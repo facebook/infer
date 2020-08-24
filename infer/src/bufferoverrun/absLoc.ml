@@ -280,6 +280,10 @@ module Loc = struct
         false
 
 
+  let get_parent_field field_loc =
+    match field_loc with BoField.(Field {prefix= l} | StarField {prefix= l}) -> l | _ -> field_loc
+
+
   let get_literal_string = function
     | BoField.Prim (Allocsite a) ->
         Allocsite.get_literal_string a
@@ -531,6 +535,17 @@ module PowLoc = struct
         Loc.is_unknown l
     | Known ploc ->
         LocSet.mem l ploc
+
+
+  let get_parent_field ploc =
+    match ploc with
+    | Bottom ->
+        (* Return the unknown location to avoid unintended unreachable nodes *)
+        Unknown
+    | Unknown ->
+        Unknown
+    | Known ploc ->
+        mk_known (LocSet.fold (fun l -> LocSet.add (Loc.get_parent_field l)) ploc LocSet.empty)
 
 
   let append_field ploc ~fn =

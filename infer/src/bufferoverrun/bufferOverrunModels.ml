@@ -1115,6 +1115,39 @@ module NSCollection = struct
       |> model_by_value coll id
     in
     {exec; check= no_check}
+
+
+  let iterator coll_exp =
+    let exec {integer_type_widths; location} ~ret:(ret_id, _) mem =
+      let traces = Trace.(Set.singleton location ArrayDeclaration) in
+      let array_v = Sem.eval integer_type_widths coll_exp mem in
+      let array_loc = Dom.Val.get_all_locs array_v in
+      let offset_loc = PowLoc.append_field ~fn:BufferOverrunField.objc_iterator_offset array_loc in
+      let mem = Dom.Mem.add_heap_set offset_loc Dom.Val.Itv.zero mem in
+      model_by_value (Dom.Val.of_pow_loc ~traces array_loc) ret_id mem
+      |> Dom.Mem.add_heap_set array_loc array_v
+      |> Dom.Mem.add_iterator_alias_objc ret_id
+    in
+    {exec; check= no_check}
+
+
+  let next_object iterator =
+    let exec {integer_type_widths} ~ret:(id, _) mem =
+      let iterator_v = Sem.eval integer_type_widths iterator mem in
+      let traces = Dom.Val.get_traces iterator_v in
+      let offset_loc =
+        Dom.Val.get_pow_loc iterator_v
+        |> PowLoc.append_field ~fn:BufferOverrunField.objc_iterator_offset
+      in
+      let next_offset_v =
+        Dom.Mem.find_set offset_loc mem |> Dom.Val.get_itv |> Itv.incr |> Dom.Val.of_itv
+      in
+      let locs = eval_collection_internal_array_locs iterator mem in
+      model_by_value (Dom.Val.of_pow_loc ~traces locs) id mem
+      |> Dom.Mem.add_heap_set offset_loc next_offset_v
+      |> Dom.Mem.add_iterator_next_object_alias id iterator
+    in
+    {exec; check= no_check}
 end
 
 module JavaClass = struct
@@ -1640,6 +1673,10 @@ module Call = struct
         &:: "arrayWithObjects:count:" <>$ capt_exp $+ capt_exp $--> NSCollection.create_from_array
       ; +PatternMatch.ObjectiveC.implements "NSArray"
         &:: "arrayWithObjects" &++> NSCollection.of_list
+      ; +PatternMatch.ObjectiveC.implements "NSArray"
+        &:: "objectEnumerator" <>$ capt_exp $--> NSCollection.iterator
+      ; +PatternMatch.ObjectiveC.implements "NSEnumerator"
+        &:: "nextObject" <>$ capt_exp $--> NSCollection.next_object
       ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
         &:: "addObject:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.add
       ; +PatternMatch.ObjectiveC.implements "NSMutableArray"

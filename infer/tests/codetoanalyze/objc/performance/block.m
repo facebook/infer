@@ -6,7 +6,7 @@
  */
 #import <Foundation/Foundation.h>
 
-NSInteger block_multiply_array_linear_FN(NSArray* array) {
+NSInteger block_multiply_array_linear(NSArray* array) {
   NSInteger (^sum_array)(NSArray*) = ^(NSArray* array) {
     NSInteger n = 0;
     for (id value in array) {

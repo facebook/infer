@@ -107,6 +107,8 @@ module PowLoc : sig
 
   val compare : t -> t -> int
 
+  val get_parent_field : t -> t
+
   val append_field : t -> fn:Fieldname.t -> t
 
   val append_star_field : t -> fn:Fieldname.t -> t

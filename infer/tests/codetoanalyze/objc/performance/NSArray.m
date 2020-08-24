@@ -145,14 +145,14 @@ NSArray* nsarray_sort_using_descriptors_nlogn_FN(NSArray* array) {
 
 // iterate through array
 
-void nsarray_iterate_linear_FN(NSArray* array) {
+void nsarray_iterate_linear(NSArray* array) {
   NSInteger sum = 0;
   for (id obj in array) {
     sum += (NSInteger)obj;
   }
 }
 
-void nsarray_enumerator_linear_FN(NSArray* array) {
+void nsarray_enumerator_linear_FP(NSArray* array) {
   NSEnumerator* enumerator = [array objectEnumerator];
 
   id obj;
@@ -163,7 +163,13 @@ void nsarray_enumerator_linear_FN(NSArray* array) {
   }
 }
 
-void nsarray_next_object_linear_FN(NSArray* array) {
+void nsarray_next_object_linear(NSArray* array) {
+  for (id item in array) {
+  }
+}
+
+void nsarray_next_object_constant_FP() {
+  NSArray* array = @[ @1, @2 ];
   for (id item in array) {
   }
 }

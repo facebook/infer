@@ -221,6 +221,10 @@ module Val : sig
   (** Pruning semantics for [Binop.Lt]. This prunes value of [x] when given [x < y], i.e.,
       [prune_lt x y]. *)
 
+  val prune_le : t -> t -> t
+  (** Pruning semantics for [Binop.Lt]. This prunes value of [x] when given [x <= y], i.e.,
+      [prune_le x y]. *)
+
   val prune_ne_zero : t -> t
   (** Prune value of [x] when given [x != 0] *)
 
@@ -334,6 +338,9 @@ module AliasTarget : sig
     | IteratorHasNext of {java_tmp: AbsLoc.Loc.t option}
         (** This is for tracking return values of the [hasNext] function. If [%r] has an alias to
             [HasNext {l}], which means that [%r] is same to [l.hasNext()]. *)
+    | IteratorNextObject of {objc_tmp: AbsLoc.Loc.t option}
+        (** This is for tracking the return values of [nextObject] function. If [%r] has an alias to
+            [nextObject {l}], which means that [%r] is the same to [l.nextObject()]. *)
     | Top
 
   include AbstractDomain.S with type t := t
@@ -579,12 +586,17 @@ module Mem : sig
   val add_iterator_has_next_alias : Ident.t -> Exp.t -> t -> t
   (** Add an [AliasTarget.IteratorHasNext] alias when [ident = iterator.hasNext()] is called *)
 
+  val add_iterator_next_object_alias : Ident.t -> Exp.t -> t -> t
+  (** Add an [AliasTarget.IteratorNextObject] alias when [ident = iterator.nextObject()] is called *)
+
   val incr_iterator_simple_alias_on_call : eval_sym_trace -> callee_exit_mem:no_oenv_t -> t -> t
   (** Update [AliasTarget.IteratorSimple] alias at function calls *)
 
   val add_iterator_alias : Ident.t -> t -> t
   (** Add [AliasTarget.IteratorSimple] and [AliasTarget.IteratorOffset] aliases when
       [Iteratable.iterator()] is called *)
+
+  val add_iterator_alias_objc : Ident.t -> t -> t
 
   val incr_iterator_offset_alias : Exp.t -> t -> t
   (** Update iterator offset alias when [iterator.next()] is called *)

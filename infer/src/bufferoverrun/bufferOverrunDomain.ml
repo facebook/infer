@@ -414,6 +414,8 @@ module Val = struct
 
   let prune_lt : t -> t -> t = prune_binop Binop.Lt
 
+  let prune_le : t -> t -> t = prune_binop Binop.Le
+
   let is_pointer_to_non_array x = (not (PowLoc.is_bot x.powloc)) && ArrayBlk.is_bot x.arrayblk
 
   (* In the pointer arithmetics, it returns top, if we cannot
@@ -717,6 +719,22 @@ module MemPure = struct
     Option.map (find_opt linked_list_index mem) ~f:(fun (_, v) -> (linked_list_index, v))
 
 
+  let get_objc_iterator_offset loc mem =
+    match find_opt loc mem with
+    | Some (_, array_v) -> (
+        let elem_loc = Val.get_all_locs array_v in
+        let array_set = PowLoc.get_parent_field elem_loc |> PowLoc.to_set in
+        match LocSet.max_elt_opt array_set with
+        | Some array_loc ->
+            let offset = Loc.append_field array_loc BufferOverrunField.objc_iterator_offset in
+            if Loc.is_unknown offset then None
+            else Option.map (find_opt offset mem) ~f:(fun (_, v) -> (offset, v))
+        | _ ->
+            None )
+    | _ ->
+        None
+
+
   let range :
          filter_loc:(Loc.t -> LoopHeadLoc.t option)
       -> node_id:ProcCfg.Normal.Node.id
@@ -728,6 +746,7 @@ module MemPure = struct
         match filter_loc loc with
         | Some loop_head_loc -> (
             let loc, v = Option.value (get_linked_list_index loc mem) ~default:(loc, v) in
+            let loc, v = Option.value (get_objc_iterator_offset loc mem) ~default:(loc, v) in
             let itv_updated_by = Val.get_itv_updated_by v in
             match itv_updated_by with
             | Addition | Multiplication ->
@@ -854,6 +873,7 @@ module AliasTarget = struct
     | IteratorSimple of {i: IntLit.t; java_tmp: Loc.t option}
     | IteratorOffset of {alias_typ: alias_typ; i: IntLit.t; java_tmp: Loc.t option}
     | IteratorHasNext of {java_tmp: Loc.t option}
+    | IteratorNextObject of {objc_tmp: AbsLoc.Loc.t option}
     | Top
   [@@deriving compare]
 
@@ -887,6 +907,8 @@ module AliasTarget = struct
             alias_typ_pp alias_typ pp_rhs pp_intlit i
       | IteratorHasNext {java_tmp} ->
           F.fprintf fmt "%t%a=hasNext(%t)" pp_lhs pp_java_tmp java_tmp pp_rhs
+      | IteratorNextObject {objc_tmp} ->
+          F.fprintf fmt "%t%a=nextObject(%t)" pp_lhs pp_java_tmp objc_tmp pp_rhs
       | Top ->
           F.fprintf fmt "%t=?%t" pp_lhs pp_rhs
 
@@ -901,7 +923,8 @@ module AliasTarget = struct
     | Size {java_tmp= Some tmp}
     | IteratorSimple {java_tmp= Some tmp}
     | IteratorOffset {java_tmp= Some tmp}
-    | IteratorHasNext {java_tmp= Some tmp} ->
+    | IteratorHasNext {java_tmp= Some tmp}
+    | IteratorNextObject {objc_tmp= Some tmp} ->
         PowLoc.singleton tmp
     | Simple {java_tmp= None}
     | Size {java_tmp= None}
@@ -910,6 +933,7 @@ module AliasTarget = struct
     | IteratorSimple {java_tmp= None}
     | IteratorOffset {java_tmp= None}
     | IteratorHasNext {java_tmp= None}
+    | IteratorNextObject {objc_tmp= None}
     | Top ->
         PowLoc.bot
 
@@ -932,6 +956,8 @@ module AliasTarget = struct
         IteratorOffset {alias_typ; i; java_tmp= Option.bind java_tmp ~f}
     | IteratorHasNext {java_tmp} ->
         IteratorHasNext {java_tmp= Option.bind java_tmp ~f}
+    | IteratorNextObject {objc_tmp} ->
+        IteratorNextObject {objc_tmp= Option.bind objc_tmp ~f}
     | Top ->
         Top
 
@@ -1023,6 +1049,8 @@ module AliasTarget = struct
         IteratorOffset {a with java_tmp= Some loc}
     | IteratorHasNext _ ->
         IteratorHasNext {java_tmp= Some loc}
+    | IteratorNextObject _ ->
+        IteratorNextObject {objc_tmp= Some loc}
     | _ as alias ->
         alias
 end
@@ -1157,22 +1185,20 @@ module AliasMap = struct
 
   let store : Loc.t -> Ident.t -> t -> t =
    fun l id x ->
-    if Language.curr_language_is Java then
-      let tgts = find_id id x in
-      if Loc.is_frontend_tmp l then add_aliases ~lhs:(KeyLhs.of_loc l) tgts x
-      else
-        let accum_java_tmp_alias rhs tgt acc =
-          match tgt with
-          | AliasTarget.Simple {i} when IntLit.iszero i && Loc.is_frontend_tmp rhs ->
-              add_alias ~lhs:(KeyLhs.of_id id) ~rhs:l
-                (AliasTarget.Simple {i; java_tmp= Some rhs})
-                acc
-              |> add_alias ~lhs:(KeyLhs.of_loc rhs) ~rhs:l (AliasTarget.Simple {i; java_tmp= None})
-          | _ ->
-              acc
-        in
-        AliasTargets.fold accum_java_tmp_alias tgts x
-    else x
+    let tgts = find_id id x in
+    if Loc.is_frontend_tmp l then add_aliases ~lhs:(KeyLhs.of_loc l) tgts x
+    else
+      let accum_java_tmp_alias rhs tgt acc =
+        match tgt with
+        | AliasTarget.Simple {i} when IntLit.iszero i && Loc.is_frontend_tmp rhs ->
+            add_alias ~lhs:(KeyLhs.of_id id) ~rhs:l (AliasTarget.Simple {i; java_tmp= Some rhs}) acc
+            |> add_alias ~lhs:(KeyLhs.of_loc rhs) ~rhs:l (AliasTarget.Simple {i; java_tmp= None})
+        | AliasTarget.IteratorNextObject _ ->
+            add_alias ~lhs:(KeyLhs.of_loc l) ~rhs tgt acc
+        | _ ->
+            acc
+      in
+      AliasTargets.fold accum_java_tmp_alias tgts x
 
 
   let add_size_alias ~lhs ~lhs_v ~arr ~arr_size x =
@@ -1297,6 +1323,24 @@ module AliasMap = struct
         AliasTargets.fold accum_has_next_alias tgts x
     | _ ->
         x
+
+
+  let add_iterator_next_object_alias ~ret_id ~iterator x =
+    let accum_next_object_alias rhs tgt acc =
+      match tgt with
+      | AliasTarget.IteratorSimple _ ->
+          add_alias ~lhs:(KeyLhs.of_id ret_id) ~rhs
+            (AliasTarget.IteratorNextObject {objc_tmp= None})
+            acc
+      | _ ->
+          acc
+    in
+    let open IOption.Let_syntax in
+    M.find_opt (KeyLhs.of_id iterator) x
+    >>= AliasTargets.find_simple_alias
+    >>= (fun rhs -> M.find_opt (KeyLhs.of_loc rhs) x)
+    >>| (fun tgts -> AliasTargets.fold accum_next_object_alias tgts x)
+    |> Option.value ~default:x
 end
 
 module AliasRet = struct
@@ -1419,6 +1463,10 @@ module Alias = struct
 
   let add_iterator_has_next_alias : ret_id:Ident.t -> iterator:Ident.t -> t -> t =
    fun ~ret_id ~iterator a -> lift_map (AliasMap.add_iterator_has_next_alias ~ret_id ~iterator) a
+
+
+  let add_iterator_next_object_alias : ret_id:Ident.t -> iterator:Ident.t -> t -> t =
+   fun ~ret_id ~iterator a -> lift_map (AliasMap.add_iterator_next_object_alias ~ret_id ~iterator) a
 
 
   let remove_temp : Ident.t -> t -> t = fun temp -> lift_map (AliasMap.remove (KeyLhs.of_id temp))
@@ -1996,10 +2044,19 @@ module MemReach = struct
 
   let add_iterator_alias id m = add_iterator_offset_alias id m |> add_iterator_simple_alias id
 
+  let add_iterator_alias_objc id m =
+    let array_loc = find_stack (Loc.of_id id) m |> Val.get_pow_loc in
+    {m with alias= Alias.add_iterator_simple_alias id array_loc m.alias}
+
+
   let incr_iterator_offset_alias id m = {m with alias= Alias.incr_iterator_offset_alias id m.alias}
 
   let add_iterator_has_next_alias ~ret_id ~iterator m =
     {m with alias= Alias.add_iterator_has_next_alias ~ret_id ~iterator m.alias}
+
+
+  let add_iterator_next_object_alias ~ret_id ~iterator m =
+    {m with alias= Alias.add_iterator_next_object_alias ~ret_id ~iterator m.alias}
 
 
   let incr_iterator_simple_alias_on_call eval_sym_trace ~callee_exit_mem m =
@@ -2368,6 +2425,10 @@ module Mem = struct
 
   let add_iterator_alias : Ident.t -> t -> t = fun id -> map ~f:(MemReach.add_iterator_alias id)
 
+  let add_iterator_alias_objc : Ident.t -> t -> t =
+   fun id -> map ~f:(MemReach.add_iterator_alias_objc id)
+
+
   let incr_iterator_offset_alias : Exp.t -> t -> t =
    fun iterator m ->
     match iterator with Exp.Var id -> map ~f:(MemReach.incr_iterator_offset_alias id) m | _ -> m
@@ -2378,6 +2439,15 @@ module Mem = struct
     match iterator with
     | Exp.Var iterator ->
         map ~f:(MemReach.add_iterator_has_next_alias ~ret_id ~iterator) m
+    | _ ->
+        m
+
+
+  let add_iterator_next_object_alias : Ident.t -> Exp.t -> t -> t =
+   fun ret_id iterator m ->
+    match iterator with
+    | Exp.Var iterator ->
+        map ~f:(MemReach.add_iterator_next_object_alias ~ret_id ~iterator) m
     | _ ->
         m
 
