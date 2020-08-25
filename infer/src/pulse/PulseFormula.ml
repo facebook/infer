@@ -396,12 +396,10 @@ module Atom = struct
     | BitNot (BitNot t) ->
         (* [~~t = t] *)
         t
-    | Not (Const c) when Q.equal c Q.zero ->
-        (* [!0 = 1]  *)
-        one
-    | Not (Const c) when Q.equal c Q.one ->
-        (* [!1 = 0]  *)
-        zero
+    | Not (Const c) ->
+        if Q.equal c Q.zero then (* [!0 = 1]  *)
+          one else (* [!<non-zero> = 0]  *)
+                zero
     | Add (Const c1, Const c2) ->
         (* constants *)
         Const (Q.add c1 c2)
@@ -560,6 +558,10 @@ module LinArith : sig
 
   val of_operand : operand -> t
 
+  val of_term : Term.t -> t option
+  (** more or less syntactic attempt at detecting when an arbitrary term is a linear formula; call
+      {!Atom.eval_term} first for best results *)
+
   val get_as_const : t -> Q.t option
   (** [get_as_const l] is [Some c] if [l=c], else [None] *)
 
@@ -645,9 +647,51 @@ end = struct
 
   let of_var v = (Var.Map.singleton v Q.one, Q.zero)
 
-  let of_intlit i = (Var.Map.empty, IntLit.to_big_int i |> Q.of_bigint)
+  let of_q q = (Var.Map.empty, q)
+
+  let of_intlit i = IntLit.to_big_int i |> Q.of_bigint |> of_q
 
   let of_operand = function AbstractValueOperand v -> of_var v | LiteralOperand i -> of_intlit i
+
+  (* don't duplicate simplifications between here and {!Atom.eval_term} *)
+  let rec of_term (t : Term.t) =
+    let open IOption.Let_syntax in
+    match t with
+    | Var v ->
+        Some (of_var v)
+    | Const c ->
+        Some (of_q c)
+    | Minus t ->
+        let+ l = of_term t in
+        minus l
+    | Add (t1, t2) ->
+        let* l1 = of_term t1 in
+        let+ l2 = of_term t2 in
+        add l1 l2
+    | Mult (Const c, t) | Mult (t, Const c) ->
+        let+ l = of_term t in
+        mult c l
+    | Div (t, Const c) when not (Q.equal c Q.zero) ->
+        let+ l = of_term t in
+        mult (Q.inv c) l
+    | Mult _
+    | Div _
+    | Mod _
+    | BitNot _
+    | BitAnd _
+    | BitOr _
+    | BitShiftLeft _
+    | BitShiftRight _
+    | BitXor _
+    | Not _
+    | And _
+    | Or _
+    | LessThan _
+    | LessEqual _
+    | Equal _
+    | NotEqual _ ->
+        None
+
 
   let get_as_const (vs, c) = if Var.Map.is_empty vs then Some c else None
 
@@ -897,14 +941,26 @@ end = struct
 
 
   let normalize_atoms phi =
-    (* TODO: normalizing an atom may produce a new linear arithmetic or variable equality fact, we
-       should detect that and feed it back to the rest of the formula *)
-    let+ atoms =
-      IContainer.fold_of_pervasives_set_fold Atom.Set.fold phi.atoms ~init:(Sat Atom.Set.empty)
-        ~f:(fun facts atom ->
-          let* facts = facts in
+    let+ phi, atoms =
+      IContainer.fold_of_pervasives_set_fold Atom.Set.fold phi.atoms
+        ~init:(Sat (phi, Atom.Set.empty))
+        ~f:(fun acc atom ->
+          let* phi, facts = acc in
           normalize_atom phi atom
-          >>| function None -> facts | Some atom' -> Atom.Set.add atom' facts )
+          >>= function
+          | None ->
+              acc
+          | Some (Atom.Equal (t1, t2) as atom') -> (
+            match Option.both (LinArith.of_term t1) (LinArith.of_term t2) with
+            | None ->
+                Sat (phi, Atom.Set.add atom' facts)
+            | Some (l1, l2) ->
+                (* an atom has been found to have become a linear equality, move it to the linear
+                   equalities *)
+                let+ phi = solve_eq ~fuel:5 l1 l2 phi in
+                (phi, facts) )
+          | Some atom' ->
+              Sat (phi, Atom.Set.add atom' facts) )
     in
     {phi with atoms}
 

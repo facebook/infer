@@ -50,6 +50,10 @@ let%test_module _ =
 
     let ( - ) f1 f2 phi = of_binop (MinusA None) f1 f2 phi
 
+    let ( * ) f1 f2 phi = of_binop (Mult None) f1 f2 phi
+
+    let ( / ) f1 f2 phi = of_binop Div f1 f2 phi
+
     let ( = ) f1 f2 phi =
       let* phi, op1 = f1 phi in
       let* phi, op2 = f2 phi in
@@ -157,6 +161,39 @@ let%test_module _ =
     let%expect_test _ =
       normalize (x = i 0 && x < i 0) ;
       [%expect {|unsat|}]
+
+    let%expect_test "nonlinear arithmetic" =
+      normalize (z * (x + (v * y) + i 1) / w = i 0) ;
+      [%expect
+        {|
+        true (no var=var)
+        &&
+        v7 = x + v6 ∧ v8 = x + v6 +1 ∧ v10 = 0
+        &&
+        {0 = v9÷w}∧{v6 = v×y}∧{v9 = z×v8} |}]
+
+    (* check that this becomes all linear equalities *)
+    let%expect_test _ =
+      normalize (i 12 * (x + (i 3 * y) + i 1) / i 7 = i 0) ;
+      [%expect
+        {|
+        true (no var=var)
+        &&
+        x = -v6 + 1/12·v9 -1 ∧ y = 1/3·v6 ∧ v7 = x + v6 ∧ v8 = x + v6 +1 ∧ v9 = 0 ∧ v10 = 0
+        &&
+        true (no atoms)|}]
+
+    (* check that this becomes all linear equalities thanks to constant propagation *)
+    let%expect_test _ =
+      normalize (z * (x + (v * y) + i 1) / w = i 0 && z = i 12 && v = i 3 && w = i 7) ;
+      [%expect
+        {|
+        true (no var=var)
+        &&
+        x = -v6 + 1/12·v9 -1 ∧ y = 1/3·v6 ∧ z = 12 ∧ w = 7 ∧ v = 3 ∧ v7 = x + v6
+         ∧ v8 = x + v6 +1 ∧ v9 = 0 ∧ v10 = 0
+        &&
+        true (no atoms)|}]
 
     let%expect_test _ =
       simplify ~keep:[x_var] (x = i 0 && y = i 1 && z = i 2 && w = i 3) ;
