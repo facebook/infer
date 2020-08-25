@@ -24,8 +24,3 @@ void double_free_global_bad() {
   free_global_pointer_ok();
   free_global_pointer_ok();
 }
-
-void free_nullptr_ok() {
-  int* p = nullptr;
-  free(p);
-}

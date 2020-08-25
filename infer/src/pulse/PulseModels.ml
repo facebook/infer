@@ -81,10 +81,9 @@ module Misc = struct
   let id_first_arg arg_access_hist : model =
    fun _ ~callee_procname:_ _ ~ret astate ->
     PulseOperations.write_id (fst ret) arg_access_hist astate |> PulseOperations.ok_continue
-end
 
-module C = struct
-  let free deleted_access : model =
+
+  let free_or_delete operation deleted_access : model =
    fun _ ~callee_procname:_ location ~ret:_ astate ->
     (* NOTE: we could introduce a case-split explicitly on =0 vs ≠0 but instead only act on what we
        currently know about the value. This is purely to avoid contributing to path explosion. *)
@@ -93,9 +92,15 @@ module C = struct
       PulseOperations.ok_continue astate
     else
       let astate = PulseArithmetic.and_positive (fst deleted_access) astate in
-      let+ astate = PulseOperations.invalidate location Invalidation.CFree deleted_access astate in
+      let invalidation =
+        match operation with `Free -> Invalidation.CFree | `Delete -> Invalidation.CppDelete
+      in
+      let+ astate = PulseOperations.invalidate location invalidation deleted_access astate in
       [ExecutionDomain.ContinueProgram astate]
+end
 
+module C = struct
+  let free deleted_access : model = Misc.free_or_delete `Free deleted_access
 
   let malloc _ : model =
    fun _ ~callee_procname location ~ret:(ret_id, _) astate ->
@@ -225,13 +230,7 @@ module FollyOptional = struct
 end
 
 module Cplusplus = struct
-  let delete deleted_access : model =
-   fun _ ~callee_procname:_ location ~ret:_ astate ->
-    let+ astate =
-      PulseOperations.invalidate location Invalidation.CppDelete deleted_access astate
-    in
-    [ExecutionDomain.ContinueProgram astate]
-
+  let delete deleted_access : model = Misc.free_or_delete `Delete deleted_access
 
   let placement_new actuals : model =
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
