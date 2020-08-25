@@ -238,9 +238,9 @@ let%test_module "non-linear simplifications" =
   ( module struct
     let%expect_test "zero propagation" =
       simplify ~keep:[w_var] (((i 0 / (x * z)) & v) * v mod y = w) ;
-      [%expect {|w=v10 && true (no linear) && {w = v9 mod y}∧{v8 = 0&v}∧{v9 = v8×v}|}]
+      [%expect {|w=v10 && w = 0 && true (no atoms)|}]
 
     let%expect_test "constant propagation: bitshift" =
       simplify ~keep:[x_var] (of_binop Shiftlt (of_binop Shiftrt (i 0b111) (i 2)) (i 2) = x) ;
-      [%expect {|x=v7 && true (no linear) && {x = v6<<2}∧{v6 = 7>>2}|}]
+      [%expect {|x=v7 && x = 4 && true (no atoms)|}]
   end )
