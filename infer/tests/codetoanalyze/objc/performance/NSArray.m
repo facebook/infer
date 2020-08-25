@@ -168,7 +168,7 @@ void nsarray_next_object_linear(NSArray* array) {
   }
 }
 
-void nsarray_next_object_constant_FP() {
+void nsarray_next_object_constant() {
   NSArray* array = @[ @1, @2 ];
   for (id item in array) {
   }

@@ -19,7 +19,7 @@ codetoanalyze/objc/performance/NSArray.m, nsarray_init_with_objects_constant, 39
 codetoanalyze/objc/performance/NSArray.m, nsarray_is_equal_to_array_linear, 4 + array1->elements.length.ub,  OnUIThread:false, [{array1->elements.length.ub},Modeled call to NSArray.isEqualToArray:]
 codetoanalyze/objc/performance/NSArray.m, nsarray_iterate_linear, 6 + 4 ⋅ array->elements.length.ub + 4 ⋅ (array->elements.length.ub + 1),  OnUIThread:false, [{array->elements.length.ub + 1},Loop,{array->elements.length.ub},Loop]
 codetoanalyze/objc/performance/NSArray.m, nsarray_last_object_constant, 4,  OnUIThread:false, []
-codetoanalyze/objc/performance/NSArray.m, nsarray_next_object_constant_FP, ⊤,  OnUIThread:false, [Unbounded loop,Loop]
+codetoanalyze/objc/performance/NSArray.m, nsarray_next_object_constant, 25,  OnUIThread:false, []
 codetoanalyze/objc/performance/NSArray.m, nsarray_next_object_linear, 5 + array->elements.length.ub + 4 ⋅ (array->elements.length.ub + 1),  OnUIThread:false, [{array->elements.length.ub + 1},Loop,{array->elements.length.ub},Loop]
 codetoanalyze/objc/performance/NSArray.m, nsarray_object_at_indexed_constant, 34,  OnUIThread:false, []
 codetoanalyze/objc/performance/NSArray.m, nsarray_sort_using_descriptors_constant, 34,  OnUIThread:false, []

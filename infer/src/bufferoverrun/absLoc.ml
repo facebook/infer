@@ -231,6 +231,13 @@ module Loc = struct
         false
 
 
+  let is_objc_iterator_offset = function
+    | BoField.Field {fn} ->
+        Fieldname.equal fn BoField.objc_iterator_offset
+    | _ ->
+        false
+
+
   let is_frontend_tmp = function
     | BoField.Prim (Var x) ->
         not (Var.appears_in_source_code x)
@@ -354,7 +361,8 @@ module Loc = struct
         false
     | BoField.Prim (Allocsite allocsite) ->
         Allocsite.represents_multiple_values allocsite
-    | BoField.Field _ as x when is_c_strlen x || is_java_collection_internal_array x ->
+    | BoField.Field _ as x
+      when is_c_strlen x || is_java_collection_internal_array x || is_objc_iterator_offset x ->
         false
     | BoField.Field {prefix= l} ->
         represents_multiple_values l
