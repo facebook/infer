@@ -198,8 +198,8 @@ let%test_module "normalization" =
         {|
         true (no var=var)
         &&
-        x = -v6 + v8 -1 ∧ y = 1/3·v6 ∧ z = 12 ∧ w = 7 ∧ v = 3 ∧ v7 = v8 -1
-         ∧ v8 = 1/12·v9 ∧ v9 = 0 ∧ v10 = 0
+        x = -v6 -1 ∧ y = 1/3·v6 ∧ z = 12 ∧ w = 7 ∧ v = 3 ∧ v7 = -1
+         ∧ v8 = 0 ∧ v9 = 0 ∧ v10 = 0
         &&
         true (no atoms)|}]
   end )
@@ -242,4 +242,9 @@ let%test_module "non-linear simplifications" =
     let%expect_test "constant propagation: bitshift" =
       simplify ~keep:[x_var] (of_binop Shiftlt (of_binop Shiftrt (i 0b111) (i 2)) (i 2) = x) ;
       [%expect {|true (no var=var) && x = 4 && true (no atoms)|}]
+
+    let%expect_test "non-linear becomes linear" =
+      normalize (w = (i 2 * z) - i 3 && z = x * y && y = i 2) ;
+      [%expect
+        {|z=v8 ∧ w=v7 && x = 1/4·v6 ∧ y = 2 ∧ z = 1/2·v6 ∧ w = v6 -3 && true (no atoms)|}]
   end )

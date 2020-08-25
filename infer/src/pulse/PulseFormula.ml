@@ -1168,29 +1168,50 @@ end = struct
     Atom.eval atom' |> sat_of_eval_result
 
 
+  (** return [(new_linear_equalities, phi ∧ atom)], where [new_linear_equalities] is [true] if
+      [phi.linear_eqs] was changed as a result *)
   let and_atom atom phi =
     normalize_atom phi atom
     >>= function
     | None ->
-        Sat phi
+        Sat (false, phi)
     | Some (Atom.Equal (Linear l, Const c)) | Some (Atom.Equal (Const c, Linear l)) ->
         (* NOTE: {!normalize_atom} calls {!Atom.eval}, which normalizes linear equalities so
            they end up only on one side, hence only this match case is needed to detect linear
            equalities *)
-        solve_eq l (LinArith.of_q c) phi
+        let+ phi' = solve_eq l (LinArith.of_q c) phi in
+        (true, phi')
     | Some atom' ->
-        Sat {phi with atoms= Atom.Set.add atom' phi.atoms}
+        Sat (false, {phi with atoms= Atom.Set.add atom' phi.atoms})
 
 
   let normalize_atoms phi =
     let atoms0 = phi.atoms in
-    let init = Sat {phi with atoms= Atom.Set.empty} in
+    let init = Sat (false, {phi with atoms= Atom.Set.empty}) in
     IContainer.fold_of_pervasives_set_fold Atom.Set.fold atoms0 ~init ~f:(fun acc atom ->
-        let* phi = acc in
-        and_atom atom phi )
+        let* changed, phi = acc in
+        let+ changed', phi = and_atom atom phi in
+        (changed || changed', phi) )
 
 
-  let normalize phi = normalize_linear_eqs ~fuel:base_fuel phi >>= normalize_atoms
+  let normalize phi =
+    (* NOTE: we may consume a quadratic amount of [fuel] here since the fuel here is not consumed by
+       [normalize_linear_eqs] (i.e. [normalize_linear_eqs] does not return the remaining
+       fuel). That's ok because there's not much fuel to begin with, and as long as we're making
+       progress it's probably worth it anyway. *)
+    let rec normalize_with_fuel ~fuel phi =
+      let* new_linear_eqs, phi = normalize_linear_eqs ~fuel phi >>= normalize_atoms in
+      if new_linear_eqs && fuel > 0 then (
+        L.d_printfln "new linear equalities, consuming fuel (from %d)" fuel ;
+        normalize_with_fuel ~fuel:(fuel - 1) phi )
+      else (
+        L.d_printfln "ran out of fuel when normalizing" ;
+        Sat phi )
+    in
+    normalize_with_fuel ~fuel:base_fuel phi
+
+
+  let and_atom atom phi = and_atom atom phi >>| snd
 end
 
 let and_mk_atom mk_atom op1 op2 phi =
