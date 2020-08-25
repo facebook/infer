@@ -12,6 +12,20 @@ module Var = PulseAbstractValue
 
 type operand = LiteralOperand of IntLit.t | AbstractValueOperand of Var.t
 
+module Q = struct
+  include Q
+
+  let not_equal q1 q2 = not (Q.equal q1 q2)
+
+  let is_one q = Q.equal q Q.one
+
+  let is_minus_one q = Q.equal q Q.minus_one
+
+  let is_zero q = Q.equal q Q.zero
+
+  let is_not_zero q = not (is_zero q)
+end
+
 (** Expressive term structure to be able to express all of SIL, but the main smarts of the formulas
     are for the equality between variables and linear arithmetic subsets. Terms (and atoms, below)
     are kept as a last-resort for when outside that fragment. *)
@@ -173,9 +187,9 @@ module Term = struct
         Or (t1, t2)
 
 
-  let is_zero = function Const c -> Q.equal c Q.zero | _ -> false
+  let is_zero = function Const c -> Q.is_zero c | _ -> false
 
-  let is_non_zero_const = function Const c -> not (Q.equal c Q.zero) | _ -> false
+  let is_non_zero_const = function Const c -> Q.is_not_zero c | _ -> false
 
   (** Fold [f] on the strict sub-terms of [t], if any. Preserve physical equality if [f] does. *)
   let fold_map_direct_subterms t ~init ~f =
@@ -397,46 +411,46 @@ module Atom = struct
         (* [~~t = t] *)
         t
     | Not (Const c) ->
-        if Q.equal c Q.zero then (* [!0 = 1]  *)
+        if Q.is_zero c then (* [!0 = 1]  *)
           one else (* [!<non-zero> = 0]  *)
                 zero
     | Add (Const c1, Const c2) ->
         (* constants *)
         Const (Q.add c1 c2)
-    | Add (Const c, t) when Q.equal c Q.zero ->
+    | Add (Const c, t) when Q.is_zero c ->
         (* [0 + t = t] *)
         t
-    | Add (t, Const c) when Q.equal c Q.zero ->
+    | Add (t, Const c) when Q.is_zero c ->
         (* [t + 0 = t] *)
         t
-    | Mult (Const c, t) when Q.equal c Q.one ->
+    | Mult (Const c, t) when Q.is_one c ->
         (* [1 × t = t] *)
         t
-    | Mult (t, Const c) when Q.equal c Q.one ->
+    | Mult (t, Const c) when Q.is_one c ->
         (* [t × 1 = t] *)
         t
-    | Mult (Const c, _) when Q.equal c Q.zero ->
+    | Mult (Const c, _) when Q.is_zero c ->
         (* [0 × t = 0] *)
         zero
-    | Mult (_, Const c) when Q.equal c Q.zero ->
+    | Mult (_, Const c) when Q.is_zero c ->
         (* [t × 0 = 0] *)
         zero
-    | Div (Const c, _) when Q.equal c Q.zero ->
+    | Div (Const c, _) when Q.is_zero c ->
         (* [0 / t = 0] *)
         zero
-    | Div (t, Const c) when Q.equal c Q.one ->
+    | Div (t, Const c) when Q.is_one c ->
         (* [t / 1 = t] *)
         t
-    | Div (t, Const c) when Q.equal c Q.minus_one ->
+    | Div (t, Const c) when Q.is_minus_one c ->
         (* [t / (-1) = -t] *)
         eval_term (Minus t)
     | Div (Minus t1, Minus t2) ->
         (* [(-t1) / (-t2) = t1 / t2] *)
         eval_term (Div (t1, t2))
-    | Mod (Const c, _) when Q.equal c Q.zero ->
+    | Mod (Const c, _) when Q.is_zero c ->
         (* [0 % t = 0] *)
         zero
-    | Mod (_, Const q) when Q.equal q Q.one ->
+    | Mod (_, Const q) when Q.is_one q ->
         (* [t % 1 = 0] *)
         zero
     | Mod (t1, t2) when equal_syntax t1 t2 ->
@@ -480,7 +494,7 @@ module Atom = struct
       | Equal _ ->
           eval_result_of_bool (Q.equal c1 c2)
       | NotEqual _ ->
-          eval_result_of_bool (not (Q.equal c1 c2))
+          eval_result_of_bool (Q.not_equal c1 c2)
       | LessEqual _ ->
           eval_result_of_bool (Q.leq c1 c2)
       | LessThan _ ->
@@ -585,14 +599,14 @@ end = struct
     if Var.Map.is_empty vs then Q.pp_print fmt c
     else
       let pp_c fmt c =
-        if Q.equal c Q.zero then ()
+        if Q.is_zero c then ()
         else
           let plusminus, c_pos = if Q.geq c Q.zero then ('+', c) else ('-', Q.neg c) in
           F.fprintf fmt " %c%a" plusminus Q.pp_print c_pos
       in
       let pp_coeff fmt q =
-        if Q.equal q Q.one then ()
-        else if Q.equal q Q.minus_one then F.pp_print_string fmt "-"
+        if Q.is_one q then ()
+        else if Q.is_minus_one q then F.pp_print_string fmt "-"
         else F.fprintf fmt "%a·" Q.pp_print q
       in
       let pp_vs fmt vs =
@@ -608,7 +622,7 @@ end = struct
     ( Var.Map.union
         (fun _v c1 c2 ->
           let c = Q.add c1 c2 in
-          if Q.equal c Q.zero then None else Some c )
+          if Q.is_zero c then None else Some c )
         vs1 vs2
     , Q.add c1 c2 )
 
@@ -619,18 +633,18 @@ end = struct
 
   let zero = (Var.Map.empty, Q.zero)
 
-  let is_zero (vs, c) = Q.equal c Q.zero && Var.Map.is_empty vs
+  let is_zero (vs, c) = Q.is_zero c && Var.Map.is_empty vs
 
   let mult q ((vs, c) as l) =
-    if Q.equal q Q.zero then (* needed for correction: coeffs cannot be zero *) zero
-    else if Q.equal q Q.one then (* purely an optimisation *) l
+    if Q.is_zero q then (* needed for correction: coeffs cannot be zero *) zero
+    else if Q.is_one q then (* purely an optimisation *) l
     else (Var.Map.map (fun c -> Q.mul q c) vs, Q.mul q c)
 
 
   let solve_eq_zero (vs, c) =
     match Var.Map.min_binding_opt vs with
     | None ->
-        if Q.equal c Q.zero then Sat None else Unsat
+        if Q.is_zero c then Sat None else Unsat
     | Some (x, coeff) ->
         let d = Q.neg coeff in
         let vs' =
@@ -671,7 +685,7 @@ end = struct
     | Mult (Const c, t) | Mult (t, Const c) ->
         let+ l = of_term t in
         mult c l
-    | Div (t, Const c) when not (Q.equal c Q.zero) ->
+    | Div (t, Const c) when Q.is_not_zero c ->
         let+ l = of_term t in
         mult (Q.inv c) l
     | Mult _
@@ -696,9 +710,9 @@ end = struct
   let get_as_const (vs, c) = if Var.Map.is_empty vs then Some c else None
 
   let get_as_var (vs, c) =
-    if Q.equal c Q.zero then
+    if Q.is_zero c then
       match Var.Map.is_singleton_or_more vs with
-      | Singleton (x, cx) when Q.equal cx Q.one ->
+      | Singleton (x, cx) when Q.is_one cx ->
           Some x
       | _ ->
           None
@@ -729,7 +743,7 @@ end = struct
                 Var.Map.add v q0 vs
             | Some q ->
                 let q' = Q.add q q0 in
-                if Q.equal q' Q.zero then Var.Map.remove v vs else Var.Map.add v q vs
+                if Q.is_zero q' then Var.Map.remove v vs else Var.Map.add v q vs
           in
           (acc_f, vs) )
         vs_foreign (init, Var.Map.empty)
