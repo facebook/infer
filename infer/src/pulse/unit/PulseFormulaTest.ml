@@ -168,7 +168,7 @@ let%test_module "normalization" =
 
     let%expect_test _ =
       normalize (x + y < x + y) ;
-      [%expect {|true (no var=var) && v6 = x + y ∧ v7 = x + y && {[v6 + -v7] < 0}|}]
+      [%expect {|unsat|}]
 
     let%expect_test "nonlinear arithmetic" =
       normalize (z * (x + (v * y) + i 1) / w = i 0) ;
@@ -178,7 +178,7 @@ let%test_module "normalization" =
         &&
         v7 = x + v6 ∧ v8 = x + v6 +1 ∧ v10 = 0
         &&
-        {0 = [v9]÷[w]}∧{[v6] = [v]×[y]}∧{[v9] = [z]×[v8]} |}]
+        {0 = [v9]÷[w]}∧{[v6] = [v]×[y]}∧{[v9] = [z]×[x + v6 +1]} |}]
 
     (* check that this becomes all linear equalities *)
     let%expect_test _ =

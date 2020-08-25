@@ -1069,11 +1069,11 @@ end = struct
     let normalize_term phi t =
       Term.map_variables t ~f:(fun v ->
           let v_canon = (VarUF.find phi.var_eqs v :> Var.t) in
-          let q_opt =
-            let open Option.Monad_infix in
-            Var.Map.find_opt v_canon phi.linear_eqs >>= LinArith.get_as_const
-          in
-          match q_opt with None -> VarSubst v_canon | Some q -> QSubst q )
+          match Var.Map.find_opt v_canon phi.linear_eqs with
+          | None ->
+              VarSubst v_canon
+          | Some l -> (
+            match LinArith.get_as_const l with None -> LinSubst l | Some q -> QSubst q ) )
     in
     let atom' = Atom.map_terms atom ~f:(fun t -> normalize_term phi t) in
     Atom.eval atom' |> sat_of_eval_result
