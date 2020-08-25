@@ -187,16 +187,19 @@ end = struct
 
   let of_subst_target = function QSubst q -> of_q q | VarSubst v -> of_var v | LinSubst l -> l
 
-  let fold_map_variables (vs_foreign, c) ~init ~f =
-    let acc_f, l =
+  let fold_map_variables ((vs_foreign, c) as l0) ~init ~f =
+    let changed = ref false in
+    let acc_f, l' =
       Var.Map.fold
         (fun v_foreign q0 (acc_f, l) ->
           let acc_f, op = f acc_f v_foreign in
+          (match op with VarSubst v when Var.equal v v_foreign -> () | _ -> changed := true) ;
           (acc_f, add (mult q0 (of_subst_target op)) l) )
         vs_foreign
         (init, (Var.Map.empty, c))
     in
-    (acc_f, l)
+    let l' = if !changed then l' else l0 in
+    (acc_f, l')
 
 
   let map_variables l ~f = fold_map_variables l ~init:() ~f:(fun () v -> ((), f v)) |> snd
@@ -495,7 +498,8 @@ module Term = struct
         (acc, t')
     | Linear l ->
         let acc, l' = LinArith.fold_map_variables l ~init ~f in
-        (acc, Linear l')
+        let t' = if phys_equal l l' then t else Linear l' in
+        (acc, t')
     | _ ->
         fold_map_direct_subterms t ~init ~f:(fun acc t' -> fold_map_variables t' ~init:acc ~f)
 
