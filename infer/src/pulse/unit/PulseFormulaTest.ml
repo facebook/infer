@@ -176,9 +176,9 @@ let%test_module "normalization" =
         {|
         true (no var=var)
         &&
-        v7 = x + v6 ∧ v8 = x + v6 +1 ∧ v10 = 0
+        x = -v6 + v8 -1 ∧ v7 = v8 -1 ∧ v10 = 0
         &&
-        {0 = [v9]÷[w]}∧{[v6] = [v]×[y]}∧{[v9] = [z]×[x + v6 +1]} |}]
+        {0 = [v9]÷[w]}∧{[v6] = [v]×[y]}∧{[v9] = [z]×[v8]} |}]
 
     (* check that this becomes all linear equalities *)
     let%expect_test _ =
@@ -187,7 +187,7 @@ let%test_module "normalization" =
         {|
         true (no var=var)
         &&
-        x = -v6 + 1/12·v9 -1 ∧ y = 1/3·v6 ∧ v7 = x + v6 ∧ v8 = x + v6 +1 ∧ v9 = 0 ∧ v10 = 0
+        x = -v6 -1 ∧ y = 1/3·v6 ∧ v7 = -1 ∧ v8 = 0 ∧ v9 = 0 ∧ v10 = 0
         &&
         true (no atoms)|}]
 
@@ -198,8 +198,8 @@ let%test_module "normalization" =
         {|
         true (no var=var)
         &&
-        x = -v6 + 1/12·v9 -1 ∧ y = 1/3·v6 ∧ z = 12 ∧ w = 7 ∧ v = 3 ∧ v7 = x + v6
-         ∧ v8 = x + v6 +1 ∧ v9 = 0 ∧ v10 = 0
+        x = -v6 + v8 -1 ∧ y = 1/3·v6 ∧ z = 12 ∧ w = 7 ∧ v = 3 ∧ v7 = v8 -1
+         ∧ v8 = 1/12·v9 ∧ v9 = 0 ∧ v10 = 0
         &&
         true (no atoms)|}]
   end )
@@ -221,17 +221,12 @@ let%test_module "variable elimination" =
     (* should keep most of this or realize that [w = z] hence this boils down to [z+1 = 0] *)
     let%expect_test _ =
       simplify ~keep:[y_var; z_var] (x = y + z && w = x - y && v = w + i 1 && v = i 0) ;
-      [%expect {|x=v6 ∧ z=w=v7 && x = y -1 ∧ z = -1 && true (no atoms)|}]
+      [%expect {|x=v6 && x = y -1 ∧ z = -1 && true (no atoms)|}]
 
     let%expect_test _ =
       simplify ~keep:[x_var; y_var] (x = y + z && w + x + y = i 0 && v = w + i 1) ;
       [%expect
-        {|
-        x=v6 ∧ v=v9
-        &&
-        x = 1/2·z + -1/2·w ∧ y = -1/2·z + -1/2·w ∧ v = w +1 ∧ v7 = 1/2·z + 1/2·w
-        &&
-        true (no atoms)|}]
+        {|x=v6 ∧ v=v9 && x = -v + v7 +1 ∧ y = -v7 ∧ z = -v + 2·v7 +1 ∧ w = v -1 && true (no atoms)|}]
 
     let%expect_test _ =
       simplify ~keep:[x_var; y_var] (x = y + i 4 && x = w && y = z) ;
@@ -242,9 +237,9 @@ let%test_module "non-linear simplifications" =
   ( module struct
     let%expect_test "zero propagation" =
       simplify ~keep:[w_var] (((i 0 / (x * z)) & v) * v mod y = w) ;
-      [%expect {|w=v10 && w = 0 && true (no atoms)|}]
+      [%expect {|true (no var=var) && w = 0 && true (no atoms)|}]
 
     let%expect_test "constant propagation: bitshift" =
       simplify ~keep:[x_var] (of_binop Shiftlt (of_binop Shiftrt (i 0b111) (i 2)) (i 2) = x) ;
-      [%expect {|x=v7 && x = 4 && true (no atoms)|}]
+      [%expect {|true (no var=var) && x = 4 && true (no atoms)|}]
   end )
