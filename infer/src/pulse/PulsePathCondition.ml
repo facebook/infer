@@ -186,7 +186,7 @@ let and_citvs_callee subst citvs_caller citvs_callee =
 let and_formula_callee subst formula_caller ~callee:formula_callee =
   (* need to translate callee variables to make sense for the caller, thereby possibly extending
      the current substitution *)
-  Formula.and_fold_map_variables formula_caller ~up_to_f:formula_callee ~f:subst_find_or_new
+  Formula.and_fold_subst_variables formula_caller ~up_to_f:formula_callee ~f:subst_find_or_new
     ~init:subst
 
 

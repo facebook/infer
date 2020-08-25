@@ -221,7 +221,7 @@ let%test_module "variable elimination" =
     (* should keep most of this or realize that [w = z] hence this boils down to [z+1 = 0] *)
     let%expect_test _ =
       simplify ~keep:[y_var; z_var] (x = y + z && w = x - y && v = w + i 1 && v = i 0) ;
-      [%expect {|x=v6 && x = y -1 ∧ z = -1 && true (no atoms)|}]
+      [%expect {|x=v6 ∧ z=w=v7 && x = y -1 ∧ z = -1 && true (no atoms)|}]
 
     let%expect_test _ =
       simplify ~keep:[x_var; y_var] (x = y + z && w + x + y = i 0 && v = w + i 1) ;
