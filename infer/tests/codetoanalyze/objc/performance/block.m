@@ -17,3 +17,24 @@ NSInteger block_multiply_array_linear(NSArray* array) {
 
   return sum_array(array);
 }
+
+typedef void (^BlockA)(void);
+void loop_linear(int x) {
+  for (int i = 0; i < x; i++) {
+  }
+}
+
+void runBlockA(BlockA block) { block(); }
+
+void doBlockA_linear_FN(int a) {
+  BlockA block = ^{
+    loop_linear(a);
+  };
+  runBlockA(block);
+}
+
+void doBlockA_direct_block_linear_FN(int a) {
+  runBlockA(^{
+    loop_linear(a);
+  });
+}
