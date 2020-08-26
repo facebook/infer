@@ -152,7 +152,7 @@ void nsarray_iterate_linear(NSArray* array) {
   }
 }
 
-void nsarray_enumerator_linear_FP(NSArray* array) {
+void nsarray_enumerator_linear(NSArray* array) {
   NSEnumerator* enumerator = [array objectEnumerator];
 
   id obj;

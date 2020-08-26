@@ -1193,7 +1193,7 @@ module AliasMap = struct
         | AliasTarget.Simple {i} when IntLit.iszero i && Loc.is_frontend_tmp rhs ->
             add_alias ~lhs:(KeyLhs.of_id id) ~rhs:l (AliasTarget.Simple {i; java_tmp= Some rhs}) acc
             |> add_alias ~lhs:(KeyLhs.of_loc rhs) ~rhs:l (AliasTarget.Simple {i; java_tmp= None})
-        | AliasTarget.IteratorNextObject _ ->
+        | AliasTarget.IteratorNextObject _ | AliasTarget.IteratorSimple _ ->
             add_alias ~lhs:(KeyLhs.of_loc l) ~rhs tgt acc
         | _ ->
             acc
