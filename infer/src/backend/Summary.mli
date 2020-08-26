@@ -73,7 +73,7 @@ module OnDisk : sig
   (** Try to find the attributes for a defined proc. First look at specs (to get attributes computed
       by analysis) then look at the attributes table. If no attributes can be found, return None. *)
 
-  val store : t -> unit
+  val store_analyzed : t -> unit
   (** Save summary for the procedure into the spec database *)
 
   val reset_all : filter:Filtering.procedures_filter -> unit -> unit

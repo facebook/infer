@@ -268,23 +268,24 @@ module OnDisk = struct
 
 
   (** Save summary for the procedure into the spec database *)
-  let store (summ : t) =
-    let final_summary = {summ with status= Status.Analyzed} in
-    let proc_name = get_proc_name final_summary in
+  let store (summary : t) =
+    let proc_name = get_proc_name summary in
     (* Make sure the summary in memory is identical to the saved one *)
-    add proc_name final_summary ;
+    add proc_name summary ;
     if Config.biabduction_models_mode then
       Serialization.write_to_file summary_serializer
         (specs_filename_of_procname proc_name)
-        ~data:final_summary
+        ~data:summary
     else
-      let analysis_summary = AnalysisSummary.of_full_summary final_summary in
-      let report_summary = ReportSummary.of_full_summary final_summary in
+      let analysis_summary = AnalysisSummary.of_full_summary summary in
+      let report_summary = ReportSummary.of_full_summary summary in
       DBWriter.store_spec
         ~proc_name:(Procname.SQLite.serialize proc_name)
         ~analysis_summary:(AnalysisSummary.SQLite.serialize analysis_summary)
         ~report_summary:(ReportSummary.SQLite.serialize report_summary)
 
+
+  let store_analyzed summary = store {summary with status= Status.Analyzed}
 
   let reset proc_desc =
     let summary =
