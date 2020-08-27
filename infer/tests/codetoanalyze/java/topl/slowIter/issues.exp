@@ -1,0 +1,2 @@
+codetoanalyze/java/topl/slowIter/SlowIterTests.java, SlowIterTests.aBad(java.util.Map):void, 0, TOPL_PULSE_ERROR, no_bucket, ERROR, []
+codetoanalyze/java/topl/slowIter/SlowIterTests.java, SlowIterTests.bBad(java.util.Map):void, 0, TOPL_PULSE_ERROR, no_bucket, ERROR, []

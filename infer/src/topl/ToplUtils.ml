@@ -28,11 +28,12 @@ let topl_call ret_id (ret_typ : Typ.desc) loc method_name arg_ts : Sil.instr =
   Sil.Call ((ret_id, Typ.mk ret_typ), e_fun, arg_ts, loc, CallFlags.default)
 
 
-let topl_class_exp =
+let topl_class_pvar =
   let class_name = Mangled.from_string ToplName.topl_property in
-  let var_name = Pvar.mk_global class_name in
-  Exp.Lvar var_name
+  Pvar.mk_global class_name
 
+
+let topl_class_exp = Exp.Lvar topl_class_pvar
 
 let make_field field_name =
   Fieldname.make (Typ.Name.Java.from_string ToplName.topl_property) field_name

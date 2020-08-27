@@ -378,3 +378,10 @@ let is_unsat_expensive phi =
         (false_, true)
     | Sat formula ->
         ({phi with formula}, false)
+
+
+let as_int phi v =
+  (* TODO(rgrigore): Ask BoItvs too. *)
+  IList.force_until_first_some
+    [ lazy (CItvs.find_opt v phi.citvs |> Option.value_map ~default:None ~f:CItv.as_int)
+    ; lazy (Formula.as_int phi.formula v) ]

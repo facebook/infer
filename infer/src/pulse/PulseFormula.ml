@@ -1383,3 +1383,10 @@ let simplify ~keep phi =
 let is_known_zero phi v =
   Var.Map.find_opt (VarUF.find phi.var_eqs v :> Var.t) phi.linear_eqs
   |> Option.exists ~f:LinArith.is_zero
+
+
+let as_int phi v =
+  let maybe_int q = if Z.equal (Q.den q) Z.one then Q.to_int q else None in
+  let open Option.Monad_infix in
+  Var.Map.find_opt (VarUF.find phi.var_eqs v :> Var.t) phi.linear_eqs
+  >>= LinArith.get_as_const >>= maybe_int
