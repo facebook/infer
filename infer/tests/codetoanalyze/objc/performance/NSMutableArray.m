@@ -23,10 +23,7 @@ void nsmarray_empty_ok_costant() {
   [array insertObject:@1 atIndex:0];
 }
 
-// top cost caused by not able to estimate the
-// length of array after adding elements to the
-// array in a loop
-void nsmarray_add_in_loop_constant_FP() {
+void nsmarray_add_in_loop_constant() {
   NSMutableArray* array = [[NSMutableArray alloc] init];
   for (int i = 0; i < 10; i++) {
     [array addObject:[NSNumber numberWithInt:i]];
@@ -35,7 +32,7 @@ void nsmarray_add_in_loop_constant_FP() {
   }
 }
 
-void nsmarray_add_in_loop_linear_FP(NSUInteger n) {
+void nsmarray_add_in_loop_linear(NSUInteger n) {
   NSMutableArray* array = [[NSMutableArray alloc] init];
   for (int i = 0; i < n; i++) {
     [array addObject:[NSNumber numberWithInt:i]];
@@ -113,7 +110,7 @@ id nsmarray_remove_constant() {
   return array[0];
 }
 
-void nsmarray_remove_in_loop_constant_FP() {
+void nsmarray_remove_in_loop_constant() {
   NSMutableArray* array = [[NSMutableArray alloc] init];
   for (int i = 0; i < 10; i++) {
     [array addObject:[NSNumber numberWithInt:i]];

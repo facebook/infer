@@ -96,6 +96,8 @@ module Loc : sig
 
   val represents_multiple_values : t -> bool
 
+  val is_objc_collection_internal_array : t -> bool
+
   val append_field : ?typ:Typ.typ -> t -> Fieldname.t -> t
   (** It appends field. [typ] is the type of [fn]. *)
 end

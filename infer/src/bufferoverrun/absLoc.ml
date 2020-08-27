@@ -231,6 +231,13 @@ module Loc = struct
         false
 
 
+  let is_objc_collection_internal_array = function
+    | BoField.Field {fn} ->
+        Fieldname.equal fn BoField.objc_collection_internal_array
+    | _ ->
+        false
+
+
   let is_objc_iterator_offset = function
     | BoField.Field {fn} ->
         Fieldname.equal fn BoField.objc_iterator_offset
@@ -362,7 +369,10 @@ module Loc = struct
     | BoField.Prim (Allocsite allocsite) ->
         Allocsite.represents_multiple_values allocsite
     | BoField.Field _ as x
-      when is_c_strlen x || is_java_collection_internal_array x || is_objc_iterator_offset x ->
+      when is_c_strlen x
+           || is_java_collection_internal_array x
+           || is_objc_iterator_offset x
+           || is_objc_collection_internal_array x ->
         false
     | BoField.Field {prefix= l} ->
         represents_multiple_values l

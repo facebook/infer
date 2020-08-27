@@ -1115,6 +1115,12 @@ module AliasTargets = struct
           ()
     in
     match iter is_simple_zero x with () -> None | exception Found rhs -> Some rhs
+
+
+  let find_size_alias x =
+    let exception Found of KeyRhs.t in
+    let is_size rhs = function AliasTarget.Size _ -> raise (Found rhs) | _ -> () in
+    match iter is_size x with () -> None | exception Found rhs -> Some rhs
 end
 
 module AliasMap = struct
@@ -1163,13 +1169,21 @@ module AliasMap = struct
    fun loc x -> find (KeyLhs.LocKey loc) x |> AliasTargets.map (AliasTarget.set_java_tmp loc)
 
 
+  let has_objc_collection_size_alias : Loc.t -> t -> bool =
+   fun loc x ->
+    AliasTargets.find_size_alias (find_loc loc x)
+    |> Option.value_map ~default:false ~f:Loc.is_objc_collection_internal_array
+
+
   let load : Ident.t -> Loc.t -> AliasTarget.t -> t -> t =
    fun id loc tgt x ->
     if Loc.is_unknown loc || AliasTarget.is_unknown tgt then x
     else
       let tgts =
         match tgt with
-        | AliasTarget.Simple {i} when IntLit.iszero i && Language.curr_language_is Java ->
+        | AliasTarget.Simple {i}
+          when IntLit.iszero i
+               && (Language.curr_language_is Java || has_objc_collection_size_alias loc x) ->
             find_loc loc x |> AliasTargets.add loc tgt
         | _ ->
             AliasTargets.singleton loc tgt
