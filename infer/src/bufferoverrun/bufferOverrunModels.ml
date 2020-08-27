@@ -1656,7 +1656,7 @@ module Call = struct
       ; -"CFArrayGetValueAtIndex" <>$ capt_var_exn $+ capt_exp $!--> NSCollection.get_at_index
       ; -"CFDictionaryGetCount" <>$ capt_exp $!--> NSCollection.size
       ; -"MCFArrayGetCount" <>$ capt_exp $!--> NSCollection.size
-      ; +PatternMatch.ObjectiveC.implements "NSArray" &:: "init" <>$ capt_exp $--> id
+      ; +PatternMatch.ObjectiveC.implements "NSObject" &:: "init" <>$ capt_exp $--> id
       ; +PatternMatch.ObjectiveC.implements "NSArray" &:: "array" <>--> NSCollection.new_collection
       ; +PatternMatch.ObjectiveC.implements "NSArray"
         &:: "firstObject" <>$ capt_var_exn $!--> NSCollection.get_first
@@ -1705,7 +1705,6 @@ module Call = struct
         &:: "allValues" <>$ capt_exp $--> create_copy_array
       ; +PatternMatch.ObjectiveC.implements "NSNumber" &:: "numberWithInt:" <>$ capt_exp $--> id
       ; +PatternMatch.ObjectiveC.implements "NSNumber" &:: "integerValue" <>$ capt_exp $--> id
-      ; +PatternMatch.ObjectiveC.implements "NSString" &:: "init" <>$ capt_exp $--> id
       ; +PatternMatch.ObjectiveC.implements "NSString"
         &:: "stringWithUTF8String:" <>$ capt_exp $!--> NSString.create_with_c_string
       ; +PatternMatch.ObjectiveC.implements "NSString"

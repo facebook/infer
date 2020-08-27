@@ -126,3 +126,9 @@ void nsmarray_remove_all_linear(NSMutableArray* array) {
   for (int i = 0; i < array.count; i++) {
   }
 }
+
+void nsarray_new_constant(int x) {
+  NSMutableArray* arr = [NSMutableArray new];
+  for (int i = 0; i < arr.count; i++) {
+  }
+}
