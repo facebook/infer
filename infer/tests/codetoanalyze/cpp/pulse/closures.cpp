@@ -170,3 +170,84 @@ void function_assign_null_ok() {
   std::function<int()> f = [] { return 1; };
   f = nullptr;
 }
+
+void capture_by_value_ok() {
+  int value = 5;
+  auto f = [value]() -> int* { return new int(value); };
+  value++;
+  int* p = f();
+  int* q = nullptr;
+  if (*p != 5) {
+    *q = 42;
+  }
+}
+
+void capture_by_value_bad() {
+  int value = 5;
+  auto f = [value]() -> int* { return new int(value); };
+  value++;
+  int* p = f();
+  int* q = nullptr;
+  if (*p == 5) {
+    *q = 42;
+  }
+}
+
+void capture_by_ref_ok() {
+  int value = 5;
+  auto f = [&value]() -> int* { return new int(value); };
+  value++;
+  int* p = f();
+  int* q = nullptr;
+  if (*p != 6) {
+    *q = 42;
+  }
+}
+
+void capture_by_ref_bad() {
+  int value = 5;
+  auto f = [&value]() -> int* { return new int(value); };
+  value++;
+  int* p = f();
+  int* q = nullptr;
+  if (*p == 6) {
+    *q = 42;
+  }
+}
+
+S* update_inside_lambda_capture_and_init(S* s) {
+  S* object = nullptr;
+  auto f = [& o = object](S* s) { o = s; };
+  f(s);
+  return object;
+}
+
+int update_inside_lambda_capture_and_init_ok(S* param_s) {
+  return update_inside_lambda_capture_and_init(param_s)->f;
+}
+
+S* update_inside_lambda_capture_only(S* s) {
+  S* object = nullptr;
+  /* FIXME: clang AST gives us `S*` for  variable `object` in the
+     lambda's body, hence the translation misses one dereference */
+  auto f = [&object](S* s) { object = s; };
+  f(s);
+  return object;
+}
+
+int update_inside_lambda_capture_only_ok_FP(S* param_s) {
+  return update_inside_lambda_capture_only(param_s)->f;
+}
+
+void call_argument(std::function<void(S*)> f, S* s) { f(s); }
+
+S* update_inside_lambda_as_argument(S* s) {
+  S* object = nullptr;
+  auto f = [& o = object](S* s) { o = s; };
+  call_argument(f, s);
+  return object;
+}
+
+int update_inside_lambda_as_argument_ok_FP(S* param_s) {
+  return update_inside_lambda_as_argument(param_s)->f;
+}

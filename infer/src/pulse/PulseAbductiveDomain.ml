@@ -302,23 +302,29 @@ end
 let mk_initial proc_desc =
   (* HACK: save the formals in the stacks of the pre and the post to remember which local variables
      correspond to formals *)
-  let formals =
+  let formals_and_captured =
     let proc_name = Procdesc.get_proc_name proc_desc in
     let location = Procdesc.get_loc proc_desc in
-    Procdesc.get_formals proc_desc
-    |> List.map ~f:(fun (mangled, _) ->
-           let pvar = Pvar.mk mangled proc_name in
-           ( Var.of_pvar pvar
-           , (AbstractValue.mk_fresh (), [ValueHistory.FormalDeclared (pvar, location)]) ) )
+    let init_var mangled =
+      let pvar = Pvar.mk mangled proc_name in
+      (Var.of_pvar pvar, (AbstractValue.mk_fresh (), [ValueHistory.FormalDeclared (pvar, location)]))
+    in
+    let formals =
+      Procdesc.get_formals proc_desc |> List.map ~f:(fun (mangled, _) -> init_var mangled)
+    in
+    let captured =
+      Procdesc.get_captured proc_desc |> List.map ~f:(fun (mangled, _, _) -> init_var mangled)
+    in
+    captured @ formals
   in
   let initial_stack =
-    List.fold formals ~init:(PreDomain.empty :> BaseDomain.t).stack
+    List.fold formals_and_captured ~init:(PreDomain.empty :> BaseDomain.t).stack
       ~f:(fun stack (formal, addr_loc) -> BaseStack.add formal addr_loc stack)
   in
   let pre =
     let initial_heap =
-      List.fold formals ~init:(PreDomain.empty :> base_domain).heap ~f:(fun heap (_, (addr, _)) ->
-          BaseMemory.register_address addr heap )
+      List.fold formals_and_captured ~init:(PreDomain.empty :> base_domain).heap
+        ~f:(fun heap (_, (addr, _)) -> BaseMemory.register_address addr heap)
     in
     PreDomain.update ~stack:initial_stack ~heap:initial_heap PreDomain.empty
   in
