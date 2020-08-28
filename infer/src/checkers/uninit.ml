@@ -95,6 +95,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Some typ, (Var.ProgramVar pv, _) ->
         (not (Pvar.is_frontend_tmp pv))
         && (not (Procdesc.is_captured_pvar pdesc pv))
+        && (not (Procdesc.has_modify_in_block_attr pdesc pv))
         && MaybeUninitVars.mem access_expr maybe_uninit_vars
         && should_report_on_type typ
     | _, _ ->

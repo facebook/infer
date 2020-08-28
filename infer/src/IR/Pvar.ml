@@ -308,6 +308,10 @@ let get_initializer_pname {pv_name; pv_kind} =
       None
 
 
+let swap_proc_in_local_pvar pvar proc_name =
+  match pvar.pv_kind with Local_var _ -> {pvar with pv_kind= Local_var proc_name} | _ -> pvar
+
+
 let rename ~f {pv_name; pv_kind} =
   let pv_name = Mangled.rename ~f pv_name in
   let pv_hash = name_hash pv_name in

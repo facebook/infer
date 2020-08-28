@@ -167,6 +167,8 @@ val build_formal_from_pvar : t -> Mangled.t
 
 val materialized_cpp_temporary : string
 
+val swap_proc_in_local_pvar : t -> Procname.t -> t
+
 val rename : f:(string -> string) -> t -> t
 
 (** Sets of pvars. *)

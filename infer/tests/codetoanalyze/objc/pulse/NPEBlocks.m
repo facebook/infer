@@ -13,6 +13,10 @@
 
 @end
 
+typedef void (^MyBlock)();
+
+void dispatch(MyBlock block) { block(); }
+
 @implementation Singleton
 
 // Common FP in Pulse NPEs, this requires block specialization
@@ -21,6 +25,16 @@
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
     a = [[Singleton alloc] init];
+  });
+  return a->_x;
+}
+
+- (int)dispatch_no_npe_good {
+  static Singleton* a = nil;
+  static dispatch_once_t onceToken;
+  dispatch(^{
+    a = [[Singleton alloc] init];
+    a->_x = 5;
   });
   return a->_x;
 }

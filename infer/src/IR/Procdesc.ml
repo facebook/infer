@@ -641,6 +641,15 @@ let create_node pdesc loc kind instrs =
   create_node_from_not_reversed pdesc loc kind (Instrs.of_list instrs)
 
 
+let shallow_copy_code_from_pdesc ~orig_pdesc ~dest_pdesc =
+  dest_pdesc.nodes <- orig_pdesc.nodes ;
+  dest_pdesc.nodes_num <- orig_pdesc.nodes_num ;
+  dest_pdesc.start_node <- orig_pdesc.start_node ;
+  dest_pdesc.exit_node <- orig_pdesc.exit_node ;
+  dest_pdesc.loop_heads <- orig_pdesc.loop_heads ;
+  dest_pdesc.wto <- orig_pdesc.wto
+
+
 (** Set the successor and exception nodes. If this is a join node right before the exit node, add an
     extra node in the middle, otherwise nullify and abstract instructions cannot be added after a
     conditional. *)
