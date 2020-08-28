@@ -240,8 +240,11 @@ module TransferFunctions = struct
               if is_build_method callee_pname tenv then
                 Domain.call_build_method ~ret:return_access_path ~receiver astate
               else if is_builder callee_pname tenv then
-                let callee_prefix = Domain.MethodCallPrefix.make callee_pname location in
-                Domain.call_builder ~ret:return_access_path ~receiver callee_prefix astate
+                let callee_prefixes =
+                  Domain.MethodCallPrefix.make_with_prefixes callee_pname location
+                in
+                List.fold ~init:astate callee_prefixes ~f:(fun acc callee_prefix ->
+                    Domain.call_builder ~ret:return_access_path ~receiver callee_prefix acc )
               else astate
         else
           (* treat it like a normal call *)

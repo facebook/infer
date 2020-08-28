@@ -37,13 +37,15 @@ module MethodCallPrefix = struct
     {prefix: string; procname: Procname.t [@compare.ignore]; location: Location.t [@compare.ignore]}
   [@@deriving compare]
 
-  let make procname location =
+  let make_with_prefixes procname location =
     let method_name = Procname.get_method procname in
     let prefix_opt =
       String.Set.find_map suffixes ~f:(fun suffix -> String.chop_suffix method_name ~suffix)
     in
-    let prefix = Option.value prefix_opt ~default:method_name in
-    {prefix; procname; location}
+    let default = [{prefix= method_name; procname; location}] in
+    Option.value_map prefix_opt ~default ~f:(fun prefix ->
+        (* We have to add the default as well as the stripped prefix since there could be a required prop which actually includes the suffix. *)
+        {prefix; procname; location} :: default )
 
 
   let pp fmt {procname} = Procname.pp fmt procname
