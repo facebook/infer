@@ -137,6 +137,7 @@ module JavaString = struct
 end
 
 module BoundsOfCollection = BoundsOf (CostUtils.Collection)
+module BoundsOfNSCollection = BoundsOf (CostUtils.NSCollection)
 module BoundsOfArray = BoundsOf (CostUtils.Array)
 module BoundsOfCString = BoundsOf (CostUtils.CString)
 
@@ -214,17 +215,26 @@ module Call = struct
           &:: "componentsSeparatedByString:" <>$ capt_exp $+ capt_exp
           $--> NSString.op_on_two_str BasicCost.mult
                  ~of_function:"NSString.componentsSeparatedByString:"
-        ; -"NSArray" &:: "initWithArray:" <>$ any_arg $+ capt_exp
-          $--> NSCollection.get_length ~of_function:"NSArray.initWithArray:"
-        ; -"NSArray" &:: "isEqualToArray:" <>$ capt_exp $+ capt_exp
+        ; +PatternMatch.ObjectiveC.implements "NSArray"
+          &:: "initWithArray:" <>$ any_arg $+ capt_exp
+          $--> BoundsOfNSCollection.linear_length ~of_function:"NSArray.initWithArray:"
+        ; +PatternMatch.ObjectiveC.implements "NSArray"
+          &:: "isEqualToArray:" <>$ capt_exp $+ capt_exp
           $--> NSCollection.op_on_two_coll BasicCost.min_default_left
                  ~of_function:"NSArray.isEqualToArray:"
-        ; -"NSArray" &:: "containsObject:" <>$ capt_exp $+ any_arg
-          $--> NSCollection.get_length ~of_function:"NSArray.containsObject:"
-        ; -"NSMutableArray" &:: "removeAllObjects" <>$ capt_exp
-          $--> NSCollection.get_length ~of_function:"NSArray.removeAllObjects"
-        ; -"NSMutableArray" &:: "addObjectsFromArray:" <>$ any_arg $+ capt_exp
-          $--> NSCollection.get_length ~of_function:"NSArray.addObjectsFromArray:"
+        ; +PatternMatch.ObjectiveC.implements "NSArray"
+          &:: "containsObject:" <>$ capt_exp $+ any_arg
+          $--> BoundsOfNSCollection.linear_length ~of_function:"NSArray.containsObject:"
+        ; +PatternMatch.ObjectiveC.implements "NSArray"
+          &:: "sortedArrayUsingDescriptors:" <>$ capt_exp $+ any_arg
+          $--> BoundsOfNSCollection.n_log_n_length
+                 ~of_function:"NSArray.sortedArrayUsingDescriptors:"
+        ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
+          &:: "removeAllObjects" <>$ capt_exp
+          $--> BoundsOfNSCollection.linear_length ~of_function:"NSArray.removeAllObjects"
+        ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
+          &:: "addObjectsFromArray:" <>$ any_arg $+ capt_exp
+          $--> BoundsOfNSCollection.linear_length ~of_function:"NSArray.addObjectsFromArray:"
         ; +PatternMatch.Java.implements_collections
           &:: "sort" $ capt_exp
           $+...$--> BoundsOfCollection.n_log_n_length ~of_function:"Collections.sort"

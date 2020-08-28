@@ -137,7 +137,7 @@ NSArray* nsarray_sort_using_descriptors_constant() {
   return [array sortedArrayUsingDescriptors:@[ sd ]];
 }
 
-NSArray* nsarray_sort_using_descriptors_nlogn_FN(NSArray* array) {
+NSArray* nsarray_sort_using_descriptors_nlogn(NSArray* array) {
   NSSortDescriptor* sd = [[NSSortDescriptor alloc] initWithKey:nil
                                                      ascending:YES];
   return [array sortedArrayUsingDescriptors:@[ sd ]];

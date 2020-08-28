@@ -55,6 +55,11 @@ module Collection : S = struct
     BufferOverrunModels.Collection.eval_collection_length coll_exp inferbo_mem
 end
 
+module NSCollection : S = struct
+  let length coll_exp inferbo_mem =
+    BufferOverrunModels.NSCollection.eval_collection_length coll_exp inferbo_mem
+end
+
 module CString : S = struct
   let length exp inferbo_mem = BufferOverrunSemantics.eval_string_len exp inferbo_mem
 end
