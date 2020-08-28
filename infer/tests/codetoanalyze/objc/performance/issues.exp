@@ -1,5 +1,7 @@
 codetoanalyze/objc/performance/NSArray.m, nsarray_empty_array_constant, 3, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
 codetoanalyze/objc/performance/NSArray.m, nsarray_init_constant, 3, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
+codetoanalyze/objc/performance/NSDictionary.m, nsdictionary_enumerate_call_constant_FP, 0, INFINITE_EXECUTION_TIME, no_bucket, ERROR, [Unbounded value dict->elements.length.ub,Call to nsdictionary_all_values_linear,Loop]
+codetoanalyze/objc/performance/NSDictionary.m, nsdictionary_enumerate_call_constant_FP, 5, INTEGER_OVERFLOW_U5, no_bucket, ERROR, [Unknown value from: NSDictionary.dictionaryWithObjects:forKeys:count:,Call,<LHS trace>,Parameter `dict->elements[*]`,Binary operation: ([0, +oo] + 1):signed32 by call to `nsdictionary_all_values_linear` ]
 codetoanalyze/objc/performance/NSDictionary.m, nsdictionary_init_with_dictionary_linear_FP, 0, INFINITE_EXECUTION_TIME, no_bucket, ERROR, [Unbounded loop,Loop]
 codetoanalyze/objc/performance/NSDictionary.m, nsdictionary_init_with_dictionary_linear_FP, 2, INTEGER_OVERFLOW_U5, no_bucket, ERROR, [<LHS trace>,Unknown value from: NSDictionary.initWithDictionary:,Binary operation: ([0, +oo] + 1):signed32]
 codetoanalyze/objc/performance/NSMutableArray.m, nsarray_new_constant, 2, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]

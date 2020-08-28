@@ -99,3 +99,11 @@ void nsdictionary_enumerator_linear(NSDictionary* dict) {
   while ((key = [enumerator nextObject])) {
   }
 }
+
+void nsdictionary_enumerate_call_constant_FP() {
+  NSDictionary* dict =
+      @{@"helloString" : @"Hello, World!",
+        @"magicNumber" : @42};
+
+  nsdictionary_all_values_linear(dict);
+}
