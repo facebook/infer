@@ -20,6 +20,11 @@ type var_data =
   ; is_constexpr: bool
   ; is_declared_unused: bool  (** variable declared with attribute [unused] *) }
 
+type specialized_with_blocks_info =
+  { orig_proc: Procname.t
+  ; formals_to_procs_and_new_formals: (Procname.t * (Mangled.t * Typ.t) list) Mangled.Map.t }
+[@@deriving compare]
+
 type t =
   { access: PredSymb.access  (** visibility access *)
   ; captured: (Mangled.t * Typ.t * Pvar.capture_mode) list
@@ -40,6 +45,10 @@ type t =
   ; is_synthetic_method: bool  (** the procedure is a synthetic method *)
   ; is_variadic: bool  (** the procedure is variadic, only supported for Clang procedures *)
   ; sentinel_attr: (int * int) option  (** __attribute__((sentinel(int, int))) *)
+  ; specialized_with_blocks_info: specialized_with_blocks_info option
+        (** the procedure is a clone specialized with calls to concrete closures, with link to the
+            original procedure, and a map that links the original formals to the elements of the
+            closure used to specialize the procedure. *)
   ; clang_method_kind: ClangMethodKind.t  (** the kind of method the procedure is *)
   ; loc: Location.t  (** location of this procedure in the source code *)
   ; translation_unit: SourceFile.t  (** source file where the procedure was captured *)

@@ -161,9 +161,9 @@ val is_pod : t -> bool
 val get_initializer_pname : t -> Procname.t option
 (** Get the procname of the initializer function for the given global variable *)
 
-val get_name_of_local_with_procname : t -> Mangled.t
-(** [get_name_of_local_with_procname var] Return a name that is composed of the name of var and the
-    name of the procname in case of locals *)
+val build_formal_from_pvar : t -> Mangled.t
+(** [build_formal_from_pvar var] Return a name that is composed of the name of var (and the name of
+    the procname in case of locals) *)
 
 val materialized_cpp_temporary : string
 

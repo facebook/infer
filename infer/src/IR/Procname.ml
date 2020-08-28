@@ -553,6 +553,13 @@ let get_global_name_of_initializer = function
       None
 
 
+let pp_with_block_parameters pp fmt base blocks =
+  pp fmt base ;
+  F.pp_print_string fmt "[" ;
+  Pp.seq ~sep:"^" F.pp_print_string fmt blocks ;
+  F.pp_print_string fmt "]"
+
+
 (** Very verbose representation of an existing Procname.t *)
 let rec pp_unique_id fmt = function
   | Java j ->
@@ -566,9 +573,7 @@ let rec pp_unique_id fmt = function
   | WithBlockParameters (base, []) ->
       pp_unique_id fmt base
   | WithBlockParameters (base, (_ :: _ as blocks)) ->
-      pp_unique_id fmt base ;
-      F.pp_print_string fmt "_" ;
-      Pp.seq ~sep:"_" F.pp_print_string fmt blocks
+      pp_with_block_parameters pp_unique_id fmt base blocks
   | Linters_dummy_method ->
       F.pp_print_string fmt "Linters_dummy_method"
 
@@ -588,9 +593,7 @@ let rec pp fmt = function
   | WithBlockParameters (base, []) ->
       pp fmt base
   | WithBlockParameters (base, (_ :: _ as blocks)) ->
-      pp fmt base ;
-      F.pp_print_string fmt "_" ;
-      Pp.seq ~sep:"_" F.pp_print_string fmt blocks
+      pp_with_block_parameters pp fmt base blocks
   | Linters_dummy_method ->
       pp_unique_id fmt Linters_dummy_method
 

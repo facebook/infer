@@ -307,7 +307,7 @@ let with_block_args callee_pdesc pname_with_block_args block_args =
                 ~f:(fun (_, var, typ, _) ->
                   (* Here we create fresh names for the new formals, based on the names of the captured
                      variables annotated with the name of the caller method *)
-                  (Pvar.get_name_of_local_with_procname var, typ) )
+                  (Pvar.build_formal_from_pvar var, typ) )
                 cl.captured_vars
             in
             Mangled.Map.add param_name (cl.name, formals_from_captured) subts
