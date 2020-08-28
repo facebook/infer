@@ -166,6 +166,14 @@ void call_lambda_bad() {
   f(s);
 }
 
+void call_lambda_std_fun_bad() {
+  std::function<void(S*)> f;
+  f = [](S* s) { int x = s->f; };
+  S* s = new S();
+  delete s;
+  f(s);
+}
+
 void function_assign_null_ok() {
   std::function<int()> f = [] { return 1; };
   f = nullptr;

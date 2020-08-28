@@ -429,7 +429,8 @@ module StdBasicString = struct
 end
 
 module StdFunction = struct
-  let operator_call lambda_ptr_hist actuals : model =
+  let operator_call ProcnameDispatcher.Call.FuncArg.{arg_payload= lambda_ptr_hist; typ} actuals :
+      model =
    fun {analyze_dependency} ~callee_procname:_ location ~ret astate ->
     let havoc_ret (ret_id, _) astate =
       let event = ValueHistory.Call {f= Model "std::function::operator()"; location; in_call= []} in
@@ -445,8 +446,9 @@ module StdFunction = struct
         Ok (havoc_ret ret astate |> List.map ~f:ExecutionDomain.continue)
     | Some callee_proc_name ->
         let actuals =
-          List.map actuals ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
-              (arg_payload, typ) )
+          (lambda_ptr_hist, typ)
+          :: List.map actuals ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
+                 (arg_payload, typ) )
         in
         PulseOperations.call
           ~callee_data:(analyze_dependency callee_proc_name)
@@ -890,8 +892,7 @@ module ProcNameDispatcher = struct
         ; -"std" &:: "basic_string" &:: "data" <>$ capt_arg_payload $--> StdBasicString.data
         ; -"std" &:: "basic_string" &:: "~basic_string" <>$ capt_arg_payload
           $--> StdBasicString.destructor
-        ; -"std" &:: "function" &:: "operator()" $ capt_arg_payload
-          $++$--> StdFunction.operator_call
+        ; -"std" &:: "function" &:: "operator()" $ capt_arg $++$--> StdFunction.operator_call
         ; -"std" &:: "function" &:: "operator=" $ capt_arg_payload $+ capt_arg_payload
           $--> StdFunction.operator_equal
         ; +PatternMatch.Java.implements_lang "Object"
