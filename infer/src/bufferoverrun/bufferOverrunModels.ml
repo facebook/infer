@@ -1703,6 +1703,10 @@ module Call = struct
         &:: "allKeys" <>$ capt_exp $--> create_copy_array
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
         &:: "allValues" <>$ capt_exp $--> create_copy_array
+      ; +PatternMatch.ObjectiveC.implements "NSDictionary"
+        &:: "objectEnumerator" <>$ capt_exp $--> NSCollection.iterator
+      ; +PatternMatch.ObjectiveC.implements "NSDictionary"
+        &:: "keyEnumerator" <>$ capt_exp $--> NSCollection.iterator
       ; +PatternMatch.ObjectiveC.implements "NSNumber" &:: "numberWithInt:" <>$ capt_exp $--> id
       ; +PatternMatch.ObjectiveC.implements "NSNumber" &:: "integerValue" <>$ capt_exp $--> id
       ; +PatternMatch.ObjectiveC.implements "NSString"
