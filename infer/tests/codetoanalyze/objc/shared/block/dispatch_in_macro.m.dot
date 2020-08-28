@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_3" -> "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_5" ;
-"DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_4" [label="4:  Call _fun__dispatch_once \n   n$3=_fun__dispatch_once[objc_blockDispatchInMacroTest_1](&#GB<codetoanalyze/objc/shared/block/dispatch_in_macro.m>$DispatchInMacroTest.once_token:long*) block_params [line 21, column 10]\n " shape="box"]
+"DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_4" [label="4:  Call _fun__dispatch_once \n   n$3=_fun__dispatch_once(&#GB<codetoanalyze/objc/shared/block/dispatch_in_macro.m>$DispatchInMacroTest.once_token:long*,(_fun_objc_blockDispatchInMacroTest_1):_fn_(*)) [line 21, column 10]\n " shape="box"]
 	
 
 	 "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_4" -> "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_3" ;

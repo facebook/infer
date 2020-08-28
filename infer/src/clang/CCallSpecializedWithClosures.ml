@@ -124,6 +124,11 @@ let is_initializer proc_desc =
   Procname.is_constructor proc_name
 
 
+let is_dispatch_model proc_desc =
+  let proc_name = Procdesc.get_proc_name proc_desc in
+  ObjCDispatchModels.is_model proc_name
+
+
 let replace_with_specialize_methods cfg _node instr =
   match instr with
   | Sil.Call (ret, Exp.Const (Const.Cfun callee_pname), actual_params, loc, flags)
@@ -133,7 +138,10 @@ let replace_with_specialize_methods cfg _node instr =
       parameter and then run the block. It doesn't work well when the block is instead stored in
       a field. This case will be left as future work, and we won't specialize common cases where this
       happens such as setters or initializers. *)
-    | Some proc_desc when (not (is_objc_setter proc_desc)) && not (is_initializer proc_desc) -> (
+    | Some proc_desc
+      when (not (is_objc_setter proc_desc))
+           && (not (is_initializer proc_desc))
+           && not (is_dispatch_model proc_desc) -> (
         let callee_attributes = Procdesc.get_attributes proc_desc in
         match
           formals_actuals_map callee_attributes.formals callee_attributes.method_annotation.params

@@ -404,10 +404,6 @@ let as_java_exn ~explanation t =
 (* TODO: deprecate this unfortunately named function and use is_clang instead *)
 let is_c_method = function ObjC_Cpp _ -> true | _ -> false
 
-let is_c_function = function C _ -> true | _ -> false
-
-let is_clang = function ObjC_Cpp name -> ObjC_Cpp.is_objc_method name | name -> is_c_function name
-
 let is_java_lift f = function Java java_pname -> f java_pname | _ -> false
 
 let is_java_access_method = is_java_lift Java.is_access_method

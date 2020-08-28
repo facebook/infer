@@ -33,7 +33,7 @@ void doBlockA_linear_FN(int a) {
   runBlockA(block);
 }
 
-void doBlockA_direct_block_linear_FN(int a) {
+void doBlockA_direct_block_linear(int a) {
   runBlockA(^{
     loop_linear(a);
   });

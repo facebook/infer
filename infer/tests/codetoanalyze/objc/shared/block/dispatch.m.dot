@@ -110,7 +110,7 @@ digraph cfg {
 	
 
 	 "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_3" -> "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_2" ;
-"block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_4" [label="4:  Call _fun__dispatch_once \n   n$7=*&a:DispatchA* [line 37, column 24]\n  n$9=_fun__dispatch_once[objc_blockDispatchA.block_attribute_2](&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA.block_attribute.once:long*,n$7:DispatchA*) block_params [line 37, column 3]\n " shape="box"]
+"block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_4" [label="4:  Call _fun__dispatch_once \n   n$7=*&a:DispatchA* [line 37, column 24]\n  n$9=_fun__dispatch_once(&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA.block_attribute.once:long*,(_fun_objc_blockDispatchA.block_attribute_2,([by ref]n$7 &a:DispatchA*)):_fn_(*)) [line 37, column 3]\n " shape="box"]
 	
 
 	 "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_4" -> "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_3" ;
@@ -190,7 +190,7 @@ digraph cfg {
 	
 
 	 "sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_3" -> "sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_2" ;
-"sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_4" [label="4:  Call _fun__dispatch_once \n   n$4=_fun__dispatch_once[objc_blockDispatchA.sharedInstance_1](&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA.sharedInstance.once:long*) block_params [line 28, column 3]\n " shape="box"]
+"sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_4" [label="4:  Call _fun__dispatch_once \n   n$4=_fun__dispatch_once(&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA.sharedInstance.once:long*,(_fun_objc_blockDispatchA.sharedInstance_1):_fn_(*)) [line 28, column 3]\n " shape="box"]
 	
 
 	 "sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_4" -> "sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_3" ;

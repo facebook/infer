@@ -283,9 +283,6 @@ val is_objc_dealloc : t -> bool
 val is_c_method : t -> bool
 (** Return true this is an Objective-C/C++ method name. *)
 
-val is_clang : t -> bool
-(** Return true if this is a C, C++, or Objective-C procedure name *)
-
 val is_constructor : t -> bool
 (** Check if this is a constructor. *)
 

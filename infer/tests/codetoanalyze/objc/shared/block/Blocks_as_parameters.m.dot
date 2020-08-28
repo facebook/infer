@@ -33,7 +33,7 @@ digraph cfg {
 	
 
 	 "f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_3" -> "f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_2" ;
-"f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_4" [label="4:  Message Call: foo:and: \n   n$4=*&self:B* [line 23, column 10]\n  n$5=*n$4.h:int [line 23, column 10]\n  n$2=*&self:B* const  [line 24, column 11]\n  n$6=_fun_B.foo:and:[objc_blockB.f_1](n$5:int,n$2:B* const ) block_params [line 23, column 3]\n " shape="box"]
+"f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_4" [label="4:  Message Call: foo:and: \n   n$4=*&self:B* [line 23, column 10]\n  n$5=*n$4.h:int [line 23, column 10]\n  n$2=*&self:B* const  [line 24, column 11]\n  n$6=_fun_B.foo:and:[objc_blockB.f_1](n$5:int,n$2:B* const ) [line 23, column 3]\n " shape="box"]
 	
 
 	 "f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_4" -> "f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_3" ;

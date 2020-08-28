@@ -77,7 +77,7 @@ digraph cfg {
 	
 
 	 "bar2#A#instance.413fa5106d6a23f2bf18df99659efb82_3" -> "bar2#A#instance.413fa5106d6a23f2bf18df99659efb82_2" ;
-"bar2#A#instance.413fa5106d6a23f2bf18df99659efb82_4" [label="4:  Call _fun_foo \n   n$14=*&self:A* [line 40, column 7]\n  n$16=*&self:A* [line 43, column 7]\n  n$18=*&self:A* [line 46, column 7]\n  n$19=_fun_foo[objc_blockA.bar2_3^objc_blockA.bar2_4](n$14:A*,n$18:A*) block_params [line 39, column 3]\n " shape="box"]
+"bar2#A#instance.413fa5106d6a23f2bf18df99659efb82_4" [label="4:  Call _fun_foo \n   n$14=*&self:A* [line 40, column 7]\n  n$16=*&self:A* [line 43, column 7]\n  n$18=*&self:A* [line 46, column 7]\n  n$19=_fun_foo[objc_blockA.bar2_3^objc_blockA.bar2_4](n$14:A*,n$18:A*) [line 39, column 3]\n " shape="box"]
 	
 
 	 "bar2#A#instance.413fa5106d6a23f2bf18df99659efb82_4" -> "bar2#A#instance.413fa5106d6a23f2bf18df99659efb82_3" ;
@@ -96,7 +96,7 @@ digraph cfg {
 	
 
 	 "bar:#A(class A)#instance.3e4a860660eb436d473f8ceeb9c1a72b_4" -> "bar:#A(class A)#instance.3e4a860660eb436d473f8ceeb9c1a72b_3" ;
-"bar:#A(class A)#instance.3e4a860660eb436d473f8ceeb9c1a72b_5" [label="5:  Call _fun_foo \n   n$3=*&self:A* [line 27, column 7]\n  n$4=*&x:int [line 27, column 7]\n  n$7=*&self:A* [line 30, column 7]\n  n$10=*&a:A* [line 33, column 7]\n  n$11=_fun_foo[objc_blockA.bar:_1^objc_blockA.bar:_2](n$4:int,n$3:A*,n$10:A*) block_params [line 26, column 3]\n " shape="box"]
+"bar:#A(class A)#instance.3e4a860660eb436d473f8ceeb9c1a72b_5" [label="5:  Call _fun_foo \n   n$3=*&self:A* [line 27, column 7]\n  n$4=*&x:int [line 27, column 7]\n  n$7=*&self:A* [line 30, column 7]\n  n$10=*&a:A* [line 33, column 7]\n  n$11=_fun_foo[objc_blockA.bar:_1^objc_blockA.bar:_2](n$4:int,n$3:A*,n$10:A*) [line 26, column 3]\n " shape="box"]
 	
 
 	 "bar:#A(class A)#instance.3e4a860660eb436d473f8ceeb9c1a72b_5" -> "bar:#A(class A)#instance.3e4a860660eb436d473f8ceeb9c1a72b_4" ;

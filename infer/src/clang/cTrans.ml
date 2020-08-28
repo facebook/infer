@@ -291,9 +291,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let call_instr =
       Sil.Call (ret_id', function_sil, params @ forwarded_params, sil_loc, call_flags)
     in
-    let call_instr' = Sil.add_with_block_parameters_flag call_instr in
     mk_trans_result ret_exps
-      {empty_control with instrs= forwarded_init_instrs @ [call_instr']; initd_exps}
+      {empty_control with instrs= forwarded_init_instrs @ [call_instr]; initd_exps}
 
 
   (** Given a captured var, return the instruction to assign it to a temp *)
