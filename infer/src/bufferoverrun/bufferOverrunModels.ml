@@ -1691,6 +1691,8 @@ module Call = struct
       ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
         &:: "addObjectsFromArray:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.addAll
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
+        &:: "dictionary" <>--> NSCollection.new_collection
+      ; +PatternMatch.ObjectiveC.implements "NSDictionary"
         &:: "dictionaryWithObjects:forKeys:count:" <>$ any_arg $+ capt_exp $+ capt_exp
         $--> NSCollection.create_from_array
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"

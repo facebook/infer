@@ -107,3 +107,8 @@ void nsdictionary_enumerate_call_constant_FP() {
 
   nsdictionary_all_values_linear(dict);
 }
+
+void nsdictionary_dictionary_constant() {
+  NSDictionary* dict = nsdictionary_init_dictionary_constant();
+  nsdictionary_all_values_linear(dict);
+}
