@@ -229,6 +229,10 @@ module Call = struct
           &:: "sortedArrayUsingDescriptors:" <>$ capt_exp $+ any_arg
           $--> BoundsOfNSCollection.n_log_n_length
                  ~of_function:"NSArray.sortedArrayUsingDescriptors:"
+        ; +PatternMatch.ObjectiveC.implements "NSArray"
+          &:: "arrayByAddingObjectsFromArray:" <>$ capt_exp $+ capt_exp
+          $--> NSCollection.op_on_two_coll BasicCost.plus
+                 ~of_function:"NSArray.arrayByAddingObjectsFromArray:"
         ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
           &:: "removeAllObjects" <>$ capt_exp
           $--> BoundsOfNSCollection.linear_length ~of_function:"NSArray.removeAllObjects"

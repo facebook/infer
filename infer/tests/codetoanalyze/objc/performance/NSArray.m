@@ -70,9 +70,12 @@ NSArray* nsarray_add_object_constant(id obj) {
   return [array arrayByAddingObject:obj];
 }
 
-NSArray* nsarray_add_objects_from_array_linear_FN(NSArray* append_array) {
+NSArray* nsarray_add_objects_from_array_linear(NSArray* append_array) {
   NSArray* array = [[NSArray alloc] init];
-  return [array arrayByAddingObjectsFromArray:append_array];
+  NSArray* new_array = [array arrayByAddingObjectsFromArray:append_array];
+
+  for (int i = 0; i < new_array.count; i++) {
+  }
 }
 
 // query element

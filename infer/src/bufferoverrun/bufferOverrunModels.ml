@@ -1087,6 +1087,25 @@ module NSCollection = struct
     {exec; check= no_check}
 
 
+  let new_collection_of_size coll_id size_exp =
+    let exec ({integer_type_widths} as model_env) ~ret:((id, _) as ret) mem =
+      let coll = Dom.Mem.find_stack (Loc.of_id coll_id) mem in
+      let to_add_length = Sem.eval integer_type_widths size_exp mem |> Dom.Val.get_itv in
+      change_size_by ~size_f:(fun _ -> to_add_length) coll_id model_env ~ret mem
+      |> model_by_value coll id
+    in
+    {exec; check= no_check}
+
+
+  let new_collection_by_add_all coll_exp1 coll_exp2 =
+    let exec model_env ~ret:((ret_id, _) as ret) mem =
+      create_collection model_env ~ret mem ~size_exp:Exp.zero
+      |> (addAll ret_id coll_exp1).exec model_env ~ret
+      |> (addAll ret_id coll_exp2).exec model_env ~ret
+    in
+    {exec; check= no_check}
+
+
   let get_first coll_id = get_at_index coll_id Exp.zero
 
   let remove_last coll_id = {exec= change_size_by ~size_f:Itv.decr coll_id; check= no_check}
@@ -1675,8 +1694,14 @@ module Call = struct
         &:: "arrayWithObjects" &++> NSCollection.of_list
       ; +PatternMatch.ObjectiveC.implements "NSArray"
         &:: "objectEnumerator" <>$ capt_exp $--> NSCollection.iterator
+      ; +PatternMatch.ObjectiveC.implements "NSArray"
+        &:: "arrayByAddingObjectsFromArray:" <>$ capt_exp $+ capt_exp
+        $--> NSCollection.new_collection_by_add_all
       ; +PatternMatch.ObjectiveC.implements "NSEnumerator"
         &:: "nextObject" <>$ capt_exp $--> NSCollection.next_object
+      ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
+        &:: "initWithCapacity:" <>$ capt_var_exn $+ capt_exp
+        $--> NSCollection.new_collection_of_size
       ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
         &:: "addObject:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.add
       ; +PatternMatch.ObjectiveC.implements "NSMutableArray"

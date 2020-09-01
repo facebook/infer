@@ -5,8 +5,6 @@ codetoanalyze/objc/performance/NSDictionary.m, nsdictionary_enumerate_call_const
 codetoanalyze/objc/performance/NSDictionary.m, nsdictionary_init_with_dictionary_linear_FP, 0, INFINITE_EXECUTION_TIME, no_bucket, ERROR, [Unbounded loop,Loop]
 codetoanalyze/objc/performance/NSDictionary.m, nsdictionary_init_with_dictionary_linear_FP, 2, INTEGER_OVERFLOW_U5, no_bucket, ERROR, [<LHS trace>,Unknown value from: NSDictionary.initWithDictionary:,Binary operation: ([0, +oo] + 1):signed32]
 codetoanalyze/objc/performance/NSMutableArray.m, nsarray_new_constant, 2, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
-codetoanalyze/objc/performance/NSMutableArray.m, nsmarray_init_with_capacity_constant_FP, 0, INFINITE_EXECUTION_TIME, no_bucket, ERROR, [Unbounded loop,Loop]
-codetoanalyze/objc/performance/NSMutableArray.m, nsmarray_init_with_capacity_constant_FP, 3, INTEGER_OVERFLOW_U5, no_bucket, ERROR, [<LHS trace>,Unknown value from: NSMutableArray.initWithCapacity:,Binary operation: ([0, +oo] + 1):signed32]
 codetoanalyze/objc/performance/NSMutableArray.m, nsmarray_remove_constant, 6, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Through,Through,Through,Through,Array access: Offset: 0 Size: 0]
 codetoanalyze/objc/performance/NSMutableArray.m, nsmarray_remove_in_loop_constant, 6, BUFFER_OVERRUN_L3, no_bucket, ERROR, [<Offset trace>,Set array size,<Length trace>,Assignment,Set array size,Array access: Offset: [0, 9] Size: [1, 10]]
 codetoanalyze/objc/performance/NSMutableArray.m, nsmarray_set_linear, 2, INTEGER_OVERFLOW_U5, no_bucket, ERROR, [<LHS trace>,Unknown value from: NSNumber.intValue,Binary operation: ([-oo, +oo] + 1):signed32]

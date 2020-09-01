@@ -8,7 +8,7 @@
 
 // init array
 
-void nsmarray_init_with_capacity_constant_FP() {
+void nsmarray_init_with_capacity_constant() {
   NSMutableArray* table = [[NSMutableArray alloc] initWithCapacity:256];
 
   for (int i = 0; i < table.count; i++) {
