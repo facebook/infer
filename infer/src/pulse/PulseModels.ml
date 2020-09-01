@@ -23,15 +23,19 @@ type model =
 let cpp_model_namespace = QualifiedCppName.of_list ["__infer_pulse_model"]
 
 module Misc = struct
-  let shallow_copy location event ret_id dest_pointer_hist src_pointer_hist astate =
-    let* astate, obj = PulseOperations.eval_access location src_pointer_hist Dereference astate in
-    let* astate, obj_copy = PulseOperations.shallow_copy location obj astate in
+  let shallow_copy_value location event ret_id dest_pointer_hist src_value_hist astate =
+    let* astate, obj_copy = PulseOperations.shallow_copy location src_value_hist astate in
     let+ astate =
       PulseOperations.write_deref location ~ref:dest_pointer_hist
         ~obj:(fst obj_copy, event :: snd obj_copy)
         astate
     in
     PulseOperations.havoc_id ret_id [event] astate
+
+
+  let shallow_copy location event ret_id dest_pointer_hist src_pointer_hist astate =
+    let* astate, obj = PulseOperations.eval_access location src_pointer_hist Dereference astate in
+    shallow_copy_value location event ret_id dest_pointer_hist obj astate
 
 
   let shallow_copy_model model_desc dest_pointer_hist src_pointer_hist : model =
@@ -455,9 +459,9 @@ module StdFunction = struct
           location callee_proc_name ~ret ~actuals ~formals_opt:None astate
 
 
-  let operator_equal dest src : model =
+  let assign dest ProcnameDispatcher.Call.FuncArg.{arg_payload= src; typ= src_typ} ~desc : model =
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
-    let event = ValueHistory.Call {f= Model "std::function::operator="; location; in_call= []} in
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let+ astate =
       if PulseArithmetic.is_known_zero astate (fst src) then
         let empty_target = AbstractValue.mk_fresh () in
@@ -465,7 +469,12 @@ module StdFunction = struct
           PulseOperations.write_deref location ~ref:dest ~obj:(empty_target, [event]) astate
         in
         PulseOperations.havoc_id ret_id [event] astate
-      else Misc.shallow_copy location event ret_id dest src astate
+      else
+        match src_typ.Typ.desc with
+        | Tptr (_, Pk_reference) ->
+            Misc.shallow_copy location event ret_id dest src astate
+        | _ ->
+            Misc.shallow_copy_value location event ret_id dest src astate
     in
     [ExecutionDomain.ContinueProgram astate]
 end
@@ -892,9 +901,11 @@ module ProcNameDispatcher = struct
         ; -"std" &:: "basic_string" &:: "data" <>$ capt_arg_payload $--> StdBasicString.data
         ; -"std" &:: "basic_string" &:: "~basic_string" <>$ capt_arg_payload
           $--> StdBasicString.destructor
+        ; -"std" &:: "function" &:: "function" $ capt_arg_payload $+ capt_arg
+          $--> StdFunction.assign ~desc:"std::function::function"
         ; -"std" &:: "function" &:: "operator()" $ capt_arg $++$--> StdFunction.operator_call
-        ; -"std" &:: "function" &:: "operator=" $ capt_arg_payload $+ capt_arg_payload
-          $--> StdFunction.operator_equal
+        ; -"std" &:: "function" &:: "operator=" $ capt_arg_payload $+ capt_arg
+          $--> StdFunction.assign ~desc:"std::function::operator="
         ; +PatternMatch.Java.implements_lang "Object"
           &:: "clone" $ capt_arg_payload $--> JavaObject.clone
         ; ( +PatternMatch.Java.implements_lang "System"
