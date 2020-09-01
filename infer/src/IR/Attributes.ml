@@ -28,59 +28,59 @@ let proc_kind_of_attr (proc_attributes : ProcAttributes.t) =
   if proc_attributes.is_defined then ProcDefined else ProcUndefined
 
 
-let replace pname pname_blob akind source_file attributes proc_desc callees =
-  let pname_str = Procname.to_string pname in
-  let akind_int64 = int64_of_attributes_kind akind in
-  let proc_desc_blob = Procdesc.SQLite.serialize proc_desc in
-  let callees_blob = Procname.SQLiteList.serialize callees in
-  DBWriter.replace_attributes ~pname_str ~pname:pname_blob ~akind:akind_int64 ~source_file
-    ~attributes ~proc_desc:proc_desc_blob ~callees:callees_blob
+let should_try_to_update =
+  let find_more_defined_statement =
+    ResultsDatabase.register_statement
+      {|
+        SELECT attr_kind
+        FROM procedures
+        WHERE proc_name = :pname
+              AND attr_kind > :akind
+      |}
+  in
+  fun pname_blob akind ->
+    ResultsDatabase.with_registered_statement find_more_defined_statement ~f:(fun db find_stmt ->
+        Sqlite3.bind find_stmt 1 (* :pname *) pname_blob
+        |> SqliteUtils.check_result_code db ~log:"replace bind pname" ;
+        Sqlite3.bind find_stmt 2 (* :akind *) (Sqlite3.Data.INT (int64_of_attributes_kind akind))
+        |> SqliteUtils.check_result_code db ~log:"replace bind attribute kind" ;
+        SqliteUtils.result_single_column_option ~finalize:false ~log:"Attributes.replace" db
+          find_stmt
+        |> (* there is no entry with a strictly larger "definedness" for that proc name *)
+        Option.is_none )
 
 
-let find_more_defined_statement =
-  ResultsDatabase.register_statement
-    {|
-SELECT attr_kind
-FROM procedures
-WHERE proc_name = :pname
-      AND attr_kind > :akind
-|}
-
-
-let should_try_to_update pname_blob akind =
-  ResultsDatabase.with_registered_statement find_more_defined_statement ~f:(fun db find_stmt ->
-      Sqlite3.bind find_stmt 1 (* :pname *) pname_blob
-      |> SqliteUtils.check_result_code db ~log:"replace bind pname" ;
-      Sqlite3.bind find_stmt 2 (* :akind *) (Sqlite3.Data.INT (int64_of_attributes_kind akind))
-      |> SqliteUtils.check_result_code db ~log:"replace bind attribute kind" ;
-      SqliteUtils.result_single_column_option ~finalize:false ~log:"Attributes.replace" db find_stmt
-      |> (* there is no entry with a strictly larger "definedness" for that proc name *)
-      Option.is_none )
-
-
-let select_statement =
-  ResultsDatabase.register_statement "SELECT proc_attributes FROM procedures WHERE proc_name = :k"
-
-
-let find pname_blob =
-  ResultsDatabase.with_registered_statement select_statement ~f:(fun db select_stmt ->
-      Sqlite3.bind select_stmt 1 pname_blob
-      |> SqliteUtils.check_result_code db ~log:"find bind proc name" ;
-      SqliteUtils.result_single_column_option ~finalize:false ~log:"Attributes.find" db select_stmt
-      |> Option.map ~f:ProcAttributes.SQLite.deserialize )
+let find =
+  let select_statement =
+    ResultsDatabase.register_statement "SELECT proc_attributes FROM procedures WHERE proc_name = :k"
+  in
+  fun pname_blob ->
+    ResultsDatabase.with_registered_statement select_statement ~f:(fun db select_stmt ->
+        Sqlite3.bind select_stmt 1 pname_blob
+        |> SqliteUtils.check_result_code db ~log:"find bind proc name" ;
+        SqliteUtils.result_single_column_option ~finalize:false ~log:"Attributes.find" db
+          select_stmt
+        |> Option.map ~f:ProcAttributes.SQLite.deserialize )
 
 
 let load pname = find (Procname.SQLite.serialize pname)
 
 let store ~proc_desc (attr : ProcAttributes.t) =
-  let pkind = proc_kind_of_attr attr in
+  let akind = proc_kind_of_attr attr in
   let key = Procname.SQLite.serialize attr.proc_name in
-  if should_try_to_update key pkind then
-    replace attr.proc_name key pkind
-      (SourceFile.SQLite.serialize attr.loc.Location.file)
-      (ProcAttributes.SQLite.serialize attr)
-      proc_desc
-      (Option.map proc_desc ~f:Procdesc.get_static_callees |> Option.value ~default:[])
+  if should_try_to_update key akind then
+    let source_file_blob = SourceFile.SQLite.serialize attr.loc.Location.file in
+    let attributes_blob = ProcAttributes.SQLite.serialize attr in
+    let pname_str = Procname.to_string attr.proc_name in
+    let akind_int64 = int64_of_attributes_kind akind in
+    let proc_desc_blob = Procdesc.SQLite.serialize proc_desc in
+    let callees_blob =
+      Option.map proc_desc ~f:Procdesc.get_static_callees
+      |> Option.value ~default:[] |> Procname.SQLiteList.serialize
+    in
+    DBWriter.replace_attributes ~pname_str ~pname:key ~akind:akind_int64
+      ~source_file:source_file_blob ~attributes:attributes_blob ~proc_desc:proc_desc_blob
+      ~callees:callees_blob
 
 
 let find_file_capturing_procedure pname =

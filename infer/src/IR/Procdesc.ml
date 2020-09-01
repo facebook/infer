@@ -835,13 +835,13 @@ module SQLite = SqliteUtils.MarshalledNullableDataNOTForComparison (struct
   type nonrec t = t
 end)
 
-let load_statement =
-  ResultsDatabase.register_statement "SELECT cfg FROM procedures WHERE proc_name = :k"
-
-
-let load pname =
-  ResultsDatabase.with_registered_statement load_statement ~f:(fun db stmt ->
-      Procname.SQLite.serialize pname |> Sqlite3.bind stmt 1
-      |> SqliteUtils.check_result_code db ~log:"load bind proc name" ;
-      SqliteUtils.result_single_column_option ~finalize:false ~log:"Procdesc.load" db stmt
-      |> Option.bind ~f:SQLite.deserialize )
+let load =
+  let load_statement =
+    ResultsDatabase.register_statement "SELECT cfg FROM procedures WHERE proc_name = :k"
+  in
+  fun pname ->
+    ResultsDatabase.with_registered_statement load_statement ~f:(fun db stmt ->
+        Procname.SQLite.serialize pname |> Sqlite3.bind stmt 1
+        |> SqliteUtils.check_result_code db ~log:"load bind proc name" ;
+        SqliteUtils.result_single_column_option ~finalize:false ~log:"Procdesc.load" db stmt
+        |> Option.bind ~f:SQLite.deserialize )

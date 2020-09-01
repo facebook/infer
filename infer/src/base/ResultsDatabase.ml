@@ -13,26 +13,30 @@ let results_dir_get_path entry = ResultsDirEntryName.get_path ~results_dir:Confi
 
 let procedures_schema prefix =
   Printf.sprintf
-    {|CREATE TABLE IF NOT EXISTS %sprocedures
-  ( proc_name TEXT PRIMARY KEY
-  , proc_name_hum TEXT
-  , attr_kind INTEGER NOT NULL
-  , source_file TEXT NOT NULL
-  , proc_attributes BLOB NOT NULL
-  , cfg BLOB
-  , callees BLOB NOT NULL
-  )|}
+    {|
+      CREATE TABLE IF NOT EXISTS %sprocedures
+        ( proc_name BLOB PRIMARY KEY NOT NULL
+        , proc_name_hum TEXT
+        , attr_kind INTEGER NOT NULL
+        , source_file TEXT NOT NULL
+        , proc_attributes BLOB NOT NULL
+        , cfg BLOB
+        , callees BLOB NOT NULL
+        )
+    |}
     prefix
 
 
 let source_files_schema prefix =
   Printf.sprintf
-    {|CREATE TABLE IF NOT EXISTS %ssource_files
-  ( source_file TEXT PRIMARY KEY
-  , type_environment BLOB NOT NULL
-  , integer_type_widths BLOB
-  , procedure_names BLOB NOT NULL
-  , freshly_captured INT NOT NULL )|}
+    {|
+      CREATE TABLE IF NOT EXISTS %ssource_files
+        ( source_file TEXT PRIMARY KEY
+        , type_environment BLOB NOT NULL
+        , integer_type_widths BLOB
+        , procedure_names BLOB NOT NULL
+        , freshly_captured INT NOT NULL )
+    |}
     prefix
 
 
@@ -40,10 +44,11 @@ let specs_schema prefix =
   Printf.sprintf
     {|
       CREATE TABLE IF NOT EXISTS %sspecs
-      ( proc_name TEXT PRIMARY KEY
-      , analysis_summary BLOB NOT NULL
-      , report_summary BLOB NOT NULL
-    )|}
+        ( proc_name BLOB PRIMARY KEY NOT NULL
+        , analysis_summary BLOB NOT NULL
+        , report_summary BLOB NOT NULL
+        )
+    |}
     prefix
 
 
