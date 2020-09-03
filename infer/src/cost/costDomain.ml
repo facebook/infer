@@ -49,9 +49,8 @@ module BasicCostWithReason = struct
   let pp_hum = pp
 end
 
-(** Module to simulate a record
-    [{OperationCost:BasicCost.t; AllocationCost: BasicCost.t; IOCost:BasicCost.t}] with a map
-    [{OperationCost, AllocationCost, IOCost} -> BasicCost.t] *)
+(** Module to simulate a record [{OperationCost:BasicCost.t; AllocationCost: BasicCost.t}] with a
+    map [{OperationCost, AllocationCost} -> BasicCost.t] *)
 module VariantCostMap = struct
   include PrettyPrintable.PPMonoMapOfPPMap (CostIssues.CostKindMap) (BasicCostWithReason)
 

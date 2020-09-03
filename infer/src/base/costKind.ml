@@ -7,35 +7,20 @@
 open! IStd
 module F = Format
 
-type t = OperationCost | AllocationCost | IOCost [@@deriving compare]
+type t = OperationCost | AllocationCost [@@deriving compare]
 
-let to_issue_string = function
-  | OperationCost ->
-      "EXECUTION_TIME"
-  | AllocationCost ->
-      "ALLOCATION"
-  | IOCost ->
-      "IO"
-
+let to_issue_string = function OperationCost -> "EXECUTION_TIME" | AllocationCost -> "ALLOCATION"
 
 let to_complexity_string = function
   | AllocationCost ->
       "Allocation complexity"
   | OperationCost ->
       "Time complexity"
-  | IOCost ->
-      "IO complexity"
 
 
 let pp f k =
   let k_str =
-    match k with
-    | OperationCost ->
-        "Execution Cost"
-    | AllocationCost ->
-        "Allocation Cost"
-    | IOCost ->
-        "IO Cost"
+    match k with OperationCost -> "Execution Cost" | AllocationCost -> "Allocation Cost"
   in
   F.pp_print_string f k_str
 
@@ -44,8 +29,6 @@ let to_json_cost_info c = function
   | OperationCost ->
       c.Jsonbug_t.exec_cost
   | AllocationCost ->
-      assert false
-  | IOCost ->
       assert false
 
 
