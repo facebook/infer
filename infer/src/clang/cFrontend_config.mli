@@ -24,6 +24,8 @@ val alloc : string
 
 val arrayWithObjects_count : string
 
+val dictionaryWithObjects_forKeys_count : string
+
 val dealloc : string
 
 val assert_fail : string

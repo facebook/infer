@@ -100,7 +100,7 @@ void nsdictionary_enumerator_linear(NSDictionary* dict) {
   }
 }
 
-void nsdictionary_enumerate_call_constant_FP() {
+void nsdictionary_enumerate_call_constant() {
   NSDictionary* dict =
       @{@"helloString" : @"Hello, World!",
         @"magicNumber" : @42};

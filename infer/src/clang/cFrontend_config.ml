@@ -24,6 +24,8 @@ let alloc = "alloc"
 
 let arrayWithObjects_count = "arrayWithObjects:count:"
 
+let dictionaryWithObjects_forKeys_count = "dictionaryWithObjects:forKeys:count:"
+
 let dealloc = "dealloc"
 
 let assert_fail = "__assert_fail"
