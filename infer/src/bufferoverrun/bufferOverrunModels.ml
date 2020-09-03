@@ -1734,6 +1734,10 @@ module Call = struct
         &:: "objectEnumerator" <>$ capt_exp $--> NSCollection.iterator
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
         &:: "keyEnumerator" <>$ capt_exp $--> NSCollection.iterator
+      ; +PatternMatch.ObjectiveC.implements "NSOrderedSet"
+        &:: "objectEnumerator" <>$ capt_exp $--> NSCollection.iterator
+      ; +PatternMatch.ObjectiveC.implements "NSOrderedSet"
+        &:: "reverseObjectEnumerator" <>$ capt_exp $--> NSCollection.iterator
       ; +PatternMatch.ObjectiveC.implements "NSNumber" &:: "numberWithInt:" <>$ capt_exp $--> id
       ; +PatternMatch.ObjectiveC.implements "NSNumber" &:: "integerValue" <>$ capt_exp $--> id
       ; +PatternMatch.ObjectiveC.implements "NSString"
