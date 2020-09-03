@@ -2990,6 +2990,27 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         assert false
 
 
+  and objCAutoreleasePoolStmt_trans trans_state stmt_info stmts =
+    let procdesc = trans_state.context.procdesc in
+    let location =
+      CLocation.location_of_stmt_info trans_state.context.translation_unit_context.source_file
+        stmt_info
+    in
+    let mk_call_node fname =
+      let ret = mk_fresh_void_id_typ () in
+      let pname = Procname.from_string_c_fun fname in
+      let instr = Sil.Call (ret, Const (Cfun pname), [], location, CallFlags.default) in
+      Procdesc.create_node procdesc location (Stmt_node (Call fname)) [instr]
+    in
+    let push_node = mk_call_node CFrontend_config.objc_autorelease_pool_push in
+    let pop_node = mk_call_node CFrontend_config.objc_autorelease_pool_pop in
+    let res_trans_body = compoundStmt_trans {trans_state with succ_nodes= [pop_node]} stmts in
+    Procdesc.set_succs push_node ~normal:(Some res_trans_body.control.root_nodes) ~exn:None ;
+    Procdesc.set_succs pop_node ~normal:(Some trans_state.succ_nodes) ~exn:None ;
+    mk_trans_result res_trans_body.return
+      {empty_control with root_nodes= [push_node]; leaf_nodes= [pop_node]}
+
+
   and blockExpr_trans trans_state stmt_info expr_info decl =
     let context = trans_state.context in
     let outer_proc = Procdesc.get_proc_name context.CContext.procdesc in
@@ -3796,8 +3817,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         mk_trans_result (last_or_mk_fresh_void_exp_typ returns) control
     | BlockExpr (stmt_info, _, expr_info, decl) ->
         blockExpr_trans trans_state stmt_info expr_info decl
-    | ObjCAutoreleasePoolStmt (_, stmts) ->
-        compoundStmt_trans trans_state stmts
+    | ObjCAutoreleasePoolStmt (stmt_info, stmts) ->
+        objCAutoreleasePoolStmt_trans trans_state stmt_info stmts
     | ObjCAtTryStmt (_, stmts) ->
         compoundStmt_trans trans_state stmts
     | CXXTryStmt (_, try_stmts) ->

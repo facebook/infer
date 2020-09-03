@@ -8,6 +8,7 @@ TESTS_DIR = ../../../..
 CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS) -fobjc-arc
 
 SOURCES = \
+  ../autoreleasepool/Autoreleasepool.m \
   ../if_and_arc/If_and_arc.m \
   ../predefined_expr/PredefinedExprExample.m \
   ../types/attributes.m \
