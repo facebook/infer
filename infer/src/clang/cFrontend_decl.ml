@@ -96,33 +96,25 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
       | Some body ->
           let procname = ms.CMethodSignature.name in
           let return_param_typ_opt = ms.CMethodSignature.return_param_typ in
-          let ms', procname' =
-            if is_destructor then (
-              (* For a destructor we create two procedures: a destructor wrapper and an inner destructor *)
-              (* A destructor wrapper is called from the outside, i.e. for destructing local variables and fields *)
-              (* The destructor wrapper calls the inner destructor which has the actual body *)
-              if
-                CMethod_trans.create_local_procdesc ~set_objc_accessor_attr trans_unit_ctx cfg tenv
-                  ms [body] []
-              then
-                add_method trans_unit_ctx tenv cfg curr_class procname body ms return_param_typ_opt
-                  None extra_instrs ~is_destructor_wrapper:true ;
-              let new_method_name =
-                Config.clang_inner_destructor_prefix ^ Procname.get_method procname
-              in
-              let ms' =
-                {ms with name= Procname.objc_cpp_replace_method_name procname new_method_name}
-              in
-              let procname' = ms'.CMethodSignature.name in
-              (ms', procname') )
-            else (ms, procname)
+          let add_method_if_create_procdesc ms procname ~is_destructor_wrapper =
+            if
+              CMethod_trans.create_local_procdesc ~set_objc_accessor_attr trans_unit_ctx cfg tenv ms
+                [body] []
+            then
+              add_method trans_unit_ctx tenv cfg curr_class procname body ms return_param_typ_opt
+                None extra_instrs ~is_destructor_wrapper
           in
-          if
-            CMethod_trans.create_local_procdesc ~set_objc_accessor_attr trans_unit_ctx cfg tenv ms'
-              [body] []
-          then
-            add_method trans_unit_ctx tenv cfg curr_class procname' body ms' return_param_typ_opt
-              None extra_instrs ~is_destructor_wrapper:false
+          ignore (add_method_if_create_procdesc ms procname ~is_destructor_wrapper:is_destructor) ;
+          if is_destructor then
+            (* For a destructor we create two procedures: a destructor wrapper and an inner destructor *)
+            (* A destructor wrapper is called from the outside, i.e. for destructing local variables and fields *)
+            (* The destructor wrapper calls the inner destructor which has the actual body *)
+            let new_method_name =
+              Config.clang_inner_destructor_prefix ^ Procname.get_method procname
+            in
+            let new_procname = Procname.objc_cpp_replace_method_name procname new_method_name in
+            let new_ms = {ms with name= new_procname} in
+            add_method_if_create_procdesc new_ms new_procname ~is_destructor_wrapper:false
       | None ->
           if set_objc_accessor_attr then
             ignore
