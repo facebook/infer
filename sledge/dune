@@ -38,7 +38,7 @@
  (library
   (name llair)
   (public_name sledge.llair)
-  (libraries nonstdlib)
+  (libraries nonstdlib fpath)
   (flags
    (:standard -open NS))
   (preprocess
