@@ -605,17 +605,17 @@ let fold_dnf ~conj ~disj sjn (xs, conjuncts) disjuncts =
     let djns = sjn.djns in
     let sjn = {sjn with djns= []} in
     split_case
-      (List.rev_append djns pending_splits)
+      (Iter.append (Iter.of_list djns) pending_splits)
       (xs, conj sjn conjuncts)
       disjuncts
   and split_case pending_splits (xs, conjuncts) disjuncts =
-    match pending_splits with
-    | split :: pending_splits ->
+    match Iter.pop pending_splits with
+    | Some (split, pending_splits) ->
         List.fold split ~init:disjuncts ~f:(fun disjuncts sjn ->
             add_disjunct pending_splits sjn (xs, conjuncts) disjuncts )
-    | [] -> disj (xs, conjuncts) disjuncts
+    | None -> disj (xs, conjuncts) disjuncts
   in
-  add_disjunct [] sjn (xs, conjuncts) disjuncts
+  add_disjunct Iter.empty sjn (xs, conjuncts) disjuncts
 
 let dnf q =
   [%Trace.call fun {pf} -> pf "%a" pp q]

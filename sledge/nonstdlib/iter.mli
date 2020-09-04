@@ -10,3 +10,5 @@ include module type of IterLabels
 module Import : sig
   type 'a iter = 'a t
 end
+
+val pop : 'a iter -> ('a * 'a iter) option

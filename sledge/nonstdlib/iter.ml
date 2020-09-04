@@ -10,3 +10,6 @@ include IterLabels
 module Import = struct
   type 'a iter = 'a t
 end
+
+let pop seq =
+  match head seq with Some x -> Some (x, drop 1 seq) | None -> None
