@@ -15,6 +15,7 @@ The [-trace <spec>] argument of each subcommand enables debug tracing according 
   . translate  translate LLVM bitcode to LLAIR
   analyze      analyze LLAIR code
   disassemble  print LLAIR code in textual form
+  smt          process SMT-LIB benchmarks
   version      print version information
   help         explain a given subcommand (perhaps recursively)
 
@@ -222,6 +223,23 @@ The <input> file must be LLAIR code, as produced by `sledge llvm translate`.
   [-trace <spec>]             enable debug tracing
   [-help]                     print this help text and exit
                               (alias: -?)
+
+
+====== sledge smt ======
+
+process SMT-LIB benchmarks
+
+  sledge smt <input>
+
+The <input> file is interpreted as an SMT-LIB 2 benchmark.
+
+=== flags ===
+
+  [-colors]         enable printing in colors
+  [-margin <cols>]  wrap debug tracing at <cols> columns
+  [-trace <spec>]   enable debug tracing
+  [-help]           print this help text and exit
+                    (alias: -?)
 
 
 ====== sledge version ======

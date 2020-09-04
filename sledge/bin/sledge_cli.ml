@@ -45,19 +45,26 @@ let command ~summary ?readme param =
       Trace.flush () ;
       Format.printf "@\nRESULT: Success: Invalid Accesses: %i@."
         (Report.invalid_access_count ())
-    with exn ->
-      let bt = Printexc.get_raw_backtrace () in
-      Trace.flush () ;
-      ( match exn with
-      | Frontend.Invalid_llvm msg ->
-          Format.printf "@\nRESULT: Invalid input: %s@." msg
-      | Unimplemented msg ->
-          Format.printf "@\nRESULT: Unimplemented: %s@." msg
-      | Failure msg -> Format.printf "@\nRESULT: Internal error: %s@." msg
-      | _ ->
-          Format.printf "@\nRESULT: Unknown error: %s@."
-            (Printexc.to_string exn) ) ;
-      Printexc.raise_with_backtrace exn bt
+    with
+    | Smtlib.Unsound ->
+        Trace.flush () ;
+        Format.printf "@\nRESULT: Unsound@."
+    | Smtlib.Incomplete ->
+        Trace.flush () ;
+        Format.printf "@\nRESULT: Incomplete@."
+    | exn ->
+        let bt = Printexc.get_raw_backtrace () in
+        Trace.flush () ;
+        ( match exn with
+        | Frontend.Invalid_llvm msg ->
+            Format.printf "@\nRESULT: Invalid input: %s@." msg
+        | Unimplemented msg ->
+            Format.printf "@\nRESULT: Unimplemented: %s@." msg
+        | Failure msg -> Format.printf "@\nRESULT: Internal error: %s@." msg
+        | _ ->
+            Format.printf "@\nRESULT: Unknown error: %s@."
+              (Printexc.to_string exn) ) ;
+        Printexc.raise_with_backtrace exn bt
   in
   Command.basic ~summary ?readme (trace *> param >>| wrap)
 
@@ -230,6 +237,17 @@ let disassemble_cmd =
   in
   command ~summary ~readme param
 
+let smt_cmd =
+  let summary = "process SMT-LIB benchmarks" in
+  let readme () =
+    "The <input> file is interpreted as an SMT-LIB 2 benchmark."
+  in
+  let param =
+    let%map_open input = anon ("<input>" %: string) in
+    fun () -> Smtlib.process input
+  in
+  command ~summary ~readme param
+
 let summary = "SLEdge static analyzer"
 
 let readme () =
@@ -245,4 +263,5 @@ Command.run ~version:Version.version ~build_info:Version.build_info
      [ ("buck", Sledge_buck.main ~command ~analyze:(translate >*> analyze))
      ; ("llvm", llvm_grp)
      ; ("analyze", analyze_cmd)
-     ; ("disassemble", disassemble_cmd) ])
+     ; ("disassemble", disassemble_cmd)
+     ; ("smt", smt_cmd) ])

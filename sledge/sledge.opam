@@ -23,6 +23,7 @@ depends: [
   "ppx_compare"
   "ppx_hash"
   "shexp"
+  "smtlib-utils"
   "yojson"
   "zarith"
 ]
