@@ -205,8 +205,12 @@ module Context : sig
   val union : Var.Set.t -> t -> t -> Var.Set.t * t
   (** Union (that is, conjoin) two contexts of assumptions. *)
 
-  val interN : Var.Set.t -> t list -> Var.Set.t * t
+  val inter : Var.Set.t -> t -> t -> Var.Set.t * t
   (** Intersect (that is, disjoin) contexts of assumptions. *)
+
+  val interN : Var.Set.t -> t list -> Var.Set.t * t
+  (** Intersect contexts of assumptions. Possibly weaker than logical
+      disjunction. *)
 
   val rename : t -> Var.Subst.t -> t
   (** Apply a renaming substitution to the context. *)

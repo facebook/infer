@@ -1533,6 +1533,10 @@ module Context = struct
     let vs', z = Ses.Equality.and_ (vs_to_ses vs) x y in
     (vs_of_ses vs', z)
 
+  let inter vs x y =
+    let vs', z = Ses.Equality.or_ (vs_to_ses vs) x y in
+    (vs_of_ses vs', z)
+
   let interN vs xs =
     let vs', z = Ses.Equality.orN (vs_to_ses vs) xs in
     (vs_of_ses vs', z)
