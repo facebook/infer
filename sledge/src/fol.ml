@@ -95,6 +95,7 @@ let equal_trm x y =
       Int.equal i j
   | _ -> equal_trm x y
 
+let sort_trm x y = if compare_trm x y <= 0 then (x, y) else (y, x)
 let zero = Z Z.zero
 let one = Z Z.one
 let _Neg x = Neg x
@@ -199,6 +200,8 @@ end = struct
     | UNegLit of Predsym.t * trm
   [@@deriving compare, equal, sexp]
 
+  let sort_fml x y = if compare_fml x y <= 0 then (x, y) else (y, x)
+
   (** Some normalization is necessary for [embed_into_fml] (defined below)
       to be left inverse to [embed_into_cnd]. Essentially
       [0 ≠ (p ? 1 : 0)] needs to normalize to [p], by way of
@@ -241,7 +244,9 @@ end = struct
       match equal_or_separate x y with
       | Equal -> Tt
       | Separate -> Ff
-      | Unknown -> Eq (x, y)
+      | Unknown ->
+          let x, y = sort_trm x y in
+          Eq (x, y)
 
   let _Dq x y =
     if x == zero then _Dq0 y
@@ -250,7 +255,9 @@ end = struct
       match equal_or_separate x y with
       | Equal -> Ff
       | Separate -> Tt
-      | Unknown -> Dq (x, y)
+      | Unknown ->
+          let x, y = sort_trm x y in
+          Dq (x, y)
 
   let _Gt0 = function
     | Z z -> if Z.gt z Z.zero then Tt else Ff
@@ -290,7 +297,9 @@ end = struct
       match equal_or_opposite p q with
       | Equal -> p
       | Opposite -> Ff
-      | Unknown -> And (p, q) )
+      | Unknown ->
+          let p, q = sort_fml p q in
+          And (p, q) )
 
   and _Or p q =
     match (p, q) with
@@ -300,7 +309,9 @@ end = struct
       match equal_or_opposite p q with
       | Equal -> p
       | Opposite -> Tt
-      | Unknown -> Or (p, q) )
+      | Unknown ->
+          let p, q = sort_fml p q in
+          Or (p, q) )
 
   and _Iff p q =
     match (p, q) with
@@ -310,7 +321,9 @@ end = struct
       match equal_or_opposite p q with
       | Equal -> Tt
       | Opposite -> Ff
-      | Unknown -> Iff (p, q) )
+      | Unknown ->
+          let p, q = sort_fml p q in
+          Iff (p, q) )
 
   and _Xor p q =
     match (p, q) with
@@ -320,7 +333,9 @@ end = struct
       match equal_or_opposite p q with
       | Equal -> Ff
       | Opposite -> Tt
-      | Unknown -> Xor (p, q) )
+      | Unknown ->
+          let p, q = sort_fml p q in
+          Xor (p, q) )
 
   and _Not = function
     | Tt -> _Ff
