@@ -282,6 +282,12 @@ end = struct
   let _UPosLit p x = UPosLit (p, x)
   let _UNegLit p x = UNegLit (p, x)
 
+  let is_negative = function
+    | Ff | Dq _ | Dq0 _ | Lt0 _ | Le0 _ | Or _ | Xor _ | UNegLit _ -> true
+    | Tt | Eq _ | Eq0 _ | Gt0 _ | Ge0 _ | And _ | Iff _ | UPosLit _ | Cond _
+      ->
+        false
+
   type equal_or_opposite = Equal | Opposite | Unknown
 
   let rec equal_or_opposite p q : equal_or_opposite =
@@ -378,9 +384,13 @@ end = struct
       match equal_or_opposite pos neg with
       (* (c ? p : p) ==> c *)
       | Equal -> cnd
-      (* (c : p : ¬p) ==> c <=> p *)
+      (* (c ? p : ¬p) ==> c <=> p *)
       | Opposite -> _Iff cnd pos
-      | Unknown -> Cond {cnd; pos; neg} )
+      (* (c ? p : n) <=> (¬c ? n : p) *)
+      | Unknown when is_negative cnd ->
+          Cond {cnd= _Not cnd; pos= neg; neg= pos}
+      (* (c ? p : n) *)
+      | _ -> Cond {cnd; pos; neg} )
 end
 
 open Fml
