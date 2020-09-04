@@ -498,4 +498,25 @@ let%test_module _ =
            rep= [[%x_5 ↦ 0]; [%y_6 ↦ 0]; [%z_7 ↦ 0]; [-1 ↦ ]; [0 ↦ ]]} |}]
 
     let%test _ = implies_eq r19 z !0
+
+    let%expect_test _ =
+      let f =
+        Formula.(
+          andN
+            [ eq x y
+            ; cond ~cnd:(eq x !0) ~pos:(eq z !2) ~neg:(eq z !3)
+            ; or_ (eq w !4) (eq w !5) ])
+      in
+      printf Formula.pp f ;
+      printf Formula.pp
+        (Formula.orN (Iter.to_list (Iter.map ~f:snd3 (Context.dnf f)))) ;
+      [%expect
+        {|
+        (((%x_5 = %y_6) ∧ ((0 = %x_5) ? (%z_7 = 2) : (%z_7 = 3)))
+          ∧ ((%w_4 = 4) ∨ (%w_4 = 5)))
+
+        (((((((%x_5 = %y_6) ∧ (%w_4 = 5)) ∧ (0 ≠ %x_5)) ∧ (%z_7 = 3))
+            ∨ ((((%x_5 = %y_6) ∧ (%w_4 = 5)) ∧ (0 = %x_5)) ∧ (%z_7 = 2)))
+           ∨ ((((%x_5 = %y_6) ∧ (%w_4 = 4)) ∧ (0 ≠ %x_5)) ∧ (%z_7 = 3)))
+          ∨ ((((%x_5 = %y_6) ∧ (%w_4 = 4)) ∧ (0 = %x_5)) ∧ (%z_7 = 2))) |}]
   end )

@@ -181,7 +181,6 @@ and Formula : sig
     init:'a -> t -> f:('a -> Var.t -> 'a * Var.t) -> 'a * t
 
   val rename : Var.Subst.t -> t -> t
-  val disjuncts : t -> t list
 end
 
 (** Sets of assumptions, interpreted as conjunction, plus reasoning about
@@ -211,6 +210,9 @@ module Context : sig
   val interN : Var.Set.t -> t list -> Var.Set.t * t
   (** Intersect contexts of assumptions. Possibly weaker than logical
       disjunction. *)
+
+  val dnf : Formula.t -> (Var.Set.t * Formula.t * t) iter
+  (** Disjunctive-normal form expansion. *)
 
   val rename : t -> Var.Subst.t -> t
   (** Apply a renaming substitution to the context. *)

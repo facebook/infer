@@ -522,12 +522,11 @@ let orN = function
 let pure (p : Formula.t) =
   [%Trace.call fun {pf} -> pf "%a" Formula.pp p]
   ;
-  List.fold (Formula.disjuncts p) ~init:(false_ Var.Set.empty)
-    ~f:(fun q p ->
-      let us = Formula.fv p in
-      let xs, ctx = Context.add us p Context.empty in
+  Iter.fold (Context.dnf p) ~init:(false_ Var.Set.empty)
+    ~f:(fun q (xs, pure, ctx) ->
+      let us = Formula.fv pure in
       if Context.is_unsat ctx then extend_us us q
-      else or_ q (exists_fresh xs {emp with us; ctx; pure= p}) )
+      else or_ q (exists_fresh xs {emp with us; ctx; pure}) )
   |>
   [%Trace.retn fun {pf} q ->
     pf "%a" pp q ;

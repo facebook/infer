@@ -1198,15 +1198,32 @@ module Formula = struct
 
   let rename s e = map_vars ~f:(Var.Subst.apply s) e
 
-  let disjuncts p =
-    let rec disjuncts_ p ds =
-      match p with
-      | Or (a, b) -> disjuncts_ a (disjuncts_ b ds)
+  let fold_dnf :
+         meet1:('literal -> 'conjunction -> 'conjunction)
+      -> join1:('conjunction -> 'disjunction -> 'disjunction)
+      -> top:'conjunction
+      -> bot:'disjunction
+      -> 'formula
+      -> 'disjunction =
+   fun ~meet1 ~join1 ~top ~bot fml ->
+    let rec add_conjunct (cjn, splits) fml =
+      match fml with
+      | Tt | Ff | Eq _ | Dq _ | Eq0 _ | Dq0 _ | Gt0 _ | Ge0 _ | Lt0 _
+       |Le0 _ | Iff _ | Xor _ | UPosLit _ | UNegLit _ ->
+          (meet1 fml cjn, splits)
+      | And (p, q) -> add_conjunct (add_conjunct (cjn, splits) p) q
+      | Or (p, q) -> (cjn, [p; q] :: splits)
       | Cond {cnd; pos; neg} ->
-          disjuncts_ (and_ cnd pos) (disjuncts_ (and_ (not_ cnd) neg) ds)
-      | d -> d :: ds
+          (cjn, [and_ cnd pos; and_ (not_ cnd) neg] :: splits)
     in
-    disjuncts_ p []
+    let rec add_disjunct (cjn, splits) djn fml =
+      let cjn, splits = add_conjunct (cjn, splits) fml in
+      match splits with
+      | split :: splits ->
+          List.fold ~f:(add_disjunct (cjn, splits)) ~init:djn split
+      | [] -> join1 cjn djn
+    in
+    add_disjunct (top, []) bot fml
 end
 
 (*
@@ -1540,6 +1557,16 @@ module Context = struct
   let interN vs xs =
     let vs', z = Ses.Equality.orN (vs_to_ses vs) xs in
     (vs_of_ses vs', z)
+
+  let dnf f =
+    let meet1 a (vs, p, x) =
+      let vs, x = add vs a x in
+      (vs, Formula.and_ p a, x)
+    in
+    let join1 = Iter.cons in
+    let top = (Var.Set.empty, Formula.tt, empty) in
+    let bot = Iter.empty in
+    Formula.fold_dnf ~meet1 ~join1 ~top ~bot f
 
   let rename x sub = Ses.Equality.rename x (v_map_ses (Var.Subst.apply sub))
 
