@@ -2,9 +2,11 @@
 .llvm_install
 /llvm/
 /test/**/*.bc
-/test/**/*.bc.err
-/test/**/*.bc.out
-/test/**/*.ll.err
-/test/**/*.ll.out
-/test/report.current
+/test/**/*.err
+/test/**/*.out
+/test/**/*.sexp
+/test/*.html
+/test/*.sexp
+/test/extra
+/test/local
 _build
