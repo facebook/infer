@@ -138,4 +138,4 @@
   (with-stdout-to
    sledge-help.txt
    (run tools/gen_help.sh)))
- (mode promote-until-clean))
+ (mode promote))
