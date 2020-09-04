@@ -16,7 +16,7 @@ depends: [
   "crunch" {build}
   "ctypes"
   "ctypes-foreign"
-  "dune" {build & >= "2.5"}
+  "dune" {build & >= "2.7"}
   "dune-build-info" {build}
   "llvm" {= "8.0.0"}
   "ppx_compare"
