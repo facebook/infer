@@ -787,7 +787,7 @@ module SQLite = struct
     let sexp_of_t p = Sexp.Atom (F.asprintf "%a" pp p)
   end
 
-  module Serializer = SqliteUtils.MarshalledDataForComparison (T)
+  module Serializer = SqliteUtils.MarshalledDataNOTForComparison (T)
 
   let pname_to_key = Base.Hashtbl.create (module T)
 
