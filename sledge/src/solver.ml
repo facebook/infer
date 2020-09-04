@@ -154,8 +154,7 @@ let excise_exists goal =
   else
     let solutions_for_xs =
       let xs =
-        Var.Set.diff goal.xs
-          (Sh.fv ~ignore_ctx:() (Sh.with_pure Formula.tt goal.sub))
+        Var.Set.diff goal.xs (Sh.fv ~ignore_ctx:() ~ignore_pure:() goal.sub)
       in
       Context.solve_for_vars [Var.Set.empty; goal.us; xs] goal.sub.ctx
     in

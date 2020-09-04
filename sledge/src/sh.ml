@@ -75,16 +75,15 @@ let fold_terms_seg {loc; bas; len; siz; seq} ~init ~f =
 let fold_vars_seg seg ~init ~f =
   fold_terms_seg seg ~init ~f:(fun init -> Term.fold_vars ~f ~init)
 
-let fold_vars_stem ?ignore_ctx {us= _; xs= _; ctx; pure; heap; djns= _}
-    ~init ~f =
-  List.fold ~init heap ~f:(fun init -> fold_vars_seg ~f ~init)
-  |> fun init ->
-  Term.fold_vars ~f ~init (Formula.inject pure)
-  |> fun init ->
-  if Option.is_some ignore_ctx then init else Context.fold_vars ~f ~init ctx
+let fold_vars_stem ?ignore_ctx ?ignore_pure
+    {us= _; xs= _; ctx; pure; heap; djns= _} ~init ~f =
+  let unless flag f init = if Option.is_some flag then init else f ~init in
+  List.fold ~f:(fun init -> fold_vars_seg ~f ~init) heap ~init
+  |> unless ignore_pure (Term.fold_vars ~f (Formula.inject pure))
+  |> unless ignore_ctx (Context.fold_vars ~f ctx)
 
-let fold_vars ?ignore_ctx fold_vars q ~init ~f =
-  fold_vars_stem ?ignore_ctx ~init ~f q
+let fold_vars ?ignore_ctx ?ignore_pure fold_vars q ~init ~f =
+  fold_vars_stem ?ignore_ctx ?ignore_pure ~init ~f q
   |> fun init ->
   List.fold ~init q.djns ~f:(fun init -> List.fold ~init ~f:fold_vars)
 
@@ -266,10 +265,10 @@ let pp_raw fs q =
 
 let fv_seg seg = fold_vars_seg seg ~f:Var.Set.add ~init:Var.Set.empty
 
-let fv ?ignore_ctx q =
+let fv ?ignore_ctx ?ignore_pure q =
   let rec fv_union init q =
     Var.Set.diff
-      (fold_vars ?ignore_ctx fv_union q ~init ~f:Var.Set.add)
+      (fold_vars ?ignore_ctx ?ignore_pure fv_union q ~init ~f:Var.Set.add)
       q.xs
   in
   fv_union Var.Set.empty q
@@ -569,8 +568,6 @@ let seg pt =
   else {emp with us; heap= [pt]} |> check invariant
 
 (** Update *)
-
-let with_pure pure q = {q with pure} |> check invariant
 
 let rem_seg seg q =
   {q with heap= List.remove_exn q.heap seg} |> check invariant
