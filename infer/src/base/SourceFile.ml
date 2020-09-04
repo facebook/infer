@@ -139,24 +139,33 @@ let changed_sources_from_changed_files changed_files =
 
 
 module SQLite = struct
-  module T = struct
-    type nonrec t = t
-  end
+  type nonrec t = t
 
-  module Serializer = SqliteUtils.MarshalledDataForComparison (T)
-  include T
+  let invalid_tag = 'I'
 
-  let serialize = function
-    | RelativeProjectRoot path ->
-        (* show the most common paths as text (for debugging, possibly perf) *)
-        Sqlite3.Data.TEXT path
-    | _ as x ->
-        Serializer.serialize x
+  let absolute_tag = 'A'
+
+  let relative_tag = 'R'
+
+  let serialize sourcefile =
+    let tag_text tag str = Sqlite3.Data.TEXT (Printf.sprintf "%c%s" tag str) in
+    match sourcefile with
+    | Invalid {ml_source_file} ->
+        tag_text invalid_tag ml_source_file
+    | Absolute abs_path ->
+        tag_text absolute_tag abs_path
+    | RelativeProjectRoot rel_path ->
+        tag_text relative_tag rel_path
 
 
-  let deserialize = function
-    | Sqlite3.Data.TEXT rel_path ->
-        RelativeProjectRoot rel_path
-    | blob ->
-        Serializer.deserialize blob
+  let deserialize serialized_sourcefile =
+    let[@warning "-8"] (Sqlite3.Data.TEXT text) = serialized_sourcefile in
+    if String.is_empty text then
+      L.die InternalError "Could not deserialize sourcefile with empty representation@." ;
+    let tag = text.[0] in
+    let str = String.sub ~pos:1 ~len:(String.length text - 1) text in
+    if Char.equal tag invalid_tag then Invalid {ml_source_file= str}
+    else if Char.equal tag absolute_tag then Absolute str
+    else if Char.equal tag relative_tag then RelativeProjectRoot str
+    else L.die InternalError "Could not deserialize sourcefile with tag=%c, str= %s@." tag str
 end
