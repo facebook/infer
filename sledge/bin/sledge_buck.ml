@@ -26,7 +26,9 @@ let cwd = Unix.getcwd ()
 (* query buck for root *)
 let buck_root =
   let open Process in
-  lazy (String.strip (eval (run "buck" ["root"] |- read_all)))
+  lazy
+    (String.strip
+       (eval (run "buck" ["root"; "@mode/" ^ Lazy.force mode] |- read_all)))
 
 (* use buck root for working directory *)
 let context () =
