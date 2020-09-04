@@ -31,7 +31,7 @@ module Implementation = struct
       ResultsDatabase.register_statement
         {|
           INSERT OR REPLACE INTO procedures
-          SELECT :uid, :pname, :proc_name_hum, :akind, :sfile, :pattr, :cfg, :callees
+          SELECT :uid, :pname, :akind, :sfile, :pattr, :cfg, :callees
           FROM (
             SELECT NULL
             FROM (
@@ -43,24 +43,22 @@ module Implementation = struct
                   OR (attr_kind = :akind AND source_file <= :sfile) )
         |}
     in
-    fun ~proc_uid ~proc_name ~proc_name_hum ~attr_kind ~source_file ~proc_attributes ~cfg ~callees ->
+    fun ~proc_uid ~proc_name ~attr_kind ~source_file ~proc_attributes ~cfg ~callees ->
       ResultsDatabase.with_registered_statement attribute_replace_statement
         ~f:(fun db replace_stmt ->
           Sqlite3.bind replace_stmt 1 (* :proc_uid *) (Sqlite3.Data.TEXT proc_uid)
           |> SqliteUtils.check_result_code db ~log:"replace bind proc_uid" ;
           Sqlite3.bind replace_stmt 2 (* :pname *) proc_name
           |> SqliteUtils.check_result_code db ~log:"replace bind proc_name" ;
-          Sqlite3.bind replace_stmt 3 (* :proc_name_hum *) (Sqlite3.Data.TEXT proc_name_hum)
-          |> SqliteUtils.check_result_code db ~log:"replace bind proc_name_hum" ;
-          Sqlite3.bind replace_stmt 4 (* :akind *) (Sqlite3.Data.INT attr_kind)
+          Sqlite3.bind replace_stmt 3 (* :akind *) (Sqlite3.Data.INT attr_kind)
           |> SqliteUtils.check_result_code db ~log:"replace bind attr_kind" ;
-          Sqlite3.bind replace_stmt 5 (* :sfile *) source_file
+          Sqlite3.bind replace_stmt 4 (* :sfile *) source_file
           |> SqliteUtils.check_result_code db ~log:"replace bind source source_file" ;
-          Sqlite3.bind replace_stmt 6 (* :pattr *) proc_attributes
+          Sqlite3.bind replace_stmt 5 (* :pattr *) proc_attributes
           |> SqliteUtils.check_result_code db ~log:"replace bind proc proc_attributes" ;
-          Sqlite3.bind replace_stmt 7 (* :cfg *) cfg
+          Sqlite3.bind replace_stmt 6 (* :cfg *) cfg
           |> SqliteUtils.check_result_code db ~log:"replace bind cfg" ;
-          Sqlite3.bind replace_stmt 8 (* :callees *) callees
+          Sqlite3.bind replace_stmt 7 (* :callees *) callees
           |> SqliteUtils.check_result_code db ~log:"replace bind callees" ;
           SqliteUtils.result_unit db ~finalize:false ~log:"replace_attributes" replace_stmt )
 
@@ -112,7 +110,6 @@ module Implementation = struct
               SELECT
                 sub.proc_uid,
                 sub.proc_name,
-                sub.proc_name_hum,
                 sub.attr_kind,
                 sub.source_file,
                 sub.proc_attributes,
@@ -237,7 +234,6 @@ module Command = struct
     | ReplaceAttributes of
         { proc_uid: string
         ; proc_name: Sqlite3.Data.t
-        ; proc_name_hum: string
         ; attr_kind: int64
         ; source_file: Sqlite3.Data.t
         ; proc_attributes: Sqlite3.Data.t
@@ -289,11 +285,10 @@ module Command = struct
         Implementation.merge infer_deps_file
     | StoreSpec {proc_uid; proc_name; analysis_summary; report_summary} ->
         Implementation.store_spec ~proc_uid ~proc_name ~analysis_summary ~report_summary
-    | ReplaceAttributes
-        {proc_uid; proc_name; proc_name_hum; attr_kind; source_file; proc_attributes; cfg; callees}
+    | ReplaceAttributes {proc_uid; proc_name; attr_kind; source_file; proc_attributes; cfg; callees}
       ->
-        Implementation.replace_attributes ~proc_uid ~proc_name ~proc_name_hum ~attr_kind
-          ~source_file ~proc_attributes ~cfg ~callees
+        Implementation.replace_attributes ~proc_uid ~proc_name ~attr_kind ~source_file
+          ~proc_attributes ~cfg ~callees
     | ResetCaptureTables ->
         Implementation.reset_capture_tables ()
     | Terminate ->
@@ -397,11 +392,9 @@ let start () = Server.start ()
 
 let stop () = Server.send Command.Terminate
 
-let replace_attributes ~proc_uid ~proc_name ~proc_name_hum ~attr_kind ~source_file ~proc_attributes
-    ~cfg ~callees =
+let replace_attributes ~proc_uid ~proc_name ~attr_kind ~source_file ~proc_attributes ~cfg ~callees =
   perform
-    (ReplaceAttributes
-       {proc_uid; proc_name; proc_name_hum; attr_kind; source_file; proc_attributes; cfg; callees})
+    (ReplaceAttributes {proc_uid; proc_name; attr_kind; source_file; proc_attributes; cfg; callees})
 
 
 let add_source_file ~source_file ~tenv ~integer_type_widths ~proc_names =

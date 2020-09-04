@@ -72,17 +72,16 @@ let store ~proc_desc (attr : ProcAttributes.t) =
   let proc_uid = Procname.to_unique_id pname in
   if should_try_to_update proc_uid akind then
     let proc_name = Procname.SQLite.serialize pname in
-    let proc_name_hum = Procname.to_string pname in
     let attr_kind = int64_of_attributes_kind akind in
     let cfg = Procdesc.SQLite.serialize proc_desc in
     let proc_attributes = ProcAttributes.SQLite.serialize attr in
     let source_file = SourceFile.SQLite.serialize attr.loc.Location.file in
     let callees =
-      Option.map proc_desc ~f:Procdesc.get_static_callees
-      |> Option.value ~default:[] |> Procname.SQLiteList.serialize
+      Option.value_map proc_desc ~f:Procdesc.get_static_callees ~default:[]
+      |> Procname.SQLiteList.serialize
     in
-    DBWriter.replace_attributes ~proc_uid ~proc_name ~proc_name_hum ~attr_kind ~source_file
-      ~proc_attributes ~cfg ~callees
+    DBWriter.replace_attributes ~proc_uid ~proc_name ~attr_kind ~source_file ~proc_attributes ~cfg
+      ~callees
 
 
 let find_file_capturing_procedure pname =

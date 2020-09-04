@@ -14,7 +14,6 @@ val use_daemon : bool
 val replace_attributes :
      proc_uid:string
   -> proc_name:Sqlite3.Data.t
-  -> proc_name_hum:string
   -> attr_kind:int64
   -> source_file:Sqlite3.Data.t
   -> proc_attributes:Sqlite3.Data.t
