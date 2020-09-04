@@ -12,6 +12,7 @@ depends: [
   "ocaml"
   "apron"
   "base"
+  "containers"
   "core" {>= "v0.14"}
   "crunch" {build}
   "ctypes"

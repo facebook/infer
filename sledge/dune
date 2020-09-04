@@ -70,6 +70,18 @@
   (inline_tests)))
 
 (subdir
+ report
+ (executable
+  (name sledge_report)
+  (public_name sledge-report)
+  (package sledge)
+  (libraries sledge)
+  (flags
+   (:standard -open NS -open Sledge))
+  (preprocess
+   (pps ppx_sledge ppx_trace))))
+
+(subdir
  src/test
  (library
   (name test)

@@ -6,7 +6,7 @@
 .PHONY: default
 default: exes
 
-EXES = bin/sledge_cli
+EXES = bin/sledge_cli report/sledge_report
 INSTALLS = sledge
 
 DEBUG_TARGETS = $(patsubst %,_build/debug/%.exe,$(EXES)) $(patsubst %,_build/debug/%.install,$(INSTALLS))

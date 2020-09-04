@@ -6,7 +6,7 @@
 (library
  (name NS)
  (public_name nonstdlib)
- (libraries core core_kernel.fheap iter zarith trace)
+ (libraries containers core core_kernel.fheap iter zarith trace)
  (flags (:standard))
  (preprocess
   (pps ppx_sledge ppx_trace))
