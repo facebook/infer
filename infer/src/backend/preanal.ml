@@ -301,12 +301,6 @@ module Liveness = struct
     add_nullify_instrs summary tenv liveness_inv_map
 end
 
-module FunctionPointerSubstitution = struct
-  let process proc_desc =
-    let updated = FunctionPointers.substitute_function_pointers proc_desc in
-    if updated then Attributes.store ~proc_desc:(Some proc_desc) (Procdesc.get_attributes proc_desc)
-end
-
 (** pre-analysis to cut control flow after calls to functions whose type indicates they do not
     return *)
 module NoReturn = struct
@@ -376,7 +370,7 @@ let do_preanalysis exe_env pdesc =
   let proc_name = Procdesc.get_proc_name pdesc in
   if Procname.is_java proc_name then InlineJavaSyntheticMethods.process pdesc ;
   if Config.function_pointer_specialization && not (Procname.is_java proc_name) then
-    FunctionPointerSubstitution.process pdesc ;
+    FunctionPointers.substitute pdesc ;
   (* NOTE: It is important that this preanalysis stays before Liveness *)
   if not (Procname.is_java proc_name) then (
     ClosuresSubstitution.process summary ;

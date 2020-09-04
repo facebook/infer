@@ -7,13 +7,6 @@
 
 open! IStd
 module F = Format
-
-module Procname = struct
-  type t = Procname.t [@@deriving compare]
-
-  let pp = Procname.pp
-end
-
 module ProcnameSet = AbstractDomain.FiniteSet (Procname)
 module Domain = AbstractDomain.Map (String) (ProcnameSet)
 
@@ -95,7 +88,7 @@ let get_function_pointers proc_desc =
   Analyzer.exec_cfg cfg () ~initial:Domain.empty
 
 
-let substitute_function_pointers proc_desc =
+let substitute proc_desc =
   let function_pointers = get_function_pointers proc_desc in
   let f = substitute_function_ptrs ~function_pointers in
-  Procdesc.replace_instrs proc_desc ~f
+  ignore (Procdesc.replace_instrs proc_desc ~f)
