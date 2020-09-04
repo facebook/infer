@@ -6,6 +6,6 @@
  *)
 
 val main :
-     command:unit Command.basic_command
-  -> analyze:(string list -> unit -> unit) Command.Param.t
+     command:Report.status Command.basic_command
+  -> analyze:(string list -> unit -> Report.status) Command.Param.t
   -> Command.t

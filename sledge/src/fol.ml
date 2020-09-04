@@ -1652,7 +1652,11 @@ module Context = struct
     in
     if not [%debug] then f ()
     else
-      try f () with exn -> raise_s ([%sexp_of: exn * call] (exn, call ()))
+      try f ()
+      with exn ->
+        let bt = Printexc.get_raw_backtrace () in
+        let sexp = sexp_of_call (call ()) in
+        raise (Replay (exn, bt, sexp))
 
   let add_tmr = Timer.create "add" ~at_exit:report
   let union_tmr = Timer.create "union" ~at_exit:report

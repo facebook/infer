@@ -7,7 +7,4 @@
 
 (** Process SMT-LIB benchmarks using SLEdge's first-order theory solver. *)
 
-exception Unsound
-exception Incomplete
-
-val process : string -> unit
+val process : string -> Report.status

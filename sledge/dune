@@ -62,7 +62,7 @@
  (library
   (name sledge)
   (public_name sledge)
-  (libraries nonstdlib llair ses)
+  (libraries mtime mtime.clock.os nonstdlib llair ses)
   (flags
    (:standard -open NS))
   (preprocess

@@ -21,6 +21,7 @@ depends: [
   "fpath"
   "iter"
   "llvm" {= "8.0.0"}
+  "mtime"
   "ppx_compare"
   "ppx_hash"
   "shexp"

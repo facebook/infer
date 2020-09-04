@@ -12,6 +12,21 @@ module Monad = Monad
 
 (** Failures *)
 
+exception Replay of exn * Printexc.raw_backtrace * Sexp.t
+
+let register_sexp_of_exn exn sexp_of_exn =
+  Sexplib.Conv.Exn_converter.add
+    (Obj.Extension_constructor.of_val exn)
+    sexp_of_exn
+
+;;
+register_sexp_of_exn
+  (Replay (Stdlib.Not_found, Printexc.get_callstack 1, Sexp.List []))
+  (function
+    | Replay (exn, _, payload) ->
+        Sexp.List [Atom "Replay"; sexp_of_exn exn; payload]
+    | exn -> Sexp.Atom (Printexc.to_string exn) )
+
 let fail = Trace.fail
 
 exception Unimplemented of string
@@ -55,20 +70,32 @@ let violates f x =
 module Invariant = struct
   include Core.Invariant
 
+  exception
+    Violation of
+      exn * Printexc.raw_backtrace * Source_code_position.t * Sexp.t
+
+  ;;
+  register_sexp_of_exn
+    (Violation
+       ( Stdlib.Not_found
+       , Printexc.get_callstack 1
+       , Lexing.dummy_pos
+       , Sexp.List [] ))
+    (function
+      | Violation (exn, _, pos, payload) ->
+          Sexp.List
+            [ Atom "Invariant.Violation"
+            ; sexp_of_exn exn
+            ; Source_code_position.sexp_of_t pos
+            ; payload ]
+      | exn -> Sexp.Atom (Printexc.to_string exn) )
+
   let invariant here t sexp_of_t f =
     assert (
       ( try f ()
-        with exn ->
+        with exn0 ->
           let bt = Printexc.get_raw_backtrace () in
-          let exn =
-            Error.to_exn
-              (Error.create_s
-                 (Sexp.List
-                    [ Atom "invariant failed"
-                    ; sexp_of_exn exn
-                    ; Source_code_position.sexp_of_t here
-                    ; sexp_of_t t ]))
-          in
+          let exn = Violation (exn0, bt, here, sexp_of_t t) in
           Printexc.raise_with_backtrace exn bt ) ;
       true )
 end

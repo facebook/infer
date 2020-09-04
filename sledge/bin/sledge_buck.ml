@@ -190,7 +190,7 @@ let ( |**> ) = Command.Param.map2 ~f:(fun a f b -> f b a)
 let abs_path_arg =
   Command.Param.(Arg_type.map string ~f:(make_absolute cwd))
 
-let main ~(command : unit Command.basic_command) ~analyze =
+let main ~(command : Report.status Command.basic_command) ~analyze =
   let bitcode_inputs =
     let%map_open target = anon ("<target>" %: string)
     and modules =
@@ -214,7 +214,7 @@ let main ~(command : unit Command.basic_command) ~analyze =
     let readme () =
       "Build a buck target and report the included bitcode files."
     in
-    let param = bitcode_inputs >>| fun _ () -> () in
+    let param = bitcode_inputs >>| fun _ () -> Report.Ok in
     command ~summary ~readme param
   in
   let analyze_cmd =
@@ -242,7 +242,7 @@ let main ~(command : unit Command.basic_command) ~analyze =
       in
       fun () -> llvm_link_opt ~fuzzer ~bitcode_output
     in
-    let param = bitcode_inputs |**> link in
+    let param = bitcode_inputs |**> link >>| fun _ () -> Report.Ok in
     command ~summary ~readme param
   in
   let summary = "integration with Buck" in

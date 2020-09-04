@@ -33,40 +33,45 @@ let command ~summary ?readme param =
       flag "trace" ~doc:"<spec> enable debug tracing"
         (optional_with_default Trace.none
            (Arg_type.create (fun s -> Trace.parse s |> Result.ok_exn)))
+    and colors = flag "colors" no_arg ~doc:"enable printing in colors"
     and margin =
       flag "margin" ~doc:"<cols> wrap debug tracing at <cols> columns"
         (optional int)
-    and colors = flag "colors" no_arg ~doc:"enable printing in colors" in
-    Trace.init ~colors ?margin ~config ()
+    and report =
+      flag "report" (optional string)
+        ~doc:
+          "<file> write report sexp to <file>, or to standard error if \
+           \"-\""
+    and append_report =
+      flag "append-report" no_arg ~doc:"append to report file"
+    in
+    Trace.init ~colors ?margin ~config () ;
+    Option.iter ~f:(Report.init ~append:append_report) report
   in
-  let wrap main () =
-    try
-      main () |> ignore ;
-      Trace.flush () ;
-      Format.printf "@\nRESULT: Success: Invalid Accesses: %i@."
-        (Report.invalid_access_count ())
-    with
-    | Smtlib.Unsound ->
-        Trace.flush () ;
-        Format.printf "@\nRESULT: Unsound@."
-    | Smtlib.Incomplete ->
-        Trace.flush () ;
-        Format.printf "@\nRESULT: Incomplete@."
-    | exn ->
-        let bt = Printexc.get_raw_backtrace () in
-        Trace.flush () ;
-        ( match exn with
-        | Frontend.Invalid_llvm msg ->
-            Format.printf "@\nRESULT: Invalid input: %s@." msg
-        | Unimplemented msg ->
-            Format.printf "@\nRESULT: Unimplemented: %s@." msg
-        | Failure msg -> Format.printf "@\nRESULT: Internal error: %s@." msg
-        | _ ->
-            Format.printf "@\nRESULT: Unknown error: %s@."
-              (Printexc.to_string exn) ) ;
-        Printexc.raise_with_backtrace exn bt
+  let flush main () = Fun.protect main ~finally:Trace.flush in
+  let report main () =
+    try main () |> Report.status
+    with exn ->
+      let bt =
+        match exn with
+        | Invariant.Violation (_, bt, _, _) -> bt
+        | Replay (_, bt, _) -> bt
+        | _ -> Printexc.get_raw_backtrace ()
+      in
+      let rec status_of_exn = function
+        | Invariant.Violation (exn, _, _, _) | Replay (exn, _, _) ->
+            status_of_exn exn
+        | Frontend.Invalid_llvm msg -> Report.InvalidInput msg
+        | Unimplemented msg -> Report.Unimplemented msg
+        | Assert_failure _ as exn ->
+            Report.InternalError (Sexp.to_string_hum (sexp_of_exn exn))
+        | Failure msg -> Report.InternalError msg
+        | exn -> Report.UnknownError (Printexc.to_string exn)
+      in
+      Report.status (status_of_exn exn) ;
+      Printexc.raise_with_backtrace exn bt
   in
-  Command.basic ~summary ?readme (trace *> param >>| wrap)
+  Command.basic ~summary ?readme (trace *> param >>| flush >>| report)
 
 let marshal program file =
   Out_channel.with_file file ~f:(fun oc -> Marshal.to_channel oc program [])
@@ -133,7 +138,8 @@ let analyze =
     let skip_throw = not exceptions in
     Domain_sh.simplify_states := not no_simplify_states ;
     Timer.enabled := stats ;
-    exec {bound; skip_throw; function_summaries; entry_points; globals} pgm
+    exec {bound; skip_throw; function_summaries; entry_points; globals} pgm ;
+    Report.safe_or_unsafe ()
 
 let analyze_cmd =
   let summary = "analyze LLAIR code" in
@@ -155,12 +161,13 @@ let disassemble =
   in
   fun program () ->
     let pgm = program () in
-    match llair_txt_output with
+    ( match llair_txt_output with
     | None -> Format.printf "%a@." Llair.Program.pp pgm
     | Some file ->
         Out_channel.with_file file ~f:(fun oc ->
             let fs = Format.formatter_of_out_channel oc in
-            Format.fprintf fs "%a@." Llair.Program.pp pgm )
+            Format.fprintf fs "%a@." Llair.Program.pp pgm ) ) ;
+    Report.Ok
 
 let disassemble_cmd =
   let summary = "print LLAIR code in textual form" in
@@ -219,7 +226,7 @@ let llvm_grp =
        textual (.ll) form; or of the form @<argsfile>, where <argsfile> \
        names a file containing one <input> per line."
     in
-    let param = translate_inputs in
+    let param = translate_inputs >>| fun _ () -> Report.Ok in
     command ~summary ~readme param
   in
   let disassemble_cmd =

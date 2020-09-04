@@ -22,11 +22,10 @@ let unknown_call call =
         | _ -> () )
       call Llair.Term.pp call]
 
-let count = ref 0
-let invalid_access_count () = !count
+let invalid_access_count = ref 0
 
 let invalid_access fmt_thunk pp access loc =
-  Int.incr count ;
+  Int.incr invalid_access_count ;
   let rep fs =
     Format.fprintf fs "%a Invalid memory access@;<1 2>@[%a@]" Llair.Loc.pp
       (loc access) pp access
@@ -40,3 +39,94 @@ let invalid_access_inst fmt_thunk inst =
 
 let invalid_access_term fmt_thunk term =
   invalid_access fmt_thunk Llair.Term.pp term Llair.Term.loc
+
+type status =
+  | Safe
+  | Unsafe of int
+  | Ok
+  | Unsound
+  | Incomplete
+  | InvalidInput of string
+  | Unimplemented of string
+  | InternalError of string
+  | Timeout
+  | Memout
+  | Crash of string
+  | UnknownError of string
+[@@deriving compare, equal, sexp]
+
+let pp_status ppf stat =
+  let pf fmt = Format.fprintf ppf fmt in
+  match stat with
+  | Safe -> pf "Safe"
+  | Unsafe i -> pf "Unsafe: %i" i
+  | Ok -> pf "Ok"
+  | Unsound -> pf "Unsound"
+  | Incomplete -> pf "Incomplete"
+  | InvalidInput msg -> pf "Invalid input: %s" msg
+  | Unimplemented msg -> pf "Unimpemented: %s" msg
+  | InternalError msg -> pf "Internal error: %s" msg
+  | Timeout -> pf "Timeout"
+  | Memout -> pf "Memout"
+  | Crash msg -> pf "Crash: %s" msg
+  | UnknownError msg -> pf "Unknown error: %s" msg
+
+let safe_or_unsafe () =
+  if !invalid_access_count = 0 then Safe else Unsafe !invalid_access_count
+
+type gc_stats = {allocated: float; promoted: float; peak_size: float}
+[@@deriving sexp]
+
+type entry =
+  | ProcessTimes of float * Unix.process_times
+  | GcStats of gc_stats
+  | Status of status
+[@@deriving sexp]
+
+let process_times () =
+  let ptimes = Unix.times () in
+  let etime =
+    try Mtime.Span.to_s (Mtime_clock.elapsed ()) with Sys_error _ -> 0.
+  in
+  ProcessTimes (etime, ptimes)
+
+let gc_stats () =
+  let words_to_MB n = n /. float (Sys.word_size / 8) /. (1024. *. 1024.) in
+  let ctrl = Gc.get () in
+  let stat = Gc.quick_stat () in
+  let allocated =
+    words_to_MB (stat.minor_words +. stat.major_words -. stat.promoted_words)
+  in
+  let promoted = words_to_MB stat.promoted_words in
+  let peak_size =
+    words_to_MB (float (ctrl.minor_heap_size + stat.top_heap_words))
+  in
+  GcStats {allocated; promoted; peak_size}
+
+type t = {name: string; entry: entry} [@@deriving sexp]
+
+let chan = ref None
+let name = ref ""
+
+let output entry =
+  Option.iter !chan ~f:(fun chan ->
+      Out_channel.output_string chan
+        (Sexp.to_string (sexp_of_t {name= !name; entry})) ;
+      Out_channel.newline chan )
+
+let init ?append filename =
+  (chan :=
+     match filename with
+     | "" -> None
+     | "-" -> Some Out_channel.stderr
+     | _ -> Some (Out_channel.create ?append filename)) ;
+  name :=
+    Option.value
+      (Stdlib.Filename.chop_suffix_opt ~suffix:".sexp" filename)
+      ~default:filename ;
+  at_exit (fun () ->
+      output (process_times ()) ;
+      output (gc_stats ()) ;
+      Option.iter ~f:Out_channel.close_no_err !chan )
+
+let status s = output (Status s)

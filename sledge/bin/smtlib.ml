@@ -183,4 +183,9 @@ let process_stmt (stmt : Smt.Ast.statement) =
   | Stmt_exit -> ()
 
 let process filename =
-  List.iter ~f:process_stmt (Smt.parse_file_exn filename)
+  try
+    List.iter ~f:process_stmt (Smt.parse_file_exn filename) ;
+    Report.Ok
+  with
+  | Unsound -> Report.Unsound
+  | Incomplete -> Report.Incomplete
