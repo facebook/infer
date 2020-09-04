@@ -18,6 +18,7 @@ depends: [
   "ctypes-foreign"
   "dune" {build & >= "2.7"}
   "dune-build-info" {build}
+  "iter"
   "llvm" {= "8.0.0"}
   "ppx_compare"
   "ppx_hash"

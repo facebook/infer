@@ -22,6 +22,9 @@ include (
            and type -'a return := 'a Core.return
     end )
 
+module Iter = Iter
+include Iter.Import
+
 external ( == ) : 'a -> 'a -> bool = "%eq"
 external ( != ) : 'a -> 'a -> bool = "%noteq"
 
