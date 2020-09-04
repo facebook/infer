@@ -1574,24 +1574,34 @@ module Context = struct
   (* Replay debugging *)
 
   type call =
-    | Normalize of t * exp
     | Add of Var.Set.t * fml * t
     | Union of Var.Set.t * t * t
+    | Inter of Var.Set.t * t * t
     | InterN of Var.Set.t * t list
     | Rename of t * Var.Subst.t
+    | Is_unsat of t
+    | Implies of t * fml
+    | Refutes of t * fml
+    | Normalize of t * exp
     | Apply_subst of Var.Set.t * Subst.t * t
     | Solve_for_vars of Var.Set.t list * t
+    | Elim of Var.Set.t * t
   [@@deriving sexp]
 
   let replay c =
     match call_of_sexp (Sexp.of_string c) with
-    | Normalize (r, e) -> normalize r e |> ignore
     | Add (us, e, r) -> add us e r |> ignore
     | Union (us, r, s) -> union us r s |> ignore
+    | Inter (us, r, s) -> inter us r s |> ignore
     | InterN (us, rs) -> interN us rs |> ignore
     | Rename (r, s) -> rename r s |> ignore
+    | Is_unsat r -> is_unsat r |> ignore
+    | Implies (r, f) -> implies r f |> ignore
+    | Refutes (r, f) -> refutes r f |> ignore
+    | Normalize (r, e) -> normalize r e |> ignore
     | Apply_subst (us, s, r) -> apply_subst us s r |> ignore
     | Solve_for_vars (vss, r) -> solve_for_vars vss r |> ignore
+    | Elim (ks, r) -> elim ks r |> ignore
 
   (* Debug wrappers *)
 
@@ -1617,28 +1627,45 @@ module Context = struct
     else
       try f () with exn -> raise_s ([%sexp_of: exn * call] (exn, call ()))
 
-  let normalize_tmr = Timer.create "normalize" ~at_exit:report
   let add_tmr = Timer.create "add" ~at_exit:report
-  let uniontmr = Timer.create "union" ~at_exit:report
+  let union_tmr = Timer.create "union" ~at_exit:report
+  let inter_tmr = Timer.create "inter" ~at_exit:report
   let interN_tmr = Timer.create "interN" ~at_exit:report
   let rename_tmr = Timer.create "rename" ~at_exit:report
+  let is_unsat_tmr = Timer.create "is_unsat" ~at_exit:report
+  let implies_tmr = Timer.create "implies" ~at_exit:report
+  let refutes_tmr = Timer.create "refutes" ~at_exit:report
+  let normalize_tmr = Timer.create "normalize" ~at_exit:report
   let apply_subst_tmr = Timer.create "apply_subst" ~at_exit:report
   let solve_for_vars_tmr = Timer.create "solve_for_vars" ~at_exit:report
-
-  let normalize r e =
-    wrap normalize_tmr (fun () -> normalize r e) (fun () -> Normalize (r, e))
+  let elim_tmr = Timer.create "elim" ~at_exit:report
 
   let add us e r =
     wrap add_tmr (fun () -> add us e r) (fun () -> Add (us, e, r))
 
   let union us r s =
-    wrap uniontmr (fun () -> union us r s) (fun () -> Union (us, r, s))
+    wrap union_tmr (fun () -> union us r s) (fun () -> Union (us, r, s))
+
+  let inter us r s =
+    wrap inter_tmr (fun () -> inter us r s) (fun () -> Inter (us, r, s))
 
   let interN us rs =
     wrap interN_tmr (fun () -> interN us rs) (fun () -> InterN (us, rs))
 
   let rename r s =
     wrap rename_tmr (fun () -> rename r s) (fun () -> Rename (r, s))
+
+  let is_unsat r =
+    wrap is_unsat_tmr (fun () -> is_unsat r) (fun () -> Is_unsat r)
+
+  let implies r f =
+    wrap implies_tmr (fun () -> implies r f) (fun () -> Implies (r, f))
+
+  let refutes r f =
+    wrap refutes_tmr (fun () -> refutes r f) (fun () -> Refutes (r, f))
+
+  let normalize r e =
+    wrap normalize_tmr (fun () -> normalize r e) (fun () -> Normalize (r, e))
 
   let apply_subst us s r =
     wrap apply_subst_tmr
@@ -1649,6 +1676,9 @@ module Context = struct
     wrap solve_for_vars_tmr
       (fun () -> solve_for_vars vss r)
       (fun () -> Solve_for_vars (vss, r))
+
+  let elim ks r =
+    wrap elim_tmr (fun () -> elim ks r) (fun () -> Elim (ks, r))
 end
 
 (*
