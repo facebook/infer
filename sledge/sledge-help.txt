@@ -6,18 +6,19 @@ The [-trace <spec>] argument of each subcommand enables debug tracing according 
 
 === subcommands ===
 
-  buck         integration with Buck
-  . analyze    analyze buck target
-  . bitcode    report bitcode files in buck target
-  . link       link buck target to LLVM bitcode
-  llvm         integration with LLVM
-  . analyze    analyze LLVM bitcode
-  . translate  translate LLVM bitcode to LLAIR
-  analyze      analyze LLAIR code
-  disassemble  print LLAIR code in textual form
-  smt          process SMT-LIB benchmarks
-  version      print version information
-  help         explain a given subcommand (perhaps recursively)
+  buck           integration with Buck
+  . analyze      analyze buck target
+  . bitcode      report bitcode files in buck target
+  . link         link buck target to LLVM bitcode
+  llvm           integration with LLVM
+  . analyze      analyze LLVM bitcode
+  . translate    translate LLVM bitcode to LLAIR
+  . disassemble  translate LLVM bitcode to LLAIR and print in textual form
+  analyze        analyze LLAIR code
+  disassemble    print LLAIR code in textual form
+  smt            process SMT-LIB benchmarks
+  version        print version information
+  help           explain a given subcommand (perhaps recursively)
 
 
 ====== sledge buck ======
@@ -120,9 +121,10 @@ Code can be provided by one or more LLVM bitcode files.
 
 === subcommands ===
 
-  analyze    analyze LLVM bitcode
-  translate  translate LLVM bitcode to LLAIR
-  help       explain a given subcommand (perhaps recursively)
+  analyze      analyze LLVM bitcode
+  translate    translate LLVM bitcode to LLAIR
+  disassemble  translate LLVM bitcode to LLAIR and print in textual form
+  help         explain a given subcommand (perhaps recursively)
 
 
 ====== sledge llvm analyze ======
@@ -178,6 +180,31 @@ Translate one or more LLVM bitcode files to LLAIR. Each <input> filename may be 
   [-trace <spec>]         enable debug tracing
   [-help]                 print this help text and exit
                           (alias: -?)
+
+
+====== sledge llvm disassemble ======
+
+translate LLVM bitcode to LLAIR and print in textual form
+
+  sledge llvm disassemble <input> [<input> ...]
+
+The <input> file must be LLVM bitcode.
+
+=== flags ===
+
+  [-colors]                   enable printing in colors
+  [-fuzzer]                   add a harness for libFuzzer targets
+  [-llair-output <file>]      write generated LLAIR to <file>
+  [-llair-txt-output <file>]  write generated textual LLAIR to <file>, or to
+                              standard output if omitted
+  [-margin <cols>]            wrap debug tracing at <cols> columns
+  [-no-internalize]           do not internalize all functions except the entry
+                              points specified in the config file
+  [-no-models]                do not add models for C/C++ runtime and standard
+                              libraries
+  [-trace <spec>]             enable debug tracing
+  [-help]                     print this help text and exit
+                              (alias: -?)
 
 
 ====== sledge analyze ======

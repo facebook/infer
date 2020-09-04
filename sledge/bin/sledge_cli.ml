@@ -146,6 +146,33 @@ let analyze_cmd =
   in
   command ~summary ~readme param
 
+let disassemble =
+  let%map_open llair_txt_output =
+    flag "llair-txt-output" (optional string)
+      ~doc:
+        "<file> write generated textual LLAIR to <file>, or to standard \
+         output if omitted"
+  in
+  fun program () ->
+    let pgm = program () in
+    match llair_txt_output with
+    | None -> Format.printf "%a@." Llair.Program.pp pgm
+    | Some file ->
+        Out_channel.with_file file ~f:(fun oc ->
+            let fs = Format.formatter_of_out_channel oc in
+            Format.fprintf fs "%a@." Llair.Program.pp pgm )
+
+let disassemble_cmd =
+  let summary = "print LLAIR code in textual form" in
+  let readme () =
+    "The <input> file must be LLAIR code, as produced by `sledge llvm \
+     translate`."
+  in
+  let param =
+    Command.Param.(anon ("<input>" %: string) >>| unmarshal |*> disassemble)
+  in
+  command ~summary ~readme param
+
 let translate =
   let%map_open llair_output =
     flag "llair-output" (optional string)
@@ -195,6 +222,14 @@ let llvm_grp =
     let param = translate_inputs in
     command ~summary ~readme param
   in
+  let disassemble_cmd =
+    let summary =
+      "translate LLVM bitcode to LLAIR and print in textual form"
+    in
+    let readme () = "The <input> file must be LLVM bitcode." in
+    let param = translate_inputs |*> disassemble in
+    command ~summary ~readme param
+  in
   let analyze_cmd =
     let summary = "analyze LLVM bitcode" in
     let readme () =
@@ -210,32 +245,9 @@ let llvm_grp =
     "Code can be provided by one or more LLVM bitcode files."
   in
   Command.group ~summary ~readme ~preserve_subcommand_order:()
-    [("analyze", analyze_cmd); ("translate", translate_cmd)]
-
-let disassemble_cmd =
-  let summary = "print LLAIR code in textual form" in
-  let readme () =
-    "The <input> file must be LLAIR code, as produced by `sledge llvm \
-     translate`."
-  in
-  let param =
-    let%map_open input = anon ("<input>" %: string)
-    and llair_txt_output =
-      flag "llair-txt-output" (optional string)
-        ~doc:
-          "<file> write generated textual LLAIR to <file>, or to standard \
-           output if omitted"
-    in
-    fun () ->
-      let program = unmarshal input () in
-      match llair_txt_output with
-      | None -> Format.printf "%a@." Llair.Program.pp program
-      | Some file ->
-          Out_channel.with_file file ~f:(fun oc ->
-              let fs = Format.formatter_of_out_channel oc in
-              Format.fprintf fs "%a@." Llair.Program.pp program )
-  in
-  command ~summary ~readme param
+    [ ("analyze", analyze_cmd)
+    ; ("translate", translate_cmd)
+    ; ("disassemble", disassemble_cmd) ]
 
 let smt_cmd =
   let summary = "process SMT-LIB benchmarks" in
