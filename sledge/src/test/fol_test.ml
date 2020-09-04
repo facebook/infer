@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Sledge
+
 let%test_module _ =
   ( module struct
     open Fol
@@ -123,6 +125,7 @@ let%test_module _ =
       pp_raw r1 ;
       [%expect
         {|
+
         %x_5 = %y_6
 
       {sat= true; rep= [[%x_5 ↦ ]; [%y_6 ↦ %x_5]; [-1 ↦ ]; [0 ↦ ]]} |}]

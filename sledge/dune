@@ -70,6 +70,17 @@
   (inline_tests)))
 
 (subdir
+ src/test
+ (library
+  (name test)
+  (libraries sledge)
+  (flags
+   (:standard -open NS))
+  (preprocess
+   (pps ppx_sledge ppx_trace))
+  (inline_tests)))
+
+(subdir
  model
  (rule
   (targets cxxabi.bc)

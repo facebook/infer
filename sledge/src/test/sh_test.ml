@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Sledge
 open Fol
 
 let%test_module _ =
@@ -60,11 +61,11 @@ let%test_module _ =
       pp (star p q) ;
       [%expect
         {|
-        ∃ %x_6 .   emp
-    
-          0 = %x_6 ∧ emp
-    
-          0 = %x_6 ∧ emp |}]
+          ∃ %x_6 .   emp
+
+            0 = %x_6 ∧ emp
+
+            0 = %x_6 ∧ emp |}]
 
     let%expect_test _ =
       let q =

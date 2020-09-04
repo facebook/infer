@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Ses
+
 let%test_module _ =
   ( module struct
     open Equality
