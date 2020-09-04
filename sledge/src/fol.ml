@@ -290,12 +290,42 @@ end = struct
 
   type equal_or_opposite = Equal | Opposite | Unknown
 
-  let rec equal_or_opposite p q : equal_or_opposite =
-    if equal_fml p q then Equal
-    else if equal_fml p (_Not q) then Opposite
-    else Unknown
+  let rec equal_or_opposite p q =
+    match (p, q) with
+    | Tt, Ff | Ff, Tt -> Opposite
+    | Eq (a, b), Dq (a', b') | Dq (a, b), Eq (a', b') ->
+        if equal_trm a a' && equal_trm b b' then Opposite else Unknown
+    | Eq0 a, Dq0 a'
+     |Dq0 a, Eq0 a'
+     |Gt0 a, Le0 a'
+     |Ge0 a, Lt0 a'
+     |Lt0 a, Ge0 a'
+     |Le0 a, Gt0 a' ->
+        if equal_trm a a' then Opposite else Unknown
+    | And (a, b), Or (a', b') | Or (a', b'), And (a, b) -> (
+      match equal_or_opposite a a' with
+      | Opposite -> (
+        match equal_or_opposite b b' with
+        | Opposite -> Opposite
+        | _ -> Unknown )
+      | _ -> Unknown )
+    | Iff (p, q), Xor (p', q') | Xor (p, q), Iff (p', q') ->
+        if equal_fml p p' && equal_fml q q' then Opposite else Unknown
+    | Cond {cnd= c; pos= p; neg= n}, Cond {cnd= c'; pos= p'; neg= n'} ->
+        if equal_fml c c' then
+          match equal_or_opposite p p' with
+          | Opposite -> (
+            match equal_or_opposite n n' with
+            | Opposite -> Opposite
+            | _ -> Unknown )
+          | Equal -> if equal_fml n n' then Equal else Unknown
+          | Unknown -> Unknown
+        else Unknown
+    | UPosLit (p, x), UNegLit (p', x') | UNegLit (p, x), UPosLit (p', x') ->
+        if Predsym.equal p p' && equal_trm x x' then Opposite else Unknown
+    | _ -> if equal_fml p q then Equal else Unknown
 
-  and _And p q =
+  let _And p q =
     match (p, q) with
     | Tt, p | p, Tt -> p
     | Ff, _ | _, Ff -> Ff
@@ -307,7 +337,7 @@ end = struct
           let p, q = sort_fml p q in
           And (p, q) )
 
-  and _Or p q =
+  let _Or p q =
     match (p, q) with
     | Ff, p | p, Ff -> p
     | Tt, _ | _, Tt -> Tt
@@ -319,7 +349,7 @@ end = struct
           let p, q = sort_fml p q in
           Or (p, q) )
 
-  and _Iff p q =
+  let rec _Iff p q =
     match (p, q) with
     | Tt, p | p, Tt -> p
     | Ff, p | p, Ff -> _Not p
