@@ -43,11 +43,9 @@ val append_buck_flavors : string list
 
 val assign : string
 
-val biabduction_models_dir : string
+val biabduction_models_sql : string
 
 val biabduction_models_jar : string
-
-val biabduction_models_src_dir : string
 
 val bin_dir : string
 
@@ -133,8 +131,6 @@ val kotlin_source_extension : string
 val sourcepath : string option
 
 val sources : string list
-
-val specs_files_suffix : string
 
 val trace_absarray : bool
 

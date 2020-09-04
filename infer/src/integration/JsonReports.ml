@@ -158,13 +158,12 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
       L.(die InternalError)
         "Invalid source file for %a %a@.Trace: %a@." IssueType.pp err_key.issue_type
         Localise.pp_error_desc err_key.err_desc Errlog.pp_loc_trace err_data.loc_trace ;
-    let should_report_source_file =
-      (not (SourceFile.is_biabduction_model source_file))
-      || Config.debug_mode || Config.debug_exceptions
+    let should_report_proc_name =
+      Config.debug_mode || Config.debug_exceptions || not (BiabductionModels.mem proc_name)
     in
     if
       error_filter source_file err_key.issue_type
-      && should_report_source_file
+      && should_report_proc_name
       && should_report err_key.issue_type err_key.err_desc
     then
       let severity = IssueType.string_of_severity err_key.severity in

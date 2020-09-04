@@ -432,7 +432,7 @@ clang_plugin_test_replace: clang_setup
 	)
 
 .PHONY: ocaml_unit_test
-ocaml_unit_test: src_build_common
+ocaml_unit_test: src_build_common infer_models
 	$(QUIET)$(call silent_on_success,Running OCaml unit tests,\
 	$(MAKE_SOURCE) unit)
 
@@ -639,8 +639,6 @@ endif
 	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/annotations/'
 	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/wrappers/' || \
 	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/lib/wrappers/'
-	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/specs/' || \
-	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/lib/specs/'
 	test -d      '$(DESTDIR)$(libdir)/infer/infer/bin/' || \
 	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/bin/'
 # copy files
@@ -661,8 +659,8 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 	  [ $(cc) -ef '$(INFER_BIN)' ] && \
 	  $(REMOVE) '$(notdir $(cc))' && \
 	  $(LN_S) ../../bin/infer '$(notdir $(cc))';))
-	find infer/lib/specs/* -print0 | xargs -0 -I \{\} \
-	  $(INSTALL_DATA) -C \{\} '$(DESTDIR)$(libdir)'/infer/\{\}
+	$(INSTALL_DATA) -C          'infer/lib/models.sql' \
+	  '$(DESTDIR)$(libdir)/infer/infer/lib/models.sql'
 	$(INSTALL_DATA) -C          'infer/lib/linter_rules/linters.al' \
 	  '$(DESTDIR)$(libdir)/infer/infer/lib/linter_rules/linters.al'
 	$(INSTALL_DATA) -C          'infer/etc/clang_ast.dict' \

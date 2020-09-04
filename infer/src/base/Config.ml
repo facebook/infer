@@ -188,8 +188,6 @@ let source_file_extentions = [".java"; ".m"; ".mm"; ".c"; ".cc"; ".cpp"; ".h"]
 
 let kotlin_source_extension = ".kt"
 
-let specs_files_suffix = ".specs"
-
 (** Enable detailed tracing information during array abstraction *)
 let trace_absarray = false
 
@@ -330,16 +328,10 @@ let lib_dir = bin_dir ^/ Filename.parent_dir_name ^/ "lib"
 
 let etc_dir = bin_dir ^/ Filename.parent_dir_name ^/ "etc"
 
-(** Path to lib/specs to retrieve the default models *)
-let biabduction_models_dir = lib_dir ^/ "specs"
+(** Path to the database dump with model summaries *)
+let biabduction_models_sql = lib_dir ^/ "models.sql"
 
 let biabduction_models_jar = lib_dir ^/ "java" ^/ "models.jar"
-
-let biabduction_models_src_dir =
-  let root = Unix.getcwd () in
-  let dir = bin_dir ^/ Filename.parent_dir_name ^/ "models" in
-  Utils.filename_to_absolute ~root dir
-
 
 (* Normalize the path *)
 

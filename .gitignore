@@ -118,6 +118,7 @@ buck-out/
 /infer/models/java/models/
 /infer/models/models.jar
 /infer/lib/java/models.jar
+/infer/lib/models.sql
 /infer/models/java/bootclasspath
 /infer/models/c/out/
 /infer/models/cpp/out/
