@@ -15,7 +15,8 @@ let procedures_schema prefix =
   Printf.sprintf
     {|
       CREATE TABLE IF NOT EXISTS %sprocedures
-        ( proc_name BLOB PRIMARY KEY NOT NULL
+        ( proc_uid TEXT PRIMARY KEY NOT NULL
+        , proc_name BLOB NOT NULL
         , proc_name_hum TEXT
         , attr_kind INTEGER NOT NULL
         , source_file TEXT NOT NULL
@@ -44,7 +45,8 @@ let specs_schema prefix =
   Printf.sprintf
     {|
       CREATE TABLE IF NOT EXISTS %sspecs
-        ( proc_name BLOB PRIMARY KEY NOT NULL
+        ( proc_uid TEXT PRIMARY KEY NOT NULL
+        , proc_name BLOB NOT NULL
         , analysis_summary BLOB NOT NULL
         , report_summary BLOB NOT NULL
         )

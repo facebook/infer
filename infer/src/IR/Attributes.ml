@@ -34,16 +34,17 @@ let should_try_to_update =
       {|
         SELECT attr_kind
         FROM procedures
-        WHERE proc_name = :pname
+        WHERE proc_uid = :uid
               AND attr_kind > :akind
       |}
   in
-  fun pname_blob akind ->
+  fun proc_uid attr_kind ->
     ResultsDatabase.with_registered_statement find_more_defined_statement ~f:(fun db find_stmt ->
-        Sqlite3.bind find_stmt 1 (* :pname *) pname_blob
-        |> SqliteUtils.check_result_code db ~log:"replace bind pname" ;
-        Sqlite3.bind find_stmt 2 (* :akind *) (Sqlite3.Data.INT (int64_of_attributes_kind akind))
-        |> SqliteUtils.check_result_code db ~log:"replace bind attribute kind" ;
+        Sqlite3.bind find_stmt 1 (* uid *) (Sqlite3.Data.TEXT proc_uid)
+        |> SqliteUtils.check_result_code db ~log:"should update bind pname_uid" ;
+        Sqlite3.bind find_stmt 2
+          (* :akind *) (Sqlite3.Data.INT (int64_of_attributes_kind attr_kind))
+        |> SqliteUtils.check_result_code db ~log:"should update bind attribute kind" ;
         SqliteUtils.result_single_column_option ~finalize:false ~log:"Attributes.replace" db
           find_stmt
         |> (* there is no entry with a strictly larger "definedness" for that proc name *)
@@ -52,35 +53,36 @@ let should_try_to_update =
 
 let find =
   let select_statement =
-    ResultsDatabase.register_statement "SELECT proc_attributes FROM procedures WHERE proc_name = :k"
+    ResultsDatabase.register_statement "SELECT proc_attributes FROM procedures WHERE proc_uid = :k"
   in
-  fun pname_blob ->
+  fun proc_uid ->
     ResultsDatabase.with_registered_statement select_statement ~f:(fun db select_stmt ->
-        Sqlite3.bind select_stmt 1 pname_blob
+        Sqlite3.bind select_stmt 1 (Sqlite3.Data.TEXT proc_uid)
         |> SqliteUtils.check_result_code db ~log:"find bind proc name" ;
         SqliteUtils.result_single_column_option ~finalize:false ~log:"Attributes.find" db
           select_stmt
         |> Option.map ~f:ProcAttributes.SQLite.deserialize )
 
 
-let load pname = find (Procname.SQLite.serialize pname)
+let load pname = find (Procname.to_unique_id pname)
 
 let store ~proc_desc (attr : ProcAttributes.t) =
+  let pname = attr.proc_name in
   let akind = proc_kind_of_attr attr in
-  let key = Procname.SQLite.serialize attr.proc_name in
-  if should_try_to_update key akind then
-    let source_file_blob = SourceFile.SQLite.serialize attr.loc.Location.file in
-    let attributes_blob = ProcAttributes.SQLite.serialize attr in
-    let pname_str = Procname.to_string attr.proc_name in
-    let akind_int64 = int64_of_attributes_kind akind in
-    let proc_desc_blob = Procdesc.SQLite.serialize proc_desc in
-    let callees_blob =
+  let proc_uid = Procname.to_unique_id pname in
+  if should_try_to_update proc_uid akind then
+    let proc_name = Procname.SQLite.serialize pname in
+    let proc_name_hum = Procname.to_string pname in
+    let attr_kind = int64_of_attributes_kind akind in
+    let cfg = Procdesc.SQLite.serialize proc_desc in
+    let proc_attributes = ProcAttributes.SQLite.serialize attr in
+    let source_file = SourceFile.SQLite.serialize attr.loc.Location.file in
+    let callees =
       Option.map proc_desc ~f:Procdesc.get_static_callees
       |> Option.value ~default:[] |> Procname.SQLiteList.serialize
     in
-    DBWriter.replace_attributes ~pname_str ~pname:key ~akind:akind_int64
-      ~source_file:source_file_blob ~attributes:attributes_blob ~proc_desc:proc_desc_blob
-      ~callees:callees_blob
+    DBWriter.replace_attributes ~proc_uid ~proc_name ~proc_name_hum ~attr_kind ~source_file
+      ~proc_attributes ~cfg ~callees
 
 
 let find_file_capturing_procedure pname =

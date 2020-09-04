@@ -12,12 +12,13 @@ val use_daemon : bool
 (** indicates that there should be a daemon running *)
 
 val replace_attributes :
-     pname_str:string
-  -> pname:Sqlite3.Data.t
-  -> akind:int64
+     proc_uid:string
+  -> proc_name:Sqlite3.Data.t
+  -> proc_name_hum:string
+  -> attr_kind:int64
   -> source_file:Sqlite3.Data.t
-  -> attributes:Sqlite3.Data.t
-  -> proc_desc:Sqlite3.Data.t
+  -> proc_attributes:Sqlite3.Data.t
+  -> cfg:Sqlite3.Data.t
   -> callees:Sqlite3.Data.t
   -> unit
 
@@ -42,11 +43,12 @@ val start : unit -> unit
 val stop : unit -> unit
 
 val store_spec :
-     proc_name:Sqlite3.Data.t
+     proc_uid:string
+  -> proc_name:Sqlite3.Data.t
   -> analysis_summary:Sqlite3.Data.t
   -> report_summary:Sqlite3.Data.t
   -> unit
 
-val delete_spec : proc_name:Sqlite3.Data.t -> unit
+val delete_spec : proc_uid:string -> unit
 
 val delete_all_specs : unit -> unit

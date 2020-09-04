@@ -221,13 +221,13 @@ module OnDisk = struct
   let spec_of_procname =
     let load_statement =
       ResultsDatabase.register_statement
-        "SELECT analysis_summary, report_summary FROM specs WHERE proc_name = :k"
+        "SELECT analysis_summary, report_summary FROM specs WHERE proc_uid = :k"
     in
     fun proc_name ->
-      ResultsDatabase.with_registered_statement load_statement ~f:(fun db load_stmt ->
-          Sqlite3.bind load_stmt 1 (Procname.SQLite.serialize proc_name)
-          |> SqliteUtils.check_result_code db ~log:"load proc specs bind proc_name" ;
-          SqliteUtils.result_option ~finalize:false db ~log:"load proc specs run" load_stmt
+      ResultsDatabase.with_registered_statement load_statement ~f:(fun db stmt ->
+          Sqlite3.bind stmt 1 (Sqlite3.Data.TEXT (Procname.to_unique_id proc_name))
+          |> SqliteUtils.check_result_code db ~log:"load proc specs bind proc_uid" ;
+          SqliteUtils.result_option ~finalize:false db ~log:"load proc specs run" stmt
             ~read_row:(fun stmt ->
               let analysis_summary = Sqlite3.column stmt 0 |> AnalysisSummary.SQLite.deserialize in
               let report_summary = Sqlite3.column stmt 1 |> ReportSummary.SQLite.deserialize in
@@ -279,7 +279,7 @@ module OnDisk = struct
     else
       let analysis_summary = AnalysisSummary.of_full_summary summary in
       let report_summary = ReportSummary.of_full_summary summary in
-      DBWriter.store_spec
+      DBWriter.store_spec ~proc_uid:(Procname.to_unique_id proc_name)
         ~proc_name:(Procname.SQLite.serialize proc_name)
         ~analysis_summary:(AnalysisSummary.SQLite.serialize analysis_summary)
         ~report_summary:(ReportSummary.SQLite.serialize report_summary)
@@ -317,7 +317,7 @@ module OnDisk = struct
       let filename = specs_filename_of_procname pname |> DB.filename_to_string in
       (* Unix_error is raised if the file isn't present so do nothing in this case *)
       try Unix.unlink filename with Unix.Unix_error _ -> ()
-    else DBWriter.delete_spec ~proc_name:(Procname.SQLite.serialize pname)
+    else DBWriter.delete_spec ~proc_uid:(Procname.to_unique_id pname)
 
 
   let iter_filtered_specs ~filter ~f =
@@ -325,7 +325,7 @@ module OnDisk = struct
     let dummy_source_file = SourceFile.invalid __FILE__ in
     (* NB the order is deterministic, but it is over a serialised value, so it is arbitrary *)
     Sqlite3.prepare db
-      "SELECT proc_name, analysis_summary, report_summary FROM specs ORDER BY proc_name ASC"
+      "SELECT proc_name, analysis_summary, report_summary FROM specs ORDER BY proc_uid ASC"
     |> Container.iter ~fold:(SqliteUtils.result_fold_rows db ~log:"iter over filtered specs")
          ~f:(fun stmt ->
            let proc_name = Sqlite3.column stmt 0 |> Procname.SQLite.deserialize in
@@ -340,7 +340,7 @@ module OnDisk = struct
     let db = ResultsDatabase.get_database () in
     let dummy_source_file = SourceFile.invalid __FILE__ in
     (* NB the order is deterministic, but it is over a serialised value, so it is arbitrary *)
-    Sqlite3.prepare db "SELECT proc_name, report_summary FROM specs ORDER BY proc_name ASC"
+    Sqlite3.prepare db "SELECT proc_name, report_summary FROM specs ORDER BY proc_uid ASC"
     |> Container.iter ~fold:(SqliteUtils.result_fold_rows db ~log:"iter over filtered specs")
          ~f:(fun stmt ->
            let proc_name = Sqlite3.column stmt 0 |> Procname.SQLite.deserialize in
