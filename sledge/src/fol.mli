@@ -227,14 +227,14 @@ module Context : sig
   (** Holds only if a formula is inconsistent with a context of assumptions,
       that is, conjoining the formula to the assumptions is unsatisfiable. *)
 
-  val class_of : t -> Term.t -> Term.t list
-  (** Equivalence class of [e]: all the terms [f] in the context such that
-      [e = f] is implied by the assumptions. *)
-
   val normalize : t -> Term.t -> Term.t
   (** Normalize a term [e] to [e'] such that [e = e'] is implied by the
       assumptions, where [e'] and its subterms are expressed in terms of the
       canonical representatives of each equivalence class. *)
+
+  val class_of : t -> Term.t -> Term.t list
+  (** Equivalence class of [e]: all the terms [f] in the context such that
+      [e = f] is implied by the assumptions. *)
 
   val fold_vars : init:'a -> t -> f:('a -> Var.t -> 'a) -> 'a
   (** Enumerate the variables occurring in the terms of the context. *)

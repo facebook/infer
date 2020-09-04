@@ -1452,21 +1452,13 @@ module Context = struct
   type t = Ses.Equality.t [@@deriving sexp]
 
   let invariant = Ses.Equality.invariant
-  let empty = Ses.Equality.true_
 
-  let add vs f x =
-    let vs', x' = Ses.Equality.and_term (vs_to_ses vs) (f_to_ses f) x in
-    (vs_of_ses vs', x')
+  (* Query *)
 
-  let union vs x y =
-    let vs', z = Ses.Equality.and_ (vs_to_ses vs) x y in
-    (vs_of_ses vs', z)
+  let fold_vars ~init x ~f =
+    Ses.Equality.fold_vars x ~init ~f:(fun s v -> f s (v_of_ses v))
 
-  let interN vs xs =
-    let vs', z = Ses.Equality.orN (vs_to_ses vs) xs in
-    (vs_of_ses vs', z)
-
-  let rename x sub = Ses.Equality.rename x (v_map_ses (Var.Subst.apply sub))
+  let fv e = fold_vars e ~f:Var.Set.add ~init:Var.Set.empty
   let is_empty x = Ses.Equality.is_true x
   let is_unsat x = Ses.Equality.is_false x
   let implies x b = Ses.Equality.implies x (f_to_ses b)
@@ -1475,11 +1467,6 @@ module Context = struct
     Ses.Term.is_false (Ses.Equality.normalize x (f_to_ses b))
 
   let normalize x e = ses_map (Ses.Equality.normalize x) e
-
-  let fold_vars ~init x ~f =
-    Ses.Equality.fold_vars x ~init ~f:(fun s v -> f s (v_of_ses v))
-
-  let fv e = fold_vars e ~f:Var.Set.add ~init:Var.Set.empty
 
   (* Classes *)
 
@@ -1533,6 +1520,24 @@ module Context = struct
       (Formula.ppx var_strength)
       fs fml ~suf:"@]" ;
     first && List.is_empty fml
+
+  (* Construct *)
+
+  let empty = Ses.Equality.true_
+
+  let add vs f x =
+    let vs', x' = Ses.Equality.and_term (vs_to_ses vs) (f_to_ses f) x in
+    (vs_of_ses vs', x')
+
+  let union vs x y =
+    let vs', z = Ses.Equality.and_ (vs_to_ses vs) x y in
+    (vs_of_ses vs', z)
+
+  let interN vs xs =
+    let vs', z = Ses.Equality.orN (vs_to_ses vs) xs in
+    (vs_of_ses vs', z)
+
+  let rename x sub = Ses.Equality.rename x (v_map_ses (Var.Subst.apply sub))
 
   (* Substs *)
 
