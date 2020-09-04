@@ -287,6 +287,6 @@ let%test_module _ =
       infer_frame minuend [m_] subtrahend ;
       [%expect
         {|
-        ( infer_frame:   emp \- ∃ %m_8 .   %a_1 = %m_8 ∧ (%a_1 ≠ 0) ∧ emp
+        ( infer_frame:   emp \- ∃ %m_8 .   %a_1 = %m_8 ∧ (0 ≠ %a_1) ∧ emp
         ) infer_frame: |}]
   end )

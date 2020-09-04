@@ -95,10 +95,21 @@ let equal_trm x y =
       Int.equal i j
   | _ -> equal_trm x y
 
+let zero = Z Z.zero
+let one = Z Z.one
 let _Neg x = Neg x
-let _Add x y = Add (x, y)
+
+let _Add x y =
+  match (x, y) with
+  | _, Q q when Q.sign q = 0 -> x
+  | Q q, _ when Q.sign q = 0 -> y
+  | _ -> Add (x, y)
+
 let _Sub x y = Sub (x, y)
-let _Mulq q x = Mulq (q, x)
+
+let _Mulq q x =
+  if Q.equal Q.one q then x else if Q.sign q = 0 then zero else Mulq (q, x)
+
 let _Splat x = Splat x
 let _Sized seq siz = Sized {seq; siz}
 let _Extract seq off len = Extract {seq; off; len}
@@ -108,8 +119,6 @@ let _Update rcd idx elt = Update {rcd; idx; elt}
 let _Tuple es = Tuple es
 let _Project ary idx tup = Project {ary; idx; tup}
 let _Apply f a = Apply (f, a)
-let zero = Z Z.zero
-let one = Z Z.one
 
 (*
  * (Uninterpreted) Predicate Symbols
@@ -161,6 +170,7 @@ module Fml : sig
   val _Ge0 : trm -> fml
   val _Lt0 : trm -> fml
   val _Le0 : trm -> fml
+  val _Not : fml -> fml
   val _And : fml -> fml -> fml
   val _Or : fml -> fml -> fml
   val _Iff : fml -> fml -> fml
@@ -197,34 +207,165 @@ end = struct
 
   let _Tt = Tt
   let _Ff = Ff
-  let _Eq x y = if equal_trm x y then Tt else Eq (x, y)
-  let _Dq x y = Dq (x, y)
-  let _Eq0 x = Eq0 x
 
-  let _Dq0 = function
+  type equal_or_separate = Equal | Separate | Unknown
+
+  let equal_or_separate d e : equal_or_separate =
+    match (d, e) with
+    | Z y, Z z -> if Z.equal y z then Equal else Separate
+    | Q q, Q r -> if Q.equal q r then Equal else Separate
+    | Z z, Q q | Q q, Z z ->
+        if Q.equal (Q.of_z z) q then Equal else Separate
+    | _ -> if equal_trm d e then Equal else Unknown
+
+  let _Eq0 x =
+    match equal_or_separate zero x with
+    (* 0 = 0 ==> tt *)
+    | Equal -> Tt
+    (* 0 = N ==> ff for N ≢ 0 *)
+    | Separate -> Ff
+    | Unknown -> Eq0 x
+
+  let _Dq0 x =
+    match equal_or_separate zero x with
     (* 0 ≠ 0 ==> ff *)
-    | Z _ as z when z == zero -> Ff
+    | Equal -> Ff
     (* 0 ≠ N ==> tt for N ≢ 0 *)
-    | Z _ -> Tt
-    | t -> Dq0 t
+    | Separate -> Tt
+    | Unknown -> Dq0 x
 
-  let _Gt0 x = Gt0 x
-  let _Ge0 x = Ge0 x
-  let _Lt0 x = Lt0 x
-  let _Le0 x = Le0 x
-  let _And p q = And (p, q)
-  let _Or p q = Or (p, q)
-  let _Iff p q = Iff (p, q)
-  let _Xor p q = Xor (p, q)
+  let _Eq x y =
+    if x == zero then _Eq0 y
+    else if y == zero then _Eq0 x
+    else
+      match equal_or_separate x y with
+      | Equal -> Tt
+      | Separate -> Ff
+      | Unknown -> Eq (x, y)
 
-  let _Cond cnd pos neg =
-    match (pos, neg) with
-    (* (p ? tt : ff) ==> p *)
-    | Tt, Ff -> cnd
-    | _ -> Cond {cnd; pos; neg}
+  let _Dq x y =
+    if x == zero then _Dq0 y
+    else if y == zero then _Dq0 x
+    else
+      match equal_or_separate x y with
+      | Equal -> Ff
+      | Separate -> Tt
+      | Unknown -> Dq (x, y)
+
+  let _Gt0 = function
+    | Z z -> if Z.gt z Z.zero then Tt else Ff
+    | Q q -> if Q.gt q Q.zero then Tt else Ff
+    | x -> Gt0 x
+
+  let _Ge0 = function
+    | Z z -> if Z.geq z Z.zero then Tt else Ff
+    | Q q -> if Q.geq q Q.zero then Tt else Ff
+    | x -> Ge0 x
+
+  let _Lt0 = function
+    | Z z -> if Z.lt z Z.zero then Tt else Ff
+    | Q q -> if Q.lt q Q.zero then Tt else Ff
+    | x -> Lt0 x
+
+  let _Le0 = function
+    | Z z -> if Z.leq z Z.zero then Tt else Ff
+    | Q q -> if Q.leq q Q.zero then Tt else Ff
+    | x -> Le0 x
 
   let _UPosLit p x = UPosLit (p, x)
   let _UNegLit p x = UNegLit (p, x)
+
+  type equal_or_opposite = Equal | Opposite | Unknown
+
+  let rec equal_or_opposite p q : equal_or_opposite =
+    if equal_fml p q then Equal
+    else if equal_fml p (_Not q) then Opposite
+    else Unknown
+
+  and _And p q =
+    match (p, q) with
+    | Tt, p | p, Tt -> p
+    | Ff, _ | _, Ff -> Ff
+    | _ -> (
+      match equal_or_opposite p q with
+      | Equal -> p
+      | Opposite -> Ff
+      | Unknown -> And (p, q) )
+
+  and _Or p q =
+    match (p, q) with
+    | Ff, p | p, Ff -> p
+    | Tt, _ | _, Tt -> Tt
+    | _ -> (
+      match equal_or_opposite p q with
+      | Equal -> p
+      | Opposite -> Tt
+      | Unknown -> Or (p, q) )
+
+  and _Iff p q =
+    match (p, q) with
+    | Tt, p | p, Tt -> p
+    | Ff, p | p, Ff -> _Not p
+    | _ -> (
+      match equal_or_opposite p q with
+      | Equal -> Tt
+      | Opposite -> Ff
+      | Unknown -> Iff (p, q) )
+
+  and _Xor p q =
+    match (p, q) with
+    | Tt, p | p, Tt -> _Not p
+    | Ff, p | p, Ff -> p
+    | _ -> (
+      match equal_or_opposite p q with
+      | Equal -> Ff
+      | Opposite -> Tt
+      | Unknown -> Xor (p, q) )
+
+  and _Not = function
+    | Tt -> _Ff
+    | Ff -> _Tt
+    | Eq (x, y) -> _Dq x y
+    | Dq (x, y) -> _Eq x y
+    | Eq0 x -> _Dq0 x
+    | Dq0 x -> _Eq0 x
+    | Gt0 x -> _Le0 x
+    | Ge0 x -> _Lt0 x
+    | Lt0 x -> _Ge0 x
+    | Le0 x -> _Gt0 x
+    | And (x, y) -> _Or (_Not x) (_Not y)
+    | Or (x, y) -> _And (_Not x) (_Not y)
+    | Iff (x, y) -> _Xor x y
+    | Xor (x, y) -> _Iff x y
+    | Cond {cnd; pos; neg} -> _Cond cnd (_Not pos) (_Not neg)
+    | UPosLit (p, x) -> _UNegLit p x
+    | UNegLit (p, x) -> _UPosLit p x
+
+  and _Cond cnd pos neg =
+    match (cnd, pos, neg) with
+    (* (tt ? p : n) ==> p *)
+    | Tt, _, _ -> pos
+    (* (ff ? p : n) ==> n *)
+    | Ff, _, _ -> neg
+    (* (c ? tt : ff) ==> c *)
+    | _, Tt, Ff -> cnd
+    (* (c ? ff : tt) ==> ¬c *)
+    | _, Ff, Tt -> _Not cnd
+    (* (c ? p : ff) ==> c ∧ p *)
+    | _, _, Ff -> _And cnd pos
+    (* (c ? ff : n) ==> ¬c ∧ n *)
+    | _, Ff, _ -> _And (_Not cnd) neg
+    (* (c ? tt : n) ==> c ∨ n *)
+    | _, Tt, _ -> _Or cnd neg
+    (* (c ? p : tt) ==> ¬c ∨ p *)
+    | _, _, Tt -> _Or (_Not cnd) pos
+    | _ -> (
+      match equal_or_opposite pos neg with
+      (* (c ? p : p) ==> c *)
+      | Equal -> cnd
+      (* (c : p : ¬p) ==> c <=> p *)
+      | Opposite -> _Iff cnd pos
+      | Unknown -> Cond {cnd; pos; neg} )
 end
 
 open Fml
@@ -1005,25 +1146,7 @@ module Formula = struct
   let iff = _Iff
   let xor = _Xor
   let cond ~cnd ~pos ~neg = _Cond cnd pos neg
-
-  let rec not_ = function
-    | Tt -> _Ff
-    | Ff -> _Tt
-    | Eq (x, y) -> _Dq x y
-    | Dq (x, y) -> _Eq x y
-    | Eq0 x -> _Dq0 x
-    | Dq0 x -> _Eq0 x
-    | Gt0 x -> _Le0 x
-    | Ge0 x -> _Lt0 x
-    | Lt0 x -> _Ge0 x
-    | Le0 x -> _Gt0 x
-    | And (x, y) -> _Or (not_ x) (not_ y)
-    | Or (x, y) -> _And (not_ x) (not_ y)
-    | Iff (x, y) -> _Xor x y
-    | Xor (x, y) -> _Iff x y
-    | Cond {cnd; pos; neg} -> _Cond cnd (not_ pos) (not_ neg)
-    | UPosLit (p, x) -> _UNegLit p x
-    | UNegLit (p, x) -> _UPosLit p x
+  let not_ = _Not
 
   (** Query *)
 
