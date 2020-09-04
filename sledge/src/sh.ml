@@ -526,7 +526,7 @@ let pure (p : Formula.t) =
     ~f:(fun q p ->
       let us = Formula.fv p in
       let xs, ctx = Context.add us p Context.empty in
-      if Context.is_unsat ctx then false_ us
+      if Context.is_unsat ctx then extend_us us q
       else or_ q (exists_fresh xs {emp with us; ctx; pure= p}) )
   |>
   [%Trace.retn fun {pf} q ->
