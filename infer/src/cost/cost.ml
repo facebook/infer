@@ -294,7 +294,7 @@ let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as
       inferbo_summary
     in
     let get_formals callee_pname =
-      AnalysisCallbacks.get_proc_desc callee_pname >>| Procdesc.get_pvar_formals
+      AnalysisCallbacks.proc_resolve_attributes callee_pname >>| ProcAttributes.get_pvar_formals
     in
     let instr_cfg = InstrCFG.from_pdesc proc_desc in
     let extras =

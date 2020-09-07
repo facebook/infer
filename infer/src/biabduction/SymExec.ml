@@ -974,10 +974,8 @@ let execute_store ?(report_deref_errors = true) ({InterproceduralAnalysis.tenv; 
 
 
 let is_variadic_procname callee_pname =
-  Option.value_map
-    (AnalysisCallbacks.get_proc_desc callee_pname)
-    ~f:(fun proc_desc -> (Procdesc.get_attributes proc_desc).ProcAttributes.is_variadic)
-    ~default:false
+  Option.value_map ~default:false (AnalysisCallbacks.proc_resolve_attributes callee_pname)
+    ~f:(fun proc_attrs -> proc_attrs.ProcAttributes.is_variadic)
 
 
 let resolve_and_analyze_no_dynamic_dispatch {InterproceduralAnalysis.analyze_dependency; tenv}

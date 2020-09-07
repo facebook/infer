@@ -9,7 +9,8 @@ open! IStd
 
 let report_error {IntraproceduralAnalysis.proc_desc; tenv; err_log} checker kind loc
     ?(field_name = None) ~severity description =
-  let suppressed = Reporting.is_suppressed tenv proc_desc kind ~field_name in
+  let proc_attrs = Procdesc.get_attributes proc_desc in
+  let suppressed = Reporting.is_suppressed tenv proc_attrs kind ~field_name in
   if suppressed then Logging.debug Analysis Medium "Reporting is suppressed!@\n"
   else
     let localized_description = Localise.verbatim_desc description in

@@ -25,7 +25,7 @@ end
 val report_on_pair :
      analyze_ondemand:(Procname.t -> (Procdesc.t * StarvationDomain.summary) option)
   -> Tenv.t
-  -> Procdesc.t
+  -> ProcAttributes.t
   -> StarvationDomain.CriticalPair.t
   -> ReportMap.t
   -> ReportMap.t
@@ -33,7 +33,7 @@ val report_on_pair :
 val report_on_parallel_composition :
      should_report_starvation:bool
   -> Tenv.t
-  -> Procdesc.t
+  -> ProcAttributes.t
   -> StarvationDomain.CriticalPair.t
   -> StarvationDomain.Lock.t
   -> Procname.t

@@ -97,6 +97,19 @@ let get_annotated_formals {method_annotation= {params}; formals} =
   List.rev (zip_params (List.rev params) (List.rev formals))
 
 
+let get_access attributes = attributes.access
+
+let get_formals attributes = attributes.formals
+
+let get_pvar_formals attributes =
+  let pname = attributes.proc_name in
+  List.map attributes.formals ~f:(fun (name, typ) -> (Pvar.mk name pname, typ))
+
+
+let get_proc_name attributes = attributes.proc_name
+
+let get_loc attributes = attributes.loc
+
 let default translation_unit proc_name =
   { access= PredSymb.Default
   ; captured= []

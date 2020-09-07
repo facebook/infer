@@ -49,13 +49,15 @@ module PulseTransferFunctions = struct
 
   type analysis_data = PulseSummary.t InterproceduralAnalysis.t
 
+  let get_pvar_formals pname =
+    AnalysisCallbacks.proc_resolve_attributes pname |> Option.map ~f:ProcAttributes.get_pvar_formals
+
+
   let interprocedural_call {InterproceduralAnalysis.analyze_dependency} ret call_exp actuals
       call_loc astate =
     match proc_name_of_call call_exp with
     | Some callee_pname when not Config.pulse_intraprocedural_only ->
-        let formals_opt =
-          AnalysisCallbacks.get_proc_desc callee_pname |> Option.map ~f:Procdesc.get_pvar_formals
-        in
+        let formals_opt = get_pvar_formals callee_pname in
         let callee_data = analyze_dependency callee_pname in
         PulseOperations.call ~callee_data call_loc callee_pname ~ret ~actuals ~formals_opt astate
     | _ ->

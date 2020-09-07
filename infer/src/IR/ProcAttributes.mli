@@ -64,6 +64,20 @@ val default : SourceFile.t -> Procname.t -> t
 
 val pp : Format.formatter -> t -> unit
 
+val get_access : t -> PredSymb.access
+(** Return the visibility attribute *)
+
+val get_formals : t -> (Mangled.t * Typ.t) list
+(** Return name and type of formal parameters *)
+
 val get_annotated_formals : t -> ((Mangled.t * Typ.t) * Annot.Item.t) list
+
+val get_loc : t -> Location.t
+(** Return loc information for the procedure *)
+
+val get_proc_name : t -> Procname.t
+
+val get_pvar_formals : t -> (Pvar.t * Typ.t) list
+(** Return pvar and type of formal parameters *)
 
 module SQLite : SqliteUtils.Data with type t = t

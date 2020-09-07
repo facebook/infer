@@ -63,6 +63,7 @@ let report exe_env work_set =
     Summary.OnDisk.get procname
     |> Option.fold ~init ~f:(fun acc summary ->
            let pdesc = Summary.get_proc_desc summary in
+           let pattrs = Procdesc.get_attributes pdesc in
            let tenv = Exe_env.get_tenv exe_env procname in
            let acc =
              Starvation.report_on_pair
@@ -71,7 +72,7 @@ let report exe_env work_set =
                  |> Option.bind ~f:(fun summary ->
                         Option.map summary.Summary.payloads.starvation ~f:(fun starvation ->
                             (Summary.get_proc_desc summary, starvation) ) ) )
-               tenv pdesc pair acc
+               tenv pattrs pair acc
            in
            match pair.elem.event with
            | LockAcquire lock ->
@@ -80,7 +81,7 @@ let report exe_env work_set =
                in
                WorkHashSet.fold
                  (fun (other_procname, (other_pair : CriticalPair.t)) () acc ->
-                   Starvation.report_on_parallel_composition ~should_report_starvation tenv pdesc
+                   Starvation.report_on_parallel_composition ~should_report_starvation tenv pattrs
                      pair lock other_procname other_pair acc )
                  work_set acc
            | _ ->
