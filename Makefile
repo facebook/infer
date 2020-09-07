@@ -642,6 +642,8 @@ endif
 	test -d      '$(DESTDIR)$(libdir)/infer/infer/bin/' || \
 	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/bin/'
 # copy files
+	$(INSTALL_DATA) -C          'infer/lib/models.sql' \
+	  '$(DESTDIR)$(libdir)/infer/infer/lib/models.sql'
 ifeq ($(BUILD_C_ANALYZERS),yes)
 	$(INSTALL_DATA) -C          'facebook-clang-plugins/libtooling/build/FacebookClangPlugin.dylib' \
 	  '$(DESTDIR)$(libdir)/infer/facebook-clang-plugins/libtooling/build/FacebookClangPlugin.dylib'
@@ -659,8 +661,6 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 	  [ $(cc) -ef '$(INFER_BIN)' ] && \
 	  $(REMOVE) '$(notdir $(cc))' && \
 	  $(LN_S) ../../bin/infer '$(notdir $(cc))';))
-	$(INSTALL_DATA) -C          'infer/lib/models.sql' \
-	  '$(DESTDIR)$(libdir)/infer/infer/lib/models.sql'
 	$(INSTALL_DATA) -C          'infer/lib/linter_rules/linters.al' \
 	  '$(DESTDIR)$(libdir)/infer/infer/lib/linter_rules/linters.al'
 	$(INSTALL_DATA) -C          'infer/etc/clang_ast.dict' \
