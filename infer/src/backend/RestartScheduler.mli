@@ -14,4 +14,4 @@ val lock_exn : Procname.t -> unit
 
 val unlock : Procname.t -> unit
 
-val make : SourceFile.t list -> (TaskSchedulerTypes.target, Procname.t) ProcessPool.TaskGenerator.t
+val make : SourceFile.t list -> (TaskSchedulerTypes.target, string) ProcessPool.TaskGenerator.t

@@ -96,7 +96,7 @@ let build_from_sources sources =
   g
 
 
-let bottom_up sources : (TaskSchedulerTypes.target, Procname.t) ProcessPool.TaskGenerator.t =
+let bottom_up sources : (TaskSchedulerTypes.target, string) ProcessPool.TaskGenerator.t =
   let open TaskSchedulerTypes in
   let syntactic_call_graph = build_from_sources sources in
   let remaining = ref (CallGraph.n_procs syntactic_call_graph) in

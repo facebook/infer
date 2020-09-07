@@ -7,9 +7,9 @@
 open! IStd
 module L = Logging
 
-type work_with_dependency = {work: TaskSchedulerTypes.target; need_to_finish: Procname.t option}
+type work_with_dependency = {work: TaskSchedulerTypes.target; dependency_filename_opt: string option}
 
-let of_list (lst : work_with_dependency list) : ('a, Procname.t) ProcessPool.TaskGenerator.t =
+let of_list (lst : work_with_dependency list) : ('a, string) ProcessPool.TaskGenerator.t =
   let content = Queue.of_list lst in
   let remaining = ref (Queue.length content) in
   let remaining_tasks () = !remaining in
@@ -18,12 +18,12 @@ let of_list (lst : work_with_dependency list) : ('a, Procname.t) ProcessPool.Tas
     match result with
     | None ->
         decr remaining
-    | Some _ as need_to_finish ->
-        Queue.enqueue content {work; need_to_finish}
+    | Some _ as dependency_filename_opt ->
+        Queue.enqueue content {work; dependency_filename_opt}
   in
   let work_if_dependency_allows w =
-    match w.need_to_finish with
-    | Some pname when ProcLocker.is_locked pname ->
+    match w.dependency_filename_opt with
+    | Some dependency_filename when ProcLocker.is_locked ~proc_filename:dependency_filename ->
         Queue.enqueue content w ;
         None
     | None | Some _ ->
@@ -38,10 +38,11 @@ let make sources =
     List.map sources ~f:SourceFiles.proc_names_of_source
     |> List.concat
     |> List.rev_map ~f:(fun procname ->
-           {work= TaskSchedulerTypes.Procname procname; need_to_finish= None} )
+           {work= TaskSchedulerTypes.Procname procname; dependency_filename_opt= None} )
   in
   let files =
-    List.map sources ~f:(fun file -> {work= TaskSchedulerTypes.File file; need_to_finish= None})
+    List.map sources ~f:(fun file ->
+        {work= TaskSchedulerTypes.File file; dependency_filename_opt= None} )
   in
   let permute = List.permute ~random_state:(Random.State.make (Array.create ~len:1 0)) in
   permute pnames @ permute files |> of_list
@@ -90,7 +91,9 @@ let lock_exn pname =
       if ProcLocker.try_lock pname then record_locked_proc pname
       else (
         unlock_all () ;
-        raise (TaskSchedulerTypes.ProcnameAlreadyLocked pname) ) )
+        raise
+          (TaskSchedulerTypes.ProcnameAlreadyLocked {dependency_filename= Procname.to_filename pname})
+        ) )
 
 
 let unlock pname =
