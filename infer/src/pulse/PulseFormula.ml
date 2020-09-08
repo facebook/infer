@@ -1200,13 +1200,15 @@ end = struct
        fuel). That's ok because there's not much fuel to begin with, and as long as we're making
        progress it's probably worth it anyway. *)
     let rec normalize_with_fuel ~fuel phi =
-      let* new_linear_eqs, phi = normalize_linear_eqs ~fuel phi >>= normalize_atoms in
-      if new_linear_eqs && fuel > 0 then (
-        L.d_printfln "new linear equalities, consuming fuel (from %d)" fuel ;
-        normalize_with_fuel ~fuel:(fuel - 1) phi )
-      else (
+      if fuel <= 0 then (
         L.d_printfln "ran out of fuel when normalizing" ;
         Sat phi )
+      else
+        let* new_linear_eqs, phi = normalize_linear_eqs ~fuel phi >>= normalize_atoms in
+        if new_linear_eqs then (
+          L.d_printfln "new linear equalities, consuming fuel (from %d)" fuel ;
+          normalize_with_fuel ~fuel:(fuel - 1) phi )
+        else Sat phi
     in
     normalize_with_fuel ~fuel:base_fuel phi
 
