@@ -3119,14 +3119,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       CLocation.location_of_stmt_info trans_state.context.translation_unit_context.source_file
         stmt_info
     in
-    let mk_call_node fname =
+    let mk_call_node pname =
       let ret = mk_fresh_void_id_typ () in
-      let pname = Procname.from_string_c_fun fname in
       let instr = Sil.Call (ret, Const (Cfun pname), [], location, CallFlags.default) in
-      Procdesc.create_node procdesc location (Stmt_node (Call fname)) [instr]
+      Procdesc.create_node procdesc location (Stmt_node (Call (Procname.to_string pname))) [instr]
     in
-    let push_node = mk_call_node CFrontend_config.objc_autorelease_pool_push in
-    let pop_node = mk_call_node CFrontend_config.objc_autorelease_pool_pop in
+    let push_node = mk_call_node BuiltinDecl.objc_autorelease_pool_push in
+    let pop_node = mk_call_node BuiltinDecl.objc_autorelease_pool_pop in
+    Procdesc.Node.set_code_block_exit push_node ~code_block_exit:pop_node ;
     let res_trans_body = compoundStmt_trans {trans_state with succ_nodes= [pop_node]} stmts in
     Procdesc.set_succs push_node ~normal:(Some res_trans_body.control.root_nodes) ~exn:None ;
     Procdesc.set_succs pop_node ~normal:(Some trans_state.succ_nodes) ~exn:None ;

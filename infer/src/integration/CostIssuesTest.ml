@@ -20,10 +20,17 @@ let pp_custom_of_cost_report fmt report cost_fields =
           F.fprintf fmt "%s%s" (comma_separator index) cost_item.loc.file
       | Cost ->
           F.fprintf fmt "%s%s" (comma_separator index) cost_item.exec_cost.hum.hum_polynomial
+      | AutoreleasepoolSize ->
+          F.fprintf fmt "%s%s" (comma_separator index)
+            cost_item.autoreleasepool_size.hum.hum_polynomial
       | IsOnUIThread ->
           F.fprintf fmt "%s OnUIThread:%b" (comma_separator index) cost_item.is_on_ui_thread
       | Trace ->
-          IssuesTest.pp_trace fmt cost_item.exec_cost.trace (comma_separator index)
+          let trace =
+            if Config.cost_tests_only_autoreleasepool then cost_item.autoreleasepool_size.trace
+            else cost_item.exec_cost.trace
+          in
+          IssuesTest.pp_trace fmt trace (comma_separator index)
     in
     List.iteri ~f:pp_cost_field cost_fields ;
     F.fprintf fmt "@."
@@ -36,12 +43,14 @@ let cost_tests_jsonbug_compare (cost1 : Jsonbug_t.cost_item) (cost2 : Jsonbug_t.
   [%compare: string * string * string * Caml.Digest.t * bool]
     ( cost1.loc.file
     , cost1.procedure_id
-    , cost1.exec_cost.hum.hum_polynomial
+    , ( if Config.cost_tests_only_autoreleasepool then cost1.autoreleasepool_size.hum.hum_polynomial
+      else cost1.exec_cost.hum.hum_polynomial )
     , cost1.hash
     , cost1.is_on_ui_thread )
     ( cost2.loc.file
     , cost2.procedure_id
-    , cost2.exec_cost.hum.hum_polynomial
+    , ( if Config.cost_tests_only_autoreleasepool then cost2.autoreleasepool_size.hum.hum_polynomial
+      else cost2.exec_cost.hum.hum_polynomial )
     , cost2.hash
     , cost2.is_on_ui_thread )
 

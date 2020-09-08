@@ -39,6 +39,10 @@ OPTIONS
            Write a list of cost issues in a format suitable for cost tests to
            file
 
+       --cost-tests-only-autoreleasepool
+           Activates: [EXPERIMENTAL] Report only autoreleasepool size results
+           in cost tests (Conversely: --no-cost-tests-only-autoreleasepool)
+
        --debug,-g
            Activates: Debug mode (also sets --debug-level 2,
            --developer-mode, --print-buckets, --print-types,

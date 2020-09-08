@@ -87,6 +87,10 @@ let add_top_pname_opt kind cost_record top_pname_opt =
 
 let get_operation_cost cost_record = get_cost_kind CostKind.OperationCost cost_record
 
+let set_autoreleasepool_size_zero cost_record =
+  VariantCostMap.remove CostKind.AutoreleasepoolSize cost_record
+
+
 let map ~f cost_record = VariantCostMap.map f cost_record
 
 let zero_record = VariantCostMap.empty
@@ -103,6 +107,10 @@ let plus cost_record1 cost_record2 =
 let unit_cost_atomic_operation = VariantCostMap.increment CostKind.OperationCost zero_record
 
 let unit_cost_allocation = VariantCostMap.increment CostKind.AllocationCost zero_record
+
+let unit_cost_autoreleasepool_size =
+  VariantCostMap.increment CostKind.AutoreleasepoolSize zero_record
+
 
 let of_operation_cost operation_cost =
   VariantCostMap.increase_by CostKind.OperationCost

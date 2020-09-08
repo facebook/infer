@@ -62,6 +62,8 @@ val add_top_pname_opt : CostKind.t -> t -> Procname.t option -> t
 
 val get_operation_cost : t -> BasicCostWithReason.t
 
+val set_autoreleasepool_size_zero : t -> t
+
 val map : f:(BasicCostWithReason.t -> BasicCostWithReason.t) -> t -> t
 
 val zero_record : t
@@ -78,6 +80,9 @@ val unit_cost_atomic_operation : t
 
 val unit_cost_allocation : t
 (** Map representing cost record \{OperationCost:0; AllocationCost:1; AutoreleasepoolSize:0\} *)
+
+val unit_cost_autoreleasepool_size : t
+(** Map representing cost record \{OperationCost:0; AllocationCost:0; AutoreleasepoolSize:1\} *)
 
 val of_operation_cost : BasicCost.t -> t
 (** Map representing cost record \{OperationCost:operation_cost; AllocationCost:0;

@@ -155,6 +155,10 @@ let nsArray_arrayWithObjectsCount =
   create_objc_class_method "NSArray" "arrayWithObjects:count:" [None; None]
 
 
+let objc_autorelease_pool_pop = create_procname "_objc_autoreleasePoolPop"
+
+let objc_autorelease_pool_push = create_procname "_objc_autoreleasePoolPush"
+
 let objc_cpp_throw = create_procname "__infer_objc_cpp_throw"
 
 let pthread_create = create_procname "pthread_create"

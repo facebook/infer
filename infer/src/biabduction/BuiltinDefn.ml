@@ -960,6 +960,12 @@ let nsArray_arrayWithObjectsCount =
   Builtin.register BuiltinDecl.nsArray_arrayWithObjectsCount execute_skip
 
 
+let objc_autorelease_pool_pop = Builtin.register BuiltinDecl.objc_autorelease_pool_pop execute_skip
+
+let objc_autorelease_pool_push =
+  Builtin.register BuiltinDecl.objc_autorelease_pool_push execute_skip
+
+
 (* model throwing exception in objc/c++ as divergence *)
 let objc_cpp_throw = Builtin.register BuiltinDecl.objc_cpp_throw execute_exit
 

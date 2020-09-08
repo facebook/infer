@@ -81,10 +81,6 @@ val nsobject_cl : string
 
 val nsstring_cl : string
 
-val objc_autorelease_pool_pop : string
-
-val objc_autorelease_pool_push : string
-
 val objc_class : string
 
 val objc_object : string

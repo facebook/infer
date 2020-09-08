@@ -232,6 +232,8 @@ val cost_scuba_logging : bool
 
 val costs_previous : string option
 
+val cost_tests_only_autoreleasepool : bool
+
 val cxx : bool
 
 val cxx_scope_guards : Yojson.Basic.t

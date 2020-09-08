@@ -87,10 +87,6 @@ let nsobject_cl = "NSObject"
 
 let nsstring_cl = "NSString"
 
-let objc_autorelease_pool_pop = "_objc_autoreleasePoolPop"
-
-let objc_autorelease_pool_push = "_objc_autoreleasePoolPush"
-
 let objc_class = "objc_class"
 
 let objc_object = "objc_object"

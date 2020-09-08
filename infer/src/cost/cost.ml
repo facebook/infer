@@ -51,6 +51,10 @@ module InstrBasicCostWithReason = struct
     List.exists allocation_functions ~f:(fun f -> Procname.equal callee_pname f)
 
 
+  let is_autorelease_function callee_pname =
+    String.equal (Procname.get_method callee_pname) "autorelease"
+
+
   let get_instr_cost_record tenv extras instr_node instr =
     match instr with
     | Sil.Call (ret, Exp.Const (Const.Cfun callee_pname), params, _, _) when Config.inclusive_cost
@@ -105,6 +109,8 @@ module InstrBasicCostWithReason = struct
         in
         if is_allocation_function callee_pname then
           CostDomain.plus CostDomain.unit_cost_allocation operation_cost
+        else if is_autorelease_function callee_pname then
+          CostDomain.plus CostDomain.unit_cost_autoreleasepool_size operation_cost
         else operation_cost
     | Sil.Call (_, Exp.Const (Const.Cfun _), _, _, _) ->
         CostDomain.zero_record
@@ -176,8 +182,15 @@ module WorstCaseCost = struct
   let compute tenv extras cfg =
     let init = CostDomain.zero_record in
     let cost =
-      InstrCFG.fold_nodes cfg ~init ~f:(fun acc pair ->
-          exec_node tenv extras pair |> CostDomain.plus acc )
+      let nodes_in_autoreleasepool = CostUtils.get_nodes_in_autoreleasepool cfg in
+      InstrCFG.fold_nodes cfg ~init ~f:(fun acc ((node, _) as pair) ->
+          let cost = exec_node tenv extras pair in
+          let cost =
+            if Procdesc.NodeSet.mem node nodes_in_autoreleasepool then
+              CostDomain.set_autoreleasepool_size_zero cost
+            else cost
+          in
+          CostDomain.plus acc cost )
     in
     Option.iter (CostDomain.get_operation_cost cost).top_pname_opt ~f:(fun top_pname ->
         ScubaLogging.cost_log_message ~label:"unmodeled_function_top_cost"

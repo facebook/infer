@@ -131,7 +131,9 @@ module Node = struct
     ; loc: Location.t  (** location in the source code *)
     ; mutable preds: t list  (** predecessor nodes in the cfg *)
     ; pname: Procname.t  (** name of the procedure the node belongs to *)
-    ; mutable succs: t list  (** successor nodes in the cfg *) }
+    ; mutable succs: t list  (** successor nodes in the cfg *)
+    ; mutable code_block_exit: t option
+          (** exit node corresponding to start node in a code block *) }
 
   let exn_handler_kind = Stmt_node ExceptionHandler
 
@@ -149,7 +151,8 @@ module Node = struct
     ; pname
     ; succs= []
     ; preds= []
-    ; exn= [] }
+    ; exn= []
+    ; code_block_exit= None }
 
 
   let compare node1 node2 = Int.compare node1.id node2.id
@@ -401,6 +404,10 @@ module Node = struct
     F.asprintf "%s@\n%a" str_kind (Instrs.pp pe) (get_instrs node)
 
 
+  let set_code_block_exit node ~code_block_exit = node.code_block_exit <- Some code_block_exit
+
+  let get_code_block_exit node = node.code_block_exit
+
   (** simple key for a node: just look at the instructions *)
   let simple_key node =
     let add_instr instr =
@@ -631,7 +638,8 @@ let create_node_from_not_reversed pdesc loc kind instrs =
     ; preds= []
     ; pname= pdesc.attributes.proc_name
     ; succs= []
-    ; exn= [] }
+    ; exn= []
+    ; code_block_exit= None }
   in
   pdesc.nodes <- node :: pdesc.nodes ;
   node

@@ -162,6 +162,13 @@ module Node : sig
 
   val get_wto_index : t -> int
 
+  val set_code_block_exit : t -> code_block_exit:t -> unit
+  (** Set an exit node corresponding to a start node of a code block. Using this, when there is a
+      code block, frontend can keep the correspondence between start/exit nodes of a code block. *)
+
+  val get_code_block_exit : t -> t option
+  (** Get an exit node corresponding to a start node of a code block. *)
+
   val is_dangling : t -> bool
   (** Returns true if the node is dangling, i.e. no successors and predecessors *)
 

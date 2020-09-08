@@ -944,6 +944,12 @@ and costs_previous =
     "Costs report of the base revision to use for comparison"
 
 
+and cost_tests_only_autoreleasepool =
+  CLOpt.mk_bool ~long:"cost-tests-only-autoreleasepool"
+    ~in_help:InferCommand.[(Report, manual_generic); (ReportDiff, manual_generic)]
+    "[EXPERIMENTAL] Report only autoreleasepool size results in cost tests"
+
+
 and siof_check_iostreams =
   CLOpt.mk_bool ~long:"siof-check-iostreams"
     ~in_help:InferCommand.[(Analyze, manual_siof)]
@@ -2712,6 +2718,8 @@ and cost_issues_tests = !cost_issues_tests
 and cost_scuba_logging = !cost_scuba_logging
 
 and costs_previous = !costs_previous
+
+and cost_tests_only_autoreleasepool = !cost_tests_only_autoreleasepool
 
 and cxx = !cxx
 
