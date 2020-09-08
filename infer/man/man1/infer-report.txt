@@ -85,6 +85,10 @@ OPTIONS
              ARRAY_OUT_OF_BOUNDS_L2 (disabled by default),
              ARRAY_OUT_OF_BOUNDS_L3 (disabled by default),
              ASSIGN_POINTER_WARNING (enabled by default),
+             AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE (enabled by default),
+             AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE_UI_THREAD (enabled by
+           default),
+             AUTORELEASEPOOL_SIZE_UNREACHABLE_AT_EXIT (disabled by default),
              Abduction_case_not_implemented (enabled by default),
              Array_of_pointsto (enabled by default),
              Assert_failure (enabled by default),
@@ -164,6 +168,7 @@ OPTIONS
              INFERBO_ALLOC_IS_ZERO (enabled by default),
              INFERBO_ALLOC_MAY_BE_BIG (enabled by default),
              INFERBO_ALLOC_MAY_BE_NEGATIVE (enabled by default),
+             INFINITE_AUTORELEASEPOOL_SIZE (disabled by default),
              INFINITE_EXECUTION_TIME (disabled by default),
              INHERENTLY_DANGEROUS_FUNCTION (enabled by default),
              INSECURE_INTENT_HANDLING (enabled by default),

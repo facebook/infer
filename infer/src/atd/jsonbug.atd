@@ -90,6 +90,7 @@ type cost_item = {
   procedure_id : string;
   is_on_ui_thread : bool;
   exec_cost : cost_info;
+  autoreleasepool_size : cost_info;
 }
 
 type costs_report = cost_item list

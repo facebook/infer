@@ -223,7 +223,15 @@ end = struct
     ; ( "EXECUTION_TIME_UNREACHABLE_AT_EXIT"
       , [%blob "../../documentation/issues/EXECUTION_TIME_UNREACHABLE_AT_EXIT.md"] )
     ; ("INFINITE_EXECUTION_TIME", [%blob "../../documentation/issues/INFINITE_EXECUTION_TIME.md"])
-    ]
+    ; ( "AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE"
+      , [%blob "../../documentation/issues/AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE.md"] )
+    ; ( "AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE_UI_THREAD"
+      , [%blob "../../documentation/issues/AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE_UI_THREAD.md"]
+      )
+    ; ( "AUTORELEASEPOOL_SIZE_UNREACHABLE_AT_EXIT"
+      , [%blob "../../documentation/issues/AUTORELEASEPOOL_SIZE_UNREACHABLE_AT_EXIT.md"] )
+    ; ( "INFINITE_AUTORELEASEPOOL_SIZE"
+      , [%blob "../../documentation/issues/INFINITE_AUTORELEASEPOOL_SIZE.md"] ) ]
 
 
   (** cost issues are already registered below.*)
