@@ -11,13 +11,6 @@ open! IStd
 
 module F = Format
 
-(* make sure SimpleChecker.ml is not dead code *)
-let () =
-  if false then
-    let module SC = SimpleChecker.Make in
-    ()
-
-
 type callback_fun =
   | Procedure of Callbacks.proc_callback_t
   | DynamicDispatch of Callbacks.proc_callback_t
