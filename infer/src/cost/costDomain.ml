@@ -98,9 +98,20 @@ let zero_record = VariantCostMap.empty
 (** If nb_exec is unreachable, we map to unreachable, not 0 *)
 let mult_by cost_record ~nb_exec = map cost_record ~f:(BasicCostWithReason.mult_unreachable nb_exec)
 
+(** "zero+unreachable" is defined as unreachable in the operation cost, but as zero in the other
+    costs. This is because "zero+unreachable" is a bit weird in the operation cost: it means that no
+    statment is analyzed yet, but at the same time the a program point is analyzed as unreachable.
+    For debugging purpose, we define it to return the more specific unreachable cost. *)
 let plus cost_record1 cost_record2 =
-  VariantCostMap.union
-    (fun _kind cost1 cost2 -> Some (BasicCostWithReason.plus cost1 cost2))
+  VariantCostMap.merge
+    (fun kind cost1 cost2 ->
+      match (kind, cost1, cost2) with
+      | OperationCost, Some cost, None | OperationCost, None, Some cost ->
+          Some cost
+      | (OperationCost | AllocationCost | AutoreleasepoolSize), _, _ ->
+          let cost1 = Option.value cost1 ~default:BasicCostWithReason.zero in
+          let cost2 = Option.value cost2 ~default:BasicCostWithReason.zero in
+          Some (BasicCostWithReason.plus cost1 cost2) )
     cost_record1 cost_record2
 
 

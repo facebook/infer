@@ -93,4 +93,13 @@
   }
 }
 
+- (void)autorelease_unreachable_zero:(int)n {
+  int i = 1;
+  if (i == 0) {
+    for (int j = 0; j < n; j++) {
+      [self call_autorelease_constant];
+    }
+  }
+}
+
 @end
