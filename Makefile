@@ -97,6 +97,7 @@ BUILD_SYSTEMS_TESTS += \
   objc_retain_cycles_weak
 
 DIRECT_TESTS += \
+  objc_autoreleasepool \
   objc_biabduction \
   objc_frontend \
   objc_linters \
@@ -480,6 +481,7 @@ COST_TESTS += \
   java_hoistingExpensive \
   java_performance \
   java_performance-exclusive \
+  objc_autoreleasepool \
   objc_performance \
 
 ifeq ($(IS_FACEBOOK_TREE),yes)

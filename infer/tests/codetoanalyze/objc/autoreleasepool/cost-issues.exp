@@ -5,6 +5,7 @@ codetoanalyze/objc/autoreleasepool/arc_caller.m, ArcCaller.callGiveMeObject_line
 codetoanalyze/objc/autoreleasepool/arc_caller.m, ArcCaller.callMutableCopyObject_zero:x:, 0,  OnUIThread:false, []
 codetoanalyze/objc/autoreleasepool/arc_caller.m, ArcCaller.callNewObject_zero:, 0,  OnUIThread:false, []
 codetoanalyze/objc/autoreleasepool/arc_caller.m, ArcCaller.dealloc, 0,  OnUIThread:false, []
+codetoanalyze/objc/autoreleasepool/basic.m, Basic.autorelease_unreachable_zero:, 0,  OnUIThread:false, []
 codetoanalyze/objc/autoreleasepool/basic.m, Basic.autoreleased_in_autoreleasepool_zero:, 0,  OnUIThread:false, []
 codetoanalyze/objc/autoreleasepool/basic.m, Basic.autoreleased_in_loop_linear:, n,  OnUIThread:false, [{n},Loop]
 codetoanalyze/objc/autoreleasepool/basic.m, Basic.autoreleased_in_loop_nested_zero:, 0,  OnUIThread:false, []
