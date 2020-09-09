@@ -11,8 +11,10 @@ INFERPRINT_OPTIONS = --issues-tests
 INFERPRINT_COST_OPTIONS = --cost-tests-only-autoreleasepool --cost-issues-tests
 
 SOURCES = $(wildcard *.m)
+SOURCES_ARC = $(wildcard arc_*.m)
+SOURCES_NO_ARC = $(filter-out $(SOURCES_ARC),$(SOURCES))
 
-include $(TESTS_DIR)/clang.make
+include $(TESTS_DIR)/clang-arc-no-arc.make
 include $(TESTS_DIR)/objc.make
 include $(TESTS_DIR)/cost.make
 
