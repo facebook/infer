@@ -12,8 +12,8 @@ module L = Logging
 let results_dir_get_path entry = ResultsDirEntryName.get_path ~results_dir:Config.results_dir entry
 
 let procedures_schema prefix =
-  (* it would be nice to use "WITHOUT ROWID" here but ancient versions of sqlite do not support
-     it *)
+  (* [proc_uid] is meant to only be used with [Procname.to_unique_id]
+     [Marshal]ed values must never be used as keys. *)
   Printf.sprintf
     {|
       CREATE TABLE IF NOT EXISTS %sprocedures
@@ -30,6 +30,7 @@ let procedures_schema prefix =
 
 
 let source_files_schema prefix =
+  (* [Marshal]ed values must never be used as keys. [source_file] has a custom serialiser *)
   Printf.sprintf
     {|
       CREATE TABLE IF NOT EXISTS %ssource_files
@@ -43,6 +44,8 @@ let source_files_schema prefix =
 
 
 let specs_schema prefix =
+  (* [proc_uid] is meant to only be used with [Procname.to_unique_id]
+     [Marshal]ed values must never be used as keys. *)
   Printf.sprintf
     {|
       CREATE TABLE IF NOT EXISTS %sspecs

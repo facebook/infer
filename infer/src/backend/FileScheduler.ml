@@ -14,8 +14,8 @@ let make sources =
     |> ProcessPool.TaskGenerator.of_list
   in
   let next x =
-    let res = gen.next x in
+    gen.next x
     (* see defn of gen above to see why res should never match Some (Procname _) *)
-    match res with None -> None | Some (Procname _) -> assert false | Some (File _) as v -> v
+    |> Option.map ~f:(function File _ as v -> v | Procname _ | ProcUID _ -> assert false)
   in
   {gen with next}

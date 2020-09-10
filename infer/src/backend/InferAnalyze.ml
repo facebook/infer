@@ -24,6 +24,25 @@ let clear_caches () =
   clear_caches_except_lrus ()
 
 
+let proc_name_of_uid =
+  let statement =
+    ResultsDatabase.register_statement "SELECT proc_name FROM procedures WHERE proc_uid = :k"
+  in
+  fun proc_uid ->
+    ResultsDatabase.with_registered_statement statement ~f:(fun db stmt ->
+        Sqlite3.bind stmt 1 (Sqlite3.Data.TEXT proc_uid)
+        |> SqliteUtils.check_result_code db ~log:"proc_name of proc_uid bind proc_uid" ;
+        let result_option =
+          SqliteUtils.result_option ~finalize:false db ~log:"proc_name of proc_uid" stmt
+            ~read_row:(fun stmt -> Sqlite3.column stmt 0 |> Procname.SQLite.deserialize)
+        in
+        match result_option with
+        | Some proc_name ->
+            proc_name
+        | None ->
+            L.die InternalError "Requested non-existent proc_uid: %s@." proc_uid )
+
+
 let analyze_target : (TaskSchedulerTypes.target, string) Tasks.doer =
   let analyze_source_file exe_env source_file =
     if Topl.is_active () then DB.Results_dir.init (Topl.sourcefile ()) ;
@@ -62,6 +81,8 @@ let analyze_target : (TaskSchedulerTypes.target, string) Tasks.doer =
     match target with
     | Procname procname ->
         analyze_proc_name exe_env procname
+    | ProcUID proc_uid ->
+        proc_name_of_uid proc_uid |> analyze_proc_name exe_env
     | File source_file ->
         analyze_source_file exe_env source_file
 

@@ -138,8 +138,8 @@ let bottom_up sources : (TaskSchedulerTypes.target, string) ProcessPool.TaskGene
         decr remaining ;
         decr scheduled ;
         CallGraph.remove syntactic_call_graph pname
-    | File _ ->
-        L.die InternalError "Only Procnames are scheduled but File target was received"
+    | File _ | ProcUID _ ->
+        L.die InternalError "Only Procnames are scheduled but File/ProcUID target was received"
   in
   {remaining_tasks; is_empty; finished; next}
 
