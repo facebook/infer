@@ -35,8 +35,14 @@ usage () {
     echo "    -c,--only-check-install    check if recompiling clang is needed"
     echo "    -h,--help                  show this message"
     echo "    -n,--ninja                 use ninja for building"
+    echo "    -p,--clang-hash            print the installed clang hash"
     echo "    -r,--only-record-install   do not install clang but pretend we did"
     echo "    -s,--sequential-link       only use one process for linking (ninja only)"
+}
+
+clang_hash () {
+    HASH=$($SHASUM "${SCRIPT_DIR}/setup.sh" "${SCRIPT_DIR}/src/prepare_clang_src.sh" | $SHASUM)
+    printf "%s" "$HASH" | cut -d ' ' -f 1
 }
 
 check_installed () {
@@ -49,18 +55,24 @@ check_installed () {
 
 record_installed () {
     pushd "$SCRIPT_DIR" > /dev/null
-    $SHASUM "$SCRIPT_RELATIVE_PATH" > "$CLANG_INSTALLED_VERSION_FILE"
+    $SHASUM setup.sh src/prepare_clang_src.sh > "$CLANG_INSTALLED_VERSION_FILE"
     popd > /dev/null
 }
 
 ONLY_CHECK=
 ONLY_RECORD=
+PRINT_CLANG_HASH=
 USE_NINJA=
 SEQUENTIAL_LINK=
 
 while [[ $# -gt 0 ]]; do
     opt_key="$1"
     case $opt_key in
+        -p|--clang-hash)
+            PRINT_CLANG_HASH=yes
+            shift
+            continue
+            ;;
         -c|--only-check-install)
             ONLY_CHECK=yes
             shift
@@ -91,6 +103,11 @@ while [[ $# -gt 0 ]]; do
     esac
     shift
 done
+
+if [ "$PRINT_CLANG_HASH" = "yes" ]; then
+    clang_hash
+    exit 0
+fi
 
 if [ "$ONLY_RECORD" = "yes" ]; then
     record_installed
