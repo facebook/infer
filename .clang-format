@@ -13,6 +13,7 @@ BreakBeforeBinaryOperators: false
 BreakBeforeBraces: Attach
 BreakConstructorInitializersBeforeComma: false
 ColumnLimit:     80
+CommentPragmas:  '^@atd'
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
 ConstructorInitializerIndentWidth: 4
 ContinuationIndentWidth: 4
@@ -26,7 +27,7 @@ MaxEmptyLinesToKeep: 1
 NamespaceIndentation: None
 ObjCSpaceBeforeProtocolList: false
 PenaltyBreakBeforeFirstCallParameter: 10
-PenaltyBreakComment: 60
+PenaltyBreakComment: 1000
 PenaltyBreakFirstLessLess: 20
 PenaltyBreakString: 1000
 PenaltyExcessCharacter: 1000000

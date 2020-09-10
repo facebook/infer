@@ -179,3 +179,12 @@ infer/src/.project
 /infer/src/deadcode/dune
 _opam
 _coverage
+
+# facebook-clang-plugins
+/facebook-clang-plugins/clang-ocaml/.depend
+/facebook-clang-plugins/clang-ocaml/build
+/facebook-clang-plugins/clang/install
+/facebook-clang-plugins/clang/installed.version
+/facebook-clang-plugins/clang/src/download
+/facebook-clang-plugins/libtooling/build
+/facebook-clang-plugins/xcode/*
