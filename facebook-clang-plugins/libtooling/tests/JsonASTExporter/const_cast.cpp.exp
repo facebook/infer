@@ -1,0 +1,1251 @@
+["TranslationUnitDecl" , [
+  {
+    "pointer" : 1,
+    "source_range" : [
+      {
+      },
+      {
+      }
+    ]
+  },
+  [
+    ["TypedefDecl" , [
+      {
+        "pointer" : 2,
+        "source_range" : [
+          {
+          },
+          {
+          }
+        ],
+        "is_implicit" : true
+      },
+      {
+        "name" : "__int128_t",
+        "qual_name" : [
+          "__int128_t"
+        ]
+      },
+      0,
+      {
+      }
+    ]],
+    ["TypedefDecl" , [
+      {
+        "pointer" : 3,
+        "source_range" : [
+          {
+          },
+          {
+          }
+        ],
+        "is_implicit" : true
+      },
+      {
+        "name" : "__uint128_t",
+        "qual_name" : [
+          "__uint128_t"
+        ]
+      },
+      0,
+      {
+      }
+    ]],
+    ["TypedefDecl" , [
+      {
+        "pointer" : 4,
+        "source_range" : [
+          {
+          },
+          {
+          }
+        ],
+        "is_implicit" : true
+      },
+      {
+        "name" : "__NSConstantString",
+        "qual_name" : [
+          "__NSConstantString"
+        ]
+      },
+      0,
+      {
+      }
+    ]],
+    ["TypedefDecl" , [
+      {
+        "pointer" : 5,
+        "source_range" : [
+          {
+          },
+          {
+          }
+        ],
+        "is_implicit" : true
+      },
+      {
+        "name" : "__builtin_ms_va_list",
+        "qual_name" : [
+          "__builtin_ms_va_list"
+        ]
+      },
+      0,
+      {
+      }
+    ]],
+    ["TypedefDecl" , [
+      {
+        "pointer" : 6,
+        "source_range" : [
+          {
+          },
+          {
+          }
+        ],
+        "is_implicit" : true
+      },
+      {
+        "name" : "__builtin_va_list",
+        "qual_name" : [
+          "__builtin_va_list"
+        ]
+      },
+      0,
+      {
+      }
+    ]],
+    ["CXXRecordDecl" , [
+      {
+        "pointer" : 7,
+        "parent_pointer" : 1,
+        "source_range" : [
+          {
+            "file" : "tests/const_cast.cpp",
+            "line" : 7,
+            "column" : 1
+          },
+          {
+            "line" : 10,
+            "column" : 1
+          }
+        ],
+        "is_this_declaration_referenced" : true
+      },
+      {
+        "name" : "Foo",
+        "qual_name" : [
+          "Foo"
+        ]
+      },
+      8,
+      [
+        ["CXXRecordDecl" , [
+          {
+            "pointer" : 9,
+            "parent_pointer" : 7,
+            "source_range" : [
+              {
+                "line" : 7,
+                "column" : 1
+              },
+              {
+                "column" : 7
+              }
+            ],
+            "is_implicit" : true,
+            "access" : "Public"
+          },
+          {
+            "name" : "Foo",
+            "qual_name" : [
+              "Foo",
+              "Foo"
+            ]
+          },
+          8,
+          [
+          ],
+          {
+          },
+          "TTK_Class",
+          {
+            "definition_ptr" : 0
+          },
+          {
+          }
+        ]],
+        ["AccessSpecDecl" , [
+          {
+            "pointer" : 10,
+            "source_range" : [
+              {
+                "line" : 8,
+                "column" : 2
+              },
+              {
+                "column" : 8
+              }
+            ],
+            "access" : "Public"
+          }
+        ]],
+        ["CXXMethodDecl" , [
+          {
+            "pointer" : 11,
+            "parent_pointer" : 7,
+            "source_range" : [
+              {
+                "line" : 9,
+                "column" : 3
+              },
+              {
+                "column" : 16
+              }
+            ],
+            "is_used" : true,
+            "is_this_declaration_referenced" : true,
+            "access" : "Public"
+          },
+          {
+            "name" : "func",
+            "qual_name" : [
+              "func",
+              "Foo"
+            ]
+          },
+          {
+            "type_ptr" : 12
+          },
+          {
+            "mangled_name" : "999725558640074098",
+            "is_cpp" : true,
+            "decl_ptr_with_body" : 11,
+            "body" : ["CompoundStmt" , [
+              {
+                "pointer" : 13,
+                "source_range" : [
+                  {
+                    "column" : 15
+                  },
+                  {
+                    "column" : 16
+                  }
+                ]
+              },
+              [
+              ]
+            ]]
+          },
+          {
+          }
+        ]]
+      ],
+      {
+      },
+      "TTK_Class",
+      {
+        "definition_ptr" : 7,
+        "is_complete_definition" : true
+      },
+      {
+        "is_pod" : true
+      }
+    ]],
+    ["FunctionDecl" , [
+      {
+        "pointer" : 14,
+        "source_range" : [
+          {
+            "line" : 12,
+            "column" : 1
+          },
+          {
+            "line" : 15,
+            "column" : 1
+          }
+        ]
+      },
+      {
+        "name" : "someFunction",
+        "qual_name" : [
+          "someFunction"
+        ]
+      },
+      {
+        "type_ptr" : 15
+      },
+      {
+        "mangled_name" : "9689270513361838995",
+        "is_cpp" : true,
+        "parameters" : [
+          ["ParmVarDecl" , [
+            {
+              "pointer" : 16,
+              "source_range" : [
+                {
+                  "line" : 12,
+                  "column" : 19
+                },
+                {
+                  "column" : 30
+                }
+              ],
+              "is_used" : true,
+              "is_this_declaration_referenced" : true
+            },
+            {
+              "name" : "f",
+              "qual_name" : [
+                "f"
+              ]
+            },
+            {
+              "type_ptr" : 17
+            },
+            {
+              "parm_index_in_function" : 0
+            }
+          ]]
+        ],
+        "decl_ptr_with_body" : 14,
+        "body" : ["CompoundStmt" , [
+          {
+            "pointer" : 18,
+            "source_range" : [
+              {
+                "column" : 33
+              },
+              {
+                "line" : 15,
+                "column" : 1
+              }
+            ]
+          },
+          [
+            ["DeclStmt" , [
+              {
+                "pointer" : 19,
+                "source_range" : [
+                  {
+                    "line" : 13,
+                    "column" : 3
+                  },
+                  {
+                    "column" : 35
+                  }
+                ]
+              },
+              [
+                ["CXXConstCastExpr" , [
+                  {
+                    "pointer" : 20,
+                    "source_range" : [
+                      {
+                        "column" : 15
+                      },
+                      {
+                        "column" : 34
+                      }
+                    ]
+                  },
+                  [
+                    ["DeclRefExpr" , [
+                      {
+                        "pointer" : 21,
+                        "source_range" : [
+                          {
+                            "column" : 33
+                          },
+                          {
+                            "column" : 33
+                          }
+                        ]
+                      },
+                      [
+                      ],
+                      {
+                        "qual_type" : {
+                          "type_ptr" : 8,
+                          "is_const" : true
+                        },
+                        "value_kind" : "LValue"
+                      },
+                      {
+                        "decl_ref" : {
+                          "kind" : "ParmVar",
+                          "decl_pointer" : 16,
+                          "name" : {
+                            "name" : "f",
+                            "qual_name" : [
+                              "f"
+                            ]
+                          },
+                          "qual_type" : {
+                            "type_ptr" : 17
+                          }
+                        }
+                      }
+                    ]]
+                  ],
+                  {
+                    "qual_type" : {
+                      "type_ptr" : 8
+                    },
+                    "value_kind" : "LValue"
+                  },
+                  {
+                    "cast_kind" : "NoOp",
+                    "base_path" : [
+                    ]
+                  },
+                  {
+                    "type_ptr" : 22
+                  },
+                  "const_cast"
+                ]]
+              ],
+              [
+                ["VarDecl" , [
+                  {
+                    "pointer" : 23,
+                    "source_range" : [
+                      {
+                        "column" : 3
+                      },
+                      {
+                        "column" : 34
+                      }
+                    ],
+                    "is_used" : true,
+                    "is_this_declaration_referenced" : true
+                  },
+                  {
+                    "name" : "fRef",
+                    "qual_name" : [
+                      "fRef"
+                    ]
+                  },
+                  {
+                    "type_ptr" : 22
+                  },
+                  {
+                    "init_expr" : ["CXXConstCastExpr" , [
+                      {
+                        "pointer" : 20,
+                        "source_range" : [
+                          {
+                            "column" : 15
+                          },
+                          {
+                            "column" : 34
+                          }
+                        ]
+                      },
+                      [
+                        ["DeclRefExpr" , [
+                          {
+                            "pointer" : 21,
+                            "source_range" : [
+                              {
+                                "column" : 33
+                              },
+                              {
+                                "column" : 33
+                              }
+                            ]
+                          },
+                          [
+                          ],
+                          {
+                            "qual_type" : {
+                              "type_ptr" : 8,
+                              "is_const" : true
+                            },
+                            "value_kind" : "LValue"
+                          },
+                          {
+                            "decl_ref" : {
+                              "kind" : "ParmVar",
+                              "decl_pointer" : 16,
+                              "name" : {
+                                "name" : "f",
+                                "qual_name" : [
+                                  "f"
+                                ]
+                              },
+                              "qual_type" : {
+                                "type_ptr" : 17
+                              }
+                            }
+                          }
+                        ]]
+                      ],
+                      {
+                        "qual_type" : {
+                          "type_ptr" : 8
+                        },
+                        "value_kind" : "LValue"
+                      },
+                      {
+                        "cast_kind" : "NoOp",
+                        "base_path" : [
+                        ]
+                      },
+                      {
+                        "type_ptr" : 22
+                      },
+                      "const_cast"
+                    ]]
+                  }
+                ]]
+              ]
+            ]],
+            ["CXXMemberCallExpr" , [
+              {
+                "pointer" : 24,
+                "source_range" : [
+                  {
+                    "line" : 14,
+                    "column" : 3
+                  },
+                  {
+                    "column" : 13
+                  }
+                ]
+              },
+              [
+                ["MemberExpr" , [
+                  {
+                    "pointer" : 25,
+                    "source_range" : [
+                      {
+                        "column" : 3
+                      },
+                      {
+                        "column" : 8
+                      }
+                    ]
+                  },
+                  [
+                    ["DeclRefExpr" , [
+                      {
+                        "pointer" : 26,
+                        "source_range" : [
+                          {
+                            "column" : 3
+                          },
+                          {
+                            "column" : 3
+                          }
+                        ]
+                      },
+                      [
+                      ],
+                      {
+                        "qual_type" : {
+                          "type_ptr" : 8
+                        },
+                        "value_kind" : "LValue"
+                      },
+                      {
+                        "decl_ref" : {
+                          "kind" : "Var",
+                          "decl_pointer" : 23,
+                          "name" : {
+                            "name" : "fRef",
+                            "qual_name" : [
+                              "fRef"
+                            ]
+                          },
+                          "qual_type" : {
+                            "type_ptr" : 22
+                          }
+                        }
+                      }
+                    ]]
+                  ],
+                  {
+                    "qual_type" : {
+                      "type_ptr" : 27
+                    }
+                  },
+                  {
+                    "performs_virtual_dispatch" : true,
+                    "name" : {
+                      "name" : "func",
+                      "qual_name" : [
+                        "func",
+                        "Foo"
+                      ]
+                    },
+                    "decl_ref" : {
+                      "kind" : "CXXMethod",
+                      "decl_pointer" : 11,
+                      "name" : {
+                        "name" : "func",
+                        "qual_name" : [
+                          "func",
+                          "Foo"
+                        ]
+                      },
+                      "qual_type" : {
+                        "type_ptr" : 12
+                      }
+                    }
+                  }
+                ]]
+              ],
+              {
+                "qual_type" : {
+                  "type_ptr" : 28
+                }
+              }
+            ]]
+          ]
+        ]]
+      }
+    ]],
+    ["VarDecl" , [
+      {
+        "pointer" : 29,
+        "source_range" : [
+          {
+            "line" : 17,
+            "column" : 1
+          },
+          {
+            "column" : 19
+          }
+        ]
+      },
+      {
+        "name" : "i",
+        "qual_name" : [
+          "i"
+        ]
+      },
+      {
+        "type_ptr" : 30,
+        "is_const" : true
+      },
+      {
+        "is_global" : true,
+        "is_const_expr" : true,
+        "is_init_ice" : true,
+        "init_expr" : ["IntegerLiteral" , [
+          {
+            "pointer" : 31,
+            "source_range" : [
+              {
+                "column" : 19
+              },
+              {
+                "column" : 19
+              }
+            ]
+          },
+          [
+          ],
+          {
+            "qual_type" : {
+              "type_ptr" : 30
+            }
+          },
+          {
+            "is_signed" : true,
+            "bitwidth" : 32,
+            "value" : "1"
+          }
+        ]]
+      }
+    ]],
+    ["TypedefDecl" , [
+      {
+        "pointer" : 32,
+        "source_range" : [
+          {
+          },
+          {
+          }
+        ],
+        "is_implicit" : true
+      },
+      {
+        "name" : "instancetype",
+        "qual_name" : [
+          "instancetype"
+        ]
+      },
+      33,
+      {
+      }
+    ]]
+  ],
+  {
+  },
+  {
+    "input_path" : "tests/const_cast.cpp",
+    "input_kind" : "IK_CXX",
+    "integer_type_widths" : {
+      "char_type" : 8,
+      "short_type" : 16,
+      "int_type" : 32,
+      "long_type" : 64,
+      "longlong_type" : 64
+    },
+    "types" : [
+      ["BuiltinType" , [
+        {
+          "pointer" : 28
+        },
+        "Void"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 34
+        },
+        "Bool"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 35
+        },
+        "Char_S"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 36
+        },
+        "SChar"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 37
+        },
+        "Short"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 30
+        },
+        "Int"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 38
+        },
+        "Long"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 39
+        },
+        "LongLong"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 40
+        },
+        "UChar"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 41
+        },
+        "UShort"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 42
+        },
+        "UInt"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 43
+        },
+        "ULong"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 44
+        },
+        "ULongLong"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 45
+        },
+        "Float"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 46
+        },
+        "Double"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 47
+        },
+        "LongDouble"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 48
+        },
+        "Float128"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 49
+        },
+        "Float16"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 50
+        },
+        "ShortAccum"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 51
+        },
+        "Accum"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 52
+        },
+        "LongAccum"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 53
+        },
+        "UShortAccum"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 54
+        },
+        "UAccum"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 55
+        },
+        "ULongAccum"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 56
+        },
+        "ShortFract"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 57
+        },
+        "Fract"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 58
+        },
+        "LongFract"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 59
+        },
+        "UShortFract"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 60
+        },
+        "UFract"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 61
+        },
+        "ULongFract"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 62
+        },
+        "SatShortAccum"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 63
+        },
+        "SatAccum"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 64
+        },
+        "SatLongAccum"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 65
+        },
+        "SatUShortAccum"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 66
+        },
+        "SatUAccum"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 67
+        },
+        "SatULongAccum"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 68
+        },
+        "SatShortFract"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 69
+        },
+        "SatFract"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 70
+        },
+        "SatLongFract"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 71
+        },
+        "SatUShortFract"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 72
+        },
+        "SatUFract"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 73
+        },
+        "SatULongFract"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 74
+        },
+        "Int128"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 75
+        },
+        "UInt128"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 76
+        },
+        "WChar_S"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 77
+        },
+        "Char8"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 78
+        },
+        "Char16"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 79
+        },
+        "Char32"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 80
+        },
+        "Dependent"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 81
+        },
+        "Overload"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 27
+        },
+        "BoundMember"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 82
+        },
+        "PseudoObject"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 83
+        },
+        "UnknownAny"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 84
+        },
+        "ARCUnbridgedCast"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 85
+        },
+        "BuiltinFn"
+      ]],
+      ["ComplexType" , [
+        {
+          "pointer" : 86
+        }
+      ]],
+      ["ComplexType" , [
+        {
+          "pointer" : 87
+        }
+      ]],
+      ["ComplexType" , [
+        {
+          "pointer" : 88
+        }
+      ]],
+      ["ComplexType" , [
+        {
+          "pointer" : 89
+        }
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 90
+        },
+        "ObjCId"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 91
+        },
+        "ObjCClass"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 92
+        },
+        "ObjCSel"
+      ]],
+      ["PointerType" , [
+        {
+          "pointer" : 93
+        },
+        {
+          "type_ptr" : 28
+        }
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 94
+        },
+        "NullPtr"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 95
+        },
+        "Half"
+      ]],
+      ["RecordType" , [
+        {
+          "pointer" : 96
+        },
+        97
+      ]],
+      ["PointerType" , [
+        {
+          "pointer" : 98
+        },
+        {
+          "type_ptr" : 30,
+          "is_const" : true
+        }
+      ]],
+      ["PointerType" , [
+        {
+          "pointer" : 99
+        },
+        {
+          "type_ptr" : 35,
+          "is_const" : true
+        }
+      ]],
+      ["PointerType" , [
+        {
+          "pointer" : 100
+        },
+        {
+          "type_ptr" : 35
+        }
+      ]],
+      ["RecordType" , [
+        {
+          "pointer" : 101
+        },
+        102
+      ]],
+      ["ConstantArrayType" , [
+        {
+          "pointer" : 103
+        },
+        {
+          "element_type" : {
+            "type_ptr" : 101
+          },
+          "stride" : 24
+        },
+        1
+      ]],
+      ["RecordType" , [
+        {
+          "pointer" : 8
+        },
+        7
+      ]],
+      ["PointerType" , [
+        {
+          "pointer" : 104
+        },
+        {
+          "type_ptr" : 8
+        }
+      ]],
+      ["FunctionProtoType" , [
+        {
+          "pointer" : 12
+        },
+        {
+          "return_type" : {
+            "type_ptr" : 28
+          }
+        },
+        {
+        }
+      ]],
+      ["LValueReferenceType" , [
+        {
+          "pointer" : 17
+        },
+        {
+          "type_ptr" : 8,
+          "is_const" : true
+        }
+      ]],
+      ["FunctionProtoType" , [
+        {
+          "pointer" : 15
+        },
+        {
+          "return_type" : {
+            "type_ptr" : 28
+          }
+        },
+        {
+          "params_type" : [
+            {
+              "type_ptr" : 17
+            }
+          ]
+        }
+      ]],
+      ["LValueReferenceType" , [
+        {
+          "pointer" : 22
+        },
+        {
+          "type_ptr" : 8
+        }
+      ]],
+      ["PointerType" , [
+        {
+          "pointer" : 105
+        },
+        {
+          "type_ptr" : 8,
+          "is_const" : true
+        }
+      ]],
+      ["ObjCObjectType" , [
+        {
+          "pointer" : 106
+        },
+        {
+          "base_type" : 90
+        }
+      ]],
+      ["ObjCObjectPointerType" , [
+        {
+          "pointer" : 107
+        },
+        {
+          "type_ptr" : 106
+        }
+      ]],
+      ["TypedefType" , [
+        {
+          "pointer" : 108,
+          "desugared_type" : 107
+        },
+        {
+          "child_type" : {
+            "type_ptr" : 107
+          },
+          "decl_ptr" : 109
+        }
+      ]],
+      ["TypedefType" , [
+        {
+          "pointer" : 33,
+          "desugared_type" : 107
+        },
+        {
+          "child_type" : {
+            "type_ptr" : 108
+          },
+          "decl_ptr" : 32
+        }
+      ]],
+      ["NoneType" , [
+        {
+          "pointer" : 0
+        }
+      ]]
+    ]
+  }
+]]

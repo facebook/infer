@@ -1,0 +1,13 @@
+--- a/llvm/tools/clang/lib/Sema/SemaInit.cpp
++++ b/llvm/tools/clang/lib/Sema/SemaInit.cpp
+@@ -7147,7 +7147,9 @@ void Sema::checkInitializerLifetime(const InitializedEntity &Entity,
+             << Entity.getType()->isReferenceType() << DRE->getDecl()
+             << isa<ParmVarDecl>(DRE->getDecl()) << DiagRange;
+       } else if (isa<BlockExpr>(L)) {
+-        Diag(DiagLoc, diag::err_ret_local_block) << DiagRange;
++        // Don't throw this error during Infer runs
++        // Diag(DiagLoc, diag::err_ret_local_block) << DiagRange;
++        return false;
+       } else if (isa<AddrLabelExpr>(L)) {
+         // Don't warn when returning a label from a statement expression.
+         // Leaving the scope doesn't end its lifetime.

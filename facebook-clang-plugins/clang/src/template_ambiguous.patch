@@ -1,0 +1,12 @@
+--- a/llvm/tools/clang/lib/Sema/SemaTemplate.cpp
++++ b/llvm/tools/clang/lib/Sema/SemaTemplate.cpp
+@@ -441,9 +441,6 @@ bool Sema::LookupTemplateName(LookupResult &Found,
+     IsDependent |= Found.wasNotFoundInCurrentInstantiation();
+   }
+
+-  if (Found.isAmbiguous())
+-    return false;
+-
+   if (ATK && !SS.isSet() && ObjectType.isNull() && TemplateKWLoc.isInvalid()) {
+     // C++2a [temp.names]p2:
+     //   A name is also considered to refer to a template if it is an

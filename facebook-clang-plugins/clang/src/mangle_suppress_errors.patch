@@ -1,0 +1,77 @@
+--- a/llvm/tools/clang/lib/AST/ItaniumMangle.cpp
++++ b/llvm/tools/clang/lib/AST/ItaniumMangle.cpp
+@@ -3048,11 +3048,7 @@ void CXXNameMangler::mangleNeonVectorType(const VectorType *T) {
+ }
+
+ void CXXNameMangler::mangleNeonVectorType(const DependentVectorType *T) {
+-  DiagnosticsEngine &Diags = Context.getDiags();
+-  unsigned DiagID = Diags.getCustomDiagID(
+-      DiagnosticsEngine::Error,
+-      "cannot mangle this dependent neon vector type yet");
+-  Diags.Report(T->getAttributeLoc(), DiagID);
++  Out << "__unhandled_NeonVectorType";
+ }
+
+ static StringRef mangleAArch64VectorBase(const BuiltinType *EltType) {
+@@ -3123,11 +3119,7 @@ void CXXNameMangler::mangleAArch64NeonVectorType(const VectorType *T) {
+   Out << TypeName.length() << TypeName;
+ }
+ void CXXNameMangler::mangleAArch64NeonVectorType(const DependentVectorType *T) {
+-  DiagnosticsEngine &Diags = Context.getDiags();
+-  unsigned DiagID = Diags.getCustomDiagID(
+-      DiagnosticsEngine::Error,
+-      "cannot mangle this dependent neon vector type yet");
+-  Diags.Report(T->getAttributeLoc(), DiagID);
++  Out << "__unhandled_AArch64NeonVectorType";
+ }
+
+ // GNU extension: vector types
+@@ -3626,12 +3618,7 @@ recurse:
+   case Expr::BuiltinBitCastExprClass:
+   {
+     if (!NullOut) {
+-      // As bad as this diagnostic is, it's better than crashing.
+-      DiagnosticsEngine &Diags = Context.getDiags();
+-      unsigned DiagID = Diags.getCustomDiagID(DiagnosticsEngine::Error,
+-                                       "cannot yet mangle expression type %0");
+-      Diags.Report(E->getExprLoc(), DiagID)
+-        << E->getStmtClassName() << E->getSourceRange();
++      Out << "__unhandled_expression";
+     }
+     break;
+   }
+@@ -3652,12 +3639,7 @@ recurse:
+
+   // Even gcc-4.5 doesn't mangle this.
+   case Expr::BinaryConditionalOperatorClass: {
+-    DiagnosticsEngine &Diags = Context.getDiags();
+-    unsigned DiagID =
+-      Diags.getCustomDiagID(DiagnosticsEngine::Error,
+-                "?: operator with omitted middle operand cannot be mangled");
+-    Diags.Report(E->getExprLoc(), DiagID)
+-      << E->getStmtClassName() << E->getSourceRange();
++    Out << "__unhandled_BinaryConditionalOperatorClass";
+     break;
+   }
+
+@@ -3952,18 +3934,11 @@ recurse:
+       Out << 'a';
+       break;
+     case UETT_VecStep: {
+-      DiagnosticsEngine &Diags = Context.getDiags();
+-      unsigned DiagID = Diags.getCustomDiagID(DiagnosticsEngine::Error,
+-                                     "cannot yet mangle vec_step expression");
+-      Diags.Report(DiagID);
++      Out << "__unhandled_VecStep";
+       return;
+     }
+     case UETT_OpenMPRequiredSimdAlign: {
+-      DiagnosticsEngine &Diags = Context.getDiags();
+-      unsigned DiagID = Diags.getCustomDiagID(
+-          DiagnosticsEngine::Error,
+-          "cannot yet mangle __builtin_omp_required_simd_align expression");
+-      Diags.Report(DiagID);
++      Out << "__unhandled_UETT_OpenMPRequiredSimdAlign";
+       return;
+     }
+     }

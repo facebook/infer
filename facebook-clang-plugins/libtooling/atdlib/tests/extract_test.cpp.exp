@@ -1,0 +1,11 @@
+type x = {
+  foo : int
+}
+
+type x = {
+}
+foo
+bar
+still there
+some long line cut with \
+  bla

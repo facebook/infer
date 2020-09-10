@@ -1,0 +1,32 @@
+-100000
+-4611686018427387904
+4611686018427387903
+"Hello"
+true
+[]
+[
+  "Hello, how are you?", "I'm well, thank you; and you, how are you?",
+  "I'm fine, thank you."
+]
+[ [ [ 1 ] ], [ [], [ 2, 3 ] ], [] ]
+{
+  #113028d1: "Hello",
+  #fdfeeaa8: true,
+  #171bbdbe: 100000,
+  #21ac3408: unit,
+  #21ac3408: unit,
+  #21ac3408: unit,
+  #21ac3408: unit,
+  #21ac3408: unit,
+  #21ac3408: unit,
+  #21ac3408: unit,
+  #21ac3408: unit,
+  #21ac3408: unit
+}
+{ #171bbdbe: 100000, #258f6d99: [ 1, 2 ] }
+{
+  #113028d1: "multiply",
+  #258f6d99: [ { #171bbdbe: 32 }, { #171bbdbe: 52, #21ac3408: unit } ]
+}
+(<#d0f10f28>, <#cc5ca7c2: <#ca5ebee1: <#d0f10f28>>>)
+(<#d0f10f28>, <#cc5ca7c2: <#ca5ebee1: <#c31c6b9c: ("f", "\"3\t4\n\"")>>>)

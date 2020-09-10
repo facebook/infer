@@ -1,0 +1,32 @@
+100000
+-100000
+"Hello"
+true
+[
+  "Hello",
+  true,
+  100000
+]
+{
+  "string" : "Hello",
+  "boolean" : true,
+  "integer" : 100000
+}
+{
+  "integer" : 100000,
+  "array" : [
+    1,
+    2
+  ]
+}
+[
+  "zero",
+  ["succ" , ["pred" , "zero"]]
+]
+(
+  <"zero">,
+  <"succ" : <"pred" : <"eval" : (
+    "f",
+    "\"3\t4\n\""
+  )>>>
+)

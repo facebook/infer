@@ -1,0 +1,5 @@
+type @ObjCExpression@ = {}
+
+type x@@yz = {
+  @CXXExpression@ : string
+}
