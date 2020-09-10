@@ -1,5 +1,5 @@
 (*
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -20,7 +20,9 @@ let validate_type_ptr key_ptr c_type = validate_ptr key_ptr (`TypeNode c_type)
 
 let print_node path kind_str =
   let indent = String.make (List.length path) ' ' in
-  prerr_string indent ; prerr_string kind_str ; prerr_newline ()
+  prerr_string indent ;
+  prerr_string kind_str ;
+  prerr_newline ()
 
 
 let sloc_to_str sloc =
@@ -65,9 +67,15 @@ let check_decl_cache_from_file fname =
 
 let main =
   let v = Sys.argv in
-  try for i = 1 to Array.length v - 1 do check_decl_cache_from_file v.(i) done with
+  try
+    for i = 1 to Array.length v - 1 do
+      check_decl_cache_from_file v.(i)
+    done
+  with
   | PointerMismatch ->
       prerr_string "Pointer in cache doesn't match" ;
       exit 1
   | Yojson.Json_error s | Atdgen_runtime.Oj_run.Error s ->
-      prerr_string s ; prerr_newline () ; exit 1
+      prerr_string s ;
+      prerr_newline () ;
+      exit 1

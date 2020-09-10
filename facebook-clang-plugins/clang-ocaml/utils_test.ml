@@ -1,5 +1,5 @@
 (*
- * Copyright (c) 2014-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -39,7 +39,11 @@ let () =
 
 
 let () =
-  let pid, ic = Process.fork (fun oc -> output_string oc "foo\nbar\n" ; true) in
+  let pid, ic =
+    Process.fork (fun oc ->
+        output_string oc "foo\nbar\n" ;
+        true )
+  in
   let lines = stream_to_list (line_stream_of_channel ic) in
   assert_true "line_stream_of_channel::wait" (Process.wait pid) ;
   assert_equal "line_stream_of_channel::result" lines ["foo"; "bar"]

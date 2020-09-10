@@ -1,5 +1,5 @@
 (*
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -8,7 +8,7 @@
 module PointerOrd = struct
   type t = int
 
-  let compare (i: int) (j: int) = i - j
+  let compare (i : int) (j : int) = i - j
 end
 
 module PointerMap = Map.Make (PointerOrd)
@@ -24,8 +24,8 @@ let ivarToPropertyMap = ref PointerMap.empty
 let empty_v = Clang_ast_visit.empty_visitor
 
 (* This function is not thread-safe *)
-let visit_ast ?(visit_decl= empty_v) ?(visit_stmt= empty_v) ?(visit_type= empty_v)
-    ?(visit_src_loc= empty_v) top_decl =
+let visit_ast ?(visit_decl = empty_v) ?(visit_stmt = empty_v) ?(visit_type = empty_v)
+    ?(visit_src_loc = empty_v) top_decl =
   Clang_ast_visit.decl_visitor := visit_decl ;
   Clang_ast_visit.stmt_visitor := visit_stmt ;
   Clang_ast_visit.type_visitor := visit_type ;
@@ -113,4 +113,5 @@ let index_node_pointers top_decl =
   visit_ast ~visit_decl:process_decl ~visit_stmt:add_stmt_to_cache ~visit_type:add_type_to_cache
     ~visit_src_loc:complete_source_location top_decl ;
   let result = (!declMap, !stmtMap, !typeMap, !ivarToPropertyMap) in
-  reset_cache () ; result
+  reset_cache () ;
+  result

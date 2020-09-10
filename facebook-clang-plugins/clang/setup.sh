@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2014-present, Facebook, Inc.
+# Copyright (c) Facebook, Inc. and its affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -174,9 +174,9 @@ if [ "$SEQUENTIAL_LINK" = "yes" ]; then
     fi
     # For Ninja, the compile jobs is the number of CPUs *not* $JOBS
     CMAKE_ARGS+=(
-	-DCMAKE_JOB_POOLS:STRING="compile=$NCPUS;link=1"
-	-DCMAKE_JOB_POOL_COMPILE:STRING="compile"
-	-DCMAKE_JOB_POOL_LINK:STRING="link"
+        -DCMAKE_JOB_POOLS:STRING="compile=$NCPUS;link=1"
+        -DCMAKE_JOB_POOL_COMPILE:STRING="compile"
+        -DCMAKE_JOB_POOL_LINK:STRING="link"
     )
 fi
 

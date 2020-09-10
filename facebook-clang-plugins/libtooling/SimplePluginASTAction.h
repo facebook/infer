@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -160,8 +160,8 @@ class SimplePluginASTActionBase : public clang::PluginASTAction {
     case clang::InputKind::Unknown:
     case clang::InputKind::Asm:
     case clang::InputKind::LLVM_IR:
-      // We can't do anything with these - they may trigger errors when running
-      // clang frontend
+      // We can't do anything with these - they may trigger errors when
+      // running clang frontend
       return false;
     default:
       // run the consumer for IK_AST and all others

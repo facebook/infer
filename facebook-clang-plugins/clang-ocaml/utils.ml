@@ -1,5 +1,5 @@
 (*
- * Copyright (c) 2014-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17,10 +17,12 @@ let open_out name = if name = "-" then stdout else Pervasives.open_out name
 let make_cached f =
   let h = H.create 10 in
   function
-    | x ->
-      try H.find h x with Not_found ->
-        let y = f x in
-        H.add h x y ; y
+  | x -> (
+    try H.find h x
+    with Not_found ->
+      let y = f x in
+      H.add h x y ;
+      y )
 
 
 (* missing string API *)
@@ -87,7 +89,8 @@ let stream_concat streams =
             current_stream := Some stream ;
             stream
       in
-      try Some (Stream.next stream) with Stream.Failure ->
+      try Some (Stream.next stream)
+      with Stream.Failure ->
         current_stream := None ;
         next i
     with Stream.Failure -> None
@@ -149,9 +152,11 @@ module DisjointSet = struct
   let create () = Hashtbl.create 10
 
   let bucket t x =
-    try Hashtbl.find t x with Not_found ->
+    try Hashtbl.find t x
+    with Not_found ->
       let b = {parent= x; rank= 0} in
-      Hashtbl.add t x b ; b
+      Hashtbl.add t x b ;
+      b
 
 
   let rec find_bucket t x =

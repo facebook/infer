@@ -1,5 +1,5 @@
 (*
- * Copyright (c) 2014-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -29,6 +29,8 @@ let print_named_decl_from_file fname =
 
 
 let main =
-  try Array.iteri (fun i arg -> if i <> 0 then print_named_decl_from_file arg) Sys.argv with
-  | Yojson.Json_error s | Atdgen_runtime.Oj_run.Error s ->
-      prerr_string s ; prerr_newline () ; exit 1
+  try Array.iteri (fun i arg -> if i <> 0 then print_named_decl_from_file arg) Sys.argv
+  with Yojson.Json_error s | Atdgen_runtime.Oj_run.Error s ->
+    prerr_string s ;
+    prerr_newline () ;
+    exit 1

@@ -1,5 +1,5 @@
 (*
- * Copyright (c) 2014-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -14,6 +14,12 @@ let main =
         true )
   in
   let zipunzip = compose gzip gunzip in
-  ignore (diff_on_same_input (fun ic oc -> copy ic oc ; flush_all () ; true) zipunzip ic stderr) ;
+  ignore
+    (diff_on_same_input
+       (fun ic oc ->
+         copy ic oc ;
+         flush_all () ;
+         true )
+       zipunzip ic stderr) ;
   close_in ic ;
   ignore (wait pid)

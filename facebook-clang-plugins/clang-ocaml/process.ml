@@ -1,5 +1,5 @@
 (*
- * Copyright (c) 2014-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -50,20 +50,42 @@ let gzip ic oc =
   let ocz = Gzip.open_out_chan oc in
   let buffer = Bytes.create buffer_size in
   let rec loop () =
-    match input ic buffer 0 buffer_size with 0 -> () | r -> Gzip.output ocz buffer 0 r ; loop ()
+    match input ic buffer 0 buffer_size with
+    | 0 ->
+        ()
+    | r ->
+        Gzip.output ocz buffer 0 r ;
+        loop ()
   in
-  let success = try loop () ; true with Gzip.Error _ -> false in
-  Gzip.close_out ocz ; success
+  let success =
+    try
+      loop () ;
+      true
+    with Gzip.Error _ -> false
+  in
+  Gzip.close_out ocz ;
+  success
 
 
 let gunzip ic oc =
   let icz = Gzip.open_in_chan ic in
   let buffer = Bytes.create buffer_size in
   let rec loop () =
-    match Gzip.input icz buffer 0 buffer_size with 0 -> () | r -> output oc buffer 0 r ; loop ()
+    match Gzip.input icz buffer 0 buffer_size with
+    | 0 ->
+        ()
+    | r ->
+        output oc buffer 0 r ;
+        loop ()
   in
-  let success = try loop () ; true with Gzip.Error _ -> false in
-  Gzip.close_in icz ; success
+  let success =
+    try
+      loop () ;
+      true
+    with Gzip.Error _ -> false
+  in
+  Gzip.close_in icz ;
+  success
 
 
 let copy ic oc = tee ic [oc]
@@ -91,21 +113,29 @@ let diff file1 file2 oc = exec [|"diff"; file1; file2|] stdin oc stderr
 let fork f =
   let fd_in, fd_out = U.pipe () in
   match U.fork () with
-  | 0
-    -> (
+  | 0 -> (
       U.close fd_in ;
-      try if f (U.out_channel_of_descr fd_out) then exit 0 else ( close fd_out ; exit 1 )
-      with _ -> close fd_out ; exit 2 )
+      try
+        if f (U.out_channel_of_descr fd_out) then exit 0
+        else (
+          close fd_out ;
+          exit 1 )
+      with _ ->
+        close fd_out ;
+        exit 2 )
   | pid ->
       if pid < 0 then failwith "fork error"
-      else ( U.close fd_out ; (pid, U.in_channel_of_descr fd_in) )
+      else (
+        U.close fd_out ;
+        (pid, U.in_channel_of_descr fd_in) )
 
 
 let compose f g ic oc =
   let pid, ic1 = fork (f ic) in
   let r1 = g ic1 oc in
   let r2 = wait pid in
-  close_in ic1 ; r1 && r2
+  close_in ic1 ;
+  r1 && r2
 
 
 let diff_on_same_input f1 f2 ic oc =
@@ -122,4 +152,7 @@ let diff_on_same_input f1 f2 ic oc =
   close_out ofile1 ;
   close_out ofile2 ;
   let success = if r1 && r2 then diff file1 file2 oc else false in
-  U.unlink file ; U.unlink file1 ; U.unlink file2 ; success
+  U.unlink file ;
+  U.unlink file1 ;
+  U.unlink file2 ;
+  success
