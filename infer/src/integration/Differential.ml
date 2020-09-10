@@ -57,9 +57,9 @@ let dedup (issues : Jsonbug_t.jsonbug list) =
 module CostsSummary = struct
   module DegreeMap = Caml.Map.Make (Int)
 
-  type 'a count = {top: 'a; zero: 'a; degrees: 'a DegreeMap.t}
+  type 'a count = {top: 'a; unreachable: 'a; zero: 'a; degrees: 'a DegreeMap.t}
 
-  let init = {top= 0; zero= 0; degrees= DegreeMap.empty}
+  let init = {top= 0; unreachable= 0; zero= 0; degrees= DegreeMap.empty}
 
   type previous_current = {previous: int; current: int}
 
@@ -69,7 +69,8 @@ module CostsSummary = struct
       match CostDomain.BasicCost.degree e with
       | None ->
           if CostDomain.BasicCost.is_top e then {t with top= t.top + 1}
-          else if CostDomain.BasicCost.is_unreachable e then {t with zero= t.zero + 1}
+          else if CostDomain.BasicCost.is_unreachable e then
+            {t with unreachable= t.unreachable + 1; zero= t.zero + 1}
           else (* a cost with no degree must be either T/bottom*) assert false
       | Some d ->
           let degrees = DegreeMap.update (Polynomials.Degree.encode_to_int d) incr t.degrees in
@@ -80,7 +81,7 @@ module CostsSummary = struct
       | None ->
           {t with top= t.top + 1}
       | Some d when Int.equal d 0 ->
-          {t with zero= t.zero + 1}
+          {t with unreachable= t.unreachable + 1; zero= t.zero + 1}
       | Some d ->
           let degrees = DegreeMap.update d incr t.degrees in
           {t with degrees}
@@ -113,6 +114,7 @@ module CostsSummary = struct
       DegreeMap.merge merge_aux current previous
     in
     { top= {current= current_counts.top; previous= previous_counts.top}
+    ; unreachable= {current= current_counts.unreachable; previous= previous_counts.unreachable}
     ; zero= {current= current_counts.zero; previous= previous_counts.zero}
     ; degrees= compute_degrees current_counts.degrees previous_counts.degrees }
 
@@ -131,6 +133,8 @@ module CostsSummary = struct
     in
     `Assoc
       [ ("top", create_assoc paired_counts.top.current paired_counts.top.previous)
+      ; ( "unreachable"
+        , create_assoc paired_counts.unreachable.current paired_counts.unreachable.previous )
       ; ("zero", create_assoc paired_counts.zero.current paired_counts.zero.previous)
       ; ("degrees", `List json_degrees) ]
 end
@@ -324,7 +328,7 @@ let of_costs ~(current_costs : Jsonbug_t.costs_report) ~(previous_costs : Jsonbu
         let curr_item = max_degree_polynomial current in
         let prev_item = max_degree_polynomial previous in
         if Config.filtering && (CostItem.is_one curr_item || CostItem.is_one prev_item) then
-          (* transitions to/from zero costs are obvious, no need to flag them *)
+          (* transitions to/from unreachable costs are obvious, no need to flag them *)
           (left, both, right)
         else
           let cmp = CostItem.compare_by_degree curr_item prev_item in
