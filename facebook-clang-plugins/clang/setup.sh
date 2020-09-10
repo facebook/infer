@@ -41,8 +41,10 @@ usage () {
 }
 
 clang_hash () {
-    HASH=$($SHASUM "${SCRIPT_DIR}/setup.sh" "${SCRIPT_DIR}/src/prepare_clang_src.sh" | $SHASUM)
+    pushd "$SCRIPT_DIR" > /dev/null
+    HASH=$($SHASUM setup.sh src/prepare_clang_src.sh | $SHASUM)
     printf "%s" "$HASH" | cut -d ' ' -f 1
+    popd > /dev/null
 }
 
 check_installed () {
