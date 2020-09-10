@@ -11,7 +11,7 @@ set -o pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPT_RELATIVE_PATH="$(basename "${BASH_SOURCE[0]}")"
-CLANG_RELATIVE_SRC="src/llvm_clang_compiler-rt_libcxx_libcxxabi_openmp-9.0.0.tar.xz"
+CLANG_RELATIVE_SRC="src/download/llvm"
 CLANG_SRC="$SCRIPT_DIR/$CLANG_RELATIVE_SRC"
 CLANG_PREBUILD_PATCHES=(
     "$SCRIPT_DIR/src/err_ret_local_block.patch"
@@ -49,7 +49,7 @@ check_installed () {
 
 record_installed () {
     pushd "$SCRIPT_DIR" > /dev/null
-    $SHASUM "$CLANG_RELATIVE_SRC" "$SCRIPT_RELATIVE_PATH" > "$CLANG_INSTALLED_VERSION_FILE"
+    $SHASUM "$SCRIPT_RELATIVE_PATH" > "$CLANG_INSTALLED_VERSION_FILE"
     popd > /dev/null
 }
 
@@ -181,6 +181,18 @@ if [ "$SEQUENTIAL_LINK" = "yes" ]; then
 fi
 
 # start the installation
+if [ ! -d "$CLANG_SRC" ]; then
+    echo "Clang src (${CLANG_SRC}) missing, please run src/prepare_clang_src.sh"
+    exit 1
+fi
+
+# apply prebuild patch
+pushd "${SCRIPT_DIR}/src/download"
+for PATCH_FILE in ${CLANG_PREBUILD_PATCHES[*]}; do
+    "$PATCH" --batch -p 1 < "$PATCH_FILE"
+done
+popd
+
 if [ -n "$CLANG_TMP_DIR" ]; then
     TMP=$CLANG_TMP_DIR
 else
@@ -188,25 +200,13 @@ else
 fi
 pushd "$TMP"
 
-if tar --version | grep -q 'GNU'; then
-    # GNU tar is too verbose if the tarball was created on MacOS
-    QUIET_TAR="--warning=no-unknown-keyword"
-fi
-echo "unpacking '$CLANG_SRC'..."
-tar --extract $QUIET_TAR --file "$CLANG_SRC"
-
-# apply prebuild patch
-for PATCH_FILE in ${CLANG_PREBUILD_PATCHES[*]}; do
-    "$PATCH" --batch -p 1 < "$PATCH_FILE"
-done
-
 mkdir -p build
 pushd build
 
 # workaround install issue with ocaml llvm bindings and ocamldoc
 mkdir -p docs/ocamldoc/html
 
-cmake -G "$CMAKE_GENERATOR" ../llvm "${CMAKE_ARGS[@]}" $CLANG_CMAKE_ARGS
+cmake -G "$CMAKE_GENERATOR" "$CLANG_SRC" "${CMAKE_ARGS[@]}" $CLANG_CMAKE_ARGS
 
 $BUILD_BIN $BUILD_ARGS
 
