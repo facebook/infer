@@ -409,7 +409,7 @@ clang_plugin_test: clang_setup
 	  SDKPATH=$(XCODE_ISYSROOT) \
 	)
 
-.PHONY: clang_plugin_test
+.PHONY: clang_plugin_test_replace
 clang_plugin_test_replace: clang_setup
 	$(QUIET)$(call silent_on_success,Running facebook-clang-plugins/libtooling/ record tests,\
 	$(MAKE) -C $(FCP_DIR)/libtooling record-test-outputs \
