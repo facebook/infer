@@ -92,7 +92,16 @@ let pp_all ~filter ~proc_name:proc_name_cond ~attr_kind ~source_file:source_file
   (* we could also register this statement but it's typically used only once per run so just prepare
      it inside the function *)
   Sqlite3.prepare db
-    "SELECT proc_name, proc_uid, attr_kind, source_file, proc_attributes, cfg FROM procedures"
+    {|
+       SELECT
+         proc_name,
+         proc_uid,
+         attr_kind,
+         source_file,
+         proc_attributes,
+         cfg
+       FROM procedures ORDER BY proc_uid
+    |}
   |> Container.iter ~fold:(SqliteUtils.result_fold_rows db ~log:"print all procedures")
        ~f:(fun stmt ->
          let proc_name = Sqlite3.column stmt 0 |> Procname.SQLite.deserialize in
