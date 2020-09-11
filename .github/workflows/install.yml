@@ -13,7 +13,7 @@ jobs:
           - macOS-latest
           - ubuntu-latest
         ocaml-version:
-          - 4.09.1
+          - 4.11.1
 
     runs-on: ${{ matrix.os }}
 

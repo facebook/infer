@@ -402,6 +402,7 @@ let startup_action =
   if infer_is_javac then Javac
   else if
     !Sys.interactive
+    || String.is_substring ~substring:"inline_test_runner" exe_basename
     || String.is_substring ~substring:"inferunit" exe_basename
     || String.equal "run.exe" exe_basename
     || String.equal "run.bc" exe_basename
