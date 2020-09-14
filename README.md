@@ -1,18 +1,9 @@
-<p align="center">
-  <img src="website/static/img/logo.png" alt="logo" width="20%" />
-</p>
-<h1 align="center">
-  Infer
-</h1>
-<p align="center">
-  <a href="https://travis-ci.org/facebook/infer">
-    <img src="https://travis-ci.org/facebook/infer.svg?branch=master" alt="Build Status" />
-  </a>
-  <p align="center">
-    <a href="http://fbinfer.com/">Infer</a>is a static analysis tool for Java, C++, Objective-C, and C. Infer is written in <a href="https://ocaml.org/">OCaml</a>.
-  </p>
-</p>
+<img src="website/static/img/logo.png" alt="logo" width="15%" />
 
+# Infer [![Build Status](https://travis-ci.org/facebook/infer.svg?branch=master)](https://travis-ci.org/facebook/infer)
+
+[Infer](http://fbinfer.com/) is a static analysis tool for Java,
+C++, Objective-C, and C. Infer is written in [OCaml](https://ocaml.org/).
 
 ## Installation
 
