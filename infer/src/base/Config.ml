@@ -2542,14 +2542,19 @@ let post_parsing_initialization command_opt =
   in
   Caml.Printexc.set_uncaught_exception_handler uncaught_exception_handler ;
   F.set_margin !margin ;
-  let set_minor_heap_size nMb =
-    (* increase the minor heap size to speed up gc *)
+  let set_gc_params () =
     let ctrl = Gc.get () in
     let words_of_Mb nMb = nMb * 1024 * 1024 * 8 / Sys.word_size in
-    let new_size = max ctrl.minor_heap_size (words_of_Mb nMb) in
-    Gc.set {ctrl with minor_heap_size= new_size}
+    let new_size nMb = max ctrl.minor_heap_size (words_of_Mb nMb) in
+    (* increase the minor heap size *)
+    let minor_heap_size = new_size 8 in
+    (* use the best-fit allocator *)
+    let allocation_policy = 2 in
+    (* increase the overhead as the default is tuned for the next-fit allocator *)
+    let space_overhead = 120 in
+    Gc.set {ctrl with minor_heap_size; allocation_policy; space_overhead}
   in
-  set_minor_heap_size 8 ;
+  set_gc_params () ;
   let symops_timeout, seconds_timeout =
     let default_symops_timeout = 1100 in
     let default_seconds_timeout = 10.0 in
