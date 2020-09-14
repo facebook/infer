@@ -123,7 +123,7 @@ fi
 
 setup_opam () {
     opam var root 1>/dev/null 2>/dev/null || opam init --reinit --bare --no-setup &&
-    opam_switch_create_if_needed "$INFER_OPAM_SWITCH" "$INFER_OPAM_COMPILER" &&
+    opam_retry opam_switch_create_if_needed "$INFER_OPAM_SWITCH" "$INFER_OPAM_COMPILER" &&
     opam switch set "$INFER_OPAM_SWITCH"
 }
 
