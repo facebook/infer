@@ -21,7 +21,7 @@
 - (void)testLength:(NSData*)imageData {
   unsigned char* pixels = (unsigned char*)[imageData bytes];
 
-  if (imageData.length > 0) {
+  if (imageData && imageData.length > 0) {
     pixels[0] = 255;
   }
 }

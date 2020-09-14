@@ -52,7 +52,7 @@ let store source_file cfg =
       {attributes with loc= loc'; translation_unit= source_file}
     in
     Procdesc.set_attributes proc_desc attributes' ;
-    Attributes.store ~proc_desc:(Some proc_desc) attributes'
+    Attributes.store ~proc_desc:(Option.some_if attributes.is_defined proc_desc) attributes'
   in
   Procname.Hash.iter save_proc cfg
 

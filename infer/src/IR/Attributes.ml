@@ -67,6 +67,13 @@ let find =
 let load pname = find (Procname.to_unique_id pname)
 
 let store ~proc_desc (attr : ProcAttributes.t) =
+  if attr.is_defined && Option.is_none proc_desc then
+    Logging.die InternalError "Was given DEFINED procedure without procdesc: %a@." ProcAttributes.pp
+      attr ;
+  if (not attr.is_defined) && Option.is_some proc_desc then
+    Logging.die InternalError
+      "Was given UNDEFINED procedure WITH procdesc:@\nAttributes:%a@\nProcdesc:%a@."
+      ProcAttributes.pp attr (Pp.option Procdesc.pp_signature) proc_desc ;
   let pname = attr.proc_name in
   let akind = proc_kind_of_attr attr in
   let proc_uid = Procname.to_unique_id pname in

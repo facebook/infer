@@ -374,7 +374,7 @@ let reason_to_skip ~callee_desc : string option =
         if Option.is_some attr_reason then attr_reason else Some "function or method not found"
   | `ProcName callee_pname ->
       let pname_reason = reason_from_pname callee_pname in
-      if Option.is_some pname_reason then pname_reason else Some "function or method not found"
+      if Option.is_some pname_reason then pname_reason else Some "method has no implementation"
 
 
 (** In case of constant string dereference, return the result immediately *)
