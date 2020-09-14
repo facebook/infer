@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+open! AbstractDomain.Types
 
 (** set of lists of locations for remembering what trace ends have been reported *)
 module LocListSet = struct
@@ -208,8 +209,20 @@ module CostItem = struct
       (pp_degree ~only_bigO:false) curr_item
 end
 
+let polynomial_traces = function
+  | None ->
+      []
+  | Some (Val (_, degree_term)) ->
+      Polynomials.NonNegativeNonTopPolynomial.get_symbols degree_term
+      |> List.map ~f:Bounds.NonNegativeBound.make_err_trace
+  | Some (Below traces) ->
+      [("", Polynomials.UnreachableTraces.make_err_trace traces)]
+  | Some (Above traces) ->
+      [("", Polynomials.TopTraces.make_err_trace traces)]
+
+
 let issue_of_cost kind CostIssues.{complexity_increase_issue; unreachable_issue; infinite_issue}
-    ~delta ~prev_item
+    ~delta ~prev_item:({CostItem.degree_with_term= prev_degree_with_term} as prev_item)
     ~curr_item:
       ({CostItem.cost_item= cost_info; degree_with_term= curr_degree_with_term} as curr_item) =
   let file = cost_info.Jsonbug_t.loc.file in
@@ -266,25 +279,15 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; unreachable_issue;
     let line = cost_info.Jsonbug_t.loc.lnum in
     let column = cost_info.Jsonbug_t.loc.cnum in
     let trace =
-      let polynomial_traces =
-        match curr_degree_with_term with
-        | None ->
-            []
-        | Some (Val (_, degree_term)) ->
-            Polynomials.NonNegativeNonTopPolynomial.get_symbols degree_term
-            |> List.map ~f:Bounds.NonNegativeBound.make_err_trace
-        | Some (Below traces) ->
-            [("", Polynomials.UnreachableTraces.make_err_trace traces)]
-        | Some (Above traces) ->
-            [("", Polynomials.TopTraces.make_err_trace traces)]
-      in
-      let curr_cost_trace =
+      let marker_cost_trace msg cost_item =
         [ Errlog.make_trace_element 0
             {Location.line; col= column; file= source_file}
-            (Format.asprintf "Updated %a" CostItem.pp_cost_msg curr_item)
+            (Format.asprintf "%s %a" msg CostItem.pp_cost_msg cost_item)
             [] ]
       in
-      ("", curr_cost_trace) :: polynomial_traces |> Errlog.concat_traces
+      (("", marker_cost_trace "Previous" prev_item) :: polynomial_traces prev_degree_with_term)
+      @ (("", marker_cost_trace "Updated" curr_item) :: polynomial_traces curr_degree_with_term)
+      |> Errlog.concat_traces
     in
     let severity = IssueType.Advice in
     Some
