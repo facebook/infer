@@ -124,97 +124,6 @@ module Map = struct
   include Provide_of_sexp (T)
 end
 
-let rec ppx strength fs term =
-  let rec pp fs term =
-    let pf fmt =
-      Format.pp_open_box fs 2 ;
-      Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
-    in
-    match term with
-    | Var {name; id= -1} -> Trace.pp_styled `Bold "%@%s" fs name
-    | Var {name; id= 0} -> Trace.pp_styled `Bold "%%%s" fs name
-    | Var {name; id} -> (
-      match strength term with
-      | None -> pf "%%%s_%d" name id
-      | Some `Universal -> Trace.pp_styled `Bold "%%%s_%d" fs name id
-      | Some `Existential -> Trace.pp_styled `Cyan "%%%s_%d" fs name id
-      | Some `Anonymous -> Trace.pp_styled `Cyan "_" fs )
-    | Integer {data} -> Trace.pp_styled `Magenta "%a" fs Z.pp data
-    | Rational {data} -> Trace.pp_styled `Magenta "%a" fs Q.pp data
-    | Float {data} -> pf "%s" data
-    | Label {name} -> pf "%s" name
-    | Ap1 (Signed {bits}, arg) -> pf "((s%i)@ %a)" bits pp arg
-    | Ap1 (Unsigned {bits}, arg) -> pf "((u%i)@ %a)" bits pp arg
-    | Ap1 (Convert {src; dst}, arg) ->
-        pf "((%a)(%a)@ %a)" Llair.Typ.pp dst Llair.Typ.pp src pp arg
-    | Ap2 (Eq, x, y) -> pf "(%a@ = %a)" pp x pp y
-    | Ap2 (Dq, x, y) -> pf "(%a@ @<2>≠ %a)" pp x pp y
-    | Ap2 (Lt, x, y) -> pf "(%a@ < %a)" pp x pp y
-    | Ap2 (Le, x, y) -> pf "(%a@ @<2>≤ %a)" pp x pp y
-    | Ap2 (Ord, x, y) -> pf "(%a@ ord %a)" pp x pp y
-    | Ap2 (Uno, x, y) -> pf "(%a@ uno %a)" pp x pp y
-    | Add args ->
-        let pp_poly_term fs (monomial, coefficient) =
-          match monomial with
-          | Integer {data} when Z.equal Z.one data -> Q.pp fs coefficient
-          | _ when Q.equal Q.one coefficient -> pp fs monomial
-          | _ ->
-              Format.fprintf fs "%a @<1>× %a" Q.pp coefficient pp monomial
-        in
-        pf "(%a)" (Qset.pp "@ + " pp_poly_term) args
-    | Mul args ->
-        let pp_mono_term fs (factor, exponent) =
-          if Q.equal Q.one exponent then pp fs factor
-          else Format.fprintf fs "%a^%a" pp factor Q.pp exponent
-        in
-        pf "(%a)" (Qset.pp "@ @<2>× " pp_mono_term) args
-    | Ap2 (Div, x, y) -> pf "(%a@ / %a)" pp x pp y
-    | Ap2 (Rem, x, y) -> pf "(%a@ rem %a)" pp x pp y
-    | And xs -> pf "(@[%a@])" (Set.pp ~sep:" &&@ " pp) xs
-    | Or xs -> pf "(@[%a@])" (Set.pp ~sep:" ||@ " pp) xs
-    | Ap2 (Xor, x, Integer {data}) when Z.is_true data -> pf "¬%a" pp x
-    | Ap2 (Xor, Integer {data}, x) when Z.is_true data -> pf "¬%a" pp x
-    | Ap2 (Xor, x, y) -> pf "(%a@ xor %a)" pp x pp y
-    | Ap2 (Shl, x, y) -> pf "(%a@ shl %a)" pp x pp y
-    | Ap2 (Lshr, x, y) -> pf "(%a@ lshr %a)" pp x pp y
-    | Ap2 (Ashr, x, y) -> pf "(%a@ ashr %a)" pp x pp y
-    | Ap3 (Conditional, cnd, thn, els) ->
-        pf "(%a@ ? %a@ : %a)" pp cnd pp thn pp els
-    | Ap3 (Extract, seq, off, len) -> pf "%a[%a,%a)" pp seq pp off pp len
-    | Ap1 (Splat, byt) -> pf "%a^" pp byt
-    | Ap2 (Sized, siz, arr) -> pf "@<1>⟨%a,%a@<1>⟩" pp siz pp arr
-    | ApN (Concat, args) when IArray.is_empty args -> pf "@<2>⟨⟩"
-    | ApN (Concat, args) -> pf "(%a)" (IArray.pp "@,^" pp) args
-    | ApN (Record, elts) -> pf "{%a}" (pp_record strength) elts
-    | Ap1 (Select idx, rcd) -> pf "%a[%i]" pp rcd idx
-    | Ap2 (Update idx, rcd, elt) ->
-        pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
-    | RecRecord i -> pf "(rec_record %i)" i
-  in
-  pp fs term
-  [@@warning "-9"]
-
-and pp_record strength fs elts =
-  [%Trace.fprintf
-    fs "%a"
-      (fun fs elts ->
-        match
-          String.init (IArray.length elts) ~f:(fun i ->
-              match IArray.get elts i with
-              | Integer {data} -> Char.of_int_exn (Z.to_int data)
-              | _ -> raise (Invalid_argument "not a string") )
-        with
-        | s -> Format.fprintf fs "@[<h>%s@]" (String.escaped s)
-        | exception _ ->
-            Format.fprintf fs "@[<h>%a@]"
-              (IArray.pp ",@ " (ppx strength))
-              elts )
-      elts]
-
-let pp = ppx (fun _ -> None)
-let pp_t = pp
-let pp_diff fs (x, y) = Format.fprintf fs "-- %a ++ %a" pp x pp y
-
 (** Invariant *)
 
 let assert_conjunction = function
@@ -311,6 +220,99 @@ let invariant e =
       assert (not (Z.equal Z.one (Q.den data)))
   | _ -> ()
   [@@warning "-9"]
+
+(** Pretty-print *)
+
+let rec ppx strength fs term =
+  let rec pp fs term =
+    let pf fmt =
+      Format.pp_open_box fs 2 ;
+      Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
+    in
+    match term with
+    | Var {name; id= -1} -> Trace.pp_styled `Bold "%@%s" fs name
+    | Var {name; id= 0} -> Trace.pp_styled `Bold "%%%s" fs name
+    | Var {name; id} -> (
+      match strength term with
+      | None -> pf "%%%s_%d" name id
+      | Some `Universal -> Trace.pp_styled `Bold "%%%s_%d" fs name id
+      | Some `Existential -> Trace.pp_styled `Cyan "%%%s_%d" fs name id
+      | Some `Anonymous -> Trace.pp_styled `Cyan "_" fs )
+    | Integer {data} -> Trace.pp_styled `Magenta "%a" fs Z.pp data
+    | Rational {data} -> Trace.pp_styled `Magenta "%a" fs Q.pp data
+    | Float {data} -> pf "%s" data
+    | Label {name} -> pf "%s" name
+    | Ap1 (Signed {bits}, arg) -> pf "((s%i)@ %a)" bits pp arg
+    | Ap1 (Unsigned {bits}, arg) -> pf "((u%i)@ %a)" bits pp arg
+    | Ap1 (Convert {src; dst}, arg) ->
+        pf "((%a)(%a)@ %a)" Llair.Typ.pp dst Llair.Typ.pp src pp arg
+    | Ap2 (Eq, x, y) -> pf "(%a@ = %a)" pp x pp y
+    | Ap2 (Dq, x, y) -> pf "(%a@ @<2>≠ %a)" pp x pp y
+    | Ap2 (Lt, x, y) -> pf "(%a@ < %a)" pp x pp y
+    | Ap2 (Le, x, y) -> pf "(%a@ @<2>≤ %a)" pp x pp y
+    | Ap2 (Ord, x, y) -> pf "(%a@ ord %a)" pp x pp y
+    | Ap2 (Uno, x, y) -> pf "(%a@ uno %a)" pp x pp y
+    | Add args ->
+        let pp_poly_term fs (monomial, coefficient) =
+          match monomial with
+          | Integer {data} when Z.equal Z.one data -> Q.pp fs coefficient
+          | _ when Q.equal Q.one coefficient -> pp fs monomial
+          | _ ->
+              Format.fprintf fs "%a @<1>× %a" Q.pp coefficient pp monomial
+        in
+        pf "(%a)" (Qset.pp "@ + " pp_poly_term) args
+    | Mul args ->
+        let pp_mono_term fs (factor, exponent) =
+          if Q.equal Q.one exponent then pp fs factor
+          else Format.fprintf fs "%a^%a" pp factor Q.pp exponent
+        in
+        pf "(%a)" (Qset.pp "@ @<2>× " pp_mono_term) args
+    | Ap2 (Div, x, y) -> pf "(%a@ / %a)" pp x pp y
+    | Ap2 (Rem, x, y) -> pf "(%a@ rem %a)" pp x pp y
+    | And xs -> pf "(@[%a@])" (Set.pp ~sep:" &&@ " pp) xs
+    | Or xs -> pf "(@[%a@])" (Set.pp ~sep:" ||@ " pp) xs
+    | Ap2 (Xor, x, Integer {data}) when Z.is_true data -> pf "¬%a" pp x
+    | Ap2 (Xor, Integer {data}, x) when Z.is_true data -> pf "¬%a" pp x
+    | Ap2 (Xor, x, y) -> pf "(%a@ xor %a)" pp x pp y
+    | Ap2 (Shl, x, y) -> pf "(%a@ shl %a)" pp x pp y
+    | Ap2 (Lshr, x, y) -> pf "(%a@ lshr %a)" pp x pp y
+    | Ap2 (Ashr, x, y) -> pf "(%a@ ashr %a)" pp x pp y
+    | Ap3 (Conditional, cnd, thn, els) ->
+        pf "(%a@ ? %a@ : %a)" pp cnd pp thn pp els
+    | Ap3 (Extract, seq, off, len) -> pf "%a[%a,%a)" pp seq pp off pp len
+    | Ap1 (Splat, byt) -> pf "%a^" pp byt
+    | Ap2 (Sized, siz, arr) -> pf "@<1>⟨%a,%a@<1>⟩" pp siz pp arr
+    | ApN (Concat, args) when IArray.is_empty args -> pf "@<2>⟨⟩"
+    | ApN (Concat, args) -> pf "(%a)" (IArray.pp "@,^" pp) args
+    | ApN (Record, elts) -> pf "{%a}" (pp_record strength) elts
+    | Ap1 (Select idx, rcd) -> pf "%a[%i]" pp rcd idx
+    | Ap2 (Update idx, rcd, elt) ->
+        pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
+    | RecRecord i -> pf "(rec_record %i)" i
+  in
+  pp fs term
+  [@@warning "-9"]
+
+and pp_record strength fs elts =
+  [%Trace.fprintf
+    fs "%a"
+      (fun fs elts ->
+        match
+          String.init (IArray.length elts) ~f:(fun i ->
+              match IArray.get elts i with
+              | Integer {data} -> Char.of_int_exn (Z.to_int data)
+              | _ -> raise (Invalid_argument "not a string") )
+        with
+        | s -> Format.fprintf fs "@[<h>%s@]" (String.escaped s)
+        | exception _ ->
+            Format.fprintf fs "@[<h>%a@]"
+              (IArray.pp ",@ " (ppx strength))
+              elts )
+      elts]
+
+let pp = ppx (fun _ -> None)
+let pp_t = pp
+let pp_diff fs (x, y) = Format.fprintf fs "-- %a ++ %a" pp x pp y
 
 (** Construct *)
 
