@@ -50,6 +50,20 @@ Driver.Cookies.add_simple_handler "ppx_trace_enabled" Ast_pattern.__
       debug := true
   | _ -> () )
 
+let expand_debug ~ctxt =
+  let loc = Expansion_context.Extension.extension_point_loc ctxt in
+  ebool ~loc !debug
+
+let debug_extension =
+  Extension.V3.declare "debug" Extension.Context.expression
+    (Ast_pattern.pstr Ast_pattern.nil)
+    expand_debug
+
+let debug_rule = Context_free.Rule.extension debug_extension
+
+;;
+Driver.register_transformation ~rules:[debug_rule] "debug"
+
 let rec get_fun_name pat =
   match pat.ppat_desc with
   | Ppat_var {txt; _} -> txt
@@ -89,7 +103,6 @@ let mapper =
         (Nolabel, mod_name) :: (Nolabel, fun_name) :: args
       in
       match exp.pexp_desc with
-      | Pexp_extension ({txt= "debug"; loc}, PStr []) -> ebool ~loc !debug
       | Pexp_extension
           ( { txt=
                 ( "Trace.info" | "Trace.infok" | "Trace.printf"
