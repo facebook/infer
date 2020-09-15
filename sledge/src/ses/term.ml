@@ -1035,11 +1035,6 @@ module Var = struct
     | Var _ as v -> Some (v |> check invariant)
     | _ -> None
 
-  let of_reg r =
-    match of_term (of_exp (r : Llair.Reg.t :> Llair.Exp.t)) with
-    | Some v -> v
-    | _ -> violates Llair.Reg.invariant r
-
   let program ~name ~global = Var {name; id= (if global then -1 else 0)}
 
   let fresh name ~wrt =
@@ -1060,9 +1055,6 @@ module Var = struct
     let pp_xs fs xs =
       if not (is_empty xs) then
         Format.fprintf fs "@<2>∃ @[%a@] .@;<1 2>" pp xs
-
-    let of_regs =
-      Llair.Reg.Set.fold ~init:empty ~f:(fun s r -> add s (of_reg r))
   end
 end
 

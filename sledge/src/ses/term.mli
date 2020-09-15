@@ -116,7 +116,6 @@ module Var : sig
     val ppx : strength -> t pp
     val pp : t pp
     val pp_xs : t pp
-    val of_regs : Llair.Reg.Set.t -> t
   end
 
   val pp : t pp
@@ -127,7 +126,6 @@ module Var : sig
   val id : t -> int
   val of_ : term -> t
   val of_term : term -> t option
-  val of_reg : Llair.Reg.t -> t
   val program : name:string -> global:bool -> t
   val fresh : string -> wrt:Set.t -> t * Set.t
 
