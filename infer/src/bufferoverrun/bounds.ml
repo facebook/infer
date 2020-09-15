@@ -1294,6 +1294,8 @@ module BoundTrace = struct
 
 
   let of_loop location = Loop location
+
+  let of_modeled_function pname location = ModeledFunction {pname; location}
 end
 
 (** A NonNegativeBound is a Bound that is either non-negative or symbolic but will be evaluated to a

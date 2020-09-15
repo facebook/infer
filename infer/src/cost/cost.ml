@@ -57,8 +57,8 @@ module InstrBasicCostWithReason = struct
 
   let get_instr_cost_record tenv extras instr_node instr =
     match instr with
-    | Sil.Call (ret, Exp.Const (Const.Cfun callee_pname), params, _, _) when Config.inclusive_cost
-      ->
+    | Sil.Call (ret, Exp.Const (Const.Cfun callee_pname), params, location, _)
+      when Config.inclusive_cost ->
         let { inferbo_invariant_map
             ; integer_type_widths
             ; inferbo_get_summary
@@ -110,7 +110,10 @@ module InstrBasicCostWithReason = struct
         if is_allocation_function callee_pname then
           CostDomain.plus CostDomain.unit_cost_allocation operation_cost
         else if is_autorelease_function callee_pname then
-          CostDomain.plus CostDomain.unit_cost_autoreleasepool_size operation_cost
+          CostDomain.plus
+            (CostDomain.unit_cost_autoreleasepool_size
+               ~autoreleasepool_trace:(Bounds.BoundTrace.of_modeled_function "autorelease" location))
+            operation_cost
         else operation_cost
     | Sil.Call (_, Exp.Const (Const.Cfun _), _, _, _) ->
         CostDomain.zero_record
@@ -207,12 +210,19 @@ let is_report_suppressed pname =
 
 
 module Check = struct
-  let report_top_and_unreachable pname proc_desc err_log loc ~name ~cost
+  let report_top_and_unreachable kind pname proc_desc err_log loc ~name ~cost
       {CostIssues.unreachable_issue; infinite_issue} =
     let report issue suffix =
+      let is_autoreleasepool_trace =
+        match (kind : CostKind.t) with
+        | AutoreleasepoolSize ->
+            true
+        | OperationCost | AllocationCost ->
+            false
+      in
       let message = F.asprintf "%s of the function %a %s" name Procname.pp pname suffix in
       Reporting.log_issue proc_desc err_log ~loc
-        ~ltr:(BasicCostWithReason.polynomial_traces cost)
+        ~ltr:(BasicCostWithReason.polynomial_traces ~is_autoreleasepool_trace cost)
         ~extras:(compute_errlog_extras cost) Cost issue message
     in
     if BasicCostWithReason.is_top cost then report infinite_issue "cannot be computed"
@@ -226,9 +236,9 @@ module Check = struct
     let proc_loc = Procdesc.get_loc proc_desc in
     if not (is_report_suppressed pname) then
       CostIssues.CostKindMap.iter2 CostIssues.enabled_cost_map cost
-        ~f:(fun _kind (CostIssues.{name; top_and_unreachable} as issue_spec) cost ->
+        ~f:(fun kind (CostIssues.{name; top_and_unreachable} as issue_spec) cost ->
           if top_and_unreachable then
-            report_top_and_unreachable pname proc_desc err_log proc_loc ~name ~cost issue_spec )
+            report_top_and_unreachable kind pname proc_desc err_log proc_loc ~name ~cost issue_spec )
 end
 
 type bound_map = BasicCost.t Node.IdMap.t

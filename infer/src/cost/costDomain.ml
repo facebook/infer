@@ -13,7 +13,7 @@ module BasicCost = struct
 
   (* NOTE: Increment the version number if you changed the [t] type.  This is for avoiding
      demarshalling failure of cost analysis results in running infer-reportdiff. *)
-  let version = 7
+  let version = 8
 end
 
 module BasicCostWithReason = struct
@@ -25,7 +25,9 @@ module BasicCostWithReason = struct
 
   let zero = {cost= BasicCost.zero; top_pname_opt= None}
 
-  let one = {cost= BasicCost.one; top_pname_opt= None}
+  let one ?autoreleasepool_trace () =
+    {cost= BasicCost.one ?autoreleasepool_trace (); top_pname_opt= None}
+
 
   let subst callee_pname location record eval_sym =
     {record with cost= BasicCost.subst callee_pname location record.cost eval_sym}
@@ -42,7 +44,9 @@ module BasicCostWithReason = struct
 
   let mult_unreachable cost record = {record with cost= BasicCost.mult_unreachable cost record.cost}
 
-  let polynomial_traces {cost} = BasicCost.polynomial_traces cost
+  let polynomial_traces ~is_autoreleasepool_trace {cost} =
+    BasicCost.polynomial_traces ~is_autoreleasepool_trace cost
+
 
   let pp format {cost} = BasicCost.pp format cost
 
@@ -68,7 +72,8 @@ module VariantCostMap = struct
       record
 
 
-  let increment kind record = increase_by kind BasicCostWithReason.one record
+  let increment ?autoreleasepool_trace kind record =
+    increase_by kind (BasicCostWithReason.one ?autoreleasepool_trace ()) record
 end
 
 type t = VariantCostMap.t
@@ -119,8 +124,8 @@ let unit_cost_atomic_operation = VariantCostMap.increment CostKind.OperationCost
 
 let unit_cost_allocation = VariantCostMap.increment CostKind.AllocationCost zero_record
 
-let unit_cost_autoreleasepool_size =
-  VariantCostMap.increment CostKind.AutoreleasepoolSize zero_record
+let unit_cost_autoreleasepool_size ~autoreleasepool_trace =
+  VariantCostMap.increment ~autoreleasepool_trace CostKind.AutoreleasepoolSize zero_record
 
 
 let of_operation_cost operation_cost =

@@ -9,7 +9,7 @@ open! IStd
 module BasicCost = CostDomain.BasicCost
 open BufferOverrunUtils.ModelEnv
 
-let unit_cost_model _model_env ~ret:_ _inferbo_mem = BasicCost.one
+let unit_cost_model _model_env ~ret:_ _inferbo_mem = BasicCost.one ()
 
 let cost_of_exp exp ~degree_kind ~of_function {integer_type_widths; location} ~ret:_ inferbo_mem =
   let itv =

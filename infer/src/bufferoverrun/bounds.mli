@@ -145,7 +145,11 @@ module BoundTrace : sig
 
   val make_err_trace : depth:int -> t -> Errlog.loc_trace
 
+  val call : callee_pname:Procname.t -> location:Location.t -> t -> t
+
   val of_loop : Location.t -> t
+
+  val of_modeled_function : string -> Location.t -> t
 end
 
 type ('c, 's, 't) valclass = Constant of 'c | Symbolic of 's | ValTop of 't

@@ -209,12 +209,13 @@ module CostItem = struct
       (pp_degree ~only_bigO:false) curr_item
 end
 
-let polynomial_traces = function
+let polynomial_traces issue_type = function
   | None ->
       []
   | Some (Val (_, degree_term)) ->
-      Polynomials.NonNegativeNonTopPolynomial.get_symbols degree_term
-      |> List.map ~f:Bounds.NonNegativeBound.make_err_trace
+      Polynomials.NonNegativeNonTopPolynomial.polynomial_traces
+        ~is_autoreleasepool_trace:(IssueType.is_autoreleasepool_size_issue issue_type)
+        degree_term
   | Some (Below traces) ->
       [("", Polynomials.UnreachableTraces.make_err_trace traces)]
   | Some (Above traces) ->
@@ -285,8 +286,10 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; unreachable_issue;
             (Format.asprintf "%s %a" msg CostItem.pp_cost_msg cost_item)
             [] ]
       in
-      (("", marker_cost_trace "Previous" prev_item) :: polynomial_traces prev_degree_with_term)
-      @ (("", marker_cost_trace "Updated" curr_item) :: polynomial_traces curr_degree_with_term)
+      ("", marker_cost_trace "Previous" prev_item)
+      :: polynomial_traces issue_type prev_degree_with_term
+      @ ("", marker_cost_trace "Updated" curr_item)
+        :: polynomial_traces issue_type curr_degree_with_term
       |> Errlog.concat_traces
     in
     let severity = IssueType.Advice in

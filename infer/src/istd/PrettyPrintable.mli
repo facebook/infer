@@ -204,6 +204,8 @@ module type PPUniqRankSet = sig
 
   val remove : elt -> t -> t
 
+  val mem : elt -> t -> bool
+
   val union_prefer_left : t -> t -> t
   (** in case an element with the same rank is present both in [lhs] and [rhs], keep the one from
       [lhs] in [union_prefer_left lhs rhs] *)

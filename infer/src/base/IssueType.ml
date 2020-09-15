@@ -89,6 +89,8 @@ module Unsafe : sig
   val all_issues : unit -> t list
 
   val set_enabled : t -> bool -> unit
+
+  module IssueSet : PrettyPrintable.PPUniqRankSet with type elt = t
 end = struct
   module T = struct
     type t =
@@ -978,10 +980,18 @@ let wrong_argument_number =
 let unreachable_cost_call ~kind = register_cost ~enabled:false ~kind "%s_UNREACHABLE_AT_EXIT"
 
 (* register enabled cost issues *)
-let () =
+let is_autoreleasepool_size_issue =
+  let autoreleasepool_size_issues = ref IssueSet.empty in
+  let add_autoreleasepool_size_issue ~kind issue_type =
+    match (kind : CostKind.t) with
+    | AutoreleasepoolSize ->
+        autoreleasepool_size_issues := IssueSet.add !autoreleasepool_size_issues issue_type
+    | OperationCost | AllocationCost ->
+        ()
+  in
   List.iter CostKind.enabled_cost_kinds ~f:(fun CostKind.{kind} ->
       List.iter [true; false] ~f:(fun is_on_ui_thread ->
-          ignore (unreachable_cost_call ~kind) ;
-          ignore (infinite_cost_call ~kind) ;
-          ignore (complexity_increase ~kind ~is_on_ui_thread) ;
-          () ) )
+          add_autoreleasepool_size_issue ~kind (unreachable_cost_call ~kind) ;
+          add_autoreleasepool_size_issue ~kind (infinite_cost_call ~kind) ;
+          add_autoreleasepool_size_issue ~kind (complexity_increase ~kind ~is_on_ui_thread) ) ) ;
+  fun issue_type -> IssueSet.mem issue_type !autoreleasepool_size_issues

@@ -39,7 +39,7 @@ module BasicCostWithReason : sig
 
   val degree : t -> Polynomials.Degree.t option
 
-  val polynomial_traces : t -> Errlog.loc_trace
+  val polynomial_traces : is_autoreleasepool_trace:bool -> t -> Errlog.loc_trace
 
   val pp_hum : Format.formatter -> t -> unit
 end
@@ -81,7 +81,7 @@ val unit_cost_atomic_operation : t
 val unit_cost_allocation : t
 (** Map representing cost record \{OperationCost:0; AllocationCost:1; AutoreleasepoolSize:0\} *)
 
-val unit_cost_autoreleasepool_size : t
+val unit_cost_autoreleasepool_size : autoreleasepool_trace:Bounds.BoundTrace.t -> t
 (** Map representing cost record \{OperationCost:0; AllocationCost:0; AutoreleasepoolSize:1\} *)
 
 val of_operation_cost : BasicCost.t -> t

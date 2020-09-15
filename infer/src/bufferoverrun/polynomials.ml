@@ -72,6 +72,8 @@ module type NonNegativeSymbol = sig
   val pp : hum:bool -> F.formatter -> t -> unit
 
   val split_mult : t -> (t * t) option
+
+  val make_err_trace : t -> string * Errlog.loc_trace
 end
 
 module type NonNegativeSymbolWithDegreeKind = sig
@@ -86,6 +88,8 @@ module type NonNegativeSymbolWithDegreeKind = sig
   val symbol : t -> t0
 
   val split_mult : t -> (t * t) option
+
+  val make_err_trace_symbol : t0 -> string * Errlog.loc_trace
 end
 
 module MakeSymbolWithDegreeKind (S : NonNegativeSymbol) :
@@ -135,6 +139,11 @@ module MakeSymbolWithDegreeKind (S : NonNegativeSymbol) :
 
   let split_mult {degree_kind; symbol} =
     Option.map (S.split_mult symbol) ~f:(fun (s1, s2) -> (make degree_kind s1, make degree_kind s2))
+
+
+  let make_err_trace {symbol} = S.make_err_trace symbol
+
+  let make_err_trace_symbol symbol = S.make_err_trace symbol
 end
 
 module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
@@ -207,47 +216,83 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
       - symbols children of a term are 'smaller' than its self symbol
       - contents of terms are not zero
       - symbols in terms are only symbolic values *)
-  type t = {const: NonNegativeInt.t; terms: t M.t} [@@deriving compare]
+  type poly = {const: NonNegativeInt.t; terms: poly M.t} [@@deriving compare]
 
-  let of_non_negative_int : NonNegativeInt.t -> t = fun const -> {const; terms= M.empty}
+  type t = {poly: poly; autoreleasepool_trace: Bounds.BoundTrace.t option} [@@deriving compare]
+
+  let get_autoreleasepool_trace {autoreleasepool_trace} = autoreleasepool_trace
+
+  let join_autoreleasepool_trace x y = Option.first_some x y
+
+  let poly_of_non_negative_int : NonNegativeInt.t -> poly = fun const -> {const; terms= M.empty}
+
+  let of_non_negative_int : ?autoreleasepool_trace:Bounds.BoundTrace.t -> NonNegativeInt.t -> t =
+   fun ?autoreleasepool_trace const -> {poly= poly_of_non_negative_int const; autoreleasepool_trace}
+
+
+  let zero_poly = poly_of_non_negative_int NonNegativeInt.zero
 
   let zero = of_non_negative_int NonNegativeInt.zero
 
-  let one = of_non_negative_int NonNegativeInt.one
+  let one_poly = poly_of_non_negative_int NonNegativeInt.one
 
-  let of_int_exn : int -> t = fun i -> i |> NonNegativeInt.of_int_exn |> of_non_negative_int
+  let one ?autoreleasepool_trace () = of_non_negative_int ?autoreleasepool_trace NonNegativeInt.one
 
-  let is_zero : t -> bool = fun {const; terms} -> NonNegativeInt.is_zero const && M.is_empty terms
+  let of_int_exn : ?autoreleasepool_trace:Bounds.BoundTrace.t -> int -> t =
+   fun ?autoreleasepool_trace i ->
+    i |> NonNegativeInt.of_int_exn |> of_non_negative_int ?autoreleasepool_trace
 
-  let is_one : t -> bool = fun {const; terms} -> NonNegativeInt.is_one const && M.is_empty terms
 
-  let is_constant : t -> bool = fun {terms} -> M.is_empty terms
+  let is_zero_poly : poly -> bool =
+   fun {const; terms} -> NonNegativeInt.is_zero const && M.is_empty terms
+
+
+  let is_zero : t -> bool = fun {poly} -> is_zero_poly poly
+
+  let is_one_poly : poly -> bool =
+   fun {const; terms} -> NonNegativeInt.is_one const && M.is_empty terms
+
+
+  let is_one : t -> bool = fun {poly} -> is_one_poly poly
+
+  let is_constant : t -> bool = fun {poly= {terms}} -> M.is_empty terms
 
   let is_symbolic : t -> bool = fun p -> not (is_constant p)
 
-  let rec plus : t -> t -> t =
+  let rec plus_poly : poly -> poly -> poly =
    fun p1 p2 ->
     { const= NonNegativeInt.(p1.const + p2.const)
-    ; terms= M.increasing_union ~f:plus p1.terms p2.terms }
+    ; terms= M.increasing_union ~f:plus_poly p1.terms p2.terms }
 
 
-  let rec mult_const_positive : t -> PositiveInt.t -> t =
+  let plus : t -> t -> t =
+   fun p1 p2 ->
+    { poly= plus_poly p1.poly p2.poly
+    ; autoreleasepool_trace=
+        join_autoreleasepool_trace p1.autoreleasepool_trace p2.autoreleasepool_trace }
+
+
+  let rec mult_const_positive : poly -> PositiveInt.t -> poly =
    fun {const; terms} c ->
     { const= NonNegativeInt.(const * (c :> NonNegativeInt.t))
     ; terms= M.map (fun p -> mult_const_positive p c) terms }
 
 
-  let mult_const : t -> NonNegativeInt.t -> t =
+  let mult_const_poly : poly -> NonNegativeInt.t -> poly =
    fun p c ->
-    match PositiveInt.of_big_int (c :> Z.t) with None -> zero | Some c -> mult_const_positive p c
+    match PositiveInt.of_big_int (c :> Z.t) with
+    | None ->
+        zero_poly
+    | Some c ->
+        mult_const_positive p c
 
 
   (* (c + r * R + s * S + t * T) x s
      = 0 + r * (R x s) + s * (c + s * S + t * T) *)
-  let rec mult_symb : t -> S.t -> t =
+  let rec mult_symb_poly : poly -> S.t -> poly =
    fun {const; terms} s ->
     let less_than_s, equal_s_opt, greater_than_s = M.split s terms in
-    let less_than_s = M.map (fun p -> mult_symb p s) less_than_s in
+    let less_than_s = M.map (fun p -> mult_symb_poly p s) less_than_s in
     let s_term =
       let terms =
         match equal_s_opt with
@@ -258,17 +303,30 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
       in
       {const; terms}
     in
-    let terms = if is_zero s_term then less_than_s else M.add s s_term less_than_s in
+    let terms = if is_zero_poly s_term then less_than_s else M.add s s_term less_than_s in
     {const= NonNegativeInt.zero; terms}
 
 
-  let rec mult : t -> t -> t =
+  let mult_symb : t -> S.t -> t = fun x s -> {x with poly= mult_symb_poly x.poly s}
+
+  let rec mult_poly : poly -> poly -> poly =
    fun p1 p2 ->
-    if is_zero p1 || is_zero p2 then zero
-    else if is_one p1 then p2
-    else if is_one p2 then p1
+    if is_zero_poly p1 || is_zero_poly p2 then zero_poly
+    else if is_one_poly p1 then p2
+    else if is_one_poly p2 then p1
     else
-      mult_const p1 p2.const |> M.fold (fun s p acc -> plus (mult_symb (mult p p1) s) acc) p2.terms
+      mult_const_poly p1 p2.const
+      |> M.fold (fun s p acc -> plus_poly (mult_symb_poly (mult_poly p p1) s) acc) p2.terms
+
+
+  let mult : t -> t -> t =
+   fun p1 p2 ->
+    let poly = mult_poly p1.poly p2.poly in
+    let autoreleasepool_trace =
+      if is_zero_poly poly then None
+      else join_autoreleasepool_trace p1.autoreleasepool_trace p2.autoreleasepool_trace
+    in
+    {poly; autoreleasepool_trace}
 
 
   let rec of_valclass : (NonNegativeInt.t, S.t, 't) Bounds.valclass -> ('t, t, 't) below_above =
@@ -280,7 +338,9 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
     | Symbolic s -> (
       match S.split_mult s with
       | None ->
-          Val {const= NonNegativeInt.zero; terms= M.singleton s one}
+          Val
+            { poly= {const= NonNegativeInt.zero; terms= M.singleton s one_poly}
+            ; autoreleasepool_trace= None }
       | Some (s1, s2) -> (
         match (of_valclass (S.classify s1), of_valclass (S.classify s2)) with
         | Val s1, Val s2 ->
@@ -311,33 +371,41 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
 
 
   (* assumes symbols are not comparable *)
-  let rec leq : lhs:t -> rhs:t -> bool =
+  let rec leq_poly : lhs:poly -> rhs:poly -> bool =
    fun ~lhs ~rhs ->
     phys_equal lhs rhs
-    || (NonNegativeInt.leq ~lhs:lhs.const ~rhs:rhs.const && M.le ~le_elt:leq lhs.terms rhs.terms)
+    || NonNegativeInt.leq ~lhs:lhs.const ~rhs:rhs.const
+       && M.le ~le_elt:leq_poly lhs.terms rhs.terms
     || Option.exists (int_ub lhs) ~f:(fun lhs_ub ->
            NonNegativeInt.leq ~lhs:lhs_ub ~rhs:(int_lb rhs) )
 
 
-  let rec xcompare ~lhs ~rhs =
+  let leq ~lhs ~rhs = leq_poly ~lhs:lhs.poly ~rhs:rhs.poly
+
+  let rec xcompare_poly ~lhs ~rhs =
     let cmp_const =
       PartialOrder.of_compare ~compare:NonNegativeInt.compare ~lhs:lhs.const ~rhs:rhs.const
     in
-    let cmp_terms = M.xcompare ~xcompare_elt:xcompare ~lhs:lhs.terms ~rhs:rhs.terms in
+    let cmp_terms = M.xcompare ~xcompare_elt:xcompare_poly ~lhs:lhs.terms ~rhs:rhs.terms in
     PartialOrder.join cmp_const cmp_terms
 
 
-  let rec mask_min_max_constant {const; terms} =
+  let xcompare ~lhs ~rhs = xcompare_poly ~lhs:lhs.poly ~rhs:rhs.poly
+
+  let rec mask_min_max_constant_poly {const; terms} =
     { const
     ; terms=
         M.fold
           (fun s p acc ->
-            let p' = mask_min_max_constant p in
+            let p' = mask_min_max_constant_poly p in
             M.update (S.mask_min_max_constant s)
-              (function None -> Some p' | Some p -> if leq ~lhs:p ~rhs:p' then Some p' else Some p)
+              (function
+                | None -> Some p' | Some p -> if leq_poly ~lhs:p ~rhs:p' then Some p' else Some p )
               acc )
           terms M.empty }
 
+
+  let mask_min_max_constant x = {x with poly= mask_min_max_constant_poly x.poly}
 
   (* assumes symbols are not comparable *)
   (* TODO: improve this for comparable symbols *)
@@ -355,7 +423,7 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
   let subst callee_pname location =
     let exception ReturnTop of (S.t * Bounds.BoundTrace.t) in
     (* avoids top-lifting everything *)
-    let rec subst {const; terms} eval_sym =
+    let rec subst_poly {const; terms} eval_sym =
       M.fold
         (fun s p acc ->
           match S.subst callee_pname location s eval_sym with
@@ -364,36 +432,48 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
             | None ->
                 acc
             | Some c ->
-                let p = subst p eval_sym in
-                mult_const_positive p c |> plus acc )
+                let p = subst_poly p eval_sym in
+                mult_const_positive p c |> plus_poly acc )
           | ValTop trace ->
-              let p = subst p eval_sym in
-              if is_zero p then acc else raise (ReturnTop (s, trace))
+              let p = subst_poly p eval_sym in
+              if is_zero_poly p then acc else raise (ReturnTop (s, trace))
           | Symbolic s ->
-              let p = subst p eval_sym in
-              mult_symb p s |> plus acc )
-        terms (of_non_negative_int const)
+              let p = subst_poly p eval_sym in
+              mult_symb_poly p s |> plus_poly acc )
+        terms (poly_of_non_negative_int const)
     in
-    fun p eval_sym ->
-      match subst p eval_sym with p -> Val p | exception ReturnTop s_trace -> Above s_trace
+    fun {poly; autoreleasepool_trace} eval_sym ->
+      match subst_poly poly eval_sym with
+      | poly ->
+          let autoreleasepool_trace =
+            Option.map autoreleasepool_trace ~f:(fun autoreleasepool_trace ->
+                Bounds.BoundTrace.call ~callee_pname ~location autoreleasepool_trace )
+          in
+          Val {poly; autoreleasepool_trace}
+      | exception ReturnTop s_trace ->
+          Above s_trace
 
 
   (** Emit a pair (d,t) where d is the degree of the polynomial and t is the first term with such
       degree *)
-  let rec degree_with_term {terms} =
-    M.fold
-      (fun t p cur_max ->
-        let d, p' = degree_with_term p in
-        let degree_term = (Degree.succ (S.degree_kind t) d, mult_symb p' t) in
-        if [%compare: Degree.t * t] degree_term cur_max > 0 then degree_term else cur_max )
-      terms (Degree.zero, one)
+  let degree_with_term {poly; autoreleasepool_trace} =
+    let rec degree_with_term_poly {terms} =
+      M.fold
+        (fun t p cur_max ->
+          let d, p' = degree_with_term_poly p in
+          let degree_term = (Degree.succ (S.degree_kind t) d, mult_symb p' t) in
+          if [%compare: Degree.t * t] degree_term cur_max > 0 then degree_term else cur_max )
+        terms
+        (Degree.zero, one ?autoreleasepool_trace ())
+    in
+    degree_with_term_poly poly
 
 
   let degree p = fst (degree_with_term p)
 
   let multiplication_sep = F.sprintf " %s " SpecialChars.multiplication_sign
 
-  let pp : hum:bool -> F.formatter -> t -> unit =
+  let pp_poly : hum:bool -> F.formatter -> poly -> unit =
     let add_symb s (((last_s, last_occ) as last), others) =
       if Int.equal 0 (S.compare s last_s) then ((last_s, PositiveInt.succ last_occ), others)
       else ((s, PositiveInt.one), last :: others)
@@ -442,11 +522,22 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
       |> ignore
 
 
+  let pp : hum:bool -> F.formatter -> t -> unit = fun ~hum fmt {poly} -> pp_poly ~hum fmt poly
+
   let get_symbols p : S.t0 list =
     let rec get_symbols_sub {terms} acc =
       M.fold (fun s p acc -> get_symbols_sub p (S.symbol s :: acc)) terms acc
     in
-    get_symbols_sub p []
+    get_symbols_sub p.poly []
+
+
+  let polynomial_traces ?(is_autoreleasepool_trace = false) p =
+    let traces = get_symbols p |> List.map ~f:S.make_err_trace_symbol in
+    if is_autoreleasepool_trace then
+      get_autoreleasepool_trace p
+      |> Option.value_map ~default:traces ~f:(fun trace ->
+             traces @ [("autorelease", Bounds.BoundTrace.make_err_trace ~depth:0 trace)] )
+    else traces
 end
 
 module NonNegativeBoundWithDegreeKind = MakeSymbolWithDegreeKind (Bounds.NonNegativeBound)
@@ -594,13 +685,17 @@ module NonNegativePolynomial = struct
 
   let zero = Val NonNegativeNonTopPolynomial.zero
 
-  let one = Val NonNegativeNonTopPolynomial.one
+  let one ?autoreleasepool_trace () =
+    Val (NonNegativeNonTopPolynomial.one ?autoreleasepool_trace ())
+
 
   let of_unreachable node_loc =
     Below (UnreachableTraces.singleton (UnreachableTrace.unreachable_node node_loc))
 
 
-  let of_int_exn i = Val (NonNegativeNonTopPolynomial.of_int_exn i)
+  let of_int_exn ?autoreleasepool_trace i =
+    Val (NonNegativeNonTopPolynomial.of_int_exn ?autoreleasepool_trace i)
+
 
   let make_trace_set ~map_above =
     AbstractDomain.StackedUtils.map
@@ -694,11 +789,6 @@ module NonNegativePolynomial = struct
       ~f_below:Fn.id
 
 
-  let get_symbols =
-    AbstractDomain.StackedUtils.map ~f:NonNegativeNonTopPolynomial.get_symbols ~f_above:Fn.id
-      ~f_below:Fn.id
-
-
   let pp_degree ~only_bigO fmt = function
     | Above _ ->
         Format.pp_print_string fmt "Top"
@@ -720,12 +810,12 @@ module NonNegativePolynomial = struct
         ""
 
 
-  let polynomial_traces p =
-    match get_symbols p with
+  let polynomial_traces ?is_autoreleasepool_trace = function
     | Below trace ->
         UnreachableTraces.make_err_trace trace
-    | Val symbols ->
-        List.map symbols ~f:Bounds.NonNegativeBound.make_err_trace |> Errlog.concat_traces
+    | Val p ->
+        NonNegativeNonTopPolynomial.polynomial_traces ?is_autoreleasepool_trace p
+        |> Errlog.concat_traces
     | Above trace ->
         TopTraces.make_err_trace trace
 
