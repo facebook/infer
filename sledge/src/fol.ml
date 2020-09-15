@@ -95,7 +95,6 @@ let equal_trm x y =
       Int.equal i j
   | _ -> equal_trm x y
 
-let sort_trm x y = if compare_trm x y <= 0 then (x, y) else (y, x)
 let zero = Z Z.zero
 let one = Z Z.one
 let _Neg x = Neg x
@@ -211,53 +210,55 @@ end = struct
   let _Tt = Tt
   let _Ff = Ff
 
-  type equal_or_separate = Equal | Separate | Unknown
+  (** classification of terms as either semantically equal or disequal, or
+      if semantic relationship is unknown, as either syntactically less than
+      or greater than *)
+  type compare_semantic_syntactic = SemEq | SemDq | SynLt | SynGt
 
-  let equal_or_separate d e : equal_or_separate =
+  let compare_semantic_syntactic d e =
     match (d, e) with
-    | Z y, Z z -> if Z.equal y z then Equal else Separate
-    | Q q, Q r -> if Q.equal q r then Equal else Separate
-    | Z z, Q q | Q q, Z z ->
-        if Q.equal (Q.of_z z) q then Equal else Separate
-    | _ -> if equal_trm d e then Equal else Unknown
+    | Z y, Z z -> if Z.equal y z then SemEq else SemDq
+    | Q q, Q r -> if Q.equal q r then SemEq else SemDq
+    | Z z, Q q | Q q, Z z -> if Q.equal (Q.of_z z) q then SemEq else SemDq
+    | _ ->
+        let ord = compare_trm d e in
+        if ord < 0 then SynLt else if ord = 0 then SemEq else SynGt
 
   let _Eq0 x =
-    match equal_or_separate zero x with
+    match compare_semantic_syntactic zero x with
     (* 0 = 0 ==> tt *)
-    | Equal -> Tt
+    | SemEq -> Tt
     (* 0 = N ==> ff for N ≢ 0 *)
-    | Separate -> Ff
-    | Unknown -> Eq0 x
+    | SemDq -> Ff
+    | SynLt | SynGt -> Eq0 x
 
   let _Dq0 x =
-    match equal_or_separate zero x with
+    match compare_semantic_syntactic zero x with
     (* 0 ≠ 0 ==> ff *)
-    | Equal -> Ff
+    | SemEq -> Ff
     (* 0 ≠ N ==> tt for N ≢ 0 *)
-    | Separate -> Tt
-    | Unknown -> Dq0 x
+    | SemDq -> Tt
+    | SynLt | SynGt -> Dq0 x
 
   let _Eq x y =
     if x == zero then _Eq0 y
     else if y == zero then _Eq0 x
     else
-      match equal_or_separate x y with
-      | Equal -> Tt
-      | Separate -> Ff
-      | Unknown ->
-          let x, y = sort_trm x y in
-          Eq (x, y)
+      match compare_semantic_syntactic x y with
+      | SemEq -> Tt
+      | SemDq -> Ff
+      | SynLt -> Eq (x, y)
+      | SynGt -> Eq (y, x)
 
   let _Dq x y =
     if x == zero then _Dq0 y
     else if y == zero then _Dq0 x
     else
-      match equal_or_separate x y with
-      | Equal -> Ff
-      | Separate -> Tt
-      | Unknown ->
-          let x, y = sort_trm x y in
-          Dq (x, y)
+      match compare_semantic_syntactic x y with
+      | SemEq -> Ff
+      | SemDq -> Tt
+      | SynLt -> Dq (x, y)
+      | SynGt -> Dq (y, x)
 
   let _Gt0 = function
     | Z z -> if Z.gt z Z.zero then Tt else Ff
