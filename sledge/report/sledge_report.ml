@@ -343,7 +343,7 @@ let write_html ranges rows chan =
         | ss ->
             List.iter ss ~f:(fun s ->
                 match (s : Report.status) with
-                | Safe | Unsafe _ | Ok ->
+                | Safe _ | Unsafe _ | Ok ->
                     Printf.fprintf ppf
                       "<td style=\"border-left: 2px solid #eee8d5\";>%a</td>\n"
                       pf_status s

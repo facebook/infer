@@ -40,9 +40,16 @@ let invalid_access_inst fmt_thunk inst =
 let invalid_access_term fmt_thunk term =
   invalid_access fmt_thunk Llair.Term.pp term Llair.Term.loc
 
+(** Functional statistics *)
+
+let steps = ref 0
+let step () = Int.incr steps
+
+(** Status reporting *)
+
 type status =
-  | Safe
-  | Unsafe of int
+  | Safe of {steps: int}
+  | Unsafe of {alarms: int; steps: int}
   | Ok
   | Unsound
   | Incomplete
@@ -58,8 +65,8 @@ type status =
 let pp_status ppf stat =
   let pf fmt = Format.fprintf ppf fmt in
   match stat with
-  | Safe -> pf "Safe"
-  | Unsafe i -> pf "Unsafe: %i" i
+  | Safe {steps} -> pf "Safe (%i)" steps
+  | Unsafe {alarms; steps} -> pf "Unsafe: %i (%i)" alarms steps
   | Ok -> pf "Ok"
   | Unsound -> pf "Unsound"
   | Incomplete -> pf "Incomplete"
@@ -72,7 +79,8 @@ let pp_status ppf stat =
   | UnknownError msg -> pf "Unknown error: %s" msg
 
 let safe_or_unsafe () =
-  if !invalid_access_count = 0 then Safe else Unsafe !invalid_access_count
+  if !invalid_access_count = 0 then Safe {steps= !steps}
+  else Unsafe {alarms= !invalid_access_count; steps= !steps}
 
 type gc_stats = {allocated: float; promoted: float; peak_size: float}
 [@@deriving sexp]

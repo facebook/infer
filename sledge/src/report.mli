@@ -8,13 +8,14 @@
 (** Issue reporting *)
 
 val init : ?append:bool -> string -> unit
+val step : unit -> unit
 val unknown_call : Llair.term -> unit
 val invalid_access_inst : (Formatter.t -> unit) -> Llair.inst -> unit
 val invalid_access_term : (Formatter.t -> unit) -> Llair.term -> unit
 
 type status =
-  | Safe
-  | Unsafe of int
+  | Safe of {steps: int}
+  | Unsafe of {alarms: int; steps: int}
   | Ok
   | Unsound
   | Incomplete
