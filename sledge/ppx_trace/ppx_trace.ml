@@ -40,7 +40,6 @@
 
 open Ppxlib
 open Ast_builder.Default
-module Ast_mapper = Selected_ast.Ast.Ast_mapper
 
 let debug = ref false
 
@@ -75,56 +74,57 @@ let vb_stack_with, vb_stack_top =
   (with_, top)
 
 let mapper =
-  let value_binding (m : Ast_mapper.mapper) vb =
-    vb_stack_with vb.pvb_pat ~f:(fun () ->
-        Ast_mapper.default_mapper.value_binding m vb )
-  in
-  let expr (m : Ast_mapper.mapper) exp =
-    let append_here_args args =
-      let mod_name = evar ~loc:Location.none "Stdlib.__MODULE__" in
-      let fun_name =
-        estring ~loc:Location.none (get_fun_name (vb_stack_top ()))
-      in
-      (Nolabel, mod_name) :: (Nolabel, fun_name) :: args
-    in
-    match exp.pexp_desc with
-    | Pexp_extension ({txt= "debug"; loc}, PStr []) -> ebool ~loc !debug
-    | Pexp_extension
-        ( { txt=
-              ( "Trace.info" | "Trace.infok" | "Trace.printf"
-              | "Trace.fprintf" | "Trace.kprintf" ) as txt
-          ; loc }
-        , PStr [{pstr_desc= Pstr_eval (arg, []); _}] ) ->
-        if not !debug then eunit ~loc:exp.pexp_loc
-        else
-          let args =
-            match arg.pexp_desc with
-            | Pexp_apply (op, args) -> (Nolabel, op) :: args
-            | _ -> [(Nolabel, arg)]
-          in
-          pexp_apply ~loc:exp.pexp_loc (evar ~loc txt)
-            (append_here_args args)
-    | Pexp_extension
-        ( {txt= "Trace.call"; loc= call_loc}
-        , PStr [{pstr_desc= Pstr_eval (call_fun, []); _}] ) ->
-        if not !debug then eunit ~loc:exp.pexp_loc
-        else
-          pexp_apply ~loc:exp.pexp_loc
-            (evar ~loc:call_loc "Trace.call")
-            (append_here_args [(Nolabel, call_fun)])
-    | Pexp_extension
-        ( {txt= "Trace.retn"; loc= retn_loc}
-        , PStr [{pstr_desc= Pstr_eval (retn_fun, []); _}] ) ->
-        if not !debug then evar ~loc:exp.pexp_loc "Stdlib.Fun.id"
-        else
-          pexp_apply ~loc:exp.pexp_loc
-            (evar ~loc:retn_loc "Trace.retn")
-            (append_here_args [(Nolabel, retn_fun)])
-    | _ -> Ast_mapper.default_mapper.expr m exp
-  in
-  {Ast_mapper.default_mapper with expr; value_binding}
+  object
+    inherit Ast_traverse.map as super
 
-let impl = Selected_ast.Ast.map_structure mapper
+    method! value_binding vb =
+      vb_stack_with vb.pvb_pat ~f:(fun () -> super#value_binding vb)
+
+    method! expression exp =
+      let append_here_args args =
+        let mod_name = evar ~loc:Location.none "Stdlib.__MODULE__" in
+        let fun_name =
+          estring ~loc:Location.none (get_fun_name (vb_stack_top ()))
+        in
+        (Nolabel, mod_name) :: (Nolabel, fun_name) :: args
+      in
+      match exp.pexp_desc with
+      | Pexp_extension ({txt= "debug"; loc}, PStr []) -> ebool ~loc !debug
+      | Pexp_extension
+          ( { txt=
+                ( "Trace.info" | "Trace.infok" | "Trace.printf"
+                | "Trace.fprintf" | "Trace.kprintf" ) as txt
+            ; loc }
+          , PStr [{pstr_desc= Pstr_eval (arg, []); _}] ) ->
+          if not !debug then eunit ~loc:exp.pexp_loc
+          else
+            let args =
+              match arg.pexp_desc with
+              | Pexp_apply (op, args) -> (Nolabel, op) :: args
+              | _ -> [(Nolabel, arg)]
+            in
+            pexp_apply ~loc:exp.pexp_loc (evar ~loc txt)
+              (append_here_args args)
+      | Pexp_extension
+          ( {txt= "Trace.call"; loc= call_loc}
+          , PStr [{pstr_desc= Pstr_eval (call_fun, []); _}] ) ->
+          if not !debug then eunit ~loc:exp.pexp_loc
+          else
+            pexp_apply ~loc:exp.pexp_loc
+              (evar ~loc:call_loc "Trace.call")
+              (append_here_args [(Nolabel, call_fun)])
+      | Pexp_extension
+          ( {txt= "Trace.retn"; loc= retn_loc}
+          , PStr [{pstr_desc= Pstr_eval (retn_fun, []); _}] ) ->
+          if not !debug then evar ~loc:exp.pexp_loc "Stdlib.Fun.id"
+          else
+            pexp_apply ~loc:exp.pexp_loc
+              (evar ~loc:retn_loc "Trace.retn")
+              (append_here_args [(Nolabel, retn_fun)])
+      | _ -> super#expression exp
+  end
+
+let impl = mapper#structure
 
 ;;
 Driver.register_transformation "trace" ~impl
