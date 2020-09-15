@@ -7,8 +7,8 @@
 CLANG_ARGS?=-O0
 
 # executable to test
-SLEDGE_DBG=$(CURDIR)/../_build/debug/bin/sledge_cli.exe
-SLEDGE_OPT=$(CURDIR)/../_build/release/bin/sledge_cli.exe
+SLEDGE_DBG=$(CURDIR)/../_build/debug/cli/sledge_cli.exe
+SLEDGE_OPT=$(CURDIR)/../_build/release/cli/sledge_cli.exe
 
 # additional arguments to pass to sledge
 SLEDGE_ARGS?=

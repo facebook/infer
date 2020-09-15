@@ -114,7 +114,7 @@
   (public_name sledge.model)))
 
 (subdir
- bin
+ cli
  (executable
   (name sledge_cli)
   (public_name sledge)
@@ -132,8 +132,8 @@
 
 (rule
  (targets sledge-help.txt)
- (deps bin/sledge_cli.ml bin/sledge_buck.ml tools/gen_help.sh
-   bin/sledge_cli.exe)
+ (deps cli/sledge_cli.ml cli/sledge_buck.ml tools/gen_help.sh
+   cli/sledge_cli.exe)
  (action
   (with-stdout-to
    sledge-help.txt
