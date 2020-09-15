@@ -98,43 +98,12 @@ include module type of T with type t = T.t
 
 (** Term.Var is re-exported as Var *)
 module Var : sig
-  type term := t
-  type t = private term [@@deriving compare, equal, sexp]
-  type strength = t -> [`Universal | `Existential | `Anonymous] option
+  include Var_intf.VAR with type t = private T.t
 
-  module Map : sig
-    include Map.S with type key := t
+  val of_ : T.t -> t
+  (** [var (of_ e)] = [e] if [e] matches [Var _], otherwise undefined *)
 
-    val t_of_sexp : (Sexp.t -> 'a) -> Sexp.t -> 'a t
-  end
-
-  module Set : sig
-    include NS.Set.S with type elt := t
-
-    val sexp_of_t : t -> Sexp.t
-    val t_of_sexp : Sexp.t -> t
-    val ppx : strength -> t pp
-    val pp : t pp
-    val pp_xs : t pp
-  end
-
-  val pp : t pp
-
-  include Invariant.S with type t := t
-
-  val name : t -> string
-  val id : t -> int
-  val of_ : term -> t
-  val of_term : term -> t option
-  val program : name:string -> global:bool -> t
-  val fresh : string -> wrt:Set.t -> t * Set.t
-
-  val identified : name:string -> id:int -> t
-  (** Variable with the given [id]. Variables are compared by [id] alone,
-      [name] is used only for printing. The only way to ensure [identified]
-      variables do not clash with [fresh] variables is to pass the
-      [identified] variables to [fresh] in [wrt]:
-      [Var.fresh name ~wrt:(Var.Set.of_ (Var.identified ~name ~id))]. *)
+  val of_term : T.t -> t option
 end
 
 module Map : sig
