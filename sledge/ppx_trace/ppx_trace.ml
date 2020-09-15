@@ -11,22 +11,37 @@
     "debug" mode or not. To enable "debug" mode, pass
     [--cookie 'ppx_trace_enabled="1"'] (or with [true] instead or [1]).
 
-    It rewrites [\[%Trace.info f\]] to a call
-    [\[Trace.info mod_name fun_name f\]] where [mod_name] and [fun_name] are
-    the enclosing module and function names in the parsetree. This is only
-    done in debug mode, otherwise [\[%Trace.info f\]] is rewritten to [()].
+    It rewrites [\[%trace\] ~call ~retn ~rais] to a call
+    [Trace.trace ~call ~retn ~rais mod_name fun_name] where [mod_name] and
+    [fun_name] are the enclosing module and function names in the parsetree.
+    This is only done in debug mode, otherwise
+    [\[%trace\] ~call ~retn ~rais] is rewritten to [(fun k -> k ())].
 
-    Similarly, [\[%Trace.call\]] is rewritten to a call to [Trace.call] or
-    [()], and [\[%Trace.retn\]] to a call to [Trace.retn] or [Fun.id].
+    Similarly, [\[%Trace.info\]], [\[%Trace.infok\]], [\[%Trace.printf\]],
+    [\[%Trace.fprintf\]], [\[%Trace.kprintf\]], and [\[%Trace.call\]] are
+    rewritten to their analogues in the [Trace] module, or [()]; and
+    [\[%Trace.retn\]] is rewritten to a call to [Trace.retn] or
+    [(fun x -> x)].
 
     For example, this enables writing
 
     {[
-      [%Trace.call fun {pf} -> pf "%a" pp_arg_type arg]
-      ;
-      func arg
-      |>
-      [%Trace.retn fun {pf} -> pf "%a" pp_result_type]
+      let func arg =
+        [%trace]
+          ~call:(fun {pf} -> pf "%a" pp_arg_type arg)
+          ~retn:(fun {pf} -> pf "%a" pp_result_type)
+        @@ fun () -> func arg
+    ]}
+
+    or
+
+    {[
+      let func arg =
+        [%Trace.call fun {pf} -> pf "%a" pp_arg_type arg]
+        ;
+        func arg
+        |>
+        [%Trace.retn fun {pf} -> pf "%a" pp_result_type]
     ]}
 
     to trace calls to [func] in debug mode while completely compiling out
@@ -90,6 +105,11 @@ let vb_stack_with, vb_stack_top =
 (* (fun x -> x) *)
 let fun_id loc = pexp_fun ~loc Nolabel None (pvar ~loc "x") (evar ~loc "x")
 
+(* (fun k -> k ()) *)
+let fun_go loc =
+  pexp_fun ~loc Nolabel None (pvar ~loc "k")
+    (eapply ~loc (evar ~loc "k") [eunit ~loc])
+
 let mapper =
   object
     inherit Ast_traverse.map as super
@@ -106,6 +126,14 @@ let mapper =
         (Nolabel, mod_name) :: (Nolabel, fun_name) :: args
       in
       match exp.pexp_desc with
+      | Pexp_apply
+          ( { pexp_desc= Pexp_extension ({txt= "trace"; loc}, PStr [])
+            ; pexp_loc }
+          , args ) ->
+          if not !debug then fun_go pexp_loc
+          else
+            pexp_apply ~loc:exp.pexp_loc (evar ~loc "Trace.trace")
+              (append_here_args args)
       | Pexp_extension
           ( { txt=
                 ( "Trace.info" | "Trace.infok" | "Trace.printf"
