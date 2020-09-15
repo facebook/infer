@@ -87,6 +87,9 @@ let vb_stack_with, vb_stack_top =
   let top () = List.hd !stack in
   (with_, top)
 
+(* (fun x -> x) *)
+let fun_id loc = pexp_fun ~loc Nolabel None (pvar ~loc "x") (evar ~loc "x")
+
 let mapper =
   object
     inherit Ast_traverse.map as super
@@ -129,7 +132,7 @@ let mapper =
       | Pexp_extension
           ( {txt= "Trace.retn"; loc= retn_loc}
           , PStr [{pstr_desc= Pstr_eval (retn_fun, []); _}] ) ->
-          if not !debug then evar ~loc:exp.pexp_loc "Stdlib.Fun.id"
+          if not !debug then fun_id exp.pexp_loc
           else
             pexp_apply ~loc:exp.pexp_loc
               (evar ~loc:retn_loc "Trace.retn")
