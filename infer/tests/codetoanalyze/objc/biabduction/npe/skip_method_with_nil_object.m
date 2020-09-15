@@ -23,8 +23,8 @@
   return [SkipMethodNilA new];
 }
 
-- (int)testOk_FP {
-  SkipMethodNilA* personID = nil;
+- (int)testOk:(SkipMethodNilA*)person {
+  SkipMethodNilA* personID = [person get_a];
   NSString* lastRecord = [personID skip_method];
   if (lastRecord) {
     personID->x = 6;
