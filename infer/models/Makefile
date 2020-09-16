@@ -10,7 +10,6 @@ C_MODELS_DIR = c/src
 CPP_MODELS_DIR = cpp/src
 JAVA_MODELS_DIR = java
 OBJC_MODELS_DIR = objc/src
-OBJCPP_MODELS_DIR = objcpp/src
 
 RESULTS_DIR = infer-out
 RESULTS_DB = $(RESULTS_DIR)/results.db
@@ -40,8 +39,6 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 	$(QUIET)$(call silent_on_success,Capturing C++ models,\
 	  $(INFER_BIN) capture $(INFER_OPTIONS) --continue -- $(MAKE) -C $(CPP_MODELS_DIR) all)
 ifeq (yes, $(HAS_OBJC))
-	$(QUIET)$(call silent_on_success,Capturing ObjCPP models,\
-	  $(INFER_BIN) capture $(INFER_OPTIONS) --continue -- $(MAKE) -C $(OBJCPP_MODELS_DIR) all)
 	$(QUIET)$(call silent_on_success,Capturing ObjC models,\
 	  $(INFER_BIN) capture $(INFER_OPTIONS) --continue -- $(MAKE) -C $(OBJC_MODELS_DIR) all)
 endif
@@ -87,7 +84,6 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 	$(QUIET)$(MAKE) -C $(CPP_MODELS_DIR) clean
 ifeq (yes, $(HAS_OBJC))
 	$(QUIET)$(MAKE) -C $(OBJC_MODELS_DIR) clean
-	$(QUIET)$(MAKE) -C $(OBJCPP_MODELS_DIR) clean
 endif
 endif
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
