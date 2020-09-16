@@ -233,6 +233,8 @@ module SymbolPath = struct
         false
 
 
+  let is_length = function Length _ -> true | _ -> false
+
   let is_global = function Normal p | Offset {p} | Length {p} | Modeled {p} -> is_global_partial p
 end
 
@@ -351,6 +353,13 @@ module Symbol = struct
         assert false
     | OneValue {path} | BoundEnd {path} ->
         path
+
+
+  let is_length = function
+    | ForeignVariable _ ->
+        false
+    | OneValue {path} | BoundEnd {path} ->
+        SymbolPath.is_length path
 
 
   (* NOTE: This may not be satisfied in the cost checker for simplifying its results. *)

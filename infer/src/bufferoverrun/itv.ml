@@ -22,9 +22,18 @@ module ItvRange = struct
 
   let of_bounds : loop_head_loc:Location.t -> lb:Bound.t -> ub:Bound.t -> t =
    fun ~loop_head_loc ~lb ~ub ->
+    let lb =
+      (* Handle the case of[s, c] where s contains positive length path and c
+         is constant. E.g [len, 2] would give 3 since len is always
+         nonnegative *)
+      if Bound.is_symbolic lb && not (Bound.is_symbolic ub) then
+        Bound.remove_positive_length_symbol lb
+      else lb
+    in
     Bound.plus_u ~weak:true ub Bound.one
     |> Bound.plus_u ~weak:true (Bound.neg lb)
     |> Bound.simplify_min_one |> Bound.simplify_bound_ends_from_paths
+    |> Bound.simplify_minimum_length
     |> Bounds.NonNegativeBound.of_loop_bound loop_head_loc
 
 
