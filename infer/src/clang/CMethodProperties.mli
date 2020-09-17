@@ -19,6 +19,8 @@ val get_param_decls : Clang_ast_t.decl -> Clang_ast_t.decl list
 
 val get_method_body : Clang_ast_t.decl -> Clang_ast_t.stmt option
 
+val is_cpp_lambda_call_operator : Clang_ast_t.decl -> bool
+
 val is_cpp_virtual : Clang_ast_t.decl -> bool
 
 val get_init_list_instrs :
