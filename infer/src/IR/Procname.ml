@@ -637,6 +637,9 @@ let hashable_name proc_name =
          before the first colon is used for the bug hash *)
       let name = F.asprintf "%a" (pp_simplified_string ~withclass:true) proc_name in
       List.hd_exn (String.split name ~on:':')
+  | Block bsig ->
+      let name = F.asprintf "%a" (Block.pp Non_verbose) bsig in
+      List.hd_exn (String.split name ~on:':')
   | _ ->
       (* Other cases for C and C++ method names *)
       F.asprintf "%a" (pp_simplified_string ~withclass:true) proc_name
