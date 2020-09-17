@@ -222,7 +222,18 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
 
   let get_autoreleasepool_trace {autoreleasepool_trace} = autoreleasepool_trace
 
-  let join_autoreleasepool_trace x y = Option.first_some x y
+  let rec degree_poly {terms} =
+    M.fold
+      (fun t p cur_max ->
+        let degree_term = Degree.succ (S.degree_kind t) (degree_poly p) in
+        if Degree.compare degree_term cur_max > 0 then degree_term else cur_max )
+      terms Degree.zero
+
+
+  let join_autoreleasepool_trace poly_x poly_y x y =
+    Option.merge x y ~f:(fun x y ->
+        if Degree.compare (degree_poly poly_x) (degree_poly poly_y) >= 0 then x else y )
+
 
   let poly_of_non_negative_int : NonNegativeInt.t -> poly = fun const -> {const; terms= M.empty}
 
@@ -269,7 +280,8 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
    fun p1 p2 ->
     { poly= plus_poly p1.poly p2.poly
     ; autoreleasepool_trace=
-        join_autoreleasepool_trace p1.autoreleasepool_trace p2.autoreleasepool_trace }
+        join_autoreleasepool_trace p1.poly p2.poly p1.autoreleasepool_trace p2.autoreleasepool_trace
+    }
 
 
   let rec mult_const_positive : poly -> PositiveInt.t -> poly =
@@ -324,7 +336,8 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
     let poly = mult_poly p1.poly p2.poly in
     let autoreleasepool_trace =
       if is_zero_poly poly then None
-      else join_autoreleasepool_trace p1.autoreleasepool_trace p2.autoreleasepool_trace
+      else
+        join_autoreleasepool_trace p1.poly p2.poly p1.autoreleasepool_trace p2.autoreleasepool_trace
     in
     {poly; autoreleasepool_trace}
 
@@ -446,8 +459,7 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
       match subst_poly poly eval_sym with
       | poly ->
           let autoreleasepool_trace =
-            Option.map autoreleasepool_trace ~f:(fun autoreleasepool_trace ->
-                Bounds.BoundTrace.call ~callee_pname ~location autoreleasepool_trace )
+            Option.map autoreleasepool_trace ~f:(Bounds.BoundTrace.call ~callee_pname ~location)
           in
           Val {poly; autoreleasepool_trace}
       | exception ReturnTop s_trace ->
@@ -464,9 +476,10 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
           let degree_term = (Degree.succ (S.degree_kind t) d, mult_symb p' t) in
           if [%compare: Degree.t * t] degree_term cur_max > 0 then degree_term else cur_max )
         terms
-        (Degree.zero, one ?autoreleasepool_trace ())
+        (Degree.zero, one ())
     in
-    degree_with_term_poly poly
+    let d, p = degree_with_term_poly poly in
+    (d, {p with autoreleasepool_trace})
 
 
   let degree p = fst (degree_with_term p)
@@ -534,9 +547,9 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
   let polynomial_traces ?(is_autoreleasepool_trace = false) p =
     let traces = get_symbols p |> List.map ~f:S.make_err_trace_symbol in
     if is_autoreleasepool_trace then
-      get_autoreleasepool_trace p
-      |> Option.value_map ~default:traces ~f:(fun trace ->
-             traces @ [("autorelease", Bounds.BoundTrace.make_err_trace ~depth:0 trace)] )
+      traces
+      @ Option.value_map (get_autoreleasepool_trace p) ~default:[] ~f:(fun trace ->
+            [("autorelease", Bounds.BoundTrace.make_err_trace ~depth:0 trace)] )
     else traces
 end
 

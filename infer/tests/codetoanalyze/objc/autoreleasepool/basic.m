@@ -102,4 +102,12 @@
   }
 }
 
+- (void)multiple_autorelease_constants:(int)n {
+  [self call_autorelease_constant];
+  for (int i = 0; i < n; i++) {
+    [self call_autorelease_constant];
+  }
+  [self call_autorelease_constant];
+}
+
 @end

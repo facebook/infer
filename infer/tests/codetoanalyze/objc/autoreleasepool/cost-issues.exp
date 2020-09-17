@@ -19,6 +19,7 @@ codetoanalyze/objc/autoreleasepool/basic.m, Basic.call_autorelease_constant, 1, 
 codetoanalyze/objc/autoreleasepool/basic.m, Basic.call_no_autorelease_zero, 0,  OnUIThread:false, []
 codetoanalyze/objc/autoreleasepool/basic.m, Basic.dealloc, 0,  OnUIThread:false, []
 codetoanalyze/objc/autoreleasepool/basic.m, Basic.loop_in_autoreleasepool_zero:, 0,  OnUIThread:false, []
+codetoanalyze/objc/autoreleasepool/basic.m, Basic.multiple_autorelease_constants:, 2 + n,  OnUIThread:false, [{n},Loop,autorelease,Call to Basic.call_autorelease_constant,Modeled call to autorelease]
 codetoanalyze/objc/autoreleasepool/basic.m, Basic.no_autoreleased_in_loop_zero:, 0,  OnUIThread:false, []
 codetoanalyze/objc/autoreleasepool/no_arc_callee.m, NoArcCallee.allocObject, 0,  OnUIThread:false, []
 codetoanalyze/objc/autoreleasepool/no_arc_callee.m, NoArcCallee.copyObject:, 0,  OnUIThread:false, []
