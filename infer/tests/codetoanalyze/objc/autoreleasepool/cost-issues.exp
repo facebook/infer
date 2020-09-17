@@ -1,3 +1,7 @@
+${XCODE_ISYSROOT}/System/Library/Frameworks/Foundation.framework/Headers/NSArray.h, NSArray.indexOfObjectPassingTest:[objc_blockArcBlock.callIndexOfObjectPassingTest_linear_FN:_1], 0,  OnUIThread:false, []
+codetoanalyze/objc/autoreleasepool/arc_block.m, ArcBlock.callIndexOfObjectPassingTest_linear_FN:, 0,  OnUIThread:false, []
+codetoanalyze/objc/autoreleasepool/arc_block.m, ArcBlock.dealloc, 0,  OnUIThread:false, []
+codetoanalyze/objc/autoreleasepool/arc_block.m, objc_blockArcBlock.callIndexOfObjectPassingTest_linear_FN:_1, 1,  OnUIThread:false, [autorelease,Call to NoArcCallee.giveMeObject,Modeled call to autorelease]
 codetoanalyze/objc/autoreleasepool/arc_caller.m, ArcCaller.callAllocObject_zero:, 0,  OnUIThread:false, []
 codetoanalyze/objc/autoreleasepool/arc_caller.m, ArcCaller.callCopyObject_zero:x:, 0,  OnUIThread:false, []
 codetoanalyze/objc/autoreleasepool/arc_caller.m, ArcCaller.callGiveMeObject_autoreleasepool_zero:, 0,  OnUIThread:false, []
