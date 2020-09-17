@@ -37,11 +37,8 @@ module ReportableViolation : sig
     ; param_position: int
     ; function_procname: Procname.Java.t }
 
-  val get_severity : t -> IssueType.severity
-  (** Severity of the violation to be reported *)
-
-  val get_description :
-    assignment_location:Location.t -> assignment_type -> t -> string * IssueType.t * Location.t
+  val make_nullsafe_issue :
+    assignment_location:Location.t -> assignment_type -> t -> NullsafeIssue.t
   (** Given context around violation, return error message together with the info where to put this
       message *)
 end

@@ -524,9 +524,10 @@ let do_preconditions_check_not_null
           TypeErr.register_error analysis_data find_canonical_duplicate
             (Condition_redundant
                { is_always_true= true
+               ; loc
                ; condition_descr= EradicateChecks.explain_expr tenv node cond
                ; nonnull_origin= InferredNullability.get_origin nullability })
-            (Some instr_ref) ~nullsafe_mode loc ) ;
+            (Some instr_ref) ~nullsafe_mode ) ;
         let previous_origin = InferredNullability.get_origin nullability in
         let new_origin = TypeOrigin.InferredNonnull {previous_origin} in
         TypeState.add pvar

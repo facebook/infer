@@ -253,7 +253,8 @@ let mk_nullsafe_issue_for_untrusted_values ~nullsafe_mode ~untrusted_kind ~bad_u
       offending_object NullsafeMode.pp nullsafe_mode coming_from_explanation what_is_used
       bad_usage_location.Location.line recommendation
   in
-  (description, issue_type, object_loc)
+  NullsafeIssue.make ~description ~issue_type ~loc:object_loc
+    ~severity:(NullsafeMode.severity nullsafe_mode)
 
 
 let find_alternative_nonnull_method_description nullable_origin =

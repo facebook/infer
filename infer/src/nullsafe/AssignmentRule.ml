@@ -38,8 +38,6 @@ module ReportableViolation = struct
     if is_non_reportable then None else Some {nullsafe_mode; violation}
 
 
-  let get_severity {nullsafe_mode} = NullsafeMode.severity nullsafe_mode
-
   let get_origin_opt assignment_type origin =
     let should_show_origin =
       match assignment_type with
@@ -146,7 +144,7 @@ module ReportableViolation = struct
 
 
   let mk_nullsafe_issue_for_explicitly_nullable_values ~assignment_type ~rhs_origin
-      ~explicit_rhs_nullable_kind ~assignment_location =
+      ~explicit_rhs_nullable_kind ~assignment_location ~nullsafe_mode =
     let nullability_evidence =
       get_origin_opt assignment_type rhs_origin
       |> Option.bind ~f:(fun origin -> TypeOrigin.get_description origin)
@@ -164,7 +162,7 @@ module ReportableViolation = struct
           Format.asprintf " If you don't expect null, use %a instead." MF.pp_monospaced descr )
         ~default:""
     in
-    let error_message =
+    let description =
       match assignment_type with
       | PassingParamToFunction function_info ->
           Format.sprintf "%s%s"
@@ -197,10 +195,11 @@ module ReportableViolation = struct
             return_description nullability_evidence_as_suffix alternative_recommendation
     in
     let issue_type = get_issue_type assignment_type in
-    (error_message, issue_type, assignment_location)
+    NullsafeIssue.make ~description ~issue_type ~loc:assignment_location
+      ~severity:(NullsafeMode.severity nullsafe_mode)
 
 
-  let get_description ~assignment_location assignment_type {nullsafe_mode; violation= {rhs}} =
+  let make_nullsafe_issue ~assignment_location assignment_type {nullsafe_mode; violation= {rhs}} =
     let rhs_origin = InferredNullability.get_origin rhs in
     let user_friendly_nullable =
       ErrorRenderingUtils.UserFriendlyNullable.from_nullability
@@ -219,7 +218,7 @@ module ReportableViolation = struct
           ~bad_usage_location:assignment_location rhs_origin
     | ErrorRenderingUtils.UserFriendlyNullable.ExplainablyNullable explicit_kind ->
         (* Attempt to assigning a value that can be explained to the user as nullable. *)
-        mk_nullsafe_issue_for_explicitly_nullable_values ~assignment_type ~rhs_origin
+        mk_nullsafe_issue_for_explicitly_nullable_values ~assignment_type ~rhs_origin ~nullsafe_mode
           ~explicit_rhs_nullable_kind:explicit_kind ~assignment_location
 end
 

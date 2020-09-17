@@ -35,7 +35,7 @@ let check_object_dereference ({IntraproceduralAnalysis.tenv; _} as analysis_data
           {dereference_violation; dereference_location= loc; nullable_object_descr; dereference_type}
       in
       TypeErr.register_error analysis_data find_canonical_duplicate type_error (Some instr_ref)
-        ~nullsafe_mode loc )
+        ~nullsafe_mode )
 
 
 (** [expr] is an expression that was explicitly compared with `null`. At the same time, [expr] had
@@ -106,8 +106,8 @@ let check_condition_for_redundancy
     let condition_descr = explain_expr tenv node expr in
     let nonnull_origin = InferredNullability.get_origin inferred_nullability in
     TypeErr.register_error analysis_data find_canonical_duplicate
-      (TypeErr.Condition_redundant {is_always_true; condition_descr; nonnull_origin})
-      (Some instr_ref) ~nullsafe_mode loc
+      (TypeErr.Condition_redundant {is_always_true; loc; condition_descr; nonnull_origin})
+      (Some instr_ref) ~nullsafe_mode
 
 
 (** Check an assignment to a field. *)
@@ -154,7 +154,7 @@ let check_field_assignment
                  { assignment_violation
                  ; assignment_location= loc
                  ; assignment_type= AssignmentRule.ReportableViolation.AssigningToField fname })
-              (Some instr_ref) ~nullsafe_mode loc ) )
+              (Some instr_ref) ~nullsafe_mode ) )
 
 
 (* Check if the field declared as not nullable (implicitly or explicitly). If the field is
@@ -297,8 +297,8 @@ let check_constructor_initialization
                   ()
                 else
                   TypeErr.register_error analysis_data find_canonical_duplicate
-                    (TypeErr.Field_not_initialized {field_name})
-                    None ~nullsafe_mode loc ;
+                    (TypeErr.Field_not_initialized {field_name; loc})
+                    None ~nullsafe_mode ;
               (* Check if field is over-annotated. *)
               match annotated_field with
               | None ->
@@ -315,8 +315,9 @@ let check_constructor_initialization
                         TypeErr.register_error analysis_data find_canonical_duplicate
                           (TypeErr.Over_annotation
                              { over_annotated_violation
+                             ; loc
                              ; violation_type= OverAnnotatedRule.FieldOverAnnoted field_name })
-                          ~nullsafe_mode None loc ) )
+                          ~nullsafe_mode None ) )
           in
           List.iter ~f:do_field fields
       | None ->
@@ -336,7 +337,7 @@ let check_return_not_nullable analysis_data ~nullsafe_mode ~java_pname find_cano
            { assignment_violation
            ; assignment_location= loc
            ; assignment_type= ReturningFromFunction java_pname })
-        None ~nullsafe_mode loc )
+        None ~nullsafe_mode )
 
 
 let check_return_overrannotated ~java_pname analysis_data find_canonical_duplicate loc
@@ -351,8 +352,9 @@ let check_return_overrannotated ~java_pname analysis_data find_canonical_duplica
   Result.iter_error (OverAnnotatedRule.check ~what ~by_rhs_upper_bound)
     ~f:(fun over_annotated_violation ->
       TypeErr.register_error analysis_data find_canonical_duplicate
-        (Over_annotation {over_annotated_violation; violation_type= ReturnOverAnnotated java_pname})
-        None ~nullsafe_mode loc )
+        (Over_annotation
+           {over_annotated_violation; loc; violation_type= ReturnOverAnnotated java_pname})
+        None ~nullsafe_mode )
 
 
 (** Check the annotations when returning from a method. *)
@@ -424,7 +426,7 @@ let check_call_parameters ({IntraproceduralAnalysis.tenv; _} as analysis_data) ~
                  ; actual_param_expression
                  ; param_position
                  ; function_procname= callee_pname } })
-        (Some instr_ref) ~nullsafe_mode loc
+        (Some instr_ref) ~nullsafe_mode
     in
     if PatternMatch.type_is_class formal.param_annotated_type.typ then
       (* Passing a param to a function is essentially an assignment the actual param value
@@ -444,10 +446,11 @@ let check_inheritance_rule_for_return analysis_data find_canonical_duplicate loc
       TypeErr.register_error analysis_data find_canonical_duplicate
         (Inconsistent_subclass
            { inheritance_violation
+           ; loc
            ; violation_type= InconsistentReturn
            ; overridden_proc_name
            ; base_proc_name })
-        None ~nullsafe_mode loc )
+        None ~nullsafe_mode )
 
 
 let check_inheritance_rule_for_param analysis_data find_canonical_duplicate loc ~nullsafe_mode
@@ -463,8 +466,9 @@ let check_inheritance_rule_for_param analysis_data find_canonical_duplicate loc 
                InconsistentParam
                  {param_position; param_description= Mangled.to_string overridden_param_name}
            ; base_proc_name
+           ; loc
            ; overridden_proc_name })
-        None ~nullsafe_mode loc )
+        None ~nullsafe_mode )
 
 
 let check_inheritance_rule_for_params analysis_data find_canonical_duplicate loc ~nullsafe_mode

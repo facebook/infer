@@ -17,6 +17,7 @@ let mock_summary id =
   let mock_issue =
     TypeErr.Condition_redundant
       { is_always_true= true
+      ; loc= Location.dummy
       ; condition_descr= Some (Int.to_string id)
       ; nonnull_origin= TypeOrigin.New }
   in

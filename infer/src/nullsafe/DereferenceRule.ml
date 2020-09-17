@@ -38,7 +38,7 @@ module ReportableViolation = struct
 
 
   let mk_nullsafe_issue_for_explicitly_nullable_values ~explicit_kind ~dereference_type
-      dereference_location ~nullable_object_descr ~nullable_object_origin =
+      dereference_location ~nullsafe_mode ~nullable_object_descr ~nullable_object_origin =
     let module MF = MarkupFormatter in
     let what_is_dereferred_str =
       match dereference_type with
@@ -95,10 +95,12 @@ module ReportableViolation = struct
           Format.sprintf "%s is nullable and is not locally checked for null when %s%s.%s"
             what_is_dereferred_str action_descr origin_descr alternative_recommendation
     in
-    (description, IssueType.eradicate_nullable_dereference, dereference_location)
+    NullsafeIssue.make ~description ~issue_type:IssueType.eradicate_nullable_dereference
+      ~loc:dereference_location
+      ~severity:(NullsafeMode.severity nullsafe_mode)
 
 
-  let get_description {nullsafe_mode; violation= {nullability}} ~dereference_location
+  let make_nullsafe_issue {nullsafe_mode; violation= {nullability}} ~dereference_location
       dereference_type ~nullable_object_descr =
     let user_friendly_nullable =
       ErrorRenderingUtils.UserFriendlyNullable.from_nullability
@@ -119,10 +121,7 @@ module ReportableViolation = struct
     | ErrorRenderingUtils.UserFriendlyNullable.ExplainablyNullable explicit_kind ->
         (* Attempt to dereference value that can be explained to the user as nullable. *)
         mk_nullsafe_issue_for_explicitly_nullable_values ~explicit_kind ~dereference_type
-          dereference_location ~nullable_object_descr ~nullable_object_origin
-
-
-  let get_severity {nullsafe_mode} = NullsafeMode.severity nullsafe_mode
+          ~nullsafe_mode dereference_location ~nullable_object_descr ~nullable_object_origin
 end
 
 let check nullability =
