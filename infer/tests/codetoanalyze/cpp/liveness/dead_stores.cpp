@@ -69,8 +69,12 @@ void init_capture_reassign_bad() {
   return [i = 1]() { return i; }();
 }
 
-void init_capture_no_call_bad() {
+void FN_init_capture_no_call_bad() {
   [i = 1]() { return i; };
+}
+
+void FN_init_capture_call_bad2() {
+  auto f = [i = 1]() { return i; };
 }
 
 int FN_init_capture_no_read_bad() {

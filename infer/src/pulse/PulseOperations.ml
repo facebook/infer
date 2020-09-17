@@ -468,17 +468,9 @@ let apply_callee callee_pname call_loc callee_exec_state ~ret ~captured_vars_wit
 let get_captured_actuals location ~captured_vars ~actual_closure astate =
   let* astate, this_value_addr = eval_access location actual_closure Dereference astate in
   let+ _, astate, captured_vars_with_actuals =
-    List.fold_result captured_vars ~init:(0, astate, [])
-      ~f:(fun (id, astate, captured) (var, mode) ->
-        let* astate, field =
-          eval_access location this_value_addr (FieldAccess (Closures.mk_fake_field ~id)) astate
-        in
+    List.fold_result captured_vars ~init:(0, astate, []) ~f:(fun (id, astate, captured) var ->
         let+ astate, captured_actual =
-          match mode with
-          | Pvar.ByReference ->
-              eval_access location field Dereference astate
-          | Pvar.ByValue ->
-              Ok (astate, field)
+          eval_access location this_value_addr (FieldAccess (Closures.mk_fake_field ~id)) astate
         in
         (id + 1, astate, (var, captured_actual) :: captured) )
   in
@@ -495,9 +487,9 @@ let call ~callee_data call_loc callee_pname ~ret ~actuals ~formals_opt (astate :
       in
       let captured_vars =
         Procdesc.get_captured callee_proc_desc
-        |> List.map ~f:(fun (mangled, _, mode) ->
+        |> List.map ~f:(fun (mangled, _, _) ->
                let pvar = Pvar.mk mangled callee_pname in
-               (Var.of_pvar pvar, mode) )
+               Var.of_pvar pvar )
       in
       let* astate, captured_vars_with_actuals =
         match actuals with

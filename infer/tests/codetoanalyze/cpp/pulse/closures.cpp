@@ -211,7 +211,7 @@ void capture_by_value_bad() {
   }
 }
 
-void capture_by_ref_ok() {
+void capture_by_ref_ok_FP() {
   int value = 5;
   auto f = [&value]() -> int* { return new int(value); };
   value++;
@@ -225,6 +225,50 @@ void capture_by_ref_ok() {
 void capture_by_ref_bad() {
   int value = 5;
   auto f = [&value]() -> int* { return new int(value); };
+  value++;
+  int* p = f();
+  int* q = nullptr;
+  if (*p == 6) {
+    *q = 42;
+  }
+}
+
+void capture_by_value_init_ok() {
+  int value = 5;
+  auto f = [v = value]() -> int* { return new int(v); };
+  value++;
+  int* p = f();
+  int* q = nullptr;
+  if (*p != 5) {
+    *q = 42;
+  }
+}
+
+void capture_by_value_init_bad() {
+  int value = 5;
+  auto f = [v = value]() -> int* { return new int(v); };
+  value++;
+  int* p = f();
+  int* q = nullptr;
+  if (*p == 5) {
+    *q = 42;
+  }
+}
+
+void capture_by_ref_init_ok() {
+  int value = 5;
+  auto f = [& v = value]() -> int* { return new int(v); };
+  value++;
+  int* p = f();
+  int* q = nullptr;
+  if (*p != 6) {
+    *q = 42;
+  }
+}
+
+void capture_by_ref_init_bad() {
+  int value = 5;
+  auto f = [& v = value]() -> int* { return new int(v); };
   value++;
   int* p = f();
   int* q = nullptr;

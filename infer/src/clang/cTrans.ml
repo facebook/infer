@@ -3177,26 +3177,32 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       CVar_decl.sil_var_of_captured_var context stmt_info.Clang_ast_t.si_source_range procname
         decl_ref
     in
-    let translate_capture_init (pvar, typ) init_decl =
+    let translate_captured_var_assign pvar_typ_mode trans_results_acc captured_vars_acc =
+      let loc =
+        CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
+      in
+      let ((exp, _, typ, _) as exp_pvar_typ), instr = assign_captured_var loc pvar_typ_mode in
+      let trans_results = mk_trans_result (exp, typ) {empty_control with instrs= [instr]} in
+      (trans_results :: trans_results_acc, exp_pvar_typ :: captured_vars_acc)
+    in
+    let translate_capture_init mode (pvar, typ) init_decl (trans_results_acc, captured_vars_acc) =
       match init_decl with
       | Clang_ast_t.VarDecl (_, _, _, {vdi_init_expr}) ->
-          init_expr_trans trans_state (Exp.Lvar pvar, typ) stmt_info vdi_init_expr
+          let init_trans_results =
+            init_expr_trans trans_state (Exp.Lvar pvar, typ) stmt_info vdi_init_expr
+            :: trans_results_acc
+          in
+          translate_captured_var_assign (pvar, typ, mode) init_trans_results captured_vars_acc
       | _ ->
           CFrontend_errors.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
             "Capture-init statement without var decl"
     in
     let translate_normal_capture mode (pvar, typ) (trans_results_acc, captured_vars_acc) =
-      let loc =
-        CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
-      in
       match mode with
       | Pvar.ByReference ->
           (trans_results_acc, (Exp.Lvar pvar, pvar, typ, mode) :: captured_vars_acc)
       | Pvar.ByValue ->
-          let pvar_typ_mode = (pvar, typ, mode) in
-          let ((exp, _, typ, _) as exp_pvar_typ), instr = assign_captured_var loc pvar_typ_mode in
-          let trans_results = mk_trans_result (exp, typ) {empty_control with instrs= [instr]} in
-          (trans_results :: trans_results_acc, exp_pvar_typ :: captured_vars_acc)
+          translate_captured_var_assign (pvar, typ, mode) trans_results_acc captured_vars_acc
     in
     let translate_captured
         {Clang_ast_t.lci_captured_var; lci_init_captured_vardecl; lci_capture_this; lci_capture_kind}
@@ -3221,9 +3227,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | Some captured_var_decl_ref, Some init_decl -> (
         (* capture and init *)
         match get_captured_pvar_typ captured_var_decl_ref with
-        | Some ((pvar, typ) as pvar_typ) ->
-            ( translate_capture_init pvar_typ init_decl :: trans_results_acc
-            , (Exp.Lvar pvar, pvar, typ, mode) :: captured_vars_acc )
+        | Some pvar_typ ->
+            translate_capture_init mode pvar_typ init_decl acc
         | None ->
             (trans_results_acc, captured_vars_acc) )
       | Some captured_var_decl_ref, None -> (
