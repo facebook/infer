@@ -59,7 +59,12 @@ let to_string =
         path
     | Absolute path ->
         if force_relative then
-          Option.value_exn (Utils.filename_to_relative ~force_full_backtrack:true ~root path)
+          let open IOption.Let_syntax in
+          (let* isysroot_suffix = Config.xcode_isysroot_suffix in
+           let+ pos = String.substr_index path ~pattern:isysroot_suffix in
+           "${XCODE_ISYSROOT}" ^ String.subo ~pos:(pos + String.length isysroot_suffix) path)
+          |> IOption.if_none_eval ~f:(fun () ->
+                 Option.value_exn (Utils.filename_to_relative ~force_full_backtrack:true ~root path) )
         else path
 
 

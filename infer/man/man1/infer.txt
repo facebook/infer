@@ -1199,6 +1199,10 @@ OPTIONS
            Specify the path to Xcode developer directory, to use for Buck
            clang targets           See also infer-capture(1).
 
+       --xcode-isysroot-suffix string
+           Specify the suffix of Xcode isysroot directory, to avoid absolute
+           paths in tests           See also infer-analyze(1).
+
        --xcpretty
            Activates: Infer will use xcpretty together with xcodebuild to
            analyze an iOS app. xcpretty just needs to be in the path, infer

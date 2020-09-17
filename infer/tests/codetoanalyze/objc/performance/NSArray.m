@@ -121,9 +121,6 @@ id nsarray_first_object_constant(NSArray* array) { return array.firstObject; }
 id nsarray_last_object_constant(NSArray* array) { return array.lastObject; }
 
 // find element
-// To be uncommented when we find a solution to avoiding absolute paths
-// from the standard library in tests.
-/*
 NSInteger nsarray_binary_search_log_FN(NSArray* sorted_array) {
   NSNumber* target = @5;
   return [sorted_array indexOfObject:target
@@ -133,7 +130,6 @@ NSInteger nsarray_binary_search_log_FN(NSArray* sorted_array) {
                        return [lhs compare:rhs];
                      }];
 }
-*/
 
 // sort array
 

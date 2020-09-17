@@ -2388,6 +2388,12 @@ and xcode_developer_dir =
     "Specify the path to Xcode developer directory, to use for Buck clang targets"
 
 
+and xcode_isysroot_suffix =
+  CLOpt.mk_string_opt ~long:"xcode-isysroot-suffix"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Specify the suffix of Xcode isysroot directory, to avoid absolute paths in tests"
+
+
 and xcpretty =
   CLOpt.mk_bool ~long:"xcpretty" ~default:false
     ~in_help:InferCommand.[(Capture, manual_clang)]
@@ -3197,6 +3203,8 @@ and write_html_whitelist_regex = !write_html_whitelist_regex
 and write_website = !write_website
 
 and xcode_developer_dir = !xcode_developer_dir
+
+and xcode_isysroot_suffix = !xcode_isysroot_suffix
 
 and xcpretty = !xcpretty
 

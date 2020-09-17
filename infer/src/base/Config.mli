@@ -617,6 +617,8 @@ val write_website : string option
 
 val xcode_developer_dir : string option
 
+val xcode_isysroot_suffix : string option
+
 val xcpretty : bool
 
 (** {2 Configuration values derived from command-line options} *)

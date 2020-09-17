@@ -380,6 +380,10 @@ OPTIONS
        --uninit-only
            Activates: Enable uninit and disable all other checkers
            (Conversely: --no-uninit-only)
+
+       --xcode-isysroot-suffix string
+           Specify the suffix of Xcode isysroot directory, to avoid absolute
+           paths in tests
 BUCK OPTIONS
        --merge
            Activates: Merge the captured results directories specified in the
