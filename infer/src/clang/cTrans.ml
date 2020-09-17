@@ -3193,6 +3193,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
     in
     let translate_captured_var_assign exp pvar typ mode =
+      (* Structs always have reference if passed as parameters *)
+      let typ =
+        match typ.Typ.desc with Tstruct _ -> Typ.mk (Tptr (typ, Pk_reference)) | _ -> typ
+      in
       let instr, exp = CTrans_utils.dereference_var_sil (exp, typ) loc in
       let trans_results = mk_trans_result (exp, typ) {empty_control with instrs= [instr]} in
       (trans_results, (exp, pvar, typ, mode))
@@ -3232,7 +3236,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | Pvar.ByValue -> (
           let init, exp, typ_new =
             match typ.Typ.desc with
-            | Tptr (typ_no_ref, Pk_reference) ->
+            (* TODO: Structs are missing copy constructor instructions when passed by value *)
+            | Tptr (typ_no_ref, Pk_reference) when not (Typ.is_struct typ_no_ref) ->
                 let return = (Exp.Lvar pvar, typ) in
                 (* We need to dereference ref variable as usual when we read its value *)
                 let init_trans_results =

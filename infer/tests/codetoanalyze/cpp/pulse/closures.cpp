@@ -325,6 +325,50 @@ void ref_capture_by_ref_bad() {
   }
 }
 
+void struct_capture_by_ref_bad() {
+  S s;
+  auto f = [&s]() -> int* { return new int(s.f); };
+  s.f = 5;
+  int* p = f();
+  int* q = nullptr;
+  if (*p == 5) {
+    *q = 42;
+  }
+}
+
+void struct_capture_by_ref_ok() {
+  S s;
+  auto f = [&s]() -> int* { return new int(s.f); };
+  s.f = 5;
+  int* p = f();
+  int* q = nullptr;
+  if (*p != 5) {
+    *q = 42;
+  }
+}
+
+void struct_capture_by_val_bad() {
+  S s;
+  auto f = [s]() -> int* { return new int(s.f); };
+  s.f = 5;
+  int* p = f();
+  int* q = nullptr;
+  if (*p == 1) {
+    *q = 42;
+  }
+}
+
+void struct_capture_by_val_ok_FP() {
+  S s;
+  auto f = [s]() -> int* { return new int(s.f); };
+  s.f = 5;
+  int* p = f();
+  int* q = nullptr;
+  if (*p != 1) {
+    *q = 42;
+  }
+}
+
 S* update_inside_lambda_capture_and_init(S* s) {
   S* object = nullptr;
   auto f = [& o = object](S* s) { o = s; };

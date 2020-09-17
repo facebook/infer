@@ -107,3 +107,39 @@ int ref_init_capture_by_ref() {
   [& xlambda = xref]() { xlambda++; }();
   return xref;
 }
+
+int struct_capture_by_value() {
+  SomeStruct x;
+  SomeStruct& xref = x;
+  auto f = [x, xref]() { return x.f + xref.f; };
+  return f();
+}
+
+int struct_capture_by_ref() {
+  SomeStruct x;
+  SomeStruct& xref = x;
+  auto f = [&x, &xref]() {
+    xref.f++;
+    return x.f;
+  };
+  return f();
+}
+
+int struct_init_capture_by_value() {
+  SomeStruct x;
+  SomeStruct& xref = x;
+  auto f = [xlambda = x, xreflambda = xref]() {
+    return xlambda.f + xreflambda.f;
+  };
+  return f();
+}
+
+int struct_init_capture_by_ref() {
+  SomeStruct x;
+  SomeStruct& xref = x;
+  auto f = [& xlambda = x, &xreflambda = xref]() {
+    xreflambda.f++;
+    return xlambda.f;
+  };
+  return f();
+}
