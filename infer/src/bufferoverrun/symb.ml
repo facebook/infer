@@ -24,10 +24,14 @@ module SymbolPath = struct
 
   let compare_deref_kind _ _ = 0
 
+  type callsite = CallSite.t
+
+  let compare_callsite x y = Procname.compare (CallSite.pname x) (CallSite.pname y)
+
   type prim =
     | Pvar of Pvar.t
     | Deref of deref_kind * partial
-    | Callsite of {ret_typ: Typ.t; cs: CallSite.t; obj_path: partial option [@compare.ignore]}
+    | Callsite of {ret_typ: Typ.t; cs: callsite; obj_path: partial option [@compare.ignore]}
   [@@deriving compare]
 
   and partial = prim BoField.t [@@deriving compare]
