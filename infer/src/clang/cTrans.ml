@@ -824,6 +824,18 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     CContext.add_block_static_var context procname (pvar, typ) ;
     let var_exp = Exp.Lvar pvar in
+    (* Captured variables without initialization do not have the correct types
+       inside of lambda bodies. Use the types stored in the procdesc. *)
+    let typ =
+      match procname with
+      | Procname.ObjC_Cpp cpp_pname when Procname.ObjC_Cpp.is_cpp_lambda cpp_pname ->
+          let pvar_name = Pvar.get_name pvar in
+          List.find (Procdesc.get_captured context.procdesc) ~f:(fun (captured_var, _, _) ->
+              Mangled.equal captured_var pvar_name )
+          |> Option.value_map ~f:(fun (_, t, _) -> t) ~default:typ
+      | _ ->
+          typ
+    in
     let return =
       if Self.is_var_self pvar (CContext.is_objc_method context) && CType.is_class typ then
         let class_name = CContext.get_curr_class_typename stmt_info context in
@@ -3200,7 +3212,18 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let translate_normal_capture mode (pvar, typ) (trans_results_acc, captured_vars_acc) =
       match mode with
       | Pvar.ByReference ->
-          (trans_results_acc, (Exp.Lvar pvar, pvar, typ, mode) :: captured_vars_acc)
+          let ref_typ =
+            (* A variable captured by ref (except for ref variables) is missing ref in its type *)
+            match typ.Typ.desc with
+            | Tptr (_, Typ.Pk_reference) ->
+                typ
+            | _ when Pvar.is_this pvar ->
+                (* Special case for this *)
+                typ
+            | _ ->
+                Typ.mk (Tptr (typ, Typ.Pk_reference))
+          in
+          (trans_results_acc, (Exp.Lvar pvar, pvar, ref_typ, mode) :: captured_vars_acc)
       | Pvar.ByValue ->
           translate_captured_var_assign (pvar, typ, mode) trans_results_acc captured_vars_acc
     in

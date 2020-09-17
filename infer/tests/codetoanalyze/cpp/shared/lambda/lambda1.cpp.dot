@@ -313,14 +313,14 @@ digraph cfg {
 	
 
 	 "operator()#lambda_shared_lambda_lambda1.cpp:31:10#normal_capture#(3336792892144266867).563aa24976a73c4ea364dbb5afa3f73f_3" -> "operator()#lambda_shared_lambda_lambda1.cpp:31:10#normal_capture#(3336792892144266867).563aa24976a73c4ea364dbb5afa3f73f_2" ;
-"operator()#lambda_shared_lambda_lambda1.cpp:36:3#capture_by_ref#(17277454583786497390).328aa336808e9a777a5cd630eb1ef54f_1" [label="1: Start capture_by_ref::lambda_shared_lambda_lambda1.cpp:36:3::operator()\nFormals:  this:capture_by_ref::lambda_shared_lambda_lambda1.cpp:36:3*\nLocals: \nCaptured:  [by ref]x:int \n  " color=yellow style=filled]
+"operator()#lambda_shared_lambda_lambda1.cpp:36:3#capture_by_ref#(17277454583786497390).328aa336808e9a777a5cd630eb1ef54f_1" [label="1: Start capture_by_ref::lambda_shared_lambda_lambda1.cpp:36:3::operator()\nFormals:  this:capture_by_ref::lambda_shared_lambda_lambda1.cpp:36:3*\nLocals: \nCaptured:  [by ref]x:int& \n  " color=yellow style=filled]
 	
 
 	 "operator()#lambda_shared_lambda_lambda1.cpp:36:3#capture_by_ref#(17277454583786497390).328aa336808e9a777a5cd630eb1ef54f_1" -> "operator()#lambda_shared_lambda_lambda1.cpp:36:3#capture_by_ref#(17277454583786497390).328aa336808e9a777a5cd630eb1ef54f_3" ;
 "operator()#lambda_shared_lambda_lambda1.cpp:36:3#capture_by_ref#(17277454583786497390).328aa336808e9a777a5cd630eb1ef54f_2" [label="2: Exit capture_by_ref::lambda_shared_lambda_lambda1.cpp:36:3::operator() \n  " color=yellow style=filled]
 	
 
-"operator()#lambda_shared_lambda_lambda1.cpp:36:3#capture_by_ref#(17277454583786497390).328aa336808e9a777a5cd630eb1ef54f_3" [label="3:  UnaryOperator \n   n$0=*&x:int [line 36, column 12]\n  *&x:int=(n$0 + 1) [line 36, column 12]\n " shape="box"]
+"operator()#lambda_shared_lambda_lambda1.cpp:36:3#capture_by_ref#(17277454583786497390).328aa336808e9a777a5cd630eb1ef54f_3" [label="3:  UnaryOperator \n   n$0=*&x:int& [line 36, column 12]\n  n$1=*n$0:int [line 36, column 12]\n  *n$0:int=(n$1 + 1) [line 36, column 12]\n " shape="box"]
 	
 
 	 "operator()#lambda_shared_lambda_lambda1.cpp:36:3#capture_by_ref#(17277454583786497390).328aa336808e9a777a5cd630eb1ef54f_3" -> "operator()#lambda_shared_lambda_lambda1.cpp:36:3#capture_by_ref#(17277454583786497390).328aa336808e9a777a5cd630eb1ef54f_2" ;

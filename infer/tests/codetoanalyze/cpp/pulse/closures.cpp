@@ -124,7 +124,7 @@ int ref_capture_return_local_lambda_ok() {
   return f().f;
 }
 
-S& FN_ref_capture_return_local_lambda_bad() {
+S& ref_capture_return_local_lambda_bad() {
   S x;
   auto f = [&x](void) -> S& {
     // no way to know if ok here
@@ -211,7 +211,7 @@ void capture_by_value_bad() {
   }
 }
 
-void capture_by_ref_ok_FP() {
+void capture_by_ref_ok() {
   int value = 5;
   auto f = [&value]() -> int* { return new int(value); };
   value++;
@@ -297,7 +297,7 @@ S* update_inside_lambda_capture_only(S* s) {
   return object;
 }
 
-int update_inside_lambda_capture_only_ok_FP(S* param_s) {
+int update_inside_lambda_capture_only_ok(S* param_s) {
   return update_inside_lambda_capture_only(param_s)->f;
 }
 
