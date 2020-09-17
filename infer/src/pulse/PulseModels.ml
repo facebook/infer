@@ -74,7 +74,28 @@ module Misc = struct
     PulseOperations.write_id ret_id (ret_addr, []) astate |> PulseOperations.ok_continue
 
 
-  let skip : model = fun _ ~callee_procname:_ _ ~ret:_ astate -> PulseOperations.ok_continue astate
+  (** Pretend the function call is a call to an "unknown" function, i.e. a function for which we
+      don't have the implementation. This triggers a bunch of heuristics, e.g. to havoc arguments we
+      suspect are passed by reference. *)
+  let unknown_call skip_reason args : model =
+   fun _ ~callee_procname location ~ret astate ->
+    let actuals =
+      List.map args ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= actual; typ} ->
+          (actual, typ) )
+    in
+    let formals_opt =
+      AnalysisCallbacks.proc_resolve_attributes callee_procname
+      |> Option.map ~f:ProcAttributes.get_pvar_formals
+    in
+    Ok
+      [ ExecutionDomain.ContinueProgram
+          (PulseOperations.unknown_call location (Model skip_reason) ~ret ~actuals ~formals_opt
+             astate) ]
+
+
+  (** don't actually do nothing, apply the heuristics for unknown calls (this may or may not be a
+      good idea) *)
+  let skip = unknown_call
 
   let nondet ~fn_name : model =
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
@@ -819,7 +840,7 @@ end
 module StringSet = Caml.Set.Make (String)
 
 module ProcNameDispatcher = struct
-  let dispatch : (Tenv.t, model, arg_payload) ProcnameDispatcher.Call.dispatcher =
+  let dispatch : (Tenv.t * Procname.t, model, arg_payload) ProcnameDispatcher.Call.dispatcher =
     let open ProcnameDispatcher.Call in
     let match_builtin builtin _ s = String.equal s (Procname.get_method builtin) in
     let pushback_modeled =
@@ -859,6 +880,13 @@ module ProcNameDispatcher = struct
         ~model:(fun m -> Misc.return_positive ~desc:m)
         Config.pulse_model_return_nonnull
     in
+    let match_regexp_opt r_opt (_tenv, proc_name) _ =
+      Option.value_map ~default:false r_opt ~f:(fun r ->
+          let s = Procname.to_string proc_name in
+          let r = Str.string_match r s 0 in
+          r )
+    in
+    let map_context_tenv f (x, _) = f x in
     make_dispatcher
       ( transfer_ownership_matchers @ abort_matchers @ return_nonnull_matchers
       @ [ +match_builtin BuiltinDecl.free <>$ capt_arg_payload $--> C.free
@@ -872,13 +900,16 @@ module ProcNameDispatcher = struct
         ; +match_builtin BuiltinDecl.exit <>--> Misc.early_exit
         ; +match_builtin BuiltinDecl.__infer_initializer_list
           <>$ capt_arg_payload $+...$--> Misc.id_first_arg
-        ; +PatternMatch.Java.implements_lang "System" &:: "exit" <>--> Misc.early_exit
+        ; +map_context_tenv (PatternMatch.Java.implements_lang "System")
+          &:: "exit" <>--> Misc.early_exit
         ; +match_builtin BuiltinDecl.__get_array_length <>--> Misc.return_unknown_size
         ; (* consider that all fbstrings are small strings to avoid false positives due to manual
              ref-counting *)
           -"folly" &:: "fbstring_core" &:: "category" &--> Misc.return_int Int64.zero
-        ; -"folly" &:: "DelayedDestruction" &:: "destroy" &--> Misc.skip
-        ; -"folly" &:: "SocketAddress" &:: "~SocketAddress" &--> Misc.skip
+        ; -"folly" &:: "DelayedDestruction" &:: "destroy"
+          &++> Misc.skip "folly::DelayedDestruction::destroy is modelled as skip"
+        ; -"folly" &:: "SocketAddress" &:: "~SocketAddress"
+          &++> Misc.skip "folly::SocketAddress's destructor is modelled as skip"
         ; -"folly" &:: "Optional" &:: "Optional" <>$ capt_arg_payload
           $+ any_arg_of_typ (-"folly" &:: "None")
           $--> FollyOptional.assign_none ~desc:"folly::Optional::Optional(=None)"
@@ -906,11 +937,11 @@ module ProcNameDispatcher = struct
         ; -"std" &:: "function" &:: "operator()" $ capt_arg $++$--> StdFunction.operator_call
         ; -"std" &:: "function" &:: "operator=" $ capt_arg_payload $+ capt_arg
           $--> StdFunction.assign ~desc:"std::function::operator="
-        ; +PatternMatch.Java.implements_lang "Object"
+        ; +map_context_tenv (PatternMatch.Java.implements_lang "Object")
           &:: "clone" $ capt_arg_payload $--> JavaObject.clone
-        ; ( +PatternMatch.Java.implements_lang "System"
+        ;  +map_context_tenv (PatternMatch.Java.implements_lang "System")
           &:: "arraycopy" $ capt_arg_payload $+ any_arg $+ capt_arg_payload
-          $+...$--> fun src dest -> Misc.shallow_copy_model "System.arraycopy" dest src )
+          $+...$--> (fun src dest -> Misc.shallow_copy_model "System.arraycopy" dest src )
         ; -"std" &:: "atomic" &:: "atomic" <>$ capt_arg_payload $+ capt_arg_payload
           $--> StdAtomicInteger.constructor
         ; -"std" &:: "__atomic_base" &:: "fetch_add" <>$ capt_arg_payload $+ capt_arg_payload
@@ -1002,79 +1033,81 @@ module ProcNameDispatcher = struct
         ; -"std" &:: "vector" &:: "shrink_to_fit" <>$ capt_arg_payload
           $--> StdVector.invalidate_references ShrinkToFit
         ; -"std" &:: "vector" &:: "push_back" <>$ capt_arg_payload $+...$--> StdVector.push_back
-        ; +PatternMatch.Java.implements_collection
+        ; +map_context_tenv PatternMatch.Java.implements_collection
           &:: "add" <>$ capt_arg_payload $+ capt_arg_payload $--> JavaCollection.add
-        ; +PatternMatch.Java.implements_list
+        ; +map_context_tenv PatternMatch.Java.implements_list
           &:: "add" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
           $--> JavaCollection.add_at
-        ; +PatternMatch.Java.implements_collection
+        ; +map_context_tenv PatternMatch.Java.implements_collection
           &:: "remove" <>$ capt_arg_payload $+ any_arg $--> JavaCollection.remove
-        ; +PatternMatch.Java.implements_list
+        ; +map_context_tenv PatternMatch.Java.implements_list
           &:: "remove" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg
           $--> JavaCollection.remove_at
-        ; +PatternMatch.Java.implements_collection
+        ; +map_context_tenv PatternMatch.Java.implements_collection
           &::+ (fun _ str -> StringSet.mem str pushback_modeled)
           <>$ capt_arg_payload $+...$--> StdVector.push_back
-        ; +PatternMatch.Java.implements_queue
+        ; +map_context_tenv PatternMatch.Java.implements_queue
           &::+ (fun _ str -> StringSet.mem str pushback_modeled)
           <>$ capt_arg_payload $+...$--> StdVector.push_back
-        ; +PatternMatch.Java.implements_lang "StringBuilder"
+        ; +map_context_tenv( PatternMatch.Java.implements_lang "StringBuilder")
           &::+ (fun _ str -> StringSet.mem str pushback_modeled)
           <>$ capt_arg_payload $+...$--> StdVector.push_back
-        ; +PatternMatch.Java.implements_lang "StringBuilder"
+        ; +map_context_tenv( PatternMatch.Java.implements_lang "StringBuilder")
           &:: "setLength" <>$ capt_arg_payload
           $+...$--> StdVector.invalidate_references ShrinkToFit
-        ; +PatternMatch.Java.implements_lang "String"
+        ; +map_context_tenv (PatternMatch.Java.implements_lang "String")
           &::+ (fun _ str -> StringSet.mem str pushback_modeled)
           <>$ capt_arg_payload $+...$--> StdVector.push_back
-        ; +PatternMatch.Java.implements_iterator
+        ; +map_context_tenv PatternMatch.Java.implements_iterator
           &:: "remove" <>$ capt_arg_payload
           $+...$--> JavaIterator.remove ~desc:"remove"
-        ; +PatternMatch.Java.implements_map &:: "put" <>$ capt_arg_payload
-          $+...$--> StdVector.push_back
-        ; +PatternMatch.Java.implements_map &:: "putAll" <>$ capt_arg_payload
-          $+...$--> StdVector.push_back
+        ; +map_context_tenv PatternMatch.Java.implements_map
+          &:: "put" <>$ capt_arg_payload $+...$--> StdVector.push_back
+        ; +map_context_tenv PatternMatch.Java.implements_map
+          &:: "putAll" <>$ capt_arg_payload $+...$--> StdVector.push_back
         ; -"std" &:: "vector" &:: "reserve" <>$ capt_arg_payload $+...$--> StdVector.reserve
-        ; +PatternMatch.Java.implements_collection
+        ; +map_context_tenv PatternMatch.Java.implements_collection
           &:: "get" <>$ capt_arg_payload $+ capt_arg_payload
           $--> StdVector.at ~desc:"Collection.get()"
-        ; +PatternMatch.Java.implements_list
+        ; +map_context_tenv PatternMatch.Java.implements_list
           &:: "set" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
           $--> JavaCollection.set
-        ; +PatternMatch.Java.implements_iterator
+        ; +map_context_tenv PatternMatch.Java.implements_iterator
           &:: "hasNext"
           &--> Misc.nondet ~fn_name:"Iterator.hasNext()"
-        ; +PatternMatch.Java.implements_enumeration
+        ; +map_context_tenv PatternMatch.Java.implements_enumeration
           &:: "hasMoreElements"
           &--> Misc.nondet ~fn_name:"Enumeration.hasMoreElements()"
-        ; +PatternMatch.Java.implements_lang "Object"
+        ; +map_context_tenv( PatternMatch.Java.implements_lang "Object")
           &:: "equals"
           &--> Misc.nondet ~fn_name:"Object.equals"
-        ; +PatternMatch.Java.implements_lang "Iterable"
+        ; +map_context_tenv (PatternMatch.Java.implements_lang "Iterable")
           &:: "iterator" <>$ capt_arg_payload
           $+...$--> JavaIterator.constructor ~desc:"Iterable.iterator"
-        ; +PatternMatch.Java.implements_iterator
+        ; +map_context_tenv PatternMatch.Java.implements_iterator
           &:: "next" <>$ capt_arg_payload
           $!--> JavaIterator.next ~desc:"Iterator.next()"
-        ; ( +PatternMatch.Java.implements_enumeration
+        ; ( +map_context_tenv PatternMatch.Java.implements_enumeration
           &:: "nextElement" <>$ capt_arg_payload
           $!--> fun x ->
           StdVector.at ~desc:"Enumeration.nextElement" x (AbstractValue.mk_fresh (), []) )
-        ; +PatternMatch.ObjectiveC.is_core_graphics_create_or_copy &++> C.malloc
-        ; +PatternMatch.ObjectiveC.is_core_foundation_create_or_copy &++> C.malloc
+        ; +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_create_or_copy &++> C.malloc
+        ; +map_context_tenv PatternMatch.ObjectiveC.is_core_foundation_create_or_copy &++> C.malloc
         ; +match_builtin BuiltinDecl.malloc_no_fail <>$ capt_arg_payload $--> C.malloc_not_null
-        ; +PatternMatch.ObjectiveC.is_modelled_as_alloc &++> C.malloc_not_null
-        ; +PatternMatch.ObjectiveC.is_core_graphics_release
+        ; +map_context_tenv PatternMatch.ObjectiveC.is_modelled_as_alloc &++> C.malloc_not_null
+        ; +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_release
           <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; -"CFRelease" <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
-        ; +PatternMatch.ObjectiveC.is_modelled_as_release
+        ; +map_context_tenv PatternMatch.ObjectiveC.is_modelled_as_release
           <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; -"CFAutorelease" <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; -"CFBridgingRelease" <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; +match_builtin BuiltinDecl.__objc_bridge_transfer
           <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; +match_builtin BuiltinDecl.__objc_alloc_no_fail <>$ capt_exp $--> ObjC.alloc_not_null
-        ; -"NSObject" &:: "init" <>$ capt_arg_payload $--> Misc.id_first_arg ] )
+        ; -"NSObject" &:: "init" <>$ capt_arg_payload $--> Misc.id_first_arg
+        ; +match_regexp_opt Config.pulse_model_skip_pattern
+          &::.*++> Misc.skip "modelled as skip due to configuration option" ] )
 end
 
-let dispatch tenv proc_name args = ProcNameDispatcher.dispatch tenv proc_name args
+let dispatch tenv proc_name args = ProcNameDispatcher.dispatch (tenv, proc_name) proc_name args

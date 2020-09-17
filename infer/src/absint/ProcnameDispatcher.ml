@@ -852,6 +852,8 @@ module Call = struct
 
   let ( &::.*--> ) name_matcher f = name_matcher <...>! () &::.*! () $! () $+...$--> f
 
+  let ( &::.*++> ) name_matcher f = name_matcher <...>! () &::.*! () $! () $++$--> f
+
   let ( $!--> ) args_matcher f =
     args_matcher $* exact_args_or_retry wrong_args_internal_error $*--> f
 end

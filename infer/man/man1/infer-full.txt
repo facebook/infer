@@ -920,6 +920,10 @@ OPTIONS
            Methods that should be modelled as returning non-null in Pulse       
     See also infer-analyze(1).
 
+       --pulse-model-skip-pattern string
+           Regex of methods that should be modelled as "skip" in Pulse       
+    See also infer-analyze(1).
+
        --pulse-model-transfer-ownership +string
            Methods that should be modelled as transfering memory ownership in
            Pulse. Accepted formats are method or namespace::method       
@@ -1723,6 +1727,9 @@ INTERNAL OPTIONS
 
        --pulse-model-return-nonnull-reset
            Set --pulse-model-return-nonnull to the empty list.
+
+       --pulse-model-skip-pattern-reset
+           Cancel the effect of --pulse-model-skip-pattern.
 
        --pulse-model-transfer-ownership-reset
            Set --pulse-model-transfer-ownership to the empty list.

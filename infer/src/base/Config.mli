@@ -463,6 +463,8 @@ val pulse_model_release_pattern : Str.regexp option
 
 val pulse_model_return_nonnull : string list
 
+val pulse_model_skip_pattern : Str.regexp option
+
 val pulse_model_transfer_ownership_namespace : (string * string) list
 
 val pulse_model_transfer_ownership : string list
