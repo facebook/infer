@@ -13,6 +13,8 @@ type t
 val make :
   issue_type:IssueType.t -> description:string -> loc:Location.t -> severity:IssueType.severity -> t
 
+val with_third_party_dependent_methods : (Procname.Java.t * AnnotatedSignature.t) list -> t -> t
+
 val get_issue_type : t -> IssueType.t
 
 val get_description : t -> string
@@ -20,3 +22,5 @@ val get_description : t -> string
 val get_loc : t -> Location.t
 
 val get_severity : t -> IssueType.severity
+
+val get_nullsafe_extra : t -> Procname.Java.t -> Jsonbug_t.nullsafe_extra

@@ -8,6 +8,7 @@
 package codetoanalyze.java.nullsafe;
 
 import com.facebook.infer.annotation.NullsafeStrict;
+import java.util.List;
 import javax.annotation.Nullable;
 import some.test.pckg.ThirdPartyTestClass;
 
@@ -78,5 +79,41 @@ public class StrictModeForThirdParty {
   public void passingNonnullToParamIsOK() {
     // Independently of param signature, it is safe to pass non-nullables
     obj.secondParamSpecifiedAsNonnull(getNonnull(), getNonnull());
+  }
+
+  // Below follow tests ensuring how we represent third party methods in the output .json file
+  // for interesting edge cases.
+
+  // Expect the dependent third party signature to be correctly rendered in .json output as
+  // "some.test.pckg.ThirdPartyTestClass#genericObjectRepresentation(java.lang.Object,
+  // java.util.List)"
+  public String genericObjectRepresentation(String s, List<String> l) {
+    return obj.generic(s, l);
+  }
+
+  // Expect the dependent third party signature to be correctly rendered in .json output as
+  // "some.test.pckg.ThirdPartyTestClass#genericExtendsStringRepresentation(java.lang.String,
+  // java.util.List)"
+  public String genericExtendsStringRepresentation(String s, List<String> l) {
+    return obj.genericString(s, l);
+  }
+
+  // Expect the dependent third party signature to be correctly rendered in .json output as
+  // "some.test.pckg.ThirdPartyTestClass#arrayRepresentation(java.lang.String, java.lang.String[])"
+  public String arrayRepresentation(String s, String[] arr) {
+    return obj.array(s, arr);
+  }
+
+  // Expect the dependent third party signature to be correctly rendered in .json output as
+  // "some.test.pckg.ThirdPartyTestClass#varargRepresentation(java.lang.String, java.lang.String[])"
+  public String varargRepresentation(String s) {
+    return obj.vararg(s, s, s, "Hello");
+  }
+
+  // Expect the dependent third party signature to be correctly rendered in .json output as
+  // "some.test.pckg.ThirdPartyTestClass#varargGenericRepresentation(java.lang.String,
+  // java.lang.String[])"
+  public String varargGenericRepresentation(String s) {
+    return obj.varargGeneric(s, s, s, "Hello");
   }
 }

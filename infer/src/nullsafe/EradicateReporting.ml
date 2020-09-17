@@ -15,13 +15,6 @@ let get_proc_name proc_attrs =
       Logging.die InternalError "Unexpected attempt to report a nullsafe error on a non-java method"
 
 
-let get_nullsafe_extra proc_attrs =
-  let proc_name = get_proc_name proc_attrs in
-  let class_name = Procname.Java.get_simple_class_name proc_name in
-  let package = Procname.Java.get_package proc_name in
-  Some Jsonbug_t.{class_name; package; meta_issue_info= None}
-
-
 let report_error {IntraproceduralAnalysis.proc_desc; tenv; err_log} checker ?(field_name = None)
     nullsafe_issue =
   let proc_attrs = Procdesc.get_attributes proc_desc in
@@ -29,7 +22,8 @@ let report_error {IntraproceduralAnalysis.proc_desc; tenv; err_log} checker ?(fi
   let description = NullsafeIssue.get_description nullsafe_issue in
   let severity = NullsafeIssue.get_severity nullsafe_issue in
   let loc = NullsafeIssue.get_loc nullsafe_issue in
-  let nullsafe_extra = get_nullsafe_extra proc_attrs in
+  let proc_name = get_proc_name proc_attrs in
+  let nullsafe_extra = Some (NullsafeIssue.get_nullsafe_extra nullsafe_issue proc_name) in
   let extras = Jsonbug_t.{nullsafe_extra; cost_degree= None; cost_polynomial= None} in
   let suppressed = Reporting.is_suppressed tenv proc_attrs issue_type ~field_name in
   if suppressed then Logging.debug Analysis Medium "Reporting is suppressed!@\n"

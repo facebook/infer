@@ -34,6 +34,10 @@ and third_party_model_source =
   | InThirdPartyRepo of {filename: string; line_number: int}
 [@@deriving compare]
 
+val get_non_virtual_params : t -> param_signature list
+(** List of params, not counting the optional first ("this") param used to represent non-static
+    methods. *)
+
 val set_modelled_nullability : Procname.t -> t -> third_party_model_source -> bool * bool list -> t
 (** Override nullability for a function signature given its modelled nullability (for ret value and
     params) *)
