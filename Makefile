@@ -94,7 +94,8 @@ BUILD_SYSTEMS_TESTS += \
   objc_getters_setters \
   objc_missing_fld \
   objc_retain_cycles \
-  objc_retain_cycles_weak
+  objc_retain_cycles_weak \
+  differential_of_costs_report_objc \
 
 DIRECT_TESTS += \
   objc_autoreleasepool \
@@ -130,7 +131,7 @@ endif # BUILD_C_ANALYZERS
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 BUILD_SYSTEMS_TESTS += \
   differential_interesting_paths_filter \
-  differential_of_costs_report \
+  differential_of_costs_report_java \
   incremental_analysis_cost_change \
   differential_skip_anonymous_class_renamings \
   differential_skip_duplicated_types_on_filenames \
