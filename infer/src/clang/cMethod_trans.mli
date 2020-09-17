@@ -19,19 +19,15 @@ type method_call_type = MCVirtual | MCNoVirtual | MCStatic [@@deriving compare]
 val equal_method_call_type : method_call_type -> method_call_type -> bool
 
 val should_create_procdesc :
-     ?captured_vars:(Mangled.t * Typ.typ * Pvar.capture_mode) list
-  -> Cfg.t
-  -> Procname.t
-  -> defined:bool
-  -> set_objc_accessor_attr:bool
-  -> bool
+  Cfg.t -> Procname.t -> defined:bool -> set_objc_accessor_attr:bool -> bool
 (** Return if a procdesc should be added or not. It returns [false] when the same name of procdesc
     was added previously. [defined] represents if the function body is non-empty.
     [set_objc_accessor_attr] represents if the function is a getter/setter in Obj-C. *)
 
 val create_local_procdesc :
      ?set_objc_accessor_attr:bool
-  -> ?update_lambda_captured:bool
+  -> ?record_lambda_captured:bool
+  -> ?is_cpp_lambda_call_operator:bool
   -> CFrontend_config.translation_unit_context
   -> Cfg.t
   -> Tenv.t

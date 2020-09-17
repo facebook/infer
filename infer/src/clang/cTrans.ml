@@ -182,11 +182,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     Ident.NameGenerator.set_current ident_state
 
 
-  let call_translation context decl =
+  let call_translation ?(is_cpp_lambda_expr = false) context decl =
     let open CContext in
     keep_ident_counter ~f:(fun () ->
+        let decl_context = if is_cpp_lambda_expr then `CppLambdaExprTranslation else `Translation in
         F.translate_one_declaration context.translation_unit_context context.tenv context.cfg
-          `Translation decl )
+          decl_context decl )
 
 
   let global_var_decl_translation context decl_ref =
@@ -3170,7 +3171,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let open CContext in
     let qual_type = expr_info.Clang_ast_t.ei_qual_type in
     let context = trans_state.context in
-    call_translation context lei_lambda_decl ;
     let procname = Procdesc.get_proc_name context.procdesc in
     let typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
     let get_captured_pvar_typ decl_ref =
@@ -3258,6 +3258,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let lambda_pname =
       CMethod_trans.get_procname_from_cpp_lambda context lei_lambda_decl captured_var_names
     in
+    (* We want to translate `operator()` after translating captured variables
+       so we can correct type of variables captured by reference *)
+    call_translation ~is_cpp_lambda_expr:true context lei_lambda_decl ;
     let closure = Exp.Closure {name= lambda_pname; captured_vars} in
     collect_trans_results context.procdesc ~return:(closure, typ) trans_results
 

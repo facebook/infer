@@ -71,7 +71,7 @@ let should_translate translation_unit (loc_start, loc_end) decl_trans_context ~t
   || map_file_of equal_current_source loc_start
   || (Config.cxx && map_file_of equal_header_of_current_source loc_start)
   || Config.cxx
-     && decl_trans_context = `Translation
+     && (decl_trans_context = `Translation || decl_trans_context = `CppLambdaExprTranslation)
      && translate_on_demand && not Config.testing_mode
 
 
