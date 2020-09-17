@@ -3189,13 +3189,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       CVar_decl.sil_var_of_captured_var context stmt_info.Clang_ast_t.si_source_range procname
         decl_ref
     in
-    let translate_captured_var_assign pvar_typ_mode trans_results_acc captured_vars_acc =
-      let loc =
-        CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
-      in
-      let ((exp, _, typ, _) as exp_pvar_typ), instr = assign_captured_var loc pvar_typ_mode in
+    let loc =
+      CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
+    in
+    let translate_captured_var_assign exp pvar typ mode =
+      let instr, exp = CTrans_utils.dereference_var_sil (exp, typ) loc in
       let trans_results = mk_trans_result (exp, typ) {empty_control with instrs= [instr]} in
-      (trans_results :: trans_results_acc, exp_pvar_typ :: captured_vars_acc)
+      (trans_results, (exp, pvar, typ, mode))
     in
     let translate_capture_init mode (pvar, typ) init_decl (trans_results_acc, captured_vars_acc) =
       match init_decl with
@@ -3204,28 +3204,55 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             init_expr_trans trans_state (Exp.Lvar pvar, typ) stmt_info vdi_init_expr
             :: trans_results_acc
           in
-          translate_captured_var_assign (pvar, typ, mode) init_trans_results captured_vars_acc
+          let trans_result, captured_var =
+            translate_captured_var_assign (Lvar pvar) pvar typ mode
+          in
+          (trans_result :: init_trans_results, captured_var :: captured_vars_acc)
       | _ ->
           CFrontend_errors.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
             "Capture-init statement without var decl"
     in
     let translate_normal_capture mode (pvar, typ) (trans_results_acc, captured_vars_acc) =
       match mode with
-      | Pvar.ByReference ->
-          let ref_typ =
-            (* A variable captured by ref (except for ref variables) is missing ref in its type *)
+      | Pvar.ByReference -> (
+        match typ.Typ.desc with
+        | Tptr (_, Typ.Pk_reference) ->
+            let trans_result, captured_var =
+              translate_captured_var_assign (Exp.Lvar pvar) pvar typ mode
+            in
+            (trans_result :: trans_results_acc, captured_var :: captured_vars_acc)
+        | _ when Pvar.is_this pvar ->
+            (* Special case for this *)
+            (trans_results_acc, (Exp.Lvar pvar, pvar, typ, mode) :: captured_vars_acc)
+        | _ ->
+            (* A variable captured by ref (except ref variables) is missing ref in its type *)
+            ( trans_results_acc
+            , (Exp.Lvar pvar, pvar, Typ.mk (Tptr (typ, Pk_reference)), mode) :: captured_vars_acc )
+        )
+      | Pvar.ByValue -> (
+          let init, exp, typ_new =
             match typ.Typ.desc with
-            | Tptr (_, Typ.Pk_reference) ->
-                typ
-            | _ when Pvar.is_this pvar ->
-                (* Special case for this *)
-                typ
+            | Tptr (typ_no_ref, Pk_reference) ->
+                let return = (Exp.Lvar pvar, typ) in
+                (* We need to dereference ref variable as usual when we read its value *)
+                let init_trans_results =
+                  dereference_value_from_result stmt_info.Clang_ast_t.si_source_range loc
+                    (mk_trans_result return empty_control)
+                in
+                let exp, _ = init_trans_results.return in
+                (Some init_trans_results, exp, typ_no_ref)
             | _ ->
-                Typ.mk (Tptr (typ, Typ.Pk_reference))
+                (None, Exp.Lvar pvar, typ)
           in
-          (trans_results_acc, (Exp.Lvar pvar, pvar, ref_typ, mode) :: captured_vars_acc)
-      | Pvar.ByValue ->
-          translate_captured_var_assign (pvar, typ, mode) trans_results_acc captured_vars_acc
+          let trans_result, captured_var = translate_captured_var_assign exp pvar typ_new mode in
+          let trans_results, captured_vars =
+            (trans_result :: trans_results_acc, captured_var :: captured_vars_acc)
+          in
+          match init with
+          | Some init ->
+              (init :: trans_results, captured_vars)
+          | None ->
+              (trans_results, captured_vars) )
     in
     let translate_captured
         {Clang_ast_t.lci_captured_var; lci_init_captured_vardecl; lci_capture_this; lci_capture_kind}

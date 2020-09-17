@@ -277,6 +277,54 @@ void capture_by_ref_init_bad() {
   }
 }
 
+void ref_capture_by_value_ok() {
+  int value = 5;
+  int& ref = value;
+  auto f = [ref]() -> int* { return new int(ref); };
+  ref++;
+  int* p = f();
+  int* q = nullptr;
+  if (*p != 5) {
+    *q = 42;
+  }
+}
+
+void ref_capture_by_value_bad() {
+  int value = 5;
+  int& ref = value;
+  auto f = [ref]() -> int* { return new int(ref); };
+  ref++;
+  int* p = f();
+  int* q = nullptr;
+  if (*p == 5) {
+    *q = 42;
+  }
+}
+
+void ref_capture_by_ref_ok() {
+  int value = 5;
+  int& ref = value;
+  auto f = [&ref]() -> int* { return new int(ref); };
+  ref++;
+  int* p = f();
+  int* q = nullptr;
+  if (*p != 6) {
+    *q = 42;
+  }
+}
+
+void ref_capture_by_ref_bad() {
+  int value = 5;
+  int& ref = value;
+  auto f = [&ref]() -> int* { return new int(ref); };
+  ref++;
+  int* p = f();
+  int* q = nullptr;
+  if (*p == 6) {
+    *q = 42;
+  }
+}
+
 S* update_inside_lambda_capture_and_init(S* s) {
   S* object = nullptr;
   auto f = [& o = object](S* s) { o = s; };

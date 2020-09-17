@@ -404,7 +404,7 @@ let create_call_to_objc_bridge_transfer sil_loc exp typ =
 let dereference_var_sil (exp, typ) sil_loc =
   let id = Ident.create_fresh Ident.knormal in
   let sil_instr = Sil.Load {id; e= exp; root_typ= typ; typ; loc= sil_loc} in
-  ([sil_instr], Exp.Var id)
+  (sil_instr, Exp.Var id)
 
 
 let dereference_value_from_result ?(strip_pointer = false) source_range sil_loc trans_result =
@@ -420,7 +420,7 @@ let dereference_value_from_result ?(strip_pointer = false) source_range sil_loc 
   let cast_typ = if strip_pointer then typ_no_ptr else class_typ in
   let cast_inst, cast_exp = dereference_var_sil (obj_sil, cast_typ) sil_loc in
   { trans_result with
-    control= {trans_result.control with instrs= trans_result.control.instrs @ cast_inst}
+    control= {trans_result.control with instrs= trans_result.control.instrs @ [cast_inst]}
   ; return= (cast_exp, cast_typ) }
 
 
@@ -439,8 +439,8 @@ let cast_operation ?objc_bridge_cast_kind cast_kind ((exp, typ) as exp_typ) cast
   | `LValueToRValue ->
       (* Takes an LValue and allow it to use it as RValue. *)
       (* So we assign the LValue to a temp and we pass it to the parent.*)
-      let instrs, deref_exp = dereference_var_sil (exp, cast_typ) sil_loc in
-      (instrs, (deref_exp, cast_typ))
+      let instr, deref_exp = dereference_var_sil (exp, cast_typ) sil_loc in
+      ([instr], (deref_exp, cast_typ))
   | `NullToPointer ->
       if Exp.is_zero exp then ([], (Exp.null, cast_typ)) else ([], (exp, cast_typ))
   | `ToVoid ->
