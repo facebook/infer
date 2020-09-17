@@ -2975,7 +2975,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         objCArrayDictLiteral_trans trans_state expr_info stmt_info stmts method_pointer
 
 
-  (** Translates an dictionary literal @ [ @"firstName": @"Foo", @"lastName":@"Bar" ] to
+  (** Translates an dictionary literal [@\[ @"firstName": @"Foo", @"lastName":@"Bar" \]] to
 
       {[
         n$1=NSString.stringWithUTF8:(@"firstName")

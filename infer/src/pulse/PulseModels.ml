@@ -939,9 +939,9 @@ module ProcNameDispatcher = struct
           $--> StdFunction.assign ~desc:"std::function::operator="
         ; +map_context_tenv (PatternMatch.Java.implements_lang "Object")
           &:: "clone" $ capt_arg_payload $--> JavaObject.clone
-        ;  +map_context_tenv (PatternMatch.Java.implements_lang "System")
+        ; ( +map_context_tenv (PatternMatch.Java.implements_lang "System")
           &:: "arraycopy" $ capt_arg_payload $+ any_arg $+ capt_arg_payload
-          $+...$--> (fun src dest -> Misc.shallow_copy_model "System.arraycopy" dest src )
+          $+...$--> fun src dest -> Misc.shallow_copy_model "System.arraycopy" dest src )
         ; -"std" &:: "atomic" &:: "atomic" <>$ capt_arg_payload $+ capt_arg_payload
           $--> StdAtomicInteger.constructor
         ; -"std" &:: "__atomic_base" &:: "fetch_add" <>$ capt_arg_payload $+ capt_arg_payload
@@ -1049,10 +1049,10 @@ module ProcNameDispatcher = struct
         ; +map_context_tenv PatternMatch.Java.implements_queue
           &::+ (fun _ str -> StringSet.mem str pushback_modeled)
           <>$ capt_arg_payload $+...$--> StdVector.push_back
-        ; +map_context_tenv( PatternMatch.Java.implements_lang "StringBuilder")
+        ; +map_context_tenv (PatternMatch.Java.implements_lang "StringBuilder")
           &::+ (fun _ str -> StringSet.mem str pushback_modeled)
           <>$ capt_arg_payload $+...$--> StdVector.push_back
-        ; +map_context_tenv( PatternMatch.Java.implements_lang "StringBuilder")
+        ; +map_context_tenv (PatternMatch.Java.implements_lang "StringBuilder")
           &:: "setLength" <>$ capt_arg_payload
           $+...$--> StdVector.invalidate_references ShrinkToFit
         ; +map_context_tenv (PatternMatch.Java.implements_lang "String")
@@ -1078,7 +1078,7 @@ module ProcNameDispatcher = struct
         ; +map_context_tenv PatternMatch.Java.implements_enumeration
           &:: "hasMoreElements"
           &--> Misc.nondet ~fn_name:"Enumeration.hasMoreElements()"
-        ; +map_context_tenv( PatternMatch.Java.implements_lang "Object")
+        ; +map_context_tenv (PatternMatch.Java.implements_lang "Object")
           &:: "equals"
           &--> Misc.nondet ~fn_name:"Object.equals"
         ; +map_context_tenv (PatternMatch.Java.implements_lang "Iterable")
