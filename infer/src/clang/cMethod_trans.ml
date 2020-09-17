@@ -267,6 +267,7 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) ?(record_lambda_capt
         ; is_biabduction_model= Config.biabduction_models_mode
         ; passed_as_noescape_block_to= ms.CMethodSignature.passed_as_noescape_block_to
         ; is_no_return= ms.CMethodSignature.is_no_return
+        ; is_objc_arc_on= trans_unit_ctx.CFrontend_config.is_objc_arc_on
         ; is_variadic= ms.CMethodSignature.is_variadic
         ; sentinel_attr= find_sentinel_attribute ms.CMethodSignature.attributes
         ; loc= loc_start

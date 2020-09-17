@@ -529,6 +529,8 @@ let is_defined pdesc = pdesc.attributes.is_defined
 
 let is_java_synchronized pdesc = pdesc.attributes.is_java_synchronized_method
 
+let is_objc_arc_on pdesc = pdesc.attributes.is_objc_arc_on
+
 let iter_nodes f pdesc = List.iter ~f (get_nodes pdesc)
 
 let iter_instrs f pdesc =

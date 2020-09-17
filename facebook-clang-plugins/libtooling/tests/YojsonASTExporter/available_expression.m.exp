@@ -676,6 +676,7 @@ tests/available_expression.m:8:20: note: add a super class to fix this problem
       "long_type" : 64,
       "longlong_type" : 64
     },
+    "is_objc_arc_on" : true,
     "types" : [
       <"BuiltinType" : (
         {

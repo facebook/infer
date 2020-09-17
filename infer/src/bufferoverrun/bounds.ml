@@ -1291,10 +1291,11 @@ module BoundTrace = struct
     | Loop of Location.t
     | Call of {callee_pname: Procname.t; callee_trace: t; location: Location.t}
     | ModeledFunction of {pname: string; location: Location.t}
+    | ArcFromNonArc of {pname: string; location: Location.t}
   [@@deriving compare]
 
   let rec length = function
-    | Loop _ | ModeledFunction _ ->
+    | Loop _ | ModeledFunction _ | ArcFromNonArc _ ->
         1
     | Call {callee_trace} ->
         1 + length callee_trace
@@ -1309,6 +1310,8 @@ module BoundTrace = struct
         F.fprintf f "Loop (%a)" Location.pp loc
     | ModeledFunction {pname; location} ->
         F.fprintf f "ModeledFunction `%s` (%a)" pname Location.pp location
+    | ArcFromNonArc {pname; location} ->
+        F.fprintf f "ArcFromNonArc `%s` (%a)" pname Location.pp location
     | Call {callee_pname; callee_trace; location} ->
         F.fprintf f "%a -> Call `%a` (%a)" pp callee_trace Procname.pp callee_pname Location.pp
           location
@@ -1327,11 +1330,16 @@ module BoundTrace = struct
     | ModeledFunction {pname; location} ->
         let desc = F.asprintf "Modeled call to %s" pname in
         [Errlog.make_trace_element depth location desc []]
+    | ArcFromNonArc {pname; location} ->
+        let desc = F.asprintf "ARC function call to %s from non-ARC caller" pname in
+        [Errlog.make_trace_element depth location desc []]
 
 
   let of_loop location = Loop location
 
   let of_modeled_function pname location = ModeledFunction {pname; location}
+
+  let of_arc_from_non_arc pname location = ArcFromNonArc {pname; location}
 end
 
 (** A NonNegativeBound is a Bound that is either non-negative or symbolic but will be evaluated to a

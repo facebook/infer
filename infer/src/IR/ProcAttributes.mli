@@ -41,6 +41,7 @@ type t =
         (** Present if the procedure is an Objective-C block that has been passed to the given
             method in a position annotated with the NS_NOESCAPE attribute. *)
   ; is_no_return: bool  (** the procedure is known not to return *)
+  ; is_objc_arc_on: bool  (** the ObjC procedure is compiled with ARC *)
   ; is_specialized: bool  (** the procedure is a clone specialized for dynamic dispatch handling *)
   ; is_synthetic_method: bool  (** the procedure is a synthetic method *)
   ; is_variadic: bool  (** the procedure is variadic, only supported for Clang procedures *)

@@ -14,7 +14,10 @@ type clang_lang = C | CPP | ObjC | ObjCPP [@@deriving compare]
 let equal_clang_lang = [%compare.equal: clang_lang]
 
 type translation_unit_context =
-  {lang: clang_lang; source_file: SourceFile.t; integer_type_widths: Typ.IntegerWidths.t}
+  { lang: clang_lang
+  ; source_file: SourceFile.t
+  ; integer_type_widths: Typ.IntegerWidths.t
+  ; is_objc_arc_on: bool }
 
 type decl_trans_context = [`DeclTraversal | `Translation | `CppLambdaExprTranslation]
 

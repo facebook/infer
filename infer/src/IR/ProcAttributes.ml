@@ -59,6 +59,7 @@ type t =
         (** Present if the procedure is an Objective-C block that has been passed to the given
             method in a position annotated with the NS_NOESCAPE attribute. *)
   ; is_no_return: bool  (** the procedure is known not to return *)
+  ; is_objc_arc_on: bool  (** the ObjC procedure is compiled with ARC *)
   ; is_specialized: bool  (** the procedure is a clone specialized for dynamic dispatch handling *)
   ; is_synthetic_method: bool  (** the procedure is a synthetic method *)
   ; is_variadic: bool  (** the procedure is variadic, only supported for Clang procedures *)
@@ -123,6 +124,7 @@ let default translation_unit proc_name =
   ; is_java_synchronized_method= false
   ; passed_as_noescape_block_to= None
   ; is_no_return= false
+  ; is_objc_arc_on= false
   ; is_specialized= false
   ; specialized_with_blocks_info= None
   ; is_synthetic_method= false
@@ -173,6 +175,7 @@ let pp f
      ; is_java_synchronized_method
      ; passed_as_noescape_block_to
      ; is_no_return
+     ; is_objc_arc_on
      ; is_specialized
      ; specialized_with_blocks_info
      ; is_synthetic_method
@@ -221,6 +224,7 @@ let pp f
     F.fprintf f "; passed_as_noescape_block_to %a" (Pp.option Procname.pp)
       passed_as_noescape_block_to ;
   pp_bool_default ~default:default.is_no_return "is_no_return" is_no_return f () ;
+  pp_bool_default ~default:default.is_objc_arc_on "is_objc_arc_on" is_objc_arc_on f () ;
   pp_bool_default ~default:default.is_specialized "is_specialized" is_specialized f () ;
   if
     not

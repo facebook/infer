@@ -1360,6 +1360,7 @@ void ASTExporter<ATDWriter>::dumpIntegerTypeWidths(const TargetInfo &info) {
 //@atd   input_path : source_file;
 //@atd   input_kind : input_kind;
 //@atd   integer_type_widths : integer_type_widths;
+//@atd   ~is_objc_arc_on : bool;
 //@atd   types : c_type list;
 //@atd } <ocaml field_prefix="tudi_">
 template <class ATDWriter>
@@ -1367,7 +1368,8 @@ void ASTExporter<ATDWriter>::VisitTranslationUnitDecl(
     const TranslationUnitDecl *D) {
   VisitDecl(D);
   VisitDeclContext(D);
-  ObjectScope Scope(OF, 4);
+  bool IsObjCArcOn = D->getASTContext().getLangOpts().ObjCAutoRefCount;
+  ObjectScope Scope(OF, 4 + IsObjCArcOn);
   OF.emitTag("input_path");
   OF.emitString(
       Options.normalizeSourcePath(Options.inputFile.getFile().str().c_str()));
@@ -1375,6 +1377,7 @@ void ASTExporter<ATDWriter>::VisitTranslationUnitDecl(
   dumpInputKind(Options.inputFile.getKind());
   OF.emitTag("integer_type_widths");
   dumpIntegerTypeWidths(Context.getTargetInfo());
+  OF.emitFlag("is_objc_arc_on", IsObjCArcOn);
   OF.emitTag("types");
   const auto &types = Context.getTypes();
   ArrayScope aScope(OF, types.size() + 1); // + 1 for nullptr

@@ -271,6 +271,9 @@ val is_defined : t -> bool
 val is_java_synchronized : t -> bool
 (** Return [true] if the procedure signature has the Java synchronized keyword *)
 
+val is_objc_arc_on : t -> bool
+(** Return [true] iff the ObjC procedure is compiled with ARC *)
+
 val iter_instrs : (Node.t -> Sil.instr -> unit) -> t -> unit
 (** iterate over all nodes and their instructions *)
 

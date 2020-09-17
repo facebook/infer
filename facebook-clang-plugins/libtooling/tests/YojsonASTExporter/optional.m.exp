@@ -1302,6 +1302,7 @@
       "long_type" : 64,
       "longlong_type" : 64
     },
+    "is_objc_arc_on" : true,
     "types" : [
       <"BuiltinType" : (
         {

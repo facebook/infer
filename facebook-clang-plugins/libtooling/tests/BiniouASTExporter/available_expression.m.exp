@@ -303,6 +303,7 @@ tests/available_expression.m:8:20: note: add a super class to fix this problem
         #d7cd079d: 64,
         #048ad2a1: 64
       },
+      #247f0baa: true,
       #1acb7079: [
         <#22d546dd: ({ #d121c0bd: 18 }, <#392cef74>)>,
         <#22d546dd: ({ #d121c0bd: 28 }, <#2bf4b04a>)>,

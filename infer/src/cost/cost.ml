@@ -22,7 +22,8 @@ type extras_WorstCaseCost =
   ; inferbo_get_summary: BufferOverrunAnalysisSummary.get_summary
   ; get_node_nb_exec: Node.t -> BasicCost.t
   ; get_summary: Procname.t -> CostDomain.summary option
-  ; get_formals: Procname.t -> (Pvar.t * Typ.t) list option }
+  ; get_formals: Procname.t -> (Pvar.t * Typ.t) list option
+  ; proc_resolve_attributes: Procname.t -> ProcAttributes.t option }
 
 let instantiate_cost integer_type_widths ~inferbo_caller_mem ~callee_pname ~callee_formals ~params
     ~callee_cost ~loc =
@@ -55,9 +56,15 @@ module InstrBasicCostWithReason = struct
     String.equal (Procname.get_method callee_pname) "autorelease"
 
 
-  let get_instr_cost_record tenv extras instr_node instr =
+  let is_objc_call_from_no_arc_to_arc {proc_resolve_attributes} caller_pdesc callee_pname =
+    (not (Procdesc.is_objc_arc_on caller_pdesc))
+    && Option.exists (proc_resolve_attributes callee_pname)
+         ~f:(fun {ProcAttributes.is_objc_arc_on} -> is_objc_arc_on)
+
+
+  let get_instr_cost_record tenv extras cfg instr_node instr =
     match instr with
-    | Sil.Call (ret, Exp.Const (Const.Cfun callee_pname), params, location, _)
+    | Sil.Call (((_, ret_typ) as ret), Exp.Const (Const.Cfun callee_pname), params, location, _)
       when Config.inclusive_cost ->
         let { inferbo_invariant_map
             ; integer_type_widths
@@ -66,7 +73,7 @@ module InstrBasicCostWithReason = struct
             ; get_formals } =
           extras
         in
-        let operation_cost =
+        let cost =
           match
             BufferOverrunAnalysis.extract_pre (InstrCFG.Node.id instr_node) inferbo_invariant_map
           with
@@ -107,14 +114,25 @@ module InstrBasicCostWithReason = struct
                            callee_pname) ;
                     CostDomain.unit_cost_atomic_operation ) )
         in
-        if is_allocation_function callee_pname then
-          CostDomain.plus CostDomain.unit_cost_allocation operation_cost
-        else if is_autorelease_function callee_pname then
-          CostDomain.plus
-            (CostDomain.unit_cost_autoreleasepool_size
-               ~autoreleasepool_trace:(Bounds.BoundTrace.of_modeled_function "autorelease" location))
-            operation_cost
-        else operation_cost
+        let cost =
+          if is_allocation_function callee_pname then
+            CostDomain.plus CostDomain.unit_cost_allocation cost
+          else cost
+        in
+        if is_autorelease_function callee_pname then
+          let autoreleasepool_trace =
+            Bounds.BoundTrace.of_modeled_function "autorelease" location
+          in
+          CostDomain.plus cost (CostDomain.unit_cost_autoreleasepool_size ~autoreleasepool_trace)
+        else if
+          is_objc_call_from_no_arc_to_arc extras cfg callee_pname
+          && Typ.is_pointer_to_objc_class ret_typ
+        then
+          let autoreleasepool_trace =
+            Bounds.BoundTrace.of_arc_from_non_arc (Procname.to_string callee_pname) location
+          in
+          CostDomain.plus cost (CostDomain.unit_cost_autoreleasepool_size ~autoreleasepool_trace)
+        else cost
     | Sil.Call (_, Exp.Const (Const.Cfun _), _, _, _) ->
         CostDomain.zero_record
     | Sil.Load {id= lhs_id} when Ident.is_none lhs_id ->
@@ -134,7 +152,7 @@ module InstrBasicCostWithReason = struct
         CostDomain.zero_record
 
 
-  let get_instr_node_cost_record tenv extras instr_node =
+  let get_instr_node_cost_record tenv extras cfg instr_node =
     let instrs = InstrCFG.instrs instr_node in
     let instr =
       match IContainer.singleton_or_more instrs ~fold:Instrs.fold with
@@ -145,7 +163,7 @@ module InstrBasicCostWithReason = struct
       | More ->
           assert false
     in
-    let cost = get_instr_cost_record tenv extras instr_node instr in
+    let cost = get_instr_cost_record tenv extras cfg instr_node instr in
     let operation_cost = CostDomain.get_operation_cost cost in
     let log_msg top_or_bottom =
       Logging.d_printfln_escaped "Statement cost became %s at %a (%a)." top_or_bottom
@@ -169,10 +187,10 @@ let compute_errlog_extras cost =
 module WorstCaseCost = struct
   (** We don't report when the cost is Top as it corresponds to subsequent 'don't know's. Instead,
       we report Top cost only at the top level per function. *)
-  let exec_node tenv extras instr_node =
+  let exec_node tenv extras cfg instr_node =
     let {get_node_nb_exec} = extras in
     let instr_cost_record =
-      InstrBasicCostWithReason.get_instr_node_cost_record tenv extras instr_node
+      InstrBasicCostWithReason.get_instr_node_cost_record tenv extras cfg instr_node
     in
     let node = InstrCFG.Node.underlying_node instr_node in
     let nb_exec = get_node_nb_exec node in
@@ -187,7 +205,7 @@ module WorstCaseCost = struct
     let cost =
       let nodes_in_autoreleasepool = CostUtils.get_nodes_in_autoreleasepool cfg in
       InstrCFG.fold_nodes cfg ~init ~f:(fun acc ((node, _) as pair) ->
-          let cost = exec_node tenv extras pair in
+          let cost = exec_node tenv extras cfg pair in
           let cost =
             if Procdesc.NodeSet.mem node nodes_in_autoreleasepool then
               CostDomain.set_autoreleasepool_size_zero cost
@@ -326,7 +344,8 @@ let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as
       ; integer_type_widths
       ; get_node_nb_exec
       ; get_summary
-      ; get_formals }
+      ; get_formals
+      ; proc_resolve_attributes= AnalysisCallbacks.proc_resolve_attributes }
     in
     AnalysisCallbacks.html_debug_new_node_session (NodeCFG.start_node node_cfg)
       ~pp_name:(fun f -> F.pp_print_string f "cost(worst-case)")

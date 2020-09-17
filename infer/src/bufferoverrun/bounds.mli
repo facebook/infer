@@ -156,6 +156,8 @@ module BoundTrace : sig
   val of_loop : Location.t -> t
 
   val of_modeled_function : string -> Location.t -> t
+
+  val of_arc_from_non_arc : string -> Location.t -> t
 end
 
 type ('c, 's, 't) valclass = Constant of 'c | Symbolic of 's | ValTop of 't
