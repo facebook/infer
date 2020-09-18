@@ -52,8 +52,8 @@ module InstrBasicCostWithReason = struct
     List.exists allocation_functions ~f:(fun f -> Procname.equal callee_pname f)
 
 
-  let is_autorelease_function callee_pname =
-    String.equal (Procname.get_method callee_pname) "autorelease"
+  let is_autorelease_function tenv callee_pname fun_arg_list =
+    CostAutoreleaseModels.Call.dispatch tenv callee_pname fun_arg_list |> Option.is_some
 
 
   (** The methods whose name start with one of the prefixes return an object that is owned by the
@@ -82,6 +82,10 @@ module InstrBasicCostWithReason = struct
             ; get_formals } =
           extras
         in
+        let fun_arg_list =
+          List.map params ~f:(fun (exp, typ) ->
+              ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= ()} )
+        in
         let cost =
           match
             BufferOverrunAnalysis.extract_pre (InstrCFG.Node.id instr_node) inferbo_invariant_map
@@ -90,10 +94,6 @@ module InstrBasicCostWithReason = struct
               CostDomain.unit_cost_atomic_operation
           | Some inferbo_mem -> (
               let loc = InstrCFG.Node.loc instr_node in
-              let fun_arg_list =
-                List.map params ~f:(fun (exp, typ) ->
-                    ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= ()} )
-              in
               match CostModels.Call.dispatch tenv callee_pname fun_arg_list with
               | Some model ->
                   let node_hash = InstrCFG.Node.hash instr_node in
@@ -128,9 +128,9 @@ module InstrBasicCostWithReason = struct
             CostDomain.plus CostDomain.unit_cost_allocation cost
           else cost
         in
-        if is_autorelease_function callee_pname then
+        if is_autorelease_function tenv callee_pname fun_arg_list then
           let autoreleasepool_trace =
-            Bounds.BoundTrace.of_modeled_function "autorelease" location
+            Bounds.BoundTrace.of_modeled_function (Procname.to_string callee_pname) location
           in
           CostDomain.plus cost (CostDomain.unit_cost_autoreleasepool_size ~autoreleasepool_trace)
         else if
