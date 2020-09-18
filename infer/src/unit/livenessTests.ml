@@ -99,6 +99,8 @@ let tests =
         ; While (unknown_cond, [id_assign_var "b" "d"])
         ; invariant "{ b }"
         ; id_assign_var "a" "b" ] ) ]
-    |> TestInterpreter.create_tests (fun _summary -> ()) ~initial:Liveness.Domain.empty
+    |> TestInterpreter.create_tests
+         (fun summary -> Summary.get_proc_desc summary)
+         ~initial:Liveness.Domain.empty
   in
   "liveness_test_suite" >::: test_list

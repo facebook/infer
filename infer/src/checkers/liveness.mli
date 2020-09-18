@@ -14,6 +14,8 @@ module PreAnalysisTransferFunctions (CFG : ProcCfg.S) :
   TransferFunctions.SIL
     with module CFG = CFG
      and module Domain = Domain
-     and type analysis_data = unit
+     and type analysis_data = Procdesc.t
 
 val checker : IntraproceduralAnalysis.t -> unit
+
+val is_always_in_scope : Procdesc.t -> Pvar.t -> bool

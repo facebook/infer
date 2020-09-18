@@ -229,23 +229,24 @@ module Liveness = struct
   module NullifyAnalysis = AbstractInterpreter.MakeRPO (NullifyTransferFunctions)
 
   let add_nullify_instrs summary tenv liveness_inv_map =
+    let proc_desc = Summary.get_proc_desc summary in
     let address_taken_vars =
       if Procname.is_java (Summary.get_proc_name summary) then AddressTaken.Domain.empty
         (* can't take the address of a variable in Java *)
       else
         let initial = AddressTaken.Domain.empty in
-        match AddressTaken.Analyzer.compute_post () ~initial (Summary.get_proc_desc summary) with
+        match AddressTaken.Analyzer.compute_post () ~initial proc_desc with
         | Some post ->
             post
         | None ->
             AddressTaken.Domain.empty
     in
-    let nullify_proc_cfg = ProcCfg.Exceptional.from_pdesc (Summary.get_proc_desc summary) in
+    let nullify_proc_cfg = ProcCfg.Exceptional.from_pdesc proc_desc in
     let nullify_proc_data = {ProcData.summary; tenv; extras= liveness_inv_map} in
     let initial = (VarDomain.empty, VarDomain.empty) in
     let nullify_inv_map = NullifyAnalysis.exec_cfg nullify_proc_cfg nullify_proc_data ~initial in
     (* only nullify pvars that are local; don't nullify those that can escape *)
-    let is_local pvar = not (Pvar.is_return pvar || Pvar.is_global pvar) in
+    let is_local pvar = not (Liveness.is_always_in_scope proc_desc pvar) in
     let prepend_node_nullify_instructions loc pvars instrs =
       List.fold pvars ~init:instrs ~f:(fun instrs pvar ->
           if is_local pvar then Sil.Metadata (Nullify (pvar, loc)) :: instrs else instrs )
@@ -295,9 +296,10 @@ module Liveness = struct
 
 
   let process summary tenv =
-    let liveness_proc_cfg = BackwardCfg.from_pdesc (Summary.get_proc_desc summary) in
+    let proc_desc = Summary.get_proc_desc summary in
+    let liveness_proc_cfg = BackwardCfg.from_pdesc proc_desc in
     let initial = Liveness.Domain.empty in
-    let liveness_inv_map = LivenessAnalysis.exec_cfg liveness_proc_cfg () ~initial in
+    let liveness_inv_map = LivenessAnalysis.exec_cfg liveness_proc_cfg proc_desc ~initial in
     add_nullify_instrs summary tenv liveness_inv_map
 end
 
