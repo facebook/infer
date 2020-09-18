@@ -12,25 +12,25 @@
 
 @implementation NoArcCaller
 
-- (void)callAllocObject_zero_FP:(int)n {
+- (void)callAllocObject_zero:(int)n {
   for (int i = 0; i < n; i++) {
     ArcCallee* obj = [ArcCallee allocObject];
   }
 }
 
-- (void)callNewObject_zero_FP:(int)n {
+- (void)callNewObject_zero:(int)n {
   for (int i = 0; i < n; i++) {
     ArcCallee* obj = [ArcCallee newObject];
   }
 }
 
-- (void)callCopyObject_zero_FP:(int)n x:(ArcCallee*)x {
+- (void)callCopyObject_zero:(int)n x:(ArcCallee*)x {
   for (int i = 0; i < n; i++) {
     ArcCallee* obj = [ArcCallee copyObject:x];
   }
 }
 
-- (void)callMutableCopyObject_zero_FP:(int)n x:(ArcCallee*)x {
+- (void)callMutableCopyObject_zero:(int)n x:(ArcCallee*)x {
   for (int i = 0; i < n; i++) {
     ArcCallee* obj = [ArcCallee mutableCopyObject:x];
   }

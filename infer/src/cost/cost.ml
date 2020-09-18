@@ -56,6 +56,15 @@ module InstrBasicCostWithReason = struct
     String.equal (Procname.get_method callee_pname) "autorelease"
 
 
+  (** The methods whose name start with one of the prefixes return an object that is owned by the
+      caller. Therefore ARC will not add any objects they return into an autorelease pool. *)
+  let return_object_owned_by_caller =
+    let prefixes = ["alloc"; "new"; "copy"; "mutableCopy"] in
+    fun callee_pname ->
+      let method_name = Procname.get_method callee_pname in
+      List.exists prefixes ~f:(fun prefix -> String.is_prefix method_name ~prefix)
+
+
   let is_objc_call_from_no_arc_to_arc {proc_resolve_attributes} caller_pdesc callee_pname =
     (not (Procdesc.is_objc_arc_on caller_pdesc))
     && Option.exists (proc_resolve_attributes callee_pname)
@@ -127,6 +136,7 @@ module InstrBasicCostWithReason = struct
         else if
           is_objc_call_from_no_arc_to_arc extras cfg callee_pname
           && Typ.is_pointer_to_objc_class ret_typ
+          && not (return_object_owned_by_caller callee_pname)
         then
           let autoreleasepool_trace =
             Bounds.BoundTrace.of_arc_from_non_arc (Procname.to_string callee_pname) location
