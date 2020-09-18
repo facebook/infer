@@ -12,6 +12,7 @@ module Call = struct
     let open ProcnameDispatcher.Call in
     make_dispatcher
       [ +PatternMatch.ObjectiveC.implements "NSObject" &:: "autorelease" &--> ()
+      ; -"CFAutorelease" &--> ()
       ; +PatternMatch.ObjectiveC.implements "NSKeyedUnarchiver"
         &:: "initForReadingFromData:error:" &--> ()
       ; +PatternMatch.ObjectiveC.implements "NSKeyedUnarchiver"

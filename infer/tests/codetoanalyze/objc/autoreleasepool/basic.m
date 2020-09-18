@@ -110,4 +110,8 @@
   [self call_autorelease_constant];
 }
 
+- (void)call_cf_autorelease_constant:(NSObject*)x {
+  CFAutorelease((__bridge CFTypeRef)x);
+}
+
 @end

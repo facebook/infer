@@ -28,6 +28,7 @@ codetoanalyze/objc/autoreleasepool/basic.m, Basic.autoreleased_in_loop_nested_ze
 codetoanalyze/objc/autoreleasepool/basic.m, Basic.autoreleased_in_loop_sequential_constant:, 1,  OnUIThread:false, [autorelease,Call to Basic.call_autorelease_constant,Modeled call to NSObject.autorelease]
 codetoanalyze/objc/autoreleasepool/basic.m, Basic.autoreleased_in_loop_sequential_linear:, n,  OnUIThread:false, [{n},Loop,autorelease,Call to Basic.call_autorelease_constant,Modeled call to NSObject.autorelease]
 codetoanalyze/objc/autoreleasepool/basic.m, Basic.call_autorelease_constant, 1,  OnUIThread:false, [autorelease,Modeled call to NSObject.autorelease]
+codetoanalyze/objc/autoreleasepool/basic.m, Basic.call_cf_autorelease_constant:, 1,  OnUIThread:false, [autorelease,Modeled call to CFAutorelease]
 codetoanalyze/objc/autoreleasepool/basic.m, Basic.call_no_autorelease_zero, 0,  OnUIThread:false, []
 codetoanalyze/objc/autoreleasepool/basic.m, Basic.dealloc, 0,  OnUIThread:false, []
 codetoanalyze/objc/autoreleasepool/basic.m, Basic.loop_in_autoreleasepool_zero:, 0,  OnUIThread:false, []
