@@ -67,3 +67,7 @@ val is_unsat_cheap : t -> bool
 
 val is_unsat_expensive : t -> t * bool
 (** whether the state contains a contradiction, only call this when you absolutely have to *)
+
+val as_int : t -> AbstractValue.t -> int option
+(** [as_int phi t] returns an integer x such that [phi |- t = x], if known for sure; see also
+    [is_known_zero] *)

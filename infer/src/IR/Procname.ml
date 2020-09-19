@@ -404,10 +404,6 @@ let as_java_exn ~explanation t =
 (* TODO: deprecate this unfortunately named function and use is_clang instead *)
 let is_c_method = function ObjC_Cpp _ -> true | _ -> false
 
-let is_c_function = function C _ -> true | _ -> false
-
-let is_clang = function ObjC_Cpp name -> ObjC_Cpp.is_objc_method name | name -> is_c_function name
-
 let is_java_lift f = function Java java_pname -> f java_pname | _ -> false
 
 let is_java_access_method = is_java_lift Java.is_access_method
@@ -553,6 +549,13 @@ let get_global_name_of_initializer = function
       None
 
 
+let pp_with_block_parameters pp fmt base blocks =
+  pp fmt base ;
+  F.pp_print_string fmt "[" ;
+  Pp.seq ~sep:"^" F.pp_print_string fmt blocks ;
+  F.pp_print_string fmt "]"
+
+
 (** Very verbose representation of an existing Procname.t *)
 let rec pp_unique_id fmt = function
   | Java j ->
@@ -566,9 +569,7 @@ let rec pp_unique_id fmt = function
   | WithBlockParameters (base, []) ->
       pp_unique_id fmt base
   | WithBlockParameters (base, (_ :: _ as blocks)) ->
-      pp_unique_id fmt base ;
-      F.pp_print_string fmt "_" ;
-      Pp.seq ~sep:"_" F.pp_print_string fmt blocks
+      pp_with_block_parameters pp_unique_id fmt base blocks
   | Linters_dummy_method ->
       F.pp_print_string fmt "Linters_dummy_method"
 
@@ -588,9 +589,7 @@ let rec pp fmt = function
   | WithBlockParameters (base, []) ->
       pp fmt base
   | WithBlockParameters (base, (_ :: _ as blocks)) ->
-      pp fmt base ;
-      F.pp_print_string fmt "_" ;
-      Pp.seq ~sep:"_" F.pp_print_string fmt blocks
+      pp_with_block_parameters pp fmt base blocks
   | Linters_dummy_method ->
       pp_unique_id fmt Linters_dummy_method
 
@@ -637,6 +636,9 @@ let hashable_name proc_name =
          hash to change when a parameter is introduced or removed, only the part of the name
          before the first colon is used for the bug hash *)
       let name = F.asprintf "%a" (pp_simplified_string ~withclass:true) proc_name in
+      List.hd_exn (String.split name ~on:':')
+  | Block bsig ->
+      let name = F.asprintf "%a" (Block.pp Non_verbose) bsig in
       List.hd_exn (String.split name ~on:':')
   | _ ->
       (* Other cases for C and C++ method names *)
@@ -788,7 +790,7 @@ module SQLite = struct
     let sexp_of_t p = Sexp.Atom (F.asprintf "%a" pp p)
   end
 
-  module Serializer = SqliteUtils.MarshalledDataForComparison (T)
+  module Serializer = SqliteUtils.MarshalledDataNOTForComparison (T)
 
   let pname_to_key = Base.Hashtbl.create (module T)
 

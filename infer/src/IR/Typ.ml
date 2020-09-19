@@ -569,6 +569,8 @@ let is_struct typ = match typ.desc with Tstruct _ -> true | _ -> false
 
 let is_pointer_to_cpp_class typ = match typ.desc with Tptr (t, _) -> is_cpp_class t | _ -> false
 
+let is_pointer_to_objc_class typ = match typ.desc with Tptr (t, _) -> is_objc_class t | _ -> false
+
 let is_pointer_to_void typ = match typ.desc with Tptr ({desc= Tvoid}, _) -> true | _ -> false
 
 let is_void typ = match typ.desc with Tvoid -> true | _ -> false

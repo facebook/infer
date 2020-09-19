@@ -97,14 +97,9 @@ module Closures = struct
 
   let record location pname captured astate =
     let captured_addresses =
-      List.rev_filter_map captured
-        ~f:(fun (captured_as, (address_captured, trace_captured), mode) ->
-          match mode with
-          | Pvar.ByValue ->
-              None
-          | Pvar.ByReference ->
-              let new_trace = ValueHistory.Capture {captured_as; location} :: trace_captured in
-              Some (address_captured, new_trace) )
+      List.filter_map captured ~f:(fun (captured_as, (address_captured, trace_captured), mode) ->
+          let new_trace = ValueHistory.Capture {captured_as; mode; location} :: trace_captured in
+          Some (address_captured, new_trace) )
     in
     let closure_addr_hist = (AbstractValue.mk_fresh (), [ValueHistory.Assignment location]) in
     let fake_capture_edges = mk_capture_edges captured_addresses in
@@ -664,9 +659,11 @@ let unknown_call call_loc reason ~ret ~actuals ~formals_opt astate =
   |> havoc_ret ret |> add_skipped_proc
 
 
-let apply_callee callee_pname call_loc callee_exec_state ~ret ~formals ~actuals astate =
+let apply_callee callee_pname call_loc callee_exec_state ~ret ~captured_vars_with_actuals ~formals
+    ~actuals astate =
   let apply callee_prepost ~f =
-    PulseInterproc.apply_prepost callee_pname call_loc ~callee_prepost ~formals ~actuals astate
+    PulseInterproc.apply_prepost callee_pname call_loc ~callee_prepost ~captured_vars_with_actuals
+      ~formals ~actuals astate
     >>| function
     | None ->
         (* couldn't apply pre/post pair *) None
@@ -739,6 +736,18 @@ let check_imply_er callers_invalids callee_proc_name call_location call_astate =
     | _ -> Ok call_astate
   
   
+let get_captured_actuals location ~captured_vars ~actual_closure astate =
+  let* astate, this_value_addr = eval_access location actual_closure Dereference astate in
+  let+ _, astate, captured_vars_with_actuals =
+    List.fold_result captured_vars ~init:(0, astate, []) ~f:(fun (id, astate, captured) var ->
+        let+ astate, captured_actual =
+          eval_access location this_value_addr (FieldAccess (Closures.mk_fake_field ~id)) astate
+        in
+        (id + 1, astate, (var, captured_actual) :: captured) )
+  in
+  (astate, captured_vars_with_actuals)
+
+
 let call ~callee_data call_loc callee_pname ~ret ~actuals ~formals_opt (astate : AbductiveDomain.t)
     : (ExecutionDomain.t list, Diagnostic.t * t) result =
   match callee_data with
@@ -746,6 +755,21 @@ let call ~callee_data call_loc callee_pname ~ret ~actuals ~formals_opt (astate :
       let formals =
         Procdesc.get_formals callee_proc_desc
         |> List.map ~f:(fun (mangled, _) -> Pvar.mk mangled callee_pname |> Var.of_pvar)
+      in
+      let captured_vars =
+        Procdesc.get_captured callee_proc_desc
+        |> List.map ~f:(fun (mangled, _, _) ->
+               let pvar = Pvar.mk mangled callee_pname in
+               Var.of_pvar pvar )
+      in
+      let* astate, captured_vars_with_actuals =
+        match actuals with
+        | (actual_closure, _) :: _
+          when not (Procname.is_objc_block callee_pname || List.is_empty captured_vars) ->
+            (* Assumption: the first parameter will be a closure *)
+            get_captured_actuals call_loc ~captured_vars ~actual_closure astate
+        | _ ->
+            Ok (astate, [])
       in
       let is_blacklist =
         Option.exists Config.pulse_cut_to_one_path_procedures_pattern ~f:(fun regex ->
@@ -756,7 +780,8 @@ let call ~callee_data call_loc callee_pname ~ret ~actuals ~formals_opt (astate :
         ~f:(fun posts callee_exec_state ->
           (* apply all pre/post specs *)
           match
-            apply_callee callee_pname call_loc callee_exec_state ~formals ~actuals ~ret astate
+            apply_callee callee_pname call_loc callee_exec_state ~captured_vars_with_actuals
+              ~formals ~actuals ~ret astate
           with
           | Ok None ->
               (* couldn't apply pre/post pair *)

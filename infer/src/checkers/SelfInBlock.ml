@@ -285,23 +285,21 @@ module TransferFunctions = struct
     {domain with vars}
 
 
-  let is_objc_instance proc_desc_opt =
-    match proc_desc_opt with
-    | Some proc_desc -> (
-        let proc_attrs = Procdesc.get_attributes proc_desc in
-        match proc_attrs.ProcAttributes.clang_method_kind with
-        | ClangMethodKind.OBJC_INSTANCE ->
-            true
-        | _ ->
-            false )
+  let is_objc_instance attributes_opt =
+    match attributes_opt with
+    | Some proc_attrs -> (
+      match proc_attrs.ProcAttributes.clang_method_kind with
+      | ClangMethodKind.OBJC_INSTANCE ->
+          true
+      | _ ->
+          false )
     | None ->
         false
 
 
-  let get_annotations proc_desc_opt =
-    match proc_desc_opt with
-    | Some proc_desc ->
-        let proc_attrs = Procdesc.get_attributes proc_desc in
+  let get_annotations attributes_opt =
+    match attributes_opt with
+    | Some proc_attrs ->
         Some proc_attrs.ProcAttributes.method_annotation.params
     | None ->
         None
@@ -330,14 +328,14 @@ module TransferFunctions = struct
       | _ ->
           domain
     in
-    let proc_desc_opt = AnalysisCallbacks.get_proc_desc pname in
-    let annotations = get_annotations proc_desc_opt in
+    let attributes_opt = AnalysisCallbacks.proc_resolve_attributes pname in
+    let annotations = get_annotations attributes_opt in
     let args =
-      if is_objc_instance proc_desc_opt then match args with _ :: rest -> rest | [] -> []
+      if is_objc_instance attributes_opt then match args with _ :: rest -> rest | [] -> []
       else args
     in
     let annotations =
-      if is_objc_instance proc_desc_opt then
+      if is_objc_instance attributes_opt then
         match annotations with Some (_ :: rest) -> Some rest | _ -> annotations
       else annotations
     in

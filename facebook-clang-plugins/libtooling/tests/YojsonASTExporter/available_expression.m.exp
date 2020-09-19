@@ -1,0 +1,1217 @@
+tests/available_expression.m:8:12: warning: class 'NSObject' defined without specifying a base class [-Wobjc-root-class]
+@interface NSObject
+           ^
+tests/available_expression.m:8:20: note: add a super class to fix this problem
+@interface NSObject
+                   ^
+                    : NSObject 
+<"TranslationUnitDecl" : (
+  {
+    "pointer" : 1,
+    "source_range" : (
+      {
+      },
+      {
+      }
+    )
+  },
+  [
+    <"TypedefDecl" : (
+      {
+        "pointer" : 2,
+        "source_range" : (
+          {
+          },
+          {
+          }
+        ),
+        "is_implicit" : true
+      },
+      {
+        "name" : "__int128_t",
+        "qual_name" : [
+          "__int128_t"
+        ]
+      },
+      0,
+      {
+      }
+    )>,
+    <"TypedefDecl" : (
+      {
+        "pointer" : 3,
+        "source_range" : (
+          {
+          },
+          {
+          }
+        ),
+        "is_implicit" : true
+      },
+      {
+        "name" : "__uint128_t",
+        "qual_name" : [
+          "__uint128_t"
+        ]
+      },
+      0,
+      {
+      }
+    )>,
+    <"TypedefDecl" : (
+      {
+        "pointer" : 4,
+        "source_range" : (
+          {
+          },
+          {
+          }
+        ),
+        "is_implicit" : true
+      },
+      {
+        "name" : "SEL",
+        "qual_name" : [
+          "SEL"
+        ]
+      },
+      5,
+      {
+      }
+    )>,
+    <"TypedefDecl" : (
+      {
+        "pointer" : 6,
+        "source_range" : (
+          {
+          },
+          {
+          }
+        ),
+        "is_implicit" : true
+      },
+      {
+        "name" : "id",
+        "qual_name" : [
+          "id"
+        ]
+      },
+      7,
+      {
+      }
+    )>,
+    <"TypedefDecl" : (
+      {
+        "pointer" : 8,
+        "source_range" : (
+          {
+          },
+          {
+          }
+        ),
+        "is_implicit" : true
+      },
+      {
+        "name" : "Class",
+        "qual_name" : [
+          "Class"
+        ]
+      },
+      0,
+      {
+      }
+    )>,
+    <"ObjCInterfaceDecl" : (
+      {
+        "pointer" : 9,
+        "parent_pointer" : 1,
+        "source_range" : (
+          {
+          },
+          {
+          }
+        ),
+        "is_implicit" : true
+      },
+      {
+        "name" : "Protocol",
+        "qual_name" : [
+          "Protocol"
+        ]
+      },
+      [
+      ],
+      {
+      },
+      {
+      }
+    )>,
+    <"TypedefDecl" : (
+      {
+        "pointer" : 10,
+        "source_range" : (
+          {
+          },
+          {
+          }
+        ),
+        "is_implicit" : true
+      },
+      {
+        "name" : "__NSConstantString",
+        "qual_name" : [
+          "__NSConstantString"
+        ]
+      },
+      0,
+      {
+      }
+    )>,
+    <"TypedefDecl" : (
+      {
+        "pointer" : 11,
+        "source_range" : (
+          {
+          },
+          {
+          }
+        ),
+        "is_implicit" : true
+      },
+      {
+        "name" : "__builtin_ms_va_list",
+        "qual_name" : [
+          "__builtin_ms_va_list"
+        ]
+      },
+      0,
+      {
+      }
+    )>,
+    <"TypedefDecl" : (
+      {
+        "pointer" : 12,
+        "source_range" : (
+          {
+          },
+          {
+          }
+        ),
+        "is_implicit" : true
+      },
+      {
+        "name" : "__builtin_va_list",
+        "qual_name" : [
+          "__builtin_va_list"
+        ]
+      },
+      0,
+      {
+      }
+    )>,
+    <"ObjCInterfaceDecl" : (
+      {
+        "pointer" : 13,
+        "parent_pointer" : 1,
+        "source_range" : (
+          {
+            "file" : "tests/available_expression.m",
+            "line" : 8,
+            "column" : 1
+          },
+          {
+            "line" : 9,
+            "column" : 2
+          }
+        )
+      },
+      {
+        "name" : "NSObject",
+        "qual_name" : [
+          "NSObject"
+        ]
+      },
+      [
+      ],
+      {
+      },
+      {
+        "implementation" : {
+          "kind" : <"ObjCImplementation">,
+          "decl_pointer" : 14,
+          "name" : {
+            "name" : "NSObject",
+            "qual_name" : [
+              "NSObject"
+            ]
+          }
+        }
+      }
+    )>,
+    <"ObjCImplementationDecl" : (
+      {
+        "pointer" : 14,
+        "parent_pointer" : 1,
+        "source_range" : (
+          {
+            "line" : 10,
+            "column" : 1
+          },
+          {
+            "line" : 11,
+            "column" : 1
+          }
+        )
+      },
+      {
+        "name" : "NSObject",
+        "qual_name" : [
+          "NSObject"
+        ]
+      },
+      [
+      ],
+      {
+      },
+      {
+        "class_interface" : {
+          "kind" : <"ObjCInterface">,
+          "decl_pointer" : 13,
+          "name" : {
+            "name" : "NSObject",
+            "qual_name" : [
+              "NSObject"
+            ]
+          }
+        }
+      }
+    )>,
+    <"ObjCInterfaceDecl" : (
+      {
+        "pointer" : 15,
+        "parent_pointer" : 1,
+        "source_range" : (
+          {
+            "line" : 13,
+            "column" : 1
+          },
+          {
+            "line" : 15,
+            "column" : 2
+          }
+        )
+      },
+      {
+        "name" : "available_expression",
+        "qual_name" : [
+          "available_expression"
+        ]
+      },
+      [
+      ],
+      {
+      },
+      {
+        "super" : {
+          "kind" : <"ObjCInterface">,
+          "decl_pointer" : 13,
+          "name" : {
+            "name" : "NSObject",
+            "qual_name" : [
+              "NSObject"
+            ]
+          }
+        },
+        "implementation" : {
+          "kind" : <"ObjCImplementation">,
+          "decl_pointer" : 16,
+          "name" : {
+            "name" : "available_expression",
+            "qual_name" : [
+              "available_expression"
+            ]
+          }
+        }
+      }
+    )>,
+    <"ObjCImplementationDecl" : (
+      {
+        "pointer" : 16,
+        "parent_pointer" : 1,
+        "source_range" : (
+          {
+            "line" : 17,
+            "column" : 1
+          },
+          {
+            "line" : 27,
+            "column" : 1
+          }
+        )
+      },
+      {
+        "name" : "available_expression",
+        "qual_name" : [
+          "available_expression"
+        ]
+      },
+      [
+        <"ObjCMethodDecl" : (
+          {
+            "pointer" : 17,
+            "parent_pointer" : 16,
+            "source_range" : (
+              {
+                "line" : 19,
+                "column" : 1
+              },
+              {
+                "line" : 25,
+                "column" : 1
+              }
+            )
+          },
+          {
+            "name" : "test_no_bug:and:",
+            "qual_name" : [
+              "test_no_bug:and:",
+              "available_expression"
+            ]
+          },
+          {
+            "is_instance_method" : true,
+            "result_type" : {
+              "type_ptr" : 18
+            },
+            "parameters" : [
+              <"ParmVarDecl" : (
+                {
+                  "pointer" : 19,
+                  "source_range" : (
+                    {
+                      "line" : 19,
+                      "column" : 22
+                    },
+                    {
+                      "column" : 26
+                    }
+                  )
+                },
+                {
+                  "name" : "n",
+                  "qual_name" : [
+                    "n"
+                  ]
+                },
+                {
+                  "type_ptr" : 20
+                },
+                {
+                  "parm_index_in_function" : 0
+                }
+              )>,
+              <"ParmVarDecl" : (
+                {
+                  "pointer" : 21,
+                  "source_range" : (
+                    {
+                      "column" : 33
+                    },
+                    {
+                      "column" : 56
+                    }
+                  )
+                },
+                {
+                  "name" : "data",
+                  "qual_name" : [
+                    "data"
+                  ]
+                },
+                {
+                  "type_ptr" : 22
+                },
+                {
+                  "parm_index_in_function" : 1
+                }
+              )>
+            ],
+            "implicit_parameters" : [
+              <"ImplicitParamDecl" : (
+                {
+                  "pointer" : 23,
+                  "source_range" : (
+                    {
+                    },
+                    {
+                    }
+                  ),
+                  "is_implicit" : true
+                },
+                {
+                  "name" : "self",
+                  "qual_name" : [
+                    "self"
+                  ]
+                },
+                {
+                  "type_ptr" : 22,
+                  "is_const" : true
+                },
+                {
+                }
+              )>,
+              <"ImplicitParamDecl" : (
+                {
+                  "pointer" : 24,
+                  "source_range" : (
+                    {
+                    },
+                    {
+                    }
+                  ),
+                  "is_implicit" : true
+                },
+                {
+                  "name" : "_cmd",
+                  "qual_name" : [
+                    "_cmd"
+                  ]
+                },
+                {
+                  "type_ptr" : 5
+                },
+                {
+                }
+              )>
+            ],
+            "body" : <"CompoundStmt" : (
+              {
+                "pointer" : 25,
+                "source_range" : (
+                  {
+                    "column" : 61
+                  },
+                  {
+                    "line" : 25,
+                    "column" : 1
+                  }
+                )
+              },
+              [
+                <"IfStmt" : (
+                  {
+                    "pointer" : 26,
+                    "source_range" : (
+                      {
+                        "line" : 20,
+                        "column" : 3
+                      },
+                      {
+                        "line" : 21,
+                        "column" : 3
+                      }
+                    )
+                  },
+                  [
+                    <"ObjCAvailabilityCheckExpr" : (
+                      {
+                        "pointer" : 27,
+                        "source_range" : (
+                          {
+                            "line" : 20,
+                            "column" : 7
+                          },
+                          {
+                            "column" : 42
+                          }
+                        )
+                      },
+                      [
+                      ],
+                      {
+                        "qual_type" : {
+                          "type_ptr" : 28
+                        }
+                      },
+                      {
+                        "version" : "11.0"
+                      }
+                    )>,
+                    <"CompoundStmt" : (
+                      {
+                        "pointer" : 29,
+                        "source_range" : (
+                          {
+                            "column" : 45
+                          },
+                          {
+                            "line" : 21,
+                            "column" : 3
+                          }
+                        )
+                      },
+                      [
+                      ]
+                    )>
+                  ],
+                  {
+                    "cond" : 27,
+                    "then" : 29
+                  }
+                )>,
+                <"IfStmt" : (
+                  {
+                    "pointer" : 30,
+                    "source_range" : (
+                      {
+                        "line" : 23,
+                        "column" : 3
+                      },
+                      {
+                        "line" : 24,
+                        "column" : 3
+                      }
+                    )
+                  },
+                  [
+                    <"ObjCAvailabilityCheckExpr" : (
+                      {
+                        "pointer" : 31,
+                        "source_range" : (
+                          {
+                            "line" : 23,
+                            "column" : 7
+                          },
+                          {
+                            "column" : 48
+                          }
+                        )
+                      },
+                      [
+                      ],
+                      {
+                        "qual_type" : {
+                          "type_ptr" : 28
+                        }
+                      },
+                      {
+                        "version" : "8"
+                      }
+                    )>,
+                    <"CompoundStmt" : (
+                      {
+                        "pointer" : 32,
+                        "source_range" : (
+                          {
+                            "column" : 51
+                          },
+                          {
+                            "line" : 24,
+                            "column" : 3
+                          }
+                        )
+                      },
+                      [
+                      ]
+                    )>
+                  ],
+                  {
+                    "cond" : 31,
+                    "then" : 32
+                  }
+                )>
+              ]
+            )>,
+            "mangled_name" : "-[available_expression test_no_bug:and:]"
+          }
+        )>
+      ],
+      {
+      },
+      {
+        "class_interface" : {
+          "kind" : <"ObjCInterface">,
+          "decl_pointer" : 15,
+          "name" : {
+            "name" : "available_expression",
+            "qual_name" : [
+              "available_expression"
+            ]
+          }
+        }
+      }
+    )>,
+    <"TypedefDecl" : (
+      {
+        "pointer" : 33,
+        "source_range" : (
+          {
+          },
+          {
+          }
+        ),
+        "is_implicit" : true
+      },
+      {
+        "name" : "instancetype",
+        "qual_name" : [
+          "instancetype"
+        ]
+      },
+      34,
+      {
+      }
+    )>
+  ],
+  {
+  },
+  {
+    "input_path" : "tests/available_expression.m",
+    "input_kind" : <"IK_ObjC">,
+    "integer_type_widths" : {
+      "char_type" : 8,
+      "short_type" : 16,
+      "int_type" : 32,
+      "long_type" : 64,
+      "longlong_type" : 64
+    },
+    "is_objc_arc_on" : true,
+    "types" : [
+      <"BuiltinType" : (
+        {
+          "pointer" : 18
+        },
+        <"Void">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 28
+        },
+        <"Bool">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 35
+        },
+        <"Char_S">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 36
+        },
+        <"SChar">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 37
+        },
+        <"Short">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 20
+        },
+        <"Int">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 38
+        },
+        <"Long">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 39
+        },
+        <"LongLong">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 40
+        },
+        <"UChar">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 41
+        },
+        <"UShort">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 42
+        },
+        <"UInt">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 43
+        },
+        <"ULong">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 44
+        },
+        <"ULongLong">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 45
+        },
+        <"Float">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 46
+        },
+        <"Double">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 47
+        },
+        <"LongDouble">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 48
+        },
+        <"Float128">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 49
+        },
+        <"Float16">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 50
+        },
+        <"ShortAccum">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 51
+        },
+        <"Accum">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 52
+        },
+        <"LongAccum">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 53
+        },
+        <"UShortAccum">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 54
+        },
+        <"UAccum">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 55
+        },
+        <"ULongAccum">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 56
+        },
+        <"ShortFract">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 57
+        },
+        <"Fract">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 58
+        },
+        <"LongFract">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 59
+        },
+        <"UShortFract">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 60
+        },
+        <"UFract">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 61
+        },
+        <"ULongFract">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 62
+        },
+        <"SatShortAccum">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 63
+        },
+        <"SatAccum">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 64
+        },
+        <"SatLongAccum">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 65
+        },
+        <"SatUShortAccum">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 66
+        },
+        <"SatUAccum">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 67
+        },
+        <"SatULongAccum">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 68
+        },
+        <"SatShortFract">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 69
+        },
+        <"SatFract">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 70
+        },
+        <"SatLongFract">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 71
+        },
+        <"SatUShortFract">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 72
+        },
+        <"SatUFract">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 73
+        },
+        <"SatULongFract">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 74
+        },
+        <"Int128">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 75
+        },
+        <"UInt128">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 76
+        },
+        <"WChar_S">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 77
+        },
+        <"Char8">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 78
+        },
+        <"Dependent">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 79
+        },
+        <"Overload">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 80
+        },
+        <"BoundMember">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 81
+        },
+        <"PseudoObject">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 82
+        },
+        <"UnknownAny">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 83
+        },
+        <"ARCUnbridgedCast">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 84
+        },
+        <"BuiltinFn">
+      )>,
+      <"ComplexType" : (
+        {
+          "pointer" : 85
+        }
+      )>,
+      <"ComplexType" : (
+        {
+          "pointer" : 86
+        }
+      )>,
+      <"ComplexType" : (
+        {
+          "pointer" : 87
+        }
+      )>,
+      <"ComplexType" : (
+        {
+          "pointer" : 88
+        }
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 89
+        },
+        <"ObjCId">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 90
+        },
+        <"ObjCClass">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 91
+        },
+        <"ObjCSel">
+      )>,
+      <"PointerType" : (
+        {
+          "pointer" : 92
+        },
+        {
+          "type_ptr" : 18
+        }
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 93
+        },
+        <"NullPtr">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 94
+        },
+        <"Half">
+      )>,
+      <"PointerType" : (
+        {
+          "pointer" : 95
+        },
+        {
+          "type_ptr" : 91
+        }
+      )>,
+      <"ObjCObjectType" : (
+        {
+          "pointer" : 96
+        },
+        {
+          "base_type" : 89
+        }
+      )>,
+      <"ObjCObjectPointerType" : (
+        {
+          "pointer" : 97
+        },
+        {
+          "type_ptr" : 96
+        }
+      )>,
+      <"ObjCObjectType" : (
+        {
+          "pointer" : 98
+        },
+        {
+          "base_type" : 90
+        }
+      )>,
+      <"ObjCObjectPointerType" : (
+        {
+          "pointer" : 99
+        },
+        {
+          "type_ptr" : 98
+        }
+      )>,
+      <"ObjCInterfaceType" : (
+        {
+          "pointer" : 100
+        },
+        9
+      )>,
+      <"RecordType" : (
+        {
+          "pointer" : 101
+        },
+        102
+      )>,
+      <"PointerType" : (
+        {
+          "pointer" : 103
+        },
+        {
+          "type_ptr" : 20,
+          "is_const" : true
+        }
+      )>,
+      <"PointerType" : (
+        {
+          "pointer" : 104
+        },
+        {
+          "type_ptr" : 35,
+          "is_const" : true
+        }
+      )>,
+      <"PointerType" : (
+        {
+          "pointer" : 105
+        },
+        {
+          "type_ptr" : 35
+        }
+      )>,
+      <"RecordType" : (
+        {
+          "pointer" : 106
+        },
+        107
+      )>,
+      <"ConstantArrayType" : (
+        {
+          "pointer" : 108
+        },
+        {
+          "element_type" : {
+            "type_ptr" : 106
+          },
+          "stride" : 24
+        },
+        1
+      )>,
+      <"ObjCInterfaceType" : (
+        {
+          "pointer" : 109
+        },
+        13
+      )>,
+      <"ObjCInterfaceType" : (
+        {
+          "pointer" : 110
+        },
+        15
+      )>,
+      <"ObjCObjectPointerType" : (
+        {
+          "pointer" : 22
+        },
+        {
+          "type_ptr" : 110
+        }
+      )>,
+      <"TypedefType" : (
+        {
+          "pointer" : 7,
+          "desugared_type" : 97
+        },
+        {
+          "child_type" : {
+            "type_ptr" : 97
+          },
+          "decl_ptr" : 6
+        }
+      )>,
+      <"TypedefType" : (
+        {
+          "pointer" : 34,
+          "desugared_type" : 97
+        },
+        {
+          "child_type" : {
+            "type_ptr" : 7
+          },
+          "decl_ptr" : 33
+        }
+      )>,
+      <"TypedefType" : (
+        {
+          "pointer" : 5,
+          "desugared_type" : 95
+        },
+        {
+          "child_type" : {
+            "type_ptr" : 95
+          },
+          "decl_ptr" : 4
+        }
+      )>,
+      <"NoneType" : (
+        {
+          "pointer" : 0
+        }
+      )>
+    ]
+  }
+)>
+1 warning generated.

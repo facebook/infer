@@ -43,11 +43,9 @@ val append_buck_flavors : string list
 
 val assign : string
 
-val biabduction_models_dir : string
+val biabduction_models_sql : string
 
 val biabduction_models_jar : string
-
-val biabduction_models_src_dir : string
 
 val bin_dir : string
 
@@ -133,8 +131,6 @@ val kotlin_source_extension : string
 val sourcepath : string option
 
 val sources : string list
-
-val specs_files_suffix : string
 
 val trace_absarray : bool
 
@@ -235,6 +231,8 @@ val cost_issues_tests : string option
 val cost_scuba_logging : bool
 
 val costs_previous : string option
+
+val cost_tests_only_autoreleasepool : bool
 
 val cxx : bool
 
@@ -469,6 +467,8 @@ val pulse_model_release_pattern : Str.regexp option
 
 val pulse_model_return_nonnull : string list
 
+val pulse_model_skip_pattern : Str.regexp option
+
 val pulse_model_transfer_ownership_namespace : (string * string) list
 
 val pulse_model_transfer_ownership : string list
@@ -622,6 +622,8 @@ val write_html_whitelist_regex : string list
 val write_website : string option
 
 val xcode_developer_dir : string option
+
+val xcode_isysroot_suffix : string option
 
 val xcpretty : bool
 

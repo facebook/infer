@@ -6,7 +6,7 @@
  */
 #import <Foundation/Foundation.h>
 
-NSInteger block_multiply_array_linear_FN(NSArray* array) {
+NSInteger block_multiply_array_linear(NSArray* array) {
   NSInteger (^sum_array)(NSArray*) = ^(NSArray* array) {
     NSInteger n = 0;
     for (id value in array) {
@@ -16,4 +16,25 @@ NSInteger block_multiply_array_linear_FN(NSArray* array) {
   };
 
   return sum_array(array);
+}
+
+typedef void (^BlockA)(void);
+void loop_linear(int x) {
+  for (int i = 0; i < x; i++) {
+  }
+}
+
+void runBlockA(BlockA block) { block(); }
+
+void doBlockA_linear_FN(int a) {
+  BlockA block = ^{
+    loop_linear(a);
+  };
+  runBlockA(block);
+}
+
+void doBlockA_direct_block_linear(int a) {
+  runBlockA(^{
+    loop_linear(a);
+  });
 }

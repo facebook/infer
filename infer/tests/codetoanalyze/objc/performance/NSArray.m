@@ -70,9 +70,12 @@ NSArray* nsarray_add_object_constant(id obj) {
   return [array arrayByAddingObject:obj];
 }
 
-NSArray* nsarray_add_objects_from_array_linear_FN(NSArray* append_array) {
+NSArray* nsarray_add_objects_from_array_linear(NSArray* append_array) {
   NSArray* array = [[NSArray alloc] init];
-  return [array arrayByAddingObjectsFromArray:append_array];
+  NSArray* new_array = [array arrayByAddingObjectsFromArray:append_array];
+
+  for (int i = 0; i < new_array.count; i++) {
+  }
 }
 
 // query element
@@ -137,7 +140,7 @@ NSArray* nsarray_sort_using_descriptors_constant() {
   return [array sortedArrayUsingDescriptors:@[ sd ]];
 }
 
-NSArray* nsarray_sort_using_descriptors_nlogn_FN(NSArray* array) {
+NSArray* nsarray_sort_using_descriptors_nlogn(NSArray* array) {
   NSSortDescriptor* sd = [[NSSortDescriptor alloc] initWithKey:nil
                                                      ascending:YES];
   return [array sortedArrayUsingDescriptors:@[ sd ]];
@@ -145,14 +148,14 @@ NSArray* nsarray_sort_using_descriptors_nlogn_FN(NSArray* array) {
 
 // iterate through array
 
-void nsarray_iterate_linear_FN(NSArray* array) {
+void nsarray_iterate_linear(NSArray* array) {
   NSInteger sum = 0;
   for (id obj in array) {
     sum += (NSInteger)obj;
   }
 }
 
-void nsarray_enumerator_linear_FN(NSArray* array) {
+void nsarray_enumerator_linear(NSArray* array) {
   NSEnumerator* enumerator = [array objectEnumerator];
 
   id obj;
@@ -163,7 +166,13 @@ void nsarray_enumerator_linear_FN(NSArray* array) {
   }
 }
 
-void nsarray_next_object_linear_FN(NSArray* array) {
+void nsarray_next_object_linear(NSArray* array) {
+  for (id item in array) {
+  }
+}
+
+void nsarray_next_object_constant() {
+  NSArray* array = @[ @1, @2 ];
   for (id item in array) {
   }
 }

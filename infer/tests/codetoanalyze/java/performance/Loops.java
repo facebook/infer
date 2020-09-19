@@ -10,6 +10,7 @@ import android.app.Activity;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.ArrayList;
 
 public class Loops {
 
@@ -170,5 +171,15 @@ public class Loops {
         j--;
       }
     }
+  }
+
+  int loop_prune_constant(ArrayList<Integer> list) {
+    int k = 0;
+    for (int i = 0; i < 3; ++i) {
+      if (list.size() >= i + 1) {
+        k++;
+      }
+    }
+    return k;
   }
 }

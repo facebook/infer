@@ -36,6 +36,10 @@ and third_party_model_source =
   | InThirdPartyRepo of {filename: string; line_number: int}
 [@@deriving compare]
 
+let get_non_virtual_params {params} =
+  match params with x :: tail when Mangled.is_this x.mangled -> tail | _ -> params
+
+
 (* get nullability of method's return type given its annotations and information about its params *)
 let nullability_for_return ~is_callee_in_trust_list ~nullsafe_mode ~is_third_party ret_type
     ret_annotations ~has_propagates_nullable_in_param =

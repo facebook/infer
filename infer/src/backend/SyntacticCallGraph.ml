@@ -96,7 +96,7 @@ let build_from_sources sources =
   g
 
 
-let bottom_up sources : (TaskSchedulerTypes.target, Procname.t) ProcessPool.TaskGenerator.t =
+let bottom_up sources : (TaskSchedulerTypes.target, string) ProcessPool.TaskGenerator.t =
   let open TaskSchedulerTypes in
   let syntactic_call_graph = build_from_sources sources in
   let remaining = ref (CallGraph.n_procs syntactic_call_graph) in
@@ -138,8 +138,8 @@ let bottom_up sources : (TaskSchedulerTypes.target, Procname.t) ProcessPool.Task
         decr remaining ;
         decr scheduled ;
         CallGraph.remove syntactic_call_graph pname
-    | File _ ->
-        L.die InternalError "Only Procnames are scheduled but File target was received"
+    | File _ | ProcUID _ ->
+        L.die InternalError "Only Procnames are scheduled but File/ProcUID target was received"
   in
   {remaining_tasks; is_empty; finished; next}
 

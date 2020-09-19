@@ -89,6 +89,8 @@ module Unsafe : sig
   val all_issues : unit -> t list
 
   val set_enabled : t -> bool -> unit
+
+  module IssueSet : PrettyPrintable.PPUniqRankSet with type elt = t
 end = struct
   module T = struct
     type t =
@@ -223,7 +225,15 @@ end = struct
     ; ( "EXECUTION_TIME_UNREACHABLE_AT_EXIT"
       , [%blob "../../documentation/issues/EXECUTION_TIME_UNREACHABLE_AT_EXIT.md"] )
     ; ("INFINITE_EXECUTION_TIME", [%blob "../../documentation/issues/INFINITE_EXECUTION_TIME.md"])
-    ]
+    ; ( "AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE"
+      , [%blob "../../documentation/issues/AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE.md"] )
+    ; ( "AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE_UI_THREAD"
+      , [%blob "../../documentation/issues/AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE_UI_THREAD.md"]
+      )
+    ; ( "AUTORELEASEPOOL_SIZE_UNREACHABLE_AT_EXIT"
+      , [%blob "../../documentation/issues/AUTORELEASEPOOL_SIZE_UNREACHABLE_AT_EXIT.md"] )
+    ; ( "INFINITE_AUTORELEASEPOOL_SIZE"
+      , [%blob "../../documentation/issues/INFINITE_AUTORELEASEPOOL_SIZE.md"] ) ]
 
 
   (** cost issues are already registered below.*)
@@ -864,8 +874,12 @@ let complexity_increase ~kind ~is_on_ui_thread =
   register_cost ~kind ~is_on_ui_thread "%s_COMPLEXITY_INCREASE"
 
 
-let topl_error =
-  register ~id:"TOPL_ERROR" Error ToplOnBiabduction ~user_documentation:"Experimental."
+let topl_biabd_error =
+  register ~id:"TOPL_BIABD_ERROR" Error ToplOnBiabduction ~user_documentation:"Experimental."
+
+
+let topl_pulse_error =
+  register ~id:"TOPL_PULSE_ERROR" Error ToplOnPulse ~user_documentation:"Experimental."
 
 
 let uninitialized_value =
@@ -974,10 +988,18 @@ let combined_pointer_errors =
       ~user_documentation:"See ...."
   
 (* register enabled cost issues *)
-let () =
+let is_autoreleasepool_size_issue =
+  let autoreleasepool_size_issues = ref IssueSet.empty in
+  let add_autoreleasepool_size_issue ~kind issue_type =
+    match (kind : CostKind.t) with
+    | AutoreleasepoolSize ->
+        autoreleasepool_size_issues := IssueSet.add !autoreleasepool_size_issues issue_type
+    | OperationCost | AllocationCost ->
+        ()
+  in
   List.iter CostKind.enabled_cost_kinds ~f:(fun CostKind.{kind} ->
       List.iter [true; false] ~f:(fun is_on_ui_thread ->
-          ignore (unreachable_cost_call ~kind) ;
-          ignore (infinite_cost_call ~kind) ;
-          ignore (complexity_increase ~kind ~is_on_ui_thread) ;
-          () ) )
+          add_autoreleasepool_size_issue ~kind (unreachable_cost_call ~kind) ;
+          add_autoreleasepool_size_issue ~kind (infinite_cost_call ~kind) ;
+          add_autoreleasepool_size_issue ~kind (complexity_increase ~kind ~is_on_ui_thread) ) ) ;
+  fun issue_type -> IssueSet.mem issue_type !autoreleasepool_size_issues

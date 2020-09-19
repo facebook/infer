@@ -24,10 +24,14 @@ module SymbolPath = struct
 
   let compare_deref_kind _ _ = 0
 
+  type callsite = CallSite.t
+
+  let compare_callsite x y = Procname.compare (CallSite.pname x) (CallSite.pname y)
+
   type prim =
     | Pvar of Pvar.t
     | Deref of deref_kind * partial
-    | Callsite of {ret_typ: Typ.t; cs: CallSite.t; obj_path: partial option [@compare.ignore]}
+    | Callsite of {ret_typ: Typ.t; cs: callsite; obj_path: partial option [@compare.ignore]}
   [@@deriving compare]
 
   and partial = prim BoField.t [@@deriving compare]
@@ -233,6 +237,8 @@ module SymbolPath = struct
         false
 
 
+  let is_length = function Length _ -> true | _ -> false
+
   let is_global = function Normal p | Offset {p} | Length {p} | Modeled {p} -> is_global_partial p
 end
 
@@ -351,6 +357,13 @@ module Symbol = struct
         assert false
     | OneValue {path} | BoundEnd {path} ->
         path
+
+
+  let is_length = function
+    | ForeignVariable _ ->
+        false
+    | OneValue {path} | BoundEnd {path} ->
+        SymbolPath.is_length path
 
 
   (* NOTE: This may not be satisfied in the cost checker for simplifying its results. *)

@@ -162,6 +162,13 @@ module Node : sig
 
   val get_wto_index : t -> int
 
+  val set_code_block_exit : t -> code_block_exit:t -> unit
+  (** Set an exit node corresponding to a start node of a code block. Using this, when there is a
+      code block, frontend can keep the correspondence between start/exit nodes of a code block. *)
+
+  val get_code_block_exit : t -> t option
+  (** Get an exit node corresponding to a start node of a code block. *)
+
   val is_dangling : t -> bool
   (** Returns true if the node is dangling, i.e. no successors and predecessors *)
 
@@ -264,6 +271,9 @@ val is_defined : t -> bool
 val is_java_synchronized : t -> bool
 (** Return [true] if the procedure signature has the Java synchronized keyword *)
 
+val is_objc_arc_on : t -> bool
+(** Return [true] iff the ObjC procedure is compiled with ARC *)
+
 val iter_instrs : (Node.t -> Sil.instr -> unit) -> t -> unit
 (** iterate over all nodes and their instructions *)
 
@@ -321,6 +331,8 @@ val is_captured_var : t -> Var.t -> bool
 (** true if var is a captured variable of a cpp lambda or obcj block *)
 
 val has_modify_in_block_attr : t -> Pvar.t -> bool
+
+val shallow_copy_code_from_pdesc : orig_pdesc:t -> dest_pdesc:t -> unit
 
 (** per-procedure CFGs are stored in the SQLite "procedures" table as NULL if the procedure has no
     CFG *)

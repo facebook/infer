@@ -8,6 +8,10 @@ open! IStd
 
 (** for the Restart scheduler: raise when a worker tries to analyze a procedure already being
     analyzed by another process *)
-exception ProcnameAlreadyLocked of Procname.t
+exception ProcnameAlreadyLocked of {dependency_filename: string}
 
-type target = Procname of Procname.t | File of SourceFile.t
+type target =
+  | Procname of Procname.t
+  | File of SourceFile.t
+  | ProcUID of string
+      (** matches primary key of [procedures] and [specs] tables; see [ResultsDatabase.ml] *)

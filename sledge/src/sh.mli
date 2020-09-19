@@ -72,12 +72,6 @@ val and_subst : Context.Subst.t -> t -> t
 
 (** Update *)
 
-val with_pure : Formula.t -> t -> t
-(** [with_pure pure q] is [{q with pure}], which assumes that [q.pure] and
-    [pure] are defined in the same vocabulary. Note that [ctx] is not
-    weakened, so if [pure] and [q.pure] do not induce the same context, then
-    the result will have a stronger [ctx] than induced by its [pure]. *)
-
 val rem_seg : seg -> t -> t
 (** [star (seg s) (rem_seg s q)] is equivalent to [q], assuming that [s] is
     (physically equal to) one of the elements of [q.heap]. Raises if [s] is
@@ -128,7 +122,7 @@ val pure_approx : t -> Formula.t
     [is_empty q], then [pure_approx q] is equivalent to
     [pure (pure_approx q)]. *)
 
-val fv : ?ignore_ctx:unit -> t -> Var.Set.t
+val fv : ?ignore_ctx:unit -> ?ignore_pure:unit -> t -> Var.Set.t
 (** Free variables, a subset of vocabulary. *)
 
 val fold_dnf :

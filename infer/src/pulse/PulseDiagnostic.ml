@@ -90,7 +90,8 @@ let rec get_message ?print_loc:(pr=false) = function
         | ViaCall {f; _} ->
             F.fprintf fmt "by call to %a" CallEvent.describe f
       in
-      F.asprintf "memory dynamically allocated at line %d %a, is not reachable after %a"
+      F.asprintf
+        "memory dynamically allocated at line %d %a, is not freed after the last access at %a"
         allocation_line pp_allocation_trace allocation_trace Location.pp location
   | StackVariableAddressEscape {variable; _} ->
       let pp_var f var =

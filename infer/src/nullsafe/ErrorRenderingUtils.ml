@@ -94,6 +94,7 @@ type message_info =
   ; coming_from_explanation: string
   ; what_is_used: string
   ; recommendation: string
+  ; third_party_dependent_methods: (Procname.Java.t * AnnotatedSignature.t) list
   ; issue_type: IssueType.t }
 
 let get_field_class_name field_name =
@@ -152,14 +153,14 @@ let mk_recommendation_for_third_party_field nullsafe_mode field =
 
 let get_info object_origin nullsafe_mode untrusted_kind =
   match object_origin with
-  | TypeOrigin.MethodCall {pname; call_loc} ->
+  | TypeOrigin.MethodCall {pname; call_loc; annotated_signature} ->
       let offending_object =
         F.asprintf "%a" MarkupFormatter.pp_monospaced
           (Procname.Java.to_simplified_string ~withclass:true pname)
       in
       let object_loc = call_loc in
       let what_is_used = "Result of this call" in
-      let coming_from_explanation, recommendation, issue_type =
+      let coming_from_explanation, recommendation, issue_type, third_party_dependent_methods =
         match untrusted_kind with
         | UserFriendlyNullable.ThirdPartyNonnull ->
             let suggested_third_party_sig_file =
@@ -177,7 +178,8 @@ let get_info object_origin nullsafe_mode untrusted_kind =
             in
             ( "not vetted third party methods"
             , F.sprintf "add the correct signature to %s" where_to_add_signature
-            , IssueType.eradicate_unvetted_third_party_in_nullsafe )
+            , IssueType.eradicate_unvetted_third_party_in_nullsafe
+            , [(pname, annotated_signature)] )
         | UserFriendlyNullable.UncheckedNonnull | UserFriendlyNullable.LocallyCheckedNonnull ->
             let from =
               mk_coming_from_unchecked_or_locally_checked_case_only nullsafe_mode untrusted_kind
@@ -188,12 +190,13 @@ let get_info object_origin nullsafe_mode untrusted_kind =
                 untrusted_kind ~what_to_strictify
             in
             let issue_type = IssueType.eradicate_unchecked_usage_in_nullsafe in
-            (from, recommendation, issue_type)
+            (from, recommendation, issue_type, [])
       in
       { offending_object
       ; object_loc
       ; coming_from_explanation
       ; what_is_used
+      ; third_party_dependent_methods
       ; recommendation
       ; issue_type }
   | TypeOrigin.Field {field_name; access_loc} ->
@@ -228,6 +231,7 @@ let get_info object_origin nullsafe_mode untrusted_kind =
       ; coming_from_explanation
       ; what_is_used
       ; recommendation
+      ; third_party_dependent_methods= []
       ; issue_type }
   | other ->
       Logging.die InternalError
@@ -243,6 +247,7 @@ let mk_nullsafe_issue_for_untrusted_values ~nullsafe_mode ~untrusted_kind ~bad_u
       ; coming_from_explanation
       ; what_is_used
       ; recommendation
+      ; third_party_dependent_methods
       ; issue_type } =
     get_info object_origin nullsafe_mode untrusted_kind
   in
@@ -253,7 +258,9 @@ let mk_nullsafe_issue_for_untrusted_values ~nullsafe_mode ~untrusted_kind ~bad_u
       offending_object NullsafeMode.pp nullsafe_mode coming_from_explanation what_is_used
       bad_usage_location.Location.line recommendation
   in
-  (description, issue_type, object_loc)
+  NullsafeIssue.make ~description ~issue_type ~loc:object_loc
+    ~severity:(NullsafeMode.severity nullsafe_mode)
+  |> NullsafeIssue.with_third_party_dependent_methods third_party_dependent_methods
 
 
 let find_alternative_nonnull_method_description nullable_origin =

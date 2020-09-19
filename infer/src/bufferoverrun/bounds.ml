@@ -105,6 +105,12 @@ module SymLinear = struct
 
   let neg : t -> t = fun x -> M.map NonZeroInt.( ~- ) x
 
+  let remove_positive_length_symbol : t -> t =
+    M.filter (fun symb coeff ->
+        let path = Symb.Symbol.path symb in
+        not (NonZeroInt.is_positive coeff && Symb.SymbolPath.is_length path) )
+
+
   let plus : t -> t -> t =
    fun x y ->
     let plus_coeff _ c1 c2 = NonZeroInt.plus c1 c2 in
@@ -612,6 +618,22 @@ module Bound = struct
         mk_MinMaxB (MinMax.neg m, neg x, neg y)
     | MultB (c, x, y) ->
         mk_MultB (Z.neg c, neg x, y)
+
+
+  let rec remove_positive_length_symbol b =
+    match b with
+    | MInf | PInf ->
+        b
+    | Linear (c, x) ->
+        Linear (c, SymLinear.remove_positive_length_symbol x)
+    | MinMax (c, sign, min_max, d, x) ->
+        if Symb.Symbol.is_length x then
+          Linear (Sign.eval_big_int sign c (MinMax.eval_big_int min_max d Z.zero), SymLinear.empty)
+        else b
+    | MinMaxB (m, x, y) ->
+        mk_MinMaxB (m, remove_positive_length_symbol x, remove_positive_length_symbol y)
+    | MultB (c, x, y) ->
+        mk_MultB (c, remove_positive_length_symbol x, remove_positive_length_symbol y)
 
 
   let exact_min : otherwise:(t -> t -> t) -> t -> t -> t =
@@ -1227,6 +1249,20 @@ module Bound = struct
         if phys_equal a a' && phys_equal b b' then x else mk_MultB (c, a', b')
 
 
+  let simplify_minimum_length x =
+    match x with
+    | MultB _ | Linear _ | MInf | PInf | MinMaxB _ ->
+        x
+    | MinMax (c1, sign, Min, c2, symb) ->
+        let path = Symb.Symbol.path symb in
+        if Symb.SymbolPath.is_length path then
+          let z = Sign.eval_big_int sign c1 (Z.min c2 Z.zero) in
+          Linear (z, SymLinear.empty)
+        else x
+    | MinMax _ ->
+        x
+
+
   let get_same_one_symbol b1 b2 =
     match (b1, b2) with
     | Linear (n1, se1), Linear (n2, se2) when Z.(equal n1 zero) && Z.(equal n2 zero) ->
@@ -1255,10 +1291,11 @@ module BoundTrace = struct
     | Loop of Location.t
     | Call of {callee_pname: Procname.t; callee_trace: t; location: Location.t}
     | ModeledFunction of {pname: string; location: Location.t}
+    | ArcFromNonArc of {pname: string; location: Location.t}
   [@@deriving compare]
 
   let rec length = function
-    | Loop _ | ModeledFunction _ ->
+    | Loop _ | ModeledFunction _ | ArcFromNonArc _ ->
         1
     | Call {callee_trace} ->
         1 + length callee_trace
@@ -1273,6 +1310,8 @@ module BoundTrace = struct
         F.fprintf f "Loop (%a)" Location.pp loc
     | ModeledFunction {pname; location} ->
         F.fprintf f "ModeledFunction `%s` (%a)" pname Location.pp location
+    | ArcFromNonArc {pname; location} ->
+        F.fprintf f "ArcFromNonArc `%s` (%a)" pname Location.pp location
     | Call {callee_pname; callee_trace; location} ->
         F.fprintf f "%a -> Call `%a` (%a)" pp callee_trace Procname.pp callee_pname Location.pp
           location
@@ -1291,9 +1330,16 @@ module BoundTrace = struct
     | ModeledFunction {pname; location} ->
         let desc = F.asprintf "Modeled call to %s" pname in
         [Errlog.make_trace_element depth location desc []]
+    | ArcFromNonArc {pname; location} ->
+        let desc = F.asprintf "ARC function call to %s from non-ARC caller" pname in
+        [Errlog.make_trace_element depth location desc []]
 
 
   let of_loop location = Loop location
+
+  let of_modeled_function pname location = ModeledFunction {pname; location}
+
+  let of_arc_from_non_arc pname location = ArcFromNonArc {pname; location}
 end
 
 (** A NonNegativeBound is a Bound that is either non-negative or symbolic but will be evaluated to a

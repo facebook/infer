@@ -95,10 +95,21 @@ let equal_trm x y =
       Int.equal i j
   | _ -> equal_trm x y
 
+let zero = Z Z.zero
+let one = Z Z.one
 let _Neg x = Neg x
-let _Add x y = Add (x, y)
+
+let _Add x y =
+  match (x, y) with
+  | _, Q q when Q.sign q = 0 -> x
+  | Q q, _ when Q.sign q = 0 -> y
+  | _ -> Add (x, y)
+
 let _Sub x y = Sub (x, y)
-let _Mulq q x = Mulq (q, x)
+
+let _Mulq q x =
+  if Q.equal Q.one q then x else if Q.sign q = 0 then zero else Mulq (q, x)
+
 let _Splat x = Splat x
 let _Sized seq siz = Sized {seq; siz}
 let _Extract seq off len = Extract {seq; off; len}
@@ -108,8 +119,6 @@ let _Update rcd idx elt = Update {rcd; idx; elt}
 let _Tuple es = Tuple es
 let _Project ary idx tup = Project {ary; idx; tup}
 let _Apply f a = Apply (f, a)
-let zero = Z Z.zero
-let one = Z Z.one
 
 (*
  * (Uninterpreted) Predicate Symbols
@@ -161,6 +170,7 @@ module Fml : sig
   val _Ge0 : trm -> fml
   val _Lt0 : trm -> fml
   val _Le0 : trm -> fml
+  val _Not : fml -> fml
   val _And : fml -> fml -> fml
   val _Or : fml -> fml -> fml
   val _Iff : fml -> fml -> fml
@@ -189,6 +199,8 @@ end = struct
     | UNegLit of Predsym.t * trm
   [@@deriving compare, equal, sexp]
 
+  let sort_fml x y = if compare_fml x y <= 0 then (x, y) else (y, x)
+
   (** Some normalization is necessary for [embed_into_fml] (defined below)
       to be left inverse to [embed_into_cnd]. Essentially
       [0 ≠ (p ? 1 : 0)] needs to normalize to [p], by way of
@@ -197,34 +209,219 @@ end = struct
 
   let _Tt = Tt
   let _Ff = Ff
-  let _Eq x y = if equal_trm x y then Tt else Eq (x, y)
-  let _Dq x y = Dq (x, y)
-  let _Eq0 x = Eq0 x
 
-  let _Dq0 = function
+  (** classification of terms as either semantically equal or disequal, or
+      if semantic relationship is unknown, as either syntactically less than
+      or greater than *)
+  type compare_semantic_syntactic = SemEq | SemDq | SynLt | SynGt
+
+  let compare_semantic_syntactic d e =
+    match (d, e) with
+    | Z y, Z z -> if Z.equal y z then SemEq else SemDq
+    | Q q, Q r -> if Q.equal q r then SemEq else SemDq
+    | Z z, Q q | Q q, Z z -> if Q.equal (Q.of_z z) q then SemEq else SemDq
+    | _ ->
+        let ord = compare_trm d e in
+        if ord < 0 then SynLt else if ord = 0 then SemEq else SynGt
+
+  let _Eq0 x =
+    match compare_semantic_syntactic zero x with
+    (* 0 = 0 ==> tt *)
+    | SemEq -> Tt
+    (* 0 = N ==> ff for N ≢ 0 *)
+    | SemDq -> Ff
+    | SynLt | SynGt -> Eq0 x
+
+  let _Dq0 x =
+    match compare_semantic_syntactic zero x with
     (* 0 ≠ 0 ==> ff *)
-    | Z _ as z when z == zero -> Ff
+    | SemEq -> Ff
     (* 0 ≠ N ==> tt for N ≢ 0 *)
-    | Z _ -> Tt
-    | t -> Dq0 t
+    | SemDq -> Tt
+    | SynLt | SynGt -> Dq0 x
 
-  let _Gt0 x = Gt0 x
-  let _Ge0 x = Ge0 x
-  let _Lt0 x = Lt0 x
-  let _Le0 x = Le0 x
-  let _And p q = And (p, q)
-  let _Or p q = Or (p, q)
-  let _Iff p q = Iff (p, q)
-  let _Xor p q = Xor (p, q)
+  let _Eq x y =
+    if x == zero then _Eq0 y
+    else if y == zero then _Eq0 x
+    else
+      match compare_semantic_syntactic x y with
+      | SemEq -> Tt
+      | SemDq -> Ff
+      | SynLt -> Eq (x, y)
+      | SynGt -> Eq (y, x)
 
-  let _Cond cnd pos neg =
-    match (pos, neg) with
-    (* (p ? tt : ff) ==> p *)
-    | Tt, Ff -> cnd
-    | _ -> Cond {cnd; pos; neg}
+  let _Dq x y =
+    if x == zero then _Dq0 y
+    else if y == zero then _Dq0 x
+    else
+      match compare_semantic_syntactic x y with
+      | SemEq -> Ff
+      | SemDq -> Tt
+      | SynLt -> Dq (x, y)
+      | SynGt -> Dq (y, x)
+
+  let _Gt0 = function
+    | Z z -> if Z.gt z Z.zero then Tt else Ff
+    | Q q -> if Q.gt q Q.zero then Tt else Ff
+    | x -> Gt0 x
+
+  let _Ge0 = function
+    | Z z -> if Z.geq z Z.zero then Tt else Ff
+    | Q q -> if Q.geq q Q.zero then Tt else Ff
+    | x -> Ge0 x
+
+  let _Lt0 = function
+    | Z z -> if Z.lt z Z.zero then Tt else Ff
+    | Q q -> if Q.lt q Q.zero then Tt else Ff
+    | x -> Lt0 x
+
+  let _Le0 = function
+    | Z z -> if Z.leq z Z.zero then Tt else Ff
+    | Q q -> if Q.leq q Q.zero then Tt else Ff
+    | x -> Le0 x
 
   let _UPosLit p x = UPosLit (p, x)
   let _UNegLit p x = UNegLit (p, x)
+
+  let is_negative = function
+    | Ff | Dq _ | Dq0 _ | Lt0 _ | Le0 _ | Or _ | Xor _ | UNegLit _ -> true
+    | Tt | Eq _ | Eq0 _ | Gt0 _ | Ge0 _ | And _ | Iff _ | UPosLit _ | Cond _
+      ->
+        false
+
+  type equal_or_opposite = Equal | Opposite | Unknown
+
+  let rec equal_or_opposite p q =
+    match (p, q) with
+    | Tt, Ff | Ff, Tt -> Opposite
+    | Eq (a, b), Dq (a', b') | Dq (a, b), Eq (a', b') ->
+        if equal_trm a a' && equal_trm b b' then Opposite else Unknown
+    | Eq0 a, Dq0 a'
+     |Dq0 a, Eq0 a'
+     |Gt0 a, Le0 a'
+     |Ge0 a, Lt0 a'
+     |Lt0 a, Ge0 a'
+     |Le0 a, Gt0 a' ->
+        if equal_trm a a' then Opposite else Unknown
+    | And (a, b), Or (a', b') | Or (a', b'), And (a, b) -> (
+      match equal_or_opposite a a' with
+      | Opposite -> (
+        match equal_or_opposite b b' with
+        | Opposite -> Opposite
+        | _ -> Unknown )
+      | _ -> Unknown )
+    | Iff (p, q), Xor (p', q') | Xor (p, q), Iff (p', q') ->
+        if equal_fml p p' && equal_fml q q' then Opposite else Unknown
+    | Cond {cnd= c; pos= p; neg= n}, Cond {cnd= c'; pos= p'; neg= n'} ->
+        if equal_fml c c' then
+          match equal_or_opposite p p' with
+          | Opposite -> (
+            match equal_or_opposite n n' with
+            | Opposite -> Opposite
+            | _ -> Unknown )
+          | Equal -> if equal_fml n n' then Equal else Unknown
+          | Unknown -> Unknown
+        else Unknown
+    | UPosLit (p, x), UNegLit (p', x') | UNegLit (p, x), UPosLit (p', x') ->
+        if Predsym.equal p p' && equal_trm x x' then Opposite else Unknown
+    | _ -> if equal_fml p q then Equal else Unknown
+
+  let _And p q =
+    match (p, q) with
+    | Tt, p | p, Tt -> p
+    | Ff, _ | _, Ff -> Ff
+    | _ -> (
+      match equal_or_opposite p q with
+      | Equal -> p
+      | Opposite -> Ff
+      | Unknown ->
+          let p, q = sort_fml p q in
+          And (p, q) )
+
+  let _Or p q =
+    match (p, q) with
+    | Ff, p | p, Ff -> p
+    | Tt, _ | _, Tt -> Tt
+    | _ -> (
+      match equal_or_opposite p q with
+      | Equal -> p
+      | Opposite -> Tt
+      | Unknown ->
+          let p, q = sort_fml p q in
+          Or (p, q) )
+
+  let rec _Iff p q =
+    match (p, q) with
+    | Tt, p | p, Tt -> p
+    | Ff, p | p, Ff -> _Not p
+    | _ -> (
+      match equal_or_opposite p q with
+      | Equal -> Tt
+      | Opposite -> Ff
+      | Unknown ->
+          let p, q = sort_fml p q in
+          Iff (p, q) )
+
+  and _Xor p q =
+    match (p, q) with
+    | Tt, p | p, Tt -> _Not p
+    | Ff, p | p, Ff -> p
+    | _ -> (
+      match equal_or_opposite p q with
+      | Equal -> Ff
+      | Opposite -> Tt
+      | Unknown ->
+          let p, q = sort_fml p q in
+          Xor (p, q) )
+
+  and _Not = function
+    | Tt -> _Ff
+    | Ff -> _Tt
+    | Eq (x, y) -> _Dq x y
+    | Dq (x, y) -> _Eq x y
+    | Eq0 x -> _Dq0 x
+    | Dq0 x -> _Eq0 x
+    | Gt0 x -> _Le0 x
+    | Ge0 x -> _Lt0 x
+    | Lt0 x -> _Ge0 x
+    | Le0 x -> _Gt0 x
+    | And (x, y) -> _Or (_Not x) (_Not y)
+    | Or (x, y) -> _And (_Not x) (_Not y)
+    | Iff (x, y) -> _Xor x y
+    | Xor (x, y) -> _Iff x y
+    | Cond {cnd; pos; neg} -> _Cond cnd (_Not pos) (_Not neg)
+    | UPosLit (p, x) -> _UNegLit p x
+    | UNegLit (p, x) -> _UPosLit p x
+
+  and _Cond cnd pos neg =
+    match (cnd, pos, neg) with
+    (* (tt ? p : n) ==> p *)
+    | Tt, _, _ -> pos
+    (* (ff ? p : n) ==> n *)
+    | Ff, _, _ -> neg
+    (* (c ? tt : ff) ==> c *)
+    | _, Tt, Ff -> cnd
+    (* (c ? ff : tt) ==> ¬c *)
+    | _, Ff, Tt -> _Not cnd
+    (* (c ? p : ff) ==> c ∧ p *)
+    | _, _, Ff -> _And cnd pos
+    (* (c ? ff : n) ==> ¬c ∧ n *)
+    | _, Ff, _ -> _And (_Not cnd) neg
+    (* (c ? tt : n) ==> c ∨ n *)
+    | _, Tt, _ -> _Or cnd neg
+    (* (c ? p : tt) ==> ¬c ∨ p *)
+    | _, _, Tt -> _Or (_Not cnd) pos
+    | _ -> (
+      match equal_or_opposite pos neg with
+      (* (c ? p : p) ==> c *)
+      | Equal -> cnd
+      (* (c ? p : ¬p) ==> c <=> p *)
+      | Opposite -> _Iff cnd pos
+      (* (c ? p : n) <=> (¬c ? n : p) *)
+      | Unknown when is_negative cnd ->
+          Cond {cnd= _Not cnd; pos= neg; neg= pos}
+      (* (c ? p : n) *)
+      | _ -> Cond {cnd; pos; neg} )
 end
 
 open Fml
@@ -1005,25 +1202,7 @@ module Formula = struct
   let iff = _Iff
   let xor = _Xor
   let cond ~cnd ~pos ~neg = _Cond cnd pos neg
-
-  let rec not_ = function
-    | Tt -> _Ff
-    | Ff -> _Tt
-    | Eq (x, y) -> _Dq x y
-    | Dq (x, y) -> _Eq x y
-    | Eq0 x -> _Dq0 x
-    | Dq0 x -> _Eq0 x
-    | Gt0 x -> _Le0 x
-    | Ge0 x -> _Lt0 x
-    | Lt0 x -> _Ge0 x
-    | Le0 x -> _Gt0 x
-    | And (x, y) -> _Or (not_ x) (not_ y)
-    | Or (x, y) -> _And (not_ x) (not_ y)
-    | Iff (x, y) -> _Xor x y
-    | Xor (x, y) -> _Iff x y
-    | Cond {cnd; pos; neg} -> _Cond cnd (not_ pos) (not_ neg)
-    | UPosLit (p, x) -> _UNegLit p x
-    | UNegLit (p, x) -> _UPosLit p x
+  let not_ = _Not
 
   (** Query *)
 
@@ -1075,15 +1254,32 @@ module Formula = struct
 
   let rename s e = map_vars ~f:(Var.Subst.apply s) e
 
-  let disjuncts p =
-    let rec disjuncts_ p ds =
-      match p with
-      | Or (a, b) -> disjuncts_ a (disjuncts_ b ds)
+  let fold_dnf :
+         meet1:('literal -> 'conjunction -> 'conjunction)
+      -> join1:('conjunction -> 'disjunction -> 'disjunction)
+      -> top:'conjunction
+      -> bot:'disjunction
+      -> 'formula
+      -> 'disjunction =
+   fun ~meet1 ~join1 ~top ~bot fml ->
+    let rec add_conjunct (cjn, splits) fml =
+      match fml with
+      | Tt | Ff | Eq _ | Dq _ | Eq0 _ | Dq0 _ | Gt0 _ | Ge0 _ | Lt0 _
+       |Le0 _ | Iff _ | Xor _ | UPosLit _ | UNegLit _ ->
+          (meet1 fml cjn, splits)
+      | And (p, q) -> add_conjunct (add_conjunct (cjn, splits) p) q
+      | Or (p, q) -> (cjn, [p; q] :: splits)
       | Cond {cnd; pos; neg} ->
-          disjuncts_ (and_ cnd pos) (disjuncts_ (and_ (not_ cnd) neg) ds)
-      | d -> d :: ds
+          (cjn, [and_ cnd pos; and_ (not_ cnd) neg] :: splits)
     in
-    disjuncts_ p []
+    let rec add_disjunct (cjn, splits) djn fml =
+      let cjn, splits = add_conjunct (cjn, splits) fml in
+      match splits with
+      | split :: splits ->
+          List.fold ~f:(add_disjunct (cjn, splits)) ~init:djn split
+      | [] -> join1 cjn djn
+    in
+    add_disjunct (top, []) bot fml
 end
 
 (*
@@ -1329,21 +1525,13 @@ module Context = struct
   type t = Ses.Equality.t [@@deriving sexp]
 
   let invariant = Ses.Equality.invariant
-  let empty = Ses.Equality.true_
 
-  let add vs f x =
-    let vs', x' = Ses.Equality.and_term (vs_to_ses vs) (f_to_ses f) x in
-    (vs_of_ses vs', x')
+  (* Query *)
 
-  let union vs x y =
-    let vs', z = Ses.Equality.and_ (vs_to_ses vs) x y in
-    (vs_of_ses vs', z)
+  let fold_vars ~init x ~f =
+    Ses.Equality.fold_vars x ~init ~f:(fun s v -> f s (v_of_ses v))
 
-  let interN vs xs =
-    let vs', z = Ses.Equality.orN (vs_to_ses vs) xs in
-    (vs_of_ses vs', z)
-
-  let rename x sub = Ses.Equality.rename x (v_map_ses (Var.Subst.apply sub))
+  let fv e = fold_vars e ~f:Var.Set.add ~init:Var.Set.empty
   let is_empty x = Ses.Equality.is_true x
   let is_unsat x = Ses.Equality.is_false x
   let implies x b = Ses.Equality.implies x (f_to_ses b)
@@ -1352,11 +1540,6 @@ module Context = struct
     Ses.Term.is_false (Ses.Equality.normalize x (f_to_ses b))
 
   let normalize x e = ses_map (Ses.Equality.normalize x) e
-
-  let fold_vars ~init x ~f =
-    Ses.Equality.fold_vars x ~init ~f:(fun s v -> f s (v_of_ses v))
-
-  let fv e = fold_vars e ~f:Var.Set.add ~init:Var.Set.empty
 
   (* Classes *)
 
@@ -1411,6 +1594,38 @@ module Context = struct
       fs fml ~suf:"@]" ;
     first && List.is_empty fml
 
+  (* Construct *)
+
+  let empty = Ses.Equality.true_
+
+  let add vs f x =
+    let vs', x' = Ses.Equality.and_term (vs_to_ses vs) (f_to_ses f) x in
+    (vs_of_ses vs', x')
+
+  let union vs x y =
+    let vs', z = Ses.Equality.and_ (vs_to_ses vs) x y in
+    (vs_of_ses vs', z)
+
+  let inter vs x y =
+    let vs', z = Ses.Equality.or_ (vs_to_ses vs) x y in
+    (vs_of_ses vs', z)
+
+  let interN vs xs =
+    let vs', z = Ses.Equality.orN (vs_to_ses vs) xs in
+    (vs_of_ses vs', z)
+
+  let dnf f =
+    let meet1 a (vs, p, x) =
+      let vs, x = add vs a x in
+      (vs, Formula.and_ p a, x)
+    in
+    let join1 = Iter.cons in
+    let top = (Var.Set.empty, Formula.tt, empty) in
+    let bot = Iter.empty in
+    Formula.fold_dnf ~meet1 ~join1 ~top ~bot f
+
+  let rename x sub = Ses.Equality.rename x (v_map_ses (Var.Subst.apply sub))
+
   (* Substs *)
 
   module Subst = struct
@@ -1442,24 +1657,34 @@ module Context = struct
   (* Replay debugging *)
 
   type call =
-    | Normalize of t * exp
     | Add of Var.Set.t * fml * t
     | Union of Var.Set.t * t * t
+    | Inter of Var.Set.t * t * t
     | InterN of Var.Set.t * t list
     | Rename of t * Var.Subst.t
+    | Is_unsat of t
+    | Implies of t * fml
+    | Refutes of t * fml
+    | Normalize of t * exp
     | Apply_subst of Var.Set.t * Subst.t * t
     | Solve_for_vars of Var.Set.t list * t
+    | Elim of Var.Set.t * t
   [@@deriving sexp]
 
   let replay c =
     match call_of_sexp (Sexp.of_string c) with
-    | Normalize (r, e) -> normalize r e |> ignore
     | Add (us, e, r) -> add us e r |> ignore
     | Union (us, r, s) -> union us r s |> ignore
+    | Inter (us, r, s) -> inter us r s |> ignore
     | InterN (us, rs) -> interN us rs |> ignore
     | Rename (r, s) -> rename r s |> ignore
+    | Is_unsat r -> is_unsat r |> ignore
+    | Implies (r, f) -> implies r f |> ignore
+    | Refutes (r, f) -> refutes r f |> ignore
+    | Normalize (r, e) -> normalize r e |> ignore
     | Apply_subst (us, s, r) -> apply_subst us s r |> ignore
     | Solve_for_vars (vss, r) -> solve_for_vars vss r |> ignore
+    | Elim (ks, r) -> elim ks r |> ignore
 
   (* Debug wrappers *)
 
@@ -1483,30 +1708,51 @@ module Context = struct
     in
     if not [%debug] then f ()
     else
-      try f () with exn -> raise_s ([%sexp_of: exn * call] (exn, call ()))
+      try f ()
+      with exn ->
+        let bt = Printexc.get_raw_backtrace () in
+        let sexp = sexp_of_call (call ()) in
+        raise (Replay (exn, bt, sexp))
 
-  let normalize_tmr = Timer.create "normalize" ~at_exit:report
   let add_tmr = Timer.create "add" ~at_exit:report
-  let uniontmr = Timer.create "union" ~at_exit:report
+  let union_tmr = Timer.create "union" ~at_exit:report
+  let inter_tmr = Timer.create "inter" ~at_exit:report
   let interN_tmr = Timer.create "interN" ~at_exit:report
   let rename_tmr = Timer.create "rename" ~at_exit:report
+  let is_unsat_tmr = Timer.create "is_unsat" ~at_exit:report
+  let implies_tmr = Timer.create "implies" ~at_exit:report
+  let refutes_tmr = Timer.create "refutes" ~at_exit:report
+  let normalize_tmr = Timer.create "normalize" ~at_exit:report
   let apply_subst_tmr = Timer.create "apply_subst" ~at_exit:report
   let solve_for_vars_tmr = Timer.create "solve_for_vars" ~at_exit:report
-
-  let normalize r e =
-    wrap normalize_tmr (fun () -> normalize r e) (fun () -> Normalize (r, e))
+  let elim_tmr = Timer.create "elim" ~at_exit:report
 
   let add us e r =
     wrap add_tmr (fun () -> add us e r) (fun () -> Add (us, e, r))
 
   let union us r s =
-    wrap uniontmr (fun () -> union us r s) (fun () -> Union (us, r, s))
+    wrap union_tmr (fun () -> union us r s) (fun () -> Union (us, r, s))
+
+  let inter us r s =
+    wrap inter_tmr (fun () -> inter us r s) (fun () -> Inter (us, r, s))
 
   let interN us rs =
     wrap interN_tmr (fun () -> interN us rs) (fun () -> InterN (us, rs))
 
   let rename r s =
     wrap rename_tmr (fun () -> rename r s) (fun () -> Rename (r, s))
+
+  let is_unsat r =
+    wrap is_unsat_tmr (fun () -> is_unsat r) (fun () -> Is_unsat r)
+
+  let implies r f =
+    wrap implies_tmr (fun () -> implies r f) (fun () -> Implies (r, f))
+
+  let refutes r f =
+    wrap refutes_tmr (fun () -> refutes r f) (fun () -> Refutes (r, f))
+
+  let normalize r e =
+    wrap normalize_tmr (fun () -> normalize r e) (fun () -> Normalize (r, e))
 
   let apply_subst us s r =
     wrap apply_subst_tmr
@@ -1517,6 +1763,9 @@ module Context = struct
     wrap solve_for_vars_tmr
       (fun () -> solve_for_vars vss r)
       (fun () -> Solve_for_vars (vss, r))
+
+  let elim ks r =
+    wrap elim_tmr (fun () -> elim ks r) (fun () -> Elim (ks, r))
 end
 
 (*

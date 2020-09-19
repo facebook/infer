@@ -714,7 +714,16 @@ let nonnull_alternatives_table =
   mk_table method_descr_to_alternative
 
 
-let field_nullability = [("java.lang.Boolean.TRUE", o); ("java.lang.Boolean.FALSE", o)]
+let field_nullability =
+  [ ("java.lang.Boolean.TRUE", o)
+  ; ("java.lang.Boolean.FALSE", o)
+  ; ("java.nio.charset.StandardCharsets.ISO_8859_1", o)
+  ; ("java.nio.charset.StandardCharsets.US_ASCII", o)
+  ; ("java.nio.charset.StandardCharsets.UTF_16", o)
+  ; ("java.nio.charset.StandardCharsets.UTF_16BE", o)
+  ; ("java.nio.charset.StandardCharsets.UTF_16LE", o)
+  ; ("java.nio.charset.StandardCharsets.UTF_8", o) ]
+
 
 let field_nullability_table =
   let table = Hashtbl.create 1 in

@@ -17,6 +17,7 @@ public class RequiredProps {
   public MyComponent mMyComponent;
   public MyLithoComponent mMyLithoComponent;
   public ResPropComponent mResPropComponent;
+  public ResPropDoubleComponent mResPropDoubleComponent;
   public VarArgPropComponent mVarArgPropComponent;
 
   public Component buildWithAllOk() {
@@ -251,6 +252,18 @@ public class RequiredProps {
 
   public void buildPropResWithPxOk() {
     mResPropComponent.create().propPx(new Object()).build();
+  }
+
+  public void buildPropResWithPxDoubleOk() {
+    mResPropDoubleComponent.create().propPx(new Object()).propPx(0).build();
+  }
+
+  public void buildPropResWithPxDoubleAlsoOk() {
+    mResPropDoubleComponent.create().prop(new Object()).propPx(0).build();
+  }
+
+  public void buildPropResWithPxDoubleBad() {
+    mResPropDoubleComponent.create().prop(new Object()).build();
   }
 
   public void buildPropResWithSpOk() {

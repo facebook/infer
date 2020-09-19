@@ -184,3 +184,13 @@ void explicit_check_for_null_ok(Handle h) { return h->foo(); }
 X* checks_for_null() { return getX(true) == nullptr ? nullptr : new X(); }
 
 void cannot_be_null_ok() { return checks_for_null()->foo(); }
+
+void free_nullptr_ok() {
+  int* p = nullptr;
+  free(p);
+}
+
+void delete_nullptr_ok() {
+  int* p = nullptr;
+  delete p;
+}

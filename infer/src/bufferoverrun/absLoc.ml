@@ -231,6 +231,20 @@ module Loc = struct
         false
 
 
+  let is_objc_collection_internal_array = function
+    | BoField.Field {fn} ->
+        Fieldname.equal fn BoField.objc_collection_internal_array
+    | _ ->
+        false
+
+
+  let is_objc_iterator_offset = function
+    | BoField.Field {fn} ->
+        Fieldname.equal fn BoField.objc_iterator_offset
+    | _ ->
+        false
+
+
   let is_frontend_tmp = function
     | BoField.Prim (Var x) ->
         not (Var.appears_in_source_code x)
@@ -278,6 +292,10 @@ module Loc = struct
         equal loc l
     | _ ->
         false
+
+
+  let get_parent_field field_loc =
+    match field_loc with BoField.(Field {prefix= l} | StarField {prefix= l}) -> l | _ -> field_loc
 
 
   let get_literal_string = function
@@ -350,7 +368,11 @@ module Loc = struct
         false
     | BoField.Prim (Allocsite allocsite) ->
         Allocsite.represents_multiple_values allocsite
-    | BoField.Field _ as x when is_c_strlen x || is_java_collection_internal_array x ->
+    | BoField.Field _ as x
+      when is_c_strlen x
+           || is_java_collection_internal_array x
+           || is_objc_iterator_offset x
+           || is_objc_collection_internal_array x ->
         false
     | BoField.Field {prefix= l} ->
         represents_multiple_values l
@@ -531,6 +553,17 @@ module PowLoc = struct
         Loc.is_unknown l
     | Known ploc ->
         LocSet.mem l ploc
+
+
+  let get_parent_field ploc =
+    match ploc with
+    | Bottom ->
+        (* Return the unknown location to avoid unintended unreachable nodes *)
+        Unknown
+    | Unknown ->
+        Unknown
+    | Known ploc ->
+        mk_known (LocSet.fold (fun l -> LocSet.add (Loc.get_parent_field l)) ploc LocSet.empty)
 
 
   let append_field ploc ~fn =

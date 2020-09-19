@@ -5,7 +5,7 @@
 
 TESTS_DIR = ../../../..
 
-INFER_OPTIONS = --seconds-per-iteration 20 --symops-per-iteration 60000 --topl-properties servlet.topl --topl-biabd-only
+INFER_OPTIONS = --pulse-max-disjuncts 100 --topl-properties servlet.topl --topl-pulse-only
 INFERPRINT_OPTIONS = --issues-tests
 TEST_CLASSPATH = javax.servlet-api-4.0.1.jar
 

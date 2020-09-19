@@ -126,6 +126,12 @@ module Bound : sig
 
   val simplify_min_one : t -> t
 
+  val simplify_minimum_length : t -> t
+  (** Simplifies c1 +/- min(c2, length) to c1 +- min(0,c2) *)
+
+  val remove_positive_length_symbol : t -> t
+  (** Removes positive symbols that are coming from length paths *)
+
   val get_same_one_symbol : t -> t -> Symb.SymbolPath.t option
   (** It returns a symbol [s] when the two bounds are all linear expressions of the symbol [1⋅s]. *)
 
@@ -145,7 +151,13 @@ module BoundTrace : sig
 
   val make_err_trace : depth:int -> t -> Errlog.loc_trace
 
+  val call : callee_pname:Procname.t -> location:Location.t -> t -> t
+
   val of_loop : Location.t -> t
+
+  val of_modeled_function : string -> Location.t -> t
+
+  val of_arc_from_non_arc : string -> Location.t -> t
 end
 
 type ('c, 's, 't) valclass = Constant of 'c | Symbolic of 's | ValTop of 't

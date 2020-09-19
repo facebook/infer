@@ -139,7 +139,6 @@ module type NameCommon = sig
        ('context, 'f_in, 'f_out, 'arg_payload) name_matcher
     -> 'f_in
     -> ('context, 'f_out, 'arg_payload) matcher
-
   (** After a name, accepts ALL template arguments, accepts ALL path tails (names, templates),
       accepts ALL function arguments, binds the function *)
 end
@@ -323,6 +322,13 @@ module Call : sig
     -> ('context, 'f_out, 'arg_payload) matcher
   (** After a name, accepts ALL template arguments, accepts ALL path tails (names, templates),
       accepts ALL function arguments, binds the function *)
+
+  val ( &::.*++> ) :
+       ('context, 'f_in, 'arg_payload FuncArg.t list -> 'f_out, 'arg_payload) name_matcher
+    -> 'f_in
+    -> ('context, 'f_out, 'arg_payload) matcher
+  (** After a name, accepts ALL template arguments, accepts ALL path tails (names, templates),
+      captures ALL function arguments as a list, binds the function *)
 
   val ( $!--> ) :
        ('context, 'f_in, 'f_proc_out, 'f_out, 'arg_payload) args_matcher

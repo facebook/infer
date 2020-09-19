@@ -663,7 +663,6 @@ let of_post pdesc astate =
   let astate = filter_for_summary astate in
   let astate, live_addresses, _ = discard_unreachable astate in
   let astate =
-    (* this also forces the lazy path condition for safe serialization *)
     {astate with path_condition= PathCondition.simplify ~keep:live_addresses astate.path_condition}
   in
   invalidate_locals pdesc astate

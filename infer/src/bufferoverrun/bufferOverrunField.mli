@@ -50,6 +50,9 @@ val is_java_collection_internal_array : Fieldname.t -> bool
 val objc_collection_internal_array : Fieldname.t
 (** Field for ObjC's collection's elements *)
 
+val objc_iterator_offset : Fieldname.t
+(** Field for ObjC's nscollection's iterator offset *)
+
 (** {2 Field domain constructor} *)
 
 type field_typ = Typ.t option

@@ -1,4 +1,0 @@
-INFINITE_EXECUTION_TIME, no_bucket, src/DiffExample.java, DiffExample.f1(int):void, 0, [Unbounded loop,Loop]
-EXECUTION_TIME_COMPLEXITY_INCREASE, no_bucket, src/DiffExample.java, DiffExample.f4(int):int, 0, [Updated Cost of f4 is 6 + 5 ⋅ k (degree is 1),{k},Loop]
-EXECUTION_TIME_COMPLEXITY_INCREASE, no_bucket, src/DiffExample.java, DiffExample.f5(java.util.ArrayList):void, 0, [Updated Cost of f5 is 2 + list.length × log(list.length) (degree is 1 + 1⋅log),{list.length},Modeled call to Collections.sort,{list.length},Modeled call to Collections.sort]
-EXECUTION_TIME_COMPLEXITY_INCREASE_UI_THREAD, no_bucket, src/DiffExampleUIThread.java, DiffExampleUIThread.f2(int):void, 0, [Updated Cost of f2 is 5 + 5 ⋅ x (degree is 1),{x},Loop]

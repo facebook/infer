@@ -50,6 +50,7 @@ module ProcName = struct
       ; -"__variable_initialization" <>--> PurityDomain.pure
       ; +(fun _ name -> BuiltinDecl.is_declared (Procname.from_string_c_fun name))
         <>--> PurityDomain.impure_global
+      ; +PatternMatch.ObjectiveC.implements "NSEnumerator" &:: "nextObject" <>--> modifies_first
       ; +PatternMatch.Java.implements_android "text.TextUtils" &:: "isEmpty" <>--> PurityDomain.pure
       ; +PatternMatch.Java.implements_android "view.ViewGroup"
         &:: "getChildAt" <>--> PurityDomain.pure

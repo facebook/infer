@@ -75,16 +75,15 @@ let fold_terms_seg {loc; bas; len; siz; seq} ~init ~f =
 let fold_vars_seg seg ~init ~f =
   fold_terms_seg seg ~init ~f:(fun init -> Term.fold_vars ~f ~init)
 
-let fold_vars_stem ?ignore_ctx {us= _; xs= _; ctx; pure; heap; djns= _}
-    ~init ~f =
-  List.fold ~init heap ~f:(fun init -> fold_vars_seg ~f ~init)
-  |> fun init ->
-  Term.fold_vars ~f ~init (Formula.inject pure)
-  |> fun init ->
-  if Option.is_some ignore_ctx then init else Context.fold_vars ~f ~init ctx
+let fold_vars_stem ?ignore_ctx ?ignore_pure
+    {us= _; xs= _; ctx; pure; heap; djns= _} ~init ~f =
+  let unless flag f init = if Option.is_some flag then init else f ~init in
+  List.fold ~f:(fun init -> fold_vars_seg ~f ~init) heap ~init
+  |> unless ignore_pure (Term.fold_vars ~f (Formula.inject pure))
+  |> unless ignore_ctx (Context.fold_vars ~f ctx)
 
-let fold_vars ?ignore_ctx fold_vars q ~init ~f =
-  fold_vars_stem ?ignore_ctx ~init ~f q
+let fold_vars ?ignore_ctx ?ignore_pure fold_vars q ~init ~f =
+  fold_vars_stem ?ignore_ctx ?ignore_pure ~init ~f q
   |> fun init ->
   List.fold ~init q.djns ~f:(fun init -> List.fold ~init ~f:fold_vars)
 
@@ -266,10 +265,10 @@ let pp_raw fs q =
 
 let fv_seg seg = fold_vars_seg seg ~f:Var.Set.add ~init:Var.Set.empty
 
-let fv ?ignore_ctx q =
+let fv ?ignore_ctx ?ignore_pure q =
   let rec fv_union init q =
     Var.Set.diff
-      (fold_vars ?ignore_ctx fv_union q ~init ~f:Var.Set.add)
+      (fold_vars ?ignore_ctx ?ignore_pure fv_union q ~init ~f:Var.Set.add)
       q.xs
   in
   fv_union Var.Set.empty q
@@ -523,12 +522,11 @@ let orN = function
 let pure (p : Formula.t) =
   [%Trace.call fun {pf} -> pf "%a" Formula.pp p]
   ;
-  List.fold (Formula.disjuncts p) ~init:(false_ Var.Set.empty)
-    ~f:(fun q p ->
-      let us = Formula.fv p in
-      let xs, ctx = Context.add us p Context.empty in
-      if Context.is_unsat ctx then false_ us
-      else or_ q (exists_fresh xs {emp with us; ctx; pure= p}) )
+  Iter.fold (Context.dnf p) ~init:(false_ Var.Set.empty)
+    ~f:(fun q (xs, pure, ctx) ->
+      let us = Formula.fv pure in
+      if Context.is_unsat ctx then extend_us us q
+      else or_ q (exists_fresh xs {emp with us; ctx; pure}) )
   |>
   [%Trace.retn fun {pf} q ->
     pf "%a" pp q ;
@@ -570,8 +568,6 @@ let seg pt =
 
 (** Update *)
 
-let with_pure pure q = {q with pure} |> check invariant
-
 let rem_seg seg q =
   {q with heap= List.remove_exn q.heap seg} |> check invariant
 
@@ -608,17 +604,17 @@ let fold_dnf ~conj ~disj sjn (xs, conjuncts) disjuncts =
     let djns = sjn.djns in
     let sjn = {sjn with djns= []} in
     split_case
-      (List.rev_append djns pending_splits)
+      (Iter.append (Iter.of_list djns) pending_splits)
       (xs, conj sjn conjuncts)
       disjuncts
   and split_case pending_splits (xs, conjuncts) disjuncts =
-    match pending_splits with
-    | split :: pending_splits ->
+    match Iter.pop pending_splits with
+    | Some (split, pending_splits) ->
         List.fold split ~init:disjuncts ~f:(fun disjuncts sjn ->
             add_disjunct pending_splits sjn (xs, conjuncts) disjuncts )
-    | [] -> disj (xs, conjuncts) disjuncts
+    | None -> disj (xs, conjuncts) disjuncts
   in
-  add_disjunct [] sjn (xs, conjuncts) disjuncts
+  add_disjunct Iter.empty sjn (xs, conjuncts) disjuncts
 
 let dnf q =
   [%Trace.call fun {pf} -> pf "%a" pp q]

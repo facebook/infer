@@ -77,3 +77,69 @@ int struct_capture() {
   auto f = [x, y]() { return x.f + y.f; };
   return f();
 }
+
+int ref_capture_by_value() {
+  int x = 0;
+  int& xref = x;
+  auto f = [xref]() { return xref + 1; };
+  int ret = f();
+  return ret;
+}
+
+int ref_init_capture_by_value() {
+  int x = 0;
+  int& xref = x;
+  auto f = [xlambda = xref]() { return xlambda + 1; };
+  int ret = f();
+  return ret;
+}
+
+int ref_capture_by_ref() {
+  int x = 0;
+  int& xref = x;
+  [&xref]() { xref++; }();
+  return xref;
+}
+
+int ref_init_capture_by_ref() {
+  int x = 0;
+  int& xref = x;
+  [& xlambda = xref]() { xlambda++; }();
+  return xref;
+}
+
+int struct_capture_by_value() {
+  SomeStruct x;
+  SomeStruct& xref = x;
+  auto f = [x, xref]() { return x.f + xref.f; };
+  return f();
+}
+
+int struct_capture_by_ref() {
+  SomeStruct x;
+  SomeStruct& xref = x;
+  auto f = [&x, &xref]() {
+    xref.f++;
+    return x.f;
+  };
+  return f();
+}
+
+int struct_init_capture_by_value() {
+  SomeStruct x;
+  SomeStruct& xref = x;
+  auto f = [xlambda = x, xreflambda = xref]() {
+    return xlambda.f + xreflambda.f;
+  };
+  return f();
+}
+
+int struct_init_capture_by_ref() {
+  SomeStruct x;
+  SomeStruct& xref = x;
+  auto f = [& xlambda = x, &xreflambda = xref]() {
+    xreflambda.f++;
+    return xlambda.f;
+  };
+  return f();
+}

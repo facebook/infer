@@ -13,7 +13,7 @@ module BasicCost = struct
 
   (* NOTE: Increment the version number if you changed the [t] type.  This is for avoiding
      demarshalling failure of cost analysis results in running infer-reportdiff. *)
-  let version = 7
+  let version = 8
 end
 
 module BasicCostWithReason = struct
@@ -25,7 +25,9 @@ module BasicCostWithReason = struct
 
   let zero = {cost= BasicCost.zero; top_pname_opt= None}
 
-  let one = {cost= BasicCost.one; top_pname_opt= None}
+  let one ?autoreleasepool_trace () =
+    {cost= BasicCost.one ?autoreleasepool_trace (); top_pname_opt= None}
+
 
   let subst callee_pname location record eval_sym =
     {record with cost= BasicCost.subst callee_pname location record.cost eval_sym}
@@ -42,16 +44,17 @@ module BasicCostWithReason = struct
 
   let mult_unreachable cost record = {record with cost= BasicCost.mult_unreachable cost record.cost}
 
-  let polynomial_traces {cost} = BasicCost.polynomial_traces cost
+  let polynomial_traces ~is_autoreleasepool_trace {cost} =
+    BasicCost.polynomial_traces ~is_autoreleasepool_trace cost
+
 
   let pp format {cost} = BasicCost.pp format cost
 
   let pp_hum = pp
 end
 
-(** Module to simulate a record
-    [{OperationCost:BasicCost.t; AllocationCost: BasicCost.t; IOCost:BasicCost.t}] with a map
-    [{OperationCost, AllocationCost, IOCost} -> BasicCost.t] *)
+(** Module to simulate a record [{OperationCost:BasicCost.t; AllocationCost: BasicCost.t}] with a
+    map [{OperationCost, AllocationCost} -> BasicCost.t] *)
 module VariantCostMap = struct
   include PrettyPrintable.PPMonoMapOfPPMap (CostIssues.CostKindMap) (BasicCostWithReason)
 
@@ -69,7 +72,8 @@ module VariantCostMap = struct
       record
 
 
-  let increment kind record = increase_by kind BasicCostWithReason.one record
+  let increment ?autoreleasepool_trace kind record =
+    increase_by kind (BasicCostWithReason.one ?autoreleasepool_trace ()) record
 end
 
 type t = VariantCostMap.t
@@ -88,6 +92,10 @@ let add_top_pname_opt kind cost_record top_pname_opt =
 
 let get_operation_cost cost_record = get_cost_kind CostKind.OperationCost cost_record
 
+let set_autoreleasepool_size_zero cost_record =
+  VariantCostMap.remove CostKind.AutoreleasepoolSize cost_record
+
+
 let map ~f cost_record = VariantCostMap.map f cost_record
 
 let zero_record = VariantCostMap.empty
@@ -95,15 +103,30 @@ let zero_record = VariantCostMap.empty
 (** If nb_exec is unreachable, we map to unreachable, not 0 *)
 let mult_by cost_record ~nb_exec = map cost_record ~f:(BasicCostWithReason.mult_unreachable nb_exec)
 
+(** "zero+unreachable" is defined as unreachable in the operation cost, but as zero in the other
+    costs. This is because "zero+unreachable" is a bit weird in the operation cost: it means that no
+    statment is analyzed yet, but at the same time the a program point is analyzed as unreachable.
+    For debugging purpose, we define it to return the more specific unreachable cost. *)
 let plus cost_record1 cost_record2 =
-  VariantCostMap.union
-    (fun _kind cost1 cost2 -> Some (BasicCostWithReason.plus cost1 cost2))
+  VariantCostMap.merge
+    (fun kind cost1 cost2 ->
+      match (kind, cost1, cost2) with
+      | OperationCost, Some cost, None | OperationCost, None, Some cost ->
+          Some cost
+      | (OperationCost | AllocationCost | AutoreleasepoolSize), _, _ ->
+          let cost1 = Option.value cost1 ~default:BasicCostWithReason.zero in
+          let cost2 = Option.value cost2 ~default:BasicCostWithReason.zero in
+          Some (BasicCostWithReason.plus cost1 cost2) )
     cost_record1 cost_record2
 
 
 let unit_cost_atomic_operation = VariantCostMap.increment CostKind.OperationCost zero_record
 
 let unit_cost_allocation = VariantCostMap.increment CostKind.AllocationCost zero_record
+
+let unit_cost_autoreleasepool_size ~autoreleasepool_trace =
+  VariantCostMap.increment ~autoreleasepool_trace CostKind.AutoreleasepoolSize zero_record
+
 
 let of_operation_cost operation_cost =
   VariantCostMap.increase_by CostKind.OperationCost

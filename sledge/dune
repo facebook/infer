@@ -38,7 +38,7 @@
  (library
   (name llair)
   (public_name sledge.llair)
-  (libraries nonstdlib)
+  (libraries nonstdlib fpath)
   (flags
    (:standard -open NS))
   (preprocess
@@ -62,7 +62,30 @@
  (library
   (name sledge)
   (public_name sledge)
-  (libraries nonstdlib llair ses)
+  (libraries mtime mtime.clock.os nonstdlib llair ses)
+  (flags
+   (:standard -open NS))
+  (preprocess
+   (pps ppx_sledge ppx_trace))
+  (inline_tests)))
+
+(subdir
+ report
+ (executable
+  (name sledge_report)
+  (public_name sledge-report)
+  (package sledge)
+  (libraries sledge)
+  (flags
+   (:standard -open NS -open Sledge))
+  (preprocess
+   (pps ppx_sledge ppx_trace))))
+
+(subdir
+ src/test
+ (library
+  (name test)
+  (libraries sledge)
   (flags
    (:standard -open NS))
   (preprocess
@@ -91,14 +114,15 @@
   (public_name sledge.model)))
 
 (subdir
- bin
+ cli
  (executable
   (name sledge_cli)
   (public_name sledge)
   (package sledge)
   (libraries apron apron.boxMPQ ctypes ctypes.foreign dune-build-info llvm
     llvm.irreader llvm.analysis llvm.scalar_opts llvm.target llvm.ipo
-    llvm.linker shexp.process yojson trace nonstdlib sledge model)
+    llvm.linker shexp.process yojson trace nonstdlib sledge model
+    smtlib-utils)
   (flags
    (:standard -w -58 -open NS -open Sledge -open Model))
   (preprocess
@@ -108,10 +132,10 @@
 
 (rule
  (targets sledge-help.txt)
- (deps bin/sledge_cli.ml bin/sledge_buck.ml tools/gen_help.sh
-   bin/sledge_cli.exe)
+ (deps cli/sledge_cli.ml cli/sledge_buck.ml tools/gen_help.sh
+   cli/sledge_cli.exe)
  (action
   (with-stdout-to
    sledge-help.txt
    (run tools/gen_help.sh)))
- (mode promote-until-clean))
+ (mode promote))

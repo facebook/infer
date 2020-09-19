@@ -186,6 +186,8 @@ let is_neq_to_zero = function
       false
 
 
+let as_int = function Between (Int l, Int u) when IntLit.eq l u -> IntLit.to_int l | _ -> None
+
 let has_empty_intersection a1 a2 =
   match (a1, a2) with
   | Outside _, Outside _ ->

@@ -19,10 +19,9 @@ let pp fs {reg} =
   pf "@%s%a" name Reg.pp_demangled reg
 
 let pp_defn fs {reg; init; loc} =
-  Format.fprintf fs "@[<2>%a %a%a%a@]" Typ.pp (Reg.typ reg) Reg.pp reg
-    Loc.pp loc
+  Format.fprintf fs "@[<2>%a %a%a %a@]" Typ.pp (Reg.typ reg) Reg.pp reg
     (Option.pp "@ = @[%a@]" Exp.pp)
-    (Option.map ~f:fst init)
+    (Option.map ~f:fst init) Loc.pp loc
 
 let invariant g =
   let@ () = Invariant.invariant [%here] g [%sexp_of: t] in

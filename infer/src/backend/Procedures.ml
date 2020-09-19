@@ -65,7 +65,7 @@ let pp_all ~filter ~proc_name:proc_name_cond ~attr_kind ~source_file:source_file
       pp_if ?new_line condition title pp fmt (Sqlite3.column stmt column |> deserialize)
   in
   let pp_row stmt fmt source_file proc_name =
-    let[@warning "-8"] (Sqlite3.Data.TEXT proc_name_hum) = Sqlite3.column stmt 1 in
+    let[@warning "-8"] (Sqlite3.Data.TEXT proc_uid) = Sqlite3.column stmt 1 in
     let dump_cfg fmt cfg_opt =
       match cfg_opt with
       | None ->
@@ -74,7 +74,7 @@ let pp_all ~filter ~proc_name:proc_name_cond ~attr_kind ~source_file:source_file
           let path = DotCfg.emit_proc_desc source_file cfg in
           F.fprintf fmt "'%s'" path
     in
-    Format.fprintf fmt "@[<v2>%s@,%a%a%a%a%a@]@\n" proc_name_hum
+    Format.fprintf fmt "@[<v2>%s@,%a%a%a%a%a@]@\n" proc_uid
       (pp_if source_file_cond "source_file" SourceFile.pp)
       source_file
       (pp_if proc_name_cond "proc_name" Procname.pp)
@@ -92,7 +92,16 @@ let pp_all ~filter ~proc_name:proc_name_cond ~attr_kind ~source_file:source_file
   (* we could also register this statement but it's typically used only once per run so just prepare
      it inside the function *)
   Sqlite3.prepare db
-    "SELECT proc_name, proc_name_hum, attr_kind, source_file, proc_attributes, cfg FROM procedures"
+    {|
+       SELECT
+         proc_name,
+         proc_uid,
+         attr_kind,
+         source_file,
+         proc_attributes,
+         cfg
+       FROM procedures ORDER BY proc_uid
+    |}
   |> Container.iter ~fold:(SqliteUtils.result_fold_rows db ~log:"print all procedures")
        ~f:(fun stmt ->
          let proc_name = Sqlite3.column stmt 0 |> Procname.SQLite.deserialize in

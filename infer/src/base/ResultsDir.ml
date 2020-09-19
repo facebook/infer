@@ -80,24 +80,10 @@ module RunState = struct
     store ()
 end
 
-let results_dir_dir_markers = [get_path Specs]
-
 let is_results_dir ~check_correct_version () =
-  let not_found = ref "" in
   let capture_db_path = get_path CaptureDB in
-  let has_all_markers =
-    List.for_all results_dir_dir_markers ~f:(fun d ->
-        Sys.is_directory d = `Yes
-        ||
-        ( not_found := d ^ "/" ;
-          false ) )
-    && ( (not check_correct_version)
-       || Sys.is_file capture_db_path = `Yes
-       ||
-       ( not_found := capture_db_path ;
-         false ) )
-  in
-  Result.ok_if_true has_all_markers ~error:(Printf.sprintf "'%s' not found" !not_found)
+  let has_all_markers = (not check_correct_version) || Sys.is_file capture_db_path = `Yes in
+  Result.ok_if_true has_all_markers ~error:(Printf.sprintf "'%s' not found" capture_db_path)
 
 
 let non_empty_directory_exists results_dir =
@@ -137,7 +123,6 @@ let create_results_dir () =
              L.die UserError "ERROR: %s@\nPlease remove '%s' and try again" error Config.results_dir ) ;
   Unix.mkdir_p Config.results_dir ;
   Unix.mkdir_p (get_path Temporary) ;
-  Unix.mkdir_p (get_path Specs) ;
   prepare_logging_and_db () ;
   ()
 

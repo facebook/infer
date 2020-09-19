@@ -174,11 +174,13 @@ let store_to_filename tenv tenv_filename =
 let store_global tenv =
   (* update in-memory global tenv for later uses by this process, e.g. in single-core mode the
      frontend and backend run in the same process *)
-  L.debug Capture Quiet "Tenv.store: global tenv has size %d bytes.@."
-    (Obj.(reachable_words (repr tenv)) * (Sys.word_size / 8)) ;
+  if Config.debug_level_capture > 0 then
+    L.debug Capture Quiet "Tenv.store: global tenv has size %d bytes.@."
+      (Obj.(reachable_words (repr tenv)) * (Sys.word_size / 8)) ;
   let tenv = TypenameHashNormalizer.normalize tenv in
-  L.debug Capture Quiet "Tenv.store: canonicalized tenv has size %d bytes.@."
-    (Obj.(reachable_words (repr tenv)) * (Sys.word_size / 8)) ;
+  if Config.debug_level_capture > 0 then
+    L.debug Capture Quiet "Tenv.store: canonicalized tenv has size %d bytes.@."
+      (Obj.(reachable_words (repr tenv)) * (Sys.word_size / 8)) ;
   global_tenv := Some tenv ;
   store_to_filename tenv global_tenv_path
 

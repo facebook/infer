@@ -179,7 +179,7 @@ val call :
 val unknown_call :
      Location.t
   -> CallEvent.t
-  -> ret:Ident.t * 'a
+  -> ret:Ident.t * Typ.t
   -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
   -> formals_opt:(Pvar.t * Typ.t) list option
   -> t

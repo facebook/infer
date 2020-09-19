@@ -181,7 +181,6 @@ and Formula : sig
     init:'a -> t -> f:('a -> Var.t -> 'a * Var.t) -> 'a * t
 
   val rename : Var.Subst.t -> t -> t
-  val disjuncts : t -> t list
 end
 
 (** Sets of assumptions, interpreted as conjunction, plus reasoning about
@@ -205,8 +204,15 @@ module Context : sig
   val union : Var.Set.t -> t -> t -> Var.Set.t * t
   (** Union (that is, conjoin) two contexts of assumptions. *)
 
-  val interN : Var.Set.t -> t list -> Var.Set.t * t
+  val inter : Var.Set.t -> t -> t -> Var.Set.t * t
   (** Intersect (that is, disjoin) contexts of assumptions. *)
+
+  val interN : Var.Set.t -> t list -> Var.Set.t * t
+  (** Intersect contexts of assumptions. Possibly weaker than logical
+      disjunction. *)
+
+  val dnf : Formula.t -> (Var.Set.t * Formula.t * t) iter
+  (** Disjunctive-normal form expansion. *)
 
   val rename : t -> Var.Subst.t -> t
   (** Apply a renaming substitution to the context. *)
@@ -227,14 +233,14 @@ module Context : sig
   (** Holds only if a formula is inconsistent with a context of assumptions,
       that is, conjoining the formula to the assumptions is unsatisfiable. *)
 
-  val class_of : t -> Term.t -> Term.t list
-  (** Equivalence class of [e]: all the terms [f] in the context such that
-      [e = f] is implied by the assumptions. *)
-
   val normalize : t -> Term.t -> Term.t
   (** Normalize a term [e] to [e'] such that [e = e'] is implied by the
       assumptions, where [e'] and its subterms are expressed in terms of the
       canonical representatives of each equivalence class. *)
+
+  val class_of : t -> Term.t -> Term.t list
+  (** Equivalence class of [e]: all the terms [f] in the context such that
+      [e = f] is implied by the assumptions. *)
 
   val fold_vars : init:'a -> t -> f:('a -> Var.t -> 'a) -> 'a
   (** Enumerate the variables occurring in the terms of the context. *)

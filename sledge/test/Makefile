@@ -7,18 +7,23 @@
 CLANG_ARGS?=-O0
 
 # executable to test
-SLEDGE_EXE=$(CURDIR)/../_build/_install/debug/bin/sledge
+SLEDGE_DBG=$(CURDIR)/../_build/debug/cli/sledge_cli.exe
+SLEDGE_OPT=$(CURDIR)/../_build/release/cli/sledge_cli.exe
 
 # additional arguments to pass to sledge
 SLEDGE_ARGS?=
 
 # limits for each test run
-TIMEOUT?=30
+TIMEOUT?=90
 MEMOUT?=4096
 
-SLEDGE=./wrap.sh $(TIMEOUT) $(MEMOUT) $(SLEDGE_EXE)
+sledge_dbg=./wrap.sh $(TIMEOUT) $(MEMOUT) $(SLEDGE_DBG)
+sledge_opt=./wrap.sh $(TIMEOUT) $(MEMOUT) $(SLEDGE_OPT)
 
-DIFF?=diff
+sledge_report=$(CURDIR)/../_build/debug/report/sledge_report.exe
+
+# which utilities to use
+diff?=patdiff
 
 # configure the non-host llvm and clang
 export PATH := $(CURDIR)/../.llvm_install/sledge/bin:$(PATH)
@@ -28,130 +33,220 @@ export LANG := C
 
 default: test
 
-# all analyze tests
-translate:
-	@find -L llvm -name '*.ll' -or -name '*.bc' \
-	 | parallel --bar $(SLEDGE) llvm translate -no-models -no-internalize $(SLEDGE_ARGS)
-
-_translate-report-raw:
-	@find -L llvm -name '*.out' \
-	 | xargs grep "RESULT:" \
-	 | sed 's/\.out:/:	/' | sort | sort -s -t':' -k 3,4
-
-# report all results
-translate-report-full:
-	@$(MAKE) --silent _translate-report-raw | column -ts$$'\t'
-
-# report all errors
-translate-report-errors:
-	@$(MAKE) --silent _translate-report-raw \
-	 | grep -E -v "RESULT: (Success|Invalid input)" \
-	 | column -ts$$'\t'
-
-# report errors
-translate-report:
-	@$(MAKE) --silent _translate-report-raw \
-	 | grep -E -v "RESULT: Unimplemented" \
-	 | grep -E -v "RESULT: (Success|Invalid input)" \
-	 | column -ts$$'\t'
-
-Buckets:=\
-  "Invalid input"\
-  "Success"\
-  "Unimplemented: ConstantAggregateZero of size 0"\
-  "Unimplemented: call null"\
-  "Unimplemented: coroutines"\
-  "Unimplemented: ifuncs"\
-  "Unimplemented: inline asm"\
-  "Unimplemented: landingpad of type"\
-  "Unimplemented: non-integral pointer types"\
-  "Unimplemented: opcode kind in call instruction"\
-  "Unimplemented: operand kind in call instruction"\
-  "Unimplemented: size_of"\
-  "Unimplemented: statepoints"\
-  "Unimplemented: unsized non-opaque aggregate types"\
-  "Unimplemented: vector operations"\
-  "Unimplemented: windows exception handling"\
-  "segmentation violation"
-
-report-summary:
-	for b in $(Buckets); do (printf "$$b\t"; grep -E "$$b" report.expected | wc -l); done | sort -t$$'\t' -k 2 -n -r | column -ts$$'\t'
-
 # compile c to llvm bitcode
 %.bc : %.c
-	@(cd $(dir $*) && clang -g -c -emit-llvm $(CLANG_ARGS) $(notdir $*).c -o $(notdir $*).bc)
+	@(cd $(dir $*) && clang -g -c -emit-llvm -include $(CURDIR)/../model/llair_intrinsics.h -Wno-main-return-type $(CLANG_ARGS) $(notdir $*).c -o $(notdir $*).bc)
 
 # compile c++ to llvm bitcode
 %.bc : %.cpp
 	@(cd $(dir $*) && clang++ -g -c -emit-llvm $(CLANG_ARGS) $(notdir $*).cpp -o $(notdir $*).bc)
 
 %.llair : %.bc
-	$(SLEDGE_EXE) llvm translate $< -llair-output $@
+	$(SLEDGE_DBG) llvm translate $< -llair-output $@
 
 %.llair.txt : %.llair
-	$(SLEDGE_EXE) disassemble $< -llair-txt-output $@
+	$(SLEDGE_DBG) disassemble $< -llair-txt-output $@
 
-# code to test analyze
-AnalyzeCs:=$(shell find * -not -path 'llvm/*' -name '*.c')
-AnalyzeCPPs:=$(shell find * -not -path 'llvm/*' -name '*.cpp')
+# code to test sledge translate
+TranslateCs:=$(shell find -L {,local/}translate -name '*.c' 2>/dev/null)
+TranslateCPPs:=$(shell find -L {,local/}translate -name '*.cpp' 2>/dev/null)
+TranslateGenBCs:=$(patsubst %.c,%.bc,$(TranslateCs)) $(patsubst %.cpp,%.bc,$(TranslateCPPs))
+TranslateBCs:=$(TranslateGenBCs) $(shell find -L extra/translate -name '*.bc' 2>/dev/null)
+TranslateLLs:=$(shell find -L {,local/}translate -name '*.ll' 2>/dev/null)
+TranslateTests:=$(TranslateBCs) $(TranslateLLs)
 
-AnalyzeBCs:=$(patsubst %.c,%.bc,$(AnalyzeCs)) $(patsubst %.cpp,%.bc,$(AnalyzeCPPs))
-AnalyzeLLs:=$(shell find * -not -path 'llvm/*' -name '*.ll')
-
+# code to test sledge analyze
+AnalyzeCs:=$(shell find -L {,local/}analyze -name '*.c' 2>/dev/null)
+AnalyzeCPPs:=$(shell find -L {,local/}analyze -name '*.cpp' 2>/dev/null)
+AnalyzeGenBCs:=$(patsubst %.c,%.bc,$(AnalyzeCs)) $(patsubst %.cpp,%.bc,$(AnalyzeCPPs))
+AnalyzeBCs:=$(AnalyzeGenBCs) $(shell find -L extra/analyze -name '*.bc' 2>/dev/null)
+AnalyzeLLs:=$(shell find -L {,local/}analyze -name '*.ll' 2>/dev/null)
 AnalyzeTests:=$(AnalyzeBCs) $(AnalyzeLLs)
 
+GeneratedBCs:=$(TranslateGenBCs) $(AnalyzeGenBCs)
+
 # compile all c/c++ to bc
-compile: $(AnalyzeBCs)
+compile: $(GeneratedBCs)
+	@if [ -d "extra" ]; then \
+	   $(MAKE) sledge=$(SLEDGE_DBG) -C extra compile; \
+	 fi
 
-# all analyze tests
+#
+# translation (frontend) tests
+#
+
+# run sledge llvm translate tests
+.PHONY: translate
+translate: compile
+	-@parallel --bar $(sledge_dbg) llvm disassemble -no-models -no-internalize $(SLEDGE_ARGS) ::: $(TranslateTests)
+
+.PHONY: translate.sexp
+translate.sexp:
+	@find -L {,local/,extra/}translate -not -path 'baseline/*' -name '*.sexp' 2>/dev/null \
+	 | xargs cat > translate.sexp
+
+baseline/translate.sexp: translate.sexp
+	@cp translate.sexp $@
+
+translate.html: translate.sexp
+	@$(sledge_report) html -baseline baseline/translate.sexp translate.sexp -output $@
+
+translate-status: translate.sexp
+	@$(sledge_report) status -baseline baseline/translate.sexp translate.sexp | column -ts$$'\t'
+
+#
+# analyze (backend) tests
+#
+
+# run analyze tests
+.PHONY: analyze
 analyze: compile
-	@parallel --bar $(SLEDGE) llvm analyze $(SLEDGE_ARGS) ::: $(AnalyzeTests)
+	-@parallel --bar $(sledge_dbg) llvm analyze -bound 5 -trace Report+Control $(SLEDGE_ARGS) ::: $(AnalyzeTests)
 
-# run all tests and generate code coverage information
-BISECT_DIR=$(CURDIR)/../_coverage/out
-coverage:
-	@cd ..; dune build _build/_install/coverage/bin/sledge
-	@mkdir -p $(BISECT_DIR)
-	@-$(MAKE) BISECT_FILE=$(BISECT_DIR)/bisect SLEDGE_EXE=$(CURDIR)/../_build/_install/coverage/bin/sledge test -k
-	@find $(BISECT_DIR) -type f | xargs bisect-ppx-report -I ../_build/_install/coverage/ -text ../_coverage/summary.txt -html ../_coverage/
-	@echo "open ../_coverage/index.html"
+parallel_sledge_opt=parallel --shuf --bar $(sledge_opt) llvm analyze -append-report -bound 5 $(SLEDGE_ARGS) :::
 
-_analyze-report-raw:
-	@find * -not -path 'llvm/*' -name '*.out' \
-	 | xargs grep "RESULT:" \
-	 | sed 's/\.out:/:	/' | sort | sort -s -t':' -k 3,4
+analyze-perf1: compile
+	@$(parallel_sledge_opt) $(AnalyzeTests)
 
-# report all results
-analyze-report-full:
-	@$(MAKE) --silent _analyze-report-raw | column -ts$$'\t'
+analyze-perf3: compile
+	@$(parallel_sledge_opt) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests)
 
-# list tests with zero or multiple RESULT lines
-report-invalid-results:
-	@find -L * -name '*.out' -exec grep -H -c "RESULT:" {} \; \
-	 | grep -v ":1$$"
+analyze-perf5: compile
+	@$(parallel_sledge_opt) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests)
+
+analyze-perf7: compile
+	@$(parallel_sledge_opt) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests)
+
+.PHONY: analyze.sexp
+analyze.sexp:
+	@find -L {,local/,extra/}analyze -not -path 'baseline/*' -name '*.sexp' 2>/dev/null \
+	 | xargs cat > analyze.sexp
+
+baseline/analyze.sexp: analyze.sexp
+	@cp analyze.sexp $@
+
+analyze.html: analyze.sexp
+	@$(sledge_report) html -baseline baseline/analyze.sexp analyze.sexp -output $@
+
+analyze-status: analyze.sexp
+	@$(sledge_report) status -baseline baseline/analyze.sexp analyze.sexp | column -ts$$'\t'
+
+#
+# smt tests
+#
+
+SmtTests:=$(shell find smt -name '*.smt2' 2>/dev/null)
+
+# run sledge smt tests
+.PHONY: smt
+smt:
+	-@parallel --bar $(sledge_dbg) smt $(SLEDGE_ARGS) ::: $(SmtTests)
+
+parallel_sledge_opt_smt=parallel --shuf --bar $(sledge_opt) smt -append-report $(SLEDGE_ARGS) :::
+
+smt-perf1:
+	@$(parallel_sledge_opt_smt) $(SmtTests)
+
+smt-perf3:
+	@$(parallel_sledge_opt_smt) $(SmtTests) $(SmtTests) $(SmtTests)
+
+smt-perf5:
+	@$(parallel_sledge_opt_smt) $(SmtTests) $(SmtTests) $(SmtTests) $(SmtTests) $(SmtTests)
+
+smt-perf7:
+	@$(parallel_sledge_opt_smt) $(SmtTests) $(SmtTests) $(SmtTests) $(SmtTests) $(SmtTests) $(SmtTests) $(SmtTests)
+
+.PHONY: smt.sexp
+smt.sexp:
+	@find -L {,local/,extra/}smt -not -path 'baseline/*' -name '*.sexp' 2>/dev/null \
+	 | xargs cat > smt.sexp
+
+baseline/smt.sexp: smt.sexp
+	@cp smt.sexp $@
+
+smt.html: smt.sexp
+	@$(sledge_report) html -baseline baseline/smt.sexp smt.sexp -output $@
+
+smt-status: smt.sexp
+	@$(sledge_report) status -baseline baseline/smt.sexp smt.sexp | column -ts$$'\t'
+
+#
+# llvm tests
+#
+
+# run sledge llvm translate tests
+.PHONY: llvm
+llvm:
+	-@find -L llvm -name '*.ll' -or -name '*.bc' 2>/dev/null \
+	 | parallel --bar $(sledge_dbg) llvm translate -no-models -no-internalize $(SLEDGE_ARGS)
+
+.PHONY: llvm.sexp
+llvm.sexp:
+	@find -L {,local/,extra/}llvm -not -path 'baseline/*' -name '*.sexp' 2>/dev/null \
+	 | xargs cat > llvm.sexp
+
+baseline/llvm.sexp: llvm.sexp
+	@cp llvm.sexp $@
+
+llvm.html: llvm.sexp
+	@$(sledge_report) html -baseline baseline/llvm.sexp llvm.sexp -output $@
+
+llvm-status: llvm.sexp
+	@$(sledge_report) status -baseline baseline/llvm.sexp llvm.sexp | column -ts$$'\t'
+
+#
+# test workflow
+#
 
 # report warnings
 warnings:
 	@find -L * -name '*.out' | xargs grep -h "Warning:" | sort
 
+test-translate:
+	-@find -L {,local/,extra/}translate -name "*.sexp" -or -name "*.out" -or -name '*.err' -or -name '*.llair' -or -name '*.llair.txt' -delete 2>/dev/null
+	-@$(MAKE) --no-print-directory translate
+	@$(MAKE) --no-print-directory translate-status
+
+test-analyze:
+	-@find -L {,local/,extra/}analyze -name "*.sexp" -or -name "*.out" -or -name '*.err' -delete 2>/dev/null
+	-@$(MAKE) --no-print-directory analyze
+	@$(MAKE) --no-print-directory analyze-status
+
+test-smt:
+	-@find -L {,local/,extra/}smt -name "*.sexp" -or -name "*.out" -or -name '*.err' -delete 2>/dev/null
+	-@$(MAKE) --no-print-directory smt
+	@$(MAKE) --no-print-directory smt-status
+
+test-llvm:
+	-@find -L {,local/,extra/}llvm -name "*.sexp" -or -name "*.out" -or -name '*.err' -or -name '*.llair' -delete 2>/dev/null
+	-@$(MAKE) --no-print-directory llvm
+	@$(MAKE) --no-print-directory llvm-status
+
 # run tests and check against expected results
-test:
-	-@$(MAKE) --silent --keep-going clean analyze translate
-	@$(MAKE) --silent _analyze-report-raw > report.current
-	@$(MAKE) --silent _translate-report-raw >> report.current
-	@$(DIFF) report.expected report.current
+test: test-translate test-analyze test-smt test-llvm
 
 # set current results as new expected results
-promote:
-	@cp report.current report.expected
+promote: baseline/translate.sexp baseline/analyze.sexp baseline/smt.sexp baseline/llvm.sexp
+
+# copy the current out and err files to the baseline dir
+promote-out:
+	@find -L * -not -path 'baseline/*' \( -name '*.out' -or -name '*.err' \) | xargs gcp --parents -t baseline
+
+# diff the current out files against the ones in the baseline dir
+diff-out:
+	@$(diff) -mask-uniques -include '.*\.out' baseline -alt-next current .
+
+# diff the current err files against the ones in the baseline dir
+diff-err:
+	@$(diff) -mask-uniques -include '.*\.err' baseline -alt-next current .
 
 # remove generated bitcode files
 cleanbc:
-	@rm -f $(AnalyzeBCs)
+	@rm -f $(GeneratedBCs)
 
 # remove result files
 cleanout:
-	@find -L * -name "*.out" -or -name '*.err' -or -name '*.llair' \
+	@find -L * -not -path 'baseline/*' -name "*.sexp" -or -name "*.out" -or -name '*.err' -or -name '*.llair' -or -name '*.llair.txt'	 \
 	 | xargs rm -f
 
 clean: cleanbc cleanout

@@ -311,7 +311,9 @@ val symexec_memory_error : t
 
 val thread_safety_violation : t
 
-val topl_error : t
+val topl_biabd_error : t
+
+val topl_pulse_error : t
 
 val uninitialized_value : t
 
@@ -354,3 +356,5 @@ val wrong_argument_number : t
 val combined_pointer_errors : t
   
 val unreachable_cost_call : kind:CostKind.t -> t
+
+val is_autoreleasepool_size_issue : t -> bool

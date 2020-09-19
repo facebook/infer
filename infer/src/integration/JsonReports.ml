@@ -158,13 +158,12 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
       L.(die InternalError)
         "Invalid source file for %a %a@.Trace: %a@." IssueType.pp err_key.issue_type
         Localise.pp_error_desc err_key.err_desc Errlog.pp_loc_trace err_data.loc_trace ;
-    let should_report_source_file =
-      (not (SourceFile.is_biabduction_model source_file))
-      || Config.debug_mode || Config.debug_exceptions
+    let should_report_proc_name =
+      Config.debug_mode || Config.debug_exceptions || not (BiabductionModels.mem proc_name)
     in
     if
       error_filter source_file err_key.issue_type
-      && should_report_source_file
+      && should_report_proc_name
       && should_report err_key.issue_type err_key.err_desc
     then
       let severity = IssueType.string_of_severity err_key.severity in
@@ -250,14 +249,16 @@ module JsonCostsPrinter = MakeJsonListPrinter (struct
               Format.asprintf "%a" (CostDomain.BasicCost.pp_degree ~only_bigO:true) degree_with_term
           }
         in
-        let cost_info cost =
+        let cost_info ?is_autoreleasepool_trace cost =
           { Jsonbug_t.polynomial_version= CostDomain.BasicCost.version
           ; polynomial= CostDomain.BasicCost.encode cost
           ; degree=
               Option.map (CostDomain.BasicCost.degree cost) ~f:Polynomials.Degree.encode_to_int
           ; hum= hum cost
-          ; trace= loc_trace_to_jsonbug_record (CostDomain.BasicCost.polynomial_traces cost) Advice
-          }
+          ; trace=
+              loc_trace_to_jsonbug_record
+                (CostDomain.BasicCost.polynomial_traces ?is_autoreleasepool_trace cost)
+                Advice }
         in
         let cost_item =
           let file =
@@ -268,7 +269,10 @@ module JsonCostsPrinter = MakeJsonListPrinter (struct
           ; procedure_name= Procname.get_method proc_name
           ; procedure_id= procedure_id_of_procname proc_name
           ; is_on_ui_thread
-          ; exec_cost= cost_info (CostDomain.get_cost_kind CostKind.OperationCost post).cost }
+          ; exec_cost= cost_info (CostDomain.get_cost_kind CostKind.OperationCost post).cost
+          ; autoreleasepool_size=
+              cost_info ~is_autoreleasepool_trace:true
+                (CostDomain.get_cost_kind CostKind.AutoreleasepoolSize post).cost }
         in
         Some (Jsonbug_j.string_of_cost_item cost_item)
     | _ ->

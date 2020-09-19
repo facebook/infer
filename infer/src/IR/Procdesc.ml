@@ -131,7 +131,9 @@ module Node = struct
     ; loc: Location.t  (** location in the source code *)
     ; mutable preds: t list  (** predecessor nodes in the cfg *)
     ; pname: Procname.t  (** name of the procedure the node belongs to *)
-    ; mutable succs: t list  (** successor nodes in the cfg *) }
+    ; mutable succs: t list  (** successor nodes in the cfg *)
+    ; mutable code_block_exit: t option
+          (** exit node corresponding to start node in a code block *) }
 
   let exn_handler_kind = Stmt_node ExceptionHandler
 
@@ -149,7 +151,8 @@ module Node = struct
     ; pname
     ; succs= []
     ; preds= []
-    ; exn= [] }
+    ; exn= []
+    ; code_block_exit= None }
 
 
   let compare node1 node2 = Int.compare node1.id node2.id
@@ -401,6 +404,10 @@ module Node = struct
     F.asprintf "%s@\n%a" str_kind (Instrs.pp pe) (get_instrs node)
 
 
+  let set_code_block_exit node ~code_block_exit = node.code_block_exit <- Some code_block_exit
+
+  let get_code_block_exit node = node.code_block_exit
+
   (** simple key for a node: just look at the instructions *)
   let simple_key node =
     let add_instr instr =
@@ -522,6 +529,8 @@ let is_defined pdesc = pdesc.attributes.is_defined
 
 let is_java_synchronized pdesc = pdesc.attributes.is_java_synchronized_method
 
+let is_objc_arc_on pdesc = pdesc.attributes.is_objc_arc_on
+
 let iter_nodes f pdesc = List.iter ~f (get_nodes pdesc)
 
 let iter_instrs f pdesc =
@@ -631,7 +640,8 @@ let create_node_from_not_reversed pdesc loc kind instrs =
     ; preds= []
     ; pname= pdesc.attributes.proc_name
     ; succs= []
-    ; exn= [] }
+    ; exn= []
+    ; code_block_exit= None }
   in
   pdesc.nodes <- node :: pdesc.nodes ;
   node
@@ -639,6 +649,15 @@ let create_node_from_not_reversed pdesc loc kind instrs =
 
 let create_node pdesc loc kind instrs =
   create_node_from_not_reversed pdesc loc kind (Instrs.of_list instrs)
+
+
+let shallow_copy_code_from_pdesc ~orig_pdesc ~dest_pdesc =
+  dest_pdesc.nodes <- orig_pdesc.nodes ;
+  dest_pdesc.nodes_num <- orig_pdesc.nodes_num ;
+  dest_pdesc.start_node <- orig_pdesc.start_node ;
+  dest_pdesc.exit_node <- orig_pdesc.exit_node ;
+  dest_pdesc.loop_heads <- orig_pdesc.loop_heads ;
+  dest_pdesc.wto <- orig_pdesc.wto
 
 
 (** Set the successor and exception nodes. If this is a join node right before the exit node, add an
@@ -826,13 +845,13 @@ module SQLite = SqliteUtils.MarshalledNullableDataNOTForComparison (struct
   type nonrec t = t
 end)
 
-let load_statement =
-  ResultsDatabase.register_statement "SELECT cfg FROM procedures WHERE proc_name = :k"
-
-
-let load pname =
-  ResultsDatabase.with_registered_statement load_statement ~f:(fun db stmt ->
-      Procname.SQLite.serialize pname |> Sqlite3.bind stmt 1
-      |> SqliteUtils.check_result_code db ~log:"load bind proc name" ;
-      SqliteUtils.result_single_column_option ~finalize:false ~log:"Procdesc.load" db stmt
-      |> Option.bind ~f:SQLite.deserialize )
+let load =
+  let load_statement =
+    ResultsDatabase.register_statement "SELECT cfg FROM procedures WHERE proc_uid = :k"
+  in
+  fun pname ->
+    ResultsDatabase.with_registered_statement load_statement ~f:(fun db stmt ->
+        Sqlite3.bind stmt 1 (Sqlite3.Data.TEXT (Procname.to_unique_id pname))
+        |> SqliteUtils.check_result_code db ~log:"load bind proc_uid" ;
+        SqliteUtils.result_single_column_option ~finalize:false ~log:"Procdesc.load" db stmt
+        |> Option.bind ~f:SQLite.deserialize )

@@ -154,8 +154,7 @@ let excise_exists goal =
   else
     let solutions_for_xs =
       let xs =
-        Var.Set.diff goal.xs
-          (Sh.fv ~ignore_ctx:() (Sh.with_pure Formula.tt goal.sub))
+        Var.Set.diff goal.xs (Sh.fv ~ignore_ctx:() ~ignore_pure:() goal.sub)
       in
       Context.solve_for_vars [Var.Set.empty; goal.us; xs] goal.sub.ctx
     in
@@ -657,40 +656,42 @@ let excise_dnf : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
   List.fold_option dnf_minuend
     ~init:(Sh.false_ (Var.Set.union minuend.us xs))
     ~f:(fun remainders minuend ->
-      ([%Trace.call fun {pf} -> pf "@[<2>minuend@ %a@]" Sh.pp minuend]
-      ;
+      [%trace]
+        ~call:(fun {pf} -> pf "@[<2>minuend@ %a@]" Sh.pp minuend)
+        ~retn:(fun {pf} -> pf "%a" (Option.pp "%a" Sh.pp))
+      @@ fun () ->
       let zs, min = Sh.bind_exists minuend ~wrt:xs in
       let us = min.us in
       let com = Sh.emp in
       let+ remainder =
         List.find_map dnf_subtrahend ~f:(fun sub ->
-            [%Trace.call fun {pf} -> pf "@[<2>subtrahend@ %a@]" Sh.pp sub]
-            ;
+            [%trace]
+              ~call:(fun {pf} -> pf "@[<2>subtrahend@ %a@]" Sh.pp sub)
+              ~retn:(fun {pf} -> pf "%a" (Option.pp "%a" Sh.pp))
+            @@ fun () ->
             let sub = Sh.and_ctx min.ctx (Sh.extend_us us sub) in
-            excise (goal ~us ~com ~min ~xs ~sub ~zs ~pgs:true)
-            |>
-            [%Trace.retn fun {pf} -> pf "%a" (Option.pp "%a" Sh.pp)] )
+            excise (goal ~us ~com ~min ~xs ~sub ~zs ~pgs:true) )
       in
-      Sh.or_ remainders remainder)
-      |>
-      [%Trace.retn fun {pf} -> pf "%a" (Option.pp "%a" Sh.pp)] )
+      Sh.or_ remainders remainder )
 
 let infer_frame : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
  fun minuend xs subtrahend ->
-  [%Trace.call fun {pf} ->
-    pf "@[<hv>%a@ \\- %a%a@]" Sh.pp minuend Var.Set.pp_xs xs Sh.pp
-      subtrahend]
-  ;
+  [%trace]
+    ~call:(fun {pf} ->
+      pf "@[<hv>%a@ \\- %a%a@]" Sh.pp minuend Var.Set.pp_xs xs Sh.pp
+        subtrahend )
+    ~retn:(fun {pf} r ->
+      pf "%a" (Option.pp "%a" Sh.pp) r ;
+      Option.iter r ~f:(fun frame ->
+          let lost = Var.Set.diff (Var.Set.union minuend.us xs) frame.us in
+          let gain = Var.Set.diff frame.us (Var.Set.union minuend.us xs) in
+          assert (
+            Var.Set.is_empty lost || fail "lost: %a" Var.Set.pp lost () ) ;
+          assert (
+            Var.Set.is_empty gain || fail "gained: %a" Var.Set.pp gain () ) )
+      )
+  @@ fun () ->
   assert (Var.Set.disjoint minuend.us xs) ;
   assert (Var.Set.is_subset xs ~of_:subtrahend.us) ;
   assert (Var.Set.is_subset (Var.Set.diff subtrahend.us xs) ~of_:minuend.us) ;
   excise_dnf minuend xs subtrahend
-  |>
-  [%Trace.retn fun {pf} r ->
-    pf "%a" (Option.pp "%a" Sh.pp) r ;
-    Option.iter r ~f:(fun frame ->
-        let lost = Var.Set.diff (Var.Set.union minuend.us xs) frame.us in
-        let gain = Var.Set.diff frame.us (Var.Set.union minuend.us xs) in
-        assert (Var.Set.is_empty lost || fail "lost: %a" Var.Set.pp lost ()) ;
-        assert (
-          Var.Set.is_empty gain || fail "gained: %a" Var.Set.pp gain () ) )]

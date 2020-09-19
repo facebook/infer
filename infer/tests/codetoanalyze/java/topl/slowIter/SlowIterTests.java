@@ -8,8 +8,7 @@
 import java.util.Map;
 
 class SlowIterTests {
-  // T62611635
-  static <K, V> void FN_aBad(Map<K, V> m) {
+  static <K, V> void aBad(Map<K, V> m) {
     for (K k : m.keySet()) {
       System.out.printf("%s -> %s\n", k, m.get(k));
     }
@@ -22,7 +21,7 @@ class SlowIterTests {
   }
 
   // Inter-procedural variant of aBad.
-  static <K, V> void FN_bBad(Map<K, V> m) {
+  static <K, V> void bBad(Map<K, V> m) {
     for (K k : m.keySet()) {
       print(k, m);
     }

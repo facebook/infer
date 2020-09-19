@@ -179,6 +179,15 @@ let is_cell_read_only ~edges_pre_opt ~cell_post:(_, attrs_post) =
   match edges_pre_opt with None -> false | Some _ -> not (Attributes.is_modified attrs_post)
 
 
+let materialize_pre_for_captured_vars callee_proc_name call_location pre_post
+    ~captured_vars_with_actuals call_state =
+  List.fold_result captured_vars_with_actuals ~init:call_state
+    ~f:(fun call_state (formal, actual) ->
+      materialize_pre_from_actual callee_proc_name call_location
+        ~pre:(pre_post.AbductiveDomain.pre :> BaseDomain.t)
+        ~formal ~actual call_state )
+
+
 let materialize_pre_for_parameters callee_proc_name call_location pre_post ~formals ~actuals
     call_state =
   (* For each [(formal, actual)] pair, resolve them to addresses in their respective states then
@@ -290,13 +299,16 @@ let apply_arithmetic_constraints callee_proc_name call_location pre_post call_st
     call_state.subst call_state)
 
 
-let materialize_pre callee_proc_name call_location pre_post ~formals ~actuals call_state =
+let materialize_pre callee_proc_name call_location pre_post ~captured_vars_with_actuals ~formals
+    ~actuals call_state =
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse call pre" ())) ;
   let r =
     let open IResult.Let_syntax in
     (* first make as large a mapping as we can between callee values and caller values... *)
     materialize_pre_for_parameters callee_proc_name call_location pre_post ~formals ~actuals
       call_state
+    >>= materialize_pre_for_captured_vars callee_proc_name call_location pre_post
+          ~captured_vars_with_actuals
     >>= materialize_pre_for_globals callee_proc_name call_location pre_post
     >>| (* ...then relational arithmetic constraints in the callee's attributes will make sense in
            terms of the caller's values *)
@@ -470,6 +482,12 @@ let apply_post_for_parameters callee_proc_name call_location pre_post ~formals ~
       call_state
 
 
+let apply_post_for_captured_vars callee_proc_name call_location pre_post ~captured_vars_with_actuals
+    call_state =
+  List.fold captured_vars_with_actuals ~init:call_state ~f:(fun call_state (formal, actual) ->
+      record_post_for_actual callee_proc_name call_location pre_post ~formal ~actual call_state )
+
+
 let apply_post_for_globals callee_proc_name call_location pre_post call_state =
   match
     fold_globals_of_stack call_location (pre_post.AbductiveDomain.pre :> BaseDomain.t).stack
@@ -510,10 +528,13 @@ let record_skipped_calls callee_proc_name call_loc pre_post call_state =
   {call_state with astate}
 
 
-let apply_post callee_proc_name call_location pre_post ~formals ~actuals call_state =
+let apply_post callee_proc_name call_location pre_post ~captured_vars_with_actuals ~formals ~actuals
+    call_state =
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse call post" ())) ;
   let r =
     apply_post_for_parameters callee_proc_name call_location pre_post ~formals ~actuals call_state
+    |> apply_post_for_captured_vars callee_proc_name call_location pre_post
+         ~captured_vars_with_actuals
     |> apply_post_for_globals callee_proc_name call_location pre_post
     |> record_post_for_return callee_proc_name call_location pre_post
     |> fun (call_state, return_caller) ->
@@ -578,7 +599,8 @@ let check_all_valid callee_proc_name call_location {AbductiveDomain.pre; _} call
    the noise that this will introduce since we don't care about values. For instance, if the pre
    is for a path where [formal != 0] and we pass [0] then it will be an FP. Maybe the solution is
    to bake in some value analysis. *)
-let apply_prepost callee_proc_name call_location ~callee_prepost:pre_post ~formals ~actuals astate =
+let apply_prepost callee_proc_name call_location ~callee_prepost:pre_post
+    ~captured_vars_with_actuals ~formals ~actuals astate =
   L.d_printfln "Applying pre/post for %a(%a):@\n%a" Procname.pp callee_proc_name
     (Pp.seq ~sep:"," Var.pp) formals pp pre_post ;
   let empty_call_state =
@@ -586,7 +608,8 @@ let apply_prepost callee_proc_name call_location ~callee_prepost:pre_post ~forma
   in
   (* read the precondition *)
   match
-    materialize_pre callee_proc_name call_location pre_post ~formals ~actuals empty_call_state
+    materialize_pre callee_proc_name call_location pre_post ~captured_vars_with_actuals ~formals
+      ~actuals empty_call_state
   with
   | exception Contradiction reason ->
       (* can't make sense of the pre-condition in the current context: give up on that particular
@@ -610,7 +633,7 @@ let apply_prepost callee_proc_name call_location ~callee_prepost:pre_post ~forma
         let invalid_caller = call_state.invalid_caller in
         let call_state = {call_state with astate; visited= AddressSet.empty} in
         (* apply the postcondition *)
-        let astate, pre_subst = apply_post callee_proc_name call_location pre_post ~formals ~actuals call_state in
+        let astate, pre_subst = apply_post callee_proc_name call_location pre_post ~captured_vars_with_actuals ~formals ~actuals call_state in
         (update_modified_vars pre_post call_state.subst astate, pre_subst, invalid_caller)
       with
       | Ok post ->

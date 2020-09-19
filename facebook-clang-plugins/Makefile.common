@@ -1,0 +1,66 @@
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+include $(LEVEL)/Makefile.config
+
+# Typical compilation flags for Objective C examples
+ifeq ($(HAS_OBJC),yes)
+IOSFLAGS=-isysroot $(SDKPATH) -mios-simulator-version-min=8.2 -target x86_64-apple-darwin14 -fobjc-arc \
+  -Wno-unused-command-line-argument \
+  -Wno-objc-property-implementation
+endif
+
+# we assume that the targeted clang was configured with --enable-libcpp --enable-cxx14
+CFLAGS_Darwin+=-stdlib=libc++ -std=c++14
+LDFLAGS_Darwin+=-stdlib=libc++
+
+CFLAGS_Linux+=-std=c++14 -fPIC
+LDFLAGS_Linux+=
+
+override CFLAGS+=$(CFLAGS_$(shell uname)) -g
+override LDFLAGS+=$(LDFLAGS_$(shell uname))
+
+override CFLAGS+=$(CLANG_INCLUDES:%=-I%) -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -fvisibility-inlines-hidden -fno-exceptions -fno-rtti -fno-common -Woverloaded-virtual -Wcast-qual -fno-strict-aliasing -pedantic -Wno-long-long -Wall -W -Wno-unused-parameter -Wwrite-strings -Wno-uninitialized  -Wno-missing-field-initializers -Wno-vla-extension -Wno-c99-extensions
+
+ifdef DEBUG
+override CFLAGS+=-DDEBUG
+export VERBOSE:=1
+SHELL=bash -O nullglob
+else
+override CFLAGS+=-O3 -DNDEBUG
+override LDFLAGS+=-O3
+# early exit when tests fail
+SHELL=bash -e -O nullglob
+endif
+
+# project headers (if any)
+HEADERS?=
+
+# test runner
+RUNTEST=$(LEVEL)/scripts/run_test.sh
+
+LDFLAGS_DYLIB=$(LDFLAGS)
+LDFLAGS_DYLIB+=-Wl,-rpath -Wl,@executable_path/../lib -Wl,-undefined,dynamic_lookup -Wl,-flat_namespace -Wl,-undefined,suppress -dynamiclib -shared
+
+CLANG_TOOL_LIBS := \
+    -lclangFrontend \
+    -lclangIndex \
+    -lclangSerialization \
+    -lclangDriver \
+    -lclangTooling \
+    -lclangCodeGen \
+    -lclangParse \
+    -lclangSema \
+    -lclangAnalysis \
+    -lclangRewriteFrontend \
+    -lclangRewrite \
+    -lclangEdit \
+    -lclangAST \
+    -lclangLex \
+    -lclangBasic
+
+# Local Variables:
+# mode: makefile
+# End:

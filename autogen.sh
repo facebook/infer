@@ -12,17 +12,6 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # make sure we run from the root of the repo
 pushd "$SCRIPT_DIR" > /dev/null
 
-# try to pull submodules if we are in a git repo
-# might fail if git is not installed (how did you even checkout the
-# repo in the first place?)
-if test -d '.git' && [ -z "$SKIP_SUBMODULES" ] ; then
-  printf 'git repository detected, updating submodule... '
-  git submodule update --init > /dev/null
-  printf 'done\n'
-else
-  echo 'no git repository detected; not updating git submodules'
-fi
-
 # We need to record the date that the documentation was last modified to put in our man
 # pages. Unfortunately that information is only available reliably from `git`, which we don't have
 # access to from other distributions of the infer source code. Such source distributions should

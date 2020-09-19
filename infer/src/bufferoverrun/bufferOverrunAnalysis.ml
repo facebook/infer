@@ -443,7 +443,7 @@ let compute_invariant_map :
     let open IOption.Let_syntax in
     let get_summary proc_name = analyze_dependency proc_name >>| snd in
     let get_formals callee_pname =
-      AnalysisCallbacks.get_proc_desc callee_pname >>| Procdesc.get_pvar_formals
+      AnalysisCallbacks.proc_resolve_attributes callee_pname >>| ProcAttributes.get_pvar_formals
     in
     let integer_type_widths = Exe_env.get_integer_type_widths exe_env proc_name in
     let oenv = OndemandEnv.mk proc_desc tenv integer_type_widths in

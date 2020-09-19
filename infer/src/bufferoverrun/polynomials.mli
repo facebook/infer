@@ -22,7 +22,7 @@ end
 module NonNegativeNonTopPolynomial : sig
   type t
 
-  val get_symbols : t -> Bounds.NonNegativeBound.t list
+  val polynomial_traces : ?is_autoreleasepool_trace:bool -> t -> (string * Errlog.loc_trace) list
 end
 
 module TopTraces : sig
@@ -56,9 +56,9 @@ module NonNegativePolynomial : sig
 
   val zero : t
 
-  val one : t
+  val one : ?autoreleasepool_trace:Bounds.BoundTrace.t -> unit -> t
 
-  val of_int_exn : int -> t
+  val of_int_exn : ?autoreleasepool_trace:Bounds.BoundTrace.t -> int -> t
 
   val is_symbolic : t -> bool
 
@@ -91,7 +91,7 @@ module NonNegativePolynomial : sig
 
   val pp_degree : only_bigO:bool -> Format.formatter -> degree_with_term -> unit
 
-  val polynomial_traces : t -> Errlog.loc_trace
+  val polynomial_traces : ?is_autoreleasepool_trace:bool -> t -> Errlog.loc_trace
 
   val encode : t -> string
 

@@ -80,6 +80,8 @@ module SymbolPath : sig
   val is_cpp_vector_elem : partial -> bool
 
   val is_global_partial : partial -> bool
+
+  val is_length : t -> bool
 end
 
 module Symbol : sig
@@ -94,6 +96,8 @@ module Symbol : sig
   val is_non_int : t -> bool
 
   val is_global : t -> bool
+
+  val is_length : t -> bool
 
   val pp_mark : markup:bool -> F.formatter -> t -> unit
 

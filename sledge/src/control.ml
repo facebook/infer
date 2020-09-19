@@ -400,6 +400,7 @@ module Make (Dom : Domain_intf.Dom) = struct
    fun opts pgm stk state block ->
     [%Trace.info
       "@[<2>exec term@\n@[%a@]@\n%a@]" Dom.pp state Llair.Term.pp block.term] ;
+    Report.step () ;
     match block.term with
     | Switch {key; tbl; els} ->
         IArray.fold tbl
@@ -465,6 +466,7 @@ module Make (Dom : Domain_intf.Dom) = struct
    fun state inst ->
     [%Trace.info
       "@[<2>exec inst@\n@[%a@]@\n%a@]" Dom.pp state Llair.Inst.pp inst] ;
+    Report.step () ;
     Dom.exec_inst state inst |> Result.of_option ~error:(state, inst)
 
   let exec_block :

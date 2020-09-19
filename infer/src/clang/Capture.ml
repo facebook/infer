@@ -69,7 +69,8 @@ let run_clang_frontend ast_source =
           ; long_width= widths.itw_long_type
           ; longlong_width= widths.itw_longlong_type }
         in
-        {CFrontend_config.source_file; lang; integer_type_widths}
+        let is_objc_arc_on = info.Clang_ast_t.tudi_is_objc_arc_on in
+        {CFrontend_config.source_file; lang; integer_type_widths; is_objc_arc_on}
     | _ ->
         assert false
   in

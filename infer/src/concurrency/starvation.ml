@@ -394,7 +394,8 @@ module ReportMap : sig
 
   val empty : t
 
-  type report_add_t = Tenv.t -> Procdesc.t -> Location.t -> Errlog.loc_trace -> string -> t -> t
+  type report_add_t =
+    Tenv.t -> ProcAttributes.t -> Location.t -> Errlog.loc_trace -> string -> t -> t
 
   val add_deadlock : report_add_t
 
@@ -431,40 +432,41 @@ end = struct
 
   type t = report_t list Location.Map.t
 
-  type report_add_t = Tenv.t -> Procdesc.t -> Location.t -> Errlog.loc_trace -> string -> t -> t
+  type report_add_t =
+    Tenv.t -> ProcAttributes.t -> Location.t -> Errlog.loc_trace -> string -> t -> t
 
   let empty : t = Location.Map.empty
 
-  let add tenv pdesc loc report loc_map =
-    if Reporting.is_suppressed tenv pdesc (issue_type_of_problem report.problem) then loc_map
+  let add tenv pattrs loc report loc_map =
+    if Reporting.is_suppressed tenv pattrs (issue_type_of_problem report.problem) then loc_map
     else
       Location.Map.update loc
         (function reports_opt -> Some (report :: Option.value reports_opt ~default:[]))
         loc_map
 
 
-  let add_deadlock tenv pdesc loc ltr message (map : t) =
-    let pname = Procdesc.get_proc_name pdesc in
+  let add_deadlock tenv pattrs loc ltr message (map : t) =
+    let pname = ProcAttributes.get_proc_name pattrs in
     let report = {problem= Deadlock (-List.length ltr); pname; ltr; message} in
-    add tenv pdesc loc report map
+    add tenv pattrs loc report map
 
 
-  let add_starvation sev tenv pdesc loc ltr message map =
-    let pname = Procdesc.get_proc_name pdesc in
+  let add_starvation sev tenv pattrs loc ltr message map =
+    let pname = ProcAttributes.get_proc_name pattrs in
     let report = {pname; problem= Starvation sev; ltr; message} in
-    add tenv pdesc loc report map
+    add tenv pattrs loc report map
 
 
-  let add_strict_mode_violation tenv pdesc loc ltr message (map : t) =
-    let pname = Procdesc.get_proc_name pdesc in
+  let add_strict_mode_violation tenv pattrs loc ltr message (map : t) =
+    let pname = ProcAttributes.get_proc_name pattrs in
     let report = {problem= StrictModeViolation (-List.length ltr); pname; ltr; message} in
-    add tenv pdesc loc report map
+    add tenv pattrs loc report map
 
 
-  let add_lockless_violation tenv pdesc loc ltr message (map : t) =
-    let pname = Procdesc.get_proc_name pdesc in
+  let add_lockless_violation tenv pattrs loc ltr message (map : t) =
+    let pname = ProcAttributes.get_proc_name pattrs in
     let report = {problem= LocklessViolation (-List.length ltr); pname; ltr; message} in
-    add tenv pdesc loc report map
+    add tenv pattrs loc report map
 
 
   let issue_log_of loc_map =
@@ -563,10 +565,10 @@ let should_report_deadlock_on_current_proc current_elem endpoint_elem =
           c < 0 )
 
 
-let should_report pdesc =
-  (not (PredSymb.equal_access (Procdesc.get_access pdesc) Private))
+let should_report attrs =
+  (not (PredSymb.equal_access (ProcAttributes.get_access attrs) Private))
   &&
-  match Procdesc.get_proc_name pdesc with
+  match ProcAttributes.get_proc_name attrs with
   | Procname.Java java_pname ->
       (not (Procname.Java.is_autogen_method java_pname))
       && not (Procname.Java.is_class_initializer java_pname)
@@ -582,9 +584,9 @@ let fold_reportable_summaries analyze_ondemand tenv clazz ~init ~f =
     |> Option.value_map ~default:[] ~f:(fun tstruct -> tstruct.Struct.methods)
   in
   let f acc mthd =
-    AnalysisCallbacks.get_proc_desc mthd
-    |> Option.value_map ~default:acc ~f:(fun other_pdesc ->
-           if should_report other_pdesc then
+    AnalysisCallbacks.proc_resolve_attributes mthd
+    |> Option.value_map ~default:acc ~f:(fun other_attrs ->
+           if should_report other_attrs then
              analyze_ondemand mthd
              |> Option.map ~f:(fun (_, payload) -> (mthd, payload))
              |> Option.fold ~init:acc ~f
@@ -603,10 +605,10 @@ let fold_reportable_summaries analyze_ondemand tenv clazz ~init ~f =
 
 (** report warnings possible on the parallel composition of two threads/critical pairs
     [should_report_starvation] means [pair] is on the UI thread and not on a constructor *)
-let report_on_parallel_composition ~should_report_starvation tenv pdesc pair lock other_pname
+let report_on_parallel_composition ~should_report_starvation tenv pattrs pair lock other_pname
     other_pair report_map =
   let open Domain in
-  let pname = Procdesc.get_proc_name pdesc in
+  let pname = ProcAttributes.get_proc_name pattrs in
   let make_trace_and_loc () =
     let first_trace = CriticalPair.make_trace ~header:"[Trace 1] " pname pair in
     let second_trace = CriticalPair.make_trace ~header:"[Trace 2] " other_pname other_pair in
@@ -626,7 +628,7 @@ let report_on_parallel_composition ~should_report_starvation tenv pdesc pair loc
             pname_pp pname Lock.pp_locks lock Event.describe event
         in
         let ltr, loc = make_trace_and_loc () in
-        ReportMap.add_starvation sev tenv pdesc loc ltr error_message report_map
+        ReportMap.add_starvation sev tenv pattrs loc ltr error_message report_map
     | MonitorWait monitor_lock
       when should_report_starvation
            && Acquisitions.lock_is_held_in_other_thread tenv lock acquisitions
@@ -637,7 +639,7 @@ let report_on_parallel_composition ~should_report_starvation tenv pdesc pair loc
             pname_pp pname Lock.pp_locks lock Event.describe other_pair.CriticalPair.elem.event
         in
         let ltr, loc = make_trace_and_loc () in
-        ReportMap.add_starvation High tenv pdesc loc ltr error_message report_map
+        ReportMap.add_starvation High tenv pattrs loc ltr error_message report_map
     | LockAcquire other_lock
       when CriticalPair.may_deadlock tenv pair other_pair
            && should_report_deadlock_on_current_proc pair other_pair ->
@@ -648,15 +650,15 @@ let report_on_parallel_composition ~should_report_starvation tenv pdesc pair loc
             pname_pp pname pname_pp other_pname Lock.describe lock Lock.describe other_lock
         in
         let ltr, loc = make_trace_and_loc () in
-        ReportMap.add_deadlock tenv pdesc loc ltr error_message report_map
+        ReportMap.add_deadlock tenv pattrs loc ltr error_message report_map
     | _ ->
         report_map
   else report_map
 
 
-let report_on_pair ~analyze_ondemand tenv pdesc (pair : Domain.CriticalPair.t) report_map =
+let report_on_pair ~analyze_ondemand tenv pattrs (pair : Domain.CriticalPair.t) report_map =
   let open Domain in
-  let pname = Procdesc.get_proc_name pdesc in
+  let pname = ProcAttributes.get_proc_name pattrs in
   let event = pair.elem.event in
   let should_report_starvation =
     CriticalPair.is_uithread pair && not (Procname.is_constructor pname)
@@ -673,21 +675,21 @@ let report_on_pair ~analyze_ondemand tenv pdesc (pair : Domain.CriticalPair.t) r
           Event.describe event
       in
       let ltr, loc = make_trace_and_loc () in
-      ReportMap.add_starvation sev tenv pdesc loc ltr error_message report_map
+      ReportMap.add_starvation sev tenv pattrs loc ltr error_message report_map
   | MonitorWait _ when should_report_starvation ->
       let error_message =
         Format.asprintf "Method %a runs on UI thread and may block; %a." pname_pp pname
           Event.describe event
       in
       let ltr, loc = make_trace_and_loc () in
-      ReportMap.add_starvation High tenv pdesc loc ltr error_message report_map
+      ReportMap.add_starvation High tenv pattrs loc ltr error_message report_map
   | StrictModeCall _ when should_report_starvation ->
       let error_message =
         Format.asprintf "Method %a runs on UI thread and may violate Strict Mode; %a." pname_pp
           pname Event.describe event
       in
       let ltr, loc = make_trace_and_loc () in
-      ReportMap.add_strict_mode_violation tenv pdesc loc ltr error_message report_map
+      ReportMap.add_strict_mode_violation tenv pattrs loc ltr error_message report_map
   | LockAcquire _ when StarvationModels.is_annotated_lockless tenv pname ->
       let error_message =
         Format.asprintf "Method %a is annotated %s but%a." pname_pp pname
@@ -696,14 +698,14 @@ let report_on_pair ~analyze_ondemand tenv pdesc (pair : Domain.CriticalPair.t) r
       in
       let loc = CriticalPair.get_earliest_lock_or_call_loc ~procname:pname pair in
       let ltr = CriticalPair.make_trace pname pair in
-      ReportMap.add_lockless_violation tenv pdesc loc ltr error_message report_map
+      ReportMap.add_lockless_violation tenv pattrs loc ltr error_message report_map
   | LockAcquire lock when Acquisitions.lock_is_held lock pair.elem.acquisitions ->
       let error_message =
         Format.asprintf "Potential self deadlock. %a%a twice." pname_pp pname Lock.pp_locks lock
       in
       let loc = CriticalPair.get_earliest_lock_or_call_loc ~procname:pname pair in
       let ltr = CriticalPair.make_trace ~header:"In method " pname pair in
-      ReportMap.add_deadlock tenv pdesc loc ltr error_message report_map
+      ReportMap.add_deadlock tenv pattrs loc ltr error_message report_map
   | LockAcquire lock when not Config.starvation_whole_program ->
       Lock.root_class lock
       |> Option.value_map ~default:report_map ~f:(fun other_class ->
@@ -714,7 +716,7 @@ let report_on_pair ~analyze_ondemand tenv pdesc (pair : Domain.CriticalPair.t) r
              fold_reportable_summaries analyze_ondemand tenv other_class ~init:report_map
                ~f:(fun acc (other_pname, {critical_pairs}) ->
                  CriticalPairs.fold
-                   (report_on_parallel_composition ~should_report_starvation tenv pdesc pair lock
+                   (report_on_parallel_composition ~should_report_starvation tenv pattrs pair lock
                       other_pname)
                    critical_pairs acc ) )
   | _ ->
@@ -732,8 +734,9 @@ let reporting {InterproceduralAnalysis.procedures; file_exe_env; analyze_file_de
     let report_procedure report_map procname =
       analyze_file_dependency procname
       |> Option.value_map ~default:report_map ~f:(fun (proc_desc, summary) ->
+             let attributes = Procdesc.get_attributes proc_desc in
              let tenv = Exe_env.get_tenv file_exe_env procname in
-             if should_report proc_desc then report_on_proc tenv proc_desc report_map summary
+             if should_report attributes then report_on_proc tenv attributes report_map summary
              else report_map )
     in
     List.fold procedures ~init:ReportMap.empty ~f:report_procedure |> ReportMap.issue_log_of

@@ -261,6 +261,9 @@ OPTIONS
        --pulse-model-return-nonnull +string
            Methods that should be modelled as returning non-null in Pulse
 
+       --pulse-model-skip-pattern string
+           Regex of methods that should be modelled as "skip" in Pulse
+
        --pulse-model-transfer-ownership +string
            Methods that should be modelled as transfering memory ownership in
            Pulse. Accepted formats are method or namespace::method
@@ -380,6 +383,10 @@ OPTIONS
        --uninit-only
            Activates: Enable uninit and disable all other checkers
            (Conversely: --no-uninit-only)
+
+       --xcode-isysroot-suffix string
+           Specify the suffix of Xcode isysroot directory, to avoid absolute
+           paths in tests
 BUCK OPTIONS
        --merge
            Activates: Merge the captured results directories specified in the

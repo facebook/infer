@@ -34,8 +34,7 @@ val parse : string -> (t, parsing_error) result
     ["package.name.Class$NestedClass#foo(package.name.SomeClass, @Nullable package.name.OtherClass)
     @Nullable"] *)
 
-(* used for testing *)
-val to_canonical_string : t -> string [@@warning "-32"]
+val to_canonical_string : t -> string
 
 val pp : Format.formatter -> t -> unit
 (** String representation as it can be parsed via [parse]

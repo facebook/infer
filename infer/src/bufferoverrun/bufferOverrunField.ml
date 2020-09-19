@@ -43,6 +43,8 @@ let is_java_collection_internal_array fn = Fieldname.equal fn java_collection_in
 
 let objc_collection_internal_array = mk "nscollection.elements" Typ.(mk_array void)
 
+let objc_iterator_offset = mk "nsiterator.offset" Typ.(mk_array void)
+
 let c_strlen () =
   if Language.curr_language_is Java then mk "length" Typ.uint else mk "c.strlen" Typ.uint
 

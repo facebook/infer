@@ -39,8 +39,6 @@ val create : ?warn_on_error:bool -> string -> t
     WARNING: If warn_on_error is false, no warning will be shown whenever an error occurs for the
     given path (e.g. if it does not exist). *)
 
-val is_biabduction_model : t -> bool
-
 val is_under_project_root : t -> bool
 (** Returns true if the file is in project root *)
 

@@ -32,7 +32,6 @@ type id =
   | ReportXML
   | RetainCycles
   | RunState
-  | Specs
   | StarvationIssues
   | Temporary
   | TestDeterminatorReport
@@ -161,11 +160,6 @@ let of_id = function
   | RunState ->
       { rel_path= ".infer_runstate.json"
       ; kind= File
-      ; before_incremental_analysis= Keep
-      ; before_caching_capture= Delete }
-  | Specs ->
-      { rel_path= "specs"
-      ; kind= Directory
       ; before_incremental_analysis= Keep
       ; before_caching_capture= Delete }
   | StarvationIssues ->

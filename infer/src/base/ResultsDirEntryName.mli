@@ -33,7 +33,6 @@ type id =
   | ReportXML  (** a PMD-style XML version of [report.json] *)
   | RetainCycles  (** directory of retain cycles dotty files *)
   | RunState  (** internal data about the last infer run *)
-  | Specs  (** directory containing summaries as .specs files *)
   | StarvationIssues  (** directory of issues reported by the starvation analysis *)
   | Temporary  (** directory containing temp files *)
   | TestDeterminatorReport  (** the report produced by the test determinator capture mode *)

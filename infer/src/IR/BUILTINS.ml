@@ -112,6 +112,10 @@ module type S = sig
 
   val nsArray_arrayWithObjectsCount : t
 
+  val objc_autorelease_pool_pop : t
+
+  val objc_autorelease_pool_push : t
+
   val objc_cpp_throw : t
 
   val pthread_create : t

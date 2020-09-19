@@ -38,8 +38,6 @@ module ReportableViolation = struct
     if is_non_reportable then None else Some {nullsafe_mode; violation}
 
 
-  let get_severity {nullsafe_mode} = NullsafeMode.severity nullsafe_mode
-
   let get_origin_opt assignment_type origin =
     let should_show_origin =
       match assignment_type with
@@ -61,9 +59,24 @@ module ReportableViolation = struct
     else Format.fprintf fmt "(%a)" MarkupFormatter.pp_monospaced name
 
 
-  let mk_description_for_bad_param_passed
+  (* A slight adapter over [NullsafeIssue.make]: the same signature but additionally accepts an alternative method *)
+  let make_issue_with_recommendation ~alternative_method ~description =
+    (* If there is an alternative method to propose, tell about it at the end of the description *)
+    let alternative_recommendation =
+      Option.value_map alternative_method
+        ~f:
+          (Format.asprintf " If you don't expect null, use %a instead."
+             MarkupFormatter.pp_monospaced)
+        ~default:""
+    in
+    let full_description = Format.sprintf "%s%s" description alternative_recommendation in
+    NullsafeIssue.make ~description:full_description
+
+
+  let mk_issue_for_bad_param_passed
       {kind; param_signature; actual_param_expression; param_position; function_procname}
-      ~param_nullability_kind ~nullability_evidence =
+      ~param_nullability_kind ~nullability_evidence
+      ~(make_issue_fn : description:string -> issue_type:IssueType.t -> NullsafeIssue.t) =
     let nullability_evidence_as_suffix =
       Option.value_map nullability_evidence ~f:(fun evidence -> ": " ^ evidence) ~default:""
     in
@@ -81,6 +94,7 @@ module ReportableViolation = struct
         in
         Format.asprintf "%a is %s" MF.pp_monospaced actual_param_expression nullability_descr
     in
+    let issue_type = IssueType.eradicate_parameter_not_nullable in
     match AnnotatedNullability.get_nullability annotated_param_nullability with
     | Nullability.Null ->
         Logging.die Logging.InternalError "Unexpected param nullability: Null"
@@ -107,12 +121,15 @@ module ReportableViolation = struct
             ~default:"the third party signature storage"
         in
         let procname_str = Procname.Java.to_simplified_string ~withclass:true function_procname in
-        Format.asprintf
-          "Third-party %a is missing a signature that would allow passing a nullable to param \
-           #%d%a. Actual argument %s%s. Consider adding the correct signature of %a to %s."
-          MF.pp_monospaced procname_str param_position pp_param_name param_signature.mangled
-          argument_description nullability_evidence_as_suffix MF.pp_monospaced procname_str
-          where_to_add_signature
+        let description =
+          Format.asprintf
+            "Third-party %a is missing a signature that would allow passing a nullable to param \
+             #%d%a. Actual argument %s%s. Consider adding the correct signature of %a to %s."
+            MF.pp_monospaced procname_str param_position pp_param_name param_signature.mangled
+            argument_description nullability_evidence_as_suffix MF.pp_monospaced procname_str
+            where_to_add_signature
+        in
+        make_issue_fn ~description ~issue_type
     | Nullability.LocallyCheckedNonnull
     | Nullability.LocallyTrustedNonnull
     | Nullability.UncheckedNonnull
@@ -129,23 +146,17 @@ module ReportableViolation = struct
                    ~filename)
                 line_number
         in
-        Format.asprintf "%a: parameter #%d%a is declared non-nullable%s but the argument %s%s."
-          MF.pp_monospaced
-          (Procname.Java.to_simplified_string ~withclass:true function_procname)
-          param_position pp_param_name param_signature.mangled nonnull_evidence argument_description
-          nullability_evidence_as_suffix
+        let description =
+          Format.asprintf "%a: parameter #%d%a is declared non-nullable%s but the argument %s%s."
+            MF.pp_monospaced
+            (Procname.Java.to_simplified_string ~withclass:true function_procname)
+            param_position pp_param_name param_signature.mangled nonnull_evidence
+            argument_description nullability_evidence_as_suffix
+        in
+        make_issue_fn ~description ~issue_type
 
 
-  let get_issue_type = function
-    | PassingParamToFunction _ ->
-        IssueType.eradicate_parameter_not_nullable
-    | AssigningToField _ ->
-        IssueType.eradicate_field_not_nullable
-    | ReturningFromFunction _ ->
-        IssueType.eradicate_return_not_nullable
-
-
-  let mk_nullsafe_issue_for_explicitly_nullable_values ~assignment_type ~rhs_origin
+  let mk_nullsafe_issue_for_explicitly_nullable_values ~assignment_type ~rhs_origin ~nullsafe_mode
       ~explicit_rhs_nullable_kind ~assignment_location =
     let nullability_evidence =
       get_origin_opt assignment_type rhs_origin
@@ -154,53 +165,54 @@ module ReportableViolation = struct
     let nullability_evidence_as_suffix =
       Option.value_map nullability_evidence ~f:(fun evidence -> ": " ^ evidence) ~default:""
     in
-    let module MF = MarkupFormatter in
-    let alternative_method_description =
-      ErrorRenderingUtils.find_alternative_nonnull_method_description rhs_origin
+    (* A functor for creating the nullsafe issue: the alternative method, location,
+       and severity are known at this point.
+       The rest to be filled by the client *)
+    let make_issue_fn =
+      make_issue_with_recommendation
+        ~alternative_method:
+          (ErrorRenderingUtils.find_alternative_nonnull_method_description rhs_origin)
+        ~severity:(NullsafeMode.severity nullsafe_mode)
+        ~loc:assignment_location
     in
-    let alternative_recommendation =
-      Option.value_map alternative_method_description
-        ~f:(fun descr ->
-          Format.asprintf " If you don't expect null, use %a instead." MF.pp_monospaced descr )
-        ~default:""
-    in
-    let error_message =
-      match assignment_type with
-      | PassingParamToFunction function_info ->
-          Format.sprintf "%s%s"
-            (mk_description_for_bad_param_passed function_info ~nullability_evidence
-               ~param_nullability_kind:explicit_rhs_nullable_kind)
-            alternative_recommendation
-      | AssigningToField field_name ->
-          let rhs_description =
-            match explicit_rhs_nullable_kind with
-            | ErrorRenderingUtils.UserFriendlyNullable.Null ->
-                "`null`"
-            | ErrorRenderingUtils.UserFriendlyNullable.Nullable ->
-                "a nullable"
-          in
-          Format.asprintf "%a is declared non-nullable but is assigned %s%s.%s" MF.pp_monospaced
+    match assignment_type with
+    | PassingParamToFunction function_info ->
+        mk_issue_for_bad_param_passed function_info ~nullability_evidence
+          ~param_nullability_kind:explicit_rhs_nullable_kind ~make_issue_fn
+    | AssigningToField field_name ->
+        let rhs_description =
+          match explicit_rhs_nullable_kind with
+          | ErrorRenderingUtils.UserFriendlyNullable.Null ->
+              "`null`"
+          | ErrorRenderingUtils.UserFriendlyNullable.Nullable ->
+              "a nullable"
+        in
+        let description =
+          Format.asprintf "%a is declared non-nullable but is assigned %s%s."
+            MarkupFormatter.pp_monospaced
             (Fieldname.get_field_name field_name)
-            rhs_description nullability_evidence_as_suffix alternative_recommendation
-      | ReturningFromFunction function_proc_name ->
-          let return_description =
-            match explicit_rhs_nullable_kind with
-            | ErrorRenderingUtils.UserFriendlyNullable.Null ->
-                (* Return `null` in all_whitelisted branches *)
-                "`null`"
-            | ErrorRenderingUtils.UserFriendlyNullable.Nullable ->
-                "a nullable value"
-          in
-          Format.asprintf "%a: return type is declared non-nullable but the method returns %s%s.%s"
-            MF.pp_monospaced
+            rhs_description nullability_evidence_as_suffix
+        in
+        make_issue_fn ~description ~issue_type:IssueType.eradicate_field_not_nullable
+    | ReturningFromFunction function_proc_name ->
+        let return_description =
+          match explicit_rhs_nullable_kind with
+          | ErrorRenderingUtils.UserFriendlyNullable.Null ->
+              (* Return `null` in all_whitelisted branches *)
+              "`null`"
+          | ErrorRenderingUtils.UserFriendlyNullable.Nullable ->
+              "a nullable value"
+        in
+        let description =
+          Format.asprintf "%a: return type is declared non-nullable but the method returns %s%s."
+            MarkupFormatter.pp_monospaced
             (Procname.Java.to_simplified_string ~withclass:false function_proc_name)
-            return_description nullability_evidence_as_suffix alternative_recommendation
-    in
-    let issue_type = get_issue_type assignment_type in
-    (error_message, issue_type, assignment_location)
+            return_description nullability_evidence_as_suffix
+        in
+        make_issue_fn ~description ~issue_type:IssueType.eradicate_return_not_nullable
 
 
-  let get_description ~assignment_location assignment_type {nullsafe_mode; violation= {rhs}} =
+  let make_nullsafe_issue ~assignment_location assignment_type {nullsafe_mode; violation= {rhs}} =
     let rhs_origin = InferredNullability.get_origin rhs in
     let user_friendly_nullable =
       ErrorRenderingUtils.UserFriendlyNullable.from_nullability
@@ -219,7 +231,7 @@ module ReportableViolation = struct
           ~bad_usage_location:assignment_location rhs_origin
     | ErrorRenderingUtils.UserFriendlyNullable.ExplainablyNullable explicit_kind ->
         (* Attempt to assigning a value that can be explained to the user as nullable. *)
-        mk_nullsafe_issue_for_explicitly_nullable_values ~assignment_type ~rhs_origin
+        mk_nullsafe_issue_for_explicitly_nullable_values ~assignment_type ~rhs_origin ~nullsafe_mode
           ~explicit_rhs_nullable_kind:explicit_kind ~assignment_location
 end
 

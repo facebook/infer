@@ -39,47 +39,57 @@ module ReportableViolation = struct
         false
 
 
-  let get_description _ violation_type ~base_proc_name ~overridden_proc_name =
+  let make_nullsafe_issue _ violation_type ~nullsafe_mode ~loc ~base_proc_name ~overridden_proc_name
+      =
     let module MF = MarkupFormatter in
     let base_method_descr = Procname.Java.to_simplified_string ~withclass:true base_proc_name in
     let overridden_method_descr =
       Procname.Java.to_simplified_string ~withclass:true overridden_proc_name
     in
-    match violation_type with
-    | InconsistentReturn ->
-        Format.asprintf
-          "Child method %a is not substitution-compatible with its parent: the return type is \
-           declared as nullable, but parent method %a is missing `@Nullable` declaration. Either \
-           mark the parent as `@Nullable` or ensure the child does not return `null`."
-          MF.pp_monospaced overridden_method_descr MF.pp_monospaced base_method_descr
-    | InconsistentParam {param_description; param_position} ->
-        if is_java_lang_object_equals base_proc_name then
-          (* This is a popular enough case to make error message specific *)
+    let description =
+      match violation_type with
+      | InconsistentReturn ->
           Format.asprintf
-            "Parameter %a is missing `@Nullable` declaration: according to the Java Specification, \
-             for any object `x` call `x.equals(null)` should properly return false."
-            MF.pp_monospaced param_description
-        else
-          let translate_position = function
-            | 1 ->
-                "First"
-            | 2 ->
-                "Second"
-            | 3 ->
-                "Third"
-            | n ->
-                string_of_int n ^ "th"
-          in
-          Format.asprintf
-            "%s parameter %a of method %a is missing `@Nullable` declaration when overriding %a. \
-             The parent method declared it can handle `null` for this param, so the child should \
-             also declare that."
-            (translate_position param_position)
-            MF.pp_monospaced param_description MF.pp_monospaced overridden_method_descr
-            MF.pp_monospaced base_method_descr
-
-
-  let get_severity {nullsafe_mode} = NullsafeMode.severity nullsafe_mode
+            "Child method %a is not substitution-compatible with its parent: the return type is \
+             declared as nullable, but parent method %a is missing `@Nullable` declaration. Either \
+             mark the parent as `@Nullable` or ensure the child does not return `null`."
+            MF.pp_monospaced overridden_method_descr MF.pp_monospaced base_method_descr
+      | InconsistentParam {param_description; param_position} ->
+          if is_java_lang_object_equals base_proc_name then
+            (* This is a popular enough case to make error message specific *)
+            Format.asprintf
+              "Parameter %a is missing `@Nullable` declaration: according to the Java \
+               Specification, for any object `x` call `x.equals(null)` should properly return \
+               false."
+              MF.pp_monospaced param_description
+          else
+            let translate_position = function
+              | 1 ->
+                  "First"
+              | 2 ->
+                  "Second"
+              | 3 ->
+                  "Third"
+              | n ->
+                  string_of_int n ^ "th"
+            in
+            Format.asprintf
+              "%s parameter %a of method %a is missing `@Nullable` declaration when overriding %a. \
+               The parent method declared it can handle `null` for this param, so the child should \
+               also declare that."
+              (translate_position param_position)
+              MF.pp_monospaced param_description MF.pp_monospaced overridden_method_descr
+              MF.pp_monospaced base_method_descr
+    in
+    let severity = NullsafeMode.severity nullsafe_mode in
+    let issue_type =
+      match violation_type with
+      | InconsistentReturn ->
+          IssueType.eradicate_inconsistent_subclass_return_annotation
+      | InconsistentParam _ ->
+          IssueType.eradicate_inconsistent_subclass_parameter_annotation
+    in
+    NullsafeIssue.make ~description ~loc ~issue_type ~severity
 end
 
 let check type_role ~base ~overridden =

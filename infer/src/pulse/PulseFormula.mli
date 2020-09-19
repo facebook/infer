@@ -53,12 +53,14 @@ val normalize : t -> t normalized
 
 val simplify : keep:Var.Set.t -> t -> t normalized
 
-val and_fold_map_variables :
+val and_fold_subst_variables :
   t -> up_to_f:t -> init:'acc -> f:('acc -> Var.t -> 'acc * Var.t) -> ('acc * t) normalized
 
 val get_variables : t -> Var.Set.t
   
 val is_known_zero : t -> Var.t -> bool
+
+val as_int : t -> Var.t -> int option
 
 (** {3 Notations} *)
 

@@ -67,7 +67,7 @@ void nsdictionary_all_values_linear(NSDictionary* dict) {
   }
 }
 
-id nsdictionary_find_key_linear_FN(NSDictionary* dict, id item) {
+id nsdictionary_find_key_constant(NSDictionary* dict, id item) {
   NSEnumerator* enumerator = [dict keyEnumerator];
   id key;
   while ((key = [enumerator nextObject]) && dict[key] == item) {
@@ -78,7 +78,7 @@ id nsdictionary_find_key_linear_FN(NSDictionary* dict, id item) {
 
 // enumerate dictionary
 
-void nsdictionary_fast_enumerate_linear_FN(NSDictionary* dict) {
+void nsdictionary_fast_enumerate_linear(NSDictionary* dict) {
   for (id key in dict) {
   }
 }
@@ -93,9 +93,22 @@ void nsdictionary_enumerate_constant() {
   }
 }
 
-void nsdictionary_enumerator_linear_FN(NSDictionary* dict) {
+void nsdictionary_enumerator_linear(NSDictionary* dict) {
   NSEnumerator* enumerator = [dict keyEnumerator];
   id key;
   while ((key = [enumerator nextObject])) {
   }
+}
+
+void nsdictionary_enumerate_call_constant() {
+  NSDictionary* dict =
+      @{@"helloString" : @"Hello, World!",
+        @"magicNumber" : @42};
+
+  nsdictionary_all_values_linear(dict);
+}
+
+void nsdictionary_dictionary_constant() {
+  NSDictionary* dict = nsdictionary_init_dictionary_constant();
+  nsdictionary_all_values_linear(dict);
 }

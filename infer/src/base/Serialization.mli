@@ -17,9 +17,6 @@ module Key : sig
   val issues : t
   (** current key for lint issues *)
 
-  val summary : t
-  (** current key for a procedure summary *)
-
   val tenv : t
   (** current key for tenv *)
 end

@@ -1,3 +1,3 @@
-codetoanalyze/java/topl/servlet/ServletTests.java, ServletTests.aBad(javax.servlet.ServletResponse):void, 0, TOPL_ERROR, no_bucket, ERROR, []
-codetoanalyze/java/topl/servlet/ServletTests.java, ServletTests.bBad(javax.servlet.ServletResponse):void, 0, TOPL_ERROR, no_bucket, ERROR, []
-codetoanalyze/java/topl/servlet/ServletTests.java, ServletTests.cBad(javax.servlet.ServletRequest,javax.servlet.ServletResponse,javax.servlet.RequestDispatcher):void, 0, TOPL_ERROR, no_bucket, ERROR, []
+codetoanalyze/java/topl/servlet/ServletTests.java, ServletTests.aBad(javax.servlet.ServletResponse):void, 0, TOPL_PULSE_ERROR, no_bucket, ERROR, []
+codetoanalyze/java/topl/servlet/ServletTests.java, ServletTests.bBad(javax.servlet.ServletResponse):void, 0, TOPL_PULSE_ERROR, no_bucket, ERROR, []
+codetoanalyze/java/topl/servlet/ServletTests.java, ServletTests.cBad(javax.servlet.ServletRequest,javax.servlet.ServletResponse,javax.servlet.RequestDispatcher):void, 0, TOPL_PULSE_ERROR, no_bucket, ERROR, []

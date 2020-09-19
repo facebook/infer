@@ -96,6 +96,8 @@ module Loc : sig
 
   val represents_multiple_values : t -> bool
 
+  val is_objc_collection_internal_array : t -> bool
+
   val append_field : ?typ:Typ.typ -> t -> Fieldname.t -> t
   (** It appends field. [typ] is the type of [fn]. *)
 end
@@ -106,6 +108,8 @@ module PowLoc : sig
   include AbstractDomain.S
 
   val compare : t -> t -> int
+
+  val get_parent_field : t -> t
 
   val append_field : t -> fn:Fieldname.t -> t
 

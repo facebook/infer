@@ -12,6 +12,199 @@ module Var = PulseAbstractValue
 
 type operand = LiteralOperand of IntLit.t | AbstractValueOperand of Var.t
 
+(** "normalized" is not to be taken too seriously, it just means *some* normalization was applied
+    that could result in discovering something is unsatisfiable *)
+type 'a normalized = Unsat | Sat of 'a
+
+(** {!Q} from zarith with a few convenience functions added *)
+module Q = struct
+  include Q
+
+  let not_equal q1 q2 = not (Q.equal q1 q2)
+
+  let is_one q = Q.equal q Q.one
+
+  let is_minus_one q = Q.equal q Q.minus_one
+
+  let is_zero q = Q.equal q Q.zero
+
+  let is_not_zero q = not (is_zero q)
+
+  let conv_protect f q = try Some (f q) with Division_by_zero | Z.Overflow -> None
+
+  let to_int q = conv_protect Q.to_int q
+
+  let to_int64 q = conv_protect Q.to_int64 q
+
+  let to_bigint q = conv_protect Q.to_bigint q
+end
+
+(** Linear Arithmetic *)
+module LinArith : sig
+  (** linear combination of variables, eg [2·x + 3/4·y + 12] *)
+  type t [@@deriving compare]
+
+  type subst_target = QSubst of Q.t | VarSubst of Var.t | LinSubst of t
+
+  val pp : (F.formatter -> Var.t -> unit) -> F.formatter -> t -> unit
+
+  val is_zero : t -> bool
+
+  val add : t -> t -> t
+
+  val minus : t -> t
+
+  val subtract : t -> t -> t
+
+  val mult : Q.t -> t -> t
+
+  val solve_eq : t -> t -> (Var.t * t) option normalized
+  (** [solve_eq l1 l2] is [Sat (Some (x, l))] if [l1=l2 <=> x=l], [Sat None] if [l1 = l2] is always
+      true, and [Unsat] if it is always false *)
+
+  val of_q : Q.t -> t
+
+  val of_var : Var.t -> t
+
+  val get_as_const : t -> Q.t option
+  (** [get_as_const l] is [Some c] if [l=c], else [None] *)
+
+  val get_as_var : t -> Var.t option
+  (** [get_as_var l] is [Some x] if [l=x], else [None] *)
+
+  val has_var : Var.t -> t -> bool
+
+  val subst : Var.t -> Var.t -> t -> t
+
+  val get_variables : t -> Var.t Seq.t
+
+  val fold_subst_variables : t -> init:'a -> f:('a -> Var.t -> 'a * subst_target) -> 'a * t
+
+  val subst_variables : t -> f:(Var.t -> subst_target) -> t
+end = struct
+  (** invariant: the representation is always "canonical": coefficients cannot be [Q.zero] *)
+  type t = Q.t Var.Map.t * Q.t [@@deriving compare]
+
+  type subst_target = QSubst of Q.t | VarSubst of Var.t | LinSubst of t
+
+  let pp pp_var fmt (vs, c) =
+    if Var.Map.is_empty vs then Q.pp_print fmt c
+    else
+      let pp_c fmt c =
+        if Q.is_zero c then ()
+        else
+          let plusminus, c_pos = if Q.geq c Q.zero then ('+', c) else ('-', Q.neg c) in
+          F.fprintf fmt " %c%a" plusminus Q.pp_print c_pos
+      in
+      let pp_coeff fmt q =
+        if Q.is_one q then ()
+        else if Q.is_minus_one q then F.pp_print_string fmt "-"
+        else F.fprintf fmt "%a·" Q.pp_print q
+      in
+      let pp_vs fmt vs =
+        Pp.collection ~sep:" + "
+          ~fold:(IContainer.fold_of_pervasives_map_fold Var.Map.fold)
+          ~pp_item:(fun fmt (v, q) -> F.fprintf fmt "%a%a" pp_coeff q pp_var v)
+          fmt vs
+      in
+      F.fprintf fmt "@[<h>%a%a@]" pp_vs vs pp_c c
+
+
+  let add (vs1, c1) (vs2, c2) =
+    ( Var.Map.union
+        (fun _v c1 c2 ->
+          let c = Q.add c1 c2 in
+          if Q.is_zero c then None else Some c )
+        vs1 vs2
+    , Q.add c1 c2 )
+
+
+  let minus (vs, c) = (Var.Map.map (fun c -> Q.neg c) vs, Q.neg c)
+
+  let subtract l1 l2 = add l1 (minus l2)
+
+  let zero = (Var.Map.empty, Q.zero)
+
+  let is_zero (vs, c) = Q.is_zero c && Var.Map.is_empty vs
+
+  let mult q ((vs, c) as l) =
+    if Q.is_zero q then (* needed for correction: coeffs cannot be zero *) zero
+    else if Q.is_one q then (* purely an optimisation *) l
+    else (Var.Map.map (fun c -> Q.mul q c) vs, Q.mul q c)
+
+
+  let solve_eq_zero (vs, c) =
+    match Var.Map.min_binding_opt vs with
+    | None ->
+        if Q.is_zero c then Sat None else Unsat
+    | Some (x, coeff) ->
+        let d = Q.neg coeff in
+        let vs' =
+          Var.Map.fold
+            (fun v' coeff' vs' ->
+              if Var.equal v' x then vs' else Var.Map.add v' (Q.div coeff' d) vs' )
+            vs Var.Map.empty
+        in
+        let c' = Q.div c d in
+        Sat (Some (x, (vs', c')))
+
+
+  let solve_eq l1 l2 = solve_eq_zero (subtract l1 l2)
+
+  let of_var v = (Var.Map.singleton v Q.one, Q.zero)
+
+  let of_q q = (Var.Map.empty, q)
+
+  let get_as_const (vs, c) = if Var.Map.is_empty vs then Some c else None
+
+  let get_as_var (vs, c) =
+    if Q.is_zero c then
+      match Var.Map.is_singleton_or_more vs with
+      | Singleton (x, cx) when Q.is_one cx ->
+          Some x
+      | _ ->
+          None
+    else None
+
+
+  let has_var x (vs, _) = Var.Map.mem x vs
+
+  let subst x y ((vs, c) as l) =
+    match Var.Map.find_opt x vs with
+    | None ->
+        l
+    | Some cx ->
+        let vs' = Var.Map.remove x vs |> Var.Map.add y cx in
+        (vs', c)
+
+
+  let of_subst_target = function QSubst q -> of_q q | VarSubst v -> of_var v | LinSubst l -> l
+
+  let fold_subst_variables ((vs_foreign, c) as l0) ~init ~f =
+    let changed = ref false in
+    let acc_f, l' =
+      Var.Map.fold
+        (fun v_foreign q0 (acc_f, l) ->
+          let acc_f, op = f acc_f v_foreign in
+          (match op with VarSubst v when Var.equal v v_foreign -> () | _ -> changed := true) ;
+          (acc_f, add (mult q0 (of_subst_target op)) l) )
+        vs_foreign
+        (init, (Var.Map.empty, c))
+    in
+    let l' = if !changed then l' else l0 in
+    (acc_f, l')
+
+
+  let subst_variables l ~f = fold_subst_variables l ~init:() ~f:(fun () v -> ((), f v)) |> snd
+
+  let get_variables (vs, _) = Var.Map.to_seq vs |> Seq.map fst
+end
+
+type subst_target = LinArith.subst_target =
+  | QSubst of Q.t
+  | VarSubst of Var.t
+  | LinSubst of LinArith.t
+
 (** Expressive term structure to be able to express all of SIL, but the main smarts of the formulas
     are for the equality between variables and linear arithmetic subsets. Terms (and atoms, below)
     are kept as a last-resort for when outside that fragment. *)
@@ -19,6 +212,7 @@ module Term = struct
   type t =
     | Const of Q.t
     | Var of Var.t
+    | Linear of LinArith.t
     | Add of t * t
     | Minus of t
     | LessThan of t * t
@@ -48,6 +242,8 @@ module Term = struct
     | Const _ ->
         (* negative and/or a fraction *) true
     | Var _ ->
+        false
+    | Linear _ ->
         false
     | Minus _
     | BitNot _
@@ -79,6 +275,8 @@ module Term = struct
         pp_var fmt v
     | Const c ->
         Q.pp_print fmt c
+    | Linear l ->
+        F.fprintf fmt "[%a]" (LinArith.pp pp_var) l
     | Minus t ->
         F.fprintf fmt "-%a" (pp_paren pp_var ~needs_paren) t
     | BitNot t ->
@@ -121,13 +319,22 @@ module Term = struct
         F.fprintf fmt "%a≠%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
 
 
-  let of_intlit i = Const (Q.of_bigint (IntLit.to_big_int i))
+  let of_q q = Const q
 
-  let of_operand = function AbstractValueOperand v -> Var v | LiteralOperand i -> of_intlit i
+  let of_operand = function
+    | AbstractValueOperand v ->
+        Var v
+    | LiteralOperand i ->
+        IntLit.to_big_int i |> Q.of_bigint |> of_q
 
-  let one = Const Q.one
 
-  let zero = Const Q.zero
+  let of_subst_target = function QSubst q -> of_q q | VarSubst v -> Var v | LinSubst l -> Linear l
+
+  let one = of_q Q.one
+
+  let zero = of_q Q.zero
+
+  let of_bool b = if b then one else zero
 
   let of_unop (unop : Unop.t) t =
     match unop with Neg -> Minus t | BNot -> BitNot t | LNot -> Not t
@@ -173,45 +380,27 @@ module Term = struct
         Or (t1, t2)
 
 
-  let is_zero = function Const c -> Q.equal c Q.zero | _ -> false
+  let is_zero = function Const c -> Q.is_zero c | _ -> false
 
-  let is_non_zero_const = function Const c -> not (Q.equal c Q.zero) | _ -> false
+  let is_non_zero_const = function Const c -> Q.is_not_zero c | _ -> false
 
   (** Fold [f] on the strict sub-terms of [t], if any. Preserve physical equality if [f] does. *)
   let fold_map_direct_subterms t ~init ~f =
     match t with
-    | Var _ | Const _ ->
+    | Var _ | Const _ | Linear _ ->
         (init, t)
     | Minus t_not | BitNot t_not | Not t_not ->
         let acc, t_not' = f init t_not in
         let t' =
           if phys_equal t_not t_not' then t
           else
-            match t with
+            match[@warning "-8"] t with
             | Minus _ ->
                 Minus t_not'
             | BitNot _ ->
                 BitNot t_not'
             | Not _ ->
                 Not t_not'
-            | Var _
-            | Const _
-            | Add _
-            | Mult _
-            | Div _
-            | Mod _
-            | BitAnd _
-            | BitOr _
-            | BitShiftLeft _
-            | BitShiftRight _
-            | BitXor _
-            | And _
-            | Or _
-            | LessThan _
-            | LessEqual _
-            | Equal _
-            | NotEqual _ ->
-                assert false
         in
         (acc, t')
     | Add (t1, t2)
@@ -234,7 +423,7 @@ module Term = struct
         let t' =
           if phys_equal t1 t1' && phys_equal t2 t2' then t
           else
-            match t with
+            match[@warning "-8"] t with
             | Add _ ->
                 Add (t1', t2')
             | Mult _ ->
@@ -265,8 +454,6 @@ module Term = struct
                 Equal (t1', t2')
             | NotEqual _ ->
                 NotEqual (t1', t2')
-            | Var _ | Const _ | Minus _ | BitNot _ | Not _ ->
-                assert false
         in
         (acc, t')
 
@@ -275,26 +462,229 @@ module Term = struct
     fold_map_direct_subterms t ~init:() ~f:(fun () t' -> ((), f t')) |> snd
 
 
-  let rec fold_map_variables t ~init ~f =
+  let rec fold_subst_variables t ~init ~f =
     match t with
     | Var v ->
-        let acc, t_v = f init v in
-        let t' = match t_v with Var v' when Var.equal v v' -> t | _ -> t_v in
+        let acc, op = f init v in
+        let t' = match op with VarSubst v' when Var.equal v v' -> t | _ -> of_subst_target op in
+        (acc, t')
+    | Linear l ->
+        let acc, l' = LinArith.fold_subst_variables l ~init ~f in
+        let t' = if phys_equal l l' then t else Linear l' in
         (acc, t')
     | _ ->
-        fold_map_direct_subterms t ~init ~f:(fun acc t' -> fold_map_variables t' ~init:acc ~f)
+        fold_map_direct_subterms t ~init ~f:(fun acc t' -> fold_subst_variables t' ~init:acc ~f)
 
 
   let fold_variables t ~init ~f =
-    fold_map_variables t ~init ~f:(fun acc v -> (f acc v, Var v)) |> fst
+    fold_subst_variables t ~init ~f:(fun acc v -> (f acc v, VarSubst v)) |> fst
 
 
   let iter_variables t ~f = fold_variables t ~init:() ~f:(fun () v -> f v)
 
-  let map_variables t ~f = fold_map_variables t ~init:() ~f:(fun () v -> ((), f v)) |> snd
+  let subst_variables t ~f = fold_subst_variables t ~init:() ~f:(fun () v -> ((), f v)) |> snd
 
   let has_var_notin vars t =
     Container.exists t ~iter:iter_variables ~f:(fun v -> not (Var.Set.mem v vars))
+
+
+  (** reduce to a constant when the direct sub-terms are constants *)
+  let eval_const_shallow t0 =
+    let map_const t f = match t with Const c -> f c | _ -> t0 in
+    let map_const2 t1 t2 f = match (t1, t2) with Const c1, Const c2 -> f c1 c2 | _ -> t0 in
+    let q_map t q_f = map_const t (fun c -> Const (q_f c)) in
+    let q_map2 t1 t2 q_f = map_const2 t1 t2 (fun c1 c2 -> Const (q_f c1 c2)) in
+    let q_predicate_map t q_f = map_const t (fun c -> q_f c |> of_bool) in
+    let q_predicate_map2 t1 t2 q_f = map_const2 t1 t2 (fun c1 c2 -> q_f c1 c2 |> of_bool) in
+    let conv2 conv1 conv2 conv_back c1 c2 f =
+      let open IOption.Let_syntax in
+      let* i1 = conv1 c1 in
+      let+ i2 = conv2 c2 in
+      f i1 i2 |> conv_back
+    in
+    let map_i64_i64 = conv2 Q.to_int64 Q.to_int64 Q.of_int64 in
+    let map_i64_i = conv2 Q.to_int64 Q.to_int Q.of_int64 in
+    let map_z_z = conv2 Q.to_bigint Q.to_bigint Q.of_bigint in
+    let or_undef q_opt = Option.value ~default:Q.undef q_opt in
+    match t0 with
+    | Const _ | Var _ ->
+        t0
+    | Linear l ->
+        LinArith.get_as_const l |> Option.value_map ~default:t0 ~f:(fun c -> Const c)
+    | Minus t' ->
+        q_map t' Q.(mul minus_one)
+    | Add (t1, t2) ->
+        q_map2 t1 t2 Q.add
+    | BitNot t' ->
+        q_map t' (fun c ->
+            let open Option.Monad_infix in
+            Q.to_int64 c >>| Int64.bit_not >>| Q.of_int64 |> or_undef )
+    | Mult (t1, t2) ->
+        q_map2 t1 t2 Q.mul
+    | Div (t1, t2) ->
+        q_map2 t1 t2 Q.div
+    | Mod (t1, t2) ->
+        q_map2 t1 t2 (fun c1 c2 -> map_z_z c1 c2 Z.( mod ) |> or_undef)
+    | Not t' ->
+        q_predicate_map t' Q.is_zero
+    | And (t1, t2) ->
+        map_const2 t1 t2 (fun c1 c2 -> of_bool (Q.is_not_zero c1 && Q.is_not_zero c2))
+    | Or (t1, t2) ->
+        map_const2 t1 t2 (fun c1 c2 -> of_bool (Q.is_not_zero c1 || Q.is_not_zero c2))
+    | LessThan (t1, t2) ->
+        q_predicate_map2 t1 t2 Q.lt
+    | LessEqual (t1, t2) ->
+        q_predicate_map2 t1 t2 Q.leq
+    | Equal (t1, t2) ->
+        q_predicate_map2 t1 t2 Q.equal
+    | NotEqual (t1, t2) ->
+        q_predicate_map2 t1 t2 Q.not_equal
+    | BitAnd (t1, t2)
+    | BitOr (t1, t2)
+    | BitShiftLeft (t1, t2)
+    | BitShiftRight (t1, t2)
+    | BitXor (t1, t2) ->
+        q_map2 t1 t2 (fun c1 c2 ->
+            match[@warning "-8"] t0 with
+            | BitAnd _ ->
+                map_i64_i64 c1 c2 Int64.bit_and |> or_undef
+            | BitOr _ ->
+                map_i64_i64 c1 c2 Int64.bit_or |> or_undef
+            | BitShiftLeft _ ->
+                map_i64_i c1 c2 Int64.shift_left |> or_undef
+            | BitShiftRight _ ->
+                map_i64_i c1 c2 Int64.shift_right |> or_undef
+            | BitXor _ ->
+                map_i64_i64 c1 c2 Int64.bit_xor |> or_undef )
+
+
+  let rec simplify_shallow t =
+    match t with
+    | Var _ | Const _ ->
+        t
+    | Minus (Minus t) ->
+        (* [--t = t] *)
+        t
+    | BitNot (BitNot t) ->
+        (* [~~t = t] *)
+        t
+    | Add (Const c, t) when Q.is_zero c ->
+        (* [0 + t = t] *)
+        t
+    | Add (t, Const c) when Q.is_zero c ->
+        (* [t + 0 = t] *)
+        t
+    | Mult (Const c, t) when Q.is_one c ->
+        (* [1 × t = t] *)
+        t
+    | Mult (t, Const c) when Q.is_one c ->
+        (* [t × 1 = t] *)
+        t
+    | Mult (Const c, _) when Q.is_zero c ->
+        (* [0 × t = 0] *)
+        zero
+    | Mult (_, Const c) when Q.is_zero c ->
+        (* [t × 0 = 0] *)
+        zero
+    | Div (Const c, _) when Q.is_zero c ->
+        (* [0 / t = 0] *)
+        zero
+    | Div (_, Const c) when Q.is_zero c ->
+        (* [t / 0 = undefined] *)
+        Const Q.undef
+    | Div (t, Const c) ->
+        (* [t / c = (1/c)·t] *)
+        simplify_shallow (Mult (Const (Q.inv c), t))
+    | Div (Minus t1, Minus t2) ->
+        (* [(-t1) / (-t2) = t1 / t2] *)
+        simplify_shallow (Div (t1, t2))
+    | Div (t1, t2) when equal_syntax t1 t2 ->
+        (* [t / t = 1] *)
+        one
+    | Mod (Const c, _) when Q.is_zero c ->
+        (* [0 % t = 0] *)
+        zero
+    | Mod (_, Const q) when Q.is_one q ->
+        (* [t % 1 = 0] *)
+        zero
+    | Mod (t1, t2) when equal_syntax t1 t2 ->
+        (* [t % t = 0] *)
+        zero
+    | BitAnd (t1, t2) when is_zero t1 || is_zero t2 ->
+        zero
+    | BitXor (t1, t2) when equal_syntax t1 t2 ->
+        zero
+    | (BitShiftLeft (t1, _) | BitShiftRight (t1, _)) when is_zero t1 ->
+        zero
+    | (BitShiftLeft (t1, t2) | BitShiftRight (t1, t2)) when is_zero t2 ->
+        t1
+    | And (t1, t2) when is_zero t1 || is_zero t2 ->
+        (* [false ∧ t = t ∧ false = false] *) zero
+    | And (t1, t2) when is_non_zero_const t1 ->
+        (* [true ∧ t = t] *) t2
+    | And (t1, t2) when is_non_zero_const t2 ->
+        (* [t ∧ true = t] *) t1
+    | Or (t1, t2) when is_non_zero_const t1 || is_non_zero_const t2 ->
+        (* [true ∨ t = t ∨ true = true] *) one
+    | Or (t1, t2) when is_zero t1 ->
+        (* [false ∨ t = t] *) t2
+    | Or (t1, t2) when is_zero t2 ->
+        (* [t ∨ false = t] *) t1
+    | _ ->
+        t
+
+
+  (** more or less syntactic attempt at detecting when an arbitrary term is a linear formula; call
+      {!Atom.eval_term} first for best results *)
+  let linearize t =
+    let rec aux_linearize t =
+      let open IOption.Let_syntax in
+      match t with
+      | Var v ->
+          Some (LinArith.of_var v)
+      | Const c ->
+          Some (LinArith.of_q c)
+      | Linear l ->
+          Some l
+      | Minus t ->
+          let+ l = aux_linearize t in
+          LinArith.minus l
+      | Add (t1, t2) ->
+          let* l1 = aux_linearize t1 in
+          let+ l2 = aux_linearize t2 in
+          LinArith.add l1 l2
+      | Mult (Const c, t) | Mult (t, Const c) ->
+          let+ l = aux_linearize t in
+          LinArith.mult c l
+      | Div (t, Const c) when Q.is_not_zero c ->
+          let+ l = aux_linearize t in
+          LinArith.mult (Q.inv c) l
+      | Mult _
+      | Div _
+      | Mod _
+      | BitNot _
+      | BitAnd _
+      | BitOr _
+      | BitShiftLeft _
+      | BitShiftRight _
+      | BitXor _
+      | Not _
+      | And _
+      | Or _
+      | LessThan _
+      | LessEqual _
+      | Equal _
+      | NotEqual _ ->
+          None
+    in
+    match aux_linearize t with None -> t | Some l -> Linear l
+
+
+  let simplify_linear = function
+    | Linear l -> (
+      match LinArith.get_as_const l with Some c -> Const c | None -> Linear l )
+    | t ->
+        t
 end
 
 (** Basically boolean terms, used to build the part of a formula that is not equalities between
@@ -306,8 +696,6 @@ module Atom = struct
     | Equal of Term.t * Term.t
     | NotEqual of Term.t * Term.t
   [@@deriving compare]
-
-  type atom = t
 
   let pp_with_pp_var pp_var fmt atom =
     (* add parens around terms that look like atoms to disambiguate *)
@@ -325,8 +713,6 @@ module Atom = struct
     | NotEqual (t1, t2) ->
         F.fprintf fmt "%a ≠ %a" pp_term t1 pp_term t2
 
-
-  let pp = pp_with_pp_var Var.pp
 
   let get_terms atom =
     let (LessEqual (t1, t2) | LessThan (t1, t2) | Equal (t1, t2) | NotEqual (t1, t2)) = atom in
@@ -354,6 +740,23 @@ module Atom = struct
     (acc, t')
 
 
+  let equal t1 t2 = Equal (t1, t2)
+
+  let less_equal t1 t2 = LessEqual (t1, t2)
+
+  let less_than t1 t2 = LessThan (t1, t2)
+
+  let nnot = function
+    | Equal (t1, t2) ->
+        NotEqual (t1, t2)
+    | NotEqual (t1, t2) ->
+        Equal (t1, t2)
+    | LessEqual (t1, t2) ->
+        LessThan (t2, t1)
+    | LessThan (t1, t2) ->
+        LessEqual (t2, t1)
+
+
   let map_terms atom ~f = fold_map_terms atom ~init:() ~f:(fun () t -> ((), f t)) |> snd
 
   let to_term : t -> Term.t = function
@@ -369,6 +772,14 @@ module Atom = struct
 
   type eval_result = True | False | Atom of t
 
+  module EvalResultMonad = struct
+    let bind_eval_result eval_result f =
+      match eval_result with True | False -> eval_result | Atom atom -> f atom
+
+
+    let ( let* ) x f = bind_eval_result x f
+  end
+
   let eval_result_of_bool b = if b then True else False
 
   let term_of_eval_result = function
@@ -380,131 +791,133 @@ module Atom = struct
         to_term atom
 
 
-  (* Many simplifications are still TODO *)
-  let rec eval_term t =
-    let open Term in
-    let t_norm_subterms = map_direct_subterms ~f:eval_term t in
-    match t_norm_subterms with
-    | Var _ | Const _ ->
-        t
-    | Minus (Minus t) ->
-        (* [--t = t] *)
-        t
-    | Minus (Const c) ->
-        (* [-c = -1*c] *)
-        Const (Q.(mul minus_one) c)
-    | BitNot (BitNot t) ->
-        (* [~~t = t] *)
-        t
-    | Not (Const c) when Q.equal c Q.zero ->
-        (* [!0 = 1]  *)
-        one
-    | Not (Const c) when Q.equal c Q.one ->
-        (* [!1 = 0]  *)
-        zero
-    | Add (Const c1, Const c2) ->
-        (* constants *)
-        Const (Q.add c1 c2)
-    | Add (Const c, t) when Q.equal c Q.zero ->
-        (* [0 + t = t] *)
-        t
-    | Add (t, Const c) when Q.equal c Q.zero ->
-        (* [t + 0 = t] *)
-        t
-    | Mult (Const c, t) when Q.equal c Q.one ->
-        (* [1 × t = t] *)
-        t
-    | Mult (t, Const c) when Q.equal c Q.one ->
-        (* [t × 1 = t] *)
-        t
-    | Mult (Const c, _) when Q.equal c Q.zero ->
-        (* [0 × t = 0] *)
-        zero
-    | Mult (_, Const c) when Q.equal c Q.zero ->
-        (* [t × 0 = 0] *)
-        zero
-    | Div (Const c, _) when Q.equal c Q.zero ->
-        (* [0 / t = 0] *)
-        zero
-    | Div (t, Const c) when Q.equal c Q.one ->
-        (* [t / 1 = t] *)
-        t
-    | Div (t, Const c) when Q.equal c Q.minus_one ->
-        (* [t / (-1) = -t] *)
-        eval_term (Minus t)
-    | Div (Minus t1, Minus t2) ->
-        (* [(-t1) / (-t2) = t1 / t2] *)
-        eval_term (Div (t1, t2))
-    | Mod (Const c, _) when Q.equal c Q.zero ->
-        (* [0 % t = 0] *)
-        zero
-    | Mod (_, Const q) when Q.equal q Q.one ->
-        (* [t % 1 = 0] *)
-        zero
-    | Mod (t1, t2) when equal_syntax t1 t2 ->
-        (* [t % t = 0] *)
-        zero
-    | And (t1, t2) when is_zero t1 || is_zero t2 ->
-        (* [false ∧ t = t ∧ false = false] *) zero
-    | And (t1, t2) when is_non_zero_const t1 ->
-        (* [true ∧ t = t] *) t2
-    | And (t1, t2) when is_non_zero_const t2 ->
-        (* [t ∧ true = t] *) t1
-    | Or (t1, t2) when is_non_zero_const t1 || is_non_zero_const t2 ->
-        (* [true ∨ t = t ∨ true = true] *) one
-    | Or (t1, t2) when is_zero t1 ->
-        (* [false ∨ t = t] *) t2
-    | Or (t1, t2) when is_zero t2 ->
-        (* [t ∨ false = t] *) t1
+  let atom_of_term : Term.t -> t option = function
     (* terms that are atoms can be simplified in [eval_atom] *)
     | LessEqual (t1, t2) ->
-        eval_atom (LessEqual (t1, t2) : atom) |> term_of_eval_result
+        Some (LessEqual (t1, t2))
     | LessThan (t1, t2) ->
-        eval_atom (LessThan (t1, t2) : atom) |> term_of_eval_result
+        Some (LessThan (t1, t2))
     | Equal (t1, t2) ->
-        eval_atom (Equal (t1, t2) : atom) |> term_of_eval_result
+        Some (Equal (t1, t2))
     | NotEqual (t1, t2) ->
-        eval_atom (NotEqual (t1, t2) : atom) |> term_of_eval_result
+        Some (NotEqual (t1, t2))
     | _ ->
-        t_norm_subterms
+        None
 
 
-  (** This assumes that the terms in the atom have been normalized/evaluated already.
+  let term_is_atom t = atom_of_term t |> Option.is_some
 
-      TODO: probably a better way to implement this would be to rely entirely on
-      [eval_term (term_of_atom (atom))], possibly implementing it as something about observing the
-      sign/zero-ness of [t1 - t2]. *)
-  and eval_atom (atom : t) =
+  let eval_const_shallow atom =
+    let on_const f =
+      match get_terms atom with
+      | Const c1, Const c2 ->
+          f c1 c2 |> eval_result_of_bool
+      | _ ->
+          Atom atom
+    in
+    match atom with
+    | Equal _ ->
+        on_const Q.equal
+    | NotEqual _ ->
+        on_const Q.not_equal
+    | LessEqual _ ->
+        on_const Q.leq
+    | LessThan _ ->
+        on_const Q.lt
+
+
+  let get_as_linear atom =
+    match get_terms atom with
+    | Linear l1, Linear l2 ->
+        let l = LinArith.subtract l1 l2 in
+        let t = Term.simplify_linear (Linear l) in
+        Some
+          ( match atom with
+          | Equal _ ->
+              Equal (t, Term.zero)
+          | NotEqual _ ->
+              NotEqual (t, Term.zero)
+          | LessEqual _ ->
+              LessEqual (t, Term.zero)
+          | LessThan _ ->
+              LessThan (t, Term.zero) )
+    | _ ->
+        None
+
+
+  let get_as_embedded_atom atom =
+    let of_terms is_equal t1 t2 =
+      match (atom_of_term t1, t2) with
+      | Some atom, Term.Const c ->
+          (* [atom = 0] or [atom ≠ 1] means [atom] is false, [atom ≠ 0] or [atom = 1] means [atom]
+             is true *)
+          let positive = (is_equal && Q.is_one c) || ((not is_equal) && Q.is_zero c) in
+          if positive then Some atom else Some (nnot atom)
+      | _ ->
+          None
+    in
+    (* [of_terms] is written for only one side, the one where [t1] is the potential atom *)
+    let of_terms_symmetry is_equal atom =
+      let t1, t2 = get_terms atom in
+      let t1, t2 = if term_is_atom t1 then (t1, t2) else (t2, t1) in
+      of_terms is_equal t1 t2
+    in
+    match atom with
+    | Equal (Const _, _) | Equal (_, Const _) ->
+        of_terms_symmetry true atom
+    | NotEqual (Const _, _) | NotEqual (_, Const _) ->
+        of_terms_symmetry false atom
+    | _ ->
+        None
+
+
+  let eval_syntactically_equal_terms atom =
     let t1, t2 = get_terms atom in
-    match (t1, t2) with
-    | Const c1, Const c2 -> (
+    if Term.equal_syntax t1 t2 then
       match atom with
       | Equal _ ->
-          eval_result_of_bool (Q.equal c1 c2)
+          True
       | NotEqual _ ->
-          eval_result_of_bool (not (Q.equal c1 c2))
+          False
       | LessEqual _ ->
-          eval_result_of_bool (Q.leq c1 c2)
+          True
       | LessThan _ ->
-          eval_result_of_bool (Q.lt c1 c2) )
-    | _ ->
-        if Term.equal_syntax t1 t2 then
-          match atom with
-          | Equal _ ->
-              True
-          | NotEqual _ ->
-              False
-          | LessEqual _ ->
-              True
-          | LessThan _ ->
-              False
-        else Atom atom
+          False
+    else Atom atom
 
 
-  let eval (atom : t) = map_terms atom ~f:eval_term |> eval_atom
+  (** This assumes that the terms in the atom have been normalized/evaluated already. *)
+  let rec eval_atom (atom : t) =
+    let open EvalResultMonad in
+    let* atom = eval_const_shallow atom in
+    match get_as_linear atom with
+    | Some atom' ->
+        eval_atom atom'
+    | None -> (
+      match get_as_embedded_atom atom with
+      | Some atom' ->
+          eval_atom atom'
+      | None ->
+          eval_syntactically_equal_terms atom )
 
-  let fold_map_variables a ~init ~f =
-    fold_map_terms a ~init ~f:(fun acc t -> Term.fold_map_variables t ~init:acc ~f)
+
+  let rec eval_term t =
+    let t =
+      Term.map_direct_subterms ~f:eval_term t
+      |> Term.simplify_shallow |> Term.eval_const_shallow |> Term.linearize |> Term.simplify_linear
+    in
+    match atom_of_term t with
+    | Some atom ->
+        (* terms that are atoms can be simplified in [eval_atom] *)
+        eval_atom atom |> term_of_eval_result
+    | None ->
+        t
+
+
+  let eval atom = map_terms atom ~f:eval_term |> eval_atom
+
+  let fold_subst_variables a ~init ~f =
+    fold_map_terms a ~init ~f:(fun acc t -> Term.fold_subst_variables t ~init:acc ~f)
 
 
   let has_var_notin vars atom =
@@ -516,10 +929,6 @@ module Atom = struct
     type nonrec t = t [@@deriving compare]
   end)
 end
-
-(** "normalized" is not to be taken too seriously, it just means *some* normalization was applied
-    that could result in discovering something is unsatisfiable *)
-type 'a normalized = Unsat | Sat of 'a
 
 module SatUnsatMonad = struct
   let map_normalized f norm = match norm with Unsat -> Unsat | Sat phi -> Sat (f phi)
@@ -535,166 +944,9 @@ module SatUnsatMonad = struct
   let ( let* ) phi f = bind_normalized f phi
 end
 
-(** Linear Arithmetic*)
-module LinArith : sig
-  (** linear combination of variables, eg [2·x + 3/4·y + 12] *)
-  type t
+let sat_of_eval_result (eval_result : Atom.eval_result) =
+  match eval_result with True -> Sat None | False -> Unsat | Atom atom -> Sat (Some atom)
 
-  val pp : (F.formatter -> Var.t -> unit) -> F.formatter -> t -> unit
-
-  val is_zero : t -> bool
-
-  val add : t -> t -> t
-
-  val minus : t -> t
-
-  val subtract : t -> t -> t
-
-  val solve_eq : t -> t -> (Var.t * t) option normalized
-  (** [solve_eq l1 l2] is [Sat (Some (x, l))] if [l1=l2 <=> x=l], [Sat None] if [l1 = l2] is always
-      true, and [Unsat] if it is always false *)
-
-  val of_var : Var.t -> t
-
-  val of_intlit : IntLit.t -> t
-
-  val of_operand : operand -> t
-
-  val get_as_const : t -> Q.t option
-  (** [get_as_const l] is [Some c] if [l=c], else [None] *)
-
-  val get_as_var : t -> Var.t option
-  (** [get_as_var l] is [Some x] if [l=x], else [None] *)
-
-  val has_var : Var.t -> t -> bool
-
-  val subst : Var.t -> Var.t -> t -> t
-
-  val subst_vars : f:(Var.t -> t) -> t -> t
-
-  val get_variables : t -> Var.t Seq.t
-
-  val fold_map_variables : t -> init:'a -> f:('a -> Var.t -> 'a * Var.t) -> 'a * t
-end = struct
-  (** invariant: the representation is always "canonical": coefficients cannot be [Q.zero] *)
-  type t = Q.t Var.Map.t * Q.t
-
-  let pp pp_var fmt (vs, c) =
-    if Var.Map.is_empty vs then Q.pp_print fmt c
-    else
-      let pp_c fmt c =
-        if Q.equal c Q.zero then ()
-        else
-          let plusminus, c_pos = if Q.geq c Q.zero then ('+', c) else ('-', Q.neg c) in
-          F.fprintf fmt " %c%a" plusminus Q.pp_print c_pos
-      in
-      let pp_coeff fmt q =
-        if Q.equal q Q.one then ()
-        else if Q.equal q Q.minus_one then F.pp_print_string fmt "-"
-        else F.fprintf fmt "%a·" Q.pp_print q
-      in
-      let pp_vs fmt vs =
-        Pp.collection ~sep:" + "
-          ~fold:(IContainer.fold_of_pervasives_map_fold Var.Map.fold)
-          ~pp_item:(fun fmt (v, q) -> F.fprintf fmt "%a%a" pp_coeff q pp_var v)
-          fmt vs
-      in
-      F.fprintf fmt "@[<h>%a%a@]" pp_vs vs pp_c c
-
-
-  let add (vs1, c1) (vs2, c2) =
-    ( Var.Map.union
-        (fun _v c1 c2 ->
-          let c = Q.add c1 c2 in
-          if Q.equal c Q.zero then None else Some c )
-        vs1 vs2
-    , Q.add c1 c2 )
-
-
-  let minus (vs, c) = (Var.Map.map (fun c -> Q.neg c) vs, Q.neg c)
-
-  let subtract l1 l2 = add l1 (minus l2)
-
-  let zero = (Var.Map.empty, Q.zero)
-
-  let is_zero (vs, c) = Q.equal c Q.zero && Var.Map.is_empty vs
-
-  let mult q ((vs, c) as l) =
-    if Q.equal q Q.zero then (* needed for correction: coeffs cannot be zero *) zero
-    else if Q.equal q Q.one then (* purely an optimisation *) l
-    else (Var.Map.map (fun c -> Q.mul q c) vs, Q.mul q c)
-
-
-  let solve_eq_zero (vs, c) =
-    match Var.Map.min_binding_opt vs with
-    | None ->
-        if Q.equal c Q.zero then Sat None else Unsat
-    | Some (x, coeff) ->
-        let d = Q.neg coeff in
-        let vs' =
-          Var.Map.fold
-            (fun v' coeff' vs' ->
-              if Var.equal v' x then vs' else Var.Map.add v' (Q.div coeff' d) vs' )
-            vs Var.Map.empty
-        in
-        let c' = Q.div c d in
-        Sat (Some (x, (vs', c')))
-
-
-  let solve_eq l1 l2 = solve_eq_zero (subtract l1 l2)
-
-  let of_var v = (Var.Map.singleton v Q.one, Q.zero)
-
-  let of_intlit i = (Var.Map.empty, IntLit.to_big_int i |> Q.of_bigint)
-
-  let of_operand = function AbstractValueOperand v -> of_var v | LiteralOperand i -> of_intlit i
-
-  let get_as_const (vs, c) = if Var.Map.is_empty vs then Some c else None
-
-  let get_as_var (vs, c) =
-    if Q.equal c Q.zero then
-      match Var.Map.is_singleton_or_more vs with
-      | Singleton (x, cx) when Q.equal cx Q.one ->
-          Some x
-      | _ ->
-          None
-    else None
-
-
-  let has_var x (vs, _) = Var.Map.mem x vs
-
-  let subst x y ((vs, c) as l) =
-    match Var.Map.find_opt x vs with
-    | None ->
-        l
-    | Some cx ->
-        let vs' = Var.Map.remove x vs |> Var.Map.add y cx in
-        (vs', c)
-
-
-  let subst_vars ~f (vs, c) = Var.Map.fold (fun v q l -> mult q (f v) |> add l) vs (Var.Map.empty, c)
-
-  let fold_map_variables (vs_foreign, c) ~init ~f =
-    let acc_f, vs =
-      Var.Map.fold
-        (fun v_foreign q0 (acc_f, vs) ->
-          let acc_f, v = f acc_f v_foreign in
-          let vs =
-            match Var.Map.find_opt v vs with
-            | None ->
-                Var.Map.add v q0 vs
-            | Some q ->
-                let q' = Q.add q q0 in
-                if Q.equal q' Q.zero then Var.Map.remove v vs else Var.Map.add v q vs
-          in
-          (acc_f, vs) )
-        vs_foreign (init, Var.Map.empty)
-    in
-    (acc_f, (vs, c))
-
-
-  let get_variables (vs, _) = Var.Map.to_seq vs |> Seq.map fst
-end
 
 module VarUF =
   UnionFind.Make
@@ -745,6 +997,8 @@ module Normalizer : sig
 
   val and_var_var : Var.t -> Var.t -> t -> t normalized
 
+  val and_atom : Atom.t -> t -> t normalized
+
   val normalize : t -> t normalized
 end = struct
   (* Use the monadic notations when normalizing formulas. *)
@@ -780,38 +1034,44 @@ end = struct
   (** substitute vars in [l] *once* with their linear form to discover more simplification
       opportunities *)
   let apply phi l =
-    LinArith.subst_vars l ~f:(fun v ->
+    LinArith.subst_variables l ~f:(fun v ->
         let repr = (get_repr phi v :> Var.t) in
         match Var.Map.find_opt repr phi.linear_eqs with
         | None ->
-            LinArith.of_var repr
+            VarSubst repr
         | Some l' ->
-            l' )
+            LinSubst l' )
 
 
-  let rec solve_eq ~fuel t1 t2 phi =
-    LinArith.solve_eq t1 t2
-    >>= function None -> Sat phi | Some (x, l) -> merge_var_linarith ~fuel x l phi
-
-
-  and merge_var_linarith ~fuel v l phi =
-    let v = (get_repr phi v :> Var.t) in
-    let l = apply phi l in
-    match LinArith.get_as_var l with
-    | Some v' ->
-        merge_vars ~fuel (v :> Var.t) v' phi
-    | None -> (
-      match Var.Map.find_opt (v :> Var.t) phi.linear_eqs with
-      | None ->
-          (* this is probably dodgy as nothing guarantees that [l] does not mention [v] *)
-          Sat {phi with linear_eqs= Var.Map.add (v :> Var.t) l phi.linear_eqs}
-      | Some l' ->
-          (* This is the only step that consumes fuel: discovering an equality [l = l']: because we
-             do not record these anywhere (except when there consequence can be recorded as [y =
-             l''] or [y = y'], we could potentially discover the same equality over and over and
-             diverge otherwise *)
-          if fuel > 0 then solve_eq ~fuel:(fuel - 1) l l' phi
-          else (* [fuel = 0]: give up simplifying further for fear of diverging *) Sat phi )
+  let rec solve_normalized_eq ~fuel l1 l2 phi =
+    LinArith.solve_eq l1 l2
+    >>= function
+    | None ->
+        Sat phi
+    | Some (v, l) -> (
+      match LinArith.get_as_var l with
+      | Some v' ->
+          merge_vars ~fuel (v :> Var.t) v' phi
+      | None -> (
+        match Var.Map.find_opt (v :> Var.t) phi.linear_eqs with
+        | None ->
+            (* this can break the (as a result non-)invariant that variables in the domain of
+               [linear_eqs] do not appear in the range of [linear_eqs] *)
+            Sat {phi with linear_eqs= Var.Map.add (v :> Var.t) l phi.linear_eqs}
+        | Some l' ->
+            (* This is the only step that consumes fuel: discovering an equality [l = l']: because we
+               do not record these anywhere (except when there consequence can be recorded as [y =
+               l''] or [y = y'], we could potentially discover the same equality over and over and
+               diverge otherwise. Or could we? *)
+            (* [l'] is possibly not normalized w.r.t. the current [phi] so take this opportunity to
+               normalize it *)
+            if fuel > 0 then (
+              L.d_printfln "Consuming fuel solving linear equality (from %d)" fuel ;
+              solve_normalized_eq ~fuel:(fuel - 1) l (apply phi l') phi )
+            else (
+              (* [fuel = 0]: give up simplifying further for fear of diverging *)
+              L.d_printfln "Ran out of fuel solving linear equality" ;
+              Sat phi ) ) )
 
 
   and merge_vars ~fuel v1 v2 phi =
@@ -825,9 +1085,11 @@ end = struct
         (* new equality [v_old = v_new]: we need to update a potential [v_old = l] to be [v_new =
            l], and if [v_new = l'] was known we need to also explore the consequences of [l = l'] *)
         (* NOTE: we try to maintain the invariant that for all [x=l] in [phi.linear_eqs], [x ∉
-           vars(l)], because other Shostak techniques do so (in fact, they impose a stricter
-           condition that the domain and the range of [phi.linear_eqs] mention distinct variables),
-           but some other steps of the reasoning may break that. Not sure why we bother. *)
+           vars(l)]. We also try to stay as close as possible (without going back and re-normalizing
+           every linear equality every time we learn new equalities) to the invariant that the
+           domain and the range of [phi.linear_eqs] mention distinct variables. This is to speed up
+           normalization steps: when the stronger invariant holds we can normalize in one step (in
+           [normalize_linear_eqs]). *)
         let v_new = (v_new :> Var.t) in
         let phi, l_new =
           match Var.Map.find_opt v_new phi.linear_eqs with
@@ -859,178 +1121,137 @@ end = struct
             (* no need to consume fuel here as we can only go through this branch finitely many
                times because there are finitely many variables in a given formula *)
             (* TODO: we may want to keep the "simpler" representative for [v_new] between [l1] and [l2] *)
-            solve_eq ~fuel l1 l2 phi )
+            solve_normalized_eq ~fuel l1 l2 phi )
 
 
   (** an arbitrary value *)
-  let fuel = 5
+  let base_fuel = 5
 
-  let and_var_linarith v l phi = merge_var_linarith ~fuel v l phi
+  let solve_eq t1 t2 phi = solve_normalized_eq ~fuel:base_fuel (apply phi t1) (apply phi t2) phi
 
-  let and_var_var v1 v2 phi = merge_vars ~fuel v1 v2 phi
+  let and_var_linarith v l phi = solve_eq l (LinArith.of_var v) phi
 
-  let normalize_linear_eqs phi0 =
-    (* reconstruct the relation from scratch *)
-    Var.Map.fold
-      (fun v l phi -> bind_normalized (and_var_linarith v (apply phi0 l)) phi)
-      phi0.linear_eqs
-      (Sat {phi0 with linear_eqs= Var.Map.empty})
+  let and_var_var v1 v2 phi = merge_vars ~fuel:base_fuel v1 v2 phi
+
+  let rec normalize_linear_eqs ~fuel phi0 =
+    let* changed, phi' =
+      (* reconstruct the relation from scratch *)
+      Var.Map.fold
+        (fun v l acc ->
+          let* changed, phi = acc in
+          let l' = apply phi0 l in
+          let+ phi' = and_var_linarith v l' phi in
+          (changed || not (phys_equal l l'), phi') )
+        phi0.linear_eqs
+        (Sat (false, {phi0 with linear_eqs= Var.Map.empty}))
+    in
+    if changed then
+      if fuel > 0 then (
+        (* do another pass if we can afford it *)
+        L.d_printfln "consuming fuel normalizing linear equalities (from %d)" fuel ;
+        normalize_linear_eqs ~fuel:(fuel - 1) phi' )
+      else (
+        L.d_printfln "ran out of fuel normalizing linear equalities" ;
+        Sat phi' )
+    else Sat phi0
 
 
   let normalize_atom phi (atom : Atom.t) =
     let normalize_term phi t =
-      Term.map_variables t ~f:(fun v ->
+      Term.subst_variables t ~f:(fun v ->
           let v_canon = (VarUF.find phi.var_eqs v :> Var.t) in
-          let q_opt =
-            let open Option.Monad_infix in
-            Var.Map.find_opt v_canon phi.linear_eqs >>= LinArith.get_as_const
-          in
-          match q_opt with None -> Var v_canon | Some q -> Const q )
+          match Var.Map.find_opt v_canon phi.linear_eqs with
+          | None ->
+              VarSubst v_canon
+          | Some l -> (
+            match LinArith.get_as_const l with None -> LinSubst l | Some q -> QSubst q ) )
     in
     let atom' = Atom.map_terms atom ~f:(fun t -> normalize_term phi t) in
-    match Atom.eval atom' with
-    | True ->
-        Sat None
-    | False ->
-        L.d_printfln "Contradiction detected! %a ~> %a is False" Atom.pp atom Atom.pp atom' ;
-        Unsat
-    | Atom atom ->
-        Sat (Some atom)
+    Atom.eval atom' |> sat_of_eval_result
+
+
+  (** return [(new_linear_equalities, phi ∧ atom)], where [new_linear_equalities] is [true] if
+      [phi.linear_eqs] was changed as a result *)
+  let and_atom atom phi =
+    normalize_atom phi atom
+    >>= function
+    | None ->
+        Sat (false, phi)
+    | Some (Atom.Equal (Linear l, Const c)) | Some (Atom.Equal (Const c, Linear l)) ->
+        (* NOTE: {!normalize_atom} calls {!Atom.eval}, which normalizes linear equalities so
+           they end up only on one side, hence only this match case is needed to detect linear
+           equalities *)
+        let+ phi' = solve_eq l (LinArith.of_q c) phi in
+        (true, phi')
+    | Some atom' ->
+        Sat (false, {phi with atoms= Atom.Set.add atom' phi.atoms})
 
 
   let normalize_atoms phi =
-    (* TODO: normalizing an atom may produce a new linear arithmetic or variable equality fact, we
-       should detect that and feed it back to the rest of the formula *)
-    let+ atoms =
-      IContainer.fold_of_pervasives_set_fold Atom.Set.fold phi.atoms ~init:(Sat Atom.Set.empty)
-        ~f:(fun facts atom ->
-          let* facts = facts in
-          normalize_atom phi atom
-          >>| function None -> facts | Some atom' -> Atom.Set.add atom' facts )
+    let atoms0 = phi.atoms in
+    let init = Sat (false, {phi with atoms= Atom.Set.empty}) in
+    IContainer.fold_of_pervasives_set_fold Atom.Set.fold atoms0 ~init ~f:(fun acc atom ->
+        let* changed, phi = acc in
+        let+ changed', phi = and_atom atom phi in
+        (changed || changed', phi) )
+
+
+  let normalize phi =
+    (* NOTE: we may consume a quadratic amount of [fuel] here since the fuel here is not consumed by
+       [normalize_linear_eqs] (i.e. [normalize_linear_eqs] does not return the remaining
+       fuel). That's ok because there's not much fuel to begin with, and as long as we're making
+       progress it's probably worth it anyway. *)
+    let rec normalize_with_fuel ~fuel phi =
+      if fuel <= 0 then (
+        L.d_printfln "ran out of fuel when normalizing" ;
+        Sat phi )
+      else
+        let* new_linear_eqs, phi = normalize_linear_eqs ~fuel phi >>= normalize_atoms in
+        if new_linear_eqs then (
+          L.d_printfln "new linear equalities, consuming fuel (from %d)" fuel ;
+          normalize_with_fuel ~fuel:(fuel - 1) phi )
+        else Sat phi
     in
-    {phi with atoms}
+    normalize_with_fuel ~fuel:base_fuel phi
 
 
-  let normalize phi = normalize_linear_eqs phi >>= normalize_atoms
+  let and_atom atom phi = and_atom atom phi >>| snd
 end
 
-let and_equal op1 op2 phi =
-  match (op1, op2) with
-  | LiteralOperand i1, LiteralOperand i2 ->
-      if IntLit.eq i1 i2 then Sat phi else Unsat
-  | AbstractValueOperand v, LiteralOperand i | LiteralOperand i, AbstractValueOperand v ->
-      Normalizer.and_var_linarith v (LinArith.of_intlit i) phi
-  | AbstractValueOperand v1, AbstractValueOperand v2 ->
-      Normalizer.and_var_var v1 v2 phi
+let and_mk_atom mk_atom op1 op2 phi =
+  Normalizer.and_atom (mk_atom (Term.of_operand op1) (Term.of_operand op2)) phi
 
 
-let and_atom atom phi = {phi with atoms= Atom.Set.add atom phi.atoms}
+let and_equal = and_mk_atom Atom.equal
 
-let and_less_equal op1 op2 phi =
-  match (op1, op2) with
-  | LiteralOperand i1, LiteralOperand i2 ->
-      if IntLit.leq i1 i2 then Sat phi else Unsat
-  | _ ->
-      Sat (and_atom (LessEqual (Term.of_operand op1, Term.of_operand op2)) phi)
+let and_less_equal = and_mk_atom Atom.less_equal
 
-
-let and_less_than op1 op2 phi =
-  match (op1, op2) with
-  | LiteralOperand i1, LiteralOperand i2 ->
-      if IntLit.lt i1 i2 then Sat phi else Unsat
-  | _ ->
-      Sat (and_atom (LessThan (Term.of_operand op1, Term.of_operand op2)) phi)
-
+let and_less_than = and_mk_atom Atom.less_than
 
 let and_equal_unop v (op : Unop.t) x phi =
-  match op with
-  | Neg ->
-      Normalizer.and_var_linarith v LinArith.(minus (of_operand x)) phi
-  | BNot | LNot ->
-      Sat (and_atom (Equal (Term.Var v, Term.of_unop op (Term.of_operand x))) phi)
+  Normalizer.and_atom (Equal (Var v, Term.of_unop op (Term.of_operand x))) phi
 
 
 let and_equal_binop v (bop : Binop.t) x y phi =
-  let and_linear_eq l = Normalizer.and_var_linarith v l phi in
-  match bop with
-  | PlusA _ | PlusPI ->
-      LinArith.(add (of_operand x) (of_operand y)) |> and_linear_eq
-  | MinusA _ | MinusPI | MinusPP ->
-      LinArith.(subtract (of_operand x) (of_operand y)) |> and_linear_eq
-  (* TODO: some of the below could become linear arithmetic after simplifications (e.g. up to constants) *)
-  | Mult _
-  | Div
-  | Mod
-  | Shiftlt
-  | Shiftrt
-  | BAnd
-  | BXor
-  | BOr
-  (* TODO: (most) logical operators should be translated into the formula structure *)
-  | Lt
-  | Gt
-  | Le
-  | Ge
-  | Eq
-  | Ne
-  | LAnd
-  | LOr ->
-      Sat
-        (and_atom
-           (Equal (Term.Var v, Term.of_binop bop (Term.of_operand x) (Term.of_operand y)))
-           phi)
+  Normalizer.and_atom (Equal (Var v, Term.of_binop bop (Term.of_operand x) (Term.of_operand y))) phi
 
 
 let prune_binop ~negated (bop : Binop.t) x y phi =
-  let atom op x y =
-    let tx = Term.of_operand x in
-    let ty = Term.of_operand y in
-    let atom : Atom.t =
-      match op with
-      | `LessThan ->
-          LessThan (tx, ty)
-      | `LessEqual ->
-          LessEqual (tx, ty)
-      | `NotEqual ->
-          NotEqual (tx, ty)
-    in
-    Sat (and_atom atom phi)
-  in
-  match (bop, negated) with
-  | Eq, false | Ne, true ->
-      and_equal x y phi
-  | Ne, false | Eq, true ->
-      atom `NotEqual x y
-  | Lt, false | Ge, true ->
-      atom `LessThan x y
-  | Le, false | Gt, true ->
-      atom `LessEqual x y
-  | Ge, false | Lt, true ->
-      atom `LessEqual y x
-  | Gt, false | Le, true ->
-      atom `LessThan y x
-  | LAnd, _
-  | LOr, _
-  | Mult _, _
-  | Div, _
-  | Mod, _
-  | Shiftlt, _
-  | Shiftrt, _
-  | BAnd, _
-  | BXor, _
-  | BOr, _
-  | PlusA _, _
-  | PlusPI, _
-  | MinusA _, _
-  | MinusPI, _
-  | MinusPP, _ ->
-      Sat phi
+  let tx = Term.of_operand x in
+  let ty = Term.of_operand y in
+  let t = Term.of_binop bop tx ty in
+  let atom = if negated then Atom.Equal (t, Term.zero) else Atom.NotEqual (t, Term.zero) in
+  Normalizer.and_atom atom phi
 
 
 let normalize phi = Normalizer.normalize phi
 
 (** translate each variable in [phi_foreign] according to [f] then incorporate each fact into [phi0] *)
-let and_fold_map_variables phi0 ~up_to_f:phi_foreign ~init ~f =
+let and_fold_subst_variables phi0 ~up_to_f:phi_foreign ~init ~f:f_var =
+  let f_subst acc v =
+    let acc', v' = f_var acc v in
+    (acc', VarSubst v')
+  in
   (* propagate [Unsat] faster using this exception *)
   let exception Contradiction in
   let sat_value_exn (norm : 'a normalized) =
@@ -1039,30 +1260,26 @@ let and_fold_map_variables phi0 ~up_to_f:phi_foreign ~init ~f =
   let and_var_eqs acc =
     VarUF.fold_congruences phi_foreign.var_eqs ~init:acc
       ~f:(fun (acc_f, phi) (repr_foreign, vs_foreign) ->
-        let acc_f, repr = f acc_f (repr_foreign :> Var.t) in
+        let acc_f, repr = f_var acc_f (repr_foreign :> Var.t) in
         IContainer.fold_of_pervasives_set_fold Var.Set.fold vs_foreign ~init:(acc_f, phi)
           ~f:(fun (acc_f, phi) v_foreign ->
-            let acc_f, v = f acc_f v_foreign in
+            let acc_f, v = f_var acc_f v_foreign in
             let phi = Normalizer.and_var_var repr v phi |> sat_value_exn in
             (acc_f, phi) ) )
   in
   let and_linear_eqs acc =
     IContainer.fold_of_pervasives_map_fold Var.Map.fold phi_foreign.linear_eqs ~init:acc
       ~f:(fun (acc_f, phi) (v_foreign, l_foreign) ->
-        let acc_f, v = f acc_f v_foreign in
-        let acc_f, l = LinArith.fold_map_variables l_foreign ~init:acc_f ~f in
+        let acc_f, v = f_var acc_f v_foreign in
+        let acc_f, l = LinArith.fold_subst_variables l_foreign ~init:acc_f ~f:f_subst in
         let phi = Normalizer.and_var_linarith v l phi |> sat_value_exn in
         (acc_f, phi) )
   in
   let and_atoms acc =
     IContainer.fold_of_pervasives_set_fold Atom.Set.fold phi_foreign.atoms ~init:acc
       ~f:(fun (acc_f, phi) atom_foreign ->
-        let acc_f, atom =
-          Atom.fold_map_variables atom_foreign ~init:acc_f ~f:(fun acc_f v ->
-              let acc_f, v' = f acc_f v in
-              (acc_f, Term.Var v') )
-        in
-        let phi = and_atom atom phi in
+        let acc_f, atom = Atom.fold_subst_variables atom_foreign ~init:acc_f ~f:f_subst in
+        let phi = Normalizer.and_atom atom phi |> sat_value_exn in
         (acc_f, phi) )
   in
   try Sat (and_var_eqs (init, phi0) |> and_linear_eqs |> and_atoms) with Contradiction -> Unsat
@@ -1197,3 +1414,10 @@ let get_variables {var_eqs; linear_eqs; atoms}=
 let is_known_zero phi v =
   Var.Map.find_opt (VarUF.find phi.var_eqs v :> Var.t) phi.linear_eqs
   |> Option.exists ~f:LinArith.is_zero
+
+
+let as_int phi v =
+  let maybe_int q = if Z.equal (Q.den q) Z.one then Q.to_int q else None in
+  let open Option.Monad_infix in
+  Var.Map.find_opt (VarUF.find phi.var_eqs v :> Var.t) phi.linear_eqs
+  >>= LinArith.get_as_const >>= maybe_int

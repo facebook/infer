@@ -38,15 +38,14 @@ module ReportableViolation : sig
   (** Depending on the mode, violation might or might not be important enough to be reported to the
       user. If it should NOT be reported for that mode, this function will return None. *)
 
-  val get_severity : t -> IssueType.severity
-  (** Severity of the violation to be reported *)
-
-  val get_description :
+  val make_nullsafe_issue :
        t
     -> violation_type
+    -> nullsafe_mode:NullsafeMode.t
+    -> loc:Location.t
     -> base_proc_name:Procname.Java.t
     -> overridden_proc_name:Procname.Java.t
-    -> string
+    -> NullsafeIssue.t
   (** Given context around violation, return error message together with the info where to put this
       message *)
 end

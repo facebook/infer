@@ -124,7 +124,7 @@ int ref_capture_return_local_lambda_ok() {
   return f().f;
 }
 
-S& FN_ref_capture_return_local_lambda_bad() {
+S& ref_capture_return_local_lambda_bad() {
   S x;
   auto f = [&x](void) -> S& {
     // no way to know if ok here
@@ -166,7 +166,242 @@ void call_lambda_bad() {
   f(s);
 }
 
+void call_lambda_std_fun_bad() {
+  std::function<void(S*)> f;
+  f = [](S* s) { int x = s->f; };
+  S* s = new S();
+  delete s;
+  f(s);
+}
+
+void call_std_fun_constructor_bad() {
+  std::function<void(S*)> f1 = [](S* s) { int x = s->f; };
+  std::function<void(S*)> f2 = f1;
+  S* s = new S();
+  delete s;
+  f2(s);
+}
+
+void function_constructor_null_ok() { std::function<int()> f = nullptr; }
+
 void function_assign_null_ok() {
   std::function<int()> f = [] { return 1; };
   f = nullptr;
+}
+
+void capture_by_value_ok() {
+  int value = 5;
+  auto f = [value]() -> int* { return new int(value); };
+  value++;
+  int* p = f();
+  int* q = nullptr;
+  if (*p != 5) {
+    *q = 42;
+  }
+}
+
+void capture_by_value_bad() {
+  int value = 5;
+  auto f = [value]() -> int* { return new int(value); };
+  value++;
+  int* p = f();
+  int* q = nullptr;
+  if (*p == 5) {
+    *q = 42;
+  }
+}
+
+void capture_by_ref_ok() {
+  int value = 5;
+  auto f = [&value]() -> int* { return new int(value); };
+  value++;
+  int* p = f();
+  int* q = nullptr;
+  if (*p != 6) {
+    *q = 42;
+  }
+}
+
+void capture_by_ref_bad() {
+  int value = 5;
+  auto f = [&value]() -> int* { return new int(value); };
+  value++;
+  int* p = f();
+  int* q = nullptr;
+  if (*p == 6) {
+    *q = 42;
+  }
+}
+
+void capture_by_value_init_ok() {
+  int value = 5;
+  auto f = [v = value]() -> int* { return new int(v); };
+  value++;
+  int* p = f();
+  int* q = nullptr;
+  if (*p != 5) {
+    *q = 42;
+  }
+}
+
+void capture_by_value_init_bad() {
+  int value = 5;
+  auto f = [v = value]() -> int* { return new int(v); };
+  value++;
+  int* p = f();
+  int* q = nullptr;
+  if (*p == 5) {
+    *q = 42;
+  }
+}
+
+void capture_by_ref_init_ok() {
+  int value = 5;
+  auto f = [& v = value]() -> int* { return new int(v); };
+  value++;
+  int* p = f();
+  int* q = nullptr;
+  if (*p != 6) {
+    *q = 42;
+  }
+}
+
+void capture_by_ref_init_bad() {
+  int value = 5;
+  auto f = [& v = value]() -> int* { return new int(v); };
+  value++;
+  int* p = f();
+  int* q = nullptr;
+  if (*p == 6) {
+    *q = 42;
+  }
+}
+
+void ref_capture_by_value_ok() {
+  int value = 5;
+  int& ref = value;
+  auto f = [ref]() -> int* { return new int(ref); };
+  ref++;
+  int* p = f();
+  int* q = nullptr;
+  if (*p != 5) {
+    *q = 42;
+  }
+}
+
+void ref_capture_by_value_bad() {
+  int value = 5;
+  int& ref = value;
+  auto f = [ref]() -> int* { return new int(ref); };
+  ref++;
+  int* p = f();
+  int* q = nullptr;
+  if (*p == 5) {
+    *q = 42;
+  }
+}
+
+void ref_capture_by_ref_ok() {
+  int value = 5;
+  int& ref = value;
+  auto f = [&ref]() -> int* { return new int(ref); };
+  ref++;
+  int* p = f();
+  int* q = nullptr;
+  if (*p != 6) {
+    *q = 42;
+  }
+}
+
+void ref_capture_by_ref_bad() {
+  int value = 5;
+  int& ref = value;
+  auto f = [&ref]() -> int* { return new int(ref); };
+  ref++;
+  int* p = f();
+  int* q = nullptr;
+  if (*p == 6) {
+    *q = 42;
+  }
+}
+
+void struct_capture_by_ref_bad() {
+  S s;
+  auto f = [&s]() -> int* { return new int(s.f); };
+  s.f = 5;
+  int* p = f();
+  int* q = nullptr;
+  if (*p == 5) {
+    *q = 42;
+  }
+}
+
+void struct_capture_by_ref_ok() {
+  S s;
+  auto f = [&s]() -> int* { return new int(s.f); };
+  s.f = 5;
+  int* p = f();
+  int* q = nullptr;
+  if (*p != 5) {
+    *q = 42;
+  }
+}
+
+void struct_capture_by_val_bad() {
+  S s;
+  auto f = [s]() -> int* { return new int(s.f); };
+  s.f = 5;
+  int* p = f();
+  int* q = nullptr;
+  if (*p == 1) {
+    *q = 42;
+  }
+}
+
+void struct_capture_by_val_ok_FP() {
+  S s;
+  auto f = [s]() -> int* { return new int(s.f); };
+  s.f = 5;
+  int* p = f();
+  int* q = nullptr;
+  if (*p != 1) {
+    *q = 42;
+  }
+}
+
+S* update_inside_lambda_capture_and_init(S* s) {
+  S* object = nullptr;
+  auto f = [& o = object](S* s) { o = s; };
+  f(s);
+  return object;
+}
+
+int update_inside_lambda_capture_and_init_ok(S* param_s) {
+  return update_inside_lambda_capture_and_init(param_s)->f;
+}
+
+S* update_inside_lambda_capture_only(S* s) {
+  S* object = nullptr;
+  /* FIXME: clang AST gives us `S*` for  variable `object` in the
+     lambda's body, hence the translation misses one dereference */
+  auto f = [&object](S* s) { object = s; };
+  f(s);
+  return object;
+}
+
+int update_inside_lambda_capture_only_ok(S* param_s) {
+  return update_inside_lambda_capture_only(param_s)->f;
+}
+
+void call_argument(std::function<void(S*)> f, S* s) { f(s); }
+
+S* update_inside_lambda_as_argument(S* s) {
+  S* object = nullptr;
+  auto f = [& o = object](S* s) { o = s; };
+  call_argument(f, s);
+  return object;
+}
+
+int update_inside_lambda_as_argument_ok_FP(S* param_s) {
+  return update_inside_lambda_as_argument(param_s)->f;
 }

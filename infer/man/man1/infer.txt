@@ -279,6 +279,11 @@ OPTIONS
            Activates: Enable cost and disable all other checkers (Conversely:
            --no-cost-only)           See also infer-analyze(1).
 
+       --cost-tests-only-autoreleasepool
+           Activates: [EXPERIMENTAL] Report only autoreleasepool size results
+           in cost tests (Conversely: --no-cost-tests-only-autoreleasepool)       
+    See also infer-report(1) and infer-reportdiff(1).
+
        --costs-current path
            Costs report of the latest revision           See also infer-reportdiff(1).
 
@@ -366,6 +371,10 @@ OPTIONS
              ARRAY_OUT_OF_BOUNDS_L2 (disabled by default),
              ARRAY_OUT_OF_BOUNDS_L3 (disabled by default),
              ASSIGN_POINTER_WARNING (enabled by default),
+             AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE (enabled by default),
+             AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE_UI_THREAD (enabled by
+           default),
+             AUTORELEASEPOOL_SIZE_UNREACHABLE_AT_EXIT (disabled by default),
              Abduction_case_not_implemented (enabled by default),
              Array_of_pointsto (enabled by default),
              Assert_failure (enabled by default),
@@ -445,6 +454,7 @@ OPTIONS
              INFERBO_ALLOC_IS_ZERO (enabled by default),
              INFERBO_ALLOC_MAY_BE_BIG (enabled by default),
              INFERBO_ALLOC_MAY_BE_NEGATIVE (enabled by default),
+             INFINITE_AUTORELEASEPOOL_SIZE (disabled by default),
              INFINITE_EXECUTION_TIME (disabled by default),
              INHERENTLY_DANGEROUS_FUNCTION (enabled by default),
              INSECURE_INTENT_HANDLING (enabled by default),
@@ -495,7 +505,8 @@ OPTIONS
              STRONG_SELF_NOT_CHECKED (enabled by default),
              Symexec_memory_error (enabled by default),
              THREAD_SAFETY_VIOLATION (enabled by default),
-             TOPL_ERROR (enabled by default),
+             TOPL_BIABD_ERROR (enabled by default),
+             TOPL_PULSE_ERROR (enabled by default),
              UNINITIALIZED_VALUE (enabled by default),
              UNREACHABLE_CODE (enabled by default),
              UNTRUSTED_BUFFER_ACCESS (disabled by default),
@@ -909,6 +920,10 @@ OPTIONS
            Methods that should be modelled as returning non-null in Pulse       
     See also infer-analyze(1).
 
+       --pulse-model-skip-pattern string
+           Regex of methods that should be modelled as "skip" in Pulse       
+    See also infer-analyze(1).
+
        --pulse-model-transfer-ownership +string
            Methods that should be modelled as transfering memory ownership in
            Pulse. Accepted formats are method or namespace::method       
@@ -1187,6 +1202,10 @@ OPTIONS
        --xcode-developer-dir XCODE_DEVELOPER_DIR
            Specify the path to Xcode developer directory, to use for Buck
            clang targets           See also infer-capture(1).
+
+       --xcode-isysroot-suffix string
+           Specify the suffix of Xcode isysroot directory, to avoid absolute
+           paths in tests           See also infer-analyze(1).
 
        --xcpretty
            Activates: Infer will use xcpretty together with xcodebuild to

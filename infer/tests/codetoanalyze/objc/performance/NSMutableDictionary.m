@@ -7,8 +7,7 @@
 #import <Foundation/Foundation.h>
 
 // set element
-void nsmutabledictionary_set_element_in_loop_linear_FN(
-    NSMutableDictionary* dict) {
+void nsmutabledictionary_set_element_in_loop_linear(NSMutableDictionary* dict) {
   for (NSString* key in dict) {
     dict[key] = key;
   }

@@ -86,7 +86,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let is_array t = match t.Typ.desc with Typ.Tarray _ -> true | _ -> false
 
   let get_formals pname =
-    AnalysisCallbacks.get_proc_desc pname |> Option.map ~f:Procdesc.get_formals
+    AnalysisCallbacks.proc_resolve_attributes pname |> Option.map ~f:ProcAttributes.get_formals
 
 
   let should_report_var pdesc tenv maybe_uninit_vars access_expr =
@@ -95,6 +95,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Some typ, (Var.ProgramVar pv, _) ->
         (not (Pvar.is_frontend_tmp pv))
         && (not (Procdesc.is_captured_pvar pdesc pv))
+        && (not (Procdesc.has_modify_in_block_attr pdesc pv))
         && MaybeUninitVars.mem access_expr maybe_uninit_vars
         && should_report_on_type typ
     | _, _ ->

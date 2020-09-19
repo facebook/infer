@@ -23,15 +23,19 @@ type model =
 let cpp_model_namespace = QualifiedCppName.of_list ["__infer_pulse_model"]
 
 module Misc = struct
-  let shallow_copy location event ret_id dest_pointer_hist src_pointer_hist astate =
-    let* astate, obj = PulseOperations.eval_access location src_pointer_hist Dereference astate in
-    let* astate, obj_copy = PulseOperations.shallow_copy location obj astate in
+  let shallow_copy_value location event ret_id dest_pointer_hist src_value_hist astate =
+    let* astate, obj_copy = PulseOperations.shallow_copy location src_value_hist astate in
     let+ astate =
       PulseOperations.write_deref location ~ref:dest_pointer_hist
         ~obj:(fst obj_copy, event :: snd obj_copy)
         astate
     in
     PulseOperations.havoc_id ret_id [event] astate
+
+
+  let shallow_copy location event ret_id dest_pointer_hist src_pointer_hist astate =
+    let* astate, obj = PulseOperations.eval_access location src_pointer_hist Dereference astate in
+    shallow_copy_value location event ret_id dest_pointer_hist obj astate
 
 
   let shallow_copy_model model_desc dest_pointer_hist src_pointer_hist : model =
@@ -79,7 +83,28 @@ module Misc = struct
     PulseOperations.write_id ret_id (ret_addr, []) astate |> PulseOperations.ok_continue
 
 
-  let skip : model = fun _ ~callee_procname:_ _ ~ret:_ astate -> PulseOperations.ok_continue astate
+  (** Pretend the function call is a call to an "unknown" function, i.e. a function for which we
+      don't have the implementation. This triggers a bunch of heuristics, e.g. to havoc arguments we
+      suspect are passed by reference. *)
+  let unknown_call skip_reason args : model =
+   fun _ ~callee_procname location ~ret astate ->
+    let actuals =
+      List.map args ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= actual; typ} ->
+          (actual, typ) )
+    in
+    let formals_opt =
+      AnalysisCallbacks.proc_resolve_attributes callee_procname
+      |> Option.map ~f:ProcAttributes.get_pvar_formals
+    in
+    Ok
+      [ ExecutionDomain.ContinueProgram
+          (PulseOperations.unknown_call location (Model skip_reason) ~ret ~actuals ~formals_opt
+             astate) ]
+
+
+  (** don't actually do nothing, apply the heuristics for unknown calls (this may or may not be a
+      good idea) *)
+  let skip = unknown_call
 
   let nondet ~fn_name : model =
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
@@ -90,7 +115,6 @@ module Misc = struct
   let id_first_arg arg_access_hist : model =
    fun _ ~callee_procname:_ _ ~ret astate ->
     PulseOperations.write_id (fst ret) arg_access_hist astate |> PulseOperations.ok_continue
-end
 
 let check_memory_leak_after_free callee_procname location deleted_addr live_addresses_before_free astates=
   List.fold astates ~init:(Ok ()) ~f:(fun acc astate ->
@@ -105,29 +129,38 @@ let check_memory_leak_after_free callee_procname location deleted_addr live_addr
           | AbductiveDomain.PostStatus.Er _ -> acc
       )
 
-module C = struct
-  let free ((deleted_addr, _) as deleted_access) : model =
-   fun _ ~callee_procname location ~ret:_ astate ->
+let free_or_delete operation deleted_access : model =
+   fun _ ~callee_procname:_ location ~ret:_ astate ->
     (* NOTE: we could introduce a case-split explicitly on =0 vs ≠0 but instead only act on what we
        currently know about the value. This is purely to avoid contributing to path explosion. *)
     (* freeing 0 is a no-op *)
     if PulseArithmetic.is_known_zero astate (fst deleted_access) then
       PulseOperations.ok_continue astate
     else (
-      if not Config.pulse_isl then
+        if not Config.pulse_isl then
         let astate = PulseArithmetic.and_positive (fst deleted_access) astate in
-        let+ astate = PulseOperations.invalidate location Invalidation.CFree deleted_access astate in
-        [ExecutionDomain.ContinueProgram astate]
+      let invalidation =
+        match operation with `Free -> Invalidation.CFree | `Delete -> Invalidation.CppDelete
+      in
+      let+ astate = PulseOperations.invalidate location invalidation deleted_access astate in
+      [ExecutionDomain.ContinueProgram astate]
      else
         let live_addresses_before_free = BaseDomain.reachable_addresses_from Var.appears_in_source_code (astate.AbductiveDomain.post :> BaseDomain.t) in
-        let* astates = PulseOperations.invalidate_biad callee_procname location Invalidation.CFree ~null_noop:true deleted_access astate in
+        let invalidation =
+          match operation with `Free -> Invalidation.CFree | `Delete -> Invalidation.CppDelete
+        in
+        let* astates = PulseOperations.invalidate_biad callee_procname location invalidation ~null_noop:true deleted_access astate in
         let+ () = check_memory_leak_after_free callee_procname location deleted_addr live_addresses_before_free astates in
         List.map astates ~f:(fun astate ->
              let modified_vars = BaseDomain.reachable_vars_from deleted_addr (fun v -> Var.Set.mem v astate.AbductiveDomain.imm_params) (astate.AbductiveDomain.post :> BaseDomain.t) in
              let astate = Var.Set.fold (fun v astate -> AbductiveDomain.remove_imm_param v astate) modified_vars astate in
              ExecutionDomain.ContinueProgram astate)
      )
+     
+end
 
+module C = struct
+  let free deleted_access : model = Misc.free_or_delete `Free deleted_access
 
   let malloc _ : model =
    fun _ ~callee_procname location ~ret:(ret_id, _) astate ->
@@ -271,24 +304,7 @@ module FollyOptional = struct
 end
 
 module Cplusplus = struct
-  let delete ((deleted_addr, _) as deleted_access) : model =
-   fun _ ~callee_procname location ~ret:_ astate ->
-    if not Config.pulse_isl then
-      let+ astate =
-        PulseOperations.invalidate location Invalidation.CppDelete deleted_access astate
-      in
-      [ExecutionDomain.ContinueProgram astate]
-    else
-      let live_addresses_before_free = BaseDomain.reachable_addresses (astate.AbductiveDomain.post :> BaseDomain.t) in
-      let* astates =
-       PulseOperations.invalidate_biad callee_procname location Invalidation.CppDelete deleted_access  astate
-      in
-      let+ () = check_memory_leak_after_free callee_procname location deleted_addr live_addresses_before_free astates in
-      List.map astates ~f:(fun astate ->
-            let modified_vars = BaseDomain.reachable_vars_from deleted_addr (fun v -> Var.Set.mem v astate.AbductiveDomain.imm_params) (astate.AbductiveDomain.post :> BaseDomain.t) in
-             let astate = Var.Set.fold (fun v astate -> AbductiveDomain.remove_imm_param v astate) modified_vars astate in
-             ExecutionDomain.ContinueProgram astate)
-
+  let delete deleted_access : model = Misc.free_or_delete `Delete deleted_access
 
   let placement_new actuals : model =
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
@@ -487,7 +503,8 @@ module StdBasicString = struct
 end
 
 module StdFunction = struct
-  let operator_call lambda_ptr_hist actuals : model =
+  let operator_call ProcnameDispatcher.Call.FuncArg.{arg_payload= lambda_ptr_hist; typ} actuals :
+      model =
    fun {analyze_dependency} ~callee_procname:_ location ~ret astate ->
     let havoc_ret (ret_id, _) astate =
       let event = ValueHistory.Call {f= Model "std::function::operator()"; location; in_call= []} in
@@ -503,17 +520,18 @@ module StdFunction = struct
         Ok (havoc_ret ret astate |> List.map ~f:ExecutionDomain.continue)
     | Some callee_proc_name ->
         let actuals =
-          List.map actuals ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
-              (arg_payload, typ) )
+          (lambda_ptr_hist, typ)
+          :: List.map actuals ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
+                 (arg_payload, typ) )
         in
         PulseOperations.call
           ~callee_data:(analyze_dependency callee_proc_name)
           location callee_proc_name ~ret ~actuals ~formals_opt:None astate
 
 
-  let operator_equal dest src : model =
+  let assign dest ProcnameDispatcher.Call.FuncArg.{arg_payload= src; typ= src_typ} ~desc : model =
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
-    let event = ValueHistory.Call {f= Model "std::function::operator="; location; in_call= []} in
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let+ astate =
       if PulseArithmetic.is_known_zero astate (fst src) then
         let empty_target = AbstractValue.mk_fresh () in
@@ -521,7 +539,12 @@ module StdFunction = struct
           PulseOperations.write_deref location ~ref:dest ~obj:(empty_target, [event]) astate
         in
         PulseOperations.havoc_id ret_id [event] astate
-      else Misc.shallow_copy location event ret_id dest src astate
+      else
+        match src_typ.Typ.desc with
+        | Tptr (_, Pk_reference) ->
+            Misc.shallow_copy location event ret_id dest src astate
+        | _ ->
+            Misc.shallow_copy_value location event ret_id dest src astate
     in
     [ExecutionDomain.ContinueProgram astate]
 end
@@ -877,7 +900,7 @@ end
 module StringSet = Caml.Set.Make (String)
 
 module ProcNameDispatcher = struct
-  let dispatch : (Tenv.t, model, arg_payload) ProcnameDispatcher.Call.dispatcher =
+  let dispatch : (Tenv.t * Procname.t, model, arg_payload) ProcnameDispatcher.Call.dispatcher =
     let open ProcnameDispatcher.Call in
     let match_builtin builtin _ s = String.equal s (Procname.get_method builtin) in
     let pushback_modeled =
@@ -917,6 +940,13 @@ module ProcNameDispatcher = struct
         ~model:(fun m -> Misc.return_positive ~desc:m)
         Config.pulse_model_return_nonnull
     in
+    let match_regexp_opt r_opt (_tenv, proc_name) _ =
+      Option.value_map ~default:false r_opt ~f:(fun r ->
+          let s = Procname.to_string proc_name in
+          let r = Str.string_match r s 0 in
+          r )
+    in
+    let map_context_tenv f (x, _) = f x in
     make_dispatcher
       ( transfer_ownership_matchers @ abort_matchers @ return_nonnull_matchers
       @ [ +match_builtin BuiltinDecl.free <>$ capt_arg_payload $--> C.free
@@ -930,13 +960,16 @@ module ProcNameDispatcher = struct
         ; +match_builtin BuiltinDecl.exit <>--> Misc.early_exit
         ; +match_builtin BuiltinDecl.__infer_initializer_list
           <>$ capt_arg_payload $+...$--> Misc.id_first_arg
-        ; +PatternMatch.Java.implements_lang "System" &:: "exit" <>--> Misc.early_exit
+        ; +map_context_tenv (PatternMatch.Java.implements_lang "System")
+          &:: "exit" <>--> Misc.early_exit
         ; +match_builtin BuiltinDecl.__get_array_length <>--> Misc.return_unknown_size
         ; (* consider that all fbstrings are small strings to avoid false positives due to manual
              ref-counting *)
           -"folly" &:: "fbstring_core" &:: "category" &--> Misc.return_int Int64.zero
-        ; -"folly" &:: "DelayedDestruction" &:: "destroy" &--> Misc.skip
-        ; -"folly" &:: "SocketAddress" &:: "~SocketAddress" &--> Misc.skip
+        ; -"folly" &:: "DelayedDestruction" &:: "destroy"
+          &++> Misc.skip "folly::DelayedDestruction::destroy is modelled as skip"
+        ; -"folly" &:: "SocketAddress" &:: "~SocketAddress"
+          &++> Misc.skip "folly::SocketAddress's destructor is modelled as skip"
         ; -"folly" &:: "Optional" &:: "Optional" <>$ capt_arg_payload
           $+ any_arg_of_typ (-"folly" &:: "None")
           $--> FollyOptional.assign_none ~desc:"folly::Optional::Optional(=None)"
@@ -959,13 +992,14 @@ module ProcNameDispatcher = struct
         ; -"std" &:: "basic_string" &:: "data" <>$ capt_arg_payload $--> StdBasicString.data
         ; -"std" &:: "basic_string" &:: "~basic_string" <>$ capt_arg_payload
           $--> StdBasicString.destructor
-        ; -"std" &:: "function" &:: "operator()" $ capt_arg_payload
-          $++$--> StdFunction.operator_call
-        ; -"std" &:: "function" &:: "operator=" $ capt_arg_payload $+ capt_arg_payload
-          $--> StdFunction.operator_equal
-        ; +PatternMatch.Java.implements_lang "Object"
+        ; -"std" &:: "function" &:: "function" $ capt_arg_payload $+ capt_arg
+          $--> StdFunction.assign ~desc:"std::function::function"
+        ; -"std" &:: "function" &:: "operator()" $ capt_arg $++$--> StdFunction.operator_call
+        ; -"std" &:: "function" &:: "operator=" $ capt_arg_payload $+ capt_arg
+          $--> StdFunction.assign ~desc:"std::function::operator="
+        ; +map_context_tenv (PatternMatch.Java.implements_lang "Object")
           &:: "clone" $ capt_arg_payload $--> JavaObject.clone
-        ; ( +PatternMatch.Java.implements_lang "System"
+        ; ( +map_context_tenv (PatternMatch.Java.implements_lang "System")
           &:: "arraycopy" $ capt_arg_payload $+ any_arg $+ capt_arg_payload
           $+...$--> fun src dest -> Misc.shallow_copy_model "System.arraycopy" dest src )
         ; -"std" &:: "atomic" &:: "atomic" <>$ capt_arg_payload $+ capt_arg_payload
@@ -1059,79 +1093,81 @@ module ProcNameDispatcher = struct
         ; -"std" &:: "vector" &:: "shrink_to_fit" <>$ capt_arg_payload
           $--> StdVector.invalidate_references ShrinkToFit
         ; -"std" &:: "vector" &:: "push_back" <>$ capt_arg_payload $+...$--> StdVector.push_back
-        ; +PatternMatch.Java.implements_collection
+        ; +map_context_tenv PatternMatch.Java.implements_collection
           &:: "add" <>$ capt_arg_payload $+ capt_arg_payload $--> JavaCollection.add
-        ; +PatternMatch.Java.implements_list
+        ; +map_context_tenv PatternMatch.Java.implements_list
           &:: "add" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
           $--> JavaCollection.add_at
-        ; +PatternMatch.Java.implements_collection
+        ; +map_context_tenv PatternMatch.Java.implements_collection
           &:: "remove" <>$ capt_arg_payload $+ any_arg $--> JavaCollection.remove
-        ; +PatternMatch.Java.implements_list
+        ; +map_context_tenv PatternMatch.Java.implements_list
           &:: "remove" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg
           $--> JavaCollection.remove_at
-        ; +PatternMatch.Java.implements_collection
+        ; +map_context_tenv PatternMatch.Java.implements_collection
           &::+ (fun _ str -> StringSet.mem str pushback_modeled)
           <>$ capt_arg_payload $+...$--> StdVector.push_back
-        ; +PatternMatch.Java.implements_queue
+        ; +map_context_tenv PatternMatch.Java.implements_queue
           &::+ (fun _ str -> StringSet.mem str pushback_modeled)
           <>$ capt_arg_payload $+...$--> StdVector.push_back
-        ; +PatternMatch.Java.implements_lang "StringBuilder"
+        ; +map_context_tenv (PatternMatch.Java.implements_lang "StringBuilder")
           &::+ (fun _ str -> StringSet.mem str pushback_modeled)
           <>$ capt_arg_payload $+...$--> StdVector.push_back
-        ; +PatternMatch.Java.implements_lang "StringBuilder"
+        ; +map_context_tenv (PatternMatch.Java.implements_lang "StringBuilder")
           &:: "setLength" <>$ capt_arg_payload
           $+...$--> StdVector.invalidate_references ShrinkToFit
-        ; +PatternMatch.Java.implements_lang "String"
+        ; +map_context_tenv (PatternMatch.Java.implements_lang "String")
           &::+ (fun _ str -> StringSet.mem str pushback_modeled)
           <>$ capt_arg_payload $+...$--> StdVector.push_back
-        ; +PatternMatch.Java.implements_iterator
+        ; +map_context_tenv PatternMatch.Java.implements_iterator
           &:: "remove" <>$ capt_arg_payload
           $+...$--> JavaIterator.remove ~desc:"remove"
-        ; +PatternMatch.Java.implements_map &:: "put" <>$ capt_arg_payload
-          $+...$--> StdVector.push_back
-        ; +PatternMatch.Java.implements_map &:: "putAll" <>$ capt_arg_payload
-          $+...$--> StdVector.push_back
+        ; +map_context_tenv PatternMatch.Java.implements_map
+          &:: "put" <>$ capt_arg_payload $+...$--> StdVector.push_back
+        ; +map_context_tenv PatternMatch.Java.implements_map
+          &:: "putAll" <>$ capt_arg_payload $+...$--> StdVector.push_back
         ; -"std" &:: "vector" &:: "reserve" <>$ capt_arg_payload $+...$--> StdVector.reserve
-        ; +PatternMatch.Java.implements_collection
+        ; +map_context_tenv PatternMatch.Java.implements_collection
           &:: "get" <>$ capt_arg_payload $+ capt_arg_payload
           $--> StdVector.at ~desc:"Collection.get()"
-        ; +PatternMatch.Java.implements_list
+        ; +map_context_tenv PatternMatch.Java.implements_list
           &:: "set" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
           $--> JavaCollection.set
-        ; +PatternMatch.Java.implements_iterator
+        ; +map_context_tenv PatternMatch.Java.implements_iterator
           &:: "hasNext"
           &--> Misc.nondet ~fn_name:"Iterator.hasNext()"
-        ; +PatternMatch.Java.implements_enumeration
+        ; +map_context_tenv PatternMatch.Java.implements_enumeration
           &:: "hasMoreElements"
           &--> Misc.nondet ~fn_name:"Enumeration.hasMoreElements()"
-        ; +PatternMatch.Java.implements_lang "Object"
+        ; +map_context_tenv (PatternMatch.Java.implements_lang "Object")
           &:: "equals"
           &--> Misc.nondet ~fn_name:"Object.equals"
-        ; +PatternMatch.Java.implements_lang "Iterable"
+        ; +map_context_tenv (PatternMatch.Java.implements_lang "Iterable")
           &:: "iterator" <>$ capt_arg_payload
           $+...$--> JavaIterator.constructor ~desc:"Iterable.iterator"
-        ; +PatternMatch.Java.implements_iterator
+        ; +map_context_tenv PatternMatch.Java.implements_iterator
           &:: "next" <>$ capt_arg_payload
           $!--> JavaIterator.next ~desc:"Iterator.next()"
-        ; ( +PatternMatch.Java.implements_enumeration
+        ; ( +map_context_tenv PatternMatch.Java.implements_enumeration
           &:: "nextElement" <>$ capt_arg_payload
           $!--> fun x ->
           StdVector.at ~desc:"Enumeration.nextElement" x (AbstractValue.mk_fresh (), []) )
-        ; +PatternMatch.ObjectiveC.is_core_graphics_create_or_copy &++> C.malloc
-        ; +PatternMatch.ObjectiveC.is_core_foundation_create_or_copy &++> C.malloc
+        ; +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_create_or_copy &++> C.malloc
+        ; +map_context_tenv PatternMatch.ObjectiveC.is_core_foundation_create_or_copy &++> C.malloc
         ; +match_builtin BuiltinDecl.malloc_no_fail <>$ capt_arg_payload $--> C.malloc_not_null
-        ; +PatternMatch.ObjectiveC.is_modelled_as_alloc &++> C.malloc_not_null
-        ; +PatternMatch.ObjectiveC.is_core_graphics_release
+        ; +map_context_tenv PatternMatch.ObjectiveC.is_modelled_as_alloc &++> C.malloc_not_null
+        ; +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_release
           <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; -"CFRelease" <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
-        ; +PatternMatch.ObjectiveC.is_modelled_as_release
+        ; +map_context_tenv PatternMatch.ObjectiveC.is_modelled_as_release
           <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; -"CFAutorelease" <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; -"CFBridgingRelease" <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; +match_builtin BuiltinDecl.__objc_bridge_transfer
           <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; +match_builtin BuiltinDecl.__objc_alloc_no_fail <>$ capt_exp $--> ObjC.alloc_not_null
-        ; -"NSObject" &:: "init" <>$ capt_arg_payload $--> Misc.id_first_arg ] )
+        ; -"NSObject" &:: "init" <>$ capt_arg_payload $--> Misc.id_first_arg
+        ; +match_regexp_opt Config.pulse_model_skip_pattern
+          &::.*++> Misc.skip "modelled as skip due to configuration option" ] )
 end
 
-let dispatch tenv proc_name args = ProcNameDispatcher.dispatch tenv proc_name args
+let dispatch tenv proc_name args = ProcNameDispatcher.dispatch (tenv, proc_name) proc_name args

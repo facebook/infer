@@ -178,13 +178,6 @@ let create_normal name stamp = create_with_stamp KNormal name stamp
 (** Create a fresh identifier with default name for the given kind. *)
 let create_fresh kind = NameGenerator.create_fresh_ident kind (standard_name kind)
 
-let create_fresh_specialized_with_blocks kind =
-  let fid = create_fresh kind in
-  (* The stamps are per-procedure unique, add a big enough number to effectively create
-     a namespace for vars in objc blocks *)
-  {fid with stamp= fid.stamp + 10000}
-
-
 let create_none () = create_fresh KNone
 
 (** Generate a footprint identifier with the given name and stamp *)

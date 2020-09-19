@@ -6,17 +6,19 @@ The [-trace <spec>] argument of each subcommand enables debug tracing according 
 
 === subcommands ===
 
-  buck         integration with Buck
-  . analyze    analyze buck target
-  . bitcode    report bitcode files in buck target
-  . link       link buck target to LLVM bitcode
-  llvm         integration with LLVM
-  . analyze    analyze LLVM bitcode
-  . translate  translate LLVM bitcode to LLAIR
-  analyze      analyze LLAIR code
-  disassemble  print LLAIR code in textual form
-  version      print version information
-  help         explain a given subcommand (perhaps recursively)
+  buck           integration with Buck
+  . analyze      analyze buck target
+  . bitcode      report bitcode files in buck target
+  . link         link buck target to LLVM bitcode
+  llvm           integration with LLVM
+  . analyze      analyze LLVM bitcode
+  . translate    translate LLVM bitcode to LLAIR
+  . disassemble  translate LLVM bitcode to LLAIR and print in textual form
+  analyze        analyze LLAIR code
+  disassemble    print LLAIR code in textual form
+  smt            process SMT-LIB benchmarks
+  version        print version information
+  help           explain a given subcommand (perhaps recursively)
 
 
 ====== sledge buck ======
@@ -45,6 +47,7 @@ Analyze code in a buck target. This is a convenience wrapper for the sequence `s
 
 === flags ===
 
+  [-append-report]        append to report file
   [-bound <int>]          stop execution exploration at depth <int>
   [-colors]               enable printing in colors
   [-domain <string>]      select abstract domain; must be one of "sh" (default,
@@ -63,6 +66,8 @@ Analyze code in a buck target. This is a convenience wrapper for the sequence `s
                           libraries
   [-no-simplify-states]   do not simplify states during symbolic execution
   [-preanalyze-globals]   pre-analyze global variables used by each function
+  [-report <file>]        write report sexp to <file>, or to standard error if
+                          "-"
   [-stats]                output performance statistics to stderr
   [-trace <spec>]         enable debug tracing
   [-help]                 print this help text and exit
@@ -79,10 +84,12 @@ Build a buck target and report the included bitcode files.
 
 === flags ===
 
+  [-append-report]   append to report file
   [-colors]          enable printing in colors
   [-margin <cols>]   wrap debug tracing at <cols> columns
   [-modules <file>]  write list of bitcode files to <file>, or to standard
                      output if <file> is `-`
+  [-report <file>]   write report sexp to <file>, or to standard error if "-"
   [-trace <spec>]    enable debug tracing
   [-help]            print this help text and exit
                      (alias: -?)
@@ -99,11 +106,14 @@ Link code in a buck target to a single LLVM bitcode module. This also internaliz
 === flags ===
 
   -bitcode-output <file>  write linked bitcode to <file>
+  [-append-report]        append to report file
   [-colors]               enable printing in colors
   [-fuzzer]               add a harness for libFuzzer targets
   [-margin <cols>]        wrap debug tracing at <cols> columns
   [-modules <file>]       write list of bitcode files to <file>, or to standard
                           output if <file> is `-`
+  [-report <file>]        write report sexp to <file>, or to standard error if
+                          "-"
   [-trace <spec>]         enable debug tracing
   [-help]                 print this help text and exit
                           (alias: -?)
@@ -119,9 +129,10 @@ Code can be provided by one or more LLVM bitcode files.
 
 === subcommands ===
 
-  analyze    analyze LLVM bitcode
-  translate  translate LLVM bitcode to LLAIR
-  help       explain a given subcommand (perhaps recursively)
+  analyze      analyze LLVM bitcode
+  translate    translate LLVM bitcode to LLAIR
+  disassemble  translate LLVM bitcode to LLAIR and print in textual form
+  help         explain a given subcommand (perhaps recursively)
 
 
 ====== sledge llvm analyze ======
@@ -134,6 +145,7 @@ Analyze code in one or more LLVM bitcode files. This is a convenience wrapper fo
 
 === flags ===
 
+  [-append-report]        append to report file
   [-bound <int>]          stop execution exploration at depth <int>
   [-colors]               enable printing in colors
   [-domain <string>]      select abstract domain; must be one of "sh" (default,
@@ -150,6 +162,8 @@ Analyze code in one or more LLVM bitcode files. This is a convenience wrapper fo
                           libraries
   [-no-simplify-states]   do not simplify states during symbolic execution
   [-preanalyze-globals]   pre-analyze global variables used by each function
+  [-report <file>]        write report sexp to <file>, or to standard error if
+                          "-"
   [-stats]                output performance statistics to stderr
   [-trace <spec>]         enable debug tracing
   [-help]                 print this help text and exit
@@ -166,6 +180,7 @@ Translate one or more LLVM bitcode files to LLAIR. Each <input> filename may be 
 
 === flags ===
 
+  [-append-report]        append to report file
   [-colors]               enable printing in colors
   [-fuzzer]               add a harness for libFuzzer targets
   [-llair-output <file>]  write generated LLAIR to <file>
@@ -174,9 +189,39 @@ Translate one or more LLVM bitcode files to LLAIR. Each <input> filename may be 
                           points specified in the config file
   [-no-models]            do not add models for C/C++ runtime and standard
                           libraries
+  [-report <file>]        write report sexp to <file>, or to standard error if
+                          "-"
   [-trace <spec>]         enable debug tracing
   [-help]                 print this help text and exit
                           (alias: -?)
+
+
+====== sledge llvm disassemble ======
+
+translate LLVM bitcode to LLAIR and print in textual form
+
+  sledge llvm disassemble <input> [<input> ...]
+
+The <input> file must be LLVM bitcode.
+
+=== flags ===
+
+  [-append-report]            append to report file
+  [-colors]                   enable printing in colors
+  [-fuzzer]                   add a harness for libFuzzer targets
+  [-llair-output <file>]      write generated LLAIR to <file>
+  [-llair-txt-output <file>]  write generated textual LLAIR to <file>, or to
+                              standard output if omitted
+  [-margin <cols>]            wrap debug tracing at <cols> columns
+  [-no-internalize]           do not internalize all functions except the entry
+                              points specified in the config file
+  [-no-models]                do not add models for C/C++ runtime and standard
+                              libraries
+  [-report <file>]            write report sexp to <file>, or to standard error
+                              if "-"
+  [-trace <spec>]             enable debug tracing
+  [-help]                     print this help text and exit
+                              (alias: -?)
 
 
 ====== sledge analyze ======
@@ -189,6 +234,7 @@ The <input> file must be binary LLAIR, such as produced by `sledge translate`.
 
 === flags ===
 
+  [-append-report]       append to report file
   [-bound <int>]         stop execution exploration at depth <int>
   [-colors]              enable printing in colors
   [-domain <string>]     select abstract domain; must be one of "sh" (default,
@@ -199,6 +245,8 @@ The <input> file must be binary LLAIR, such as produced by `sledge translate`.
   [-margin <cols>]       wrap debug tracing at <cols> columns
   [-no-simplify-states]  do not simplify states during symbolic execution
   [-preanalyze-globals]  pre-analyze global variables used by each function
+  [-report <file>]       write report sexp to <file>, or to standard error if
+                         "-"
   [-stats]               output performance statistics to stderr
   [-trace <spec>]        enable debug tracing
   [-help]                print this help text and exit
@@ -215,13 +263,35 @@ The <input> file must be LLAIR code, as produced by `sledge llvm translate`.
 
 === flags ===
 
+  [-append-report]            append to report file
   [-colors]                   enable printing in colors
   [-llair-txt-output <file>]  write generated textual LLAIR to <file>, or to
                               standard output if omitted
   [-margin <cols>]            wrap debug tracing at <cols> columns
+  [-report <file>]            write report sexp to <file>, or to standard error
+                              if "-"
   [-trace <spec>]             enable debug tracing
   [-help]                     print this help text and exit
                               (alias: -?)
+
+
+====== sledge smt ======
+
+process SMT-LIB benchmarks
+
+  sledge smt <input>
+
+The <input> file is interpreted as an SMT-LIB 2 benchmark.
+
+=== flags ===
+
+  [-append-report]  append to report file
+  [-colors]         enable printing in colors
+  [-margin <cols>]  wrap debug tracing at <cols> columns
+  [-report <file>]  write report sexp to <file>, or to standard error if "-"
+  [-trace <spec>]   enable debug tracing
+  [-help]           print this help text and exit
+                    (alias: -?)
 
 
 ====== sledge version ======

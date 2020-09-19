@@ -19,6 +19,10 @@ val is_equal_to : IntLit.t -> t -> bool
 
 val is_neq_to_zero : t -> bool
 
+val as_int : t -> int option
+(** [as_int v] returns [Some x] if [v] is known to be [x] *)
+
+
 val pp : F.formatter -> t -> unit
 
 type abduction_result =

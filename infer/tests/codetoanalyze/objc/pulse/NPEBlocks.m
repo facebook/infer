@@ -13,6 +13,10 @@
 
 @end
 
+typedef void (^MyBlock)();
+
+void dispatch(MyBlock block) { block(); }
+
 @implementation Singleton
 
 // Common FP in Pulse NPEs, this requires block specialization
@@ -25,6 +29,16 @@
   return a->_x;
 }
 
+- (int)dispatch_no_npe_good {
+  static Singleton* a = nil;
+  static dispatch_once_t onceToken;
+  dispatch(^{
+    a = [[Singleton alloc] init];
+    a->_x = 5;
+  });
+  return a->_x;
+}
+
 @end
 
 int captured_npe_bad() {
@@ -33,4 +47,13 @@ int captured_npe_bad() {
     return *x;
   };
   return my_block();
+}
+
+int captured_npe_ok_FP(int* y) {
+  __block int* x = NULL;
+  void (^my_block)(void) = ^() {
+    x = y;
+  };
+  my_block();
+  return *x;
 }

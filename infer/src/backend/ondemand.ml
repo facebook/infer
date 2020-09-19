@@ -185,7 +185,7 @@ let run_proc_analysis ~caller_pdesc callee_pdesc =
   in
   let postprocess summary =
     decr nesting ;
-    Summary.OnDisk.store summary ;
+    Summary.OnDisk.store_analyzed summary ;
     remove_active callee_pname ;
     Printer.write_proc_html callee_pdesc ;
     log_elapsed_time () ;
@@ -202,7 +202,7 @@ let run_proc_analysis ~caller_pdesc callee_pdesc =
       {summary.payloads with biabduction}
     in
     let new_summary = {summary with stats; payloads} in
-    Summary.OnDisk.store new_summary ;
+    Summary.OnDisk.store_analyzed new_summary ;
     remove_active callee_pname ;
     log_elapsed_time () ;
     new_summary

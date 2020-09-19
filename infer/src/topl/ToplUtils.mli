@@ -17,6 +17,8 @@ val topl_class_name : Typ.Name.t
 
 val topl_class_typ : Typ.t
 
+val topl_class_pvar : Pvar.t
+
 val static_var : string -> Exp.t
 
 val local_var : Procname.t -> string -> Exp.t

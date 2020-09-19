@@ -32,7 +32,7 @@ module.exports = {
       "about-Infer",
       "separation-logic-and-bi-abduction",
     ],
-    Contribute: ["absint-framework", "adding-checkers", "internal-API"],
+    Contribute: ["absint-framework", "internal-API"],
     Versions: ["versions"],
   },
 };

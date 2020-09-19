@@ -35,10 +35,13 @@ type pvar_kind =
 (** Names for program variables. *)
 type t = {pv_hash: int; pv_name: Mangled.t; pv_kind: pvar_kind} [@@deriving compare]
 
-let get_name_of_local_with_procname var =
+let build_formal_from_pvar var =
   match var.pv_kind with
   | Local_var pname ->
-      Mangled.from_string (F.asprintf "%s_%a" (Mangled.to_string var.pv_name) Procname.pp pname)
+      Mangled.from_string
+        (F.asprintf "%s[%a]" (Mangled.to_string var.pv_name)
+           (Procname.pp_simplified_string ~withclass:false)
+           pname)
   | _ ->
       var.pv_name
 
@@ -311,6 +314,10 @@ let get_initializer_pname {pv_name; pv_kind} =
       else Some (Procname.from_string_c_fun name)
   | _ ->
       None
+
+
+let swap_proc_in_local_pvar pvar proc_name =
+  match pvar.pv_kind with Local_var _ -> {pvar with pv_kind= Local_var proc_name} | _ -> pvar
 
 
 let rename ~f {pv_name; pv_kind} =

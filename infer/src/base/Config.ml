@@ -188,8 +188,6 @@ let source_file_extentions = [".java"; ".m"; ".mm"; ".c"; ".cc"; ".cpp"; ".h"]
 
 let kotlin_source_extension = ".kt"
 
-let specs_files_suffix = ".specs"
-
 (** Enable detailed tracing information during array abstraction *)
 let trace_absarray = false
 
@@ -330,16 +328,10 @@ let lib_dir = bin_dir ^/ Filename.parent_dir_name ^/ "lib"
 
 let etc_dir = bin_dir ^/ Filename.parent_dir_name ^/ "etc"
 
-(** Path to lib/specs to retrieve the default models *)
-let biabduction_models_dir = lib_dir ^/ "specs"
+(** Path to the database dump with model summaries *)
+let biabduction_models_sql = lib_dir ^/ "models.sql"
 
 let biabduction_models_jar = lib_dir ^/ "java" ^/ "models.jar"
-
-let biabduction_models_src_dir =
-  let root = Unix.getcwd () in
-  let dir = bin_dir ^/ Filename.parent_dir_name ^/ "models" in
-  Utils.filename_to_absolute ~root dir
-
 
 (* Normalize the path *)
 
@@ -410,6 +402,7 @@ let startup_action =
   if infer_is_javac then Javac
   else if
     !Sys.interactive
+    || String.is_substring ~substring:"inline_test_runner" exe_basename
     || String.is_substring ~substring:"inferunit" exe_basename
     || String.equal "run.exe" exe_basename
     || String.equal "run.bc" exe_basename
@@ -950,6 +943,12 @@ and costs_previous =
   CLOpt.mk_path_opt ~long:"costs-previous"
     ~in_help:InferCommand.[(ReportDiff, manual_generic)]
     "Costs report of the base revision to use for comparison"
+
+
+and cost_tests_only_autoreleasepool =
+  CLOpt.mk_bool ~long:"cost-tests-only-autoreleasepool"
+    ~in_help:InferCommand.[(Report, manual_generic); (ReportDiff, manual_generic)]
+    "[EXPERIMENTAL] Report only autoreleasepool size results in cost tests"
 
 
 and siof_check_iostreams =
@@ -1878,6 +1877,12 @@ and pulse_model_return_nonnull =
     "Methods that should be modelled as returning non-null in Pulse"
 
 
+and pulse_model_skip_pattern =
+  CLOpt.mk_string_opt ~long:"pulse-model-skip-pattern"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Regex of methods that should be modelled as \"skip\" in Pulse"
+
+
 and pulse_model_transfer_ownership =
   CLOpt.mk_string_list ~long:"pulse-model-transfer-ownership"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -2396,6 +2401,12 @@ and xcode_developer_dir =
     "Specify the path to Xcode developer directory, to use for Buck clang targets"
 
 
+and xcode_isysroot_suffix =
+  CLOpt.mk_string_opt ~long:"xcode-isysroot-suffix"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Specify the suffix of Xcode isysroot directory, to avoid absolute paths in tests"
+
+
 and xcpretty =
   CLOpt.mk_bool ~long:"xcpretty" ~default:false
     ~in_help:InferCommand.[(Capture, manual_clang)]
@@ -2550,14 +2561,19 @@ let post_parsing_initialization command_opt =
   in
   Caml.Printexc.set_uncaught_exception_handler uncaught_exception_handler ;
   F.set_margin !margin ;
-  let set_minor_heap_size nMb =
-    (* increase the minor heap size to speed up gc *)
+  let set_gc_params () =
     let ctrl = Gc.get () in
     let words_of_Mb nMb = nMb * 1024 * 1024 * 8 / Sys.word_size in
-    let new_size = max ctrl.minor_heap_size (words_of_Mb nMb) in
-    Gc.set {ctrl with minor_heap_size= new_size}
+    let new_size nMb = max ctrl.minor_heap_size (words_of_Mb nMb) in
+    (* increase the minor heap size *)
+    let minor_heap_size = new_size 8 in
+    (* use the best-fit allocator *)
+    let allocation_policy = 2 in
+    (* increase the overhead as the default is tuned for the next-fit allocator *)
+    let space_overhead = 120 in
+    Gc.set {ctrl with minor_heap_size; allocation_policy; space_overhead}
   in
-  set_minor_heap_size 8 ;
+  set_gc_params () ;
   let symops_timeout, seconds_timeout =
     let default_symops_timeout = 1100 in
     let default_seconds_timeout = 10.0 in
@@ -2727,6 +2743,8 @@ and cost_issues_tests = !cost_issues_tests
 and cost_scuba_logging = !cost_scuba_logging
 
 and costs_previous = !costs_previous
+
+and cost_tests_only_autoreleasepool = !cost_tests_only_autoreleasepool
 
 and cxx = !cxx
 
@@ -3001,6 +3019,8 @@ and pulse_model_release_pattern = Option.map ~f:Str.regexp !pulse_model_release_
 
 and pulse_model_return_nonnull = !pulse_model_return_nonnull
 
+and pulse_model_skip_pattern = Option.map ~f:Str.regexp !pulse_model_skip_pattern
+
 and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
   let models =
     let re = Str.regexp "::" in
@@ -3202,6 +3222,8 @@ and write_html_whitelist_regex = !write_html_whitelist_regex
 and write_website = !write_website
 
 and xcode_developer_dir = !xcode_developer_dir
+
+and xcode_isysroot_suffix = !xcode_isysroot_suffix
 
 and xcpretty = !xcpretty
 

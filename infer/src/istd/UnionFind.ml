@@ -90,10 +90,13 @@ module Make (X : Element) (XSet : Caml.Set.S with type elt = X.t) = struct
 
   let empty = {reprs= UF.empty; classes= UF.Map.empty}
 
+<<<<<<< HEAD
   let is_empty {reprs; classes} = UF.is_empty reprs && UF.Map.is_empty classes
 
   let find_opt uf x = UF.find_opt uf.reprs x
 
+=======
+>>>>>>> upstream/master
   let find uf x = UF.find uf.reprs x
 
   let union uf x1 x2 =

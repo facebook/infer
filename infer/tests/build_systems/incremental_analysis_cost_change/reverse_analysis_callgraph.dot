@@ -2,28 +2,28 @@
 digraph callgraph {
   N1 [ label = "Test.<init>()", flag = true ];
 
-  N5 [ label = "void PrintStream.println(String)", flag = false ];
-  N5 -> N3 ;
+  N5 [ label = "void Test.main(String[])", flag = true ];
 
   N0 [ label = "Object.<init>()", flag = false ];
-  N0 -> N2 ;
+  N0 -> N7 ;
   N0 -> N1 ;
 
-  N7 [ label = "void Test.complexityIncrease(int)", flag = true ];
-  N7 -> N8 ;
+  N7 [ label = "Unchanged.<init>()", flag = false ];
 
-  N6 [ label = "void Test.complexityDecrease(int)", flag = true ];
-  N6 -> N8 ;
+  N6 [ label = "void Test.newMethod(int)", flag = true ];
 
-  N4 [ label = "void Test.newMethod(int)", flag = true ];
+  N4 [ label = "void Test.complexityIncrease(int)", flag = true ];
+  N4 -> N5 ;
 
-  N2 [ label = "Unchanged.<init>()", flag = false ];
+  N2 [ label = "void Unchanged.orderN(int)", flag = false ];
+  N2 -> N6 ;
+  N2 -> N4 ;
+  N2 -> N3 ;
 
-  N8 [ label = "void Test.main(String[])", flag = true ];
+  N8 [ label = "void PrintStream.println(String)", flag = false ];
+  N8 -> N2 ;
 
-  N3 [ label = "void Unchanged.orderN(int)", flag = false ];
-  N3 -> N7 ;
-  N3 -> N6 ;
-  N3 -> N4 ;
+  N3 [ label = "void Test.complexityDecrease(int)", flag = true ];
+  N3 -> N5 ;
 
 }

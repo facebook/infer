@@ -35,8 +35,9 @@ let check_immutable_cast analysis_data proc_desc typ_expected typ_found_opt loc 
                 (Procname.to_simplified_string (Procdesc.get_proc_name proc_desc))
                 Typ.Name.pp name_given Typ.Name.pp name_expected
             in
+            let issue_type = IssueType.checkers_immutable_cast in
             EradicateReporting.report_error analysis_data ImmutableCast
-              IssueType.checkers_immutable_cast loc description ~severity:Warning
+              (NullsafeIssue.make ~loc ~description ~severity:Warning ~issue_type)
       | _ ->
           () )
   | None ->

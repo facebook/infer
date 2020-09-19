@@ -10,6 +10,7 @@ CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS)
 SOURCES = \
   ../block/retain_cycle.m \
   ../block/static.m \
+  ../block/specialized_method_with_block_params.m \
   ../boxing/Boxing.m \
   ../boxing/array.m \
   ../boxing/array_literal.c \

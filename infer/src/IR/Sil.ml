@@ -190,20 +190,5 @@ let pp_instr ~print_types pe0 f instr =
           pp_instr_metadata pe0 f metadata )
 
 
-let add_with_block_parameters_flag instr =
-  match instr with
-  | Call (ret_id_typ, Exp.Const (Const.Cfun pname), arg_ts, loc, cf) ->
-      if
-        List.exists ~f:(fun (exp, _) -> Exp.is_objc_block_closure exp) arg_ts
-        && Procname.is_clang pname
-        (* to be extended to other methods *)
-      then
-        let cf' = {cf with cf_with_block_parameters= true} in
-        Call (ret_id_typ, Exp.Const (Const.Cfun pname), arg_ts, loc, cf')
-      else instr
-  | _ ->
-      instr
-
-
 (** Dump an instruction. *)
 let d_instr (i : instr) = L.d_pp_with_pe ~color:Pp.Green (pp_instr ~print_types:true) i

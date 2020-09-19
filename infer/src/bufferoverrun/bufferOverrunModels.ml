@@ -1087,6 +1087,25 @@ module NSCollection = struct
     {exec; check= no_check}
 
 
+  let new_collection_of_size coll_id size_exp =
+    let exec ({integer_type_widths} as model_env) ~ret:((id, _) as ret) mem =
+      let coll = Dom.Mem.find_stack (Loc.of_id coll_id) mem in
+      let to_add_length = Sem.eval integer_type_widths size_exp mem |> Dom.Val.get_itv in
+      change_size_by ~size_f:(fun _ -> to_add_length) coll_id model_env ~ret mem
+      |> model_by_value coll id
+    in
+    {exec; check= no_check}
+
+
+  let new_collection_by_add_all coll_exp1 coll_exp2 =
+    let exec model_env ~ret:((ret_id, _) as ret) mem =
+      create_collection model_env ~ret mem ~size_exp:Exp.zero
+      |> (addAll ret_id coll_exp1).exec model_env ~ret
+      |> (addAll ret_id coll_exp2).exec model_env ~ret
+    in
+    {exec; check= no_check}
+
+
   let get_first coll_id = get_at_index coll_id Exp.zero
 
   let remove_last coll_id = {exec= change_size_by ~size_f:Itv.decr coll_id; check= no_check}
@@ -1113,6 +1132,39 @@ module NSCollection = struct
       let set_length = eval_collection_length src_exp mem |> Dom.Val.get_itv in
       change_size_by ~size_f:(fun _ -> set_length) coll_id model_env ~ret mem
       |> model_by_value coll id
+    in
+    {exec; check= no_check}
+
+
+  let iterator coll_exp =
+    let exec {integer_type_widths; location} ~ret:(ret_id, _) mem =
+      let traces = Trace.(Set.singleton location ArrayDeclaration) in
+      let array_v = Sem.eval integer_type_widths coll_exp mem in
+      let array_loc = Dom.Val.get_all_locs array_v in
+      let offset_loc = PowLoc.append_field ~fn:BufferOverrunField.objc_iterator_offset array_loc in
+      let mem = Dom.Mem.add_heap_set offset_loc Dom.Val.Itv.zero mem in
+      model_by_value (Dom.Val.of_pow_loc ~traces array_loc) ret_id mem
+      |> Dom.Mem.add_heap_set array_loc array_v
+      |> Dom.Mem.add_iterator_alias_objc ret_id
+    in
+    {exec; check= no_check}
+
+
+  let next_object iterator =
+    let exec {integer_type_widths} ~ret:(id, _) mem =
+      let iterator_v = Sem.eval integer_type_widths iterator mem in
+      let traces = Dom.Val.get_traces iterator_v in
+      let offset_loc =
+        Dom.Val.get_pow_loc iterator_v
+        |> PowLoc.append_field ~fn:BufferOverrunField.objc_iterator_offset
+      in
+      let next_offset_v =
+        Dom.Mem.find_set offset_loc mem |> Dom.Val.get_itv |> Itv.incr |> Dom.Val.of_itv
+      in
+      let locs = eval_collection_internal_array_locs iterator mem in
+      model_by_value (Dom.Val.of_pow_loc ~traces locs) id mem
+      |> Dom.Mem.add_heap_set offset_loc next_offset_v
+      |> Dom.Mem.add_iterator_next_object_alias id iterator
     in
     {exec; check= no_check}
 end
@@ -1623,7 +1675,7 @@ module Call = struct
       ; -"CFArrayGetValueAtIndex" <>$ capt_var_exn $+ capt_exp $!--> NSCollection.get_at_index
       ; -"CFDictionaryGetCount" <>$ capt_exp $!--> NSCollection.size
       ; -"MCFArrayGetCount" <>$ capt_exp $!--> NSCollection.size
-      ; +PatternMatch.ObjectiveC.implements "NSArray" &:: "init" <>$ capt_exp $--> id
+      ; +PatternMatch.ObjectiveC.implements "NSObject" &:: "init" <>$ capt_exp $--> id
       ; +PatternMatch.ObjectiveC.implements "NSArray" &:: "array" <>--> NSCollection.new_collection
       ; +PatternMatch.ObjectiveC.implements "NSArray"
         &:: "firstObject" <>$ capt_var_exn $!--> NSCollection.get_first
@@ -1640,6 +1692,16 @@ module Call = struct
         &:: "arrayWithObjects:count:" <>$ capt_exp $+ capt_exp $--> NSCollection.create_from_array
       ; +PatternMatch.ObjectiveC.implements "NSArray"
         &:: "arrayWithObjects" &++> NSCollection.of_list
+      ; +PatternMatch.ObjectiveC.implements "NSArray"
+        &:: "objectEnumerator" <>$ capt_exp $--> NSCollection.iterator
+      ; +PatternMatch.ObjectiveC.implements "NSArray"
+        &:: "arrayByAddingObjectsFromArray:" <>$ capt_exp $+ capt_exp
+        $--> NSCollection.new_collection_by_add_all
+      ; +PatternMatch.ObjectiveC.implements "NSEnumerator"
+        &:: "nextObject" <>$ capt_exp $--> NSCollection.next_object
+      ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
+        &:: "initWithCapacity:" <>$ capt_var_exn $+ capt_exp
+        $--> NSCollection.new_collection_of_size
       ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
         &:: "addObject:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.add
       ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
@@ -1654,6 +1716,8 @@ module Call = struct
       ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
         &:: "addObjectsFromArray:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.addAll
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
+        &:: "dictionary" <>--> NSCollection.new_collection
+      ; +PatternMatch.ObjectiveC.implements "NSDictionary"
         &:: "dictionaryWithObjects:forKeys:count:" <>$ any_arg $+ capt_exp $+ capt_exp
         $--> NSCollection.create_from_array
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
@@ -1666,9 +1730,16 @@ module Call = struct
         &:: "allKeys" <>$ capt_exp $--> create_copy_array
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
         &:: "allValues" <>$ capt_exp $--> create_copy_array
+      ; +PatternMatch.ObjectiveC.implements "NSDictionary"
+        &:: "objectEnumerator" <>$ capt_exp $--> NSCollection.iterator
+      ; +PatternMatch.ObjectiveC.implements "NSDictionary"
+        &:: "keyEnumerator" <>$ capt_exp $--> NSCollection.iterator
+      ; +PatternMatch.ObjectiveC.implements "NSOrderedSet"
+        &:: "objectEnumerator" <>$ capt_exp $--> NSCollection.iterator
+      ; +PatternMatch.ObjectiveC.implements "NSOrderedSet"
+        &:: "reverseObjectEnumerator" <>$ capt_exp $--> NSCollection.iterator
       ; +PatternMatch.ObjectiveC.implements "NSNumber" &:: "numberWithInt:" <>$ capt_exp $--> id
       ; +PatternMatch.ObjectiveC.implements "NSNumber" &:: "integerValue" <>$ capt_exp $--> id
-      ; +PatternMatch.ObjectiveC.implements "NSString" &:: "init" <>$ capt_exp $--> id
       ; +PatternMatch.ObjectiveC.implements "NSString"
         &:: "stringWithUTF8String:" <>$ capt_exp $!--> NSString.create_with_c_string
       ; +PatternMatch.ObjectiveC.implements "NSString"

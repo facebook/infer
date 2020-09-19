@@ -121,19 +121,13 @@ let get_objc_method_data obj_c_message_expr_info =
       (selector, MCStatic)
 
 
-let should_create_procdesc ?(captured_vars = []) cfg procname ~defined ~set_objc_accessor_attr =
+let should_create_procdesc cfg procname ~defined ~set_objc_accessor_attr =
   match Procname.Hash.find cfg procname with
   | previous_procdesc ->
       let is_defined_previous = Procdesc.is_defined previous_procdesc in
       if (defined || set_objc_accessor_attr) && not is_defined_previous then (
         Procname.Hash.remove cfg procname ;
         true )
-      else if is_defined_previous && not (List.is_empty captured_vars) then (
-        let new_attributes =
-          {(Procdesc.get_attributes previous_procdesc) with captured= captured_vars}
-        in
-        Procdesc.set_attributes previous_procdesc new_attributes ;
-        false )
       else false
   | exception Caml.Not_found ->
       true
@@ -195,8 +189,8 @@ let find_sentinel_attribute attrs =
 
 
 (** Creates a procedure description. *)
-let create_local_procdesc ?(set_objc_accessor_attr = false) ?(update_lambda_captured = false)
-    trans_unit_ctx cfg tenv ms fbody captured =
+let create_local_procdesc ?(set_objc_accessor_attr = false) ?(record_lambda_captured = false)
+    ?(is_cpp_lambda_call_operator = false) trans_unit_ctx cfg tenv ms fbody captured =
   let defined = not (List.is_empty fbody) in
   let proc_name = ms.CMethodSignature.name in
   let clang_method_kind = ms.CMethodSignature.method_kind in
@@ -214,6 +208,17 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) ?(update_lambda_capt
   let captured_mangled =
     List.map ~f:(fun (var, t, mode) -> (Pvar.get_name var, t, mode)) captured
   in
+  (* Retrieve captured variables from procdesc created when translating captured variables in lambda expression *)
+  (* We want to do this before `should_create_procdesc` is called as it can remove previous procdesc *)
+  let captured_mangled_not_formals =
+    if is_cpp_lambda_call_operator then
+      match Procname.Hash.find cfg proc_name with
+      | procdesc_prev ->
+          Procdesc.get_captured procdesc_prev
+      | exception Caml.Not_found ->
+          captured_mangled
+    else captured_mangled
+  in
   let create_new_procdesc () =
     let all_params = Option.to_list ms.CMethodSignature.class_param @ ms.CMethodSignature.params in
     let has_added_return_param = ms.CMethodSignature.has_added_return_param in
@@ -225,11 +230,11 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) ?(update_lambda_capt
     let formals =
       List.map ~f:(fun ({name; typ} : CMethodSignature.param_type) -> (name, typ)) all_params
     in
-    (* Captured variables for blocks are treated as parameters
-       Captured variables will not be added to formals for lambdas' `operator()` as procdesc for
-       `operator()` is created before captured variables are translated
-    *)
-    let captured_as_formals = List.map ~f:(fun (var, t, _) -> (var, t)) captured_mangled in
+    (* Captured variables for blocks are treated as parameters, but not for cpp lambdas *)
+    let captured_as_formals =
+      if is_cpp_lambda_call_operator then []
+      else List.map ~f:(fun (var, t, _) -> (var, t)) captured_mangled
+    in
     let formals = captured_as_formals @ formals in
     let const_formals =
       get_const_params_indices ~shift:(List.length captured_as_formals) all_params
@@ -253,7 +258,7 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) ?(update_lambda_capt
     let procdesc =
       let proc_attributes =
         { (ProcAttributes.default translation_unit proc_name) with
-          ProcAttributes.captured= captured_mangled
+          ProcAttributes.captured= captured_mangled_not_formals
         ; formals
         ; const_formals
         ; has_added_return_param
@@ -262,6 +267,7 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) ?(update_lambda_capt
         ; is_biabduction_model= Config.biabduction_models_mode
         ; passed_as_noescape_block_to= ms.CMethodSignature.passed_as_noescape_block_to
         ; is_no_return= ms.CMethodSignature.is_no_return
+        ; is_objc_arc_on= trans_unit_ctx.CFrontend_config.is_objc_arc_on
         ; is_variadic= ms.CMethodSignature.is_variadic
         ; sentinel_attr= find_sentinel_attribute ms.CMethodSignature.attributes
         ; loc= loc_start
@@ -278,11 +284,23 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) ?(update_lambda_capt
       Procdesc.set_start_node procdesc start_node ;
       Procdesc.set_exit_node procdesc exit_node )
   in
-  let captured_vars = if update_lambda_captured then captured_mangled else [] in
-  if should_create_procdesc cfg proc_name ~defined ~set_objc_accessor_attr ~captured_vars then (
+  if should_create_procdesc cfg proc_name ~defined ~set_objc_accessor_attr then (
     create_new_procdesc () ;
     true )
-  else false
+  else (
+    (* If we do not create procdesc when captured variables are translated,
+       then we want to record captured variables in the previously created procdesc *)
+    ignore
+      ( if record_lambda_captured then
+        match Procname.Hash.find cfg proc_name with
+        | procdesc_prev ->
+            let new_attributes =
+              {(Procdesc.get_attributes procdesc_prev) with captured= captured_mangled}
+            in
+            Procdesc.set_attributes procdesc_prev new_attributes
+        | exception Caml.Not_found ->
+            () ) ;
+    false )
 
 
 (** Create a procdesc for objc methods whose signature cannot be found. *)
@@ -311,7 +329,7 @@ let create_procdesc_with_pointer ?(captured_vars = []) context pointer class_nam
       ignore
         (create_local_procdesc context.translation_unit_context context.cfg context.tenv callee_ms
            [] captured_vars
-           ~update_lambda_captured:(not (List.is_empty captured_vars))) ;
+           ~record_lambda_captured:(not (List.is_empty captured_vars))) ;
       callee_ms.CMethodSignature.name
   | None ->
       let callee_name, method_kind =

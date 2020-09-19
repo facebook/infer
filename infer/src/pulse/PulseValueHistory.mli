@@ -12,7 +12,7 @@ type event =
   | Allocation of {f: CallEvent.t; location: Location.t}
   | Assignment of Location.t
   | Call of {f: CallEvent.t; location: Location.t; in_call: t}
-  | Capture of {captured_as: Pvar.t; location: Location.t}
+  | Capture of {captured_as: Pvar.t; mode: Pvar.capture_mode; location: Location.t}
   | Conditional of {is_then_branch: bool; if_kind: Sil.if_kind; location: Location.t}
   | CppTemporaryCreated of Location.t
   | FormalDeclared of Pvar.t * Typ.t * Location.t

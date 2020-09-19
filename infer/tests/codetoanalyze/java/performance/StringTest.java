@@ -98,7 +98,7 @@ class StringTest {
 
   boolean unknown_bool;
 
-  public void last_index_of_linear_FP(String s) {
+  public void last_index_of_linear_FN(String s) {
     int i = s.lastIndexOf('/');
     while (i > 0) {
       int j = s.lastIndexOf('/', i - 1);

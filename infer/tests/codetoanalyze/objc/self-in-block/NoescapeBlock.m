@@ -74,12 +74,12 @@
     if (result != nil) {
       [resultsList addObject:result];
     }
-    [ArrayUtils enumerate:^(id obj, NSUInteger idx, BOOL* stop) {
-      __strong __typeof(weakSelf) strongSelf = weakSelf; // no bug here
-      if (strongSelf) {
-        int x = strongSelf->x;
-      }
-    }];
+  }];
+  [ArrayUtils enumerate:^(id obj, NSUInteger idx, BOOL* stop) {
+    __strong __typeof(weakSelf) strongSelf = weakSelf; // no bug here
+    if (strongSelf) {
+      int x = strongSelf->x;
+    }
   }];
   return resultsList;
 }

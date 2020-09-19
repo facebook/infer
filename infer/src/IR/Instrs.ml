@@ -80,8 +80,6 @@ let append_list t list =
 
 let of_list l = NotReversed (Array.of_list l)
 
-let of_rev_list l = NotReversed (Array.of_list_rev l)
-
 let filter_map t ~f =
   let instrs = get_underlying_not_reversed t in
   NotReversed (Array.filter_map instrs ~f)

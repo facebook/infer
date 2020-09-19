@@ -38,6 +38,7 @@ val ( <$ ) : ('a -> unit) -> 'a -> 'a
 
 (** Failures *)
 
+exception Replay of exn * Printexc.raw_backtrace * Sexp.t
 exception Unimplemented of string
 
 val fail : ('a, unit -> _) fmt -> 'a
@@ -68,7 +69,13 @@ val violates : ('a -> unit) -> 'a -> _
 
 (** Extensions *)
 
-module Invariant : module type of Core.Invariant
+module Invariant : sig
+  include module type of Core.Invariant
+
+  exception
+    Violation of
+      exn * Printexc.raw_backtrace * Source_code_position.t * Sexp.t
+end
 
 (** Containers *)
 

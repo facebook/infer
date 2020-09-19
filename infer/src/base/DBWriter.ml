@@ -10,162 +10,164 @@ module L = Logging
 module F = Format
 
 module Implementation = struct
-  let attribute_replace_statement =
-    (* The innermost SELECT returns either the current attributes_kind and source_file associated with
-       the given proc name, or default values of (-1,""). These default values have the property that
-       they are always "less than" any legit value. More precisely, MAX ensures that some value is
-       returned even if there is no row satisfying WHERE (we'll get NULL in that case, the value in
-       the row otherwise). COALESCE then returns the first non-NULL value, which will be either the
-       value of the row corresponding to that pname in the DB, or the default if no such row exists.
+  let replace_attributes =
+    let attribute_replace_statement =
+      (* The innermost SELECT returns either the current attributes_kind and source_file associated with
+         the given proc name, or default values of (-1,""). These default values have the property that
+         they are always "less than" any legit value. More precisely, MAX ensures that some value is
+         returned even if there is no row satisfying WHERE (we'll get NULL in that case, the value in
+         the row otherwise). COALESCE then returns the first non-NULL value, which will be either the
+         value of the row corresponding to that pname in the DB, or the default if no such row exists.
 
-       The next (second-outermost) SELECT filters out that value if it is "more defined" than the ones
-       we would like to insert (which will never be the case if the default values are returned). If
-       not, it returns a trivial row (consisting solely of NULL since we don't use its values) and the
-       INSERT OR REPLACE will proceed and insert or update the values stored into the DB for that
-       pname. *)
-    (* TRICK: use the source file to be more deterministic in case the same procedure name is defined
-       in several files *)
-    (* TRICK: older versions of sqlite (prior to version 3.15.0 (2016-10-14)) do not support row
-       values so the lexicographic ordering for (:akind, :sfile) is done by hand *)
-    ResultsDatabase.register_statement
-      {|
-        INSERT OR REPLACE INTO procedures
-        SELECT :pname, :proc_name_hum, :akind, :sfile, :pattr, :cfg, :callees
-        FROM (
-          SELECT NULL
+         The next (second-outermost) SELECT filters out that value if it is "more defined" than the ones
+         we would like to insert (which will never be the case if the default values are returned). If
+         not, it returns a trivial row (consisting solely of NULL since we don't use its values) and the
+         INSERT OR REPLACE will proceed and insert or update the values stored into the DB for that
+         pname. *)
+      (* TRICK: use the source file to be more deterministic in case the same procedure name is defined
+         in several files *)
+      (* TRICK: older versions of sqlite (prior to version 3.15.0 (2016-10-14)) do not support row
+         values so the lexicographic ordering for (:akind, :sfile) is done by hand *)
+      ResultsDatabase.register_statement
+        {|
+          INSERT OR REPLACE INTO procedures
+          SELECT :uid, :pname, :akind, :sfile, :pattr, :cfg, :callees
           FROM (
-            SELECT COALESCE(MAX(attr_kind),-1) AS attr_kind,
-                  COALESCE(MAX(source_file),"") AS source_file
-            FROM procedures
-            WHERE proc_name = :pname )
-          WHERE attr_kind < :akind
-                OR (attr_kind = :akind AND source_file <= :sfile) )
-      |}
+            SELECT NULL
+            FROM (
+              SELECT COALESCE(MAX(attr_kind),-1) AS attr_kind,
+                    COALESCE(MAX(source_file),"") AS source_file
+              FROM procedures
+              WHERE proc_uid = :uid )
+            WHERE attr_kind < :akind
+                  OR (attr_kind = :akind AND source_file <= :sfile) )
+        |}
+    in
+    fun ~proc_uid ~proc_name ~attr_kind ~source_file ~proc_attributes ~cfg ~callees ->
+      ResultsDatabase.with_registered_statement attribute_replace_statement
+        ~f:(fun db replace_stmt ->
+          Sqlite3.bind replace_stmt 1 (* :proc_uid *) (Sqlite3.Data.TEXT proc_uid)
+          |> SqliteUtils.check_result_code db ~log:"replace bind proc_uid" ;
+          Sqlite3.bind replace_stmt 2 (* :pname *) proc_name
+          |> SqliteUtils.check_result_code db ~log:"replace bind proc_name" ;
+          Sqlite3.bind replace_stmt 3 (* :akind *) (Sqlite3.Data.INT attr_kind)
+          |> SqliteUtils.check_result_code db ~log:"replace bind attr_kind" ;
+          Sqlite3.bind replace_stmt 4 (* :sfile *) source_file
+          |> SqliteUtils.check_result_code db ~log:"replace bind source source_file" ;
+          Sqlite3.bind replace_stmt 5 (* :pattr *) proc_attributes
+          |> SqliteUtils.check_result_code db ~log:"replace bind proc proc_attributes" ;
+          Sqlite3.bind replace_stmt 6 (* :cfg *) cfg
+          |> SqliteUtils.check_result_code db ~log:"replace bind cfg" ;
+          Sqlite3.bind replace_stmt 7 (* :callees *) callees
+          |> SqliteUtils.check_result_code db ~log:"replace bind callees" ;
+          SqliteUtils.result_unit db ~finalize:false ~log:"replace_attributes" replace_stmt )
 
 
-  let replace_attributes ~pname_str ~pname ~akind ~source_file ~attributes ~proc_desc ~callees =
-    ResultsDatabase.with_registered_statement attribute_replace_statement ~f:(fun db replace_stmt ->
-        Sqlite3.bind replace_stmt 1 (* :pname *) pname
-        |> SqliteUtils.check_result_code db ~log:"replace bind pname" ;
-        Sqlite3.bind replace_stmt 2 (* :proc_name_hum *) (Sqlite3.Data.TEXT pname_str)
-        |> SqliteUtils.check_result_code db ~log:"replace bind proc_name_hum" ;
-        Sqlite3.bind replace_stmt 3 (* :akind *) (Sqlite3.Data.INT akind)
-        |> SqliteUtils.check_result_code db ~log:"replace bind attribute kind" ;
-        Sqlite3.bind replace_stmt 4 (* :sfile *) source_file
-        |> SqliteUtils.check_result_code db ~log:"replace bind source file" ;
-        Sqlite3.bind replace_stmt 5 (* :pattr *) attributes
-        |> SqliteUtils.check_result_code db ~log:"replace bind proc attributes" ;
-        Sqlite3.bind replace_stmt 6 (* :cfg *) proc_desc
-        |> SqliteUtils.check_result_code db ~log:"replace bind cfg" ;
-        Sqlite3.bind replace_stmt 7 (* :callees *) callees
-        |> SqliteUtils.check_result_code db ~log:"replace bind callees" ;
-        SqliteUtils.result_unit db ~finalize:false ~log:"Attributes.replace" replace_stmt )
-
-
-  let source_file_store_statement =
-    ResultsDatabase.register_statement
-      {|
-        INSERT OR REPLACE INTO source_files
-        VALUES (:source, :tenv, :integer_type_widths, :proc_names, :freshly_captured)
-      |}
-
-
-  let add_source_file ~source_file ~tenv ~integer_type_widths ~proc_names =
-    ResultsDatabase.with_registered_statement source_file_store_statement ~f:(fun db store_stmt ->
-        Sqlite3.bind store_stmt 1 source_file
-        (* :source *)
-        |> SqliteUtils.check_result_code db ~log:"store bind source file" ;
-        Sqlite3.bind store_stmt 2 tenv
-        (* :tenv *)
-        |> SqliteUtils.check_result_code db ~log:"store bind type environment" ;
-        Sqlite3.bind store_stmt 3 integer_type_widths
-        (* :integer_type_widths *)
-        |> SqliteUtils.check_result_code db ~log:"store bind integer type widths" ;
-        Sqlite3.bind store_stmt 4 proc_names
-        (* :proc_names *)
-        |> SqliteUtils.check_result_code db ~log:"store bind proc names" ;
-        Sqlite3.bind store_stmt 5 (Sqlite3.Data.INT Int64.one)
-        (* :freshly_captured *)
-        |> SqliteUtils.check_result_code db ~log:"store freshness" ;
-        SqliteUtils.result_unit ~finalize:false ~log:"Cfg.store" db store_stmt )
-
-
-  let mark_all_source_files_stale_statement =
-    ResultsDatabase.register_statement "UPDATE source_files SET freshly_captured = 0"
+  let add_source_file =
+    let source_file_store_statement =
+      ResultsDatabase.register_statement
+        {|
+          INSERT OR REPLACE INTO source_files
+          VALUES (:source, :tenv, :integer_type_widths, :proc_names, :freshly_captured)
+        |}
+    in
+    fun ~source_file ~tenv ~integer_type_widths ~proc_names ->
+      ResultsDatabase.with_registered_statement source_file_store_statement ~f:(fun db store_stmt ->
+          Sqlite3.bind store_stmt 1 source_file
+          (* :source *)
+          |> SqliteUtils.check_result_code db ~log:"store bind source file" ;
+          Sqlite3.bind store_stmt 2 tenv
+          (* :tenv *)
+          |> SqliteUtils.check_result_code db ~log:"store bind type environment" ;
+          Sqlite3.bind store_stmt 3 integer_type_widths
+          (* :integer_type_widths *)
+          |> SqliteUtils.check_result_code db ~log:"store bind integer type widths" ;
+          Sqlite3.bind store_stmt 4 proc_names
+          (* :proc_names *)
+          |> SqliteUtils.check_result_code db ~log:"store bind proc names" ;
+          Sqlite3.bind store_stmt 5 (Sqlite3.Data.INT Int64.one)
+          (* :freshly_captured *)
+          |> SqliteUtils.check_result_code db ~log:"store freshness" ;
+          SqliteUtils.result_unit ~finalize:false ~log:"Cfg.store" db store_stmt )
 
 
   let mark_all_source_files_stale () =
-    ResultsDatabase.with_registered_statement mark_all_source_files_stale_statement
-      ~f:(fun db stmt -> SqliteUtils.result_unit db ~finalize:false ~log:"mark_all_stale" stmt)
+    ResultsDatabase.get_database ()
+    |> SqliteUtils.exec ~stmt:"UPDATE source_files SET freshly_captured = 0" ~log:"mark_all_stale"
 
 
   let merge_procedures_table ~db_file =
-    let db = ResultsDatabase.get_database () in
     (* Do the merge purely in SQL for great speed. The query works by doing a left join between the
        sub-table and the main one, and applying the same "more defined" logic as in Attributes in the
        cases where a proc_name is present in both the sub-table and the main one (main.attr_kind !=
        NULL). All the rows that pass this filter are inserted/updated into the main table. *)
-    Sqlite3.exec db
-      {|
-        INSERT OR REPLACE INTO memdb.procedures
-        SELECT sub.proc_name, sub.proc_name_hum, sub.attr_kind, sub.source_file, sub.proc_attributes, sub.cfg, sub.callees
-        FROM (
-          attached.procedures AS sub
-          LEFT OUTER JOIN memdb.procedures AS main
-          ON sub.proc_name = main.proc_name )
-        WHERE
-          main.attr_kind IS NULL
-          OR main.attr_kind < sub.attr_kind
-          OR (main.attr_kind = sub.attr_kind AND main.source_file < sub.source_file)
-      |}
-    |> SqliteUtils.check_result_code db
+    ResultsDatabase.get_database ()
+    |> SqliteUtils.exec
          ~log:(Printf.sprintf "copying procedures of database '%s'" db_file)
+         ~stmt:
+           {|
+              INSERT OR REPLACE INTO memdb.procedures
+              SELECT
+                sub.proc_uid,
+                sub.proc_name,
+                sub.attr_kind,
+                sub.source_file,
+                sub.proc_attributes,
+                sub.cfg,
+                sub.callees
+              FROM (
+                attached.procedures AS sub
+                LEFT OUTER JOIN memdb.procedures AS main
+                ON sub.proc_uid = main.proc_uid )
+              WHERE
+                main.attr_kind IS NULL
+                OR main.attr_kind < sub.attr_kind
+                OR (main.attr_kind = sub.attr_kind AND main.source_file < sub.source_file)
+            |}
 
 
   let merge_source_files_table ~db_file =
-    let db = ResultsDatabase.get_database () in
-    Sqlite3.exec db
-      {|
-        INSERT OR REPLACE INTO memdb.source_files
-        SELECT source_file, type_environment, integer_type_widths, procedure_names, 1
-        FROM attached.source_files
-      |}
-    |> SqliteUtils.check_result_code db
+    ResultsDatabase.get_database ()
+    |> SqliteUtils.exec
          ~log:(Printf.sprintf "copying source_files of database '%s'" db_file)
+         ~stmt:
+           {|
+              INSERT OR REPLACE INTO memdb.source_files
+              SELECT source_file, type_environment, integer_type_widths, procedure_names, 1
+              FROM attached.source_files
+            |}
 
 
   let copy_to_main db =
-    Sqlite3.exec db {| INSERT OR REPLACE INTO procedures SELECT * FROM memdb.procedures |}
-    |> SqliteUtils.check_result_code db ~log:"Copying procedures into main db" ;
-    Sqlite3.exec db {| INSERT OR REPLACE INTO source_files SELECT * FROM memdb.source_files |}
-    |> SqliteUtils.check_result_code db ~log:"Copying source_files into main db"
+    SqliteUtils.exec db ~log:"Copying procedures into main db"
+      ~stmt:"INSERT OR REPLACE INTO procedures SELECT * FROM memdb.procedures" ;
+    SqliteUtils.exec db ~log:"Copying source_files into main db"
+      ~stmt:"INSERT OR REPLACE INTO source_files SELECT * FROM memdb.source_files"
 
 
   let merge_db infer_out_src =
     let db_file = ResultsDirEntryName.get_path ~results_dir:infer_out_src CaptureDB in
     let main_db = ResultsDatabase.get_database () in
-    Sqlite3.exec main_db (Printf.sprintf "ATTACH '%s' AS attached" db_file)
-    |> SqliteUtils.check_result_code main_db ~log:(Printf.sprintf "attaching database '%s'" db_file) ;
+    SqliteUtils.exec main_db
+      ~stmt:(Printf.sprintf "ATTACH '%s' AS attached" db_file)
+      ~log:(Printf.sprintf "attaching database '%s'" db_file) ;
     merge_procedures_table ~db_file ;
     merge_source_files_table ~db_file ;
-    Sqlite3.exec main_db "DETACH attached"
-    |> SqliteUtils.check_result_code main_db ~log:(Printf.sprintf "detaching database '%s'" db_file)
+    SqliteUtils.exec main_db ~stmt:"DETACH attached"
+      ~log:(Printf.sprintf "detaching database '%s'" db_file)
 
 
   let merge infer_deps_file =
     let main_db = ResultsDatabase.get_database () in
-    Sqlite3.exec main_db "ATTACH ':memory:' AS memdb"
-    |> SqliteUtils.check_result_code main_db ~log:"attaching memdb" ;
+    SqliteUtils.exec main_db ~stmt:"ATTACH ':memory:' AS memdb" ~log:"attaching memdb" ;
     ResultsDatabase.create_tables ~prefix:"memdb." main_db ;
     Utils.iter_infer_deps ~project_root:Config.project_root ~f:merge_db infer_deps_file ;
     copy_to_main main_db ;
-    Sqlite3.exec main_db "DETACH memdb"
-    |> SqliteUtils.check_result_code main_db ~log:"detaching memdb"
+    SqliteUtils.exec main_db ~stmt:"DETACH memdb" ~log:"detaching memdb"
 
 
   let canonicalize () =
-    let db = ResultsDatabase.get_database () in
-    SqliteUtils.exec db ~log:"running VACUUM" ~stmt:"VACUUM"
+    ResultsDatabase.get_database () |> SqliteUtils.exec ~log:"running VACUUM" ~stmt:"VACUUM"
 
 
   let reset_capture_tables () =
@@ -178,33 +180,38 @@ module Implementation = struct
   let store_spec =
     let store_statement =
       ResultsDatabase.register_statement
-        "INSERT OR REPLACE INTO specs VALUES (:proc_name, :analysis_summary, :report_summary)"
+        {|
+          INSERT OR REPLACE INTO specs
+          VALUES (:proc_uid, :proc_name, :analysis_summary, :report_summary)
+        |}
     in
-    fun ~proc_name ~analysis_summary ~report_summary ->
+    fun ~proc_uid ~proc_name ~analysis_summary ~report_summary ->
       ResultsDatabase.with_registered_statement store_statement ~f:(fun db store_stmt ->
-          Sqlite3.bind store_stmt 1 proc_name
+          Sqlite3.bind store_stmt 1 (Sqlite3.Data.TEXT proc_uid)
+          |> SqliteUtils.check_result_code db ~log:"store spec bind proc_uid" ;
+          Sqlite3.bind store_stmt 2 proc_name
           |> SqliteUtils.check_result_code db ~log:"store spec bind proc_name" ;
-          Sqlite3.bind store_stmt 2 analysis_summary
+          Sqlite3.bind store_stmt 3 analysis_summary
           |> SqliteUtils.check_result_code db ~log:"store spec bind analysis_summary" ;
-          Sqlite3.bind store_stmt 3 report_summary
+          Sqlite3.bind store_stmt 4 report_summary
           |> SqliteUtils.check_result_code db ~log:"store spec bind report_summary" ;
           SqliteUtils.result_unit ~finalize:false ~log:"store spec" db store_stmt )
 
 
   let delete_spec =
     let delete_statement =
-      ResultsDatabase.register_statement "DELETE FROM specs WHERE proc_name = :k"
+      ResultsDatabase.register_statement "DELETE FROM specs WHERE proc_uid = :k"
     in
-    fun ~proc_name ->
+    fun ~proc_uid ->
       ResultsDatabase.with_registered_statement delete_statement ~f:(fun db delete_stmt ->
-          Sqlite3.bind delete_stmt 1 proc_name
-          |> SqliteUtils.check_result_code db ~log:"delete spec bind proc_name" ;
+          Sqlite3.bind delete_stmt 1 (Sqlite3.Data.TEXT proc_uid)
+          |> SqliteUtils.check_result_code db ~log:"delete spec bind proc_uid" ;
           SqliteUtils.result_unit ~finalize:false ~log:"store spec" db delete_stmt )
 
 
   let delete_all_specs () =
-    let db = ResultsDatabase.get_database () in
-    SqliteUtils.exec db ~log:"drop procedures table" ~stmt:"DELETE FROM specs"
+    ResultsDatabase.get_database ()
+    |> SqliteUtils.exec ~log:"drop procedures table" ~stmt:"DELETE FROM specs"
 end
 
 module Command = struct
@@ -215,19 +222,22 @@ module Command = struct
         ; integer_type_widths: Sqlite3.Data.t
         ; proc_names: Sqlite3.Data.t }
     | DeleteAllSpecs
-    | DeleteSpec of {proc_name: Sqlite3.Data.t}
+    | DeleteSpec of {proc_uid: string}
     | Handshake
     | MarkAllSourceFilesStale
     | Merge of {infer_deps_file: string}
     | StoreSpec of
-        {proc_name: Sqlite3.Data.t; analysis_summary: Sqlite3.Data.t; report_summary: Sqlite3.Data.t}
+        { proc_uid: string
+        ; proc_name: Sqlite3.Data.t
+        ; analysis_summary: Sqlite3.Data.t
+        ; report_summary: Sqlite3.Data.t }
     | ReplaceAttributes of
-        { pname_str: string
-        ; pname: Sqlite3.Data.t
-        ; akind: int64
+        { proc_uid: string
+        ; proc_name: Sqlite3.Data.t
+        ; attr_kind: int64
         ; source_file: Sqlite3.Data.t
-        ; attributes: Sqlite3.Data.t
-        ; proc_desc: Sqlite3.Data.t
+        ; proc_attributes: Sqlite3.Data.t
+        ; cfg: Sqlite3.Data.t
         ; callees: Sqlite3.Data.t }
     | ResetCaptureTables
     | Terminate
@@ -265,19 +275,20 @@ module Command = struct
         Implementation.add_source_file ~source_file ~tenv ~integer_type_widths ~proc_names
     | DeleteAllSpecs ->
         Implementation.delete_all_specs ()
-    | DeleteSpec {proc_name} ->
-        Implementation.delete_spec ~proc_name
+    | DeleteSpec {proc_uid} ->
+        Implementation.delete_spec ~proc_uid
     | Handshake ->
         ()
     | MarkAllSourceFilesStale ->
         Implementation.mark_all_source_files_stale ()
     | Merge {infer_deps_file} ->
         Implementation.merge infer_deps_file
-    | StoreSpec {proc_name; analysis_summary; report_summary} ->
-        Implementation.store_spec ~proc_name ~analysis_summary ~report_summary
-    | ReplaceAttributes {pname_str; pname; akind; source_file; attributes; proc_desc; callees} ->
-        Implementation.replace_attributes ~pname_str ~pname ~akind ~source_file ~attributes
-          ~proc_desc ~callees
+    | StoreSpec {proc_uid; proc_name; analysis_summary; report_summary} ->
+        Implementation.store_spec ~proc_uid ~proc_name ~analysis_summary ~report_summary
+    | ReplaceAttributes {proc_uid; proc_name; attr_kind; source_file; proc_attributes; cfg; callees}
+      ->
+        Implementation.replace_attributes ~proc_uid ~proc_name ~attr_kind ~source_file
+          ~proc_attributes ~cfg ~callees
     | ResetCaptureTables ->
         Implementation.reset_capture_tables ()
     | Terminate ->
@@ -381,8 +392,9 @@ let start () = Server.start ()
 
 let stop () = Server.send Command.Terminate
 
-let replace_attributes ~pname_str ~pname ~akind ~source_file ~attributes ~proc_desc ~callees =
-  perform (ReplaceAttributes {pname_str; pname; akind; source_file; attributes; proc_desc; callees})
+let replace_attributes ~proc_uid ~proc_name ~attr_kind ~source_file ~proc_attributes ~cfg ~callees =
+  perform
+    (ReplaceAttributes {proc_uid; proc_name; attr_kind; source_file; proc_attributes; cfg; callees})
 
 
 let add_source_file ~source_file ~tenv ~integer_type_widths ~proc_names =
@@ -397,10 +409,10 @@ let canonicalize () = perform Vacuum
 
 let reset_capture_tables () = perform ResetCaptureTables
 
-let store_spec ~proc_name ~analysis_summary ~report_summary =
-  perform (StoreSpec {proc_name; analysis_summary; report_summary})
+let store_spec ~proc_uid ~proc_name ~analysis_summary ~report_summary =
+  perform (StoreSpec {proc_uid; proc_name; analysis_summary; report_summary})
 
 
-let delete_spec ~proc_name = perform (DeleteSpec {proc_name})
+let delete_spec ~proc_uid = perform (DeleteSpec {proc_uid})
 
 let delete_all_specs () = perform DeleteAllSpecs

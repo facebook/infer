@@ -214,8 +214,6 @@ since they (could) have the same domain
 ** eliminate existentials
 by changing Congruence reps to avoid existentials if possible and then normalizing Sh ito reps
 ** add exps in pure and pto (including memory siz and arr) to carrier
-** Sh.with_pure is an underspeced, tightly coupled, API: replace
-Sh.with_pure assumes that the replaced pure part is defined in the same vocabulary, induces the same congruence, etc. This API is fragile, and ought to be replaced with something that has simpler assumptions without imposing an excessive pessimization.
 ** optimize Sh.and_ with direct implementation
 ** perhaps it would be better to allow us and xs to intersect
 but to rename xs when binding them or otherwise operating under the quantifier. But it might be an unnecessary complication to always have to deal with the potential for shadowing.

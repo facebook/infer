@@ -7,6 +7,6 @@
 
 open! IStd
 
-type t = IsOnUIThread | Procedure | File | Cost | Trace [@@deriving equal]
+type t = IsOnUIThread | Procedure | File | Cost | AutoreleasepoolSize | Trace [@@deriving equal]
 
 val all_fields : t list

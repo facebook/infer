@@ -92,6 +92,19 @@ let get_method_body method_decl =
       raise CFrontend_errors.Invalid_declaration
 
 
+let is_cpp_lambda_call_operator meth_decl =
+  let open Clang_ast_t in
+  match meth_decl with
+  | CXXMethodDecl (di, _, _, _, _) -> (
+    match CAst_utils.get_decl_opt di.di_parent_pointer with
+    | Some (Clang_ast_t.CXXRecordDecl (_, _, _, _, _, _, _, cxx_rdi)) ->
+        Option.is_some cxx_rdi.xrdi_lambda_call_operator
+    | _ ->
+        false )
+  | _ ->
+      false
+
+
 let is_cpp_virtual method_decl =
   let open Clang_ast_t in
   match method_decl with

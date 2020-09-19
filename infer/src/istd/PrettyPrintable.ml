@@ -253,6 +253,8 @@ module type PPUniqRankSet = sig
 
   val remove : elt -> t -> t
 
+  val mem : elt -> t -> bool
+
   val union_prefer_left : t -> t -> t
 
   val pp : ?print_rank:bool -> F.formatter -> t -> unit
@@ -318,6 +320,8 @@ module MakePPUniqRankSet
 
 
   let remove value map = Map.remove (Val.to_rank value) map
+
+  let mem value map = Map.mem (Val.to_rank value) map
 
   let singleton value = add Map.empty value
 

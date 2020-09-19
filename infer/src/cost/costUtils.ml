@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module L = Logging
 module BasicCost = CostDomain.BasicCost
 open BufferOverrunUtils.ModelEnv
 
@@ -55,6 +56,43 @@ module Collection : S = struct
     BufferOverrunModels.Collection.eval_collection_length coll_exp inferbo_mem
 end
 
+module NSCollection : S = struct
+  let length coll_exp inferbo_mem =
+    BufferOverrunModels.NSCollection.eval_collection_length coll_exp inferbo_mem
+end
+
 module CString : S = struct
   let length exp inferbo_mem = BufferOverrunSemantics.eval_string_len exp inferbo_mem
 end
+
+let get_nodes_in_block ~block_start ~block_exit =
+  let rec accum_nodes_in_block ~from acc =
+    match from with
+    | [] ->
+        acc
+    | x :: tl ->
+        if Procdesc.Node.equal x block_exit || Procdesc.NodeSet.mem x acc then
+          accum_nodes_in_block ~from:tl acc
+        else
+          let from = Procdesc.Node.get_succs x @ tl in
+          accum_nodes_in_block ~from (Procdesc.NodeSet.add x acc)
+  in
+  accum_nodes_in_block ~from:[block_start] Procdesc.NodeSet.empty
+
+
+let get_nodes_in_autoreleasepool cfg =
+  Procdesc.fold_instrs cfg ~init:Procdesc.NodeSet.empty ~f:(fun acc node -> function
+    | Sil.Call (_, Const (Cfun pname), _, _, _)
+      when Procname.equal pname BuiltinDecl.objc_autorelease_pool_push -> (
+      match Procdesc.Node.get_code_block_exit node with
+      | None ->
+          (* Each _objc_autoreleasePoolPush has a corresponding _objc_autoreleasePoolPop, so we
+             should always have a corresponding exit node of the autoreleasepool block. *)
+          L.internal_error
+            "Not found: block-exit node matching to block_start node(%a) is not found.@."
+            Procdesc.Node.pp node ;
+          assert false
+      | Some block_exit ->
+          get_nodes_in_block ~block_start:node ~block_exit |> Procdesc.NodeSet.union acc )
+    | _ ->
+        acc )

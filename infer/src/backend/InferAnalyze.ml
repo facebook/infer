@@ -24,7 +24,26 @@ let clear_caches () =
   clear_caches_except_lrus ()
 
 
-let analyze_target : (TaskSchedulerTypes.target, Procname.t) Tasks.doer =
+let proc_name_of_uid =
+  let statement =
+    ResultsDatabase.register_statement "SELECT proc_name FROM procedures WHERE proc_uid = :k"
+  in
+  fun proc_uid ->
+    ResultsDatabase.with_registered_statement statement ~f:(fun db stmt ->
+        Sqlite3.bind stmt 1 (Sqlite3.Data.TEXT proc_uid)
+        |> SqliteUtils.check_result_code db ~log:"proc_name of proc_uid bind proc_uid" ;
+        let result_option =
+          SqliteUtils.result_option ~finalize:false db ~log:"proc_name of proc_uid" stmt
+            ~read_row:(fun stmt -> Sqlite3.column stmt 0 |> Procname.SQLite.deserialize)
+        in
+        match result_option with
+        | Some proc_name ->
+            proc_name
+        | None ->
+            L.die InternalError "Requested non-existent proc_uid: %s@." proc_uid )
+
+
+let analyze_target : (TaskSchedulerTypes.target, string) Tasks.doer =
   let analyze_source_file exe_env source_file =
     if Topl.is_active () then DB.Results_dir.init (Topl.sourcefile ()) ;
     DB.Results_dir.init source_file ;
@@ -35,7 +54,8 @@ let analyze_target : (TaskSchedulerTypes.target, Procname.t) Tasks.doer =
             DotCfg.emit_frontend_cfg (Topl.sourcefile ()) (Topl.cfg ()) ;
           if Config.write_html then Printer.write_all_html_files source_file ;
           None
-        with TaskSchedulerTypes.ProcnameAlreadyLocked pname -> Some pname )
+        with TaskSchedulerTypes.ProcnameAlreadyLocked {dependency_filename} ->
+          Some dependency_filename )
   in
   (* In call-graph scheduling, log progress every [per_procedure_logging_granularity] procedures.
      The default roughly reflects the average number of procedures in a C++ file. *)
@@ -51,7 +71,8 @@ let analyze_target : (TaskSchedulerTypes.target, Procname.t) Tasks.doer =
     try
       Ondemand.analyze_proc_name_toplevel exe_env proc_name ;
       None
-    with TaskSchedulerTypes.ProcnameAlreadyLocked pname -> Some pname
+    with TaskSchedulerTypes.ProcnameAlreadyLocked {dependency_filename} ->
+      Some dependency_filename
   in
   fun target ->
     let exe_env = Exe_env.mk () in
@@ -60,6 +81,8 @@ let analyze_target : (TaskSchedulerTypes.target, Procname.t) Tasks.doer =
     match target with
     | Procname procname ->
         analyze_proc_name exe_env procname
+    | ProcUID proc_uid ->
+        proc_name_of_uid proc_uid |> analyze_proc_name exe_env
     | File source_file ->
         analyze_source_file exe_env source_file
 

@@ -227,6 +227,11 @@ let conjoin_props env post pre =
   List.fold ~init:post ~f:(Prop.prop_atom_and env) (Prop.get_pure pre)
 
 
+let message_of_state state =
+  let property, _vname = ToplAutomaton.vname (Lazy.force automaton) state in
+  Printf.sprintf "property %s reaches error" property
+
+
 (** For each (pre, post) pair of symbolic heaps and each (start, error) pair of Topl automata
     states, define
 
@@ -252,8 +257,8 @@ let add_errors_biabduction {InterproceduralAnalysis.proc_desc; tenv; err_log} bi
           L.die InternalError "Topl.add_errors should only be called after RE_EXECUTION"
       in
       let extract_specs x = BiabductionSummary.(normalized_specs_to_specs x.preposts) in
-      Option.iter ~f:check_phase biabduction_summary ;
-      Option.value_map ~default:[] ~f:extract_specs biabduction_summary
+      check_phase biabduction_summary ;
+      extract_specs biabduction_summary
     in
     let subscript varname sub = Printf.sprintf "%s_%s" varname sub in
     let subscript_pre varname = subscript varname "pre" in
@@ -279,11 +284,10 @@ let add_errors_biabduction {InterproceduralAnalysis.proc_desc; tenv; err_log} bi
             let phi = conjoin_props tenv post pre_start in
             let psi = Prop.conjoin_neq tenv error_exp state_post_value phi in
             if (not (is_inconsistent tenv phi)) && is_inconsistent tenv psi then (
-              let property, _vname = ToplAutomaton.vname (Lazy.force automaton) error in
-              let message = Printf.sprintf "property %s reaches error" property in
+              let message = message_of_state error in
               tt "WARN@\n" ;
-              Reporting.log_issue proc_desc err_log ToplOnBiabduction IssueType.topl_error ~loc
-                message )
+              Reporting.log_issue proc_desc err_log ToplOnBiabduction IssueType.topl_biabd_error
+                ~loc message )
           in
           (* Don't warn if [lookup_static_var] fails. *)
           Option.iter ~f:handle_state_post_value (lookup_static_var tenv state_var post)
@@ -300,9 +304,48 @@ let add_errors_biabduction {InterproceduralAnalysis.proc_desc; tenv; err_log} bi
     List.iter ~f:handle_preposts preposts
 
 
-let add_errors_pulse _analysis_data _summary =
-  (* TODO(rgrigore): Do something similar to add_errors_biabduction, but for pulse summaries. *)
-  ()
+let add_errors_pulse {InterproceduralAnalysis.proc_desc; err_log} pulse_summary =
+  let pulse_summary =
+    let f = function PulseExecutionDomain.ContinueProgram s -> Some s | _ -> None in
+    List.filter_map ~f pulse_summary
+  in
+  let proc_name = Procdesc.get_proc_name proc_desc in
+  if not (ToplUtils.is_synthesized proc_name) then
+    let start_to_error =
+      Lazy.force automaton |> ToplAutomaton.get_start_error_pairs |> Int.Table.of_alist_exn
+    in
+    let topl_property_var = Var.of_pvar ToplUtils.topl_class_pvar in
+    let topl_state_field = HilExp.Access.FieldAccess (ToplUtils.make_field ToplName.state) in
+    let check_pre_post pre_post =
+      let open IOption.Let_syntax in
+      let path_condition = pre_post.PulseAbductiveDomain.path_condition in
+      let get_topl_state_opt pulse_state =
+        let stack = pulse_state.PulseBaseDomain.stack in
+        let heap = pulse_state.PulseBaseDomain.heap in
+        let* topl_property_addr, _ = PulseBaseStack.find_opt topl_property_var stack in
+        let* state_addr, _ =
+          PulseBaseMemory.find_edge_opt topl_property_addr topl_state_field heap
+        in
+        let* state_val, _ =
+          PulseBaseMemory.find_edge_opt state_addr HilExp.Access.Dereference heap
+        in
+        PulsePathCondition.as_int path_condition state_val
+      in
+      let* pre_topl = get_topl_state_opt (pre_post.PulseAbductiveDomain.pre :> PulseBaseDomain.t) in
+      let* post_topl =
+        get_topl_state_opt (pre_post.PulseAbductiveDomain.post :> PulseBaseDomain.t)
+      in
+      let* error_topl = Int.Table.find start_to_error pre_topl in
+      if Int.equal post_topl error_topl then Some error_topl else None
+    in
+    let errors = List.filter_map ~f:check_pre_post pulse_summary in
+    let errors = Int.Set.to_list (Int.Set.of_list errors) in
+    let loc = Procdesc.get_loc proc_desc in
+    let report error_state =
+      let m = message_of_state error_state in
+      Reporting.log_issue proc_desc err_log ToplOnPulse IssueType.topl_pulse_error ~loc m
+    in
+    List.iter ~f:report errors
 
 
 let sourcefile () =
@@ -318,7 +361,7 @@ let cfg () =
 let analyze_with analyze postprocess analysis_data =
   if is_active () then instrument analysis_data ;
   let summary = analyze analysis_data in
-  if is_active () then postprocess analysis_data summary ;
+  if is_active () then Option.iter ~f:(postprocess analysis_data) summary ;
   summary
 
 

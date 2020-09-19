@@ -157,7 +157,8 @@ let check_printf_args_ok tenv (node : Procdesc.Node.t) (instr : Sil.instr) (proc
             check_type_names cl (printf.format_pos + 1) pn (format_string_type_names fmt 0)
               vararg_ivar_type_names
         | None ->
-            if not (Reporting.is_suppressed tenv proc_desc IssueType.checkers_printf_args) then
+            let proc_attrs = Procdesc.get_attributes proc_desc in
+            if not (Reporting.is_suppressed tenv proc_attrs IssueType.checkers_printf_args) then
               Reporting.log_issue proc_desc err_log ~loc:cl PrintfArgs
                 IssueType.checkers_printf_args "Format string must be string literal"
       with e ->
