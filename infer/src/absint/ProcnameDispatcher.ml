@@ -575,15 +575,20 @@ module Call = struct
       List.find_map matchers ~f:(fun (matcher : _ matcher) -> matcher.on_java context java args)
     in
     fun context procname args ->
-      match procname with
-      | ObjC_Cpp objc_cpp ->
-          on_objc_cpp context objc_cpp args
-      | C c ->
-          on_c context c args
-      | Java java ->
-          on_java context java args
-      | _ ->
-          None
+      let rec match_procname procname =
+        match (procname : Procname.t) with
+        | ObjC_Cpp objc_cpp ->
+            on_objc_cpp context objc_cpp args
+        | C c ->
+            on_c context c args
+        | Java java ->
+            on_java context java args
+        | WithBlockParameters (procname, _) ->
+            match_procname procname
+        | _ ->
+            None
+      in
+      match_procname procname
 
 
   let merge_dispatchers :

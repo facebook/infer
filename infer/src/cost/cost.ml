@@ -128,7 +128,7 @@ module InstrBasicCostWithReason = struct
           (inferbo_mem_opt, CostAutoreleaseModels.Call.dispatch tenv callee_pname fun_arg_list)
         with
         | Some inferbo_mem, Some model ->
-            let autoreleasepool_size = model (Lazy.force model_env) ~ret inferbo_mem in
+            let autoreleasepool_size = model get_summary (Lazy.force model_env) ~ret inferbo_mem in
             CostDomain.plus_autoreleasepool_size autoreleasepool_size cost
         | _, _ ->
             if

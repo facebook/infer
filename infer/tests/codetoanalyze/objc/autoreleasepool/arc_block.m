@@ -12,7 +12,7 @@
 
 @implementation ArcBlock
 
-+ (void)callIndexOfObjectPassingTest_linear_FN:(NSArray*)x {
++ (void)callIndexOfObjectPassingTest_linear:(NSArray*)x {
   int i = [x indexOfObjectPassingTest:^BOOL(
                  NSObject* obj, NSUInteger idx, BOOL* stop) {
     NoArcCallee* o = [NoArcCallee giveMeObject];

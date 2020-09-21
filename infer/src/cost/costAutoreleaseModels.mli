@@ -8,5 +8,9 @@
 open! IStd
 
 module Call : sig
-  val dispatch : (Tenv.t, CostUtils.model, unit) ProcnameDispatcher.Call.dispatcher
+  val dispatch :
+    ( Tenv.t
+    , (Procname.t -> CostDomain.summary option) -> CostUtils.model
+    , unit )
+    ProcnameDispatcher.Call.dispatcher
 end

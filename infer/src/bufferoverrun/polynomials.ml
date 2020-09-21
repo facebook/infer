@@ -331,8 +331,7 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
       |> M.fold (fun s p acc -> plus_poly (mult_symb_poly (mult_poly p p1) s) acc) p2.terms
 
 
-  let mult : t -> t -> t =
-   fun p1 p2 ->
+  let mult_common p1 p2 ~join_autoreleasepool_trace =
     let poly = mult_poly p1.poly p2.poly in
     let autoreleasepool_trace =
       if is_zero_poly poly then None
@@ -340,6 +339,15 @@ module MakePolynomial (S : NonNegativeSymbolWithDegreeKind) = struct
         join_autoreleasepool_trace p1.poly p2.poly p1.autoreleasepool_trace p2.autoreleasepool_trace
     in
     {poly; autoreleasepool_trace}
+
+
+  let mult p1 p2 = mult_common p1 p2 ~join_autoreleasepool_trace
+
+  (** It takes only the trace of the body part, because the trace for the iteration number will be
+      taken later from symbolic values. *)
+  let mult_loop ~iter ~body =
+    mult_common iter body ~join_autoreleasepool_trace:(fun _iter_poly _body_poly _iter body ->
+        body )
 
 
   let rec of_valclass : (NonNegativeInt.t, S.t, 't) Bounds.valclass -> ('t, t, 't) below_above =
@@ -758,6 +766,11 @@ module NonNegativePolynomial = struct
   let mult_unreachable = unreachable_lifted_increasing ~f:NonNegativeNonTopPolynomial.mult
 
   let mult = top_lifted_increasing ~f:NonNegativeNonTopPolynomial.mult
+
+  let mult_loop ~iter ~body =
+    top_lifted_increasing iter body ~f:(fun iter body ->
+        NonNegativeNonTopPolynomial.mult_loop ~iter ~body )
+
 
   let min_default_left p1 p2 =
     AbstractDomain.StackedUtils.combine ~dir:`Decreasing p1 p2
