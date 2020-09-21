@@ -6,9 +6,9 @@
  */
 
 import java.util.ArrayList;
+import com.google.common.base.Preconditions;
 
 // This class has the following costs:
-// 1 bottom (zero), 2 constant, 1 linear, 1 top
 // constructor: constant
 // private access$000 method for accessing f8 
 // f1: top
@@ -18,7 +18,8 @@ import java.util.ArrayList;
 // f5: n log n
 // f6: n log n
 // f7: top by call to f1
-// f8: quadratic
+// f8: unreachable
+// f9: quadratic
 
 public class DiffExample {
 
@@ -28,7 +29,7 @@ public class DiffExample {
       
         @Override
         public String toString() {
-           f8(z);
+           f9(z);
           return super.toString();
         }
       };
@@ -74,8 +75,14 @@ public class DiffExample {
         f1(k);
     }
 
+
+   private void f8() {
+       int x = 0;
+       Preconditions.checkArgument(false);       
+   }
+
    // cost: quadratic
-    private static void f8(int k) {
+    private static void f9(int k) {
         for (int i = 0; i < k; i++) {
             f4(k);
         }

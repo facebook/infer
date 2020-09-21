@@ -8,7 +8,6 @@
 import java.util.ArrayList;
 
 // This class has the following costs:
-// 2 constant, 1 linear, 1 quadratic
 // constructor: constant
 // private access$000 method for accessing f4 
 // f1: linear
@@ -67,4 +66,9 @@ public class DiffExample {
             i++;
         }
     }
+
+   private void f8() {
+       int x = 0;
+   }
+
 }

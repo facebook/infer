@@ -19,10 +19,10 @@ $(CURRENT_REPORT):
 	$(QUIET)$(COPY) src/DiffExample.java.current src/DiffExample.java
 	$(QUIET)$(COPY) src/DiffExampleUIThread.java.current src/DiffExampleUIThread.java
 	$(QUIET)$(call silent_on_success,Testing Cost Differential: current,\
-	$(INFER_BIN) --enable-issue-type INFINITE_EXECUTION_TIME --cost-only -o $(CURRENT_DIR) -- $(JAVAC) -cp $(CLASSPATH)  src/*.java)
+	$(INFER_BIN) --no-filtering --cost-only -o $(CURRENT_DIR) -- $(JAVAC) -cp $(CLASSPATH)  src/*.java)
 
 $(PREVIOUS_REPORT):
 	$(QUIET)$(COPY) src/DiffExample.java.previous src/DiffExample.java
 	$(QUIET)$(COPY) src/DiffExampleUIThread.java.previous src/DiffExampleUIThread.java
 	$(QUIET)$(call silent_on_success,Testing Cost Differential: previous,\
-	$(INFER_BIN) --debug --enable-issue-type INFINITE_EXECUTION_TIME --cost-only -o $(PREVIOUS_DIR) -- $(JAVAC)  -cp $(CLASSPATH) src/*.java)
+	$(INFER_BIN) --debug --no-filtering --cost-only -o $(PREVIOUS_DIR) -- $(JAVAC)  -cp $(CLASSPATH) src/*.java)
