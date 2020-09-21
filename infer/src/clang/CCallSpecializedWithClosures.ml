@@ -88,14 +88,14 @@ let should_specialize actual_params call_flags =
 
 (* name for the specialized method instantiated with closure arguments *)
 let pname_with_closure_args callee_pname actual_params =
-  let block_name_args =
+  let block_args =
     List.filter_map actual_params ~f:(function
       | Exp.Closure cl, _ when Procname.is_objc_block cl.name ->
-          Some (Procname.block_name_of_procname cl.name)
+          Some (Procname.block_of_procname cl.name)
       | _ ->
           None )
   in
-  Procname.with_block_parameters callee_pname block_name_args
+  Procname.with_block_parameters callee_pname block_args
 
 
 let formals_closures_map map =

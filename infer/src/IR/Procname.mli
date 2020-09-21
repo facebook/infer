@@ -196,10 +196,10 @@ type t =
   | Linters_dummy_method
   | Block of Block.t
   | ObjC_Cpp of ObjC_Cpp.t
-  | WithBlockParameters of t * Block.block_name list
+  | WithBlockParameters of t * Block.t list
 [@@deriving compare]
 
-val block_name_of_procname : t -> Block.block_name
+val block_of_procname : t -> Block.t
 
 val equal : t -> t -> bool
 
@@ -292,9 +292,9 @@ val is_java : t -> bool
 val as_java_exn : explanation:string -> t -> Java.t
 (** Converts to a Java.t. Throws if [is_java] is false *)
 
-val with_block_parameters : t -> Block.block_name list -> t
+val with_block_parameters : t -> Block.t list -> t
 (** Create a procedure name instantiated with block parameters from a base procedure name and a list
-    of block procedure names (the arguments). *)
+    of block procedures. *)
 
 val objc_cpp_replace_method_name : t -> string -> t
 

@@ -381,7 +381,7 @@ type t =
   | Linters_dummy_method
   | Block of Block.t
   | ObjC_Cpp of ObjC_Cpp.t
-  | WithBlockParameters of t * Block.block_name list
+  | WithBlockParameters of t * Block.t list
 [@@deriving compare]
 
 let equal = [%compare.equal: t]
@@ -424,10 +424,10 @@ let is_objc_dealloc procname =
   match procname with ObjC_Cpp {method_name} -> ObjC_Cpp.is_objc_dealloc method_name | _ -> false
 
 
-let block_name_of_procname procname =
+let block_of_procname procname =
   match procname with
   | Block block ->
-      block.name
+      block
   | _ ->
       Logging.die InternalError "Only to be called with Objective-C block names"
 
@@ -549,10 +549,10 @@ let get_global_name_of_initializer = function
       None
 
 
-let pp_with_block_parameters pp fmt base blocks =
+let pp_with_block_parameters verbose pp fmt base blocks =
   pp fmt base ;
   F.pp_print_string fmt "[" ;
-  Pp.seq ~sep:"^" F.pp_print_string fmt blocks ;
+  Pp.seq ~sep:"^" (Block.pp verbose) fmt blocks ;
   F.pp_print_string fmt "]"
 
 
@@ -569,7 +569,7 @@ let rec pp_unique_id fmt = function
   | WithBlockParameters (base, []) ->
       pp_unique_id fmt base
   | WithBlockParameters (base, (_ :: _ as blocks)) ->
-      pp_with_block_parameters pp_unique_id fmt base blocks
+      pp_with_block_parameters Verbose pp_unique_id fmt base blocks
   | Linters_dummy_method ->
       F.pp_print_string fmt "Linters_dummy_method"
 
@@ -589,7 +589,7 @@ let rec pp fmt = function
   | WithBlockParameters (base, []) ->
       pp fmt base
   | WithBlockParameters (base, (_ :: _ as blocks)) ->
-      pp_with_block_parameters pp fmt base blocks
+      pp_with_block_parameters Non_verbose pp fmt base blocks
   | Linters_dummy_method ->
       pp_unique_id fmt Linters_dummy_method
 
