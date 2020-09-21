@@ -20,4 +20,14 @@
 
 + (int)giveMeInt;
 
++ (NSString*)giveTaggedPointerString;
+
++ (NSNumber*)giveTaggedPointerNumber;
+
++ (NSIndexPath*)giveTaggedPointerIndexPath;
+
++ (NSIndexSet*)giveTaggedPointerIndexSet;
+
++ (NSDate*)giveTaggedPointerDate;
+
 @end

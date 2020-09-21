@@ -133,7 +133,7 @@ module InstrBasicCostWithReason = struct
         | _, _ ->
             if
               is_objc_call_from_no_arc_to_arc extras cfg callee_pname
-              && Typ.is_pointer_to_objc_class ret_typ
+              && Typ.is_pointer_to_objc_non_tagged_class ret_typ
               && not (return_object_owned_by_caller callee_pname)
             then
               let autoreleasepool_trace =

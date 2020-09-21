@@ -54,4 +54,24 @@
   int i = [ArcCallee giveMeInt];
 }
 
+- (void)callGiveTaggedPointerString_zero {
+  NSString* x = [ArcCallee giveTaggedPointerString];
+}
+
+- (void)callGiveTaggedPointerNumber_zero {
+  NSNumber* x = [ArcCallee giveTaggedPointerNumber];
+}
+
+- (void)callGiveTaggedPointerIndexPath_zero {
+  NSIndexPath* x = [ArcCallee giveTaggedPointerIndexPath];
+}
+
+- (void)callGiveTaggedPointerIndexSet_zero {
+  NSIndexSet* x = [ArcCallee giveTaggedPointerIndexSet];
+}
+
+- (void)callGiveTaggedPointerDate_zero {
+  NSDate* x = [ArcCallee giveTaggedPointerDate];
+}
+
 @end
