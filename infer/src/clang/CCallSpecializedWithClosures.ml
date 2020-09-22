@@ -163,7 +163,15 @@ let replace_with_specialize_methods cfg _node instr =
               ; method_annotation= {annot with params= new_annots}
               ; proc_name= specialized_pname }
             in
-            Cfg.create_proc_desc cfg new_attributes |> ignore ;
+            (* To avoid duplicated additions on a specialized procname, it does a membership check.
+               This may happen when there are multiple function calls with the same callees and the
+               same closure parameters.  For the following additions, we can simply ignore them,
+               because the function bodies of the same procname must be the same.
+
+               Here, it adds an empty procdesc temporarily.  The function body will be filled later
+               by [ClosureSubstSpecializedMethod]. *)
+            if not (Cfg.mem cfg specialized_pname) then
+              Cfg.create_proc_desc cfg new_attributes |> ignore ;
             Sil.Call (ret, Exp.Const (Const.Cfun specialized_pname), new_actuals, loc, flags)
         | None ->
             instr )
@@ -175,6 +183,7 @@ let replace_with_specialize_methods cfg _node instr =
 
 let process cfg =
   let process_pdesc _proc_name proc_desc =
+    ClosuresSubstitution.process_closure_param proc_desc ;
     Procdesc.replace_instrs proc_desc ~f:(replace_with_specialize_methods cfg) |> ignore
   in
   Procname.Hash.iter process_pdesc cfg

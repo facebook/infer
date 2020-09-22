@@ -142,6 +142,8 @@ val pp_diff : ?print_types:bool -> Pp.env -> F.formatter -> t -> unit
 
 val pp : F.formatter -> t -> unit
 
+val pp_closure : F.formatter -> closure -> unit
+
 val to_string : t -> string
 
 val d_exp : t -> unit

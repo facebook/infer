@@ -47,4 +47,13 @@ foo(_Nullable MyBlock my_block1, _Nullable MyBlock my_block2, _Nonnull A* a) {
   return self->x;
 }
 
+- (int)call_foo_with_same_param {
+  void (^b)(int) = ^(int i) {
+    self->x = 5;
+  };
+  foo(b, b, self);
+  foo(b, b, self);
+  return self->x;
+}
+
 @end

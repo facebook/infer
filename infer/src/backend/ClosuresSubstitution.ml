@@ -83,9 +83,9 @@ let get_invariant_at_node (map : Analyzer.invariant_map) node : Domain.t =
       Domain.bottom
 
 
-let replace_instr node (astate : Domain.t) (instr : Sil.instr) : Sil.instr =
+let replace_closure_call node (astate : Domain.t) (instr : Sil.instr) : Sil.instr =
   let kind = `ExecNode in
-  let pp_name fmt = Format.pp_print_string fmt "Closure Substitution" in
+  let pp_name fmt = Format.pp_print_string fmt "Closure Call Substitution" in
   NodePrinter.with_session (CFG.Node.underlying_node node) ~kind ~pp_name ~f:(fun () ->
       match instr with
       | Call (ret_id_typ, Var id, actual_params, loc, call_flags) -> (
@@ -110,8 +110,39 @@ let replace_instr node (astate : Domain.t) (instr : Sil.instr) : Sil.instr =
           instr )
 
 
-let process summary =
-  let pdesc = Summary.get_proc_desc summary in
+(** [replace_closure_param] propagates closures to function parameters, so that more functions are
+    specialized by [CCallSpecializedWithClosures.process]. Note that unlike [replace_closure_call]
+    running at the analysis phase, [replace_closure_param] should run before
+    [CCallSpecializedWithClosures.process] at the capture phase. *)
+let replace_closure_param node (astate : Domain.t) (instr : Sil.instr) : Sil.instr =
+  let kind = `ExecNode in
+  let pp_name fmt = Format.pp_print_string fmt "Closure Param Substitution" in
+  let replace () =
+    match instr with
+    | Sil.Call (ret, func, actual_params, loc, flags) ->
+        let modified = ref false in
+        let replace_param ((exp, typ) as param) =
+          match exp with
+          | Exp.Closure _ ->
+              param
+          | _ -> (
+            match VDom.get (eval_expr astate exp) with
+            | None ->
+                param
+            | Some c ->
+                L.d_printfln "found closure %a for parameter %a\n" Exp.pp_closure c Exp.pp exp ;
+                modified := true ;
+                (Exp.Closure c, typ) )
+        in
+        let actual_params' = List.map actual_params ~f:replace_param in
+        if !modified then Sil.Call (ret, func, actual_params', loc, flags) else instr
+    | _ ->
+        instr
+  in
+  NodePrinter.with_session (CFG.Node.underlying_node node) ~kind ~pp_name ~f:replace
+
+
+let process_common replace_instr pdesc =
   let node_cfg = CFG.from_pdesc pdesc in
   let map = Analyzer.exec_cfg node_cfg ~initial:Domain.empty () in
   let update_context = eval_instr in
@@ -120,3 +151,11 @@ let process summary =
     Procdesc.replace_instrs_using_context pdesc ~f:replace_instr ~update_context ~context_at_node
   in
   ()
+
+
+let process_closure_call summary =
+  let pdesc = Summary.get_proc_desc summary in
+  process_common replace_closure_call pdesc
+
+
+let process_closure_param pdesc = process_common replace_closure_param pdesc

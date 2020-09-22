@@ -66,6 +66,17 @@ digraph cfg {
 	
 
 	 "objc_blockA.bar:_2(class A).714c02790d023adc163c946a9f0220cd_3" -> "objc_blockA.bar:_2(class A).714c02790d023adc163c946a9f0220cd_2" ;
+"objc_blockA.call_foo_with_same_param_5(class A).03c7f776ebd8253258577359808dec16_1" [label="1: Start objc_blockA.call_foo_with_same_param_5\nFormals:  self:A* i:int\nLocals: \nCaptured:  [by ref]self:A* \n  " color=yellow style=filled]
+	
+
+	 "objc_blockA.call_foo_with_same_param_5(class A).03c7f776ebd8253258577359808dec16_1" -> "objc_blockA.call_foo_with_same_param_5(class A).03c7f776ebd8253258577359808dec16_3" ;
+"objc_blockA.call_foo_with_same_param_5(class A).03c7f776ebd8253258577359808dec16_2" [label="2: Exit objc_blockA.call_foo_with_same_param_5 \n  " color=yellow style=filled]
+	
+
+"objc_blockA.call_foo_with_same_param_5(class A).03c7f776ebd8253258577359808dec16_3" [label="3:  BinaryOperatorStmt: Assign \n   n$31=*&self:A* [line 52, column 5]\n  *n$31.x:int=5 [line 52, column 5]\n " shape="box"]
+	
+
+	 "objc_blockA.call_foo_with_same_param_5(class A).03c7f776ebd8253258577359808dec16_3" -> "objc_blockA.call_foo_with_same_param_5(class A).03c7f776ebd8253258577359808dec16_2" ;
 "bar2#A#instance.413fa5106d6a23f2bf18df99659efb82_1" [label="1: Start A.bar2\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -104,6 +115,29 @@ digraph cfg {
 	
 
 	 "bar:#A(class A)#instance.3e4a860660eb436d473f8ceeb9c1a72b_6" -> "bar:#A(class A)#instance.3e4a860660eb436d473f8ceeb9c1a72b_5" ;
+"call_foo_with_same_param#A#instance.7f01b1476c1662f7ce825ec7b1739a00_1" [label="1: Start A.call_foo_with_same_param\nFormals:  self:A*\nLocals:  b:_fn_(*) \n  " color=yellow style=filled]
+	
+
+	 "call_foo_with_same_param#A#instance.7f01b1476c1662f7ce825ec7b1739a00_1" -> "call_foo_with_same_param#A#instance.7f01b1476c1662f7ce825ec7b1739a00_6" ;
+"call_foo_with_same_param#A#instance.7f01b1476c1662f7ce825ec7b1739a00_2" [label="2: Exit A.call_foo_with_same_param \n  " color=yellow style=filled]
+	
+
+"call_foo_with_same_param#A#instance.7f01b1476c1662f7ce825ec7b1739a00_3" [label="3:  Return Stmt \n   n$20=*&self:A* [line 56, column 10]\n  n$21=*n$20.x:int [line 56, column 10]\n  *&return:int=n$21 [line 56, column 3]\n " shape="box"]
+	
+
+	 "call_foo_with_same_param#A#instance.7f01b1476c1662f7ce825ec7b1739a00_3" -> "call_foo_with_same_param#A#instance.7f01b1476c1662f7ce825ec7b1739a00_2" ;
+"call_foo_with_same_param#A#instance.7f01b1476c1662f7ce825ec7b1739a00_4" [label="4:  Call _fun_foo \n   n$22=*&b:_fn_(*) [line 55, column 7]\n  n$23=*&b:_fn_(*) [line 55, column 10]\n  n$24=*&self:A* [line 55, column 13]\n  n$25=_fun_foo[objc_blockA.call_foo_with_same_param_5^objc_blockA.call_foo_with_same_param_5](n$30:A*,n$24:A*) [line 55, column 3]\n " shape="box"]
+	
+
+	 "call_foo_with_same_param#A#instance.7f01b1476c1662f7ce825ec7b1739a00_4" -> "call_foo_with_same_param#A#instance.7f01b1476c1662f7ce825ec7b1739a00_3" ;
+"call_foo_with_same_param#A#instance.7f01b1476c1662f7ce825ec7b1739a00_5" [label="5:  Call _fun_foo \n   n$26=*&b:_fn_(*) [line 54, column 7]\n  n$27=*&b:_fn_(*) [line 54, column 10]\n  n$28=*&self:A* [line 54, column 13]\n  n$29=_fun_foo[objc_blockA.call_foo_with_same_param_5^objc_blockA.call_foo_with_same_param_5](n$30:A*,n$28:A*) [line 54, column 3]\n " shape="box"]
+	
+
+	 "call_foo_with_same_param#A#instance.7f01b1476c1662f7ce825ec7b1739a00_5" -> "call_foo_with_same_param#A#instance.7f01b1476c1662f7ce825ec7b1739a00_4" ;
+"call_foo_with_same_param#A#instance.7f01b1476c1662f7ce825ec7b1739a00_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(b:_fn_(*)); [line 51, column 3]\n  n$30=*&self:A* [line 51, column 20]\n  *&b:_fn_(*)=(_fun_objc_blockA.call_foo_with_same_param_5,([by ref]n$30 &self:A*)) [line 51, column 3]\n " shape="box"]
+	
+
+	 "call_foo_with_same_param#A#instance.7f01b1476c1662f7ce825ec7b1739a00_6" -> "call_foo_with_same_param#A#instance.7f01b1476c1662f7ce825ec7b1739a00_5" ;
 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_1" [label="1: Start A.dealloc\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
 	
 

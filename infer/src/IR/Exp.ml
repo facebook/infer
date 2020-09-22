@@ -225,12 +225,8 @@ let rec pp_ pe pp_t f e =
       F.fprintf f "(%a %s %a)" pp_exp e1 (Binop.str pe op) pp_exp e2
   | Exn e ->
       F.fprintf f "EXN %a" pp_exp e
-  | Closure {name; captured_vars} ->
-      if List.is_empty captured_vars then F.fprintf f "(%a)" pp_exp (Const (Cfun name))
-      else
-        F.fprintf f "(%a,%a)" pp_exp (Const (Cfun name))
-          (Pp.comma_seq (pp_captured_var pe pp_t))
-          captured_vars
+  | Closure closure ->
+      pp_closure_ pe pp_t f closure
   | Lvar pv ->
       Pvar.pp pe f pv
   | Lfield (e, fld, _) ->
@@ -259,12 +255,23 @@ and pp_captured_var pe pp_t f (exp, var, typ, mode) =
         (pp_ pe pp_t) exp (Pvar.pp pe) var (Typ.pp pe) typ
 
 
+and pp_closure_ pe pp_t f {name; captured_vars} =
+  let pp_exp = pp_ pe pp_t in
+  if List.is_empty captured_vars then F.fprintf f "(%a)" pp_exp (Const (Cfun name))
+  else
+    F.fprintf f "(%a,%a)" pp_exp (Const (Cfun name))
+      (Pp.comma_seq (pp_captured_var pe pp_t))
+      captured_vars
+
+
 let pp_printenv ~print_types pe f e =
   let pp_typ = if print_types then Typ.pp_full else Typ.pp in
   pp_ pe (pp_typ pe) f e
 
 
 let pp f e = pp_printenv ~print_types:false Pp.text f e
+
+let pp_closure = pp_closure_ Pp.text (Typ.pp Pp.text)
 
 let to_string e = F.asprintf "%a" pp e
 
