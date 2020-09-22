@@ -117,7 +117,7 @@ class SimplePluginASTActionBase : public clang::PluginASTAction {
 
   void ExecuteAction() override {
     auto &preprocessor = getCompilerInstance().getPreprocessor();
-    preprocessor.addPPCallbacks(llvm::make_unique<PreprocessorHandler>(
+    preprocessor.addPPCallbacks(std::make_unique<PreprocessorHandler>(
         preprocessor.getSourceManager(), options, sharedData));
     clang::PluginASTAction::ExecuteAction();
   }
@@ -157,9 +157,9 @@ class SimplePluginASTActionBase : public clang::PluginASTAction {
     clang::FrontendInputFile inputFile = CI.getFrontendOpts().Inputs[0];
 
     switch (inputFile.getKind().getLanguage()) {
-    case clang::InputKind::Unknown:
-    case clang::InputKind::Asm:
-    case clang::InputKind::LLVM_IR:
+    case clang::Language::Unknown:
+    case clang::Language::Asm:
+    case clang::Language::LLVM_IR:
       // We can't do anything with these - they may trigger errors when
       // running clang frontend
       return false;
@@ -183,7 +183,7 @@ class SimpleFrontendActionFactory
   explicit SimpleFrontendActionFactory(std::vector<std::string> args)
       : args_(args) {}
 
-  clang::FrontendAction *create() override {
+  std::unique_ptr<clang::FrontendAction> create() override {
     return new SimpleASTAction(args_);
   }
 };

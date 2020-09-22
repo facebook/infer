@@ -4181,6 +4181,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | OMPTaskwaitDirective _
     | OMPTaskyieldDirective _
     | OMPTeamsDirective _
+    | OMPMasterTaskLoopDirective _
+    | OMPMasterTaskLoopSimdDirective _
+    | OMPParallelMasterTaskLoopDirective _
+    | OMPParallelMasterTaskLoopSimdDirective _
+    | OMPParallelMasterDirective _
+    | CXXRewrittenBinaryOperator _
+    | ConceptSpecializationExpr _
+    | RequiresExpr _
     | SourceLocExpr _
     | SEHExceptStmt _
     | SEHFinallyStmt _

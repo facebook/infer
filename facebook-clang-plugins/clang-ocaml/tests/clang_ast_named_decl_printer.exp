@@ -374,6 +374,14 @@ _str
 _x
 _y
 _delegate
+str
+setStr:
+x
+setX:
+y
+setY:
+delegate
+setDelegate:
 MyCategory
 bar:
 MyCategory
