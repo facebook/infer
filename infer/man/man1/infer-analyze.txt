@@ -212,9 +212,6 @@ OPTIONS
        --max-jobs int
            Maximum number of analysis jobs running simultaneously
 
-       --perf-profiler-data-file file
-           DEPRECATED: Specify the file containing perf profiler data to read
-
        --print-active-checkers
            Activates: Print the active checkers before starting the analysis
            (Conversely: --no-print-active-checkers)

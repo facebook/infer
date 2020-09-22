@@ -1487,12 +1487,6 @@ and _log_skipped =
      machine-readable format"
 
 
-and[@warning "-32"] perf_profiler_data_file =
-  CLOpt.mk_path_opt ~long:"perf-profiler-data-file"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
-    ~meta:"file" "DEPRECATED: Specify the file containing perf profiler data to read"
-
-
 and linter =
   CLOpt.mk_string_opt ~long:"linter"
     ~in_help:InferCommand.[(Capture, manual_clang_linters)]
