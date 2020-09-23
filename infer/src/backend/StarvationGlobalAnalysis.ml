@@ -12,7 +12,7 @@ module Domain = StarvationDomain
 (* given a scheduled-work item, read the summary of the scheduled method from the disk
    and adapt its contents to the thread it was scheduled too *)
 let get_summary_of_scheduled_work (work_item : Domain.ScheduledWorkItem.t) =
-  let astate = {Domain.bottom with thread= work_item.thread} in
+  let astate = {Domain.initial with thread= work_item.thread} in
   let callsite = CallSite.make work_item.procname work_item.loc in
   let open IOption.Let_syntax in
   let* {Summary.payloads= {starvation}} = Summary.OnDisk.get work_item.procname in

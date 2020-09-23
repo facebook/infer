@@ -109,6 +109,54 @@ module Lock = struct
     String.compare (mk_str t1) (mk_str t2)
 end
 
+module AccessExpressionDomain = struct
+  open AbstractDomain.Types
+
+  type t = HilExp.AccessExpression.t top_lifted [@@deriving equal]
+
+  let pp fmt = function
+    | Top ->
+        F.pp_print_string fmt "AccExpTop"
+    | NonTop lock ->
+        HilExp.AccessExpression.pp fmt lock
+
+
+  let top = Top
+
+  let is_top = function Top -> true | NonTop _ -> false
+
+  let join lhs rhs = if equal lhs rhs then lhs else top
+
+  let leq ~lhs ~rhs = equal (join lhs rhs) rhs
+
+  let widen ~prev ~next ~num_iters:_ = join prev next
+end
+
+module VarDomain = struct
+  include AbstractDomain.SafeInvertedMap (Var) (AccessExpressionDomain)
+
+  let exit_scope init deadvars =
+    List.fold deadvars ~init ~f:(fun acc deadvar ->
+        filter
+          (fun _key acc_exp_opt ->
+            match acc_exp_opt with
+            | Top ->
+                (* should never happen in a safe inverted map *)
+                false
+            | NonTop acc_exp ->
+                let var, _ = HilExp.AccessExpression.get_base acc_exp in
+                not (Var.equal var deadvar) )
+          acc
+        |> remove deadvar )
+
+
+  let get var astate =
+    match find_opt var astate with None | Some Top -> None | Some (NonTop x) -> Some x
+
+
+  let set var acc_exp astate = add var (NonTop acc_exp) astate
+end
+
 module Event = struct
   type t =
     | LockAcquire of Lock.t
@@ -598,33 +646,26 @@ type t =
   ; critical_pairs: CriticalPairs.t
   ; attributes: AttributeDomain.t
   ; thread: ThreadDomain.t
-  ; scheduled_work: ScheduledWorkDomain.t }
+  ; scheduled_work: ScheduledWorkDomain.t
+  ; var_state: VarDomain.t }
 
-let bottom =
+let initial =
   { guard_map= GuardToLockMap.empty
   ; lock_state= LockState.top
   ; critical_pairs= CriticalPairs.empty
   ; attributes= AttributeDomain.empty
   ; thread= ThreadDomain.bottom
-  ; scheduled_work= ScheduledWorkDomain.bottom }
-
-
-let is_bottom astate =
-  GuardToLockMap.is_empty astate.guard_map
-  && LockState.is_top astate.lock_state
-  && CriticalPairs.is_empty astate.critical_pairs
-  && AttributeDomain.is_top astate.attributes
-  && ThreadDomain.is_bottom astate.thread
-  && ScheduledWorkDomain.is_bottom astate.scheduled_work
+  ; scheduled_work= ScheduledWorkDomain.bottom
+  ; var_state= VarDomain.top }
 
 
 let pp fmt astate =
   F.fprintf fmt
     "{guard_map= %a; lock_state= %a; critical_pairs= %a; attributes= %a; thread= %a; \
-     scheduled_work= %a}"
+     scheduled_work= %a; var_state= %a}"
     GuardToLockMap.pp astate.guard_map LockState.pp astate.lock_state CriticalPairs.pp
     astate.critical_pairs AttributeDomain.pp astate.attributes ThreadDomain.pp astate.thread
-    ScheduledWorkDomain.pp astate.scheduled_work
+    ScheduledWorkDomain.pp astate.scheduled_work VarDomain.pp astate.var_state
 
 
 let join lhs rhs =
@@ -633,7 +674,8 @@ let join lhs rhs =
   ; critical_pairs= CriticalPairs.join lhs.critical_pairs rhs.critical_pairs
   ; attributes= AttributeDomain.join lhs.attributes rhs.attributes
   ; thread= ThreadDomain.join lhs.thread rhs.thread
-  ; scheduled_work= ScheduledWorkDomain.join lhs.scheduled_work rhs.scheduled_work }
+  ; scheduled_work= ScheduledWorkDomain.join lhs.scheduled_work rhs.scheduled_work
+  ; var_state= VarDomain.join lhs.var_state rhs.var_state }
 
 
 let widen ~prev ~next ~num_iters:_ = join prev next
@@ -645,6 +687,7 @@ let leq ~lhs ~rhs =
   && AttributeDomain.leq ~lhs:lhs.attributes ~rhs:rhs.attributes
   && ThreadDomain.leq ~lhs:lhs.thread ~rhs:rhs.thread
   && ScheduledWorkDomain.leq ~lhs:lhs.scheduled_work ~rhs:rhs.scheduled_work
+  && VarDomain.leq ~lhs:lhs.var_state ~rhs:rhs.var_state
 
 
 let add_critical_pair ?tenv lock_state event thread ~loc acc =
@@ -825,3 +868,16 @@ let summary_of_astate : Procdesc.t -> t -> summary =
   ; scheduled_work= astate.scheduled_work
   ; attributes
   ; return_attribute }
+
+
+let remove_dead_vars (astate : t) deadvars =
+  let deadvars =
+    (* The liveness analysis will kill any variable (such as [this]) immediately after its
+       last use. This is bad for attributes that need to live until the end of the method,
+       so we restrict to SSA variables. *)
+    List.rev_filter deadvars ~f:(fun (v : Var.t) ->
+        match v with LogicalVar _ -> true | ProgramVar pvar -> Pvar.is_ssa_frontend_tmp pvar )
+  in
+  let var_state = VarDomain.exit_scope astate.var_state deadvars in
+  let attributes = AttributeDomain.exit_scope deadvars astate.attributes in
+  {astate with var_state; attributes}
