@@ -19,10 +19,10 @@ module ReportableViolation = struct
 
   and function_info =
     { param_signature: AnnotatedSignature.param_signature
-    ; kind: AnnotatedSignature.kind
     ; actual_param_expression: string
     ; param_position: int
-    ; function_procname: Procname.Java.t }
+    ; annotated_signature: AnnotatedSignature.t
+    ; procname: Procname.Java.t }
 
   let from nullsafe_mode ({lhs; rhs} as violation) =
     let falls_under_optimistic_third_party =
@@ -74,7 +74,7 @@ module ReportableViolation = struct
 
 
   let mk_issue_for_bad_param_passed
-      {kind; param_signature; actual_param_expression; param_position; function_procname}
+      {annotated_signature; param_signature; actual_param_expression; param_position; procname}
       ~param_nullability_kind ~nullability_evidence
       ~(make_issue_fn : description:string -> issue_type:IssueType.t -> NullsafeIssue.t) =
     let nullability_evidence_as_suffix =
@@ -110,7 +110,7 @@ module ReportableViolation = struct
         let suggested_third_party_sig_file =
           ThirdPartyAnnotationInfo.lookup_related_sig_file_for_proc
             (ThirdPartyAnnotationGlobalRepo.get_repo ())
-            function_procname
+            procname
         in
         let where_to_add_signature =
           Option.value_map suggested_third_party_sig_file
@@ -120,7 +120,7 @@ module ReportableViolation = struct
               (* this can happen when third party is registered in a deprecated way (not in third party repository) *)
             ~default:"the third party signature storage"
         in
-        let procname_str = Procname.Java.to_simplified_string ~withclass:true function_procname in
+        let procname_str = Procname.Java.to_simplified_string ~withclass:true procname in
         let description =
           Format.asprintf
             "Third-party %a is missing a signature that would allow passing a nullable to param \
@@ -130,12 +130,13 @@ module ReportableViolation = struct
             where_to_add_signature
         in
         make_issue_fn ~description ~issue_type
+        |> NullsafeIssue.with_third_party_dependent_methods [(procname, annotated_signature)]
     | Nullability.LocallyCheckedNonnull
     | Nullability.LocallyTrustedNonnull
     | Nullability.UncheckedNonnull
     | Nullability.StrictNonnull ->
         let nonnull_evidence =
-          match kind with
+          match annotated_signature.kind with
           | FirstParty | ThirdParty Unregistered ->
               ""
           | ThirdParty ModelledInternally ->
@@ -149,7 +150,7 @@ module ReportableViolation = struct
         let description =
           Format.asprintf "%a: parameter #%d%a is declared non-nullable%s but the argument %s%s."
             MF.pp_monospaced
-            (Procname.Java.to_simplified_string ~withclass:true function_procname)
+            (Procname.Java.to_simplified_string ~withclass:true procname)
             param_position pp_param_name param_signature.mangled nonnull_evidence
             argument_description nullability_evidence_as_suffix
         in

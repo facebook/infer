@@ -422,10 +422,10 @@ let check_call_parameters ({IntraproceduralAnalysis.tenv; _} as analysis_data) ~
            ; assignment_type=
                PassingParamToFunction
                  { param_signature= formal
-                 ; kind= callee_annotated_signature.AnnotatedSignature.kind
                  ; actual_param_expression
                  ; param_position
-                 ; function_procname= callee_pname } })
+                 ; annotated_signature= callee_annotated_signature
+                 ; procname= callee_pname } })
         (Some instr_ref) ~nullsafe_mode
     in
     if PatternMatch.type_is_class formal.param_annotated_type.typ then

@@ -32,10 +32,10 @@ module ReportableViolation : sig
 
   and function_info =
     { param_signature: AnnotatedSignature.param_signature
-    ; kind: AnnotatedSignature.kind
     ; actual_param_expression: string
     ; param_position: int
-    ; function_procname: Procname.Java.t }
+    ; annotated_signature: AnnotatedSignature.t
+    ; procname: Procname.Java.t }
 
   val make_nullsafe_issue :
     assignment_location:Location.t -> assignment_type -> t -> NullsafeIssue.t
