@@ -12,9 +12,10 @@ typedef BOOL (^Filter)(id);
 @interface MyEnumerator : NSObject
 @end
 
-@implementation MyEnumerator
-NSEnumerator* _enumerator;
-Filter _filter;
+@implementation MyEnumerator {
+  NSEnumerator* _enumerator;
+  Filter _filter;
+}
 
 - (instancetype)initWithArray:(NSArray*)array filter:(Filter)filter {
   _enumerator = [array objectEnumerator];
