@@ -281,9 +281,7 @@ let get_struct_decls decl =
   | ObjCPropertyImplDecl _
   | PragmaCommentDecl _
   | PragmaDetectMismatchDecl _
-  | StaticAssertDecl _
-  | LifetimeExtendedTemporaryDecl _
-  | RequiresExprBodyDecl _ ->
+  | StaticAssertDecl _ ->
       []
 
 

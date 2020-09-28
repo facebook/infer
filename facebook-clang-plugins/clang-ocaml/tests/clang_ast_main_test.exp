@@ -1112,7 +1112,7 @@ TranslationUnitDecl None:None:None None:None:None
   VarDecl tests/friend.cpp:18:1 tests/friend.cpp:18:8
     CXXConstructExpr
   TypedefDecl tests/friend.cpp:18:8 tests/friend.cpp:18:8
-86 37 115 
+58 37 112 
 TranslationUnitDecl None:None:None None:None:None
   TypedefDecl None:None:None None:None:None
   TypedefDecl None:None:None None:None:None
@@ -1127,58 +1127,32 @@ TranslationUnitDecl None:None:None None:None:None
   TypedefDecl tests/FoundationStub.h:9:1 tests/FoundationStub.h:9:22
   ObjCInterfaceDecl tests/FoundationStub.h:16:1 tests/FoundationStub.h:27:2
     ObjCMethodDecl tests/FoundationStub.h:18:1 tests/FoundationStub.h:18:22
-       ImplicitParamDecl tests/FoundationStub.h:18:22 tests/FoundationStub.h:18:22
-       ImplicitParamDecl tests/FoundationStub.h:18:22 tests/FoundationStub.h:18:22
     ObjCMethodDecl tests/FoundationStub.h:19:1 tests/FoundationStub.h:19:20
-       ImplicitParamDecl tests/FoundationStub.h:19:20 tests/FoundationStub.h:19:20
-       ImplicitParamDecl tests/FoundationStub.h:19:20 tests/FoundationStub.h:19:20
     ObjCMethodDecl tests/FoundationStub.h:20:1 tests/FoundationStub.h:20:28
-       ImplicitParamDecl tests/FoundationStub.h:20:28 tests/FoundationStub.h:20:28
-       ImplicitParamDecl tests/FoundationStub.h:20:28 tests/FoundationStub.h:20:28
     ObjCMethodDecl tests/FoundationStub.h:21:1 tests/FoundationStub.h:21:21
-       ImplicitParamDecl tests/FoundationStub.h:21:21 tests/FoundationStub.h:21:21
-       ImplicitParamDecl tests/FoundationStub.h:21:21 tests/FoundationStub.h:21:21
     ObjCMethodDecl tests/FoundationStub.h:22:1 tests/FoundationStub.h:22:15
-       ImplicitParamDecl tests/FoundationStub.h:22:15 tests/FoundationStub.h:22:15
-       ImplicitParamDecl tests/FoundationStub.h:22:15 tests/FoundationStub.h:22:15
     ObjCMethodDecl tests/FoundationStub.h:24:1 tests/FoundationStub.h:24:34
        ParmVarDecl tests/FoundationStub.h:24:29 tests/FoundationStub.h:24:33
-       ImplicitParamDecl tests/FoundationStub.h:24:33 tests/FoundationStub.h:24:33
-       ImplicitParamDecl tests/FoundationStub.h:24:33 tests/FoundationStub.h:24:33
     ObjCMethodDecl tests/FoundationStub.h:25:1 tests/FoundationStub.h:25:41
        ParmVarDecl tests/FoundationStub.h:25:29 tests/FoundationStub.h:25:40
-       ImplicitParamDecl tests/FoundationStub.h:25:40 tests/FoundationStub.h:25:40
-       ImplicitParamDecl tests/FoundationStub.h:25:40 tests/FoundationStub.h:25:40
   ObjCInterfaceDecl tests/FoundationStub.h:29:1 tests/FoundationStub.h:31:2
     ObjCMethodDecl tests/FoundationStub.h:30:1 tests/FoundationStub.h:30:37
        ParmVarDecl tests/FoundationStub.h:30:32 tests/FoundationStub.h:30:36
-       ImplicitParamDecl tests/FoundationStub.h:30:36 tests/FoundationStub.h:30:36
-       ImplicitParamDecl tests/FoundationStub.h:30:36 tests/FoundationStub.h:30:36
   ObjCInterfaceDecl tests/FoundationStub.h:33:1 tests/FoundationStub.h:35:2
     ObjCMethodDecl tests/FoundationStub.h:34:1 tests/FoundationStub.h:34:21
-       ImplicitParamDecl tests/FoundationStub.h:34:21 tests/FoundationStub.h:34:21
-       ImplicitParamDecl tests/FoundationStub.h:34:21 tests/FoundationStub.h:34:21
   ObjCInterfaceDecl tests/FoundationStub.h:37:1 tests/FoundationStub.h:42:2
     ObjCMethodDecl tests/FoundationStub.h:38:1 tests/FoundationStub.h:40:56
        ParmVarDecl tests/FoundationStub.h:38:46 tests/FoundationStub.h:38:51
        ParmVarDecl tests/FoundationStub.h:39:46 tests/FoundationStub.h:39:51
        ParmVarDecl tests/FoundationStub.h:40:40 tests/FoundationStub.h:40:51
-       ImplicitParamDecl tests/FoundationStub.h:40:51 tests/FoundationStub.h:40:51
-       ImplicitParamDecl tests/FoundationStub.h:40:51 tests/FoundationStub.h:40:51
     ObjCMethodDecl tests/FoundationStub.h:41:1 tests/FoundationStub.h:41:38
        ParmVarDecl tests/FoundationStub.h:41:32 tests/FoundationStub.h:41:35
-       ImplicitParamDecl tests/FoundationStub.h:41:35 tests/FoundationStub.h:41:35
-       ImplicitParamDecl tests/FoundationStub.h:41:35 tests/FoundationStub.h:41:35
   ObjCInterfaceDecl tests/FoundationStub.h:44:1 tests/FoundationStub.h:47:2
     ObjCMethodDecl tests/FoundationStub.h:45:1 tests/FoundationStub.h:45:64
        ParmVarDecl tests/FoundationStub.h:45:35 tests/FoundationStub.h:45:40
        ParmVarDecl tests/FoundationStub.h:45:52 tests/FoundationStub.h:45:61
-       ImplicitParamDecl tests/FoundationStub.h:45:61 tests/FoundationStub.h:45:61
-       ImplicitParamDecl tests/FoundationStub.h:45:61 tests/FoundationStub.h:45:61
     ObjCMethodDecl tests/FoundationStub.h:46:1 tests/FoundationStub.h:46:49
        ParmVarDecl tests/FoundationStub.h:46:33 tests/FoundationStub.h:46:44
-       ImplicitParamDecl tests/FoundationStub.h:46:44 tests/FoundationStub.h:46:44
-       ImplicitParamDecl tests/FoundationStub.h:46:44 tests/FoundationStub.h:46:44
   ObjCInterfaceDecl tests/FoundationStub.h:49:1 tests/FoundationStub.h:50:2
   FunctionDecl tests/FoundationStub.h:52:13 tests/FoundationStub.h:52:13
      ParmVarDecl tests/FoundationStub.h:52:13 tests/FoundationStub.h:52:13
@@ -1187,8 +1161,6 @@ TranslationUnitDecl None:None:None None:None:None
   ObjCInterfaceDecl tests/Hello.m:10:1 tests/Hello.m:12:2
     ObjCMethodDecl tests/Hello.m:11:1 tests/Hello.m:11:19
        ParmVarDecl tests/Hello.m:11:14 tests/Hello.m:11:18
-       ImplicitParamDecl tests/Hello.m:11:18 tests/Hello.m:11:18
-       ImplicitParamDecl tests/Hello.m:11:18 tests/Hello.m:11:18
   ObjCImplementationDecl tests/Hello.m:14:1 tests/Hello.m:20:1
     ObjCMethodDecl tests/Hello.m:15:1 tests/Hello.m:19:1
        ParmVarDecl tests/Hello.m:15:14 tests/Hello.m:15:18
@@ -1237,7 +1209,7 @@ TranslationUnitDecl None:None:None None:None:None
       ReturnStmt
         IntegerLiteral
   TypedefDecl tests/Hello.m:28:10 tests/Hello.m:28:10
-176 193 139 
+132 193 139 
 TranslationUnitDecl None:None:None None:None:None
   TypedefDecl None:None:None None:None:None
   TypedefDecl None:None:None None:None:None
@@ -1252,58 +1224,32 @@ TranslationUnitDecl None:None:None None:None:None
   TypedefDecl tests/FoundationStub.h:9:1 tests/FoundationStub.h:9:22
   ObjCInterfaceDecl tests/FoundationStub.h:16:1 tests/FoundationStub.h:27:2
     ObjCMethodDecl tests/FoundationStub.h:18:1 tests/FoundationStub.h:18:22
-       ImplicitParamDecl tests/FoundationStub.h:18:22 tests/FoundationStub.h:18:22
-       ImplicitParamDecl tests/FoundationStub.h:18:22 tests/FoundationStub.h:18:22
     ObjCMethodDecl tests/FoundationStub.h:19:1 tests/FoundationStub.h:19:20
-       ImplicitParamDecl tests/FoundationStub.h:19:20 tests/FoundationStub.h:19:20
-       ImplicitParamDecl tests/FoundationStub.h:19:20 tests/FoundationStub.h:19:20
     ObjCMethodDecl tests/FoundationStub.h:20:1 tests/FoundationStub.h:20:28
-       ImplicitParamDecl tests/FoundationStub.h:20:28 tests/FoundationStub.h:20:28
-       ImplicitParamDecl tests/FoundationStub.h:20:28 tests/FoundationStub.h:20:28
     ObjCMethodDecl tests/FoundationStub.h:21:1 tests/FoundationStub.h:21:21
-       ImplicitParamDecl tests/FoundationStub.h:21:21 tests/FoundationStub.h:21:21
-       ImplicitParamDecl tests/FoundationStub.h:21:21 tests/FoundationStub.h:21:21
     ObjCMethodDecl tests/FoundationStub.h:22:1 tests/FoundationStub.h:22:15
-       ImplicitParamDecl tests/FoundationStub.h:22:15 tests/FoundationStub.h:22:15
-       ImplicitParamDecl tests/FoundationStub.h:22:15 tests/FoundationStub.h:22:15
     ObjCMethodDecl tests/FoundationStub.h:24:1 tests/FoundationStub.h:24:34
        ParmVarDecl tests/FoundationStub.h:24:29 tests/FoundationStub.h:24:33
-       ImplicitParamDecl tests/FoundationStub.h:24:33 tests/FoundationStub.h:24:33
-       ImplicitParamDecl tests/FoundationStub.h:24:33 tests/FoundationStub.h:24:33
     ObjCMethodDecl tests/FoundationStub.h:25:1 tests/FoundationStub.h:25:41
        ParmVarDecl tests/FoundationStub.h:25:29 tests/FoundationStub.h:25:40
-       ImplicitParamDecl tests/FoundationStub.h:25:40 tests/FoundationStub.h:25:40
-       ImplicitParamDecl tests/FoundationStub.h:25:40 tests/FoundationStub.h:25:40
   ObjCInterfaceDecl tests/FoundationStub.h:29:1 tests/FoundationStub.h:31:2
     ObjCMethodDecl tests/FoundationStub.h:30:1 tests/FoundationStub.h:30:37
        ParmVarDecl tests/FoundationStub.h:30:32 tests/FoundationStub.h:30:36
-       ImplicitParamDecl tests/FoundationStub.h:30:36 tests/FoundationStub.h:30:36
-       ImplicitParamDecl tests/FoundationStub.h:30:36 tests/FoundationStub.h:30:36
   ObjCInterfaceDecl tests/FoundationStub.h:33:1 tests/FoundationStub.h:35:2
     ObjCMethodDecl tests/FoundationStub.h:34:1 tests/FoundationStub.h:34:21
-       ImplicitParamDecl tests/FoundationStub.h:34:21 tests/FoundationStub.h:34:21
-       ImplicitParamDecl tests/FoundationStub.h:34:21 tests/FoundationStub.h:34:21
   ObjCInterfaceDecl tests/FoundationStub.h:37:1 tests/FoundationStub.h:42:2
     ObjCMethodDecl tests/FoundationStub.h:38:1 tests/FoundationStub.h:40:56
        ParmVarDecl tests/FoundationStub.h:38:46 tests/FoundationStub.h:38:51
        ParmVarDecl tests/FoundationStub.h:39:46 tests/FoundationStub.h:39:51
        ParmVarDecl tests/FoundationStub.h:40:40 tests/FoundationStub.h:40:51
-       ImplicitParamDecl tests/FoundationStub.h:40:51 tests/FoundationStub.h:40:51
-       ImplicitParamDecl tests/FoundationStub.h:40:51 tests/FoundationStub.h:40:51
     ObjCMethodDecl tests/FoundationStub.h:41:1 tests/FoundationStub.h:41:38
        ParmVarDecl tests/FoundationStub.h:41:32 tests/FoundationStub.h:41:35
-       ImplicitParamDecl tests/FoundationStub.h:41:35 tests/FoundationStub.h:41:35
-       ImplicitParamDecl tests/FoundationStub.h:41:35 tests/FoundationStub.h:41:35
   ObjCInterfaceDecl tests/FoundationStub.h:44:1 tests/FoundationStub.h:47:2
     ObjCMethodDecl tests/FoundationStub.h:45:1 tests/FoundationStub.h:45:64
        ParmVarDecl tests/FoundationStub.h:45:35 tests/FoundationStub.h:45:40
        ParmVarDecl tests/FoundationStub.h:45:52 tests/FoundationStub.h:45:61
-       ImplicitParamDecl tests/FoundationStub.h:45:61 tests/FoundationStub.h:45:61
-       ImplicitParamDecl tests/FoundationStub.h:45:61 tests/FoundationStub.h:45:61
     ObjCMethodDecl tests/FoundationStub.h:46:1 tests/FoundationStub.h:46:49
        ParmVarDecl tests/FoundationStub.h:46:33 tests/FoundationStub.h:46:44
-       ImplicitParamDecl tests/FoundationStub.h:46:44 tests/FoundationStub.h:46:44
-       ImplicitParamDecl tests/FoundationStub.h:46:44 tests/FoundationStub.h:46:44
   ObjCInterfaceDecl tests/FoundationStub.h:49:1 tests/FoundationStub.h:50:2
   FunctionDecl tests/FoundationStub.h:52:13 tests/FoundationStub.h:52:13
      ParmVarDecl tests/FoundationStub.h:52:13 tests/FoundationStub.h:52:13
@@ -1312,12 +1258,8 @@ TranslationUnitDecl None:None:None None:None:None
   ObjCProtocolDecl tests/ObjCTest.m:10:1 tests/ObjCTest.m:12:2
     ObjCPropertyDecl tests/ObjCTest.m:11:1 tests/ObjCTest.m:11:38
     ObjCMethodDecl tests/ObjCTest.m:11:38 tests/ObjCTest.m:11:38
-       ImplicitParamDecl tests/ObjCTest.m:11:38 tests/ObjCTest.m:11:38
-       ImplicitParamDecl tests/ObjCTest.m:11:38 tests/ObjCTest.m:11:38
     ObjCMethodDecl tests/ObjCTest.m:11:38 tests/ObjCTest.m:11:38
        ParmVarDecl tests/ObjCTest.m:11:38 tests/ObjCTest.m:11:38
-       ImplicitParamDecl tests/ObjCTest.m:11:38 tests/ObjCTest.m:11:38
-       ImplicitParamDecl tests/ObjCTest.m:11:38 tests/ObjCTest.m:11:38
   ObjCProtocolDecl tests/ObjCTest.m:14:1 tests/ObjCTest.m:14:11
   ObjCInterfaceDecl tests/ObjCTest.m:16:1 tests/ObjCTest.m:24:2
     ObjCPropertyDecl tests/ObjCTest.m:18:1 tests/ObjCTest.m:18:38
@@ -1355,8 +1297,6 @@ TranslationUnitDecl None:None:None None:None:None
   ObjCCategoryDecl tests/ObjCTest.m:26:1 tests/ObjCTest.m:30:2
     ObjCMethodDecl tests/ObjCTest.m:28:1 tests/ObjCTest.m:28:35
        ParmVarDecl tests/ObjCTest.m:28:14 tests/ObjCTest.m:28:34
-       ImplicitParamDecl tests/ObjCTest.m:28:34 tests/ObjCTest.m:28:34
-       ImplicitParamDecl tests/ObjCTest.m:28:34 tests/ObjCTest.m:28:34
   ObjCImplementationDecl tests/ObjCTest.m:32:1 tests/ObjCTest.m:65:1
     ObjCMethodDecl tests/ObjCTest.m:34:1 tests/ObjCTest.m:63:1
        ParmVarDecl tests/ObjCTest.m:34:14 tests/ObjCTest.m:34:34
@@ -1595,39 +1535,9 @@ TranslationUnitDecl None:None:None None:None:None
     ObjCPropertyImplDecl tests/ObjCTest.m:21:34 tests/ObjCTest.m:21:34
     ObjCIvarDecl tests/ObjCTest.m:22:54 tests/ObjCTest.m:22:54
     ObjCPropertyImplDecl tests/ObjCTest.m:22:54 tests/ObjCTest.m:22:54
-    ObjCMethodDecl tests/ObjCTest.m:18:38 tests/ObjCTest.m:18:38
-       ImplicitParamDecl tests/ObjCTest.m:18:38 tests/ObjCTest.m:18:38
-       ImplicitParamDecl tests/ObjCTest.m:18:38 tests/ObjCTest.m:18:38
-    ObjCMethodDecl tests/ObjCTest.m:18:38 tests/ObjCTest.m:18:38
-       ParmVarDecl tests/ObjCTest.m:18:38 tests/ObjCTest.m:18:38
-       ImplicitParamDecl tests/ObjCTest.m:18:38 tests/ObjCTest.m:18:38
-       ImplicitParamDecl tests/ObjCTest.m:18:38 tests/ObjCTest.m:18:38
-    ObjCMethodDecl tests/ObjCTest.m:20:36 tests/ObjCTest.m:20:36
-       ImplicitParamDecl tests/ObjCTest.m:20:36 tests/ObjCTest.m:20:36
-       ImplicitParamDecl tests/ObjCTest.m:20:36 tests/ObjCTest.m:20:36
-    ObjCMethodDecl tests/ObjCTest.m:20:36 tests/ObjCTest.m:20:36
-       ParmVarDecl tests/ObjCTest.m:20:36 tests/ObjCTest.m:20:36
-       ImplicitParamDecl tests/ObjCTest.m:20:36 tests/ObjCTest.m:20:36
-       ImplicitParamDecl tests/ObjCTest.m:20:36 tests/ObjCTest.m:20:36
-    ObjCMethodDecl tests/ObjCTest.m:21:34 tests/ObjCTest.m:21:34
-       ImplicitParamDecl tests/ObjCTest.m:21:34 tests/ObjCTest.m:21:34
-       ImplicitParamDecl tests/ObjCTest.m:21:34 tests/ObjCTest.m:21:34
-    ObjCMethodDecl tests/ObjCTest.m:21:34 tests/ObjCTest.m:21:34
-       ParmVarDecl tests/ObjCTest.m:21:34 tests/ObjCTest.m:21:34
-       ImplicitParamDecl tests/ObjCTest.m:21:34 tests/ObjCTest.m:21:34
-       ImplicitParamDecl tests/ObjCTest.m:21:34 tests/ObjCTest.m:21:34
-    ObjCMethodDecl tests/ObjCTest.m:22:54 tests/ObjCTest.m:22:54
-       ImplicitParamDecl tests/ObjCTest.m:22:54 tests/ObjCTest.m:22:54
-       ImplicitParamDecl tests/ObjCTest.m:22:54 tests/ObjCTest.m:22:54
-    ObjCMethodDecl tests/ObjCTest.m:22:54 tests/ObjCTest.m:22:54
-       ParmVarDecl tests/ObjCTest.m:22:54 tests/ObjCTest.m:22:54
-       ImplicitParamDecl tests/ObjCTest.m:22:54 tests/ObjCTest.m:22:54
-       ImplicitParamDecl tests/ObjCTest.m:22:54 tests/ObjCTest.m:22:54
   ObjCCategoryDecl tests/ObjCTest.m:67:1 tests/ObjCTest.m:71:2
     ObjCMethodDecl tests/ObjCTest.m:69:1 tests/ObjCTest.m:69:26
        ParmVarDecl tests/ObjCTest.m:69:14 tests/ObjCTest.m:69:25
-       ImplicitParamDecl tests/ObjCTest.m:69:25 tests/ObjCTest.m:69:25
-       ImplicitParamDecl tests/ObjCTest.m:69:25 tests/ObjCTest.m:69:25
   ObjCCategoryImplDecl tests/ObjCTest.m:73:1 tests/ObjCTest.m:81:1
     ObjCMethodDecl tests/ObjCTest.m:75:1 tests/ObjCTest.m:79:1
        ParmVarDecl tests/ObjCTest.m:75:14 tests/ObjCTest.m:75:25
@@ -1715,8 +1625,6 @@ TranslationUnitDecl None:None:None None:None:None
   ObjCInterfaceDecl tests/ObjCTest.m:87:1 tests/ObjCTest.m:89:2
     ObjCMethodDecl tests/ObjCTest.m:88:1 tests/ObjCTest.m:88:60
        ParmVarDecl tests/ObjCTest.m:88:28 tests/ObjCTest.m:88:58
-       ImplicitParamDecl tests/ObjCTest.m:88:58 tests/ObjCTest.m:88:58
-       ImplicitParamDecl tests/ObjCTest.m:88:58 tests/ObjCTest.m:88:58
   ObjCInterfaceDecl tests/ObjCTest.m:91:1 tests/ObjCTest.m:92:2
   ObjCImplementationDecl tests/ObjCTest.m:94:1 tests/ObjCTest.m:104:1
     ObjCMethodDecl tests/ObjCTest.m:96:1 tests/ObjCTest.m:98:1
@@ -1758,7 +1666,7 @@ TranslationUnitDecl None:None:None None:None:None
       ReturnStmt
         IntegerLiteral
   TypedefDecl tests/ObjCTest.m:111:10 tests/ObjCTest.m:111:10
-82 8 118 
+56 8 115 
 TranslationUnitDecl None:None:None None:None:None
   TypedefDecl None:None:None None:None:None
   TypedefDecl None:None:None None:None:None
@@ -1773,58 +1681,32 @@ TranslationUnitDecl None:None:None None:None:None
   TypedefDecl tests/FoundationStub.h:9:1 tests/FoundationStub.h:9:22
   ObjCInterfaceDecl tests/FoundationStub.h:16:1 tests/FoundationStub.h:27:2
     ObjCMethodDecl tests/FoundationStub.h:18:1 tests/FoundationStub.h:18:22
-       ImplicitParamDecl tests/FoundationStub.h:18:22 tests/FoundationStub.h:18:22
-       ImplicitParamDecl tests/FoundationStub.h:18:22 tests/FoundationStub.h:18:22
     ObjCMethodDecl tests/FoundationStub.h:19:1 tests/FoundationStub.h:19:20
-       ImplicitParamDecl tests/FoundationStub.h:19:20 tests/FoundationStub.h:19:20
-       ImplicitParamDecl tests/FoundationStub.h:19:20 tests/FoundationStub.h:19:20
     ObjCMethodDecl tests/FoundationStub.h:20:1 tests/FoundationStub.h:20:28
-       ImplicitParamDecl tests/FoundationStub.h:20:28 tests/FoundationStub.h:20:28
-       ImplicitParamDecl tests/FoundationStub.h:20:28 tests/FoundationStub.h:20:28
     ObjCMethodDecl tests/FoundationStub.h:21:1 tests/FoundationStub.h:21:21
-       ImplicitParamDecl tests/FoundationStub.h:21:21 tests/FoundationStub.h:21:21
-       ImplicitParamDecl tests/FoundationStub.h:21:21 tests/FoundationStub.h:21:21
     ObjCMethodDecl tests/FoundationStub.h:22:1 tests/FoundationStub.h:22:15
-       ImplicitParamDecl tests/FoundationStub.h:22:15 tests/FoundationStub.h:22:15
-       ImplicitParamDecl tests/FoundationStub.h:22:15 tests/FoundationStub.h:22:15
     ObjCMethodDecl tests/FoundationStub.h:24:1 tests/FoundationStub.h:24:34
        ParmVarDecl tests/FoundationStub.h:24:29 tests/FoundationStub.h:24:33
-       ImplicitParamDecl tests/FoundationStub.h:24:33 tests/FoundationStub.h:24:33
-       ImplicitParamDecl tests/FoundationStub.h:24:33 tests/FoundationStub.h:24:33
     ObjCMethodDecl tests/FoundationStub.h:25:1 tests/FoundationStub.h:25:41
        ParmVarDecl tests/FoundationStub.h:25:29 tests/FoundationStub.h:25:40
-       ImplicitParamDecl tests/FoundationStub.h:25:40 tests/FoundationStub.h:25:40
-       ImplicitParamDecl tests/FoundationStub.h:25:40 tests/FoundationStub.h:25:40
   ObjCInterfaceDecl tests/FoundationStub.h:29:1 tests/FoundationStub.h:31:2
     ObjCMethodDecl tests/FoundationStub.h:30:1 tests/FoundationStub.h:30:37
        ParmVarDecl tests/FoundationStub.h:30:32 tests/FoundationStub.h:30:36
-       ImplicitParamDecl tests/FoundationStub.h:30:36 tests/FoundationStub.h:30:36
-       ImplicitParamDecl tests/FoundationStub.h:30:36 tests/FoundationStub.h:30:36
   ObjCInterfaceDecl tests/FoundationStub.h:33:1 tests/FoundationStub.h:35:2
     ObjCMethodDecl tests/FoundationStub.h:34:1 tests/FoundationStub.h:34:21
-       ImplicitParamDecl tests/FoundationStub.h:34:21 tests/FoundationStub.h:34:21
-       ImplicitParamDecl tests/FoundationStub.h:34:21 tests/FoundationStub.h:34:21
   ObjCInterfaceDecl tests/FoundationStub.h:37:1 tests/FoundationStub.h:42:2
     ObjCMethodDecl tests/FoundationStub.h:38:1 tests/FoundationStub.h:40:56
        ParmVarDecl tests/FoundationStub.h:38:46 tests/FoundationStub.h:38:51
        ParmVarDecl tests/FoundationStub.h:39:46 tests/FoundationStub.h:39:51
        ParmVarDecl tests/FoundationStub.h:40:40 tests/FoundationStub.h:40:51
-       ImplicitParamDecl tests/FoundationStub.h:40:51 tests/FoundationStub.h:40:51
-       ImplicitParamDecl tests/FoundationStub.h:40:51 tests/FoundationStub.h:40:51
     ObjCMethodDecl tests/FoundationStub.h:41:1 tests/FoundationStub.h:41:38
        ParmVarDecl tests/FoundationStub.h:41:32 tests/FoundationStub.h:41:35
-       ImplicitParamDecl tests/FoundationStub.h:41:35 tests/FoundationStub.h:41:35
-       ImplicitParamDecl tests/FoundationStub.h:41:35 tests/FoundationStub.h:41:35
   ObjCInterfaceDecl tests/FoundationStub.h:44:1 tests/FoundationStub.h:47:2
     ObjCMethodDecl tests/FoundationStub.h:45:1 tests/FoundationStub.h:45:64
        ParmVarDecl tests/FoundationStub.h:45:35 tests/FoundationStub.h:45:40
        ParmVarDecl tests/FoundationStub.h:45:52 tests/FoundationStub.h:45:61
-       ImplicitParamDecl tests/FoundationStub.h:45:61 tests/FoundationStub.h:45:61
-       ImplicitParamDecl tests/FoundationStub.h:45:61 tests/FoundationStub.h:45:61
     ObjCMethodDecl tests/FoundationStub.h:46:1 tests/FoundationStub.h:46:49
        ParmVarDecl tests/FoundationStub.h:46:33 tests/FoundationStub.h:46:44
-       ImplicitParamDecl tests/FoundationStub.h:46:44 tests/FoundationStub.h:46:44
-       ImplicitParamDecl tests/FoundationStub.h:46:44 tests/FoundationStub.h:46:44
   ObjCInterfaceDecl tests/FoundationStub.h:49:1 tests/FoundationStub.h:50:2
   FunctionDecl tests/FoundationStub.h:52:13 tests/FoundationStub.h:52:13
      ParmVarDecl tests/FoundationStub.h:52:13 tests/FoundationStub.h:52:13

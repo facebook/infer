@@ -44,6 +44,7 @@ codetoanalyze/objc/biabduction/memory_leaks_benchmark/RetainCycleDeduplication.m
 codetoanalyze/objc/biabduction/memory_leaks_benchmark/RetainCyclePropertyInProtocol.m, Delegate.delegate, 0, Bad_footprint, no_bucket, ERROR, [start of procedure delegate]
 codetoanalyze/objc/biabduction/memory_leaks_benchmark/RetainCyclePropertyInProtocol.m, Delegate.setDelegate:, 0, Bad_footprint, no_bucket, ERROR, [start of procedure setDelegate:]
 codetoanalyze/objc/biabduction/memory_leaks_benchmark/RetainCyclePropertyInProtocol.m, Delegate.setStrong_delegate:, 0, Bad_footprint, no_bucket, ERROR, [start of procedure setStrong_delegate:]
+codetoanalyze/objc/biabduction/memory_leaks_benchmark/RetainCyclePropertyInProtocol.m, Delegate.setStrong_delegate:, 0, Bad_footprint, no_bucket, ERROR, [start of procedure setStrong_delegate:]
 codetoanalyze/objc/biabduction/memory_leaks_benchmark/RetainCyclePropertyInProtocol.m, Delegate.strong_delegate, 0, Bad_footprint, no_bucket, ERROR, [start of procedure strong_delegate]
 codetoanalyze/objc/biabduction/memory_leaks_benchmark/retain_cycle.m, strongcycle, 6, BIABDUCTION_ANALYSIS_STOPS, no_bucket, WARNING, [start of procedure strongcycle(),start of procedure setB:,return from a call to AA.setB:,start of procedure setA:,return from a call to BBStrong.setA:]
 codetoanalyze/objc/biabduction/memory_leaks_benchmark/retain_cycle.m, strongcycle, 6, RETAIN_CYCLE, no_bucket, ERROR, [start of procedure strongcycle(),start of procedure setB:,return from a call to AA.setB:,start of procedure setA:,return from a call to BBStrong.setA:]

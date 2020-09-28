@@ -12,30 +12,28 @@ set -o pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SHASUM=${SHASUM:-shasum -a 256}
 
-LLVM_VER="10.0.1"
-
-GITHUB_URL="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VER}"
+LLVM_VER="9.0.0"
 
 LLVM_FILE="llvm-${LLVM_VER}.src.tar.xz"
-CLANG_FILE="clang-${LLVM_VER}.src.tar.xz"
+CLANG_FILE="cfe-${LLVM_VER}.src.tar.xz"
 COMPILER_RT_FILE="compiler-rt-${LLVM_VER}.src.tar.xz"
 LIBCXX_FILE="libcxx-${LLVM_VER}.src.tar.xz"
 LIBCXXABI_FILE="libcxxabi-${LLVM_VER}.src.tar.xz"
 OPENMP_FILE="openmp-${LLVM_VER}.src.tar.xz"
 
-LLVM_URL="${GITHUB_URL}/${LLVM_FILE}"
-CLANG_URL="${GITHUB_URL}/${CLANG_FILE}"
-COMPILER_RT_URL="${GITHUB_URL}/${COMPILER_RT_FILE}"
-LIBCXX_URL="${GITHUB_URL}/${LIBCXX_FILE}"
-LIBCXXABI_URL="${GITHUB_URL}/${LIBCXXABI_FILE}"
-OPENMP_URL="${GITHUB_URL}/${OPENMP_FILE}"
+LLVM_URL="https://releases.llvm.org/${LLVM_VER}/${LLVM_FILE}"
+CLANG_URL="https://releases.llvm.org/${LLVM_VER}/${CLANG_FILE}"
+COMPILER_RT_URL="https://releases.llvm.org/${LLVM_VER}/${COMPILER_RT_FILE}"
+LIBCXX_URL="https://releases.llvm.org/${LLVM_VER}/${LIBCXX_FILE}"
+LIBCXXABI_URL="https://releases.llvm.org/${LLVM_VER}/${LIBCXXABI_FILE}"
+OPENMP_URL="https://releases.llvm.org/${LLVM_VER}/${OPENMP_FILE}"
 
-LLVM_SHA="c5d8e30b57cbded7128d78e5e8dad811bff97a8d471896812f57fa99ee82cdf3"
-CLANG_SHA="f99afc382b88e622c689b6d96cadfa6241ef55dca90e87fc170352e12ddb2b24"
-COMPILER_RT_SHA="d90dc8e121ca0271f0fd3d639d135bfaa4b6ed41e67bd6eb77808f72629658fa"
-LIBCXX_SHA="def674535f22f83131353b3c382ccebfef4ba6a35c488bdb76f10b68b25be86c"
-LIBCXXABI_SHA="a97ef810b2e9fb70e8f7e317b74e646ed4944f488b02ac5ddd9c99e385381a7b"
-OPENMP_SHA="d19f728c8e04fb1e94566c8d76aef50ec926cd2f95ef3bf1e0a5de4909b28b44"
+LLVM_SHA="d6a0565cf21f22e9b4353b2eb92622e8365000a9e90a16b09b56f8157eabfe84"
+CLANG_SHA="7ba81eef7c22ca5da688fdf9d88c20934d2d6b40bfe150ffd338900890aa4610"
+COMPILER_RT_SHA="56e4cd96dd1d8c346b07b4d6b255f976570c6f2389697347a6c3dcb9e820d10e"
+LIBCXX_SHA="3c4162972b5d3204ba47ac384aa456855a17b5e97422723d4758251acf1ed28c"
+LIBCXXABI_SHA="675041783565c906ac2f7f8b2bc5c40f14d871ecfa8ade34855aa18de95530e9"
+OPENMP_SHA="9979eb1133066376cc0be29d1682bc0b0e7fb541075b391061679111ae4d3b5b"
 
 FILES=(
     $LLVM_FILE
@@ -69,7 +67,7 @@ pushd "${SCRIPT_DIR}/download" >/dev/null
 
 for i in ${!URLS[@]}; do
     if [ ! -f "${FILES[$i]}" ]; then
-        curl -L "${URLS[$i]}" --output "${FILES[$i]}"
+        curl "${URLS[$i]}" --output "${FILES[$i]}"
     fi
     echo "${SHAS[$i]}  ${FILES[$i]}" | $SHASUM -c
 done
@@ -79,7 +77,7 @@ rm -rf "llvm-${LLVM_VER}.src" "llvm"
 tar xf "${LLVM_FILE}"
 cd "llvm-${LLVM_VER}.src/tools"
 tar xf "../../${CLANG_FILE}"
-mv "clang-${LLVM_VER}.src" clang
+mv "cfe-${LLVM_VER}.src" clang
 cd ../projects
 tar xf "../../${COMPILER_RT_FILE}"
 mv "compiler-rt-${LLVM_VER}.src" compiler-rt

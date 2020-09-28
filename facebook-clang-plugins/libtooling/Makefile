@@ -8,9 +8,12 @@
 LEVEL=..
 include $(LEVEL)/Makefile.common
 
+HEADERS+=SimplePluginASTAction.h FileUtils.h AttrParameterVectorStream.h
+OBJS+=SimplePluginASTAction.o FileUtils.o AttrParameterVectorStream.o
+
 # ASTExporter
-HEADERS+=atdlib/ATDWriter.h ASTExporter.h NamePrinter.h AttrParameterVectorStream.h SimplePluginASTAction.h FileUtils.h
-OBJS+=ASTExporter.o SimplePluginASTAction.o FileUtils.o AttrParameterVectorStream.o
+HEADERS+=atdlib/ATDWriter.h ASTExporter.h NamePrinter.h
+OBJS+=ASTExporter.o
 
 # Json
 PLUGINS+=JsonASTExporter
@@ -25,7 +28,7 @@ BINIOU_PLUGIN=BiniouASTExporter
 PLUGINS+=$(BINIOU_PLUGIN)
 EXTS+=.biniou
 
-all: build/FacebookClangPlugin.dylib
+all: build/FacebookClangPlugin.dylib build/ast_exporter_bin
 
 include $(LEVEL)/Makefile.rules
 
@@ -34,6 +37,12 @@ CLANG_FRONTEND=$(CLANG) -fsyntax-only -Xpreprocessor -detailed-preprocessing-rec
 build/FacebookClangPlugin.dylib: $(OBJS:%=build/%) $(HEADERS)
 	@mkdir -p build
 	$(CXX) $(LDFLAGS_DYLIB) -o $@ $(OBJS:%=build/%) -lz -lpthread -lm
+
+# Experimental tool. This requires clang static libraries.
+AST_EXPORTER_OBJS=ast_exporter_bin.o SimplePluginASTAction.o FileUtils.o AttrParameterVectorStream.o
+build/ast_exporter_bin: $(AST_EXPORTER_OBJS:%=build/%) $(HEADERS)
+	@mkdir -p build
+	$(CXX) -o $@ $(AST_EXPORTER_OBJS:%=build/%) $(LDFLAGS) $(LLVM_CXXFLAGS) $(CLANG_TOOL_LIBS) $(LLVM_LDFLAGS) -lz -lpthread -lm
 
 TEST_DIRS=tests
 
