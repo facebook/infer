@@ -88,7 +88,7 @@ digraph cfg {
 	
 
 	 "bar2#A#instance.413fa5106d6a23f2bf18df99659efb82_3" -> "bar2#A#instance.413fa5106d6a23f2bf18df99659efb82_2" ;
-"bar2#A#instance.413fa5106d6a23f2bf18df99659efb82_4" [label="4:  Call _fun_foo \n   n$14=*&self:A* [line 40, column 7]\n  n$16=*&self:A* [line 43, column 7]\n  n$18=*&self:A* [line 46, column 7]\n  n$19=_fun_foo[objc_blockA.bar2_3^objc_blockA.bar2_4](n$14:A*,n$18:A*) [line 39, column 3]\n " shape="box"]
+"bar2#A#instance.413fa5106d6a23f2bf18df99659efb82_4" [label="4:  Call _fun_foo \n   n$14=*&self:A* [line 40, column 7]\n  n$16=*&self:A* [line 43, column 7]\n  n$18=*&self:A* [line 46, column 7]\n  n$19=_fun_foo[objc_blockA.bar2_3^objc_blockA.bar2_4](n$14:A*,(_fun_objc_blockA.bar2_4,([by ref]n$16 &self:A*)):_fn_(*),(_fun_objc_blockA.bar2_3,([by ref]n$14 &self:A*)):_fn_(*),n$18:A*) [line 39, column 3]\n " shape="box"]
 	
 
 	 "bar2#A#instance.413fa5106d6a23f2bf18df99659efb82_4" -> "bar2#A#instance.413fa5106d6a23f2bf18df99659efb82_3" ;
@@ -107,7 +107,7 @@ digraph cfg {
 	
 
 	 "bar:#A(class A)#instance.3e4a860660eb436d473f8ceeb9c1a72b_4" -> "bar:#A(class A)#instance.3e4a860660eb436d473f8ceeb9c1a72b_3" ;
-"bar:#A(class A)#instance.3e4a860660eb436d473f8ceeb9c1a72b_5" [label="5:  Call _fun_foo \n   n$3=*&self:A* [line 27, column 7]\n  n$4=*&x:int [line 27, column 7]\n  n$7=*&self:A* [line 30, column 7]\n  n$10=*&a:A* [line 33, column 7]\n  n$11=_fun_foo[objc_blockA.bar:_1^objc_blockA.bar:_2](n$4:int,n$3:A*,n$10:A*) [line 26, column 3]\n " shape="box"]
+"bar:#A(class A)#instance.3e4a860660eb436d473f8ceeb9c1a72b_5" [label="5:  Call _fun_foo \n   n$3=*&self:A* [line 27, column 7]\n  n$4=*&x:int [line 27, column 7]\n  n$7=*&self:A* [line 30, column 7]\n  n$10=*&a:A* [line 33, column 7]\n  n$11=_fun_foo[objc_blockA.bar:_1^objc_blockA.bar:_2](n$4:int,n$3:A*,(_fun_objc_blockA.bar:_2,([by ref]n$7 &self:A*)):_fn_(*),(_fun_objc_blockA.bar:_1,([by ref]n$3 &self:A*),([by ref]n$4 &x:int)):_fn_(*),n$10:A*) [line 26, column 3]\n " shape="box"]
 	
 
 	 "bar:#A(class A)#instance.3e4a860660eb436d473f8ceeb9c1a72b_5" -> "bar:#A(class A)#instance.3e4a860660eb436d473f8ceeb9c1a72b_4" ;
@@ -126,11 +126,11 @@ digraph cfg {
 	
 
 	 "call_foo_with_same_param#A#instance.7f01b1476c1662f7ce825ec7b1739a00_3" -> "call_foo_with_same_param#A#instance.7f01b1476c1662f7ce825ec7b1739a00_2" ;
-"call_foo_with_same_param#A#instance.7f01b1476c1662f7ce825ec7b1739a00_4" [label="4:  Call _fun_foo \n   n$22=*&b:_fn_(*) [line 55, column 7]\n  n$23=*&b:_fn_(*) [line 55, column 10]\n  n$24=*&self:A* [line 55, column 13]\n  n$25=_fun_foo[objc_blockA.call_foo_with_same_param_5^objc_blockA.call_foo_with_same_param_5](n$30:A*,n$24:A*) [line 55, column 3]\n " shape="box"]
+"call_foo_with_same_param#A#instance.7f01b1476c1662f7ce825ec7b1739a00_4" [label="4:  Call _fun_foo \n   n$22=*&b:_fn_(*) [line 55, column 7]\n  n$23=*&b:_fn_(*) [line 55, column 10]\n  n$24=*&self:A* [line 55, column 13]\n  n$25=_fun_foo[objc_blockA.call_foo_with_same_param_5^objc_blockA.call_foo_with_same_param_5](n$30:A*,(_fun_objc_blockA.call_foo_with_same_param_5,([by ref]n$30 &self:A*)):_fn_(*),(_fun_objc_blockA.call_foo_with_same_param_5,([by ref]n$30 &self:A*)):_fn_(*),n$24:A*) [line 55, column 3]\n " shape="box"]
 	
 
 	 "call_foo_with_same_param#A#instance.7f01b1476c1662f7ce825ec7b1739a00_4" -> "call_foo_with_same_param#A#instance.7f01b1476c1662f7ce825ec7b1739a00_3" ;
-"call_foo_with_same_param#A#instance.7f01b1476c1662f7ce825ec7b1739a00_5" [label="5:  Call _fun_foo \n   n$26=*&b:_fn_(*) [line 54, column 7]\n  n$27=*&b:_fn_(*) [line 54, column 10]\n  n$28=*&self:A* [line 54, column 13]\n  n$29=_fun_foo[objc_blockA.call_foo_with_same_param_5^objc_blockA.call_foo_with_same_param_5](n$30:A*,n$28:A*) [line 54, column 3]\n " shape="box"]
+"call_foo_with_same_param#A#instance.7f01b1476c1662f7ce825ec7b1739a00_5" [label="5:  Call _fun_foo \n   n$26=*&b:_fn_(*) [line 54, column 7]\n  n$27=*&b:_fn_(*) [line 54, column 10]\n  n$28=*&self:A* [line 54, column 13]\n  n$29=_fun_foo[objc_blockA.call_foo_with_same_param_5^objc_blockA.call_foo_with_same_param_5](n$30:A*,(_fun_objc_blockA.call_foo_with_same_param_5,([by ref]n$30 &self:A*)):_fn_(*),(_fun_objc_blockA.call_foo_with_same_param_5,([by ref]n$30 &self:A*)):_fn_(*),n$28:A*) [line 54, column 3]\n " shape="box"]
 	
 
 	 "call_foo_with_same_param#A#instance.7f01b1476c1662f7ce825ec7b1739a00_5" -> "call_foo_with_same_param#A#instance.7f01b1476c1662f7ce825ec7b1739a00_4" ;

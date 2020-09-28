@@ -50,7 +50,8 @@ module Call = struct
       [ +PatternMatch.ObjectiveC.implements "NSObject" &:: "autorelease" &--> unit_cost
       ; -"CFAutorelease" &--> unit_cost
       ; +PatternMatch.ObjectiveC.implements "NSArray"
-        &:: "indexOfObjectPassingTest:" $ capt_exp $--> NSArray.index_of_object_passing_test
+        &:: "indexOfObjectPassingTest:" $ capt_exp $+ any_arg
+        $--> NSArray.index_of_object_passing_test
       ; +PatternMatch.ObjectiveC.implements "NSKeyedUnarchiver"
         &:: "initForReadingFromData:error:" &--> unit_cost
       ; +PatternMatch.ObjectiveC.implements "NSKeyedUnarchiver"

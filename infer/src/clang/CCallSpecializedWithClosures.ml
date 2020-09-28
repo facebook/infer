@@ -56,6 +56,7 @@ let formals_actuals_new_set map =
     (fun formal actual set ->
       match actual with
       | Exp.Closure closure, _ ->
+          let set = FormalsActualsSet.add {formal; actual} set in
           List.fold_left closure.Exp.captured_vars ~init:set ~f:(fun set (exp, var, typ, _) ->
               let formal_annot =
                 {formal_type= (Pvar.build_formal_from_pvar var, typ); formal_annot= Annot.Item.empty}
