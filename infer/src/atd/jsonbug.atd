@@ -28,9 +28,17 @@ type nullsafe_meta_issue_info = {
   can_be_promoted_to: nullsafe_mode nullable (* If present, it implies that the class is not only free of issues, but the mode can be promoted to a stricter one *)
 }
 
+type method_info = {
+  class_name: string;
+  package: string;
+  method_name: string;
+  call_line: int;
+}
+
 type nullsafe_extra = {
   class_name: string;
   package: string nullable;
+  ?nullable_methods: method_info list option; (* If the issue is related to unsafe use of methods being nullable, here's the list of them *)
   ?unvetted_3rd_party: string list option; (* If the issue is related to the use of a not yet registered third-party methods, here's the list of their signatures *)
   ?meta_issue_info: nullsafe_meta_issue_info option (* Should be present if the issue is "nullsafe meta issue" *)
 }

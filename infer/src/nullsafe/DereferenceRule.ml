@@ -95,9 +95,13 @@ module ReportableViolation = struct
           Format.sprintf "%s is nullable and is not locally checked for null when %s%s.%s"
             what_is_dereferred_str action_descr origin_descr alternative_recommendation
     in
+    let nullable_methods =
+      match nullable_object_origin with TypeOrigin.MethodCall origin -> [origin] | _ -> []
+    in
     NullsafeIssue.make ~description ~issue_type:IssueType.eradicate_nullable_dereference
       ~loc:dereference_location
       ~severity:(NullsafeMode.severity nullsafe_mode)
+    |> NullsafeIssue.with_nullable_methods nullable_methods
 
 
   let make_nullsafe_issue {nullsafe_mode; violation= {nullability}} ~dereference_location

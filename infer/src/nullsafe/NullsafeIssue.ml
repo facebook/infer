@@ -12,13 +12,18 @@ type t =
   ; description: string  (** Human-readable description *)
   ; loc: Location.t  (** Where to report the error *)
   ; severity: IssueType.severity
+  ; nullable_methods: TypeOrigin.method_call_origin list
+        (** If the issue is associated with misusing nullable values coming from method calls,
+            here's the list *)
   ; third_party_dependent_methods: (Procname.Java.t * AnnotatedSignature.t) list }
 
 let make ~issue_type ~description ~loc ~severity =
-  {issue_type; description; loc; severity; third_party_dependent_methods= []}
+  {issue_type; description; loc; severity; third_party_dependent_methods= []; nullable_methods= []}
 
 
 let with_third_party_dependent_methods methods t = {t with third_party_dependent_methods= methods}
+
+let with_nullable_methods methods t = {t with nullable_methods= methods}
 
 let get_issue_type {issue_type} = issue_type
 
@@ -65,7 +70,16 @@ let to_third_party_method_according_to_source_code_annotations (proc_name, annot
   ThirdPartyMethod.{class_name; method_name; ret_nullability; params}
 
 
-let get_nullsafe_extra {third_party_dependent_methods} proc_name =
+let to_nullable_method_json nullable_methods =
+  List.map nullable_methods ~f:(fun TypeOrigin.{pname; call_loc} ->
+      Jsonbug_t.
+        { class_name= Procname.Java.get_simple_class_name pname
+        ; method_name= Procname.Java.get_method pname
+        ; package= Procname.Java.get_package pname |> Option.value ~default:""
+        ; call_line= call_loc.Location.line } )
+
+
+let get_nullsafe_extra {third_party_dependent_methods; nullable_methods} proc_name =
   let class_name = Procname.Java.get_simple_class_name proc_name in
   let package = Procname.Java.get_package proc_name in
   let unvetted_3rd_party_list =
@@ -76,4 +90,7 @@ let get_nullsafe_extra {third_party_dependent_methods} proc_name =
   let unvetted_3rd_party =
     if List.is_empty unvetted_3rd_party_list then None else Some unvetted_3rd_party_list
   in
-  Jsonbug_t.{class_name; package; meta_issue_info= None; unvetted_3rd_party}
+  let nullable_methods =
+    if List.is_empty nullable_methods then None else Some (to_nullable_method_json nullable_methods)
+  in
+  Jsonbug_t.{class_name; package; meta_issue_info= None; unvetted_3rd_party; nullable_methods}
