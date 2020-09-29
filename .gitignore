@@ -51,6 +51,7 @@ duplicates.txt
 /infer/tests/build_systems/incremental_analysis_cost_change/src
 /infer/tests/build_systems/incremental_analysis_add_procedure/src
 /infer/tests/build_systems/java_test_determinator/*.test
+/infer/tests/build_systems/java_source_parser/*.test
 /_release
 /infer-source
 

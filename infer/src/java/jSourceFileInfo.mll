@@ -402,7 +402,31 @@ and skip_comments action = parse
           In_channel.close cin
     )
 
-  let debug_on_file _path =
-    (* TODO: do something here *)
-    ()
+  let debug_on_file path =
+    if String.is_suffix path ~suffix:".java" then (
+      let cin = In_channel.create path in
+      let stack = [] in
+      let record_location ~classname ~col ~line =
+        let cn : JBasics.class_name = JBasics.make_cn classname in
+        Printf.printf "class %s at line %d, column %d\n"
+          (JBasics.cn_name cn) line col in
+      try (
+        let state = { record_location; stack; } in
+        class_scan state (from_channel cin) ;
+        In_channel.close cin )
+      with
+        | Failure s ->
+          Printf.printf "Error parsing source file: %s" s;
+          In_channel.close cin
+        | Missing_opening_bracket ->
+          Printf.printf
+            "Missing opening bracket error while parsing source file\n";
+          In_channel.close cin
+        | Missing_opening_parenthesis ->
+          Printf.printf
+            "Missing opening parenthesis error while parsing source file\n";
+          In_channel.close cin
+    )
+
+
 }
