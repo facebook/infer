@@ -28,7 +28,7 @@ BINIOU_PLUGIN=BiniouASTExporter
 PLUGINS+=$(BINIOU_PLUGIN)
 EXTS+=.biniou
 
-all: build/FacebookClangPlugin.dylib build/ast_exporter_bin
+all: build/FacebookClangPlugin.dylib
 
 include $(LEVEL)/Makefile.rules
 
