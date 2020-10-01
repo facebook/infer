@@ -1,4 +1,5 @@
 ${XCODE_ISYSROOT}/System/Library/Frameworks/Foundation.framework/Headers/NSArray.h, NSArray.indexOfObject:inSortedRange:options:usingComparator:[objc_blocknsarray_binary_search_log_FN_1], 0,  OnUIThread:false, []
+codetoanalyze/objc/performance/NSArray.m, call_nsarray_enumerator_param_linear_FN, 12,  OnUIThread:false, []
 codetoanalyze/objc/performance/NSArray.m, nsarray_access_constant, 50,  OnUIThread:false, []
 codetoanalyze/objc/performance/NSArray.m, nsarray_access_linear, 3 + 7 ⋅ array->elements.length.ub + 3 ⋅ (array->elements.length.ub + 1),  OnUIThread:false, [{array->elements.length.ub + 1},Loop,{array->elements.length.ub},Loop]
 codetoanalyze/objc/performance/NSArray.m, nsarray_add_object_constant, 8,  OnUIThread:false, []
@@ -9,6 +10,7 @@ codetoanalyze/objc/performance/NSArray.m, nsarray_contains_object_linear, 3 + ar
 codetoanalyze/objc/performance/NSArray.m, nsarray_count_bounded_linear, 3 + 3 ⋅ array->elements.length.ub + 3 ⋅ (array->elements.length.ub + 1),  OnUIThread:false, [{array->elements.length.ub + 1},Loop,{array->elements.length.ub},Loop]
 codetoanalyze/objc/performance/NSArray.m, nsarray_empty_array_constant, 8,  OnUIThread:false, []
 codetoanalyze/objc/performance/NSArray.m, nsarray_enumerator_linear, 6 + 4 ⋅ array->elements.length.ub + 4 ⋅ (array->elements.length.ub + 1),  OnUIThread:false, [{array->elements.length.ub + 1},Loop,{array->elements.length.ub},Loop]
+codetoanalyze/objc/performance/NSArray.m, nsarray_enumerator_param_linear_FN, 7,  OnUIThread:false, []
 codetoanalyze/objc/performance/NSArray.m, nsarray_find_linear, 4 + 9 ⋅ array->elements.length.ub + 3 ⋅ (array->elements.length.ub + 1),  OnUIThread:false, [{array->elements.length.ub + 1},Loop,{array->elements.length.ub},Loop]
 codetoanalyze/objc/performance/NSArray.m, nsarray_first_object_constant, 4,  OnUIThread:false, []
 codetoanalyze/objc/performance/NSArray.m, nsarray_get_first_constant, 27,  OnUIThread:false, []

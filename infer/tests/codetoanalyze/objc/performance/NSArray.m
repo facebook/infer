@@ -166,6 +166,17 @@ void nsarray_enumerator_linear(NSArray* array) {
   }
 }
 
+void nsarray_enumerator_param_linear_FN(NSEnumerator* enumerator) {
+  id obj;
+  while (obj = [enumerator nextObject]) {
+  }
+}
+
+void call_nsarray_enumerator_param_linear_FN(NSArray* array) {
+  NSEnumerator* enumerator = [array objectEnumerator];
+  nsarray_enumerator_param_linear_FN(enumerator);
+}
+
 void nsarray_next_object_linear(NSArray* array) {
   for (id item in array) {
   }
