@@ -9,18 +9,22 @@ open! IStd
 module AbductiveDomain = PulseAbductiveDomain
 module LatentIssue = PulseLatentIssue
 
-type t =
-  | AbortProgram of AbductiveDomain.t
+type 'abductive_domain_t base_t =
+  | ContinueProgram of 'abductive_domain_t  (** represents the state at the program point *)
+  | ExitProgram of 'abductive_domain_t  (** represents the state originating at exit/divergence. *)
+  | AbortProgram of AbductiveDomain.summary
       (** represents the state at the program point that caused an error *)
-  | ContinueProgram of AbductiveDomain.t  (** represents the state at the program point *)
-  | ExitProgram of AbductiveDomain.t  (** represents the state originating at exit/divergence. *)
-  | LatentAbortProgram of {astate: AbductiveDomain.t; latent_issue: LatentIssue.t}
+  | LatentAbortProgram of {astate: AbductiveDomain.summary; latent_issue: LatentIssue.t}
       (** this path leads to an error but we don't have conclusive enough data to report it yet *)
+
+type t = AbductiveDomain.t base_t
 
 include AbstractDomain.NoJoin with type t := t
 
 val continue : AbductiveDomain.t -> t
 
-val of_posts : Procdesc.t -> t list -> t list
-
 val mk_initial : Procdesc.t -> t
+
+type summary = AbductiveDomain.summary base_t
+
+val summary_of_posts : Procdesc.t -> t list -> summary list

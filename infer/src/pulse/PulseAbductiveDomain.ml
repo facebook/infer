@@ -432,7 +432,9 @@ let invalidate_locals pdesc astate : t =
   else {astate with post= PostDomain.update astate.post ~attrs:attrs'}
 
 
-let of_post pdesc astate =
+type summary = t
+
+let summary_of_post pdesc astate =
   let astate = filter_for_summary astate in
   let astate, live_addresses, _ = discard_unreachable astate in
   let astate =

@@ -437,8 +437,8 @@ let unknown_call call_loc reason ~ret ~actuals ~formals_opt astate =
   |> havoc_ret ret |> add_skipped_proc
 
 
-let apply_callee callee_pname call_loc callee_exec_state ~ret ~captured_vars_with_actuals ~formals
-    ~actuals astate =
+let apply_callee ~caller_proc_desc callee_pname call_loc callee_exec_state ~ret
+    ~captured_vars_with_actuals ~formals ~actuals astate =
   let apply callee_prepost ~f =
     PulseInterproc.apply_prepost callee_pname call_loc ~callee_prepost ~captured_vars_with_actuals
       ~formals ~actuals astate
@@ -467,13 +467,18 @@ let apply_callee callee_pname call_loc callee_exec_state ~ret ~captured_vars_wit
   | ExitProgram astate ->
       apply astate ~f:(fun astate -> Ok (Some (ExitProgram astate)))
   | LatentAbortProgram {astate; latent_issue} ->
-      apply astate ~f:(fun astate ->
-          let latent_issue =
-            LatentIssue.add_call (CallEvent.Call callee_pname, call_loc) latent_issue
-          in
-          if LatentIssue.should_report astate then
-            Error (LatentIssue.to_diagnostic latent_issue, astate)
-          else Ok (Some (LatentAbortProgram {astate; latent_issue})) )
+      apply
+        (astate :> AbductiveDomain.t)
+        ~f:(fun astate ->
+          let astate_summary = AbductiveDomain.summary_of_post caller_proc_desc astate in
+          if PulseArithmetic.is_unsat_cheap (astate_summary :> AbductiveDomain.t) then Ok None
+          else
+            let latent_issue =
+              LatentIssue.add_call (CallEvent.Call callee_pname, call_loc) latent_issue
+            in
+            if LatentIssue.should_report astate_summary then
+              Error (LatentIssue.to_diagnostic latent_issue, (astate_summary :> AbductiveDomain.t))
+            else Ok (Some (LatentAbortProgram {astate= astate_summary; latent_issue})) )
 
 
 let get_captured_actuals location ~captured_vars ~actual_closure astate =
@@ -488,8 +493,9 @@ let get_captured_actuals location ~captured_vars ~actual_closure astate =
   (astate, captured_vars_with_actuals)
 
 
-let call ~callee_data call_loc callee_pname ~ret ~actuals ~formals_opt (astate : AbductiveDomain.t)
-    : (ExecutionDomain.t list, Diagnostic.t * t) result =
+let call ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.t) option) call_loc
+    callee_pname ~ret ~actuals ~formals_opt (astate : AbductiveDomain.t) :
+    (ExecutionDomain.t list, Diagnostic.t * t) result =
   match callee_data with
   | Some (callee_proc_desc, exec_states) ->
       let formals =
@@ -516,12 +522,14 @@ let call ~callee_data call_loc callee_pname ~ret ~actuals ~formals_opt (astate :
             Str.string_match regex (Procname.to_string callee_pname) 0 )
       in
       (* call {!AbductiveDomain.PrePost.apply} on each pre/post pair in the summary. *)
-      IContainer.fold_result_until exec_states ~fold:List.fold ~init:[]
+      IContainer.fold_result_until
+        (exec_states :> ExecutionDomain.t list)
+        ~fold:List.fold ~init:[]
         ~f:(fun posts callee_exec_state ->
           (* apply all pre/post specs *)
           match
-            apply_callee callee_pname call_loc callee_exec_state ~captured_vars_with_actuals
-              ~formals ~actuals ~ret astate
+            apply_callee ~caller_proc_desc callee_pname call_loc callee_exec_state
+              ~captured_vars_with_actuals ~formals ~actuals ~ret astate
           with
           | Ok None ->
               (* couldn't apply pre/post pair *)

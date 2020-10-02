@@ -304,10 +304,10 @@ let add_errors_biabduction {InterproceduralAnalysis.proc_desc; tenv; err_log} bi
     List.iter ~f:handle_preposts preposts
 
 
-let add_errors_pulse {InterproceduralAnalysis.proc_desc; err_log} pulse_summary =
+let add_errors_pulse {InterproceduralAnalysis.proc_desc; err_log} (pulse_summary : PulseSummary.t) =
   let pulse_summary =
     let f = function PulseExecutionDomain.ContinueProgram s -> Some s | _ -> None in
-    List.filter_map ~f pulse_summary
+    List.filter_map ~f (pulse_summary :> PulseExecutionDomain.t list)
   in
   let proc_name = Procdesc.get_proc_name proc_desc in
   if not (ToplUtils.is_synthesized proc_name) then

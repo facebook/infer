@@ -158,7 +158,12 @@ val add_skipped_calls : SkippedCalls.t -> t -> t
 
 val set_path_condition : PathCondition.t -> t -> t
 
-val of_post : Procdesc.t -> t -> t
+(** private type to make sure {!summary_of_post} is always called when creating summaries *)
+type summary = private t
+
+val summary_of_post : Procdesc.t -> t -> summary
+(** trim the state down to just the procedure's interface (formals and globals), and simplify and
+    normalize the state *)
 
 val set_post_edges : AbstractValue.t -> BaseMemory.Edges.t -> t -> t
 (** directly set the edges for the given address, bypassing abduction altogether *)

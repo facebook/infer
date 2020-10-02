@@ -7,6 +7,8 @@
 
 open! IStd
 open PulseBasicInterface
+module AbductiveDomain = PulseAbductiveDomain
+module Arithmetic = PulseArithmetic
 
 type t = AccessToInvalidAddress of Diagnostic.access_to_invalid_address [@@deriving equal]
 
@@ -20,9 +22,13 @@ let add_call call_and_loc = function
       AccessToInvalidAddress {access with calling_context= call_and_loc :: access.calling_context}
 
 
-let should_report astate = PulseArithmetic.has_no_assumptions astate
+let should_report (astate : AbductiveDomain.summary) =
+  Arithmetic.has_no_assumptions (astate :> AbductiveDomain.t)
 
-let should_report_diagnostic astate (diagnostic : Diagnostic.t) =
+
+(* require a summary because we don't want to stop reporting because some non-abducible condition is
+   not true as calling context cannot possibly influence such conditions *)
+let should_report_diagnostic (astate : AbductiveDomain.summary) (diagnostic : Diagnostic.t) =
   match diagnostic with
   | MemoryLeak _ | StackVariableAddressEscape _ ->
       (* these issues are reported regardless of the calling context, not sure if that's the right

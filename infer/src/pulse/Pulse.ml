@@ -23,29 +23,26 @@ let check_error_transform {InterproceduralAnalysis.proc_desc; err_log} ~f = func
   | Ok astate ->
       f astate
   | Error (diagnostic, astate) -> (
-      let astate, is_unsat = PulseArithmetic.is_unsat_expensive astate in
-      if is_unsat then []
+      let astate_summary = AbductiveDomain.summary_of_post proc_desc astate in
+      if PulseArithmetic.is_unsat_cheap (astate_summary :> AbductiveDomain.t) then []
       else
-        let astate = AbductiveDomain.of_post proc_desc astate in
-        if PulseArithmetic.is_unsat_cheap astate then []
-        else
-          match LatentIssue.should_report_diagnostic astate diagnostic with
-          | `ReportNow ->
-              report proc_desc err_log diagnostic ;
-              [ExecutionDomain.AbortProgram astate]
-          | `DelayReport latent_issue ->
-              ( if Config.pulse_report_latent_issues then
-                (* HACK: report latent issues with a prominent message to distinguish them from
-                   non-latent. Useful for infer's own tests. *)
-                let diagnostic = LatentIssue.to_diagnostic latent_issue in
-                let extra_trace =
-                  let depth = 0 in
-                  let tags = [] in
-                  let location = Diagnostic.get_location diagnostic in
-                  [Errlog.make_trace_element depth location "*** LATENT ***" tags]
-                in
-                report ~extra_trace proc_desc err_log diagnostic ) ;
-              [ExecutionDomain.LatentAbortProgram {astate; latent_issue}] )
+        match LatentIssue.should_report_diagnostic astate_summary diagnostic with
+        | `ReportNow ->
+            report proc_desc err_log diagnostic ;
+            [ExecutionDomain.AbortProgram astate_summary]
+        | `DelayReport latent_issue ->
+            ( if Config.pulse_report_latent_issues then
+              (* HACK: report latent issues with a prominent message to distinguish them from
+                 non-latent. Useful for infer's own tests. *)
+              let diagnostic = LatentIssue.to_diagnostic latent_issue in
+              let extra_trace =
+                let depth = 0 in
+                let tags = [] in
+                let location = Diagnostic.get_location diagnostic in
+                [Errlog.make_trace_element depth location "*** LATENT ***" tags]
+              in
+              report ~extra_trace proc_desc err_log diagnostic ) ;
+            [ExecutionDomain.LatentAbortProgram {astate= astate_summary; latent_issue}] )
 
 
 let check_error_continue analysis_data result =
@@ -72,13 +69,14 @@ module PulseTransferFunctions = struct
     AnalysisCallbacks.proc_resolve_attributes pname |> Option.map ~f:ProcAttributes.get_pvar_formals
 
 
-  let interprocedural_call {InterproceduralAnalysis.analyze_dependency} ret call_exp actuals
-      call_loc astate =
+  let interprocedural_call {InterproceduralAnalysis.analyze_dependency; proc_desc} ret call_exp
+      actuals call_loc astate =
     match proc_name_of_call call_exp with
     | Some callee_pname when not Config.pulse_intraprocedural_only ->
         let formals_opt = get_pvar_formals callee_pname in
         let callee_data = analyze_dependency callee_pname in
-        PulseOperations.call ~callee_data call_loc callee_pname ~ret ~actuals ~formals_opt astate
+        PulseOperations.call ~caller_proc_desc:proc_desc ~callee_data call_loc callee_pname ~ret
+          ~actuals ~formals_opt astate
     | _ ->
         L.d_printfln "Skipping indirect call %a@\n" Exp.pp call_exp ;
         PulseOperations.unknown_call call_loc (SkippedUnknownCall call_exp) ~ret ~actuals

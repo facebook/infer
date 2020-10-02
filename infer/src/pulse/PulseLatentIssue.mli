@@ -7,6 +7,7 @@
 
 open! IStd
 open PulseBasicInterface
+module AbductiveDomain = PulseAbductiveDomain
 
 (** A subset of [PulseDiagnostic] that can be "latent", i.e. there is a potential issue in the code
     but we want to delay reporting until we see the conditions for the bug manifest themselves in
@@ -16,9 +17,9 @@ type t = AccessToInvalidAddress of Diagnostic.access_to_invalid_address [@@deriv
 
 val to_diagnostic : t -> Diagnostic.t
 
-val should_report : PulseAbductiveDomain.t -> bool
+val should_report : AbductiveDomain.summary -> bool
 
 val should_report_diagnostic :
-  PulseAbductiveDomain.t -> Diagnostic.t -> [`ReportNow | `DelayReport of t]
+  AbductiveDomain.summary -> Diagnostic.t -> [`ReportNow | `DelayReport of t]
 
 val add_call : CallEvent.t * Location.t -> t -> t
