@@ -47,7 +47,7 @@ let run_buck_build prog buck_build_args =
         let filename =
           ResultsDirEntryName.get_path
             ~results_dir:(Config.project_root ^/ target_path)
-            BuckDependencies
+            CaptureDependencies
         in
         if PolyVariantEqual.(Sys.file_exists filename = `Yes) then filename :: acc else acc
     | _ ->
@@ -92,7 +92,7 @@ let clang_flavor_capture ~prog ~buck_build_cmd =
     Process.create_process_and_wait ~prog ~args:["clean"] ;
   let depsfiles = run_buck_build prog (buck_build_cmd @ capture_buck_args ()) in
   let deplines = merge_deps_files depsfiles in
-  let infer_out_depsfile = ResultsDir.get_path BuckDependencies in
+  let infer_out_depsfile = ResultsDir.get_path CaptureDependencies in
   Utils.with_file_out infer_out_depsfile ~f:(fun out_chan ->
       Out_channel.output_lines out_chan deplines ) ;
   ()

@@ -37,9 +37,78 @@ let parse_gradle_line ~line =
   {files= concat_st res.files res.file_st; opts= res.opts @ res.opt_st}
 
 
-let normalize path = if String.is_substring path ~substring:" " then "\"" ^ path ^ "\"" else path
+let process_gradle_output_line =
+  let capture_output_template = ResultsDir.get_path Temporary ^/ "capture_target" in
+  fun ((seen, target_dirs) as acc) line ->
+    String.substr_index line ~pattern:arg_start_pattern
+    |> Option.value_map ~default:acc ~f:(fun pos ->
+           let content = String.drop_prefix line (pos + String.length arg_start_pattern) in
+           L.debug Capture Verbose "Processing: %s@." content ;
+           if String.Set.mem seen content then acc
+           else
+             let javac_data = parse_gradle_line ~line:content in
+             let out_dir = Unix.mkdtemp capture_output_template in
+             (String.Set.add seen content, (out_dir, javac_data) :: target_dirs) )
 
-let capture ~prog ~args =
+
+let run_gradle ~prog ~args =
+  let gradle_output_file =
+    Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) "gradle_output" ".log"
+  in
+  let shell_cmd =
+    List.map ~f:Escape.escape_shell (prog :: "--debug" :: args)
+    |> String.concat ~sep:" "
+    |> fun cmd -> Printf.sprintf "%s >'%s'" cmd gradle_output_file
+  in
+  L.progress "[GRADLE] %s@\n" shell_cmd ;
+  let time = Mtime_clock.counter () in
+  Process.create_process_and_wait ~prog:"sh" ~args:["-c"; shell_cmd] ;
+  L.progress "[GRADLE] running gradle took %a@\n" Mtime.Span.pp (Mtime_clock.count time) ;
+  match Utils.read_file gradle_output_file with
+  | Ok lines ->
+      List.fold lines ~init:(String.Set.empty, []) ~f:process_gradle_output_line
+  | Error _ ->
+      L.die ExternalError "*** failed to read gradle output: %s@\n" gradle_output_file
+
+
+let capture_gradle_target (out_dir, (javac_data : javac_data)) =
+  let tmpfile, oc =
+    Core.Filename.open_temp_file ~in_dir:(ResultsDir.get_path Temporary) "gradle_files" ""
+  in
+  List.iter javac_data.files ~f:(fun file ->
+      Out_channel.output_string oc (Escape.escape_shell file) ;
+      Out_channel.newline oc ) ;
+  Out_channel.close oc ;
+  let prog = Config.bin_dir ^/ "infer" in
+  let args =
+    "capture" :: "-j" :: "1" :: "-o" :: out_dir :: "--" :: "javac" :: ("@" ^ tmpfile)
+    :: List.filter_map javac_data.opts ~f:(fun arg ->
+           if String.equal "-Werror" arg then None
+           else if String.is_substring arg ~substring:"-g:" then Some "-g"
+           else Some arg )
+  in
+  L.debug Capture Verbose "%s %s@." prog (String.concat ~sep:" " args) ;
+  Process.create_process_and_wait ~prog ~args ;
+  None
+
+
+let run_infer_capture target_data =
+  Tasks.Runner.create ~jobs:Config.jobs
+    ~child_prologue:(fun () -> ())
+    ~f:capture_gradle_target
+    ~child_epilogue:(fun () -> ())
+    ~tasks:(fun () -> ProcessPool.TaskGenerator.of_list target_data)
+  |> Tasks.Runner.run |> ignore
+
+
+let write_rev_infer_deps rev_target_data =
+  ResultsDir.get_path CaptureDependencies
+  |> Utils.with_file_out ~f:(fun out_channel ->
+         List.rev_map rev_target_data ~f:(fun (out_dir, _) -> Printf.sprintf "-\t-\t%s" out_dir)
+         |> Out_channel.output_lines out_channel )
+
+
+let log_environment_info ~prog =
   let java_version =
     Process.create_process_and_wait_with_output ~prog:"java" ~args:["-version"] ReadStderr
   in
@@ -49,39 +118,15 @@ let capture ~prog ~args =
   let gradle_version =
     Process.create_process_and_wait_with_output ~prog ~args:["--version"] ReadStdout
   in
-  L.environment_info "%s %s %s@." java_version javac_version gradle_version ;
-  let process_gradle_line seen line =
-    match String.substr_index line ~pattern:arg_start_pattern with
-    | Some pos ->
-        let content = String.drop_prefix line (pos + String.length arg_start_pattern) in
-        L.debug Capture Verbose "Processing: %s@." content ;
-        if String.Set.mem seen content then seen
-        else
-          let javac_data = parse_gradle_line ~line:content in
-          let tmpfile, oc =
-            Core.Filename.open_temp_file ~in_dir:(ResultsDir.get_path Temporary) "gradle_files" ""
-          in
-          List.iter javac_data.files ~f:(fun file ->
-              Out_channel.output_string oc (normalize file ^ "\n") ) ;
-          Out_channel.close oc ;
-          Javac.call_infer_javac_capture ~javac_args:(("@" ^ tmpfile) :: javac_data.opts) ;
-          String.Set.add seen content
-    | None ->
-        seen
-  in
-  let gradle_output_file =
-    Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) "gradle_output" ".log"
-  in
-  let shell_cmd =
-    List.map ~f:Escape.escape_shell (prog :: "--debug" :: args)
-    |> String.concat ~sep:" "
-    |> fun cmd -> Printf.sprintf "%s >'%s'" cmd gradle_output_file
-  in
-  L.progress "[GRADLE] %s@." shell_cmd ;
-  Process.create_process_and_wait ~prog:"sh" ~args:["-c"; shell_cmd] ;
-  match Utils.read_file gradle_output_file with
-  | Ok lines ->
-      let processed = List.fold lines ~init:String.Set.empty ~f:process_gradle_line in
-      L.progress "[GRADLE] processed %d lines" @@ String.Set.length processed
-  | Error _ ->
-      L.die ExternalError "*** failed to read gradle output: %s" gradle_output_file
+  L.environment_info "%s %s %s@\n" java_version javac_version gradle_version
+
+
+let capture ~prog ~args =
+  log_environment_info ~prog ;
+  let processed, rev_target_data = run_gradle ~prog ~args in
+  let time = Mtime_clock.counter () in
+  run_infer_capture rev_target_data ;
+  write_rev_infer_deps rev_target_data ;
+  ResultsDir.RunState.set_merge_capture true ;
+  L.debug Capture Quiet "[GRADLE] infer processed %d lines in %a@\n" (String.Set.length processed)
+    Mtime.Span.pp (Mtime_clock.count time)

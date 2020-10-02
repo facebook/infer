@@ -264,7 +264,7 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
            && InferCommand.equal Run Config.command ->
         (* if doing capture + analysis of buck with flavors, we always need to merge targets before the analysis phase *)
         true
-    | Analyze | BuckGenruleMaster _ | BuckCombinedGenrule _ | BuckJavaFlavor _ ->
+    | Analyze | BuckGenruleMaster _ | BuckCombinedGenrule _ | BuckJavaFlavor _ | Gradle _ ->
         ResultsDir.RunState.get_merge_capture ()
     | _ ->
         false
