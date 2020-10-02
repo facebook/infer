@@ -133,6 +133,8 @@ buck-out/
 /infer/etc/clang_ast.dict
 /infer/src/toplevel.mlpack
 
+/external_repo
+
 # atdgen generated files
 /infer/src/atd/*_j.ml
 /infer/src/atd/*_j.mli
