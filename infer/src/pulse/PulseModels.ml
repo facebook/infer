@@ -554,7 +554,7 @@ module GenericArrayBackedCollectionIterator = struct
         let access_trace = Trace.Immediate {location; history= snd pointer} in
         Error
           ( Diagnostic.AccessToInvalidAddress
-              {invalidation= EndIterator; invalidation_trace; access_trace}
+              {calling_context= []; invalidation= EndIterator; invalidation_trace; access_trace}
           , astate )
       else Ok astate
     in

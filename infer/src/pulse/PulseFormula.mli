@@ -58,6 +58,8 @@ val is_known_zero : t -> Var.t -> bool
 
 val as_int : t -> Var.t -> int option
 
+val has_no_assumptions : t -> bool
+
 (** {3 Notations} *)
 
 include sig

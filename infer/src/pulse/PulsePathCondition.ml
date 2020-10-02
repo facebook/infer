@@ -385,3 +385,6 @@ let as_int phi v =
   IList.force_until_first_some
     [ lazy (CItvs.find_opt v phi.citvs |> Option.value_map ~default:None ~f:CItv.as_int)
     ; lazy (Formula.as_int phi.formula v) ]
+
+
+let has_no_assumptions phi = Formula.has_no_assumptions phi.formula

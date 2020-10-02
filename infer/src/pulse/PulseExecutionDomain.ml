@@ -8,12 +8,15 @@
 open! IStd
 module F = Format
 module L = Logging
+open PulseBasicInterface
 module AbductiveDomain = PulseAbductiveDomain
+module LatentIssue = PulseLatentIssue
 
 type t =
   | AbortProgram of AbductiveDomain.t
   | ContinueProgram of AbductiveDomain.t
   | ExitProgram of AbductiveDomain.t
+  | LatentAbortProgram of {astate: AbductiveDomain.t; latent_issue: LatentIssue.t}
 
 let continue astate = ContinueProgram astate
 
@@ -25,6 +28,9 @@ let leq ~lhs ~rhs =
   | ContinueProgram astate1, ContinueProgram astate2
   | ExitProgram astate1, ExitProgram astate2 ->
       AbductiveDomain.leq ~lhs:astate1 ~rhs:astate2
+  | ( LatentAbortProgram {astate= astate1; latent_issue= issue1}
+    , LatentAbortProgram {astate= astate2; latent_issue= issue2} ) ->
+      LatentIssue.equal issue1 issue2 && AbductiveDomain.leq ~lhs:astate1 ~rhs:astate2
   | _ ->
       false
 
@@ -36,6 +42,12 @@ let pp fmt = function
       F.fprintf fmt "{ExitProgram %a}" AbductiveDomain.pp astate
   | AbortProgram astate ->
       F.fprintf fmt "{AbortProgram %a}" AbductiveDomain.pp astate
+  | LatentAbortProgram {astate; latent_issue} ->
+      let diagnostic = LatentIssue.to_diagnostic latent_issue in
+      let message = Diagnostic.get_message diagnostic in
+      let location = Diagnostic.get_location diagnostic in
+      F.fprintf fmt "{LatentAbortProgram(%a: %s) %a}" Location.pp location message
+        AbductiveDomain.pp astate
 
 
 let map ~f exec_state =
@@ -46,11 +58,18 @@ let map ~f exec_state =
       ContinueProgram (f astate)
   | ExitProgram astate ->
       ExitProgram (f astate)
+  | LatentAbortProgram {astate; latent_issue} ->
+      LatentAbortProgram {astate= f astate; latent_issue}
 
 
 let of_posts pdesc posts =
   List.filter_mapi posts ~f:(fun i exec_state ->
-      let (AbortProgram astate | ContinueProgram astate | ExitProgram astate) = exec_state in
+      let ( AbortProgram astate
+          | ContinueProgram astate
+          | ExitProgram astate
+          | LatentAbortProgram {astate} ) =
+        exec_state
+      in
       L.d_printfln "Creating spec out of state #%d:@\n%a" i pp exec_state ;
       let astate, is_unsat = PulseArithmetic.is_unsat_expensive astate in
       if is_unsat then None

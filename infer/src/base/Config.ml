@@ -1881,6 +1881,12 @@ and pulse_model_transfer_ownership =
      are method or namespace::method"
 
 
+and pulse_report_latent_issues =
+  CLOpt.mk_bool ~long:"pulse-report-latent-issues"
+    "Only use for testing, there should be no need to turn this on for regular code analysis. \
+     Report latent issues instead of waiting for them to become concrete."
+
+
 and pulse_widen_threshold =
   CLOpt.mk_int ~long:"pulse-widen-threshold" ~default:3
     "Under-approximate after $(i,int) loop iterations"
@@ -3024,6 +3030,8 @@ and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
   in
   List.partition_map ~f:aux models
 
+
+and pulse_report_latent_issues = !pulse_report_latent_issues
 
 and pulse_widen_threshold = !pulse_widen_threshold
 

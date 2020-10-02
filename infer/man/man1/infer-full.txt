@@ -1731,6 +1731,12 @@ INTERNAL OPTIONS
            Maximum number of array elements and structure fields to keep
            track of for a given array address.
 
+       --pulse-report-latent-issues
+           Activates: Only use for testing, there should be no need to turn
+           this on for regular code analysis. Report latent issues instead of
+           waiting for them to become concrete. (Conversely:
+           --no-pulse-report-latent-issues)
+
        --pulse-widen-threshold int
            Under-approximate after int loop iterations
 

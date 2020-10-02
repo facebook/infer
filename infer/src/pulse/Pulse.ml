@@ -12,21 +12,40 @@ open IResult.Let_syntax
 open PulseBasicInterface
 open PulseDomainInterface
 
-let report {InterproceduralAnalysis.proc_desc; err_log} diagnostic =
+let report ?(extra_trace = []) proc_desc err_log diagnostic =
   let open Diagnostic in
-  Reporting.log_issue proc_desc err_log ~loc:(get_location diagnostic) ~ltr:(get_trace diagnostic)
+  Reporting.log_issue proc_desc err_log ~loc:(get_location diagnostic)
+    ~ltr:(extra_trace @ get_trace diagnostic)
     Pulse (get_issue_type diagnostic) (get_message diagnostic)
 
 
-let check_error_transform analysis_data ~f = function
+let check_error_transform {InterproceduralAnalysis.proc_desc; err_log} ~f = function
   | Ok astate ->
       f astate
-  | Error (diagnostic, astate) ->
+  | Error (diagnostic, astate) -> (
       let astate, is_unsat = PulseArithmetic.is_unsat_expensive astate in
       if is_unsat then []
-      else (
-        report analysis_data diagnostic ;
-        [ExecutionDomain.AbortProgram astate] )
+      else
+        let astate = AbductiveDomain.of_post proc_desc astate in
+        if PulseArithmetic.is_unsat_cheap astate then []
+        else
+          match LatentIssue.should_report_diagnostic astate diagnostic with
+          | `ReportNow ->
+              report proc_desc err_log diagnostic ;
+              [ExecutionDomain.AbortProgram astate]
+          | `DelayReport latent_issue ->
+              ( if Config.pulse_report_latent_issues then
+                (* HACK: report latent issues with a prominent message to distinguish them from
+                   non-latent. Useful for infer's own tests. *)
+                let diagnostic = LatentIssue.to_diagnostic latent_issue in
+                let extra_trace =
+                  let depth = 0 in
+                  let tags = [] in
+                  let location = Diagnostic.get_location diagnostic in
+                  [Errlog.make_trace_element depth location "*** LATENT ***" tags]
+                in
+                report ~extra_trace proc_desc err_log diagnostic ) ;
+              [ExecutionDomain.LatentAbortProgram {astate; latent_issue}] )
 
 
 let check_error_continue analysis_data result =
@@ -83,14 +102,14 @@ module PulseTransferFunctions = struct
 
   (** [out_of_scope_access_expr] has just gone out of scope and in now invalid *)
   let exec_object_out_of_scope call_loc (pvar, typ) exec_state =
-    match exec_state with
-    | ExecutionDomain.ContinueProgram astate ->
+    match (exec_state : ExecutionDomain.t) with
+    | ContinueProgram astate ->
         let gone_out_of_scope = Invalidation.GoneOutOfScope (pvar, typ) in
         let* astate, out_of_scope_base = PulseOperations.eval call_loc (Exp.Lvar pvar) astate in
         (* invalidate [&x] *)
         PulseOperations.invalidate call_loc gone_out_of_scope out_of_scope_base astate
         >>| ExecutionDomain.continue
-    | ExecutionDomain.AbortProgram _ | ExecutionDomain.ExitProgram _ ->
+    | AbortProgram _ | ExitProgram _ | LatentAbortProgram _ ->
         Ok exec_state
 
 
@@ -183,7 +202,7 @@ module PulseTransferFunctions = struct
         ~f:(fun astates (astate : Domain.t) ->
           let astate =
             match astate with
-            | AbortProgram _ | ExitProgram _ ->
+            | AbortProgram _ | ExitProgram _ | LatentAbortProgram _ ->
                 [astate]
             | ContinueProgram astate ->
                 dispatch_call analysis_data ret call_exp actuals location call_flags astate
@@ -207,7 +226,7 @@ module PulseTransferFunctions = struct
   let exec_instr (astate : Domain.t) ({InterproceduralAnalysis.proc_desc} as analysis_data)
       _cfg_node (instr : Sil.instr) : Domain.t list =
     match astate with
-    | AbortProgram _ ->
+    | AbortProgram _ | LatentAbortProgram _ ->
         (* We can also continue the analysis with the error state here
                  but there might be a risk we would get nonsense. *)
         [astate]
@@ -258,7 +277,7 @@ module PulseTransferFunctions = struct
             List.fold
               ~f:(fun astates (astate : Domain.t) ->
                 match astate with
-                | AbortProgram _ | ExitProgram _ ->
+                | AbortProgram _ | ExitProgram _ | LatentAbortProgram _ ->
                     [astate]
                 | ContinueProgram astate ->
                     let astate =

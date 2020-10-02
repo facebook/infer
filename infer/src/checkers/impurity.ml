@@ -142,7 +142,7 @@ let extract_impurity tenv pdesc (exec_state : ExecutionDomain.t) : ImpurityDomai
     match exec_state with
     | ExitProgram astate ->
         (astate, true)
-    | AbortProgram astate | ContinueProgram astate ->
+    | AbortProgram astate | ContinueProgram astate | LatentAbortProgram {astate} ->
         (astate, false)
   in
   let pre_heap = (AbductiveDomain.get_pre astate).BaseDomain.heap in

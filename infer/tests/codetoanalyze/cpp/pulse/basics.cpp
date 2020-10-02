@@ -53,7 +53,7 @@ void aggregate_reassign3_ok() {
   }
 }
 
-int multiple_invalidations_branch_bad(int n, int* ptr) {
+int multiple_invalidations_branch_latent(int n, int* ptr) {
   if (n == 7) {
     delete ptr;
   } else {
@@ -62,7 +62,7 @@ int multiple_invalidations_branch_bad(int n, int* ptr) {
   return *ptr;
 }
 
-int multiple_invalidations_loop_bad(int n, int* ptr) {
+int multiple_invalidations_loop_latent(int n, int* ptr) {
   for (int i = 0; i < n; i++) {
     if (i == 7) {
       delete ptr;

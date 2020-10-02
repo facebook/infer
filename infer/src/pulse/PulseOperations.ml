@@ -20,7 +20,9 @@ let check_addr_access location (address, history) astate =
   let access_trace = Trace.Immediate {location; history} in
   AddressAttributes.check_valid access_trace address astate
   |> Result.map_error ~f:(fun (invalidation, invalidation_trace) ->
-         (Diagnostic.AccessToInvalidAddress {invalidation; invalidation_trace; access_trace}, astate) )
+         ( Diagnostic.AccessToInvalidAddress
+             {calling_context= []; invalidation; invalidation_trace; access_trace}
+         , astate ) )
 
 
 module Closures = struct
@@ -440,9 +442,9 @@ let apply_callee callee_pname call_loc callee_exec_state ~ret ~captured_vars_wit
   let apply callee_prepost ~f =
     PulseInterproc.apply_prepost callee_pname call_loc ~callee_prepost ~captured_vars_with_actuals
       ~formals ~actuals astate
-    >>| function
+    >>= function
     | None ->
-        (* couldn't apply pre/post pair *) None
+        (* couldn't apply pre/post pair *) Ok None
     | Some (post, return_val_opt) ->
         let event = ValueHistory.Call {f= Call callee_pname; location= call_loc; in_call= []} in
         let post =
@@ -452,17 +454,26 @@ let apply_callee callee_pname call_loc callee_exec_state ~ret ~captured_vars_wit
           | None ->
               havoc_id (fst ret) [event] post
         in
-        Some (f post)
+        f post
   in
   let open ExecutionDomain in
   match callee_exec_state with
   | AbortProgram _ ->
-      (* Callee has failed; don't propagate the failure *)
+      (* Callee has failed; propagate the fact that a failure happened. TODO: should only do so if
+         we can apply the precondition? *)
       Ok (Some callee_exec_state)
   | ContinueProgram astate ->
-      apply astate ~f:(fun astate -> ContinueProgram astate)
+      apply astate ~f:(fun astate -> Ok (Some (ContinueProgram astate)))
   | ExitProgram astate ->
-      apply astate ~f:(fun astate -> ExitProgram astate)
+      apply astate ~f:(fun astate -> Ok (Some (ExitProgram astate)))
+  | LatentAbortProgram {astate; latent_issue} ->
+      apply astate ~f:(fun astate ->
+          let latent_issue =
+            LatentIssue.add_call (CallEvent.Call callee_pname, call_loc) latent_issue
+          in
+          if LatentIssue.should_report astate then
+            Error (LatentIssue.to_diagnostic latent_issue, astate)
+          else Ok (Some (LatentAbortProgram {astate; latent_issue})) )
 
 
 let get_captured_actuals location ~captured_vars ~actual_closure astate =

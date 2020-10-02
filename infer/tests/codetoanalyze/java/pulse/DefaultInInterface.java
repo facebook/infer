@@ -45,7 +45,7 @@ public class DefaultInInterface {
     }
   }
 
-  static void uncertainCallMethod1NPE(int i) {
+  static void uncertainCallMethod1NPE_latent(int i) {
     A aAorB = new A();
     if (i > 0) { // feasible path
       aAorB = new B();

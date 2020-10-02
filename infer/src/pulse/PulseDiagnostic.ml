@@ -12,21 +12,30 @@ module Invalidation = PulseInvalidation
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
 
+type access_to_invalid_address =
+  { calling_context: (CallEvent.t * Location.t) list
+  ; invalidation: Invalidation.t
+  ; invalidation_trace: Trace.t
+  ; access_trace: Trace.t }
+[@@deriving equal]
+
 type t =
-  | AccessToInvalidAddress of
-      {invalidation: Invalidation.t; invalidation_trace: Trace.t; access_trace: Trace.t}
+  | AccessToInvalidAddress of access_to_invalid_address
   | MemoryLeak of {procname: Procname.t; allocation_trace: Trace.t; location: Location.t}
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
+[@@deriving equal]
 
 let get_location = function
-  | AccessToInvalidAddress {access_trace} ->
+  | AccessToInvalidAddress {calling_context= []; access_trace} ->
       Trace.get_outer_location access_trace
+  | AccessToInvalidAddress {calling_context= (_, location) :: _} ->
+      (* report at the call site that triggers the bug *) location
   | MemoryLeak {location} | StackVariableAddressEscape {location} ->
       location
 
 
 let get_message = function
-  | AccessToInvalidAddress {invalidation; invalidation_trace; access_trace} ->
+  | AccessToInvalidAddress {calling_context; invalidation; invalidation_trace; access_trace} ->
       (* The goal is to get one of the following messages depending on the scenario:
 
          42: delete x; return x->f
@@ -44,19 +53,27 @@ let get_message = function
          Likewise if we don't have "x" in the second part but instead some non-user-visible expression, then
          "`x->f` accesses `x`, which was invalidated at line 42 by `delete`"
       *)
+      (* whether the [calling_context + trace] starts with a call or contains only an immediate event *)
+      let immediate_or_first_call calling_context (trace : Trace.t) =
+        match (calling_context, trace) with
+        | [], Immediate _ ->
+            `Immediate
+        | (f, _) :: _, _ | [], ViaCall {f; _} ->
+            `Call f
+      in
       let pp_access_trace fmt (trace : Trace.t) =
-        match trace with
-        | Immediate _ ->
+        match immediate_or_first_call calling_context trace with
+        | `Immediate ->
             F.fprintf fmt "accessing memory that "
-        | ViaCall {f; _} ->
+        | `Call f ->
             F.fprintf fmt "call to %a eventually accesses memory that " CallEvent.describe f
       in
       let pp_invalidation_trace line invalidation fmt (trace : Trace.t) =
         let pp_line fmt line = F.fprintf fmt " on line %d" line in
-        match trace with
-        | Immediate _ ->
+        match immediate_or_first_call calling_context trace with
+        | `Immediate ->
             F.fprintf fmt "%a%a" Invalidation.describe invalidation pp_line line
-        | ViaCall {f; _} ->
+        | `Call f ->
             F.fprintf fmt "%a%a indirectly during the call to %a" Invalidation.describe invalidation
               pp_line line CallEvent.describe f
       in
@@ -97,7 +114,21 @@ let add_errlog_header ~title location errlog =
 
 
 let get_trace = function
-  | AccessToInvalidAddress {invalidation; invalidation_trace; access_trace} ->
+  | AccessToInvalidAddress {calling_context; invalidation; invalidation_trace; access_trace} ->
+      (fun errlog ->
+        match calling_context with
+        | [] ->
+            errlog
+        | (_, first_call_loc) :: _ ->
+            add_errlog_header ~title:"calling context starts here" first_call_loc
+            @@ ( List.fold calling_context ~init:(errlog, 0) ~f:(fun (errlog, depth) (call, loc) ->
+                     ( Errlog.make_trace_element depth loc
+                         (F.asprintf "in call to %a" CallEvent.pp call)
+                         []
+                       :: errlog
+                     , depth + 1 ) )
+               |> fst ) )
+      @@
       let start_location = Trace.get_start_location invalidation_trace in
       add_errlog_header ~title:"invalidation part of the trace starts here" start_location
       @@ Trace.add_to_errlog ~nesting:1

@@ -28,7 +28,11 @@ void call_ifnotthenderef_false_null_bad() { ifnotthenderef(false, nullptr); }
 // should be FN given the current "all allocated addresses are assumed
 // disjoint unless specified otherwise" but we detect the bug because
 // we don't propagate pure equalities that we discover to the heap part
-void alias_null_deref_bad(int* x, int* y) {
+//
+// Well, at the moment it *is* FN but because we mark the issue
+// "latent" because the "if" test is not conclusively true. This is
+// also ok.
+void alias_null_deref_latent(int* x, int* y) {
   *x = 32;
   *y = 52;
   if (x == y) {
