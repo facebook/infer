@@ -31,9 +31,17 @@ module BasicCostWithReason : sig
 
   type t = {cost: BasicCost.t; top_pname_opt: Procname.t option}
 
+  val one : ?autoreleasepool_trace:Bounds.BoundTrace.t -> unit -> t
+
+  val zero : t
+
   val is_top : t -> bool
 
+  val of_basic_cost : BasicCost.t -> t
+
   val is_unreachable : t -> bool
+
+  val plus : t -> t -> t
 
   val subst : Procname.t -> Location.t -> t -> Bounds.Bound.eval_sym -> t
 
@@ -58,13 +66,13 @@ val pp_summary : F.formatter -> summary -> unit
 
 val get_cost_kind : CostKind.t -> t -> BasicCostWithReason.t
 
-val add_top_pname_opt : CostKind.t -> t -> Procname.t option -> t
-
 val get_operation_cost : t -> BasicCostWithReason.t
 
 val set_autoreleasepool_size_zero : t -> t
 
-val map : f:(BasicCostWithReason.t -> BasicCostWithReason.t) -> t -> t
+val find_opt : CostKind.t -> t -> BasicCostWithReason.t option
+
+val construct : f:(CostKind.t -> BasicCostWithReason.t) -> t
 
 val zero_record : t
 (** Map representing cost record \{OperationCost:0; AllocationCost:0; AutoreleasepoolSize:0\} *)
@@ -75,18 +83,5 @@ val mult_by : t -> nb_exec:BasicCost.t -> t
 val plus : t -> t -> t
 (** Union of two maps where common costs are added together *)
 
-val plus_autoreleasepool_size : BasicCost.t -> t -> t
-(** Add an autoreleasepool size to the cost map *)
-
 val unit_cost_atomic_operation : t
 (** Map representing cost record \{OperationCost:1; AllocationCost:0; AutoreleasepoolSize:0\} *)
-
-val unit_cost_allocation : t
-(** Map representing cost record \{OperationCost:0; AllocationCost:1; AutoreleasepoolSize:0\} *)
-
-val unit_cost_autoreleasepool_size : autoreleasepool_trace:Bounds.BoundTrace.t -> t
-(** Map representing cost record \{OperationCost:0; AllocationCost:0; AutoreleasepoolSize:1\} *)
-
-val of_operation_cost : BasicCost.t -> t
-(** Map representing cost record \{OperationCost:operation_cost; AllocationCost:0;
-    AutoreleasepoolSize:0\} *)

@@ -40,18 +40,6 @@ module InstrBasicCostWithReason = struct
     For example for basic operation we set it to 1 and for function call we take it from the spec of the function.
   *)
 
-  let allocation_functions =
-    [ BuiltinDecl.__new
-    ; BuiltinDecl.__new_array
-    ; BuiltinDecl.__objc_alloc_no_fail
-    ; BuiltinDecl.malloc
-    ; BuiltinDecl.malloc_no_fail ]
-
-
-  let is_allocation_function callee_pname =
-    List.exists allocation_functions ~f:(fun f -> Procname.equal callee_pname f)
-
-
   (** The methods whose name start with one of the prefixes return an object that is owned by the
       caller. Therefore ARC will not add any objects they return into an autorelease pool. *)
   let return_object_owned_by_caller =
@@ -67,9 +55,55 @@ module InstrBasicCostWithReason = struct
          ~f:(fun {ProcAttributes.is_objc_arc_on} -> is_objc_arc_on)
 
 
+  let dispatch_operation tenv callee_pname callee_cost_opt fun_arg_list model_env ret inferbo_mem =
+    match CostModels.Call.dispatch tenv callee_pname fun_arg_list with
+    | Some model ->
+        BasicCostWithReason.of_basic_cost (model (Lazy.force model_env) ~ret inferbo_mem)
+    | None -> (
+      match callee_cost_opt with
+      | Some callee_cost ->
+          let () =
+            Logging.(debug Analysis Quiet)
+              "@.Instantiated cost : %a \n" BasicCostWithReason.pp_hum callee_cost
+          in
+          callee_cost
+      | _ ->
+          ScubaLogging.cost_log_message ~label:"unmodeled_function_operation_cost"
+            ~message:(F.asprintf "Unmodeled Function[Operation Cost] : %a" Procname.pp callee_pname) ;
+          BasicCostWithReason.one () )
+
+
+  let dispatch_autoreleasepool tenv callee_pname callee_cost_opt fun_arg_list
+      ({get_summary} as extras) model_env ((_, ret_typ) as ret) cfg loc inferbo_mem :
+      BasicCostWithReason.t =
+    match CostAutoreleaseModels.Call.dispatch tenv callee_pname fun_arg_list with
+    | Some model ->
+        let autoreleasepool_size = model get_summary (Lazy.force model_env) ~ret inferbo_mem in
+        BasicCostWithReason.of_basic_cost autoreleasepool_size
+    | None ->
+        let fun_cost =
+          if
+            is_objc_call_from_no_arc_to_arc extras cfg callee_pname
+            && Typ.is_pointer_to_objc_non_tagged_class ret_typ
+            && not (return_object_owned_by_caller callee_pname)
+          then
+            let autoreleasepool_trace =
+              Bounds.BoundTrace.of_arc_from_non_arc (Procname.to_string callee_pname) loc
+            in
+            BasicCostWithReason.one ~autoreleasepool_trace ()
+          else BasicCostWithReason.zero
+        in
+        Option.value_map ~default:fun_cost ~f:(BasicCostWithReason.plus fun_cost) callee_cost_opt
+
+
+  let dispatch_allocation tenv callee_pname callee_cost_opt : BasicCostWithReason.t =
+    CostAllocationModels.ProcName.dispatch tenv callee_pname
+    |> Option.value ~default:(Option.value callee_cost_opt ~default:BasicCostWithReason.zero)
+
+
   let get_instr_cost_record tenv extras cfg instr_node instr =
     match instr with
-    | Sil.Call (((_, ret_typ) as ret), Exp.Const (Const.Cfun callee_pname), params, location, _)
+    | Sil.Call (ret, Exp.Const (Const.Cfun callee_pname), params, location, _)
       when Config.inclusive_cost -> (
         let { inferbo_invariant_map
             ; integer_type_widths
@@ -91,57 +125,31 @@ module InstrBasicCostWithReason = struct
              BufferOverrunUtils.ModelEnv.mk_model_env callee_pname ~node_hash location tenv
                integer_type_widths inferbo_get_summary )
         in
-        let cost =
-          match inferbo_mem_opt with
-          | None ->
-              CostDomain.unit_cost_atomic_operation
-          | Some inferbo_mem -> (
-            match CostModels.Call.dispatch tenv callee_pname fun_arg_list with
-            | Some model ->
-                CostDomain.of_operation_cost (model (Lazy.force model_env) ~ret inferbo_mem)
-            | None -> (
-              match (get_summary callee_pname, get_formals callee_pname) with
-              | Some {CostDomain.post= callee_cost_record}, Some callee_formals -> (
-                  let instantiated_cost =
-                    CostDomain.map callee_cost_record ~f:(fun callee_cost ->
-                        instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
-                          ~callee_pname ~callee_formals ~params ~callee_cost ~loc:location )
-                  in
-                  match CostDomain.get_operation_cost callee_cost_record with
-                  | {cost; top_pname_opt= None} when BasicCost.is_top cost ->
-                      CostDomain.add_top_pname_opt CostKind.OperationCost instantiated_cost
-                        (Some callee_pname)
-                  | _ ->
-                      instantiated_cost )
-              | _, _ ->
-                  ScubaLogging.cost_log_message ~label:"unmodeled_function_cost_analysis"
-                    ~message:
-                      (F.asprintf "Unmodeled Function[Cost Analysis] : %a" Procname.pp callee_pname) ;
-                  CostDomain.unit_cost_atomic_operation ) )
+        let get_callee_cost_opt kind inferbo_mem =
+          match (get_summary callee_pname, get_formals callee_pname) with
+          | Some {CostDomain.post= callee_cost_record}, Some callee_formals ->
+              CostDomain.find_opt kind callee_cost_record
+              |> Option.map ~f:(fun callee_cost ->
+                     instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
+                       ~callee_pname ~callee_formals ~params ~callee_cost ~loc:location )
+          | _ ->
+              None
         in
-        let cost =
-          if is_allocation_function callee_pname then
-            CostDomain.plus CostDomain.unit_cost_allocation cost
-          else cost
-        in
-        match
-          (inferbo_mem_opt, CostAutoreleaseModels.Call.dispatch tenv callee_pname fun_arg_list)
-        with
-        | Some inferbo_mem, Some model ->
-            let autoreleasepool_size = model get_summary (Lazy.force model_env) ~ret inferbo_mem in
-            CostDomain.plus_autoreleasepool_size autoreleasepool_size cost
-        | _, _ ->
-            if
-              is_objc_call_from_no_arc_to_arc extras cfg callee_pname
-              && Typ.is_pointer_to_objc_non_tagged_class ret_typ
-              && not (return_object_owned_by_caller callee_pname)
-            then
-              let autoreleasepool_trace =
-                Bounds.BoundTrace.of_arc_from_non_arc (Procname.to_string callee_pname) location
-              in
-              CostDomain.plus cost
-                (CostDomain.unit_cost_autoreleasepool_size ~autoreleasepool_trace)
-            else cost )
+        match inferbo_mem_opt with
+        | None ->
+            CostDomain.unit_cost_atomic_operation
+        | Some inferbo_mem ->
+            CostDomain.construct ~f:(fun kind ->
+                let callee_cost_opt = get_callee_cost_opt kind inferbo_mem in
+                match kind with
+                | OperationCost ->
+                    dispatch_operation tenv callee_pname callee_cost_opt fun_arg_list model_env ret
+                      inferbo_mem
+                | AllocationCost ->
+                    dispatch_allocation tenv callee_pname callee_cost_opt
+                | AutoreleasepoolSize ->
+                    dispatch_autoreleasepool tenv callee_pname callee_cost_opt fun_arg_list extras
+                      model_env ret cfg location inferbo_mem ) )
     | Sil.Call (_, Exp.Const (Const.Cfun _), _, _, _) ->
         CostDomain.zero_record
     | Sil.Load {id= lhs_id} when Ident.is_none lhs_id ->
@@ -175,7 +183,7 @@ module InstrBasicCostWithReason = struct
     let cost = get_instr_cost_record tenv extras cfg instr_node instr in
     let operation_cost = CostDomain.get_operation_cost cost in
     let log_msg top_or_bottom =
-      Logging.d_printfln_escaped "Statement cost became %s at %a (%a)." top_or_bottom
+      Logging.d_printfln_escaped "Statement's operation cost became %s at %a (%a)." top_or_bottom
         InstrCFG.Node.pp_id (InstrCFG.Node.id instr_node)
         (Sil.pp_instr ~print_types:false Pp.text)
         instr
