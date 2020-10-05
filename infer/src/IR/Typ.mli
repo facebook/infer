@@ -332,6 +332,8 @@ val is_void : t -> bool
 
 val is_pointer_to_int : t -> bool
 
+val is_pointer_to_function : t -> bool
+
 val is_pointer : t -> bool
 
 val is_reference : t -> bool

@@ -601,6 +601,8 @@ let is_void typ = match typ.desc with Tvoid -> true | _ -> false
 
 let is_pointer_to_int typ = match typ.desc with Tptr ({desc= Tint _}, _) -> true | _ -> false
 
+let is_pointer_to_function typ = match typ.desc with Tptr ({desc= Tfun}, _) -> true | _ -> false
+
 let is_int typ = match typ.desc with Tint _ -> true | _ -> false
 
 let is_unsigned_int typ = match typ.desc with Tint ikind -> ikind_is_unsigned ikind | _ -> false

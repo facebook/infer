@@ -99,6 +99,7 @@ BUILD_SYSTEMS_TESTS += \
 
 DIRECT_TESTS += \
   objc_autoreleasepool \
+  objc_bufferoverrun \
   objc_biabduction \
   objc_frontend \
   objc_linters \
