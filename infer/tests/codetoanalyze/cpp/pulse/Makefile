@@ -8,7 +8,7 @@ TESTS_DIR = ../../..
 # see explanations in cpp/biabduction/Makefile for the custom isystem
 CLANG_OPTIONS = -x c++ -std=c++17 -nostdinc++ -isystem$(CLANG_INCLUDES)/c++/v1/ -c
 INFER_OPTIONS = --pulse-only --debug-exceptions --project-root $(TESTS_DIR) \
---pulse-model-abort "ns1::ns2::fun_abort" --pulse-model-return-nonnull "Handle::get"
+  --pulse-report-latent-issues
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard *.cpp)

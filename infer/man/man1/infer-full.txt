@@ -814,10 +814,6 @@ OPTIONS
            
            See also infer-analyze(1).
 
-       --perf-profiler-data-file file
-           DEPRECATED: Specify the file containing perf profiler data to read       
-    See also infer-analyze(1).
-
        --pmd-xml
            Activates: Output issues in (PMD) XML format in
            infer-out/report.xml (Conversely: --no-pmd-xml)           See also infer-run(1).
@@ -1667,9 +1663,6 @@ INTERNAL OPTIONS
            data. When false, error traces are shorter and show only direct
            flow via souces/sinks (Conversely: --no-passthroughs)
 
-       --perf-profiler-data-file-reset
-           Cancel the effect of --perf-profiler-data-file.
-
        --print-buckets
            Activates: Show the internal bucket of Infer reports in their
            textual description (Conversely: --no-print-buckets)
@@ -1737,6 +1730,12 @@ INTERNAL OPTIONS
        --pulse-recency-limit int
            Maximum number of array elements and structure fields to keep
            track of for a given array address.
+
+       --pulse-report-latent-issues
+           Activates: Only use for testing, there should be no need to turn
+           this on for regular code analysis. Report latent issues instead of
+           waiting for them to become concrete. (Conversely:
+           --no-pulse-report-latent-issues)
 
        --pulse-widen-threshold int
            Under-approximate after int loop iterations

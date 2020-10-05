@@ -26,4 +26,4 @@ void store_exit(int* x, bool b) {
   }
 }
 
-void store_exit_null_bad(bool b) { store_exit(NULL, b); }
+void store_exit_null_bad() { store_exit(NULL, true); }

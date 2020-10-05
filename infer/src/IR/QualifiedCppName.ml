@@ -110,3 +110,9 @@ module Match = struct
     let normalized_qualifiers = strip_template_args quals in
     Str.string_match matcher (to_separated_string ~sep:matching_separator normalized_qualifiers) 0
 end
+
+module Set = PrettyPrintable.MakePPSet (struct
+  type nonrec t = t [@@deriving compare]
+
+  let pp = pp
+end)

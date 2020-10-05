@@ -79,6 +79,8 @@ module NonNegativePolynomial : sig
 
   val mult : t -> t -> t
 
+  val mult_loop : iter:t -> body:t -> t
+
   val min_default_left : t -> t -> t
 
   val subst : Procname.t -> Location.t -> t -> Bound.eval_sym -> t

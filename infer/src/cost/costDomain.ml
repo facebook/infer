@@ -120,6 +120,16 @@ let plus cost_record1 cost_record2 =
     cost_record1 cost_record2
 
 
+let plus_autoreleasepool_size autoreleasepool_size cost =
+  VariantCostMap.update AutoreleasepoolSize
+    (function
+      | None ->
+          Some {BasicCostWithReason.cost= autoreleasepool_size; top_pname_opt= None}
+      | Some prev ->
+          Some {prev with cost= BasicCost.plus prev.cost autoreleasepool_size} )
+    cost
+
+
 let unit_cost_atomic_operation = VariantCostMap.increment CostKind.OperationCost zero_record
 
 let unit_cost_allocation = VariantCostMap.increment CostKind.AllocationCost zero_record

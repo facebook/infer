@@ -36,7 +36,7 @@ void read_iterator_loop_ok(std::vector<int>& vec) {
   }
 }
 
-void iterator_next_after_emplace_loop_bad(std::vector<int>& vec) {
+void iterator_next_after_emplace_loop_latent(std::vector<int>& vec) {
   int sum = 0;
   for (auto iter = vec.begin(); iter != vec.end(); ++iter) {
     int elem = *iter;
@@ -46,7 +46,7 @@ void iterator_next_after_emplace_loop_bad(std::vector<int>& vec) {
   }
 }
 
-void iterator_after_push_back_loop_bad(std::vector<int>& vec_other) {
+void iterator_after_push_back_loop_latent(std::vector<int>& vec_other) {
   std::vector<int> vec(2);
   auto iter_begin = vec.begin();
   auto iter_end = vec.end();

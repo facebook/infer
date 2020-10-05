@@ -375,7 +375,7 @@ let do_preanalysis exe_env pdesc =
     FunctionPointers.substitute pdesc ;
   (* NOTE: It is important that this preanalysis stays before Liveness *)
   if not (Procname.is_java proc_name) then (
-    ClosuresSubstitution.process summary ;
+    ClosuresSubstitution.process_closure_call summary ;
     ClosureSubstSpecializedMethod.process summary ) ;
   Liveness.process summary tenv ;
   AddAbstractionInstructions.process pdesc ;

@@ -28,6 +28,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       actuals
 
 
+  let hilexp_of_sil ~add_deref (astate : Domain.t) silexp typ =
+    let f_resolve_id var = Domain.VarDomain.get var astate.var_state in
+    HilExp.of_sil ~include_array_indexes:false ~f_resolve_id ~add_deref silexp typ
+
+
+  let hilexp_of_sils ~add_deref astate silexps =
+    List.map silexps ~f:(fun (exp, typ) -> hilexp_of_sil ~add_deref astate exp typ)
+
+
   let rec get_access_expr (hilexp : HilExp.t) =
     match hilexp with
     | AccessExpression access_exp ->
@@ -56,12 +65,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
              {acc with attributes} )
     in
     match HilExp.get_access_exprs assume_exp with
-    | [access_expr] when AttributeDomain.is_thread_guard access_expr astate.attributes ->
-        HilExp.eval_boolean_exp access_expr assume_exp
-        |> Option.fold ~init:astate ~f:add_thread_choice
-    | [access_expr] when AttributeDomain.is_future_done_guard access_expr astate.attributes ->
-        HilExp.eval_boolean_exp access_expr assume_exp
-        |> Option.fold ~init:astate ~f:(add_future_done_choice access_expr)
+    | [access_expr] ->
+        if AttributeDomain.is_thread_guard access_expr astate.attributes then
+          HilExp.eval_boolean_exp access_expr assume_exp
+          |> Option.fold ~init:astate ~f:add_thread_choice
+        else if AttributeDomain.is_future_done_guard access_expr astate.attributes then
+          HilExp.eval_boolean_exp access_expr assume_exp
+          |> Option.fold ~init:astate ~f:(add_future_done_choice access_expr)
+        else astate
     | _ ->
         astate
 
@@ -214,8 +225,33 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     |> Option.value ~default:astate
 
 
+  let do_metadata (metadata : Sil.instr_metadata) astate =
+    match metadata with ExitScope (vars, _) -> Domain.remove_dead_vars astate vars | _ -> astate
+
+
+  let do_load tenv ~lhs rhs_exp rhs_typ (astate : Domain.t) =
+    let lhs_var = fst lhs in
+    let add_deref = match (lhs_var : Var.t) with LogicalVar _ -> true | ProgramVar _ -> false in
+    let rhs_hil_exp = hilexp_of_sil ~add_deref astate rhs_exp rhs_typ in
+    let astate =
+      get_access_expr rhs_hil_exp
+      |> Option.value_map ~default:astate ~f:(fun acc_exp ->
+             {astate with var_state= Domain.VarDomain.set lhs_var acc_exp astate.var_state} )
+    in
+    let lhs_hil_acc_exp = HilExp.AccessExpression.base lhs in
+    do_assignment tenv lhs_hil_acc_exp rhs_hil_exp astate
+
+
+  let do_cast tenv id base_typ actuals astate =
+    match actuals with
+    | [(e, typ); _sizeof] ->
+        do_load tenv ~lhs:(Var.of_id id, base_typ) e typ astate
+    | _ ->
+        astate
+
+
   let exec_instr (astate : Domain.t) ({interproc= {proc_desc; tenv}; formals} as analysis_data) _
-      (instr : HilInstr.t) =
+      instr =
     let open ConcurrencyModels in
     let open StarvationModels in
     let get_lock_path = Domain.Lock.make formals in
@@ -225,68 +261,84 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       List.filter_map ~f:get_lock_path locks |> Domain.acquire ~tenv astate ~procname ~loc
     in
     let do_unlock locks astate = List.filter_map ~f:get_lock_path locks |> Domain.release astate in
-    match instr with
-    | Assign (lhs_access_exp, rhs_exp, _) ->
-        do_assignment tenv lhs_access_exp rhs_exp astate
-    | Metadata (Sil.ExitScope (vars, _)) ->
-        {astate with attributes= Domain.AttributeDomain.exit_scope vars astate.attributes}
-    | Metadata _ ->
+    match (instr : Sil.instr) with
+    | Metadata metadata ->
+        do_metadata metadata astate
+    | Prune (exp, _loc, _then_branch, _if_kind) ->
+        let hil_exp = hilexp_of_sil ~add_deref:false astate exp Typ.boolean in
+        do_assume hil_exp astate
+    | Load {id} when Ident.is_none id ->
         astate
-    | Assume (assume_exp, _, _, _) ->
-        do_assume assume_exp astate
-    | Call (_, Indirect _, _, _, _) ->
+    | Load {id; e; typ} ->
+        do_load tenv ~lhs:(Var.of_id id, typ) e typ astate
+    | Store {e1= Lvar lhs_pvar; typ; e2} when Pvar.is_ssa_frontend_tmp lhs_pvar ->
+        do_load tenv ~lhs:(Var.of_pvar lhs_pvar, typ) e2 typ astate
+    | Store {e1; typ; e2} ->
+        let rhs_hil_exp = hilexp_of_sil ~add_deref:false astate e2 typ in
+        hilexp_of_sil ~add_deref:true astate e1 (Typ.mk_ptr typ)
+        |> get_access_expr
+        |> Option.value_map ~default:astate ~f:(fun lhs_hil_acc_exp ->
+               do_assignment tenv lhs_hil_acc_exp rhs_hil_exp astate )
+    | Call (_, Const (Cfun callee), actuals, _, _)
+      when should_skip_analysis tenv callee (hilexp_of_sils ~add_deref:false astate actuals) ->
         astate
-    | Call (_, Direct callee, actuals, _, _) when should_skip_analysis tenv callee actuals ->
-        astate
-    | Call (ret_base, Direct callee, actuals, _, loc) -> (
-      match get_lock_effect callee actuals with
-      | Lock locks ->
-          do_lock locks loc astate
-      | GuardLock guard ->
-          Domain.lock_guard tenv astate guard ~procname ~loc
-      | GuardConstruct {guard; lock; acquire_now} -> (
-        match get_lock_path lock with
-        | Some lock_path ->
-            Domain.add_guard tenv astate guard lock_path ~acquire_now ~procname ~loc
-        | None ->
-            log_parse_error "Couldn't parse lock in guard constructor" callee actuals ;
-            astate )
-      | Unlock locks ->
-          do_unlock locks astate
-      | GuardUnlock guard ->
-          Domain.unlock_guard astate guard
-      | GuardDestroy guard ->
-          Domain.remove_guard astate guard
-      | LockedIfTrue _ | GuardLockedIfTrue _ ->
-          astate
-      | NoEffect when is_synchronized_library_call tenv callee ->
-          (* model a synchronized call without visible internal behaviour *)
-          let locks = List.hd actuals |> Option.to_list in
-          do_lock locks loc astate |> do_unlock locks
-      | NoEffect when is_java && is_strict_mode_violation tenv callee actuals ->
-          Domain.strict_mode_call ~callee ~loc astate
-      | NoEffect when is_java && is_monitor_wait tenv callee actuals ->
-          Domain.wait_on_monitor ~loc formals actuals astate
-      | NoEffect when is_java && is_future_get tenv callee actuals ->
-          Domain.future_get ~callee ~loc actuals astate
-      | NoEffect when is_java -> (
-          let ret_exp = HilExp.AccessExpression.base ret_base in
-          let astate = do_work_scheduling tenv callee actuals loc astate in
-          match may_block tenv callee actuals with
-          | Some sev ->
-              Domain.blocking_call ~callee sev ~loc astate
+    | Call ((id, base_typ), Const (Cfun callee), actuals, _, _)
+      when Procname.equal callee BuiltinDecl.__cast ->
+        do_cast tenv id base_typ actuals astate
+    | Call ((id, typ), Const (Cfun callee), sil_actuals, loc, _) -> (
+        let ret_base = (Var.of_id id, typ) in
+        let actuals = hilexp_of_sils ~add_deref:false astate sil_actuals in
+        match get_lock_effect callee actuals with
+        | Lock locks ->
+            do_lock locks loc astate
+        | GuardLock guard ->
+            Domain.lock_guard tenv astate guard ~procname ~loc
+        | GuardConstruct {guard; lock; acquire_now} -> (
+          match get_lock_path lock with
+          | Some lock_path ->
+              Domain.add_guard tenv astate guard lock_path ~acquire_now ~procname ~loc
           | None ->
-              do_call analysis_data ret_exp callee actuals loc astate )
-      | NoEffect ->
-          (* in C++/Obj C we only care about deadlocks, not starvation errors *)
-          let ret_exp = HilExp.AccessExpression.base ret_base in
-          do_call analysis_data ret_exp callee actuals loc astate )
+              log_parse_error "Couldn't parse lock in guard constructor" callee actuals ;
+              astate )
+        | Unlock locks ->
+            do_unlock locks astate
+        | GuardUnlock guard ->
+            Domain.unlock_guard astate guard
+        | GuardDestroy guard ->
+            Domain.remove_guard astate guard
+        | LockedIfTrue _ | GuardLockedIfTrue _ ->
+            astate
+        | NoEffect when is_synchronized_library_call tenv callee ->
+            (* model a synchronized call without visible internal behaviour *)
+            let locks = List.hd actuals |> Option.to_list in
+            do_lock locks loc astate |> do_unlock locks
+        | NoEffect when is_java && is_strict_mode_violation tenv callee actuals ->
+            Domain.strict_mode_call ~callee ~loc astate
+        | NoEffect when is_java && is_monitor_wait tenv callee actuals ->
+            Domain.wait_on_monitor ~loc formals actuals astate
+        | NoEffect when is_java && is_future_get tenv callee actuals ->
+            Domain.future_get ~callee ~loc actuals astate
+        | NoEffect when is_java -> (
+            let ret_exp = HilExp.AccessExpression.base ret_base in
+            let astate = do_work_scheduling tenv callee actuals loc astate in
+            match may_block tenv callee actuals with
+            | Some sev ->
+                Domain.blocking_call ~callee sev ~loc astate
+            | None ->
+                do_call analysis_data ret_exp callee actuals loc astate )
+        | NoEffect ->
+            (* in C++/Obj C we only care about deadlocks, not starvation errors *)
+            let ret_exp = HilExp.AccessExpression.base ret_base in
+            do_call analysis_data ret_exp callee actuals loc astate )
+    | Call ((id, _), _, _, _, _) ->
+        (* call havocs LHS *)
+        Domain.remove_dead_vars astate [Var.of_id id]
 
 
   let pp_session_name _node fmt = F.pp_print_string fmt "starvation"
 end
 
-module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (ProcCfg.Normal))
+module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions (ProcCfg.Normal))
 
 (** Compute the attributes (of static variables) set up by the class initializer. *)
 let set_class_init_attributes procname (astate : Domain.t) =
@@ -378,7 +430,7 @@ let analyze_procedure ({InterproceduralAnalysis.proc_desc; tenv} as interproc) =
       else Fn.id
     in
     let initial =
-      Domain.bottom
+      Domain.initial
       (* set the attributes of instance variables set up by all constructors or the class initializer *)
       |> set_initial_attributes interproc
       |> set_lock_state_for_synchronized_proc |> set_thread_status_by_annotation

@@ -129,7 +129,7 @@ digraph cfg {
 	
 
 	 "dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_3" -> "dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_2" ;
-"dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_4" [label="4:  Call _fun__dispatch_once \n   n$18=*&initialization_block__:_fn_(*) [line 58, column 32]\n  n$19=_fun__dispatch_once(&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA.dispatch_a_block_variable.once_token__:long*,n$18:_fn_(*)) [line 58, column 3]\n " shape="box"]
+"dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_4" [label="4:  Call _fun__dispatch_once \n   n$18=*&initialization_block__:_fn_(*) [line 58, column 32]\n  n$19=_fun__dispatch_once(&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA.dispatch_a_block_variable.once_token__:long*,(_fun_objc_blockDispatchA.dispatch_a_block_variable_4):_fn_(*)) [line 58, column 3]\n " shape="box"]
 	
 
 	 "dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_4" -> "dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_3" ;
@@ -148,7 +148,7 @@ digraph cfg {
 	
 
 	 "dispatch_a_block_variable_from_macro#DispatchA#class.92567a38d5ab3cf637f72030b1097441_3" -> "dispatch_a_block_variable_from_macro#DispatchA#class.92567a38d5ab3cf637f72030b1097441_6" ;
-"dispatch_a_block_variable_from_macro#DispatchA#class.92567a38d5ab3cf637f72030b1097441_4" [label="4:  Call _fun__dispatch_once \n   n$23=*&initialization_block__:_fn_(*) [line 69, column 34]\n  n$24=_fun__dispatch_once(&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA.dispatch_a_block_variable_from_macro.once_token__:long*,n$23:_fn_(*)) [line 69, column 5]\n " shape="box"]
+"dispatch_a_block_variable_from_macro#DispatchA#class.92567a38d5ab3cf637f72030b1097441_4" [label="4:  Call _fun__dispatch_once \n   n$23=*&initialization_block__:_fn_(*) [line 69, column 34]\n  n$24=_fun__dispatch_once(&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA.dispatch_a_block_variable_from_macro.once_token__:long*,(_fun_objc_blockDispatchA.dispatch_a_block_variable_from_macro_5):_fn_(*)) [line 69, column 5]\n " shape="box"]
 	
 
 	 "dispatch_a_block_variable_from_macro#DispatchA#class.92567a38d5ab3cf637f72030b1097441_4" -> "dispatch_a_block_variable_from_macro#DispatchA#class.92567a38d5ab3cf637f72030b1097441_3" ;

@@ -269,6 +269,12 @@ module Call = struct
         ; +PatternMatch.Java.implements_collections
           &:: "copy" <>$ capt_exp
           $+...$--> BoundsOfCollection.linear_length ~of_function:"Collections.copy"
+          (* TODO: T72085946; take the cost of function into account *)
+        ; +PatternMatch.Java.implements_iterable
+          &:: "forEach" $ capt_exp
+          $+...$--> BoundsOfCollection.linear_length ~of_function:"Iterable.forEach"
+        ; +PatternMatch.Java.implements_map &:: "forEach" $ capt_exp
+          $+...$--> BoundsOfCollection.linear_length ~of_function:"Map.forEach"
         ; +PatternMatch.Java.implements_collections
           &:: "fill" <>$ capt_exp
           $+...$--> BoundsOfCollection.linear_length ~of_function:"Collections.fill"

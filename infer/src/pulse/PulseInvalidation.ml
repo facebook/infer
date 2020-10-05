@@ -16,7 +16,7 @@ type std_vector_function =
   | PushBack
   | Reserve
   | ShrinkToFit
-[@@deriving compare]
+[@@deriving compare, equal]
 
 let pp_std_vector_function f = function
   | Assign ->
@@ -37,7 +37,7 @@ let pp_std_vector_function f = function
       F.fprintf f "std::vector::shrink_to_fit"
 
 
-type java_iterator_function = Remove [@@deriving compare]
+type java_iterator_function = Remove [@@deriving compare, equal]
 
 let pp_java_iterator_function f = function Remove -> F.pp_print_string f "Iterator.remove"
 
@@ -51,7 +51,7 @@ type t =
   | OptionalEmpty
   | StdVector of std_vector_function
   | JavaIterator of java_iterator_function
-[@@deriving compare]
+[@@deriving compare, equal]
 
 let issue_type_of_cause = function
   | CFree ->

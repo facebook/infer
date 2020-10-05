@@ -26,7 +26,7 @@ void loop_linear(int x) {
 
 void runBlockA(BlockA block) { block(); }
 
-void doBlockA_linear_FN(int a) {
+void doBlockA_linear(int a) {
   BlockA block = ^{
     loop_linear(a);
   };

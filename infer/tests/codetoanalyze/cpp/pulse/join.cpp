@@ -22,7 +22,7 @@ struct list {
   struct foo* foo;
 };
 
-int invalidate_node_alias_bad(struct list* head, int cond) {
+int invalidate_node_alias_latent(struct list* head, int cond) {
   int* result = 0;
   struct list* x = head;
   if (cond) {
@@ -35,6 +35,10 @@ int invalidate_node_alias_bad(struct list* head, int cond) {
     delete result;
   }
   return *result;
+}
+
+int invalidate_node_alias_bad(struct list* head) {
+  invalidate_node_alias_latent(head, true);
 }
 
 void list_delete_ok(struct list** l) {

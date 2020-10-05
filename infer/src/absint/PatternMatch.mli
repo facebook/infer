@@ -32,6 +32,9 @@ module Java : sig
   val implements_arrays : Tenv.t -> string -> bool
   (** Check whether class implements Java's Arrays *)
 
+  val implements_iterable : Tenv.t -> string -> bool
+  (** Check whether class implements Java's Iterable *)
+
   val implements_iterator : Tenv.t -> string -> bool
   (** Check whether class implements Java's Iterator *)
 

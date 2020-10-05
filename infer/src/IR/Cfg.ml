@@ -61,3 +61,6 @@ let pp_proc_signatures fmt cfg =
   F.fprintf fmt "@[<v>METHOD SIGNATURES@;" ;
   iter_over_sorted_procs ~f:(Procdesc.pp_signature fmt) cfg ;
   F.fprintf fmt "@]"
+
+
+let mem = Procname.Hash.mem

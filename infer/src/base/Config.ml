@@ -1487,12 +1487,6 @@ and _log_skipped =
      machine-readable format"
 
 
-and[@warning "-32"] perf_profiler_data_file =
-  CLOpt.mk_path_opt ~long:"perf-profiler-data-file"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
-    ~meta:"file" "DEPRECATED: Specify the file containing perf profiler data to read"
-
-
 and linter =
   CLOpt.mk_string_opt ~long:"linter"
     ~in_help:InferCommand.[(Capture, manual_clang_linters)]
@@ -1888,6 +1882,12 @@ and pulse_model_transfer_ownership =
     ~in_help:InferCommand.[(Analyze, manual_generic)]
     "Methods that should be modelled as transfering memory ownership in Pulse. Accepted formats \
      are method or namespace::method"
+
+
+and pulse_report_latent_issues =
+  CLOpt.mk_bool ~long:"pulse-report-latent-issues"
+    "Only use for testing, there should be no need to turn this on for regular code analysis. \
+     Report latent issues instead of waiting for them to become concrete."
 
 
 and pulse_widen_threshold =
@@ -3041,6 +3041,8 @@ and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
   in
   List.partition_map ~f:aux models
 
+
+and pulse_report_latent_issues = !pulse_report_latent_issues
 
 and pulse_widen_threshold = !pulse_widen_threshold
 

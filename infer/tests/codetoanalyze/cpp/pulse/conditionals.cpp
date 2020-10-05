@@ -79,7 +79,7 @@ void add_test2_ok(int* x, int y, int z) {
   }
 }
 
-void add_test3_bad(int* x, int y, int z) {
+void add_test3_latent(int* x, int y, int z) {
   free(x);
   if (y > 2 && y + z > 5) { // sometimes true
     *x = 42;
@@ -95,7 +95,7 @@ void add_test4_bad_FN(int* x) {
   *x = 42;
 }
 
-void add_test5_bad(int* x, int n) {
+void add_test5_latent(int* x, int n) {
   free(x);
   // the unknown bound is treated non-deterministically, good thing here
   for (int i = 0; i < n; i++) {

@@ -21,6 +21,7 @@ module BaseDomain = PulseBaseDomain
 module BaseStack = PulseBaseStack
 module BaseMemory = PulseBaseMemory
 module BaseAddressAttributes = PulseBaseAddressAttributes
+module LatentIssue = PulseLatentIssue
 
 (** {2 Enforce short form usage} *)
 
@@ -36,4 +37,5 @@ include struct
   [@@deprecated "use the short form BaseAddressAttributes instead"]
   module PulseExecutionDomain = PulseExecutionDomain
   [@@deprecated "use the short form ExecutionDomain instead"]
+  module PulseLatentIssue = PulseLatentIssue [@@deprecated "use the short form LatentIssue instead"]
 end

@@ -11,7 +11,7 @@ module F = Format
 module Types = struct
   type 'astate bottom_lifted = Bottom | NonBottom of 'astate
 
-  type 'astate top_lifted = Top | NonTop of 'astate
+  type 'astate top_lifted = Top | NonTop of 'astate [@@deriving equal]
 
   type ('below, 'astate, 'above) below_above = Below of 'below | Above of 'above | Val of 'astate
 end

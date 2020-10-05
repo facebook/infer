@@ -184,7 +184,11 @@ let report_meta_issue_for_top_level_class tenv source_file class_name class_stru
     let class_name = JavaClassName.classname class_name in
     let nullsafe_extra =
       Jsonbug_t.
-        {class_name; package; meta_issue_info= Some meta_issue_info; unvetted_3rd_party= None}
+        { class_name
+        ; package
+        ; meta_issue_info= Some meta_issue_info
+        ; unvetted_3rd_party= None
+        ; nullable_methods= None }
     in
     log_issue ~issue_log ~loc:class_loc ~severity ~nullsafe_extra issue_type description
 
@@ -209,7 +213,8 @@ let analyze_nullsafe_annotations tenv source_file class_name class_struct issue_
   let nullsafe_extra =
     let package = JavaClassName.package class_name in
     let class_name = JavaClassName.classname class_name in
-    Jsonbug_t.{class_name; package; meta_issue_info= None; unvetted_3rd_party= None}
+    Jsonbug_t.
+      {class_name; package; meta_issue_info= None; unvetted_3rd_party= None; nullable_methods= None}
   in
   match NullsafeMode.check_problematic_class_annotation tenv class_name with
   | Ok () ->

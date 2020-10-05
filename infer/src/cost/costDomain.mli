@@ -75,6 +75,9 @@ val mult_by : t -> nb_exec:BasicCost.t -> t
 val plus : t -> t -> t
 (** Union of two maps where common costs are added together *)
 
+val plus_autoreleasepool_size : BasicCost.t -> t -> t
+(** Add an autoreleasepool size to the cost map *)
+
 val unit_cost_atomic_operation : t
 (** Map representing cost record \{OperationCost:1; AllocationCost:0; AutoreleasepoolSize:0\} *)
 

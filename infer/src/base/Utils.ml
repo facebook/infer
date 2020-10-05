@@ -469,23 +469,23 @@ let physical_cores () =
       let physical_or_core_regxp =
         Re.Str.regexp "\\(physical id\\|core id\\)[^0-9]+\\([0-9]+\\).*"
       in
-      let rec loop max_socket_id max_core_id =
+      let rec loop sockets cores =
         match In_channel.input_line ~fix_win_eol:true ic with
         | None ->
-            (max_socket_id + 1, max_core_id + 1)
+            (Int.Set.length sockets, Int.Set.length cores)
         | Some line when Re.Str.string_match physical_or_core_regxp line 0 -> (
             let value = Re.Str.matched_group 2 line |> int_of_string in
             match Re.Str.matched_group 1 line with
             | "physical id" ->
-                loop (max value max_socket_id) max_core_id
+                loop (Int.Set.add sockets value) cores
             | "core id" ->
-                loop max_socket_id (max value max_core_id)
+                loop sockets (Int.Set.add cores value)
             | _ ->
                 L.die InternalError "Couldn't parse line '%s' from /proc/cpuinfo." line )
         | Some _ ->
-            loop max_socket_id max_core_id
+            loop sockets cores
       in
-      let sockets, cores_per_socket = loop 0 0 in
+      let sockets, cores_per_socket = loop Int.Set.empty Int.Set.empty in
       sockets * cores_per_socket )
 
 

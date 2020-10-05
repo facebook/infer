@@ -15,6 +15,8 @@ val make :
 
 val with_third_party_dependent_methods : (Procname.Java.t * AnnotatedSignature.t) list -> t -> t
 
+val with_nullable_methods : TypeOrigin.method_call_origin list -> t -> t
+
 val get_issue_type : t -> IssueType.t
 
 val get_description : t -> string

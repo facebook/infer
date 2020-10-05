@@ -58,9 +58,7 @@ let compute_upperbound_map node_cfg inferbo_invariant_map control_invariant_map 
               | Unreachable ->
                   let node_loc = NodeCFG.Node.loc node in
                   L.debug Analysis Medium
-                    "@\n\
-                     [COST ANALYSIS INTERNAL WARNING:] No 'env' found. This location is \
-                     unreachable returning cost 0 \n" ;
+                    "@\n[COST ANALYSIS INTERNAL WARNING:] This location is unreachable \n" ;
                   BasicCost.of_unreachable node_loc
               | ExcRaised ->
                   BasicCost.one ()

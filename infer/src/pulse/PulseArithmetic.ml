@@ -56,3 +56,7 @@ let is_unsat_cheap astate = PathCondition.is_unsat_cheap astate.AbductiveDomain.
 let is_unsat_expensive astate =
   let phi', is_unsat = PathCondition.is_unsat_expensive astate.AbductiveDomain.path_condition in
   (AbductiveDomain.set_path_condition phi' astate, is_unsat)
+
+
+let has_no_assumptions astate =
+  PathCondition.has_no_assumptions astate.AbductiveDomain.path_condition

@@ -46,10 +46,12 @@ duplicates.txt
 /infer/tests/build_systems/diff_*/src
 /infer/tests/build_systems/differential_*/**/*.class
 /infer/tests/build_systems/differential_*/**/Diff*.java
+/infer/tests/build_systems/differential_*/**/Diff*.m
 /infer/tests/build_systems/incremental_analysis_remove_file/src
 /infer/tests/build_systems/incremental_analysis_cost_change/src
 /infer/tests/build_systems/incremental_analysis_add_procedure/src
 /infer/tests/build_systems/java_test_determinator/*.test
+/infer/tests/build_systems/java_source_parser/*.test
 /_release
 /infer-source
 
@@ -130,6 +132,8 @@ buck-out/
 /infer/lib/specs/clean_models
 /infer/etc/clang_ast.dict
 /infer/src/toplevel.mlpack
+
+/external_repo
 
 # atdgen generated files
 /infer/src/atd/*_j.ml

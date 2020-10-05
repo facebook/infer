@@ -10,7 +10,7 @@ build: [
 ]
 depends: [
   "ocaml"
-  "apron"
+  "apron" {>= "v0.9.13"}
   "base"
   "containers"
   "core" {>= "v0.14"}

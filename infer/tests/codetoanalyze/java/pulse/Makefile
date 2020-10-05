@@ -5,7 +5,7 @@
 
 TESTS_DIR = ../../..
 
-INFER_OPTIONS = --pulse-only --debug-exceptions
+INFER_OPTIONS = --pulse-only --debug-exceptions --pulse-report-latent-issues
 INFERPRINT_OPTIONS = --issues-tests
 SOURCES = $(wildcard *.java)
 

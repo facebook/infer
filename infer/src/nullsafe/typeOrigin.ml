@@ -12,6 +12,13 @@ open! IStd
 type method_parameter_origin = Normal of AnnotatedSignature.param_signature | ObjectEqualsOverride
 [@@deriving compare]
 
+type method_call_origin =
+  { pname: Procname.Java.t
+  ; call_loc: Location.t
+  ; annotated_signature: AnnotatedSignature.t
+  ; is_defined: bool }
+[@@deriving compare]
+
 type t =
   | NullConst of Location.t
   | NonnullConst of Location.t
@@ -22,11 +29,7 @@ type t =
       ; access_loc: Location.t }
   | CurrMethodParameter of method_parameter_origin
   | This
-  | MethodCall of
-      { pname: Procname.Java.t
-      ; call_loc: Location.t
-      ; annotated_signature: AnnotatedSignature.t
-      ; is_defined: bool }
+  | MethodCall of method_call_origin
   | CallToGetKnownToContainsKey
   | New
   | ArrayLengthResult

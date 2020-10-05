@@ -220,7 +220,12 @@ val remove_local_var : Var.t -> t -> t
 
 val set_path_condition : PathCondition.t -> t -> t
 
-val of_post : Procdesc.t -> t -> t
+(** private type to make sure {!summary_of_post} is always called when creating summaries *)
+type summary = private t
+
+val summary_of_post : Procdesc.t -> t -> summary
+(** trim the state down to just the procedure's interface (formals and globals), and simplify and
+    normalize the state *)
 
 val invalidate_locals : Procdesc.t -> t -> t
 

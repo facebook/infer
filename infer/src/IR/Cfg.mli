@@ -20,6 +20,8 @@ val store : SourceFile.t -> t -> unit
 (** Save the individual [Procdesc.t] and [ProcAttributes.t] to the database for the procedures in
     the cfg. *)
 
+val mem : t -> Procname.t -> bool
+
 (** {2 Functions for manipulating an interprocedural CFG} *)
 
 val create : unit -> t

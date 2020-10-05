@@ -56,6 +56,7 @@ let formals_actuals_new_set map =
     (fun formal actual set ->
       match actual with
       | Exp.Closure closure, _ ->
+          let set = FormalsActualsSet.add {formal; actual} set in
           List.fold_left closure.Exp.captured_vars ~init:set ~f:(fun set (exp, var, typ, _) ->
               let formal_annot =
                 {formal_type= (Pvar.build_formal_from_pvar var, typ); formal_annot= Annot.Item.empty}
@@ -88,14 +89,14 @@ let should_specialize actual_params call_flags =
 
 (* name for the specialized method instantiated with closure arguments *)
 let pname_with_closure_args callee_pname actual_params =
-  let block_name_args =
+  let block_args =
     List.filter_map actual_params ~f:(function
       | Exp.Closure cl, _ when Procname.is_objc_block cl.name ->
-          Some (Procname.block_name_of_procname cl.name)
+          Some (Procname.block_of_procname cl.name)
       | _ ->
           None )
   in
-  Procname.with_block_parameters callee_pname block_name_args
+  Procname.with_block_parameters callee_pname block_args
 
 
 let formals_closures_map map =
@@ -163,7 +164,15 @@ let replace_with_specialize_methods cfg _node instr =
               ; method_annotation= {annot with params= new_annots}
               ; proc_name= specialized_pname }
             in
-            Cfg.create_proc_desc cfg new_attributes |> ignore ;
+            (* To avoid duplicated additions on a specialized procname, it does a membership check.
+               This may happen when there are multiple function calls with the same callees and the
+               same closure parameters.  For the following additions, we can simply ignore them,
+               because the function bodies of the same procname must be the same.
+
+               Here, it adds an empty procdesc temporarily.  The function body will be filled later
+               by [ClosureSubstSpecializedMethod]. *)
+            if not (Cfg.mem cfg specialized_pname) then
+              Cfg.create_proc_desc cfg new_attributes |> ignore ;
             Sil.Call (ret, Exp.Const (Const.Cfun specialized_pname), new_actuals, loc, flags)
         | None ->
             instr )
@@ -175,6 +184,7 @@ let replace_with_specialize_methods cfg _node instr =
 
 let process cfg =
   let process_pdesc _proc_name proc_desc =
+    ClosuresSubstitution.process_closure_param proc_desc ;
     Procdesc.replace_instrs proc_desc ~f:(replace_with_specialize_methods cfg) |> ignore
   in
   Procname.Hash.iter process_pdesc cfg

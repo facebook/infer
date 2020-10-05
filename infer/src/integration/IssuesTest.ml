@@ -8,11 +8,18 @@
 open! IStd
 module F = Format
 
-let pp_nullsafe_extra fmt Jsonbug_t.{class_name; package; meta_issue_info; unvetted_3rd_party} =
+let pp_method_info fmt Jsonbug_t.{class_name; package; method_name; call_line} =
+  F.fprintf fmt "%s.%s.%s at %d" package class_name method_name call_line
+
+
+let pp_nullsafe_extra fmt
+    Jsonbug_t.{class_name; package; meta_issue_info; unvetted_3rd_party; nullable_methods} =
   F.fprintf fmt "%s, %s" class_name (Option.value package ~default:"<no package>") ;
   Option.iter unvetted_3rd_party ~f:(fun unvetted_3rd_party ->
       let third_party_str = String.concat unvetted_3rd_party ~sep:"," in
       F.fprintf fmt ", unvetted_3rd_party:[%s]" third_party_str ) ;
+  Option.iter nullable_methods ~f:(fun nullable_methods ->
+      F.fprintf fmt ", nullable_methods:%a" (Pp.seq pp_method_info) nullable_methods ) ;
   Option.iter meta_issue_info
     ~f:(fun Jsonbug_t.{num_issues; curr_nullsafe_mode; can_be_promoted_to} ->
       let can_be_promoted_to_str =

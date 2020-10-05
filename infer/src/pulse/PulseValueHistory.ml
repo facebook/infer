@@ -19,7 +19,7 @@ type event =
   | VariableAccessed of Pvar.t * Location.t
   | VariableDeclared of Pvar.t * Location.t
 
-and t = event list [@@deriving compare]
+and t = event list [@@deriving compare, equal]
 
 let pp_event_no_location fmt event =
   let pp_pvar fmt pvar =

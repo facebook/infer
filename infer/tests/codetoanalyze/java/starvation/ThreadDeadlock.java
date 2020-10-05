@@ -82,17 +82,16 @@ class ThreadDeadlock {
 
   Object lockE, lockF, lockG;
 
-  public void FP_sequentialEandGOk() {
+  public void sequentialEandGOk() {
     synchronized (lockE) {
       synchronized (lockF) {
       }
     }
-    // at this point we still believe lockE is held
     synchronized (lockG) {
     }
   }
 
-  public void FP_nestedGthenEOk() {
+  public void nestedGthenEOk() {
     synchronized (lockG) {
       synchronized (lockE) {
       }

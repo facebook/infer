@@ -1,3 +1,5 @@
 {
+  "pulse-model-abort": ["ns1::ns2::fun_abort"],
+  "pulse-model-return-nonnull": ["Handle::get"],
   "pulse-model-skip-pattern": "skip_model::SkipAll::.*\\|.*SkipSome<.*>::skip_me"
 }

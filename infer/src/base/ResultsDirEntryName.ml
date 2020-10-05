@@ -10,8 +10,8 @@ open! IStd
 let buck_infer_deps_file_name = "infer-deps.txt"
 
 type id =
-  | BuckDependencies
   | CaptureDB
+  | CaptureDependencies
   | ChangedFunctions
   | Debug
   | Differential
@@ -52,7 +52,7 @@ type t =
             e.g., a distributed Buck cache. *) }
 
 let of_id = function
-  | BuckDependencies ->
+  | CaptureDependencies ->
       { rel_path= buck_infer_deps_file_name
       ; kind= File
       ; before_incremental_analysis= Delete

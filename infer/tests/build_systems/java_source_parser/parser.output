@@ -1,0 +1,11 @@
+class java.source.parser.Main at line 9, column 13
+class java.source.parser.Main$Interface at line 12, column 19
+class java.source.parser.Main$AnnotatedClass at line 17, column 8
+class java.source.parser.Main$Impl at line 29, column 15
+class java.source.parser.Main$MyThread at line 37, column 15
+class java.source.parser.Main$MyThread$1 at line 43, column 23
+class java.source.parser.Main$MyThread$2 at line 52, column 29
+class java.source.parser.Main$MyThread$3 at line 62, column 27
+class java.source.parser.Main$MyThread$4 at line 68, column 17
+class java.source.parser.Main$Block at line 80, column 14
+class java.source.parser.Main$Block$C at line 104, column 18

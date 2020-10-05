@@ -103,10 +103,10 @@ let is_synthetic_err = function
   | Bad_assignment {assignment_type; _} -> (
       AssignmentRule.ReportableViolation.(
         match assignment_type with
-        | PassingParamToFunction {function_procname; _} ->
+        | PassingParamToFunction {procname; _} ->
             (* NOTE: this currently doesn't cover the case when the actual
                argument involves syntethic code *)
-            Procname.Java.is_autogen_method function_procname
+            Procname.Java.is_autogen_method procname
         | AssigningToField fieldname ->
             Fieldname.is_java_synthetic fieldname
         | _ ->

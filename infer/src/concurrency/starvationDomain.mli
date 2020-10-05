@@ -45,6 +45,16 @@ module Lock : sig
   (** a stable order for avoiding reporting deadlocks twice based on the root variable type *)
 end
 
+module VarDomain : sig
+  include AbstractDomain.WithTop
+
+  type key = Var.t
+
+  val get : key -> t -> HilExp.AccessExpression.t option
+
+  val set : key -> HilExp.AccessExpression.t -> t -> t
+end
+
 module Event : sig
   type t =
     | LockAcquire of Lock.t
@@ -140,8 +150,6 @@ module AttributeDomain : sig
 
   val is_future_done_guard : HilExp.AccessExpression.t -> t -> bool
   (** does the given expr has attribute [FutureDone x] return [Some x] else [None] *)
-
-  val exit_scope : Var.t list -> t -> t
 end
 
 (** A record of scheduled parallel work: the method scheduled to run, where, and on what thread. *)
@@ -159,9 +167,13 @@ type t =
   ; critical_pairs: CriticalPairs.t
   ; attributes: AttributeDomain.t
   ; thread: ThreadDomain.t
-  ; scheduled_work: ScheduledWorkDomain.t }
+  ; scheduled_work: ScheduledWorkDomain.t
+  ; var_state: VarDomain.t }
 
-include AbstractDomain.WithBottom with type t := t
+include AbstractDomain.S with type t := t
+
+val initial : t
+(** initial domain state *)
 
 val acquire : ?tenv:Tenv.t -> t -> procname:Procname.t -> loc:Location.t -> Lock.t list -> t
 (** simultaneously acquire a number of locks, no-op if list is empty *)
@@ -226,3 +238,5 @@ val integrate_summary :
 val summary_of_astate : Procdesc.t -> t -> summary
 
 val filter_blocking_calls : t -> t
+
+val remove_dead_vars : t -> Var.t list -> t

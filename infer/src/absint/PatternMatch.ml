@@ -102,6 +102,8 @@ module Java = struct
 
   let implements_arrays = implements "java.util.Arrays"
 
+  let implements_iterable = implements "java.lang.Iterable"
+
   let implements_iterator = implements "java.util.Iterator"
 
   let implements_collection = implements "java.util.Collection"

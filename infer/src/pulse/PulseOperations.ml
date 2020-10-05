@@ -20,7 +20,9 @@ let check_addr_access location (address, history) astate =
   let access_trace = Trace.Immediate {location; history} in
   AddressAttributes.check_valid access_trace address astate
   |> Result.map_error ~f:(fun (invalidation, invalidation_trace) ->
-         (Diagnostic.AccessToInvalidAddress {invalidation; invalidation_trace; access_trace}, astate) )
+         ( Diagnostic.AccessToInvalidAddress
+             {calling_context= []; invalidation; invalidation_trace; access_trace}
+         , astate ) )
 
 let is_top_post astate=
    let imm_params = astate.AbductiveDomain.imm_params in
@@ -659,15 +661,15 @@ let unknown_call call_loc reason ~ret ~actuals ~formals_opt astate =
   |> havoc_ret ret |> add_skipped_proc
 
 
-let apply_callee callee_pname call_loc callee_exec_state ~ret ~captured_vars_with_actuals ~formals
-    ~actuals astate =
+let apply_callee ~caller_proc_desc callee_pname call_loc callee_exec_state ~ret
+    ~captured_vars_with_actuals ~formals ~actuals astate =
   let apply callee_prepost ~f =
     PulseInterproc.apply_prepost callee_pname call_loc ~callee_prepost ~captured_vars_with_actuals
       ~formals ~actuals astate
-    >>| function
+    >>= function
     | None ->
-        (* couldn't apply pre/post pair *) None
-    | Some (post, return_val_opt, subst) ->
+        (* couldn't apply pre/post pair *) Ok None
+    | Some (post, return_val_opt) ->
         let event = ValueHistory.Call {f= Call callee_pname; location= call_loc; in_call= []} in
         let post =
           match return_val_opt with
@@ -684,9 +686,22 @@ let apply_callee callee_pname call_loc callee_exec_state ~ret ~captured_vars_wit
       (* Callee has failed; don't propagate the failure *)
       Ok (Some (callee_exec_state, AbstractValue.Map.empty))
   | ContinueProgram astate ->
-      apply astate ~f:(fun astate -> ContinueProgram astate)
+      apply astate ~f:(fun astate -> Ok (Some (ContinueProgram astate)))
   | ExitProgram astate ->
-      apply astate ~f:(fun astate -> ExitProgram astate)
+      apply astate ~f:(fun astate -> Ok (Some (ExitProgram astate)))
+  | LatentAbortProgram {astate; latent_issue} ->
+      apply
+        (astate :> AbductiveDomain.t)
+        ~f:(fun astate ->
+          let astate_summary = AbductiveDomain.summary_of_post caller_proc_desc astate in
+          if PulseArithmetic.is_unsat_cheap (astate_summary :> AbductiveDomain.t) then Ok None
+          else
+            let latent_issue =
+              LatentIssue.add_call (CallEvent.Call callee_pname, call_loc) latent_issue
+            in
+            if LatentIssue.should_report astate_summary then
+              Error (LatentIssue.to_diagnostic latent_issue, (astate_summary :> AbductiveDomain.t))
+            else Ok (Some (LatentAbortProgram {astate= astate_summary; latent_issue}, git fetch upstream)) )
 
 let check_all_invalid callees_callers_match callee_proc_name call_location astate =
   let res = (match astate.AbductiveDomain.status with
@@ -748,8 +763,9 @@ let get_captured_actuals location ~captured_vars ~actual_closure astate =
   (astate, captured_vars_with_actuals)
 
 
-let call ~callee_data call_loc callee_pname ~ret ~actuals ~formals_opt (astate : AbductiveDomain.t)
-    : (ExecutionDomain.t list, Diagnostic.t * t) result =
+let call ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.t) option) call_loc
+    callee_pname ~ret ~actuals ~formals_opt (astate : AbductiveDomain.t) :
+    (ExecutionDomain.t list, Diagnostic.t * t) result =
   match callee_data with
   | Some (callee_proc_desc, exec_states) -> (
       let formals =
@@ -776,12 +792,14 @@ let call ~callee_data call_loc callee_pname ~ret ~actuals ~formals_opt (astate :
             Str.string_match regex (Procname.to_string callee_pname) 0 )
       in
       (* call {!AbductiveDomain.PrePost.apply} on each pre/post pair in the summary. *)
-      IContainer.fold_result_until exec_states ~fold:List.fold ~init:[]
+      IContainer.fold_result_until
+        (exec_states :> ExecutionDomain.t list)
+        ~fold:List.fold ~init:[]
         ~f:(fun posts callee_exec_state ->
           (* apply all pre/post specs *)
           match
-            apply_callee callee_pname call_loc callee_exec_state ~captured_vars_with_actuals
-              ~formals ~actuals ~ret astate
+            apply_callee ~caller_proc_desc callee_pname call_loc callee_exec_state
+              ~captured_vars_with_actuals ~formals ~actuals ~ret astate
           with
           | Ok None ->
               (* couldn't apply pre/post pair *)

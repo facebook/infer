@@ -10,8 +10,8 @@ open! IStd
     directory you probably want to use {!ResultsDir.Entry} instead of this module. *)
 
 type id =
-  | BuckDependencies  (** list of Buck directories with infer-out/ directories *)
   | CaptureDB  (** the capture database *)
+  | CaptureDependencies  (** list of infer-out/ directories that contain capture artefacts *)
   | ChangedFunctions  (** results of the clang test determinator *)
   | Debug  (** directory containing debug data *)
   | Differential  (** contains the results of [infer reportdiff] *)

@@ -10,7 +10,6 @@ set -e
 set -o pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIPT_RELATIVE_PATH="$(basename "${BASH_SOURCE[0]}")"
 CLANG_RELATIVE_SRC="src/download/llvm"
 CLANG_SRC="$SCRIPT_DIR/$CLANG_RELATIVE_SRC"
 CLANG_PREBUILD_PATCHES=(
@@ -49,15 +48,22 @@ clang_hash () {
 
 check_installed () {
     pushd "$SCRIPT_DIR" > /dev/null
-    $SHASUM -c "$CLANG_INSTALLED_VERSION_FILE" >& /dev/null
-    local result=$?
+    HASH=$(clang_hash)
+    RESULT=1
+    if [ -f "$CLANG_INSTALLED_VERSION_FILE" ]; then
+        FILE_HASH=$(cat "$CLANG_INSTALLED_VERSION_FILE")
+        if [ "$HASH" == "$FILE_HASH" ]; then
+            RESULT=0
+        fi
+    fi
     popd > /dev/null
-    return $result
+    return $RESULT
 }
 
 record_installed () {
     pushd "$SCRIPT_DIR" > /dev/null
-    $SHASUM setup.sh src/prepare_clang_src.sh > "$CLANG_INSTALLED_VERSION_FILE"
+    HASH=$(clang_hash)
+    echo $HASH > "$CLANG_INSTALLED_VERSION_FILE"
     popd > /dev/null
 }
 

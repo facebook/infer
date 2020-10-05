@@ -36,4 +36,24 @@
   return 100;
 }
 
++ (NSString*)giveTaggedPointerString {
+  return [NSString new];
+}
+
++ (NSNumber*)giveTaggedPointerNumber {
+  return [NSNumber new];
+}
+
++ (NSIndexPath*)giveTaggedPointerIndexPath {
+  return [NSIndexPath new];
+}
+
++ (NSIndexSet*)giveTaggedPointerIndexSet {
+  return [NSIndexSet new];
+}
+
++ (NSDate*)giveTaggedPointerDate {
+  return [NSDate new];
+}
+
 @end

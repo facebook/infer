@@ -71,3 +71,6 @@ val is_unsat_expensive : t -> t * bool
 val as_int : t -> AbstractValue.t -> int option
 (** [as_int phi t] returns an integer x such that [phi |- t = x], if known for sure; see also
     [is_known_zero] *)
+
+val has_no_assumptions : t -> bool
+(** whether the current path is independent of any calling context *)

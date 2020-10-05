@@ -52,7 +52,7 @@ void double_delete_bad() {
   delete s;
 }
 
-void delete_in_branch_bad(bool b) {
+void delete_in_branch_latent(bool b) {
   auto s = new Simple{1};
   if (b) {
     delete s;
@@ -69,7 +69,7 @@ void delete_in_branch_ok(bool b) {
   }
 }
 
-void use_in_branch_bad(bool b) {
+void use_in_branch_latent(bool b) {
   auto s = new Simple{1};
   delete s;
   if (b) {

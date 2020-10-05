@@ -142,8 +142,10 @@ let extract_impurity tenv pdesc (exec_state : ExecutionDomain.t) : ImpurityDomai
     match exec_state with
     | ExitProgram astate ->
         (astate, true)
-    | AbortProgram astate | ContinueProgram astate ->
+    | ContinueProgram astate ->
         (astate, false)
+    | AbortProgram astate | LatentAbortProgram {astate} ->
+        ((astate :> AbductiveDomain.t), false)
   in
   let pre_heap = (AbductiveDomain.get_pre astate).BaseDomain.heap in
   let post = AbductiveDomain.get_post astate in
@@ -162,7 +164,8 @@ let extract_impurity tenv pdesc (exec_state : ExecutionDomain.t) : ImpurityDomai
   {modified_globals; modified_params; skipped_calls; exited}
 
 
-let checker {IntraproceduralAnalysis.proc_desc; tenv; err_log} pulse_summary_opt =
+let checker {IntraproceduralAnalysis.proc_desc; tenv; err_log}
+    (pulse_summary_opt : PulseSummary.t option) =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let pname_loc = Procdesc.get_loc proc_desc in
   match pulse_summary_opt with
@@ -182,8 +185,9 @@ let checker {IntraproceduralAnalysis.proc_desc; tenv; err_log} pulse_summary_opt
         IssueType.impure_function impure_fun_desc
   | Some pre_posts ->
       let (ImpurityDomain.{modified_globals; modified_params; skipped_calls} as impurity_astate) =
-        List.fold pre_posts ~init:ImpurityDomain.pure ~f:(fun acc exec_state ->
-            let modified = extract_impurity tenv proc_desc exec_state in
+        List.fold pre_posts ~init:ImpurityDomain.pure
+          ~f:(fun acc (exec_state : ExecutionDomain.summary) ->
+            let modified = extract_impurity tenv proc_desc (exec_state :> ExecutionDomain.t) in
             ImpurityDomain.join acc modified )
       in
       if PurityChecker.should_report proc_name && not (ImpurityDomain.is_pure impurity_astate) then

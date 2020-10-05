@@ -22,7 +22,7 @@ type if_kind =
   | Ik_land_lor  (** obtained from translation of && or || *)
   | Ik_while
   | Ik_switch
-[@@deriving compare]
+[@@deriving compare, equal]
 
 type instr_metadata =
   | Abstract of Location.t

@@ -27,6 +27,9 @@ val div : t -> t -> t
 
 val eq : t -> t -> bool
 
+val equal : t -> t -> bool
+(** an alias for {!eq}, for convenience *)
+
 val of_int : int -> t
 
 val of_big_int : Z.t -> t [@@warning "-32"]
