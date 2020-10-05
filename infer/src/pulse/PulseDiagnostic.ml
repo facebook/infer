@@ -24,8 +24,8 @@ type t =
   | MemoryLeak of {procname: Procname.t; allocation_trace: Trace.t; location: Location.t}
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
   | OrError of (t list * Location.t)
-[@@deriving equal]
-             
+[@@deriving compare, equal]
+
 let get_location = function
   | AccessToInvalidAddress {calling_context= []; access_trace} ->
       Trace.get_outer_location access_trace

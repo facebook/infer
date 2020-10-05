@@ -30,7 +30,7 @@ type t =
   | MemoryLeak of {procname: Procname.t; allocation_trace: Trace.t; location: Location.t}
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
   | OrError of (t list * Location.t)
-[@@deriving equal]
+[@@deriving compare, equal]
 
 val equal : t -> t -> bool
 

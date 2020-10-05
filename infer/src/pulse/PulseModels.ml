@@ -131,7 +131,7 @@ let check_memory_leak_after_free callee_procname location deleted_addr live_addr
       )
 
 let free_or_delete operation deleted_access : model =
-   fun _ ~callee_procname:_ location ~ret:_ astate ->
+   fun _ ~callee_procname location ~ret:_ astate ->
     (* NOTE: we could introduce a case-split explicitly on =0 vs ≠0 but instead only act on what we
        currently know about the value. This is purely to avoid contributing to path explosion. *)
     (* freeing 0 is a no-op *)
@@ -151,9 +151,9 @@ let free_or_delete operation deleted_access : model =
           match operation with `Free -> Invalidation.CFree | `Delete -> Invalidation.CppDelete
         in
         let* astates = PulseOperations.invalidate_biad callee_procname location invalidation ~null_noop:true deleted_access astate in
-        let+ () = check_memory_leak_after_free callee_procname location deleted_addr live_addresses_before_free astates in
+        let+ () = check_memory_leak_after_free callee_procname location (fst deleted_access) live_addresses_before_free astates in
         List.map astates ~f:(fun astate ->
-             let modified_vars = BaseDomain.reachable_vars_from deleted_addr (fun v -> Var.Set.mem v astate.AbductiveDomain.imm_params) (astate.AbductiveDomain.post :> BaseDomain.t) in
+             let modified_vars = BaseDomain.reachable_vars_from (fst deleted_access) (fun v -> Var.Set.mem v astate.AbductiveDomain.imm_params) (astate.AbductiveDomain.post :> BaseDomain.t) in
              let astate = Var.Set.fold (fun v astate -> AbductiveDomain.remove_imm_param v astate) modified_vars astate in
              ExecutionDomain.ContinueProgram astate)
      )
