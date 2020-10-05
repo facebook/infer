@@ -34,6 +34,8 @@ module Make (X : Element) (XSet : Caml.Set.S with type elt = X.t) : sig
       form of "old representative = new representative", [None] if they were already in the same
       congruence class *)
 
+  val find_opt : t -> X.t -> repr option
+
   val find : t -> X.t -> repr
   (** return the element given if it wasn't found in the relation *)
 

@@ -30,6 +30,7 @@ module Make (X : Element) (XSet : Caml.Set.S with type elt = X.t) = struct
 
     val is_empty : t -> bool
 
+    val find_opt : t -> X.t -> repr option
 
     val find : t -> X.t -> repr
 

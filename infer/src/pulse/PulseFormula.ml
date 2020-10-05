@@ -1397,15 +1397,15 @@ let get_variables {var_eqs; linear_eqs; atoms}=
     IContainer.fold_of_pervasives_map_fold Var.Map.fold linear_eqs ~init:acc
       ~f:(fun acc_f (v_foreign, l_foreign) ->
         let acc_f =  Var.Set.add v_foreign acc_f in
-        (fst (LinArith.fold_map_variables l_foreign ~init:acc_f ~f:(fun acc_f var -> Var.Set.add var acc_f,var))))
+        (fst (LinArith.fold_subst_variables l_foreign ~init:acc_f ~f:(fun acc_f var -> Var.Set.add var acc_f, VarSubst var))))
   in
   let get_atoms acc =
     IContainer.fold_of_pervasives_set_fold Atom.Set.fold atoms ~init:acc
       ~f:(fun acc_f atom_foreign ->
         let acc_f, _ =
-          Atom.fold_map_variables atom_foreign ~init:acc_f ~f:(fun acc_f v ->
+          Atom.fold_subst_variables atom_foreign ~init:acc_f ~f:(fun acc_f v ->
               let acc_f =  Var.Set.add v acc_f in
-              (acc_f, Term.Var v) )
+              (acc_f, VarSubst v) )
         in
         (acc_f) )
   in

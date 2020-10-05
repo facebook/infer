@@ -116,6 +116,7 @@ module Misc = struct
    fun _ ~callee_procname:_ _ ~ret astate ->
     PulseOperations.write_id (fst ret) arg_access_hist astate |> PulseOperations.ok_continue
 
+
 let check_memory_leak_after_free callee_procname location deleted_addr live_addresses_before_free astates=
   List.fold astates ~init:(Ok ()) ~f:(fun acc astate ->
           match astate.AbductiveDomain.status with
