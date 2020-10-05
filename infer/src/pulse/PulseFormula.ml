@@ -976,8 +976,6 @@ module Formula = struct
 
   let ttrue = {var_eqs= VarUF.empty; linear_eqs= Var.Map.empty; atoms= Atom.Set.empty}
 
-
-let is_ttrue {var_eqs; linear_eqs; atoms} = VarUF.is_empty var_eqs && Var.Map.is_empty linear_eqs && Atom.Set.is_empty atoms
   
 let pp_with_pp_var pp_var fmt phi =
     let pp_linear_eqs fmt m =
@@ -1257,7 +1255,10 @@ let and_mk_atom mk_atom op1 op2 phi =
   let atom = mk_atom (Term.of_operand op1) (Term.of_operand op2) in
   and_known_atom atom phi
 
-
+let is_ttrue phi =
+  let {Formula.var_eqs; Formula.linear_eqs; Formula.atoms} = phi.both in
+  VarUF.is_empty var_eqs && Var.Map.is_empty linear_eqs && Atom.Set.is_empty atoms
+                                          
 let and_equal = and_mk_atom Atom.equal
 
 let and_less_equal = and_mk_atom Atom.less_equal
@@ -1484,7 +1485,8 @@ let simplify ~keep phi =
   let pruned = Atom.Set.filter filter_atom phi.pruned in
   {known; pruned; both}
 
-let get_variables {var_eqs; linear_eqs; atoms}=
+let get_variables phi=
+   let {Formula.var_eqs; Formula.linear_eqs; Formula.atoms} = phi.both in
    let get_var_eqs acc =
     VarUF.fold_congruences var_eqs ~init:acc
       ~f:(fun acc_f  (repr_foreign, vs_foreign) ->

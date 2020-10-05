@@ -374,7 +374,7 @@ module DisjunctiveAnalyzer =
       let widen_policy = `UnderApproximateAfterNumIterations Config.pulse_widen_threshold
     end)
 
-let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
+let checker ({InterproceduralAnalysis.proc_desc; err_log} as analysis_data) =
   AbstractValue.State.reset () ;
   let initial = [ExecutionDomain.mk_initial proc_desc] in
   match DisjunctiveAnalyzer.compute_post analysis_data ~initial proc_desc with
@@ -387,7 +387,7 @@ let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
           match post with
           | ExecutionDomain.ContinueProgram astate -> (
               match astate.AbductiveDomain.status with
-              | AbductiveDomain.PostStatus.Er _ when (BaseDomain.is_empty (astate.pre :> BaseDomain.t)) -> (r1, re, ra, r3)
+              | AbductiveDomain.PostStatus.Er _ when (BaseDomain.is_empty (astate.AbductiveDomain.pre :> BaseDomain.t)) -> (r1, re, ra, r3)
               | AbductiveDomain.PostStatus.Er raise_opt -> r1@[astate], re, ra, (r3 || Option.is_some raise_opt)
               | _ -> r1, re@[post], ra, r3 )
           | ExecutionDomain.AbortProgram astate -> r1, re, ra@[ExecutionDomain.AbortProgram  astate], r3
@@ -398,7 +398,7 @@ let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
             let diagnostic_opt = PulseOperations.merge_spec (Procdesc.get_loc proc_desc) simpl_er_posts in
             match diagnostic_opt with
             | Some diagnostic ->
-               report analysis_data diagnostic
+               report proc_desc err_log diagnostic
             | None ->
                ()
           else

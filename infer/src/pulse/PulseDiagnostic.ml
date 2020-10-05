@@ -17,14 +17,14 @@ type access_to_invalid_address =
   ; invalidation: Invalidation.t
   ; invalidation_trace: Trace.t
   ; access_trace: Trace.t }
-[@@deriving equal]
+[@@deriving compare,equal]
 
 type t =
   | AccessToInvalidAddress of access_to_invalid_address
   | MemoryLeak of {procname: Procname.t; allocation_trace: Trace.t; location: Location.t}
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
   | OrError of (t list * Location.t)
-[@@deriving compare, equal]
+[@@deriving compare,equal]
 
 let get_location = function
   | AccessToInvalidAddress {calling_context= []; access_trace} ->
@@ -59,31 +59,31 @@ let rec get_message ?print_loc:(pr=false) = function
      let pp_line fmt line = if line < 0 then F.fprintf fmt " in a caller" else F.fprintf fmt " on line %d" line in
       let immediate_or_first_call calling_context (trace : Trace.t) =
         match (calling_context, trace) with
-        | [], Immediate _ ->
-            `Immediate
-        | (f, _) :: _, _ | [], ViaCall {f; _} ->
-            `Call f
+        | [], Immediate {location} ->
+            `Immediate location
+        | (f, location) :: _, _ | [], ViaCall {f; location} ->
+            `Call (f, location)
       in
       let pp_access_trace fmt (trace : Trace.t) =
-        (* match immediate_or_first_call calling_context trace with *)
-        match trace with
-        | Immediate {location} ->
+        match immediate_or_first_call calling_context trace with
+        (* match trace with *)
+        | `Immediate location ->
              if pr then
                  F.fprintf fmt "accessing memory (%a) that " pp_line location.Location.line
              else
                  F.fprintf fmt "accessing memory that "
-        | ViaCall {f; location} ->
+        | `Call (f, location) ->
              if pr then
                  F.fprintf fmt ("call to %a eventually accesses memory (%a) that ") CallEvent.describe f pp_line location.Location.line
              else
                  F.fprintf fmt ("call to %a eventually accesses memory that ") CallEvent.describe f
       in
       let pp_invalidation_trace line invalidation fmt (trace : Trace.t) =
-        (*  match immediate_or_first_call calling_context trace with *)
-        match trace with
-        | Immediate _ ->
+        match immediate_or_first_call calling_context trace with
+        (* match trace with *)
+        | `Immediate _ ->
             F.fprintf fmt "%a%a" Invalidation.describe invalidation pp_line line
-        | `Call f ->
+        | `Call (f, _) ->
             F.fprintf fmt "%a%a indirectly during the call to %a" Invalidation.describe invalidation
               pp_line line CallEvent.describe f
       in

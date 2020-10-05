@@ -48,7 +48,7 @@ let check_and_abduce_addr_access procname location (address, history) ?null_noop
   match res with
     | Error (invalidation, invalidation_trace, astate) ->
        if is_must_bug astate then
-           Error (Diagnostic.AccessToInvalidAddress {invalidation; invalidation_trace; access_trace}, astate)
+           Error (Diagnostic.AccessToInvalidAddress {calling_context= []; invalidation; invalidation_trace; access_trace}, astate)
        else Ok [AddressAttributes.add_one address (Attribute.Invalid (invalidation, access_trace)) astate]
     | Ok astates ->
        Ok astates
@@ -669,7 +669,7 @@ let apply_callee ~caller_proc_desc callee_pname call_loc callee_exec_state ~ret
     >>= function
     | None ->
         (* couldn't apply pre/post pair *) Ok None
-    | Some (post, return_val_opt) ->
+    | Some (post, return_val_opt, subst) ->
         let event = ValueHistory.Call {f= Call callee_pname; location= call_loc; in_call= []} in
         let post =
           match return_val_opt with
@@ -678,7 +678,7 @@ let apply_callee ~caller_proc_desc callee_pname call_loc callee_exec_state ~ret
           | None ->
               havoc_id (fst ret) [event] post
         in
-        Some ((f post), subst)
+        (f post subst)
   in
   let open ExecutionDomain in
   match callee_exec_state with
@@ -686,13 +686,13 @@ let apply_callee ~caller_proc_desc callee_pname call_loc callee_exec_state ~ret
       (* Callee has failed; don't propagate the failure *)
       Ok (Some (callee_exec_state, AbstractValue.Map.empty))
   | ContinueProgram astate ->
-      apply astate ~f:(fun astate -> Ok (Some (ContinueProgram astate)))
+      apply astate ~f:(fun astate subst -> Ok (Some (ContinueProgram astate, subst)))
   | ExitProgram astate ->
-      apply astate ~f:(fun astate -> Ok (Some (ExitProgram astate)))
+      apply astate ~f:(fun astate subst -> Ok (Some (ExitProgram astate, subst)))
   | LatentAbortProgram {astate; latent_issue} ->
       apply
         (astate :> AbductiveDomain.t)
-        ~f:(fun astate ->
+        ~f:(fun astate subst ->
           let astate_summary = AbductiveDomain.summary_of_post caller_proc_desc astate in
           if PulseArithmetic.is_unsat_cheap (astate_summary :> AbductiveDomain.t) then Ok None
           else
@@ -701,7 +701,7 @@ let apply_callee ~caller_proc_desc callee_pname call_loc callee_exec_state ~ret
             in
             if LatentIssue.should_report astate_summary then
               Error (LatentIssue.to_diagnostic latent_issue, (astate_summary :> AbductiveDomain.t))
-            else Ok (Some (LatentAbortProgram {astate= astate_summary; latent_issue}, git fetch upstream)) )
+            else Ok (Some ((LatentAbortProgram {astate= astate_summary; latent_issue}), subst)))
 
 let check_all_invalid callees_callers_match callee_proc_name call_location astate =
   let res = (match astate.AbductiveDomain.status with
@@ -734,10 +734,10 @@ let check_all_invalid callees_callers_match callee_proc_name call_location astat
       (L.d_printfln "ERROR: caller's %a invalid!" AbstractValue.pp addr_caller ;
       if is_must_bug astate then
           Error ( Diagnostic.AccessToInvalidAddress
-                       {invalidation; invalidation_trace; access_trace}
-          , AbductiveDomain.set_status (AbductiveDomain.PostStatus.Er (Some (Diagnostic.AccessToInvalidAddress {invalidation; invalidation_trace; access_trace}))) astate )
+                       {calling_context= []; invalidation; invalidation_trace; access_trace}
+          , AbductiveDomain.set_status (AbductiveDomain.PostStatus.Er (Some (Diagnostic.AccessToInvalidAddress {calling_context= []; invalidation; invalidation_trace; access_trace}))) astate )
       else
-           Ok (AbductiveDomain.set_status (AbductiveDomain.PostStatus.Er (Some (Diagnostic.AccessToInvalidAddress {invalidation; invalidation_trace; access_trace}))) astate))
+           Ok (AbductiveDomain.set_status (AbductiveDomain.PostStatus.Er (Some (Diagnostic.AccessToInvalidAddress {calling_context= []; invalidation; invalidation_trace; access_trace}))) astate))
     | Ok astate ->
        Ok astate
   (* ) *)
@@ -882,7 +882,7 @@ let merge_spec location astates=
              let loc = Trace.get_outer_location trace in
              let acc_loc = Location.none loc.Location.file in
              let invalidation_trace = Trace.set_outer_location acc_loc trace in
-             let new_er = Diagnostic.AccessToInvalidAddress {invalidation; invalidation_trace; access_trace = trace} in
+             let new_er = Diagnostic.AccessToInvalidAddress {calling_context= []; invalidation; invalidation_trace; access_trace = trace} in
              add_non_duplicate new_er
           | None ->
              acc)

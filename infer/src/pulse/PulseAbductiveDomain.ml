@@ -403,7 +403,7 @@ module AddressAttributes = struct
           end
       | Some (invalidation, invalidation_trace) -> (
           (* abduce failed *)
-          Error (invalidation, invalidation_trace, {astate with status = PostStatus.Er (Some (Diagnostic.AccessToInvalidAddress {invalidation; invalidation_trace; access_trace}))})
+          Error (invalidation, invalidation_trace, {astate with status = PostStatus.Er (Some (Diagnostic.AccessToInvalidAddress {calling_context= []; invalidation; invalidation_trace; access_trace}))})
       )
    
     

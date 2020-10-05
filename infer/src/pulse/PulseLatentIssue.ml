@@ -30,7 +30,7 @@ let should_report (astate : AbductiveDomain.summary) =
    not true as calling context cannot possibly influence such conditions *)
 let should_report_diagnostic (astate : AbductiveDomain.summary) (diagnostic : Diagnostic.t) =
   match diagnostic with
-  | MemoryLeak _ | StackVariableAddressEscape _ ->
+  | MemoryLeak _ | StackVariableAddressEscape _ | OrError _ ->
       (* these issues are reported regardless of the calling context, not sure if that's the right
          decision yet *)
       `ReportNow
