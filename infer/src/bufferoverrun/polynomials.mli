@@ -6,7 +6,6 @@
  *)
 
 open! IStd
-module Bound = Bounds.Bound
 
 module DegreeKind : sig
   type t = Linear | Log
@@ -83,7 +82,7 @@ module NonNegativePolynomial : sig
 
   val min_default_left : t -> t -> t
 
-  val subst : Procname.t -> Location.t -> t -> Bound.eval_sym -> t
+  val subst : Procname.t -> Location.t -> t -> Bounds.Bound.eval_sym -> t
 
   val degree : t -> Degree.t option
 
