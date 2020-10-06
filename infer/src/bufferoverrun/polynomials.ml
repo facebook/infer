@@ -106,8 +106,19 @@ module NonNegativeBoundWithDegreeKind = struct
 end
 
 module NonNegativeNonTopPolynomial = struct
+  module Key = struct
+    type t = NonNegativeBoundWithDegreeKind of NonNegativeBoundWithDegreeKind.t
+    [@@deriving compare]
+
+    let lift_valclass = function
+      | Symbolic s ->
+          Symbolic (NonNegativeBoundWithDegreeKind s)
+      | (Constant _ | ValTop _) as x ->
+          x
+  end
+
   module M = struct
-    include Caml.Map.Make (NonNegativeBoundWithDegreeKind)
+    include Caml.Map.Make (Key)
 
     let increasing_union ~f m1 m2 = union (fun _ v1 v2 -> Some (f v1 v2)) m1 m2
 
@@ -184,10 +195,12 @@ module NonNegativeNonTopPolynomial = struct
   let rec degree_poly {terms} =
     M.fold
       (fun t p cur_max ->
-        let degree_term =
-          Degree.succ (NonNegativeBoundWithDegreeKind.degree_kind t) (degree_poly p)
-        in
-        if Degree.compare degree_term cur_max > 0 then degree_term else cur_max )
+        match t with
+        | NonNegativeBoundWithDegreeKind t ->
+            let degree_term =
+              Degree.succ (NonNegativeBoundWithDegreeKind.degree_kind t) (degree_poly p)
+            in
+            if Degree.compare degree_term cur_max > 0 then degree_term else cur_max )
       terms Degree.zero
 
 
@@ -262,7 +275,7 @@ module NonNegativeNonTopPolynomial = struct
 
   (* (c + r * R + s * S + t * T) x s
      = 0 + r * (R x s) + s * (c + s * S + t * T) *)
-  let rec mult_symb_poly : poly -> NonNegativeBoundWithDegreeKind.t -> poly =
+  let rec mult_symb_poly : poly -> Key.t -> poly =
    fun {const; terms} s ->
     let less_than_s, equal_s_opt, greater_than_s = M.split s terms in
     let less_than_s = M.map (fun p -> mult_symb_poly p s) less_than_s in
@@ -280,9 +293,7 @@ module NonNegativeNonTopPolynomial = struct
     {const= NonNegativeInt.zero; terms}
 
 
-  let mult_symb : t -> NonNegativeBoundWithDegreeKind.t -> t =
-   fun x s -> {x with poly= mult_symb_poly x.poly s}
-
+  let mult_symb : t -> Key.t -> t = fun x s -> {x with poly= mult_symb_poly x.poly s}
 
   let rec mult_poly : poly -> poly -> poly =
    fun p1 p2 ->
@@ -313,23 +324,21 @@ module NonNegativeNonTopPolynomial = struct
         body )
 
 
-  let rec of_valclass :
-      (NonNegativeInt.t, NonNegativeBoundWithDegreeKind.t, 't) valclass -> ('t, t, 't) below_above =
-    function
+  let rec of_valclass : (NonNegativeInt.t, Key.t, 't) valclass -> ('t, t, 't) below_above = function
     | ValTop trace ->
         Above trace
     | Constant i ->
         Val (of_non_negative_int i)
-    | Symbolic s -> (
+    | Symbolic (NonNegativeBoundWithDegreeKind s as key) -> (
       match NonNegativeBoundWithDegreeKind.split_mult s with
       | None ->
           Val
-            { poly= {const= NonNegativeInt.zero; terms= M.singleton s one_poly}
+            { poly= {const= NonNegativeInt.zero; terms= M.singleton key one_poly}
             ; autoreleasepool_trace= None }
       | Some (s1, s2) -> (
         match
-          ( of_valclass (NonNegativeBoundWithDegreeKind.classify s1)
-          , of_valclass (NonNegativeBoundWithDegreeKind.classify s2) )
+          ( of_valclass (Key.lift_valclass (NonNegativeBoundWithDegreeKind.classify s1))
+          , of_valclass (Key.lift_valclass (NonNegativeBoundWithDegreeKind.classify s2)) )
         with
         | Val s1, Val s2 ->
             Val (mult s1 s2)
@@ -342,19 +351,23 @@ module NonNegativeNonTopPolynomial = struct
   let rec int_lb {const; terms} =
     M.fold
       (fun symbol polynomial acc ->
-        let s_lb = NonNegativeBoundWithDegreeKind.int_lb symbol in
-        let p_lb = int_lb polynomial in
-        NonNegativeInt.((s_lb * p_lb) + acc) )
+        match symbol with
+        | NonNegativeBoundWithDegreeKind symbol ->
+            let s_lb = NonNegativeBoundWithDegreeKind.int_lb symbol in
+            let p_lb = int_lb polynomial in
+            NonNegativeInt.((s_lb * p_lb) + acc) )
       terms const
 
 
   let rec int_ub {const; terms} =
     M.fold
       (fun symbol polynomial acc ->
-        Option.bind acc ~f:(fun acc ->
-            Option.bind (NonNegativeBoundWithDegreeKind.int_ub symbol) ~f:(fun s_ub ->
-                Option.map (int_ub polynomial) ~f:(fun p_ub -> NonNegativeInt.((s_ub * p_ub) + acc)) ) )
-        )
+        match symbol with
+        | NonNegativeBoundWithDegreeKind symbol ->
+            Option.bind acc ~f:(fun acc ->
+                Option.bind (NonNegativeBoundWithDegreeKind.int_ub symbol) ~f:(fun s_ub ->
+                    Option.map (int_ub polynomial) ~f:(fun p_ub ->
+                        NonNegativeInt.((s_ub * p_ub) + acc) ) ) ) )
       terms (Some const)
 
 
@@ -385,12 +398,18 @@ module NonNegativeNonTopPolynomial = struct
     ; terms=
         M.fold
           (fun s p acc ->
-            let p' = mask_min_max_constant_poly p in
-            M.update
-              (NonNegativeBoundWithDegreeKind.mask_min_max_constant s)
-              (function
-                | None -> Some p' | Some p -> if leq_poly ~lhs:p ~rhs:p' then Some p' else Some p )
-              acc )
+            match s with
+            | NonNegativeBoundWithDegreeKind s ->
+                let p' = mask_min_max_constant_poly p in
+                M.update
+                  (NonNegativeBoundWithDegreeKind
+                     (NonNegativeBoundWithDegreeKind.mask_min_max_constant s))
+                  (function
+                    | None ->
+                        Some p'
+                    | Some p ->
+                        if leq_poly ~lhs:p ~rhs:p' then Some p' else Some p )
+                  acc )
           terms M.empty }
 
 
@@ -415,20 +434,22 @@ module NonNegativeNonTopPolynomial = struct
     let rec subst_poly {const; terms} eval_sym =
       M.fold
         (fun s p acc ->
-          match NonNegativeBoundWithDegreeKind.subst callee_pname location s eval_sym with
-          | Constant c -> (
-            match PositiveInt.of_big_int (c :> Z.t) with
-            | None ->
-                acc
-            | Some c ->
+          match s with
+          | NonNegativeBoundWithDegreeKind s -> (
+            match NonNegativeBoundWithDegreeKind.subst callee_pname location s eval_sym with
+            | Constant c -> (
+              match PositiveInt.of_big_int (c :> Z.t) with
+              | None ->
+                  acc
+              | Some c ->
+                  let p = subst_poly p eval_sym in
+                  mult_const_positive p c |> plus_poly acc )
+            | ValTop trace ->
                 let p = subst_poly p eval_sym in
-                mult_const_positive p c |> plus_poly acc )
-          | ValTop trace ->
-              let p = subst_poly p eval_sym in
-              if is_zero_poly p then acc else raise (ReturnTop (s, trace))
-          | Symbolic s ->
-              let p = subst_poly p eval_sym in
-              mult_symb_poly p s |> plus_poly acc )
+                if is_zero_poly p then acc else raise (ReturnTop (s, trace))
+            | Symbolic s ->
+                let p = subst_poly p eval_sym in
+                mult_symb_poly p (NonNegativeBoundWithDegreeKind s) |> plus_poly acc ) )
         terms (poly_of_non_negative_int const)
     in
     fun {poly; autoreleasepool_trace} eval_sym ->
@@ -448,11 +469,14 @@ module NonNegativeNonTopPolynomial = struct
     let rec degree_with_term_poly {terms} =
       M.fold
         (fun t p cur_max ->
-          let d, p' = degree_with_term_poly p in
-          let degree_term =
-            (Degree.succ (NonNegativeBoundWithDegreeKind.degree_kind t) d, mult_symb p' t)
-          in
-          if [%compare: Degree.t * t] degree_term cur_max > 0 then degree_term else cur_max )
+          match t with
+          | NonNegativeBoundWithDegreeKind t ->
+              let d, p' = degree_with_term_poly p in
+              let degree_term =
+                ( Degree.succ (NonNegativeBoundWithDegreeKind.degree_kind t) d
+                , mult_symb p' (NonNegativeBoundWithDegreeKind t) )
+              in
+              if [%compare: Degree.t * t] degree_term cur_max > 0 then degree_term else cur_max )
         terms
         (Degree.zero, one ())
     in
@@ -466,8 +490,7 @@ module NonNegativeNonTopPolynomial = struct
 
   let pp_poly : hum:bool -> F.formatter -> poly -> unit =
     let add_symb s (((last_s, last_occ) as last), others) =
-      if Int.equal 0 (NonNegativeBoundWithDegreeKind.compare s last_s) then
-        ((last_s, PositiveInt.succ last_occ), others)
+      if Int.equal 0 (Key.compare s last_s) then ((last_s, PositiveInt.succ last_occ), others)
       else ((s, PositiveInt.one), last :: others)
     in
     let pp_coeff fmt (c : NonNegativeInt.t) =
@@ -482,7 +505,9 @@ module NonNegativeNonTopPolynomial = struct
       if String.contains s ' ' then F.fprintf fmt "(%s)" s else F.pp_print_string fmt s
     in
     let pp_symb ~hum fmt symb =
-      pp_magic_parentheses (NonNegativeBoundWithDegreeKind.pp ~hum) fmt symb
+      match (symb : Key.t) with
+      | NonNegativeBoundWithDegreeKind symb ->
+          pp_magic_parentheses (NonNegativeBoundWithDegreeKind.pp ~hum) fmt symb
     in
     let pp_symb_exp ~hum fmt (symb, exp) = F.fprintf fmt "%a%a" (pp_symb ~hum) symb pp_exp exp in
     let pp_symbs ~hum fmt (last, others) =
@@ -521,7 +546,10 @@ module NonNegativeNonTopPolynomial = struct
   let get_symbols p : NonNegativeBound.t list =
     let rec get_symbols_sub {terms} acc =
       M.fold
-        (fun s p acc -> get_symbols_sub p (NonNegativeBoundWithDegreeKind.symbol s :: acc))
+        (fun s p acc ->
+          match s with
+          | NonNegativeBoundWithDegreeKind s ->
+              get_symbols_sub p (NonNegativeBoundWithDegreeKind.symbol s :: acc) )
         terms acc
     in
     get_symbols_sub p.poly []
@@ -704,7 +732,8 @@ module NonNegativePolynomial = struct
   let of_non_negative_bound ?(degree_kind = DegreeKind.Linear) b =
     b
     |> NonNegativeBoundWithDegreeKind.make degree_kind
-    |> NonNegativeBoundWithDegreeKind.classify |> NonNegativeNonTopPolynomial.of_valclass
+    |> NonNegativeBoundWithDegreeKind.classify |> NonNegativeNonTopPolynomial.Key.lift_valclass
+    |> NonNegativeNonTopPolynomial.of_valclass
     (* Invariant: we always get a non-below bound from [of_valclass] *)
     |> make_trace_set ~map_above:TopTrace.unbounded_loop
 
