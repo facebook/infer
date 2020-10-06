@@ -107,6 +107,24 @@ module Lock = struct
     let mk_str t = root_class t |> Option.value_map ~default:"" ~f:Typ.Name.to_string in
     (* use string comparison on types as a stable order to decide whether to report a deadlock *)
     String.compare (mk_str t1) (mk_str t2)
+
+
+  let apply_subst_to_list subst l =
+    let rec apply_subst_to_list_inner l =
+      match l with
+      | [] ->
+          ([], false)
+      | lock :: locks -> (
+          let locks', modified = apply_subst_to_list_inner locks in
+          match apply_subst subst lock with
+          | None ->
+              (locks', true)
+          | Some lock' when (not modified) && phys_equal lock lock' ->
+              (l, false)
+          | Some lock' ->
+              (lock' :: locks', true) )
+    in
+    apply_subst_to_list_inner l |> fst
 end
 
 module AccessExpressionDomain = struct
@@ -159,15 +177,15 @@ end
 
 module Event = struct
   type t =
-    | LockAcquire of Lock.t
+    | LockAcquire of Lock.t list
     | MayBlock of (Procname.t * StarvationModels.severity)
     | StrictModeCall of Procname.t
     | MonitorWait of Lock.t
   [@@deriving compare]
 
   let pp fmt = function
-    | LockAcquire lock ->
-        F.fprintf fmt "LockAcquire(%a)" Lock.pp lock
+    | LockAcquire locks ->
+        F.fprintf fmt "LockAcquire(%a)" (PrettyPrintable.pp_collection ~pp_item:Lock.pp) locks
     | MayBlock (pname, sev) ->
         F.fprintf fmt "MayBlock(%a, %a)" Procname.pp pname StarvationModels.pp_severity sev
     | StrictModeCall pname ->
@@ -178,8 +196,8 @@ module Event = struct
 
   let describe fmt elem =
     match elem with
-    | LockAcquire lock ->
-        Lock.pp_locks fmt lock
+    | LockAcquire locks ->
+        Pp.comma_seq Lock.pp_locks fmt locks
     | MayBlock (pname, _) | StrictModeCall pname ->
         F.fprintf fmt "calls %a" describe_pname pname
     | MonitorWait lock ->
@@ -195,24 +213,20 @@ module Event = struct
   let make_object_wait lock = MonitorWait lock
 
   let apply_subst subst event =
-    let make_monitor_wait lock = MonitorWait lock in
-    let make_lock_acquire lock = LockAcquire lock in
-    let apply_subst_aux make lock =
-      match Lock.apply_subst subst lock with
-      | None ->
-          None
-      | Some lock' when phys_equal lock lock' ->
-          Some event
-      | Some lock' ->
-          Some (make lock')
-    in
     match event with
-    | MonitorWait lock ->
-        apply_subst_aux make_monitor_wait lock
-    | LockAcquire lock ->
-        apply_subst_aux make_lock_acquire lock
     | MayBlock _ | StrictModeCall _ ->
         Some event
+    | MonitorWait lock ->
+        Lock.apply_subst subst lock
+        |> Option.map ~f:(fun lock' -> if phys_equal lock lock' then event else MonitorWait lock')
+    | LockAcquire locks -> (
+      match Lock.apply_subst_to_list subst locks with
+      | [] ->
+          None
+      | locks' when phys_equal locks locks' ->
+          Some event
+      | locks' ->
+          Some (LockAcquire locks') )
 end
 
 (** A lock acquisition with source location and procname in which it occurs. The location & procname
@@ -275,8 +289,6 @@ module LockState : sig
 
   val release : Lock.t -> t -> t
 
-  val is_lock_taken : Event.t -> t -> bool
-
   val get_acquisitions : t -> Acquisitions.t
 end = struct
   (* abstraction limit for lock counts *)
@@ -315,14 +327,6 @@ end = struct
   let top = {map= Map.top; acquisitions= Acquisitions.empty}
 
   let is_top {map} = Map.is_top map
-
-  let is_lock_taken event {acquisitions} =
-    match event with
-    | Event.LockAcquire lock ->
-        Acquisitions.mem (Acquisition.make_dummy lock) acquisitions
-    | _ ->
-        false
-
 
   let acquire ~procname ~loc lock {map; acquisitions} =
     let should_add_acquisition = ref false in
@@ -399,9 +403,10 @@ let is_recursive_lock event tenv =
           (Typ.pp_full Pp.text) typ ;
         true
   in
-  match event with
-  | Event.LockAcquire lock_path ->
-      Lock.get_typ tenv lock_path |> Option.exists ~f:is_class_and_recursive_lock
+  match (event : Event.t) with
+  | LockAcquire locks ->
+      List.exists locks ~f:(fun lock_path ->
+          Lock.get_typ tenv lock_path |> Option.exists ~f:is_class_and_recursive_lock )
   | _ ->
       false
 
@@ -413,19 +418,19 @@ module CriticalPair = struct
 
   let is_blocking_call {elem= {event}} = match event with LockAcquire _ -> true | _ -> false
 
-  let get_final_acquire {elem= {event}} =
-    match event with LockAcquire lock -> Some lock | _ -> None
-
-
-  let may_deadlock tenv ({elem= pair1} as t1 : t) ({elem= pair2} as t2 : t) =
-    ThreadDomain.can_run_in_parallel pair1.thread pair2.thread
-    && Option.both (get_final_acquire t1) (get_final_acquire t2)
-       |> Option.exists ~f:(fun (lock1, lock2) ->
-              (not (Lock.equal_across_threads tenv lock1 lock2))
-              && Acquisitions.lock_is_held_in_other_thread tenv lock2 pair1.acquisitions
-              && Acquisitions.lock_is_held_in_other_thread tenv lock1 pair2.acquisitions
-              && Acquisitions.no_locks_common_across_threads tenv pair1.acquisitions
-                   pair2.acquisitions )
+  let may_deadlock tenv ~(lhs : t) ~lhs_lock ~(rhs : t) =
+    let get_acquired_locks {elem= {event}} =
+      match event with LockAcquire locks -> locks | _ -> []
+    in
+    if ThreadDomain.can_run_in_parallel lhs.elem.thread rhs.elem.thread then
+      get_acquired_locks rhs
+      |> List.find ~f:(fun rhs_lock ->
+             (not (Lock.equal_across_threads tenv lhs_lock rhs_lock))
+             && Acquisitions.lock_is_held_in_other_thread tenv rhs_lock lhs.elem.acquisitions
+             && Acquisitions.lock_is_held_in_other_thread tenv lhs_lock rhs.elem.acquisitions
+             && Acquisitions.no_locks_common_across_threads tenv lhs.elem.acquisitions
+                  rhs.elem.acquisitions )
+    else None
 
 
   let apply_subst subst pair =
@@ -436,26 +441,34 @@ module CriticalPair = struct
         Some (map ~f:(fun _elem -> elem') pair)
 
 
+  (** if given [Some tenv], transform a pair so as to remove reentrant locks that are already in
+      [held_locks] *)
+  let filter_out_reentrant_relocks tenv_opt held_locks pair =
+    match (tenv_opt, pair.elem.event) with
+    | Some tenv, LockAcquire locks -> (
+        let filtered_locks =
+          IList.filter_changed locks ~f:(fun lock ->
+              (not (Acquisitions.lock_is_held lock held_locks))
+              || not (is_recursive_lock pair.elem.event tenv) )
+        in
+        match filtered_locks with
+        | [] ->
+            None
+        | _ when phys_equal filtered_locks locks ->
+            Some pair
+        | _ ->
+            Some (map pair ~f:(fun elem -> {elem with event= LockAcquire filtered_locks})) )
+    | _, _ ->
+        Some pair
+
+
   let integrate_summary_opt ?subst ?tenv existing_acquisitions call_site
       (caller_thread : ThreadDomain.t) (callee_pair : t) =
     let substitute_pair subst callee_pair =
       match subst with None -> Some callee_pair | Some subst -> apply_subst subst callee_pair
     in
-    let filter_out_reentrant_relock callee_pair =
-      match tenv with
-      | None ->
-          Some callee_pair
-      | Some tenv
-        when get_final_acquire callee_pair
-             |> Option.for_all ~f:(fun lock ->
-                    (not (Acquisitions.lock_is_held lock existing_acquisitions))
-                    || not (is_recursive_lock callee_pair.elem.event tenv) ) ->
-          Some callee_pair
-      | _ ->
-          None
-    in
     substitute_pair subst callee_pair
-    |> Option.bind ~f:filter_out_reentrant_relock
+    |> Option.bind ~f:(filter_out_reentrant_relocks tenv existing_acquisitions)
     |> Option.bind ~f:(fun callee_pair ->
            ThreadDomain.apply_to_pair caller_thread callee_pair.elem.thread
            |> Option.map ~f:(fun thread ->
@@ -528,17 +541,6 @@ module CriticalPair = struct
   let can_run_in_parallel t1 t2 = ThreadDomain.can_run_in_parallel t1.elem.thread t2.elem.thread
 end
 
-(** skip adding an order pair [(_, event)] if
-
-    - we have no tenv, or,
-    - [event] is not a lock event, or,
-    - we do not hold the lock, or,
-    - the lock is not recursive. *)
-let should_skip ?tenv event lock_state =
-  Option.exists tenv ~f:(fun tenv ->
-      LockState.is_lock_taken event lock_state && is_recursive_lock event tenv )
-
-
 module CriticalPairs = struct
   include CriticalPair.FiniteSet
 
@@ -548,9 +550,8 @@ module CriticalPairs = struct
       (fun critical_pair acc ->
         CriticalPair.integrate_summary_opt ?subst ?tenv existing_acquisitions call_site thread
           critical_pair
-        |> Option.fold ~init:acc ~f:(fun acc (new_pair : CriticalPair.t) ->
-               if should_skip ?tenv new_pair.elem.event lock_state then acc else add new_pair acc )
-        )
+        |> Option.bind ~f:(CriticalPair.filter_out_reentrant_relocks tenv existing_acquisitions)
+        |> Option.value_map ~default:acc ~f:(fun new_pair -> add new_pair acc) )
       astate empty
 end
 
@@ -691,19 +692,17 @@ let leq ~lhs ~rhs =
 
 
 let add_critical_pair ?tenv lock_state event thread ~loc acc =
-  if should_skip ?tenv event lock_state then acc
-  else
-    let acquisitions = LockState.get_acquisitions lock_state in
-    let critical_pair = CriticalPair.make ~loc acquisitions event thread in
-    CriticalPairs.add critical_pair acc
+  let acquisitions = LockState.get_acquisitions lock_state in
+  let critical_pair = CriticalPair.make ~loc acquisitions event thread in
+  CriticalPair.filter_out_reentrant_relocks tenv acquisitions critical_pair
+  |> Option.value_map ~default:acc ~f:(fun pair -> CriticalPairs.add pair acc)
 
 
 let acquire ?tenv ({lock_state; critical_pairs} as astate) ~procname ~loc locks =
   { astate with
     critical_pairs=
-      List.fold locks ~init:critical_pairs ~f:(fun acc lock ->
-          let event = Event.make_acquire lock in
-          add_critical_pair ?tenv lock_state event astate.thread ~loc acc )
+      (let event = Event.make_acquire locks in
+       add_critical_pair ?tenv lock_state event astate.thread ~loc critical_pairs )
   ; lock_state=
       List.fold locks ~init:lock_state ~f:(fun acc lock ->
           LockState.acquire ~procname ~loc lock acc ) }

@@ -57,7 +57,7 @@ end
 
 module Event : sig
   type t =
-    | LockAcquire of Lock.t
+    | LockAcquire of Lock.t list
     | MayBlock of (Procname.t * StarvationModels.severity)
     | StrictModeCall of Procname.t
     | MonitorWait of Lock.t
@@ -107,8 +107,10 @@ module CriticalPair : sig
   val get_earliest_lock_or_call_loc : procname:Procname.t -> t -> Location.t
   (** outermost callsite location OR lock acquisition *)
 
-  val may_deadlock : Tenv.t -> t -> t -> bool
-  (** two pairs can run in parallel and satisfy the conditions for deadlock *)
+  val may_deadlock : Tenv.t -> lhs:t -> lhs_lock:Lock.t -> rhs:t -> Lock.t option
+  (** if two pairs can run in parallel and satisfy the conditions for deadlock, when [lhs_lock] of
+      [lhs] is involved return the lock involved from [rhs], as [LockAcquire] may involve more than
+      one *)
 
   val make_trace :
     ?header:string -> ?include_acquisitions:bool -> Procname.t -> t -> Errlog.loc_trace
