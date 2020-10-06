@@ -75,7 +75,7 @@ let report exe_env work_set =
                tenv pattrs pair acc
            in
            match pair.elem.event with
-           | LockAcquire locks ->
+           | LockAcquire {locks} ->
                List.fold locks ~init:acc ~f:(fun acc lock ->
                    let should_report_starvation =
                      CriticalPair.is_uithread pair && not (Procname.is_constructor procname)

@@ -177,56 +177,61 @@ end
 
 module Event = struct
   type t =
-    | LockAcquire of Lock.t list
-    | MayBlock of (Procname.t * StarvationModels.severity)
-    | StrictModeCall of Procname.t
-    | MonitorWait of Lock.t
+    | LockAcquire of {locks: Lock.t list}
+    | MayBlock of {callee: Procname.t; severity: StarvationModels.severity}
+    | StrictModeCall of {callee: Procname.t}
+    | MonitorWait of {lock: Lock.t}
   [@@deriving compare]
 
   let pp fmt = function
-    | LockAcquire locks ->
+    | LockAcquire {locks} ->
         F.fprintf fmt "LockAcquire(%a)" (PrettyPrintable.pp_collection ~pp_item:Lock.pp) locks
-    | MayBlock (pname, sev) ->
-        F.fprintf fmt "MayBlock(%a, %a)" Procname.pp pname StarvationModels.pp_severity sev
-    | StrictModeCall pname ->
-        F.fprintf fmt "StrictModeCall(%a)" Procname.pp pname
-    | MonitorWait lock ->
+    | MayBlock {callee; severity} ->
+        F.fprintf fmt "MayBlock(%a, %a)" Procname.pp callee StarvationModels.pp_severity severity
+    | StrictModeCall {callee} ->
+        F.fprintf fmt "StrictModeCall(%a)" Procname.pp callee
+    | MonitorWait {lock} ->
         F.fprintf fmt "MonitorWait(%a)" Lock.pp lock
 
 
   let describe fmt elem =
     match elem with
-    | LockAcquire locks ->
+    | LockAcquire {locks} ->
         Pp.comma_seq Lock.pp_locks fmt locks
-    | MayBlock (pname, _) | StrictModeCall pname ->
-        F.fprintf fmt "calls %a" describe_pname pname
-    | MonitorWait lock ->
+    | MayBlock {callee} | StrictModeCall {callee} ->
+        F.fprintf fmt "calls %a" describe_pname callee
+    | MonitorWait {lock} ->
         F.fprintf fmt "calls `wait` on %a" Lock.describe lock
 
 
-  let make_acquire lock = LockAcquire lock
+  let make_acquire locks = LockAcquire {locks}
 
-  let make_blocking_call callee sev = MayBlock (callee, sev)
+  let make_blocking_call callee severity = MayBlock {callee; severity}
 
-  let make_strict_mode_call callee = StrictModeCall callee
+  let make_strict_mode_call callee = StrictModeCall {callee}
 
-  let make_object_wait lock = MonitorWait lock
+  let make_object_wait lock = MonitorWait {lock}
 
   let apply_subst subst event =
     match event with
     | MayBlock _ | StrictModeCall _ ->
         Some event
-    | MonitorWait lock ->
-        Lock.apply_subst subst lock
-        |> Option.map ~f:(fun lock' -> if phys_equal lock lock' then event else MonitorWait lock')
-    | LockAcquire locks -> (
+    | MonitorWait {lock} -> (
+      match Lock.apply_subst subst lock with
+      | None ->
+          None
+      | Some lock' when phys_equal lock lock' ->
+          Some event
+      | Some lock ->
+          Some (MonitorWait {lock}) )
+    | LockAcquire {locks} -> (
       match Lock.apply_subst_to_list subst locks with
       | [] ->
           None
       | locks' when phys_equal locks locks' ->
           Some event
-      | locks' ->
-          Some (LockAcquire locks') )
+      | locks ->
+          Some (LockAcquire {locks}) )
 end
 
 (** A lock acquisition with source location and procname in which it occurs. The location & procname
@@ -404,7 +409,7 @@ let is_recursive_lock event tenv =
         true
   in
   match (event : Event.t) with
-  | LockAcquire locks ->
+  | LockAcquire {locks} ->
       List.exists locks ~f:(fun lock_path ->
           Lock.get_typ tenv lock_path |> Option.exists ~f:is_class_and_recursive_lock )
   | _ ->
@@ -420,7 +425,7 @@ module CriticalPair = struct
 
   let may_deadlock tenv ~(lhs : t) ~lhs_lock ~(rhs : t) =
     let get_acquired_locks {elem= {event}} =
-      match event with LockAcquire locks -> locks | _ -> []
+      match event with LockAcquire {locks} -> locks | _ -> []
     in
     if ThreadDomain.can_run_in_parallel lhs.elem.thread rhs.elem.thread then
       get_acquired_locks rhs
@@ -445,7 +450,7 @@ module CriticalPair = struct
       [held_locks] *)
   let filter_out_reentrant_relocks tenv_opt held_locks pair =
     match (tenv_opt, pair.elem.event) with
-    | Some tenv, LockAcquire locks -> (
+    | Some tenv, LockAcquire {locks} -> (
         let filtered_locks =
           IList.filter_changed locks ~f:(fun lock ->
               (not (Acquisitions.lock_is_held lock held_locks))
@@ -456,8 +461,8 @@ module CriticalPair = struct
             None
         | _ when phys_equal filtered_locks locks ->
             Some pair
-        | _ ->
-            Some (map pair ~f:(fun elem -> {elem with event= LockAcquire filtered_locks})) )
+        | locks ->
+            Some (map pair ~f:(fun elem -> {elem with event= LockAcquire {locks}})) )
     | _, _ ->
         Some pair
 

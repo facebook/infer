@@ -57,10 +57,10 @@ end
 
 module Event : sig
   type t =
-    | LockAcquire of Lock.t list
-    | MayBlock of (Procname.t * StarvationModels.severity)
-    | StrictModeCall of Procname.t
-    | MonitorWait of Lock.t
+    | LockAcquire of {locks: Lock.t list}
+    | MayBlock of {callee: Procname.t; severity: StarvationModels.severity}
+    | StrictModeCall of {callee: Procname.t}
+    | MonitorWait of {lock: Lock.t}
   [@@deriving compare]
 
   val describe : F.formatter -> t -> unit

@@ -605,7 +605,7 @@ let should_report_deadlock_on_current_proc current_elem endpoint_elem =
       (* should never happen *)
       L.die InternalError "Deadlock cannot occur without two lock events: %a" CriticalPair.pp
         current_elem
-  | LockAcquire endpoint_locks, LockAcquire current_locks -> (
+  | LockAcquire {locks= endpoint_locks}, LockAcquire {locks= current_locks} -> (
       (* first elem is a class object (see [lock_of_class]), so always report because the
          reverse ordering on the events will not occur since we don't search the class for static locks *)
       List.exists ~f:Lock.is_class_object endpoint_locks
@@ -671,7 +671,7 @@ let report_on_parallel_composition ~should_report_starvation tenv pattrs pair lo
   if CriticalPair.can_run_in_parallel pair other_pair then
     let acquisitions = other_pair.CriticalPair.elem.acquisitions in
     match other_pair.CriticalPair.elem.event with
-    | MayBlock (_, sev) as event
+    | MayBlock {severity} as event
       when should_report_starvation
            && Acquisitions.lock_is_held_in_other_thread tenv lock acquisitions ->
         let error_message =
@@ -680,8 +680,8 @@ let report_on_parallel_composition ~should_report_starvation tenv pattrs pair lo
             pname_pp pname Lock.pp_locks lock Event.describe event
         in
         let ltr, loc = make_trace_and_loc () in
-        ReportMap.add_starvation sev tenv pattrs loc ltr error_message report_map
-    | MonitorWait monitor_lock
+        ReportMap.add_starvation severity tenv pattrs loc ltr error_message report_map
+    | MonitorWait {lock= monitor_lock}
       when should_report_starvation
            && Acquisitions.lock_is_held_in_other_thread tenv lock acquisitions
            && not (Lock.equal lock monitor_lock) ->
@@ -723,13 +723,13 @@ let report_on_pair ~analyze_ondemand tenv pattrs (pair : Domain.CriticalPair.t) 
     (ltr, loc)
   in
   match event with
-  | MayBlock (_, sev) when should_report_starvation ->
+  | MayBlock {severity} when should_report_starvation ->
       let error_message =
         Format.asprintf "Method %a runs on UI thread and may block; %a." pname_pp pname
           Event.describe event
       in
       let ltr, loc = make_trace_and_loc () in
-      ReportMap.add_starvation sev tenv pattrs loc ltr error_message report_map
+      ReportMap.add_starvation severity tenv pattrs loc ltr error_message report_map
   | MonitorWait _ when should_report_starvation ->
       let error_message =
         Format.asprintf "Method %a runs on UI thread and may block; %a." pname_pp pname
@@ -753,7 +753,7 @@ let report_on_pair ~analyze_ondemand tenv pattrs (pair : Domain.CriticalPair.t) 
       let loc = CriticalPair.get_earliest_lock_or_call_loc ~procname:pname pair in
       let ltr = CriticalPair.make_trace pname pair in
       ReportMap.add_lockless_violation tenv pattrs loc ltr error_message report_map
-  | LockAcquire locks -> (
+  | LockAcquire {locks} -> (
     match
       List.find locks ~f:(fun lock -> Acquisitions.lock_is_held lock pair.elem.acquisitions)
     with
