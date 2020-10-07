@@ -715,7 +715,8 @@ let nonnull_alternatives_table =
 
 
 let field_nullability =
-  [ ("java.lang.Boolean.TRUE", o)
+  [ ("android.net.Uri.EMPTY", o)
+  ; ("java.lang.Boolean.TRUE", o)
   ; ("java.lang.Boolean.FALSE", o)
   ; ("java.nio.charset.StandardCharsets.ISO_8859_1", o)
   ; ("java.nio.charset.StandardCharsets.US_ASCII", o)
