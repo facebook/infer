@@ -21,16 +21,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Restore opam cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.opam
+          key: opam-${{ runner.os }}-${{ hashFiles('opam.locked') }}
+
       - name: Use OCaml ${{ matrix.ocaml-version }}
         uses: avsm/setup-ocaml@v1
         with:
           ocaml-version: ${{ matrix.ocaml-version }}
-
-      - name: Restore opam cache
-        uses: actions/cache@v2
-        with:
-          path: ${HOME}/.opam
-          key: ${{ runner.os }}-${{ hashFiles('opam.locked') }}
 
       - name: Install Required Brew Packages for MacOS
         run: brew install pkg-config automake jq
