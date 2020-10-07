@@ -25,6 +25,8 @@ type decl_trans_context = [`DeclTraversal | `Translation | `CppLambdaExprTransla
 
 val alloc : string
 
+val allocWithZone : string
+
 val arrayWithObjects_count : string
 
 val dictionaryWithObjects_forKeys_count : string

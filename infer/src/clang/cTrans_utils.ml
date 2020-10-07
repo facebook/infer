@@ -363,7 +363,10 @@ let new_or_alloc_trans trans_state loc stmt_info qual_type class_name_opt select
     | None ->
         CType.objc_classname_of_type function_type
   in
-  if String.equal selector CFrontend_config.alloc then
+  if
+    String.equal selector CFrontend_config.alloc
+    || String.equal selector CFrontend_config.allocWithZone
+  then
     alloc_trans trans_state ~alloc_builtin:BuiltinDecl.__objc_alloc_no_fail loc stmt_info
       function_type
   else if String.equal selector CFrontend_config.new_str then

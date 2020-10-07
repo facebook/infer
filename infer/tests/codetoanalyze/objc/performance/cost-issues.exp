@@ -31,6 +31,7 @@ codetoanalyze/objc/performance/NSArray.m, objc_blocknsarray_binary_search_log_FN
 codetoanalyze/objc/performance/NSDictionary.m, nsdictionary_all_keys_linear1, 3 + 3 ⋅ dict->elements.length.ub + 4 ⋅ (dict->elements.length.ub + 1),  OnUIThread:false, [{dict->elements.length.ub + 1},Loop,{dict->elements.length.ub},Loop]
 codetoanalyze/objc/performance/NSDictionary.m, nsdictionary_all_keys_linear2, 6 + 3 ⋅ dict->elements.length.ub + 3 ⋅ (dict->elements.length.ub + 1),  OnUIThread:false, [{dict->elements.length.ub + 1},Loop,{dict->elements.length.ub},Loop]
 codetoanalyze/objc/performance/NSDictionary.m, nsdictionary_all_values_linear, 3 + 3 ⋅ dict->elements.length.ub + 4 ⋅ (dict->elements.length.ub + 1),  OnUIThread:false, [{dict->elements.length.ub + 1},Loop,{dict->elements.length.ub},Loop]
+codetoanalyze/objc/performance/NSDictionary.m, nsdictionary_alloc_with_zone_init_with_dictionary_linear, 7 + 3 ⋅ dict->elements.length.ub + 4 ⋅ (dict->elements.length.ub + 1),  OnUIThread:false, [{dict->elements.length.ub + 1},Loop,{dict->elements.length.ub},Loop]
 codetoanalyze/objc/performance/NSDictionary.m, nsdictionary_dictionary_constant, 13,  OnUIThread:false, []
 codetoanalyze/objc/performance/NSDictionary.m, nsdictionary_dictionary_with_objects_linear, 14 + 15 ⋅ n_entries + 3 ⋅ n_entries + 2 ⋅ (1+max(0, n_entries)) + 4 ⋅ (1+max(0, n_entries)),  OnUIThread:false, [{1+max(0, n_entries)},Loop,{1+max(0, n_entries)},Loop,{n_entries},Loop,{n_entries},Loop]
 codetoanalyze/objc/performance/NSDictionary.m, nsdictionary_enumerate_call_constant, 65,  OnUIThread:false, []

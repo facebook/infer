@@ -25,6 +25,8 @@ type decl_trans_context = [`DeclTraversal | `Translation | `CppLambdaExprTransla
 
 let alloc = "alloc"
 
+let allocWithZone = "allocWithZone:"
+
 let arrayWithObjects_count = "arrayWithObjects:count:"
 
 let dictionaryWithObjects_forKeys_count = "dictionaryWithObjects:forKeys:count:"

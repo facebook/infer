@@ -1298,7 +1298,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         Some (mk_trans_result (exp, typ) empty_control)
     else if
       (* alloc or new *)
-      String.equal selector CFrontend_config.alloc || String.equal selector CFrontend_config.new_str
+      String.equal selector CFrontend_config.alloc
+      (* allocWithZone is like alloc: This method exists for
+         historical reasons; memory zones are no longer used by
+         Objective-C. *)
+      || String.equal selector CFrontend_config.allocWithZone
+      || String.equal selector CFrontend_config.new_str
     then
       match receiver_kind with
       | `Class qual_type ->
@@ -2221,10 +2226,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         for (__begin = __range.begin(), __end = __range.end();
              __begin != __end;
              ++__begin)
-         {
-            v = *__begin;
-            loop_body;
-          }
+            {
+              v = *__begin;
+              loop_body;
+            }
       ]} *)
   and cxxForRangeStmt_trans trans_state stmt_info stmt_list =
     let open Clang_ast_t in
@@ -2899,11 +2904,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
       {[
         n$1=NSNumber.numberWithInt:(2:int)
-        n$2=NSNumber.numberWithInt:(3:int)
-        temp[0]:objc_object*=n$1
-        temp[1]:objc_object*=n$2
-        n$3=NSArray.arrayWithObjects:count:(temp:objc_object* const [2*8],2:int)
-        a:NSArray*=n$3
+            n$2=NSNumber.numberWithInt:(3:int)
+            temp[0]:objc_object*=n$1
+                      temp[1]:objc_object*=n$2
+                                n$3=NSArray.arrayWithObjects:count:(temp:objc_object* const [2*8],2:int)
+            a:NSArray*=n$3
       ]}
 
       where [temp] is an additional local variable declared as array. *)
@@ -2992,15 +2997,15 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
       {[
         n$1=NSString.stringWithUTF8:(@"firstName")
-        n$2=NSNumber.stringWithUTF8:(@"Foo")
-        n$3=NSNumber.stringWithUTF8:(@"lastName")
-        n$4=NSNumber.stringWithUTF8:(@"Bar")
-        temp1[0]:objc_object*=n$1
-        temp1[1]:objc_object*=n$3
-        temp2[0]:objc_object*=n$2
-        temp2[1]:objc_object*=n$4
-        n$3=NSDictionary.dictionaryWithObjects:forKeys:count:(temp2:objc_object* const [2*8],
-                                                              temp1:objc_object* const [2*8], 2:int)
+            n$2=NSNumber.stringWithUTF8:(@"Foo")
+            n$3=NSNumber.stringWithUTF8:(@"lastName")
+            n$4=NSNumber.stringWithUTF8:(@"Bar")
+            temp1[0]:objc_object*=n$1
+                       temp1[1]:objc_object*=n$3
+                                  temp2[0]:objc_object*=n$2
+                                             temp2[1]:objc_object*=n$4
+                                                        n$3=NSDictionary.dictionaryWithObjects:forKeys:count:(temp2:objc_object* const [2*8],
+                                                                                                              temp1:objc_object* const [2*8], 2:int)
       ]}
 
       where [temp1] [temp2] are additional local variables declared as array. *)

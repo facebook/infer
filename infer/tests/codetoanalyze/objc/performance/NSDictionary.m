@@ -25,6 +25,14 @@ void nsdictionary_init_with_dictionary_linear(NSDictionary* dict) {
   }
 }
 
+void nsdictionary_alloc_with_zone_init_with_dictionary_linear(
+    NSDictionary* dict, NSZone* zone) {
+  NSDictionary* copy_dict =
+      [[NSDictionary allocWithZone:zone] initWithDictionary:dict];
+  for (int i = 0; i < [copy_dict allValues].count; i++) {
+  }
+}
+
 NSDictionary* nsdictionary_dictionary_with_objects_linear(int n_entries) {
   NSDictionary* asciiDict;
   NSString* keyArray[n_entries];
