@@ -1518,6 +1518,9 @@ let objc_malloc exp =
     match exp with
     | Exp.Sizeof {typ} when PatternMatch.ObjectiveC.implements "NSArray" tenv (Typ.to_string typ) ->
         NSCollection.new_collection.exec model ~ret mem
+    | Exp.Sizeof {typ}
+      when PatternMatch.ObjectiveC.implements "NSDictionary" tenv (Typ.to_string typ) ->
+        NSCollection.new_collection.exec model ~ret mem
     | Exp.Sizeof {typ} when PatternMatch.ObjectiveC.implements "NSString" tenv (Typ.to_string typ)
       ->
         (NSString.create_with_c_string (Exp.Const (Const.Cstr ""))).exec model ~ret mem
@@ -1679,6 +1682,8 @@ module Call = struct
       ; +PatternMatch.ObjectiveC.implements "NSArray" &:: "array" <>--> NSCollection.new_collection
       ; +PatternMatch.ObjectiveC.implements "NSArray"
         &:: "firstObject" <>$ capt_var_exn $!--> NSCollection.get_first
+      ; +PatternMatch.ObjectiveC.implements "NSDictionary"
+        &:: "initWithDictionary:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.copy
       ; +PatternMatch.ObjectiveC.implements "NSArray"
         &:: "initWithArray:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.copy
       ; +PatternMatch.ObjectiveC.implements "NSArray"
