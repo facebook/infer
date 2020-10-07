@@ -1512,14 +1512,17 @@ module NSString = struct
     {exec; check= no_check}
 end
 
+let is_objc_collection =
+  let coll = ["NSArray"; "NSDictionary"; "NSOrderedSet"; "NSSet"] in
+  fun tenv typ_str ->
+    List.exists ~f:(fun obj_class -> PatternMatch.ObjectiveC.implements obj_class tenv typ_str) coll
+
+
 let objc_malloc exp =
   let can_be_zero = true in
   let exec ({tenv} as model) ~ret mem =
     match exp with
-    | Exp.Sizeof {typ} when PatternMatch.ObjectiveC.implements "NSArray" tenv (Typ.to_string typ) ->
-        NSCollection.new_collection.exec model ~ret mem
-    | Exp.Sizeof {typ}
-      when PatternMatch.ObjectiveC.implements "NSDictionary" tenv (Typ.to_string typ) ->
+    | Exp.Sizeof {typ} when is_objc_collection tenv (Typ.to_string typ) ->
         NSCollection.new_collection.exec model ~ret mem
     | Exp.Sizeof {typ} when PatternMatch.ObjectiveC.implements "NSString" tenv (Typ.to_string typ)
       ->
@@ -1684,21 +1687,21 @@ module Call = struct
         &:: "firstObject" <>$ capt_var_exn $!--> NSCollection.get_first
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
         &:: "initWithDictionary:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.copy
+      ; +PatternMatch.ObjectiveC.implements "NSSet"
+        &:: "initWithArray:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.copy
       ; +PatternMatch.ObjectiveC.implements "NSArray"
         &:: "initWithArray:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.copy
       ; +PatternMatch.ObjectiveC.implements "NSArray"
         &:: "initWithArray:copyItems:" <>$ capt_var_exn $+ capt_exp $+ any_arg
         $--> NSCollection.copy
-      ; +PatternMatch.ObjectiveC.implements "NSArray"
-        &:: "count" <>$ capt_exp $!--> NSCollection.size
+      ; +is_objc_collection &:: "count" <>$ capt_exp $!--> NSCollection.size
+      ; +is_objc_collection &:: "objectEnumerator" <>$ capt_exp $--> NSCollection.iterator
       ; +PatternMatch.ObjectiveC.implements "NSArray"
         &:: "objectAtIndexedSubscript:" <>$ capt_var_exn $+ capt_exp $!--> NSCollection.get_at_index
       ; +PatternMatch.ObjectiveC.implements "NSArray"
         &:: "arrayWithObjects:count:" <>$ capt_exp $+ capt_exp $--> NSCollection.create_from_array
       ; +PatternMatch.ObjectiveC.implements "NSArray"
         &:: "arrayWithObjects" &++> NSCollection.of_list
-      ; +PatternMatch.ObjectiveC.implements "NSArray"
-        &:: "objectEnumerator" <>$ capt_exp $--> NSCollection.iterator
       ; +PatternMatch.ObjectiveC.implements "NSArray"
         &:: "arrayByAddingObjectsFromArray:" <>$ capt_exp $+ capt_exp
         $--> NSCollection.new_collection_by_add_all
@@ -1730,17 +1733,11 @@ module Call = struct
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
         &:: "objectForKey:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.get_at_index
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
-        &:: "count" <>$ capt_exp $--> NSCollection.size
-      ; +PatternMatch.ObjectiveC.implements "NSDictionary"
         &:: "allKeys" <>$ capt_exp $--> create_copy_array
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
         &:: "allValues" <>$ capt_exp $--> create_copy_array
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
-        &:: "objectEnumerator" <>$ capt_exp $--> NSCollection.iterator
-      ; +PatternMatch.ObjectiveC.implements "NSDictionary"
         &:: "keyEnumerator" <>$ capt_exp $--> NSCollection.iterator
-      ; +PatternMatch.ObjectiveC.implements "NSOrderedSet"
-        &:: "objectEnumerator" <>$ capt_exp $--> NSCollection.iterator
       ; +PatternMatch.ObjectiveC.implements "NSOrderedSet"
         &:: "reverseObjectEnumerator" <>$ capt_exp $--> NSCollection.iterator
       ; +PatternMatch.ObjectiveC.implements "NSNumber" &:: "numberWithInt:" <>$ capt_exp $--> id
