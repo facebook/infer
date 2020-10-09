@@ -1682,6 +1682,8 @@ module Call = struct
       ; -"CFDictionaryGetCount" <>$ capt_exp $!--> NSCollection.size
       ; -"MCFArrayGetCount" <>$ capt_exp $!--> NSCollection.size
       ; +PatternMatch.ObjectiveC.implements "NSObject" &:: "init" <>$ capt_exp $--> id
+      ; +PatternMatch.ObjectiveC.implements "NSObject" &:: "copy" <>$ capt_exp $--> id
+      ; +PatternMatch.ObjectiveC.implements "NSObject" &:: "mutableCopy" <>$ capt_exp $--> id
       ; +PatternMatch.ObjectiveC.implements "NSArray" &:: "array" <>--> NSCollection.new_collection
       ; +PatternMatch.ObjectiveC.implements "NSArray"
         &:: "firstObject" <>$ capt_var_exn $!--> NSCollection.get_first

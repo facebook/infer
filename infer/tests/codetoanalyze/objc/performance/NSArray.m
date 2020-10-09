@@ -199,3 +199,9 @@ void nsarray_count_bounded_linear(NSArray* array) {
   for (int i = 0; i < array.count; i++) {
   }
 }
+
+void nsarray_copy_linear(NSArray* array) {
+  NSArray* copy = [array mutableCopy];
+  for (int i = 0; i < copy.count; i++) {
+  }
+}
