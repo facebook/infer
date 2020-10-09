@@ -926,6 +926,29 @@ endif
 	$(QUIET)$(call silent_on_success,Calling 'infer help --write-website',\
 	$(INFER_BIN) help --write-website "$(WEBSITE_DIR)")
 
+.PHONY: new-website-version
+new-website-version: doc-publish
+#	this will version docs/ appropriately
+	cd $(WEBSITE_DIR) && \
+	yarn run docusaurus docs:version $(INFER_MAJOR).$(INFER_MINOR).$(INFER_PATCH)
+#	copy static versioned resources
+	cd $(WEBSITE_DIR)/static/man && \
+	cp -a next/ $(INFER_MAJOR).$(INFER_MINOR).$(INFER_PATCH)/
+	cd $(WEBSITE_DIR)/static/odoc && \
+	cp -a next/ $(INFER_MAJOR).$(INFER_MINOR).$(INFER_PATCH)/
+#	adjust intra-doc paths in new doc version
+	cd $(WEBSITE_DIR)/versioned_docs/version-$(INFER_MAJOR).$(INFER_MINOR).$(INFER_PATCH)/ && \
+	find . -type f -not -name versions.md \
+	  -exec sed -i -e 's#/docs/next/#/docs/#g' \{\} \+
+#	adjust paths to static versioned resources in new doc version
+	cd $(WEBSITE_DIR)/versioned_docs/version-$(INFER_MAJOR).$(INFER_MINOR).$(INFER_PATCH)/ && \
+	find . -type f -not -name versions.md \
+	  -exec sed -i -e 's#/next/#/$(INFER_MAJOR).$(INFER_MINOR).$(INFER_PATCH)/#g' \{\} \+
+#	adjust versions.md, the page where users can navigate to other versions of the docs
+	cd $(WEBSITE_DIR)/ && \
+	find docs versioned_docs -name versions.md \
+	  -exec sed -i -e 's#^- \[latest released version (\([^)]*\))\](/docs/getting-started)$$#- [latest released version ($(INFER_MAJOR).$(INFER_MINOR).$(INFER_PATCH))](/docs/getting-started)\n- [previous version (\1)](/docs/\1/getting-started)#' \{\} \+
+
 # print list of targets
 .PHONY: show-targets
 show-targets:
