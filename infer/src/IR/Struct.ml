@@ -43,6 +43,7 @@ type t =
   { fields: fields  (** non-static fields *)
   ; statics: fields  (** static fields *)
   ; supers: Typ.Name.t list  (** superclasses *)
+  ; objc_protocols: Typ.Name.t list  (** ObjC protocols *)
   ; methods: Procname.t list  (** methods defined *)
   ; exported_objc_methods: Procname.t list  (** methods in ObjC interface, subset of [methods] *)
   ; annots: Annot.Item.t  (** annotations *)
@@ -57,9 +58,15 @@ let pp_field pe f (field_name, typ, ann) =
 
 
 let pp pe name f
-    ({fields; statics; supers; methods; exported_objc_methods; annots; java_class_info; dummy}[@warning
-                                                                                                "+9"])
-    =
+    ({ fields
+     ; statics
+     ; supers
+     ; objc_protocols
+     ; methods
+     ; exported_objc_methods
+     ; annots
+     ; java_class_info
+     ; dummy }[@warning "+9"]) =
   let pp_field pe f (field_name, typ, ann) =
     F.fprintf f "@;<0 2>%a %a %a" (Typ.pp_full pe) typ Fieldname.pp field_name Annot.Item.pp ann
   in
@@ -75,6 +82,7 @@ let pp pe name f
      @[<v>fields: {@[<v>%a@]}@,\
      statics: {@[<v>%a@]}@,\
      supers: {@[<v>%a@]}@,\
+     objc_protocols: {@[<v>%a@]}@,\
      methods: {@[<v>%a@]}@,\
      exported_obj_methods: {@[<v>%a@]}@,\
      annots: {@[<v>%a@]}@,\
@@ -87,30 +95,43 @@ let pp pe name f
     statics
     (seq (fun f n -> F.fprintf f "@;<0 2>%a" Typ.Name.pp n))
     supers
+    (seq (fun f n -> F.fprintf f "@;<0 2>%a" Typ.Name.pp n))
+    objc_protocols
     (seq (fun f m -> F.fprintf f "@;<0 2>%a" Procname.pp m))
     methods
     (seq (fun f m -> F.fprintf f "@;<0 2>%a" Procname.pp m))
     exported_objc_methods Annot.Item.pp annots pp_java_class_info_opt java_class_info dummy
 
 
-let internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods ?supers ?annots
-    ?java_class_info ?dummy () =
+let internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods ?supers
+    ?objc_protocols ?annots ?java_class_info ?dummy () =
   let default_ =
     { fields= []
     ; statics= []
     ; methods= []
     ; exported_objc_methods= []
     ; supers= []
+    ; objc_protocols= []
     ; annots= Annot.Item.empty
     ; java_class_info= None
     ; dummy= false }
   in
   let mk_struct_ ?(default = default_) ?(fields = default.fields) ?(statics = default.statics)
       ?(methods = default.methods) ?(exported_objc_methods = default.exported_objc_methods)
-      ?(supers = default.supers) ?(annots = default.annots) ?(dummy = default.dummy) () =
-    {fields; statics; methods; exported_objc_methods; supers; annots; java_class_info; dummy}
+      ?(supers = default.supers) ?(objc_protocols = default.objc_protocols)
+      ?(annots = default.annots) ?(dummy = default.dummy) () =
+    { fields
+    ; statics
+    ; methods
+    ; exported_objc_methods
+    ; supers
+    ; objc_protocols
+    ; annots
+    ; java_class_info
+    ; dummy }
   in
-  mk_struct_ ?default ?fields ?statics ?methods ?exported_objc_methods ?supers ?annots ?dummy ()
+  mk_struct_ ?default ?fields ?statics ?methods ?exported_objc_methods ?supers ?objc_protocols
+    ?annots ?dummy ()
 
 
 (** the element typ of the final extensible array in the given typ, if any *)

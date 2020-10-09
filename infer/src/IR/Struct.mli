@@ -26,6 +26,7 @@ type t =
   { fields: fields  (** non-static fields *)
   ; statics: fields  (** static fields *)
   ; supers: Typ.Name.t list  (** superclasses *)
+  ; objc_protocols: Typ.Name.t list  (** ObjC protocols *)
   ; methods: Procname.t list  (** methods defined *)
   ; exported_objc_methods: Procname.t list  (** methods in ObjC interface, subset of [methods] *)
   ; annots: Annot.Item.t  (** annotations *)
@@ -46,6 +47,7 @@ val internal_mk_struct :
   -> ?methods:Procname.t list
   -> ?exported_objc_methods:Procname.t list
   -> ?supers:Typ.Name.t list
+  -> ?objc_protocols:Typ.Name.t list
   -> ?annots:Annot.Item.t
   -> ?java_class_info:java_class_info
   -> ?dummy:bool
