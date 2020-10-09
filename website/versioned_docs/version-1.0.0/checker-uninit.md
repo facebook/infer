@@ -1,5 +1,5 @@
 ---
-title: "Uninitialized Variable"
+title: "Uninitialized Value"
 description: "Warns when values are used before having been initialized."
 ---
 

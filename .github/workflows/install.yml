@@ -30,8 +30,8 @@ jobs:
             4. Download the release tarballs and test that the binaries works.
             5. Fill in the shasums by running the command at the end of the release text.
             --- PUBLISH GITHUB RELEASE HERE ---
-            5. At some point, copy the GitHub changelog to Changelog.md in the repo.
-            6. Tweet.
+            6. At some point, copy the GitHub changelog to Changelog.md in the repo.
+            7. Tweet.
             --- DELETE EVERYTHING ABOVE THIS LINE ---
 
             This is a binary release of Infer for Linux and MacOS. To use it follow these [instructions](http://fbinfer.com/docs/getting-started.html).

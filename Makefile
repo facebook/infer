@@ -915,7 +915,9 @@ endif
 	$(QUIET)$(call silent_on_success,Copying man pages,\
 	$(REMOVE) "$(WEBSITE_DIR)"/static/man/*; \
 	for man in $(INFER_GROFF_MANUALS); do \
-	  groff -Thtml "$$man" > "$(WEBSITE_DIR)"/static/man/next/$$(basename "$$man").html; \
+	  groff -Thtml "$$man" \
+	  | grep -v '^<!-- CreationDate: .*>$$' \
+	  > "$(WEBSITE_DIR)"/static/man/next/$$(basename "$$man").html; \
 	done)
 	$(QUIET)$(call silent_on_success,Building OCaml modules documentation,\
 	$(MAKE) IS_FACEBOOK_TREE=no NO_BROWSE_DOC=yes doc)
