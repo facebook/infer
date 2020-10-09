@@ -20,6 +20,7 @@ module.exports = {
           "man-infer-analyze",
           "man-infer-capture",
           "man-infer-compile",
+          "man-infer-debug",
           "man-infer-explore",
           "man-infer-help",
           "man-infer-report",
