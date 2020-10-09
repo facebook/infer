@@ -5,7 +5,50 @@ on:
   - pull_request
 
 jobs:
+  create-release:
+    name: Create release
+    runs-on: ubuntu-latest
+    outputs:
+      upload-url: ${{ steps.create-release.outputs.upload_url }}
+    steps:
+      - name: Create Release
+        id: create-release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Infer version ${{ github.ref }}
+          draft: true
+          prerelease: false
+          body: |
+            BEFORE PUBLISHING CHECKLIST:
+            1. From the commit tagged on GitHub, create and push a new version of the website with "make new-website-version" (see website/README.md for how to test).
+            2. Consider deleting the oldest documentation version (see Docusaurus 2 documentation for details).
+            3. Fill in the changelog below to go on GitHub.
+            4. Download the release tarballs and test that the binaries works.
+            5. Fill in the shasums by running the command at the end of the release text.
+            --- PUBLISH GITHUB RELEASE HERE ---
+            5. At some point, copy the GitHub changelog to Changelog.md in the repo.
+            6. Tweet.
+            --- DELETE EVERYTHING ABOVE THIS LINE ---
+
+            This is a binary release of Infer for Linux and MacOS. To use it follow these [instructions](http://fbinfer.com/docs/getting-started.html).
+
+            - new feature 1
+            - new feature 2
+
+            The sha256 checksums of the tarballs are:
+            ```
+            $ shasum -a 256 infer-*-v<VERSION GOES HERE>.tar.xz
+            DOWNLOAD BOTH TARBALLS AND PUT RESULT OF THE ABOVE COMMAND HERE BEFORE PUBLISHING
+            ```
+
   build:
+    name: Build Infer
+    needs: create-release
+
     strategy:
       fail-fast: false
       matrix:
@@ -14,7 +57,6 @@ jobs:
           - ubuntu-latest
         ocaml-version:
           - 4.11.1
-
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -66,10 +108,13 @@ jobs:
 
       - run: ./build-infer.sh --yes all
 
-      - run: make install
+      - run: make install BUILD_MODE=opt
         if: runner.os == 'macOS'
 
-      - run: sudo make install
+      - run: |
+          sudo make install BUILD_MODE=opt
+          # restore permissions after root build
+          sudo chown $USER: -R .
         if: runner.os == 'Linux'
 
       - name: Test infer
@@ -125,3 +170,20 @@ jobs:
           # first command should exit with status 2
           infer --fail-on-issue -P -- clang -c FailingTest.c || if [[ $? -ne 2 ]]; then exit 1; fi
           infer --fail-on-issue -P -- clang -c PassingTest.c
+
+      - name: Build release tarball
+        id: build-release
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          ./scripts/create_binary_release.sh "$(echo '${{ github.ref }}' | rev | cut -d / -f 1 | rev)"
+
+      - name: Upload Release Asset
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload-url }}
+          asset_path: ${{ steps.build-release.outputs.tarball-path }}
+          asset_name: ${{ steps.build-release.outputs.tarball-path }}
+          asset_content_type: application/x-gtar
