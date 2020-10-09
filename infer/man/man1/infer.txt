@@ -1030,6 +1030,15 @@ OPTIONS
     See also infer-analyze(1), infer-capture(1), infer-explore(1),
            infer-report(1), and infer-run(1).
 
+       --scheduler { file | restart | callgraph }
+           Specify the scheduler used for the analysis phase:           - file: schedule one job per file
+           - callgraph: schedule one job per procedure, following the
+           syntactic call graph. Usually faster than "file".
+           - restart: same as callgraph but uses locking to try and avoid
+           duplicate work between different analysis processes and thus
+           performs better in some circumstances
+           See also infer-analyze(1).
+
        --select N
            Select bug number N. If omitted, prompt for input.           See also infer-explore(1).
 
