@@ -191,6 +191,9 @@ module ObjectiveC : sig
   val implements : string -> Tenv.t -> string -> bool
   (** Check whether class implements a given ObjC class *)
 
+  val conforms_to : protocol:string -> Tenv.t -> string -> bool
+  (** Check whether class conforms to a given ObjC protocol *)
+
   val is_core_graphics_create_or_copy : Tenv.t -> string -> bool
 
   val is_core_foundation_create_or_copy : Tenv.t -> string -> bool

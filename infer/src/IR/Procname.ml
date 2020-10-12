@@ -234,6 +234,12 @@ module ObjC_Cpp = struct
 
   let make_dealloc name = make name "dealloc" ObjCInstanceMethod Typ.NoTemplate []
 
+  let make_copyWithZone ~is_mutable name =
+    let zone = Typ.CStruct (QualifiedCppName.of_qual_string "_NSZone") in
+    let method_name = if is_mutable then "mutableCopyWithZone:" else "copyWithZone:" in
+    make name method_name ObjCInstanceMethod Typ.NoTemplate [Parameter.clang_param_of_name zone]
+
+
   let get_class_name objc_cpp = Typ.Name.name objc_cpp.class_name
 
   let get_class_type_name objc_cpp = objc_cpp.class_name
@@ -724,6 +730,8 @@ let make_java ~class_name ~return_type ~method_name ~parameters ~kind () =
 
 
 let make_objc_dealloc name = ObjC_Cpp (ObjC_Cpp.make_dealloc name)
+
+let make_objc_copyWithZone ~is_mutable name = ObjC_Cpp (ObjC_Cpp.make_copyWithZone ~is_mutable name)
 
 module Hashable = struct
   type nonrec t = t [@@deriving compare, equal]

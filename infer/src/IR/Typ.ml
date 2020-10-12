@@ -689,3 +689,5 @@ let rec is_java_type t =
 let pointer_to_java_lang_object = mk_ptr (mk_struct Name.Java.java_lang_object)
 
 let pointer_to_java_lang_string = mk_ptr (mk_struct Name.Java.java_lang_string)
+
+let pointer_to_objc_nszone = mk_ptr (mk_struct (CStruct (QualifiedCppName.of_qual_string "NSZone")))
