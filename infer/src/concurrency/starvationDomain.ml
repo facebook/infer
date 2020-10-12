@@ -421,8 +421,6 @@ module CriticalPair = struct
 
   let make ~loc acquisitions event thread = make {acquisitions; event; thread} loc
 
-  let is_blocking_call {elem= {event}} = match event with LockAcquire _ -> true | _ -> false
-
   let may_deadlock tenv ~(lhs : t) ~lhs_lock ~(rhs : t) =
     let get_acquired_locks {elem= {event}} =
       match event with LockAcquire {locks} -> locks | _ -> []
@@ -645,9 +643,11 @@ module ScheduledWorkItem = struct
 end
 
 module ScheduledWorkDomain = AbstractDomain.FiniteSet (ScheduledWorkItem)
+module IgnoreBlockingCalls = AbstractDomain.BooleanOr
 
 type t =
-  { guard_map: GuardToLockMap.t
+  { ignore_blocking_calls: IgnoreBlockingCalls.t
+  ; guard_map: GuardToLockMap.t
   ; lock_state: LockState.t
   ; critical_pairs: CriticalPairs.t
   ; attributes: AttributeDomain.t
@@ -656,7 +656,8 @@ type t =
   ; var_state: VarDomain.t }
 
 let initial =
-  { guard_map= GuardToLockMap.empty
+  { ignore_blocking_calls= false
+  ; guard_map= GuardToLockMap.empty
   ; lock_state= LockState.top
   ; critical_pairs= CriticalPairs.empty
   ; attributes= AttributeDomain.empty
@@ -675,7 +676,9 @@ let pp fmt astate =
 
 
 let join lhs rhs =
-  { guard_map= GuardToLockMap.join lhs.guard_map rhs.guard_map
+  { ignore_blocking_calls=
+      IgnoreBlockingCalls.join lhs.ignore_blocking_calls rhs.ignore_blocking_calls
+  ; guard_map= GuardToLockMap.join lhs.guard_map rhs.guard_map
   ; lock_state= LockState.join lhs.lock_state rhs.lock_state
   ; critical_pairs= CriticalPairs.join lhs.critical_pairs rhs.critical_pairs
   ; attributes= AttributeDomain.join lhs.attributes rhs.attributes
@@ -687,7 +690,8 @@ let join lhs rhs =
 let widen ~prev ~next ~num_iters:_ = join prev next
 
 let leq ~lhs ~rhs =
-  GuardToLockMap.leq ~lhs:lhs.guard_map ~rhs:rhs.guard_map
+  IgnoreBlockingCalls.leq ~lhs:lhs.ignore_blocking_calls ~rhs:rhs.ignore_blocking_calls
+  && GuardToLockMap.leq ~lhs:lhs.guard_map ~rhs:rhs.guard_map
   && LockState.leq ~lhs:lhs.lock_state ~rhs:rhs.lock_state
   && CriticalPairs.leq ~lhs:lhs.critical_pairs ~rhs:rhs.critical_pairs
   && AttributeDomain.leq ~lhs:lhs.attributes ~rhs:rhs.attributes
@@ -714,9 +718,11 @@ let acquire ?tenv ({lock_state; critical_pairs} as astate) ~procname ~loc locks 
 
 
 let make_call_with_event new_event ~loc astate =
-  { astate with
-    critical_pairs=
-      add_critical_pair astate.lock_state new_event astate.thread ~loc astate.critical_pairs }
+  if astate.ignore_blocking_calls then astate
+  else
+    { astate with
+      critical_pairs=
+        add_critical_pair astate.lock_state new_event astate.thread ~loc astate.critical_pairs }
 
 
 let blocking_call ~callee sev ~loc astate =
@@ -781,10 +787,6 @@ let lock_guard ~procname ~loc tenv astate guard =
   GuardToLockMap.find_opt guard astate.guard_map
   |> Option.value_map ~default:astate ~f:(fun lock_opt ->
          FlatLock.get lock_opt |> Option.to_list |> acquire ~tenv astate ~procname ~loc )
-
-
-let filter_blocking_calls ({critical_pairs} as astate) =
-  {astate with critical_pairs= CriticalPairs.filter CriticalPair.is_blocking_call critical_pairs}
 
 
 let schedule_work loc thread_constraint astate procname =
@@ -885,3 +887,6 @@ let remove_dead_vars (astate : t) deadvars =
   let var_state = VarDomain.exit_scope astate.var_state deadvars in
   let attributes = AttributeDomain.exit_scope deadvars astate.attributes in
   {astate with var_state; attributes}
+
+
+let set_ignore_blocking_calls_flag astate = {astate with ignore_blocking_calls= true}

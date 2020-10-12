@@ -164,7 +164,8 @@ end
 module ScheduledWorkDomain : AbstractDomain.FiniteSetS with type elt = ScheduledWorkItem.t
 
 type t =
-  { guard_map: GuardToLockMap.t
+  { ignore_blocking_calls: bool
+  ; guard_map: GuardToLockMap.t
   ; lock_state: LockState.t
   ; critical_pairs: CriticalPairs.t
   ; attributes: AttributeDomain.t
@@ -239,6 +240,6 @@ val integrate_summary :
 
 val summary_of_astate : Procdesc.t -> t -> summary
 
-val filter_blocking_calls : t -> t
+val set_ignore_blocking_calls_flag : t -> t
 
 val remove_dead_vars : t -> Var.t list -> t

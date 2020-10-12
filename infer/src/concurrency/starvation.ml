@@ -425,18 +425,19 @@ let analyze_procedure ({InterproceduralAnalysis.proc_desc; tenv} as interproc) =
       in
       {astate with thread}
     in
-    let filter_blocks =
-      if StarvationModels.is_annotated_nonblocking tenv procname then Domain.filter_blocking_calls
-      else Fn.id
+    let set_ignore_blocking_calls_flag astate =
+      if StarvationModels.is_annotated_nonblocking tenv procname then
+        Domain.set_ignore_blocking_calls_flag astate
+      else astate
     in
     let initial =
       Domain.initial
       (* set the attributes of instance variables set up by all constructors or the class initializer *)
       |> set_initial_attributes interproc
       |> set_lock_state_for_synchronized_proc |> set_thread_status_by_annotation
+      |> set_ignore_blocking_calls_flag
     in
     Analyzer.compute_post proc_data ~initial proc_desc
-    |> Option.map ~f:filter_blocks
     |> Option.map ~f:(Domain.summary_of_astate proc_desc)
 
 
