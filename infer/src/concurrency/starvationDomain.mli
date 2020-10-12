@@ -57,10 +57,10 @@ end
 
 module Event : sig
   type t =
-    | LockAcquire of {locks: Lock.t list}
-    | MayBlock of {callee: Procname.t; severity: StarvationModels.severity}
-    | StrictModeCall of {callee: Procname.t}
-    | MonitorWait of {lock: Lock.t}
+    | LockAcquire of {locks: Lock.t list; thread: ThreadDomain.t}
+    | MayBlock of {callee: Procname.t; severity: StarvationModels.severity; thread: ThreadDomain.t}
+    | StrictModeCall of {callee: Procname.t; thread: ThreadDomain.t}
+    | MonitorWait of {lock: Lock.t; thread: ThreadDomain.t}
   [@@deriving compare]
 
   val describe : F.formatter -> t -> unit
@@ -88,7 +88,7 @@ end
 
 (** An event and the currently-held locks at the time it occurred. *)
 module CriticalPairElement : sig
-  type t = private {acquisitions: Acquisitions.t; event: Event.t; thread: ThreadDomain.t}
+  type t = private {acquisitions: Acquisitions.t; event: Event.t}
 end
 
 (** A [CriticalPairElement] equipped with a call stack. The intuition is that if we have a critical
