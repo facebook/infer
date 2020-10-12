@@ -183,23 +183,23 @@ let check_state_list =
 
 
 let check_argument_list =
-  [ ((o, [n]), "com.facebook.common.internal.Preconditions.checkArgument(boolean):void")
-  ; ( (o, [n; n])
+  [ ((o, [o]), "com.facebook.common.internal.Preconditions.checkArgument(boolean):void")
+  ; ( (o, [o; n])
     , "com.facebook.common.internal.Preconditions.checkArgument(boolean,java.lang.Object):void" )
-  ; ( (o, [n; n; n])
+  ; ( (o, [o; n; n])
     , "com.facebook.common.internal.Preconditions.checkArgument(boolean,java.lang.String,java.lang.Object[]):void"
     )
-  ; ((o, [n]), "com.facebook.common.preconditions.Preconditions.checkArgument(boolean):void")
-  ; ( (o, [n; n])
+  ; ((o, [o]), "com.facebook.common.preconditions.Preconditions.checkArgument(boolean):void")
+  ; ( (o, [o; n])
     , "com.facebook.common.preconditions.Preconditions.checkArgument(boolean,java.lang.Object):void"
     )
-  ; ( (o, [n; n; n])
+  ; ( (o, [o; n; n])
     , "com.facebook.common.preconditions.Preconditions.checkArgument(boolean,java.lang.String,java.lang.Object[]):void"
     )
-  ; ((o, [n]), "com.google.common.base.Preconditions.checkArgument(boolean):void")
-  ; ( (o, [n; n])
+  ; ((o, [o]), "com.google.common.base.Preconditions.checkArgument(boolean):void")
+  ; ( (o, [o; n])
     , "com.google.common.base.Preconditions.checkArgument(boolean,java.lang.Object):void" )
-  ; ( (o, [n; n; n])
+  ; ( (o, [o; n; n])
     , "com.google.common.base.Preconditions.checkArgument(boolean,java.lang.String,java.lang.Object[]):void"
     ) ]
 
