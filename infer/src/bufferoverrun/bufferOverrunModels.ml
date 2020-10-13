@@ -1605,15 +1605,6 @@ module Buffer = struct
     {exec; check= no_check}
 end
 
-module Object = struct
-  let clone exp =
-    let exec {integer_type_widths} ~ret:(ret_id, _) mem =
-      let v = Sem.eval integer_type_widths exp mem in
-      model_by_value v ret_id mem
-    in
-    {exec; check= no_check}
-end
-
 module InferAnnotation = struct
   let assert_get index_exp coll_exp =
     match coll_exp with
@@ -1841,7 +1832,7 @@ module Call = struct
         $--> StdVector.constructor_empty
       ; -"google" &:: "StrLen" <>$ capt_exp $--> strlen
       ; (* Java models *)
-        -"java.lang.Object" &:: "clone" <>$ capt_exp $--> Object.clone
+        -"java.lang.Object" &:: "clone" <>$ capt_exp $--> id
       ; +PatternMatch.Java.implements_arrays &:: "asList" <>$ capt_exp $!--> create_copy_array
       ; +PatternMatch.Java.implements_arrays &:: "copyOf" <>$ capt_exp $+ capt_exp $+...$--> copyOf
       ; (* model sets and maps as lists *)
