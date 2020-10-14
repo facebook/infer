@@ -34,7 +34,7 @@ jobs:
             7. Tweet.
             --- DELETE EVERYTHING ABOVE THIS LINE ---
 
-            This is a binary release of Infer for Linux and MacOS. To use it follow these [instructions](http://fbinfer.com/docs/getting-started.html).
+            This is a binary release of Infer for Linux and MacOS. To use it follow these [instructions](http://fbinfer.com/docs/getting-started).
 
             - new feature 1
             - new feature 2
