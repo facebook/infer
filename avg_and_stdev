@@ -1,0 +1,41 @@
+#include <stdio.h>
+#include<math.h>
+
+float Average(int a, int b, int c,int d, int e){
+    
+    return (float)(a+b+c+d+e)/5;
+}
+
+void sd(float Average,int a ,int b,int c,int d, int e){
+    float variance, std_deviation;
+    variance = (pow(a-Average,2)+pow(b-Average,2)+pow(c-Average,2)+pow(d-Average,2)+pow(e-Average,2));
+    std_deviation = sqrt(variance/5);
+    
+    printf("\nStandard deviation = %.2f\n", std_deviation);
+}
+
+int main()
+{
+    //the number whose avg yout want to find , it can be increased or decreased
+    int num1, num2, num3, num4, num5;
+    float avg;
+    //the input for the numbers
+    printf("Enter number: ");
+    scanf("%d",&num1);
+    printf("Enter number: ");
+    scanf("%d",&num2);
+    printf("Enter number: ");
+    scanf("%d",&num3);
+    printf("Enter number: ");
+    scanf("%d",&num4);
+    printf("Enter number: ");
+    scanf("%d",&num5);
+    
+    //calculate average and standard deviation of the input numbers 
+    avg = Average(num1, num2,num3,num4, num5);
+
+    printf("Average marks= %.2f" ,avg);
+    sd(avg,num1, num2,num3,num4, num5);
+
+    return 0;
+}
