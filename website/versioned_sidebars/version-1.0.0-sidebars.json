@@ -1,0 +1,245 @@
+{
+  "version-1.0.0/docs": [
+    {
+      "collapsed": true,
+      "type": "category",
+      "label": "Quick Start",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-1.0.0/getting-started"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/hello-world"
+        }
+      ]
+    },
+    {
+      "collapsed": true,
+      "type": "category",
+      "label": "User Guide",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-1.0.0/infer-workflow"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/analyzing-apps-or-projects"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/steps-for-ci"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/advanced-features"
+        },
+        {
+          "collapsed": true,
+          "type": "category",
+          "label": "Infer Manuals",
+          "items": [
+            {
+              "type": "doc",
+              "id": "version-1.0.0/man-infer"
+            },
+            {
+              "type": "doc",
+              "id": "version-1.0.0/man-infer-analyze"
+            },
+            {
+              "type": "doc",
+              "id": "version-1.0.0/man-infer-capture"
+            },
+            {
+              "type": "doc",
+              "id": "version-1.0.0/man-infer-compile"
+            },
+            {
+              "type": "doc",
+              "id": "version-1.0.0/man-infer-debug"
+            },
+            {
+              "type": "doc",
+              "id": "version-1.0.0/man-infer-explore"
+            },
+            {
+              "type": "doc",
+              "id": "version-1.0.0/man-infer-help"
+            },
+            {
+              "type": "doc",
+              "id": "version-1.0.0/man-infer-report"
+            },
+            {
+              "type": "doc",
+              "id": "version-1.0.0/man-infer-reportdiff"
+            },
+            {
+              "type": "doc",
+              "id": "version-1.0.0/man-infer-run"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "collapsed": true,
+      "type": "category",
+      "label": "Analyses and Issue Types",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-1.0.0/all-issue-types"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/checker-annotation-reachability"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/checker-biabduction"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/checker-bufferoverrun"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/checker-config-checks-between-markers"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/checker-cost"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/checker-eradicate"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/checker-fragment-retains-view"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/checker-immutable-cast"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/checker-impurity"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/checker-inefficient-keyset-iterator"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/checker-linters"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/checker-litho-required-props"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/checker-liveness"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/checker-loop-hoisting"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/checker-printf-args"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/checker-pulse"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/checker-purity"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/checker-quandary"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/checker-racerd"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/checker-resource-leak-lab"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/checker-siof"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/checker-self-in-block"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/checker-starvation"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/checker-topl-biabd"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/checker-topl-pulse"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/checker-uninit"
+        }
+      ]
+    },
+    {
+      "collapsed": true,
+      "type": "category",
+      "label": "Foundations",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-1.0.0/about-Infer"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/separation-logic-and-bi-abduction"
+        }
+      ]
+    },
+    {
+      "collapsed": true,
+      "type": "category",
+      "label": "Contribute",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-1.0.0/absint-framework"
+        },
+        {
+          "type": "doc",
+          "id": "version-1.0.0/internal-API"
+        }
+      ]
+    },
+    {
+      "collapsed": true,
+      "type": "category",
+      "label": "Versions",
+      "items": [
+        {
+          "type": "doc",
+          "id": "version-1.0.0/versions"
+        }
+      ]
+    }
+  ]
+}

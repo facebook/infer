@@ -470,7 +470,13 @@ let mk_eval_sym_trace ?(is_params_ref = false) integer_type_widths
                   Mem.find_set (eval_locs a caller_mem) caller_mem )
             in
             this_actual :: actuals
-      else List.map ~f:(fun (a, _) -> eval integer_type_widths a caller_mem) actual_exps
+      else
+        List.map actual_exps ~f:(fun (a, _) ->
+            match (a : Exp.t) with
+            | Closure closure ->
+                FuncPtr.Set.of_closure closure |> Val.of_func_ptrs
+            | _ ->
+                eval integer_type_widths a caller_mem )
     in
     ParamBindings.make callee_formals actuals
   in
@@ -480,13 +486,20 @@ let mk_eval_sym_trace ?(is_params_ref = false) integer_type_widths
     Symb.Symbol.check_bound_end s bound_end ;
     Itv.get_bound itv bound_end
   in
+  let eval_locpath ~mode partial = eval_locpath ~mode params partial caller_mem in
+  let eval_func_ptrs ~mode partial =
+    eval_sympath_partial ~mode params partial caller_mem |> Val.get_func_ptrs
+  in
   let trace_of_sym s =
     let sympath = Symb.Symbol.path s in
     let itv, traces = eval_sympath ~mode:EvalNormal params sympath caller_mem in
     if Itv.eq itv Itv.bot then TraceSet.bottom else traces
   in
-  let eval_locpath ~mode partial = eval_locpath ~mode params partial caller_mem in
-  fun ~mode -> {eval_sym= eval_sym ~mode; trace_of_sym; eval_locpath= eval_locpath ~mode}
+  fun ~mode ->
+    { eval_sym= eval_sym ~mode
+    ; eval_locpath= eval_locpath ~mode
+    ; eval_func_ptrs= eval_func_ptrs ~mode
+    ; trace_of_sym }
 
 
 let mk_eval_sym_mode ~mode integer_type_widths callee_formals actual_exps caller_mem =

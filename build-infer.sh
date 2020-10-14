@@ -165,7 +165,6 @@ fi
 ./configure $INFER_CONFIGURE_OPTS
 
 if [ "$BUILD_CLANG" == "yes" ]; then
-  facebook-clang-plugins/clang/src/prepare_clang_src.sh
   if ! facebook-clang-plugins/clang/setup.sh --only-check-install; then
     echo ""
     echo "  Warning: you are not using a release of Infer. The C and"
@@ -195,6 +194,9 @@ if [ "$BUILD_CLANG" == "yes" ]; then
     if [ "x$confirm" != "xy" ]; then
         exit 0
     fi
+
+    # only run this script if we are definitely building clang
+    facebook-clang-plugins/clang/src/prepare_clang_src.sh
   fi
 fi
 

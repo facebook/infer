@@ -57,10 +57,10 @@ end
 
 module Event : sig
   type t =
-    | LockAcquire of Lock.t
-    | MayBlock of (Procname.t * StarvationModels.severity)
-    | StrictModeCall of Procname.t
-    | MonitorWait of Lock.t
+    | LockAcquire of {locks: Lock.t list; thread: ThreadDomain.t}
+    | MayBlock of {callee: Procname.t; severity: StarvationModels.severity; thread: ThreadDomain.t}
+    | StrictModeCall of {callee: Procname.t; thread: ThreadDomain.t}
+    | MonitorWait of {lock: Lock.t; thread: ThreadDomain.t}
   [@@deriving compare]
 
   val describe : F.formatter -> t -> unit
@@ -88,7 +88,7 @@ end
 
 (** An event and the currently-held locks at the time it occurred. *)
 module CriticalPairElement : sig
-  type t = private {acquisitions: Acquisitions.t; event: Event.t; thread: ThreadDomain.t}
+  type t = private {acquisitions: Acquisitions.t; event: Event.t}
 end
 
 (** A [CriticalPairElement] equipped with a call stack. The intuition is that if we have a critical
@@ -107,8 +107,10 @@ module CriticalPair : sig
   val get_earliest_lock_or_call_loc : procname:Procname.t -> t -> Location.t
   (** outermost callsite location OR lock acquisition *)
 
-  val may_deadlock : Tenv.t -> t -> t -> bool
-  (** two pairs can run in parallel and satisfy the conditions for deadlock *)
+  val may_deadlock : Tenv.t -> lhs:t -> lhs_lock:Lock.t -> rhs:t -> Lock.t option
+  (** if two pairs can run in parallel and satisfy the conditions for deadlock, when [lhs_lock] of
+      [lhs] is involved return the lock involved from [rhs], as [LockAcquire] may involve more than
+      one *)
 
   val make_trace :
     ?header:string -> ?include_acquisitions:bool -> Procname.t -> t -> Errlog.loc_trace
@@ -162,7 +164,8 @@ end
 module ScheduledWorkDomain : AbstractDomain.FiniteSetS with type elt = ScheduledWorkItem.t
 
 type t =
-  { guard_map: GuardToLockMap.t
+  { ignore_blocking_calls: bool
+  ; guard_map: GuardToLockMap.t
   ; lock_state: LockState.t
   ; critical_pairs: CriticalPairs.t
   ; attributes: AttributeDomain.t
@@ -237,6 +240,6 @@ val integrate_summary :
 
 val summary_of_astate : Procdesc.t -> t -> summary
 
-val filter_blocking_calls : t -> t
+val set_ignore_blocking_calls_flag : t -> t
 
 val remove_dead_vars : t -> Var.t list -> t

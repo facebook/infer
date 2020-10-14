@@ -75,6 +75,13 @@ let add_class_to_tenv qual_type_to_sil_type procname_from_decl tenv decl_info na
     create_supers_fields qual_type_to_sil_type tenv interface_name decl_list
       ocidi.Clang_ast_t.otdi_super
   in
+  let objc_protocols =
+    List.filter_map
+      ~f:(fun dr ->
+        Option.map dr.Clang_ast_t.dr_name ~f:(fun x ->
+            CAst_utils.get_qualified_name x |> Typ.Name.Objc.from_qual_name ) )
+      ocidi.Clang_ast_t.otdi_protocols
+  in
   let fields_sc = CField_decl.fields_superclass tenv ocidi in
   (*In case we found categories, or partial definition of this class earlier and they are already in the tenv *)
   let fields, (supers : Typ.Name.t list), methods =
@@ -95,8 +102,8 @@ let add_class_to_tenv qual_type_to_sil_type procname_from_decl tenv decl_info na
       methods
   in
   ignore
-    (Tenv.mk_struct tenv ~fields:all_fields ~supers ~methods ~annots:Annot.Class.objc
-       ~exported_objc_methods:methods interface_name) ;
+    (Tenv.mk_struct tenv ~fields:all_fields ~supers ~objc_protocols ~methods
+       ~annots:Annot.Class.objc ~exported_objc_methods:methods interface_name) ;
   interface_desc
 
 

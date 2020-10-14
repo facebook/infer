@@ -278,8 +278,45 @@ module TransferFunctions = struct
         Dom.Mem.add_unknown ret ~location mem
 
 
+  let call {interproc= {tenv}; get_summary; get_formals; oenv= {integer_type_widths}} node location
+      ((id, _) as ret) callee_pname params mem =
+    let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
+    let fun_arg_list =
+      List.map params ~f:(fun (exp, typ) ->
+          ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= ()} )
+    in
+    match Models.Call.dispatch tenv callee_pname fun_arg_list with
+    | Some {Models.exec} ->
+        let model_env =
+          let node_hash = CFG.Node.hash node in
+          BoUtils.ModelEnv.mk_model_env callee_pname ~node_hash location tenv integer_type_widths
+            get_summary
+        in
+        exec model_env ~ret mem
+    | None -> (
+        let {BoUtils.ReplaceCallee.pname= callee_pname; params; is_params_ref} =
+          BoUtils.ReplaceCallee.replace_make_shared tenv get_formals callee_pname params
+        in
+        match (get_summary callee_pname, get_formals callee_pname) with
+        | Some callee_exit_mem, Some callee_formals ->
+            instantiate_mem ~is_params_ref integer_type_widths id callee_formals callee_pname params
+              mem callee_exit_mem location
+        | _, _ ->
+            (* This may happen for procedures with a biabduction model too. *)
+            L.d_printfln_escaped "/!\\ Unknown call to %a" Procname.pp callee_pname ;
+            ScubaLogging.cost_log_message ~label:"unmodeled_function_inferbo"
+              ~message:(F.asprintf "Unmodeled Function[Inferbo] : %a" Procname.pp callee_pname) ;
+            Dom.Mem.add_unknown_from ret ~callee_pname ~location mem )
+
+
+  let unknown_call location ((id, _) as ret) mem =
+    let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
+    Dom.Mem.add_unknown ret ~location mem
+
+
   let exec_instr : Dom.Mem.t -> analysis_data -> CFG.Node.t -> Sil.instr -> Dom.Mem.t =
-   fun mem {interproc= {proc_desc; tenv}; get_summary; get_formals; oenv= {integer_type_widths}}
+   fun mem
+       ({interproc= {proc_desc; tenv}; get_summary; oenv= {integer_type_widths}} as analysis_data)
        node instr ->
     match instr with
     | Load {id} when Ident.is_none id ->
@@ -372,38 +409,19 @@ module TransferFunctions = struct
         assign_java_enum_values get_summary id
           ~caller_pname:(Procdesc.get_proc_name proc_desc)
           ~callee_pname mem
-    | Call (((id, _) as ret), Const (Cfun callee_pname), params, location, _) -> (
-        let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
-        let fun_arg_list =
-          List.map params ~f:(fun (exp, typ) ->
-              ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= ()} )
-        in
-        match Models.Call.dispatch tenv callee_pname fun_arg_list with
-        | Some {Models.exec} ->
-            let model_env =
-              let node_hash = CFG.Node.hash node in
-              BoUtils.ModelEnv.mk_model_env callee_pname ~node_hash location tenv
-                integer_type_widths get_summary
-            in
-            exec model_env ~ret mem
-        | None -> (
-            let {BoUtils.ReplaceCallee.pname= callee_pname; params; is_params_ref} =
-              BoUtils.ReplaceCallee.replace_make_shared tenv get_formals callee_pname params
-            in
-            match (get_summary callee_pname, get_formals callee_pname) with
-            | Some callee_exit_mem, Some callee_formals ->
-                instantiate_mem ~is_params_ref integer_type_widths id callee_formals callee_pname
-                  params mem callee_exit_mem location
-            | _, _ ->
-                (* This may happen for procedures with a biabduction model too. *)
-                L.d_printfln_escaped "/!\\ Unknown call to %a" Procname.pp callee_pname ;
-                ScubaLogging.cost_log_message ~label:"unmodeled_function_inferbo"
-                  ~message:(F.asprintf "Unmodeled Function[Inferbo] : %a" Procname.pp callee_pname) ;
-                Dom.Mem.add_unknown_from ret ~callee_pname ~location mem ) )
-    | Call (((id, _) as ret), fun_exp, _, location, _) ->
-        let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
-        L.d_printfln_escaped "/!\\ Call to non-const function %a" Exp.pp fun_exp ;
-        Dom.Mem.add_unknown ret ~location mem
+    | Call (ret, Const (Cfun callee_pname), params, location, _) ->
+        call analysis_data node location ret callee_pname params mem
+    | Call (ret, fun_exp, params, location, _) -> (
+        let func_ptrs = Sem.eval integer_type_widths fun_exp mem |> Dom.Val.get_func_ptrs in
+        match FuncPtr.Set.is_singleton_or_more func_ptrs with
+        | Singleton (Closure {name= callee_pname}) ->
+            call analysis_data node location ret callee_pname params mem
+        | More ->
+            L.d_printfln_escaped "/!\\ Call to multiple functions %a" Exp.pp fun_exp ;
+            unknown_call location ret mem
+        | Empty | Singleton (Path _) ->
+            L.d_printfln_escaped "/!\\ Call to non-const function %a" Exp.pp fun_exp ;
+            unknown_call location ret mem )
     | Metadata (VariableLifetimeBegins (pvar, typ, location)) when Pvar.is_global pvar ->
         let model_env =
           let pname = Procdesc.get_proc_name proc_desc in

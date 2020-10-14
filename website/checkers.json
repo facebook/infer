@@ -12,6 +12,7 @@
     "checker-loop-hoisting", "checker-printf-args", "checker-pulse",
     "checker-purity", "checker-quandary", "checker-racerd",
     "checker-resource-leak-lab", "checker-siof", "checker-self-in-block",
-    "checker-starvation", "checker-topl", "checker-uninit"
+    "checker-starvation", "checker-topl-biabd", "checker-topl-pulse",
+    "checker-uninit"
   ]
 }

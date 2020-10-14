@@ -90,7 +90,11 @@ There are a number of known limitations to the design of the static cost analysi
 ## List of Issue Types
 
 The following issue types are reported by this checker:
+- [AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE](/docs/next/all-issue-types#autoreleasepool_size_complexity_increase)
+- [AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE_UI_THREAD](/docs/next/all-issue-types#autoreleasepool_size_complexity_increase_ui_thread)
+- [AUTORELEASEPOOL_SIZE_UNREACHABLE_AT_EXIT](/docs/next/all-issue-types#autoreleasepool_size_unreachable_at_exit)
 - [EXECUTION_TIME_COMPLEXITY_INCREASE](/docs/next/all-issue-types#execution_time_complexity_increase)
 - [EXECUTION_TIME_COMPLEXITY_INCREASE_UI_THREAD](/docs/next/all-issue-types#execution_time_complexity_increase_ui_thread)
 - [EXECUTION_TIME_UNREACHABLE_AT_EXIT](/docs/next/all-issue-types#execution_time_unreachable_at_exit)
+- [INFINITE_AUTORELEASEPOOL_SIZE](/docs/next/all-issue-types#infinite_autoreleasepool_size)
 - [INFINITE_EXECUTION_TIME](/docs/next/all-issue-types#infinite_execution_time)

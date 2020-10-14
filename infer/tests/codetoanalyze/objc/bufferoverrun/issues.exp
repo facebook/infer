@@ -1,0 +1,1 @@
+codetoanalyze/objc/bufferoverrun/block.m, Block.block_in_field_Bad, 7, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Call,Assignment,<Length trace>,Array declaration,Array access: Offset: 15 Size: 10]

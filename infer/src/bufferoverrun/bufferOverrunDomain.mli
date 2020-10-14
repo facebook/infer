@@ -36,8 +36,9 @@ end
 (** type for on-demand symbol evaluation in Inferbo *)
 type eval_sym_trace =
   { eval_sym: Bounds.Bound.eval_sym  (** evaluating symbol *)
-  ; trace_of_sym: Symb.Symbol.t -> BufferOverrunTrace.Set.t  (** getting traces of symbol *)
-  ; eval_locpath: AbsLoc.PowLoc.eval_locpath  (** evaluating path *) }
+  ; eval_locpath: AbsLoc.PowLoc.eval_locpath  (** evaluating path *)
+  ; eval_func_ptrs: FuncPtr.Set.eval_func_ptrs  (** evaluating function pointers *)
+  ; trace_of_sym: Symb.Symbol.t -> BufferOverrunTrace.Set.t  (** getting traces of symbol *) }
 
 module Val : sig
   type t =
@@ -47,6 +48,7 @@ module Val : sig
     ; modeled_range: ModeledRange.t
     ; powloc: AbsLoc.PowLoc.t  (** Simple pointers *)
     ; arrayblk: ArrayBlk.t  (** Array blocks *)
+    ; func_ptrs: FuncPtr.Set.t  (** Function pointers *)
     ; traces: BufferOverrunTrace.Set.t }
 
   include AbstractDomain.S with type t := t
@@ -81,6 +83,8 @@ module Val : sig
 
   val of_pow_loc : traces:BufferOverrunTrace.Set.t -> AbsLoc.PowLoc.t -> t
 
+  val of_func_ptrs : FuncPtr.Set.t -> t
+
   val unknown_locs : t
 
   val unknown_from : Typ.t -> callee_pname:Procname.t option -> location:Location.t -> t
@@ -112,6 +116,8 @@ module Val : sig
   val get_modeled_range : t -> ModeledRange.t
 
   val get_pow_loc : t -> AbsLoc.PowLoc.t
+
+  val get_func_ptrs : t -> FuncPtr.Set.t
 
   val get_traces : t -> BufferOverrunTrace.Set.t
 

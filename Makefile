@@ -99,6 +99,7 @@ BUILD_SYSTEMS_TESTS += \
 
 DIRECT_TESTS += \
   objc_autoreleasepool \
+  objc_bufferoverrun \
   objc_biabduction \
   objc_frontend \
   objc_linters \
@@ -909,21 +910,54 @@ ifeq ($(IS_FACEBOOK_TREE),yes)
 	$(MAKE) -C facebook clean)
 endif
 	$(QUIET)$(call silent_on_success,Building infer and manuals,\
-	$(MAKE) $(INFER_GROFF_MANUALS))
+	$(MAKE) IS_FACEBOOK_TREE=no $(INFER_GROFF_MANUALS))
 	$(QUIET)$(MKDIR_P) "$(WEBSITE_DIR)"/static/man/next "$(WEBSITE_DIR)"/static/odoc/next
 	$(QUIET)$(call silent_on_success,Copying man pages,\
 	$(REMOVE) "$(WEBSITE_DIR)"/static/man/*; \
 	for man in $(INFER_GROFF_MANUALS); do \
-	  groff -Thtml "$$man" > "$(WEBSITE_DIR)"/static/man/next/$$(basename "$$man").html; \
+	  groff -Thtml "$$man" \
+	  | grep -v '^<!-- CreationDate: .*>$$' \
+	  > "$(WEBSITE_DIR)"/static/man/next/$$(basename "$$man").html; \
 	done)
 	$(QUIET)$(call silent_on_success,Building OCaml modules documentation,\
 	$(MAKE) IS_FACEBOOK_TREE=no NO_BROWSE_DOC=yes doc)
 	$(QUIET)$(call silent_on_success,Copying OCaml modules documentation,\
 	rsync -a --delete $(BUILD_DIR)/default/_doc/_html/ "$(WEBSITE_DIR)"/static/odoc/next/)
 	$(QUIET)$(call silent_on_success,Building infer,\
-	$(MAKE) src_build)
+	$(MAKE) IS_FACEBOOK_TREE=no src_build)
 	$(QUIET)$(call silent_on_success,Calling 'infer help --write-website',\
 	$(INFER_BIN) help --write-website "$(WEBSITE_DIR)")
+
+.PHONY: new-website-version
+# note: deletes already-created new version if already there to make it easier to update new
+# versions while preparing a release
+new-website-version: doc-publish
+#	this will version docs/ appropriately
+	cd $(WEBSITE_DIR) && \
+	rm -rf versioned_*/version-$(INFER_MAJOR).$(INFER_MINOR).$(INFER_PATCH)* ; \
+	sed -i -e '/"$(INFER_MAJOR).$(INFER_MINOR).$(INFER_PATCH)"/d' versions.json ; \
+	yarn run docusaurus docs:version $(INFER_MAJOR).$(INFER_MINOR).$(INFER_PATCH)
+#	copy static versioned resources
+	cd $(WEBSITE_DIR)/static/man && \
+	rm -fr $(INFER_MAJOR).$(INFER_MINOR).$(INFER_PATCH)/ ; \
+	cp -a next/ $(INFER_MAJOR).$(INFER_MINOR).$(INFER_PATCH)/
+	cd $(WEBSITE_DIR)/static/odoc && \
+	rm -fr $(INFER_MAJOR).$(INFER_MINOR).$(INFER_PATCH)/ ; \
+	cp -a next/ $(INFER_MAJOR).$(INFER_MINOR).$(INFER_PATCH)/
+#	adjust intra-doc paths in new doc version
+	cd $(WEBSITE_DIR)/versioned_docs/version-$(INFER_MAJOR).$(INFER_MINOR).$(INFER_PATCH)/ && \
+	find . -type f -not -name versions.md \
+	  -exec sed -i -e 's#/docs/next/#/docs/#g' \{\} \+
+#	adjust paths to static versioned resources in new doc version
+	cd $(WEBSITE_DIR)/versioned_docs/version-$(INFER_MAJOR).$(INFER_MINOR).$(INFER_PATCH)/ && \
+	find . -type f -not -name versions.md \
+	  -exec sed -i -e 's#/next/#/$(INFER_MAJOR).$(INFER_MINOR).$(INFER_PATCH)/#g' \{\} \+
+#	adjust versions.md, the page where users can navigate to other versions of the docs, unless
+#	it was already changed by an earlier run of this rule
+	cd $(WEBSITE_DIR)/ && \
+	grep -q -F 'latest released version ($(INFER_MAJOR).$(INFER_MINOR).$(INFER_PATCH))' docs/versions.md || \
+	find docs versioned_docs -name versions.md \
+	  -exec sed -i -e 's#^- \[latest released version (\([^)]*\))\](/docs/getting-started)$$#- [latest released version ($(INFER_MAJOR).$(INFER_MINOR).$(INFER_PATCH))](/docs/getting-started)\n- [previous version (\1)](/docs/\1/getting-started)#' \{\} \+
 
 # print list of targets
 .PHONY: show-targets

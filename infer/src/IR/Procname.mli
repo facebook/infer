@@ -265,6 +265,9 @@ val make_objc_dealloc : Typ.Name.t -> t
 (** Create a Objective-C dealloc name. This is a destructor for an Objective-C class. This procname
     is given by the class name, since it is always an instance method with the name "dealloc" *)
 
+val make_objc_copyWithZone : is_mutable:bool -> Typ.Name.t -> t
+(** Create an Objective-C method for copyWithZone: or mutableCopyWithZone: according to is_mutable. *)
+
 val empty_block : t
 (** Empty block name. *)
 

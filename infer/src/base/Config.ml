@@ -2259,8 +2259,14 @@ and export_changed_functions =
 
 and scheduler =
   CLOpt.mk_symbol ~long:"scheduler" ~default:File ~eq:equal_scheduler
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
     ~symbols:[("file", File); ("restart", Restart); ("callgraph", SyntacticCallGraph)]
-    "Specify the scheduler used for the analysis phase"
+    "Specify the scheduler used for the analysis phase:\n\
+     - file: schedule one job per file\n\
+     - callgraph: schedule one job per procedure, following the syntactic call graph. Usually \
+     faster than \"file\".\n\
+     - restart: same as callgraph but uses locking to try and avoid duplicate work between \
+     different analysis processes and thus performs better in some circumstances"
 
 
 and test_filtering =

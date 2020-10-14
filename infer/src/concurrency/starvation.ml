@@ -425,18 +425,19 @@ let analyze_procedure ({InterproceduralAnalysis.proc_desc; tenv} as interproc) =
       in
       {astate with thread}
     in
-    let filter_blocks =
-      if StarvationModels.is_annotated_nonblocking tenv procname then Domain.filter_blocking_calls
-      else Fn.id
+    let set_ignore_blocking_calls_flag astate =
+      if StarvationModels.is_annotated_nonblocking tenv procname then
+        Domain.set_ignore_blocking_calls_flag astate
+      else astate
     in
     let initial =
       Domain.initial
       (* set the attributes of instance variables set up by all constructors or the class initializer *)
       |> set_initial_attributes interproc
       |> set_lock_state_for_synchronized_proc |> set_thread_status_by_annotation
+      |> set_ignore_blocking_calls_flag
     in
     Analyzer.compute_post proc_data ~initial proc_desc
-    |> Option.map ~f:filter_blocks
     |> Option.map ~f:(Domain.summary_of_astate proc_desc)
 
 
@@ -605,12 +606,12 @@ let should_report_deadlock_on_current_proc current_elem endpoint_elem =
       (* should never happen *)
       L.die InternalError "Deadlock cannot occur without two lock events: %a" CriticalPair.pp
         current_elem
-  | LockAcquire endpoint_lock, LockAcquire current_lock -> (
+  | LockAcquire {locks= endpoint_locks}, LockAcquire {locks= current_locks} -> (
       (* first elem is a class object (see [lock_of_class]), so always report because the
          reverse ordering on the events will not occur since we don't search the class for static locks *)
-      Lock.is_class_object endpoint_lock
+      List.exists ~f:Lock.is_class_object endpoint_locks
       ||
-      match Lock.compare_wrt_reporting endpoint_lock current_lock with
+      match List.compare Lock.compare_wrt_reporting endpoint_locks current_locks with
       | 0 ->
           Location.compare current_elem.CriticalPair.loc endpoint_elem.CriticalPair.loc < 0
       | c ->
@@ -671,7 +672,7 @@ let report_on_parallel_composition ~should_report_starvation tenv pattrs pair lo
   if CriticalPair.can_run_in_parallel pair other_pair then
     let acquisitions = other_pair.CriticalPair.elem.acquisitions in
     match other_pair.CriticalPair.elem.event with
-    | MayBlock (_, sev) as event
+    | MayBlock {severity} as event
       when should_report_starvation
            && Acquisitions.lock_is_held_in_other_thread tenv lock acquisitions ->
         let error_message =
@@ -680,8 +681,8 @@ let report_on_parallel_composition ~should_report_starvation tenv pattrs pair lo
             pname_pp pname Lock.pp_locks lock Event.describe event
         in
         let ltr, loc = make_trace_and_loc () in
-        ReportMap.add_starvation sev tenv pattrs loc ltr error_message report_map
-    | MonitorWait monitor_lock
+        ReportMap.add_starvation severity tenv pattrs loc ltr error_message report_map
+    | MonitorWait {lock= monitor_lock}
       when should_report_starvation
            && Acquisitions.lock_is_held_in_other_thread tenv lock acquisitions
            && not (Lock.equal lock monitor_lock) ->
@@ -692,17 +693,19 @@ let report_on_parallel_composition ~should_report_starvation tenv pattrs pair lo
         in
         let ltr, loc = make_trace_and_loc () in
         ReportMap.add_starvation High tenv pattrs loc ltr error_message report_map
-    | LockAcquire other_lock
-      when CriticalPair.may_deadlock tenv pair other_pair
-           && should_report_deadlock_on_current_proc pair other_pair ->
-        let error_message =
-          Format.asprintf
-            "Potential deadlock. %a (Trace 1) and %a (Trace 2) acquire locks %a and %a in reverse \
-             orders."
-            pname_pp pname pname_pp other_pname Lock.describe lock Lock.describe other_lock
-        in
-        let ltr, loc = make_trace_and_loc () in
-        ReportMap.add_deadlock tenv pattrs loc ltr error_message report_map
+    | LockAcquire _ -> (
+      match CriticalPair.may_deadlock tenv ~lhs:pair ~lhs_lock:lock ~rhs:other_pair with
+      | Some other_lock when should_report_deadlock_on_current_proc pair other_pair ->
+          let error_message =
+            Format.asprintf
+              "Potential deadlock. %a (Trace 1) and %a (Trace 2) acquire locks %a and %a in \
+               reverse orders."
+              pname_pp pname pname_pp other_pname Lock.describe lock Lock.describe other_lock
+          in
+          let ltr, loc = make_trace_and_loc () in
+          ReportMap.add_deadlock tenv pattrs loc ltr error_message report_map
+      | _ ->
+          report_map )
     | _ ->
         report_map
   else report_map
@@ -721,13 +724,13 @@ let report_on_pair ~analyze_ondemand tenv pattrs (pair : Domain.CriticalPair.t) 
     (ltr, loc)
   in
   match event with
-  | MayBlock (_, sev) when should_report_starvation ->
+  | MayBlock {severity} when should_report_starvation ->
       let error_message =
         Format.asprintf "Method %a runs on UI thread and may block; %a." pname_pp pname
           Event.describe event
       in
       let ltr, loc = make_trace_and_loc () in
-      ReportMap.add_starvation sev tenv pattrs loc ltr error_message report_map
+      ReportMap.add_starvation severity tenv pattrs loc ltr error_message report_map
   | MonitorWait _ when should_report_starvation ->
       let error_message =
         Format.asprintf "Method %a runs on UI thread and may block; %a." pname_pp pname
@@ -751,26 +754,33 @@ let report_on_pair ~analyze_ondemand tenv pattrs (pair : Domain.CriticalPair.t) 
       let loc = CriticalPair.get_earliest_lock_or_call_loc ~procname:pname pair in
       let ltr = CriticalPair.make_trace pname pair in
       ReportMap.add_lockless_violation tenv pattrs loc ltr error_message report_map
-  | LockAcquire lock when Acquisitions.lock_is_held lock pair.elem.acquisitions ->
-      let error_message =
-        Format.asprintf "Potential self deadlock. %a%a twice." pname_pp pname Lock.pp_locks lock
-      in
-      let loc = CriticalPair.get_earliest_lock_or_call_loc ~procname:pname pair in
-      let ltr = CriticalPair.make_trace ~header:"In method " pname pair in
-      ReportMap.add_deadlock tenv pattrs loc ltr error_message report_map
-  | LockAcquire lock when not Config.starvation_whole_program ->
-      Lock.root_class lock
-      |> Option.value_map ~default:report_map ~f:(fun other_class ->
-             (* get the class of the root variable of the lock in the lock acquisition
-                and retrieve all the summaries of the methods of that class;
-                then, report on the parallel composition of the current pair and any pair in these
-                summaries that can indeed run in parallel *)
-             fold_reportable_summaries analyze_ondemand tenv other_class ~init:report_map
-               ~f:(fun acc (other_pname, {critical_pairs}) ->
-                 CriticalPairs.fold
-                   (report_on_parallel_composition ~should_report_starvation tenv pattrs pair lock
-                      other_pname)
-                   critical_pairs acc ) )
+  | LockAcquire {locks} -> (
+    match
+      List.find locks ~f:(fun lock -> Acquisitions.lock_is_held lock pair.elem.acquisitions)
+    with
+    | Some lock ->
+        let error_message =
+          Format.asprintf "Potential self deadlock. %a%a twice." pname_pp pname Lock.pp_locks lock
+        in
+        let loc = CriticalPair.get_earliest_lock_or_call_loc ~procname:pname pair in
+        let ltr = CriticalPair.make_trace ~header:"In method " pname pair in
+        ReportMap.add_deadlock tenv pattrs loc ltr error_message report_map
+    | None when Config.starvation_whole_program ->
+        report_map
+    | None ->
+        List.fold locks ~init:report_map ~f:(fun acc lock ->
+            Lock.root_class lock
+            |> Option.value_map ~default:acc ~f:(fun other_class ->
+                   (* get the class of the root variable of the lock in the lock acquisition
+                      and retrieve all the summaries of the methods of that class;
+                      then, report on the parallel composition of the current pair and any pair in these
+                      summaries that can indeed run in parallel *)
+                   fold_reportable_summaries analyze_ondemand tenv other_class ~init:acc
+                     ~f:(fun acc (other_pname, {critical_pairs}) ->
+                       CriticalPairs.fold
+                         (report_on_parallel_composition ~should_report_starvation tenv pattrs pair
+                            lock other_pname)
+                         critical_pairs acc ) ) ) )
   | _ ->
       report_map
 

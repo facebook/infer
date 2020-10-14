@@ -40,6 +40,7 @@ val mk_struct :
   -> ?methods:Procname.t list
   -> ?exported_objc_methods:Procname.t list
   -> ?supers:Typ.Name.t list
+  -> ?objc_protocols:Typ.Name.t list
   -> ?annots:Annot.Item.t
   -> ?java_class_info:Struct.java_class_info
   -> ?dummy:bool

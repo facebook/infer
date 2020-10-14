@@ -84,8 +84,9 @@ end
 
 type eval_sym_trace =
   { eval_sym: Bounds.Bound.eval_sym
-  ; trace_of_sym: Symb.Symbol.t -> Trace.Set.t
-  ; eval_locpath: PowLoc.eval_locpath }
+  ; eval_locpath: PowLoc.eval_locpath
+  ; eval_func_ptrs: FuncPtr.Set.eval_func_ptrs
+  ; trace_of_sym: Symb.Symbol.t -> Trace.Set.t }
 
 module Val = struct
   type t =
@@ -95,6 +96,7 @@ module Val = struct
     ; modeled_range: ModeledRange.t
     ; powloc: PowLoc.t
     ; arrayblk: ArrayBlk.t
+    ; func_ptrs: FuncPtr.Set.t
     ; traces: TraceSet.t }
 
   let bot : t =
@@ -104,6 +106,7 @@ module Val = struct
     ; modeled_range= ModeledRange.bottom
     ; powloc= PowLoc.bot
     ; arrayblk= ArrayBlk.bot
+    ; func_ptrs= FuncPtr.Set.bottom
     ; traces= TraceSet.bottom }
 
 
@@ -119,12 +122,16 @@ module Val = struct
       if not (ModeledRange.is_bottom range) then
         F.fprintf fmt " (modeled_range:%a)" ModeledRange.pp range
     in
+    let func_ptrs_pp fmt func_ptrs =
+      if not (FuncPtr.Set.is_bottom func_ptrs) then
+        F.fprintf fmt ", func_ptrs:%a" FuncPtr.Set.pp func_ptrs
+    in
     let trace_pp fmt traces =
       if Config.bo_debug >= 3 then F.fprintf fmt ", %a" TraceSet.pp traces
     in
-    F.fprintf fmt "(%a%a%a%a, %a, %a%a)" Itv.pp x.itv itv_thresholds_pp x.itv_thresholds
+    F.fprintf fmt "(%a%a%a%a, %a, %a%a%a)" Itv.pp x.itv itv_thresholds_pp x.itv_thresholds
       itv_updated_by_pp x.itv_updated_by modeled_range_pp x.modeled_range PowLoc.pp x.powloc
-      ArrayBlk.pp x.arrayblk trace_pp x.traces
+      ArrayBlk.pp x.arrayblk func_ptrs_pp x.func_ptrs trace_pp x.traces
 
 
   let unknown_from : Typ.t -> callee_pname:_ -> location:_ -> t =
@@ -137,6 +144,7 @@ module Val = struct
     ; modeled_range= ModeledRange.bottom
     ; powloc= (if is_int then PowLoc.bot else PowLoc.unknown)
     ; arrayblk= (if is_int then ArrayBlk.bottom else ArrayBlk.unknown)
+    ; func_ptrs= FuncPtr.Set.bottom
     ; traces }
 
 
@@ -149,6 +157,7 @@ module Val = struct
       && ModeledRange.leq ~lhs:lhs.modeled_range ~rhs:rhs.modeled_range
       && PowLoc.leq ~lhs:lhs.powloc ~rhs:rhs.powloc
       && ArrayBlk.leq ~lhs:lhs.arrayblk ~rhs:rhs.arrayblk
+      && FuncPtr.Set.leq ~lhs:lhs.func_ptrs ~rhs:rhs.func_ptrs
 
 
   let widen ~prev ~next ~num_iters =
@@ -166,6 +175,7 @@ module Val = struct
           ModeledRange.widen ~prev:prev.modeled_range ~next:next.modeled_range ~num_iters
       ; powloc= PowLoc.widen ~prev:prev.powloc ~next:next.powloc ~num_iters
       ; arrayblk= ArrayBlk.widen ~prev:prev.arrayblk ~next:next.arrayblk ~num_iters
+      ; func_ptrs= FuncPtr.Set.widen ~prev:prev.func_ptrs ~next:next.func_ptrs ~num_iters
       ; traces= TraceSet.join prev.traces next.traces }
 
 
@@ -179,6 +189,7 @@ module Val = struct
       ; modeled_range= ModeledRange.join x.modeled_range y.modeled_range
       ; powloc= PowLoc.join x.powloc y.powloc
       ; arrayblk= ArrayBlk.join x.arrayblk y.arrayblk
+      ; func_ptrs= FuncPtr.Set.join x.func_ptrs y.func_ptrs
       ; traces= TraceSet.join x.traces y.traces }
 
 
@@ -195,6 +206,8 @@ module Val = struct
   let get_array_locs : t -> PowLoc.t = fun x -> ArrayBlk.get_pow_loc x.arrayblk
 
   let get_all_locs : t -> PowLoc.t = fun x -> PowLoc.join x.powloc (get_array_locs x)
+
+  let get_func_ptrs : t -> FuncPtr.Set.t = fun x -> x.func_ptrs
 
   let get_traces : t -> TraceSet.t = fun x -> x.traces
 
@@ -229,6 +242,8 @@ module Val = struct
     let size = Itv.of_int (String.length s + 1) in
     of_c_array_alloc allocsite ~stride ~offset ~size ~traces:TraceSet.bottom
 
+
+  let of_func_ptrs func_ptrs = {bot with func_ptrs}
 
   let deref_of_literal_string s =
     let max_char = String.fold s ~init:0 ~f:(fun acc c -> max acc (Char.to_int c)) in
@@ -449,7 +464,7 @@ module Val = struct
 
 
   let subst : t -> eval_sym_trace -> Location.t -> t =
-   fun x {eval_sym; trace_of_sym; eval_locpath} location ->
+   fun x {eval_sym; eval_locpath; eval_func_ptrs; trace_of_sym} location ->
     let symbols = get_symbols x in
     let traces_caller =
       Itv.SymbolSet.fold
@@ -463,6 +478,7 @@ module Val = struct
       itv= Itv.subst x.itv eval_sym
     ; powloc= PowLoc.join powloc powloc_from_arrayblk
     ; arrayblk
+    ; func_ptrs= FuncPtr.Set.subst x.func_ptrs eval_func_ptrs
     ; traces }
     (* normalize bottom *)
     |> normalize
@@ -505,7 +521,10 @@ module Val = struct
 
   let unknown_locs = of_pow_loc PowLoc.unknown ~traces:TraceSet.bottom
 
-  let is_bot x = Itv.is_bottom x.itv && PowLoc.is_bot x.powloc && ArrayBlk.is_bot x.arrayblk
+  let is_bot x =
+    Itv.is_bottom x.itv && PowLoc.is_bot x.powloc && ArrayBlk.is_bot x.arrayblk
+    && FuncPtr.Set.is_bottom x.func_ptrs
+
 
   let is_mone x = Itv.is_mone (get_itv x)
 
@@ -544,6 +563,8 @@ module Val = struct
         itv_val ~non_int:true |> set_itv_updated_by_unknown
     | Tint _ | Tvoid ->
         itv_val ~non_int:false |> set_itv_updated_by_addition
+    | Tptr ({desc= Tfun}, _) ->
+        of_func_ptrs (FuncPtr.Set.of_path path)
     | Tptr (elt, _) ->
         if is_java || SPath.is_this path then
           let deref_kind =
@@ -651,6 +672,9 @@ module Val = struct
               match typ with
               | Some typ when Loc.is_global l ->
                   L.d_printfln_escaped "Val.on_demand for %a -> global" Loc.pp l ;
+                  do_on_demand path typ
+              | Some typ when Typ.is_pointer_to_function typ ->
+                  L.d_printfln_escaped "Val.on_demand for %a -> function pointer" Loc.pp l ;
                   do_on_demand path typ
               | _ ->
                   L.d_printfln_escaped "Val.on_demand for %a -> no type" Loc.pp l ;

@@ -18,6 +18,15 @@ let rec supertype_exists tenv pred name =
       false
 
 
+(** Holds iff the predicate holds on a protocol of the named type *)
+let protocol_exists tenv pred name =
+  match Tenv.lookup tenv name with
+  | Some {objc_protocols} ->
+      List.exists ~f:(fun name -> pred name) objc_protocols
+  | None ->
+      false
+
+
 let rec supertype_find_map_opt tenv f name =
   match f name with
   | None -> (
@@ -290,6 +299,11 @@ module ObjectiveC = struct
   let implements interface tenv typename =
     let is_interface s _ = String.equal interface (Typ.Name.name s) in
     supertype_exists tenv is_interface (Typ.Name.Objc.from_string typename)
+
+
+  let conforms_to ~protocol tenv typename =
+    let is_protocol s = String.equal protocol (Typ.Name.name s) in
+    protocol_exists tenv is_protocol (Typ.Name.Objc.from_string typename)
 
 
   let is_core_graphics_create_or_copy _ procname =

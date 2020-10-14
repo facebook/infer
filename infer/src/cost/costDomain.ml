@@ -13,13 +13,15 @@ module BasicCost = struct
 
   (* NOTE: Increment the version number if you changed the [t] type.  This is for avoiding
      demarshalling failure of cost analysis results in running infer-reportdiff. *)
-  let version = 8
+  let version = 9
 end
 
 module BasicCostWithReason = struct
   type t = {cost: BasicCost.t; top_pname_opt: Procname.t option}
 
   let is_top {cost} = BasicCost.is_top cost
+
+  let is_zero {cost} = BasicCost.is_zero cost
 
   let is_unreachable {cost} = BasicCost.is_unreachable cost
 
@@ -29,8 +31,11 @@ module BasicCostWithReason = struct
     {cost= BasicCost.one ?autoreleasepool_trace (); top_pname_opt= None}
 
 
-  let subst callee_pname location record eval_sym =
-    {record with cost= BasicCost.subst callee_pname location record.cost eval_sym}
+  let of_basic_cost cost = {cost; top_pname_opt= None}
+
+  let subst callee_pname location {cost; top_pname_opt} eval_sym =
+    let cost = BasicCost.subst callee_pname location cost eval_sym in
+    if BasicCost.is_top cost then {cost; top_pname_opt= Some callee_pname} else {cost; top_pname_opt}
 
 
   (* When we fold the nodes while traversing the cfg,
@@ -63,13 +68,15 @@ module VariantCostMap = struct
   let get kind record = find_opt kind record |> Option.value ~default:BasicCostWithReason.zero
 
   let increase_by kind cost_to_add record =
-    update kind
-      (function
-        | None ->
-            Some cost_to_add
-        | Some existing ->
-            Some (BasicCostWithReason.plus cost_to_add existing) )
-      record
+    if BasicCostWithReason.is_zero cost_to_add then record
+    else
+      update kind
+        (function
+          | None ->
+              Some cost_to_add
+          | Some existing ->
+              Some (BasicCostWithReason.plus cost_to_add existing) )
+        record
 
 
   let increment ?autoreleasepool_trace kind record =
@@ -84,12 +91,6 @@ let pp_summary fmt {post} = F.fprintf fmt "@\n Post: %a @\n" VariantCostMap.pp p
 
 let get_cost_kind kind cost_record = VariantCostMap.get kind cost_record
 
-let add_top_pname_opt kind cost_record top_pname_opt =
-  VariantCostMap.update kind
-    (function Some cost_with_reason -> Some {cost_with_reason with top_pname_opt} | _ -> None)
-    cost_record
-
-
 let get_operation_cost cost_record = get_cost_kind CostKind.OperationCost cost_record
 
 let set_autoreleasepool_size_zero cost_record =
@@ -98,7 +99,16 @@ let set_autoreleasepool_size_zero cost_record =
 
 let map ~f cost_record = VariantCostMap.map f cost_record
 
+let find_opt = VariantCostMap.find_opt
+
 let zero_record = VariantCostMap.empty
+
+let construct ~f =
+  let open CostKind in
+  List.fold_left ~init:zero_record
+    ~f:(fun acc kind -> VariantCostMap.increase_by kind (f kind) acc)
+    [OperationCost; AllocationCost; AutoreleasepoolSize]
+
 
 (** If nb_exec is unreachable, we map to unreachable, not 0 *)
 let mult_by cost_record ~nb_exec = map cost_record ~f:(BasicCostWithReason.mult_unreachable nb_exec)
@@ -120,25 +130,4 @@ let plus cost_record1 cost_record2 =
     cost_record1 cost_record2
 
 
-let plus_autoreleasepool_size autoreleasepool_size cost =
-  VariantCostMap.update AutoreleasepoolSize
-    (function
-      | None ->
-          Some {BasicCostWithReason.cost= autoreleasepool_size; top_pname_opt= None}
-      | Some prev ->
-          Some {prev with cost= BasicCost.plus prev.cost autoreleasepool_size} )
-    cost
-
-
 let unit_cost_atomic_operation = VariantCostMap.increment CostKind.OperationCost zero_record
-
-let unit_cost_allocation = VariantCostMap.increment CostKind.AllocationCost zero_record
-
-let unit_cost_autoreleasepool_size ~autoreleasepool_trace =
-  VariantCostMap.increment ~autoreleasepool_trace CostKind.AutoreleasepoolSize zero_record
-
-
-let of_operation_cost operation_cost =
-  VariantCostMap.increase_by CostKind.OperationCost
-    {cost= operation_cost; top_pname_opt= None}
-    zero_record

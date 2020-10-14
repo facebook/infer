@@ -25,11 +25,11 @@ let pp fmt (tenv : t) =
 let create () = TypenameHash.create 1000
 
 (** Construct a struct type in a type environment *)
-let mk_struct tenv ?default ?fields ?statics ?methods ?exported_objc_methods ?supers ?annots
-    ?java_class_info ?dummy name =
+let mk_struct tenv ?default ?fields ?statics ?methods ?exported_objc_methods ?supers ?objc_protocols
+    ?annots ?java_class_info ?dummy name =
   let struct_typ =
     Struct.internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods ?supers
-      ?annots ?java_class_info ?dummy ()
+      ?objc_protocols ?annots ?java_class_info ?dummy ()
   in
   TypenameHash.replace tenv name struct_typ ;
   struct_typ

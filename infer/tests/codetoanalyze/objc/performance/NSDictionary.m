@@ -19,8 +19,16 @@ NSDictionary* nsdictionary_init_dictionary_constant() {
   return [NSDictionary dictionary];
 }
 
-void nsdictionary_init_with_dictionary_linear_FP(NSDictionary* dict) {
+void nsdictionary_init_with_dictionary_linear(NSDictionary* dict) {
   NSDictionary* copy_dict = [[NSDictionary alloc] initWithDictionary:dict];
+  for (int i = 0; i < [copy_dict allValues].count; i++) {
+  }
+}
+
+void nsdictionary_alloc_with_zone_init_with_dictionary_linear(
+    NSDictionary* dict, NSZone* zone) {
+  NSDictionary* copy_dict =
+      [[NSDictionary allocWithZone:zone] initWithDictionary:dict];
   for (int i = 0; i < [copy_dict allValues].count; i++) {
   }
 }

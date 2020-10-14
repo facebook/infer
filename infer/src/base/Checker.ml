@@ -396,7 +396,7 @@ let config_unsafe checker =
       ; activates= [Pulse] }
   | Uninit ->
       { id= "uninit"
-      ; kind= UserFacing {title= "Uninitialized Variable"; markdown_body= ""}
+      ; kind= UserFacing {title= "Uninitialized Value"; markdown_body= ""}
       ; support= supports_clang
       ; short_documentation= "Warns when values are used before having been initialized."
       ; cli_flags= Some {deprecated= []; show_in_help= true}

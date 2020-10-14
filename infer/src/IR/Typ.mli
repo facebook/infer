@@ -171,6 +171,8 @@ val pointer_to_java_lang_object : t
 
 val pointer_to_java_lang_string : t
 
+val pointer_to_objc_nszone : t
+
 val get_ikind_opt : t -> ikind option
 (** Get ikind if the type is integer. *)
 
@@ -331,6 +333,8 @@ val is_pointer_to_void : t -> bool
 val is_void : t -> bool
 
 val is_pointer_to_int : t -> bool
+
+val is_pointer_to_function : t -> bool
 
 val is_pointer : t -> bool
 
