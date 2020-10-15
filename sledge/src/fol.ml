@@ -450,38 +450,10 @@ type exp = [cnd | `Fml of fml] [@@deriving compare, equal, sexp]
 
 (** Variable terms *)
 module Var : sig
-  type t = private trm [@@deriving compare, equal, sexp]
-  type strength = t -> [`Universal | `Existential | `Anonymous] option
-
-  val ppx : strength -> t pp
-  val pp : t pp
-
-  module Map : Map.S with type key := t
-
-  module Set : sig
-    include NS.Set.S with type elt := t
-
-    val sexp_of_t : t -> Sexp.t
-    val t_of_sexp : Sexp.t -> t
-    val ppx : strength -> t pp
-    val pp : t pp
-    val pp_xs : t pp
-  end
+  include Ses.Var_intf.VAR with type t = private trm
 
   val of_ : trm -> t
   val of_exp : exp -> t option
-  val program : name:string -> global:bool -> t
-  val fresh : string -> wrt:Set.t -> t * Set.t
-
-  val identified : name:string -> id:int -> t
-  (** Variable with the given [id]. Variables are compared by [id] alone,
-      [name] is used only for printing. The only way to ensure [identified]
-      variables do not clash with [fresh] variables is to pass the
-      [identified] variables to [fresh] in [wrt]:
-      [Var.fresh name ~wrt:(Var.Set.of_ (Var.identified ~name ~id))]. *)
-
-  val id : t -> int
-  val name : t -> string
 
   module Subst : sig
     type var := t
@@ -502,70 +474,27 @@ module Var : sig
 end = struct
   module T = struct
     type t = trm [@@deriving compare, equal, sexp]
-    type strength = t -> [`Universal | `Existential | `Anonymous] option
-
-    let invariant (x : t) =
-      let@ () = Invariant.invariant [%here] x [%sexp_of: t] in
-      match x with
-      | Var _ -> ()
-      | _ -> fail "non-var: %a" Sexp.pp_hum (sexp_of_trm x) ()
-
-    let ppx strength fs v =
-      let pf fmt = pp_boxed fs fmt in
-      match (v : trm) with
-      | Var {name; id= -1} -> Trace.pp_styled `Bold "%@%s" fs name
-      | Var {name; id= 0} -> Trace.pp_styled `Bold "%%%s" fs name
-      | Var {name; id} -> (
-        match strength v with
-        | None -> pf "%%%s_%d" name id
-        | Some `Universal -> Trace.pp_styled `Bold "%%%s_%d" fs name id
-        | Some `Existential -> Trace.pp_styled `Cyan "%%%s_%d" fs name id
-        | Some `Anonymous -> Trace.pp_styled `Cyan "_" fs )
-      | x -> violates invariant x
-
-    let pp = ppx (fun _ -> None)
   end
 
-  include T
+  let invariant (x : trm) =
+    let@ () = Invariant.invariant [%here] x [%sexp_of: trm] in
+    match x with
+    | Var _ -> ()
+    | _ -> fail "non-var: %a" Sexp.pp_hum (sexp_of_trm x) ()
 
-  module Map = struct
-    include Map.Make (T)
-    include Provide_of_sexp (T)
-  end
+  include Ses.Var0.Make (struct
+    include T
 
-  module Set = struct
-    include Set.Make (T)
-    include Provide_of_sexp (T)
+    let make ~id ~name = Var {id; name} |> check invariant
+    let id = function Var v -> v.id | x -> violates invariant x
+    let name = function Var v -> v.name | x -> violates invariant x
+  end)
 
-    let ppx strength vs = pp (T.ppx strength) vs
-    let pp vs = pp T.pp vs
-
-    let pp_xs fs xs =
-      if not (is_empty xs) then
-        Format.fprintf fs "@<2>∃ @[%a@] .@;<1 2>" pp xs
-  end
-
-  (* access *)
-
-  let id = function Var v -> v.id | x -> violates invariant x
-  let name = function Var v -> v.name | x -> violates invariant x
-
-  (* construct *)
-
-  let of_ = function Var _ as v -> v | _ -> invalid_arg "Var.of_"
+  let of_ v = v |> check invariant
 
   let of_exp = function
     | `Trm (Var _ as v) -> Some (v |> check invariant)
     | _ -> None
-
-  let program ~name ~global = Var {name; id= (if global then -1 else 0)}
-
-  let fresh name ~wrt =
-    let max = match Set.max_elt wrt with None -> 0 | Some max -> id max in
-    let x' = Var {name; id= max + 1} in
-    (x', Set.add wrt x')
-
-  let identified ~name ~id = Var {name; id}
 
   (*
    * Renamings

@@ -7,35 +7,7 @@
 
 (** Variables *)
 module Var : sig
-  type t [@@deriving compare, equal, sexp]
-  type strength = t -> [`Universal | `Existential | `Anonymous] option
-
-  val ppx : strength -> t pp
-  val pp : t pp
-
-  module Map : Map.S with type key := t
-
-  module Set : sig
-    include NS.Set.S with type elt := t
-
-    val sexp_of_t : t -> Sexp.t
-    val t_of_sexp : Sexp.t -> t
-    val ppx : strength -> t pp
-    val pp : t pp
-    val pp_xs : t pp
-  end
-
-  val fresh : string -> wrt:Set.t -> t * Set.t
-
-  val identified : name:string -> id:int -> t
-  (** Variable with the given [id]. Variables are compared by [id] alone,
-      [name] is used only for printing. The only way to ensure [identified]
-      variables do not clash with [fresh] variables is to pass the
-      [identified] variables to [fresh] in [wrt]:
-      [Var.fresh name ~wrt:(Var.Set.of_ (Var.identified ~name ~id))]. *)
-
-  val id : t -> int
-  val name : t -> string
+  include Ses.Var_intf.VAR
 
   module Subst : sig
     type var := t
