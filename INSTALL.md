@@ -5,7 +5,7 @@
 We provide a binary release of Infer. We encourage you to use this
 release as compiling infer's dependencies is time-consuming. Follow
 the instructions in our [Getting
-Started](http://fbinfer.com/docs/getting-started.html#install-from-source)
+Started](http://fbinfer.com/docs/getting-started#install-from-source)
 page to install Infer.
 
 
