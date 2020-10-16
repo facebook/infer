@@ -502,14 +502,9 @@ let mk_eval_sym_trace ?(is_params_ref = false) integer_type_widths
     ; trace_of_sym }
 
 
-let mk_eval_sym_mode ~mode integer_type_widths callee_formals actual_exps caller_mem =
-  let eval_sym_trace =
-    mk_eval_sym_trace integer_type_widths callee_formals actual_exps caller_mem ~mode
-  in
-  eval_sym_trace.eval_sym
+let mk_eval_sym_cost integer_type_widths callee_formals actual_exps caller_mem =
+  mk_eval_sym_trace integer_type_widths callee_formals actual_exps caller_mem ~mode:EvalCost
 
-
-let mk_eval_sym_cost = mk_eval_sym_mode ~mode:EvalCost
 
 (* This function evaluates the array length conservatively, which is useful when there are multiple
    array locations and their lengths are joined to top.  For example, if the [arr_locs] points to

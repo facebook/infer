@@ -43,7 +43,15 @@ module BasicCostWithReason : sig
 
   val plus : t -> t -> t
 
-  val subst : Procname.t -> Location.t -> t -> Bounds.Bound.eval_sym -> t
+  val subst :
+       Procname.t
+    -> Location.t
+    -> t
+    -> Bounds.Bound.eval_sym
+    -> FuncPtr.Set.eval_func_ptrs
+    -> (Procname.t -> t option)
+    -> default_closure_cost:Ints.NonNegativeInt.t
+    -> t
 
   val degree : t -> Polynomials.Degree.t option
 

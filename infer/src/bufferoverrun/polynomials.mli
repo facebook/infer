@@ -71,6 +71,8 @@ module NonNegativePolynomial : sig
 
   val of_non_negative_bound : ?degree_kind:DegreeKind.t -> Bounds.NonNegativeBound.t -> t
 
+  val of_func_ptr : Symb.SymbolPath.partial -> t
+
   val plus : t -> t -> t
 
   val mult_unreachable : t -> t -> t
@@ -82,7 +84,15 @@ module NonNegativePolynomial : sig
 
   val min_default_left : t -> t -> t
 
-  val subst : Procname.t -> Location.t -> t -> Bounds.Bound.eval_sym -> t
+  val subst :
+       Procname.t
+    -> Location.t
+    -> t
+    -> Bounds.Bound.eval_sym
+    -> FuncPtr.Set.eval_func_ptrs
+    -> (Procname.t -> t option)
+    -> default_closure_cost:Ints.NonNegativeInt.t
+    -> t
 
   val degree : t -> Degree.t option
 
