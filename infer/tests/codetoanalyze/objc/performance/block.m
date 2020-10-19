@@ -38,3 +38,11 @@ void doBlockA_direct_block_linear(int a) {
     loop_linear(a);
   });
 }
+
+void wrapper_runBlockA(BlockA block) { runBlockA(block); }
+
+void call_wrapper_runBlockA_linear(int a) {
+  wrapper_runBlockA(^{
+    loop_linear(a);
+  });
+}

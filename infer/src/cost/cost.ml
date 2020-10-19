@@ -106,19 +106,22 @@ module InstrBasicCostWithReason = struct
     |> Option.value ~default:(Option.value callee_cost_opt ~default:BasicCostWithReason.zero)
 
 
-  let dispatch_autoreleasepool_func_ptr_call {inferbo_invariant_map; integer_type_widths} instr_node
-      fun_exp =
+  let dispatch_func_ptr_call {inferbo_invariant_map; integer_type_widths} instr_node fun_exp =
     BufferOverrunAnalysis.extract_pre (InstrCFG.Node.id instr_node) inferbo_invariant_map
-    |> Option.value_map ~default:BasicCostWithReason.zero ~f:(fun inferbo_mem ->
+    |> Option.bind ~f:(fun inferbo_mem ->
            let func_ptrs =
              BufferOverrunSemantics.eval integer_type_widths fun_exp inferbo_mem
              |> BufferOverrunDomain.Val.get_func_ptrs
            in
            match FuncPtr.Set.is_singleton_or_more func_ptrs with
            | Singleton (Path path) ->
-               BasicCost.of_func_ptr path |> BasicCostWithReason.of_basic_cost
+               let symbolic_cost =
+                 BasicCost.of_func_ptr path |> BasicCostWithReason.of_basic_cost
+               in
+               Some (CostDomain.construct ~f:(fun _ -> symbolic_cost))
            | _ ->
-               BasicCostWithReason.zero )
+               None )
+    |> Option.value ~default:CostDomain.unit_cost_atomic_operation
 
 
   let get_instr_cost_record tenv extras cfg instr_node instr =
@@ -186,14 +189,7 @@ module InstrBasicCostWithReason = struct
     | Sil.Call (_, Exp.Const (Const.Cfun _), _, _, _) ->
         CostDomain.zero_record
     | Sil.Call (_, fun_exp, _, _location, _) ->
-        CostDomain.construct ~f:(fun kind ->
-            match kind with
-            | OperationCost ->
-                BasicCostWithReason.one ()
-            | AllocationCost ->
-                BasicCostWithReason.zero
-            | AutoreleasepoolSize ->
-                dispatch_autoreleasepool_func_ptr_call extras instr_node fun_exp )
+        dispatch_func_ptr_call extras instr_node fun_exp
     | Sil.Load {id= lhs_id} when Ident.is_none lhs_id ->
         (* dummy deref inserted by frontend--don't count as a step. In
            JDK 11, dummy deref disappears and causes cost differences
