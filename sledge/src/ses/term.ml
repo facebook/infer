@@ -421,7 +421,7 @@ let rec simp_add_ es poly =
   (* (coeff × term) + poly *)
   let f term coeff poly =
     match (term, poly) with
-    (* (0 × e) + s ==> 0 (optim) *)
+    (* (0 × e) + s ==> s (optim) *)
     | _ when Q.equal Q.zero coeff -> poly
     (* (c × 0) + s ==> s (optim) *)
     | Integer {data}, _ when Z.equal Z.zero data -> poly
@@ -534,9 +534,9 @@ let simp_mul es =
 
 let simp_cond cnd thn els =
   match cnd with
-  (* ¬(true ? t : e) ==> t *)
+  (* (true ? t : e) ==> t *)
   | Integer {data} when Z.is_true data -> thn
-  (* ¬(false ? t : e) ==> e *)
+  (* (false ? t : e) ==> e *)
   | Integer {data} when Z.is_false data -> els
   | _ -> Ap3 (Conditional, cnd, thn, els)
 
