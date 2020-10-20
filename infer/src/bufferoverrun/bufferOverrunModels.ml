@@ -1338,18 +1338,6 @@ module JavaString = struct
     ArrObjCommon.constructor_from_char_ptr model_env tgt_deref ~fn src mem
 
 
-  (* https://docs.oracle.com/javase/7/docs/api/java/lang/String.html#String(char[]) *)
-  (* same for byte[]*)
-  let constructor_from_array tgt_exp arr_exp =
-    let exec {integer_type_widths} ~ret:_ mem =
-      let tgt_locs = Sem.eval_locs tgt_exp mem in
-      let deref_of_tgt = PowLoc.append_field tgt_locs ~fn in
-      let src_arr_locs = Dom.Val.get_all_locs (Sem.eval_arr integer_type_widths arr_exp mem) in
-      Dom.Mem.update_mem deref_of_tgt (Dom.Mem.find_set src_arr_locs mem) mem
-    in
-    {exec; check= no_check}
-
-
   let malloc_and_set_length exp ({location} as model_env) ~ret:((id, _) as ret) length mem =
     let {exec} = malloc ~can_be_zero:false exp in
     let mem = exec model_env ~ret mem in
@@ -1620,7 +1608,6 @@ module Call = struct
     let int_typ = Typ.mk (Typ.Tint Typ.IInt) in
     let char_typ = Typ.mk (Typ.Tint Typ.IChar) in
     let char_ptr = Typ.mk (Typ.Tptr (char_typ, Pk_pointer)) in
-    let char_array = Typ.mk (Typ.Tptr (Typ.mk_array char_typ, Pk_pointer)) in
     let match_builtin builtin _ s = String.equal s (Procname.get_method builtin) in
     make_dispatcher
       [ (* Clang common models *)
@@ -1903,9 +1890,6 @@ module Call = struct
       ; +PatternMatch.Java.implements_iterator &:: "next" <>$ capt_exp $!--> Collection.next
       ; +PatternMatch.Java.implements_lang "CharSequence"
         &:: "<init>" <>$ capt_exp $+ capt_exp $--> JavaString.copy_constructor
-      ; +PatternMatch.Java.implements_lang "CharSequence"
-        &:: "<init>" <>$ capt_exp $+ capt_exp_of_prim_typ char_array
-        $--> JavaString.constructor_from_array
       ; +PatternMatch.Java.implements_lang "CharSequence"
         &:: "charAt" <>$ capt_exp $+ capt_exp $--> JavaString.charAt
       ; +PatternMatch.Java.implements_lang "CharSequence"
