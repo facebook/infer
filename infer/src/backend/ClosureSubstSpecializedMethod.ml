@@ -14,7 +14,7 @@ module PPPVar = struct
 end
 
 module VDom = AbstractDomain.Flat (PPPVar)
-module Domain = AbstractDomain.Map (Ident) (VDom)
+module Domain = AbstractDomain.SafeInvertedMap (Ident) (VDom)
 
 module TransferFunctions = struct
   module CFG = CFG
@@ -28,9 +28,9 @@ module TransferFunctions = struct
     | Load {id; e= Exp.Lvar pvar} ->
         Domain.add id (VDom.v pvar) astate
     | Load {id} ->
-        Domain.add id VDom.bottom astate
+        Domain.add id VDom.top astate
     | Call ((id, _), _, _, _, _) ->
-        Domain.add id VDom.bottom astate
+        Domain.add id VDom.top astate
     | _ ->
         astate
 

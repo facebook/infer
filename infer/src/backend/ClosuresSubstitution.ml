@@ -25,13 +25,13 @@ end
 
 module VDom = AbstractDomain.Flat (ExpClosure)
 module CFG = ProcCfg.Normal
-module Domain = AbstractDomain.Map (Var) (VDom)
+module Domain = AbstractDomain.SafeInvertedMap (Var) (VDom)
 
-let get_var (astate : Domain.t) (v : Var.t) : VDom.t =
-  match Domain.find_opt v astate with Some ab -> ab | None -> VDom.bottom
+let get_var (astate : Domain.t) (v : Var.t) =
+  match Domain.find_opt v astate with Some c -> c | None -> VDom.top
 
 
-let rec eval_expr (astate : Domain.t) (expr : Exp.t) : VDom.t =
+let rec eval_expr (astate : Domain.t) (expr : Exp.t) =
   match expr with
   | Var id ->
       get_var astate (Var.of_id id)
@@ -75,12 +75,9 @@ end
 
 module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions)
 
-let get_invariant_at_node (map : Analyzer.invariant_map) node : Domain.t =
-  match Analyzer.InvariantMap.find_opt (Procdesc.Node.get_id node) map with
-  | Some abstate ->
-      abstate.pre
-  | None ->
-      Domain.bottom
+let get_invariant_at_node (map : Analyzer.invariant_map) node =
+  Analyzer.InvariantMap.find_opt (Procdesc.Node.get_id node) map
+  |> Option.value_map ~default:Domain.top ~f:(fun abstate -> abstate.AbstractInterpreter.State.pre)
 
 
 let replace_closure_call node (astate : Domain.t) (instr : Sil.instr) : Sil.instr =
@@ -90,8 +87,7 @@ let replace_closure_call node (astate : Domain.t) (instr : Sil.instr) : Sil.inst
       match instr with
       | Call (ret_id_typ, Var id, actual_params, loc, call_flags) -> (
           L.d_printfln "call  %a " (Sil.pp_instr Pp.text ~print_types:true) instr ;
-          let aval = eval_expr astate (Var id) in
-          match VDom.get aval with
+          match eval_expr astate (Var id) |> VDom.get with
           | None ->
               L.d_printfln "(no closure found)" ;
               instr
@@ -126,7 +122,7 @@ let replace_closure_param node (astate : Domain.t) (instr : Sil.instr) : Sil.ins
           | Exp.Closure _ ->
               param
           | _ -> (
-            match VDom.get (eval_expr astate exp) with
+            match eval_expr astate exp |> VDom.get with
             | None ->
                 param
             | Some c ->
