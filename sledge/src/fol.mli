@@ -31,7 +31,7 @@ module rec Term : sig
   type t [@@deriving compare, equal, sexp]
 
   (* pretty-printing *)
-  val ppx : Var.strength -> t pp
+  val ppx : Var.t Var.strength -> t pp
   val pp : t pp
 
   module Map : Map.S with type key := t
@@ -104,7 +104,7 @@ and Formula : sig
   val project : Term.t -> t option
 
   (* pretty-printing *)
-  val ppx : Var.strength -> t pp
+  val ppx : Var.t Var.strength -> t pp
   val pp : t pp
 
   (** Construct *)
@@ -170,7 +170,7 @@ module Context : sig
   val pp : t pp
 
   val ppx_diff :
-    Var.strength -> Format.formatter -> t -> Formula.t -> t -> bool
+    Var.t Var.strength -> Format.formatter -> t -> Formula.t -> t -> bool
 
   include Invariant.S with type t := t
 

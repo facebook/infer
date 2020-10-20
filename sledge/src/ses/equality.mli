@@ -22,7 +22,7 @@ val classes : t -> classes
 
 val pp : t pp
 val pp_classes : t pp
-val ppx_classes : Var.strength -> classes pp
+val ppx_classes : Var.t Var.strength -> classes pp
 
 include Invariant.S with type t := t
 
