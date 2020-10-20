@@ -11,7 +11,6 @@ type t =
   | Mul
   | Div
   | Rem
-  | RecRecord of int
   | BitAnd
   | BitOr
   | BitXor
@@ -29,7 +28,6 @@ let pp ppf f =
   | Mul -> pf "@<1>×"
   | Div -> pf "/"
   | Rem -> pf "%%"
-  | RecRecord i -> pf "(rec_record %i)" i
   | BitAnd -> pf "&&"
   | BitOr -> pf "||"
   | BitXor -> pf "xor"

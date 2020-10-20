@@ -33,6 +33,7 @@ type trm =
   | Select of {idx: int; rcd: trm}
   | Update of {idx: int; rcd: trm; elt: trm}
   | Record of trm array
+  | Ancestor of int
   | Tuple of trm array
   | Project of {ary: int; idx: int; tup: trm}
   | Apply of Funsym.t * trm
@@ -76,6 +77,7 @@ let _Concat es = Concat es
 let _Select idx rcd = Select {idx; rcd}
 let _Update idx rcd elt = Update {idx; rcd; elt}
 let _Record es = Record es
+let _Ancestor i = Ancestor i
 let _Tuple es = Tuple es
 let _Project ary idx tup = Project {ary; idx; tup}
 let _Apply f a = Apply (f, a)
@@ -455,6 +457,7 @@ let rec ppx_t strength fs trm =
     | Select {idx; rcd} -> pf "%a[%i]" pp rcd idx
     | Update {idx; rcd; elt} -> pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
     | Record xs -> pf "{%a}" (ppx_record strength) xs
+    | Ancestor i -> pf "(ancestor %i)" i
     | Tuple xs -> pf "(%a)" (Array.pp ",@ " (ppx_t strength)) xs
     | Project {ary; idx; tup} -> pf "proj(%i,%i)(%a)" ary idx pp tup
     | Apply (f, Tuple [||]) -> pf "%a" Funsym.pp f
@@ -537,7 +540,7 @@ let pp = ppx (fun _ -> None)
 let rec fold_vars_t e ~init ~f =
   match e with
   | Var _ as v -> f init (Var.of_ v)
-  | Z _ | Q _ -> init
+  | Z _ | Q _ | Ancestor _ -> init
   | Neg x
    |Mulq (_, x)
    |Splat x
@@ -626,7 +629,7 @@ let rec map_trms_f ~f b =
 let rec map_vars_t ~f e =
   match e with
   | Var _ as v -> (f (Var.of_ v) : var :> trm)
-  | Z _ | Q _ -> e
+  | Z _ | Q _ | Ancestor _ -> e
   | Neg x -> map1 (map_vars_t ~f) e _Neg x
   | Add (x, y) -> map2 (map_vars_t ~f) e _Add x y
   | Sub (x, y) -> map2 (map_vars_t ~f) e _Sub x y
@@ -871,6 +874,7 @@ module Term = struct
   let select ~rcd ~idx = ap1t (_Select idx) rcd
   let update ~rcd ~idx ~elt = ap2t (_Update idx) rcd elt
   let record elts = apNt (fun es -> _Record (Array.of_list es)) elts
+  let ancestor i = `Trm (_Ancestor i)
 
   (* tuples *)
 
@@ -1098,10 +1102,10 @@ let rec t_to_ses : trm -> Ses.Term.t = function
       Ses.Term.update ~rcd:(t_to_ses rcd) ~idx ~elt:(t_to_ses elt)
   | Record es ->
       Ses.Term.record (IArray.of_array (Array.map ~f:t_to_ses es))
+  | Ancestor i -> Ses.Term.rec_record i
   | Apply (Mul, Tuple [|x; y|]) -> Ses.Term.mul (t_to_ses x) (t_to_ses y)
   | Apply (Div, Tuple [|x; y|]) -> Ses.Term.div (t_to_ses x) (t_to_ses y)
   | Apply (Rem, Tuple [|x; y|]) -> Ses.Term.rem (t_to_ses x) (t_to_ses y)
-  | Apply (RecRecord i, Tuple [||]) -> Ses.Term.rec_record i
   | Apply (BitAnd, Tuple [|x; y|]) ->
       Ses.Term.and_ (t_to_ses x) (t_to_ses y)
   | Apply (BitOr, Tuple [|x; y|]) -> Ses.Term.or_ (t_to_ses x) (t_to_ses y)
@@ -1265,7 +1269,7 @@ and of_ses : Ses.Term.t -> exp =
       update ~rcd:(of_ses rcd) ~idx ~elt:(of_ses elt)
   | ApN (Record, elts) ->
       record (Array.map ~f:of_ses (IArray.to_array elts))
-  | RecRecord i -> uap0 (RecRecord i)
+  | RecRecord i -> ancestor i
   | Apply (sym, args) ->
       apply sym (Array.map ~f:of_ses (IArray.to_array args))
 
@@ -1641,7 +1645,7 @@ module Term_of_Llair = struct
         update ~rcd:(exp rcd) ~idx ~elt:(exp elt)
     | ApN (Record, _, elts) ->
         record (Array.map ~f:exp (IArray.to_array elts))
-    | RecRecord (i, _) -> uap0 (RecRecord i)
+    | RecRecord (i, _) -> ancestor i
     | Ap1 (Splat, _, byt) -> splat (exp byt)
 end
 
