@@ -270,8 +270,7 @@ module Fml : sig
     | Xor of fml * fml
     | Cond of {cnd: fml; pos: fml; neg: fml}
     (* uninterpreted literals *)
-    | UPosLit of Predsym.t * trm array
-    | UNegLit of Predsym.t * trm array
+    | Lit of Predsym.t * trm array
   [@@deriving compare, equal, sexp]
 
   val _Tt : fml
@@ -284,8 +283,7 @@ module Fml : sig
   val _Iff : fml -> fml -> fml
   val _Xor : fml -> fml -> fml
   val _Cond : fml -> fml -> fml -> fml
-  val _UPosLit : Predsym.t -> trm array -> fml
-  val _UNegLit : Predsym.t -> trm array -> fml
+  val _Lit : Predsym.t -> trm array -> fml
 end = struct
   type fml =
     | Tt
@@ -298,8 +296,7 @@ end = struct
     | Iff of fml * fml
     | Xor of fml * fml
     | Cond of {cnd: fml; pos: fml; neg: fml}
-    | UPosLit of Predsym.t * trm array
-    | UNegLit of Predsym.t * trm array
+    | Lit of Predsym.t * trm array
   [@@deriving compare, equal, sexp]
 
   let sort_fml x y = if compare_fml x y <= 0 then (x, y) else (y, x)
@@ -349,13 +346,11 @@ end = struct
     | Q q -> if Q.gt q Q.zero then Tt else _Ff
     | x -> Gt0 x
 
-  let _UPosLit p xs = UPosLit (p, xs)
-  let _UNegLit p xs = UNegLit (p, xs)
+  let _Lit p xs = Lit (p, xs)
 
   let rec is_negative = function
-    | Not (Tt | Eq _ | Eq0 _ | Gt0 _) | Or _ | Xor _ | UNegLit _ -> true
-    | Tt | Eq _ | Eq0 _ | Gt0 _ | And _ | Iff _ | UPosLit _ | Cond _ ->
-        false
+    | Not (Tt | Eq _ | Eq0 _ | Gt0 _ | Lit _) | Or _ | Xor _ -> true
+    | Tt | Eq _ | Eq0 _ | Gt0 _ | And _ | Iff _ | Lit _ | Cond _ -> false
     | Not p -> not (is_negative p)
 
   type equal_or_opposite = Equal | Opposite | Unknown
@@ -381,10 +376,6 @@ end = struct
             | _ -> Unknown )
           | Equal -> if equal_fml n n' then Equal else Unknown
           | Unknown -> Unknown
-        else Unknown
-    | UPosLit (p, xs), UNegLit (p', xs') | UNegLit (p, xs), UPosLit (p', xs')
-      ->
-        if Predsym.equal p p' && Array.equal equal_trm xs xs' then Opposite
         else Unknown
     | _ -> if equal_fml p q then Equal else Unknown
 
@@ -443,9 +434,7 @@ end = struct
     | Iff (x, y) -> _Xor x y
     | Xor (x, y) -> _Iff x y
     | Cond {cnd; pos; neg} -> _Cond cnd (_Not pos) (_Not neg)
-    | UPosLit (p, xs) -> _UNegLit p xs
-    | UNegLit (p, xs) -> _UPosLit p xs
-    | (Tt | Eq _ | Eq0 _ | Gt0 _) as x -> Not x
+    | (Tt | Eq _ | Eq0 _ | Gt0 _ | Lit _) as x -> Not x
 
   and _Cond cnd pos neg =
     match (cnd, pos, neg) with
@@ -524,9 +513,7 @@ let ppx_f strength fs fml =
     | Xor (x, y) -> pf "(%a@ xor %a)" pp x pp y
     | Cond {cnd; pos; neg} ->
         pf "@[<hv 1>(%a@ ? %a@ : %a)@]" pp cnd pp pos pp neg
-    | UPosLit (p, xs) -> pf "%a(%a)" Predsym.pp p (Array.pp ",@ " pp_t) xs
-    | UNegLit (p, xs) ->
-        pf "@<1>¬%a(%a)" Predsym.pp p (Array.pp ",@ " pp_t) xs
+    | Lit (p, xs) -> pf "%a(%a)" Predsym.pp p (Array.pp ",@ " pp_t) xs
   in
   pp fs fml
 
@@ -579,8 +566,7 @@ let rec fold_vars_f ~init p ~f =
   | Cond {cnd; pos; neg} ->
       fold_vars_f ~f cnd
         ~init:(fold_vars_f ~f pos ~init:(fold_vars_f ~f neg ~init))
-  | UPosLit (_, xs) | UNegLit (_, xs) ->
-      Array.fold ~f:(fun init -> fold_vars_t ~f ~init) xs ~init
+  | Lit (_, xs) -> Array.fold ~f:(fun init -> fold_vars_t ~f ~init) xs ~init
 
 let rec fold_vars_c ~init ~f = function
   | `Ite (cnd, thn, els) ->
@@ -628,8 +614,7 @@ let rec map_trms_f ~f b =
   | Iff (x, y) -> map2 (map_trms_f ~f) b _Iff x y
   | Xor (x, y) -> map2 (map_trms_f ~f) b _Xor x y
   | Cond {cnd; pos; neg} -> map3 (map_trms_f ~f) b _Cond cnd pos neg
-  | UPosLit (p, xs) -> mapN f b (_UPosLit p) xs
-  | UNegLit (p, xs) -> mapN f b (_UNegLit p) xs
+  | Lit (p, xs) -> mapN f b (_Lit p) xs
 
 (** map_vars *)
 
@@ -950,8 +935,7 @@ module Formula = struct
 
   (* uninterpreted *)
 
-  let uposlit p es = apNf (_UPosLit p) es
-  let uneglit p es = apNf (_UNegLit p) es
+  let lit p es = apNf (_Lit p) es
 
   (* connectives *)
 
@@ -1000,8 +984,7 @@ module Formula = struct
     | Iff (x, y) -> map2 (map_terms ~f) b _Iff x y
     | Xor (x, y) -> map2 (map_terms ~f) b _Xor x y
     | Cond {cnd; pos; neg} -> map3 (map_terms ~f) b _Cond cnd pos neg
-    | UPosLit (p, xs) -> lift_mapN f b (_UPosLit p) xs
-    | UNegLit (p, xs) -> lift_mapN f b (_UNegLit p) xs
+    | Lit (p, xs) -> lift_mapN f b (_Lit p) xs
 
   let fold_map_vars ~init e ~f =
     let s = ref init in
@@ -1025,8 +1008,7 @@ module Formula = struct
    fun ~meet1 ~join1 ~top ~bot fml ->
     let rec add_conjunct (cjn, splits) fml =
       match fml with
-      | Tt | Eq _ | Eq0 _ | Gt0 _ | Iff _ | Xor _ | UPosLit _ | UNegLit _
-       |Not _ ->
+      | Tt | Eq _ | Eq0 _ | Gt0 _ | Iff _ | Xor _ | Lit _ | Not _ ->
           (meet1 fml cjn, splits)
       | And (p, q) -> add_conjunct (add_conjunct (cjn, splits) p) q
       | Or (p, q) -> (cjn, [p; q] :: splits)
@@ -1110,10 +1092,8 @@ let rec f_to_ses : fml -> Ses.Term.t = function
   | Cond {cnd; pos; neg} ->
       Ses.Term.conditional ~cnd:(f_to_ses cnd) ~thn:(f_to_ses pos)
         ~els:(f_to_ses neg)
-  | UPosLit (sym, args) ->
+  | Lit (sym, args) ->
       Ses.Term.poslit sym (IArray.of_array (Array.map ~f:t_to_ses args))
-  | UNegLit (sym, args) ->
-      Ses.Term.neglit sym (IArray.of_array (Array.map ~f:t_to_ses args))
 
 let rec to_ses : exp -> Ses.Term.t = function
   | `Ite (cnd, thn, els) ->
@@ -1137,8 +1117,7 @@ let vs_of_ses : Ses.Var.Set.t -> Var.Set.t =
 
 let uap1 f = ap1t (fun x -> _Apply f [|x|])
 let uap2 f = ap2t (fun x y -> _Apply f [|x; y|])
-let uposN p = apNf (_UPosLit p)
-let unegN p = apNf (_UNegLit p)
+let litN p = apNf (_Lit p)
 
 let rec uap_tt f a = uap1 f (of_ses a)
 and uap_ttt f a b = uap2 f (of_ses a) (of_ses b)
@@ -1178,9 +1157,9 @@ and of_ses : Ses.Term.t -> exp =
   | Ap2 (Lt, d, e) -> ap2_f (fun p q -> and_ (not_ p) q) lt d e
   | Ap2 (Le, d, e) -> ap2_f (fun p q -> or_ (not_ p) q) le d e
   | PosLit (p, es) ->
-      `Fml (uposN p (IArray.to_array (IArray.map ~f:of_ses es)))
+      `Fml (litN p (IArray.to_array (IArray.map ~f:of_ses es)))
   | NegLit (p, es) ->
-      `Fml (unegN p (IArray.to_array (IArray.map ~f:of_ses es)))
+      `Fml (not_ (litN p (IArray.to_array (IArray.map ~f:of_ses es))))
   | Add sum -> (
     match Ses.Term.Qset.pop_min_elt sum with
     | None -> zero

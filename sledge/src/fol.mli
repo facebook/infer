@@ -116,8 +116,7 @@ and Formula : sig
   val le : Term.t -> Term.t -> t
 
   (* uninterpreted *)
-  val uposlit : Predsym.t -> Term.t array -> t
-  val uneglit : Predsym.t -> Term.t array -> t
+  val lit : Predsym.t -> Term.t array -> t
 
   (* connectives *)
   val not_ : t -> t

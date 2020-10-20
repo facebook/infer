@@ -23,8 +23,8 @@ let regs =
 let uap0 f = T.apply f [||]
 let uap1 f a = T.apply f [|a|]
 let uap2 f a b = T.apply f [|a; b|]
-let uposlit2 p a b = F.uposlit p [|a; b|]
-let uneglit2 p a b = F.uneglit p [|a; b|]
+let lit2 p a b = F.lit p [|a; b|]
+let nlit2 p a b = F.not_ (lit2 p a b)
 
 let rec ap_ttt : 'a. (T.t -> T.t -> 'a) -> _ -> _ -> 'a =
  fun f a b -> f (term a) (term b)
@@ -106,8 +106,8 @@ and term : Llair.Exp.t -> T.t =
   | Ap2 (Ult, typ, d, e) -> ap_uuf F.lt typ d e
   | Ap2 (Uge, typ, d, e) -> ap_uuf F.ge typ d e
   | Ap2 (Ule, typ, d, e) -> ap_uuf F.le typ d e
-  | Ap2 (Ord, _, d, e) -> ap_ttf (uposlit2 (Predsym.uninterp "ord")) d e
-  | Ap2 (Uno, _, d, e) -> ap_ttf (uneglit2 (Predsym.uninterp "ord")) d e
+  | Ap2 (Ord, _, d, e) -> ap_ttf (lit2 (Predsym.uninterp "ord")) d e
+  | Ap2 (Uno, _, d, e) -> ap_ttf (nlit2 (Predsym.uninterp "ord")) d e
   | Ap2 (Add, _, d, e) -> ap_ttt T.add d e
   | Ap2 (Sub, _, d, e) -> ap_ttt T.sub d e
   | Ap2 (Mul, _, d, e) -> ap_ttt T.mul d e
