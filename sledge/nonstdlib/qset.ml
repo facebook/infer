@@ -80,8 +80,8 @@ struct
   let choose = M.choose
   let choose_exn = M.choose_exn
   let pop = M.pop
-  let min_elt = M.min_elt
-  let pop_min_elt = M.pop_min_elt
+  let min_elt = M.min_binding
+  let pop_min_elt = M.pop_min_binding
 
   let classify s =
     match pop s with

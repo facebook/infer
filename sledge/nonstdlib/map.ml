@@ -11,24 +11,39 @@ include Map_intf
 module Make (Key : sig
   type t [@@deriving compare, sexp_of]
 end) : S with type key = Key.t = struct
-  module KeyMap = Core.Map.Make_plain (Key)
-  module Key = KeyMap.Key
+  module M = CCMap.Make (Key)
 
   type key = Key.t
+  type 'a t = 'a M.t [@@deriving compare, equal]
 
-  include KeyMap.Tree
+  let sexp_of_t sexp_of_data m =
+    M.to_list m
+    |> Sexplib.Conv.sexp_of_list
+         (Sexplib.Conv.sexp_of_pair Key.sexp_of_t sexp_of_data)
 
-  let compare = compare_direct
+  module Provide_of_sexp (Key : sig
+    type t = key [@@deriving of_sexp]
+  end) =
+  struct
+    let t_of_sexp data_of_sexp s =
+      s
+      |> Sexplib.Conv.list_of_sexp
+           (Sexplib.Conv.pair_of_sexp Key.t_of_sexp data_of_sexp)
+      |> M.of_list
+  end
 
-  let to_map t =
-    Core.Map.Using_comparator.of_tree ~comparator:Key.comparator t
+  let empty = M.empty
+  let singleton = M.singleton
+  let add_exn m ~key ~data = M.add key data m
+  let set m ~key ~data = M.add key data m
 
-  let of_map m = Base.Map.Using_comparator.to_tree m
+  let add_multi m ~key ~data =
+    M.update key
+      (function Some vs -> Some (data :: vs) | None -> Some [data])
+      m
 
-  let merge_skewed x y ~combine =
-    of_map (Core.Map.merge_skewed (to_map x) (to_map y) ~combine)
-
-  let map_endo t ~f = map_endo map t ~f
+  let remove m key = M.remove key m
+  let merge l r ~f = M.merge_safe l r ~f:(fun key -> f ~key)
 
   let merge_endo t u ~f =
     let change = ref false in
@@ -43,48 +58,106 @@ end) : S with type key = Key.t = struct
     in
     if !change then t' else t
 
-  let fold_until m ~init ~f ~finish =
-    let fold m ~init ~f =
-      let f ~key ~data s = f s (key, data) in
-      fold m ~init ~f
-    in
-    let f s (k, v) = f ~key:k ~data:v s in
-    Container.fold_until ~fold ~init ~f ~finish m
+  let merge_skewed x y ~combine =
+    M.union (fun key v1 v2 -> Some (combine ~key v1 v2)) x y
 
-  let root_key_exn m =
-    let@ {return} = with_return in
-    binary_search_segmented m `Last_on_left ~segment_of:(fun ~key ~data:_ ->
-        return key )
-    |> ignore ;
-    raise (Not_found_s (Atom __LOC__))
+  let union x y ~f = M.union f x y
+  let is_empty = M.is_empty
 
-  let choose_exn m =
-    let@ {return} = with_return in
-    binary_search_segmented m `Last_on_left ~segment_of:(fun ~key ~data ->
-        return (key, data) )
-    |> ignore ;
-    raise (Not_found_s (Atom __LOC__))
+  let root_key m =
+    let exception Found in
+    let found = ref None in
+    try
+      M.find_first
+        (fun key ->
+          found := Some key ;
+          raise Found )
+        m
+      |> ignore ;
+      None
+    with
+    | Found -> !found
+    | Not_found -> None
 
-  let choose m = try Some (choose_exn m) with Not_found_s _ -> None
-  let pop m = choose m |> Option.map ~f:(fun (k, v) -> (k, v, remove m k))
-
-  let pop_min_elt m =
-    min_elt m |> Option.map ~f:(fun (k, v) -> (k, v, remove m k))
+  let root_binding m =
+    let exception Found in
+    let found = ref None in
+    try
+      M.for_all
+        (fun key data ->
+          found := Some (key, data) ;
+          raise Found )
+        m
+      |> ignore ;
+      None
+    with
+    | Found -> !found
+    | Not_found -> None
 
   let is_singleton m =
-    try
-      let l, _, r = split m (root_key_exn m) in
-      is_empty l && is_empty r
-    with Not_found_s _ -> false
+    match root_key m with
+    | Some k ->
+        let l, _, r = M.split k m in
+        is_empty l && is_empty r
+    | None -> false
+
+  let length = M.cardinal
+  let choose_key = root_key
+  let choose = root_binding
+  let choose_exn m = CCOpt.get_exn (choose m)
+  let min_binding = M.min_binding_opt
+  let mem m k = M.mem k m
+  let find_exn m k = M.find k m
+  let find m k = M.find_opt k m
+
+  let find_multi m k =
+    match M.find_opt k m with None -> [] | Some vs -> vs
 
   let find_and_remove m k =
     let found = ref None in
     let m =
-      change m k ~f:(fun v ->
+      M.update k
+        (fun v ->
           found := v ;
           None )
+        m
     in
     Option.map ~f:(fun v -> (v, m)) !found
+
+  let pop m = choose m |> CCOpt.map (fun (k, v) -> (k, v, remove m k))
+
+  let pop_min_binding m =
+    min_binding m |> CCOpt.map (fun (k, v) -> (k, v, remove m k))
+
+  let change m key ~f = M.update key f m
+  let update m k ~f = M.update k (fun v -> Some (f v)) m
+  let map m ~f = M.map f m
+  let mapi m ~f = M.mapi (fun key data -> f ~key ~data) m
+  let map_endo t ~f = map_endo map t ~f
+  let filter_mapi m ~f = M.filter_map (fun key data -> f ~key ~data) m
+  let iter m ~f = M.iter (fun _ data -> f data) m
+  let iteri m ~f = M.iter (fun key data -> f ~key ~data) m
+  let existsi m ~f = M.exists (fun key data -> f ~key ~data) m
+  let for_alli m ~f = M.for_all (fun key data -> f ~key ~data) m
+  let fold m ~init ~f = M.fold (fun key data acc -> f ~key ~data acc) m init
+  let to_alist ?key_order:_ = M.to_list
+  let data m = Iter.to_list (M.values m)
+
+  let to_iter2 l r =
+    let seq = ref Iter.empty in
+    M.merge_safe l r ~f:(fun k vv ->
+        seq := Iter.cons (k, vv) !seq ;
+        None )
+    |> ignore ;
+    !seq
+
+  let symmetric_diff ~data_equal l r =
+    Iter.filter_map (to_iter2 l r) ~f:(fun (k, vv) ->
+        match vv with
+        | `Both (lv, rv) when data_equal lv rv -> None
+        | `Both vv -> Some (k, `Unequal vv)
+        | `Left lv -> Some (k, `Left lv)
+        | `Right rv -> Some (k, `Right rv) )
 
   let pp pp_k pp_v fs m =
     Format.fprintf fs "@[<1>[%a]@]"
@@ -101,7 +174,7 @@ end) : S with type key = Key.t = struct
       | k, `Unequal vv ->
           Format.fprintf fs "[@[%a@ @<2>↦ %a@]]" pp_key k pp_diff_val vv
     in
-    let sd = Sequence.to_list (symmetric_diff ~data_equal x y) in
+    let sd = Iter.to_list (symmetric_diff ~data_equal x y) in
     if not (List.is_empty sd) then
       Format.fprintf fs "[@[<hv>%a@]];@ " (List.pp ";@ " pp_diff_elt) sd
 end
