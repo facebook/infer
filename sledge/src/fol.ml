@@ -301,6 +301,8 @@ end = struct
     match f with
     (* formulas are in negation-normal form *)
     | Not (Not _ | And _ | Or _ | Cond _) -> assert false
+    (* conditional formulas are in "positive condition" form *)
+    | Cond {cnd= Not _ | Or _} -> assert false
     | _ -> ()
 
   let sort_fml x y = if compare_fml x y <= 0 then (x, y) else (y, x)
@@ -356,11 +358,6 @@ end = struct
 
   let _Lit p xs = Lit (p, xs) |> check invariant
 
-  let rec is_negative = function
-    | Not (Tt | Eq _ | Eq0 _ | Gt0 _ | Lit _ | Iff _) | Or _ -> true
-    | Tt | Eq _ | Eq0 _ | Gt0 _ | And _ | Iff _ | Lit _ | Cond _ -> false
-    | Not p -> not (is_negative p)
-
   type equal_or_opposite = Equal | Opposite | Unknown
 
   let rec equal_or_opposite p q =
@@ -384,6 +381,8 @@ end = struct
           | Unknown -> Unknown
         else Unknown
     | _ -> if equal_fml p q then Equal else Unknown
+
+  let is_negative = function Not _ | Or _ -> true | _ -> false
 
   let _And p q =
     ( match (p, q) with
@@ -457,7 +456,7 @@ end = struct
       | Equal -> cnd
       (* (c ? p : ¬p) ==> c <=> p *)
       | Opposite -> _Iff cnd pos
-      (* (c ? p : n) <=> (¬c ? n : p) *)
+      (* (¬c ? n : p) ==> (c ? p : n) *)
       | Unknown when is_negative cnd ->
           Cond {cnd= _Not cnd; pos= neg; neg= pos}
       (* (c ? p : n) *)
