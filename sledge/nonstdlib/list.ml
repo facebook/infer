@@ -47,7 +47,6 @@ let fold_option xs ~init ~f =
     (fold xs ~init ~f:(fun acc elt ->
          match f acc elt with Some res -> res | None -> return None ))
 
-let filter_map_endo t ~f = filter_map_endo filter_map t ~f
 let map_endo t ~f = map_endo map t ~f
 
 let rev_map_unzip xs ~f =

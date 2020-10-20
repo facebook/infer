@@ -76,15 +76,3 @@ let map_endo map t ~f =
         x' )
   in
   if !change then t' else t
-
-let filter_map_endo filter_map t ~f =
-  let change = ref false in
-  let t' =
-    filter_map t ~f:(fun x ->
-        let x'_opt = f x in
-        ( match x'_opt with
-        | Some x' when x' == x -> ()
-        | _ -> change := true ) ;
-        x'_opt )
-  in
-  if !change then t' else t

@@ -40,10 +40,6 @@ val map_endo : 'a t -> f:('a -> 'a) -> 'a t
 (** Like map, but specialized to require [f] to be an endofunction, which
     enables preserving [==] if [f] preserves [==] of every element. *)
 
-val filter_map_endo : 'a t -> f:('a -> 'a option) -> 'a t
-(** Like filter_map, but specialized to require [f] to be an endofunction,
-    which enables preserving [==] if [f] preserves [==] of every element. *)
-
 val rev_map_unzip : 'a t -> f:('a -> 'b * 'c) -> 'b list * 'c list
 (** [rev_map_unzip ~f xs] is [unzip (rev_map ~f xs)] but more efficient. *)
 
