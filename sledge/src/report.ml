@@ -127,9 +127,8 @@ let name = ref ""
 
 let output entry =
   Option.iter !chan ~f:(fun chan ->
-      Out_channel.output_string chan
-        (Sexp.to_string (sexp_of_t {name= !name; entry})) ;
-      Out_channel.newline chan )
+      Out_channel.output_lines chan
+        [Sexp.to_string (sexp_of_t {name= !name; entry})] )
 
 let init ?append filename =
   (chan :=
