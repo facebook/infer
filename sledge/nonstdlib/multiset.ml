@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(** Qset - Set with (signed) rational multiplicity for each element *)
+(** Multiset - Set with (signed) rational multiplicity for each element *)
 
 open NS0
-include Qset_intf
+include Multiset_intf
 
 module Make (Elt : sig
   type t [@@deriving compare, sexp_of]

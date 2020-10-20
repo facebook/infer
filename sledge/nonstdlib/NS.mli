@@ -109,7 +109,7 @@ module IArray = IArray
 include module type of IArray.Import
 module Set = Set
 module Map = Map
-module Qset = Qset
+module Multiset = Multiset
 
 (** Data types *)
 

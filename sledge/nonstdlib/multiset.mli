@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(** Qset - Set with (signed) rational multiplicity for each element *)
+(** Multiset - Set with (signed) rational multiplicity for each element *)
 
-include module type of Qset_intf
+include module type of Multiset_intf
 
 module Make (Elt : sig
   type t [@@deriving compare, sexp_of]

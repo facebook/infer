@@ -44,11 +44,11 @@ end = struct
 end
 
 and Qset : sig
-  include NS.Qset.S with type elt := T.t
+  include NS.Multiset.S with type elt := T.t
 
   val t_of_sexp : Sexp.t -> t
 end = struct
-  include NS.Qset.Make (T)
+  include NS.Multiset.Make (T)
 
   let t_of_sexp = t_of_sexp T.t_of_sexp
 end
