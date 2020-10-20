@@ -185,6 +185,16 @@ end = struct
                 elts )
         elts]
 
+  let invariant e =
+    let@ () = Invariant.invariant [%here] e [%sexp_of: trm] in
+    match e with
+    | Q q -> assert (not (Z.equal Z.one (Q.den q)))
+    | Arith a -> (
+      match Arith.classify a with
+      | Compound -> ()
+      | Trm _ | Const _ -> assert false )
+    | _ -> ()
+
   (* destructors *)
 
   let get_z = function Z z -> Some z | _ -> None
@@ -192,38 +202,43 @@ end = struct
 
   (* constructors *)
 
-  let _Var id name = Var {id; name}
+  let _Var id name = Var {id; name} |> check invariant
 
   (* statically allocated since they are tested with == *)
-  let zero = Z Z.zero
-  let one = Z Z.one
+  let zero = Z Z.zero |> check invariant
+  let one = Z Z.one |> check invariant
 
   let _Z z =
-    if Z.equal Z.zero z then zero else if Z.equal Z.one z then one else Z z
+    (if Z.equal Z.zero z then zero else if Z.equal Z.one z then one else Z z)
+    |> check invariant
 
-  let _Q q = if Z.equal Z.one (Q.den q) then _Z (Q.num q) else Q q
+  let _Q q =
+    (if Z.equal Z.one (Q.den q) then _Z (Q.num q) else Q q)
+    |> check invariant
 
   let _Arith a =
-    match Arith.classify a with
+    ( match Arith.classify a with
     | Trm e -> e
     | Const q -> _Q q
-    | Compound -> Arith a
+    | Compound -> Arith a )
+    |> check invariant
 
-  let _Splat x = Splat x
-  let _Sized seq siz = Sized {seq; siz}
-  let _Extract seq off len = Extract {seq; off; len}
-  let _Concat es = Concat es
-  let _Select idx rcd = Select {idx; rcd}
-  let _Update idx rcd elt = Update {idx; rcd; elt}
-  let _Record es = Record es
-  let _Ancestor i = Ancestor i
+  let _Splat x = Splat x |> check invariant
+  let _Sized seq siz = Sized {seq; siz} |> check invariant
+  let _Extract seq off len = Extract {seq; off; len} |> check invariant
+  let _Concat es = Concat es |> check invariant
+  let _Select idx rcd = Select {idx; rcd} |> check invariant
+  let _Update idx rcd elt = Update {idx; rcd; elt} |> check invariant
+  let _Record es = Record es |> check invariant
+  let _Ancestor i = Ancestor i |> check invariant
 
   let _Apply f es =
-    match
-      Funsym.eval ~equal:equal_trm ~get_z ~ret_z:_Z ~get_q ~ret_q:_Q f es
-    with
+    ( match
+        Funsym.eval ~equal:equal_trm ~get_z ~ret_z:_Z ~get_q ~ret_q:_Q f es
+      with
     | Some c -> c
-    | None -> Apply (f, es)
+    | None -> Apply (f, es) )
+    |> check invariant
 end
 
 open Trm
@@ -323,7 +338,6 @@ end = struct
     match (d, e) with
     | Z y, Z z -> if Z.equal y z then SemEq else SemDq
     | Q q, Q r -> if Q.equal q r then SemEq else SemDq
-    | Z z, Q q | Q q, Z z -> if Q.equal (Q.of_z z) q then SemEq else SemDq
     | _ ->
         let ord = compare_trm d e in
         if ord < 0 then SynLt else if ord = 0 then SemEq else SynGt
@@ -936,7 +950,6 @@ module Term = struct
   let const_of = function
     | `Trm (Z z) -> Some (Q.of_z z)
     | `Trm (Q q) -> Some q
-    | `Trm (Arith a) -> Arith.get_const a
     | _ -> None
 
   (** Traverse *)
