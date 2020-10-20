@@ -61,8 +61,8 @@ module rec Term : sig
   val concat : t array -> t
 
   (* records *)
-  val select : rcd:t -> idx:t -> t
-  val update : rcd:t -> idx:t -> elt:t -> t
+  val select : rcd:t -> idx:int -> t
+  val update : rcd:t -> idx:int -> elt:t -> t
 
   (* tuples *)
   val tuple : t array -> t

@@ -30,8 +30,8 @@ type trm =
   | Sized of {seq: trm; siz: trm}
   | Extract of {seq: trm; off: trm; len: trm}
   | Concat of trm array
-  | Select of {rcd: trm; idx: trm}
-  | Update of {rcd: trm; idx: trm; elt: trm}
+  | Select of {idx: int; rcd: trm}
+  | Update of {idx: int; rcd: trm; elt: trm}
   | Tuple of trm array
   | Project of {ary: int; idx: int; tup: trm}
   | Apply of Funsym.t * trm
@@ -72,8 +72,8 @@ let _Splat x = Splat x
 let _Sized seq siz = Sized {seq; siz}
 let _Extract seq off len = Extract {seq; off; len}
 let _Concat es = Concat es
-let _Select rcd idx = Select {rcd; idx}
-let _Update rcd idx elt = Update {rcd; idx; elt}
+let _Select idx rcd = Select {idx; rcd}
+let _Update idx rcd elt = Update {idx; rcd; elt}
 let _Tuple es = Tuple es
 let _Project ary idx tup = Project {ary; idx; tup}
 let _Apply f a = Apply (f, a)
@@ -437,15 +437,15 @@ type var = Var.t
 let encoded_record r =
   let exception Not_a_record in
   let rec encoded_record_ i = function
-    | Apply (EmptyRecord, Tuple [||]) when Z.equal i Z.zero -> []
-    | Update {rcd= Apply (EmptyRecord, Tuple [||]); idx= Z j; elt}
-      when Z.equal i j ->
+    | Apply (EmptyRecord, Tuple [||]) when Int.equal i 0 -> []
+    | Update {rcd= Apply (EmptyRecord, Tuple [||]); idx= j; elt}
+      when Int.equal i j ->
         [elt]
-    | Update {rcd; idx= Z j; elt} when Z.equal i j ->
-        elt :: encoded_record_ (Z.succ i) rcd
+    | Update {rcd; idx= j; elt} when Int.equal i j ->
+        elt :: encoded_record_ (Int.succ i) rcd
     | _ -> raise Not_a_record
   in
-  match encoded_record_ Z.zero r with
+  match encoded_record_ 0 r with
   | es -> Some es
   | exception Not_a_record -> None
 
@@ -465,10 +465,10 @@ let rec ppx_t strength fs trm =
     | Extract {seq; off; len} -> pf "%a[%a,%a)" pp seq pp off pp len
     | Concat [||] -> pf "@<2>⟨⟩"
     | Concat xs -> pf "(%a)" (Array.pp "@,^" pp) xs
-    | Select {rcd; idx} -> pf "%a[%a]" pp rcd pp idx
-    | Update {rcd; idx; elt} -> (
+    | Select {idx; rcd} -> pf "%a[%i]" pp rcd idx
+    | Update {idx; rcd; elt} -> (
       match encoded_record trm with
-      | None -> pf "[%a@ @[| %a → %a@]]" pp rcd pp idx pp elt
+      | None -> pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
       | Some elts -> pf "{%a}" (pp_record strength) elts )
     | Tuple xs -> pf "(%a)" (Array.pp ",@ " (ppx_t strength)) xs
     | Project {ary; idx; tup} -> pf "proj(%i,%i)(%a)" ary idx pp tup
@@ -556,15 +556,16 @@ let rec fold_vars_t e ~init ~f =
   | Neg x
    |Mulq (_, x)
    |Splat x
+   |Select {rcd= x}
    |Project {ary= _; idx= _; tup= x}
    |Apply (_, x) ->
       fold_vars_t ~f x ~init
   | Add (x, y)
    |Sub (x, y)
    |Sized {seq= x; siz= y}
-   |Select {rcd= x; idx= y} ->
+   |Update {rcd= x; elt= y} ->
       fold_vars_t ~f x ~init:(fold_vars_t ~f y ~init)
-  | Update {rcd= x; idx= y; elt= z} | Extract {seq= x; off= y; len= z} ->
+  | Extract {seq= x; off= y; len= z} ->
       fold_vars_t ~f x
         ~init:(fold_vars_t ~f y ~init:(fold_vars_t ~f z ~init))
   | Concat xs | Tuple xs ->
@@ -649,8 +650,8 @@ let rec map_vars_t ~f e =
   | Sized {seq; siz} -> map2 (map_vars_t ~f) e _Sized seq siz
   | Extract {seq; off; len} -> map3 (map_vars_t ~f) e _Extract seq off len
   | Concat xs -> mapN (map_vars_t ~f) e _Concat xs
-  | Select {rcd; idx} -> map2 (map_vars_t ~f) e _Select rcd idx
-  | Update {rcd; idx; elt} -> map3 (map_vars_t ~f) e _Update rcd idx elt
+  | Select {idx; rcd} -> map1 (map_vars_t ~f) e (_Select idx) rcd
+  | Update {idx; rcd; elt} -> map2 (map_vars_t ~f) e (_Update idx) rcd elt
   | Tuple xs -> mapN (map_vars_t ~f) e _Tuple xs
   | Project {ary; idx; tup} -> map1 (map_vars_t ~f) e (_Project ary idx) tup
   | Apply (g, x) -> map1 (map_vars_t ~f) e (_Apply g) x
@@ -881,8 +882,8 @@ module Term = struct
 
   (* records *)
 
-  let select ~rcd ~idx = ap2t _Select rcd idx
-  let update ~rcd ~idx ~elt = ap3t _Update rcd idx elt
+  let select ~rcd ~idx = ap1t (_Select idx) rcd
+  let update ~rcd ~idx ~elt = ap2t (_Update idx) rcd elt
 
   (* tuples *)
 
@@ -1090,14 +1091,6 @@ let vs_to_ses : Var.Set.t -> Ses.Var.Set.t =
   Var.Set.fold vs ~init:Ses.Var.Set.empty ~f:(fun vs v ->
       Ses.Var.Set.add vs (v_to_ses v) )
 
-let to_int e =
-  match Ses.Term.d_int e with
-  | Some z -> (
-    match Z.to_int z with
-    | i -> i
-    | exception Z.Overflow -> fail "non-int: %a" Ses.Term.pp e () )
-  | None -> fail "non-Z: %a" Ses.Term.pp e ()
-
 let rec t_to_ses : trm -> Ses.Term.t = function
   | Var {name; id} -> Ses.Term.var (Ses.Var.identified ~name ~id)
   | Z z -> Ses.Term.integer z
@@ -1113,12 +1106,9 @@ let rec t_to_ses : trm -> Ses.Term.t = function
       Ses.Term.extract ~seq:(t_to_ses seq) ~off:(t_to_ses off)
         ~len:(t_to_ses len)
   | Concat es -> Ses.Term.concat (Array.map ~f:t_to_ses es)
-  | Select {rcd; idx} ->
-      Ses.Term.select ~rcd:(t_to_ses rcd) ~idx:(to_int (t_to_ses idx))
-  | Update {rcd; idx; elt} ->
-      Ses.Term.update ~rcd:(t_to_ses rcd)
-        ~idx:(to_int (t_to_ses idx))
-        ~elt:(t_to_ses elt)
+  | Select {idx; rcd} -> Ses.Term.select ~rcd:(t_to_ses rcd) ~idx
+  | Update {idx; rcd; elt} ->
+      Ses.Term.update ~rcd:(t_to_ses rcd) ~idx ~elt:(t_to_ses elt)
   | Apply (Mul, Tuple [|x; y|]) -> Ses.Term.mul (t_to_ses x) (t_to_ses y)
   | Apply (Div, Tuple [|x; y|]) -> Ses.Term.div (t_to_ses x) (t_to_ses y)
   | Apply (Rem, Tuple [|x; y|]) -> Ses.Term.rem (t_to_ses x) (t_to_ses y)
@@ -1283,16 +1273,13 @@ and of_ses : Ses.Term.t -> exp =
   | Ap2 (Sized, siz, seq) -> sized ~seq:(of_ses seq) ~siz:(of_ses siz)
   | ApN (Concat, args) ->
       concat (Array.map ~f:of_ses (IArray.to_array args))
-  | Ap1 (Select idx, rcd) ->
-      select ~rcd:(of_ses rcd) ~idx:(integer (Z.of_int idx))
+  | Ap1 (Select idx, rcd) -> select ~rcd:(of_ses rcd) ~idx
   | Ap2 (Update idx, rcd, elt) ->
-      update ~rcd:(of_ses rcd)
-        ~idx:(integer (Z.of_int idx))
-        ~elt:(of_ses elt)
+      update ~rcd:(of_ses rcd) ~idx ~elt:(of_ses elt)
   | ApN (Record, elts) ->
       let init = uap0 EmptyRecord in
-      IArray.foldi ~init elts ~f:(fun i rcd e ->
-          update ~rcd ~idx:(integer (Z.of_int i)) ~elt:(of_ses e) )
+      IArray.foldi ~init elts ~f:(fun idx rcd e ->
+          update ~rcd ~idx ~elt:(of_ses e) )
   | RecRecord i -> uap0 (RecRecord i)
   | Apply (sym, args) ->
       apply sym (Array.map ~f:of_ses (IArray.to_array args))
@@ -1664,14 +1651,13 @@ module Term_of_Llair = struct
         ap_ffff _Cond cnd pos neg
     | Ap3 (Conditional, _, cnd, thn, els) ->
         ite ~cnd:(embed_into_fml (exp cnd)) ~thn:(exp thn) ~els:(exp els)
-    | Ap1 (Select idx, _, rcd) ->
-        select ~rcd:(exp rcd) ~idx:(integer (Z.of_int idx))
+    | Ap1 (Select idx, _, rcd) -> select ~rcd:(exp rcd) ~idx
     | Ap2 (Update idx, _, rcd, elt) ->
-        update ~rcd:(exp rcd) ~idx:(integer (Z.of_int idx)) ~elt:(exp elt)
+        update ~rcd:(exp rcd) ~idx ~elt:(exp elt)
     | ApN (Record, _, elts) ->
         let init = uap0 EmptyRecord in
-        IArray.foldi ~init elts ~f:(fun i rcd e ->
-            update ~rcd ~idx:(integer (Z.of_int i)) ~elt:(exp e) )
+        IArray.foldi ~init elts ~f:(fun idx rcd e ->
+            update ~rcd ~idx ~elt:(exp e) )
     | RecRecord (i, _) -> uap0 (RecRecord i)
     | Ap1 (Splat, _, byt) -> splat (exp byt)
 end
