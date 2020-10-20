@@ -296,6 +296,13 @@ end = struct
     | Lit of Predsym.t * trm array
   [@@deriving compare, equal, sexp]
 
+  let invariant f =
+    let@ () = Invariant.invariant [%here] f [%sexp_of: fml] in
+    match f with
+    (* formulas are in negation-normal form *)
+    | Not (Not _ | And _ | Or _ | Cond _) -> assert false
+    | _ -> ()
+
   let sort_fml x y = if compare_fml x y <= 0 then (x, y) else (y, x)
 
   (** Some normalization is necessary for [embed_into_fml] (defined below)
@@ -304,8 +311,8 @@ end = struct
       [0 ≠ (p ? 1 : 0)] ==> [(p ? 0 ≠ 1 : 0 ≠ 0)] ==> [(p ? tt : ff)]
       ==> [p]. *)
 
-  let _Tt = Tt
-  let _Ff = Not Tt
+  let _Tt = Tt |> check invariant
+  let _Ff = Not Tt |> check invariant
 
   (** classification of terms as either semantically equal or disequal, or
       if semantic relationship is unknown, as either syntactically less than
@@ -321,29 +328,33 @@ end = struct
         if ord < 0 then SynLt else if ord = 0 then SemEq else SynGt
 
   let _Eq0 x =
-    match compare_semantic_syntactic zero x with
+    ( match compare_semantic_syntactic zero x with
     (* 0 = 0 ==> tt *)
     | SemEq -> Tt
     (* 0 = N ==> ff for N ≢ 0 *)
     | SemDq -> _Ff
-    | SynLt | SynGt -> Eq0 x
+    | SynLt | SynGt -> Eq0 x )
+    |> check invariant
 
   let _Eq x y =
-    if x == zero then _Eq0 y
+    ( if x == zero then _Eq0 y
     else if y == zero then _Eq0 x
     else
       match compare_semantic_syntactic x y with
       | SemEq -> Tt
       | SemDq -> _Ff
       | SynLt -> Eq (x, y)
-      | SynGt -> Eq (y, x)
+      | SynGt -> Eq (y, x) )
+    |> check invariant
 
-  let _Gt0 = function
+  let _Gt0 x =
+    ( match x with
     | Z z -> if Z.gt z Z.zero then Tt else _Ff
     | Q q -> if Q.gt q Q.zero then Tt else _Ff
-    | x -> Gt0 x
+    | x -> Gt0 x )
+    |> check invariant
 
-  let _Lit p xs = Lit (p, xs)
+  let _Lit p xs = Lit (p, xs) |> check invariant
 
   let rec is_negative = function
     | Not (Tt | Eq _ | Eq0 _ | Gt0 _ | Lit _ | Iff _) | Or _ -> true
@@ -375,7 +386,7 @@ end = struct
     | _ -> if equal_fml p q then Equal else Unknown
 
   let _And p q =
-    match (p, q) with
+    ( match (p, q) with
     | Tt, p | p, Tt -> p
     | Not Tt, _ | _, Not Tt -> _Ff
     | _ -> (
@@ -384,10 +395,11 @@ end = struct
       | Opposite -> _Ff
       | Unknown ->
           let p, q = sort_fml p q in
-          And (p, q) )
+          And (p, q) ) )
+    |> check invariant
 
   let _Or p q =
-    match (p, q) with
+    ( match (p, q) with
     | Not Tt, p | p, Not Tt -> p
     | Tt, _ | _, Tt -> Tt
     | _ -> (
@@ -396,10 +408,11 @@ end = struct
       | Opposite -> Tt
       | Unknown ->
           let p, q = sort_fml p q in
-          Or (p, q) )
+          Or (p, q) ) )
+    |> check invariant
 
   let rec _Iff p q =
-    match (p, q) with
+    ( match (p, q) with
     | Tt, p | p, Tt -> p
     | Not Tt, p | p, Not Tt -> _Not p
     | _ -> (
@@ -408,17 +421,20 @@ end = struct
       | Opposite -> _Ff
       | Unknown ->
           let p, q = sort_fml p q in
-          Iff (p, q) )
+          Iff (p, q) ) )
+    |> check invariant
 
-  and _Not = function
+  and _Not p =
+    ( match p with
     | Not x -> x
     | And (x, y) -> _Or (_Not x) (_Not y)
     | Or (x, y) -> _And (_Not x) (_Not y)
     | Cond {cnd; pos; neg} -> _Cond cnd (_Not pos) (_Not neg)
-    | (Tt | Eq _ | Eq0 _ | Gt0 _ | Lit _ | Iff _) as x -> Not x
+    | Tt | Eq _ | Eq0 _ | Gt0 _ | Lit _ | Iff _ -> Not p )
+    |> check invariant
 
   and _Cond cnd pos neg =
-    match (cnd, pos, neg) with
+    ( match (cnd, pos, neg) with
     (* (tt ? p : n) ==> p *)
     | Tt, _, _ -> pos
     (* (ff ? p : n) ==> n *)
@@ -445,7 +461,8 @@ end = struct
       | Unknown when is_negative cnd ->
           Cond {cnd= _Not cnd; pos= neg; neg= pos}
       (* (c ? p : n) *)
-      | _ -> Cond {cnd; pos; neg} )
+      | _ -> Cond {cnd; pos; neg} ) )
+    |> check invariant
 end
 
 open Fml
