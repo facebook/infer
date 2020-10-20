@@ -125,7 +125,6 @@ module Either = struct
   let right v = Right v
 end
 
-module Hashtbl = Base.Hashtbl
 module Hash_queue = Core_kernel.Hash_queue
 
 (** Input / Output *)
@@ -228,4 +227,5 @@ let violates f x =
 
 (** Deprecated *)
 
+module Hashtbl = struct end
 module With_return = Base.With_return

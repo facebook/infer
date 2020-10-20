@@ -146,7 +146,7 @@ include module type of IArray.Import
 module Set = Set
 module Map = Map
 module Multiset = Multiset
-module Hashtbl = Base.Hashtbl
+module HashTable = HashTable
 module HashSet = HashSet
 module Hash_queue = Core_kernel.Hash_queue
 
@@ -214,4 +214,5 @@ val violates : ('a -> unit) -> 'a -> _
 
 (**)
 
+module Hashtbl : sig end [@@deprecated "Use HashTable instead of Hashtbl"]
 module With_return = Base.With_return

@@ -6,7 +6,8 @@
  *)
 
 open! NS0
-include module type of Base.String
-module Set : Set.S with type elt = string
-module Map : Map.S with type key = string
-module Tbl : HashTable.S with type key = string
+
+(** Hash tables *)
+
+include module type of HashTable_intf
+module Make (Key : HashedType) : S with type key = Key.t

@@ -91,10 +91,10 @@ let tuple elts ~bits ~byts ~packed =
 let opaque ~name = Opaque {name} |> check invariant
 
 let struct_ =
-  let defns : (string, t) Hashtbl.t = Hashtbl.create (module String) in
+  let defns = String.Tbl.create () in
   let dummy_typ = Opaque {name= "dummy"} in
   fun ~name ~bits ~byts ~packed elt_thks ->
-    match Hashtbl.find defns name with
+    match String.Tbl.find defns name with
     | Some typ -> typ
     | None ->
         (* Add placeholder defn to prevent computing [elts] in calls to
@@ -103,7 +103,7 @@ let struct_ =
         let typ =
           Struct {name; elts= IArray.of_array elts; bits; byts; packed}
         in
-        Hashtbl.set defns ~key:name ~data:typ ;
+        String.Tbl.set defns ~key:name ~data:typ ;
         IArray.iteri elt_thks ~f:(fun i (lazy elt) -> elts.(i) <- elt) ;
         typ |> check invariant
 

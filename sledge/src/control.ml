@@ -258,7 +258,9 @@ module Make (Dom : Domain_intf.Dom) = struct
   let exec_jump stk state block Llair.{dst; retreating} =
     Work.add ~prev:block ~retreating stk state dst
 
-  let summary_table = Hashtbl.create (module Llair.Reg)
+  module RegTbl = HashTable.Make (Llair.Reg)
+
+  let summary_table = RegTbl.create ()
 
   let exec_call opts stk state block call globals =
     let Llair.{callee; actuals; areturn; return; recursive} = call in
@@ -279,7 +281,7 @@ module Make (Dom : Domain_intf.Dom) = struct
           else
             let maybe_summary_post =
               let state = fst (domain_call ~summaries:false state) in
-              let* summary = Hashtbl.find summary_table name.reg in
+              let* summary = RegTbl.find summary_table name.reg in
               List.find_map ~f:(Dom.apply_summary state) summary
             in
             [%Trace.info
@@ -308,7 +310,7 @@ module Make (Dom : Domain_intf.Dom) = struct
   let pp_st () =
     [%Trace.printf
       "@[<v>%t@]" (fun fs ->
-          Hashtbl.iteri summary_table ~f:(fun ~key ~data ->
+          RegTbl.iteri summary_table ~f:(fun ~key ~data ->
               Format.fprintf fs "@[<v>%a:@ @[%a@]@]@ " Llair.Reg.pp key
                 (List.pp "@," Dom.pp_summary)
                 data ) )]
@@ -328,7 +330,7 @@ module Make (Dom : Domain_intf.Dom) = struct
             ~formals:
               (Llair.Reg.Set.union (Llair.Reg.Set.of_list formals) globals)
         in
-        Hashtbl.add_multi summary_table ~key:name.reg ~data:function_summary ;
+        RegTbl.add_multi summary_table ~key:name.reg ~data:function_summary ;
         pp_st () ;
         post_state
     in
@@ -511,7 +513,7 @@ module Make (Dom : Domain_intf.Dom) = struct
   let compute_summaries opts pgm : Dom.summary list Llair.Reg.Map.t =
     assert opts.function_summaries ;
     exec_pgm opts pgm ;
-    Hashtbl.fold summary_table ~init:Llair.Reg.Map.empty
+    RegTbl.fold summary_table ~init:Llair.Reg.Map.empty
       ~f:(fun ~key ~data map ->
         match data with [] -> map | _ -> Llair.Reg.Map.set map ~key ~data )
 end

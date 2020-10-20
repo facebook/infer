@@ -9,3 +9,4 @@ open! NS0
 include Base.String
 module Set = Set.Make (Base.String)
 module Map = Map.Make (Base.String)
+module Tbl = HashTable.Make (Base.String)

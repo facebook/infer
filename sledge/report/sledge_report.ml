@@ -6,10 +6,10 @@
  *)
 
 module Command = Core.Command
-module Tbl = CCHashtbl.Make (String)
+module Tbl = String.Tbl
 
 let read filename =
-  let tbl = Tbl.create 64 in
+  let tbl = Tbl.create () in
   List.iter (Sexp.load_sexps filename) ~f:(fun sexp ->
       let {Report.name; entry} = Report.t_of_sexp sexp in
       match (Tbl.find_opt tbl name, entry) with

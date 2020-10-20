@@ -51,14 +51,24 @@ let invalid_llvm : string -> 'a =
 
 (* gather names and debug locations *)
 
-let sym_tbl : (Llvm.llvalue, string * Loc.t) Hashtbl.t =
-  Hashtbl.Poly.create ~size:4_194_304 ()
+module LlvalueTbl = HashTable.Make (struct
+  type t = Llvm.llvalue
 
-let scope_tbl :
-    ( [`Fun of Llvm.llvalue | `Mod of Llvm.llmodule]
-    , int ref * (string, int) Hashtbl.t )
-    Hashtbl.t =
-  Hashtbl.Poly.create ~size:32_768 ()
+  include Poly
+end)
+
+module SymTbl = LlvalueTbl
+
+let sym_tbl : (string * Loc.t) SymTbl.t = SymTbl.create ~size:4_194_304 ()
+
+module ScopeTbl = HashTable.Make (struct
+  type t = [`Fun of Llvm.llvalue | `Mod of Llvm.llmodule]
+
+  include Poly
+end)
+
+let scope_tbl : (int ref * int String.Tbl.t) ScopeTbl.t =
+  ScopeTbl.create ~size:32_768 ()
 
 open struct
   open struct
@@ -103,8 +113,8 @@ open struct
       | None -> ()
       | Some scope ->
           let next, void_tbl =
-            Hashtbl.find_or_add scope_tbl scope ~default:(fun () ->
-                (ref 0, Hashtbl.Poly.create ()) )
+            ScopeTbl.find_or_add scope_tbl scope ~default:(fun () ->
+                (ref 0, String.Tbl.create ()) )
           in
           let name =
             match Llvm.classify_type (Llvm.type_of llv) with
@@ -120,12 +130,12 @@ open struct
                     | s -> s )
                   | _ -> "void"
                 in
-                match Hashtbl.find void_tbl fname with
+                match String.Tbl.find void_tbl fname with
                 | None ->
-                    Hashtbl.set void_tbl ~key:fname ~data:1 ;
+                    String.Tbl.set void_tbl ~key:fname ~data:1 ;
                     fname ^ ".void"
                 | Some count ->
-                    Hashtbl.set void_tbl ~key:fname ~data:(count + 1) ;
+                    String.Tbl.set void_tbl ~key:fname ~data:(count + 1) ;
                     String.concat_array
                       [|fname; ".void."; Int.to_string count|] )
             | _ -> (
@@ -142,7 +152,7 @@ open struct
                     String.concat_array [|"\""; name; "\""|]
                 | exception _ -> name ) )
           in
-          Hashtbl.set sym_tbl ~key:llv ~data:(name, loc)
+          SymTbl.set sym_tbl ~key:llv ~data:(name, loc)
   end
 
   let scan_names_and_locs : Llvm.llmodule -> unit =
@@ -178,25 +188,30 @@ open struct
     Llvm.iter_functions scan_function m
 
   let find_name : Llvm.llvalue -> string =
-   fun v -> fst (Hashtbl.find_exn sym_tbl v)
+   fun v -> fst (SymTbl.find_exn sym_tbl v)
 
   let find_loc : Llvm.llvalue -> Loc.t =
-   fun v -> snd (Hashtbl.find_exn sym_tbl v)
+   fun v -> snd (SymTbl.find_exn sym_tbl v)
 end
 
 let label_of_block : Llvm.llbasicblock -> string =
  fun blk -> find_name (Llvm.value_of_block blk)
 
-let anon_struct_name : (Llvm.lltype, string) Hashtbl.t =
-  Hashtbl.Poly.create ()
+module LltypeTbl = HashTable.Make (struct
+  type t = Llvm.lltype
+
+  include Poly
+end)
+
+let anon_struct_name : string LltypeTbl.t = LltypeTbl.create ()
 
 let struct_name : Llvm.lltype -> string =
  fun llt ->
   match Llvm.struct_name llt with
   | Some name -> name
   | None ->
-      Hashtbl.find_or_add anon_struct_name llt ~default:(fun () ->
-          Int.to_string (Hashtbl.length anon_struct_name) )
+      LltypeTbl.find_or_add anon_struct_name llt ~default:(fun () ->
+          Int.to_string (LltypeTbl.length anon_struct_name) )
 
 type x = {llcontext: Llvm.llcontext; lldatalayout: Llvm_target.DataLayout.t}
 
@@ -214,7 +229,7 @@ let size_of, bit_size_of =
   ( size_to_int Llvm_target.DataLayout.abi_size
   , size_to_int Llvm_target.DataLayout.size_in_bits )
 
-let memo_type : (Llvm.lltype, Typ.t) Hashtbl.t = Hashtbl.Poly.create ()
+let memo_type : Typ.t LltypeTbl.t = LltypeTbl.create ()
 
 let rec xlate_type : x -> Llvm.lltype -> Typ.t =
  fun x llt ->
@@ -277,7 +292,7 @@ let rec xlate_type : x -> Llvm.lltype -> Typ.t =
           fail "expected to be sized: %a" pp_lltype llt ()
       | Void | Label | Metadata -> assert false
   in
-  Hashtbl.find_or_add memo_type llt ~default:(fun () ->
+  LltypeTbl.find_or_add memo_type llt ~default:(fun () ->
       [%Trace.call fun {pf} -> pf "%a" pp_lltype llt]
       ;
       xlate_type_ llt
@@ -335,11 +350,17 @@ let pp_prefix_exp fs (insts, exp) =
    of 'undef' to a distinct register *)
 let undef_count = ref 0
 
-let memo_value : (bool * Llvm.llvalue, Inst.t list * Exp.t) Hashtbl.t =
-  Hashtbl.Poly.create ()
+module ValTbl = HashTable.Make (struct
+  type t = bool * Llvm.llvalue
 
-let memo_global : (Llvm.llvalue, Global.t) Hashtbl.t =
-  Hashtbl.Poly.create ()
+  include Poly
+end)
+
+let memo_value : (Inst.t list * Exp.t) ValTbl.t = ValTbl.create ()
+
+module GlobTbl = LlvalueTbl
+
+let memo_global : Global.t GlobTbl.t = GlobTbl.create ()
 
 let should_inline : Llvm.llvalue -> bool =
  fun llv ->
@@ -485,7 +506,7 @@ and xlate_value ?(inline = false) stk :
      |NullValue | BasicBlock | InlineAsm | MDNode | MDString ->
         fail "xlate_value: %a" pp_llvalue llv ()
   in
-  Hashtbl.find_or_add memo_value (inline, llv) ~default:(fun () ->
+  ValTbl.find_or_add memo_value (inline, llv) ~default:(fun () ->
       [%Trace.call fun {pf} -> pf "%a" pp_llvalue llv]
       ;
       xlate_value_ llv
@@ -709,14 +730,14 @@ and xlate_opcode stk :
 
 and xlate_global stk : x -> Llvm.llvalue -> Global.t =
  fun x llg ->
-  Hashtbl.find_or_add memo_global llg ~default:(fun () ->
+  GlobTbl.find_or_add memo_global llg ~default:(fun () ->
       [%Trace.call fun {pf} -> pf "%a" pp_llvalue llg]
       ;
       let g = xlate_name x ~global:() llg in
       let loc = find_loc llg in
       (* add to tbl without initializer in case of recursive occurrences in
          its own initializer *)
-      Hashtbl.set memo_global ~key:llg ~data:(Global.mk g loc) ;
+      GlobTbl.set memo_global ~key:llg ~data:(Global.mk g loc) ;
       let init =
         match Llvm.classify_value llg with
         | GlobalVariable ->
@@ -1520,12 +1541,12 @@ let check_datalayout llcontext lldatalayout =
    Gc.full_major) before freeing the memory with Llvm.dispose_module and
    Llvm.dispose_context. *)
 let cleanup llmodule llcontext =
-  Hashtbl.clear sym_tbl ;
-  Hashtbl.clear scope_tbl ;
-  Hashtbl.clear anon_struct_name ;
-  Hashtbl.clear memo_type ;
-  Hashtbl.clear memo_global ;
-  Hashtbl.clear memo_value ;
+  SymTbl.clear sym_tbl ;
+  ScopeTbl.clear scope_tbl ;
+  LltypeTbl.clear anon_struct_name ;
+  LltypeTbl.clear memo_type ;
+  GlobTbl.clear memo_global ;
+  ValTbl.clear memo_value ;
   StringS.clear ignored_callees ;
   Gc.full_major () ;
   Llvm.dispose_module llmodule ;
