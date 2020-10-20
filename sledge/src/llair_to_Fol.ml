@@ -43,7 +43,31 @@ and ap_uuf (f : T.t -> T.t -> F.t) typ a b = F.inject (ap_uut f typ a b)
 
 and term : Llair.Exp.t -> T.t =
  fun e ->
+  let imp p q = F.or_ (F.not_ p) q in
+  let nimp p q = F.and_ p (F.not_ q) in
+  let if_ p q = F.or_ p (F.not_ q) in
+  let nif p q = F.and_ (F.not_ p) q in
   match e with
+  (* formulas *)
+  | Ap2 (Eq, Integer {bits= 1; _}, p, q) -> ap_fff F.iff p q
+  | Ap2 (Dq, Integer {bits= 1; _}, p, q) -> ap_fff F.xor p q
+  | Ap2 ((Gt | Ugt), Integer {bits= 1; _}, p, q) -> ap_fff nimp p q
+  | Ap2 ((Lt | Ult), Integer {bits= 1; _}, p, q) -> ap_fff nif p q
+  | Ap2 ((Ge | Uge), Integer {bits= 1; _}, p, q) -> ap_fff if_ p q
+  | Ap2 ((Le | Ule), Integer {bits= 1; _}, p, q) -> ap_fff imp p q
+  | Ap2 (Add, Integer {bits= 1; _}, p, q) -> ap_fff F.xor p q
+  | Ap2 (Sub, Integer {bits= 1; _}, p, q) -> ap_fff F.xor p q
+  | Ap2 (Mul, Integer {bits= 1; _}, p, q) -> ap_fff F.and_ p q
+  (* div and rem are not formulas even if bits=1 due to division by 0 *)
+  | Ap2 (And, Integer {bits= 1; _}, p, q) -> ap_fff F.and_ p q
+  | Ap2 (Or, Integer {bits= 1; _}, p, q) -> ap_fff F.or_ p q
+  | Ap2 (Xor, Integer {bits= 1; _}, p, q) -> ap_fff F.xor p q
+  | Ap2 ((Shl | Lshr), Integer {bits= 1; _}, p, q) -> ap_fff nimp p q
+  | Ap2 (Ashr, Integer {bits= 1; _}, p, q) -> ap_fff F.or_ p q
+  | Ap3 (Conditional, Integer {bits= 1; _}, cnd, pos, neg) ->
+      F.inject
+        (F.cond ~cnd:(formula cnd) ~pos:(formula pos) ~neg:(formula neg))
+  (* terms *)
   | Reg {name; global; typ= _} -> T.var (Var.program ~name ~global)
   | Label {parent; name} ->
       uap0 (Funsym.uninterp ("label_" ^ parent ^ "_" ^ name))
@@ -72,14 +96,6 @@ and term : Llair.Exp.t -> T.t =
         Format.asprintf "convert_%a_%a" Llair.Typ.pp src Llair.Typ.pp dst
       in
       uap1 (Funsym.uninterp s) (term e)
-  | Ap2 (Eq, Integer {bits= 1; _}, p, q) -> ap_fff F.iff p q
-  | Ap2 (Dq, Integer {bits= 1; _}, p, q) -> ap_fff F.xor p q
-  | Ap2 ((Gt | Ugt), Integer {bits= 1; _}, p, q)
-   |Ap2 ((Lt | Ult), Integer {bits= 1; _}, q, p) ->
-      ap_fff (fun p q -> F.and_ p (F.not_ q)) p q
-  | Ap2 ((Ge | Uge), Integer {bits= 1; _}, p, q)
-   |Ap2 ((Le | Ule), Integer {bits= 1; _}, q, p) ->
-      ap_fff (fun p q -> F.or_ p (F.not_ q)) p q
   | Ap2 (Eq, _, d, e) -> ap_ttf F.eq d e
   | Ap2 (Dq, _, d, e) -> ap_ttf F.dq d e
   | Ap2 (Gt, _, d, e) -> ap_ttf F.gt d e
@@ -92,9 +108,6 @@ and term : Llair.Exp.t -> T.t =
   | Ap2 (Ule, typ, d, e) -> ap_uuf F.le typ d e
   | Ap2 (Ord, _, d, e) -> ap_ttf (uposlit2 (Predsym.uninterp "ord")) d e
   | Ap2 (Uno, _, d, e) -> ap_ttf (uneglit2 (Predsym.uninterp "ord")) d e
-  | Ap2 (Add, Integer {bits= 1; _}, p, q) -> ap_fff F.xor p q
-  | Ap2 (Sub, Integer {bits= 1; _}, p, q) -> ap_fff F.xor p q
-  | Ap2 (Mul, Integer {bits= 1; _}, p, q) -> ap_fff F.and_ p q
   | Ap2 (Add, _, d, e) -> ap_ttt T.add d e
   | Ap2 (Sub, _, d, e) -> ap_ttt T.sub d e
   | Ap2 (Mul, _, d, e) -> ap_ttt T.mul d e
@@ -102,18 +115,12 @@ and term : Llair.Exp.t -> T.t =
   | Ap2 (Rem, _, d, e) -> ap_ttt (uap2 Rem) d e
   | Ap2 (Udiv, typ, d, e) -> ap_uut (uap2 Div) typ d e
   | Ap2 (Urem, typ, d, e) -> ap_uut (uap2 Rem) typ d e
-  | Ap2 (And, Integer {bits= 1; _}, p, q) -> ap_fff F.and_ p q
-  | Ap2 (Or, Integer {bits= 1; _}, p, q) -> ap_fff F.or_ p q
-  | Ap2 (Xor, Integer {bits= 1; _}, p, q) -> ap_fff F.xor p q
   | Ap2 (And, _, d, e) -> ap_ttt (uap2 BitAnd) d e
   | Ap2 (Or, _, d, e) -> ap_ttt (uap2 BitOr) d e
   | Ap2 (Xor, _, d, e) -> ap_ttt (uap2 BitXor) d e
   | Ap2 (Shl, _, d, e) -> ap_ttt (uap2 BitShl) d e
   | Ap2 (Lshr, _, d, e) -> ap_ttt (uap2 BitLshr) d e
   | Ap2 (Ashr, _, d, e) -> ap_ttt (uap2 BitAshr) d e
-  | Ap3 (Conditional, Integer {bits= 1; _}, cnd, pos, neg) ->
-      F.inject
-        (F.cond ~cnd:(formula cnd) ~pos:(formula pos) ~neg:(formula neg))
   | Ap3 (Conditional, _, cnd, thn, els) ->
       T.ite ~cnd:(formula cnd) ~thn:(term thn) ~els:(term els)
   | Ap1 (Select idx, _, rcd) -> T.select ~rcd:(term rcd) ~idx
