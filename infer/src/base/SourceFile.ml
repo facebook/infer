@@ -191,7 +191,8 @@ let create ?(warn_on_error = true) path =
     | None ->
         RelativeProjectRoot path
     | Some workspace_rel_root ->
-        RelativeProjectRootAndWorkspace {workspace_rel_root; rel_path= path}
+        let rel_path, new_root = Utils.normalize_path_from ~root:workspace_rel_root path in
+        RelativeProjectRootAndWorkspace {workspace_rel_root= new_root; rel_path}
   else from_abs_path ~warn_on_error path
 
 
