@@ -63,6 +63,7 @@ module rec Term : sig
   (* records *)
   val select : rcd:t -> idx:int -> t
   val update : rcd:t -> idx:int -> elt:t -> t
+  val record : t array -> t
 
   (* tuples *)
   val tuple : t array -> t

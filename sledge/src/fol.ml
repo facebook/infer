@@ -32,6 +32,7 @@ type trm =
   | Concat of trm array
   | Select of {idx: int; rcd: trm}
   | Update of {idx: int; rcd: trm; elt: trm}
+  | Record of trm array
   | Tuple of trm array
   | Project of {ary: int; idx: int; tup: trm}
   | Apply of Funsym.t * trm
@@ -74,6 +75,7 @@ let _Extract seq off len = Extract {seq; off; len}
 let _Concat es = Concat es
 let _Select idx rcd = Select {idx; rcd}
 let _Update idx rcd elt = Update {idx; rcd; elt}
+let _Record es = Record es
 let _Tuple es = Tuple es
 let _Project ary idx tup = Project {ary; idx; tup}
 let _Apply f a = Apply (f, a)
@@ -434,21 +436,6 @@ type var = Var.t
 
 (** pp *)
 
-let encoded_record r =
-  let exception Not_a_record in
-  let rec encoded_record_ i = function
-    | Apply (EmptyRecord, Tuple [||]) when Int.equal i 0 -> []
-    | Update {rcd= Apply (EmptyRecord, Tuple [||]); idx= j; elt}
-      when Int.equal i j ->
-        [elt]
-    | Update {rcd; idx= j; elt} when Int.equal i j ->
-        elt :: encoded_record_ (Int.succ i) rcd
-    | _ -> raise Not_a_record
-  in
-  match encoded_record_ 0 r with
-  | es -> Some es
-  | exception Not_a_record -> None
-
 let rec ppx_t strength fs trm =
   let rec pp fs trm =
     let pf fmt = pp_boxed fs fmt in
@@ -466,10 +453,8 @@ let rec ppx_t strength fs trm =
     | Concat [||] -> pf "@<2>⟨⟩"
     | Concat xs -> pf "(%a)" (Array.pp "@,^" pp) xs
     | Select {idx; rcd} -> pf "%a[%i]" pp rcd idx
-    | Update {idx; rcd; elt} -> (
-      match encoded_record trm with
-      | None -> pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
-      | Some elts -> pf "{%a}" (pp_record strength) elts )
+    | Update {idx; rcd; elt} -> pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
+    | Record xs -> pf "{%a}" (ppx_record strength) xs
     | Tuple xs -> pf "(%a)" (Array.pp ",@ " (ppx_t strength)) xs
     | Project {ary; idx; tup} -> pf "proj(%i,%i)(%a)" ary idx pp tup
     | Apply (f, Tuple [||]) -> pf "%a" Funsym.pp f
@@ -482,21 +467,21 @@ let rec ppx_t strength fs trm =
   in
   pp fs trm
 
-and pp_record strength fs elts =
+and ppx_record strength fs elts =
   [%Trace.fprintf
     fs "%a"
       (fun fs elts ->
         let exception Not_a_string in
         match
-          String.of_char_list
-            (List.map elts ~f:(function
+          String.init (Array.length elts) ~f:(fun i ->
+              match elts.(i) with
               | Z c -> Char.of_int_exn (Z.to_int c)
-              | _ -> raise Not_a_string ))
+              | _ -> raise Not_a_string )
         with
         | s -> Format.fprintf fs "%S" s
         | exception (Not_a_string | Z.Overflow | Failure _) ->
             Format.fprintf fs "@[<h>%a@]"
-              (List.pp ",@ " (ppx_t strength))
+              (Array.pp ",@ " (ppx_t strength))
               elts )
       elts]
 
@@ -568,7 +553,7 @@ let rec fold_vars_t e ~init ~f =
   | Extract {seq= x; off= y; len= z} ->
       fold_vars_t ~f x
         ~init:(fold_vars_t ~f y ~init:(fold_vars_t ~f z ~init))
-  | Concat xs | Tuple xs ->
+  | Concat xs | Record xs | Tuple xs ->
       Array.fold ~f:(fun init -> fold_vars_t ~f ~init) xs ~init
 
 let rec fold_vars_f ~init p ~f =
@@ -652,6 +637,7 @@ let rec map_vars_t ~f e =
   | Concat xs -> mapN (map_vars_t ~f) e _Concat xs
   | Select {idx; rcd} -> map1 (map_vars_t ~f) e (_Select idx) rcd
   | Update {idx; rcd; elt} -> map2 (map_vars_t ~f) e (_Update idx) rcd elt
+  | Record xs -> mapN (map_vars_t ~f) e _Record xs
   | Tuple xs -> mapN (map_vars_t ~f) e _Tuple xs
   | Project {ary; idx; tup} -> map1 (map_vars_t ~f) e (_Project ary idx) tup
   | Apply (g, x) -> map1 (map_vars_t ~f) e (_Apply g) x
@@ -884,6 +870,7 @@ module Term = struct
 
   let select ~rcd ~idx = ap1t (_Select idx) rcd
   let update ~rcd ~idx ~elt = ap2t (_Update idx) rcd elt
+  let record elts = apNt (fun es -> _Record (Array.of_list es)) elts
 
   (* tuples *)
 
@@ -1109,11 +1096,11 @@ let rec t_to_ses : trm -> Ses.Term.t = function
   | Select {idx; rcd} -> Ses.Term.select ~rcd:(t_to_ses rcd) ~idx
   | Update {idx; rcd; elt} ->
       Ses.Term.update ~rcd:(t_to_ses rcd) ~idx ~elt:(t_to_ses elt)
+  | Record es ->
+      Ses.Term.record (IArray.of_array (Array.map ~f:t_to_ses es))
   | Apply (Mul, Tuple [|x; y|]) -> Ses.Term.mul (t_to_ses x) (t_to_ses y)
   | Apply (Div, Tuple [|x; y|]) -> Ses.Term.div (t_to_ses x) (t_to_ses y)
   | Apply (Rem, Tuple [|x; y|]) -> Ses.Term.rem (t_to_ses x) (t_to_ses y)
-  | Apply (EmptyRecord, Tuple [||]) ->
-      Ses.Term.record (IArray.of_array [||])
   | Apply (RecRecord i, Tuple [||]) -> Ses.Term.rec_record i
   | Apply (BitAnd, Tuple [|x; y|]) ->
       Ses.Term.and_ (t_to_ses x) (t_to_ses y)
@@ -1277,9 +1264,7 @@ and of_ses : Ses.Term.t -> exp =
   | Ap2 (Update idx, rcd, elt) ->
       update ~rcd:(of_ses rcd) ~idx ~elt:(of_ses elt)
   | ApN (Record, elts) ->
-      let init = uap0 EmptyRecord in
-      IArray.foldi ~init elts ~f:(fun idx rcd e ->
-          update ~rcd ~idx ~elt:(of_ses e) )
+      record (Array.map ~f:of_ses (IArray.to_array elts))
   | RecRecord i -> uap0 (RecRecord i)
   | Apply (sym, args) ->
       apply sym (Array.map ~f:of_ses (IArray.to_array args))
@@ -1655,9 +1640,7 @@ module Term_of_Llair = struct
     | Ap2 (Update idx, _, rcd, elt) ->
         update ~rcd:(exp rcd) ~idx ~elt:(exp elt)
     | ApN (Record, _, elts) ->
-        let init = uap0 EmptyRecord in
-        IArray.foldi ~init elts ~f:(fun idx rcd e ->
-            update ~rcd ~idx ~elt:(exp e) )
+        record (Array.map ~f:exp (IArray.to_array elts))
     | RecRecord (i, _) -> uap0 (RecRecord i)
     | Ap1 (Splat, _, byt) -> splat (exp byt)
 end

@@ -17,7 +17,6 @@ type t =
   | Rem
       (** Remainder of division, satisfies [a = b * div a b + rem a b] and
           for integers [rem a b] has same sign as [a], and [|rem a b| < |b|] *)
-  | EmptyRecord
   | RecRecord of int
   | BitAnd  (** Bitwise logical And *)
   | BitOr  (** Bitwise logical inclusive Or *)
