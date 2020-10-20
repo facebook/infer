@@ -35,3 +35,4 @@ type t =
 [@@deriving compare, equal, sexp]
 
 val pp : t pp
+val uninterp : string -> t

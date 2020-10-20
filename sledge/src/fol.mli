@@ -64,6 +64,7 @@ module rec Term : sig
   val select : rcd:t -> idx:int -> t
   val update : rcd:t -> idx:int -> elt:t -> t
   val record : t array -> t
+  val ancestor : int -> t
 
   (* uninterpreted *)
   val apply : Ses.Funsym.t -> t array -> t
@@ -138,6 +139,8 @@ and Formula : sig
   val andN : t list -> t
   val or_ : t -> t -> t
   val orN : t list -> t
+  val iff : t -> t -> t
+  val xor : t -> t -> t
   val cond : cnd:t -> pos:t -> neg:t -> t
 
   (** Query *)
@@ -264,19 +267,4 @@ module Context : sig
 
   val replay : string -> unit
   (** Replay debugging *)
-end
-
-(** Convert from Llair *)
-
-module Var_of_Llair : sig
-  val reg : Llair.Reg.t -> Var.t
-  val regs : Llair.Reg.Set.t -> Var.Set.t
-end
-
-module Term_of_Llair : sig
-  val exp : Llair.Exp.t -> Term.t
-end
-
-module Formula_of_Llair : sig
-  val exp : Llair.Exp.t -> Formula.t
 end

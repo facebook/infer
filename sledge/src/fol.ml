@@ -401,7 +401,6 @@ module Var : sig
   include Ses.Var_intf.VAR with type t = private trm
 
   val of_ : trm -> t
-  val of_exp : exp -> t option
 end = struct
   module T = struct
     type t = trm [@@deriving compare, equal, sexp]
@@ -422,10 +421,6 @@ end = struct
   end)
 
   let of_ v = v |> check invariant
-
-  let of_exp = function
-    | `Trm (Var _ as v) -> Some (v |> check invariant)
-    | _ -> None
 end
 
 type var = Var.t
@@ -1147,11 +1142,8 @@ let vs_of_ses : Ses.Var.Set.t -> Var.Set.t =
   Ses.Var.Set.fold vs ~init:Var.Set.empty ~f:(fun vs v ->
       Var.Set.add vs (v_of_ses v) )
 
-let uap0 f = `Trm (Apply (f, [||]))
 let uap1 f = ap1t (fun x -> Apply (f, [|x|]))
 let uap2 f = ap2t (fun x y -> Apply (f, [|x; y|]))
-let upos2 p = ap2f (fun x y -> _UPosLit p [|x; y|])
-let uneg2 p = ap2f (fun x y -> _UNegLit p [|x; y|])
 let uposN p = apNf (_UPosLit p)
 let unegN p = apNf (_UNegLit p)
 
@@ -1516,134 +1508,4 @@ module Context = struct
 
   let elim ks r =
     wrap elim_tmr (fun () -> elim ks r) (fun () -> Elim (ks, r))
-end
-
-(*
- * Convert from Llair
- *)
-
-module Term_of_Llair = struct
-  let rec uap_te f a = uap1 f (exp a)
-  and uap_tte f a b = uap2 f (exp a) (exp b)
-
-  and usap_ttt : 'a. (exp -> exp -> 'a) -> _ -> _ -> _ -> 'a =
-   fun f typ a b ->
-    let bits = Llair.Typ.bit_size_of typ in
-    f (uap1 (Unsigned bits) (exp a)) (uap1 (Unsigned bits) (exp b))
-
-  and usap_ttf (f : exp -> exp -> fml) typ a b = `Fml (usap_ttt f typ a b)
-  and ap_ttt : 'a. (exp -> exp -> 'a) -> _ -> _ -> 'a =
-   fun f a b -> f (exp a) (exp b)
-  and ap_ttf (f : exp -> exp -> fml) a b = `Fml (ap_ttt f a b)
-
-  and ap_fff (f : fml -> fml -> fml) a b =
-    `Fml (f (embed_into_fml (exp a)) (embed_into_fml (exp b)))
-
-  and ap_ffff (f : fml -> fml -> fml -> fml) a b c =
-    `Fml
-      (f
-         (embed_into_fml (exp a))
-         (embed_into_fml (exp b))
-         (embed_into_fml (exp c)))
-
-  and exp : Llair.Exp.t -> exp =
-   fun e ->
-    let open Term in
-    let open Formula in
-    match e with
-    | Reg {name; global; typ= _} -> var (Var.program ~name ~global)
-    | Label {parent; name} ->
-        uap0 (Uninterp ("label_" ^ parent ^ "_" ^ name))
-    | Integer {typ= _; data} -> integer data
-    | Float {data; typ= _} -> (
-      match Q.of_float (Float.of_string data) with
-      | q when Q.is_real q -> rational q
-      | _ | (exception Invalid_argument _) ->
-          uap0 (Uninterp ("float_" ^ data)) )
-    | Ap1 (Signed {bits}, _, e) ->
-        let a = exp e in
-        if bits = 1 then
-          match Formula.project a with
-          | Some fml -> Formula.inject fml
-          | _ -> uap1 (Signed bits) a
-        else uap1 (Signed bits) a
-    | Ap1 (Unsigned {bits}, _, e) ->
-        let a = exp e in
-        if bits = 1 then
-          match Formula.project a with
-          | Some fml -> Formula.inject fml
-          | _ -> uap1 (Unsigned bits) a
-        else uap1 (Unsigned bits) a
-    | Ap1 (Convert {src}, dst, e) ->
-        let s =
-          Format.asprintf "convert_%a_%a" Llair.Typ.pp src Llair.Typ.pp dst
-        in
-        uap_te (Uninterp s) e
-    | Ap2 (Eq, Integer {bits= 1; _}, p, q) -> ap_fff iff p q
-    | Ap2 (Dq, Integer {bits= 1; _}, p, q) -> ap_fff xor p q
-    | Ap2 ((Gt | Ugt), Integer {bits= 1; _}, p, q)
-     |Ap2 ((Lt | Ult), Integer {bits= 1; _}, q, p) ->
-        ap_fff (fun p q -> and_ p (not_ q)) p q
-    | Ap2 ((Ge | Uge), Integer {bits= 1; _}, p, q)
-     |Ap2 ((Le | Ule), Integer {bits= 1; _}, q, p) ->
-        ap_fff (fun p q -> or_ p (not_ q)) p q
-    | Ap2 (Eq, _, d, e) -> ap_ttf eq d e
-    | Ap2 (Dq, _, d, e) -> ap_ttf dq d e
-    | Ap2 (Gt, _, d, e) -> ap_ttf gt d e
-    | Ap2 (Lt, _, d, e) -> ap_ttf lt d e
-    | Ap2 (Ge, _, d, e) -> ap_ttf ge d e
-    | Ap2 (Le, _, d, e) -> ap_ttf le d e
-    | Ap2 (Ugt, typ, d, e) -> usap_ttf gt typ d e
-    | Ap2 (Ult, typ, d, e) -> usap_ttf lt typ d e
-    | Ap2 (Uge, typ, d, e) -> usap_ttf ge typ d e
-    | Ap2 (Ule, typ, d, e) -> usap_ttf le typ d e
-    | Ap2 (Ord, _, d, e) -> ap_ttf (upos2 (Predsym.uninterp "ord")) d e
-    | Ap2 (Uno, _, d, e) -> ap_ttf (uneg2 (Predsym.uninterp "ord")) d e
-    | Ap2 (Add, Integer {bits= 1; _}, p, q) -> ap_fff xor p q
-    | Ap2 (Sub, Integer {bits= 1; _}, p, q) -> ap_fff xor p q
-    | Ap2 (Mul, Integer {bits= 1; _}, p, q) -> ap_fff and_ p q
-    | Ap2 (Add, _, d, e) -> ap_ttt add d e
-    | Ap2 (Sub, _, d, e) -> ap_ttt sub d e
-    | Ap2 (Mul, _, d, e) -> ap_ttt mul d e
-    | Ap2 (Div, _, d, e) -> uap_tte Div d e
-    | Ap2 (Rem, _, d, e) -> uap_tte Rem d e
-    | Ap2 (Udiv, typ, d, e) -> usap_ttt (uap2 Div) typ d e
-    | Ap2 (Urem, typ, d, e) -> usap_ttt (uap2 Rem) typ d e
-    | Ap2 (And, Integer {bits= 1; _}, p, q) -> ap_fff and_ p q
-    | Ap2 (Or, Integer {bits= 1; _}, p, q) -> ap_fff or_ p q
-    | Ap2 (Xor, Integer {bits= 1; _}, p, q) -> ap_fff xor p q
-    | Ap2 (And, _, d, e) -> ap_ttt (uap2 BitAnd) d e
-    | Ap2 (Or, _, d, e) -> ap_ttt (uap2 BitOr) d e
-    | Ap2 (Xor, _, d, e) -> ap_ttt (uap2 BitXor) d e
-    | Ap2 (Shl, _, d, e) -> ap_ttt (uap2 BitShl) d e
-    | Ap2 (Lshr, _, d, e) -> ap_ttt (uap2 BitLshr) d e
-    | Ap2 (Ashr, _, d, e) -> ap_ttt (uap2 BitAshr) d e
-    | Ap3 (Conditional, Integer {bits= 1; _}, cnd, pos, neg) ->
-        ap_ffff _Cond cnd pos neg
-    | Ap3 (Conditional, _, cnd, thn, els) ->
-        ite ~cnd:(embed_into_fml (exp cnd)) ~thn:(exp thn) ~els:(exp els)
-    | Ap1 (Select idx, _, rcd) -> select ~rcd:(exp rcd) ~idx
-    | Ap2 (Update idx, _, rcd, elt) ->
-        update ~rcd:(exp rcd) ~idx ~elt:(exp elt)
-    | ApN (Record, _, elts) ->
-        record (Array.map ~f:exp (IArray.to_array elts))
-    | RecRecord (i, _) -> ancestor i
-    | Ap1 (Splat, _, byt) -> splat (exp byt)
-end
-
-module Formula_of_Llair = struct
-  let exp e = embed_into_fml (Term_of_Llair.exp e)
-end
-
-module Var_of_Llair = struct
-  let reg r =
-    match
-      Var.of_exp (Term_of_Llair.exp (r : Llair.Reg.t :> Llair.Exp.t))
-    with
-    | Some v -> v
-    | _ -> violates Llair.Reg.invariant r
-
-  let regs =
-    Llair.Reg.Set.fold ~init:Var.Set.empty ~f:(fun s r ->
-        Var.Set.add s (reg r) )
 end

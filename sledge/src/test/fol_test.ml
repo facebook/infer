@@ -523,7 +523,7 @@ let%test_module _ =
 
     let%test "unsigned boolean overflow" =
       Formula.equal Formula.tt
-        (Formula_of_Llair.exp
+        (Llair_to_Fol.formula
            Llair.(
              Exp.uge
                (Exp.integer Typ.bool Z.minus_one)
@@ -531,7 +531,7 @@ let%test_module _ =
 
     let pp_exp e =
       Format.printf "@\nexp= %a; term= %a@." Llair.Exp.pp e Term.pp
-        (Term_of_Llair.exp e)
+        (Llair_to_Fol.term e)
 
     let ( !! ) i = Llair.(Exp.integer Typ.siz (Z.of_int i))
 

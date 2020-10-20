@@ -37,3 +37,5 @@ let pp ppf f =
   | Signed n -> pf "(s%i)" n
   | Unsigned n -> pf "(u%i)" n
   | Uninterp sym -> pf "%s" sym
+
+let uninterp s = Uninterp s
