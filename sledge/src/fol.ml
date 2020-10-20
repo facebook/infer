@@ -36,7 +36,7 @@ type trm =
   | Ancestor of int
   | Tuple of trm array
   | Project of {ary: int; idx: int; tup: trm}
-  | Apply of Funsym.t * trm
+  | Apply of Funsym.t * trm array
 [@@deriving compare, equal, sexp]
 
 let compare_trm x y =
@@ -80,7 +80,7 @@ let _Record es = Record es
 let _Ancestor i = Ancestor i
 let _Tuple es = Tuple es
 let _Project ary idx tup = Project {ary; idx; tup}
-let _Apply f a = Apply (f, a)
+let _Apply f es = Apply (f, es)
 
 (*
  * Formulas
@@ -106,8 +106,8 @@ module Fml : sig
     | Iff of fml * fml
     | Xor of fml * fml
     | Cond of {cnd: fml; pos: fml; neg: fml}
-    | UPosLit of Predsym.t * trm
-    | UNegLit of Predsym.t * trm
+    | UPosLit of Predsym.t * trm array
+    | UNegLit of Predsym.t * trm array
   [@@deriving compare, equal, sexp]
 
   val _Tt : fml
@@ -126,8 +126,8 @@ module Fml : sig
   val _Iff : fml -> fml -> fml
   val _Xor : fml -> fml -> fml
   val _Cond : fml -> fml -> fml -> fml
-  val _UPosLit : Predsym.t -> trm -> fml
-  val _UNegLit : Predsym.t -> trm -> fml
+  val _UPosLit : Predsym.t -> trm array -> fml
+  val _UNegLit : Predsym.t -> trm array -> fml
 end = struct
   type fml =
     | Tt
@@ -145,8 +145,8 @@ end = struct
     | Iff of fml * fml
     | Xor of fml * fml
     | Cond of {cnd: fml; pos: fml; neg: fml}
-    | UPosLit of Predsym.t * trm
-    | UNegLit of Predsym.t * trm
+    | UPosLit of Predsym.t * trm array
+    | UNegLit of Predsym.t * trm array
   [@@deriving compare, equal, sexp]
 
   let sort_fml x y = if compare_fml x y <= 0 then (x, y) else (y, x)
@@ -230,8 +230,8 @@ end = struct
     | Q q -> if Q.leq q Q.zero then Tt else Ff
     | x -> Le0 x
 
-  let _UPosLit p x = UPosLit (p, x)
-  let _UNegLit p x = UNegLit (p, x)
+  let _UPosLit p xs = UPosLit (p, xs)
+  let _UNegLit p xs = UNegLit (p, xs)
 
   let is_negative = function
     | Ff | Dq _ | Dq0 _ | Lt0 _ | Le0 _ | Or _ | Xor _ | UNegLit _ -> true
@@ -272,8 +272,10 @@ end = struct
           | Equal -> if equal_fml n n' then Equal else Unknown
           | Unknown -> Unknown
         else Unknown
-    | UPosLit (p, x), UNegLit (p', x') | UNegLit (p, x), UPosLit (p', x') ->
-        if Predsym.equal p p' && equal_trm x x' then Opposite else Unknown
+    | UPosLit (p, xs), UNegLit (p', xs') | UNegLit (p, xs), UPosLit (p', xs')
+      ->
+        if Predsym.equal p p' && Array.equal equal_trm xs xs' then Opposite
+        else Unknown
     | _ -> if equal_fml p q then Equal else Unknown
 
   let _And p q =
@@ -340,8 +342,8 @@ end = struct
     | Iff (x, y) -> _Xor x y
     | Xor (x, y) -> _Iff x y
     | Cond {cnd; pos; neg} -> _Cond cnd (_Not pos) (_Not neg)
-    | UPosLit (p, x) -> _UNegLit p x
-    | UNegLit (p, x) -> _UPosLit p x
+    | UPosLit (p, xs) -> _UNegLit p xs
+    | UNegLit (p, xs) -> _UPosLit p xs
 
   and _Cond cnd pos neg =
     match (cnd, pos, neg) with
@@ -460,13 +462,14 @@ let rec ppx_t strength fs trm =
     | Ancestor i -> pf "(ancestor %i)" i
     | Tuple xs -> pf "(%a)" (Array.pp ",@ " (ppx_t strength)) xs
     | Project {ary; idx; tup} -> pf "proj(%i,%i)(%a)" ary idx pp tup
-    | Apply (f, Tuple [||]) -> pf "%a" Funsym.pp f
+    | Apply (f, [||]) -> pf "%a" Funsym.pp f
     | Apply
         ( ( ( Mul | Div | Rem | BitAnd | BitOr | BitXor | BitShl | BitLshr
             | BitAshr ) as f )
-        , Tuple [|x; y|] ) ->
+        , [|x; y|] ) ->
         pf "(%a@ %a@ %a)" pp x Funsym.pp f pp y
-    | Apply (f, a) -> pf "%a@ %a" Funsym.pp f pp a
+    | Apply (f, es) ->
+        pf "%a(%a)" Funsym.pp f (Array.pp ",@ " (ppx_t strength)) es
   in
   pp fs trm
 
@@ -511,8 +514,9 @@ let ppx_f strength fs fml =
     | Xor (x, y) -> pf "(%a@ xor %a)" pp x pp y
     | Cond {cnd; pos; neg} ->
         pf "@[<hv 1>(%a@ ? %a@ : %a)@]" pp cnd pp pos pp neg
-    | UPosLit (p, x) -> pf "%a(%a)" Predsym.pp p pp_t x
-    | UNegLit (p, x) -> pf "@<1>¬%a(%a)" Predsym.pp p pp_t x
+    | UPosLit (p, xs) -> pf "%a(%a)" Predsym.pp p (Array.pp ",@ " pp_t) xs
+    | UNegLit (p, xs) ->
+        pf "@<1>¬%a(%a)" Predsym.pp p (Array.pp ",@ " pp_t) xs
   in
   pp fs fml
 
@@ -545,8 +549,7 @@ let rec fold_vars_t e ~init ~f =
    |Mulq (_, x)
    |Splat x
    |Select {rcd= x}
-   |Project {ary= _; idx= _; tup= x}
-   |Apply (_, x) ->
+   |Project {ary= _; idx= _; tup= x} ->
       fold_vars_t ~f x ~init
   | Add (x, y)
    |Sub (x, y)
@@ -556,7 +559,7 @@ let rec fold_vars_t e ~init ~f =
   | Extract {seq= x; off= y; len= z} ->
       fold_vars_t ~f x
         ~init:(fold_vars_t ~f y ~init:(fold_vars_t ~f z ~init))
-  | Concat xs | Record xs | Tuple xs ->
+  | Concat xs | Record xs | Tuple xs | Apply (_, xs) ->
       Array.fold ~f:(fun init -> fold_vars_t ~f ~init) xs ~init
 
 let rec fold_vars_f ~init p ~f =
@@ -569,7 +572,8 @@ let rec fold_vars_f ~init p ~f =
   | Cond {cnd; pos; neg} ->
       fold_vars_f ~f cnd
         ~init:(fold_vars_f ~f pos ~init:(fold_vars_f ~f neg ~init))
-  | UPosLit (_, x) | UNegLit (_, x) -> fold_vars_t ~f x ~init
+  | UPosLit (_, xs) | UNegLit (_, xs) ->
+      Array.fold ~f:(fun init -> fold_vars_t ~f ~init) xs ~init
 
 let rec fold_vars_c ~init ~f = function
   | `Ite (cnd, thn, els) ->
@@ -621,8 +625,8 @@ let rec map_trms_f ~f b =
   | Iff (x, y) -> map2 (map_trms_f ~f) b _Iff x y
   | Xor (x, y) -> map2 (map_trms_f ~f) b _Xor x y
   | Cond {cnd; pos; neg} -> map3 (map_trms_f ~f) b _Cond cnd pos neg
-  | UPosLit (p, x) -> map1 f b (_UPosLit p) x
-  | UNegLit (p, x) -> map1 f b (_UNegLit p) x
+  | UPosLit (p, xs) -> mapN f b (_UPosLit p) xs
+  | UNegLit (p, xs) -> mapN f b (_UNegLit p) xs
 
 (** map_vars *)
 
@@ -643,7 +647,7 @@ let rec map_vars_t ~f e =
   | Record xs -> mapN (map_vars_t ~f) e _Record xs
   | Tuple xs -> mapN (map_vars_t ~f) e _Tuple xs
   | Project {ary; idx; tup} -> map1 (map_vars_t ~f) e (_Project ary idx) tup
-  | Apply (g, x) -> map1 (map_vars_t ~f) e (_Apply g) x
+  | Apply (g, xs) -> mapN (map_vars_t ~f) e (_Apply g) xs
 
 let map_vars_f ~f = map_trms_f ~f:(map_vars_t ~f)
 
@@ -858,10 +862,7 @@ module Term = struct
           match y with
           | Z z -> mulq (Q.of_z z) (`Trm x)
           | Q q -> mulq q (`Trm x)
-          | _ ->
-              ap2t
-                (fun x y -> Apply (Mul, Tuple [|x; y|]))
-                (`Trm x) (`Trm y) ) )
+          | _ -> ap2t (fun x y -> Apply (Mul, [|x; y|])) (`Trm x) (`Trm y) ) )
 
   (* sequences *)
 
@@ -888,7 +889,7 @@ module Term = struct
 
   (* uninterpreted *)
 
-  let apply sym args = apNt (fun es -> _Apply sym (_Tuple es)) args
+  let apply sym args = apNt (_Apply sym) args
 
   (** Destruct *)
 
@@ -978,8 +979,8 @@ module Formula = struct
 
   (* uninterpreted *)
 
-  let uposlit p e = ap1f (_UPosLit p) e
-  let uneglit p e = ap1f (_UNegLit p) e
+  let uposlit p es = apNf (_UPosLit p) es
+  let uneglit p es = apNf (_UNegLit p) es
 
   (* connectives *)
 
@@ -1012,6 +1013,11 @@ module Formula = struct
         (exp -> exp) -> t -> (trm -> trm -> t) -> trm -> trm -> t =
      fun f b cons x y -> map2 f b (ap2f cons) (`Trm x) (`Trm y)
     in
+    let lift_mapN : (exp -> exp) -> t -> (trm array -> t) -> trm array -> t
+        =
+     fun f b cons xs ->
+      mapN f b (apNf cons) (Array.map ~f:(fun x -> `Trm x) xs)
+    in
     match b with
     | Tt | Ff -> b
     | Eq (x, y) -> lift_map2 f b _Eq x y
@@ -1027,8 +1033,8 @@ module Formula = struct
     | Iff (x, y) -> map2 (map_terms ~f) b _Iff x y
     | Xor (x, y) -> map2 (map_terms ~f) b _Xor x y
     | Cond {cnd; pos; neg} -> map3 (map_terms ~f) b _Cond cnd pos neg
-    | UPosLit (p, x) -> lift_map1 f b (_UPosLit p) x
-    | UNegLit (p, x) -> lift_map1 f b (_UNegLit p) x
+    | UPosLit (p, xs) -> lift_mapN f b (_UPosLit p) xs
+    | UNegLit (p, xs) -> lift_mapN f b (_UNegLit p) xs
 
   let fold_map_vars ~init e ~f =
     let s = ref init in
@@ -1103,23 +1109,20 @@ let rec t_to_ses : trm -> Ses.Term.t = function
   | Record es ->
       Ses.Term.record (IArray.of_array (Array.map ~f:t_to_ses es))
   | Ancestor i -> Ses.Term.rec_record i
-  | Apply (Mul, Tuple [|x; y|]) -> Ses.Term.mul (t_to_ses x) (t_to_ses y)
-  | Apply (Div, Tuple [|x; y|]) -> Ses.Term.div (t_to_ses x) (t_to_ses y)
-  | Apply (Rem, Tuple [|x; y|]) -> Ses.Term.rem (t_to_ses x) (t_to_ses y)
-  | Apply (BitAnd, Tuple [|x; y|]) ->
-      Ses.Term.and_ (t_to_ses x) (t_to_ses y)
-  | Apply (BitOr, Tuple [|x; y|]) -> Ses.Term.or_ (t_to_ses x) (t_to_ses y)
-  | Apply (BitXor, Tuple [|x; y|]) -> Ses.Term.dq (t_to_ses x) (t_to_ses y)
-  | Apply (BitShl, Tuple [|x; y|]) -> Ses.Term.shl (t_to_ses x) (t_to_ses y)
-  | Apply (BitLshr, Tuple [|x; y|]) ->
-      Ses.Term.lshr (t_to_ses x) (t_to_ses y)
-  | Apply (BitAshr, Tuple [|x; y|]) ->
-      Ses.Term.ashr (t_to_ses x) (t_to_ses y)
-  | Apply (Signed n, Tuple [|x|]) -> Ses.Term.signed n (t_to_ses x)
-  | Apply (Unsigned n, Tuple [|x|]) -> Ses.Term.unsigned n (t_to_ses x)
-  | Apply (sym, Tuple xs) ->
+  | Apply (Mul, [|x; y|]) -> Ses.Term.mul (t_to_ses x) (t_to_ses y)
+  | Apply (Div, [|x; y|]) -> Ses.Term.div (t_to_ses x) (t_to_ses y)
+  | Apply (Rem, [|x; y|]) -> Ses.Term.rem (t_to_ses x) (t_to_ses y)
+  | Apply (BitAnd, [|x; y|]) -> Ses.Term.and_ (t_to_ses x) (t_to_ses y)
+  | Apply (BitOr, [|x; y|]) -> Ses.Term.or_ (t_to_ses x) (t_to_ses y)
+  | Apply (BitXor, [|x; y|]) -> Ses.Term.dq (t_to_ses x) (t_to_ses y)
+  | Apply (BitShl, [|x; y|]) -> Ses.Term.shl (t_to_ses x) (t_to_ses y)
+  | Apply (BitLshr, [|x; y|]) -> Ses.Term.lshr (t_to_ses x) (t_to_ses y)
+  | Apply (BitAshr, [|x; y|]) -> Ses.Term.ashr (t_to_ses x) (t_to_ses y)
+  | Apply (Signed n, [|x|]) -> Ses.Term.signed n (t_to_ses x)
+  | Apply (Unsigned n, [|x|]) -> Ses.Term.unsigned n (t_to_ses x)
+  | Apply (sym, xs) ->
       Ses.Term.apply sym (IArray.of_array (Array.map ~f:t_to_ses xs))
-  | (Apply _ | Tuple _ | Project _) as t ->
+  | (Tuple _ | Project _) as t ->
       fail "cannot translate to Ses: %a" pp_t t ()
 
 let rec f_to_ses : fml -> Ses.Term.t = function
@@ -1140,12 +1143,10 @@ let rec f_to_ses : fml -> Ses.Term.t = function
   | Cond {cnd; pos; neg} ->
       Ses.Term.conditional ~cnd:(f_to_ses cnd) ~thn:(f_to_ses pos)
         ~els:(f_to_ses neg)
-  | UPosLit (sym, Tuple args) ->
+  | UPosLit (sym, args) ->
       Ses.Term.poslit sym (IArray.of_array (Array.map ~f:t_to_ses args))
-  | UNegLit (sym, Tuple args) ->
+  | UNegLit (sym, args) ->
       Ses.Term.neglit sym (IArray.of_array (Array.map ~f:t_to_ses args))
-  | (UPosLit _ | UNegLit _) as f ->
-      fail "cannot translate to Ses: %a" pp_f f ()
 
 let rec to_ses : exp -> Ses.Term.t = function
   | `Ite (cnd, thn, els) ->
@@ -1167,13 +1168,13 @@ let vs_of_ses : Ses.Var.Set.t -> Var.Set.t =
   Ses.Var.Set.fold vs ~init:Var.Set.empty ~f:(fun vs v ->
       Var.Set.add vs (v_of_ses v) )
 
-let uap0 f = `Trm (Apply (f, Tuple [||]))
-let uap1 f = ap1t (fun x -> Apply (f, Tuple [|x|]))
-let uap2 f = ap2t (fun x y -> Apply (f, Tuple [|x; y|]))
-let upos2 p = ap2f (fun x y -> _UPosLit p (Tuple [|x; y|]))
-let uneg2 p = ap2f (fun x y -> _UNegLit p (Tuple [|x; y|]))
-let uposN p = apNf (fun xs -> _UPosLit p (Tuple xs))
-let unegN p = apNf (fun xs -> _UNegLit p (Tuple xs))
+let uap0 f = `Trm (Apply (f, [||]))
+let uap1 f = ap1t (fun x -> Apply (f, [|x|]))
+let uap2 f = ap2t (fun x y -> Apply (f, [|x; y|]))
+let upos2 p = ap2f (fun x y -> _UPosLit p [|x; y|])
+let uneg2 p = ap2f (fun x y -> _UNegLit p [|x; y|])
+let uposN p = apNf (_UPosLit p)
+let unegN p = apNf (_UNegLit p)
 
 let rec uap_tt f a = uap1 f (of_ses a)
 and uap_ttt f a b = uap2 f (of_ses a) (of_ses b)

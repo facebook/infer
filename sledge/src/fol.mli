@@ -133,8 +133,8 @@ and Formula : sig
   val le : Term.t -> Term.t -> t
 
   (* uninterpreted *)
-  val uposlit : Ses.Predsym.t -> Term.t -> t
-  val uneglit : Ses.Predsym.t -> Term.t -> t
+  val uposlit : Ses.Predsym.t -> Term.t array -> t
+  val uneglit : Ses.Predsym.t -> Term.t array -> t
 
   (* connectives *)
   val not_ : t -> t
