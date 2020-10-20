@@ -1380,14 +1380,12 @@ module Context = struct
 
   let class_of x e = List.map ~f:of_ses (Ses.Equality.class_of x (to_ses e))
 
-  let classes_of_ses clss =
-    Ses.Term.Map.fold clss ~init:Term.Map.empty
+  let classes x =
+    Ses.Term.Map.fold (Ses.Equality.classes x) ~init:Term.Map.empty
       ~f:(fun ~key:rep ~data:cls clss ->
         let rep' = of_ses rep in
         let cls' = List.map ~f:of_ses cls in
         Term.Map.set ~key:rep' ~data:cls' clss )
-
-  let classes x = classes_of_ses (Ses.Equality.classes x)
 
   let diff_classes r s =
     Term.Map.filter_mapi (classes r) ~f:(fun ~key:rep ~data:cls ->
