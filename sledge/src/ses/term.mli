@@ -19,11 +19,6 @@ type op1 =
       (** [Ap1 (Unsigned {bits= n}, arg)] is [arg] interpreted as an [n]-bit
           unsigned integer. That is, it unsigned-binary--decodes the low [n]
           bits of the infinite two's-complement encoding of [arg]. *)
-  | Convert of {src: Llair.Typ.t; dst: Llair.Typ.t}
-      (** [Ap1 (Convert {src; dst}, arg)] is [arg] converted from type [src]
-          to type [dst], possibly with loss of information. The [src] and
-          [dst] types must be [Typ.convertible] and must not both be
-          [Integer] types. *)
   | Splat  (** Iterated concatenation of a single byte *)
   | Select of int  (** Select an index from a record *)
 [@@deriving compare, equal, sexp]
@@ -134,7 +129,6 @@ val rational : Q.t -> t
 (* type conversions *)
 val signed : int -> t -> t
 val unsigned : int -> t -> t
-val convert : Llair.Typ.t -> to_:Llair.Typ.t -> t -> t
 
 (* comparisons *)
 val eq : t -> t -> t

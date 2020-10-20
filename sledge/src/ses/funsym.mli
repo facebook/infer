@@ -33,7 +33,6 @@ type t =
       (** [Unsigned n] interprets its argument as an [n]-bit unsigned
           integer. That is, it unsigned-binary--decodes the low [n] bits of
           the infinite two's-complement encoding of the argument. *)
-  | Convert of {src: Llair.Typ.t; dst: Llair.Typ.t}
   | Uninterp of string  (** Uninterpreted function symbol *)
 [@@deriving compare, equal, sexp]
 

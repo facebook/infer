@@ -12,7 +12,6 @@
 type op1 =
   | Signed of {bits: int}
   | Unsigned of {bits: int}
-  | Convert of {src: Llair.Typ.t; dst: Llair.Typ.t}
   | Splat
   | Select of int
 [@@deriving compare, equal, hash, sexp]
@@ -208,13 +207,6 @@ let invariant e =
   | Ap2 (Sized, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _) ->
       assert_sequence e
   | ApN (Record, elts) -> assert (not (IArray.is_empty elts))
-  | Ap1 (Convert {src= Integer _; dst= Integer _}, _) -> assert false
-  | Ap1 (Convert {src; dst}, _) ->
-      assert (Llair.Typ.convertible src dst) ;
-      assert (
-        not
-          (Llair.Typ.equivalent src dst)
-          (* avoid redundant representations *) )
   | Rational {data} ->
       assert (Q.is_real data) ;
       assert (not (Z.equal Z.one (Q.den data)))
@@ -258,8 +250,6 @@ let rec ppx strength fs term =
     | Rational {data} -> Trace.pp_styled `Magenta "%a" fs Q.pp data
     | Ap1 (Signed {bits}, arg) -> pf "((s%i)@ %a)" bits pp arg
     | Ap1 (Unsigned {bits}, arg) -> pf "((u%i)@ %a)" bits pp arg
-    | Ap1 (Convert {src; dst}, arg) ->
-        pf "((%a)(%a)@ %a)" Llair.Typ.pp dst Llair.Typ.pp src pp arg
     | Ap2 (Eq, x, y) -> pf "(%a@ = %a)" pp x pp y
     | Ap2 (Dq, x, y) -> pf "(%a@ @<2>≠ %a)" pp x pp y
     | Ap2 (Lt, x, y) -> pf "(%a@ < %a)" pp x pp y
@@ -364,8 +354,6 @@ let simp_unsigned bits arg =
   match arg with
   | Integer {data} -> integer (Z.extract data 0 bits)
   | _ -> Ap1 (Unsigned {bits}, arg)
-
-let simp_convert src dst arg = Ap1 (Convert {src; dst}, arg)
 
 (* arithmetic *)
 
@@ -555,9 +543,7 @@ let simp_cond cnd thn els =
 (* boolean / bitwise *)
 
 let rec is_boolean = function
-  | Ap1 ((Unsigned {bits= 1} | Convert {dst= Integer {bits= 1; _}; _}), _)
-   |Ap2 ((Eq | Dq | Lt | Le), _, _) ->
-      true
+  | Ap1 (Unsigned {bits= 1}, _) | Ap2 ((Eq | Dq | Lt | Le), _, _) -> true
   | Ap2 ((Div | Rem | Xor | Shl | Lshr | Ashr), x, y)
    |Ap3 (Conditional, _, x, y) ->
       is_boolean x || is_boolean y
@@ -911,7 +897,6 @@ let norm1 op x =
   ( match op with
   | Signed {bits} -> simp_signed bits x
   | Unsigned {bits} -> simp_unsigned bits x
-  | Convert {src; dst} -> simp_convert src dst x
   | Splat -> simp_splat x
   | Select idx -> simp_select idx x )
   |> check invariant
@@ -946,11 +931,6 @@ let normN op xs =
 
 let signed bits term = norm1 (Signed {bits}) term
 let unsigned bits term = norm1 (Unsigned {bits}) term
-
-let convert src ~to_:dst arg =
-  if Llair.Typ.equivalent src dst then arg
-  else norm1 (Convert {src; dst}) arg
-
 let eq = norm2 Eq
 let dq = norm2 Dq
 let lt = norm2 Lt

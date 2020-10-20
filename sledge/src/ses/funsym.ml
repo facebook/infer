@@ -21,7 +21,6 @@ type t =
   | BitAshr
   | Signed of int
   | Unsigned of int
-  | Convert of {src: Llair.Typ.t; dst: Llair.Typ.t}
   | Uninterp of string
 [@@deriving compare, equal, sexp]
 
@@ -41,5 +40,4 @@ let pp ppf f =
   | BitAshr -> pf "ashr"
   | Signed n -> pf "(s%i)" n
   | Unsigned n -> pf "(u%i)" n
-  | Convert {src; dst} -> pf "(%a)(%a)" Llair.Typ.pp dst Llair.Typ.pp src
   | Uninterp sym -> pf "%s" sym

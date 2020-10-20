@@ -1136,8 +1136,6 @@ let rec t_to_ses : trm -> Ses.Term.t = function
       Ses.Term.ashr (t_to_ses x) (t_to_ses y)
   | Apply (Signed n, Tuple [|x|]) -> Ses.Term.signed n (t_to_ses x)
   | Apply (Unsigned n, Tuple [|x|]) -> Ses.Term.unsigned n (t_to_ses x)
-  | Apply (Convert {src; dst}, Tuple [|x|]) ->
-      Ses.Term.convert src ~to_:dst (t_to_ses x)
   | Apply (sym, Tuple xs) ->
       Ses.Term.apply sym (IArray.of_array (Array.map ~f:t_to_ses xs))
   | (Apply _ | Tuple _ | Project _) as t ->
@@ -1229,7 +1227,6 @@ and of_ses : Ses.Term.t -> exp =
   | Rational {data} -> rational data
   | Ap1 (Signed {bits}, e) -> uap_tt (Signed bits) e
   | Ap1 (Unsigned {bits}, e) -> uap_tt (Unsigned bits) e
-  | Ap1 (Convert {src; dst}, e) -> uap_tt (Convert {src; dst}) e
   | Ap2 (Eq, d, e) -> ap2_f iff eq d e
   | Ap2 (Dq, d, e) -> ap2_f xor dq d e
   | Ap2 (Lt, d, e) -> ap2_f (fun p q -> and_ (not_ p) q) lt d e
@@ -1619,7 +1616,11 @@ module Term_of_Llair = struct
           | Some fml -> Formula.inject fml
           | _ -> uap1 (Unsigned bits) a
         else uap1 (Unsigned bits) a
-    | Ap1 (Convert {src}, dst, e) -> uap_te (Convert {src; dst}) e
+    | Ap1 (Convert {src}, dst, e) ->
+        let s =
+          Format.asprintf "convert_%a_%a" Llair.Typ.pp src Llair.Typ.pp dst
+        in
+        uap_te (Uninterp s) e
     | Ap2 (Eq, Integer {bits= 1; _}, p, q) -> ap_fff iff p q
     | Ap2 (Dq, Integer {bits= 1; _}, p, q) -> ap_fff xor p q
     | Ap2 ((Gt | Ugt), Integer {bits= 1; _}, p, q)
