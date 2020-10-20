@@ -246,7 +246,7 @@ cleanbc:
 
 # remove result files
 cleanout:
-	@find -L * -not -path 'baseline/*' -name "*.sexp" -or -name "*.out" -or -name '*.err' -or -name '*.llair' -or -name '*.llair.txt'	 \
+	@find -L * -not -path 'baseline/*' -name "*.sexp" -or -name "*.out" -or -name '*.err' -or -name '*.llair' -or -name '*.llair.txt' \
 	 | xargs rm -f
 
 clean: cleanbc cleanout
