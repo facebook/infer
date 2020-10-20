@@ -234,6 +234,11 @@ module Representation (Trm : INDETERMINATE) = struct
 
     (* transform *)
 
+    let split_const poly =
+      match Sum.find_and_remove poly Mono.one with
+      | Some (c, p_c) -> (p_c, c)
+      | None -> (poly, Q.zero)
+
     let map poly ~f =
       let p, p' = (poly, Sum.empty) in
       let p, p' =

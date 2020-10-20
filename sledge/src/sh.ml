@@ -170,11 +170,7 @@ let pp_block x fs segs =
   | [] -> ()
 
 let pp_heap x ?pre ctx fs heap =
-  let bas_off e =
-    match Term.const_of e with
-    | Some const -> (Term.sub e (Term.rational const), const)
-    | None -> (e, Q.zero)
-  in
+  let bas_off = Term.split_const in
   let cmp s1 s2 =
     [%compare: Term.t * (Term.t * Q.t)]
       (Context.normalize ctx s1.bas, bas_off (Context.normalize ctx s1.loc))

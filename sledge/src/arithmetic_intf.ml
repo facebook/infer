@@ -48,6 +48,11 @@ module type S = sig
 
   (** Transform *)
 
+  val split_const : t -> t * Q.t
+  (** Splits an arithmetic term into the sum of its constant and
+      non-constant parts. That is, [split_const a] is [(b, c)] such that
+      [a = b + c] and the absolute value of [c] is maximal. *)
+
   val map : t -> f:(trm -> trm) -> t
   (** [map ~f a] is [a] with each indeterminate transformed by [f]. Viewing
       [a] as a polynomial,

@@ -60,9 +60,15 @@ module rec Term : sig
 
   val d_int : t -> Z.t option
 
+  val get_const : t -> Q.t option
+  (** [get_const a] is [Some q] iff [equal a (const q)] *)
+
   (** Access *)
 
-  val const_of : t -> Q.t option
+  val split_const : t -> t * Q.t
+  (** Splits a term into the sum of its constant and non-constant parts.
+      That is, [split_const a] is [(b, c)] such that [a = b + c] and the
+      absolute value of [c] is maximal. *)
 
   (** Query *)
 

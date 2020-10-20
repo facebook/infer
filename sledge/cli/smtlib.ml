@@ -67,10 +67,10 @@ and x_trm : var_env -> Smt.Ast.term -> Term.t =
     match List.map ~f:(x_trm n) es with
     | e :: es ->
         List.fold es ~init:e ~f:(fun p e ->
-            match Term.const_of e with
+            match Term.get_const e with
             | Some q -> Term.mulq q p
             | None -> (
-              match Term.const_of p with
+              match Term.get_const p with
               | Some q -> Term.mulq q e
               | None -> fail "nonlinear: %a" Smt.Ast.pp_term term () ) )
     | [] -> fail "malformed: %a" Smt.Ast.pp_term term () )
@@ -78,7 +78,7 @@ and x_trm : var_env -> Smt.Ast.term -> Term.t =
     match List.map ~f:(x_trm n) es with
     | e :: es ->
         List.fold es ~init:e ~f:(fun p e ->
-            match Term.const_of e with
+            match Term.get_const e with
             | Some q -> Term.mulq (Q.inv q) p
             | None -> fail "nonlinear: %a" Smt.Ast.pp_term term () )
     | [] -> fail "malformed: %a" Smt.Ast.pp_term term () )

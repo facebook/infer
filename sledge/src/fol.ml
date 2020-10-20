@@ -855,12 +855,20 @@ module Term = struct
 
   let d_int = function `Trm (Z z) -> Some z | _ -> None
 
-  (** Access *)
-
-  let const_of = function
+  let get_const = function
     | `Trm (Z z) -> Some (Q.of_z z)
     | `Trm (Q q) -> Some q
     | _ -> None
+
+  (** Access *)
+
+  let split_const = function
+    | `Trm (Z z) -> (zero, Q.of_z z)
+    | `Trm (Q q) -> (zero, q)
+    | `Trm (Arith a) ->
+        let a_c, c = Arith.split_const a in
+        (`Trm (_Arith a_c), c)
+    | e -> (e, Q.zero)
 
   (** Traverse *)
 
