@@ -191,9 +191,6 @@ val apply : Funsym.t -> t iarray -> t
 val poslit : Predsym.t -> t iarray -> t
 val neglit : Predsym.t -> t iarray -> t
 
-(* convert *)
-val of_exp : Llair.Exp.t -> t
-
 (** Destruct *)
 
 val d_int : t -> Z.t option

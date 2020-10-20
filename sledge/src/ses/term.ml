@@ -994,59 +994,6 @@ let apply sym args = simp_apply sym args |> check invariant
 let poslit sym args = simp_poslit sym args |> check invariant
 let neglit sym args = simp_neglit sym args |> check invariant
 
-let rec binary mk x y = mk (of_exp x) (of_exp y)
-
-and ubinary mk typ x y =
-  let unsigned typ = unsigned (Llair.Typ.bit_size_of typ) in
-  mk (unsigned typ (of_exp x)) (unsigned typ (of_exp y))
-
-and of_exp e =
-  match (e : Llair.Exp.t) with
-  | Reg {name; global; typ= _} -> Var {name; id= (if global then -1 else 0)}
-  | Label {parent; name} -> label ~parent ~name
-  | Integer {data; typ= _} -> integer data
-  | Float {data; typ= _} -> float data
-  | Ap1 (Signed {bits}, _, x) -> signed bits (of_exp x)
-  | Ap1 (Unsigned {bits}, _, x) -> unsigned bits (of_exp x)
-  | Ap1 (Convert {src}, dst, exp) -> convert src ~to_:dst (of_exp exp)
-  | Ap2 (Eq, _, x, y) -> binary eq x y
-  | Ap2 (Dq, _, x, y) -> binary dq x y
-  | Ap2 (Gt, _, x, y) -> binary lt y x
-  | Ap2 (Ge, _, x, y) -> binary le y x
-  | Ap2 (Lt, _, x, y) -> binary lt x y
-  | Ap2 (Le, _, x, y) -> binary le x y
-  | Ap2 (Ugt, typ, x, y) -> ubinary lt typ y x
-  | Ap2 (Uge, typ, x, y) -> ubinary le typ y x
-  | Ap2 (Ult, typ, x, y) -> ubinary lt typ x y
-  | Ap2 (Ule, typ, x, y) -> ubinary le typ x y
-  | Ap2 (Ord, _, x, y) ->
-      (poslit (Predsym.uninterp "ord"))
-        (IArray.of_array [|of_exp x; of_exp y|])
-  | Ap2 (Uno, _, x, y) ->
-      (neglit (Predsym.uninterp "ord"))
-        (IArray.of_array [|of_exp x; of_exp y|])
-  | Ap2 (Add, _, x, y) -> binary add x y
-  | Ap2 (Sub, _, x, y) -> binary sub x y
-  | Ap2 (Mul, _, x, y) -> binary mul x y
-  | Ap2 (Div, _, x, y) -> binary div x y
-  | Ap2 (Rem, _, x, y) -> binary rem x y
-  | Ap2 (Udiv, typ, x, y) -> ubinary div typ x y
-  | Ap2 (Urem, typ, x, y) -> ubinary rem typ x y
-  | Ap2 (And, _, x, y) -> binary and_ x y
-  | Ap2 (Or, _, x, y) -> binary or_ x y
-  | Ap2 (Xor, _, x, y) -> binary xor x y
-  | Ap2 (Shl, _, x, y) -> binary shl x y
-  | Ap2 (Lshr, _, x, y) -> binary lshr x y
-  | Ap2 (Ashr, _, x, y) -> binary ashr x y
-  | Ap3 (Conditional, _, cnd, thn, els) ->
-      conditional ~cnd:(of_exp cnd) ~thn:(of_exp thn) ~els:(of_exp els)
-  | Ap1 (Splat, _, byt) -> splat (of_exp byt)
-  | ApN (Record, _, elts) -> record (IArray.map ~f:of_exp elts)
-  | Ap1 (Select idx, _, rcd) -> select ~rcd:(of_exp rcd) ~idx
-  | Ap2 (Update idx, _, rcd, elt) ->
-      update ~rcd:(of_exp rcd) ~idx ~elt:(of_exp elt)
-  | RecRecord (i, _) -> rec_record i
-
 (** Destruct *)
 
 let d_int = function Integer {data} -> Some data | _ -> None
