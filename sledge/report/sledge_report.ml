@@ -12,12 +12,11 @@ let read filename =
   List.iter (Sexp.load_sexps filename) ~f:(fun sexp ->
       let {Report.name; entry} = Report.t_of_sexp sexp in
       match (Tbl.find_opt tbl name, entry) with
-      | None, ProcessTimes (etime, ptimes) ->
-          Tbl.replace tbl name ([(etime, ptimes)], [], [])
+      | None, ProcessTimes ptimes -> Tbl.replace tbl name ([ptimes], [], [])
       | None, GcStats gc -> Tbl.replace tbl name ([], [gc], [])
       | None, Status status -> Tbl.replace tbl name ([], [], [status])
-      | Some (times, gcs, statuses), ProcessTimes (etime, ptimes) ->
-          Tbl.replace tbl name ((etime, ptimes) :: times, gcs, statuses)
+      | Some (times, gcs, statuses), ProcessTimes ptimes ->
+          Tbl.replace tbl name (ptimes :: times, gcs, statuses)
       | Some (times, gcs, statuses), GcStats gc ->
           Tbl.replace tbl name (times, gc :: gcs, statuses)
       | Some (times, gc, statuses), Status status ->
@@ -35,10 +34,9 @@ type ('t, 'g) row =
   ; status: Report.status list
   ; status_deltas: Report.status list option }
 
-let times_of_raw (etime, ptimes) =
-  let {Unix.tms_utime; tms_cutime; tms_stime; tms_cstime} = ptimes in
-  let utime = tms_utime +. tms_cutime in
-  let stime = tms_stime +. tms_cstime in
+let times_of_raw {Report.etime; utime; stime; cutime; cstime} =
+  let utime = utime +. cutime in
+  let stime = stime +. cstime in
   let etime = etime in
   {etime; utime; stime}
 
@@ -117,22 +115,21 @@ let combine name b_result c_result =
                   , Iter.empty
                   , Iter.empty )
                 ~f:(fun (etimes, utimes, stimes, cutimes, cstimes)
-                   ( etime
-                   , {Unix.tms_utime; tms_cutime; tms_stime; tms_cstime} )
+                   {Report.etime; utime; stime; cutime; cstime}
                    ->
                   ( Iter.cons etime etimes
-                  , Iter.cons tms_utime utimes
-                  , Iter.cons tms_stime stimes
-                  , Iter.cons tms_cutime cutimes
-                  , Iter.cons tms_cstime cstimes ) )
+                  , Iter.cons utime utimes
+                  , Iter.cons stime stimes
+                  , Iter.cons cutime cutimes
+                  , Iter.cons cstime cstimes ) )
             in
             Some
               (times_of_raw
-                 ( ave_floats etimes
-                 , { tms_utime= ave_floats utimes
-                   ; tms_stime= ave_floats stimes
-                   ; tms_cutime= ave_floats cutimes
-                   ; tms_cstime= ave_floats cstimes } ))
+                 { etime= ave_floats etimes
+                 ; utime= ave_floats utimes
+                 ; stime= ave_floats stimes
+                 ; cutime= ave_floats cutimes
+                 ; cstime= ave_floats cstimes })
         in
         let gcs =
           if List.is_empty gcs then None

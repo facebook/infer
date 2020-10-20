@@ -35,8 +35,11 @@ val status : status -> unit
 type gc_stats = {allocated: float; promoted: float; peak_size: float}
 [@@deriving sexp]
 
+type times =
+  {etime: float; utime: float; stime: float; cutime: float; cstime: float}
+
 type entry =
-  | ProcessTimes of float * Unix.process_times
+  | ProcessTimes of times
   | GcStats of gc_stats
   | Status of status
 [@@deriving sexp]
