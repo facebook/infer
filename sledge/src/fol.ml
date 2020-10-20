@@ -790,16 +790,17 @@ let rev_mapN_cnd :
   loop [] rev_xs
 
 (** Map an nary function on terms over expressions. *)
-let apNt : (trm list -> trm) -> exp array -> exp =
+let apNt : (trm array -> trm) -> exp array -> exp =
  fun f xs ->
   rev_mapN_cnd ite
-    (fun xs -> `Trm (f xs))
-    (Array.fold ~f:(fun xs x -> embed_into_cnd x :: xs) ~init:[] xs)
+    (fun xs -> `Trm (f (Array.of_list xs)))
+    (Array.to_list_rev_map ~f:embed_into_cnd xs)
 
-let apNf : (trm list -> fml) -> exp iarray -> fml =
+let apNf : (trm array -> fml) -> exp array -> fml =
  fun f xs ->
-  rev_mapN_cnd _Cond f
-    (IArray.fold ~f:(fun xs x -> embed_into_cnd x :: xs) ~init:[] xs)
+  rev_mapN_cnd _Cond
+    (fun xs -> f (Array.of_list xs))
+    (Array.to_list_rev_map ~f:embed_into_cnd xs)
 
 (*
  * Terms: exposed interface
@@ -867,18 +868,18 @@ module Term = struct
   let splat = ap1t _Splat
   let sized ~seq ~siz = ap2t _Sized seq siz
   let extract ~seq ~off ~len = ap3t _Extract seq off len
-  let concat elts = apNt (fun es -> _Concat (Array.of_list es)) elts
+  let concat elts = apNt _Concat elts
 
   (* records *)
 
   let select ~rcd ~idx = ap1t (_Select idx) rcd
   let update ~rcd ~idx ~elt = ap2t (_Update idx) rcd elt
-  let record elts = apNt (fun es -> _Record (Array.of_list es)) elts
+  let record elts = apNt _Record elts
   let ancestor i = `Trm (_Ancestor i)
 
   (* tuples *)
 
-  let tuple elts = apNt (fun es -> _Tuple (Array.of_list es)) elts
+  let tuple elts = apNt _Tuple elts
   let project ~ary ~idx tup = ap1t (_Project ary idx) tup
 
   (* if-then-else *)
@@ -887,8 +888,7 @@ module Term = struct
 
   (* uninterpreted *)
 
-  let apply sym args =
-    apNt (fun es -> _Apply sym (_Tuple (Array.of_list es))) args
+  let apply sym args = apNt (fun es -> _Apply sym (_Tuple es)) args
 
   (** Destruct *)
 
@@ -1172,8 +1172,8 @@ let uap1 f = ap1t (fun x -> Apply (f, Tuple [|x|]))
 let uap2 f = ap2t (fun x y -> Apply (f, Tuple [|x; y|]))
 let upos2 p = ap2f (fun x y -> _UPosLit p (Tuple [|x; y|]))
 let uneg2 p = ap2f (fun x y -> _UNegLit p (Tuple [|x; y|]))
-let uposN p = apNf (fun xs -> _UPosLit p (Tuple (Array.of_list xs)))
-let unegN p = apNf (fun xs -> _UNegLit p (Tuple (Array.of_list xs)))
+let uposN p = apNf (fun xs -> _UPosLit p (Tuple xs))
+let unegN p = apNf (fun xs -> _UNegLit p (Tuple xs))
 
 let rec uap_tt f a = uap1 f (of_ses a)
 and uap_ttt f a b = uap2 f (of_ses a) (of_ses b)
@@ -1212,8 +1212,10 @@ and of_ses : Ses.Term.t -> exp =
   | Ap2 (Dq, d, e) -> ap2_f xor dq d e
   | Ap2 (Lt, d, e) -> ap2_f (fun p q -> and_ (not_ p) q) lt d e
   | Ap2 (Le, d, e) -> ap2_f (fun p q -> or_ (not_ p) q) le d e
-  | PosLit (p, es) -> `Fml (uposN p (IArray.map ~f:of_ses es))
-  | NegLit (p, es) -> `Fml (unegN p (IArray.map ~f:of_ses es))
+  | PosLit (p, es) ->
+      `Fml (uposN p (IArray.to_array (IArray.map ~f:of_ses es)))
+  | NegLit (p, es) ->
+      `Fml (unegN p (IArray.to_array (IArray.map ~f:of_ses es)))
   | Add sum -> (
     match Ses.Term.Qset.pop_min_elt sum with
     | None -> zero

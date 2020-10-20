@@ -128,6 +128,8 @@ module Array = struct
     in
     map_inplace a ~f ;
     !s
+
+  let to_list_rev_map xs ~f = fold ~f:(fun ys x -> f x :: ys) ~init:[] xs
 end
 
 include Array.Import

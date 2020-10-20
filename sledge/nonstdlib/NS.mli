@@ -100,6 +100,8 @@ module Array : sig
 
   val fold_map_inplace :
     'a array -> init:'s -> f:('s -> 'a -> 's * 'a) -> 's
+
+  val to_list_rev_map : 'a array -> f:('a -> 'b) -> 'b list
 end
 
 include module type of Array.Import
