@@ -1395,11 +1395,7 @@ module JavaString = struct
     {exec; check= no_check}
 
 
-  let create_with_length {pname; node_hash; location; integer_type_widths} ~ret:(id, _) ~begin_idx
-      ~end_v mem =
-    let begin_itv = Sem.eval integer_type_widths begin_idx mem |> Dom.Val.get_itv in
-    let end_itv = Dom.Val.get_itv end_v in
-    let length_itv = Itv.minus end_itv begin_itv in
+  let create_with_length {pname; node_hash; location} ~ret:(id, _) ~length_itv mem =
     let arr_loc =
       Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path:None
         ~represents_multiple_values:false
@@ -1416,17 +1412,34 @@ module JavaString = struct
 
 
   let substring_no_end exp begin_idx =
-    let exec model_env ~ret mem =
-      create_with_length model_env ~ret ~begin_idx ~end_v:(get_length model_env exp mem) mem
+    let exec ({integer_type_widths} as model_env) ~ret mem =
+      let begin_itv = Sem.eval integer_type_widths begin_idx mem |> Dom.Val.get_itv in
+      let end_itv = get_length model_env exp mem |> Dom.Val.get_itv in
+      let length_itv = Itv.minus end_itv begin_itv in
+      create_with_length model_env ~ret ~length_itv mem
     in
     {exec; check= no_check}
 
 
   let substring begin_idx end_idx =
     let exec ({integer_type_widths} as model_env) ~ret mem =
-      create_with_length model_env ~ret ~begin_idx
-        ~end_v:(Sem.eval integer_type_widths end_idx mem)
-        mem
+      let begin_itv = Sem.eval integer_type_widths begin_idx mem |> Dom.Val.get_itv in
+      let end_itv = Sem.eval integer_type_widths end_idx mem |> Dom.Val.get_itv in
+      let length_itv = Itv.minus end_itv begin_itv in
+      create_with_length model_env ~ret ~length_itv mem
+    in
+    {exec; check= no_check}
+
+
+  let create_from_short_arr exp =
+    let exec ({integer_type_widths} as model_env) ~ret mem =
+      let mem = create_with_length model_env ~ret ~length_itv:Itv.zero mem in
+      let deref_of_tgt =
+        Dom.Mem.find_stack (Loc.of_id (fst ret)) mem
+        |> Dom.Val.get_pow_loc |> PowLoc.append_field ~fn
+      in
+      let src_arr_locs = Dom.Val.get_all_locs (Sem.eval_arr integer_type_widths exp mem) in
+      Dom.Mem.update_mem deref_of_tgt (Dom.Mem.find_set src_arr_locs mem) mem
     in
     {exec; check= no_check}
 
@@ -1439,8 +1452,8 @@ module NSString = struct
 
   let create_with_c_string src_exp =
     let exec model_env ~ret mem =
-      let v = Sem.eval_string_len src_exp mem in
-      JavaString.create_with_length model_env ~ret ~begin_idx:Exp.zero ~end_v:v mem
+      let length_itv = Sem.eval_string_len src_exp mem |> Dom.Val.get_itv in
+      JavaString.create_with_length model_env ~ret ~length_itv mem
     in
     {exec; check= no_check}
 
@@ -1607,7 +1620,9 @@ module Call = struct
     let open ProcnameDispatcher.Call in
     let int_typ = Typ.mk (Typ.Tint Typ.IInt) in
     let char_typ = Typ.mk (Typ.Tint Typ.IChar) in
+    let short_typ = Typ.mk (Typ.Tint Typ.IUShort) in
     let char_ptr = Typ.mk (Typ.Tptr (char_typ, Pk_pointer)) in
+    let short_array = Typ.mk (Typ.Tptr (Typ.mk_array short_typ, Pk_pointer)) in
     let match_builtin builtin _ s = String.equal s (Procname.get_method builtin) in
     make_dispatcher
       [ (* Clang common models *)
@@ -1925,6 +1940,8 @@ module Call = struct
         &:: "<init>" <>$ capt_exp $--> JavaString.empty_constructor
       ; +PatternMatch.Java.implements_lang "String"
         &:: "concat" <>$ capt_exp $+ capt_exp $+...$--> JavaString.concat
+      ; +PatternMatch.Java.implements_lang "String"
+        &:: "valueOf" <>$ capt_exp_of_prim_typ short_array $--> JavaString.create_from_short_arr
       ; +PatternMatch.Java.implements_lang "String"
         &:: "indexOf" <>$ capt_exp $+ any_arg $+...$--> JavaString.indexOf
       ; +PatternMatch.Java.implements_lang "String"

@@ -343,6 +343,8 @@ codetoanalyze/java/performance/StringTest.java, StringTest.split_with_limit_line
 codetoanalyze/java/performance/StringTest.java, StringTest.startsWith_constant():java.lang.String, 18,  OnUIThread:false, []
 codetoanalyze/java/performance/StringTest.java, StringTest.string_constructor_constant():void, 45,  OnUIThread:false, []
 codetoanalyze/java/performance/StringTest.java, StringTest.string_constructor_linear(java.lang.String):void, 9 + 5 ⋅ s.length + 3 ⋅ (s.length + 1),  OnUIThread:false, [{s.length + 1},Loop,{s.length},Loop]
+codetoanalyze/java/performance/StringTest.java, StringTest.string_valueOf_constant():void, 85,  OnUIThread:false, []
+codetoanalyze/java/performance/StringTest.java, StringTest.string_valueOf_linear(char[]):void, 8 + 5 ⋅ input.length + 3 ⋅ (input.length + 1),  OnUIThread:false, [{input.length + 1},Loop,{input.length},Loop]
 codetoanalyze/java/performance/StringTest.java, StringTest.substring_linear(java.lang.String,int,int):void, 13 + 8 ⋅ (-x + y),  OnUIThread:false, [{-x + y},Loop]
 codetoanalyze/java/performance/StringTest.java, StringTest.substring_no_end_linear(java.lang.String,int):void, 12 + 8 ⋅ (-x + s.length),  OnUIThread:false, [{-x + s.length},Loop]
 codetoanalyze/java/performance/Switch.java, codetoanalyze.java.performance.Switch.<init>(), 3,  OnUIThread:false, []

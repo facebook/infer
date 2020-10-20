@@ -112,4 +112,15 @@ class StringTest {
   void class_get_canonical_name_constant(Integer a) {
     for (int i = 0; i < a.getClass().getCanonicalName().length(); i++) {}
   }
+
+  void string_valueOf_linear(char[] input) {
+    String s = String.valueOf(input);
+    for (int i = 0; i < s.length(); i++) {}
+  }
+
+  void string_valueOf_constant() {
+    char[] input = {'a', 'b', 'c', 'd', 'e', 'f', 'g'};
+    String s = String.valueOf(input);
+    for (int i = 0; i < s.length(); i++) {}
+  }
 }
