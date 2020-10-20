@@ -13,7 +13,7 @@ open Fol
 type t = Sh.t [@@deriving equal, sexp]
 
 let pp fs q = Format.fprintf fs "@[{ %a@ }@]" Sh.pp q
-let report_fmt_thunk = Fn.flip pp
+let report_fmt_thunk = Fun.flip pp
 
 (* set by cli *)
 let simplify_states = ref true

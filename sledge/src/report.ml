@@ -138,7 +138,7 @@ let init ?append filename =
      | _ -> Some (Out_channel.create ?append filename)) ;
   name :=
     Option.value
-      (Stdlib.Filename.chop_suffix_opt ~suffix:".sexp" filename)
+      (Filename.chop_suffix_opt ~suffix:".sexp" filename)
       ~default:filename ;
   at_exit (fun () ->
       output (process_times ()) ;

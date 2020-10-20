@@ -318,7 +318,9 @@ module Term = struct
     | Return {exp; _} -> (
       match parent with
       | Some parent ->
-          assert (Bool.(Option.is_some exp = Option.is_some parent.freturn))
+          assert (
+            Bool.equal (Option.is_some exp) (Option.is_some parent.freturn)
+          )
       | None -> assert true )
     | Throw _ | Unreachable -> assert true
 
@@ -470,7 +472,9 @@ module Func = struct
           not
             (List.contains_dup (entry_cfg func) ~compare:(fun b1 b2 ->
                  String.compare b1.lbl b2.lbl )) ) ;
-        assert (Bool.(Option.is_some return = Option.is_some func.freturn)) ;
+        assert (
+          Bool.equal (Option.is_some return) (Option.is_some func.freturn)
+        ) ;
         iter_term func ~f:(fun term -> Term.invariant ~parent:func term)
     | _ -> assert false
 

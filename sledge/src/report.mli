@@ -10,8 +10,8 @@
 val init : ?append:bool -> string -> unit
 val step : unit -> unit
 val unknown_call : Llair.term -> unit
-val invalid_access_inst : (Formatter.t -> unit) -> Llair.inst -> unit
-val invalid_access_term : (Formatter.t -> unit) -> Llair.term -> unit
+val invalid_access_inst : (Format.formatter -> unit) -> Llair.inst -> unit
+val invalid_access_term : (Format.formatter -> unit) -> Llair.term -> unit
 
 type status =
   | Safe of {steps: int}

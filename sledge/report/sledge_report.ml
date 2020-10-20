@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+module Command = Core.Command
 module Tbl = CCHashtbl.Make (String)
 
 let read filename =
@@ -251,7 +252,7 @@ let color max dat =
       (scale1 x r0 r1, scale1 x g0 g1, scale1 x b0 b1)
     in
     let x = Float.max (-1.) (Float.min x 1.) in
-    if Float.is_negative x then scale (-.x) lace green else scale x lace red
+    if Float.(x < 0.) then scale (-.x) lace green else scale x lace red
   in
   let rgb_to_hex (r, g, b) =
     let to_int x = Int.min 255 (Int.max 0 (Float.to_int x)) in

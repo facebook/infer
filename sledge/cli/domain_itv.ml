@@ -46,7 +46,7 @@ let pp fs =
   in
   bindings >> Array.pp "@," (pp_pair Var.print Interval.print) fs
 
-let report_fmt_thunk = Fn.flip pp
+let report_fmt_thunk = Fun.flip pp
 let init _gs = Abstract1.top (Lazy.force man) (Environment.make [||] [||])
 let apron_var_of_name = (fun nm -> "%" ^ nm) >> Apron.Var.of_string
 let apron_var_of_reg = Llair.Reg.name >> apron_var_of_name
@@ -68,7 +68,7 @@ let rec apron_texpr_of_llair_exp exp q =
   | Reg {name} -> Some (Texpr1.Var (apron_var_of_name name))
   | Integer {data} -> Some (Texpr1.Cst (Coeff.s_of_int (Z.to_int data)))
   | Float {data} -> (
-    match Float.of_string data with
+    match Float.of_string_exn data with
     | f -> Some (Texpr1.Cst (Coeff.s_of_float f))
     | exception Invalid_argument _ -> None )
   | Ap1 (Signed {bits}, _, _) ->

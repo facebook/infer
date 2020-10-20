@@ -5,9 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Core
+include Stdlib.Sys
 
-val main :
-     command:Report.status Command.basic_command
-  -> analyze:(string list -> unit -> Report.status) Command.Param.t
-  -> Command.t
+let getenv = getenv_opt

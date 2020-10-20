@@ -467,7 +467,9 @@ module Make (Dom : Domain_intf.Dom) = struct
     [%Trace.info
       "@[<2>exec inst@\n@[%a@]@\n%a@]" Dom.pp state Llair.Inst.pp inst] ;
     Report.step () ;
-    Dom.exec_inst state inst |> Result.of_option ~error:(state, inst)
+    Dom.exec_inst state inst
+    |> function
+    | Some state -> Result.Ok state | None -> Result.Error (state, inst)
 
   let exec_block :
          exec_opts

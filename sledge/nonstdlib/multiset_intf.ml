@@ -7,7 +7,7 @@
 
 (** Multiset - Set with (signed) rational multiplicity for each element *)
 
-open NS0
+open! NS0
 
 module type MULTIPLICITY = sig
   type t [@@deriving compare, equal, hash, sexp]

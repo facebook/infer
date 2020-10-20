@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Core
+open! NS0
 
-val main :
-     command:Report.status Command.basic_command
-  -> analyze:(string list -> unit -> Report.status) Command.Param.t
-  -> Command.t
+type t = Neg | Zero | Pos
+
+val of_int : int -> t
+val of_float : float -> t

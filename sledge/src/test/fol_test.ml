@@ -16,7 +16,7 @@ let%test_module _ =
 
     (* let () =
      *   Trace.init ~margin:160
-     *     ~config:(Result.ok_exn (Trace.parse "+Fol"))
+     *     ~config:(Result.get_ok (Trace.parse "+Fol"))
      *     () *)
 
     [@@@warning "-32"]

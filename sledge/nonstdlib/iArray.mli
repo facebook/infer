@@ -13,13 +13,14 @@
     structure, it only attempts to make it inconvenient to unintentionally
     mutate. *)
 
-open NS0
+open! NS0
+include module type of Core_kernel.Perms.Export
 
 include
-  module type of Array.Permissioned
-    with type ('a, 'p) t := ('a, 'p) Array.Permissioned.t
+  module type of Core_kernel.Array.Permissioned
+    with type ('a, 'p) t := ('a, 'p) Core_kernel.Array.Permissioned.t
 
-type 'a t = ('a, immutable) Array.Permissioned.t
+type 'a t = ('a, immutable) Core_kernel.Array.Permissioned.t
 [@@deriving compare, equal, hash, sexp]
 
 module Import : sig
@@ -45,7 +46,7 @@ val fold_map :
 val fold_map_until :
      'a t
   -> init:'accum
-  -> f:('accum -> 'a -> ('accum * 'b, 'final) Continue_or_stop.t)
+  -> f:('accum -> 'a -> ('accum * 'b, 'final) continue_or_stop)
   -> finish:('accum * 'b t -> 'final)
   -> 'final
 

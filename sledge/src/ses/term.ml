@@ -153,8 +153,8 @@ let assert_monomial mono =
       Qset.iter args ~f:(fun factor exponent ->
           assert (Z.equal (Q.den exponent) Z.one) ;
           assert (Q.sign exponent > 0) ;
-          assert_indeterminate factor |> Fn.id )
-  | _ -> assert_indeterminate mono |> Fn.id
+          assert_indeterminate factor |> Fun.id )
+  | _ -> assert_indeterminate mono |> Fun.id
 
 (* a polynomial term is a monomial multiplied by a non-zero coefficient
  *     c × ∏ᵢ xᵢ
@@ -169,8 +169,8 @@ let assert_poly_term mono coeff =
       | None | Some ((Integer _ | Rational _), _) -> assert false
       | Some (_, n) -> assert (Qset.length args > 1 || not (Q.equal Q.one n))
       ) ;
-      assert_monomial mono |> Fn.id
-  | _ -> assert_monomial mono |> Fn.id
+      assert_monomial mono |> Fun.id
+  | _ -> assert_monomial mono |> Fun.id
 
 (* a polynomial is a linear combination of monomials, e.g.
  *     ∑ᵢ cᵢ × ∏ⱼ xᵢⱼ
@@ -184,7 +184,7 @@ let assert_polynomial poly =
       | None | Some ((Integer _ | Rational _), _) -> assert false
       | Some (_, k) -> assert (Qset.length args > 1 || not (Q.equal Q.one k))
       ) ;
-      Qset.iter args ~f:(fun m c -> assert_poly_term m c |> Fn.id)
+      Qset.iter args ~f:(fun m c -> assert_poly_term m c |> Fun.id)
   | _ -> assert false
 
 (* sequence args of Extract and Concat must be sequence terms, in
@@ -200,10 +200,10 @@ let rec assert_sequence = function
 let invariant e =
   let@ () = Invariant.invariant [%here] e [%sexp_of: t] in
   match e with
-  | And _ -> assert_conjunction e |> Fn.id
-  | Or _ -> assert_disjunction e |> Fn.id
-  | Add _ -> assert_polynomial e |> Fn.id
-  | Mul _ -> assert_monomial e |> Fn.id
+  | And _ -> assert_conjunction e |> Fun.id
+  | Or _ -> assert_disjunction e |> Fun.id
+  | Add _ -> assert_polynomial e |> Fun.id
+  | Mul _ -> assert_monomial e |> Fun.id
   | Ap2 (Sized, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _) ->
       assert_sequence e
   | ApN (Record, elts) -> assert (not (IArray.is_empty elts))
@@ -744,10 +744,10 @@ let simp_le x y =
 
 let rec simp_eq x y =
   match
-    match Ordering.of_int (compare x y) with
-    | Equal -> None
-    | Less -> Some (x, y)
-    | Greater -> Some (y, x)
+    match Sign.of_int (compare x y) with
+    | Neg -> Some (x, y)
+    | Zero -> None
+    | Pos -> Some (y, x)
   with
   (* e = e ==> true *)
   | None -> bool true
@@ -1145,7 +1145,7 @@ let iter_vars e ~f =
   iter_terms ~f:(fun e -> Option.iter ~f (Var.of_term e)) e
 
 let exists_vars e ~f =
-  with_return (fun {return} ->
+  With_return.with_return (fun {return} ->
       iter_vars e ~f:(fun v -> if f v then return true) ;
       false )
 

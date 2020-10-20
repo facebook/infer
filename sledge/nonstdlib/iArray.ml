@@ -7,14 +7,15 @@
 
 (** IArray - Immutable view of an array *)
 
-open NS0
+open! NS0
+include Core_kernel.Perms.Export
 
 include (
-  Array.Permissioned :
-    module type of Array.Permissioned
-      with type ('a, 'p) t := ('a, 'p) Array.Permissioned.t )
+  Core_kernel.Array.Permissioned :
+    module type of Core_kernel.Array.Permissioned
+      with type ('a, 'p) t := ('a, 'p) Core_kernel.Array.Permissioned.t )
 
-type 'a t = ('a, immutable) Array.Permissioned.t
+type 'a t = ('a, immutable) Core_kernel.Array.Permissioned.t
 
 let a2i (a : 'a array) : 'a t = Obj.magic a
 let i2a (a : 'a t) : 'a array = Obj.magic a
@@ -41,15 +42,14 @@ let contains_dup ~compare xs =
     (find_consecutive_duplicate ~equal (sorted_copy ~compare xs))
 
 let fold_map xs ~init ~f =
-  Tuple2.map_snd ~f:a2i (Array.fold_map (i2a xs) ~init ~f)
+  let a, ys = Array.fold_map (i2a xs) ~init ~f in
+  (a, a2i ys)
 
 let fold_map_until xs ~init ~f ~finish =
-  with_return (fun {return} ->
+  With_return.with_return (fun {return} ->
       finish
         (fold_map xs ~init ~f:(fun s x ->
-             match (f s x : _ Continue_or_stop.t) with
-             | Continue x -> x
-             | Stop x -> return x )) )
+             match f s x with Continue x -> x | Stop x -> return x )) )
 
 let map_endo xs ~f = map_endo map xs ~f
 

@@ -57,7 +57,7 @@ and x_trm : var_env -> Smt.Ast.term -> Term.t =
     with _ -> (
       try Term.rational (Q.of_string s)
       with _ -> (
-        try Term.rational (Q.of_float (Float.of_string s))
+        try Term.rational (Q.of_float (Float.of_string_exn s))
         with _ -> fail "not a rational: %a" Smt.Ast.pp_term term () ) ) )
   | Arith (Add, e :: es) ->
       List.fold ~f:(fun s e -> Term.add s (x_trm n e)) ~init:(x_trm n e) es

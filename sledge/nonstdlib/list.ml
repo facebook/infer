@@ -5,8 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open NS0
-include Core.List
+open! NS0
+include Base.List
+
+exception Not_found_s = Base.Sexp.Not_found_s
 
 let rec pp ?pre ?suf sep pp_elt fs = function
   | [] -> ()
@@ -42,7 +44,7 @@ let find_map_remove xs ~f =
   find_map_remove_ [] xs
 
 let fold_option xs ~init ~f =
-  let@ {return} = with_return in
+  let@ {return} = With_return.with_return in
   Some
     (fold xs ~init ~f:(fun acc elt ->
          match f acc elt with Some res -> res | None -> return None ))
@@ -54,7 +56,7 @@ let rev_map_unzip xs ~f =
       let y, z = f x in
       (y :: ys, z :: zs) )
 
-let remove_exn ?(equal = phys_equal) xs x =
+let remove_exn ?(equal = ( == )) xs x =
   let rec remove_ ys = function
     | [] -> raise (Not_found_s (Atom __LOC__))
     | z :: xs ->
@@ -78,17 +80,17 @@ let symmetric_diff ~compare xs ys =
     | x :: xs, y :: ys ->
         let ord = compare x y in
         if ord = 0 then symmetric_diff_ xs ys
-        else if ord < 0 then First x :: symmetric_diff_ xs yys
-        else Second y :: symmetric_diff_ xxs ys
-    | xs, [] -> map ~f:Either.first xs
-    | [], ys -> map ~f:Either.second ys
+        else if ord < 0 then Left x :: symmetric_diff_ xs yys
+        else Right y :: symmetric_diff_ xxs ys
+    | xs, [] -> map ~f:Either.left xs
+    | [], ys -> map ~f:Either.right ys
   in
   symmetric_diff_ (sort ~compare xs) (sort ~compare ys)
 
 let pp_diff ~compare sep pp_elt fs (xs, ys) =
-  let pp_diff_elt fs elt =
+  let pp_diff_elt fs (elt : _ Either.t) =
     match elt with
-    | First x -> Format.fprintf fs "-- %a" pp_elt x
-    | Second y -> Format.fprintf fs "++ %a" pp_elt y
+    | Left x -> Format.fprintf fs "-- %a" pp_elt x
+    | Right y -> Format.fprintf fs "++ %a" pp_elt y
   in
   pp sep pp_diff_elt fs (symmetric_diff ~compare xs ys)

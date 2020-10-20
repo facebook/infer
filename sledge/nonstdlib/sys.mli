@@ -5,9 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Core
-
-val main :
-     command:Report.status Command.basic_command
-  -> analyze:(string list -> unit -> Report.status) Command.Param.t
-  -> Command.t
+val executable_name : string
+val getenv : string -> string option
+external getcwd : unit -> string = "caml_sys_getcwd"
+val word_size : int
+val ocaml_version : string

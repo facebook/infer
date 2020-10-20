@@ -7,7 +7,7 @@
 
 (** Timers for runtime statistics *)
 
-open NS0
+open! NS0
 
 type t =
   { mutable ustart: float

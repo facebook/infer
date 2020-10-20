@@ -73,7 +73,7 @@ and term : Llair.Exp.t -> T.t =
       uap0 (Funsym.uninterp ("label_" ^ parent ^ "_" ^ name))
   | Integer {typ= _; data} -> T.integer data
   | Float {data; typ= _} -> (
-    match Q.of_float (Float.of_string data) with
+    match Q.of_float (Float.of_string_exn data) with
     | q when Q.is_real q -> T.rational q
     | _ | (exception Invalid_argument _) ->
         uap0 (Funsym.uninterp ("float_" ^ data)) )

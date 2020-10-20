@@ -7,7 +7,7 @@
 
 (** Multiset - Set with multiplicity for each element *)
 
-open NS0
+open! NS0
 include Multiset_intf
 
 module Make

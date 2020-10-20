@@ -633,7 +633,7 @@ let rec norm_ s q =
   [%Trace.call fun {pf} -> pf "@[%a@]@ %a" Context.Subst.pp s pp_raw q]
   ;
   let q =
-    map q ~f_sjn:(norm_ s) ~f_ctx:Fn.id ~f_trm:(Context.Subst.subst s)
+    map q ~f_sjn:(norm_ s) ~f_ctx:Fun.id ~f_trm:(Context.Subst.subst s)
       ~f_fml:(Formula.map_terms ~f:(Context.Subst.subst s))
   in
   let xs, ctx = Context.apply_subst (Var.Set.union q.us q.xs) s q.ctx in

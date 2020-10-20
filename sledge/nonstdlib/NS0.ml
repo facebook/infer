@@ -5,28 +5,51 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-include (
-  Core :
-    sig
-      include
-        module type of Core
-          with module Printexc := Core.Printexc
-           and module Monad := Core.Monad
-           and module Option := Core.Option
-           and module List := Core.List
-           and module Map := Core.Map
-           and module Map_intf := Core.Map_intf
-           and module Set := Core.Set
-           and module Set_intf := Core.Set_intf
-           and module String := Core.String
-           and type -'a return := 'a Core.return
-    end )
+(** Global namespace used when defining the rest of nonstdlib, which is
+    extended in NS, the exposed interface of nonstdlib *)
+
+(** Support for [@@deriving compare, equal, hash, sexp] on builtin types *)
+
+include Ppx_compare_lib.Builtin
+module Hash = Ppx_hash_lib.Std.Hash
+include Hash.Builtin
+module Sexp = Sexplib.Sexp
+include Ppx_sexp_conv_lib.Conv
+
+(** Iterators *)
 
 module Iter = Iter
 include Iter.Import
 
-external ( == ) : 'a -> 'a -> bool = "%eq"
-external ( != ) : 'a -> 'a -> bool = "%noteq"
+(** Specialize polymorphic comparison to int *)
+
+external ( = ) : int -> int -> bool = "%equal"
+external ( <> ) : int -> int -> bool = "%notequal"
+external ( < ) : int -> int -> bool = "%lessthan"
+external ( > ) : int -> int -> bool = "%greaterthan"
+external ( <= ) : int -> int -> bool = "%lessequal"
+external ( >= ) : int -> int -> bool = "%greaterequal"
+external compare : int -> int -> int = "%compare"
+external equal : int -> int -> bool = "%equal"
+
+let min x y = if x <= y then x else y
+let max x y = if x >= y then x else y
+
+(** Polymorphic comparison and hashing *)
+module Poly = struct
+  external ( = ) : 'a -> 'a -> bool = "%equal"
+  external ( <> ) : 'a -> 'a -> bool = "%notequal"
+  external ( < ) : 'a -> 'a -> bool = "%lessthan"
+  external ( > ) : 'a -> 'a -> bool = "%greaterthan"
+  external ( <= ) : 'a -> 'a -> bool = "%lessequal"
+  external ( >= ) : 'a -> 'a -> bool = "%greaterequal"
+  external compare : 'a -> 'a -> int = "%compare"
+  external equal : 'a -> 'a -> bool = "%equal"
+
+  let min x y = if x <= y then x else y
+  let max x y = if x >= y then x else y
+  let hash = Stdlib.Hashtbl.hash
+end
 
 (** Function combinators *)
 
@@ -47,11 +70,18 @@ let ( <$ ) f x =
 
 let ( let@ ) x f = x @@ f
 
-(** Pretty-printer for argument type. *)
-type 'a pp = Format.formatter -> 'a -> unit
+(** Tuple operations *)
 
-(** Format strings. *)
-type ('a, 'b) fmt = ('a, 'b) Trace.fmt
+let fst3 (x, _, _) = x
+let snd3 (_, y, _) = y
+let trd3 (_, _, z) = z
+
+(** Pretty-printing *)
+
+type 'a pp = Format.formatter -> 'a -> unit
+type ('a, 'b) fmt = ('a, Format.formatter, unit, 'b) format4
+
+(** Monadic syntax *)
 
 module type Applicative_syntax = sig
   type 'a t
@@ -67,6 +97,12 @@ module type Monad_syntax = sig
   val ( and* ) : 'a t -> 'b t -> ('a * 'b) t
 end
 
+(** Data types *)
+
+module Char = Containers.Char
+
+(** Container utilities *)
+
 let map_endo map t ~f =
   let change = ref false in
   let t' =
@@ -76,3 +112,121 @@ let map_endo map t ~f =
         x' )
   in
   if !change then t' else t
+
+(** Containers *)
+
+type ('a, 'b) continue_or_stop = Continue of 'a | Stop of 'b
+
+(* from upcoming Stdlib *)
+module Either = struct
+  type ('a, 'b) t = Left of 'a | Right of 'b
+
+  let left v = Left v
+  let right v = Right v
+end
+
+module Hashtbl = Base.Hashtbl
+module Hash_set = Base.Hash_set
+module Hash_queue = Core_kernel.Hash_queue
+
+(** Input / Output *)
+
+module In_channel = Stdio.In_channel
+module Out_channel = Stdio.Out_channel
+
+(** Invariants *)
+
+let register_sexp_of_exn exn sexp_of_exn =
+  Sexplib.Conv.Exn_converter.add
+    (Obj.Extension_constructor.of_val exn)
+    sexp_of_exn
+
+module Invariant = struct
+  type position = Lexing.position =
+    {pos_fname: string; pos_lnum: int; pos_bol: int; pos_cnum: int}
+  [@@deriving sexp_of]
+
+  exception Violation of exn * Printexc.raw_backtrace * position * Sexp.t
+
+  ;;
+  register_sexp_of_exn
+    (Violation
+       (Not_found, Printexc.get_callstack 1, Lexing.dummy_pos, Sexp.List []))
+    (function
+      | Violation (exn, _, pos, payload) ->
+          Sexp.List
+            [ Atom "Invariant.Violation"
+            ; sexp_of_exn exn
+            ; sexp_of_position pos
+            ; payload ]
+      | exn -> Sexp.Atom (Printexc.to_string exn) )
+
+  let invariant here t sexp_of_t f =
+    assert (
+      ( try f ()
+        with exn ->
+          let bt = Printexc.get_raw_backtrace () in
+          let exn = Violation (exn, bt, here, sexp_of_t t) in
+          Printexc.raise_with_backtrace exn bt ) ;
+      true )
+
+  module type S = sig
+    type t
+
+    val invariant : t -> unit
+  end
+end
+
+(** Failures *)
+
+exception Replay of exn * Printexc.raw_backtrace * Sexp.t
+
+;;
+register_sexp_of_exn
+  (Replay (Not_found, Printexc.get_callstack 1, Sexp.List []))
+  (function
+    | Replay (exn, _, payload) ->
+        Sexp.List [Atom "Replay"; sexp_of_exn exn; payload]
+    | exn -> Sexp.Atom (Printexc.to_string exn) )
+
+let fail = Trace.fail
+
+exception Unimplemented of string
+
+let todo fmt = Trace.raisef (fun msg -> Unimplemented msg) fmt
+
+let warn fmt =
+  let fs = Format.std_formatter in
+  Format.pp_open_box fs 2 ;
+  Format.pp_print_string fs "Warning: " ;
+  Format.kfprintf
+    (fun fs () ->
+      Format.pp_close_box fs () ;
+      Format.pp_force_newline fs () )
+    fs fmt
+
+(** Assertions *)
+
+let assertf cnd fmt =
+  if not cnd then fail fmt
+  else Format.ikfprintf (fun _ () -> ()) Format.str_formatter fmt
+
+let checkf cnd fmt =
+  if not cnd then fail fmt
+  else Format.ikfprintf (fun _ () -> true) Format.str_formatter fmt
+
+let check f x =
+  assert (
+    f x ;
+    true ) ;
+  x
+
+let violates f x =
+  assert (
+    f x ;
+    true ) ;
+  assert false
+
+(** Deprecated *)
+
+module With_return = Base.With_return

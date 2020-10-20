@@ -6,7 +6,7 @@
  *)
 
 open! NS0
-include Core.Option
+include Base.Option
 
 let pp fmt pp_elt fs = function
   | Some x -> Format.fprintf fs fmt pp_elt x

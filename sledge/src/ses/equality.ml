@@ -96,7 +96,7 @@ end = struct
     |>
     [%Trace.retn fun {pf} r' ->
       pf "%a" pp_diff (r, r') ;
-      assert (r' != r ==> not (equal r' r))]
+      assert (r' == r || not (equal r' r))]
 
   (** compose a substitution with a mapping *)
   let compose1 ~key ~data s =
@@ -198,10 +198,10 @@ let prefer e f =
 
 (** orient equations based on representative preference *)
 let orient e f =
-  match Ordering.of_int (prefer e f) with
-  | Less -> Some (e, f)
-  | Equal -> None
-  | Greater -> Some (f, e)
+  match Sign.of_int (prefer e f) with
+  | Neg -> Some (e, f)
+  | Zero -> None
+  | Pos -> Some (f, e)
 
 let norm (_, _, s) e = Subst.norm s e
 
@@ -420,8 +420,9 @@ let pre_invariant r =
       (* carrier is closed under subterms *)
       Term.iter trm ~f:(fun subtrm ->
           assert (
-            non_interpreted subtrm
-            ==> (Term.is_constant subtrm || in_car r subtrm)
+            (not (non_interpreted subtrm))
+            || Term.is_constant subtrm
+            || in_car r subtrm
             || fail "@[subterm %a@ of %a@ not in carrier of@ %a@]" Term.pp
                  subtrm Term.pp trm pp r () ) ) )
 
@@ -433,7 +434,8 @@ let invariant r =
     || Subst.for_alli r.rep ~f:(fun ~key:a ~data:a' ->
            Subst.for_alli r.rep ~f:(fun ~key:b ~data:b' ->
                Term.compare a b >= 0
-               || congruent r a b ==> Term.equal a' b'
+               || (not (congruent r a b))
+               || Term.equal a' b'
                || fail "not congruent %a@ %a@ in@ %a" Term.pp a Term.pp b pp
                     r () ) ) )
 
@@ -451,7 +453,7 @@ let false_ = {true_ with sat= false}
 let lookup r a =
   ([%Trace.call fun {pf} -> pf "%a" Term.pp a]
   ;
-  let@ {return} = with_return in
+  let@ {return} = With_return.with_return in
   Subst.iteri r.rep ~f:(fun ~key:b ~data:b' ->
       if semi_congruent r a b then return b' ) ;
   a)
@@ -506,7 +508,7 @@ let merge us a b r =
 
 (** find an unproved equation between congruent terms *)
 let find_missing r =
-  let@ {return} = with_return in
+  let@ {return} = With_return.with_return in
   Subst.iteri r.rep ~f:(fun ~key:a ~data:a' ->
       let a_subnorm = Term.map ~f:(Subst.norm r.rep) a in
       Subst.iteri r.rep ~f:(fun ~key:b ~data:b' ->

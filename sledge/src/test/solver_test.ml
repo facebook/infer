@@ -12,13 +12,13 @@ let%test_module _ =
   ( module struct
     let () =
       Trace.init ~margin:68
-        ~config:(Result.ok_exn (Trace.parse "+Solver.infer_frame"))
+        ~config:(Result.get_ok (Trace.parse "+Solver.infer_frame"))
         ()
 
     (* let () =
      *   Trace.init ~margin:160
      *     ~config:
-     *       (Result.ok_exn (Trace.parse "+Solver.infer_frame+Solver.excise"))
+     *       (Result.get_ok (Trace.parse "+Solver.infer_frame+Solver.excise"))
      *     ()
      * 
      * [@@@warning "-32"] *)

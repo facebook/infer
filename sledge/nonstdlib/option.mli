@@ -6,7 +6,7 @@
  *)
 
 open! NS0
-include module type of Core.Option
+include module type of Base.Option
 
 val pp : ('a_pp -> 'a -> unit, unit) fmt -> 'a_pp -> 'a option pp
 (** Pretty-print an option. *)

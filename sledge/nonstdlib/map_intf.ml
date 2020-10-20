@@ -5,9 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open NS0
-
-exception Not_found = Stdlib.Not_found
+open! NS0
 
 module type S = sig
   type key

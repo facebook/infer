@@ -206,7 +206,7 @@ let ptr_siz : x -> int =
 let size_of, bit_size_of =
   let size_to_int size_of x llt =
     if Llvm.type_is_sized llt then
-      match Int64.to_int (size_of llt x.lldatalayout) with
+      match Int64.unsigned_to_int (size_of llt x.lldatalayout) with
       | Some n -> n
       | None -> fail "type size too large: %a" pp_lltype llt ()
     else fail "types with undetermined size: %a" pp_lltype llt ()
@@ -460,7 +460,7 @@ and xlate_value ?(inline = false) stk :
         ([], Exp.label ~parent ~name)
     | UndefValue ->
         let typ = xlate_type x (Llvm.type_of llv) in
-        let name = sprintf "undef_%i" !undef_count in
+        let name = Printf.sprintf "undef_%i" !undef_count in
         let loc = Loc.none in
         let reg = Reg.program typ name in
         let msg = Llvm.string_of_llvalue llv in
@@ -674,7 +674,7 @@ and xlate_opcode stk :
             | Struct ->
                 let fld =
                   match
-                    Option.bind ~f:Int64.to_int
+                    Option.bind ~f:Int64.unsigned_to_int
                       (Llvm.int64_of_const (Llvm.operand llv i))
                   with
                   | Some n -> n
@@ -1486,7 +1486,12 @@ let link_in : Llvm.llcontext -> Llvm.lllinker -> string -> unit =
 let check_datalayout llcontext lldatalayout =
   let check_size llt typ =
     let llsiz =
-      Int64.to_int_exn (Llvm_target.DataLayout.abi_size llt lldatalayout)
+      match
+        Int64.unsigned_to_int
+          (Llvm_target.DataLayout.abi_size llt lldatalayout)
+      with
+      | Some n -> n
+      | None -> fail "type size too large: %a" pp_lltype llt ()
     in
     let siz = Typ.size_of typ in
     if llsiz != siz then

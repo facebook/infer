@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open NS0
-include module type of Core.List
+open! NS0
+include module type of Base.List
 
 val pp :
      ?pre:(unit, unit) fmt
