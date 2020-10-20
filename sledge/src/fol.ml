@@ -262,7 +262,6 @@ module Fml : sig
     (* arithmetic *)
     | Eq0 of trm  (** [Eq0(x)] iff x = 0 *)
     | Gt0 of trm  (** [Gt0(x)] iff x > 0 *)
-    | Le0 of trm  (** [Le0(x)] iff x ≤ 0 *)
     (* propositional connectives *)
     | Not of fml
     | And of fml * fml
@@ -279,7 +278,6 @@ module Fml : sig
   val _Eq : trm -> trm -> fml
   val _Eq0 : trm -> fml
   val _Gt0 : trm -> fml
-  val _Le0 : trm -> fml
   val _Not : fml -> fml
   val _And : fml -> fml -> fml
   val _Or : fml -> fml -> fml
@@ -294,7 +292,6 @@ end = struct
     | Eq of trm * trm
     | Eq0 of trm
     | Gt0 of trm
-    | Le0 of trm
     | Not of fml
     | And of fml * fml
     | Or of fml * fml
@@ -352,16 +349,11 @@ end = struct
     | Q q -> if Q.gt q Q.zero then Tt else _Ff
     | x -> Gt0 x
 
-  let _Le0 = function
-    | Z z -> if Z.leq z Z.zero then Tt else _Ff
-    | Q q -> if Q.leq q Q.zero then Tt else _Ff
-    | x -> Le0 x
-
   let _UPosLit p xs = UPosLit (p, xs)
   let _UNegLit p xs = UNegLit (p, xs)
 
   let rec is_negative = function
-    | Not (Tt | Eq _ | Eq0 _) | Le0 _ | Or _ | Xor _ | UNegLit _ -> true
+    | Not (Tt | Eq _ | Eq0 _ | Gt0 _) | Or _ | Xor _ | UNegLit _ -> true
     | Tt | Eq _ | Eq0 _ | Gt0 _ | And _ | Iff _ | UPosLit _ | Cond _ ->
         false
     | Not p -> not (is_negative p)
@@ -371,8 +363,6 @@ end = struct
   let rec equal_or_opposite p q =
     match (p, q) with
     | p, Not p' | Not p', p -> if equal_fml p p' then Opposite else Unknown
-    | Gt0 a, Le0 a' | Le0 a, Gt0 a' ->
-        if equal_trm a a' then Opposite else Unknown
     | And (a, b), Or (a', b') | Or (a', b'), And (a, b) -> (
       match equal_or_opposite a a' with
       | Opposite -> (
@@ -447,8 +437,6 @@ end = struct
           Xor (p, q) )
 
   and _Not = function
-    | Gt0 x -> _Le0 x
-    | Le0 x -> _Gt0 x
     | Not x -> x
     | And (x, y) -> _Or (_Not x) (_Not y)
     | Or (x, y) -> _And (_Not x) (_Not y)
@@ -457,7 +445,7 @@ end = struct
     | Cond {cnd; pos; neg} -> _Cond cnd (_Not pos) (_Not neg)
     | UPosLit (p, xs) -> _UNegLit p xs
     | UNegLit (p, xs) -> _UPosLit p xs
-    | (Tt | Eq _ | Eq0 _) as x -> Not x
+    | (Tt | Eq _ | Eq0 _ | Gt0 _) as x -> Not x
 
   and _Cond cnd pos neg =
     match (cnd, pos, neg) with
@@ -528,7 +516,7 @@ let ppx_f strength fs fml =
     | Eq0 x -> pf "(0 = %a)" pp_t x
     | Not (Eq0 x) -> pf "(0 @<2>≠ %a)" pp_t x
     | Gt0 x -> pf "(0 < %a)" pp_t x
-    | Le0 x -> pf "(0 @<2>≥ %a)" pp_t x
+    | Not (Gt0 x) -> pf "(0 @<2>≥ %a)" pp_t x
     | Not x -> pf "@<1>¬%a" pp x
     | And (x, y) -> pf "(%a@ @<2>∧ %a)" pp x pp y
     | Or (x, y) -> pf "(%a@ @<2>∨ %a)" pp x pp y
@@ -584,7 +572,7 @@ let rec fold_vars_f ~init p ~f =
   match (p : fml) with
   | Tt -> init
   | Eq (x, y) -> fold_vars_t ~f x ~init:(fold_vars_t ~f y ~init)
-  | Eq0 x | Gt0 x | Le0 x -> fold_vars_t ~f x ~init
+  | Eq0 x | Gt0 x -> fold_vars_t ~f x ~init
   | Not x -> fold_vars_f ~f x ~init
   | And (x, y) | Or (x, y) | Iff (x, y) | Xor (x, y) ->
       fold_vars_f ~f x ~init:(fold_vars_f ~f y ~init)
@@ -634,7 +622,6 @@ let rec map_trms_f ~f b =
   | Eq (x, y) -> map2 f b _Eq x y
   | Eq0 x -> map1 f b _Eq0 x
   | Gt0 x -> map1 f b _Gt0 x
-  | Le0 x -> map1 f b _Le0 x
   | Not x -> map1 (map_trms_f ~f) b _Not x
   | And (x, y) -> map2 (map_trms_f ~f) b _And x y
   | Or (x, y) -> map2 (map_trms_f ~f) b _Or x y
@@ -944,7 +931,7 @@ module Formula = struct
   let eq0 = ap1f _Eq0
   let dq0 a = _Not (eq0 a)
   let gt0 = ap1f _Gt0
-  let le0 = ap1f _Le0
+  let le0 a = _Not (gt0 a)
   let ge0 a = le0 (Term.neg a)
   let lt0 a = gt0 (Term.neg a)
 
@@ -1007,7 +994,6 @@ module Formula = struct
     | Eq (x, y) -> lift_map2 f b _Eq x y
     | Eq0 x -> lift_map1 f b _Eq0 x
     | Gt0 x -> lift_map1 f b _Gt0 x
-    | Le0 x -> lift_map1 f b _Le0 x
     | Not x -> map1 (map_terms ~f) b _Not x
     | And (x, y) -> map2 (map_terms ~f) b _And x y
     | Or (x, y) -> map2 (map_terms ~f) b _Or x y
@@ -1039,8 +1025,8 @@ module Formula = struct
    fun ~meet1 ~join1 ~top ~bot fml ->
     let rec add_conjunct (cjn, splits) fml =
       match fml with
-      | Tt | Eq _ | Eq0 _ | Gt0 _ | Le0 _ | Iff _ | Xor _ | UPosLit _
-       |UNegLit _ | Not _ ->
+      | Tt | Eq _ | Eq0 _ | Gt0 _ | Iff _ | Xor _ | UPosLit _ | UNegLit _
+       |Not _ ->
           (meet1 fml cjn, splits)
       | And (p, q) -> add_conjunct (add_conjunct (cjn, splits) p) q
       | Or (p, q) -> (cjn, [p; q] :: splits)
@@ -1116,7 +1102,6 @@ let rec f_to_ses : fml -> Ses.Term.t = function
   | Eq (x, y) -> Ses.Term.eq (t_to_ses x) (t_to_ses y)
   | Eq0 x -> Ses.Term.eq Ses.Term.zero (t_to_ses x)
   | Gt0 x -> Ses.Term.lt Ses.Term.zero (t_to_ses x)
-  | Le0 x -> Ses.Term.le (t_to_ses x) Ses.Term.zero
   | Not p -> Ses.Term.not_ (f_to_ses p)
   | And (p, q) -> Ses.Term.and_ (f_to_ses p) (f_to_ses q)
   | Or (p, q) -> Ses.Term.or_ (f_to_ses p) (f_to_ses q)
