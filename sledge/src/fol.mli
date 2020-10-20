@@ -5,26 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Ses
+
 (** Variables *)
-module Var : sig
-  include Ses.Var_intf.VAR
-
-  module Subst : sig
-    type var := t
-    type t [@@deriving compare, equal, sexp]
-    type x = {sub: t; dom: Set.t; rng: Set.t}
-
-    val pp : t pp
-    val empty : t
-    val freshen : Set.t -> wrt:Set.t -> x * Set.t
-    val invert : t -> t
-    val restrict : t -> Set.t -> x
-    val is_empty : t -> bool
-    val domain : t -> Set.t
-    val range : t -> Set.t
-    val fold : t -> init:'a -> f:(var -> var -> 'a -> 'a) -> 'a
-  end
-end
+module Var : Var_intf.VAR
 
 (** Terms *)
 module rec Term : sig
@@ -51,8 +35,10 @@ module rec Term : sig
   val sub : t -> t -> t
   val mulq : Q.t -> t -> t
   val mul : t -> t -> t
+  val div : t -> t -> t
+  val pow : t -> int -> t
 
-  (* sequences (of non-fixed size) *)
+  (* sequences (of flexible size) *)
   val splat : t -> t
   val sized : seq:t -> siz:t -> t
   val extract : seq:t -> off:t -> len:t -> t
@@ -65,7 +51,7 @@ module rec Term : sig
   val ancestor : int -> t
 
   (* uninterpreted *)
-  val apply : Ses.Funsym.t -> t array -> t
+  val apply : Funsym.t -> t array -> t
 
   (* if-then-else *)
   val ite : cnd:Formula.t -> thn:t -> els:t -> t
@@ -130,8 +116,8 @@ and Formula : sig
   val le : Term.t -> Term.t -> t
 
   (* uninterpreted *)
-  val uposlit : Ses.Predsym.t -> Term.t array -> t
-  val uneglit : Ses.Predsym.t -> Term.t array -> t
+  val uposlit : Predsym.t -> Term.t array -> t
+  val uneglit : Predsym.t -> Term.t array -> t
 
   (* connectives *)
   val not_ : t -> t

@@ -111,9 +111,9 @@ and term : Llair.Exp.t -> T.t =
   | Ap2 (Add, _, d, e) -> ap_ttt T.add d e
   | Ap2 (Sub, _, d, e) -> ap_ttt T.sub d e
   | Ap2 (Mul, _, d, e) -> ap_ttt T.mul d e
-  | Ap2 (Div, _, d, e) -> ap_ttt (uap2 Div) d e
+  | Ap2 (Div, _, d, e) -> ap_ttt T.div d e
   | Ap2 (Rem, _, d, e) -> ap_ttt (uap2 Rem) d e
-  | Ap2 (Udiv, typ, d, e) -> ap_uut (uap2 Div) typ d e
+  | Ap2 (Udiv, typ, d, e) -> ap_uut T.div typ d e
   | Ap2 (Urem, typ, d, e) -> ap_uut (uap2 Rem) typ d e
   | Ap2 (And, _, d, e) -> ap_ttt (uap2 BitAnd) d e
   | Ap2 (Or, _, d, e) -> ap_ttt (uap2 BitOr) d e

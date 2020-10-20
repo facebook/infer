@@ -380,7 +380,7 @@ module Sum = struct
   let mul_const const sum =
     assert (not (Q.equal Q.zero const)) ;
     if Q.equal Q.one const then sum
-    else Qset.map_counts ~f:(fun _ -> Q.mul const) sum
+    else Qset.map_counts ~f:(Q.mul const) sum
 
   let to_term sum =
     match Qset.classify sum with

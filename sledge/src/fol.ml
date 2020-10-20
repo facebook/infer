@@ -5,110 +5,239 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Ses
+
 let pp_boxed fs fmt =
   Format.pp_open_box fs 2 ;
   Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
-
-module Funsym = Ses.Funsym
-module Predsym = Ses.Predsym
 
 (*
  * Terms
  *)
 
-(** Terms, denoting functions from structures to values, built from
-    variables and applications of function symbols from various theories. *)
-type trm =
-  (* variables *)
-  | Var of {id: int; name: string}
-  (* arithmetic *)
-  | Z of Z.t
-  | Q of Q.t
-  | Neg of trm
-  | Add of trm * trm
-  | Sub of trm * trm
-  | Mulq of Q.t * trm
-  (* sequences (of non-fixed size) *)
-  | Splat of trm
-  | Sized of {seq: trm; siz: trm}
-  | Extract of {seq: trm; off: trm; len: trm}
-  | Concat of trm array
-  (* records (with fixed indices) *)
-  | Select of {idx: int; rcd: trm}
-  | Update of {idx: int; rcd: trm; elt: trm}
-  | Record of trm array
-  | Ancestor of int
-  (* uninterpreted *)
-  | Apply of Funsym.t * trm array
-[@@deriving compare, equal, sexp]
+(** Variable terms, represented as a subtype of general terms *)
+module rec Var : sig
+  include Var_intf.VAR with type t = private Trm.trm
 
-let compare_trm x y =
-  if x == y then 0
-  else
+  val of_ : Trm.trm -> t
+end = struct
+  module T = struct
+    type t = Trm.trm [@@deriving compare, equal, sexp]
+
+    let invariant x =
+      let@ () = Invariant.invariant [%here] x [%sexp_of: t] in
+      match x with
+      | Var _ -> ()
+      | _ -> fail "non-var: %a" Sexp.pp_hum (sexp_of_t x) ()
+
+    let make ~id ~name = Trm._Var id name |> check invariant
+    let id = function Trm.Var v -> v.id | x -> violates invariant x
+    let name = function Trm.Var v -> v.name | x -> violates invariant x
+  end
+
+  include Var0.Make (T)
+
+  let of_ v = v |> check T.invariant
+end
+
+and Arith0 :
+  (Arithmetic.REPRESENTATION
+    with type var := Var.t
+    with type trm := Trm.trm) =
+  Arithmetic.Representation (Trm)
+
+and Arith :
+  (Arithmetic.S
+    with type var := Var.t
+    with type trm := Trm.trm
+    with type t = Arith0.t) = struct
+  include Arith0
+
+  include Make (struct
+    let get_arith (e : Trm.trm) =
+      match e with
+      | Z z -> Some (Arith.const (Q.of_z z))
+      | Q q -> Some (Arith.const q)
+      | Arith a -> Some a
+      | _ -> None
+  end)
+end
+
+(** Terms, built from variables and applications of function symbols from
+    various theories. Denote functions from structures to values. *)
+and Trm : sig
+  type var = Var.t
+
+  type trm = private
+    (* variables *)
+    | Var of {id: int; name: string}
+    (* arithmetic *)
+    | Z of Z.t
+    | Q of Q.t
+    | Arith of Arith.t
+    (* sequences (of flexible size) *)
+    | Splat of trm
+    | Sized of {seq: trm; siz: trm}
+    | Extract of {seq: trm; off: trm; len: trm}
+    | Concat of trm array
+    (* records (with fixed indices) *)
+    | Select of {idx: int; rcd: trm}
+    | Update of {idx: int; rcd: trm; elt: trm}
+    | Record of trm array
+    | Ancestor of int
+    (* uninterpreted *)
+    | Apply of Funsym.t * trm array
+  [@@deriving compare, equal, sexp]
+
+  val ppx : Var.t Var.strength -> trm pp
+  val _Var : int -> string -> trm
+  val _Z : Z.t -> trm
+  val _Q : Q.t -> trm
+  val _Arith : Arith.t -> trm
+  val _Splat : trm -> trm
+  val _Sized : trm -> trm -> trm
+  val _Extract : trm -> trm -> trm -> trm
+  val _Concat : trm array -> trm
+  val _Select : int -> trm -> trm
+  val _Update : int -> trm -> trm -> trm
+  val _Record : trm array -> trm
+  val _Ancestor : int -> trm
+  val _Apply : Funsym.t -> trm array -> trm
+end = struct
+  type var = Var.t
+
+  type trm =
+    | Var of {id: int; name: string}
+    | Z of Z.t
+    | Q of Q.t
+    | Arith of Arith.t
+    | Splat of trm
+    | Sized of {seq: trm; siz: trm}
+    | Extract of {seq: trm; off: trm; len: trm}
+    | Concat of trm array
+    | Select of {idx: int; rcd: trm}
+    | Update of {idx: int; rcd: trm; elt: trm}
+    | Record of trm array
+    | Ancestor of int
+    | Apply of Funsym.t * trm array
+  [@@deriving compare, equal, sexp]
+
+  let compare_trm x y =
+    if x == y then 0
+    else
+      match (x, y) with
+      | Var {id= i; name= _}, Var {id= j; name= _} when i > 0 && j > 0 ->
+          Int.compare i j
+      | _ -> compare_trm x y
+
+  let equal_trm x y =
+    x == y
+    ||
     match (x, y) with
     | Var {id= i; name= _}, Var {id= j; name= _} when i > 0 && j > 0 ->
-        Int.compare i j
-    | _ -> compare_trm x y
+        Int.equal i j
+    | _ -> equal_trm x y
 
-let equal_trm x y =
-  x == y
-  ||
-  match (x, y) with
-  | Var {id= i; name= _}, Var {id= j; name= _} when i > 0 && j > 0 ->
-      Int.equal i j
-  | _ -> equal_trm x y
+  let rec ppx strength fs trm =
+    let rec pp fs trm =
+      let pf fmt = pp_boxed fs fmt in
+      match trm with
+      | Var _ as v -> Var.ppx strength fs (Var.of_ v)
+      | Z z -> Trace.pp_styled `Magenta "%a" fs Z.pp z
+      | Q q -> Trace.pp_styled `Magenta "%a" fs Q.pp q
+      | Arith a -> Arith.ppx strength fs a
+      | Splat x -> pf "%a^" pp x
+      | Sized {seq; siz} -> pf "@<1>⟨%a,%a@<1>⟩" pp siz pp seq
+      | Extract {seq; off; len} -> pf "%a[%a,%a)" pp seq pp off pp len
+      | Concat [||] -> pf "@<2>⟨⟩"
+      | Concat xs -> pf "(%a)" (Array.pp "@,^" pp) xs
+      | Select {idx; rcd} -> pf "%a[%i]" pp rcd idx
+      | Update {idx; rcd; elt} ->
+          pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
+      | Record xs -> pf "{%a}" (ppx_record strength) xs
+      | Ancestor i -> pf "(ancestor %i)" i
+      | Apply (f, [||]) -> pf "%a" Funsym.pp f
+      | Apply
+          ( ( (Rem | BitAnd | BitOr | BitXor | BitShl | BitLshr | BitAshr)
+            as f )
+          , [|x; y|] ) ->
+          pf "(%a@ %a@ %a)" pp x Funsym.pp f pp y
+      | Apply (f, es) ->
+          pf "%a(%a)" Funsym.pp f (Array.pp ",@ " (ppx strength)) es
+    in
+    pp fs trm
 
-(* destructors *)
+  and ppx_record strength fs elts =
+    [%Trace.fprintf
+      fs "%a"
+        (fun fs elts ->
+          let exception Not_a_string in
+          match
+            String.init (Array.length elts) ~f:(fun i ->
+                match elts.(i) with
+                | Z c -> Char.of_int_exn (Z.to_int c)
+                | _ -> raise Not_a_string )
+          with
+          | s -> Format.fprintf fs "%S" s
+          | exception (Not_a_string | Z.Overflow | Failure _) ->
+              Format.fprintf fs "@[<h>%a@]"
+                (Array.pp ",@ " (ppx strength))
+                elts )
+        elts]
 
-let get_z = function Z z -> Some z | _ -> None
-let get_q = function Q q -> Some q | Z z -> Some (Q.of_z z) | _ -> None
+  (* destructors *)
 
-(* constructors *)
+  let get_z = function Z z -> Some z | _ -> None
+  let get_q = function Q q -> Some q | Z z -> Some (Q.of_z z) | _ -> None
 
-(* statically allocated since they are tested with == *)
-let zero = Z Z.zero
-let one = Z Z.one
+  (* constructors *)
 
-let _Z z =
-  if Z.equal Z.zero z then zero else if Z.equal Z.one z then one else Z z
+  let _Var id name = Var {id; name}
 
-let _Q q = if Z.equal Z.one (Q.den q) then _Z (Q.num q) else Q q
-let _Neg x = Neg x
+  (* statically allocated since they are tested with == *)
+  let zero = Z Z.zero
+  let one = Z Z.one
 
-let _Add x y =
-  match (x, y) with
-  | _, Q q when Q.sign q = 0 -> x
-  | Q q, _ when Q.sign q = 0 -> y
-  | _ -> Add (x, y)
+  let _Z z =
+    if Z.equal Z.zero z then zero else if Z.equal Z.one z then one else Z z
 
-let _Sub x y = Sub (x, y)
+  let _Q q = if Z.equal Z.one (Q.den q) then _Z (Q.num q) else Q q
 
-let _Mulq q x =
-  if Q.equal Q.one q then x else if Q.sign q = 0 then zero else Mulq (q, x)
+  let _Arith a =
+    match Arith.classify a with
+    | Trm e -> e
+    | Const q -> _Q q
+    | Compound -> Arith a
 
-let _Splat x = Splat x
-let _Sized seq siz = Sized {seq; siz}
-let _Extract seq off len = Extract {seq; off; len}
-let _Concat es = Concat es
-let _Select idx rcd = Select {idx; rcd}
-let _Update idx rcd elt = Update {idx; rcd; elt}
-let _Record es = Record es
-let _Ancestor i = Ancestor i
+  let _Splat x = Splat x
+  let _Sized seq siz = Sized {seq; siz}
+  let _Extract seq off len = Extract {seq; off; len}
+  let _Concat es = Concat es
+  let _Select idx rcd = Select {idx; rcd}
+  let _Update idx rcd elt = Update {idx; rcd; elt}
+  let _Record es = Record es
+  let _Ancestor i = Ancestor i
 
-let _Apply f es =
-  match
-    Funsym.eval ~equal:equal_trm ~get_z ~ret_z:_Z ~get_q ~ret_q:_Q f es
-  with
-  | Some c -> c
-  | None -> Apply (f, es)
+  let _Apply f es =
+    match
+      Funsym.eval ~equal:equal_trm ~get_z ~ret_z:_Z ~get_q ~ret_q:_Q f es
+    with
+    | Some c -> c
+    | None -> Apply (f, es)
+end
+
+open Trm
+
+let zero = _Z Z.zero
+let one = _Z Z.one
 
 (*
  * Formulas
  *)
 
-(** Formulas, denoting sets of structures, built from propositional
-    variables, applications of predicate symbols from various theories, and
-    first-order logic connectives. *)
+(** Formulas, built from literals with predicate symbols from various
+    theories, and propositional constants and connectives. Denote sets of
+    structures. *)
 module Fml : sig
   type fml = private
     (* propositional constants *)
@@ -422,95 +551,13 @@ type cnd = [`Ite of fml * cnd * cnd | `Trm of trm]
 type exp = [cnd | `Fml of fml] [@@deriving compare, equal, sexp]
 
 (*
- * Variables
- *)
-
-(** Variable terms *)
-module Var : sig
-  include Ses.Var_intf.VAR with type t = private trm
-
-  val of_ : trm -> t
-end = struct
-  module T = struct
-    type t = trm [@@deriving compare, equal, sexp]
-  end
-
-  let invariant (x : trm) =
-    let@ () = Invariant.invariant [%here] x [%sexp_of: trm] in
-    match x with
-    | Var _ -> ()
-    | _ -> fail "non-var: %a" Sexp.pp_hum (sexp_of_trm x) ()
-
-  include Ses.Var0.Make (struct
-    include T
-
-    let make ~id ~name = Var {id; name} |> check invariant
-    let id = function Var v -> v.id | x -> violates invariant x
-    let name = function Var v -> v.name | x -> violates invariant x
-  end)
-
-  let of_ v = v |> check invariant
-end
-
-type var = Var.t
-
-(*
  * Representation operations
  *)
 
 (** pp *)
 
-let rec ppx_t strength fs trm =
-  let rec pp fs trm =
-    let pf fmt = pp_boxed fs fmt in
-    match trm with
-    | Var _ as v -> Var.ppx strength fs (Var.of_ v)
-    | Z z -> Trace.pp_styled `Magenta "%a" fs Z.pp z
-    | Q q -> Trace.pp_styled `Magenta "%a" fs Q.pp q
-    | Neg x -> pf "(- %a)" pp x
-    | Add (x, y) -> pf "(%a@ + %a)" pp x pp y
-    | Sub (x, y) -> pf "(%a@ - %a)" pp x pp y
-    | Mulq (q, x) -> pf "(%a@ @<2>× %a)" Q.pp q pp x
-    | Splat x -> pf "%a^" pp x
-    | Sized {seq; siz} -> pf "@<1>⟨%a,%a@<1>⟩" pp siz pp seq
-    | Extract {seq; off; len} -> pf "%a[%a,%a)" pp seq pp off pp len
-    | Concat [||] -> pf "@<2>⟨⟩"
-    | Concat xs -> pf "(%a)" (Array.pp "@,^" pp) xs
-    | Select {idx; rcd} -> pf "%a[%i]" pp rcd idx
-    | Update {idx; rcd; elt} -> pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
-    | Record xs -> pf "{%a}" (ppx_record strength) xs
-    | Ancestor i -> pf "(ancestor %i)" i
-    | Apply (f, [||]) -> pf "%a" Funsym.pp f
-    | Apply
-        ( ( ( Mul | Div | Rem | BitAnd | BitOr | BitXor | BitShl | BitLshr
-            | BitAshr ) as f )
-        , [|x; y|] ) ->
-        pf "(%a@ %a@ %a)" pp x Funsym.pp f pp y
-    | Apply (f, es) ->
-        pf "%a(%a)" Funsym.pp f (Array.pp ",@ " (ppx_t strength)) es
-  in
-  pp fs trm
-
-and ppx_record strength fs elts =
-  [%Trace.fprintf
-    fs "%a"
-      (fun fs elts ->
-        let exception Not_a_string in
-        match
-          String.init (Array.length elts) ~f:(fun i ->
-              match elts.(i) with
-              | Z c -> Char.of_int_exn (Z.to_int c)
-              | _ -> raise Not_a_string )
-        with
-        | s -> Format.fprintf fs "%S" s
-        | exception (Not_a_string | Z.Overflow | Failure _) ->
-            Format.fprintf fs "@[<h>%a@]"
-              (Array.pp ",@ " (ppx_t strength))
-              elts )
-      elts]
-
 let ppx_f strength fs fml =
-  let pp_t = ppx_t strength in
+  let pp_t = Trm.ppx strength in
   let rec pp fs fml =
     let pf fmt = pp_boxed fs fmt in
     match (fml : fml) with
@@ -539,7 +586,7 @@ let ppx_f strength fs fml =
 let pp_f = ppx_f (fun _ -> None)
 
 let ppx_c strength fs ct =
-  let pp_t = ppx_t strength in
+  let pp_t = Trm.ppx strength in
   let pp_f = ppx_f strength in
   let rec pp fs ct =
     let pf fmt = pp_boxed fs fmt in
@@ -559,20 +606,20 @@ let pp = ppx (fun _ -> None)
 
 let rec fold_vars_t e ~init ~f =
   match e with
-  | Var _ as v -> f init (Var.of_ v)
   | Z _ | Q _ | Ancestor _ -> init
-  | Neg x | Mulq (_, x) | Splat x | Select {rcd= x} ->
-      fold_vars_t ~f x ~init
-  | Add (x, y)
-   |Sub (x, y)
-   |Sized {seq= x; siz= y}
-   |Update {rcd= x; elt= y} ->
+  | Var _ as v -> f init (Var.of_ v)
+  | Splat x | Select {rcd= x} -> fold_vars_t ~f x ~init
+  | Sized {seq= x; siz= y} | Update {rcd= x; elt= y} ->
       fold_vars_t ~f x ~init:(fold_vars_t ~f y ~init)
   | Extract {seq= x; off= y; len= z} ->
       fold_vars_t ~f x
         ~init:(fold_vars_t ~f y ~init:(fold_vars_t ~f z ~init))
   | Concat xs | Record xs | Apply (_, xs) ->
       Array.fold ~f:(fun init -> fold_vars_t ~f ~init) xs ~init
+  | Arith a ->
+      Iter.fold
+        ~f:(fun s x -> fold_vars_t ~f x ~init:s)
+        ~init (Arith.iter a)
 
 let rec fold_vars_f ~init p ~f =
   match (p : fml) with
@@ -645,11 +692,10 @@ let rec map_trms_f ~f b =
 let rec map_vars_t ~f e =
   match e with
   | Var _ as v -> (f (Var.of_ v) : var :> trm)
-  | Z _ | Q _ | Ancestor _ -> e
-  | Neg x -> map1 (map_vars_t ~f) e _Neg x
-  | Add (x, y) -> map2 (map_vars_t ~f) e _Add x y
-  | Sub (x, y) -> map2 (map_vars_t ~f) e _Sub x y
-  | Mulq (q, x) -> map1 (map_vars_t ~f) e (_Mulq q) x
+  | Z _ | Q _ -> e
+  | Arith a ->
+      let a' = Arith.map ~f:(map_vars_t ~f) a in
+      if a == a' then e else _Arith a'
   | Splat x -> map1 (map_vars_t ~f) e _Splat x
   | Sized {seq; siz} -> map2 (map_vars_t ~f) e _Sized seq siz
   | Extract {seq; off; len} -> map3 (map_vars_t ~f) e _Extract seq off len
@@ -657,6 +703,7 @@ let rec map_vars_t ~f e =
   | Select {idx; rcd} -> map1 (map_vars_t ~f) e (_Select idx) rcd
   | Update {idx; rcd; elt} -> map2 (map_vars_t ~f) e (_Update idx) rcd elt
   | Record xs -> mapN (map_vars_t ~f) e _Record xs
+  | Ancestor _ -> e
   | Apply (g, xs) -> mapN (map_vars_t ~f) e (_Apply g) xs
 
 let map_vars_f ~f = map_trms_f ~f:(map_vars_t ~f)
@@ -844,35 +891,19 @@ module Term = struct
 
   let var v = `Trm (v : var :> trm)
 
-  (* constants *)
+  (* arithmetic *)
 
   let zero = `Trm zero
   let one = `Trm one
-
-  let integer z =
-    if Z.equal Z.zero z then zero
-    else if Z.equal Z.one z then one
-    else `Trm (Z z)
-
-  let rational q = `Trm (Q q)
-
-  (* arithmetic *)
-
-  let neg = ap1t _Neg
-  let add = ap2t _Add
-  let sub = ap2t _Sub
-  let mulq q = ap1t (_Mulq q)
-
-  let mul =
-    ap2 (fun x y ->
-        match x with
-        | Z z -> mulq (Q.of_z z) (`Trm y)
-        | Q q -> mulq q (`Trm y)
-        | _ -> (
-          match y with
-          | Z z -> mulq (Q.of_z z) (`Trm x)
-          | Q q -> mulq q (`Trm x)
-          | _ -> ap2t (fun x y -> Apply (Mul, [|x; y|])) (`Trm x) (`Trm y) ) )
+  let integer z = `Trm (_Z z)
+  let rational q = `Trm (_Q q)
+  let neg = ap1t @@ fun x -> _Arith Arith.(neg (trm x))
+  let add = ap2t @@ fun x y -> _Arith Arith.(add (trm x) (trm y))
+  let sub = ap2t @@ fun x y -> _Arith Arith.(sub (trm x) (trm y))
+  let mulq q = ap1t @@ fun x -> _Arith Arith.(mulc q (trm x))
+  let mul = ap2t @@ fun x y -> _Arith (Arith.mul x y)
+  let div = ap2t @@ fun x y -> _Arith (Arith.div x y)
+  let pow x i = (ap1t @@ fun x -> _Arith (Arith.pow x i)) x
 
   (* sequences *)
 
@@ -888,13 +919,13 @@ module Term = struct
   let record elts = apNt _Record elts
   let ancestor i = `Trm (_Ancestor i)
 
-  (* if-then-else *)
-
-  let ite ~cnd ~thn ~els = ite cnd thn els
-
   (* uninterpreted *)
 
   let apply sym args = apNt (_Apply sym) args
+
+  (* if-then-else *)
+
+  let ite ~cnd ~thn ~els = ite cnd thn els
 
   (** Destruct *)
 
@@ -902,19 +933,11 @@ module Term = struct
 
   (** Access *)
 
-  let const_of x =
-    let rec const_of t =
-      let neg = Option.map ~f:Q.neg in
-      let add = Option.map2 ~f:Q.add in
-      match t with
-      | Z z -> Some (Q.of_z z)
-      | Q q -> Some q
-      | Neg x -> neg (const_of x)
-      | Add (x, y) -> add (const_of x) (const_of y)
-      | Sub (x, y) -> add (const_of x) (neg (const_of y))
-      | _ -> None
-    in
-    match x with `Trm t -> const_of t | _ -> None
+  let const_of = function
+    | `Trm (Z z) -> Some (Q.of_z z)
+    | `Trm (Q q) -> Some q
+    | `Trm (Arith a) -> Arith.get_const a
+    | _ -> None
 
   (** Traverse *)
 
@@ -1093,14 +1116,22 @@ let vs_to_ses : Var.Set.t -> Ses.Var.Set.t =
   Var.Set.fold vs ~init:Ses.Var.Set.empty ~f:(fun vs v ->
       Ses.Var.Set.add vs (v_to_ses v) )
 
-let rec t_to_ses : trm -> Ses.Term.t = function
+let rec arith_to_ses poly =
+  Arith.fold_monomials poly ~init:Ses.Term.zero ~f:(fun mono coeff e ->
+      Ses.Term.add e
+        (Ses.Term.mulq coeff
+           (Arith.fold_factors mono ~init:Ses.Term.one ~f:(fun trm pow f ->
+                let rec exp b i =
+                  assert (i > 0) ;
+                  if i = 1 then b else Ses.Term.mul b (exp f (i - 1))
+                in
+                Ses.Term.mul f (exp (t_to_ses trm) pow) ))) )
+
+and t_to_ses : trm -> Ses.Term.t = function
   | Var {name; id} -> Ses.Term.var (Ses.Var.identified ~name ~id)
   | Z z -> Ses.Term.integer z
   | Q q -> Ses.Term.rational q
-  | Neg x -> Ses.Term.neg (t_to_ses x)
-  | Add (x, y) -> Ses.Term.add (t_to_ses x) (t_to_ses y)
-  | Sub (x, y) -> Ses.Term.sub (t_to_ses x) (t_to_ses y)
-  | Mulq (q, x) -> Ses.Term.mulq q (t_to_ses x)
+  | Arith a -> arith_to_ses a
   | Splat x -> Ses.Term.splat (t_to_ses x)
   | Sized {seq; siz} ->
       Ses.Term.sized ~seq:(t_to_ses seq) ~siz:(t_to_ses siz)
@@ -1114,8 +1145,6 @@ let rec t_to_ses : trm -> Ses.Term.t = function
   | Record es ->
       Ses.Term.record (IArray.of_array (Array.map ~f:t_to_ses es))
   | Ancestor i -> Ses.Term.rec_record i
-  | Apply (Mul, [|x; y|]) -> Ses.Term.mul (t_to_ses x) (t_to_ses y)
-  | Apply (Div, [|x; y|]) -> Ses.Term.div (t_to_ses x) (t_to_ses y)
   | Apply (Rem, [|x; y|]) -> Ses.Term.rem (t_to_ses x) (t_to_ses y)
   | Apply (BitAnd, [|x; y|]) -> Ses.Term.and_ (t_to_ses x) (t_to_ses y)
   | Apply (BitOr, [|x; y|]) -> Ses.Term.or_ (t_to_ses x) (t_to_ses y)
@@ -1171,8 +1200,8 @@ let vs_of_ses : Ses.Var.Set.t -> Var.Set.t =
   Ses.Var.Set.fold vs ~init:Var.Set.empty ~f:(fun vs v ->
       Var.Set.add vs (v_of_ses v) )
 
-let uap1 f = ap1t (fun x -> Apply (f, [|x|]))
-let uap2 f = ap2t (fun x y -> Apply (f, [|x; y|]))
+let uap1 f = ap1t (fun x -> _Apply f [|x|])
+let uap2 f = ap2t (fun x y -> _Apply f [|x; y|])
 let uposN p = apNf (_UPosLit p)
 let unegN p = apNf (_UNegLit p)
 
@@ -1237,18 +1266,18 @@ and of_ses : Ses.Term.t -> exp =
     | Some (e, q, prod) ->
         let rec expn e n =
           let p = Z.pred n in
-          if Z.sign p = 0 then e else uap2 Mul e (expn e p)
+          if Z.sign p = 0 then e else mul e (expn e p)
         in
         let exp e q =
           let n = Q.num q in
           let sn = Z.sign n in
           if sn = 0 then of_ses e
           else if sn > 0 then expn (of_ses e) n
-          else uap2 Div one (expn (of_ses e) (Z.neg n))
+          else div one (expn (of_ses e) (Z.neg n))
         in
         Ses.Term.Qset.fold prod ~init:(exp e q) ~f:(fun e q s ->
-            uap2 Mul (exp e q) s ) )
-  | Ap2 (Div, d, e) -> uap_ttt Div d e
+            mul (exp e q) s ) )
+  | Ap2 (Div, d, e) -> div (of_ses d) (of_ses e)
   | Ap2 (Rem, d, e) -> uap_ttt Rem d e
   | And es -> apN and_ (uap2 BitAnd) tt es
   | Or es -> apN or_ (uap2 BitOr) ff es

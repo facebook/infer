@@ -62,6 +62,7 @@ end) : S with type key = Key.t = struct
     M.union (fun key v1 v2 -> Some (combine ~key v1 v2)) x y
 
   let union x y ~f = M.union f x y
+  let partition m ~f = M.partition f m
   let is_empty = M.is_empty
 
   let root_key m =
@@ -109,6 +110,22 @@ end) : S with type key = Key.t = struct
   let mem m k = M.mem k m
   let find_exn m k = M.find k m
   let find m k = M.find_opt k m
+
+  let only_binding m =
+    match root_key m with
+    | Some k -> (
+      match M.split k m with
+      | l, Some v, r when is_empty l && is_empty r -> Some (k, v)
+      | _ -> None )
+    | None -> None
+
+  let classify m =
+    match root_key m with
+    | None -> `Zero
+    | Some k -> (
+      match M.split k m with
+      | l, Some v, r when is_empty l && is_empty r -> `One (k, v)
+      | _ -> `Many )
 
   let find_multi m k =
     match M.find_opt k m with None -> [] | Some vs -> vs

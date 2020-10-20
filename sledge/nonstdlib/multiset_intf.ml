@@ -44,14 +44,27 @@ module type S = sig
   (** Set the multiplicity of an element to zero. [O(log n)] *)
 
   val union : t -> t -> t
-  (** Sum multiplicities pointwise. [O(n + m)] *)
+  (** Add multiplicities pointwise. [O(n + m)] *)
+
+  val diff : t -> t -> t
+  (** Subtract multiplicities pointwise. [O(n + m)] *)
 
   val map : t -> f:(elt -> mul -> elt * mul) -> t
   (** Map over the elements in ascending order. Preserves physical equality
       if [f] does. *)
 
-  val map_counts : t -> f:(elt -> mul -> mul) -> t
+  val map_counts : t -> f:(mul -> mul) -> t
   (** Map over the multiplicities of the elements in ascending order. *)
+
+  val mapi_counts : t -> f:(elt -> mul -> mul) -> t
+  (** Map over the multiplicities of the elements in ascending order. *)
+
+  val flat_map : t -> f:(elt -> mul -> t) -> t
+  (** Flat map over the elements in ascending order. Preserves physical
+      equality if [f e m] is a singleton [(e', m')] with [e == e'] and
+      [Mul.equal m m'] for all elements. *)
+
+  val partition : t -> f:(elt -> mul -> bool) -> t * t
 
   (* queries *)
 
@@ -63,6 +76,9 @@ module type S = sig
 
   val count : t -> elt -> mul
   (** Multiplicity of an element. [O(log n)]. *)
+
+  val only_elt : t -> (elt * mul) option
+  (** The only element of a singleton multiset. [O(1)]. *)
 
   val choose_exn : t -> elt * mul
   (** Find an unspecified element. [O(1)]. *)
@@ -99,6 +115,6 @@ module type S = sig
   val for_all : t -> f:(elt -> mul -> bool) -> bool
   (** Test whether all elements satisfy a predicate. *)
 
-  val fold : t -> f:(elt -> mul -> 's -> 's) -> init:'s -> 's
+  val fold : t -> init:'s -> f:(elt -> mul -> 's -> 's) -> 's
   (** Fold over the elements in ascending order. *)
 end

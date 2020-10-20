@@ -183,6 +183,14 @@ module Q = struct
 
   let of_z = Q.of_bigint
 
+  let pow q = function
+    | 1 -> q
+    | 0 -> Q.one
+    | -1 -> Q.inv q
+    | n ->
+        let q, n = if n < 0 then (Q.inv q, -n) else (q, n) in
+        Q.make (Z.pow (Q.num q) n) (Z.pow (Q.den q) n)
+
   include Q
 end
 

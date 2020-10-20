@@ -8,8 +8,6 @@
 (** Function Symbols *)
 
 type t =
-  | Mul
-  | Div
   | Rem
   | BitAnd
   | BitOr
@@ -25,8 +23,6 @@ type t =
 let pp ppf f =
   let pf fmt = Format.fprintf ppf fmt in
   match f with
-  | Mul -> pf "@<1>×"
-  | Div -> pf "/"
   | Rem -> pf "%%"
   | BitAnd -> pf "&&"
   | BitOr -> pf "||"

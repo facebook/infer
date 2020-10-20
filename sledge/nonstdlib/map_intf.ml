@@ -53,12 +53,15 @@ module type S = sig
     'a t -> 'a t -> combine:(key:key -> 'a -> 'a -> 'a) -> 'a t
 
   val union : 'a t -> 'a t -> f:(key -> 'a -> 'a -> 'a option) -> 'a t
+  val partition : 'a t -> f:(key -> 'a -> bool) -> 'a t * 'a t
 
   (** {1 Query} *)
 
   val is_empty : 'a t -> bool
   val is_singleton : 'a t -> bool
   val length : 'a t -> int
+  val only_binding : 'a t -> (key * 'a) option
+  val classify : 'a t -> [`Zero | `One of key * 'a | `Many]
 
   val choose_key : 'a t -> key option
   (** Find an unspecified key. Different keys may be chosen for equivalent
