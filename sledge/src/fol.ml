@@ -58,8 +58,21 @@ let equal_trm x y =
       Int.equal i j
   | _ -> equal_trm x y
 
+(* destructors *)
+
+let get_z = function Z z -> Some z | _ -> None
+let get_q = function Q q -> Some q | Z z -> Some (Q.of_z z) | _ -> None
+
+(* constructors *)
+
+(* statically allocated since they are tested with == *)
 let zero = Z Z.zero
 let one = Z Z.one
+
+let _Z z =
+  if Z.equal Z.zero z then zero else if Z.equal Z.one z then one else Z z
+
+let _Q q = if Z.equal Z.one (Q.den q) then _Z (Q.num q) else Q q
 let _Neg x = Neg x
 
 let _Add x y =
@@ -81,7 +94,13 @@ let _Select idx rcd = Select {idx; rcd}
 let _Update idx rcd elt = Update {idx; rcd; elt}
 let _Record es = Record es
 let _Ancestor i = Ancestor i
-let _Apply f es = Apply (f, es)
+
+let _Apply f es =
+  match
+    Funsym.eval ~equal:equal_trm ~get_z ~ret_z:_Z ~get_q ~ret_q:_Q f es
+  with
+  | Some c -> c
+  | None -> Apply (f, es)
 
 (*
  * Formulas

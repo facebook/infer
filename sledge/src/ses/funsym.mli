@@ -36,3 +36,15 @@ type t =
 
 val pp : t pp
 val uninterp : string -> t
+
+val eval :
+     equal:('a -> 'a -> bool)
+  -> get_z:('a -> Z.t option)
+  -> ret_z:(Z.t -> 'a)
+  -> get_q:('a -> Q.t option)
+  -> ret_q:(Q.t -> 'a)
+  -> t
+  -> 'a array
+  -> 'a option
+(** [eval ~equal ~get_z ~ret_z ~get_q ~ret_q f xs] evaluates the application
+    [f xs] using the provided embeddings of arguments into values. *)
