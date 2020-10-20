@@ -10,3 +10,13 @@ void nsordered_set_iterate_linear(NSOrderedSet* ordered_set) {
   for (id item in ordered_set) {
   }
 }
+
+void nsordered_set_empty_constant() {
+  NSOrderedSet* ordered_set = [NSOrderedSet orderedSet];
+  nsordered_set_iterate_linear(ordered_set);
+}
+
+void nsordered_set_with_array_linear(NSArray* array) {
+  NSOrderedSet* ordered_set = [NSOrderedSet orderedSetWithArray:array];
+  nsordered_set_iterate_linear(ordered_set);
+}
