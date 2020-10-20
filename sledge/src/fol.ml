@@ -575,7 +575,8 @@ let ppx_f strength fs fml =
     | Or (x, y) -> pf "(%a@ @<2>∨ %a)" pp x pp y
     | Iff (x, y) -> pf "(%a@ <=> %a)" pp x pp y
     | Xor (x, y) -> pf "(%a@ xor %a)" pp x pp y
-    | Cond {cnd; pos; neg} -> pf "(%a@ ? %a@ : %a)" pp cnd pp pos pp neg
+    | Cond {cnd; pos; neg} ->
+        pf "@[<hv 1>(%a@ ? %a@ : %a)@]" pp cnd pp pos pp neg
     | UPosLit (p, x) -> pf "%a(%a)" Predsym.pp p pp_t x
     | UNegLit (p, x) -> pf "@<1>¬%a(%a)" Predsym.pp p pp_t x
   in
