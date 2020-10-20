@@ -31,6 +31,7 @@ module Funsym = struct
     | Signed of int
     | Unsigned of int
     | Convert of {src: Llair.Typ.t; dst: Llair.Typ.t}
+    | External of Ses.Term.Funsym.t
   [@@deriving compare, equal, sexp]
 
   let pp fs f =
@@ -52,6 +53,7 @@ module Funsym = struct
     | Signed n -> pf "(s%i)" n
     | Unsigned n -> pf "(u%i)" n
     | Convert {src; dst} -> pf "(%a)(%a)" Llair.Typ.pp dst Llair.Typ.pp src
+    | External sym -> pf "%a" Ses.Term.Funsym.pp sym
 end
 
 (*
@@ -942,6 +944,13 @@ module Term = struct
 
   let ite ~cnd ~thn ~els = ite cnd thn els
 
+  (* uninterpreted *)
+
+  let apply sym args =
+    apNt
+      (fun es -> _Apply (Funsym.External sym) (_Tuple (Array.of_list es)))
+      args
+
   (** Destruct *)
 
   let d_int = function `Trm (Z z) -> Some z | _ -> None
@@ -1337,6 +1346,8 @@ and of_ses : Ses.Term.t -> exp =
       IArray.foldi ~init elts ~f:(fun i rcd e ->
           update ~rcd ~idx:(integer (Z.of_int i)) ~elt:(of_ses e) )
   | RecRecord i -> uap0 (RecRecord i)
+  | Apply (sym, args) ->
+      apply sym (Array.map ~f:of_ses (IArray.to_array args))
 
 let f_of_ses e = embed_into_fml (of_ses e)
 

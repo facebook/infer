@@ -9,6 +9,18 @@
 
 [@@@warning "+9"]
 
+module Funsym : sig
+  type t [@@deriving compare, equal, sexp]
+
+  val make : string -> t
+  val pp : t pp
+end = struct
+  type t = string [@@deriving compare, equal, sexp]
+
+  let make s = s
+  let pp = Format.pp_print_string
+end
+
 type op1 =
   | Signed of {bits: int}
   | Unsigned of {bits: int}
@@ -75,6 +87,7 @@ and T : sig
     | Integer of {data: Z.t}
     | Rational of {data: Q.t}
     | RecRecord of int
+    | Apply of Funsym.t * t iarray
   [@@deriving compare, equal, sexp]
 end = struct
   type set = Set.t [@@deriving compare, equal, sexp]
@@ -95,6 +108,7 @@ end = struct
     | Integer of {data: Z.t}
     | Rational of {data: Q.t}
     | RecRecord of int
+    | Apply of Funsym.t * t iarray
   [@@deriving compare, equal, sexp]
 
   (* Note: solve (and invariant) requires Qset.min_elt to return a
@@ -305,6 +319,8 @@ let rec ppx strength fs term =
     | Ap2 (Update idx, rcd, elt) ->
         pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
     | RecRecord i -> pf "(rec_record %i)" i
+    | Apply (sym, args) ->
+        pf "(%a@ %a)" Funsym.pp sym (IArray.pp "@ " pp) args
   in
   pp fs term
   [@@warning "-9"]
@@ -901,6 +917,10 @@ let simp_select idx rcd = Ap1 (Select idx, rcd)
 let simp_update idx rcd elt = Ap2 (Update idx, rcd, elt)
 let simp_rec_record i = RecRecord i
 
+(* uninterpreted *)
+
+let simp_apply sym args = Apply (sym, args)
+
 (* dispatching for normalization and invariant checking *)
 
 let norm1 op x =
@@ -982,6 +1002,7 @@ let record elts = normN Record elts
 let select ~rcd ~idx = norm1 (Select idx) rcd
 let update ~rcd ~idx ~elt = norm2 (Update idx) rcd elt
 let rec_record i = simp_rec_record i |> check invariant
+let apply sym args = simp_apply sym args |> check invariant
 
 let rec binary mk x y = mk (of_exp x) (of_exp y)
 
@@ -1058,9 +1079,9 @@ let map e ~f =
     let z' = f z in
     if x' == x && y' == y && z' == z then e else norm3 op x' y' z'
   in
-  let mapN op ~f xs =
+  let mapN mk ~f xs =
     let xs' = IArray.map_endo ~f xs in
-    if xs' == xs then e else normN op xs'
+    if xs' == xs then e else mk xs'
   in
   let map_set mk ~f args =
     let args' = Set.map ~f args in
@@ -1078,7 +1099,8 @@ let map e ~f =
   | Ap1 (op, x) -> map1 op ~f x
   | Ap2 (op, x, y) -> map2 op ~f x y
   | Ap3 (op, x, y, z) -> map3 op ~f x y z
-  | ApN (op, xs) -> mapN op ~f xs
+  | ApN (op, xs) -> mapN (normN op) ~f xs
+  | Apply (sym, xs) -> mapN (simp_apply sym) ~f xs
   | Var _ | Label _ | Float _ | Integer _ | Rational _ | RecRecord _ -> e
 
 let fold_map e ~init ~f =
@@ -1130,7 +1152,7 @@ let iter e ~f =
       f x ;
       f y ;
       f z
-  | ApN (_, xs) -> IArray.iter ~f xs
+  | ApN (_, xs) | Apply (_, xs) -> IArray.iter ~f xs
   | And args | Or args -> Set.iter ~f args
   | Add args | Mul args -> Qset.iter ~f:(fun arg _ -> f arg) args
   | Var _ | Label _ | Float _ | Integer _ | Rational _ | RecRecord _ -> ()
@@ -1140,7 +1162,7 @@ let exists e ~f =
   | Ap1 (_, x) -> f x
   | Ap2 (_, x, y) -> f x || f y
   | Ap3 (_, x, y, z) -> f x || f y || f z
-  | ApN (_, xs) -> IArray.exists ~f xs
+  | ApN (_, xs) | Apply (_, xs) -> IArray.exists ~f xs
   | And args | Or args -> Set.exists ~f args
   | Add args | Mul args -> Qset.exists ~f:(fun arg _ -> f arg) args
   | Var _ | Label _ | Float _ | Integer _ | Rational _ | RecRecord _ ->
@@ -1151,7 +1173,7 @@ let for_all e ~f =
   | Ap1 (_, x) -> f x
   | Ap2 (_, x, y) -> f x && f y
   | Ap3 (_, x, y, z) -> f x && f y && f z
-  | ApN (_, xs) -> IArray.for_all ~f xs
+  | ApN (_, xs) | Apply (_, xs) -> IArray.for_all ~f xs
   | And args | Or args -> Set.for_all ~f args
   | Add args | Mul args -> Qset.for_all ~f:(fun arg _ -> f arg) args
   | Var _ | Label _ | Float _ | Integer _ | Rational _ | RecRecord _ -> true
@@ -1161,7 +1183,8 @@ let fold e ~init:s ~f =
   | Ap1 (_, x) -> f x s
   | Ap2 (_, x, y) -> f y (f x s)
   | Ap3 (_, x, y, z) -> f z (f y (f x s))
-  | ApN (_, xs) -> IArray.fold ~f:(fun s x -> f x s) xs ~init:s
+  | ApN (_, xs) | Apply (_, xs) ->
+      IArray.fold ~f:(fun s x -> f x s) xs ~init:s
   | And args | Or args -> Set.fold ~f:(fun s e -> f e s) args ~init:s
   | Add args | Mul args -> Qset.fold ~f:(fun e _ s -> f e s) args ~init:s
   | Var _ | Label _ | Float _ | Integer _ | Rational _ | RecRecord _ -> s
@@ -1176,7 +1199,7 @@ let rec iter_terms e ~f =
       iter_terms ~f x ;
       iter_terms ~f y ;
       iter_terms ~f z
-  | ApN (_, xs) -> IArray.iter ~f:(iter_terms ~f) xs
+  | ApN (_, xs) | Apply (_, xs) -> IArray.iter ~f:(iter_terms ~f) xs
   | And args | Or args -> Set.iter args ~f:(iter_terms ~f)
   | Add args | Mul args ->
       Qset.iter args ~f:(fun arg _ -> iter_terms ~f arg)
@@ -1191,7 +1214,8 @@ let rec fold_terms e ~init:s ~f =
     | Ap1 (_, x) -> fold_terms f x s
     | Ap2 (_, x, y) -> fold_terms f y (fold_terms f x s)
     | Ap3 (_, x, y, z) -> fold_terms f z (fold_terms f y (fold_terms f x s))
-    | ApN (_, xs) -> IArray.fold ~f:(fun s x -> fold_terms f x s) xs ~init:s
+    | ApN (_, xs) | Apply (_, xs) ->
+        IArray.fold ~f:(fun s x -> fold_terms f x s) xs ~init:s
     | And args | Or args ->
         Set.fold args ~init:s ~f:(fun s x -> fold_terms f x s)
     | Add args | Mul args ->
@@ -1227,7 +1251,8 @@ let rec height = function
   | Ap1 (_, a) -> 1 + height a
   | Ap2 (_, a, b) -> 1 + max (height a) (height b)
   | Ap3 (_, a, b, c) -> 1 + max (height a) (max (height b) (height c))
-  | ApN (_, v) -> 1 + IArray.fold v ~init:0 ~f:(fun m a -> max m (height a))
+  | ApN (_, v) | Apply (_, v) ->
+      1 + IArray.fold v ~init:0 ~f:(fun m a -> max m (height a))
   | And bs | Or bs ->
       1 + Set.fold bs ~init:0 ~f:(fun m a -> max m (height a))
   | Add qs | Mul qs ->

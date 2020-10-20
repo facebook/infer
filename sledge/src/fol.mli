@@ -68,6 +68,9 @@ module rec Term : sig
   val tuple : t array -> t
   val project : ary:int -> idx:int -> t -> t
 
+  (* uninterpreted *)
+  val apply : Ses.Term.Funsym.t -> t array -> t
+
   (* if-then-else *)
   val ite : cnd:Formula.t -> thn:t -> els:t -> t
 

@@ -10,6 +10,13 @@
     Pure (heap-independent) terms are arithmetic, bitwise-logical, etc.
     operations over literal values and variables. *)
 
+module Funsym : sig
+  type t [@@deriving compare, equal, sexp]
+
+  val make : string -> t
+  val pp : t pp
+end
+
 type op1 =
   | Signed of {bits: int}
       (** [Ap1 (Signed {bits= n}, arg)] is [arg] interpreted as an [n]-bit
@@ -91,6 +98,8 @@ and T : sig
     | Integer of {data: Z.t}  (** Integer constant *)
     | Rational of {data: Q.t}  (** Rational constant *)
     | RecRecord of int  (** Reference to ancestor recursive record *)
+    | Apply of Funsym.t * t iarray
+        (** Uninterpreted function application *)
   [@@deriving compare, equal, sexp]
 end
 
@@ -185,6 +194,9 @@ val record : t iarray -> t
 val select : rcd:t -> idx:int -> t
 val update : rcd:t -> idx:int -> elt:t -> t
 val rec_record : int -> t
+
+(* uninterpreted *)
+val apply : Funsym.t -> t iarray -> t
 
 (* convert *)
 val of_exp : Llair.Exp.t -> t
