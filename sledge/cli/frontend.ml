@@ -43,7 +43,8 @@ exception Invalid_llvm of string
 let invalid_llvm : string -> 'a =
  fun msg ->
   let first_line =
-    Option.value_map ~default:msg ~f:(String.prefix msg)
+    Option.value_map ~default:msg
+      ~f:(fun i -> String.take i msg)
       (String.index msg '\n')
   in
   Format.printf "@\n%s@\n" msg ;
@@ -136,8 +137,8 @@ open struct
                     fname ^ ".void"
                 | Some count ->
                     String.Tbl.set void_tbl ~key:fname ~data:(count + 1) ;
-                    String.concat_array
-                      [|fname; ".void."; Int.to_string count|] )
+                    String.concat ~sep:""
+                      [fname; ".void."; Int.to_string count] )
             | _ -> (
               match Llvm.value_name llv with
               | "" ->
@@ -149,7 +150,7 @@ open struct
                 match Int.of_string name with
                 | _ ->
                     (* escape to avoid clash with names of anonymous values *)
-                    String.concat_array [|"\""; name; "\""|]
+                    String.concat ~sep:"" ["\""; name; "\""]
                 | exception _ -> name ) )
           in
           SymTbl.set sym_tbl ~key:llv ~data:(name, loc)
@@ -308,7 +309,7 @@ and xlate_type_opt : x -> Llvm.lltype -> Typ.t option =
 let i32 x = xlate_type x (Llvm.i32_type x.llcontext)
 
 let suffix_after_last_space : string -> string =
- fun str -> String.drop_prefix str (String.rindex_exn str ' ' + 1)
+ fun str -> String.drop (String.rindex_exn str ' ' + 1) str
 
 let xlate_int : x -> Llvm.llvalue -> Exp.t =
  fun x llv ->
@@ -1009,7 +1010,7 @@ let xlate_instr :
       match xlate_intrinsic_exp fname with
       | Some intrinsic -> inline_or_move (intrinsic x)
       | None -> (
-        match String.split fname ~on:'.' with
+        match String.split_on_char fname ~by:'.' with
         | ["__llair_throw"] ->
             let pre, exc = xlate_value x (Llvm.operand instr 0) in
             emit_term ~prefix:(pop loc @ pre) (Term.throw ~exc ~loc)
@@ -1136,7 +1137,7 @@ let xlate_instr :
           Array.length (Llvm.param_types (Llvm.element_type lltyp)) )
       in
       (* intrinsics *)
-      match String.split fname ~on:'.' with
+      match String.split_on_char fname ~by:'.' with
       | _ when Option.is_some (xlate_intrinsic_exp fname) ->
           let prefix, dst, blocks = xlate_jump x instr return_blk loc [] in
           emit_term ~prefix (Term.goto ~dst ~loc) ~blocks
@@ -1596,8 +1597,8 @@ let translate ~models ~fuzzer ~internalize : string list -> Llair.program =
       (fun functions llf ->
         let name = Llvm.value_name llf in
         if
-          String.is_prefix name ~prefix:"__llair_"
-          || String.is_prefix name ~prefix:"llvm."
+          String.prefix name ~pre:"__llair_"
+          || String.prefix name ~pre:"llvm."
         then functions
         else xlate_function x llf :: functions )
       [] llmodule

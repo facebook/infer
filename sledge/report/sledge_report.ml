@@ -306,9 +306,8 @@ let write_html ranges rows chan =
       let name =
         if String.length name <= max_name_length then name
         else
-          String.prefix name (max_name_length / 2)
-          ^ "…"
-          ^ String.suffix name (max_name_length / 2)
+          let len = max_name_length / 2 in
+          String.take len name ^ "…" ^ String.rtake len name
       in
       let time ppf t =
         Printf.fprintf ppf
@@ -332,7 +331,7 @@ let write_html ranges rows chan =
       let peakd = delta ranges.max_peak ranges.pct_peak in
       let pf_status ppf s =
         let status_to_string = Format.asprintf "%a" Report.pp_status in
-        Printf.fprintf ppf "%s" (String.prefix (status_to_string s) 50)
+        Printf.fprintf ppf "%s" (String.take 50 (status_to_string s))
       in
       let stat ppf = function
         | [] ->

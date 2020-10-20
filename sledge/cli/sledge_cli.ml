@@ -206,8 +206,7 @@ let llvm_grp =
   let translate_inputs =
     let expand_argsfile input =
       if Char.equal input.[0] '@' then
-        In_channel.with_file ~f:In_channel.input_lines
-          (String.subo ~pos:1 input)
+        In_channel.with_file ~f:In_channel.input_lines (String.drop 1 input)
       else [input]
     in
     let open Command.Param in

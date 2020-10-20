@@ -739,7 +739,7 @@ let intrinsic ~skip_throw :
  fun pre areturn intrinsic actuals ->
   let name =
     let n = Var.name intrinsic in
-    match String.index n '.' with None -> n | Some i -> String.prefix n i
+    match String.index n '.' with None -> n | Some i -> String.take i n
   in
   let skip pre = Some (Some pre) in
   ( match (areturn, name, actuals) with
