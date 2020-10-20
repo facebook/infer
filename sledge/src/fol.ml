@@ -19,21 +19,26 @@ module Predsym = Ses.Predsym
 (** Terms, denoting functions from structures to values, built from
     variables and applications of function symbols from various theories. *)
 type trm =
+  (* variables *)
   | Var of {id: int; name: string}
+  (* arithmetic *)
   | Z of Z.t
   | Q of Q.t
   | Neg of trm
   | Add of trm * trm
   | Sub of trm * trm
   | Mulq of Q.t * trm
+  (* sequences (of non-fixed size) *)
   | Splat of trm
   | Sized of {seq: trm; siz: trm}
   | Extract of {seq: trm; off: trm; len: trm}
   | Concat of trm array
+  (* records (with fixed indices) *)
   | Select of {idx: int; rcd: trm}
   | Update of {idx: int; rcd: trm; elt: trm}
   | Record of trm array
   | Ancestor of int
+  (* uninterpreted *)
   | Apply of Funsym.t * trm array
 [@@deriving compare, equal, sexp]
 
@@ -87,21 +92,26 @@ let _Apply f es = Apply (f, es)
     first-order logic connectives. *)
 module Fml : sig
   type fml = private
+    (* propositional constants *)
     | Tt
     | Ff
+    (* equality *)
     | Eq of trm * trm
     | Dq of trm * trm
+    (* arithmetic *)
     | Eq0 of trm  (** [Eq0(x)] iff x = 0 *)
     | Dq0 of trm  (** [Dq0(x)] iff x ≠ 0 *)
     | Gt0 of trm  (** [Gt0(x)] iff x > 0 *)
     | Ge0 of trm  (** [Ge0(x)] iff x ≥ 0 *)
     | Lt0 of trm  (** [Lt0(x)] iff x < 0 *)
     | Le0 of trm  (** [Le0(x)] iff x ≤ 0 *)
+    (* propositional connectives *)
     | And of fml * fml
     | Or of fml * fml
     | Iff of fml * fml
     | Xor of fml * fml
     | Cond of {cnd: fml; pos: fml; neg: fml}
+    (* uninterpreted literals *)
     | UPosLit of Predsym.t * trm array
     | UNegLit of Predsym.t * trm array
   [@@deriving compare, equal, sexp]

@@ -41,26 +41,24 @@ module rec Term : sig
   (* variables *)
   val var : Var.t -> t
 
-  (* constants *)
+  (* arithmetic *)
   val zero : t
   val one : t
   val integer : Z.t -> t
   val rational : Q.t -> t
-
-  (* arithmetic *)
   val neg : t -> t
   val add : t -> t -> t
   val sub : t -> t -> t
   val mulq : Q.t -> t -> t
   val mul : t -> t -> t
 
-  (* sequences *)
+  (* sequences (of non-fixed size) *)
   val splat : t -> t
   val sized : seq:t -> siz:t -> t
   val extract : seq:t -> off:t -> len:t -> t
   val concat : t array -> t
 
-  (* records *)
+  (* records (with fixed indices) *)
   val select : rcd:t -> idx:int -> t
   val update : rcd:t -> idx:int -> elt:t -> t
   val record : t array -> t
@@ -115,9 +113,11 @@ and Formula : sig
   val tt : t
   val ff : t
 
-  (* comparisons *)
+  (* equality *)
   val eq : Term.t -> Term.t -> t
   val dq : Term.t -> Term.t -> t
+
+  (* arithmetic *)
   val eq0 : Term.t -> t
   val dq0 : Term.t -> t
   val gt0 : Term.t -> t
