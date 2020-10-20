@@ -10,13 +10,6 @@
     Pure (heap-independent) terms are arithmetic, bitwise-logical, etc.
     operations over literal values and variables. *)
 
-module Funsym : sig
-  type t [@@deriving compare, equal, sexp]
-
-  val make : string -> t
-  val pp : t pp
-end
-
 type op1 =
   | Signed of {bits: int}
       (** [Ap1 (Signed {bits= n}, arg)] is [arg] interpreted as an [n]-bit

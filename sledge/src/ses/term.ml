@@ -9,18 +9,6 @@
 
 [@@@warning "+9"]
 
-module Funsym : sig
-  type t [@@deriving compare, equal, sexp]
-
-  val make : string -> t
-  val pp : t pp
-end = struct
-  type t = string [@@deriving compare, equal, sexp]
-
-  let make s = s
-  let pp = Format.pp_print_string
-end
-
 type op1 =
   | Signed of {bits: int}
   | Unsigned of {bits: int}

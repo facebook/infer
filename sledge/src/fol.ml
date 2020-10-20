@@ -9,52 +9,7 @@ let pp_boxed fs fmt =
   Format.pp_open_box fs 2 ;
   Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
 
-(*
- * (Uninterpreted) Function Symbols
- *)
-
-module Funsym = struct
-  type t =
-    | Float of string
-    | Label of {parent: string; name: string}
-    | Mul
-    | Div
-    | Rem
-    | EmptyRecord
-    | RecRecord of int
-    | BitAnd
-    | BitOr
-    | BitXor
-    | BitShl
-    | BitLshr
-    | BitAshr
-    | Signed of int
-    | Unsigned of int
-    | Convert of {src: Llair.Typ.t; dst: Llair.Typ.t}
-    | External of Ses.Term.Funsym.t
-  [@@deriving compare, equal, sexp]
-
-  let pp fs f =
-    let pf fmt = pp_boxed fs fmt in
-    match f with
-    | Float s -> pf "%s" s
-    | Label {name} -> pf "%s" name
-    | Mul -> pf "@<1>×"
-    | Div -> pf "/"
-    | Rem -> pf "%%"
-    | EmptyRecord -> pf "{}"
-    | RecRecord i -> pf "(rec_record %i)" i
-    | BitAnd -> pf "&&"
-    | BitOr -> pf "||"
-    | BitXor -> pf "xor"
-    | BitShl -> pf "shl"
-    | BitLshr -> pf "lshr"
-    | BitAshr -> pf "ashr"
-    | Signed n -> pf "(s%i)" n
-    | Unsigned n -> pf "(u%i)" n
-    | Convert {src; dst} -> pf "(%a)(%a)" Llair.Typ.pp dst Llair.Typ.pp src
-    | External sym -> pf "%a" Ses.Term.Funsym.pp sym
-end
+module Funsym = Ses.Funsym
 
 (*
  * Terms
@@ -947,9 +902,7 @@ module Term = struct
   (* uninterpreted *)
 
   let apply sym args =
-    apNt
-      (fun es -> _Apply (Funsym.External sym) (_Tuple (Array.of_list es)))
-      args
+    apNt (fun es -> _Apply sym (_Tuple (Array.of_list es))) args
 
   (** Destruct *)
 
@@ -1188,6 +1141,8 @@ let rec t_to_ses : trm -> Ses.Term.t = function
   | Apply (Unsigned n, Tuple [|x|]) -> Ses.Term.unsigned n (t_to_ses x)
   | Apply (Convert {src; dst}, Tuple [|x|]) ->
       Ses.Term.convert src ~to_:dst (t_to_ses x)
+  | Apply (sym, Tuple xs) ->
+      Ses.Term.apply sym (IArray.of_array (Array.map ~f:t_to_ses xs))
   | (Apply _ | Tuple _ | Project _) as t ->
       fail "cannot translate to Ses: %a" pp_t t ()
 
