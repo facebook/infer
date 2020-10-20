@@ -91,6 +91,8 @@ codetoanalyze/objc/performance/NSString.m, string_is_equal_to_string_linear, 4 +
 codetoanalyze/objc/performance/NSString.m, string_length_linear, 3 + 3 ⋅ s.length.ub + 4 ⋅ (s.length.ub + 1),  OnUIThread:false, [{s.length.ub + 1},Loop,{s.length.ub},Loop]
 codetoanalyze/objc/performance/NSString.m, string_with_utf8_string_linear, 7 + 3 ⋅ p->strlen.ub + p->strlen.ub + 4 ⋅ (p->strlen.ub + 1),  OnUIThread:false, [{p->strlen.ub + 1},Loop,{p->strlen.ub},Modeled call to NSString.stringWithUTF8String:,{p->strlen.ub},Loop]
 codetoanalyze/objc/performance/NSString.m, substring_no_end_linear, 10 + 6 ⋅ (-x + s.length.ub),  OnUIThread:false, [{-x + s.length.ub},Loop]
+codetoanalyze/objc/performance/NSURL.m, get_resource_value_constant, 16,  OnUIThread:false, []
+codetoanalyze/objc/performance/NSURL.m, path_linear, 6 + 3 ⋅ url.length.ub + 3 ⋅ (url.length.ub + 1),  OnUIThread:false, [{url.length.ub + 1},Loop,{url.length.ub},Loop]
 codetoanalyze/objc/performance/araii.m, Araii.buffer, 4,  OnUIThread:false, []
 codetoanalyze/objc/performance/araii.m, Araii.dealloc, 4,  OnUIThread:false, []
 codetoanalyze/objc/performance/araii.m, Araii.initWithBuffer, 15,  OnUIThread:false, []

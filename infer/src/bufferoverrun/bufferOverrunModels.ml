@@ -1169,6 +1169,12 @@ module NSCollection = struct
     {exec; check= no_check}
 end
 
+module NSURL = struct
+  let get_resource_value =
+    let exec _model_env ~ret:(id, _) mem = model_by_value (Dom.Val.of_itv Itv.zero_one) id mem in
+    {exec; check= no_check}
+end
+
 module JavaClass = struct
   let decl_array {pname; node_hash; location} ~ret:(ret_id, _) length mem =
     let loc =
@@ -1758,6 +1764,9 @@ module Call = struct
       ; +PatternMatch.ObjectiveC.implements "NSString"
         &:: "initWithBytes:length:encoding:" <>$ capt_exp $+ capt_exp $+ capt_exp $+ any_arg
         $!--> NSString.init_with_c_string_with_len
+      ; +PatternMatch.ObjectiveC.implements "NSURL"
+        &:: "getResourceValue:forKey:error:" &--> NSURL.get_resource_value
+      ; +PatternMatch.ObjectiveC.implements "NSURL" &:: "path" $ capt_exp $--> id
       ; (* C++ models *)
         -"boost" &:: "split"
         $ capt_arg_of_typ (-"std" &:: "vector")
