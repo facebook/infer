@@ -141,10 +141,7 @@ let restore_global_state st =
 (** reference to log errors only at the innermost recursive call *)
 let logged_error = ref false
 
-let analyze callee_summary =
-  BackendStats.incr_ondemand_procs_analyzed () ;
-  let callee_pdesc = Summary.get_proc_desc callee_summary in
-  let exe_env = Option.value_exn !exe_env_ref in
+let update_taskbar callee_pdesc =
   let proc_name = Procdesc.get_proc_name callee_pdesc in
   let source_file = (Procdesc.get_attributes callee_pdesc).ProcAttributes.translation_unit in
   let t0 = Mtime_clock.now () in
@@ -156,7 +153,12 @@ let analyze callee_summary =
     F.asprintf "%s%a: %a" nesting SourceFile.pp source_file Procname.pp proc_name
   in
   current_taskbar_status := Some (t0, status) ;
-  !ProcessPoolState.update_status t0 status ;
+  !ProcessPoolState.update_status t0 status
+
+
+let analyze callee_summary =
+  BackendStats.incr_ondemand_procs_analyzed () ;
+  let exe_env = Option.value_exn !exe_env_ref in
   Callbacks.iterate_procedure_callbacks exe_env callee_summary
 
 
@@ -175,6 +177,7 @@ let run_proc_analysis ~caller_pdesc callee_pdesc =
       Procname.pp callee_pname ;
   let preprocess () =
     incr nesting ;
+    update_taskbar callee_pdesc ;
     Preanal.do_preanalysis (Option.value_exn !exe_env_ref) callee_pdesc ;
     if Config.debug_mode then
       DotCfg.emit_proc_desc (Procdesc.get_attributes callee_pdesc).translation_unit callee_pdesc
