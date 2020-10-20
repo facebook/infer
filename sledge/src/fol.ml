@@ -1412,22 +1412,22 @@ module Context = struct
 
   let pp fs r = ppx_classes (fun _ -> None) fs (classes r)
 
-  let ppx_diff var_strength fs parent_ctx fml ctx =
-    let clss = diff_classes ctx parent_ctx in
+  let ppx var_strength fs clss noneqs =
     let first = Term.Map.is_empty clss in
     if not first then Format.fprintf fs "  " ;
     ppx_classes var_strength fs clss ;
-    let fml =
-      let normalizef x e = f_ses_map (Ses.Equality.normalize x) e in
-      let fml' = normalizef ctx fml in
-      if Formula.(equal tt fml') then [] else [fml']
-    in
     List.pp
       ~pre:(if first then "@[  " else "@ @[@<2>∧ ")
       "@ @<2>∧ "
       (Formula.ppx var_strength)
-      fs fml ~suf:"@]" ;
-    first && List.is_empty fml
+      fs noneqs ~suf:"@]" ;
+    first && List.is_empty noneqs
+
+  let ppx_diff var_strength fs parent_ctx fml ctx =
+    let fml' = f_ses_map (Ses.Equality.normalize ctx) fml in
+    ppx var_strength fs
+      (diff_classes ctx parent_ctx)
+      (if Formula.(equal tt fml') then [] else [fml'])
 
   (* Construct *)
 
