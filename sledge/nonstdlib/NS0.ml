@@ -23,17 +23,21 @@ include Iter.Import
 
 (** Specialize polymorphic comparison to int *)
 
-external ( = ) : int -> int -> bool = "%equal"
-external ( <> ) : int -> int -> bool = "%notequal"
-external ( < ) : int -> int -> bool = "%lessthan"
-external ( > ) : int -> int -> bool = "%greaterthan"
-external ( <= ) : int -> int -> bool = "%lessequal"
-external ( >= ) : int -> int -> bool = "%greaterequal"
-external compare : int -> int -> int = "%compare"
-external equal : int -> int -> bool = "%equal"
+module Int_compare = struct
+  external ( = ) : int -> int -> bool = "%equal"
+  external ( <> ) : int -> int -> bool = "%notequal"
+  external ( < ) : int -> int -> bool = "%lessthan"
+  external ( > ) : int -> int -> bool = "%greaterthan"
+  external ( <= ) : int -> int -> bool = "%lessequal"
+  external ( >= ) : int -> int -> bool = "%greaterequal"
+  external compare : int -> int -> int = "%compare"
+  external equal : int -> int -> bool = "%equal"
 
-let min x y = if x <= y then x else y
-let max x y = if x >= y then x else y
+  let min x y = if x <= y then x else y
+  let max x y = if x >= y then x else y
+end
+
+include Int_compare
 
 (** Polymorphic comparison and hashing *)
 module Poly = struct
