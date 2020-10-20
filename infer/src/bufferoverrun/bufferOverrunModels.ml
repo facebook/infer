@@ -832,7 +832,7 @@ module AbstractCollection (Lang : Lang) = struct
 
   let get_collection_internal_array_locs coll_id mem =
     let coll = Dom.Mem.find (Loc.of_id coll_id) mem in
-    Dom.Val.get_pow_loc coll |> PowLoc.append_field ~fn:Lang.collection_internal_array_field
+    Dom.Val.get_all_locs coll |> PowLoc.append_field ~fn:Lang.collection_internal_array_field
 
 
   let get_collection_internal_elements_locs coll_id mem =
@@ -1022,12 +1022,17 @@ module AbstractCollection (Lang : Lang) = struct
     {exec; check= check_index ~last_included:false coll_id index_exp}
 
 
-  let get_at_index coll_id index_exp =
+  let get_any_index coll_id =
     let exec _model_env ~ret:(ret_id, _) mem =
       let locs = get_collection_internal_elements_locs coll_id mem in
       let v = Dom.Mem.find_set locs mem in
       model_by_value v ret_id mem
     in
+    {exec; check= no_check}
+
+
+  let get_at_index coll_id index_exp =
+    let {exec} = get_any_index coll_id in
     {exec; check= check_index ~last_included:false coll_id index_exp}
 end
 
@@ -1708,6 +1713,8 @@ module Call = struct
         $--> NSCollection.new_collection_by_add_all
       ; +PatternMatch.ObjectiveC.implements "NSEnumerator"
         &:: "nextObject" <>$ capt_exp $--> NSCollection.next_object
+      ; +PatternMatch.ObjectiveC.implements "NSKeyedUnarchiver"
+        &:: "decodeObjectForKey:" $ capt_var_exn $+...$--> NSCollection.get_any_index
       ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
         &:: "initWithCapacity:" <>$ capt_var_exn $+ capt_exp
         $--> NSCollection.new_collection_of_size
