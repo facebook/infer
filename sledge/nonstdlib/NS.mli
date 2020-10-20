@@ -146,8 +146,9 @@ include module type of IArray.Import
 module Set = Set
 module Map = Map
 module Multiset = Multiset
-module HashTable = HashTable
+module FHeap = Fheap [@@warning "-49"]
 module HashSet = HashSet
+module HashTable = HashTable
 module HashQueue = Core_kernel.Hash_queue
 
 (** Input / Output *)

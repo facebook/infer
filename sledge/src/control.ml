@@ -196,7 +196,7 @@ module Make (Dom : Domain_intf.Dom) = struct
     end
 
     type priority = int * Edge.t [@@deriving compare]
-    type priority_queue = priority Fheap.t
+    type priority_queue = priority FHeap.t
     type waiting_states = (Dom.t * Depths.t) list Llair.Block.Map.t
     type t = priority_queue * waiting_states * int
     type x = Depths.t -> t -> t
@@ -207,7 +207,7 @@ module Make (Dom : Domain_intf.Dom) = struct
     let pp fs pq =
       Format.fprintf fs "@[%a@]"
         (List.pp " ::@ " pp_priority)
-        (Fheap.to_list pq)
+        (FHeap.to_list pq)
 
     let skip _ w = w
     let seq x y d w = y d (x d w)
@@ -221,7 +221,7 @@ module Make (Dom : Domain_intf.Dom) = struct
         [%Trace.info "prune: %i: %a" depth Edge.pp edge] ;
         work )
       else
-        let pq = Fheap.add pq (depth, edge) in
+        let pq = FHeap.add pq (depth, edge) in
         [%Trace.info "@[<6>enqueue %i: %a@ | %a@]" depth Edge.pp edge pp pq] ;
         let depths = Depths.set depths ~key:edge ~data:depth in
         let ws =
@@ -231,10 +231,10 @@ module Make (Dom : Domain_intf.Dom) = struct
 
     let init state curr bound =
       add ~retreating:false Stack.empty state curr Depths.empty
-        (Fheap.create ~cmp:compare_priority, empty_waiting_states, bound)
+        (FHeap.create ~cmp:compare_priority, empty_waiting_states, bound)
 
     let rec run ~f (pq0, ws, bnd) =
-      match Fheap.pop pq0 with
+      match FHeap.pop pq0 with
       | Some ((_, ({Edge.dst; stk} as edge)), pq) -> (
         match Llair.Block.Map.find_and_remove ws dst with
         | Some (q :: qs, ws) ->
