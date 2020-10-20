@@ -131,6 +131,10 @@ and Formula : sig
   val lt : Term.t -> Term.t -> t
   val le : Term.t -> Term.t -> t
 
+  (* uninterpreted *)
+  val uposlit : Ses.Predsym.t -> Term.t -> t
+  val uneglit : Ses.Predsym.t -> Term.t -> t
+
   (* connectives *)
   val not_ : t -> t
   val and_ : t -> t -> t

@@ -10,6 +10,7 @@ let pp_boxed fs fmt =
   Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
 
 module Funsym = Ses.Funsym
+module Predsym = Ses.Predsym
 
 (*
  * Terms
@@ -76,18 +77,6 @@ let _Update rcd idx elt = Update {rcd; idx; elt}
 let _Tuple es = Tuple es
 let _Project ary idx tup = Project {ary; idx; tup}
 let _Apply f a = Apply (f, a)
-
-(*
- * (Uninterpreted) Predicate Symbols
- *)
-
-module Predsym = struct
-  type t = Ordered [@@deriving compare, equal, hash, sexp]
-
-  let pp fs p =
-    let pf fmt = pp_boxed fs fmt in
-    match p with Ordered -> pf "ordered"
-end
 
 (*
  * Formulas
@@ -817,6 +806,11 @@ let apNt : (trm list -> trm) -> exp array -> exp =
     (fun xs -> `Trm (f xs))
     (Array.fold ~f:(fun xs x -> embed_into_cnd x :: xs) ~init:[] xs)
 
+let apNf : (trm list -> fml) -> exp iarray -> fml =
+ fun f xs ->
+  rev_mapN_cnd _Cond f
+    (IArray.fold ~f:(fun xs x -> embed_into_cnd x :: xs) ~init:[] xs)
+
 (*
  * Terms: exposed interface
  *)
@@ -989,6 +983,11 @@ module Formula = struct
 
   let lt a b = gt b a
   let le a b = ge b a
+
+  (* uninterpreted *)
+
+  let uposlit p e = ap1f (_UPosLit p) e
+  let uneglit p e = ap1f (_UNegLit p) e
 
   (* connectives *)
 
@@ -1164,11 +1163,11 @@ let rec f_to_ses : fml -> Ses.Term.t = function
   | Cond {cnd; pos; neg} ->
       Ses.Term.conditional ~cnd:(f_to_ses cnd) ~thn:(f_to_ses pos)
         ~els:(f_to_ses neg)
-  | UPosLit (Ordered, Tuple [|x; y|]) ->
-      Ses.Term.ord (t_to_ses x) (t_to_ses y)
-  | UNegLit (Ordered, Tuple [|x; y|]) ->
-      Ses.Term.uno (t_to_ses x) (t_to_ses y)
-  | (UPosLit (Ordered, _) | UNegLit (Ordered, _)) as f ->
+  | UPosLit (sym, Tuple args) ->
+      Ses.Term.poslit sym (IArray.of_array (Array.map ~f:t_to_ses args))
+  | UNegLit (sym, Tuple args) ->
+      Ses.Term.neglit sym (IArray.of_array (Array.map ~f:t_to_ses args))
+  | (UPosLit _ | UNegLit _) as f ->
       fail "cannot translate to Ses: %a" pp_f f ()
 
 let rec to_ses : exp -> Ses.Term.t = function
@@ -1196,10 +1195,11 @@ let uap1 f = ap1t (fun x -> Apply (f, Tuple [|x|]))
 let uap2 f = ap2t (fun x y -> Apply (f, Tuple [|x; y|]))
 let upos2 p = ap2f (fun x y -> _UPosLit p (Tuple [|x; y|]))
 let uneg2 p = ap2f (fun x y -> _UNegLit p (Tuple [|x; y|]))
+let uposN p = apNf (fun xs -> _UPosLit p (Tuple (Array.of_list xs)))
+let unegN p = apNf (fun xs -> _UNegLit p (Tuple (Array.of_list xs)))
 
 let rec uap_tt f a = uap1 f (of_ses a)
 and uap_ttt f a b = uap2 f (of_ses a) (of_ses b)
-and ap_ttf f a b = `Fml (f (of_ses a) (of_ses b))
 
 and ap2 mk_f mk_t a b =
   match (of_ses a, of_ses b) with
@@ -1238,8 +1238,8 @@ and of_ses : Ses.Term.t -> exp =
   | Ap2 (Dq, d, e) -> ap2_f xor dq d e
   | Ap2 (Lt, d, e) -> ap2_f (fun p q -> and_ (not_ p) q) lt d e
   | Ap2 (Le, d, e) -> ap2_f (fun p q -> or_ (not_ p) q) le d e
-  | Ap2 (Ord, d, e) -> ap_ttf (upos2 Ordered) d e
-  | Ap2 (Uno, d, e) -> ap_ttf (uneg2 Ordered) d e
+  | PosLit (p, es) -> `Fml (uposN p (IArray.map ~f:of_ses es))
+  | NegLit (p, es) -> `Fml (unegN p (IArray.map ~f:of_ses es))
   | Add sum -> (
     match Ses.Term.Qset.pop_min_elt sum with
     | None -> zero
@@ -1640,8 +1640,8 @@ module Term_of_Llair = struct
     | Ap2 (Ult, typ, d, e) -> usap_ttf lt typ d e
     | Ap2 (Uge, typ, d, e) -> usap_ttf ge typ d e
     | Ap2 (Ule, typ, d, e) -> usap_ttf le typ d e
-    | Ap2 (Ord, _, d, e) -> ap_ttf (upos2 Ordered) d e
-    | Ap2 (Uno, _, d, e) -> ap_ttf (uneg2 Ordered) d e
+    | Ap2 (Ord, _, d, e) -> ap_ttf (upos2 (Predsym.uninterp "ord")) d e
+    | Ap2 (Uno, _, d, e) -> ap_ttf (uneg2 (Predsym.uninterp "ord")) d e
     | Ap2 (Add, Integer {bits= 1; _}, p, q) -> ap_fff xor p q
     | Ap2 (Sub, Integer {bits= 1; _}, p, q) -> ap_fff xor p q
     | Ap2 (Mul, Integer {bits= 1; _}, p, q) -> ap_fff and_ p q

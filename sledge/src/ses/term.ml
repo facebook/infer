@@ -22,8 +22,6 @@ type op2 =
   | Dq
   | Lt
   | Le
-  | Ord
-  | Uno
   | Div
   | Rem
   | Xor
@@ -76,6 +74,8 @@ and T : sig
     | Rational of {data: Q.t}
     | RecRecord of int
     | Apply of Funsym.t * t iarray
+    | PosLit of Predsym.t * t iarray
+    | NegLit of Predsym.t * t iarray
   [@@deriving compare, equal, sexp]
 end = struct
   type set = Set.t [@@deriving compare, equal, sexp]
@@ -97,6 +97,8 @@ end = struct
     | Rational of {data: Q.t}
     | RecRecord of int
     | Apply of Funsym.t * t iarray
+    | PosLit of Predsym.t * t iarray
+    | NegLit of Predsym.t * t iarray
   [@@deriving compare, equal, sexp]
 
   (* Note: solve (and invariant) requires Qset.min_elt to return a
@@ -268,8 +270,6 @@ let rec ppx strength fs term =
     | Ap2 (Dq, x, y) -> pf "(%a@ @<2>≠ %a)" pp x pp y
     | Ap2 (Lt, x, y) -> pf "(%a@ < %a)" pp x pp y
     | Ap2 (Le, x, y) -> pf "(%a@ @<2>≤ %a)" pp x pp y
-    | Ap2 (Ord, x, y) -> pf "(%a@ ord %a)" pp x pp y
-    | Ap2 (Uno, x, y) -> pf "(%a@ uno %a)" pp x pp y
     | Add args ->
         let pp_poly_term fs (monomial, coefficient) =
           match monomial with
@@ -309,6 +309,10 @@ let rec ppx strength fs term =
     | RecRecord i -> pf "(rec_record %i)" i
     | Apply (sym, args) ->
         pf "(%a@ %a)" Funsym.pp sym (IArray.pp "@ " pp) args
+    | PosLit (sym, args) ->
+        pf "(%a@ %a)" Predsym.pp sym (IArray.pp "@ " pp) args
+    | NegLit (sym, args) ->
+        pf "¬(%a@ %a)" Predsym.pp sym (IArray.pp "@ " pp) args
   in
   pp fs term
   [@@warning "-9"]
@@ -743,6 +747,9 @@ and simp_concat xs =
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp]
 
+let simp_poslit sym args = PosLit (sym, args)
+let simp_neglit sym args = NegLit (sym, args)
+
 (* comparison *)
 
 let simp_lt x y =
@@ -756,9 +763,6 @@ let simp_le x y =
   | Integer {data= i}, Integer {data= j} -> bool (Z.leq i j)
   | Rational {data= i}, Rational {data= j} -> bool (Q.leq i j)
   | _ -> Ap2 (Le, x, y)
-
-let simp_ord x y = Ap2 (Ord, x, y)
-let simp_uno x y = Ap2 (Uno, x, y)
 
 let rec simp_eq x y =
   match
@@ -839,10 +843,10 @@ and simp_not term =
   | Ap2 (Lt, x, y) -> simp_le y x
   (* ¬(x <= y) ==> y < x *)
   | Ap2 (Le, x, y) -> simp_lt y x
-  (* ¬(x ≠ nan ∧ y ≠ nan) ==> x = nan ∨ y = nan *)
-  | Ap2 (Ord, x, y) -> simp_uno x y
-  (* ¬(x = nan ∨ y = nan) ==> x ≠ nan ∧ y ≠ nan *)
-  | Ap2 (Uno, x, y) -> simp_ord x y
+  (* ¬p(xs) ==> (¬p)(xs) *)
+  | PosLit (p, xs) -> simp_neglit p xs
+  (* ¬(¬p)(xs) ==> p(xs) *)
+  | NegLit (p, xs) -> simp_poslit p xs
   (* ¬(a ∧ b) ==> ¬a ∨ ¬b *)
   | And xs -> simp_or (Set.map ~f:simp_not xs)
   (* ¬(a ∨ b) ==> ¬a ∧ ¬b *)
@@ -927,8 +931,6 @@ let norm2 op x y =
   | Dq -> simp_dq x y
   | Lt -> simp_lt x y
   | Le -> simp_le x y
-  | Ord -> simp_ord x y
-  | Uno -> simp_uno x y
   | Div -> simp_div x y
   | Rem -> simp_rem x y
   | Xor -> simp_xor x y
@@ -961,8 +963,6 @@ let eq = norm2 Eq
 let dq = norm2 Dq
 let lt = norm2 Lt
 let le = norm2 Le
-let ord = norm2 Ord
-let uno = norm2 Uno
 let neg e = simp_negate e |> check invariant
 let add e f = simp_add2 e f |> check invariant
 let addN args = simp_add args |> check invariant
@@ -991,6 +991,8 @@ let select ~rcd ~idx = norm1 (Select idx) rcd
 let update ~rcd ~idx ~elt = norm2 (Update idx) rcd elt
 let rec_record i = simp_rec_record i |> check invariant
 let apply sym args = simp_apply sym args |> check invariant
+let poslit sym args = simp_poslit sym args |> check invariant
+let neglit sym args = simp_neglit sym args |> check invariant
 
 let rec binary mk x y = mk (of_exp x) (of_exp y)
 
@@ -1017,8 +1019,12 @@ and of_exp e =
   | Ap2 (Uge, typ, x, y) -> ubinary le typ y x
   | Ap2 (Ult, typ, x, y) -> ubinary lt typ x y
   | Ap2 (Ule, typ, x, y) -> ubinary le typ x y
-  | Ap2 (Ord, _, x, y) -> binary ord x y
-  | Ap2 (Uno, _, x, y) -> binary uno x y
+  | Ap2 (Ord, _, x, y) ->
+      (poslit (Predsym.uninterp "ord"))
+        (IArray.of_array [|of_exp x; of_exp y|])
+  | Ap2 (Uno, _, x, y) ->
+      (neglit (Predsym.uninterp "ord"))
+        (IArray.of_array [|of_exp x; of_exp y|])
   | Ap2 (Add, _, x, y) -> binary add x y
   | Ap2 (Sub, _, x, y) -> binary sub x y
   | Ap2 (Mul, _, x, y) -> binary mul x y
@@ -1089,6 +1095,8 @@ let map e ~f =
   | Ap3 (op, x, y, z) -> map3 op ~f x y z
   | ApN (op, xs) -> mapN (normN op) ~f xs
   | Apply (sym, xs) -> mapN (simp_apply sym) ~f xs
+  | PosLit (sym, xs) -> mapN (simp_poslit sym) ~f xs
+  | NegLit (sym, xs) -> mapN (simp_neglit sym) ~f xs
   | Var _ | Label _ | Float _ | Integer _ | Rational _ | RecRecord _ -> e
 
 let fold_map e ~init ~f =
@@ -1140,7 +1148,8 @@ let iter e ~f =
       f x ;
       f y ;
       f z
-  | ApN (_, xs) | Apply (_, xs) -> IArray.iter ~f xs
+  | ApN (_, xs) | Apply (_, xs) | PosLit (_, xs) | NegLit (_, xs) ->
+      IArray.iter ~f xs
   | And args | Or args -> Set.iter ~f args
   | Add args | Mul args -> Qset.iter ~f:(fun arg _ -> f arg) args
   | Var _ | Label _ | Float _ | Integer _ | Rational _ | RecRecord _ -> ()
@@ -1150,7 +1159,8 @@ let exists e ~f =
   | Ap1 (_, x) -> f x
   | Ap2 (_, x, y) -> f x || f y
   | Ap3 (_, x, y, z) -> f x || f y || f z
-  | ApN (_, xs) | Apply (_, xs) -> IArray.exists ~f xs
+  | ApN (_, xs) | Apply (_, xs) | PosLit (_, xs) | NegLit (_, xs) ->
+      IArray.exists ~f xs
   | And args | Or args -> Set.exists ~f args
   | Add args | Mul args -> Qset.exists ~f:(fun arg _ -> f arg) args
   | Var _ | Label _ | Float _ | Integer _ | Rational _ | RecRecord _ ->
@@ -1161,7 +1171,8 @@ let for_all e ~f =
   | Ap1 (_, x) -> f x
   | Ap2 (_, x, y) -> f x && f y
   | Ap3 (_, x, y, z) -> f x && f y && f z
-  | ApN (_, xs) | Apply (_, xs) -> IArray.for_all ~f xs
+  | ApN (_, xs) | Apply (_, xs) | PosLit (_, xs) | NegLit (_, xs) ->
+      IArray.for_all ~f xs
   | And args | Or args -> Set.for_all ~f args
   | Add args | Mul args -> Qset.for_all ~f:(fun arg _ -> f arg) args
   | Var _ | Label _ | Float _ | Integer _ | Rational _ | RecRecord _ -> true
@@ -1171,7 +1182,7 @@ let fold e ~init:s ~f =
   | Ap1 (_, x) -> f x s
   | Ap2 (_, x, y) -> f y (f x s)
   | Ap3 (_, x, y, z) -> f z (f y (f x s))
-  | ApN (_, xs) | Apply (_, xs) ->
+  | ApN (_, xs) | Apply (_, xs) | PosLit (_, xs) | NegLit (_, xs) ->
       IArray.fold ~f:(fun s x -> f x s) xs ~init:s
   | And args | Or args -> Set.fold ~f:(fun s e -> f e s) args ~init:s
   | Add args | Mul args -> Qset.fold ~f:(fun e _ s -> f e s) args ~init:s
@@ -1187,7 +1198,8 @@ let rec iter_terms e ~f =
       iter_terms ~f x ;
       iter_terms ~f y ;
       iter_terms ~f z
-  | ApN (_, xs) | Apply (_, xs) -> IArray.iter ~f:(iter_terms ~f) xs
+  | ApN (_, xs) | Apply (_, xs) | PosLit (_, xs) | NegLit (_, xs) ->
+      IArray.iter ~f:(iter_terms ~f) xs
   | And args | Or args -> Set.iter args ~f:(iter_terms ~f)
   | Add args | Mul args ->
       Qset.iter args ~f:(fun arg _ -> iter_terms ~f arg)
@@ -1202,7 +1214,7 @@ let rec fold_terms e ~init:s ~f =
     | Ap1 (_, x) -> fold_terms f x s
     | Ap2 (_, x, y) -> fold_terms f y (fold_terms f x s)
     | Ap3 (_, x, y, z) -> fold_terms f z (fold_terms f y (fold_terms f x s))
-    | ApN (_, xs) | Apply (_, xs) ->
+    | ApN (_, xs) | Apply (_, xs) | PosLit (_, xs) | NegLit (_, xs) ->
         IArray.fold ~f:(fun s x -> fold_terms f x s) xs ~init:s
     | And args | Or args ->
         Set.fold args ~init:s ~f:(fun s x -> fold_terms f x s)
@@ -1239,7 +1251,7 @@ let rec height = function
   | Ap1 (_, a) -> 1 + height a
   | Ap2 (_, a, b) -> 1 + max (height a) (height b)
   | Ap3 (_, a, b, c) -> 1 + max (height a) (max (height b) (height c))
-  | ApN (_, v) | Apply (_, v) ->
+  | ApN (_, v) | Apply (_, v) | PosLit (_, v) | NegLit (_, v) ->
       1 + IArray.fold v ~init:0 ~f:(fun m a -> max m (height a))
   | And bs | Or bs ->
       1 + Set.fold bs ~init:0 ~f:(fun m a -> max m (height a))

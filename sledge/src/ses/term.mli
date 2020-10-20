@@ -33,8 +33,6 @@ type op2 =
   | Dq  (** Disequal test *)
   | Lt  (** Less-than test *)
   | Le  (** Less-than-or-equal test *)
-  | Ord  (** Ordered test (neither arg is nan) *)
-  | Uno  (** Unordered test (some arg is nan) *)
   | Div  (** Division, for integers result is truncated toward zero *)
   | Rem
       (** Remainder of division, satisfies [a = b * div a b + rem a b] and
@@ -93,6 +91,8 @@ and T : sig
     | RecRecord of int  (** Reference to ancestor recursive record *)
     | Apply of Funsym.t * t iarray
         (** Uninterpreted function application *)
+    | PosLit of Predsym.t * t iarray
+    | NegLit of Predsym.t * t iarray
   [@@deriving compare, equal, sexp]
 end
 
@@ -146,8 +146,6 @@ val eq : t -> t -> t
 val dq : t -> t -> t
 val lt : t -> t -> t
 val le : t -> t -> t
-val ord : t -> t -> t
-val uno : t -> t -> t
 
 (* arithmetic *)
 val neg : t -> t
@@ -190,6 +188,8 @@ val rec_record : int -> t
 
 (* uninterpreted *)
 val apply : Funsym.t -> t iarray -> t
+val poslit : Predsym.t -> t iarray -> t
+val neglit : Predsym.t -> t iarray -> t
 
 (* convert *)
 val of_exp : Llair.Exp.t -> t
