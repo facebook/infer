@@ -125,7 +125,7 @@ module Either = struct
   let right v = Right v
 end
 
-module Hash_queue = Core_kernel.Hash_queue
+module HashQueue = Core_kernel.Hash_queue
 
 (** Input / Output *)
 

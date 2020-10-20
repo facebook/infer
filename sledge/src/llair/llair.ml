@@ -404,8 +404,8 @@ module Block_label = struct
 end
 
 module BlockS = HashSet.Make (Block_label)
-module BlockQ = Hash_queue.Make (Block_label)
-module FuncQ = Hash_queue.Make (Reg)
+module BlockQ = HashQueue.Make (Block_label)
+module FuncQ = HashQueue.Make (Reg)
 
 (** Functions *)
 
