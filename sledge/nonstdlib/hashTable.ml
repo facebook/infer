@@ -34,7 +34,7 @@ module Make (Key : HashedType) = struct
       | Some v ->
           found := Some v ;
           Some v ) ;
-    Option.value_exn !found
+    Option.get_exn !found
 
   let iteri tbl ~f = iter (fun key data -> f ~key ~data) tbl
 

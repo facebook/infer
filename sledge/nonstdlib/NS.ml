@@ -20,7 +20,7 @@ module Map = Map
 module Monad = Monad
 module Multiset = Multiset
 module Option = Option
-include Option.Import
+include Option.Infix
 module Q = Q_ext
 module Set = Set
 module Sign = Sign

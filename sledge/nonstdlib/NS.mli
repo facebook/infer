@@ -130,7 +130,7 @@ include module type of Iter.Import
 type ('a, 'b) continue_or_stop = Continue of 'a | Stop of 'b
 
 module Option = Option
-include module type of Option.Import
+include module type of Option.Infix
 
 module Either : sig
   type ('a, 'b) t = Left of 'a | Right of 'b

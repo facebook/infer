@@ -105,7 +105,7 @@ end) : S with type key = Key.t = struct
   let length = M.cardinal
   let choose_key = root_key
   let choose = root_binding
-  let choose_exn m = CCOpt.get_exn (choose m)
+  let choose_exn m = Option.get_exn (choose m)
   let min_binding = M.min_binding_opt
   let mem m k = M.mem k m
   let find_exn m k = M.find k m
@@ -141,10 +141,10 @@ end) : S with type key = Key.t = struct
     in
     Option.map ~f:(fun v -> (v, m)) !found
 
-  let pop m = choose m |> CCOpt.map (fun (k, v) -> (k, v, remove m k))
+  let pop m = choose m |> Option.map ~f:(fun (k, v) -> (k, v, remove m k))
 
   let pop_min_binding m =
-    min_binding m |> CCOpt.map (fun (k, v) -> (k, v, remove m k))
+    min_binding m |> Option.map ~f:(fun (k, v) -> (k, v, remove m k))
 
   let change m key ~f = M.update key f m
   let update m k ~f = M.update k (fun v -> Some (f v)) m

@@ -6,7 +6,6 @@
  *)
 
 open! NS0
-module Option = CCOpt
 include Set_intf
 
 module Make (Elt : sig
@@ -29,10 +28,10 @@ end) : S with type elt = Elt.t = struct
 
   let empty = S.empty
   let of_ = S.singleton
-  let of_option xo = Option.map_or S.singleton xo ~default:empty
+  let of_option xo = Option.map_or ~f:S.singleton xo ~default:empty
   let of_list = S.of_list
   let add s x = S.add x s
-  let add_option xo s = Option.fold add s xo
+  let add_option xo s = Option.fold ~f:add ~init:s xo
   let add_list xs s = S.add_list s xs
   let diff = S.diff
   let inter = S.inter

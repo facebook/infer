@@ -320,7 +320,7 @@ and solve_ ?f d e s =
 let solve ?f ~us ~xs d e =
   [%Trace.call fun {pf} -> pf "%a@ %a" Term.pp d Term.pp e]
   ;
-  (solve_ ?f d e (us, xs, Subst.empty) >>| fun (_, xs, s) -> (xs, s))
+  (solve_ ?f d e (us, xs, Subst.empty) >|= fun (_, xs, s) -> (xs, s))
   |>
   [%Trace.retn fun {pf} ->
     function
@@ -443,8 +443,8 @@ let invariant r =
 
 let true_ =
   let rep = Subst.empty in
-  let rep = Option.value_exn (Subst.extend Term.true_ rep) in
-  let rep = Option.value_exn (Subst.extend Term.false_ rep) in
+  let rep = Option.get_exn (Subst.extend Term.true_ rep) in
+  let rep = Option.get_exn (Subst.extend Term.false_ rep) in
   {xs= Var.Set.empty; sat= true; rep} |> check invariant
 
 let false_ = {true_ with sat= false}

@@ -126,7 +126,7 @@ let localize_entry globals actuals formals freturn locals shadow pre entry =
   let foot = Sh.exists formals_set function_summary_pre in
   let xs, foot = Sh.bind_exists ~wrt:pre.Sh.us foot in
   let frame =
-    try Option.value_exn (Solver.infer_frame pre xs foot)
+    try Option.get_exn (Solver.infer_frame pre xs foot)
     with _ ->
       fail "Solver couldn't infer frame of a garbage-collected pre" ()
   in

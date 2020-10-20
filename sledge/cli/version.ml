@@ -17,7 +17,7 @@ let debug =
 module Build_info = Build_info.V1
 
 let version_to_string v =
-  Option.value_map ~f:Build_info.Version.to_string v ~default:"dev"
+  Option.map_or ~f:Build_info.Version.to_string v ~default:"dev"
 
 let version =
   Format.sprintf "%s%s"

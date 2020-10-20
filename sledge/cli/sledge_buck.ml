@@ -150,7 +150,7 @@ let llvm_link_opt ~fuzzer ~bitcode_output modules =
   let open Process in
   eval ~context
     ( ( if fuzzer then
-        echo ~n:() (Option.value_exn (Model.read "/lib_fuzzer_main.bc"))
+        echo ~n:() (Option.get_exn (Model.read "/lib_fuzzer_main.bc"))
       else return () )
     |- run (Lazy.force llvm_bin ^ "llvm-link") ("-o=-" :: modules)
     |- run

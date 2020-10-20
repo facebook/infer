@@ -223,7 +223,7 @@ let exec_intrinsic ~skip_throw:_ pre aret i _ =
       ; "__cxa_allocate_exception"
       ; "_ZN5folly13usingJEMallocEv" ]
       ~f:(String.equal name)
-  then Option.map ~f:(Option.some << exec_kill pre) aret
+  then Option.map ~f:(Option.return << exec_kill pre) aret
   else None
 
 type from_call = {areturn: Llair.Reg.t option; caller_q: t}

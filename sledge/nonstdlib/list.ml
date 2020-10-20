@@ -13,12 +13,12 @@ exception Not_found_s = Base.Sexp.Not_found_s
 let rec pp ?pre ?suf sep pp_elt fs = function
   | [] -> ()
   | x :: xs ->
-      Option.iter pre ~f:(Format.fprintf fs) ;
+      Option.iter ~f:(Format.fprintf fs) pre ;
       pp_elt fs x ;
       ( match xs with
       | [] -> ()
       | xs -> Format.fprintf fs "%( %)%a" sep (pp sep pp_elt) xs ) ;
-      Option.iter suf ~f:(Format.fprintf fs)
+      Option.iter ~f:(Format.fprintf fs) suf
 
 let findi x xs =
   let rec findi_ i xs =

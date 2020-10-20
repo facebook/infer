@@ -43,7 +43,7 @@ exception Invalid_llvm of string
 let invalid_llvm : string -> 'a =
  fun msg ->
   let first_line =
-    Option.value_map ~default:msg
+    Option.map_or ~default:msg
       ~f:(fun i -> String.take i msg)
       (String.index msg '\n')
   in
@@ -554,7 +554,7 @@ and xlate_opcode stk :
    |FPExt | PtrToInt | IntToPtr | BitCast | AddrSpaceCast ->
       convert opcode
   | ICmp -> (
-    match Option.value_exn (Llvm.icmp_predicate llv) with
+    match Option.get_exn (Llvm.icmp_predicate llv) with
     | Eq -> binary Exp.eq
     | Ne -> binary Exp.dq
     | Sgt -> binary Exp.gt
@@ -1187,7 +1187,7 @@ let xlate_instr :
       in
       emit_term ~prefix:(pop loc @ pre) (Term.return ~exp ~loc)
   | Br -> (
-    match Option.value_exn (Llvm.get_branch instr) with
+    match Option.get_exn (Llvm.get_branch instr) with
     | `Unconditional blk ->
         let prefix, dst, blocks = xlate_jump x instr blk loc [] in
         emit_term ~prefix (Term.goto ~dst ~loc) ~blocks
@@ -1567,7 +1567,7 @@ let translate ~models ~fuzzer ~internalize : string list -> Llair.program =
   let link_model_file name =
     Llvm_linker.link_in link_ctx
       (Llvm_irreader.parse_ir llcontext
-         (Llvm.MemoryBuffer.of_string (Option.value_exn (Model.read name))))
+         (Llvm.MemoryBuffer.of_string (Option.get_exn (Model.read name))))
   in
   if models then link_model_file "/cxxabi.bc" ;
   if fuzzer then link_model_file "/lib_fuzzer_main.bc" ;
