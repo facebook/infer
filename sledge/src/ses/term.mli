@@ -83,8 +83,6 @@ and T : sig
     | Or of set  (** Disjunction, boolean or bitwise *)
     | Add of qset  (** Sum of terms with rational coefficients *)
     | Mul of qset  (** Product of terms with rational exponents *)
-    | Label of {parent: string; name: string}
-        (** Address of named code block within parent function *)
     | Integer of {data: Z.t}  (** Integer constant *)
     | Rational of {data: Q.t}  (** Rational constant *)
     | RecRecord of int  (** Reference to ancestor recursive record *)
@@ -124,7 +122,6 @@ val invariant : t -> unit
 val var : Var.t -> t
 
 (* constants *)
-val label : parent:string -> name:string -> t
 val bool : bool -> t
 val true_ : t
 val false_ : t
