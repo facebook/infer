@@ -65,10 +65,6 @@ module rec Term : sig
   val update : rcd:t -> idx:int -> elt:t -> t
   val record : t array -> t
 
-  (* tuples *)
-  val tuple : t array -> t
-  val project : ary:int -> idx:int -> t -> t
-
   (* uninterpreted *)
   val apply : Ses.Funsym.t -> t array -> t
 

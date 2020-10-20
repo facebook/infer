@@ -34,8 +34,6 @@ type trm =
   | Update of {idx: int; rcd: trm; elt: trm}
   | Record of trm array
   | Ancestor of int
-  | Tuple of trm array
-  | Project of {ary: int; idx: int; tup: trm}
   | Apply of Funsym.t * trm array
 [@@deriving compare, equal, sexp]
 
@@ -78,8 +76,6 @@ let _Select idx rcd = Select {idx; rcd}
 let _Update idx rcd elt = Update {idx; rcd; elt}
 let _Record es = Record es
 let _Ancestor i = Ancestor i
-let _Tuple es = Tuple es
-let _Project ary idx tup = Project {ary; idx; tup}
 let _Apply f es = Apply (f, es)
 
 (*
@@ -460,8 +456,6 @@ let rec ppx_t strength fs trm =
     | Update {idx; rcd; elt} -> pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
     | Record xs -> pf "{%a}" (ppx_record strength) xs
     | Ancestor i -> pf "(ancestor %i)" i
-    | Tuple xs -> pf "(%a)" (Array.pp ",@ " (ppx_t strength)) xs
-    | Project {ary; idx; tup} -> pf "proj(%i,%i)(%a)" ary idx pp tup
     | Apply (f, [||]) -> pf "%a" Funsym.pp f
     | Apply
         ( ( ( Mul | Div | Rem | BitAnd | BitOr | BitXor | BitShl | BitLshr
@@ -490,8 +484,6 @@ and ppx_record strength fs elts =
               (Array.pp ",@ " (ppx_t strength))
               elts )
       elts]
-
-let pp_t = ppx_t (fun _ -> None)
 
 let ppx_f strength fs fml =
   let pp_t = ppx_t strength in
@@ -545,11 +537,7 @@ let rec fold_vars_t e ~init ~f =
   match e with
   | Var _ as v -> f init (Var.of_ v)
   | Z _ | Q _ | Ancestor _ -> init
-  | Neg x
-   |Mulq (_, x)
-   |Splat x
-   |Select {rcd= x}
-   |Project {ary= _; idx= _; tup= x} ->
+  | Neg x | Mulq (_, x) | Splat x | Select {rcd= x} ->
       fold_vars_t ~f x ~init
   | Add (x, y)
    |Sub (x, y)
@@ -559,7 +547,7 @@ let rec fold_vars_t e ~init ~f =
   | Extract {seq= x; off= y; len= z} ->
       fold_vars_t ~f x
         ~init:(fold_vars_t ~f y ~init:(fold_vars_t ~f z ~init))
-  | Concat xs | Record xs | Tuple xs | Apply (_, xs) ->
+  | Concat xs | Record xs | Apply (_, xs) ->
       Array.fold ~f:(fun init -> fold_vars_t ~f ~init) xs ~init
 
 let rec fold_vars_f ~init p ~f =
@@ -645,8 +633,6 @@ let rec map_vars_t ~f e =
   | Select {idx; rcd} -> map1 (map_vars_t ~f) e (_Select idx) rcd
   | Update {idx; rcd; elt} -> map2 (map_vars_t ~f) e (_Update idx) rcd elt
   | Record xs -> mapN (map_vars_t ~f) e _Record xs
-  | Tuple xs -> mapN (map_vars_t ~f) e _Tuple xs
-  | Project {ary; idx; tup} -> map1 (map_vars_t ~f) e (_Project ary idx) tup
   | Apply (g, xs) -> mapN (map_vars_t ~f) e (_Apply g) xs
 
 let map_vars_f ~f = map_trms_f ~f:(map_vars_t ~f)
@@ -877,11 +863,6 @@ module Term = struct
   let update ~rcd ~idx ~elt = ap2t (_Update idx) rcd elt
   let record elts = apNt _Record elts
   let ancestor i = `Trm (_Ancestor i)
-
-  (* tuples *)
-
-  let tuple elts = apNt _Tuple elts
-  let project ~ary ~idx tup = ap1t (_Project ary idx) tup
 
   (* if-then-else *)
 
@@ -1122,8 +1103,6 @@ let rec t_to_ses : trm -> Ses.Term.t = function
   | Apply (Unsigned n, [|x|]) -> Ses.Term.unsigned n (t_to_ses x)
   | Apply (sym, xs) ->
       Ses.Term.apply sym (IArray.of_array (Array.map ~f:t_to_ses xs))
-  | (Tuple _ | Project _) as t ->
-      fail "cannot translate to Ses: %a" pp_t t ()
 
 let rec f_to_ses : fml -> Ses.Term.t = function
   | Tt -> Ses.Term.true_
