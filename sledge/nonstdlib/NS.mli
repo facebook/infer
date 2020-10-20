@@ -114,11 +114,25 @@ module Qset = Qset
 (** Data types *)
 
 module String : sig
-  include sig
-    include module type of Core.String with module Map := Core.String.Map
-  end
+  include
+    module type of Core.String
+      with module Map := Core.String.Map
+      with module Set := Core.String.Set
 
   module Map : Map.S with type key = string
+  module Set : Set.S with type elt = string
+end
+
+module Int : sig
+  include module type of Stdlib.Int
+
+  include
+    module type of Core.Int
+      with module Map := Core.Int.Map
+      with module Set := Core.Int.Set
+
+  module Map : Map.S with type key = int
+  module Set : Set.S with type elt = int
 end
 
 module Q : sig

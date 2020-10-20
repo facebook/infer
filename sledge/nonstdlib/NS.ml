@@ -146,10 +146,29 @@ module String = struct
     Core.String :
       sig
         include
-          module type of Core.String with module Map := Core.String.Map
+          module type of Core.String
+            with module Map := Core.String.Map
+            with module Set := Core.String.Set
       end )
 
   module Map = Map.Make (Core.String)
+  module Set = Set.Make (Core.String)
+end
+
+module Int = struct
+  include Stdlib.Int
+
+  include (
+    Int :
+      sig
+        include
+          module type of Core.Int
+            with module Map := Core.Int.Map
+            with module Set := Core.Int.Set
+      end )
+
+  module Map = Map.Make (Int)
+  module Set = Set.Make (Int)
 end
 
 module Q = struct
