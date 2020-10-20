@@ -1713,6 +1713,9 @@ module Call = struct
         $--> NSCollection.new_collection_by_add_all
       ; +PatternMatch.ObjectiveC.implements "NSEnumerator"
         &:: "nextObject" <>$ capt_exp $--> NSCollection.next_object
+      ; +PatternMatch.ObjectiveC.implements "NSFileManager"
+        &:: "contentsOfDirectoryAtURL:includingPropertiesForKeys:options:error:"
+        &--> NSCollection.new_collection
       ; +PatternMatch.ObjectiveC.implements "NSKeyedUnarchiver"
         &:: "decodeObjectForKey:" $ capt_var_exn $+...$--> NSCollection.get_any_index
       ; +PatternMatch.ObjectiveC.implements "NSMutableArray"

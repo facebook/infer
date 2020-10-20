@@ -1,5 +1,6 @@
 codetoanalyze/objc/performance/NSArray.m, nsarray_empty_array_constant, 3, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
 codetoanalyze/objc/performance/NSArray.m, nsarray_init_constant, 3, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
+codetoanalyze/objc/performance/NSFileManager.m, contents_of_directory_at_url_constant, 7, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
 codetoanalyze/objc/performance/NSMutableArray.m, nsarray_new_constant, 2, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
 codetoanalyze/objc/performance/NSMutableArray.m, nsmarray_remove_constant, 6, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Through,Through,Through,Through,Array access: Offset: 0 Size: 0]
 codetoanalyze/objc/performance/NSMutableArray.m, nsmarray_remove_in_loop_constant, 6, BUFFER_OVERRUN_L3, no_bucket, ERROR, [<Offset trace>,Set array size,<Length trace>,Assignment,Set array size,Array access: Offset: [0, 9] Size: [1, 10]]
