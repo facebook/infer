@@ -392,6 +392,10 @@ module Block_label = struct
       [%compare: string * Global.t] (x.lbl, x.parent.name)
         (y.lbl, y.parent.name)
 
+    let equal x y =
+      [%equal: string * Global.t] (x.lbl, x.parent.name)
+        (y.lbl, y.parent.name)
+
     let hash b = [%hash: string * Global.t] (b.lbl, b.parent.name)
   end
 
@@ -399,6 +403,7 @@ module Block_label = struct
   module Set = Set.Make (T)
 end
 
+module BlockS = HashSet.Make (Block_label)
 module BlockQ = Hash_queue.Make (Block_label)
 module FuncQ = Hash_queue.Make (Reg)
 
@@ -412,9 +417,9 @@ module Func = struct
     | _ -> false
 
   let fold_cfg ~init ~f func =
-    let seen = Hash_set.create (module Block_label) in
+    let seen = BlockS.create 0 in
     let rec fold_cfg_ s blk =
-      if Result.is_error (Hash_set.strict_add seen blk) then s
+      if not (BlockS.add seen blk) then s
       else
         let s =
           let f s j = fold_cfg_ s j.dst in

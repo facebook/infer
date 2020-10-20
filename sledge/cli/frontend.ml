@@ -897,7 +897,9 @@ let rec xlate_func_name x llv =
   | ConstantPointerNull -> todo "call null: %a" pp_llvalue llv ()
   | _ -> todo "function kind in %a" pp_llvalue llv ()
 
-let ignored_callees = Hash_set.create (module String)
+module StringS = HashSet.Make (String)
+
+let ignored_callees = StringS.create 0
 
 let xlate_size_of x llv =
   Exp.integer Typ.siz (Z.of_int (size_of x (Llvm.type_of llv)))
@@ -977,9 +979,8 @@ let xlate_instr :
       in
       let fname = Llvm.value_name llfunc in
       let skip msg =
-        ( match Hash_set.strict_add ignored_callees fname with
-        | Ok () -> warn "ignoring uninterpreted %s %s" msg fname ()
-        | Error _ -> () ) ;
+        if StringS.add ignored_callees fname then
+          warn "ignoring uninterpreted %s %s" msg fname () ;
         let reg = xlate_name_opt x instr in
         emit_inst (Inst.nondet ~reg ~msg:fname ~loc)
       in
@@ -1066,13 +1067,14 @@ let xlate_instr :
                     Llvm.num_arg_operands instr
                   else
                     let fname = Llvm.value_name llfunc in
-                    ( match Hash_set.strict_add ignored_callees fname with
-                    | Ok () when not (Llvm.is_declaration llfunc) ->
-                        warn
-                          "ignoring variable arguments to variadic \
-                           function: %a"
-                          Exp.pp callee ()
-                    | _ -> () ) ;
+                    if
+                      StringS.add ignored_callees fname
+                      && not (Llvm.is_declaration llfunc)
+                    then
+                      warn
+                        "ignoring variable arguments to variadic function: \
+                         %a"
+                        Exp.pp callee () ;
                     let llfty = Llvm.element_type lltyp in
                     ( match Llvm.classify_type llfty with
                     | Function -> ()
@@ -1103,11 +1105,12 @@ let xlate_instr :
         if not (Llvm.is_var_arg (Llvm.element_type lltyp)) then
           Llvm.num_arg_operands instr
         else (
-          ( match Hash_set.strict_add ignored_callees fname with
-          | Ok () when not (Llvm.is_declaration llfunc) ->
-              warn "ignoring variable arguments to variadic function: %a"
-                Global.pp (xlate_global x llfunc) ()
-          | _ -> () ) ;
+          if
+            StringS.add ignored_callees fname
+            && not (Llvm.is_declaration llfunc)
+          then
+            warn "ignoring variable arguments to variadic function: %a"
+              Global.pp (xlate_global x llfunc) () ;
           assert (Poly.(Llvm.classify_type lltyp = Pointer)) ;
           Array.length (Llvm.param_types (Llvm.element_type lltyp)) )
       in
@@ -1523,7 +1526,7 @@ let cleanup llmodule llcontext =
   Hashtbl.clear memo_type ;
   Hashtbl.clear memo_global ;
   Hashtbl.clear memo_value ;
-  Hash_set.clear ignored_callees ;
+  StringS.clear ignored_callees ;
   Gc.full_major () ;
   Llvm.dispose_module llmodule ;
   Llvm.dispose_context llcontext

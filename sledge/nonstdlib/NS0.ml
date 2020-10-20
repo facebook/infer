@@ -126,7 +126,6 @@ module Either = struct
 end
 
 module Hashtbl = Base.Hashtbl
-module Hash_set = Base.Hash_set
 module Hash_queue = Core_kernel.Hash_queue
 
 (** Input / Output *)

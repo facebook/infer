@@ -147,7 +147,7 @@ module Set = Set
 module Map = Map
 module Multiset = Multiset
 module Hashtbl = Base.Hashtbl
-module Hash_set = Base.Hash_set
+module HashSet = HashSet
 module Hash_queue = Core_kernel.Hash_queue
 
 (** Input / Output *)

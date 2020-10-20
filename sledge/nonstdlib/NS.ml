@@ -10,6 +10,7 @@
 include NS0
 module Array = Array
 module Float = Float
+module HashSet = HashSet
 module IArray = IArray
 include IArray.Import
 module Int = Int
