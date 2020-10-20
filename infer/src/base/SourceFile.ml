@@ -12,7 +12,12 @@ module L = Logging
 type t =
   | Invalid of {ml_source_file: string}
   | Absolute of string
-  | RelativeProjectRoot of string  (** relative to project root *)
+  | RelativeProjectRoot of string  (** path of the source file relative to the project root *)
+  | RelativeProjectRootAndWorkspace of
+      { workspace_rel_root: string
+            (** path relative to the workspace of the project root with respect to which the source
+                file was captured *)
+      ; rel_path: string  (** path of the source file relative to the project root *) }
 [@@deriving compare, equal]
 
 module OrderedSourceFile = struct
@@ -30,42 +35,82 @@ module Hash = Caml.Hashtbl.Make (struct
   let hash = Caml.Hashtbl.hash
 end)
 
+let project_root_real = Utils.realpath Config.project_root
+
+let workspace_real = Option.map ~f:Utils.realpath Config.workspace
+
+let workspace_rel_root_opt =
+  Option.bind workspace_real ~f:(fun workspace_real ->
+      Utils.filename_to_relative ~root:workspace_real project_root_real )
+
+
 let from_abs_path ?(warn_on_error = true) fname =
   if Filename.is_relative fname then
     L.(die InternalError) "Path '%s' is relative, when absolute path was expected." fname ;
   (* try to get realpath of source file. Use original if it fails *)
   let fname_real = try Utils.realpath ~warn_on_error fname with Unix.Unix_error _ -> fname in
-  let project_root_real = Utils.realpath ~warn_on_error Config.project_root in
-  match
+  let rel_path_opt =
     Utils.filename_to_relative ~backtrack:Config.relative_path_backtrack ~root:project_root_real
       fname_real
-  with
-  | Some path ->
-      RelativeProjectRoot path
-  | None when Config.buck_cache_mode && Filename.check_suffix fname_real "java" ->
+  in
+  match (rel_path_opt, workspace_rel_root_opt) with
+  | Some rel_path, Some workspace_rel_root ->
+      RelativeProjectRootAndWorkspace {workspace_rel_root; rel_path}
+  | Some rel_path, None ->
+      RelativeProjectRoot rel_path
+  | None, _ when Config.buck_cache_mode && Filename.check_suffix fname_real "java" ->
       L.(die InternalError) "%s is not relative to %s" fname_real project_root_real
-  | None ->
+  | None, _ ->
       (* fname_real is absolute already *)
       Absolute fname_real
 
 
-let to_string =
-  let root = Utils.realpath Config.project_root in
-  fun ?(force_relative = false) fname ->
-    match fname with
-    | Invalid {ml_source_file} ->
-        "DUMMY from " ^ ml_source_file
-    | RelativeProjectRoot path ->
-        path
-    | Absolute path ->
-        if force_relative then
-          let open IOption.Let_syntax in
-          (let* isysroot_suffix = Config.xcode_isysroot_suffix in
-           let+ pos = String.substr_index path ~pattern:isysroot_suffix in
-           "${XCODE_ISYSROOT}" ^ String.subo ~pos:(pos + String.length isysroot_suffix) path)
-          |> IOption.if_none_eval ~f:(fun () ->
-                 Option.value_exn (Utils.filename_to_relative ~force_full_backtrack:true ~root path) )
-        else path
+let reroot_rel_path ~foreign_rel_project_root rel_path =
+  match (workspace_real, foreign_rel_project_root) with
+  | None, Some foreign_rel_project_root ->
+      L.die UserError
+        "Missing workspace: please provide the --workspace option. A file (relative path: '%s') \
+         was encountered whose project root at the time of capture is relative to a workspace \
+         (project root: '%s'). The same workspace must be specified now."
+        rel_path foreign_rel_project_root
+  | Some workspace, foreign_offset_opt
+    when not (Option.equal String.equal foreign_offset_opt workspace_rel_root_opt) ->
+      (* re-root rel_path relative to the current project_root *)
+      let offset_to_abs_path offset_opt =
+        (* if the relative offset of the project root with respect to the workspace is None then
+           assume the project root is relative to the workspace (with no offset), i.e. that the
+           offset is [.] *)
+        Option.value_map ~default:workspace offset_opt ~f:(fun offset -> workspace ^/ offset)
+      in
+      let abs_project_root = offset_to_abs_path workspace_rel_root_opt in
+      let foreign_abs_project_root = offset_to_abs_path foreign_offset_opt in
+      Option.value_exn
+        (Utils.filename_to_relative ~force_full_backtrack:true ~root:abs_project_root
+           foreign_abs_project_root)
+      ^/ rel_path
+  | _ ->
+      rel_path
+
+
+let to_string ?(force_relative = false) fname =
+  match fname with
+  | Invalid {ml_source_file} ->
+      "DUMMY from " ^ ml_source_file
+  | RelativeProjectRootAndWorkspace {workspace_rel_root= foreign_rel_project_root; rel_path} ->
+      reroot_rel_path ~foreign_rel_project_root:(Some foreign_rel_project_root) rel_path
+  | RelativeProjectRoot rel_path ->
+      reroot_rel_path ~foreign_rel_project_root:None rel_path
+  | Absolute path ->
+      if force_relative then
+        let open IOption.Let_syntax in
+        (let* isysroot_suffix = Config.xcode_isysroot_suffix in
+         let+ pos = String.substr_index path ~pattern:isysroot_suffix in
+         "${XCODE_ISYSROOT}" ^ String.subo ~pos:(pos + String.length isysroot_suffix) path)
+        |> IOption.if_none_eval ~f:(fun () ->
+               Option.value_exn
+                 (Utils.filename_to_relative ~force_full_backtrack:true ~root:project_root_real
+                    path) )
+      else path
 
 
 let has_extension t ~ext = String.is_suffix (to_string t) ~suffix:ext
@@ -77,13 +122,23 @@ let to_abs_path fname =
   | Invalid {ml_source_file} ->
       L.(die InternalError)
         "cannot be called with Invalid source file originating in %s" ml_source_file
-  | RelativeProjectRoot path ->
-      Filename.concat Config.project_root path
+  | RelativeProjectRoot rel_path ->
+      Config.project_root ^/ rel_path
+  | RelativeProjectRootAndWorkspace {workspace_rel_root; rel_path} ->
+      workspace_rel_root ^/ Config.project_root ^/ rel_path
   | Absolute path ->
       path
 
 
-let to_rel_path fname = match fname with RelativeProjectRoot path -> path | _ -> to_abs_path fname
+let to_rel_path fname =
+  match fname with
+  | RelativeProjectRootAndWorkspace {workspace_rel_root= foreign_rel_project_root; rel_path} ->
+      reroot_rel_path ~foreign_rel_project_root:(Some foreign_rel_project_root) rel_path
+  | RelativeProjectRoot rel_path ->
+      reroot_rel_path ~foreign_rel_project_root:None rel_path
+  | Absolute _ | Invalid _ ->
+      to_abs_path fname
+
 
 let invalid ml_source_file = Invalid {ml_source_file}
 
@@ -94,6 +149,14 @@ let is_under_project_root = function
       L.(die InternalError) "cannot be called with Invalid source file from %s" ml_source_file
   | RelativeProjectRoot _ ->
       true
+  | RelativeProjectRootAndWorkspace {workspace_rel_root= foreign_rel_project_root}
+    when Option.equal String.equal workspace_rel_root_opt (Some foreign_rel_project_root) ->
+      (* relative to the same project root *)
+      true
+  | RelativeProjectRootAndWorkspace _ ->
+      (* Relative to a possibly-different project root. We should check if it the absolute file path
+         is inside the current project root but just return [false] instead. *)
+      false
   | Absolute _ ->
       false
 
@@ -124,8 +187,11 @@ let of_header ?(warn_on_error = true) header_file =
 
 let create ?(warn_on_error = true) path =
   if Filename.is_relative path then
-    (* sources in changed-files-index may be specified relative to project root *)
-    RelativeProjectRoot path
+    match workspace_rel_root_opt with
+    | None ->
+        RelativeProjectRoot path
+    | Some workspace_rel_root ->
+        RelativeProjectRootAndWorkspace {workspace_rel_root; rel_path= path}
   else from_abs_path ~warn_on_error path
 
 
@@ -150,7 +216,11 @@ module SQLite = struct
 
   let absolute_tag = 'A'
 
-  let relative_tag = 'R'
+  let relative_project_root_tag = 'R'
+
+  (* to encode the pair (workspace_rel_root, rel_path), we store the length of the first element
+     in-between two 'W' characters, eg 'W3Wfoo/rest/of/the/path.java' *)
+  let relative_project_root_and_workspace_tag = 'W'
 
   let serialize sourcefile =
     let tag_text tag str = Sqlite3.Data.TEXT (Printf.sprintf "%c%s" tag str) in
@@ -160,7 +230,11 @@ module SQLite = struct
     | Absolute abs_path ->
         tag_text absolute_tag abs_path
     | RelativeProjectRoot rel_path ->
-        tag_text relative_tag rel_path
+        tag_text relative_project_root_tag rel_path
+    | RelativeProjectRootAndWorkspace {workspace_rel_root= prefix; rel_path} ->
+        Sqlite3.Data.TEXT
+          (Printf.sprintf "%c%d%c%s/%s" relative_project_root_and_workspace_tag
+             (String.length prefix) relative_project_root_and_workspace_tag prefix rel_path)
 
 
   let deserialize serialized_sourcefile =
@@ -171,6 +245,14 @@ module SQLite = struct
     let str = String.sub ~pos:1 ~len:(String.length text - 1) text in
     if Char.equal tag invalid_tag then Invalid {ml_source_file= str}
     else if Char.equal tag absolute_tag then Absolute str
-    else if Char.equal tag relative_tag then RelativeProjectRoot str
+    else if Char.equal tag relative_project_root_tag then RelativeProjectRoot str
+    else if Char.equal tag relative_project_root_and_workspace_tag then
+      let prefix_length_str, path_with_prefix =
+        String.lsplit2_exn str ~on:relative_project_root_and_workspace_tag
+      in
+      let prefix_length = Int.of_string prefix_length_str in
+      let prefix = String.prefix path_with_prefix prefix_length in
+      let rel_path = String.drop_prefix path_with_prefix (prefix_length + 1) in
+      RelativeProjectRootAndWorkspace {workspace_rel_root= prefix; rel_path}
     else L.die InternalError "Could not deserialize sourcefile with tag=%c, str= %s@." tag str
 end

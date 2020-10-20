@@ -2380,6 +2380,14 @@ and worklist_mode =
   var
 
 
+and workspace =
+  CLOpt.mk_path_opt ~long:"workspace"
+    ~in_help:InferCommand.[(Capture, manual_generic)]
+    "Specifies the root of the workspace, which is a directory containing $(b,--project-root). \
+     This can be needed if the capture phase is expected to require several $(i,different) project \
+     roots, all relative to a common workspace. Usually a single project root is enough, though."
+
+
 and write_html_whitelist_regex =
   CLOpt.mk_string_list ~long:"write-html-whitelist-regex"
     "Whitelist files that will have their html debug output printed when $(b,--html) is true."
@@ -3209,6 +3217,8 @@ and unsafe_malloc = !unsafe_malloc
 and incremental_analysis = !incremental_analysis
 
 and worklist_mode = !worklist_mode
+
+and workspace = !workspace
 
 and write_dotty = !write_dotty
 

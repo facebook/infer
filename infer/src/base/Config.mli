@@ -611,6 +611,8 @@ val unsafe_malloc : bool
 
 val worklist_mode : int
 
+val workspace : string option
+
 val write_dotty : bool
 
 val write_html : bool

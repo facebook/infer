@@ -1185,6 +1185,13 @@ OPTIONS
        --version-json
            Print version information in json format and exit           See also infer-run(1).
 
+       --workspace path
+           Specifies the root of the workspace, which is a directory
+           containing --project-root. This can be needed if the capture phase
+           is expected to require several different project roots, all
+           relative to a common workspace. Usually a single project root is
+           enough, though.           See also infer-capture(1).
+
        --write-website path_to_website_dir
            Use to write website files documenting issue types and checkers
            under path_to_website_dir/. Meant to be used within the Infer
@@ -1947,6 +1954,9 @@ INTERNAL OPTIONS
 
        --visits-bias
            nodes visited fewer times are analyzed first
+
+       --workspace-reset
+           Cancel the effect of --workspace.
 
        --write-dotty
            Activates: Produce dotty files for specs in the results directory
