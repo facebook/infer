@@ -257,7 +257,6 @@ module Fml : sig
   type fml = private
     (* propositional constants *)
     | Tt
-    | Ff
     (* equality *)
     | Eq of trm * trm
     | Dq of trm * trm
@@ -279,7 +278,6 @@ module Fml : sig
   [@@deriving compare, equal, sexp]
 
   val _Tt : fml
-  val _Ff : fml
   val _Eq : trm -> trm -> fml
   val _Dq : trm -> trm -> fml
   val _Eq0 : trm -> fml
@@ -297,7 +295,6 @@ module Fml : sig
 end = struct
   type fml =
     | Tt
-    | Ff
     | Eq of trm * trm
     | Dq of trm * trm
     | Eq0 of trm
@@ -323,7 +320,7 @@ end = struct
       ==> [p]. *)
 
   let _Tt = Tt
-  let _Ff = Ff
+  let _Ff = Not Tt
 
   (** classification of terms as either semantically equal or disequal, or
       if semantic relationship is unknown, as either syntactically less than
@@ -343,13 +340,13 @@ end = struct
     (* 0 = 0 ==> tt *)
     | SemEq -> Tt
     (* 0 = N ==> ff for N ≢ 0 *)
-    | SemDq -> Ff
+    | SemDq -> _Ff
     | SynLt | SynGt -> Eq0 x
 
   let _Dq0 x =
     match compare_semantic_syntactic zero x with
     (* 0 ≠ 0 ==> ff *)
-    | SemEq -> Ff
+    | SemEq -> _Ff
     (* 0 ≠ N ==> tt for N ≢ 0 *)
     | SemDq -> Tt
     | SynLt | SynGt -> Dq0 x
@@ -360,7 +357,7 @@ end = struct
     else
       match compare_semantic_syntactic x y with
       | SemEq -> Tt
-      | SemDq -> Ff
+      | SemDq -> _Ff
       | SynLt -> Eq (x, y)
       | SynGt -> Eq (y, x)
 
@@ -369,26 +366,26 @@ end = struct
     else if y == zero then _Dq0 x
     else
       match compare_semantic_syntactic x y with
-      | SemEq -> Ff
+      | SemEq -> _Ff
       | SemDq -> Tt
       | SynLt -> Dq (x, y)
       | SynGt -> Dq (y, x)
 
   let _Gt0 = function
-    | Z z -> if Z.gt z Z.zero then Tt else Ff
-    | Q q -> if Q.gt q Q.zero then Tt else Ff
+    | Z z -> if Z.gt z Z.zero then Tt else _Ff
+    | Q q -> if Q.gt q Q.zero then Tt else _Ff
     | x -> Gt0 x
 
   let _Le0 = function
-    | Z z -> if Z.leq z Z.zero then Tt else Ff
-    | Q q -> if Q.leq q Q.zero then Tt else Ff
+    | Z z -> if Z.leq z Z.zero then Tt else _Ff
+    | Q q -> if Q.leq q Q.zero then Tt else _Ff
     | x -> Le0 x
 
   let _UPosLit p xs = UPosLit (p, xs)
   let _UNegLit p xs = UNegLit (p, xs)
 
   let rec is_negative = function
-    | Ff | Dq _ | Dq0 _ | Le0 _ | Or _ | Xor _ | UNegLit _ -> true
+    | Not Tt | Dq _ | Dq0 _ | Le0 _ | Or _ | Xor _ | UNegLit _ -> true
     | Tt | Eq _ | Eq0 _ | Gt0 _ | And _ | Iff _ | UPosLit _ | Cond _ ->
         false
     | Not p -> not (is_negative p)
@@ -397,7 +394,7 @@ end = struct
 
   let rec equal_or_opposite p q =
     match (p, q) with
-    | Tt, Ff | Ff, Tt -> Opposite
+    | p, Not p' | Not p', p -> if equal_fml p p' then Opposite else Unknown
     | Eq (a, b), Dq (a', b') | Dq (a, b), Eq (a', b') ->
         if equal_trm a a' && equal_trm b b' then Opposite else Unknown
     | Eq0 a, Dq0 a' | Dq0 a, Eq0 a' | Gt0 a, Le0 a' | Le0 a, Gt0 a' ->
@@ -430,18 +427,18 @@ end = struct
   let _And p q =
     match (p, q) with
     | Tt, p | p, Tt -> p
-    | Ff, _ | _, Ff -> Ff
+    | Not Tt, _ | _, Not Tt -> _Ff
     | _ -> (
       match equal_or_opposite p q with
       | Equal -> p
-      | Opposite -> Ff
+      | Opposite -> _Ff
       | Unknown ->
           let p, q = sort_fml p q in
           And (p, q) )
 
   let _Or p q =
     match (p, q) with
-    | Ff, p | p, Ff -> p
+    | Not Tt, p | p, Not Tt -> p
     | Tt, _ | _, Tt -> Tt
     | _ -> (
       match equal_or_opposite p q with
@@ -454,11 +451,11 @@ end = struct
   let rec _Iff p q =
     match (p, q) with
     | Tt, p | p, Tt -> p
-    | Ff, p | p, Ff -> _Not p
+    | Not Tt, p | p, Not Tt -> _Not p
     | _ -> (
       match equal_or_opposite p q with
       | Equal -> Tt
-      | Opposite -> Ff
+      | Opposite -> _Ff
       | Unknown ->
           let p, q = sort_fml p q in
           Iff (p, q) )
@@ -466,18 +463,16 @@ end = struct
   and _Xor p q =
     match (p, q) with
     | Tt, p | p, Tt -> _Not p
-    | Ff, p | p, Ff -> p
+    | Not Tt, p | p, Not Tt -> p
     | _ -> (
       match equal_or_opposite p q with
-      | Equal -> Ff
+      | Equal -> _Ff
       | Opposite -> Tt
       | Unknown ->
           let p, q = sort_fml p q in
           Xor (p, q) )
 
   and _Not = function
-    | Tt -> _Ff
-    | Ff -> _Tt
     | Eq (x, y) -> _Dq x y
     | Dq (x, y) -> _Eq x y
     | Eq0 x -> _Dq0 x
@@ -492,21 +487,22 @@ end = struct
     | Cond {cnd; pos; neg} -> _Cond cnd (_Not pos) (_Not neg)
     | UPosLit (p, xs) -> _UNegLit p xs
     | UNegLit (p, xs) -> _UPosLit p xs
+    | Tt as x -> Not x
 
   and _Cond cnd pos neg =
     match (cnd, pos, neg) with
     (* (tt ? p : n) ==> p *)
     | Tt, _, _ -> pos
     (* (ff ? p : n) ==> n *)
-    | Ff, _, _ -> neg
+    | Not Tt, _, _ -> neg
     (* (c ? tt : ff) ==> c *)
-    | _, Tt, Ff -> cnd
+    | _, Tt, Not Tt -> cnd
     (* (c ? ff : tt) ==> ¬c *)
-    | _, Ff, Tt -> _Not cnd
+    | _, Not Tt, Tt -> _Not cnd
     (* (c ? p : ff) ==> c ∧ p *)
-    | _, _, Ff -> _And cnd pos
+    | _, _, Not Tt -> _And cnd pos
     (* (c ? ff : n) ==> ¬c ∧ n *)
-    | _, Ff, _ -> _And (_Not cnd) neg
+    | _, Not Tt, _ -> _And (_Not cnd) neg
     (* (c ? tt : n) ==> c ∨ n *)
     | _, Tt, _ -> _Or cnd neg
     (* (c ? p : tt) ==> ¬c ∨ p *)
@@ -556,7 +552,7 @@ let ppx_f strength fs fml =
     let pf fmt = pp_boxed fs fmt in
     match (fml : fml) with
     | Tt -> pf "tt"
-    | Ff -> pf "ff"
+    | Not Tt -> pf "ff"
     | Eq (x, y) -> pf "(%a@ = %a)" pp_t x pp_t y
     | Dq (x, y) -> pf "(%a@ @<2>≠ %a)" pp_t x pp_t y
     | Eq0 x -> pf "(0 = %a)" pp_t x
@@ -616,7 +612,7 @@ let rec fold_vars_t e ~init ~f =
 
 let rec fold_vars_f ~init p ~f =
   match (p : fml) with
-  | Tt | Ff -> init
+  | Tt -> init
   | Eq (x, y) | Dq (x, y) -> fold_vars_t ~f x ~init:(fold_vars_t ~f y ~init)
   | Eq0 x | Dq0 x | Gt0 x | Le0 x -> fold_vars_t ~f x ~init
   | Not x -> fold_vars_f ~f x ~init
@@ -664,7 +660,7 @@ let mapN f e cons xs =
 
 let rec map_trms_f ~f b =
   match b with
-  | Tt | Ff -> b
+  | Tt -> b
   | Eq (x, y) -> map2 f b _Eq x y
   | Dq (x, y) -> map2 f b _Dq x y
   | Eq0 x -> map1 f b _Eq0 x
@@ -971,7 +967,7 @@ module Formula = struct
   (* constants *)
 
   let tt = _Tt
-  let ff = _Ff
+  let ff = _Not tt
 
   (* comparisons *)
 
@@ -1039,7 +1035,7 @@ module Formula = struct
       mapN f b (apNf cons) (Array.map ~f:(fun x -> `Trm x) xs)
     in
     match b with
-    | Tt | Ff -> b
+    | Tt -> b
     | Eq (x, y) -> lift_map2 f b _Eq x y
     | Dq (x, y) -> lift_map2 f b _Dq x y
     | Eq0 x -> lift_map1 f b _Eq0 x
@@ -1077,8 +1073,8 @@ module Formula = struct
    fun ~meet1 ~join1 ~top ~bot fml ->
     let rec add_conjunct (cjn, splits) fml =
       match fml with
-      | Tt | Ff | Eq _ | Dq _ | Eq0 _ | Dq0 _ | Gt0 _ | Le0 _ | Iff _
-       |Xor _ | UPosLit _ | UNegLit _ | Not _ ->
+      | Tt | Eq _ | Dq _ | Eq0 _ | Dq0 _ | Gt0 _ | Le0 _ | Iff _ | Xor _
+       |UPosLit _ | UNegLit _ | Not _ ->
           (meet1 fml cjn, splits)
       | And (p, q) -> add_conjunct (add_conjunct (cjn, splits) p) q
       | Or (p, q) -> (cjn, [p; q] :: splits)
@@ -1150,7 +1146,7 @@ and t_to_ses : trm -> Ses.Term.t = function
 
 let rec f_to_ses : fml -> Ses.Term.t = function
   | Tt -> Ses.Term.true_
-  | Ff -> Ses.Term.false_
+  | Not Tt -> Ses.Term.false_
   | Eq (x, y) -> Ses.Term.eq (t_to_ses x) (t_to_ses y)
   | Dq (x, y) -> Ses.Term.dq (t_to_ses x) (t_to_ses y)
   | Eq0 x -> Ses.Term.eq Ses.Term.zero (t_to_ses x)
