@@ -8,7 +8,6 @@
 (** Function Symbols *)
 
 type t =
-  | Float of string
   | Label of {parent: string; name: string}
   | Mul
   | Div
@@ -30,7 +29,6 @@ type t =
 let pp ppf f =
   let pf fmt = Format.fprintf ppf fmt in
   match f with
-  | Float s -> pf "%s" s
   | Label {name} -> pf "%s" name
   | Mul -> pf "@<1>×"
   | Div -> pf "/"

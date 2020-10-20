@@ -1119,7 +1119,6 @@ let rec t_to_ses : trm -> Ses.Term.t = function
       Ses.Term.update ~rcd:(t_to_ses rcd)
         ~idx:(to_int (t_to_ses idx))
         ~elt:(t_to_ses elt)
-  | Apply (Float s, Tuple [||]) -> Ses.Term.float s
   | Apply (Label {parent; name}, Tuple [||]) -> Ses.Term.label ~parent ~name
   | Apply (Mul, Tuple [|x; y|]) -> Ses.Term.mul (t_to_ses x) (t_to_ses y)
   | Apply (Div, Tuple [|x; y|]) -> Ses.Term.div (t_to_ses x) (t_to_ses y)
@@ -1229,7 +1228,6 @@ and of_ses : Ses.Term.t -> exp =
   | Var {id; name} -> var (Var.identified ~id ~name)
   | Integer {data} -> integer data
   | Rational {data} -> rational data
-  | Float {data} -> uap0 (Float data)
   | Label {parent; name} -> uap0 (Label {parent; name})
   | Ap1 (Signed {bits}, e) -> uap_tt (Signed bits) e
   | Ap1 (Unsigned {bits}, e) -> uap_tt (Unsigned bits) e
@@ -1606,7 +1604,8 @@ module Term_of_Llair = struct
     | Float {data; typ= _} -> (
       match Q.of_float (Float.of_string data) with
       | q when Q.is_real q -> rational q
-      | _ | (exception Invalid_argument _) -> uap0 (Float data) )
+      | _ | (exception Invalid_argument _) ->
+          uap0 (Uninterp ("float_" ^ data)) )
     | Ap1 (Signed {bits}, _, e) ->
         let a = exp e in
         if bits = 1 then

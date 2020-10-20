@@ -85,7 +85,6 @@ and T : sig
     | Mul of qset  (** Product of terms with rational exponents *)
     | Label of {parent: string; name: string}
         (** Address of named code block within parent function *)
-    | Float of {data: string}  (** Floating-point constant *)
     | Integer of {data: Z.t}  (** Integer constant *)
     | Rational of {data: Q.t}  (** Rational constant *)
     | RecRecord of int  (** Reference to ancestor recursive record *)
@@ -134,7 +133,6 @@ val zero : t
 val one : t
 val minus_one : t
 val rational : Q.t -> t
-val float : string -> t
 
 (* type conversions *)
 val signed : int -> t -> t

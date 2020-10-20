@@ -12,7 +12,6 @@
     applied to literal values of the expected sorts are reduced to literal
     values. *)
 type t =
-  | Float of string
   | Label of {parent: string; name: string}
   | Mul  (** Multiplication *)
   | Div  (** Division, for integers result is truncated toward zero *)
