@@ -57,7 +57,7 @@ module rec Set : sig
 end
 
 and Qset : sig
-  include NS.Multiset.S with type elt := T.t
+  include NS.Multiset.S with type mul := Q.t with type elt := T.t
 
   val t_of_sexp : Sexp.t -> t
 end

@@ -9,6 +9,7 @@
 
 include module type of Multiset_intf
 
-module Make (Elt : sig
-  type t [@@deriving compare, sexp_of]
-end) : S with type elt = Elt.t
+module Make
+    (Mul : MULTIPLICITY) (Elt : sig
+      type t [@@deriving compare, sexp_of]
+    end) : S with type mul = Mul.t with type elt = Elt.t
