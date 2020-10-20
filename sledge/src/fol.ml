@@ -261,7 +261,7 @@ module Fml : sig
     | Eq of trm * trm
     (* arithmetic *)
     | Eq0 of trm  (** [Eq0(x)] iff x = 0 *)
-    | Gt0 of trm  (** [Gt0(x)] iff x > 0 *)
+    | Pos of trm  (** [Pos(x)] iff x > 0 *)
     (* propositional connectives *)
     | Not of fml
     | And of fml * fml
@@ -275,7 +275,7 @@ module Fml : sig
   val _Tt : fml
   val _Eq : trm -> trm -> fml
   val _Eq0 : trm -> fml
-  val _Gt0 : trm -> fml
+  val _Pos : trm -> fml
   val _Not : fml -> fml
   val _And : fml -> fml -> fml
   val _Or : fml -> fml -> fml
@@ -287,7 +287,7 @@ end = struct
     | Tt
     | Eq of trm * trm
     | Eq0 of trm
-    | Gt0 of trm
+    | Pos of trm
     | Not of fml
     | And of fml * fml
     | Or of fml * fml
@@ -349,11 +349,11 @@ end = struct
       | SynGt -> Eq (y, x) )
     |> check invariant
 
-  let _Gt0 x =
+  let _Pos x =
     ( match x with
     | Z z -> if Z.gt z Z.zero then Tt else _Ff
     | Q q -> if Q.gt q Q.zero then Tt else _Ff
-    | x -> Gt0 x )
+    | x -> Pos x )
     |> check invariant
 
   let _Lit p xs = Lit (p, xs) |> check invariant
@@ -429,7 +429,7 @@ end = struct
     | And (x, y) -> _Or (_Not x) (_Not y)
     | Or (x, y) -> _And (_Not x) (_Not y)
     | Cond {cnd; pos; neg} -> _Cond cnd (_Not pos) (_Not neg)
-    | Tt | Eq _ | Eq0 _ | Gt0 _ | Lit _ | Iff _ -> Not p )
+    | Tt | Eq _ | Eq0 _ | Pos _ | Lit _ | Iff _ -> Not p )
     |> check invariant
 
   and _Cond cnd pos neg =
@@ -501,8 +501,8 @@ let ppx_f strength fs fml =
     | Not (Eq (x, y)) -> pf "(%a@ @<2>≠ %a)" pp_t x pp_t y
     | Eq0 x -> pf "(0 = %a)" pp_t x
     | Not (Eq0 x) -> pf "(0 @<2>≠ %a)" pp_t x
-    | Gt0 x -> pf "(0 < %a)" pp_t x
-    | Not (Gt0 x) -> pf "(0 @<2>≥ %a)" pp_t x
+    | Pos x -> pf "(0 < %a)" pp_t x
+    | Not (Pos x) -> pf "(0 @<2>≥ %a)" pp_t x
     | Not x -> pf "@<1>¬%a" pp x
     | And (x, y) -> pf "(%a@ @<2>∧ %a)" pp x pp y
     | Or (x, y) -> pf "(%a@ @<2>∨ %a)" pp x pp y
@@ -555,7 +555,7 @@ let rec fold_vars_f ~init p ~f =
   match (p : fml) with
   | Tt -> init
   | Eq (x, y) -> fold_vars_t ~f x ~init:(fold_vars_t ~f y ~init)
-  | Eq0 x | Gt0 x -> fold_vars_t ~f x ~init
+  | Eq0 x | Pos x -> fold_vars_t ~f x ~init
   | Not x -> fold_vars_f ~f x ~init
   | And (x, y) | Or (x, y) | Iff (x, y) ->
       fold_vars_f ~f x ~init:(fold_vars_f ~f y ~init)
@@ -603,7 +603,7 @@ let rec map_trms_f ~f b =
   | Tt -> b
   | Eq (x, y) -> map2 f b _Eq x y
   | Eq0 x -> map1 f b _Eq0 x
-  | Gt0 x -> map1 f b _Gt0 x
+  | Pos x -> map1 f b _Pos x
   | Not x -> map1 (map_trms_f ~f) b _Not x
   | And (x, y) -> map2 (map_trms_f ~f) b _And x y
   | Or (x, y) -> map2 (map_trms_f ~f) b _Or x y
@@ -910,20 +910,14 @@ module Formula = struct
   let dq a b = _Not (eq a b)
   let eq0 = ap1f _Eq0
   let dq0 a = _Not (eq0 a)
-  let gt0 = ap1f _Gt0
-  let le0 a = _Not (gt0 a)
-  let ge0 a = le0 (Term.neg a)
-  let lt0 a = gt0 (Term.neg a)
+  let pos = ap1f _Pos
 
-  let gt a b =
-    if a == Term.zero then lt0 b
-    else if b == Term.zero then gt0 a
-    else gt0 (Term.sub a b)
+  (* a > b iff a-b > 0 iff 0 < a-b *)
+  let gt a b = if b == Term.zero then pos a else pos (Term.sub a b)
 
+  (* a ≥ b iff 0 ≥ b-a iff ¬(0 < b-a) *)
   let ge a b =
-    if a == Term.zero then le0 b
-    else if b == Term.zero then ge0 a
-    else ge0 (Term.sub a b)
+    if a == Term.zero then _Not (pos b) else _Not (pos (Term.sub b a))
 
   let lt a b = gt b a
   let le a b = ge b a
@@ -972,7 +966,7 @@ module Formula = struct
     | Tt -> b
     | Eq (x, y) -> lift_map2 f b _Eq x y
     | Eq0 x -> lift_map1 f b _Eq0 x
-    | Gt0 x -> lift_map1 f b _Gt0 x
+    | Pos x -> lift_map1 f b _Pos x
     | Not x -> map1 (map_terms ~f) b _Not x
     | And (x, y) -> map2 (map_terms ~f) b _And x y
     | Or (x, y) -> map2 (map_terms ~f) b _Or x y
@@ -1002,7 +996,7 @@ module Formula = struct
    fun ~meet1 ~join1 ~top ~bot fml ->
     let rec add_conjunct (cjn, splits) fml =
       match fml with
-      | Tt | Eq _ | Eq0 _ | Gt0 _ | Iff _ | Lit _ | Not _ ->
+      | Tt | Eq _ | Eq0 _ | Pos _ | Iff _ | Lit _ | Not _ ->
           (meet1 fml cjn, splits)
       | And (p, q) -> add_conjunct (add_conjunct (cjn, splits) p) q
       | Or (p, q) -> (cjn, [p; q] :: splits)
@@ -1077,7 +1071,7 @@ let rec f_to_ses : fml -> Ses.Term.t = function
   | Not Tt -> Ses.Term.false_
   | Eq (x, y) -> Ses.Term.eq (t_to_ses x) (t_to_ses y)
   | Eq0 x -> Ses.Term.eq Ses.Term.zero (t_to_ses x)
-  | Gt0 x -> Ses.Term.lt Ses.Term.zero (t_to_ses x)
+  | Pos x -> Ses.Term.lt Ses.Term.zero (t_to_ses x)
   | Not p -> Ses.Term.not_ (f_to_ses p)
   | And (p, q) -> Ses.Term.and_ (f_to_ses p) (f_to_ses q)
   | Or (p, q) -> Ses.Term.or_ (f_to_ses p) (f_to_ses q)
