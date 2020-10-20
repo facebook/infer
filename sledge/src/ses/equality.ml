@@ -383,13 +383,13 @@ let pp_diff fs (r, s) =
 
 let ppx_cls x = List.pp "@ = " (Term.ppx x)
 let pp_cls = ppx_cls (fun _ -> None)
-let pp_diff_cls = List.pp_diff ~compare:Term.compare "@ = " Term.pp
+let pp_diff_cls = List.pp_diff ~cmp:Term.compare "@ = " Term.pp
 
 let ppx_classes x fs clss =
   List.pp "@ @<2>∧ "
     (fun fs (rep, cls) ->
       Format.fprintf fs "@[%a@ = %a@]" (Term.ppx x) rep (ppx_cls x)
-        (List.sort ~compare:Term.compare cls) )
+        (List.sort ~cmp:Term.compare cls) )
     fs (Term.Map.to_alist clss)
 
 let pp_classes fs r = ppx_classes (fun _ -> None) fs (classes r)
@@ -903,17 +903,14 @@ let solve_class us us_xs ~key:rep ~data:cls (classes, subst) =
       Subst.pp subst]
   ;
   let cls, cls_not_ito_us_xs =
-    List.partition_tf
+    List.partition
       ~f:(fun e -> Var.Set.is_subset (Term.fv e) ~of_:us_xs)
       (rep :: cls)
   in
   let cls, subst = solve_interp_eqs us (cls, subst) in
   let cls, subst = solve_uninterp_eqs us (cls, subst) in
   let cls = List.rev_append cls_not_ito_us_xs cls in
-  let cls =
-    List.remove ~equal:Term.equal cls (Subst.norm subst rep)
-    |> Option.value ~default:cls
-  in
+  let cls = List.remove ~eq:Term.equal (Subst.norm subst rep) cls in
   let classes =
     if List.is_empty cls then Term.Map.remove classes rep
     else Term.Map.set classes ~key:rep ~data:cls
@@ -959,7 +956,8 @@ let solve_concat_extracts_eq r x =
 let solve_concat_extracts r us x (classes, subst, us_xs) =
   match
     List.filter_map (solve_concat_extracts_eq r x) ~f:(fun rev_extracts ->
-        List.fold_option rev_extracts ~init:[] ~f:(fun suffix e ->
+        Iter.fold_opt (Iter.of_list rev_extracts) ~init:[]
+          ~f:(fun suffix e ->
             let+ rep_ito_us =
               List.fold (cls_of r e) ~init:None ~f:(fun rep_ito_us trm ->
                   match rep_ito_us with
@@ -969,7 +967,8 @@ let solve_concat_extracts r us x (classes, subst, us_xs) =
                   | _ -> rep_ito_us )
             in
             Term.sized ~siz:(Term.seq_size_exn e) ~seq:rep_ito_us :: suffix ) )
-    |> List.min_elt ~compare:[%compare: Term.t list]
+    |> Iter.of_list
+    |> Iter.min ~lt:(fun xs ys -> [%compare: Term.t list] xs ys < 0)
   with
   | Some extracts ->
       let concat = Term.concat (Array.of_list extracts) in
@@ -1036,7 +1035,7 @@ let solve_for_vars vss r =
           || fail "@[%a@ = %a@ not entailed by@ @[%a@]@]" Term.pp key
                Term.pp data pp_classes r () ) ;
         assert (
-          List.fold_until vss ~init:us
+          Iter.fold_until (Iter.of_list vss) ~init:us
             ~f:(fun us xs ->
               let us_xs = Var.Set.union us xs in
               let ks = Term.fv key in
@@ -1046,8 +1045,8 @@ let solve_for_vars vss r =
                 && Var.Set.is_subset ds ~of_:us_xs
                 && ( Var.Set.is_subset ds ~of_:us
                    || not (Var.Set.is_subset ks ~of_:us) )
-              then Stop true
-              else Continue us_xs )
+              then `Stop true
+              else `Continue us_xs )
             ~finish:(fun _ -> false) ) )]
 
 let elim xs r = {r with rep= Subst.remove xs r.rep}

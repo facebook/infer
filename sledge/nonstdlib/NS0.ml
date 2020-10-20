@@ -119,8 +119,6 @@ let map_endo map t ~f =
 
 (** Containers *)
 
-type ('a, 'b) continue_or_stop = Continue of 'a | Stop of 'b
-
 (* from upcoming Stdlib *)
 module Either = struct
   type ('a, 'b) t = Left of 'a | Right of 'b

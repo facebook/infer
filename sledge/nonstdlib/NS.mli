@@ -127,8 +127,6 @@ include module type of Iter.Import
 
 (** Containers *)
 
-type ('a, 'b) continue_or_stop = Continue of 'a | Stop of 'b
-
 module Option = Option
 include module type of Option.Infix
 

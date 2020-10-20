@@ -460,7 +460,7 @@ module Func = struct
         if is_undefined func then Format.fprintf fs " #%i@]" sort_index
         else
           let cfg =
-            List.sort ~compare:Block.compare (List.tl_exn (entry_cfg func))
+            List.sort ~cmp:Block.compare (List.tl_exn (entry_cfg func))
           in
           Format.fprintf fs " { #%i %a@;<1 4>@[<v>%a@ %a@]%t%a@]@ }"
             sort_index Loc.pp name.loc pp_cmnd cmnd Term.pp term
@@ -475,8 +475,9 @@ module Func = struct
     | Pointer {elt= Function {return; _}; _} ->
         assert (
           not
-            (List.contains_dup (entry_cfg func) ~compare:(fun b1 b2 ->
-                 String.compare b1.lbl b2.lbl )) ) ;
+            (Iter.contains_dup
+               (Iter.of_list (entry_cfg func))
+               ~cmp:(fun b1 b2 -> String.compare b1.lbl b2.lbl)) ) ;
         assert (
           Bool.equal (Option.is_some return) (Option.is_some func.freturn)
         ) ;
@@ -615,5 +616,5 @@ module Program = struct
       globals
       (List.pp "@\n@\n" Func.pp)
       ( String.Map.data functions
-      |> List.sort ~compare:(fun x y -> compare_block x.entry y.entry) )
+      |> List.sort ~cmp:(fun x y -> compare_block x.entry y.entry) )
 end

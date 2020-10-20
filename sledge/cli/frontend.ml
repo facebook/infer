@@ -469,8 +469,8 @@ and xlate_value ?(inline = false) stk :
         (pre, Exp.record typ (IArray.of_list args))
     | ConstantStruct -> (
         let typ = xlate_type x (Llvm.type_of llv) in
-        match List.findi llv stk with
-        | Some i -> ([], Exp.rec_record i typ)
+        match List.find_idx ~f:(( == ) llv) stk with
+        | Some (i, _) -> ([], Exp.rec_record i typ)
         | None ->
             let stk = llv :: stk in
             let len = Llvm.num_operands llv in

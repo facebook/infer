@@ -278,7 +278,7 @@ let call ~summaries ~globals:_ ~actuals ~areturn ~formals ~freturn:_
     let mangle r =
       Llair.Reg.program (Llair.Reg.typ r) ("__tmp__" ^ Llair.Reg.name r)
     in
-    let args = List.zip_exn formals actuals in
+    let args = List.combine_exn formals actuals in
     let q' =
       List.fold args ~init:q ~f:(fun q (f, a) -> assign (mangle f) a q)
     in

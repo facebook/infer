@@ -45,6 +45,8 @@ let fold_map xs ~init ~f =
   let a, ys = Array.fold_map (i2a xs) ~init ~f in
   (a, a2i ys)
 
+type ('a, 'b) continue_or_stop = Continue of 'a | Stop of 'b
+
 let fold_map_until xs ~init ~f ~finish =
   With_return.with_return (fun {return} ->
       finish

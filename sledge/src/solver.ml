@@ -653,7 +653,8 @@ let excise_dnf : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
  fun minuend xs subtrahend ->
   let dnf_minuend = Sh.dnf minuend in
   let dnf_subtrahend = Sh.dnf subtrahend in
-  List.fold_option dnf_minuend
+  Iter.fold_opt
+    (Iter.of_list dnf_minuend)
     ~init:(Sh.false_ (Var.Set.union minuend.us xs))
     ~f:(fun remainders minuend ->
       [%trace]

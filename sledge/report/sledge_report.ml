@@ -75,11 +75,11 @@ let add_gcs base_gcs gcs row =
   else List.fold ~f:(add_gc base_gcs) ~init:row gcs
 
 let add_status base_status row status =
-  if List.mem ~equal:Report.equal_status row.status status then row
+  if List.mem ~eq:Report.equal_status status row.status then row
   else
     match base_status with
     | Some base_status
-      when not (List.mem ~equal:Report.equal_status base_status status) ->
+      when not (List.mem ~eq:Report.equal_status status base_status) ->
         { row with
           status= status :: row.status
         ; status_deltas=
@@ -151,7 +151,7 @@ let combine name b_result c_result =
                 ; peak_size= ave_floats peaks }
         in
         let status =
-          Some (List.dedup_and_sort ~compare:Report.compare_status statuses)
+          Some (List.sort_uniq ~cmp:Report.compare_status statuses)
         in
         (times, gcs, status)
     | None -> (None, None, None)

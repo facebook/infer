@@ -31,7 +31,7 @@ let build_info =
         ( Build_info.Statically_linked_library.name lib
         , version_to_string
             (Build_info.Statically_linked_library.version lib) ) )
-    |> List.sort ~compare:[%compare: string * string]
+    |> List.sort ~cmp:[%compare: string * string]
   in
   let max_length =
     List.fold_left libs ~init:0 ~f:(fun n (name, _) ->

@@ -6,7 +6,9 @@
  *)
 
 open! NS0
-include module type of Base.List
+include module type of ContainersLabels.List
+
+type 'a t = 'a list [@@deriving compare, equal, hash, sexp]
 
 val pp :
      ?pre:(unit, unit) fmt
@@ -17,39 +19,43 @@ val pp :
 (** Pretty-print a list. *)
 
 val pp_diff :
-     compare:('a -> 'a -> int)
+     cmp:('a -> 'a -> int)
   -> (unit, unit) fmt
   -> 'a pp
   -> ('a list * 'a list) pp
 
-val findi : 'a -> 'a t -> int option
-(** [findi x xs] is [Some i] when [nth xs i == x], otherwise [None]. *)
-
+val hd : 'a t -> 'a option
+val hd_exn : 'a t -> 'a
+val tl : 'a t -> 'a t option
+val tl_exn : 'a t -> 'a t
 val pop_exn : 'a list -> 'a * 'a list
+val exists : 'a t -> f:('a -> bool) -> bool
+val for_all : 'a t -> f:('a -> bool) -> bool
+val find : 'a t -> f:('a -> bool) -> 'a option
+val find_exn : 'a t -> f:('a -> bool) -> 'a
+val find_map : 'a t -> f:('a -> 'b option) -> 'b option
+val find_map_exn : 'a t -> f:('a -> 'b option) -> 'b
 
-val find_map_remove :
-  'a list -> f:('a -> 'b option) -> ('b * 'a list) option
+val remove_one_exn : eq:('a -> 'a -> bool) -> 'a -> 'a list -> 'a list
+(** Returns the input list without the first element [eq]ual to the
+    argument, or raise [Not_found] if no such element exists. *)
 
-val fold_option :
-  'a t -> init:'accum -> f:('accum -> 'a -> 'accum option) -> 'accum option
-(** [fold_option t ~init ~f] is a short-circuiting version of [fold] that
-    runs in the [Option] monad. If [f] returns [None], that value is
-    returned without any additional invocations of [f]. *)
+val remove_one : eq:('a -> 'a -> bool) -> 'a -> 'a list -> 'a list option
+val remove : eq:('a -> 'a -> bool) -> 'a -> 'a list -> 'a list
+val map : 'a t -> f:('a -> 'b) -> 'b t
 
 val map_endo : 'a t -> f:('a -> 'a) -> 'a t
-(** Like map, but specialized to require [f] to be an endofunction, which
+(** Like [map], but specialized to require [f] to be an endofunction, which
     enables preserving [==] if [f] preserves [==] of every element. *)
 
-val rev_map_unzip : 'a t -> f:('a -> 'b * 'c) -> 'b list * 'c list
-(** [rev_map_unzip ~f xs] is [unzip (rev_map ~f xs)] but more efficient. *)
+val rev_map_split : 'a t -> f:('a -> 'b * 'c) -> 'b list * 'c list
+(** [rev_map_split ~f xs] is [split (rev_map ~f xs)] but more efficient. *)
 
-val remove_exn : ?equal:('a -> 'a -> bool) -> 'a list -> 'a -> 'a list
-(** Returns the input list without the first element [equal] to the
-    argument, or raise [Not_found_s] if no such element exists. [equal]
-    defaults to physical equality. *)
-
-val remove : ?equal:('a -> 'a -> bool) -> 'a list -> 'a -> 'a list option
-val rev_init : int -> f:(int -> 'a) -> 'a list
+val combine : 'a t -> 'b t -> ('a * 'b) t option
+val combine_exn : 'a t -> 'b t -> ('a * 'b) t
+val fold : 'a list -> init:'s -> f:('s -> 'a -> 's) -> 's
+val reduce : 'a t -> f:('a -> 'a -> 'a) -> 'a option
+val fold2_exn : 'a t -> 'b t -> init:'s -> f:('s -> 'a -> 'b -> 's) -> 's
 
 val symmetric_diff :
-  compare:('a -> 'a -> int) -> 'a t -> 'a t -> ('a, 'a) Either.t t
+  cmp:('a -> 'a -> int) -> 'a t -> 'a t -> ('a, 'a) Either.t t

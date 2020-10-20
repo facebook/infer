@@ -43,6 +43,8 @@ val contains_dup : compare:('a -> 'a -> int) -> 'a t -> bool
 val fold_map :
   'a t -> init:'accum -> f:('accum -> 'a -> 'accum * 'b) -> 'accum * 'b t
 
+type ('a, 'b) continue_or_stop = Continue of 'a | Stop of 'b
+
 val fold_map_until :
      'a t
   -> init:'accum

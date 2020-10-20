@@ -1273,7 +1273,7 @@ module Context = struct
     List.pp "@ @<2>∧ "
       (fun fs (rep, cls) ->
         Format.fprintf fs "@[%a@ = %a@]" (Term.ppx x) rep (ppx_cls x)
-          (List.sort ~compare:Term.compare cls) )
+          (List.sort ~cmp:Term.compare cls) )
       fs (Term.Map.to_alist clss)
 
   let pp fs r = ppx_classes (fun _ -> None) fs (classes r)
