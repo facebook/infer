@@ -776,6 +776,17 @@ let field_nullability =
   ; ("android.os.Build.SUPPORTED_ABIS", o)
   ; ( "android.os.Message.obj"
     , n (* An extra object going with the message - null if was not attached *) )
+  ; ( "android.util.Pair.first"
+    , o
+      (* Deliberate UNSOUNDNESS. Since we don't support annotations in generic params,
+         for the sake of usability we consider Pair to be non-nullable,
+         which is true in majority of usages.
+         This is a concious decision: Pair is a useful utility class, and without this
+         it would be barely usable in practice.
+         This is also on par with our policy for arrays and other containers, which are considered
+         non-nullable.
+      *) )
+  ; ("android.util.Pair.second", o)
   ; ("android.util.Patterns.DOMAIN_NAME", o)
   ; ("android.util.Patterns.EMAIL_ADDRESS", o)
   ; ("android.util.Patterns.IP_ADDRESS", o)
