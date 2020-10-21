@@ -458,10 +458,12 @@ let apply_callee ~caller_proc_desc callee_pname call_loc callee_exec_state ~ret
   in
   let open ExecutionDomain in
   match callee_exec_state with
-  | AbortProgram _ ->
-      (* Callee has failed; propagate the fact that a failure happened. TODO: should only do so if
-         we can apply the precondition? *)
-      Ok (Some callee_exec_state)
+  | AbortProgram astate ->
+      apply
+        (astate :> AbductiveDomain.t)
+        ~f:(fun astate ->
+          let astate_summary = AbductiveDomain.summary_of_post caller_proc_desc astate in
+          Ok (Some (AbortProgram astate_summary)) )
   | ContinueProgram astate ->
       apply astate ~f:(fun astate -> Ok (Some (ContinueProgram astate)))
   | ExitProgram astate ->
