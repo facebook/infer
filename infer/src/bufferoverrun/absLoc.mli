@@ -119,6 +119,8 @@ module PowLoc : sig
 
   val add : Loc.t -> t -> t
 
+  val of_list : Loc.t list -> t
+
   val exists : (Loc.t -> bool) -> t -> bool
 
   val mem : Loc.t -> t -> bool

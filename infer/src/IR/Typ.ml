@@ -526,6 +526,9 @@ module Name = struct
         |> QualifiedCppName.Set.of_list
       in
       function ObjcClass name -> not (QualifiedCppName.Set.mem name tagged_classes) | _ -> false
+
+
+    let objc_ns_enumerator = from_string "NSEnumerator"
   end
 
   module Set = PrettyPrintable.MakePPSet (struct

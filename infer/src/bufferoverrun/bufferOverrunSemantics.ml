@@ -590,27 +590,18 @@ module Prune = struct
             update_mem_in_prune lv_linked_list_index pruned_v acc ) )
 
 
-  let nscollection_length_of_iterator loc mem =
-    let arr_locs =
-      Mem.find loc mem |> Val.get_all_locs
-      |> PowLoc.append_field ~fn:BufferOverrunField.objc_collection_internal_array
-    in
-    eval_array_locs_length arr_locs mem
-
-
   let prune_iterator_offset_objc next_object mem acc =
     let tgts = Mem.find_alias_loc next_object mem in
     AliasTargets.fold
-      (fun rhs tgt acc ->
+      (fun iterator tgt acc ->
         match tgt with
         | AliasTarget.IteratorNextObject _ ->
-            let array_length = nscollection_length_of_iterator rhs mem in
-            let iterator_offset_loc =
-              Loc.append_field rhs BufferOverrunField.objc_iterator_offset
+            let iterator_v = Mem.find iterator mem in
+            let iterator_v' =
+              { iterator_v with
+                arrayblk= Val.get_array_blk iterator_v |> ArrayBlk.prune_offset_le_size }
             in
-            let iterator_offset_v = Mem.find iterator_offset_loc mem in
-            let iterator_offset_v' = Val.prune_le iterator_offset_v array_length in
-            update_mem_in_prune iterator_offset_loc iterator_offset_v' acc
+            update_mem_in_prune iterator iterator_v' acc
         | _ ->
             acc )
       tgts acc

@@ -51,7 +51,7 @@ NSArray* nsarray_init_with_objects_constant() {
   }
 }
 
-NSArray* nsarray_array_with_objects_constant() {
+NSArray* nsarray_array_with_objects_constant_FP() {
   NSDate* aDate = [NSDate distantFuture];
   NSValue* aValue = @(5);
   NSString* aString = @"hello";
@@ -166,13 +166,13 @@ void nsarray_enumerator_linear(NSArray* array) {
   }
 }
 
-void nsarray_enumerator_param_linear_FN(NSEnumerator* enumerator) {
+void nsarray_enumerator_param_linear(NSEnumerator* enumerator) {
   id obj;
   while (obj = [enumerator nextObject]) {
   }
 }
 
-void call_nsarray_enumerator_param_linear_FN(NSArray* array) {
+void call_nsarray_enumerator_param_linear(NSArray* array) {
   NSEnumerator* enumerator = [array objectEnumerator];
   nsarray_enumerator_param_linear_FN(enumerator);
 }

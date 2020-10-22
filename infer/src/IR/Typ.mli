@@ -271,6 +271,8 @@ module Name : sig
     val from_qual_name : QualifiedCppName.t -> t
 
     val protocol_from_qual_name : QualifiedCppName.t -> t
+
+    val objc_ns_enumerator : t
   end
 
   module Set : PrettyPrintable.PPSet with type elt = t

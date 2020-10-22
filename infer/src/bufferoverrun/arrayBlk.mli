@@ -58,6 +58,9 @@ val prune_eq : t -> t -> t
 val prune_ne : t -> t -> t
 (** [prune_ne x y] returns a pruned value of [x] by [!= y]. *)
 
+val prune_offset_le_size : t -> t
+(** Prune offset by [offset <= size] *)
+
 val minus_offset : t -> Itv.t -> t
 
 val plus_offset : t -> Itv.t -> t

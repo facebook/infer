@@ -1142,34 +1142,34 @@ module NSCollection = struct
 
 
   let iterator coll_exp =
-    let exec {integer_type_widths; location} ~ret:(ret_id, _) mem =
-      let traces = Trace.(Set.singleton location ArrayDeclaration) in
-      let array_v = Sem.eval integer_type_widths coll_exp mem in
-      let array_loc = Dom.Val.get_all_locs array_v in
-      let offset_loc = PowLoc.append_field ~fn:BufferOverrunField.objc_iterator_offset array_loc in
-      let mem = Dom.Mem.add_heap_set offset_loc Dom.Val.Itv.zero mem in
-      model_by_value (Dom.Val.of_pow_loc ~traces array_loc) ret_id mem
-      |> Dom.Mem.add_heap_set array_loc array_v
-      |> Dom.Mem.add_iterator_alias_objc ret_id
+    let exec {integer_type_widths= _; location} ~ret:(id, _) mem =
+      let elements_locs = eval_collection_internal_array_locs coll_exp mem in
+      let v = Dom.Mem.find_set elements_locs mem |> Dom.Val.set_array_offset location Itv.zero in
+      model_by_value v id mem
     in
     {exec; check= no_check}
 
 
   let next_object iterator =
-    let exec {integer_type_widths} ~ret:(id, _) mem =
-      let iterator_v = Sem.eval integer_type_widths iterator mem in
-      let traces = Dom.Val.get_traces iterator_v in
-      let offset_loc =
-        Dom.Val.get_pow_loc iterator_v
-        |> PowLoc.append_field ~fn:BufferOverrunField.objc_iterator_offset
+    let exec _ ~ret:(ret_id, _) mem =
+      let iterator_locs =
+        Dom.Mem.find_simple_alias iterator mem
+        |> List.filter_map ~f:(fun (l, i) -> if IntLit.iszero i then Some l else None)
+        |> PowLoc.of_list
       in
-      let next_offset_v =
-        Dom.Mem.find_set offset_loc mem |> Dom.Val.get_itv |> Itv.incr |> Dom.Val.of_itv
+      let iterator_v = Dom.Mem.find_set iterator_locs mem in
+      let arrayblk = ArrayBlk.plus_offset (Dom.Val.get_array_blk iterator_v) Itv.one in
+      let iterator_v' = {iterator_v with arrayblk} in
+      let return_v =
+        (* NOTE: It joins zero to avoid unreachable nodes due to the following hack.  The
+           [nextObject] returns the offset of the enumerator instead of an object elements,
+           which helps the cost checker select the offset as a control variable, for example,
+           [while(obj = [enumerator nextObject]) { ... }]. *)
+        ArrayBlk.get_offset arrayblk |> Itv.join Itv.zero |> Dom.Val.of_itv
       in
-      let locs = eval_collection_internal_array_locs iterator mem in
-      model_by_value (Dom.Val.of_pow_loc ~traces locs) id mem
-      |> Dom.Mem.add_heap_set offset_loc next_offset_v
-      |> Dom.Mem.add_iterator_next_object_alias id iterator
+      model_by_value return_v ret_id mem
+      |> Dom.Mem.add_heap_set iterator_locs iterator_v'
+      |> Dom.Mem.add_iterator_next_object_alias ~ret_id ~iterator
     in
     {exec; check= no_check}
 end
@@ -1712,7 +1712,7 @@ module Call = struct
         &:: "arrayByAddingObjectsFromArray:" <>$ capt_exp $+ capt_exp
         $--> NSCollection.new_collection_by_add_all
       ; +PatternMatch.ObjectiveC.implements "NSEnumerator"
-        &:: "nextObject" <>$ capt_exp $--> NSCollection.next_object
+        &:: "nextObject" <>$ capt_var_exn $--> NSCollection.next_object
       ; +PatternMatch.ObjectiveC.implements "NSFileManager"
         &:: "contentsOfDirectoryAtURL:includingPropertiesForKeys:options:error:"
         &--> NSCollection.new_collection
