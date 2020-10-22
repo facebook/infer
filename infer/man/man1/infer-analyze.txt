@@ -72,6 +72,10 @@ OPTIONS
            Activates: Enable cost and disable all other checkers (Conversely:
            --no-cost-only)
 
+       --no-cost-suppress-func-ptr
+           Deactivates: Suppress printing function pointers in cost reports
+           (Conversely: --cost-suppress-func-ptr)
+
        --custom-symbols json
            Specify named lists of symbols available to rules
 

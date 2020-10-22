@@ -945,6 +945,12 @@ and costs_previous =
     "Costs report of the base revision to use for comparison"
 
 
+and cost_suppress_func_ptr =
+  CLOpt.mk_bool ~default:true ~long:"cost-suppress-func-ptr"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Suppress printing function pointers in cost reports"
+
+
 and cost_tests_only_autoreleasepool =
   CLOpt.mk_bool ~long:"cost-tests-only-autoreleasepool"
     ~in_help:InferCommand.[(Report, manual_generic); (ReportDiff, manual_generic)]
@@ -2752,6 +2758,8 @@ and cost_issues_tests = !cost_issues_tests
 and cost_scuba_logging = !cost_scuba_logging
 
 and costs_previous = !costs_previous
+
+and cost_suppress_func_ptr = !cost_suppress_func_ptr
 
 and cost_tests_only_autoreleasepool = !cost_tests_only_autoreleasepool
 

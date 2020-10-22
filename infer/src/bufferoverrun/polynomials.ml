@@ -132,6 +132,8 @@ module NonNegativeNonTopPolynomial = struct
 
 
     let pp = pp_hum ~hum:true
+
+    let is_func_ptr = function FuncPtr _ -> true | NonNegativeBoundWithDegreeKind _ -> false
   end
 
   module M = struct
@@ -513,23 +515,20 @@ module NonNegativeNonTopPolynomial = struct
         Above s_trace
 
 
+  let rec is_zero_degree_poly {const; terms} =
+    NonNegativeInt.is_zero const && is_zero_degree_terms terms
+
+
+  and is_zero_degree_terms terms =
+    M.for_all (fun key v -> Key.is_func_ptr key || is_zero_degree_poly v) terms
+
+
   (** Emit a pair (d,t) where d is the degree of the polynomial and t is the first term with such
       degree. When calculating the degree, it ignores symbols of function pointer, so they are
       addressed as if zero cost. *)
   let degree_with_term {poly; autoreleasepool_trace} =
-    let rec is_func_ptr_poly {const; terms} =
-      NonNegativeInt.is_zero const
-      && M.for_all
-           (fun key v ->
-             match key with
-             | FuncPtr _ ->
-                 true
-             | NonNegativeBoundWithDegreeKind _ ->
-                 is_func_ptr_poly v )
-           terms
-    in
     let rec degree_with_term_poly ({terms} as poly) =
-      if is_func_ptr_poly poly then (Degree.zero, true, poly)
+      if is_zero_degree_poly poly then (Degree.zero, true, poly)
       else
         M.fold
           (fun t p cur_max ->
@@ -584,19 +583,28 @@ module NonNegativeNonTopPolynomial = struct
       in
       ( M.fold
           (fun s p print_plus ->
-            pp_sub ~hum ~print_plus (add_symb s symbs) fmt p ;
-            true )
+            if Config.cost_suppress_func_ptr && (Key.is_func_ptr s || is_zero_degree_poly p) then
+              print_plus
+            else (
+              pp_sub ~hum ~print_plus (add_symb s symbs) fmt p ;
+              true ) )
           terms print_plus
         : bool )
       |> ignore
     in
     fun ~hum fmt {const; terms} ->
       let const_not_zero = not (NonNegativeInt.is_zero const) in
-      if const_not_zero || M.is_empty terms then NonNegativeInt.pp fmt const ;
+      if
+        const_not_zero || M.is_empty terms
+        || (Config.cost_suppress_func_ptr && is_zero_degree_terms terms)
+      then NonNegativeInt.pp fmt const ;
       ( M.fold
           (fun s p print_plus ->
-            pp_sub ~hum ~print_plus ((s, PositiveInt.one), []) fmt p ;
-            true )
+            if Config.cost_suppress_func_ptr && (Key.is_func_ptr s || is_zero_degree_poly p) then
+              print_plus
+            else (
+              pp_sub ~hum ~print_plus ((s, PositiveInt.one), []) fmt p ;
+              true ) )
           terms const_not_zero
         : bool )
       |> ignore

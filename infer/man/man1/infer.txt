@@ -279,6 +279,10 @@ OPTIONS
            Activates: Enable cost and disable all other checkers (Conversely:
            --no-cost-only)           See also infer-analyze(1).
 
+       --no-cost-suppress-func-ptr
+           Deactivates: Suppress printing function pointers in cost reports
+           (Conversely: --cost-suppress-func-ptr)           See also infer-analyze(1).
+
        --cost-tests-only-autoreleasepool
            Activates: [EXPERIMENTAL] Report only autoreleasepool size results
            in cost tests (Conversely: --no-cost-tests-only-autoreleasepool)       

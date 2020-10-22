@@ -7,7 +7,8 @@ TESTS_DIR = ../../..
 
 CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS)
 INFER_OPTIONS = --cost-only --debug-exceptions --project-root $(TESTS_DIR) \
-  --report-force-relative-path --xcode-isysroot-suffix $(XCODE_ISYSROOT_SUFFIX)
+  --report-force-relative-path --xcode-isysroot-suffix $(XCODE_ISYSROOT_SUFFIX) \
+  --no-cost-suppress-func-ptr
 INFERPRINT_OPTIONS = --issues-tests
 INFERPRINT_COST_OPTIONS = --cost-tests-only-autoreleasepool --cost-issues-tests
 

@@ -20,9 +20,11 @@ $(CURRENT_REPORT) $(PREVIOUS_REPORT): $(OBJC_DEPS)
 $(CURRENT_REPORT):
 	$(QUIET)$(COPY) src/DiffBlock.current.m src/DiffBlock.m
 	$(QUIET)$(call silent_on_success,Testing Cost Differential: current,\
-	$(INFER_BIN)  --no-filtering --cost-only -o $(CURRENT_DIR) -- clang $(CLANG_OPTIONS) $(COPIED))
+	$(INFER_BIN)  --no-filtering --cost-only --no-cost-suppress-func-ptr -o $(CURRENT_DIR) \
+	  -- clang $(CLANG_OPTIONS) $(COPIED))
 
 $(PREVIOUS_REPORT):
 	$(QUIET)$(COPY) src/DiffBlock.previous.m src/DiffBlock.m
 	$(QUIET)$(call silent_on_success,Testing Cost Differential: previous,\
-	$(INFER_BIN) --debug --no-filtering --cost-only -o $(PREVIOUS_DIR) -- clang $(CLANG_OPTIONS) $(COPIED))
+	$(INFER_BIN) --debug --no-filtering --cost-only --no-cost-suppress-func-ptr -o $(PREVIOUS_DIR) \
+	  -- clang $(CLANG_OPTIONS) $(COPIED))

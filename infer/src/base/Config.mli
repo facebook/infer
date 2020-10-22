@@ -232,6 +232,8 @@ val cost_scuba_logging : bool
 
 val costs_previous : string option
 
+val cost_suppress_func_ptr : bool
+
 val cost_tests_only_autoreleasepool : bool
 
 val cxx : bool
