@@ -1165,7 +1165,7 @@ module NSCollection = struct
            [nextObject] returns the offset of the enumerator instead of an object elements,
            which helps the cost checker select the offset as a control variable, for example,
            [while(obj = [enumerator nextObject]) { ... }]. *)
-        ArrayBlk.get_offset arrayblk |> Itv.join Itv.zero |> Dom.Val.of_itv
+        ArrayBlk.get_offset ~cost_mode:true arrayblk |> Itv.join Itv.zero |> Dom.Val.of_itv
       in
       model_by_value return_v ret_id mem
       |> Dom.Mem.add_heap_set iterator_locs iterator_v'

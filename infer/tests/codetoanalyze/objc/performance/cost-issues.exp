@@ -1,5 +1,6 @@
 ${XCODE_ISYSROOT}/System/Library/Frameworks/Foundation.framework/Headers/NSArray.h, NSArray.indexOfObject:inSortedRange:options:usingComparator:[objc_blocknsarray_binary_search_log_FN_1], 0,  OnUIThread:false, []
 codetoanalyze/objc/performance/NSArray.m, call_nsarray_enumerator_param_linear, 6,  OnUIThread:false, []
+codetoanalyze/objc/performance/NSArray.m, multiple_nsarray_enumerators_param_linear, 12 + 5 ⋅ (enumerator2.length + enumerator1.length + 2),  OnUIThread:false, [{enumerator2.length + enumerator1.length + 2},Loop]
 codetoanalyze/objc/performance/NSArray.m, nsarray_access_constant, 50,  OnUIThread:false, []
 codetoanalyze/objc/performance/NSArray.m, nsarray_access_linear, 3 + 7 ⋅ array->elements.length.ub + 3 ⋅ (array->elements.length.ub + 1),  OnUIThread:false, [{array->elements.length.ub + 1},Loop,{array->elements.length.ub},Loop]
 codetoanalyze/objc/performance/NSArray.m, nsarray_add_object_constant, 8,  OnUIThread:false, []

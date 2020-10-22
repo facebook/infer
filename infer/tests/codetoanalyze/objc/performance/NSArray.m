@@ -172,6 +172,15 @@ void nsarray_enumerator_param_linear(NSEnumerator* enumerator) {
   }
 }
 
+void multiple_nsarray_enumerators_param_linear(bool b,
+                                               NSEnumerator* enumerator1,
+                                               NSEnumerator* enumerator2) {
+  NSEnumerator* enumerator = b ? enumerator1 : enumerator2;
+  id obj;
+  while (obj = [enumerator nextObject]) {
+  }
+}
+
 void call_nsarray_enumerator_param_linear(NSArray* array) {
   NSEnumerator* enumerator = [array objectEnumerator];
   nsarray_enumerator_param_linear_FN(enumerator);
