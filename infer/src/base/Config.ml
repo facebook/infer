@@ -2721,6 +2721,8 @@ and checkers = List.map !all_checkers ~f:(fun (checker, _, var) -> (checker, !va
 
 and clang_biniou_file = !clang_biniou_file
 
+and clang_compilation_dbs = !clang_compilation_dbs
+
 and clang_compound_literal_init_limit = !clang_compound_literal_init_limit
 
 and clang_extra_flags = !clang_extra_flags

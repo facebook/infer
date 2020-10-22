@@ -157,3 +157,16 @@ let capture_files_in_database ~changed_files compilation_database =
         fun source_file -> SourceFile.Set.mem source_file changed_files_set
   in
   run_compilation_database compilation_database filter_changed
+
+
+let capture ~changed_files ~db_files =
+  let root = Config.project_root in
+  let clang_compilation_dbs =
+    List.map db_files ~f:(function
+      | `Escaped fname ->
+          `Escaped (Utils.filename_to_absolute ~root fname)
+      | `Raw fname ->
+          `Raw (Utils.filename_to_absolute ~root fname) )
+  in
+  let compilation_database = CompilationDatabase.from_json_files clang_compilation_dbs in
+  capture_files_in_database ~changed_files compilation_database

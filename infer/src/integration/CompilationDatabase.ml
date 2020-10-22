@@ -10,14 +10,12 @@ module L = Logging
 
 type compilation_data = {directory: string; executable: string; escaped_arguments: string list}
 
-type t = compilation_data SourceFile.Map.t ref
+type t = compilation_data SourceFile.Map.t
 
-let empty () = ref SourceFile.Map.empty
-
-let get_size database = SourceFile.Map.cardinal !database
+let empty = SourceFile.Map.empty
 
 let filter_compilation_data database ~f =
-  SourceFile.Map.filter (fun s _ -> f s) !database |> SourceFile.Map.bindings
+  SourceFile.Map.filter (fun s _ -> f s) database |> SourceFile.Map.bindings
 
 
 let parse_command_and_arguments command_and_arguments =
@@ -49,7 +47,7 @@ let decode_json_file (database : t) json_format =
   let exit_format_error error =
     L.(die ExternalError) ("Json file doesn't have the expected format: " ^^ error)
   in
-  let parse_command json =
+  let parse_command db json =
     let directory = ref None in
     let file = ref None in
     let command = ref None in
@@ -126,21 +124,20 @@ let decode_json_file (database : t) json_format =
         let compilation_data = {directory; executable; escaped_arguments} in
         let abs_file = if Filename.is_relative file then directory ^/ file else file in
         let source_file = SourceFile.from_abs_path abs_file in
-        database := SourceFile.Map.add source_file compilation_data !database
+        SourceFile.Map.add source_file compilation_data db
     | _ ->
         exit_format_error "Compilation database entry is not an object: %s"
           (Yojson.Basic.to_string json)
   in
   match Yojson.Basic.from_file json_path with
   | `List commands ->
-      List.iter ~f:parse_command commands
+      List.fold ~init:database ~f:parse_command commands
   | _ as json ->
       exit_format_error "Compilation database is not a list of commands: %s"
         (Yojson.Basic.to_string json)
 
 
 let from_json_files db_json_files =
-  let db = empty () in
-  List.iter ~f:(decode_json_file db) db_json_files ;
-  L.(debug Capture Quiet) "created database with %d entries@\n" (get_size db) ;
+  let db = List.fold ~init:empty ~f:decode_json_file db_json_files in
+  L.(debug Capture Quiet) "created database with %d entries@\n" (SourceFile.Map.cardinal db) ;
   db
