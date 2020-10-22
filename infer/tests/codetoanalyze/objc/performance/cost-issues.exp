@@ -4,7 +4,7 @@ codetoanalyze/objc/performance/NSArray.m, nsarray_access_constant, 50,  OnUIThre
 codetoanalyze/objc/performance/NSArray.m, nsarray_access_linear, 3 + 7 ⋅ array->elements.length.ub + 3 ⋅ (array->elements.length.ub + 1),  OnUIThread:false, [{array->elements.length.ub + 1},Loop,{array->elements.length.ub},Loop]
 codetoanalyze/objc/performance/NSArray.m, nsarray_add_object_constant, 8,  OnUIThread:false, []
 codetoanalyze/objc/performance/NSArray.m, nsarray_add_objects_from_array_linear, 9 + 3 ⋅ append_array->elements.length.ub + append_array->elements.length.ub + 3 ⋅ (append_array->elements.length.ub + 1),  OnUIThread:false, [{append_array->elements.length.ub + 1},Loop,{append_array->elements.length.ub},Modeled call to NSArray.arrayByAddingObjectsFromArray:,{append_array->elements.length.ub},Loop]
-codetoanalyze/objc/performance/NSArray.m, nsarray_array_with_objects_constant_FP, ⊤,  OnUIThread:false, [Unbounded loop,Loop]
+codetoanalyze/objc/performance/NSArray.m, nsarray_array_with_objects_constant, 47,  OnUIThread:false, []
 codetoanalyze/objc/performance/NSArray.m, nsarray_binary_search_log_FN, 10,  OnUIThread:false, []
 codetoanalyze/objc/performance/NSArray.m, nsarray_contains_object_linear, 3 + array->elements.length.ub,  OnUIThread:false, [{array->elements.length.ub},Modeled call to NSArray.containsObject:]
 codetoanalyze/objc/performance/NSArray.m, nsarray_copy_linear, 6 + 3 ⋅ array->elements.length.ub + 3 ⋅ (array->elements.length.ub + 1),  OnUIThread:false, [{array->elements.length.ub + 1},Loop,{array->elements.length.ub},Loop]

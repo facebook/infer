@@ -1707,7 +1707,7 @@ module Call = struct
       ; +PatternMatch.ObjectiveC.implements "NSArray"
         &:: "arrayWithObjects:count:" <>$ capt_exp $+ capt_exp $--> NSCollection.create_from_array
       ; +PatternMatch.ObjectiveC.implements "NSArray"
-        &:: "arrayWithObjects" &++> NSCollection.of_list
+        &:: "arrayWithObjects:" &++> NSCollection.of_list
       ; +PatternMatch.ObjectiveC.implements "NSArray"
         &:: "arrayByAddingObjectsFromArray:" <>$ capt_exp $+ capt_exp
         $--> NSCollection.new_collection_by_add_all

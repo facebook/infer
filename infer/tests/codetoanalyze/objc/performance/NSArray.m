@@ -51,7 +51,7 @@ NSArray* nsarray_init_with_objects_constant() {
   }
 }
 
-NSArray* nsarray_array_with_objects_constant_FP() {
+NSArray* nsarray_array_with_objects_constant() {
   NSDate* aDate = [NSDate distantFuture];
   NSValue* aValue = @(5);
   NSString* aString = @"hello";
