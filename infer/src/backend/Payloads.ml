@@ -27,6 +27,8 @@ type t =
   ; uninit: UninitDomain.Summary.t option }
 [@@deriving fields]
 
+let yojson_of_t = [%yojson_of: _]
+
 type 'a pp = Pp.env -> F.formatter -> 'a -> unit
 
 type field = F : {field: (t, 'a option) Field.t; name: string; pp: 'a pp} -> field

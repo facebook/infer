@@ -1792,6 +1792,12 @@ and procedures_summary =
     "Print the summaries of each procedure in the output of $(b,--procedures)"
 
 
+and procedures_summary_json =
+  CLOpt.mk_bool ~long:"procedures-summary-json" ~default:false
+    ~in_help:InferCommand.[(Debug, manual_debug_procedures)]
+    "Emit the summaries of each procedure in the output of $(b,--procedures) as JSON"
+
+
 and process_clang_ast =
   CLOpt.mk_bool ~long:"process-clang-ast" ~default:false
     "process the ast to emit some info about the file (Not available for Java)"
@@ -2997,6 +3003,8 @@ and procedures_name = !procedures_name
 and procedures_source_file = !procedures_source_file
 
 and procedures_summary = !procedures_summary
+
+and procedures_summary_json = !procedures_summary_json
 
 and process_clang_ast = !process_clang_ast
 

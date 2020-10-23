@@ -6,11 +6,11 @@
  *)
 
 open! IStd
-
-(** Top-level driver that orchestrates build system integration, frontends, backend, and reporting *)
-
+module F = Format
 module CLOpt = CommandLineOption
 module L = Logging
+
+(** Top-level driver that orchestrates build system integration, frontends, backend, and reporting *)
 
 let run driver_mode =
   let open Driver in
@@ -223,16 +223,28 @@ let () =
             L.result "Global type environment:@\n@[<v>%a@]" Tenv.pp tenv ) ;
       ( if Config.procedures then
         let filter = Lazy.force Filtering.procedures_filter in
-        if Config.procedures_summary then
-          let pp_summary fmt proc_name =
-            match Summary.OnDisk.get proc_name with
-            | None ->
-                Format.fprintf fmt "No summary found: %a@\n" Procname.pp proc_name
-            | Some summary ->
-                Summary.pp_text fmt summary
+        if Config.procedures_summary || Config.procedures_summary_json then
+          let f_console_output proc_names =
+            let pp_summary fmt proc_name =
+              match Summary.OnDisk.get proc_name with
+              | None ->
+                  F.fprintf fmt "No summary found: %a@\n" Procname.pp proc_name
+              | Some summary ->
+                  Summary.pp_text fmt summary
+            in
+            L.result "%t" (fun fmt -> List.iter proc_names ~f:(pp_summary fmt))
           in
-          Option.iter (Procedures.select_proc_names_interactive ~filter) ~f:(fun proc_names ->
-              L.result "%a" (fun fmt () -> List.iter proc_names ~f:(pp_summary fmt)) () )
+          let json_of_summary proc_name =
+            Summary.OnDisk.get proc_name |> Option.map ~f:Summary.yojson_of_t
+          in
+          let f_json proc_names =
+            Yojson.Safe.to_channel stdout (`List (List.filter_map ~f:json_of_summary proc_names)) ;
+            Out_channel.newline stdout ;
+            Out_channel.flush stdout
+          in
+          Option.iter
+            (Procedures.select_proc_names_interactive ~filter)
+            ~f:(if Config.procedures_summary_json then f_json else f_console_output)
         else
           L.result "%a"
             Config.(

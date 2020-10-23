@@ -60,7 +60,6 @@ depends: [
   "extlib" {= "1.7.7"}
   "fieldslib" {= "v0.14.0"}
   "integers" {= "0.4.0"}
-  "iter" {= "1.2.1"}
   "jane-street-headers" {= "v0.14.0"}
   "javalib" {= "3.2.1"}
   "jst-config" {= "v0.14.0"}
@@ -115,6 +114,8 @@ depends: [
   "ppx_tools" {= "6.2"}
   "ppx_typerep_conv" {= "v0.14.1"}
   "ppx_variants_conv" {= "v0.14.1"}
+  "ppx_yojson_conv" {= "v0.14.0"}
+  "ppx_yojson_conv_lib" {= "v0.14.0"}
   "ppxfind" {= "1.4"}
   "ppxlib" {= "0.15.0"}
   "protocol_version_header" {= "v0.14.0"}

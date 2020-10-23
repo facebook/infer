@@ -68,6 +68,8 @@ include struct
   [@@deriving fields]
 end
 
+let yojson_of_t {payloads} = [%yojson_of: Payloads.t] payloads
+
 type full_summary = t
 
 let get_status summary = summary.status

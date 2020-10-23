@@ -439,6 +439,8 @@ val procedures_source_file : bool
 
 val procedures_summary : bool
 
+val procedures_summary_json : bool
+
 val process_clang_ast : bool
 
 val clang_frontend_action_string : string
