@@ -4,11 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 
 TESTS_DIR = ../..
-ROOT_DIR = $(TESTS_DIR)/../..
 
-ANALYSE = $(ROOT_DIR)/scripts/genrule_run.sh 
 BUCK_TARGET = //module2:module2
-CLEAN_EXTRA = buck-out 
+CLEAN_EXTRA = buck-out
 SOURCES = $(shell find . -name '*.java')
 
 INFERPRINT_OPTIONS = --issues-tests
@@ -21,4 +19,3 @@ $(INFER_OUT)/report.json: $(MAKEFILE_LIST) $(SOURCES)
 	$(call silent_on_success,Testing genrule capture integration in $(TEST_REL_DIR),\
 	  $(INFER_BIN) --results-dir $(@D) $(INFER_OPTIONS) -- \
 	    buck build --no-cache $(BUCK_TARGET))
-
