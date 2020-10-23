@@ -484,7 +484,7 @@ OPTIONS
              MULTIPLE_WEAKSELF (enabled by default),
              MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE (enabled by default),
              Missing_fld (enabled by default),
-             NULLPTR_DEREFERENCE (disabled by default),
+             NULLPTR_DEREFERENCE (enabled by default),
              NULL_DEREFERENCE (enabled by default),
              OPTIONAL_EMPTY_ACCESS (disabled by default),
              PARAMETER_NOT_NULL_CHECKED (enabled by default),
