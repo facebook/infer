@@ -1044,7 +1044,8 @@ OPTIONS
            See also infer-analyze(1).
 
        --select N
-           Select bug number N. If omitted, prompt for input.           See also infer-explore(1).
+           Select option number N. If omitted, prompt for input.       
+    See also infer-debug(1) and infer-explore(1).
 
        --no-self-in-block
            Deactivates: checker self-in-block: An Objective-C-specific

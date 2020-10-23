@@ -37,7 +37,7 @@ EXPLORE BUGS
            shown.
 
        --select N
-           Select bug number N. If omitted, prompt for input.
+           Select option number N. If omitted, prompt for input.
 
        --no-source-preview
            Deactivates: print code excerpts around trace elements

@@ -2065,8 +2065,8 @@ and seconds_per_iteration =
 
 and select =
   CLOpt.mk_int_opt ~long:"select" ~meta:"N"
-    ~in_help:InferCommand.[(Explore, manual_explore_bugs)]
-    "Select bug number $(i,N). If omitted, prompt for input."
+    ~in_help:InferCommand.[(Debug, manual_generic); (Explore, manual_explore_bugs)]
+    "Select option number $(i,N). If omitted, prompt for input."
 
 
 and scuba_logging, cost_scuba_logging =

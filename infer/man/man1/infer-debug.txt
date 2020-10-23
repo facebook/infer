@@ -33,6 +33,9 @@ OPTIONS
        --help-full
            Show this manual with all internal options in the INTERNAL OPTIONS
            section
+
+       --select N
+           Select option number N. If omitted, prompt for input.
 DEBUG GLOBAL TYPE ENVIRONMENT
        --global-tenv
            Activates: Print the global type environment. (Conversely:

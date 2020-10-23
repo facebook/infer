@@ -4,8 +4,10 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
+
 open! IStd
 module F = Format
+module L = Logging
 
 let get_all ~filter () =
   let db = ResultsDatabase.get_database () in
@@ -19,33 +21,37 @@ let get_all ~filter () =
 
 let select_proc_names_interactive ~filter =
   let proc_names = get_all ~filter () |> List.rev in
-  match proc_names with
-  | [] ->
-      print_endline "No procedures found" ;
+  let proc_names_len = List.length proc_names in
+  match (proc_names, Config.select) with
+  | [], _ ->
+      F.eprintf "No procedures found" ;
       None
-  | [proc_name] ->
-      Format.printf "Selected proc name: %a@\n" Procname.pp proc_name ;
-      Format.print_flush () ;
+  | _, Some n when n >= proc_names_len ->
+      L.die UserError "Cannot select result #%d out of only %d procedures" n proc_names_len
+  | [proc_name], _ ->
+      F.eprintf "Selected proc name: %a@." Procname.pp proc_name ;
       Some proc_names
-  | _ ->
+  | _, Some n ->
+      let proc_names_array = List.to_array proc_names in
+      Some [proc_names_array.(n)]
+  | _, None ->
       let proc_names_array = List.to_array proc_names in
       Array.iteri proc_names_array ~f:(fun i proc_name ->
-          Format.printf "%d: %a@\n" i Procname.pp proc_name ) ;
-      Format.print_flush () ;
+          F.eprintf "%d: %a@\n" i Procname.pp proc_name ) ;
       let rec ask_user_input () =
-        print_string "Select one number (type 'a' for selecting all, 'q' for quit): " ;
-        Out_channel.(flush stdout) ;
+        F.eprintf "Select one number (type 'a' for selecting all, 'q' for quit): " ;
+        Out_channel.flush stderr ;
         let input = String.strip In_channel.(input_line_exn stdin) in
         if String.equal (String.lowercase input) "a" then Some proc_names
         else if String.equal (String.lowercase input) "q" then (
-          print_endline "Quit interactive mode" ;
+          F.eprintf "Quit interactive mode" ;
           None )
         else
           match int_of_string_opt input with
           | Some n when 0 <= n && n < Array.length proc_names_array ->
               Some [proc_names_array.(n)]
           | _ ->
-              print_endline "Invalid input" ;
+              F.eprintf "Invalid input" ;
               ask_user_input ()
       in
       ask_user_input ()
@@ -74,7 +80,7 @@ let pp_all ~filter ~proc_name:proc_name_cond ~attr_kind ~source_file:source_file
           let path = DotCfg.emit_proc_desc source_file cfg in
           F.fprintf fmt "'%s'" path
     in
-    Format.fprintf fmt "@[<v2>%s@,%a%a%a%a%a@]@\n" proc_uid
+    F.fprintf fmt "@[<v2>%s@,%a%a%a%a%a@]@\n" proc_uid
       (pp_if source_file_cond "source_file" SourceFile.pp)
       source_file
       (pp_if proc_name_cond "proc_name" Procname.pp)
