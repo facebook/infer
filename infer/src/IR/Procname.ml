@@ -20,7 +20,7 @@ module Java = struct
     | Non_Static
         (** in Java, procedures called with invokevirtual, invokespecial, and invokeinterface *)
     | Static  (** in Java, procedures called with invokestatic *)
-  [@@deriving compare]
+  [@@deriving compare, yojson_of]
 
   (** Type of java procedure names. *)
   type t =
@@ -29,7 +29,7 @@ module Java = struct
     ; class_name: Typ.Name.t
     ; return_type: Typ.t option (* option because constructors have no return type *)
     ; kind: kind }
-  [@@deriving compare]
+  [@@deriving compare, yojson_of]
 
   let ensure_java_type t =
     if not (Typ.is_java_type t) then
@@ -177,7 +177,7 @@ module Parameter = struct
   (** Type for parameters in clang procnames, [Some name] means the parameter is of type pointer to
       struct, with [name] being the name of the struct, [None] means the parameter is of some other
       type. *)
-  type clang_parameter = Typ.Name.t option [@@deriving compare, equal]
+  type clang_parameter = Typ.Name.t option [@@deriving compare, equal, yojson_of]
 
   (** Type for parameters in procnames, for java and clang. *)
   type t = JavaParameter of Typ.t | ClangParameter of clang_parameter [@@deriving compare, equal]
@@ -218,7 +218,7 @@ module ObjC_Cpp = struct
     | ObjCClassMethod
     | ObjCInstanceMethod
     | ObjCInternalMethod
-  [@@deriving compare]
+  [@@deriving compare, yojson_of]
 
   type t =
     { class_name: Typ.Name.t
@@ -226,7 +226,7 @@ module ObjC_Cpp = struct
     ; method_name: string
     ; parameters: Parameter.clang_parameter list
     ; template_args: Typ.template_spec_info }
-  [@@deriving compare]
+  [@@deriving compare, yojson_of]
 
   let make class_name method_name kind template_args parameters =
     {class_name; method_name; kind; template_args; parameters}
@@ -319,7 +319,7 @@ module C = struct
     ; mangled: string option
     ; parameters: Parameter.clang_parameter list
     ; template_args: Typ.template_spec_info }
-  [@@deriving compare]
+  [@@deriving compare, yojson_of]
 
   let c name mangled parameters template_args =
     {name; mangled= Some mangled; parameters; template_args}
@@ -359,9 +359,10 @@ end
 
 module Block = struct
   (** Type of Objective C block names. *)
-  type block_name = string [@@deriving compare]
+  type block_name = string [@@deriving compare, yojson_of]
 
-  type t = {name: block_name; parameters: Parameter.clang_parameter list} [@@deriving compare]
+  type t = {name: block_name; parameters: Parameter.clang_parameter list}
+  [@@deriving compare, yojson_of]
 
   let make name parameters = {name; parameters}
 
@@ -388,7 +389,7 @@ type t =
   | Block of Block.t
   | ObjC_Cpp of ObjC_Cpp.t
   | WithBlockParameters of t * Block.t list
-[@@deriving compare]
+[@@deriving compare, yojson_of]
 
 let equal = [%compare.equal: t]
 

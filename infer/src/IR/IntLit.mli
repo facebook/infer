@@ -10,7 +10,7 @@ open! IStd
 module F = Format
 
 (** signed and unsigned integer literals *)
-type t
+type t [@@deriving yojson_of]
 
 exception OversizedShift
 

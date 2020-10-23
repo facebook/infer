@@ -26,6 +26,8 @@ let compare_pointerness _ _ = 0
 (** signed and unsigned integer literals *)
 type t = {signedness: signedness; i: Z.t; pointerness: pointerness} [@@deriving compare]
 
+let yojson_of_t {i} = [%yojson_of: string] (Z.to_string i)
+
 exception OversizedShift
 
 let area {signedness; i} =

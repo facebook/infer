@@ -68,7 +68,9 @@ include struct
   [@@deriving fields]
 end
 
-let yojson_of_t {payloads} = [%yojson_of: Payloads.t] payloads
+let yojson_of_t {proc_desc; payloads} =
+  [%yojson_of: Procname.t * Payloads.t] (Procdesc.get_proc_name proc_desc, payloads)
+
 
 type full_summary = t
 
