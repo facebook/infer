@@ -527,7 +527,7 @@ val scuba_tags : string list String.Map.t
 
 val seconds_per_iteration : float option
 
-val select : int option
+val select : [`All | `Select of int] option
 
 val show_buckets : bool
 

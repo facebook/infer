@@ -1048,9 +1048,9 @@ OPTIONS
            performs better in some circumstances
            See also infer-analyze(1).
 
-       --select N
-           Select option number N. If omitted, prompt for input.       
-    See also infer-debug(1) and infer-explore(1).
+       --select (N|all)
+           Select option number N or all of them. If omitted, prompt for
+           input.           See also infer-debug(1) and infer-explore(1).
 
        --no-self-in-block
            Deactivates: checker self-in-block: An Objective-C-specific

@@ -26,12 +26,14 @@ let select_proc_names_interactive ~filter =
   | [], _ ->
       F.eprintf "No procedures found" ;
       None
-  | _, Some n when n >= proc_names_len ->
+  | _, Some (`Select n) when n >= proc_names_len ->
       L.die UserError "Cannot select result #%d out of only %d procedures" n proc_names_len
   | [proc_name], _ ->
       F.eprintf "Selected proc name: %a@." Procname.pp proc_name ;
       Some proc_names
-  | _, Some n ->
+  | _, Some `All ->
+      Some proc_names
+  | _, Some (`Select n) ->
       let proc_names_array = List.to_array proc_names in
       Some [proc_names_array.(n)]
   | _, None ->

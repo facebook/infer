@@ -2070,9 +2070,9 @@ and seconds_per_iteration =
 
 
 and select =
-  CLOpt.mk_int_opt ~long:"select" ~meta:"N"
+  CLOpt.mk_string_opt ~long:"select" ~meta:"(N|all)"
     ~in_help:InferCommand.[(Debug, manual_generic); (Explore, manual_explore_bugs)]
-    "Select option number $(i,N). If omitted, prompt for input."
+    "Select option number $(i,N) or $(i,all) of them. If omitted, prompt for input."
 
 
 and scuba_logging, cost_scuba_logging =
@@ -3123,7 +3123,17 @@ and scuba_tags = String.Map.map !scuba_tags ~f:(fun v -> String.split v ~on:',')
 
 and seconds_per_iteration = !seconds_per_iteration
 
-and select = !select
+and select =
+  match !select with
+  | None ->
+      None
+  | Some "all" ->
+      Some `All
+  | Some n -> (
+    try Some (`Select (Int.of_string n))
+    with _ ->
+      L.die UserError "Wrong argument for --select: expected an integer or \"all\" but got '%s'" n )
+
 
 and show_buckets = !print_buckets
 
