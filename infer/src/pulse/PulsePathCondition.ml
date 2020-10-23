@@ -34,6 +34,8 @@ type t =
   ; citvs: CItvs.t
   ; formula: Formula.t }
 
+let yojson_of_t = [%yojson_of: _]
+
 let pp fmt {is_unsat; bo_itvs; citvs; formula} =
   F.fprintf fmt "@[<hv>unsat:%b,@;bo: @[%a@],@;citv: @[%a@],@;formula: @[%a@]@]" is_unsat BoItvs.pp
     bo_itvs CItvs.pp citvs Formula.pp formula

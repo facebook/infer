@@ -35,6 +35,8 @@ type pvar_kind =
 (** Names for program variables. *)
 type t = {pv_hash: int; pv_name: Mangled.t; pv_kind: pvar_kind} [@@deriving compare]
 
+let yojson_of_t {pv_name} = [%yojson_of: Mangled.t] pv_name
+
 let build_formal_from_pvar var =
   match var.pv_kind with
   | Local_var pname ->

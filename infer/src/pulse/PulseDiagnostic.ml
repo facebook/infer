@@ -19,6 +19,8 @@ type access_to_invalid_address =
   ; access_trace: Trace.t }
 [@@deriving equal]
 
+let yojson_of_access_to_invalid_address = [%yojson_of: _]
+
 type t =
   | AccessToInvalidAddress of access_to_invalid_address
   | MemoryLeak of {procname: Procname.t; allocation_trace: Trace.t; location: Location.t}

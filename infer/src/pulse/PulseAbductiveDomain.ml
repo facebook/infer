@@ -19,7 +19,7 @@ module BaseAddressAttributes = PulseBaseAddressAttributes
 module type BaseDomainSig = sig
   (* private because the lattice is not the same for preconditions and postconditions so we don't
      want to confuse them *)
-  type t = private BaseDomain.t
+  type t = private BaseDomain.t [@@deriving yojson_of]
 
   val empty : t
 
@@ -83,6 +83,7 @@ type t =
   ; pre: PreDomain.t  (** inferred pre at the current program point *)
   ; skipped_calls: SkippedCalls.t  (** set of skipped calls *)
   ; path_condition: PathCondition.t }
+[@@deriving yojson_of]
 
 let pp f {post; pre; path_condition; skipped_calls} =
   F.fprintf f "@[<v>%a@;%a@;PRE=[%a]@;skipped_calls=%a@]" PathCondition.pp path_condition
@@ -428,7 +429,7 @@ let invalidate_locals pdesc astate : t =
   else {astate with post= PostDomain.update astate.post ~attrs:attrs'}
 
 
-type summary = t
+type summary = t [@@deriving yojson_of]
 
 let summary_of_post pdesc astate =
   let astate = filter_for_summary astate in

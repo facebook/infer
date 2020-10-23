@@ -8,7 +8,7 @@ open! IStd
 module F = Format
 
 (** An abstract value, eg an address in memory. *)
-type t = private int [@@deriving compare]
+type t = private int [@@deriving compare, yojson_of]
 
 val equal : t -> t -> bool
 

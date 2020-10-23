@@ -11,7 +11,7 @@
     -open IBase))
  (libraries core IStdlib ATDGenerated IBase IR)
  (preprocess
-  (pps ppx_compare)))
+  (pps ppx_compare ppx_yojson_conv)))
 
 (documentation
  (package infer)

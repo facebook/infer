@@ -8,7 +8,7 @@ open! IStd
 module F = Format
 open PulseBasicInterface
 
-type t
+type t [@@deriving yojson_of]
 
 val empty : t
 

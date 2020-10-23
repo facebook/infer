@@ -185,7 +185,7 @@ val is_strong_pointer : t -> bool
 
 module Name : sig
   (** Named types. *)
-  type t = name [@@deriving compare]
+  type t = name [@@deriving compare, yojson_of]
 
   val equal : t -> t -> bool
   (** Equality for typenames *)

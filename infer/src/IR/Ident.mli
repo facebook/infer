@@ -11,7 +11,7 @@
 open! IStd
 
 (** Program and logical variables. *)
-type t [@@deriving compare]
+type t [@@deriving compare, yojson_of]
 
 val equal : t -> t -> bool
 (** Equality for identifiers. *)

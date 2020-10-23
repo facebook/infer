@@ -25,6 +25,6 @@ val continue : AbductiveDomain.t -> t
 
 val mk_initial : Procdesc.t -> t
 
-type summary = AbductiveDomain.summary base_t
+type summary = AbductiveDomain.summary base_t [@@deriving yojson_of]
 
 val summary_of_posts : Procdesc.t -> t list -> summary list

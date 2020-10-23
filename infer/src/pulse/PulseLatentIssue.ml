@@ -10,7 +10,8 @@ open PulseBasicInterface
 module AbductiveDomain = PulseAbductiveDomain
 module Arithmetic = PulseArithmetic
 
-type t = AccessToInvalidAddress of Diagnostic.access_to_invalid_address [@@deriving equal]
+type t = AccessToInvalidAddress of Diagnostic.access_to_invalid_address
+[@@deriving equal, yojson_of]
 
 let to_diagnostic = function
   | AccessToInvalidAddress access_to_invalid_address ->

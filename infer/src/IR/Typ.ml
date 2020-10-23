@@ -202,6 +202,8 @@ module T = struct
     | Template of {mangled: string option; args: template_arg list}
   [@@deriving compare]
 
+  let yojson_of_name = [%yojson_of: _]
+
   let equal_desc = [%compare.equal: desc]
 
   let equal_name = [%compare.equal: name]
@@ -372,7 +374,7 @@ let to_string typ =
 
 
 module Name = struct
-  type t = name [@@deriving compare, equal]
+  type t = name [@@deriving compare, equal, yojson_of]
 
   let equal = [%compare.equal: t]
 

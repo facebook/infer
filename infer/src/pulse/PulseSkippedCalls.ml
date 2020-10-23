@@ -24,3 +24,5 @@ module SkippedTrace = struct
 end
 
 include AbstractDomain.Map (Procname) (SkippedTrace)
+
+let yojson_of_t = [%yojson_of: _]
