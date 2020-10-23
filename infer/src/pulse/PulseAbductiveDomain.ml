@@ -41,8 +41,10 @@ end
 type base_domain = BaseDomain.t =
   {heap: BaseMemory.t; stack: BaseStack.t; attrs: BaseAddressAttributes.t}
 
-(** operations common to [Domain] and [PreDomain], see also the [BaseDomain] signature *)
-module BaseDomainCommon = struct
+(** represents the post abstract state at each program point *)
+module PostDomain : BaseDomainSig = struct
+  include BaseDomain
+
   let update ?stack ?heap ?attrs foot =
     let new_stack, new_heap, new_attrs =
       ( Option.value ~default:foot.stack stack
@@ -68,12 +70,6 @@ module BaseDomainCommon = struct
       BaseAddressAttributes.filter_with_discarded_addrs (fun address _ -> f address) foot.attrs
     in
     (update ~heap:heap' ~attrs:attrs' foot, discarded_addresses)
-end
-
-(** represents the post abstract state at each program point *)
-module PostDomain : BaseDomainSig = struct
-  include BaseDomainCommon
-  include BaseDomain
 end
 
 (* NOTE: [PreDomain] and [Domain] theoretically differ in that [PreDomain] should be the inverted lattice of [Domain], but since we never actually join states or check implication the two collapse into one. *)
