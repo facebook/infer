@@ -335,15 +335,15 @@ let delete_edges_in_callee_pre_from_caller ~addr_callee:_ ~edges_pre_opt ~addr_c
   | None ->
       BaseMemory.Edges.empty
   | Some old_post_edges -> (
-    match edges_pre_opt with
-    | None ->
-        old_post_edges
-    | Some edges_pre ->
-        (* TODO: should apply [call_state.subst] to [_access]! Actually, should rewrite the
-           whole [cell_pre] beforehand so that [Edges.merge] makes sense. *)
-        BaseMemory.Edges.filter old_post_edges ~f:(fun (access, _) ->
-            (* delete edge if some edge for the same access exists in the pre *)
-            not (BaseMemory.Edges.mem edges_pre access) ) )
+      match edges_pre_opt with
+      | None ->
+          old_post_edges
+      | Some edges_pre ->
+          (* TODO: should apply [call_state.subst] to [_access]! Actually, should rewrite the
+             whole [cell_pre] beforehand so that [Edges.merge] makes sense. *)
+          BaseMemory.Edges.filter old_post_edges ~f:(fun (access, _) ->
+              (* delete edge if some edge for the same access exists in the pre *)
+              not (BaseMemory.Edges.mem edges_pre access) ) )
 
 
 let record_post_cell callee_proc_name call_loc ~addr_callee ~edges_pre_opt
@@ -624,10 +624,10 @@ let apply_prepost callee_proc_name call_location ~callee_prepost:pre_post
       match
         let open IResult.Let_syntax in
         let+ astate =
-	 if not Config.pulse_isl then
-	   check_all_valid callee_proc_name call_location pre_post call_state
-	 else
-	   set_status pre_post.AbductiveDomain.status call_state
+	  if not Config.pulse_isl then
+     check_all_valid callee_proc_name call_location pre_post call_state
+   else
+     set_status pre_post.AbductiveDomain.status call_state
 	in
         (* reset [visited] *)
         let invalid_caller = call_state.invalid_caller in

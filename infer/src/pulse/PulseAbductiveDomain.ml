@@ -102,7 +102,6 @@ type t =
   ; pre: PreDomain.t  (** inferred pre at the current program point *)
   ; skipped_calls: SkippedCalls.t  (** set of skipped calls *)
   ; path_condition: PathCondition.t
-  ; path_condition: PathCondition.t
   ; status: PostStatus.t
   ; local_ptrvars : VarSet.t
   ; nonref_formals : VarSet.t

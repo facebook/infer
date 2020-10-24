@@ -24,22 +24,22 @@ let check_addr_access location (address, history) astate =
              {calling_context= []; invalidation; invalidation_trace; access_trace}
          , astate ) )
 
-let is_top_post astate=
-   let imm_params = astate.AbductiveDomain.imm_params in
-   if Var.Set.is_empty imm_params then
-      true
-   else
-      let imm_addresses = BaseDomain.reachable_addresses_from (fun var -> Var.Set.mem var imm_params) (astate.AbductiveDomain.post :> BaseDomain.t) in
-      let imm_addresses = AbstractValue.Set.diff imm_addresses astate.AbductiveDomain.mod_addrs in
-      let post_pc = PathCondition.simplify ~keep:imm_addresses astate.AbductiveDomain.path_condition in
-      PathCondition.is_true post_pc
+(* let is_top_post astate=
+ *   let imm_params = astate.AbductiveDomain.imm_params in
+ *   if Var.Set.is_empty imm_params then
+ *     true
+ *   else
+ *     let imm_addresses = BaseDomain.reachable_addresses_from (fun var -> Var.Set.mem var imm_params) (astate.AbductiveDomain.post :> BaseDomain.t) in
+ *     let imm_addresses = AbstractValue.Set.diff imm_addresses astate.AbductiveDomain.mod_addrs in
+ *     let post_pc = PathCondition.simplify ~keep:imm_addresses astate.AbductiveDomain.path_condition in
+ *     PathCondition.is_true post_pc *)
 
 let is_top_pre astate=
-    let pre_formal_addresses = BaseDomain.reachable_addresses_from (fun var -> Var.Set.mem var astate.AbductiveDomain.nonref_formals) (astate.AbductiveDomain.pre :> BaseDomain.t) in
-    BaseAddressAttributes.is_empty_heap_attrs pre_formal_addresses (astate.AbductiveDomain.pre :> BaseDomain.t).attrs
+  let pre_formal_addresses = BaseDomain.reachable_addresses_from (fun var -> Var.Set.mem var astate.AbductiveDomain.nonref_formals) (astate.AbductiveDomain.pre :> BaseDomain.t) in
+  BaseAddressAttributes.is_empty_heap_attrs pre_formal_addresses (astate.AbductiveDomain.pre :> BaseDomain.t).attrs && PulseArithmetic.has_no_assumptions (astate :> AbductiveDomain.t)
 
 let is_must_bug astate=
-  is_top_pre astate && is_top_post astate
+  is_top_pre astate (* && is_top_post astate *)
   
 let check_and_abduce_addr_access procname location (address, history) ?null_noop:(null_noop=false) astate =
   let access_trace = Trace.Immediate {location; history} in
@@ -122,17 +122,17 @@ let eval_access location addr_hist access astate =
 
 let get_array_access addr ati astate =
   match Memory.find_edges_opt addr astate with
-    | Some edges -> (
-     let kv_op = List.find ~f:(fun (acc,_) -> match acc with
-      | HilExp.Access.ArrayAccess (_, dest_addr) -> PulseArithmetic.is_equal_to astate dest_addr ati 
-      | _ -> false) (Memory.Edges.bindings edges)
-     in match kv_op with
-          | None -> None
-          | Some (acc, _) -> ( match acc with
-                                 | HilExp.Access.ArrayAccess (_, dest_addr) -> Some dest_addr
-                                 | _ -> None)
-                         )
-    | None ->  None
+  | Some edges -> (
+      let kv_op = List.find ~f:(fun (acc,_) -> match acc with
+          | HilExp.Access.ArrayAccess (_, dest_addr) -> PulseArithmetic.is_equal_to astate dest_addr ati 
+          | _ -> false) (Memory.Edges.bindings edges)
+      in match kv_op with
+      | None -> None
+      | Some (acc, _) -> ( match acc with
+          | HilExp.Access.ArrayAccess (_, dest_addr) -> Some dest_addr
+          | _ -> None)
+    )
+  | None ->  None
 
 let eval location exp0 astate =
   let rec eval exp astate =
@@ -154,8 +154,8 @@ let eval location exp0 astate =
         let+ astate, rev_captured =
           List.fold_result captured_vars ~init:(astate, [])
             ~f:(fun (astate, rev_captured) (capt_exp, captured_as, _, mode) ->
-              let+ astate, addr_trace = eval capt_exp astate in
-              (astate, (captured_as, addr_trace, mode) :: rev_captured) )
+                let+ astate, addr_trace = eval capt_exp astate in
+                (astate, (captured_as, addr_trace, mode) :: rev_captured) )
         in
         Closures.record location name (List.rev rev_captured) astate
     | Cast (_, exp') ->
@@ -712,42 +712,42 @@ let check_all_invalid callees_callers_match callee_proc_name call_location astat
     | AbductiveDomain.PostStatus.Er _ -> (
         AbstractValue.Map.fold
             (fun addr_caller hist_caller astate_result ->
-                match astate_result with
-                | Error _ ->
+               match astate_result with
+               | Error _ ->
                    astate_result
-                | Ok astate -> (
-                 match BaseAddressAttributes.get_invalid addr_caller (astate.AbductiveDomain.post :> BaseDomain.t).attrs with
-                 | None -> astate_result
-                 | Some (invalidation, invalidation_trace) ->
-                      let access_trace =
-                        Trace.ViaCall
-                            { in_call= invalidation_trace
-                            ; f= Call callee_proc_name
-                            ; location= call_location
-                            ; history= hist_caller }
-                      in
-                      Error (invalidation, invalidation_trace, access_trace, addr_caller, astate)
-            ) )
+               | Ok astate -> (
+                   match BaseAddressAttributes.get_invalid addr_caller (astate.AbductiveDomain.post :> BaseDomain.t).attrs with
+                   | None -> astate_result
+                   | Some (invalidation, invalidation_trace) ->
+                       let access_trace =
+                         Trace.ViaCall
+                           { in_call= invalidation_trace
+                           ; f= Call callee_proc_name
+                           ; location= call_location
+                           ; history= hist_caller }
+                       in
+                       Error (invalidation, invalidation_trace, access_trace, addr_caller, astate)
+                 ) )
             callees_callers_match (Ok astate))
-            )
+    )
   in
   (* |> Result.map_error ~f:(fun (invalidation, invalidation_trace, access_trace, addr_caller) -> *)
   match res with
-    | Error (invalidation, invalidation_trace, access_trace, addr_caller, astate) ->
-      (L.d_printfln "ERROR: caller's %a invalid!" AbstractValue.pp addr_caller ;
-      if is_must_bug astate then
-          Error ( Diagnostic.AccessToInvalidAddress
-                       {calling_context= []; invalidation; invalidation_trace; access_trace}
-          , AbductiveDomain.set_status (AbductiveDomain.PostStatus.Er (Some (Diagnostic.AccessToInvalidAddress {calling_context= []; invalidation; invalidation_trace; access_trace}))) astate )
-      else
-           Ok (AbductiveDomain.set_status (AbductiveDomain.PostStatus.Er (Some (Diagnostic.AccessToInvalidAddress {calling_context= []; invalidation; invalidation_trace; access_trace}))) astate))
-    | Ok astate ->
-       Ok astate
-  (* ) *)
+  | Error (invalidation, invalidation_trace, access_trace, addr_caller, astate) ->
+      (L.d_printfln "ERROR: caller's %a er!" AbstractValue.pp addr_caller ;
+       if is_must_bug astate then
+         Error ( Diagnostic.AccessToInvalidAddress
+                   {calling_context= []; invalidation; invalidation_trace; access_trace}
+               , AbductiveDomain.set_status (AbductiveDomain.PostStatus.Er (Some (Diagnostic.AccessToInvalidAddress {calling_context= []; invalidation; invalidation_trace; access_trace}))) astate )
+       else
+         Ok (AbductiveDomain.set_status (AbductiveDomain.PostStatus.Er (Some (Diagnostic.AccessToInvalidAddress {calling_context= []; invalidation; invalidation_trace; access_trace}))) astate))
+  | Ok astate ->
+      Ok astate
+(* ) *)
 
 let check_imply_er callers_invalids callee_proc_name call_location call_astate =
   match call_astate with
-    | ExecutionDomain.ContinueProgram astate -> (
+  | ExecutionDomain.ContinueProgram astate -> (
         let+ astate = check_all_invalid callers_invalids callee_proc_name call_location astate in
         (ExecutionDomain.ContinueProgram astate)
     )
@@ -768,7 +768,7 @@ let get_captured_actuals location ~captured_vars ~actual_closure astate =
 
 let call ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.t) option) call_loc
     callee_pname ~ret ~actuals ~formals_opt (astate : AbductiveDomain.t) :
-    (ExecutionDomain.t list, Diagnostic.t * t) result =
+  (ExecutionDomain.t list, Diagnostic.t * t) result =
   match callee_data with
   | Some (callee_proc_desc, exec_states) -> (
       let formals =
@@ -778,8 +778,8 @@ let call ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.t) option)
       let captured_vars =
         Procdesc.get_captured callee_proc_desc
         |> List.map ~f:(fun (mangled, _, _) ->
-               let pvar = Pvar.mk mangled callee_pname in
-               Var.of_pvar pvar )
+            let pvar = Pvar.mk mangled callee_pname in
+            Var.of_pvar pvar )
       in
       let* astate, captured_vars_with_actuals =
         match actuals with
@@ -849,26 +849,26 @@ let merge_spec location astates=
   in
   let find_top_addrs addr_abd_attrs=
     BaseAddressAttributes.sfold (fun addr attrs acc_tops ->
-       let abd_attr, null_attr, free_attr =
+        let abd_attr, null_attr, free_attr =
          Attribute.Set.fold
-             (fun attr (acc_abd, acc_null, acc_free) ->(
-                     match attr with
-                     | Attribute.AbdAllocated _ ->
-                        (true, acc_null, acc_free)
-                     | Attribute.Invalid (CFree, _) ->
-                        (acc_abd, acc_null, true)
-                     | Attribute.Invalid (CppDelete, _) ->
-                        (acc_abd, acc_null, true)
-                     | Attribute.Invalid (ConstantDereference i, _) when IntLit.iszero i ->
-                        (acc_abd, true, acc_free)
-                     | _ ->
-                        (acc_abd, acc_null, acc_free))) attrs (false, false, false)
-       in
-       if abd_attr && null_attr && free_attr then
-           AbstractValue.Set.add addr acc_tops
-       else
-           acc_tops
-        ) addr_abd_attrs AbstractValue.Set.empty
+           (fun attr (acc_abd, acc_null, acc_free) ->(
+                match attr with
+                | Attribute.AbdAllocated _ ->
+                    (true, acc_null, acc_free)
+                | Attribute.Invalid (CFree, _) ->
+                    (acc_abd, acc_null, true)
+                | Attribute.Invalid (CppDelete, _) ->
+                    (acc_abd, acc_null, true)
+                | Attribute.Invalid (ConstantDereference i, _) when IntLit.iszero i ->
+                    (acc_abd, true, acc_free)
+                | _ ->
+                    (acc_abd, acc_null, acc_free))) attrs (false, false, false)
+        in
+        if abd_attr && null_attr && free_attr then
+          AbstractValue.Set.add addr acc_tops
+        else
+          acc_tops
+      ) addr_abd_attrs AbstractValue.Set.empty
   in
   let extract_error acc er_astate=
     let add_non_duplicate er=
@@ -892,36 +892,43 @@ let merge_spec location astates=
       | _ -> acc
   in
   (* merge post *)
-  let post_addr_abd_attrs = List.fold astates ~init:(BaseAddressAttributes.sempty) ~f:(fun acc astate -> extract_abd_attr acc astate.AbductiveDomain.nonref_formals (astate.AbductiveDomain.post :> BaseDomain.t)) in
-  (* find all address v such that v=abdalloca \/ v=null \/ v=free *)
-  let post_top_addrs = find_top_addrs post_addr_abd_attrs in
-  let simpl_astates = AbstractValue.Set.fold (fun addr acc_posts ->
-                             List.map acc_posts ~f:(fun astate -> AddressAttributes.map_post_attrs ~f:(fun attrs ->
-                                     BaseAddressAttributes.remove addr attrs
-                                 ) astate )
-                          ) post_top_addrs astates  in
-  let er_top_posts, _ =
-    match List.fold2 astates simpl_astates ~init:([], []) ~f:(fun (acc, rem_acc) astate simpl_astate  ->
-                  if is_top_post simpl_astate then
-                      (acc@[astate], rem_acc)
-                  else
-                      (acc, rem_acc@[astate])) with
-    | List.Or_unequal_lengths.Ok res -> res
-    | _ -> assert false
-  in
+  (* let post_addr_abd_attrs = List.fold astates ~init:(BaseAddressAttributes.sempty) ~f:(fun acc astate -> extract_abd_attr acc astate.AbductiveDomain.nonref_formals (astate.AbductiveDomain.post :> BaseDomain.t)) in
+   * (\* find all address v such that v=abdalloca \/ v=null \/ v=free *\)
+   * let post_top_addrs = find_top_addrs post_addr_abd_attrs in
+   * let simpl_astates = AbstractValue.Set.fold (fun addr acc_posts ->
+   *     List.map acc_posts ~f:(fun astate -> AddressAttributes.map_post_attrs ~f:(fun attrs ->
+   *         BaseAddressAttributes.remove addr attrs
+   *       ) astate )
+   *   ) post_top_addrs astates  in
+   * let er_top_posts, _ =
+   *   match List.fold2 astates simpl_astates ~init:([], []) ~f:(fun (acc, rem_acc) astate simpl_astate  ->
+   *       if is_top_post simpl_astate then
+   *         (acc@[astate], rem_acc)
+   *       else
+   *         (acc, rem_acc@[astate])) with
+   *   | List.Or_unequal_lengths.Ok res -> res
+   *   | _ -> assert false
+   * in *)
   (*merge pre*)
-  let addr_abd_attrs = List.fold er_top_posts ~init:(BaseAddressAttributes.sempty) ~f:(fun acc astate -> extract_abd_attr acc astate.AbductiveDomain.nonref_formals (astate.AbductiveDomain.pre :> BaseDomain.t)) in
-  let top_addrs = find_top_addrs addr_abd_attrs in
-  (* find all address v such that v=abdalloca \/ v=null \/ v=free *)
-  let er_top_pres = AbstractValue.Set.fold (fun addr acc_posts ->
-                             List.map acc_posts ~f:(fun astate -> AddressAttributes.map_pre_attrs ~f:(fun attrs ->
-                                                                          BaseAddressAttributes.remove addr attrs
-                                                                      ) astate )
-                        ) top_addrs er_top_posts  in
-  let er_top_pres = List.filter er_top_pres ~f:(is_top_pre) in
-  let invalidations = List.fold er_top_pres ~init:[] ~f:extract_error in
+  let invalidations =
+    match astates with
+    | [astate] when is_top_pre astate ->
+        extract_error [] astate
+    | _ ->
+        let er_top_posts = astates in
+        let addr_abd_attrs = List.fold er_top_posts ~init:(BaseAddressAttributes.sempty) ~f:(fun acc astate -> extract_abd_attr acc astate.AbductiveDomain.nonref_formals (astate.AbductiveDomain.pre :> BaseDomain.t)) in
+        let top_addrs = find_top_addrs addr_abd_attrs in
+        (* find all address v such that v=abdalloca \/ v=null \/ v=free *)
+        let er_top_pres = AbstractValue.Set.fold (fun addr acc_posts ->
+            List.map acc_posts ~f:(fun astate -> AddressAttributes.map_pre_attrs ~f:(fun attrs ->
+                BaseAddressAttributes.remove addr attrs
+              ) astate )
+          ) top_addrs er_top_posts  in
+        let er_top_pres = List.filter er_top_pres ~f:(is_top_pre) in
+        List.fold er_top_pres ~init:[] ~f:extract_error in
   match invalidations with
   | [] -> None
+  | [er] -> Some er
   | or_errs -> 
-     Some (Diagnostic.OrError (or_errs, location))
+      Some (Diagnostic.OrError (or_errs, location))
 
