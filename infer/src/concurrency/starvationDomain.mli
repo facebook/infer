@@ -64,6 +64,8 @@ module Event : sig
   [@@deriving compare]
 
   val describe : F.formatter -> t -> unit
+
+  val get_acquired_locks : t -> Lock.t list
 end
 
 module LockState : AbstractDomain.WithTop
@@ -120,6 +122,10 @@ module CriticalPair : sig
 
   val can_run_in_parallel : t -> t -> bool
   (** can two pairs describe events on two threads that can run in parallel *)
+
+  val with_callsite : t -> CallSite.t -> t
+
+  val apply_caller_thread : ThreadDomain.t -> t -> t option
 end
 
 module CriticalPairs : AbstractDomain.FiniteSetS with type elt = CriticalPair.t
@@ -178,7 +184,7 @@ include AbstractDomain.S with type t := t
 val initial : t
 (** initial domain state *)
 
-val acquire : ?tenv:Tenv.t -> t -> procname:Procname.t -> loc:Location.t -> Lock.t list -> t
+val acquire : tenv:Tenv.t -> t -> procname:Procname.t -> loc:Location.t -> Lock.t list -> t
 (** simultaneously acquire a number of locks, no-op if list is empty *)
 
 val release : t -> Lock.t list -> t
@@ -228,9 +234,9 @@ val empty_summary : summary
 val pp_summary : F.formatter -> summary -> unit
 
 val integrate_summary :
-     ?tenv:Tenv.t
-  -> ?lhs:HilExp.AccessExpression.t
-  -> ?subst:Lock.subst
+     tenv:Tenv.t
+  -> lhs:HilExp.AccessExpression.t
+  -> subst:Lock.subst
   -> CallSite.t
   -> t
   -> summary
@@ -243,3 +249,5 @@ val summary_of_astate : Procdesc.t -> t -> summary
 val set_ignore_blocking_calls_flag : t -> t
 
 val remove_dead_vars : t -> Var.t list -> t
+
+val fold_critical_pairs_of_summary : (CriticalPair.t -> 'a -> 'a) -> summary -> 'a -> 'a

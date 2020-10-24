@@ -43,7 +43,8 @@ exception Invalid_llvm of string
 let invalid_llvm : string -> 'a =
  fun msg ->
   let first_line =
-    Option.value_map ~default:msg ~f:(String.prefix msg)
+    Option.map_or ~default:msg
+      ~f:(fun i -> String.take i msg)
       (String.index msg '\n')
   in
   Format.printf "@\n%s@\n" msg ;
@@ -51,14 +52,24 @@ let invalid_llvm : string -> 'a =
 
 (* gather names and debug locations *)
 
-let sym_tbl : (Llvm.llvalue, string * Loc.t) Hashtbl.t =
-  Hashtbl.Poly.create ~size:4_194_304 ()
+module LlvalueTbl = HashTable.Make (struct
+  type t = Llvm.llvalue
 
-let scope_tbl :
-    ( [`Fun of Llvm.llvalue | `Mod of Llvm.llmodule]
-    , int ref * (string, int) Hashtbl.t )
-    Hashtbl.t =
-  Hashtbl.Poly.create ~size:32_768 ()
+  include Poly
+end)
+
+module SymTbl = LlvalueTbl
+
+let sym_tbl : (string * Loc.t) SymTbl.t = SymTbl.create ~size:4_194_304 ()
+
+module ScopeTbl = HashTable.Make (struct
+  type t = [`Fun of Llvm.llvalue | `Mod of Llvm.llmodule]
+
+  include Poly
+end)
+
+let scope_tbl : (int ref * int String.Tbl.t) ScopeTbl.t =
+  ScopeTbl.create ~size:32_768 ()
 
 open struct
   open struct
@@ -103,8 +114,8 @@ open struct
       | None -> ()
       | Some scope ->
           let next, void_tbl =
-            Hashtbl.find_or_add scope_tbl scope ~default:(fun () ->
-                (ref 0, Hashtbl.Poly.create ()) )
+            ScopeTbl.find_or_add scope_tbl scope ~default:(fun () ->
+                (ref 0, String.Tbl.create ()) )
           in
           let name =
             match Llvm.classify_type (Llvm.type_of llv) with
@@ -120,14 +131,14 @@ open struct
                     | s -> s )
                   | _ -> "void"
                 in
-                match Hashtbl.find void_tbl fname with
+                match String.Tbl.find void_tbl fname with
                 | None ->
-                    Hashtbl.set void_tbl ~key:fname ~data:1 ;
+                    String.Tbl.set void_tbl ~key:fname ~data:1 ;
                     fname ^ ".void"
                 | Some count ->
-                    Hashtbl.set void_tbl ~key:fname ~data:(count + 1) ;
-                    String.concat_array
-                      [|fname; ".void."; Int.to_string count|] )
+                    String.Tbl.set void_tbl ~key:fname ~data:(count + 1) ;
+                    String.concat ~sep:""
+                      [fname; ".void."; Int.to_string count] )
             | _ -> (
               match Llvm.value_name llv with
               | "" ->
@@ -139,10 +150,10 @@ open struct
                 match Int.of_string name with
                 | _ ->
                     (* escape to avoid clash with names of anonymous values *)
-                    String.concat_array [|"\""; name; "\""|]
+                    String.concat ~sep:"" ["\""; name; "\""]
                 | exception _ -> name ) )
           in
-          Hashtbl.set sym_tbl ~key:llv ~data:(name, loc)
+          SymTbl.set sym_tbl ~key:llv ~data:(name, loc)
   end
 
   let scan_names_and_locs : Llvm.llmodule -> unit =
@@ -178,25 +189,30 @@ open struct
     Llvm.iter_functions scan_function m
 
   let find_name : Llvm.llvalue -> string =
-   fun v -> fst (Hashtbl.find_exn sym_tbl v)
+   fun v -> fst (SymTbl.find_exn sym_tbl v)
 
   let find_loc : Llvm.llvalue -> Loc.t =
-   fun v -> snd (Hashtbl.find_exn sym_tbl v)
+   fun v -> snd (SymTbl.find_exn sym_tbl v)
 end
 
 let label_of_block : Llvm.llbasicblock -> string =
  fun blk -> find_name (Llvm.value_of_block blk)
 
-let anon_struct_name : (Llvm.lltype, string) Hashtbl.t =
-  Hashtbl.Poly.create ()
+module LltypeTbl = HashTable.Make (struct
+  type t = Llvm.lltype
+
+  include Poly
+end)
+
+let anon_struct_name : string LltypeTbl.t = LltypeTbl.create ()
 
 let struct_name : Llvm.lltype -> string =
  fun llt ->
   match Llvm.struct_name llt with
   | Some name -> name
   | None ->
-      Hashtbl.find_or_add anon_struct_name llt ~default:(fun () ->
-          Int.to_string (Hashtbl.length anon_struct_name) )
+      LltypeTbl.find_or_add anon_struct_name llt ~default:(fun () ->
+          Int.to_string (LltypeTbl.length anon_struct_name) )
 
 type x = {llcontext: Llvm.llcontext; lldatalayout: Llvm_target.DataLayout.t}
 
@@ -206,7 +222,7 @@ let ptr_siz : x -> int =
 let size_of, bit_size_of =
   let size_to_int size_of x llt =
     if Llvm.type_is_sized llt then
-      match Int64.to_int (size_of llt x.lldatalayout) with
+      match Int64.unsigned_to_int (size_of llt x.lldatalayout) with
       | Some n -> n
       | None -> fail "type size too large: %a" pp_lltype llt ()
     else fail "types with undetermined size: %a" pp_lltype llt ()
@@ -214,7 +230,7 @@ let size_of, bit_size_of =
   ( size_to_int Llvm_target.DataLayout.abi_size
   , size_to_int Llvm_target.DataLayout.size_in_bits )
 
-let memo_type : (Llvm.lltype, Typ.t) Hashtbl.t = Hashtbl.Poly.create ()
+let memo_type : Typ.t LltypeTbl.t = LltypeTbl.create ()
 
 let rec xlate_type : x -> Llvm.lltype -> Typ.t =
  fun x llt ->
@@ -277,7 +293,7 @@ let rec xlate_type : x -> Llvm.lltype -> Typ.t =
           fail "expected to be sized: %a" pp_lltype llt ()
       | Void | Label | Metadata -> assert false
   in
-  Hashtbl.find_or_add memo_type llt ~default:(fun () ->
+  LltypeTbl.find_or_add memo_type llt ~default:(fun () ->
       [%Trace.call fun {pf} -> pf "%a" pp_lltype llt]
       ;
       xlate_type_ llt
@@ -293,7 +309,7 @@ and xlate_type_opt : x -> Llvm.lltype -> Typ.t option =
 let i32 x = xlate_type x (Llvm.i32_type x.llcontext)
 
 let suffix_after_last_space : string -> string =
- fun str -> String.drop_prefix str (String.rindex_exn str ' ' + 1)
+ fun str -> String.drop (String.rindex_exn str ' ' + 1) str
 
 let xlate_int : x -> Llvm.llvalue -> Exp.t =
  fun x llv ->
@@ -335,11 +351,17 @@ let pp_prefix_exp fs (insts, exp) =
    of 'undef' to a distinct register *)
 let undef_count = ref 0
 
-let memo_value : (bool * Llvm.llvalue, Inst.t list * Exp.t) Hashtbl.t =
-  Hashtbl.Poly.create ()
+module ValTbl = HashTable.Make (struct
+  type t = bool * Llvm.llvalue
 
-let memo_global : (Llvm.llvalue, Global.t) Hashtbl.t =
-  Hashtbl.Poly.create ()
+  include Poly
+end)
+
+let memo_value : (Inst.t list * Exp.t) ValTbl.t = ValTbl.create ()
+
+module GlobTbl = LlvalueTbl
+
+let memo_global : Global.t GlobTbl.t = GlobTbl.create ()
 
 let should_inline : Llvm.llvalue -> bool =
  fun llv ->
@@ -447,8 +469,8 @@ and xlate_value ?(inline = false) stk :
         (pre, Exp.record typ (IArray.of_list args))
     | ConstantStruct -> (
         let typ = xlate_type x (Llvm.type_of llv) in
-        match List.findi llv stk with
-        | Some i -> ([], Exp.rec_record i typ)
+        match List.find_idx ~f:(( == ) llv) stk with
+        | Some (i, _) -> ([], Exp.rec_record i typ)
         | None ->
             let stk = llv :: stk in
             let len = Llvm.num_operands llv in
@@ -460,7 +482,7 @@ and xlate_value ?(inline = false) stk :
         ([], Exp.label ~parent ~name)
     | UndefValue ->
         let typ = xlate_type x (Llvm.type_of llv) in
-        let name = sprintf "undef_%i" !undef_count in
+        let name = Printf.sprintf "undef_%i" !undef_count in
         let loc = Loc.none in
         let reg = Reg.program typ name in
         let msg = Llvm.string_of_llvalue llv in
@@ -485,7 +507,7 @@ and xlate_value ?(inline = false) stk :
      |NullValue | BasicBlock | InlineAsm | MDNode | MDString ->
         fail "xlate_value: %a" pp_llvalue llv ()
   in
-  Hashtbl.find_or_add memo_value (inline, llv) ~default:(fun () ->
+  ValTbl.find_or_add memo_value (inline, llv) ~default:(fun () ->
       [%Trace.call fun {pf} -> pf "%a" pp_llvalue llv]
       ;
       xlate_value_ llv
@@ -532,7 +554,7 @@ and xlate_opcode stk :
    |FPExt | PtrToInt | IntToPtr | BitCast | AddrSpaceCast ->
       convert opcode
   | ICmp -> (
-    match Option.value_exn (Llvm.icmp_predicate llv) with
+    match Option.get_exn (Llvm.icmp_predicate llv) with
     | Eq -> binary Exp.eq
     | Ne -> binary Exp.dq
     | Sgt -> binary Exp.gt
@@ -674,7 +696,7 @@ and xlate_opcode stk :
             | Struct ->
                 let fld =
                   match
-                    Option.bind ~f:Int64.to_int
+                    Option.bind ~f:Int64.unsigned_to_int
                       (Llvm.int64_of_const (Llvm.operand llv i))
                   with
                   | Some n -> n
@@ -709,14 +731,14 @@ and xlate_opcode stk :
 
 and xlate_global stk : x -> Llvm.llvalue -> Global.t =
  fun x llg ->
-  Hashtbl.find_or_add memo_global llg ~default:(fun () ->
+  GlobTbl.find_or_add memo_global llg ~default:(fun () ->
       [%Trace.call fun {pf} -> pf "%a" pp_llvalue llg]
       ;
       let g = xlate_name x ~global:() llg in
       let loc = find_loc llg in
       (* add to tbl without initializer in case of recursive occurrences in
          its own initializer *)
-      Hashtbl.set memo_global ~key:llg ~data:(Global.mk g loc) ;
+      GlobTbl.set memo_global ~key:llg ~data:(Global.mk g loc) ;
       let init =
         match Llvm.classify_value llg with
         | GlobalVariable ->
@@ -897,7 +919,9 @@ let rec xlate_func_name x llv =
   | ConstantPointerNull -> todo "call null: %a" pp_llvalue llv ()
   | _ -> todo "function kind in %a" pp_llvalue llv ()
 
-let ignored_callees = Hash_set.create (module String)
+module StringS = HashSet.Make (String)
+
+let ignored_callees = StringS.create 0
 
 let xlate_size_of x llv =
   Exp.integer Typ.siz (Z.of_int (size_of x (Llvm.type_of llv)))
@@ -977,9 +1001,8 @@ let xlate_instr :
       in
       let fname = Llvm.value_name llfunc in
       let skip msg =
-        ( match Hash_set.strict_add ignored_callees fname with
-        | Ok () -> warn "ignoring uninterpreted %s %s" msg fname ()
-        | Error _ -> () ) ;
+        if StringS.add ignored_callees fname then
+          warn "ignoring uninterpreted %s %s" msg fname () ;
         let reg = xlate_name_opt x instr in
         emit_inst (Inst.nondet ~reg ~msg:fname ~loc)
       in
@@ -987,7 +1010,7 @@ let xlate_instr :
       match xlate_intrinsic_exp fname with
       | Some intrinsic -> inline_or_move (intrinsic x)
       | None -> (
-        match String.split fname ~on:'.' with
+        match String.split_on_char fname ~by:'.' with
         | ["__llair_throw"] ->
             let pre, exc = xlate_value x (Llvm.operand instr 0) in
             emit_term ~prefix:(pop loc @ pre) (Term.throw ~exc ~loc)
@@ -1066,13 +1089,14 @@ let xlate_instr :
                     Llvm.num_arg_operands instr
                   else
                     let fname = Llvm.value_name llfunc in
-                    ( match Hash_set.strict_add ignored_callees fname with
-                    | Ok () when not (Llvm.is_declaration llfunc) ->
-                        warn
-                          "ignoring variable arguments to variadic \
-                           function: %a"
-                          Exp.pp callee ()
-                    | _ -> () ) ;
+                    if
+                      StringS.add ignored_callees fname
+                      && not (Llvm.is_declaration llfunc)
+                    then
+                      warn
+                        "ignoring variable arguments to variadic function: \
+                         %a"
+                        Exp.pp callee () ;
                     let llfty = Llvm.element_type lltyp in
                     ( match Llvm.classify_type llfty with
                     | Function -> ()
@@ -1103,16 +1127,17 @@ let xlate_instr :
         if not (Llvm.is_var_arg (Llvm.element_type lltyp)) then
           Llvm.num_arg_operands instr
         else (
-          ( match Hash_set.strict_add ignored_callees fname with
-          | Ok () when not (Llvm.is_declaration llfunc) ->
-              warn "ignoring variable arguments to variadic function: %a"
-                Global.pp (xlate_global x llfunc) ()
-          | _ -> () ) ;
+          if
+            StringS.add ignored_callees fname
+            && not (Llvm.is_declaration llfunc)
+          then
+            warn "ignoring variable arguments to variadic function: %a"
+              Global.pp (xlate_global x llfunc) () ;
           assert (Poly.(Llvm.classify_type lltyp = Pointer)) ;
           Array.length (Llvm.param_types (Llvm.element_type lltyp)) )
       in
       (* intrinsics *)
-      match String.split fname ~on:'.' with
+      match String.split_on_char fname ~by:'.' with
       | _ when Option.is_some (xlate_intrinsic_exp fname) ->
           let prefix, dst, blocks = xlate_jump x instr return_blk loc [] in
           emit_term ~prefix (Term.goto ~dst ~loc) ~blocks
@@ -1162,7 +1187,7 @@ let xlate_instr :
       in
       emit_term ~prefix:(pop loc @ pre) (Term.return ~exp ~loc)
   | Br -> (
-    match Option.value_exn (Llvm.get_branch instr) with
+    match Option.get_exn (Llvm.get_branch instr) with
     | `Unconditional blk ->
         let prefix, dst, blocks = xlate_jump x instr blk loc [] in
         emit_term ~prefix (Term.goto ~dst ~loc) ~blocks
@@ -1486,7 +1511,12 @@ let link_in : Llvm.llcontext -> Llvm.lllinker -> string -> unit =
 let check_datalayout llcontext lldatalayout =
   let check_size llt typ =
     let llsiz =
-      Int64.to_int_exn (Llvm_target.DataLayout.abi_size llt lldatalayout)
+      match
+        Int64.unsigned_to_int
+          (Llvm_target.DataLayout.abi_size llt lldatalayout)
+      with
+      | Some n -> n
+      | None -> fail "type size too large: %a" pp_lltype llt ()
     in
     let siz = Typ.size_of typ in
     if llsiz != siz then
@@ -1512,13 +1542,13 @@ let check_datalayout llcontext lldatalayout =
    Gc.full_major) before freeing the memory with Llvm.dispose_module and
    Llvm.dispose_context. *)
 let cleanup llmodule llcontext =
-  Hashtbl.clear sym_tbl ;
-  Hashtbl.clear scope_tbl ;
-  Hashtbl.clear anon_struct_name ;
-  Hashtbl.clear memo_type ;
-  Hashtbl.clear memo_global ;
-  Hashtbl.clear memo_value ;
-  Hash_set.clear ignored_callees ;
+  SymTbl.clear sym_tbl ;
+  ScopeTbl.clear scope_tbl ;
+  LltypeTbl.clear anon_struct_name ;
+  LltypeTbl.clear memo_type ;
+  GlobTbl.clear memo_global ;
+  ValTbl.clear memo_value ;
+  StringS.clear ignored_callees ;
   Gc.full_major () ;
   Llvm.dispose_module llmodule ;
   Llvm.dispose_context llcontext
@@ -1537,7 +1567,7 @@ let translate ~models ~fuzzer ~internalize : string list -> Llair.program =
   let link_model_file name =
     Llvm_linker.link_in link_ctx
       (Llvm_irreader.parse_ir llcontext
-         (Llvm.MemoryBuffer.of_string (Option.value_exn (Model.read name))))
+         (Llvm.MemoryBuffer.of_string (Option.get_exn (Model.read name))))
   in
   if models then link_model_file "/cxxabi.bc" ;
   if fuzzer then link_model_file "/lib_fuzzer_main.bc" ;
@@ -1567,8 +1597,8 @@ let translate ~models ~fuzzer ~internalize : string list -> Llair.program =
       (fun functions llf ->
         let name = Llvm.value_name llf in
         if
-          String.is_prefix name ~prefix:"__llair_"
-          || String.is_prefix name ~prefix:"llvm."
+          String.prefix name ~pre:"__llair_"
+          || String.prefix name ~pre:"llvm."
         then functions
         else xlate_function x llf :: functions )
       [] llmodule

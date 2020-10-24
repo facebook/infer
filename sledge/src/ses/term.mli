@@ -19,11 +19,6 @@ type op1 =
       (** [Ap1 (Unsigned {bits= n}, arg)] is [arg] interpreted as an [n]-bit
           unsigned integer. That is, it unsigned-binary--decodes the low [n]
           bits of the infinite two's-complement encoding of [arg]. *)
-  | Convert of {src: Llair.Typ.t; dst: Llair.Typ.t}
-      (** [Ap1 (Convert {src; dst}, arg)] is [arg] converted from type [src]
-          to type [dst], possibly with loss of information. The [src] and
-          [dst] types must be [Typ.convertible] and must not both be
-          [Integer] types. *)
   | Splat  (** Iterated concatenation of a single byte *)
   | Select of int  (** Select an index from a record *)
 [@@deriving compare, equal, sexp]
@@ -33,8 +28,6 @@ type op2 =
   | Dq  (** Disequal test *)
   | Lt  (** Less-than test *)
   | Le  (** Less-than-or-equal test *)
-  | Ord  (** Ordered test (neither arg is nan) *)
-  | Uno  (** Unordered test (some arg is nan) *)
   | Div  (** Division, for integers result is truncated toward zero *)
   | Rem
       (** Remainder of division, satisfies [a = b * div a b + rem a b] and
@@ -64,7 +57,7 @@ module rec Set : sig
 end
 
 and Qset : sig
-  include NS.Qset.S with type elt := T.t
+  include NS.Multiset.S with type mul := Q.t with type elt := T.t
 
   val t_of_sexp : Sexp.t -> t
 end
@@ -85,12 +78,13 @@ and T : sig
     | Or of set  (** Disjunction, boolean or bitwise *)
     | Add of qset  (** Sum of terms with rational coefficients *)
     | Mul of qset  (** Product of terms with rational exponents *)
-    | Label of {parent: string; name: string}
-        (** Address of named code block within parent function *)
-    | Float of {data: string}  (** Floating-point constant *)
     | Integer of {data: Z.t}  (** Integer constant *)
     | Rational of {data: Q.t}  (** Rational constant *)
     | RecRecord of int  (** Reference to ancestor recursive record *)
+    | Apply of Funsym.t * t iarray
+        (** Uninterpreted function application *)
+    | PosLit of Predsym.t * t iarray
+    | NegLit of Predsym.t * t iarray
   [@@deriving compare, equal, sexp]
 end
 
@@ -112,7 +106,7 @@ module Map : sig
   val t_of_sexp : (Sexp.t -> 'a) -> Sexp.t -> 'a t
 end
 
-val ppx : Var.strength -> t pp
+val ppx : Var.t Var.strength -> t pp
 val pp : t pp
 val pp_diff : (t * t) pp
 val invariant : t -> unit
@@ -123,7 +117,6 @@ val invariant : t -> unit
 val var : Var.t -> t
 
 (* constants *)
-val label : parent:string -> name:string -> t
 val bool : bool -> t
 val true_ : t
 val false_ : t
@@ -132,20 +125,16 @@ val zero : t
 val one : t
 val minus_one : t
 val rational : Q.t -> t
-val float : string -> t
 
 (* type conversions *)
 val signed : int -> t -> t
 val unsigned : int -> t -> t
-val convert : Llair.Typ.t -> to_:Llair.Typ.t -> t -> t
 
 (* comparisons *)
 val eq : t -> t -> t
 val dq : t -> t -> t
 val lt : t -> t -> t
 val le : t -> t -> t
-val ord : t -> t -> t
-val uno : t -> t -> t
 
 (* arithmetic *)
 val neg : t -> t
@@ -186,8 +175,10 @@ val select : rcd:t -> idx:int -> t
 val update : rcd:t -> idx:int -> elt:t -> t
 val rec_record : int -> t
 
-(* convert *)
-val of_exp : Llair.Exp.t -> t
+(* uninterpreted *)
+val apply : Funsym.t -> t iarray -> t
+val poslit : Predsym.t -> t iarray -> t
+val neglit : Predsym.t -> t iarray -> t
 
 (** Destruct *)
 

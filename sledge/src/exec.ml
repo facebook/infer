@@ -630,7 +630,7 @@ let strlen_spec reg ptr =
  * Symbolic Execution
  *)
 
-open Option.Import
+open Option.Infix
 
 let check_preserve_us (q0 : Sh.t) (q1 : Sh.t) =
   let gain_us = Var.Set.diff q1.us q0.us in
@@ -739,7 +739,7 @@ let intrinsic ~skip_throw :
  fun pre areturn intrinsic actuals ->
   let name =
     let n = Var.name intrinsic in
-    match String.index n '.' with None -> n | Some i -> String.prefix n i
+    match String.index n '.' with None -> n | Some i -> String.take i n
   in
   let skip pre = Some (Some pre) in
   ( match (areturn, name, actuals) with

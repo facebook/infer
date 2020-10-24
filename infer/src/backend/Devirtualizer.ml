@@ -18,10 +18,10 @@ module L = Logging
 module VDom = AbstractDomain.Flat (JavaClassName)
 
 module CFG = ProcCfg.Normal
-module Domain = AbstractDomain.Map (Var) (VDom)
+module Domain = AbstractDomain.SafeInvertedMap (Var) (VDom)
 
 let get_var (astate : Domain.t) (v : Var.t) : VDom.t =
-  match Domain.find_opt v astate with Some ab -> ab | None -> VDom.bottom
+  match Domain.find_opt v astate with Some ab -> ab | None -> VDom.top
 
 
 let rec eval_expr (astate : Domain.t) (expr : Exp.t) : VDom.t =
@@ -93,7 +93,7 @@ let analyze_at_node (map : Analyzer.invariant_map) node : Domain.t =
   | Some abstate ->
       abstate.pre
   | None ->
-      Domain.bottom
+      Domain.top
 
 
 (* inspired from biabduction/Symexec.ml, function resolve_method  *)

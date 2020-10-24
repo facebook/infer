@@ -22,7 +22,8 @@ type access_to_invalid_address =
   ; access_trace: Trace.t
         (** assuming we are in the calling context, the trace leads to an access to the value
             invalidated in [invalidation_trace] without further assumptions *) }
-[@@deriving compare,equal]
+[@@deriving compare,equal, yojson_of]
+
 
 (** an error to report to the user *)
 type t =

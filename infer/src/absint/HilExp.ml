@@ -11,6 +11,8 @@ module L = Logging
 
 type typ_ = Typ.t
 
+let yojson_of_typ_ = [%yojson_of: _]
+
 let compare_typ_ _ _ = 0
 
 module Access = struct
@@ -19,7 +21,7 @@ module Access = struct
     | ArrayAccess of typ_ * 'array_index
     | TakeAddress
     | Dereference
-  [@@deriving compare]
+  [@@deriving compare, yojson_of]
 
   let pp pp_array_index fmt = function
     | FieldAccess field_name ->

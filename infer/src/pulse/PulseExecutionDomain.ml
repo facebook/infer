@@ -21,6 +21,7 @@ type 'abductive_domain_t base_t =
   | ExitProgram of 'abductive_domain_t
   | AbortProgram of AbductiveDomain.summary
   | LatentAbortProgram of {astate: AbductiveDomain.summary; latent_issue: LatentIssue.t}
+[@@deriving yojson_of]
 
 type t = AbductiveDomain.t base_t
 
@@ -70,7 +71,7 @@ let map ~f exec_state =
       LatentAbortProgram {astate; latent_issue}
 
 
-type summary = AbductiveDomain.summary base_t
+type summary = AbductiveDomain.summary base_t [@@deriving yojson_of]
 
 let summary_of_posts pdesc posts =
   List.filter_mapi posts ~f:(fun i exec_state ->

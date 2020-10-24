@@ -11,7 +11,7 @@ val explore :
   -> report_txt:string
   -> report_json:string
   -> show_source_context:bool
-  -> selected:int option
+  -> selected:[`All | `Select of int] option
   -> max_nested_level:int option
   -> unit
 

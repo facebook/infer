@@ -10,7 +10,7 @@ module type Dom = sig
   type t [@@deriving equal, sexp_of]
 
   val pp : t pp
-  val report_fmt_thunk : t -> Formatter.t -> unit
+  val report_fmt_thunk : t -> Format.formatter -> unit
   val init : Llair.Global.t iarray -> t
   val join : t -> t -> t option
   val is_false : t -> bool

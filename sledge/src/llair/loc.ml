@@ -22,7 +22,7 @@ let pp fs ({dir; file; line; col} as loc) =
   if not (equal loc none) then Format.pp_print_string fs "; " ;
   if not (String.is_empty dir) then (
     let dir =
-      Option.value_map ~f:Fpath.to_string
+      Option.map_or ~f:Fpath.to_string
         (Fpath.relativize ~root:(Fpath.v !root) (Fpath.v dir))
         ~default:dir
     in

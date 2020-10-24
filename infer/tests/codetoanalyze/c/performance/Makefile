@@ -6,7 +6,8 @@
 TESTS_DIR = ../../..
 
 CLANG_OPTIONS = -c
-INFER_OPTIONS = --cost-only --bufferoverrun --debug-exceptions --project-root $(TESTS_DIR)
+INFER_OPTIONS = --cost-only --bufferoverrun --debug-exceptions --project-root $(TESTS_DIR) \
+  --no-cost-suppress-func-ptr
 INFERPRINT_OPTIONS = --issues-tests
 INFERPRINT_COST_OPTIONS = --cost-issues-tests
 

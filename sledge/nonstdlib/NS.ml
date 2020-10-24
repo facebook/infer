@@ -8,183 +8,29 @@
 (** Global namespace intended to be opened in each source file *)
 
 include NS0
-module Monad = Monad
-
-(** Failures *)
-
-exception Replay of exn * Printexc.raw_backtrace * Sexp.t
-
-let register_sexp_of_exn exn sexp_of_exn =
-  Sexplib.Conv.Exn_converter.add
-    (Obj.Extension_constructor.of_val exn)
-    sexp_of_exn
-
-;;
-register_sexp_of_exn
-  (Replay (Stdlib.Not_found, Printexc.get_callstack 1, Sexp.List []))
-  (function
-    | Replay (exn, _, payload) ->
-        Sexp.List [Atom "Replay"; sexp_of_exn exn; payload]
-    | exn -> Sexp.Atom (Printexc.to_string exn) )
-
-let fail = Trace.fail
-
-exception Unimplemented of string
-
-let todo fmt = Trace.raisef (fun msg -> Unimplemented msg) fmt
-
-let warn fmt =
-  let fs = Format.std_formatter in
-  Format.pp_open_box fs 2 ;
-  Format.pp_print_string fs "Warning: " ;
-  Format.kfprintf
-    (fun fs () ->
-      Format.pp_close_box fs () ;
-      Format.pp_force_newline fs () )
-    fs fmt
-
-(** Assertions *)
-
-let assertf cnd fmt =
-  if not cnd then fail fmt
-  else Format.ikfprintf (fun _ () -> ()) Format.str_formatter fmt
-
-let checkf cnd fmt =
-  if not cnd then fail fmt
-  else Format.ikfprintf (fun _ () -> true) Format.str_formatter fmt
-
-let check f x =
-  assert (
-    f x ;
-    true ) ;
-  x
-
-let violates f x =
-  assert (
-    f x ;
-    true ) ;
-  assert false
-
-(** Extensions *)
-
-module Invariant = struct
-  include Core.Invariant
-
-  exception
-    Violation of
-      exn * Printexc.raw_backtrace * Source_code_position.t * Sexp.t
-
-  ;;
-  register_sexp_of_exn
-    (Violation
-       ( Stdlib.Not_found
-       , Printexc.get_callstack 1
-       , Lexing.dummy_pos
-       , Sexp.List [] ))
-    (function
-      | Violation (exn, _, pos, payload) ->
-          Sexp.List
-            [ Atom "Invariant.Violation"
-            ; sexp_of_exn exn
-            ; Source_code_position.sexp_of_t pos
-            ; payload ]
-      | exn -> Sexp.Atom (Printexc.to_string exn) )
-
-  let invariant here t sexp_of_t f =
-    assert (
-      ( try f ()
-        with exn0 ->
-          let bt = Printexc.get_raw_backtrace () in
-          let exn = Violation (exn0, bt, here, sexp_of_t t) in
-          Printexc.raise_with_backtrace exn bt ) ;
-      true )
-end
-
-(** Containers *)
-
-module Option = Option
-include Option.Import
-module List = List
-
-module Array = struct
-  include Core.Array
-
-  let hash_fold_t hash_fold_elt s a =
-    Hash.Builtin.hash_fold_array_frozen hash_fold_elt s a
-
-  module Import = struct
-    type 'a array = 'a t [@@deriving compare, equal, hash, sexp]
-  end
-
-  let pp sep pp_elt fs a = List.pp sep pp_elt fs (to_list a)
-  let map_endo xs ~f = map_endo map xs ~f
-
-  let fold_map_inplace a ~init ~f =
-    let s = ref init in
-    let f x =
-      let s', x' = f !s x in
-      s := s' ;
-      x'
-    in
-    map_inplace a ~f ;
-    !s
-end
-
-include Array.Import
+module Array = Array
+module Float = Float
+module HashSet = HashSet
+module HashTable = HashTable
 module IArray = IArray
 include IArray.Import
-module Set = Set
+module Int = Int
+module List = List
 module Map = Map
-module Qset = Qset
-
-(** Data types *)
-
-module String = struct
-  include (
-    Core.String :
-      sig
-        include
-          module type of Core.String with module Map := Core.String.Map
-      end )
-
-  module Map = Map.Make (Core.String)
-end
-
-module Q = struct
-  let pp = Q.pp_print
-  let hash = Hashtbl.hash
-  let hash_fold_t s q = Int.hash_fold_t s (hash q)
-  let sexp_of_t q = Sexp.Atom (Q.to_string q)
-
-  let t_of_sexp = function
-    | Sexp.Atom s -> Q.of_string s
-    | _ -> assert false
-
-  let of_z = Q.of_bigint
-
-  include Q
-end
-
-module Z = struct
-  let pp = Z.pp_print
-  let hash = [%hash: Z.t]
-  let hash_fold_t s z = Int.hash_fold_t s (hash z)
-  let sexp_of_t z = Sexp.Atom (Z.to_string z)
-
-  let t_of_sexp = function
-    | Sexp.Atom s -> Z.of_string s
-    | _ -> assert false
-
-  (* the signed 1-bit integers are -1 and 0 *)
-  let true_ = Z.minus_one
-  let false_ = Z.zero
-  let of_bool = function true -> true_ | false -> false_
-  let is_true = Z.equal true_
-  let is_false = Z.equal false_
-
-  include Z
-end
-
-(** Utilities *)
-
+module Monad = Monad
+module Multiset = Multiset
+module Option = Option
+include Option.Infix
+module Q = Q_ext
+module Set = Set
+module Sign = Sign
+module String = String
+module Sys = Sys
 module Timer = Timer
+module Z = Z_ext
+
+module Filename = struct
+  include Filename
+
+  let realpath = Core.Filename.realpath
+end

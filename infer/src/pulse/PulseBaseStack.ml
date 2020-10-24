@@ -21,7 +21,7 @@ module VarAddress = struct
 end
 
 module AddrHistPair = struct
-  type t = AbstractValue.t * ValueHistory.t [@@deriving compare]
+  type t = AbstractValue.t * ValueHistory.t [@@deriving compare, yojson_of]
 
   let pp f addr_trace =
     if Config.debug_level_analysis >= 3 then
@@ -43,3 +43,6 @@ let compare = compare AddrHistPair.compare
 
 let get_vars (stack: t)=
   Stack.fold (fun v _ acc -> acc@[v]) stack []
+
+let yojson_of_t m = [%yojson_of: (VarAddress.t * AddrHistPair.t) list] (bindings m)
+

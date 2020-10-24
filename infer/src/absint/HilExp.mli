@@ -14,7 +14,7 @@ module Access : sig
     | ArrayAccess of Typ.t * 'array_index
     | TakeAddress
     | Dereference
-  [@@deriving compare]
+  [@@deriving compare, yojson_of]
 
   val pp : (Format.formatter -> 'array_index -> unit) -> Format.formatter -> 'array_index t -> unit
 

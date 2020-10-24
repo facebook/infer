@@ -13,7 +13,8 @@ module Hashtbl = Caml.Hashtbl
 module F = Format
 
 module Name = struct
-  type t = Primed | Normal | Footprint | Spec | FromString of string [@@deriving compare]
+  type t = Primed | Normal | Footprint | Spec | FromString of string
+  [@@deriving compare, yojson_of]
 
   let primed = "t"
 
@@ -52,7 +53,7 @@ type kind =
   | KFootprint
   | KNormal
   | KPrimed
-[@@deriving compare]
+[@@deriving compare, yojson_of]
 
 let kfootprint = KFootprint
 
@@ -65,7 +66,7 @@ let equal_kind = [%compare.equal: kind]
 (* timestamp for a path identifier *)
 let path_ident_stamp = -3
 
-type t = {kind: kind; name: Name.t; stamp: int} [@@deriving compare]
+type t = {kind: kind; name: Name.t; stamp: int} [@@deriving compare, yojson_of]
 
 (* most unlikely first *)
 let equal i1 i2 =

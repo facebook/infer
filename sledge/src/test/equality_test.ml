@@ -15,7 +15,7 @@ let%test_module _ =
 
     (* let () =
      *   Trace.init ~margin:160
-     *     ~config:(Result.ok_exn (Trace.parse "+Equality"))
+     *     ~config:(Result.get_ok (Trace.parse "+Equality"))
      *     ()
      *
      * [@@@warning "-32"] *)
@@ -62,17 +62,17 @@ let%test_module _ =
         = (%y_6 rem %t_1)
 
       {sat= true;
-       rep= [[%t_1 ↦ ];
-             [%u_2 ↦ %t_1];
-             [%v_3 ↦ %t_1];
-             [%w_4 ↦ %t_1];
-             [%x_5 ↦ %t_1];
-             [%y_6 ↦ ];
-             [%z_7 ↦ %t_1];
-             [(%y_6 rem %v_3) ↦ %t_1];
-             [(%y_6 rem %z_7) ↦ %t_1];
+       rep= [[0 ↦ ];
              [-1 ↦ ];
-             [0 ↦ ]]} |}]
+             [(%y_6 rem %z_7) ↦ %t_1];
+             [(%y_6 rem %v_3) ↦ %t_1];
+             [%z_7 ↦ %t_1];
+             [%y_6 ↦ ];
+             [%x_5 ↦ %t_1];
+             [%w_4 ↦ %t_1];
+             [%v_3 ↦ %t_1];
+             [%u_2 ↦ %t_1];
+             [%t_1 ↦ ]]} |}]
 
     let%test _ = implies_eq r3 t z
 
@@ -83,7 +83,7 @@ let%test_module _ =
       pp r15 ;
       [%expect
         {|
-          {sat= true; rep= [[%x_5 ↦ 1]; [(%x_5 ≠ 0) ↦ -1]; [-1 ↦ ]; [0 ↦ ]]} |}]
+          {sat= true; rep= [[0 ↦ ]; [-1 ↦ ]; [(%x_5 ≠ 0) ↦ -1]; [%x_5 ↦ 1]]} |}]
 
     let%test _ = implies_eq r15 b (Term.signed 1 !1)
     let%test _ = implies_eq r15 (Term.unsigned 1 b) !1

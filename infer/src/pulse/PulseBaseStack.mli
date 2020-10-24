@@ -30,3 +30,6 @@ val compare : t -> t -> int [@@warning "-32"]
 val pp : F.formatter -> t -> unit
 
 val get_vars : t -> VarAddress.t list
+
+val yojson_of_t : t -> Yojson.Safe.t
+

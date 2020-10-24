@@ -54,7 +54,7 @@ type ikind =
   | IULongLong  (** [unsigned long long] (or [unsigned int64_] on Microsoft Visual C) *)
   | I128  (** [__int128_t] *)
   | IU128  (** [__uint128_t] *)
-[@@deriving compare]
+[@@deriving compare, yojson_of]
 
 let equal_ikind = [%compare.equal: ikind]
 
@@ -130,7 +130,7 @@ let ikind_is_char = function IChar | ISChar | IUChar -> true | _ -> false
 
 (** Kinds of floating-point numbers *)
 type fkind = FFloat  (** [float] *) | FDouble  (** [double] *) | FLongDouble  (** [long double] *)
-[@@deriving compare]
+[@@deriving compare, yojson_of]
 
 let equal_fkind = [%compare.equal: fkind]
 
@@ -150,7 +150,7 @@ type ptr_kind =
   | Pk_objc_weak  (** Obj-C __weak pointer *)
   | Pk_objc_unsafe_unretained  (** Obj-C __unsafe_unretained pointer *)
   | Pk_objc_autoreleasing  (** Obj-C __autoreleasing pointer *)
-[@@deriving compare]
+[@@deriving compare, yojson_of]
 
 let equal_ptr_kind = [%compare.equal: ptr_kind]
 
@@ -168,10 +168,11 @@ let ptr_kind_string = function
 
 
 module T = struct
-  type type_quals = {is_const: bool; is_restrict: bool; is_volatile: bool} [@@deriving compare]
+  type type_quals = {is_const: bool; is_restrict: bool; is_volatile: bool}
+  [@@deriving compare, yojson_of]
 
   (** types for sil (structured) expressions *)
-  type t = {desc: desc; quals: type_quals} [@@deriving compare]
+  type t = {desc: desc; quals: type_quals}
 
   and desc =
     | Tint of ikind  (** integer type *)
@@ -183,7 +184,6 @@ module T = struct
     | TVar of string  (** type variable (ie. C++ template variables) *)
     | Tarray of {elt: t; length: IntLit.t option; stride: IntLit.t option}
         (** array type with statically fixed length and stride *)
-  [@@deriving compare]
 
   and name =
     | CStruct of QualifiedCppName.t
@@ -192,15 +192,15 @@ module T = struct
     | JavaClass of JavaClassName.t
     | ObjcClass of QualifiedCppName.t
     | ObjcProtocol of QualifiedCppName.t
-  [@@deriving compare]
 
-  and template_arg = TType of t | TInt of Int64.t | TNull | TNullPtr | TOpaque
-  [@@deriving compare]
+  and template_arg = TType of t | TInt of int64 | TNull | TNullPtr | TOpaque
 
   and template_spec_info =
     | NoTemplate
     | Template of {mangled: string option; args: template_arg list}
-  [@@deriving compare]
+  [@@deriving compare, yojson_of]
+
+  let yojson_of_name = [%yojson_of: _]
 
   let equal_desc = [%compare.equal: desc]
 
@@ -372,7 +372,7 @@ let to_string typ =
 
 
 module Name = struct
-  type t = name [@@deriving compare, equal]
+  type t = name [@@deriving compare, equal, yojson_of]
 
   let equal = [%compare.equal: t]
 
@@ -526,6 +526,9 @@ module Name = struct
         |> QualifiedCppName.Set.of_list
       in
       function ObjcClass name -> not (QualifiedCppName.Set.mem name tagged_classes) | _ -> false
+
+
+    let objc_ns_enumerator = from_string "NSEnumerator"
   end
 
   module Set = PrettyPrintable.MakePPSet (struct

@@ -21,6 +21,10 @@ type event =
 
 and t = event list [@@deriving compare, equal]
 
+let yojson_of_event = [%yojson_of: _]
+
+let yojson_of_t = [%yojson_of: _]
+
 let pp_event_no_location fmt event =
   let pp_pvar fmt pvar =
     if Pvar.is_global pvar then F.fprintf fmt "global variable `%a`" Pvar.pp_value_non_verbose pvar

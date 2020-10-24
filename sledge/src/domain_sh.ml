@@ -7,12 +7,13 @@
 
 (** Abstract domain *)
 
+module X = Llair_to_Fol
 open Fol
 
 type t = Sh.t [@@deriving equal, sexp]
 
 let pp fs q = Format.fprintf fs "@[{ %a@ }@]" Sh.pp q
-let report_fmt_thunk = Fn.flip pp
+let report_fmt_thunk = Fun.flip pp
 
 (* set by cli *)
 let simplify_states = ref true
@@ -21,9 +22,9 @@ let simplify q = if !simplify_states then Sh.simplify q else q
 let init globals =
   IArray.fold globals ~init:Sh.emp ~f:(fun q -> function
     | {Llair.Global.reg; init= Some (seq, siz)} ->
-        let loc = Term.var (Var_of_Llair.reg reg) in
+        let loc = Term.var (X.reg reg) in
         let len = Term.integer (Z.of_int siz) in
-        let seq = Term_of_Llair.exp seq in
+        let seq = X.term seq in
         Sh.star q (Sh.seg {loc; bas= loc; len; siz= len; seq})
     | _ -> q )
 
@@ -36,16 +37,11 @@ let join p q =
 
 let is_false = Sh.is_false
 let dnf = Sh.dnf
-
-let exec_assume q b =
-  Exec.assume q (Formula_of_Llair.exp b) |> Option.map ~f:simplify
-
-let exec_kill q r = Exec.kill q (Var_of_Llair.reg r) |> simplify
+let exec_assume q b = Exec.assume q (X.formula b) |> Option.map ~f:simplify
+let exec_kill q r = Exec.kill q (X.reg r) |> simplify
 
 let exec_move q res =
-  Exec.move q
-    (IArray.map res ~f:(fun (r, e) ->
-         (Var_of_Llair.reg r, Term_of_Llair.exp e) ))
+  Exec.move q (IArray.map res ~f:(fun (r, e) -> (X.reg r, X.term e)))
   |> simplify
 
 let exec_inst pre inst =
@@ -53,37 +49,27 @@ let exec_inst pre inst =
   | Move {reg_exps; _} ->
       Some
         (Exec.move pre
-           (IArray.map reg_exps ~f:(fun (r, e) ->
-                (Var_of_Llair.reg r, Term_of_Llair.exp e) )))
+           (IArray.map reg_exps ~f:(fun (r, e) -> (X.reg r, X.term e))))
   | Load {reg; ptr; len; _} ->
-      Exec.load pre ~reg:(Var_of_Llair.reg reg) ~ptr:(Term_of_Llair.exp ptr)
-        ~len:(Term_of_Llair.exp len)
+      Exec.load pre ~reg:(X.reg reg) ~ptr:(X.term ptr) ~len:(X.term len)
   | Store {ptr; exp; len; _} ->
-      Exec.store pre ~ptr:(Term_of_Llair.exp ptr)
-        ~exp:(Term_of_Llair.exp exp) ~len:(Term_of_Llair.exp len)
+      Exec.store pre ~ptr:(X.term ptr) ~exp:(X.term exp) ~len:(X.term len)
   | Memset {dst; byt; len; _} ->
-      Exec.memset pre ~dst:(Term_of_Llair.exp dst)
-        ~byt:(Term_of_Llair.exp byt) ~len:(Term_of_Llair.exp len)
+      Exec.memset pre ~dst:(X.term dst) ~byt:(X.term byt) ~len:(X.term len)
   | Memcpy {dst; src; len; _} ->
-      Exec.memcpy pre ~dst:(Term_of_Llair.exp dst)
-        ~src:(Term_of_Llair.exp src) ~len:(Term_of_Llair.exp len)
+      Exec.memcpy pre ~dst:(X.term dst) ~src:(X.term src) ~len:(X.term len)
   | Memmov {dst; src; len; _} ->
-      Exec.memmov pre ~dst:(Term_of_Llair.exp dst)
-        ~src:(Term_of_Llair.exp src) ~len:(Term_of_Llair.exp len)
+      Exec.memmov pre ~dst:(X.term dst) ~src:(X.term src) ~len:(X.term len)
   | Alloc {reg; num; len; _} ->
-      Exec.alloc pre ~reg:(Var_of_Llair.reg reg)
-        ~num:(Term_of_Llair.exp num) ~len
-  | Free {ptr; _} -> Exec.free pre ~ptr:(Term_of_Llair.exp ptr)
-  | Nondet {reg; _} ->
-      Some (Exec.nondet pre (Option.map ~f:Var_of_Llair.reg reg))
+      Exec.alloc pre ~reg:(X.reg reg) ~num:(X.term num) ~len
+  | Free {ptr; _} -> Exec.free pre ~ptr:(X.term ptr)
+  | Nondet {reg; _} -> Some (Exec.nondet pre (Option.map ~f:X.reg reg))
   | Abort _ -> Exec.abort pre )
   |> Option.map ~f:simplify
 
 let exec_intrinsic ~skip_throw q r i es =
-  Exec.intrinsic ~skip_throw q
-    (Option.map ~f:Var_of_Llair.reg r)
-    (Var_of_Llair.reg i)
-    (List.map ~f:Term_of_Llair.exp es)
+  Exec.intrinsic ~skip_throw q (Option.map ~f:X.reg r) (X.reg i)
+    (List.map ~f:X.term es)
   |> Option.map ~f:(Option.map ~f:simplify)
 
 let term_eq_class_has_only_vars_in fvs ctx term =
@@ -132,18 +118,15 @@ let and_eqs sub formals actuals q =
 let localize_entry globals actuals formals freturn locals shadow pre entry =
   (* Add the formals here to do garbage collection and then get rid of them *)
   let formals_set = Var.Set.of_list formals in
-  let freturn_locals =
-    Var_of_Llair.regs (Llair.Reg.Set.add_option freturn locals)
-  in
+  let freturn_locals = X.regs (Llair.Reg.Set.add_option freturn locals) in
   let function_summary_pre =
-    garbage_collect entry
-      ~wrt:(Var.Set.union formals_set (Var_of_Llair.regs globals))
+    garbage_collect entry ~wrt:(Var.Set.union formals_set (X.regs globals))
   in
   [%Trace.info "function summary pre %a" pp function_summary_pre] ;
   let foot = Sh.exists formals_set function_summary_pre in
   let xs, foot = Sh.bind_exists ~wrt:pre.Sh.us foot in
   let frame =
-    try Option.value_exn (Solver.infer_frame pre xs foot)
+    try Option.get_exn (Solver.infer_frame pre xs foot)
     with _ ->
       fail "Solver couldn't infer frame of a garbage-collected pre" ()
   in
@@ -169,12 +152,10 @@ let call ~summaries ~globals ~actuals ~areturn ~formals ~freturn ~locals q =
       (List.rev formals) Llair.Reg.Set.pp locals Llair.Reg.Set.pp globals pp
       q]
   ;
-  let actuals = List.map ~f:Term_of_Llair.exp actuals in
-  let areturn = Option.map ~f:Var_of_Llair.reg areturn in
-  let formals = List.map ~f:Var_of_Llair.reg formals in
-  let freturn_locals =
-    Var_of_Llair.regs (Llair.Reg.Set.add_option freturn locals)
-  in
+  let actuals = List.map ~f:X.term actuals in
+  let areturn = Option.map ~f:X.reg areturn in
+  let formals = List.map ~f:X.reg formals in
+  let freturn_locals = X.regs (Llair.Reg.Set.add_option freturn locals) in
   let modifs = Var.Set.of_option areturn in
   (* quantify modifs, their current value will be overwritten and so does
      not need to be saved in the freshening renaming *)
@@ -210,7 +191,7 @@ let post locals _ q =
   [%Trace.call fun {pf} ->
     pf "@[<hv>locals: {@[%a@]}@ q: %a@]" Llair.Reg.Set.pp locals Sh.pp q]
   ;
-  Sh.exists (Var_of_Llair.regs locals) q |> simplify
+  Sh.exists (X.regs locals) q |> simplify
   |>
   [%Trace.retn fun {pf} -> pf "%a" Sh.pp]
 
@@ -227,8 +208,8 @@ let retn formals freturn {areturn; unshadow; frame} q =
       (Option.pp "@ areturn: %a" Var.pp)
       areturn Var.Subst.pp unshadow pp q pp frame]
   ;
-  let formals = List.map ~f:Var_of_Llair.reg formals in
-  let freturn = Option.map ~f:Var_of_Llair.reg freturn in
+  let formals = List.map ~f:X.reg formals in
+  let freturn = Option.map ~f:X.reg freturn in
   let q, shadows =
     match areturn with
     | Some areturn -> (
@@ -272,8 +253,8 @@ let create_summary ~locals ~formals ~entry ~current:(post : Sh.t) =
     pf "formals %a@ entry: %a@ current: %a" Llair.Reg.Set.pp formals pp
       entry pp post]
   ;
-  let locals = Var_of_Llair.regs locals in
-  let formals = Var_of_Llair.regs formals in
+  let locals = X.regs locals in
+  let formals = X.regs formals in
   let foot = Sh.exists locals entry in
   let foot, subst = Sh.freshen ~wrt:(Var.Set.union foot.us post.us) foot in
   let restore_formals q =

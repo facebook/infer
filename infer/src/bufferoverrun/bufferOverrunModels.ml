@@ -832,7 +832,7 @@ module AbstractCollection (Lang : Lang) = struct
 
   let get_collection_internal_array_locs coll_id mem =
     let coll = Dom.Mem.find (Loc.of_id coll_id) mem in
-    Dom.Val.get_pow_loc coll |> PowLoc.append_field ~fn:Lang.collection_internal_array_field
+    Dom.Val.get_all_locs coll |> PowLoc.append_field ~fn:Lang.collection_internal_array_field
 
 
   let get_collection_internal_elements_locs coll_id mem =
@@ -1022,12 +1022,17 @@ module AbstractCollection (Lang : Lang) = struct
     {exec; check= check_index ~last_included:false coll_id index_exp}
 
 
-  let get_at_index coll_id index_exp =
+  let get_any_index coll_id =
     let exec _model_env ~ret:(ret_id, _) mem =
       let locs = get_collection_internal_elements_locs coll_id mem in
       let v = Dom.Mem.find_set locs mem in
       model_by_value v ret_id mem
     in
+    {exec; check= no_check}
+
+
+  let get_at_index coll_id index_exp =
+    let {exec} = get_any_index coll_id in
     {exec; check= check_index ~last_included:false coll_id index_exp}
 end
 
@@ -1137,35 +1142,41 @@ module NSCollection = struct
 
 
   let iterator coll_exp =
-    let exec {integer_type_widths; location} ~ret:(ret_id, _) mem =
-      let traces = Trace.(Set.singleton location ArrayDeclaration) in
-      let array_v = Sem.eval integer_type_widths coll_exp mem in
-      let array_loc = Dom.Val.get_all_locs array_v in
-      let offset_loc = PowLoc.append_field ~fn:BufferOverrunField.objc_iterator_offset array_loc in
-      let mem = Dom.Mem.add_heap_set offset_loc Dom.Val.Itv.zero mem in
-      model_by_value (Dom.Val.of_pow_loc ~traces array_loc) ret_id mem
-      |> Dom.Mem.add_heap_set array_loc array_v
-      |> Dom.Mem.add_iterator_alias_objc ret_id
+    let exec {integer_type_widths= _; location} ~ret:(id, _) mem =
+      let elements_locs = eval_collection_internal_array_locs coll_exp mem in
+      let v = Dom.Mem.find_set elements_locs mem |> Dom.Val.set_array_offset location Itv.zero in
+      model_by_value v id mem
     in
     {exec; check= no_check}
 
 
   let next_object iterator =
-    let exec {integer_type_widths} ~ret:(id, _) mem =
-      let iterator_v = Sem.eval integer_type_widths iterator mem in
-      let traces = Dom.Val.get_traces iterator_v in
-      let offset_loc =
-        Dom.Val.get_pow_loc iterator_v
-        |> PowLoc.append_field ~fn:BufferOverrunField.objc_iterator_offset
+    let exec _ ~ret:(ret_id, _) mem =
+      let iterator_locs =
+        Dom.Mem.find_simple_alias iterator mem
+        |> List.filter_map ~f:(fun (l, i) -> if IntLit.iszero i then Some l else None)
+        |> PowLoc.of_list
       in
-      let next_offset_v =
-        Dom.Mem.find_set offset_loc mem |> Dom.Val.get_itv |> Itv.incr |> Dom.Val.of_itv
+      let iterator_v = Dom.Mem.find_set iterator_locs mem in
+      let arrayblk = ArrayBlk.plus_offset (Dom.Val.get_array_blk iterator_v) Itv.one in
+      let iterator_v' = {iterator_v with arrayblk} in
+      let return_v =
+        (* NOTE: It joins zero to avoid unreachable nodes due to the following hack.  The
+           [nextObject] returns the offset of the enumerator instead of an object elements,
+           which helps the cost checker select the offset as a control variable, for example,
+           [while(obj = [enumerator nextObject]) { ... }]. *)
+        ArrayBlk.get_offset ~cost_mode:true arrayblk |> Itv.join Itv.zero |> Dom.Val.of_itv
       in
-      let locs = eval_collection_internal_array_locs iterator mem in
-      model_by_value (Dom.Val.of_pow_loc ~traces locs) id mem
-      |> Dom.Mem.add_heap_set offset_loc next_offset_v
-      |> Dom.Mem.add_iterator_next_object_alias id iterator
+      model_by_value return_v ret_id mem
+      |> Dom.Mem.add_heap_set iterator_locs iterator_v'
+      |> Dom.Mem.add_iterator_next_object_alias ~ret_id ~iterator
     in
+    {exec; check= no_check}
+end
+
+module NSURL = struct
+  let get_resource_value =
+    let exec _model_env ~ret:(id, _) mem = model_by_value (Dom.Val.of_itv Itv.zero_one) id mem in
     {exec; check= no_check}
 end
 
@@ -1338,18 +1349,6 @@ module JavaString = struct
     ArrObjCommon.constructor_from_char_ptr model_env tgt_deref ~fn src mem
 
 
-  (* https://docs.oracle.com/javase/7/docs/api/java/lang/String.html#String(char[]) *)
-  (* same for byte[]*)
-  let constructor_from_array tgt_exp arr_exp =
-    let exec {integer_type_widths} ~ret:_ mem =
-      let tgt_locs = Sem.eval_locs tgt_exp mem in
-      let deref_of_tgt = PowLoc.append_field tgt_locs ~fn in
-      let src_arr_locs = Dom.Val.get_all_locs (Sem.eval_arr integer_type_widths arr_exp mem) in
-      Dom.Mem.update_mem deref_of_tgt (Dom.Mem.find_set src_arr_locs mem) mem
-    in
-    {exec; check= no_check}
-
-
   let malloc_and_set_length exp ({location} as model_env) ~ret:((id, _) as ret) length mem =
     let {exec} = malloc ~can_be_zero:false exp in
     let mem = exec model_env ~ret mem in
@@ -1407,11 +1406,7 @@ module JavaString = struct
     {exec; check= no_check}
 
 
-  let create_with_length {pname; node_hash; location; integer_type_widths} ~ret:(id, _) ~begin_idx
-      ~end_v mem =
-    let begin_itv = Sem.eval integer_type_widths begin_idx mem |> Dom.Val.get_itv in
-    let end_itv = Dom.Val.get_itv end_v in
-    let length_itv = Itv.minus end_itv begin_itv in
+  let create_with_length {pname; node_hash; location} ~ret:(id, _) ~length_itv mem =
     let arr_loc =
       Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path:None
         ~represents_multiple_values:false
@@ -1428,17 +1423,34 @@ module JavaString = struct
 
 
   let substring_no_end exp begin_idx =
-    let exec model_env ~ret mem =
-      create_with_length model_env ~ret ~begin_idx ~end_v:(get_length model_env exp mem) mem
+    let exec ({integer_type_widths} as model_env) ~ret mem =
+      let begin_itv = Sem.eval integer_type_widths begin_idx mem |> Dom.Val.get_itv in
+      let end_itv = get_length model_env exp mem |> Dom.Val.get_itv in
+      let length_itv = Itv.minus end_itv begin_itv in
+      create_with_length model_env ~ret ~length_itv mem
     in
     {exec; check= no_check}
 
 
   let substring begin_idx end_idx =
     let exec ({integer_type_widths} as model_env) ~ret mem =
-      create_with_length model_env ~ret ~begin_idx
-        ~end_v:(Sem.eval integer_type_widths end_idx mem)
-        mem
+      let begin_itv = Sem.eval integer_type_widths begin_idx mem |> Dom.Val.get_itv in
+      let end_itv = Sem.eval integer_type_widths end_idx mem |> Dom.Val.get_itv in
+      let length_itv = Itv.minus end_itv begin_itv in
+      create_with_length model_env ~ret ~length_itv mem
+    in
+    {exec; check= no_check}
+
+
+  let create_from_short_arr exp =
+    let exec ({integer_type_widths} as model_env) ~ret mem =
+      let mem = create_with_length model_env ~ret ~length_itv:Itv.zero mem in
+      let deref_of_tgt =
+        Dom.Mem.find_stack (Loc.of_id (fst ret)) mem
+        |> Dom.Val.get_pow_loc |> PowLoc.append_field ~fn
+      in
+      let src_arr_locs = Dom.Val.get_all_locs (Sem.eval_arr integer_type_widths exp mem) in
+      Dom.Mem.update_mem deref_of_tgt (Dom.Mem.find_set src_arr_locs mem) mem
     in
     {exec; check= no_check}
 
@@ -1451,8 +1463,8 @@ module NSString = struct
 
   let create_with_c_string src_exp =
     let exec model_env ~ret mem =
-      let v = Sem.eval_string_len src_exp mem in
-      JavaString.create_with_length model_env ~ret ~begin_idx:Exp.zero ~end_v:v mem
+      let length_itv = Sem.eval_string_len src_exp mem |> Dom.Val.get_itv in
+      JavaString.create_with_length model_env ~ret ~length_itv mem
     in
     {exec; check= no_check}
 
@@ -1619,8 +1631,9 @@ module Call = struct
     let open ProcnameDispatcher.Call in
     let int_typ = Typ.mk (Typ.Tint Typ.IInt) in
     let char_typ = Typ.mk (Typ.Tint Typ.IChar) in
+    let short_typ = Typ.mk (Typ.Tint Typ.IUShort) in
     let char_ptr = Typ.mk (Typ.Tptr (char_typ, Pk_pointer)) in
-    let char_array = Typ.mk (Typ.Tptr (Typ.mk_array char_typ, Pk_pointer)) in
+    let short_array = Typ.mk (Typ.Tptr (Typ.mk_array short_typ, Pk_pointer)) in
     let match_builtin builtin _ s = String.equal s (Procname.get_method builtin) in
     make_dispatcher
       [ (* Clang common models *)
@@ -1694,12 +1707,17 @@ module Call = struct
       ; +PatternMatch.ObjectiveC.implements "NSArray"
         &:: "arrayWithObjects:count:" <>$ capt_exp $+ capt_exp $--> NSCollection.create_from_array
       ; +PatternMatch.ObjectiveC.implements "NSArray"
-        &:: "arrayWithObjects" &++> NSCollection.of_list
+        &:: "arrayWithObjects:" &++> NSCollection.of_list
       ; +PatternMatch.ObjectiveC.implements "NSArray"
         &:: "arrayByAddingObjectsFromArray:" <>$ capt_exp $+ capt_exp
         $--> NSCollection.new_collection_by_add_all
       ; +PatternMatch.ObjectiveC.implements "NSEnumerator"
-        &:: "nextObject" <>$ capt_exp $--> NSCollection.next_object
+        &:: "nextObject" <>$ capt_var_exn $--> NSCollection.next_object
+      ; +PatternMatch.ObjectiveC.implements "NSFileManager"
+        &:: "contentsOfDirectoryAtURL:includingPropertiesForKeys:options:error:"
+        &--> NSCollection.new_collection
+      ; +PatternMatch.ObjectiveC.implements "NSKeyedUnarchiver"
+        &:: "decodeObjectForKey:" $ capt_var_exn $+...$--> NSCollection.get_any_index
       ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
         &:: "initWithCapacity:" <>$ capt_var_exn $+ capt_exp
         $--> NSCollection.new_collection_of_size
@@ -1732,6 +1750,10 @@ module Call = struct
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
         &:: "keyEnumerator" <>$ capt_exp $--> NSCollection.iterator
       ; +PatternMatch.ObjectiveC.implements "NSOrderedSet"
+        &:: "orderedSet" $$--> NSCollection.new_collection
+      ; +PatternMatch.ObjectiveC.implements "NSOrderedSet"
+        &:: "orderedSetWithArray:" $ capt_exp $--> id
+      ; +PatternMatch.ObjectiveC.implements "NSOrderedSet"
         &:: "reverseObjectEnumerator" <>$ capt_exp $--> NSCollection.iterator
       ; +PatternMatch.ObjectiveC.implements "NSNumber" &:: "numberWithInt:" <>$ capt_exp $--> id
       ; +PatternMatch.ObjectiveC.implements "NSNumber" &:: "integerValue" <>$ capt_exp $--> id
@@ -1752,6 +1774,9 @@ module Call = struct
       ; +PatternMatch.ObjectiveC.implements "NSString"
         &:: "initWithBytes:length:encoding:" <>$ capt_exp $+ capt_exp $+ capt_exp $+ any_arg
         $!--> NSString.init_with_c_string_with_len
+      ; +PatternMatch.ObjectiveC.implements "NSURL"
+        &:: "getResourceValue:forKey:error:" &--> NSURL.get_resource_value
+      ; +PatternMatch.ObjectiveC.implements "NSURL" &:: "path" $ capt_exp $--> id
       ; (* C++ models *)
         -"boost" &:: "split"
         $ capt_arg_of_typ (-"std" &:: "vector")
@@ -1904,9 +1929,6 @@ module Call = struct
       ; +PatternMatch.Java.implements_lang "CharSequence"
         &:: "<init>" <>$ capt_exp $+ capt_exp $--> JavaString.copy_constructor
       ; +PatternMatch.Java.implements_lang "CharSequence"
-        &:: "<init>" <>$ capt_exp $+ capt_exp_of_prim_typ char_array
-        $--> JavaString.constructor_from_array
-      ; +PatternMatch.Java.implements_lang "CharSequence"
         &:: "charAt" <>$ capt_exp $+ capt_exp $--> JavaString.charAt
       ; +PatternMatch.Java.implements_lang "CharSequence"
         &:: "equals"
@@ -1941,6 +1963,8 @@ module Call = struct
         &:: "<init>" <>$ capt_exp $--> JavaString.empty_constructor
       ; +PatternMatch.Java.implements_lang "String"
         &:: "concat" <>$ capt_exp $+ capt_exp $+...$--> JavaString.concat
+      ; +PatternMatch.Java.implements_lang "String"
+        &:: "valueOf" <>$ capt_exp_of_prim_typ short_array $--> JavaString.create_from_short_arr
       ; +PatternMatch.Java.implements_lang "String"
         &:: "indexOf" <>$ capt_exp $+ any_arg $+...$--> JavaString.indexOf
       ; +PatternMatch.Java.implements_lang "String"

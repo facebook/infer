@@ -227,10 +227,6 @@ module Val : sig
   (** Pruning semantics for [Binop.Lt]. This prunes value of [x] when given [x < y], i.e.,
       [prune_lt x y]. *)
 
-  val prune_le : t -> t -> t
-  (** Pruning semantics for [Binop.Lt]. This prunes value of [x] when given [x <= y], i.e.,
-      [prune_le x y]. *)
-
   val prune_ne_zero : t -> t
   (** Prune value of [x] when given [x != 0] *)
 
@@ -592,7 +588,7 @@ module Mem : sig
   val add_iterator_has_next_alias : Ident.t -> Exp.t -> t -> t
   (** Add an [AliasTarget.IteratorHasNext] alias when [ident = iterator.hasNext()] is called *)
 
-  val add_iterator_next_object_alias : Ident.t -> Exp.t -> t -> t
+  val add_iterator_next_object_alias : ret_id:Ident.t -> iterator:Ident.t -> t -> t
   (** Add an [AliasTarget.IteratorNextObject] alias when [ident = iterator.nextObject()] is called *)
 
   val incr_iterator_simple_alias_on_call : eval_sym_trace -> callee_exit_mem:no_oenv_t -> t -> t
@@ -601,8 +597,6 @@ module Mem : sig
   val add_iterator_alias : Ident.t -> t -> t
   (** Add [AliasTarget.IteratorSimple] and [AliasTarget.IteratorOffset] aliases when
       [Iteratable.iterator()] is called *)
-
-  val add_iterator_alias_objc : Ident.t -> t -> t
 
   val incr_iterator_offset_alias : Exp.t -> t -> t
   (** Update iterator offset alias when [iterator.next()] is called *)

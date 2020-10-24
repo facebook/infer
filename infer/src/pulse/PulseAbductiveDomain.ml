@@ -20,7 +20,7 @@ module VarSet = Var.Set
 module type BaseDomainSig = sig
   (* private because the lattice is not the same for preconditions and postconditions so we don't
      want to confuse them *)
-  type t = private BaseDomain.t
+  type t = private BaseDomain.t [@@deriving yojson_of]
 
   val empty : t
 
@@ -42,8 +42,10 @@ end
 type base_domain = BaseDomain.t =
   {heap: BaseMemory.t; stack: BaseStack.t; attrs: BaseAddressAttributes.t}
 
-(** operations common to [Domain] and [PreDomain], see also the [BaseDomain] signature *)
-module BaseDomainCommon = struct
+(** represents the post abstract state at each program point *)
+module PostDomain : BaseDomainSig = struct
+  include BaseDomain
+
   let update ?stack ?heap ?attrs foot =
     let new_stack, new_heap, new_attrs =
       ( Option.value ~default:foot.stack stack
@@ -69,12 +71,6 @@ module BaseDomainCommon = struct
       BaseAddressAttributes.filter_with_discarded_addrs (fun address _ -> f address) foot.attrs
     in
     (update ~heap:heap' ~attrs:attrs' foot, discarded_addresses)
-end
-
-(** represents the post abstract state at each program point *)
-module PostDomain : BaseDomainSig = struct
-  include BaseDomainCommon
-  include BaseDomain
 end
 
 (* NOTE: [PreDomain] and [Domain] theoretically differ in that [PreDomain] should be the inverted lattice of [Domain], but since we never actually join states or check implication the two collapse into one. *)
@@ -106,11 +102,13 @@ type t =
   ; pre: PreDomain.t  (** inferred pre at the current program point *)
   ; skipped_calls: SkippedCalls.t  (** set of skipped calls *)
   ; path_condition: PathCondition.t
+  ; path_condition: PathCondition.t
   ; status: PostStatus.t
   ; local_ptrvars : VarSet.t
   ; nonref_formals : VarSet.t
   ; imm_params : VarSet.t
   ; mod_addrs : AbstractValue.Set.t }
+  [@@deriving yojson_of]
 
 let pp f {post; pre; path_condition; skipped_calls; local_ptrvars; nonref_formals; imm_params;mod_addrs; status} =
   F.fprintf f "@[<v>%a\n%a@;%a@;PRE=[%a]@;skipped_calls=%a@;local_ptrvars=%a@; nonref_formals=%a@;imm_params=%a@;mod_addrs=%a@]" PathCondition.pp path_condition
@@ -659,7 +657,7 @@ let invalidate_locals pdesc astate : t =
   else {astate with post= PostDomain.update astate.post ~attrs:attrs'}
 
 
-type summary = t
+type summary = t [@@deriving yojson_of]
 
 let summary_of_post pdesc astate =
   let astate = filter_for_summary astate in

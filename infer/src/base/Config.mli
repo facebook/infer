@@ -232,6 +232,8 @@ val cost_scuba_logging : bool
 
 val costs_previous : string option
 
+val cost_suppress_func_ptr : bool
+
 val cost_tests_only_autoreleasepool : bool
 
 val cxx : bool
@@ -437,6 +439,8 @@ val procedures_source_file : bool
 
 val procedures_summary : bool
 
+val procedures_summary_json : bool
+
 val process_clang_ast : bool
 
 val clang_frontend_action_string : string
@@ -527,7 +531,7 @@ val scuba_tags : string list String.Map.t
 
 val seconds_per_iteration : float option
 
-val select : int option
+val select : [`All | `Select of int] option
 
 val show_buckets : bool
 
@@ -615,6 +619,8 @@ val unsafe_malloc : bool
 
 val worklist_mode : int
 
+val workspace : string option
+
 val write_dotty : bool
 
 val write_html : bool
@@ -650,4 +656,4 @@ val scuba_execution_id : Int64.t option
 
 (** {2 Global variables with initial values specified by command-line options} *)
 
-val clang_compilation_dbs : [`Escaped of string | `Raw of string] list ref
+val clang_compilation_dbs : [`Escaped of string | `Raw of string] list

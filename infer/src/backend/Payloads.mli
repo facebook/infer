@@ -29,7 +29,7 @@ include sig
     ; starvation: StarvationDomain.summary option
     ; nullsafe: NullsafeSummary.t option
     ; uninit: UninitDomain.Summary.t option }
-  [@@deriving fields]
+  [@@deriving fields, yojson_of]
 end
 
 val pp : Pp.env -> Format.formatter -> t -> unit

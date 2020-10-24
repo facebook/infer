@@ -7,7 +7,7 @@
 
 open! IStd
 
-type t [@@deriving compare, equal]
+type t [@@deriving compare, equal, yojson_of]
 
 module Map : Caml.Map.S with type key = t
 

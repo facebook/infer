@@ -546,6 +546,8 @@ module PowLoc = struct
         mk_known (LocSet.add l ploc)
 
 
+  let of_list locs = List.fold locs ~init:bot ~f:(fun acc loc -> add loc acc)
+
   let mem l = function
     | Bottom ->
         false

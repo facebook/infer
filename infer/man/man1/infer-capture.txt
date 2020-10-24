@@ -111,6 +111,13 @@ OPTIONS
            SQLite page size in bytes, must be a power of two between 512 and
            65536.
 
+       --workspace path
+           Specifies the root of the workspace, which is a directory
+           containing --project-root. This can be needed if the capture phase
+           is expected to require several different project roots, all
+           relative to a common workspace. Usually a single project root is
+           enough, though.
+
        --  Stop argument processing, use remaining arguments as a build
            command
 BUCK OPTIONS

@@ -23,6 +23,8 @@ let mk_fresh () =
 
 let pp f l = F.fprintf f "v%d" l
 
+let yojson_of_t l = `String (F.asprintf "%a" pp l)
+
 let of_id v = v
 
 module PPKey = struct

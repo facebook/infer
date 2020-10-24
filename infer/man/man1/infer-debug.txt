@@ -33,6 +33,10 @@ OPTIONS
        --help-full
            Show this manual with all internal options in the INTERNAL OPTIONS
            section
+
+       --select (N|all)
+           Select option number N or all of them. If omitted, prompt for
+           input.
 DEBUG GLOBAL TYPE ENVIRONMENT
        --global-tenv
            Activates: Print the global type environment. (Conversely:
@@ -77,6 +81,10 @@ DEBUG PROCEDURES
        --procedures-summary
            Activates: Print the summaries of each procedure in the output of
            --procedures (Conversely: --no-procedures-summary)
+
+       --procedures-summary-json
+           Activates: Emit the summaries of each procedure in the output of
+           --procedures as JSON (Conversely: --no-procedures-summary-json)
 DEBUG SOURCE FILES
        --source-files
            Activates: Print source files discovered by infer (Conversely:

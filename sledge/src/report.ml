@@ -85,18 +85,27 @@ let safe_or_unsafe () =
 type gc_stats = {allocated: float; promoted: float; peak_size: float}
 [@@deriving sexp]
 
+type times =
+  {etime: float; utime: float; stime: float; cutime: float; cstime: float}
+[@@deriving sexp]
+
 type entry =
-  | ProcessTimes of float * Unix.process_times
+  | ProcessTimes of times
   | GcStats of gc_stats
   | Status of status
 [@@deriving sexp]
 
 let process_times () =
-  let ptimes = Unix.times () in
+  let {Unix.tms_utime; tms_stime; tms_cutime; tms_cstime} = Unix.times () in
   let etime =
     try Mtime.Span.to_s (Mtime_clock.elapsed ()) with Sys_error _ -> 0.
   in
-  ProcessTimes (etime, ptimes)
+  ProcessTimes
+    { etime
+    ; utime= tms_utime
+    ; stime= tms_stime
+    ; cutime= tms_cutime
+    ; cstime= tms_cstime }
 
 let gc_stats () =
   let words_to_MB n = n /. float (Sys.word_size / 8) /. (1024. *. 1024.) in
@@ -118,9 +127,8 @@ let name = ref ""
 
 let output entry =
   Option.iter !chan ~f:(fun chan ->
-      Out_channel.output_string chan
-        (Sexp.to_string (sexp_of_t {name= !name; entry})) ;
-      Out_channel.newline chan )
+      Out_channel.output_lines chan
+        [Sexp.to_string (sexp_of_t {name= !name; entry})] )
 
 let init ?append filename =
   (chan :=
@@ -130,7 +138,7 @@ let init ?append filename =
      | _ -> Some (Out_channel.create ?append filename)) ;
   name :=
     Option.value
-      (Stdlib.Filename.chop_suffix_opt ~suffix:".sexp" filename)
+      (Filename.chop_suffix_opt ~suffix:".sexp" filename)
       ~default:filename ;
   at_exit (fun () ->
       output (process_times ()) ;

@@ -11,7 +11,7 @@ open PulseBasicInterface
 (* {3 Heap domain } *)
 
 module Access = struct
-  type t = AbstractValue.t HilExp.Access.t [@@deriving compare]
+  type t = AbstractValue.t HilExp.Access.t [@@deriving compare, yojson_of]
 
   let equal = [%compare.equal: t]
 
@@ -19,7 +19,7 @@ module Access = struct
 end
 
 module AddrTrace = struct
-  type t = AbstractValue.t * ValueHistory.t [@@deriving compare]
+  type t = AbstractValue.t * ValueHistory.t [@@deriving compare, yojson_of]
 
   let pp fmt addr_trace =
     if Config.debug_level_analysis >= 3 then
@@ -27,11 +27,14 @@ module AddrTrace = struct
     else AbstractValue.pp fmt (fst addr_trace)
 end
 
-module Edges =
-  RecencyMap.Make (Access) (AddrTrace)
-    (struct
-      let limit = Config.pulse_recency_limit
-    end)
+module Edges = struct
+  include RecencyMap.Make (Access) (AddrTrace)
+            (struct
+              let limit = Config.pulse_recency_limit
+            end)
+
+  let yojson_of_t edges = [%yojson_of: (Access.t * AddrTrace.t) list] (bindings edges)
+end
 
 module Graph = PrettyPrintable.MakePPMonoMap (AbstractValue) (Edges)
 
@@ -61,5 +64,7 @@ let exist_edge_dest dest_addr=
       )
 
 
+
+let yojson_of_t g = [%yojson_of: (AbstractValue.t * Edges.t) list] (Graph.bindings g)
 
 include Graph

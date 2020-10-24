@@ -197,7 +197,7 @@ type t =
   | Block of Block.t
   | ObjC_Cpp of ObjC_Cpp.t
   | WithBlockParameters of t * Block.t list
-[@@deriving compare]
+[@@deriving compare, yojson_of]
 
 val block_of_procname : t -> Block.t
 

@@ -8,7 +8,7 @@
 open! IStd
 open PulseDomainInterface
 
-type t = ExecutionDomain.summary list
+type t = ExecutionDomain.summary list [@@deriving yojson_of]
 
 val of_posts : Procdesc.t -> ExecutionDomain.t list -> t
 

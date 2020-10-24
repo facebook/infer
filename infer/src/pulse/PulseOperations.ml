@@ -682,9 +682,12 @@ let apply_callee ~caller_proc_desc callee_pname call_loc callee_exec_state ~ret
   in
   let open ExecutionDomain in
   match callee_exec_state with
-  | AbortProgram _ ->
-      (* Callee has failed; don't propagate the failure *)
-      Ok (Some (callee_exec_state, AbstractValue.Map.empty))
+  | AbortProgram astate ->
+      apply
+        (astate :> AbductiveDomain.t)
+        ~f:(fun astate ->
+          let astate_summary = AbductiveDomain.summary_of_post caller_proc_desc astate in
+          Ok (Some (AbortProgram astate_summary)) )
   | ContinueProgram astate ->
       apply astate ~f:(fun astate subst -> Ok (Some (ContinueProgram astate, subst)))
   | ExitProgram astate ->

@@ -24,7 +24,9 @@ module VarSet = Var.Set
 module type BaseDomainSig = sig
   (* private because the lattice is not the same for preconditions and postconditions so we don't
      want to confuse them *)
-  type t = private BaseDomain.t
+  type t = private BaseDomain.t [@@deriving yojson_of]
+
+  val yojson_of_t : t -> Yojson.Safe.t
 
   val empty : t
 
@@ -221,7 +223,7 @@ val remove_local_var : Var.t -> t -> t
 val set_path_condition : PathCondition.t -> t -> t
 
 (** private type to make sure {!summary_of_post} is always called when creating summaries *)
-type summary = private t
+type summary = private t [@@deriving yojson_of]
 
 val summary_of_post : Procdesc.t -> t -> summary
 (** trim the state down to just the procedure's interface (formals and globals), and simplify and

@@ -19,7 +19,7 @@ type event =
   | VariableAccessed of Pvar.t * Location.t
   | VariableDeclared of Pvar.t * Location.t
 
-and t = event list [@@deriving compare, equal]
+and t = event list [@@deriving compare, equal, yojson_of]
 
 val pp : F.formatter -> t -> unit
 

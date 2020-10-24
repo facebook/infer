@@ -57,7 +57,7 @@ and x_trm : var_env -> Smt.Ast.term -> Term.t =
     with _ -> (
       try Term.rational (Q.of_string s)
       with _ -> (
-        try Term.rational (Q.of_float (Float.of_string s))
+        try Term.rational (Q.of_float (Float.of_string_exn s))
         with _ -> fail "not a rational: %a" Smt.Ast.pp_term term () ) ) )
   | Arith (Add, e :: es) ->
       List.fold ~f:(fun s e -> Term.add s (x_trm n e)) ~init:(x_trm n e) es
@@ -67,10 +67,10 @@ and x_trm : var_env -> Smt.Ast.term -> Term.t =
     match List.map ~f:(x_trm n) es with
     | e :: es ->
         List.fold es ~init:e ~f:(fun p e ->
-            match Term.const_of e with
+            match Term.get_const e with
             | Some q -> Term.mulq q p
             | None -> (
-              match Term.const_of p with
+              match Term.get_const p with
               | Some q -> Term.mulq q e
               | None -> fail "nonlinear: %a" Smt.Ast.pp_term term () ) )
     | [] -> fail "malformed: %a" Smt.Ast.pp_term term () )
@@ -78,7 +78,7 @@ and x_trm : var_env -> Smt.Ast.term -> Term.t =
     match List.map ~f:(x_trm n) es with
     | e :: es ->
         List.fold es ~init:e ~f:(fun p e ->
-            match Term.const_of e with
+            match Term.get_const e with
             | Some q -> Term.mulq (Q.inv q) p
             | None -> fail "nonlinear: %a" Smt.Ast.pp_term term () )
     | [] -> fail "malformed: %a" Smt.Ast.pp_term term () )

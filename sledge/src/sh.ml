@@ -79,7 +79,7 @@ let fold_vars_stem ?ignore_ctx ?ignore_pure
     {us= _; xs= _; ctx; pure; heap; djns= _} ~init ~f =
   let unless flag f init = if Option.is_some flag then init else f ~init in
   List.fold ~f:(fun init -> fold_vars_seg ~f ~init) heap ~init
-  |> unless ignore_pure (Term.fold_vars ~f (Formula.inject pure))
+  |> unless ignore_pure (Formula.fold_vars ~f pure)
   |> unless ignore_ctx (Context.fold_vars ~f ctx)
 
 let fold_vars ?ignore_ctx ?ignore_pure fold_vars q ~init ~f =
@@ -106,7 +106,7 @@ let rec var_strength_ xs m q =
   let m =
     List.fold ~init:m_stem q.djns ~f:(fun m djn ->
         let ms = List.map ~f:(fun dj -> snd (var_strength_ xs m dj)) djn in
-        List.reduce_balanced ms ~f:(fun m1 m2 ->
+        List.reduce ms ~f:(fun m1 m2 ->
             Var.Map.merge_skewed m1 m2 ~combine:(fun ~key:_ s1 s2 ->
                 match (s1, s2) with
                 | `Anonymous, `Anonymous -> `Anonymous
@@ -170,24 +170,19 @@ let pp_block x fs segs =
   | [] -> ()
 
 let pp_heap x ?pre ctx fs heap =
-  let bas_off e =
-    match Term.const_of e with
-    | Some const -> (Term.sub e (Term.rational const), const)
-    | None -> (e, Q.zero)
-  in
-  let compare s1 s2 =
+  let bas_off = Term.split_const in
+  let cmp s1 s2 =
     [%compare: Term.t * (Term.t * Q.t)]
       (Context.normalize ctx s1.bas, bas_off (Context.normalize ctx s1.loc))
       (Context.normalize ctx s2.bas, bas_off (Context.normalize ctx s2.loc))
   in
-  let break s1 s2 =
-    (not (Term.equal s1.bas s2.bas))
-    || (not (Term.equal s1.len s2.len))
-    || not
-         (Context.implies ctx (Formula.eq (Term.add s1.loc s1.siz) s2.loc))
+  let eq s1 s2 =
+    Term.equal s1.bas s2.bas
+    && Term.equal s1.len s2.len
+    && Context.implies ctx (Formula.eq (Term.add s1.loc s1.siz) s2.loc)
   in
   let heap = List.map heap ~f:(map_seg ~f:(Context.normalize ctx)) in
-  let blocks = List.group ~break (List.sort ~compare heap) in
+  let blocks = List.group_succ ~eq (List.sort ~cmp heap) in
   List.pp ?pre "@ * " (pp_block x) fs blocks
 
 let pp_us ?(pre = ("" : _ fmt)) ?vs () fs us =
@@ -569,7 +564,8 @@ let seg pt =
 (** Update *)
 
 let rem_seg seg q =
-  {q with heap= List.remove_exn q.heap seg} |> check invariant
+  {q with heap= List.remove_one_exn ~eq:( == ) seg q.heap}
+  |> check invariant
 
 let filter_heap ~f q =
   {q with heap= List.filter q.heap ~f} |> check invariant
@@ -633,7 +629,7 @@ let rec norm_ s q =
   [%Trace.call fun {pf} -> pf "@[%a@]@ %a" Context.Subst.pp s pp_raw q]
   ;
   let q =
-    map q ~f_sjn:(norm_ s) ~f_ctx:Fn.id ~f_trm:(Context.Subst.subst s)
+    map q ~f_sjn:(norm_ s) ~f_ctx:Fun.id ~f_trm:(Context.Subst.subst s)
       ~f_fml:(Formula.map_terms ~f:(Context.Subst.subst s))
   in
   let xs, ctx = Context.apply_subst (Var.Set.union q.us q.xs) s q.ctx in
@@ -692,7 +688,7 @@ let rec propagate_context_ ancestor_vs ancestor_ctx q =
   exists xs
     (List.fold djns ~init:ancestor_stem ~f:(fun q' djn ->
          let dj_ctxs, djn =
-           List.rev_map_unzip djn ~f:(fun dj ->
+           List.rev_map_split djn ~f:(fun dj ->
                let dj = propagate_context_ ancestor_vs ancestor_ctx dj in
                (dj.ctx, dj) )
          in

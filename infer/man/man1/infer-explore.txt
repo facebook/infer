@@ -36,8 +36,9 @@ EXPLORE BUGS
            maximum nesting level are skipped. If omitted, all levels are
            shown.
 
-       --select N
-           Select bug number N. If omitted, prompt for input.
+       --select (N|all)
+           Select option number N or all of them. If omitted, prompt for
+           input.
 
        --no-source-preview
            Deactivates: print code excerpts around trace elements

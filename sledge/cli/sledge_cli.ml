@@ -7,8 +7,7 @@
 
 (** SLEdge command line interface *)
 
-let () = Backtrace.Exn.set_recording Version.debug
-
+module Command = Core.Command
 open Command.Let_syntax
 
 type 'a param = 'a Command.Param.t
@@ -32,7 +31,7 @@ let command ~summary ?readme param =
     let%map_open config =
       flag "trace" ~doc:"<spec> enable debug tracing"
         (optional_with_default Trace.none
-           (Arg_type.create (fun s -> Trace.parse s |> Result.ok_exn)))
+           (Arg_type.create (fun s -> Trace.parse s |> Result.get_ok)))
     and colors = flag "colors" no_arg ~doc:"enable printing in colors"
     and margin =
       flag "margin" ~doc:"<cols> wrap debug tracing at <cols> columns"
@@ -206,9 +205,8 @@ let translate =
 let llvm_grp =
   let translate_inputs =
     let expand_argsfile input =
-      if Char.(input.[0] = '@') then
-        In_channel.with_file ~f:In_channel.input_lines
-          (String.subo ~pos:1 input)
+      if Char.equal input.[0] '@' then
+        In_channel.with_file ~f:In_channel.input_lines (String.drop 1 input)
       else [input]
     in
     let open Command.Param in
@@ -275,6 +273,9 @@ let readme () =
    separated by + or -. For example, M-M.f enables all tracing in the M \
    module except the M.f function. The <spec> value * enables all debug \
    tracing."
+
+;;
+Printexc.record_backtrace Version.debug
 
 ;;
 Command.run ~version:Version.version ~build_info:Version.build_info

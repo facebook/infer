@@ -9,7 +9,7 @@ open! IStd
 
 exception ParseError of string
 
-type t [@@deriving compare]
+type t [@@deriving compare, yojson_of]
 
 val empty : t
 (** empty qualified name *)

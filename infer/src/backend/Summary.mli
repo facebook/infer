@@ -42,6 +42,7 @@ type t =
             after per-procedure analysis). This latter category of errors should NOT be written
             here, use [IssueLog] and its serialization capabilities instead. *)
   ; mutable callee_pnames: Procname.Set.t }
+[@@deriving yojson_of]
 
 val get_proc_name : t -> Procname.t
 (** Get the procedure name *)

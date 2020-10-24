@@ -12,7 +12,6 @@
 type op1 =
   | Signed of {bits: int}
   | Unsigned of {bits: int}
-  | Convert of {src: Llair.Typ.t; dst: Llair.Typ.t}
   | Splat
   | Select of int
 [@@deriving compare, equal, hash, sexp]
@@ -22,8 +21,6 @@ type op2 =
   | Dq
   | Lt
   | Le
-  | Ord
-  | Uno
   | Div
   | Rem
   | Xor
@@ -47,11 +44,11 @@ end = struct
 end
 
 and Qset : sig
-  include NS.Qset.S with type elt := T.t
+  include NS.Multiset.S with type mul := Q.t with type elt := T.t
 
   val t_of_sexp : Sexp.t -> t
 end = struct
-  include NS.Qset.Make (T)
+  include NS.Multiset.Make (Q) (T)
 
   let t_of_sexp = t_of_sexp T.t_of_sexp
 end
@@ -70,11 +67,12 @@ and T : sig
     | Or of set
     | Add of qset
     | Mul of qset
-    | Label of {parent: string; name: string}
-    | Float of {data: string}
     | Integer of {data: Z.t}
     | Rational of {data: Q.t}
     | RecRecord of int
+    | Apply of Funsym.t * t iarray
+    | PosLit of Predsym.t * t iarray
+    | NegLit of Predsym.t * t iarray
   [@@deriving compare, equal, sexp]
 end = struct
   type set = Set.t [@@deriving compare, equal, sexp]
@@ -90,11 +88,12 @@ end = struct
     | Or of set
     | Add of qset
     | Mul of qset
-    | Label of {parent: string; name: string}
-    | Float of {data: string}
     | Integer of {data: Z.t}
     | Rational of {data: Q.t}
     | RecRecord of int
+    | Apply of Funsym.t * t iarray
+    | PosLit of Predsym.t * t iarray
+    | NegLit of Predsym.t * t iarray
   [@@deriving compare, equal, sexp]
 
   (* Note: solve (and invariant) requires Qset.min_elt to return a
@@ -154,8 +153,8 @@ let assert_monomial mono =
       Qset.iter args ~f:(fun factor exponent ->
           assert (Z.equal (Q.den exponent) Z.one) ;
           assert (Q.sign exponent > 0) ;
-          assert_indeterminate factor |> Fn.id )
-  | _ -> assert_indeterminate mono |> Fn.id
+          assert_indeterminate factor |> Fun.id )
+  | _ -> assert_indeterminate mono |> Fun.id
 
 (* a polynomial term is a monomial multiplied by a non-zero coefficient
  *     c × ∏ᵢ xᵢ
@@ -170,8 +169,8 @@ let assert_poly_term mono coeff =
       | None | Some ((Integer _ | Rational _), _) -> assert false
       | Some (_, n) -> assert (Qset.length args > 1 || not (Q.equal Q.one n))
       ) ;
-      assert_monomial mono |> Fn.id
-  | _ -> assert_monomial mono |> Fn.id
+      assert_monomial mono |> Fun.id
+  | _ -> assert_monomial mono |> Fun.id
 
 (* a polynomial is a linear combination of monomials, e.g.
  *     ∑ᵢ cᵢ × ∏ⱼ xᵢⱼ
@@ -185,7 +184,7 @@ let assert_polynomial poly =
       | None | Some ((Integer _ | Rational _), _) -> assert false
       | Some (_, k) -> assert (Qset.length args > 1 || not (Q.equal Q.one k))
       ) ;
-      Qset.iter args ~f:(fun m c -> assert_poly_term m c |> Fn.id)
+      Qset.iter args ~f:(fun m c -> assert_poly_term m c |> Fun.id)
   | _ -> assert false
 
 (* sequence args of Extract and Concat must be sequence terms, in
@@ -201,20 +200,13 @@ let rec assert_sequence = function
 let invariant e =
   let@ () = Invariant.invariant [%here] e [%sexp_of: t] in
   match e with
-  | And _ -> assert_conjunction e |> Fn.id
-  | Or _ -> assert_disjunction e |> Fn.id
-  | Add _ -> assert_polynomial e |> Fn.id
-  | Mul _ -> assert_monomial e |> Fn.id
+  | And _ -> assert_conjunction e |> Fun.id
+  | Or _ -> assert_disjunction e |> Fun.id
+  | Add _ -> assert_polynomial e |> Fun.id
+  | Mul _ -> assert_monomial e |> Fun.id
   | Ap2 (Sized, _, _) | Ap3 (Extract, _, _, _) | ApN (Concat, _) ->
       assert_sequence e
   | ApN (Record, elts) -> assert (not (IArray.is_empty elts))
-  | Ap1 (Convert {src= Integer _; dst= Integer _}, _) -> assert false
-  | Ap1 (Convert {src; dst}, _) ->
-      assert (Llair.Typ.convertible src dst) ;
-      assert (
-        not
-          (Llair.Typ.equivalent src dst)
-          (* avoid redundant representations *) )
   | Rational {data} ->
       assert (Q.is_real data) ;
       assert (not (Z.equal Z.one (Q.den data)))
@@ -256,18 +248,12 @@ let rec ppx strength fs term =
     | Var _ as v -> Var.ppx strength fs (Var.of_ v)
     | Integer {data} -> Trace.pp_styled `Magenta "%a" fs Z.pp data
     | Rational {data} -> Trace.pp_styled `Magenta "%a" fs Q.pp data
-    | Float {data} -> pf "%s" data
-    | Label {name} -> pf "%s" name
     | Ap1 (Signed {bits}, arg) -> pf "((s%i)@ %a)" bits pp arg
     | Ap1 (Unsigned {bits}, arg) -> pf "((u%i)@ %a)" bits pp arg
-    | Ap1 (Convert {src; dst}, arg) ->
-        pf "((%a)(%a)@ %a)" Llair.Typ.pp dst Llair.Typ.pp src pp arg
     | Ap2 (Eq, x, y) -> pf "(%a@ = %a)" pp x pp y
     | Ap2 (Dq, x, y) -> pf "(%a@ @<2>≠ %a)" pp x pp y
     | Ap2 (Lt, x, y) -> pf "(%a@ < %a)" pp x pp y
     | Ap2 (Le, x, y) -> pf "(%a@ @<2>≤ %a)" pp x pp y
-    | Ap2 (Ord, x, y) -> pf "(%a@ ord %a)" pp x pp y
-    | Ap2 (Uno, x, y) -> pf "(%a@ uno %a)" pp x pp y
     | Add args ->
         let pp_poly_term fs (monomial, coefficient) =
           match monomial with
@@ -305,6 +291,12 @@ let rec ppx strength fs term =
     | Ap2 (Update idx, rcd, elt) ->
         pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
     | RecRecord i -> pf "(rec_record %i)" i
+    | Apply (sym, args) ->
+        pf "(%a@ %a)" Funsym.pp sym (IArray.pp "@ " pp) args
+    | PosLit (sym, args) ->
+        pf "(%a@ %a)" Predsym.pp sym (IArray.pp "@ " pp) args
+    | NegLit (sym, args) ->
+        pf "¬(%a@ %a)" Predsym.pp sym (IArray.pp "@ " pp) args
   in
   pp fs term
   [@@warning "-9"]
@@ -350,8 +342,6 @@ let minus_one = integer Z.minus_one
 let bool b = integer (Z.of_bool b)
 let true_ = bool true
 let false_ = bool false
-let float data = Float {data} |> check invariant
-let label ~parent ~name = Label {parent; name} |> check invariant
 
 (* type conversions *)
 
@@ -364,8 +354,6 @@ let simp_unsigned bits arg =
   match arg with
   | Integer {data} -> integer (Z.extract data 0 bits)
   | _ -> Ap1 (Unsigned {bits}, arg)
-
-let simp_convert src dst arg = Ap1 (Convert {src; dst}, arg)
 
 (* arithmetic *)
 
@@ -392,7 +380,7 @@ module Sum = struct
   let mul_const const sum =
     assert (not (Q.equal Q.zero const)) ;
     if Q.equal Q.one const then sum
-    else Qset.map_counts ~f:(fun _ -> Q.mul const) sum
+    else Qset.map_counts ~f:(Q.mul const) sum
 
   let to_term sum =
     match Qset.classify sum with
@@ -433,7 +421,7 @@ let rec simp_add_ es poly =
   (* (coeff × term) + poly *)
   let f term coeff poly =
     match (term, poly) with
-    (* (0 × e) + s ==> 0 (optim) *)
+    (* (0 × e) + s ==> s (optim) *)
     | _ when Q.equal Q.zero coeff -> poly
     (* (c × 0) + s ==> s (optim) *)
     | Integer {data}, _ when Z.equal Z.zero data -> poly
@@ -546,18 +534,16 @@ let simp_mul es =
 
 let simp_cond cnd thn els =
   match cnd with
-  (* ¬(true ? t : e) ==> t *)
+  (* (true ? t : e) ==> t *)
   | Integer {data} when Z.is_true data -> thn
-  (* ¬(false ? t : e) ==> e *)
+  (* (false ? t : e) ==> e *)
   | Integer {data} when Z.is_false data -> els
   | _ -> Ap3 (Conditional, cnd, thn, els)
 
 (* boolean / bitwise *)
 
 let rec is_boolean = function
-  | Ap1 ((Unsigned {bits= 1} | Convert {dst= Integer {bits= 1; _}; _}), _)
-   |Ap2 ((Eq | Dq | Lt | Le), _, _) ->
-      true
+  | Ap1 (Unsigned {bits= 1}, _) | Ap2 ((Eq | Dq | Lt | Le), _, _) -> true
   | Ap2 ((Div | Rem | Xor | Shl | Lshr | Ashr), x, y)
    |Ap3 (Conditional, _, x, y) ->
       is_boolean x || is_boolean y
@@ -739,6 +725,9 @@ and simp_concat xs =
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp]
 
+let simp_poslit sym args = PosLit (sym, args)
+let simp_neglit sym args = NegLit (sym, args)
+
 (* comparison *)
 
 let simp_lt x y =
@@ -753,15 +742,12 @@ let simp_le x y =
   | Rational {data= i}, Rational {data= j} -> bool (Q.leq i j)
   | _ -> Ap2 (Le, x, y)
 
-let simp_ord x y = Ap2 (Ord, x, y)
-let simp_uno x y = Ap2 (Uno, x, y)
-
 let rec simp_eq x y =
   match
-    match Ordering.of_int (compare x y) with
-    | Equal -> None
-    | Less -> Some (x, y)
-    | Greater -> Some (y, x)
+    match Sign.of_int (compare x y) with
+    | Neg -> Some (x, y)
+    | Zero -> None
+    | Pos -> Some (y, x)
   with
   (* e = e ==> true *)
   | None -> bool true
@@ -835,10 +821,10 @@ and simp_not term =
   | Ap2 (Lt, x, y) -> simp_le y x
   (* ¬(x <= y) ==> y < x *)
   | Ap2 (Le, x, y) -> simp_lt y x
-  (* ¬(x ≠ nan ∧ y ≠ nan) ==> x = nan ∨ y = nan *)
-  | Ap2 (Ord, x, y) -> simp_uno x y
-  (* ¬(x = nan ∨ y = nan) ==> x ≠ nan ∧ y ≠ nan *)
-  | Ap2 (Uno, x, y) -> simp_ord x y
+  (* ¬p(xs) ==> (¬p)(xs) *)
+  | PosLit (p, xs) -> simp_neglit p xs
+  (* ¬(¬p)(xs) ==> p(xs) *)
+  | NegLit (p, xs) -> simp_poslit p xs
   (* ¬(a ∧ b) ==> ¬a ∨ ¬b *)
   | And xs -> simp_or (Set.map ~f:simp_not xs)
   (* ¬(a ∨ b) ==> ¬a ∧ ¬b *)
@@ -901,13 +887,16 @@ let simp_select idx rcd = Ap1 (Select idx, rcd)
 let simp_update idx rcd elt = Ap2 (Update idx, rcd, elt)
 let simp_rec_record i = RecRecord i
 
+(* uninterpreted *)
+
+let simp_apply sym args = Apply (sym, args)
+
 (* dispatching for normalization and invariant checking *)
 
 let norm1 op x =
   ( match op with
   | Signed {bits} -> simp_signed bits x
   | Unsigned {bits} -> simp_unsigned bits x
-  | Convert {src; dst} -> simp_convert src dst x
   | Splat -> simp_splat x
   | Select idx -> simp_select idx x )
   |> check invariant
@@ -919,8 +908,6 @@ let norm2 op x y =
   | Dq -> simp_dq x y
   | Lt -> simp_lt x y
   | Le -> simp_le x y
-  | Ord -> simp_ord x y
-  | Uno -> simp_uno x y
   | Div -> simp_div x y
   | Rem -> simp_rem x y
   | Xor -> simp_xor x y
@@ -944,17 +931,10 @@ let normN op xs =
 
 let signed bits term = norm1 (Signed {bits}) term
 let unsigned bits term = norm1 (Unsigned {bits}) term
-
-let convert src ~to_:dst arg =
-  if Llair.Typ.equivalent src dst then arg
-  else norm1 (Convert {src; dst}) arg
-
 let eq = norm2 Eq
 let dq = norm2 Dq
 let lt = norm2 Lt
 let le = norm2 Le
-let ord = norm2 Ord
-let uno = norm2 Uno
 let neg e = simp_negate e |> check invariant
 let add e f = simp_add2 e f |> check invariant
 let addN args = simp_add args |> check invariant
@@ -982,55 +962,9 @@ let record elts = normN Record elts
 let select ~rcd ~idx = norm1 (Select idx) rcd
 let update ~rcd ~idx ~elt = norm2 (Update idx) rcd elt
 let rec_record i = simp_rec_record i |> check invariant
-
-let rec binary mk x y = mk (of_exp x) (of_exp y)
-
-and ubinary mk typ x y =
-  let unsigned typ = unsigned (Llair.Typ.bit_size_of typ) in
-  mk (unsigned typ (of_exp x)) (unsigned typ (of_exp y))
-
-and of_exp e =
-  match (e : Llair.Exp.t) with
-  | Reg {name; global; typ= _} -> Var {name; id= (if global then -1 else 0)}
-  | Label {parent; name} -> label ~parent ~name
-  | Integer {data; typ= _} -> integer data
-  | Float {data; typ= _} -> float data
-  | Ap1 (Signed {bits}, _, x) -> signed bits (of_exp x)
-  | Ap1 (Unsigned {bits}, _, x) -> unsigned bits (of_exp x)
-  | Ap1 (Convert {src}, dst, exp) -> convert src ~to_:dst (of_exp exp)
-  | Ap2 (Eq, _, x, y) -> binary eq x y
-  | Ap2 (Dq, _, x, y) -> binary dq x y
-  | Ap2 (Gt, _, x, y) -> binary lt y x
-  | Ap2 (Ge, _, x, y) -> binary le y x
-  | Ap2 (Lt, _, x, y) -> binary lt x y
-  | Ap2 (Le, _, x, y) -> binary le x y
-  | Ap2 (Ugt, typ, x, y) -> ubinary lt typ y x
-  | Ap2 (Uge, typ, x, y) -> ubinary le typ y x
-  | Ap2 (Ult, typ, x, y) -> ubinary lt typ x y
-  | Ap2 (Ule, typ, x, y) -> ubinary le typ x y
-  | Ap2 (Ord, _, x, y) -> binary ord x y
-  | Ap2 (Uno, _, x, y) -> binary uno x y
-  | Ap2 (Add, _, x, y) -> binary add x y
-  | Ap2 (Sub, _, x, y) -> binary sub x y
-  | Ap2 (Mul, _, x, y) -> binary mul x y
-  | Ap2 (Div, _, x, y) -> binary div x y
-  | Ap2 (Rem, _, x, y) -> binary rem x y
-  | Ap2 (Udiv, typ, x, y) -> ubinary div typ x y
-  | Ap2 (Urem, typ, x, y) -> ubinary rem typ x y
-  | Ap2 (And, _, x, y) -> binary and_ x y
-  | Ap2 (Or, _, x, y) -> binary or_ x y
-  | Ap2 (Xor, _, x, y) -> binary xor x y
-  | Ap2 (Shl, _, x, y) -> binary shl x y
-  | Ap2 (Lshr, _, x, y) -> binary lshr x y
-  | Ap2 (Ashr, _, x, y) -> binary ashr x y
-  | Ap3 (Conditional, _, cnd, thn, els) ->
-      conditional ~cnd:(of_exp cnd) ~thn:(of_exp thn) ~els:(of_exp els)
-  | Ap1 (Splat, _, byt) -> splat (of_exp byt)
-  | ApN (Record, _, elts) -> record (IArray.map ~f:of_exp elts)
-  | Ap1 (Select idx, _, rcd) -> select ~rcd:(of_exp rcd) ~idx
-  | Ap2 (Update idx, _, rcd, elt) ->
-      update ~rcd:(of_exp rcd) ~idx ~elt:(of_exp elt)
-  | RecRecord (i, _) -> rec_record i
+let apply sym args = simp_apply sym args |> check invariant
+let poslit sym args = simp_poslit sym args |> check invariant
+let neglit sym args = simp_neglit sym args |> check invariant
 
 (** Destruct *)
 
@@ -1058,9 +992,9 @@ let map e ~f =
     let z' = f z in
     if x' == x && y' == y && z' == z then e else norm3 op x' y' z'
   in
-  let mapN op ~f xs =
+  let mapN mk ~f xs =
     let xs' = IArray.map_endo ~f xs in
-    if xs' == xs then e else normN op xs'
+    if xs' == xs then e else mk xs'
   in
   let map_set mk ~f args =
     let args' = Set.map ~f args in
@@ -1078,8 +1012,11 @@ let map e ~f =
   | Ap1 (op, x) -> map1 op ~f x
   | Ap2 (op, x, y) -> map2 op ~f x y
   | Ap3 (op, x, y, z) -> map3 op ~f x y z
-  | ApN (op, xs) -> mapN op ~f xs
-  | Var _ | Label _ | Float _ | Integer _ | Rational _ | RecRecord _ -> e
+  | ApN (op, xs) -> mapN (normN op) ~f xs
+  | Apply (sym, xs) -> mapN (simp_apply sym) ~f xs
+  | PosLit (sym, xs) -> mapN (simp_poslit sym) ~f xs
+  | NegLit (sym, xs) -> mapN (simp_neglit sym) ~f xs
+  | Var _ | Integer _ | Rational _ | RecRecord _ -> e
 
 let fold_map e ~init ~f =
   let s = ref init in
@@ -1130,41 +1067,44 @@ let iter e ~f =
       f x ;
       f y ;
       f z
-  | ApN (_, xs) -> IArray.iter ~f xs
+  | ApN (_, xs) | Apply (_, xs) | PosLit (_, xs) | NegLit (_, xs) ->
+      IArray.iter ~f xs
   | And args | Or args -> Set.iter ~f args
   | Add args | Mul args -> Qset.iter ~f:(fun arg _ -> f arg) args
-  | Var _ | Label _ | Float _ | Integer _ | Rational _ | RecRecord _ -> ()
+  | Var _ | Integer _ | Rational _ | RecRecord _ -> ()
 
 let exists e ~f =
   match e with
   | Ap1 (_, x) -> f x
   | Ap2 (_, x, y) -> f x || f y
   | Ap3 (_, x, y, z) -> f x || f y || f z
-  | ApN (_, xs) -> IArray.exists ~f xs
+  | ApN (_, xs) | Apply (_, xs) | PosLit (_, xs) | NegLit (_, xs) ->
+      IArray.exists ~f xs
   | And args | Or args -> Set.exists ~f args
   | Add args | Mul args -> Qset.exists ~f:(fun arg _ -> f arg) args
-  | Var _ | Label _ | Float _ | Integer _ | Rational _ | RecRecord _ ->
-      false
+  | Var _ | Integer _ | Rational _ | RecRecord _ -> false
 
 let for_all e ~f =
   match e with
   | Ap1 (_, x) -> f x
   | Ap2 (_, x, y) -> f x && f y
   | Ap3 (_, x, y, z) -> f x && f y && f z
-  | ApN (_, xs) -> IArray.for_all ~f xs
+  | ApN (_, xs) | Apply (_, xs) | PosLit (_, xs) | NegLit (_, xs) ->
+      IArray.for_all ~f xs
   | And args | Or args -> Set.for_all ~f args
   | Add args | Mul args -> Qset.for_all ~f:(fun arg _ -> f arg) args
-  | Var _ | Label _ | Float _ | Integer _ | Rational _ | RecRecord _ -> true
+  | Var _ | Integer _ | Rational _ | RecRecord _ -> true
 
 let fold e ~init:s ~f =
   match e with
   | Ap1 (_, x) -> f x s
   | Ap2 (_, x, y) -> f y (f x s)
   | Ap3 (_, x, y, z) -> f z (f y (f x s))
-  | ApN (_, xs) -> IArray.fold ~f:(fun s x -> f x s) xs ~init:s
+  | ApN (_, xs) | Apply (_, xs) | PosLit (_, xs) | NegLit (_, xs) ->
+      IArray.fold ~f:(fun s x -> f x s) xs ~init:s
   | And args | Or args -> Set.fold ~f:(fun s e -> f e s) args ~init:s
   | Add args | Mul args -> Qset.fold ~f:(fun e _ s -> f e s) args ~init:s
-  | Var _ | Label _ | Float _ | Integer _ | Rational _ | RecRecord _ -> s
+  | Var _ | Integer _ | Rational _ | RecRecord _ -> s
 
 let rec iter_terms e ~f =
   ( match e with
@@ -1176,12 +1116,12 @@ let rec iter_terms e ~f =
       iter_terms ~f x ;
       iter_terms ~f y ;
       iter_terms ~f z
-  | ApN (_, xs) -> IArray.iter ~f:(iter_terms ~f) xs
+  | ApN (_, xs) | Apply (_, xs) | PosLit (_, xs) | NegLit (_, xs) ->
+      IArray.iter ~f:(iter_terms ~f) xs
   | And args | Or args -> Set.iter args ~f:(iter_terms ~f)
   | Add args | Mul args ->
       Qset.iter args ~f:(fun arg _ -> iter_terms ~f arg)
-  | Var _ | Label _ | Float _ | Integer _ | Rational _ | RecRecord _ -> ()
-  ) ;
+  | Var _ | Integer _ | Rational _ | RecRecord _ -> () ) ;
   f e
 
 let rec fold_terms e ~init:s ~f =
@@ -1191,12 +1131,13 @@ let rec fold_terms e ~init:s ~f =
     | Ap1 (_, x) -> fold_terms f x s
     | Ap2 (_, x, y) -> fold_terms f y (fold_terms f x s)
     | Ap3 (_, x, y, z) -> fold_terms f z (fold_terms f y (fold_terms f x s))
-    | ApN (_, xs) -> IArray.fold ~f:(fun s x -> fold_terms f x s) xs ~init:s
+    | ApN (_, xs) | Apply (_, xs) | PosLit (_, xs) | NegLit (_, xs) ->
+        IArray.fold ~f:(fun s x -> fold_terms f x s) xs ~init:s
     | And args | Or args ->
         Set.fold args ~init:s ~f:(fun s x -> fold_terms f x s)
     | Add args | Mul args ->
         Qset.fold args ~init:s ~f:(fun arg _ s -> fold_terms f arg s)
-    | Var _ | Label _ | Float _ | Integer _ | Rational _ | RecRecord _ -> s
+    | Var _ | Integer _ | Rational _ | RecRecord _ -> s
   in
   f s e
 
@@ -1204,7 +1145,7 @@ let iter_vars e ~f =
   iter_terms ~f:(fun e -> Option.iter ~f (Var.of_term e)) e
 
 let exists_vars e ~f =
-  with_return (fun {return} ->
+  With_return.with_return (fun {return} ->
       iter_vars e ~f:(fun v -> if f v then return true) ;
       false )
 
@@ -1219,7 +1160,7 @@ let is_false = function Integer {data} -> Z.is_false data | _ -> false
 
 let rec is_constant = function
   | Var _ -> false
-  | Label _ | Float _ | Integer _ | Rational _ -> true
+  | Integer _ | Rational _ -> true
   | a -> for_all ~f:is_constant a
 
 let rec height = function
@@ -1227,12 +1168,13 @@ let rec height = function
   | Ap1 (_, a) -> 1 + height a
   | Ap2 (_, a, b) -> 1 + max (height a) (height b)
   | Ap3 (_, a, b, c) -> 1 + max (height a) (max (height b) (height c))
-  | ApN (_, v) -> 1 + IArray.fold v ~init:0 ~f:(fun m a -> max m (height a))
+  | ApN (_, v) | Apply (_, v) | PosLit (_, v) | NegLit (_, v) ->
+      1 + IArray.fold v ~init:0 ~f:(fun m a -> max m (height a))
   | And bs | Or bs ->
       1 + Set.fold bs ~init:0 ~f:(fun m a -> max m (height a))
   | Add qs | Mul qs ->
       1 + Qset.fold qs ~init:0 ~f:(fun a _ m -> max m (height a))
-  | Label _ | Float _ | Integer _ | Rational _ | RecRecord _ -> 0
+  | Integer _ | Rational _ | RecRecord _ -> 0
 
 (** Solve *)
 

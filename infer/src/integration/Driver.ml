@@ -104,18 +104,6 @@ let check_xcpretty () =
          @."
 
 
-let capture_with_compilation_database db_files =
-  let root = Config.project_root in
-  Config.clang_compilation_dbs :=
-    List.map db_files ~f:(function
-      | `Escaped fname ->
-          `Escaped (Utils.filename_to_absolute ~root fname)
-      | `Raw fname ->
-          `Raw (Utils.filename_to_absolute ~root fname) ) ;
-  let compilation_database = CompilationDatabase.from_json_files !Config.clang_compilation_dbs in
-  CaptureCompilationDatabase.capture_files_in_database compilation_database
-
-
 let capture ~changed_files = function
   | Analyze ->
       ()
@@ -130,10 +118,10 @@ let capture ~changed_files = function
       BuckGenrule.capture CombinedGenrule build_cmd
   | BuckCompilationDB {deps; prog; args} ->
       L.progress "Capturing using Buck's compilation database...@." ;
-      let json_cdb =
+      let db_files =
         CaptureCompilationDatabase.get_compilation_database_files_buck deps ~prog ~args
       in
-      capture_with_compilation_database ~changed_files json_cdb
+      CaptureCompilationDatabase.capture ~changed_files ~db_files
   | BuckGenrule {prog} ->
       L.progress "Capturing for Buck genrule compatibility...@." ;
       JMain.from_arguments prog
@@ -148,7 +136,7 @@ let capture ~changed_files = function
       Clang.capture compiler ~prog ~args
   | ClangCompilationDB {db_files} ->
       L.progress "Capturing using compilation database...@." ;
-      capture_with_compilation_database ~changed_files db_files
+      CaptureCompilationDatabase.capture ~changed_files ~db_files
   | Gradle {prog; args} ->
       L.progress "Capturing in gradle mode...@." ;
       Gradle.capture ~prog ~args
@@ -167,10 +155,10 @@ let capture ~changed_files = function
   | XcodeXcpretty {prog; args} ->
       L.progress "Capturing using xcodebuild and xcpretty...@." ;
       check_xcpretty () ;
-      let json_cdb =
+      let db_files =
         CaptureCompilationDatabase.get_compilation_database_files_xcodebuild ~prog ~args
       in
-      capture_with_compilation_database ~changed_files json_cdb
+      CaptureCompilationDatabase.capture ~changed_files ~db_files
 
 
 (* shadowed for tracing *)
@@ -363,9 +351,9 @@ let assert_supported_build_system build_system =
 let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
   match build_cmd with
   | [] ->
-      if not (List.is_empty !Config.clang_compilation_dbs) then (
+      if not (List.is_empty Config.clang_compilation_dbs) then (
         assert_supported_mode `Clang "clang compilation database" ;
-        ClangCompilationDB {db_files= !Config.clang_compilation_dbs} )
+        ClangCompilationDB {db_files= Config.clang_compilation_dbs} )
       else Analyze
   | prog :: args -> (
       let build_system =

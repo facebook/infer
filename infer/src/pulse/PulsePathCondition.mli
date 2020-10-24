@@ -10,7 +10,7 @@ module F = Format
 module AbstractValue = PulseAbstractValue
 module ValueHistory = PulseValueHistory
 
-type t
+type t [@@deriving yojson_of]
 
 val true_ : t
 

@@ -35,4 +35,5 @@ val find_edges_opt : AbstractValue.t -> t -> Edges.t option
 
 val exist_edge_dest : AbstractValue.t -> t -> bool
 
+val yojson_of_t : t -> Yojson.Safe.t
 

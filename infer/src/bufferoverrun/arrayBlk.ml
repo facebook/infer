@@ -279,6 +279,14 @@ module ArrInfo = struct
         Itv.is_length_path_of prefix length
     | _ ->
         false
+
+
+  let prune_offset_le_size info =
+    match info with
+    | C {offset; size; stride} ->
+        C {offset= Itv.prune_le offset size; size; stride}
+    | Java _ | Top ->
+        info
 end
 
 include AbstractDomain.Map (Allocsite) (ArrInfo)
@@ -385,6 +393,8 @@ let prune_binop : Binop.t -> t -> t -> t = fun c a1 a2 -> do_prune (ArrInfo.prun
 let prune_eq : t -> t -> t = fun a1 a2 -> do_prune ArrInfo.prune_eq a1 a2
 
 let prune_ne : t -> t -> t = fun a1 a2 -> do_prune ArrInfo.prune_ne a1 a2
+
+let prune_offset_le_size a = map ArrInfo.prune_offset_le_size a
 
 let set_length : Itv.t -> t -> t = fun length a -> map (ArrInfo.set_length length) a
 

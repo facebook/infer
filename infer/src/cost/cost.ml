@@ -25,13 +25,18 @@ type extras_WorstCaseCost =
   ; get_formals: Procname.t -> (Pvar.t * Typ.t) list option
   ; proc_resolve_attributes: Procname.t -> ProcAttributes.t option }
 
-let instantiate_cost integer_type_widths ~inferbo_caller_mem ~callee_pname ~callee_formals ~params
-    ~callee_cost ~loc =
-  let eval_sym =
+let instantiate_cost ?get_closure_callee_cost ~default_closure_cost integer_type_widths
+    ~inferbo_caller_mem ~callee_pname ~callee_formals ~params ~callee_cost ~loc =
+  let {BufferOverrunDomain.eval_sym; eval_func_ptrs} =
     BufferOverrunSemantics.mk_eval_sym_cost integer_type_widths callee_formals params
       inferbo_caller_mem
   in
-  BasicCostWithReason.subst callee_pname loc callee_cost eval_sym
+  let get_closure_callee_cost pname =
+    Option.bind get_closure_callee_cost ~f:(fun get_closure_callee_cost ->
+        get_closure_callee_cost pname )
+  in
+  BasicCostWithReason.subst callee_pname loc callee_cost eval_sym eval_func_ptrs
+    get_closure_callee_cost ~default_closure_cost
 
 
 module InstrBasicCostWithReason = struct
@@ -101,6 +106,24 @@ module InstrBasicCostWithReason = struct
     |> Option.value ~default:(Option.value callee_cost_opt ~default:BasicCostWithReason.zero)
 
 
+  let dispatch_func_ptr_call {inferbo_invariant_map; integer_type_widths} instr_node fun_exp =
+    BufferOverrunAnalysis.extract_pre (InstrCFG.Node.id instr_node) inferbo_invariant_map
+    |> Option.bind ~f:(fun inferbo_mem ->
+           let func_ptrs =
+             BufferOverrunSemantics.eval integer_type_widths fun_exp inferbo_mem
+             |> BufferOverrunDomain.Val.get_func_ptrs
+           in
+           match FuncPtr.Set.is_singleton_or_more func_ptrs with
+           | Singleton (Path path) ->
+               let symbolic_cost =
+                 BasicCost.of_func_ptr path |> BasicCostWithReason.of_basic_cost
+               in
+               Some (CostDomain.construct ~f:(fun _ -> symbolic_cost))
+           | _ ->
+               None )
+    |> Option.value ~default:CostDomain.unit_cost_atomic_operation
+
+
   let get_instr_cost_record tenv extras cfg instr_node instr =
     match instr with
     | Sil.Call (ret, Exp.Const (Const.Cfun callee_pname), params, location, _)
@@ -126,12 +149,25 @@ module InstrBasicCostWithReason = struct
                integer_type_widths inferbo_get_summary )
         in
         let get_callee_cost_opt kind inferbo_mem =
+          let default_closure_cost =
+            match (kind : CostKind.t) with
+            | OperationCost ->
+                Ints.NonNegativeInt.one
+            | AllocationCost | AutoreleasepoolSize ->
+                Ints.NonNegativeInt.zero
+          in
           match (get_summary callee_pname, get_formals callee_pname) with
           | Some {CostDomain.post= callee_cost_record}, Some callee_formals ->
               CostDomain.find_opt kind callee_cost_record
               |> Option.map ~f:(fun callee_cost ->
-                     instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
-                       ~callee_pname ~callee_formals ~params ~callee_cost ~loc:location )
+                     let get_closure_callee_cost pname =
+                       get_summary pname
+                       |> Option.map ~f:(fun {CostDomain.post} ->
+                              CostDomain.get_cost_kind kind post )
+                     in
+                     instantiate_cost ~get_closure_callee_cost ~default_closure_cost
+                       integer_type_widths ~inferbo_caller_mem:inferbo_mem ~callee_pname
+                       ~callee_formals ~params ~callee_cost ~loc:location )
           | _ ->
               None
         in
@@ -152,12 +188,14 @@ module InstrBasicCostWithReason = struct
                       model_env ret cfg location inferbo_mem ) )
     | Sil.Call (_, Exp.Const (Const.Cfun _), _, _, _) ->
         CostDomain.zero_record
+    | Sil.Call (_, fun_exp, _, _location, _) ->
+        dispatch_func_ptr_call extras instr_node fun_exp
     | Sil.Load {id= lhs_id} when Ident.is_none lhs_id ->
         (* dummy deref inserted by frontend--don't count as a step. In
            JDK 11, dummy deref disappears and causes cost differences
            otherwise. *)
         CostDomain.zero_record
-    | Sil.Load _ | Sil.Store _ | Sil.Call _ | Sil.Prune _ ->
+    | Sil.Load _ | Sil.Store _ | Sil.Prune _ ->
         CostDomain.unit_cost_atomic_operation
     | Sil.Metadata Skip -> (
       match InstrCFG.Node.kind instr_node with

@@ -27,7 +27,7 @@ let cwd = Unix.getcwd ()
 let buck_root =
   let open Process in
   lazy
-    (String.strip
+    (String.trim
        (eval (run "buck" ["root"; "@mode/" ^ Lazy.force mode] |- read_all)))
 
 (* use buck root for working directory *)
@@ -111,11 +111,10 @@ let expand_arch_archive ~context archive_name =
 
 (* find bitcode module(s) in a linker arg *)
 let parse_linker_arg ~context rev_modules arg =
-  if String.is_suffix arg ~suffix:".o" then
-    add_module ~context arg rev_modules
-  else if String.is_suffix arg ~suffix:".a" then
+  if String.suffix arg ~suf:".o" then add_module ~context arg rev_modules
+  else if String.suffix arg ~suf:".a" then
     let thin_archive =
-      String.strip Process.(eval (run "head" ["-1"; arg] |- read_all))
+      String.trim Process.(eval (run "head" ["-1"; arg] |- read_all))
     in
     if String.equal thin_archive "!<thin>" then
       expand_thin_archive ~context arg rev_modules
@@ -129,8 +128,8 @@ let parse_linker_arg ~context rev_modules arg =
 let bitcode_files_of ~target =
   let target =
     if
-      List.exists (Config.find_list "buck-target-patterns")
-        ~f:(fun substring -> String.is_substring target ~substring)
+      List.exists (Config.find_list "buck-target-patterns") ~f:(fun sub ->
+          String.mem target ~sub )
     then target ^ "_sledge"
     else target
   in
@@ -151,7 +150,7 @@ let llvm_link_opt ~fuzzer ~bitcode_output modules =
   let open Process in
   eval ~context
     ( ( if fuzzer then
-        echo ~n:() (Option.value_exn (Model.read "/lib_fuzzer_main.bc"))
+        echo ~n:() (Option.get_exn (Model.read "/lib_fuzzer_main.bc"))
       else return () )
     |- run (Lazy.force llvm_bin ^ "llvm-link") ("-o=-" :: modules)
     |- run
@@ -182,6 +181,7 @@ let llvm_link_opt ~fuzzer ~bitcode_output modules =
 
 (** command line interface *)
 
+module Command = Core.Command
 open Command.Let_syntax
 
 let ( |*> ) a' f' = a' |> Command.Param.apply f'

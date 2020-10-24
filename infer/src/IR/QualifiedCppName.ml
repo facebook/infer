@@ -11,7 +11,7 @@ module F = Format
 exception ParseError of string
 
 (* internally it uses reversed list to store qualified name, for example: ["get", "shared_ptr<int>", "std"]*)
-type t = string list [@@deriving compare]
+type t = string list [@@deriving compare, yojson_of]
 
 let empty = []
 

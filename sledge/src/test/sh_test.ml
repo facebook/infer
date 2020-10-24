@@ -15,7 +15,7 @@ let%test_module _ =
     let () = Trace.init ~margin:68 ()
 
     (* let () =
-     *   Trace.init ~margin:160 ~config:(Result.ok_exn (Trace.parse "+Sh")) ()
+     *   Trace.init ~margin:160 ~config:(Result.get_ok (Trace.parse "+Sh")) ()
      *
      * [@@@warning "-32"] *)
 
@@ -24,6 +24,7 @@ let%test_module _ =
     let pp_djn = Format.printf "@\n%a@." pp_djn
     let ( ~$ ) = Var.Set.of_list
     let ( ! ) i = Term.integer (Z.of_int i)
+    let ( + ) = Term.add
     let ( - ) = Term.sub
     let ( = ) = Formula.eq
     let f = Term.splat (* any uninterpreted function *)
@@ -52,6 +53,14 @@ let%test_module _ =
 
     let of_eqs l =
       List.fold ~init:emp ~f:(fun q (a, b) -> and_ (Formula.eq a b) q) l
+
+    let%expect_test _ =
+      pp
+        (star
+           (seg {loc= x; bas= x; len= !16; siz= !8; seq= a})
+           (seg {loc= x + !8; bas= x; len= !16; siz= !8; seq= b})) ;
+      [%expect {|
+          %x_6 -[)-> ⟨8,%a_1⟩^⟨8,%b_2⟩ |}]
 
     let%expect_test _ =
       let p = exists ~$[x_] (extend_us ~$[x_] emp) in
@@ -145,11 +154,11 @@ let%test_module _ =
       pp q' ;
       [%expect
         {|
-        ∃ %x_6 .   %x_6 = %x_6^ ∧ (-1 + %y_7) = %y_7^ ∧ emp
-    
-          ((-1 + %y_7) = %y_7^) ∧ emp
+        ∃ %x_6 .   (1 × (%y_7) + -1) = %y_7^ ∧ %x_6 = %x_6^ ∧ emp
 
-          (-1 + %y_7) = %y_7^ ∧ emp |}]
+          ((1 × (%y_7) + -1) = %y_7^) ∧ emp
+
+          (1 × (%y_7) + -1) = %y_7^ ∧ emp |}]
 
     let%expect_test _ =
       let q =

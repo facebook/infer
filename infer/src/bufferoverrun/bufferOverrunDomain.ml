@@ -429,8 +429,6 @@ module Val = struct
 
   let prune_lt : t -> t -> t = prune_binop Binop.Lt
 
-  let prune_le : t -> t -> t = prune_binop Binop.Le
-
   let is_pointer_to_non_array x = (not (PowLoc.is_bot x.powloc)) && ArrayBlk.is_bot x.arrayblk
 
   (* In the pointer arithmetics, it returns top, if we cannot
@@ -565,6 +563,14 @@ module Val = struct
         itv_val ~non_int:false |> set_itv_updated_by_addition
     | Tptr ({desc= Tfun}, _) ->
         of_func_ptrs (FuncPtr.Set.of_path path)
+    | Tptr ({desc= Tstruct name}, _) when Typ.equal_name name Typ.Name.Objc.objc_ns_enumerator ->
+        (* NOTE: It generates a value of NSEnumerator specifically.  Especially, it assigns zero to
+           the offset, rather than a symbol, to avoid precision loss by limited handling of symbolic
+           values in the domain.  Although this is an unsound design choice, we expect it should not
+           that harmful for calculating WCET. *)
+        let allocsite = SPath.deref ~deref_kind:Deref_CPointer path |> Allocsite.make_symbol in
+        let size = Itv.of_length_path ~is_void:false path in
+        {bot with arrayblk= ArrayBlk.make_c allocsite ~offset:Itv.zero ~size ~stride:Itv.one}
     | Tptr (elt, _) ->
         if is_java || SPath.is_this path then
           let deref_kind =
@@ -1365,20 +1371,13 @@ module AliasMap = struct
 
 
   let add_iterator_next_object_alias ~ret_id ~iterator x =
-    let accum_next_object_alias rhs tgt acc =
-      match tgt with
-      | AliasTarget.IteratorSimple _ ->
-          add_alias ~lhs:(KeyLhs.of_id ret_id) ~rhs
-            (AliasTarget.IteratorNextObject {objc_tmp= None})
-            acc
-      | _ ->
-          acc
-    in
     let open IOption.Let_syntax in
     M.find_opt (KeyLhs.of_id iterator) x
     >>= AliasTargets.find_simple_alias
-    >>= (fun rhs -> M.find_opt (KeyLhs.of_loc rhs) x)
-    >>| (fun tgts -> AliasTargets.fold accum_next_object_alias tgts x)
+    >>| (fun rhs ->
+          add_alias ~lhs:(KeyLhs.of_id ret_id) ~rhs
+            (AliasTarget.IteratorNextObject {objc_tmp= None})
+            x )
     |> Option.value ~default:x
 end
 
@@ -2083,11 +2082,6 @@ module MemReach = struct
 
   let add_iterator_alias id m = add_iterator_offset_alias id m |> add_iterator_simple_alias id
 
-  let add_iterator_alias_objc id m =
-    let array_loc = find_stack (Loc.of_id id) m |> Val.get_pow_loc in
-    {m with alias= Alias.add_iterator_simple_alias id array_loc m.alias}
-
-
   let incr_iterator_offset_alias id m = {m with alias= Alias.incr_iterator_offset_alias id m.alias}
 
   let add_iterator_has_next_alias ~ret_id ~iterator m =
@@ -2464,10 +2458,6 @@ module Mem = struct
 
   let add_iterator_alias : Ident.t -> t -> t = fun id -> map ~f:(MemReach.add_iterator_alias id)
 
-  let add_iterator_alias_objc : Ident.t -> t -> t =
-   fun id -> map ~f:(MemReach.add_iterator_alias_objc id)
-
-
   let incr_iterator_offset_alias : Exp.t -> t -> t =
    fun iterator m ->
     match iterator with Exp.Var id -> map ~f:(MemReach.incr_iterator_offset_alias id) m | _ -> m
@@ -2482,13 +2472,8 @@ module Mem = struct
         m
 
 
-  let add_iterator_next_object_alias : Ident.t -> Exp.t -> t -> t =
-   fun ret_id iterator m ->
-    match iterator with
-    | Exp.Var iterator ->
-        map ~f:(MemReach.add_iterator_next_object_alias ~ret_id ~iterator) m
-    | _ ->
-        m
+  let add_iterator_next_object_alias : ret_id:Ident.t -> iterator:Ident.t -> t -> t =
+   fun ~ret_id ~iterator m -> map ~f:(MemReach.add_iterator_next_object_alias ~ret_id ~iterator) m
 
 
   let incr_iterator_simple_alias_on_call eval_sym_trace ~callee_exit_mem m =

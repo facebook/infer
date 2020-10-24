@@ -6,17 +6,15 @@
  *)
 
 open! NS0
-include module type of Core.Option
+include module type of Containers.Option
+
+type 'a t = 'a option [@@deriving compare, equal, hash, sexp]
 
 val pp : ('a_pp -> 'a -> unit, unit) fmt -> 'a_pp -> 'a option pp
-(** Pretty-print an option. *)
-
-val or_else : f:(unit -> 'a option) -> 'a option -> 'a option
-(** [or_else ~f] is [f ()] on [None] and otherwise identity *)
-
-val cons : 'a t -> 'a list -> 'a list
-
-module Import : sig
-  include Monad_syntax with type 'a t := 'a option
-  include module type of Monad_infix
-end
+val map : 'a t -> f:('a -> 'b) -> 'b t
+val map_or : 'a t -> default:'b -> f:('a -> 'b) -> 'b
+val bind : 'a t -> f:('a -> 'b t) -> 'b t
+val iter : 'a t -> f:('a -> unit) -> unit
+val exists : 'a t -> f:('a -> bool) -> bool
+val for_all : 'a t -> f:('a -> bool) -> bool
+val fold : 'a t -> init:'s -> f:('s -> 'a -> 's) -> 's

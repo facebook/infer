@@ -5,61 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Ses
+
 (** Variables *)
-module Var : sig
-  type t [@@deriving compare, equal, sexp]
-  type strength = t -> [`Universal | `Existential | `Anonymous] option
-
-  val ppx : strength -> t pp
-  val pp : t pp
-
-  module Map : Map.S with type key := t
-
-  module Set : sig
-    include NS.Set.S with type elt := t
-
-    val sexp_of_t : t -> Sexp.t
-    val t_of_sexp : Sexp.t -> t
-    val ppx : strength -> t pp
-    val pp : t pp
-    val pp_xs : t pp
-  end
-
-  val fresh : string -> wrt:Set.t -> t * Set.t
-
-  val identified : name:string -> id:int -> t
-  (** Variable with the given [id]. Variables are compared by [id] alone,
-      [name] is used only for printing. The only way to ensure [identified]
-      variables do not clash with [fresh] variables is to pass the
-      [identified] variables to [fresh] in [wrt]:
-      [Var.fresh name ~wrt:(Var.Set.of_ (Var.identified ~name ~id))]. *)
-
-  val id : t -> int
-  val name : t -> string
-
-  module Subst : sig
-    type var := t
-    type t [@@deriving compare, equal, sexp]
-    type x = {sub: t; dom: Set.t; rng: Set.t}
-
-    val pp : t pp
-    val empty : t
-    val freshen : Set.t -> wrt:Set.t -> x * Set.t
-    val invert : t -> t
-    val restrict : t -> Set.t -> x
-    val is_empty : t -> bool
-    val domain : t -> Set.t
-    val range : t -> Set.t
-    val fold : t -> init:'a -> f:(var -> var -> 'a -> 'a) -> 'a
-  end
-end
+module Var : Var_intf.VAR
 
 (** Terms *)
 module rec Term : sig
   type t [@@deriving compare, equal, sexp]
 
   (* pretty-printing *)
-  val ppx : Var.strength -> t pp
+  val ppx : Var.t Var.strength -> t pp
   val pp : t pp
 
   module Map : Map.S with type key := t
@@ -69,32 +25,33 @@ module rec Term : sig
   (* variables *)
   val var : Var.t -> t
 
-  (* constants *)
+  (* arithmetic *)
   val zero : t
   val one : t
   val integer : Z.t -> t
   val rational : Q.t -> t
-
-  (* arithmetic *)
   val neg : t -> t
   val add : t -> t -> t
   val sub : t -> t -> t
   val mulq : Q.t -> t -> t
   val mul : t -> t -> t
+  val div : t -> t -> t
+  val pow : t -> int -> t
 
-  (* sequences *)
+  (* sequences (of flexible size) *)
   val splat : t -> t
   val sized : seq:t -> siz:t -> t
   val extract : seq:t -> off:t -> len:t -> t
   val concat : t array -> t
 
-  (* records *)
-  val select : rcd:t -> idx:t -> t
-  val update : rcd:t -> idx:t -> elt:t -> t
+  (* records (with fixed indices) *)
+  val select : rcd:t -> idx:int -> t
+  val update : rcd:t -> idx:int -> elt:t -> t
+  val record : t array -> t
+  val ancestor : int -> t
 
-  (* tuples *)
-  val tuple : t array -> t
-  val project : ary:int -> idx:int -> t -> t
+  (* uninterpreted *)
+  val apply : Funsym.t -> t array -> t
 
   (* if-then-else *)
   val ite : cnd:Formula.t -> thn:t -> els:t -> t
@@ -103,9 +60,15 @@ module rec Term : sig
 
   val d_int : t -> Z.t option
 
+  val get_const : t -> Q.t option
+  (** [get_const a] is [Some q] iff [equal a (const q)] *)
+
   (** Access *)
 
-  val const_of : t -> Q.t option
+  val split_const : t -> t * Q.t
+  (** Splits a term into the sum of its constant and non-constant parts.
+      That is, [split_const a] is [(b, c)] such that [a = b + c] and the
+      absolute value of [c] is maximal. *)
 
   (** Query *)
 
@@ -133,7 +96,7 @@ and Formula : sig
   val project : Term.t -> t option
 
   (* pretty-printing *)
-  val ppx : Var.strength -> t pp
+  val ppx : Var.t Var.strength -> t pp
   val pp : t pp
 
   (** Construct *)
@@ -142,19 +105,21 @@ and Formula : sig
   val tt : t
   val ff : t
 
-  (* comparisons *)
+  (* equality *)
   val eq : Term.t -> Term.t -> t
   val dq : Term.t -> Term.t -> t
+
+  (* arithmetic *)
   val eq0 : Term.t -> t
   val dq0 : Term.t -> t
-  val gt0 : Term.t -> t
-  val ge0 : Term.t -> t
-  val lt0 : Term.t -> t
-  val le0 : Term.t -> t
+  val pos : Term.t -> t
   val gt : Term.t -> Term.t -> t
   val ge : Term.t -> Term.t -> t
   val lt : Term.t -> Term.t -> t
   val le : Term.t -> Term.t -> t
+
+  (* uninterpreted *)
+  val lit : Predsym.t -> Term.t array -> t
 
   (* connectives *)
   val not_ : t -> t
@@ -162,6 +127,8 @@ and Formula : sig
   val andN : t list -> t
   val or_ : t -> t -> t
   val orN : t list -> t
+  val iff : t -> t -> t
+  val xor : t -> t -> t
   val cond : cnd:t -> pos:t -> neg:t -> t
 
   (** Query *)
@@ -191,7 +158,7 @@ module Context : sig
   val pp : t pp
 
   val ppx_diff :
-    Var.strength -> Format.formatter -> t -> Formula.t -> t -> bool
+    Var.t Var.strength -> Format.formatter -> t -> Formula.t -> t -> bool
 
   include Invariant.S with type t := t
 
@@ -288,19 +255,4 @@ module Context : sig
 
   val replay : string -> unit
   (** Replay debugging *)
-end
-
-(** Convert from Llair *)
-
-module Var_of_Llair : sig
-  val reg : Llair.Reg.t -> Var.t
-  val regs : Llair.Reg.Set.t -> Var.Set.t
-end
-
-module Term_of_Llair : sig
-  val exp : Llair.Exp.t -> Term.t
-end
-
-module Formula_of_Llair : sig
-  val exp : Llair.Exp.t -> Formula.t
 end

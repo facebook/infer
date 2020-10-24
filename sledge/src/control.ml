@@ -196,7 +196,7 @@ module Make (Dom : Domain_intf.Dom) = struct
     end
 
     type priority = int * Edge.t [@@deriving compare]
-    type priority_queue = priority Fheap.t
+    type priority_queue = priority FHeap.t
     type waiting_states = (Dom.t * Depths.t) list Llair.Block.Map.t
     type t = priority_queue * waiting_states * int
     type x = Depths.t -> t -> t
@@ -207,7 +207,7 @@ module Make (Dom : Domain_intf.Dom) = struct
     let pp fs pq =
       Format.fprintf fs "@[%a@]"
         (List.pp " ::@ " pp_priority)
-        (Fheap.to_list pq)
+        (FHeap.to_list pq)
 
     let skip _ w = w
     let seq x y d w = y d (x d w)
@@ -221,7 +221,7 @@ module Make (Dom : Domain_intf.Dom) = struct
         [%Trace.info "prune: %i: %a" depth Edge.pp edge] ;
         work )
       else
-        let pq = Fheap.add pq (depth, edge) in
+        let pq = FHeap.add pq (depth, edge) in
         [%Trace.info "@[<6>enqueue %i: %a@ | %a@]" depth Edge.pp edge pp pq] ;
         let depths = Depths.set depths ~key:edge ~data:depth in
         let ws =
@@ -231,10 +231,10 @@ module Make (Dom : Domain_intf.Dom) = struct
 
     let init state curr bound =
       add ~retreating:false Stack.empty state curr Depths.empty
-        (Fheap.create ~cmp:compare_priority, empty_waiting_states, bound)
+        (FHeap.create ~cmp:compare_priority, empty_waiting_states, bound)
 
     let rec run ~f (pq0, ws, bnd) =
-      match Fheap.pop pq0 with
+      match FHeap.pop pq0 with
       | Some ((_, ({Edge.dst; stk} as edge)), pq) -> (
         match Llair.Block.Map.find_and_remove ws dst with
         | Some (q :: qs, ws) ->
@@ -258,7 +258,9 @@ module Make (Dom : Domain_intf.Dom) = struct
   let exec_jump stk state block Llair.{dst; retreating} =
     Work.add ~prev:block ~retreating stk state dst
 
-  let summary_table = Hashtbl.create (module Llair.Reg)
+  module RegTbl = HashTable.Make (Llair.Reg)
+
+  let summary_table = RegTbl.create ()
 
   let exec_call opts stk state block call globals =
     let Llair.{callee; actuals; areturn; return; recursive} = call in
@@ -279,7 +281,7 @@ module Make (Dom : Domain_intf.Dom) = struct
           else
             let maybe_summary_post =
               let state = fst (domain_call ~summaries:false state) in
-              let* summary = Hashtbl.find summary_table name.reg in
+              let* summary = RegTbl.find summary_table name.reg in
               List.find_map ~f:(Dom.apply_summary state) summary
             in
             [%Trace.info
@@ -308,7 +310,7 @@ module Make (Dom : Domain_intf.Dom) = struct
   let pp_st () =
     [%Trace.printf
       "@[<v>%t@]" (fun fs ->
-          Hashtbl.iteri summary_table ~f:(fun ~key ~data ->
+          RegTbl.iteri summary_table ~f:(fun ~key ~data ->
               Format.fprintf fs "@[<v>%a:@ @[%a@]@]@ " Llair.Reg.pp key
                 (List.pp "@," Dom.pp_summary)
                 data ) )]
@@ -328,7 +330,7 @@ module Make (Dom : Domain_intf.Dom) = struct
             ~formals:
               (Llair.Reg.Set.union (Llair.Reg.Set.of_list formals) globals)
         in
-        Hashtbl.add_multi summary_table ~key:name.reg ~data:function_summary ;
+        RegTbl.add_multi summary_table ~key:name.reg ~data:function_summary ;
         pp_st () ;
         post_state
     in
@@ -467,7 +469,9 @@ module Make (Dom : Domain_intf.Dom) = struct
     [%Trace.info
       "@[<2>exec inst@\n@[%a@]@\n%a@]" Dom.pp state Llair.Inst.pp inst] ;
     Report.step () ;
-    Dom.exec_inst state inst |> Result.of_option ~error:(state, inst)
+    Dom.exec_inst state inst
+    |> function
+    | Some state -> Result.Ok state | None -> Result.Error (state, inst)
 
   let exec_block :
          exec_opts
@@ -509,7 +513,7 @@ module Make (Dom : Domain_intf.Dom) = struct
   let compute_summaries opts pgm : Dom.summary list Llair.Reg.Map.t =
     assert opts.function_summaries ;
     exec_pgm opts pgm ;
-    Hashtbl.fold summary_table ~init:Llair.Reg.Map.empty
+    RegTbl.fold summary_table ~init:Llair.Reg.Map.empty
       ~f:(fun ~key ~data map ->
         match data with [] -> map | _ -> Llair.Reg.Map.set map ~key ~data )
 end

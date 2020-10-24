@@ -7,8 +7,41 @@
 
 (** Global namespace intended to be opened in each source file *)
 
-include module type of NS0
-module Monad = Monad
+(** Support for [@@deriving compare, equal, hash, sexp] on builtin types *)
+
+include module type of Ppx_compare_lib.Builtin
+module Hash = Ppx_hash_lib.Std.Hash
+include module type of Hash.Builtin
+module Sexp = Sexplib.Sexp
+include module type of Ppx_sexp_conv_lib.Conv
+
+(** Comparison *)
+
+val min : int -> int -> int
+val max : int -> int -> int
+external ( = ) : int -> int -> bool = "%equal"
+external ( <> ) : int -> int -> bool = "%notequal"
+external ( < ) : int -> int -> bool = "%lessthan"
+external ( > ) : int -> int -> bool = "%greaterthan"
+external ( <= ) : int -> int -> bool = "%lessequal"
+external ( >= ) : int -> int -> bool = "%greaterequal"
+external compare : int -> int -> int = "%compare"
+external equal : int -> int -> bool = "%equal"
+
+(** Polymorphic comparison and hashing *)
+module Poly : sig
+  external ( = ) : 'a -> 'a -> bool = "%equal"
+  external ( <> ) : 'a -> 'a -> bool = "%notequal"
+  external ( < ) : 'a -> 'a -> bool = "%lessthan"
+  external ( > ) : 'a -> 'a -> bool = "%greaterthan"
+  external ( <= ) : 'a -> 'a -> bool = "%lessequal"
+  external ( >= ) : 'a -> 'a -> bool = "%greaterequal"
+  external compare : 'a -> 'a -> int = "%compare"
+  external equal : 'a -> 'a -> bool = "%equal"
+  val min : 'a -> 'a -> 'a
+  val max : 'a -> 'a -> 'a
+  val hash : 'a -> int
+end
 
 (** Function combinators *)
 
@@ -35,6 +68,117 @@ val ( $> ) : 'a -> ('a -> unit) -> 'a
 val ( <$ ) : ('a -> unit) -> 'a -> 'a
 (** Apply and ignore function: [f <$ x] is exactly equivalent to [f x ; x].
     Left associative. *)
+
+(** Tuple operations *)
+
+val fst3 : 'a * _ * _ -> 'a
+(** First projection from a triple. *)
+
+val snd3 : _ * 'b * _ -> 'b
+(** Second projection from a triple. *)
+
+val trd3 : _ * _ * 'c -> 'c
+(** Third projection from a triple. *)
+
+(** Pretty-printing *)
+
+(** Pretty-printer for argument type. *)
+type 'a pp = Format.formatter -> 'a -> unit
+
+(** Format strings. *)
+type ('a, 'b) fmt = ('a, Format.formatter, unit, 'b) format4
+
+(** Monadic syntax *)
+
+module type Applicative_syntax = sig
+  type 'a t
+
+  val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
+  val ( and+ ) : 'a t -> 'b t -> ('a * 'b) t
+end
+
+module type Monad_syntax = sig
+  type 'a t
+
+  val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
+  val ( and+ ) : 'a t -> 'b t -> ('a * 'b) t
+  val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
+  val ( and* ) : 'a t -> 'b t -> ('a * 'b) t
+end
+
+(** Monads *)
+
+module Monad = Monad
+
+(** Data types *)
+
+module Sign = Sign
+module Char = Containers.Char
+module Int = Int
+module Z = Z_ext
+module Q = Q_ext
+module Float = Float
+module String = String
+
+(** Iterators *)
+
+module Iter = Iter
+include module type of Iter.Import
+
+(** Containers *)
+
+module Option = Option
+include module type of Option.Infix
+
+module Either : sig
+  type ('a, 'b) t = Left of 'a | Right of 'b
+
+  val left : 'a -> ('a, 'b) t
+  val right : 'a -> ('b, 'a) t
+end
+
+module List = List
+module Array = Array
+module IArray = IArray
+include module type of IArray.Import
+module Set = Set
+module Map = Map
+module Multiset = Multiset
+module FHeap = Fheap [@@warning "-49"]
+module HashSet = HashSet
+module HashTable = HashTable
+module HashQueue = Core_kernel.Hash_queue
+
+(** Input / Output *)
+
+module In_channel = Stdio.In_channel
+module Out_channel = Stdio.Out_channel
+
+(** System interfaces *)
+
+module Sys = Sys
+module Timer = Timer
+
+module Filename : sig
+  include module type of Filename
+
+  val realpath : string -> string
+end
+
+(** Invariants *)
+module Invariant : sig
+  exception
+    Violation of exn * Printexc.raw_backtrace * Lexing.position * Sexp.t
+
+  val invariant :
+    Lexing.position -> 'a -> ('a -> Sexp.t) -> (unit -> unit) -> unit
+
+  module type S = sig
+    type t
+
+    val invariant : t -> unit
+  end
+end
 
 (** Failures *)
 
@@ -67,88 +211,7 @@ val check : ('a -> unit) -> 'a -> 'a
 val violates : ('a -> unit) -> 'a -> _
 (** Assert that function raises on argument. *)
 
-(** Extensions *)
+(**)
 
-module Invariant : sig
-  include module type of Core.Invariant
-
-  exception
-    Violation of
-      exn * Printexc.raw_backtrace * Source_code_position.t * Sexp.t
-end
-
-(** Containers *)
-
-module Option = Option
-include module type of Option.Import
-module List = List
-
-module Array : sig
-  include module type of Array
-
-  type 'a t = 'a Array.t [@@deriving compare, equal, hash, sexp]
-
-  module Import : sig
-    type 'a array = 'a t [@@deriving compare, equal, hash, sexp]
-  end
-
-  val pp : (unit, unit) fmt -> 'a pp -> 'a array pp
-
-  val map_endo : 'a t -> f:('a -> 'a) -> 'a t
-  (** Like map, but specialized to require [f] to be an endofunction, which
-      enables preserving [==] if [f] preserves [==] of every element. *)
-
-  val fold_map_inplace :
-    'a array -> init:'s -> f:('s -> 'a -> 's * 'a) -> 's
-end
-
-include module type of Array.Import
-module IArray = IArray
-include module type of IArray.Import
-module Set = Set
-module Map = Map
-module Qset = Qset
-
-(** Data types *)
-
-module String : sig
-  include sig
-    include module type of Core.String with module Map := Core.String.Map
-  end
-
-  module Map : Map.S with type key = string
-end
-
-module Q : sig
-  include module type of struct
-    include Q
-  end
-
-  val of_z : Z.t -> t
-  val compare : t -> t -> int
-  val hash : t -> int
-  val hash_fold_t : t Hash.folder
-  val t_of_sexp : Sexp.t -> t
-  val sexp_of_t : t -> Sexp.t
-  val pp : t pp
-end
-
-module Z : sig
-  include module type of struct
-    include Z
-  end
-
-  val compare : t -> t -> int
-  val hash : t -> int
-  val hash_fold_t : t Hash.folder
-  val t_of_sexp : Sexp.t -> t
-  val sexp_of_t : t -> Sexp.t
-  val pp : t pp
-  val true_ : t
-  val false_ : t
-  val of_bool : bool -> t
-  val is_true : t -> bool
-  val is_false : t -> bool
-end
-
-module Timer = Timer
+module Hashtbl : sig end [@@deprecated "Use HashTable instead of Hashtbl"]
+module With_return = Base.With_return

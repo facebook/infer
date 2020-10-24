@@ -33,8 +33,15 @@ module BasicCostWithReason = struct
 
   let of_basic_cost cost = {cost; top_pname_opt= None}
 
-  let subst callee_pname location {cost; top_pname_opt} eval_sym =
-    let cost = BasicCost.subst callee_pname location cost eval_sym in
+  let subst callee_pname location {cost; top_pname_opt} eval_sym eval_func_ptrs
+      get_closure_callee_cost ~default_closure_cost =
+    let get_closure_callee_cost pname =
+      get_closure_callee_cost pname |> Option.map ~f:(fun {cost} -> cost)
+    in
+    let cost =
+      BasicCost.subst callee_pname location cost eval_sym eval_func_ptrs get_closure_callee_cost
+        ~default_closure_cost
+    in
     if BasicCost.is_top cost then {cost; top_pname_opt= Some callee_pname} else {cost; top_pname_opt}
 
 

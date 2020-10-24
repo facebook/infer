@@ -12,13 +12,13 @@ let%test_module _ =
   ( module struct
     let () =
       Trace.init ~margin:68
-        ~config:(Result.ok_exn (Trace.parse "+Solver.infer_frame"))
+        ~config:(Result.get_ok (Trace.parse "+Solver.infer_frame"))
         ()
 
     (* let () =
      *   Trace.init ~margin:160
      *     ~config:
-     *       (Result.ok_exn (Trace.parse "+Solver.infer_frame+Solver.excise"))
+     *       (Result.get_ok (Trace.parse "+Solver.infer_frame+Solver.excise"))
      *     ()
      * 
      * [@@@warning "-32"] *)
@@ -143,7 +143,7 @@ let%test_module _ =
         {|
         ( infer_frame:
             %l_6 -[)-> ⟨8,%a_1⟩^⟨8,%a_2⟩ \- ∃ %a_3 .   %l_6 -[)-> ⟨16,%a_3⟩
-        ) infer_frame:   %a_2 = _ ∧ (⟨8,%a_1⟩^⟨8,%a_2⟩) = %a_3 ∧ emp |}]
+        ) infer_frame:   (⟨8,%a_1⟩^⟨8,%a_2⟩) = %a_3 ∧ %a_2 = _ ∧ emp |}]
 
     let%expect_test _ =
       check_frame
@@ -159,7 +159,7 @@ let%test_module _ =
           \- ∃ %a_3, %m_8 .
               %l_6 -[ %l_6, %m_8 )-> ⟨16,%a_3⟩
         ) infer_frame:
-            %a_2 = _ ∧ 16 = %m_8 ∧ (⟨8,%a_1⟩^⟨8,%a_2⟩) = %a_3 ∧ emp |}]
+            (⟨8,%a_1⟩^⟨8,%a_2⟩) = %a_3 ∧ 16 = %m_8 ∧ %a_2 = _ ∧ emp |}]
 
     let%expect_test _ =
       check_frame
@@ -175,7 +175,7 @@ let%test_module _ =
           \- ∃ %a_3, %m_8 .
               %l_6 -[ %l_6, %m_8 )-> ⟨%m_8,%a_3⟩
         ) infer_frame:
-            %a_2 = _ ∧ 16 = %m_8 ∧ (⟨8,%a_1⟩^⟨8,%a_2⟩) = %a_3 ∧ emp |}]
+            (⟨8,%a_1⟩^⟨8,%a_2⟩) = %a_3 ∧ 16 = %m_8 ∧ %a_2 = _ ∧ emp |}]
 
     let%expect_test _ =
       check_frame
@@ -194,10 +194,10 @@ let%test_module _ =
               %k_5 -[ %k_5, %m_8 )-> ⟨%n_9,%a_2⟩ * %l_6 -[)-> ⟨8,%n_9⟩
         ) infer_frame:
           ∃ %a0_10, %a1_11 .
-            %a_2 = %a0_10
+            (⟨16,%a_2⟩^⟨16,%a1_11⟩) = %a_1
           ∧ 16 = %m_8 = %n_9
-          ∧ (⟨16,%a_2⟩^⟨16,%a1_11⟩) = %a_1
-          ∧ (16 + %k_5) -[ %k_5, 16 )-> ⟨16,%a1_11⟩ |}]
+          ∧ %a_2 = %a0_10
+          ∧ (1 × (%k_5) + 16) -[ %k_5, 16 )-> ⟨16,%a1_11⟩ |}]
 
     let%expect_test _ =
       infer_frame
@@ -216,10 +216,10 @@ let%test_module _ =
               %k_5 -[ %k_5, %m_8 )-> ⟨%n_9,%a_2⟩ * %l_6 -[)-> ⟨8,%n_9⟩
         ) infer_frame:
           ∃ %a0_10, %a1_11 .
-            %a_2 = %a0_10
+            (⟨16,%a_2⟩^⟨16,%a1_11⟩) = %a_1
           ∧ 16 = %m_8 = %n_9
-          ∧ (⟨16,%a_2⟩^⟨16,%a1_11⟩) = %a_1
-          ∧ (16 + %k_5) -[ %k_5, 16 )-> ⟨16,%a1_11⟩ |}]
+          ∧ %a_2 = %a0_10
+          ∧ (1 × (%k_5) + 16) -[ %k_5, 16 )-> ⟨16,%a1_11⟩ |}]
 
     let seg_split_symbolically =
       Sh.star
@@ -238,7 +238,7 @@ let%test_module _ =
         {|
         ( infer_frame:
             %l_6
-              -[ %l_6, 16 )-> ⟨(8 × %n_9),%a_2⟩^⟨(16 + (-8 × %n_9)),%a_3⟩
+              -[ %l_6, 16 )-> ⟨(8 × (%n_9)),%a_2⟩^⟨(-8 × (%n_9) + 16),%a_3⟩
           * ( (  2 = %n_9 ∧ emp)
             ∨ (  0 = %n_9 ∧ emp)
             ∨ (  1 = %n_9 ∧ emp)
@@ -246,19 +246,19 @@ let%test_module _ =
           \- ∃ %a_1, %m_8 .
               %l_6 -[ %l_6, %m_8 )-> ⟨%m_8,%a_1⟩
         ) infer_frame:
-            ( (  %a_1 = %a_2
+            ( (  16 = %m_8
                ∧ 2 = %n_9
+               ∧ %a_1 = %a_2
+               ∧ (1 × (%l_6) + 16) -[ %l_6, 16 )-> ⟨0,%a_3⟩)
+            ∨ (  (⟨8,%a_2⟩^⟨8,%a_3⟩) = %a_1
                ∧ 16 = %m_8
-               ∧ (16 + %l_6) -[ %l_6, 16 )-> ⟨0,%a_3⟩)
-            ∨ (  %a_3 = _
                ∧ 1 = %n_9
-               ∧ 16 = %m_8
-               ∧ (⟨8,%a_2⟩^⟨8,%a_3⟩) = %a_1
+               ∧ %a_3 = _
                ∧ emp)
-            ∨ (  %a_3 = _
-               ∧ 0 = %n_9
+            ∨ (  (⟨0,%a_2⟩^⟨16,%a_3⟩) = %a_1
                ∧ 16 = %m_8
-               ∧ (⟨0,%a_2⟩^⟨16,%a_3⟩) = %a_1
+               ∧ 0 = %n_9
+               ∧ %a_3 = _
                ∧ emp)
             ) |}]
 
@@ -271,9 +271,9 @@ let%test_module _ =
       [%expect
         {|
         ( infer_frame:
-            (0 ≤ (2 + (-1 × %n_9)))
+            (0 ≥ (1 × (%n_9) + -2))
           ∧ %l_6
-              -[ %l_6, 16 )-> ⟨(8 × %n_9),%a_2⟩^⟨(16 + (-8 × %n_9)),%a_3⟩
+              -[ %l_6, 16 )-> ⟨(8 × (%n_9)),%a_2⟩^⟨(-8 × (%n_9) + 16),%a_3⟩
           \- ∃ %a_1, %m_8 .
               %l_6 -[ %l_6, %m_8 )-> ⟨%m_8,%a_1⟩
         ) infer_frame: |}]

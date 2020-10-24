@@ -49,11 +49,17 @@ typedef BOOL (^Filter)(id);
                                       }];
 }
 
-- (void)callMyEnumerator_linear_FN:(NSArray*)x {
+// The cost analyzer cannot reason the amortized complexity.
+- (void)callMyEnumerator_linear_FP:(NSArray*)x {
   MyEnumerator* enumerator = [self makeMyEnumerator_zero:x];
   id s;
   while (s = [enumerator nextObject]) {
   }
+}
+
+- (void)callMyEnumerator_nextObject_linear:(NSArray*)x {
+  MyEnumerator* enumerator = [self makeMyEnumerator_zero:x];
+  id s = [enumerator nextObject];
 }
 
 @end

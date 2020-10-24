@@ -945,6 +945,12 @@ and costs_previous =
     "Costs report of the base revision to use for comparison"
 
 
+and cost_suppress_func_ptr =
+  CLOpt.mk_bool ~default:true ~long:"cost-suppress-func-ptr"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Suppress printing function pointers in cost reports"
+
+
 and cost_tests_only_autoreleasepool =
   CLOpt.mk_bool ~long:"cost-tests-only-autoreleasepool"
     ~in_help:InferCommand.[(Report, manual_generic); (ReportDiff, manual_generic)]
@@ -1786,6 +1792,12 @@ and procedures_summary =
     "Print the summaries of each procedure in the output of $(b,--procedures)"
 
 
+and procedures_summary_json =
+  CLOpt.mk_bool ~long:"procedures-summary-json" ~default:false
+    ~in_help:InferCommand.[(Debug, manual_debug_procedures)]
+    "Emit the summaries of each procedure in the output of $(b,--procedures) as JSON"
+
+
 and process_clang_ast =
   CLOpt.mk_bool ~long:"process-clang-ast" ~default:false
     "process the ast to emit some info about the file (Not available for Java)"
@@ -2065,9 +2077,9 @@ and seconds_per_iteration =
 
 
 and select =
-  CLOpt.mk_int_opt ~long:"select" ~meta:"N"
-    ~in_help:InferCommand.[(Explore, manual_explore_bugs)]
-    "Select bug number $(i,N). If omitted, prompt for input."
+  CLOpt.mk_string_opt ~long:"select" ~meta:"(N|all)"
+    ~in_help:InferCommand.[(Debug, manual_generic); (Explore, manual_explore_bugs)]
+    "Select option number $(i,N) or $(i,all) of them. If omitted, prompt for input."
 
 
 and scuba_logging, cost_scuba_logging =
@@ -2385,6 +2397,14 @@ and worklist_mode =
   CLOpt.mk_set var 2 ~long:"visits-bias" ~deprecated:["visits_bias"]
     "nodes visited fewer times are analyzed first" ;
   var
+
+
+and workspace =
+  CLOpt.mk_path_opt ~long:"workspace"
+    ~in_help:InferCommand.[(Capture, manual_generic)]
+    "Specifies the root of the workspace, which is a directory containing $(b,--project-root). \
+     This can be needed if the capture phase is expected to require several $(i,different) project \
+     roots, all relative to a common workspace. Usually a single project root is enough, though."
 
 
 and write_html_whitelist_regex =
@@ -2720,6 +2740,8 @@ and checkers = List.map !all_checkers ~f:(fun (checker, _, var) -> (checker, !va
 
 and clang_biniou_file = !clang_biniou_file
 
+and clang_compilation_dbs = !clang_compilation_dbs
+
 and clang_compound_literal_init_limit = !clang_compound_literal_init_limit
 
 and clang_extra_flags = !clang_extra_flags
@@ -2749,6 +2771,8 @@ and cost_issues_tests = !cost_issues_tests
 and cost_scuba_logging = !cost_scuba_logging
 
 and costs_previous = !costs_previous
+
+and cost_suppress_func_ptr = !cost_suppress_func_ptr
 
 and cost_tests_only_autoreleasepool = !cost_tests_only_autoreleasepool
 
@@ -2987,6 +3011,8 @@ and procedures_source_file = !procedures_source_file
 
 and procedures_summary = !procedures_summary
 
+and procedures_summary_json = !procedures_summary_json
+
 and process_clang_ast = !process_clang_ast
 
 and progress_bar =
@@ -3108,7 +3134,17 @@ and scuba_tags = String.Map.map !scuba_tags ~f:(fun v -> String.split v ~on:',')
 
 and seconds_per_iteration = !seconds_per_iteration
 
-and select = !select
+and select =
+  match !select with
+  | None ->
+      None
+  | Some "all" ->
+      Some `All
+  | Some n -> (
+    try Some (`Select (Int.of_string n))
+    with _ ->
+      L.die UserError "Wrong argument for --select: expected an integer or \"all\" but got '%s'" n )
+
 
 and show_buckets = !print_buckets
 
@@ -3220,6 +3256,8 @@ and unsafe_malloc = !unsafe_malloc
 and incremental_analysis = !incremental_analysis
 
 and worklist_mode = !worklist_mode
+
+and workspace = !workspace
 
 and write_dotty = !write_dotty
 

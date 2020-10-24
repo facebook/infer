@@ -318,7 +318,9 @@ module Term = struct
     | Return {exp; _} -> (
       match parent with
       | Some parent ->
-          assert (Bool.(Option.is_some exp = Option.is_some parent.freturn))
+          assert (
+            Bool.equal (Option.is_some exp) (Option.is_some parent.freturn)
+          )
       | None -> assert true )
     | Throw _ | Unreachable -> assert true
 
@@ -390,6 +392,10 @@ module Block_label = struct
       [%compare: string * Global.t] (x.lbl, x.parent.name)
         (y.lbl, y.parent.name)
 
+    let equal x y =
+      [%equal: string * Global.t] (x.lbl, x.parent.name)
+        (y.lbl, y.parent.name)
+
     let hash b = [%hash: string * Global.t] (b.lbl, b.parent.name)
   end
 
@@ -397,8 +403,9 @@ module Block_label = struct
   module Set = Set.Make (T)
 end
 
-module BlockQ = Hash_queue.Make (Block_label)
-module FuncQ = Hash_queue.Make (Reg)
+module BlockS = HashSet.Make (Block_label)
+module BlockQ = HashQueue.Make (Block_label)
+module FuncQ = HashQueue.Make (Reg)
 
 (** Functions *)
 
@@ -410,9 +417,9 @@ module Func = struct
     | _ -> false
 
   let fold_cfg ~init ~f func =
-    let seen = Hash_set.create (module Block_label) in
+    let seen = BlockS.create 0 in
     let rec fold_cfg_ s blk =
-      if Result.is_error (Hash_set.strict_add seen blk) then s
+      if not (BlockS.add seen blk) then s
       else
         let s =
           let f s j = fold_cfg_ s j.dst in
@@ -453,7 +460,7 @@ module Func = struct
         if is_undefined func then Format.fprintf fs " #%i@]" sort_index
         else
           let cfg =
-            List.sort ~compare:Block.compare (List.tl_exn (entry_cfg func))
+            List.sort ~cmp:Block.compare (List.tl_exn (entry_cfg func))
           in
           Format.fprintf fs " { #%i %a@;<1 4>@[<v>%a@ %a@]%t%a@]@ }"
             sort_index Loc.pp name.loc pp_cmnd cmnd Term.pp term
@@ -468,9 +475,12 @@ module Func = struct
     | Pointer {elt= Function {return; _}; _} ->
         assert (
           not
-            (List.contains_dup (entry_cfg func) ~compare:(fun b1 b2 ->
-                 String.compare b1.lbl b2.lbl )) ) ;
-        assert (Bool.(Option.is_some return = Option.is_some func.freturn)) ;
+            (Iter.contains_dup
+               (Iter.of_list (entry_cfg func))
+               ~cmp:(fun b1 b2 -> String.compare b1.lbl b2.lbl)) ) ;
+        assert (
+          Bool.equal (Option.is_some return) (Option.is_some func.freturn)
+        ) ;
         iter_term func ~f:(fun term -> Term.invariant ~parent:func term)
     | _ -> assert false
 
@@ -606,5 +616,5 @@ module Program = struct
       globals
       (List.pp "@\n@\n" Func.pp)
       ( String.Map.data functions
-      |> List.sort ~compare:(fun x y -> compare_block x.entry y.entry) )
+      |> List.sort ~cmp:(fun x y -> compare_block x.entry y.entry) )
 end

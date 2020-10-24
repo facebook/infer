@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 open PulseDomainInterface
 
-type t = ExecutionDomain.summary list
+type t = ExecutionDomain.summary list [@@deriving yojson_of]
 
 let pp fmt summary =
   F.open_vbox 0 ;

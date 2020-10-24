@@ -7,7 +7,6 @@
 
 (** Interval abstract domain *)
 
-open Ses
 open Apron
 
 let equal_apron_typ =
@@ -47,7 +46,7 @@ let pp fs =
   in
   bindings >> Array.pp "@," (pp_pair Var.print Interval.print) fs
 
-let report_fmt_thunk = Fn.flip pp
+let report_fmt_thunk = Fun.flip pp
 let init _gs = Abstract1.top (Lazy.force man) (Environment.make [||] [||])
 let apron_var_of_name = (fun nm -> "%" ^ nm) >> Apron.Var.of_string
 let apron_var_of_reg = Llair.Reg.name >> apron_var_of_name
@@ -64,121 +63,80 @@ let rec apron_typ_of_llair_typ : Llair.Typ.t -> Texpr1.typ option = function
         () ;
       None
 
-let apron_of_q = Q.to_float >> fun fp -> Texpr1.Cst (Coeff.s_of_float fp)
-
-let rec pow base typ = function
-  | 1 -> base
-  | z ->
-      Texpr1.Binop (Texpr1.Mul, base, pow base typ (z - 1), typ, Texpr0.Rnd)
-
-(* An n-ary term with [subtms] {(q0, e0), ..., (qn, en)} is interpreted as:
- *    ∑ᵢ eᵢ*qᵢ (when [op] is [Texpr1.Add])
- *    ∏ᵢ eᵢ^qᵢ (when [op] is [Texpr1.Mul])
- * (See sledge/src/llair/term.ml functions assert_(mono|poly)mial for details)
- *)
-let rec texpr_of_nary_term subtms typ q op =
-  assert (Term.Qset.length subtms >= 2) ;
-  let term_to_texpr (tm, coeff) =
-    let* base = apron_texpr_of_llair_term tm q typ in
-    match op with
-    | Texpr1.Add ->
-        Some
-          (Texpr1.Binop (Texpr1.Mul, base, apron_of_q coeff, typ, Texpr0.Rnd))
-    | Texpr1.Mul
-    (* only handle positive integer exponents *)
-      when Z.equal Z.one (Q.den coeff) && Q.sign coeff = 1 ->
-        Some (pow base typ (Q.to_int coeff))
-    | _ -> None
-  in
-  match Term.Qset.to_list subtms with
-  | hd :: tl ->
-      List.fold tl ~init:(term_to_texpr hd) ~f:(fun acc curr ->
-          let* c = term_to_texpr curr in
-          let+ a = acc in
-          Texpr1.Binop (op, c, a, typ, Texpr0.Rnd) )
-  | _ -> assert false
-
-and apron_texpr_of_llair_term tm q typ =
-  match (tm : Term.t) with
-  | Add terms -> texpr_of_nary_term terms typ q Texpr1.Add
-  | Mul terms -> texpr_of_nary_term terms typ q Texpr1.Mul
-  | Var {name} -> Some (Texpr1.Var (apron_var_of_name name))
+let rec apron_texpr_of_llair_exp exp q =
+  match (exp : Llair.Exp.t) with
+  | Reg {name} -> Some (Texpr1.Var (apron_var_of_name name))
   | Integer {data} -> Some (Texpr1.Cst (Coeff.s_of_int (Z.to_int data)))
-  | Float {data} ->
-      let f =
-        try Float.of_string data
-        with Invalid_argument _ -> failwith "malformed float: %s"
+  | Float {data} -> (
+    match Float.of_string_exn data with
+    | f -> Some (Texpr1.Cst (Coeff.s_of_float f))
+    | exception Invalid_argument _ -> None )
+  | Ap1 (Signed {bits}, _, _) ->
+      let n = Int.shift_left 1 (bits - 1) in
+      Some (Texpr1.Cst (Coeff.i_of_int (-n) (n - 1)))
+  | Ap1 (Unsigned {bits}, _, _) ->
+      let n = Int.shift_left 1 (bits - 1) in
+      Some (Texpr1.Cst (Coeff.i_of_int 0 n))
+  | Ap1 (Convert {src}, dst, x) ->
+      let* src' = apron_typ_of_llair_typ src in
+      let* dst' = apron_typ_of_llair_typ dst in
+      let subtm = apron_texpr_of_llair_exp x q in
+      if equal_apron_typ src' dst' then subtm
+      else
+        let+ t = subtm in
+        Texpr1.Unop (Texpr1.Cast, t, dst', Texpr0.Rnd)
+  | Ap2 (op, typ, x, y) -> (
+      let* typ' = apron_typ_of_llair_typ typ in
+      let* x' = apron_texpr_of_llair_exp x q in
+      let* y' = apron_texpr_of_llair_exp y q in
+      (* abstract evaluation of boolean binary operation [te1 op te2] at [q]
+         by translation to [te1 - te2 op 0] and intersection with [q] *)
+      let bool_binop q op x' y' =
+        let env = Abstract1.env q in
+        let lhs = Texpr1.Binop (Texpr1.Sub, x', y', typ', Texpr0.Rnd) in
+        let tcons = Tcons1.make (Texpr1.of_expr env lhs) op in
+        let ea =
+          Tcons1.array_make env 1 $> fun ea -> Tcons1.array_set ea 0 tcons
+        in
+        (* if meet of q with tree constraint encoding of binop is: (bottom
+           -> binop definitely false); (unchanged from q -> binop definitely
+           true); (else -> binop may be true or false) *)
+        let meet = Abstract1.meet_tcons_array (Lazy.force man) q ea in
+        if is_false meet then Some (Texpr1.Cst (Coeff.s_of_int 0))
+        else if equal meet q then Some (Texpr1.Cst (Coeff.s_of_int (-1)))
+        else Some (Texpr1.Cst (Coeff.i_of_int (-1) 0))
       in
-      Some (Texpr1.Cst (Coeff.s_of_float f))
-  | Ap1 (Convert {dst; src}, t) -> (
-    match (apron_typ_of_llair_typ dst, apron_typ_of_llair_typ src) with
-    | None, _ | _, None -> None
-    | Some dst, Some src ->
-        let subtm = apron_texpr_of_llair_term t q src in
-        if equal_apron_typ src dst then subtm
-        else
-          let+ t = subtm in
-          Texpr1.Unop (Texpr1.Cast, t, dst, Texpr0.Rnd) )
-  (* extraction to unsigned 1-bit int is llvm encoding of C boolean;
-     restrict to [0,1] *)
-  | Ap1 (Unsigned {bits= 1}, _t) -> Some (Texpr1.Cst (Coeff.i_of_int 0 1))
-  (* "t xor true" and "true xor t" are negation *)
-  | Ap2 (Xor, t, Integer {data}) when Z.is_true data ->
-      let+ t = apron_texpr_of_llair_term t q typ in
-      Texpr1.Unop (Texpr1.Neg, t, typ, Texpr0.Rnd)
-  | Ap2 (Xor, Integer {data}, t) when Z.is_true data ->
-      let+ t = apron_texpr_of_llair_term t q typ in
-      Texpr1.Unop (Texpr1.Neg, t, typ, Texpr0.Rnd)
-  (* query apron for abstract evaluation of binary operations*)
-  | Ap2 (op, t1, t2) ->
-      let* f =
-        match op with
-        | Rem -> Some (mk_arith_binop typ Texpr0.Mod)
-        | Div -> Some (mk_arith_binop typ Texpr0.Div)
-        | Eq -> Some (mk_bool_binop typ q Tcons0.EQ)
-        | Dq -> Some (mk_bool_binop typ q Tcons0.DISEQ)
-        | Lt -> Some (Fn.flip (mk_bool_binop typ q Tcons0.SUP))
-        | Le -> Some (Fn.flip (mk_bool_binop typ q Tcons0.SUPEQ))
-        | _ -> None
+      let arith_bop op x' y' =
+        Some (Texpr1.Binop (op, x', y', typ', Texpr0.Rnd))
       in
-      let* te1 = apron_texpr_of_llair_term t1 q typ in
-      let+ te2 = apron_texpr_of_llair_term t2 q typ in
-      f te1 te2
-  | x ->
-      [%Trace.info
-        "No corresponding apron term for llair term: %a" Term.pp x] ;
+      match op with
+      | Eq -> bool_binop q Tcons0.EQ x' y'
+      | Dq -> bool_binop q Tcons0.DISEQ x' y'
+      | Gt -> bool_binop q Tcons0.SUP x' y'
+      | Ge -> bool_binop q Tcons0.SUPEQ x' y'
+      | Lt -> bool_binop q Tcons0.SUP y' x'
+      | Le -> bool_binop q Tcons0.SUPEQ y' x'
+      | Ugt | Uge | Ult | Ule | Ord | Uno -> None
+      | Add -> arith_bop Texpr1.Add x' y'
+      | Sub -> arith_bop Texpr1.Sub x' y'
+      | Mul -> arith_bop Texpr1.Mul x' y'
+      | Div -> arith_bop Texpr1.Div x' y'
+      | Rem -> arith_bop Texpr1.Mod x' y'
+      | Udiv | Urem -> None
+      | And | Or | Xor | Shl | Lshr | Ashr | Update _ -> None )
+  | Label _
+   |Ap1 ((Splat | Select _), _, _)
+   |Ap3 (Conditional, _, _, _, _)
+   |ApN (Record, _, _)
+   |RecRecord _ ->
       None
-
-and mk_arith_binop typ op te1 te2 =
-  Texpr1.Binop (op, te1, te2, typ, Texpr0.Rnd)
-
-(** abstract evaluation of boolean binary operation [te1 op te2] at [q] by
-    translation to [te1 - te2 op 0] and intersection with [q]*)
-and mk_bool_binop typ q op te1 te2 =
-  let env = Abstract1.env q in
-  let lhs = Texpr1.Binop (Texpr1.Sub, te1, te2, typ, Texpr0.Rnd) in
-  let tcons = Tcons1.make (Texpr1.of_expr env lhs) op in
-  let ea =
-    Tcons1.array_make env 1 $> fun ea -> Tcons1.array_set ea 0 tcons
-  in
-  (* if meet of q with tree constraint encoding of binop is: (bottom ->
-     binop definitely false); (unchanged from q -> binop definitely true);
-     (else -> binop may be true or false) *)
-  let meet = Abstract1.meet_tcons_array (Lazy.force man) q ea in
-  if is_false meet then Texpr1.Cst (Coeff.s_of_int 0)
-  else if equal meet q then Texpr1.Cst (Coeff.s_of_int (-1))
-  else Texpr1.Cst (Coeff.i_of_int (-1) 0)
 
 let assign reg exp q =
   [%Trace.call fun {pf} ->
     pf "{%a}@\n%a := %a" pp q Llair.Reg.pp reg Llair.Exp.pp exp]
   ;
   let lval = apron_var_of_reg reg in
-  ( match
-      Option.bind
-        ~f:(apron_texpr_of_llair_term (Term.of_exp exp) q)
-        (apron_typ_of_llair_typ (Llair.Reg.typ reg))
-    with
+  ( match apron_texpr_of_llair_exp exp q with
   | Some e ->
       let env = Abstract1.env q in
       let new_env =
@@ -199,7 +157,7 @@ let assign reg exp q =
 
 (** block if [e] is known to be false; skip otherwise *)
 let exec_assume q e =
-  match apron_texpr_of_llair_term (Term.of_exp e) q Texpr1.Int with
+  match apron_texpr_of_llair_exp e q with
   | Some e ->
       let cond =
         Abstract1.bound_texpr (Lazy.force man) q (Texpr1.of_expr q.env e)
@@ -265,7 +223,7 @@ let exec_intrinsic ~skip_throw:_ pre aret i _ =
       ; "__cxa_allocate_exception"
       ; "_ZN5folly13usingJEMallocEv" ]
       ~f:(String.equal name)
-  then Option.map ~f:(Option.some << exec_kill pre) aret
+  then Option.map ~f:(Option.return << exec_kill pre) aret
   else None
 
 type from_call = {areturn: Llair.Reg.t option; caller_q: t}
@@ -320,7 +278,7 @@ let call ~summaries ~globals:_ ~actuals ~areturn ~formals ~freturn:_
     let mangle r =
       Llair.Reg.program (Llair.Reg.typ r) ("__tmp__" ^ Llair.Reg.name r)
     in
-    let args = List.zip_exn formals actuals in
+    let args = List.combine_exn formals actuals in
     let q' =
       List.fold args ~init:q ~f:(fun q (f, a) -> assign (mangle f) a q)
     in

@@ -86,7 +86,7 @@ val is_restrict : type_quals -> bool
 val is_volatile : type_quals -> bool
 
 (** types for sil (structured) expressions *)
-type t = {desc: desc; quals: type_quals} [@@deriving compare]
+type t = {desc: desc; quals: type_quals} [@@deriving compare, yojson_of]
 
 and desc =
   | Tint of ikind  (** integer type *)
@@ -98,7 +98,6 @@ and desc =
   | TVar of string  (** type variable (ie. C++ template variables) *)
   | Tarray of {elt: t; length: IntLit.t option; stride: IntLit.t option}
       (** array type with statically fixed length and stride *)
-[@@deriving compare]
 
 and name =
   | CStruct of QualifiedCppName.t
@@ -110,9 +109,8 @@ and name =
   | JavaClass of JavaClassName.t
   | ObjcClass of QualifiedCppName.t
   | ObjcProtocol of QualifiedCppName.t
-[@@deriving compare]
 
-and template_arg = TType of t | TInt of Int64.t | TNull | TNullPtr | TOpaque [@@deriving compare]
+and template_arg = TType of t | TInt of Int64.t | TNull | TNullPtr | TOpaque
 
 and template_spec_info =
   | NoTemplate
@@ -122,7 +120,6 @@ and template_spec_info =
                 mangling is not guaranteed to be unique to a single type. All the information in the
                 template arguments is also needed for uniqueness. *)
       ; args: template_arg list }
-[@@deriving compare]
 
 val pp_template_spec_info : Pp.env -> F.formatter -> template_spec_info -> unit [@@warning "-32"]
 
@@ -185,7 +182,7 @@ val is_strong_pointer : t -> bool
 
 module Name : sig
   (** Named types. *)
-  type t = name [@@deriving compare]
+  type t = name [@@deriving compare, yojson_of]
 
   val equal : t -> t -> bool
   (** Equality for typenames *)
@@ -271,6 +268,8 @@ module Name : sig
     val from_qual_name : QualifiedCppName.t -> t
 
     val protocol_from_qual_name : QualifiedCppName.t -> t
+
+    val objc_ns_enumerator : t
   end
 
   module Set : PrettyPrintable.PPSet with type elt = t

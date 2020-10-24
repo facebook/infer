@@ -79,7 +79,7 @@ val mk_eval_sym_cost :
   -> (Pvar.t * Typ.t) list
   -> (Exp.t * Typ.t) list
   -> BufferOverrunDomain.Mem.t
-  -> Bounds.Bound.eval_sym
+  -> BufferOverrunDomain.eval_sym_trace
 (** Make [eval_sym] function of [EvalCost] mode for on-demand symbol evaluation *)
 
 module Prune : sig

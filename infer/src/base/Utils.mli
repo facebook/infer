@@ -20,6 +20,12 @@ val string_crc_hex32 : string -> string
 val read_file : string -> (string list, string) Result.t
 (** read a source file and return a list of lines *)
 
+val normalize_path_from : root:string -> string -> string * string
+(** [normalize_path_from ~root path] removes ".." and "." parts of [root/path] when possible and
+    returns the new [root] and [path], eg if [root = "r"] and [path = "a/../../../foo/./bar"] then
+    the result is [("../foo/bar", ".")] (in particular "r/a/../../../foo/./bar" and "./../foo/bar"
+    represent the same file) *)
+
 val filename_to_absolute : root:string -> string -> string
 (** Convert a filename to an absolute one if it is relative, and normalize "." and ".." *)
 

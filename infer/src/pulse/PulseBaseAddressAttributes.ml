@@ -19,6 +19,8 @@ module Graph = PrettyPrintable.MakePPMonoMap (AbstractValue) (AttributesNoRank)
 
 type t = Graph.t
 
+let yojson_of_t = [%yojson_of: _]
+
 let add_one addr attribute attrs =
   match Graph.find_opt addr attrs with
   | None ->

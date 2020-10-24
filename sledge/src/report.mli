@@ -10,8 +10,8 @@
 val init : ?append:bool -> string -> unit
 val step : unit -> unit
 val unknown_call : Llair.term -> unit
-val invalid_access_inst : (Formatter.t -> unit) -> Llair.inst -> unit
-val invalid_access_term : (Formatter.t -> unit) -> Llair.term -> unit
+val invalid_access_inst : (Format.formatter -> unit) -> Llair.inst -> unit
+val invalid_access_term : (Format.formatter -> unit) -> Llair.term -> unit
 
 type status =
   | Safe of {steps: int}
@@ -35,8 +35,11 @@ val status : status -> unit
 type gc_stats = {allocated: float; promoted: float; peak_size: float}
 [@@deriving sexp]
 
+type times =
+  {etime: float; utime: float; stime: float; cutime: float; cstime: float}
+
 type entry =
-  | ProcessTimes of float * Unix.process_times
+  | ProcessTimes of times
   | GcStats of gc_stats
   | Status of status
 [@@deriving sexp]

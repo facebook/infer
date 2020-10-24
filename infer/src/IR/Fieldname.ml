@@ -8,7 +8,7 @@
 open! IStd
 module F = Format
 
-type t = {class_name: Typ.Name.t; field_name: string} [@@deriving compare, equal]
+type t = {class_name: Typ.Name.t; field_name: string} [@@deriving compare, equal, yojson_of]
 
 let make class_name field_name = {class_name; field_name}
 

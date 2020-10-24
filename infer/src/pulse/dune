@@ -11,4 +11,4 @@
     -open IBase -open Absint -open BO))
  (libraries core IStdlib ATDGenerated IBase IR Absint BO)
  (preprocess
-  (pps ppx_compare ppx_variants_conv)))
+  (pps ppx_yojson_conv ppx_compare ppx_variants_conv)))

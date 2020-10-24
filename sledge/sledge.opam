@@ -13,6 +13,7 @@ depends: [
   "apron" {>= "v0.9.13"}
   "base"
   "containers"
+  "containers-data"
   "core" {>= "v0.14"}
   "crunch" {build}
   "ctypes"

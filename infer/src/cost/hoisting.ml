@@ -113,8 +113,9 @@ let get_cost_if_expensive tenv integer_type_widths get_callee_cost_summary_and_f
         let callee_cost = CostDomain.get_operation_cost cost_record in
         if CostDomain.BasicCost.is_symbolic callee_cost.cost then
           Some
-            (Cost.instantiate_cost integer_type_widths ~inferbo_caller_mem:inferbo_mem
-               ~callee_pname:pname ~callee_formals ~params ~callee_cost ~loc)
+            (Cost.instantiate_cost ~default_closure_cost:Ints.NonNegativeInt.one integer_type_widths
+               ~inferbo_caller_mem:inferbo_mem ~callee_pname:pname ~callee_formals ~params
+               ~callee_cost ~loc)
               .cost
         else None
     | None ->

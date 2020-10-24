@@ -27,6 +27,10 @@ type t =
   ; uninit: UninitDomain.Summary.t option }
 [@@deriving fields]
 
+let yojson_of_t {pulse} =
+  [%yojson_of: (string * PulseSummary.t option) list] [(Checker.get_id Pulse, pulse)]
+
+
 type 'a pp = Pp.env -> F.formatter -> 'a -> unit
 
 type field = F : {field: (t, 'a option) Field.t; name: string; pp: 'a pp} -> field
