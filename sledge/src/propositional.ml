@@ -146,42 +146,38 @@ module Make (Trm : TERM) = struct
           | p -> (Fmls.of_ p, Fmls.empty) )
         p q
 
-    type equal_or_opposite = Equal | Opposite | Unknown
-
-    let rec equal_or_opposite p q =
+    let rec eval_iff p q =
       match (p, q) with
-      | p, Not p' | Not p', p ->
-          if equal_fml p p' then Opposite else Unknown
+      | p, Not p' | Not p', p -> if equal_fml p p' then Some false else None
       | And {pos= ap; neg= an}, Or {pos= op; neg= on}
        |Or {pos= op; neg= on}, And {pos= ap; neg= an}
         when Fmls.equal ap on && Fmls.equal an op ->
-          Opposite
+          Some false
       | Cond {cnd= c; pos= p; neg= n}, Cond {cnd= c'; pos= p'; neg= n'} ->
           if equal_fml c c' then
-            match equal_or_opposite p p' with
-            | Opposite -> (
-              match equal_or_opposite n n' with
-              | Opposite -> Opposite
-              | _ -> Unknown )
-            | Equal -> if equal_fml n n' then Equal else Unknown
-            | Unknown -> Unknown
-          else Unknown
-      | _ -> if equal_fml p q then Equal else Unknown
-
-    let is_negative = function Not _ | Or _ -> true | _ -> false
+            match eval_iff p p' with
+            | Some false -> (
+              match eval_iff n n' with
+              | Some false -> Some false
+              | _ -> None )
+            | Some true -> if equal_fml n n' then Some true else None
+            | None -> None
+          else None
+      | _ -> if equal_fml p q then Some true else None
 
     let _Iff p q =
       ( match (p, q) with
       | Tt, p | p, Tt -> p
       | Not Tt, p | p, Not Tt -> _Not p
       | _ -> (
-        match equal_or_opposite p q with
-        | Equal -> tt
-        | Opposite -> ff
-        | Unknown ->
+        match eval_iff p q with
+        | Some b -> bool b
+        | None ->
             let p, q = sort_fml p q in
             Iff (p, q) ) )
       |> check invariant
+
+    let is_negative = function Not _ | Or _ -> true | _ -> false
 
     let _Cond cnd pos neg =
       ( match (cnd, pos, neg) with
@@ -202,13 +198,13 @@ module Make (Trm : TERM) = struct
       (* (c ? p : tt) ==> ¬c ∨ p *)
       | _, _, Tt -> or_ (_Not cnd) pos
       | _ -> (
-        match equal_or_opposite pos neg with
+        match eval_iff pos neg with
         (* (c ? p : p) ==> c *)
-        | Equal -> cnd
+        | Some true -> cnd
         (* (c ? p : ¬p) ==> c <=> p *)
-        | Opposite -> _Iff cnd pos
+        | Some false -> _Iff cnd pos
         (* (¬c ? n : p) ==> (c ? p : n) *)
-        | Unknown when is_negative cnd ->
+        | None when is_negative cnd ->
             Cond {cnd= _Not cnd; pos= neg; neg= pos}
         (* (c ? p : n) *)
         | _ -> Cond {cnd; pos; neg} ) )
