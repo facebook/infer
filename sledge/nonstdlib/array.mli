@@ -23,6 +23,7 @@ val split : ('a * 'b) t -> 'a t * 'b t
 val combine : 'a t -> 'b t -> ('a * 'b) t option
 val combine_exn : 'a t -> 'b t -> ('a * 'b) t
 val is_empty : 'a t -> bool
+val mem : 'a -> 'a t -> eq:('a -> 'a -> bool) -> bool
 val iter : 'a t -> f:('a -> unit) -> unit
 val iteri : 'a t -> f:(int -> 'a -> unit) -> unit
 val exists : 'a t -> f:('a -> bool) -> bool

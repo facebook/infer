@@ -11,6 +11,26 @@ module Import = struct
   type 'a iter = 'a t
 end
 
+let mem elt seq ~eq = mem ~eq ~x:elt seq
+let sort seq ~cmp = sort ~cmp seq
+let sort_uniq seq ~cmp = sort_uniq ~cmp seq
+let sorted seq ~cmp = sorted ~cmp seq
+let group_succ_by seq ~eq = group_succ_by ~eq seq
+let group_by seq ~hash ~eq = group_by ~hash ~eq seq
+let count seq ~hash ~eq = count ~hash ~eq seq
+let uniq seq ~eq = uniq ~eq seq
+let join_by ~eq ~hash k1 k2 ~merge = join_by ~eq ~hash k1 k2 ~merge
+let join_all_by ~eq ~hash k1 k2 ~merge = join_all_by ~eq ~hash k1 k2 ~merge
+let group_join_by ~eq ~hash = group_join_by ~eq ~hash
+let inter ~eq ~hash = inter ~eq ~hash
+let union ~eq ~hash = union ~eq ~hash
+let diff ~eq ~hash = diff ~eq ~hash
+let subset ~eq ~hash = subset ~eq ~hash
+let max seq ~lt = max ~lt seq
+let max_exn seq ~lt = max_exn ~lt seq
+let min seq ~lt = min ~lt seq
+let min_exn seq ~lt = min_exn ~lt seq
+
 let pop seq =
   match head seq with Some x -> Some (x, drop 1 seq) | None -> None
 

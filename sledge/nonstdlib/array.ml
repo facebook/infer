@@ -69,6 +69,7 @@ let combine_exn xs ys =
 let combine xs ys =
   try Some (combine_exn xs ys) with Invalid_argument _ -> None
 
+let mem x xs ~eq = mem ~eq x xs
 let iter xs ~f = iter ~f xs
 let iteri xs ~f = iteri ~f xs
 let exists xs ~f = exists ~f xs

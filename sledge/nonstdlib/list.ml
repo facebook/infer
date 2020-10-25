@@ -15,6 +15,7 @@ let hd = function [] -> None | hd :: _ -> Some hd
 let tl_exn = tl
 let tl = function [] -> None | _ :: tl -> Some tl
 let pop_exn = function x :: xs -> (x, xs) | [] -> raise Not_found
+let mem elt seq ~eq = mem ~eq elt seq
 let exists xs ~f = exists ~f xs
 let for_all xs ~f = for_all ~f xs
 let find_exn xs ~f = find ~f xs
@@ -46,6 +47,10 @@ let combine_exn = combine
 let combine xs ys =
   try Some (combine_exn xs ys) with Invalid_argument _ -> None
 
+let group_by seq ~hash ~eq = group_by ~hash ~eq seq
+let join_by ~eq ~hash k1 k2 ~merge = join_by ~eq ~hash k1 k2 ~merge
+let join_all_by ~eq ~hash k1 k2 ~merge = join_all_by ~eq ~hash k1 k2 ~merge
+let group_join_by ~eq ~hash = group_join_by ~eq ~hash
 let fold xs ~init ~f = fold_left ~f ~init xs
 
 let reduce xs ~f =
@@ -84,3 +89,11 @@ let pp_diff ~cmp sep pp_elt fs (xs, ys) =
     | Right y -> Format.fprintf fs "++ %a" pp_elt y
   in
   pp sep pp_diff_elt fs (symmetric_diff ~cmp xs ys)
+
+module Assoc = struct
+  include Assoc
+
+  let mem elt seq ~eq = mem ~eq elt seq
+end
+
+let mem_assoc elt seq ~eq = mem_assoc ~eq elt seq
