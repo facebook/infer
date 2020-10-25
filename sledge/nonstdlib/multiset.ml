@@ -41,8 +41,8 @@ struct
          (Sexplib.Conv.pair_of_sexp elt_of_sexp Mul.t_of_sexp)
          sexp)
 
-  let pp sep pp_elt fs s =
-    List.pp sep pp_elt fs (Iter.to_list (M.to_iter s))
+  let pp ?pre ?suf sep pp_elt fs s =
+    List.pp ?pre ?suf sep pp_elt fs (Iter.to_list (M.to_iter s))
 
   let empty = M.empty
   let of_ x i = if Mul.equal Mul.zero i then empty else M.singleton x i

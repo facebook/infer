@@ -210,6 +210,7 @@ let rec pp_ ?var_strength vs parent_xs parent_ctx fs
   let first =
     if Option.is_some var_strength then
       Context.ppx_diff x fs parent_ctx pure ctx
+    else if Formula.equal Formula.tt pure then true
     else (
       Format.fprintf fs "@[  %a@]" Formula.pp pure ;
       false )

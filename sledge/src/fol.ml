@@ -314,6 +314,10 @@ let ppx_f strength fs fml =
   let pp_t = Trm.ppx strength in
   let rec pp fs fml =
     let pf fmt = pp_boxed fs fmt in
+    let pp_arith op x =
+      let a, c = Arith.split_const (Arith.trm x) in
+      pf "(%a@ @<2>%s %a)" Q.pp (Q.neg c) op (Arith.ppx strength) a
+    in
     let pp_join sep pos neg =
       pf "(%a%t%a)" (Fmls.pp ~sep pp) pos
         (fun ppf ->
@@ -327,10 +331,10 @@ let ppx_f strength fs fml =
     | Not Tt -> pf "ff"
     | Eq (x, y) -> pf "(%a@ = %a)" pp_t x pp_t y
     | Not (Eq (x, y)) -> pf "(%a@ @<2>≠ %a)" pp_t x pp_t y
-    | Eq0 x -> pf "(0 = %a)" pp_t x
-    | Not (Eq0 x) -> pf "(0 @<2>≠ %a)" pp_t x
-    | Pos x -> pf "(0 < %a)" pp_t x
-    | Not (Pos x) -> pf "(0 @<2>≥ %a)" pp_t x
+    | Eq0 x -> pp_arith "=" x
+    | Not (Eq0 x) -> pp_arith "≠" x
+    | Pos x -> pp_arith "<" x
+    | Not (Pos x) -> pp_arith "≥" x
     | Not x -> pf "@<1>¬%a" pp x
     | And {pos; neg} -> pp_join "@ @<2>∧ " pos neg
     | Or {pos; neg} -> pp_join "@ @<2>∨ " pos neg

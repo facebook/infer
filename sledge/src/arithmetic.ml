@@ -41,7 +41,9 @@ module Representation (Trm : INDETERMINATE) = struct
             (Prod.map_counts ~f:Int.neg den)
       in
       let num, den = num_den power_product in
-      Format.fprintf ppf "@[<2>(%a%a)@]" pp_num num pp_den den
+      if Prod.is_singleton num && Prod.is_empty den then
+        Format.fprintf ppf "@[<2>%a@]" pp_num num
+      else Format.fprintf ppf "@[<2>(%a%a)@]" pp_num num pp_den den
 
     (** [one] is the empty product Πᵢ₌₁⁰ xᵢ^pᵢ *)
     let one = Prod.empty
@@ -86,10 +88,16 @@ module Representation (Trm : INDETERMINATE) = struct
       else
         let pp_coeff_mono ppf (m, c) =
           if Mono.equal_one m then Trace.pp_styled `Magenta "%a" ppf Q.pp c
-          else
-            Format.fprintf ppf "%a @<2>× %a" Q.pp c (Mono.ppx strength) m
+          else if Q.equal Q.one c then
+            Format.fprintf ppf "%a" (Mono.ppx strength) m
+          else Format.fprintf ppf "%a@<1>×%a" Q.pp c (Mono.ppx strength) m
         in
-        Format.fprintf ppf "@[<2>(%a)@]" (Sum.pp "@ + " pp_coeff_mono) poly
+        if Sum.is_singleton poly then
+          Format.fprintf ppf "@[<2>%a@]" (Sum.pp "@ + " pp_coeff_mono) poly
+        else
+          Format.fprintf ppf "@[<2>(%a)@]"
+            (Sum.pp "@ + " pp_coeff_mono)
+            poly
 
     let mono_invariant mono =
       let@ () = Invariant.invariant [%here] mono [%sexp_of: Mono.t] in

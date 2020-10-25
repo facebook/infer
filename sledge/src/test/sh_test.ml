@@ -154,11 +154,11 @@ let%test_module _ =
       pp q' ;
       [%expect
         {|
-        ∃ %x_6 .   %x_6 = %x_6^ ∧ (-1 + 1 × (%y_7)) = %y_7^ ∧ emp
+        ∃ %x_6 .   %x_6 = %x_6^ ∧ (-1 + %y_7) = %y_7^ ∧ emp
 
-          (tt ∧ ((-1 + 1 × (%y_7)) = %y_7^)) ∧ emp
+          (tt ∧ ((-1 + %y_7) = %y_7^)) ∧ emp
 
-          (-1 + 1 × (%y_7)) = %y_7^ ∧ emp |}]
+          (-1 + %y_7) = %y_7^ ∧ emp |}]
 
     let%expect_test _ =
       let q =
@@ -185,7 +185,7 @@ let%test_module _ =
           ∨ (∃ %b_2 .   (tt ∧ (⟨8,%a_1⟩ = (⟨4,%c_3⟩^⟨4,%b_2⟩))) ∧ emp)
           )
 
-          tt ∧ emp * ( (  tt ∧ emp) ∨ (  (tt ∧ (0 ≠ %x_6)) ∧ emp) )
+          ( (  emp) ∨ (  (tt ∧ (0 ≠ %x_6)) ∧ emp) )
 
           ( (  emp) ∨ (  (0 ≠ %x_6) ∧ emp) ) |}]
   end )

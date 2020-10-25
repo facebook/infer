@@ -28,7 +28,13 @@ module type S = sig
   val hash_fold_t : elt Hash.folder -> t Hash.folder
   val sexp_of_t : t -> Sexp.t
   val t_of_sexp : (Sexp.t -> elt) -> Sexp.t -> t
-  val pp : (unit, unit) fmt -> (elt * mul) pp -> t pp
+
+  val pp :
+       ?pre:(unit, unit) fmt
+    -> ?suf:(unit, unit) fmt
+    -> (unit, unit) fmt
+    -> (elt * mul) pp
+    -> t pp
 
   (* constructors *)
 
