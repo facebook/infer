@@ -116,6 +116,7 @@ module type S = sig
     ?key_order:[`Increasing | `Decreasing] -> 'a t -> (key * 'a) list
 
   val data : 'a t -> 'a list
+  val to_iter : 'a t -> (key * 'a) iter
 
   val to_iter2 :
        'a t

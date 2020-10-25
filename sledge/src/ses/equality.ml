@@ -51,6 +51,7 @@ module Subst : sig
   val extend : Term.t -> t -> t option
   val remove : Var.Set.t -> t -> t
   val map_entries : f:(Term.t -> Term.t) -> t -> t
+  val to_iter : t -> (Term.t * Term.t) iter
   val to_alist : t -> (Term.t * Term.t) list
   val partition_valid : Var.Set.t -> t -> t * Var.Set.t * t
 end = struct
@@ -70,6 +71,7 @@ end = struct
   let fold = Term.Map.fold
   let iteri = Term.Map.iteri
   let for_alli = Term.Map.for_alli
+  let to_iter = Term.Map.to_iter
   let to_alist = Term.Map.to_alist ~key_order:`Increasing
 
   (** look up a term in a substitution *)
@@ -453,10 +455,9 @@ let false_ = {true_ with sat= false}
 let lookup r a =
   ([%Trace.call fun {pf} -> pf "%a" Term.pp a]
   ;
-  let@ {return} = With_return.with_return in
-  Subst.iteri r.rep ~f:(fun ~key:b ~data:b' ->
-      if semi_congruent r a b then return b' ) ;
-  a)
+  Iter.find_map (Subst.to_iter r.rep) ~f:(fun (b, b') ->
+      Option.return_if (semi_congruent r a b) b' )
+  |> Option.value ~default:a)
   |>
   [%Trace.retn fun {pf} -> pf "%a" Term.pp]
 
@@ -508,20 +509,19 @@ let merge us a b r =
 
 (** find an unproved equation between congruent terms *)
 let find_missing r =
-  let@ {return} = With_return.with_return in
-  Subst.iteri r.rep ~f:(fun ~key:a ~data:a' ->
+  Iter.find_map (Subst.to_iter r.rep) ~f:(fun (a, a') ->
       let a_subnorm = Term.map ~f:(Subst.norm r.rep) a in
-      Subst.iteri r.rep ~f:(fun ~key:b ~data:b' ->
-          if
+      Iter.find_map (Subst.to_iter r.rep) ~f:(fun (b, b') ->
+          (* need to equate a' and b'? *)
+          let need_a'_eq_b' =
             (* optimize: do not consider both a = b and b = a *)
             Term.compare a b < 0
             (* a and b are not already equal *)
             && (not (Term.equal a' b'))
             (* a and b are congruent *)
             && semi_congruent r a_subnorm b
-          then (* need to equate a' and b' *)
-            return (Some (a', b')) ) ) ;
-  None
+          in
+          Option.return_if need_a'_eq_b' (a', b') ) )
 
 let rec close us r =
   if not r.sat then r

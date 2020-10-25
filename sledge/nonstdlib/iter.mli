@@ -14,6 +14,7 @@ end
 val pop : 'a iter -> ('a * 'a iter) option
 val find : 'a t -> f:('a -> bool) -> 'a option
 val find_exn : 'a t -> f:('a -> bool) -> 'a
+val find_map : 'a iter -> f:('a -> 'b option) -> 'b option
 val contains_dup : 'a iter -> cmp:('a -> 'a -> int) -> bool
 
 val fold_opt : 'a t -> init:'s -> f:('s -> 'a -> 's option) -> 's option

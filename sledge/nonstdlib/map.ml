@@ -159,6 +159,7 @@ end) : S with type key = Key.t = struct
   let fold m ~init ~f = M.fold (fun key data acc -> f ~key ~data acc) m init
   let to_alist ?key_order:_ = M.to_list
   let data m = Iter.to_list (M.values m)
+  let to_iter = M.to_iter
 
   let to_iter2 l r =
     let seq = ref Iter.empty in

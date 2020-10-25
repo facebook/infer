@@ -231,4 +231,3 @@ let violates f x =
 (** Deprecated *)
 
 module Hashtbl = struct end
-module With_return = Base.With_return

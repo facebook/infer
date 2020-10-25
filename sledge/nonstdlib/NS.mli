@@ -214,4 +214,3 @@ val violates : ('a -> unit) -> 'a -> _
 (**)
 
 module Hashtbl : sig end [@@deprecated "Use HashTable instead of Hashtbl"]
-module With_return = Base.With_return

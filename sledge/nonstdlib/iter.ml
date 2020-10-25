@@ -14,6 +14,7 @@ end
 let pop seq =
   match head seq with Some x -> Some (x, drop 1 seq) | None -> None
 
+let find_map seq ~f = find_map ~f seq
 let find seq ~f = find (CCOpt.if_ f) seq
 let find_exn seq ~f = CCOpt.get_exn (find ~f seq)
 

@@ -1145,9 +1145,7 @@ let iter_vars e ~f =
   iter_terms ~f:(fun e -> Option.iter ~f (Var.of_term e)) e
 
 let exists_vars e ~f =
-  With_return.with_return (fun {return} ->
-      iter_vars e ~f:(fun v -> if f v then return true) ;
-      false )
+  Iter.exists ~f (Iter.from_labelled_iter (iter_vars e))
 
 let fold_vars e ~init ~f =
   fold_terms ~f:(fun s e -> Option.fold ~f ~init:s (Var.of_term e)) ~init e
