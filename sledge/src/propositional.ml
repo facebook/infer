@@ -111,6 +111,7 @@ module Make (Trm : TERM) = struct
       join _And ff
         (function
           | And {pos; neg} -> (pos, neg)
+          | Tt -> (Fmls.empty, Fmls.empty)
           | Not p -> (Fmls.empty, Fmls.of_ p)
           | p -> (Fmls.of_ p, Fmls.empty) )
         p q
@@ -119,6 +120,7 @@ module Make (Trm : TERM) = struct
       join _Or tt
         (function
           | Or {pos; neg} -> (pos, neg)
+          | Not Tt -> (Fmls.empty, Fmls.empty)
           | Not p -> (Fmls.empty, Fmls.of_ p)
           | p -> (Fmls.of_ p, Fmls.empty) )
         p q
