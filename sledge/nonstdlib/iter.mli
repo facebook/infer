@@ -12,6 +12,7 @@ module Import : sig
 end
 
 val mem : 'a -> 'a t -> eq:('a -> 'a -> bool) -> bool
+val map : 'a t -> f:('a -> 'b) -> 'b t
 val sort : 'a t -> cmp:('a -> 'a -> int) -> 'a t
 val sort_uniq : 'a t -> cmp:('a -> 'a -> int) -> 'a t
 val sorted : 'a t -> cmp:('a -> 'a -> int) -> bool

@@ -853,9 +853,7 @@ let v_to_ses : var -> Ses.Var.t =
  fun v -> Ses.Var.identified ~id:(Var.id v) ~name:(Var.name v)
 
 let vs_to_ses : Var.Set.t -> Ses.Var.Set.t =
- fun vs ->
-  Var.Set.fold vs Ses.Var.Set.empty ~f:(fun v ->
-      Ses.Var.Set.add (v_to_ses v) )
+ fun vs -> Ses.Var.Set.of_iter (Iter.map ~f:v_to_ses (Var.Set.to_iter vs))
 
 let rec arith_to_ses poly =
   Arith.fold_monomials poly Ses.Term.zero ~f:(fun mono coeff e ->
@@ -936,8 +934,7 @@ let v_of_ses : Ses.Var.t -> var =
  fun v -> Var.identified ~id:(Ses.Var.id v) ~name:(Ses.Var.name v)
 
 let vs_of_ses : Ses.Var.Set.t -> Var.Set.t =
- fun vs ->
-  Ses.Var.Set.fold ~f:(fun v -> Var.Set.add (v_of_ses v)) vs Var.Set.empty
+ fun vs -> Var.Set.of_iter (Iter.map ~f:v_of_ses (Ses.Var.Set.to_iter vs))
 
 let uap1 f = ap1t (fun x -> _Apply f [|x|])
 let uap2 f = ap2t (fun x y -> _Apply f [|x; y|])

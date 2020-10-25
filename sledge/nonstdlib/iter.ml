@@ -12,6 +12,7 @@ module Import = struct
 end
 
 let mem elt seq ~eq = mem ~eq ~x:elt seq
+let map seq ~f = map ~f seq
 let sort seq ~cmp = sort ~cmp seq
 let sort_uniq seq ~cmp = sort_uniq ~cmp seq
 let sorted seq ~cmp = sorted ~cmp seq

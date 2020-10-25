@@ -112,6 +112,9 @@ module type S = sig
   val keys : 'a t -> key iter
   val values : 'a t -> 'a iter
   val to_iter : 'a t -> (key * 'a) iter
+  val to_list : 'a t -> (key * 'a) list
+  val of_iter : (key * 'a) iter -> 'a t
+  val of_list : (key * 'a) list -> 'a t
 
   val to_iter2 :
        'a t

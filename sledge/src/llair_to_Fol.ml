@@ -16,9 +16,7 @@ let reg r =
   let global = Llair.Reg.is_global r in
   Var.program ~name ~global
 
-let regs rs =
-  Llair.Reg.Set.fold ~f:(fun r -> Var.Set.add (reg r)) rs Var.Set.empty
-
+let regs rs = Var.Set.of_iter (Iter.map ~f:reg (Llair.Reg.Set.to_iter rs))
 let uap0 f = T.apply f [||]
 let uap1 f a = T.apply f [|a|]
 let uap2 f a b = T.apply f [|a; b|]

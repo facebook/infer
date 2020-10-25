@@ -60,6 +60,7 @@ module type S = sig
   (** {1 Convert} *)
 
   val to_iter : t -> elt iter
+  val of_iter : elt iter -> t
 
   (** {1 Pretty-print} *)
 

@@ -94,12 +94,8 @@ module Make (T : REPR) = struct
       |> check (fun ({sub; _}, _) -> invariant sub)
 
     let fold sub z ~f = Map.fold ~f:(fun ~key ~data -> f key data) sub z
-
-    let domain sub =
-      Map.fold ~f:(fun ~key ~data:_ -> Set.add key) sub Set.empty
-
-    let range sub =
-      Map.fold ~f:(fun ~key:_ ~data -> Set.add data) sub Set.empty
+    let domain sub = Set.of_iter (Map.keys sub)
+    let range sub = Set.of_iter (Map.values sub)
 
     let invert sub =
       Map.fold sub empty ~f:(fun ~key ~data sub' ->

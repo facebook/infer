@@ -162,6 +162,9 @@ end) : S with type key = Key.t = struct
   let keys = M.keys
   let values = M.values
   let to_iter = M.to_iter
+  let to_list = M.to_list
+  let of_iter = M.of_iter
+  let of_list = M.of_list
 
   let to_iter2 l r =
     let seq = ref Iter.empty in

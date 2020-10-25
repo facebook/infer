@@ -80,6 +80,7 @@ end) : S with type elt = Elt.t = struct
   let for_all s ~f = S.for_all f s
   let fold s z ~f = S.fold f s z
   let to_iter = S.to_iter
+  let of_iter = S.of_iter
 
   let pp ?pre ?suf ?(sep = (",@ " : (unit, unit) fmt)) pp_elt fs x =
     List.pp ?pre ?suf sep pp_elt fs (S.elements x)

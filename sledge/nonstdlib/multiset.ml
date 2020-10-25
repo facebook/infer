@@ -33,15 +33,13 @@ struct
   let sexp_of_t s =
     List.sexp_of_t
       (Sexplib.Conv.sexp_of_pair Elt.sexp_of_t Mul.sexp_of_t)
-      (Iter.to_list (M.to_iter s))
+      (M.to_list s)
 
   let t_of_sexp elt_of_sexp sexp =
-    List.fold_left
-      ~f:(fun m (key, data) -> M.add_exn ~key ~data m)
+    M.of_list
       (List.t_of_sexp
          (Sexplib.Conv.pair_of_sexp elt_of_sexp Mul.t_of_sexp)
          sexp)
-      M.empty
 
   let pp sep pp_elt fs s =
     List.pp sep pp_elt fs (Iter.to_list (M.to_iter s))
