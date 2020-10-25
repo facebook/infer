@@ -27,7 +27,7 @@ let bindings (itv : t) =
   let vars =
     Environment.vars box.box1_env |> fun (i, r) -> Array.append i r
   in
-  Array.zip_exn vars box.interval_array
+  Array.combine_exn vars box.interval_array
 
 let sexp_of_t (itv : t) =
   let sexps =
@@ -295,8 +295,8 @@ let call ~summaries ~globals:_ ~actuals ~areturn ~formals ~freturn:_
     let q'' = Abstract1.change_environment man q' callee_env false in
     let q''' =
       Abstract1.rename_array man q''
-        (Array.of_list_map ~f:(mangle >> apron_var_of_reg) formals)
-        (Array.of_list_map ~f:apron_var_of_reg formals)
+        (Array.map ~f:(mangle >> apron_var_of_reg) (Array.of_list formals))
+        (Array.map ~f:apron_var_of_reg (Array.of_list formals))
     in
     (q''', {areturn; caller_q= q})
 

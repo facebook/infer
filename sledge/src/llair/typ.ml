@@ -99,7 +99,7 @@ let struct_ =
     | None ->
         (* Add placeholder defn to prevent computing [elts] in calls to
            [struct] from [elts] for recursive occurrences of [name]. *)
-        let elts = Array.create ~len:(IArray.length elt_thks) dummy_typ in
+        let elts = Array.make (IArray.length elt_thks) dummy_typ in
         let typ =
           Struct {name; elts= IArray.of_array elts; bits; byts; packed}
         in
