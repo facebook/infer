@@ -7,7 +7,7 @@
  (debug
   (flags
    (-w +a-4-9-18-30-40-42-44-48@50-66 -strict-formats -strict-sequence
-     -error-style short -short-paths -bin-annot -keep-locs -keep-docs -opaque))
+     -short-paths -bin-annot -keep-locs -keep-docs -opaque))
   (env-vars
    (PPX_TRACE_ENABLED 1))
   (inline_tests enabled))
