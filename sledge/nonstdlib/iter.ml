@@ -14,6 +14,9 @@ end
 let pop seq =
   match head seq with Some x -> Some (x, drop 1 seq) | None -> None
 
+let find seq ~f = find (CCOpt.if_ f) seq
+let find_exn seq ~f = CCOpt.get_exn (find ~f seq)
+
 let contains_dup (type elt) seq ~cmp =
   let module S = CCSet.Make (struct
     type t = elt
@@ -50,3 +53,14 @@ let fold_until (type res) seq ~init ~f ~finish =
         | `Stop r -> raise_notrace (Stop r) ) ;
     finish !state
   with Stop r -> r
+
+let fold_result (type s e) seq ~init ~f =
+  let state = ref init in
+  let exception Stop of (s, e) result in
+  try
+    seq (fun x ->
+        match f !state x with
+        | Ok s -> state := s
+        | Error _ as e -> raise_notrace (Stop e) ) ;
+    Ok !state
+  with Stop e -> e

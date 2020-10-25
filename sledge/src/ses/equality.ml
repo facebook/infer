@@ -247,13 +247,13 @@ let rec solve_extract ?f a o l b s =
 (* α₀^…^αᵢ^αⱼ^…^αᵥ = β ==> |α₀^…^αᵥ| = |β| ∧ … ∧ αⱼ = β[n₀+…+nᵢ,nⱼ) ∧ …
    where nₓ ≡ |αₓ| and m = |β| *)
 and solve_concat ?f a0V b m s =
-  IArray.fold_until a0V ~init:(s, Term.zero)
+  Iter.fold_until (IArray.to_iter a0V) ~init:(s, Term.zero)
     ~f:(fun (s, oI) aJ ->
       let nJ = Term.seq_size_exn aJ in
       let oJ = Term.add oI nJ in
       match solve_ ?f aJ (Term.extract ~seq:b ~off:oI ~len:nJ) s with
-      | Some s -> Continue (s, oJ)
-      | None -> Stop None )
+      | Some s -> `Continue (s, oJ)
+      | None -> `Stop None )
     ~finish:(fun (s, n0V) -> solve_ ?f n0V m s)
 
 and solve_ ?f d e s =

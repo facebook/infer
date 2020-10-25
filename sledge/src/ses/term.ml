@@ -670,7 +670,7 @@ let rec simp_extract seq off len =
             ~f:(fun (l, oI) naI ->
               let nI = seq_size_exn naI in
               if Z.equal Z.zero l then
-                Continue ((l, oI), simp_extract naI oI zero)
+                `Continue ((l, oI), simp_extract naI oI zero)
               else
                 let oI_nI = simp_sub oI nI in
                 match oI_nI with
@@ -678,8 +678,8 @@ let rec simp_extract seq off len =
                     let oJ = if Z.sign data <= 0 then zero else oI_nI in
                     let lI = Z.(max zero (min l (neg data))) in
                     let l = Z.(l - lI) in
-                    Continue ((l, oJ), simp_extract naI oI (integer lI))
-                | _ -> Stop (Ap3 (Extract, seq, off, len)) )
+                    `Continue ((l, oJ), simp_extract naI oI (integer lI))
+                | _ -> `Stop (Ap3 (Extract, seq, off, len)) )
             ~finish:(fun (_, e1N) -> simp_concat e1N)
       | _ -> Ap3 (Extract, seq, off, len) )
     (* α[o,l) *)
@@ -720,7 +720,7 @@ and simp_concat xs =
     | _ -> None
   in
   let xs = flatten xs in
-  let xs = IArray.combine_adjacent ~f:simp_adjacent xs in
+  let xs = IArray.reduce_adjacent ~f:simp_adjacent xs in
   (if IArray.length xs = 1 then IArray.get xs 0 else ApN (Concat, xs))
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp]

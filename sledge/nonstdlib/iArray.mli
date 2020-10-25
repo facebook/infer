@@ -14,22 +14,17 @@
     mutate. *)
 
 open! NS0
-include module type of Core_kernel.Perms.Export
 
-include
-  module type of Core_kernel.Array.Permissioned
-    with type ('a, 'p) t := ('a, 'p) Core_kernel.Array.Permissioned.t
-
-type 'a t = ('a, immutable) Core_kernel.Array.Permissioned.t
-[@@deriving compare, equal, hash, sexp]
+type 'a t [@@deriving compare, equal, hash, sexp]
 
 module Import : sig
   type 'a iarray = 'a t [@@deriving compare, equal, hash, sexp]
 end
 
 val pp : (unit, unit) fmt -> 'a pp -> 'a t pp
-val empty : 'a t
-val of_ : 'a -> 'a t
+
+val to_array : 'a t -> 'a array
+(** [to_array v] is the array backing [v], no copy is performed. *)
 
 val of_array : 'a array -> 'a t
 (** [of_array a] is an iarray that shares its representation with array [a],
@@ -38,22 +33,39 @@ val of_array : 'a array -> 'a t
     not be used after conversion, or with care for multi-step initialization
     of an iarray. *)
 
-val contains_dup : compare:('a -> 'a -> int) -> 'a t -> bool
-
-val fold_map :
-  'a t -> init:'accum -> f:('accum -> 'a -> 'accum * 'b) -> 'accum * 'b t
-
-type ('a, 'b) continue_or_stop = Continue of 'a | Stop of 'b
-
-val fold_map_until :
-     'a t
-  -> init:'accum
-  -> f:('accum -> 'a -> ('accum * 'b, 'final) continue_or_stop)
-  -> finish:('accum * 'b t -> 'final)
-  -> 'final
+val empty : 'a t
+val of_ : 'a -> 'a t
+val of_list : 'a list -> 'a t
+val of_list_rev : 'a list -> 'a t
+val init : int -> f:(int -> 'a) -> 'a t
+val sub : 'a t -> pos:int -> len:int -> 'a t
+val concat : 'a t list -> 'a t
+val map : 'a t -> f:('a -> 'b) -> 'b t
 
 val map_endo : 'a t -> f:('a -> 'a) -> 'a t
 (** Like map, but specialized to require [f] to be an endofunction, which
     enables preserving [==] if [f] preserves [==] of every element. *)
 
-val combine_adjacent : f:('a -> 'a -> 'a option) -> 'a t -> 'a t
+val reduce_adjacent : 'a t -> f:('a -> 'a -> 'a option) -> 'a t
+val split : ('a * 'b) t -> 'a t * 'b t
+val is_empty : 'a t -> bool
+val length : 'a t -> int
+val get : 'a t -> int -> 'a
+val to_iter : 'a t -> 'a iter
+val iter : 'a t -> f:('a -> unit) -> unit
+val iteri : 'a t -> f:(int -> 'a -> unit) -> unit
+val exists : 'a t -> f:('a -> bool) -> bool
+val for_all : 'a t -> f:('a -> bool) -> bool
+val for_all2_exn : 'a t -> 'b t -> f:('a -> 'b -> bool) -> bool
+val fold : 'a t -> init:'s -> f:('s -> 'a -> 's) -> 's
+val fold_right : 'a t -> init:'s -> f:('a -> 's -> 's) -> 's
+
+val fold_map :
+  'a t -> init:'accum -> f:('accum -> 'a -> 'accum * 'b) -> 'accum * 'b t
+
+val fold_map_until :
+     'a t
+  -> init:'s
+  -> f:('s -> 'a -> [`Continue of 's * 'b | `Stop of 'c])
+  -> finish:('s * 'b t -> 'c)
+  -> 'c

@@ -10,15 +10,34 @@ include module type of ContainersLabels.Array
 
 type 'a t = 'a array [@@deriving compare, equal, sexp]
 
-val is_empty : 'a t -> bool
+val of_ : 'a -> 'a t
+val of_list_rev : 'a list -> 'a t
 val map : 'a t -> f:('a -> 'b) -> 'b t
 
 val map_endo : 'a t -> f:('a -> 'a) -> 'a t
 (** Like [map], but specialized to require [f] to be an endofunction, which
     enables preserving [==] if [f] preserves [==] of every element. *)
 
+val reduce_adjacent : 'a t -> f:('a -> 'a -> 'a option) -> 'a t
+val split : ('a * 'b) t -> 'a t * 'b t
 val combine : 'a t -> 'b t -> ('a * 'b) t option
 val combine_exn : 'a t -> 'b t -> ('a * 'b) t
+val is_empty : 'a t -> bool
+val iter : 'a t -> f:('a -> unit) -> unit
+val iteri : 'a t -> f:(int -> 'a -> unit) -> unit
+val exists : 'a t -> f:('a -> bool) -> bool
+val for_all : 'a t -> f:('a -> bool) -> bool
+val for_all2_exn : 'a t -> 'b t -> f:('a -> 'b -> bool) -> bool
 val fold : 'a array -> init:'s -> f:('s -> 'a -> 's) -> 's
+val fold_right : 'a t -> init:'s -> f:('a -> 's -> 's) -> 's
+val fold_map : 'a t -> init:'s -> f:('s -> 'a -> 's * 'b) -> 's * 'b t
+
+val fold_map_until :
+     'a t
+  -> init:'s
+  -> f:('s -> 'a -> [`Continue of 's * 'b | `Stop of 'c])
+  -> finish:('s * 'b t -> 'c)
+  -> 'c
+
 val to_list_rev_map : 'a array -> f:('a -> 'b) -> 'b list
 val pp : (unit, unit) fmt -> 'a pp -> 'a array pp

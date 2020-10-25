@@ -482,7 +482,9 @@ module Make (Dom : Domain_intf.Dom) = struct
       -> Work.x =
    fun opts pgm stk state block ->
     [%Trace.info "exec block %%%s" block.lbl] ;
-    match IArray.fold_result ~f:exec_inst ~init:state block.cmnd with
+    match
+      Iter.fold_result ~f:exec_inst ~init:state (IArray.to_iter block.cmnd)
+    with
     | Ok state -> exec_term opts pgm stk state block
     | Error (state, inst) ->
         Report.invalid_access_inst (Dom.report_fmt_thunk state) inst ;

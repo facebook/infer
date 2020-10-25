@@ -129,7 +129,7 @@ let pp_inst fs inst =
   let pf pp = Format.fprintf fs pp in
   match inst with
   | Move {reg_exps; loc} ->
-      let regs, exps = IArray.unzip reg_exps in
+      let regs, exps = IArray.split reg_exps in
       pf "@[<2>@[%a@]@ := @[%a@];@]\t%a" (IArray.pp ",@ " Reg.pp) regs
         (IArray.pp ",@ " Exp.pp) exps Loc.pp loc
   | Load {reg; ptr; len; loc} ->
@@ -501,7 +501,8 @@ module Func = struct
     let resolve_parent_and_jumps block =
       block.parent <- func ;
       let lookup cfg lbl : block =
-        IArray.find_exn cfg ~f:(fun k -> String.equal lbl k.lbl)
+        Iter.find_exn (IArray.to_iter cfg) ~f:(fun k ->
+            String.equal lbl k.lbl )
       in
       let set_dst jmp = jmp.dst <- lookup cfg jmp.dst.lbl in
       match block.term with
@@ -602,7 +603,7 @@ module Program = struct
     let@ () = Invariant.invariant [%here] pgm [%sexp_of: program] in
     assert (
       not
-        (IArray.contains_dup pgm.globals ~compare:(fun g1 g2 ->
+        (Iter.contains_dup (IArray.to_iter pgm.globals) ~cmp:(fun g1 g2 ->
              Reg.compare g1.Global.reg g2.Global.reg )) )
 
   let mk ~globals ~functions =

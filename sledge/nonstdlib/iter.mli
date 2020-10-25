@@ -12,6 +12,8 @@ module Import : sig
 end
 
 val pop : 'a iter -> ('a * 'a iter) option
+val find : 'a t -> f:('a -> bool) -> 'a option
+val find_exn : 'a t -> f:('a -> bool) -> 'a
 val contains_dup : 'a iter -> cmp:('a -> 'a -> int) -> bool
 
 val fold_opt : 'a t -> init:'s -> f:('s -> 'a -> 's option) -> 's option
@@ -25,3 +27,6 @@ val fold_until :
   -> f:('s -> 'a -> [`Continue of 's | `Stop of 'b])
   -> finish:('s -> 'b)
   -> 'b
+
+val fold_result :
+  'a t -> init:'s -> f:('s -> 'a -> ('s, 'e) result) -> ('s, 'e) result
