@@ -161,7 +161,7 @@ end) : S with type key = Key.t = struct
   let fold m ~init ~f = M.fold (fun key data acc -> f ~key ~data acc) m init
   let keys = M.keys
   let values = M.values
-  let to_iter m = Iter.rev (M.to_iter m)
+  let to_iter = M.to_iter
 
   let to_iter2 l r =
     let seq = ref Iter.empty in
