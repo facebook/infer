@@ -69,29 +69,6 @@ module Make (Trm : TERM) = struct
     let mk_Tt () = tt
     let bool b = if b then tt else ff
 
-    let _Eq0 x =
-      (match eval_eq0 x with Some b -> bool b | None -> Eq0 x)
-      |> check invariant
-
-    let _Eq x y =
-      ( if x == zero then _Eq0 y
-      else if y == zero then _Eq0 x
-      else
-        match eval_eq x y with
-        | Some b -> bool b
-        | None -> (
-          match Sign.of_int (compare_trm x y) with
-          | Neg -> Eq (x, y)
-          | Zero -> tt
-          | Pos -> Eq (y, x) ) )
-      |> check invariant
-
-    let _Pos x =
-      (match eval_pos x with Some b -> bool b | None -> Pos x)
-      |> check invariant
-
-    let _Lit p xs = Lit (p, xs) |> check invariant
-
     let rec _Not p =
       ( match p with
       | Not x -> x
@@ -209,5 +186,10 @@ module Make (Trm : TERM) = struct
         (* (c ? p : n) *)
         | _ -> Cond {cnd; pos; neg} ) )
       |> check invariant
+
+    let _Eq x y = Eq (x, y) |> check invariant
+    let _Eq0 x = Eq0 x |> check invariant
+    let _Pos x = Pos x |> check invariant
+    let _Lit p xs = Lit (p, xs) |> check invariant
   end
 end

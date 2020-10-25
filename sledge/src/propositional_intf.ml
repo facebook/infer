@@ -11,11 +11,6 @@ open Ses
 
 module type TERM = sig
   type trm [@@deriving compare, equal, sexp]
-
-  val zero : trm
-  val eval_eq : trm -> trm -> bool option
-  val eval_eq0 : trm -> bool option
-  val eval_pos : trm -> bool option
 end
 
 (** Formulas, built from literals with predicate symbols from various

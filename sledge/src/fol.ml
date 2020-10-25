@@ -250,28 +250,40 @@ let one = _Z Z.one
  * Formulas
  *)
 
-include Propositional.Make (struct
-  include Trm
+module Prop = Propositional.Make (Trm)
 
-  let zero = zero
+module Fml = struct
+  include Prop.Fml
 
-  let eval_eq d e =
-    match (d, e) with
-    | Z y, Z z -> Some (Z.equal y z)
-    | Q q, Q r -> Some (Q.equal q r)
-    | _ -> None
+  let tt = mk_Tt ()
+  let ff = _Not tt
+  let bool b = if b then tt else ff
 
-  let eval_eq0 = function
-    | Z z -> Some (Z.equal Z.zero z)
-    | Q q -> Some (Q.equal Q.zero q)
-    | _ -> None
+  let _Eq0 = function
+    | Z z -> bool (Z.equal Z.zero z)
+    | Q q -> bool (Q.equal Q.zero q)
+    | x -> _Eq0 x
 
-  let eval_pos = function
-    | Z z -> Some (Z.gt z Z.zero)
-    | Q q -> Some (Q.gt q Q.zero)
-    | _ -> None
-end)
+  let _Pos = function
+    | Z z -> bool (Z.gt z Z.zero)
+    | Q q -> bool (Q.gt q Q.zero)
+    | x -> _Pos x
 
+  let _Eq x y =
+    if x == zero then _Eq0 y
+    else if y == zero then _Eq0 x
+    else
+      match (x, y) with
+      | Z y, Z z -> bool (Z.equal y z)
+      | Q q, Q r -> bool (Q.equal q r)
+      | _ -> (
+        match Sign.of_int (compare_trm x y) with
+        | Neg -> _Eq x y
+        | Zero -> tt
+        | Pos -> _Eq y x )
+end
+
+module Fmls = Prop.Fmls
 open Fml
 
 (*
