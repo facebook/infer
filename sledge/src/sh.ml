@@ -68,24 +68,21 @@ let map ~f_sjn ~f_ctx ~f_trm ~f_fml ({us; xs= _; ctx; pure; heap; djns} as q)
     then q
     else {q with ctx; pure; heap; djns}
 
-let fold_terms_seg {loc; bas; len; siz; seq} ~init ~f =
-  let f b s = f s b in
-  f loc (f bas (f len (f siz (f seq init))))
+let fold_terms_seg {loc; bas; len; siz; seq} s ~f =
+  f loc (f bas (f len (f siz (f seq s))))
 
-let fold_vars_seg seg ~init ~f =
-  fold_terms_seg seg ~init ~f:(fun init -> Term.fold_vars ~f ~init)
+let fold_vars_seg seg s ~f = fold_terms_seg ~f:(Term.fold_vars ~f) seg s
 
 let fold_vars_stem ?ignore_ctx ?ignore_pure
-    {us= _; xs= _; ctx; pure; heap; djns= _} ~init ~f =
-  let unless flag f init = if Option.is_some flag then init else f ~init in
-  List.fold ~f:(fun init -> fold_vars_seg ~f ~init) heap ~init
+    {us= _; xs= _; ctx; pure; heap; djns= _} s ~f =
+  let unless flag f s = if Option.is_some flag then s else f s in
+  List.fold ~f:(fold_vars_seg ~f) heap s
   |> unless ignore_pure (Formula.fold_vars ~f pure)
   |> unless ignore_ctx (Context.fold_vars ~f ctx)
 
-let fold_vars ?ignore_ctx ?ignore_pure fold_vars q ~init ~f =
-  fold_vars_stem ?ignore_ctx ?ignore_pure ~init ~f q
-  |> fun init ->
-  List.fold ~init q.djns ~f:(fun init -> List.fold ~init ~f:fold_vars)
+let fold_vars ?ignore_ctx ?ignore_pure fold_vars q s ~f =
+  fold_vars_stem ?ignore_ctx ?ignore_pure ~f q s
+  |> List.fold ~f:(List.fold ~f:fold_vars) q.djns
 
 (** Pretty-printing *)
 
@@ -98,13 +95,13 @@ let rec var_strength_ xs m q =
   in
   let xs = Var.Set.union xs q.xs in
   let m_stem =
-    fold_vars_stem ~ignore_ctx:() q ~init:m ~f:(fun m var ->
+    fold_vars_stem ~ignore_ctx:() q m ~f:(fun var m ->
         if not (Var.Set.mem xs var) then
           Var.Map.add ~key:var ~data:`Universal m
         else add var m )
   in
   let m =
-    List.fold ~init:m_stem q.djns ~f:(fun m djn ->
+    List.fold q.djns m_stem ~f:(fun djn m ->
         let ms = List.map ~f:(fun dj -> snd (var_strength_ xs m dj)) djn in
         List.reduce ms ~f:(fun m1 m2 ->
             Var.Map.union m1 m2 ~f:(fun _ s1 s2 ->
@@ -118,8 +115,8 @@ let rec var_strength_ xs m q =
 
 let var_strength ?(xs = Var.Set.empty) q =
   let m =
-    Var.Set.fold xs ~init:Var.Map.empty ~f:(fun x m ->
-        Var.Map.add ~key:x ~data:`Existential m )
+    Var.Set.fold xs Var.Map.empty ~f:(fun x ->
+        Var.Map.add ~key:x ~data:`Existential )
   in
   var_strength_ xs m q
 
@@ -146,7 +143,7 @@ let pp_block x fs segs =
         match Term.d_int len with
         | Some data -> (
           match
-            List.fold segs ~init:(Some Z.zero) ~f:(fun len seg ->
+            List.fold segs (Some Z.zero) ~f:(fun seg len ->
                 match (len, Term.d_int seg.siz) with
                 | Some len, Some data -> Some (Z.add len data)
                 | _ -> None )
@@ -258,17 +255,15 @@ let pp_djn fs d =
 let pp_raw fs q =
   pp_ ?var_strength:None Var.Set.empty Var.Set.empty Context.empty fs q
 
-let fv_seg seg =
-  fold_vars_seg seg ~f:(Fun.flip Var.Set.add) ~init:Var.Set.empty
+let fv_seg seg = fold_vars_seg ~f:Var.Set.add seg Var.Set.empty
 
 let fv ?ignore_ctx ?ignore_pure q =
-  let rec fv_union init q =
+  let rec fv_union q s =
     Var.Set.diff
-      (fold_vars ?ignore_ctx ?ignore_pure fv_union q ~init
-         ~f:(Fun.flip Var.Set.add))
+      (fold_vars ?ignore_ctx ?ignore_pure fv_union ~f:Var.Set.add q s)
       q.xs
   in
-  fv_union Var.Set.empty q
+  fv_union q Var.Set.empty
 
 let invariant_pure p = assert (not Formula.(equal ff p))
 let invariant_seg _ = ()
@@ -482,7 +477,7 @@ let star q1 q2 =
 let starN = function
   | [] -> emp
   | [q] -> q
-  | q :: qs -> List.fold ~f:star ~init:q qs
+  | q :: qs -> List.fold ~f:star qs q
 
 let or_ q1 q2 =
   [%Trace.call fun {pf} -> pf "(%a)@ (%a)" pp_raw q1 pp_raw q2]
@@ -514,13 +509,13 @@ let or_ q1 q2 =
 let orN = function
   | [] -> false_ Var.Set.empty
   | [q] -> q
-  | q :: qs -> List.fold ~f:or_ ~init:q qs
+  | q :: qs -> List.fold ~f:or_ qs q
 
 let pure (p : Formula.t) =
   [%Trace.call fun {pf} -> pf "%a" Formula.pp p]
   ;
-  Iter.fold (Context.dnf p) ~init:(false_ Var.Set.empty)
-    ~f:(fun q (xs, pure, ctx) ->
+  Iter.fold (Context.dnf p) (false_ Var.Set.empty)
+    ~f:(fun (xs, pure, ctx) q ->
       let us = Formula.fv pure in
       if Context.is_unsat ctx then extend_us us q
       else or_ q (exists_fresh xs {emp with us; ctx; pure}) )
@@ -536,7 +531,7 @@ let and_subst subst q =
   ;
   Context.Subst.fold
     ~f:(fun ~key ~data -> and_ (Formula.eq key data))
-    subst ~init:q
+    subst q
   |>
   [%Trace.retn fun {pf} q ->
     pf "%a" pp q ;
@@ -546,7 +541,7 @@ let subst sub q =
   [%Trace.call fun {pf} -> pf "@[%a@]@ %a" Var.Subst.pp sub pp q]
   ;
   let dom, eqs =
-    Var.Subst.fold sub ~init:(Var.Set.empty, Formula.tt)
+    Var.Subst.fold sub (Var.Set.empty, Formula.tt)
       ~f:(fun var trm (dom, eqs) ->
         ( Var.Set.add var dom
         , Formula.and_ (Formula.eq (Term.var var) (Term.var trm)) eqs ) )
@@ -580,11 +575,9 @@ let rec is_empty q =
 let rec pure_approx q =
   Formula.andN
     ( [q.pure]
-    |> fun init ->
-    List.fold ~init q.heap ~f:(fun p seg -> Formula.dq0 seg.loc :: p)
-    |> fun init ->
-    List.fold ~init q.djns ~f:(fun p djn ->
-        Formula.orN (List.map djn ~f:pure_approx) :: p ) )
+    |> List.fold q.heap ~f:(fun seg p -> Formula.dq0 seg.loc :: p)
+    |> List.fold q.djns ~f:(fun djn p ->
+           Formula.orN (List.map djn ~f:pure_approx) :: p ) )
 
 let pure_approx q =
   [%Trace.call fun {pf} -> pf "%a" pp q]
@@ -608,7 +601,7 @@ let fold_dnf ~conj ~disj sjn (xs, conjuncts) disjuncts =
   and split_case pending_splits (xs, conjuncts) disjuncts =
     match Iter.pop pending_splits with
     | Some (split, pending_splits) ->
-        List.fold split ~init:disjuncts ~f:(fun disjuncts sjn ->
+        List.fold split disjuncts ~f:(fun sjn disjuncts ->
             add_disjunct pending_splits sjn (xs, conjuncts) disjuncts )
     | None -> disj (xs, conjuncts) disjuncts
   in
@@ -658,15 +651,15 @@ let rec freshen_nested_xs q =
   (* trim xs to those that appear in the stem and sink the rest *)
   let fv_stem = fv {q with xs= Var.Set.empty; djns= []} in
   let xs_sink, xs = Var.Set.diff_inter q.xs fv_stem in
-  let xs_below, djns =
-    List.fold_map ~init:Var.Set.empty q.djns ~f:(fun xs_below djn ->
-        List.fold_map ~init:xs_below djn ~f:(fun xs_below dj ->
+  let djns, xs_below =
+    List.fold_map q.djns Var.Set.empty ~f:(fun djn xs_below ->
+        List.fold_map djn xs_below ~f:(fun dj xs_below ->
             (* quantify xs not in stem and freshen disjunct *)
             let dj' =
               freshen_nested_xs (exists (Var.Set.inter xs_sink dj.us) dj)
             in
             let xs_below' = Var.Set.union xs_below dj'.xs in
-            (xs_below', dj') ) )
+            (dj', xs_below') ) )
   in
   (* rename xs to miss all xs in subformulas *)
   freshen_xs {q with xs; djns} ~wrt:(Var.Set.union q.us xs_below)
@@ -688,7 +681,7 @@ let rec propagate_context_ ancestor_vs ancestor_ctx q =
   let ancestor_stem = and_ctx_ ancestor_ctx stem in
   let ancestor_ctx = ancestor_stem.ctx in
   exists xs
-    (List.fold djns ~init:ancestor_stem ~f:(fun q' djn ->
+    (List.fold djns ancestor_stem ~f:(fun djn q' ->
          let dj_ctxs, djn =
            List.rev_map_split djn ~f:(fun dj ->
                let dj = propagate_context_ ancestor_vs ancestor_ctx dj in

@@ -47,9 +47,9 @@ let%test_module _ =
     let g = Term.mul
 
     let of_eqs l =
-      List.fold ~init:(wrt, empty)
-        ~f:(fun (us, r) (a, b) -> add us (Formula.eq a b) r)
-        l
+      List.fold
+        ~f:(fun (a, b) (us, r) -> add us (Formula.eq a b) r)
+        l (wrt, empty)
       |> snd
 
     let add_eq a b r = add wrt (Formula.eq a b) r |> snd

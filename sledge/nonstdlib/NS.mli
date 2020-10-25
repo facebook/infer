@@ -137,6 +137,7 @@ module Either : sig
   val right : 'a -> ('b, 'a) t
 end
 
+module Pair = Containers.Pair
 module List = List
 module Array = Array
 module IArray = IArray

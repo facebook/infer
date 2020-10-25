@@ -15,9 +15,9 @@ let init _ = ()
 let join () () = Some ()
 let is_false _ = false
 let exec_assume () _ = Some ()
-let exec_kill () _ = ()
-let exec_move () _ = ()
-let exec_inst () _ = Some ()
+let exec_kill _ () = ()
+let exec_move _ () = ()
+let exec_inst _ () = Some ()
 let exec_intrinsic ~skip_throw:_ _ _ _ _ : t option option = None
 
 type from_call = unit [@@deriving compare, equal, sexp]

@@ -102,13 +102,13 @@ open Fresh.Import
 let move_spec reg_exps =
   let foot = Sh.emp in
   let ws, rs =
-    IArray.fold reg_exps ~init:(Var.Set.empty, Var.Set.empty)
-      ~f:(fun (ws, rs) (reg, exp) ->
+    IArray.fold reg_exps (Var.Set.empty, Var.Set.empty)
+      ~f:(fun (reg, exp) (ws, rs) ->
         (Var.Set.add reg ws, Var.Set.union rs (Term.fv exp)) )
   in
   let+ sub, ms = Fresh.assign ~ws ~rs in
   let post =
-    IArray.fold reg_exps ~init:Sh.emp ~f:(fun post (reg, exp) ->
+    IArray.fold reg_exps Sh.emp ~f:(fun (reg, exp) post ->
         Sh.and_ (Formula.eq (Term.var reg) (Term.rename sub exp)) post )
   in
   {foot; sub; ms; post}

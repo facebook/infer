@@ -68,8 +68,8 @@ module type S = sig
 
   type product
 
-  val fold_factors : product -> init:'s -> f:(trm -> int -> 's -> 's) -> 's
-  val fold_monomials : t -> init:'s -> f:(product -> Q.t -> 's -> 's) -> 's
+  val fold_factors : product -> 's -> f:(trm -> int -> 's -> 's) -> 's
+  val fold_monomials : t -> 's -> f:(product -> Q.t -> 's -> 's) -> 's
 end
 
 (** Indeterminate terms, treated as atomic / variables except when they can

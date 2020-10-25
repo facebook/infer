@@ -29,15 +29,15 @@ val iteri : 'a t -> f:(int -> 'a -> unit) -> unit
 val exists : 'a t -> f:('a -> bool) -> bool
 val for_all : 'a t -> f:('a -> bool) -> bool
 val for_all2_exn : 'a t -> 'b t -> f:('a -> 'b -> bool) -> bool
-val fold : 'a array -> init:'s -> f:('s -> 'a -> 's) -> 's
-val fold_right : 'a t -> init:'s -> f:('a -> 's -> 's) -> 's
-val fold_map : 'a t -> init:'s -> f:('s -> 'a -> 's * 'b) -> 's * 'b t
+val fold : 'a t -> 's -> f:('a -> 's -> 's) -> 's
+val fold_right : 'a t -> 's -> f:('a -> 's -> 's) -> 's
+val fold_map : 'a t -> 's -> f:('a -> 's -> 'b * 's) -> 'b t * 's
 
 val fold_map_until :
      'a t
-  -> init:'s
-  -> f:('s -> 'a -> [`Continue of 's * 'b | `Stop of 'c])
-  -> finish:('s * 'b t -> 'c)
+  -> 's
+  -> f:('a -> 's -> [`Continue of 'b * 's | `Stop of 'c])
+  -> finish:('b t * 's -> 'c)
   -> 'c
 
 val to_list_rev_map : 'a array -> f:('a -> 'b) -> 'b list

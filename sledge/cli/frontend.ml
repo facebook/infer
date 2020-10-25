@@ -865,10 +865,10 @@ let xlate_jump :
   match xlate_jump_ reg_exps (Llvm.instr_begin dst) with
   | [] -> ([], jmp, blocks)
   | rev_reg_pre_exps ->
-      let rev_pre, rev_reg_exps =
-        List.fold_map rev_reg_pre_exps ~init:[]
-          ~f:(fun rev_pre (reg, (pre, exp)) ->
-            (List.rev_append pre rev_pre, (reg, exp)) )
+      let rev_reg_exps, rev_pre =
+        List.fold_map rev_reg_pre_exps []
+          ~f:(fun (reg, (pre, exp)) rev_pre ->
+            ((reg, exp), List.rev_append pre rev_pre) )
       in
       let mov =
         Inst.move ~reg_exps:(IArray.of_list_rev rev_reg_exps) ~loc

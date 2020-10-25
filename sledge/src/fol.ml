@@ -350,51 +350,46 @@ let pp = ppx (fun _ -> None)
 
 (** fold_vars *)
 
-let fold_pos_neg ~pos ~neg ~init ~f =
-  let f_not p s = f s (_Not p) in
-  Fmls.fold ~init:(Fmls.fold ~init ~f:(Fun.flip f) pos) ~f:f_not neg
+let fold_pos_neg ~pos ~neg s ~f =
+  let f_not p s = f (_Not p) s in
+  Fmls.fold ~f:f_not neg (Fmls.fold ~f pos s)
 
-let rec fold_vars_t e ~init ~f =
+let rec fold_vars_t e s ~f =
   match e with
-  | Z _ | Q _ | Ancestor _ -> init
-  | Var _ as v -> f init (Var.of_ v)
-  | Splat x | Select {rcd= x} -> fold_vars_t ~f x ~init
+  | Z _ | Q _ | Ancestor _ -> s
+  | Var _ as v -> f (Var.of_ v) s
+  | Splat x | Select {rcd= x} -> fold_vars_t ~f x s
   | Sized {seq= x; siz= y} | Update {rcd= x; elt= y} ->
-      fold_vars_t ~f x ~init:(fold_vars_t ~f y ~init)
+      fold_vars_t ~f x (fold_vars_t ~f y s)
   | Extract {seq= x; off= y; len= z} ->
-      fold_vars_t ~f x
-        ~init:(fold_vars_t ~f y ~init:(fold_vars_t ~f z ~init))
+      fold_vars_t ~f x (fold_vars_t ~f y (fold_vars_t ~f z s))
   | Concat xs | Record xs | Apply (_, xs) ->
-      Array.fold ~f:(fun init -> fold_vars_t ~f ~init) xs ~init
-  | Arith a ->
-      Iter.fold
-        ~f:(fun s x -> fold_vars_t ~f x ~init:s)
-        ~init (Arith.iter a)
+      Array.fold ~f:(fold_vars_t ~f) xs s
+  | Arith a -> Iter.fold ~f:(fold_vars_t ~f) (Arith.iter a) s
 
-let rec fold_vars_f ~init p ~f =
+let rec fold_vars_f p s ~f =
   match (p : fml) with
-  | Tt -> init
-  | Eq (x, y) -> fold_vars_t ~f x ~init:(fold_vars_t ~f y ~init)
-  | Eq0 x | Pos x -> fold_vars_t ~f x ~init
-  | Not x -> fold_vars_f ~f x ~init
+  | Tt -> s
+  | Eq (x, y) -> fold_vars_t ~f x (fold_vars_t ~f y s)
+  | Eq0 x | Pos x -> fold_vars_t ~f x s
+  | Not x -> fold_vars_f ~f x s
   | And {pos; neg} | Or {pos; neg} ->
-      fold_pos_neg ~f:(fun init -> fold_vars_f ~f ~init) ~pos ~neg ~init
-  | Iff (x, y) -> fold_vars_f ~f x ~init:(fold_vars_f ~f y ~init)
+      fold_pos_neg ~f:(fold_vars_f ~f) ~pos ~neg s
+  | Iff (x, y) -> fold_vars_f ~f x (fold_vars_f ~f y s)
   | Cond {cnd; pos; neg} ->
-      fold_vars_f ~f cnd
-        ~init:(fold_vars_f ~f pos ~init:(fold_vars_f ~f neg ~init))
-  | Lit (_, xs) -> Array.fold ~f:(fun init -> fold_vars_t ~f ~init) xs ~init
+      fold_vars_f ~f cnd (fold_vars_f ~f pos (fold_vars_f ~f neg s))
+  | Lit (_, xs) -> Array.fold ~f:(fold_vars_t ~f) xs s
 
-let rec fold_vars_c ~init ~f = function
+let rec fold_vars_c c s ~f =
+  match c with
   | `Ite (cnd, thn, els) ->
-      fold_vars_f ~f cnd
-        ~init:(fold_vars_c ~f thn ~init:(fold_vars_c ~f els ~init))
-  | `Trm t -> fold_vars_t ~f t ~init
+      fold_vars_f ~f cnd (fold_vars_c ~f thn (fold_vars_c ~f els s))
+  | `Trm t -> fold_vars_t ~f t s
 
-let fold_vars ~init e ~f =
+let fold_vars e s ~f =
   match e with
-  | `Fml p -> fold_vars_f ~f ~init p
-  | #cnd as c -> fold_vars_c ~f ~init c
+  | `Fml p -> fold_vars_f ~f p s
+  | #cnd as c -> fold_vars_c ~f c s
 
 (** map *)
 
@@ -704,21 +699,21 @@ module Term = struct
 
   let map_vars = map_vars
 
-  let fold_map_vars e ~init ~f =
-    let s = ref init in
+  let fold_map_vars e s0 ~f =
+    let s = ref s0 in
     let f x =
-      let s', x' = f !s x in
+      let x', s' = f x !s in
       s := s' ;
       x'
     in
     let e' = map_vars ~f e in
-    (!s, e')
+    (e', !s)
 
   let rename s e = map_vars ~f:(Var.Subst.apply s) e
 
   (** Query *)
 
-  let fv e = fold_vars e ~f:(Fun.flip Var.Set.add) ~init:Var.Set.empty
+  let fv e = fold_vars ~f:Var.Set.add e Var.Set.empty
 end
 
 (*
@@ -763,9 +758,9 @@ module Formula = struct
   (* connectives *)
 
   let and_ = and_
-  let andN = function [] -> tt | b :: bs -> List.fold ~init:b ~f:and_ bs
+  let andN = function [] -> tt | b :: bs -> List.fold ~f:and_ bs b
   let or_ = or_
-  let orN = function [] -> ff | b :: bs -> List.fold ~init:b ~f:or_ bs
+  let orN = function [] -> ff | b :: bs -> List.fold ~f:or_ bs b
   let iff = _Iff
   let xor p q = _Not (_Iff p q)
   let cond ~cnd ~pos ~neg = _Cond cnd pos neg
@@ -773,7 +768,7 @@ module Formula = struct
 
   (** Query *)
 
-  let fv e = fold_vars_f e ~f:(Fun.flip Var.Set.add) ~init:Var.Set.empty
+  let fv e = fold_vars_f ~f:Var.Set.add e Var.Set.empty
 
   (** Traverse *)
 
@@ -808,15 +803,15 @@ module Formula = struct
     | Cond {cnd; pos; neg} -> map3 (map_terms ~f) b _Cond cnd pos neg
     | Lit (p, xs) -> lift_mapN f b (_Lit p) xs
 
-  let fold_map_vars ~init e ~f =
-    let s = ref init in
+  let fold_map_vars e s0 ~f =
+    let s = ref s0 in
     let f x =
-      let s', x' = f !s x in
+      let x', s' = f x !s in
       s := s' ;
       x'
     in
     let e' = map_vars ~f e in
-    (!s, e')
+    (e', !s)
 
   let rename s e = map_vars ~f:(Var.Subst.apply s) e
 
@@ -828,25 +823,26 @@ module Formula = struct
       -> 'formula
       -> 'disjunction =
    fun ~meet1 ~join1 ~top ~bot fml ->
-    let rec add_conjunct (cjn, splits) fml =
+    let rec add_conjunct fml (cjn, splits) =
       match fml with
       | Tt | Eq _ | Eq0 _ | Pos _ | Iff _ | Lit _ | Not _ ->
           (meet1 fml cjn, splits)
       | And {pos; neg} ->
-          fold_pos_neg ~f:add_conjunct ~init:(cjn, splits) ~pos ~neg
+          fold_pos_neg ~f:add_conjunct ~pos ~neg (cjn, splits)
       | Or {pos; neg} -> (cjn, (pos, neg) :: splits)
       | Cond {cnd; pos; neg} ->
-          add_conjunct (cjn, splits)
+          add_conjunct
             (or_ (and_ cnd pos) (and_ (not_ cnd) neg))
+            (cjn, splits)
     in
-    let rec add_disjunct (cjn, splits) djn fml =
-      let cjn, splits = add_conjunct (cjn, splits) fml in
+    let rec add_disjunct (cjn, splits) fml djn =
+      let cjn, splits = add_conjunct fml (cjn, splits) in
       match splits with
       | (pos, neg) :: splits ->
-          fold_pos_neg ~f:(add_disjunct (cjn, splits)) ~init:djn ~pos ~neg
+          fold_pos_neg ~f:(add_disjunct (cjn, splits)) ~pos ~neg djn
       | [] -> join1 cjn djn
     in
-    add_disjunct (top, []) bot fml
+    add_disjunct (top, []) fml bot
 end
 
 (*
@@ -858,14 +854,14 @@ let v_to_ses : var -> Ses.Var.t =
 
 let vs_to_ses : Var.Set.t -> Ses.Var.Set.t =
  fun vs ->
-  Var.Set.fold vs ~init:Ses.Var.Set.empty ~f:(fun v vs ->
-      Ses.Var.Set.add (v_to_ses v) vs )
+  Var.Set.fold vs Ses.Var.Set.empty ~f:(fun v ->
+      Ses.Var.Set.add (v_to_ses v) )
 
 let rec arith_to_ses poly =
-  Arith.fold_monomials poly ~init:Ses.Term.zero ~f:(fun mono coeff e ->
+  Arith.fold_monomials poly Ses.Term.zero ~f:(fun mono coeff e ->
       Ses.Term.add e
         (Ses.Term.mulq coeff
-           (Arith.fold_factors mono ~init:Ses.Term.one ~f:(fun trm pow f ->
+           (Arith.fold_factors mono Ses.Term.one ~f:(fun trm pow f ->
                 let rec exp b i =
                   assert (i > 0) ;
                   if i = 1 then b else Ses.Term.mul b (exp f (i - 1))
@@ -911,12 +907,12 @@ let rec f_to_ses : fml -> Ses.Term.t = function
   | Not p -> Ses.Term.not_ (f_to_ses p)
   | And {pos; neg} ->
       fold_pos_neg
-        ~f:(fun p f -> Ses.Term.and_ p (f_to_ses f))
-        ~init:Ses.Term.true_ ~pos ~neg
+        ~f:(fun f p -> Ses.Term.and_ p (f_to_ses f))
+        ~pos ~neg Ses.Term.true_
   | Or {pos; neg} ->
       fold_pos_neg
-        ~f:(fun p f -> Ses.Term.or_ p (f_to_ses f))
-        ~init:Ses.Term.false_ ~pos ~neg
+        ~f:(fun f p -> Ses.Term.or_ p (f_to_ses f))
+        ~pos ~neg Ses.Term.false_
   | Iff (p, q) -> Ses.Term.eq (f_to_ses p) (f_to_ses q)
   | Cond {cnd; pos; neg} ->
       Ses.Term.conditional ~cnd:(f_to_ses cnd) ~thn:(f_to_ses pos)
@@ -941,8 +937,7 @@ let v_of_ses : Ses.Var.t -> var =
 
 let vs_of_ses : Ses.Var.Set.t -> Var.Set.t =
  fun vs ->
-  Ses.Var.Set.fold vs ~init:Var.Set.empty ~f:(fun v vs ->
-      Var.Set.add (v_of_ses v) vs )
+  Ses.Var.Set.fold ~f:(fun v -> Var.Set.add (v_of_ses v)) vs Var.Set.empty
 
 let uap1 f = ap1t (fun x -> _Apply f [|x|])
 let uap2 f = ap2t (fun x y -> _Apply f [|x; y|])
@@ -960,7 +955,7 @@ and ap2_f mk_f mk_t a b = ap2 mk_f (fun x y -> `Fml (mk_t x y)) a b
 
 and apN mk_f mk_t mk_unit es =
   match
-    Ses.Term.Set.fold ~init:(None, None) es ~f:(fun e (fs, ts) ->
+    Ses.Term.Set.fold es (None, None) ~f:(fun e (fs, ts) ->
         match of_ses e with
         | `Fml f ->
             (Some (match fs with None -> f | Some g -> mk_f f g), ts)
@@ -1001,8 +996,7 @@ and of_ses : Ses.Term.t -> exp =
             | `Trm (Q r) -> rational (Q.mul q r)
             | t -> mulq q t
         in
-        Ses.Term.Qset.fold sum ~init:(mul e q) ~f:(fun e q s ->
-            add (mul e q) s ) )
+        Ses.Term.Qset.fold ~f:(fun e q -> add (mul e q)) sum (mul e q) )
   | Mul prod -> (
     match Ses.Term.Qset.pop_min_elt prod with
     | None -> one
@@ -1018,8 +1012,7 @@ and of_ses : Ses.Term.t -> exp =
           else if sn > 0 then expn (of_ses e) n
           else div one (expn (of_ses e) (Z.neg n))
         in
-        Ses.Term.Qset.fold prod ~init:(exp e q) ~f:(fun e q s ->
-            mul (exp e q) s ) )
+        Ses.Term.Qset.fold ~f:(fun e q -> mul (exp e q)) prod (exp e q) )
   | Ap2 (Div, d, e) -> div (of_ses d) (of_ses e)
   | Ap2 (Rem, d, e) -> uap_ttt Rem d e
   | And es -> apN and_ (uap2 BitAnd) tt es
@@ -1073,10 +1066,10 @@ module Context = struct
 
   (* Query *)
 
-  let fold_vars ~init x ~f =
-    Ses.Equality.fold_vars x ~init ~f:(fun s v -> f s (v_of_ses v))
+  let fold_vars x s ~f =
+    Ses.Equality.fold_vars ~f:(fun v -> f (v_of_ses v)) x s
 
-  let fv e = fold_vars e ~f:(Fun.flip Var.Set.add) ~init:Var.Set.empty
+  let fv e = fold_vars ~f:Var.Set.add e Var.Set.empty
   let is_empty x = Ses.Equality.is_true x
   let is_unsat x = Ses.Equality.is_false x
   let implies x b = Ses.Equality.implies x (f_to_ses b)
@@ -1091,7 +1084,7 @@ module Context = struct
   let class_of x e = List.map ~f:of_ses (Ses.Equality.class_of x (to_ses e))
 
   let classes x =
-    Ses.Term.Map.fold (Ses.Equality.classes x) ~init:Term.Map.empty
+    Ses.Term.Map.fold (Ses.Equality.classes x) Term.Map.empty
       ~f:(fun ~key:rep ~data:cls clss ->
         let rep' = of_ses rep in
         let cls' = List.map ~f:of_ses cls in
@@ -1178,8 +1171,8 @@ module Context = struct
     let pp = Ses.Equality.Subst.pp
     let is_empty = Ses.Equality.Subst.is_empty
 
-    let fold s ~init ~f =
-      Ses.Equality.Subst.fold s ~init ~f:(fun ~key ~data ->
+    let fold s z ~f =
+      Ses.Equality.Subst.fold s z ~f:(fun ~key ~data ->
           f ~key:(of_ses key) ~data:(of_ses data) )
 
     let subst s = ses_map (Ses.Equality.Subst.subst s)

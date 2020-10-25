@@ -93,13 +93,11 @@ end = struct
       let us = Option.value us ~default:Var.Set.empty in
       let us =
         Option.fold
-          ~f:(fun us sub -> Var.Set.union (Var.Set.diff sub.Sh.us xs) us)
-          sub ~init:us
+          ~f:(fun sub -> Var.Set.union (Var.Set.diff sub.Sh.us xs))
+          sub us
       in
       let union_us q_opt us' =
-        Option.fold
-          ~f:(fun us' q -> Var.Set.union q.Sh.us us')
-          q_opt ~init:us'
+        Option.fold ~f:(fun q -> Var.Set.union q.Sh.us) q_opt us'
       in
       union_us com (union_us min us)
     in
@@ -655,8 +653,8 @@ let excise_dnf : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
   let dnf_subtrahend = Sh.dnf subtrahend in
   Iter.fold_opt
     (Iter.of_list dnf_minuend)
-    ~init:(Sh.false_ (Var.Set.union minuend.us xs))
-    ~f:(fun remainders minuend ->
+    (Sh.false_ (Var.Set.union minuend.us xs))
+    ~f:(fun minuend remainders ->
       [%trace]
         ~call:(fun {pf} -> pf "@[<2>minuend@ %a@]" Sh.pp minuend)
         ~retn:(fun {pf} -> pf "%a" (Option.pp "%a" Sh.pp))

@@ -52,7 +52,7 @@ let%test_module _ =
            (Array.map ~f:(fun (siz, seq) -> Term.sized ~siz ~seq) ms))
 
     let of_eqs l =
-      List.fold ~init:emp ~f:(fun q (a, b) -> and_ (Formula.eq a b) q) l
+      List.fold ~f:(fun (a, b) q -> and_ (Formula.eq a b) q) l emp
 
     let%expect_test _ =
       pp
@@ -143,8 +143,8 @@ let%test_module _ =
         ( (  0 = _ ∧ emp)
         ∨ (  ( (  1 = _ = %y_7 ∧ emp) ∨ (  2 = _ ∧ emp) ))
         )
-    
-        ( (  1 = %y_7 ∧ emp) ∨ (  emp) ∨ (  emp) ) |}]
+
+        ( (  emp) ∨ (  1 = %y_7 ∧ emp) ∨ (  emp) ) |}]
 
     let%expect_test _ =
       let q = exists ~$[x_] (of_eqs [(f x, x); (f y, y - !1)]) in

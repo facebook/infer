@@ -30,7 +30,7 @@ module Make (Dom : Domain_intf.Dom) = struct
 
     val pop_throw :
          t
-      -> init:'a
+      -> 'a
       -> unwind:
            (   Llair.Reg.t list
             -> Llair.Reg.Set.t
@@ -130,7 +130,7 @@ module Make (Dom : Domain_intf.Dom) = struct
       | Return {from_call; dst; stk} -> Some (from_call, dst, stk)
       | Empty -> None
 
-    let pop_throw stk ~init ~unwind =
+    let pop_throw stk state ~unwind =
       let rec pop_throw_ state = function
         | Return {formals; locals; from_call; stk} ->
             pop_throw_ (unwind formals locals from_call state) stk
@@ -139,7 +139,7 @@ module Make (Dom : Domain_intf.Dom) = struct
         | Empty -> None
         | Throw _ as stk -> violates invariant stk
       in
-      pop_throw_ init stk
+      pop_throw_ state stk
   end
 
   module Work : sig
@@ -240,7 +240,7 @@ module Make (Dom : Domain_intf.Dom) = struct
         | Some (q :: qs, ws) ->
             let join (qa, da) (q, d) = (Dom.join q qa, Depths.join d da) in
             let skipped, (qs, depths) =
-              List.fold qs ~init:([], q) ~f:(fun (skipped, joined) curr ->
+              List.fold qs ([], q) ~f:(fun curr (skipped, joined) ->
                   match join curr joined with
                   | Some joined, depths -> (skipped, (joined, depths))
                   | None, _ -> (curr :: skipped, joined) )
@@ -275,7 +275,7 @@ module Make (Dom : Domain_intf.Dom) = struct
     let domain_call =
       Dom.call ~globals ~actuals ~areturn ~formals ~freturn ~locals
     in
-    List.fold ~init:Work.skip dnf_states ~f:(fun acc state ->
+    List.fold dnf_states Work.skip ~f:(fun state acc ->
         match
           if not opts.function_summaries then None
           else
@@ -337,7 +337,7 @@ module Make (Dom : Domain_intf.Dom) = struct
     let exit_state =
       match (freturn, exp) with
       | Some freturn, Some return_val ->
-          Dom.exec_move pre_state (IArray.of_ (freturn, return_val))
+          Dom.exec_move (IArray.of_ (freturn, return_val)) pre_state
       | None, None -> pre_state
       | _ -> violates Llair.Func.invariant block.parent
     in
@@ -365,11 +365,11 @@ module Make (Dom : Domain_intf.Dom) = struct
       Dom.retn formals (Some func.fthrow) from_call
         (Dom.post scope from_call state)
     in
-    ( match Stack.pop_throw stk ~unwind ~init:pre_state with
+    ( match Stack.pop_throw stk ~unwind pre_state with
     | Some (from_call, retn_site, stk, unwind_state) ->
         let fthrow = func.fthrow in
         let exit_state =
-          Dom.exec_move unwind_state (IArray.of_ (fthrow, exc))
+          Dom.exec_move (IArray.of_ (fthrow, exc)) unwind_state
         in
         let post_state = Dom.post func.locals from_call exit_state in
         let retn_state =
@@ -389,7 +389,7 @@ module Make (Dom : Domain_intf.Dom) = struct
       -> Work.x =
    fun stk state block areturn return ->
     Report.unknown_call block.term ;
-    let state = Option.fold ~f:Dom.exec_kill ~init:state areturn in
+    let state = Option.fold ~f:Dom.exec_kill areturn state in
     exec_jump stk state block return
 
   let exec_term :
@@ -405,22 +405,21 @@ module Make (Dom : Domain_intf.Dom) = struct
     Report.step () ;
     match block.term with
     | Switch {key; tbl; els} ->
-        IArray.fold tbl
-          ~f:(fun x (case, jump) ->
+        IArray.fold
+          ~f:(fun (case, jump) x ->
             match Dom.exec_assume state (Llair.Exp.eq key case) with
             | Some state -> exec_jump stk state block jump |> Work.seq x
             | None -> x )
-          ~init:
-            ( match
-                Dom.exec_assume state
-                  (IArray.fold tbl ~init:Llair.Exp.true_
-                     ~f:(fun b (case, _) ->
-                       Llair.Exp.and_ (Llair.Exp.dq key case) b ))
-              with
-            | Some state -> exec_jump stk state block els
-            | None -> Work.skip )
+          tbl
+          ( match
+              Dom.exec_assume state
+                (IArray.fold tbl Llair.Exp.true_ ~f:(fun (case, _) b ->
+                     Llair.Exp.and_ (Llair.Exp.dq key case) b ))
+            with
+          | Some state -> exec_jump stk state block els
+          | None -> Work.skip )
     | Iswitch {ptr; tbl} ->
-        IArray.fold tbl ~init:Work.skip ~f:(fun x (jump : Llair.jump) ->
+        IArray.fold tbl Work.skip ~f:(fun (jump : Llair.jump) x ->
             match
               Dom.exec_assume state
                 (Llair.Exp.eq ptr
@@ -438,10 +437,10 @@ module Make (Dom : Domain_intf.Dom) = struct
         match callees with
         | [] -> exec_skip_func stk state block areturn return
         | callees ->
-            List.fold callees ~init:Work.skip ~f:(fun x callee ->
+            List.fold callees Work.skip ~f:(fun callee x ->
                 ( match
-                    Dom.exec_intrinsic ~skip_throw:opts.skip_throw state
-                      areturn callee.name.reg actuals
+                    Dom.exec_intrinsic ~skip_throw:opts.skip_throw areturn
+                      callee.name.reg actuals state
                   with
                 | Some None ->
                     Report.invalid_access_term
@@ -463,13 +462,13 @@ module Make (Dom : Domain_intf.Dom) = struct
         else exec_throw stk state block exc
     | Unreachable -> Work.skip
 
-  let exec_inst : Dom.t -> Llair.inst -> (Dom.t, Dom.t * Llair.inst) result
+  let exec_inst : Llair.inst -> Dom.t -> (Dom.t, Dom.t * Llair.inst) result
       =
-   fun state inst ->
+   fun inst state ->
     [%Trace.info
       "@[<2>exec inst@\n@[%a@]@\n%a@]" Dom.pp state Llair.Inst.pp inst] ;
     Report.step () ;
-    Dom.exec_inst state inst
+    Dom.exec_inst inst state
     |> function
     | Some state -> Result.Ok state | None -> Result.Error (state, inst)
 
@@ -483,7 +482,7 @@ module Make (Dom : Domain_intf.Dom) = struct
    fun opts pgm stk state block ->
     [%Trace.info "exec block %%%s" block.lbl] ;
     match
-      Iter.fold_result ~f:exec_inst ~init:state (IArray.to_iter block.cmnd)
+      Iter.fold_result ~f:exec_inst (IArray.to_iter block.cmnd) state
     with
     | Ok state -> exec_term opts pgm stk state block
     | Error (state, inst) ->
@@ -517,7 +516,6 @@ module Make (Dom : Domain_intf.Dom) = struct
   let compute_summaries opts pgm : Dom.summary list Llair.Reg.Map.t =
     assert opts.function_summaries ;
     exec_pgm opts pgm ;
-    RegTbl.fold summary_table ~init:Llair.Reg.Map.empty
-      ~f:(fun ~key ~data map ->
+    RegTbl.fold summary_table Llair.Reg.Map.empty ~f:(fun ~key ~data map ->
         match data with [] -> map | _ -> Llair.Reg.Map.add ~key ~data map )
 end

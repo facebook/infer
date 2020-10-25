@@ -17,9 +17,7 @@ let reg r =
   Var.program ~name ~global
 
 let regs rs =
-  Llair.Reg.Set.fold
-    ~f:(fun r -> Var.Set.add (reg r))
-    rs ~init:Var.Set.empty
+  Llair.Reg.Set.fold ~f:(fun r -> Var.Set.add (reg r)) rs Var.Set.empty
 
 let uap0 f = T.apply f [||]
 let uap1 f a = T.apply f [|a|]

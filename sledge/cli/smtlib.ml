@@ -45,9 +45,9 @@ let assert_term term =
   let top = top () in
   top.asserts <- term :: top.asserts
 
-let rec x_let init nes =
-  List.fold nes ~init ~f:(fun n (name, term) ->
-      VarEnv.add_exn ~key:name ~data:(x_trm init term) n )
+let rec x_let env nes =
+  List.fold nes env ~f:(fun (name, term) ->
+      VarEnv.add_exn ~key:name ~data:(x_trm env term) )
 
 and x_trm : var_env -> Smt.Ast.term -> Term.t =
  fun n term ->
@@ -60,13 +60,13 @@ and x_trm : var_env -> Smt.Ast.term -> Term.t =
         try Term.rational (Q.of_float (Float.of_string_exn s))
         with _ -> fail "not a rational: %a" Smt.Ast.pp_term term () ) ) )
   | Arith (Add, e :: es) ->
-      List.fold ~f:(fun s e -> Term.add s (x_trm n e)) ~init:(x_trm n e) es
+      List.fold ~f:(fun e -> Term.add (x_trm n e)) es (x_trm n e)
   | Arith (Minus, e :: es) ->
-      List.fold ~f:(fun s e -> Term.sub s (x_trm n e)) ~init:(x_trm n e) es
+      List.fold ~f:(fun e -> Term.sub (x_trm n e)) es (x_trm n e)
   | Arith (Mult, es) -> (
     match List.map ~f:(x_trm n) es with
     | e :: es ->
-        List.fold es ~init:e ~f:(fun p e ->
+        List.fold es e ~f:(fun e p ->
             match Term.get_const e with
             | Some q -> Term.mulq q p
             | None -> (
@@ -77,7 +77,7 @@ and x_trm : var_env -> Smt.Ast.term -> Term.t =
   | Arith (Div, es) -> (
     match List.map ~f:(x_trm n) es with
     | e :: es ->
-        List.fold es ~init:e ~f:(fun p e ->
+        List.fold es e ~f:(fun e p ->
             match Term.get_const e with
             | Some q -> Term.mulq (Q.inv q) p
             | None -> fail "nonlinear: %a" Smt.Ast.pp_term term () )

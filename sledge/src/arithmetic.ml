@@ -242,10 +242,10 @@ module Representation (Trm : INDETERMINATE) = struct
     let map poly ~f =
       let p, p' = (poly, Sum.empty) in
       let p, p' =
-        Sum.fold poly ~init:(p, p') ~f:(fun mono coeff (p, p') ->
+        Sum.fold poly (p, p') ~f:(fun mono coeff (p, p') ->
             let m, cm' = (mono, CM.one) in
             let m, cm' =
-              Prod.fold mono ~init:(m, cm') ~f:(fun trm power (m, cm') ->
+              Prod.fold mono (m, cm') ~f:(fun trm power (m, cm') ->
                   let trm' = f trm in
                   if trm == trm' then (m, cm')
                   else

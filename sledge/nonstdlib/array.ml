@@ -74,29 +74,31 @@ let iter xs ~f = iter ~f xs
 let iteri xs ~f = iteri ~f xs
 let exists xs ~f = exists ~f xs
 let for_all xs ~f = for_all ~f xs
-let fold xs ~init ~f = fold ~f ~init xs
-let fold_right xs ~init ~f = fold_right ~f ~init xs
-let fold_map xs ~init ~f = fold_map ~f ~init xs
+let fold xs init ~f = fold ~f:(fun s x -> f x s) ~init xs
+let fold_right xs init ~f = fold_right ~f ~init xs
 
-let fold_map_until xs ~init ~f ~finish =
+let fold_map xs init ~f =
+  Pair.swap (fold_map ~f:(fun s x -> Pair.swap (f x s)) ~init xs)
+
+let fold_map_until xs s ~f ~finish =
   let l = length xs in
-  if l = 0 then finish (init, [||])
+  if l = 0 then finish ([||], s)
   else
-    match f init xs.(0) with
+    match f xs.(0) s with
     | `Stop r -> r
-    | `Continue (s, y) ->
+    | `Continue (y, s) ->
         let ys = make l y in
         let rec fold_map_until_ s i =
-          if i = l then finish (s, ys)
+          if i = l then finish (ys, s)
           else
-            match f s xs.(i) with
+            match f xs.(i) s with
             | `Stop r -> r
-            | `Continue (s, y) ->
+            | `Continue (y, s) ->
                 ys.(i) <- y ;
                 fold_map_until_ s (i + 1)
         in
         fold_map_until_ s 1
 
 let for_all2_exn xs ys ~f = for_all2 ~f xs ys
-let to_list_rev_map xs ~f = fold ~f:(fun ys x -> f x :: ys) ~init:[] xs
+let to_list_rev_map xs ~f = fold ~f:(fun x ys -> f x :: ys) xs []
 let pp sep pp_elt fs a = List.pp sep pp_elt fs (to_list a)

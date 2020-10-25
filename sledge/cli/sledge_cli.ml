@@ -95,8 +95,8 @@ let used_globals pgm preanalyze : Domain_used_globals.r =
       (Llair.Reg.Map.map summary_table ~f:Llair.Reg.Set.union_list)
   else
     Declared
-      (IArray.fold pgm.globals ~init:Llair.Reg.Set.empty ~f:(fun acc g ->
-           Llair.Reg.Set.add g.reg acc ))
+      (IArray.fold pgm.globals Llair.Reg.Set.empty ~f:(fun g ->
+           Llair.Reg.Set.add g.reg ))
 
 let analyze =
   let%map_open bound =

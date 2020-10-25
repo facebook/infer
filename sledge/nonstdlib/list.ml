@@ -51,12 +51,19 @@ let group_by seq ~hash ~eq = group_by ~hash ~eq seq
 let join_by ~eq ~hash k1 k2 ~merge = join_by ~eq ~hash k1 k2 ~merge
 let join_all_by ~eq ~hash k1 k2 ~merge = join_all_by ~eq ~hash k1 k2 ~merge
 let group_join_by ~eq ~hash = group_join_by ~eq ~hash
-let fold xs ~init ~f = fold_left ~f ~init xs
+let fold xs init ~f = fold_left ~f:(fun s x -> f x s) ~init xs
+let fold_left xs init ~f = fold_left ~f ~init xs
+let fold_right xs init ~f = fold_right ~f ~init xs
 
 let reduce xs ~f =
-  match xs with [] -> None | x :: xs -> Some (fold xs ~init:x ~f)
+  match xs with [] -> None | x :: xs -> Some (fold ~f xs x)
 
-let fold2_exn xs ys ~init ~f = fold_left2 ~f ~init xs ys
+let fold_map xs init ~f =
+  Pair.swap (fold_map ~f:(fun s x -> Pair.swap (f x s)) ~init xs)
+
+let fold2_exn xs ys init ~f =
+  fold_left2 ~f:(fun s x y -> f x y s) ~init xs ys
+
 let group_succ ~eq xs = group_succ ~eq:(fun y x -> eq x y) xs
 
 let symmetric_diff ~cmp xs ys =

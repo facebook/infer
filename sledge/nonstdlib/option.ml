@@ -20,4 +20,4 @@ let bind xo ~f = bind xo f
 let iter xo ~f = iter f xo
 let exists xo ~f = exists f xo
 let for_all xo ~f = for_all f xo
-let fold xo ~init ~f = fold f init xo
+let fold xo s ~f = fold (fun x s -> f s x) s xo

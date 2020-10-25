@@ -66,7 +66,7 @@ module Make (T : REPR) = struct
     let invariant s =
       let@ () = Invariant.invariant [%here] s [%sexp_of: t] in
       let domain, range =
-        Map.fold s ~init:(Set.empty, Set.empty)
+        Map.fold s (Set.empty, Set.empty)
           ~f:(fun ~key ~data (domain, range) ->
             (* substs are injective *)
             assert (not (Set.mem range data)) ;
@@ -84,8 +84,7 @@ module Make (T : REPR) = struct
       else
         let wrt = Set.union wrt vs in
         let sub, rng, wrt =
-          Set.fold dom ~init:(empty, Set.empty, wrt)
-            ~f:(fun x (sub, rng, wrt) ->
+          Set.fold dom (empty, Set.empty, wrt) ~f:(fun x (sub, rng, wrt) ->
               let x', wrt = fresh (name x) ~wrt in
               let sub = Map.add_exn ~key:x ~data:x' sub in
               let rng = Set.add x' rng in
@@ -94,24 +93,21 @@ module Make (T : REPR) = struct
         ({sub; dom; rng}, wrt) )
       |> check (fun ({sub; _}, _) -> invariant sub)
 
-    let fold sub ~init ~f =
-      Map.fold sub ~init ~f:(fun ~key ~data s -> f key data s)
+    let fold sub z ~f = Map.fold ~f:(fun ~key ~data -> f key data) sub z
 
     let domain sub =
-      Map.fold sub ~init:Set.empty ~f:(fun ~key ~data:_ domain ->
-          Set.add key domain )
+      Map.fold ~f:(fun ~key ~data:_ -> Set.add key) sub Set.empty
 
     let range sub =
-      Map.fold sub ~init:Set.empty ~f:(fun ~key:_ ~data range ->
-          Set.add data range )
+      Map.fold ~f:(fun ~key:_ ~data -> Set.add data) sub Set.empty
 
     let invert sub =
-      Map.fold sub ~init:empty ~f:(fun ~key ~data sub' ->
+      Map.fold sub empty ~f:(fun ~key ~data sub' ->
           Map.add_exn ~key:data ~data:key sub' )
       |> check invariant
 
     let restrict sub vs =
-      Map.fold sub ~init:{sub; dom= Set.empty; rng= Set.empty}
+      Map.fold sub {sub; dom= Set.empty; rng= Set.empty}
         ~f:(fun ~key ~data z ->
           if Set.mem vs key then
             {z with dom= Set.add key z.dom; rng= Set.add data z.rng}

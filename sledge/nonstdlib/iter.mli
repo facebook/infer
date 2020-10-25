@@ -66,18 +66,19 @@ val find : 'a t -> f:('a -> bool) -> 'a option
 val find_exn : 'a t -> f:('a -> bool) -> 'a
 val find_map : 'a iter -> f:('a -> 'b option) -> 'b option
 val contains_dup : 'a iter -> cmp:('a -> 'a -> int) -> bool
+val fold : 'a t -> 's -> f:('a -> 's -> 's) -> 's
 
-val fold_opt : 'a t -> init:'s -> f:('s -> 'a -> 's option) -> 's option
-(** [fold_option t ~init ~f] is a short-circuiting version of [fold] that
-    runs in the [Option] monad. If [f] returns [None], [None] is returned
-    without any additional invocations of [f]. *)
+val fold_opt : 'a t -> 's -> f:('a -> 's -> 's option) -> 's option
+(** [fold_opt t s ~f] is a short-circuiting version of [fold] that runs in
+    the [Option] monad. If [f] returns [None], [None] is returned without
+    any additional invocations of [f]. *)
 
 val fold_until :
      'a t
-  -> init:'s
-  -> f:('s -> 'a -> [`Continue of 's | `Stop of 'b])
+  -> 's
+  -> f:('a -> 's -> [`Continue of 's | `Stop of 'b])
   -> finish:('s -> 'b)
   -> 'b
 
 val fold_result :
-  'a t -> init:'s -> f:('s -> 'a -> ('s, 'e) result) -> ('s, 'e) result
+  'a t -> 's -> f:('a -> 's -> ('s, 'e) result) -> ('s, 'e) result

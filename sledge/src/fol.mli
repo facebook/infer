@@ -76,15 +76,12 @@ module rec Term : sig
 
   (** Traverse *)
 
-  val fold_vars : init:'a -> t -> f:('a -> Var.t -> 'a) -> 'a
+  val fold_vars : t -> 's -> f:(Var.t -> 's -> 's) -> 's
 
   (** Transform *)
 
   val map_vars : f:(Var.t -> Var.t) -> t -> t
-
-  val fold_map_vars :
-    t -> init:'a -> f:('a -> Var.t -> 'a * Var.t) -> 'a * t
-
+  val fold_map_vars : t -> 's -> f:(Var.t -> 's -> Var.t * 's) -> t * 's
   val rename : Var.Subst.t -> t -> t
 end
 
@@ -137,16 +134,13 @@ and Formula : sig
 
   (** Traverse *)
 
-  val fold_vars : init:'a -> t -> f:('a -> Var.t -> 'a) -> 'a
+  val fold_vars : t -> 's -> f:(Var.t -> 's -> 's) -> 's
 
   (** Transform *)
 
   val map_terms : f:(Term.t -> Term.t) -> t -> t
   val map_vars : f:(Var.t -> Var.t) -> t -> t
-
-  val fold_map_vars :
-    init:'a -> t -> f:('a -> Var.t -> 'a * Var.t) -> 'a * t
-
+  val fold_map_vars : t -> 's -> f:(Var.t -> 's -> Var.t * 's) -> t * 's
   val rename : Var.Subst.t -> t -> t
 end
 
@@ -209,7 +203,7 @@ module Context : sig
   (** Equivalence class of [e]: all the terms [f] in the context such that
       [e = f] is implied by the assumptions. *)
 
-  val fold_vars : init:'a -> t -> f:('a -> Var.t -> 'a) -> 'a
+  val fold_vars : t -> 's -> f:(Var.t -> 's -> 's) -> 's
   (** Enumerate the variables occurring in the terms of the context. *)
 
   val fv : t -> Var.Set.t
@@ -221,9 +215,7 @@ module Context : sig
 
     val pp : t pp
     val is_empty : t -> bool
-
-    val fold :
-      t -> init:'a -> f:(key:Term.t -> data:Term.t -> 'a -> 'a) -> 'a
+    val fold : t -> 's -> f:(key:Term.t -> data:Term.t -> 's -> 's) -> 's
 
     val subst : t -> Term.t -> Term.t
     (** Apply a substitution recursively to subterms. *)

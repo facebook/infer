@@ -64,7 +64,7 @@ module type VAR = sig
     val is_empty : t -> bool
     val domain : t -> Set.t
     val range : t -> Set.t
-    val fold : t -> init:'a -> f:(var -> var -> 'a -> 'a) -> 'a
+    val fold : t -> 's -> f:(var -> var -> 's -> 's) -> 's
     val apply : t -> var -> var
   end
 end

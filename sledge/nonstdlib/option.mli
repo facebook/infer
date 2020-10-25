@@ -17,4 +17,4 @@ val bind : 'a t -> f:('a -> 'b t) -> 'b t
 val iter : 'a t -> f:('a -> unit) -> unit
 val exists : 'a t -> f:('a -> bool) -> bool
 val for_all : 'a t -> f:('a -> bool) -> bool
-val fold : 'a t -> init:'s -> f:('s -> 'a -> 's) -> 's
+val fold : 'a t -> 's -> f:('a -> 's -> 's) -> 's

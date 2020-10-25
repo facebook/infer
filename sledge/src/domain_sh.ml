@@ -20,13 +20,14 @@ let simplify_states = ref true
 let simplify q = if !simplify_states then Sh.simplify q else q
 
 let init globals =
-  IArray.fold globals ~init:Sh.emp ~f:(fun q -> function
-    | {Llair.Global.reg; init= Some (seq, siz)} ->
-        let loc = Term.var (X.reg reg) in
-        let len = Term.integer (Z.of_int siz) in
-        let seq = X.term seq in
-        Sh.star q (Sh.seg {loc; bas= loc; len; siz= len; seq})
-    | _ -> q )
+  IArray.fold globals Sh.emp ~f:(fun global q ->
+      match global with
+      | {Llair.Global.reg; init= Some (seq, siz)} ->
+          let loc = Term.var (X.reg reg) in
+          let len = Term.integer (Z.of_int siz) in
+          let seq = X.term seq in
+          Sh.star q (Sh.seg {loc; bas= loc; len; siz= len; seq})
+      | _ -> q )
 
 let join p q =
   [%Trace.call fun {pf} -> pf "%a@ %a" pp p pp q]
@@ -38,13 +39,13 @@ let join p q =
 let is_false = Sh.is_false
 let dnf = Sh.dnf
 let exec_assume q b = Exec.assume q (X.formula b) |> Option.map ~f:simplify
-let exec_kill q r = Exec.kill q (X.reg r) |> simplify
+let exec_kill r q = Exec.kill q (X.reg r) |> simplify
 
-let exec_move q res =
+let exec_move res q =
   Exec.move q (IArray.map res ~f:(fun (r, e) -> (X.reg r, X.term e)))
   |> simplify
 
-let exec_inst pre inst =
+let exec_inst inst pre =
   ( match (inst : Llair.inst) with
   | Move {reg_exps; _} ->
       Some
@@ -67,7 +68,7 @@ let exec_inst pre inst =
   | Abort _ -> Exec.abort pre )
   |> Option.map ~f:simplify
 
-let exec_intrinsic ~skip_throw q r i es =
+let exec_intrinsic ~skip_throw r i es q =
   Exec.intrinsic ~skip_throw q (Option.map ~f:X.reg r) (X.reg i)
     (List.map ~f:X.term es)
   |> Option.map ~f:(Option.map ~f:simplify)
@@ -94,10 +95,10 @@ let garbage_collect (q : t) ~wrt =
     if Var.Set.equal previous current then current
     else
       let new_set =
-        List.fold ~init:current q.heap ~f:(fun current seg ->
+        List.fold q.heap current ~f:(fun seg current ->
             if term_eq_class_has_only_vars_in current q.ctx seg.loc then
-              List.fold (Context.class_of q.ctx seg.seq) ~init:current
-                ~f:(fun c e -> Var.Set.union c (Term.fv e))
+              List.fold (Context.class_of q.ctx seg.seq) current
+                ~f:(fun e c -> Var.Set.union c (Term.fv e))
             else current )
       in
       all_reachable_vars current new_set q
@@ -109,11 +110,11 @@ let garbage_collect (q : t) ~wrt =
   [%Trace.retn fun {pf} -> pf "%a" pp]
 
 let and_eqs sub formals actuals q =
-  let and_eq q formal actual =
+  let and_eq formal actual q =
     let actual' = Term.rename sub actual in
     Sh.and_ (Formula.eq (Term.var formal) actual') q
   in
-  List.fold2_exn ~f:and_eq formals actuals ~init:q
+  List.fold2_exn ~f:and_eq formals actuals q
 
 let localize_entry globals actuals formals freturn locals shadow pre entry =
   (* Add the formals here to do garbage collection and then get rid of them *)
@@ -257,7 +258,7 @@ let create_summary ~locals ~formals ~entry ~current:(post : Sh.t) =
   let foot = Sh.exists locals entry in
   let foot, subst = Sh.freshen ~wrt:(Var.Set.union foot.us post.us) foot in
   let restore_formals q =
-    Var.Set.fold formals ~init:q ~f:(fun var q ->
+    Var.Set.fold formals q ~f:(fun var q ->
         let var = Term.var var in
         let renamed_var = Term.rename subst var in
         Sh.and_ (Formula.eq renamed_var var) q )

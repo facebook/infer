@@ -55,7 +55,7 @@ module type S = sig
   val iter : t -> f:(elt -> unit) -> unit
   val exists : t -> f:(elt -> bool) -> bool
   val for_all : t -> f:(elt -> bool) -> bool
-  val fold : t -> init:'s -> f:(elt -> 's -> 's) -> 's
+  val fold : t -> 's -> f:(elt -> 's -> 's) -> 's
 
   (** {1 Convert} *)
 

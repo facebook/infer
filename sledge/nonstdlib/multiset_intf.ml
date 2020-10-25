@@ -115,6 +115,6 @@ module type S = sig
   val for_all : t -> f:(elt -> mul -> bool) -> bool
   (** Test whether all elements satisfy a predicate. *)
 
-  val fold : t -> init:'s -> f:(elt -> mul -> 's -> 's) -> 's
+  val fold : t -> 's -> f:(elt -> mul -> 's -> 's) -> 's
   (** Fold over the elements in ascending order. *)
 end

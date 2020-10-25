@@ -31,13 +31,13 @@ end) : S with type elt = Elt.t = struct
   let of_option xo = Option.map_or ~f:S.singleton xo ~default:empty
   let of_list = S.of_list
   let add x s = S.add x s
-  let add_option xo s = Option.fold ~f:(Fun.flip add) ~init:s xo
+  let add_option = Option.fold ~f:add
   let add_list xs s = S.add_list s xs
   let diff = S.diff
   let inter = S.inter
   let union = S.union
   let diff_inter s t = (diff s t, inter s t)
-  let union_list ss = List.fold ~f:union ~init:empty ss
+  let union_list ss = List.fold ~f:union ss empty
   let is_empty = S.is_empty
   let cardinal = S.cardinal
   let mem s x = S.mem x s
@@ -78,7 +78,7 @@ end) : S with type elt = Elt.t = struct
   let iter s ~f = S.iter f s
   let exists s ~f = S.exists f s
   let for_all s ~f = S.for_all f s
-  let fold s ~init ~f = S.fold f s init
+  let fold s z ~f = S.fold f s z
   let to_iter = S.to_iter
 
   let pp ?pre ?suf ?(sep = (",@ " : (unit, unit) fmt)) pp_elt fs x =

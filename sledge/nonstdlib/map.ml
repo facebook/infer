@@ -158,7 +158,7 @@ end) : S with type key = Key.t = struct
   let iteri m ~f = M.iter (fun key data -> f ~key ~data) m
   let existsi m ~f = M.exists (fun key data -> f ~key ~data) m
   let for_alli m ~f = M.for_all (fun key data -> f ~key ~data) m
-  let fold m ~init ~f = M.fold (fun key data acc -> f ~key ~data acc) m init
+  let fold m s ~f = M.fold (fun key data acc -> f ~key ~data acc) m s
   let keys = M.keys
   let values = M.values
   let to_iter = M.to_iter

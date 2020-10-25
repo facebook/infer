@@ -42,9 +42,7 @@ let%test_module _ =
     let z = Term.var z_
 
     let of_eqs l =
-      List.fold ~init:(wrt, true_)
-        ~f:(fun (us, r) (a, b) -> and_eq us a b r)
-        l
+      List.fold ~f:(fun (a, b) (us, r) -> and_eq us a b r) l (wrt, true_)
       |> snd
 
     let implies_eq r a b = implies r (Term.eq a b)

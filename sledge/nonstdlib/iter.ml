@@ -37,6 +37,7 @@ let pop seq =
 let find_map seq ~f = find_map ~f seq
 let find seq ~f = find (CCOpt.if_ f) seq
 let find_exn seq ~f = CCOpt.get_exn (find ~f seq)
+let fold seq init ~f = fold ~f:(fun s x -> f x s) ~init seq
 
 let contains_dup (type elt) seq ~cmp =
   let module S = CCSet.Make (struct
@@ -46,41 +47,41 @@ let contains_dup (type elt) seq ~cmp =
   end) in
   let exception Found_dup in
   try
-    fold ~init:S.empty seq ~f:(fun elts x ->
+    fold seq S.empty ~f:(fun x elts ->
         let elts' = S.add x elts in
         if elts' == elts then raise_notrace Found_dup else elts' )
     |> ignore ;
     false
   with Found_dup -> true
 
-let fold_opt seq ~init ~f =
-  let state = ref init in
+let fold_opt seq s ~f =
+  let state = ref s in
   let exception Stop in
   try
     seq (fun x ->
-        match f !state x with
+        match f x !state with
         | Some s -> state := s
         | None -> raise_notrace Stop ) ;
     Some !state
   with Stop -> None
 
-let fold_until (type res) seq ~init ~f ~finish =
-  let state = ref init in
+let fold_until (type res) seq s ~f ~finish =
+  let state = ref s in
   let exception Stop of res in
   try
     seq (fun x ->
-        match f !state x with
+        match f x !state with
         | `Continue s -> state := s
         | `Stop r -> raise_notrace (Stop r) ) ;
     finish !state
   with Stop r -> r
 
-let fold_result (type s e) seq ~init ~f =
-  let state = ref init in
+let fold_result (type s e) seq s ~f =
+  let state = ref s in
   let exception Stop of (s, e) result in
   try
     seq (fun x ->
-        match f !state x with
+        match f x !state with
         | Ok s -> state := s
         | Error _ as e -> raise_notrace (Stop e) ) ;
     Ok !state

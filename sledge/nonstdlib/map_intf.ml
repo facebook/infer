@@ -105,7 +105,7 @@ module type S = sig
   val iteri : 'a t -> f:(key:key -> data:'a -> unit) -> unit
   val existsi : 'a t -> f:(key:key -> data:'a -> bool) -> bool
   val for_alli : 'a t -> f:(key:key -> data:'a -> bool) -> bool
-  val fold : 'a t -> init:'s -> f:(key:key -> data:'a -> 's -> 's) -> 's
+  val fold : 'a t -> 's -> f:(key:key -> data:'a -> 's -> 's) -> 's
 
   (** {1 Convert} *)
 
