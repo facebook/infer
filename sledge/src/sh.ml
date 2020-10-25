@@ -90,28 +90,28 @@ let fold_vars ?ignore_ctx ?ignore_pure fold_vars q ~init ~f =
 (** Pretty-printing *)
 
 let rec var_strength_ xs m q =
-  let add m v =
-    match Var.Map.find m v with
-    | None -> Var.Map.set m ~key:v ~data:`Anonymous
-    | Some `Anonymous -> Var.Map.set m ~key:v ~data:`Existential
+  let add v m =
+    match Var.Map.find v m with
+    | None -> Var.Map.add ~key:v ~data:`Anonymous m
+    | Some `Anonymous -> Var.Map.add ~key:v ~data:`Existential m
     | Some _ -> m
   in
   let xs = Var.Set.union xs q.xs in
   let m_stem =
     fold_vars_stem ~ignore_ctx:() q ~init:m ~f:(fun m var ->
         if not (Var.Set.mem xs var) then
-          Var.Map.set m ~key:var ~data:`Universal
-        else add m var )
+          Var.Map.add ~key:var ~data:`Universal m
+        else add var m )
   in
   let m =
     List.fold ~init:m_stem q.djns ~f:(fun m djn ->
         let ms = List.map ~f:(fun dj -> snd (var_strength_ xs m dj)) djn in
         List.reduce ms ~f:(fun m1 m2 ->
-            Var.Map.merge_skewed m1 m2 ~combine:(fun ~key:_ s1 s2 ->
+            Var.Map.union m1 m2 ~f:(fun _ s1 s2 ->
                 match (s1, s2) with
-                | `Anonymous, `Anonymous -> `Anonymous
-                | `Universal, _ | _, `Universal -> `Universal
-                | `Existential, _ | _, `Existential -> `Existential ) )
+                | `Anonymous, `Anonymous -> Some `Anonymous
+                | `Universal, _ | _, `Universal -> Some `Universal
+                | `Existential, _ | _, `Existential -> Some `Existential ) )
         |> Option.value ~default:m )
   in
   (m_stem, m)
@@ -119,7 +119,7 @@ let rec var_strength_ xs m q =
 let var_strength ?(xs = Var.Set.empty) q =
   let m =
     Var.Set.fold xs ~init:Var.Map.empty ~f:(fun m x ->
-        Var.Map.set m ~key:x ~data:`Existential )
+        Var.Map.add ~key:x ~data:`Existential m )
   in
   var_strength_ xs m q
 
@@ -198,7 +198,7 @@ let pp_us ?(pre = ("" : _ fmt)) ?vs () fs us =
 let rec pp_ ?var_strength vs parent_xs parent_ctx fs
     {us; xs; ctx; pure; heap; djns} =
   Format.pp_open_hvbox fs 0 ;
-  let x v = Option.bind ~f:(fun (_, m) -> Var.Map.find m v) var_strength in
+  let x v = Option.bind ~f:(fun (_, m) -> Var.Map.find v m) var_strength in
   pp_us ~vs () fs us ;
   let xs_d_vs, xs_i_vs =
     Var.Set.diff_inter

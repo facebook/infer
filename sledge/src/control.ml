@@ -187,10 +187,10 @@ module Make (Dom : Domain_intf.Dom) = struct
 
       let empty = M.empty
       let find = M.find
-      let set = M.set
+      let add = M.add
 
       let join x y =
-        M.merge x y ~f:(fun ~key:_ -> function
+        M.merge x y ~f:(fun _ -> function
           | `Left d | `Right d -> Some d
           | `Both (d1, d2) -> Some (Int.max d1 d2) )
     end
@@ -215,7 +215,7 @@ module Make (Dom : Domain_intf.Dom) = struct
     let add ?prev ~retreating stk state curr depths ((pq, ws, bound) as work)
         =
       let edge = {Edge.dst= curr; src= prev; stk} in
-      let depth = Option.value (Depths.find depths edge) ~default:0 in
+      let depth = Option.value (Depths.find edge depths) ~default:0 in
       let depth = if retreating then depth + 1 else depth in
       if depth > bound then (
         [%Trace.info "prune: %i: %a" depth Edge.pp edge] ;
@@ -223,9 +223,9 @@ module Make (Dom : Domain_intf.Dom) = struct
       else
         let pq = FHeap.add pq (depth, edge) in
         [%Trace.info "@[<6>enqueue %i: %a@ | %a@]" depth Edge.pp edge pp pq] ;
-        let depths = Depths.set depths ~key:edge ~data:depth in
+        let depths = Depths.add ~key:edge ~data:depth depths in
         let ws =
-          Llair.Block.Map.add_multi ws ~key:curr ~data:(state, depths)
+          Llair.Block.Map.add_multi ~key:curr ~data:(state, depths) ws
         in
         (pq, ws, bound)
 
@@ -236,7 +236,7 @@ module Make (Dom : Domain_intf.Dom) = struct
     let rec run ~f (pq0, ws, bnd) =
       match FHeap.pop pq0 with
       | Some ((_, ({Edge.dst; stk} as edge)), pq) -> (
-        match Llair.Block.Map.find_and_remove ws dst with
+        match Llair.Block.Map.find_and_remove dst ws with
         | Some (q :: qs, ws) ->
             let join (qa, da) (q, d) = (Dom.join q qa, Depths.join d da) in
             let skipped, (qs, depths) =
@@ -245,7 +245,7 @@ module Make (Dom : Domain_intf.Dom) = struct
                   | Some joined, depths -> (skipped, (joined, depths))
                   | None, _ -> (curr :: skipped, joined) )
             in
-            let ws = Llair.Block.Map.add_exn ws ~key:dst ~data:skipped in
+            let ws = Llair.Block.Map.add_exn ~key:dst ~data:skipped ws in
             run ~f (f stk qs dst depths (pq, ws, bnd))
         | _ ->
             [%Trace.info "done: %a" Edge.pp edge] ;
@@ -330,7 +330,7 @@ module Make (Dom : Domain_intf.Dom) = struct
             ~formals:
               (Llair.Reg.Set.union (Llair.Reg.Set.of_list formals) globals)
         in
-        RegTbl.add_multi summary_table ~key:name.reg ~data:function_summary ;
+        RegTbl.add_multi ~key:name.reg ~data:function_summary summary_table ;
         pp_st () ;
         post_state
     in
@@ -432,7 +432,7 @@ module Make (Dom : Domain_intf.Dom) = struct
             | None -> x )
     | Call ({callee; actuals; areturn; return} as call) -> (
         let lookup name =
-          Option.to_list (Llair.Func.find pgm.functions name)
+          Option.to_list (Llair.Func.find name pgm.functions)
         in
         let callees, state = Dom.resolve_callee lookup callee state in
         match callees with
@@ -492,7 +492,9 @@ module Make (Dom : Domain_intf.Dom) = struct
 
   let harness : exec_opts -> Llair.program -> (int -> Work.t) option =
    fun opts pgm ->
-    List.find_map ~f:(Llair.Func.find pgm.functions) opts.entry_points
+    List.find_map
+      ~f:(fun entry_point -> Llair.Func.find entry_point pgm.functions)
+      opts.entry_points
     |> function
     | Some {name= {reg}; formals= []; freturn; locals; entry} ->
         Some
@@ -517,5 +519,5 @@ module Make (Dom : Domain_intf.Dom) = struct
     exec_pgm opts pgm ;
     RegTbl.fold summary_table ~init:Llair.Reg.Map.empty
       ~f:(fun ~key ~data map ->
-        match data with [] -> map | _ -> Llair.Reg.Map.set map ~key ~data )
+        match data with [] -> map | _ -> Llair.Reg.Map.add ~key ~data map )
 end

@@ -235,7 +235,7 @@ module Representation (Trm : INDETERMINATE) = struct
     (* transform *)
 
     let split_const poly =
-      match Sum.find_and_remove poly Mono.one with
+      match Sum.find_and_remove Mono.one poly with
       | Some (c, p_c) -> (p_c, c)
       | None -> (poly, Q.zero)
 
@@ -249,11 +249,11 @@ module Representation (Trm : INDETERMINATE) = struct
                   let trm' = f trm in
                   if trm == trm' then (m, cm')
                   else
-                    (Prod.remove m trm, CM.mul cm' (CM.of_trm trm' ~power)) )
+                    (Prod.remove trm m, CM.mul cm' (CM.of_trm trm' ~power)) )
             in
             if CM.equal_one cm' then (p, p')
             else
-              ( Sum.remove p mono
+              ( Sum.remove mono p
               , Sum.union p' (CM.to_poly (CM.mul (coeff, m) cm')) ) )
       in
       if Sum.is_empty p' then poly else Sum.union p p' |> check invariant

@@ -87,7 +87,7 @@ module Make (T : REPR) = struct
           Set.fold dom ~init:(empty, Set.empty, wrt)
             ~f:(fun (sub, rng, wrt) x ->
               let x', wrt = fresh (name x) ~wrt in
-              let sub = Map.add_exn sub ~key:x ~data:x' in
+              let sub = Map.add_exn ~key:x ~data:x' sub in
               let rng = Set.add rng x' in
               (sub, rng, wrt) )
         in
@@ -107,7 +107,7 @@ module Make (T : REPR) = struct
 
     let invert sub =
       Map.fold sub ~init:empty ~f:(fun ~key ~data sub' ->
-          Map.add_exn sub' ~key:data ~data:key )
+          Map.add_exn ~key:data ~data:key sub' )
       |> check invariant
 
     let restrict sub vs =
@@ -119,13 +119,13 @@ module Make (T : REPR) = struct
             assert (
               (* all substs are injective, so the current mapping is the
                  only one that can cause [data] to be in [rng] *)
-              (not (Set.mem (range (Map.remove sub key)) data))
+              (not (Set.mem (range (Map.remove key sub)) data))
               || violates invariant sub ) ;
-            {z with sub= Map.remove z.sub key} ) )
+            {z with sub= Map.remove key z.sub} ) )
       |> check (fun {sub; dom; rng} ->
              assert (Set.equal dom (domain sub)) ;
              assert (Set.equal rng (range sub)) )
 
-    let apply sub v = Map.find sub v |> Option.value ~default:v
+    let apply sub v = Map.find v sub |> Option.value ~default:v
   end
 end

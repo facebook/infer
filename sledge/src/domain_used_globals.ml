@@ -111,7 +111,7 @@ let by_function : r -> Llair.Reg.t -> t =
   ( match s with
   | Declared set -> set
   | Per_function map -> (
-    match Llair.Reg.Map.find map fn with
+    match Llair.Reg.Map.find fn map with
     | Some gs -> gs
     | None ->
         fail

@@ -21,16 +21,16 @@ module type S = sig
 
   val empty : 'a t
   val singleton : key -> 'a -> 'a t
-  val add_exn : 'a t -> key:key -> data:'a -> 'a t
-  val set : 'a t -> key:key -> data:'a -> 'a t
-  val add_multi : 'a list t -> key:key -> data:'a -> 'a list t
-  val remove : 'a t -> key -> 'a t
+  val add_exn : key:key -> data:'a -> 'a t -> 'a t
+  val add : key:key -> data:'a -> 'a t -> 'a t
+  val add_multi : key:key -> data:'a -> 'a list t -> 'a list t
+  val remove : key -> 'a t -> 'a t
 
   val merge :
        'a t
     -> 'b t
     -> f:
-         (   key:key
+         (   key
           -> [`Left of 'a | `Both of 'a * 'b | `Right of 'b]
           -> 'c option)
     -> 'c t
@@ -39,16 +39,13 @@ module type S = sig
        'a t
     -> 'b t
     -> f:
-         (   key:key
+         (   key
           -> [`Left of 'a | `Both of 'a * 'b | `Right of 'b]
           -> 'a option)
     -> 'a t
   (** Like merge, but specialized to require [f] to preserve the type of the
       left argument, which enables preserving [==] if [f] preserves [==] of
       every value. *)
-
-  val merge_skewed :
-    'a t -> 'a t -> combine:(key:key -> 'a -> 'a -> 'a) -> 'a t
 
   val union : 'a t -> 'a t -> f:(key -> 'a -> 'a -> 'a option) -> 'a t
   val partition : 'a t -> f:(key -> 'a -> bool) -> 'a t * 'a t
@@ -74,12 +71,12 @@ module type S = sig
       equivalent maps. [O(1)]. *)
 
   val min_binding : 'a t -> (key * 'a) option
-  val mem : 'a t -> key -> bool
-  val find : 'a t -> key -> 'a option
-  val find_exn : 'a t -> key -> 'a
-  val find_multi : 'a list t -> key -> 'a list
+  val mem : key -> 'a t -> bool
+  val find : key -> 'a t -> 'a option
+  val find_exn : key -> 'a t -> 'a
+  val find_multi : key -> 'a list t -> 'a list
 
-  val find_and_remove : 'a t -> key -> ('a * 'a t) option
+  val find_and_remove : key -> 'a t -> ('a * 'a t) option
   (** Find and remove the binding for a key. *)
 
   val pop : 'a t -> (key * 'a * 'a t) option
@@ -91,8 +88,8 @@ module type S = sig
 
   (** {1 Transform} *)
 
-  val change : 'a t -> key -> f:('a option -> 'a option) -> 'a t
-  val update : 'a t -> key -> f:('a option -> 'a) -> 'a t
+  val change : key -> 'a t -> f:('a option -> 'a option) -> 'a t
+  val update : key -> 'a t -> f:('a option -> 'a) -> 'a t
   val map : 'a t -> f:('a -> 'b) -> 'b t
   val mapi : 'a t -> f:(key:key -> data:'a -> 'b) -> 'b t
 
@@ -108,14 +105,12 @@ module type S = sig
   val iteri : 'a t -> f:(key:key -> data:'a -> unit) -> unit
   val existsi : 'a t -> f:(key:key -> data:'a -> bool) -> bool
   val for_alli : 'a t -> f:(key:key -> data:'a -> bool) -> bool
-  val fold : 'a t -> init:'b -> f:(key:key -> data:'a -> 'b -> 'b) -> 'b
+  val fold : 'a t -> init:'s -> f:(key:key -> data:'a -> 's -> 's) -> 's
 
   (** {1 Convert} *)
 
-  val to_alist :
-    ?key_order:[`Increasing | `Decreasing] -> 'a t -> (key * 'a) list
-
-  val data : 'a t -> 'a list
+  val keys : 'a t -> key iter
+  val values : 'a t -> 'a iter
   val to_iter : 'a t -> (key * 'a) iter
 
   val to_iter2 :
@@ -124,9 +119,9 @@ module type S = sig
     -> (key * [`Left of 'a | `Both of 'a * 'b | `Right of 'b]) iter
 
   val symmetric_diff :
-       data_equal:('a -> 'b -> bool)
-    -> 'a t
+       'a t
     -> 'b t
+    -> eq:('a -> 'b -> bool)
     -> (key * [> `Left of 'a | `Unequal of 'a * 'b | `Right of 'b]) iter
 
   (** {1 Pretty-print} *)
@@ -134,9 +129,9 @@ module type S = sig
   val pp : key pp -> 'a pp -> 'a t pp
 
   val pp_diff :
-       data_equal:('a -> 'a -> bool)
-    -> key pp
+       key pp
     -> 'a pp
     -> ('a * 'a) pp
+    -> eq:('a -> 'a -> bool)
     -> ('a t * 'a t) pp
 end

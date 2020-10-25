@@ -1095,7 +1095,7 @@ module Context = struct
       ~f:(fun ~key:rep ~data:cls clss ->
         let rep' = of_ses rep in
         let cls' = List.map ~f:of_ses cls in
-        Term.Map.set ~key:rep' ~data:cls' clss )
+        Term.Map.add ~key:rep' ~data:cls' clss )
 
   let diff_classes r s =
     Term.Map.filter_mapi (classes r) ~f:(fun ~key:rep ~data:cls ->
@@ -1116,7 +1116,8 @@ module Context = struct
       (fun fs (rep, cls) ->
         Format.fprintf fs "@[%a@ = %a@]" (Term.ppx x) rep (ppx_cls x)
           (List.sort ~cmp:Term.compare cls) )
-      fs (Term.Map.to_alist clss)
+      fs
+      (Iter.to_list (Term.Map.to_iter clss))
 
   let pp fs r = ppx_classes (fun _ -> None) fs (classes r)
 

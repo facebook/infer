@@ -34,22 +34,26 @@ end) : S with type key = Key.t = struct
 
   let empty = M.empty
   let singleton = M.singleton
-  let add_exn m ~key ~data = M.add key data m
-  let set m ~key ~data = M.add key data m
 
-  let add_multi m ~key ~data =
+  let add_exn ~key ~data m =
+    assert (not (M.mem key m)) ;
+    M.add key data m
+
+  let add ~key ~data m = M.add key data m
+
+  let add_multi ~key ~data m =
     M.update key
       (function Some vs -> Some (data :: vs) | None -> Some [data])
       m
 
-  let remove m key = M.remove key m
-  let merge l r ~f = M.merge_safe l r ~f:(fun key -> f ~key)
+  let remove key m = M.remove key m
+  let merge l r ~f = M.merge_safe l r ~f
 
   let merge_endo t u ~f =
     let change = ref false in
     let t' =
-      merge t u ~f:(fun ~key side ->
-          let f_side = f ~key side in
+      merge t u ~f:(fun key side ->
+          let f_side = f key side in
           ( match (side, f_side) with
           | (`Both (data, _) | `Left data), Some data' when data' == data ->
               ()
@@ -57,9 +61,6 @@ end) : S with type key = Key.t = struct
           f_side )
     in
     if !change then t' else t
-
-  let merge_skewed x y ~combine =
-    M.union (fun key v1 v2 -> Some (combine ~key v1 v2)) x y
 
   let union x y ~f = M.union f x y
   let partition m ~f = M.partition f m
@@ -103,13 +104,6 @@ end) : S with type key = Key.t = struct
     | None -> false
 
   let length = M.cardinal
-  let choose_key = root_key
-  let choose = root_binding
-  let choose_exn m = Option.get_exn (choose m)
-  let min_binding = M.min_binding_opt
-  let mem m k = M.mem k m
-  let find_exn m k = M.find k m
-  let find m k = M.find_opt k m
 
   let only_binding m =
     match root_key m with
@@ -127,10 +121,18 @@ end) : S with type key = Key.t = struct
       | l, Some v, r when is_empty l && is_empty r -> `One (k, v)
       | _ -> `Many )
 
-  let find_multi m k =
+  let choose_key = root_key
+  let choose = root_binding
+  let choose_exn m = Option.get_exn (choose m)
+  let min_binding = M.min_binding_opt
+  let mem k m = M.mem k m
+  let find_exn k m = M.find k m
+  let find k m = M.find_opt k m
+
+  let find_multi k m =
     match M.find_opt k m with None -> [] | Some vs -> vs
 
-  let find_and_remove m k =
+  let find_and_remove k m =
     let found = ref None in
     let m =
       M.update k
@@ -141,13 +143,13 @@ end) : S with type key = Key.t = struct
     in
     Option.map ~f:(fun v -> (v, m)) !found
 
-  let pop m = choose m |> Option.map ~f:(fun (k, v) -> (k, v, remove m k))
+  let pop m = choose m |> Option.map ~f:(fun (k, v) -> (k, v, remove k m))
 
   let pop_min_binding m =
-    min_binding m |> Option.map ~f:(fun (k, v) -> (k, v, remove m k))
+    min_binding m |> Option.map ~f:(fun (k, v) -> (k, v, remove k m))
 
-  let change m key ~f = M.update key f m
-  let update m k ~f = M.update k (fun v -> Some (f v)) m
+  let change k m ~f = M.update k f m
+  let update k m ~f = M.update k (fun v -> Some (f v)) m
   let map m ~f = M.map f m
   let mapi m ~f = M.mapi (fun key data -> f ~key ~data) m
   let map_endo t ~f = map_endo map t ~f
@@ -157,9 +159,9 @@ end) : S with type key = Key.t = struct
   let existsi m ~f = M.exists (fun key data -> f ~key ~data) m
   let for_alli m ~f = M.for_all (fun key data -> f ~key ~data) m
   let fold m ~init ~f = M.fold (fun key data acc -> f ~key ~data acc) m init
-  let to_alist ?key_order:_ = M.to_list
-  let data m = Iter.to_list (M.values m)
-  let to_iter = M.to_iter
+  let keys = M.keys
+  let values = M.values
+  let to_iter m = Iter.rev (M.to_iter m)
 
   let to_iter2 l r =
     let seq = ref Iter.empty in
@@ -169,10 +171,10 @@ end) : S with type key = Key.t = struct
     |> ignore ;
     !seq
 
-  let symmetric_diff ~data_equal l r =
+  let symmetric_diff l r ~eq =
     Iter.filter_map (to_iter2 l r) ~f:(fun (k, vv) ->
         match vv with
-        | `Both (lv, rv) when data_equal lv rv -> None
+        | `Both (lv, rv) when eq lv rv -> None
         | `Both vv -> Some (k, `Unequal vv)
         | `Left lv -> Some (k, `Left lv)
         | `Right rv -> Some (k, `Right rv) )
@@ -181,9 +183,9 @@ end) : S with type key = Key.t = struct
     Format.fprintf fs "@[<1>[%a]@]"
       (List.pp ",@ " (fun fs (k, v) ->
            Format.fprintf fs "@[%a@ @<2>↦ %a@]" pp_k k pp_v v ))
-      (to_alist m)
+      (Iter.to_list (to_iter m))
 
-  let pp_diff ~data_equal pp_key pp_val pp_diff_val fs (x, y) =
+  let pp_diff pp_key pp_val pp_diff_val ~eq fs (x, y) =
     let pp_diff_elt fs = function
       | k, `Left v ->
           Format.fprintf fs "-- [@[%a@ @<2>↦ %a@]]" pp_key k pp_val v
@@ -192,7 +194,7 @@ end) : S with type key = Key.t = struct
       | k, `Unequal vv ->
           Format.fprintf fs "[@[%a@ @<2>↦ %a@]]" pp_key k pp_diff_val vv
     in
-    let sd = Iter.to_list (symmetric_diff ~data_equal x y) in
+    let sd = Iter.to_list (symmetric_diff ~eq x y) in
     if not (List.is_empty sd) then
       Format.fprintf fs "[@[<hv>%a@]];@ " (List.pp ";@ " pp_diff_elt) sd
 end

@@ -562,8 +562,8 @@ let set_derived_metadata functions =
         | Iswitch {tbl; _} -> IArray.iter tbl ~f:jump
         | Call ({callee; return; throw; _} as call) ->
             ( match
-                Option.bind ~f:(Func.find functions)
-                  (Option.map ~f:Reg.name (Reg.of_exp callee))
+                let* reg = Reg.of_exp callee in
+                Func.find (Reg.name reg) functions
               with
             | Some func ->
                 if Block_label.Set.mem ancestors func.entry then
@@ -589,7 +589,7 @@ let set_derived_metadata functions =
   in
   let functions =
     List.fold functions ~init:String.Map.empty ~f:(fun m func ->
-        String.Map.add_exn m ~key:(Reg.name func.name.reg) ~data:func )
+        String.Map.add_exn ~key:(Reg.name func.name.reg) ~data:func m )
   in
   let roots = compute_roots functions in
   let tips_to_roots = topsort functions roots in
@@ -616,6 +616,7 @@ module Program = struct
       (IArray.pp "@\n@\n" Global.pp_defn)
       globals
       (List.pp "@\n@\n" Func.pp)
-      ( String.Map.data functions
+      ( String.Map.values functions
+      |> Iter.to_list
       |> List.sort ~cmp:(fun x y -> compare_block x.entry y.entry) )
 end

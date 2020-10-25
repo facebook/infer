@@ -368,9 +368,9 @@ module Sum = struct
     assert (not (Q.equal Q.zero coeff)) ;
     match term with
     | Integer {data} when Z.equal Z.zero data -> sum
-    | Integer {data} -> Qset.add sum one Q.(coeff * of_z data)
-    | Rational {data} -> Qset.add sum one Q.(coeff * data)
-    | _ -> Qset.add sum term coeff
+    | Integer {data} -> Qset.add one Q.(coeff * of_z data) sum
+    | Rational {data} -> Qset.add one Q.(coeff * data) sum
+    | _ -> Qset.add term coeff sum
 
   let of_ ?(coeff = Q.one) term = add coeff term empty
 
@@ -403,7 +403,7 @@ module Prod = struct
 
   let add term prod =
     assert (match term with Integer _ | Rational _ -> false | _ -> true) ;
-    Qset.add prod term Q.one
+    Qset.add term Q.one prod
 
   let of_ term = add term empty
   let union = Qset.union
@@ -972,7 +972,7 @@ let d_int = function Integer {data} -> Some data | _ -> None
 
 (** Access *)
 
-let const_of = function Add poly -> Some (Qset.count poly one) | _ -> None
+let const_of = function Add poly -> Some (Qset.count one poly) | _ -> None
 
 (** Transform *)
 
@@ -1198,7 +1198,7 @@ let rec solve_sum rejected_sum sum =
   let* mono, coeff, sum = Qset.pop_min_elt sum in
   match solve_for_mono rejected_sum coeff mono sum with
   | Some _ as soln -> soln
-  | None -> solve_sum (Qset.add rejected_sum mono coeff) sum
+  | None -> solve_sum (Qset.add mono coeff rejected_sum) sum
 
 (* solve [0 = e] *)
 let solve_zero_eq ?for_ e =
@@ -1209,7 +1209,7 @@ let solve_zero_eq ?for_ e =
     match for_ with
     | None -> solve_sum Qset.empty sum
     | Some mono ->
-        let* coeff, sum = Qset.find_and_remove sum mono in
+        let* coeff, sum = Qset.find_and_remove mono sum in
         solve_for_mono Qset.empty coeff mono sum )
   | _ -> None )
   |>

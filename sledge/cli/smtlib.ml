@@ -53,7 +53,7 @@ and x_trm : var_env -> Smt.Ast.term -> Term.t =
  fun n term ->
   match term with
   | Const s -> (
-    try VarEnv.find_exn n s
+    try VarEnv.find_exn s n
     with _ -> (
       try Term.rational (Q.of_string s)
       with _ -> (

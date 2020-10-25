@@ -195,7 +195,7 @@ module Func : sig
     -> fthrow:Reg.t
     -> t
 
-  val find : functions -> string -> func option
+  val find : string -> functions -> func option
   (** Look up a function of the given name in the given functions. *)
 
   val is_undefined : func -> bool
