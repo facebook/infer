@@ -76,7 +76,7 @@ module rec Term : sig
 
   (** Traverse *)
 
-  val fold_vars : t -> 's -> f:(Var.t -> 's -> 's) -> 's
+  val vars : t -> Var.t iter
 
   (** Transform *)
 
@@ -134,7 +134,7 @@ and Formula : sig
 
   (** Traverse *)
 
-  val fold_vars : t -> 's -> f:(Var.t -> 's -> 's) -> 's
+  val vars : t -> Var.t iter
 
   (** Transform *)
 
@@ -203,7 +203,7 @@ module Context : sig
   (** Equivalence class of [e]: all the terms [f] in the context such that
       [e = f] is implied by the assumptions. *)
 
-  val fold_vars : t -> 's -> f:(Var.t -> 's -> 's) -> 's
+  val vars : t -> Var.t iter
   (** Enumerate the variables occurring in the terms of the context. *)
 
   val fv : t -> Var.Set.t

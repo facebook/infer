@@ -106,6 +106,7 @@ and Trm : sig
   val add : trm -> trm -> trm
   val sub : trm -> trm -> trm
   val seq_size_exn : trm -> trm
+  val vars : trm -> Var.t iter
 end = struct
   type var = Var.t
 
@@ -366,6 +367,24 @@ end = struct
     | Some c -> c
     | None -> Apply (f, es) )
     |> check invariant
+
+  let rec iter_vars e ~f =
+    match e with
+    | Var _ as v -> f (Var.of_ v)
+    | Z _ | Q _ | Ancestor _ -> ()
+    | Splat x | Select {rcd= x} -> iter_vars ~f x
+    | Sized {seq= x; siz= y} | Update {rcd= x; elt= y} ->
+        iter_vars ~f x ;
+        iter_vars ~f y
+    | Extract {seq= x; off= y; len= z} ->
+        iter_vars ~f x ;
+        iter_vars ~f y ;
+        iter_vars ~f z
+    | Concat xs | Record xs | Apply (_, xs) ->
+        Array.iter ~f:(iter_vars ~f) xs
+    | Arith a -> Iter.iter ~f:(iter_vars ~f) (Arith.iter a)
+
+  let vars e = Iter.from_labelled_iter (iter_vars e)
 end
 
 open Trm
@@ -448,6 +467,8 @@ module Fml = struct
        |((Sized _ | Extract _ | Concat _) as a), x ->
           _Eq (_Sized x (seq_size_exn a)) a
       | _ -> sort_eq x y
+
+  let vars p = Iter.flat_map ~f:Trm.vars (trms p)
 end
 
 module Fmls = Prop.Fmls
@@ -530,49 +551,6 @@ let ppx strength fs = function
   | `Fml f -> ppx_f strength fs f
 
 let pp = ppx (fun _ -> None)
-
-(** fold_vars *)
-
-let fold_pos_neg ~pos ~neg s ~f =
-  let f_not p s = f (_Not p) s in
-  Fmls.fold ~f:f_not neg (Fmls.fold ~f pos s)
-
-let rec fold_vars_t e s ~f =
-  match e with
-  | Z _ | Q _ | Ancestor _ -> s
-  | Var _ as v -> f (Var.of_ v) s
-  | Splat x | Select {rcd= x} -> fold_vars_t ~f x s
-  | Sized {seq= x; siz= y} | Update {rcd= x; elt= y} ->
-      fold_vars_t ~f x (fold_vars_t ~f y s)
-  | Extract {seq= x; off= y; len= z} ->
-      fold_vars_t ~f x (fold_vars_t ~f y (fold_vars_t ~f z s))
-  | Concat xs | Record xs | Apply (_, xs) ->
-      Array.fold ~f:(fold_vars_t ~f) xs s
-  | Arith a -> Iter.fold ~f:(fold_vars_t ~f) (Arith.iter a) s
-
-let rec fold_vars_f p s ~f =
-  match (p : fml) with
-  | Tt -> s
-  | Eq (x, y) -> fold_vars_t ~f x (fold_vars_t ~f y s)
-  | Eq0 x | Pos x -> fold_vars_t ~f x s
-  | Not x -> fold_vars_f ~f x s
-  | And {pos; neg} | Or {pos; neg} ->
-      fold_pos_neg ~f:(fold_vars_f ~f) ~pos ~neg s
-  | Iff (x, y) -> fold_vars_f ~f x (fold_vars_f ~f y s)
-  | Cond {cnd; pos; neg} ->
-      fold_vars_f ~f cnd (fold_vars_f ~f pos (fold_vars_f ~f neg s))
-  | Lit (_, xs) -> Array.fold ~f:(fold_vars_t ~f) xs s
-
-let rec fold_vars_c c s ~f =
-  match c with
-  | `Ite (cnd, thn, els) ->
-      fold_vars_f ~f cnd (fold_vars_c ~f thn (fold_vars_c ~f els s))
-  | `Trm t -> fold_vars_t ~f t s
-
-let fold_vars e s ~f =
-  match e with
-  | `Fml p -> fold_vars_f ~f p s
-  | #cnd as c -> fold_vars_c ~f c s
 
 (** map *)
 
@@ -876,7 +854,20 @@ module Term = struct
 
   (** Traverse *)
 
-  let fold_vars = fold_vars
+  let rec iter_vars_c c ~f =
+    match c with
+    | `Ite (cnd, thn, els) ->
+        Iter.iter ~f (Fml.vars cnd) ;
+        iter_vars_c ~f thn ;
+        iter_vars_c ~f els
+    | `Trm t -> Iter.iter ~f (Trm.vars t)
+
+  let iter_vars e ~f =
+    match e with
+    | `Fml p -> Iter.iter ~f (Fml.vars p)
+    | #cnd as c -> iter_vars_c ~f c
+
+  let vars e = Iter.from_labelled_iter (iter_vars e)
 
   (** Transform *)
 
@@ -896,7 +887,7 @@ module Term = struct
 
   (** Query *)
 
-  let fv e = fold_vars ~f:Var.Set.add e Var.Set.empty
+  let fv e = Var.Set.of_iter (vars e)
 end
 
 (*
@@ -949,13 +940,13 @@ module Formula = struct
   let cond ~cnd ~pos ~neg = _Cond cnd pos neg
   let not_ = _Not
 
-  (** Query *)
-
-  let fv e = fold_vars_f ~f:Var.Set.add e Var.Set.empty
-
   (** Traverse *)
 
-  let fold_vars = fold_vars_f
+  let vars = Fml.vars
+
+  (** Query *)
+
+  let fv p = Var.Set.of_iter (vars p)
 
   (** Transform *)
 
@@ -997,6 +988,10 @@ module Formula = struct
     (e', !s)
 
   let rename s e = map_vars ~f:(Var.Subst.apply s) e
+
+  let fold_pos_neg ~pos ~neg s ~f =
+    let f_not p s = f (_Not p) s in
+    Fmls.fold ~f:f_not neg (Fmls.fold ~f pos s)
 
   let fold_dnf :
          meet1:('literal -> 'conjunction -> 'conjunction)
@@ -1087,11 +1082,11 @@ let rec f_to_ses : fml -> Ses.Term.t = function
   | Pos x -> Ses.Term.lt Ses.Term.zero (t_to_ses x)
   | Not p -> Ses.Term.not_ (f_to_ses p)
   | And {pos; neg} ->
-      fold_pos_neg
+      Formula.fold_pos_neg
         ~f:(fun f p -> Ses.Term.and_ p (f_to_ses f))
         ~pos ~neg Ses.Term.true_
   | Or {pos; neg} ->
-      fold_pos_neg
+      Formula.fold_pos_neg
         ~f:(fun f p -> Ses.Term.or_ p (f_to_ses f))
         ~pos ~neg Ses.Term.false_
   | Iff (p, q) -> Ses.Term.eq (f_to_ses p) (f_to_ses q)
@@ -1246,10 +1241,11 @@ module Context = struct
 
   (* Query *)
 
-  let fold_vars x s ~f =
-    Ses.Equality.fold_vars ~f:(fun v -> f (v_of_ses v)) x s
+  let vars x =
+    Iter.from_iter (fun f ->
+        Ses.Equality.fold_vars ~f:(fun v () -> f (v_of_ses v)) x () )
 
-  let fv e = fold_vars ~f:Var.Set.add e Var.Set.empty
+  let fv x = Var.Set.of_iter (vars x)
   let is_empty x = Ses.Equality.is_true x
   let is_unsat x = Ses.Equality.is_false x
   let implies x b = Ses.Equality.implies x (f_to_ses b)

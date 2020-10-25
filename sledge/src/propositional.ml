@@ -193,5 +193,31 @@ module Make (Trm : TERM) = struct
     let _Eq0 x = Eq0 x |> check invariant
     let _Pos x = Pos x |> check invariant
     let _Lit p xs = Lit (p, xs) |> check invariant
+
+    let iter_pos_neg ~pos ~neg ~f =
+      let f_not p = f (_Not p) in
+      Fmls.iter ~f pos ;
+      Fmls.iter ~f:f_not neg
+
+    let rec iter_trms p ~f =
+      match p with
+      | Tt -> ()
+      | Eq (x, y) ->
+          f x ;
+          f y
+      | Eq0 x | Pos x -> f x
+      | Not x -> iter_trms ~f x
+      | And {pos; neg} | Or {pos; neg} ->
+          iter_pos_neg ~f:(iter_trms ~f) ~pos ~neg
+      | Iff (x, y) ->
+          iter_trms ~f x ;
+          iter_trms ~f y
+      | Cond {cnd; pos; neg} ->
+          iter_trms ~f cnd ;
+          iter_trms ~f pos ;
+          iter_trms ~f neg
+      | Lit (_, xs) -> Array.iter ~f xs
+
+    let trms p = Iter.from_labelled_iter (iter_trms p)
   end
 end

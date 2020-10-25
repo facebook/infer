@@ -71,14 +71,15 @@ let map ~f_sjn ~f_ctx ~f_trm ~f_fml ({us; xs= _; ctx; pure; heap; djns} as q)
 let fold_terms_seg {loc; bas; len; siz; seq} s ~f =
   f loc (f bas (f len (f siz (f seq s))))
 
-let fold_vars_seg seg s ~f = fold_terms_seg ~f:(Term.fold_vars ~f) seg s
+let fold_vars_seg seg s ~f =
+  fold_terms_seg ~f:(Iter.fold ~f << Term.vars) seg s
 
 let fold_vars_stem ?ignore_ctx ?ignore_pure
     {us= _; xs= _; ctx; pure; heap; djns= _} s ~f =
   let unless flag f s = if Option.is_some flag then s else f s in
   List.fold ~f:(fold_vars_seg ~f) heap s
-  |> unless ignore_pure (Formula.fold_vars ~f pure)
-  |> unless ignore_ctx (Context.fold_vars ~f ctx)
+  |> unless ignore_pure (Iter.fold ~f (Formula.vars pure))
+  |> unless ignore_ctx (Iter.fold ~f (Context.vars ctx))
 
 let fold_vars ?ignore_ctx ?ignore_pure fold_vars q s ~f =
   fold_vars_stem ?ignore_ctx ?ignore_pure ~f q s

@@ -50,6 +50,7 @@ module type FORMULA = sig
   val _Lit : Predsym.t -> trm array -> fml
   val and_ : fml -> fml -> fml
   val or_ : fml -> fml -> fml
+  val trms : fml -> trm iter
 end
 
 (** Sets of formulas *)
