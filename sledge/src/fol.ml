@@ -103,6 +103,7 @@ and Trm : sig
   val _Record : trm array -> trm
   val _Ancestor : int -> trm
   val _Apply : Funsym.t -> trm array -> trm
+  val sub : trm -> trm -> trm
 end = struct
   type var = Var.t
 
@@ -223,6 +224,7 @@ end = struct
     | Compound -> Arith a )
     |> check invariant
 
+  let sub x y = _Arith Arith.(sub (trm x) (trm y))
   let _Splat x = Splat x |> check invariant
   let _Sized seq siz = Sized {seq; siz} |> check invariant
   let _Extract seq off len = Extract {seq; off; len} |> check invariant
@@ -274,8 +276,9 @@ module Fml = struct
     else if y == zero then _Eq0 x
     else
       match (x, y) with
-      | Z y, Z z -> bool (Z.equal y z)
-      | Q q, Q r -> bool (Q.equal q r)
+      (* x = y ==> 0 = x - y when x = y is an arithmetic equality *)
+      | (Z _ | Q _ | Arith _), _ | _, (Z _ | Q _ | Arith _) ->
+          _Eq0 (sub x y)
       | _ -> (
         match Sign.of_int (compare_trm x y) with
         | Neg -> _Eq x y
@@ -660,7 +663,7 @@ module Term = struct
   let rational q = `Trm (_Q q)
   let neg = ap1t @@ fun x -> _Arith Arith.(neg (trm x))
   let add = ap2t @@ fun x y -> _Arith Arith.(add (trm x) (trm y))
-  let sub = ap2t @@ fun x y -> _Arith Arith.(sub (trm x) (trm y))
+  let sub = ap2t Trm.sub
   let mulq q = ap1t @@ fun x -> _Arith Arith.(mulc q (trm x))
   let mul = ap2t @@ fun x y -> _Arith (Arith.mul x y)
   let div = ap2t @@ fun x y -> _Arith (Arith.div x y)

@@ -76,7 +76,7 @@ let%test_module _ =
 
     let%expect_test _ =
       pp_raw f2 ;
-      [%expect {| {sat= false; rep= [[%x_5 ↦ ]; [-1 ↦ ]; [0 ↦ ]]} |}]
+      [%expect {| {sat= false; rep= [[-1 ↦ ]; [0 ↦ ]]} |}]
 
     let f3 = of_eqs [(x + !0, x + !1)]
 
@@ -84,7 +84,7 @@ let%test_module _ =
 
     let%expect_test _ =
       pp_raw f3 ;
-      [%expect {| {sat= false; rep= [[%x_5 ↦ ]; [-1 ↦ ]; [0 ↦ ]]} |}]
+      [%expect {| {sat= false; rep= [[-1 ↦ ]; [0 ↦ ]]} |}]
 
     let f4 = of_eqs [(x, y); (x + !0, y + !1)]
 
@@ -512,13 +512,13 @@ let%test_module _ =
         (Formula.orN (Iter.to_list (Iter.map ~f:snd3 (Context.dnf f)))) ;
       [%expect
         {|
-        ((%x_5 = %y_6) ∧ ((%w_4 = 4) ∨ (%w_4 = 5))
-          ∧ ((0 = %x_5) ? (%z_7 = 2) : (%z_7 = 3)))
+        ((%x_5 = %y_6) ∧ ((5 = %w_4) ∨ (4 = %w_4))
+          ∧ ((0 = %x_5) ? (2 = %z_7) : (3 = %z_7)))
 
-        (((%w_4 = 4) ∧ (%x_5 = %y_6) ∧ (%z_7 = 2) ∧ (0 = %x_5))
-          ∨ ((%w_4 = 4) ∧ (%x_5 = %y_6) ∧ (%z_7 = 3) ∧ (0 ≠ %x_5))
-          ∨ ((%w_4 = 5) ∧ (%x_5 = %y_6) ∧ (%z_7 = 2) ∧ (0 = %x_5))
-          ∨ ((%w_4 = 5) ∧ (%x_5 = %y_6) ∧ (%z_7 = 3) ∧ (0 ≠ %x_5))) |}]
+        (((%x_5 = %y_6) ∧ (0 = %x_5) ∧ (5 = %w_4) ∧ (2 = %z_7))
+          ∨ ((%x_5 = %y_6) ∧ (0 = %x_5) ∧ (4 = %w_4) ∧ (2 = %z_7))
+          ∨ ((%x_5 = %y_6) ∧ (5 = %w_4) ∧ (3 = %z_7) ∧ (0 ≠ %x_5))
+          ∨ ((%x_5 = %y_6) ∧ (4 = %w_4) ∧ (3 = %z_7) ∧ (0 ≠ %x_5))) |}]
 
     let%test "unsigned boolean overflow" =
       Formula.equal Formula.tt
