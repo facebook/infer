@@ -250,10 +250,24 @@ let one = _Z Z.one
  * Formulas
  *)
 
+(** Sets of formulas *)
+module rec Fmls : sig
+  include Set.S with type elt := Fml.fml
+
+  val t_of_sexp : Sexp.t -> t
+end = struct
+  module T = struct
+    type t = Fml.fml [@@deriving compare, equal, sexp]
+  end
+
+  include Set.Make (T)
+  include Provide_of_sexp (T)
+end
+
 (** Formulas, built from literals with predicate symbols from various
     theories, and propositional constants and connectives. Denote sets of
     structures. *)
-module Fml : sig
+and Fml : sig
   type fml = private
     (* propositional constants *)
     | Tt
@@ -264,24 +278,26 @@ module Fml : sig
     | Pos of trm  (** [Pos(x)] iff x > 0 *)
     (* propositional connectives *)
     | Not of fml
-    | And of fml * fml
-    | Or of fml * fml
+    | And of {pos: Fmls.t; neg: Fmls.t}
+    | Or of {pos: Fmls.t; neg: Fmls.t}
     | Iff of fml * fml
     | Cond of {cnd: fml; pos: fml; neg: fml}
     (* uninterpreted literals *)
     | Lit of Predsym.t * trm array
   [@@deriving compare, equal, sexp]
 
-  val _Tt : fml
+  val mk_Tt : unit -> fml
   val _Eq : trm -> trm -> fml
   val _Eq0 : trm -> fml
   val _Pos : trm -> fml
   val _Not : fml -> fml
-  val _And : fml -> fml -> fml
-  val _Or : fml -> fml -> fml
+  val _And : pos:Fmls.t -> neg:Fmls.t -> fml
+  val _Or : pos:Fmls.t -> neg:Fmls.t -> fml
   val _Iff : fml -> fml -> fml
   val _Cond : fml -> fml -> fml -> fml
   val _Lit : Predsym.t -> trm array -> fml
+  val and_ : fml -> fml -> fml
+  val or_ : fml -> fml -> fml
 end = struct
   type fml =
     | Tt
@@ -289,8 +305,8 @@ end = struct
     | Eq0 of trm
     | Pos of trm
     | Not of fml
-    | And of fml * fml
-    | Or of fml * fml
+    | And of {pos: Fmls.t; neg: Fmls.t}
+    | Or of {pos: Fmls.t; neg: Fmls.t}
     | Iff of fml * fml
     | Cond of {cnd: fml; pos: fml; neg: fml}
     | Lit of Predsym.t * trm array
@@ -301,6 +317,12 @@ end = struct
     match f with
     (* formulas are in negation-normal form *)
     | Not (Not _ | And _ | Or _ | Cond _) -> assert false
+    (* conjunction and disjunction formulas are: *)
+    | And {pos; neg} | Or {pos; neg} ->
+        (* not "zero" (the negation of their unit) *)
+        assert (Fmls.disjoint pos neg) ;
+        (* not singleton *)
+        assert (Fmls.cardinal pos + Fmls.cardinal neg > 1)
     (* conditional formulas are in "positive condition" form *)
     | Cond {cnd= Not _ | Or _} -> assert false
     | _ -> ()
@@ -313,8 +335,9 @@ end = struct
       [0 ≠ (p ? 1 : 0)] ==> [(p ? 0 ≠ 1 : 0 ≠ 0)] ==> [(p ? tt : ff)]
       ==> [p]. *)
 
-  let _Tt = Tt |> check invariant
-  let _Ff = Not Tt |> check invariant
+  let tt = Tt |> check invariant
+  let ff = Not Tt |> check invariant
+  let mk_Tt () = tt
 
   (** classification of terms as either semantically equal or disequal, or
       if semantic relationship is unknown, as either syntactically less than
@@ -332,9 +355,9 @@ end = struct
   let _Eq0 x =
     ( match compare_semantic_syntactic zero x with
     (* 0 = 0 ==> tt *)
-    | SemEq -> Tt
+    | SemEq -> tt
     (* 0 = N ==> ff for N ≢ 0 *)
-    | SemDq -> _Ff
+    | SemDq -> ff
     | SynLt | SynGt -> Eq0 x )
     |> check invariant
 
@@ -343,33 +366,80 @@ end = struct
     else if y == zero then _Eq0 x
     else
       match compare_semantic_syntactic x y with
-      | SemEq -> Tt
-      | SemDq -> _Ff
+      | SemEq -> tt
+      | SemDq -> ff
       | SynLt -> Eq (x, y)
       | SynGt -> Eq (y, x) )
     |> check invariant
 
   let _Pos x =
     ( match x with
-    | Z z -> if Z.gt z Z.zero then Tt else _Ff
-    | Q q -> if Q.gt q Q.zero then Tt else _Ff
+    | Z z -> if Z.gt z Z.zero then tt else ff
+    | Q q -> if Q.gt q Q.zero then tt else ff
     | x -> Pos x )
     |> check invariant
 
   let _Lit p xs = Lit (p, xs) |> check invariant
+
+  let rec _Not p =
+    ( match p with
+    | Not x -> x
+    | And {pos; neg} -> Or {pos= neg; neg= pos}
+    | Or {pos; neg} -> And {pos= neg; neg= pos}
+    | Cond {cnd; pos; neg} -> Cond {cnd; pos= _Not pos; neg= _Not neg}
+    | Tt | Eq _ | Eq0 _ | Pos _ | Lit _ | Iff _ -> Not p )
+    |> check invariant
+
+  let _Join cons zero ~pos ~neg =
+    if not (Fmls.disjoint pos neg) then zero
+    else if Fmls.is_empty neg then
+      match Fmls.only_elt pos with Some p -> p | _ -> cons ~pos ~neg
+    else if Fmls.is_empty pos then
+      match Fmls.only_elt neg with Some n -> _Not n | _ -> cons ~pos ~neg
+    else cons ~pos ~neg
+
+  let _And ~pos ~neg = _Join (fun ~pos ~neg -> And {pos; neg}) ff ~pos ~neg
+  let _Or ~pos ~neg = _Join (fun ~pos ~neg -> Or {pos; neg}) tt ~pos ~neg
+
+  let join _Cons zero split_pos_neg p q =
+    ( if equal_fml p zero || equal_fml q zero then zero
+    else
+      let pp, pn = split_pos_neg p in
+      if Fmls.is_empty pp && Fmls.is_empty pn then q
+      else
+        let qp, qn = split_pos_neg q in
+        if Fmls.is_empty qp && Fmls.is_empty qn then p
+        else
+          let pos = Fmls.union pp qp in
+          let neg = Fmls.union pn qn in
+          _Cons ~pos ~neg )
+    |> check invariant
+
+  let and_ p q =
+    join _And ff
+      (function
+        | And {pos; neg} -> (pos, neg)
+        | Not p -> (Fmls.empty, Fmls.of_ p)
+        | p -> (Fmls.of_ p, Fmls.empty) )
+      p q
+
+  let or_ p q =
+    join _Or tt
+      (function
+        | Or {pos; neg} -> (pos, neg)
+        | Not p -> (Fmls.empty, Fmls.of_ p)
+        | p -> (Fmls.of_ p, Fmls.empty) )
+      p q
 
   type equal_or_opposite = Equal | Opposite | Unknown
 
   let rec equal_or_opposite p q =
     match (p, q) with
     | p, Not p' | Not p', p -> if equal_fml p p' then Opposite else Unknown
-    | And (a, b), Or (a', b') | Or (a', b'), And (a, b) -> (
-      match equal_or_opposite a a' with
-      | Opposite -> (
-        match equal_or_opposite b b' with
-        | Opposite -> Opposite
-        | _ -> Unknown )
-      | _ -> Unknown )
+    | And {pos= ap; neg= an}, Or {pos= op; neg= on}
+     |Or {pos= op; neg= on}, And {pos= ap; neg= an}
+      when Fmls.equal ap on && Fmls.equal an op ->
+        Opposite
     | Cond {cnd= c; pos= p; neg= n}, Cond {cnd= c'; pos= p'; neg= n'} ->
         if equal_fml c c' then
           match equal_or_opposite p p' with
@@ -384,55 +454,20 @@ end = struct
 
   let is_negative = function Not _ | Or _ -> true | _ -> false
 
-  let _And p q =
-    ( match (p, q) with
-    | Tt, p | p, Tt -> p
-    | Not Tt, _ | _, Not Tt -> _Ff
-    | _ -> (
-      match equal_or_opposite p q with
-      | Equal -> p
-      | Opposite -> _Ff
-      | Unknown ->
-          let p, q = sort_fml p q in
-          And (p, q) ) )
-    |> check invariant
-
-  let _Or p q =
-    ( match (p, q) with
-    | Not Tt, p | p, Not Tt -> p
-    | Tt, _ | _, Tt -> Tt
-    | _ -> (
-      match equal_or_opposite p q with
-      | Equal -> p
-      | Opposite -> Tt
-      | Unknown ->
-          let p, q = sort_fml p q in
-          Or (p, q) ) )
-    |> check invariant
-
-  let rec _Iff p q =
+  let _Iff p q =
     ( match (p, q) with
     | Tt, p | p, Tt -> p
     | Not Tt, p | p, Not Tt -> _Not p
     | _ -> (
       match equal_or_opposite p q with
-      | Equal -> Tt
-      | Opposite -> _Ff
+      | Equal -> tt
+      | Opposite -> ff
       | Unknown ->
           let p, q = sort_fml p q in
           Iff (p, q) ) )
     |> check invariant
 
-  and _Not p =
-    ( match p with
-    | Not x -> x
-    | And (x, y) -> _Or (_Not x) (_Not y)
-    | Or (x, y) -> _And (_Not x) (_Not y)
-    | Cond {cnd; pos; neg} -> _Cond cnd (_Not pos) (_Not neg)
-    | Tt | Eq _ | Eq0 _ | Pos _ | Lit _ | Iff _ -> Not p )
-    |> check invariant
-
-  and _Cond cnd pos neg =
+  let _Cond cnd pos neg =
     ( match (cnd, pos, neg) with
     (* (tt ? p : n) ==> p *)
     | Tt, _, _ -> pos
@@ -443,13 +478,13 @@ end = struct
     (* (c ? ff : tt) ==> ¬c *)
     | _, Not Tt, Tt -> _Not cnd
     (* (c ? p : ff) ==> c ∧ p *)
-    | _, _, Not Tt -> _And cnd pos
+    | _, _, Not Tt -> and_ cnd pos
     (* (c ? ff : n) ==> ¬c ∧ n *)
-    | _, Not Tt, _ -> _And (_Not cnd) neg
+    | _, Not Tt, _ -> and_ (_Not cnd) neg
     (* (c ? tt : n) ==> c ∨ n *)
-    | _, Tt, _ -> _Or cnd neg
+    | _, Tt, _ -> or_ cnd neg
     (* (c ? p : tt) ==> ¬c ∨ p *)
-    | _, _, Tt -> _Or (_Not cnd) pos
+    | _, _, Tt -> or_ (_Not cnd) pos
     | _ -> (
       match equal_or_opposite pos neg with
       (* (c ? p : p) ==> c *)
@@ -494,6 +529,14 @@ let ppx_f strength fs fml =
   let pp_t = Trm.ppx strength in
   let rec pp fs fml =
     let pf fmt = pp_boxed fs fmt in
+    let pp_join sep pos neg =
+      pf "(%a%t%a)" (Fmls.pp ~sep pp) pos
+        (fun ppf ->
+          if (not (Fmls.is_empty pos)) && not (Fmls.is_empty neg) then
+            Format.fprintf ppf sep )
+        (Fmls.pp ~sep (fun fs fml -> pp fs (_Not fml)))
+        neg
+    in
     match (fml : fml) with
     | Tt -> pf "tt"
     | Not Tt -> pf "ff"
@@ -504,8 +547,8 @@ let ppx_f strength fs fml =
     | Pos x -> pf "(0 < %a)" pp_t x
     | Not (Pos x) -> pf "(0 @<2>≥ %a)" pp_t x
     | Not x -> pf "@<1>¬%a" pp x
-    | And (x, y) -> pf "(%a@ @<2>∧ %a)" pp x pp y
-    | Or (x, y) -> pf "(%a@ @<2>∨ %a)" pp x pp y
+    | And {pos; neg} -> pp_join "@ @<2>∧ " pos neg
+    | Or {pos; neg} -> pp_join "@ @<2>∨ " pos neg
     | Iff (x, y) -> pf "(%a@ <=> %a)" pp x pp y
     | Cond {cnd; pos; neg} ->
         pf "@[<hv 1>(%a@ ? %a@ : %a)@]" pp cnd pp pos pp neg
@@ -534,6 +577,10 @@ let pp = ppx (fun _ -> None)
 
 (** fold_vars *)
 
+let fold_pos_neg ~pos ~neg ~init ~f =
+  let f_not s p = f s (_Not p) in
+  Fmls.fold ~init:(Fmls.fold ~init ~f pos) ~f:f_not neg
+
 let rec fold_vars_t e ~init ~f =
   match e with
   | Z _ | Q _ | Ancestor _ -> init
@@ -557,8 +604,9 @@ let rec fold_vars_f ~init p ~f =
   | Eq (x, y) -> fold_vars_t ~f x ~init:(fold_vars_t ~f y ~init)
   | Eq0 x | Pos x -> fold_vars_t ~f x ~init
   | Not x -> fold_vars_f ~f x ~init
-  | And (x, y) | Or (x, y) | Iff (x, y) ->
-      fold_vars_f ~f x ~init:(fold_vars_f ~f y ~init)
+  | And {pos; neg} | Or {pos; neg} ->
+      fold_pos_neg ~f:(fun init -> fold_vars_f ~f ~init) ~pos ~neg ~init
+  | Iff (x, y) -> fold_vars_f ~f x ~init:(fold_vars_f ~f y ~init)
   | Cond {cnd; pos; neg} ->
       fold_vars_f ~f cnd
         ~init:(fold_vars_f ~f pos ~init:(fold_vars_f ~f neg ~init))
@@ -596,6 +644,11 @@ let mapN f e cons xs =
   let xs' = Array.map_endo ~f xs in
   if xs' == xs then e else cons xs'
 
+let map_pos_neg f e cons ~pos ~neg =
+  let pos' = Fmls.map ~f pos in
+  let neg' = Fmls.map ~f neg in
+  if pos' == pos && neg' == neg then e else cons ~pos:pos' ~neg:neg'
+
 (** map_trms *)
 
 let rec map_trms_f ~f b =
@@ -605,8 +658,8 @@ let rec map_trms_f ~f b =
   | Eq0 x -> map1 f b _Eq0 x
   | Pos x -> map1 f b _Pos x
   | Not x -> map1 (map_trms_f ~f) b _Not x
-  | And (x, y) -> map2 (map_trms_f ~f) b _And x y
-  | Or (x, y) -> map2 (map_trms_f ~f) b _Or x y
+  | And {pos; neg} -> map_pos_neg (map_trms_f ~f) b _And ~pos ~neg
+  | Or {pos; neg} -> map_pos_neg (map_trms_f ~f) b _Or ~pos ~neg
   | Iff (x, y) -> map2 (map_trms_f ~f) b _Iff x y
   | Cond {cnd; pos; neg} -> map3 (map_trms_f ~f) b _Cond cnd pos neg
   | Lit (p, xs) -> mapN f b (_Lit p) xs
@@ -909,7 +962,7 @@ module Formula = struct
 
   (* constants *)
 
-  let tt = _Tt
+  let tt = mk_Tt ()
   let ff = _Not tt
 
   (* comparisons *)
@@ -936,9 +989,9 @@ module Formula = struct
 
   (* connectives *)
 
-  let and_ = _And
+  let and_ = and_
   let andN = function [] -> tt | b :: bs -> List.fold ~init:b ~f:and_ bs
-  let or_ = _Or
+  let or_ = or_
   let orN = function [] -> ff | b :: bs -> List.fold ~init:b ~f:or_ bs
   let iff = _Iff
   let xor p q = _Not (_Iff p q)
@@ -976,8 +1029,8 @@ module Formula = struct
     | Eq0 x -> lift_map1 f b _Eq0 x
     | Pos x -> lift_map1 f b _Pos x
     | Not x -> map1 (map_terms ~f) b _Not x
-    | And (x, y) -> map2 (map_terms ~f) b _And x y
-    | Or (x, y) -> map2 (map_terms ~f) b _Or x y
+    | And {pos; neg} -> map_pos_neg (map_terms ~f) b _And ~pos ~neg
+    | Or {pos; neg} -> map_pos_neg (map_terms ~f) b _Or ~pos ~neg
     | Iff (x, y) -> map2 (map_terms ~f) b _Iff x y
     | Cond {cnd; pos; neg} -> map3 (map_terms ~f) b _Cond cnd pos neg
     | Lit (p, xs) -> lift_mapN f b (_Lit p) xs
@@ -1006,16 +1059,18 @@ module Formula = struct
       match fml with
       | Tt | Eq _ | Eq0 _ | Pos _ | Iff _ | Lit _ | Not _ ->
           (meet1 fml cjn, splits)
-      | And (p, q) -> add_conjunct (add_conjunct (cjn, splits) p) q
-      | Or (p, q) -> (cjn, [p; q] :: splits)
+      | And {pos; neg} ->
+          fold_pos_neg ~f:add_conjunct ~init:(cjn, splits) ~pos ~neg
+      | Or {pos; neg} -> (cjn, (pos, neg) :: splits)
       | Cond {cnd; pos; neg} ->
-          (cjn, [and_ cnd pos; and_ (not_ cnd) neg] :: splits)
+          add_conjunct (cjn, splits)
+            (or_ (and_ cnd pos) (and_ (not_ cnd) neg))
     in
     let rec add_disjunct (cjn, splits) djn fml =
       let cjn, splits = add_conjunct (cjn, splits) fml in
       match splits with
-      | split :: splits ->
-          List.fold ~f:(add_disjunct (cjn, splits)) ~init:djn split
+      | (pos, neg) :: splits ->
+          fold_pos_neg ~f:(add_disjunct (cjn, splits)) ~init:djn ~pos ~neg
       | [] -> join1 cjn djn
     in
     add_disjunct (top, []) bot fml
@@ -1081,8 +1136,14 @@ let rec f_to_ses : fml -> Ses.Term.t = function
   | Eq0 x -> Ses.Term.eq Ses.Term.zero (t_to_ses x)
   | Pos x -> Ses.Term.lt Ses.Term.zero (t_to_ses x)
   | Not p -> Ses.Term.not_ (f_to_ses p)
-  | And (p, q) -> Ses.Term.and_ (f_to_ses p) (f_to_ses q)
-  | Or (p, q) -> Ses.Term.or_ (f_to_ses p) (f_to_ses q)
+  | And {pos; neg} ->
+      fold_pos_neg
+        ~f:(fun p f -> Ses.Term.and_ p (f_to_ses f))
+        ~init:Ses.Term.true_ ~pos ~neg
+  | Or {pos; neg} ->
+      fold_pos_neg
+        ~f:(fun p f -> Ses.Term.or_ p (f_to_ses f))
+        ~init:Ses.Term.false_ ~pos ~neg
   | Iff (p, q) -> Ses.Term.eq (f_to_ses p) (f_to_ses q)
   | Cond {cnd; pos; neg} ->
       Ses.Term.conditional ~cnd:(f_to_ses cnd) ~thn:(f_to_ses pos)

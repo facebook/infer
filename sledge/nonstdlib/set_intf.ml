@@ -35,10 +35,12 @@ module type S = sig
   (** {1 Query} *)
 
   val is_empty : t -> bool
+  val cardinal : t -> int
   val mem : t -> elt -> bool
   val is_subset : t -> of_:t -> bool
   val disjoint : t -> t -> bool
   val max_elt : t -> elt option
+  val only_elt : t -> elt option
 
   val pop_exn : t -> elt * t
   (** Find and remove an unspecified element. [O(1)]. *)

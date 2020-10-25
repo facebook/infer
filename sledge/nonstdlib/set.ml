@@ -39,6 +39,7 @@ end) : S with type elt = Elt.t = struct
   let diff_inter s t = (diff s t, inter s t)
   let union_list ss = List.fold ~f:union ~init:empty ss
   let is_empty = S.is_empty
+  let cardinal = S.cardinal
   let mem s x = S.mem x s
   let is_subset s ~of_:t = S.subset s t
   let disjoint = S.disjoint
@@ -59,6 +60,14 @@ end) : S with type elt = Elt.t = struct
 
   let choose = root_elt
   let choose_exn m = Option.get_exn (choose m)
+
+  let only_elt s =
+    match root_elt s with
+    | Some elt -> (
+      match S.split elt s with
+      | l, _, r when is_empty l && is_empty r -> Some elt
+      | _ -> None )
+    | None -> None
 
   let pop_exn s =
     let elt = choose_exn s in
