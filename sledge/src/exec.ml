@@ -52,7 +52,7 @@ end = struct
 
   let var nam {wrt; xs} =
     let x, wrt = Var.fresh nam ~wrt in
-    let xs = Var.Set.add xs x in
+    let xs = Var.Set.add x xs in
     return (Term.var x) {wrt; xs}
 
   let seg ?bas ?len ?siz ?seq loc =
@@ -104,7 +104,7 @@ let move_spec reg_exps =
   let ws, rs =
     IArray.fold reg_exps ~init:(Var.Set.empty, Var.Set.empty)
       ~f:(fun (ws, rs) (reg, exp) ->
-        (Var.Set.add ws reg, Var.Set.union rs (Term.fv exp)) )
+        (Var.Set.add reg ws, Var.Set.union rs (Term.fv exp)) )
   in
   let+ sub, ms = Fresh.assign ~ws ~rs in
   let post =

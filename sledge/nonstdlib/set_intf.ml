@@ -23,7 +23,7 @@ module type S = sig
   val of_ : elt -> t
   val of_option : elt option -> t
   val of_list : elt list -> t
-  val add : t -> elt -> t
+  val add : elt -> t -> t
   val add_option : elt option -> t -> t
   val add_list : elt list -> t -> t
   val diff : t -> t -> t
@@ -37,15 +37,13 @@ module type S = sig
   val is_empty : t -> bool
   val cardinal : t -> int
   val mem : t -> elt -> bool
-  val is_subset : t -> of_:t -> bool
+  val subset : t -> of_:t -> bool
   val disjoint : t -> t -> bool
   val max_elt : t -> elt option
   val only_elt : t -> elt option
 
   val pop_exn : t -> elt * t
   (** Find and remove an unspecified element. [O(1)]. *)
-
-  val elements : t -> elt list
 
   (** {1 Transform} *)
 
@@ -57,7 +55,11 @@ module type S = sig
   val iter : t -> f:(elt -> unit) -> unit
   val exists : t -> f:(elt -> bool) -> bool
   val for_all : t -> f:(elt -> bool) -> bool
-  val fold : t -> init:'a -> f:('a -> elt -> 'a) -> 'a
+  val fold : t -> init:'s -> f:(elt -> 's -> 's) -> 's
+
+  (** {1 Convert} *)
+
+  val to_iter : t -> elt iter
 
   (** {1 Pretty-print} *)
 

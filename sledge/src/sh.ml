@@ -118,7 +118,7 @@ let rec var_strength_ xs m q =
 
 let var_strength ?(xs = Var.Set.empty) q =
   let m =
-    Var.Set.fold xs ~init:Var.Map.empty ~f:(fun m x ->
+    Var.Set.fold xs ~init:Var.Map.empty ~f:(fun x m ->
         Var.Map.add ~key:x ~data:`Existential m )
   in
   var_strength_ xs m q
@@ -258,12 +258,14 @@ let pp_djn fs d =
 let pp_raw fs q =
   pp_ ?var_strength:None Var.Set.empty Var.Set.empty Context.empty fs q
 
-let fv_seg seg = fold_vars_seg seg ~f:Var.Set.add ~init:Var.Set.empty
+let fv_seg seg =
+  fold_vars_seg seg ~f:(Fun.flip Var.Set.add) ~init:Var.Set.empty
 
 let fv ?ignore_ctx ?ignore_pure q =
   let rec fv_union init q =
     Var.Set.diff
-      (fold_vars ?ignore_ctx ?ignore_pure fv_union q ~init ~f:Var.Set.add)
+      (fold_vars ?ignore_ctx ?ignore_pure fv_union q ~init
+         ~f:(Fun.flip Var.Set.add))
       q.xs
   in
   fv_union Var.Set.empty q
@@ -280,7 +282,7 @@ let rec invariant q =
       || fail "inter: @[%a@]@\nq: @[%a@]" Var.Set.pp (Var.Set.inter us xs)
            pp q () ) ;
     assert (
-      Var.Set.is_subset (fv q) ~of_:us
+      Var.Set.subset (fv q) ~of_:us
       || fail "unbound but free: %a" Var.Set.pp (Var.Set.diff (fv q) us) ()
     ) ;
     Context.invariant ctx ;
@@ -294,7 +296,7 @@ let rec invariant q =
     List.iter heap ~f:invariant_seg ;
     List.iter djns ~f:(fun djn ->
         List.iter djn ~f:(fun sjn ->
-            assert (Var.Set.is_subset sjn.us ~of_:(Var.Set.union us xs)) ;
+            assert (Var.Set.subset sjn.us ~of_:(Var.Set.union us xs)) ;
             invariant sjn ) )
   with exc ->
     [%Trace.info "%a" pp q] ;
@@ -314,7 +316,7 @@ let rec apply_subst sub q =
 and rename_ Var.Subst.{sub; dom; rng} q =
   [%Trace.call fun {pf} ->
     pf "@[%a@]@ %a" Var.Subst.pp sub pp q ;
-    assert (Var.Set.is_subset dom ~of_:q.us)]
+    assert (Var.Set.subset dom ~of_:q.us)]
   ;
   ( if Var.Subst.is_empty sub then q
   else
@@ -342,7 +344,7 @@ and rename sub q =
 and freshen_xs q ~wrt =
   [%Trace.call fun {pf} ->
     pf "{@[%a@]}@ %a" Var.Set.pp wrt pp q ;
-    assert (Var.Set.is_subset q.us ~of_:wrt)]
+    assert (Var.Set.subset q.us ~of_:wrt)]
   ;
   let Var.Subst.{sub; dom; rng}, _ = Var.Subst.freshen q.xs ~wrt in
   ( if Var.Subst.is_empty sub then q
@@ -373,7 +375,7 @@ let freshen q ~wrt =
   [%Trace.retn fun {pf} (q', _) ->
     pf "%a" pp q' ;
     invariant q' ;
-    assert (Var.Set.is_subset wrt ~of_:q'.us) ;
+    assert (Var.Set.subset wrt ~of_:q'.us) ;
     assert (Var.Set.disjoint wrt (fv q'))]
 
 let bind_exists q ~wrt =
@@ -404,7 +406,7 @@ let exists xs q =
   [%Trace.call fun {pf} -> pf "{@[%a@]}@ %a" Var.Set.pp xs pp q]
   ;
   assert (
-    Var.Set.is_subset xs ~of_:q.us
+    Var.Set.subset xs ~of_:q.us
     || fail "Sh.exists xs - q.us: %a" Var.Set.pp (Var.Set.diff xs q.us) ()
   ) ;
   ( if Var.Set.is_empty xs then q
@@ -423,7 +425,7 @@ let elim_exists xs q =
 
 (** conjoin an FOL context assuming vocabulary is compatible *)
 let and_ctx_ ctx q =
-  assert (Var.Set.is_subset (Context.fv ctx) ~of_:q.us) ;
+  assert (Var.Set.subset (Context.fv ctx) ~of_:q.us) ;
   let xs, ctx = Context.union (Var.Set.union q.us q.xs) q.ctx ctx in
   if Context.is_unsat ctx then false_ q.us else exists_fresh xs {q with ctx}
 
@@ -546,7 +548,7 @@ let subst sub q =
   let dom, eqs =
     Var.Subst.fold sub ~init:(Var.Set.empty, Formula.tt)
       ~f:(fun var trm (dom, eqs) ->
-        ( Var.Set.add dom var
+        ( Var.Set.add var dom
         , Formula.and_ (Formula.eq (Term.var var) (Term.var trm)) eqs ) )
   in
   exists dom (and_ eqs q)
@@ -697,7 +699,7 @@ let rec propagate_context_ ancestor_vs ancestor_ctx q =
          let djn_xs = Var.Set.diff (Context.fv djn_ctx) q'.us in
          let djn = List.map ~f:(elim_exists djn_xs) djn in
          let ctx_djn = and_ctx_ djn_ctx (orN djn) in
-         assert (is_false ctx_djn || Var.Set.is_subset new_xs ~of_:djn_xs) ;
+         assert (is_false ctx_djn || Var.Set.subset new_xs ~of_:djn_xs) ;
          star (exists djn_xs ctx_djn) q' ))
   |>
   [%Trace.retn fun {pf} q' ->

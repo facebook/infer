@@ -566,7 +566,7 @@ let rec simp_and2 x y =
   (* e && e ==> e *)
   | _ when equal x y -> x
   | _ ->
-      let add s = function And cs -> Set.union s cs | c -> Set.add s c in
+      let add s = function And cs -> Set.union s cs | c -> Set.add c s in
       And (add (add Set.empty x) y)
 
 let simp_and xs = Set.fold xs ~init:true_ ~f:simp_and2
@@ -587,7 +587,7 @@ let rec simp_or2 x y =
   (* e || e ==> e *)
   | _ when equal x y -> x
   | _ ->
-      let add s = function Or cs -> Set.union s cs | c -> Set.add s c in
+      let add s = function Or cs -> Set.union s cs | c -> Set.add c s in
       Or (add (add Set.empty x) y)
 
 let simp_or xs = Set.fold xs ~init:false_ ~f:simp_or2
@@ -1041,15 +1041,15 @@ let disjuncts e =
     match e with
     | Or es ->
         let e0, e1N = Set.pop_exn es in
-        Set.fold e1N ~init:(disjuncts_ e0) ~f:(fun cs e ->
+        Set.fold e1N ~init:(disjuncts_ e0) ~f:(fun e cs ->
             Set.union cs (disjuncts_ e) )
     | Ap3 (Conditional, cnd, thn, els) ->
         Set.add
-          (Set.of_ (and_ (orN (disjuncts_ cnd)) (orN (disjuncts_ thn))))
           (and_ (orN (disjuncts_ (not_ cnd))) (orN (disjuncts_ els)))
+          (Set.of_ (and_ (orN (disjuncts_ cnd)) (orN (disjuncts_ thn))))
     | _ -> Set.of_ e
   in
-  Set.elements (disjuncts_ e)
+  Iter.to_list (Set.to_iter (disjuncts_ e))
 
 let rename f e =
   let f = (f : Var.t -> Var.t :> Var.t -> t) in
@@ -1102,7 +1102,7 @@ let fold e ~init:s ~f =
   | Ap3 (_, x, y, z) -> f z (f y (f x s))
   | ApN (_, xs) | Apply (_, xs) | PosLit (_, xs) | NegLit (_, xs) ->
       IArray.fold ~f:(fun s x -> f x s) xs ~init:s
-  | And args | Or args -> Set.fold ~f:(fun s e -> f e s) args ~init:s
+  | And args | Or args -> Set.fold ~f args ~init:s
   | Add args | Mul args -> Qset.fold ~f:(fun e _ s -> f e s) args ~init:s
   | Var _ | Integer _ | Rational _ | RecRecord _ -> s
 
@@ -1133,8 +1133,7 @@ let rec fold_terms e ~init:s ~f =
     | Ap3 (_, x, y, z) -> fold_terms f z (fold_terms f y (fold_terms f x s))
     | ApN (_, xs) | Apply (_, xs) | PosLit (_, xs) | NegLit (_, xs) ->
         IArray.fold ~f:(fun s x -> fold_terms f x s) xs ~init:s
-    | And args | Or args ->
-        Set.fold args ~init:s ~f:(fun s x -> fold_terms f x s)
+    | And args | Or args -> Set.fold args ~init:s ~f:(fold_terms f)
     | Add args | Mul args ->
         Qset.fold args ~init:s ~f:(fun arg _ s -> fold_terms f arg s)
     | Var _ | Integer _ | Rational _ | RecRecord _ -> s
@@ -1152,7 +1151,7 @@ let fold_vars e ~init ~f =
 
 (** Query *)
 
-let fv e = fold_vars e ~f:Var.Set.add ~init:Var.Set.empty
+let fv e = fold_vars e ~f:(Fun.flip Var.Set.add) ~init:Var.Set.empty
 let is_true = function Integer {data} -> Z.is_true data | _ -> false
 let is_false = function Integer {data} -> Z.is_false data | _ -> false
 
@@ -1169,7 +1168,7 @@ let rec height = function
   | ApN (_, v) | Apply (_, v) | PosLit (_, v) | NegLit (_, v) ->
       1 + IArray.fold v ~init:0 ~f:(fun m a -> max m (height a))
   | And bs | Or bs ->
-      1 + Set.fold bs ~init:0 ~f:(fun m a -> max m (height a))
+      1 + Set.fold bs ~init:0 ~f:(fun a m -> max m (height a))
   | Add qs | Mul qs ->
       1 + Qset.fold qs ~init:0 ~f:(fun a _ m -> max m (height a))
   | Integer _ | Rational _ | RecRecord _ -> 0

@@ -25,7 +25,7 @@ let retn _ _ from_call post = Llair.Reg.Set.union from_call post
 let dnf t = [t]
 
 let add_if_global gs v =
-  if Llair.Reg.is_global v then Llair.Reg.Set.add gs v else gs
+  if Llair.Reg.is_global v then Llair.Reg.Set.add v gs else gs
 
 let used_globals ?(init = empty) exp =
   Llair.Exp.fold_regs exp ~init ~f:add_if_global

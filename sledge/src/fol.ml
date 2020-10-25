@@ -351,8 +351,8 @@ let pp = ppx (fun _ -> None)
 (** fold_vars *)
 
 let fold_pos_neg ~pos ~neg ~init ~f =
-  let f_not s p = f s (_Not p) in
-  Fmls.fold ~init:(Fmls.fold ~init ~f pos) ~f:f_not neg
+  let f_not p s = f s (_Not p) in
+  Fmls.fold ~init:(Fmls.fold ~init ~f:(Fun.flip f) pos) ~f:f_not neg
 
 let rec fold_vars_t e ~init ~f =
   match e with
@@ -718,7 +718,7 @@ module Term = struct
 
   (** Query *)
 
-  let fv e = fold_vars e ~f:Var.Set.add ~init:Var.Set.empty
+  let fv e = fold_vars e ~f:(Fun.flip Var.Set.add) ~init:Var.Set.empty
 end
 
 (*
@@ -773,7 +773,7 @@ module Formula = struct
 
   (** Query *)
 
-  let fv e = fold_vars_f e ~f:Var.Set.add ~init:Var.Set.empty
+  let fv e = fold_vars_f e ~f:(Fun.flip Var.Set.add) ~init:Var.Set.empty
 
   (** Traverse *)
 
@@ -858,8 +858,8 @@ let v_to_ses : var -> Ses.Var.t =
 
 let vs_to_ses : Var.Set.t -> Ses.Var.Set.t =
  fun vs ->
-  Var.Set.fold vs ~init:Ses.Var.Set.empty ~f:(fun vs v ->
-      Ses.Var.Set.add vs (v_to_ses v) )
+  Var.Set.fold vs ~init:Ses.Var.Set.empty ~f:(fun v vs ->
+      Ses.Var.Set.add (v_to_ses v) vs )
 
 let rec arith_to_ses poly =
   Arith.fold_monomials poly ~init:Ses.Term.zero ~f:(fun mono coeff e ->
@@ -941,8 +941,8 @@ let v_of_ses : Ses.Var.t -> var =
 
 let vs_of_ses : Ses.Var.Set.t -> Var.Set.t =
  fun vs ->
-  Ses.Var.Set.fold vs ~init:Var.Set.empty ~f:(fun vs v ->
-      Var.Set.add vs (v_of_ses v) )
+  Ses.Var.Set.fold vs ~init:Var.Set.empty ~f:(fun v vs ->
+      Var.Set.add (v_of_ses v) vs )
 
 let uap1 f = ap1t (fun x -> _Apply f [|x|])
 let uap2 f = ap2t (fun x y -> _Apply f [|x; y|])
@@ -960,7 +960,7 @@ and ap2_f mk_f mk_t a b = ap2 mk_f (fun x y -> `Fml (mk_t x y)) a b
 
 and apN mk_f mk_t mk_unit es =
   match
-    Ses.Term.Set.fold ~init:(None, None) es ~f:(fun (fs, ts) e ->
+    Ses.Term.Set.fold ~init:(None, None) es ~f:(fun e (fs, ts) ->
         match of_ses e with
         | `Fml f ->
             (Some (match fs with None -> f | Some g -> mk_f f g), ts)
@@ -1076,7 +1076,7 @@ module Context = struct
   let fold_vars ~init x ~f =
     Ses.Equality.fold_vars x ~init ~f:(fun s v -> f s (v_of_ses v))
 
-  let fv e = fold_vars e ~f:Var.Set.add ~init:Var.Set.empty
+  let fv e = fold_vars e ~f:(Fun.flip Var.Set.add) ~init:Var.Set.empty
   let is_empty x = Ses.Equality.is_true x
   let is_unsat x = Ses.Equality.is_false x
   let implies x b = Ses.Equality.implies x (f_to_ses b)

@@ -78,7 +78,7 @@ let term_eq_class_has_only_vars_in fvs ctx term =
       Context.pp ctx Term.pp term]
   ;
   let term_has_only_vars_in fvs term =
-    Var.Set.is_subset (Term.fv term) ~of_:fvs
+    Var.Set.subset (Term.fv term) ~of_:fvs
   in
   let term_eq_class = Context.class_of ctx term in
   List.exists ~f:(term_has_only_vars_in fvs) term_eq_class
@@ -170,9 +170,8 @@ let call ~summaries ~globals ~actuals ~areturn ~formals ~freturn ~locals q =
   let entry = and_eqs shadow formals actuals q' in
   (* note: locals and formals are in scope *)
   assert (
-    Var.Set.is_subset
-      (Var.Set.add_list formals freturn_locals)
-      ~of_:entry.us ) ;
+    Var.Set.subset (Var.Set.add_list formals freturn_locals) ~of_:entry.us
+  ) ;
   (* simplify *)
   let entry = simplify entry in
   ( if not summaries then (entry, {areturn; unshadow; frame= Sh.emp})
@@ -258,7 +257,7 @@ let create_summary ~locals ~formals ~entry ~current:(post : Sh.t) =
   let foot = Sh.exists locals entry in
   let foot, subst = Sh.freshen ~wrt:(Var.Set.union foot.us post.us) foot in
   let restore_formals q =
-    Var.Set.fold formals ~init:q ~f:(fun q var ->
+    Var.Set.fold formals ~init:q ~f:(fun var q ->
         let var = Term.var var in
         let renamed_var = Term.rename subst var in
         Sh.and_ (Formula.eq renamed_var var) q )

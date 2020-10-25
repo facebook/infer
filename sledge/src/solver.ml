@@ -81,7 +81,7 @@ end = struct
       assert (Var.Set.equal us min.us) ;
       assert (Var.Set.equal (Var.Set.union us xs) sub.us) ;
       assert (Var.Set.disjoint us xs) ;
-      assert (Var.Set.is_subset zs ~of_:(Var.Set.union us xs))
+      assert (Var.Set.subset zs ~of_:(Var.Set.union us xs))
     with exc ->
       [%Trace.info "%a" pp g] ;
       raise exc
@@ -139,8 +139,8 @@ let eq_concat (siz, seq) ms =
 
 let fresh_var name vs zs ~wrt =
   let v, wrt = Var.fresh name ~wrt in
-  let vs = Var.Set.add vs v in
-  let zs = Var.Set.add zs v in
+  let vs = Var.Set.add v vs in
+  let zs = Var.Set.add v zs in
   let v = Term.var v in
   (v, vs, zs, wrt)
 
@@ -693,6 +693,6 @@ let infer_frame : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
       )
   @@ fun () ->
   assert (Var.Set.disjoint minuend.us xs) ;
-  assert (Var.Set.is_subset xs ~of_:subtrahend.us) ;
-  assert (Var.Set.is_subset (Var.Set.diff subtrahend.us xs) ~of_:minuend.us) ;
+  assert (Var.Set.subset xs ~of_:subtrahend.us) ;
+  assert (Var.Set.subset (Var.Set.diff subtrahend.us xs) ~of_:minuend.us) ;
   excise_dnf minuend xs subtrahend

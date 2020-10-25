@@ -261,10 +261,10 @@ module Inst = struct
     match inst with
     | Move {reg_exps; _} ->
         IArray.fold
-          ~f:(fun vs (reg, _) -> Reg.Set.add vs reg)
+          ~f:(fun vs (reg, _) -> Reg.Set.add reg vs)
           ~init:vs reg_exps
     | Load {reg; _} | Alloc {reg; _} | Nondet {reg= Some reg; _} ->
-        Reg.Set.add vs reg
+        Reg.Set.add reg vs
     | Store _ | Memcpy _ | Memmov _ | Memset _ | Free _
      |Nondet {reg= None; _}
      |Abort _ ->
@@ -549,7 +549,7 @@ let set_derived_metadata functions =
     let rec visit ancestors func src =
       if BlockQ.mem tips_to_roots src then ()
       else
-        let ancestors = Block_label.Set.add ancestors src in
+        let ancestors = Block_label.Set.add src ancestors in
         let jump jmp =
           if Block_label.Set.mem ancestors jmp.dst then
             jmp.retreating <- true

@@ -177,8 +177,9 @@ let exec_move q move_vec =
   let defs, uses =
     IArray.fold move_vec ~init:(Llair.Reg.Set.empty, Llair.Reg.Set.empty)
       ~f:(fun (defs, uses) (r, e) ->
-        ( Llair.Reg.Set.add defs r
-        , Llair.Exp.fold_regs e ~init:uses ~f:Llair.Reg.Set.add ) )
+        ( Llair.Reg.Set.add r defs
+        , Llair.Exp.fold_regs e ~init:uses ~f:(Fun.flip Llair.Reg.Set.add)
+        ) )
   in
   assert (Llair.Reg.Set.disjoint defs uses) ;
   IArray.fold move_vec ~init:q ~f:(fun a (r, e) -> assign r e a)
@@ -234,7 +235,7 @@ let recursion_beyond_bound = `prune
 (** existentially quantify locals *)
 let post locals _ (q : t) =
   let locals =
-    Llair.Reg.Set.fold locals ~init:[] ~f:(fun a r ->
+    Llair.Reg.Set.fold locals ~init:[] ~f:(fun r a ->
         let v = apron_var_of_reg r in
         if Environment.mem_var q.env v then v :: a else a )
     |> Array.of_list

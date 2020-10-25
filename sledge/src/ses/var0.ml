@@ -50,7 +50,7 @@ module Make (T : REPR) = struct
   let fresh name ~wrt =
     let max = match Set.max_elt wrt with None -> 0 | Some max -> id max in
     let x' = make ~id:(max + 1) ~name in
-    (x', Set.add wrt x')
+    (x', Set.add x' wrt)
 
   let program ~name ~global = make ~id:(if global then -1 else 0) ~name
   let identified ~name ~id = make ~id ~name
@@ -70,7 +70,7 @@ module Make (T : REPR) = struct
           ~f:(fun ~key ~data (domain, range) ->
             (* substs are injective *)
             assert (not (Set.mem range data)) ;
-            (Set.add domain key, Set.add range data) )
+            (Set.add key domain, Set.add data range) )
       in
       assert (Set.disjoint domain range)
 
@@ -85,10 +85,10 @@ module Make (T : REPR) = struct
         let wrt = Set.union wrt vs in
         let sub, rng, wrt =
           Set.fold dom ~init:(empty, Set.empty, wrt)
-            ~f:(fun (sub, rng, wrt) x ->
+            ~f:(fun x (sub, rng, wrt) ->
               let x', wrt = fresh (name x) ~wrt in
               let sub = Map.add_exn ~key:x ~data:x' sub in
-              let rng = Set.add rng x' in
+              let rng = Set.add x' rng in
               (sub, rng, wrt) )
         in
         ({sub; dom; rng}, wrt) )
@@ -99,11 +99,11 @@ module Make (T : REPR) = struct
 
     let domain sub =
       Map.fold sub ~init:Set.empty ~f:(fun ~key ~data:_ domain ->
-          Set.add domain key )
+          Set.add key domain )
 
     let range sub =
       Map.fold sub ~init:Set.empty ~f:(fun ~key:_ ~data range ->
-          Set.add range data )
+          Set.add data range )
 
     let invert sub =
       Map.fold sub ~init:empty ~f:(fun ~key ~data sub' ->
@@ -114,7 +114,7 @@ module Make (T : REPR) = struct
       Map.fold sub ~init:{sub; dom= Set.empty; rng= Set.empty}
         ~f:(fun ~key ~data z ->
           if Set.mem vs key then
-            {z with dom= Set.add z.dom key; rng= Set.add z.rng data}
+            {z with dom= Set.add key z.dom; rng= Set.add data z.rng}
           else (
             assert (
               (* all substs are injective, so the current mapping is the
