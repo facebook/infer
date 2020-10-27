@@ -128,7 +128,7 @@ include module type of Iter.Import
 (** Containers *)
 
 module Option = Option
-include module type of Option.Infix
+include module type of Option.Import
 
 module Either : sig
   type ('a, 'b) t = Left of 'a | Right of 'b

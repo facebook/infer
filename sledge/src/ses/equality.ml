@@ -317,7 +317,7 @@ and solve_ ?f d e s =
 let solve ?f ~us ~xs d e =
   [%Trace.call fun {pf} -> pf "%a@ %a" Term.pp d Term.pp e]
   ;
-  (solve_ ?f d e (us, xs, Subst.empty) >|= fun (_, xs, s) -> (xs, s))
+  (solve_ ?f d e (us, xs, Subst.empty) |>= fun (_, xs, s) -> (xs, s))
   |>
   [%Trace.retn fun {pf} ->
     function
