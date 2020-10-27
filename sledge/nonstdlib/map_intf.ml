@@ -50,6 +50,9 @@ module type S = sig
   val union : 'a t -> 'a t -> f:(key -> 'a -> 'a -> 'a option) -> 'a t
   val partition : 'a t -> f:(key -> 'a -> bool) -> 'a t * 'a t
 
+  val partition_map :
+    'a t -> f:(key -> 'a -> ('b, 'c) Either.t) -> 'b t * 'c t
+
   (** {1 Query} *)
 
   val is_empty : 'a t -> bool

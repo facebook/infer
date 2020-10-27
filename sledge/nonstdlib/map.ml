@@ -64,6 +64,15 @@ end) : S with type key = Key.t = struct
 
   let union x y ~f = M.union f x y
   let partition m ~f = M.partition f m
+
+  let partition_map m ~f =
+    M.fold
+      (fun k v (l, r) ->
+        match (f k v : _ Either.t) with
+        | Left a -> (M.add k a l, r)
+        | Right b -> (l, M.add k b r) )
+      m (empty, empty)
+
   let is_empty = M.is_empty
 
   let root_key m =

@@ -64,6 +64,7 @@ struct
       | `Right j -> Some (Mul.neg j) )
 
   let partition = M.partition
+  let partition_map = M.partition_map
 
   let map m ~f =
     let m' = empty in

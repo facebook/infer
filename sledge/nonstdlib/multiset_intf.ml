@@ -71,6 +71,7 @@ module type S = sig
       [Mul.equal m m'] for all elements. *)
 
   val partition : t -> f:(elt -> mul -> bool) -> t * t
+  val partition_map : t -> f:(elt -> mul -> (mul, mul) Either.t) -> t * t
 
   (* queries *)
 
