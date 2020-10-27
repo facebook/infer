@@ -193,7 +193,6 @@ struct
       type t = Q.t * Prod.t
 
       let one = (Q.one, Mono.one)
-      let equal_one (c, m) = Mono.equal_one m && Q.equal Q.one c
       let mul (c1, m1) (c2, m2) = (Q.mul c1 c2, Mono.mul m1 m2)
 
       (** Monomials [Mono.t] have [trm] indeterminates, which include, via
@@ -268,6 +267,10 @@ struct
           if Q.sign coeff >= 0 then Left coeff else Right (Q.neg coeff) )
 
     let map poly ~f =
+      [%trace]
+        ~call:(fun {pf} -> pf "%a" pp poly)
+        ~retn:(fun {pf} -> pf "%a" pp)
+      @@ fun () ->
       let p, p' = (poly, Sum.empty) in
       let p, p' =
         Sum.fold poly (p, p') ~f:(fun mono coeff (p, p') ->
@@ -279,12 +282,10 @@ struct
                   else
                     (Prod.remove trm m, CM.mul cm' (CM.of_trm trm' ~power)) )
             in
-            if CM.equal_one cm' then (p, p')
-            else
-              ( Sum.remove mono p
-              , Sum.union p' (CM.to_poly (CM.mul (coeff, m) cm')) ) )
+            ( Sum.remove mono p
+            , Sum.union p' (CM.to_poly (CM.mul (coeff, m) cm')) ) )
       in
-      if Sum.is_empty p' then poly else Sum.union p p' |> check invariant
+      Sum.union p p' |> check invariant
 
     (* traverse *)
 
