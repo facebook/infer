@@ -10,7 +10,7 @@
 open Ses
 
 module type TERM = sig
-  type trm [@@deriving compare, equal, sexp]
+  type t [@@deriving compare, equal, sexp]
 end
 
 (** Formulas, built from literals with predicate symbols from various
@@ -18,9 +18,9 @@ end
     structures. *)
 module type FORMULA = sig
   type trm
-  type fmls
+  type set
 
-  type fml = private
+  type t = private
     (* propositional constants *)
     | Tt
     (* equality *)
@@ -29,28 +29,28 @@ module type FORMULA = sig
     | Eq0 of trm  (** [Eq0(x)] iff x = 0 *)
     | Pos of trm  (** [Pos(x)] iff x > 0 *)
     (* propositional connectives *)
-    | Not of fml
-    | And of {pos: fmls; neg: fmls}
-    | Or of {pos: fmls; neg: fmls}
-    | Iff of fml * fml
-    | Cond of {cnd: fml; pos: fml; neg: fml}
+    | Not of t
+    | And of {pos: set; neg: set}
+    | Or of {pos: set; neg: set}
+    | Iff of t * t
+    | Cond of {cnd: t; pos: t; neg: t}
     (* uninterpreted literals *)
     | Lit of Predsym.t * trm array
   [@@deriving compare, equal, sexp]
 
-  val mk_Tt : unit -> fml
-  val _Eq : trm -> trm -> fml
-  val _Eq0 : trm -> fml
-  val _Pos : trm -> fml
-  val _Not : fml -> fml
-  val _And : pos:fmls -> neg:fmls -> fml
-  val _Or : pos:fmls -> neg:fmls -> fml
-  val _Iff : fml -> fml -> fml
-  val _Cond : fml -> fml -> fml -> fml
-  val _Lit : Predsym.t -> trm array -> fml
-  val and_ : fml -> fml -> fml
-  val or_ : fml -> fml -> fml
-  val trms : fml -> trm iter
+  val mk_Tt : unit -> t
+  val _Eq : trm -> trm -> t
+  val _Eq0 : trm -> t
+  val _Pos : trm -> t
+  val _Not : t -> t
+  val _And : pos:set -> neg:set -> t
+  val _Or : pos:set -> neg:set -> t
+  val _Iff : t -> t -> t
+  val _Cond : t -> t -> t -> t
+  val _Lit : Predsym.t -> trm array -> t
+  val and_ : t -> t -> t
+  val or_ : t -> t -> t
+  val trms : t -> trm iter
 end
 
 (** Sets of formulas *)
@@ -61,7 +61,6 @@ module type FORMULA_SET = sig
 end
 
 module type MAKE = functor (Trm : TERM) -> sig
-  module rec Fml :
-    (FORMULA with type trm := Trm.trm with type fmls := Fmls.t)
-  and Fmls : (FORMULA_SET with type elt := Fml.fml)
+  module rec Fml : (FORMULA with type trm := Trm.t with type set := Fmls.t)
+  and Fmls : (FORMULA_SET with type elt := Fml.t)
 end

@@ -15,12 +15,12 @@ let pp_boxed fs fmt =
 
 (** Variable terms, represented as a subtype of general terms *)
 module rec Var : sig
-  include Ses.Var_intf.VAR with type t = private Trm.trm
+  include Ses.Var_intf.VAR with type t = private Trm.t
 
-  val of_ : Trm.trm -> t
+  val of_ : Trm.t -> t
 end = struct
   module T = struct
-    type t = Trm.trm [@@deriving compare, equal, sexp]
+    type t = Trm.t [@@deriving compare, equal, sexp]
 
     let invariant x =
       let@ () = Invariant.invariant [%here] x [%sexp_of: t] in
@@ -39,20 +39,23 @@ end = struct
 end
 
 and Arith0 :
-  (Arithmetic.REPRESENTATION
-    with type var := Var.t
-    with type trm := Trm.trm) =
-  Arithmetic.Representation (Trm)
+  (Arithmetic.REPRESENTATION with type var := Var.t with type trm := Trm.t) =
+Arithmetic.Representation (struct
+  type trm = Trm.t [@@deriving compare, equal, sexp]
+  type var = Var.t
+
+  let ppx = Trm.ppx
+end)
 
 and Arith :
   (Arithmetic.S
     with type var := Var.t
-    with type trm := Trm.trm
+    with type trm := Trm.t
     with type t = Arith0.t) = struct
   include Arith0
 
   include Make (struct
-    let get_arith (e : Trm.trm) =
+    let get_arith (e : Trm.t) =
       match e with
       | Z z -> Some (Arith.const (Q.of_z z))
       | Q q -> Some (Arith.const q)
@@ -64,9 +67,7 @@ end
 (** Terms, built from variables and applications of function symbols from
     various theories. Denote functions from structures to values. *)
 and Trm : sig
-  type var = Var.t
-
-  type trm = private
+  type t = private
     (* variables *)
     | Var of {id: int; name: string}
     (* arithmetic *)
@@ -74,71 +75,69 @@ and Trm : sig
     | Q of Q.t
     | Arith of Arith.t
     (* sequences (of flexible size) *)
-    | Splat of trm
-    | Sized of {seq: trm; siz: trm}
-    | Extract of {seq: trm; off: trm; len: trm}
-    | Concat of trm array
+    | Splat of t
+    | Sized of {seq: t; siz: t}
+    | Extract of {seq: t; off: t; len: t}
+    | Concat of t array
     (* records (with fixed indices) *)
-    | Select of {idx: int; rcd: trm}
-    | Update of {idx: int; rcd: trm; elt: trm}
-    | Record of trm array
+    | Select of {idx: int; rcd: t}
+    | Update of {idx: int; rcd: t; elt: t}
+    | Record of t array
     | Ancestor of int
     (* uninterpreted *)
-    | Apply of Funsym.t * trm array
+    | Apply of Funsym.t * t array
   [@@deriving compare, equal, sexp]
 
-  val ppx : Var.t Var.strength -> trm pp
-  val _Var : int -> string -> trm
-  val _Z : Z.t -> trm
-  val _Q : Q.t -> trm
-  val _Arith : Arith.t -> trm
-  val _Splat : trm -> trm
-  val _Sized : trm -> trm -> trm
-  val _Extract : trm -> trm -> trm -> trm
-  val _Concat : trm array -> trm
-  val _Select : int -> trm -> trm
-  val _Update : int -> trm -> trm -> trm
-  val _Record : trm array -> trm
-  val _Ancestor : int -> trm
-  val _Apply : Funsym.t -> trm array -> trm
-  val add : trm -> trm -> trm
-  val sub : trm -> trm -> trm
-  val seq_size_exn : trm -> trm
-  val seq_size : trm -> trm option
+  val ppx : Var.t Var.strength -> t pp
+  val _Var : int -> string -> t
+  val _Z : Z.t -> t
+  val _Q : Q.t -> t
+  val _Arith : Arith.t -> t
+  val _Splat : t -> t
+  val _Sized : t -> t -> t
+  val _Extract : t -> t -> t -> t
+  val _Concat : t array -> t
+  val _Select : int -> t -> t
+  val _Update : int -> t -> t -> t
+  val _Record : t array -> t
+  val _Ancestor : int -> t
+  val _Apply : Funsym.t -> t array -> t
+  val add : t -> t -> t
+  val sub : t -> t -> t
+  val seq_size_exn : t -> t
+  val seq_size : t -> t option
 end = struct
-  type var = Var.t
-
-  type trm =
+  type t =
     | Var of {id: int; name: string}
     | Z of Z.t
     | Q of Q.t
     | Arith of Arith.t
-    | Splat of trm
-    | Sized of {seq: trm; siz: trm}
-    | Extract of {seq: trm; off: trm; len: trm}
-    | Concat of trm array
-    | Select of {idx: int; rcd: trm}
-    | Update of {idx: int; rcd: trm; elt: trm}
-    | Record of trm array
+    | Splat of t
+    | Sized of {seq: t; siz: t}
+    | Extract of {seq: t; off: t; len: t}
+    | Concat of t array
+    | Select of {idx: int; rcd: t}
+    | Update of {idx: int; rcd: t; elt: t}
+    | Record of t array
     | Ancestor of int
-    | Apply of Funsym.t * trm array
+    | Apply of Funsym.t * t array
   [@@deriving compare, equal, sexp]
 
-  let compare_trm x y =
+  let compare x y =
     if x == y then 0
     else
       match (x, y) with
       | Var {id= i; name= _}, Var {id= j; name= _} when i > 0 && j > 0 ->
           Int.compare i j
-      | _ -> compare_trm x y
+      | _ -> compare x y
 
-  let equal_trm x y =
+  let equal x y =
     x == y
     ||
     match (x, y) with
     | Var {id= i; name= _}, Var {id= j; name= _} when i > 0 && j > 0 ->
         Int.equal i j
-    | _ -> equal_trm x y
+    | _ -> equal x y
 
   let rec ppx strength fs trm =
     let rec pp fs trm =
@@ -190,7 +189,7 @@ end = struct
   let pp = ppx (fun _ -> None)
 
   let invariant e =
-    let@ () = Invariant.invariant [%here] e [%sexp_of: trm] in
+    let@ () = Invariant.invariant [%here] e [%sexp_of: t] in
     match e with
     | Q q -> assert (not (Z.equal Z.one (Q.den q)))
     | Arith a -> (
@@ -247,7 +246,7 @@ end = struct
   let _Sized seq siz =
     ( match seq_size seq with
     (* ⟨n,α⟩ ==> α when n ≡ |α| *)
-    | Some n when equal_trm siz n -> seq
+    | Some n when equal siz n -> seq
     | _ -> Sized {seq; siz} )
     |> check invariant
 
@@ -268,7 +267,7 @@ end = struct
       ~retn:(fun {pf} -> pf "%a" pp)
     @@ fun () ->
     (* _[_,0) ==> ⟨⟩ *)
-    ( if equal_trm len zero then empty_seq
+    ( if equal len zero then empty_seq
     else
       let o_l = add off len in
       match seq with
@@ -279,7 +278,7 @@ end = struct
       | Sized {siz= n; seq= Splat _ as e} when partial_ge n o_l ->
           _Sized e len
       (* ⟨n,a⟩[0,n) ==> ⟨n,a⟩ *)
-      | Sized {siz= n} when equal_trm off zero && equal_trm n len -> seq
+      | Sized {siz= n} when equal off zero && equal n len -> seq
       (* For (α₀^α₁)[o,l) there are 3 cases:
        *
        * ⟨...⟩^⟨...⟩
@@ -339,13 +338,12 @@ end = struct
       (* ⟨n,a⟩[o,k)^⟨n,a⟩[o+k,l) ==> ⟨n,a⟩[o,k+l) when n ≥ o+k+l *)
       | ( Extract {seq= Sized {siz= n} as na; off= o; len= k}
         , Extract {seq= na'; off= o_k; len= l} )
-        when equal_trm na na'
-             && equal_trm o_k (add o k)
-             && partial_ge n (add o_k l) ->
+        when equal na na' && equal o_k (add o k) && partial_ge n (add o_k l)
+        ->
           Some (_Extract na o (add k l))
       (* ⟨m,E^⟩^⟨n,E^⟩ ==> ⟨m+n,E^⟩ *)
       | Sized {siz= m; seq= Splat _ as a}, Sized {siz= n; seq= a'}
-        when equal_trm a a' ->
+        when equal a a' ->
           Some (_Sized a (add m n))
       | _ -> None
     in
@@ -359,9 +357,7 @@ end = struct
   let _Ancestor i = Ancestor i |> check invariant
 
   let _Apply f es =
-    ( match
-        Funsym.eval ~equal:equal_trm ~get_z ~ret_z:_Z ~get_q ~ret_q:_Q f es
-      with
+    ( match Funsym.eval ~equal ~get_z ~ret_z:_Z ~get_q ~ret_q:_Q f es with
     | Some c -> c
     | None -> Apply (f, es) )
     |> check invariant

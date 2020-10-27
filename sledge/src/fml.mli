@@ -8,15 +8,13 @@
 (** Formulas *)
 
 open Propositional_intf
-include FORMULA with type trm := Trm.trm
-module Fmls : FORMULA_SET with type elt := fml with type t = fmls
+include FORMULA with type trm := Trm.t
+module Set : FORMULA_SET with type elt := t with type t = set
 
-type trm := Trm.trm
-
-val tt : fml
-val ff : fml
-val bool : bool -> fml
-val _Eq0 : trm -> fml
-val _Pos : trm -> fml
-val _Eq : trm -> trm -> fml
-val vars : fml -> Trm.Var.t iter
+val tt : t
+val ff : t
+val bool : bool -> t
+val _Eq0 : Trm.t -> t
+val _Pos : Trm.t -> t
+val _Eq : Trm.t -> Trm.t -> t
+val vars : t -> Var.t iter

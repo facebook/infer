@@ -9,7 +9,7 @@
 
 type arith
 
-type trm = private
+type t = private
   (* variables *)
   | Var of {id: int; name: string}
   (* arithmetic *)
@@ -17,49 +17,48 @@ type trm = private
   | Q of Q.t
   | Arith of arith
   (* sequences (of flexible size) *)
-  | Splat of trm
-  | Sized of {seq: trm; siz: trm}
-  | Extract of {seq: trm; off: trm; len: trm}
-  | Concat of trm array
+  | Splat of t
+  | Sized of {seq: t; siz: t}
+  | Extract of {seq: t; off: t; len: t}
+  | Concat of t array
   (* records (with fixed indices) *)
-  | Select of {idx: int; rcd: trm}
-  | Update of {idx: int; rcd: trm; elt: trm}
-  | Record of trm array
+  | Select of {idx: int; rcd: t}
+  | Update of {idx: int; rcd: t; elt: t}
+  | Record of t array
   | Ancestor of int
   (* uninterpreted *)
-  | Apply of Ses.Funsym.t * trm array
+  | Apply of Ses.Funsym.t * t array
 [@@deriving compare, equal, sexp]
 
 module Var : sig
+  type trm := t
+
   include Ses.Var_intf.VAR with type t = private trm
 
   val of_ : trm -> t
 end
 
 module Arith :
-  Arithmetic.S
-    with type var := Var.t
-    with type trm := trm
-    with type t = arith
+  Arithmetic.S with type var := Var.t with type trm := t with type t = arith
 
-val ppx : Var.t Var.strength -> trm pp
-val _Var : int -> string -> trm
-val _Z : Z.t -> trm
-val _Q : Q.t -> trm
-val _Arith : Arith.t -> trm
-val _Splat : trm -> trm
-val _Sized : trm -> trm -> trm
-val _Extract : trm -> trm -> trm -> trm
-val _Concat : trm array -> trm
-val _Select : int -> trm -> trm
-val _Update : int -> trm -> trm -> trm
-val _Record : trm array -> trm
-val _Ancestor : int -> trm
-val _Apply : Ses.Funsym.t -> trm array -> trm
-val add : trm -> trm -> trm
-val sub : trm -> trm -> trm
-val seq_size_exn : trm -> trm
-val seq_size : trm -> trm option
-val vars : trm -> Var.t iter
-val zero : trm
-val one : trm
+val ppx : Var.t Var.strength -> t pp
+val _Var : int -> string -> t
+val _Z : Z.t -> t
+val _Q : Q.t -> t
+val _Arith : Arith.t -> t
+val _Splat : t -> t
+val _Sized : t -> t -> t
+val _Extract : t -> t -> t -> t
+val _Concat : t array -> t
+val _Select : int -> t -> t
+val _Update : int -> t -> t -> t
+val _Record : t array -> t
+val _Ancestor : int -> t
+val _Apply : Ses.Funsym.t -> t array -> t
+val add : t -> t -> t
+val sub : t -> t -> t
+val seq_size_exn : t -> t
+val seq_size : t -> t option
+val vars : t -> Var.t iter
+val zero : t
+val one : t

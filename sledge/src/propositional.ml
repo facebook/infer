@@ -10,12 +10,10 @@
 include Propositional_intf
 
 module Make (Trm : TERM) = struct
-  open Trm
-
   (** Sets of formulas *)
-  module rec Fmls : (FORMULA_SET with type elt := Fml.fml) = struct
+  module rec Fmls : (FORMULA_SET with type elt := Fml.t) = struct
     module T = struct
-      type t = Fml.fml [@@deriving compare, equal, sexp]
+      type t = Fml.t [@@deriving compare, equal, sexp]
     end
 
     include Set.Make (T)
@@ -25,23 +23,23 @@ module Make (Trm : TERM) = struct
   (** Formulas, built from literals with predicate symbols from various
       theories, and propositional constants and connectives. Denote sets of
       structures. *)
-  and Fml : (FORMULA with type trm := Trm.trm with type fmls := Fmls.t) =
+  and Fml : (FORMULA with type trm := Trm.t with type set := Fmls.t) =
   struct
-    type fml =
+    type t =
       | Tt
-      | Eq of trm * trm
-      | Eq0 of trm
-      | Pos of trm
-      | Not of fml
+      | Eq of Trm.t * Trm.t
+      | Eq0 of Trm.t
+      | Pos of Trm.t
+      | Not of t
       | And of {pos: Fmls.t; neg: Fmls.t}
       | Or of {pos: Fmls.t; neg: Fmls.t}
-      | Iff of fml * fml
-      | Cond of {cnd: fml; pos: fml; neg: fml}
-      | Lit of Ses.Predsym.t * trm array
+      | Iff of t * t
+      | Cond of {cnd: t; pos: t; neg: t}
+      | Lit of Ses.Predsym.t * Trm.t array
     [@@deriving compare, equal, sexp]
 
     let invariant f =
-      let@ () = Invariant.invariant [%here] f [%sexp_of: fml] in
+      let@ () = Invariant.invariant [%here] f [%sexp_of: t] in
       match f with
       (* formulas are in negation-normal form *)
       | Not (Not _ | And _ | Or _ | Cond _) -> assert false
@@ -55,7 +53,7 @@ module Make (Trm : TERM) = struct
       | Cond {cnd= Not _ | Or _} -> assert false
       | _ -> ()
 
-    let sort_fml x y = if compare_fml x y <= 0 then (x, y) else (y, x)
+    let sort x y = if compare x y <= 0 then (x, y) else (y, x)
 
     (** Some normalization is necessary for [embed_into_fml] (defined below)
         to be left inverse to [embed_into_cnd]. Essentially
@@ -93,7 +91,7 @@ module Make (Trm : TERM) = struct
     let _Or ~pos ~neg = _Join (fun ~pos ~neg -> Or {pos; neg}) tt ~pos ~neg
 
     let join _Cons zero split_pos_neg p q =
-      ( if equal_fml p zero || equal_fml q zero then zero
+      ( if equal p zero || equal q zero then zero
       else
         let pp, pn = split_pos_neg p in
         if Fmls.is_empty pp && Fmls.is_empty pn then q
@@ -126,22 +124,22 @@ module Make (Trm : TERM) = struct
 
     let rec eval_iff p q =
       match (p, q) with
-      | p, Not p' | Not p', p -> if equal_fml p p' then Some false else None
+      | p, Not p' | Not p', p -> if equal p p' then Some false else None
       | And {pos= ap; neg= an}, Or {pos= op; neg= on}
        |Or {pos= op; neg= on}, And {pos= ap; neg= an}
         when Fmls.equal ap on && Fmls.equal an op ->
           Some false
       | Cond {cnd= c; pos= p; neg= n}, Cond {cnd= c'; pos= p'; neg= n'} ->
-          if equal_fml c c' then
+          if equal c c' then
             match eval_iff p p' with
             | Some false -> (
               match eval_iff n n' with
               | Some false -> Some false
               | _ -> None )
-            | Some true -> if equal_fml n n' then Some true else None
+            | Some true -> if equal n n' then Some true else None
             | None -> None
           else None
-      | _ -> if equal_fml p q then Some true else None
+      | _ -> if equal p q then Some true else None
 
     let _Iff p q =
       ( match (p, q) with
@@ -151,7 +149,7 @@ module Make (Trm : TERM) = struct
         match eval_iff p q with
         | Some b -> bool b
         | None ->
-            let p, q = sort_fml p q in
+            let p, q = sort p q in
             Iff (p, q) ) )
       |> check invariant
 

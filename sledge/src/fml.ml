@@ -8,9 +8,9 @@
 (** Formulas *)
 
 module Prop = Propositional.Make (Trm)
-module Fmls = Prop.Fmls
+module Set = Prop.Fmls
 
-type fmls = Fmls.t
+type set = Set.t
 
 include Prop.Fml
 
@@ -19,13 +19,13 @@ let ff = _Not tt
 let bool b = if b then tt else ff
 
 let _Eq0 x =
-  match (x : Trm.trm) with
+  match (x : Trm.t) with
   | Z z -> bool (Z.equal Z.zero z)
   | Q q -> bool (Q.equal Q.zero q)
   | x -> _Eq0 x
 
 let _Pos x =
-  match (x : Trm.trm) with
+  match (x : Trm.t) with
   | Z z -> bool (Z.gt z Z.zero)
   | Q q -> bool (Q.gt q Q.zero)
   | x -> _Pos x
@@ -35,7 +35,7 @@ let _Eq x y =
   else if y == Trm.zero then _Eq0 x
   else
     let sort_eq x y =
-      match Sign.of_int (Trm.compare_trm x y) with
+      match Sign.of_int (Trm.compare x y) with
       | Neg -> _Eq x y
       | Zero -> tt
       | Pos -> _Eq y x
@@ -51,8 +51,7 @@ let _Eq x y =
         let l = min m n in
         let length_common_prefix =
           let rec find_lcp i =
-            if i < l && Trm.equal_trm a.(i) b.(i) then find_lcp (i + 1)
-            else i
+            if i < l && Trm.equal a.(i) b.(i) then find_lcp (i + 1) else i
           in
           find_lcp 0
         in
@@ -60,8 +59,7 @@ let _Eq x y =
         else
           let length_common_suffix =
             let rec find_lcs i =
-              if Trm.equal_trm a.(m - 1 - i) b.(n - 1 - i) then
-                find_lcs (i + 1)
+              if Trm.equal a.(m - 1 - i) b.(n - 1 - i) then find_lcs (i + 1)
               else i
             in
             find_lcs 0

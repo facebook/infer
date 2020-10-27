@@ -9,6 +9,8 @@ open Trm
 open Fml
 
 type var = Var.t
+type trm = Trm.t [@@deriving compare, equal, sexp]
+type fml = Fml.t [@@deriving compare, equal, sexp]
 
 (*
  * Conditional terms
@@ -47,11 +49,11 @@ let ppx_f strength fs fml =
       pf "(%a@ @<2>%s %a)" Q.pp (Q.neg c) op (Arith.ppx strength) a
     in
     let pp_join sep pos neg =
-      pf "(%a%t%a)" (Fmls.pp ~sep pp) pos
+      pf "(%a%t%a)" (Fml.Set.pp ~sep pp) pos
         (fun ppf ->
-          if (not (Fmls.is_empty pos)) && not (Fmls.is_empty neg) then
+          if (not (Fml.Set.is_empty pos)) && not (Fml.Set.is_empty neg) then
             Format.fprintf ppf sep )
-        (Fmls.pp ~sep (fun fs fml -> pp fs (_Not fml)))
+        (Fml.Set.pp ~sep (fun fs fml -> pp fs (_Not fml)))
         neg
     in
     match (fml : fml) with
@@ -114,8 +116,8 @@ let mapN f e cons xs =
   if xs' == xs then e else cons xs'
 
 let map_pos_neg f e cons ~pos ~neg =
-  let pos' = Fmls.map ~f pos in
-  let neg' = Fmls.map ~f neg in
+  let pos' = Fml.Set.map ~f pos in
+  let neg' = Fml.Set.map ~f neg in
   if pos' == pos && neg' == neg then e else cons ~pos:pos' ~neg:neg'
 
 (** map_trms *)
@@ -531,7 +533,7 @@ module Formula = struct
 
   let fold_pos_neg ~pos ~neg s ~f =
     let f_not p s = f (_Not p) s in
-    Fmls.fold ~f:f_not neg (Fmls.fold ~f pos s)
+    Fml.Set.fold ~f:f_not neg (Fml.Set.fold ~f pos s)
 
   let fold_dnf :
          meet1:('literal -> 'conjunction -> 'conjunction)
