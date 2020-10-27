@@ -80,6 +80,16 @@ val snd3 : _ * 'b * _ -> 'b
 val trd3 : _ * _ * 'c -> 'c
 (** Third projection from a triple. *)
 
+(** Map-and-construct operations that preserve physical equality *)
+
+val map1 : ('a -> 'a) -> 'b -> ('a -> 'b) -> 'a -> 'b
+val map2 : ('a -> 'a) -> 'b -> ('a -> 'a -> 'b) -> 'a -> 'a -> 'b
+
+val map3 :
+  ('a -> 'a) -> 'b -> ('a -> 'a -> 'a -> 'b) -> 'a -> 'a -> 'a -> 'b
+
+val mapN : ('a -> 'a) -> 'b -> ('a array -> 'b) -> 'a array -> 'b
+
 (** Pretty-printing *)
 
 (** Pretty-printer for argument type. *)

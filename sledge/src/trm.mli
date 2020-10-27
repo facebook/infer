@@ -62,3 +62,4 @@ val seq_size : t -> t option
 val vars : t -> Var.t iter
 val zero : t
 val one : t
+val map_vars : t -> f:(Var.t -> Var.t) -> t

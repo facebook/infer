@@ -14,6 +14,46 @@ type set = Set.t
 
 include Prop.Fml
 
+let pp_boxed fs fmt =
+  Format.pp_open_box fs 2 ;
+  Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
+
+let ppx strength fs fml =
+  let pp_t = Trm.ppx strength in
+  let rec pp fs fml =
+    let pf fmt = pp_boxed fs fmt in
+    let pp_arith op x =
+      let a, c = Trm.Arith.split_const (Trm.Arith.trm x) in
+      pf "(%a@ @<2>%s %a)" Q.pp (Q.neg c) op (Trm.Arith.ppx strength) a
+    in
+    let pp_join sep pos neg =
+      pf "(%a%t%a)" (Set.pp ~sep pp) pos
+        (fun ppf ->
+          if (not (Set.is_empty pos)) && not (Set.is_empty neg) then
+            Format.fprintf ppf sep )
+        (Set.pp ~sep (fun fs fml -> pp fs (_Not fml)))
+        neg
+    in
+    match fml with
+    | Tt -> pf "tt"
+    | Not Tt -> pf "ff"
+    | Eq (x, y) -> pf "(%a@ = %a)" pp_t x pp_t y
+    | Not (Eq (x, y)) -> pf "(%a@ @<2>≠ %a)" pp_t x pp_t y
+    | Eq0 x -> pp_arith "=" x
+    | Not (Eq0 x) -> pp_arith "≠" x
+    | Pos x -> pp_arith "<" x
+    | Not (Pos x) -> pp_arith "≥" x
+    | Not x -> pf "@<1>¬%a" pp x
+    | And {pos; neg} -> pp_join "@ @<2>∧ " pos neg
+    | Or {pos; neg} -> pp_join "@ @<2>∨ " pos neg
+    | Iff (x, y) -> pf "(%a@ <=> %a)" pp x pp y
+    | Cond {cnd; pos; neg} ->
+        pf "@[<hv 1>(%a@ ? %a@ : %a)@]" pp cnd pp pos pp neg
+    | Lit (p, xs) -> pf "%a(%a)" Ses.Predsym.pp p (Array.pp ",@ " pp_t) xs
+  in
+  pp fs fml
+
+let pp = ppx (fun _ -> None)
 let tt = mk_Tt ()
 let ff = _Not tt
 let bool b = if b then tt else ff
@@ -79,4 +119,21 @@ let _Eq x y =
         _Eq (Trm._Sized x (Trm.seq_size_exn a)) a
     | _ -> sort_eq x y
 
+let map_pos_neg f e cons ~pos ~neg =
+  map2 (Set.map ~f) e (fun pos neg -> cons ~pos ~neg) pos neg
+
+let rec map_trms b ~f =
+  match b with
+  | Tt -> b
+  | Eq (x, y) -> map2 f b _Eq x y
+  | Eq0 x -> map1 f b _Eq0 x
+  | Pos x -> map1 f b _Pos x
+  | Not x -> map1 (map_trms ~f) b _Not x
+  | And {pos; neg} -> map_pos_neg (map_trms ~f) b _And ~pos ~neg
+  | Or {pos; neg} -> map_pos_neg (map_trms ~f) b _Or ~pos ~neg
+  | Iff (x, y) -> map2 (map_trms ~f) b _Iff x y
+  | Cond {cnd; pos; neg} -> map3 (map_trms ~f) b _Cond cnd pos neg
+  | Lit (p, xs) -> mapN f b (_Lit p) xs
+
+let map_vars b ~f = map_trms ~f:(Trm.map_vars ~f) b
 let vars p = Iter.flat_map ~f:Trm.vars (trms p)

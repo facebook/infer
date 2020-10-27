@@ -370,6 +370,27 @@ include Trm
 let zero = _Z Z.zero
 let one = _Z Z.one
 
+(** Transform *)
+
+let rec map_vars e ~f =
+  match e with
+  | Var _ as v -> (f (Var.of_ v) : Var.t :> t)
+  | Z _ | Q _ -> e
+  | Arith a ->
+      let a' = Arith.map ~f:(map_vars ~f) a in
+      if a == a' then e else _Arith a'
+  | Splat x -> map1 (map_vars ~f) e _Splat x
+  | Sized {seq; siz} -> map2 (map_vars ~f) e _Sized seq siz
+  | Extract {seq; off; len} -> map3 (map_vars ~f) e _Extract seq off len
+  | Concat xs -> mapN (map_vars ~f) e _Concat xs
+  | Select {idx; rcd} -> map1 (map_vars ~f) e (_Select idx) rcd
+  | Update {idx; rcd; elt} -> map2 (map_vars ~f) e (_Update idx) rcd elt
+  | Record xs -> mapN (map_vars ~f) e _Record xs
+  | Ancestor _ -> e
+  | Apply (g, xs) -> mapN (map_vars ~f) e (_Apply g) xs
+
+(** Traverse *)
+
 let rec iter_vars e ~f =
   match e with
   | Var _ as v -> f (Var.of_ v)

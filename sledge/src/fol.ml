@@ -12,9 +12,8 @@ type var = Var.t
 type trm = Trm.t [@@deriving compare, equal, sexp]
 type fml = Fml.t [@@deriving compare, equal, sexp]
 
-(*
- * Conditional terms
- *)
+let map_pos_neg f e cons ~pos ~neg =
+  map2 (Set.map ~f) e (fun pos neg -> cons ~pos ~neg) pos neg
 
 (** Conditional terms, denoting functions from structures to values, taking
     the form of trees with internal nodes labeled with formulas and leaves
@@ -22,64 +21,17 @@ type fml = Fml.t [@@deriving compare, equal, sexp]
 type cnd = [`Ite of fml * cnd * cnd | `Trm of trm]
 [@@deriving compare, equal, sexp]
 
-(*
- * Expressions
- *)
-
 (** Expressions, which are partitioned into terms, conditional terms, and
     formulas. *)
 type exp = [cnd | `Fml of fml] [@@deriving compare, equal, sexp]
-
-(*
- * Representation operations
- *)
-
-(** pp *)
 
 let pp_boxed fs fmt =
   Format.pp_open_box fs 2 ;
   Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
 
-let ppx_f strength fs fml =
+let ppx_cnd strength fs ct =
   let pp_t = Trm.ppx strength in
-  let rec pp fs fml =
-    let pf fmt = pp_boxed fs fmt in
-    let pp_arith op x =
-      let a, c = Arith.split_const (Arith.trm x) in
-      pf "(%a@ @<2>%s %a)" Q.pp (Q.neg c) op (Arith.ppx strength) a
-    in
-    let pp_join sep pos neg =
-      pf "(%a%t%a)" (Fml.Set.pp ~sep pp) pos
-        (fun ppf ->
-          if (not (Fml.Set.is_empty pos)) && not (Fml.Set.is_empty neg) then
-            Format.fprintf ppf sep )
-        (Fml.Set.pp ~sep (fun fs fml -> pp fs (_Not fml)))
-        neg
-    in
-    match (fml : fml) with
-    | Tt -> pf "tt"
-    | Not Tt -> pf "ff"
-    | Eq (x, y) -> pf "(%a@ = %a)" pp_t x pp_t y
-    | Not (Eq (x, y)) -> pf "(%a@ @<2>≠ %a)" pp_t x pp_t y
-    | Eq0 x -> pp_arith "=" x
-    | Not (Eq0 x) -> pp_arith "≠" x
-    | Pos x -> pp_arith "<" x
-    | Not (Pos x) -> pp_arith "≥" x
-    | Not x -> pf "@<1>¬%a" pp x
-    | And {pos; neg} -> pp_join "@ @<2>∧ " pos neg
-    | Or {pos; neg} -> pp_join "@ @<2>∨ " pos neg
-    | Iff (x, y) -> pf "(%a@ <=> %a)" pp x pp y
-    | Cond {cnd; pos; neg} ->
-        pf "@[<hv 1>(%a@ ? %a@ : %a)@]" pp cnd pp pos pp neg
-    | Lit (p, xs) -> pf "%a(%a)" Ses.Predsym.pp p (Array.pp ",@ " pp_t) xs
-  in
-  pp fs fml
-
-let pp_f = ppx_f (fun _ -> None)
-
-let ppx_c strength fs ct =
-  let pp_t = Trm.ppx strength in
-  let pp_f = ppx_f strength in
+  let pp_f = Fml.ppx strength in
   let rec pp fs ct =
     let pf fmt = pp_boxed fs fmt in
     match ct with
@@ -89,88 +41,10 @@ let ppx_c strength fs ct =
   pp fs ct
 
 let ppx strength fs = function
-  | #cnd as c -> ppx_c strength fs c
-  | `Fml f -> ppx_f strength fs f
+  | #cnd as c -> ppx_cnd strength fs c
+  | `Fml f -> Fml.ppx strength fs f
 
 let pp = ppx (fun _ -> None)
-
-(** map *)
-
-let map1 f e cons x =
-  let x' = f x in
-  if x == x' then e else cons x'
-
-let map2 f e cons x y =
-  let x' = f x in
-  let y' = f y in
-  if x == x' && y == y' then e else cons x' y'
-
-let map3 f e cons x y z =
-  let x' = f x in
-  let y' = f y in
-  let z' = f z in
-  if x == x' && y == y' && z == z' then e else cons x' y' z'
-
-let mapN f e cons xs =
-  let xs' = Array.map_endo ~f xs in
-  if xs' == xs then e else cons xs'
-
-let map_pos_neg f e cons ~pos ~neg =
-  let pos' = Fml.Set.map ~f pos in
-  let neg' = Fml.Set.map ~f neg in
-  if pos' == pos && neg' == neg then e else cons ~pos:pos' ~neg:neg'
-
-(** map_trms *)
-
-let rec map_trms_f ~f b =
-  match b with
-  | Tt -> b
-  | Eq (x, y) -> map2 f b _Eq x y
-  | Eq0 x -> map1 f b _Eq0 x
-  | Pos x -> map1 f b _Pos x
-  | Not x -> map1 (map_trms_f ~f) b _Not x
-  | And {pos; neg} -> map_pos_neg (map_trms_f ~f) b _And ~pos ~neg
-  | Or {pos; neg} -> map_pos_neg (map_trms_f ~f) b _Or ~pos ~neg
-  | Iff (x, y) -> map2 (map_trms_f ~f) b _Iff x y
-  | Cond {cnd; pos; neg} -> map3 (map_trms_f ~f) b _Cond cnd pos neg
-  | Lit (p, xs) -> mapN f b (_Lit p) xs
-
-(** map_vars *)
-
-let rec map_vars_t ~f e =
-  match e with
-  | Var _ as v -> (f (Var.of_ v) : var :> trm)
-  | Z _ | Q _ -> e
-  | Arith a ->
-      let a' = Arith.map ~f:(map_vars_t ~f) a in
-      if a == a' then e else _Arith a'
-  | Splat x -> map1 (map_vars_t ~f) e _Splat x
-  | Sized {seq; siz} -> map2 (map_vars_t ~f) e _Sized seq siz
-  | Extract {seq; off; len} -> map3 (map_vars_t ~f) e _Extract seq off len
-  | Concat xs -> mapN (map_vars_t ~f) e _Concat xs
-  | Select {idx; rcd} -> map1 (map_vars_t ~f) e (_Select idx) rcd
-  | Update {idx; rcd; elt} -> map2 (map_vars_t ~f) e (_Update idx) rcd elt
-  | Record xs -> mapN (map_vars_t ~f) e _Record xs
-  | Ancestor _ -> e
-  | Apply (g, xs) -> mapN (map_vars_t ~f) e (_Apply g) xs
-
-let map_vars_f ~f = map_trms_f ~f:(map_vars_t ~f)
-
-let rec map_vars_c ~f c =
-  match c with
-  | `Ite (cnd, thn, els) ->
-      let cnd' = map_vars_f ~f cnd in
-      let thn' = map_vars_c ~f thn in
-      let els' = map_vars_c ~f els in
-      if cnd' == cnd && thn' == thn && els' == els then c
-      else `Ite (cnd', thn', els')
-  | `Trm t ->
-      let t' = map_vars_t ~f t in
-      if t' == t then c else `Trm t'
-
-let map_vars ~f = function
-  | `Fml p -> `Fml (map_vars_f ~f p)
-  | #cnd as c -> (map_vars_c ~f c :> exp)
 
 (*
  * Core construction functions
@@ -413,7 +287,21 @@ module Term = struct
 
   (** Transform *)
 
-  let map_vars = map_vars
+  let rec map_vars_c ~f c =
+    match c with
+    | `Ite (cnd, thn, els) ->
+        let cnd' = Fml.map_vars ~f cnd in
+        let thn' = map_vars_c ~f thn in
+        let els' = map_vars_c ~f els in
+        if cnd' == cnd && thn' == thn && els' == els then c
+        else `Ite (cnd', thn', els')
+    | `Trm t ->
+        let t' = Trm.map_vars ~f t in
+        if t' == t then c else `Trm t'
+
+  let map_vars ~f = function
+    | `Fml p -> `Fml (Fml.map_vars ~f p)
+    | #cnd as c -> (map_vars_c ~f c :> exp)
 
   let fold_map_vars e s0 ~f =
     let s = ref s0 in
@@ -441,8 +329,8 @@ module Formula = struct
 
   let inject f = `Fml f
   let project = function `Fml f -> Some f | #cnd as c -> project_out_fml c
-  let ppx = ppx_f
-  let pp = pp_f
+  let ppx = Fml.ppx
+  let pp = Fml.pp
 
   (* constants *)
 
@@ -492,7 +380,7 @@ module Formula = struct
 
   (** Transform *)
 
-  let map_vars = map_vars_f
+  let map_vars = Fml.map_vars
 
   let rec map_terms ~f b =
     let lift_map1 : (exp -> exp) -> t -> (trm -> t) -> trm -> t =
