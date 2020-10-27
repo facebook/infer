@@ -7,7 +7,7 @@
 
 (** Arithmetic terms *)
 
-open Ses
+module Var = Ses.Var
 
 module type S = sig
   type var

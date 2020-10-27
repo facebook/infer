@@ -8,7 +8,6 @@
 (** Propositional formulas *)
 
 include Propositional_intf
-open Ses
 
 module Make (Trm : TERM) = struct
   open Trm
@@ -38,7 +37,7 @@ module Make (Trm : TERM) = struct
       | Or of {pos: Fmls.t; neg: Fmls.t}
       | Iff of fml * fml
       | Cond of {cnd: fml; pos: fml; neg: fml}
-      | Lit of Predsym.t * trm array
+      | Lit of Ses.Predsym.t * trm array
     [@@deriving compare, equal, sexp]
 
     let invariant f =
