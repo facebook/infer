@@ -252,6 +252,22 @@ module FollyOptional = struct
     let astate_empty = PulseArithmetic.and_eq_int value_addr IntLit.zero astate in
     let astate_false = PulseArithmetic.and_eq_int ret_addr IntLit.zero astate_empty in
     [ExecutionDomain.ContinueProgram astate_false; ExecutionDomain.ContinueProgram astate_true]
+
+
+  let value_or optional default : model =
+   fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
+    let event = ValueHistory.Call {f= Model "folly::Optional::value_or()"; location; in_call= []} in
+    let* astate, (value_addr, value_hist) = to_internal_value_deref location optional astate in
+    let value_hist = (value_addr, event :: value_hist) in
+    let astate_non_empty = PulseArithmetic.and_positive value_addr astate in
+    let astate_value = PulseOperations.write_id ret_id value_hist astate_non_empty in
+    let+ astate, (default_val, default_hist) =
+      PulseOperations.eval_access location default Dereference astate
+    in
+    let default_value_hist = (default_val, event :: default_hist) in
+    let astate_empty = PulseArithmetic.and_eq_int value_addr IntLit.zero astate in
+    let astate_default = PulseOperations.write_id ret_id default_value_hist astate_empty in
+    [ExecutionDomain.ContinueProgram astate_value; ExecutionDomain.ContinueProgram astate_default]
 end
 
 module Cplusplus = struct
@@ -929,6 +945,8 @@ module ProcNameDispatcher = struct
         ; -"folly" &:: "Optional" &:: "reset" <>$ capt_arg_payload
           $+...$--> FollyOptional.assign_none ~desc:"folly::Optional::reset()"
         ; -"folly" &:: "Optional" &:: "value" <>$ capt_arg_payload $+...$--> FollyOptional.value
+        ; -"folly" &:: "Optional" &:: "value_or" $ capt_arg_payload $+ capt_arg_payload
+          $+...$--> FollyOptional.value_or
         ; -"std" &:: "basic_string" &:: "data" <>$ capt_arg_payload $--> StdBasicString.data
         ; -"std" &:: "basic_string" &:: "~basic_string" <>$ capt_arg_payload
           $--> StdBasicString.destructor
