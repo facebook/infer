@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 #import <Foundation/Foundation.h>
+#import "MyEnumerator.h"
 
 // init array
 
@@ -213,4 +214,9 @@ void nsarray_copy_linear(NSArray* array) {
   NSArray* copy = [array mutableCopy];
   for (int i = 0; i < copy.count; i++) {
   }
+}
+
+void call_my_enumerator_next_object_linear(MyEnumerator* enumerator) {
+  // NSEnumerator.nextObject should be replaced to MyEnumerator.nextObject
+  NSString* s = [enumerator nextObject];
 }
