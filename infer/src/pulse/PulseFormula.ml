@@ -37,12 +37,20 @@ module Q = struct
   let to_int64 q = conv_protect Q.to_int64 q
 
   let to_bigint q = conv_protect Q.to_bigint q
+
+  type z = Z.t
+
+  let yojson_of_z z = `String (Z.to_string z)
+
+  type _q = t = {num: z; den: z} [@@deriving yojson_of]
+
+  let yojson_of_t = [%yojson_of: _q]
 end
 
 (** Linear Arithmetic *)
 module LinArith : sig
   (** linear combination of variables, eg [2·x + 3/4·y + 12] *)
-  type t [@@deriving compare]
+  type t [@@deriving compare, yojson_of]
 
   type subst_target = QSubst of Q.t | VarSubst of Var.t | LinSubst of t
 
@@ -84,6 +92,8 @@ module LinArith : sig
 end = struct
   (** invariant: the representation is always "canonical": coefficients cannot be [Q.zero] *)
   type t = Q.t Var.Map.t * Q.t [@@deriving compare]
+
+  let yojson_of_t (vs, c) = `List [Var.Map.yojson_of_t Q.yojson_of_t vs; Q.yojson_of_t c]
 
   type subst_target = QSubst of Q.t | VarSubst of Var.t | LinSubst of t
 
@@ -231,7 +241,7 @@ module Term = struct
     | BitShiftLeft of t * t
     | BitShiftRight of t * t
     | BitXor of t * t
-  [@@deriving compare]
+  [@@deriving compare, yojson_of]
 
   let equal_syntax = [%compare.equal: t]
 
@@ -695,7 +705,7 @@ module Atom = struct
     | LessThan of Term.t * Term.t
     | Equal of Term.t * Term.t
     | NotEqual of Term.t * Term.t
-  [@@deriving compare]
+  [@@deriving compare, yojson_of]
 
   let pp_with_pp_var pp_var fmt atom =
     (* add parens around terms that look like atoms to disambiguate *)
@@ -937,6 +947,9 @@ module Atom = struct
           ~fold:(IContainer.fold_of_pervasives_set_fold fold)
           ~pp_item:(fun fmt atom -> F.fprintf fmt "{%a}" (pp_with_pp_var pp_var) atom)
           fmt atoms
+
+
+    let yojson_of_t atoms = `List (List.map (elements atoms) ~f:yojson_of_t)
   end
 end
 
@@ -968,11 +981,27 @@ module VarUF =
     (Var.Set)
 
 module Formula = struct
+  (* redefined for yojson output *)
+  type var_eqs = VarUF.t
+
+  let yojson_of_var_eqs var_eqs =
+    `List
+      (VarUF.fold_congruences var_eqs ~init:[] ~f:(fun jsons (repr, eqs) ->
+           `List
+             (Var.yojson_of_t (repr :> Var.t) :: List.map ~f:Var.yojson_of_t (Var.Set.elements eqs))
+           :: jsons ))
+
+
+  type linear_eqs = LinArith.t Var.Map.t
+
+  let yojson_of_linear_eqs linear_eqs = Var.Map.yojson_of_t LinArith.yojson_of_t linear_eqs
+
   type t =
-    { var_eqs: VarUF.t  (** equality relation between variables *)
-    ; linear_eqs: LinArith.t Var.Map.t
+    { var_eqs: var_eqs  (** equality relation between variables *)
+    ; linear_eqs: linear_eqs
           (** equalities of the form [x = l] where [l] is from linear arithmetic *)
     ; atoms: Atom.Set.t  (** not always normalized w.r.t. [var_eqs] and [linear_eqs] *) }
+  [@@deriving yojson_of]
 
   let ttrue = {var_eqs= VarUF.empty; linear_eqs= Var.Map.empty; atoms= Atom.Set.empty}
 
@@ -1234,6 +1263,7 @@ type t =
   { known: Formula.t  (** all the things we know to be true for sure *)
   ; pruned: Atom.Set.t  (** collection of conditions that have to be true along the path *)
   ; both: Formula.t  (** [both = known ∧ pruned], allows us to detect contradictions *) }
+[@@deriving yojson_of]
 
 let ttrue = {known= Formula.ttrue; pruned= Atom.Set.empty; both= Formula.ttrue}
 

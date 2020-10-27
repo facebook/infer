@@ -28,7 +28,11 @@ end
 
 module Set : PrettyPrintable.PPSet with type elt = t
 
-module Map : PrettyPrintable.PPMap with type key = t
+module Map : sig
+  include PrettyPrintable.PPMap with type key = t
+
+  val yojson_of_t : ('a -> Yojson.Safe.t) -> 'a t -> Yojson.Safe.t
+end
 
 (** internal state of the module
 
