@@ -20,11 +20,27 @@ let pp_boxed fs fmt =
 
 let ppx strength fs fml =
   let pp_t = Trm.ppx strength in
+  let pp_a = Trm.Arith.ppx strength in
   let rec pp fs fml =
     let pf fmt = pp_boxed fs fmt in
+    let pp_binop x = pf "(%a@ @<2>%s %a)" x in
+    let pp_arith_op x op y =
+      let flip = Trm.Arith.compare x y > 0 in
+      let x, y = if flip then (y, x) else (x, y) in
+      match op with
+      | ">" -> pp_binop pp_a x (if flip then "<" else ">") pp_a y
+      | "≤" -> pp_binop pp_a x (if flip then "≥" else "≤") pp_a y
+      | op -> pp_binop pp_a x op pp_a y
+    in
     let pp_arith op x =
-      let a, c = Trm.Arith.split_const (Trm.Arith.trm x) in
-      pf "(%a@ @<2>%s %a)" Q.pp (Q.neg c) op (Trm.Arith.ppx strength) a
+      let p_c, n_d = Trm.Arith.partition_sign (Trm.Arith.trm x) in
+      if Trm.Arith.equal (Trm.Arith.const Q.zero) p_c then
+        let n, d = Trm.Arith.split_const n_d in
+        pp_arith_op n op (Trm.Arith.const (Q.neg d))
+      else if Trm.Arith.equal (Trm.Arith.const Q.zero) n_d then
+        let p, c = Trm.Arith.split_const p_c in
+        pp_arith_op p op (Trm.Arith.const (Q.neg c))
+      else pp_arith_op p_c op n_d
     in
     let pp_join sep pos neg =
       pf "(%a%t%a)" (Set.pp ~sep pp) pos
@@ -37,12 +53,12 @@ let ppx strength fs fml =
     match fml with
     | Tt -> pf "tt"
     | Not Tt -> pf "ff"
-    | Eq (x, y) -> pf "(%a@ = %a)" pp_t x pp_t y
-    | Not (Eq (x, y)) -> pf "(%a@ @<2>≠ %a)" pp_t x pp_t y
+    | Eq (x, y) -> pp_binop pp_t x "=" pp_t y
+    | Not (Eq (x, y)) -> pp_binop pp_t x "≠" pp_t y
     | Eq0 x -> pp_arith "=" x
     | Not (Eq0 x) -> pp_arith "≠" x
-    | Pos x -> pp_arith "<" x
-    | Not (Pos x) -> pp_arith "≥" x
+    | Pos x -> pp_arith ">" x
+    | Not (Pos x) -> pp_arith "≤" x
     | Not x -> pf "@<1>¬%a" pp x
     | And {pos; neg} -> pp_join "@ @<2>∧ " pos neg
     | Or {pos; neg} -> pp_join "@ @<2>∨ " pos neg

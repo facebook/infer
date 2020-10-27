@@ -263,6 +263,10 @@ struct
       | Some (c, p_c) -> (p_c, c)
       | None -> (poly, Q.zero)
 
+    let partition_sign poly =
+      Sum.partition_map poly ~f:(fun _ coeff ->
+          if Q.sign coeff >= 0 then Left coeff else Right (Q.neg coeff) )
+
     let map poly ~f =
       let p, p' = (poly, Sum.empty) in
       let p, p' =

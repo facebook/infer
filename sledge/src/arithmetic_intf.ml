@@ -53,6 +53,10 @@ module type S = sig
       non-constant parts. That is, [split_const a] is [(b, c)] such that
       [a = b + c] and the absolute value of [c] is maximal. *)
 
+  val partition_sign : t -> t * t
+  (** [partition_sign a] is [(p, n)] such that [a] = [p - n] and all
+      coefficients in [p] and [n] are non-negative. *)
+
   val map : t -> f:(trm -> trm) -> t
   (** [map ~f a] is [a] with each indeterminate transformed by [f]. Viewing
       [a] as a polynomial,
