@@ -54,6 +54,9 @@ let ppx strength fs fml =
   pp fs fml
 
 let pp = ppx (fun _ -> None)
+
+(** Construct *)
+
 let tt = mk_Tt ()
 let ff = _Not tt
 let bool b = if b then tt else ff
@@ -119,6 +122,18 @@ let _Eq x y =
         _Eq (Trm.sized ~siz:(Trm.seq_size_exn a) ~seq:x) a
     | _ -> sort_eq x y
 
+let eq = _Eq
+let eq0 = _Eq0
+let pos = _Pos
+let not_ = _Not
+let and_ = and_
+let andN = _And
+let or_ = or_
+let orN = _Or
+let iff = _Iff
+let cond ~cnd ~pos ~neg = _Cond cnd pos neg
+let lit = _Lit
+
 let map_pos_neg f e cons ~pos ~neg =
   map2 (Set.map ~f) e (fun pos neg -> cons ~pos ~neg) pos neg
 
@@ -136,4 +151,7 @@ let rec map_trms b ~f =
   | Lit (p, xs) -> mapN f b (_Lit p) xs
 
 let map_vars b ~f = map_trms ~f:(Trm.map_vars ~f) b
+
+(** Traverse *)
+
 let vars p = Iter.flat_map ~f:Trm.vars (trms p)

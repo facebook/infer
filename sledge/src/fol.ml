@@ -5,14 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Fml
-
 type var = Var.t
 type trm = Trm.t [@@deriving compare, equal, sexp]
 type fml = Fml.t [@@deriving compare, equal, sexp]
 
 let map_pos_neg f e cons ~pos ~neg =
-  map2 (Set.map ~f) e (fun pos neg -> cons ~pos ~neg) pos neg
+  map2 (Fml.Set.map ~f) e (fun pos neg -> cons ~pos ~neg) pos neg
 
 (** Conditional terms, denoting functions from structures to values, taking
     the form of trees with internal nodes labeled with formulas and leaves
@@ -82,6 +80,18 @@ let project_out_fml : cnd -> fml option = function
       Some cnd
   | _ -> None
 
+(** Construct a conditional formula. *)
+let cond cnd pos neg = Fml.cond ~cnd ~pos ~neg
+
+(** Construct a conditional term, or formula if possible precisely. *)
+let ite : fml -> exp -> exp -> exp =
+ fun cnd thn els ->
+  match (thn, els) with
+  | `Fml pos, `Fml neg -> `Fml (cond cnd pos neg)
+  | _ -> (
+      let c = `Ite (cnd, embed_into_cnd thn, embed_into_cnd els) in
+      match project_out_fml c with Some f -> `Fml f | None -> c )
+
 (** Embed a conditional term into a formula (associating 0 with false and
     non-0 with true, lifted over the tree mapping conditional terms to
     conditional formulas), identity on formulas.
@@ -98,16 +108,7 @@ let project_out_fml : cnd -> fml option = function
       [0 ≠ x] holds. *)
 let embed_into_fml : exp -> fml = function
   | `Fml fml -> fml
-  | #cnd as c -> map_cnd _Cond (fun e -> _Not (_Eq0 e)) c
-
-(** Construct a conditional term, or formula if possible precisely. *)
-let ite : fml -> exp -> exp -> exp =
- fun cnd thn els ->
-  match (thn, els) with
-  | `Fml pos, `Fml neg -> `Fml (_Cond cnd pos neg)
-  | _ -> (
-      let c = `Ite (cnd, embed_into_cnd thn, embed_into_cnd els) in
-      match project_out_fml c with Some f -> `Fml f | None -> c )
+  | #cnd as c -> map_cnd cond (fun e -> Fml.not_ (Fml.eq0 e)) c
 
 (** Map a unary function on terms over an expression. *)
 let ap1 : (trm -> exp) -> exp -> exp =
@@ -116,7 +117,7 @@ let ap1 : (trm -> exp) -> exp -> exp =
 let ap1t : (trm -> trm) -> exp -> exp = fun f -> ap1 (fun x -> `Trm (f x))
 
 let ap1f : (trm -> fml) -> exp -> fml =
- fun f x -> map_cnd _Cond f (embed_into_cnd x)
+ fun f x -> map_cnd cond f (embed_into_cnd x)
 
 (** Map a binary function on terms over conditional terms. This yields a
     conditional tree with the structure from the first argument where each
@@ -137,7 +138,7 @@ let ap2t : (trm -> trm -> trm) -> exp -> exp -> exp =
  fun f -> ap2 (fun x y -> `Trm (f x y))
 
 let ap2f : (trm -> trm -> fml) -> exp -> exp -> fml =
- fun f x y -> map2_cnd _Cond f (embed_into_cnd x) (embed_into_cnd y)
+ fun f x y -> map2_cnd cond f (embed_into_cnd x) (embed_into_cnd y)
 
 (** Map a ternary function on terms over conditional terms. *)
 let map3_cnd :
@@ -181,7 +182,7 @@ let apNt : (trm array -> trm) -> exp array -> exp =
 
 let apNf : (trm array -> fml) -> exp array -> fml =
  fun f xs ->
-  rev_mapN_cnd _Cond
+  rev_mapN_cnd cond
     (fun xs -> f (Array.of_list xs))
     (Array.to_list_rev_map ~f:embed_into_cnd xs)
 
@@ -333,62 +334,50 @@ end
  *)
 
 module Formula = struct
-  type t = fml [@@deriving compare, equal, sexp]
+  include Fml
 
   let inject f = `Fml f
   let project = function `Fml f -> Some f | #cnd as c -> project_out_fml c
-  let ppx = Fml.ppx
-  let pp = Fml.pp
 
-  (* constants *)
+  (** Construct *)
 
-  let tt = mk_Tt ()
-  let ff = _Not tt
+  (* equality *)
 
-  (* comparisons *)
+  let eq = ap2f Fml.eq
+  let dq a b = Fml.not_ (eq a b)
 
-  let eq = ap2f _Eq
-  let dq a b = _Not (eq a b)
-  let eq0 = ap1f _Eq0
-  let dq0 a = _Not (eq0 a)
-  let pos = ap1f _Pos
+  (* arithmetic *)
+
+  let eq0 = ap1f Fml.eq0
+  let dq0 a = Fml.not_ (eq0 a)
+  let pos = ap1f Fml.pos
 
   (* a > b iff a-b > 0 iff 0 < a-b *)
   let gt a b = if b == Term.zero then pos a else pos (Term.sub a b)
 
   (* a ≥ b iff 0 ≥ b-a iff ¬(0 < b-a) *)
   let ge a b =
-    if a == Term.zero then _Not (pos b) else _Not (pos (Term.sub b a))
+    if a == Term.zero then Fml.not_ (pos b)
+    else Fml.not_ (pos (Term.sub b a))
 
   let lt a b = gt b a
   let le a b = ge b a
 
   (* uninterpreted *)
 
-  let lit p es = apNf (_Lit p) es
+  let lit p es = apNf (Fml.lit p) es
 
   (* connectives *)
 
-  let and_ = and_
   let andN = function [] -> tt | b :: bs -> List.fold ~f:and_ bs b
-  let or_ = or_
   let orN = function [] -> ff | b :: bs -> List.fold ~f:or_ bs b
-  let iff = _Iff
-  let xor p q = _Not (_Iff p q)
-  let cond ~cnd ~pos ~neg = _Cond cnd pos neg
-  let not_ = _Not
-
-  (** Traverse *)
-
-  let vars = Fml.vars
+  let xor p q = Fml.not_ (iff p q)
 
   (** Query *)
 
   let fv p = Var.Set.of_iter (vars p)
 
   (** Transform *)
-
-  let map_vars = Fml.map_vars
 
   let rec map_terms ~f b =
     let lift_map1 : (exp -> exp) -> t -> (trm -> t) -> trm -> t =
@@ -405,15 +394,18 @@ module Formula = struct
     in
     match b with
     | Tt -> b
-    | Eq (x, y) -> lift_map2 f b _Eq x y
-    | Eq0 x -> lift_map1 f b _Eq0 x
-    | Pos x -> lift_map1 f b _Pos x
-    | Not x -> map1 (map_terms ~f) b _Not x
-    | And {pos; neg} -> map_pos_neg (map_terms ~f) b _And ~pos ~neg
-    | Or {pos; neg} -> map_pos_neg (map_terms ~f) b _Or ~pos ~neg
-    | Iff (x, y) -> map2 (map_terms ~f) b _Iff x y
-    | Cond {cnd; pos; neg} -> map3 (map_terms ~f) b _Cond cnd pos neg
-    | Lit (p, xs) -> lift_mapN f b (_Lit p) xs
+    | Eq (x, y) -> lift_map2 f b Fml.eq x y
+    | Eq0 x -> lift_map1 f b Fml.eq0 x
+    | Pos x -> lift_map1 f b Fml.pos x
+    | Not x -> map1 (map_terms ~f) b Fml.not_ x
+    | And {pos; neg} -> map_pos_neg (map_terms ~f) b Fml.andN ~pos ~neg
+    | Or {pos; neg} -> map_pos_neg (map_terms ~f) b Fml.orN ~pos ~neg
+    | Iff (x, y) -> map2 (map_terms ~f) b Fml.iff x y
+    | Cond {cnd; pos; neg} ->
+        map3 (map_terms ~f) b
+          (fun cnd pos neg -> Fml.cond ~cnd ~pos ~neg)
+          cnd pos neg
+    | Lit (p, xs) -> lift_mapN f b (Fml.lit p) xs
 
   let fold_map_vars e s0 ~f =
     let s = ref s0 in
@@ -428,7 +420,7 @@ module Formula = struct
   let rename s e = map_vars ~f:(Var.Subst.apply s) e
 
   let fold_pos_neg ~pos ~neg s ~f =
-    let f_not p s = f (_Not p) s in
+    let f_not p s = f (Fml.not_ p) s in
     Fml.Set.fold ~f:f_not neg (Fml.Set.fold ~f pos s)
 
   let fold_dnf :
@@ -554,7 +546,7 @@ let vs_of_ses : Ses.Var.Set.t -> Var.Set.t =
 
 let uap1 f = ap1t (fun x -> Trm.apply f [|x|])
 let uap2 f = ap2t (fun x y -> Trm.apply f [|x; y|])
-let litN p = apNf (_Lit p)
+let litN p = apNf (Fml.lit p)
 
 let rec uap_tt f a = uap1 f (of_ses a)
 and uap_ttt f a b = uap2 f (of_ses a) (of_ses b)
