@@ -40,7 +40,7 @@ end) : S with type elt = Elt.t = struct
   let union_list ss = List.fold ~f:union ss empty
   let is_empty = S.is_empty
   let cardinal = S.cardinal
-  let mem s x = S.mem x s
+  let mem = S.mem
   let subset s ~of_:t = S.subset s t
   let disjoint = S.disjoint
   let max_elt = S.max_elt_opt

@@ -300,7 +300,8 @@ struct
 
     (* solve *)
 
-    let exists_fv_in vs poly = Iter.exists ~f:(Var.Set.mem vs) (vars poly)
+    let exists_fv_in vs poly =
+      Iter.exists ~f:(fun v -> Var.Set.mem v vs) (vars poly)
 
     (** [solve_for_mono r c m p] solves [0 = r + (c×m) + p] as [m = q]
         ([Some (m, q)]) such that [r + (c×m) + p = m - q] *)

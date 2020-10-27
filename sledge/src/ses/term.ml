@@ -1170,7 +1170,8 @@ let rec height = function
 (** Solve *)
 
 let exists_fv_in vs qset =
-  Qset.exists qset ~f:(fun e _ -> exists_vars e ~f:(Var.Set.mem vs))
+  Qset.exists qset ~f:(fun e _ ->
+      exists_vars e ~f:(fun v -> Var.Set.mem v vs) )
 
 (* solve [0 = rejected_sum + (coeff × mono) + sum] *)
 let solve_for_mono rejected_sum coeff mono sum =

@@ -139,7 +139,7 @@ end = struct
       [ys ⊆ xs]. *)
   let is_valid_eq xs e f =
     let is_var_in xs e =
-      Option.exists ~f:(Var.Set.mem xs) (Var.of_term e)
+      Option.exists ~f:(fun x -> Var.Set.mem x xs) (Var.of_term e)
     in
     ( is_var_in xs e
     || is_var_in xs f
@@ -280,14 +280,14 @@ and solve_ ?f d e s =
       | Some m -> solve_ ?f n m s )
       >>= solve_ ?f a b
   | Some ((Var _ as v), (Ap3 (Extract, _, _, l) as e)) ->
-      if not (Var.Set.mem (Term.fv e) (Var.of_ v)) then
+      if not (Var.Set.mem (Var.of_ v) (Term.fv e)) then
         (* v = α[o,l) ==> v ↦ α[o,l) when v ∉ fv(α[o,l)) *)
         compose1 ?f ~var:v ~rep:e s
       else
         (* v = α[o,l) ==> α[o,l) ↦ ⟨l,v⟩ when v ∈ fv(α[o,l)) *)
         compose1 ?f ~var:e ~rep:(Term.sized ~siz:l ~seq:v) s
   | Some ((Var _ as v), (ApN (Concat, a0V) as c)) ->
-      if not (Var.Set.mem (Term.fv c) (Var.of_ v)) then
+      if not (Var.Set.mem (Var.of_ v) (Term.fv c)) then
         (* v = α₀^…^αᵥ ==> v ↦ α₀^…^αᵥ when v ∉ fv(α₀^…^αᵥ) *)
         compose1 ?f ~var:v ~rep:c s
       else

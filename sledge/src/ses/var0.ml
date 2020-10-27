@@ -69,7 +69,7 @@ module Make (T : REPR) = struct
         Map.fold s (Set.empty, Set.empty)
           ~f:(fun ~key ~data (domain, range) ->
             (* substs are injective *)
-            assert (not (Set.mem range data)) ;
+            assert (not (Set.mem data range)) ;
             (Set.add key domain, Set.add data range) )
       in
       assert (Set.disjoint domain range)
@@ -105,13 +105,13 @@ module Make (T : REPR) = struct
     let restrict sub vs =
       Map.fold sub {sub; dom= Set.empty; rng= Set.empty}
         ~f:(fun ~key ~data z ->
-          if Set.mem vs key then
+          if Set.mem key vs then
             {z with dom= Set.add key z.dom; rng= Set.add data z.rng}
           else (
             assert (
               (* all substs are injective, so the current mapping is the
                  only one that can cause [data] to be in [rng] *)
-              (not (Set.mem (range (Map.remove key sub)) data))
+              (not (Set.mem data (range (Map.remove key sub))))
               || violates invariant sub ) ;
             {z with sub= Map.remove key z.sub} ) )
       |> check (fun {sub; dom; rng} ->

@@ -36,7 +36,7 @@ module type S = sig
 
   val is_empty : t -> bool
   val cardinal : t -> int
-  val mem : t -> elt -> bool
+  val mem : elt -> t -> bool
   val subset : t -> of_:t -> bool
   val disjoint : t -> t -> bool
   val max_elt : t -> elt option

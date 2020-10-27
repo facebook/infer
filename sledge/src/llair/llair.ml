@@ -542,7 +542,7 @@ let set_derived_metadata functions =
       else
         let ancestors = Block_label.Set.add src ancestors in
         let jump jmp =
-          if Block_label.Set.mem ancestors jmp.dst then
+          if Block_label.Set.mem jmp.dst ancestors then
             jmp.retreating <- true
           else visit ancestors func jmp.dst
         in
@@ -557,7 +557,7 @@ let set_derived_metadata functions =
                 Func.find (Reg.name reg) functions
               with
             | Some func ->
-                if Block_label.Set.mem ancestors func.entry then
+                if Block_label.Set.mem func.entry ancestors then
                   call.recursive <- true
                 else visit ancestors func func.entry
             | None ->

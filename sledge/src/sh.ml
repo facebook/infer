@@ -97,7 +97,7 @@ let rec var_strength_ xs m q =
   let xs = Var.Set.union xs q.xs in
   let m_stem =
     fold_vars_stem ~ignore_ctx:() q m ~f:(fun var m ->
-        if not (Var.Set.mem xs var) then
+        if not (Var.Set.mem var xs) then
           Var.Map.add ~key:var ~data:`Universal m
         else add var m )
   in
