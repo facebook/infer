@@ -40,12 +40,13 @@ end
 
 and Arith0 :
   (Arithmetic.REPRESENTATION with type var := Var.t with type trm := Trm.t) =
-Arithmetic.Representation (struct
-  type trm = Trm.t [@@deriving compare, equal, sexp]
-  type var = Var.t
+  Arithmetic.Representation
+    (Var)
+    (struct
+      include Trm
 
-  let ppx = Trm.ppx
-end)
+      type trm = t [@@deriving compare, equal, sexp]
+    end)
 
 and Arith :
   (Arithmetic.S
@@ -89,6 +90,7 @@ and Trm : sig
   [@@deriving compare, equal, sexp]
 
   val ppx : Var.t Var.strength -> t pp
+  val pp : t pp
   val _Var : int -> string -> t
   val _Z : Z.t -> t
   val _Q : Q.t -> t
@@ -106,6 +108,7 @@ and Trm : sig
   val sub : t -> t -> t
   val seq_size_exn : t -> t
   val seq_size : t -> t option
+  val vars : t -> Var.t iter
 end = struct
   type t =
     | Var of {id: int; name: string}
@@ -198,12 +201,12 @@ end = struct
       | Trm _ | Const _ -> assert false )
     | _ -> ()
 
-  (* destructors *)
+  (** Destruct *)
 
   let get_z = function Z z -> Some z | _ -> None
   let get_q = function Q q -> Some q | Z z -> Some (Q.of_z z) | _ -> None
 
-  (* constructors *)
+  (** Construct *)
 
   let _Var id name = Var {id; name} |> check invariant
 
@@ -361,6 +364,26 @@ end = struct
     | Some c -> c
     | None -> Apply (f, es) )
     |> check invariant
+
+  (** Traverse *)
+
+  let rec iter_vars e ~f =
+    match e with
+    | Var _ as v -> f (Var.of_ v)
+    | Z _ | Q _ | Ancestor _ -> ()
+    | Splat x | Select {rcd= x} -> iter_vars ~f x
+    | Sized {seq= x; siz= y} | Update {rcd= x; elt= y} ->
+        iter_vars ~f x ;
+        iter_vars ~f y
+    | Extract {seq= x; off= y; len= z} ->
+        iter_vars ~f x ;
+        iter_vars ~f y ;
+        iter_vars ~f z
+    | Concat xs | Record xs | Apply (_, xs) ->
+        Array.iter ~f:(iter_vars ~f) xs
+    | Arith a -> Iter.iter ~f:(iter_vars ~f) (Arith.trms a)
+
+  let vars e = Iter.from_labelled_iter (iter_vars e)
 end
 
 type arith = Arith.t
@@ -424,22 +447,3 @@ let rec map_vars e ~f =
   | Record xs -> mapN (map_vars ~f) e _Record xs
   | Ancestor _ -> e
   | Apply (g, xs) -> mapN (map_vars ~f) e (_Apply g) xs
-
-(** Traverse *)
-
-let rec iter_vars e ~f =
-  match e with
-  | Var _ as v -> f (Var.of_ v)
-  | Z _ | Q _ | Ancestor _ -> ()
-  | Splat x | Select {rcd= x} -> iter_vars ~f x
-  | Sized {seq= x; siz= y} | Update {rcd= x; elt= y} ->
-      iter_vars ~f x ;
-      iter_vars ~f y
-  | Extract {seq= x; off= y; len= z} ->
-      iter_vars ~f x ;
-      iter_vars ~f y ;
-      iter_vars ~f z
-  | Concat xs | Record xs | Apply (_, xs) -> Array.iter ~f:(iter_vars ~f) xs
-  | Arith a -> Iter.iter ~f:(iter_vars ~f) (Arith.iter a)
-
-let vars e = Iter.from_labelled_iter (iter_vars e)

@@ -61,8 +61,15 @@ module type S = sig
 
   (** Traverse *)
 
-  val iter : t -> trm iter
-  (** [iter a] enumerates the indeterminate terms appearing in [a] *)
+  val trms : t -> trm iter
+  (** [trms a] enumerates the indeterminate terms appearing in [a] *)
+
+  (** Solve *)
+
+  val solve_zero_eq : ?for_:trm -> trm -> (t * t) option
+  (** [solve_zero_eq d] is [Some (e, f)] if [0 = d] can be equivalently
+      expressed as [e = f] for some monomial subterm [e] of [d]. If [for_]
+      is passed, then the subterm [e] must be [for_]. *)
 
   (**/**)
 
@@ -79,6 +86,8 @@ module type INDETERMINATE = sig
   type var
 
   val ppx : var Var.strength -> trm pp
+  val pp : trm pp
+  val vars : trm -> var iter
 end
 
 (** An embedding of arithmetic terms [t] into indeterminates [trm],
