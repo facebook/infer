@@ -89,3 +89,4 @@ val seq_size : t -> t option
 (** Traverse *)
 
 val vars : t -> Var.t iter
+val subtrms : t -> t iter

@@ -447,3 +447,21 @@ let rec map_vars e ~f =
   | Record xs -> mapN (map_vars ~f) e _Record xs
   | Ancestor _ -> e
   | Apply (g, xs) -> mapN (map_vars ~f) e (_Apply g) xs
+
+(** Traverse *)
+
+let iter_subtrms e ~f =
+  match e with
+  | Var _ | Z _ | Q _ | Ancestor _ -> ()
+  | Arith a -> Iter.iter ~f (Arith.trms a)
+  | Splat x | Select {rcd= x} -> f x
+  | Sized {seq= x; siz= y} | Update {rcd= x; elt= y} ->
+      f x ;
+      f y
+  | Extract {seq= x; off= y; len= z} ->
+      f x ;
+      f y ;
+      f z
+  | Concat xs | Record xs | Apply (_, xs) -> Array.iter ~f xs
+
+let subtrms e = Iter.from_labelled_iter (iter_subtrms e)
