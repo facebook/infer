@@ -170,4 +170,27 @@ let map_vars b ~f = map_trms ~f:(Trm.map_vars ~f) b
 
 (** Traverse *)
 
+let fold_pos_neg ~pos ~neg s ~f =
+  let f_not p s = f (not_ p) s in
+  Set.fold ~f:f_not neg (Set.fold ~f pos s)
+
+let fold_dnf ~meet1 ~join1 ~top ~bot fml =
+  let rec add_conjunct fml (cjn, splits) =
+    match fml with
+    | Tt | Eq _ | Eq0 _ | Pos _ | Iff _ | Lit _ | Not _ ->
+        (meet1 fml cjn, splits)
+    | And {pos; neg} -> fold_pos_neg ~f:add_conjunct ~pos ~neg (cjn, splits)
+    | Or {pos; neg} -> (cjn, (pos, neg) :: splits)
+    | Cond {cnd; pos; neg} ->
+        add_conjunct (or_ (and_ cnd pos) (and_ (not_ cnd) neg)) (cjn, splits)
+  in
+  let rec add_disjunct (cjn, splits) fml djn =
+    let cjn, splits = add_conjunct fml (cjn, splits) in
+    match splits with
+    | (pos, neg) :: splits ->
+        fold_pos_neg ~f:(add_disjunct (cjn, splits)) ~pos ~neg djn
+    | [] -> join1 cjn djn
+  in
+  add_disjunct (top, []) fml bot
+
 let vars p = Iter.flat_map ~f:Trm.vars (trms p)

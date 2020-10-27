@@ -9,9 +9,6 @@ type var = Var.t
 type trm = Trm.t [@@deriving compare, equal, sexp]
 type fml = Fml.t [@@deriving compare, equal, sexp]
 
-let map_pos_neg f e cons ~pos ~neg =
-  map2 (Fml.Set.map ~f) e (fun pos neg -> cons ~pos ~neg) pos neg
-
 (** Conditional terms, denoting functions from structures to values, taking
     the form of trees with internal nodes labeled with formulas and leaves
     labeled with terms. *)
@@ -410,8 +407,8 @@ module Formula = struct
     | Eq0 x -> lift_map1 f b Fml.eq0 x
     | Pos x -> lift_map1 f b Fml.pos x
     | Not x -> map1 (map_terms ~f) b Fml.not_ x
-    | And {pos; neg} -> map_pos_neg (map_terms ~f) b Fml.andN ~pos ~neg
-    | Or {pos; neg} -> map_pos_neg (map_terms ~f) b Fml.orN ~pos ~neg
+    | And {pos; neg} -> Fml.map_pos_neg (map_terms ~f) b Fml.andN ~pos ~neg
+    | Or {pos; neg} -> Fml.map_pos_neg (map_terms ~f) b Fml.orN ~pos ~neg
     | Iff (x, y) -> map2 (map_terms ~f) b Fml.iff x y
     | Cond {cnd; pos; neg} ->
         map3 (map_terms ~f) b
@@ -430,39 +427,6 @@ module Formula = struct
     (e', !s)
 
   let rename s e = map_vars ~f:(Var.Subst.apply s) e
-
-  let fold_pos_neg ~pos ~neg s ~f =
-    let f_not p s = f (Fml.not_ p) s in
-    Fml.Set.fold ~f:f_not neg (Fml.Set.fold ~f pos s)
-
-  let fold_dnf :
-         meet1:('literal -> 'conjunction -> 'conjunction)
-      -> join1:('conjunction -> 'disjunction -> 'disjunction)
-      -> top:'conjunction
-      -> bot:'disjunction
-      -> 'formula
-      -> 'disjunction =
-   fun ~meet1 ~join1 ~top ~bot fml ->
-    let rec add_conjunct fml (cjn, splits) =
-      match fml with
-      | Tt | Eq _ | Eq0 _ | Pos _ | Iff _ | Lit _ | Not _ ->
-          (meet1 fml cjn, splits)
-      | And {pos; neg} ->
-          fold_pos_neg ~f:add_conjunct ~pos ~neg (cjn, splits)
-      | Or {pos; neg} -> (cjn, (pos, neg) :: splits)
-      | Cond {cnd; pos; neg} ->
-          add_conjunct
-            (or_ (and_ cnd pos) (and_ (not_ cnd) neg))
-            (cjn, splits)
-    in
-    let rec add_disjunct (cjn, splits) fml djn =
-      let cjn, splits = add_conjunct fml (cjn, splits) in
-      match splits with
-      | (pos, neg) :: splits ->
-          fold_pos_neg ~f:(add_disjunct (cjn, splits)) ~pos ~neg djn
-      | [] -> join1 cjn djn
-    in
-    add_disjunct (top, []) fml bot
 end
 
 (*
