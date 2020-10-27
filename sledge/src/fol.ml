@@ -51,6 +51,18 @@ let pp = ppx (fun _ -> None)
  * and formulas stratified below conditional terms and then expressions.
  *)
 
+let _Ite cnd thn els =
+  match (cnd : Fml.t) with
+  (* (tt ? t : e) ==> t *)
+  | Tt -> thn
+  (* (ff ? t : e) ==> e *)
+  | Not Tt -> els
+  (* (c ? t : t) ==> t *)
+  | _ when equal_cnd thn els -> thn
+  (* (¬c ? t : e) ==> (c ? e : t) *)
+  | _ when Fml.is_negative cnd -> `Ite (Fml.not_ cnd, els, thn)
+  | _ -> `Ite (cnd, thn, els)
+
 (** Map a unary function on terms over the leaves of a conditional term,
     rebuilding the tree of conditionals with the supplied ite construction
     function. *)
@@ -67,7 +79,7 @@ let rec map_cnd : (fml -> 'a -> 'a -> 'a) -> (trm -> 'a) -> cnd -> 'a =
 let embed_into_cnd : exp -> cnd = function
   | #cnd as c -> c
   (* p ==> (p ? 1 : 0) *)
-  | `Fml fml -> `Ite (fml, `Trm Trm.one, `Trm Trm.zero)
+  | `Fml fml -> _Ite fml (`Trm Trm.one) (`Trm Trm.zero)
 
 (** Project out a formula that is embedded into a conditional term.
 
@@ -89,8 +101,8 @@ let ite : fml -> exp -> exp -> exp =
   match (thn, els) with
   | `Fml pos, `Fml neg -> `Fml (cond cnd pos neg)
   | _ -> (
-      let c = `Ite (cnd, embed_into_cnd thn, embed_into_cnd els) in
-      match project_out_fml c with Some f -> `Fml f | None -> c )
+      let c = _Ite cnd (embed_into_cnd thn) (embed_into_cnd els) in
+      match project_out_fml c with Some f -> `Fml f | None -> (c :> exp) )
 
 (** Embed a conditional term into a formula (associating 0 with false and
     non-0 with true, lifted over the tree mapping conditional terms to
@@ -303,7 +315,7 @@ module Term = struct
         let thn' = map_vars_c ~f thn in
         let els' = map_vars_c ~f els in
         if cnd' == cnd && thn' == thn && els' == els then c
-        else `Ite (cnd', thn', els')
+        else _Ite cnd' thn' els'
     | `Trm t ->
         let t' = Trm.map_vars ~f t in
         if t' == t then c else `Trm t'

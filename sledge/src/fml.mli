@@ -70,3 +70,7 @@ val map_trms : t -> f:(Trm.t -> Trm.t) -> t
 (** Traverse *)
 
 val vars : t -> Var.t iter
+
+(** Query *)
+
+val is_negative : t -> bool

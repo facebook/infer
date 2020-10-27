@@ -50,6 +50,7 @@ module type FORMULA = sig
   val _Lit : Predsym.t -> trm array -> t
   val and_ : t -> t -> t
   val or_ : t -> t -> t
+  val is_negative : t -> bool
   val trms : t -> trm iter
 end
 

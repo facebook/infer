@@ -420,13 +420,14 @@ let%test_module _ =
           {sat= true;
            rep= [[%x_5 ↦ 1];
                  [%y_6 ↦ ];
-                 [(%x_5 ≠ 0) ↦ -1];
-                 [(%y_6 ≠ 0) ↦ -1];
+                 [(%x_5 = 0) ↦ 0];
+                 [(%y_6 = 0) ↦ 0];
                  [-1 ↦ ];
                  [0 ↦ ]]} |}]
 
     let%test _ = implies_eq r14 a (Formula.inject Formula.tt)
-    let%test _ = implies_eq r14 b (Formula.inject Formula.tt)
+    (* incomplete *)
+    let%test _ = not (implies_eq r14 b (Formula.inject Formula.tt))
 
     let b = Formula.inject (Formula.dq x !0)
     let r15 = of_eqs [(b, b); (x, !1)]
