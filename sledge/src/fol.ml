@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Trm
 open Fml
 
 type var = Var.t
@@ -70,7 +69,7 @@ let rec map_cnd : (fml -> 'a -> 'a -> 'a) -> (trm -> 'a) -> cnd -> 'a =
 let embed_into_cnd : exp -> cnd = function
   | #cnd as c -> c
   (* p ==> (p ? 1 : 0) *)
-  | `Fml fml -> `Ite (fml, `Trm one, `Trm zero)
+  | `Fml fml -> `Ite (fml, `Trm Trm.one, `Trm Trm.zero)
 
 (** Project out a formula that is embedded into a conditional term.
 
@@ -78,7 +77,8 @@ let embed_into_cnd : exp -> cnd = function
       that [project_out_fml (embed_into_cnd (`Fml f)) = Some f]. *)
 let project_out_fml : cnd -> fml option = function
   (* (p ? 1 : 0) ==> p *)
-  | `Ite (cnd, `Trm one', `Trm zero') when one == one' && zero == zero' ->
+  | `Ite (cnd, `Trm one', `Trm zero')
+    when Trm.one == one' && Trm.zero == zero' ->
       Some cnd
   | _ -> None
 
@@ -215,35 +215,41 @@ module Term = struct
 
   (* arithmetic *)
 
-  let zero = `Trm zero
-  let one = `Trm one
-  let integer z = `Trm (_Z z)
-  let rational q = `Trm (_Q q)
-  let neg = ap1t @@ fun x -> _Arith Arith.(neg (trm x))
+  let zero = `Trm Trm.zero
+  let one = `Trm Trm.one
+  let integer z = `Trm (Trm.integer z)
+  let rational q = `Trm (Trm.rational q)
+  let neg = ap1t Trm.neg
   let add = ap2t Trm.add
   let sub = ap2t Trm.sub
-  let mulq q = ap1t @@ fun x -> _Arith Arith.(mulc q (trm x))
-  let mul = ap2t @@ fun x y -> _Arith (Arith.mul x y)
-  let div = ap2t @@ fun x y -> _Arith (Arith.div x y)
-  let pow x i = (ap1t @@ fun x -> _Arith (Arith.pow x i)) x
+  let mulq q = ap1t (Trm.mulq q)
+  let mul = ap2t Trm.mul
+  let div = ap2t Trm.div
+  let pow x i = (ap1t @@ fun x -> Trm.pow x i) x
 
   (* sequences *)
 
-  let splat = ap1t _Splat
-  let sized ~seq ~siz = ap2t _Sized seq siz
-  let extract ~seq ~off ~len = ap3t _Extract seq off len
-  let concat elts = apNt _Concat elts
+  let splat = ap1t Trm.splat
+  let sized ~seq ~siz = ap2t (fun seq siz -> Trm.sized ~seq ~siz) seq siz
+
+  let extract ~seq ~off ~len =
+    ap3t (fun seq off len -> Trm.extract ~seq ~off ~len) seq off len
+
+  let concat elts = apNt Trm.concat elts
 
   (* records *)
 
-  let select ~rcd ~idx = ap1t (_Select idx) rcd
-  let update ~rcd ~idx ~elt = ap2t (_Update idx) rcd elt
-  let record elts = apNt _Record elts
-  let ancestor i = `Trm (_Ancestor i)
+  let select ~rcd ~idx = ap1t (fun rcd -> Trm.select ~rcd ~idx) rcd
+
+  let update ~rcd ~idx ~elt =
+    ap2t (fun rcd elt -> Trm.update ~rcd ~idx ~elt) rcd elt
+
+  let record elts = apNt Trm.record elts
+  let ancestor i = `Trm (Trm.ancestor i)
 
   (* uninterpreted *)
 
-  let apply sym args = apNt (_Apply sym) args
+  let apply sym args = apNt (Trm.apply sym) args
 
   (* if-then-else *)
 
@@ -251,21 +257,23 @@ module Term = struct
 
   (** Destruct *)
 
-  let d_int = function `Trm (Z z) -> Some z | _ -> None
+  let d_int e = match (e : t) with `Trm (Z z) -> Some z | _ -> None
 
-  let get_const = function
+  let get_const e =
+    match (e : t) with
     | `Trm (Z z) -> Some (Q.of_z z)
     | `Trm (Q q) -> Some q
     | _ -> None
 
   (** Access *)
 
-  let split_const = function
+  let split_const e =
+    match (e : t) with
     | `Trm (Z z) -> (zero, Q.of_z z)
     | `Trm (Q q) -> (zero, q)
     | `Trm (Arith a) ->
-        let a_c, c = Arith.split_const a in
-        (`Trm (_Arith a_c), c)
+        let a_c, c = Trm.Arith.split_const a in
+        (`Trm (Trm.arith a_c), c)
     | e -> (e, Q.zero)
 
   (** Traverse *)
@@ -464,10 +472,10 @@ let vs_to_ses : Var.Set.t -> Ses.Var.Set.t =
  fun vs -> Ses.Var.Set.of_iter (Iter.map ~f:v_to_ses (Var.Set.to_iter vs))
 
 let rec arith_to_ses poly =
-  Arith.fold_monomials poly Ses.Term.zero ~f:(fun mono coeff e ->
+  Trm.Arith.fold_monomials poly Ses.Term.zero ~f:(fun mono coeff e ->
       Ses.Term.add e
         (Ses.Term.mulq coeff
-           (Arith.fold_factors mono Ses.Term.one ~f:(fun trm pow f ->
+           (Trm.Arith.fold_factors mono Ses.Term.one ~f:(fun trm pow f ->
                 let rec exp b i =
                   assert (i > 0) ;
                   if i = 1 then b else Ses.Term.mul b (exp f (i - 1))
@@ -544,8 +552,8 @@ let v_of_ses : Ses.Var.t -> var =
 let vs_of_ses : Ses.Var.Set.t -> Var.Set.t =
  fun vs -> Var.Set.of_iter (Iter.map ~f:v_of_ses (Ses.Var.Set.to_iter vs))
 
-let uap1 f = ap1t (fun x -> _Apply f [|x|])
-let uap2 f = ap2t (fun x y -> _Apply f [|x; y|])
+let uap1 f = ap1t (fun x -> Trm.apply f [|x|])
+let uap2 f = ap2t (fun x y -> Trm.apply f [|x; y|])
 let litN p = apNf (_Lit p)
 
 let rec uap_tt f a = uap1 f (of_ses a)

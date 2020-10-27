@@ -367,8 +367,44 @@ type arith = Arith.t
 
 include Trm
 
+(** Construct *)
+
+(* variables *)
+
+let var v = (v : Var.t :> t)
+
+(* arithmetic *)
+
 let zero = _Z Z.zero
 let one = _Z Z.one
+let integer z = _Z z
+let rational q = _Q q
+let neg x = _Arith Arith.(neg (trm x))
+let add = Trm.add
+let sub = Trm.sub
+let mulq q x = _Arith Arith.(mulc q (trm x))
+let mul x y = _Arith (Arith.mul x y)
+let div x y = _Arith (Arith.div x y)
+let pow x i = _Arith (Arith.pow x i)
+let arith = _Arith
+
+(* sequences *)
+
+let splat = _Splat
+let sized ~seq ~siz = _Sized seq siz
+let extract ~seq ~off ~len = _Extract seq off len
+let concat elts = _Concat elts
+
+(* records *)
+
+let select ~rcd ~idx = _Select idx rcd
+let update ~rcd ~idx ~elt = _Update idx rcd elt
+let record elts = _Record elts
+let ancestor i = _Ancestor i
+
+(* uninterpreted *)
+
+let apply sym args = _Apply sym args
 
 (** Transform *)
 

@@ -42,24 +42,50 @@ module Arith :
   Arithmetic.S with type var := Var.t with type trm := t with type t = arith
 
 val ppx : Var.t Var.strength -> t pp
-val _Var : int -> string -> t
-val _Z : Z.t -> t
-val _Q : Q.t -> t
-val _Arith : Arith.t -> t
-val _Splat : t -> t
-val _Sized : t -> t -> t
-val _Extract : t -> t -> t -> t
-val _Concat : t array -> t
-val _Select : int -> t -> t
-val _Update : int -> t -> t -> t
-val _Record : t array -> t
-val _Ancestor : int -> t
-val _Apply : Ses.Funsym.t -> t array -> t
-val add : t -> t -> t
-val sub : t -> t -> t
-val seq_size_exn : t -> t
-val seq_size : t -> t option
-val vars : t -> Var.t iter
+
+(** Construct *)
+
+(* variables *)
+val var : Var.t -> t
+
+(* arithmetic *)
 val zero : t
 val one : t
+val integer : Z.t -> t
+val rational : Q.t -> t
+val neg : t -> t
+val add : t -> t -> t
+val sub : t -> t -> t
+val mulq : Q.t -> t -> t
+val mul : t -> t -> t
+val div : t -> t -> t
+val pow : t -> int -> t
+val arith : Arith.t -> t
+
+(* sequences (of flexible size) *)
+val splat : t -> t
+val sized : seq:t -> siz:t -> t
+val extract : seq:t -> off:t -> len:t -> t
+val concat : t array -> t
+
+(* records (with fixed indices) *)
+val select : rcd:t -> idx:int -> t
+val update : rcd:t -> idx:int -> elt:t -> t
+val record : t array -> t
+val ancestor : int -> t
+
+(* uninterpreted *)
+val apply : Ses.Funsym.t -> t array -> t
+
+(** Transform *)
+
 val map_vars : t -> f:(Var.t -> Var.t) -> t
+
+(** Query *)
+
+val seq_size_exn : t -> t
+val seq_size : t -> t option
+
+(** Traverse *)
+
+val vars : t -> Var.t iter

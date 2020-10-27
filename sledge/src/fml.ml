@@ -110,13 +110,13 @@ let _Eq x y =
             let pos = length_common_prefix in
             let a = Array.sub ~pos ~len:(m - length_common) a in
             let b = Array.sub ~pos ~len:(n - length_common) b in
-            _Eq (Trm._Concat a) (Trm._Concat b)
+            _Eq (Trm.concat a) (Trm.concat b)
     | (Sized _ | Extract _ | Concat _), (Sized _ | Extract _ | Concat _) ->
         sort_eq x y
     (* x = α ==> ⟨x,|α|⟩ = α *)
     | x, ((Sized _ | Extract _ | Concat _) as a)
      |((Sized _ | Extract _ | Concat _) as a), x ->
-        _Eq (Trm._Sized x (Trm.seq_size_exn a)) a
+        _Eq (Trm.sized ~siz:(Trm.seq_size_exn a) ~seq:x) a
     | _ -> sort_eq x y
 
 let map_pos_neg f e cons ~pos ~neg =
