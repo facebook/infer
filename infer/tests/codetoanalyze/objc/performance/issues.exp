@@ -3,6 +3,7 @@ codetoanalyze/objc/performance/NSArray.m, nsarray_enumerator_linear, 7, INTEGER_
 codetoanalyze/objc/performance/NSArray.m, nsarray_init_constant, 3, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
 codetoanalyze/objc/performance/NSArray.m, nsarray_iterate_linear, 3, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [<LHS trace>,Assignment,<RHS trace>,Assignment,Binary operation: ([0, +oo] + [1, array->elements.length.ub + 1]):signed64]
 codetoanalyze/objc/performance/NSDictionary.m, nsdictionary_enumerate_constant, 6, BUFFER_OVERRUN_L2, no_bucket, ERROR, [<Offset trace>,Assignment,<Length trace>,Array declaration,Array access: Offset: [1, 3] Size: 2]
+codetoanalyze/objc/performance/NSEnumeration.m, loop_id_enumerator_linear_FP, 0, INFINITE_EXECUTION_TIME, no_bucket, ERROR, [Unbounded loop,Loop]
 codetoanalyze/objc/performance/NSFileManager.m, contents_of_directory_at_url_constant, 7, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
 codetoanalyze/objc/performance/NSMutableArray.m, nsarray_new_constant, 2, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
 codetoanalyze/objc/performance/NSMutableArray.m, nsmarray_remove_constant, 6, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Through,Through,Through,Through,Array access: Offset: 0 Size: 0]

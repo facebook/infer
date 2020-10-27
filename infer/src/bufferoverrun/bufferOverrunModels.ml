@@ -1702,6 +1702,8 @@ module Call = struct
         $--> NSCollection.copy
       ; +is_objc_collection &:: "count" <>$ capt_exp $!--> NSCollection.size
       ; +is_objc_collection &:: "objectEnumerator" <>$ capt_exp $--> NSCollection.iterator
+      ; +PatternMatch.ObjectiveC.conforms_to ~protocol:"NSFastEnumeration"
+        &:: "objectEnumerator" <>$ capt_exp $--> NSCollection.iterator
       ; +PatternMatch.ObjectiveC.implements "NSArray"
         &:: "objectAtIndexedSubscript:" <>$ capt_var_exn $+ capt_exp $!--> NSCollection.get_at_index
       ; +PatternMatch.ObjectiveC.implements "NSArray"
