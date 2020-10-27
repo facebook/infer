@@ -563,7 +563,8 @@ module Val = struct
         itv_val ~non_int:false |> set_itv_updated_by_addition
     | Tptr ({desc= Tfun}, _) ->
         of_func_ptrs (FuncPtr.Set.of_path path)
-    | Tptr ({desc= Tstruct name}, _) when Typ.equal_name name Typ.Name.Objc.objc_ns_enumerator ->
+    | Tptr ({desc= Tstruct name}, _)
+      when PatternMatch.is_subtype tenv name Typ.Name.Objc.objc_ns_enumerator ->
         (* NOTE: It generates a value of NSEnumerator specifically.  Especially, it assigns zero to
            the offset, rather than a symbol, to avoid precision loss by limited handling of symbolic
            values in the domain.  Although this is an unsound design choice, we expect it should not

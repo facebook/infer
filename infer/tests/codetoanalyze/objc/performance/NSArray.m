@@ -220,3 +220,10 @@ void call_my_enumerator_next_object_linear(MyEnumerator* enumerator) {
   // NSEnumerator.nextObject should be replaced to MyEnumerator.nextObject
   NSString* s = [enumerator nextObject];
 }
+
+// The cost analyzer cannot reason the amortized complexity.
+void loop_with_my_enumerator_next_object_linear_FP(MyEnumerator* enumerator) {
+  NSString* s;
+  while (s = [enumerator nextObject]) {
+  }
+}
