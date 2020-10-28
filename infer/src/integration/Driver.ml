@@ -432,10 +432,7 @@ let mode_from_command_line =
 let run_prologue mode =
   if CLOpt.is_originator then L.environment_info "%a@\n" Config.pp_version () ;
   if Config.debug_mode then L.environment_info "Driver mode:@\n%a@." pp_mode mode ;
-  if CLOpt.is_originator then (
-    if Config.dump_duplicate_symbols then reset_duplicates_file () ;
-    (* disable the Buck daemon as changes in the Buck or infer config may be missed otherwise *)
-    Unix.putenv ~key:"NO_BUCKD" ~data:"1" ) ;
+  if CLOpt.is_originator && Config.dump_duplicate_symbols then reset_duplicates_file () ;
   ()
 
 
