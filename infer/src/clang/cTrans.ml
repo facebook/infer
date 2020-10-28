@@ -838,14 +838,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let return =
       if Self.is_var_self pvar (CContext.is_objc_method context) && CType.is_class typ then
-        let class_name = CContext.get_curr_class_typename stmt_info context in
-        if trans_state.is_fst_arg_objc_instance_method_call then
-          raise
-            (Self.SelfClassException
-               {class_name; position= __POS__; source_range= stmt_info.Clang_ast_t.si_source_range})
-        else
-          let exp_typ = sizeof_expr_class class_name in
-          exp_typ
+        sizeof_expr_class (CContext.get_curr_class_typename stmt_info context)
       else (var_exp, typ)
     in
     L.(debug Capture Verbose) "@\n@\n PVAR ='%s'@\n@\n" (Pvar.to_string pvar) ;
@@ -1289,13 +1282,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         CMethod_trans.get_class_name_method_call_from_receiver_kind context obj_c_message_expr_info
           act_params
       in
-      if trans_state.is_fst_arg_objc_instance_method_call && is_receiver_instance receiver_kind then
-        raise
-          (Self.SelfClassException
-             {class_name; position= __POS__; source_range= si.Clang_ast_t.si_source_range})
-      else
-        let exp, typ = sizeof_expr_class class_name in
-        Some (mk_trans_result (exp, typ) empty_control)
+      Some (mk_trans_result (sizeof_expr_class class_name) empty_control)
     else if
       (* alloc or new *)
       String.equal selector CFrontend_config.alloc
@@ -1347,23 +1334,24 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let param_trans_results =
           List.mapi ~f:(exec_instruction_with_trans_state trans_state_param callee_ms_opt) rest
         in
-        try
-          let trans_state_param' =
-            if is_receiver_instance obj_c_message_expr_info.Clang_ast_t.omei_receiver_kind then
-              {trans_state_param with is_fst_arg_objc_instance_method_call= true}
-            else {trans_state_param with is_fst_arg_objc_instance_method_call= false}
-          in
-          let fst_res_trans =
-            exec_instruction_with_trans_state trans_state_param' callee_ms_opt 0 stmt
-          in
-          (obj_c_message_expr_info, fst_res_trans :: param_trans_results)
-        with Self.SelfClassException e ->
-          let pointer = obj_c_message_expr_info.Clang_ast_t.omei_decl_pointer in
-          let selector = obj_c_message_expr_info.Clang_ast_t.omei_selector in
-          let obj_c_message_expr_info =
-            Ast_expressions.make_obj_c_message_expr_info_class selector e.class_name pointer
-          in
-          (obj_c_message_expr_info, param_trans_results) )
+        let trans_state_param' =
+          { trans_state_param with
+            is_fst_arg_objc_instance_method_call=
+              is_receiver_instance obj_c_message_expr_info.Clang_ast_t.omei_receiver_kind }
+        in
+        match CTrans_utils.should_remove_first_param trans_state_param' stmt with
+        | Some class_name ->
+            let pointer = obj_c_message_expr_info.Clang_ast_t.omei_decl_pointer in
+            let selector = obj_c_message_expr_info.Clang_ast_t.omei_selector in
+            let obj_c_message_expr_info =
+              Ast_expressions.make_obj_c_message_expr_info_class selector class_name pointer
+            in
+            (obj_c_message_expr_info, param_trans_results)
+        | None ->
+            let fst_res_trans =
+              exec_instruction_with_trans_state trans_state_param' callee_ms_opt 0 stmt
+            in
+            (obj_c_message_expr_info, fst_res_trans :: param_trans_results) )
     | [] ->
         (obj_c_message_expr_info, [])
 

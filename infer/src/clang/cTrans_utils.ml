@@ -581,10 +581,6 @@ let extract_stmt_from_singleton stmt_list source_range warning_string =
 
 
 module Self = struct
-  exception
-    SelfClassException of
-      {class_name: Typ.Name.t; position: Logging.ocaml_pos; source_range: Clang_ast_t.source_range}
-
   let add_self_parameter_for_super_instance stmt_info context procname loc mei =
     if is_superinstance mei then
       let typ, self_expr, instrs =
@@ -644,3 +640,33 @@ let last_or_mk_fresh_void_exp_typ exp_typs =
       last_exp_typ
   | None ->
       mk_fresh_void_exp_typ ()
+
+
+let should_remove_first_param {context= {tenv} as context; is_fst_arg_objc_instance_method_call}
+    stmt =
+  let some_class_name stmt_info = Some (CContext.get_curr_class_typename stmt_info context) in
+  match (stmt : Clang_ast_t.stmt) with
+  | ImplicitCastExpr
+      ( _
+      , [ DeclRefExpr
+            ( stmt_info
+            , _
+            , _
+            , {drti_decl_ref= Some {dr_name= Some {ni_name= name}; dr_qual_type= Some qual_type}} )
+        ]
+      , _
+      , {cei_cast_kind= `LValueToRValue} )
+    when is_fst_arg_objc_instance_method_call && String.equal name "self"
+         && CType.is_class (CType_decl.qual_type_to_sil_type tenv qual_type) ->
+      some_class_name stmt_info
+  | ObjCMessageExpr
+      ( _
+      , [ ImplicitCastExpr
+            (_, [DeclRefExpr (stmt_info, _, _, _)], _, {cei_cast_kind= `LValueToRValue}) ]
+      , _
+      , {omei_selector= selector} )
+    when is_fst_arg_objc_instance_method_call && String.equal selector CFrontend_config.class_method
+    ->
+      some_class_name stmt_info
+  | _ ->
+      None

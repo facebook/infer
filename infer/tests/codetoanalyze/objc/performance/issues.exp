@@ -12,6 +12,7 @@ codetoanalyze/objc/performance/NSMutableArray.m, nsmarray_set_linear, 2, INTEGER
 codetoanalyze/objc/performance/NSSet.m, nsset_enumerator_linear, 7, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [<LHS trace>,Assignment,<RHS trace>,Assignment,Binary operation: ([0, +oo] + [1, set->elements.length.ub + 1]):signed64]
 codetoanalyze/objc/performance/NSSet.m, nsset_init_constant, 3, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
 codetoanalyze/objc/performance/NSSet.m, nsset_iterate_linear, 3, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [<LHS trace>,Assignment,<RHS trace>,Assignment,Binary operation: ([0, +oo] + [1, set->elements.length.ub + 1]):signed64]
+codetoanalyze/objc/performance/NSString.m, DummyClass.call_string_by_appending_string_constant_FP, 0, INFINITE_EXECUTION_TIME, no_bucket, ERROR, [Unbounded loop,Modeled call to NSString.stringByAppendingString:]
 codetoanalyze/objc/performance/NSString.m, init_string_constant, 2, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
 codetoanalyze/objc/performance/NSString.m, replace_linear_FP, 0, INFINITE_EXECUTION_TIME, no_bucket, ERROR, [Unbounded loop,Loop]
 codetoanalyze/objc/performance/NSString.m, replace_linear_FP, 2, INTEGER_OVERFLOW_U5, no_bucket, ERROR, [<LHS trace>,Unknown value from: NSString.stringByReplacingOccurrencesOfString:withString:,Binary operation: ([0, +oo] + 1):signed32]

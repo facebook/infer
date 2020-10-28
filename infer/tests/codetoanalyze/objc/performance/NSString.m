@@ -123,3 +123,14 @@ NSString* string_by_appending_path_component_linear(NSString* path,
 bool string_has_prefix_linear(NSString* str, NSString* prefix) {
   return [str hasPrefix:prefix];
 }
+
+@interface DummyClass : NSObject
+@end
+
+@implementation DummyClass
+
++ (void)call_string_by_appending_string_constant_FP {
+  NSString* s = [NSStringFromClass(self) stringByAppendingString:@"abc"];
+}
+
+@end

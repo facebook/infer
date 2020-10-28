@@ -81,6 +81,8 @@ codetoanalyze/objc/performance/NSSet.m, nsset_init_with_array_linear, 7 + 3 ⋅ 
 codetoanalyze/objc/performance/NSSet.m, nsset_init_with_set_constant, 6,  OnUIThread:false, []
 codetoanalyze/objc/performance/NSSet.m, nsset_iterate_linear, 6 + 8 ⋅ (set->elements.length.ub + 1),  OnUIThread:false, [{set->elements.length.ub + 1},Loop]
 codetoanalyze/objc/performance/NSSet.m, nsset_next_object_linear, 5 + 5 ⋅ (set->elements.length.ub + 1),  OnUIThread:false, [{set->elements.length.ub + 1},Loop]
+codetoanalyze/objc/performance/NSString.m, DummyClass.call_string_by_appending_string_constant_FP, ⊤,  OnUIThread:false, [Unbounded loop,Modeled call to NSString.stringByAppendingString:]
+codetoanalyze/objc/performance/NSString.m, DummyClass.dealloc, 1,  OnUIThread:false, []
 codetoanalyze/objc/performance/NSString.m, call_component_separated_by_char_constant, 46,  OnUIThread:false, []
 codetoanalyze/objc/performance/NSString.m, call_init_with_string_constant, 15,  OnUIThread:false, []
 codetoanalyze/objc/performance/NSString.m, component_seperated_by_char_linear, 6 + m.length.ub + 3 ⋅ (-1+max(2, m.length.ub)) + 3 ⋅ (max(2, m.length.ub)),  OnUIThread:false, [{max(2, m.length.ub)},Loop,{-1+max(2, m.length.ub)},Loop,{m.length.ub},Modeled call to NSString.componentsSeparatedByString:]
