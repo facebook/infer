@@ -390,6 +390,8 @@ type arith = Arith.t
 
 include Trm
 
+let pp_diff fs (x, y) = Format.fprintf fs "-- %a ++ %a" pp x pp y
+
 (** Construct *)
 
 (* variables *)

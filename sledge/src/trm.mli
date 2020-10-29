@@ -42,6 +42,8 @@ module Arith :
   Arithmetic.S with type var := Var.t with type trm := t with type t = arith
 
 val ppx : Var.strength -> t pp
+val pp : t pp
+val pp_diff : (t * t) pp
 
 (** Construct *)
 
