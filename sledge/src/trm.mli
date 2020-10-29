@@ -36,6 +36,7 @@ module Var : sig
   include Ses.Var_intf.VAR with type t = private trm
 
   val of_ : trm -> t
+  val of_trm : trm -> t option
 end
 
 module Arith :
