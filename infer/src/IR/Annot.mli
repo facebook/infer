@@ -55,6 +55,8 @@ module Item : sig
 
   val is_final : t -> bool
   (** Check if final annotation is included in. *)
+
+  module Normalizer : HashNormalizer.S with type t = t
 end
 
 module Class : sig

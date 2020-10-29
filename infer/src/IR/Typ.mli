@@ -275,6 +275,8 @@ module Name : sig
   module Set : PrettyPrintable.PPSet with type elt = t
 
   module Map : PrettyPrintable.PPMap with type key = t
+
+  module Normalizer : HashNormalizer.S with type t = t
 end
 
 val equal : t -> t -> bool
@@ -355,3 +357,5 @@ val has_block_prefix : string -> bool
 val unsome : string -> t option -> t
 
 type typ = t
+
+module Normalizer : HashNormalizer.S with type t = t

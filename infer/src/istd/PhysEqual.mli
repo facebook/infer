@@ -7,8 +7,6 @@
 
 open! IStd
 
-val shallow_equal : 'a -> 'a -> bool
-
 (** Helpers function to enforce physical equality.
 
     Let suppose [construct/deconstruct] is a 1-level-allocation OCaml construction/deconstruction,

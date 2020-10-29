@@ -58,3 +58,16 @@ let is_java_outer_instance ({field_name} as field) =
   let last_char = field_name.[String.length field_name - 1] in
   Char.(last_char >= '0' && last_char <= '9')
   && String.is_suffix field_name ~suffix:(this ^ String.of_char last_char)
+
+
+module Normalizer = HashNormalizer.Make (struct
+  type nonrec t = t [@@deriving equal]
+
+  let hash = Hashtbl.hash
+
+  let normalize t =
+    let class_name = Typ.Name.Normalizer.normalize t.class_name in
+    let field_name = HashNormalizer.StringNormalizer.normalize t.field_name in
+    if phys_equal class_name t.class_name && phys_equal field_name t.field_name then t
+    else {class_name; field_name}
+end)

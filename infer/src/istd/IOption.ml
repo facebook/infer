@@ -17,6 +17,15 @@ let if_none_eval = value_default_f
 
 let exists2 x y ~f = match (x, y) with Some x, Some y -> f x y | _, _ -> false
 
+let map_changed opt ~equal ~f =
+  match opt with
+  | None ->
+      opt
+  | Some x ->
+      let x' = f x in
+      if equal x x' then opt else Some x'
+
+
 module Let_syntax = struct
   include Option.Let_syntax
 
