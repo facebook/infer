@@ -95,6 +95,7 @@ val map : t -> f:(t -> t) -> t
 
 val seq_size_exn : t -> t
 val seq_size : t -> t option
+val fv : t -> Var.Set.t
 
 (** Traverse *)
 

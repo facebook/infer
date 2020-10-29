@@ -492,3 +492,7 @@ let iter_subtrms e ~f =
   | Concat xs | Record xs | Apply (_, xs) -> Array.iter ~f xs
 
 let subtrms e = Iter.from_labelled_iter (iter_subtrms e)
+
+(** Query *)
+
+let fv e = Var.Set.of_iter (vars e)
