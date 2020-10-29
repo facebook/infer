@@ -446,9 +446,7 @@ let rec map_vars e ~f =
   match e with
   | Var _ as v -> (f (Var.of_ v) : Var.t :> t)
   | Z _ | Q _ -> e
-  | Arith a ->
-      let a' = Arith.map ~f:(map_vars ~f) a in
-      if a == a' then e else _Arith a'
+  | Arith a -> map1 (Arith.map ~f:(map_vars ~f)) e _Arith a
   | Splat x -> map1 (map_vars ~f) e _Splat x
   | Sized {seq; siz} -> map2 (map_vars ~f) e _Sized seq siz
   | Extract {seq; off; len} -> map3 (map_vars ~f) e _Extract seq off len
@@ -458,6 +456,22 @@ let rec map_vars e ~f =
   | Record xs -> mapN (map_vars ~f) e _Record xs
   | Ancestor _ -> e
   | Apply (g, xs) -> mapN (map_vars ~f) e (_Apply g) xs
+
+let map e ~f =
+  match e with
+  | Var _ | Z _ | Q _ -> e
+  | Arith a ->
+      let a' = Arith.map ~f a in
+      if a == a' then e else _Arith a'
+  | Splat x -> map1 f e _Splat x
+  | Sized {seq; siz} -> map2 f e _Sized seq siz
+  | Extract {seq; off; len} -> map3 f e _Extract seq off len
+  | Concat xs -> mapN f e _Concat xs
+  | Select {idx; rcd} -> map1 f e (_Select idx) rcd
+  | Update {idx; rcd; elt} -> map2 f e (_Update idx) rcd elt
+  | Record xs -> mapN f e _Record xs
+  | Ancestor _ -> e
+  | Apply (g, xs) -> mapN f e (_Apply g) xs
 
 (** Traverse *)
 

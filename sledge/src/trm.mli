@@ -88,6 +88,7 @@ val apply : Ses.Funsym.t -> t array -> t
 (** Transform *)
 
 val map_vars : t -> f:(Var.t -> Var.t) -> t
+val map : t -> f:(t -> t) -> t
 
 (** Query *)
 
