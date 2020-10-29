@@ -386,6 +386,15 @@ end = struct
   let vars e = Iter.from_labelled_iter (iter_vars e)
 end
 
+module T = struct
+  type t = Trm.t [@@deriving compare, sexp]
+end
+
+module Map = struct
+  include Map.Make (T)
+  include Provide_of_sexp (T)
+end
+
 type arith = Arith.t
 
 include Trm
