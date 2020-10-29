@@ -496,3 +496,4 @@ let subtrms e = Iter.from_labelled_iter (iter_subtrms e)
 (** Query *)
 
 let fv e = Var.Set.of_iter (vars e)
+let rec height e = 1 + Iter.fold ~f:(fun x -> max (height x)) (subtrms e) 0
