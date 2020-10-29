@@ -11,7 +11,7 @@ open Var_intf
 module Make (T : REPR) = struct
   include T
 
-  type 'a strength = 'a -> [`Universal | `Existential | `Anonymous] option
+  type nonrec strength = t strength
 
   let ppx strength ppf v =
     let id = id v in

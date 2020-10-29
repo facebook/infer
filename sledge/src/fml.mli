@@ -33,7 +33,7 @@ module Set : sig
   val t_of_sexp : Sexp.t -> t
 end
 
-val ppx : Var.t Var.strength -> t pp
+val ppx : Var.strength -> t pp
 val pp : t pp
 
 (** Construct *)

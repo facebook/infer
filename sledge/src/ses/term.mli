@@ -106,7 +106,7 @@ module Map : sig
   val t_of_sexp : (Sexp.t -> 'a) -> Sexp.t -> 'a t
 end
 
-val ppx : Var.t Var.strength -> t pp
+val ppx : Var.strength -> t pp
 val pp : t pp
 val pp_diff : (t * t) pp
 val invariant : t -> unit

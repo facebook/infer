@@ -13,11 +13,13 @@ module type REPR = sig
   val name : t -> string
 end
 
+type 'a strength = 'a -> [`Universal | `Existential | `Anonymous] option
+
 module type VAR = sig
   type t [@@deriving compare, equal, sexp]
-  type 'a strength = 'a -> [`Universal | `Existential | `Anonymous] option
+  type nonrec strength = t strength
 
-  val ppx : t strength -> t pp
+  val ppx : strength -> t pp
   val pp : t pp
 
   module Map : sig
@@ -27,13 +29,11 @@ module type VAR = sig
   end
 
   module Set : sig
-    type var := t
-
     include NS.Set.S with type elt := t
 
     val sexp_of_t : t -> Sexp.t
     val t_of_sexp : Sexp.t -> t
-    val ppx : var strength -> t pp
+    val ppx : strength -> t pp
     val pp : t pp
     val pp_xs : t pp
   end

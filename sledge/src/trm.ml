@@ -89,7 +89,7 @@ and Trm : sig
     | Apply of Funsym.t * t array
   [@@deriving compare, equal, sexp]
 
-  val ppx : Var.t Var.strength -> t pp
+  val ppx : Var.strength -> t pp
   val pp : t pp
   val _Var : int -> string -> t
   val _Z : Z.t -> t

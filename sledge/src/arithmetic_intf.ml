@@ -7,14 +7,12 @@
 
 (** Arithmetic terms *)
 
-module Var = Ses.Var
-
 module type S = sig
   type var
   type trm
   type t [@@deriving compare, equal, sexp]
 
-  val ppx : var Var.strength -> t pp
+  val ppx : var Ses.Var_intf.strength -> t pp
 
   (** Construct and Destruct atomic terms *)
 
@@ -89,7 +87,7 @@ module type INDETERMINATE = sig
   type trm [@@deriving compare, equal, sexp]
   type var
 
-  val ppx : var Var.strength -> trm pp
+  val ppx : var Ses.Var_intf.strength -> trm pp
   val pp : trm pp
   val vars : trm -> var iter
 end
