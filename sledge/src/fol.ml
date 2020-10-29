@@ -317,9 +317,27 @@ module Term = struct
         let t' = Trm.map_vars ~f t in
         if t' == t then c else `Trm t'
 
-  let map_vars ~f = function
+  let map_vars e ~f =
+    match e with
     | `Fml p -> `Fml (Fml.map_vars ~f p)
     | #cnd as c -> (map_vars_c ~f c :> exp)
+
+  let rec map_trms_c ~f c =
+    match c with
+    | `Ite (cnd, thn, els) ->
+        let cnd' = Fml.map_trms ~f cnd in
+        let thn' = map_trms_c ~f thn in
+        let els' = map_trms_c ~f els in
+        if cnd' == cnd && thn' == thn && els' == els then c
+        else _Ite cnd' thn' els'
+    | `Trm t ->
+        let t' = f t in
+        if t' == t then c else `Trm t'
+
+  let map_trms e ~f =
+    match e with
+    | `Fml p -> `Fml (Fml.map_trms ~f p)
+    | #cnd as c -> (map_trms_c ~f c :> exp)
 
   let fold_map_vars e s0 ~f =
     let s = ref s0 in

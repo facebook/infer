@@ -75,7 +75,8 @@ module rec Term : sig
 
   (** Transform *)
 
-  val map_vars : f:(Var.t -> Var.t) -> t -> t
+  val map_vars : t -> f:(Var.t -> Var.t) -> t
+  val map_trms : t -> f:(Trm.t -> Trm.t) -> t
   val fold_map_vars : t -> 's -> f:(Var.t -> 's -> Var.t * 's) -> t * 's
   val rename : Var.Subst.t -> t -> t
 end
