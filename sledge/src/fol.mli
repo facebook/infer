@@ -85,7 +85,7 @@ end
 
 (** Formulas *)
 and Formula : sig
-  type t [@@deriving compare, equal, sexp]
+  type t = Fml.t [@@deriving compare, equal, sexp]
 
   val inject : t -> Term.t
   val project : Term.t -> t option
