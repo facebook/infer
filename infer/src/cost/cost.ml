@@ -62,10 +62,12 @@ module InstrBasicCostWithReason = struct
         && Procdesc.is_objc_arc_on callee_pdesc )
 
 
-  let dispatch_operation tenv callee_pname callee_cost_opt fun_arg_list model_env ret inferbo_mem =
+  let dispatch_operation tenv callee_pname callee_cost_opt fun_arg_list get_summary model_env ret
+      inferbo_mem =
     match CostModels.Call.dispatch tenv callee_pname fun_arg_list with
     | Some model ->
-        BasicCostWithReason.of_basic_cost (model (Lazy.force model_env) ~ret inferbo_mem)
+        BasicCostWithReason.of_basic_cost
+          (model get_summary (Lazy.force model_env) ~ret inferbo_mem)
     | None -> (
       match callee_cost_opt with
       | Some callee_cost ->
@@ -181,8 +183,8 @@ module InstrBasicCostWithReason = struct
                 let callee_cost_opt = get_callee_cost_opt kind inferbo_mem in
                 match kind with
                 | OperationCost ->
-                    dispatch_operation tenv callee_pname callee_cost_opt fun_arg_list model_env ret
-                      inferbo_mem
+                    dispatch_operation tenv callee_pname callee_cost_opt fun_arg_list
+                      extras.get_summary model_env ret inferbo_mem
                 | AllocationCost ->
                     dispatch_allocation tenv callee_pname callee_cost_opt
                 | AutoreleasepoolSize ->

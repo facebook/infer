@@ -306,6 +306,11 @@ module ObjectiveC = struct
     protocol_exists tenv is_protocol (Typ.Name.Objc.from_string typename)
 
 
+  let implements_collection =
+    let coll = ["NSArray"; "NSDictionary"; "NSOrderedSet"; "NSSet"] in
+    fun tenv typ_str -> List.exists ~f:(fun obj_class -> implements obj_class tenv typ_str) coll
+
+
   let is_core_graphics_create_or_copy _ procname =
     String.is_prefix ~prefix:"CG" procname
     && ( String.is_substring ~substring:"Create" procname
