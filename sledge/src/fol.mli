@@ -58,6 +58,8 @@ module rec Term : sig
   val get_const : t -> Q.t option
   (** [get_const a] is [Some q] iff [equal a (const q)] *)
 
+  val get_trm : t -> Trm.t option
+
   (** Access *)
 
   val split_const : t -> t * Q.t

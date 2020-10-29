@@ -275,6 +275,8 @@ module Term = struct
     | `Trm (Q q) -> Some q
     | _ -> None
 
+  let get_trm = function `Trm t -> Some t | _ -> None
+
   (** Access *)
 
   let split_const e =
