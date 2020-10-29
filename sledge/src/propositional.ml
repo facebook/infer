@@ -75,20 +75,29 @@ module Make (Trm : TERM) = struct
       | Tt | Eq _ | Eq0 _ | Pos _ | Lit _ | Iff _ -> Not p )
       |> check invariant
 
-    let _Join cons zero ~pos ~neg =
-      if not (Fmls.disjoint pos neg) then zero
-      else if Fmls.is_empty neg then
-        match Fmls.only_elt pos with Some p -> p | _ -> cons ~pos ~neg
-      else if Fmls.is_empty pos then
-        match Fmls.only_elt neg with
-        | Some n -> _Not n
+    let _Join cons unit zero ~pos ~neg =
+      let pos = Fmls.remove unit pos in
+      let neg = Fmls.remove zero neg in
+      if
+        Fmls.mem zero pos
+        || Fmls.mem unit neg
+        || not (Fmls.disjoint pos neg)
+      then zero
+      else
+        match Fmls.classify neg with
+        | `Zero -> (
+          match Fmls.classify pos with
+          | `Zero -> unit
+          | `One p -> p
+          | `Many -> cons ~pos ~neg )
+        | `One n when Fmls.is_empty pos -> _Not n
         | _ -> cons ~pos ~neg
-      else cons ~pos ~neg
 
     let _And ~pos ~neg =
-      _Join (fun ~pos ~neg -> And {pos; neg}) ff ~pos ~neg
+      _Join (fun ~pos ~neg -> And {pos; neg}) tt ff ~pos ~neg
 
-    let _Or ~pos ~neg = _Join (fun ~pos ~neg -> Or {pos; neg}) tt ~pos ~neg
+    let _Or ~pos ~neg =
+      _Join (fun ~pos ~neg -> Or {pos; neg}) ff tt ~pos ~neg
 
     let join _Cons zero split_pos_neg p q =
       ( if equal p zero || equal q zero then zero

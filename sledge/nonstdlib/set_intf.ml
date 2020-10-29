@@ -26,6 +26,7 @@ module type S = sig
   val add : elt -> t -> t
   val add_option : elt option -> t -> t
   val add_list : elt list -> t -> t
+  val remove : elt -> t -> t
   val diff : t -> t -> t
   val inter : t -> t -> t
   val union : t -> t -> t
@@ -41,6 +42,7 @@ module type S = sig
   val disjoint : t -> t -> bool
   val max_elt : t -> elt option
   val only_elt : t -> elt option
+  val classify : t -> [`Zero | `One of elt | `Many]
 
   val pop_exn : t -> elt * t
   (** Find and remove an unspecified element. [O(1)]. *)

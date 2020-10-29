@@ -33,6 +33,7 @@ end) : S with type elt = Elt.t = struct
   let add x s = S.add x s
   let add_option = Option.fold ~f:add
   let add_list xs s = S.add_list s xs
+  let remove x s = S.remove x s
   let diff = S.diff
   let inter = S.inter
   let union = S.union
@@ -68,6 +69,14 @@ end) : S with type elt = Elt.t = struct
       | l, _, r when is_empty l && is_empty r -> Some elt
       | _ -> None )
     | None -> None
+
+  let classify s =
+    match root_elt s with
+    | None -> `Zero
+    | Some elt -> (
+      match S.split elt s with
+      | l, true, r when is_empty l && is_empty r -> `One elt
+      | _ -> `Many )
 
   let pop_exn s =
     let elt = choose_exn s in
