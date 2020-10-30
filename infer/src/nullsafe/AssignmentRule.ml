@@ -138,6 +138,8 @@ module ReportableViolation = struct
         in
         make_issue_factory ~description ~issue_type
         |> NullsafeIssue.with_third_party_dependent_methods [(procname, annotated_signature)]
+    (* Equivalent to non-null from user point of view *)
+    | Nullability.ProvisionallyNullable
     | Nullability.LocallyCheckedNonnull
     | Nullability.LocallyTrustedNonnull
     | Nullability.UncheckedNonnull

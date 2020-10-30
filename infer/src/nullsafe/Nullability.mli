@@ -37,6 +37,10 @@ type t =
           type-checks files against its dependencies but does not require the dependencies to be
           transitively checked. Therefore this type of non-nullable value is differentiated from
           StrictNonnull. *)
+  | ProvisionallyNullable
+      (** Only for "annotation graph" mode. Indicates the value coming from a not annotated object
+          in the class under analysis. Since the object is not annotated, it should be treated as
+          non-null for all cases related to user-facing issue generation. *)
   | StrictNonnull
       (** Non-nullable value with the highest degree of certainty, because it is either:
 

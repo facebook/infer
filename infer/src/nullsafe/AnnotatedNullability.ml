@@ -47,7 +47,7 @@ let get_nullability = function
   | Nullable _ ->
       Nullability.Nullable
   | ProvisionallyNullable _ ->
-      Nullability.Nullable
+      Nullability.ProvisionallyNullable
   | ThirdPartyNonnull ->
       Nullability.ThirdPartyNonnull
   | UncheckedNonnull _ ->

@@ -65,7 +65,7 @@ let get_nullability = function
         (* Annotated as Nullable explicitly or implicitly *)
         Nullability.Nullable
     | AnnotatedNullability.ProvisionallyNullable _ ->
-        Nullability.Nullable
+        Nullability.ProvisionallyNullable
     | AnnotatedNullability.UncheckedNonnull _
     | AnnotatedNullability.ThirdPartyNonnull
     | AnnotatedNullability.LocallyTrustedNonnull

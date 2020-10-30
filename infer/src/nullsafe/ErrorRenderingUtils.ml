@@ -29,6 +29,8 @@ module UserFriendlyNullable = struct
     | Nullability.LocallyTrustedNonnull ->
         (* The value is trusted in the current mode by definition, hence is not treated as nullable. *)
         None
+    | Nullability.ProvisionallyNullable ->
+        (* from the user-facing point of view, this is a non-null *) None
     | Nullability.StrictNonnull ->
         None
 end
