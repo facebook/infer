@@ -85,7 +85,7 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr : Sil.instr) =
   | Call ((ret_id, ret_typ), call_exp, formals, loc, call_flags) ->
       let hil_ret = (Var.of_id ret_id, ret_typ) in
       let hil_call =
-        match exp_of_sil call_exp Typ.void with
+        match exp_of_sil call_exp StdTyp.void with
         | Constant (Cfun procname) | Closure (procname, _) ->
             Direct procname
         | call_exp ->

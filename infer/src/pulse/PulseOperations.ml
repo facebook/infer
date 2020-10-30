@@ -107,7 +107,7 @@ let eval location exp0 astate =
         let* astate, addr_hist_index = eval exp_index astate in
         let* astate, addr_hist = eval exp' astate in
         let+ astate = check_addr_access location addr_hist astate in
-        Memory.eval_edge addr_hist (ArrayAccess (Typ.void, fst addr_hist_index)) astate
+        Memory.eval_edge addr_hist (ArrayAccess (StdTyp.void, fst addr_hist_index)) astate
     | Closure {name; captured_vars} ->
         let+ astate, rev_captured =
           List.fold_result captured_vars ~init:(astate, [])
@@ -202,7 +202,7 @@ let write_field location ~ref:addr_trace_ref field ~obj:addr_trace_obj astate =
 
 
 let write_arr_index location ~ref:addr_trace_ref ~index ~obj:addr_trace_obj astate =
-  write_access location addr_trace_ref (ArrayAccess (Typ.void, index)) addr_trace_obj astate
+  write_access location addr_trace_ref (ArrayAccess (StdTyp.void, index)) addr_trace_obj astate
 
 
 let havoc_field location addr_trace field trace_obj astate =

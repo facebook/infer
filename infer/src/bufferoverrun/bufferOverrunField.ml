@@ -29,24 +29,24 @@ let mk, get_type =
   (mk, get_type)
 
 
-let java_collection_internal_array = mk "java.collection.elements" Typ.(mk_array void)
+let java_collection_internal_array = mk "java.collection.elements" Typ.(mk_array StdTyp.void)
 
-let java_linked_list_index = mk "java.linked_list_index" Typ.(int)
+let java_linked_list_index = mk "java.linked_list_index" StdTyp.(int)
 
-let java_linked_list_length = mk "java.linked_list_length" Typ.(int)
+let java_linked_list_length = mk "java.linked_list_length" StdTyp.(int)
 
 let java_linked_list_next typ = mk "java.linked_list_next" typ
 
-let java_list_files_length = mk "java.list_files_length" Typ.(int)
+let java_list_files_length = mk "java.list_files_length" StdTyp.(int)
 
 let is_java_collection_internal_array fn = Fieldname.equal fn java_collection_internal_array
 
-let objc_collection_internal_array = mk "nscollection.elements" Typ.(mk_array void)
+let objc_collection_internal_array = mk "nscollection.elements" Typ.(mk_array StdTyp.void)
 
-let objc_iterator_offset = mk "nsiterator.offset" Typ.(mk_array void)
+let objc_iterator_offset = mk "nsiterator.offset" Typ.(mk_array StdTyp.void)
 
 let c_strlen () =
-  if Language.curr_language_is Java then mk "length" Typ.uint else mk "c.strlen" Typ.uint
+  if Language.curr_language_is Java then mk "length" StdTyp.uint else mk "c.strlen" StdTyp.uint
 
 
 let cpp_vector_elem_str = "cpp.vector_elem"

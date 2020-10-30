@@ -265,7 +265,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Metadata metadata ->
         do_metadata metadata astate
     | Prune (exp, _loc, _then_branch, _if_kind) ->
-        let hil_exp = hilexp_of_sil ~add_deref:false astate exp Typ.boolean in
+        let hil_exp = hilexp_of_sil ~add_deref:false astate exp StdTyp.boolean in
         do_assume hil_exp astate
     | Load {id} when Ident.is_none id ->
         astate

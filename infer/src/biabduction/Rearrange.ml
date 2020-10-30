@@ -438,7 +438,7 @@ let strexp_extend_values analysis_data pname tenv orig_prop footprint_part kind 
     | Exp.Sizeof sizeof_data ->
         sizeof_data
     | _ ->
-        {Exp.typ= Typ.void; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
+        {Exp.typ= StdTyp.void; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
   in
   List.map
     ~f:(fun (atoms', se', typ') ->

@@ -395,7 +395,7 @@ let create_call_to_objc_bridge_transfer sil_loc exp typ =
   let pname = BuiltinDecl.__objc_bridge_transfer in
   let stmt_call =
     Sil.Call
-      ( (Ident.create_fresh Ident.knormal, Typ.void)
+      ( (Ident.create_fresh Ident.knormal, StdTyp.void)
       , Exp.Const (Const.Cfun pname)
       , [(exp, typ)]
       , sil_loc
@@ -479,9 +479,9 @@ let cast_operation ?objc_bridge_cast_kind cast_kind ((exp, typ) as exp_typ) cast
 
 let trans_assertion_failure sil_loc (context : CContext.t) =
   let assert_fail_builtin = Exp.Const (Const.Cfun BuiltinDecl.__infer_fail) in
-  let args = [(Exp.Const (Const.Cstr Config.default_failure_name), Typ.void)] in
+  let args = [(Exp.Const (Const.Cstr Config.default_failure_name), StdTyp.void)] in
   let ret_id = Ident.create_fresh Ident.knormal in
-  let ret_typ = Typ.void in
+  let ret_typ = StdTyp.void in
   let call_instr =
     Sil.Call ((ret_id, ret_typ), assert_fail_builtin, args, sil_loc, CallFlags.default)
   in
@@ -625,12 +625,12 @@ let is_logical_negation_of_int tenv ei uoi =
       false
 
 
-let mk_fresh_void_exp_typ () = (Exp.Var (Ident.create_fresh Ident.knormal), Typ.void)
+let mk_fresh_void_exp_typ () = (Exp.Var (Ident.create_fresh Ident.knormal), StdTyp.void)
 
-let mk_fresh_void_id_typ () = (Ident.create_fresh Ident.knormal, Typ.void)
+let mk_fresh_void_id_typ () = (Ident.create_fresh Ident.knormal, StdTyp.void)
 
 let mk_fresh_void_return () =
-  let id = Ident.create_fresh Ident.knormal and void = Typ.void in
+  let id = Ident.create_fresh Ident.knormal and void = StdTyp.void in
   ((id, void), (Exp.Var id, void))
 
 

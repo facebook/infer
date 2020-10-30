@@ -11,21 +11,21 @@ open Javalib_pack
 
 let translate_basic_type = function
   | `Bool ->
-      Typ.boolean
+      StdTyp.boolean
   | `Byte ->
-      Typ.java_byte
+      StdTyp.Java.byte
   | `Char ->
-      Typ.java_char
+      StdTyp.Java.char
   | `Double ->
-      Typ.double
+      StdTyp.double
   | `Float ->
-      Typ.float
+      StdTyp.float
   | `Int ->
-      Typ.int
+      StdTyp.int
   | `Long ->
-      Typ.long
+      StdTyp.long
   | `Short ->
-      Typ.java_short
+      StdTyp.Java.short
 
 
 let rec translate_value_type = function
@@ -56,7 +56,7 @@ let rec translate_value_exn = function
   | JBasics.EVClass (Some typ) ->
       Annot.Class (translate_value_type typ)
   | JBasics.EVClass _ ->
-      Annot.Class Typ.void
+      Annot.Class StdTyp.void
   | JBasics.EVAnnotation ann ->
       Annot.Annot (translate ann)
   | _ ->

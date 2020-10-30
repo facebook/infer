@@ -24,7 +24,7 @@ let get_dealloc_call_field (self_var, self_typ) location instrs (fieldname, fiel
       let ret_id = Ident.create_fresh Ident.knormal in
       let call_instr =
         Sil.Call
-          ( (ret_id, Typ.void)
+          ( (ret_id, StdTyp.void)
           , Const (Cfun field_class_dealloc_name)
           , [(Var id_field, field_typ)]
           , location

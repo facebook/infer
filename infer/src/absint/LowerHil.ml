@@ -49,7 +49,7 @@ module Make (TransferFunctions : TransferFunctions.HIL) (HilConfig : HilConfig) 
            "dump" all of the temporaries out of the id map, then execute the unlock instruction. *)
         let actual_state' =
           Bindings.fold bindings ~init:actual_state ~f:(fun id access_expr astate_acc ->
-              let lhs_access_path = HilExp.AccessExpression.base (id, Typ.void) in
+              let lhs_access_path = HilExp.AccessExpression.base (id, StdTyp.void) in
               let dummy_assign =
                 HilInstr.Assign (lhs_access_path, HilExp.AccessExpression access_expr, loc)
               in

@@ -110,7 +110,7 @@ module Java = struct
 
   let to_simplified_string ?(withclass = false) = Pp.string_of_pp (pp ~withclass Simple)
 
-  let get_return_typ pname_java = Option.value ~default:Typ.void pname_java.return_type
+  let get_return_typ pname_java = Option.value ~default:StdTyp.void pname_java.return_type
 
   let is_close {method_name} = String.equal method_name "close"
 
@@ -120,7 +120,7 @@ module Java = struct
     { method_name= class_initializer_method_name
     ; parameters= []
     ; class_name
-    ; return_type= Some Typ.void
+    ; return_type= Some StdTyp.void
     ; kind= Static }
 
 
@@ -163,7 +163,7 @@ module Java = struct
   let is_vararg {parameters} =
     match List.last parameters with
     | Some {desc= Tptr ({desc= Tarray {elt}}, Pk_pointer)} ->
-        Typ.(equal pointer_to_java_lang_object elt)
+        Typ.equal StdTyp.Java.pointer_to_java_lang_object elt
     | _ ->
         false
 

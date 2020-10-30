@@ -59,7 +59,7 @@ val empty_control : control
 val mk_trans_result :
      ?method_name:BuiltinDecl.t
   -> ?is_cpp_call_virtual:bool
-  -> Exp.t * Typ.typ
+  -> Exp.t * Typ.t
   -> control
   -> trans_result
 
@@ -129,12 +129,7 @@ val new_or_alloc_trans :
   -> trans_result
 
 val cpp_new_trans :
-     Typ.IntegerWidths.t
-  -> Location.t
-  -> Typ.t
-  -> Exp.t option
-  -> (Exp.t * Typ.typ) list
-  -> trans_result
+  Typ.IntegerWidths.t -> Location.t -> Typ.t -> Exp.t option -> (Exp.t * Typ.t) list -> trans_result
 
 (** Module for creating cfg nodes and other utility functions related to them. *)
 module Nodes : sig

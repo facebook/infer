@@ -539,7 +539,7 @@ module GenericArrayBackedCollection = struct
 
 
   let eval_element location internal_array index astate =
-    PulseOperations.eval_access location internal_array (ArrayAccess (Typ.void, index)) astate
+    PulseOperations.eval_access location internal_array (ArrayAccess (StdTyp.void, index)) astate
 
 
   let element location collection index astate =

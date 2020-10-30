@@ -479,7 +479,7 @@ let typecheck_expr_for_errors analysis_data ~nullsafe_mode find_canonical_duplic
     checks node instr_ref typestate1 exp1 loc1 : unit =
   ignore
     (typecheck_expr_simple analysis_data ~nullsafe_mode find_canonical_duplicate calls_this checks
-       node instr_ref typestate1 exp1 Typ.void TypeOrigin.OptimisticFallback loc1)
+       node instr_ref typestate1 exp1 StdTyp.void TypeOrigin.OptimisticFallback loc1)
 
 
 (** Get the values of a vararg parameter given the pvar used to assign the elements by looking for
@@ -634,7 +634,7 @@ let do_preconditions_check_state instr_ref idenv tenv curr_pname curr_annotated_
       typestate'
 
 
-let object_typ = Typ.(mk_ptr (mk_struct Name.Java.java_lang_object))
+let object_typ = StdTyp.Java.pointer_to_java_lang_object
 
 (* Handle m.put(k,v) as assignment pvar = v for the pvar associated to m.get(k) *)
 let do_map_put ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as analysis_data)
@@ -838,7 +838,9 @@ let rec check_condition_for_sil_prune
     | Some expr_str ->
         (* Add pvar representing call to `get` to a typestate, indicating that it is a non-nullable *)
         let pvar = Pvar.mk (Mangled.from_string expr_str) curr_pname in
-        let range = (Typ.void, InferredNullability.create TypeOrigin.CallToGetKnownToContainsKey) in
+        let range =
+          (StdTyp.void, InferredNullability.create TypeOrigin.CallToGetKnownToContainsKey)
+        in
         let typestate_with_new_pvar = TypeState.add pvar range typestate in
         typestate_with_new_pvar
           ~descr:"modelling result of Map.get() since containsKey() returned true"
@@ -881,8 +883,8 @@ let rec check_condition_for_sil_prune
       *)
       let typ, inferred_nullability =
         typecheck_expr_simple analysis_data ~nullsafe_mode find_canonical_duplicate calls_this
-          checks original_node instr_ref typestate pvar_expr Typ.void TypeOrigin.OptimisticFallback
-          loc
+          checks original_node instr_ref typestate pvar_expr StdTyp.void
+          TypeOrigin.OptimisticFallback loc
       in
       if checks.eradicate then
         EradicateChecks.check_condition_for_redundancy analysis_data ~is_always_true:true_branch

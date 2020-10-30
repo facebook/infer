@@ -261,30 +261,6 @@ let mk_struct name = mk (Tstruct name)
 
 let mk_ptr ?(ptr_kind = Pk_pointer) t = mk (Tptr (t, ptr_kind))
 
-let void = mk Tvoid
-
-let void_star = mk (Tptr (void, Pk_pointer))
-
-let java_char = mk (Tint IUShort)
-
-let java_byte = mk (Tint ISChar)
-
-let java_short = mk (Tint IShort)
-
-let boolean = mk (Tint IBool)
-
-let char = mk (Tint IChar)
-
-let float = mk (Tfloat FFloat)
-
-let double = mk (Tfloat FDouble)
-
-let int = mk (Tint IInt)
-
-let uint = mk (Tint IUInt)
-
-let long = mk (Tint ILong)
-
 let get_ikind_opt {desc} = match desc with Tint ikind -> Some ikind | _ -> None
 
 (* TODO: size_t should be implementation-dependent. *)
@@ -447,16 +423,6 @@ module Name = struct
 
     let is_class = function JavaClass _ -> true | _ -> false
 
-    let java_io_serializable = from_string "java.io.Serializable"
-
-    let java_lang_class = from_string "java.lang.Class"
-
-    let java_lang_cloneable = from_string "java.lang.Cloneable"
-
-    let java_lang_object = from_string "java.lang.Object"
-
-    let java_lang_string = from_string "java.lang.String"
-
     let get_java_class_name_opt typename =
       match typename with JavaClass java_class_name -> Some java_class_name | _ -> None
 
@@ -518,9 +484,6 @@ module Name = struct
         |> QualifiedCppName.Set.of_list
       in
       function ObjcClass name -> not (QualifiedCppName.Set.mem name tagged_classes) | _ -> false
-
-
-    let objc_ns_enumerator = from_string "NSEnumerator"
   end
 
   module Set = PrettyPrintable.MakePPSet (struct
@@ -626,8 +589,6 @@ let has_block_prefix s =
       false
 
 
-type typ = t
-
 let rec pp_java ~verbose f {desc} =
   let string_of_int = function
     | IInt ->
@@ -694,12 +655,6 @@ let rec is_java_type t =
   | _ ->
       false
 
-
-let pointer_to_java_lang_object = mk_ptr (mk_struct Name.Java.java_lang_object)
-
-let pointer_to_java_lang_string = mk_ptr (mk_struct Name.Java.java_lang_string)
-
-let pointer_to_objc_nszone = mk_ptr (mk_struct (CStruct (QualifiedCppName.of_qual_string "NSZone")))
 
 module TypeQualsNormalizer = HashNormalizer.Make (struct
   type t = type_quals [@@deriving equal]

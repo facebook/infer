@@ -107,7 +107,7 @@ module ReplaceObjCCopy = struct
             (Sil.Call
                ( ret_id_typ
                , function_exp
-               , params @ [(Exp.null, Typ.pointer_to_objc_nszone)]
+               , params @ [(Exp.null, StdTyp.Objc.pointer_to_nszone)]
                , loc
                , flags )) )
         else None

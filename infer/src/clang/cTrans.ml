@@ -758,7 +758,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             let ret_id = Ident.create_fresh Ident.knormal in
             let call_instr =
               Sil.Call
-                ( (ret_id, Typ.void)
+                ( (ret_id, StdTyp.void)
                 , Const (Cfun BuiltinDecl.zero_initialization)
                 , [exp_typ]
                 , sil_loc
@@ -1240,7 +1240,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       decl_ref_trans ~context:(MemberOrIvar this_res_trans) trans_state si decl_ref
     in
     let res_trans =
-      cxx_method_construct_call_trans trans_state_pri res_trans_callee params_stmt si Typ.void
+      cxx_method_construct_call_trans trans_state_pri res_trans_callee params_stmt si StdTyp.void
         ~is_injected_destructor:false ~is_cpp_call_virtual:false (Some tmp_res_trans)
         ~is_inherited_ctor
     in
@@ -1263,7 +1263,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | Some res_trans_callee when Option.is_some res_trans_callee.method_name ->
         let is_cpp_call_virtual = res_trans_callee.is_cpp_call_virtual in
         Some
-          (cxx_method_construct_call_trans trans_state_pri res_trans_callee [] si' Typ.void
+          (cxx_method_construct_call_trans trans_state_pri res_trans_callee [] si' StdTyp.void
              ~is_injected_destructor ~is_cpp_call_virtual None ~is_inherited_ctor:false)
     | _ ->
         None
@@ -2913,7 +2913,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         | Typ.{desc= Tptr (t, _)} ->
             Typ.mk_array ~length ~stride:(IntLit.of_int 8) t
         | _ ->
-            Typ.void_star
+            StdTyp.void_star
       in
       (Exp.Lvar temp, array_typ)
     in
@@ -2938,7 +2938,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let res_trans_call =
       let method_type_no_ref = CType_decl.get_type_from_expr_info expr_info tenv in
       let method_type = add_reference_if_glvalue method_type_no_ref expr_info in
-      let actuals = [temp_with_typ; (Exp.Const (Cint length), Typ.int)] in
+      let actuals = [temp_with_typ; (Exp.Const (Cint length), StdTyp.int)] in
       let callee_name, method_call_type =
         let typ =
           CAst_utils.qual_type_of_decl_ptr
@@ -3016,7 +3016,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             | Typ.{desc= Tptr (t, _)} ->
                 Typ.mk_array ~length ~stride:(IntLit.of_int 8) t
             | _ ->
-                Typ.void_star
+                StdTyp.void_star
           in
           (Exp.Lvar temp, array_typ)
     in
@@ -3057,7 +3057,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       let actuals =
         [ temp1_with_typ
         ; temp2_with_typ
-        ; (Exp.Const (Cint (IntLit.div length (IntLit.of_int 2))), Typ.int) ]
+        ; (Exp.Const (Cint (IntLit.div length (IntLit.of_int 2))), StdTyp.int) ]
       in
       let callee_name, method_call_type =
         let typ =
@@ -3496,7 +3496,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let stmt = match stmts with [stmt] -> stmt | _ -> assert false in
     let res_trans_stmt = exec_with_glvalue_as_reference instruction trans_state' stmt in
     let exp = res_trans_stmt.return in
-    let args = [exp; (sizeof_expr, Typ.void)] in
+    let args = [exp; (sizeof_expr, StdTyp.void)] in
     let ret_id = Ident.create_fresh Ident.knormal in
     let call = Sil.Call ((ret_id, cast_type), builtin, args, sil_loc, CallFlags.default) in
     let res_ex = Exp.Var ret_id in
@@ -3539,7 +3539,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   and gccAsmStmt_trans trans_state stmt_info stmts =
     call_function_with_args Procdesc.Node.GCCAsmStmt BuiltinDecl.__infer_skip_gcc_asm_stmt
-      trans_state stmt_info Typ.void stmts
+      trans_state stmt_info StdTyp.void stmts
 
 
   and offsetOf_trans trans_state expr_info offset_of_expr_info stmt_info =
@@ -3557,17 +3557,17 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   and genericSelectionExprUnknown_trans trans_state stmt_info stmts =
     call_function_with_args Procdesc.Node.GenericSelectionExpr
-      BuiltinDecl.__infer_generic_selection_expr trans_state stmt_info Typ.void stmts
+      BuiltinDecl.__infer_generic_selection_expr trans_state stmt_info StdTyp.void stmts
 
 
   and objc_cxx_throw_trans trans_state stmt_info stmts =
     call_function_with_args Procdesc.Node.ObjCCPPThrow BuiltinDecl.objc_cpp_throw trans_state
-      stmt_info Typ.void stmts
+      stmt_info StdTyp.void stmts
 
 
   and cxxPseudoDestructorExpr_trans () =
     mk_trans_result
-      (Exp.Const (Const.Cfun BuiltinDecl.__infer_skip_function), Typ.void)
+      (Exp.Const (Const.Cfun BuiltinDecl.__infer_skip_function), StdTyp.void)
       empty_control
 
 
@@ -3590,7 +3590,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let fun_name = BuiltinDecl.__cxx_typeid in
     let sil_fun = Exp.Const (Const.Cfun fun_name) in
     let ret_id = Ident.create_fresh Ident.knormal in
-    let void_typ = Typ.void in
+    let void_typ = StdTyp.void in
     let type_info_objc =
       (Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact}, void_typ)
     in
@@ -4042,7 +4042,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | None ->
           genericSelectionExprUnknown_trans trans_state stmt_info stmts )
     | SizeOfPackExpr _ ->
-        mk_trans_result (Exp.get_undefined false, Typ.void) empty_control
+        mk_trans_result (Exp.get_undefined false, StdTyp.void) empty_control
     | GCCAsmStmt (stmt_info, stmts) ->
         gccAsmStmt_trans trans_state stmt_info stmts
     | CXXPseudoDestructorExpr _ ->
@@ -4187,7 +4187,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
               ((stmt_info, stmts), ret_typ)
           | None ->
               let stmt_tuple = Clang_ast_proj.get_stmt_tuple instr in
-              (stmt_tuple, Typ.void)
+              (stmt_tuple, StdTyp.void)
         in
         skip_unimplemented
           ~reason:

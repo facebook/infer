@@ -1565,7 +1565,7 @@ and struct_imply tenv source calc_missing subs fsel1 fsel2 typ2 :
   | (f1, se1) :: fsel1', (f2, se2) :: fsel2' -> (
     match Fieldname.compare f1 f2 with
     | 0 ->
-        let typ' = Struct.fld_typ ~lookup ~default:Typ.void f2 typ2 in
+        let typ' = Struct.fld_typ ~lookup ~default:StdTyp.void f2 typ2 in
         let subs', se_frame, se_missing =
           sexp_imply tenv (Exp.Lfield (source, f2, typ2)) false calc_missing subs se1 se2 typ'
         in
@@ -1585,7 +1585,7 @@ and struct_imply tenv source calc_missing subs fsel1 fsel2 typ2 :
         in
         (subs', (f1, se1) :: fld_frame, fld_missing)
     | _ ->
-        let typ' = Struct.fld_typ ~lookup ~default:Typ.void f2 typ2 in
+        let typ' = Struct.fld_typ ~lookup ~default:StdTyp.void f2 typ2 in
         let subs' =
           sexp_imply_nolhs tenv (Exp.Lfield (source, f2, typ2)) calc_missing subs se2 typ'
         in
@@ -1595,7 +1595,7 @@ and struct_imply tenv source calc_missing subs fsel1 fsel2 typ2 :
         let fld_missing' = (f2, se2) :: fld_missing in
         (subs', fld_frame, fld_missing') )
   | [], (f2, se2) :: fsel2' ->
-      let typ' = Struct.fld_typ ~lookup ~default:Typ.void f2 typ2 in
+      let typ' = Struct.fld_typ ~lookup ~default:StdTyp.void f2 typ2 in
       let subs' =
         sexp_imply_nolhs tenv (Exp.Lfield (source, f2, typ2)) calc_missing subs se2 typ'
       in
@@ -1607,7 +1607,7 @@ and struct_imply tenv source calc_missing subs fsel1 fsel2 typ2 :
 
 and array_imply tenv source calc_index_frame calc_missing subs esel1 esel2 typ2 :
     subst2 * (Exp.t * Predicates.strexp) list * (Exp.t * Predicates.strexp) list =
-  let typ_elem = Typ.array_elem (Some Typ.void) typ2 in
+  let typ_elem = Typ.array_elem (Some StdTyp.void) typ2 in
   match (esel1, esel2) with
   | _, [] ->
       (subs, esel1, [])
@@ -1971,7 +1971,7 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
           match Prop.prop_iter_current tenv iter1' with
           | Predicates.Hpointsto (e1, se1, texp1), _ -> (
             try
-              let typ2 = Exp.texp_to_typ (Some Typ.void) texp2 in
+              let typ2 = Exp.texp_to_typ (Some StdTyp.void) texp2 in
               let typing_frame, typing_missing = texp_imply tenv subs texp1 texp2 e1 calc_missing in
               let se1' = sexp_imply_preprocess se1 texp1 se2 in
               let subs', fld_frame, fld_missing =
@@ -2214,7 +2214,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
             , Predicates.inst_none )
       | Java ->
           let mk_fld_sexp field_name =
-            let fld = Fieldname.make Typ.Name.Java.java_lang_string field_name in
+            let fld = Fieldname.make StdTyp.Name.Java.java_lang_string field_name in
             let se =
               Predicates.Eexp (Exp.Var (Ident.create_fresh Ident.kprimed), Predicates.Inone)
             in
@@ -2232,7 +2232,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
             ; dynamic_length= None
             ; subtype= Subtype.exact }
       | Java ->
-          let object_type = Typ.Name.Java.java_lang_string in
+          let object_type = StdTyp.Name.Java.java_lang_string in
           Exp.Sizeof
             { typ= Typ.mk (Tstruct object_type)
             ; nbytes= None
@@ -2247,12 +2247,12 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
     let sexp =
       (* TODO: add appropriate fields *)
       Predicates.Estruct
-        ( [ ( Fieldname.make Typ.Name.Java.java_lang_class "name"
+        ( [ ( Fieldname.make StdTyp.Name.Java.java_lang_class "name"
             , Predicates.Eexp (Exp.Const (Const.Cstr s), Predicates.Inone) ) ]
         , Predicates.inst_none )
     in
     let class_texp =
-      let class_type = Typ.Name.Java.java_lang_class in
+      let class_type = StdTyp.Name.Java.java_lang_class in
       Exp.Sizeof
         { typ= Typ.mk (Tstruct class_type)
         ; nbytes= None
@@ -2301,7 +2301,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
                   let subs' =
                     match hpred2' with
                     | Predicates.Hpointsto (e2, se2, te2) ->
-                        let typ2 = Exp.texp_to_typ (Some Typ.void) te2 in
+                        let typ2 = Exp.texp_to_typ (Some StdTyp.void) te2 in
                         sexp_imply_nolhs tenv e2 calc_missing subs se2 typ2
                     | _ ->
                         subs

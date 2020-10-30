@@ -115,7 +115,7 @@ let add_missing_fields tenv class_name missing_fields =
 
 
 let modelled_fields_in_classes =
-  [ ("NSData", "_bytes", Typ.mk (Tptr (Typ.void, Typ.Pk_pointer)))
+  [ ("NSData", "_bytes", Typ.mk (Tptr (StdTyp.void, Typ.Pk_pointer)))
   ; ("NSArray", "elementData", Typ.mk (Tint Typ.IInt)) ]
 
 

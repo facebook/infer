@@ -136,40 +136,6 @@ val mk_struct : name -> t
 val mk_ptr : ?ptr_kind:ptr_kind -> t -> t
 (** make a pointer to [t], default kind is [Pk_pointer] *)
 
-val void : t
-(** void type *)
-
-val java_char : t
-
-val java_byte : t
-
-val java_short : t
-
-val boolean : t
-
-val char : t [@@warning "-32"]
-
-val int : t
-(** signed int type *)
-
-val uint : t
-(** unsigned int type *)
-
-val long : t
-
-val float : t
-
-val double : t
-
-val void_star : t
-(** void* type *)
-
-val pointer_to_java_lang_object : t
-
-val pointer_to_java_lang_string : t
-
-val pointer_to_objc_nszone : t
-
 val get_ikind_opt : t -> ikind option
 (** Get ikind if the type is integer. *)
 
@@ -241,16 +207,6 @@ module Name : sig
 
     val is_anonymous_inner_class_name_opt : t -> bool option
     (** return None if it is not a Java class *)
-
-    val java_lang_object : t
-
-    val java_io_serializable : t
-
-    val java_lang_cloneable : t
-
-    val java_lang_class : t
-
-    val java_lang_string : t
   end
 
   module Cpp : sig
@@ -268,8 +224,6 @@ module Name : sig
     val from_qual_name : QualifiedCppName.t -> t
 
     val protocol_from_qual_name : QualifiedCppName.t -> t
-
-    val objc_ns_enumerator : t
   end
 
   module Set : PrettyPrintable.PPSet with type elt = t
@@ -355,7 +309,5 @@ val is_java_type : t -> bool
 val has_block_prefix : string -> bool
 
 val unsome : string -> t option -> t
-
-type typ = t
 
 module Normalizer : HashNormalizer.S with type t = t

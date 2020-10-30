@@ -609,8 +609,8 @@ let execute___cxx_typeid ({Builtin.analysis_data; prop_; args; loc} as r) : Buil
           let set_instr =
             Sil.Store
               { e1= field_exp
-              ; root_typ= Typ.void
-              ; typ= Typ.void
+              ; root_typ= StdTyp.void
+              ; typ= StdTyp.void
               ; e2= Exp.Const (Const.Cstr typ_string)
               ; loc }
           in
@@ -752,8 +752,8 @@ let execute___infer_fail {Builtin.analysis_data= {tenv} as analysis_data; prop_;
   let set_instr =
     Sil.Store
       { e1= Exp.Lvar Predicates.custom_error
-      ; root_typ= Typ.void
-      ; typ= Typ.void
+      ; root_typ= StdTyp.void
+      ; typ= StdTyp.void
       ; e2= Exp.Const (Const.Cstr error_str)
       ; loc }
   in
@@ -772,8 +772,8 @@ let execute___assert_fail {Builtin.analysis_data; prop_; path; args; loc} : Buil
   let set_instr =
     Sil.Store
       { e1= Exp.Lvar Predicates.custom_error
-      ; root_typ= Typ.void
-      ; typ= Typ.void
+      ; root_typ= StdTyp.void
+      ; typ= StdTyp.void
       ; e2= Exp.Const (Const.Cstr error_str)
       ; loc }
   in
@@ -786,7 +786,11 @@ let execute_objc_alloc_no_fail symb_state typ alloc_fun_opt {Builtin.analysis_da
   let ptr_typ = Typ.mk (Tptr (typ, Typ.Pk_pointer)) in
   let sizeof_typ = Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact} in
   let alloc_fun_exp =
-    match alloc_fun_opt with Some pname -> [(Exp.Const (Const.Cfun pname), Typ.void)] | None -> []
+    match alloc_fun_opt with
+    | Some pname ->
+        [(Exp.Const (Const.Cfun pname), StdTyp.void)]
+    | None ->
+        []
   in
   let alloc_instr =
     Sil.Call (ret_id_typ, alloc_fun, [(sizeof_typ, ptr_typ)] @ alloc_fun_exp, loc, CallFlags.default)

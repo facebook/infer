@@ -98,7 +98,7 @@ module Loc : sig
 
   val is_objc_collection_internal_array : t -> bool
 
-  val append_field : ?typ:Typ.typ -> t -> Fieldname.t -> t
+  val append_field : ?typ:Typ.t -> t -> Fieldname.t -> t
   (** It appends field. [typ] is the type of [fn]. *)
 end
 
@@ -133,7 +133,7 @@ module PowLoc : sig
 
   val fold : (Loc.t -> 'a -> 'a) -> t -> 'a -> 'a
 
-  val cast : Typ.typ -> t -> t
+  val cast : Typ.t -> t -> t
 
   val of_c_strlen : t -> t
   (** It appends the [strlen] field. *)

@@ -43,9 +43,9 @@ let rec check_subtype_java tenv (t1 : Typ.t) (t2 : Typ.t) =
   | Tptr (dom_type1, _), Tptr (dom_type2, _) ->
       check_subtype_java tenv dom_type1 dom_type2
   | Tarray _, Tstruct (JavaClass _ as cn2) ->
-      Typ.Name.equal cn2 Typ.Name.Java.java_io_serializable
-      || Typ.Name.equal cn2 Typ.Name.Java.java_lang_cloneable
-      || Typ.Name.equal cn2 Typ.Name.Java.java_lang_object
+      Typ.Name.equal cn2 StdTyp.Name.Java.java_io_serializable
+      || Typ.Name.equal cn2 StdTyp.Name.Java.java_lang_cloneable
+      || Typ.Name.equal cn2 StdTyp.Name.Java.java_lang_object
   | _ ->
       check_subtype_basic_type t1 t2
 
@@ -66,9 +66,9 @@ let rec case_analysis_type tenv ((t1 : Typ.t), st1) ((t2 : Typ.t), st2) =
   | Tstruct (JavaClass _ as cn1), Tstruct (JavaClass _ as cn2) ->
       Subtype.case_analysis tenv (cn1, st1) (cn2, st2)
   | Tstruct (JavaClass _ as cn1), Tarray _
-    when ( Typ.Name.equal cn1 Typ.Name.Java.java_io_serializable
-         || Typ.Name.equal cn1 Typ.Name.Java.java_lang_cloneable
-         || Typ.Name.equal cn1 Typ.Name.Java.java_lang_object )
+    when ( Typ.Name.equal cn1 StdTyp.Name.Java.java_io_serializable
+         || Typ.Name.equal cn1 StdTyp.Name.Java.java_lang_cloneable
+         || Typ.Name.equal cn1 StdTyp.Name.Java.java_lang_object )
          && not (Subtype.equal st1 Subtype.exact) ->
       (Some st1, None)
   | Tstruct cn1, Tstruct cn2
