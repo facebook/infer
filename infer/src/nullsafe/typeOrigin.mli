@@ -52,8 +52,5 @@ val get_nullability : t -> Nullability.t
 val get_description : t -> string option
 (** Get a description to be used for error messages. *)
 
-val join : t -> t -> t
-(** Join with left priority *)
-
 val to_string : t -> string
 (** Raw string representation. *)

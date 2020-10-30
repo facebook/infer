@@ -39,9 +39,9 @@ let join t1 t2 =
         t2.origin
     | false, false | true, true ->
         (* Nullability is not fully determined by neither t1 nor t2
-           Let TypeOrigin logic to decide what to prefer in this case.
+           Picking the left one for stability
         *)
-        TypeOrigin.join t1.origin t2.origin
+        t1.origin
   in
   {nullability= joined_nullability; origin= joined_origin}
 

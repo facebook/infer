@@ -194,13 +194,3 @@ let get_description origin =
   (* A technical origin *)
   | OptimisticFallback ->
       None
-
-
-let join o1 o2 =
-  match (o1, o2) with
-  | Field _, (NullConst _ | NonnullConst _ | CurrMethodParameter _ | This | MethodCall _ | New) ->
-      (* low priority to Field, to support field initialization patterns *)
-      o2
-  | _ ->
-      (* left priority *)
-      o1
