@@ -19,6 +19,7 @@ open! IStd
 (** See {!Nullability.t} for explanation *)
 type t =
   | Nullable of nullable_origin
+  | ProvisionallyNullable of ProvisionalAnnotation.t  (** Exist only for specical run modes *)
   | ThirdPartyNonnull
   | UncheckedNonnull of unchecked_nonnull_origin
   | LocallyTrustedNonnull

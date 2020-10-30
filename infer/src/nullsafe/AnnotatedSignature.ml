@@ -41,8 +41,8 @@ let get_non_virtual_params {params} =
 
 
 (* get nullability of method's return type given its annotations and information about its params *)
-let nullability_for_return ~is_callee_in_trust_list ~nullsafe_mode ~is_third_party ret_type
-    ret_annotations ~has_propagates_nullable_in_param =
+let nullability_for_return ~proc_name ~is_callee_in_trust_list ~nullsafe_mode ~is_third_party
+    ~is_provisional_annotation_mode ret_type ret_annotations ~has_propagates_nullable_in_param =
   let nullability =
     AnnotatedNullability.of_type_and_annotation ~is_callee_in_trust_list ~nullsafe_mode
       ~is_third_party ret_type ret_annotations
@@ -54,18 +54,37 @@ let nullability_for_return ~is_callee_in_trust_list ~nullsafe_mode ~is_third_par
   | _ when has_propagates_nullable_in_param ->
       (* if any params is propagates nullable, the return type can be only nullable *)
       AnnotatedNullability.Nullable AnnotatedNullability.HasPropagatesNullableInParam
+  | _ when is_provisional_annotation_mode ->
+      (* Not explicitly annotated with [@Nullable] - make it provisionally nullable  *)
+      AnnotatedNullability.ProvisionallyNullable (ProvisionalAnnotation.Method proc_name)
+  | _ ->
+      nullability
+
+
+let nullability_for_param ~proc_name ~param_num ~is_callee_in_trust_list ~nullsafe_mode
+    ~is_third_party ~is_provisional_annotation_mode param_type param_annotations =
+  let nullability =
+    AnnotatedNullability.of_type_and_annotation ~is_callee_in_trust_list ~nullsafe_mode
+      ~is_third_party param_type param_annotations
+  in
+  match nullability with
+  | AnnotatedNullability.Nullable _ ->
+      nullability
+  | _ when is_provisional_annotation_mode ->
+      AnnotatedNullability.ProvisionallyNullable
+        (ProvisionalAnnotation.Param {method_info= proc_name; num= param_num})
   | _ ->
       nullability
 
 
 (* Given annotations for method signature, extract nullability information
    for return type and params *)
-let extract_nullability ~is_callee_in_trust_list ~nullsafe_mode ~is_third_party ret_type
-    ret_annotations param_annotated_types =
+let extract_nullability ~proc_name ~is_callee_in_trust_list ~nullsafe_mode ~is_third_party
+    ~is_provisional_annotation_mode ret_type ret_annotations param_annotated_types =
   let params_nullability =
-    List.map param_annotated_types ~f:(fun (typ, annotations) ->
-        AnnotatedNullability.of_type_and_annotation ~is_callee_in_trust_list ~nullsafe_mode
-          ~is_third_party typ annotations )
+    List.mapi param_annotated_types ~f:(fun param_num (param_type, param_annotations) ->
+        nullability_for_param ~proc_name ~param_num ~is_callee_in_trust_list ~nullsafe_mode
+          ~is_third_party ~is_provisional_annotation_mode param_type param_annotations )
   in
   let has_propagates_nullable_in_param =
     List.exists params_nullability ~f:(function
@@ -75,13 +94,13 @@ let extract_nullability ~is_callee_in_trust_list ~nullsafe_mode ~is_third_party 
           false )
   in
   let return_nullability =
-    nullability_for_return ~is_callee_in_trust_list ~nullsafe_mode ~is_third_party ret_type
-      ret_annotations ~has_propagates_nullable_in_param
+    nullability_for_return ~proc_name ~is_callee_in_trust_list ~nullsafe_mode ~is_third_party
+      ret_type ~is_provisional_annotation_mode ret_annotations ~has_propagates_nullable_in_param
   in
   (return_nullability, params_nullability)
 
 
-let get ~is_callee_in_trust_list ~nullsafe_mode
+let get_impl ~is_callee_in_trust_list ~nullsafe_mode ~is_provisional_annotation_mode
     ( {ProcAttributes.proc_name; ret_type; method_annotation= {return= ret_annotation}} as
     proc_attributes ) : t =
   let proc_name =
@@ -98,8 +117,8 @@ let get ~is_callee_in_trust_list ~nullsafe_mode
     List.map params_with_annotations ~f:(fun ((_, typ), annotations) -> (typ, annotations))
   in
   let return_nullability, params_nullability =
-    extract_nullability ~is_callee_in_trust_list ~nullsafe_mode ~is_third_party ret_type
-      ret_annotation param_annotated_types
+    extract_nullability ~proc_name ~is_callee_in_trust_list ~nullsafe_mode ~is_third_party
+      ~is_provisional_annotation_mode ret_type ret_annotation param_annotated_types
   in
   let ret =
     { ret_annotation_deprecated= ret_annotation
@@ -116,6 +135,8 @@ let get ~is_callee_in_trust_list ~nullsafe_mode
   {nullsafe_mode; kind; ret; params}
 
 
+let get = get_impl ~is_provisional_annotation_mode:false
+
 let get_for_class_under_analysis tenv proc_attributes =
   (* Signature makes special meaning when the method is inside the class we are currently analysing.
      Various non-nullable levels (as dictated by nullsafe mode of the class)
@@ -125,7 +146,8 @@ let get_for_class_under_analysis tenv proc_attributes =
      We achieve it via passing Strict mode to the signature extractor.
   *)
   let result =
-    get ~is_callee_in_trust_list:false ~nullsafe_mode:NullsafeMode.Strict proc_attributes
+    get_impl ~is_callee_in_trust_list:false ~nullsafe_mode:NullsafeMode.Strict proc_attributes
+      ~is_provisional_annotation_mode:Config.nullsafe_annotation_graph
   in
   (* Don't forget about the original mode *)
   let nullsafe_mode = NullsafeMode.of_procname tenv proc_attributes.ProcAttributes.proc_name in

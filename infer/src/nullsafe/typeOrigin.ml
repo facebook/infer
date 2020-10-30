@@ -64,6 +64,8 @@ let get_nullability = function
     | AnnotatedNullability.Nullable _ ->
         (* Annotated as Nullable explicitly or implicitly *)
         Nullability.Nullable
+    | AnnotatedNullability.ProvisionallyNullable _ ->
+        Nullability.Nullable
     | AnnotatedNullability.UncheckedNonnull _
     | AnnotatedNullability.ThirdPartyNonnull
     | AnnotatedNullability.LocallyTrustedNonnull
@@ -134,6 +136,10 @@ let get_method_ret_description pname call_loc
     match nullability with
     | AnnotatedNullability.Nullable _ ->
         "nullable"
+    | AnnotatedNullability.ProvisionallyNullable _ ->
+        (* There should not be scenario where this is explained to the end user. *)
+        Logging.die InternalError
+          "get_method_ret_description: Unexpected nullability: ProvisionallyNullable"
     | AnnotatedNullability.ThirdPartyNonnull
     | AnnotatedNullability.UncheckedNonnull _
     | AnnotatedNullability.LocallyTrustedNonnull
