@@ -147,7 +147,7 @@ val java_short : t
 
 val boolean : t
 
-val char : t
+val char : t [@@warning "-32"]
 
 val int : t
 (** signed int type *)

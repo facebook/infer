@@ -47,7 +47,7 @@ let cast_type = function
   | JBir.I2B ->
       Typ.boolean
   | JBir.I2C ->
-      Typ.char
+      Typ.java_char
   | JBir.I2S ->
       Typ.java_short
 
