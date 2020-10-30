@@ -32,7 +32,7 @@ let empty = M.empty
 let pp fmt typestate =
   let pp_one exp (typ, ta) =
     F.fprintf fmt "  %a -> [%s] %a %a@\n" Exp.pp exp
-      (TypeOrigin.to_string (InferredNullability.get_origin ta))
+      (TypeOrigin.to_string (InferredNullability.get_simple_origin ta))
       InferredNullability.pp ta (Typ.pp_full Pp.text) typ
   in
   let pp_map map = M.iter pp_one map in

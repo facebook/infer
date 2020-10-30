@@ -218,7 +218,7 @@ module ReportableViolation = struct
 
 
   let make_nullsafe_issue ~assignment_location assignment_type {nullsafe_mode; violation= {rhs}} =
-    let rhs_origin = InferredNullability.get_origin rhs in
+    let rhs_origin = InferredNullability.get_simple_origin rhs in
     let user_friendly_nullable =
       ErrorRenderingUtils.UserFriendlyNullable.from_nullability
         (InferredNullability.get_nullability rhs)

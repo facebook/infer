@@ -104,7 +104,7 @@ let check_condition_for_redundancy
        So Condition_redundant should either accept expression, or this should pass a condition.
     *)
     let condition_descr = explain_expr tenv node expr in
-    let nonnull_origin = InferredNullability.get_origin inferred_nullability in
+    let nonnull_origin = InferredNullability.get_simple_origin inferred_nullability in
     TypeErr.register_error analysis_data find_canonical_duplicate
       (TypeErr.Condition_redundant {is_always_true; loc; condition_descr; nonnull_origin})
       (Some instr_ref) ~nullsafe_mode
@@ -256,7 +256,7 @@ let check_constructor_initialization
               predicate_holds_for_some_typestate
                 (Lazy.force typestates_for_curr_constructor_and_all_initializer_methods) field_name
                 ~predicate:(fun (_, nullability) ->
-                  is_initialized (InferredNullability.get_origin nullability) )
+                  is_initialized (InferredNullability.get_simple_origin nullability) )
             in
             (* TODO(T54584721) This check is completely independent of the current constuctor we check.
                This check should be moved out of this function. Until it is done,

@@ -114,7 +114,7 @@ module ReportableViolation = struct
                "get_description:: Dereference violation should not be possible for non-nullable \
                 values" )
     in
-    let nullable_object_origin = InferredNullability.get_origin nullability in
+    let nullable_object_origin = InferredNullability.get_simple_origin nullability in
     match user_friendly_nullable with
     | ErrorRenderingUtils.UserFriendlyNullable.UntrustedNonnull untrusted_kind ->
         (* Attempt to dereference a value which is not explictly declared as nullable,

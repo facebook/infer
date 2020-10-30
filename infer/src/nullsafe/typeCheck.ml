@@ -160,7 +160,7 @@ let rec typecheck_expr ({IntraproceduralAnalysis.tenv; _} as analysis_data) ~nul
               (typ, InferredNullability.create TypeOrigin.OptimisticFallback)
               loc
           in
-          let object_origin = InferredNullability.get_origin inferred_nullability in
+          let object_origin = InferredNullability.get_simple_origin inferred_nullability in
           let tr_new =
             match AnnotatedField.get tenv field_name typ with
             | Some AnnotatedField.{annotated_type= field_type} ->
@@ -207,7 +207,7 @@ let handle_field_access_via_temporary idenv curr_pname typestate exp =
   let pvar_get_origin pvar =
     match TypeState.lookup_pvar pvar typestate with
     | Some (_, inferred_nullability) ->
-        Some (InferredNullability.get_origin inferred_nullability)
+        Some (InferredNullability.get_simple_origin inferred_nullability)
     | None ->
         None
   in
@@ -313,7 +313,7 @@ let convert_complex_exp_to_pvar_and_register_field_in_typestate tenv idenv curr_
             | _ ->
                 None )
             |> Option.value_map
-                 ~f:(fun (_, nullability) -> InferredNullability.get_origin nullability)
+                 ~f:(fun (_, nullability) -> InferredNullability.get_simple_origin nullability)
                  ~default:TypeOrigin.OptimisticFallback
           in
           let exp' = IDEnv.expand_expr_temps idenv original_node exp_ in
@@ -526,9 +526,9 @@ let do_preconditions_check_not_null
                { is_always_true= true
                ; loc
                ; condition_descr= EradicateChecks.explain_expr tenv node cond
-               ; nonnull_origin= InferredNullability.get_origin nullability })
+               ; nonnull_origin= InferredNullability.get_simple_origin nullability })
             (Some instr_ref) ~nullsafe_mode ) ;
-        let previous_origin = InferredNullability.get_origin nullability in
+        let previous_origin = InferredNullability.get_simple_origin nullability in
         let new_origin = TypeOrigin.InferredNonnull {previous_origin} in
         TypeState.add pvar
           (t, InferredNullability.create new_origin)
@@ -577,7 +577,7 @@ let do_preconditions_check_state instr_ref idenv tenv curr_pname curr_annotated_
     (* handle the annotation flag for pvar *)
     match TypeState.lookup_pvar pvar typestate1 with
     | Some (t, nullability) ->
-        let previous_origin = InferredNullability.get_origin nullability in
+        let previous_origin = InferredNullability.get_simple_origin nullability in
         let new_origin = TypeOrigin.InferredNonnull {previous_origin} in
         TypeState.add pvar
           (t, InferredNullability.create new_origin)
@@ -851,7 +851,7 @@ let rec check_condition_for_sil_prune
       | Some (t, current_nullability) ->
           let new_origin =
             TypeOrigin.InferredNonnull
-              {previous_origin= InferredNullability.get_origin current_nullability}
+              {previous_origin= InferredNullability.get_simple_origin current_nullability}
           in
           let new_nullability = InferredNullability.create new_origin in
           TypeState.add pvar (t, new_nullability) typestate' ~descr
