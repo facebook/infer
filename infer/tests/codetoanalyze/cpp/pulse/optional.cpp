@@ -70,6 +70,16 @@ int not_none_ok() {
   return foo.value();
 }
 
+int not_none_check_value_ok() {
+  folly::Optional<int> foo{5};
+  int x = foo.value();
+  if (x != 5) {
+    folly::Optional<int> foo{folly::none};
+    return foo.value();
+  }
+  return x;
+}
+
 int none_check_ok() {
   folly::Optional<int> foo{folly::none};
   if (foo) {
@@ -135,6 +145,16 @@ void operator_arrow_bad() { emplace(folly::none); }
 int value_or_check_empty_ok() {
   folly::Optional<int> foo{folly::none};
   if (foo.value_or(0) > 0) {
+    return foo.value();
+  }
+  return -1;
+}
+
+int value_or_check_value_ok() {
+  folly::Optional<int> foo{5};
+  int x = foo.value_or(0);
+  if (x != 5) {
+    folly::Optional<int> foo{folly::none};
     return foo.value();
   }
   return -1;
