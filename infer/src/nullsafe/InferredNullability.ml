@@ -67,5 +67,10 @@ let join t1 t2 =
 
 let get_simple_origin t = List.nth_exn t.origins 0
 
+let get_provisional_annotations t =
+  List.filter_map t.origins ~f:TypeOrigin.get_provisional_annotation
+  |> List.dedup_and_sort ~compare:ProvisionalAnnotation.compare
+
+
 let origin_is_fun_defined t =
   match get_simple_origin t with TypeOrigin.MethodCall {is_defined; _} -> is_defined | _ -> false

@@ -165,6 +165,37 @@ let get_method_ret_description pname call_loc
     (atline call_loc) model_info
 
 
+let get_provisional_annotation = function
+  | NullConst _
+  | NonnullConst _
+  | This
+  | New
+  | ArrayLengthResult
+  | CallToGetKnownToContainsKey
+  | InferredNonnull _
+  | ArrayAccess
+  | OptimisticFallback ->
+      None
+  | Field
+      {field_type= {nullability= AnnotatedNullability.ProvisionallyNullable provisional_annotation}}
+    ->
+      Some provisional_annotation
+  | CurrMethodParameter
+      (Normal
+        { param_annotated_type=
+            {nullability= AnnotatedNullability.ProvisionallyNullable provisional_annotation} }) ->
+      Some provisional_annotation
+  | MethodCall
+      { annotated_signature=
+          { ret=
+              { ret_annotated_type=
+                  {nullability= AnnotatedNullability.ProvisionallyNullable provisional_annotation}
+              } } } ->
+      Some provisional_annotation
+  | Field _ | CurrMethodParameter _ | MethodCall _ ->
+      None
+
+
 let get_description origin =
   match origin with
   | NullConst loc ->

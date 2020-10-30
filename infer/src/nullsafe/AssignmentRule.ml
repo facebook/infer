@@ -8,6 +8,29 @@ open! IStd
 
 type violation = {lhs: AnnotatedNullability.t; rhs: InferredNullability.t} [@@deriving compare]
 
+module ProvisionalViolation = struct
+  type t =
+    { fix_annotation: ProvisionalAnnotation.t option
+    ; offending_annotations: ProvisionalAnnotation.t list }
+
+  let offending_annotations {offending_annotations} = offending_annotations
+
+  let fix_annotation {fix_annotation} = fix_annotation
+
+  let from {lhs; rhs} =
+    let offending_annotations = InferredNullability.get_provisional_annotations rhs in
+    if List.is_empty offending_annotations then None
+    else
+      let fix_annotation =
+        match lhs with
+        | AnnotatedNullability.ProvisionallyNullable annotation ->
+            Some annotation
+        | _ ->
+            None
+      in
+      Some {offending_annotations; fix_annotation}
+end
+
 module ReportableViolation = struct
   type t = {nullsafe_mode: NullsafeMode.t; violation: violation}
 

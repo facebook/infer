@@ -16,3 +16,5 @@ type t =
   | Method of Procname.Java.t
   | Param of {method_info: Procname.Java.t; num: int}
 [@@deriving compare]
+
+val pp : Format.formatter -> t -> unit

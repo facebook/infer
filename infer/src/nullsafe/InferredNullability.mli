@@ -26,6 +26,8 @@ val is_nonnullish : t -> bool
 val get_simple_origin : t -> TypeOrigin.t
 (** The simple explanation of how was nullability inferred. *)
 
+val get_provisional_annotations : t -> ProvisionalAnnotation.t list
+
 val join : t -> t -> t
 (** This is what happens with nullability when we join two flows in CFG, e.g.
 

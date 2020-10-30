@@ -250,10 +250,58 @@ let analyze_nullsafe_annotations tenv source_file class_name class_struct issue_
         IssueType.eradicate_bad_nested_class_annotation description
 
 
+let process_issue_for_annotation_graph issue =
+  match issue with
+  | TypeErr.Condition_redundant _
+  | TypeErr.Field_not_initialized _
+  | TypeErr.Inconsistent_subclass _
+  | TypeErr.Over_annotation _ ->
+      ()
+  | TypeErr.Nullable_dereference {dereference_violation} ->
+      DereferenceRule.ProvisionalViolation.from dereference_violation
+      |> Option.iter ~f:(fun provisional_violation ->
+             let annotations =
+               DereferenceRule.ProvisionalViolation.offending_annotations provisional_violation
+             in
+             Logging.debug Analysis Medium
+               "Found provisional violation: dereference caused by any of %a\n"
+               (Pp.seq ProvisionalAnnotation.pp) annotations )
+  | TypeErr.Bad_assignment {assignment_violation} ->
+      AssignmentRule.ProvisionalViolation.from assignment_violation
+      |> Option.iter ~f:(fun provisional_violation ->
+             let offending_annotations =
+               AssignmentRule.ProvisionalViolation.offending_annotations provisional_violation
+             in
+             let fix_annotation =
+               AssignmentRule.ProvisionalViolation.fix_annotation provisional_violation
+             in
+             let fix_annotation_descr =
+               Option.value_map fix_annotation
+                 ~f:(fun annotation ->
+                   Format.asprintf ", fixable by %a" ProvisionalAnnotation.pp annotation )
+                 ~default:""
+             in
+             Logging.debug Analysis Medium
+               "Found provisional violation: assignment caused by any of %a%s\n"
+               (Pp.seq ProvisionalAnnotation.pp) offending_annotations fix_annotation_descr )
+
+
+let construct_annotation_graph _class_name class_info issue_log =
+  if not Config.nullsafe_annotation_graph then issue_log
+  else (
+    (* TODO: actually construct the graph (just print provisional violations for now) *)
+    AggregatedSummaries.ClassInfo.get_summaries class_info
+    |> List.map ~f:(fun NullsafeSummary.{issues} -> issues)
+    |> List.fold ~init:[] ~f:( @ )
+    |> List.iter ~f:process_issue_for_annotation_graph ;
+    issue_log )
+
+
 let analyze_class_impl tenv source_file class_name class_struct class_info issue_log =
   issue_log
   |> analyze_meta_issue_for_top_level_class tenv source_file class_name class_struct class_info
   |> analyze_nullsafe_annotations tenv source_file class_name class_struct
+  |> construct_annotation_graph class_name class_info
 
 
 let analyze_class tenv source_file class_info issue_log =

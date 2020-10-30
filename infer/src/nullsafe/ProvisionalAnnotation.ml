@@ -11,3 +11,11 @@ type t =
   | Method of Procname.Java.t
   | Param of {method_info: Procname.Java.t; num: int}
 [@@deriving compare]
+
+let pp fmt = function
+  | Field {field_name} ->
+      Format.fprintf fmt "Field(%s)" field_name
+  | Method proc_name ->
+      Format.fprintf fmt "Method(%a)" Procname.pp (Procname.Java proc_name)
+  | Param {method_info; num} ->
+      Format.fprintf fmt "Param(%d, %a)" num Procname.pp (Procname.Java method_info)
