@@ -12,8 +12,6 @@ module L = Logging
 (** Hash tables on type names. *)
 module TypenameHash = Caml.Hashtbl.Make (Typ.Name)
 
-module TypenameHashNormalizer = MaximumSharing.ForHashtbl (TypenameHash)
-
 (** Type for type environment. *)
 type t = Struct.t TypenameHash.t
 
@@ -171,13 +169,39 @@ let store_to_filename tenv tenv_filename =
   if Config.debug_mode then store_debug_file tenv tenv_filename
 
 
+module Normalizer = struct
+  let normalize tenv =
+    let new_tenv = TypenameHash.create (TypenameHash.length tenv) in
+    let normalize_mapping name tstruct =
+      let name = Typ.Name.Normalizer.normalize name in
+      let tstruct = Struct.Normalizer.normalize tstruct in
+      TypenameHash.add new_tenv name tstruct
+    in
+    TypenameHash.iter normalize_mapping tenv ;
+    new_tenv
+
+
+  let reset () =
+    Typ.Normalizer.reset () ;
+    Typ.Name.Normalizer.reset () ;
+    Struct.Normalizer.reset () ;
+    Fieldname.Normalizer.reset () ;
+    Procname.Normalizer.reset () ;
+    SourceFile.Normalizer.reset () ;
+    Location.Normalizer.reset () ;
+    Annot.Item.Normalizer.reset () ;
+    JavaClassName.Normalizer.reset () ;
+    HashNormalizer.StringNormalizer.reset ()
+end
+
 let store_global tenv =
   (* update in-memory global tenv for later uses by this process, e.g. in single-core mode the
      frontend and backend run in the same process *)
   if Config.debug_level_capture > 0 then
     L.debug Capture Quiet "Tenv.store: global tenv has size %d bytes.@."
       (Obj.(reachable_words (repr tenv)) * (Sys.word_size / 8)) ;
-  let tenv = TypenameHashNormalizer.normalize tenv in
+  let tenv = Normalizer.normalize tenv in
+  Normalizer.reset () ;
   if Config.debug_level_capture > 0 then
     L.debug Capture Quiet "Tenv.store: canonicalized tenv has size %d bytes.@."
       (Obj.(reachable_words (repr tenv)) * (Sys.word_size / 8)) ;

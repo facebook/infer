@@ -1633,6 +1633,11 @@ INTERNAL OPTIONS
            typechecker, use `--eradicate` for now. (Conversely:
            --no-nullsafe)
 
+       --nullsafe-annotation-graph
+           Activates: Nullsafe: an experimental mode for calculating the
+           dependency graph between potential annotations to add in the
+           source code. (Conversely: --no-nullsafe-annotation-graph)
+
        --nullsafe-disable-field-not-initialized-in-nonstrict-classes
            Activates: Nullsafe: In this mode field not initialized issues
            won't be reported unless the class is marked as @NullsafeStrict.

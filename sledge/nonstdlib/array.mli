@@ -5,14 +5,40 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open NS0
-include module type of Base.Array
+open! NS0
+include module type of ContainersLabels.Array
 
-val pp : (unit, unit) fmt -> 'a pp -> 'a array pp
+type 'a t = 'a array [@@deriving compare, equal, sexp]
+
+val of_ : 'a -> 'a t
+val of_list_rev : 'a list -> 'a t
+val map : 'a t -> f:('a -> 'b) -> 'b t
 
 val map_endo : 'a t -> f:('a -> 'a) -> 'a t
-(** Like map, but specialized to require [f] to be an endofunction, which
+(** Like [map], but specialized to require [f] to be an endofunction, which
     enables preserving [==] if [f] preserves [==] of every element. *)
 
-val fold_map_inplace : 'a array -> init:'s -> f:('s -> 'a -> 's * 'a) -> 's
+val reduce_adjacent : 'a t -> f:('a -> 'a -> 'a option) -> 'a t
+val split : ('a * 'b) t -> 'a t * 'b t
+val combine : 'a t -> 'b t -> ('a * 'b) t option
+val combine_exn : 'a t -> 'b t -> ('a * 'b) t
+val is_empty : 'a t -> bool
+val mem : 'a -> 'a t -> eq:('a -> 'a -> bool) -> bool
+val iter : 'a t -> f:('a -> unit) -> unit
+val iteri : 'a t -> f:(int -> 'a -> unit) -> unit
+val exists : 'a t -> f:('a -> bool) -> bool
+val for_all : 'a t -> f:('a -> bool) -> bool
+val for_all2_exn : 'a t -> 'b t -> f:('a -> 'b -> bool) -> bool
+val fold : 'a t -> 's -> f:('a -> 's -> 's) -> 's
+val fold_right : 'a t -> 's -> f:('a -> 's -> 's) -> 's
+val fold_map : 'a t -> 's -> f:('a -> 's -> 'b * 's) -> 'b t * 's
+
+val fold_map_until :
+     'a t
+  -> 's
+  -> f:('a -> 's -> [`Continue of 'b * 's | `Stop of 'c])
+  -> finish:('b t * 's -> 'c)
+  -> 'c
+
 val to_list_rev_map : 'a array -> f:('a -> 'b) -> 'b list
+val pp : (unit, unit) fmt -> 'a pp -> 'a array pp

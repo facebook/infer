@@ -183,7 +183,7 @@ val rec_record : int -> Typ.t -> t
 
 (** Traverse *)
 
-val fold_regs : t -> init:'a -> f:('a -> Reg.t -> 'a) -> 'a
+val fold_regs : t -> 's -> f:(Reg.t -> 's -> 's) -> 's
 
 (** Query *)
 

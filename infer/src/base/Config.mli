@@ -393,6 +393,8 @@ val no_translate_libs : bool
 
 val nullable_annotation : string option
 
+val nullsafe_annotation_graph : bool
+
 val nullsafe_disable_field_not_initialized_in_nonstrict_classes : bool
 
 val nullsafe_optimistic_third_party_params_in_non_strict : bool

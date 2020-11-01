@@ -52,7 +52,7 @@ end = struct
 
   let var nam {wrt; xs} =
     let x, wrt = Var.fresh nam ~wrt in
-    let xs = Var.Set.add xs x in
+    let xs = Var.Set.add x xs in
     return (Term.var x) {wrt; xs}
 
   let seg ?bas ?len ?siz ?seq loc =
@@ -102,13 +102,13 @@ open Fresh.Import
 let move_spec reg_exps =
   let foot = Sh.emp in
   let ws, rs =
-    IArray.fold reg_exps ~init:(Var.Set.empty, Var.Set.empty)
-      ~f:(fun (ws, rs) (reg, exp) ->
-        (Var.Set.add ws reg, Var.Set.union rs (Term.fv exp)) )
+    IArray.fold reg_exps (Var.Set.empty, Var.Set.empty)
+      ~f:(fun (reg, exp) (ws, rs) ->
+        (Var.Set.add reg ws, Var.Set.union rs (Term.fv exp)) )
   in
   let+ sub, ms = Fresh.assign ~ws ~rs in
   let post =
-    IArray.fold reg_exps ~init:Sh.emp ~f:(fun post (reg, exp) ->
+    IArray.fold reg_exps Sh.emp ~f:(fun (reg, exp) post ->
         Sh.and_ (Formula.eq (Term.var reg) (Term.rename sub exp)) post )
   in
   {foot; sub; ms; post}
@@ -630,7 +630,7 @@ let strlen_spec reg ptr =
  * Symbolic Execution
  *)
 
-open Option.Infix
+open Option.Import
 
 let check_preserve_us (q0 : Sh.t) (q1 : Sh.t) =
   let gain_us = Var.Set.diff q1.us q0.us in

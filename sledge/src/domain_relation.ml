@@ -45,21 +45,21 @@ module Make (State_domain : State_domain_sig) = struct
     let+ next = State_domain.exec_assume current cnd in
     (entry, next)
 
-  let exec_kill (entry, current) reg =
-    (entry, State_domain.exec_kill current reg)
+  let exec_kill reg (entry, current) =
+    (entry, State_domain.exec_kill reg current)
 
-  let exec_move (entry, current) reg_exps =
-    (entry, State_domain.exec_move current reg_exps)
+  let exec_move reg_exps (entry, current) =
+    (entry, State_domain.exec_move reg_exps current)
 
-  let exec_inst (entry, current) inst =
-    let+ next = State_domain.exec_inst current inst in
+  let exec_inst inst (entry, current) =
+    let+ next = State_domain.exec_inst inst current in
     (entry, next)
 
-  let exec_intrinsic ~skip_throw (entry, current) areturn intrinsic actuals
+  let exec_intrinsic ~skip_throw areturn intrinsic actuals (entry, current)
       =
     let+ next_opt =
-      State_domain.exec_intrinsic ~skip_throw current areturn intrinsic
-        actuals
+      State_domain.exec_intrinsic ~skip_throw areturn intrinsic actuals
+        current
     in
     let+ next = next_opt in
     (entry, next)

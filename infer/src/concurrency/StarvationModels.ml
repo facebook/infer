@@ -402,7 +402,9 @@ let is_assume_true =
 
 
 let is_java_main_method (pname : Procname.t) =
-  let pointer_to_array_of_java_lang_string = Typ.(mk_ptr (mk_array pointer_to_java_lang_string)) in
+  let pointer_to_array_of_java_lang_string =
+    Typ.(mk_ptr (mk_array StdTyp.Java.pointer_to_java_lang_string))
+  in
   let check_main_args args =
     match args with [arg] -> Typ.equal pointer_to_array_of_java_lang_string arg | _ -> false
   in
@@ -412,5 +414,5 @@ let is_java_main_method (pname : Procname.t) =
   | Java java_pname ->
       Procname.Java.is_static java_pname
       && String.equal "main" (Procname.get_method pname)
-      && Typ.equal Typ.void (Procname.Java.get_return_typ java_pname)
+      && Typ.equal StdTyp.void (Procname.Java.get_return_typ java_pname)
       && check_main_args (Procname.Java.get_parameters java_pname)

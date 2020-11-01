@@ -129,7 +129,7 @@ let pp_inst fs inst =
   let pf pp = Format.fprintf fs pp in
   match inst with
   | Move {reg_exps; loc} ->
-      let regs, exps = IArray.unzip reg_exps in
+      let regs, exps = IArray.split reg_exps in
       pf "@[<2>@[%a@]@ := @[%a@];@]\t%a" (IArray.pp ",@ " Reg.pp) regs
         (IArray.pp ",@ " Exp.pp) exps Loc.pp loc
   | Load {reg; ptr; len; loc} ->
@@ -260,11 +260,9 @@ module Inst = struct
   let union_locals inst vs =
     match inst with
     | Move {reg_exps; _} ->
-        IArray.fold
-          ~f:(fun vs (reg, _) -> Reg.Set.add vs reg)
-          ~init:vs reg_exps
+        IArray.fold ~f:(fun (reg, _) vs -> Reg.Set.add reg vs) reg_exps vs
     | Load {reg; _} | Alloc {reg; _} | Nondet {reg= Some reg; _} ->
-        Reg.Set.add vs reg
+        Reg.Set.add reg vs
     | Store _ | Memcpy _ | Memmov _ | Memset _ | Free _
      |Nondet {reg= None; _}
      |Abort _ ->
@@ -272,19 +270,19 @@ module Inst = struct
 
   let locals inst = union_locals inst Reg.Set.empty
 
-  let fold_exps inst ~init ~f =
+  let fold_exps inst s ~f =
     match inst with
     | Move {reg_exps; loc= _} ->
-        IArray.fold reg_exps ~init ~f:(fun acc (_reg, exp) -> f acc exp)
-    | Load {reg= _; ptr; len; loc= _} -> f (f init ptr) len
-    | Store {ptr; exp; len; loc= _} -> f (f (f init ptr) exp) len
-    | Memset {dst; byt; len; loc= _} -> f (f (f init dst) byt) len
+        IArray.fold ~f:(fun (_reg, exp) -> f exp) reg_exps s
+    | Load {reg= _; ptr; len; loc= _} -> f len (f ptr s)
+    | Store {ptr; exp; len; loc= _} -> f len (f exp (f ptr s))
+    | Memset {dst; byt; len; loc= _} -> f len (f byt (f dst s))
     | Memcpy {dst; src; len; loc= _} | Memmov {dst; src; len; loc= _} ->
-        f (f (f init dst) src) len
-    | Alloc {reg= _; num; len= _; loc= _} -> f init num
-    | Free {ptr; loc= _} -> f init ptr
-    | Nondet {reg= _; msg= _; loc= _} -> init
-    | Abort {loc= _} -> init
+        f len (f src (f dst s))
+    | Alloc {reg= _; num; len= _; loc= _} -> f num s
+    | Free {ptr; loc= _} -> f ptr s
+    | Nondet {reg= _; msg= _; loc= _} -> s
+    | Abort {loc= _} -> s
 end
 
 (** Jumps *)
@@ -416,34 +414,27 @@ module Func = struct
     | {entry= {cmnd; term= Unreachable; _}; _} -> IArray.is_empty cmnd
     | _ -> false
 
-  let fold_cfg ~init ~f func =
+  let fold_cfg ~f func s =
     let seen = BlockS.create 0 in
-    let rec fold_cfg_ s blk =
+    let rec fold_cfg_ blk s =
       if not (BlockS.add seen blk) then s
       else
         let s =
-          let f s j = fold_cfg_ s j.dst in
+          let f j s = fold_cfg_ j.dst s in
           match blk.term with
           | Switch {tbl; els; _} ->
-              let s = IArray.fold ~f:(fun s (_, j) -> f s j) ~init:s tbl in
-              f s els
-          | Iswitch {tbl; _} -> IArray.fold ~f ~init:s tbl
-          | Call {return; throw; _} ->
-              let s = f s return in
-              Option.fold ~f ~init:s throw
+              let s = IArray.fold ~f:(fun (_, j) -> f j) tbl s in
+              f els s
+          | Iswitch {tbl; _} -> IArray.fold ~f tbl s
+          | Call {return; throw; _} -> Option.fold ~f throw (f return s)
           | Return _ | Throw _ | Unreachable -> s
         in
-        f s blk
+        f blk s
     in
-    fold_cfg_ init func.entry
+    fold_cfg_ func.entry s
 
-  let fold_term func ~init ~f =
-    fold_cfg func ~init ~f:(fun s blk -> f s blk.term)
-
-  let iter_term func ~f =
-    fold_cfg func ~init:() ~f:(fun () blk -> f blk.term)
-
-  let entry_cfg func = fold_cfg ~init:[] ~f:(fun cfg blk -> blk :: cfg) func
+  let iter_term func ~f = fold_cfg ~f:(fun blk () -> f blk.term) func ()
+  let entry_cfg func = fold_cfg ~f:(fun blk cfg -> blk :: cfg) func []
 
   let pp fs func =
     let {name; formals; freturn; entry; _} = func in
@@ -489,19 +480,19 @@ module Func = struct
   let mk ~(name : Global.t) ~formals ~freturn ~fthrow ~entry ~cfg =
     let locals =
       let locals_cmnd locals cmnd =
-        IArray.fold_right ~f:Inst.union_locals cmnd ~init:locals
+        IArray.fold_right ~f:Inst.union_locals cmnd locals
       in
-      let locals_block locals block =
+      let locals_block block locals =
         locals_cmnd (Term.union_locals block.term locals) block.cmnd
       in
-      let init = locals_block Reg.Set.empty entry in
-      IArray.fold ~f:locals_block cfg ~init
+      IArray.fold ~f:locals_block cfg (locals_block entry Reg.Set.empty)
     in
     let func = {name; formals; freturn; fthrow; locals; entry} in
     let resolve_parent_and_jumps block =
       block.parent <- func ;
       let lookup cfg lbl : block =
-        IArray.find_exn cfg ~f:(fun k -> String.equal lbl k.lbl)
+        Iter.find_exn (IArray.to_iter cfg) ~f:(fun k ->
+            String.equal lbl k.lbl )
       in
       let set_dst jmp = jmp.dst <- lookup cfg jmp.dst.lbl in
       match block.term with
@@ -534,13 +525,14 @@ let set_derived_metadata functions =
     String.Map.iter functions ~f:(fun func ->
         FuncQ.enqueue_back_exn roots func.name.reg func ) ;
     String.Map.iter functions ~f:(fun func ->
-        Func.fold_term func ~init:() ~f:(fun () -> function
-          | Call {callee; _} -> (
-            match Reg.of_exp callee with
-            | Some callee ->
-                FuncQ.remove roots callee |> (ignore : [> ] -> unit)
-            | None -> () )
-          | _ -> () ) ) ;
+        Func.iter_term func ~f:(fun term ->
+            match term with
+            | Call {callee; _} -> (
+              match Reg.of_exp callee with
+              | Some callee ->
+                  FuncQ.remove roots callee |> (ignore : [> ] -> unit)
+              | None -> () )
+            | _ -> () ) ) ;
     roots
   in
   let topsort functions roots =
@@ -548,9 +540,9 @@ let set_derived_metadata functions =
     let rec visit ancestors func src =
       if BlockQ.mem tips_to_roots src then ()
       else
-        let ancestors = Block_label.Set.add ancestors src in
+        let ancestors = Block_label.Set.add src ancestors in
         let jump jmp =
-          if Block_label.Set.mem ancestors jmp.dst then
+          if Block_label.Set.mem jmp.dst ancestors then
             jmp.retreating <- true
           else visit ancestors func jmp.dst
         in
@@ -561,11 +553,11 @@ let set_derived_metadata functions =
         | Iswitch {tbl; _} -> IArray.iter tbl ~f:jump
         | Call ({callee; return; throw; _} as call) ->
             ( match
-                Option.bind ~f:(Func.find functions)
-                  (Option.map ~f:Reg.name (Reg.of_exp callee))
+                let* reg = Reg.of_exp callee in
+                Func.find (Reg.name reg) functions
               with
             | Some func ->
-                if Block_label.Set.mem ancestors func.entry then
+                if Block_label.Set.mem func.entry ancestors then
                   call.recursive <- true
                 else visit ancestors func func.entry
             | None ->
@@ -587,8 +579,8 @@ let set_derived_metadata functions =
         index := !index - 1 )
   in
   let functions =
-    List.fold functions ~init:String.Map.empty ~f:(fun m func ->
-        String.Map.add_exn m ~key:(Reg.name func.name.reg) ~data:func )
+    List.fold functions String.Map.empty ~f:(fun func m ->
+        String.Map.add_exn ~key:(Reg.name func.name.reg) ~data:func m )
   in
   let roots = compute_roots functions in
   let tips_to_roots = topsort functions roots in
@@ -602,7 +594,7 @@ module Program = struct
     let@ () = Invariant.invariant [%here] pgm [%sexp_of: program] in
     assert (
       not
-        (IArray.contains_dup pgm.globals ~compare:(fun g1 g2 ->
+        (Iter.contains_dup (IArray.to_iter pgm.globals) ~cmp:(fun g1 g2 ->
              Reg.compare g1.Global.reg g2.Global.reg )) )
 
   let mk ~globals ~functions =
@@ -615,6 +607,7 @@ module Program = struct
       (IArray.pp "@\n@\n" Global.pp_defn)
       globals
       (List.pp "@\n@\n" Func.pp)
-      ( String.Map.data functions
+      ( String.Map.values functions
+      |> Iter.to_list
       |> List.sort ~cmp:(fun x y -> compare_block x.entry y.entry) )
 end

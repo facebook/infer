@@ -368,14 +368,12 @@ module Sum = struct
     assert (not (Q.equal Q.zero coeff)) ;
     match term with
     | Integer {data} when Z.equal Z.zero data -> sum
-    | Integer {data} -> Qset.add sum one Q.(coeff * of_z data)
-    | Rational {data} -> Qset.add sum one Q.(coeff * data)
-    | _ -> Qset.add sum term coeff
+    | Integer {data} -> Qset.add one Q.(coeff * of_z data) sum
+    | Rational {data} -> Qset.add one Q.(coeff * data) sum
+    | _ -> Qset.add term coeff sum
 
   let of_ ?(coeff = Q.one) term = add coeff term empty
-
-  let map sum ~f =
-    Qset.fold sum ~init:empty ~f:(fun e c sum -> add c (f e) sum)
+  let map sum ~f = Qset.fold ~f:(fun e c sum -> add c (f e) sum) sum empty
 
   let mul_const const sum =
     assert (not (Q.equal Q.zero const)) ;
@@ -403,7 +401,7 @@ module Prod = struct
 
   let add term prod =
     assert (match term with Integer _ | Rational _ -> false | _ -> true) ;
-    Qset.add prod term Q.one
+    Qset.add term Q.one prod
 
   let of_ term = add term empty
   let union = Qset.union
@@ -436,7 +434,7 @@ let rec simp_add_ es poly =
     (* (c₁ × X₁) + X₂ ==> ∑ᵢ₌₁² cᵢ × Xᵢ for c₂ = 1 *)
     | _ -> Sum.to_term (Sum.add coeff term (Sum.of_ poly))
   in
-  Qset.fold ~f es ~init:poly
+  Qset.fold ~f es poly
 
 and simp_mul2 e f =
   match (e, f) with
@@ -526,7 +524,7 @@ let simp_mul es =
     if Q.equal Q.zero pwr then term
     else mul_pwr bas Q.(pwr - one) (simp_mul2 bas term)
   in
-  Qset.fold es ~init:one ~f:(fun bas pwr term ->
+  Qset.fold es one ~f:(fun bas pwr term ->
       if Q.sign pwr >= 0 then mul_pwr bas pwr term
       else simp_div term (mul_pwr bas (Q.neg pwr) one) )
 
@@ -566,10 +564,10 @@ let rec simp_and2 x y =
   (* e && e ==> e *)
   | _ when equal x y -> x
   | _ ->
-      let add s = function And cs -> Set.union s cs | c -> Set.add s c in
+      let add s = function And cs -> Set.union s cs | c -> Set.add c s in
       And (add (add Set.empty x) y)
 
-let simp_and xs = Set.fold xs ~init:true_ ~f:simp_and2
+let simp_and xs = Set.fold ~f:simp_and2 xs true_
 
 let rec simp_or2 x y =
   match (x, y) with
@@ -587,18 +585,19 @@ let rec simp_or2 x y =
   (* e || e ==> e *)
   | _ when equal x y -> x
   | _ ->
-      let add s = function Or cs -> Set.union s cs | c -> Set.add s c in
+      let add s = function Or cs -> Set.union s cs | c -> Set.add c s in
       Or (add (add Set.empty x) y)
 
-let simp_or xs = Set.fold xs ~init:false_ ~f:simp_or2
+let simp_or xs = Set.fold ~f:simp_or2 xs false_
 
 (* sequence sizes *)
 
 let rec seq_size_exn = function
   | Ap2 (Sized, n, _) | Ap3 (Extract, _, _, n) -> n
   | ApN (Concat, a0U) ->
-      IArray.fold a0U ~init:zero ~f:(fun a0I aJ ->
-          simp_add2 a0I (seq_size_exn aJ) )
+      IArray.fold
+        ~f:(fun aJ a0I -> simp_add2 a0I (seq_size_exn aJ))
+        a0U zero
   | _ -> invalid_arg "seq_size_exn"
 
 let seq_size e = try Some (seq_size_exn e) with Invalid_argument _ -> None
@@ -666,11 +665,11 @@ let rec simp_extract seq off len =
     | ApN (Concat, na1N) -> (
       match len with
       | Integer {data= l} ->
-          IArray.fold_map_until na1N ~init:(l, off)
-            ~f:(fun (l, oI) naI ->
+          IArray.fold_map_until na1N (l, off)
+            ~f:(fun naI (l, oI) ->
               let nI = seq_size_exn naI in
               if Z.equal Z.zero l then
-                Continue ((l, oI), simp_extract naI oI zero)
+                `Continue (simp_extract naI oI zero, (l, oI))
               else
                 let oI_nI = simp_sub oI nI in
                 match oI_nI with
@@ -678,9 +677,9 @@ let rec simp_extract seq off len =
                     let oJ = if Z.sign data <= 0 then zero else oI_nI in
                     let lI = Z.(max zero (min l (neg data))) in
                     let l = Z.(l - lI) in
-                    Continue ((l, oJ), simp_extract naI oI (integer lI))
-                | _ -> Stop (Ap3 (Extract, seq, off, len)) )
-            ~finish:(fun (_, e1N) -> simp_concat e1N)
+                    `Continue (simp_extract naI oI (integer lI), (l, oJ))
+                | _ -> `Stop (Ap3 (Extract, seq, off, len)) )
+            ~finish:(fun (e1N, _) -> simp_concat e1N)
       | _ -> Ap3 (Extract, seq, off, len) )
     (* α[o,l) *)
     | _ -> Ap3 (Extract, seq, off, len) )
@@ -697,7 +696,7 @@ and simp_concat xs =
     in
     let concat_sub_Concat xs =
       IArray.concat
-        (IArray.fold_right xs ~init:[] ~f:(fun x s ->
+        (IArray.fold_right xs [] ~f:(fun x s ->
              match x with
              | ApN (Concat, ys) -> ys :: s
              | x -> IArray.of_array [|x|] :: s ))
@@ -720,7 +719,7 @@ and simp_concat xs =
     | _ -> None
   in
   let xs = flatten xs in
-  let xs = IArray.combine_adjacent ~f:simp_adjacent xs in
+  let xs = IArray.reduce_adjacent ~f:simp_adjacent xs in
   (if IArray.length xs = 1 then IArray.get xs 0 else ApN (Concat, xs))
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp]
@@ -972,7 +971,7 @@ let d_int = function Integer {data} -> Some data | _ -> None
 
 (** Access *)
 
-let const_of = function Add poly -> Some (Qset.count poly one) | _ -> None
+let const_of = function Add poly -> Some (Qset.count one poly) | _ -> None
 
 (** Transform *)
 
@@ -1018,38 +1017,37 @@ let map e ~f =
   | NegLit (sym, xs) -> mapN (simp_neglit sym) ~f xs
   | Var _ | Integer _ | Rational _ | RecRecord _ -> e
 
-let fold_map e ~init ~f =
-  let s = ref init in
+let fold_map e s0 ~f =
+  let s = ref s0 in
   let f x =
-    let s', x' = f !s x in
+    let x', s' = f x !s in
     s := s' ;
     x'
   in
   let e' = map e ~f in
-  (!s, e')
+  (e', !s)
 
 let rec map_rec_pre e ~f =
   match f e with Some e' -> e' | None -> map ~f:(map_rec_pre ~f) e
 
-let rec fold_map_rec_pre e ~init:s ~f =
-  match f s e with
-  | Some (s, e') -> (s, e')
-  | None -> fold_map ~f:(fun s e -> fold_map_rec_pre ~f ~init:s e) ~init:s e
+let rec fold_map_rec_pre e s ~f =
+  match f e s with
+  | Some (e', s) -> (e', s)
+  | None -> fold_map ~f:(fold_map_rec_pre ~f) e s
 
 let disjuncts e =
   let rec disjuncts_ e =
     match e with
     | Or es ->
         let e0, e1N = Set.pop_exn es in
-        Set.fold e1N ~init:(disjuncts_ e0) ~f:(fun cs e ->
-            Set.union cs (disjuncts_ e) )
+        Set.fold ~f:(fun e -> Set.union (disjuncts_ e)) e1N (disjuncts_ e0)
     | Ap3 (Conditional, cnd, thn, els) ->
         Set.add
-          (Set.of_ (and_ (orN (disjuncts_ cnd)) (orN (disjuncts_ thn))))
           (and_ (orN (disjuncts_ (not_ cnd))) (orN (disjuncts_ els)))
+          (Set.of_ (and_ (orN (disjuncts_ cnd)) (orN (disjuncts_ thn))))
     | _ -> Set.of_ e
   in
-  Set.elements (disjuncts_ e)
+  Iter.to_list (Set.to_iter (disjuncts_ e))
 
 let rename f e =
   let f = (f : Var.t -> Var.t :> Var.t -> t) in
@@ -1095,15 +1093,15 @@ let for_all e ~f =
   | Add args | Mul args -> Qset.for_all ~f:(fun arg _ -> f arg) args
   | Var _ | Integer _ | Rational _ | RecRecord _ -> true
 
-let fold e ~init:s ~f =
+let fold e s ~f =
   match e with
   | Ap1 (_, x) -> f x s
   | Ap2 (_, x, y) -> f y (f x s)
   | Ap3 (_, x, y, z) -> f z (f y (f x s))
   | ApN (_, xs) | Apply (_, xs) | PosLit (_, xs) | NegLit (_, xs) ->
-      IArray.fold ~f:(fun s x -> f x s) xs ~init:s
-  | And args | Or args -> Set.fold ~f:(fun s e -> f e s) args ~init:s
-  | Add args | Mul args -> Qset.fold ~f:(fun e _ s -> f e s) args ~init:s
+      IArray.fold ~f xs s
+  | And args | Or args -> Set.fold ~f args s
+  | Add args | Mul args -> Qset.fold ~f:(fun e _ s -> f e s) args s
   | Var _ | Integer _ | Rational _ | RecRecord _ -> s
 
 let rec iter_terms e ~f =
@@ -1124,37 +1122,32 @@ let rec iter_terms e ~f =
   | Var _ | Integer _ | Rational _ | RecRecord _ -> () ) ;
   f e
 
-let rec fold_terms e ~init:s ~f =
-  let fold_terms f e s = fold_terms e ~init:s ~f in
-  let s =
-    match e with
-    | Ap1 (_, x) -> fold_terms f x s
-    | Ap2 (_, x, y) -> fold_terms f y (fold_terms f x s)
-    | Ap3 (_, x, y, z) -> fold_terms f z (fold_terms f y (fold_terms f x s))
+let rec fold_terms e s ~f =
+  f e
+    ( match e with
+    | Ap1 (_, x) -> fold_terms ~f x s
+    | Ap2 (_, x, y) -> fold_terms ~f y (fold_terms ~f x s)
+    | Ap3 (_, x, y, z) ->
+        fold_terms ~f z (fold_terms ~f y (fold_terms ~f x s))
     | ApN (_, xs) | Apply (_, xs) | PosLit (_, xs) | NegLit (_, xs) ->
-        IArray.fold ~f:(fun s x -> fold_terms f x s) xs ~init:s
-    | And args | Or args ->
-        Set.fold args ~init:s ~f:(fun s x -> fold_terms f x s)
+        IArray.fold ~f:(fold_terms ~f) xs s
+    | And args | Or args -> Set.fold ~f:(fold_terms ~f) args s
     | Add args | Mul args ->
-        Qset.fold args ~init:s ~f:(fun arg _ s -> fold_terms f arg s)
-    | Var _ | Integer _ | Rational _ | RecRecord _ -> s
-  in
-  f s e
+        Qset.fold ~f:(fun arg _ -> fold_terms ~f arg) args s
+    | Var _ | Integer _ | Rational _ | RecRecord _ -> s )
 
 let iter_vars e ~f =
   iter_terms ~f:(fun e -> Option.iter ~f (Var.of_term e)) e
 
 let exists_vars e ~f =
-  With_return.with_return (fun {return} ->
-      iter_vars e ~f:(fun v -> if f v then return true) ;
-      false )
+  Iter.exists ~f (Iter.from_labelled_iter (iter_vars e))
 
-let fold_vars e ~init ~f =
-  fold_terms ~f:(fun s e -> Option.fold ~f ~init:s (Var.of_term e)) ~init e
+let fold_vars e s ~f =
+  fold_terms ~f:(fun e -> Option.fold ~f (Var.of_term e)) e s
 
 (** Query *)
 
-let fv e = fold_vars e ~f:Var.Set.add ~init:Var.Set.empty
+let fv e = fold_vars ~f:Var.Set.add e Var.Set.empty
 let is_true = function Integer {data} -> Z.is_true data | _ -> false
 let is_false = function Integer {data} -> Z.is_false data | _ -> false
 
@@ -1169,17 +1162,16 @@ let rec height = function
   | Ap2 (_, a, b) -> 1 + max (height a) (height b)
   | Ap3 (_, a, b, c) -> 1 + max (height a) (max (height b) (height c))
   | ApN (_, v) | Apply (_, v) | PosLit (_, v) | NegLit (_, v) ->
-      1 + IArray.fold v ~init:0 ~f:(fun m a -> max m (height a))
-  | And bs | Or bs ->
-      1 + Set.fold bs ~init:0 ~f:(fun m a -> max m (height a))
-  | Add qs | Mul qs ->
-      1 + Qset.fold qs ~init:0 ~f:(fun a _ m -> max m (height a))
+      1 + IArray.fold ~f:(fun a m -> max m (height a)) v 0
+  | And bs | Or bs -> 1 + Set.fold ~f:(fun a m -> max m (height a)) bs 0
+  | Add qs | Mul qs -> 1 + Qset.fold ~f:(fun a _ m -> max m (height a)) qs 0
   | Integer _ | Rational _ | RecRecord _ -> 0
 
 (** Solve *)
 
 let exists_fv_in vs qset =
-  Qset.exists qset ~f:(fun e _ -> exists_vars e ~f:(Var.Set.mem vs))
+  Qset.exists qset ~f:(fun e _ ->
+      exists_vars e ~f:(fun v -> Var.Set.mem v vs) )
 
 (* solve [0 = rejected_sum + (coeff × mono) + sum] *)
 let solve_for_mono rejected_sum coeff mono sum =
@@ -1200,7 +1192,7 @@ let rec solve_sum rejected_sum sum =
   let* mono, coeff, sum = Qset.pop_min_elt sum in
   match solve_for_mono rejected_sum coeff mono sum with
   | Some _ as soln -> soln
-  | None -> solve_sum (Qset.add rejected_sum mono coeff) sum
+  | None -> solve_sum (Qset.add mono coeff rejected_sum) sum
 
 (* solve [0 = e] *)
 let solve_zero_eq ?for_ e =
@@ -1211,7 +1203,7 @@ let solve_zero_eq ?for_ e =
     match for_ with
     | None -> solve_sum Qset.empty sum
     | Some mono ->
-        let* coeff, sum = Qset.find_and_remove sum mono in
+        let* coeff, sum = Qset.find_and_remove mono sum in
         solve_for_mono Qset.empty coeff mono sum )
   | _ -> None )
   |>

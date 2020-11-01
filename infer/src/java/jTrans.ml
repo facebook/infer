@@ -160,7 +160,7 @@ let translate_locals program tenv formals bytecode jbir_code =
     Array.fold
       ~f:(fun accu jbir_var ->
         let var = Mangled.from_string (JBir.var_name_g jbir_var) in
-        collect accu (var, Typ.void) )
+        collect accu (var, StdTyp.void) )
       ~init:with_bytecode_vars (JBir.vars jbir_code)
   in
   snd with_jbir_vars
@@ -546,7 +546,7 @@ let rec expression (context : JContext.t) pc expr =
             | _ ->
                 assert false
           in
-          let args = [(sil_ex, type_of_ex); (sizeof_expr, Typ.void)] in
+          let args = [(sil_ex, type_of_ex); (sizeof_expr, StdTyp.void)] in
           let ret_id = Ident.create_fresh Ident.knormal in
           let call =
             Sil.Call ((ret_id, Typ.mk (Tint IBool)), builtin, args, loc, CallFlags.default)
@@ -702,7 +702,7 @@ let method_invocation (context : JContext.t) loc pc var_opt cn ms sil_obj_opt ex
     let return_type =
       match JBasics.ms_rtype ms with
       | None ->
-          Typ.void
+          StdTyp.void
       | Some vt ->
           JTransType.value_type program tenv vt
     in
@@ -719,7 +719,7 @@ let method_invocation (context : JContext.t) loc pc var_opt cn ms sil_obj_opt ex
     | None ->
         let call_instr =
           Sil.Call
-            ((Ident.create_fresh Ident.knormal, Typ.void), callee_fun, call_args, loc, call_flags)
+            ((Ident.create_fresh Ident.knormal, StdTyp.void), callee_fun, call_args, loc, call_flags)
         in
         instrs @ [call_instr]
     | Some var ->
@@ -757,7 +757,7 @@ let method_invocation (context : JContext.t) loc pc var_opt cn ms sil_obj_opt ex
         let set_file_attr =
           let set_builtin = Exp.Const (Const.Cfun BuiltinDecl.__set_file_attribute) in
           Sil.Call
-            ( (Ident.create_fresh Ident.knormal, Typ.void)
+            ( (Ident.create_fresh Ident.knormal, StdTyp.void)
             , set_builtin
             , [exp]
             , loc
@@ -770,7 +770,7 @@ let method_invocation (context : JContext.t) loc pc var_opt cn ms sil_obj_opt ex
         let set_mem_attr =
           let set_builtin = Exp.Const (Const.Cfun BuiltinDecl.__set_mem_attribute) in
           Sil.Call
-            ( (Ident.create_fresh Ident.knormal, Typ.void)
+            ( (Ident.create_fresh Ident.knormal, StdTyp.void)
             , set_builtin
             , [exp]
             , loc
@@ -840,7 +840,7 @@ let assume_not_null loc sil_expr =
   let not_null_expr = Exp.BinOp (Binop.Ne, sil_expr, Exp.null) in
   let call_args = [(not_null_expr, Typ.mk (Tint Typ.IBool))] in
   Sil.Call
-    ( (Ident.create_fresh Ident.knormal, Typ.void)
+    ( (Ident.create_fresh Ident.knormal, StdTyp.void)
     , builtin_infer_assume
     , call_args
     , loc
@@ -864,7 +864,7 @@ let instruction (context : JContext.t) pc instr : translation =
     let builtin_const = Exp.Const (Const.Cfun builtin) in
     let instr =
       Sil.Call
-        ( (Ident.create_fresh Ident.knormal, Typ.void)
+        ( (Ident.create_fresh Ident.knormal, StdTyp.void)
         , builtin_const
         , [(sil_expr, sil_type)]
         , loc

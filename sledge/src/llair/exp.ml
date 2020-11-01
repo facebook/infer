@@ -410,24 +410,19 @@ let rec_record i typ = RecRecord (i, typ)
 
 (** Traverse *)
 
-let fold_exps e ~init ~f =
-  let rec fold_exps_ e z =
-    let z =
-      match e with
-      | Ap1 (_, _, x) -> fold_exps_ x z
-      | Ap2 (_, _, x, y) -> fold_exps_ y (fold_exps_ x z)
-      | Ap3 (_, _, w, x, y) -> fold_exps_ w (fold_exps_ y (fold_exps_ x z))
-      | ApN (_, _, xs) ->
-          IArray.fold xs ~init:z ~f:(fun z elt -> fold_exps_ elt z)
-      | _ -> z
-    in
-    f z e
-  in
-  fold_exps_ e init
+let rec fold_exps e z ~f =
+  f e
+    ( match e with
+    | Ap1 (_, _, x) -> fold_exps ~f x z
+    | Ap2 (_, _, x, y) -> fold_exps ~f y (fold_exps ~f x z)
+    | Ap3 (_, _, w, x, y) ->
+        fold_exps ~f w (fold_exps ~f y (fold_exps ~f x z))
+    | ApN (_, _, xs) -> IArray.fold xs z ~f:(fold_exps ~f)
+    | _ -> z )
 
-let fold_regs e ~init ~f =
-  fold_exps e ~init ~f:(fun z x ->
-      match x with Reg _ -> f z (x :> Reg.t) | _ -> z )
+let fold_regs e z ~f =
+  fold_exps e z ~f:(fun x z ->
+      match x with Reg _ -> f (x :> Reg.t) z | _ -> z )
 
 (** Query *)
 

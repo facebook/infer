@@ -30,17 +30,19 @@ end) : S with type elt = Elt.t = struct
   let of_ = S.singleton
   let of_option xo = Option.map_or ~f:S.singleton xo ~default:empty
   let of_list = S.of_list
-  let add s x = S.add x s
-  let add_option xo s = Option.fold ~f:add ~init:s xo
+  let add x s = S.add x s
+  let add_option = Option.fold ~f:add
   let add_list xs s = S.add_list s xs
+  let remove x s = S.remove x s
   let diff = S.diff
   let inter = S.inter
   let union = S.union
   let diff_inter s t = (diff s t, inter s t)
-  let union_list ss = List.fold ~f:union ~init:empty ss
+  let union_list ss = List.fold ~f:union ss empty
   let is_empty = S.is_empty
-  let mem s x = S.mem x s
-  let is_subset s ~of_:t = S.subset s t
+  let cardinal = S.cardinal
+  let mem = S.mem
+  let subset s ~of_:t = S.subset s t
   let disjoint = S.disjoint
   let max_elt = S.max_elt_opt
 
@@ -60,17 +62,34 @@ end) : S with type elt = Elt.t = struct
   let choose = root_elt
   let choose_exn m = Option.get_exn (choose m)
 
+  let only_elt s =
+    match root_elt s with
+    | Some elt -> (
+      match S.split elt s with
+      | l, _, r when is_empty l && is_empty r -> Some elt
+      | _ -> None )
+    | None -> None
+
+  let classify s =
+    match root_elt s with
+    | None -> `Zero
+    | Some elt -> (
+      match S.split elt s with
+      | l, true, r when is_empty l && is_empty r -> `One elt
+      | _ -> `Many )
+
   let pop_exn s =
     let elt = choose_exn s in
     (elt, S.remove elt s)
 
-  let elements = S.elements
   let map s ~f = S.map f s
   let filter s ~f = S.filter f s
   let iter s ~f = S.iter f s
   let exists s ~f = S.exists f s
   let for_all s ~f = S.for_all f s
-  let fold s ~init ~f = S.fold (fun x a -> f a x) s init
+  let fold s z ~f = S.fold f s z
+  let to_iter = S.to_iter
+  let of_iter = S.of_iter
 
   let pp ?pre ?suf ?(sep = (",@ " : (unit, unit) fmt)) pp_elt fs x =
     List.pp ?pre ?suf sep pp_elt fs (S.elements x)

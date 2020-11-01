@@ -49,11 +49,11 @@ type t =
 
 val get_nullability : t -> Nullability.t
 
+val get_provisional_annotation : t -> ProvisionalAnnotation.t option
+(** If the origin is associated with provisional annotation, return it *)
+
 val get_description : t -> string option
 (** Get a description to be used for error messages. *)
-
-val join : t -> t -> t
-(** Join with left priority *)
 
 val to_string : t -> string
 (** Raw string representation. *)

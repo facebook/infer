@@ -81,7 +81,7 @@ end = struct
       assert (Var.Set.equal us min.us) ;
       assert (Var.Set.equal (Var.Set.union us xs) sub.us) ;
       assert (Var.Set.disjoint us xs) ;
-      assert (Var.Set.is_subset zs ~of_:(Var.Set.union us xs))
+      assert (Var.Set.subset zs ~of_:(Var.Set.union us xs))
     with exc ->
       [%Trace.info "%a" pp g] ;
       raise exc
@@ -93,13 +93,11 @@ end = struct
       let us = Option.value us ~default:Var.Set.empty in
       let us =
         Option.fold
-          ~f:(fun us sub -> Var.Set.union (Var.Set.diff sub.Sh.us xs) us)
-          sub ~init:us
+          ~f:(fun sub -> Var.Set.union (Var.Set.diff sub.Sh.us xs))
+          sub us
       in
       let union_us q_opt us' =
-        Option.fold
-          ~f:(fun us' q -> Var.Set.union q.Sh.us us')
-          q_opt ~init:us'
+        Option.fold ~f:(fun q -> Var.Set.union q.Sh.us) q_opt us'
       in
       union_us com (union_us min us)
     in
@@ -139,8 +137,8 @@ let eq_concat (siz, seq) ms =
 
 let fresh_var name vs zs ~wrt =
   let v, wrt = Var.fresh name ~wrt in
-  let vs = Var.Set.add vs v in
-  let zs = Var.Set.add zs v in
+  let vs = Var.Set.add v vs in
+  let zs = Var.Set.add v zs in
   let v = Term.var v in
   (v, vs, zs, wrt)
 
@@ -655,8 +653,8 @@ let excise_dnf : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
   let dnf_subtrahend = Sh.dnf subtrahend in
   Iter.fold_opt
     (Iter.of_list dnf_minuend)
-    ~init:(Sh.false_ (Var.Set.union minuend.us xs))
-    ~f:(fun remainders minuend ->
+    (Sh.false_ (Var.Set.union minuend.us xs))
+    ~f:(fun minuend remainders ->
       [%trace]
         ~call:(fun {pf} -> pf "@[<2>minuend@ %a@]" Sh.pp minuend)
         ~retn:(fun {pf} -> pf "%a" (Option.pp "%a" Sh.pp))
@@ -693,6 +691,6 @@ let infer_frame : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
       )
   @@ fun () ->
   assert (Var.Set.disjoint minuend.us xs) ;
-  assert (Var.Set.is_subset xs ~of_:subtrahend.us) ;
-  assert (Var.Set.is_subset (Var.Set.diff subtrahend.us xs) ~of_:minuend.us) ;
+  assert (Var.Set.subset xs ~of_:subtrahend.us) ;
+  assert (Var.Set.subset (Var.Set.diff subtrahend.us xs) ~of_:minuend.us) ;
   excise_dnf minuend xs subtrahend

@@ -103,7 +103,7 @@ module SourceKind = struct
                 | Some {Typ.desc} ->
                     desc
                 | None ->
-                    Typ.void_star.desc
+                    StdTyp.void_star.desc
               in
               [(CommandLineFlag (global_pvar, typ_desc), None)]
             else []

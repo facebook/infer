@@ -18,38 +18,38 @@ exception Type_tranlsation_error of string
 (** https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html *)
 let translate_basic_type = function
   | `Int ->
-      Typ.int
+      StdTyp.int
   | `Bool ->
-      Typ.boolean
+      StdTyp.boolean
   | `Byte ->
-      Typ.java_byte
+      StdTyp.Java.byte
   | `Char ->
-      Typ.java_char
+      StdTyp.Java.char
   | `Double ->
-      Typ.double
+      StdTyp.double
   | `Float ->
-      Typ.float
+      StdTyp.float
   | `Long ->
-      Typ.long
+      StdTyp.long
   | `Short ->
-      Typ.java_short
+      StdTyp.Java.short
 
 
 let cast_type = function
   | JBir.F2I | JBir.L2I | JBir.D2I ->
-      Typ.int
+      StdTyp.int
   | JBir.D2L | JBir.F2L | JBir.I2L ->
-      Typ.long
+      StdTyp.long
   | JBir.I2F | JBir.L2F | JBir.D2F ->
-      Typ.float
+      StdTyp.float
   | JBir.L2D | JBir.F2D | JBir.I2D ->
-      Typ.double
+      StdTyp.double
   | JBir.I2B ->
-      Typ.boolean
+      StdTyp.boolean
   | JBir.I2C ->
-      Typ.char
+      StdTyp.Java.char
   | JBir.I2S ->
-      Typ.java_short
+      StdTyp.Java.short
 
 
 let typename_of_classname cn = Typ.Name.Java.from_string (JBasics.cn_name cn)
@@ -119,7 +119,7 @@ let method_signature_names ms =
     | None when String.equal method_name JConfig.constructor_name ->
         None
     | None ->
-        Some Typ.void
+        Some StdTyp.void
     | Some vt ->
         Some (get_named_type vt)
   in
@@ -399,4 +399,4 @@ let rec expr_type (context : JContext.t) expr =
 
 (** Returns the return type of the method based on the return type specified in ms. *)
 let return_type program tenv ms =
-  match JBasics.ms_rtype ms with None -> Typ.void | Some vt -> value_type program tenv vt
+  match JBasics.ms_rtype ms with None -> StdTyp.void | Some vt -> value_type program tenv vt

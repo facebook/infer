@@ -1617,6 +1617,12 @@ and nullable_annotation =
   CLOpt.mk_string_opt ~long:"nullable-annotation-name" "Specify custom nullable annotation name"
 
 
+and nullsafe_annotation_graph =
+  CLOpt.mk_bool ~long:"nullsafe-annotation-graph"
+    "Nullsafe: an experimental mode for calculating the dependency graph between potential \
+     annotations to add in the source code."
+
+
 and nullsafe_disable_field_not_initialized_in_nonstrict_classes =
   CLOpt.mk_bool ~long:"nullsafe-disable-field-not-initialized-in-nonstrict-classes" ~default:false
     "Nullsafe: In this mode field not initialized issues won't be reported unless the class is \
@@ -2948,6 +2954,8 @@ and monitor_prop_size = !monitor_prop_size
 and nelseg = !nelseg
 
 and nullable_annotation = !nullable_annotation
+
+and nullsafe_annotation_graph = !nullsafe_annotation_graph
 
 and nullsafe_disable_field_not_initialized_in_nonstrict_classes =
   !nullsafe_disable_field_not_initialized_in_nonstrict_classes

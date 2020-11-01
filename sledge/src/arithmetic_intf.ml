@@ -7,14 +7,12 @@
 
 (** Arithmetic terms *)
 
-open Ses
-
 module type S = sig
   type var
   type trm
   type t [@@deriving compare, equal, sexp]
 
-  val ppx : var Var.strength -> t pp
+  val ppx : var Ses.Var_intf.strength -> t pp
 
   (** Construct and Destruct atomic terms *)
 
@@ -53,6 +51,10 @@ module type S = sig
       non-constant parts. That is, [split_const a] is [(b, c)] such that
       [a = b + c] and the absolute value of [c] is maximal. *)
 
+  val partition_sign : t -> t * t
+  (** [partition_sign a] is [(p, n)] such that [a] = [p - n] and all
+      coefficients in [p] and [n] are non-negative. *)
+
   val map : t -> f:(trm -> trm) -> t
   (** [map ~f a] is [a] with each indeterminate transformed by [f]. Viewing
       [a] as a polynomial,
@@ -61,15 +63,22 @@ module type S = sig
 
   (** Traverse *)
 
-  val iter : t -> trm iter
-  (** [iter a] enumerates the indeterminate terms appearing in [a] *)
+  val trms : t -> trm iter
+  (** [trms a] enumerates the indeterminate terms appearing in [a] *)
+
+  (** Solve *)
+
+  val solve_zero_eq : ?for_:trm -> trm -> (t * t) option
+  (** [solve_zero_eq d] is [Some (e, f)] if [0 = d] can be equivalently
+      expressed as [e = f] for some monomial subterm [e] of [d]. If [for_]
+      is passed, then the subterm [e] must be [for_]. *)
 
   (**/**)
 
   type product
 
-  val fold_factors : product -> init:'s -> f:(trm -> int -> 's -> 's) -> 's
-  val fold_monomials : t -> init:'s -> f:(product -> Q.t -> 's -> 's) -> 's
+  val fold_factors : product -> 's -> f:(trm -> int -> 's -> 's) -> 's
+  val fold_monomials : t -> 's -> f:(product -> Q.t -> 's -> 's) -> 's
 end
 
 (** Indeterminate terms, treated as atomic / variables except when they can
@@ -78,7 +87,9 @@ module type INDETERMINATE = sig
   type trm [@@deriving compare, equal, sexp]
   type var
 
-  val ppx : var Var.strength -> trm pp
+  val ppx : var Ses.Var_intf.strength -> trm pp
+  val pp : trm pp
+  val vars : trm -> var iter
 end
 
 (** An embedding of arithmetic terms [t] into indeterminates [trm],

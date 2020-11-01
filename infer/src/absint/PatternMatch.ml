@@ -286,7 +286,7 @@ module Java = struct
   let is_override_of_lang_object_equals curr_pname =
     let is_only_param_of_object_type = function
       | [Procname.Parameter.JavaParameter param_type]
-        when Typ.equal param_type Typ.pointer_to_java_lang_object ->
+        when Typ.equal param_type StdTyp.Java.pointer_to_java_lang_object ->
           true
       | _ ->
           false
@@ -304,6 +304,11 @@ module ObjectiveC = struct
   let conforms_to ~protocol tenv typename =
     let is_protocol s = String.equal protocol (Typ.Name.name s) in
     protocol_exists tenv is_protocol (Typ.Name.Objc.from_string typename)
+
+
+  let implements_collection =
+    let coll = ["NSArray"; "NSDictionary"; "NSOrderedSet"; "NSSet"] in
+    fun tenv typ_str -> List.exists ~f:(fun obj_class -> implements obj_class tenv typ_str) coll
 
 
   let is_core_graphics_create_or_copy _ procname =

@@ -61,3 +61,5 @@ SOURCES = \
 
 include $(TESTS_DIR)/clang-frontend.make
 include $(TESTS_DIR)/objc.make
+
+CLEAN_EXTRA += *.o ../*/*.test.dot ../*/*/*.test.dot

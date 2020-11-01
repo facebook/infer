@@ -52,7 +52,7 @@ let%test_module _ =
            (Array.map ~f:(fun (siz, seq) -> Term.sized ~siz ~seq) ms))
 
     let of_eqs l =
-      List.fold ~init:emp ~f:(fun q (a, b) -> and_ (Formula.eq a b) q) l
+      List.fold ~f:(fun (a, b) q -> and_ (Formula.eq a b) q) l emp
 
     let%expect_test _ =
       pp
@@ -94,8 +94,8 @@ let%test_module _ =
           ∨ (  ( (  1 = _ = %y_7 ∧ emp) ∨ (  2 = _ ∧ emp) ))
           )
     
-        ( (∃ %x_6, %x_7 .   (%x_7 = 2) ∧ emp)
-        ∨ (∃ %x_6 .   ((%x_6 = 1) ∧ (%y_7 = 1)) ∧ emp)
+        ( (∃ %x_6, %x_7 .   (2 = %x_7) ∧ emp)
+        ∨ (∃ %x_6 .   ((1 = %x_6) ∧ (1 = %y_7)) ∧ emp)
         ∨ (  (0 = %x_6) ∧ emp)
         ) |}]
 
@@ -119,8 +119,8 @@ let%test_module _ =
           ∨ (  ( (  1 = _ = %y_7 ∧ emp) ∨ (  2 = _ ∧ emp) ))
           )
     
-        ( (∃ %x_6, %x_8, %x_9 .   (%x_9 = 2) ∧ emp)
-        ∨ (∃ %x_6, %x_8 .   ((%y_7 = 1) ∧ (%x_8 = 1)) ∧ emp)
+        ( (∃ %x_6, %x_8, %x_9 .   (2 = %x_9) ∧ emp)
+        ∨ (∃ %x_6, %x_8 .   ((1 = %y_7) ∧ (1 = %x_8)) ∧ emp)
         ∨ (∃ %x_6 .   (0 = %x_6) ∧ emp)
         ) |}]
 
@@ -143,8 +143,8 @@ let%test_module _ =
         ( (  0 = _ ∧ emp)
         ∨ (  ( (  1 = _ = %y_7 ∧ emp) ∨ (  2 = _ ∧ emp) ))
         )
-    
-        ( (  1 = %y_7 ∧ emp) ∨ (  emp) ∨ (  emp) ) |}]
+
+        ( (  emp) ∨ (  1 = %y_7 ∧ emp) ∨ (  emp) ) |}]
 
     let%expect_test _ =
       let q = exists ~$[x_] (of_eqs [(f x, x); (f y, y - !1)]) in
@@ -154,11 +154,11 @@ let%test_module _ =
       pp q' ;
       [%expect
         {|
-        ∃ %x_6 .   (1 × (%y_7) + -1) = %y_7^ ∧ %x_6 = %x_6^ ∧ emp
+        ∃ %x_6 .   %x_6 = %x_6^ ∧ (-1 + %y_7) = %y_7^ ∧ emp
 
-          ((1 × (%y_7) + -1) = %y_7^) ∧ emp
+          ((1 + %y_7^) = %y_7) ∧ emp
 
-          (1 × (%y_7) + -1) = %y_7^ ∧ emp |}]
+          (-1 + %y_7) = %y_7^ ∧ emp |}]
 
     let%expect_test _ =
       let q =
@@ -185,7 +185,7 @@ let%test_module _ =
           ∨ (∃ %b_2 .   (⟨8,%a_1⟩ = (⟨4,%c_3⟩^⟨4,%b_2⟩)) ∧ emp)
           )
 
-          tt ∧ emp * ( (  tt ∧ emp) ∨ (  (0 ≠ %x_6) ∧ emp) )
+          ( (  emp) ∨ (  (0 ≠ %x_6) ∧ emp) )
 
           ( (  emp) ∨ (  (0 ≠ %x_6) ∧ emp) ) |}]
   end )

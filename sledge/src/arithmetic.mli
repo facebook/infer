@@ -7,9 +7,10 @@
 
 (** Arithmetic terms *)
 
+open Ses.Var_intf
 include module type of Arithmetic_intf
 
-module Representation (Indeterminate : INDETERMINATE) :
-  REPRESENTATION
-    with type var := Indeterminate.var
-    with type trm := Indeterminate.trm
+module Representation
+    (Var : VAR)
+    (Indeterminate : INDETERMINATE with type var := Var.t) :
+  REPRESENTATION with type var := Var.t with type trm := Indeterminate.trm

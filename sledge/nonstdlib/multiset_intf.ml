@@ -28,7 +28,13 @@ module type S = sig
   val hash_fold_t : elt Hash.folder -> t Hash.folder
   val sexp_of_t : t -> Sexp.t
   val t_of_sexp : (Sexp.t -> elt) -> Sexp.t -> t
-  val pp : (unit, unit) fmt -> (elt * mul) pp -> t pp
+
+  val pp :
+       ?pre:(unit, unit) fmt
+    -> ?suf:(unit, unit) fmt
+    -> (unit, unit) fmt
+    -> (elt * mul) pp
+    -> t pp
 
   (* constructors *)
 
@@ -37,10 +43,10 @@ module type S = sig
 
   val of_ : elt -> mul -> t
 
-  val add : t -> elt -> mul -> t
+  val add : elt -> mul -> t -> t
   (** Add to multiplicity of single element. [O(log n)] *)
 
-  val remove : t -> elt -> t
+  val remove : elt -> t -> t
   (** Set the multiplicity of an element to zero. [O(log n)] *)
 
   val union : t -> t -> t
@@ -65,6 +71,7 @@ module type S = sig
       [Mul.equal m m'] for all elements. *)
 
   val partition : t -> f:(elt -> mul -> bool) -> t * t
+  val partition_map : t -> f:(elt -> mul -> (mul, mul) Either.t) -> t * t
 
   (* queries *)
 
@@ -74,7 +81,7 @@ module type S = sig
   val length : t -> int
   (** Number of elements with non-zero multiplicity. [O(1)]. *)
 
-  val count : t -> elt -> mul
+  val count : elt -> t -> mul
   (** Multiplicity of an element. [O(log n)]. *)
 
   val only_elt : t -> (elt * mul) option
@@ -98,11 +105,11 @@ module type S = sig
   val classify : t -> [`Zero | `One of elt * mul | `Many]
   (** Classify a set as either empty, singleton, or otherwise. *)
 
-  val find_and_remove : t -> elt -> (mul * t) option
+  val find_and_remove : elt -> t -> (mul * t) option
   (** Find and remove an element. *)
 
-  val to_list : t -> (elt * mul) list
-  (** Convert to a list of elements in ascending order. *)
+  val to_iter : t -> (elt * mul) iter
+  (** Enumerate elements in ascending order. *)
 
   (* traversals *)
 
@@ -115,6 +122,6 @@ module type S = sig
   val for_all : t -> f:(elt -> mul -> bool) -> bool
   (** Test whether all elements satisfy a predicate. *)
 
-  val fold : t -> init:'s -> f:(elt -> mul -> 's -> 's) -> 's
+  val fold : t -> 's -> f:(elt -> mul -> 's -> 's) -> 's
   (** Fold over the elements in ascending order. *)
 end

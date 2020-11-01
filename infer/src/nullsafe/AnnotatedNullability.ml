@@ -17,6 +17,7 @@ module F = Format
 (** See {!Nullability.t} for explanation *)
 type t =
   | Nullable of nullable_origin
+  | ProvisionallyNullable of ProvisionalAnnotation.t
   | ThirdPartyNonnull
   | UncheckedNonnull of unchecked_nonnull_origin
   | LocallyTrustedNonnull
@@ -45,6 +46,8 @@ and strict_nonnull_origin =
 let get_nullability = function
   | Nullable _ ->
       Nullability.Nullable
+  | ProvisionallyNullable _ ->
+      Nullability.ProvisionallyNullable
   | ThirdPartyNonnull ->
       Nullability.ThirdPartyNonnull
   | UncheckedNonnull _ ->
@@ -90,6 +93,8 @@ let pp fmt t =
   match t with
   | Nullable origin ->
       F.fprintf fmt "Nullable[%s]" (string_of_nullable_origin origin)
+  | ProvisionallyNullable _ ->
+      F.fprintf fmt "ProvisionallyNullable"
   | ThirdPartyNonnull ->
       F.fprintf fmt "ThirdPartyNonnull"
   | UncheckedNonnull origin ->

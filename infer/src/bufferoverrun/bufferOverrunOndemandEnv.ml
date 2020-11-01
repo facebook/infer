@@ -39,13 +39,13 @@ let mk pdesc =
           | Tarray {elt} ->
               Some elt
           | Tvoid ->
-              Some Typ.void
+              Some StdTyp.void
           | Tstruct typename -> (
             match BufferOverrunTypModels.dispatch tenv typename with
             | Some (CArray {element_typ}) ->
                 Some element_typ
             | Some CppStdVector ->
-                Some (Typ.mk (Typ.Tptr (Typ.void, Typ.Pk_pointer)))
+                Some (Typ.mk (Typ.Tptr (StdTyp.void, Typ.Pk_pointer)))
             | Some JavaCollection ->
                 (* Current Java frontend does give element types of Java collection. *)
                 None
@@ -62,7 +62,7 @@ let mk pdesc =
         match BoField.get_type fn with
         | None ->
             let lookup = Tenv.lookup tenv in
-            Option.map (typ_of_param_path x) ~f:(Struct.fld_typ ~lookup ~default:Typ.void fn)
+            Option.map (typ_of_param_path x) ~f:(Struct.fld_typ ~lookup ~default:StdTyp.void fn)
         | some_typ ->
             some_typ )
       | BoField.StarField {last_field} ->

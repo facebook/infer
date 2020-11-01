@@ -16,16 +16,16 @@ module type Dom = sig
   val is_false : t -> bool
   val dnf : t -> t list
   val exec_assume : t -> Llair.Exp.t -> t option
-  val exec_kill : t -> Llair.Reg.t -> t
-  val exec_move : t -> (Llair.Reg.t * Llair.Exp.t) iarray -> t
-  val exec_inst : t -> Llair.inst -> t option
+  val exec_kill : Llair.Reg.t -> t -> t
+  val exec_move : (Llair.Reg.t * Llair.Exp.t) iarray -> t -> t
+  val exec_inst : Llair.inst -> t -> t option
 
   val exec_intrinsic :
        skip_throw:bool
-    -> t
     -> Llair.Reg.t option
     -> Llair.Reg.t
     -> Llair.Exp.t list
+    -> t
     -> t option option
 
   type from_call [@@deriving sexp_of]

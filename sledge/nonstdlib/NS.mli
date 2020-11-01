@@ -80,6 +80,16 @@ val snd3 : _ * 'b * _ -> 'b
 val trd3 : _ * _ * 'c -> 'c
 (** Third projection from a triple. *)
 
+(** Map-and-construct operations that preserve physical equality *)
+
+val map1 : ('a -> 'a) -> 'b -> ('a -> 'b) -> 'a -> 'b
+val map2 : ('a -> 'a) -> 'b -> ('a -> 'a -> 'b) -> 'a -> 'a -> 'b
+
+val map3 :
+  ('a -> 'a) -> 'b -> ('a -> 'a -> 'a -> 'b) -> 'a -> 'a -> 'a -> 'b
+
+val mapN : ('a -> 'a) -> 'b -> ('a array -> 'b) -> 'a array -> 'b
+
 (** Pretty-printing *)
 
 (** Pretty-printer for argument type. *)
@@ -128,7 +138,7 @@ include module type of Iter.Import
 (** Containers *)
 
 module Option = Option
-include module type of Option.Infix
+include module type of Option.Import
 
 module Either : sig
   type ('a, 'b) t = Left of 'a | Right of 'b
@@ -137,6 +147,7 @@ module Either : sig
   val right : 'a -> ('b, 'a) t
 end
 
+module Pair = Containers.Pair
 module List = List
 module Array = Array
 module IArray = IArray
@@ -214,4 +225,3 @@ val violates : ('a -> unit) -> 'a -> _
 (**)
 
 module Hashtbl : sig end [@@deprecated "Use HashTable instead of Hashtbl"]
-module With_return = Base.With_return

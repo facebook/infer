@@ -346,3 +346,5 @@ val to_filename : t -> string
 
 val get_qualifiers : t -> QualifiedCppName.t
 (** get qualifiers of C/objc/C++ method/function *)
+
+module Normalizer : HashNormalizer.S with type t = t

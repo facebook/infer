@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 #import <Foundation/Foundation.h>
+#import "MyEnumerator.h"
 
 // init array
 
@@ -214,3 +215,40 @@ void nsarray_copy_linear(NSArray* array) {
   for (int i = 0; i < copy.count; i++) {
   }
 }
+
+void call_my_enumerator_next_object_linear(MyEnumerator* enumerator) {
+  // NSEnumerator.nextObject should be replaced to MyEnumerator.nextObject
+  NSString* s = [enumerator nextObject];
+}
+
+// The cost analyzer cannot reason the amortized complexity.
+void loop_with_my_enumerator_next_object_linear_FP(MyEnumerator* enumerator) {
+  NSString* s;
+  while (s = [enumerator nextObject]) {
+  }
+}
+
+void enumerate_via_block_linear(NSArray* array) {
+  [array enumerateObjectsUsingBlock:^(id obj, NSUInteger index, BOOL* stop){
+      // do something with obj
+  }];
+}
+
+@interface MyBlock : NSObject
+@end
+
+@implementation MyBlock
+
++ (void)call_enumerate_via_block_param_linear_FN:(NSArray*)x:(int)size {
+  void (^b)(id, NSUInteger, BOOL*) =
+      ^(id object, NSUInteger indexPath, BOOL* stop) {
+        for (int i = 0; i < size; i++) {
+        }
+      };
+  // Here, captured arg size is passed as the first argument to the block,
+  // not the array x. Hence, currently we don't recognize the mode which expects
+  // only two args.
+  [x enumerateObjectsUsingBlock:b];
+}
+
+@end

@@ -28,8 +28,6 @@ and value =
   | Class of Typ.t
   | Annot of t
 
-let equal = [%compare.equal: t]
-
 let volatile = {class_name= "volatile"; parameters= []}
 
 let final = {class_name= "final"; parameters= []}
@@ -84,6 +82,80 @@ and pp fmt annotation =
     F.fprintf fmt "(%a)" (F.pp_print_list ~pp_sep:comma_sep pp_parameter) annotation.parameters
 
 
+module rec ValueNormalizer : (HashNormalizer.S with type t = value) = struct
+  module rec V : (HashNormalizer.NormalizedT with type t = value) = struct
+    type t = value [@@deriving equal]
+
+    let hash = Hashtbl.hash
+
+    let normalize value =
+      match value with
+      | Str str ->
+          let str' = HashNormalizer.StringNormalizer.normalize str in
+          if phys_equal str str' then value else Str str'
+      | Bool _ ->
+          value
+      | Enum {class_typ; value= str_value} ->
+          let class_typ' = Typ.Normalizer.normalize class_typ in
+          let str_value' = HashNormalizer.StringNormalizer.normalize str_value in
+          if phys_equal class_typ class_typ' && phys_equal str_value str_value' then value
+          else Enum {class_typ= class_typ'; value= str_value'}
+      | Array list ->
+          let list' = IList.map_changed list ~equal:phys_equal ~f:N.normalize in
+          if phys_equal list list' then value else Array list'
+      | Class typ ->
+          let typ' = Typ.Normalizer.normalize typ in
+          if phys_equal typ typ' then value else Class typ'
+      | Annot t ->
+          let t' = TNormalizer.normalize t in
+          if phys_equal t t' then value else Annot t'
+  end
+
+  and N : (HashNormalizer.S with type t = V.t) = HashNormalizer.Make (V)
+
+  include N
+end
+
+and ParameterNormalizer : (HashNormalizer.S with type t = parameter) = HashNormalizer.Make (struct
+  type t = parameter [@@deriving equal]
+
+  let hash = Hashtbl.hash
+
+  let normalize_str_opt str_opt =
+    IOption.map_changed str_opt ~equal:phys_equal ~f:HashNormalizer.StringNormalizer.normalize
+
+
+  let normalize parameter =
+    let name = normalize_str_opt parameter.name in
+    let value = ValueNormalizer.normalize parameter.value in
+    if phys_equal name parameter.name && phys_equal value parameter.value then parameter
+    else {name; value}
+end)
+
+and TNormalizer : (HashNormalizer.S with type t = t) = HashNormalizer.Make (struct
+  type nonrec t = t [@@deriving equal]
+
+  let hash = Hashtbl.hash
+
+  let normalize t =
+    let class_name = HashNormalizer.StringNormalizer.normalize t.class_name in
+    let parameters =
+      IList.map_changed ~equal:phys_equal ~f:ParameterNormalizer.normalize t.parameters
+    in
+    if phys_equal class_name t.class_name && phys_equal parameters t.parameters then t
+    else {class_name; parameters}
+end)
+
+module PairNormalizer = HashNormalizer.Make (struct
+  type nonrec t = t * bool [@@deriving equal]
+
+  let hash = Hashtbl.hash
+
+  let normalize ((t, b) as pair) =
+    let t' = TNormalizer.normalize t in
+    if phys_equal t t' then pair else (t', b)
+end)
+
 module Item = struct
   (** Annotation for one item: a list of annotations with visibility. *)
   type nonrec t = (t * bool) list [@@deriving compare, equal]
@@ -101,6 +173,23 @@ module Item = struct
   let is_empty ia = List.is_empty ia
 
   let is_final ia = List.exists ia ~f:(fun (x, b) -> b && is_final x)
+
+  module Normalizer = struct
+    include HashNormalizer.Make (struct
+      type nonrec t = t [@@deriving equal]
+
+      let hash = Hashtbl.hash
+
+      let normalize pairs = IList.map_changed pairs ~equal:phys_equal ~f:PairNormalizer.normalize
+    end)
+
+    let reset () =
+      reset () ;
+      PairNormalizer.reset () ;
+      TNormalizer.reset () ;
+      ParameterNormalizer.reset () ;
+      ValueNormalizer.reset ()
+  end
 end
 
 module Class = struct

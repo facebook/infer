@@ -20,7 +20,7 @@ module Java = struct
     | Non_Static
         (** in Java, procedures called with invokevirtual, invokespecial, and invokeinterface *)
     | Static  (** in Java, procedures called with invokestatic *)
-  [@@deriving compare, yojson_of]
+  [@@deriving compare, equal, yojson_of]
 
   (** Type of java procedure names. *)
   type t =
@@ -29,7 +29,7 @@ module Java = struct
     ; class_name: Typ.Name.t
     ; return_type: Typ.t option (* option because constructors have no return type *)
     ; kind: kind }
-  [@@deriving compare, yojson_of]
+  [@@deriving compare, equal, yojson_of]
 
   let ensure_java_type t =
     if not (Typ.is_java_type t) then
@@ -110,7 +110,7 @@ module Java = struct
 
   let to_simplified_string ?(withclass = false) = Pp.string_of_pp (pp ~withclass Simple)
 
-  let get_return_typ pname_java = Option.value ~default:Typ.void pname_java.return_type
+  let get_return_typ pname_java = Option.value ~default:StdTyp.void pname_java.return_type
 
   let is_close {method_name} = String.equal method_name "close"
 
@@ -120,7 +120,7 @@ module Java = struct
     { method_name= class_initializer_method_name
     ; parameters= []
     ; class_name
-    ; return_type= Some Typ.void
+    ; return_type= Some StdTyp.void
     ; kind= Static }
 
 
@@ -163,7 +163,7 @@ module Java = struct
   let is_vararg {parameters} =
     match List.last parameters with
     | Some {desc= Tptr ({desc= Tarray {elt}}, Pk_pointer)} ->
-        Typ.(equal pointer_to_java_lang_object elt)
+        Typ.equal StdTyp.Java.pointer_to_java_lang_object elt
     | _ ->
         false
 
@@ -171,6 +171,30 @@ module Java = struct
   let is_external java_pname =
     let package = get_package java_pname in
     Option.exists ~f:Config.java_package_is_external package
+
+
+  module Normalizer = HashNormalizer.Make (struct
+    type nonrec t = t [@@deriving equal]
+
+    let hash = Hashtbl.hash
+
+    let normalize t =
+      let method_name = HashNormalizer.StringNormalizer.normalize t.method_name in
+      let parameters =
+        IList.map_changed t.parameters ~equal:phys_equal ~f:Typ.Normalizer.normalize
+      in
+      let class_name = Typ.Name.Normalizer.normalize t.class_name in
+      let return_type =
+        IOption.map_changed t.return_type ~equal:phys_equal ~f:Typ.Normalizer.normalize
+      in
+      if
+        phys_equal method_name t.method_name
+        && phys_equal parameters t.parameters
+        && phys_equal class_name t.class_name
+        && phys_equal return_type t.return_type
+      then t
+      else {method_name; parameters; class_name; return_type; kind= t.kind}
+  end)
 end
 
 module Parameter = struct
@@ -825,4 +849,24 @@ module UnitCache = struct
     in
     let cache_set pname value = cache := Some (pname, value) in
     (cache_get, cache_set)
+end
+
+module Normalizer = struct
+  include HashNormalizer.Make (struct
+    type nonrec t = t [@@deriving equal]
+
+    let hash = hash
+
+    let normalize t =
+      match t with
+      | Java java_pname ->
+          let java_pname' = Java.Normalizer.normalize java_pname in
+          if phys_equal java_pname java_pname' then t else Java java_pname'
+      | _ ->
+          t
+  end)
+
+  let reset () =
+    reset () ;
+    Java.Normalizer.reset ()
 end

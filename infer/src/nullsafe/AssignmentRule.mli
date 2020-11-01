@@ -16,6 +16,22 @@ val check : lhs:AnnotatedNullability.t -> rhs:InferredNullability.t -> (unit, vi
 (** If `null` can leak from a "less strict" type to "more strict" type, this is an Assignment Rule
     violation. *)
 
+(** Violation that will occur if the provisional annotation becomes real [@Nullable] *)
+module ProvisionalViolation : sig
+  type t
+
+  val offending_annotations : t -> ProvisionalAnnotation.t list
+  (** Non-empty list of corresponding provisional annotations (adding any of those will lead to an
+      issue) *)
+
+  val fix_annotation : t -> ProvisionalAnnotation.t option
+  (** If there is a place such as adding [@Nullable] will fix the issue, this is the one. *)
+
+  val from : violation -> t option
+  (** If the violation is provisional (so is not real but will become real when the annotation is
+      added), create it. *)
+end
+
 (** Violation that needs to be reported to the user. *)
 module ReportableViolation : sig
   type t

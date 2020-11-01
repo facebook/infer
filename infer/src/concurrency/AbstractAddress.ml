@@ -100,11 +100,11 @@ type t =
       (** method parameter represented by its 0-indexed position, root var is not used in comparison *)
 [@@deriving compare, equal]
 
-let get_typ tenv =
-  let class_type = Typ.(mk (Tstruct Name.Java.java_lang_class)) in
-  let some_ptr_to_class_type = Some Typ.(mk (Tptr (class_type, Pk_pointer))) in
-  function
-  | Class _ -> some_ptr_to_class_type | Global {path} | Parameter {path} -> get_typ tenv path
+let get_typ tenv = function
+  | Class _ ->
+      Some StdTyp.Java.pointer_to_java_lang_class
+  | Global {path} | Parameter {path} ->
+      get_typ tenv path
 
 
 let append ~on_to:(base, accesses) (_, accesses') =

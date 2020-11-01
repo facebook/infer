@@ -435,7 +435,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
               ~set_objc_accessor_attr:false
           then (
             let ms =
-              CMethodSignature.mk procname None [] (Typ.void, Annot.Item.empty) []
+              CMethodSignature.mk procname None [] (StdTyp.void, Annot.Item.empty) []
                 decl_info.Clang_ast_t.di_source_range ClangMethodKind.C_FUNCTION None None None
                 `None
             in

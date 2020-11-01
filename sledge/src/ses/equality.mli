@@ -22,7 +22,7 @@ val classes : t -> classes
 
 val pp : t pp
 val pp_classes : t pp
-val ppx_classes : Var.t Var.strength -> classes pp
+val ppx_classes : Var.strength -> classes pp
 
 include Invariant.S with type t := t
 
@@ -65,7 +65,7 @@ val normalize : t -> Term.t -> Term.t
     relation, where [e'] and its subterms are expressed in terms of the
     relation's canonical representatives of each equivalence class. *)
 
-val fold_vars : t -> init:'a -> f:('a -> Var.t -> 'a) -> 'a
+val fold_vars : t -> 's -> f:(Var.t -> 's -> 's) -> 's
 
 (** Solution Substitutions *)
 module Subst : sig
@@ -73,7 +73,7 @@ module Subst : sig
 
   val pp : t pp
   val is_empty : t -> bool
-  val fold : t -> init:'a -> f:(key:Term.t -> data:Term.t -> 'a -> 'a) -> 'a
+  val fold : t -> 's -> f:(key:Term.t -> data:Term.t -> 's -> 's) -> 's
 
   val subst : t -> Term.t -> Term.t
   (** Apply a substitution recursively to subterms. *)

@@ -86,7 +86,7 @@ module StructuredSil = struct
       | Some ret_id_typ ->
           ret_id_typ
       | None ->
-          (Ident.create_fresh Ident.knormal, Typ.void)
+          (Ident.create_fresh Ident.knormal, StdTyp.void)
     in
     let call_exp = Exp.Const (Const.Cfun procname) in
     Cmd (Sil.Call (ret_id_typ, call_exp, args, dummy_loc, CallFlags.default))

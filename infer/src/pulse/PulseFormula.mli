@@ -16,7 +16,7 @@ module Var = PulseAbstractValue
 
     Build formulas from SIL and tries to decide if they are (mostly un-)satisfiable. *)
 
-type t
+type t [@@deriving yojson_of]
 
 val pp : F.formatter -> t -> unit
 

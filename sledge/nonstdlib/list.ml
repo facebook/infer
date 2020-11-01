@@ -15,6 +15,7 @@ let hd = function [] -> None | hd :: _ -> Some hd
 let tl_exn = tl
 let tl = function [] -> None | _ :: tl -> Some tl
 let pop_exn = function x :: xs -> (x, xs) | [] -> raise Not_found
+let mem elt seq ~eq = mem ~eq elt seq
 let exists xs ~f = exists ~f xs
 let for_all xs ~f = for_all ~f xs
 let find_exn xs ~f = find ~f xs
@@ -46,12 +47,23 @@ let combine_exn = combine
 let combine xs ys =
   try Some (combine_exn xs ys) with Invalid_argument _ -> None
 
-let fold xs ~init ~f = fold_left ~f ~init xs
+let group_by seq ~hash ~eq = group_by ~hash ~eq seq
+let join_by ~eq ~hash k1 k2 ~merge = join_by ~eq ~hash k1 k2 ~merge
+let join_all_by ~eq ~hash k1 k2 ~merge = join_all_by ~eq ~hash k1 k2 ~merge
+let group_join_by ~eq ~hash = group_join_by ~eq ~hash
+let fold xs init ~f = fold_left ~f:(fun s x -> f x s) ~init xs
+let fold_left xs init ~f = fold_left ~f ~init xs
+let fold_right xs init ~f = fold_right ~f ~init xs
 
 let reduce xs ~f =
-  match xs with [] -> None | x :: xs -> Some (fold xs ~init:x ~f)
+  match xs with [] -> None | x :: xs -> Some (fold ~f xs x)
 
-let fold2_exn xs ys ~init ~f = fold_left2 ~f ~init xs ys
+let fold_map xs init ~f =
+  Pair.swap (fold_map ~f:(fun s x -> Pair.swap (f x s)) ~init xs)
+
+let fold2_exn xs ys init ~f =
+  fold_left2 ~f:(fun s x y -> f x y s) ~init xs ys
+
 let group_succ ~eq xs = group_succ ~eq:(fun y x -> eq x y) xs
 
 let symmetric_diff ~cmp xs ys =
@@ -84,3 +96,11 @@ let pp_diff ~cmp sep pp_elt fs (xs, ys) =
     | Right y -> Format.fprintf fs "++ %a" pp_elt y
   in
   pp sep pp_diff_elt fs (symmetric_diff ~cmp xs ys)
+
+module Assoc = struct
+  include Assoc
+
+  let mem elt seq ~eq = mem ~eq elt seq
+end
+
+let mem_assoc elt seq ~eq = mem_assoc ~eq elt seq

@@ -43,3 +43,5 @@ val to_simplified_string : t -> string
 
 val pp : F.formatter -> t -> unit
 (** Pretty print a field name. *)
+
+module Normalizer : HashNormalizer.S with type t = t

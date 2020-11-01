@@ -64,6 +64,8 @@ let get_nullability = function
     | AnnotatedNullability.Nullable _ ->
         (* Annotated as Nullable explicitly or implicitly *)
         Nullability.Nullable
+    | AnnotatedNullability.ProvisionallyNullable _ ->
+        Nullability.ProvisionallyNullable
     | AnnotatedNullability.UncheckedNonnull _
     | AnnotatedNullability.ThirdPartyNonnull
     | AnnotatedNullability.LocallyTrustedNonnull
@@ -134,6 +136,10 @@ let get_method_ret_description pname call_loc
     match nullability with
     | AnnotatedNullability.Nullable _ ->
         "nullable"
+    | AnnotatedNullability.ProvisionallyNullable _ ->
+        (* There should not be scenario where this is explained to the end user. *)
+        Logging.die InternalError
+          "get_method_ret_description: Unexpected nullability: ProvisionallyNullable"
     | AnnotatedNullability.ThirdPartyNonnull
     | AnnotatedNullability.UncheckedNonnull _
     | AnnotatedNullability.LocallyTrustedNonnull
@@ -157,6 +163,37 @@ let get_method_ret_description pname call_loc
   Format.sprintf "call to %s%s%s"
     (Procname.Java.to_simplified_string ~withclass:should_show_class_name pname)
     (atline call_loc) model_info
+
+
+let get_provisional_annotation = function
+  | NullConst _
+  | NonnullConst _
+  | This
+  | New
+  | ArrayLengthResult
+  | CallToGetKnownToContainsKey
+  | InferredNonnull _
+  | ArrayAccess
+  | OptimisticFallback ->
+      None
+  | Field
+      {field_type= {nullability= AnnotatedNullability.ProvisionallyNullable provisional_annotation}}
+    ->
+      Some provisional_annotation
+  | CurrMethodParameter
+      (Normal
+        { param_annotated_type=
+            {nullability= AnnotatedNullability.ProvisionallyNullable provisional_annotation} }) ->
+      Some provisional_annotation
+  | MethodCall
+      { annotated_signature=
+          { ret=
+              { ret_annotated_type=
+                  {nullability= AnnotatedNullability.ProvisionallyNullable provisional_annotation}
+              } } } ->
+      Some provisional_annotation
+  | Field _ | CurrMethodParameter _ | MethodCall _ ->
+      None
 
 
 let get_description origin =
@@ -188,13 +225,3 @@ let get_description origin =
   (* A technical origin *)
   | OptimisticFallback ->
       None
-
-
-let join o1 o2 =
-  match (o1, o2) with
-  | Field _, (NullConst _ | NonnullConst _ | CurrMethodParameter _ | This | MethodCall _ | New) ->
-      (* low priority to Field, to support field initialization patterns *)
-      o2
-  | _ ->
-      (* left priority *)
-      o1

@@ -395,7 +395,7 @@ let create_call_to_objc_bridge_transfer sil_loc exp typ =
   let pname = BuiltinDecl.__objc_bridge_transfer in
   let stmt_call =
     Sil.Call
-      ( (Ident.create_fresh Ident.knormal, Typ.void)
+      ( (Ident.create_fresh Ident.knormal, StdTyp.void)
       , Exp.Const (Const.Cfun pname)
       , [(exp, typ)]
       , sil_loc
@@ -479,9 +479,9 @@ let cast_operation ?objc_bridge_cast_kind cast_kind ((exp, typ) as exp_typ) cast
 
 let trans_assertion_failure sil_loc (context : CContext.t) =
   let assert_fail_builtin = Exp.Const (Const.Cfun BuiltinDecl.__infer_fail) in
-  let args = [(Exp.Const (Const.Cstr Config.default_failure_name), Typ.void)] in
+  let args = [(Exp.Const (Const.Cstr Config.default_failure_name), StdTyp.void)] in
   let ret_id = Ident.create_fresh Ident.knormal in
-  let ret_typ = Typ.void in
+  let ret_typ = StdTyp.void in
   let call_instr =
     Sil.Call ((ret_id, ret_typ), assert_fail_builtin, args, sil_loc, CallFlags.default)
   in
@@ -581,10 +581,6 @@ let extract_stmt_from_singleton stmt_list source_range warning_string =
 
 
 module Self = struct
-  exception
-    SelfClassException of
-      {class_name: Typ.Name.t; position: Logging.ocaml_pos; source_range: Clang_ast_t.source_range}
-
   let add_self_parameter_for_super_instance stmt_info context procname loc mei =
     if is_superinstance mei then
       let typ, self_expr, instrs =
@@ -629,12 +625,12 @@ let is_logical_negation_of_int tenv ei uoi =
       false
 
 
-let mk_fresh_void_exp_typ () = (Exp.Var (Ident.create_fresh Ident.knormal), Typ.void)
+let mk_fresh_void_exp_typ () = (Exp.Var (Ident.create_fresh Ident.knormal), StdTyp.void)
 
-let mk_fresh_void_id_typ () = (Ident.create_fresh Ident.knormal, Typ.void)
+let mk_fresh_void_id_typ () = (Ident.create_fresh Ident.knormal, StdTyp.void)
 
 let mk_fresh_void_return () =
-  let id = Ident.create_fresh Ident.knormal and void = Typ.void in
+  let id = Ident.create_fresh Ident.knormal and void = StdTyp.void in
   ((id, void), (Exp.Var id, void))
 
 
@@ -644,3 +640,33 @@ let last_or_mk_fresh_void_exp_typ exp_typs =
       last_exp_typ
   | None ->
       mk_fresh_void_exp_typ ()
+
+
+let should_remove_first_param {context= {tenv} as context; is_fst_arg_objc_instance_method_call}
+    stmt =
+  let some_class_name stmt_info = Some (CContext.get_curr_class_typename stmt_info context) in
+  match (stmt : Clang_ast_t.stmt) with
+  | ImplicitCastExpr
+      ( _
+      , [ DeclRefExpr
+            ( stmt_info
+            , _
+            , _
+            , {drti_decl_ref= Some {dr_name= Some {ni_name= name}; dr_qual_type= Some qual_type}} )
+        ]
+      , _
+      , {cei_cast_kind= `LValueToRValue} )
+    when is_fst_arg_objc_instance_method_call && String.equal name "self"
+         && CType.is_class (CType_decl.qual_type_to_sil_type tenv qual_type) ->
+      some_class_name stmt_info
+  | ObjCMessageExpr
+      ( _
+      , [ ImplicitCastExpr
+            (_, [DeclRefExpr (stmt_info, _, _, _)], _, {cei_cast_kind= `LValueToRValue}) ]
+      , _
+      , {omei_selector= selector} )
+    when is_fst_arg_objc_instance_method_call && String.equal selector CFrontend_config.class_method
+    ->
+      some_class_name stmt_info
+  | _ ->
+      None

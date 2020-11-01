@@ -23,6 +23,7 @@ type extras_WorstCaseCost =
   ; get_node_nb_exec: Node.t -> BasicCost.t
   ; get_summary: Procname.t -> CostDomain.summary option
   ; get_formals: Procname.t -> (Pvar.t * Typ.t) list option
+  ; get_proc_desc: Procname.t -> Procdesc.t option
   ; proc_resolve_attributes: Procname.t -> ProcAttributes.t option }
 
 let instantiate_cost ?get_closure_callee_cost ~default_closure_cost integer_type_widths
@@ -54,16 +55,19 @@ module InstrBasicCostWithReason = struct
       List.exists prefixes ~f:(fun prefix -> String.is_prefix method_name ~prefix)
 
 
-  let is_objc_call_from_no_arc_to_arc {proc_resolve_attributes} caller_pdesc callee_pname =
-    (not (Procdesc.is_objc_arc_on caller_pdesc))
-    && Option.exists (proc_resolve_attributes callee_pname)
-         ~f:(fun {ProcAttributes.is_objc_arc_on} -> is_objc_arc_on)
+  let is_objc_call_from_no_arc_to_arc {get_proc_desc} caller_pdesc callee_pname =
+    Option.exists (get_proc_desc callee_pname) ~f:(fun callee_pdesc ->
+        Procdesc.is_defined callee_pdesc
+        && (not (Procdesc.is_objc_arc_on caller_pdesc))
+        && Procdesc.is_objc_arc_on callee_pdesc )
 
 
-  let dispatch_operation tenv callee_pname callee_cost_opt fun_arg_list model_env ret inferbo_mem =
+  let dispatch_operation tenv callee_pname callee_cost_opt fun_arg_list get_summary model_env ret
+      inferbo_mem =
     match CostModels.Call.dispatch tenv callee_pname fun_arg_list with
     | Some model ->
-        BasicCostWithReason.of_basic_cost (model (Lazy.force model_env) ~ret inferbo_mem)
+        BasicCostWithReason.of_basic_cost
+          (model get_summary (Lazy.force model_env) ~ret inferbo_mem)
     | None -> (
       match callee_cost_opt with
       | Some callee_cost ->
@@ -179,8 +183,8 @@ module InstrBasicCostWithReason = struct
                 let callee_cost_opt = get_callee_cost_opt kind inferbo_mem in
                 match kind with
                 | OperationCost ->
-                    dispatch_operation tenv callee_pname callee_cost_opt fun_arg_list model_env ret
-                      inferbo_mem
+                    dispatch_operation tenv callee_pname callee_cost_opt fun_arg_list
+                      extras.get_summary model_env ret inferbo_mem
                 | AllocationCost ->
                     dispatch_allocation tenv callee_pname callee_cost_opt
                 | AutoreleasepoolSize ->
@@ -400,6 +404,7 @@ let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as
       ; get_node_nb_exec
       ; get_summary
       ; get_formals
+      ; get_proc_desc= AnalysisCallbacks.get_proc_desc
       ; proc_resolve_attributes= AnalysisCallbacks.proc_resolve_attributes }
     in
     AnalysisCallbacks.html_debug_new_node_session (NodeCFG.start_node node_cfg)

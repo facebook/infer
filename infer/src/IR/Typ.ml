@@ -54,9 +54,7 @@ type ikind =
   | IULongLong  (** [unsigned long long] (or [unsigned int64_] on Microsoft Visual C) *)
   | I128  (** [__int128_t] *)
   | IU128  (** [__uint128_t] *)
-[@@deriving compare, yojson_of]
-
-let equal_ikind = [%compare.equal: ikind]
+[@@deriving compare, equal, yojson_of]
 
 let ikind_to_string = function
   | IChar ->
@@ -130,9 +128,7 @@ let ikind_is_char = function IChar | ISChar | IUChar -> true | _ -> false
 
 (** Kinds of floating-point numbers *)
 type fkind = FFloat  (** [float] *) | FDouble  (** [double] *) | FLongDouble  (** [long double] *)
-[@@deriving compare, yojson_of]
-
-let equal_fkind = [%compare.equal: fkind]
+[@@deriving compare, equal, yojson_of]
 
 let fkind_to_string = function
   | FFloat ->
@@ -150,9 +146,7 @@ type ptr_kind =
   | Pk_objc_weak  (** Obj-C __weak pointer *)
   | Pk_objc_unsafe_unretained  (** Obj-C __unsafe_unretained pointer *)
   | Pk_objc_autoreleasing  (** Obj-C __autoreleasing pointer *)
-[@@deriving compare, yojson_of]
-
-let equal_ptr_kind = [%compare.equal: ptr_kind]
+[@@deriving compare, equal, yojson_of]
 
 let ptr_kind_string = function
   | Pk_reference ->
@@ -169,7 +163,7 @@ let ptr_kind_string = function
 
 module T = struct
   type type_quals = {is_const: bool; is_restrict: bool; is_volatile: bool}
-  [@@deriving compare, yojson_of]
+  [@@deriving compare, equal, yojson_of]
 
   (** types for sil (structured) expressions *)
   type t = {desc: desc; quals: type_quals}
@@ -267,30 +261,6 @@ let mk_struct name = mk (Tstruct name)
 
 let mk_ptr ?(ptr_kind = Pk_pointer) t = mk (Tptr (t, ptr_kind))
 
-let void = mk Tvoid
-
-let void_star = mk (Tptr (void, Pk_pointer))
-
-let java_char = mk (Tint IUShort)
-
-let java_byte = mk (Tint ISChar)
-
-let java_short = mk (Tint IShort)
-
-let boolean = mk (Tint IBool)
-
-let char = mk (Tint IChar)
-
-let float = mk (Tfloat FFloat)
-
-let double = mk (Tfloat FDouble)
-
-let int = mk (Tint IInt)
-
-let uint = mk (Tint IUInt)
-
-let long = mk (Tint ILong)
-
 let get_ikind_opt {desc} = match desc with Tint ikind -> Some ikind | _ -> None
 
 (* TODO: size_t should be implementation-dependent. *)
@@ -374,8 +344,6 @@ let to_string typ =
 module Name = struct
   type t = name [@@deriving compare, equal, yojson_of]
 
-  let equal = [%compare.equal: t]
-
   let hash = Hashtbl.hash
 
   let qual_name = function
@@ -455,16 +423,6 @@ module Name = struct
 
     let is_class = function JavaClass _ -> true | _ -> false
 
-    let java_io_serializable = from_string "java.io.Serializable"
-
-    let java_lang_class = from_string "java.lang.Class"
-
-    let java_lang_cloneable = from_string "java.lang.Cloneable"
-
-    let java_lang_object = from_string "java.lang.Object"
-
-    let java_lang_string = from_string "java.lang.String"
-
     let get_java_class_name_opt typename =
       match typename with JavaClass java_class_name -> Some java_class_name | _ -> None
 
@@ -526,9 +484,6 @@ module Name = struct
         |> QualifiedCppName.Set.of_list
       in
       function ObjcClass name -> not (QualifiedCppName.Set.mem name tagged_classes) | _ -> false
-
-
-    let objc_ns_enumerator = from_string "NSEnumerator"
   end
 
   module Set = PrettyPrintable.MakePPSet (struct
@@ -541,6 +496,20 @@ module Name = struct
     type nonrec t = t [@@deriving compare]
 
     let pp = pp
+  end)
+
+  module Normalizer = HashNormalizer.Make (struct
+    type nonrec t = t [@@deriving equal]
+
+    let hash = Hashtbl.hash
+
+    let normalize t =
+      match t with
+      | CStruct _ | CUnion _ | CppClass _ | ObjcClass _ | ObjcProtocol _ ->
+          t
+      | JavaClass java_class_name ->
+          let java_class_name' = JavaClassName.Normalizer.normalize java_class_name in
+          if phys_equal java_class_name java_class_name' then t else JavaClass java_class_name'
   end)
 end
 
@@ -620,8 +589,6 @@ let has_block_prefix s =
       false
 
 
-type typ = t
-
 let rec pp_java ~verbose f {desc} =
   let string_of_int = function
     | IInt ->
@@ -689,8 +656,51 @@ let rec is_java_type t =
       false
 
 
-let pointer_to_java_lang_object = mk_ptr (mk_struct Name.Java.java_lang_object)
+module TypeQualsNormalizer = HashNormalizer.Make (struct
+  type t = type_quals [@@deriving equal]
 
-let pointer_to_java_lang_string = mk_ptr (mk_struct Name.Java.java_lang_string)
+  let hash = Hashtbl.hash
 
-let pointer_to_objc_nszone = mk_ptr (mk_struct (CStruct (QualifiedCppName.of_qual_string "NSZone")))
+  let normalize = Fn.id
+end)
+
+module rec DescNormalizer : (HashNormalizer.S with type t = desc) = HashNormalizer.Make (struct
+  type t = desc [@@deriving equal]
+
+  let hash = Hashtbl.hash
+
+  let normalize t =
+    match t with
+    | Tint _ | Tfloat _ | Tvoid | Tfun ->
+        t
+    | Tstruct name ->
+        let name' = Name.Normalizer.normalize name in
+        if phys_equal name name' then t else Tstruct name'
+    | TVar str_var ->
+        let str_var' = HashNormalizer.StringNormalizer.normalize str_var in
+        if phys_equal str_var str_var' then t else TVar str_var'
+    | Tptr (pointed, ptr_kind) ->
+        let pointed' = Normalizer.normalize pointed in
+        if phys_equal pointed pointed' then t else Tptr (pointed', ptr_kind)
+    | Tarray {elt; length; stride} ->
+        let elt' = Normalizer.normalize elt in
+        if phys_equal elt elt' then t else Tarray {elt= elt'; length; stride}
+end)
+
+and Normalizer : (HashNormalizer.S with type t = t) = struct
+  include HashNormalizer.Make (struct
+    include T
+
+    let hash = Hashtbl.hash
+
+    let normalize t =
+      let quals = TypeQualsNormalizer.normalize t.quals in
+      let desc = DescNormalizer.normalize t.desc in
+      if phys_equal desc t.desc && phys_equal quals t.quals then t else {desc; quals}
+  end)
+
+  let reset () =
+    reset () ;
+    TypeQualsNormalizer.reset () ;
+    DescNormalizer.reset ()
+end

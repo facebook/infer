@@ -24,30 +24,25 @@ let post _ _ state = state
 let retn _ _ from_call post = Llair.Reg.Set.union from_call post
 let dnf t = [t]
 
-let add_if_global gs v =
-  if Llair.Reg.is_global v then Llair.Reg.Set.add gs v else gs
+let add_if_global v gs =
+  if Llair.Reg.is_global v then Llair.Reg.Set.add v gs else gs
 
-let used_globals ?(init = empty) exp =
-  Llair.Exp.fold_regs exp ~init ~f:add_if_global
+let used_globals exp s = Llair.Exp.fold_regs ~f:add_if_global exp s
+let exec_assume st exp = Some (used_globals exp st)
+let exec_kill _ st = st
 
-let exec_assume st exp = Some (used_globals ~init:st exp)
-let exec_kill st _ = st
+let exec_move reg_exps st =
+  IArray.fold ~f:(fun (_, rhs) -> used_globals rhs) reg_exps st
 
-let exec_move st reg_exps =
-  IArray.fold reg_exps ~init:st ~f:(fun st (_, rhs) ->
-      used_globals ~init:st rhs )
-
-let exec_inst st inst =
+let exec_inst inst st =
   [%Trace.call fun {pf} -> pf "pre:{%a} %a" pp st Llair.Inst.pp inst]
   ;
-  Some
-    (Llair.Inst.fold_exps inst ~init:st ~f:(fun acc e ->
-         used_globals ~init:acc e ))
+  Some (Llair.Inst.fold_exps ~f:used_globals inst st)
   |>
   [%Trace.retn fun {pf} ->
     Option.iter ~f:(fun uses -> pf "post:{%a}" pp uses)]
 
-let exec_intrinsic ~skip_throw:_ st _ intrinsic actuals =
+let exec_intrinsic ~skip_throw:_ _ intrinsic actuals st =
   let name = Llair.Reg.name intrinsic in
   if
     List.exists
@@ -72,9 +67,7 @@ let exec_intrinsic ~skip_throw:_ st _ intrinsic actuals =
       ; "__cxa_allocate_exception"
       ; "_ZN5folly13usingJEMallocEv" ]
       ~f:(String.equal name)
-  then
-    List.fold actuals ~init:st ~f:(fun s a -> used_globals ~init:s a)
-    |> fun res -> Some (Some res)
+  then List.fold ~f:used_globals actuals st |> fun res -> Some (Some res)
   else None
 
 type from_call = t [@@deriving sexp]
@@ -82,10 +75,10 @@ type from_call = t [@@deriving sexp]
 (* Set abstract state to bottom (i.e. empty set) at function entry *)
 let call ~summaries:_ ~globals:_ ~actuals ~areturn:_ ~formals:_ ~freturn:_
     ~locals:_ st =
-  (empty, List.fold actuals ~init:st ~f:(fun s a -> used_globals ~init:s a))
+  (empty, List.fold ~f:used_globals actuals st)
 
 let resolve_callee lookup ptr st =
-  let st = used_globals ~init:st ptr in
+  let st = used_globals ptr st in
   match Llair.Reg.of_exp ptr with
   | Some callee -> (lookup (Llair.Reg.name callee), st)
   | None -> ([], st)
@@ -111,7 +104,7 @@ let by_function : r -> Llair.Reg.t -> t =
   ( match s with
   | Declared set -> set
   | Per_function map -> (
-    match Llair.Reg.Map.find map fn with
+    match Llair.Reg.Map.find fn map with
     | Some gs -> gs
     | None ->
         fail

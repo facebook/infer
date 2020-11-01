@@ -5,17 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Ses
-
-(** Variables *)
-module Var : Var_intf.VAR
-
 (** Terms *)
 module rec Term : sig
   type t [@@deriving compare, equal, sexp]
 
   (* pretty-printing *)
-  val ppx : Var.t Var.strength -> t pp
+  val ppx : Var.strength -> t pp
   val pp : t pp
 
   module Map : Map.S with type key := t
@@ -51,7 +46,7 @@ module rec Term : sig
   val ancestor : int -> t
 
   (* uninterpreted *)
-  val apply : Funsym.t -> t array -> t
+  val apply : Ses.Funsym.t -> t array -> t
 
   (* if-then-else *)
   val ite : cnd:Formula.t -> thn:t -> els:t -> t
@@ -62,6 +57,8 @@ module rec Term : sig
 
   val get_const : t -> Q.t option
   (** [get_const a] is [Some q] iff [equal a (const q)] *)
+
+  val get_trm : t -> Trm.t option
 
   (** Access *)
 
@@ -76,27 +73,25 @@ module rec Term : sig
 
   (** Traverse *)
 
-  val fold_vars : init:'a -> t -> f:('a -> Var.t -> 'a) -> 'a
+  val vars : t -> Var.t iter
 
   (** Transform *)
 
-  val map_vars : f:(Var.t -> Var.t) -> t -> t
-
-  val fold_map_vars :
-    t -> init:'a -> f:('a -> Var.t -> 'a * Var.t) -> 'a * t
-
+  val map_vars : t -> f:(Var.t -> Var.t) -> t
+  val map_trms : t -> f:(Trm.t -> Trm.t) -> t
+  val fold_map_vars : t -> 's -> f:(Var.t -> 's -> Var.t * 's) -> t * 's
   val rename : Var.Subst.t -> t -> t
 end
 
 (** Formulas *)
 and Formula : sig
-  type t [@@deriving compare, equal, sexp]
+  type t = Fml.t [@@deriving compare, equal, sexp]
 
   val inject : t -> Term.t
   val project : Term.t -> t option
 
   (* pretty-printing *)
-  val ppx : Var.t Var.strength -> t pp
+  val ppx : Var.strength -> t pp
   val pp : t pp
 
   (** Construct *)
@@ -119,7 +114,7 @@ and Formula : sig
   val le : Term.t -> Term.t -> t
 
   (* uninterpreted *)
-  val lit : Predsym.t -> Term.t array -> t
+  val lit : Ses.Predsym.t -> Term.t array -> t
 
   (* connectives *)
   val not_ : t -> t
@@ -137,16 +132,13 @@ and Formula : sig
 
   (** Traverse *)
 
-  val fold_vars : init:'a -> t -> f:('a -> Var.t -> 'a) -> 'a
+  val vars : t -> Var.t iter
 
   (** Transform *)
 
   val map_terms : f:(Term.t -> Term.t) -> t -> t
-  val map_vars : f:(Var.t -> Var.t) -> t -> t
-
-  val fold_map_vars :
-    init:'a -> t -> f:('a -> Var.t -> 'a * Var.t) -> 'a * t
-
+  val map_vars : t -> f:(Var.t -> Var.t) -> t
+  val fold_map_vars : t -> 's -> f:(Var.t -> 's -> Var.t * 's) -> t * 's
   val rename : Var.Subst.t -> t -> t
 end
 
@@ -158,7 +150,7 @@ module Context : sig
   val pp : t pp
 
   val ppx_diff :
-    Var.t Var.strength -> Format.formatter -> t -> Formula.t -> t -> bool
+    Var.strength -> Format.formatter -> t -> Formula.t -> t -> bool
 
   include Invariant.S with type t := t
 
@@ -209,7 +201,7 @@ module Context : sig
   (** Equivalence class of [e]: all the terms [f] in the context such that
       [e = f] is implied by the assumptions. *)
 
-  val fold_vars : init:'a -> t -> f:('a -> Var.t -> 'a) -> 'a
+  val vars : t -> Var.t iter
   (** Enumerate the variables occurring in the terms of the context. *)
 
   val fv : t -> Var.Set.t
@@ -221,9 +213,7 @@ module Context : sig
 
     val pp : t pp
     val is_empty : t -> bool
-
-    val fold :
-      t -> init:'a -> f:(key:Term.t -> data:Term.t -> 'a -> 'a) -> 'a
+    val fold : t -> 's -> f:(key:Term.t -> data:Term.t -> 's -> 's) -> 's
 
     val subst : t -> Term.t -> Term.t
     (** Apply a substitution recursively to subterms. *)

@@ -37,3 +37,5 @@ val pp_file_pos : Format.formatter -> t -> unit
 val pp_range : Format.formatter -> t * t -> unit
 
 module Map : PrettyPrintable.PPMap with type key = t
+
+module Normalizer : HashNormalizer.S with type t = t

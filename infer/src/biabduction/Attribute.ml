@@ -365,7 +365,7 @@ let find_equal_formal_path tenv e prop =
                       | Predicates.Eexp (exp2, _) when Exp.equal exp2 e -> (
                         match find_in_sigma exp1 seen_hpreds with
                         | Some vfs ->
-                            Some (Exp.Lfield (vfs, field, Typ.void))
+                            Some (Exp.Lfield (vfs, field, StdTyp.void))
                         | None ->
                             None )
                       | _ ->

@@ -9,7 +9,7 @@ open! IStd
 
 let make_var var_str = Pvar.mk (Mangled.from_string var_str) Procname.empty_block
 
-let make_base ?(typ = Typ.void) base_str = AccessPath.base_of_pvar (make_var base_str) typ
+let make_base ?(typ = StdTyp.void) base_str = AccessPath.base_of_pvar (make_var base_str) typ
 
 let make_fieldname field_name =
   assert (not (String.contains field_name '.')) ;

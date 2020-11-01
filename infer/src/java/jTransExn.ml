@@ -84,7 +84,7 @@ let translate_exceptions (context : JContext.t) exit_nodes get_body_nodes handle
                 [ (Exp.Var id_exn_val, Typ.mk (Tptr (exn_type, Typ.Pk_pointer)))
                 ; ( Exp.Sizeof
                       {typ= exn_type; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
-                  , Typ.void ) ]
+                  , StdTyp.void ) ]
               in
               Sil.Call
                 ( (id_instanceof, Typ.mk (Tint IBool))

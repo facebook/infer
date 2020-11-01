@@ -188,7 +188,7 @@ module PulseTransferFunctions = struct
     let used_ids = Stack.keys astate |> List.filter_map ~f:(fun var -> Var.get_ident var) in
     Ident.update_name_generator used_ids ;
     let call_dealloc (astate_list : Domain.t list) (ret_id, id, typ, dealloc) =
-      let ret = (ret_id, Typ.void) in
+      let ret = (ret_id, StdTyp.void) in
       let call_flags = CallFlags.default in
       let call_exp = Exp.Const (Cfun dealloc) in
       let actuals = [(Exp.Var id, typ)] in

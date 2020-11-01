@@ -8,6 +8,29 @@ open! IStd
 
 type violation = {lhs: AnnotatedNullability.t; rhs: InferredNullability.t} [@@deriving compare]
 
+module ProvisionalViolation = struct
+  type t =
+    { fix_annotation: ProvisionalAnnotation.t option
+    ; offending_annotations: ProvisionalAnnotation.t list }
+
+  let offending_annotations {offending_annotations} = offending_annotations
+
+  let fix_annotation {fix_annotation} = fix_annotation
+
+  let from {lhs; rhs} =
+    let offending_annotations = InferredNullability.get_provisional_annotations rhs in
+    if List.is_empty offending_annotations then None
+    else
+      let fix_annotation =
+        match lhs with
+        | AnnotatedNullability.ProvisionallyNullable annotation ->
+            Some annotation
+        | _ ->
+            None
+      in
+      Some {offending_annotations; fix_annotation}
+end
+
 module ReportableViolation = struct
   type t = {nullsafe_mode: NullsafeMode.t; violation: violation}
 
@@ -138,6 +161,8 @@ module ReportableViolation = struct
         in
         make_issue_factory ~description ~issue_type
         |> NullsafeIssue.with_third_party_dependent_methods [(procname, annotated_signature)]
+    (* Equivalent to non-null from user point of view *)
+    | Nullability.ProvisionallyNullable
     | Nullability.LocallyCheckedNonnull
     | Nullability.LocallyTrustedNonnull
     | Nullability.UncheckedNonnull
@@ -218,7 +243,7 @@ module ReportableViolation = struct
 
 
   let make_nullsafe_issue ~assignment_location assignment_type {nullsafe_mode; violation= {rhs}} =
-    let rhs_origin = InferredNullability.get_origin rhs in
+    let rhs_origin = InferredNullability.get_simple_origin rhs in
     let user_friendly_nullable =
       ErrorRenderingUtils.UserFriendlyNullable.from_nullability
         (InferredNullability.get_nullability rhs)

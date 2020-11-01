@@ -64,3 +64,5 @@ val has_extension : t -> ext:string -> bool
 (** returns whether the source file has provided extension *)
 
 module SQLite : SqliteUtils.Data with type t = t
+
+module Normalizer : HashNormalizer.S with type t = t

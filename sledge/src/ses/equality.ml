@@ -25,9 +25,9 @@ let interpreted e = equal_kind (classify e) Interpreted
 let non_interpreted e = not (interpreted e)
 let uninterpreted e = equal_kind (classify e) Uninterpreted
 
-let rec fold_max_solvables e ~init ~f =
-  if non_interpreted e then f e init
-  else Term.fold e ~init ~f:(fun d s -> fold_max_solvables ~f d ~init:s)
+let rec fold_max_solvables e s ~f =
+  if non_interpreted e then f e s
+  else Term.fold ~f:(fold_max_solvables ~f) e s
 
 (** Solution Substitutions *)
 module Subst : sig
@@ -38,9 +38,9 @@ module Subst : sig
   val empty : t
   val is_empty : t -> bool
   val length : t -> int
-  val mem : t -> Term.t -> bool
-  val find : t -> Term.t -> Term.t option
-  val fold : t -> init:'a -> f:(key:Term.t -> data:Term.t -> 'a -> 'a) -> 'a
+  val mem : Term.t -> t -> bool
+  val find : Term.t -> t -> Term.t option
+  val fold : t -> 's -> f:(key:Term.t -> data:Term.t -> 's -> 's) -> 's
   val iteri : t -> f:(key:Term.t -> data:Term.t -> unit) -> unit
   val for_alli : t -> f:(key:Term.t -> data:Term.t -> bool) -> bool
   val apply : t -> Term.t -> Term.t
@@ -51,17 +51,14 @@ module Subst : sig
   val extend : Term.t -> t -> t option
   val remove : Var.Set.t -> t -> t
   val map_entries : f:(Term.t -> Term.t) -> t -> t
-  val to_alist : t -> (Term.t * Term.t) list
+  val to_iter : t -> (Term.t * Term.t) iter
   val partition_valid : Var.Set.t -> t -> t * Var.Set.t * t
 end = struct
   type t = Term.t Term.Map.t [@@deriving compare, equal, sexp_of]
 
   let t_of_sexp = Term.Map.t_of_sexp Term.t_of_sexp
   let pp = Term.Map.pp Term.pp Term.pp
-
-  let pp_diff =
-    Term.Map.pp_diff ~data_equal:Term.equal Term.pp Term.pp Term.pp_diff
-
+  let pp_diff = Term.Map.pp_diff ~eq:Term.equal Term.pp Term.pp Term.pp_diff
   let empty = Term.Map.empty
   let is_empty = Term.Map.is_empty
   let length = Term.Map.length
@@ -70,10 +67,10 @@ end = struct
   let fold = Term.Map.fold
   let iteri = Term.Map.iteri
   let for_alli = Term.Map.for_alli
-  let to_alist = Term.Map.to_alist ~key_order:`Increasing
+  let to_iter = Term.Map.to_iter
 
   (** look up a term in a substitution *)
-  let apply s a = Term.Map.find s a |> Option.value ~default:a
+  let apply s a = Term.Map.find a s |> Option.value ~default:a
 
   let rec subst s a = apply s (Term.map ~f:(subst s) a)
 
@@ -86,7 +83,7 @@ end = struct
     [%Trace.call fun {pf} -> pf "%a@ %a" pp r pp s]
     ;
     let r' = Term.Map.map_endo ~f:(norm s) r in
-    Term.Map.merge_endo r' s ~f:(fun ~key -> function
+    Term.Map.merge_endo r' s ~f:(fun key -> function
       | `Both (data_r, data_s) ->
           assert (
             Term.equal data_s data_r
@@ -110,7 +107,7 @@ end = struct
   let extend e s =
     let exception Found in
     match
-      Term.Map.update s e ~f:(function
+      Term.Map.update e s ~f:(function
         | Some _ -> raise_notrace Found
         | None -> e )
     with
@@ -119,20 +116,20 @@ end = struct
 
   (** remove entries for vars *)
   let remove xs s =
-    Var.Set.fold ~f:(fun s x -> Term.Map.remove s (Term.var x)) ~init:s xs
+    Var.Set.fold ~f:(fun x -> Term.Map.remove (Term.var x)) xs s
 
   (** map over a subst, applying [f] to both domain and range, requires that
       [f] is injective and for any set of terms [E], [f\[E\]] is disjoint
       from [E] *)
   let map_entries ~f s =
-    Term.Map.fold s ~init:s ~f:(fun ~key ~data s ->
+    Term.Map.fold s s ~f:(fun ~key ~data s ->
         let key' = f key in
         let data' = f data in
         if Term.equal key' key then
           if Term.equal data' data then s
-          else Term.Map.set s ~key ~data:data'
+          else Term.Map.add ~key ~data:data' s
         else
-          let s = Term.Map.remove s key in
+          let s = Term.Map.remove key s in
           match (key : Term.t) with
           | Integer _ | Rational _ -> s
           | _ -> Term.Map.add_exn ~key:key' ~data:data' s )
@@ -142,7 +139,7 @@ end = struct
       [ys ⊆ xs]. *)
   let is_valid_eq xs e f =
     let is_var_in xs e =
-      Option.exists ~f:(Var.Set.mem xs) (Var.of_term e)
+      Option.exists ~f:(fun x -> Var.Set.mem x xs) (Var.of_term e)
     in
     ( is_var_in xs e
     || is_var_in xs f
@@ -162,13 +159,13 @@ end = struct
        valid, so loop until no change. *)
     let rec partition_valid_ t ks s =
       let t', ks', s' =
-        Term.Map.fold s ~init:(t, ks, s) ~f:(fun ~key ~data (t, ks, s) ->
+        Term.Map.fold s (t, ks, s) ~f:(fun ~key ~data (t, ks, s) ->
             if is_valid_eq ks key data then (t, ks, s)
             else
-              let t = Term.Map.set ~key ~data t
+              let t = Term.Map.add ~key ~data t
               and ks =
                 Var.Set.diff ks (Var.Set.union (Term.fv key) (Term.fv data))
-              and s = Term.Map.remove s key in
+              and s = Term.Map.remove key s in
               (t, ks, s) )
       in
       if s' != s then partition_valid_ t' ks' s' else (t', ks', s')
@@ -215,7 +212,7 @@ let compose1 ?f ~var ~rep (us, xs, s) =
 
 let fresh name (us, xs, s) =
   let x, us = Var.fresh name ~wrt:us in
-  let xs = Var.Set.add xs x in
+  let xs = Var.Set.add x xs in
   (Term.var x, (us, xs, s))
 
 let solve_poly ?f p q s =
@@ -247,13 +244,13 @@ let rec solve_extract ?f a o l b s =
 (* α₀^…^αᵢ^αⱼ^…^αᵥ = β ==> |α₀^…^αᵥ| = |β| ∧ … ∧ αⱼ = β[n₀+…+nᵢ,nⱼ) ∧ …
    where nₓ ≡ |αₓ| and m = |β| *)
 and solve_concat ?f a0V b m s =
-  IArray.fold_until a0V ~init:(s, Term.zero)
-    ~f:(fun (s, oI) aJ ->
+  Iter.fold_until (IArray.to_iter a0V) (s, Term.zero)
+    ~f:(fun aJ (s, oI) ->
       let nJ = Term.seq_size_exn aJ in
       let oJ = Term.add oI nJ in
       match solve_ ?f aJ (Term.extract ~seq:b ~off:oI ~len:nJ) s with
-      | Some s -> Continue (s, oJ)
-      | None -> Stop None )
+      | Some s -> `Continue (s, oJ)
+      | None -> `Stop None )
     ~finish:(fun (s, n0V) -> solve_ ?f n0V m s)
 
 and solve_ ?f d e s =
@@ -283,14 +280,14 @@ and solve_ ?f d e s =
       | Some m -> solve_ ?f n m s )
       >>= solve_ ?f a b
   | Some ((Var _ as v), (Ap3 (Extract, _, _, l) as e)) ->
-      if not (Var.Set.mem (Term.fv e) (Var.of_ v)) then
+      if not (Var.Set.mem (Var.of_ v) (Term.fv e)) then
         (* v = α[o,l) ==> v ↦ α[o,l) when v ∉ fv(α[o,l)) *)
         compose1 ?f ~var:v ~rep:e s
       else
         (* v = α[o,l) ==> α[o,l) ↦ ⟨l,v⟩ when v ∈ fv(α[o,l)) *)
         compose1 ?f ~var:e ~rep:(Term.sized ~siz:l ~seq:v) s
   | Some ((Var _ as v), (ApN (Concat, a0V) as c)) ->
-      if not (Var.Set.mem (Term.fv c) (Var.of_ v)) then
+      if not (Var.Set.mem (Var.of_ v) (Term.fv c)) then
         (* v = α₀^…^αᵥ ==> v ↦ α₀^…^αᵥ when v ∉ fv(α₀^…^αᵥ) *)
         compose1 ?f ~var:v ~rep:c s
       else
@@ -320,7 +317,7 @@ and solve_ ?f d e s =
 let solve ?f ~us ~xs d e =
   [%Trace.call fun {pf} -> pf "%a@ %a" Term.pp d Term.pp e]
   ;
-  (solve_ ?f d e (us, xs, Subst.empty) >|= fun (_, xs, s) -> (xs, s))
+  (solve_ ?f d e (us, xs, Subst.empty) |>= fun (_, xs, s) -> (xs, s))
   |>
   [%Trace.retn fun {pf} ->
     function
@@ -345,16 +342,16 @@ type classes = Term.t list Term.Map.t
 let classes r =
   let add key data cls =
     if Term.equal key data then cls
-    else Term.Map.add_multi cls ~key:data ~data:key
+    else Term.Map.add_multi ~key:data ~data:key cls
   in
-  Subst.fold r.rep ~init:Term.Map.empty ~f:(fun ~key ~data cls ->
+  Subst.fold r.rep Term.Map.empty ~f:(fun ~key ~data cls ->
       match classify key with
       | Interpreted | Atomic -> add key data cls
       | Uninterpreted -> add (Term.map ~f:(Subst.apply r.rep) key) data cls )
 
 let cls_of r e =
   let e' = Subst.apply r.rep e in
-  Term.Map.find (classes r) e' |> Option.value ~default:[e']
+  Term.Map.find e' (classes r) |> Option.value ~default:[e']
 
 (** Pretty-printing *)
 
@@ -368,7 +365,7 @@ let pp fs {sat; rep} =
   let pp_term_v fs (k, v) = if not (Term.equal k v) then Term.pp fs v in
   Format.fprintf fs "@[{@[<hv>sat= %b;@ rep= %a@]}@]" sat
     (pp_alist Term.pp pp_term_v)
-    (Subst.to_alist rep)
+    (Iter.to_list (Subst.to_iter rep))
 
 let pp_diff fs (r, s) =
   let pp_sat fs =
@@ -390,18 +387,18 @@ let ppx_classes x fs clss =
     (fun fs (rep, cls) ->
       Format.fprintf fs "@[%a@ = %a@]" (Term.ppx x) rep (ppx_cls x)
         (List.sort ~cmp:Term.compare cls) )
-    fs (Term.Map.to_alist clss)
+    fs
+    (Iter.to_list (Term.Map.to_iter clss))
 
 let pp_classes fs r = ppx_classes (fun _ -> None) fs (classes r)
 
 let pp_diff_clss =
-  Term.Map.pp_diff ~data_equal:(List.equal Term.equal) Term.pp pp_cls
-    pp_diff_cls
+  Term.Map.pp_diff ~eq:(List.equal Term.equal) Term.pp pp_cls pp_diff_cls
 
 (** Basic queries *)
 
 (** test membership in carrier *)
-let in_car r e = Subst.mem r.rep e
+let in_car r e = Subst.mem e r.rep
 
 (** congruent specialized to assume subterms of [a'] are [Subst.norm]alized
     wrt [r] (or canonized) *)
@@ -453,10 +450,9 @@ let false_ = {true_ with sat= false}
 let lookup r a =
   ([%Trace.call fun {pf} -> pf "%a" Term.pp a]
   ;
-  let@ {return} = With_return.with_return in
-  Subst.iteri r.rep ~f:(fun ~key:b ~data:b' ->
-      if semi_congruent r a b then return b' ) ;
-  a)
+  Iter.find_map (Subst.to_iter r.rep) ~f:(fun (b, b') ->
+      Option.return_if (semi_congruent r a b) b' )
+  |> Option.value ~default:a)
   |>
   [%Trace.retn fun {pf} -> pf "%a" Term.pp]
 
@@ -481,12 +477,12 @@ let rec extend_ a r =
   match (a : Term.t) with
   | Integer _ | Rational _ -> r
   | _ -> (
-      if interpreted a then Term.fold ~f:extend_ a ~init:r
+      if interpreted a then Term.fold ~f:extend_ a r
       else
         (* add uninterpreted terms *)
         match Subst.extend a r with
         (* and their subterms if newly added *)
-        | Some r -> Term.fold ~f:extend_ a ~init:r
+        | Some r -> Term.fold ~f:extend_ a r
         | None -> r )
 
 (** add a term to the carrier *)
@@ -508,20 +504,19 @@ let merge us a b r =
 
 (** find an unproved equation between congruent terms *)
 let find_missing r =
-  let@ {return} = With_return.with_return in
-  Subst.iteri r.rep ~f:(fun ~key:a ~data:a' ->
+  Iter.find_map (Subst.to_iter r.rep) ~f:(fun (a, a') ->
       let a_subnorm = Term.map ~f:(Subst.norm r.rep) a in
-      Subst.iteri r.rep ~f:(fun ~key:b ~data:b' ->
-          if
+      Iter.find_map (Subst.to_iter r.rep) ~f:(fun (b, b') ->
+          (* need to equate a' and b'? *)
+          let need_a'_eq_b' =
             (* optimize: do not consider both a = b and b = a *)
             Term.compare a b < 0
             (* a and b are not already equal *)
             && (not (Term.equal a' b'))
             (* a and b are congruent *)
             && semi_congruent r a_subnorm b
-          then (* need to equate a' and b' *)
-            return (Some (a', b')) ) ) ;
-  None
+          in
+          Option.return_if need_a'_eq_b' (a', b') ) )
 
 let rec close us r =
   if not r.sat then r
@@ -575,28 +570,24 @@ let normalize = canon
 
 let class_of r e =
   let e' = normalize r e in
-  e' :: Term.Map.find_multi (classes r) e'
+  e' :: Term.Map.find_multi e' (classes r)
 
-let fold_uses_of r t ~init ~f =
-  let rec fold_ e ~init:s ~f =
+let fold_uses_of r t s ~f =
+  let rec fold_ e s ~f =
     let s =
-      Term.fold e ~init:s ~f:(fun sub s ->
-          if Term.equal t sub then f s e else s )
+      Term.fold e s ~f:(fun sub s -> if Term.equal t sub then f s e else s)
     in
-    if interpreted e then
-      Term.fold e ~init:s ~f:(fun d s -> fold_ ~f d ~init:s)
-    else s
+    if interpreted e then Term.fold ~f:(fold_ ~f) e s else s
   in
-  Subst.fold r.rep ~init ~f:(fun ~key:trm ~data:rep s ->
-      let f trm s = fold_ trm ~init:s ~f in
-      f trm (f rep s) )
+  Subst.fold r.rep s ~f:(fun ~key:trm ~data:rep s ->
+      fold_ ~f trm (fold_ ~f rep s) )
 
 let apply_subst us s r =
   [%Trace.call fun {pf} -> pf "%a@ %a" Subst.pp s pp r]
   ;
-  Term.Map.fold (classes r) ~init:true_ ~f:(fun ~key:rep ~data:cls r ->
+  Term.Map.fold (classes r) true_ ~f:(fun ~key:rep ~data:cls r ->
       let rep' = Subst.subst s rep in
-      List.fold cls ~init:r ~f:(fun r trm ->
+      List.fold cls r ~f:(fun trm r ->
           let trm' = Subst.subst s trm in
           and_eq_ us trm' rep' r ) )
   |> extract_xs
@@ -614,8 +605,7 @@ let and_ us r s =
     let s, r =
       if Subst.length s.rep <= Subst.length r.rep then (s, r) else (r, s)
     in
-    Subst.fold s.rep ~init:r ~f:(fun ~key:e ~data:e' r -> and_eq_ us e e' r)
-  )
+    Subst.fold s.rep r ~f:(fun ~key:e ~data:e' r -> and_eq_ us e e' r) )
   |> extract_xs
   |>
   [%Trace.retn fun {pf} (_, r') ->
@@ -629,10 +619,10 @@ let or_ us r s =
   else if not r.sat then s
   else
     let merge_mems rs r s =
-      Term.Map.fold (classes s) ~init:rs ~f:(fun ~key:rep ~data:cls rs ->
+      Term.Map.fold (classes s) rs ~f:(fun ~key:rep ~data:cls rs ->
           List.fold cls
-            ~init:([rep], rs)
-            ~f:(fun (reps, rs) exp ->
+            ([rep], rs)
+            ~f:(fun exp (reps, rs) ->
               match
                 List.find ~f:(fun rep -> implies r (Term.eq exp rep)) reps
               with
@@ -653,13 +643,13 @@ let or_ us r s =
 let orN us rs =
   match rs with
   | [] -> (us, false_)
-  | r :: rs -> List.fold ~f:(fun (us, s) r -> or_ us s r) ~init:(us, r) rs
+  | r :: rs -> List.fold ~f:(fun r (us, s) -> or_ us s r) rs (us, r)
 
 let rec and_term_ us e r =
   let eq_false b r = and_eq_ us b Term.false_ r in
   match (e : Term.t) with
   | Integer {data} -> if Z.is_false data then false_ else r
-  | And cs -> Term.Set.fold cs ~init:r ~f:(fun r e -> and_term_ us e r)
+  | And cs -> Term.Set.fold ~f:(and_term_ us) cs r
   | Ap2 (Eq, a, b) -> and_eq_ us a b r
   | Ap2 (Xor, Integer {data}, a) when Z.is_true data -> eq_false a r
   | Ap2 (Xor, a, Integer {data}) when Z.is_true data -> eq_false a r
@@ -693,11 +683,10 @@ let rename r sub =
     pf "%a" pp_diff (r, r') ;
     invariant r']
 
-let fold_terms r ~init ~f =
-  Subst.fold r.rep ~f:(fun ~key ~data z -> f (f z data) key) ~init
+let fold_terms r z ~f =
+  Subst.fold ~f:(fun ~key ~data z -> f key (f data z)) r.rep z
 
-let fold_vars r ~init ~f =
-  fold_terms r ~init ~f:(fun init -> Term.fold_vars ~f ~init)
+let fold_vars r z ~f = fold_terms ~f:(Term.fold_vars ~f) r z
 
 (** Existential Witnessing and Elimination *)
 
@@ -707,12 +696,12 @@ let subst_invariant us s0 s =
     Subst.iteri s ~f:(fun ~key ~data ->
         (* dom of new entries not ito us *)
         assert (
-          Option.for_all ~f:(Term.equal data) (Subst.find s0 key)
-          || not (Var.Set.is_subset (Term.fv key) ~of_:us) ) ;
+          Option.for_all ~f:(Term.equal data) (Subst.find key s0)
+          || not (Var.Set.subset (Term.fv key) ~of_:us) ) ;
         (* rep not ito us implies trm not ito us *)
         assert (
-          Var.Set.is_subset (Term.fv data) ~of_:us
-          || not (Var.Set.is_subset (Term.fv key) ~of_:us) ) ) ;
+          Var.Set.subset (Term.fv data) ~of_:us
+          || not (Var.Set.subset (Term.fv key) ~of_:us) ) ) ;
     true )
 
 type 'a zom = Zero | One of 'a | Many
@@ -726,9 +715,9 @@ let solve_poly_eq us p' q' subst =
   ;
   let diff = Term.sub p' q' in
   let max_solvables_not_ito_us =
-    fold_max_solvables diff ~init:Zero ~f:(fun solvable_subterm -> function
+    fold_max_solvables diff Zero ~f:(fun solvable_subterm -> function
       | Many -> Many
-      | zom when Var.Set.is_subset (Term.fv solvable_subterm) ~of_:us -> zom
+      | zom when Var.Set.subset (Term.fv solvable_subterm) ~of_:us -> zom
       | One _ -> Many
       | Zero -> One solvable_subterm )
   in
@@ -745,8 +734,8 @@ let solve_seq_eq us e' f' subst =
   [%Trace.call fun {pf} -> pf "%a = %a" Term.pp e' Term.pp f']
   ;
   let f x u =
-    (not (Var.Set.is_subset (Term.fv x) ~of_:us))
-    && Var.Set.is_subset (Term.fv u) ~of_:us
+    (not (Var.Set.subset (Term.fv x) ~of_:us))
+    && Var.Set.subset (Term.fv u) ~of_:us
   in
   let solve_concat ms n a =
     let a, n =
@@ -838,9 +827,9 @@ let solve_uninterp_eqs us (cls, subst) =
     [%compare: kind * Term.t] (classify e, e) (classify f, f)
   in
   let {rep_us; cls_us; rep_xs; cls_xs} =
-    List.fold cls ~init:{rep_us= None; cls_us= []; rep_xs= None; cls_xs= []}
-      ~f:(fun ({rep_us; cls_us; rep_xs; cls_xs} as s) trm ->
-        if Var.Set.is_subset (Term.fv trm) ~of_:us then
+    List.fold cls {rep_us= None; cls_us= []; rep_xs= None; cls_xs= []}
+      ~f:(fun trm ({rep_us; cls_us; rep_xs; cls_xs} as s) ->
+        if Var.Set.subset (Term.fv trm) ~of_:us then
           match rep_us with
           | Some rep when compare rep trm <= 0 ->
               {s with cls_us= trm :: cls_us}
@@ -872,7 +861,7 @@ let solve_uninterp_eqs us (cls, subst) =
         | None -> (cls, cls_xs)
       in
       let subst =
-        List.fold cls_xs ~init:subst ~f:(fun subst trm_xs ->
+        List.fold cls_xs subst ~f:(fun trm_xs subst ->
             Subst.compose1 ~key:trm_xs ~data:rep_us subst )
       in
       (cls, subst)
@@ -881,7 +870,7 @@ let solve_uninterp_eqs us (cls, subst) =
     | Some rep_xs ->
         let cls = rep_xs :: cls_us in
         let subst =
-          List.fold cls_xs ~init:subst ~f:(fun subst trm_xs ->
+          List.fold cls_xs subst ~f:(fun trm_xs subst ->
               Subst.compose1 ~key:trm_xs ~data:rep_xs subst )
         in
         (cls, subst)
@@ -904,7 +893,7 @@ let solve_class us us_xs ~key:rep ~data:cls (classes, subst) =
   ;
   let cls, cls_not_ito_us_xs =
     List.partition
-      ~f:(fun e -> Var.Set.is_subset (Term.fv e) ~of_:us_xs)
+      ~f:(fun e -> Var.Set.subset (Term.fv e) ~of_:us_xs)
       (rep :: cls)
   in
   let cls, subst = solve_interp_eqs us (cls, subst) in
@@ -912,8 +901,8 @@ let solve_class us us_xs ~key:rep ~data:cls (classes, subst) =
   let cls = List.rev_append cls_not_ito_us_xs cls in
   let cls = List.remove ~eq:Term.equal (Subst.norm subst rep) cls in
   let classes =
-    if List.is_empty cls then Term.Map.remove classes rep
-    else Term.Map.set classes ~key:rep ~data:cls
+    if List.is_empty cls then Term.Map.remove rep classes
+    else Term.Map.add ~key:rep ~data:cls classes
   in
   (classes, subst)
   |>
@@ -925,9 +914,9 @@ let solve_concat_extracts_eq r x =
   [%Trace.call fun {pf} -> pf "%a@ %a" Term.pp x pp r]
   ;
   let uses =
-    fold_uses_of r x ~init:[] ~f:(fun uses -> function
+    fold_uses_of r x [] ~f:(fun uses -> function
       | Ap2 (Sized, _, _) as m ->
-          fold_uses_of r m ~init:uses ~f:(fun uses -> function
+          fold_uses_of r m uses ~f:(fun uses -> function
             | Ap3 (Extract, _, _, _) as e -> e :: uses | _ -> uses )
       | _ -> uses )
   in
@@ -938,8 +927,8 @@ let solve_concat_extracts_eq r x =
         | _ -> false )
   in
   let rec find_extracts full_rev_extracts rev_prefix off =
-    List.fold (find_extracts_at_off off) ~init:full_rev_extracts
-      ~f:(fun full_rev_extracts e ->
+    List.fold (find_extracts_at_off off) full_rev_extracts
+      ~f:(fun e full_rev_extracts ->
         match e with
         | Ap3 (Extract, Ap2 (Sized, n, _), o, l) ->
             let o_l = Term.add o l in
@@ -956,14 +945,12 @@ let solve_concat_extracts_eq r x =
 let solve_concat_extracts r us x (classes, subst, us_xs) =
   match
     List.filter_map (solve_concat_extracts_eq r x) ~f:(fun rev_extracts ->
-        Iter.fold_opt (Iter.of_list rev_extracts) ~init:[]
-          ~f:(fun suffix e ->
+        Iter.fold_opt (Iter.of_list rev_extracts) [] ~f:(fun e suffix ->
             let+ rep_ito_us =
-              List.fold (cls_of r e) ~init:None ~f:(fun rep_ito_us trm ->
+              List.fold (cls_of r e) None ~f:(fun trm rep_ito_us ->
                   match rep_ito_us with
                   | Some rep when Term.compare rep trm <= 0 -> rep_ito_us
-                  | _ when Var.Set.is_subset (Term.fv trm) ~of_:us ->
-                      Some trm
+                  | _ when Var.Set.subset (Term.fv trm) ~of_:us -> Some trm
                   | _ -> rep_ito_us )
             in
             Term.sized ~siz:(Term.seq_size_exn e) ~seq:rep_ito_us :: suffix ) )
@@ -976,24 +963,22 @@ let solve_concat_extracts r us x (classes, subst, us_xs) =
       (classes, subst, us_xs)
   | None -> (classes, subst, us_xs)
 
-let solve_for_xs r us xs (classes, subst, us_xs) =
-  Var.Set.fold xs ~init:(classes, subst, us_xs)
-    ~f:(fun (classes, subst, us_xs) x ->
+let solve_for_xs r us xs =
+  Var.Set.fold xs ~f:(fun x (classes, subst, us_xs) ->
       let x = Term.var x in
-      if Subst.mem subst x then (classes, subst, us_xs)
+      if Subst.mem x subst then (classes, subst, us_xs)
       else solve_concat_extracts r us x (classes, subst, us_xs) )
 
 (** move equations from [classes] to [subst] which can be expressed, after
     normalizing with [subst], as [x ↦ u] where [us ∪ xs ⊇ fv x ⊈ us]
     and [fv u ⊆ us] or else [fv u ⊆ us ∪ xs]. *)
-let solve_classes r (classes, subst, us) xs =
+let solve_classes r xs (classes, subst, us) =
   [%Trace.call fun {pf} ->
     pf "us: {@[%a@]}@ xs: {@[%a@]}" Var.Set.pp us Var.Set.pp xs]
   ;
   let rec solve_classes_ (classes0, subst0, us_xs) =
     let classes, subst =
-      Term.Map.fold ~f:(solve_class us us_xs) classes0
-        ~init:(classes0, subst0)
+      Term.Map.fold ~f:(solve_class us us_xs) classes0 (classes0, subst0)
     in
     if subst != subst0 then solve_classes_ (classes, subst, us_xs)
     else (classes, subst, us_xs)
@@ -1024,8 +1009,7 @@ let solve_for_vars vss r =
   let us, vss =
     match vss with us :: vss -> (us, vss) | [] -> (Var.Set.empty, vss)
   in
-  List.fold ~f:(solve_classes r) ~init:(classes r, Subst.empty, us) vss
-  |> snd3
+  List.fold ~f:(solve_classes r) vss (classes r, Subst.empty, us) |> snd3
   |>
   [%Trace.retn fun {pf} subst ->
     pf "%a" Subst.pp subst ;
@@ -1035,16 +1019,16 @@ let solve_for_vars vss r =
           || fail "@[%a@ = %a@ not entailed by@ @[%a@]@]" Term.pp key
                Term.pp data pp_classes r () ) ;
         assert (
-          Iter.fold_until (Iter.of_list vss) ~init:us
-            ~f:(fun us xs ->
+          Iter.fold_until (Iter.of_list vss) us
+            ~f:(fun xs us ->
               let us_xs = Var.Set.union us xs in
               let ks = Term.fv key in
               let ds = Term.fv data in
               if
-                Var.Set.is_subset ks ~of_:us_xs
-                && Var.Set.is_subset ds ~of_:us_xs
-                && ( Var.Set.is_subset ds ~of_:us
-                   || not (Var.Set.is_subset ks ~of_:us) )
+                Var.Set.subset ks ~of_:us_xs
+                && Var.Set.subset ds ~of_:us_xs
+                && ( Var.Set.subset ds ~of_:us
+                   || not (Var.Set.subset ks ~of_:us) )
               then `Stop true
               else `Continue us_xs )
             ~finish:(fun _ -> false) ) )]

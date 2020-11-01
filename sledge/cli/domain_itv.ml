@@ -27,11 +27,11 @@ let bindings (itv : t) =
   let vars =
     Environment.vars box.box1_env |> fun (i, r) -> Array.append i r
   in
-  Array.zip_exn vars box.interval_array
+  Array.combine_exn vars box.interval_array
 
 let sexp_of_t (itv : t) =
   let sexps =
-    Array.fold (bindings itv) ~init:[] ~f:(fun acc (v, {inf; sup}) ->
+    Array.fold_right (bindings itv) [] ~f:(fun (v, {inf; sup}) acc ->
         Sexp.List
           [ Sexp.Atom (Var.to_string v)
           ; Sexp.Atom (Scalar.to_string inf)
@@ -166,39 +166,39 @@ let exec_assume q e =
   | _ -> Some q
 
 (** existentially quantify killed register [r] out of state [q] *)
-let exec_kill q r =
+let exec_kill r q =
   let apron_v = apron_var_of_reg r in
   if Environment.mem_var (Abstract1.env q) apron_v then
     Abstract1.forget_array (Lazy.force man) q [|apron_v|] false
   else q
 
 (** perform a series [move_vec] of reg:=exp moves at state [q] *)
-let exec_move q move_vec =
+let exec_move move_vec q =
   let defs, uses =
-    IArray.fold move_vec ~init:(Llair.Reg.Set.empty, Llair.Reg.Set.empty)
-      ~f:(fun (defs, uses) (r, e) ->
-        ( Llair.Reg.Set.add defs r
-        , Llair.Exp.fold_regs e ~init:uses ~f:Llair.Reg.Set.add ) )
+    IArray.fold move_vec (Llair.Reg.Set.empty, Llair.Reg.Set.empty)
+      ~f:(fun (r, e) (defs, uses) ->
+        ( Llair.Reg.Set.add r defs
+        , Llair.Exp.fold_regs ~f:Llair.Reg.Set.add e uses ) )
   in
   assert (Llair.Reg.Set.disjoint defs uses) ;
-  IArray.fold move_vec ~init:q ~f:(fun a (r, e) -> assign r e a)
+  IArray.fold ~f:(fun (r, e) q -> assign r e q) move_vec q
 
-let exec_inst q i =
+let exec_inst i q =
   match (i : Llair.inst) with
-  | Move {reg_exps; loc= _} -> Some (exec_move q reg_exps)
+  | Move {reg_exps; loc= _} -> Some (exec_move reg_exps q)
   | Store {ptr; exp; len= _; loc= _} -> (
     match Llair.Reg.of_exp ptr with
     | Some reg -> Some (assign reg exp q)
     | None -> Some q )
   | Load {reg; ptr; len= _; loc= _} -> Some (assign reg ptr q)
-  | Nondet {reg= Some reg; msg= _; loc= _} -> Some (exec_kill q reg)
+  | Nondet {reg= Some reg; msg= _; loc= _} -> Some (exec_kill reg q)
   | Nondet {reg= None; msg= _; loc= _}
    |Alloc _ | Memset _ | Memcpy _ | Memmov _ | Free _ ->
       Some q
   | Abort _ -> None
 
 (** Treat any intrinsic function as havoc on the return register [aret] *)
-let exec_intrinsic ~skip_throw:_ pre aret i _ =
+let exec_intrinsic ~skip_throw:_ aret i _ pre =
   let name = Llair.Reg.name i in
   if
     List.exists
@@ -223,7 +223,9 @@ let exec_intrinsic ~skip_throw:_ pre aret i _ =
       ; "__cxa_allocate_exception"
       ; "_ZN5folly13usingJEMallocEv" ]
       ~f:(String.equal name)
-  then Option.map ~f:(Option.return << exec_kill pre) aret
+  then
+    let+ aret = aret in
+    Some (exec_kill aret pre)
   else None
 
 type from_call = {areturn: Llair.Reg.t option; caller_q: t}
@@ -234,7 +236,7 @@ let recursion_beyond_bound = `prune
 (** existentially quantify locals *)
 let post locals _ (q : t) =
   let locals =
-    Llair.Reg.Set.fold locals ~init:[] ~f:(fun a r ->
+    Llair.Reg.Set.fold locals [] ~f:(fun r a ->
         let v = apron_var_of_reg r in
         if Environment.mem_var q.env v then v :: a else a )
     |> Array.of_list
@@ -263,7 +265,7 @@ let retn _ freturn {areturn; caller_q} callee_q =
       Abstract1.rename_array man result
         [|apron_var_of_reg fret|]
         [|apron_var_of_reg aret|]
-  | Some aret, None -> exec_kill caller_q aret
+  | Some aret, None -> exec_kill aret caller_q
   | None, _ -> caller_q
 
 (** map actuals to formals (via temporary registers), stash constraints on
@@ -279,11 +281,9 @@ let call ~summaries ~globals:_ ~actuals ~areturn ~formals ~freturn:_
       Llair.Reg.program (Llair.Reg.typ r) ("__tmp__" ^ Llair.Reg.name r)
     in
     let args = List.combine_exn formals actuals in
-    let q' =
-      List.fold args ~init:q ~f:(fun q (f, a) -> assign (mangle f) a q)
-    in
+    let q' = List.fold ~f:(fun (f, a) q -> assign (mangle f) a q) args q in
     let callee_env =
-      List.fold formals ~init:([], []) ~f:(fun (is, fs) f ->
+      List.fold formals ([], []) ~f:(fun f (is, fs) ->
           match apron_typ_of_llair_typ (Llair.Reg.typ f) with
           | None -> (is, fs)
           | Some Texpr1.Int -> (apron_var_of_reg (mangle f) :: is, fs)
@@ -295,8 +295,8 @@ let call ~summaries ~globals:_ ~actuals ~areturn ~formals ~freturn:_
     let q'' = Abstract1.change_environment man q' callee_env false in
     let q''' =
       Abstract1.rename_array man q''
-        (Array.of_list_map ~f:(mangle >> apron_var_of_reg) formals)
-        (Array.of_list_map ~f:apron_var_of_reg formals)
+        (Array.map ~f:(mangle >> apron_var_of_reg) (Array.of_list formals))
+        (Array.map ~f:apron_var_of_reg (Array.of_list formals))
     in
     (q''', {areturn; caller_q= q})
 

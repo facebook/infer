@@ -107,6 +107,7 @@ let get_cost_if_expensive tenv integer_type_widths get_callee_cost_summary_and_f
     Option.value_exn (BufferOverrunAnalysis.extract_pre instr_node_id inferbo_invariant_map)
   in
   let loc = InstrCFG.Node.loc last_node in
+  let get_summary pname = Option.map ~f:fst (get_callee_cost_summary_and_formals pname) in
   let cost_opt =
     match get_callee_cost_summary_and_formals pname with
     | Some (CostDomain.{post= cost_record}, callee_formals) ->
@@ -130,7 +131,7 @@ let get_cost_if_expensive tenv integer_type_widths get_callee_cost_summary_and_f
                  BufferOverrunUtils.ModelEnv.mk_model_env pname ~node_hash loc tenv
                    integer_type_widths inferbo_get_summary
                in
-               model model_env ~ret inferbo_mem )
+               model get_summary model_env ~ret inferbo_mem )
   in
   Option.filter cost_opt ~f:CostDomain.BasicCost.is_symbolic
 

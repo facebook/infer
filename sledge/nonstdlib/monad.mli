@@ -5,28 +5,19 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-module type S = sig
+include module type of Monad_intf
+
+module Make (M : sig
   type 'a t
 
   val return : 'a -> 'a t
-  val bind : ('a -> 'b t) -> 'a t -> 'b t
-
-  module Import : sig
-    val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
-    val ( >>| ) : 'a t -> ('a -> 'b) -> 'b t
-    val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
-    val ( and* ) : 'a t -> 'b t -> ('a * 'b) t
-    val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
-    val ( and+ ) : 'a t -> 'b t -> ('a * 'b) t
-  end
-end
+  val bind : 'a t -> ('a -> 'b t) -> 'b t
+end) : S with type 'a t = 'a M.t
 
 module State (State : sig
   type t
 end) : sig
-  type state = State.t
+  include S with type 'a t = State.t -> 'a * State.t
 
-  include S with type 'a t = state -> 'a * state
-
-  val run : 'a t -> state -> 'a * state
+  val run : 'a t -> State.t -> 'a * State.t
 end

@@ -15,6 +15,7 @@ type t =
   | UncheckedNonnull
   | LocallyTrustedNonnull
   | LocallyCheckedNonnull
+  | ProvisionallyNullable
   | StrictNonnull
 [@@deriving compare, equal]
 
@@ -32,6 +33,8 @@ let join x y =
       Nullable
   | ThirdPartyNonnull, _ | _, ThirdPartyNonnull ->
       ThirdPartyNonnull
+  | ProvisionallyNullable, _ | _, ProvisionallyNullable ->
+      ProvisionallyNullable
   | UncheckedNonnull, _ | _, UncheckedNonnull ->
       UncheckedNonnull
   | LocallyTrustedNonnull, _ | _, LocallyTrustedNonnull ->
@@ -45,25 +48,30 @@ let join x y =
 let is_subtype ~subtype ~supertype = equal (join subtype supertype) supertype
 
 let is_considered_nonnull ~nullsafe_mode nullability =
-  let least_required =
-    match nullsafe_mode with
-    | NullsafeMode.Strict ->
-        StrictNonnull
-    | NullsafeMode.Local (NullsafeMode.Trust.Only trust_list)
-      when NullsafeMode.Trust.is_trust_none trust_list ->
-        (* Though "trust none" is technically a subcase of trust some,
-           we need this pattern to be different from the one below so we can detect possible
-           promotions from "trust some" to "trust none" *)
-        LocallyCheckedNonnull
-    | NullsafeMode.Local (NullsafeMode.Trust.Only _) ->
-        LocallyTrustedNonnull
-    | NullsafeMode.Local NullsafeMode.Trust.All ->
-        UncheckedNonnull
-    | NullsafeMode.Default ->
-        (* In default mode, we trust everything, even not annotated third party. *)
-        ThirdPartyNonnull
-  in
-  is_subtype ~subtype:nullability ~supertype:least_required
+  if equal ProvisionallyNullable nullability then
+    (* Deliberately ignoring modes for this type
+       (ProvisionallyNullable is currently not indented to work well with all features for non-default modes) *)
+    true
+  else
+    let least_required =
+      match nullsafe_mode with
+      | NullsafeMode.Strict ->
+          StrictNonnull
+      | NullsafeMode.Local (NullsafeMode.Trust.Only trust_list)
+        when NullsafeMode.Trust.is_trust_none trust_list ->
+          (* Though "trust none" is technically a subcase of trust some,
+             we need this pattern to be different from the one below so we can detect possible
+             promotions from "trust some" to "trust none" *)
+          LocallyCheckedNonnull
+      | NullsafeMode.Local (NullsafeMode.Trust.Only _) ->
+          LocallyTrustedNonnull
+      | NullsafeMode.Local NullsafeMode.Trust.All ->
+          UncheckedNonnull
+      | NullsafeMode.Default ->
+          (* In default mode, we trust everything, even not annotated third party. *)
+          ThirdPartyNonnull
+    in
+    is_subtype ~subtype:nullability ~supertype:least_required
 
 
 let is_nonnullish t = is_considered_nonnull ~nullsafe_mode:NullsafeMode.Default t
@@ -73,6 +81,8 @@ let to_string = function
       "Null"
   | Nullable ->
       "Nullable"
+  | ProvisionallyNullable ->
+      "ProvisionallyNullable"
   | ThirdPartyNonnull ->
       "ThirdPartyNonnull"
   | UncheckedNonnull ->

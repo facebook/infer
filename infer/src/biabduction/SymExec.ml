@@ -626,7 +626,8 @@ let call_constructor_url_update_args =
     Procname.make_java
       ~class_name:(Typ.Name.Java.from_string "java.net.URL")
       ~return_type:None ~method_name:Procname.Java.constructor_method_name
-      ~parameters:[Typ.pointer_to_java_lang_string] ~kind:Procname.Java.Non_Static ()
+      ~parameters:[StdTyp.Java.pointer_to_java_lang_string]
+      ~kind:Procname.Java.Non_Static ()
   in
   fun pname actual_params ->
     if Procname.equal url_pname pname then

@@ -127,6 +127,7 @@ module Either = struct
   let right v = Right v
 end
 
+module Pair = Containers.Pair
 module FHeap = Fheap [@@warning "-49"]
 module HashQueue = Core_kernel.Hash_queue
 
@@ -231,4 +232,3 @@ let violates f x =
 (** Deprecated *)
 
 module Hashtbl = struct end
-module With_return = Base.With_return

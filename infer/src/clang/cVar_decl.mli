@@ -23,7 +23,7 @@ val sil_var_of_captured_var :
   -> Clang_ast_t.source_range
   -> Procname.t
   -> Clang_ast_t.decl_ref
-  -> (Pvar.t * Typ.typ) option
+  -> (Pvar.t * Typ.t) option
 
 val captured_vars_from_block_info :
      CContext.t

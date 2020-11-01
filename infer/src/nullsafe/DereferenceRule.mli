@@ -16,6 +16,19 @@ val check : InferredNullability.t -> (unit, violation) result
     might or might not be severe enough to be reported to the user, depending on the mode
     agreements. *)
 
+(** Violation that will occur if the provisional annotation becomes real [@Nullable] *)
+module ProvisionalViolation : sig
+  type t
+
+  val offending_annotations : t -> ProvisionalAnnotation.t list
+  (** Non-empty list of corresponding provisional annotations (adding any of those will lead to an
+      issue) *)
+
+  val from : violation -> t option
+  (** If the violation is provisional (so is not real but will become real when the annotation is
+      added), create it. *)
+end
+
 (** Violation that needs to be reported to the user. *)
 module ReportableViolation : sig
   type t

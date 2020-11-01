@@ -34,7 +34,7 @@ let build_info =
     |> List.sort ~cmp:[%compare: string * string]
   in
   let max_length =
-    List.fold_left libs ~init:0 ~f:(fun n (name, _) ->
+    List.fold_left libs 0 ~f:(fun n (name, _) ->
         max n (String.length name) )
   in
   String.concat ~sep:"\n"

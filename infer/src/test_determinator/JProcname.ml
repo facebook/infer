@@ -70,23 +70,23 @@ module JNI = struct
   let rec to_typ jni =
     match jni with
     | Boolean ->
-        Typ.boolean
+        StdTyp.boolean
     | Byte ->
-        Typ.java_byte
+        StdTyp.Java.byte
     | Char ->
-        Typ.java_char
+        StdTyp.Java.char
     | Short ->
-        Typ.java_short
+        StdTyp.Java.short
     | Int ->
-        Typ.int
+        StdTyp.int
     | Long ->
-        Typ.long
+        StdTyp.long
     | Float ->
-        Typ.float
+        StdTyp.float
     | Double ->
-        Typ.double
+        StdTyp.double
     | Void ->
-        Typ.void
+        StdTyp.void
     | FullyQualifiedClass (pkg, classname) ->
         Typ.(mk_ptr (mk_struct (JavaClass (JavaClassName.make ~package:(Some pkg) ~classname))))
     | Array typ ->

@@ -59,7 +59,7 @@ val empty_control : control
 val mk_trans_result :
      ?method_name:BuiltinDecl.t
   -> ?is_cpp_call_virtual:bool
-  -> Exp.t * Typ.typ
+  -> Exp.t * Typ.t
   -> control
   -> trans_result
 
@@ -129,12 +129,7 @@ val new_or_alloc_trans :
   -> trans_result
 
 val cpp_new_trans :
-     Typ.IntegerWidths.t
-  -> Location.t
-  -> Typ.t
-  -> Exp.t option
-  -> (Exp.t * Typ.typ) list
-  -> trans_result
+  Typ.IntegerWidths.t -> Location.t -> Typ.t -> Exp.t option -> (Exp.t * Typ.t) list -> trans_result
 
 (** Module for creating cfg nodes and other utility functions related to them. *)
 module Nodes : sig
@@ -231,10 +226,6 @@ end
 (** This module handles the translation of the variable self which is challenging because self is
     used both as a variable in instance method calls and also as a type in class method calls. *)
 module Self : sig
-  exception
-    SelfClassException of
-      {class_name: Typ.Name.t; position: Logging.ocaml_pos; source_range: Clang_ast_t.source_range}
-
   val add_self_parameter_for_super_instance :
        Clang_ast_t.stmt_info
     -> CContext.t
@@ -256,3 +247,7 @@ val mk_fresh_void_id_typ : unit -> Ident.t * Typ.t
 val mk_fresh_void_return : unit -> (Ident.t * Typ.t) * (Exp.t * Typ.t)
 
 val last_or_mk_fresh_void_exp_typ : (Exp.t * Typ.t) list -> Exp.t * Typ.t
+
+val should_remove_first_param : trans_state -> Clang_ast_t.stmt -> Typ.name option
+(** Return a class name when the first parameter should be removed according to its context, for
+    example, when [self] or [\[x class\]] is given as the first parameter for a class method. *)

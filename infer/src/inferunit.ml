@@ -39,7 +39,6 @@ let () =
         ; JavaProfilerSamplesTest.tests
         ; LivenessTests.tests
         ; LRUHashtblTests.tests
-        ; MaximumSharingTests.tests
         ; ProcCfgTests.tests
         ; RestartSchedulerTests.tests
         ; SchedulerTests.tests

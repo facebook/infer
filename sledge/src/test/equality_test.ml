@@ -42,9 +42,7 @@ let%test_module _ =
     let z = Term.var z_
 
     let of_eqs l =
-      List.fold ~init:(wrt, true_)
-        ~f:(fun (us, r) (a, b) -> and_eq us a b r)
-        l
+      List.fold ~f:(fun (a, b) (us, r) -> and_eq us a b r) l (wrt, true_)
       |> snd
 
     let implies_eq r a b = implies r (Term.eq a b)
@@ -62,17 +60,17 @@ let%test_module _ =
         = (%y_6 rem %t_1)
 
       {sat= true;
-       rep= [[0 ↦ ];
-             [-1 ↦ ];
-             [(%y_6 rem %z_7) ↦ %t_1];
-             [(%y_6 rem %v_3) ↦ %t_1];
-             [%z_7 ↦ %t_1];
-             [%y_6 ↦ ];
-             [%x_5 ↦ %t_1];
-             [%w_4 ↦ %t_1];
-             [%v_3 ↦ %t_1];
+       rep= [[%t_1 ↦ ];
              [%u_2 ↦ %t_1];
-             [%t_1 ↦ ]]} |}]
+             [%v_3 ↦ %t_1];
+             [%w_4 ↦ %t_1];
+             [%x_5 ↦ %t_1];
+             [%y_6 ↦ ];
+             [%z_7 ↦ %t_1];
+             [(%y_6 rem %v_3) ↦ %t_1];
+             [(%y_6 rem %z_7) ↦ %t_1];
+             [-1 ↦ ];
+             [0 ↦ ]]} |}]
 
     let%test _ = implies_eq r3 t z
 
@@ -83,7 +81,7 @@ let%test_module _ =
       pp r15 ;
       [%expect
         {|
-          {sat= true; rep= [[0 ↦ ]; [-1 ↦ ]; [(%x_5 ≠ 0) ↦ -1]; [%x_5 ↦ 1]]} |}]
+          {sat= true; rep= [[%x_5 ↦ 1]; [(%x_5 ≠ 0) ↦ -1]; [-1 ↦ ]; [0 ↦ ]]} |}]
 
     let%test _ = implies_eq r15 b (Term.signed 1 !1)
     let%test _ = implies_eq r15 (Term.unsigned 1 b) !1

@@ -7,15 +7,35 @@
 
 open! IStd
 
-type t = {nullability: Nullability.t; origin: TypeOrigin.t} [@@deriving compare]
+type t =
+  { nullability: Nullability.t
+  ; origins: TypeOrigin.t list  (** Origins responsible for this nullability type *) }
+[@@deriving compare]
 
-let create origin = {nullability= TypeOrigin.get_nullability origin; origin}
+let rec sanitize_origin = function
+  (* Collapse consecutive chains of InferredNonnull to get rid of infinite chains in loops and
+     hence allowing to reach the fixpoint *)
+  | TypeOrigin.InferredNonnull
+      {previous_origin= TypeOrigin.InferredNonnull {previous_origin= underlying}} ->
+      TypeOrigin.InferredNonnull {previous_origin= underlying} |> sanitize_origin
+  | other ->
+      other
+
+
+let create origin =
+  {nullability= TypeOrigin.get_nullability origin; origins= [sanitize_origin origin]}
+
 
 let get_nullability {nullability} = nullability
 
 let is_nonnullish {nullability} = Nullability.is_nonnullish nullability
 
 let pp fmt {nullability} = Nullability.pp fmt nullability
+
+(* Join two lists with removing duplicates and preserving the order of join *)
+let join_origins origins1 origins2 =
+  (IList.append_no_duplicates ~cmp:TypeOrigin.compare |> Staged.unstage) origins1 origins2
+
 
 let join t1 t2 =
   let joined_nullability = Nullability.join t1.nullability t2.nullability in
@@ -25,28 +45,32 @@ let join t1 t2 =
      If nullability is fully determined by one of the arguments, origin should be get from this argument.
      Otherwise we apply heuristics to choose origin either from t1 or t2.
   *)
-  let joined_origin =
+  let joined_origins =
     match (is_equal_to_t1, is_equal_to_t2) with
     | _ when Nullability.equal t1.nullability Nullability.Null ->
-        t1.origin
+        t1.origins
     | _ when Nullability.equal t2.nullability Nullability.Null ->
-        t2.origin
+        t2.origins
     | true, false ->
         (* Nullability was fully determined by t1. *)
-        t1.origin
+        t1.origins
     | false, true ->
         (* Nullability was fully determined by t2 *)
-        t2.origin
+        t2.origins
     | false, false | true, true ->
-        (* Nullability is not fully determined by neither t1 nor t2
-           Let TypeOrigin logic to decide what to prefer in this case.
+        (* Nullability is not fully determined by neither t1 nor t2 - join both lists
         *)
-        TypeOrigin.join t1.origin t2.origin
+        join_origins t1.origins t2.origins
   in
-  {nullability= joined_nullability; origin= joined_origin}
+  {nullability= joined_nullability; origins= joined_origins}
 
 
-let get_origin t = t.origin
+let get_simple_origin t = List.nth_exn t.origins 0
+
+let get_provisional_annotations t =
+  List.filter_map t.origins ~f:TypeOrigin.get_provisional_annotation
+  |> List.dedup_and_sort ~compare:ProvisionalAnnotation.compare
+
 
 let origin_is_fun_defined t =
-  match get_origin t with TypeOrigin.MethodCall {is_defined; _} -> is_defined | _ -> false
+  match get_simple_origin t with TypeOrigin.MethodCall {is_defined; _} -> is_defined | _ -> false

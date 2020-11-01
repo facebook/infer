@@ -257,3 +257,31 @@ module SQLite = struct
       RelativeProjectRootAndWorkspace {workspace_rel_root= prefix; rel_path}
     else L.die InternalError "Could not deserialize sourcefile with tag=%c, str= %s@." tag str
 end
+
+module Normalizer = HashNormalizer.Make (struct
+  type nonrec t = t [@@deriving equal]
+
+  let hash = Hashtbl.hash
+
+  let normalize fname =
+    let string_normalize = HashNormalizer.StringNormalizer.normalize in
+    match fname with
+    | Invalid {ml_source_file} ->
+        let ml_source_file' = string_normalize ml_source_file in
+        if phys_equal ml_source_file ml_source_file' then fname
+        else Invalid {ml_source_file= ml_source_file'}
+    | RelativeProjectRootAndWorkspace {workspace_rel_root; rel_path} ->
+        let workspace_rel_root' = string_normalize workspace_rel_root in
+        let rel_path' = string_normalize rel_path in
+        if phys_equal workspace_rel_root workspace_rel_root' && phys_equal rel_path rel_path' then
+          fname
+        else
+          RelativeProjectRootAndWorkspace
+            {workspace_rel_root= workspace_rel_root'; rel_path= rel_path'}
+    | RelativeProjectRoot rel_path ->
+        let rel_path' = string_normalize rel_path in
+        if phys_equal rel_path rel_path' then fname else RelativeProjectRoot rel_path'
+    | Absolute path ->
+        let path' = string_normalize path in
+        if phys_equal path path' then fname else Absolute path'
+end)

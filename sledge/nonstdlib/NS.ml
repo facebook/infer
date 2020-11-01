@@ -8,6 +8,28 @@
 (** Global namespace intended to be opened in each source file *)
 
 include NS0
+
+(** Map-and-construct operations that preserve physical equality *)
+
+let map1 f e cons x =
+  let x' = f x in
+  if x == x' then e else cons x'
+
+let map2 f e cons x y =
+  let x' = f x in
+  let y' = f y in
+  if x == x' && y == y' then e else cons x' y'
+
+let map3 f e cons x y z =
+  let x' = f x in
+  let y' = f y in
+  let z' = f z in
+  if x == x' && y == y' && z == z' then e else cons x' y' z'
+
+let mapN f e cons xs =
+  let xs' = Array.map_endo ~f xs in
+  if xs' == xs then e else cons xs'
+
 module Array = Array
 module Float = Float
 module HashSet = HashSet
@@ -20,7 +42,7 @@ module Map = Map
 module Monad = Monad
 module Multiset = Multiset
 module Option = Option
-include Option.Infix
+include Option.Import
 module Q = Q_ext
 module Set = Set
 module Sign = Sign

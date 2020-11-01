@@ -160,7 +160,7 @@ let rec typecheck_expr ({IntraproceduralAnalysis.tenv; _} as analysis_data) ~nul
               (typ, InferredNullability.create TypeOrigin.OptimisticFallback)
               loc
           in
-          let object_origin = InferredNullability.get_origin inferred_nullability in
+          let object_origin = InferredNullability.get_simple_origin inferred_nullability in
           let tr_new =
             match AnnotatedField.get tenv field_name typ with
             | Some AnnotatedField.{annotated_type= field_type} ->
@@ -207,7 +207,7 @@ let handle_field_access_via_temporary idenv curr_pname typestate exp =
   let pvar_get_origin pvar =
     match TypeState.lookup_pvar pvar typestate with
     | Some (_, inferred_nullability) ->
-        Some (InferredNullability.get_origin inferred_nullability)
+        Some (InferredNullability.get_simple_origin inferred_nullability)
     | None ->
         None
   in
@@ -313,7 +313,7 @@ let convert_complex_exp_to_pvar_and_register_field_in_typestate tenv idenv curr_
             | _ ->
                 None )
             |> Option.value_map
-                 ~f:(fun (_, nullability) -> InferredNullability.get_origin nullability)
+                 ~f:(fun (_, nullability) -> InferredNullability.get_simple_origin nullability)
                  ~default:TypeOrigin.OptimisticFallback
           in
           let exp' = IDEnv.expand_expr_temps idenv original_node exp_ in
@@ -479,7 +479,7 @@ let typecheck_expr_for_errors analysis_data ~nullsafe_mode find_canonical_duplic
     checks node instr_ref typestate1 exp1 loc1 : unit =
   ignore
     (typecheck_expr_simple analysis_data ~nullsafe_mode find_canonical_duplicate calls_this checks
-       node instr_ref typestate1 exp1 Typ.void TypeOrigin.OptimisticFallback loc1)
+       node instr_ref typestate1 exp1 StdTyp.void TypeOrigin.OptimisticFallback loc1)
 
 
 (** Get the values of a vararg parameter given the pvar used to assign the elements by looking for
@@ -526,9 +526,9 @@ let do_preconditions_check_not_null
                { is_always_true= true
                ; loc
                ; condition_descr= EradicateChecks.explain_expr tenv node cond
-               ; nonnull_origin= InferredNullability.get_origin nullability })
+               ; nonnull_origin= InferredNullability.get_simple_origin nullability })
             (Some instr_ref) ~nullsafe_mode ) ;
-        let previous_origin = InferredNullability.get_origin nullability in
+        let previous_origin = InferredNullability.get_simple_origin nullability in
         let new_origin = TypeOrigin.InferredNonnull {previous_origin} in
         TypeState.add pvar
           (t, InferredNullability.create new_origin)
@@ -577,7 +577,7 @@ let do_preconditions_check_state instr_ref idenv tenv curr_pname curr_annotated_
     (* handle the annotation flag for pvar *)
     match TypeState.lookup_pvar pvar typestate1 with
     | Some (t, nullability) ->
-        let previous_origin = InferredNullability.get_origin nullability in
+        let previous_origin = InferredNullability.get_simple_origin nullability in
         let new_origin = TypeOrigin.InferredNonnull {previous_origin} in
         TypeState.add pvar
           (t, InferredNullability.create new_origin)
@@ -634,7 +634,7 @@ let do_preconditions_check_state instr_ref idenv tenv curr_pname curr_annotated_
       typestate'
 
 
-let object_typ = Typ.(mk_ptr (mk_struct Name.Java.java_lang_object))
+let object_typ = StdTyp.Java.pointer_to_java_lang_object
 
 (* Handle m.put(k,v) as assignment pvar = v for the pvar associated to m.get(k) *)
 let do_map_put ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as analysis_data)
@@ -838,7 +838,9 @@ let rec check_condition_for_sil_prune
     | Some expr_str ->
         (* Add pvar representing call to `get` to a typestate, indicating that it is a non-nullable *)
         let pvar = Pvar.mk (Mangled.from_string expr_str) curr_pname in
-        let range = (Typ.void, InferredNullability.create TypeOrigin.CallToGetKnownToContainsKey) in
+        let range =
+          (StdTyp.void, InferredNullability.create TypeOrigin.CallToGetKnownToContainsKey)
+        in
         let typestate_with_new_pvar = TypeState.add pvar range typestate in
         typestate_with_new_pvar
           ~descr:"modelling result of Map.get() since containsKey() returned true"
@@ -851,7 +853,7 @@ let rec check_condition_for_sil_prune
       | Some (t, current_nullability) ->
           let new_origin =
             TypeOrigin.InferredNonnull
-              {previous_origin= InferredNullability.get_origin current_nullability}
+              {previous_origin= InferredNullability.get_simple_origin current_nullability}
           in
           let new_nullability = InferredNullability.create new_origin in
           TypeState.add pvar (t, new_nullability) typestate' ~descr
@@ -881,8 +883,8 @@ let rec check_condition_for_sil_prune
       *)
       let typ, inferred_nullability =
         typecheck_expr_simple analysis_data ~nullsafe_mode find_canonical_duplicate calls_this
-          checks original_node instr_ref typestate pvar_expr Typ.void TypeOrigin.OptimisticFallback
-          loc
+          checks original_node instr_ref typestate pvar_expr StdTyp.void
+          TypeOrigin.OptimisticFallback loc
       in
       if checks.eradicate then
         EradicateChecks.check_condition_for_redundancy analysis_data ~is_always_true:true_branch

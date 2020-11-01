@@ -150,27 +150,36 @@ let test_from_json_string_with_valid_input =
               make_java
                 ~class_name:(Typ.Name.Java.from_string "lll.mmm.Nnn")
                 ~return_type:None ~method_name:Java.constructor_method_name
-                ~parameters:[Typ.pointer_to_java_lang_string; Typ.(mk_ptr (mk_array int)); Typ.long]
+                ~parameters:
+                  [ StdTyp.Java.pointer_to_java_lang_string
+                  ; Typ.(mk_ptr (mk_array StdTyp.int))
+                  ; StdTyp.long ]
                 ~kind:Java.Non_Static ())
           ; Procname.(
               make_java
                 ~class_name:(Typ.Name.Java.from_string "ggg.hhh.Iii")
                 ~return_type:None ~method_name:Java.class_initializer_method_name
-                ~parameters:[Typ.pointer_to_java_lang_string; Typ.(mk_ptr (mk_array int)); Typ.long]
+                ~parameters:
+                  [ StdTyp.Java.pointer_to_java_lang_string
+                  ; Typ.(mk_ptr (mk_array StdTyp.int))
+                  ; StdTyp.long ]
                 ~kind:Java.Non_Static ()) ] )
     ; ( "label2"
       , Procname.Set.of_list
           [ Procname.(
               make_java
                 ~class_name:(Typ.Name.Java.from_string "ddd.eee.Fff")
-                ~return_type:(Some Typ.(mk_ptr (mk_array (mk_ptr (mk_array java_char)))))
+                ~return_type:(Some Typ.(mk_ptr (mk_array (mk_ptr (mk_array StdTyp.Java.char)))))
                 ~method_name:"methodTwo"
-                ~parameters:[Typ.pointer_to_java_lang_string; Typ.(mk_ptr (mk_array int)); Typ.long]
+                ~parameters:
+                  [ StdTyp.Java.pointer_to_java_lang_string
+                  ; Typ.(mk_ptr (mk_array StdTyp.int))
+                  ; StdTyp.long ]
                 ~kind:Java.Non_Static ())
           ; Procname.(
               make_java
                 ~class_name:(Typ.Name.Java.from_string "aaa.bbb.Ccc")
-                ~return_type:(Some Typ.void) ~method_name:"methodOne" ~parameters:[]
+                ~return_type:(Some StdTyp.void) ~method_name:"methodOne" ~parameters:[]
                 ~kind:Java.Non_Static ()) ] ) ]
   in
   let expected3 =
@@ -191,12 +200,12 @@ let test_from_json_string_with_valid_input =
           [ Procname.(
               make_java
                 ~class_name:(Typ.Name.Java.from_string "ddd.eee.Fff")
-                ~return_type:(Some Typ.void) ~method_name:"methodTwo" ~parameters:[]
+                ~return_type:(Some StdTyp.void) ~method_name:"methodTwo" ~parameters:[]
                 ~kind:Java.Non_Static ())
           ; Procname.(
               make_java
                 ~class_name:(Typ.Name.Java.from_string "aaa.bbb.Ccc")
-                ~return_type:(Some Typ.void) ~method_name:"methodOne" ~parameters:[]
+                ~return_type:(Some StdTyp.void) ~method_name:"methodOne" ~parameters:[]
                 ~kind:Java.Non_Static ()) ] ) ]
   in
   [ ("test_from_json_string_1", input1, expected1, true)

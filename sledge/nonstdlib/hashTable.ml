@@ -37,7 +37,5 @@ module Make (Key : HashedType) = struct
     Option.get_exn !found
 
   let iteri tbl ~f = iter (fun key data -> f ~key ~data) tbl
-
-  let fold tbl ~init ~f =
-    fold (fun key data acc -> f ~key ~data acc) tbl init
+  let fold tbl s ~f = fold (fun key data acc -> f ~key ~data acc) tbl s
 end

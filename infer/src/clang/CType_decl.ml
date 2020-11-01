@@ -151,7 +151,7 @@ module BuildMethodSignature = struct
     let return_typ_annot = CAst_utils.sil_annot_of_type return_qual_type in
     let is_objc_method = CMethodProperties.is_objc_method method_decl in
     if should_add_return_param return_typ ~is_objc_method then
-      (Typ.void, Some (CType.add_pointer_to_typ return_typ), Annot.Item.empty, true)
+      (StdTyp.void, Some (CType.add_pointer_to_typ return_typ), Annot.Item.empty, true)
     else (return_typ, None, return_typ_annot, false)
 
 

@@ -30,7 +30,7 @@ module NSArray = struct
           let length =
             CostModels.BoundsOfNSCollection.linear_length
               ~of_function:(Procname.to_simplified_string pname)
-              array model_env ~ret inferbo_mem
+              array get_summary model_env ~ret inferbo_mem
           in
           BasicCost.mult_loop ~iter:length ~body:callee_cost
       | None ->

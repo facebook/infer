@@ -19,5 +19,5 @@ module type S = sig
   val find : 'a t -> key -> 'a option
   val find_or_add : 'a t -> key -> default:(unit -> 'a) -> 'a
   val iteri : 'a t -> f:(key:key -> data:'a -> unit) -> unit
-  val fold : 'a t -> init:'s -> f:(key:key -> data:'a -> 's -> 's) -> 's
+  val fold : 'a t -> 's -> f:(key:key -> data:'a -> 's -> 's) -> 's
 end

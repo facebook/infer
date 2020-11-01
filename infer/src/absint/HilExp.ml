@@ -405,8 +405,7 @@ let rec get_typ tenv = function
   | Constant (Cfloat _) ->
       Some (Typ.mk (Typ.Tfloat Typ.FFloat))
   | Constant (Cclass _) ->
-      let typ = Typ.(mk (Tstruct Name.Java.java_lang_class)) in
-      Some Typ.(mk (Tptr (typ, Pk_pointer)))
+      Some StdTyp.Java.pointer_to_java_lang_class
   | Constant (Cstr _) ->
       (* TODO: this will need to behave differently depending on whether we're in C++ or Java *)
       None
@@ -470,7 +469,7 @@ and access_exprs_of_exp ~include_array_indexes ~f_resolve_id ~add_deref exp0 typ
         of_exp_ root_exp root_exp_typ add_field_access_expr acc
     | Exp.Lindex (root_exp, index_exp) ->
         let index =
-          let index_typ = (* TODO: bogus *) Typ.void in
+          let index_typ = (* TODO: bogus *) StdTyp.void in
           array_index_of_exp ~include_array_indexes ~f_resolve_id ~add_deref index_exp index_typ
         in
         let add_array_access_expr access_expr =
@@ -698,6 +697,6 @@ let access_expr_of_exp ~include_array_indexes ~f_resolve_id exp typ =
       let dummy_base_var =
         Var.of_id (Ident.create_normal (Ident.string_to_name (IntLit.to_string i)) 0)
       in
-      Some (AccessExpression.base (dummy_base_var, Typ.void_star))
+      Some (AccessExpression.base (dummy_base_var, StdTyp.void_star))
   | _ ->
       None

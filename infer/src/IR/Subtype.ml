@@ -45,7 +45,7 @@ let is_interface tenv (class_name : Typ.Name.t) =
 let is_root_class class_name =
   match class_name with
   | Typ.JavaClass _ ->
-      Typ.Name.equal class_name Typ.Name.Java.java_lang_object
+      Typ.Name.equal class_name StdTyp.Name.Java.java_lang_object
   | _ ->
       false
 

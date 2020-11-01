@@ -77,3 +77,5 @@ val merge : Typ.Name.t -> newer:t -> current:t -> t
 val is_not_java_interface : t -> bool
 (** check that a struct either defines a non-java type, or a non-java-interface type (abstract or
     normal class) *)
+
+module Normalizer : HashNormalizer.S with type t = t

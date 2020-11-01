@@ -7,9 +7,13 @@
 
 (** Arithmetic terms *)
 
+open Ses.Var_intf
 include Arithmetic_intf
 
-module Representation (Trm : INDETERMINATE) = struct
+module Representation
+    (Var : VAR)
+    (Trm : INDETERMINATE with type var := Var.t) =
+struct
   module Prod = struct
     include Multiset.Make
               (Int)
@@ -41,7 +45,9 @@ module Representation (Trm : INDETERMINATE) = struct
             (Prod.map_counts ~f:Int.neg den)
       in
       let num, den = num_den power_product in
-      Format.fprintf ppf "@[<2>(%a%a)@]" pp_num num pp_den den
+      if Prod.is_singleton num && Prod.is_empty den then
+        Format.fprintf ppf "@[<2>%a@]" pp_num num
+      else Format.fprintf ppf "@[<2>(%a%a)@]" pp_num num pp_den den
 
     (** [one] is the empty product Πᵢ₌₁⁰ xᵢ^pᵢ *)
     let one = Prod.empty
@@ -62,6 +68,16 @@ module Representation (Trm : INDETERMINATE) = struct
     (** [get_trm m] is [Some x] iff [equal m (of_ x 1)] *)
     let get_trm mono =
       match Prod.only_elt mono with Some (trm, 1) -> Some trm | _ -> None
+
+    (* traverse *)
+
+    let trms mono =
+      Iter.from_iter (fun f -> Prod.iter mono ~f:(fun trm _ -> f trm))
+
+    (* query *)
+
+    let vars p = Iter.flat_map ~f:Trm.vars (trms p)
+    let fv p = Var.Set.of_iter (vars p)
   end
 
   module Sum = struct
@@ -86,10 +102,18 @@ module Representation (Trm : INDETERMINATE) = struct
       else
         let pp_coeff_mono ppf (m, c) =
           if Mono.equal_one m then Trace.pp_styled `Magenta "%a" ppf Q.pp c
-          else
-            Format.fprintf ppf "%a @<2>× %a" Q.pp c (Mono.ppx strength) m
+          else if Q.equal Q.one c then
+            Format.fprintf ppf "%a" (Mono.ppx strength) m
+          else Format.fprintf ppf "%a@<1>×%a" Q.pp c (Mono.ppx strength) m
         in
-        Format.fprintf ppf "@[<2>(%a)@]" (Sum.pp "@ + " pp_coeff_mono) poly
+        if Sum.is_singleton poly then
+          Format.fprintf ppf "@[<2>%a@]" (Sum.pp "@ + " pp_coeff_mono) poly
+        else
+          Format.fprintf ppf "@[<2>(%a)@]"
+            (Sum.pp "@ + " pp_coeff_mono)
+            poly
+
+    let pp = ppx (fun _ -> None)
 
     let mono_invariant mono =
       let@ () = Invariant.invariant [%here] mono [%sexp_of: Mono.t] in
@@ -169,7 +193,6 @@ module Representation (Trm : INDETERMINATE) = struct
       type t = Q.t * Prod.t
 
       let one = (Q.one, Mono.one)
-      let equal_one (c, m) = Mono.equal_one m && Q.equal Q.one c
       let mul (c1, m1) (c2, m2) = (Q.mul c1 c2, Mono.mul m1 m2)
 
       (** Monomials [Mono.t] have [trm] indeterminates, which include, via
@@ -235,39 +258,104 @@ module Representation (Trm : INDETERMINATE) = struct
     (* transform *)
 
     let split_const poly =
-      match Sum.find_and_remove poly Mono.one with
+      match Sum.find_and_remove Mono.one poly with
       | Some (c, p_c) -> (p_c, c)
       | None -> (poly, Q.zero)
 
+    let partition_sign poly =
+      Sum.partition_map poly ~f:(fun _ coeff ->
+          if Q.sign coeff >= 0 then Left coeff else Right (Q.neg coeff) )
+
     let map poly ~f =
+      [%trace]
+        ~call:(fun {pf} -> pf "%a" pp poly)
+        ~retn:(fun {pf} -> pf "%a" pp)
+      @@ fun () ->
       let p, p' = (poly, Sum.empty) in
       let p, p' =
-        Sum.fold poly ~init:(p, p') ~f:(fun mono coeff (p, p') ->
+        Sum.fold poly (p, p') ~f:(fun mono coeff (p, p') ->
             let m, cm' = (mono, CM.one) in
             let m, cm' =
-              Prod.fold mono ~init:(m, cm') ~f:(fun trm power (m, cm') ->
+              Prod.fold mono (m, cm') ~f:(fun trm power (m, cm') ->
                   let trm' = f trm in
                   if trm == trm' then (m, cm')
                   else
-                    (Prod.remove m trm, CM.mul cm' (CM.of_trm trm' ~power)) )
+                    (Prod.remove trm m, CM.mul cm' (CM.of_trm trm' ~power)) )
             in
-            if CM.equal_one cm' then (p, p')
-            else
-              ( Sum.remove p mono
-              , Sum.union p' (CM.to_poly (CM.mul (coeff, m) cm')) ) )
+            ( Sum.remove mono p
+            , Sum.union p' (CM.to_poly (CM.mul (coeff, m) cm')) ) )
       in
-      if Sum.is_empty p' then poly else Sum.union p p' |> check invariant
+      Sum.union p p' |> check invariant
 
     (* traverse *)
 
-    let iter poly =
-      Iter.from_iter (fun f ->
-          Sum.iter poly ~f:(fun mono _ ->
-              Prod.iter mono ~f:(fun trm _ -> f trm) ) )
+    let monos poly =
+      Iter.from_iter (fun f -> Sum.iter poly ~f:(fun mono _ -> f mono))
+
+    let trms poly = Iter.flat_map ~f:Mono.trms (monos poly)
 
     type product = Prod.t
 
     let fold_factors = Prod.fold
     let fold_monomials = Sum.fold
+
+    (* query *)
+
+    let vars p = Iter.flat_map ~f:Trm.vars (trms p)
+
+    (* solve *)
+
+    let exists_fv_in vs poly =
+      Iter.exists ~f:(fun v -> Var.Set.mem v vs) (vars poly)
+
+    (** [solve_for_mono r c m p] solves [0 = r + (c×m) + p] as [m = q]
+        ([Some (m, q)]) such that [r + (c×m) + p = m - q] *)
+    let solve_for_mono rejected_poly coeff mono poly =
+      if Mono.equal_one mono || exists_fv_in (Mono.fv mono) poly then None
+      else
+        Some
+          ( Sum.of_ mono Q.one
+          , mulc (Q.inv (Q.neg coeff)) (Sum.union rejected_poly poly) )
+
+    (** [solve_poly r p] solves [0 = r + p] as [m = q] ([Some (m, q)]) such
+        that [r + p = m - q] *)
+    let rec solve_poly rejected poly =
+      [%trace]
+        ~call:(fun {pf} -> pf "0 = (%a) + (%a)" pp rejected pp poly)
+        ~retn:(fun {pf} s ->
+          pf "%a"
+            (Option.pp "%a" (fun fs (v, q) ->
+                 Format.fprintf fs "%a ↦ %a" pp v pp q ))
+            s )
+      @@ fun () ->
+      let* mono, coeff, poly = Sum.pop_min_elt poly in
+      match solve_for_mono rejected coeff mono poly with
+      | Some _ as soln -> soln
+      | None -> solve_poly (Sum.add mono coeff rejected) poly
+
+    (* solve [0 = e] *)
+    let solve_zero_eq ?for_ e =
+      [%trace]
+        ~call:(fun {pf} ->
+          pf "0 = %a%a" Trm.pp e (Option.pp " for %a" Trm.pp) for_ )
+        ~retn:(fun {pf} s ->
+          pf "%a"
+            (Option.pp "%a" (fun fs (c, r) ->
+                 Format.fprintf fs "%a ↦ %a" pp c pp r ))
+            s ;
+          match (for_, s) with
+          | Some f, Some (c, _) -> assert (equal (trm f) c)
+          | _ -> () )
+      @@ fun () ->
+      let* a = Embed.get_arith e in
+      match for_ with
+      | None -> solve_poly Sum.empty a
+      | Some for_ -> (
+          let* for_poly = Embed.get_arith for_ in
+          match get_mono for_poly with
+          | Some m ->
+              let* c, p = Sum.find_and_remove m a in
+              solve_for_mono Sum.empty c m p
+          | _ -> None )
   end
 end

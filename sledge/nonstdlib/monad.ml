@@ -5,53 +5,47 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-module type S = sig
+include Monad_intf
+
+module Make (M : sig
   type 'a t
 
   val return : 'a -> 'a t
-  val bind : ('a -> 'b t) -> 'a t -> 'b t
+  val bind : 'a t -> ('a -> 'b t) -> 'b t
+end) =
+struct
+  include M
 
-  module Import : sig
-    val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
-    val ( >>| ) : 'a t -> ('a -> 'b) -> 'b t
-    val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
-    val ( and* ) : 'a t -> 'b t -> ('a * 'b) t
-    val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
-    val ( and+ ) : 'a t -> 'b t -> ('a * 'b) t
+  let map f m = bind m (fun a -> return (f a))
+  let ap m n = bind m (fun f -> bind n (fun a -> return (f a)))
+  let prod m n = bind m (fun a -> bind n (fun b -> return (a, b)))
+
+  module Import = struct
+    let ( |>= ) m f = map f m
+    let ( >>= ) = bind
+    let ( let* ) = bind
+    let ( and* ) = prod
+    let ( let+ ) = ( |>= )
+    let ( and+ ) = prod
   end
+
+  let bind m ~f = bind m f
+  let map m ~f = map f m
 end
 
 module State (State : sig
   type t
 end) =
 struct
-  type state = State.t
-  type 'a t = state -> 'a * state
+  include Make (struct
+    type 'a t = State.t -> 'a * State.t
 
-  let return a s = (a, s)
+    let return a s = (a, s)
 
-  let bind k m s =
-    let a, s = m s in
-    k a s
+    let bind m k s =
+      let a, s = m s in
+      k a s
+  end)
 
   let run m s = m s
-
-  module Import = struct
-    let ( >>= ) m k = bind k m
-    let ( let* ) m k = bind k m
-
-    let ( and* ) : 'a t -> 'b t -> ('a * 'b) t =
-     fun m n s ->
-      let a, s = m s in
-      let b, s = n s in
-      return (a, b) s
-
-    let ( >>| ) : 'a t -> ('a -> 'b) -> 'b t =
-     fun m f ->
-      let* a = m in
-      return (f a)
-
-    let ( let+ ) = ( >>| )
-    let ( and+ ) = ( and* )
-  end
 end

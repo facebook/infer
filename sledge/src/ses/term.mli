@@ -106,7 +106,7 @@ module Map : sig
   val t_of_sexp : (Sexp.t -> 'a) -> Sexp.t -> 'a t
 end
 
-val ppx : Var.t Var.strength -> t pp
+val ppx : Var.strength -> t pp
 val pp : t pp
 val pp_diff : (t * t) pp
 val invariant : t -> unit
@@ -199,11 +199,8 @@ val map_rec_pre : t -> f:(t -> t option) -> t
     to the subterms of [x], followed by rebuilding the term structure on the
     transformed subterms. *)
 
-val fold_map : t -> init:'a -> f:('a -> t -> 'a * t) -> 'a * t
-
-val fold_map_rec_pre :
-  t -> init:'a -> f:('a -> t -> ('a * t) option) -> 'a * t
-
+val fold_map : t -> 's -> f:(t -> 's -> t * 's) -> t * 's
+val fold_map_rec_pre : t -> 's -> f:(t -> 's -> (t * 's) option) -> t * 's
 val disjuncts : t -> t list
 val rename : (Var.t -> Var.t) -> t -> t
 
@@ -211,9 +208,9 @@ val rename : (Var.t -> Var.t) -> t -> t
 
 val iter : t -> f:(t -> unit) -> unit
 val exists : t -> f:(t -> bool) -> bool
-val fold : t -> init:'a -> f:(t -> 'a -> 'a) -> 'a
-val fold_vars : t -> init:'a -> f:('a -> Var.t -> 'a) -> 'a
-val fold_terms : t -> init:'a -> f:('a -> t -> 'a) -> 'a
+val fold : t -> 'a -> f:(t -> 'a -> 'a) -> 'a
+val fold_vars : t -> 'a -> f:(Var.t -> 'a -> 'a) -> 'a
+val fold_terms : t -> 'a -> f:(t -> 'a -> 'a) -> 'a
 
 (** Query *)
 
