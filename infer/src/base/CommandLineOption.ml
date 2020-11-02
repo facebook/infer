@@ -507,6 +507,19 @@ let mk_int ~default ?(default_to_string = string_of_int) ?(f = Fn.id) ?(deprecat
     ~mk_spec:(fun set -> String set)
 
 
+let int_list_to_string lst =
+  let lst = List.map lst ~f:string_of_int in
+  String.concat ~sep:"," lst
+
+let mk_int_list ~default ?(default_to_string = int_list_to_string) ?(f = Fn.id)
+  ?(deprecated = []) ~long ?short ?parse_mode ?in_help ?(meta = "int") doc =
+  let flag = mk_flag ~deprecated ?short ~long in
+  mk ~deprecated ~long ?short ~default ?parse_mode ?in_help ~meta:("+" ^ meta) doc
+    ~default_to_string
+    ~mk_setter:(fun var str -> var := f (int_of_string str) :: !var)
+    ~decode_json:(list_json_decoder (int_json_decoder ~flag))
+    ~mk_spec:(fun set -> String set)
+
 let mk_int_opt ?default ?(default_to_string = Option.value_map ~default:"" ~f:string_of_int)
     ?f:(f0 = Fn.id) ?(deprecated = []) ~long ?short ?parse_mode ?in_help ?(meta = "int") doc =
   let f s = Some (f0 (int_of_string s)) in

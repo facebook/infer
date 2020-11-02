@@ -71,6 +71,8 @@ val mk_bool_group :
 
 val mk_int : default:int -> ?default_to_string:(int -> string) -> ?f:(int -> int) -> int ref t
 
+val mk_int_list: default:int list -> ?default_to_string:(int list -> string) -> ?f:(int -> int) -> int list ref t
+
 val mk_int_opt :
   ?default:int -> ?default_to_string:(int option -> string) -> ?f:(int -> int) -> int option ref t
 
