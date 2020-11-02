@@ -14,9 +14,13 @@ let debug_mode = Config.debug_mode || Config.frontend_stats
 
 (** This function reads the json file in fname, validates it, and encodes in the AST data structure
     defined in Clang_ast_t. *)
-let validate_decl_from_file fname =
-  Atdgen_runtime.Util.Biniou.from_file ~len:CFrontend_config.biniou_buffer_size
-    Clang_ast_b.read_decl fname
+let validate_decl_from_file file =
+  match file with
+  | `Biniou fname ->
+      Atdgen_runtime.Util.Biniou.from_file ~len:CFrontend_config.biniou_buffer_size
+        Clang_ast_b.read_decl fname
+  | `Yojson fname ->
+      Atdgen_runtime.Util.Json.from_file Clang_ast_j.read_decl fname
 
 
 let validate_decl_from_channel chan =
@@ -38,9 +42,9 @@ let run_clang_frontend ast_source =
   in
   let ast_decl =
     match ast_source with
-    | `File path ->
-        validate_decl_from_file path
-    | `Pipe chan ->
+    | `File file ->
+        validate_decl_from_file file
+    | `BiniouPipe chan ->
         validate_decl_from_channel chan
   in
   let trans_unit_ctx =
@@ -76,9 +80,9 @@ let run_clang_frontend ast_source =
   in
   let pp_ast_filename fmt ast_source =
     match ast_source with
-    | `File path ->
+    | `File (`Biniou path) | `File (`Yojson path) ->
         Format.pp_print_string fmt path
-    | `Pipe _ ->
+    | `BiniouPipe _ ->
         Format.fprintf fmt "stdin of %a" SourceFile.pp trans_unit_ctx.CFrontend_config.source_file
   in
   ClangPointers.populate_all_tables ast_decl ;
@@ -176,12 +180,12 @@ let cc1_capture clang_cmd =
     L.(debug Capture Quiet) "@\n Skip compilation and analysis of source file %s@\n@\n" source_path ;
     () )
   else
-    match Config.clang_biniou_file with
+    match Config.clang_ast_file with
     | Some fname ->
         run_and_validate_clang_frontend (`File fname)
     | None ->
         run_plugin_and_frontend source_path
-          (fun chan_in -> run_and_validate_clang_frontend (`Pipe chan_in))
+          (fun chan_in -> run_and_validate_clang_frontend (`BiniouPipe chan_in))
           clang_cmd
 
 

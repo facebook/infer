@@ -223,7 +223,9 @@ CLANG LINTERS OPTIONS
            --no-linters-validate-syntax-only)
 CLANG OPTIONS
        --clang-biniou-file file
-           Specify a file containing the AST of the program, in biniou format
+           Specify a file containing the AST of the program, in biniou
+           format. Please note you still need to provide a compilation
+           command.
 
        --clang-blacklisted-flags +string
            Clang flags to filter out
@@ -235,6 +237,11 @@ CLANG OPTIONS
            Limit after which initialization of compound types (structs and
            arrays) is not done element by element but using a builtin
            function that each analysis has to model.
+
+       --clang-yojson-file file
+           Specify a file containing the AST of the program, in yojson
+           format. Please note you still need to provide a compilation
+           command.
 
        --compilation-database +path
            File that contain compilation commands (can be specified multiple

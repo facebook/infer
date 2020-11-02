@@ -200,7 +200,7 @@ val changed_files_index : string option
 
 val check_version : string option
 
-val clang_biniou_file : string option
+val clang_ast_file : [`Biniou of string | `Yojson of string] option
 
 val clang_compound_literal_init_limit : int
 

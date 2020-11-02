@@ -220,8 +220,9 @@ OPTIONS
            relative to project root or be absolute           See also infer-analyze(1).
 
        --clang-biniou-file file
-           Specify a file containing the AST of the program, in biniou format       
-    See also infer-capture(1).
+           Specify a file containing the AST of the program, in biniou
+           format. Please note you still need to provide a compilation
+           command.           See also infer-capture(1).
 
        --clang-blacklisted-flags +string
            Clang flags to filter out           See also infer-capture(1).
@@ -233,6 +234,11 @@ OPTIONS
            Limit after which initialization of compound types (structs and
            arrays) is not done element by element but using a builtin
            function that each analysis has to model.           See also infer-analyze(1) and infer-capture(1).
+
+       --clang-yojson-file file
+           Specify a file containing the AST of the program, in yojson
+           format. Please note you still need to provide a compilation
+           command.           See also infer-capture(1).
 
        --compilation-database +path
            File that contain compilation commands (can be specified multiple
@@ -1370,6 +1376,9 @@ INTERNAL OPTIONS
 
        --clang-libcxx-include-to-override-regex-reset
            Cancel the effect of --clang-libcxx-include-to-override-regex.
+
+       --clang-yojson-file-reset
+           Cancel the effect of --clang-yojson-file.
 
        --classpath string
            Specify the Java classpath
