@@ -219,11 +219,23 @@ let checker {IntraproceduralAnalysis.proc_desc; err_log} =
   (* we don't want to report in harmless cases like int i = 0; if (...) { i = ... } else { i = ... }
      that create an intentional dead store as an attempt to imitate default value semantics.
      use dead stores to a "sentinel" value as a heuristic for ignoring this case *)
+  let is_whitelisted = function
+    | Some c ->
+        let rec helper c = function
+          | hd :: lst ->
+              if Int.(hd = c) then true else helper c lst
+          | [] ->
+              false
+        in
+        helper c Config.liveness_whitelist_constant
+    | None ->
+        false
+  in
   let rec is_sentinel_exp = function
     | Exp.Cast (_, e) ->
         is_sentinel_exp e
     | Exp.Const (Cint i) ->
-        IntLit.iszero i || IntLit.isnull i
+        IntLit.iszero i || IntLit.isnull i || is_whitelisted (IntLit.to_int i)
     | Exp.Const (Cfloat 0.0) ->
         true
     | _ ->

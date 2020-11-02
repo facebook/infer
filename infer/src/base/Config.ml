@@ -1492,6 +1492,12 @@ and liveness_dangerous_classes =
      by the program."
 
 
+and liveness_whitelist_constant =
+  CLOpt.mk_int_list ~default:[] ~long:"liveness-whitelist-constant"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "List of integer constants to be ignored by liveness analysis"
+
+
 and _log_events =
   CLOpt.mk_bool ~long:"" ~deprecated:["-log-events"] ~deprecated_no:["-no-log-events"]
     "[DOES NOTHING] Turn on the feature that logs events in a machine-readable format"
@@ -2947,6 +2953,8 @@ and list_checkers = !list_checkers
 and list_issue_types = !list_issue_types
 
 and liveness_dangerous_classes = !liveness_dangerous_classes
+
+and liveness_whitelist_constant = !liveness_whitelist_constant
 
 and load_average =
   match !load_average with None when !buck -> Some (float_of_int ncpu) | _ -> !load_average

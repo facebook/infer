@@ -374,6 +374,8 @@ val list_issue_types : bool
 
 val liveness_dangerous_classes : Yojson.Basic.t
 
+val liveness_whitelist_constant : int list
+
 val max_nesting : int option
 
 val merge : bool
