@@ -47,18 +47,25 @@ let nullability_for_return ~proc_name ~is_callee_in_trust_list ~nullsafe_mode ~i
     AnnotatedNullability.of_type_and_annotation ~is_callee_in_trust_list ~nullsafe_mode
       ~is_third_party ret_type ret_annotations
   in
-  (* if any param is annotated with propagates nullable, then the result is nullable *)
-  match nullability with
-  | AnnotatedNullability.Nullable _ ->
-      nullability (* We already know it is nullable - lets not overwrite the origin *)
-  | _ when has_propagates_nullable_in_param ->
-      (* if any params is propagates nullable, the return type can be only nullable *)
-      AnnotatedNullability.Nullable AnnotatedNullability.HasPropagatesNullableInParam
-  | _ when is_provisional_annotation_mode ->
-      (* Not explicitly annotated with [@Nullable] - make it provisionally nullable  *)
-      AnnotatedNullability.ProvisionallyNullable (ProvisionalAnnotation.Method proc_name)
-  | _ ->
-      nullability
+  (* if any param is annotated with propagates nullable, the return nullability is also nullable *)
+  let nullability =
+    match nullability with
+    | AnnotatedNullability.Nullable _ ->
+        nullability (* We already know it is nullable - lets not overwrite the origin *)
+    | _ when has_propagates_nullable_in_param ->
+        (* if any params is propagates nullable, the return type can be only nullable *)
+        AnnotatedNullability.Nullable AnnotatedNullability.HasPropagatesNullableInParam
+    | _ ->
+        nullability
+  in
+  let final_nullability =
+    if
+      is_provisional_annotation_mode
+      && AnnotatedNullability.can_be_considered_for_provisional_annotation nullability
+    then AnnotatedNullability.ProvisionallyNullable (ProvisionalAnnotation.Method proc_name)
+    else nullability
+  in
+  final_nullability
 
 
 let nullability_for_param ~proc_name ~param_num ~is_callee_in_trust_list ~nullsafe_mode
@@ -67,14 +74,13 @@ let nullability_for_param ~proc_name ~param_num ~is_callee_in_trust_list ~nullsa
     AnnotatedNullability.of_type_and_annotation ~is_callee_in_trust_list ~nullsafe_mode
       ~is_third_party param_type param_annotations
   in
-  match nullability with
-  | AnnotatedNullability.Nullable _ ->
-      nullability
-  | _ when is_provisional_annotation_mode ->
-      AnnotatedNullability.ProvisionallyNullable
-        (ProvisionalAnnotation.Param {method_info= proc_name; num= param_num})
-  | _ ->
-      nullability
+  if
+    is_provisional_annotation_mode
+    && AnnotatedNullability.can_be_considered_for_provisional_annotation nullability
+  then
+    AnnotatedNullability.ProvisionallyNullable
+      (ProvisionalAnnotation.Param {method_info= proc_name; num= param_num})
+  else nullability
 
 
 (* Given annotations for method signature, extract nullability information
