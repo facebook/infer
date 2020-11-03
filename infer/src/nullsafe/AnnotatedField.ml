@@ -38,7 +38,18 @@ let is_enum_value tenv ~class_typ (field_info : Struct.field_info) =
 
 let is_synthetic field_name = String.contains field_name '$'
 
-let get tenv field_name class_typ =
+(* For the special mode, return the provisionally nullable annotation, otherwise return the unchaged nullability *)
+let maybe_provisionally_nullable field_name ~field_class ~class_under_analysis nullability =
+  if
+    Config.nullsafe_annotation_graph
+    (* Provisionally nullable mode distinct "internal" fields in the class and all the fields outside *)
+    && Typ.Name.equal field_class class_under_analysis
+    && AnnotatedNullability.can_be_considered_for_provisional_annotation nullability
+  then AnnotatedNullability.ProvisionallyNullable (ProvisionalAnnotation.Field {field_name})
+  else nullability
+
+
+let get tenv field_name ~class_typ ~class_under_analysis =
   let open IOption.Let_syntax in
   let lookup = Tenv.lookup tenv in
   (* We currently don't support field-level strict mode annotation, so fetch it from class *)
@@ -63,7 +74,7 @@ let get tenv field_name class_typ =
     AnnotatedNullability.of_type_and_annotation ~is_callee_in_trust_list:false ~nullsafe_mode
       ~is_third_party field_typ annotations
   in
-  let corrected_nullability =
+  let special_case_nullability =
     if Nullability.is_nonnullish (AnnotatedNullability.get_nullability nullability) then
       if
         is_enum_value
@@ -81,5 +92,13 @@ let get tenv field_name class_typ =
       else nullability
     else nullability
   in
-  let annotated_type = AnnotatedType.{nullability= corrected_nullability; typ= field_typ} in
+  let field_class =
+    Option.value_exn (get_type_name class_typ)
+      ~message:"otherwise we would not have fetched field info above"
+  in
+  let final_nullability =
+    maybe_provisionally_nullable field_name ~field_class ~class_under_analysis
+      special_case_nullability
+  in
+  let annotated_type = AnnotatedType.{nullability= final_nullability; typ= field_typ} in
   {annotation_deprecated= annotations; annotated_type}

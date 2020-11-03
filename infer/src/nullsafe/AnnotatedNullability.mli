@@ -81,4 +81,12 @@ val of_type_and_annotation :
     processing. [is_callee_in_trust_list] defines whether the callee class is in the caller's
     explicitly provided trust list and therefore whether its nullability should be refined. *)
 
+val can_be_considered_for_provisional_annotation : t -> bool
+(** A method for the special mode where imaginary (provisional) [@Nullable] annotations are added to
+    the code: see also [ProvisionalAnnotation.t]. This is a helper method useful for preliminary
+    filtration of types that:
+
+    - can be semantically annotated as [@Nullable] in the source code e.g. non-primitive types
+    - makes logical sense to annotate - e.g. the source code is under control. *)
+
 val pp : Format.formatter -> t -> unit
