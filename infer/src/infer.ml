@@ -36,6 +36,8 @@ let setup () =
   ( match Config.command with
   | Analyze ->
       ResultsDir.assert_results_dir "have you run capture before?"
+  | AnalyzeJson ->
+        run Driver.AnalyzeJson
   | Report | ReportDiff ->
       ResultsDir.create_results_dir ()
   | Capture | Compile | Run ->

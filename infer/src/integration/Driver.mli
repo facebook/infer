@@ -13,6 +13,7 @@ open! IStd
 (** based on the build_system and options passed to infer, we run in different driver modes *)
 type mode =
   | Analyze
+  | AnalyzeJson
   | Ant of {prog: string; args: string list}
   | BuckClangFlavor of {build_cmd: string list}
   | BuckCombinedGenrule of {build_cmd: string list}

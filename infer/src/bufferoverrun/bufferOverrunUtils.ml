@@ -86,6 +86,9 @@ module Exec = struct
             Dom.Val.of_c_array_alloc allocsite ~stride ~offset ~size ~traces
         | Language.Java ->
             Dom.Val.of_java_array_alloc allocsite ~length:size ~traces
+        | Language.CIL ->
+            (* cil todo *)
+            Dom.Val.of_java_array_alloc allocsite ~length:size ~traces
       in
       if Int.equal dimension 1 then Dom.Mem.add_stack ~represents_multiple_values loc arr mem
       else Dom.Mem.add_heap ~represents_multiple_values loc arr mem

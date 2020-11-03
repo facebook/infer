@@ -61,6 +61,8 @@ val knormal : kind
 
 val kfootprint : kind
 
+val knone : kind
+
 val name_spec : name
 (** Name used for spec variables *)
 
@@ -78,6 +80,8 @@ val name_to_string : name -> string
 
 val get_name : t -> name
 (** Name of the identifier. *)
+
+val create_with_stamp : kind -> name -> int -> t
 
 val create : kind -> int -> t
 (** Create an identifier with default name for the given kind *)

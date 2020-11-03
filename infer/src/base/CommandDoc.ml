@@ -57,6 +57,13 @@ $(b,infer) $(i,[options])|}
     ~description:[`P "Analyze the files captured in the project results directory and report."]
     ~see_also:InferCommand.[Report; Run]
 
+let analyze_json = 
+  mk_command_doc ~title:"Infer Analysis" ~short_description:"analyze the files captured by infer"
+    ~synopsis:{|$(b,infer) $(b,analyze) $(i,[options])
+$(b,infer) $(i,[options])|}
+    ~description:[`P "Analyze the files captured in the project results directory and report."]
+    ~see_also:InferCommand.[Report; Run]
+
 
 let capture =
   mk_command_doc ~title:"Infer Compilation Capture"
@@ -332,6 +339,7 @@ let command_to_data =
   in
   let open InferCommand in
   [ mk Analyze analyze
+  ; mk AnalyzeJson analyze_json
   ; mk Capture capture
   ; mk Compile compile
   ; mk Debug debug

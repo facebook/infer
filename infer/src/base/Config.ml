@@ -153,6 +153,8 @@ let manual_internal = "INTERNAL OPTIONS"
 
 let manual_java = "JAVA OPTIONS"
 
+let manual_csharp = "CSharp OPTIONS"
+
 let manual_quandary = "QUANDARY CHECKER OPTIONS"
 
 let manual_racerd = "RACERD CHECKER OPTIONS"
@@ -485,7 +487,7 @@ let () =
     match cmd with
     | Report ->
         `Add
-    | Analyze | Capture | Compile | Debug | Explore | Help | ReportDiff | Run ->
+    | Analyze | AnalyzeJson | Capture | Compile | Debug | Explore | Help | ReportDiff | Run ->
         `Reject
   in
   (* make sure we generate doc for all the commands we know about *)
@@ -790,6 +792,11 @@ and capture_blacklist =
     "Skip capture of files matched by the specified OCaml regular expression (only supported by \
      the javac integration for now)."
 
+and cfg_json = 
+  CLOpt.mk_path_opt ~long:"cfg-json" 
+    ~in_help:InferCommand.[(AnalyzeJson, manual_generic)]
+    ~meta:"file"
+    "Path to CFG json file"
 
 and censor_report =
   CLOpt.mk_string_list ~long:"censor-report" ~deprecated:["-filter-report"]
@@ -1022,7 +1029,7 @@ and ( bo_debug
         match command with
         | Debug | Explore | Help ->
             None
-        | (Analyze | Capture | Compile | Report | ReportDiff | Run) as command ->
+        | (Analyze | AnalyzeJson | Capture | Compile | Report | ReportDiff | Run) as command ->
             Some (command, manual_generic) )
   in
   let bo_debug =
@@ -1282,6 +1289,12 @@ and external_java_packages =
     "Specify a list of Java package prefixes for external Java packages. If set, the analysis will \
      not report non-actionable warnings on those packages."
 
+and external_csharp_namespaces =
+  CLOpt.mk_string_list ~long:"external-csharp-packages"
+    ~in_help:InferCommand.[(Analyze, manual_csharp)]
+    ~meta:"prefix"
+    "Specify a list of CSharp package prefixes for external CSharp packages. If set, the analysis will \
+     not report non-actionable warnings on those packages."
 
 and fail_on_bug =
   CLOpt.mk_bool ~deprecated:["-fail-on-bug"] ~long:"fail-on-issue" ~default:false
@@ -2311,6 +2324,12 @@ and starvation_strict_mode =
     "During starvation analysis, report strict mode violations (Android only)"
 
 
+and tenv_json = 
+  CLOpt.mk_path_opt ~long:"tenv-json" 
+    ~in_help:InferCommand.[(AnalyzeJson, manual_generic)]
+    ~meta:"file"
+    "Path to TEnv json file"
+    
 and testing_mode =
   CLOpt.mk_bool
     ~deprecated:["testing_mode"; "-testing_mode"; "tm"]
@@ -2341,6 +2360,10 @@ and trace_rearrange =
   CLOpt.mk_bool ~deprecated:["trace_rearrange"] ~long:"trace-rearrange"
     "Detailed tracing information during prop re-arrangement operations"
 
+and tracing =
+  CLOpt.mk_bool ~deprecated:["tracing"] ~long:"tracing"
+    "Report error traces for runtime exceptions (Java only): generate preconditions for \
+     runtimeexceptions in Java and report errors for public methods which throw runtime exceptions"
 
 and trace_topl =
   CLOpt.mk_bool ~long:"trace-topl" "Detailed tracing information during TOPL analysis"
@@ -2836,6 +2859,8 @@ and eradicate_return_over_annotated = !eradicate_return_over_annotated
 and eradicate_verbose = !eradicate_verbose
 
 and external_java_packages = !external_java_packages
+
+and external_csharp_namespaces = !external_csharp_namespaces
 
 and fail_on_bug = !fail_on_bug
 
@@ -3362,6 +3387,14 @@ let java_package_is_external package =
       List.exists external_java_packages ~f:(fun (prefix : string) ->
           String.is_prefix package ~prefix )
 
+(** Check if a CSharp package is external to the repository *)
+let csharp_namespace_is_external package =
+  match external_csharp_namespaces with
+  | [] ->
+      false
+  | _ ->
+      List.exists external_csharp_namespaces ~f:(fun (prefix : string) ->
+          String.is_prefix package ~prefix )
 
 let is_in_custom_symbols list_name symbol =
   match List.Assoc.find ~equal:String.equal custom_symbols list_name with

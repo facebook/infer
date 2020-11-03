@@ -184,6 +184,8 @@ module Node : sig
   val pp_stmt : Format.formatter -> stmt_nodekind -> unit
 
   val compute_key : t -> NodeKey.t
+
+  val print_node : t -> unit
 end
 
 (** Map with node id keys. *)
@@ -339,3 +341,5 @@ val shallow_copy_code_from_pdesc : orig_pdesc:t -> dest_pdesc:t -> unit
 module SQLite : SqliteUtils.Data with type t = t option
 
 val load : Procname.t -> t option
+
+val print_pdesc_nodes : t -> unit

@@ -10,6 +10,42 @@ module F = Format
 
 (** Module for Procedure Names. *)
 
+(** Type of csharp procedure names. *)
+module CSharp : sig
+  type kind =
+    | Non_Static
+        (** in Java, procedures called with invokevirtual, invokespecial, and invokeinterface *)
+    | Static  (** in Java, procedures called with invokestatic *)
+
+  type t [@@deriving compare]
+
+  val constructor_method_name : string
+
+  val get_class_name : t -> string
+  (** Return the class name of a csharp procedure name. *)
+
+  val get_method : t -> string
+  (** Return the method name of a csharp procedure name. *)
+  
+  val is_static : t -> bool
+  (** Check if the java procedure is static. *)
+
+  val get_class_type_name : t -> Typ.Name.t
+  (** Return the class name as a typename of a java procedure name. *)
+  
+  val get_simple_class_name : t -> string
+  (** Return the simple class name of a CSharp procedure name (i.e. name without the package info). *)
+
+  val get_return_typ : t -> Typ.t
+  (** Return the return type of [pname_csharp]. return Tvoid if there's no return type *)
+
+  val get_class_name : t -> string
+  (** Return the class name of a java procedure name. *)
+
+  val is_generated : t -> bool
+  (** Check if the proc name comes from generated code *)
+end
+
 (** Type of java procedure names. *)
 module Java : sig
   type kind =
@@ -105,7 +141,7 @@ module Parameter : sig
   type clang_parameter = Typ.Name.t option [@@deriving compare, equal]
 
   (** Type for parameters in procnames, for java and clang. *)
-  type t = JavaParameter of Typ.t | ClangParameter of clang_parameter [@@deriving compare, equal]
+  type t = JavaParameter of Typ.t | ClangParameter of clang_parameter | CSharpParameter of Typ.t [@@deriving compare, equal]
 
   val of_typ : Typ.t -> clang_parameter
 end
@@ -191,6 +227,7 @@ end
     [foo_my_block() {my_block(); }] where foo_my_block is created with WithBlockParameters (foo,
     [my_block]) *)
 type t =
+  | CSharp of CSharp.t
   | Java of Java.t
   | C of C.t
   | Linters_dummy_method
@@ -261,6 +298,16 @@ val make_java :
   -> t
 (** Create a Java procedure name. *)
 
+val make_csharp :
+     class_name:Typ.Name.t
+  -> return_type:Typ.t option
+  -> method_name:string
+  -> parameters:Typ.t list
+  -> kind:CSharp.kind
+  -> unit
+  -> t
+(** Create a CSharp procedure name. *)
+
 val make_objc_dealloc : Typ.Name.t -> t
 (** Create a Objective-C dealloc name. This is a destructor for an Objective-C class. This procname
     is given by the class name, since it is always an instance method with the name "dealloc" *)
@@ -288,6 +335,9 @@ val is_c_method : t -> bool
 
 val is_constructor : t -> bool
 (** Check if this is a constructor. *)
+
+val is_csharp : t -> bool
+(** Check if this is a CSharp procedure name. *)
 
 val is_java : t -> bool
 (** Check if this is a Java procedure name. *)

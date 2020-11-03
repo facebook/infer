@@ -44,7 +44,6 @@ let to_simplified_string fld =
            String.concat ~sep:"." [class_only; fld.field_name] )
   else fld.field_name
 
-
 let to_full_string fld =
   (if is_java fld then dot_join else cc_join) (Typ.Name.name fld.class_name) fld.field_name
 

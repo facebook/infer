@@ -16,6 +16,7 @@ module F = Format
 (* based on the build_system and options passed to infer, we run in different driver modes *)
 type mode =
   | Analyze
+  | AnalyzeJson
   | Ant of {prog: string; args: string list}
   | BuckClangFlavor of {build_cmd: string list}
   | BuckCombinedGenrule of {build_cmd: string list}
@@ -37,6 +38,8 @@ let is_analyze_mode = function Analyze -> true | _ -> false
 let pp_mode fmt = function
   | Analyze ->
       F.fprintf fmt "Analyze driver mode"
+  | AnalyzeJson ->
+      F.fprintf fmt "Analyze json mode"
   | Ant {prog; args} ->
       F.fprintf fmt "Ant driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | BuckClangFlavor {build_cmd} ->
@@ -105,7 +108,8 @@ let check_xcpretty () =
 
 
 let capture ~changed_files = function
-  | Analyze ->
+  | Analyze
+  | AnalyzeJson ->
       ()
   | Ant {prog; args} ->
       L.progress "Capturing in ant mode...@." ;
@@ -179,6 +183,15 @@ let execute_analyze ~changed_files =
   InferAnalyze.main ~changed_files ;
   PerfEvent.(log (fun logger -> log_end_event logger ()))
 
+let execute_analyze_json () =
+  register_perf_stats_report PerfStats.TotalBackend ;
+  match (Config.cfg_json, Config.tenv_json) with
+  | (Some cfg_json, Some tenv_json) ->
+    InferAnalyze.analyze_json cfg_json tenv_json ;
+  | (_,_) ->
+    L.user_warning "** Missing cfg or tenv json files. Provide them as arguments throught '--cfg-json' and '--tenv-json' **\n" ;
+  PerfStats.get_reporter PerfStats.TotalBackend ()
+
 
 let report ?(suppress_console = false) () =
   let issues_json = ResultsDir.get_path ReportJson in
@@ -238,7 +251,7 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
         (false, false)
     | (Capture | Compile | Debug | Explore | Help | Report | ReportDiff), _ ->
         (false, false)
-    | (Analyze | Run), _ ->
+    | (Analyze | AnalyzeJson | Run), _ ->
         (true, true)
   in
   let should_analyze = should_analyze && Config.capture in
@@ -254,18 +267,24 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
         true
     | Analyze | BuckGenruleMaster _ | BuckCombinedGenrule _ | BuckJavaFlavor _ | Gradle _ ->
         ResultsDir.RunState.get_merge_capture ()
+    | AnalyzeJson ->
+        false
     | _ ->
         false
   in
+  let analyze_json = match mode with | AnalyzeJson -> true | _ -> false in
   if should_merge then (
     if Config.export_changed_functions then MergeCapture.merge_changed_functions () ;
     MergeCapture.merge_captured_targets () ;
     ResultsDir.RunState.set_merge_capture false ) ;
+
   if should_analyze then
-    if SourceFiles.is_empty () && Config.capture then error_nothing_to_analyze mode
+    (if analyze_json then
+      (execute_analyze_json () ;)
+    else if SourceFiles.is_empty () && Config.capture then error_nothing_to_analyze mode
     else (
       execute_analyze ~changed_files ;
-      if Config.starvation_whole_program then StarvationGlobalAnalysis.whole_program_analysis () ) ;
+      if Config.starvation_whole_program then StarvationGlobalAnalysis.whole_program_analysis () )) ;
   if should_report && Config.report then report ?suppress_console:suppress_console_report ()
 
 

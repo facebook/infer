@@ -44,6 +44,12 @@ module Name = struct
     let java_lang_string = from_string "java.lang.String"
   end
 
+  module CSharp = struct
+    open Typ.Name.CSharp
+
+    let system_string = from_string "System.String"
+  end
+
   module Objc = struct
     open Typ.Name.Objc
 

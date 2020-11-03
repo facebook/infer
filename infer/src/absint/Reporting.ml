@@ -32,6 +32,8 @@ let log_issue_from_summary ?severity_override proc_desc err_log ~node ~session ~
     match procname with
     | Procname.Java java_pname ->
         Procname.Java.is_generated java_pname
+    | Procname.CSharp csharp_pname ->
+        Procname.CSharp.is_generated csharp_pname
     | _ ->
         false
   in

@@ -601,6 +601,8 @@ val trace_ondemand : bool
 
 val trace_rearrange : bool
 
+val tracing : bool
+
 val trace_topl : bool
 
 val tv_commit : string option
@@ -648,6 +650,9 @@ val is_in_custom_symbols : string -> string -> bool
 
 val java_package_is_external : string -> bool
 (** Check if a Java package is external to the repository *)
+
+val csharp_namespace_is_external : string -> bool
+(** Check if a CSharp namespace is external to the repository *)
 
 val scuba_execution_id : Int64.t option
 (** a random number to (hopefully) uniquely identify this run *)

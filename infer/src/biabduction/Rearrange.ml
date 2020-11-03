@@ -470,7 +470,7 @@ let mk_ptsto_exp_footprint analysis_data pname tenv orig_prop (lexp, typ) max_st
       raise (Exceptions.Dangling_pointer_dereference (false, err_desc, __POS__)) ) ;
   let off_foot, eqs = laundry_offset_for_footprint max_stamp off in
   let subtype =
-    match !Language.curr_language with Clang -> Subtype.exact | Java -> Subtype.subtypes
+    match !Language.curr_language with Clang -> Subtype.exact | Java -> Subtype.subtypes | CIL -> Subtype.subtypes
   in
   let create_ptsto footprint_part off0 =
     match (root, off0, typ.Typ.desc) with

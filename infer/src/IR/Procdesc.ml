@@ -433,6 +433,18 @@ module Node = struct
     let succs = get_succs node in
     let preds = get_preds node in
     NodeKey.compute node ~simple_key ~succs ~preds
+  
+  let print_node node =
+    let print_node_list nl =
+      List.iter ~f:(fun n -> Printf.printf "%d " (get_id n)) nl
+    in
+    Printf.printf "id: %d preds: " (get_id node) ; print_node_list node.preds ;
+    Printf.printf "succs: " ; print_node_list node.succs;
+    Printf.printf "exn: "; print_node_list node.exn;
+    Location.pp_line Format.std_formatter node.loc ;
+    print_endline "" ;
+    print_endline (get_description Pp.text node) ;
+    ()
 end
 
 (* =============== END of module Node =============== *)
@@ -855,3 +867,7 @@ let load =
         |> SqliteUtils.check_result_code db ~log:"load bind proc_uid" ;
         SqliteUtils.result_single_column_option ~finalize:false ~log:"Procdesc.load" db stmt
         |> Option.bind ~f:SQLite.deserialize )
+
+let print_pdesc_nodes pdesc =
+  List.iter ~f:Node.print_node pdesc.nodes ;
+  print_endline "" 

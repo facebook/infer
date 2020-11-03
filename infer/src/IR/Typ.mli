@@ -106,6 +106,7 @@ and name =
      args of its parent classes, for example: MyClass<int>::InnerClass<int> will store
      "MyClass<int>", "InnerClass" *)
   | CppClass of QualifiedCppName.t * template_spec_info
+  | CSharpClass of CSharpClassName.t
   | JavaClass of JavaClassName.t
   | ObjcClass of QualifiedCppName.t
   | ObjcProtocol of QualifiedCppName.t
@@ -187,6 +188,21 @@ module Name : sig
     val from_qual_name : QualifiedCppName.t -> t
 
     val union_from_qual_name : QualifiedCppName.t -> t
+  end
+
+  module CSharp : sig
+    module Split : sig
+      type t
+
+      val make : ?namespace:string -> string -> t
+    end
+    val from_string : string -> t
+
+    val is_class : t -> bool
+    (** [is_class name] holds if [name] names a CSharp class *)
+
+    val get_csharp_class_name_exn : t -> CSharpClassName.t
+    (** Ensure [name] is a java class name and return underlying CSharpClassName *)
   end
 
   module Java : sig
@@ -302,6 +318,9 @@ val is_int : t -> bool
 val is_unsigned_int : t -> bool
 
 val is_char : t -> bool
+
+val is_csharp_type : t -> bool
+(** is [t] a type produced by the Java frontend? *)
 
 val is_java_type : t -> bool
 (** is [t] a type produced by the Java frontend? *)

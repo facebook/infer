@@ -638,7 +638,7 @@ let prop_init_formals_seed tenv new_formals (prop : 'a Prop.t) : Prop.exposed Pr
         match !Language.curr_language with
         | Clang ->
             Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
-        | Java ->
+        | Java | CIL ->
             Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.subtypes}
       in
       Prop.mk_ptsto_lvar tenv Prop.Fld_init Predicates.inst_formal (pv, texp, None)
@@ -879,7 +879,7 @@ let custom_error_preconditions summary =
 let remove_this_not_null tenv prop =
   let collect_hpred (var_option, hpreds) = function
     | Predicates.Hpointsto (Exp.Lvar pvar, Eexp (Exp.Var var, _), _)
-      when Language.curr_language_is Java && Pvar.is_this pvar ->
+      when (Language.curr_language_is Java || Language.curr_language_is CIL) && Pvar.is_this pvar ->
         (Some var, hpreds)
     | hpred ->
         (var_option, hpred :: hpreds)
@@ -1023,6 +1023,8 @@ let analyze_proc analysis_data summary_opt proc_cfg : BiabductionSummary.t =
   let updated_summary = update_summary analysis_data summary_opt specs phase res in
   if Language.curr_language_is Clang && Config.report_custom_error then
     report_custom_errors analysis_data updated_summary ;
+  if (Language.curr_language_is Java || Language.curr_language_is CIL) && Config.tracing then
+    report_runtime_exceptions tenv proc_desc updated_summary ;
   updated_summary
 
 

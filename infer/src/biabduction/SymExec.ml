@@ -417,7 +417,7 @@ let check_arith_norm_exp {InterproceduralAnalysis.proc_desc; err_log; tenv} exp 
 
 
 let method_exists right_proc_name methods =
-  if Language.curr_language_is Java then
+  if Language.curr_language_is Java || Language.curr_language_is CIL then
     List.exists ~f:(fun meth_name -> Procname.equal right_proc_name meth_name) methods
   else
     (* ObjC/C++ case : The attribute map will only exist when we have code for the method or
@@ -492,7 +492,7 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Procname.t
       (* if this is not a virtual or interface call, there's no need for resolution *)
       [callee_pname]
   | (receiver_exp, actual_receiver_typ) :: _ ->
-      if not (Language.curr_language_is Java) then
+      if not (Language.curr_language_is Java || Language.curr_language_is CIL ) then
         (* default mode for Obj-C/C++/Java virtual calls: resolution only *)
         [do_resolve callee_pname receiver_exp actual_receiver_typ]
       else
@@ -838,7 +838,7 @@ let add_constraints_on_retval tenv pdesc prop ret_exp ~has_nonnull_annot typ cal
       let prop_with_abduced_var =
         let abduced_ret_pv =
           (* in Java, always re-use the same abduced ret var to prevent false alarms with repeated method calls *)
-          let loc = if Procname.is_java callee_pname then Location.dummy else callee_loc in
+          let loc = if (Procname.is_java callee_pname || Procname.is_csharp callee_pname) then Location.dummy else callee_loc in
           Pvar.mk_abduced_ret callee_pname loc
         in
         if !BiabductionConfig.footprint then
@@ -1202,6 +1202,33 @@ let rec sym_exec
                   exec_skip_call ~reason ret_annots proc_attrs.ProcAttributes.ret_type )
           in
           List.fold ~f:(fun acc pname -> exec_one_pname pname @ acc) ~init:[] resolved_pnames
+      | CSharp callee_pname_csharp ->
+          let norm_prop, norm_args = normalize_params analysis_data prop_ actual_params in
+          let url_handled_args = call_constructor_url_update_args callee_pname norm_args in
+          let resolved_pnames =
+            resolve_virtual_pname tenv norm_prop url_handled_args callee_pname call_flags
+          in
+          let exec_one_pname pname =
+            let exec_skip_call ~reason ret_annots ret_type =
+              skip_call ~reason norm_prop path pname ret_annots loc ret_id_typ ret_type
+                url_handled_args
+            in
+            match analyze_dependency pname with
+            | None ->
+                let ret_typ = Procname.CSharp.get_return_typ callee_pname_csharp in
+                let ret_annots = load_ret_annots callee_pname in
+                exec_skip_call ~reason:"unknown method" ret_annots ret_typ
+            | Some ((callee_proc_desc, _) as callee_summary) -> (
+              match reason_to_skip ~callee_desc:(`Summary callee_summary) with
+              | None ->
+                  let handled_args = call_args norm_prop pname url_handled_args ret_id_typ loc in
+                  proc_call callee_summary handled_args
+              | Some reason ->
+                  let proc_attrs = Procdesc.get_attributes callee_proc_desc in
+                  let ret_annots = proc_attrs.ProcAttributes.method_annotation.return in
+                  exec_skip_call ~reason ret_annots proc_attrs.ProcAttributes.ret_type )
+          in
+          List.fold ~f:(fun acc pname -> exec_one_pname pname @ acc) ~init:[] resolved_pnames
       | _ ->
           (* Generic fun call with known name *)
           let prop_r, n_actual_params = normalize_params analysis_data prop_ actual_params in
@@ -1468,6 +1495,9 @@ and unknown_or_scan_call ~is_scan ~reason ret_typ ret_annots
     | Java _ ->
         (* FIXME (T19882766): we need to disable this for Java because it breaks too many tests *)
         false
+    | CSharp _ ->
+        (* FIXME (T19882766): we need to disable this for Java because it breaks too many tests *)
+        false
     | ObjC_Cpp cpp_name ->
         (* FIXME: we need to work around a frontend hack for std::shared_ptr
          * to silent some of the uninitialization warnings *)
@@ -1495,7 +1525,7 @@ and unknown_or_scan_call ~is_scan ~reason ret_typ ret_annots
   let has_nonnull_annot = Annotations.ia_is_nonnull ret_annots in
   let pre_final =
     (* in Java, assume that skip functions close resources passed as params *)
-    let pre_1 = if Procname.is_java callee_pname then remove_file_attribute pre else pre in
+    let pre_1 = if (Procname.is_java callee_pname || Procname.is_csharp callee_pname) then remove_file_attribute pre else pre in
     let pre_2 =
       (* TODO(jjb): Should this use the type of ret_id, or ret_type from the procedure type? *)
       add_constraints_on_retval tenv proc_desc pre_1

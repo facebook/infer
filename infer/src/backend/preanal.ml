@@ -503,11 +503,11 @@ let do_preanalysis exe_env pdesc =
   let summary = Summary.OnDisk.reset pdesc in
   let tenv = Exe_env.get_tenv exe_env (Procdesc.get_proc_name pdesc) in
   let proc_name = Procdesc.get_proc_name pdesc in
-  if Procname.is_java proc_name then InlineJavaSyntheticMethods.process pdesc ;
-  if Config.function_pointer_specialization && not (Procname.is_java proc_name) then
+  if (Procname.is_java proc_name || Procname.is_csharp proc_name) then InlineJavaSyntheticMethods.process pdesc ;
+  if Config.function_pointer_specialization && not (Procname.is_java proc_name || Procname.is_csharp proc_name) then
     FunctionPointers.substitute pdesc ;
   (* NOTE: It is important that this preanalysis stays before Liveness *)
-  if not (Procname.is_java proc_name) then (
+  if not (Procname.is_java proc_name || Procname.is_csharp proc_name) then (
     ClosuresSubstitution.process_closure_call summary ;
     ClosureSubstSpecializedMethod.process summary ;
     ReplaceObjCMethodCall.process tenv pdesc proc_name ) ;

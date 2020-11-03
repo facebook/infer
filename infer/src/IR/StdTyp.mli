@@ -43,6 +43,10 @@ module Name : sig
     val java_lang_string : t
   end
 
+  module CSharp : sig
+    val system_string : t
+  end
+
   module Objc : sig
     val ns_enumerator : t
   end

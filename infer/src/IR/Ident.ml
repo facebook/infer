@@ -61,6 +61,8 @@ let knormal = KNormal
 
 let kprimed = KPrimed
 
+let knone = KNone
+
 let equal_kind = [%compare.equal: kind]
 
 (* timestamp for a path identifier *)
