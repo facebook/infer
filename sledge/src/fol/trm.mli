@@ -86,6 +86,11 @@ val ancestor : int -> t
 (* uninterpreted *)
 val apply : Funsym.t -> t array -> t
 
+(** Destruct *)
+
+val get_z : t -> Z.t option
+val get_q : t -> Q.t option
+
 (** Transform *)
 
 val map_vars : t -> f:(Var.t -> Var.t) -> t

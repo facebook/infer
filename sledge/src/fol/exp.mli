@@ -71,10 +71,11 @@ module rec Term : sig
 
   (** Destruct *)
 
-  val d_int : t -> Z.t option
+  val get_z : t -> Z.t option
+  (** [get_z a] is [Some z] iff [equal a (integer z)] *)
 
-  val get_const : t -> Q.t option
-  (** [get_const a] is [Some q] iff [equal a (const q)] *)
+  val get_q : t -> Q.t option
+  (** [get_q a] is [Some q] iff [equal a (rational q)] *)
 
   (** Access *)
 

@@ -253,13 +253,8 @@ module Term = struct
 
   (** Destruct *)
 
-  let d_int e = match (e : t) with `Trm (Z z) -> Some z | _ -> None
-
-  let get_const e =
-    match (e : t) with
-    | `Trm (Z z) -> Some (Q.of_z z)
-    | `Trm (Q q) -> Some q
-    | _ -> None
+  let get_z = function `Trm t -> Trm.get_z t | _ -> None
+  let get_q = function `Trm t -> Trm.get_q t | _ -> None
 
   (** Access *)
 

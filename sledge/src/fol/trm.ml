@@ -108,6 +108,8 @@ and Trm : sig
   val sub : t -> t -> t
   val seq_size_exn : t -> t
   val seq_size : t -> t option
+  val get_z : t -> Z.t option
+  val get_q : t -> Q.t option
   val vars : t -> Var.t iter
 end = struct
   type t =

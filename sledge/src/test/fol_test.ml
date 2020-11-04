@@ -56,7 +56,7 @@ let%test_module _ =
     let union r s = union wrt r s |> snd
     let inter r s = inter wrt r s |> snd
     let implies_eq r a b = implies r (Formula.eq a b)
-    let difference x e f = Term.d_int (normalize x (Term.sub e f))
+    let difference x e f = Term.get_z (normalize x (Term.sub e f))
 
     (** tests *)
 

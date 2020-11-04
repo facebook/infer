@@ -141,15 +141,15 @@ let pp_block x fs segs =
     | {loc; bas; len; _} :: _ -> (
         Term.equal loc bas
         &&
-        match Term.d_int len with
-        | Some data -> (
+        match Term.get_z len with
+        | Some z -> (
           match
             List.fold segs (Some Z.zero) ~f:(fun seg len ->
-                match (len, Term.d_int seg.siz) with
-                | Some len, Some data -> Some (Z.add len data)
+                match (len, Term.get_z seg.siz) with
+                | Some len, Some siz -> Some (Z.add len siz)
                 | _ -> None )
           with
-          | Some blk_len -> Z.equal data blk_len
+          | Some blk_len -> Z.equal z blk_len
           | _ -> false )
         | _ -> false )
     | [] -> false
