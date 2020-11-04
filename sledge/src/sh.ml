@@ -56,18 +56,6 @@ let map_seg ~f h =
   then h
   else {loc; bas; len; siz; seq}
 
-let map ~f_sjn ~f_ctx ~f_trm ~f_fml ({us; xs= _; ctx; pure; heap; djns} as q)
-    =
-  let pure = f_fml pure in
-  if Formula.(equal ff pure) then false_ us
-  else
-    let ctx = f_ctx ctx in
-    let heap = List.map_endo heap ~f:(map_seg ~f:f_trm) in
-    let djns = List.map_endo djns ~f:(List.map_endo ~f:f_sjn) in
-    if ctx == q.ctx && pure == q.pure && heap == q.heap && djns == q.djns
-    then q
-    else {q with ctx; pure; heap; djns}
-
 let fold_terms_seg {loc; bas; len; siz; seq} s ~f =
   f loc (f bas (f len (f siz (f seq s))))
 
@@ -301,11 +289,60 @@ let rec invariant q =
 
 (** Quantification and Vocabulary *)
 
+let exists_fresh xs q =
+  [%Trace.call fun {pf} ->
+    pf "{@[%a@]}@ %a" Var.Set.pp xs pp q ;
+    assert (
+      Var.Set.disjoint xs q.us
+      || fail "Sh.exists_fresh xs ∩ q.us: %a" Var.Set.pp
+           (Var.Set.inter xs q.us) () )]
+  ;
+  ( if Var.Set.is_empty xs then q
+  else {q with xs= Var.Set.union q.xs xs} |> check invariant )
+  |>
+  [%Trace.retn fun {pf} -> pf "%a" pp]
+
+let exists xs q =
+  [%Trace.call fun {pf} -> pf "{@[%a@]}@ %a" Var.Set.pp xs pp q]
+  ;
+  assert (
+    Var.Set.subset xs ~of_:q.us
+    || fail "Sh.exists xs - q.us: %a" Var.Set.pp (Var.Set.diff xs q.us) ()
+  ) ;
+  ( if Var.Set.is_empty xs then q
+  else
+    {q with us= Var.Set.diff q.us xs; xs= Var.Set.union q.xs xs}
+    |> check invariant )
+  |>
+  [%Trace.retn fun {pf} -> pf "%a" pp]
+
+(** remove quantification on variables disjoint from vocabulary *)
+let elim_exists xs q =
+  assert (Var.Set.disjoint xs q.us) ;
+  {q with us= Var.Set.union q.us xs; xs= Var.Set.diff q.xs xs}
+
+let map ~f_sjn ~f_ctx ~f_trm ~f_fml ({us; xs= _; ctx; pure; heap; djns} as q)
+    =
+  let pure = f_fml pure in
+  if Formula.(equal ff pure) then false_ us
+  else
+    let xs, ctx = f_ctx ctx in
+    let heap = List.map_endo heap ~f:(map_seg ~f:f_trm) in
+    let djns = List.map_endo djns ~f:(List.map_endo ~f:f_sjn) in
+    if
+      ctx == q.ctx
+      && pure == q.pure
+      && heap == q.heap
+      && djns == q.djns
+      && Var.Set.is_empty xs
+    then q
+    else exists_fresh xs {q with ctx; pure; heap; djns}
+
 (** primitive application of a substitution, ignores us and xs, may violate
     invariant *)
 let rec apply_subst sub q =
   map q ~f_sjn:(rename sub)
-    ~f_ctx:(fun r -> Context.rename r sub)
+    ~f_ctx:(fun r -> (Var.Set.empty, Context.rename r sub))
     ~f_trm:(Term.rename sub) ~f_fml:(Formula.rename sub)
   |> check (fun q' ->
          assert (Var.Set.disjoint (fv q') (Var.Subst.domain sub)) )
@@ -385,38 +422,6 @@ let bind_exists q ~wrt =
   (q'.xs, {q' with us= Var.Set.union q'.us q'.xs; xs= Var.Set.empty})
   |>
   [%Trace.retn fun {pf} (_, q') -> pf "%a" pp q']
-
-let exists_fresh xs q =
-  [%Trace.call fun {pf} ->
-    pf "{@[%a@]}@ %a" Var.Set.pp xs pp q ;
-    assert (
-      Var.Set.disjoint xs q.us
-      || fail "Sh.exists_fresh xs ∩ q.us: %a" Var.Set.pp
-           (Var.Set.inter xs q.us) () )]
-  ;
-  ( if Var.Set.is_empty xs then q
-  else {q with xs= Var.Set.union q.xs xs} |> check invariant )
-  |>
-  [%Trace.retn fun {pf} -> pf "%a" pp]
-
-let exists xs q =
-  [%Trace.call fun {pf} -> pf "{@[%a@]}@ %a" Var.Set.pp xs pp q]
-  ;
-  assert (
-    Var.Set.subset xs ~of_:q.us
-    || fail "Sh.exists xs - q.us: %a" Var.Set.pp (Var.Set.diff xs q.us) ()
-  ) ;
-  ( if Var.Set.is_empty xs then q
-  else
-    {q with us= Var.Set.diff q.us xs; xs= Var.Set.union q.xs xs}
-    |> check invariant )
-  |>
-  [%Trace.retn fun {pf} -> pf "%a" pp]
-
-(** remove quantification on variables disjoint from vocabulary *)
-let elim_exists xs q =
-  assert (Var.Set.disjoint xs q.us) ;
-  {q with us= Var.Set.union q.us xs; xs= Var.Set.diff q.xs xs}
 
 (** Construct *)
 
@@ -623,12 +628,10 @@ let dnf q =
 let rec norm_ s q =
   [%Trace.call fun {pf} -> pf "@[%a@]@ %a" Context.Subst.pp s pp_raw q]
   ;
-  let q =
-    map q ~f_sjn:(norm_ s) ~f_ctx:Fun.id ~f_trm:(Context.Subst.subst s)
-      ~f_fml:(Formula.map_terms ~f:(Context.Subst.subst s))
-  in
-  let xs, ctx = Context.apply_subst (Var.Set.union q.us q.xs) s q.ctx in
-  exists_fresh xs {q with ctx}
+  map q ~f_sjn:(norm_ s)
+    ~f_ctx:(Context.apply_subst (Var.Set.union q.us q.xs) s)
+    ~f_trm:(Context.Subst.subst s)
+    ~f_fml:(Formula.map_terms ~f:(Context.Subst.subst s))
   |>
   [%Trace.retn fun {pf} q' ->
     pf "%a" pp_raw q' ;
