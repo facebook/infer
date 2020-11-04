@@ -18,8 +18,19 @@ void call_loop_enumerator_constant() {
   loop_enumerator_linear(arr);
 }
 
-// We get Top because front-end can't recognize NSFastEnumeration
-void loop_id_enumerator_linear_FP(id<NSFastEnumeration> enumeration) {
+void loop_id_enumerator_linear(id<NSFastEnumeration, NSCopying> enumeration) {
   for (id obj in enumeration) {
+  }
+}
+
+void call_loop_id_enumerator_linear(NSArray* arr) {
+  loop_id_enumerator_linear(arr);
+}
+
+@interface A : NSObject<NSCopying>
+@end
+
+void loop_enumerator_over_class_linear(A<NSFastEnumeration>* a) {
+  for (id obj in a) {
   }
 }

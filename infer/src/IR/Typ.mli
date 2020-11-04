@@ -107,7 +107,9 @@ and name =
      "MyClass<int>", "InnerClass" *)
   | CppClass of QualifiedCppName.t * template_spec_info
   | JavaClass of JavaClassName.t
-  | ObjcClass of QualifiedCppName.t
+  | ObjcClass of QualifiedCppName.t * name list
+  (* ObjC class that conforms to a list of protocols,
+     e.g. id<NSFastEnumeration, NSCopying> *)
   | ObjcProtocol of QualifiedCppName.t
 
 and template_arg = TType of t | TInt of Int64.t | TNull | TNullPtr | TOpaque
@@ -251,10 +253,17 @@ val pp_full : Pp.env -> F.formatter -> t -> unit
 val pp : Pp.env -> F.formatter -> t -> unit
 (** Pretty print a type. *)
 
+val pp_desc : Pp.env -> F.formatter -> desc -> unit
+(** Pretty print a type desc. *)
+
 val pp_java : verbose:bool -> F.formatter -> t -> unit
 (** Pretty print a Java type. Raises if type isn't produced by the Java frontend *)
 
+val pp_protocols : Pp.env -> F.formatter -> name list -> unit
+
 val to_string : t -> string
+
+val desc_to_string : desc -> string
 
 val d_full : t -> unit
 (** Dump a type with all the details. *)

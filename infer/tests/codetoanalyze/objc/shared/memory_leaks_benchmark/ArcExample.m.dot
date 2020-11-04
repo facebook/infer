@@ -48,7 +48,7 @@ digraph cfg {
 "setSon:#ArcA(class ArcA)#instance.baae73471012ee089a7558f57ddd56fe_2" [label="2: Exit ArcA.setSon: \n  " color=yellow style=filled]
 	
 
-"setSon:#ArcA(class ArcA)#instance.baae73471012ee089a7558f57ddd56fe_3" [label="3:  BinaryOperatorStmt: Node \n   n$3=*&self:ArcA* [line 14, column 17]\n  n$4=*&son:ArcA* [line 14, column 17]\n  *n$3._son:ArcA*=n$4 [line 14, column 17]\n " shape="box"]
+"setSon:#ArcA(class ArcA)#instance.baae73471012ee089a7558f57ddd56fe_3" [label="3:  BinaryOperatorStmt: Node \n   n$5=*&self:ArcA* [line 14, column 17]\n  n$6=*&son:ArcA* [line 14, column 17]\n  *n$5._son:ArcA*=n$6 [line 14, column 17]\n " shape="box"]
 	
 
 	 "setSon:#ArcA(class ArcA)#instance.baae73471012ee089a7558f57ddd56fe_3" -> "setSon:#ArcA(class ArcA)#instance.baae73471012ee089a7558f57ddd56fe_2" ;
@@ -59,7 +59,7 @@ digraph cfg {
 "son#ArcA#instance.eb40da6c5ac3fdfdee0ebe6b666b1ea5_2" [label="2: Exit ArcA.son \n  " color=yellow style=filled]
 	
 
-"son#ArcA#instance.eb40da6c5ac3fdfdee0ebe6b666b1ea5_3" [label="3:  BinaryOperatorStmt: Node \n   n$5=*&self:ArcA* [line 14, column 17]\n  n$6=*n$5._son:ArcA* [line 14, column 17]\n  *&return:ArcA*=n$6 [line 14, column 17]\n " shape="box"]
+"son#ArcA#instance.eb40da6c5ac3fdfdee0ebe6b666b1ea5_3" [label="3:  BinaryOperatorStmt: Node \n   n$3=*&self:ArcA* [line 14, column 17]\n  n$4=*n$3._son:ArcA* [line 14, column 17]\n  *&return:ArcA*=n$4 [line 14, column 17]\n " shape="box"]
 	
 
 	 "son#ArcA#instance.eb40da6c5ac3fdfdee0ebe6b666b1ea5_3" -> "son#ArcA#instance.eb40da6c5ac3fdfdee0ebe6b666b1ea5_2" ;

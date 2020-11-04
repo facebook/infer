@@ -91,6 +91,28 @@ let pointer_attribute_of_objc_attribute attr_info =
       Typ.Pk_objc_autoreleasing
 
 
+let add_protocols_to_desc tenv desc protocol_desc_list =
+  let rec add_nonempty_protocol desc =
+    match (desc : Typ.desc) with
+    | Tstruct (CStruct nm | ObjcClass (nm, _)) ->
+        let objc_protocols = List.map ~f:CType.objc_classname_of_desc protocol_desc_list in
+        let name = Typ.ObjcClass (nm, objc_protocols) in
+        ignore (Tenv.mk_struct tenv name ~objc_protocols) ;
+        let desc = Typ.Tstruct name in
+        Logging.(debug Analysis Verbose)
+          "@.Found class with protocols, replacing the existing desc with %a.. \n"
+          (Typ.pp_desc Pp.text) desc ;
+        desc
+    | Tptr (Typ.{desc; quals}, pkind) ->
+        Typ.Tptr ({desc= add_nonempty_protocol desc; quals}, pkind)
+    | Tarray Typ.{elt= {desc; quals}; length; stride} ->
+        Typ.Tarray {elt= {desc= add_nonempty_protocol desc; quals}; length; stride}
+    | _ ->
+        desc
+  in
+  if List.is_empty protocol_desc_list then desc else add_nonempty_protocol desc
+
+
 let rec build_array_type translate_decl tenv (qual_type : Clang_ast_t.qual_type) length_opt
     stride_opt =
   let array_type = qual_type_to_sil_type translate_decl tenv qual_type in
@@ -126,7 +148,14 @@ and type_desc_of_c_type translate_decl tenv c_type : Typ.desc =
       if Typ.equal_desc desc (get_builtin_objc_type `ObjCClass) then desc
       else Typ.Tptr (typ, Typ.Pk_pointer)
   | ObjCObjectType (_, objc_object_type_info) ->
-      type_ptr_to_type_desc translate_decl tenv objc_object_type_info.Clang_ast_t.ooti_base_type
+      let protocol_decls_ptr = objc_object_type_info.Clang_ast_t.ooti_protocol_decls_ptr in
+      let protocol_desc_list =
+        List.map protocol_decls_ptr ~f:(fun pointer ->
+            decl_ptr_to_type_desc translate_decl tenv pointer )
+      in
+      let type_ptr = objc_object_type_info.Clang_ast_t.ooti_base_type in
+      let desc = type_ptr_to_type_desc translate_decl tenv type_ptr in
+      add_protocols_to_desc tenv desc protocol_desc_list
   | BlockPointerType (_, qual_type) ->
       let typ = qual_type_to_sil_type translate_decl tenv qual_type in
       Typ.Tptr (typ, Typ.Pk_pointer)

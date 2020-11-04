@@ -13,6 +13,8 @@ val add_pointer_to_typ : Typ.t -> Typ.t
 
 val objc_classname_of_type : Typ.t -> Typ.Name.t
 
+val objc_classname_of_desc : Typ.desc -> Typ.Name.t
+
 val is_class : Typ.t -> bool
 
 val return_type_of_function_type : Clang_ast_t.qual_type -> Clang_ast_t.qual_type
