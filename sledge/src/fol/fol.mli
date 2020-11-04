@@ -13,7 +13,3 @@ module Var = Var
 module Term = Exp.Term
 module Formula = Exp.Formula
 module Context = Context
-
-(**/**)
-
-module Trm = Trm

@@ -247,6 +247,10 @@ module Term = struct
 
   let ite ~cnd ~thn ~els = ite cnd thn els
 
+  (* Trm.t is embedded into Term.t *)
+  let of_trm t = `Trm t
+  let get_trm = function `Trm t -> Some t | _ -> None
+
   (** Destruct *)
 
   let d_int e = match (e : t) with `Trm (Z z) -> Some z | _ -> None
@@ -256,8 +260,6 @@ module Term = struct
     | `Trm (Z z) -> Some (Q.of_z z)
     | `Trm (Q q) -> Some q
     | _ -> None
-
-  let get_trm = function `Trm t -> Some t | _ -> None
 
   (** Access *)
 

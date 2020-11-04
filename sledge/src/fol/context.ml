@@ -601,7 +601,8 @@ let normalize r e = Term.map_trms ~f:(canon r) e
 
 let class_of r e =
   match Term.get_trm (normalize r e) with
-  | Some e' -> e' :: Trm.Map.find_multi e' (classes r)
+  | Some e' ->
+      List.map ~f:Term.of_trm (e' :: Trm.Map.find_multi e' (classes r))
   | None -> []
 
 let diff_classes r s =

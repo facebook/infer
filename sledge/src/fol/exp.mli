@@ -51,14 +51,16 @@ module rec Term : sig
   (* if-then-else *)
   val ite : cnd:Formula.t -> thn:t -> els:t -> t
 
+  (* Trm.t is embedded into Term.t *)
+  val of_trm : Trm.t -> t
+  val get_trm : t -> Trm.t option
+
   (** Destruct *)
 
   val d_int : t -> Z.t option
 
   val get_const : t -> Q.t option
   (** [get_const a] is [Some q] iff [equal a (const q)] *)
-
-  val get_trm : t -> Trm.t option
 
   (** Access *)
 

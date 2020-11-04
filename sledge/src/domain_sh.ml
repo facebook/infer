@@ -79,7 +79,7 @@ let term_eq_class_has_only_vars_in fvs ctx term =
       Context.pp ctx Term.pp term]
   ;
   let term_has_only_vars_in fvs term =
-    Var.Set.subset (Trm.fv term) ~of_:fvs
+    Var.Set.subset (Term.fv term) ~of_:fvs
   in
   let term_eq_class = Context.class_of ctx term in
   List.exists ~f:(term_has_only_vars_in fvs) term_eq_class
@@ -98,7 +98,7 @@ let garbage_collect (q : t) ~wrt =
         List.fold q.heap current ~f:(fun seg current ->
             if term_eq_class_has_only_vars_in current q.ctx seg.loc then
               List.fold (Context.class_of q.ctx seg.seq) current
-                ~f:(fun e c -> Var.Set.union c (Trm.fv e))
+                ~f:(fun e c -> Var.Set.union c (Term.fv e))
             else current )
       in
       all_reachable_vars current new_set q

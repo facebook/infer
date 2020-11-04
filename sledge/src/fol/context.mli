@@ -67,7 +67,7 @@ val normalize : t -> Term.t -> Term.t
     assumptions, where [e'] and its subterms are expressed in terms of the
     canonical representatives of each equivalence class. *)
 
-val class_of : t -> Term.t -> Trm.t list
+val class_of : t -> Term.t -> Term.t list
 (** Equivalence class of [e]: all the terms [f] in the context such that
     [e = f] is implied by the assumptions. *)
 
