@@ -531,9 +531,7 @@ let and_ e q = star (pure e) q
 let and_subst subst q =
   [%Trace.call fun {pf} -> pf "%a@ %a" Context.Subst.pp subst pp q]
   ;
-  Context.Subst.fold
-    ~f:(fun ~key ~data -> and_ (Formula.eq key data))
-    subst q
+  Context.Subst.fold_eqs ~f:and_ subst q
   |>
   [%Trace.retn fun {pf} q ->
     pf "%a" pp q ;

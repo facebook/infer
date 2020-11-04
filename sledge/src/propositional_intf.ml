@@ -7,8 +7,6 @@
 
 (** Propositional formulas *)
 
-open Ses
-
 module type TERM = sig
   type t [@@deriving compare, equal, sexp]
 end
@@ -35,7 +33,7 @@ module type FORMULA = sig
     | Iff of t * t
     | Cond of {cnd: t; pos: t; neg: t}
     (* uninterpreted literals *)
-    | Lit of Predsym.t * trm array
+    | Lit of Ses.Predsym.t * trm array
   [@@deriving compare, equal, sexp]
 
   val mk_Tt : unit -> t
@@ -47,7 +45,7 @@ module type FORMULA = sig
   val _Or : pos:set -> neg:set -> t
   val _Iff : t -> t -> t
   val _Cond : t -> t -> t -> t
-  val _Lit : Predsym.t -> trm array -> t
+  val _Lit : Ses.Predsym.t -> trm array -> t
   val and_ : t -> t -> t
   val or_ : t -> t -> t
   val is_negative : t -> bool

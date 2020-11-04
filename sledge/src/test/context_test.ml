@@ -5,11 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Ses
+open Sledge
+open Fol
 
 let%test_module _ =
   ( module struct
-    open Equality
+    open Context
 
     let () = Trace.init ~margin:68 ()
 
@@ -21,10 +22,10 @@ let%test_module _ =
      * [@@@warning "-32"] *)
 
     let printf pp = Format.printf "@\n%a@." pp
-    let pp = printf pp
-    let pp_classes = Format.printf "@\n@[<hv>  %a@]@." pp_classes
+    let pp = printf Context.pp_raw
+    let pp_classes = Format.printf "@\n@[<hv>  %a@]@." Context.pp
     let ( ! ) i = Term.integer (Z.of_int i)
-    let g = Term.rem
+    let g x y = Term.apply (Uninterp "g") [|x; y|]
     let wrt = Var.Set.empty
     let t_, wrt = Var.fresh "t" ~wrt
     let u_, wrt = Var.fresh "u" ~wrt
@@ -42,10 +43,12 @@ let%test_module _ =
     let z = Term.var z_
 
     let of_eqs l =
-      List.fold ~f:(fun (a, b) (us, r) -> and_eq us a b r) l (wrt, true_)
+      List.fold
+        ~f:(fun (a, b) (us, r) -> add us (Formula.eq a b) r)
+        l (wrt, empty)
       |> snd
 
-    let implies_eq r a b = implies r (Term.eq a b)
+    let implies_eq r a b = implies r (Formula.eq a b)
 
     (* tests *)
 
@@ -56,8 +59,8 @@ let%test_module _ =
       pp r3 ;
       [%expect
         {|
-        %t_1 = %u_2 = %v_3 = %w_4 = %x_5 = %z_7 = (%y_6 rem %t_1)
-        = (%y_6 rem %t_1)
+        %t_1 = %u_2 = %v_3 = %w_4 = %x_5 = %z_7 = g(%y_6, %t_1)
+        = g(%y_6, %t_1)
 
       {sat= true;
        rep= [[%t_1 ↦ ];
@@ -67,22 +70,19 @@ let%test_module _ =
              [%x_5 ↦ %t_1];
              [%y_6 ↦ ];
              [%z_7 ↦ %t_1];
-             [(%y_6 rem %v_3) ↦ %t_1];
-             [(%y_6 rem %z_7) ↦ %t_1];
-             [-1 ↦ ];
-             [0 ↦ ]]} |}]
+             [g(%y_6, %v_3) ↦ %t_1];
+             [g(%y_6, %z_7) ↦ %t_1]]} |}]
 
     let%test _ = implies_eq r3 t z
 
-    let b = Term.dq x !0
+    let b = Formula.inject (Formula.dq x !0)
     let r15 = of_eqs [(b, b); (x, !1)]
 
     let%expect_test _ =
       pp r15 ;
-      [%expect
-        {|
-          {sat= true; rep= [[%x_5 ↦ 1]; [(%x_5 ≠ 0) ↦ -1]; [-1 ↦ ]; [0 ↦ ]]} |}]
+      [%expect {|
+          {sat= true; rep= [[%x_5 ↦ 1]]} |}]
 
-    let%test _ = implies_eq r15 b (Term.signed 1 !1)
-    let%test _ = implies_eq r15 (Term.unsigned 1 b) !1
+    let%test _ = implies_eq r15 (Term.neg b) (Term.apply (Signed 1) [|!1|])
+    let%test _ = implies_eq r15 (Term.apply (Unsigned 1) [|b|]) !1
   end )
