@@ -7,7 +7,7 @@
 
 (** Equality over uninterpreted functions and linear rational arithmetic *)
 
-open Fol
+open Exp
 
 (** Classification of Terms by Theory *)
 

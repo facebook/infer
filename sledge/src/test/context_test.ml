@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Sledge
 open Fol
 
 let%test_module _ =

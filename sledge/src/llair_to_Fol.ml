@@ -6,8 +6,6 @@
  *)
 
 open Fol
-module Funsym = Ses.Funsym
-module Predsym = Ses.Predsym
 module T = Term
 module F = Formula
 

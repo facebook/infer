@@ -35,7 +35,7 @@ module Make (Trm : TERM) = struct
       | Or of {pos: Fmls.t; neg: Fmls.t}
       | Iff of t * t
       | Cond of {cnd: t; pos: t; neg: t}
-      | Lit of Ses.Predsym.t * Trm.t array
+      | Lit of Predsym.t * Trm.t array
     [@@deriving compare, equal, sexp]
 
     let invariant f =

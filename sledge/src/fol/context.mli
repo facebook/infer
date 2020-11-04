@@ -13,7 +13,7 @@
     the variables with which any generated variables must be chosen fresh,
     and the output set is the variables that have been generated. *)
 
-open Fol
+open Exp
 
 type t [@@deriving sexp]
 

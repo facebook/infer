@@ -46,7 +46,7 @@ module rec Term : sig
   val ancestor : int -> t
 
   (* uninterpreted *)
-  val apply : Ses.Funsym.t -> t array -> t
+  val apply : Funsym.t -> t array -> t
 
   (* if-then-else *)
   val ite : cnd:Formula.t -> thn:t -> els:t -> t
@@ -114,7 +114,7 @@ and Formula : sig
   val le : Term.t -> Term.t -> t
 
   (* uninterpreted *)
-  val lit : Ses.Predsym.t -> Term.t array -> t
+  val lit : Predsym.t -> Term.t array -> t
 
   (* connectives *)
   val not_ : t -> t

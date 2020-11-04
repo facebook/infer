@@ -27,13 +27,13 @@ type t = private
   | Record of t array
   | Ancestor of int
   (* uninterpreted *)
-  | Apply of Ses.Funsym.t * t array
+  | Apply of Funsym.t * t array
 [@@deriving compare, equal, sexp]
 
 module Var : sig
   type trm := t
 
-  include Ses.Var_intf.VAR with type t = private trm
+  include Var_intf.VAR with type t = private trm
 
   val of_ : trm -> t
   val of_trm : trm -> t option
@@ -84,7 +84,7 @@ val record : t array -> t
 val ancestor : int -> t
 
 (* uninterpreted *)
-val apply : Ses.Funsym.t -> t array -> t
+val apply : Funsym.t -> t array -> t
 
 (** Transform *)
 

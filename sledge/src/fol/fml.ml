@@ -65,7 +65,7 @@ let ppx strength fs fml =
     | Iff (x, y) -> pf "(%a@ <=> %a)" pp x pp y
     | Cond {cnd; pos; neg} ->
         pf "@[<hv 1>(%a@ ? %a@ : %a)@]" pp cnd pp pos pp neg
-    | Lit (p, xs) -> pf "%a(%a)" Ses.Predsym.pp p (Array.pp ",@ " pp_t) xs
+    | Lit (p, xs) -> pf "%a(%a)" Predsym.pp p (Array.pp ",@ " pp_t) xs
   in
   pp fs fml
 

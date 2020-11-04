@@ -7,15 +7,13 @@
 
 (** Terms *)
 
-module Funsym = Ses.Funsym
-
 let pp_boxed fs fmt =
   Format.pp_open_box fs 2 ;
   Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
 
 (** Variable terms, represented as a subtype of general terms *)
 module rec Var : sig
-  include Ses.Var_intf.VAR with type t = private Trm.t
+  include Var_intf.VAR with type t = private Trm.t
 
   val of_ : Trm.t -> t
   val of_trm : Trm.t -> t option
@@ -34,7 +32,7 @@ end = struct
     let name = function Trm.Var v -> v.name | x -> violates invariant x
   end
 
-  include Ses.Var0.Make (T)
+  include Var0.Make (T)
 
   let of_ v = v |> check T.invariant
   let of_trm = function Trm.Var _ as v -> Some v | _ -> None

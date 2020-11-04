@@ -7,7 +7,7 @@
 
 (** Arithmetic terms *)
 
-open Ses.Var_intf
+open Var_intf
 include module type of Arithmetic_intf
 
 module Representation

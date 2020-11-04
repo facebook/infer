@@ -24,7 +24,7 @@ type t = private
   | Iff of t * t
   | Cond of {cnd: t; pos: t; neg: t}
   (* uninterpreted *)
-  | Lit of Ses.Predsym.t * Trm.t array
+  | Lit of Predsym.t * Trm.t array
 [@@deriving compare, equal, sexp]
 
 module Set : sig
@@ -60,7 +60,7 @@ val iff : t -> t -> t
 val cond : cnd:t -> pos:t -> neg:t -> t
 
 (* uninterpreted *)
-val lit : Ses.Predsym.t -> Trm.t array -> t
+val lit : Predsym.t -> Trm.t array -> t
 
 (** Transform *)
 
