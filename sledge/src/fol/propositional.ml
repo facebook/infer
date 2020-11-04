@@ -94,9 +94,37 @@ module Make (Trm : TERM) = struct
         | _ -> cons ~pos ~neg
 
     let _And ~pos ~neg =
+      let pos, neg =
+        Fmls.fold pos (pos, neg) ~f:(fun b (pos, neg) ->
+            match b with
+            | And {pos= p; neg= n} ->
+                (Fmls.union p (Fmls.remove b pos), Fmls.union n neg)
+            | _ -> (pos, neg) )
+      in
+      let pos, neg =
+        Fmls.fold neg (pos, neg) ~f:(fun b (pos, neg) ->
+            match b with
+            | Or {pos= p; neg= n} ->
+                (Fmls.union n pos, Fmls.union p (Fmls.remove b neg))
+            | _ -> (pos, neg) )
+      in
       _Join (fun ~pos ~neg -> And {pos; neg}) tt ff ~pos ~neg
 
     let _Or ~pos ~neg =
+      let pos, neg =
+        Fmls.fold pos (pos, neg) ~f:(fun b (pos, neg) ->
+            match b with
+            | Or {pos= p; neg= n} ->
+                (Fmls.union p (Fmls.remove b pos), Fmls.union n neg)
+            | _ -> (pos, neg) )
+      in
+      let pos, neg =
+        Fmls.fold neg (pos, neg) ~f:(fun b (pos, neg) ->
+            match b with
+            | And {pos= p; neg= n} ->
+                (Fmls.union n pos, Fmls.union p (Fmls.remove b neg))
+            | _ -> (pos, neg) )
+      in
       _Join (fun ~pos ~neg -> Or {pos; neg}) ff tt ~pos ~neg
 
     let join _Cons zero split_pos_neg p q =
