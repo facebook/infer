@@ -284,8 +284,9 @@ let rec invariant q =
             assert (Var.Set.subset sjn.us ~of_:(Var.Set.union us xs)) ;
             invariant sjn ) )
   with exc ->
+    let bt = Printexc.get_raw_backtrace () in
     [%Trace.info "%a" pp q] ;
-    raise exc
+    Printexc.raise_with_backtrace exc bt
 
 (** Quantification and Vocabulary *)
 

@@ -51,14 +51,9 @@ let command ~summary ?readme param =
   let report main () =
     try main () |> Report.status
     with exn ->
-      let bt =
-        match exn with
-        | Invariant.Violation (_, bt, _, _) -> bt
-        | Replay (_, bt, _) -> bt
-        | _ -> Printexc.get_raw_backtrace ()
-      in
+      let bt = Printexc.get_raw_backtrace () in
       let rec status_of_exn = function
-        | Invariant.Violation (exn, _, _, _) | Replay (exn, _, _) ->
+        | Invariant.Violation (exn, _, _) | Replay (exn, _) ->
             status_of_exn exn
         | Frontend.Invalid_llvm msg -> Report.InvalidInput msg
         | Unimplemented msg -> Report.Unimplemented msg

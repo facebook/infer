@@ -224,7 +224,6 @@ let trace :
         Printexc.raise_with_backtrace exc bt )
 
 let raisef ?margin exn fmt =
-  let bt = Printexc.get_raw_backtrace () in
   let fs = Format.str_formatter in
   ( match margin with
   | Some m ->
@@ -235,9 +234,7 @@ let raisef ?margin exn fmt =
   Format.kfprintf
     (fun fs () ->
       Format.pp_close_box fs () ;
-      let msg = Format.flush_str_formatter () in
-      let exn = exn msg in
-      Printexc.raise_with_backtrace exn bt )
+      raise (exn (Format.flush_str_formatter ())) )
     fs fmt
 
 let fail fmt =

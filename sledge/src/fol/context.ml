@@ -1142,8 +1142,8 @@ let wrap tmr f call =
     try f ()
     with exn ->
       let bt = Printexc.get_raw_backtrace () in
-      let sexp = sexp_of_call (call ()) in
-      raise (Replay (exn, bt, sexp))
+      let exn = Replay (exn, sexp_of_call (call ())) in
+      Printexc.raise_with_backtrace exn bt
 
 let add_tmr = Timer.create "add" ~at_exit:report
 let union_tmr = Timer.create "union" ~at_exit:report
