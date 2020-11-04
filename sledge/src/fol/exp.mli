@@ -35,15 +35,29 @@ module rec Term : sig
 
   (* sequences (of flexible size) *)
   val splat : t -> t
+  (** Iterated concatenation of a single byte *)
+
   val sized : seq:t -> siz:t -> t
+  (** Size-tagged sequence *)
+
   val extract : seq:t -> off:t -> len:t -> t
+  (** Extract a slice of a sequence *)
+
   val concat : t array -> t
+  (** Concatenation of sequences *)
 
   (* records (with fixed indices) *)
   val select : rcd:t -> idx:int -> t
+  (** Select an index from a record *)
+
   val update : rcd:t -> idx:int -> elt:t -> t
+  (** Record updated with element at index *)
+
   val record : t array -> t
+  (** Record constant *)
+
   val ancestor : int -> t
+  (** Reference to ancestor recursive record *)
 
   (* uninterpreted *)
   val apply : Funsym.t -> t array -> t
