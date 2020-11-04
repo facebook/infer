@@ -182,7 +182,7 @@ end = struct
             String.init (Array.length elts) ~f:(fun i ->
                 match elts.(i) with
                 | Z c -> Char.of_int_exn (Z.to_int c)
-                | _ -> raise Not_a_string )
+                | _ -> raise_notrace Not_a_string )
           with
           | s -> Format.fprintf fs "%S" s
           | exception (Not_a_string | Z.Overflow | Failure _) ->

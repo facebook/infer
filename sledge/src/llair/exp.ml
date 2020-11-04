@@ -154,7 +154,7 @@ and pp_record fs elts =
           String.init (IArray.length elts) ~f:(fun i ->
               match IArray.get elts i with
               | Integer {data} -> Char.of_int_exn (Z.to_int data)
-              | _ -> raise (Invalid_argument "not a string") )
+              | _ -> raise_notrace (Invalid_argument "not a string") )
         with
         | s -> Format.fprintf fs "@[<h>%s@]" (String.escaped s)
         | exception _ ->
