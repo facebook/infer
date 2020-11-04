@@ -30,7 +30,7 @@ class SuppressAllWarnigsInTheClass {
 
 public class SuppressLintExample {
 
-  @SuppressLint("Suppressing by warning type not supported yet")
+  @SuppressLint("null-dereference")
   SuppressLintExample() {
     Object object = null;
     object.toString();
@@ -41,7 +41,7 @@ public class SuppressLintExample {
     object.toString();
   }
 
-  @SuppressLint("Suppressing by warning type not supported yet")
+  @SuppressLint("null-dereference")
   void shouldNotReportNPE() {
     Object object = null;
     object.toString();

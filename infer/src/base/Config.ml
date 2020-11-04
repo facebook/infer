@@ -2205,6 +2205,13 @@ and starvation_whole_program =
     "Run whole-program starvation analysis"
 
 
+and suppress_lint_ignore_types =
+  CLOpt.mk_bool ~long:"suppress-lint-ignore-types" ~default:false
+    "[DEPRECATED] Check only the presence of @SuppressLint but not the issues types specified as \
+     parameters to the annotations when deciding to suppress issues. Use for backwards \
+     compatibility only!"
+
+
 and sqlite_cache_size =
   CLOpt.mk_int ~long:"sqlite-cache-size" ~default:2000
     ~in_help:
@@ -3214,6 +3221,8 @@ and starvation_whole_program = !starvation_whole_program
 and subtype_multirange = !subtype_multirange
 
 and summaries_caches_max_size = !summaries_caches_max_size
+
+and suppress_lint_ignore_types = !suppress_lint_ignore_types
 
 and custom_symbols =
   (* Convert symbol lists to regexps just once, here *)

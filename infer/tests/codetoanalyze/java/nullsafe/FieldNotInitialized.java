@@ -207,11 +207,11 @@ public class FieldNotInitialized {
       f(null); // Expect to see "parameter not nullable" issue
     }
 
-    // Should suppress both field not initialized warning.
-    // But actually suppresses all nullsafe issues.
+    // Should suppress both field not initialized warning,
+    // but not the PARAMETER_NOT_NULLABLE
     @SuppressLint("eradicate-field-not-initialized")
     Suppressions(int a, int b) {
-      f(null); // FALSE NEGATIVE: this issue was unintentionally suppressed as well
+      f(null);
     }
 
     // This annotation correctly suppresses only needed issues

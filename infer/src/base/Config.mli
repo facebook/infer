@@ -577,6 +577,8 @@ val subtype_multirange : bool
 
 val summaries_caches_max_size : int
 
+val suppress_lint_ignore_types : bool
+
 val symops_per_iteration : int option
 
 val test_determinator : bool
