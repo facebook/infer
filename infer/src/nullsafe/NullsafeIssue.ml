@@ -93,4 +93,10 @@ let get_nullsafe_extra {third_party_dependent_methods; nullable_methods} proc_na
   let nullable_methods =
     if List.is_empty nullable_methods then None else Some (to_nullable_method_json nullable_methods)
   in
-  Jsonbug_t.{class_name; package; meta_issue_info= None; unvetted_3rd_party; nullable_methods}
+  Jsonbug_t.
+    { class_name
+    ; package
+    ; meta_issue_info= None
+    ; unvetted_3rd_party
+    ; nullable_methods
+    ; annotation_graph= None }

@@ -154,6 +154,8 @@ val do_not_report : t
 
 val empty_vector_access : t
 
+val eradicate_annotation_graph : t
+
 val eradicate_condition_redundant : t
 
 val eradicate_field_not_initialized : t

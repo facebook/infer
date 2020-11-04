@@ -521,6 +521,14 @@ let lookup_attributes tenv proc_name =
   !found_attributes
 
 
+let lookup_attributes_exn tenv proc_name =
+  match lookup_attributes tenv proc_name with
+  | Some result ->
+      result
+  | None ->
+      Logging.die InternalError "Did not find attributes for %a" Procname.pp proc_name
+
+
 (** return the set of instance fields that are assigned to a null literal in [procdesc] *)
 let get_fields_nullified procdesc =
   (* walk through the instructions and look for instance fields that are assigned to null *)
