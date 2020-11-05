@@ -42,9 +42,15 @@ module Results_dir : sig
   val path_to_filename : path_kind -> path -> filename
   (** convert a path to a filename *)
 
+  val specs_dir : filename
+  (** directory of spec files *)
+
   val init : ?debug:bool -> SourceFile.t -> unit
   (** Initialize the results directory *)
 
+  val clean_specs_dir : unit -> unit
+  (** Clean up specs directory *)
+  
   val create_file : path_kind -> path -> Unix.File_descr.t
   (** create a file at the given path, creating any missing directories *)
 end

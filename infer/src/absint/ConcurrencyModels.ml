@@ -312,7 +312,7 @@ let is_android_lifecycle_method tenv pname =
     Procname.get_class_type_name procname
     |> Option.exists ~f:(fun typename ->
            match (typename : Typ.Name.t) with
-           | CUnion _ | CStruct _ | CppClass _ | ObjcClass _ | ObjcProtocol _ ->
+           | CUnion _ | CStruct _ | CppClass _ | CSharpClass _ | ObjcClass _ | ObjcProtocol _ ->
                false
            | JavaClass java_class_name ->
                JavaClassName.package java_class_name
@@ -331,7 +331,7 @@ let is_android_lifecycle_method tenv pname =
         false
   in
   match (pname : Procname.t) with
-  | C _ | Linters_dummy_method | Block _ | ObjC_Cpp _ | WithBlockParameters _ ->
+  | C _ | Linters_dummy_method | Block _ | ObjC_Cpp _ | CSharp _| WithBlockParameters _ ->
       false
   | Java _ ->
       method_starts_with_on pname

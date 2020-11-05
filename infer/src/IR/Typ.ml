@@ -388,7 +388,7 @@ module Name = struct
           "struct"
       | CUnion _ ->
           "union"
-      | CppClass _ | JavaClass _ | ObjcClass _ ->
+      | CppClass _ | CSharpClass _ | JavaClass _ | ObjcClass _ ->
           "class"
       | ObjcProtocol _ ->
           "protocol"
@@ -444,8 +444,6 @@ module Name = struct
     end
 
     let from_string name_str = CSharpClass (CSharpClassName.from_string name_str)
-
-    let split_typename typename = Split.of_string (name typename)
 
     let is_class = function JavaClass _ -> true | _ -> false
 
@@ -552,6 +550,9 @@ module Name = struct
       | JavaClass java_class_name ->
           let java_class_name' = JavaClassName.Normalizer.normalize java_class_name in
           if phys_equal java_class_name java_class_name' then t else JavaClass java_class_name'
+      | CSharpClass cs_class_name ->
+          let cs_class_name' = CSharpClassName.Normalizer.normalize cs_class_name in
+          if phys_equal cs_class_name cs_class_name' then t else CSharpClass cs_class_name'
   end)
 end
 

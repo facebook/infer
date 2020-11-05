@@ -409,7 +409,7 @@ let is_java_main_method (pname : Procname.t) =
     match args with [arg] -> Typ.equal pointer_to_array_of_java_lang_string arg | _ -> false
   in
   match pname with
-  | C _ | Linters_dummy_method | Block _ | ObjC_Cpp _ | WithBlockParameters _ ->
+  | C _ | Linters_dummy_method | Block _ | ObjC_Cpp _ | CSharp _ | WithBlockParameters _ ->
       false
   | Java java_pname ->
       Procname.Java.is_static java_pname

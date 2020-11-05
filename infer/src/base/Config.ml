@@ -102,6 +102,8 @@ let anonymous_block_prefix = "objc_block"
 
 let assign = "<\"Assign\">"
 
+let backend_stats_dir_name = "backend_stats"
+
 (** If true, a procedure call succeeds even when there is a bound error this mimics what happens
     with a direct array access where an error is produced and the analysis continues *)
 let bound_error_allowed_in_procedure_call = true
@@ -119,8 +121,14 @@ let default_failure_name = "ASSERTION_FAILURE"
 (** Dotty output filename **)
 let dotty_frontend_output = "proc_cfgs_frontend.dot"
 
+let driver_stats_dir_name = "driver_stats"
+
+let events_dir_name = "events"
+
 (** exit code to use for the --fail-on-issue option *)
 let fail_on_issue_exit_code = 2
+
+let frontend_stats_dir_name = "frontend_stats"
 
 (** If true, treat calls to no-arg getters as idempotent w.r.t non-nullness *)
 let idempotent_getters = true
@@ -174,11 +182,17 @@ let meet_level = 1
 
 let nsnotification_center_checker_backend = false
 
+let perf_stats_prefix = "perf_stats"
+
+let proc_stats_filename = "proc_stats.json"
+
 let property_attributes = "property_attributes"
 
 (** If true, sanity-check inferred preconditions against Nullable annotations and report
     inconsistencies *)
 let report_nullable_inconsistency = true
+
+let reporting_stats_dir_name = "reporting_stats"
 
 (** If true, compact summaries before saving *)
 let save_compact_summaries = true
@@ -187,6 +201,8 @@ let save_compact_summaries = true
 let smt_output = false
 
 let source_file_extentions = [".java"; ".m"; ".mm"; ".c"; ".cc"; ".cpp"; ".h"]
+
+let specs_dir_name = "specs"
 
 let kotlin_source_extension = ".kt"
 
@@ -2360,11 +2376,6 @@ and trace_rearrange =
   CLOpt.mk_bool ~deprecated:["trace_rearrange"] ~long:"trace-rearrange"
     "Detailed tracing information during prop re-arrangement operations"
 
-and tracing =
-  CLOpt.mk_bool ~deprecated:["tracing"] ~long:"tracing"
-    "Report error traces for runtime exceptions (Java only): generate preconditions for \
-     runtimeexceptions in Java and report errors for public methods which throw runtime exceptions"
-
 and trace_topl =
   CLOpt.mk_bool ~long:"trace-topl" "Detailed tracing information during TOPL analysis"
 
@@ -2749,6 +2760,8 @@ and capture = !capture
 
 and capture_blacklist = !capture_blacklist
 
+and cfg_json = !cfg_json
+
 and censor_report =
   List.map !censor_report ~f:(fun str ->
       match String.split str ~on:':' with
@@ -2975,7 +2988,6 @@ and liveness_dangerous_classes = !liveness_dangerous_classes
 
 and load_average =
   match !load_average with None when !buck -> Some (float_of_int ncpu) | _ -> !load_average
-
 
 and max_nesting = !max_nesting
 
@@ -3256,6 +3268,8 @@ and custom_symbols =
 and symops_per_iteration = !symops_per_iteration
 
 and keep_going = !keep_going
+
+and tenv_json = !tenv_json
 
 and test_determinator = !test_determinator
 

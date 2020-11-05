@@ -60,6 +60,13 @@ let typename_of_classname cn = Typ.Name.CSharp.from_string cn
 
 let parse_list (eleparse : Yojson.Safe.json -> 'a) (json : Yojson.Safe.json) =
   List.map ~f:eleparse (to_list json)
+
+let parse_parameter (str : string) : Annot.parameter =
+  Annot.{name= Some str; value= Annot.Str str}
+
+let parse_list_parameters (eleparse : Yojson.Safe.json -> 'a) (json : Yojson.Safe.json) =
+  List.map ~f:eleparse (to_list json)
+  |> List.map ~f:parse_parameter 
  
 let parse_cil_type_name (str : string) : Typ.t =
   let r = Str.regexp "\\." in
@@ -195,7 +202,7 @@ let parse_ident (json : Yojson.Safe.json) =
     (to_int (member "stamp" json))
 
 let parse_fieldident (json : Yojson.Safe.json) =
-  Fieldname.make StdTyp.Name.CSharp.from_string (to_string (member "field_name" json))
+  Fieldname.make StdTyp.Name.CSharp.system_string (to_string (member "field_name" json))
   
 let parse_source_file (json : Yojson.Safe.json) =
   let p = to_string (member "path" json) in
@@ -233,10 +240,6 @@ and parse_constant (json : Yojson.Safe.json) =
     Const.Cfun pname
   else if String.equal const_kind "Str" then
     Const.Cstr (to_string const_value)
-  else if String.equal const_kind "Float" then
-    match const_value with
-      | string -> Const.Cfloat nan
-      | _ -> Const.Cfloat (to_float const_value) 
   else if String.equal const_kind "Class" then
     Const.Cclass (Ident.string_to_name (to_string const_value))
   else
@@ -295,7 +298,7 @@ and parse_struct_field (json : Yojson.Safe.json) =
   let annot = parse_item_annotation (member "annotation" json) in
   (fi, t, annot)
 
-and parse_sil_type_name (json : Yojson.Safe.json): Typ.typ =
+and parse_sil_type_name (json : Yojson.Safe.json): Typ.t =
   let type_kind = to_string (member "type_kind" json) in
   if String.equal type_kind "Tarray" then
     let t = parse_sil_type_name (member "content_type" json) in
@@ -317,7 +320,7 @@ and parse_sil_type_name (json : Yojson.Safe.json): Typ.typ =
     let tn = parse_typename (member "type_name" json) in
     Typ.mk (Typ.TVar (Typ.Name.name tn))
   else if String.equal type_kind "Tvoid" then
-    Typ.void
+    StdTyp.void
   else if String.equal type_kind "Tenum" then
     (* Sil.Tenum (parse_list (parse_pair (fun n -> Mangled.from_string (to_string n)) parse_constant) value) *)
     Logging.die InternalError "Enums are not supported yet"
@@ -328,7 +331,7 @@ and parse_item_annotation (json : Yojson.Safe.json): Annot.Item.t =
   let parse_annotation (json : Yojson.Safe.json) =
     let class_name = to_string (member "class_name" json) in
     let p = member "params" json in
-    let parameters = parse_list to_string p in
+    let parameters = parse_list_parameters to_string p in
     { Annot.class_name = class_name ; Annot.parameters = parameters } in
   parse_list 
     (fun j -> 
@@ -353,16 +356,21 @@ let parse_method_annotation (json : Yojson.Safe.json): Annot.Method.t =
 let parse_proc_attributes_var (json : Yojson.Safe.json) =
   let n = to_string (member "name" json) in
   let t = parse_sil_type_name (member "type" json) in
-  (Mangled.from_string n, t)
+  (Mangled.from_string n, t, Pvar.ByValue)
+
+let parse_proc_attributes_formals (json : Yojson.Safe.json) =
+  let (n,t,m) = parse_proc_attributes_var json in
+  (n, t)
 
 let parse_proc_attributes_locals (json : Yojson.Safe.json) : ProcAttributes.var_data =
-  let (n,t) = parse_proc_attributes_var json in
+  let (n,t,m) = parse_proc_attributes_var json in
   let mib = to_bool (member "modify_in_block" json) in
   let ice = to_bool (member "is_const_expr" json) in
   { name= n
   ; typ= t
   ; modify_in_block= mib
-  ; is_constexpr= ice }
+  ; is_constexpr= ice 
+  ; is_declared_unused= false}
 
 let parse_proc_attributes (json : Yojson.Safe.json) =
   let access = 
@@ -380,7 +388,7 @@ let parse_proc_attributes (json : Yojson.Safe.json) =
 
   let formals =
     parse_list
-      parse_proc_attributes_var
+      parse_proc_attributes_formals
       (member "formals" json) in
 
   let locals =
@@ -397,7 +405,6 @@ let parse_proc_attributes (json : Yojson.Safe.json) =
     captured;
     exceptions = parse_list to_string (member "exceptions" json) ;
     formals;
-    func_attributes = [] ; (* cil todo *)
     is_abstract = to_bool (member "is_abstract" json) ;
     is_bridge_method = to_bool (member "is_bridge_method" json) ;
     is_defined = to_bool (member "is_defined" json) ;
@@ -428,12 +435,12 @@ let parse_instr (json : Yojson.Safe.json) =
     let i = parse_ident (member "identifier" json) in
     let e = parse_exp (member "expression" json) in
     let t = parse_sil_type_name (member "type" json) in
-    Sil.Load(i, e, t, l)
+    Sil.Load{id= i; e; root_typ= t; typ= t; loc= l}
   else if String.equal instr_kind "Store" then
     let e1 = parse_exp (member "lvalue" json) in
     let e2 = parse_exp (member "rvalue" json) in
     let t = parse_sil_type_name (member "type" json) in
-    Sil.Store(e1, t, e2, l)
+    Sil.Store{e1; root_typ= t; typ= t; e2= e2; loc= l}
   else if String.equal instr_kind "Prune" then
     let e = parse_exp (member "condition" json) in
     let f = to_bool (member "true_branch" json) in
@@ -495,8 +502,6 @@ let parse_stmt_nodekind (json: Yojson.Safe.json): Procdesc.Node.stmt_nodekind =
     Procdesc.Node.DeclStmt
   | "DefineBody" ->
     Procdesc.Node.DefineBody
-  | "Destruction" ->
-    Procdesc.Node.Destruction
   | "ExceptionHandler" ->
     Procdesc.Node.ExceptionHandler
   | "ExceptionsSink" ->
@@ -654,23 +659,8 @@ let parse_tenv (json : Yojson.Safe.json) =
 
 
 let clear_caches () =
-  Ondemand.clear_cache () ;
-  Summary.clear_cache () ;
+  Summary.OnDisk.clear_cache () ;
   Procname.SQLite.clear_cache ()
-
-
-(** Create tasks to analyze an execution environment *)
-let analyze_source_file : SourceFile.t Tasks.doer =
- fun source_file ->
-  if Config.memcached then Memcached.connect () ;
-  DB.Results_dir.init source_file ;
-  let exe_env = Exe_env.mk () in
-  L.task_progress SourceFile.pp source_file ~f:(fun () ->
-      (* clear cache for each source file to avoid it growing unboundedly *)
-      clear_caches () ;
-      Callbacks.analyze_file exe_env source_file ;
-      if Config.write_html then Printer.write_all_html_files source_file ) ;
-  if Config.memcached then Memcached.disconnect ()
 
 
 let output_json_makefile_stats clusters =
@@ -913,7 +903,7 @@ let invalidate_changed_procedures changed_files =
 let analyze_json cfg_json tenv_json =
   clear_caches () ;
   register_active_checkers () ;
-  if Config.reanalyze then Summary.reset_all ~filter:(Lazy.force Filtering.procedures_filter) ()
+  if Config.reanalyze then Summary.OnDisk.reset_all ~filter:(Lazy.force Filtering.procedures_filter) ()
   else DB.Results_dir.clean_specs_dir () ;
 
   Printexc.record_backtrace true;
@@ -938,7 +928,7 @@ let analyze_json cfg_json tenv_json =
   Language.curr_language := Language.CIL ;
 
   let exe_env = Exe_env.mk () in
-  Callbacks.analyze_file exe_env source_file ;
+  Ondemand.analyze_file exe_env source_file ;
 
   if Config.write_html then Printer.write_all_html_files source_file ;
   ()

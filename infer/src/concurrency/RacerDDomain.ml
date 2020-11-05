@@ -16,6 +16,8 @@ let pp_exp fmt exp =
       AccessExpression.pp fmt exp
   | Java ->
       AccessPath.pp fmt (AccessExpression.to_access_path exp)
+  | CIL ->
+      AccessPath.pp fmt (AccessExpression.to_access_path exp)
 
 
 let rec should_keep_exp formals (exp : AccessExpression.t) =

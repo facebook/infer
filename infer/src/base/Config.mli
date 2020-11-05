@@ -43,6 +43,8 @@ val append_buck_flavors : string list
 
 val assign : string
 
+val backend_stats_dir_name : string
+
 val biabduction_models_sql : string
 
 val biabduction_models_jar : string
@@ -67,13 +69,21 @@ val default_failure_name : string
 
 val dotty_frontend_output : string
 
+val driver_stats_dir_name : string
+
 val etc_dir : string
 
+val events_dir_name : string
+
 val fail_on_issue_exit_code : int
+
+val frontend_stats_dir_name : string
 
 val fcp_dir : string
 
 val idempotent_getters : bool
+
+val infer_top_results_dir_env_var : string
 
 val initial_analysis_time : float
 
@@ -106,7 +116,11 @@ val patterns_skip_implementation : string * Yojson.Basic.t
 
 val patterns_skip_translation : string * Yojson.Basic.t
 
+val perf_stats_prefix : string
+
 val pp_version : Format.formatter -> unit -> unit
+
+val proc_stats_filename : string
 
 val property_attributes : string
 
@@ -120,6 +134,8 @@ val report_force_relative_path : bool
 
 val report_nullable_inconsistency : bool
 
+val reporting_stats_dir_name : string
+
 val save_compact_summaries : bool
 
 val smt_output : bool
@@ -131,6 +147,8 @@ val kotlin_source_extension : string
 val sourcepath : string option
 
 val sources : string list
+
+val specs_dir_name : string
 
 val trace_absarray : bool
 
@@ -193,6 +211,8 @@ val call_graph_schedule : bool
 val capture : bool
 
 val capture_blacklist : string option
+
+val cfg_json : string option
 
 val censor_report : ((bool * Str.regexp) * (bool * Str.regexp) * string) list
 
@@ -579,6 +599,8 @@ val summaries_caches_max_size : int
 
 val symops_per_iteration : int option
 
+val tenv_json : string option
+
 val test_determinator : bool
 
 val export_changed_functions : bool
@@ -600,8 +622,6 @@ val trace_join : bool
 val trace_ondemand : bool
 
 val trace_rearrange : bool
-
-val tracing : bool
 
 val trace_topl : bool
 

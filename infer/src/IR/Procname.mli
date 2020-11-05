@@ -21,9 +21,6 @@ module CSharp : sig
 
   val constructor_method_name : string
 
-  val get_class_name : t -> string
-  (** Return the class name of a csharp procedure name. *)
-
   val get_method : t -> string
   (** Return the method name of a csharp procedure name. *)
   

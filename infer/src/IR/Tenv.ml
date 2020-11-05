@@ -230,6 +230,9 @@ let resolve_method ~method_exists tenv class_name proc_name =
           | JavaClass _ ->
               (* multiple inheritance not possible, but cannot distinguish interfaces from typename so search all *)
               class_struct.supers
+          | CSharpClass _ ->
+              (* multiple inheritance not possible, but cannot distinguish interfaces from typename so search all *)
+              class_struct.supers
           | ObjcClass _ ->
               (* multiple inheritance impossible, but recursive calls will throw away protocols *)
               class_struct.supers

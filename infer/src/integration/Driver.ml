@@ -84,7 +84,6 @@ let clean_compilation_command mode =
   | _ ->
       None
 
-
 let reset_duplicates_file () =
   let start = ResultsDir.get_path DuplicateFunctions in
   let delete () = Unix.unlink start in
@@ -184,13 +183,12 @@ let execute_analyze ~changed_files =
   PerfEvent.(log (fun logger -> log_end_event logger ()))
 
 let execute_analyze_json () =
-  register_perf_stats_report PerfStats.TotalBackend ;
   match (Config.cfg_json, Config.tenv_json) with
   | (Some cfg_json, Some tenv_json) ->
     InferAnalyze.analyze_json cfg_json tenv_json ;
   | (_,_) ->
     L.user_warning "** Missing cfg or tenv json files. Provide them as arguments throught '--cfg-json' and '--tenv-json' **\n" ;
-  PerfStats.get_reporter PerfStats.TotalBackend ()
+  ()
 
 
 let report ?(suppress_console = false) () =

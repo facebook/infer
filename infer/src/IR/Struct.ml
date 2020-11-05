@@ -285,6 +285,14 @@ let merge typename ~newer ~current =
       newer
   | JavaClass _ ->
       full_merge ~newer ~current
+  | CSharpClass _ when is_dummy newer ->
+      current
+  | CSharpClass _ when is_dummy current ->
+      newer
+  | CSharpClass _ when equal newer current ->
+      newer
+  | CSharpClass _ ->
+      full_merge ~newer ~current
 
 
 let is_not_java_interface = function
