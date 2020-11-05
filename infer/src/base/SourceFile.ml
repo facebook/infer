@@ -146,17 +146,9 @@ let is_invalid = function Invalid _ -> true | _ -> false
 
 let is_under_project_root = function
   | Invalid {ml_source_file} ->
-      L.(die InternalError) "cannot be called with Invalid source file from %s" ml_source_file
-  | RelativeProjectRoot _ ->
+      L.die InternalError "cannot be called with Invalid source file from %s" ml_source_file
+  | RelativeProjectRoot _ | RelativeProjectRootAndWorkspace _ ->
       true
-  | RelativeProjectRootAndWorkspace {workspace_rel_root= foreign_rel_project_root}
-    when Option.equal String.equal workspace_rel_root_opt (Some foreign_rel_project_root) ->
-      (* relative to the same project root *)
-      true
-  | RelativeProjectRootAndWorkspace _ ->
-      (* Relative to a possibly-different project root. We should check if it the absolute file path
-         is inside the current project root but just return [false] instead. *)
-      false
   | Absolute _ ->
       false
 
