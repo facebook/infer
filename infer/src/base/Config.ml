@@ -102,8 +102,6 @@ let anonymous_block_prefix = "objc_block"
 
 let assign = "<\"Assign\">"
 
-let backend_stats_dir_name = "backend_stats"
-
 (** If true, a procedure call succeeds even when there is a bound error this mimics what happens
     with a direct array access where an error is produced and the analysis continues *)
 let bound_error_allowed_in_procedure_call = true
@@ -127,8 +125,6 @@ let events_dir_name = "events"
 
 (** exit code to use for the --fail-on-issue option *)
 let fail_on_issue_exit_code = 2
-
-let frontend_stats_dir_name = "frontend_stats"
 
 (** If true, treat calls to no-arg getters as idempotent w.r.t non-nullness *)
 let idempotent_getters = true
@@ -181,8 +177,6 @@ let max_widens = 10000
 let meet_level = 1
 
 let nsnotification_center_checker_backend = false
-
-let perf_stats_prefix = "perf_stats"
 
 let proc_stats_filename = "proc_stats.json"
 

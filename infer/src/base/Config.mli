@@ -43,8 +43,6 @@ val append_buck_flavors : string list
 
 val assign : string
 
-val backend_stats_dir_name : string
-
 val biabduction_models_sql : string
 
 val biabduction_models_jar : string
@@ -76,8 +74,6 @@ val etc_dir : string
 val events_dir_name : string
 
 val fail_on_issue_exit_code : int
-
-val frontend_stats_dir_name : string
 
 val fcp_dir : string
 
@@ -115,8 +111,6 @@ val patterns_never_returning_null : string * Yojson.Basic.t
 val patterns_skip_implementation : string * Yojson.Basic.t
 
 val patterns_skip_translation : string * Yojson.Basic.t
-
-val perf_stats_prefix : string
 
 val pp_version : Format.formatter -> unit -> unit
 
