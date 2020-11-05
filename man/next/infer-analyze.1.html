@@ -73,12 +73,12 @@ report.</p>
 
 <p style="margin-left:17%;">Activates: checker
 annotation-reachability: Given a pair of source and sink
-annotation, e.g. &rsquo;@PerformanceCritical&rsquo; and
-&rsquo;@Expensive&rsquo;, this checker will warn whenever
+annotation, e.g. &lsquo;@PerformanceCritical&lsquo; and
+&lsquo;@Expensive&lsquo;, this checker will warn whenever
 some method annotated with
-&rsquo;@PerformanceCritical&rsquo; calls, directly or
+&lsquo;@PerformanceCritical&lsquo; calls, directly or
 indirectly, another method annotated with
-&rsquo;@Expensive&rsquo; (Conversely:
+&lsquo;@Expensive&lsquo; (Conversely:
 <b>--no-annotation-reachability</b>)</p>
 
 
@@ -152,7 +152,7 @@ given the same before. Not compatible with
 <p style="margin-left:17%;">Activates: checker cost:
 Computes the time complexity of functions and methods. Can
 be used to detect changes in runtime complexity with
-&rsquo;infer reportdiff&rsquo;. (Conversely:
+&lsquo;infer reportdiff&lsquo;. (Conversely:
 <b>--no-cost</b>)</p>
 
 <p style="margin-left:11%;"><b>--cost-only</b></p>
@@ -160,6 +160,13 @@ be used to detect changes in runtime complexity with
 <p style="margin-left:17%;">Activates: Enable cost and
 disable all other checkers (Conversely:
 <b>--no-cost-only</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--no-cost-suppress-func-ptr</b></p>
+
+<p style="margin-left:17%;">Deactivates: Suppress printing
+function pointers in cost reports (Conversely:
+<b>--cost-suppress-func-ptr</b>)</p>
 
 <p style="margin-left:11%;"><b>--custom-symbols</b>
 <i>json</i></p>
@@ -226,7 +233,7 @@ reporting. (Conversely: <b>--deduplicate</b>)</p>
 <p style="margin-left:11%;"><b>--eradicate</b></p>
 
 <p style="margin-left:17%;">Activates: checker eradicate:
-The eradicate &rsquo;@Nullable&rsquo; checker for Java
+The eradicate &lsquo;@Nullable&lsquo; checker for Java
 annotations. (Conversely: <b>--no-eradicate</b>)</p>
 
 <p style="margin-left:11%;"><b>--eradicate-only</b></p>
@@ -272,9 +279,9 @@ internal options in the INTERNAL OPTIONS section</p>
 <p style="margin-left:17%;">Activates: checker
 immutable-cast: Detection of object cast from immutable
 types to mutable types. For instance, it will detect casts
-from &rsquo;ImmutableList&rsquo; to &rsquo;List&rsquo;,
-&rsquo;ImmutableMap&rsquo; to &rsquo;Map&rsquo;, and
-&rsquo;ImmutableSet&rsquo; to &rsquo;Set&rsquo;.
+from &lsquo;ImmutableList&lsquo; to &lsquo;List&lsquo;,
+&lsquo;ImmutableMap&lsquo; to &lsquo;Map&lsquo;, and
+&lsquo;ImmutableSet&lsquo; to &lsquo;Set&lsquo;.
 (Conversely: <b>--no-immutable-cast</b>)</p>
 
 
@@ -343,7 +350,7 @@ disable all other checkers (Conversely:
 
 <p style="margin-left:17%;">Activates: checker
 litho-required-props: Checks that all non-optional
-&rsquo;@Prop&rsquo;s have been specified when constructing
+&lsquo;@Prop&lsquo;s have been specified when constructing
 Litho components. (Conversely:
 <b>--no-litho-required-props</b>)</p>
 
@@ -401,11 +408,11 @@ stdout and stderr (Conversely: <b>--no-print-logs</b>)</p>
 <p style="margin-left:11%;"><b>--printf-args</b></p>
 
 <p style="margin-left:17%;">Activates: checker printf-args:
-Detect mismatches between the Java &rsquo;printf&rsquo;
+Detect mismatches between the Java &lsquo;printf&lsquo;
 format strings and the argument types For example, this
 checker will warn about the type error in
-&rsquo;printf(&quot;Hello %d&quot;,
-&quot;world&quot;)&rsquo; (Conversely:
+&lsquo;printf(&quot;Hello %d&quot;,
+&quot;world&quot;)&lsquo; (Conversely:
 <b>--no-printf-args</b>)</p>
 
 <p style="margin-left:11%;"><b>--printf-args-only</b></p>
@@ -584,7 +591,7 @@ performs better in some circumstances <b><br>
 
 <p style="margin-left:17%;">Deactivates: checker
 self-in-block: An Objective-C-specific analysis to detect
-when a block captures &rsquo;self&rsquo;. (Conversely:
+when a block captures &lsquo;self&lsquo;. (Conversely:
 <b>--self-in-block</b>)</p>
 
 

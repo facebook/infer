@@ -78,18 +78,18 @@ are specified, they are applied in the order in which they
 are specified. Each filter is applied to each issue
 detected, and only issues which are accepted by all filters
 are reported. Each filter is of the form:
-&rsquo;&lt;issue_type_regex&gt;:&lt;filename_regex&gt;:&lt;reason_string&gt;&rsquo;.
+&lsquo;&lt;issue_type_regex&gt;:&lt;filename_regex&gt;:&lt;reason_string&gt;&lsquo;.
 The first two components are OCaml Str regular expressions,
-with an optional &rsquo;!&rsquo; character prefix. If a
-regex has a &rsquo;!&rsquo; prefix, the polarity is
+with an optional &lsquo;!&lsquo; character prefix. If a
+regex has a &lsquo;!&lsquo; prefix, the polarity is
 inverted, and the filter becomes a &quot;blacklist&quot;
 instead of a &quot;whitelist&quot;. Each filter is
 interpreted as an implication: an issue matches if it does
-not match the &rsquo;issue_type_regex&rsquo; or if it does
-match the &rsquo;filename_regex&rsquo;. The filenames that
+not match the &lsquo;issue_type_regex&lsquo; or if it does
+match the &lsquo;filename_regex&lsquo;. The filenames that
 are tested by the regex are relative to the
-&rsquo;--project-root&rsquo; directory. The
-&rsquo;&lt;reason_string&gt;&rsquo; is a non-empty string
+&lsquo;--project-root&lsquo; directory. The
+&lsquo;&lt;reason_string&gt;&lsquo; is a non-empty string
 used to explain why the issue was filtered.</p>
 
 <p style="margin-left:11%;"><b>--cost-issues-tests</b>
@@ -231,6 +231,7 @@ default), <br>
 DIVIDE_BY_ZERO (disabled by default), <br>
 DO_NOT_REPORT (enabled by default), <br>
 EMPTY_VECTOR_ACCESS (enabled by default), <br>
+ERADICATE_ANNOTATION_GRAPH (enabled by default), <br>
 ERADICATE_BAD_NESTED_CLASS_ANNOTATION (enabled by default),
 <br>
 ERADICATE_CONDITION_REDUNDANT (enabled by default), <br>
@@ -306,7 +307,7 @@ MULTIPLE_WEAKSELF (enabled by default), <br>
 MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE (enabled by
 default), <br>
 Missing_fld (enabled by default), <br>
-NULLPTR_DEREFERENCE (disabled by default), <br>
+NULLPTR_DEREFERENCE (enabled by default), <br>
 NULL_DEREFERENCE (enabled by default), <br>
 OPTIONAL_EMPTY_ACCESS (disabled by default), <br>
 PARAMETER_NOT_NULL_CHECKED (enabled by default), <br>

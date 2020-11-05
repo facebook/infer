@@ -121,12 +121,12 @@ reserved for internal use). <b><br>
 
 <p style="margin-left:17%;">Activates: checker
 annotation-reachability: Given a pair of source and sink
-annotation, e.g. &rsquo;@PerformanceCritical&rsquo; and
-&rsquo;@Expensive&rsquo;, this checker will warn whenever
+annotation, e.g. &lsquo;@PerformanceCritical&lsquo; and
+&lsquo;@Expensive&lsquo;, this checker will warn whenever
 some method annotated with
-&rsquo;@PerformanceCritical&rsquo; calls, directly or
+&lsquo;@PerformanceCritical&lsquo; calls, directly or
 indirectly, another method annotated with
-&rsquo;@Expensive&rsquo; (Conversely:
+&lsquo;@Expensive&lsquo; (Conversely:
 <b>--no-annotation-reachability</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -365,18 +365,18 @@ are specified, they are applied in the order in which they
 are specified. Each filter is applied to each issue
 detected, and only issues which are accepted by all filters
 are reported. Each filter is of the form:
-&rsquo;&lt;issue_type_regex&gt;:&lt;filename_regex&gt;:&lt;reason_string&gt;&rsquo;.
+&lsquo;&lt;issue_type_regex&gt;:&lt;filename_regex&gt;:&lt;reason_string&gt;&lsquo;.
 The first two components are OCaml Str regular expressions,
-with an optional &rsquo;!&rsquo; character prefix. If a
-regex has a &rsquo;!&rsquo; prefix, the polarity is
+with an optional &lsquo;!&lsquo; character prefix. If a
+regex has a &lsquo;!&lsquo; prefix, the polarity is
 inverted, and the filter becomes a &quot;blacklist&quot;
 instead of a &quot;whitelist&quot;. Each filter is
 interpreted as an implication: an issue matches if it does
-not match the &rsquo;issue_type_regex&rsquo; or if it does
-match the &rsquo;filename_regex&rsquo;. The filenames that
+not match the &lsquo;issue_type_regex&lsquo; or if it does
+match the &lsquo;filename_regex&lsquo;. The filenames that
 are tested by the regex are relative to the
-&rsquo;--project-root&rsquo; directory. The
-&rsquo;&lt;reason_string&gt;&rsquo; is a non-empty string
+&lsquo;--project-root&lsquo; directory. The
+&lsquo;&lt;reason_string&gt;&lsquo; is a non-empty string
 used to explain why the issue was filtered.</p>
 
 <p style="margin-left:11%;">See also <b>infer-report</b>(1)
@@ -393,7 +393,8 @@ root or be absolute</p>
 --clang-biniou-file</b> <i>file</i></p>
 
 <p style="margin-left:17%;">Specify a file containing the
-AST of the program, in biniou format</p>
+AST of the program, in biniou format. Please note you still
+need to provide a compilation command.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1). <b><br>
@@ -419,6 +420,14 @@ each analysis has to model.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1) and <b>infer-capture</b>(1). <b><br>
+--clang-yojson-file</b> <i>file</i></p>
+
+<p style="margin-left:17%;">Specify a file containing the
+AST of the program, in yojson format. Please note you still
+need to provide a compilation command.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-capture</b>(1). <b><br>
 --compilation-database</b> <i>+path</i></p>
 
 <p style="margin-left:17%;">File that contain compilation
@@ -478,7 +487,7 @@ given the same before. Not compatible with
 <p style="margin-left:17%;">Activates: checker cost:
 Computes the time complexity of functions and methods. Can
 be used to detect changes in runtime complexity with
-&rsquo;infer reportdiff&rsquo;. (Conversely:
+&lsquo;infer reportdiff&lsquo;. (Conversely:
 <b>--no-cost</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -495,6 +504,14 @@ a format suitable for cost tests to <i>file</i></p>
 <p style="margin-left:17%;">Activates: Enable cost and
 disable all other checkers (Conversely:
 <b>--no-cost-only</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--no-cost-suppress-func-ptr</b></p>
+
+<p style="margin-left:17%;">Deactivates: Suppress printing
+function pointers in cost reports (Conversely:
+<b>--cost-suppress-func-ptr</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -719,6 +736,7 @@ default), <br>
 DIVIDE_BY_ZERO (disabled by default), <br>
 DO_NOT_REPORT (enabled by default), <br>
 EMPTY_VECTOR_ACCESS (enabled by default), <br>
+ERADICATE_ANNOTATION_GRAPH (enabled by default), <br>
 ERADICATE_BAD_NESTED_CLASS_ANNOTATION (enabled by default),
 <br>
 ERADICATE_CONDITION_REDUNDANT (enabled by default), <br>
@@ -794,7 +812,7 @@ MULTIPLE_WEAKSELF (enabled by default), <br>
 MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE (enabled by
 default), <br>
 Missing_fld (enabled by default), <br>
-NULLPTR_DEREFERENCE (disabled by default), <br>
+NULLPTR_DEREFERENCE (enabled by default), <br>
 NULL_DEREFERENCE (enabled by default), <br>
 OPTIONAL_EMPTY_ACCESS (disabled by default), <br>
 PARAMETER_NOT_NULL_CHECKED (enabled by default), <br>
@@ -865,7 +883,7 @@ or off.</p>
 --eradicate</b></p>
 
 <p style="margin-left:17%;">Activates: checker eradicate:
-The eradicate &rsquo;@Nullable&rsquo; checker for Java
+The eradicate &lsquo;@Nullable&lsquo; checker for Java
 annotations. (Conversely: <b>--no-eradicate</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -1067,9 +1085,9 @@ report. (Conversely: <b>--no-html</b>)</p>
 <p style="margin-left:17%;">Activates: checker
 immutable-cast: Detection of object cast from immutable
 types to mutable types. For instance, it will detect casts
-from &rsquo;ImmutableList&rsquo; to &rsquo;List&rsquo;,
-&rsquo;ImmutableMap&rsquo; to &rsquo;Map&rsquo;, and
-&rsquo;ImmutableSet&rsquo; to &rsquo;Set&rsquo;.
+from &lsquo;ImmutableList&lsquo; to &lsquo;List&lsquo;,
+&lsquo;ImmutableMap&lsquo; to &lsquo;Map&lsquo;, and
+&lsquo;ImmutableSet&lsquo; to &lsquo;Set&lsquo;.
 (Conversely: <b>--no-immutable-cast</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -1263,7 +1281,7 @@ issue types that infer might report. (Conversely:
 
 <p style="margin-left:17%;">Activates: checker
 litho-required-props: Checks that all non-optional
-&rsquo;@Prop&rsquo;s have been specified when constructing
+&lsquo;@Prop&lsquo;s have been specified when constructing
 Litho components. (Conversely:
 <b>--no-litho-required-props</b>)</p>
 
@@ -1390,11 +1408,11 @@ infer-run</b>(1). <b><br>
 --printf-args</b></p>
 
 <p style="margin-left:17%;">Activates: checker printf-args:
-Detect mismatches between the Java &rsquo;printf&rsquo;
+Detect mismatches between the Java &lsquo;printf&lsquo;
 format strings and the argument types For example, this
 checker will warn about the type error in
-&rsquo;printf(&quot;Hello %d&quot;,
-&quot;world&quot;)&rsquo; (Conversely:
+&lsquo;printf(&quot;Hello %d&quot;,
+&quot;world&quot;)&lsquo; (Conversely:
 <b>--no-printf-args</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -1478,6 +1496,14 @@ found in the output of <b>--procedures</b> (Conversely:
 <p style="margin-left:17%;">Activates: Print the summaries
 of each procedure in the output of <b>--procedures</b>
 (Conversely: <b>--no-procedures-summary</b>)</p>
+
+<p style="margin-left:11%;">See also <b>infer-debug</b>(1).
+<b><br>
+--procedures-summary-json</b></p>
+
+<p style="margin-left:17%;">Activates: Emit the summaries
+of each procedure in the output of <b>--procedures</b> as
+JSON (Conversely: <b>--no-procedures-summary-json</b>)</p>
 
 <p style="margin-left:11%;">See also <b>infer-debug</b>(1).
 <b><br>
@@ -1789,18 +1815,18 @@ duplicate work between different analysis processes and thus
 <br>
 performs better in some circumstances <br>
 See also <b>infer-analyze</b>(1). <b><br>
---select</b> <i>N</i></p>
+--select</b> <i>(N|all)</i></p>
 
-<p style="margin-left:17%;">Select bug number <i>N</i>. If
-omitted, prompt for input.</p>
+<p style="margin-left:17%;">Select option number <i>N</i>
+or <i>all</i> of them. If omitted, prompt for input.</p>
 
-<p style="margin-left:11%;">See also
-<b>infer-explore</b>(1). <b><br>
+<p style="margin-left:11%;">See also <b>infer-debug</b>(1)
+and <b>infer-explore</b>(1). <b><br>
 --no-self-in-block</b></p>
 
 <p style="margin-left:17%;">Deactivates: checker
 self-in-block: An Objective-C-specific analysis to detect
-when a block captures &rsquo;self&rsquo;. (Conversely:
+when a block captures &lsquo;self&lsquo;. (Conversely:
 <b>--self-in-block</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -2066,6 +2092,17 @@ json format and exit</p>
 
 <p style="margin-left:11%;">See also <b>infer-run</b>(1).
 <b><br>
+--workspace</b> <i>path</i></p>
+
+<p style="margin-left:17%;">Specifies the root of the
+workspace, which is a directory containing
+<b>--project-root</b>. This can be needed if the capture
+phase is expected to require several <i>different</i>
+project roots, all relative to a common workspace. Usually a
+single project root is enough, though.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-capture</b>(1). <b><br>
 --write-website</b> <i>path_to_website_dir</i></p>
 
 <p style="margin-left:17%;">Use to write website files
@@ -2079,7 +2116,7 @@ Infer directory to generate its website at
 --Xbuck</b> <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&rsquo;buck build&rsquo;</i>.
+arguments to invocations of <i>&lsquo;buck build&lsquo;</i>.
 Only valid for <b>--buck-clang</b>.</p>
 
 <p style="margin-left:11%;">See also
@@ -2087,7 +2124,7 @@ Only valid for <b>--buck-clang</b>.</p>
 --Xbuck-no-inline</b> <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&rsquo;buck build&rsquo;</i>,
+arguments to invocations of <i>&lsquo;buck build&lsquo;</i>,
 don't inline any args starting with '@'. Only valid for
 <b>--buck-clang</b>.</p>
 
@@ -2119,8 +2156,8 @@ isysroot directory, to avoid absolute paths in tests</p>
 <p style="margin-left:17%;">Activates: Infer will use
 xcpretty together with xcodebuild to analyze an iOS app.
 xcpretty just needs to be in the path, infer command is
-still just <i>&rsquo;infer -- &lt;xcodebuild
-command&gt;&rsquo;</i>. (Conversely:
+still just <i>&lsquo;infer -- &lt;xcodebuild
+command&gt;&lsquo;</i>. (Conversely:
 <b>--no-xcpretty</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -2155,9 +2192,9 @@ may be passed to all infer commands using the
 <b>INFER_ARGS</b> environment variable (see the
 <i>OPTIONS</i> section). <b>INFER_ARGS</b> is expected to
 contain a string of ^-separated options. For instance,
-calling &rsquo;INFER_ARGS=--debug^--print-logs infer&rsquo;
-is equivalent to calling &rsquo;infer --debug
---print-logs&rsquo;.</p>
+calling &lsquo;INFER_ARGS=--debug^--print-logs infer&lsquo;
+is equivalent to calling &lsquo;infer --debug
+--print-logs&lsquo;.</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>INFERCONFIG</b>:
