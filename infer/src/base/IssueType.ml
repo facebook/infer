@@ -764,7 +764,7 @@ let nullptr_dereference =
 
 let optional_empty_access =
   register ~enabled:false ~id:"OPTIONAL_EMPTY_ACCESS" Error Pulse
-    ~user_documentation:"Reports on accessing folly::Optional when it is none."
+    ~user_documentation:[%blob "../../documentation/issues/OPTIONAL_EMPTY_ACCESS.md"]
 
 
 let parameter_not_null_checked =
