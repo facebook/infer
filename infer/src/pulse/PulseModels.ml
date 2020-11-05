@@ -242,7 +242,11 @@ module FollyOptional = struct
   let value optional : model =
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model "folly::Optional::value()"; location; in_call= []} in
-    let* astate, (value_addr, value_hist) = to_internal_value_deref location optional astate in
+    let* astate, ((value_addr, value_hist) as value) =
+      to_internal_value_deref location optional astate
+    in
+    (* Check dereference to show an error at the callsite of `value()` *)
+    let* astate, _ = PulseOperations.eval_access location value Dereference astate in
     PulseOperations.write_id ret_id (value_addr, event :: value_hist) astate
     |> PulseOperations.ok_continue
 
