@@ -86,6 +86,7 @@ and term : Llair.Exp.t -> T.t =
         | Some fml -> F.inject fml
         | _ -> uap1 (Unsigned bits) a
       else uap1 (Unsigned bits) a
+  | Ap1 (Convert {src= Pointer _}, Pointer _, e) -> term e
   | Ap1 (Convert {src}, dst, e) ->
       let s =
         Format.asprintf "convert_%a_of_%a" Llair.Typ.pp dst Llair.Typ.pp src
