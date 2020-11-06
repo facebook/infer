@@ -88,7 +88,7 @@ and term : Llair.Exp.t -> T.t =
       else uap1 (Unsigned bits) a
   | Ap1 (Convert {src}, dst, e) ->
       let s =
-        Format.asprintf "convert_%a_%a" Llair.Typ.pp src Llair.Typ.pp dst
+        Format.asprintf "convert_%a_of_%a" Llair.Typ.pp dst Llair.Typ.pp src
       in
       uap1 (Funsym.uninterp s) (term e)
   | Ap2 (Eq, _, d, e) -> ap_ttf F.eq d e
