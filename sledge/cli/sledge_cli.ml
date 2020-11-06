@@ -271,6 +271,8 @@ let readme () =
 
 ;;
 Printexc.record_backtrace Version.debug
+;;
+Stdlib.Sys.catch_break true
 
 ;;
 Command.run ~version:Version.version ~build_info:Version.build_info
