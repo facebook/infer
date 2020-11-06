@@ -467,13 +467,15 @@ let star q1 q2 =
       let xs, ctx =
         Context.union (Var.Set.union us (Var.Set.union xs1 xs2)) c1 c2
       in
-      if Context.is_unsat ctx then false_ us
+      let pure = Formula.and_ p1 p2 in
+      if Formula.equal Formula.ff pure || Context.is_unsat ctx then
+        false_ us
       else
         exists_fresh xs
           { us
           ; xs= Var.Set.union xs1 xs2
           ; ctx
-          ; pure= Formula.and_ p1 p2
+          ; pure
           ; heap= List.append h1 h2
           ; djns= List.append d1 d2 } )
   |>
