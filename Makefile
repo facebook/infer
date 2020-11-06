@@ -153,6 +153,7 @@ DIRECT_TESTS += \
   java_bufferoverrun \
   java_checkers \
   java_nullsafe \
+	java_nullsafe-annotation-graph \
   java_hoisting \
   java_hoistingExpensive \
   java_impurity \

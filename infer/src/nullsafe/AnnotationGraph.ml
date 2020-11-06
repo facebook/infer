@@ -60,6 +60,8 @@ let build_graph_nodes tenv class_struct class_name =
   let class_typ = Typ.mk_struct class_name in
   let field_annotations =
     class_struct.Struct.fields
+    (* Sorting to get the stable list *)
+    |> List.sort ~compare:Struct.compare_field
     |> List.filter_map ~f:(fun (field_name, _, _) ->
            let AnnotatedField.{annotated_type= {nullability}} =
              Option.value_exn
@@ -68,7 +70,9 @@ let build_graph_nodes tenv class_struct class_name =
            get_provisional_annotation nullability )
   in
   let method_signatures =
+    (* Sorting to get the stable list *)
     class_struct.Struct.methods
+    |> List.sort ~compare:Procname.compare
     |> List.map ~f:(fun proc_name ->
            let proc_attributes = Option.value_exn (PatternMatch.lookup_attributes tenv proc_name) in
            AnnotatedSignature.get_for_class_under_analysis tenv proc_attributes )
