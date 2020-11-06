@@ -60,6 +60,7 @@ and strict_nonnull_origin =
   | ModelledNonnull  (** nullsafe knows it is non-nullable via its internal models *)
   | StrictMode  (** under strict mode we consider non-null declarations to be trusted *)
   | PrimitiveType  (** Primitive types are non-nullable by language design *)
+  | ImplicitThis  (** Implicit `this` param for virtual non-static methods *)
   | EnumValue
       (** Java enum value are statically initialized with non-nulls according to language semantics *)
   | SyntheticField

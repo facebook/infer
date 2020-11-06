@@ -39,6 +39,7 @@ and strict_nonnull_origin =
   | ModelledNonnull
   | StrictMode
   | PrimitiveType
+  | ImplicitThis
   | EnumValue
   | SyntheticField
 [@@deriving compare]
@@ -85,6 +86,8 @@ let pp fmt t =
         "strict"
     | PrimitiveType ->
         "primitive"
+    | ImplicitThis ->
+        "implicit_this"
     | EnumValue ->
         "enum"
     | SyntheticField ->
@@ -162,6 +165,8 @@ let can_be_considered_for_provisional_annotation = function
       (* models correspond to code beyond control *) false
   | StrictNonnull PrimitiveType ->
       (* primitive type can not be annotated *) false
+  | StrictNonnull ImplicitThis ->
+      (* a synthetic param *) false
   | StrictNonnull EnumValue ->
       (* by design non-nullable *) false
   | StrictNonnull SyntheticField ->

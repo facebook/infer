@@ -19,20 +19,20 @@ AnnotationGraph:
     kind: Field
     field_name: fieldD
     num_violations: 1
-    dependent_point_ids: [m4]
+    dependent_point_ids: [m3]
     
   Annotation point:
-    id: m4
+    id: m3
     kind: Method
     method_info:
       method_name: methodA
       params: java.lang.String, boolean
       access_level: Private
     num_violations: 0
-    dependent_point_ids: [m7]
+    dependent_point_ids: [m5]
     
   Annotation point:
-    id: m7
+    id: m5
     kind: Method
     method_info:
       method_name: methodB
@@ -42,7 +42,7 @@ AnnotationGraph:
     dependent_point_ids: []
     
   Annotation point:
-    id: m9
+    id: m6
     kind: Method
     method_info:
       method_name: methodC
@@ -52,62 +52,7 @@ AnnotationGraph:
     dependent_point_ids: []
     
   Annotation point:
-    id: p10
-    kind: Param
-    method_info:
-      method_name: methodC
-      params: 
-      access_level: Public
-    param_num: 0
-    num_violations: 0
-    dependent_point_ids: []
-    
-  Annotation point:
-    id: p11
-    kind: Param
-    method_info:
-      method_name: methodD
-      params: 
-      access_level: Private
-    param_num: 0
-    num_violations: 0
-    dependent_point_ids: []
-    
-  Annotation point:
-    id: p12
-    kind: Param
-    method_info:
-      method_name: methodE
-      params: 
-      access_level: Private
-    param_num: 0
-    num_violations: 0
-    dependent_point_ids: []
-    
-  Annotation point:
-    id: p13
-    kind: Param
-    method_info:
-      method_name: methodF
-      params: 
-      access_level: Private
-    param_num: 0
-    num_violations: 0
-    dependent_point_ids: []
-    
-  Annotation point:
-    id: p3
-    kind: Param
-    method_info:
-      method_name: <init>
-      params: 
-      access_level: Public
-    param_num: 0
-    num_violations: 0
-    dependent_point_ids: []
-    
-  Annotation point:
-    id: p5
+    id: p4
     kind: Param
     method_info:
       method_name: methodA
@@ -115,29 +60,7 @@ AnnotationGraph:
       access_level: Private
     param_num: 0
     num_violations: 0
-    dependent_point_ids: []
-    
-  Annotation point:
-    id: p6
-    kind: Param
-    method_info:
-      method_name: methodA
-      params: java.lang.String, boolean
-      access_level: Private
-    param_num: 1
-    num_violations: 0
-    dependent_point_ids: [f0, m4]
-    
-  Annotation point:
-    id: p8
-    kind: Param
-    method_info:
-      method_name: methodB
-      params: 
-      access_level: Private
-    param_num: 0
-    num_violations: 0
-    dependent_point_ids: []
+    dependent_point_ids: [f0, m3]
     
   
 codetoanalyze/java/nullsafe-annotation-graph/AnnotationGraph.java, Linters_dummy_method, 12, ERADICATE_META_CLASS_NEEDS_IMPROVEMENT, no_bucket, INFO, [], AnnotationGraph, codetoanalyze.java.nullsafe_annotation_graph, issues: 3, curr_mode: "Default"
@@ -145,17 +68,6 @@ codetoanalyze/java/nullsafe-annotation-graph/AnnotationGraph.java, Linters_dummy
 AnnotationGraph:
   Annotation point:
     id: p0
-    kind: Param
-    method_info:
-      method_name: <init>
-      params: 
-      access_level: Default
-    param_num: 0
-    num_violations: 0
-    dependent_point_ids: []
-    
-  Annotation point:
-    id: p1
     kind: Param
     method_info:
       method_name: doesNotAcceptNull
