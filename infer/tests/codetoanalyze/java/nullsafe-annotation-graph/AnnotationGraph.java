@@ -72,6 +72,12 @@ public class AnnotationGraph {
 
     methodC().toString(); // violation for methodC
   }
+
+  @Override
+  public boolean equals(Object obj) {
+    // violation for obj
+    return toString() == obj.toString();
+  }
 }
 
 class SomeExternalClass {

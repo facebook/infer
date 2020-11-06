@@ -19,20 +19,20 @@ AnnotationGraph:
     kind: Field
     field_name: fieldD
     num_violations: 1
-    dependent_point_ids: [m3]
+    dependent_point_ids: [m4]
     
   Annotation point:
-    id: m3
+    id: m4
     kind: Method
     method_info:
       method_name: methodA
       params: java.lang.String, boolean
       access_level: Private
     num_violations: 0
-    dependent_point_ids: [m5]
+    dependent_point_ids: [m6]
     
   Annotation point:
-    id: m5
+    id: m6
     kind: Method
     method_info:
       method_name: methodB
@@ -42,7 +42,7 @@ AnnotationGraph:
     dependent_point_ids: []
     
   Annotation point:
-    id: m6
+    id: m7
     kind: Method
     method_info:
       method_name: methodC
@@ -52,7 +52,18 @@ AnnotationGraph:
     dependent_point_ids: []
     
   Annotation point:
-    id: p4
+    id: p3
+    kind: Param
+    method_info:
+      method_name: equals
+      params: java.lang.Object
+      access_level: Public
+    param_num: 0
+    num_violations: 1
+    dependent_point_ids: []
+    
+  Annotation point:
+    id: p5
     kind: Param
     method_info:
       method_name: methodA
@@ -60,11 +71,11 @@ AnnotationGraph:
       access_level: Private
     param_num: 0
     num_violations: 0
-    dependent_point_ids: [f0, m3]
+    dependent_point_ids: [f0, m4]
     
   
-codetoanalyze/java/nullsafe-annotation-graph/AnnotationGraph.java, Linters_dummy_method, 12, ERADICATE_META_CLASS_NEEDS_IMPROVEMENT, no_bucket, INFO, [], AnnotationGraph, codetoanalyze.java.nullsafe_annotation_graph, issues: 3, curr_mode: "Default"
-codetoanalyze/java/nullsafe-annotation-graph/AnnotationGraph.java, Linters_dummy_method, 77, ERADICATE_ANNOTATION_GRAPH, no_bucket, INFO, [], SomeExternalClass, codetoanalyze.java.nullsafe_annotation_graph
+codetoanalyze/java/nullsafe-annotation-graph/AnnotationGraph.java, Linters_dummy_method, 12, ERADICATE_META_CLASS_NEEDS_IMPROVEMENT, no_bucket, INFO, [], AnnotationGraph, codetoanalyze.java.nullsafe_annotation_graph, issues: 4, curr_mode: "Default"
+codetoanalyze/java/nullsafe-annotation-graph/AnnotationGraph.java, Linters_dummy_method, 83, ERADICATE_ANNOTATION_GRAPH, no_bucket, INFO, [], SomeExternalClass, codetoanalyze.java.nullsafe_annotation_graph
 AnnotationGraph:
   Annotation point:
     id: p0
@@ -78,7 +89,8 @@ AnnotationGraph:
     dependent_point_ids: []
     
   
-codetoanalyze/java/nullsafe-annotation-graph/AnnotationGraph.java, Linters_dummy_method, 77, ERADICATE_META_CLASS_CAN_BE_NULLSAFE, no_bucket, ADVICE, [Congrats! `SomeExternalClass` is free of nullability issues. Mark it `@Nullsafe(Nullsafe.Mode.LOCAL)` to prevent regressions.], SomeExternalClass, codetoanalyze.java.nullsafe_annotation_graph, issues: 0, curr_mode: "Default", promote_mode: "Strict"
+codetoanalyze/java/nullsafe-annotation-graph/AnnotationGraph.java, Linters_dummy_method, 83, ERADICATE_META_CLASS_CAN_BE_NULLSAFE, no_bucket, ADVICE, [Congrats! `SomeExternalClass` is free of nullability issues. Mark it `@Nullsafe(Nullsafe.Mode.LOCAL)` to prevent regressions.], SomeExternalClass, codetoanalyze.java.nullsafe_annotation_graph, issues: 0, curr_mode: "Default", promote_mode: "Strict"
 codetoanalyze/java/nullsafe-annotation-graph/AnnotationGraph.java, codetoanalyze.java.nullsafe_annotation_graph.AnnotationGraph.<init>(), 0, ERADICATE_FIELD_NOT_INITIALIZED, no_bucket, WARNING, [Field `fieldD` is declared non-nullable, so it should be initialized in the constructor or in an `@Initializer` method], AnnotationGraph, codetoanalyze.java.nullsafe_annotation_graph
 codetoanalyze/java/nullsafe-annotation-graph/AnnotationGraph.java, codetoanalyze.java.nullsafe_annotation_graph.AnnotationGraph.<init>(), 0, ERADICATE_FIELD_NOT_INITIALIZED, no_bucket, WARNING, [Field `fieldB` is declared non-nullable, so it should be initialized in the constructor or in an `@Initializer` method], AnnotationGraph, codetoanalyze.java.nullsafe_annotation_graph
 codetoanalyze/java/nullsafe-annotation-graph/AnnotationGraph.java, codetoanalyze.java.nullsafe_annotation_graph.AnnotationGraph.<init>(), 0, ERADICATE_FIELD_NOT_INITIALIZED, no_bucket, WARNING, [Field `fieldA` is declared non-nullable, so it should be initialized in the constructor or in an `@Initializer` method], AnnotationGraph, codetoanalyze.java.nullsafe_annotation_graph
+codetoanalyze/java/nullsafe-annotation-graph/AnnotationGraph.java, codetoanalyze.java.nullsafe_annotation_graph.AnnotationGraph.equals(java.lang.Object):boolean, 0, ERADICATE_INCONSISTENT_SUBCLASS_PARAMETER_ANNOTATION, no_bucket, WARNING, [Parameter `obj` is missing `@Nullable` declaration: according to the Java Specification, for any object `x` call `x.equals(null)` should properly return false.], AnnotationGraph, codetoanalyze.java.nullsafe_annotation_graph
