@@ -39,6 +39,9 @@ public class FieldNotInitialized {
     @SuppressLint("eradicate-field-not-initialized")
     String suppressLintIsOK; // OK: explicitly suppressed on lint level
 
+    @SuppressLint("Field Not Initialized")
+    String suppressLintNoPrefixIsOK; // OK: explicitly suppressed on lint level
+
     @SuppressLint("some-irrelevant-linter")
     String suppressWrongLintIsBAD; // BAD: this suppression is irrelevant
 

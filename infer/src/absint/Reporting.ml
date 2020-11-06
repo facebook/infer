@@ -12,16 +12,23 @@ type log_t =
 
 module Suppression = struct
   let does_annotation_suppress_issue (kind : IssueType.t) (annot : Annot.t) =
-    let normalize str = Str.global_replace (Str.regexp "[_-]") "" (String.lowercase str) in
-    let drop_prefix str = Str.replace_first (Str.regexp "^[A-Za-z]+_") "" str in
-    let normalized_equal s1 a2 =
-      Annot.(
-        has_matching_str_value a2.value ~pred:(fun s -> String.equal (normalize s1) (normalize s)))
+    let normalize str =
+      String.lowercase str |> String.filter ~f:(function ' ' | '_' | '-' -> false | _ -> true)
     in
     let is_parameter_suppressed () =
+      let normalized_equal annot_param =
+        let pred s =
+          normalize s
+          |> fun s ->
+          String.equal s (normalize kind.IssueType.hum)
+          || String.equal s (normalize kind.IssueType.unique_id)
+        in
+        Annot.(has_matching_str_value annot_param.value ~pred)
+      in
       String.is_suffix annot.class_name ~suffix:Annotations.suppress_lint
-      && List.exists ~f:(normalized_equal kind.IssueType.unique_id) annot.parameters
+      && List.exists ~f:normalized_equal annot.parameters
     in
+    let drop_prefix str = Str.replace_first (Str.regexp "^[A-Za-z]+_") "" str in
     let is_annotation_suppressed () =
       String.is_suffix
         ~suffix:(normalize (drop_prefix kind.IssueType.unique_id))
