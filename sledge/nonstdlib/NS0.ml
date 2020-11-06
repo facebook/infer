@@ -55,6 +55,8 @@ module Poly = struct
   let hash = Stdlib.Hashtbl.hash
 end
 
+module Ord = Containers.Ord
+
 (** Function combinators *)
 
 let ( >> ) f g x = g (f x)

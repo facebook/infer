@@ -43,6 +43,8 @@ module Poly : sig
   val hash : 'a -> int
 end
 
+module Ord = Containers.Ord
+
 (** Function combinators *)
 
 val ( let@ ) : ('a -> 'b) -> 'a -> 'b
