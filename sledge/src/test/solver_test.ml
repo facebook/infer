@@ -19,9 +19,9 @@ let%test_module _ =
      *   Trace.init ~margin:160
      *     ~config:
      *       (Result.get_ok (Trace.parse "+Solver.infer_frame+Solver.excise"))
-     *     ()
-     * 
-     * [@@@warning "-32"] *)
+     *     () *)
+
+    [@@@warning "-32"]
 
     let infer_frame p xs q =
       Solver.infer_frame p (Var.Set.of_list xs) q

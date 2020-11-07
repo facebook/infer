@@ -17,11 +17,11 @@
   id a = ((NSObject*)aKey)->isa;
 }
 
-- (void)setObject:(id)object forKeyedSubscript:(id)aKey {
+- (void)setObject:(id)object forKeyedSubscript:(id<NSCopying>)aKey {
   id a = ((NSObject*)aKey)->isa;
 }
 
-- (void)setObject:(id)anObject forKey:(id)aKey {
+- (void)setObject:(id)anObject forKey:(id<NSCopying>)aKey {
   id a = ((NSObject*)anObject)->isa;
   id b = ((NSObject*)aKey)->isa;
 }

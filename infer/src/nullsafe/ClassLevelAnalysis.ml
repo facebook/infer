@@ -188,7 +188,8 @@ let report_meta_issue_for_top_level_class tenv source_file class_name class_stru
         ; package
         ; meta_issue_info= Some meta_issue_info
         ; unvetted_3rd_party= None
-        ; nullable_methods= None }
+        ; nullable_methods= None
+        ; annotation_graph= None }
     in
     log_issue ~issue_log ~loc:class_loc ~severity ~nullsafe_extra issue_type description
 
@@ -214,7 +215,12 @@ let analyze_nullsafe_annotations tenv source_file class_name class_struct issue_
     let package = JavaClassName.package class_name in
     let class_name = JavaClassName.classname class_name in
     Jsonbug_t.
-      {class_name; package; meta_issue_info= None; unvetted_3rd_party= None; nullable_methods= None}
+      { class_name
+      ; package
+      ; meta_issue_info= None
+      ; unvetted_3rd_party= None
+      ; nullable_methods= None
+      ; annotation_graph= None }
   in
   match NullsafeMode.check_problematic_class_annotation tenv class_name with
   | Ok () ->
@@ -250,58 +256,45 @@ let analyze_nullsafe_annotations tenv source_file class_name class_struct issue_
         IssueType.eradicate_bad_nested_class_annotation description
 
 
-let process_issue_for_annotation_graph issue =
-  match issue with
-  | TypeErr.Condition_redundant _
-  | TypeErr.Field_not_initialized _
-  | TypeErr.Inconsistent_subclass _
-  | TypeErr.Over_annotation _ ->
-      ()
-  | TypeErr.Nullable_dereference {dereference_violation} ->
-      DereferenceRule.ProvisionalViolation.from dereference_violation
-      |> Option.iter ~f:(fun provisional_violation ->
-             let annotations =
-               DereferenceRule.ProvisionalViolation.offending_annotations provisional_violation
-             in
-             Logging.debug Analysis Medium
-               "Found provisional violation: dereference caused by any of %a\n"
-               (Pp.seq ProvisionalAnnotation.pp) annotations )
-  | TypeErr.Bad_assignment {assignment_violation} ->
-      AssignmentRule.ProvisionalViolation.from assignment_violation
-      |> Option.iter ~f:(fun provisional_violation ->
-             let offending_annotations =
-               AssignmentRule.ProvisionalViolation.offending_annotations provisional_violation
-             in
-             let fix_annotation =
-               AssignmentRule.ProvisionalViolation.fix_annotation provisional_violation
-             in
-             let fix_annotation_descr =
-               Option.value_map fix_annotation
-                 ~f:(fun annotation ->
-                   Format.asprintf ", fixable by %a" ProvisionalAnnotation.pp annotation )
-                 ~default:""
-             in
-             Logging.debug Analysis Medium
-               "Found provisional violation: assignment caused by any of %a%s\n"
-               (Pp.seq ProvisionalAnnotation.pp) offending_annotations fix_annotation_descr )
+let report_annotation_graph source_file class_name class_struct annotation_graph issue_log =
+  let class_loc = get_class_loc source_file class_struct in
+  let package = JavaClassName.package class_name in
+  let class_name = JavaClassName.classname class_name in
+  let nullsafe_extra =
+    Jsonbug_t.
+      { class_name
+      ; package
+      ; meta_issue_info= None
+      ; unvetted_3rd_party= None
+      ; nullable_methods= None
+      ; annotation_graph= Some annotation_graph }
+  in
+  log_issue ~issue_log ~loc:class_loc ~severity:IssueType.Info ~nullsafe_extra
+    IssueType.eradicate_annotation_graph ""
 
 
-let construct_annotation_graph _class_name class_info issue_log =
+let build_and_report_annotation_graph tenv source_file class_name class_struct class_info issue_log
+    =
   if not Config.nullsafe_annotation_graph then issue_log
-  else (
-    (* TODO: actually construct the graph (just print provisional violations for now) *)
-    AggregatedSummaries.ClassInfo.get_summaries class_info
-    |> List.map ~f:(fun NullsafeSummary.{issues} -> issues)
-    |> List.fold ~init:[] ~f:( @ )
-    |> List.iter ~f:process_issue_for_annotation_graph ;
-    issue_log )
+  else
+    let class_typ_name = Typ.JavaClass class_name in
+    let provisional_violations =
+      AggregatedSummaries.ClassInfo.get_summaries class_info
+      |> List.map ~f:(fun NullsafeSummary.{issues} -> issues)
+      |> List.concat
+      |> List.filter_map ~f:ProvisionalViolation.of_issue
+    in
+    let annotation_graph =
+      AnnotationGraph.build_graph tenv class_struct class_typ_name provisional_violations
+    in
+    report_annotation_graph source_file class_name class_struct annotation_graph issue_log
 
 
 let analyze_class_impl tenv source_file class_name class_struct class_info issue_log =
   issue_log
   |> analyze_meta_issue_for_top_level_class tenv source_file class_name class_struct class_info
   |> analyze_nullsafe_annotations tenv source_file class_name class_struct
-  |> construct_annotation_graph class_name class_info
+  |> build_and_report_annotation_graph tenv source_file class_name class_struct class_info
 
 
 let analyze_class tenv source_file class_info issue_log =

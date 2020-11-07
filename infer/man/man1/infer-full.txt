@@ -426,6 +426,7 @@ OPTIONS
              DIVIDE_BY_ZERO (disabled by default),
              DO_NOT_REPORT (enabled by default),
              EMPTY_VECTOR_ACCESS (enabled by default),
+             ERADICATE_ANNOTATION_GRAPH (enabled by default),
              ERADICATE_BAD_NESTED_CLASS_ANNOTATION (enabled by default),
              ERADICATE_CONDITION_REDUNDANT (enabled by default),
              ERADICATE_FIELD_NOT_INITIALIZED (enabled by default),
@@ -1902,6 +1903,12 @@ INTERNAL OPTIONS
 
        --summaries-caches-max-size int
            The maximum amount of elements the summaries LRU caches can hold
+
+       --suppress-lint-ignore-types
+           Activates: [DEPRECATED] Check only the presence of @SuppressLint
+           but not the issues types specified as parameters to the
+           annotations when deciding to suppress issues. Use for backwards
+           compatibility only! (Conversely: --no-suppress-lint-ignore-types)
 
        --symops-per-iteration int
            Set the number of symbolic operations per iteration (see

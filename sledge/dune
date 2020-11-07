@@ -46,10 +46,10 @@
   (inline_tests)))
 
 (subdir
- src/ses
+ src/fol
  (library
-  (name ses)
-  (public_name sledge.ses)
+  (name fol)
+  (public_name sledge.fol)
   (libraries nonstdlib llair)
   (flags
    (:standard -open NS))
@@ -62,7 +62,7 @@
  (library
   (name sledge)
   (public_name sledge)
-  (libraries mtime mtime.clock.os nonstdlib llair ses)
+  (libraries mtime mtime.clock.os nonstdlib llair fol)
   (flags
    (:standard -open NS))
   (preprocess

@@ -210,7 +210,7 @@ let retn formals freturn {areturn; unshadow; frame} q =
   ;
   let formals = List.map ~f:X.reg formals in
   let freturn = Option.map ~f:X.reg freturn in
-  let q, shadows =
+  let q =
     match areturn with
     | Some areturn -> (
         (* reenter scope of areturn just before exiting scope of formals *)
@@ -218,16 +218,16 @@ let retn formals freturn {areturn; unshadow; frame} q =
         (* pass return value *)
         match freturn with
         | Some freturn ->
-            (Exec.move q (IArray.of_ (areturn, Term.var freturn)), unshadow)
-        | None -> (Exec.kill q areturn, unshadow) )
-    | None -> (q, unshadow)
+            Exec.move q (IArray.of_ (areturn, Term.var freturn))
+        | None -> Exec.kill q areturn )
+    | None -> q
   in
   (* exit scope of formals *)
   let q =
     Sh.exists (Var.Set.add_list formals (Var.Set.of_option freturn)) q
   in
   (* reinstate shadowed values of locals *)
-  let q = Sh.rename shadows q in
+  let q = Sh.rename unshadow q in
   (* reconjoin frame *)
   Sh.star frame q
   (* simplify *)

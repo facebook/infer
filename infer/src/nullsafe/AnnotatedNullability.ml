@@ -39,6 +39,7 @@ and strict_nonnull_origin =
   | ModelledNonnull
   | StrictMode
   | PrimitiveType
+  | ImplicitThis
   | EnumValue
   | SyntheticField
 [@@deriving compare]
@@ -85,6 +86,8 @@ let pp fmt t =
         "strict"
     | PrimitiveType ->
         "primitive"
+    | ImplicitThis ->
+        "implicit_this"
     | EnumValue ->
         "enum"
     | SyntheticField ->
@@ -145,3 +148,28 @@ let of_type_and_annotation ~is_callee_in_trust_list ~nullsafe_mode ~is_third_par
             else UncheckedNonnull ImplicitlyNonnull
           in
           if is_callee_in_trust_list then LocallyTrustedNonnull else preliminary_nullability
+
+
+let can_be_considered_for_provisional_annotation = function
+  | Nullable _ ->
+      (* already nullable *) false
+  | ProvisionallyNullable _ ->
+      (* already provisionally nullable *) true
+  | ThirdPartyNonnull ->
+      (* third party code is considered beyond control *) false
+  | UncheckedNonnull _ | LocallyTrustedNonnull | LocallyCheckedNonnull ->
+      (* legit non-primitive non-nullable type *) true
+  | StrictNonnull ExplicitNonnullThirdParty ->
+      (* third party code is considered beyond control *) false
+  | StrictNonnull ModelledNonnull ->
+      (* models correspond to code beyond control *) false
+  | StrictNonnull PrimitiveType ->
+      (* primitive type can not be annotated *) false
+  | StrictNonnull ImplicitThis ->
+      (* a synthetic param *) false
+  | StrictNonnull EnumValue ->
+      (* by design non-nullable *) false
+  | StrictNonnull SyntheticField ->
+      (* not present in source code *) false
+  | StrictNonnull StrictMode ->
+      (* legit non-nullable non-primitive type *) true

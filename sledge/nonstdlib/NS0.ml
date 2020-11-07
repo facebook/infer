@@ -55,6 +55,8 @@ module Poly = struct
   let hash = Stdlib.Hashtbl.hash
 end
 
+module Ord = Containers.Ord
+
 (** Function combinators *)
 
 let ( >> ) f g x = g (f x)
@@ -148,14 +150,13 @@ module Invariant = struct
     {pos_fname: string; pos_lnum: int; pos_bol: int; pos_cnum: int}
   [@@deriving sexp_of]
 
-  exception Violation of exn * Printexc.raw_backtrace * position * Sexp.t
+  exception Violation of exn * position * Sexp.t
 
   ;;
   register_sexp_of_exn
-    (Violation
-       (Not_found, Printexc.get_callstack 1, Lexing.dummy_pos, Sexp.List []))
+    (Violation (Not_found, Lexing.dummy_pos, Sexp.List []))
     (function
-      | Violation (exn, _, pos, payload) ->
+      | Violation (exn, pos, payload) ->
           Sexp.List
             [ Atom "Invariant.Violation"
             ; sexp_of_exn exn
@@ -168,7 +169,7 @@ module Invariant = struct
       ( try f ()
         with exn ->
           let bt = Printexc.get_raw_backtrace () in
-          let exn = Violation (exn, bt, here, sexp_of_t t) in
+          let exn = Violation (exn, here, sexp_of_t t) in
           Printexc.raise_with_backtrace exn bt ) ;
       true )
 
@@ -181,13 +182,13 @@ end
 
 (** Failures *)
 
-exception Replay of exn * Printexc.raw_backtrace * Sexp.t
+exception Replay of exn * Sexp.t
 
 ;;
 register_sexp_of_exn
-  (Replay (Not_found, Printexc.get_callstack 1, Sexp.List []))
+  (Replay (Not_found, Sexp.List []))
   (function
-    | Replay (exn, _, payload) ->
+    | Replay (exn, payload) ->
         Sexp.List [Atom "Replay"; sexp_of_exn exn; payload]
     | exn -> Sexp.Atom (Printexc.to_string exn) )
 

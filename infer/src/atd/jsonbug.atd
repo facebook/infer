@@ -35,12 +35,34 @@ type method_info = {
   call_line: int;
 }
 
+type annotation_point_kind = [Method | Field | Param]
+
+type access_level = [Private | Protected | Public | Default]
+
+type annotation_point_method = {
+  method_name: string;
+  params: string list;
+  access_level: access_level;
+}
+
+(* A potential place to annotate as [@Nullable] *)
+type annotation_point = {
+  id: string; (* A symbolic id of an annotation point *)
+  kind: annotation_point_kind;
+  ?method_info: annotation_point_method option; (* Present iff this is a Method or Param annotation point *)
+  ?field_name: string option; (* Present iff this is a Field annotation point *)
+  ?param_num: int option; (* Present iff this is a Param annotation point *)
+  num_violations: int; (* How many violations (NOT counting violations happening in other annotation points) would be introduced if this point was annotated *)
+  dependent_point_ids: string list; (* List of other points that need to be annotated when this one is annotated *)
+}
+
 type nullsafe_extra = {
   class_name: string;
   package: string nullable;
   ?nullable_methods: method_info list option; (* If the issue is related to unsafe use of methods being nullable, here's the list of them *)
   ?unvetted_3rd_party: string list option; (* If the issue is related to the use of a not yet registered third-party methods, here's the list of their signatures *)
-  ?meta_issue_info: nullsafe_meta_issue_info option (* Should be present if the issue is "nullsafe meta issue" *)
+  ?meta_issue_info: nullsafe_meta_issue_info option; (* Should be present if the issue is "nullsafe meta issue" *)
+  ?annotation_graph: annotation_point list option; (* Annotation graph (only for annotation mode) *)
 }
 
 type extra = {

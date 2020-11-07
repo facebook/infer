@@ -173,21 +173,17 @@ let info mod_name fun_name fmt =
 let infok mod_name fun_name k =
   k {pf= (fun fmt -> info mod_name fun_name fmt)}
 
-let incf_ _mod_name fun_name fmt =
-  Format.fprintf fs "@\n@[<2>@[<hv 2>( %s:@ " fun_name ;
-  Format.kfprintf (fun fs -> Format.fprintf fs "@]") fs fmt
-
 let incf mod_name fun_name fmt =
-  if enabled mod_name fun_name then incf_ mod_name fun_name fmt
-  else Format.ifprintf fs fmt
-
-let decf_ _mod_name fun_name fmt =
-  Format.fprintf fs "@]@\n@[<2>) %s:@ " fun_name ;
-  Format.kfprintf (fun fs -> Format.fprintf fs "@]") fs fmt
+  if not (enabled mod_name fun_name) then Format.ifprintf fs fmt
+  else (
+    Format.fprintf fs "@\n@[<2>@[<hv 2>( %s:@ " fun_name ;
+    Format.kfprintf (fun fs -> Format.fprintf fs "@]") fs fmt )
 
 let decf mod_name fun_name fmt =
-  if enabled mod_name fun_name then decf_ mod_name fun_name fmt
-  else Format.ifprintf fs fmt
+  if not (enabled mod_name fun_name) then Format.ifprintf fs fmt
+  else (
+    Format.fprintf fs "@]@\n@[<2>) %s:@ " fun_name ;
+    Format.kfprintf (fun fs -> Format.fprintf fs "@]") fs fmt )
 
 let call mod_name fun_name k =
   k {pf= (fun fmt -> incf mod_name fun_name fmt)}
@@ -211,20 +207,17 @@ let trace :
     Option.value rais ~default:(fun {pf} exc _ ->
         pf "%s" (Printexc.to_string exc) )
   in
-  if not (enabled mod_name fun_name) then k ()
-  else (
-    call {pf= (fun fmt -> incf_ mod_name fun_name fmt)} ;
-    match k () with
-    | result ->
-        retn {pf= (fun fmt -> decf_ mod_name fun_name fmt)} result ;
-        result
-    | exception exc ->
-        let bt = Printexc.get_raw_backtrace () in
-        rais {pf= (fun fmt -> decf_ mod_name fun_name fmt)} exc bt ;
-        Printexc.raise_with_backtrace exc bt )
+  call {pf= (fun fmt -> incf mod_name fun_name fmt)} ;
+  match k () with
+  | result ->
+      retn {pf= (fun fmt -> decf mod_name fun_name fmt)} result ;
+      result
+  | exception exc ->
+      let bt = Printexc.get_raw_backtrace () in
+      rais {pf= (fun fmt -> decf mod_name fun_name fmt)} exc bt ;
+      Printexc.raise_with_backtrace exc bt
 
 let raisef ?margin exn fmt =
-  let bt = Printexc.get_raw_backtrace () in
   let fs = Format.str_formatter in
   ( match margin with
   | Some m ->
@@ -235,9 +228,7 @@ let raisef ?margin exn fmt =
   Format.kfprintf
     (fun fs () ->
       Format.pp_close_box fs () ;
-      let msg = Format.flush_str_formatter () in
-      let exn = exn msg in
-      Printexc.raise_with_backtrace exn bt )
+      raise (exn (Format.flush_str_formatter ())) )
     fs fmt
 
 let fail fmt =

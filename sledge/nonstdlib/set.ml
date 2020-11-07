@@ -53,7 +53,7 @@ end) : S with type elt = Elt.t = struct
       S.for_all
         (fun elt ->
           found := Some elt ;
-          raise Found )
+          raise_notrace Found )
         s
       |> ignore ;
       None

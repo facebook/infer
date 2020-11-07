@@ -233,7 +233,9 @@ let check_constructor_initialization
       match Tenv.lookup tenv name with
       | Some {fields} ->
           let do_field (field_name, field_type, _) =
-            let annotated_field = AnnotatedField.get tenv field_name ts in
+            let annotated_field =
+              AnnotatedField.get tenv field_name ~class_typ:ts ~class_under_analysis:name
+            in
             let is_initialized_by_framework =
               match annotated_field with
               | None ->

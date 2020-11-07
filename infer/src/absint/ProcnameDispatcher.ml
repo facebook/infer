@@ -43,8 +43,11 @@ let template_args_of_template_spec_info = function
 let templated_name_of_class_name class_name =
   let open Typ in
   match class_name with
-  | CStruct qual_name | CUnion qual_name | ObjcClass qual_name | ObjcProtocol qual_name ->
+  | CStruct qual_name | CUnion qual_name | ObjcProtocol qual_name ->
       (qual_name, [])
+  | ObjcClass (qual_name, protocol_names) ->
+      let protocols = F.asprintf "%a" (Typ.pp_protocols Pp.text) protocol_names in
+      (QualifiedCppName.append_protocols qual_name ~protocols, [])
   | CppClass (qual_name, template_spec_info) ->
       (qual_name, template_args_of_template_spec_info template_spec_info)
   | JavaClass mangled_name ->

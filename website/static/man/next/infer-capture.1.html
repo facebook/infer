@@ -232,6 +232,16 @@ database operations, in milliseconds.</p>
 <p style="margin-left:17%;">SQLite page size in bytes, must
 be a power of two between 512 and 65536.</p>
 
+<p style="margin-left:11%;"><b>--workspace</b>
+<i>path</i></p>
+
+<p style="margin-left:17%;">Specifies the root of the
+workspace, which is a directory containing
+<b>--project-root</b>. This can be needed if the capture
+phase is expected to require several <i>different</i>
+project roots, all relative to a common workspace. Usually a
+single project root is enough, though.</p>
+
 <table width="100%" border="0" rules="none" frame="void"
        cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
@@ -340,14 +350,14 @@ matched by the specified regular expression. Only valid for
 <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&rsquo;buck build&rsquo;</i>.
+arguments to invocations of <i>&lsquo;buck build&lsquo;</i>.
 Only valid for <b>--buck-clang</b>.</p>
 
 <p style="margin-left:11%;"><b>--Xbuck-no-inline</b>
 <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&rsquo;buck build&rsquo;</i>,
+arguments to invocations of <i>&lsquo;buck build&lsquo;</i>,
 don't inline any args starting with '@'. Only valid for
 <b>--buck-clang</b>.</p>
 
@@ -439,7 +449,8 @@ AL files, then emit possible errors in JSON format to stdout
 <i>file</i></p>
 
 <p style="margin-left:17%;">Specify a file containing the
-AST of the program, in biniou format</p>
+AST of the program, in biniou format. Please note you still
+need to provide a compilation command.</p>
 
 
 <p style="margin-left:11%;"><b>--clang-blacklisted-flags</b>
@@ -462,6 +473,13 @@ filter out</p>
 initialization of compound types (structs and arrays) is not
 done element by element but using a builtin function that
 each analysis has to model.</p>
+
+<p style="margin-left:11%;"><b>--clang-yojson-file</b>
+<i>file</i></p>
+
+<p style="margin-left:17%;">Specify a file containing the
+AST of the program, in yojson format. Please note you still
+need to provide a compilation command.</p>
 
 <p style="margin-left:11%;"><b>--compilation-database</b>
 <i>+path</i></p>
@@ -519,8 +537,8 @@ arguments to invocations of clang</p>
 <p style="margin-left:17%;">Activates: Infer will use
 xcpretty together with xcodebuild to analyze an iOS app.
 xcpretty just needs to be in the path, infer command is
-still just <i>&rsquo;infer -- &lt;xcodebuild
-command&gt;&rsquo;</i>. (Conversely:
+still just <i>&lsquo;infer -- &lt;xcodebuild
+command&gt;&lsquo;</i>. (Conversely:
 <b>--no-xcpretty</b>)</p>
 
 <h2>JAVA OPTIONS

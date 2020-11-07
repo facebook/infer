@@ -148,10 +148,10 @@ open struct
                   Int.to_string name
               | name -> (
                 match Int.of_string name with
-                | _ ->
+                | Some _ ->
                     (* escape to avoid clash with names of anonymous values *)
-                    String.concat ~sep:"" ["\""; name; "\""]
-                | exception _ -> name ) )
+                    "\"" ^ name ^ "\""
+                | None -> name ) )
           in
           SymTbl.set sym_tbl ~key:llv ~data:(name, loc)
   end

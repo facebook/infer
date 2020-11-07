@@ -159,3 +159,12 @@ int value_or_check_value_ok() {
   }
   return -1;
 }
+
+int test_trace_ref() {
+  folly::Optional<int> foo{5};
+  int sum = foo.value();
+  foo = folly::none;
+  int& x = foo.value();
+  sum += x;
+  return sum;
+}

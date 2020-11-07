@@ -43,6 +43,8 @@ module Poly : sig
   val hash : 'a -> int
 end
 
+module Ord = Containers.Ord
+
 (** Function combinators *)
 
 val ( let@ ) : ('a -> 'b) -> 'a -> 'b
@@ -178,8 +180,7 @@ end
 
 (** Invariants *)
 module Invariant : sig
-  exception
-    Violation of exn * Printexc.raw_backtrace * Lexing.position * Sexp.t
+  exception Violation of exn * Lexing.position * Sexp.t
 
   val invariant :
     Lexing.position -> 'a -> ('a -> Sexp.t) -> (unit -> unit) -> unit
@@ -193,7 +194,7 @@ end
 
 (** Failures *)
 
-exception Replay of exn * Printexc.raw_backtrace * Sexp.t
+exception Replay of exn * Sexp.t
 exception Unimplemented of string
 
 val fail : ('a, unit -> _) fmt -> 'a

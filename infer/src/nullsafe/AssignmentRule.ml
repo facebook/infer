@@ -266,9 +266,19 @@ module ReportableViolation = struct
 end
 
 let check ~lhs ~rhs =
-  let is_subtype =
-    Nullability.is_subtype
-      ~supertype:(AnnotatedNullability.get_nullability lhs)
-      ~subtype:(InferredNullability.get_nullability rhs)
-  in
-  Result.ok_if_true is_subtype ~error:{lhs; rhs}
+  match (lhs, InferredNullability.get_nullability rhs) with
+  | AnnotatedNullability.ProvisionallyNullable _, Nullability.ProvisionallyNullable ->
+      (* This is a special case. Assignment of something that comes from provisionally nullable annotation to something that
+         is annotated as provisionally nullable is a (provisional) violation.
+         (With an exception when it is an assignment to the same annotation e.g. in recursion calls;
+          but such exceptions are non-essential for the purposes of calculation of the annotation graph.
+         )
+      *)
+      Error {lhs; rhs}
+  | _ ->
+      let is_subtype =
+        Nullability.is_subtype
+          ~supertype:(AnnotatedNullability.get_nullability lhs)
+          ~subtype:(InferredNullability.get_nullability rhs)
+      in
+      Result.ok_if_true is_subtype ~error:{lhs; rhs}

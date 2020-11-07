@@ -15,9 +15,11 @@ let%test_module _ =
     let () = Trace.init ~margin:68 ()
 
     (* let () =
-     *   Trace.init ~margin:160 ~config:(Result.get_ok (Trace.parse "+Sh")) ()
-     *
-     * [@@@warning "-32"] *)
+     *   Trace.init ~margin:160
+     *     ~config:(Result.get_ok (Trace.parse "+Sh+Context+Arithmetic"))
+     *     () *)
+
+    [@@@warning "-32"]
 
     let pp = Format.printf "@\n%a@." pp
     let pp_raw = Format.printf "@\n%a@." pp_raw

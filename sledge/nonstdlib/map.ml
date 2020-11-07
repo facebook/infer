@@ -76,19 +76,21 @@ end) : S with type key = Key.t = struct
   let is_empty = M.is_empty
 
   let root_key m =
-    let exception Found in
-    let found = ref None in
-    try
-      M.find_first
-        (fun key ->
-          found := Some key ;
-          raise Found )
-        m
-      |> ignore ;
-      None
-    with
-    | Found -> !found
-    | Not_found -> None
+    if M.is_empty m then None
+    else
+      let exception Found in
+      let found = ref None in
+      try
+        M.find_first
+          (fun key ->
+            found := Some key ;
+            raise_notrace Found )
+          m
+        |> ignore ;
+        None
+      with
+      | Found -> !found
+      | Not_found -> None
 
   let root_binding m =
     let exception Found in
@@ -97,7 +99,7 @@ end) : S with type key = Key.t = struct
       M.for_all
         (fun key data ->
           found := Some (key, data) ;
-          raise Found )
+          raise_notrace Found )
         m
       |> ignore ;
       None
