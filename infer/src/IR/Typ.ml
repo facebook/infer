@@ -434,13 +434,6 @@ module Name = struct
       type t = {namespace: string option ; type_name: string}
 
       let make ?namespace type_name = {namespace; type_name}
-
-      let of_string namespace_classname =
-        match String.rsplit2 namespace_classname ~on:'.' with
-        | Some (namespace, type_name) ->
-            {type_name; namespace= Some namespace}
-        | None ->
-            {type_name= namespace_classname; namespace= None}
     end
 
     let from_string name_str = CSharpClass (CSharpClassName.from_string name_str)
@@ -673,6 +666,46 @@ let rec pp_java ~verbose f {desc} =
   | _ ->
       L.die InternalError "pp_java rec"
 
+let rec pp_cs ~verbose f {desc} =
+  let string_of_int = function
+    | IInt ->
+        JConfig.int_st
+    | IBool ->
+        JConfig.boolean_st
+    | ISChar ->
+        JConfig.byte_st
+    | IUShort ->
+        JConfig.char_st
+    | ILong ->
+        JConfig.long_st
+    | IShort ->
+        JConfig.short_st
+    | _ ->
+        L.die InternalError "pp_cs int"
+  in
+  let string_of_float = function
+    | FFloat ->
+        JConfig.float_st
+    | FDouble ->
+        JConfig.double_st
+    | _ ->
+        L.die InternalError "pp_cs float"
+  in
+  match desc with
+  | Tint ik ->
+      F.pp_print_string f (string_of_int ik)
+  | Tfloat fk ->
+      F.pp_print_string f (string_of_float fk)
+  | Tvoid ->
+      F.pp_print_string f JConfig.void
+  | Tptr (typ, _) ->
+      pp_cs ~verbose f typ
+  | Tstruct (CSharpClass cs_class_name) ->
+      CSharpClassName.pp_with_verbosity ~verbose f cs_class_name
+  | Tarray {elt} ->
+      F.fprintf f "%a[]" (pp_cs ~verbose) elt
+  | _ ->
+      L.die InternalError "pp_cs rec"
 
 let is_csharp_primitive_type {desc} =
   let is_csharp_int = function

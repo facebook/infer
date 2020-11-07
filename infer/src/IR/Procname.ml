@@ -37,7 +37,7 @@ module CSharp = struct
     Option.iter return_type ~f:ensure_csharp_type ;
     {class_name; return_type; method_name; parameters; kind}
 
-  let pp_return_type ~verbose fmt j = Option.iter j.return_type ~f:(Typ.pp_java ~verbose fmt)
+  let pp_return_type ~verbose fmt j = Option.iter j.return_type ~f:(Typ.pp_cs ~verbose fmt)
 
   let constructor_method_name = ".ctor"
 
@@ -74,7 +74,7 @@ module CSharp = struct
       F.pp_print_char fmt '.'
     in
     let pp_package_method_and_params fmt cs =
-      let pp_param_list fmt params = Pp.seq ~sep:"," (Typ.pp_java ~verbose) fmt params in
+      let pp_param_list fmt params = Pp.seq ~sep:"," (Typ.pp_cs ~verbose) fmt params in
       F.fprintf fmt "%a%s(%a)" pp_class_name_dot cs cs.method_name pp_param_list cs.parameters
     in
     match verbosity with

@@ -23,20 +23,6 @@ let iter_over_sorted_procs cfg ~f =
   |> List.sort ~compare:compare_proc_desc_by_proc_name
   |> List.iter ~f
 
-let print_cfg_procs cfg =
-  let f pname pdesc = 
-    match pname with
-    | Procname.CSharp pn ->
-      print_endline (Procname.CSharp.get_method pn) ;
-      ProcAttributes.pp Format.std_formatter (Procdesc.get_attributes pdesc) ;
-      print_endline "" ;
-      Procdesc.print_pdesc_nodes pdesc ;
-      print_endline "" 
-    | _ ->
-      ()
-  in
-  Procname.Hash.iter f cfg
-
 let get_all_defined_proc_names cfg =
   let procs = ref [] in
   let f pname pdesc = if Procdesc.is_defined pdesc then procs := pname :: !procs in

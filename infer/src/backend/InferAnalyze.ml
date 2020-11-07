@@ -9,7 +9,6 @@
 (** Main module for the analysis after the capture phase *)
 
 open! IStd
-open Utils
 open Yojson
 open Yojson.Safe.Util
 
@@ -29,42 +28,16 @@ module IntHash =
 module IntTbl = Hashtbl.Make(IntHash)
 
 exception JsonParse_Error of string
-exception StringParse_Error of string
-
-let parse_pair (fstparse : Yojson.Safe.json -> 'a) (sndparse : Yojson.Safe.json -> 'b) (json : Yojson.Safe.json) : ('a * 'b)=
-  match (to_list json) with
-  | (x::y::[]) -> (fstparse x, sndparse y)
-  | _ -> raise (JsonParse_Error "JSON Parse Error: Expected pair, got something else")
-
-let parse_triple (fstparse : Yojson.Safe.json -> 'a) (sndparse : Yojson.Safe.json -> 'b) (thdparse : Yojson.Safe.json -> 'c) (json : Yojson.Safe.json) : ('a * 'b * 'c) =
-  match (to_list json) with
-  | (x::y::z::[]) -> (fstparse x, sndparse y, thdparse z)
-  | _ -> raise (JsonParse_Error "JSON Parse Error: Expected triple, got something else")
-
-let parse_quadruple (fstparse : Yojson.Safe.json -> 'a) (sndparse : Yojson.Safe.json -> 'b) (thdparse : Yojson.Safe.json -> 'c) (frthparse : Yojson.Safe.json -> 'd) (json : Yojson.Safe.json) : ('a * 'b * 'c * 'd) =
-  match (to_list json) with
-  | (x::y::z::u::[]) -> (fstparse x, sndparse y, thdparse z, frthparse u)
-  | _ -> raise (JsonParse_Error "JSON Parse Error: Expected quadruple, got something else")
-
-let parse_quintuple (fstparse : Yojson.Safe.json -> 'a) (sndparse : Yojson.Safe.json -> 'b) (thdparse : Yojson.Safe.json -> 'c) (frthparse : Yojson.Safe.json -> 'd) (fithparse : Yojson.Safe.json -> 'e) (json : Yojson.Safe.json) : ('a * 'b * 'c * 'd * 'e) =
-  match (to_list json) with
-  | (x::y::z::u::v::[]) -> (fstparse x, sndparse y, thdparse z, frthparse u, fithparse v)
-  | _ -> raise (JsonParse_Error "JSON Parse Error: Expected quintuple, got something else")
-
-let parse_septuple (parse1 : Yojson.Safe.json -> 'a) (parse2 : Yojson.Safe.json -> 'b) (parse3 : Yojson.Safe.json -> 'c) (parse4 : Yojson.Safe.json -> 'd) (parse5 : Yojson.Safe.json -> 'e) (parse6 : Yojson.Safe.json -> 'f) (parse7 : Yojson.Safe.json -> 'g) (json : Yojson.Safe.json) : ('a * 'b * 'c * 'd * 'e * 'f * 'g) =
-  match (to_list json) with
-  | (x::y::z::u::v::w::n::[]) -> (parse1 x, parse2 y, parse3 z, parse4 u, parse5 v, parse6 w, parse7 n)
-  | _ -> raise (JsonParse_Error "JSON Parse Error: Expected septuple, got something else")
 
 let typename_of_classname cn = Typ.Name.CSharp.from_string cn
 
-let parse_list (eleparse : Yojson.Safe.json -> 'a) (json : Yojson.Safe.json) =
+let parse_list (eleparse : Safe.json -> 'a) (json : Safe.json) =
   List.map ~f:eleparse (to_list json)
 
 let parse_parameter (str : string) : Annot.parameter =
   Annot.{name= Some str; value= Annot.Str str}
 
-let parse_list_parameters (eleparse : Yojson.Safe.json -> 'a) (json : Yojson.Safe.json) =
+let parse_list_parameters (eleparse : Safe.json -> 'a) (json : Safe.json) =
   List.map ~f:eleparse (to_list json)
   |> List.map ~f:parse_parameter 
  
@@ -78,7 +51,7 @@ let parse_cil_type_name (str : string) : Typ.t =
   with e ->
     Typ.(mk_ptr (mk_struct (CSharpClass (CSharpClassName.make ~namespace:(None) ~classname:str))))
 
-let parse_cil_procname (json : Yojson.Safe.json) : Procname.t =
+let parse_cil_procname (json : Safe.json) : Procname.t =
   let method_name = to_string (member "method_name" json) in
   match method_name with
   | "__new" ->
@@ -106,7 +79,7 @@ let parse_cil_procname (json : Yojson.Safe.json) : Procname.t =
     in
     proc_name_cs ()
 
-let parse_ikind (json : Yojson.Safe.json) =
+let parse_ikind (json : Safe.json) =
   let ikind_map =
     [ ("IChar", Typ.IChar) ; ("ISChar", Typ.ISChar) ; ("IUChar", Typ.IUChar) ; ("IBool", Typ.IBool) ;
       ("IInt", Typ.IInt) ; ("IUInt", Typ.IUInt) ;
@@ -115,30 +88,30 @@ let parse_ikind (json : Yojson.Safe.json) =
       ("I128", Typ.I128) ; ("IU128", Typ.IU128) ] in
   List.Assoc.find_exn ~equal:String.equal ikind_map (to_string json)
 
-let parse_fkind (json : Yojson.Safe.json) =
+let parse_fkind (json : Safe.json) =
   let fkind_map = [ ("FFloat", Typ.FFloat) ; ("FDouble", Typ.FDouble) ; ("FLongDouble", Typ.FLongDouble) ] in
   List.Assoc.find_exn ~equal:String.equal fkind_map (to_string json)
 
-let parse_ptr_kind (json : Yojson.Safe.json) =
+let parse_ptr_kind (json : Safe.json) =
   let ptr_kind_map = [ ("Pk_pointer", Typ.Pk_pointer) ; ("Pk_reference", Typ.Pk_reference) ; ("Pk_objc_weak", Typ.Pk_objc_weak) ; ("Pk_objc_unsafe_unretained", Typ.Pk_objc_unsafe_unretained) ; ("Pk_objc_autoreleasing", Typ.Pk_objc_autoreleasing) ] in
   List.Assoc.find_exn ~equal:String.equal ptr_kind_map (to_string json)
 
-let parse_if_kind (json : Yojson.Safe.json) =
+let parse_if_kind (json : Safe.json) =
   let ifkind_map = [ ("Ik_bexp", Sil.Ik_bexp) ; ("Ik_dowhile", Sil.Ik_dowhile) ; ("Ik_for", Sil.Ik_for) ; ("Ik_if", Sil.Ik_if) ; ("Ik_land_lor", Sil.Ik_land_lor) ; ("Ik_while", Sil.Ik_while) ; ("Ik_switch", Sil.Ik_switch) ] in
   List.Assoc.find_exn ~equal:String.equal ifkind_map (to_string json)
   
-let parse_csu (json : Yojson.Safe.json) =
+let parse_csu (json : Safe.json) =
   let csu = to_string (member "csu_kind" json) in
   let name = to_string (member "name" json) in
   match csu with
   | "Class" -> typename_of_classname name
   | _ -> raise (JsonParse_Error "JSON Parse Error: Can only parse Class types so far.")
 
-let parse_unop (json : Yojson.Safe.json) =
+let parse_unop (json : Safe.json) =
   let unop_map = [ ("Neg", Unop.Neg) ; ("BNot", Unop.BNot) ; ("LNot", Unop.LNot) ] in
   List.Assoc.find_exn ~equal:String.equal unop_map (to_string json)
 
-let parse_binop (json : Yojson.Safe.json) = (*TODO: need to check the usage of "None" *)
+let parse_binop (json : Safe.json) = (*TODO: need to check the usage of "None" *)
   let binop_map = [ ("PlusA", Binop.PlusA None) ; 
                     ("PlusPI", Binop.PlusPI) ; 
                     ("MinusA", Binop.MinusA None) ; 
@@ -162,7 +135,7 @@ let parse_binop (json : Yojson.Safe.json) = (*TODO: need to check the usage of "
                     ("LOr", Binop.LOr) ] in
   List.Assoc.find_exn ~equal:String.equal binop_map (to_string json)
 
-let parse_typename (json : Yojson.Safe.json) =
+let parse_typename (json : Safe.json) =
   let tname = to_string (member "type_name_kind" json) in
   if String.equal tname "TN_typedef" then
     typename_of_classname (to_string (member "name" json))
@@ -171,10 +144,10 @@ let parse_typename (json : Yojson.Safe.json) =
   else
     Logging.die InternalError "Can't parse typename"
 
-let parse_long (json: Yojson.Safe.json) =
+let parse_long (json: Safe.json) =
   Int64.of_string (Yojson.Safe.to_string json)
 
-let parse_intrep (json : Yojson.Safe.json) =
+let parse_intrep (json : Safe.json) =
   let s = to_bool (member "unsigned" json) in
   let v = parse_long (member "value" json) in
   let p = to_bool (member "is_pointer" json) in
@@ -182,7 +155,10 @@ let parse_intrep (json : Yojson.Safe.json) =
   | (true, 0L) -> IntLit.null
   | _ -> IntLit.of_int64 v
 
-let parse_ident (json : Yojson.Safe.json) =
+let parse_floatrep (json : Safe.json) =
+  Float.of_string (Yojson.Safe.to_string json)
+
+let parse_ident (json : Safe.json) =
   let k = (to_string (member "kind" json)) in
   let kind = 
     if String.equal k "Normal" then
@@ -201,21 +177,21 @@ let parse_ident (json : Yojson.Safe.json) =
     (Ident.string_to_name (to_string (member "name" json)))
     (to_int (member "stamp" json))
 
-let parse_fieldident (json : Yojson.Safe.json) =
+let parse_fieldident (json : Safe.json) =
   Fieldname.make StdTyp.Name.CSharp.system_string (to_string (member "field_name" json))
   
-let parse_source_file (json : Yojson.Safe.json) =
+let parse_source_file (json : Safe.json) =
   let p = to_string (member "path" json) in
   SourceFile.create ~warn_on_error:false p
 
-let parse_location (json : Yojson.Safe.json) =
+let parse_location (json : Safe.json) =
   {
     Location.line = to_int (member "line" json) ;
     Location.col = to_int (member "col" json) ;
     Location.file = parse_source_file (member "source_file" json) ;
   }
 
-let rec parse_pvar (json : Yojson.Safe.json) =
+let rec parse_pvar (json : Safe.json) =
   let pvname = Mangled.from_string (to_string (member "pv_name" json)) in
   let pvkind = to_string (member "pv_kind" json) in
   if String.equal pvkind "LocalVariable" then
@@ -229,12 +205,15 @@ let rec parse_pvar (json : Yojson.Safe.json) =
   else
     Logging.die InternalError "Unknown program variable kind %s" pvkind
 
-and parse_constant (json : Yojson.Safe.json) =
+and parse_constant (json : Safe.json) =
   let const_kind = to_string (member "kind" json) in
   let const_value = (member "const_value" json) in
   if String.equal const_kind "Int" then
     let i = parse_intrep const_value in
     Const.Cint i
+  else if String.equal const_kind "Float" then
+    let f = parse_floatrep const_value in
+    Const.Cfloat f
   else if String.equal const_kind "Fun" then
     let pname = parse_cil_procname const_value in
     Const.Cfun pname
@@ -245,7 +224,7 @@ and parse_constant (json : Yojson.Safe.json) =
   else
     Logging.die InternalError "Unknown constant kind %s" const_kind
 
-and parse_exp (json : Yojson.Safe.json) =
+and parse_exp (json : Safe.json) =
   let ekind = to_string (member "expr_kind" json) in
   if String.equal ekind "VarExpression" then
     Exp.Var (parse_ident (member "identifier" json))
@@ -292,13 +271,13 @@ and parse_exp (json : Yojson.Safe.json) =
   else
     Logging.die InternalError "Unknown expression kind %s" ekind
 
-and parse_struct_field (json : Yojson.Safe.json) =
+and parse_struct_field (json : Safe.json) =
   let fi = parse_fieldident json in
   let t = parse_sil_type_name (member "type" json) in
   let annot = parse_item_annotation (member "annotation" json) in
   (fi, t, annot)
 
-and parse_sil_type_name (json : Yojson.Safe.json): Typ.t =
+and parse_sil_type_name (json : Safe.json): Typ.t =
   let type_kind = to_string (member "type_kind" json) in
   if String.equal type_kind "Tarray" then
     let t = parse_sil_type_name (member "content_type" json) in
@@ -327,8 +306,8 @@ and parse_sil_type_name (json : Yojson.Safe.json): Typ.t =
   else
     Logging.die InternalError "Unknown sil type kind %s" type_kind
 
-and parse_item_annotation (json : Yojson.Safe.json): Annot.Item.t =
-  let parse_annotation (json : Yojson.Safe.json) =
+and parse_item_annotation (json : Safe.json): Annot.Item.t =
+  let parse_annotation (json : Safe.json) =
     let class_name = to_string (member "class_name" json) in
     let p = member "params" json in
     let parameters = parse_list_parameters to_string p in
@@ -340,7 +319,7 @@ and parse_item_annotation (json : Yojson.Safe.json): Annot.Item.t =
       (parse_annotation a, to_bool v))
     (member "annotations" json)
 
-and parse_struct (json : Yojson.Safe.json) = 
+and parse_struct (json : Safe.json) = 
   let fields = parse_list parse_struct_field (member "instance_fields" json) in
   let statics = parse_list parse_struct_field (member "static_fields" json) in
   let supers = parse_list parse_csu (member "supers" json) in
@@ -348,21 +327,21 @@ and parse_struct (json : Yojson.Safe.json) =
   let annots = parse_item_annotation json in
   (fields, statics, supers, methods, annots)
       
-let parse_method_annotation (json : Yojson.Safe.json): Annot.Method.t =
+let parse_method_annotation (json : Safe.json): Annot.Method.t =
   let return = parse_item_annotation (member "return_value" json) in
   let params = parse_list parse_item_annotation (member "params" json) in
   {return; params}
 
-let parse_proc_attributes_var (json : Yojson.Safe.json) =
+let parse_proc_attributes_var (json : Safe.json) =
   let n = to_string (member "name" json) in
   let t = parse_sil_type_name (member "type" json) in
   (Mangled.from_string n, t, Pvar.ByValue)
 
-let parse_proc_attributes_formals (json : Yojson.Safe.json) =
+let parse_proc_attributes_formals (json : Safe.json) =
   let (n,t,m) = parse_proc_attributes_var json in
   (n, t)
 
-let parse_proc_attributes_locals (json : Yojson.Safe.json) : ProcAttributes.var_data =
+let parse_proc_attributes_locals (json : Safe.json) : ProcAttributes.var_data =
   let (n,t,m) = parse_proc_attributes_var json in
   let mib = to_bool (member "modify_in_block" json) in
   let ice = to_bool (member "is_const_expr" json) in
@@ -372,7 +351,7 @@ let parse_proc_attributes_locals (json : Yojson.Safe.json) : ProcAttributes.var_
   ; is_constexpr= ice 
   ; is_declared_unused= false}
 
-let parse_proc_attributes (json : Yojson.Safe.json) =
+let parse_proc_attributes (json : Safe.json) =
   let access = 
     match to_string (member "access" json) with
     | "Default" -> PredSymb.Default
@@ -415,7 +394,7 @@ let parse_proc_attributes (json : Yojson.Safe.json) =
     ret_type = parse_sil_type_name (member "ret_type" json) 
   }
 
-let parse_call_flags (json : Yojson.Safe.json) =
+let parse_call_flags (json : Safe.json) =
   {
     CallFlags.default with
     CallFlags.cf_virtual = to_bool (member "cf_virtual" json) ;
@@ -423,12 +402,12 @@ let parse_call_flags (json : Yojson.Safe.json) =
     CallFlags.cf_is_objc_block = to_bool (member "cf_is_objc_block" json) ;
   }
 
-let parse_call_args (json : Yojson.Safe.json) =
+let parse_call_args (json : Safe.json) =
   let e = parse_exp (member "expression" json) in
   let t = parse_sil_type_name (member "type" json) in
   (e, t)
 
-let parse_instr (json : Yojson.Safe.json) =
+let parse_instr (json : Safe.json) =
   let instr_kind = to_string (member "instruction_kind" json) in
   let l = parse_location (member "location" json) in
   if String.equal instr_kind "Load" then
@@ -456,7 +435,7 @@ let parse_instr (json : Yojson.Safe.json) =
     Logging.die InternalError "Unknown instruction kind %s" instr_kind
 
 (* This has the side-effect of inserting the procedure description into the CFG. *)
-let parse_pdesc (cfg : Cfg.t) (pd_id_to_pd : Procdesc.t IntTbl.t) (start_nd_tbl : int IntTbl.t) (exit_nd_tbl : int IntTbl.t) (json : Yojson.Safe.json) =
+let parse_pdesc (cfg : Cfg.t) (pd_id_to_pd : Procdesc.t IntTbl.t) (start_nd_tbl : int IntTbl.t) (exit_nd_tbl : int IntTbl.t) (json : Safe.json) =
   let _attrs = parse_proc_attributes (member "pd_attributes" json) in
   let _id = to_int (member "pd_id" json) in
   (* Store away start/end node, to be filled in later *)
@@ -469,7 +448,7 @@ let parse_pdesc (cfg : Cfg.t) (pd_id_to_pd : Procdesc.t IntTbl.t) (start_nd_tbl 
   IntTbl.add pd_id_to_pd _id pd
 
 (* Expect the entire node json to be passed *)
-let parse_stmt_nodekind (json: Yojson.Safe.json): Procdesc.Node.stmt_nodekind =
+let parse_stmt_nodekind (json: Safe.json): Procdesc.Node.stmt_nodekind =
   let nk_comment = (member "stmt_node_comment" json) in
   match (to_string (member "stmt_node_kind" json)) with
   | "AssertionFailure" ->
@@ -550,7 +529,7 @@ let parse_stmt_nodekind (json: Yojson.Safe.json): Procdesc.Node.stmt_nodekind =
     Logging.die InternalError "Unknown stmt node kind %s" snk
 
 
-let parse_prune_nodekind (json: Yojson.Safe.json): Procdesc.Node.prune_node_kind =
+let parse_prune_nodekind (json: Safe.json): Procdesc.Node.prune_node_kind =
   match to_string json with 
   | "ExceptionHandler" ->
     PruneNodeKind_ExceptionHandler
@@ -570,8 +549,7 @@ let parse_prune_nodekind (json: Yojson.Safe.json): Procdesc.Node.prune_node_kind
     Logging.die InternalError "Unknown prune node kind %s" pnk
 
 
-let parse_nodekind  (pd_id_to_pd : Procdesc.t IntTbl.t) (json : Yojson.Safe.json) =
-  let open Cfg in
+let parse_nodekind  (pd_id_to_pd : Procdesc.t IntTbl.t) (json : Safe.json) =
   let nkname = to_string (member "nd_kind" json) in
   if String.equal nkname "StartNode" then
     Procdesc.Node.Start_node
@@ -591,11 +569,8 @@ let parse_nodekind  (pd_id_to_pd : Procdesc.t IntTbl.t) (json : Yojson.Safe.json
   else
     Logging.die InternalError "Unknown nodekind: %s" nkname
 
-let parse_node (pd_id_to_pd : Procdesc.t IntTbl.t) (nd_id_to_node : Procdesc.Node.t IntTbl.t) (nd_id_to_exn_nodes : (int list) IntTbl.t) (nd_id_to_pred_nodes : (int list) IntTbl.t) (nd_id_to_succ_nodes : (int list) IntTbl.t) (json : Yojson.Safe.json) =
+let parse_node (pd_id_to_pd : Procdesc.t IntTbl.t) (nd_id_to_node : Procdesc.Node.t IntTbl.t) (nd_id_to_exn_nodes : (int list) IntTbl.t) (nd_id_to_pred_nodes : (int list) IntTbl.t) (nd_id_to_succ_nodes : (int list) IntTbl.t) (json : Safe.json) =
   let nd_id = to_int (member "nd_id" json) in
-  let nd_temps = parse_list parse_ident (member "nd_temps" json) in
-  let nd_dead_pvars_after = parse_list parse_pvar (member "nd_dead_pvars_after" json) in
-  let nd_dead_pvars_before = parse_list parse_pvar (member "nd_dead_pvars_before" json) in
   IntTbl.add nd_id_to_exn_nodes nd_id (parse_list to_int (member "nd_exn_ids" json));
   let nd_instrs = parse_list parse_instr (member "nd_instrs" json) in
   let nd_kind = parse_nodekind pd_id_to_pd json in
@@ -607,7 +582,7 @@ let parse_node (pd_id_to_pd : Procdesc.t IntTbl.t) (nd_id_to_node : Procdesc.Nod
   IntTbl.add nd_id_to_node nd_id node;
   node
 
-let parse_cfg (json : Yojson.Safe.json) =
+let parse_cfg (json : Safe.json) =
   let cfg = Cfg.create() in
 
   (* These hold information that's in the procedure description or nodes, but can only be completed once we've parsed all nodes. *)
@@ -643,14 +618,14 @@ let parse_cfg (json : Yojson.Safe.json) =
 
   cfg
 
-let parse_tenv_type (json : Yojson.Safe.json) (tenv) =
+let parse_tenv_type (json : Safe.json) (tenv) =
   let tn = parse_typename (member "type_name" json) in
   let (fields, statics, supers, methods, annots) =
     parse_struct (member "type_struct" json)
   in
   ignore (Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots tn)
 
-let parse_tenv (json : Yojson.Safe.json) =
+let parse_tenv (json : Safe.json) =
   let tenv = Tenv.create() in
   List.iter
     ~f:(fun entry -> parse_tenv_type entry tenv)
@@ -662,18 +637,6 @@ let clear_caches () =
   Summary.OnDisk.clear_cache () ;
   Procname.SQLite.clear_cache ()
 
-
-let output_json_makefile_stats clusters =
-  let num_files = List.length clusters in
-  let num_procs = 0 in
-  (* can't compute it at this stage *)
-  let num_lines = 0 in
-  let file_stats =
-    `Assoc [("files", `Int num_files); ("procedures", `Int num_procs); ("lines", `Int num_lines)]
-  in
-  (* write stats file to disk, intentionally overwriting old file if it already exists *)
-  let f = Out_channel.create (Filename.concat Config.results_dir Config.proc_stats_filename) in
-  Yojson.Safe.pretty_to_channel f file_stats
 let clear_caches_except_lrus () =
   Summary.OnDisk.clear_cache () ;
   Procname.SQLite.clear_cache () ;
@@ -914,7 +877,6 @@ let analyze_json cfg_json tenv_json =
   let source_file = SourceFile.create ~warn_on_error:false "./Program.cs" in
   (* let source_dir = DB.source_dir_from_source_file source_file in
   Utils.create_dir (DB.source_dir_to_string source_dir) ;
-
   let tenv_file = DB.source_dir_get_internal_file source_dir ".tenv" in
   let cfg_file = DB.source_dir_get_internal_file source_dir ".cfg" in
   Tenv.store_to_filename tenv tenv_file ; *)
