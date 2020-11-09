@@ -111,6 +111,7 @@ module ReportableViolation = struct
     NullsafeIssue.make ~description ~issue_type:IssueType.eradicate_nullable_dereference
       ~loc:dereference_location
       ~severity:(NullsafeMode.severity nullsafe_mode)
+      ~field_name:None
     |> NullsafeIssue.with_nullable_methods nullable_methods
 
 

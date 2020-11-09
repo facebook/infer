@@ -262,6 +262,7 @@ let mk_nullsafe_issue_for_untrusted_values ~nullsafe_mode ~untrusted_kind ~bad_u
   in
   NullsafeIssue.make ~description ~issue_type ~loc:object_loc
     ~severity:(NullsafeMode.severity nullsafe_mode)
+    ~field_name:None
   |> NullsafeIssue.with_third_party_dependent_methods third_party_dependent_methods
 
 

@@ -11,7 +11,13 @@ open! IStd
 type t
 
 val make :
-  issue_type:IssueType.t -> description:string -> loc:Location.t -> severity:IssueType.severity -> t
+     issue_type:IssueType.t
+  -> description:string
+  -> loc:Location.t
+  -> severity:IssueType.severity
+  -> (* If the issue is about a field (e.g. field not nullable etc.), here's this field *)
+     field_name:Fieldname.t option
+  -> t
 
 val with_third_party_dependent_methods : (Procname.Java.t * AnnotatedSignature.t) list -> t -> t
 

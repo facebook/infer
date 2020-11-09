@@ -89,7 +89,7 @@ module ReportableViolation = struct
       | InconsistentParam _ ->
           IssueType.eradicate_inconsistent_subclass_parameter_annotation
     in
-    NullsafeIssue.make ~description ~loc ~issue_type ~severity
+    NullsafeIssue.make ~description ~loc ~issue_type ~severity ~field_name:None
 end
 
 let check type_role ~base ~overridden =

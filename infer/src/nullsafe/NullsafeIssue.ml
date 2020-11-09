@@ -11,14 +11,21 @@ type t =
   { issue_type: IssueType.t
   ; description: string  (** Human-readable description *)
   ; loc: Location.t  (** Where to report the error *)
+  ; field_name: Fieldname.t option  (** If the issue is about a field, here's this field *)
   ; severity: IssueType.severity
   ; nullable_methods: TypeOrigin.method_call_origin list
         (** If the issue is associated with misusing nullable values coming from method calls,
             here's the list *)
   ; third_party_dependent_methods: (Procname.Java.t * AnnotatedSignature.t) list }
 
-let make ~issue_type ~description ~loc ~severity =
-  {issue_type; description; loc; severity; third_party_dependent_methods= []; nullable_methods= []}
+let make ~issue_type ~description ~loc ~severity ~field_name =
+  { issue_type
+  ; description
+  ; loc
+  ; severity
+  ; third_party_dependent_methods= []
+  ; nullable_methods= []
+  ; field_name }
 
 
 let with_third_party_dependent_methods methods t = {t with third_party_dependent_methods= methods}
@@ -79,7 +86,7 @@ let to_nullable_method_json nullable_methods =
         ; call_line= call_loc.Location.line } )
 
 
-let get_nullsafe_extra {third_party_dependent_methods; nullable_methods} proc_name =
+let get_nullsafe_extra {third_party_dependent_methods; nullable_methods; field_name} proc_name =
   let class_name = Procname.Java.get_simple_class_name proc_name in
   let package = Procname.Java.get_package proc_name in
   let unvetted_3rd_party_list =
@@ -93,10 +100,21 @@ let get_nullsafe_extra {third_party_dependent_methods; nullable_methods} proc_na
   let nullable_methods =
     if List.is_empty nullable_methods then None else Some (to_nullable_method_json nullable_methods)
   in
+  let field =
+    Option.map field_name ~f:(fun field_name ->
+        let field = Fieldname.get_field_name field_name in
+        let class_typ_name = Fieldname.get_class_name field_name in
+        let java_class_name = Typ.Name.Java.get_java_class_name_exn class_typ_name in
+        Jsonbug_t.
+          { class_name= JavaClassName.classname java_class_name
+          ; package_name= JavaClassName.package java_class_name
+          ; field } )
+  in
   Jsonbug_t.
     { class_name
     ; package
     ; meta_issue_info= None
     ; unvetted_3rd_party
     ; nullable_methods
+    ; field
     ; annotation_graph= None }

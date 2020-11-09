@@ -83,7 +83,8 @@ module ReportableViolation = struct
 
 
   (* A slight adapter over [NullsafeIssue.make]: the same signature but additionally accepts an alternative method *)
-  let make_issue_with_recommendation ~description ~rhs_origin ~issue_type ~loc ~severity =
+  let make_issue_with_recommendation ~description ~rhs_origin ~issue_type ~loc ~severity ~field_name
+      =
     (* If there is an alternative method to propose, tell about it at the end of the description *)
     let alternative_method =
       ErrorRenderingUtils.find_alternative_nonnull_method_description rhs_origin
@@ -99,7 +100,7 @@ module ReportableViolation = struct
     let nullable_methods =
       match rhs_origin with TypeOrigin.MethodCall origin -> [origin] | _ -> []
     in
-    NullsafeIssue.make ~description:full_description ~issue_type ~loc ~severity
+    NullsafeIssue.make ~description:full_description ~issue_type ~loc ~severity ~field_name
     |> NullsafeIssue.with_nullable_methods nullable_methods
 
 
@@ -189,6 +190,13 @@ module ReportableViolation = struct
         make_issue_factory ~description ~issue_type
 
 
+  let field_name_of_assignment_type = function
+    | AssigningToField field_name ->
+        Some field_name
+    | PassingParamToFunction _ | ReturningFromFunction _ ->
+        None
+
+
   let mk_nullsafe_issue_for_explicitly_nullable_values ~assignment_type ~rhs_origin ~nullsafe_mode
       ~explicit_rhs_nullable_kind ~assignment_location =
     let nullability_evidence =
@@ -204,6 +212,7 @@ module ReportableViolation = struct
       make_issue_with_recommendation ~rhs_origin
         ~severity:(NullsafeMode.severity nullsafe_mode)
         ~loc:assignment_location
+        ~field_name:(field_name_of_assignment_type assignment_type)
     in
     match assignment_type with
     | PassingParamToFunction function_info ->
