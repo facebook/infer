@@ -527,29 +527,30 @@ module NonNegativeNonTopPolynomial = struct
       degree. When calculating the degree, it ignores symbols of function pointer, so they are
       addressed as if zero cost. *)
   let degree_with_term {poly; autoreleasepool_trace} =
-    let rec degree_with_term_poly ({terms} as poly) =
-      if is_zero_degree_poly poly then (Degree.zero, true, poly)
-      else
+    let rec degree_with_term_poly {const; terms} =
+      let degree_terms =
         M.fold
           (fun t p cur_max ->
-            let degree_term =
-              match (t, degree_with_term_poly p) with
-              | NonNegativeBoundWithDegreeKind b, (d, false, p') ->
-                  ( Degree.succ (NonNegativeBoundWithDegreeKind.degree_kind b) d
-                  , false
-                  , mult_symb_poly p' t )
-              | FuncPtr _, (_, _, p') | _, (_, true, p') ->
-                  (* It ignores function pointers when calculating degree of polynomial, since their
-                     semantics is different to the other symbolic values.  For example, when a
-                     function has a complexity of |fptr| where fptr is a function pointer, it does
-                     not make sense to say the function has a linear complexity. *)
-                  (Degree.zero, true, mult_symb_poly p' t)
-            in
-            if [%compare: Degree.t * bool * poly] degree_term cur_max > 0 then degree_term
-            else cur_max )
-          terms (Degree.zero, false, one_poly)
+            match (t, degree_with_term_poly p) with
+            (* It ignores function pointers when calculating degree of polynomial, since their
+               semantics is different to the other symbolic values.  For example, when a function
+               has a complexity of |fptr| where fptr is a function pointer, it does not make sense
+               to say the function has a linear complexity. *)
+            | FuncPtr _, _ ->
+                cur_max
+            | _, (_, p') when is_zero_poly p' ->
+                cur_max
+            | NonNegativeBoundWithDegreeKind b, (d, p') ->
+                let d' = Degree.succ (NonNegativeBoundWithDegreeKind.degree_kind b) d in
+                if Degree.compare d' (fst cur_max) > 0 then (d', mult_symb_poly p' t) else cur_max
+            )
+          terms (Degree.zero, zero_poly)
+      in
+      if is_zero_poly (snd degree_terms) then
+        if NonNegativeInt.is_zero const then (Degree.zero, zero_poly) else (Degree.zero, one_poly)
+      else degree_terms
     in
-    let d, _, poly = degree_with_term_poly poly in
+    let d, poly = degree_with_term_poly poly in
     (d, {poly; autoreleasepool_trace})
 
 
