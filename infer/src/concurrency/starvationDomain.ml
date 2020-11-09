@@ -196,14 +196,17 @@ module Event = struct
   [@@deriving compare]
 
   let pp fmt = function
-    | LockAcquire {locks} ->
-        F.fprintf fmt "LockAcquire(%a)" (PrettyPrintable.pp_collection ~pp_item:Lock.pp) locks
-    | MayBlock {callee; severity} ->
-        F.fprintf fmt "MayBlock(%a, %a)" Procname.pp callee StarvationModels.pp_severity severity
-    | StrictModeCall {callee} ->
-        F.fprintf fmt "StrictModeCall(%a)" Procname.pp callee
-    | MonitorWait {lock} ->
-        F.fprintf fmt "MonitorWait(%a)" Lock.pp lock
+    | LockAcquire {locks; thread} ->
+        F.fprintf fmt "LockAcquire(%a, %a)"
+          (PrettyPrintable.pp_collection ~pp_item:Lock.pp)
+          locks ThreadDomain.pp thread
+    | MayBlock {callee; severity; thread} ->
+        F.fprintf fmt "MayBlock(%a, %a, %a)" Procname.pp callee StarvationModels.pp_severity
+          severity ThreadDomain.pp thread
+    | StrictModeCall {callee; thread} ->
+        F.fprintf fmt "StrictModeCall(%a, %a)" Procname.pp callee ThreadDomain.pp thread
+    | MonitorWait {lock; thread} ->
+        F.fprintf fmt "MonitorWait(%a, %a)" Lock.pp lock ThreadDomain.pp thread
 
 
   let describe fmt elem =
@@ -286,7 +289,8 @@ module Acquisition = struct
   [@@deriving compare]
 
   let pp fmt {lock; loc; procname} =
-    F.fprintf fmt "<lock=%a; loc=%a; procname=%a>" Lock.pp lock Location.pp loc Procname.pp procname
+    F.fprintf fmt "<@[lock=%a;@;loc=%a;@;procname=%a@]>" Lock.pp lock Location.pp loc Procname.pp
+      procname
 
 
   let describe fmt {lock} = Lock.pp_locks fmt lock
@@ -359,7 +363,7 @@ end = struct
   let get_acquisitions {acquisitions} = acquisitions
 
   let pp fmt {map; acquisitions} =
-    F.fprintf fmt "{map= %a; acquisitions= %a}" Map.pp map Acquisitions.pp acquisitions
+    F.fprintf fmt "{@[map= %a;@;acquisitions= %a@]}" Map.pp map Acquisitions.pp acquisitions
 
 
   let join lhs rhs =
@@ -431,7 +435,7 @@ module CriticalPairElement = struct
   type t = {acquisitions: Acquisitions.t; event: Event.t} [@@deriving compare]
 
   let pp fmt {acquisitions; event} =
-    F.fprintf fmt "{acquisitions= %a; event= %a}" Acquisitions.pp acquisitions Event.pp event
+    F.fprintf fmt "{@[acquisitions= %a;@;event= %a@]}" Acquisitions.pp acquisitions Event.pp event
 
 
   let describe = pp
@@ -448,7 +452,9 @@ module CriticalPairElement = struct
 end
 
 module CriticalPair = struct
-  include ExplicitTrace.MakeTraceElem (CriticalPairElement) (ExplicitTrace.DefaultCallPrinter)
+  include ExplicitTrace.MakeTraceElemModuloLocation
+            (CriticalPairElement)
+            (ExplicitTrace.DefaultCallPrinter)
 
   let make ~loc acquisitions event = make {acquisitions; event} loc
 
@@ -675,7 +681,7 @@ module ScheduledWorkItem = struct
   type t = {procname: Procname.t; loc: Location.t; thread: ThreadDomain.t} [@@deriving compare]
 
   let pp fmt {procname; loc; thread} =
-    F.fprintf fmt "{procname= %a; loc= %a; thread= %a}" Procname.pp procname Location.pp loc
+    F.fprintf fmt "{@[procname= %a;@;loc= %a;@;thread= %a@]}" Procname.pp procname Location.pp loc
       ThreadDomain.pp thread
 end
 
@@ -705,11 +711,15 @@ let initial =
 
 let pp fmt astate =
   F.fprintf fmt
-    "{guard_map= %a; lock_state= %a; critical_pairs= %a; attributes= %a; thread= %a; \
-     scheduled_work= %a; var_state= %a}"
-    GuardToLockMap.pp astate.guard_map LockState.pp astate.lock_state CriticalPairs.pp
-    astate.critical_pairs AttributeDomain.pp astate.attributes ThreadDomain.pp astate.thread
-    ScheduledWorkDomain.pp astate.scheduled_work VarDomain.pp astate.var_state
+    "{@[guard_map= %a;@;\
+     lock_state= %a;@;\
+     critical_pairs= %a;@;\
+     attributes= %a;@;\
+     thread= %a;@;\
+     scheduled_work= %a;@;\
+     var_state= %a@]}" GuardToLockMap.pp astate.guard_map LockState.pp astate.lock_state
+    CriticalPairs.pp astate.critical_pairs AttributeDomain.pp astate.attributes ThreadDomain.pp
+    astate.thread ScheduledWorkDomain.pp astate.scheduled_work VarDomain.pp astate.var_state
 
 
 let join lhs rhs =
