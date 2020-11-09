@@ -128,94 +128,94 @@ digraph cfg {
 
 	 "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_10" -> "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_5" ;
 	 "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_10" -> "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_6" ;
-"div0_assign_conditional#5107071401315365445.4f3bcdea44343998d43cc1b04e1ee179_1" [label="1: Start div0_assign_conditional\nFormals: \nLocals:  \n  " color=yellow style=filled]
+"div0_assign_conditional_bad#15392728490966978909.59445a1ff0409f58853678ecb2a0eeb6_1" [label="1: Start div0_assign_conditional_bad\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "div0_assign_conditional#5107071401315365445.4f3bcdea44343998d43cc1b04e1ee179_1" -> "div0_assign_conditional#5107071401315365445.4f3bcdea44343998d43cc1b04e1ee179_3" ;
-"div0_assign_conditional#5107071401315365445.4f3bcdea44343998d43cc1b04e1ee179_2" [label="2: Exit div0_assign_conditional \n  " color=yellow style=filled]
+	 "div0_assign_conditional_bad#15392728490966978909.59445a1ff0409f58853678ecb2a0eeb6_1" -> "div0_assign_conditional_bad#15392728490966978909.59445a1ff0409f58853678ecb2a0eeb6_3" ;
+"div0_assign_conditional_bad#15392728490966978909.59445a1ff0409f58853678ecb2a0eeb6_2" [label="2: Exit div0_assign_conditional_bad \n  " color=yellow style=filled]
 	
 
-"div0_assign_conditional#5107071401315365445.4f3bcdea44343998d43cc1b04e1ee179_3" [label="3:  Return Stmt \n   n$0=_fun_assign_conditional(0:int) [line 39, column 44]\n  *&return:int=(1 / n$0) [line 39, column 33]\n " shape="box"]
+"div0_assign_conditional_bad#15392728490966978909.59445a1ff0409f58853678ecb2a0eeb6_3" [label="3:  Return Stmt \n   n$0=_fun_assign_conditional(0:int) [line 39, column 48]\n  *&return:int=(1 / n$0) [line 39, column 37]\n " shape="box"]
 	
 
-	 "div0_assign_conditional#5107071401315365445.4f3bcdea44343998d43cc1b04e1ee179_3" -> "div0_assign_conditional#5107071401315365445.4f3bcdea44343998d43cc1b04e1ee179_2" ;
-"div0_choose_lvalue#13889289797749672490.33434dbd9bc43b011249899260680670_1" [label="1: Start div0_choose_lvalue\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 "div0_assign_conditional_bad#15392728490966978909.59445a1ff0409f58853678ecb2a0eeb6_3" -> "div0_assign_conditional_bad#15392728490966978909.59445a1ff0409f58853678ecb2a0eeb6_2" ;
+"div0_choose_lvalue_bad#15922600891528658633.d3011cf95d516b230042aa269044a695_1" [label="1: Start div0_choose_lvalue_bad\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "div0_choose_lvalue#13889289797749672490.33434dbd9bc43b011249899260680670_1" -> "div0_choose_lvalue#13889289797749672490.33434dbd9bc43b011249899260680670_3" ;
-"div0_choose_lvalue#13889289797749672490.33434dbd9bc43b011249899260680670_2" [label="2: Exit div0_choose_lvalue \n  " color=yellow style=filled]
+	 "div0_choose_lvalue_bad#15922600891528658633.d3011cf95d516b230042aa269044a695_1" -> "div0_choose_lvalue_bad#15922600891528658633.d3011cf95d516b230042aa269044a695_3" ;
+"div0_choose_lvalue_bad#15922600891528658633.d3011cf95d516b230042aa269044a695_2" [label="2: Exit div0_choose_lvalue_bad \n  " color=yellow style=filled]
 	
 
-"div0_choose_lvalue#13889289797749672490.33434dbd9bc43b011249899260680670_3" [label="3:  Return Stmt \n   n$0=_fun_choose_lvalue(1:int) [line 31, column 39]\n  *&return:int=(1 / n$0) [line 31, column 28]\n " shape="box"]
+"div0_choose_lvalue_bad#15922600891528658633.d3011cf95d516b230042aa269044a695_3" [label="3:  Return Stmt \n   n$0=_fun_choose_lvalue(1:int) [line 31, column 43]\n  *&return:int=(1 / n$0) [line 31, column 32]\n " shape="box"]
 	
 
-	 "div0_choose_lvalue#13889289797749672490.33434dbd9bc43b011249899260680670_3" -> "div0_choose_lvalue#13889289797749672490.33434dbd9bc43b011249899260680670_2" ;
-"div0_choose_rvalue#5985399689822936660.67f1213862b68d51bd848ce28d6859ec_1" [label="1: Start div0_choose_rvalue\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 "div0_choose_lvalue_bad#15922600891528658633.d3011cf95d516b230042aa269044a695_3" -> "div0_choose_lvalue_bad#15922600891528658633.d3011cf95d516b230042aa269044a695_2" ;
+"div0_choose_rvalue_bad#4711054588210108571.343d2bcae71f9c3f5c3cfb41052dfb24_1" [label="1: Start div0_choose_rvalue_bad\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "div0_choose_rvalue#5985399689822936660.67f1213862b68d51bd848ce28d6859ec_1" -> "div0_choose_rvalue#5985399689822936660.67f1213862b68d51bd848ce28d6859ec_3" ;
-"div0_choose_rvalue#5985399689822936660.67f1213862b68d51bd848ce28d6859ec_2" [label="2: Exit div0_choose_rvalue \n  " color=yellow style=filled]
+	 "div0_choose_rvalue_bad#4711054588210108571.343d2bcae71f9c3f5c3cfb41052dfb24_1" -> "div0_choose_rvalue_bad#4711054588210108571.343d2bcae71f9c3f5c3cfb41052dfb24_3" ;
+"div0_choose_rvalue_bad#4711054588210108571.343d2bcae71f9c3f5c3cfb41052dfb24_2" [label="2: Exit div0_choose_rvalue_bad \n  " color=yellow style=filled]
 	
 
-"div0_choose_rvalue#5985399689822936660.67f1213862b68d51bd848ce28d6859ec_3" [label="3:  Return Stmt \n   n$0=_fun_choose_rvalue(1:int) [line 35, column 39]\n  *&return:int=(1 / n$0) [line 35, column 28]\n " shape="box"]
+"div0_choose_rvalue_bad#4711054588210108571.343d2bcae71f9c3f5c3cfb41052dfb24_3" [label="3:  Return Stmt \n   n$0=_fun_choose_rvalue(1:int) [line 35, column 43]\n  *&return:int=(1 / n$0) [line 35, column 32]\n " shape="box"]
 	
 
-	 "div0_choose_rvalue#5985399689822936660.67f1213862b68d51bd848ce28d6859ec_3" -> "div0_choose_rvalue#5985399689822936660.67f1213862b68d51bd848ce28d6859ec_2" ;
-"div0_temp_lvalue#4236327814744405863.1539dbb4efb081b38036309be4c65715_1" [label="1: Start div0_temp_lvalue\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 "div0_choose_rvalue_bad#4711054588210108571.343d2bcae71f9c3f5c3cfb41052dfb24_3" -> "div0_choose_rvalue_bad#4711054588210108571.343d2bcae71f9c3f5c3cfb41052dfb24_2" ;
+"div0_temp_lvalue_bad#762924255965163608.e2236a796f5186064a6ced7c1ad558e7_1" [label="1: Start div0_temp_lvalue_bad\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "div0_temp_lvalue#4236327814744405863.1539dbb4efb081b38036309be4c65715_1" -> "div0_temp_lvalue#4236327814744405863.1539dbb4efb081b38036309be4c65715_3" ;
-"div0_temp_lvalue#4236327814744405863.1539dbb4efb081b38036309be4c65715_2" [label="2: Exit div0_temp_lvalue \n  " color=yellow style=filled]
+	 "div0_temp_lvalue_bad#762924255965163608.e2236a796f5186064a6ced7c1ad558e7_1" -> "div0_temp_lvalue_bad#762924255965163608.e2236a796f5186064a6ced7c1ad558e7_3" ;
+"div0_temp_lvalue_bad#762924255965163608.e2236a796f5186064a6ced7c1ad558e7_2" [label="2: Exit div0_temp_lvalue_bad \n  " color=yellow style=filled]
 	
 
-"div0_temp_lvalue#4236327814744405863.1539dbb4efb081b38036309be4c65715_3" [label="3:  Return Stmt \n   n$0=_fun_div_temp_lvalue(1:int,0:int) [line 43, column 33]\n  *&return:int=n$0 [line 43, column 26]\n " shape="box"]
+"div0_temp_lvalue_bad#762924255965163608.e2236a796f5186064a6ced7c1ad558e7_3" [label="3:  Return Stmt \n   n$0=_fun_div_temp_lvalue(1:int,0:int) [line 43, column 37]\n  *&return:int=n$0 [line 43, column 30]\n " shape="box"]
 	
 
-	 "div0_temp_lvalue#4236327814744405863.1539dbb4efb081b38036309be4c65715_3" -> "div0_temp_lvalue#4236327814744405863.1539dbb4efb081b38036309be4c65715_2" ;
-"div1_assign_conditional#703756229606178162.2f3187315131c9e8e31a0380708ebcbb_1" [label="1: Start div1_assign_conditional\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 "div0_temp_lvalue_bad#762924255965163608.e2236a796f5186064a6ced7c1ad558e7_3" -> "div0_temp_lvalue_bad#762924255965163608.e2236a796f5186064a6ced7c1ad558e7_2" ;
+"div1_assign_conditional_ok#386580495590546150.d2c51159bce0b01c70ad4bdfe249ccbe_1" [label="1: Start div1_assign_conditional_ok\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "div1_assign_conditional#703756229606178162.2f3187315131c9e8e31a0380708ebcbb_1" -> "div1_assign_conditional#703756229606178162.2f3187315131c9e8e31a0380708ebcbb_3" ;
-"div1_assign_conditional#703756229606178162.2f3187315131c9e8e31a0380708ebcbb_2" [label="2: Exit div1_assign_conditional \n  " color=yellow style=filled]
+	 "div1_assign_conditional_ok#386580495590546150.d2c51159bce0b01c70ad4bdfe249ccbe_1" -> "div1_assign_conditional_ok#386580495590546150.d2c51159bce0b01c70ad4bdfe249ccbe_3" ;
+"div1_assign_conditional_ok#386580495590546150.d2c51159bce0b01c70ad4bdfe249ccbe_2" [label="2: Exit div1_assign_conditional_ok \n  " color=yellow style=filled]
 	
 
-"div1_assign_conditional#703756229606178162.2f3187315131c9e8e31a0380708ebcbb_3" [label="3:  Return Stmt \n   n$0=_fun_assign_conditional(1:int) [line 41, column 44]\n  *&return:int=(1 / n$0) [line 41, column 33]\n " shape="box"]
+"div1_assign_conditional_ok#386580495590546150.d2c51159bce0b01c70ad4bdfe249ccbe_3" [label="3:  Return Stmt \n   n$0=_fun_assign_conditional(1:int) [line 41, column 47]\n  *&return:int=(1 / n$0) [line 41, column 36]\n " shape="box"]
 	
 
-	 "div1_assign_conditional#703756229606178162.2f3187315131c9e8e31a0380708ebcbb_3" -> "div1_assign_conditional#703756229606178162.2f3187315131c9e8e31a0380708ebcbb_2" ;
-"div1_choose_lvalue#17507024914646798803.f2ba997f0baf8ee3dada0c7b0947cb8d_1" [label="1: Start div1_choose_lvalue\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 "div1_assign_conditional_ok#386580495590546150.d2c51159bce0b01c70ad4bdfe249ccbe_3" -> "div1_assign_conditional_ok#386580495590546150.d2c51159bce0b01c70ad4bdfe249ccbe_2" ;
+"div1_choose_lvalue_ok#14794514121851844432.e6a75af880b689c083ff11acc983eb66_1" [label="1: Start div1_choose_lvalue_ok\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "div1_choose_lvalue#17507024914646798803.f2ba997f0baf8ee3dada0c7b0947cb8d_1" -> "div1_choose_lvalue#17507024914646798803.f2ba997f0baf8ee3dada0c7b0947cb8d_3" ;
-"div1_choose_lvalue#17507024914646798803.f2ba997f0baf8ee3dada0c7b0947cb8d_2" [label="2: Exit div1_choose_lvalue \n  " color=yellow style=filled]
+	 "div1_choose_lvalue_ok#14794514121851844432.e6a75af880b689c083ff11acc983eb66_1" -> "div1_choose_lvalue_ok#14794514121851844432.e6a75af880b689c083ff11acc983eb66_3" ;
+"div1_choose_lvalue_ok#14794514121851844432.e6a75af880b689c083ff11acc983eb66_2" [label="2: Exit div1_choose_lvalue_ok \n  " color=yellow style=filled]
 	
 
-"div1_choose_lvalue#17507024914646798803.f2ba997f0baf8ee3dada0c7b0947cb8d_3" [label="3:  Return Stmt \n   n$0=_fun_choose_lvalue(0:int) [line 33, column 39]\n  *&return:int=(1 / n$0) [line 33, column 28]\n " shape="box"]
+"div1_choose_lvalue_ok#14794514121851844432.e6a75af880b689c083ff11acc983eb66_3" [label="3:  Return Stmt \n   n$0=_fun_choose_lvalue(0:int) [line 33, column 42]\n  *&return:int=(1 / n$0) [line 33, column 31]\n " shape="box"]
 	
 
-	 "div1_choose_lvalue#17507024914646798803.f2ba997f0baf8ee3dada0c7b0947cb8d_3" -> "div1_choose_lvalue#17507024914646798803.f2ba997f0baf8ee3dada0c7b0947cb8d_2" ;
-"div1_choose_rvalue#2897979603329583409.ca29e44a33271dfb3905f48a478bcf9c_1" [label="1: Start div1_choose_rvalue\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 "div1_choose_lvalue_ok#14794514121851844432.e6a75af880b689c083ff11acc983eb66_3" -> "div1_choose_lvalue_ok#14794514121851844432.e6a75af880b689c083ff11acc983eb66_2" ;
+"div1_choose_rvalue_ok#15613531805403677222.429ad10e519e5d1b777d0c86b7c2e7c8_1" [label="1: Start div1_choose_rvalue_ok\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "div1_choose_rvalue#2897979603329583409.ca29e44a33271dfb3905f48a478bcf9c_1" -> "div1_choose_rvalue#2897979603329583409.ca29e44a33271dfb3905f48a478bcf9c_3" ;
-"div1_choose_rvalue#2897979603329583409.ca29e44a33271dfb3905f48a478bcf9c_2" [label="2: Exit div1_choose_rvalue \n  " color=yellow style=filled]
+	 "div1_choose_rvalue_ok#15613531805403677222.429ad10e519e5d1b777d0c86b7c2e7c8_1" -> "div1_choose_rvalue_ok#15613531805403677222.429ad10e519e5d1b777d0c86b7c2e7c8_3" ;
+"div1_choose_rvalue_ok#15613531805403677222.429ad10e519e5d1b777d0c86b7c2e7c8_2" [label="2: Exit div1_choose_rvalue_ok \n  " color=yellow style=filled]
 	
 
-"div1_choose_rvalue#2897979603329583409.ca29e44a33271dfb3905f48a478bcf9c_3" [label="3:  Return Stmt \n   n$0=_fun_choose_rvalue(0:int) [line 37, column 39]\n  *&return:int=(1 / n$0) [line 37, column 28]\n " shape="box"]
+"div1_choose_rvalue_ok#15613531805403677222.429ad10e519e5d1b777d0c86b7c2e7c8_3" [label="3:  Return Stmt \n   n$0=_fun_choose_rvalue(0:int) [line 37, column 42]\n  *&return:int=(1 / n$0) [line 37, column 31]\n " shape="box"]
 	
 
-	 "div1_choose_rvalue#2897979603329583409.ca29e44a33271dfb3905f48a478bcf9c_3" -> "div1_choose_rvalue#2897979603329583409.ca29e44a33271dfb3905f48a478bcf9c_2" ;
-"div1_temp_lvalue#14722162998333319062.760b52102ce508c3244378cf1bf06b6d_1" [label="1: Start div1_temp_lvalue\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 "div1_choose_rvalue_ok#15613531805403677222.429ad10e519e5d1b777d0c86b7c2e7c8_3" -> "div1_choose_rvalue_ok#15613531805403677222.429ad10e519e5d1b777d0c86b7c2e7c8_2" ;
+"div1_temp_lvalue_ok#4626871652686231614.8872cbb3e2dad1aa6aca69eca5075abc_1" [label="1: Start div1_temp_lvalue_ok\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "div1_temp_lvalue#14722162998333319062.760b52102ce508c3244378cf1bf06b6d_1" -> "div1_temp_lvalue#14722162998333319062.760b52102ce508c3244378cf1bf06b6d_3" ;
-"div1_temp_lvalue#14722162998333319062.760b52102ce508c3244378cf1bf06b6d_2" [label="2: Exit div1_temp_lvalue \n  " color=yellow style=filled]
+	 "div1_temp_lvalue_ok#4626871652686231614.8872cbb3e2dad1aa6aca69eca5075abc_1" -> "div1_temp_lvalue_ok#4626871652686231614.8872cbb3e2dad1aa6aca69eca5075abc_3" ;
+"div1_temp_lvalue_ok#4626871652686231614.8872cbb3e2dad1aa6aca69eca5075abc_2" [label="2: Exit div1_temp_lvalue_ok \n  " color=yellow style=filled]
 	
 
-"div1_temp_lvalue#14722162998333319062.760b52102ce508c3244378cf1bf06b6d_3" [label="3:  Return Stmt \n   n$0=_fun_div_temp_lvalue(0:int,1:int) [line 45, column 33]\n  *&return:int=n$0 [line 45, column 26]\n " shape="box"]
+"div1_temp_lvalue_ok#4626871652686231614.8872cbb3e2dad1aa6aca69eca5075abc_3" [label="3:  Return Stmt \n   n$0=_fun_div_temp_lvalue(0:int,1:int) [line 45, column 36]\n  *&return:int=n$0 [line 45, column 29]\n " shape="box"]
 	
 
-	 "div1_temp_lvalue#14722162998333319062.760b52102ce508c3244378cf1bf06b6d_3" -> "div1_temp_lvalue#14722162998333319062.760b52102ce508c3244378cf1bf06b6d_2" ;
+	 "div1_temp_lvalue_ok#4626871652686231614.8872cbb3e2dad1aa6aca69eca5075abc_3" -> "div1_temp_lvalue_ok#4626871652686231614.8872cbb3e2dad1aa6aca69eca5075abc_2" ;
 "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_1" [label="1: Start div_temp_lvalue\nFormals:  a:int b:int\nLocals:  r:int const & 0$?%__sil_tmpSIL_temp_conditional___n$3:int 0$?%__sil_tmpSIL_materialize_temp__n$2:int const  \n  " color=yellow style=filled]
 	
 
