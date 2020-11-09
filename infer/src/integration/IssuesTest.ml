@@ -16,6 +16,7 @@ let pp_nullsafe_extra fmt
     Jsonbug_t.
       { class_name
       ; package
+      ; inconsistent_param_index
       ; meta_issue_info
       ; unvetted_3rd_party
       ; nullable_methods
@@ -29,6 +30,8 @@ let pp_nullsafe_extra fmt
       F.fprintf fmt ", nullable_methods:%a" (Pp.seq pp_method_info) nullable_methods ) ;
   Option.iter field ~f:(fun Jsonbug_t.{class_name; package_name; field} ->
       F.fprintf fmt ", field:%s.%s.%s" (Option.value package_name ~default:"") class_name field ) ;
+  Option.iter inconsistent_param_index ~f:(fun index ->
+      F.fprintf fmt ", inconsistent_param_index:%d" index ) ;
   Option.iter meta_issue_info
     ~f:(fun Jsonbug_t.{num_issues; curr_nullsafe_mode; can_be_promoted_to} ->
       let can_be_promoted_to_str =

@@ -187,6 +187,7 @@ let report_meta_issue_for_top_level_class tenv source_file class_name class_stru
         { class_name
         ; package
         ; method_info= None
+        ; inconsistent_param_index= None
         ; meta_issue_info= Some meta_issue_info
         ; unvetted_3rd_party= None
         ; nullable_methods= None
@@ -220,6 +221,7 @@ let analyze_nullsafe_annotations tenv source_file class_name class_struct issue_
       { class_name
       ; package
       ; method_info= None
+      ; inconsistent_param_index= None
       ; meta_issue_info= None
       ; unvetted_3rd_party= None
       ; nullable_methods= None
@@ -269,6 +271,7 @@ let report_annotation_graph source_file class_name class_struct annotation_graph
       { class_name
       ; package
       ; method_info= None
+      ; inconsistent_param_index= None
       ; meta_issue_info= None
       ; unvetted_3rd_party= None
       ; nullable_methods= None

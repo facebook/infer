@@ -82,14 +82,15 @@ module ReportableViolation = struct
               MF.pp_monospaced base_method_descr
     in
     let severity = NullsafeMode.severity nullsafe_mode in
-    let issue_type =
+    let issue_type, param_index =
       match violation_type with
       | InconsistentReturn ->
-          IssueType.eradicate_inconsistent_subclass_return_annotation
-      | InconsistentParam _ ->
-          IssueType.eradicate_inconsistent_subclass_parameter_annotation
+          (IssueType.eradicate_inconsistent_subclass_return_annotation, None)
+      | InconsistentParam {param_position} ->
+          (IssueType.eradicate_inconsistent_subclass_parameter_annotation, Some param_position)
     in
     NullsafeIssue.make ~description ~loc ~issue_type ~severity ~field_name:None
+    |> NullsafeIssue.with_inconsistent_param_index param_index
 end
 
 let check type_role ~base ~overridden =

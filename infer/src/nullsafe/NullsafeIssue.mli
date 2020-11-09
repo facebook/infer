@@ -23,6 +23,9 @@ val with_third_party_dependent_methods : (Procname.Java.t * AnnotatedSignature.t
 
 val with_nullable_methods : TypeOrigin.method_call_origin list -> t -> t
 
+val with_inconsistent_param_index : int option -> t -> t
+(** Only for the "Inconsistent subclass param annotation" issue *)
+
 val get_issue_type : t -> IssueType.t
 
 val get_description : t -> string
