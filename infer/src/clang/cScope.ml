@@ -210,7 +210,9 @@ module Variables = struct
   let empty_scope = {current= []; current_kind= InitialScope; outers= []}
 
   let compute_vars_to_destroy_map body =
-    visit_stmt body (empty_scope, ClangPointers.Map.empty) |> snd
+    let scope_map = visit_stmt body (empty_scope, ClangPointers.Map.empty) |> snd in
+    L.debug Capture Verbose "@\n" ;
+    scope_map
 end
 
 module CXXTemporaries = struct
@@ -266,5 +268,8 @@ module CXXTemporaries = struct
         visit_stmt context stmt temporaries )
 
 
-  let get_destroyable_temporaries context stmt_list = visit_stmt_list context stmt_list []
+  let get_destroyable_temporaries context stmt_list =
+    let temporaries = visit_stmt_list context stmt_list [] in
+    L.debug Capture Verbose "@\n" ;
+    temporaries
 end

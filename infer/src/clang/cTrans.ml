@@ -475,12 +475,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let name_info, decl_ptr, qual_type = CAst_utils.get_info_from_decl_ref decl_ref in
     let field_string = name_info.Clang_ast_t.ni_name in
-    L.(debug Capture Verbose) "Translating field '%s'@\n" field_string ;
+    L.debug Capture Verbose "Translating field '%s'@\n" field_string ;
     let field_typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
     let obj_sil, class_typ = pre_trans_result.return in
     let is_pointer_typ = Typ.is_pointer class_typ in
     let class_typ = match class_typ.Typ.desc with Typ.Tptr (t, _) -> t | _ -> class_typ in
-    L.(debug Capture Verbose) "Type is  '%s' @." (Typ.to_string class_typ) ;
+    L.debug Capture Verbose "Type is  '%s' @\n" (Typ.to_string class_typ) ;
     let class_tname =
       match CAst_utils.get_decl decl_ptr with
       | Some (FieldDecl ({di_parent_pointer}, _, _, _))
@@ -535,7 +535,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let decl_opt = CAst_utils.get_function_decl_with_body decl_ptr in
     Option.iter ~f:(call_translation context) decl_opt ;
     let method_name = CAst_utils.get_unqualified_name name_info in
-    L.(debug Capture Verbose) "!!!!! Dealing with method '%s' @." method_name ;
+    L.debug Capture Verbose "!!!!! Dealing with method '%s'@\n" method_name ;
     let ms_opt = CMethod_trans.method_signature_of_pointer context.tenv decl_ptr in
     let is_instance_method =
       match ms_opt with
@@ -841,7 +841,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         sizeof_expr_class (CContext.get_curr_class_typename stmt_info context)
       else (var_exp, typ)
     in
-    L.(debug Capture Verbose) "@\n@\n PVAR ='%s'@\n@\n" (Pvar.to_string pvar) ;
+    L.debug Capture Verbose "var_deref_trans for %a:%a@\n@\n" (Pvar.pp Pp.text) pvar
+      (Typ.pp Pp.text) typ ;
     let res_trans = mk_trans_result return empty_control in
     let res_trans =
       match typ.desc with
@@ -866,9 +867,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   and decl_ref_trans ?(is_constructor_init = false) ~context trans_state stmt_info decl_ref =
-    L.(debug Capture Verbose)
-      "  priority node free = '%s'@\n@."
-      (string_of_bool (PriorityNode.is_priority_free trans_state)) ;
     let decl_kind = decl_ref.Clang_ast_t.dr_kind in
     match (decl_kind, context) with
     | `EnumConstant, _ ->
@@ -891,9 +889,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   and declRefExpr_trans trans_state stmt_info decl_ref_expr_info =
-    L.(debug Capture Verbose)
-      "  priority node free = '%b'@\n@."
-      (PriorityNode.is_priority_free trans_state) ;
     let decl_ref = Option.value_exn decl_ref_expr_info.Clang_ast_t.drti_decl_ref in
     decl_ref_trans ~context:DeclRefExpr trans_state stmt_info decl_ref
 
@@ -985,13 +980,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   and binaryOperator_trans trans_state binary_operator_info stmt_info expr_info stmt_list =
-    L.(debug Capture Verbose)
-      "  BinaryOperator '%a' "
+    L.debug Capture Verbose "  BinaryOperator '%a' "
       (Pp.of_string ~f:Clang_ast_j.string_of_binary_operator_kind)
       binary_operator_info.Clang_ast_t.boi_kind ;
-    L.(debug Capture Verbose)
-      "  priority node free = '%s'@\n@."
-      (string_of_bool (PriorityNode.is_priority_free trans_state)) ;
     let context = trans_state.context in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
     let node_name =
@@ -1357,9 +1348,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   and objCMessageExpr_trans trans_state si obj_c_message_expr_info stmt_list expr_info =
-    L.(debug Capture Verbose)
-      "  priority node free = '%s'@\n@."
-      (string_of_bool (PriorityNode.is_priority_free trans_state)) ;
     let context = trans_state.context in
     let sil_loc = CLocation.location_of_stmt_info context.translation_unit_context.source_file si in
     let method_type_no_ref = CType_decl.get_type_from_expr_info expr_info context.CContext.tenv in
@@ -2466,6 +2454,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   and init_expr_trans ?(is_initListExpr_builtin = false) trans_state var_exp_typ ?qual_type
       var_stmt_info init_expr_opt =
+    L.debug Capture Verbose "init_expr_trans %b %a %a <?qual_type> <stmt_info> %a@\n"
+      is_initListExpr_builtin pp_trans_state trans_state
+      (Pp.pair ~fst:Exp.pp ~snd:(Typ.pp Pp.text_break))
+      var_exp_typ
+      (Pp.option (Pp.of_string ~f:Clang_ast_proj.get_stmt_kind_string))
+      init_expr_opt ;
     match init_expr_opt with
     | None -> (
       match Option.bind qual_type ~f:(fun qt -> CAst_utils.get_type qt.Clang_ast_t.qt_type_ptr) with
@@ -2495,9 +2489,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           if
             (* variable might be initialized already - do nothing in that case*)
             List.exists ~f:(Exp.equal var_exp) res_trans_ie.control.initd_exps
-          then None
+          then (
+            L.debug Capture Verbose "Sub-expr already initialized %a@\n" Exp.pp var_exp ;
+            None )
           else
             let sil_e1', ie_typ = res_trans_ie.return in
+            L.debug Capture Verbose "Sub-expr did not initialize %a, initializing with %a@\n" Exp.pp
+              var_exp Exp.pp sil_e1' ;
             Some
               { empty_control with
                 instrs=
@@ -2519,9 +2517,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           Option.to_list pre_init_opt
           @ (res_trans_ie.control :: Option.to_list assign_trans_control_opt)
         in
-        PriorityNode.compute_controls_to_parent trans_state_pri sil_loc ~node_name:DeclStmt
-          var_stmt_info all_res_trans
-        |> mk_trans_result var_exp_typ
+        L.debug Capture Verbose "all_res_trans=%a@\n" (Pp.seq ~sep:";" pp_control) all_res_trans ;
+        let control =
+          PriorityNode.compute_controls_to_parent trans_state_pri sil_loc ~node_name:DeclStmt
+            var_stmt_info all_res_trans
+        in
+        L.debug Capture Verbose "combined: %a@." pp_control control ;
+        mk_trans_result var_exp_typ control
 
 
   and collect_all_decl trans_state var_decls next_nodes stmt_info : trans_result =
@@ -2600,9 +2602,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   (** For OpaqueValueExpr we return the translation generated from its source expression*)
   and opaqueValueExpr_trans trans_state opaque_value_expr_info source_range =
-    L.(debug Capture Verbose)
-      "  priority node free = '%s'@\n@."
-      (string_of_bool (PriorityNode.is_priority_free trans_state)) ;
     match trans_state.opaque_exp with
     | Some exp ->
         mk_trans_result exp empty_control
@@ -2658,9 +2657,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
   and cast_exprs_trans trans_state stmt_info stmt_list expr_info ?objc_bridge_cast_kind
       cast_expr_info =
     let context = trans_state.context in
-    L.(debug Capture Verbose)
-      "  priority node free = '%s'@\n@."
-      (string_of_bool (PriorityNode.is_priority_free trans_state)) ;
     let sil_loc =
       CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
     in
@@ -3758,10 +3754,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let {Clang_ast_t.si_pointer}, _ = Clang_ast_proj.get_stmt_tuple instr in
         Format.pp_print_int f si_pointer
       in
-      L.(debug Capture Verbose)
-        "Translating statement '%a' (pointer= '%a')@\n@[<hv2>"
+      L.debug Capture Verbose
+        "Translating statement '%a' (pointer= '%a')@\n@[<hv2>  trans_state=%a@\n"
         (Pp.of_string ~f:Clang_ast_proj.get_stmt_kind_string)
-        instr pp_pointer instr ;
+        instr pp_pointer instr pp_trans_state trans_state ;
       let trans_result =
         try instruction_scope trans_state instr
         with e ->

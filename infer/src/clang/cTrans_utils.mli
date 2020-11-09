@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 
 (** Utility methods to support the translation of clang ast constructs into sil instructions. *)
 
@@ -29,6 +30,8 @@ type trans_state =
   ; is_fst_arg_objc_instance_method_call: bool
   ; passed_as_noescape_block_to: Procname.t option }
 
+val pp_trans_state : F.formatter -> trans_state -> unit
+
 val default_trans_state : CContext.t -> trans_state
 
 (** Part of the translation result that is (loosely) related to control flow graph construction.
@@ -42,6 +45,8 @@ type control =
   ; instrs: Sil.instr list
         (** list of SIL instruction that need to be placed in cfg nodes of the parent*)
   ; initd_exps: Exp.t list  (** list of expressions that are initialised by the instructions *) }
+
+val pp_control : F.formatter -> control -> unit
 
 (** A translation result. It is returned by the translation function. *)
 type trans_result =
