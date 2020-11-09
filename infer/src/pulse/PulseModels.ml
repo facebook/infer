@@ -969,6 +969,46 @@ module ProcNameDispatcher = struct
           $+...$--> Optional.value ~desc:"folly::Optional::value()"
         ; -"folly" &:: "Optional" &:: "value_or" $ capt_arg_payload $+ capt_arg_payload
           $+...$--> Optional.value_or ~desc:"folly::Optional::value_or()"
+          (* std::optional *)
+        ; -"std" &:: "optional" &:: "optional" $ capt_arg_payload
+          $+ any_arg_of_typ (-"std" &:: "nullopt_t")
+          $--> Optional.assign_none ~desc:"std::optional::optional(=nullopt)"
+        ; -"std" &:: "optional" &:: "optional" $ capt_arg_payload
+          $--> Optional.assign_none ~desc:"std::optional::optional()"
+        ; -"std" &:: "optional" &:: "optional" $ capt_arg_payload
+          $+ capt_arg_payload_of_typ (-"std" &:: "optional")
+          $--> Optional.assign_optional_value
+                 ~desc:"std::optional::optional(std::optional<Value> arg)"
+        ; -"std" &:: "optional" &:: "optional" $ capt_arg_payload $+ capt_arg_payload
+          $+...$--> Optional.assign_value ~desc:"std::optional::optional(Value arg)"
+        ; -"std" &:: "optional" &:: "operator=" <>$ capt_arg_payload
+          $+ any_arg_of_typ (-"std" &:: "nullopt_t")
+          $--> Optional.assign_none ~desc:"std::optional::operator=(None)"
+        ; -"std" &:: "optional" &:: "operator=" <>$ capt_arg_payload
+          $+ capt_arg_payload_of_typ (-"std" &:: "optional")
+          $--> Optional.assign_optional_value
+                 ~desc:"std::optional::operator=(std::optional<Value> arg)"
+        ; -"std" &:: "optional" &:: "operator=" <>$ capt_arg_payload $+ capt_arg_payload
+          $+...$--> Optional.assign_value ~desc:"std::optional::operator=(Value arg)"
+        ; -"std" &:: "optional" &:: "emplace<>" $ capt_arg_payload
+          $+...$--> Optional.emplace ~desc:"std::optional::emplace()"
+        ; -"std" &:: "optional" &:: "emplace" $ capt_arg_payload
+          $+...$--> Optional.emplace ~desc:"std::optional::emplace()"
+        ; -"std" &:: "optional" &:: "has_value" <>$ capt_arg_payload
+          $+...$--> Optional.has_value ~desc:"std::optional::has_value()"
+        ; -"std" &:: "optional" &:: "operator_bool" <>$ capt_arg_payload
+          $+...$--> Optional.has_value ~desc:"std::optional::operator_bool()"
+        ; -"std" &:: "optional" &:: "reset" <>$ capt_arg_payload
+          $+...$--> Optional.assign_none ~desc:"std::optional::reset()"
+        ; -"std" &:: "optional" &:: "value" <>$ capt_arg_payload
+          $+...$--> Optional.value ~desc:"std::optional::value()"
+        ; -"std" &:: "optional" &:: "operator*" <>$ capt_arg_payload
+          $+...$--> Optional.value ~desc:"std::optional::operator*()"
+        ; -"std" &:: "optional" &:: "operator->" <>$ capt_arg_payload
+          $+...$--> Optional.value ~desc:"std::optional::operator->()"
+        ; -"std" &:: "optional" &:: "value_or" $ capt_arg_payload $+ capt_arg_payload
+          $+...$--> Optional.value_or ~desc:"std::optional::value_or()"
+          (* end std::optional *)
         ; -"std" &:: "basic_string" &:: "data" <>$ capt_arg_payload $--> StdBasicString.data
         ; -"std" &:: "basic_string" &:: "~basic_string" <>$ capt_arg_payload
           $--> StdBasicString.destructor

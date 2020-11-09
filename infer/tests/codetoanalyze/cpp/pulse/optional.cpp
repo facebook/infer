@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <string>
+#include <optional>
 
 namespace folly {
 
@@ -184,4 +185,95 @@ struct StringWrapper {
 
 std::string get_optional_string_wrapper_ok() {
   return StringWrapper::get_optional().value().x.data();
+}
+
+int std_not_none_ok() {
+  std::optional<int> foo{5};
+  return foo.value();
+}
+
+int std_not_none_check_value_ok_FP() {
+  std::optional<int> foo{5};
+  int x = foo.value();
+  if (x != 5) {
+    std::optional<int> foo{std::nullopt};
+    return foo.value();
+  }
+  return x;
+}
+
+int std_none_check_ok() {
+  std::optional<int> foo{std::nullopt};
+  if (foo) {
+    return foo.value();
+  }
+  return -1;
+}
+
+int std_none_no_check_bad() {
+  std::optional<int> foo{std::nullopt};
+  return foo.value();
+}
+
+int std_none_copy_ok() {
+  std::optional<int> foo{5};
+  std::optional<int> bar{foo};
+  return bar.value();
+}
+
+int std_none_copy_bad() {
+  std::optional<int> foo{std::nullopt};
+  std::optional<int> bar{foo};
+  return bar.value();
+}
+
+int std_assign_ok() {
+  std::optional<int> foo{5};
+  std::optional<int> bar{foo};
+  foo = std::nullopt;
+  return bar.value();
+}
+
+int std_assign_bad() {
+  std::optional<int> foo{std::nullopt};
+  std::optional<int> bar{5};
+  int sum = bar.value();
+  bar = foo;
+  sum += bar.value();
+  return sum;
+}
+
+int std_assign2_bad() {
+  std::optional<int> foo{5};
+  int sum = foo.value();
+  foo = std::nullopt;
+  sum += foo.value();
+  return sum;
+}
+
+void std_emplace(std::optional<State> state) {
+  if (state) {
+    state.emplace();
+  }
+  auto pos = state->vec.begin();
+}
+
+void std_operator_arrow_bad() { std_emplace(std::nullopt); }
+
+int std_value_or_check_empty_ok() {
+  std::optional<int> foo{std::nullopt};
+  if (foo.value_or(0) > 0) {
+    return foo.value();
+  }
+  return -1;
+}
+
+int std_value_or_check_value_ok_FP() {
+  std::optional<int> foo{5};
+  int x = foo.value_or(0);
+  if (x != 5) {
+    std::optional<int> foo{std::nullopt};
+    return foo.value();
+  }
+  return -1;
 }
