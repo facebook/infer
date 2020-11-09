@@ -6,6 +6,7 @@
  */
 
 #include <vector>
+#include <string>
 
 namespace folly {
 
@@ -51,6 +52,7 @@ class Optional {
   void reset() noexcept;
 
   constexpr Value& value() &;
+  constexpr const Value& value() const&;
 
   constexpr bool has_value() const noexcept;
 
@@ -70,7 +72,9 @@ int not_none_ok() {
   return foo.value();
 }
 
-int not_none_check_value_ok() {
+// missing a more precise model for
+// constructing an optional from a value
+int not_none_check_value_ok_FP() {
   folly::Optional<int> foo{5};
   int x = foo.value();
   if (x != 5) {
@@ -150,7 +154,9 @@ int value_or_check_empty_ok() {
   return -1;
 }
 
-int value_or_check_value_ok() {
+// missing a more precise model for
+// constructing an optional from a value
+int value_or_check_value_ok_FP() {
   folly::Optional<int> foo{5};
   int x = foo.value_or(0);
   if (x != 5) {
@@ -167,4 +173,15 @@ int test_trace_ref() {
   int& x = foo.value();
   sum += x;
   return sum;
+}
+
+struct StringWrapper {
+  static folly::Optional<StringWrapper> get_optional() {
+    return StringWrapper();
+  };
+  std::string x;
+};
+
+std::string get_optional_string_wrapper_ok() {
+  return StringWrapper::get_optional().value().x.data();
 }

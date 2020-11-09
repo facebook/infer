@@ -216,11 +216,11 @@ module Optional = struct
     [ExecutionDomain.ContinueProgram astate]
 
 
-  let assign_value this value ~desc : model =
+  let assign_value this _value ~desc : model =
    fun _ ~callee_procname:_ location ~ret:_ astate ->
-    let* astate, value_copy = PulseOperations.shallow_copy location value astate in
-    let+ astate, value_deref = write_value location this ~value:value_copy ~desc astate in
-    let astate = PulseArithmetic.and_positive (fst value_deref) astate in
+    (* TODO: call the copy constructor of a value *)
+    let+ astate, value = assign_value_fresh location this ~desc astate in
+    let astate = PulseArithmetic.and_positive (fst value) astate in
     [ExecutionDomain.ContinueProgram astate]
 
 
