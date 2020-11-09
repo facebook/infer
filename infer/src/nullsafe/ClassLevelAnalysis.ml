@@ -186,6 +186,7 @@ let report_meta_issue_for_top_level_class tenv source_file class_name class_stru
       Jsonbug_t.
         { class_name
         ; package
+        ; method_info= None
         ; meta_issue_info= Some meta_issue_info
         ; unvetted_3rd_party= None
         ; nullable_methods= None
@@ -218,6 +219,7 @@ let analyze_nullsafe_annotations tenv source_file class_name class_struct issue_
     Jsonbug_t.
       { class_name
       ; package
+      ; method_info= None
       ; meta_issue_info= None
       ; unvetted_3rd_party= None
       ; nullable_methods= None
@@ -266,6 +268,7 @@ let report_annotation_graph source_file class_name class_struct annotation_graph
     Jsonbug_t.
       { class_name
       ; package
+      ; method_info= None
       ; meta_issue_info= None
       ; unvetted_3rd_party= None
       ; nullable_methods= None

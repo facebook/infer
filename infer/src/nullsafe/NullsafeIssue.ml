@@ -86,6 +86,8 @@ let to_nullable_method_json nullable_methods =
         ; call_line= call_loc.Location.line } )
 
 
+let java_type_to_string java_type = Pp.string_of_pp (Typ.pp_java ~verbose:true) java_type
+
 let get_nullsafe_extra {third_party_dependent_methods; nullable_methods; field_name} proc_name =
   let class_name = Procname.Java.get_simple_class_name proc_name in
   let package = Procname.Java.get_package proc_name in
@@ -110,9 +112,12 @@ let get_nullsafe_extra {third_party_dependent_methods; nullable_methods; field_n
           ; package_name= JavaClassName.package java_class_name
           ; field } )
   in
+  let method_params = Procname.Java.get_parameters proc_name |> List.map ~f:java_type_to_string in
+  let method_info = Jsonbug_t.{name= Procname.Java.get_method proc_name; params= method_params} in
   Jsonbug_t.
     { class_name
     ; package
+    ; method_info= Some method_info
     ; meta_issue_info= None
     ; unvetted_3rd_party
     ; nullable_methods
