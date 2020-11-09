@@ -91,7 +91,7 @@ let describe f cause =
       in
       F.fprintf f "%a whose lifetime has ended" pp_var pvar
   | OptionalEmpty ->
-      F.pp_print_string f "is folly::None"
+      F.pp_print_string f "is optional empty"
   | StdVector std_vector_f ->
       F.fprintf f "was potentially invalidated by `%a()`" pp_std_vector_function std_vector_f
   | JavaIterator java_iterator_f ->
