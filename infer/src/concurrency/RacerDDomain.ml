@@ -8,7 +8,24 @@
 open! IStd
 module AccessExpression = HilExp.AccessExpression
 module F = Format
+module L = Logging
 module MF = MarkupFormatter
+
+let rec accexp_of_hilexp hil_exp =
+  match (hil_exp : HilExp.t) with
+  | AccessExpression access_expr ->
+      Some access_expr
+  | Cast (_, e) | Exception e ->
+      accexp_of_hilexp e
+  | _ ->
+      None
+
+
+let accexp_of_first_hilexp actuals = List.hd actuals |> Option.bind ~f:accexp_of_hilexp
+
+let apply_to_first_actual actuals astate ~f =
+  accexp_of_first_hilexp actuals |> Option.value_map ~default:astate ~f
+
 
 let pp_exp fmt exp =
   match !Language.curr_language with
@@ -349,8 +366,7 @@ module OwnershipDomain = struct
           get_owned prefix astate )
 
 
-  let rec ownership_of_expr expr ownership =
-    let open HilExp in
+  let rec ownership_of_expr (expr : HilExp.t) ownership =
     match expr with
     | AccessExpression access_expr ->
         get_owned access_expr ownership
@@ -544,20 +560,13 @@ let pp fmt {threads; locks; accesses; ownership; attribute_map} =
 
 
 let add_unannotated_call_access formals pname actuals loc (astate : t) =
-  match actuals with
-  | [] ->
-      astate
-  | receiver_hilexp :: _ -> (
-    match HilExp.get_access_exprs receiver_hilexp with
-    | [] | _ :: _ :: _ ->
-        (* if no access exps involved, or if more than one (should be impossible), ignore *)
-        astate
-    | [receiver] ->
-        let snapshot =
-          AccessSnapshot.make_unannotated_call_access formals receiver pname astate.locks
-            astate.threads Unowned loc
-        in
-        {astate with accesses= AccessDomain.add_opt snapshot astate.accesses} )
+  apply_to_first_actual actuals astate ~f:(fun receiver ->
+      let access_opt =
+        (* FIXME this should use the ownership of the receiver! *)
+        AccessSnapshot.make_unannotated_call_access formals receiver pname astate.locks
+          astate.threads Unowned loc
+      in
+      {astate with accesses= AccessDomain.add_opt access_opt astate.accesses} )
 
 
 let astate_to_summary proc_desc formals {threads; locks; accesses; ownership; attribute_map} =
@@ -582,3 +591,58 @@ let astate_to_summary proc_desc formals {threads; locks; accesses; ownership; at
     else AttributeMapDomain.top
   in
   {threads; locks; accesses; return_ownership; return_attribute; attributes}
+
+
+let add_access tenv formals loc ~is_write (astate : t) exp =
+  let rec add_field_accesses prefix_path acc = function
+    | [] ->
+        acc
+    | access :: access_list ->
+        let prefix_path' = Option.value_exn (AccessExpression.add_access prefix_path access) in
+        if
+          (not (HilExp.Access.is_field_or_array_access access))
+          || RacerDModels.is_safe_access access prefix_path tenv
+        then add_field_accesses prefix_path' acc access_list
+        else
+          let is_write = is_write && List.is_empty access_list in
+          let pre = OwnershipDomain.get_owned prefix_path astate.ownership in
+          let snapshot_opt =
+            AccessSnapshot.make_access formals prefix_path' ~is_write loc astate.locks
+              astate.threads pre
+          in
+          let access_acc' = AccessDomain.add_opt snapshot_opt acc in
+          add_field_accesses prefix_path' access_acc' access_list
+  in
+  let accesses =
+    List.fold (HilExp.get_access_exprs exp) ~init:astate.accesses ~f:(fun acc access_expr ->
+        let base, accesses = AccessExpression.to_accesses access_expr in
+        add_field_accesses base acc accesses )
+  in
+  {astate with accesses}
+
+
+let add_container_access tenv formals ~is_write ret_base callee_pname actuals loc (astate : t) =
+  match accexp_of_first_hilexp actuals with
+  | None ->
+      L.internal_error "Call to %a is marked as a container access, but has no receiver" Procname.pp
+        callee_pname ;
+      astate
+  | Some receiver_expr
+    when AttributeMapDomain.is_synchronized astate.attribute_map receiver_expr
+         || RacerDModels.is_synchronized_container callee_pname receiver_expr tenv ->
+      astate
+  | Some receiver_expr ->
+      let ownership_pre = OwnershipDomain.get_owned receiver_expr astate.ownership in
+      let callee_access_opt =
+        AccessSnapshot.make_container_access formals receiver_expr ~is_write callee_pname loc
+          astate.locks astate.threads ownership_pre
+      in
+      let ownership =
+        OwnershipDomain.add (AccessExpression.base ret_base) ownership_pre astate.ownership
+      in
+      let accesses = AccessDomain.add_opt callee_access_opt astate.accesses in
+      {astate with accesses; ownership}
+
+
+let add_reads_of_hilexps tenv formals exps loc astate =
+  List.fold exps ~init:astate ~f:(add_access tenv formals loc ~is_write:false)

@@ -9,6 +9,10 @@ open! IStd
 module AccessExpression = HilExp.AccessExpression
 module F = Format
 
+val accexp_of_hilexp : HilExp.t -> HilExp.access_expression option
+
+val apply_to_first_actual : HilExp.t list -> 'a -> f:(HilExp.access_expression -> 'a) -> 'a
+
 val pp_exp : F.formatter -> AccessExpression.t -> unit
 (** language sensitive pretty-printer *)
 
@@ -27,7 +31,7 @@ module Access : sig
   val get_access_exp : t -> AccessExpression.t
 end
 
-(** Overapproximation of number of time the lock has been acquired *)
+(** Overapproximation of number of times the lock has been acquired *)
 module LockDomain : sig
   include AbstractDomain.WithBottom
 
@@ -99,27 +103,6 @@ module AccessSnapshot : sig
 
   val get_loc : t -> Location.t
 
-  val make_access :
-       FormalMap.t
-    -> AccessExpression.t
-    -> is_write:bool
-    -> Location.t
-    -> LockDomain.t
-    -> ThreadsDomain.t
-    -> OwnershipAbstractValue.t
-    -> t option
-
-  val make_container_access :
-       FormalMap.t
-    -> AccessExpression.t
-    -> is_write:bool
-    -> Procname.t
-    -> Location.t
-    -> LockDomain.t
-    -> ThreadsDomain.t
-    -> OwnershipAbstractValue.t
-    -> t option
-
   val is_unprotected : t -> bool
   (** return true if not protected by lock, thread, or ownership *)
 
@@ -148,8 +131,6 @@ module OwnershipDomain : sig
 
   val add : AccessExpression.t -> OwnershipAbstractValue.t -> t -> t
 
-  val get_owned : AccessExpression.t -> t -> OwnershipAbstractValue.t
-
   val propagate_assignment : AccessExpression.t -> HilExp.t -> t -> t
 
   val propagate_return : AccessExpression.t -> OwnershipAbstractValue.t -> HilExp.t list -> t -> t
@@ -174,8 +155,6 @@ module AttributeMapDomain : sig
   (** find the [Attribute.t] associated with a given access expression or return [Attribute.bottom] *)
 
   val is_functional : t -> AccessExpression.t -> bool
-
-  val is_synchronized : t -> AccessExpression.t -> bool
 
   val propagate_assignment : AccessExpression.t -> HilExp.t -> t -> t
   (** propagate attributes from the leaves to the root of an RHS Hil expression *)
@@ -210,3 +189,18 @@ val empty_summary : summary
 val pp_summary : F.formatter -> summary -> unit
 
 val astate_to_summary : Procdesc.t -> FormalMap.t -> t -> summary
+
+val add_access : Tenv.t -> FormalMap.t -> Location.t -> is_write:bool -> t -> HilExp.t -> t
+
+val add_container_access :
+     Tenv.t
+  -> FormalMap.t
+  -> is_write:bool
+  -> AccessPath.base
+  -> Procname.t
+  -> HilExp.t list
+  -> Location.t
+  -> t
+  -> t
+
+val add_reads_of_hilexps : Tenv.t -> FormalMap.t -> HilExp.t list -> Location.t -> t -> t
