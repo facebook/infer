@@ -58,7 +58,7 @@ type annotation_point = {
 
 type field_name = {
   class_name: string;
-  package_name: string option;
+  package_name: string nullable;
   field: string;
 }
 
