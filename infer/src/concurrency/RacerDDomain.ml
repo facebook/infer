@@ -346,6 +346,26 @@ module AccessDomain = struct
 
   let add_opt snapshot_opt astate =
     Option.fold snapshot_opt ~init:astate ~f:(fun acc s -> add s acc)
+
+
+  let subst_actuals_into_formals ~caller_formals ~caller_actuals accesses ~callee_formals =
+    if is_empty accesses then accesses
+    else
+      let actuals_array = Array.of_list_map caller_actuals ~f:accexp_of_hilexp in
+      let expand_exp exp =
+        match FormalMap.get_formal_index (AccessExpression.get_base exp) callee_formals with
+        | None ->
+            exp
+        | Some formal_index when formal_index >= Array.length actuals_array ->
+            exp
+        | Some formal_index -> (
+          match actuals_array.(formal_index) with
+          | None ->
+              exp
+          | Some actual ->
+              AccessExpression.append ~onto:actual exp |> Option.value ~default:exp )
+      in
+      filter_map (AccessSnapshot.map_opt caller_formals ~f:expand_exp) accesses
 end
 
 module OwnershipDomain = struct
@@ -646,3 +666,40 @@ let add_container_access tenv formals ~is_write ret_base callee_pname actuals lo
 
 let add_reads_of_hilexps tenv formals exps loc astate =
   List.fold exps ~init:astate ~f:(add_access tenv formals loc ~is_write:false)
+
+
+let add_callee_accesses ~caller_formals ~callee_formals ~callee_accesses callee_pname actuals loc
+    (caller_astate : t) =
+  let callsite = CallSite.make callee_pname loc in
+  let callee_accesses =
+    AccessDomain.subst_actuals_into_formals ~caller_formals ~caller_actuals:actuals callee_accesses
+      ~callee_formals
+  in
+  let actuals_ownership =
+    (* precompute array holding ownership of each actual for fast random access *)
+    Array.of_list_map actuals ~f:(fun actual_exp ->
+        OwnershipDomain.ownership_of_expr actual_exp caller_astate.ownership )
+  in
+  let update_ownership_precondition actual_index (acc : OwnershipAbstractValue.t) =
+    if actual_index >= Array.length actuals_ownership then
+      (* vararg methods can result into missing actuals so simply ignore *)
+      acc
+    else OwnershipAbstractValue.join acc actuals_ownership.(actual_index)
+  in
+  let update_callee_access (snapshot : AccessSnapshot.t) acc =
+    (* update precondition with caller ownership info *)
+    let ownership_precondition =
+      match snapshot.elem.ownership_precondition with
+      | OwnedIf indexes ->
+          IntSet.fold update_ownership_precondition indexes OwnershipAbstractValue.owned
+      | Unowned ->
+          snapshot.elem.ownership_precondition
+    in
+    let snapshot_opt =
+      AccessSnapshot.update_callee_access caller_formals snapshot callsite ownership_precondition
+        caller_astate.threads caller_astate.locks
+    in
+    AccessDomain.add_opt snapshot_opt acc
+  in
+  let accesses = AccessDomain.fold update_callee_access callee_accesses caller_astate.accesses in
+  {caller_astate with accesses}

@@ -9,8 +9,6 @@ open! IStd
 module AccessExpression = HilExp.AccessExpression
 module F = Format
 
-val accexp_of_hilexp : HilExp.t -> HilExp.access_expression option
-
 val apply_to_first_actual : HilExp.t list -> 'a -> f:(HilExp.access_expression -> 'a) -> 'a
 
 val pp_exp : F.formatter -> AccessExpression.t -> unit
@@ -79,8 +77,6 @@ module OwnershipAbstractValue : sig
   val owned : t
 
   val make_owned_if : int -> t
-
-  val join : t -> t -> t
 end
 
 (** snapshot of the relevant state at the time of a heap access: concurrent thread(s), lock(s) held,
@@ -105,24 +101,9 @@ module AccessSnapshot : sig
 
   val is_unprotected : t -> bool
   (** return true if not protected by lock, thread, or ownership *)
-
-  val map_opt : FormalMap.t -> f:(AccessExpression.t -> AccessExpression.t) -> t -> t option
-
-  val update_callee_access :
-       FormalMap.t
-    -> t
-    -> CallSite.t
-    -> OwnershipAbstractValue.t
-    -> ThreadsDomain.t
-    -> LockDomain.t
-    -> t option
 end
 
-module AccessDomain : sig
-  include AbstractDomain.FiniteSetS with type elt = AccessSnapshot.t
-
-  val add_opt : elt option -> t -> t
-end
+module AccessDomain : AbstractDomain.FiniteSetS with type elt = AccessSnapshot.t
 
 module OwnershipDomain : sig
   type t
@@ -134,8 +115,6 @@ module OwnershipDomain : sig
   val propagate_assignment : AccessExpression.t -> HilExp.t -> t -> t
 
   val propagate_return : AccessExpression.t -> OwnershipAbstractValue.t -> HilExp.t list -> t -> t
-
-  val ownership_of_expr : HilExp.t -> t -> OwnershipAbstractValue.t
 end
 
 module Attribute : sig
@@ -204,3 +183,13 @@ val add_container_access :
   -> t
 
 val add_reads_of_hilexps : Tenv.t -> FormalMap.t -> HilExp.t list -> Location.t -> t -> t
+
+val add_callee_accesses :
+     caller_formals:FormalMap.t
+  -> callee_formals:FormalMap.t
+  -> callee_accesses:AccessDomain.t
+  -> Procname.t
+  -> HilExp.t list
+  -> Location.t
+  -> t
+  -> t

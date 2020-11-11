@@ -20,70 +20,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type nonrec analysis_data = analysis_data
 
-  let expand_actuals formals actuals accesses pdesc =
-    (* FIXME fix quadratic order with an array-backed substitution *)
+  let call_without_summary tenv ret_base callee_pname actuals astate =
     let open Domain in
-    if AccessDomain.is_empty accesses then accesses
-    else
-      let formal_map = FormalMap.make pdesc in
-      let expand_exp exp =
-        match FormalMap.get_formal_index (AccessExpression.get_base exp) formal_map with
-        | Some formal_index -> (
-          match List.nth actuals formal_index with
-          | Some actual_exp -> (
-            match accexp_of_hilexp actual_exp with
-            | Some actual ->
-                AccessExpression.append ~onto:actual exp |> Option.value ~default:exp
-            | None ->
-                exp )
-          | None ->
-              exp )
-        | None ->
-            exp
-      in
-      let add snapshot acc =
-        let snapshot_opt' = AccessSnapshot.map_opt formals ~f:expand_exp snapshot in
-        AccessDomain.add_opt snapshot_opt' acc
-      in
-      AccessDomain.fold add accesses AccessDomain.empty
-
-
-  let add_callee_accesses formals (caller_astate : Domain.t) callee_accesses locks threads actuals
-      callee_pname loc =
-    let open Domain in
-    let callsite = CallSite.make callee_pname loc in
-    let actuals_ownership =
-      (* precompute array holding ownership of each actual for fast random access *)
-      Array.of_list_map actuals ~f:(fun actual_exp ->
-          OwnershipDomain.ownership_of_expr actual_exp caller_astate.ownership )
-    in
-    let update_ownership_precondition actual_index (acc : OwnershipAbstractValue.t) =
-      if actual_index >= Array.length actuals_ownership then
-        (* vararg methods can result into missing actuals so simply ignore *)
-        acc
-      else OwnershipAbstractValue.join acc actuals_ownership.(actual_index)
-    in
-    let update_callee_access (snapshot : AccessSnapshot.t) acc =
-      (* update precondition with caller ownership info *)
-      let ownership_precondition =
-        match snapshot.elem.ownership_precondition with
-        | OwnedIf indexes ->
-            IntSet.fold update_ownership_precondition indexes OwnershipAbstractValue.owned
-        | Unowned ->
-            snapshot.elem.ownership_precondition
-      in
-      let snapshot_opt =
-        AccessSnapshot.update_callee_access formals snapshot callsite ownership_precondition threads
-          locks
-      in
-      AccessDomain.add_opt snapshot_opt acc
-    in
-    AccessDomain.fold update_callee_access callee_accesses caller_astate.accesses
-
-
-  let call_without_summary tenv callee_pname ret_base actuals astate =
-    let open RacerDModels in
-    let open RacerDDomain in
     if RacerDModels.is_synchronized_container_constructor tenv callee_pname actuals then
       apply_to_first_actual actuals astate ~f:(fun receiver ->
           let attribute_map = AttributeMapDomain.add receiver Synchronized astate.attribute_map in
@@ -93,7 +31,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         AttributeMapDomain.add (AccessExpression.base ret_base) Synchronized astate.attribute_map
       in
       {astate with attribute_map}
-    else if is_box callee_pname then
+    else if RacerDModels.is_box callee_pname then
       apply_to_first_actual actuals astate ~f:(fun actual_access_expr ->
           if AttributeMapDomain.is_functional astate.attribute_map actual_access_expr then
             (* TODO: check for constants, which are functional? *)
@@ -176,36 +114,30 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         | GuardConstruct {acquire_now= false} ->
             astate
         | NoEffect -> (
-            let rebased_summary_opt =
-              analyze_dependency callee_pname
-              |> Option.map ~f:(fun (callee_proc_desc, summary) ->
-                     let rebased_accesses =
-                       expand_actuals formals actuals summary.accesses callee_proc_desc
-                     in
-                     {summary with accesses= rebased_accesses} )
-            in
-            match rebased_summary_opt with
-            | Some {threads; locks; accesses; return_ownership; return_attribute} ->
-                let locks =
-                  LockDomain.integrate_summary ~caller_astate:astate.locks ~callee_astate:locks
-                in
-                let accesses =
-                  add_callee_accesses formals astate accesses locks threads actuals callee_pname loc
-                in
-                let ownership =
-                  OwnershipDomain.propagate_return ret_access_exp return_ownership actuals
-                    astate.ownership
-                in
-                let attribute_map =
-                  AttributeMapDomain.add ret_access_exp return_attribute astate.attribute_map
-                in
-                let threads =
-                  ThreadsDomain.integrate_summary ~caller_astate:astate.threads
-                    ~callee_astate:threads
-                in
-                {locks; threads; accesses; ownership; attribute_map}
-            | None ->
-                call_without_summary tenv callee_pname ret_base actuals astate )
+          match analyze_dependency callee_pname with
+          | Some (callee_proc_desc, summary) ->
+              let callee_formals = FormalMap.make callee_proc_desc in
+              let {threads; locks; return_ownership; return_attribute} = summary in
+              let astate =
+                Domain.add_callee_accesses ~caller_formals:formals ~callee_formals
+                  ~callee_accesses:summary.accesses callee_pname actuals loc astate
+              in
+              let locks =
+                LockDomain.integrate_summary ~caller_astate:astate.locks ~callee_astate:locks
+              in
+              let ownership =
+                OwnershipDomain.propagate_return ret_access_exp return_ownership actuals
+                  astate.ownership
+              in
+              let attribute_map =
+                AttributeMapDomain.add ret_access_exp return_attribute astate.attribute_map
+              in
+              let threads =
+                ThreadsDomain.integrate_summary ~caller_astate:astate.threads ~callee_astate:threads
+              in
+              {astate with locks; threads; ownership; attribute_map}
+          | None ->
+              call_without_summary tenv ret_base callee_pname actuals astate )
     in
     let add_if_annotated predicate attribute attribute_map =
       if PatternMatch.override_exists predicate tenv callee_pname then
