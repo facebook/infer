@@ -474,6 +474,13 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Procname.t
             Typ.mk (Typ.Tptr (Typ.mk (Tstruct name), Pk_pointer))
         | None ->
             fallback_typ )
+    | Procname.CSharp pname_csharp -> (
+        let name = Procname.CSharp.get_class_type_name pname_csharp in
+        match Tenv.lookup tenv name with
+        | Some _ ->
+            Typ.mk (Typ.Tptr (Typ.mk (Tstruct name), Pk_pointer))
+        | None ->
+            fallback_typ )
     | _ ->
         fallback_typ
   in

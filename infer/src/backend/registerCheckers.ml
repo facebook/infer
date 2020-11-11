@@ -129,7 +129,8 @@ let all_checkers =
   ; {checker= Uninit; callbacks= [(interprocedural Payloads.Fields.uninit Uninit.checker, Clang)]}
   ; {checker= SIOF; callbacks= [(interprocedural Payloads.Fields.siof Siof.checker, Clang)]}
   ; { checker= LithoRequiredProps
-    ; callbacks= [(interprocedural Payloads.Fields.litho_required_props RequiredProps.checker, Java)]
+    ; callbacks= [(interprocedural Payloads.Fields.litho_required_props RequiredProps.checker, Java)
+                 ;(interprocedural Payloads.Fields.litho_required_props RequiredProps.checker, CIL)]
     }
   ; (* toy resource analysis to use in the infer lab, see the lab/ directory *)
     { checker= ResourceLeakLabExercise
@@ -137,16 +138,19 @@ let all_checkers =
         [ ( (* the checked-in version is intraprocedural, but the lab asks to make it
                interprocedural later on *)
             interprocedural Payloads.Fields.lab_resource_leaks ResourceLeaks.checker
-          , Java ) ] }
+          , Java )
+          ;( interprocedural Payloads.Fields.lab_resource_leaks ResourceLeaks.checker
+          , CIL ) ] }
   ; { checker= RacerD
     ; callbacks=
         (let racerd_proc = interprocedural Payloads.Fields.racerd RacerD.analyze_procedure in
          let racerd_file = file RacerDIssues Payloads.Fields.racerd RacerD.file_analysis in
-         [(racerd_proc, Clang); (racerd_proc, Java); (racerd_proc, CIL); (racerd_file, Clang); (racerd_file, Java); (racerd_file, CIL)] ) }
+         [(racerd_proc, Clang); (racerd_proc, Java); (racerd_file, Clang); (racerd_file, Java)] ) }
   ; { checker= Quandary
     ; callbacks=
         [ (interprocedural Payloads.Fields.quandary JavaTaintAnalysis.checker, Java)
-        ; (interprocedural Payloads.Fields.quandary ClangTaintAnalysis.checker, Clang) ] }
+        ; (interprocedural Payloads.Fields.quandary ClangTaintAnalysis.checker, Clang)
+        ; (interprocedural Payloads.Fields.quandary JavaTaintAnalysis.checker, CIL) ] }
   ; { checker= Pulse
     ; callbacks=
         (let checker =
@@ -154,27 +158,33 @@ let all_checkers =
            else Pulse.checker
          in
          let pulse = interprocedural Payloads.Fields.pulse checker in
-         [(pulse, Clang); (pulse, Java)] ) }
+         [(pulse, Clang); (pulse, Java); (pulse, CIL)] ) }
   ; { checker= Impurity
     ; callbacks=
         (let impurity =
            intraprocedural_with_field_dependency Payloads.Fields.pulse Impurity.checker
          in
-         [(impurity, Java); (impurity, Clang)] ) }
-  ; {checker= PrintfArgs; callbacks= [(intraprocedural PrintfArgs.checker, Java)]}
+         [(impurity, Java); (impurity, Clang); (impurity, CIL)] ) }
+  ; {checker= PrintfArgs; callbacks= [(intraprocedural PrintfArgs.checker, Java)
+                                     ;(intraprocedural PrintfArgs.checker, CIL)]}
   ; {checker= Liveness; callbacks= [(intraprocedural Liveness.checker, Clang)]}
   ; { checker= InefficientKeysetIterator
-    ; callbacks= [(intraprocedural InefficientKeysetIterator.checker, Java)] }
+    ; callbacks= [(intraprocedural InefficientKeysetIterator.checker, Java)
+                 ;(intraprocedural InefficientKeysetIterator.checker, CIL)] }
   ; { checker= ImmutableCast
     ; callbacks=
-        [(intraprocedural_with_payload Payloads.Fields.nullsafe ImmutableChecker.analyze, Java)] }
+        [(intraprocedural_with_payload Payloads.Fields.nullsafe ImmutableChecker.analyze, Java)
+        ;(intraprocedural_with_payload Payloads.Fields.nullsafe ImmutableChecker.analyze, CIL)] }
   ; { checker= FragmentRetainsView
-    ; callbacks= [(intraprocedural FragmentRetainsViewChecker.callback_fragment_retains_view, Java)]
+    ; callbacks= [(intraprocedural FragmentRetainsViewChecker.callback_fragment_retains_view, Java)
+                 ;(intraprocedural FragmentRetainsViewChecker.callback_fragment_retains_view, CIL)]
     }
   ; { checker= Eradicate
     ; callbacks=
         [ (intraprocedural_with_payload Payloads.Fields.nullsafe Eradicate.analyze_procedure, Java)
-        ; (file NullsafeFileIssues Payloads.Fields.nullsafe FileLevelAnalysis.analyze_file, Java) ]
+        ; (file NullsafeFileIssues Payloads.Fields.nullsafe FileLevelAnalysis.analyze_file, Java)
+        ; (intraprocedural_with_payload Payloads.Fields.nullsafe Eradicate.analyze_procedure, CIL)
+        ; (file NullsafeFileIssues Payloads.Fields.nullsafe FileLevelAnalysis.analyze_file, CIL) ]
     }
   ; { checker= Biabduction
     ; callbacks=
@@ -184,20 +194,20 @@ let all_checkers =
                Topl.analyze_with_biabduction Interproc.analyze_procedure
              else Interproc.analyze_procedure )
          in
-         [(biabduction, Clang); (biabduction, Java)] ) }
+         [(biabduction, Clang); (biabduction, Java); (biabduction, CIL)] ) }
   ; { checker= AnnotationReachability
     ; callbacks=
         (let annot_reach =
            interprocedural Payloads.Fields.annot_map AnnotationReachability.checker
          in
-         [(annot_reach, Java); (annot_reach, Clang)] ) }
+         [(annot_reach, Java); (annot_reach, Clang); (annot_reach, CIL)] ) }
   ; { checker= ConfigChecksBetweenMarkers
     ; callbacks=
         (let checker =
            interprocedural Payloads.Fields.config_checks_between_markers
              ConfigChecksBetweenMarkers.checker
          in
-         [(checker, Clang); (checker, Java)] ) } ]
+         [(checker, Clang); (checker, Java); (checker, CIL)] ) } ]
 
 
 let get_active_checkers () =
