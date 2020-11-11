@@ -225,6 +225,7 @@ end = struct
     ; ( "EXECUTION_TIME_UNREACHABLE_AT_EXIT"
       , [%blob "../../documentation/issues/EXECUTION_TIME_UNREACHABLE_AT_EXIT.md"] )
     ; ("INFINITE_EXECUTION_TIME", [%blob "../../documentation/issues/INFINITE_EXECUTION_TIME.md"])
+    ; ("EXPENSIVE_EXECUTION_TIME", [%blob "../../documentation/issues/EXPENSIVE_EXECUTION_TIME.md"])
     ; ( "AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE"
       , [%blob "../../documentation/issues/AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE.md"] )
     ; ( "AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE_UI_THREAD"
@@ -233,7 +234,9 @@ end = struct
     ; ( "AUTORELEASEPOOL_SIZE_UNREACHABLE_AT_EXIT"
       , [%blob "../../documentation/issues/AUTORELEASEPOOL_SIZE_UNREACHABLE_AT_EXIT.md"] )
     ; ( "INFINITE_AUTORELEASEPOOL_SIZE"
-      , [%blob "../../documentation/issues/INFINITE_AUTORELEASEPOOL_SIZE.md"] ) ]
+      , [%blob "../../documentation/issues/INFINITE_AUTORELEASEPOOL_SIZE.md"] )
+    ; ( "EXPENSIVE_AUTORELEASEPOOL_SIZE"
+      , [%blob "../../documentation/issues/EXPENSIVE_AUTORELEASEPOOL_SIZE.md"] ) ]
 
 
   (** cost issues are already registered below.*)
@@ -589,6 +592,8 @@ let eradicate_meta_class_can_be_nullsafe =
 let exposed_insecure_intent_handling =
   register ~id:"EXPOSED_INSECURE_INTENT_HANDLING" Error Quandary ~user_documentation:"Undocumented."
 
+
+let expensive_cost_call ~kind = register_cost ~enabled:false "EXPENSIVE_%s" ~kind
 
 let failure_exe = register_hidden ~is_silent:true ~id:"Failure_exe" Info Biabduction
 

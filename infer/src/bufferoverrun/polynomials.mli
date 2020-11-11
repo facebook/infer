@@ -16,6 +16,8 @@ module Degree : sig
 
   val encode_to_int : t -> int
   (** Encodes the complex type [t] to an integer that can be used for comparison. *)
+
+  val is_constant : t -> bool
 end
 
 module NonNegativeNonTopPolynomial : sig

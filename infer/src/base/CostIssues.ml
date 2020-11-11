@@ -12,7 +12,9 @@ type issue_spec =
   ; complexity_increase_issue: is_on_ui_thread:bool -> IssueType.t
   ; unreachable_issue: IssueType.t
   ; infinite_issue: IssueType.t
-  ; top_and_unreachable: bool }
+  ; expensive_issue: IssueType.t
+  ; top_and_unreachable: bool
+  ; expensive: bool }
 
 module CostKindMap = struct
   include PrettyPrintable.MakePPMap (CostKind)
@@ -32,7 +34,7 @@ end
 
 let enabled_cost_map =
   List.fold CostKind.enabled_cost_kinds ~init:CostKindMap.empty
-    ~f:(fun acc CostKind.{kind; top_and_unreachable} ->
+    ~f:(fun acc CostKind.{kind; top_and_unreachable; expensive} ->
       let kind_spec =
         { name= Format.asprintf "The %a" CostKind.pp kind
         ; extract_cost_f= (fun c -> CostKind.to_json_cost_info c kind)
@@ -40,6 +42,8 @@ let enabled_cost_map =
             (fun ~is_on_ui_thread -> IssueType.complexity_increase ~kind ~is_on_ui_thread)
         ; unreachable_issue= IssueType.unreachable_cost_call ~kind
         ; infinite_issue= IssueType.infinite_cost_call ~kind
-        ; top_and_unreachable }
+        ; expensive_issue= IssueType.expensive_cost_call ~kind
+        ; top_and_unreachable
+        ; expensive }
       in
       CostKindMap.add kind kind_spec acc )

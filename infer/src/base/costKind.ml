@@ -49,8 +49,8 @@ let to_json_cost_info c = function
       c.Jsonbug_t.autoreleasepool_size
 
 
-type kind_spec = {kind: t; (* for non-diff analysis *) top_and_unreachable: bool}
+type kind_spec = {kind: t; (* for non-diff analysis *) top_and_unreachable: bool; expensive: bool}
 
 let enabled_cost_kinds =
-  [ {kind= OperationCost; top_and_unreachable= true}
-  ; {kind= AutoreleasepoolSize; top_and_unreachable= true} ]
+  [ {kind= OperationCost; top_and_unreachable= true; expensive= false}
+  ; {kind= AutoreleasepoolSize; top_and_unreachable= true; expensive= true} ]

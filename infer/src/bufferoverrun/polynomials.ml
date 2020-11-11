@@ -49,6 +49,9 @@ module Degree = struct
     NonNegativeInt.pp f d.linear ;
     if not (NonNegativeInt.is_zero d.log) then
       F.fprintf f " + %a%slog" NonNegativeInt.pp d.log SpecialChars.dot_operator
+
+
+  let is_constant {linear; log} = NonNegativeInt.is_zero linear && NonNegativeInt.is_zero log
 end
 
 module NonNegativeBoundWithDegreeKind = struct

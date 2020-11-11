@@ -192,6 +192,8 @@ val eradicate_meta_class_is_nullsafe : t
 
 val exposed_insecure_intent_handling : t
 
+val expensive_cost_call : kind:CostKind.t -> t
+
 val failure_exe : t
 
 val field_not_null_checked : t
