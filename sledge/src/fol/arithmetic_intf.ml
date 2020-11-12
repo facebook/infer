@@ -28,11 +28,12 @@ module type S = sig
   val get_trm : t -> trm option
   (** [get_trm a] is [Some x] iff [equal a (trm x)] *)
 
-  type view = Trm of trm | Const of Q.t | Compound
+  type kind = Trm of trm | Const of Q.t | Interpreted | Uninterpreted
 
-  val classify : t -> view
+  val classify : t -> kind
   (** [classify a] is [Trm x] iff [get_trm a] is [Some x], [Const q] iff
-      [get_const a] is [Some q], and [Compound] otherwise *)
+      [get_const a] is [Some q], [Interpreted] if the principal operation of
+      [a] is interpreted, and [Uninterpreted] otherwise *)
 
   (** Construct compound terms *)
 

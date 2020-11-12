@@ -199,8 +199,8 @@ end = struct
     | Q q -> assert (not (Z.equal Z.one (Q.den q)))
     | Arith a -> (
       match Arith.classify a with
-      | Compound -> ()
-      | Trm _ | Const _ -> assert false )
+      | Trm _ | Const _ -> assert false
+      | _ -> () )
     | _ -> ()
 
   (** Destruct *)
@@ -228,7 +228,7 @@ end = struct
     ( match Arith.classify a with
     | Trm e -> e
     | Const q -> _Q q
-    | Compound -> Arith a )
+    | _ -> Arith a )
     |> check invariant
 
   let add x y = _Arith Arith.(add (trm x) (trm y))

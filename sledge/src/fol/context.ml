@@ -14,9 +14,15 @@ open Exp
 type kind = Interpreted | Atomic | Uninterpreted
 [@@deriving compare, equal]
 
-let classify e =
+let rec classify e =
   match (e : Trm.t) with
-  | Arith _ | Sized _ | Extract _ | Concat _ -> Interpreted
+  | Arith a -> (
+    match Trm.Arith.classify a with
+    | Trm t -> classify t
+    | Const _ -> Atomic
+    | Interpreted -> Interpreted
+    | Uninterpreted -> Uninterpreted )
+  | Sized _ | Extract _ | Concat _ -> Interpreted
   | Var _ | Z _ | Q _ | Ancestor _ -> Atomic
   | Splat _ | Select _ | Update _ | Record _ | Apply _ -> Uninterpreted
 

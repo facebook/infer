@@ -165,7 +165,7 @@ struct
 
     (* projections and embeddings *)
 
-    type view = Trm of trm | Const of Q.t | Compound
+    type kind = Trm of trm | Const of Q.t | Interpreted | Uninterpreted
 
     let classify poly =
       match Sum.classify poly with
@@ -173,9 +173,10 @@ struct
       | `One (mono, coeff) -> (
         match Prod.classify mono with
         | `Zero -> Const coeff
-        | `One (trm, 1) when Q.equal Q.one coeff -> Trm trm
-        | _ -> Compound )
-      | `Many -> Compound
+        | `One (trm, 1) ->
+            if Q.equal Q.one coeff then Trm trm else Interpreted
+        | _ -> Uninterpreted )
+      | `Many -> Interpreted
 
     let get_const poly =
       match Sum.classify poly with
