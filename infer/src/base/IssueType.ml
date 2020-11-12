@@ -1005,5 +1005,6 @@ let is_autoreleasepool_size_issue =
       List.iter [true; false] ~f:(fun is_on_ui_thread ->
           add_autoreleasepool_size_issue ~kind (unreachable_cost_call ~kind) ;
           add_autoreleasepool_size_issue ~kind (infinite_cost_call ~kind) ;
+          add_autoreleasepool_size_issue ~kind (expensive_cost_call ~kind) ;
           add_autoreleasepool_size_issue ~kind (complexity_increase ~kind ~is_on_ui_thread) ) ) ;
   fun issue_type -> IssueSet.mem issue_type !autoreleasepool_size_issues
