@@ -13,7 +13,9 @@ type issue_spec =
   ; complexity_increase_issue: is_on_ui_thread:bool -> IssueType.t
   ; unreachable_issue: IssueType.t
   ; infinite_issue: IssueType.t
-  ; top_and_unreachable: bool }
+  ; expensive_issue: IssueType.t
+  ; top_and_unreachable: bool
+  ; expensive: bool }
 
 module CostKindMap : sig
   include PrettyPrintable.PPMap with type key = CostKind.t

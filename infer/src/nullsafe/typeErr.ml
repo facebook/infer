@@ -265,21 +265,21 @@ let make_nullsafe_issue_if_reportable_lazy ~nullsafe_mode err_instance =
                       this can have a lot of reasons to be actually nullable.
                       Until it is made non-precise, it is recommended to not turn this warning on.
                       But even when it is on, this should not be more than advice.
-                 *) ~severity:IssueType.Advice) )
+                 *) ~severity:IssueType.Advice ~field_name:None) )
     | Over_annotation {over_annotated_violation; loc; violation_type} ->
         Some
           ( lazy
-            (let issue_type =
+            (let issue_type, field_name =
                match violation_type with
-               | OverAnnotatedRule.FieldOverAnnoted _ ->
-                   IssueType.eradicate_field_over_annotated
+               | OverAnnotatedRule.FieldOverAnnoted field_name ->
+                   (IssueType.eradicate_field_over_annotated, Some field_name)
                | OverAnnotatedRule.ReturnOverAnnotated _ ->
-                   IssueType.eradicate_return_over_annotated
+                   (IssueType.eradicate_return_over_annotated, None)
              in
              let description =
                OverAnnotatedRule.violation_description over_annotated_violation violation_type
              in
-             NullsafeIssue.make ~description ~issue_type ~loc
+             NullsafeIssue.make ~description ~issue_type ~loc ~field_name
                ~severity:
                  (* Very non-precise issue. Should be actually turned off unless for experimental purposes. *)
                  IssueType.Advice ) )
@@ -294,7 +294,8 @@ let make_nullsafe_issue_if_reportable_lazy ~nullsafe_mode err_instance =
                     MF.pp_monospaced
                     (Fieldname.get_field_name field_name))
                ~issue_type:IssueType.eradicate_field_not_initialized ~loc
-               ~severity:(NullsafeMode.severity nullsafe_mode)) )
+               ~severity:(NullsafeMode.severity nullsafe_mode)
+               ~field_name:(Some field_name)) )
     | Bad_assignment {assignment_location; assignment_type; assignment_violation} ->
         (* If violation is reportable, create tuple, otherwise None *)
         let+ reportable_violation =

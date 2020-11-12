@@ -47,6 +47,10 @@ public class AnnotationGraph {
   private void methodD() {
     // fieldB depends on fieldA
     fieldB = fieldA;
+
+    // methodF(): param #0 and #2 depend on fieldB, but not param #2
+    // (fieldB was checked for null before)
+    methodF(fieldB, fieldB != null ? fieldB : "", fieldB);
   }
 
   private void methodE() {
@@ -66,7 +70,7 @@ public class AnnotationGraph {
     }
   }
 
-  private void methodF() {
+  private void methodF(String param0, String param1, String param2) {
     // violation for fieldA
     fieldA.toString();
 

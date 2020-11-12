@@ -182,7 +182,7 @@ module ObjC = struct
     |> PulseOperations.ok_continue
 end
 
-module FollyOptional = struct
+module Optional = struct
   let internal_value = Fieldname.make (Typ.CStruct cpp_model_namespace) "backing_value"
 
   let internal_value_access = HilExp.Access.FieldAccess internal_value
@@ -216,11 +216,11 @@ module FollyOptional = struct
     [ExecutionDomain.ContinueProgram astate]
 
 
-  let assign_value this value ~desc : model =
+  let assign_value this _value ~desc : model =
    fun _ ~callee_procname:_ location ~ret:_ astate ->
-    let* astate, value_copy = PulseOperations.shallow_copy location value astate in
-    let+ astate, value_deref = write_value location this ~value:value_copy ~desc astate in
-    let astate = PulseArithmetic.and_positive (fst value_deref) astate in
+    (* TODO: call the copy constructor of a value *)
+    let+ astate, value = assign_value_fresh location this ~desc astate in
+    let astate = PulseArithmetic.and_positive (fst value) astate in
     [ExecutionDomain.ContinueProgram astate]
 
 
@@ -231,17 +231,15 @@ module FollyOptional = struct
     [ExecutionDomain.ContinueProgram astate]
 
 
-  let emplace optional : model =
+  let emplace optional ~desc : model =
    fun _ ~callee_procname:_ location ~ret:_ astate ->
-    let+ astate, _ =
-      assign_value_fresh location optional ~desc:"folly::Optional::emplace()" astate
-    in
+    let+ astate, _ = assign_value_fresh location optional ~desc astate in
     [ExecutionDomain.ContinueProgram astate]
 
 
-  let value optional : model =
+  let value optional ~desc : model =
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
-    let event = ValueHistory.Call {f= Model "folly::Optional::value()"; location; in_call= []} in
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let* astate, ((value_addr, value_hist) as value) =
       to_internal_value_deref location optional astate
     in
@@ -251,12 +249,10 @@ module FollyOptional = struct
     |> PulseOperations.ok_continue
 
 
-  let has_value optional : model =
+  let has_value optional ~desc : model =
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let ret_addr = AbstractValue.mk_fresh () in
-    let ret_value =
-      (ret_addr, [ValueHistory.Allocation {f= Model "folly::Optional::has_value()"; location}])
-    in
+    let ret_value = (ret_addr, [ValueHistory.Allocation {f= Model desc; location}]) in
     let+ astate, (value_addr, _) = to_internal_value_deref location optional astate in
     let astate = PulseOperations.write_id ret_id ret_value astate in
     let astate_non_empty = PulseArithmetic.and_positive value_addr astate in
@@ -266,9 +262,9 @@ module FollyOptional = struct
     [ExecutionDomain.ContinueProgram astate_false; ExecutionDomain.ContinueProgram astate_true]
 
 
-  let value_or optional default : model =
+  let value_or optional default ~desc : model =
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
-    let event = ValueHistory.Call {f= Model "folly::Optional::value_or()"; location; in_call= []} in
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let* astate, value_addr = to_internal_value_deref location optional astate in
     let astate_non_empty = PulseArithmetic.and_positive (fst value_addr) astate in
     let* astate_non_empty, value =
@@ -943,33 +939,76 @@ module ProcNameDispatcher = struct
           &++> Misc.skip "folly::SocketAddress's destructor is modelled as skip"
         ; -"folly" &:: "Optional" &:: "Optional" <>$ capt_arg_payload
           $+ any_arg_of_typ (-"folly" &:: "None")
-          $--> FollyOptional.assign_none ~desc:"folly::Optional::Optional(=None)"
+          $--> Optional.assign_none ~desc:"folly::Optional::Optional(=None)"
         ; -"folly" &:: "Optional" &:: "Optional" <>$ capt_arg_payload
-          $--> FollyOptional.assign_none ~desc:"folly::Optional::Optional()"
+          $--> Optional.assign_none ~desc:"folly::Optional::Optional()"
         ; -"folly" &:: "Optional" &:: "Optional" <>$ capt_arg_payload
           $+ capt_arg_payload_of_typ (-"folly" &:: "Optional")
-          $--> FollyOptional.assign_optional_value
+          $--> Optional.assign_optional_value
                  ~desc:"folly::Optional::Optional(folly::Optional<Value> arg)"
         ; -"folly" &:: "Optional" &:: "Optional" <>$ capt_arg_payload $+ capt_arg_payload
-          $+...$--> FollyOptional.assign_value ~desc:"folly::Optional::Optional(Value arg)"
+          $+...$--> Optional.assign_value ~desc:"folly::Optional::Optional(Value arg)"
         ; -"folly" &:: "Optional" &:: "assign" <>$ capt_arg_payload
           $+ any_arg_of_typ (-"folly" &:: "None")
-          $--> FollyOptional.assign_none ~desc:"folly::Optional::assign(=None)"
+          $--> Optional.assign_none ~desc:"folly::Optional::assign(=None)"
         ; -"folly" &:: "Optional" &:: "assign" <>$ capt_arg_payload
           $+ capt_arg_payload_of_typ (-"folly" &:: "Optional")
-          $--> FollyOptional.assign_optional_value
+          $--> Optional.assign_optional_value
                  ~desc:"folly::Optional::assign(folly::Optional<Value> arg)"
         ; -"folly" &:: "Optional" &:: "assign" <>$ capt_arg_payload $+ capt_arg_payload
-          $+...$--> FollyOptional.assign_value ~desc:"folly::Optional::assign(Value arg)"
-        ; -"folly" &:: "Optional" &:: "emplace<>" $ capt_arg_payload $+...$--> FollyOptional.emplace
-        ; -"folly" &:: "Optional" &:: "emplace" $ capt_arg_payload $+...$--> FollyOptional.emplace
+          $+...$--> Optional.assign_value ~desc:"folly::Optional::assign(Value arg)"
+        ; -"folly" &:: "Optional" &:: "emplace<>" $ capt_arg_payload
+          $+...$--> Optional.emplace ~desc:"folly::Optional::emplace()"
+        ; -"folly" &:: "Optional" &:: "emplace" $ capt_arg_payload
+          $+...$--> Optional.emplace ~desc:"folly::Optional::emplace()"
         ; -"folly" &:: "Optional" &:: "has_value" <>$ capt_arg_payload
-          $+...$--> FollyOptional.has_value
+          $+...$--> Optional.has_value ~desc:"folly::Optional::has_value()"
         ; -"folly" &:: "Optional" &:: "reset" <>$ capt_arg_payload
-          $+...$--> FollyOptional.assign_none ~desc:"folly::Optional::reset()"
-        ; -"folly" &:: "Optional" &:: "value" <>$ capt_arg_payload $+...$--> FollyOptional.value
+          $+...$--> Optional.assign_none ~desc:"folly::Optional::reset()"
+        ; -"folly" &:: "Optional" &:: "value" <>$ capt_arg_payload
+          $+...$--> Optional.value ~desc:"folly::Optional::value()"
         ; -"folly" &:: "Optional" &:: "value_or" $ capt_arg_payload $+ capt_arg_payload
-          $+...$--> FollyOptional.value_or
+          $+...$--> Optional.value_or ~desc:"folly::Optional::value_or()"
+          (* std::optional *)
+        ; -"std" &:: "optional" &:: "optional" $ capt_arg_payload
+          $+ any_arg_of_typ (-"std" &:: "nullopt_t")
+          $--> Optional.assign_none ~desc:"std::optional::optional(=nullopt)"
+        ; -"std" &:: "optional" &:: "optional" $ capt_arg_payload
+          $--> Optional.assign_none ~desc:"std::optional::optional()"
+        ; -"std" &:: "optional" &:: "optional" $ capt_arg_payload
+          $+ capt_arg_payload_of_typ (-"std" &:: "optional")
+          $--> Optional.assign_optional_value
+                 ~desc:"std::optional::optional(std::optional<Value> arg)"
+        ; -"std" &:: "optional" &:: "optional" $ capt_arg_payload $+ capt_arg_payload
+          $+...$--> Optional.assign_value ~desc:"std::optional::optional(Value arg)"
+        ; -"std" &:: "optional" &:: "operator=" <>$ capt_arg_payload
+          $+ any_arg_of_typ (-"std" &:: "nullopt_t")
+          $--> Optional.assign_none ~desc:"std::optional::operator=(None)"
+        ; -"std" &:: "optional" &:: "operator=" <>$ capt_arg_payload
+          $+ capt_arg_payload_of_typ (-"std" &:: "optional")
+          $--> Optional.assign_optional_value
+                 ~desc:"std::optional::operator=(std::optional<Value> arg)"
+        ; -"std" &:: "optional" &:: "operator=" <>$ capt_arg_payload $+ capt_arg_payload
+          $+...$--> Optional.assign_value ~desc:"std::optional::operator=(Value arg)"
+        ; -"std" &:: "optional" &:: "emplace<>" $ capt_arg_payload
+          $+...$--> Optional.emplace ~desc:"std::optional::emplace()"
+        ; -"std" &:: "optional" &:: "emplace" $ capt_arg_payload
+          $+...$--> Optional.emplace ~desc:"std::optional::emplace()"
+        ; -"std" &:: "optional" &:: "has_value" <>$ capt_arg_payload
+          $+...$--> Optional.has_value ~desc:"std::optional::has_value()"
+        ; -"std" &:: "optional" &:: "operator_bool" <>$ capt_arg_payload
+          $+...$--> Optional.has_value ~desc:"std::optional::operator_bool()"
+        ; -"std" &:: "optional" &:: "reset" <>$ capt_arg_payload
+          $+...$--> Optional.assign_none ~desc:"std::optional::reset()"
+        ; -"std" &:: "optional" &:: "value" <>$ capt_arg_payload
+          $+...$--> Optional.value ~desc:"std::optional::value()"
+        ; -"std" &:: "optional" &:: "operator*" <>$ capt_arg_payload
+          $+...$--> Optional.value ~desc:"std::optional::operator*()"
+        ; -"std" &:: "optional" &:: "operator->" <>$ capt_arg_payload
+          $+...$--> Optional.value ~desc:"std::optional::operator->()"
+        ; -"std" &:: "optional" &:: "value_or" $ capt_arg_payload $+ capt_arg_payload
+          $+...$--> Optional.value_or ~desc:"std::optional::value_or()"
+          (* end std::optional *)
         ; -"std" &:: "basic_string" &:: "data" <>$ capt_arg_payload $--> StdBasicString.data
         ; -"std" &:: "basic_string" &:: "~basic_string" <>$ capt_arg_payload
           $--> StdBasicString.destructor
