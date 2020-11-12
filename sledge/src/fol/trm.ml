@@ -462,9 +462,7 @@ let rec map_vars e ~f =
 let map e ~f =
   match e with
   | Var _ | Z _ | Q _ -> e
-  | Arith a ->
-      let a' = Arith.map ~f a in
-      if a == a' then e else _Arith a'
+  | Arith a -> map1 (Arith.map ~f) e _Arith a
   | Splat x -> map1 f e _Splat x
   | Sized {seq; siz} -> map2 f e _Sized seq siz
   | Extract {seq; off; len} -> map3 f e _Extract seq off len
