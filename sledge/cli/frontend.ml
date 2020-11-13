@@ -249,10 +249,6 @@ let rec xlate_type : x -> Llvm.lltype -> Typ.t =
             todo "non-integral pointer types: %a" pp_lltype llt () ;
           let elt = xlate_type x (Llvm.element_type llt) in
           Typ.pointer ~elt
-      | Vector ->
-          let elt = xlate_type x (Llvm.element_type llt) in
-          let len = Llvm.vector_size llt in
-          Typ.array ~elt ~len ~bits ~byts
       | Array ->
           let elt = xlate_type x (Llvm.element_type llt) in
           let len = Llvm.array_length llt in
@@ -273,6 +269,7 @@ let rec xlate_type : x -> Llvm.lltype -> Typ.t =
             in
             Typ.struct_ ~name elts ~bits ~byts ~packed
       | Function -> fail "expected to be unsized: %a" pp_lltype llt ()
+      | Vector -> todo "vector types: %a" pp_lltype llt ()
       | Void | Label | Metadata | Token -> assert false
     else
       match Llvm.classify_type llt with
