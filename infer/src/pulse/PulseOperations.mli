@@ -11,9 +11,7 @@ open PulseDomainInterface
 
 type t = AbductiveDomain.t
 
-type 'a access_result = ('a, Diagnostic.t * t) result
-
-val ok_continue : t -> (ExecutionDomain.t list, 'a) result
+type 'a access_result = 'a PulseReport.access_result
 
 val check_addr_access : Location.t -> AbstractValue.t * ValueHistory.t -> t -> t access_result
 (** Check that the [address] is not known to be invalid *)
@@ -125,6 +123,7 @@ val check_address_escape :
 
 val call :
      caller_proc_desc:Procdesc.t
+  -> Errlog.t
   -> callee_data:(Procdesc.t * PulseSummary.t) option
   -> Location.t
   -> Procname.t
