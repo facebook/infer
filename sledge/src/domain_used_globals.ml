@@ -91,7 +91,7 @@ let resolve_callee lookup ptr st =
 type summary = t
 
 let pp_summary = pp
-let create_summary ~globals:_ ~locals:_ ~formals:_ state = (state, state)
+let create_summary ~locals:_ ~formals:_ state = (state, state)
 let apply_summary st summ = Some (Llair.Global.Set.union st summ)
 
 (** Query *)

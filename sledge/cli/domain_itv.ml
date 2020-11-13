@@ -311,4 +311,4 @@ type summary = t
 
 let pp_summary = pp
 let apply_summary _ _ = None
-let create_summary ~globals:_ ~locals:_ ~formals:_ q = (q, q)
+let create_summary ~locals:_ ~formals:_ q = (q, q)

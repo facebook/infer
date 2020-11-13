@@ -10,8 +10,7 @@
 include Domain_intf.Dom
 
 val create_summary :
-     globals:Llair.Global.Set.t
-  -> locals:Llair.Reg.Set.t
+     locals:Llair.Reg.Set.t
   -> formals:Llair.Reg.t list
   -> entry:t
   -> current:t

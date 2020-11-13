@@ -12,8 +12,7 @@ module type State_domain_sig = sig
   include Domain_intf.Dom
 
   val create_summary :
-       globals:Llair.Global.Set.t
-    -> locals:Llair.Reg.Set.t
+       locals:Llair.Reg.Set.t
     -> formals:Llair.Reg.t list
     -> entry:t
     -> current:t
@@ -117,9 +116,9 @@ module Make (State_domain : State_domain_sig) = struct
 
   let pp_summary = State_domain.pp_summary
 
-  let create_summary ~globals ~locals ~formals (entry, current) =
+  let create_summary ~locals ~formals (entry, current) =
     let fs, next =
-      State_domain.create_summary ~globals ~locals ~formals ~entry ~current
+      State_domain.create_summary ~locals ~formals ~entry ~current
     in
     (fs, (entry, next))
 

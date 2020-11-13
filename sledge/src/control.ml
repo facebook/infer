@@ -320,9 +320,8 @@ module Make (Dom : Domain_intf.Dom) = struct
     let summarize post_state =
       if not opts.function_summaries then post_state
       else
-        let globals = Domain_used_globals.by_function opts.globals name in
         let function_summary, post_state =
-          Dom.create_summary ~globals ~locals ~formals post_state
+          Dom.create_summary ~locals ~formals post_state
         in
         Llair.Function.Tbl.add_multi ~key:name ~data:function_summary
           summary_table ;

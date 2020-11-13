@@ -244,17 +244,15 @@ let pp_summary fs {xs; foot; post} =
   Format.fprintf fs "@[<v>xs: @[%a@]@ foot: %a@ post: %a @]" Var.Set.pp xs
     pp foot pp post
 
-let create_summary ~globals ~locals ~formals ~entry ~current:(post : Sh.t) =
+let create_summary ~locals ~formals ~entry ~current:(post : Sh.t) =
   [%Trace.call fun {pf} ->
     pf "formals %a@ entry: %a@ current: %a"
       (List.pp ",@ " Llair.Reg.pp)
       formals pp entry pp post]
   ;
-  let globals = X.globals globals in
   let formals =
     Var.Set.of_iter (Iter.map ~f:X.reg (List.to_iter formals))
   in
-  let formals = Var.Set.union formals globals in
   let locals = X.regs locals in
   let foot = Sh.exists locals entry in
   let foot, subst = Sh.freshen ~wrt:(Var.Set.union foot.us post.us) foot in

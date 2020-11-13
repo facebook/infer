@@ -39,5 +39,5 @@ let resolve_callee lookup ptr _ =
 type summary = unit
 
 let pp_summary fs () = Format.pp_print_string fs "()"
-let create_summary ~globals:_ ~locals:_ ~formals:_ _ = ((), ())
+let create_summary ~locals:_ ~formals:_ _ = ((), ())
 let apply_summary _ _ = Some ()
