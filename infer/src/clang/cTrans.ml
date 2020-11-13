@@ -619,9 +619,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     mk_trans_result ~is_cpp_call_virtual ~method_name:pname this_exp_typ context_control_with_this
 
 
-  let destructor_deref_trans trans_state pvar_trans_result class_type_ptr si ~is_inner_destructor =
-    let open Clang_ast_t in
-    let destruct_decl_ref_opt =
+  let get_destructor_decl_ref class_type_ptr =
+    let open IOption.Let_syntax in
+    let* decl_ref =
       match CAst_utils.get_decl_from_typ_ptr class_type_ptr with
       | Some (CXXRecordDecl (_, _, _, _, _, _, _, cxx_record_info))
       | Some (ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, cxx_record_info, _, _)) ->
@@ -629,17 +629,17 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | _ ->
           None
     in
-    match destruct_decl_ref_opt with
-    | Some decl_ref -> (
-      match CAst_utils.get_decl decl_ref.Clang_ast_t.dr_decl_pointer with
-      | Some (CXXDestructorDecl _) ->
-          Some
-            (method_deref_trans ~is_inner_destructor trans_state
-               ~context:(MemberOrIvar pvar_trans_result) decl_ref si `CXXDestructor)
-      | _ ->
-          None )
-    | None ->
+    match CAst_utils.get_decl decl_ref.Clang_ast_t.dr_decl_pointer with
+    | Some (CXXDestructorDecl _) ->
+        Some decl_ref
+    | _ ->
         None
+
+
+  let destructor_deref_trans trans_state pvar_trans_result destructor_decl_ref si
+      ~is_inner_destructor =
+    method_deref_trans ~is_inner_destructor trans_state ~context:(MemberOrIvar pvar_trans_result)
+      destructor_decl_ref si `CXXDestructor
 
 
   let get_this_pvar_typ stmt_info ?class_qual_type ({CContext.tenv; procdesc} as context) =
@@ -1238,8 +1238,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     {res_trans with return= tmp_res_trans.return}
 
 
-  and cxx_destructor_call_trans trans_state si this_res_trans class_type_ptr ~is_injected_destructor
-      ~is_inner_destructor =
+  and cxx_destructor_call_trans trans_state si this_res_trans destructor_decl_ref
+      ~is_injected_destructor ~is_inner_destructor =
     (* cxx_method_construct_call_trans claims a priority with the same [si]. A new pointer is
        generated to avoid premature node creation *)
     let si' = {si with Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()} in
@@ -1248,16 +1248,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let this_res_trans' =
       {this_res_trans with return= (this_exp, CType.add_pointer_to_typ this_typ)}
     in
-    match
-      destructor_deref_trans trans_state this_res_trans' class_type_ptr si' ~is_inner_destructor
-    with
-    | Some res_trans_callee when Option.is_some res_trans_callee.method_name ->
-        let is_cpp_call_virtual = res_trans_callee.is_cpp_call_virtual in
-        Some
-          (cxx_method_construct_call_trans trans_state_pri res_trans_callee [] si' StdTyp.void
-             ~is_injected_destructor ~is_cpp_call_virtual None ~is_inherited_ctor:false)
-    | _ ->
-        None
+    let res_trans_callee =
+      destructor_deref_trans trans_state this_res_trans' destructor_decl_ref si'
+        ~is_inner_destructor
+    in
+    assert (Option.is_some res_trans_callee.method_name) ;
+    let is_cpp_call_virtual = res_trans_callee.is_cpp_call_virtual in
+    cxx_method_construct_call_trans trans_state_pri res_trans_callee [] si' StdTyp.void
+      ~is_injected_destructor ~is_cpp_call_virtual None ~is_inherited_ctor:false
 
 
   and is_receiver_instance = function `Instance | `SuperInstance -> true | _ -> false
@@ -1409,8 +1407,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
   and inject_base_class_destructor_calls trans_state stmt_info bases obj_sil this_qual_type =
     List.rev_filter_map bases ~f:(fun base ->
         let this_res_trans_destruct = mk_trans_result (obj_sil, this_qual_type) empty_control in
-        cxx_destructor_call_trans trans_state stmt_info this_res_trans_destruct base
-          ~is_injected_destructor:true ~is_inner_destructor:true )
+        get_destructor_decl_ref base
+        |> Option.map ~f:(fun base_destructor_decl_ref ->
+               cxx_destructor_call_trans trans_state stmt_info this_res_trans_destruct
+                 base_destructor_decl_ref ~is_injected_destructor:true ~is_inner_destructor:true ) )
 
 
   and add_this_instrs_if_result_non_empty res_trans this_res_trans =
@@ -1491,9 +1491,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
               let field_exp = Exp.Lfield (obj_sil, field_name, this_qual_type) in
               let field_typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
               let this_res_trans_destruct = mk_trans_result (field_exp, field_typ) empty_control in
-              cxx_destructor_call_trans trans_state_pri stmt_info_loc this_res_trans_destruct
-                qual_type.Clang_ast_t.qt_type_ptr ~is_injected_destructor:true
-                ~is_inner_destructor:false
+              get_destructor_decl_ref qual_type.Clang_ast_t.qt_type_ptr
+              |> Option.map ~f:(fun destructor_decl_ref ->
+                     cxx_destructor_call_trans trans_state_pri stmt_info_loc this_res_trans_destruct
+                       destructor_decl_ref ~is_injected_destructor:true ~is_inner_destructor:false )
           | _ ->
               assert false )
       in
@@ -1531,9 +1532,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         List.filter_map vars_to_destroy ~f:(fun (pvar, typ, qual_type) ->
             let exp = Exp.Lvar pvar in
             let this_res_trans_destruct = mk_trans_result (exp, typ) empty_control in
-            cxx_destructor_call_trans trans_state_pri stmt_info_loc this_res_trans_destruct
-              qual_type.Clang_ast_t.qt_type_ptr ~is_injected_destructor:true
-              ~is_inner_destructor:false )
+            get_destructor_decl_ref qual_type.Clang_ast_t.qt_type_ptr
+            |> Option.map ~f:(fun destructor_decl_ref ->
+                   cxx_destructor_call_trans trans_state_pri stmt_info_loc this_res_trans_destruct
+                     destructor_decl_ref ~is_injected_destructor:true ~is_inner_destructor:false ) )
       in
       if List.is_empty all_res_trans then None
       else
@@ -3504,9 +3506,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         (* otherwise it would happen due to structutre of all_res_trans *)
         let this_res_trans_destruct = mk_trans_result result_trans_param.return empty_control in
         let destruct_res_trans =
-          cxx_destructor_call_trans trans_state_pri destruct_stmt_info this_res_trans_destruct
-            deleted_type.Clang_ast_t.qt_type_ptr ~is_injected_destructor:false
-            ~is_inner_destructor:false
+          get_destructor_decl_ref deleted_type.Clang_ast_t.qt_type_ptr
+          |> Option.map ~f:(fun destructor_decl_ref ->
+                 cxx_destructor_call_trans trans_state_pri destruct_stmt_info
+                   this_res_trans_destruct destructor_decl_ref ~is_injected_destructor:false
+                   ~is_inner_destructor:false )
         in
         result_trans_param :: (Option.to_list destruct_res_trans @ [call_res_trans])
         (* --- END OF DEAD CODE --- *)
