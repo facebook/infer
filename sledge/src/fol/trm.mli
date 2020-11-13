@@ -47,6 +47,8 @@ val ppx : Var.strength -> t pp
 val pp : t pp
 val pp_diff : (t * t) pp
 
+include Invariant.S with type t := t
+
 (** Construct *)
 
 (* variables *)

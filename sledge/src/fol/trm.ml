@@ -88,6 +88,9 @@ and Trm : sig
 
   val ppx : Var.strength -> t pp
   val pp : t pp
+
+  include Invariant.S with type t := t
+
   val _Var : int -> string -> t
   val _Z : Z.t -> t
   val _Q : Q.t -> t
