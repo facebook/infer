@@ -1176,6 +1176,8 @@ let xlate_instr :
       (* unimplemented *)
       | "llvm" :: "experimental" :: "gc" :: "statepoint" :: _ ->
           todo "statepoints:@ %a" pp_llvalue instr ()
+      | _ when Poly.equal (Llvm.classify_value llfunc) InlineAsm ->
+          todo "inline asm: @ %a" pp_llvalue instr ()
       (* general function call that may throw *)
       | _ ->
           let pre_0, callee = xlate_func_name x llfunc in
