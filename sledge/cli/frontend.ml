@@ -224,8 +224,8 @@ let size_of, bit_size_of =
     if Llvm.type_is_sized llt then
       match Int64.unsigned_to_int (size_of llt x.lldatalayout) with
       | Some n -> n
-      | None -> fail "type size too large: %a" pp_lltype llt ()
-    else fail "types with undetermined size: %a" pp_lltype llt ()
+      | None -> todo "type size too large: %a" pp_lltype llt ()
+    else todo "types with undetermined size: %a" pp_lltype llt ()
   in
   ( size_to_int Llvm_target.DataLayout.abi_size
   , size_to_int Llvm_target.DataLayout.size_in_bits )
