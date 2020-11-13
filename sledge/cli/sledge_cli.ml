@@ -219,7 +219,9 @@ let llvm_grp =
        textual (.ll) form; or of the form @<argsfile>, where <argsfile> \
        names a file containing one <input> per line."
     in
-    let param = translate_inputs >>| fun _ () -> Report.Ok in
+    let param =
+      translate_inputs >*> Command.Param.return (fun _ -> Report.Ok)
+    in
     command ~summary ~readme param
   in
   let disassemble_cmd =
