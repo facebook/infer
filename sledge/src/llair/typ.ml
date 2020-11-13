@@ -13,10 +13,10 @@ type t =
   | Float of {bits: int; byts: int; enc: [`IEEE | `Extended | `Pair]}
   | Pointer of {elt: t}
   | Array of {elt: t; len: int; bits: int; byts: int}
-  | Tuple of {elts: t iarray; bits: int; byts: int}
+  | Tuple of {elts: (int * t) iarray; bits: int; byts: int}
   | Struct of
       { name: string
-      ; elts: t iarray (* possibly cyclic, name unique *)
+      ; elts: (int * t) iarray (* possibly cyclic, name unique *)
             [@compare.ignore] [@equal.ignore] [@sexp_drop_if fun _ -> true]
       ; bits: int
       ; byts: int }
@@ -42,14 +42,15 @@ let rec pp fs typ =
       pf "f%i%s" bits enc_str
   | Pointer {elt} -> pf "%a*" pp elt
   | Array {elt; len} -> pf "[%i x %a]" len pp elt
-  | Tuple {elts} -> pf "{ @[%a@] }" pps elts
+  | Tuple {elts} -> pf "{ @[%a@] }" pp_flds elts
   | Struct {name} | Opaque {name} -> pf "%%%s" name
 
 and pps fs typs = IArray.pp ",@ " pp fs typs
+and pp_flds fs flds = IArray.pp ",@ " (fun fs (_, fld) -> pp fs fld) fs flds
 
 let pp_defn fs = function
   | Struct {name; elts} ->
-      Format.fprintf fs "@[<2>%%%s =@ @[{ %a@] }@]" name pps elts
+      Format.fprintf fs "@[<2>%%%s =@ @[{ %a@] }@]" name pp_flds elts
   | Opaque {name} -> Format.fprintf fs "@[<2>%%%s =@ opaque@]" name
   | typ -> pp fs typ
 
@@ -67,7 +68,8 @@ let invariant t =
       assert (Option.for_all ~f:is_sized return) ;
       assert (IArray.for_all ~f:is_sized args)
   | Array {elt} -> assert (is_sized elt)
-  | Tuple {elts} | Struct {elts} -> assert (IArray.for_all ~f:is_sized elts)
+  | Tuple {elts} | Struct {elts} ->
+      assert (IArray.for_all ~f:(fun (_, t) -> is_sized t) elts)
   | Integer {bits} | Float {bits} -> assert (bits > 0)
   | Pointer _ | Opaque _ -> assert true
 
@@ -93,7 +95,7 @@ let struct_ =
     | None ->
         (* Add placeholder defn to prevent computing [elts] in calls to
            [struct] from [elts] for recursive occurrences of [name]. *)
-        let elts = Array.make (IArray.length elt_thks) dummy_typ in
+        let elts = Array.make (IArray.length elt_thks) (0, dummy_typ) in
         let typ = Struct {name; elts= IArray.of_array elts; bits; byts} in
         String.Tbl.set defns ~key:name ~data:typ ;
         IArray.iteri elt_thks ~f:(fun i (lazy elt) -> elts.(i) <- elt) ;

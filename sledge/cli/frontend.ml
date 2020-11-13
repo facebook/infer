@@ -256,15 +256,27 @@ let rec xlate_type : x -> Llvm.lltype -> Typ.t =
       | Struct ->
           let llelts = Llvm.struct_element_types llt in
           let len = Array.length llelts in
+          let fld_off i =
+            match
+              Int64.unsigned_to_int
+                (Llvm_target.DataLayout.offset_of_element llt i
+                   x.lldatalayout)
+            with
+            | Some i -> i
+            | None -> todo "offset too large: %a" pp_lltype llt ()
+          in
           if Llvm.is_literal llt then
             let elts =
-              IArray.map ~f:(xlate_type x) (IArray.of_array llelts)
+              IArray.mapi
+                ~f:(fun i elt -> (fld_off i, xlate_type x elt))
+                (IArray.of_array llelts)
             in
             Typ.tuple elts ~bits ~byts
           else
             let name = struct_name llt in
             let elts =
-              IArray.init len ~f:(fun i -> lazy (xlate_type x llelts.(i)))
+              IArray.init len ~f:(fun i ->
+                  lazy (fld_off i, xlate_type x llelts.(i)) )
             in
             Typ.struct_ ~name elts ~bits ~byts
       | Function -> fail "expected to be unsized: %a" pp_lltype llt ()
@@ -633,7 +645,7 @@ and xlate_opcode stk :
           match (typ : Typ.t) with
           | Tuple {elts} | Struct {elts} ->
               ( Exp.select typ rcd indices.(i)
-              , IArray.get elts indices.(i)
+              , snd (IArray.get elts indices.(i))
               , Exp.update typ ~rcd indices.(i) )
           | Array {elt} ->
               ( Exp.select typ rcd indices.(i)
@@ -822,7 +834,9 @@ let landingpad_typs : x -> Llvm.llvalue -> Typ.t * Typ.t * Llvm.lltype =
 let exception_typs =
   let pi8 = Typ.pointer ~elt:Typ.byt in
   let i32 = Typ.integer ~bits:32 ~byts:4 in
-  let exc = Typ.tuple (IArray.of_array [|pi8; i32|]) ~bits:96 ~byts:12 in
+  let exc =
+    Typ.tuple (IArray.of_array [|(0, pi8); (8, i32)|]) ~bits:96 ~byts:12
+  in
   (pi8, i32, exc)
 
 (** Translate a control transfer from instruction [instr] to block [dst] to

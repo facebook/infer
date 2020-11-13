@@ -16,10 +16,11 @@ type t = private
   | Pointer of {elt: t}  (** Pointer to element type. *)
   | Array of {elt: t; len: int; bits: int; byts: int}
       (** Statically-sized array of [len] elements of type [elt]. *)
-  | Tuple of {elts: t iarray; bits: int; byts: int}
+  | Tuple of {elts: (int * t) iarray; bits: int; byts: int}
       (** Anonymous aggregate of heterogeneous types. *)
-  | Struct of {name: string; elts: t iarray; bits: int; byts: int}
-      (** Uniquely named aggregate of heterogeneous types. Every cycle of
+  | Struct of {name: string; elts: (int * t) iarray; bits: int; byts: int}
+      (** Uniquely named aggregate of heterogeneous types. Elements are
+          specified by their byte offset and their type. Every cycle of
           recursive types contains a [Struct]. NOTE: recursive [Struct]
           types are represented by cyclic values. *)
   | Opaque of {name: string}
@@ -43,8 +44,11 @@ val integer : bits:int -> byts:int -> t
 val float : bits:int -> byts:int -> enc:[`Extended | `IEEE | `Pair] -> t
 val pointer : elt:t -> t
 val array : elt:t -> len:int -> bits:int -> byts:int -> t
-val tuple : t iarray -> bits:int -> byts:int -> t
-val struct_ : name:string -> bits:int -> byts:int -> t lazy_t iarray -> t
+val tuple : (int * t) iarray -> bits:int -> byts:int -> t
+
+val struct_ :
+  name:string -> bits:int -> byts:int -> (int * t) lazy_t iarray -> t
+
 val opaque : name:string -> t
 
 (** Queries *)

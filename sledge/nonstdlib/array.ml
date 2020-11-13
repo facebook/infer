@@ -28,6 +28,7 @@ let of_list_rev = function
 
 let is_empty = function [||] -> true | _ -> false
 let map xs ~f = map ~f xs
+let mapi xs ~f = mapi ~f xs
 let map_endo xs ~f = map_endo map xs ~f
 
 let reduce_adjacent xs ~f =

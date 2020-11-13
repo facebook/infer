@@ -208,7 +208,7 @@ let rec invariant exp =
       match typ with
       | Tuple {elts} | Struct {elts} ->
           assert (valid_idx idx elts) ;
-          assert (Typ.castable (IArray.get elts idx) (typ_of elt))
+          assert (Typ.castable (snd (IArray.get elts idx)) (typ_of elt))
       | Array {elt= typ_elt} -> assert (Typ.castable typ_elt (typ_of elt))
       | _ -> assert false )
   | Ap2 (op, typ, x, y) -> (
@@ -237,7 +237,7 @@ let rec invariant exp =
     | Tuple {elts} | Struct {elts} ->
         assert (IArray.length elts = IArray.length args) ;
         assert (
-          IArray.for_all2_exn elts args ~f:(fun typ arg ->
+          IArray.for_all2_exn elts args ~f:(fun (_, typ) arg ->
               Typ.castable typ (typ_of arg) ) )
     | _ -> assert false )
   | RecRecord _ -> ()
@@ -253,7 +253,7 @@ and typ_of exp =
   | Ap1 (Select idx, typ, _) -> (
     match typ with
     | Array {elt} -> elt
-    | Tuple {elts} | Struct {elts} -> IArray.get elts idx
+    | Tuple {elts} | Struct {elts} -> snd (IArray.get elts idx)
     | _ -> violates invariant exp )
   | Ap2
       ( (Eq | Dq | Gt | Ge | Lt | Le | Ugt | Uge | Ult | Ule | Ord | Uno)
