@@ -208,7 +208,10 @@ end = struct
 
   let add x y = _Arith Arith.(add (trm x) (trm y))
   let sub x y = _Arith Arith.(sub (trm x) (trm y))
-  let _Splat x = Splat x |> check invariant
+
+  let _Splat x =
+    (* 0^ ==> 0 *)
+    (if x == zero then x else Splat x) |> check invariant
 
   let seq_size_exn =
     let invalid = Invalid_argument "seq_size_exn" in
@@ -254,6 +257,8 @@ end = struct
       (* α[m,k)[o,l) ==> α[m+o,l) when k ≥ o+l *)
       | Extract {seq= a; off= m; len= k} when partial_ge k o_l ->
           _Extract a (add m off) len
+      (* ⟨_,0⟩[_,_) ==> 0 *)
+      | Sized {seq} when seq == zero -> seq
       (* ⟨n,E^⟩[o,l) ==> ⟨l,E^⟩ when n ≥ o+l *)
       | Sized {siz= n; seq= Splat _ as e} when partial_ge n o_l ->
           _Sized e len
@@ -321,6 +326,10 @@ end = struct
         when equal na na' && equal o_k (add o k) && partial_ge n (add o_k l)
         ->
           Some (_Extract na o (add k l))
+      (* ⟨m,0⟩^⟨n,0⟩ ==> ⟨m+n,0⟩ *)
+      | Sized {siz= m; seq= a}, Sized {siz= n; seq= a'}
+        when a == zero && a' == zero ->
+          Some (_Sized a (add m n))
       (* ⟨m,E^⟩^⟨n,E^⟩ ==> ⟨m+n,E^⟩ *)
       | Sized {siz= m; seq= Splat _ as a}, Sized {siz= n; seq= a'}
         when equal a a' ->
