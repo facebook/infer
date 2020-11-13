@@ -33,10 +33,12 @@ Exp.demangle :=
   let null_ptr_size_t = from_voidp size_t null in
   let status = allocate int 0 in
   fun mangled ->
-    let demangled =
-      cxa_demangle mangled null_ptr_char null_ptr_size_t status
-    in
-    if !@status = 0 then demangled else None
+    if String.prefix ~pre:"_Z" mangled then
+      let demangled =
+        cxa_demangle mangled null_ptr_char null_ptr_size_t status
+      in
+      if !@status = 0 then demangled else None
+    else None
 
 exception Invalid_llvm of string
 
