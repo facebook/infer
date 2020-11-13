@@ -1493,7 +1493,7 @@ and liveness_dangerous_classes =
 
 
 and liveness_whitelist_constant =
-  CLOpt.mk_int_list ~default:[] ~long:"liveness-whitelist-constant"
+  CLOpt.mk_string_list ~default:[] ~long:"liveness-whitelist-constant"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
     "List of integer constants to be ignored by liveness analysis"
 
