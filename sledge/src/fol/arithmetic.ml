@@ -305,11 +305,6 @@ struct
 
     let trms poly = Iter.flat_map ~f:Mono.trms (monos poly)
 
-    type product = Prod.t
-
-    let fold_factors = Prod.fold
-    let fold_monomials = Sum.fold
-
     (* query *)
 
     let vars p = Iter.flat_map ~f:Trm.vars (trms p)

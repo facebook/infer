@@ -71,13 +71,6 @@ module type S = sig
   (** [solve_zero_eq d] is [Some (e, f)] if [0 = d] can be equivalently
       expressed as [e = f] for some monomial subterm [e] of [d]. If [for_]
       is passed, then the subterm [e] must be [for_]. *)
-
-  (**/**)
-
-  type product
-
-  val fold_factors : product -> 's -> f:(trm -> int -> 's -> 's) -> 's
-  val fold_monomials : t -> 's -> f:(product -> Q.t -> 's -> 's) -> 's
 end
 
 (** Indeterminate terms, treated as atomic / variables except when they can
