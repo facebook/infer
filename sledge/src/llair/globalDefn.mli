@@ -7,11 +7,11 @@
 
 (** Global variables *)
 
-type t = private {name: Global.t; init: (Exp.t * int) option; loc: Loc.t}
+type t = private {name: Global.t; init: Exp.t option; loc: Loc.t}
 [@@deriving compare, equal, hash, sexp]
 
 val pp : t pp
 
 include Invariant.S with type t := t
 
-val mk : ?init:Exp.t * int -> Global.t -> Loc.t -> t
+val mk : ?init:Exp.t -> Global.t -> Loc.t -> t

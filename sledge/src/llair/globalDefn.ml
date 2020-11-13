@@ -7,18 +7,19 @@
 
 (** Global variables *)
 
-type t = {name: Global.t; init: (Exp.t * int) option; loc: Loc.t}
+type t = {name: Global.t; init: Exp.t option; loc: Loc.t}
 [@@deriving compare, equal, hash, sexp]
 
 let pp ppf {name; init; loc} =
   Format.fprintf ppf "@[<2>%a %a%a %a@]" Typ.pp (Global.typ name) Global.pp
     name
     (Option.pp "@ = @[%a@]" Exp.pp)
-    (Option.map ~f:fst init) Loc.pp loc
+    init Loc.pp loc
 
 let invariant g =
   let@ () = Invariant.invariant [%here] g [%sexp_of: t] in
-  let {name} = g in
-  assert (Typ.is_sized (Global.typ name))
+  match Global.typ g.name with
+  | Pointer {elt} -> assert (Option.is_none g.init || Typ.is_sized elt)
+  | _ -> assert false
 
 let mk ?init name loc = {name; init; loc} |> check invariant

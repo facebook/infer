@@ -22,8 +22,13 @@ let simplify q = if !simplify_states then Sh.simplify q else q
 let init globals =
   IArray.fold globals Sh.emp ~f:(fun global q ->
       match (global : Llair.GlobalDefn.t) with
-      | {name; init= Some (seq, siz)} ->
+      | {name; init= Some seq} ->
           let loc = X.global name in
+          let siz =
+            match Llair.Global.typ name with
+            | Pointer {elt} -> Llair.Typ.size_of elt
+            | _ -> violates Llair.GlobalDefn.invariant global
+          in
           let len = Term.integer (Z.of_int siz) in
           let seq = X.term seq in
           Sh.star q (Sh.seg {loc; bas= loc; len; siz= len; seq})

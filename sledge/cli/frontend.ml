@@ -769,7 +769,7 @@ and xlate_global : x -> Llvm.llvalue -> GlobalDefn.t =
                 let is_nondet = function Nondet _ -> true | _ -> false in
                 if not (List.for_all ~f:is_nondet pre) then
                   todo "global initializer instructions" () ;
-                (init, size_of x (Llvm.type_of llv)) )
+                init )
         | _ -> None
       in
       GlobalDefn.mk ?init g loc
