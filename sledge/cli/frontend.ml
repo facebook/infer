@@ -256,18 +256,17 @@ let rec xlate_type : x -> Llvm.lltype -> Typ.t =
       | Struct ->
           let llelts = Llvm.struct_element_types llt in
           let len = Array.length llelts in
-          let packed = Llvm.is_packed llt in
           if Llvm.is_literal llt then
             let elts =
               IArray.map ~f:(xlate_type x) (IArray.of_array llelts)
             in
-            Typ.tuple elts ~bits ~byts ~packed
+            Typ.tuple elts ~bits ~byts
           else
             let name = struct_name llt in
             let elts =
               IArray.init len ~f:(fun i -> lazy (xlate_type x llelts.(i)))
             in
-            Typ.struct_ ~name elts ~bits ~byts ~packed
+            Typ.struct_ ~name elts ~bits ~byts
       | Function -> fail "expected to be unsized: %a" pp_lltype llt ()
       | Vector -> todo "vector types: %a" pp_lltype llt ()
       | Void | Label | Metadata | Token -> assert false
@@ -823,9 +822,7 @@ let landingpad_typs : x -> Llvm.llvalue -> Typ.t * Typ.t * Llvm.lltype =
 let exception_typs =
   let pi8 = Typ.pointer ~elt:Typ.byt in
   let i32 = Typ.integer ~bits:32 ~byts:4 in
-  let exc =
-    Typ.tuple ~packed:false (IArray.of_array [|pi8; i32|]) ~bits:96 ~byts:12
-  in
+  let exc = Typ.tuple (IArray.of_array [|pi8; i32|]) ~bits:96 ~byts:12 in
   (pi8, i32, exc)
 
 (** Translate a control transfer from instruction [instr] to block [dst] to

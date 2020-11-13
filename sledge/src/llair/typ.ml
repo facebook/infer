@@ -13,14 +13,13 @@ type t =
   | Float of {bits: int; byts: int; enc: [`IEEE | `Extended | `Pair]}
   | Pointer of {elt: t}
   | Array of {elt: t; len: int; bits: int; byts: int}
-  | Tuple of {elts: t iarray; bits: int; byts: int; packed: bool}
+  | Tuple of {elts: t iarray; bits: int; byts: int}
   | Struct of
       { name: string
       ; elts: t iarray (* possibly cyclic, name unique *)
             [@compare.ignore] [@equal.ignore] [@sexp_drop_if fun _ -> true]
       ; bits: int
-      ; byts: int
-      ; packed: bool }
+      ; byts: int }
   | Opaque of {name: string}
 [@@deriving compare, equal, hash, sexp]
 
@@ -43,17 +42,14 @@ let rec pp fs typ =
       pf "f%i%s" bits enc_str
   | Pointer {elt} -> pf "%a*" pp elt
   | Array {elt; len} -> pf "[%i x %a]" len pp elt
-  | Tuple {elts; packed} ->
-      let opn, cls = if packed then ("<{", "}>") else ("{", "}") in
-      pf "%s @[%a@] %s" opn pps elts cls
+  | Tuple {elts} -> pf "{ @[%a@] }" pps elts
   | Struct {name} | Opaque {name} -> pf "%%%s" name
 
 and pps fs typs = IArray.pp ",@ " pp fs typs
 
 let pp_defn fs = function
-  | Struct {name; elts; packed} ->
-      let opn, cls = if packed then ("<{", "}>") else ("{", "}") in
-      Format.fprintf fs "@[<2>%%%s =@ @[%s %a@] %s@]" name opn pps elts cls
+  | Struct {name; elts} ->
+      Format.fprintf fs "@[<2>%%%s =@ @[{ %a@] }@]" name pps elts
   | Opaque {name} -> Format.fprintf fs "@[<2>%%%s =@ opaque@]" name
   | typ -> pp fs typ
 
@@ -85,24 +81,20 @@ let pointer ~elt = Pointer {elt} |> check invariant
 let array ~elt ~len ~bits ~byts =
   Array {elt; len; bits; byts} |> check invariant
 
-let tuple elts ~bits ~byts ~packed =
-  Tuple {elts; bits; byts; packed} |> check invariant
-
+let tuple elts ~bits ~byts = Tuple {elts; bits; byts} |> check invariant
 let opaque ~name = Opaque {name} |> check invariant
 
 let struct_ =
   let defns = String.Tbl.create () in
   let dummy_typ = Opaque {name= "dummy"} in
-  fun ~name ~bits ~byts ~packed elt_thks ->
+  fun ~name ~bits ~byts elt_thks ->
     match String.Tbl.find defns name with
     | Some typ -> typ
     | None ->
         (* Add placeholder defn to prevent computing [elts] in calls to
            [struct] from [elts] for recursive occurrences of [name]. *)
         let elts = Array.make (IArray.length elt_thks) dummy_typ in
-        let typ =
-          Struct {name; elts= IArray.of_array elts; bits; byts; packed}
-        in
+        let typ = Struct {name; elts= IArray.of_array elts; bits; byts} in
         String.Tbl.set defns ~key:name ~data:typ ;
         IArray.iteri elt_thks ~f:(fun i (lazy elt) -> elts.(i) <- elt) ;
         typ |> check invariant
