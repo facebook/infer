@@ -94,5 +94,8 @@ val height : t -> int
 
 (** Traverse *)
 
+val trms : t -> t iter
+(** The immediate subterms of a term. *)
+
 val vars : t -> Var.t iter
-val subtrms : t -> t iter
+(** The variables that occur in a term. *)

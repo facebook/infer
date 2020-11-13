@@ -428,23 +428,16 @@ let map e ~f =
 
 (** Traverse *)
 
-let iter_subtrms e ~f =
-  match e with
-  | Var _ | Z _ | Q _ -> ()
-  | Arith a -> Iter.iter ~f (Arith.trms a)
-  | Splat x -> f x
-  | Sized {seq= x; siz= y} ->
-      f x ;
-      f y
+let trms = function
+  | Var _ | Z _ | Q _ -> Iter.empty
+  | Arith a -> Arith.trms a
+  | Splat x -> Iter.(cons x empty)
+  | Sized {seq= x; siz= y} -> Iter.(cons x (cons y empty))
   | Extract {seq= x; off= y; len= z} ->
-      f x ;
-      f y ;
-      f z
-  | Concat xs | Apply (_, xs) -> Array.iter ~f xs
-
-let subtrms e = Iter.from_labelled_iter (iter_subtrms e)
+      Iter.(cons x (cons y (cons z empty)))
+  | Concat xs | Apply (_, xs) -> Iter.of_array xs
 
 (** Query *)
 
 let fv e = Var.Set.of_iter (vars e)
-let rec height e = 1 + Iter.fold ~f:(fun x -> max (height x)) (subtrms e) 0
+let rec height e = 1 + Iter.fold ~f:(fun x -> max (height x)) (trms e) 0

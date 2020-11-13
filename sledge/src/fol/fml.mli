@@ -83,6 +83,7 @@ val fold_dnf :
   -> 'disjunction
 
 val vars : t -> Var.t iter
+val trms : t -> Trm.t iter
 
 (** Query *)
 

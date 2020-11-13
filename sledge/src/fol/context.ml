@@ -32,7 +32,7 @@ let uninterpreted e = equal_kind (classify e) Uninterpreted
 
 let rec max_solvables e =
   if non_interpreted e then Iter.return e
-  else Iter.flat_map ~f:max_solvables (Trm.subtrms e)
+  else Iter.flat_map ~f:max_solvables (Trm.trms e)
 
 let fold_max_solvables e s ~f = Iter.fold ~f (max_solvables e) s
 
@@ -168,8 +168,8 @@ end = struct
     in
     ( is_var_in xs e
     || is_var_in xs f
-    || (uninterpreted e && Iter.exists ~f:(is_var_in xs) (Trm.subtrms e))
-    || (uninterpreted f && Iter.exists ~f:(is_var_in xs) (Trm.subtrms f)) )
+    || (uninterpreted e && Iter.exists ~f:(is_var_in xs) (Trm.trms e))
+    || (uninterpreted f && Iter.exists ~f:(is_var_in xs) (Trm.trms f)) )
     $> fun b ->
     [%Trace.info
       "is_valid_eq %a%a=%a = %b" Var.Set.pp_xs xs Trm.pp e Trm.pp f b]
@@ -457,7 +457,7 @@ let pre_invariant r =
       (* no interpreted terms in carrier *)
       assert (non_interpreted trm || fail "non-interp %a" Trm.pp trm ()) ;
       (* carrier is closed under subterms *)
-      Iter.iter (Trm.subtrms trm) ~f:(fun subtrm ->
+      Iter.iter (Trm.trms trm) ~f:(fun subtrm ->
           assert (
             (not (non_interpreted subtrm))
             || (match subtrm with Z _ | Q _ -> true | _ -> false)
@@ -525,12 +525,12 @@ let rec extend_ a r =
   match (a : Trm.t) with
   | Z _ | Q _ -> r
   | _ -> (
-      if interpreted a then Iter.fold ~f:extend_ (Trm.subtrms a) r
+      if interpreted a then Iter.fold ~f:extend_ (Trm.trms a) r
       else
         (* add uninterpreted terms *)
         match Subst.extend a r with
         (* and their subterms if newly added *)
-        | Some r -> Iter.fold ~f:extend_ (Trm.subtrms a) r
+        | Some r -> Iter.fold ~f:extend_ (Trm.trms a) r
         | None -> r )
 
 (** add a term to the carrier *)
@@ -640,10 +640,10 @@ let ppx_diff var_strength fs parent_ctx fml ctx =
 let fold_uses_of r t s ~f =
   let rec fold_ e s ~f =
     let s =
-      Iter.fold (Trm.subtrms e) s ~f:(fun sub s ->
+      Iter.fold (Trm.trms e) s ~f:(fun sub s ->
           if Trm.equal t sub then f s e else s )
     in
-    if interpreted e then Iter.fold ~f:(fold_ ~f) (Trm.subtrms e) s else s
+    if interpreted e then Iter.fold ~f:(fold_ ~f) (Trm.trms e) s else s
   in
   Subst.fold r.rep s ~f:(fun ~key:trm ~data:rep s ->
       fold_ ~f trm (fold_ ~f rep s) )
