@@ -295,35 +295,20 @@ and solve_ ?f d e s =
   | None -> Some s
   (* i = j ==> false when i ≠ j *)
   | Some (Z _, Z _) | Some (Q _, Q _) -> None
+  (*
+   * Concat
+   *)
   (* ⟨0,a⟩ = β ==> a = β = ⟨⟩ *)
-  | Some (Sized {siz= n; seq= a}, b) when Trm.equal n Trm.zero ->
+  | Some (Sized {siz= n; seq= a}, b) when n == Trm.zero ->
       s |> solve_ ?f a (Trm.concat [||]) >>= solve_ ?f b (Trm.concat [||])
-  | Some (b, Sized {siz= n; seq= a}) when Trm.equal n Trm.zero ->
+  | Some (b, Sized {siz= n; seq= a}) when n == Trm.zero ->
       s |> solve_ ?f a (Trm.concat [||]) >>= solve_ ?f b (Trm.concat [||])
-  (* v = ⟨n,a⟩ ==> v = a *)
-  | Some ((Var _ as v), Sized {seq= a}) -> s |> solve_ ?f v a
-  (* ⟨n,a⟩ = ⟨m,b⟩ ==> n = m ∧ a = β *)
-  | Some (Sized {siz= n; seq= a}, Sized {siz= m; seq= b}) ->
-      s |> solve_ ?f n m >>= solve_ ?f a b
-  (* ⟨n,0⟩ = α₀^…^αᵥ ==> *)
+  (* ⟨n,0⟩ = α₀^…^αᵥ ==> … ∧ αⱼ = ⟨n,0⟩[n₀+…+nᵢ,nⱼ) ∧ … *)
   | Some ((Sized {siz= n; seq} as b), Concat a0V) when seq == Trm.zero ->
       solve_concat ?f a0V b n s
-  (* ⟨n,e^⟩ = α₀^…^αᵥ ==> *)
+  (* ⟨n,e^⟩ = α₀^…^αᵥ ==> … ∧ αⱼ = ⟨n,e^⟩[n₀+…+nᵢ,nⱼ) ∧ … *)
   | Some ((Sized {siz= n; seq= Splat _} as b), Concat a0V) ->
       solve_concat ?f a0V b n s
-  (* ⟨n,a⟩ = β ==> n = |β| ∧ a = β *)
-  | Some (Sized {siz= n; seq= a}, b) ->
-      ( match Trm.seq_size b with
-      | None -> Some s
-      | Some m -> solve_ ?f n m s )
-      >>= solve_ ?f a b
-  | Some ((Var _ as v), (Extract {len= l} as e)) ->
-      if not (Var.Set.mem (Var.of_ v) (Trm.fv e)) then
-        (* v = α[o,l) ==> v ↦ α[o,l) when v ∉ fv(α[o,l)) *)
-        compose1 ?f ~var:v ~rep:e s
-      else
-        (* v = α[o,l) ==> α[o,l) ↦ ⟨l,v⟩ when v ∈ fv(α[o,l)) *)
-        compose1 ?f ~var:e ~rep:(Trm.sized ~siz:l ~seq:v) s
   | Some ((Var _ as v), (Concat a0V as c)) ->
       if not (Var.Set.mem (Var.of_ v) (Trm.fv c)) then
         (* v = α₀^…^αᵥ ==> v ↦ α₀^…^αᵥ when v ∉ fv(α₀^…^αᵥ) *)
@@ -332,14 +317,48 @@ and solve_ ?f d e s =
         (* v = α₀^…^αᵥ ==> ⟨|α₀^…^αᵥ|,v⟩ = α₀^…^αᵥ when v ∈ fv(α₀^…^αᵥ) *)
         let m = Trm.seq_size_exn c in
         solve_concat ?f a0V (Trm.sized ~siz:m ~seq:v) m s
-  | Some ((Extract {len= l} as e), Concat a0V) -> solve_concat ?f a0V e l s
+  (* α₀^…^αᵥ = β₀^…^βᵤ ==> … ∧ αⱼ = (β₀^…^βᵤ)[n₀+…+nᵢ,nⱼ) ∧ … *)
   | Some (Concat a0V, (Concat _ as c)) ->
       solve_concat ?f a0V c (Trm.seq_size_exn c) s
+  (* α[o,l) = α₀^…^αᵥ ==> … ∧ αⱼ = α[o,l)[n₀+…+nᵢ,nⱼ) ∧ … *)
+  | Some ((Extract {len= l} as e), Concat a0V) -> solve_concat ?f a0V e l s
+  (*
+   * Extract
+   *)
+  | Some ((Var _ as v), (Extract {len= l} as e)) ->
+      if not (Var.Set.mem (Var.of_ v) (Trm.fv e)) then
+        (* v = α[o,l) ==> v ↦ α[o,l) when v ∉ fv(α[o,l)) *)
+        compose1 ?f ~var:v ~rep:e s
+      else
+        (* v = α[o,l) ==> α[o,l) ↦ ⟨l,v⟩ when v ∈ fv(α[o,l)) *)
+        compose1 ?f ~var:e ~rep:(Trm.sized ~siz:l ~seq:v) s
+  (* α[o,l) = β ==> … ∧ α = _^β^_ *)
   | Some (Extract {seq= a; off= o; len= l}, e) -> solve_extract ?f a o l e s
+  (*
+   * Sized
+   *)
+  (* v = ⟨n,a⟩ ==> v = a *)
+  | Some ((Var _ as v), Sized {seq= a}) -> s |> solve_ ?f v a
+  (* ⟨n,a⟩ = ⟨m,b⟩ ==> n = m ∧ a = β *)
+  | Some (Sized {siz= n; seq= a}, Sized {siz= m; seq= b}) ->
+      s |> solve_ ?f n m >>= solve_ ?f a b
+  (* ⟨n,a⟩ = β ==> n = |β| ∧ a = β *)
+  | Some (Sized {siz= n; seq= a}, b) ->
+      ( match Trm.seq_size b with
+      | None -> Some s
+      | Some m -> solve_ ?f n m s )
+      >>= solve_ ?f a b
+  (*
+   * Arithmetic
+   *)
   (* p = q ==> p-q = 0 *)
   | Some (((Arith _ | Z _ | Q _) as p), q | q, ((Arith _ | Z _ | Q _) as p))
     ->
       solve_poly ?f p q s
+  (*
+   * Uninterpreted
+   *)
+  (* r = v ==> v ↦ r *)
   | Some (rep, var) ->
       assert (non_interpreted var) ;
       assert (non_interpreted rep) ;
