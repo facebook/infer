@@ -14,7 +14,7 @@ SLEDGE_OPT=$(CURDIR)/../_build/release/cli/sledge_cli.exe
 SLEDGE_ARGS?=
 
 # limits for each test run
-TIMEOUT?=90
+TIMEOUT?=100
 MEMOUT?=4096
 
 sledge_dbg=./wrap.sh $(TIMEOUT) $(MEMOUT) $(SLEDGE_DBG)
@@ -35,17 +35,24 @@ default: test
 
 # compile c to llvm bitcode
 %.bc : %.c
-	@(cd $(dir $*) && clang -g -c -emit-llvm -include $(CURDIR)/../model/llair_intrinsics.h -Wno-main-return-type $(CLANG_ARGS) $(notdir $*).c -o $(notdir $*).bc)
+	@(cd $(@D) && clang -g -c -emit-llvm -include $(CURDIR)/../model/llair_intrinsics.h -Wno-main-return-type $(CLANG_ARGS) -o $(@F) $(<F))
 
 # compile c++ to llvm bitcode
 %.bc : %.cpp
-	@(cd $(dir $*) && clang++ -g -c -emit-llvm $(CLANG_ARGS) $(notdir $*).cpp -o $(notdir $*).bc)
+	@(cd $(@D) && clang++ -g -c -emit-llvm $(CLANG_ARGS) -o $(@F) $(<F))
+
+# disassemble bitcode to llvm assembly
+%.ll : %.bc
+	@(cd $(@D) && llvm-dis -show-annotations -o $(@F) $(<F))
 
 %.llair : %.bc
 	$(SLEDGE_DBG) llvm translate $< -llair-output $@
 
-%.llair.txt : %.llair
-	$(SLEDGE_DBG) disassemble $< -llair-txt-output $@
+%.llair.txt : %.bc
+	$(SLEDGE_DBG) llvm disassemble -no-models -no-internalize $< -llair-txt-output $@
+
+%.llair.txt : %.ll
+	$(SLEDGE_DBG) llvm disassemble -no-models -no-internalize $< -llair-txt-output $@
 
 # code to test sledge translate
 TranslateCs:=$(shell find -L {,local/}translate -name '*.c' 2>/dev/null)
@@ -223,7 +230,7 @@ test-llvm:
 	@$(MAKE) --no-print-directory llvm-status
 
 # run tests and check against expected results
-test: test-translate test-analyze test-smt test-llvm
+test: test-translate translate.html test-analyze analyze.html test-llvm llvm.html
 
 # set current results as new expected results
 promote: baseline/translate.sexp baseline/analyze.sexp baseline/smt.sexp baseline/llvm.sexp
