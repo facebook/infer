@@ -13,6 +13,7 @@ module rec Term : sig
   val ppx : Var.strength -> t pp
   val pp : t pp
 
+  module Set : Set.S with type elt := t
   module Map : Map.S with type key := t
 
   (** Construct *)
@@ -78,6 +79,7 @@ module rec Term : sig
   (** Traverse *)
 
   val vars : t -> Var.t iter
+  val atoms : t -> t iter
 
   (** Transform *)
 

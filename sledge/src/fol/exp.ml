@@ -196,6 +196,7 @@ module Term = struct
   end
 
   include T
+  module Set = Set.Make (T)
   module Map = Map.Make (T)
 
   let ppx = ppx
@@ -269,6 +270,7 @@ module Term = struct
     match e with `Fml f -> iter_f f | #cnd as c -> iter_c c
 
   let vars = iter ~f:Trm.vars
+  let atoms = iter ~f:(fun e -> Iter.map ~f:(fun a -> `Trm a) (Trm.atoms e))
 
   (** Transform *)
 

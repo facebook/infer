@@ -89,8 +89,9 @@ val map : t -> f:(t -> t) -> t
 
 val seq_size_exn : t -> t
 val seq_size : t -> t option
-val fv : t -> Var.Set.t
+val is_atomic : t -> bool
 val height : t -> int
+val fv : t -> Var.Set.t
 
 (** Traverse *)
 
@@ -99,3 +100,6 @@ val trms : t -> t iter
 
 val vars : t -> Var.t iter
 (** The variables that occur in a term. *)
+
+val atoms : t -> t iter
+(** The atomic reflexive-transitive subterms of a term. *)

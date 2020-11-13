@@ -437,6 +437,13 @@ let trms = function
       Iter.(cons x (cons y (cons z empty)))
   | Concat xs | Apply (_, xs) -> Iter.of_array xs
 
+let is_atomic = function
+  | Var _ | Z _ | Q _ | Concat [||] | Apply (_, [||]) -> true
+  | Arith _ | Splat _ | Sized _ | Extract _ | Concat _ | Apply _ -> false
+
+let rec atoms e =
+  if is_atomic e then Iter.return e else Iter.flat_map ~f:atoms (trms e)
+
 (** Query *)
 
 let fv e = Var.Set.of_iter (vars e)

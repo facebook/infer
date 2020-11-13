@@ -73,39 +73,30 @@ let exec_intrinsic ~skip_throw r i es q =
     (List.map ~f:X.term es)
   |> Option.map ~f:(Option.map ~f:simplify)
 
-let term_eq_class_has_only_vars_in fvs ctx term =
-  [%Trace.call fun {pf} ->
-    pf "@[<v> fvs: @[%a@] @,ctx: @[%a@] @,term: @[%a@]@]" Var.Set.pp fvs
-      Context.pp ctx Term.pp term]
-  ;
-  let term_has_only_vars_in fvs term =
-    Var.Set.subset (Term.fv term) ~of_:fvs
-  in
-  let term_eq_class = Context.class_of ctx term in
-  List.exists ~f:(term_has_only_vars_in fvs) term_eq_class
-  |>
-  [%Trace.retn fun {pf} -> pf "%b"]
+let value_determined_by ctx us a =
+  List.exists (Context.class_of ctx a) ~f:(fun b ->
+      Term.Set.subset (Term.Set.of_iter (Term.atoms b)) ~of_:us )
 
-let garbage_collect (q : t) ~wrt =
+let garbage_collect (q : Sh.t) ~wrt =
   [%Trace.call fun {pf} -> pf "%a" pp q]
   ;
   (* only support DNF for now *)
   assert (List.is_empty q.djns) ;
   let rec all_reachable_vars previous current (q : t) =
-    if Var.Set.equal previous current then current
+    if Term.Set.equal previous current then current
     else
       let new_set =
         List.fold q.heap current ~f:(fun seg current ->
-            if term_eq_class_has_only_vars_in current q.ctx seg.loc then
+            if value_determined_by q.ctx current seg.loc then
               List.fold (Context.class_of q.ctx seg.seq) current
-                ~f:(fun e c -> Var.Set.union c (Term.fv e))
+                ~f:(fun e c ->
+                  Term.Set.union c (Term.Set.of_iter (Term.atoms e)) )
             else current )
       in
       all_reachable_vars current new_set q
   in
-  let r_vars = all_reachable_vars Var.Set.empty wrt q in
-  Sh.filter_heap q ~f:(fun seg ->
-      term_eq_class_has_only_vars_in r_vars q.ctx seg.loc )
+  let r_vars = all_reachable_vars Term.Set.empty wrt q in
+  Sh.filter_heap q ~f:(fun seg -> value_determined_by q.ctx r_vars seg.loc)
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp]
 
@@ -120,10 +111,14 @@ let localize_entry globals actuals formals freturn locals shadow pre entry =
   (* Add the formals here to do garbage collection and then get rid of them *)
   let formals_set = Var.Set.of_list formals in
   let freturn_locals = X.regs (Llair.Reg.Set.add_option freturn locals) in
-  let function_summary_pre =
-    garbage_collect entry
-      ~wrt:(Var.Set.union formals_set (X.globals globals))
+  let wrt =
+    Term.Set.of_iter
+      (Iter.append
+         (Iter.map ~f:(Term.var << X.global)
+            (Llair.Global.Set.to_iter globals))
+         (Iter.map ~f:Term.var (List.to_iter formals)))
   in
+  let function_summary_pre = garbage_collect entry ~wrt in
   [%Trace.info "function summary pre %a" pp function_summary_pre] ;
   let foot = Sh.exists formals_set function_summary_pre in
   let xs, foot = Sh.bind_exists ~wrt:pre.Sh.us foot in
@@ -332,19 +327,19 @@ let%test_module _ =
     let seg_cycle = Sh.seg {loc= a; bas= b; len= n; siz= n; seq= main}
 
     let%expect_test _ =
-      pp (garbage_collect seg_main ~wrt:(Var.Set.of_list [])) ;
+      pp (garbage_collect seg_main ~wrt:(Term.Set.of_list [])) ;
       [%expect {| emp |}]
 
     let%expect_test _ =
       pp
         (garbage_collect (Sh.star seg_a seg_main)
-           ~wrt:(Var.Set.of_list [a_])) ;
+           ~wrt:(Term.Set.of_list [a])) ;
       [%expect {| %a_2 -[ %b_4, %n_3 )-> ⟨%n_3,%end_5⟩ |}]
 
     let%expect_test _ =
       pp
         (garbage_collect (Sh.star seg_a seg_main)
-           ~wrt:(Var.Set.of_list [main_])) ;
+           ~wrt:(Term.Set.of_list [main])) ;
       [%expect
         {|
           %main_1 -[ %b_4, %n_3 )-> ⟨%n_3,%a_2⟩
@@ -354,7 +349,7 @@ let%test_module _ =
       pp
         (garbage_collect
            (Sh.star seg_cycle seg_main)
-           ~wrt:(Var.Set.of_list [a_])) ;
+           ~wrt:(Term.Set.of_list [a])) ;
       [%expect
         {|
           %main_1 -[ %b_4, %n_3 )-> ⟨%n_3,%a_2⟩
