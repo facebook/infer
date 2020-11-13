@@ -221,9 +221,12 @@ let conjoin_callee_arith pre_post call_state =
     pre_post.AbductiveDomain.path_condition
     (AddressMap.pp ~pp_value:(fun fmt (addr, _) -> AbstractValue.pp fmt addr))
     call_state.subst ;
-  let subst, path_condition =
+  let subst, path_condition, new_eqs =
     PathCondition.and_callee call_state.subst call_state.astate.path_condition
       ~callee:pre_post.AbductiveDomain.path_condition
+  in
+  let path_condition =
+    AbductiveDomain.incorporate_new_eqs call_state.astate (path_condition, new_eqs)
   in
   if PathCondition.is_unsat_cheap path_condition then raise (Contradiction PathCondition)
   else

@@ -45,53 +45,61 @@ let true_ = {is_unsat= false; bo_itvs= BoItvs.empty; citvs= CItvs.empty; formula
 
 let false_ = {is_unsat= true; bo_itvs= BoItvs.empty; citvs= CItvs.empty; formula= Formula.ttrue}
 
-let map_sat phi f = if phi.is_unsat then phi else f phi
+type new_eqs = PulseFormula.new_eqs
+
+let map_sat phi f = if phi.is_unsat then (phi, []) else f phi
 
 let ( let+ ) phi f = map_sat phi f
 
-let map_formula_sat (x : 'a Formula.normalized) f = match x with Unsat -> false_ | Sat x' -> f x'
+let map_formula_sat (x : 'a Formula.normalized) f =
+  match x with Unsat -> (false_, []) | Sat x' -> f x'
+
 
 let ( let+| ) x f = map_formula_sat x f
 
 let and_nonnegative v phi =
   let+ {is_unsat; bo_itvs; citvs; formula} = phi in
-  let+| formula =
+  let+| formula, new_eqs =
     Formula.and_less_equal (LiteralOperand IntLit.zero) (AbstractValueOperand v) formula
   in
-  { is_unsat
-  ; bo_itvs= BoItvs.add v Itv.ItvPure.nat bo_itvs
-  ; citvs= CItvs.add v CItv.zero_inf citvs
-  ; formula }
+  ( { is_unsat
+    ; bo_itvs= BoItvs.add v Itv.ItvPure.nat bo_itvs
+    ; citvs= CItvs.add v CItv.zero_inf citvs
+    ; formula }
+  , new_eqs )
 
 
 let and_positive v phi =
   let+ {is_unsat; bo_itvs; citvs; formula} = phi in
-  let+| formula =
+  let+| formula, new_eqs =
     Formula.and_less_than (LiteralOperand IntLit.zero) (AbstractValueOperand v) formula
   in
-  { is_unsat
-  ; bo_itvs= BoItvs.add v Itv.ItvPure.pos bo_itvs
-  ; citvs= CItvs.add v (CItv.ge_to IntLit.one) citvs
-  ; formula }
+  ( { is_unsat
+    ; bo_itvs= BoItvs.add v Itv.ItvPure.pos bo_itvs
+    ; citvs= CItvs.add v (CItv.ge_to IntLit.one) citvs
+    ; formula }
+  , new_eqs )
 
 
 let and_eq_int v i phi =
   let+ {is_unsat; bo_itvs; citvs; formula} = phi in
-  let+| formula = Formula.and_equal (AbstractValueOperand v) (LiteralOperand i) formula in
-  { is_unsat
-  ; bo_itvs= BoItvs.add v (Itv.ItvPure.of_int_lit i) bo_itvs
-  ; citvs= CItvs.add v (CItv.equal_to i) citvs
-  ; formula }
+  let+| formula, new_eqs = Formula.and_equal (AbstractValueOperand v) (LiteralOperand i) formula in
+  ( { is_unsat
+    ; bo_itvs= BoItvs.add v (Itv.ItvPure.of_int_lit i) bo_itvs
+    ; citvs= CItvs.add v (CItv.equal_to i) citvs
+    ; formula }
+  , new_eqs )
 
 
 let simplify ~keep phi =
   let+ {is_unsat; bo_itvs; citvs; formula} = phi in
-  let+| formula = Formula.simplify ~keep formula in
+  let+| formula, new_eqs = Formula.simplify ~keep formula in
   let is_in_keep v _ = AbstractValue.Set.mem v keep in
-  { is_unsat
-  ; bo_itvs= BoItvs.filter is_in_keep bo_itvs
-  ; citvs= CItvs.filter is_in_keep citvs
-  ; formula }
+  ( { is_unsat
+    ; bo_itvs= BoItvs.filter is_in_keep bo_itvs
+    ; citvs= CItvs.filter is_in_keep citvs
+    ; formula }
+  , new_eqs )
 
 
 let subst_find_or_new subst addr_callee =
@@ -193,26 +201,27 @@ let and_formula_callee subst formula_caller ~callee:formula_callee =
 
 
 let and_callee subst phi ~callee:phi_callee =
-  if phi.is_unsat || phi_callee.is_unsat then (subst, false_)
+  if phi.is_unsat || phi_callee.is_unsat then (subst, false_, [])
   else
     match and_bo_itvs_callee subst phi.bo_itvs phi_callee.bo_itvs with
     | exception Contradiction ->
         L.d_printfln "contradiction found by inferbo intervals" ;
-        (subst, false_)
+        (subst, false_, [])
     | subst, bo_itvs' -> (
       match and_citvs_callee subst phi.citvs phi_callee.citvs with
       | exception Contradiction ->
           L.d_printfln "contradiction found by concrete intervals" ;
-          (subst, false_)
+          (subst, false_, [])
       | subst, citvs' -> (
         match and_formula_callee subst phi.formula ~callee:phi_callee.formula with
         | Unsat ->
             L.d_printfln "contradiction found by formulas" ;
-            (subst, false_)
-        | Sat (subst, formula') ->
+            (subst, false_, [])
+        | Sat (subst, formula', new_eqs) ->
             (* TODO: normalize here? *)
             L.d_printfln "conjoined formula post call: %a@\n" Formula.pp formula' ;
-            (subst, {is_unsat= false; bo_itvs= bo_itvs'; citvs= citvs'; formula= formula'}) ) )
+            (subst, {is_unsat= false; bo_itvs= bo_itvs'; citvs= citvs'; formula= formula'}, new_eqs)
+        ) )
 
 
 (** {2 Operations} *)
@@ -255,11 +264,12 @@ let eval_bo_itv_binop binop_addr bop op_lhs op_rhs bo_itvs =
 
 let eval_binop binop_addr binop op_lhs op_rhs phi =
   let+ {is_unsat; bo_itvs; citvs; formula} = phi in
-  let+| formula = Formula.and_equal_binop binop_addr binop op_lhs op_rhs formula in
-  { is_unsat
-  ; bo_itvs= eval_bo_itv_binop binop_addr binop op_lhs op_rhs bo_itvs
-  ; citvs= eval_citv_binop binop_addr binop op_lhs op_rhs citvs
-  ; formula }
+  let+| formula, new_eqs = Formula.and_equal_binop binop_addr binop op_lhs op_rhs formula in
+  ( { is_unsat
+    ; bo_itvs= eval_bo_itv_binop binop_addr binop op_lhs op_rhs bo_itvs
+    ; citvs= eval_citv_binop binop_addr binop op_lhs op_rhs citvs
+    ; formula }
+  , new_eqs )
 
 
 let eval_citv_unop unop_addr unop operand_addr citvs =
@@ -281,11 +291,14 @@ let eval_bo_itv_unop unop_addr unop operand_addr bo_itvs =
 
 let eval_unop unop_addr unop addr phi =
   let+ {is_unsat; bo_itvs; citvs; formula} = phi in
-  let+| formula = Formula.and_equal_unop unop_addr unop (AbstractValueOperand addr) formula in
-  { is_unsat
-  ; bo_itvs= eval_bo_itv_unop unop_addr unop addr bo_itvs
-  ; citvs= eval_citv_unop unop_addr unop addr citvs
-  ; formula }
+  let+| formula, new_eqs =
+    Formula.and_equal_unop unop_addr unop (AbstractValueOperand addr) formula
+  in
+  ( { is_unsat
+    ; bo_itvs= eval_bo_itv_unop unop_addr unop addr bo_itvs
+    ; citvs= eval_citv_unop unop_addr unop addr citvs
+    ; formula }
+  , new_eqs )
 
 
 let prune_bo_with_bop ~negated v_opt arith bop arith' phi =
@@ -318,14 +331,14 @@ let record_citv_abduced addr_opt arith_opt citvs =
 
 
 let prune_binop ~negated bop lhs_op rhs_op ({is_unsat; bo_itvs= _; citvs; formula} as phi) =
-  if is_unsat then phi
+  if is_unsat then (phi, [])
   else
     let value_lhs_opt, arith_lhs_opt, bo_itv_lhs = eval_operand phi lhs_op in
     let value_rhs_opt, arith_rhs_opt, bo_itv_rhs = eval_operand phi rhs_op in
     match CItv.abduce_binop_is_true ~negated bop arith_lhs_opt arith_rhs_opt with
     | Unsatisfiable ->
         L.d_printfln "contradiction detected by concrete intervals" ;
-        false_
+        (false_, [])
     | Satisfiable (abduced_lhs, abduced_rhs) -> (
         let phi =
           let citvs =
@@ -355,9 +368,9 @@ let prune_binop ~negated bop lhs_op rhs_op ({is_unsat; bo_itvs= _; citvs; formul
         match Formula.prune_binop ~negated bop lhs_op rhs_op formula with
         | Unsat ->
             L.d_printfln "contradiction detected by formulas" ;
-            false_
-        | Sat formula ->
-            {phi with is_unsat; formula} )
+            (false_, [])
+        | Sat (formula, new_eqs) ->
+            ({phi with is_unsat; formula}, new_eqs) )
 
 
 (** {2 Queries} *)
@@ -373,13 +386,13 @@ let is_unsat_cheap phi = phi.is_unsat
 let is_unsat_expensive phi =
   (* note: contradictions are detected eagerly for all sub-domains except formula, so just
      evaluate that one *)
-  if is_unsat_cheap phi then (phi, true)
+  if is_unsat_cheap phi then (phi, true, [])
   else
     match Formula.normalize phi.formula with
     | Unsat ->
-        (false_, true)
-    | Sat formula ->
-        ({phi with formula}, false)
+        (false_, true, [])
+    | Sat (formula, new_eqs) ->
+        ({phi with formula}, false, new_eqs)
 
 
 let as_int phi v =
