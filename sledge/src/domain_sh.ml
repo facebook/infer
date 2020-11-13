@@ -23,7 +23,7 @@ let init globals =
   IArray.fold globals Sh.emp ~f:(fun global q ->
       match (global : Llair.GlobalDefn.t) with
       | {name; init= Some (seq, siz)} ->
-          let loc = Term.var (X.global name) in
+          let loc = X.global name in
           let len = Term.integer (Z.of_int siz) in
           let seq = X.term seq in
           Sh.star q (Sh.seg {loc; bas= loc; len; siz= len; seq})
@@ -114,8 +114,7 @@ let localize_entry globals actuals formals freturn locals shadow pre entry =
   let wrt =
     Term.Set.of_iter
       (Iter.append
-         (Iter.map ~f:(Term.var << X.global)
-            (Llair.Global.Set.to_iter globals))
+         (Iter.map ~f:X.global (Llair.Global.Set.to_iter globals))
          (Iter.map ~f:Term.var (List.to_iter formals)))
   in
   let function_summary_pre = garbage_collect entry ~wrt in

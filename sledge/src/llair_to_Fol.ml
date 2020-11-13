@@ -9,21 +9,9 @@ open Fol
 module T = Term
 module F = Formula
 
-let func f =
-  let name = Llair.Function.name f in
-  Var.program ~name ~global:true
-
-let global g =
-  let name = Llair.Global.name g in
-  Var.program ~name ~global:true
-
-let globals gs =
-  Var.Set.of_iter (Iter.map ~f:global (Llair.Global.Set.to_iter gs))
-
-let reg r =
-  let name = Llair.Reg.name r in
-  Var.program ~name ~global:false
-
+let uconst name = T.apply (Funsym.uninterp ("@" ^ name)) [||]
+let global g = uconst (Llair.Global.name g)
+let reg r = Var.program ~name:(Llair.Reg.name r)
 let regs rs = Var.Set.of_iter (Iter.map ~f:reg (Llair.Reg.Set.to_iter rs))
 let uap0 f = T.apply f [||]
 let uap1 f a = T.apply f [|a|]
@@ -73,9 +61,8 @@ and term : Llair.Exp.t -> T.t =
       F.inject
         (F.cond ~cnd:(formula cnd) ~pos:(formula pos) ~neg:(formula neg))
   (* terms *)
-  | Reg {name; typ= _} -> T.var (Var.program ~name ~global:false)
-  | Global {name; typ= _} -> T.var (Var.program ~name ~global:true)
-  | Function {name; typ= _} -> T.var (Var.program ~name ~global:true)
+  | Reg {name; typ= _} -> T.var (Var.program ~name)
+  | Global {name; typ= _} | Function {name; typ= _} -> uconst name
   | Label {parent; name} ->
       uap0 (Funsym.uninterp ("label_" ^ parent ^ "_" ^ name))
   | Integer {typ= _; data} -> T.integer data

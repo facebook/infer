@@ -7,9 +7,7 @@
 
 open Fol
 
-val func : Llair.Function.t -> Var.t
-val global : Llair.Global.t -> Var.t
-val globals : Llair.Global.Set.t -> Var.Set.t
+val global : Llair.Global.t -> Term.t
 val reg : Llair.Reg.t -> Var.t
 val regs : Llair.Reg.Set.t -> Var.Set.t
 val term : Llair.Exp.t -> Term.t

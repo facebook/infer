@@ -16,15 +16,13 @@ module Make (T : REPR) = struct
   let ppx strength ppf v =
     let id = id v in
     let name = name v in
-    match id with
-    | -1 -> Trace.pp_styled `Bold "%@%s" ppf name
-    | 0 -> Trace.pp_styled `Bold "%%%s" ppf name
-    | _ -> (
+    if id = 0 then Trace.pp_styled `Bold "%%%s" ppf name
+    else
       match strength v with
       | None -> Format.fprintf ppf "%%%s_%d" name id
       | Some `Universal -> Trace.pp_styled `Bold "%%%s_%d" ppf name id
       | Some `Existential -> Trace.pp_styled `Cyan "%%%s_%d" ppf name id
-      | Some `Anonymous -> Trace.pp_styled `Cyan "_" ppf )
+      | Some `Anonymous -> Trace.pp_styled `Cyan "_" ppf
 
   let pp = ppx (fun _ -> None)
 
@@ -52,7 +50,7 @@ module Make (T : REPR) = struct
     let x' = make ~id:(max + 1) ~name in
     (x', Set.add x' wrt)
 
-  let program ~name ~global = make ~id:(if global then -1 else 0) ~name
+  let program ~name = make ~id:0 ~name
   let identified ~name ~id = make ~id ~name
 
   (** Variable renaming substitutions *)
