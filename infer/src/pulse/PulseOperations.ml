@@ -101,13 +101,11 @@ let eval location exp0 astate =
         Ok (eval_var [ValueHistory.VariableAccessed (pvar, location)] (Var.of_pvar pvar) astate)
     | Lfield (exp', field, _) ->
         let* astate, addr_hist = eval exp' astate in
-        let+ astate = check_addr_access location addr_hist astate in
-        Memory.eval_edge addr_hist (FieldAccess field) astate
+        eval_access location addr_hist (FieldAccess field) astate
     | Lindex (exp', exp_index) ->
         let* astate, addr_hist_index = eval exp_index astate in
         let* astate, addr_hist = eval exp' astate in
-        let+ astate = check_addr_access location addr_hist astate in
-        Memory.eval_edge addr_hist (ArrayAccess (StdTyp.void, fst addr_hist_index)) astate
+        eval_access location addr_hist (ArrayAccess (StdTyp.void, fst addr_hist_index)) astate
     | Closure {name; captured_vars} ->
         let+ astate, rev_captured =
           List.fold_result captured_vars ~init:(astate, [])
