@@ -735,11 +735,12 @@ let nondet pre = function Some reg -> kill pre reg | None -> pre
 let abort _ = None
 
 let intrinsic ~skip_throw :
-    Sh.t -> Var.t option -> Var.t -> Term.t list -> Sh.t option option =
+    Sh.t -> Var.t option -> string -> Term.t list -> Sh.t option option =
  fun pre areturn intrinsic actuals ->
   let name =
-    let n = Var.name intrinsic in
-    match String.index n '.' with None -> n | Some i -> String.take i n
+    match String.index intrinsic '.' with
+    | None -> intrinsic
+    | Some i -> String.take i intrinsic
   in
   let skip pre = Some (Some pre) in
   ( match (areturn, name, actuals) with
@@ -820,7 +821,7 @@ let intrinsic ~skip_throw :
   | None -> ()
   | Some _ ->
       [%Trace.info
-        "@[<2>exec intrinsic@ @[%a%a(@[%a@])@] from@ @[{ %a@ }@]@]"
+        "@[<2>exec intrinsic@ @[%a%s(@[%a@])@] from@ @[{ %a@ }@]@]"
           (Option.pp "%a := " Var.pp)
-          areturn Var.pp intrinsic (List.pp ",@ " Term.pp)
-          (List.rev actuals) Sh.pp pre]
+          areturn intrinsic (List.pp ",@ " Term.pp) (List.rev actuals) Sh.pp
+          pre]

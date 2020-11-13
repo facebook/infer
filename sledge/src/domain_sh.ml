@@ -69,8 +69,8 @@ let exec_inst inst pre =
   |> Option.map ~f:simplify
 
 let exec_intrinsic ~skip_throw r i es q =
-  Exec.intrinsic ~skip_throw q (Option.map ~f:X.reg r) (X.func i)
-    (List.map ~f:X.term es)
+  Exec.intrinsic ~skip_throw q (Option.map ~f:X.reg r)
+    (Llair.Function.name i) (List.map ~f:X.term es)
   |> Option.map ~f:(Option.map ~f:simplify)
 
 let value_determined_by ctx us a =

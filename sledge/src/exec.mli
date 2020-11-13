@@ -26,6 +26,6 @@ val intrinsic :
      skip_throw:bool
   -> Sh.t
   -> Var.t option
-  -> Var.t
+  -> string
   -> Term.t list
   -> Sh.t option option
