@@ -65,7 +65,7 @@ let rec apron_typ_of_llair_typ : Llair.Typ.t -> Texpr1.typ option = function
 
 let rec apron_texpr_of_llair_exp exp q =
   match (exp : Llair.Exp.t) with
-  | Reg {name} | Function {name} ->
+  | Reg {name} | Global {name} | Function {name} ->
       Some (Texpr1.Var (apron_var_of_name name))
   | Integer {data} -> Some (Texpr1.Cst (Coeff.s_of_int (Z.to_int data)))
   | Float {data} -> (
@@ -278,7 +278,7 @@ let call ~summaries ~globals:_ ~actuals ~areturn ~formals ~freturn:_
     todo "Summaries not yet implemented for interval analysis" ()
   else
     let mangle r =
-      Llair.Reg.program (Llair.Reg.typ r) ("__tmp__" ^ Llair.Reg.name r)
+      Llair.Reg.mk (Llair.Reg.typ r) ("__tmp__" ^ Llair.Reg.name r)
     in
     let args = List.combine_exn formals actuals in
     let q' = List.fold ~f:(fun (f, a) q -> assign (mangle f) a q) args q in
@@ -311,4 +311,4 @@ type summary = t
 
 let pp_summary = pp
 let apply_summary _ _ = None
-let create_summary ~locals:_ ~formals:_ q = (q, q)
+let create_summary ~globals:_ ~locals:_ ~formals:_ q = (q, q)

@@ -13,6 +13,7 @@ module Typ = Typ
 module Reg = Reg
 module Exp = Exp
 module Function = Function
+module Global = Global
 module GlobalDefn = GlobalDefn
 
 (** Instructions for memory manipulation or other non-control effects. *)

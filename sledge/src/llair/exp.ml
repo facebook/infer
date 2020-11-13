@@ -62,7 +62,8 @@ module T = struct
   [@@deriving compare, equal, hash, sexp]
 
   type t =
-    | Reg of {name: string; global: bool; typ: Typ.t}
+    | Reg of {name: string; typ: Typ.t}
+    | Global of {name: string; typ: Typ.t [@ignore]}
     | Function of {name: string; typ: Typ.t [@ignore]}
     | Label of {parent: string; name: string}
     | Integer of {data: Z.t; typ: Typ.t}
@@ -128,8 +129,8 @@ let rec pp fs exp =
     Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
   in
   match exp with
-  | Reg {name; global= true} -> pf "%@%s" name
-  | Reg {name; global= false} -> pf "%%%s" name
+  | Reg {name} -> pf "%%%s" name
+  | Global {name} -> pf "%@%s%a" name pp_demangled name
   | Function {name} -> pf "&%s%a" name pp_demangled name
   | Label {name} -> pf "%s" name
   | Integer {data; typ= Pointer _} when Z.equal Z.zero data -> pf "null"
@@ -172,7 +173,7 @@ let valid_idx idx elts = 0 <= idx && idx < IArray.length elts
 let rec invariant exp =
   let@ () = Invariant.invariant [%here] exp [%sexp_of: t] in
   match exp with
-  | Reg {typ} -> assert (Typ.is_sized typ)
+  | Reg {typ} | Global {typ} -> assert (Typ.is_sized typ)
   | Function {typ= Pointer {elt= Function _}} -> ()
   | Function _ -> assert false
   | Integer {data; typ} -> (
@@ -251,7 +252,9 @@ let rec invariant exp =
 
 and typ_of exp =
   match exp with
-  | Reg {typ} | Function {typ} | Integer {typ} | Float {typ} -> typ
+  | Reg {typ} | Global {typ} | Function {typ} | Integer {typ} | Float {typ}
+    ->
+      typ
   | Label _ -> Typ.ptr
   | Ap1 ((Signed _ | Unsigned _ | Convert _ | Splat), dst, _) -> dst
   | Ap1 (Select idx, typ, _) -> (
@@ -296,15 +299,38 @@ module Reg = struct
 
   let name = function Reg x -> x.name | r -> violates invariant r
   let typ = function Reg x -> x.typ | r -> violates invariant r
-  let is_global = function Reg x -> x.global | r -> violates invariant r
-  let pp_demangled ppf r = pp_demangled ppf (name r)
 
   let of_exp = function
     | Reg _ as e -> Some (e |> check invariant)
     | _ -> None
 
-  let program ?global typ name =
-    Reg {name; global= Option.is_some global; typ} |> check invariant
+  let mk typ name = Reg {name; typ} |> check invariant
+end
+
+(** Globals are the expressions constructed by [Global] *)
+module Global = struct
+  include T
+
+  let pp = pp
+
+  module Set = struct
+    include Set
+
+    let pp = Set.pp pp_exp
+  end
+
+  let invariant x =
+    let@ () = Invariant.invariant [%here] x [%sexp_of: t] in
+    match x with Global _ -> invariant x | _ -> assert false
+
+  let name = function Global x -> x.name | r -> violates invariant r
+  let typ = function Global x -> x.typ | r -> violates invariant r
+
+  let of_exp = function
+    | Global _ as e -> Some (e |> check invariant)
+    | _ -> None
+
+  let mk typ name = Global {name; typ} |> check invariant
 end
 
 (** Function names are the expressions constructed by [Function] *)
@@ -338,6 +364,7 @@ let reg x = x
 (* constants *)
 
 let function_ f = f
+let global g = g
 let label ~parent ~name = Label {parent; name} |> check invariant
 let integer typ data = Integer {data; typ} |> check invariant
 let null = integer Typ.ptr Z.zero

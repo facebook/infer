@@ -32,7 +32,7 @@ module type Dom = sig
 
   val call :
        summaries:bool
-    -> globals:Llair.Reg.Set.t
+    -> globals:Llair.Global.Set.t
     -> actuals:Llair.Exp.t list
     -> areturn:Llair.Reg.t option
     -> formals:Llair.Reg.t list
@@ -57,7 +57,11 @@ module type Dom = sig
   val pp_summary : summary pp
 
   val create_summary :
-    locals:Llair.Reg.Set.t -> formals:Llair.Reg.Set.t -> t -> summary * t
+       globals:Llair.Global.Set.t
+    -> locals:Llair.Reg.Set.t
+    -> formals:Llair.Reg.t list
+    -> t
+    -> summary * t
 
   val apply_summary : t -> summary -> t option
 end

@@ -72,7 +72,8 @@ type opN = Record  (** Record (array / struct) constant *)
 [@@deriving compare, equal, hash, sexp]
 
 type t = private
-  | Reg of {name: string; global: bool; typ: Typ.t}  (** Virtual register *)
+  | Reg of {name: string; typ: Typ.t}  (** Virtual register *)
+  | Global of {name: string; typ: Typ.t [@ignore]}  (** Global constant *)
   | Function of {name: string; typ: Typ.t [@ignore]}  (** Function name *)
   | Label of {parent: string; name: string}
       (** Address of named code block within parent function *)
@@ -104,15 +105,36 @@ module Reg : sig
   end
 
   val pp : t pp
-  val pp_demangled : t pp
 
   include Invariant.S with type t := t
 
   val of_exp : exp -> t option
-  val program : ?global:unit -> Typ.t -> string -> t
+  val mk : Typ.t -> string -> t
   val name : t -> string
   val typ : t -> Typ.t
-  val is_global : t -> bool
+end
+
+(** Exp.Global is re-exported as Global *)
+module Global : sig
+  type exp := t
+  type t = private exp [@@deriving compare, equal, hash, sexp]
+
+  module Set : sig
+    include Set.S with type elt := t
+
+    val sexp_of_t : t -> Sexp.t
+    val t_of_sexp : Sexp.t -> t
+    val pp : t pp
+  end
+
+  val pp : t pp
+
+  include Invariant.S with type t := t
+
+  val of_exp : exp -> t option
+  val mk : Typ.t -> string -> t
+  val name : t -> string
+  val typ : t -> Typ.t
 end
 
 (** Exp.Function is re-exported as Function *)
@@ -140,6 +162,7 @@ val reg : Reg.t -> t
 
 (* constants *)
 val function_ : Function.t -> t
+val global : Global.t -> t
 val label : parent:string -> name:string -> t
 val null : t
 val bool : bool -> t
@@ -199,6 +222,7 @@ val update : Typ.t -> rcd:t -> int -> elt:t -> t
 
 (** Traverse *)
 
+val fold_exps : t -> 's -> f:(t -> 's -> 's) -> 's
 val fold_regs : t -> 's -> f:(Reg.t -> 's -> 's) -> 's
 
 (** Query *)

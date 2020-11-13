@@ -22,8 +22,8 @@ let simplify q = if !simplify_states then Sh.simplify q else q
 let init globals =
   IArray.fold globals Sh.emp ~f:(fun global q ->
       match (global : Llair.GlobalDefn.t) with
-      | {reg; init= Some (seq, siz)} ->
-          let loc = Term.var (X.reg reg) in
+      | {name; init= Some (seq, siz)} ->
+          let loc = Term.var (X.global name) in
           let len = Term.integer (Z.of_int siz) in
           let seq = X.term seq in
           Sh.star q (Sh.seg {loc; bas= loc; len; siz= len; seq})
@@ -121,7 +121,8 @@ let localize_entry globals actuals formals freturn locals shadow pre entry =
   let formals_set = Var.Set.of_list formals in
   let freturn_locals = X.regs (Llair.Reg.Set.add_option freturn locals) in
   let function_summary_pre =
-    garbage_collect entry ~wrt:(Var.Set.union formals_set (X.regs globals))
+    garbage_collect entry
+      ~wrt:(Var.Set.union formals_set (X.globals globals))
   in
   [%Trace.info "function summary pre %a" pp function_summary_pre] ;
   let foot = Sh.exists formals_set function_summary_pre in
@@ -150,8 +151,8 @@ let call ~summaries ~globals ~actuals ~areturn ~formals ~freturn ~locals q =
       (List.pp ",@ " Llair.Exp.pp)
       (List.rev actuals)
       (List.pp ",@ " Llair.Reg.pp)
-      (List.rev formals) Llair.Reg.Set.pp locals Llair.Reg.Set.pp globals pp
-      q]
+      (List.rev formals) Llair.Reg.Set.pp locals Llair.Global.Set.pp globals
+      pp q]
   ;
   let actuals = List.map ~f:X.term actuals in
   let areturn = Option.map ~f:X.reg areturn in
@@ -248,13 +249,18 @@ let pp_summary fs {xs; foot; post} =
   Format.fprintf fs "@[<v>xs: @[%a@]@ foot: %a@ post: %a @]" Var.Set.pp xs
     pp foot pp post
 
-let create_summary ~locals ~formals ~entry ~current:(post : Sh.t) =
+let create_summary ~globals ~locals ~formals ~entry ~current:(post : Sh.t) =
   [%Trace.call fun {pf} ->
-    pf "formals %a@ entry: %a@ current: %a" Llair.Reg.Set.pp formals pp
-      entry pp post]
+    pf "formals %a@ entry: %a@ current: %a"
+      (List.pp ",@ " Llair.Reg.pp)
+      formals pp entry pp post]
   ;
+  let globals = X.globals globals in
+  let formals =
+    Var.Set.of_iter (Iter.map ~f:X.reg (List.to_iter formals))
+  in
+  let formals = Var.Set.union formals globals in
   let locals = X.regs locals in
-  let formals = X.regs formals in
   let foot = Sh.exists locals entry in
   let foot, subst = Sh.freshen ~wrt:(Var.Set.union foot.us post.us) foot in
   let restore_formals q =

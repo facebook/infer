@@ -14,6 +14,7 @@ module Typ = Typ
 module Reg = Reg
 module Exp = Exp
 module Function = Function
+module Global = Global
 module GlobalDefn = GlobalDefn
 
 type inst =
@@ -228,7 +229,7 @@ and dummy_func =
         "dummy"
   ; formals= []
   ; freturn= None
-  ; fthrow= Reg.program Typ.ptr "dummy"
+  ; fthrow= Reg.mk Typ.ptr "dummy"
   ; locals= Reg.Set.empty
   ; entry= dummy_block
   ; loc= Loc.none }
@@ -601,7 +602,7 @@ module Program = struct
     assert (
       not
         (Iter.contains_dup (IArray.to_iter pgm.globals) ~cmp:(fun g1 g2 ->
-             Reg.compare g1.GlobalDefn.reg g2.GlobalDefn.reg )) )
+             Global.compare g1.name g2.name )) )
 
   let mk ~globals ~functions =
     { globals= IArray.of_list_rev globals
@@ -610,7 +611,7 @@ module Program = struct
 
   let pp fs {globals; functions} =
     Format.fprintf fs "@[<v>@[%a@]@ @ @ @[%a@]@]"
-      (IArray.pp "@\n@\n" GlobalDefn.pp_defn)
+      (IArray.pp "@\n@\n" GlobalDefn.pp)
       globals
       (List.pp "@\n@\n" Func.pp)
       ( Function.Map.values functions

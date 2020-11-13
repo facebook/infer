@@ -322,9 +322,7 @@ module Make (Dom : Domain_intf.Dom) = struct
       else
         let globals = Domain_used_globals.by_function opts.globals name in
         let function_summary, post_state =
-          Dom.create_summary ~locals post_state
-            ~formals:
-              (Llair.Reg.Set.union (Llair.Reg.Set.of_list formals) globals)
+          Dom.create_summary ~globals ~locals ~formals post_state
         in
         Llair.Function.Tbl.add_multi ~key:name ~data:function_summary
           summary_table ;

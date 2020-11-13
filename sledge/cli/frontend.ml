@@ -343,10 +343,10 @@ let xlate_float : x -> Llvm.llvalue -> Exp.t =
   let data = suffix_after_last_space (Llvm.string_of_llvalue llv) in
   Exp.float typ data
 
-let xlate_name x ?global : Llvm.llvalue -> Reg.t =
+let xlate_name x : Llvm.llvalue -> Reg.t =
  fun llv ->
   let typ = xlate_type x (Llvm.type_of llv) in
-  Reg.program ?global typ (find_name llv)
+  Reg.mk typ (find_name llv)
 
 let xlate_name_opt : x -> Llvm.llvalue -> Reg.t option =
  fun x instr ->
@@ -457,7 +457,7 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t
         , Exp.function_
             (Function.mk (xlate_type x (Llvm.type_of llv)) (find_name llv))
         )
-    | GlobalVariable -> ([], Exp.reg (xlate_global x llv).reg)
+    | GlobalVariable -> ([], Exp.global (xlate_global x llv).name)
     | GlobalAlias -> xlate_value x (Llvm.operand llv 0)
     | ConstantInt -> ([], xlate_int x llv)
     | ConstantFP -> ([], xlate_float x llv)
@@ -501,7 +501,7 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t
           todo "types with undetermined size: %a" pp_lltype llt () ;
         let name = Printf.sprintf "undef_%i" !undef_count in
         let loc = Loc.none in
-        let reg = Reg.program typ name in
+        let reg = Reg.mk typ name in
         let msg = Llvm.string_of_llvalue llv in
         ([Inst.nondet ~reg:(Some reg) ~msg ~loc], Exp.reg reg)
     | Instruction
@@ -751,7 +751,7 @@ and xlate_global : x -> Llvm.llvalue -> GlobalDefn.t =
   GlobTbl.find_or_add memo_global llg ~default:(fun () ->
       [%Trace.call fun {pf} -> pf "%a" pp_llvalue llg]
       ;
-      let g = xlate_name x ~global:() llg in
+      let g = Global.mk (xlate_type x (Llvm.type_of llg)) (find_name llg) in
       let loc = find_loc llg in
       (* add to tbl without initializer in case of recursive occurrences in
          its own initializer *)
@@ -772,7 +772,7 @@ and xlate_global : x -> Llvm.llvalue -> GlobalDefn.t =
       in
       GlobalDefn.mk ?init g loc
       |>
-      [%Trace.retn fun {pf} -> pf "%a" GlobalDefn.pp_defn] )
+      [%Trace.retn fun {pf} -> pf "%a" GlobalDefn.pp] )
 
 type pop_thunk = Loc.t -> Llair.inst list
 
@@ -925,7 +925,7 @@ let rec xlate_func_name x llv =
       ( []
       , Exp.function_
           (Function.mk (xlate_type x (Llvm.type_of llv)) (find_name llv)) )
-  | GlobalVariable -> ([], Exp.reg (xlate_name x ~global:() llv))
+  | GlobalVariable -> ([], Exp.global (xlate_global x llv).name)
   | ConstantExpr -> xlate_opcode x llv (Llvm.constexpr_opcode llv)
   | Argument | Instruction _ -> xlate_value x llv
   | GlobalAlias -> xlate_func_name x (Llvm.operand llv 0)
@@ -1147,7 +1147,7 @@ let xlate_instr :
             && not (Llvm.is_declaration llfunc)
           then
             warn "ignoring variable arguments to variadic function: %a"
-              GlobalDefn.pp (xlate_global x llfunc) () ;
+              Global.pp (xlate_global x llfunc).name () ;
           assert (Poly.(Llvm.classify_type lltyp = Pointer)) ;
           Array.length (Llvm.param_types (Llvm.element_type lltyp)) )
       in
@@ -1264,8 +1264,8 @@ let xlate_instr :
          e.g. either cleanup or rethrow. *)
       let i32, tip, cxa_exception = landingpad_typs x instr in
       let pi8, _, exc_typ = exception_typs in
-      let exc = Exp.reg (Reg.program pi8 (find_name instr ^ ".exc")) in
-      let ti = Reg.program tip (name ^ ".ti") in
+      let exc = Exp.reg (Reg.mk pi8 (find_name instr ^ ".exc")) in
+      let ti = Reg.mk tip (name ^ ".ti") in
       (* std::type_info* ti = ((__cxa_exception* )exc - 1)->exceptionType *)
       let load_ti =
         let typ = cxa_exception in
@@ -1451,11 +1451,11 @@ let xlate_function : x -> Llvm.llvalue -> Llair.func =
   let freturn =
     match typ with
     | Pointer {elt= Function {return= Some typ; _}} ->
-        Some (Reg.program typ "freturn")
+        Some (Reg.mk typ "freturn")
     | _ -> None
   in
   let _, _, exc_typ = exception_typs in
-  let fthrow = Reg.program exc_typ "fthrow" in
+  let fthrow = Reg.mk exc_typ "fthrow" in
   ( match Llvm.block_begin llf with
   | Before entry_blk ->
       let pop = pop_stack_frame_of_function x llf entry_blk in

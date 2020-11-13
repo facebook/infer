@@ -13,10 +13,16 @@ let func f =
   let name = Llair.Function.name f in
   Var.program ~name ~global:true
 
+let global g =
+  let name = Llair.Global.name g in
+  Var.program ~name ~global:true
+
+let globals gs =
+  Var.Set.of_iter (Iter.map ~f:global (Llair.Global.Set.to_iter gs))
+
 let reg r =
   let name = Llair.Reg.name r in
-  let global = Llair.Reg.is_global r in
-  Var.program ~name ~global
+  Var.program ~name ~global:false
 
 let regs rs = Var.Set.of_iter (Iter.map ~f:reg (Llair.Reg.Set.to_iter rs))
 let uap0 f = T.apply f [||]
@@ -67,7 +73,8 @@ and term : Llair.Exp.t -> T.t =
       F.inject
         (F.cond ~cnd:(formula cnd) ~pos:(formula pos) ~neg:(formula neg))
   (* terms *)
-  | Reg {name; global; typ= _} -> T.var (Var.program ~name ~global)
+  | Reg {name; typ= _} -> T.var (Var.program ~name ~global:false)
+  | Global {name; typ= _} -> T.var (Var.program ~name ~global:true)
   | Function {name; typ= _} -> T.var (Var.program ~name ~global:true)
   | Label {parent; name} ->
       uap0 (Funsym.uninterp ("label_" ^ parent ^ "_" ^ name))
