@@ -57,9 +57,8 @@ let pp_defn fs = function
 (** Invariants *)
 
 let is_sized = function
-  | Function _ -> false
+  | Function _ | Opaque _ -> false
   | Integer _ | Float _ | Pointer _ | Array _ | Tuple _ | Struct _ -> true
-  | Opaque _ -> (* optimistically assume linking will make it sized *) true
 
 let invariant t =
   let@ () = Invariant.invariant [%here] t [%sexp_of: t] in

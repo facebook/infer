@@ -489,7 +489,10 @@ and xlate_value ?(inline = false) stk :
         let name = find_name (Llvm.operand llv 1) in
         ([], Exp.label ~parent ~name)
     | UndefValue ->
-        let typ = xlate_type x (Llvm.type_of llv) in
+        let llt = Llvm.type_of llv in
+        let typ = xlate_type x llt in
+        if not (Typ.is_sized typ) then
+          todo "types with undetermined size: %a" pp_lltype llt () ;
         let name = Printf.sprintf "undef_%i" !undef_count in
         let loc = Loc.none in
         let reg = Reg.program typ name in
