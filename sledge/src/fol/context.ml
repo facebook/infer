@@ -25,12 +25,11 @@ let classify e =
   | Splat _ | Sized _ | Extract _ | Concat _ -> Interpreted
   | Apply _ -> Uninterpreted
 
-let interpreted e = equal_kind (classify e) Interpreted
-let non_interpreted e = not (interpreted e)
-let uninterpreted e = equal_kind (classify e) Uninterpreted
+let is_interpreted e = equal_kind (classify e) Interpreted
+let is_uninterpreted e = equal_kind (classify e) Uninterpreted
 
 let rec max_solvables e =
-  if non_interpreted e then Iter.return e
+  if not (is_interpreted e) then Iter.return e
   else Iter.flat_map ~f:max_solvables (Trm.trms e)
 
 let fold_max_solvables e s ~f = Iter.fold ~f (max_solvables e) s
@@ -101,7 +100,8 @@ end = struct
     [%trace]
       ~call:(fun {pf} -> pf "%a" Trm.pp a)
       ~retn:(fun {pf} -> pf "%a" Trm.pp)
-    @@ fun () -> if interpreted a then Trm.map ~f:(norm s) a else apply s a
+    @@ fun () ->
+    if is_interpreted a then Trm.map ~f:(norm s) a else apply s a
 
   (** compose two substitutions *)
   let compose r s =
@@ -167,8 +167,8 @@ end = struct
     in
     ( is_var_in xs e
     || is_var_in xs f
-    || (uninterpreted e && Iter.exists ~f:(is_var_in xs) (Trm.trms e))
-    || (uninterpreted f && Iter.exists ~f:(is_var_in xs) (Trm.trms f)) )
+    || (is_uninterpreted e && Iter.exists ~f:(is_var_in xs) (Trm.trms e))
+    || (is_uninterpreted f && Iter.exists ~f:(is_var_in xs) (Trm.trms f)) )
     $> fun b ->
     [%Trace.info
       "is_valid_eq %a%a=%a = %b" Var.Set.pp_xs xs Trm.pp e Trm.pp f b]
@@ -364,8 +364,8 @@ and solve_ ?f d e s =
    *)
   (* r = v ==> v ↦ r *)
   | Some (rep, var) ->
-      assert (non_interpreted var) ;
-      assert (non_interpreted rep) ;
+      assert (not (is_interpreted var)) ;
+      assert (not (is_interpreted rep)) ;
       compose1 ?f ~var ~rep s )
   |>
   [%Trace.retn fun {pf} ->
@@ -484,11 +484,12 @@ let pre_invariant r =
   let@ () = Invariant.invariant [%here] r [%sexp_of: t] in
   Subst.iteri r.rep ~f:(fun ~key:trm ~data:_ ->
       (* no interpreted terms in carrier *)
-      assert (non_interpreted trm || fail "non-interp %a" Trm.pp trm ()) ;
+      assert (
+        (not (is_interpreted trm)) || fail "non-interp %a" Trm.pp trm () ) ;
       (* carrier is closed under subterms *)
       Iter.iter (Trm.trms trm) ~f:(fun subtrm ->
           assert (
-            (not (non_interpreted subtrm))
+            is_interpreted subtrm
             || (match subtrm with Z _ | Q _ -> true | _ -> false)
             || in_car r subtrm
             || fail "@[subterm %a@ of %a@ not in carrier of@ %a@]" Trm.pp
@@ -554,7 +555,7 @@ let rec extend_ a r =
   match (a : Trm.t) with
   | Z _ | Q _ -> r
   | _ -> (
-      if interpreted a then Iter.fold ~f:extend_ (Trm.trms a) r
+      if is_interpreted a then Iter.fold ~f:extend_ (Trm.trms a) r
       else
         (* add uninterpreted terms *)
         match Subst.extend a r with
@@ -672,7 +673,7 @@ let fold_uses_of r t s ~f =
       Iter.fold (Trm.trms e) s ~f:(fun sub s ->
           if Trm.equal t sub then f s e else s )
     in
-    if interpreted e then Iter.fold ~f:(fold_ ~f) (Trm.trms e) s else s
+    if is_interpreted e then Iter.fold ~f:(fold_ ~f) (Trm.trms e) s else s
   in
   Subst.fold r.rep s ~f:(fun ~key:trm ~data:rep s ->
       fold_ ~f trm (fold_ ~f rep s) )
@@ -885,7 +886,7 @@ let rec solve_interp_eqs us (cls, subst) =
     | [] -> (cls', subst)
     | trm :: cls ->
         let trm' = Subst.norm subst trm in
-        if interpreted trm' then
+        if is_interpreted trm' then
           match solve_interp_eq us trm' (cls, subst) with
           | Some subst -> solve_interp_eqs_ cls' (cls, subst)
           | None -> solve_interp_eqs_ (trm' :: cls') (cls, subst)
@@ -908,7 +909,7 @@ type cls_solve_state =
 let dom_trm e =
   match (e : Trm.t) with
   | Sized {seq= Var _ as v} -> Some v
-  | _ when non_interpreted e -> Some e
+  | _ when not (is_interpreted e) -> Some e
   | _ -> None
 
 (** move equations from [cls] (which is assumed to be normalized by [subst])
