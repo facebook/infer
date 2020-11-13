@@ -305,6 +305,9 @@ and solve_ ?f d e s =
   (* ⟨n,a⟩ = ⟨m,b⟩ ==> n = m ∧ a = β *)
   | Some (Sized {siz= n; seq= a}, Sized {siz= m; seq= b}) ->
       s |> solve_ ?f n m >>= solve_ ?f a b
+  (* ⟨n,e^⟩ = α₀^…^αᵥ ==> *)
+  | Some ((Sized {siz= n; seq= Splat _} as b), Concat a0V) ->
+      solve_concat ?f a0V b n s
   (* ⟨n,a⟩ = β ==> n = |β| ∧ a = β *)
   | Some (Sized {siz= n; seq= a}, b) ->
       ( match Trm.seq_size b with
