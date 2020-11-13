@@ -921,21 +921,6 @@ let pp_code fs (insts, term, blocks) =
     (fun fs -> if List.is_empty blocks then () else Format.fprintf fs "@\n")
     (List.pp "@ " Block.pp) blocks
 
-let rec xlate_func_name x llv =
-  match Llvm.classify_value llv with
-  | Function ->
-      ( []
-      , Exp.function_
-          (Function.mk (xlate_type x (Llvm.type_of llv)) (find_name llv)) )
-  | GlobalVariable -> ([], Exp.global (xlate_global x llv).name)
-  | ConstantExpr -> xlate_opcode x llv (Llvm.constexpr_opcode llv)
-  | Argument | Instruction _ -> xlate_value x llv
-  | GlobalAlias -> xlate_func_name x (Llvm.operand llv 0)
-  | GlobalIFunc -> todo "ifunc: %a" pp_llvalue llv ()
-  | InlineAsm -> todo "inline asm: %a" pp_llvalue llv ()
-  | ConstantPointerNull -> todo "call null: %a" pp_llvalue llv ()
-  | _ -> todo "function kind in %a" pp_llvalue llv ()
-
 module StringS = HashSet.Make (String)
 
 let ignored_callees = StringS.create 0
@@ -1096,7 +1081,7 @@ let xlate_instr :
             skip "inline asm"
         (* general function call that may not throw *)
         | _ ->
-            let pre0, callee = xlate_func_name x llfunc in
+            let pre0, callee = xlate_value x llfunc in
             let typ = xlate_type x lltyp in
             let lbl = name ^ ".ret" in
             let pre, call =
@@ -1180,7 +1165,7 @@ let xlate_instr :
           todo "inline asm: @ %a" pp_llvalue instr ()
       (* general function call that may throw *)
       | _ ->
-          let pre_0, callee = xlate_func_name x llfunc in
+          let pre_0, callee = xlate_value x llfunc in
           let typ = xlate_type x (Llvm.type_of llfunc) in
           let pre_1, actuals =
             xlate_values x num_actuals (Llvm.operand instr)
