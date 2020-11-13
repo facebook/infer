@@ -21,10 +21,6 @@ type t = private
   | Sized of {seq: t; siz: t}
   | Extract of {seq: t; off: t; len: t}
   | Concat of t array
-  (* records (with fixed indices) *)
-  | Select of {idx: int; rcd: t}
-  | Update of {idx: int; rcd: t; elt: t}
-  | Record of t array
   (* uninterpreted *)
   | Apply of Funsym.t * t array
 [@@deriving compare, equal, sexp]
@@ -75,11 +71,6 @@ val splat : t -> t
 val sized : seq:t -> siz:t -> t
 val extract : seq:t -> off:t -> len:t -> t
 val concat : t array -> t
-
-(* records (with fixed indices) *)
-val select : rcd:t -> idx:int -> t
-val update : rcd:t -> idx:int -> elt:t -> t
-val record : t array -> t
 
 (* uninterpreted *)
 val apply : Funsym.t -> t array -> t

@@ -135,6 +135,20 @@ let size_of = function
       byts
   | Pointer _ -> 8
 
+let offset_length_of_elt typ idx =
+  match typ with
+  | Array {elt} ->
+      let len = size_of elt in
+      (len * idx, len)
+  | Tuple {elts; byts} | Struct {elts; byts} ->
+      let oI, _ = IArray.get elts idx in
+      let oJ =
+        if idx = IArray.length elts - 1 then byts
+        else fst (IArray.get elts (idx + 1))
+      in
+      (oI, oJ - oI)
+  | _ -> fail "offset_length_of_elt: %a" pp typ ()
+
 let rec equivalent t0 t1 =
   match (t0, t1) with
   | (Pointer _ | Integer _), (Pointer _ | Integer _) ->

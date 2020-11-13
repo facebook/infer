@@ -24,7 +24,7 @@ let rec classify e =
     | Uninterpreted -> Uninterpreted )
   | Sized _ | Extract _ | Concat _ -> Interpreted
   | Var _ | Z _ | Q _ -> Atomic
-  | Splat _ | Select _ | Update _ | Record _ | Apply _ -> Uninterpreted
+  | Splat _ | Apply _ -> Uninterpreted
 
 let interpreted e = equal_kind (classify e) Interpreted
 let non_interpreted e = not (interpreted e)

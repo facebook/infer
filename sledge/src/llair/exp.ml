@@ -145,20 +145,14 @@ let rec pp fs exp =
   [@@warning "-9"]
 
 and pp_record fs elts =
-  [%Trace.fprintf
-    fs "%a"
-      (fun fs elts ->
-        match
-          String.init (IArray.length elts) ~f:(fun i ->
-              match IArray.get elts i with
-              | Integer {data} -> Char.of_int_exn (Z.to_int data)
-              | _ -> raise_notrace (Invalid_argument "not a string") )
-        with
-        | s -> Format.fprintf fs "@[<h>%s@]" (String.escaped s)
-        | exception _ ->
-            Format.fprintf fs "@[<h>%a@]" (IArray.pp ",@ " pp) elts )
-      elts]
-  [@@warning "-9"]
+  match
+    String.init (IArray.length elts) ~f:(fun i ->
+        match IArray.get elts i with
+        | Integer {data; _} -> Char.of_int_exn (Z.to_int data)
+        | _ -> raise_notrace (Invalid_argument "not a string") )
+  with
+  | s -> Format.fprintf fs "@[<h>%s@]" (String.escaped s)
+  | exception _ -> Format.fprintf fs "@[<hv>%a@]" (IArray.pp ",@ " pp) elts
 
 (** Invariant *)
 

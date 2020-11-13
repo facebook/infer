@@ -82,10 +82,6 @@ and Trm : sig
     | Sized of {seq: t; siz: t}
     | Extract of {seq: t; off: t; len: t}
     | Concat of t array
-    (* records (with fixed indices) *)
-    | Select of {idx: int; rcd: t}
-    | Update of {idx: int; rcd: t; elt: t}
-    | Record of t array
     (* uninterpreted *)
     | Apply of Funsym.t * t array
   [@@deriving compare, equal, sexp]
@@ -100,9 +96,6 @@ and Trm : sig
   val _Sized : t -> t -> t
   val _Extract : t -> t -> t -> t
   val _Concat : t array -> t
-  val _Select : int -> t -> t
-  val _Update : int -> t -> t -> t
-  val _Record : t array -> t
   val _Apply : Funsym.t -> t array -> t
   val add : t -> t -> t
   val sub : t -> t -> t
@@ -121,9 +114,6 @@ end = struct
     | Sized of {seq: t; siz: t}
     | Extract of {seq: t; off: t; len: t}
     | Concat of t array
-    | Select of {idx: int; rcd: t}
-    | Update of {idx: int; rcd: t; elt: t}
-    | Record of t array
     | Apply of Funsym.t * t array
   [@@deriving compare, equal, sexp]
 
@@ -155,11 +145,15 @@ end = struct
       | Sized {seq; siz} -> pf "@<1>⟨%a,%a@<1>⟩" pp siz pp seq
       | Extract {seq; off; len} -> pf "%a[%a,%a)" pp seq pp off pp len
       | Concat [||] -> pf "@<2>⟨⟩"
-      | Concat xs -> pf "(%a)" (Array.pp "@,^" pp) xs
-      | Select {idx; rcd} -> pf "%a[%i]" pp rcd idx
-      | Update {idx; rcd; elt} ->
-          pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
-      | Record xs -> pf "{%a}" (ppx_record strength) xs
+      | Concat xs -> (
+          let exception Not_a_string in
+          try
+            pf "%S"
+              (String.init (Array.length xs) ~f:(fun i ->
+                   match xs.(i) with
+                   | Sized {seq= Z c} -> Char.of_int_exn (Z.to_int c)
+                   | _ -> raise_notrace Not_a_string ))
+          with _ -> pf "(%a)" (Array.pp "@,^" pp) xs )
       | Apply (f, [||]) -> pf "%a" Funsym.pp f
       | Apply
           ( ( (Rem | BitAnd | BitOr | BitXor | BitShl | BitLshr | BitAshr)
@@ -170,24 +164,6 @@ end = struct
           pf "%a(%a)" Funsym.pp f (Array.pp ",@ " (ppx strength)) es
     in
     pp fs trm
-
-  and ppx_record strength fs elts =
-    [%Trace.fprintf
-      fs "%a"
-        (fun fs elts ->
-          let exception Not_a_string in
-          match
-            String.init (Array.length elts) ~f:(fun i ->
-                match elts.(i) with
-                | Z c -> Char.of_int_exn (Z.to_int c)
-                | _ -> raise_notrace Not_a_string )
-          with
-          | s -> Format.fprintf fs "%S" s
-          | exception (Not_a_string | Z.Overflow | Failure _) ->
-              Format.fprintf fs "@[<h>%a@]"
-                (Array.pp ",@ " (ppx strength))
-                elts )
-        elts]
 
   let pp = ppx (fun _ -> None)
 
@@ -354,10 +330,6 @@ end = struct
     let xs = Array.reduce_adjacent ~f:simp_adjacent xs in
     (if Array.length xs = 1 then xs.(0) else Concat xs) |> check invariant
 
-  let _Select idx rcd = Select {idx; rcd} |> check invariant
-  let _Update idx rcd elt = Update {idx; rcd; elt} |> check invariant
-  let _Record es = Record es |> check invariant
-
   let _Apply f es =
     ( match Funsym.eval ~equal ~get_z ~ret_z:_Z ~get_q ~ret_q:_Q f es with
     | Some c -> c
@@ -370,16 +342,15 @@ end = struct
     match e with
     | Var _ as v -> f (Var.of_ v)
     | Z _ | Q _ -> ()
-    | Splat x | Select {rcd= x} -> iter_vars ~f x
-    | Sized {seq= x; siz= y} | Update {rcd= x; elt= y} ->
+    | Splat x -> iter_vars ~f x
+    | Sized {seq= x; siz= y} ->
         iter_vars ~f x ;
         iter_vars ~f y
     | Extract {seq= x; off= y; len= z} ->
         iter_vars ~f x ;
         iter_vars ~f y ;
         iter_vars ~f z
-    | Concat xs | Record xs | Apply (_, xs) ->
-        Array.iter ~f:(iter_vars ~f) xs
+    | Concat xs | Apply (_, xs) -> Array.iter ~f:(iter_vars ~f) xs
     | Arith a -> Iter.iter ~f:(iter_vars ~f) (Arith.trms a)
 
   let vars e = Iter.from_labelled_iter (iter_vars e)
@@ -428,12 +399,6 @@ let sized ~seq ~siz = _Sized seq siz
 let extract ~seq ~off ~len = _Extract seq off len
 let concat elts = _Concat elts
 
-(* records *)
-
-let select ~rcd ~idx = _Select idx rcd
-let update ~rcd ~idx ~elt = _Update idx rcd elt
-let record elts = _Record elts
-
 (* uninterpreted *)
 
 let apply sym args = _Apply sym args
@@ -449,9 +414,6 @@ let rec map_vars e ~f =
   | Sized {seq; siz} -> map2 (map_vars ~f) e _Sized seq siz
   | Extract {seq; off; len} -> map3 (map_vars ~f) e _Extract seq off len
   | Concat xs -> mapN (map_vars ~f) e _Concat xs
-  | Select {idx; rcd} -> map1 (map_vars ~f) e (_Select idx) rcd
-  | Update {idx; rcd; elt} -> map2 (map_vars ~f) e (_Update idx) rcd elt
-  | Record xs -> mapN (map_vars ~f) e _Record xs
   | Apply (g, xs) -> mapN (map_vars ~f) e (_Apply g) xs
 
 let map e ~f =
@@ -462,9 +424,6 @@ let map e ~f =
   | Sized {seq; siz} -> map2 f e _Sized seq siz
   | Extract {seq; off; len} -> map3 f e _Extract seq off len
   | Concat xs -> mapN f e _Concat xs
-  | Select {idx; rcd} -> map1 f e (_Select idx) rcd
-  | Update {idx; rcd; elt} -> map2 f e (_Update idx) rcd elt
-  | Record xs -> mapN f e _Record xs
   | Apply (g, xs) -> mapN f e (_Apply g) xs
 
 (** Traverse *)
@@ -473,15 +432,15 @@ let iter_subtrms e ~f =
   match e with
   | Var _ | Z _ | Q _ -> ()
   | Arith a -> Iter.iter ~f (Arith.trms a)
-  | Splat x | Select {rcd= x} -> f x
-  | Sized {seq= x; siz= y} | Update {rcd= x; elt= y} ->
+  | Splat x -> f x
+  | Sized {seq= x; siz= y} ->
       f x ;
       f y
   | Extract {seq= x; off= y; len= z} ->
       f x ;
       f y ;
       f z
-  | Concat xs | Record xs | Apply (_, xs) -> Array.iter ~f xs
+  | Concat xs | Apply (_, xs) -> Array.iter ~f xs
 
 let subtrms e = Iter.from_labelled_iter (iter_subtrms e)
 

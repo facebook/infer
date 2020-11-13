@@ -120,11 +120,31 @@ and term : Llair.Exp.t -> T.t =
   | Ap2 (Ashr, _, d, e) -> ap_ttt (uap2 BitAshr) d e
   | Ap3 (Conditional, _, cnd, thn, els) ->
       T.ite ~cnd:(formula cnd) ~thn:(term thn) ~els:(term els)
-  | Ap1 (Select idx, _, rcd) -> T.select ~rcd:(term rcd) ~idx
-  | Ap2 (Update idx, _, rcd, elt) ->
-      T.update ~rcd:(term rcd) ~idx ~elt:(term elt)
-  | ApN (Record, _, elts) ->
-      T.record (Array.map ~f:term (IArray.to_array elts))
+  | Ap1 (Select idx, typ, rcd) ->
+      let off, len = Llair.Typ.offset_length_of_elt typ idx in
+      let off = T.integer (Z.of_int off) in
+      let len = T.integer (Z.of_int len) in
+      T.extract ~seq:(term rcd) ~off ~len
+  | Ap2 (Update idx, typ, rcd, elt) ->
+      let oI, lI = Llair.Typ.offset_length_of_elt typ idx in
+      let oJ = oI + lI in
+      let off0 = T.zero in
+      let len0 = T.integer (Z.of_int oI) in
+      let len1 = T.integer (Z.of_int lI) in
+      let off2 = T.integer (Z.of_int oJ) in
+      let len2 = T.integer (Z.of_int (Llair.Typ.size_of typ - oI - lI)) in
+      let seq = term rcd in
+      T.concat
+        [| T.extract ~seq ~off:off0 ~len:len0
+         ; T.sized ~seq:(term elt) ~siz:len1
+         ; T.extract ~seq ~off:off2 ~len:len2 |]
+  | ApN (Record, typ, elts) ->
+      let elt_siz i =
+        T.integer (Z.of_int (snd (Llair.Typ.offset_length_of_elt typ i)))
+      in
+      T.concat
+        (Array.mapi (IArray.to_array elts) ~f:(fun i elt ->
+             T.sized ~seq:(term elt) ~siz:(elt_siz i) ))
   | Ap1 (Splat, _, byt) -> T.splat (term byt)
 
 and formula e = F.dq0 (term e)

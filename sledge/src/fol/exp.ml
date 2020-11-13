@@ -229,15 +229,6 @@ module Term = struct
 
   let concat elts = apNt Trm.concat elts
 
-  (* records *)
-
-  let select ~rcd ~idx = ap1t (fun rcd -> Trm.select ~rcd ~idx) rcd
-
-  let update ~rcd ~idx ~elt =
-    ap2t (fun rcd elt -> Trm.update ~rcd ~idx ~elt) rcd elt
-
-  let record elts = apNt Trm.record elts
-
   (* uninterpreted *)
 
   let apply sym args = apNt (Trm.apply sym) args
