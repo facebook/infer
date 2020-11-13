@@ -13,7 +13,10 @@ type t = {dir: string; file: string; line: int; col: int}
 let none = {dir= ""; file= ""; line= 0; col= 0}
 
 let mk ?(dir = none.dir) ?(file = none.file) ?(col = none.col) ~line =
-  let dir = if String.is_empty dir then dir else Filename.realpath dir in
+  let dir =
+    if String.is_empty dir then dir
+    else try Filename.realpath dir with Unix.Unix_error _ -> dir
+  in
   {dir; file; line; col}
 
 let root = ref (Filename.realpath (Sys.getcwd ()))
