@@ -791,6 +791,10 @@ OPTIONS
            Activates: Enable liveness and disable all other checkers
            (Conversely: --no-liveness-only)           See also infer-analyze(1).
 
+       --liveness-whitelist-constant +string
+           List of integer constants to be ignored by liveness analysis       
+    See also infer-analyze(1).
+
        --load-average,-l float
            Do not start new parallel jobs if the load average is greater than
            that specified (Buck and make only)           See also infer-capture(1).
