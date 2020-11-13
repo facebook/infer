@@ -10,8 +10,8 @@
 include Domain_intf.Dom with type summary = Llair.Reg.Set.t
 
 type r =
-  | Per_function of Llair.Reg.Set.t Llair.Reg.Map.t
+  | Per_function of Llair.Reg.Set.t Llair.Function.Map.t
       (** per-function used-globals map *)
   | Declared of Llair.Reg.Set.t  (** program-wide set *)
 
-val by_function : r -> Llair.Reg.t -> summary
+val by_function : r -> Llair.Function.t -> summary

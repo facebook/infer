@@ -9,6 +9,10 @@ open Fol
 module T = Term
 module F = Formula
 
+let func f =
+  let name = Llair.Function.name f in
+  Var.program ~name ~global:true
+
 let reg r =
   let name = Llair.Reg.name r in
   let global = Llair.Reg.is_global r in
@@ -64,6 +68,7 @@ and term : Llair.Exp.t -> T.t =
         (F.cond ~cnd:(formula cnd) ~pos:(formula pos) ~neg:(formula neg))
   (* terms *)
   | Reg {name; global; typ= _} -> T.var (Var.program ~name ~global)
+  | Function {name; typ= _} -> T.var (Var.program ~name ~global:true)
   | Label {parent; name} ->
       uap0 (Funsym.uninterp ("label_" ^ parent ^ "_" ^ name))
   | Integer {typ= _; data} -> T.integer data

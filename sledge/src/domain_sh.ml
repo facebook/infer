@@ -69,7 +69,7 @@ let exec_inst inst pre =
   |> Option.map ~f:simplify
 
 let exec_intrinsic ~skip_throw r i es q =
-  Exec.intrinsic ~skip_throw q (Option.map ~f:X.reg r) (X.reg i)
+  Exec.intrinsic ~skip_throw q (Option.map ~f:X.reg r) (X.func i)
     (List.map ~f:X.term es)
   |> Option.map ~f:(Option.map ~f:simplify)
 
@@ -236,8 +236,8 @@ let retn formals freturn {areturn; unshadow; frame} q =
   [%Trace.retn fun {pf} -> pf "%a" pp]
 
 let resolve_callee lookup ptr q =
-  match Llair.Reg.of_exp ptr with
-  | Some callee -> (lookup (Llair.Reg.name callee), q)
+  match Llair.Function.of_exp ptr with
+  | Some callee -> (lookup callee, q)
   | None -> ([], q)
 
 let recursion_beyond_bound = `prune

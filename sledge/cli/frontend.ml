@@ -18,7 +18,7 @@ let pp_llblock fs t =
   Format.pp_print_string fs (Llvm.string_of_llvalue (Llvm.value_of_block t))
 
 ;;
-Reg.demangle :=
+Exp.demangle :=
   let open Ctypes in
   let cxa_demangle =
     (* char *__cxa_demangle(const char *, char *, size_t *, int * ) *)
@@ -452,7 +452,12 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t
     | Instruction (Invoke | Alloca | Load | PHI | LandingPad | VAArg)
      |Argument ->
         ([], Exp.reg (xlate_name x llv))
-    | Function | GlobalVariable -> ([], Exp.reg (xlate_global x llv).reg)
+    | Function ->
+        ( []
+        , Exp.function_
+            (Function.mk (xlate_type x (Llvm.type_of llv)) (find_name llv))
+        )
+    | GlobalVariable -> ([], Exp.reg (xlate_global x llv).reg)
     | GlobalAlias -> xlate_value x (Llvm.operand llv 0)
     | ConstantInt -> ([], xlate_int x llv)
     | ConstantFP -> ([], xlate_float x llv)
@@ -916,7 +921,11 @@ let pp_code fs (insts, term, blocks) =
 
 let rec xlate_func_name x llv =
   match Llvm.classify_value llv with
-  | Function | GlobalVariable -> ([], Exp.reg (xlate_name x ~global:() llv))
+  | Function ->
+      ( []
+      , Exp.function_
+          (Function.mk (xlate_type x (Llvm.type_of llv)) (find_name llv)) )
+  | GlobalVariable -> ([], Exp.reg (xlate_name x ~global:() llv))
   | ConstantExpr -> xlate_opcode x llv (Llvm.constexpr_opcode llv)
   | Argument | Instruction _ -> xlate_value x llv
   | GlobalAlias -> xlate_func_name x (Llvm.operand llv 0)
@@ -1424,21 +1433,23 @@ let xlate_block : pop_thunk -> x -> Llvm.llbasicblock -> Llair.block list =
 
 let report_undefined func name =
   if Option.is_some (Llvm.use_begin func) then
-    [%Trace.info "undefined function: %a" Global.pp name]
+    [%Trace.info "undefined function: %a" Function.pp name]
 
 let xlate_function : x -> Llvm.llvalue -> Llair.func =
  fun x llf ->
   [%Trace.call fun {pf} -> pf "%a" pp_llvalue llf]
   ;
   undef_count := 0 ;
-  let name = xlate_global x llf in
+  let loc = find_loc llf in
+  let typ = xlate_type x (Llvm.type_of llf) in
+  let name = Function.mk typ (find_name llf) in
   let formals =
     Llvm.fold_left_params
       (fun rev_args param -> xlate_name x param :: rev_args)
       [] llf
   in
   let freturn =
-    match Reg.typ name.reg with
+    match typ with
     | Pointer {elt= Function {return= Some typ; _}} ->
         Some (Reg.program typ "freturn")
     | _ -> None
@@ -1466,10 +1477,10 @@ let xlate_function : x -> Llvm.llvalue -> Llair.func =
         in
         trav_blocks (List.rev entry_blocks) entry_blk
       in
-      Func.mk ~name ~formals ~freturn ~fthrow ~entry ~cfg
+      Func.mk ~name ~formals ~freturn ~fthrow ~entry ~cfg ~loc
   | At_end _ ->
       report_undefined llf name ;
-      Func.mk_undefined ~name ~formals ~freturn ~fthrow )
+      Func.mk_undefined ~name ~formals ~freturn ~fthrow ~loc )
   |>
   [%Trace.retn fun {pf} -> pf "@\n%a" Func.pp]
 

@@ -75,6 +75,14 @@ let unmarshal file () =
     ~f:(fun ic -> (Marshal.from_channel ic : Llair.program))
     file
 
+let entry_points =
+  let void_to_void =
+    Llair.Typ.pointer
+      ~elt:(Llair.Typ.function_ ~args:IArray.empty ~return:None)
+  in
+  List.map (Config.find_list "entry-points") ~f:(fun name ->
+      Llair.Function.mk void_to_void name )
+
 let used_globals pgm preanalyze : Domain_used_globals.r =
   if preanalyze then
     let summary_table =
@@ -82,12 +90,12 @@ let used_globals pgm preanalyze : Domain_used_globals.r =
         { bound= 1
         ; skip_throw= false
         ; function_summaries= true
-        ; entry_points= Config.find_list "entry-points"
+        ; entry_points
         ; globals= Declared Llair.Reg.Set.empty }
         pgm
     in
     Per_function
-      (Llair.Reg.Map.map summary_table ~f:Llair.Reg.Set.union_list)
+      (Llair.Function.Map.map summary_table ~f:Llair.Reg.Set.union_list)
   else
     Declared
       (Llair.Reg.Set.of_iter
@@ -128,7 +136,6 @@ let analyze =
   fun program () ->
     let pgm = program () in
     let globals = used_globals pgm preanalyze_globals in
-    let entry_points = Config.find_list "entry-points" in
     let skip_throw = not exceptions in
     Domain_sh.simplify_states := not no_simplify_states ;
     Timer.enabled := stats ;

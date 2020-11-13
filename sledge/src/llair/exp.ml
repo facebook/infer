@@ -63,6 +63,7 @@ module T = struct
 
   type t =
     | Reg of {name: string; global: bool; typ: Typ.t}
+    | Function of {name: string; typ: Typ.t [@ignore]}
     | Label of {parent: string; name: string}
     | Integer of {data: Z.t; typ: Typ.t}
     | Float of {data: string; typ: Typ.t}
@@ -81,6 +82,15 @@ module Set = struct
 end
 
 module Map = Map.Make (T)
+module Tbl = HashTable.Make (T)
+
+let demangle = ref (fun _ -> None)
+
+let pp_demangled ppf name =
+  match !demangle name with
+  | Some demangled when not (String.equal name demangled) ->
+      Format.fprintf ppf "“%s”" demangled
+  | _ -> ()
 
 let pp_op2 fs op =
   let pf fmt = Format.fprintf fs fmt in
@@ -120,6 +130,7 @@ let rec pp fs exp =
   match exp with
   | Reg {name; global= true} -> pf "%@%s" name
   | Reg {name; global= false} -> pf "%%%s" name
+  | Function {name} -> pf "&%s%a" name pp_demangled name
   | Label {name} -> pf "%s" name
   | Integer {data; typ= Pointer _} when Z.equal Z.zero data -> pf "null"
   | Integer {data} -> Trace.pp_styled `Magenta "%a" fs Z.pp data
@@ -162,6 +173,8 @@ let rec invariant exp =
   let@ () = Invariant.invariant [%here] exp [%sexp_of: t] in
   match exp with
   | Reg {typ} -> assert (Typ.is_sized typ)
+  | Function {typ= Pointer {elt= Function _}} -> ()
+  | Function _ -> assert false
   | Integer {data; typ} -> (
     match typ with
     | Integer {bits} ->
@@ -238,7 +251,7 @@ let rec invariant exp =
 
 and typ_of exp =
   match exp with
-  | Reg {typ} | Integer {typ} | Float {typ} -> typ
+  | Reg {typ} | Function {typ} | Integer {typ} | Float {typ} -> typ
   | Label _ -> Typ.ptr
   | Ap1 ((Signed _ | Unsigned _ | Convert _ | Splat), dst, _) -> dst
   | Ap1 (Select idx, typ, _) -> (
@@ -277,19 +290,6 @@ module Reg = struct
     let pp = Set.pp pp_exp
   end
 
-  module Map = Map
-
-  let demangle = ref (fun _ -> None)
-
-  let pp_demangled fs = function
-    | Reg {name} -> (
-      match !demangle name with
-      | Some demangled when not (String.equal name demangled) ->
-          Format.fprintf fs "“%s”" demangled
-      | _ -> () )
-    | _ -> ()
-    [@@warning "-9"]
-
   let invariant x =
     let@ () = Invariant.invariant [%here] x [%sexp_of: t] in
     match x with Reg _ -> invariant x | _ -> assert false
@@ -297,7 +297,7 @@ module Reg = struct
   let name = function Reg x -> x.name | r -> violates invariant r
   let typ = function Reg x -> x.typ | r -> violates invariant r
   let is_global = function Reg x -> x.global | r -> violates invariant r
-  let of_ = function Reg _ as r -> r | _ -> invalid_arg "Reg.of_"
+  let pp_demangled ppf r = pp_demangled ppf (name r)
 
   let of_exp = function
     | Reg _ as e -> Some (e |> check invariant)
@@ -305,6 +305,28 @@ module Reg = struct
 
   let program ?global typ name =
     Reg {name; global= Option.is_some global; typ} |> check invariant
+end
+
+(** Function names are the expressions constructed by [Function] *)
+module Function = struct
+  include T
+
+  let pp = pp
+  let name = function Function x -> x.name | r -> violates invariant r
+  let typ = function Function x -> x.typ | r -> violates invariant r
+
+  let invariant x =
+    let@ () = Invariant.invariant [%here] x [%sexp_of: t] in
+    match x with Function _ -> invariant x | _ -> assert false
+
+  let of_exp = function
+    | Function _ as e -> Some (e |> check invariant)
+    | _ -> None
+
+  let mk typ name = Function {name; typ} |> check invariant
+
+  module Map = Map
+  module Tbl = Tbl
 end
 
 (** Construct *)
@@ -315,6 +337,7 @@ let reg x = x
 
 (* constants *)
 
+let function_ f = f
 let label ~parent ~name = Label {parent; name} |> check invariant
 let integer typ data = Integer {data; typ} |> check invariant
 let null = integer Typ.ptr Z.zero

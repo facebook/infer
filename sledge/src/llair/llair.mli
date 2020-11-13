@@ -12,6 +12,7 @@ module Loc = Loc
 module Typ = Typ
 module Reg = Reg
 module Exp = Exp
+module Function = Function
 module Global = Global
 
 (** Instructions for memory manipulation or other non-control effects. *)
@@ -92,12 +93,13 @@ and block = private
 (** A function is a control-flow graph with distinguished entry block, whose
     parameters are the function parameters. *)
 and func = private
-  { name: Global.t
+  { name: Function.t
   ; formals: Reg.t list  (** Formal parameters, first-param-last stack *)
   ; freturn: Reg.t option
   ; fthrow: Reg.t
   ; locals: Reg.Set.t  (** Local registers *)
-  ; entry: block }
+  ; entry: block
+  ; loc: Loc.t }
 
 type functions
 
@@ -180,25 +182,27 @@ module Func : sig
   include Invariant.S with type t := t
 
   val mk :
-       name:Global.t
+       name:Function.t
     -> formals:Reg.t list
     -> freturn:Reg.t option
     -> fthrow:Reg.t
     -> entry:block
     -> cfg:block iarray
-    -> func
+    -> loc:Loc.t
+    -> t
 
   val mk_undefined :
-       name:Global.t
+       name:Function.t
     -> formals:Reg.t list
     -> freturn:Reg.t option
     -> fthrow:Reg.t
+    -> loc:Loc.t
     -> t
 
-  val find : string -> functions -> func option
+  val find : Function.t -> functions -> t option
   (** Look up a function of the given name in the given functions. *)
 
-  val is_undefined : func -> bool
+  val is_undefined : t -> bool
   (** Holds of functions that are declared but not defined. *)
 end
 

@@ -5,10 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Fol
+(** Function names *)
 
-val func : Llair.Function.t -> Var.t
-val reg : Llair.Reg.t -> Var.t
-val regs : Llair.Reg.Set.t -> Var.Set.t
-val term : Llair.Exp.t -> Term.t
-val formula : Llair.Exp.t -> Formula.t
+include module type of struct
+  include Exp.Function
+end

@@ -65,7 +65,8 @@ let rec apron_typ_of_llair_typ : Llair.Typ.t -> Texpr1.typ option = function
 
 let rec apron_texpr_of_llair_exp exp q =
   match (exp : Llair.Exp.t) with
-  | Reg {name} -> Some (Texpr1.Var (apron_var_of_name name))
+  | Reg {name} | Function {name} ->
+      Some (Texpr1.Var (apron_var_of_name name))
   | Integer {data} -> Some (Texpr1.Cst (Coeff.s_of_int (Z.to_int data)))
   | Float {data} -> (
     match Float.of_string_exn data with
@@ -198,7 +199,7 @@ let exec_inst i q =
 
 (** Treat any intrinsic function as havoc on the return register [aret] *)
 let exec_intrinsic ~skip_throw:_ aret i _ pre =
-  let name = Llair.Reg.name i in
+  let name = Llair.Function.name i in
   if
     List.exists
       [ "malloc"
@@ -302,8 +303,8 @@ let call ~summaries ~globals:_ ~actuals ~areturn ~formals ~freturn:_
 let dnf q = [q]
 
 let resolve_callee lookup ptr q =
-  match Llair.Reg.of_exp ptr with
-  | Some callee -> (lookup (Llair.Reg.name callee), q)
+  match Llair.Function.of_exp ptr with
+  | Some callee -> (lookup callee, q)
   | None -> ([], q)
 
 type summary = t

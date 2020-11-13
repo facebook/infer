@@ -13,7 +13,7 @@ type exec_opts =
   { bound: int
   ; skip_throw: bool
   ; function_summaries: bool
-  ; entry_points: string list
+  ; entry_points: Llair.Function.t list
   ; globals: Domain_used_globals.r }
 
 module Make (Dom : Domain_intf.Dom) = struct
@@ -258,16 +258,14 @@ module Make (Dom : Domain_intf.Dom) = struct
   let exec_jump stk state block Llair.{dst; retreating} =
     Work.add ~prev:block ~retreating stk state dst
 
-  module RegTbl = HashTable.Make (Llair.Reg)
-
-  let summary_table = RegTbl.create ()
+  let summary_table = Llair.Function.Tbl.create ()
 
   let exec_call opts stk state block call globals =
     let Llair.{callee; actuals; areturn; return; recursive} = call in
     let Llair.{name; formals; freturn; locals; entry} = callee in
     [%Trace.call fun {pf} ->
-      pf "%a from %a with state@ %a" Llair.Reg.pp name.reg Llair.Reg.pp
-        return.dst.parent.name.reg Dom.pp state]
+      pf "%a from %a with state@ %a" Llair.Function.pp name
+        Llair.Function.pp return.dst.parent.name Dom.pp state]
     ;
     let dnf_states =
       if opts.function_summaries then Dom.dnf state else [state]
@@ -281,7 +279,7 @@ module Make (Dom : Domain_intf.Dom) = struct
           else
             let maybe_summary_post =
               let state = fst (domain_call ~summaries:false state) in
-              let* summary = RegTbl.find summary_table name.reg in
+              let* summary = Llair.Function.Tbl.find summary_table name in
               List.find_map ~f:(Dom.apply_summary state) summary
             in
             [%Trace.info
@@ -310,27 +308,26 @@ module Make (Dom : Domain_intf.Dom) = struct
   let pp_st () =
     [%Trace.printf
       "@[<v>%t@]" (fun fs ->
-          RegTbl.iteri summary_table ~f:(fun ~key ~data ->
-              Format.fprintf fs "@[<v>%a:@ @[%a@]@]@ " Llair.Reg.pp key
+          Llair.Function.Tbl.iteri summary_table ~f:(fun ~key ~data ->
+              Format.fprintf fs "@[<v>%a:@ @[%a@]@]@ " Llair.Function.pp key
                 (List.pp "@," Dom.pp_summary)
                 data ) )]
 
   let exec_return ~opts stk pre_state (block : Llair.block) exp =
     let Llair.{name; formals; freturn; locals} = block.parent in
-    [%Trace.call fun {pf} -> pf "from: %a" Llair.Reg.pp name.reg]
+    [%Trace.call fun {pf} -> pf "from: %a" Llair.Function.pp name]
     ;
     let summarize post_state =
       if not opts.function_summaries then post_state
       else
-        let globals =
-          Domain_used_globals.by_function opts.globals name.reg
-        in
+        let globals = Domain_used_globals.by_function opts.globals name in
         let function_summary, post_state =
           Dom.create_summary ~locals post_state
             ~formals:
               (Llair.Reg.Set.union (Llair.Reg.Set.of_list formals) globals)
         in
-        RegTbl.add_multi ~key:name.reg ~data:function_summary summary_table ;
+        Llair.Function.Tbl.add_multi ~key:name ~data:function_summary
+          summary_table ;
         pp_st () ;
         post_state
     in
@@ -350,8 +347,7 @@ module Make (Dom : Domain_intf.Dom) = struct
         (* Create and store a function summary for main *)
         if
           opts.function_summaries
-          && List.exists opts.entry_points
-               ~f:(String.equal (Llair.Reg.name name.reg))
+          && List.exists ~f:(Llair.Function.equal name) opts.entry_points
         then summarize exit_state |> (ignore : Dom.t -> unit) ;
         Work.skip )
     |>
@@ -359,7 +355,7 @@ module Make (Dom : Domain_intf.Dom) = struct
 
   let exec_throw stk pre_state (block : Llair.block) exc =
     let func = block.parent in
-    [%Trace.call fun {pf} -> pf "from %a" Llair.Reg.pp func.name.reg]
+    [%Trace.call fun {pf} -> pf "from %a" Llair.Function.pp func.name]
     ;
     let unwind formals scope from_call state =
       Dom.retn formals (Some func.fthrow) from_call
@@ -424,7 +420,7 @@ module Make (Dom : Domain_intf.Dom) = struct
               Dom.exec_assume state
                 (Llair.Exp.eq ptr
                    (Llair.Exp.label
-                      ~parent:(Llair.Reg.name jump.dst.parent.name.reg)
+                      ~parent:(Llair.Function.name jump.dst.parent.name)
                       ~name:jump.dst.lbl))
             with
             | Some state -> exec_jump stk state block jump |> Work.seq x
@@ -440,7 +436,7 @@ module Make (Dom : Domain_intf.Dom) = struct
             List.fold callees Work.skip ~f:(fun callee x ->
                 ( match
                     Dom.exec_intrinsic ~skip_throw:opts.skip_throw areturn
-                      callee.name.reg actuals state
+                      callee.name actuals state
                   with
                 | Some None ->
                     Report.invalid_access_term
@@ -454,7 +450,7 @@ module Make (Dom : Domain_intf.Dom) = struct
                 | None ->
                     exec_call opts stk state block {call with callee}
                       (Domain_used_globals.by_function opts.globals
-                         callee.name.reg) )
+                         callee.name) )
                 |> Work.seq x ) )
     | Return {exp} -> exec_return ~opts stk state block exp
     | Throw {exc} ->
@@ -495,13 +491,13 @@ module Make (Dom : Domain_intf.Dom) = struct
       ~f:(fun entry_point -> Llair.Func.find entry_point pgm.functions)
       opts.entry_points
     |> function
-    | Some {name= {reg}; formals= []; freturn; locals; entry} ->
+    | Some {name; formals= []; freturn; locals; entry} ->
         Some
           (Work.init
              (fst
                 (Dom.call ~summaries:opts.function_summaries
                    ~globals:
-                     (Domain_used_globals.by_function opts.globals reg)
+                     (Domain_used_globals.by_function opts.globals name)
                    ~actuals:[] ~areturn:None ~formals:[] ~freturn ~locals
                    (Dom.init pgm.globals)))
              entry)
@@ -513,9 +509,12 @@ module Make (Dom : Domain_intf.Dom) = struct
     | Some work -> Work.run ~f:(exec_block opts pgm) (work opts.bound)
     | None -> fail "no applicable harness" ()
 
-  let compute_summaries opts pgm : Dom.summary list Llair.Reg.Map.t =
+  let compute_summaries opts pgm : Dom.summary list Llair.Function.Map.t =
     assert opts.function_summaries ;
     exec_pgm opts pgm ;
-    RegTbl.fold summary_table Llair.Reg.Map.empty ~f:(fun ~key ~data map ->
-        match data with [] -> map | _ -> Llair.Reg.Map.add ~key ~data map )
+    Llair.Function.Tbl.fold summary_table Llair.Function.Map.empty
+      ~f:(fun ~key ~data map ->
+        match data with
+        | [] -> map
+        | _ -> Llair.Function.Map.add ~key ~data map )
 end

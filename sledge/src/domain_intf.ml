@@ -23,7 +23,7 @@ module type Dom = sig
   val exec_intrinsic :
        skip_throw:bool
     -> Llair.Reg.t option
-    -> Llair.Reg.t
+    -> Llair.Function.t
     -> Llair.Exp.t list
     -> t
     -> t option option
@@ -45,7 +45,10 @@ module type Dom = sig
   val retn : Llair.Reg.t list -> Llair.Reg.t option -> from_call -> t -> t
 
   val resolve_callee :
-    (string -> Llair.func list) -> Llair.Exp.t -> t -> Llair.func list * t
+       (Llair.Function.t -> Llair.func list)
+    -> Llair.Exp.t
+    -> t
+    -> Llair.func list * t
 
   val recursion_beyond_bound : [`skip | `prune]
 

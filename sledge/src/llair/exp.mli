@@ -73,6 +73,7 @@ type opN = Record  (** Record (array / struct) constant *)
 
 type t = private
   | Reg of {name: string; global: bool; typ: Typ.t}  (** Virtual register *)
+  | Function of {name: string; typ: Typ.t [@ignore]}  (** Function name *)
   | Label of {parent: string; name: string}
       (** Address of named code block within parent function *)
   | Integer of {data: Z.t; typ: Typ.t}  (** Integer constant *)
@@ -87,6 +88,8 @@ val pp : t pp
 
 include Invariant.S with type t := t
 
+val demangle : (string -> string option) ref
+
 (** Exp.Reg is re-exported as Reg *)
 module Reg : sig
   type exp := t
@@ -100,20 +103,34 @@ module Reg : sig
     val pp : t pp
   end
 
-  module Map : Map.S with type key := t
-
-  val demangle : (string -> string option) ref
   val pp : t pp
   val pp_demangled : t pp
 
   include Invariant.S with type t := t
 
-  val of_ : exp -> t
   val of_exp : exp -> t option
   val program : ?global:unit -> Typ.t -> string -> t
   val name : t -> string
   val typ : t -> Typ.t
   val is_global : t -> bool
+end
+
+(** Exp.Function is re-exported as Function *)
+module Function : sig
+  type exp := t
+  type t = private exp [@@deriving compare, equal, hash, sexp]
+
+  module Map : Map.S with type key := t
+  module Tbl : HashTable.S with type key := t
+
+  val pp : t pp
+
+  include Invariant.S with type t := t
+
+  val of_exp : exp -> t option
+  val mk : Typ.t -> string -> t
+  val name : t -> string
+  val typ : t -> Typ.t
 end
 
 (** Construct *)
@@ -122,6 +139,7 @@ end
 val reg : Reg.t -> t
 
 (* constants *)
+val function_ : Function.t -> t
 val label : parent:string -> name:string -> t
 val null : t
 val bool : bool -> t
