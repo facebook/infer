@@ -1,10 +1,9 @@
 /* @generated */
 digraph cfg {
-"access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_1" [label="1: Start access_field_in_ife_branch\nFormals: \nLocals:  z:int 0$?%__sil_tmpSIL_temp_conditional___n$0:int \n  " color=yellow style=filled]
+"access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_1" [label="1: Start access_field_in_ife_branch\nFormals: \nLocals:  z:int \n  " color=yellow style=filled]
 	
 
-	 "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_1" -> "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_4" ;
-	 "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_1" -> "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_5" ;
+	 "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_1" -> "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_9" ;
 "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_2" [label="2: Exit access_field_in_ife_branch \n  " color=yellow style=filled]
 	
 
@@ -20,30 +19,34 @@ digraph cfg {
 	
 
 	 "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_5" -> "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_7" ;
-"access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_6" [label="6:  ConditionalStmt Branch \n   n$1=_fun_ret_ptr(4:int) [line 20, column 50]\n  n$2=*n$1.field:int [line 20, column 49]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=n$2 [line 20, column 45]\n " shape="box"]
+"access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_6" [label="6:  ConditionalStmt Branch \n   n$0=_fun_ret_ptr(4:int) [line 20, column 50]\n  n$1=*n$0.field:int [line 20, column 49]\n  *&z:int=n$1 [line 20, column 45]\n " shape="box"]
 	
 
 	 "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_6" -> "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_3" ;
-"access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_7" [label="7:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=0 [line 20, column 45]\n " shape="box"]
+"access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_7" [label="7:  ConditionalStmt Branch \n   *&z:int=0 [line 20, column 45]\n " shape="box"]
 	
 
 	 "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_7" -> "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_3" ;
-"access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(z:int); [line 20, column 37]\n  n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 20, column 45]\n  *&z:int=n$3 [line 20, column 37]\n " shape="box"]
+"access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_8" [label="8:  between_join_and_exit \n  " shape="box"]
 	
 
 	 "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_8" -> "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_2" ;
+"access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(z:int); [line 20, column 37]\n " shape="box"]
+	
+
+	 "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_9" -> "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_4" ;
+	 "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_9" -> "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_5" ;
 "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_1" [label="1: Start call_ife_then_access_field\nFormals: \nLocals:  z:int 0$?%__sil_tmpSIL_temp_conditional___n$0:int \n  " color=yellow style=filled]
 	
 
-	 "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_1" -> "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_4" ;
-	 "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_1" -> "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_5" ;
+	 "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_1" -> "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_8" ;
 "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_2" [label="2: Exit call_ife_then_access_field \n  " color=yellow style=filled]
 	
 
 "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_3" [label="3: + \n  " ]
 	
 
-	 "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_3" -> "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_8" ;
+	 "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_3" -> "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_9" ;
 "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_4" [label="4: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 18, column 54]\n " shape="invhouse"]
 	
 
@@ -60,22 +63,26 @@ digraph cfg {
 	
 
 	 "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_7" -> "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_3" ;
-"call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(z:int); [line 18, column 37]\n  n$1=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 18, column 54]\n  n$2=_fun_ret_ptr(n$1:int) [line 18, column 46]\n  n$3=*n$2.field:int [line 18, column 45]\n  *&z:int=n$3 [line 18, column 37]\n " shape="box"]
+"call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(z:int); [line 18, column 37]\n " shape="box"]
 	
 
-	 "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_8" -> "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_2" ;
+	 "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_8" -> "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_4" ;
+	 "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_8" -> "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_5" ;
+"call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_9" [label="9:  DeclStmt \n   n$1=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 18, column 54]\n  n$2=_fun_ret_ptr(n$1:int) [line 18, column 46]\n  n$3=*n$2.field:int [line 18, column 45]\n  *&z:int=n$3 [line 18, column 37]\n " shape="box"]
+	
+
+	 "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_9" -> "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_2" ;
 "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_1" [label="1: Start ife_then_access_field\nFormals:  p:s* q:s*\nLocals:  z:int 0$?%__sil_tmpSIL_temp_conditional___n$0:s* \n  " color=yellow style=filled]
 	
 
-	 "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_1" -> "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_4" ;
-	 "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_1" -> "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_5" ;
+	 "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_1" -> "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_8" ;
 "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_2" [label="2: Exit ife_then_access_field \n  " color=yellow style=filled]
 	
 
 "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_3" [label="3: + \n  " ]
 	
 
-	 "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_3" -> "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_8" ;
+	 "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_3" -> "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_9" ;
 "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_4" [label="4: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 15, column 12]\n " shape="invhouse"]
 	
 
@@ -92,8 +99,13 @@ digraph cfg {
 	
 
 	 "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_7" -> "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_3" ;
-"ife_then_access_field.314daa5b993f0f569c257230f350e2e2_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(z:int); [line 15, column 3]\n  n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$0:s* [line 15, column 12]\n  n$4=*n$3.field:int [line 15, column 11]\n  *&z:int=n$4 [line 15, column 3]\n " shape="box"]
+"ife_then_access_field.314daa5b993f0f569c257230f350e2e2_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(z:int); [line 15, column 3]\n " shape="box"]
 	
 
-	 "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_8" -> "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_2" ;
+	 "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_8" -> "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_4" ;
+	 "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_8" -> "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_5" ;
+"ife_then_access_field.314daa5b993f0f569c257230f350e2e2_9" [label="9:  DeclStmt \n   n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$0:s* [line 15, column 12]\n  n$4=*n$3.field:int [line 15, column 11]\n  *&z:int=n$4 [line 15, column 3]\n " shape="box"]
+	
+
+	 "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_9" -> "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_2" ;
 }

@@ -1,10 +1,9 @@
 /* @generated */
 digraph cfg {
-"conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_1" [label="1: Start conditional_init_div0\nFormals: \nLocals:  a:int 0$?%__sil_tmpSIL_temp_conditional___n$1:int \n  " color=yellow style=filled]
+"conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_1" [label="1: Start conditional_init_div0\nFormals: \nLocals:  a:int \n  " color=yellow style=filled]
 	
 
-	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_1" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_8" ;
-	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_1" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_9" ;
+	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_1" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_12" ;
 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_2" [label="2: Exit conditional_init_div0 \n  " color=yellow style=filled]
 	
 
@@ -27,7 +26,8 @@ digraph cfg {
 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_7" [label="7: + \n  " ]
 	
 
-	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_7" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_12" ;
+	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_7" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_5" ;
+	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_7" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_6" ;
 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_8" [label="8: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 41, column 15]\n " shape="invhouse"]
 	
 
@@ -36,20 +36,20 @@ digraph cfg {
 	
 
 	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_9" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_11" ;
-"conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_10" [label="10:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=1 [line 41, column 15]\n " shape="box"]
+"conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_10" [label="10:  ConditionalStmt Branch \n   *&a:int=1 [line 41, column 15]\n " shape="box"]
 	
 
 	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_10" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_7" ;
-"conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_11" [label="11:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=0 [line 41, column 15]\n " shape="box"]
+"conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_11" [label="11:  ConditionalStmt Branch \n   *&a:int=0 [line 41, column 15]\n " shape="box"]
 	
 
 	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_11" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_7" ;
-"conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 41, column 7]\n  n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int [line 41, column 15]\n  *&a:int=n$2 [line 41, column 7]\n " shape="box"]
+"conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 41, column 7]\n " shape="box"]
 	
 
-	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_12" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_5" ;
-	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_12" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_6" ;
-"conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_13" [label="13:  Return Stmt \n   n$3=*&a:int [line 42, column 17]\n  *&return:int=(1 / (n$3 - 1)) [line 42, column 5]\n " shape="box"]
+	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_12" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_8" ;
+	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_12" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_9" ;
+"conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_13" [label="13:  Return Stmt \n   n$1=*&a:int [line 42, column 17]\n  *&return:int=(1 / (n$1 - 1)) [line 42, column 5]\n " shape="box"]
 	
 
 	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_13" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_2" ;

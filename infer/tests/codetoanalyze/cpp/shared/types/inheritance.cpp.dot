@@ -3,7 +3,7 @@ digraph cfg {
 "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_1" [label="1: Start call_static_methods\nFormals: \nLocals:  s2:Sub* s1:Base* b:Base* \n  " color=yellow style=filled]
 	
 
-	 "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_1" -> "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_11" ;
+	 "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_1" -> "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_19" ;
 "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_2" [label="2: Exit call_static_methods \n  " color=yellow style=filled]
 	
 
@@ -31,18 +31,54 @@ digraph cfg {
 	
 
 	 "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_8" -> "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_7" ;
-"call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(s2:Sub*); [line 22, column 3]\n  n$18=_fun___new(sizeof(t=Sub):unsigned long) [line 22, column 13]\n  n$19=_fun_Sub::Sub(n$18:Sub*) [line 22, column 17]\n  *&s2:Sub*=n$18 [line 22, column 3]\n " shape="box"]
+"call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_9" [label="9:  CXXNewExpr \n   n$18=_fun___new(sizeof(t=Sub):unsigned long) [line 22, column 13]\n " shape="box"]
 	
 
-	 "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_9" -> "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_8" ;
-"call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(s1:Base*); [line 21, column 3]\n  n$20=_fun___new(sizeof(t=Sub):unsigned long) [line 21, column 14]\n  n$21=_fun_Sub::Sub(n$20:Sub*) [line 21, column 18]\n  *&s1:Sub*=n$20 [line 21, column 3]\n " shape="box"]
+	 "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_9" -> "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_10" ;
+"call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_10" [label="10:  CXXNewExpr \n   n$19=_fun_Sub::Sub(n$18:Sub*) [line 22, column 17]\n " shape="box"]
 	
 
-	 "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_10" -> "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_9" ;
-"call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(b:Base*); [line 20, column 3]\n  n$22=_fun___new(sizeof(t=Base):unsigned long) [line 20, column 13]\n  n$23=_fun_Base::Base(n$22:Base*) [line 20, column 17]\n  *&b:Base*=n$22 [line 20, column 3]\n " shape="box"]
+	 "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_10" -> "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_12" ;
+"call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(s2:Sub*); [line 22, column 3]\n " shape="box"]
 	
 
-	 "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_11" -> "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_10" ;
+	 "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_11" -> "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_9" ;
+"call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_12" [label="12:  DeclStmt \n   *&s2:Sub*=n$18 [line 22, column 3]\n " shape="box"]
+	
+
+	 "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_12" -> "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_8" ;
+"call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_13" [label="13:  CXXNewExpr \n   n$20=_fun___new(sizeof(t=Sub):unsigned long) [line 21, column 14]\n " shape="box"]
+	
+
+	 "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_13" -> "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_14" ;
+"call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_14" [label="14:  CXXNewExpr \n   n$21=_fun_Sub::Sub(n$20:Sub*) [line 21, column 18]\n " shape="box"]
+	
+
+	 "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_14" -> "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_16" ;
+"call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_15" [label="15:  DeclStmt \n   VARIABLE_DECLARED(s1:Base*); [line 21, column 3]\n " shape="box"]
+	
+
+	 "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_15" -> "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_13" ;
+"call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_16" [label="16:  DeclStmt \n   *&s1:Sub*=n$20 [line 21, column 3]\n " shape="box"]
+	
+
+	 "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_16" -> "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_11" ;
+"call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_17" [label="17:  CXXNewExpr \n   n$22=_fun___new(sizeof(t=Base):unsigned long) [line 20, column 13]\n " shape="box"]
+	
+
+	 "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_17" -> "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_18" ;
+"call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_18" [label="18:  CXXNewExpr \n   n$23=_fun_Base::Base(n$22:Base*) [line 20, column 17]\n " shape="box"]
+	
+
+	 "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_18" -> "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_20" ;
+"call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_19" [label="19:  DeclStmt \n   VARIABLE_DECLARED(b:Base*); [line 20, column 3]\n " shape="box"]
+	
+
+	 "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_19" -> "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_17" ;
+"call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_20" [label="20:  DeclStmt \n   *&b:Base*=n$22 [line 20, column 3]\n " shape="box"]
+	
+
+	 "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_20" -> "call_static_methods#2229162425019005814.6b8ed680875ca5e183f8fa3b51ea6718_15" ;
 "fun_redefine#Base#(2650804992698061987).67136e8e6ad0793f86461827c32086fc_1" [label="1: Start Base::fun_redefine\nFormals:  this:Base*\nLocals:  \n  " color=yellow style=filled]
 	
 

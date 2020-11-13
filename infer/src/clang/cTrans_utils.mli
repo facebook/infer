@@ -16,17 +16,28 @@ type continuation =
   ; return_temp: bool
         (** true if temps should not be removed in the node but returned to ancestors *) }
 
-type priority_node = Free | Busy of Clang_ast_t.pointer
+(** Whether we are collecting instructions for a new block in the CFG ([Busy]) or there are no
+    blocks being created from enclosing translations ([Free]) *)
+type priority_node =
+  | Free  (** no node currently being created *)
+  | Busy of Clang_ast_t.pointer
+      (** the translation of the clang expression or statement at [pointer] will create a node with
+          the collected instructions from the sub-expressions (see {!control.instrs} *)
 
-(** A translation state. It provides the translation function with the info it needs to carry on the
-    translation. *)
+(** The input of the translation constructed from enclosing expressions. *)
 type trans_state =
-  { context: CContext.t  (** current context of the translation *)
-  ; succ_nodes: Procdesc.Node.t list  (** successor nodes in the cfg *)
-  ; continuation: continuation option  (** current continuation *)
-  ; priority: priority_node
+  { context: CContext.t  (** global context of the translation *)
+  ; succ_nodes: Procdesc.Node.t list
+        (** successor nodes in the CFG, i.e. instructions that will happen *after* the current
+            expression or statement being translated (note that the CFG is constructed bottom-up,
+            starting from the last instructions) *)
+  ; continuation: continuation option
+        (** current continuation, used for [break], [continue], and the like *)
+  ; priority: priority_node  (** see {!priority_node} *)
   ; var_exp_typ: (Exp.t * Typ.t) option
-  ; opaque_exp: (Exp.t * Typ.t) option
+        (** the expression (usually of the form [Exp.Lvar pvar]) that the enclosing expression or
+            statement is trying to initialize, if any *)
+  ; opaque_exp: (Exp.t * Typ.t) option  (** needed for translating [OpaqueValueExpr] nodes *)
   ; is_fst_arg_objc_instance_method_call: bool
   ; passed_as_noescape_block_to: Procname.t option }
 
@@ -43,8 +54,9 @@ type control =
   { root_nodes: Procdesc.Node.t list  (** Top cfg nodes (root) created by the translation *)
   ; leaf_nodes: Procdesc.Node.t list  (** Bottom cfg nodes (leaf) created by the translate *)
   ; instrs: Sil.instr list
-        (** list of SIL instruction that need to be placed in cfg nodes of the parent*)
-  ; initd_exps: Exp.t list  (** list of expressions that are initialised by the instructions *) }
+        (** Instructions that need to be placed in the current CFG node being constructed, *after*
+            [leaf_nodes]. *)
+  ; initd_exps: Exp.t list  (** list of expressions that are initialized by the instructions *) }
 
 val pp_control : F.formatter -> control -> unit
 
@@ -203,6 +215,26 @@ module PriorityNode : sig
     -> trans_result
   (** convenience function like [compute_results_to_parent] when there is a single [trans_result] to
       consider *)
+
+  val force_sequential :
+       Location.t
+    -> Procdesc.Node.stmt_nodekind
+    -> trans_state
+    -> Clang_ast_t.stmt_info
+    -> mk_first_opt:(trans_state -> Clang_ast_t.stmt_info -> trans_result option)
+    -> mk_second:(trans_state -> Clang_ast_t.stmt_info -> trans_result)
+    -> mk_return:(fst:trans_result -> snd:trans_result -> Exp.t * Typ.t)
+    -> trans_result
+
+  val force_sequential_with_acc :
+       Location.t
+    -> Procdesc.Node.stmt_nodekind
+    -> trans_state
+    -> Clang_ast_t.stmt_info
+    -> mk_first:(trans_state -> Clang_ast_t.stmt_info -> trans_result * 'a)
+    -> mk_second:('a -> trans_state -> Clang_ast_t.stmt_info -> trans_result)
+    -> mk_return:(fst:trans_result -> snd:trans_result -> Exp.t * Typ.t)
+    -> trans_result
 end
 
 (** Module for translating goto instructions by keeping a map of labels. *)

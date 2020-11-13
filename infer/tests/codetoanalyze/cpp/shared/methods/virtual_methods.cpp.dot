@@ -3,7 +3,7 @@ digraph cfg {
 "call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_1" [label="1: Start call_virtual_destructor\nFormals: \nLocals:  trgl:Polygon* \n  " color=yellow style=filled]
 	
 
-	 "call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_1" -> "call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_4" ;
+	 "call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_1" -> "call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_6" ;
 "call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_2" [label="2: Exit call_virtual_destructor \n  " color=yellow style=filled]
 	
 
@@ -11,10 +11,22 @@ digraph cfg {
 	
 
 	 "call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_3" -> "call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_2" ;
-"call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(trgl:Polygon*); [line 69, column 3]\n  n$2=_fun___new(sizeof(t=Triangle):unsigned long) [line 69, column 19]\n  n$3=_fun_Triangle::Triangle(n$2:Triangle*) [line 69, column 23]\n  *&trgl:Triangle*=n$2 [line 69, column 3]\n " shape="box"]
+"call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_4" [label="4:  CXXNewExpr \n   n$2=_fun___new(sizeof(t=Triangle):unsigned long) [line 69, column 19]\n " shape="box"]
 	
 
-	 "call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_4" -> "call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_3" ;
+	 "call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_4" -> "call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_5" ;
+"call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_5" [label="5:  CXXNewExpr \n   n$3=_fun_Triangle::Triangle(n$2:Triangle*) [line 69, column 23]\n " shape="box"]
+	
+
+	 "call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_5" -> "call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_7" ;
+"call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(trgl:Polygon*); [line 69, column 3]\n " shape="box"]
+	
+
+	 "call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_6" -> "call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_4" ;
+"call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_7" [label="7:  DeclStmt \n   *&trgl:Triangle*=n$2 [line 69, column 3]\n " shape="box"]
+	
+
+	 "call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_7" -> "call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_3" ;
 "poly_area#4209622570361008343.816833144841084a7fd6071bbff4c354_1" [label="1: Start poly_area\nFormals: \nLocals:  ppoly3:Polygon* poly:Polygon \n  " color=yellow style=filled]
 	
 

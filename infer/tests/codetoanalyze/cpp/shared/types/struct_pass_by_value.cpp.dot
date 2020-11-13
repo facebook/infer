@@ -86,10 +86,14 @@ digraph cfg {
 "temp_div0#struct_pass_by_value#12428807554484697371.c8fca64e841f1b138c802c96104d913c_2" [label="2: Exit struct_pass_by_value::temp_div0 \n  " color=yellow style=filled]
 	
 
-"temp_div0#struct_pass_by_value#12428807554484697371.c8fca64e841f1b138c802c96104d913c_3" [label="3:  Return Stmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$0:struct_pass_by_value::X); [line 35, column 36]\n  n$5=_fun_struct_pass_by_value::X::X(&0$?%__sil_tmpSIL_materialize_temp__n$0:struct_pass_by_value::X*,0:int) [line 35, column 36]\n  n$6=_fun_struct_pass_by_value::X::X(&0$?%__sil_tmp__temp_construct_n$4:struct_pass_by_value::X*,&0$?%__sil_tmpSIL_materialize_temp__n$0:struct_pass_by_value::X&) [line 35, column 36]\n  n$7=_fun_struct_pass_by_value::get_f(&0$?%__sil_tmp__temp_construct_n$4:struct_pass_by_value::X) [line 35, column 30]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:struct_pass_by_value::X [line 35, column 40]\n  n$2=_fun_struct_pass_by_value::X::~X(&0$?%__sil_tmpSIL_materialize_temp__n$0:struct_pass_by_value::X*) injected [line 35, column 40]\n  *&return:int=(1 / n$7) [line 35, column 19]\n " shape="box"]
+"temp_div0#struct_pass_by_value#12428807554484697371.c8fca64e841f1b138c802c96104d913c_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$0:struct_pass_by_value::X); [line 35, column 36]\n  n$5=_fun_struct_pass_by_value::X::X(&0$?%__sil_tmpSIL_materialize_temp__n$0:struct_pass_by_value::X*,0:int) [line 35, column 36]\n " shape="box"]
 	
 
-	 "temp_div0#struct_pass_by_value#12428807554484697371.c8fca64e841f1b138c802c96104d913c_3" -> "temp_div0#struct_pass_by_value#12428807554484697371.c8fca64e841f1b138c802c96104d913c_2" ;
+	 "temp_div0#struct_pass_by_value#12428807554484697371.c8fca64e841f1b138c802c96104d913c_3" -> "temp_div0#struct_pass_by_value#12428807554484697371.c8fca64e841f1b138c802c96104d913c_4" ;
+"temp_div0#struct_pass_by_value#12428807554484697371.c8fca64e841f1b138c802c96104d913c_4" [label="4:  Return Stmt \n   n$6=_fun_struct_pass_by_value::X::X(&0$?%__sil_tmp__temp_construct_n$4:struct_pass_by_value::X*,&0$?%__sil_tmpSIL_materialize_temp__n$0:struct_pass_by_value::X&) [line 35, column 36]\n  n$7=_fun_struct_pass_by_value::get_f(&0$?%__sil_tmp__temp_construct_n$4:struct_pass_by_value::X) [line 35, column 30]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:struct_pass_by_value::X [line 35, column 40]\n  n$2=_fun_struct_pass_by_value::X::~X(&0$?%__sil_tmpSIL_materialize_temp__n$0:struct_pass_by_value::X*) injected [line 35, column 40]\n  *&return:int=(1 / n$7) [line 35, column 19]\n " shape="box"]
+	
+
+	 "temp_div0#struct_pass_by_value#12428807554484697371.c8fca64e841f1b138c802c96104d913c_4" -> "temp_div0#struct_pass_by_value#12428807554484697371.c8fca64e841f1b138c802c96104d913c_2" ;
 "temp_div1#struct_pass_by_value#13173334156757910444.11618e43948d09c7324724af84bc0d5b_1" [label="1: Start struct_pass_by_value::temp_div1\nFormals: \nLocals:  0$?%__sil_tmp__temp_construct_n$4:struct_pass_by_value::X 0$?%__sil_tmpSIL_materialize_temp__n$0:struct_pass_by_value::X \n  " color=yellow style=filled]
 	
 
@@ -97,10 +101,14 @@ digraph cfg {
 "temp_div1#struct_pass_by_value#13173334156757910444.11618e43948d09c7324724af84bc0d5b_2" [label="2: Exit struct_pass_by_value::temp_div1 \n  " color=yellow style=filled]
 	
 
-"temp_div1#struct_pass_by_value#13173334156757910444.11618e43948d09c7324724af84bc0d5b_3" [label="3:  Return Stmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$0:struct_pass_by_value::X); [line 37, column 36]\n  n$5=_fun_struct_pass_by_value::X::X(&0$?%__sil_tmpSIL_materialize_temp__n$0:struct_pass_by_value::X*,1:int) [line 37, column 36]\n  n$6=_fun_struct_pass_by_value::X::X(&0$?%__sil_tmp__temp_construct_n$4:struct_pass_by_value::X*,&0$?%__sil_tmpSIL_materialize_temp__n$0:struct_pass_by_value::X&) [line 37, column 36]\n  n$7=_fun_struct_pass_by_value::get_f(&0$?%__sil_tmp__temp_construct_n$4:struct_pass_by_value::X) [line 37, column 30]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:struct_pass_by_value::X [line 37, column 40]\n  n$2=_fun_struct_pass_by_value::X::~X(&0$?%__sil_tmpSIL_materialize_temp__n$0:struct_pass_by_value::X*) injected [line 37, column 40]\n  *&return:int=(1 / n$7) [line 37, column 19]\n " shape="box"]
+"temp_div1#struct_pass_by_value#13173334156757910444.11618e43948d09c7324724af84bc0d5b_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$0:struct_pass_by_value::X); [line 37, column 36]\n  n$5=_fun_struct_pass_by_value::X::X(&0$?%__sil_tmpSIL_materialize_temp__n$0:struct_pass_by_value::X*,1:int) [line 37, column 36]\n " shape="box"]
 	
 
-	 "temp_div1#struct_pass_by_value#13173334156757910444.11618e43948d09c7324724af84bc0d5b_3" -> "temp_div1#struct_pass_by_value#13173334156757910444.11618e43948d09c7324724af84bc0d5b_2" ;
+	 "temp_div1#struct_pass_by_value#13173334156757910444.11618e43948d09c7324724af84bc0d5b_3" -> "temp_div1#struct_pass_by_value#13173334156757910444.11618e43948d09c7324724af84bc0d5b_4" ;
+"temp_div1#struct_pass_by_value#13173334156757910444.11618e43948d09c7324724af84bc0d5b_4" [label="4:  Return Stmt \n   n$6=_fun_struct_pass_by_value::X::X(&0$?%__sil_tmp__temp_construct_n$4:struct_pass_by_value::X*,&0$?%__sil_tmpSIL_materialize_temp__n$0:struct_pass_by_value::X&) [line 37, column 36]\n  n$7=_fun_struct_pass_by_value::get_f(&0$?%__sil_tmp__temp_construct_n$4:struct_pass_by_value::X) [line 37, column 30]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:struct_pass_by_value::X [line 37, column 40]\n  n$2=_fun_struct_pass_by_value::X::~X(&0$?%__sil_tmpSIL_materialize_temp__n$0:struct_pass_by_value::X*) injected [line 37, column 40]\n  *&return:int=(1 / n$7) [line 37, column 19]\n " shape="box"]
+	
+
+	 "temp_div1#struct_pass_by_value#13173334156757910444.11618e43948d09c7324724af84bc0d5b_4" -> "temp_div1#struct_pass_by_value#13173334156757910444.11618e43948d09c7324724af84bc0d5b_2" ;
 "var_div0#struct_pass_by_value#10764880494979445665.44da929aedf0cdc1afaea064cb399051_1" [label="1: Start struct_pass_by_value::var_div0\nFormals: \nLocals:  0$?%__sil_tmp__temp_construct_n$0:struct_pass_by_value::X x:struct_pass_by_value::X \n  " color=yellow style=filled]
 	
 
