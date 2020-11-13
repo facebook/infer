@@ -96,8 +96,8 @@ and Trm : sig
   val _Q : Q.t -> t
   val _Arith : Arith.t -> t
   val _Splat : t -> t
-  val _Sized : t -> t -> t
-  val _Extract : t -> t -> t -> t
+  val _Sized : seq:t -> siz:t -> t
+  val _Extract : seq:t -> off:t -> len:t -> t
   val _Concat : t array -> t
   val _Apply : Funsym.t -> t array -> t
   val add : t -> t -> t
@@ -229,7 +229,7 @@ end = struct
   let seq_size e =
     try Some (seq_size_exn e) with Invalid_argument _ -> None
 
-  let _Sized seq siz =
+  let _Sized ~seq ~siz =
     ( match seq_size seq with
     (* ⟨n,α⟩ ==> α when n ≡ |α| *)
     | Some n when equal siz n -> seq
@@ -247,7 +247,7 @@ end = struct
 
   let empty_seq = Concat [||]
 
-  let rec _Extract seq off len =
+  let rec _Extract ~seq ~off ~len =
     [%trace]
       ~call:(fun {pf} -> pf "%a" pp (Extract {seq; off; len}))
       ~retn:(fun {pf} -> pf "%a" pp)
@@ -259,12 +259,12 @@ end = struct
       match seq with
       (* α[m,k)[o,l) ==> α[m+o,l) when k ≥ o+l *)
       | Extract {seq= a; off= m; len= k} when partial_ge k o_l ->
-          _Extract a (add m off) len
+          _Extract ~seq:a ~off:(add m off) ~len
       (* ⟨_,0⟩[_,_) ==> 0 *)
       | Sized {seq} when seq == zero -> seq
       (* ⟨n,E^⟩[o,l) ==> ⟨l,E^⟩ when n ≥ o+l *)
       | Sized {siz= n; seq= Splat _ as e} when partial_ge n o_l ->
-          _Sized e len
+          _Sized ~seq:e ~siz:len
       (* ⟨n,a⟩[0,n) ==> ⟨n,a⟩ *)
       | Sized {siz= n} when equal off zero && equal n len -> seq
       (* For (α₀^α₁)[o,l) there are 3 cases:
@@ -293,7 +293,7 @@ end = struct
             Array.fold_map_until na1N (l, off)
               ~f:(fun naI (l, oI) ->
                 if Z.equal Z.zero l then
-                  `Continue (_Extract naI oI zero, (l, oI))
+                  `Continue (_Extract ~seq:naI ~off:oI ~len:zero, (l, oI))
                 else
                   let nI = seq_size_exn naI in
                   let oI_nI = sub oI nI in
@@ -302,7 +302,8 @@ end = struct
                       let oJ = if Z.sign z <= 0 then zero else oI_nI in
                       let lI = Z.(max zero (min l (neg z))) in
                       let l = Z.(l - lI) in
-                      `Continue (_Extract naI oI (_Z lI), (l, oJ))
+                      `Continue
+                        (_Extract ~seq:naI ~off:oI ~len:(_Z lI), (l, oJ))
                   | _ -> `Stop (Extract {seq; off; len}) )
               ~finish:(fun (e1N, _) -> _Concat e1N)
         | _ -> Extract {seq; off; len} )
@@ -328,15 +329,15 @@ end = struct
         , Extract {seq= na'; off= o_k; len= l} )
         when equal na na' && equal o_k (add o k) && partial_ge n (add o_k l)
         ->
-          Some (_Extract na o (add k l))
+          Some (_Extract ~seq:na ~off:o ~len:(add k l))
       (* ⟨m,0⟩^⟨n,0⟩ ==> ⟨m+n,0⟩ *)
       | Sized {siz= m; seq= a}, Sized {siz= n; seq= a'}
         when a == zero && a' == zero ->
-          Some (_Sized a (add m n))
+          Some (_Sized ~seq:a ~siz:(add m n))
       (* ⟨m,E^⟩^⟨n,E^⟩ ==> ⟨m+n,E^⟩ *)
       | Sized {siz= m; seq= Splat _ as a}, Sized {siz= n; seq= a'}
         when equal a a' ->
-          Some (_Sized a (add m n))
+          Some (_Sized ~seq:a ~siz:(add m n))
       | _ -> None
     in
     let xs = flatten xs in
@@ -408,8 +409,8 @@ let arith = _Arith
 (* sequences *)
 
 let splat = _Splat
-let sized ~seq ~siz = _Sized seq siz
-let extract ~seq ~off ~len = _Extract seq off len
+let sized = _Sized
+let extract = _Extract
 let concat elts = _Concat elts
 
 (* uninterpreted *)
@@ -424,8 +425,12 @@ let rec map_vars e ~f =
   | Z _ | Q _ -> e
   | Arith a -> map1 (Arith.map ~f:(map_vars ~f)) e _Arith a
   | Splat x -> map1 (map_vars ~f) e _Splat x
-  | Sized {seq; siz} -> map2 (map_vars ~f) e _Sized seq siz
-  | Extract {seq; off; len} -> map3 (map_vars ~f) e _Extract seq off len
+  | Sized {seq; siz} ->
+      map2 (map_vars ~f) e (fun seq siz -> _Sized ~seq ~siz) seq siz
+  | Extract {seq; off; len} ->
+      map3 (map_vars ~f) e
+        (fun seq off len -> _Extract ~seq ~off ~len)
+        seq off len
   | Concat xs -> mapN (map_vars ~f) e _Concat xs
   | Apply (g, xs) -> mapN (map_vars ~f) e (_Apply g) xs
 
@@ -434,8 +439,9 @@ let map e ~f =
   | Var _ | Z _ | Q _ -> e
   | Arith a -> map1 (Arith.map ~f) e _Arith a
   | Splat x -> map1 f e _Splat x
-  | Sized {seq; siz} -> map2 f e _Sized seq siz
-  | Extract {seq; off; len} -> map3 f e _Extract seq off len
+  | Sized {seq; siz} -> map2 f e (fun seq siz -> _Sized ~seq ~siz) seq siz
+  | Extract {seq; off; len} ->
+      map3 f e (fun seq off len -> _Extract ~seq ~off ~len) seq off len
   | Concat xs -> mapN f e _Concat xs
   | Apply (g, xs) -> mapN f e (_Apply g) xs
 
