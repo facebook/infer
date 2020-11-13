@@ -237,7 +237,6 @@ module Term = struct
     ap2t (fun rcd elt -> Trm.update ~rcd ~idx ~elt) rcd elt
 
   let record elts = apNt Trm.record elts
-  let ancestor i = `Trm (Trm.ancestor i)
 
   (* uninterpreted *)
 

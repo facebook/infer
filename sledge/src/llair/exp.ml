@@ -70,7 +70,6 @@ module T = struct
     | Ap2 of op2 * Typ.t * t * t
     | Ap3 of op3 * Typ.t * t * t * t
     | ApN of opN * Typ.t * t iarray
-    | RecRecord of int * Typ.t
   [@@deriving compare, equal, hash, sexp]
 end
 
@@ -143,7 +142,6 @@ let rec pp fs exp =
   | Ap3 (Conditional, _, cnd, thn, els) ->
       pf "(%a@ ? %a@ : %a)" pp cnd pp thn pp els
   | ApN (Record, _, elts) -> pf "{%a}" pp_record elts
-  | RecRecord (i, _) -> pf "rec_record %i" i
   [@@warning "-9"]
 
 and pp_record fs elts =
@@ -240,7 +238,6 @@ let rec invariant exp =
           IArray.for_all2_exn elts args ~f:(fun (_, typ) arg ->
               Typ.castable typ (typ_of arg) ) )
     | _ -> assert false )
-  | RecRecord _ -> ()
   [@@warning "-9"]
 
 (** Type query *)
@@ -268,8 +265,7 @@ and typ_of exp =
       , _
       , _ )
    |Ap3 (Conditional, typ, _, _, _)
-   |ApN (Record, typ, _)
-   |RecRecord (_, typ) ->
+   |ApN (Record, typ, _) ->
       typ
   [@@warning "-9"]
 
@@ -405,8 +401,6 @@ let select typ rcd idx = Ap1 (Select idx, typ, rcd) |> check invariant
 
 let update typ ~rcd idx ~elt =
   Ap2 (Update idx, typ, rcd, elt) |> check invariant
-
-let rec_record i typ = RecRecord (i, typ)
 
 (** Traverse *)
 

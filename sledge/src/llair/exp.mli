@@ -81,7 +81,6 @@ type t = private
   | Ap2 of op2 * Typ.t * t * t
   | Ap3 of op3 * Typ.t * t * t * t
   | ApN of opN * Typ.t * t iarray
-  | RecRecord of int * Typ.t  (** Reference to ancestor recursive record *)
 [@@deriving compare, equal, hash, sexp]
 
 val pp : t pp
@@ -179,7 +178,6 @@ val splat : Typ.t -> t -> t
 val record : Typ.t -> t iarray -> t
 val select : Typ.t -> t -> int -> t
 val update : Typ.t -> rcd:t -> int -> elt:t -> t
-val rec_record : int -> Typ.t -> t
 
 (** Traverse *)
 

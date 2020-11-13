@@ -25,7 +25,6 @@ type t = private
   | Select of {idx: int; rcd: t}
   | Update of {idx: int; rcd: t; elt: t}
   | Record of t array
-  | Ancestor of int
   (* uninterpreted *)
   | Apply of Funsym.t * t array
 [@@deriving compare, equal, sexp]
@@ -81,7 +80,6 @@ val concat : t array -> t
 val select : rcd:t -> idx:int -> t
 val update : rcd:t -> idx:int -> elt:t -> t
 val record : t array -> t
-val ancestor : int -> t
 
 (* uninterpreted *)
 val apply : Funsym.t -> t array -> t

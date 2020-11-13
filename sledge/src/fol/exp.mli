@@ -56,9 +56,6 @@ module rec Term : sig
   val record : t array -> t
   (** Record constant *)
 
-  val ancestor : int -> t
-  (** Reference to ancestor recursive record *)
-
   (* uninterpreted *)
   val apply : Funsym.t -> t array -> t
 

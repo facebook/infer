@@ -23,7 +23,7 @@ let rec classify e =
     | Interpreted -> Interpreted
     | Uninterpreted -> Uninterpreted )
   | Sized _ | Extract _ | Concat _ -> Interpreted
-  | Var _ | Z _ | Q _ | Ancestor _ -> Atomic
+  | Var _ | Z _ | Q _ -> Atomic
   | Splat _ | Select _ | Update _ | Record _ | Apply _ -> Uninterpreted
 
 let interpreted e = equal_kind (classify e) Interpreted

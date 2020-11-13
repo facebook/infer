@@ -86,7 +86,6 @@ and Trm : sig
     | Select of {idx: int; rcd: t}
     | Update of {idx: int; rcd: t; elt: t}
     | Record of t array
-    | Ancestor of int
     (* uninterpreted *)
     | Apply of Funsym.t * t array
   [@@deriving compare, equal, sexp]
@@ -104,7 +103,6 @@ and Trm : sig
   val _Select : int -> t -> t
   val _Update : int -> t -> t -> t
   val _Record : t array -> t
-  val _Ancestor : int -> t
   val _Apply : Funsym.t -> t array -> t
   val add : t -> t -> t
   val sub : t -> t -> t
@@ -126,7 +124,6 @@ end = struct
     | Select of {idx: int; rcd: t}
     | Update of {idx: int; rcd: t; elt: t}
     | Record of t array
-    | Ancestor of int
     | Apply of Funsym.t * t array
   [@@deriving compare, equal, sexp]
 
@@ -163,7 +160,6 @@ end = struct
       | Update {idx; rcd; elt} ->
           pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
       | Record xs -> pf "{%a}" (ppx_record strength) xs
-      | Ancestor i -> pf "(ancestor %i)" i
       | Apply (f, [||]) -> pf "%a" Funsym.pp f
       | Apply
           ( ( (Rem | BitAnd | BitOr | BitXor | BitShl | BitLshr | BitAshr)
@@ -361,7 +357,6 @@ end = struct
   let _Select idx rcd = Select {idx; rcd} |> check invariant
   let _Update idx rcd elt = Update {idx; rcd; elt} |> check invariant
   let _Record es = Record es |> check invariant
-  let _Ancestor i = Ancestor i |> check invariant
 
   let _Apply f es =
     ( match Funsym.eval ~equal ~get_z ~ret_z:_Z ~get_q ~ret_q:_Q f es with
@@ -374,7 +369,7 @@ end = struct
   let rec iter_vars e ~f =
     match e with
     | Var _ as v -> f (Var.of_ v)
-    | Z _ | Q _ | Ancestor _ -> ()
+    | Z _ | Q _ -> ()
     | Splat x | Select {rcd= x} -> iter_vars ~f x
     | Sized {seq= x; siz= y} | Update {rcd= x; elt= y} ->
         iter_vars ~f x ;
@@ -438,7 +433,6 @@ let concat elts = _Concat elts
 let select ~rcd ~idx = _Select idx rcd
 let update ~rcd ~idx ~elt = _Update idx rcd elt
 let record elts = _Record elts
-let ancestor i = _Ancestor i
 
 (* uninterpreted *)
 
@@ -458,7 +452,6 @@ let rec map_vars e ~f =
   | Select {idx; rcd} -> map1 (map_vars ~f) e (_Select idx) rcd
   | Update {idx; rcd; elt} -> map2 (map_vars ~f) e (_Update idx) rcd elt
   | Record xs -> mapN (map_vars ~f) e _Record xs
-  | Ancestor _ -> e
   | Apply (g, xs) -> mapN (map_vars ~f) e (_Apply g) xs
 
 let map e ~f =
@@ -472,14 +465,13 @@ let map e ~f =
   | Select {idx; rcd} -> map1 f e (_Select idx) rcd
   | Update {idx; rcd; elt} -> map2 f e (_Update idx) rcd elt
   | Record xs -> mapN f e _Record xs
-  | Ancestor _ -> e
   | Apply (g, xs) -> mapN f e (_Apply g) xs
 
 (** Traverse *)
 
 let iter_subtrms e ~f =
   match e with
-  | Var _ | Z _ | Q _ | Ancestor _ -> ()
+  | Var _ | Z _ | Q _ -> ()
   | Arith a -> Iter.iter ~f (Arith.trms a)
   | Splat x | Select {rcd= x} -> f x
   | Sized {seq= x; siz= y} | Update {rcd= x; elt= y} ->

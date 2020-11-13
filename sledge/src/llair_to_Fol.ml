@@ -125,7 +125,6 @@ and term : Llair.Exp.t -> T.t =
       T.update ~rcd:(term rcd) ~idx ~elt:(term elt)
   | ApN (Record, _, elts) ->
       T.record (Array.map ~f:term (IArray.to_array elts))
-  | RecRecord (i, _) -> T.ancestor i
   | Ap1 (Splat, _, byt) -> T.splat (term byt)
 
 and formula e = F.dq0 (term e)

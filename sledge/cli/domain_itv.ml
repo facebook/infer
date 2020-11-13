@@ -127,8 +127,7 @@ let rec apron_texpr_of_llair_exp exp q =
   | Label _
    |Ap1 ((Splat | Select _), _, _)
    |Ap3 (Conditional, _, _, _, _)
-   |ApN (Record, _, _)
-   |RecRecord _ ->
+   |ApN (Record, _, _) ->
       None
 
 let assign reg exp q =
