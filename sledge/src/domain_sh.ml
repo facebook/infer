@@ -21,8 +21,8 @@ let simplify q = if !simplify_states then Sh.simplify q else q
 
 let init globals =
   IArray.fold globals Sh.emp ~f:(fun global q ->
-      match global with
-      | {Llair.Global.reg; init= Some (seq, siz)} ->
+      match (global : Llair.GlobalDefn.t) with
+      | {reg; init= Some (seq, siz)} ->
           let loc = Term.var (X.reg reg) in
           let len = Term.integer (Z.of_int siz) in
           let seq = X.term seq in

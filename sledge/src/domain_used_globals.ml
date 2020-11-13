@@ -14,7 +14,8 @@ let report_fmt_thunk = Fun.flip pp
 let empty = Llair.Reg.Set.empty
 
 let init globals =
-  [%Trace.info "pgm globals: {%a}" (IArray.pp ", " Llair.Global.pp) globals] ;
+  [%Trace.info
+    "pgm globals: {%a}" (IArray.pp ", " Llair.GlobalDefn.pp) globals] ;
   empty
 
 let join l r = Some (Llair.Reg.Set.union l r)

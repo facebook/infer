@@ -13,7 +13,7 @@ module Typ = Typ
 module Reg = Reg
 module Exp = Exp
 module Function = Function
-module Global = Global
+module GlobalDefn = GlobalDefn
 
 (** Instructions for memory manipulation or other non-control effects. *)
 type inst = private
@@ -104,7 +104,7 @@ and func = private
 type functions
 
 type program = private
-  { globals: Global.t iarray  (** Global variable definitions. *)
+  { globals: GlobalDefn.t iarray  (** Global definitions. *)
   ; functions: functions  (** (Global) function definitions. *) }
 
 module Inst : sig
@@ -213,5 +213,5 @@ module Program : sig
 
   include Invariant.S with type t := t
 
-  val mk : globals:Global.t list -> functions:func list -> t
+  val mk : globals:GlobalDefn.t list -> functions:func list -> t
 end

@@ -374,7 +374,7 @@ let memo_value : (Inst.t list * Exp.t) ValTbl.t = ValTbl.create ()
 
 module GlobTbl = LlvalueTbl
 
-let memo_global : Global.t GlobTbl.t = GlobTbl.create ()
+let memo_global : GlobalDefn.t GlobTbl.t = GlobTbl.create ()
 
 let should_inline : Llvm.llvalue -> bool =
  fun llv ->
@@ -746,7 +746,7 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp_prefix_exp]
 
-and xlate_global : x -> Llvm.llvalue -> Global.t =
+and xlate_global : x -> Llvm.llvalue -> GlobalDefn.t =
  fun x llg ->
   GlobTbl.find_or_add memo_global llg ~default:(fun () ->
       [%Trace.call fun {pf} -> pf "%a" pp_llvalue llg]
@@ -755,7 +755,7 @@ and xlate_global : x -> Llvm.llvalue -> Global.t =
       let loc = find_loc llg in
       (* add to tbl without initializer in case of recursive occurrences in
          its own initializer *)
-      GlobTbl.set memo_global ~key:llg ~data:(Global.mk g loc) ;
+      GlobTbl.set memo_global ~key:llg ~data:(GlobalDefn.mk g loc) ;
       let init =
         match Llvm.classify_value llg with
         | GlobalVariable ->
@@ -770,9 +770,9 @@ and xlate_global : x -> Llvm.llvalue -> Global.t =
                 (init, size_of x (Llvm.type_of llv)) )
         | _ -> None
       in
-      Global.mk ?init g loc
+      GlobalDefn.mk ?init g loc
       |>
-      [%Trace.retn fun {pf} -> pf "%a" Global.pp_defn] )
+      [%Trace.retn fun {pf} -> pf "%a" GlobalDefn.pp_defn] )
 
 type pop_thunk = Loc.t -> Llair.inst list
 
@@ -1147,7 +1147,7 @@ let xlate_instr :
             && not (Llvm.is_declaration llfunc)
           then
             warn "ignoring variable arguments to variadic function: %a"
-              Global.pp (xlate_global x llfunc) () ;
+              GlobalDefn.pp (xlate_global x llfunc) () ;
           assert (Poly.(Llvm.classify_type lltyp = Pointer)) ;
           Array.length (Llvm.param_types (Llvm.element_type lltyp)) )
       in

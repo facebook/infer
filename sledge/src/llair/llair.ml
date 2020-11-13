@@ -14,7 +14,7 @@ module Typ = Typ
 module Reg = Reg
 module Exp = Exp
 module Function = Function
-module Global = Global
+module GlobalDefn = GlobalDefn
 
 type inst =
   | Move of {reg_exps: (Reg.t * Exp.t) iarray; loc: Loc.t}
@@ -125,7 +125,7 @@ let equal_block x y = Int.equal x.sort_index y.sort_index
 
 type functions = func Function.Map.t [@@deriving sexp_of]
 
-type program = {globals: Global.t iarray; functions: functions}
+type program = {globals: GlobalDefn.t iarray; functions: functions}
 [@@deriving sexp_of]
 
 let pp_inst fs inst =
@@ -601,7 +601,7 @@ module Program = struct
     assert (
       not
         (Iter.contains_dup (IArray.to_iter pgm.globals) ~cmp:(fun g1 g2 ->
-             Reg.compare g1.Global.reg g2.Global.reg )) )
+             Reg.compare g1.GlobalDefn.reg g2.GlobalDefn.reg )) )
 
   let mk ~globals ~functions =
     { globals= IArray.of_list_rev globals
@@ -610,7 +610,7 @@ module Program = struct
 
   let pp fs {globals; functions} =
     Format.fprintf fs "@[<v>@[%a@]@ @ @ @[%a@]@]"
-      (IArray.pp "@\n@\n" Global.pp_defn)
+      (IArray.pp "@\n@\n" GlobalDefn.pp_defn)
       globals
       (List.pp "@\n@\n" Func.pp)
       ( Function.Map.values functions
