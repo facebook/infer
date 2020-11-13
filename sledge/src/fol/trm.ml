@@ -151,7 +151,8 @@ end = struct
             pf "%S"
               (String.init (Array.length xs) ~f:(fun i ->
                    match xs.(i) with
-                   | Sized {seq= Z c} -> Char.of_int_exn (Z.to_int c)
+                   | Sized {siz= Z o; seq= Z c} when Z.equal Z.one o ->
+                       Char.of_int_exn (Z.to_int c)
                    | _ -> raise_notrace Not_a_string ))
           with _ -> pf "(%a)" (Array.pp "@,^" pp) xs )
       | Apply (f, [||]) -> pf "%a" Funsym.pp f
