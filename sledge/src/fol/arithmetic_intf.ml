@@ -93,18 +93,20 @@ module type INDETERMINATE = sig
   val vars : trm -> var iter
 end
 
-(** An embedding of arithmetic terms [t] into indeterminates [trm],
-    expressed as a partial projection from [trm] to [t]. The inverse
-    embedding function is generally internal to the client. *)
+(** An embedding of arithmetic terms [t] into indeterminates [trm]. *)
 module type EMBEDDING = sig
   type trm
   type t
 
+  val to_trm : t -> trm
+  (** Embedding from [t] to [trm]: [to_trm a] is arithmetic term [a]
+      embedded in an indeterminate term. *)
+
   val get_arith : trm -> t option
-  (** [get_arith x] should be [Some a] if indeterminate [x] is equivalent to
-      [a] embedded into an indeterminate term. This is used to flatten
-      indeterminates that are actually arithmetic for the client, thereby
-      enabling arithmetic operations to be interpreted more often. *)
+  (** Partial projection from [trm] to [t]: [get_arith x] is [Some a] if
+      [x = to_trm a]. This is used to flatten indeterminates that are
+      actually arithmetic for the client, thereby enabling arithmetic
+      operations to be interpreted more often. *)
 end
 
 (** A type [t] representing arithmetic terms over indeterminates [trm]

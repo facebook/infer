@@ -56,6 +56,8 @@ and Arith :
   include Arith0
 
   include Make (struct
+    let to_trm = Trm._Arith
+
     let get_arith (e : Trm.t) =
       match e with
       | Z z -> Some (Arith.const (Q.of_z z))
