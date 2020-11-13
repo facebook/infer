@@ -57,10 +57,8 @@ module type S = sig
       coefficients in [p] and [n] are non-negative. *)
 
   val map : t -> f:(trm -> trm) -> t
-  (** [map ~f a] is [a] with each indeterminate transformed by [f]. Viewing
-      [a] as a polynomial,
-      [map ~f (Σᵢ₌₁ⁿ cᵢ × Πⱼ₌₁ᵐᵢ xᵢⱼ^pᵢⱼ)] is
-      [Σᵢ₌₁ⁿ cᵢ × Πⱼ₌₁ᵐᵢ (f xᵢⱼ)^pᵢⱼ]. *)
+  (** [map ~f a] is [a] with each maximal non-interpreted subterm
+      transformed by [f]. *)
 
   (** Traverse *)
 
