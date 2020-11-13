@@ -22,9 +22,9 @@ let rec classify e =
     | Const _ -> Atomic
     | Interpreted -> Interpreted
     | Uninterpreted -> Uninterpreted )
-  | Sized _ | Extract _ | Concat _ -> Interpreted
+  | Splat _ | Sized _ | Extract _ | Concat _ -> Interpreted
   | Var _ | Z _ | Q _ -> Atomic
-  | Splat _ | Apply _ -> Uninterpreted
+  | Apply _ -> Uninterpreted
 
 let interpreted e = equal_kind (classify e) Interpreted
 let non_interpreted e = not (interpreted e)
@@ -348,6 +348,11 @@ and solve_ ?f d e s =
       | None -> Some s
       | Some m -> solve_ ?f n m s )
       >>= solve_ ?f a b
+  (*
+   * Splat
+   *)
+  (* a^ = b^ ==> a = b *)
+  | Some (Splat a, Splat b) -> s |> solve_ ?f a b
   (*
    * Arithmetic
    *)
