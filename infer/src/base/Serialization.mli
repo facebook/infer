@@ -14,6 +14,9 @@ module Key : sig
   (** Serialization key, used to distinguish versions of serializers and avoid assert faults *)
   type t
 
+  val summary : t
+  (** current key for a procedure summary *)
+  
   val issues : t
   (** current key for lint issues *)
 

@@ -276,6 +276,27 @@ module OnDisk = struct
       ~analysis_summary:(AnalysisSummary.SQLite.serialize analysis_summary)
       ~report_summary:(ReportSummary.SQLite.serialize report_summary)
 
+  let summary_serializer : t Serialization.serializer =
+    Serialization.create_serializer Serialization.Key.summary
+
+  let specs_filename pname =
+    let pname_file = Procname.to_filename pname in
+    pname_file ^ Config.specs_files_suffix
+
+  (** path to the .specs file for the given procedure in the current results directory *)
+  let res_dir_specs_filename pname =
+    DB.Results_dir.path_to_filename DB.Results_dir.Abs_root
+      [Config.specs_dir_name; specs_filename pname]
+
+  (** Save summary for the procedure into the spec database in spec files *)
+  let store_specs (summ : t) =
+    let final_summary = {summ with status= Status.Analyzed} in
+    let proc_name = get_proc_name final_summary in
+    (* Make sure the summary in memory is identical to the saved one *)
+    add proc_name final_summary ;
+    Serialization.write_to_file summary_serializer
+      (res_dir_specs_filename proc_name)
+      ~data:final_summary
 
   let store_analyzed summary = store {summary with status= Status.Analyzed}
 
