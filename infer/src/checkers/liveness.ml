@@ -215,7 +215,7 @@ module IntLitSet = Caml.Set.Make (IntLit)
 
 let whitelisted_constants =
   let int_lit_constants =
-    List.map ~f:(fun el -> IntLit.of_string el) Config.liveness_whitelist_constant
+    List.map ~f:(fun el -> try IntLit.of_string el with Invalid_argument _ -> L.die UserError "Ill-formed option  '%s' for --liveness-whitelist-constant: an integer was expected" el) Config.liveness_whitelist_constant
   in
   IntLitSet.of_list int_lit_constants
 
