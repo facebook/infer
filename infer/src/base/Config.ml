@@ -824,7 +824,9 @@ and check_version =
 and clang_biniou_file =
   CLOpt.mk_path_opt ~long:"clang-biniou-file"
     ~in_help:InferCommand.[(Capture, manual_clang)]
-    ~meta:"file" "Specify a file containing the AST of the program, in biniou format"
+    ~meta:"file"
+    "Specify a file containing the AST of the program, in biniou format. Please note you still \
+     need to provide a compilation command."
 
 
 and clang_compound_literal_init_limit =
@@ -892,6 +894,14 @@ and clang_libcxx_include_to_override_regex =
     "Use this option in the uncommon case where the normal compilation process overrides the \
      location of libc++. Concretely, this will replace $(b,-I <path matching the regex>) with \
      $(b,-I /path/to/infer/facebook-clang-plugins/clang/install/include/c++/v1)."
+
+
+and clang_yojson_file =
+  CLOpt.mk_path_opt ~long:"clang-yojson-file"
+    ~in_help:InferCommand.[(Capture, manual_clang)]
+    ~meta:"file"
+    "Specify a file containing the AST of the program, in yojson format. Please note you still \
+     need to provide a compilation command."
 
 
 and classpath = CLOpt.mk_string_opt ~long:"classpath" "Specify the Java classpath"
@@ -2202,6 +2212,13 @@ and starvation_whole_program =
     "Run whole-program starvation analysis"
 
 
+and suppress_lint_ignore_types =
+  CLOpt.mk_bool ~long:"suppress-lint-ignore-types" ~default:false
+    "[DEPRECATED] Check only the presence of @SuppressLint but not the issues types specified as \
+     parameters to the annotations when deciding to suppress issues. Use for backwards \
+     compatibility only!"
+
+
 and sqlite_cache_size =
   CLOpt.mk_int ~long:"sqlite-cache-size" ~default:2000
     ~in_help:
@@ -2744,7 +2761,17 @@ and check_version = !check_version
 
 and checkers = List.map !all_checkers ~f:(fun (checker, _, var) -> (checker, !var))
 
-and clang_biniou_file = !clang_biniou_file
+and clang_ast_file =
+  match (!clang_biniou_file, !clang_yojson_file) with
+  | Some _, Some _ ->
+      L.die UserError "Please provide only one of --clang-biniou-file and --clang-yojson-file"
+  | Some b, _ ->
+      Some (`Biniou b)
+  | _, Some y ->
+      Some (`Yojson y)
+  | _ ->
+      None
+
 
 and clang_compilation_dbs = !clang_compilation_dbs
 
@@ -3205,6 +3232,8 @@ and starvation_whole_program = !starvation_whole_program
 and subtype_multirange = !subtype_multirange
 
 and summaries_caches_max_size = !summaries_caches_max_size
+
+and suppress_lint_ignore_types = !suppress_lint_ignore_types
 
 and custom_symbols =
   (* Convert symbol lists to regexps just once, here *)

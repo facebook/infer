@@ -170,6 +170,8 @@ val override_iter : (Procname.t -> unit) -> Tenv.t -> Procname.t -> unit
 
 val lookup_attributes : Tenv.t -> Procname.t -> ProcAttributes.t option
 
+val lookup_attributes_exn : Tenv.t -> Procname.t -> ProcAttributes.t
+
 val type_name_get_annotation : Tenv.t -> Typ.name -> Annot.Item.t option
 
 val type_get_annotation : Tenv.t -> Typ.t -> Annot.Item.t option

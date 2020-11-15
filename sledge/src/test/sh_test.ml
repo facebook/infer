@@ -15,9 +15,11 @@ let%test_module _ =
     let () = Trace.init ~margin:68 ()
 
     (* let () =
-     *   Trace.init ~margin:160 ~config:(Result.get_ok (Trace.parse "+Sh")) ()
-     *
-     * [@@@warning "-32"] *)
+     *   Trace.init ~margin:160
+     *     ~config:(Result.get_ok (Trace.parse "+Sh+Context+Arithmetic"))
+     *     () *)
+
+    [@@@warning "-32"]
 
     let pp = Format.printf "@\n%a@." pp
     let pp_raw = Format.printf "@\n%a@." pp_raw
@@ -27,8 +29,7 @@ let%test_module _ =
     let ( + ) = Term.add
     let ( - ) = Term.sub
     let ( = ) = Formula.eq
-    let f = Term.splat (* any uninterpreted function *)
-
+    let f x = Term.apply (Uninterp "f") [|x|]
     let wrt = Var.Set.empty
     let a_, wrt = Var.fresh "a" ~wrt
     let b_, wrt = Var.fresh "b" ~wrt
@@ -154,11 +155,11 @@ let%test_module _ =
       pp q' ;
       [%expect
         {|
-        ∃ %x_6 .   %x_6 = %x_6^ ∧ (-1 + %y_7) = %y_7^ ∧ emp
+        ∃ %x_6 .   %x_6 = f(%x_6) ∧ (-1 + %y_7) = f(%y_7) ∧ emp
 
-          ((1 + %y_7^) = %y_7) ∧ emp
+          ((1 + f(%y_7)) = %y_7) ∧ emp
 
-          (-1 + %y_7) = %y_7^ ∧ emp |}]
+          (-1 + %y_7) = f(%y_7) ∧ emp |}]
 
     let%expect_test _ =
       let q =

@@ -12,43 +12,30 @@ open IResult.Let_syntax
 open PulseBasicInterface
 open PulseDomainInterface
 
-let report ?(extra_trace = []) proc_desc err_log diagnostic =
-  let open Diagnostic in
-  Reporting.log_issue proc_desc err_log ~loc:(get_location diagnostic)
-    ~ltr:(extra_trace @ get_trace diagnostic)
-    Pulse (get_issue_type diagnostic) (get_message diagnostic)
+let exec_list_of_list_result = function
+  | Ok posts ->
+      posts
+  | Error PulseReport.InfeasiblePath ->
+      []
+  | Error (PulseReport.FeasiblePath post) ->
+      [post]
 
 
-let check_error_transform {InterproceduralAnalysis.proc_desc; err_log} ~f = function
-  | Ok astate ->
-      f astate
-  | Error (diagnostic, astate) -> (
-      let astate_summary = AbductiveDomain.summary_of_post proc_desc astate in
-      if PulseArithmetic.is_unsat_cheap (astate_summary :> AbductiveDomain.t) then []
-      else
-        match LatentIssue.should_report_diagnostic astate_summary diagnostic with
-        | `ReportNow ->
-            report proc_desc err_log diagnostic ;
-            [ExecutionDomain.AbortProgram astate_summary]
-        | `DelayReport latent_issue ->
-            ( if Config.pulse_report_latent_issues then
-              (* HACK: report latent issues with a prominent message to distinguish them from
-                 non-latent. Useful for infer's own tests. *)
-              let diagnostic = LatentIssue.to_diagnostic latent_issue in
-              let extra_trace =
-                let depth = 0 in
-                let tags = [] in
-                let location = Diagnostic.get_location diagnostic in
-                [Errlog.make_trace_element depth location "*** LATENT ***" tags]
-              in
-              report ~extra_trace proc_desc err_log diagnostic ) ;
-            [ExecutionDomain.LatentAbortProgram {astate= astate_summary; latent_issue}] )
+let report_on_error {InterproceduralAnalysis.proc_desc; err_log} result =
+  PulseReport.report_error proc_desc err_log result
+  >>| (fun post -> [ExecutionDomain.ContinueProgram post])
+  |> exec_list_of_list_result
 
 
+<<<<<<< HEAD
 let check_error_continue analysis_data result =
   check_error_transform analysis_data
     ~f:(fun astates -> List.map ~f:(fun astate -> ExecutionDomain.ContinueProgram astate) astates)
     result
+=======
+let report_on_error_list {InterproceduralAnalysis.proc_desc; err_log} result =
+  PulseReport.report_error proc_desc err_log result |> exec_list_of_list_result
+>>>>>>> upstream/master
 
 
 let proc_name_of_call call_exp =
@@ -69,19 +56,20 @@ module PulseTransferFunctions = struct
     AnalysisCallbacks.proc_resolve_attributes pname |> Option.map ~f:ProcAttributes.get_pvar_formals
 
 
-  let interprocedural_call {InterproceduralAnalysis.analyze_dependency; proc_desc} ret call_exp
-      actuals call_loc astate =
+  let interprocedural_call {InterproceduralAnalysis.analyze_dependency; proc_desc; err_log} ret
+      call_exp actuals call_loc astate =
     match proc_name_of_call call_exp with
     | Some callee_pname when not Config.pulse_intraprocedural_only ->
         let formals_opt = get_pvar_formals callee_pname in
         let callee_data = analyze_dependency callee_pname in
-        PulseOperations.call ~caller_proc_desc:proc_desc ~callee_data call_loc callee_pname ~ret
-          ~actuals ~formals_opt astate
+        PulseOperations.call ~caller_proc_desc:proc_desc err_log ~callee_data call_loc callee_pname
+          ~ret ~actuals ~formals_opt astate
     | _ ->
         L.d_printfln "Skipping indirect call %a@\n" Exp.pp call_exp ;
-        PulseOperations.unknown_call call_loc (SkippedUnknownCall call_exp) ~ret ~actuals
-          ~formals_opt:None astate
-        |> PulseOperations.ok_continue
+        Ok
+          [ Domain.ContinueProgram
+              (PulseOperations.unknown_call call_loc (SkippedUnknownCall call_exp) ~ret ~actuals
+                 ~formals_opt:None astate) ]
 
 
   (** has an object just gone out of scope? *)
@@ -204,7 +192,7 @@ module PulseTransferFunctions = struct
                 [astate]
             | ContinueProgram astate ->
                 dispatch_call analysis_data ret call_exp actuals location call_flags astate
-                |> check_error_transform analysis_data ~f:Fn.id
+                |> report_on_error_list analysis_data
           in
           List.rev_append astate astates )
         ~init:[] astate_list
@@ -263,8 +251,13 @@ module PulseTransferFunctions = struct
             let+ ls_astate_rhs_addr_hist = PulseOperations.eval_deref_biad proc_desc loc rhs_exp astate in
              PulseOperations.write_id_list lhs_id ls_astate_rhs_addr_hist
           in
+<<<<<<< HEAD
           check_error_continue analysis_data result
       | Store {e1= lhs_exp; e2= rhs_exp; loc} -> (
+=======
+          report_on_error analysis_data result
+      | Store {e1= lhs_exp; e2= rhs_exp; loc} ->
+>>>>>>> upstream/master
           (* [*lhs_exp := rhs_exp] *)
           let event = ValueHistory.Assignment loc in
           let result =
@@ -312,19 +305,23 @@ module PulseTransferFunctions = struct
               | _ ->
                  Ok astates)
           in
+<<<<<<< HEAD
           check_error_continue analysis_data result)
+=======
+          report_on_error analysis_data result
+>>>>>>> upstream/master
       | Prune (condition, loc, _is_then_branch, _if_kind) ->
-          PulseOperations.prune loc ~condition astate
-          |> check_error_transform analysis_data ~f:(fun astate ->
-                 if PulseArithmetic.is_unsat_cheap astate then
-                   (* [condition] is known to be unsatisfiable: prune path *)
-                   []
-                 else
-                   (* [condition] is true or unknown value: go into the branch *)
-                   [Domain.ContinueProgram astate] )
+          (let+ astate = PulseOperations.prune loc ~condition astate in
+           if PulseArithmetic.is_unsat_cheap astate then
+             (* [condition] is known to be unsatisfiable: prune path *)
+             []
+           else
+             (* [condition] is true or unknown value: go into the branch *)
+             [Domain.ContinueProgram astate])
+          |> report_on_error_list analysis_data
       | Call (ret, call_exp, actuals, loc, call_flags) ->
           dispatch_call analysis_data ret call_exp actuals loc call_flags astate
-          |> check_error_transform analysis_data ~f:(fun id -> id)
+          |> report_on_error_list analysis_data
       | Metadata (ExitScope (vars, location)) ->
           let remove_vars vars astates =
             List.fold
@@ -334,8 +331,13 @@ module PulseTransferFunctions = struct
                     [astate]
                 | ContinueProgram astate ->
                     let astate =
+<<<<<<< HEAD
                       PulseOperations.remove_vars (Procdesc.get_proc_name proc_desc) vars location astate
                       |> check_error_continue analysis_data
+=======
+                      PulseOperations.remove_vars vars location astate
+                      |> report_on_error analysis_data
+>>>>>>> upstream/master
                     in
                     List.rev_append astate astates )
               ~init:[] astates

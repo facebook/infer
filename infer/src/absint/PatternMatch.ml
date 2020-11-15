@@ -301,9 +301,17 @@ module ObjectiveC = struct
     supertype_exists tenv is_interface (Typ.Name.Objc.from_string typename)
 
 
-  let conforms_to ~protocol tenv typename =
-    let is_protocol s = String.equal protocol (Typ.Name.name s) in
-    protocol_exists tenv is_protocol (Typ.Name.Objc.from_string typename)
+  let conforms_to =
+    let protocol_reg = Str.regexp ".+<\\(.+\\)>" in
+    fun ~protocol tenv typename ->
+      let is_protocol s = String.equal protocol (Typ.Name.name s) in
+      protocol_exists tenv is_protocol (Typ.Name.Objc.from_string typename)
+      || (* Corresponds to the case where we look inside protocols in
+            ObjCClass<P1,P2...Pn> *)
+      Str.string_match protocol_reg typename 0
+      &&
+      let conformed_protocols = Str.matched_group 1 typename |> String.split ~on:',' in
+      List.exists conformed_protocols ~f:(String.equal protocol)
 
 
   let implements_collection =
@@ -519,6 +527,14 @@ let lookup_attributes tenv proc_name =
   in
   ignore (override_find ~check_current_type:true f tenv proc_name) ;
   !found_attributes
+
+
+let lookup_attributes_exn tenv proc_name =
+  match lookup_attributes tenv proc_name with
+  | Some result ->
+      result
+  | None ->
+      Logging.die InternalError "Did not find attributes for %a" Procname.pp proc_name
 
 
 (** return the set of instance fields that are assigned to a null literal in [procdesc] *)

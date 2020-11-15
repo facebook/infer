@@ -52,9 +52,14 @@ module type TraceElem = sig
   module FiniteSet : FiniteSet with type elt = t
 end
 
-(* The [compare] function produced ignores traces but *not* locations *)
-module MakeTraceElem (Elem : Element) (CallPrinter : CallPrinter) :
-  TraceElem with type elem_t = Elem.t
+include (* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
+  sig
+  [@@@warning "-60"]
+
+  (* The [compare] function produced ignores traces but *not* locations *)
+  module MakeTraceElem (Elem : Element) (CallPrinter : CallPrinter) :
+    TraceElem with type elem_t = Elem.t
+end
 
 (* The [compare] function produced ignores traces *and* locations -- it is just [Elem.compare] *)
 module MakeTraceElemModuloLocation (Elem : Element) (CallPrinter : CallPrinter) :

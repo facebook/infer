@@ -153,6 +153,7 @@ DIRECT_TESTS += \
   java_bufferoverrun \
   java_checkers \
   java_nullsafe \
+	java_nullsafe-annotation-graph \
   java_hoisting \
   java_hoistingExpensive \
   java_impurity \
@@ -798,7 +799,7 @@ endif
 
 .PHONY: conf-clean
 conf-clean: clean
-	$(REMOVE) .buckversion
+	$(REMOVE) .buck-java8
 	$(REMOVE) Makefile.autoconf
 	$(REMOVE) acinclude.m4
 	$(REMOVE) aclocal.m4

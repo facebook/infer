@@ -40,7 +40,7 @@ val create : ?warn_on_error:bool -> string -> t
     given path (e.g. if it does not exist). *)
 
 val is_under_project_root : t -> bool
-(** Returns true if the file is in project root *)
+(** Returns true if the file is under the project root or the workspace directory if it exists *)
 
 val of_header : ?warn_on_error:bool -> t -> t option
 (** Return approximate source file corresponding to the parameter if it's header file and file

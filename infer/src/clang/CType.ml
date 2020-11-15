@@ -13,17 +13,19 @@ module L = Logging
 
 let add_pointer_to_typ typ = Typ.mk (Tptr (typ, Typ.Pk_pointer))
 
-let objc_classname_of_type typ =
-  match typ.Typ.desc with
-  | Typ.Tstruct name ->
+let objc_classname_of_desc desc =
+  match (desc : Typ.desc) with
+  | Tstruct name ->
       name
-  | Typ.Tfun ->
+  | Tfun ->
       Typ.Name.Objc.from_string CFrontend_config.objc_object
   | _ ->
       L.(debug Capture Verbose)
-        "Classname of type cannot be extracted in type %s" (Typ.to_string typ) ;
+        "Classname of type cannot be extracted in %s" (Typ.desc_to_string desc) ;
       Typ.Name.Objc.from_string "undefined"
 
+
+let objc_classname_of_type Typ.{desc} = objc_classname_of_desc desc
 
 let is_class typ =
   match typ.Typ.desc with

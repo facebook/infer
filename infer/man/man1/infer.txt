@@ -220,8 +220,9 @@ OPTIONS
            relative to project root or be absolute           See also infer-analyze(1).
 
        --clang-biniou-file file
-           Specify a file containing the AST of the program, in biniou format       
-    See also infer-capture(1).
+           Specify a file containing the AST of the program, in biniou
+           format. Please note you still need to provide a compilation
+           command.           See also infer-capture(1).
 
        --clang-blacklisted-flags +string
            Clang flags to filter out           See also infer-capture(1).
@@ -233,6 +234,11 @@ OPTIONS
            Limit after which initialization of compound types (structs and
            arrays) is not done element by element but using a builtin
            function that each analysis has to model.           See also infer-analyze(1) and infer-capture(1).
+
+       --clang-yojson-file file
+           Specify a file containing the AST of the program, in yojson
+           format. Please note you still need to provide a compilation
+           command.           See also infer-capture(1).
 
        --compilation-database +path
            File that contain compilation commands (can be specified multiple
@@ -420,6 +426,7 @@ OPTIONS
              DIVIDE_BY_ZERO (disabled by default),
              DO_NOT_REPORT (enabled by default),
              EMPTY_VECTOR_ACCESS (enabled by default),
+             ERADICATE_ANNOTATION_GRAPH (enabled by default),
              ERADICATE_BAD_NESTED_CLASS_ANNOTATION (enabled by default),
              ERADICATE_CONDITION_REDUNDANT (enabled by default),
              ERADICATE_FIELD_NOT_INITIALIZED (enabled by default),
@@ -445,6 +452,8 @@ OPTIONS
              EXECUTION_TIME_COMPLEXITY_INCREASE_UI_THREAD (enabled by
            default),
              EXECUTION_TIME_UNREACHABLE_AT_EXIT (disabled by default),
+             EXPENSIVE_AUTORELEASEPOOL_SIZE (disabled by default),
+             EXPENSIVE_EXECUTION_TIME (disabled by default),
              EXPENSIVE_LOOP_INVARIANT_CALL (enabled by default),
              EXPOSED_INSECURE_INTENT_HANDLING (enabled by default),
              Failure_exe (enabled by default),

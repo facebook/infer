@@ -20,7 +20,7 @@ class Dedup {
     callMethodWithMultipleBlocksBad();
   }
 
-  // three reports are expected
+  // two reports are expected, last call location is always deduped in analysis
   @UiThread
   void callMethodWithMultipleBlocksBad() throws InterruptedException, ExecutionException {
     future.get();

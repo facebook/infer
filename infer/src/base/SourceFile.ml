@@ -65,14 +65,18 @@ let from_abs_path ?(warn_on_error = true) fname =
       Absolute fname_real
 
 
+let die_missing_workspace ~rel_path ~foreign_rel_project_root =
+  L.die UserError
+    "Missing workspace: please provide the --workspace option. A file (relative path: '%s') was \
+     encountered whose project root at the time of capture is relative to a workspace (project \
+     root: '%s'). The same workspace must be specified now."
+    rel_path foreign_rel_project_root
+
+
 let reroot_rel_path ~foreign_rel_project_root rel_path =
   match (workspace_real, foreign_rel_project_root) with
   | None, Some foreign_rel_project_root ->
-      L.die UserError
-        "Missing workspace: please provide the --workspace option. A file (relative path: '%s') \
-         was encountered whose project root at the time of capture is relative to a workspace \
-         (project root: '%s'). The same workspace must be specified now."
-        rel_path foreign_rel_project_root
+      die_missing_workspace ~rel_path ~foreign_rel_project_root
   | Some workspace, foreign_offset_opt
     when not (Option.equal String.equal foreign_offset_opt workspace_rel_root_opt) ->
       (* re-root rel_path relative to the current project_root *)
@@ -120,12 +124,19 @@ let pp fmt fname = Format.pp_print_string fmt (to_string fname)
 let to_abs_path fname =
   match fname with
   | Invalid {ml_source_file} ->
-      L.(die InternalError)
-        "cannot be called with Invalid source file originating in %s" ml_source_file
+      L.die InternalError "cannot be called with Invalid source file originating in %s"
+        ml_source_file
   | RelativeProjectRoot rel_path ->
       Config.project_root ^/ rel_path
   | RelativeProjectRootAndWorkspace {workspace_rel_root; rel_path} ->
-      workspace_rel_root ^/ Config.project_root ^/ rel_path
+      let workspace_abs =
+        match Config.workspace with
+        | Some workspace ->
+            workspace
+        | None ->
+            die_missing_workspace ~rel_path ~foreign_rel_project_root:workspace_rel_root
+      in
+      workspace_abs ^/ workspace_rel_root ^/ rel_path
   | Absolute path ->
       path
 
@@ -146,17 +157,9 @@ let is_invalid = function Invalid _ -> true | _ -> false
 
 let is_under_project_root = function
   | Invalid {ml_source_file} ->
-      L.(die InternalError) "cannot be called with Invalid source file from %s" ml_source_file
-  | RelativeProjectRoot _ ->
+      L.die InternalError "cannot be called with Invalid source file from %s" ml_source_file
+  | RelativeProjectRoot _ | RelativeProjectRootAndWorkspace _ ->
       true
-  | RelativeProjectRootAndWorkspace {workspace_rel_root= foreign_rel_project_root}
-    when Option.equal String.equal workspace_rel_root_opt (Some foreign_rel_project_root) ->
-      (* relative to the same project root *)
-      true
-  | RelativeProjectRootAndWorkspace _ ->
-      (* Relative to a possibly-different project root. We should check if it the absolute file path
-         is inside the current project root but just return [false] instead. *)
-      false
   | Absolute _ ->
       false
 

@@ -30,7 +30,7 @@ digraph cfg {
 "child#PropertyA#instance.6f8ba5a5a49be48cc5dabe234a5b1918_2" [label="2: Exit PropertyA.child \n  " color=yellow style=filled]
 	
 
-"child#PropertyA#instance.6f8ba5a5a49be48cc5dabe234a5b1918_3" [label="3:  BinaryOperatorStmt: Node \n   n$15=*&self:PropertyA* [line 12, column 39]\n  n$16=*n$15._child:PropertyA* [line 12, column 39]\n  *&return:PropertyA*=n$16 [line 12, column 39]\n " shape="box"]
+"child#PropertyA#instance.6f8ba5a5a49be48cc5dabe234a5b1918_3" [label="3:  BinaryOperatorStmt: Node \n   n$13=*&self:PropertyA* [line 12, column 39]\n  n$14=*n$13._child:PropertyA* [line 12, column 39]\n  *&return:PropertyA*=n$14 [line 12, column 39]\n " shape="box"]
 	
 
 	 "child#PropertyA#instance.6f8ba5a5a49be48cc5dabe234a5b1918_3" -> "child#PropertyA#instance.6f8ba5a5a49be48cc5dabe234a5b1918_2" ;
@@ -103,7 +103,7 @@ digraph cfg {
 "last_name#PropertyA#instance.1ce5ad70e2d4c718c3a98ccc959a3bc9_2" [label="2: Exit PropertyA.last_name \n  " color=yellow style=filled]
 	
 
-"last_name#PropertyA#instance.1ce5ad70e2d4c718c3a98ccc959a3bc9_3" [label="3:  BinaryOperatorStmt: Node \n   n$13=*&self:PropertyA* [line 16, column 52]\n  n$14=*n$13._last_name:PropertyA* [line 16, column 52]\n  *&return:PropertyA*=n$14 [line 16, column 52]\n " shape="box"]
+"last_name#PropertyA#instance.1ce5ad70e2d4c718c3a98ccc959a3bc9_3" [label="3:  BinaryOperatorStmt: Node \n   n$19=*&self:PropertyA* [line 16, column 52]\n  n$20=*n$19._last_name:PropertyA* [line 16, column 52]\n  *&return:PropertyA*=n$20 [line 16, column 52]\n " shape="box"]
 	
 
 	 "last_name#PropertyA#instance.1ce5ad70e2d4c718c3a98ccc959a3bc9_3" -> "last_name#PropertyA#instance.1ce5ad70e2d4c718c3a98ccc959a3bc9_2" ;
@@ -114,7 +114,7 @@ digraph cfg {
 "name#PropertyA#instance.c1cdbf324fa14cda26c4633e95fc7667_2" [label="2: Exit PropertyA.name \n  " color=yellow style=filled]
 	
 
-"name#PropertyA#instance.c1cdbf324fa14cda26c4633e95fc7667_3" [label="3:  BinaryOperatorStmt: Node \n   n$19=*&self:PropertyA* [line 14, column 41]\n  n$20=*n$19._name:PropertyA* [line 14, column 41]\n  *&return:PropertyA*=n$20 [line 14, column 41]\n " shape="box"]
+"name#PropertyA#instance.c1cdbf324fa14cda26c4633e95fc7667_3" [label="3:  BinaryOperatorStmt: Node \n   n$11=*&self:PropertyA* [line 14, column 41]\n  n$12=*n$11._name:PropertyA* [line 14, column 41]\n  *&return:PropertyA*=n$12 [line 14, column 41]\n " shape="box"]
 	
 
 	 "name#PropertyA#instance.c1cdbf324fa14cda26c4633e95fc7667_3" -> "name#PropertyA#instance.c1cdbf324fa14cda26c4633e95fc7667_2" ;
@@ -125,7 +125,7 @@ digraph cfg {
 "setChild:#PropertyA(class PropertyA)#instance.2830b91fc93649a2fb3b313489bf5461_2" [label="2: Exit PropertyA.setChild: \n  " color=yellow style=filled]
 	
 
-"setChild:#PropertyA(class PropertyA)#instance.2830b91fc93649a2fb3b313489bf5461_3" [label="3:  BinaryOperatorStmt: Node \n   n$9=*&self:PropertyA* [line 12, column 39]\n  n$10=*&child:PropertyA* [line 12, column 39]\n  *n$9._child:PropertyA*=n$10 [line 12, column 39]\n " shape="box"]
+"setChild:#PropertyA(class PropertyA)#instance.2830b91fc93649a2fb3b313489bf5461_3" [label="3:  BinaryOperatorStmt: Node \n   n$17=*&self:PropertyA* [line 12, column 39]\n  n$18=*&child:PropertyA* [line 12, column 39]\n  *n$17._child:PropertyA*=n$18 [line 12, column 39]\n " shape="box"]
 	
 
 	 "setChild:#PropertyA(class PropertyA)#instance.2830b91fc93649a2fb3b313489bf5461_3" -> "setChild:#PropertyA(class PropertyA)#instance.2830b91fc93649a2fb3b313489bf5461_2" ;
@@ -136,7 +136,7 @@ digraph cfg {
 "setLast_name:#PropertyA(class PropertyA)#instance.47d6f73ea37f95beeca8ce7a0352c15f_2" [label="2: Exit PropertyA.setLast_name: \n  " color=yellow style=filled]
 	
 
-"setLast_name:#PropertyA(class PropertyA)#instance.47d6f73ea37f95beeca8ce7a0352c15f_3" [label="3:  BinaryOperatorStmt: Node \n   n$11=*&self:PropertyA* [line 16, column 52]\n  n$12=*&last_name:PropertyA* [line 16, column 52]\n  *n$11._last_name:PropertyA*=n$12 [line 16, column 52]\n " shape="box"]
+"setLast_name:#PropertyA(class PropertyA)#instance.47d6f73ea37f95beeca8ce7a0352c15f_3" [label="3:  BinaryOperatorStmt: Node \n   n$15=*&self:PropertyA* [line 16, column 52]\n  n$16=*&last_name:PropertyA* [line 16, column 52]\n  *n$15._last_name:PropertyA*=n$16 [line 16, column 52]\n " shape="box"]
 	
 
 	 "setLast_name:#PropertyA(class PropertyA)#instance.47d6f73ea37f95beeca8ce7a0352c15f_3" -> "setLast_name:#PropertyA(class PropertyA)#instance.47d6f73ea37f95beeca8ce7a0352c15f_2" ;
@@ -147,7 +147,7 @@ digraph cfg {
 "setName:#PropertyA(class PropertyA)#instance.530a6c9eaa83786feeaf3a50fc2cd0e6_2" [label="2: Exit PropertyA.setName: \n  " color=yellow style=filled]
 	
 
-"setName:#PropertyA(class PropertyA)#instance.530a6c9eaa83786feeaf3a50fc2cd0e6_3" [label="3:  BinaryOperatorStmt: Node \n   n$17=*&self:PropertyA* [line 14, column 41]\n  n$18=*&name:PropertyA* [line 14, column 41]\n  *n$17._name:PropertyA*=n$18 [line 14, column 41]\n " shape="box"]
+"setName:#PropertyA(class PropertyA)#instance.530a6c9eaa83786feeaf3a50fc2cd0e6_3" [label="3:  BinaryOperatorStmt: Node \n   n$9=*&self:PropertyA* [line 14, column 41]\n  n$10=*&name:PropertyA* [line 14, column 41]\n  *n$9._name:PropertyA*=n$10 [line 14, column 41]\n " shape="box"]
 	
 
 	 "setName:#PropertyA(class PropertyA)#instance.530a6c9eaa83786feeaf3a50fc2cd0e6_3" -> "setName:#PropertyA(class PropertyA)#instance.530a6c9eaa83786feeaf3a50fc2cd0e6_2" ;

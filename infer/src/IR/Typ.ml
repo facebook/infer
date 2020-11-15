@@ -184,7 +184,7 @@ module T = struct
     | CUnion of QualifiedCppName.t
     | CppClass of QualifiedCppName.t * template_spec_info
     | JavaClass of JavaClassName.t
-    | ObjcClass of QualifiedCppName.t
+    | ObjcClass of QualifiedCppName.t * name list
     | ObjcProtocol of QualifiedCppName.t
 
   and template_arg = TType of t | TInt of int64 | TNull | TNullPtr | TOpaque
@@ -275,39 +275,37 @@ let rec pp_full pe f typ =
     if is_restrict quals then F.pp_print_string f " __restrict " ;
     if is_volatile quals then F.pp_print_string f " volatile "
   in
-  let pp_desc f {desc} =
-    match desc with
-    | Tstruct tname ->
-        (pp_name_c_syntax pe) f tname
-    | TVar name ->
-        F.pp_print_string f name
-    | Tint ik ->
-        F.pp_print_string f (ikind_to_string ik)
-    | Tfloat fk ->
-        F.pp_print_string f (fkind_to_string fk)
-    | Tvoid ->
-        F.pp_print_string f "void"
-    | Tfun ->
-        F.pp_print_string f "_fn_"
-    | Tptr (({desc= Tarray _ | Tfun} as typ), pk) ->
-        F.fprintf f "%a(%s)" (pp_full pe) typ (ptr_kind_string pk |> escape pe)
-    | Tptr (typ, pk) ->
-        F.fprintf f "%a%s" (pp_full pe) typ (ptr_kind_string pk |> escape pe)
-    | Tarray {elt; length; stride} ->
-        let pp_int_opt fmt = function
-          | Some x ->
-              IntLit.pp fmt x
-          | None ->
-              F.pp_print_char fmt '_'
-        in
-        F.fprintf f "%a[%a*%a]" (pp_full pe) elt pp_int_opt length pp_int_opt stride
-  in
-  F.fprintf f "%a%a" pp_desc typ pp_quals typ
+  F.fprintf f "%a%a" (pp_desc pe) typ.desc pp_quals typ
+
+
+and pp_desc pe f desc =
+  match desc with
+  | Tstruct tname ->
+      (pp_name_c_syntax pe) f tname
+  | TVar name ->
+      F.pp_print_string f name
+  | Tint ik ->
+      F.pp_print_string f (ikind_to_string ik)
+  | Tfloat fk ->
+      F.pp_print_string f (fkind_to_string fk)
+  | Tvoid ->
+      F.pp_print_string f "void"
+  | Tfun ->
+      F.pp_print_string f "_fn_"
+  | Tptr (({desc= Tarray _ | Tfun} as typ), pk) ->
+      F.fprintf f "%a(%s)" (pp_full pe) typ (ptr_kind_string pk |> escape pe)
+  | Tptr (typ, pk) ->
+      F.fprintf f "%a%s" (pp_full pe) typ (ptr_kind_string pk |> escape pe)
+  | Tarray {elt; length; stride} ->
+      let pp_int_opt fmt = function Some x -> IntLit.pp fmt x | None -> F.pp_print_char fmt '_' in
+      F.fprintf f "%a[%a*%a]" (pp_full pe) elt pp_int_opt length pp_int_opt stride
 
 
 and pp_name_c_syntax pe f = function
-  | CStruct name | CUnion name | ObjcClass name | ObjcProtocol name ->
+  | CStruct name | CUnion name | ObjcProtocol name ->
       QualifiedCppName.pp f name
+  | ObjcClass (name, protocol_names) ->
+      F.fprintf f "%a%a" QualifiedCppName.pp name (pp_protocols pe) protocol_names
   | CppClass (name, template_spec) ->
       F.fprintf f "%a%a" QualifiedCppName.pp name (pp_template_spec_info pe) template_spec
   | JavaClass name ->
@@ -333,11 +331,24 @@ and pp_template_spec_info pe f = function
       F.fprintf f "%s%a%s" (escape pe "<") (Pp.comma_seq pp_arg_opt) args (escape pe ">")
 
 
+and pp_protocols pe f protocols =
+  if List.is_empty protocols then ()
+  else
+    F.fprintf f "%s%a%s" (escape pe "<")
+      (Pp.comma_seq (pp_name_c_syntax pe))
+      protocols (escape pe ">")
+
+
 (** Pretty print a type. Do nothing by default. *)
 let pp pe f te = if Config.print_types then pp_full pe f te else ()
 
 let to_string typ =
   let pp fmt = pp_full Pp.text fmt typ in
+  F.asprintf "%t" pp
+
+
+let desc_to_string desc =
+  let pp fmt = pp_desc Pp.text fmt desc in
   F.asprintf "%t" pp
 
 
@@ -347,8 +358,11 @@ module Name = struct
   let hash = Hashtbl.hash
 
   let qual_name = function
-    | CStruct name | CUnion name | ObjcClass name | ObjcProtocol name ->
+    | CStruct name | CUnion name | ObjcProtocol name ->
         name
+    | ObjcClass (name, protocol_names) ->
+        let protocols = F.asprintf "%a" (pp_protocols Pp.text) protocol_names in
+        QualifiedCppName.append_protocols name ~protocols
     | CppClass (name, templ_args) ->
         let template_suffix = F.asprintf "%a" (pp_template_spec_info Pp.text) templ_args in
         QualifiedCppName.append_template_args_to_last name ~args:template_suffix
@@ -357,7 +371,7 @@ module Name = struct
 
 
   let unqualified_name = function
-    | CStruct name | CUnion name | ObjcClass name | ObjcProtocol name ->
+    | CStruct name | CUnion name | ObjcProtocol name | ObjcClass (name, _) ->
         name
     | CppClass (name, _) ->
         name
@@ -457,7 +471,7 @@ module Name = struct
   end
 
   module Objc = struct
-    let from_qual_name qual_name = ObjcClass qual_name
+    let from_qual_name qual_name = ObjcClass (qual_name, [])
 
     let from_string name_str = QualifiedCppName.of_qual_string name_str |> from_qual_name
 
@@ -483,7 +497,8 @@ module Name = struct
         |> List.map ~f:QualifiedCppName.of_qual_string
         |> QualifiedCppName.Set.of_list
       in
-      function ObjcClass name -> not (QualifiedCppName.Set.mem name tagged_classes) | _ -> false
+      function
+      | ObjcClass (name, _) -> not (QualifiedCppName.Set.mem name tagged_classes) | _ -> false
   end
 
   module Set = PrettyPrintable.MakePPSet (struct

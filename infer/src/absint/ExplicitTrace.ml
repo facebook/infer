@@ -70,7 +70,8 @@ module MakeTraceElemWithComparator
 
     let pp fmt {elem; loc; trace} =
       let pp_trace fmt trace = PrettyPrintable.pp_collection ~pp_item:CallSite.pp fmt trace in
-      F.fprintf fmt "{elem= %a; loc= %a; trace= %a}" Elem.pp elem Location.pp loc pp_trace trace
+      F.fprintf fmt "{@[elem= %a;@;loc= %a;@;trace= %a@]}" Elem.pp elem Location.pp loc pp_trace
+        trace
 
 
     let describe fmt {elem} = Elem.describe fmt elem

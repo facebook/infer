@@ -65,10 +65,10 @@ digraph cfg {
 	
 
 	 "calling_super#A#class.0edc1d1d1c4ade7cd9adaa77e7322ad1_3" -> "calling_super#A#class.0edc1d1d1c4ade7cd9adaa77e7322ad1_2" ;
-"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_1" [label="1: Start A.class_method_fst_arg_of_class_method_inside_instance_method\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$27:NSBundle* stringsBundlePath:NSString* \n  " color=yellow style=filled]
+"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_1" [label="1: Start A.class_method_fst_arg_of_class_method_inside_instance_method\nFormals: \nLocals:  stringsBundlePath:NSString* \n  " color=yellow style=filled]
 	
 
-	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_1" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_11" ;
+	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_1" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_10" ;
 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_2" [label="2: Exit A.class_method_fst_arg_of_class_method_inside_instance_method \n  " color=yellow style=filled]
 	
 
@@ -79,7 +79,7 @@ digraph cfg {
 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_4" [label="4: + \n  " ]
 	
 
-	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_4" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_10" ;
+	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_4" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_9" ;
 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_5" [label="5: Prune (true branch, boolean exp) \n   PRUNE(n$26, true); [line 119, column 12]\n " shape="invhouse"]
 	
 
@@ -88,27 +88,23 @@ digraph cfg {
 	
 
 	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_6" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_8" ;
-"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_7" [label="7:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$27:NSBundle*=n$26 [line 119, column 12]\n " shape="box"]
+"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_7" [label="7:  ConditionalStmt Branch \n   *&#GB<codetoanalyze/objc/frontend/self_static/Self.m>$A.class_method_fst_arg_of_class_method_inside_instance_method.bundle:NSBundle*=n$26 [line 119, column 12]\n " shape="box"]
 	
 
 	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_7" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_4" ;
-"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_8" [label="8:  ConditionalStmt Branch \n   n$28=_fun_NSBundle.mainBundle() [line 119, column 59]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$27:NSBundle*=n$28 [line 119, column 12]\n " shape="box"]
+"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_8" [label="8:  ConditionalStmt Branch \n   n$27=_fun_NSBundle.mainBundle() [line 119, column 59]\n  *&#GB<codetoanalyze/objc/frontend/self_static/Self.m>$A.class_method_fst_arg_of_class_method_inside_instance_method.bundle:NSBundle*=n$27 [line 119, column 12]\n " shape="box"]
 	
 
 	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_8" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_4" ;
 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_9" [label="9:  BinaryConditionalStmt Init \n   n$25=*&stringsBundlePath:NSString* [line 119, column 37]\n  n$26=_fun_NSBundle.bundleWithPath:(n$25:NSString*) [line 119, column 12]\n " shape="box"]
 	
 
-	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_9" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_5" ;
-	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_9" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_6" ;
-"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_10" [label="10:  BinaryOperatorStmt: Assign \n   n$29=*&0$?%__sil_tmpSIL_temp_conditional___n$27:NSBundle* [line 119, column 12]\n  *&#GB<codetoanalyze/objc/frontend/self_static/Self.m>$A.class_method_fst_arg_of_class_method_inside_instance_method.bundle:NSBundle*=n$29 [line 119, column 3]\n " shape="box"]
+	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_9" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_3" ;
+"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(stringsBundlePath:NSString*); [line 116, column 3]\n  n$30=_fun_NSBundle.bundleForClass:(sizeof(t=B):unsigned long) [line 117, column 8]\n  n$28=_fun_NSString.stringWithUTF8String:(\"Strings\":char* const ) [line 117, column 60]\n  n$29=_fun_NSString.stringWithUTF8String:(\"bundle\":char* const ) [line 118, column 60]\n  n$31=_fun_NSBundle.pathForResource:ofType:(n$30:NSBundle*,n$28:NSString*,n$29:NSString*) virtual [line 117, column 7]\n  *&stringsBundlePath:NSString*=n$31 [line 116, column 3]\n " shape="box"]
 	
 
-	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_10" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_3" ;
-"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(stringsBundlePath:NSString*); [line 116, column 3]\n  n$32=_fun_NSBundle.bundleForClass:(sizeof(t=B):unsigned long) [line 117, column 8]\n  n$30=_fun_NSString.stringWithUTF8String:(\"Strings\":char* const ) [line 117, column 60]\n  n$31=_fun_NSString.stringWithUTF8String:(\"bundle\":char* const ) [line 118, column 60]\n  n$33=_fun_NSBundle.pathForResource:ofType:(n$32:NSBundle*,n$30:NSString*,n$31:NSString*) virtual [line 117, column 7]\n  *&stringsBundlePath:NSString*=n$33 [line 116, column 3]\n " shape="box"]
-	
-
-	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_11" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_9" ;
+	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_10" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_5" ;
+	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_10" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_6" ;
 "test_class#A#class.97324b18f626e66a3c32cec03286eb8d_1" [label="1: Start A.test_class\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 

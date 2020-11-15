@@ -14,22 +14,26 @@ type t [@@deriving yojson_of]
 
 val true_ : t
 
-val is_true : t -> bool
+val false_ : t
 
 val pp : F.formatter -> t -> unit
 
+val is_true : t -> bool
+
+type new_eqs = PulseFormula.new_eqs
+
 (** {2 Building arithmetic constraints} *)
 
-val and_nonnegative : AbstractValue.t -> t -> t
+val and_nonnegative : AbstractValue.t -> t -> t * new_eqs
 (** [and_nonnegative v phi] is [phi ∧ v≥0] *)
 
-val and_positive : AbstractValue.t -> t -> t
+val and_positive : AbstractValue.t -> t -> t * new_eqs
 (** [and_positive v phi] is [phi ∧ v>0] *)
 
-val and_eq_int : AbstractValue.t -> IntLit.t -> t -> t
+val and_eq_int : AbstractValue.t -> IntLit.t -> t -> t * new_eqs
 (** [and_eq_int v i phi] is [phi ∧ v=i] *)
 
-val simplify : keep:AbstractValue.Set.t -> t -> t
+val simplify : keep:AbstractValue.Set.t -> t -> t * new_eqs
 (** [simplify ~keep phi] attempts to get rid of as many variables in [fv phi] but not in [keep] as
     possible *)
 
@@ -37,17 +41,17 @@ val and_callee :
      (AbstractValue.t * ValueHistory.t) AbstractValue.Map.t
   -> t
   -> callee:t
-  -> (AbstractValue.t * ValueHistory.t) AbstractValue.Map.t * t
+  -> (AbstractValue.t * ValueHistory.t) AbstractValue.Map.t * t * new_eqs
 
 (** {2 Operations} *)
 
 type operand = LiteralOperand of IntLit.t | AbstractValueOperand of AbstractValue.t
 
-val eval_binop : AbstractValue.t -> Binop.t -> operand -> operand -> t -> t
+val eval_binop : AbstractValue.t -> Binop.t -> operand -> operand -> t -> t * new_eqs
 
-val eval_unop : AbstractValue.t -> Unop.t -> AbstractValue.t -> t -> t
+val eval_unop : AbstractValue.t -> Unop.t -> AbstractValue.t -> t -> t * new_eqs
 
-val prune_binop : negated:bool -> Binop.t -> operand -> operand -> t -> t
+val prune_binop : negated:bool -> Binop.t -> operand -> operand -> t -> t * new_eqs
 
 (** {2 Queries} *)
 
@@ -65,7 +69,7 @@ val is_known_neq_zero : t -> AbstractValue.t -> bool
 val is_unsat_cheap : t -> bool
 (** whether the state contains a contradiction, call this as often as you want *)
 
-val is_unsat_expensive : t -> t * bool
+val is_unsat_expensive : t -> t * bool * new_eqs
 (** whether the state contains a contradiction, only call this when you absolutely have to *)
 
 val as_int : t -> AbstractValue.t -> int option

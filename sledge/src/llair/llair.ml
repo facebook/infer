@@ -13,7 +13,9 @@ module Loc = Loc
 module Typ = Typ
 module Reg = Reg
 module Exp = Exp
+module Function = Function
 module Global = Global
+module GlobalDefn = GlobalDefn
 
 type inst =
   | Move of {reg_exps: (Reg.t * Exp.t) iarray; loc: Loc.t}
@@ -59,12 +61,13 @@ and block =
   ; mutable sort_index: int }
 
 and func =
-  { name: Global.t
+  { name: Function.t
   ; formals: Reg.t list
   ; freturn: Reg.t option
   ; fthrow: Reg.t
   ; locals: Reg.Set.t
-  ; entry: block }
+  ; entry: block
+  ; loc: Loc.t }
 
 let sexp_cons (hd : Sexp.t) (tl : Sexp.t) =
   match tl with
@@ -104,25 +107,26 @@ let sexp_of_block {lbl; cmnd; term; parent; sort_index} =
     { lbl: label
     ; cmnd: cmnd
     ; term: term
-    ; parent: Reg.t = parent.name.reg
+    ; parent: Function.t = parent.name
     ; sort_index: int }]
 
-let sexp_of_func {name; formals; freturn; fthrow; locals; entry} =
+let sexp_of_func {name; formals; freturn; fthrow; locals; entry; loc} =
   [%sexp
-    { name: Global.t
+    { name: Function.t
     ; formals: Reg.t list
     ; freturn: Reg.t option
     ; fthrow: Reg.t
     ; locals: Reg.Set.t
-    ; entry: block }]
+    ; entry: block
+    ; loc: Loc.t }]
 
 (* blocks in a [t] are uniquely identified by [sort_index] *)
 let compare_block x y = Int.compare x.sort_index y.sort_index
 let equal_block x y = Int.equal x.sort_index y.sort_index
 
-type functions = func String.Map.t [@@deriving sexp_of]
+type functions = func Function.Map.t [@@deriving sexp_of]
 
-type program = {globals: Global.t iarray; functions: functions}
+type program = {globals: GlobalDefn.t iarray; functions: functions}
 [@@deriving sexp_of]
 
 let pp_inst fs inst =
@@ -219,13 +223,16 @@ let rec dummy_block =
   ; sort_index= 0 }
 
 and dummy_func =
-  let dummy_reg = Reg.program ~global:() Typ.ptr "dummy" in
-  { name= Global.mk dummy_reg Loc.none
+  { name=
+      Function.mk
+        (Typ.pointer ~elt:(Typ.function_ ~args:IArray.empty ~return:None))
+        "dummy"
   ; formals= []
   ; freturn= None
-  ; fthrow= dummy_reg
+  ; fthrow= Reg.mk Typ.ptr "dummy"
   ; locals= Reg.Set.empty
-  ; entry= dummy_block }
+  ; entry= dummy_block
+  ; loc= Loc.none }
 
 (** Instructions *)
 
@@ -387,14 +394,14 @@ module Block_label = struct
     type t = block [@@deriving sexp_of]
 
     let compare x y =
-      [%compare: string * Global.t] (x.lbl, x.parent.name)
+      [%compare: string * Function.t] (x.lbl, x.parent.name)
         (y.lbl, y.parent.name)
 
     let equal x y =
-      [%equal: string * Global.t] (x.lbl, x.parent.name)
+      [%equal: string * Function.t] (x.lbl, x.parent.name)
         (y.lbl, y.parent.name)
 
-    let hash b = [%hash: string * Global.t] (b.lbl, b.parent.name)
+    let hash b = [%hash: string * Function.t] (b.lbl, b.parent.name)
   end
 
   include T
@@ -403,7 +410,7 @@ end
 
 module BlockS = HashSet.Make (Block_label)
 module BlockQ = HashQueue.Make (Block_label)
-module FuncQ = HashQueue.Make (Reg)
+module FuncQ = HashQueue.Make (Function)
 
 (** Functions *)
 
@@ -437,16 +444,16 @@ module Func = struct
   let entry_cfg func = fold_cfg ~f:(fun blk cfg -> blk :: cfg) func []
 
   let pp fs func =
-    let {name; formals; freturn; entry; _} = func in
+    let {name; formals; freturn; entry; loc; _} = func in
     let {cmnd; term; sort_index; _} = entry in
     let pp_if cnd str fs = if cnd then Format.fprintf fs str in
     Format.fprintf fs "@[<v>@[<v>%a%a@[<2>%a%a@]%t@]"
       (Option.pp "%a " Typ.pp)
-      ( match Reg.typ name.reg with
+      ( match Function.typ name with
       | Pointer {elt= Function {return; _}} -> return
       | _ -> None )
       (Option.pp " %a := " Reg.pp)
-      freturn Global.pp name (pp_actuals pp_formal) formals
+      freturn Function.pp name (pp_actuals pp_formal) formals
       (fun fs ->
         if is_undefined func then Format.fprintf fs " #%i@]" sort_index
         else
@@ -454,7 +461,7 @@ module Func = struct
             List.sort ~cmp:Block.compare (List.tl_exn (entry_cfg func))
           in
           Format.fprintf fs " { #%i %a@;<1 4>@[<v>%a@ %a@]%t%a@]@ }"
-            sort_index Loc.pp name.loc pp_cmnd cmnd Term.pp term
+            sort_index Loc.pp loc pp_cmnd cmnd Term.pp term
             (pp_if (not (List.is_empty cfg)) "@ @   ")
             (List.pp "@\n@\n  " Block.pp)
             cfg )
@@ -462,7 +469,7 @@ module Func = struct
   let invariant func =
     assert (func == func.entry.parent) ;
     let@ () = Invariant.invariant [%here] func [%sexp_of: t] in
-    match Reg.typ func.name.reg with
+    match Function.typ func.name with
     | Pointer {elt= Function {return; _}; _} ->
         assert (
           not
@@ -475,9 +482,9 @@ module Func = struct
         iter_term func ~f:(fun term -> Term.invariant ~parent:func term)
     | _ -> assert false
 
-  let find functions name = String.Map.find functions name
+  let find functions name = Function.Map.find functions name
 
-  let mk ~(name : Global.t) ~formals ~freturn ~fthrow ~entry ~cfg =
+  let mk ~name ~formals ~freturn ~fthrow ~entry ~cfg ~loc =
     let locals =
       let locals_cmnd locals cmnd =
         IArray.fold_right ~f:Inst.union_locals cmnd locals
@@ -487,7 +494,7 @@ module Func = struct
       in
       IArray.fold ~f:locals_block cfg (locals_block entry Reg.Set.empty)
     in
-    let func = {name; formals; freturn; fthrow; locals; entry} in
+    let func = {name; formals; freturn; fthrow; locals; entry; loc} in
     let resolve_parent_and_jumps block =
       block.parent <- func ;
       let lookup cfg lbl : block =
@@ -522,13 +529,13 @@ end
 let set_derived_metadata functions =
   let compute_roots functions =
     let roots = FuncQ.create () in
-    String.Map.iter functions ~f:(fun func ->
-        FuncQ.enqueue_back_exn roots func.name.reg func ) ;
-    String.Map.iter functions ~f:(fun func ->
+    Function.Map.iter functions ~f:(fun func ->
+        FuncQ.enqueue_back_exn roots func.name func ) ;
+    Function.Map.iter functions ~f:(fun func ->
         Func.iter_term func ~f:(fun term ->
             match term with
             | Call {callee; _} -> (
-              match Reg.of_exp callee with
+              match Function.of_exp callee with
               | Some callee ->
                   FuncQ.remove roots callee |> (ignore : [> ] -> unit)
               | None -> () )
@@ -553,8 +560,8 @@ let set_derived_metadata functions =
         | Iswitch {tbl; _} -> IArray.iter tbl ~f:jump
         | Call ({callee; return; throw; _} as call) ->
             ( match
-                let* reg = Reg.of_exp callee in
-                Func.find (Reg.name reg) functions
+                let* name = Function.of_exp callee in
+                Func.find name functions
               with
             | Some func ->
                 if Block_label.Set.mem func.entry ancestors then
@@ -579,8 +586,8 @@ let set_derived_metadata functions =
         index := !index - 1 )
   in
   let functions =
-    List.fold functions String.Map.empty ~f:(fun func m ->
-        String.Map.add_exn ~key:(Reg.name func.name.reg) ~data:func m )
+    List.fold functions Function.Map.empty ~f:(fun func m ->
+        Function.Map.add_exn ~key:func.name ~data:func m )
   in
   let roots = compute_roots functions in
   let tips_to_roots = topsort functions roots in
@@ -595,7 +602,7 @@ module Program = struct
     assert (
       not
         (Iter.contains_dup (IArray.to_iter pgm.globals) ~cmp:(fun g1 g2 ->
-             Reg.compare g1.Global.reg g2.Global.reg )) )
+             Global.compare g1.name g2.name )) )
 
   let mk ~globals ~functions =
     { globals= IArray.of_list_rev globals
@@ -604,10 +611,10 @@ module Program = struct
 
   let pp fs {globals; functions} =
     Format.fprintf fs "@[<v>@[%a@]@ @ @ @[%a@]@]"
-      (IArray.pp "@\n@\n" Global.pp_defn)
+      (IArray.pp "@\n@\n" GlobalDefn.pp)
       globals
       (List.pp "@\n@\n" Func.pp)
-      ( String.Map.values functions
+      ( Function.Map.values functions
       |> Iter.to_list
       |> List.sort ~cmp:(fun x y -> compare_block x.entry y.entry) )
 end

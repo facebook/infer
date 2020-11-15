@@ -287,35 +287,56 @@ let is_report_suppressed pname =
 
 
 module Check = struct
-  let report_top_and_unreachable kind pname proc_desc err_log loc ~name ~cost
-      {CostIssues.unreachable_issue; infinite_issue} =
-    let report issue suffix =
-      let is_autoreleasepool_trace =
-        match (kind : CostKind.t) with
-        | AutoreleasepoolSize ->
-            true
-        | OperationCost | AllocationCost ->
-            false
-      in
-      let message = F.asprintf "%s of the function %a %s" name Procname.pp pname suffix in
+  let is_autoreleasepool_trace kind =
+    match (kind : CostKind.t) with
+    | AutoreleasepoolSize ->
+        true
+    | OperationCost | AllocationCost ->
+        false
+
+
+  let mk_report proc_desc pname err_log loc ~name ~is_autoreleasepool_trace cost =
+    let message suffix = F.asprintf "%s of the function %a %s" name Procname.pp pname suffix in
+    fun issue suffix ->
       Reporting.log_issue proc_desc err_log ~loc
         ~ltr:(BasicCostWithReason.polynomial_traces ~is_autoreleasepool_trace cost)
-        ~extras:(compute_errlog_extras cost) Cost issue message
-    in
+        ~extras:(compute_errlog_extras cost) Cost issue (message suffix)
+
+
+  let report_top_and_unreachable ~report ~unreachable_issue ~infinite_issue cost =
     if BasicCostWithReason.is_top cost then report infinite_issue "cannot be computed"
     else if BasicCostWithReason.is_unreachable cost then
       report unreachable_issue
         "cannot be computed since the program's exit state is never reachable"
 
 
+  let report_expensive ~report ~expensive_issue cost =
+    Option.iter (BasicCostWithReason.degree cost) ~f:(fun degree ->
+        if not (Polynomials.Degree.is_constant degree) then
+          report expensive_issue "has non-constant cost" )
+
+
   let check_and_report {InterproceduralAnalysis.proc_desc; err_log} cost =
     let pname = Procdesc.get_proc_name proc_desc in
-    let proc_loc = Procdesc.get_loc proc_desc in
     if not (is_report_suppressed pname) then
       CostIssues.CostKindMap.iter2 CostIssues.enabled_cost_map cost
-        ~f:(fun kind (CostIssues.{name; top_and_unreachable} as issue_spec) cost ->
+        ~f:(fun kind
+           CostIssues.
+             { name
+             ; unreachable_issue
+             ; infinite_issue
+             ; expensive_issue
+             ; top_and_unreachable
+             ; expensive }
+           cost
+           ->
+          let report =
+            mk_report proc_desc pname err_log (Procdesc.get_loc proc_desc) ~name
+              ~is_autoreleasepool_trace:(is_autoreleasepool_trace kind) cost
+          in
           if top_and_unreachable then
-            report_top_and_unreachable kind pname proc_desc err_log proc_loc ~name ~cost issue_spec )
+            report_top_and_unreachable ~report ~unreachable_issue ~infinite_issue cost ;
+          if expensive then report_expensive ~report ~expensive_issue cost )
 end
 
 type bound_map = BasicCost.t Node.IdMap.t

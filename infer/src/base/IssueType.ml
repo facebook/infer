@@ -225,6 +225,7 @@ end = struct
     ; ( "EXECUTION_TIME_UNREACHABLE_AT_EXIT"
       , [%blob "../../documentation/issues/EXECUTION_TIME_UNREACHABLE_AT_EXIT.md"] )
     ; ("INFINITE_EXECUTION_TIME", [%blob "../../documentation/issues/INFINITE_EXECUTION_TIME.md"])
+    ; ("EXPENSIVE_EXECUTION_TIME", [%blob "../../documentation/issues/EXPENSIVE_EXECUTION_TIME.md"])
     ; ( "AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE"
       , [%blob "../../documentation/issues/AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE.md"] )
     ; ( "AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE_UI_THREAD"
@@ -233,7 +234,9 @@ end = struct
     ; ( "AUTORELEASEPOOL_SIZE_UNREACHABLE_AT_EXIT"
       , [%blob "../../documentation/issues/AUTORELEASEPOOL_SIZE_UNREACHABLE_AT_EXIT.md"] )
     ; ( "INFINITE_AUTORELEASEPOOL_SIZE"
-      , [%blob "../../documentation/issues/INFINITE_AUTORELEASEPOOL_SIZE.md"] ) ]
+      , [%blob "../../documentation/issues/INFINITE_AUTORELEASEPOOL_SIZE.md"] )
+    ; ( "EXPENSIVE_AUTORELEASEPOOL_SIZE"
+      , [%blob "../../documentation/issues/EXPENSIVE_AUTORELEASEPOOL_SIZE.md"] ) ]
 
 
   (** cost issues are already registered below.*)
@@ -472,6 +475,13 @@ let empty_vector_access =
     ~user_documentation:[%blob "../../documentation/issues/EMPTY_VECTOR_ACCESS.md"]
 
 
+(* A technical issue needed to output the annotation graph for the class - not intended to be surfaces to the end user *)
+let eradicate_annotation_graph =
+  (* Enabled by default since this requires a special mode anyway *)
+  register ~id:"ERADICATE_ANNOTATION_GRAPH" ~hum:"Annotation Graph" Info Eradicate
+    ~user_documentation:""
+
+
 (* Condition redundant is a very non-precise issue. Depending on the origin of what is compared with
    null, this can have a lot of reasons to be actually nullable.
 
@@ -586,6 +596,8 @@ let eradicate_meta_class_can_be_nullsafe =
 let exposed_insecure_intent_handling =
   register ~id:"EXPOSED_INSECURE_INTENT_HANDLING" Error Quandary ~user_documentation:"Undocumented."
 
+
+let expensive_cost_call ~kind = register_cost ~enabled:false "EXPENSIVE_%s" ~kind
 
 let failure_exe = register_hidden ~is_silent:true ~id:"Failure_exe" Info Biabduction
 
@@ -761,7 +773,7 @@ let nullptr_dereference =
 
 let optional_empty_access =
   register ~enabled:false ~id:"OPTIONAL_EMPTY_ACCESS" Error Pulse
-    ~user_documentation:"Reports on accessing folly::Optional when it is none."
+    ~user_documentation:[%blob "../../documentation/issues/OPTIONAL_EMPTY_ACCESS.md"]
 
 
 let parameter_not_null_checked =
@@ -1001,5 +1013,6 @@ let is_autoreleasepool_size_issue =
       List.iter [true; false] ~f:(fun is_on_ui_thread ->
           add_autoreleasepool_size_issue ~kind (unreachable_cost_call ~kind) ;
           add_autoreleasepool_size_issue ~kind (infinite_cost_call ~kind) ;
+          add_autoreleasepool_size_issue ~kind (expensive_cost_call ~kind) ;
           add_autoreleasepool_size_issue ~kind (complexity_increase ~kind ~is_on_ui_thread) ) ) ;
   fun issue_type -> IssueSet.mem issue_type !autoreleasepool_size_issues

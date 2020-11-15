@@ -13,13 +13,25 @@ let pp_method_info fmt Jsonbug_t.{class_name; package; method_name; call_line} =
 
 
 let pp_nullsafe_extra fmt
-    Jsonbug_t.{class_name; package; meta_issue_info; unvetted_3rd_party; nullable_methods} =
+    Jsonbug_t.
+      { class_name
+      ; package
+      ; inconsistent_param_index
+      ; meta_issue_info
+      ; unvetted_3rd_party
+      ; nullable_methods
+      ; annotation_graph
+      ; field } =
   F.fprintf fmt "%s, %s" class_name (Option.value package ~default:"<no package>") ;
   Option.iter unvetted_3rd_party ~f:(fun unvetted_3rd_party ->
       let third_party_str = String.concat unvetted_3rd_party ~sep:"," in
       F.fprintf fmt ", unvetted_3rd_party:[%s]" third_party_str ) ;
   Option.iter nullable_methods ~f:(fun nullable_methods ->
       F.fprintf fmt ", nullable_methods:%a" (Pp.seq pp_method_info) nullable_methods ) ;
+  Option.iter field ~f:(fun Jsonbug_t.{class_name; package_name; field} ->
+      F.fprintf fmt ", field:%s.%s.%s" (Option.value package_name ~default:"") class_name field ) ;
+  Option.iter inconsistent_param_index ~f:(fun index ->
+      F.fprintf fmt ", inconsistent_param_index:%d" index ) ;
   Option.iter meta_issue_info
     ~f:(fun Jsonbug_t.{num_issues; curr_nullsafe_mode; can_be_promoted_to} ->
       let can_be_promoted_to_str =
@@ -29,7 +41,10 @@ let pp_nullsafe_extra fmt
       in
       F.fprintf fmt ", issues: %d, curr_mode: %s%s" num_issues
         (Jsonbug_j.string_of_nullsafe_mode curr_nullsafe_mode)
-        can_be_promoted_to_str )
+        can_be_promoted_to_str ) ;
+  Option.iter annotation_graph ~f:(fun annotation_graph ->
+      F.fprintf fmt "\nAnnotationGraph:@\n  @[%a@]" NullsafeAnnotationGraphUtils.pp_annotation_graph
+        annotation_graph )
 
 
 let pp_trace fmt trace comma =

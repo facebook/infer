@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_1" [label="1: Start conditional_assignment\nFormals: \nLocals:  a:int 0$?%__sil_tmpSIL_temp_conditional___n$1:int result:int x:int \n  " color=yellow style=filled]
+"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_1" [label="1: Start conditional_assignment\nFormals: \nLocals:  a:int result:int x:int \n  " color=yellow style=filled]
 	
 
 	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_1" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_17" ;
@@ -14,7 +14,7 @@ digraph cfg {
 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_4" [label="4: + \n  " ]
 	
 
-	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_4" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_8" ;
+	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_4" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_13" ;
 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_5" [label="5: Prune (true branch, while) \n   n$0=*&a:int [line 21, column 14]\n  PRUNE(n$0, true); [line 21, column 14]\n " shape="invhouse"]
 	
 
@@ -26,38 +26,38 @@ digraph cfg {
 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_7" [label="7: + \n  " ]
 	
 
-	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_7" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_13" ;
-"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_8" [label="8:  BinaryOperatorStmt: GT \n   n$2=*&x:int [line 21, column 18]\n " shape="box"]
+	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_7" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_5" ;
+	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_7" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_6" ;
+"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_8" [label="8:  BinaryOperatorStmt: GT \n   n$1=*&x:int [line 21, column 18]\n " shape="box"]
 	
 
 	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_8" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_9" ;
 	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_8" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_10" ;
-"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_9" [label="9: Prune (true branch, boolean exp) \n   PRUNE((n$2 > 0), true); [line 21, column 18]\n " shape="invhouse"]
+"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_9" [label="9: Prune (true branch, boolean exp) \n   PRUNE((n$1 > 0), true); [line 21, column 18]\n " shape="invhouse"]
 	
 
 	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_9" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_11" ;
-"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_10" [label="10: Prune (false branch, boolean exp) \n   PRUNE(!(n$2 > 0), false); [line 21, column 18]\n " shape="invhouse"]
+"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_10" [label="10: Prune (false branch, boolean exp) \n   PRUNE(!(n$1 > 0), false); [line 21, column 18]\n " shape="invhouse"]
 	
 
 	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_10" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_12" ;
-"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_11" [label="11:  ConditionalStmt Branch \n   n$3=*&x:int [line 21, column 26]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=n$3 [line 21, column 18]\n " shape="box"]
+"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_11" [label="11:  ConditionalStmt Branch \n   n$2=*&x:int [line 21, column 26]\n  *&a:int=n$2 [line 21, column 18]\n " shape="box"]
 	
 
 	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_11" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_7" ;
-"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_12" [label="12:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=0 [line 21, column 18]\n " shape="box"]
+"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_12" [label="12:  ConditionalStmt Branch \n   *&a:int=0 [line 21, column 18]\n " shape="box"]
 	
 
 	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_12" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_7" ;
-"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_13" [label="13:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 21, column 10]\n  n$4=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int [line 21, column 18]\n  *&a:int=n$4 [line 21, column 10]\n " shape="box"]
+"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_13" [label="13:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 21, column 10]\n " shape="box"]
 	
 
-	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_13" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_5" ;
-	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_13" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_6" ;
-"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_14" [label="14:  BinaryOperatorStmt: SubAssign \n   n$5=*&x:int [line 23, column 5]\n  *&x:int=(n$5 - 1) [line 23, column 5]\n " shape="box"]
+	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_13" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_8" ;
+"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_14" [label="14:  BinaryOperatorStmt: SubAssign \n   n$3=*&x:int [line 23, column 5]\n  *&x:int=(n$3 - 1) [line 23, column 5]\n " shape="box"]
 	
 
 	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_14" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_4" ;
-"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_15" [label="15:  BinaryOperatorStmt: AddAssign \n   n$6=*&a:int [line 22, column 15]\n  n$7=*&result:int [line 22, column 5]\n  *&result:int=(n$7 + n$6) [line 22, column 5]\n " shape="box"]
+"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_15" [label="15:  BinaryOperatorStmt: AddAssign \n   n$4=*&a:int [line 22, column 15]\n  n$5=*&result:int [line 22, column 5]\n  *&result:int=(n$5 + n$4) [line 22, column 5]\n " shape="box"]
 	
 
 	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_15" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_14" ;

@@ -41,6 +41,7 @@ val init : int -> f:(int -> 'a) -> 'a t
 val sub : 'a t -> pos:int -> len:int -> 'a t
 val concat : 'a t list -> 'a t
 val map : 'a t -> f:('a -> 'b) -> 'b t
+val mapi : 'a t -> f:(int -> 'a -> 'b) -> 'b t
 
 val map_endo : 'a t -> f:('a -> 'a) -> 'a t
 (** Like map, but specialized to require [f] to be an endofunction, which

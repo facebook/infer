@@ -37,7 +37,7 @@ let check_immutable_cast analysis_data proc_desc typ_expected typ_found_opt loc 
             in
             let issue_type = IssueType.checkers_immutable_cast in
             EradicateReporting.report_error analysis_data ImmutableCast
-              (NullsafeIssue.make ~loc ~description ~severity:Warning ~issue_type)
+              (NullsafeIssue.make ~loc ~description ~severity:Warning ~issue_type ~field_name:None)
       | _ ->
           () )
   | None ->

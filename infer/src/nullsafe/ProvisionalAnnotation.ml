@@ -7,14 +7,14 @@
 open! IStd
 
 type t =
-  | Field of {field_name: string}
+  | Field of {field_name: Fieldname.t}
   | Method of Procname.Java.t
   | Param of {method_info: Procname.Java.t; num: int}
 [@@deriving compare]
 
 let pp fmt = function
   | Field {field_name} ->
-      Format.fprintf fmt "Field(%s)" field_name
+      Format.fprintf fmt "Field(%a)" Fieldname.pp field_name
   | Method proc_name ->
       Format.fprintf fmt "Method(%a)" Procname.pp (Procname.Java proc_name)
   | Param {method_info; num} ->

@@ -142,7 +142,7 @@ let fresh_var name vs zs ~wrt =
   let v = Term.var v in
   (v, vs, zs, wrt)
 
-let difference x e f = Term.d_int (Context.normalize x (Term.sub e f))
+let difference x e f = Term.get_z (Context.normalize x (Term.sub e f))
 let excise (k : Trace.pf -> _) = [%Trace.infok k]
 let trace (k : Trace.pf -> _) = [%Trace.infok k]
 

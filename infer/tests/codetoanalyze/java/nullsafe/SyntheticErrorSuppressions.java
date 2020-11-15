@@ -12,7 +12,7 @@ import javax.annotation.Nullable;
 
 public class SyntheticErrorSuppressions {
   static class Fragment {
-    @SuppressLint("ReturnOverAnnotated")
+    @SuppressLint("eradicate-return-over-annotated")
     @Nullable
     public static Object getContext() {
       return new Object();

@@ -3,8 +3,8 @@ digraph cfg {
 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_1" [label="1: Start binop_with_side_effects\nFormals:  z:int\nLocals:  y3:int 0$?%__sil_tmpSIL_temp_conditional___n$0:int 0$?%__sil_tmpSIL_temp_conditional___n$4:int y2:int 0$?%__sil_tmpSIL_temp_conditional___n$8:int y1:int 0$?%__sil_tmpSIL_temp_conditional___n$12:int 0$?%__sil_tmpSIL_temp_conditional___n$16:int 0$?%__sil_tmpSIL_temp_conditional___n$20:int x3:int 0$?%__sil_tmpSIL_temp_conditional___n$24:int x2:int 0$?%__sil_tmpSIL_temp_conditional___n$28:int x1:int \n  " color=yellow style=filled]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_1" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_44" ;
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_1" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_45" ;
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_1" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_47" ;
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_1" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_48" ;
 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_2" [label="2: Exit binop_with_side_effects \n  " color=yellow style=filled]
 	
 
@@ -32,7 +32,7 @@ digraph cfg {
 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_8" [label="8: + \n  " ]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_8" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_13" ;
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_8" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_14" ;
 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_9" [label="9: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 24, column 27]\n " shape="invhouse"]
 	
 
@@ -49,154 +49,166 @@ digraph cfg {
 	
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_12" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_8" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_13" [label="13:  DeclStmt \n   VARIABLE_DECLARED(y3:int); [line 24, column 3]\n  n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 24, column 13]\n  n$7=*&0$?%__sil_tmpSIL_temp_conditional___n$4:int [line 24, column 27]\n  *&y3:int=(n$3 + n$7) [line 24, column 3]\n " shape="box"]
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_13" [label="13:  DeclStmt \n   VARIABLE_DECLARED(y3:int); [line 24, column 3]\n " shape="box"]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_13" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_2" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_14" [label="14: + \n  " ]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_13" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_4" ;
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_13" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_5" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_14" [label="14:  DeclStmt \n   n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 24, column 13]\n  n$7=*&0$?%__sil_tmpSIL_temp_conditional___n$4:int [line 24, column 27]\n  *&y3:int=(n$3 + n$7) [line 24, column 3]\n " shape="box"]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_14" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_19" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_15" [label="15: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 22, column 18]\n " shape="invhouse"]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_14" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_2" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_15" [label="15: + \n  " ]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_15" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_17" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_16" [label="16: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 22, column 18]\n " shape="invhouse"]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_15" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_21" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_16" [label="16: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 22, column 18]\n " shape="invhouse"]
 	
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_16" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_18" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_17" [label="17:  ConditionalStmt Branch \n   n$9=*&z:int [line 22, column 22]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$8:int=n$9 [line 22, column 18]\n " shape="box"]
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_17" [label="17: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 22, column 18]\n " shape="invhouse"]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_17" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_14" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_18" [label="18:  ConditionalStmt Branch \n   n$10=*&z:int [line 22, column 26]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$8:int=n$10 [line 22, column 18]\n " shape="box"]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_17" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_19" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_18" [label="18:  ConditionalStmt Branch \n   n$9=*&z:int [line 22, column 22]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$8:int=n$9 [line 22, column 18]\n " shape="box"]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_18" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_14" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_19" [label="19:  DeclStmt \n   VARIABLE_DECLARED(y2:int); [line 22, column 3]\n  n$11=*&0$?%__sil_tmpSIL_temp_conditional___n$8:int [line 22, column 18]\n  *&y2:int=(77 + n$11) [line 22, column 3]\n " shape="box"]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_18" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_15" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_19" [label="19:  ConditionalStmt Branch \n   n$10=*&z:int [line 22, column 26]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$8:int=n$10 [line 22, column 18]\n " shape="box"]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_19" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_4" ;
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_19" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_5" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_20" [label="20: + \n  " ]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_19" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_15" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_20" [label="20:  DeclStmt \n   VARIABLE_DECLARED(y2:int); [line 22, column 3]\n " shape="box"]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_20" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_25" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_21" [label="21: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 20, column 13]\n " shape="invhouse"]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_20" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_16" ;
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_20" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_17" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_21" [label="21:  DeclStmt \n   n$11=*&0$?%__sil_tmpSIL_temp_conditional___n$8:int [line 22, column 18]\n  *&y2:int=(77 + n$11) [line 22, column 3]\n " shape="box"]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_21" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_23" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_22" [label="22: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 20, column 13]\n " shape="invhouse"]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_21" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_13" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_22" [label="22: + \n  " ]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_22" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_24" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_23" [label="23:  ConditionalStmt Branch \n   n$13=*&z:int [line 20, column 17]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$12:int=n$13 [line 20, column 13]\n " shape="box"]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_22" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_28" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_23" [label="23: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 20, column 13]\n " shape="invhouse"]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_23" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_20" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_24" [label="24:  ConditionalStmt Branch \n   n$14=*&z:int [line 20, column 21]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$12:int=n$14 [line 20, column 13]\n " shape="box"]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_23" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_25" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_24" [label="24: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 20, column 13]\n " shape="invhouse"]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_24" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_20" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_25" [label="25:  DeclStmt \n   VARIABLE_DECLARED(y1:int); [line 20, column 3]\n  n$15=*&0$?%__sil_tmpSIL_temp_conditional___n$12:int [line 20, column 13]\n  *&y1:int=(n$15 + 77) [line 20, column 3]\n " shape="box"]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_24" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_26" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_25" [label="25:  ConditionalStmt Branch \n   n$13=*&z:int [line 20, column 17]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$12:int=n$13 [line 20, column 13]\n " shape="box"]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_25" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_15" ;
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_25" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_16" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_26" [label="26: + \n  " ]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_25" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_22" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_26" [label="26:  ConditionalStmt Branch \n   n$14=*&z:int [line 20, column 21]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$12:int=n$14 [line 20, column 13]\n " shape="box"]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_26" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_32" ;
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_26" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_33" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_27" [label="27: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 17, column 9]\n " shape="invhouse"]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_26" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_22" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_27" [label="27:  DeclStmt \n   VARIABLE_DECLARED(y1:int); [line 20, column 3]\n " shape="box"]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_27" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_29" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_28" [label="28: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 17, column 9]\n " shape="invhouse"]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_27" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_23" ;
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_27" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_24" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_28" [label="28:  DeclStmt \n   n$15=*&0$?%__sil_tmpSIL_temp_conditional___n$12:int [line 20, column 13]\n  *&y1:int=(n$15 + 77) [line 20, column 3]\n " shape="box"]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_28" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_30" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_29" [label="29:  ConditionalStmt Branch \n   n$17=*&z:int [line 17, column 13]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$16:int=n$17 [line 17, column 9]\n " shape="box"]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_28" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_20" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_29" [label="29: + \n  " ]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_29" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_26" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_30" [label="30:  ConditionalStmt Branch \n   n$18=*&z:int [line 17, column 17]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$16:int=n$18 [line 17, column 9]\n " shape="box"]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_29" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_35" ;
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_29" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_36" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_30" [label="30: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 17, column 9]\n " shape="invhouse"]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_30" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_26" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_31" [label="31: + \n  " ]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_30" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_32" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_31" [label="31: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 17, column 9]\n " shape="invhouse"]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_31" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_36" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_32" [label="32: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 17, column 23]\n " shape="invhouse"]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_31" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_33" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_32" [label="32:  ConditionalStmt Branch \n   n$17=*&z:int [line 17, column 13]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$16:int=n$17 [line 17, column 9]\n " shape="box"]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_32" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_34" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_33" [label="33: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 17, column 23]\n " shape="invhouse"]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_32" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_29" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_33" [label="33:  ConditionalStmt Branch \n   n$18=*&z:int [line 17, column 17]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$16:int=n$18 [line 17, column 9]\n " shape="box"]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_33" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_35" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_34" [label="34:  ConditionalStmt Branch \n   n$21=*&z:int [line 17, column 27]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$20:int=n$21 [line 17, column 23]\n " shape="box"]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_33" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_29" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_34" [label="34: + \n  " ]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_34" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_31" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_35" [label="35:  ConditionalStmt Branch \n   n$22=*&z:int [line 17, column 31]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$20:int=n$22 [line 17, column 23]\n " shape="box"]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_34" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_39" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_35" [label="35: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 17, column 23]\n " shape="invhouse"]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_35" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_31" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_36" [label="36:  BinaryOperatorStmt: Assign \n   n$19=*&0$?%__sil_tmpSIL_temp_conditional___n$16:int [line 17, column 9]\n  n$23=*&0$?%__sil_tmpSIL_temp_conditional___n$20:int [line 17, column 23]\n  *&x3:int=(n$19 + n$23) [line 17, column 3]\n " shape="box"]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_35" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_37" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_36" [label="36: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 17, column 23]\n " shape="invhouse"]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_36" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_21" ;
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_36" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_22" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_37" [label="37: + \n  " ]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_36" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_38" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_37" [label="37:  ConditionalStmt Branch \n   n$21=*&z:int [line 17, column 27]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$20:int=n$21 [line 17, column 23]\n " shape="box"]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_37" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_42" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_38" [label="38: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 14, column 14]\n " shape="invhouse"]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_37" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_34" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_38" [label="38:  ConditionalStmt Branch \n   n$22=*&z:int [line 17, column 31]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$20:int=n$22 [line 17, column 23]\n " shape="box"]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_38" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_40" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_39" [label="39: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 14, column 14]\n " shape="invhouse"]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_38" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_34" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_39" [label="39:  BinaryOperatorStmt: Assign \n   n$19=*&0$?%__sil_tmpSIL_temp_conditional___n$16:int [line 17, column 9]\n  n$23=*&0$?%__sil_tmpSIL_temp_conditional___n$20:int [line 17, column 23]\n  *&x3:int=(n$19 + n$23) [line 17, column 3]\n " shape="box"]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_39" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_41" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_40" [label="40:  ConditionalStmt Branch \n   n$25=*&z:int [line 14, column 18]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$24:int=n$25 [line 14, column 14]\n " shape="box"]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_39" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_27" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_40" [label="40: + \n  " ]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_40" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_37" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_41" [label="41:  ConditionalStmt Branch \n   n$26=*&z:int [line 14, column 22]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$24:int=n$26 [line 14, column 14]\n " shape="box"]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_40" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_45" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_41" [label="41: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 14, column 14]\n " shape="invhouse"]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_41" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_37" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_42" [label="42:  BinaryOperatorStmt: Assign \n   n$27=*&0$?%__sil_tmpSIL_temp_conditional___n$24:int [line 14, column 14]\n  *&x2:int=(77 + n$27) [line 14, column 3]\n " shape="box"]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_41" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_43" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_42" [label="42: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 14, column 14]\n " shape="invhouse"]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_42" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_27" ;
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_42" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_28" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_43" [label="43: + \n  " ]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_42" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_44" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_43" [label="43:  ConditionalStmt Branch \n   n$25=*&z:int [line 14, column 18]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$24:int=n$25 [line 14, column 14]\n " shape="box"]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_43" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_48" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_44" [label="44: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 11, column 9]\n " shape="invhouse"]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_43" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_40" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_44" [label="44:  ConditionalStmt Branch \n   n$26=*&z:int [line 14, column 22]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$24:int=n$26 [line 14, column 14]\n " shape="box"]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_44" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_46" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_45" [label="45: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 11, column 9]\n " shape="invhouse"]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_44" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_40" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_45" [label="45:  BinaryOperatorStmt: Assign \n   n$27=*&0$?%__sil_tmpSIL_temp_conditional___n$24:int [line 14, column 14]\n  *&x2:int=(77 + n$27) [line 14, column 3]\n " shape="box"]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_45" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_47" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_46" [label="46:  ConditionalStmt Branch \n   n$29=*&z:int [line 11, column 13]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$28:int=n$29 [line 11, column 9]\n " shape="box"]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_45" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_30" ;
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_45" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_31" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_46" [label="46: + \n  " ]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_46" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_43" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_47" [label="47:  ConditionalStmt Branch \n   n$30=*&z:int [line 11, column 17]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$28:int=n$30 [line 11, column 9]\n " shape="box"]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_46" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_51" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_47" [label="47: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 11, column 9]\n " shape="invhouse"]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_47" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_43" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_48" [label="48:  BinaryOperatorStmt: Assign \n   n$31=*&0$?%__sil_tmpSIL_temp_conditional___n$28:int [line 11, column 9]\n  *&x1:int=(n$31 + 77) [line 11, column 3]\n " shape="box"]
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_47" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_49" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_48" [label="48: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 11, column 9]\n " shape="invhouse"]
 	
 
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_48" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_38" ;
-	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_48" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_39" ;
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_48" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_50" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_49" [label="49:  ConditionalStmt Branch \n   n$29=*&z:int [line 11, column 13]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$28:int=n$29 [line 11, column 9]\n " shape="box"]
+	
+
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_49" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_46" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_50" [label="50:  ConditionalStmt Branch \n   n$30=*&z:int [line 11, column 17]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$28:int=n$30 [line 11, column 9]\n " shape="box"]
+	
+
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_50" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_46" ;
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_51" [label="51:  BinaryOperatorStmt: Assign \n   n$31=*&0$?%__sil_tmpSIL_temp_conditional___n$28:int [line 11, column 9]\n  *&x1:int=(n$31 + 77) [line 11, column 3]\n " shape="box"]
+	
+
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_51" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_41" ;
+	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_51" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_42" ;
 }

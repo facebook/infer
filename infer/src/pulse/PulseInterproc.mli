@@ -7,17 +7,15 @@
 
 open! IStd
 open PulseBasicInterface
+open PulseDomainInterface
 
 val apply_prepost :
      Procname.t
   -> Location.t
-  -> callee_prepost:PulseAbductiveDomain.t
+  -> callee_prepost:AbductiveDomain.t
   -> captured_vars_with_actuals:(Var.t * (AbstractValue.t * ValueHistory.t)) list
   -> formals:Var.t list
   -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
-  -> PulseAbductiveDomain.t
-  -> ( (PulseAbductiveDomain.t * (AbstractValue.t * ValueHistory.t) option *  ((ValueHistory.t)  AbstractValue.Map.t)) option
-     , Diagnostic.t * PulseAbductiveDomain.t )
-     result
-(** return the abstract state after the call along with an optional return value, or [None] if the
-    precondition could not be satisfied (e.g. some aliasing constraints were not satisfied) *)
+  -> AbductiveDomain.t
+  -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t) option *  ((ValueHistory.t)  AbstractValue.Map.t)) PulseReport.access_result
+     PulseReport.path_feasibility

@@ -43,7 +43,15 @@ CGColorRef FP_switch_ok(SomeEnum e, CGColorRef defaultcolor) {
       color = defaultcolor;
       break;
   }
-  return color; // false positive because of exausted switch
+  return color; // false positive because of exhaustive switch
+}
+
+void dict_literal_with_conditional_ok() {
+  NSDictionary* exceptionParams =
+      @{@"foo" : @"bar", @"boo" : 0 ?: @"", @"beh" : 1 ? @"true" : @"false"};
+  // use the variable
+  if (exceptionParams[@"foo"]) {
+  }
 }
 
 @end

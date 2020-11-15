@@ -9,11 +9,9 @@
 
 include Domain_intf.Dom
 
-(* formals should include all the parameters of the summary. That is both
-   formals and globals. *)
 val create_summary :
      locals:Llair.Reg.Set.t
-  -> formals:Llair.Reg.Set.t
+  -> formals:Llair.Reg.t list
   -> entry:t
   -> current:t
   -> summary * t

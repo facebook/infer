@@ -583,4 +583,20 @@ void unused_unique_ptr_good(A* something) {
   auto x = std::make_unique<A>(*something);
 }
 
+struct X {
+  operator bool() { return true; }
+};
+
+X getX() {
+  X x;
+  return x;
+}
+
+void binaryConditional_bad() {
+  int i = 42;
+  X a;
+  X x = getX() ?: a;
+  int j = 42;
+}
+
 } // namespace dead_stores

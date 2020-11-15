@@ -38,6 +38,14 @@ let append_template_args_to_last quals ~args =
       raise (ParseError "expected non-empty qualified name")
 
 
+let append_protocols quals ~protocols =
+  match quals with
+  | last :: rest ->
+      (last ^ protocols) :: rest
+  | [] ->
+      raise (ParseError "expected non-empty qualified name")
+
+
 let to_list = List.rev
 
 let to_rev_list = ident

@@ -101,7 +101,7 @@ digraph cfg {
 	
 
 	 "dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_3" -> "dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_2" ;
-"dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_4" [label="4:  Call _fun_dispatch_after \n   n$16=_fun_dispatch_time(0:unsigned long long,((unsigned long long)2 * 1000000000):long long) [line 46, column 18]\n  n$17=_fun_dispatch_get_main_queue() [line 47, column 18]\n  n$21=_fun_dispatch_after(n$16:unsigned long long,n$17:NSObject*,(_fun_objc_blockDispatchEx.dispatch_after_example_3):_fn_(*)) [line 46, column 3]\n " shape="box"]
+"dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_4" [label="4:  Call _fun_dispatch_after \n   n$16=_fun_dispatch_time(0:unsigned long long,((unsigned long long)2 * 1000000000):long long) [line 46, column 18]\n  n$17=_fun_dispatch_get_main_queue() [line 47, column 18]\n  n$21=_fun_dispatch_after(n$16:unsigned long long,n$17:NSObject<OS_dispatch_queue>*,(_fun_objc_blockDispatchEx.dispatch_after_example_3):_fn_(*)) [line 46, column 3]\n " shape="box"]
 	
 
 	 "dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_4" -> "dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_3" ;
@@ -120,7 +120,7 @@ digraph cfg {
 	
 
 	 "dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_3" -> "dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_2" ;
-"dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_4" [label="4:  Call _fun_dispatch_async \n   n$9=_fun_dispatch_get_global_queue(0:long,(unsigned long)0:unsigned long) [line 36, column 18]\n  n$13=_fun_dispatch_async(n$9:NSObject*,(_fun_objc_blockDispatchEx.dispatch_async_example_2):_fn_(*)) [line 36, column 3]\n " shape="box"]
+"dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_4" [label="4:  Call _fun_dispatch_async \n   n$9=_fun_dispatch_get_global_queue(0:long,(unsigned long)0:unsigned long) [line 36, column 18]\n  n$13=_fun_dispatch_async(n$9:NSObject<OS_dispatch_queue>*,(_fun_objc_blockDispatchEx.dispatch_async_example_2):_fn_(*)) [line 36, column 3]\n " shape="box"]
 	
 
 	 "dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_4" -> "dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_3" ;
@@ -139,7 +139,7 @@ digraph cfg {
 	
 
 	 "dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_3" -> "dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_2" ;
-"dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_4" [label="4:  Call _fun_dispatch_barrier_async \n   n$38=_fun_dispatch_get_main_queue() [line 75, column 26]\n  n$42=_fun_dispatch_barrier_async(n$38:NSObject*,(_fun_objc_blockDispatchEx.dispatch_barrier_example_6):_fn_(*)) [line 75, column 3]\n " shape="box"]
+"dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_4" [label="4:  Call _fun_dispatch_barrier_async \n   n$38=_fun_dispatch_get_main_queue() [line 75, column 26]\n  n$42=_fun_dispatch_barrier_async(n$38:NSObject<OS_dispatch_queue>*,(_fun_objc_blockDispatchEx.dispatch_barrier_example_6):_fn_(*)) [line 75, column 3]\n " shape="box"]
 	
 
 	 "dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_4" -> "dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_3" ;
@@ -158,7 +158,7 @@ digraph cfg {
 	
 
 	 "dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_3" -> "dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_2" ;
-"dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_4" [label="4:  Call _fun_dispatch_group_async \n   n$24=_fun_dispatch_get_main_queue() [line 57, column 30]\n  n$28=_fun_dispatch_group_async(null:NSObject*,n$24:NSObject*,(_fun_objc_blockDispatchEx.dispatch_group_example_4):_fn_(*)) [line 57, column 3]\n " shape="box"]
+"dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_4" [label="4:  Call _fun_dispatch_group_async \n   n$24=_fun_dispatch_get_main_queue() [line 57, column 30]\n  n$28=_fun_dispatch_group_async(null:NSObject<OS_dispatch_group>*,n$24:NSObject<OS_dispatch_queue>*,(_fun_objc_blockDispatchEx.dispatch_group_example_4):_fn_(*)) [line 57, column 3]\n " shape="box"]
 	
 
 	 "dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_4" -> "dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_3" ;
@@ -177,7 +177,7 @@ digraph cfg {
 	
 
 	 "dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_3" -> "dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_2" ;
-"dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_4" [label="4:  Call _fun_dispatch_group_async \n   n$31=_fun_dispatch_get_main_queue() [line 66, column 30]\n  n$35=_fun_dispatch_group_async(null:NSObject*,n$31:NSObject*,(_fun_objc_blockDispatchEx.dispatch_group_notify_example_5):_fn_(*)) [line 66, column 3]\n " shape="box"]
+"dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_4" [label="4:  Call _fun_dispatch_group_async \n   n$31=_fun_dispatch_get_main_queue() [line 66, column 30]\n  n$35=_fun_dispatch_group_async(null:NSObject<OS_dispatch_group>*,n$31:NSObject<OS_dispatch_queue>*,(_fun_objc_blockDispatchEx.dispatch_group_notify_example_5):_fn_(*)) [line 66, column 3]\n " shape="box"]
 	
 
 	 "dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_4" -> "dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_3" ;

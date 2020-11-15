@@ -25,8 +25,19 @@ let callback1 ({IntraproceduralAnalysis.proc_desc= curr_pdesc; _} as analysis_da
            has very special meaning and nullability limitations (it can never be null).
         *)
         TypeOrigin.This
-      else if PatternMatch.Java.is_override_of_lang_object_equals curr_pname then
-        TypeOrigin.CurrMethodParameter ObjectEqualsOverride
+        (* An extra feature of Nullsafe. If the method overrides `Object.equals()`, but does not specify @Nullable annotation for the param,
+           a normal "inconsistent subclass parameter annotation" will be issued.
+           But apart from this we want to issue additional violations every time the value is used as a non-nullable.
+           This is to distinct "benign" cases where the value is simply not annotated from real bugs where e.g. the value is actually dereferenced.
+           We achieve this via having a special TypeOrigin for this param, which will be considered as nullable in relevant places.
+        *)
+      else if
+        PatternMatch.Java.is_override_of_lang_object_equals curr_pname
+        && (* Turn this feature off for annotation graph mode. In this mode not annotated, but potentially nullable params
+              are treated in special way, and this conflicts with the trick that is being made here.
+           *)
+        not Config.nullsafe_annotation_graph
+      then TypeOrigin.CurrMethodParameter ObjectEqualsOverride
       else TypeOrigin.CurrMethodParameter (Normal param_signature)
     in
     let inferred_nullability = InferredNullability.create origin in

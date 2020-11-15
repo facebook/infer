@@ -30,31 +30,41 @@ type operand = LiteralOperand of IntLit.t | AbstractValueOperand of Var.t
 
 (** {3 Build formulas} *)
 
+(** some operations will return a set of new facts discovered that are relevant to communicate to
+    the memory domain *)
+type new_eq = EqZero of Var.t | Equal of Var.t * Var.t
+
+type new_eqs = new_eq list
+
 val ttrue : t
 
 val is_ttrue : t -> bool
 
-val and_equal : operand -> operand -> t -> t normalized
+val and_equal : operand -> operand -> t -> (t * new_eqs) normalized
 
-val and_less_equal : operand -> operand -> t -> t normalized
+val and_less_equal : operand -> operand -> t -> (t * new_eqs) normalized
 
-val and_less_than : operand -> operand -> t -> t normalized
+val and_less_than : operand -> operand -> t -> (t * new_eqs) normalized
 
-val and_equal_unop : Var.t -> Unop.t -> operand -> t -> t normalized
+val and_equal_unop : Var.t -> Unop.t -> operand -> t -> (t * new_eqs) normalized
 
-val and_equal_binop : Var.t -> Binop.t -> operand -> operand -> t -> t normalized
+val and_equal_binop : Var.t -> Binop.t -> operand -> operand -> t -> (t * new_eqs) normalized
 
-val prune_binop : negated:bool -> Binop.t -> operand -> operand -> t -> t normalized
+val prune_binop : negated:bool -> Binop.t -> operand -> operand -> t -> (t * new_eqs) normalized
 
 (** {3 Operations} *)
 
-val normalize : t -> t normalized
+val normalize : t -> (t * new_eqs) normalized
 (** think a bit harder about the formula *)
 
-val simplify : keep:Var.Set.t -> t -> t normalized
+val simplify : keep:Var.Set.t -> t -> (t * new_eqs) normalized
 
 val and_fold_subst_variables :
-  t -> up_to_f:t -> init:'acc -> f:('acc -> Var.t -> 'acc * Var.t) -> ('acc * t) normalized
+     t
+  -> up_to_f:t
+  -> init:'acc
+  -> f:('acc -> Var.t -> 'acc * Var.t)
+  -> ('acc * t * new_eqs) normalized
 
 val get_variables : t -> Var.Set.t
   

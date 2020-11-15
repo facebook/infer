@@ -16,11 +16,11 @@ type t = private
   | Pointer of {elt: t}  (** Pointer to element type. *)
   | Array of {elt: t; len: int; bits: int; byts: int}
       (** Statically-sized array of [len] elements of type [elt]. *)
-  | Tuple of {elts: t iarray; bits: int; byts: int; packed: bool}
+  | Tuple of {elts: (int * t) iarray; bits: int; byts: int}
       (** Anonymous aggregate of heterogeneous types. *)
-  | Struct of
-      {name: string; elts: t iarray; bits: int; byts: int; packed: bool}
-      (** Uniquely named aggregate of heterogeneous types. Every cycle of
+  | Struct of {name: string; elts: (int * t) iarray; bits: int; byts: int}
+      (** Uniquely named aggregate of heterogeneous types. Elements are
+          specified by their byte offset and their type. Every cycle of
           recursive types contains a [Struct]. NOTE: recursive [Struct]
           types are represented by cyclic values. *)
   | Opaque of {name: string}
@@ -44,10 +44,10 @@ val integer : bits:int -> byts:int -> t
 val float : bits:int -> byts:int -> enc:[`Extended | `IEEE | `Pair] -> t
 val pointer : elt:t -> t
 val array : elt:t -> len:int -> bits:int -> byts:int -> t
-val tuple : t iarray -> bits:int -> byts:int -> packed:bool -> t
+val tuple : (int * t) iarray -> bits:int -> byts:int -> t
 
 val struct_ :
-  name:string -> bits:int -> byts:int -> packed:bool -> t lazy_t iarray -> t
+  name:string -> bits:int -> byts:int -> (int * t) lazy_t iarray -> t
 
 val opaque : name:string -> t
 
@@ -63,6 +63,11 @@ val bit_size_of : t -> int
 val size_of : t -> int
 (** The number of bytes between adjacent values of the given type, including
     alignment padding. Raises unless is_sized holds. *)
+
+val offset_length_of_elt : t -> int -> int * int
+(** The offset in bytes to, and number of bytes occupied by, the given
+    element of an aggretage type. Raises if type is not an aggregate or
+    index is invalid. *)
 
 val equivalent : t -> t -> bool
 (** Equivalent types are those that denote the same sets of values in the

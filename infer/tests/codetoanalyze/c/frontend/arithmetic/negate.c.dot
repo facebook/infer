@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"neg_bool.e953d6477eaaeafaa430423a26fbaac9_1" [label="1: Start neg_bool\nFormals:  a:_Bool\nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int \n  " color=yellow style=filled]
+"neg_bool.e953d6477eaaeafaa430423a26fbaac9_1" [label="1: Start neg_bool\nFormals:  a:_Bool\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "neg_bool.e953d6477eaaeafaa430423a26fbaac9_1" -> "neg_bool.e953d6477eaaeafaa430423a26fbaac9_4" ;
@@ -12,27 +12,27 @@ digraph cfg {
 	
 
 	 "neg_bool.e953d6477eaaeafaa430423a26fbaac9_3" -> "neg_bool.e953d6477eaaeafaa430423a26fbaac9_8" ;
-"neg_bool.e953d6477eaaeafaa430423a26fbaac9_4" [label="4: Prune (true branch, boolean exp) \n   n$1=*&a:_Bool [line 12, column 33]\n  PRUNE(n$1, true); [line 12, column 33]\n " shape="invhouse"]
+"neg_bool.e953d6477eaaeafaa430423a26fbaac9_4" [label="4: Prune (true branch, boolean exp) \n   n$0=*&a:_Bool [line 12, column 33]\n  PRUNE(n$0, true); [line 12, column 33]\n " shape="invhouse"]
 	
 
 	 "neg_bool.e953d6477eaaeafaa430423a26fbaac9_4" -> "neg_bool.e953d6477eaaeafaa430423a26fbaac9_6" ;
-"neg_bool.e953d6477eaaeafaa430423a26fbaac9_5" [label="5: Prune (false branch, boolean exp) \n   n$1=*&a:_Bool [line 12, column 33]\n  PRUNE(!n$1, false); [line 12, column 33]\n " shape="invhouse"]
+"neg_bool.e953d6477eaaeafaa430423a26fbaac9_5" [label="5: Prune (false branch, boolean exp) \n   n$0=*&a:_Bool [line 12, column 33]\n  PRUNE(!n$0, false); [line 12, column 33]\n " shape="invhouse"]
 	
 
 	 "neg_bool.e953d6477eaaeafaa430423a26fbaac9_5" -> "neg_bool.e953d6477eaaeafaa430423a26fbaac9_7" ;
-"neg_bool.e953d6477eaaeafaa430423a26fbaac9_6" [label="6:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=0 [line 12, column 32]\n " shape="box"]
+"neg_bool.e953d6477eaaeafaa430423a26fbaac9_6" [label="6:  ConditionalStmt Branch \n   *&return:int=0 [line 12, column 32]\n " shape="box"]
 	
 
 	 "neg_bool.e953d6477eaaeafaa430423a26fbaac9_6" -> "neg_bool.e953d6477eaaeafaa430423a26fbaac9_3" ;
-"neg_bool.e953d6477eaaeafaa430423a26fbaac9_7" [label="7:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=1 [line 12, column 32]\n " shape="box"]
+"neg_bool.e953d6477eaaeafaa430423a26fbaac9_7" [label="7:  ConditionalStmt Branch \n   *&return:int=1 [line 12, column 32]\n " shape="box"]
 	
 
 	 "neg_bool.e953d6477eaaeafaa430423a26fbaac9_7" -> "neg_bool.e953d6477eaaeafaa430423a26fbaac9_3" ;
-"neg_bool.e953d6477eaaeafaa430423a26fbaac9_8" [label="8:  Return Stmt \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 12, column 32]\n  *&return:int=n$2 [line 12, column 25]\n " shape="box"]
+"neg_bool.e953d6477eaaeafaa430423a26fbaac9_8" [label="8:  Return Stmt \n  " shape="box"]
 	
 
 	 "neg_bool.e953d6477eaaeafaa430423a26fbaac9_8" -> "neg_bool.e953d6477eaaeafaa430423a26fbaac9_2" ;
-"neg_char.53ef6b31d84386046a4728d1c45b5f7a_1" [label="1: Start neg_char\nFormals:  a:char\nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int \n  " color=yellow style=filled]
+"neg_char.53ef6b31d84386046a4728d1c45b5f7a_1" [label="1: Start neg_char\nFormals:  a:char\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "neg_char.53ef6b31d84386046a4728d1c45b5f7a_1" -> "neg_char.53ef6b31d84386046a4728d1c45b5f7a_4" ;
@@ -44,27 +44,27 @@ digraph cfg {
 	
 
 	 "neg_char.53ef6b31d84386046a4728d1c45b5f7a_3" -> "neg_char.53ef6b31d84386046a4728d1c45b5f7a_8" ;
-"neg_char.53ef6b31d84386046a4728d1c45b5f7a_4" [label="4: Prune (true branch, boolean exp) \n   n$1=*&a:char [line 10, column 32]\n  PRUNE(n$1, true); [line 10, column 32]\n " shape="invhouse"]
+"neg_char.53ef6b31d84386046a4728d1c45b5f7a_4" [label="4: Prune (true branch, boolean exp) \n   n$0=*&a:char [line 10, column 32]\n  PRUNE(n$0, true); [line 10, column 32]\n " shape="invhouse"]
 	
 
 	 "neg_char.53ef6b31d84386046a4728d1c45b5f7a_4" -> "neg_char.53ef6b31d84386046a4728d1c45b5f7a_6" ;
-"neg_char.53ef6b31d84386046a4728d1c45b5f7a_5" [label="5: Prune (false branch, boolean exp) \n   n$1=*&a:char [line 10, column 32]\n  PRUNE(!n$1, false); [line 10, column 32]\n " shape="invhouse"]
+"neg_char.53ef6b31d84386046a4728d1c45b5f7a_5" [label="5: Prune (false branch, boolean exp) \n   n$0=*&a:char [line 10, column 32]\n  PRUNE(!n$0, false); [line 10, column 32]\n " shape="invhouse"]
 	
 
 	 "neg_char.53ef6b31d84386046a4728d1c45b5f7a_5" -> "neg_char.53ef6b31d84386046a4728d1c45b5f7a_7" ;
-"neg_char.53ef6b31d84386046a4728d1c45b5f7a_6" [label="6:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=0 [line 10, column 31]\n " shape="box"]
+"neg_char.53ef6b31d84386046a4728d1c45b5f7a_6" [label="6:  ConditionalStmt Branch \n   *&return:int=0 [line 10, column 31]\n " shape="box"]
 	
 
 	 "neg_char.53ef6b31d84386046a4728d1c45b5f7a_6" -> "neg_char.53ef6b31d84386046a4728d1c45b5f7a_3" ;
-"neg_char.53ef6b31d84386046a4728d1c45b5f7a_7" [label="7:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=1 [line 10, column 31]\n " shape="box"]
+"neg_char.53ef6b31d84386046a4728d1c45b5f7a_7" [label="7:  ConditionalStmt Branch \n   *&return:int=1 [line 10, column 31]\n " shape="box"]
 	
 
 	 "neg_char.53ef6b31d84386046a4728d1c45b5f7a_7" -> "neg_char.53ef6b31d84386046a4728d1c45b5f7a_3" ;
-"neg_char.53ef6b31d84386046a4728d1c45b5f7a_8" [label="8:  Return Stmt \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 10, column 31]\n  *&return:int=n$2 [line 10, column 24]\n " shape="box"]
+"neg_char.53ef6b31d84386046a4728d1c45b5f7a_8" [label="8:  Return Stmt \n  " shape="box"]
 	
 
 	 "neg_char.53ef6b31d84386046a4728d1c45b5f7a_8" -> "neg_char.53ef6b31d84386046a4728d1c45b5f7a_2" ;
-"neg_int.2aa25aca565c41dd997912d11504462c_1" [label="1: Start neg_int\nFormals:  a:int\nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int \n  " color=yellow style=filled]
+"neg_int.2aa25aca565c41dd997912d11504462c_1" [label="1: Start neg_int\nFormals:  a:int\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "neg_int.2aa25aca565c41dd997912d11504462c_1" -> "neg_int.2aa25aca565c41dd997912d11504462c_4" ;
@@ -76,23 +76,23 @@ digraph cfg {
 	
 
 	 "neg_int.2aa25aca565c41dd997912d11504462c_3" -> "neg_int.2aa25aca565c41dd997912d11504462c_8" ;
-"neg_int.2aa25aca565c41dd997912d11504462c_4" [label="4: Prune (true branch, boolean exp) \n   n$1=*&a:int [line 8, column 30]\n  PRUNE(n$1, true); [line 8, column 30]\n " shape="invhouse"]
+"neg_int.2aa25aca565c41dd997912d11504462c_4" [label="4: Prune (true branch, boolean exp) \n   n$0=*&a:int [line 8, column 30]\n  PRUNE(n$0, true); [line 8, column 30]\n " shape="invhouse"]
 	
 
 	 "neg_int.2aa25aca565c41dd997912d11504462c_4" -> "neg_int.2aa25aca565c41dd997912d11504462c_6" ;
-"neg_int.2aa25aca565c41dd997912d11504462c_5" [label="5: Prune (false branch, boolean exp) \n   n$1=*&a:int [line 8, column 30]\n  PRUNE(!n$1, false); [line 8, column 30]\n " shape="invhouse"]
+"neg_int.2aa25aca565c41dd997912d11504462c_5" [label="5: Prune (false branch, boolean exp) \n   n$0=*&a:int [line 8, column 30]\n  PRUNE(!n$0, false); [line 8, column 30]\n " shape="invhouse"]
 	
 
 	 "neg_int.2aa25aca565c41dd997912d11504462c_5" -> "neg_int.2aa25aca565c41dd997912d11504462c_7" ;
-"neg_int.2aa25aca565c41dd997912d11504462c_6" [label="6:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=0 [line 8, column 29]\n " shape="box"]
+"neg_int.2aa25aca565c41dd997912d11504462c_6" [label="6:  ConditionalStmt Branch \n   *&return:int=0 [line 8, column 29]\n " shape="box"]
 	
 
 	 "neg_int.2aa25aca565c41dd997912d11504462c_6" -> "neg_int.2aa25aca565c41dd997912d11504462c_3" ;
-"neg_int.2aa25aca565c41dd997912d11504462c_7" [label="7:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=1 [line 8, column 29]\n " shape="box"]
+"neg_int.2aa25aca565c41dd997912d11504462c_7" [label="7:  ConditionalStmt Branch \n   *&return:int=1 [line 8, column 29]\n " shape="box"]
 	
 
 	 "neg_int.2aa25aca565c41dd997912d11504462c_7" -> "neg_int.2aa25aca565c41dd997912d11504462c_3" ;
-"neg_int.2aa25aca565c41dd997912d11504462c_8" [label="8:  Return Stmt \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 8, column 29]\n  *&return:int=n$2 [line 8, column 22]\n " shape="box"]
+"neg_int.2aa25aca565c41dd997912d11504462c_8" [label="8:  Return Stmt \n  " shape="box"]
 	
 
 	 "neg_int.2aa25aca565c41dd997912d11504462c_8" -> "neg_int.2aa25aca565c41dd997912d11504462c_2" ;

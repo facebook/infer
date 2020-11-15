@@ -7,27 +7,30 @@
 
 (** Used-globals abstract domain *)
 
-type t = Llair.Reg.Set.t [@@deriving equal, sexp]
+type t = Llair.Global.Set.t [@@deriving equal, sexp]
 
-let pp = Llair.Reg.Set.pp
+let pp = Llair.Global.Set.pp
 let report_fmt_thunk = Fun.flip pp
-let empty = Llair.Reg.Set.empty
+let empty = Llair.Global.Set.empty
 
 let init globals =
-  [%Trace.info "pgm globals: {%a}" (IArray.pp ", " Llair.Global.pp) globals] ;
+  [%Trace.info
+    "pgm globals: {%a}" (IArray.pp ", " Llair.GlobalDefn.pp) globals] ;
   empty
 
-let join l r = Some (Llair.Reg.Set.union l r)
+let join l r = Some (Llair.Global.Set.union l r)
 let recursion_beyond_bound = `skip
 let is_false _ = false
 let post _ _ state = state
-let retn _ _ from_call post = Llair.Reg.Set.union from_call post
+let retn _ _ from_call post = Llair.Global.Set.union from_call post
 let dnf t = [t]
 
-let add_if_global v gs =
-  if Llair.Reg.is_global v then Llair.Reg.Set.add v gs else gs
+let used_globals exp s =
+  Llair.Exp.fold_exps exp s ~f:(fun e s ->
+      match Llair.Global.of_exp e with
+      | Some g -> Llair.Global.Set.add g s
+      | None -> s )
 
-let used_globals exp s = Llair.Exp.fold_regs ~f:add_if_global exp s
 let exec_assume st exp = Some (used_globals exp st)
 let exec_kill _ st = st
 
@@ -43,7 +46,7 @@ let exec_inst inst st =
     Option.iter ~f:(fun uses -> pf "post:{%a}" pp uses)]
 
 let exec_intrinsic ~skip_throw:_ _ intrinsic actuals st =
-  let name = Llair.Reg.name intrinsic in
+  let name = Llair.Function.name intrinsic in
   if
     List.exists
       [ "malloc"
@@ -79,8 +82,8 @@ let call ~summaries:_ ~globals:_ ~actuals ~areturn:_ ~formals:_ ~freturn:_
 
 let resolve_callee lookup ptr st =
   let st = used_globals ptr st in
-  match Llair.Reg.of_exp ptr with
-  | Some callee -> (lookup (Llair.Reg.name callee), st)
+  match Llair.Function.of_exp ptr with
+  | Some callee -> (lookup callee, st)
   | None -> ([], st)
 
 (* A function summary is the set of global registers accessed by that
@@ -89,27 +92,27 @@ type summary = t
 
 let pp_summary = pp
 let create_summary ~locals:_ ~formals:_ state = (state, state)
-let apply_summary st summ = Some (Llair.Reg.Set.union st summ)
+let apply_summary st summ = Some (Llair.Global.Set.union st summ)
 
 (** Query *)
 
 type r =
-  | Per_function of Llair.Reg.Set.t Llair.Reg.Map.t
-  | Declared of Llair.Reg.Set.t
+  | Per_function of Llair.Global.Set.t Llair.Function.Map.t
+  | Declared of Llair.Global.Set.t
 
-let by_function : r -> Llair.Reg.t -> t =
+let by_function : r -> Llair.Function.t -> t =
  fun s fn ->
-  [%Trace.call fun {pf} -> pf "%a" Llair.Reg.pp fn]
+  [%Trace.call fun {pf} -> pf "%a" Llair.Function.pp fn]
   ;
   ( match s with
   | Declared set -> set
   | Per_function map -> (
-    match Llair.Reg.Map.find fn map with
+    match Llair.Function.Map.find fn map with
     | Some gs -> gs
     | None ->
         fail
           "main analysis reached function %a that was not reached by \
            used-globals pre-analysis "
-          Llair.Reg.pp fn () ) )
+          Llair.Function.pp fn () ) )
   |>
-  [%Trace.retn fun {pf} r -> pf "%a" Llair.Reg.Set.pp r]
+  [%Trace.retn fun {pf} r -> pf "%a" Llair.Global.Set.pp r]

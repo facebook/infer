@@ -62,7 +62,9 @@ module T = struct
   [@@deriving compare, equal, hash, sexp]
 
   type t =
-    | Reg of {name: string; global: bool; typ: Typ.t}
+    | Reg of {name: string; typ: Typ.t}
+    | Global of {name: string; typ: Typ.t [@ignore]}
+    | Function of {name: string; typ: Typ.t [@ignore]}
     | Label of {parent: string; name: string}
     | Integer of {data: Z.t; typ: Typ.t}
     | Float of {data: string; typ: Typ.t}
@@ -70,7 +72,6 @@ module T = struct
     | Ap2 of op2 * Typ.t * t * t
     | Ap3 of op3 * Typ.t * t * t * t
     | ApN of opN * Typ.t * t iarray
-    | RecRecord of int * Typ.t
   [@@deriving compare, equal, hash, sexp]
 end
 
@@ -82,6 +83,15 @@ module Set = struct
 end
 
 module Map = Map.Make (T)
+module Tbl = HashTable.Make (T)
+
+let demangle = ref (fun _ -> None)
+
+let pp_demangled ppf name =
+  match !demangle name with
+  | Some demangled when not (String.equal name demangled) ->
+      Format.fprintf ppf "“%s”" demangled
+  | _ -> ()
 
 let pp_op2 fs op =
   let pf fmt = Format.fprintf fs fmt in
@@ -119,8 +129,9 @@ let rec pp fs exp =
     Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
   in
   match exp with
-  | Reg {name; global= true} -> pf "%@%s" name
-  | Reg {name; global= false} -> pf "%%%s" name
+  | Reg {name} -> pf "%%%s" name
+  | Global {name} -> pf "%@%s%a" name pp_demangled name
+  | Function {name} -> pf "&%s%a" name pp_demangled name
   | Label {name} -> pf "%s" name
   | Integer {data; typ= Pointer _} when Z.equal Z.zero data -> pf "null"
   | Integer {data} -> Trace.pp_styled `Magenta "%a" fs Z.pp data
@@ -143,24 +154,17 @@ let rec pp fs exp =
   | Ap3 (Conditional, _, cnd, thn, els) ->
       pf "(%a@ ? %a@ : %a)" pp cnd pp thn pp els
   | ApN (Record, _, elts) -> pf "{%a}" pp_record elts
-  | RecRecord (i, _) -> pf "rec_record %i" i
   [@@warning "-9"]
 
 and pp_record fs elts =
-  [%Trace.fprintf
-    fs "%a"
-      (fun fs elts ->
-        match
-          String.init (IArray.length elts) ~f:(fun i ->
-              match IArray.get elts i with
-              | Integer {data} -> Char.of_int_exn (Z.to_int data)
-              | _ -> raise (Invalid_argument "not a string") )
-        with
-        | s -> Format.fprintf fs "@[<h>%s@]" (String.escaped s)
-        | exception _ ->
-            Format.fprintf fs "@[<h>%a@]" (IArray.pp ",@ " pp) elts )
-      elts]
-  [@@warning "-9"]
+  match
+    String.init (IArray.length elts) ~f:(fun i ->
+        match IArray.get elts i with
+        | Integer {data; _} -> Char.of_int_exn (Z.to_int data)
+        | _ -> raise_notrace (Invalid_argument "not a string") )
+  with
+  | s -> Format.fprintf fs "@[<h>%s@]" (String.escaped s)
+  | exception _ -> Format.fprintf fs "@[<hv>%a@]" (IArray.pp ",@ " pp) elts
 
 (** Invariant *)
 
@@ -169,7 +173,9 @@ let valid_idx idx elts = 0 <= idx && idx < IArray.length elts
 let rec invariant exp =
   let@ () = Invariant.invariant [%here] exp [%sexp_of: t] in
   match exp with
-  | Reg {typ} -> assert (Typ.is_sized typ)
+  | Reg {typ} | Global {typ} -> assert (Typ.is_sized typ)
+  | Function {typ= Pointer {elt= Function _}} -> ()
+  | Function _ -> assert false
   | Integer {data; typ} -> (
     match typ with
     | Integer {bits} ->
@@ -208,7 +214,7 @@ let rec invariant exp =
       match typ with
       | Tuple {elts} | Struct {elts} ->
           assert (valid_idx idx elts) ;
-          assert (Typ.castable (IArray.get elts idx) (typ_of elt))
+          assert (Typ.castable (snd (IArray.get elts idx)) (typ_of elt))
       | Array {elt= typ_elt} -> assert (Typ.castable typ_elt (typ_of elt))
       | _ -> assert false )
   | Ap2 (op, typ, x, y) -> (
@@ -237,23 +243,24 @@ let rec invariant exp =
     | Tuple {elts} | Struct {elts} ->
         assert (IArray.length elts = IArray.length args) ;
         assert (
-          IArray.for_all2_exn elts args ~f:(fun typ arg ->
+          IArray.for_all2_exn elts args ~f:(fun (_, typ) arg ->
               Typ.castable typ (typ_of arg) ) )
     | _ -> assert false )
-  | RecRecord _ -> ()
   [@@warning "-9"]
 
 (** Type query *)
 
 and typ_of exp =
   match exp with
-  | Reg {typ} | Integer {typ} | Float {typ} -> typ
+  | Reg {typ} | Global {typ} | Function {typ} | Integer {typ} | Float {typ}
+    ->
+      typ
   | Label _ -> Typ.ptr
   | Ap1 ((Signed _ | Unsigned _ | Convert _ | Splat), dst, _) -> dst
   | Ap1 (Select idx, typ, _) -> (
     match typ with
     | Array {elt} -> elt
-    | Tuple {elts} | Struct {elts} -> IArray.get elts idx
+    | Tuple {elts} | Struct {elts} -> snd (IArray.get elts idx)
     | _ -> violates invariant exp )
   | Ap2
       ( (Eq | Dq | Gt | Ge | Lt | Le | Ugt | Uge | Ult | Ule | Ord | Uno)
@@ -268,8 +275,7 @@ and typ_of exp =
       , _
       , _ )
    |Ap3 (Conditional, typ, _, _, _)
-   |ApN (Record, typ, _)
-   |RecRecord (_, typ) ->
+   |ApN (Record, typ, _) ->
       typ
   [@@warning "-9"]
 
@@ -287,34 +293,66 @@ module Reg = struct
     let pp = Set.pp pp_exp
   end
 
-  module Map = Map
-
-  let demangle = ref (fun _ -> None)
-
-  let pp_demangled fs = function
-    | Reg {name} -> (
-      match !demangle name with
-      | Some demangled when not (String.equal name demangled) ->
-          Format.fprintf fs "“%s”" demangled
-      | _ -> () )
-    | _ -> ()
-    [@@warning "-9"]
-
   let invariant x =
     let@ () = Invariant.invariant [%here] x [%sexp_of: t] in
     match x with Reg _ -> invariant x | _ -> assert false
 
   let name = function Reg x -> x.name | r -> violates invariant r
   let typ = function Reg x -> x.typ | r -> violates invariant r
-  let is_global = function Reg x -> x.global | r -> violates invariant r
-  let of_ = function Reg _ as r -> r | _ -> invalid_arg "Reg.of_"
 
   let of_exp = function
     | Reg _ as e -> Some (e |> check invariant)
     | _ -> None
 
-  let program ?global typ name =
-    Reg {name; global= Option.is_some global; typ} |> check invariant
+  let mk typ name = Reg {name; typ} |> check invariant
+end
+
+(** Globals are the expressions constructed by [Global] *)
+module Global = struct
+  include T
+
+  let pp = pp
+
+  module Set = struct
+    include Set
+
+    let pp = Set.pp pp_exp
+  end
+
+  let invariant x =
+    let@ () = Invariant.invariant [%here] x [%sexp_of: t] in
+    match x with Global _ -> invariant x | _ -> assert false
+
+  let name = function Global x -> x.name | r -> violates invariant r
+  let typ = function Global x -> x.typ | r -> violates invariant r
+
+  let of_exp = function
+    | Global _ as e -> Some (e |> check invariant)
+    | _ -> None
+
+  let mk typ name = Global {name; typ} |> check invariant
+end
+
+(** Function names are the expressions constructed by [Function] *)
+module Function = struct
+  include T
+
+  let pp = pp
+  let name = function Function x -> x.name | r -> violates invariant r
+  let typ = function Function x -> x.typ | r -> violates invariant r
+
+  let invariant x =
+    let@ () = Invariant.invariant [%here] x [%sexp_of: t] in
+    match x with Function _ -> invariant x | _ -> assert false
+
+  let of_exp = function
+    | Function _ as e -> Some (e |> check invariant)
+    | _ -> None
+
+  let mk typ name = Function {name; typ} |> check invariant
+
+  module Map = Map
+  module Tbl = Tbl
 end
 
 (** Construct *)
@@ -325,6 +363,8 @@ let reg x = x
 
 (* constants *)
 
+let function_ f = f
+let global g = g
 let label ~parent ~name = Label {parent; name} |> check invariant
 let integer typ data = Integer {data; typ} |> check invariant
 let null = integer Typ.ptr Z.zero
@@ -405,8 +445,6 @@ let select typ rcd idx = Ap1 (Select idx, typ, rcd) |> check invariant
 
 let update typ ~rcd idx ~elt =
   Ap2 (Update idx, typ, rcd, elt) |> check invariant
-
-let rec_record i typ = RecRecord (i, typ)
 
 (** Traverse *)
 

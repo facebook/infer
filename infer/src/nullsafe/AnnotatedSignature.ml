@@ -47,57 +47,88 @@ let nullability_for_return ~proc_name ~is_callee_in_trust_list ~nullsafe_mode ~i
     AnnotatedNullability.of_type_and_annotation ~is_callee_in_trust_list ~nullsafe_mode
       ~is_third_party ret_type ret_annotations
   in
-  (* if any param is annotated with propagates nullable, then the result is nullable *)
-  match nullability with
-  | AnnotatedNullability.Nullable _ ->
-      nullability (* We already know it is nullable - lets not overwrite the origin *)
-  | _ when has_propagates_nullable_in_param ->
-      (* if any params is propagates nullable, the return type can be only nullable *)
-      AnnotatedNullability.Nullable AnnotatedNullability.HasPropagatesNullableInParam
-  | _ when is_provisional_annotation_mode ->
-      (* Not explicitly annotated with [@Nullable] - make it provisionally nullable  *)
-      AnnotatedNullability.ProvisionallyNullable (ProvisionalAnnotation.Method proc_name)
-  | _ ->
-      nullability
-
-
-let nullability_for_param ~proc_name ~param_num ~is_callee_in_trust_list ~nullsafe_mode
-    ~is_third_party ~is_provisional_annotation_mode param_type param_annotations =
+  (* if any param is annotated with propagates nullable, the return nullability is also nullable *)
   let nullability =
-    AnnotatedNullability.of_type_and_annotation ~is_callee_in_trust_list ~nullsafe_mode
-      ~is_third_party param_type param_annotations
+    match nullability with
+    | AnnotatedNullability.Nullable _ ->
+        nullability (* We already know it is nullable - lets not overwrite the origin *)
+    | _ when has_propagates_nullable_in_param ->
+        (* if any params is propagates nullable, the return type can be only nullable *)
+        AnnotatedNullability.Nullable AnnotatedNullability.HasPropagatesNullableInParam
+    | _ ->
+        nullability
   in
-  match nullability with
-  | AnnotatedNullability.Nullable _ ->
-      nullability
-  | _ when is_provisional_annotation_mode ->
-      AnnotatedNullability.ProvisionallyNullable
-        (ProvisionalAnnotation.Param {method_info= proc_name; num= param_num})
-  | _ ->
-      nullability
+  let final_nullability =
+    if
+      is_provisional_annotation_mode
+      && AnnotatedNullability.can_be_considered_for_provisional_annotation nullability
+    then AnnotatedNullability.ProvisionallyNullable (ProvisionalAnnotation.Method proc_name)
+    else nullability
+  in
+  final_nullability
 
 
 (* Given annotations for method signature, extract nullability information
    for return type and params *)
-let extract_nullability ~proc_name ~is_callee_in_trust_list ~nullsafe_mode ~is_third_party
-    ~is_provisional_annotation_mode ret_type ret_annotations param_annotated_types =
-  let params_nullability =
-    List.mapi param_annotated_types ~f:(fun param_num (param_type, param_annotations) ->
-        nullability_for_param ~proc_name ~param_num ~is_callee_in_trust_list ~nullsafe_mode
-          ~is_third_party ~is_provisional_annotation_mode param_type param_annotations )
-  in
+let extract_for_ret ~proc_name ~is_callee_in_trust_list ~nullsafe_mode ~is_third_party
+    ~is_provisional_annotation_mode ret_type ret_annotations param_info =
   let has_propagates_nullable_in_param =
-    List.exists params_nullability ~f:(function
-      | AnnotatedNullability.Nullable AnnotatedNullability.AnnotatedPropagatesNullable ->
-          true
-      | _ ->
-          false )
+    List.exists param_info ~f:(fun {param_annotated_type= {nullability}} ->
+        match nullability with
+        | AnnotatedNullability.Nullable AnnotatedNullability.AnnotatedPropagatesNullable ->
+            true
+        | _ ->
+            false )
   in
   let return_nullability =
     nullability_for_return ~proc_name ~is_callee_in_trust_list ~nullsafe_mode ~is_third_party
       ret_type ~is_provisional_annotation_mode ret_annotations ~has_propagates_nullable_in_param
   in
-  (return_nullability, params_nullability)
+  { ret_annotation_deprecated= ret_annotations
+  ; ret_annotated_type= AnnotatedType.{nullability= return_nullability; typ= ret_type} }
+
+
+let get_param_nullability ~is_callee_in_trust_list ~nullsafe_mode ~is_third_party param_name
+    param_type param_annotations =
+  if Mangled.is_this param_name then AnnotatedNullability.StrictNonnull ImplicitThis
+  else
+    AnnotatedNullability.of_type_and_annotation ~is_callee_in_trust_list ~nullsafe_mode
+      ~is_third_party param_type param_annotations
+
+
+(* When getting param indices, we might need to offset to account for synthetic virtual params *)
+let get_param_index_offset param_nullabilities =
+  match param_nullabilities with
+  | AnnotatedNullability.StrictNonnull ImplicitThis :: _ ->
+      1
+  | _ ->
+      0
+
+
+let correct_by_provisional_annotations ~proc_name param_nullabilities =
+  let index_offset = get_param_index_offset param_nullabilities in
+  List.mapi param_nullabilities ~f:(fun param_index nullability ->
+      if AnnotatedNullability.can_be_considered_for_provisional_annotation nullability then
+        AnnotatedNullability.ProvisionallyNullable
+          (ProvisionalAnnotation.Param {method_info= proc_name; num= param_index - index_offset})
+      else nullability )
+
+
+let extract_for_params ~proc_name ~is_callee_in_trust_list ~nullsafe_mode ~is_third_party
+    ~is_provisional_annotation_mode param_info =
+  let param_nullability =
+    List.map param_info ~f:(fun (param_name, typ, annotations) ->
+        get_param_nullability ~is_callee_in_trust_list ~nullsafe_mode ~is_third_party param_name typ
+          annotations )
+  in
+  let corrected_nullability =
+    if is_provisional_annotation_mode then
+      correct_by_provisional_annotations ~proc_name param_nullability
+    else param_nullability
+  in
+  List.map2_exn param_info corrected_nullability
+    ~f:(fun (mangled, typ, param_annotation_deprecated) nullability ->
+      {param_annotation_deprecated; mangled; param_annotated_type= AnnotatedType.{nullability; typ}} )
 
 
 let get_impl ~is_callee_in_trust_list ~nullsafe_mode ~is_provisional_annotation_mode
@@ -112,24 +143,17 @@ let get_impl ~is_callee_in_trust_list ~nullsafe_mode ~is_provisional_annotation_
       (ThirdPartyAnnotationGlobalRepo.get_repo ())
       proc_name
   in
-  let params_with_annotations = ProcAttributes.get_annotated_formals proc_attributes in
-  let param_annotated_types =
-    List.map params_with_annotations ~f:(fun ((_, typ), annotations) -> (typ, annotations))
-  in
-  let return_nullability, params_nullability =
-    extract_nullability ~proc_name ~is_callee_in_trust_list ~nullsafe_mode ~is_third_party
-      ~is_provisional_annotation_mode ret_type ret_annotation param_annotated_types
-  in
-  let ret =
-    { ret_annotation_deprecated= ret_annotation
-    ; ret_annotated_type= AnnotatedType.{nullability= return_nullability; typ= ret_type} }
+  let param_info =
+    ProcAttributes.get_annotated_formals proc_attributes
+    |> List.map ~f:(fun ((a, b), c) -> (a, b, c))
   in
   let params =
-    List.map2_exn params_with_annotations params_nullability
-      ~f:(fun ((mangled, typ), param_annotation_deprecated) nullability ->
-        { param_annotation_deprecated
-        ; mangled
-        ; param_annotated_type= AnnotatedType.{nullability; typ} } )
+    extract_for_params ~proc_name ~is_callee_in_trust_list ~nullsafe_mode ~is_third_party
+      ~is_provisional_annotation_mode param_info
+  in
+  let ret =
+    extract_for_ret ~proc_name ~is_callee_in_trust_list ~nullsafe_mode ~is_third_party
+      ~is_provisional_annotation_mode ret_type ret_annotation params
   in
   let kind = if is_third_party then ThirdParty Unregistered else FirstParty in
   {nullsafe_mode; kind; ret; params}

@@ -91,6 +91,7 @@ class C {
 ## List of Issue Types
 
 The following issue types are reported by this checker:
+- [ERADICATE_ANNOTATION_GRAPH](/docs/next/all-issue-types#eradicate_annotation_graph)
 - [ERADICATE_BAD_NESTED_CLASS_ANNOTATION](/docs/next/all-issue-types#eradicate_bad_nested_class_annotation)
 - [ERADICATE_CONDITION_REDUNDANT](/docs/next/all-issue-types#eradicate_condition_redundant)
 - [ERADICATE_FIELD_NOT_INITIALIZED](/docs/next/all-issue-types#eradicate_field_not_initialized)

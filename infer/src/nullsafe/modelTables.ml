@@ -786,6 +786,7 @@ let field_nullability =
          This is also on par with our policy for arrays and other containers, which are considered
          non-nullable.
       *) )
+  ; ("android.net.wifi.WifiConfiguration.SSID", o)
   ; ("android.util.Pair.second", o)
   ; ("android.util.Patterns.DOMAIN_NAME", o)
   ; ("android.util.Patterns.EMAIL_ADDRESS", o)

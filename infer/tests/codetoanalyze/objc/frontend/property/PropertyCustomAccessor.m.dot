@@ -18,7 +18,7 @@ digraph cfg {
 "isOpaque#ASDisplayNode#instance.efbf8192c0bb59de353a9d71765d463c_2" [label="2: Exit ASDisplayNode.isOpaque \n  " color=yellow style=filled]
 	
 
-"isOpaque#ASDisplayNode#instance.efbf8192c0bb59de353a9d71765d463c_3" [label="3:  BinaryOperatorStmt: Node \n   n$2=*&self:ASDisplayNode* [line 12, column 41]\n  n$3=*n$2._opaque:_Bool [line 12, column 41]\n  *&return:_Bool=n$3 [line 12, column 41]\n " shape="box"]
+"isOpaque#ASDisplayNode#instance.efbf8192c0bb59de353a9d71765d463c_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:ASDisplayNode* [line 12, column 41]\n  n$1=*n$0._opaque:_Bool [line 12, column 41]\n  *&return:_Bool=n$1 [line 12, column 41]\n " shape="box"]
 	
 
 	 "isOpaque#ASDisplayNode#instance.efbf8192c0bb59de353a9d71765d463c_3" -> "isOpaque#ASDisplayNode#instance.efbf8192c0bb59de353a9d71765d463c_2" ;
@@ -29,7 +29,7 @@ digraph cfg {
 "setOpaque:#ASDisplayNode#instance.f5e64d1703bd4ab716e8ec5de489150d_2" [label="2: Exit ASDisplayNode.setOpaque: \n  " color=yellow style=filled]
 	
 
-"setOpaque:#ASDisplayNode#instance.f5e64d1703bd4ab716e8ec5de489150d_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:ASDisplayNode* [line 12, column 41]\n  n$1=*&opaque:_Bool [line 12, column 41]\n  *n$0._opaque:_Bool=n$1 [line 12, column 41]\n " shape="box"]
+"setOpaque:#ASDisplayNode#instance.f5e64d1703bd4ab716e8ec5de489150d_3" [label="3:  BinaryOperatorStmt: Node \n   n$2=*&self:ASDisplayNode* [line 12, column 41]\n  n$3=*&opaque:_Bool [line 12, column 41]\n  *n$2._opaque:_Bool=n$3 [line 12, column 41]\n " shape="box"]
 	
 
 	 "setOpaque:#ASDisplayNode#instance.f5e64d1703bd4ab716e8ec5de489150d_3" -> "setOpaque:#ASDisplayNode#instance.f5e64d1703bd4ab716e8ec5de489150d_2" ;

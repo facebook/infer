@@ -20,6 +20,8 @@ type model =
   -> AbductiveDomain.t
   -> ExecutionDomain.t list PulseOperations.access_result
 
+let ok_continue post = Ok [ExecutionDomain.ContinueProgram post]
+
 let cpp_model_namespace = QualifiedCppName.of_list ["__infer_pulse_model"]
 
 module Misc = struct
@@ -54,7 +56,7 @@ module Misc = struct
     let i = IntLit.of_int64 i64 in
     let ret_addr = AbstractValue.Constants.get_int i in
     let astate = PulseArithmetic.and_eq_int ret_addr i astate in
-    PulseOperations.write_id ret_id (ret_addr, []) astate |> PulseOperations.ok_continue
+    PulseOperations.write_id ret_id (ret_addr, []) astate |> ok_continue
 
 
   let return_positive ~desc : model =
@@ -64,7 +66,7 @@ module Misc = struct
     let ret_value = (ret_addr, [event]) in
     PulseOperations.write_id ret_id ret_value astate
     |> PulseArithmetic.and_positive ret_addr
-    |> PulseOperations.ok_continue
+    |> ok_continue
 
   let cpp_new ~desc : model =
    fun _ ~callee_procname location ~ret:(ret_id, _) astate ->
@@ -80,7 +82,7 @@ module Misc = struct
    fun _ ~callee_procname:_ _location ~ret:(ret_id, _) astate ->
     let ret_addr = AbstractValue.mk_fresh () in
     let astate = PulseArithmetic.and_nonnegative ret_addr astate in
-    PulseOperations.write_id ret_id (ret_addr, []) astate |> PulseOperations.ok_continue
+    PulseOperations.write_id ret_id (ret_addr, []) astate |> ok_continue
 
 
   (** Pretend the function call is a call to an "unknown" function, i.e. a function for which we
@@ -109,12 +111,12 @@ module Misc = struct
   let nondet ~fn_name : model =
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model fn_name; location; in_call= []} in
-    PulseOperations.havoc_id ret_id [event] astate |> PulseOperations.ok_continue
+    PulseOperations.havoc_id ret_id [event] astate |> ok_continue
 
 
   let id_first_arg arg_access_hist : model =
    fun _ ~callee_procname:_ _ ~ret astate ->
-    PulseOperations.write_id (fst ret) arg_access_hist astate |> PulseOperations.ok_continue
+    PulseOperations.write_id (fst ret) arg_access_hist astate |> ok_continue
 
 
 let check_memory_leak_after_free callee_procname location deleted_addr live_addresses_before_free astates=
@@ -135,28 +137,28 @@ let free_or_delete operation deleted_access : model =
     (* NOTE: we could introduce a case-split explicitly on =0 vs ≠0 but instead only act on what we
        currently know about the value. This is purely to avoid contributing to path explosion. *)
     (* freeing 0 is a no-op *)
-    if PulseArithmetic.is_known_zero astate (fst deleted_access) then
-      PulseOperations.ok_continue astate
-    else (
+    if PulseArithmetic.is_known_zero astate (fst deleted_access) then ok_continue astate
+    else
+      (
         if not Config.pulse_isl then
-        let astate = PulseArithmetic.and_positive (fst deleted_access) astate in
-      let invalidation =
-        match operation with `Free -> Invalidation.CFree | `Delete -> Invalidation.CppDelete
-      in
-      let+ astate = PulseOperations.invalidate location invalidation deleted_access astate in
-      [ExecutionDomain.ContinueProgram astate]
-     else
-        let live_addresses_before_free = BaseDomain.reachable_addresses_from Var.appears_in_source_code (astate.AbductiveDomain.post :> BaseDomain.t) in
-        let invalidation =
-          match operation with `Free -> Invalidation.CFree | `Delete -> Invalidation.CppDelete
-        in
-        let* astates = PulseOperations.invalidate_biad callee_procname location invalidation ~null_noop:true deleted_access astate in
-        let+ () = check_memory_leak_after_free callee_procname location (fst deleted_access) live_addresses_before_free astates in
-        List.map astates ~f:(fun astate ->
-             let modified_vars = BaseDomain.reachable_vars_from (fst deleted_access) (fun v -> Var.Set.mem v astate.AbductiveDomain.imm_params) (astate.AbductiveDomain.post :> BaseDomain.t) in
-             let astate = Var.Set.fold (fun v astate -> AbductiveDomain.remove_imm_param v astate) modified_vars astate in
-             ExecutionDomain.ContinueProgram astate)
-     )
+          let astate = PulseArithmetic.and_positive (fst deleted_access) astate in
+          let invalidation =
+            match operation with `Free -> Invalidation.CFree | `Delete -> Invalidation.CppDelete
+          in
+          let+ astate = PulseOperations.invalidate location invalidation deleted_access astate in
+          [ExecutionDomain.ContinueProgram astate]
+        else
+          let live_addresses_before_free = BaseDomain.reachable_addresses_from Var.appears_in_source_code (astate.AbductiveDomain.post :> BaseDomain.t) in
+          let invalidation =
+            match operation with `Free -> Invalidation.CFree | `Delete -> Invalidation.CppDelete
+          in
+          let* astates = PulseOperations.invalidate_biad callee_procname location invalidation ~null_noop:true deleted_access astate in
+          let+ () = check_memory_leak_after_free callee_procname location (fst deleted_access) live_addresses_before_free astates in
+          List.map astates ~f:(fun astate ->
+              let modified_vars = BaseDomain.reachable_vars_from (fst deleted_access) (fun v -> Var.Set.mem v astate.AbductiveDomain.imm_params) (astate.AbductiveDomain.post :> BaseDomain.t) in
+              let astate = Var.Set.fold (fun v astate -> AbductiveDomain.remove_imm_param v astate) modified_vars astate in
+              ExecutionDomain.ContinueProgram astate)
+      )
      
 end
 
@@ -190,14 +192,14 @@ module C = struct
     let astate = PulseOperations.write_id ret_id ret_value astate in
     PulseOperations.allocate callee_procname location ret_value astate
     |> PulseArithmetic.and_positive ret_addr
-    |> PulseOperations.ok_continue
+    |> ok_continue
 end
 
 module ObjCCoreFoundation = struct
   let cf_bridging_release access : model =
    fun _ ~callee_procname:_ _ ~ret:(ret_id, _) astate ->
     let astate = PulseOperations.write_id ret_id access astate in
-    PulseOperations.remove_allocation_attr (fst access) astate |> PulseOperations.ok_continue
+    PulseOperations.remove_allocation_attr (fst access) astate |> ok_continue
 end
 
 module ObjC = struct
@@ -215,10 +217,10 @@ module ObjC = struct
     let astate = PulseOperations.write_id ret_id ret_value astate in
     PulseOperations.add_dynamic_type dynamic_type ret_addr astate
     |> PulseArithmetic.and_positive ret_addr
-    |> PulseOperations.ok_continue
+    |> ok_continue
 end
 
-module FollyOptional = struct
+module Optional = struct
   let internal_value = Fieldname.make (Typ.CStruct cpp_model_namespace) "backing_value"
 
   let internal_value_access = HilExp.Access.FieldAccess internal_value
@@ -266,11 +268,11 @@ module FollyOptional = struct
             ExecutionDomain.ContinueProgram astate)
 
 
-  let assign_value this value ~desc : model =
+  let assign_value this _value ~desc : model =
    fun _ ~callee_procname:_ location ~ret:_ astate ->
-    let* astate, value_copy = PulseOperations.shallow_copy location value astate in
-    let+ astate, value_deref = write_value location this ~value:value_copy ~desc astate in
-    let astate = PulseArithmetic.and_positive (fst value_deref) astate in
+    (* TODO: call the copy constructor of a value *)
+    let+ astate, value = assign_value_fresh location this ~desc astate in
+    let astate = PulseArithmetic.and_positive (fst value) astate in
     [ExecutionDomain.ContinueProgram astate]
 
 
@@ -281,28 +283,27 @@ module FollyOptional = struct
     [ExecutionDomain.ContinueProgram astate]
 
 
-  let emplace optional : model =
+  let emplace optional ~desc : model =
    fun _ ~callee_procname:_ location ~ret:_ astate ->
-    let+ astate, _ =
-      assign_value_fresh location optional ~desc:"folly::Optional::emplace()" astate
-    in
+    let+ astate, _ = assign_value_fresh location optional ~desc astate in
     [ExecutionDomain.ContinueProgram astate]
 
 
-  let value optional : model =
+  let value optional ~desc : model =
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
-    let event = ValueHistory.Call {f= Model "folly::Optional::value()"; location; in_call= []} in
-    let* astate, (value_addr, value_hist) = to_internal_value_deref location optional astate in
-    PulseOperations.write_id ret_id (value_addr, event :: value_hist) astate
-    |> PulseOperations.ok_continue
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+    let* astate, ((value_addr, value_hist) as value) =
+      to_internal_value_deref location optional astate
+    in
+    (* Check dereference to show an error at the callsite of `value()` *)
+    let* astate, _ = PulseOperations.eval_access location value Dereference astate in
+    PulseOperations.write_id ret_id (value_addr, event :: value_hist) astate |> ok_continue
 
 
-  let has_value optional : model =
+  let has_value optional ~desc : model =
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let ret_addr = AbstractValue.mk_fresh () in
-    let ret_value =
-      (ret_addr, [ValueHistory.Allocation {f= Model "folly::Optional::has_value()"; location}])
-    in
+    let ret_value = (ret_addr, [ValueHistory.Allocation {f= Model desc; location}]) in
     let+ astate, (value_addr, _) = to_internal_value_deref location optional astate in
     let astate = PulseOperations.write_id ret_id ret_value astate in
     let astate_non_empty = PulseArithmetic.and_positive value_addr astate in
@@ -312,9 +313,9 @@ module FollyOptional = struct
     [ExecutionDomain.ContinueProgram astate_false; ExecutionDomain.ContinueProgram astate_true]
 
 
-  let value_or optional default : model =
+  let value_or optional default ~desc : model =
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
-    let event = ValueHistory.Call {f= Model "folly::Optional::value_or()"; location; in_call= []} in
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let* astate, value_addr = to_internal_value_deref location optional astate in
     let astate_non_empty = PulseArithmetic.and_positive (fst value_addr) astate in
     let* astate_non_empty, value =
@@ -342,7 +343,7 @@ module Cplusplus = struct
         PulseOperations.write_id ret_id (address, event :: hist) astate
     | _ ->
         PulseOperations.havoc_id ret_id [event] astate )
-    |> PulseOperations.ok_continue
+    |> ok_continue
 end
 
 module StdAtomicInteger = struct
@@ -533,7 +534,7 @@ end
 module StdFunction = struct
   let operator_call ProcnameDispatcher.Call.FuncArg.{arg_payload= lambda_ptr_hist; typ} actuals :
       model =
-   fun {analyze_dependency; proc_desc} ~callee_procname:_ location ~ret astate ->
+   fun {analyze_dependency; proc_desc; err_log} ~callee_procname:_ location ~ret astate ->
     let havoc_ret (ret_id, _) astate =
       let event = ValueHistory.Call {f= Model "std::function::operator()"; location; in_call= []} in
       [PulseOperations.havoc_id ret_id [event] astate]
@@ -545,14 +546,16 @@ module StdFunction = struct
     match AddressAttributes.get_closure_proc_name lambda astate with
     | None ->
         (* we don't know what proc name this lambda resolves to *)
-        Ok (havoc_ret ret astate |> List.map ~f:ExecutionDomain.continue)
+        Ok
+          ( havoc_ret ret astate
+          |> List.map ~f:(fun astate -> ExecutionDomain.ContinueProgram astate) )
     | Some callee_proc_name ->
         let actuals =
           (lambda_ptr_hist, typ)
           :: List.map actuals ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
                  (arg_payload, typ) )
         in
-        PulseOperations.call ~caller_proc_desc:proc_desc
+        PulseOperations.call ~caller_proc_desc:proc_desc err_log
           ~callee_data:(analyze_dependency callee_proc_name)
           location callee_proc_name ~ret ~actuals ~formals_opt:None astate
 
@@ -861,7 +864,7 @@ module StdVector = struct
     if AddressAttributes.is_std_vector_reserved (fst vector) astate then
       (* assume that any call to [push_back] is ok after one called [reserve] on the same vector
          (a perfect analysis would also make sure we don't exceed the reserved size) *)
-      PulseOperations.ok_continue astate
+      ok_continue astate
     else
       (* simulate a re-allocation of the underlying array every time an element is added *)
       reallocate_internal_array [crumb] vector PushBack location astate
@@ -1000,33 +1003,76 @@ module ProcNameDispatcher = struct
           &++> Misc.skip "folly::SocketAddress's destructor is modelled as skip"
         ; -"folly" &:: "Optional" &:: "Optional" <>$ capt_arg_payload
           $+ any_arg_of_typ (-"folly" &:: "None")
-          $--> FollyOptional.assign_none ~desc:"folly::Optional::Optional(=None)"
+          $--> Optional.assign_none ~desc:"folly::Optional::Optional(=None)"
         ; -"folly" &:: "Optional" &:: "Optional" <>$ capt_arg_payload
-          $--> FollyOptional.assign_none ~desc:"folly::Optional::Optional()"
+          $--> Optional.assign_none ~desc:"folly::Optional::Optional()"
         ; -"folly" &:: "Optional" &:: "Optional" <>$ capt_arg_payload
           $+ capt_arg_payload_of_typ (-"folly" &:: "Optional")
-          $--> FollyOptional.assign_optional_value
+          $--> Optional.assign_optional_value
                  ~desc:"folly::Optional::Optional(folly::Optional<Value> arg)"
         ; -"folly" &:: "Optional" &:: "Optional" <>$ capt_arg_payload $+ capt_arg_payload
-          $+...$--> FollyOptional.assign_value ~desc:"folly::Optional::Optional(Value arg)"
+          $+...$--> Optional.assign_value ~desc:"folly::Optional::Optional(Value arg)"
         ; -"folly" &:: "Optional" &:: "assign" <>$ capt_arg_payload
           $+ any_arg_of_typ (-"folly" &:: "None")
-          $--> FollyOptional.assign_none ~desc:"folly::Optional::assign(=None)"
+          $--> Optional.assign_none ~desc:"folly::Optional::assign(=None)"
         ; -"folly" &:: "Optional" &:: "assign" <>$ capt_arg_payload
           $+ capt_arg_payload_of_typ (-"folly" &:: "Optional")
-          $--> FollyOptional.assign_optional_value
+          $--> Optional.assign_optional_value
                  ~desc:"folly::Optional::assign(folly::Optional<Value> arg)"
         ; -"folly" &:: "Optional" &:: "assign" <>$ capt_arg_payload $+ capt_arg_payload
-          $+...$--> FollyOptional.assign_value ~desc:"folly::Optional::assign(Value arg)"
-        ; -"folly" &:: "Optional" &:: "emplace<>" $ capt_arg_payload $+...$--> FollyOptional.emplace
-        ; -"folly" &:: "Optional" &:: "emplace" $ capt_arg_payload $+...$--> FollyOptional.emplace
+          $+...$--> Optional.assign_value ~desc:"folly::Optional::assign(Value arg)"
+        ; -"folly" &:: "Optional" &:: "emplace<>" $ capt_arg_payload
+          $+...$--> Optional.emplace ~desc:"folly::Optional::emplace()"
+        ; -"folly" &:: "Optional" &:: "emplace" $ capt_arg_payload
+          $+...$--> Optional.emplace ~desc:"folly::Optional::emplace()"
         ; -"folly" &:: "Optional" &:: "has_value" <>$ capt_arg_payload
-          $+...$--> FollyOptional.has_value
+          $+...$--> Optional.has_value ~desc:"folly::Optional::has_value()"
         ; -"folly" &:: "Optional" &:: "reset" <>$ capt_arg_payload
-          $+...$--> FollyOptional.assign_none ~desc:"folly::Optional::reset()"
-        ; -"folly" &:: "Optional" &:: "value" <>$ capt_arg_payload $+...$--> FollyOptional.value
+          $+...$--> Optional.assign_none ~desc:"folly::Optional::reset()"
+        ; -"folly" &:: "Optional" &:: "value" <>$ capt_arg_payload
+          $+...$--> Optional.value ~desc:"folly::Optional::value()"
         ; -"folly" &:: "Optional" &:: "value_or" $ capt_arg_payload $+ capt_arg_payload
-          $+...$--> FollyOptional.value_or
+          $+...$--> Optional.value_or ~desc:"folly::Optional::value_or()"
+          (* std::optional *)
+        ; -"std" &:: "optional" &:: "optional" $ capt_arg_payload
+          $+ any_arg_of_typ (-"std" &:: "nullopt_t")
+          $--> Optional.assign_none ~desc:"std::optional::optional(=nullopt)"
+        ; -"std" &:: "optional" &:: "optional" $ capt_arg_payload
+          $--> Optional.assign_none ~desc:"std::optional::optional()"
+        ; -"std" &:: "optional" &:: "optional" $ capt_arg_payload
+          $+ capt_arg_payload_of_typ (-"std" &:: "optional")
+          $--> Optional.assign_optional_value
+                 ~desc:"std::optional::optional(std::optional<Value> arg)"
+        ; -"std" &:: "optional" &:: "optional" $ capt_arg_payload $+ capt_arg_payload
+          $+...$--> Optional.assign_value ~desc:"std::optional::optional(Value arg)"
+        ; -"std" &:: "optional" &:: "operator=" <>$ capt_arg_payload
+          $+ any_arg_of_typ (-"std" &:: "nullopt_t")
+          $--> Optional.assign_none ~desc:"std::optional::operator=(None)"
+        ; -"std" &:: "optional" &:: "operator=" <>$ capt_arg_payload
+          $+ capt_arg_payload_of_typ (-"std" &:: "optional")
+          $--> Optional.assign_optional_value
+                 ~desc:"std::optional::operator=(std::optional<Value> arg)"
+        ; -"std" &:: "optional" &:: "operator=" <>$ capt_arg_payload $+ capt_arg_payload
+          $+...$--> Optional.assign_value ~desc:"std::optional::operator=(Value arg)"
+        ; -"std" &:: "optional" &:: "emplace<>" $ capt_arg_payload
+          $+...$--> Optional.emplace ~desc:"std::optional::emplace()"
+        ; -"std" &:: "optional" &:: "emplace" $ capt_arg_payload
+          $+...$--> Optional.emplace ~desc:"std::optional::emplace()"
+        ; -"std" &:: "optional" &:: "has_value" <>$ capt_arg_payload
+          $+...$--> Optional.has_value ~desc:"std::optional::has_value()"
+        ; -"std" &:: "optional" &:: "operator_bool" <>$ capt_arg_payload
+          $+...$--> Optional.has_value ~desc:"std::optional::operator_bool()"
+        ; -"std" &:: "optional" &:: "reset" <>$ capt_arg_payload
+          $+...$--> Optional.assign_none ~desc:"std::optional::reset()"
+        ; -"std" &:: "optional" &:: "value" <>$ capt_arg_payload
+          $+...$--> Optional.value ~desc:"std::optional::value()"
+        ; -"std" &:: "optional" &:: "operator*" <>$ capt_arg_payload
+          $+...$--> Optional.value ~desc:"std::optional::operator*()"
+        ; -"std" &:: "optional" &:: "operator->" <>$ capt_arg_payload
+          $+...$--> Optional.value ~desc:"std::optional::operator->()"
+        ; -"std" &:: "optional" &:: "value_or" $ capt_arg_payload $+ capt_arg_payload
+          $+...$--> Optional.value_or ~desc:"std::optional::value_or()"
+          (* end std::optional *)
         ; -"std" &:: "basic_string" &:: "data" <>$ capt_arg_payload $--> StdBasicString.data
         ; -"std" &:: "basic_string" &:: "~basic_string" <>$ capt_arg_payload
           $--> StdBasicString.destructor

@@ -51,14 +51,9 @@ let command ~summary ?readme param =
   let report main () =
     try main () |> Report.status
     with exn ->
-      let bt =
-        match exn with
-        | Invariant.Violation (_, bt, _, _) -> bt
-        | Replay (_, bt, _) -> bt
-        | _ -> Printexc.get_raw_backtrace ()
-      in
+      let bt = Printexc.get_raw_backtrace () in
       let rec status_of_exn = function
-        | Invariant.Violation (exn, _, _, _) | Replay (exn, _, _) ->
+        | Invariant.Violation (exn, _, _) | Replay (exn, _) ->
             status_of_exn exn
         | Frontend.Invalid_llvm msg -> Report.InvalidInput msg
         | Unimplemented msg -> Report.Unimplemented msg
@@ -80,6 +75,14 @@ let unmarshal file () =
     ~f:(fun ic -> (Marshal.from_channel ic : Llair.program))
     file
 
+let entry_points =
+  let void_to_void =
+    Llair.Typ.pointer
+      ~elt:(Llair.Typ.function_ ~args:IArray.empty ~return:None)
+  in
+  List.map (Config.find_list "entry-points") ~f:(fun name ->
+      Llair.Function.mk void_to_void name )
+
 let used_globals pgm preanalyze : Domain_used_globals.r =
   if preanalyze then
     let summary_table =
@@ -87,16 +90,16 @@ let used_globals pgm preanalyze : Domain_used_globals.r =
         { bound= 1
         ; skip_throw= false
         ; function_summaries= true
-        ; entry_points= Config.find_list "entry-points"
-        ; globals= Declared Llair.Reg.Set.empty }
+        ; entry_points
+        ; globals= Declared Llair.Global.Set.empty }
         pgm
     in
     Per_function
-      (Llair.Reg.Map.map summary_table ~f:Llair.Reg.Set.union_list)
+      (Llair.Function.Map.map summary_table ~f:Llair.Global.Set.union_list)
   else
     Declared
-      (Llair.Reg.Set.of_iter
-         (Iter.map ~f:(fun g -> g.reg) (IArray.to_iter pgm.globals)))
+      (Llair.Global.Set.of_iter
+         (Iter.map ~f:(fun g -> g.name) (IArray.to_iter pgm.globals)))
 
 let analyze =
   let%map_open bound =
@@ -133,7 +136,6 @@ let analyze =
   fun program () ->
     let pgm = program () in
     let globals = used_globals pgm preanalyze_globals in
-    let entry_points = Config.find_list "entry-points" in
     let skip_throw = not exceptions in
     Domain_sh.simplify_states := not no_simplify_states ;
     Timer.enabled := stats ;
@@ -224,7 +226,9 @@ let llvm_grp =
        textual (.ll) form; or of the form @<argsfile>, where <argsfile> \
        names a file containing one <input> per line."
     in
-    let param = translate_inputs >>| fun _ () -> Report.Ok in
+    let param =
+      translate_inputs >*> Command.Param.return (fun _ -> Report.Ok)
+    in
     command ~summary ~readme param
   in
   let disassemble_cmd =
@@ -276,6 +280,8 @@ let readme () =
 
 ;;
 Printexc.record_backtrace Version.debug
+;;
+Stdlib.Sys.catch_break true
 
 ;;
 Command.run ~version:Version.version ~build_info:Version.build_info

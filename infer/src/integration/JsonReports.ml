@@ -28,19 +28,31 @@ let compute_key (bug_type : string) (proc_name : Procname.t) (filename : string)
   String.concat ~sep:"|" [base_filename; simple_procedure_name; bug_type]
 
 
-let compute_hash ~(severity : string) ~(bug_type : string) ~(proc_name : Procname.t)
-    ~(file : string) ~(qualifier : string) =
-  let base_filename = Filename.basename file in
-  let hashable_procedure_name = Procname.hashable_name proc_name in
-  let location_independent_qualifier =
-    (* Removing the line,column, and infer temporary variable (e.g., n$67) information from the
-       error message as well as the index of the annonymmous class to make the hash invariant
-       when moving the source code in the file *)
-    Str.global_replace (Str.regexp "\\(line \\|column \\|parameter \\|\\$\\)[0-9]+") "$_" qualifier
-  in
-  Utils.better_hash
-    (severity, bug_type, hashable_procedure_name, base_filename, location_independent_qualifier)
-  |> Caml.Digest.to_hex
+let compute_hash =
+  let num_regexp = Re.Str.regexp "\\(:\\)[0-9]+" in
+  let qualifier_regexp = Re.Str.regexp "\\(line \\|column \\|:\\|parameter \\|\\$\\)[0-9]+" in
+  fun ~(severity : string) ~(bug_type : string) ~(proc_name : Procname.t) ~(file : string)
+      ~(qualifier : string) ->
+    let base_filename = Filename.basename file in
+    let hashable_procedure_name = Procname.hashable_name proc_name in
+    let location_independent_proc_name =
+      Re.Str.global_replace num_regexp "$_" hashable_procedure_name
+    in
+    let location_independent_qualifier =
+      (* Removing the line,column, line and column in lambda's name
+         (e.g. test::lambda.cpp:10:15::operator()),
+         and infer temporary variable (e.g., n$67) information from the
+         error message as well as the index of the annonymmous class to make the hash invariant
+         when moving the source code in the file *)
+      Re.Str.global_replace qualifier_regexp "$_" qualifier
+    in
+    Utils.better_hash
+      ( severity
+      , bug_type
+      , location_independent_proc_name
+      , base_filename
+      , location_independent_qualifier )
+    |> Caml.Digest.to_hex
 
 
 let loc_trace_to_jsonbug_record trace_list ekind =

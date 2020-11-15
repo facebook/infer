@@ -10,7 +10,8 @@ module Tbl = String.Tbl
 
 let read filename =
   let tbl = Tbl.create () in
-  List.iter (Sexp.load_sexps filename) ~f:(fun sexp ->
+  let sexps = try Sexp.load_sexps filename with Sys_error _ -> [] in
+  List.iter sexps ~f:(fun sexp ->
       let {Report.name; entry} = Report.t_of_sexp sexp in
       match (Tbl.find_opt tbl name, entry) with
       | None, ProcessTimes ptimes -> Tbl.replace tbl name ([ptimes], [], [])
@@ -88,7 +89,8 @@ let add_status base_status status row =
     | _ -> {row with status= status :: row.status}
 
 let add_statuses base_status statuses row =
-  List.fold ~f:(add_status base_status) statuses row
+  let row = List.fold ~f:(add_status base_status) statuses row in
+  {row with status= List.sort ~cmp:Report.compare_status row.status}
 
 let ave_floats flts =
   assert (not (Iter.is_empty flts)) ;
@@ -270,7 +272,8 @@ let write_html ranges rows chan =
   pf "</style></head>\n" ;
   pf "<body style=\"background-color:#fdf6e3\">" ;
   pf
-    {|<table style="border-collapse: collapse"><tr>
+    {|<table style="border-collapse: collapse">
+        <tr>
           <th>Test</th>
           <th>elapsed<br>(sec)</th>
           <th>&Delta;<br></th>
@@ -292,8 +295,8 @@ let write_html ranges rows chan =
           <th>&Delta;%%<br></th>
           <th>Status</th>
           <th>&Delta;<br></th>
-        </tr>
-    |} ;
+        </tr>|} ;
+  pf "\n" ;
   Iter.iter rows ~f:(fun row ->
       let {name; times; times_deltas; gcs; gcs_deltas; status; status_deltas}
           =
@@ -354,7 +357,7 @@ let write_html ranges rows chan =
             List.iter ss ~f:(fun s -> Printf.fprintf ppf "%a" pf_status s) ;
             Printf.fprintf ppf "</td>\n"
       in
-      pf "<tr>" ;
+      pf "<tr>\n" ;
       pf "<td>%s</td>" name ;
       ( match (times, times_deltas) with
       | ( Some {etime; utime; stime}
@@ -467,7 +470,7 @@ let add_total rows =
     ; status_deltas= None }
   in
   let total =
-    Iter.fold rows init ~f:(fun total row ->
+    Iter.fold rows init ~f:(fun row total ->
         let times =
           match (total.times, row.times) with
           | Some total_times, Some row_times ->
@@ -526,11 +529,17 @@ let cmp x y =
   | Some _, None -> -1
   | None, Some _ -> 1
   | None, None -> (
-    match (x.times_deltas, y.times_deltas) with
-    | Some xtd, Some ytd -> Float.(compare (abs ytd.utime) (abs xtd.utime))
-    | Some _, None -> 1
-    | None, Some _ -> -1
-    | None, None -> String.compare x.name y.name )
+    match (List.hd x.status, List.hd y.status) with
+    | Some (Safe _ | Unsafe _ | Ok), Some (Safe _ | Unsafe _ | Ok) -> (
+      match (x.times_deltas, y.times_deltas) with
+      | Some xtd, Some ytd ->
+          Float.(compare (abs ytd.utime) (abs xtd.utime))
+      | Some _, None -> 1
+      | None, Some _ -> -1
+      | None, None -> String.compare x.name y.name )
+    | _, Some (Safe _ | Unsafe _ | Ok) -> -1
+    | Some (Safe _ | Unsafe _ | Ok), _ -> 1
+    | s, t -> Option.compare (Ord.opp Report.compare_status) s t )
 
 let filter rows =
   Iter.filter rows ~f:(fun {status} ->
@@ -555,10 +564,11 @@ let input_rows ?baseline current =
 let generate_html ?baseline current output =
   let rows = input_rows ?baseline current in
   let rows = Iter.map ~f:average rows in
-  let ranges = ranges rows in
   let rows = filter rows in
-  let rows = add_total rows in
+  let rows = Iter.persistent rows in
+  let ranges = ranges rows in
   let rows = Iter.sort ~cmp rows in
+  let rows = add_total rows in
   Out_channel.with_file output ~f:(write_html ranges rows)
 
 let html_cmd =
@@ -573,26 +583,29 @@ let html_cmd =
   in
   fun () -> generate_html ?baseline current output
 
-let write_status rows chan =
+let write_status ?baseline rows chan =
   let rows =
-    Iter.filter rows ~f:(fun row -> Option.is_some row.status_deltas)
+    if Option.is_none baseline then rows
+    else Iter.filter rows ~f:(fun row -> Option.is_some row.status_deltas)
   in
   let rows =
     Iter.sort ~cmp:(fun x y -> String.compare x.name y.name) rows
   in
-  let ppf = Format.formatter_of_out_channel chan in
+  let ppf = Format.str_formatter in
   Iter.iter rows ~f:(fun {name; status; status_deltas} ->
       Format.fprintf ppf "%s:\t%a%a@\n" name
         (List.pp ", " Report.pp_status)
         status
         (Option.pp "\t%a" (List.pp ", " Report.pp_status))
-        status_deltas )
+        status_deltas ) ;
+  Out_channel.output_string chan (Format.flush_str_formatter ())
 
 let generate_status ?baseline current output =
   let rows = input_rows ?baseline current in
   match output with
-  | None -> write_status rows Out_channel.stdout
-  | Some output -> Out_channel.with_file output ~f:(write_status rows)
+  | None -> write_status ?baseline rows Out_channel.stdout
+  | Some output ->
+      Out_channel.with_file output ~f:(write_status ?baseline rows)
 
 let status_cmd =
   let open Command.Let_syntax in

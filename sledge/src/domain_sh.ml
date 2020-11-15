@@ -21,9 +21,14 @@ let simplify q = if !simplify_states then Sh.simplify q else q
 
 let init globals =
   IArray.fold globals Sh.emp ~f:(fun global q ->
-      match global with
-      | {Llair.Global.reg; init= Some (seq, siz)} ->
-          let loc = Term.var (X.reg reg) in
+      match (global : Llair.GlobalDefn.t) with
+      | {name; init= Some seq} ->
+          let loc = X.global name in
+          let siz =
+            match Llair.Global.typ name with
+            | Pointer {elt} -> Llair.Typ.size_of elt
+            | _ -> violates Llair.GlobalDefn.invariant global
+          in
           let len = Term.integer (Z.of_int siz) in
           let seq = X.term seq in
           Sh.star q (Sh.seg {loc; bas= loc; len; siz= len; seq})
@@ -69,43 +74,34 @@ let exec_inst inst pre =
   |> Option.map ~f:simplify
 
 let exec_intrinsic ~skip_throw r i es q =
-  Exec.intrinsic ~skip_throw q (Option.map ~f:X.reg r) (X.reg i)
-    (List.map ~f:X.term es)
+  Exec.intrinsic ~skip_throw q (Option.map ~f:X.reg r)
+    (Llair.Function.name i) (List.map ~f:X.term es)
   |> Option.map ~f:(Option.map ~f:simplify)
 
-let term_eq_class_has_only_vars_in fvs ctx term =
-  [%Trace.call fun {pf} ->
-    pf "@[<v> fvs: @[%a@] @,ctx: @[%a@] @,term: @[%a@]@]" Var.Set.pp fvs
-      Context.pp ctx Term.pp term]
-  ;
-  let term_has_only_vars_in fvs term =
-    Var.Set.subset (Term.fv term) ~of_:fvs
-  in
-  let term_eq_class = Context.class_of ctx term in
-  List.exists ~f:(term_has_only_vars_in fvs) term_eq_class
-  |>
-  [%Trace.retn fun {pf} -> pf "%b"]
+let value_determined_by ctx us a =
+  List.exists (Context.class_of ctx a) ~f:(fun b ->
+      Term.Set.subset (Term.Set.of_iter (Term.atoms b)) ~of_:us )
 
-let garbage_collect (q : t) ~wrt =
+let garbage_collect (q : Sh.t) ~wrt =
   [%Trace.call fun {pf} -> pf "%a" pp q]
   ;
   (* only support DNF for now *)
   assert (List.is_empty q.djns) ;
   let rec all_reachable_vars previous current (q : t) =
-    if Var.Set.equal previous current then current
+    if Term.Set.equal previous current then current
     else
       let new_set =
         List.fold q.heap current ~f:(fun seg current ->
-            if term_eq_class_has_only_vars_in current q.ctx seg.loc then
+            if value_determined_by q.ctx current seg.loc then
               List.fold (Context.class_of q.ctx seg.seq) current
-                ~f:(fun e c -> Var.Set.union c (Term.fv e))
+                ~f:(fun e c ->
+                  Term.Set.union c (Term.Set.of_iter (Term.atoms e)) )
             else current )
       in
       all_reachable_vars current new_set q
   in
-  let r_vars = all_reachable_vars Var.Set.empty wrt q in
-  Sh.filter_heap q ~f:(fun seg ->
-      term_eq_class_has_only_vars_in r_vars q.ctx seg.loc )
+  let r_vars = all_reachable_vars Term.Set.empty wrt q in
+  Sh.filter_heap q ~f:(fun seg -> value_determined_by q.ctx r_vars seg.loc)
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp]
 
@@ -120,9 +116,13 @@ let localize_entry globals actuals formals freturn locals shadow pre entry =
   (* Add the formals here to do garbage collection and then get rid of them *)
   let formals_set = Var.Set.of_list formals in
   let freturn_locals = X.regs (Llair.Reg.Set.add_option freturn locals) in
-  let function_summary_pre =
-    garbage_collect entry ~wrt:(Var.Set.union formals_set (X.regs globals))
+  let wrt =
+    Term.Set.of_iter
+      (Iter.append
+         (Iter.map ~f:X.global (Llair.Global.Set.to_iter globals))
+         (Iter.map ~f:Term.var (List.to_iter formals)))
   in
+  let function_summary_pre = garbage_collect entry ~wrt in
   [%Trace.info "function summary pre %a" pp function_summary_pre] ;
   let foot = Sh.exists formals_set function_summary_pre in
   let xs, foot = Sh.bind_exists ~wrt:pre.Sh.us foot in
@@ -150,8 +150,8 @@ let call ~summaries ~globals ~actuals ~areturn ~formals ~freturn ~locals q =
       (List.pp ",@ " Llair.Exp.pp)
       (List.rev actuals)
       (List.pp ",@ " Llair.Reg.pp)
-      (List.rev formals) Llair.Reg.Set.pp locals Llair.Reg.Set.pp globals pp
-      q]
+      (List.rev formals) Llair.Reg.Set.pp locals Llair.Global.Set.pp globals
+      pp q]
   ;
   let actuals = List.map ~f:X.term actuals in
   let areturn = Option.map ~f:X.reg areturn in
@@ -210,7 +210,7 @@ let retn formals freturn {areturn; unshadow; frame} q =
   ;
   let formals = List.map ~f:X.reg formals in
   let freturn = Option.map ~f:X.reg freturn in
-  let q, shadows =
+  let q =
     match areturn with
     | Some areturn -> (
         (* reenter scope of areturn just before exiting scope of formals *)
@@ -218,16 +218,16 @@ let retn formals freturn {areturn; unshadow; frame} q =
         (* pass return value *)
         match freturn with
         | Some freturn ->
-            (Exec.move q (IArray.of_ (areturn, Term.var freturn)), unshadow)
-        | None -> (Exec.kill q areturn, unshadow) )
-    | None -> (q, unshadow)
+            Exec.move q (IArray.of_ (areturn, Term.var freturn))
+        | None -> Exec.kill q areturn )
+    | None -> q
   in
   (* exit scope of formals *)
   let q =
     Sh.exists (Var.Set.add_list formals (Var.Set.of_option freturn)) q
   in
   (* reinstate shadowed values of locals *)
-  let q = Sh.rename shadows q in
+  let q = Sh.rename unshadow q in
   (* reconjoin frame *)
   Sh.star frame q
   (* simplify *)
@@ -236,8 +236,8 @@ let retn formals freturn {areturn; unshadow; frame} q =
   [%Trace.retn fun {pf} -> pf "%a" pp]
 
 let resolve_callee lookup ptr q =
-  match Llair.Reg.of_exp ptr with
-  | Some callee -> (lookup (Llair.Reg.name callee), q)
+  match Llair.Function.of_exp ptr with
+  | Some callee -> (lookup callee, q)
   | None -> ([], q)
 
 let recursion_beyond_bound = `prune
@@ -250,11 +250,14 @@ let pp_summary fs {xs; foot; post} =
 
 let create_summary ~locals ~formals ~entry ~current:(post : Sh.t) =
   [%Trace.call fun {pf} ->
-    pf "formals %a@ entry: %a@ current: %a" Llair.Reg.Set.pp formals pp
-      entry pp post]
+    pf "formals %a@ entry: %a@ current: %a"
+      (List.pp ",@ " Llair.Reg.pp)
+      formals pp entry pp post]
   ;
+  let formals =
+    Var.Set.of_iter (Iter.map ~f:X.reg (List.to_iter formals))
+  in
   let locals = X.regs locals in
-  let formals = X.regs formals in
   let foot = Sh.exists locals entry in
   let foot, subst = Sh.freshen ~wrt:(Var.Set.union foot.us post.us) foot in
   let restore_formals q =
@@ -326,19 +329,19 @@ let%test_module _ =
     let seg_cycle = Sh.seg {loc= a; bas= b; len= n; siz= n; seq= main}
 
     let%expect_test _ =
-      pp (garbage_collect seg_main ~wrt:(Var.Set.of_list [])) ;
+      pp (garbage_collect seg_main ~wrt:(Term.Set.of_list [])) ;
       [%expect {| emp |}]
 
     let%expect_test _ =
       pp
         (garbage_collect (Sh.star seg_a seg_main)
-           ~wrt:(Var.Set.of_list [a_])) ;
+           ~wrt:(Term.Set.of_list [a])) ;
       [%expect {| %a_2 -[ %b_4, %n_3 )-> ⟨%n_3,%end_5⟩ |}]
 
     let%expect_test _ =
       pp
         (garbage_collect (Sh.star seg_a seg_main)
-           ~wrt:(Var.Set.of_list [main_])) ;
+           ~wrt:(Term.Set.of_list [main])) ;
       [%expect
         {|
           %main_1 -[ %b_4, %n_3 )-> ⟨%n_3,%a_2⟩
@@ -348,7 +351,7 @@ let%test_module _ =
       pp
         (garbage_collect
            (Sh.star seg_cycle seg_main)
-           ~wrt:(Var.Set.of_list [a_])) ;
+           ~wrt:(Term.Set.of_list [a])) ;
       [%expect
         {|
           %main_1 -[ %b_4, %n_3 )-> ⟨%n_3,%a_2⟩
