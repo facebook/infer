@@ -284,13 +284,13 @@ let write_html ranges rows chan =
           <th>system<br>(sec)</th>
           <th>&Delta;<br></th>
           <th>&Delta;%%<br></th>
-          <th>alloc<br>(MB)</th>
+          <th>alloc<br>(bytes)</th>
           <th>&Delta;<br></th>
           <th>&Delta;%%<br></th>
-          <th>promo<br>(MB)</th>
+          <th>promo<br>(bytes)</th>
           <th>&Delta;<br></th>
           <th>&Delta;%%<br></th>
-          <th>peak<br>(MB)</th>
+          <th>peak<br>(bytes)</th>
           <th>&Delta;<br></th>
           <th>&Delta;%%<br></th>
           <th>Status</th>
@@ -315,20 +315,41 @@ let write_html ranges rows chan =
            align=\"right\">%12.3f</td>\n"
           t
       in
+      let mem ppf w =
+        Printf.fprintf ppf
+          "<td style=\"border-left: 2px solid #eee8d5\"; \
+           align=\"right\">%s</td>\n"
+          Core_kernel.Byte_units.(to_string_short (of_megabytes w))
+      in
       let nondelta ppf t =
         Printf.fprintf ppf "<td align=\"right\">%12.3f</td>\n" t
+      in
+      let nondelta_mem ppf w =
+        Printf.fprintf ppf "<td align=\"right\">%s</td>\n"
+          Core_kernel.Byte_units.(to_string_short (of_megabytes w))
       in
       let delta max pct t ppf d =
         let r = 100. *. d /. t in
         Printf.fprintf ppf
           "<td align=\"right\" bgcolor=\"%s\">%12.3f</td>\n\
-           <td align=\"right\" bgcolor=\"%s\">%12.2f%%</td>\n"
-          (color max d) d (color pct r) r
+           <td align=\"right\" bgcolor=\"%s\">%12.0f%%</td>\n"
+          (color max d) d (color pct r)
+          (Base.Float.round_decimal ~decimal_digits:2 r)
+      in
+      let delta_mem max pct w ppf d =
+        let r = if Float.(d < 0.000001) then 0. else 100. *. d /. w in
+        Printf.fprintf ppf
+          "<td align=\"right\" bgcolor=\"%s\">%s</td>\n\
+           <td align=\"right\" bgcolor=\"%s\">%12.0f%%</td>\n"
+          (color max d)
+          Core_kernel.Byte_units.(to_string_short (of_megabytes d))
+          (color pct r)
+          (Base.Float.round_decimal ~decimal_digits:2 r)
       in
       let timed = delta ranges.max_time ranges.pct_time in
-      let allocd = delta ranges.max_alloc ranges.pct_alloc in
-      let promod = delta ranges.max_promo ranges.pct_promo in
-      let peakd = delta ranges.max_peak ranges.pct_peak in
+      let allocd = delta_mem ranges.max_alloc ranges.pct_alloc in
+      let promod = delta_mem ranges.max_promo ranges.pct_promo in
+      let peakd = delta_mem ranges.max_peak ranges.pct_peak in
       let pf_status ppf s =
         let status_to_string = Format.asprintf "%a" Report.pp_status in
         Printf.fprintf ppf "%s" (String.take 50 (status_to_string s))
@@ -391,21 +412,22 @@ let write_html ranges rows chan =
             { allocated= allocated_delta
             ; promoted= promoted_delta
             ; peak_size= peak_size_delta } ) ->
-          pf "%a%a%a%a%a%a" time allocated (allocd allocated)
-            allocated_delta time promoted (promod promoted) promoted_delta
-            time peak_size (peakd peak_size) peak_size_delta
+          pf "%a%a%a%a%a%a" mem allocated (allocd allocated) allocated_delta
+            mem promoted (promod promoted) promoted_delta mem peak_size
+            (peakd peak_size) peak_size_delta
       | Some {allocated; promoted; peak_size}, None ->
           pf
             "%a<td></td><td></td>\n\
              %a<td></td><td></td>\n\
              %a<td></td><td></td>\n"
-            time allocated time promoted time peak_size
+            mem allocated mem promoted mem peak_size
       | None, Some {allocated; promoted; peak_size} ->
           pf
             "<td style=\"border-left: 2px solid #eee8d5\";></td>%a<td></td>\n\
              <td style=\"border-left: 2px solid #eee8d5\";></td>%a<td></td>\n\
              <td style=\"border-left: 2px solid #eee8d5\";></td>%a<td></td>\n"
-            nondelta allocated nondelta promoted nondelta peak_size
+            nondelta_mem allocated nondelta_mem promoted nondelta_mem
+            peak_size
       | None, None ->
           pf
             "<td style=\"border-left: 2px solid \
