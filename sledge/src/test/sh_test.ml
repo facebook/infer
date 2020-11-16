@@ -58,8 +58,8 @@ let%test_module _ =
     let%expect_test _ =
       pp
         (star
-           (seg {loc= x; bas= x; len= !16; siz= !8; seq= a})
-           (seg {loc= x + !8; bas= x; len= !16; siz= !8; seq= b})) ;
+           (seg {loc= x; bas= x; len= !16; siz= !8; cnt= a})
+           (seg {loc= x + !8; bas= x; len= !16; siz= !8; cnt= b})) ;
       [%expect {|
           %x_6 -[)-> ⟨8,%a_1⟩^⟨8,%b_2⟩ |}]
 
