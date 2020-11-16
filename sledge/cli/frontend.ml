@@ -73,25 +73,34 @@ end)
 let scope_tbl : (int ref * int String.Tbl.t) ScopeTbl.t =
   ScopeTbl.create ~size:32_768 ()
 
+let realpath_tbl = String.Tbl.create ()
+
+let get_debug_loc_directory llv =
+  let+ dir = Llvm.get_debug_loc_directory llv in
+  if String.is_empty dir then dir
+  else
+    String.Tbl.find_or_add realpath_tbl dir ~default:(fun () ->
+        try Core.Filename.realpath dir with Unix.Unix_error _ -> dir )
+
 open struct
   open struct
     let loc_of_global g =
       Loc.mk
-        ?dir:(Llvm.get_debug_loc_directory g)
+        ?dir:(get_debug_loc_directory g)
         ?file:(Llvm.get_debug_loc_filename g)
         ~line:(Llvm.get_debug_loc_line g)
         ?col:None
 
     let loc_of_function f =
       Loc.mk
-        ?dir:(Llvm.get_debug_loc_directory f)
+        ?dir:(get_debug_loc_directory f)
         ?file:(Llvm.get_debug_loc_filename f)
         ~line:(Llvm.get_debug_loc_line f)
         ?col:None
 
     let loc_of_instr i =
       Loc.mk
-        ?dir:(Llvm.get_debug_loc_directory i)
+        ?dir:(get_debug_loc_directory i)
         ?file:(Llvm.get_debug_loc_filename i)
         ~line:(Llvm.get_debug_loc_line i)
         ~col:(Llvm.get_debug_loc_column i)
@@ -1553,6 +1562,7 @@ let check_datalayout llcontext lldatalayout =
    Llvm.dispose_context. *)
 let cleanup llmodule llcontext =
   SymTbl.clear sym_tbl ;
+  String.Tbl.clear realpath_tbl ;
   ScopeTbl.clear scope_tbl ;
   LltypeTbl.clear anon_struct_name ;
   LltypeTbl.clear memo_type ;
