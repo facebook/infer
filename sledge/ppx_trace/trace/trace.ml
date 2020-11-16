@@ -8,7 +8,7 @@
 module Char = struct
   include Char
 
-  let is_lowercase = function 'a' .. 'z' -> true | _ -> false
+  let is_lowercase = function 'a' .. 'z' | '_' -> true | _ -> false
   let is_uppercase = function 'A' .. 'Z' -> true | _ -> false
 end
 
