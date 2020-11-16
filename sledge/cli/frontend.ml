@@ -1013,6 +1013,10 @@ let xlate_instr :
       | Some intrinsic -> inline_or_move (intrinsic x)
       | None -> (
         match String.split_on_char fname ~by:'.' with
+        | ["__llair_choice"] ->
+            let reg = xlate_name x instr in
+            let msg = "__llair_choice" in
+            emit_inst (Inst.nondet ~reg:(Some reg) ~msg ~loc)
         | ["__llair_throw"] ->
             let pre, exc = xlate_value x (Llvm.operand instr 0) in
             emit_term ~prefix:(pop loc @ pre) (Term.throw ~exc ~loc)
