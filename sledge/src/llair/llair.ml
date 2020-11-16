@@ -335,7 +335,12 @@ and dummy_func =
 (** Instructions *)
 
 module Inst = struct
-  type t = inst [@@deriving compare, equal, hash, sexp]
+  module T = struct
+    type t = inst [@@deriving compare, equal, hash, sexp]
+  end
+
+  include T
+  module Tbl = HashTable.Make (T)
 
   let pp = pp_inst
   let move ~reg_exps ~loc = Move {reg_exps; loc}
@@ -404,7 +409,12 @@ end
 (** Basic-Block Terminators *)
 
 module Term = struct
-  type t = term [@@deriving compare, equal, hash, sexp_of]
+  module T = struct
+    type t = term [@@deriving compare, equal, hash, sexp_of]
+  end
+
+  include T
+  module Tbl = HashTable.Make (T)
 
   let pp = pp_term
 
@@ -519,7 +529,7 @@ module Func = struct
     | {entry= {cmnd; term= Unreachable; _}; _} -> IArray.is_empty cmnd
     | _ -> false
 
-  let fold_cfg ~f func s =
+  let fold_cfg func s ~f =
     let seen = BlockS.create 0 in
     let rec fold_cfg_ blk s =
       if not (BlockS.add seen blk) then s

@@ -14,15 +14,18 @@ let read filename =
   List.iter sexps ~f:(fun sexp ->
       let {Report.name; entry} = Report.t_of_sexp sexp in
       match (Tbl.find_opt tbl name, entry) with
-      | None, ProcessTimes ptimes -> Tbl.replace tbl name ([ptimes], [], [])
-      | None, GcStats gc -> Tbl.replace tbl name ([], [gc], [])
-      | None, Status status -> Tbl.replace tbl name ([], [], [status])
-      | Some (times, gcs, statuses), ProcessTimes ptimes ->
-          Tbl.replace tbl name (ptimes :: times, gcs, statuses)
-      | Some (times, gcs, statuses), GcStats gc ->
-          Tbl.replace tbl name (times, gc :: gcs, statuses)
-      | Some (times, gc, statuses), Status status ->
-          Tbl.replace tbl name (times, gc, status :: statuses) ) ;
+      | None, ProcessTimes t -> Tbl.replace tbl name ([t], [], [], [])
+      | None, GcStats g -> Tbl.replace tbl name ([], [g], [], [])
+      | None, Coverage c -> Tbl.replace tbl name ([], [], [c], [])
+      | None, Status s -> Tbl.replace tbl name ([], [], [], [s])
+      | Some (times, gcs, coverages, statuses), ProcessTimes ptimes ->
+          Tbl.replace tbl name (ptimes :: times, gcs, coverages, statuses)
+      | Some (times, gcs, coverages, statuses), GcStats gc ->
+          Tbl.replace tbl name (times, gc :: gcs, coverages, statuses)
+      | Some (times, gcs, coverages, statuses), Coverage c ->
+          Tbl.replace tbl name (times, gcs, c :: coverages, statuses)
+      | Some (times, gc, coverages, statuses), Status status ->
+          Tbl.replace tbl name (times, gc, coverages, status :: statuses) ) ;
   tbl
 
 type times = {etime: float; utime: float; stime: float}
@@ -33,6 +36,8 @@ type ('t, 'g) row =
   ; times_deltas: 't
   ; gcs: 'g
   ; gcs_deltas: 'g
+  ; cov: Report.coverage list
+  ; cov_deltas: Report.coverage list option
   ; status: Report.status list
   ; status_deltas: Report.status list option }
 
@@ -75,6 +80,27 @@ let add_gcs base_gcs gcs row =
   if List.is_empty gcs then {row with gcs_deltas= Option.to_list base_gcs}
   else List.fold ~f:(add_gc base_gcs) gcs row
 
+let add_cov base_cov cov row =
+  if List.mem ~eq:Report.equal_coverage cov row.cov then row
+  else
+    let cov_deltas =
+      match base_cov with
+      | Some (base_cov :: _) ->
+          let covd =
+            Report.
+              { steps= cov.steps - base_cov.steps
+              ; hit= cov.hit - base_cov.hit
+              ; fraction= cov.fraction -. base_cov.fraction }
+          in
+          Some (covd :: Option.value row.cov_deltas ~default:[])
+      | _ -> None
+    in
+    {row with cov= cov :: row.cov; cov_deltas}
+
+let add_covs base_cov covs row =
+  let row = List.fold ~f:(add_cov base_cov) covs row in
+  {row with cov= List.sort ~cmp:(Ord.opp Report.compare_coverage) row.cov}
+
 let add_status base_status status row =
   if List.mem ~eq:Report.equal_status status row.status then row
   else
@@ -103,9 +129,9 @@ let ave_floats flts =
   else sum /. Float.of_int num
 
 let combine name b_result c_result =
-  let base_times, base_gcs, base_status =
+  let base_times, base_gcs, base_cov, base_status =
     match b_result with
-    | Some (times, gcs, statuses) ->
+    | Some (times, gcs, covs, statuses) ->
         let times =
           if List.is_empty times then None
           else
@@ -149,11 +175,12 @@ let combine name b_result c_result =
                 ; promoted= ave_floats promos
                 ; peak_size= ave_floats peaks }
         in
+        let covs = if List.is_empty covs then None else Some covs in
         let status =
           Some (List.sort_uniq ~cmp:Report.compare_status statuses)
         in
-        (times, gcs, status)
-    | None -> (None, None, None)
+        (times, gcs, covs, status)
+    | None -> (None, None, None, None)
   in
   let row =
     { name
@@ -161,6 +188,8 @@ let combine name b_result c_result =
     ; times_deltas= []
     ; gcs= []
     ; gcs_deltas= []
+    ; cov= []
+    ; cov_deltas= None
     ; status= []
     ; status_deltas= None }
   in
@@ -168,12 +197,14 @@ let combine name b_result c_result =
   | None ->
       let times_deltas = Option.to_list base_times in
       let gcs_deltas = Option.to_list base_gcs in
+      let cov_deltas = base_cov in
       let status_deltas = base_status in
-      {row with times_deltas; gcs_deltas; status_deltas}
-  | Some (c_times, c_gcs, c_statuses) ->
+      {row with times_deltas; gcs_deltas; cov_deltas; status_deltas}
+  | Some (c_times, c_gcs, c_cov, c_statuses) ->
       row
       |> add_times base_times c_times
       |> add_gcs base_gcs c_gcs
+      |> add_covs base_cov c_cov
       |> add_statuses base_status c_statuses
 
 type ranges =
@@ -258,7 +289,8 @@ let color max dat =
     Printf.sprintf "#%2x%2x%2x" (to_int r) (to_int g) (to_int b)
   in
   let rat = dat /. max in
-  if Float.is_nan rat then rgb_to_hex lace else rgb_to_hex (gradient rat)
+  if Float.(abs dat < 0.000001 || is_nan rat) then rgb_to_hex lace
+  else rgb_to_hex (gradient rat)
 
 let write_html ranges rows chan =
   let pf fmt = Printf.fprintf chan fmt in
@@ -295,11 +327,24 @@ let write_html ranges rows chan =
           <th>&Delta;%%<br></th>
           <th>Status</th>
           <th>&Delta;<br></th>
+          <th>Steps</th>
+          <th>&Delta;<br></th>
+          <th>Cover</th>
+          <th>%%</th>
+          <th>&Delta;<br></th>
+          <th>&Delta;%%<br></th>
         </tr>|} ;
   pf "\n" ;
   Iter.iter rows ~f:(fun row ->
-      let {name; times; times_deltas; gcs; gcs_deltas; status; status_deltas}
-          =
+      let { name
+          ; times
+          ; times_deltas
+          ; gcs
+          ; gcs_deltas
+          ; cov
+          ; cov_deltas
+          ; status
+          ; status_deltas } =
         row
       in
       let max_name_length = 50 in
@@ -353,6 +398,41 @@ let write_html ranges rows chan =
       let pf_status ppf s =
         let status_to_string = Format.asprintf "%a" Report.pp_status in
         Printf.fprintf ppf "%s" (String.take 50 (status_to_string s))
+      in
+      let steps attr ppf = function
+        | [] -> Printf.fprintf ppf "<td %s></td>\n" attr
+        | cs ->
+            List.iter cs ~f:(fun {Report.steps} ->
+                if steps = 0 then Printf.fprintf ppf "<td></td>\n"
+                else
+                  Printf.fprintf ppf "<td %s align=\"right\">%i</td>\n" attr
+                    steps )
+      in
+      let hit attr ppf = function
+        | [] -> Printf.fprintf ppf "<td %s></td>\n" attr
+        | cs ->
+            List.iter cs ~f:(fun {Report.hit} ->
+                if hit = 0 then Printf.fprintf ppf "<td></td>\n"
+                else
+                  Printf.fprintf ppf "<td %s align=\"right\">%i</td>\n" attr
+                    hit )
+      in
+      let coverage attr ppf = function
+        | [] -> Printf.fprintf ppf "<td align=\"right\"></td>\n"
+        | cs ->
+            List.iter cs ~f:(fun {Report.fraction} ->
+                if Float.(abs fraction < 0.000001) then
+                  Printf.fprintf ppf "<td></td>\n"
+                else
+                  Printf.fprintf ppf
+                    "<td %s align=\"right\">%12.0f%%</td>\n" attr
+                    (Base.Float.round_decimal ~decimal_digits:2
+                       (100. *. fraction)) )
+      in
+      let coveraged coverage ppf cs =
+        let cs = Option.value cs ~default:[] in
+        let attr = if List.is_empty cs then "" else " class=\"neutral\"" in
+        Printf.fprintf ppf "%a" (coverage attr) cs
       in
       let stat ppf = function
         | [] ->
@@ -437,6 +517,13 @@ let write_html ranges rows chan =
              <td style=\"border-left: 2px solid \
              #eee8d5\";></td><td></td><td></td>\n" ) ;
       pf "%a%a" stat status statd status_deltas ;
+      pf "%a%a"
+        (steps " style=\"border-left: 2px solid #eee8d5\";")
+        cov (coveraged steps) cov_deltas ;
+      pf "%a%a"
+        (hit " style=\"border-left: 2px solid #eee8d5\";")
+        cov (coverage "") cov ;
+      pf "%a%a" (coveraged hit) cov_deltas (coveraged coverage) cov_deltas ;
       pf "</tr>\n" ) ;
   pf "<table>\n" ;
   pf "</body></html>\n"
@@ -488,6 +575,8 @@ let add_total rows =
     ; times_deltas= Some {etime= 0.; utime= 0.; stime= 0.}
     ; gcs= Some {Report.allocated= 0.; promoted= 0.; peak_size= 0.}
     ; gcs_deltas= Some {Report.allocated= 0.; promoted= 0.; peak_size= 0.}
+    ; cov= []
+    ; cov_deltas= None
     ; status= []
     ; status_deltas= None }
   in

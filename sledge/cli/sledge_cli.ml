@@ -141,6 +141,7 @@ let analyze =
     Domain_sh.simplify_states := not no_simplify_states ;
     Timer.enabled := stats ;
     exec {bound; skip_throw; function_summaries; entry_points; globals} pgm ;
+    Report.coverage pgm ;
     Report.safe_or_unsafe ()
 
 let analyze_cmd =

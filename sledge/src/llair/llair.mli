@@ -102,7 +102,7 @@ and func = private
   ; entry: block
   ; loc: Loc.t }
 
-type functions
+type functions = func Function.Map.t
 
 type program = private
   { globals: GlobalDefn.t iarray  (** Global definitions. *)
@@ -125,6 +125,8 @@ module Inst : sig
   val loc : inst -> Loc.t
   val locals : inst -> Reg.Set.t
   val fold_exps : inst -> 's -> f:(Exp.t -> 's -> 's) -> 's
+
+  module Tbl : HashTable.S with type key := t
 end
 
 module Jump : sig
@@ -164,6 +166,8 @@ module Term : sig
   val throw : exc:Exp.t -> loc:Loc.t -> term
   val unreachable : term
   val loc : term -> Loc.t
+
+  module Tbl : HashTable.S with type key := t
 end
 
 module Block : sig
@@ -202,6 +206,9 @@ module Func : sig
 
   val find : Function.t -> functions -> t option
   (** Look up a function of the given name in the given functions. *)
+
+  val fold_cfg : func -> 'a -> f:(block -> 'a -> 'a) -> 'a
+  (** Fold over the blocks of the control-flow graph of a function. *)
 
   val is_undefined : t -> bool
   (** Holds of functions that are declared but not defined. *)
