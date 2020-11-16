@@ -99,8 +99,11 @@ module Reg : sig
   module Set : sig
     include Set.S with type elt := t
 
-    val sexp_of_t : t -> Sexp.t
-    val t_of_sexp : Sexp.t -> t
+    include sig
+        type t [@@deriving hash, sexp]
+      end
+      with type t := t
+
     val pp : t pp
   end
 
@@ -122,8 +125,11 @@ module Global : sig
   module Set : sig
     include Set.S with type elt := t
 
-    val sexp_of_t : t -> Sexp.t
-    val t_of_sexp : Sexp.t -> t
+    include sig
+        type t [@@deriving sexp]
+      end
+      with type t := t
+
     val pp : t pp
   end
 

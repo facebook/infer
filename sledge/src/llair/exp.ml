@@ -79,6 +79,7 @@ include T
 
 module Set = struct
   include Set.Make (T)
+  include Provide_hash (T)
   include Provide_of_sexp (T)
 end
 

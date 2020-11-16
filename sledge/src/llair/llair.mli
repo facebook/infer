@@ -109,7 +109,7 @@ type program = private
   ; functions: functions  (** (Global) function definitions. *) }
 
 module Inst : sig
-  type t = inst
+  type t = inst [@@deriving compare, equal, hash]
 
   val pp : t pp
   val move : reg_exps:(Reg.t * Exp.t) iarray -> loc:Loc.t -> inst
@@ -128,14 +128,14 @@ module Inst : sig
 end
 
 module Jump : sig
-  type t = jump [@@deriving compare, equal, sexp_of]
+  type t = jump [@@deriving compare, equal, hash, sexp_of]
 
   val pp : jump pp
   val mk : string -> jump
 end
 
 module Term : sig
-  type t = term
+  type t = term [@@deriving compare, equal, hash]
 
   val pp : t pp
 
@@ -167,7 +167,7 @@ module Term : sig
 end
 
 module Block : sig
-  type t = block [@@deriving compare, equal, sexp_of]
+  type t = block [@@deriving compare, equal, hash, sexp_of]
 
   val pp : t pp
   val mk : lbl:label -> cmnd:cmnd -> term:term -> block
@@ -176,7 +176,7 @@ module Block : sig
 end
 
 module Func : sig
-  type t = func
+  type t = func [@@deriving compare, equal, hash]
 
   val pp : t pp
 
