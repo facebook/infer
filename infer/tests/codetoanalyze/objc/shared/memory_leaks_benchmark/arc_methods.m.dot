@@ -30,33 +30,41 @@ digraph cfg {
 "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_1" [label="1: Start ArcMethodsA.newA\nFormals: \nLocals:  a:ArcMethodsA* \n  " color=yellow style=filled]
 	
 
-	 "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_1" -> "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_4" ;
+	 "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_1" -> "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_5" ;
 "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_2" [label="2: Exit ArcMethodsA.newA \n  " color=yellow style=filled]
 	
 
-"newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_3" [label="3:  Return Stmt \n   n$0=*&a:ArcMethodsA* [line 22, column 10]\n  *&return:ArcMethodsA*=n$0 [line 22, column 3]\n " shape="box"]
+"newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_3" [label="3:  Return Stmt \n   n$0=*&a:ArcMethodsA* [line 22, column 10]\n " shape="box"]
 	
 
-	 "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_3" -> "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_2" ;
-"newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(a:ArcMethodsA*); [line 21, column 3]\n  n$1=_fun___objc_alloc_no_fail(sizeof(t=ArcMethodsA):unsigned long) [line 21, column 21]\n  n$2=_fun_NSObject.init(n$1:ArcMethodsA*) virtual [line 21, column 20]\n  *&a:ArcMethodsA*=n$2 [line 21, column 3]\n " shape="box"]
+	 "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_3" -> "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_4" ;
+"newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_4" [label="4:  Return Stmt \n   *&return:ArcMethodsA*=n$0 [line 22, column 3]\n " shape="box"]
 	
 
-	 "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_4" -> "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_3" ;
+	 "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_4" -> "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_2" ;
+"newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(a:ArcMethodsA*); [line 21, column 3]\n  n$1=_fun___objc_alloc_no_fail(sizeof(t=ArcMethodsA):unsigned long) [line 21, column 21]\n  n$2=_fun_NSObject.init(n$1:ArcMethodsA*) virtual [line 21, column 20]\n  *&a:ArcMethodsA*=n$2 [line 21, column 3]\n " shape="box"]
+	
+
+	 "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_5" -> "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_3" ;
 "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_1" [label="1: Start ArcMethodsA.someA\nFormals: \nLocals:  a:ArcMethodsA* \n  " color=yellow style=filled]
 	
 
-	 "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_1" -> "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_4" ;
+	 "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_1" -> "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_5" ;
 "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_2" [label="2: Exit ArcMethodsA.someA \n  " color=yellow style=filled]
 	
 
-"someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_3" [label="3:  Return Stmt \n   n$3=*&a:ArcMethodsA* [line 28, column 10]\n  *&return:ArcMethodsA*=n$3 [line 28, column 3]\n " shape="box"]
+"someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_3" [label="3:  Return Stmt \n   n$3=*&a:ArcMethodsA* [line 28, column 10]\n " shape="box"]
 	
 
-	 "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_3" -> "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_2" ;
-"someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(a:ArcMethodsA*); [line 26, column 3]\n  n$4=_fun___objc_alloc_no_fail(sizeof(t=ArcMethodsA):unsigned long) [line 26, column 21]\n  n$5=_fun_NSObject.init(n$4:ArcMethodsA*) virtual [line 26, column 20]\n  *&a:ArcMethodsA*=n$5 [line 26, column 3]\n " shape="box"]
+	 "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_3" -> "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_4" ;
+"someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_4" [label="4:  Return Stmt \n   *&return:ArcMethodsA*=n$3 [line 28, column 3]\n " shape="box"]
 	
 
-	 "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_4" -> "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_3" ;
+	 "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_4" -> "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_2" ;
+"someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(a:ArcMethodsA*); [line 26, column 3]\n  n$4=_fun___objc_alloc_no_fail(sizeof(t=ArcMethodsA):unsigned long) [line 26, column 21]\n  n$5=_fun_NSObject.init(n$4:ArcMethodsA*) virtual [line 26, column 20]\n  *&a:ArcMethodsA*=n$5 [line 26, column 3]\n " shape="box"]
+	
+
+	 "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_5" -> "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_3" ;
 "dealloc#ArcMethodsA#instance.7ca05d78a1bcb0ca5ca59211927eef83_1" [label="1: Start ArcMethodsA.dealloc\nFormals:  self:ArcMethodsA*\nLocals:  \n  " color=yellow style=filled]
 	
 

@@ -7,10 +7,14 @@ digraph cfg {
 "fun_with_self#17802276037376540432.4639f371cac8e491a6b8c0363a0bc168_2" [label="2: Exit fun_with_self \n  " color=yellow style=filled]
 	
 
-"fun_with_self#17802276037376540432.4639f371cac8e491a6b8c0363a0bc168_3" [label="3:  Return Stmt \n   n$0=*&self:int [line 13, column 38]\n  *&return:int=n$0 [line 13, column 31]\n " shape="box"]
+"fun_with_self#17802276037376540432.4639f371cac8e491a6b8c0363a0bc168_3" [label="3:  Return Stmt \n   n$0=*&self:int [line 13, column 38]\n " shape="box"]
 	
 
-	 "fun_with_self#17802276037376540432.4639f371cac8e491a6b8c0363a0bc168_3" -> "fun_with_self#17802276037376540432.4639f371cac8e491a6b8c0363a0bc168_2" ;
+	 "fun_with_self#17802276037376540432.4639f371cac8e491a6b8c0363a0bc168_3" -> "fun_with_self#17802276037376540432.4639f371cac8e491a6b8c0363a0bc168_4" ;
+"fun_with_self#17802276037376540432.4639f371cac8e491a6b8c0363a0bc168_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 13, column 31]\n " shape="box"]
+	
+
+	 "fun_with_self#17802276037376540432.4639f371cac8e491a6b8c0363a0bc168_4" -> "fun_with_self#17802276037376540432.4639f371cac8e491a6b8c0363a0bc168_2" ;
 "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_1" [label="1: Start test\nFormals:  a:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -18,10 +22,14 @@ digraph cfg {
 "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_3" [label="3:  Return Stmt \n   n$0=*&a:A* [line 15, column 25]\n  _=*n$0:A [line 15, column 25]\n  n$2=_fun_A::meth_with_self(n$0:A*,1:int,2:int) [line 15, column 25]\n  n$3=_fun_fun_with_self(10:int) [line 15, column 51]\n  *&return:int=(n$2 + n$3) [line 15, column 18]\n " shape="box"]
+"test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_3" [label="3:  Return Stmt \n   n$0=*&a:A* [line 15, column 25]\n  _=*n$0:A [line 15, column 25]\n  n$2=_fun_A::meth_with_self(n$0:A*,1:int,2:int) [line 15, column 25]\n  n$3=_fun_fun_with_self(10:int) [line 15, column 51]\n " shape="box"]
 	
 
-	 "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_3" -> "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_2" ;
+	 "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_3" -> "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_4" ;
+"test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_4" [label="4:  Return Stmt \n   *&return:int=(n$2 + n$3) [line 15, column 18]\n " shape="box"]
+	
+
+	 "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_4" -> "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_2" ;
 "meth_with_self#A#(5126246555081316972).087223c2fe95da4de39ef1116c167075_1" [label="1: Start A::meth_with_self\nFormals:  this:A* self:int b:int\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -29,8 +37,12 @@ digraph cfg {
 "meth_with_self#A#(5126246555081316972).087223c2fe95da4de39ef1116c167075_2" [label="2: Exit A::meth_with_self \n  " color=yellow style=filled]
 	
 
-"meth_with_self#A#(5126246555081316972).087223c2fe95da4de39ef1116c167075_3" [label="3:  Return Stmt \n   n$0=*&self:int [line 10, column 48]\n  n$1=*&b:int [line 10, column 55]\n  *&return:int=(n$0 + n$1) [line 10, column 41]\n " shape="box"]
+"meth_with_self#A#(5126246555081316972).087223c2fe95da4de39ef1116c167075_3" [label="3:  Return Stmt \n   n$0=*&self:int [line 10, column 48]\n  n$1=*&b:int [line 10, column 55]\n " shape="box"]
 	
 
-	 "meth_with_self#A#(5126246555081316972).087223c2fe95da4de39ef1116c167075_3" -> "meth_with_self#A#(5126246555081316972).087223c2fe95da4de39ef1116c167075_2" ;
+	 "meth_with_self#A#(5126246555081316972).087223c2fe95da4de39ef1116c167075_3" -> "meth_with_self#A#(5126246555081316972).087223c2fe95da4de39ef1116c167075_4" ;
+"meth_with_self#A#(5126246555081316972).087223c2fe95da4de39ef1116c167075_4" [label="4:  Return Stmt \n   *&return:int=(n$0 + n$1) [line 10, column 41]\n " shape="box"]
+	
+
+	 "meth_with_self#A#(5126246555081316972).087223c2fe95da4de39ef1116c167075_4" -> "meth_with_self#A#(5126246555081316972).087223c2fe95da4de39ef1116c167075_2" ;
 }

@@ -29,25 +29,37 @@ digraph cfg {
 "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_3" [label="3:  Return Stmt \n   n$0=*&__return_param:X* [line 13, column 12]\n  n$1=_fun_X::X(n$0:X*,&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:X const &) [line 13, column 19]\n " shape="box"]
+"test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_3" [label="3:  Return Stmt \n   n$0=*&__return_param:X* [line 13, column 12]\n " shape="box"]
 	
 
-	 "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_3" -> "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_2" ;
+	 "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_3" -> "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_4" ;
+"test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_4" [label="4:  Return Stmt \n   n$1=_fun_X::X(n$0:X*,&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:X const &) [line 13, column 19]\n " shape="box"]
+	
+
+	 "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_4" -> "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_5" ;
+"test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_5" [label="5:  Return Stmt \n  " shape="box"]
+	
+
+	 "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_5" -> "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_2" ;
 "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_1" [label="1: Start test2\nFormals: \nLocals:  local:int \n  " color=yellow style=filled]
 	
 
-	 "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_1" -> "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_4" ;
+	 "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_1" -> "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_5" ;
 "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_2" [label="2: Exit test2 \n  " color=yellow style=filled]
 	
 
-"test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|ice>$v:int [line 19, column 10]\n  *&return:int=n$0 [line 19, column 3]\n " shape="box"]
+"test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|ice>$v:int [line 19, column 10]\n " shape="box"]
 	
 
-	 "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_3" -> "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_2" ;
-"test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(local:int); [line 18, column 3]\n  n$1=*&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|ice>$v:int [line 18, column 15]\n  *&local:int=n$1 [line 18, column 3]\n " shape="box"]
+	 "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_3" -> "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_4" ;
+"test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 19, column 3]\n " shape="box"]
 	
 
-	 "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_4" -> "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_3" ;
+	 "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_4" -> "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_2" ;
+"test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(local:int); [line 18, column 3]\n  n$1=*&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|ice>$v:int [line 18, column 15]\n  *&local:int=n$1 [line 18, column 3]\n " shape="box"]
+	
+
+	 "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_5" -> "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_3" ;
 "X#X#{11474741413113936247|constexpr}.31759ca8626d769f5d4e50690b180278_1" [label="1: Start X::X\nFormals:  this:X* __param_0:X const &\nLocals:  \n  " color=yellow style=filled]
 	
 

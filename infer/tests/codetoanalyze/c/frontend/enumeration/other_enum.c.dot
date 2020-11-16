@@ -38,7 +38,7 @@ digraph cfg {
 "other_enum_test.100f3583adf0259001be6c944828c44a_1" [label="1: Start other_enum_test\nFormals: \nLocals:  foo_a:int foo_g:int \n  " color=yellow style=filled]
 	
 
-	 "other_enum_test.100f3583adf0259001be6c944828c44a_1" -> "other_enum_test.100f3583adf0259001be6c944828c44a_11" ;
+	 "other_enum_test.100f3583adf0259001be6c944828c44a_1" -> "other_enum_test.100f3583adf0259001be6c944828c44a_12" ;
 "other_enum_test.100f3583adf0259001be6c944828c44a_2" [label="2: Exit other_enum_test \n  " color=yellow style=filled]
 	
 
@@ -62,21 +62,25 @@ digraph cfg {
 "other_enum_test.100f3583adf0259001be6c944828c44a_7" [label="7: Prune (false branch, if) \n   PRUNE(!((unsigned int)n$0 == (unsigned int)12), false); [line 23, column 7]\n " shape="invhouse"]
 	
 
-	 "other_enum_test.100f3583adf0259001be6c944828c44a_7" -> "other_enum_test.100f3583adf0259001be6c944828c44a_9" ;
-"other_enum_test.100f3583adf0259001be6c944828c44a_8" [label="8:  Return Stmt \n   n$1=*&foo_g:int [line 24, column 12]\n  n$2=*&foo_a:int [line 24, column 20]\n  *&return:int=((unsigned int)n$1 / (unsigned int)n$2) [line 24, column 5]\n " shape="box"]
+	 "other_enum_test.100f3583adf0259001be6c944828c44a_7" -> "other_enum_test.100f3583adf0259001be6c944828c44a_10" ;
+"other_enum_test.100f3583adf0259001be6c944828c44a_8" [label="8:  Return Stmt \n   n$1=*&foo_g:int [line 24, column 12]\n  n$2=*&foo_a:int [line 24, column 20]\n " shape="box"]
 	
 
-	 "other_enum_test.100f3583adf0259001be6c944828c44a_8" -> "other_enum_test.100f3583adf0259001be6c944828c44a_2" ;
-"other_enum_test.100f3583adf0259001be6c944828c44a_9" [label="9:  Return Stmt \n   *&return:int=0 [line 26, column 5]\n " shape="box"]
+	 "other_enum_test.100f3583adf0259001be6c944828c44a_8" -> "other_enum_test.100f3583adf0259001be6c944828c44a_9" ;
+"other_enum_test.100f3583adf0259001be6c944828c44a_9" [label="9:  Return Stmt \n   *&return:int=((unsigned int)n$1 / (unsigned int)n$2) [line 24, column 5]\n " shape="box"]
 	
 
 	 "other_enum_test.100f3583adf0259001be6c944828c44a_9" -> "other_enum_test.100f3583adf0259001be6c944828c44a_2" ;
-"other_enum_test.100f3583adf0259001be6c944828c44a_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(foo_a:int); [line 22, column 3]\n  *&foo_a:int=0 [line 22, column 3]\n " shape="box"]
+"other_enum_test.100f3583adf0259001be6c944828c44a_10" [label="10:  Return Stmt \n   *&return:int=0 [line 26, column 5]\n " shape="box"]
 	
 
-	 "other_enum_test.100f3583adf0259001be6c944828c44a_10" -> "other_enum_test.100f3583adf0259001be6c944828c44a_5" ;
-"other_enum_test.100f3583adf0259001be6c944828c44a_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(foo_g:int); [line 21, column 3]\n  *&foo_g:int=(2 + 10) [line 21, column 3]\n " shape="box"]
+	 "other_enum_test.100f3583adf0259001be6c944828c44a_10" -> "other_enum_test.100f3583adf0259001be6c944828c44a_2" ;
+"other_enum_test.100f3583adf0259001be6c944828c44a_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(foo_a:int); [line 22, column 3]\n  *&foo_a:int=0 [line 22, column 3]\n " shape="box"]
 	
 
-	 "other_enum_test.100f3583adf0259001be6c944828c44a_11" -> "other_enum_test.100f3583adf0259001be6c944828c44a_10" ;
+	 "other_enum_test.100f3583adf0259001be6c944828c44a_11" -> "other_enum_test.100f3583adf0259001be6c944828c44a_5" ;
+"other_enum_test.100f3583adf0259001be6c944828c44a_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(foo_g:int); [line 21, column 3]\n  *&foo_g:int=(2 + 10) [line 21, column 3]\n " shape="box"]
+	
+
+	 "other_enum_test.100f3583adf0259001be6c944828c44a_12" -> "other_enum_test.100f3583adf0259001be6c944828c44a_11" ;
 }

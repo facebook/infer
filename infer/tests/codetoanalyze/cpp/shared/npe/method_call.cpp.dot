@@ -25,18 +25,22 @@ digraph cfg {
 "npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_1" [label="1: Start npe_call\nFormals: \nLocals:  x:X* \n  " color=yellow style=filled]
 	
 
-	 "npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_1" -> "npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_4" ;
+	 "npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_1" -> "npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_5" ;
 "npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_2" [label="2: Exit npe_call \n  " color=yellow style=filled]
 	
 
-"npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_3" [label="3:  Return Stmt \n   n$0=*&x:X* [line 15, column 10]\n  _=*n$0:X [line 15, column 10]\n  n$2=_fun_X::call(n$0:X*) [line 15, column 10]\n  *&return:int=n$2 [line 15, column 3]\n " shape="box"]
+"npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_3" [label="3:  Return Stmt \n   n$0=*&x:X* [line 15, column 10]\n  _=*n$0:X [line 15, column 10]\n  n$2=_fun_X::call(n$0:X*) [line 15, column 10]\n " shape="box"]
 	
 
-	 "npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_3" -> "npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_2" ;
-"npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(x:X*); [line 14, column 3]\n  *&x:X*=null [line 14, column 3]\n " shape="box"]
+	 "npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_3" -> "npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_4" ;
+"npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_4" [label="4:  Return Stmt \n   *&return:int=n$2 [line 15, column 3]\n " shape="box"]
 	
 
-	 "npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_4" -> "npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_3" ;
+	 "npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_4" -> "npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_2" ;
+"npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(x:X*); [line 14, column 3]\n  *&x:X*=null [line 14, column 3]\n " shape="box"]
+	
+
+	 "npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_5" -> "npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_3" ;
 "npe_call_after_call#8140813350794705532.fd3a6d06275def8a130284a430f22a3d_1" [label="1: Start npe_call_after_call\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 

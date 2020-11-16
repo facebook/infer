@@ -3,18 +3,22 @@ digraph cfg {
 "foo.acbd18db4cc2f85cedef654fccc4a4d8_1" [label="1: Start foo\nFormals:  a:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_1" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_4" ;
+	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_1" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_5" ;
 "foo.acbd18db4cc2f85cedef654fccc4a4d8_2" [label="2: Exit foo \n  " color=yellow style=filled]
 	
 
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_3" [label="3:  Return Stmt \n   n$0=*&a:A* [line 56, column 10]\n  *&return:A*=n$0 [line 56, column 3]\n " shape="box"]
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_3" [label="3:  Return Stmt \n   n$0=*&a:A* [line 56, column 10]\n " shape="box"]
 	
 
-	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_3" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_2" ;
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_4" [label="4:  Message Call: capture \n   n$1=*&a:A* [line 54, column 4]\n  n$2=_fun_A.capture(n$1:A*) virtual [line 54, column 3]\n " shape="box"]
+	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_3" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_4" ;
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_4" [label="4:  Return Stmt \n   *&return:A*=n$0 [line 56, column 3]\n " shape="box"]
 	
 
-	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_4" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_3" ;
+	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_4" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_2" ;
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_5" [label="5:  Message Call: capture \n   n$1=*&a:A* [line 54, column 4]\n  n$2=_fun_A.capture(n$1:A*) virtual [line 54, column 3]\n " shape="box"]
+	
+
+	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_5" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_3" ;
 "main.fad58de7366495db4650cfefac2fcd61_1" [label="1: Start main\nFormals:  argc:int argv:char const **\nLocals:  a:A* \n  " color=yellow style=filled]
 	
 

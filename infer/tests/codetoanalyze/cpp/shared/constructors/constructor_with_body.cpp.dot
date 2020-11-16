@@ -63,10 +63,14 @@ digraph cfg {
 "div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_2" [label="2: Exit constructor_with_body::X::div \n  " color=yellow style=filled]
 	
 
-"div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_3" [label="3:  Return Stmt \n   n$0=*&this:constructor_with_body::X* [line 19, column 26]\n  n$1=*n$0.f:int [line 19, column 26]\n  *&return:int=(1 / n$1) [line 19, column 15]\n " shape="box"]
+"div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_3" [label="3:  Return Stmt \n   n$0=*&this:constructor_with_body::X* [line 19, column 26]\n  n$1=*n$0.f:int [line 19, column 26]\n " shape="box"]
 	
 
-	 "div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_3" -> "div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_2" ;
+	 "div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_3" -> "div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_4" ;
+"div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$1) [line 19, column 15]\n " shape="box"]
+	
+
+	 "div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_4" -> "div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_2" ;
 "X#X#constructor_with_body#{16871729092574880817}.54f479ca84639d148c4b988a7530253a_1" [label="1: Start constructor_with_body::X::X\nFormals:  this:constructor_with_body::X*\nLocals:  \n  " color=yellow style=filled]
 	
 

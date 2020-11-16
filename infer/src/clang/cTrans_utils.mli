@@ -196,6 +196,16 @@ module PriorityNode : sig
       translation of stmt children and deals with creating or not a cfg node depending of owning the
       priority_node. It returns the [control] that should be passed to the parent. *)
 
+  val compute_control_to_parent :
+       trans_state
+    -> Location.t
+    -> node_name:Procdesc.Node.stmt_nodekind
+    -> Clang_ast_t.stmt_info
+    -> control
+    -> control
+  (** like [compute_controls_to_parent] but for a singleton, so the only possible effect is creating
+      a node *)
+
   val compute_results_to_parent :
        trans_state
     -> Location.t

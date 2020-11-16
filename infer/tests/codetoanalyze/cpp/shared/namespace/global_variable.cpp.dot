@@ -3,58 +3,70 @@ digraph cfg {
 "div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_1" [label="1: Start div0_namepace_res\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_1" -> "div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_5" ;
+	 "div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_1" -> "div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_6" ;
 "div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_2" [label="2: Exit div0_namepace_res \n  " color=yellow style=filled]
 	
 
-"div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/cpp/shared/namespace/global_variable.cpp>$f1::val:int [line 29, column 15]\n  n$1=*&#GB<codetoanalyze/cpp/shared/namespace/global_variable.cpp>$f2::val:int [line 29, column 25]\n  *&return:int=(1 / ((n$0 + n$1) + 1)) [line 29, column 3]\n " shape="box"]
+"div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/cpp/shared/namespace/global_variable.cpp>$f1::val:int [line 29, column 15]\n  n$1=*&#GB<codetoanalyze/cpp/shared/namespace/global_variable.cpp>$f2::val:int [line 29, column 25]\n " shape="box"]
 	
 
-	 "div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_3" -> "div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_2" ;
-"div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_4" [label="4:  BinaryOperatorStmt: Assign \n   *&#GB<codetoanalyze/cpp/shared/namespace/global_variable.cpp>$f2::val:int=-2 [line 28, column 3]\n " shape="box"]
+	 "div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_3" -> "div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_4" ;
+"div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_4" [label="4:  Return Stmt \n   *&return:int=(1 / ((n$0 + n$1) + 1)) [line 29, column 3]\n " shape="box"]
 	
 
-	 "div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_4" -> "div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_3" ;
-"div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_5" [label="5:  BinaryOperatorStmt: Assign \n   *&#GB<codetoanalyze/cpp/shared/namespace/global_variable.cpp>$f1::val:int=1 [line 27, column 3]\n " shape="box"]
+	 "div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_4" -> "div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_2" ;
+"div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_5" [label="5:  BinaryOperatorStmt: Assign \n   *&#GB<codetoanalyze/cpp/shared/namespace/global_variable.cpp>$f2::val:int=-2 [line 28, column 3]\n " shape="box"]
 	
 
-	 "div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_5" -> "div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_4" ;
+	 "div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_5" -> "div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_3" ;
+"div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_6" [label="6:  BinaryOperatorStmt: Assign \n   *&#GB<codetoanalyze/cpp/shared/namespace/global_variable.cpp>$f1::val:int=1 [line 27, column 3]\n " shape="box"]
+	
+
+	 "div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_6" -> "div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_5" ;
 "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_1" [label="1: Start div0_static_field\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_1" -> "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_5" ;
+	 "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_1" -> "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_6" ;
 "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_2" [label="2: Exit div0_static_field \n  " color=yellow style=filled]
 	
 
-"div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_3" [label="3:  Return Stmt \n   n$0=*&#GB<>$f1::A::v:int [line 35, column 15]\n  n$1=*&#GB<>$B::v:int [line 35, column 26]\n  *&return:int=(1 / ((n$0 + n$1) + 1)) [line 35, column 3]\n " shape="box"]
+"div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_3" [label="3:  Return Stmt \n   n$0=*&#GB<>$f1::A::v:int [line 35, column 15]\n  n$1=*&#GB<>$B::v:int [line 35, column 26]\n " shape="box"]
 	
 
-	 "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_3" -> "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_2" ;
-"div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_4" [label="4:  BinaryOperatorStmt: Assign \n   *&#GB<>$f1::A::v:int=-2 [line 34, column 3]\n " shape="box"]
+	 "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_3" -> "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_4" ;
+"div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_4" [label="4:  Return Stmt \n   *&return:int=(1 / ((n$0 + n$1) + 1)) [line 35, column 3]\n " shape="box"]
 	
 
-	 "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_4" -> "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_3" ;
-"div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_5" [label="5:  BinaryOperatorStmt: Assign \n   *&#GB<>$B::v:int=1 [line 33, column 3]\n " shape="box"]
+	 "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_4" -> "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_2" ;
+"div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_5" [label="5:  BinaryOperatorStmt: Assign \n   *&#GB<>$f1::A::v:int=-2 [line 34, column 3]\n " shape="box"]
 	
 
-	 "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_5" -> "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_4" ;
+	 "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_5" -> "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_3" ;
+"div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_6" [label="6:  BinaryOperatorStmt: Assign \n   *&#GB<>$B::v:int=1 [line 33, column 3]\n " shape="box"]
+	
+
+	 "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_6" -> "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_5" ;
 "div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_1" [label="1: Start div0_static_field_member_access\nFormals:  a:f1::A* b:C*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_1" -> "div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_5" ;
+	 "div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_1" -> "div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_6" ;
 "div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_2" [label="2: Exit div0_static_field_member_access \n  " color=yellow style=filled]
 	
 
-"div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_3" [label="3:  Return Stmt \n   n$0=*&#GB<>$f1::A::v:int [line 41, column 15]\n  n$1=*&#GB<>$B::v:int [line 41, column 26]\n  *&return:int=(1 / ((n$0 + n$1) + 1)) [line 41, column 3]\n " shape="box"]
+"div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_3" [label="3:  Return Stmt \n   n$0=*&#GB<>$f1::A::v:int [line 41, column 15]\n  n$1=*&#GB<>$B::v:int [line 41, column 26]\n " shape="box"]
 	
 
-	 "div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_3" -> "div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_2" ;
-"div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_4" [label="4:  BinaryOperatorStmt: Assign \n   *&#GB<>$B::v:int=-2 [line 40, column 3]\n " shape="box"]
+	 "div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_3" -> "div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_4" ;
+"div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_4" [label="4:  Return Stmt \n   *&return:int=(1 / ((n$0 + n$1) + 1)) [line 41, column 3]\n " shape="box"]
 	
 
-	 "div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_4" -> "div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_3" ;
-"div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_5" [label="5:  BinaryOperatorStmt: Assign \n   *&#GB<>$f1::A::v:int=1 [line 39, column 3]\n " shape="box"]
+	 "div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_4" -> "div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_2" ;
+"div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_5" [label="5:  BinaryOperatorStmt: Assign \n   *&#GB<>$B::v:int=-2 [line 40, column 3]\n " shape="box"]
 	
 
-	 "div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_5" -> "div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_4" ;
+	 "div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_5" -> "div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_3" ;
+"div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_6" [label="6:  BinaryOperatorStmt: Assign \n   *&#GB<>$f1::A::v:int=1 [line 39, column 3]\n " shape="box"]
+	
+
+	 "div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_6" -> "div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_5" ;
 }

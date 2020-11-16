@@ -25,7 +25,7 @@ digraph cfg {
 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_1" [label="1: Start Block_no_args.m\nFormals:  self:Block_no_args*\nLocals:  p:int* z:int b:_fn_(*) \n  " color=yellow style=filled]
 	
 
-	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_1" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_14" ;
+	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_1" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_16" ;
 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_2" [label="2: Exit Block_no_args.m \n  " color=yellow style=filled]
 	
 
@@ -49,33 +49,41 @@ digraph cfg {
 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == 6), false); [line 28, column 7]\n " shape="invhouse"]
 	
 
-	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_7" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_9" ;
-"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_8" [label="8:  Return Stmt \n   n$1=*&p:int* [line 29, column 13]\n  n$2=*n$1:int [line 29, column 12]\n  *&return:int=n$2 [line 29, column 5]\n " shape="box"]
+	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_7" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_10" ;
+"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_8" [label="8:  Return Stmt \n   n$1=*&p:int* [line 29, column 13]\n  n$2=*n$1:int [line 29, column 12]\n " shape="box"]
 	
 
-	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_8" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_2" ;
-"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_9" [label="9:  Return Stmt \n   n$3=*&z:int [line 31, column 12]\n  *&return:int=n$3 [line 31, column 5]\n " shape="box"]
+	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_8" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_9" ;
+"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_9" [label="9:  Return Stmt \n   *&return:int=n$2 [line 29, column 5]\n " shape="box"]
 	
 
 	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_9" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_2" ;
-"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(p:int*); [line 27, column 3]\n  *&p:int*=null [line 27, column 3]\n " shape="box"]
+"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_10" [label="10:  Return Stmt \n   n$3=*&z:int [line 31, column 12]\n " shape="box"]
 	
 
-	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_10" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_5" ;
-"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_11" [label="11:  Call n$5 \n   n$5=*&b:_fn_(*) [line 26, column 3]\n  n$6=n$5() objc_block [line 26, column 3]\n " shape="box"]
+	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_10" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_11" ;
+"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_11" [label="11:  Return Stmt \n   *&return:int=n$3 [line 31, column 5]\n " shape="box"]
 	
 
-	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_11" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_10" ;
-"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_12" [label="12:  BinaryOperatorStmt: Assign \n   n$7=*&z:int [line 23, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockBlock_no_args.m_1,([by ref]n$7 &z:int)) [line 23, column 3]\n " shape="box"]
+	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_11" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_2" ;
+"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(p:int*); [line 27, column 3]\n  *&p:int*=null [line 27, column 3]\n " shape="box"]
 	
 
-	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_12" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_11" ;
-"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_13" [label="13:  DeclStmt \n   VARIABLE_DECLARED(z:int); [line 22, column 3]\n  *&z:int=3 [line 22, column 3]\n " shape="box"]
+	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_12" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_5" ;
+"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_13" [label="13:  Call n$5 \n   n$5=*&b:_fn_(*) [line 26, column 3]\n  n$6=n$5() objc_block [line 26, column 3]\n " shape="box"]
 	
 
 	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_13" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_12" ;
-"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_14" [label="14:  BinaryOperatorStmt: Assign \n   *&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int=7 [line 20, column 3]\n " shape="box"]
+"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_14" [label="14:  BinaryOperatorStmt: Assign \n   n$7=*&z:int [line 23, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockBlock_no_args.m_1,([by ref]n$7 &z:int)) [line 23, column 3]\n " shape="box"]
 	
 
 	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_14" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_13" ;
+"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_15" [label="15:  DeclStmt \n   VARIABLE_DECLARED(z:int); [line 22, column 3]\n  *&z:int=3 [line 22, column 3]\n " shape="box"]
+	
+
+	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_15" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_14" ;
+"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_16" [label="16:  BinaryOperatorStmt: Assign \n   *&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int=7 [line 20, column 3]\n " shape="box"]
+	
+
+	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_16" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_15" ;
 }

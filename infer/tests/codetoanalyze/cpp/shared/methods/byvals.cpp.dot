@@ -7,10 +7,14 @@ digraph cfg {
 "decltype_by_ref#pass_by_val#7827598625585178144.8fa35b5b24f764bae803ce1f6e468516_2" [label="2: Exit pass_by_val::decltype_by_ref \n  " color=yellow style=filled]
 	
 
-"decltype_by_ref#pass_by_val#7827598625585178144.8fa35b5b24f764bae803ce1f6e468516_3" [label="3:  Return Stmt \n   n$0=*&p:pass_by_val::PlainStruct& [line 38, column 58]\n  n$1=*n$0.x:int [line 38, column 58]\n  n$2=*&p:pass_by_val::PlainStruct& [line 38, column 66]\n  n$3=*n$2.y:int* [line 38, column 65]\n  n$4=*n$3:int [line 38, column 64]\n  *&return:int=(n$1 + n$4) [line 38, column 51]\n " shape="box"]
+"decltype_by_ref#pass_by_val#7827598625585178144.8fa35b5b24f764bae803ce1f6e468516_3" [label="3:  Return Stmt \n   n$0=*&p:pass_by_val::PlainStruct& [line 38, column 58]\n  n$1=*n$0.x:int [line 38, column 58]\n  n$2=*&p:pass_by_val::PlainStruct& [line 38, column 66]\n  n$3=*n$2.y:int* [line 38, column 65]\n  n$4=*n$3:int [line 38, column 64]\n " shape="box"]
 	
 
-	 "decltype_by_ref#pass_by_val#7827598625585178144.8fa35b5b24f764bae803ce1f6e468516_3" -> "decltype_by_ref#pass_by_val#7827598625585178144.8fa35b5b24f764bae803ce1f6e468516_2" ;
+	 "decltype_by_ref#pass_by_val#7827598625585178144.8fa35b5b24f764bae803ce1f6e468516_3" -> "decltype_by_ref#pass_by_val#7827598625585178144.8fa35b5b24f764bae803ce1f6e468516_4" ;
+"decltype_by_ref#pass_by_val#7827598625585178144.8fa35b5b24f764bae803ce1f6e468516_4" [label="4:  Return Stmt \n   *&return:int=(n$1 + n$4) [line 38, column 51]\n " shape="box"]
+	
+
+	 "decltype_by_ref#pass_by_val#7827598625585178144.8fa35b5b24f764bae803ce1f6e468516_4" -> "decltype_by_ref#pass_by_val#7827598625585178144.8fa35b5b24f764bae803ce1f6e468516_2" ;
 "decltype_by_val#pass_by_val#14279156289723785232.72f90cb8cd80d6281316dd4fe0c3453c_1" [label="1: Start pass_by_val::decltype_by_val\nFormals:  p:pass_by_val::PlainStruct&\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -18,10 +22,14 @@ digraph cfg {
 "decltype_by_val#pass_by_val#14279156289723785232.72f90cb8cd80d6281316dd4fe0c3453c_2" [label="2: Exit pass_by_val::decltype_by_val \n  " color=yellow style=filled]
 	
 
-"decltype_by_val#pass_by_val#14279156289723785232.72f90cb8cd80d6281316dd4fe0c3453c_3" [label="3:  Return Stmt \n   n$0=*&p:pass_by_val::PlainStruct& [line 36, column 56]\n  n$1=*n$0.x:int [line 36, column 56]\n  n$2=*&p:pass_by_val::PlainStruct& [line 36, column 64]\n  n$3=*n$2.y:int* [line 36, column 63]\n  n$4=*n$3:int [line 36, column 62]\n  *&return:int=(n$1 + n$4) [line 36, column 49]\n " shape="box"]
+"decltype_by_val#pass_by_val#14279156289723785232.72f90cb8cd80d6281316dd4fe0c3453c_3" [label="3:  Return Stmt \n   n$0=*&p:pass_by_val::PlainStruct& [line 36, column 56]\n  n$1=*n$0.x:int [line 36, column 56]\n  n$2=*&p:pass_by_val::PlainStruct& [line 36, column 64]\n  n$3=*n$2.y:int* [line 36, column 63]\n  n$4=*n$3:int [line 36, column 62]\n " shape="box"]
 	
 
-	 "decltype_by_val#pass_by_val#14279156289723785232.72f90cb8cd80d6281316dd4fe0c3453c_3" -> "decltype_by_val#pass_by_val#14279156289723785232.72f90cb8cd80d6281316dd4fe0c3453c_2" ;
+	 "decltype_by_val#pass_by_val#14279156289723785232.72f90cb8cd80d6281316dd4fe0c3453c_3" -> "decltype_by_val#pass_by_val#14279156289723785232.72f90cb8cd80d6281316dd4fe0c3453c_4" ;
+"decltype_by_val#pass_by_val#14279156289723785232.72f90cb8cd80d6281316dd4fe0c3453c_4" [label="4:  Return Stmt \n   *&return:int=(n$1 + n$4) [line 36, column 49]\n " shape="box"]
+	
+
+	 "decltype_by_val#pass_by_val#14279156289723785232.72f90cb8cd80d6281316dd4fe0c3453c_4" -> "decltype_by_val#pass_by_val#14279156289723785232.72f90cb8cd80d6281316dd4fe0c3453c_2" ;
 "dependent_by_ref#pass_by_val#15143379324942623593.5ccf1ab5c879a0bcfec55b566c6a60db_1" [label="1: Start pass_by_val::dependent_by_ref\nFormals:  p:pass_by_val::PlainStruct const &\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -29,10 +37,14 @@ digraph cfg {
 "dependent_by_ref#pass_by_val#15143379324942623593.5ccf1ab5c879a0bcfec55b566c6a60db_2" [label="2: Exit pass_by_val::dependent_by_ref \n  " color=yellow style=filled]
 	
 
-"dependent_by_ref#pass_by_val#15143379324942623593.5ccf1ab5c879a0bcfec55b566c6a60db_3" [label="3:  Return Stmt \n   n$0=*&p:pass_by_val::PlainStruct const & [line 48, column 65]\n  n$1=*n$0.x:int [line 48, column 65]\n  n$2=*&p:pass_by_val::PlainStruct const & [line 48, column 73]\n  n$3=*n$2.y:int* [line 48, column 72]\n  n$4=*n$3:int [line 48, column 71]\n  *&return:int=(n$1 + n$4) [line 48, column 58]\n " shape="box"]
+"dependent_by_ref#pass_by_val#15143379324942623593.5ccf1ab5c879a0bcfec55b566c6a60db_3" [label="3:  Return Stmt \n   n$0=*&p:pass_by_val::PlainStruct const & [line 48, column 65]\n  n$1=*n$0.x:int [line 48, column 65]\n  n$2=*&p:pass_by_val::PlainStruct const & [line 48, column 73]\n  n$3=*n$2.y:int* [line 48, column 72]\n  n$4=*n$3:int [line 48, column 71]\n " shape="box"]
 	
 
-	 "dependent_by_ref#pass_by_val#15143379324942623593.5ccf1ab5c879a0bcfec55b566c6a60db_3" -> "dependent_by_ref#pass_by_val#15143379324942623593.5ccf1ab5c879a0bcfec55b566c6a60db_2" ;
+	 "dependent_by_ref#pass_by_val#15143379324942623593.5ccf1ab5c879a0bcfec55b566c6a60db_3" -> "dependent_by_ref#pass_by_val#15143379324942623593.5ccf1ab5c879a0bcfec55b566c6a60db_4" ;
+"dependent_by_ref#pass_by_val#15143379324942623593.5ccf1ab5c879a0bcfec55b566c6a60db_4" [label="4:  Return Stmt \n   *&return:int=(n$1 + n$4) [line 48, column 58]\n " shape="box"]
+	
+
+	 "dependent_by_ref#pass_by_val#15143379324942623593.5ccf1ab5c879a0bcfec55b566c6a60db_4" -> "dependent_by_ref#pass_by_val#15143379324942623593.5ccf1ab5c879a0bcfec55b566c6a60db_2" ;
 "dependent_by_val#pass_by_val#16173371529174507122.c006229ea6b255a1298dc7d547bac014_1" [label="1: Start pass_by_val::dependent_by_val\nFormals:  p:pass_by_val::PlainStruct&\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -40,10 +52,14 @@ digraph cfg {
 "dependent_by_val#pass_by_val#16173371529174507122.c006229ea6b255a1298dc7d547bac014_2" [label="2: Exit pass_by_val::dependent_by_val \n  " color=yellow style=filled]
 	
 
-"dependent_by_val#pass_by_val#16173371529174507122.c006229ea6b255a1298dc7d547bac014_3" [label="3:  Return Stmt \n   n$0=*&p:pass_by_val::PlainStruct& [line 47, column 58]\n  n$1=*n$0.x:int [line 47, column 58]\n  n$2=*&p:pass_by_val::PlainStruct& [line 47, column 66]\n  n$3=*n$2.y:int* [line 47, column 65]\n  n$4=*n$3:int [line 47, column 64]\n  *&return:int=(n$1 + n$4) [line 47, column 51]\n " shape="box"]
+"dependent_by_val#pass_by_val#16173371529174507122.c006229ea6b255a1298dc7d547bac014_3" [label="3:  Return Stmt \n   n$0=*&p:pass_by_val::PlainStruct& [line 47, column 58]\n  n$1=*n$0.x:int [line 47, column 58]\n  n$2=*&p:pass_by_val::PlainStruct& [line 47, column 66]\n  n$3=*n$2.y:int* [line 47, column 65]\n  n$4=*n$3:int [line 47, column 64]\n " shape="box"]
 	
 
-	 "dependent_by_val#pass_by_val#16173371529174507122.c006229ea6b255a1298dc7d547bac014_3" -> "dependent_by_val#pass_by_val#16173371529174507122.c006229ea6b255a1298dc7d547bac014_2" ;
+	 "dependent_by_val#pass_by_val#16173371529174507122.c006229ea6b255a1298dc7d547bac014_3" -> "dependent_by_val#pass_by_val#16173371529174507122.c006229ea6b255a1298dc7d547bac014_4" ;
+"dependent_by_val#pass_by_val#16173371529174507122.c006229ea6b255a1298dc7d547bac014_4" [label="4:  Return Stmt \n   *&return:int=(n$1 + n$4) [line 47, column 51]\n " shape="box"]
+	
+
+	 "dependent_by_val#pass_by_val#16173371529174507122.c006229ea6b255a1298dc7d547bac014_4" -> "dependent_by_val#pass_by_val#16173371529174507122.c006229ea6b255a1298dc7d547bac014_2" ;
 "dummy_struct#__infer_globals_initializer_pass_by_val.24fe54080733cebf362d2b34e691bb44_1" [label="1: Start __infer_globals_initializer_pass_by_val::dummy_struct\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -62,10 +78,14 @@ digraph cfg {
 "forward<int>#std#5548362574050729124.664bf3a19e8401f31df778b67554bdae_2" [label="2: Exit std::forward<int> \n  " color=yellow style=filled]
 	
 
-"forward<int>#std#5548362574050729124.664bf3a19e8401f31df778b67554bdae_3" [label="3:  Return Stmt \n   n$0=*&__t:int& [line 2289, column 31]\n  *&return:int&=n$0 [line 2289, column 5]\n " shape="box"]
+"forward<int>#std#5548362574050729124.664bf3a19e8401f31df778b67554bdae_3" [label="3:  Return Stmt \n   n$0=*&__t:int& [line 2289, column 31]\n " shape="box"]
 	
 
-	 "forward<int>#std#5548362574050729124.664bf3a19e8401f31df778b67554bdae_3" -> "forward<int>#std#5548362574050729124.664bf3a19e8401f31df778b67554bdae_2" ;
+	 "forward<int>#std#5548362574050729124.664bf3a19e8401f31df778b67554bdae_3" -> "forward<int>#std#5548362574050729124.664bf3a19e8401f31df778b67554bdae_4" ;
+"forward<int>#std#5548362574050729124.664bf3a19e8401f31df778b67554bdae_4" [label="4:  Return Stmt \n   *&return:int&=n$0 [line 2289, column 5]\n " shape="box"]
+	
+
+	 "forward<int>#std#5548362574050729124.664bf3a19e8401f31df778b67554bdae_4" -> "forward<int>#std#5548362574050729124.664bf3a19e8401f31df778b67554bdae_2" ;
 "forward<int_&>#std#2714018779968350623.5a6c534312c02b38db42a98e7dfe7983_1" [label="1: Start std::forward<int_&>\nFormals:  __t:int&\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -73,29 +93,41 @@ digraph cfg {
 "forward<int_&>#std#2714018779968350623.5a6c534312c02b38db42a98e7dfe7983_2" [label="2: Exit std::forward<int_&> \n  " color=yellow style=filled]
 	
 
-"forward<int_&>#std#2714018779968350623.5a6c534312c02b38db42a98e7dfe7983_3" [label="3:  Return Stmt \n   n$0=*&__t:int& [line 2289, column 31]\n  *&return:int&=n$0 [line 2289, column 5]\n " shape="box"]
+"forward<int_&>#std#2714018779968350623.5a6c534312c02b38db42a98e7dfe7983_3" [label="3:  Return Stmt \n   n$0=*&__t:int& [line 2289, column 31]\n " shape="box"]
 	
 
-	 "forward<int_&>#std#2714018779968350623.5a6c534312c02b38db42a98e7dfe7983_3" -> "forward<int_&>#std#2714018779968350623.5a6c534312c02b38db42a98e7dfe7983_2" ;
+	 "forward<int_&>#std#2714018779968350623.5a6c534312c02b38db42a98e7dfe7983_3" -> "forward<int_&>#std#2714018779968350623.5a6c534312c02b38db42a98e7dfe7983_4" ;
+"forward<int_&>#std#2714018779968350623.5a6c534312c02b38db42a98e7dfe7983_4" [label="4:  Return Stmt \n   *&return:int&=n$0 [line 2289, column 5]\n " shape="box"]
+	
+
+	 "forward<int_&>#std#2714018779968350623.5a6c534312c02b38db42a98e7dfe7983_4" -> "forward<int_&>#std#2714018779968350623.5a6c534312c02b38db42a98e7dfe7983_2" ;
 "make_id<int,_int_&,_int_&,_int>#pass_by_val(class pass_by_val::Id<int>)#6647322778693099135.704a07df7f1fd4912e21bd274744a5e0_1" [label="1: Start pass_by_val::make_id<int,_int_&,_int_&,_int>\nFormals:  args:int& args:int& args:int& __return_param:pass_by_val::Id<int>*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int> \n  " color=yellow style=filled]
 	
 
-	 "make_id<int,_int_&,_int_&,_int>#pass_by_val(class pass_by_val::Id<int>)#6647322778693099135.704a07df7f1fd4912e21bd274744a5e0_1" -> "make_id<int,_int_&,_int_&,_int>#pass_by_val(class pass_by_val::Id<int>)#6647322778693099135.704a07df7f1fd4912e21bd274744a5e0_3" ;
+	 "make_id<int,_int_&,_int_&,_int>#pass_by_val(class pass_by_val::Id<int>)#6647322778693099135.704a07df7f1fd4912e21bd274744a5e0_1" -> "make_id<int,_int_&,_int_&,_int>#pass_by_val(class pass_by_val::Id<int>)#6647322778693099135.704a07df7f1fd4912e21bd274744a5e0_4" ;
 "make_id<int,_int_&,_int_&,_int>#pass_by_val(class pass_by_val::Id<int>)#6647322778693099135.704a07df7f1fd4912e21bd274744a5e0_2" [label="2: Exit pass_by_val::make_id<int,_int_&,_int_&,_int> \n  " color=yellow style=filled]
 	
 
 "make_id<int,_int_&,_int_&,_int>#pass_by_val(class pass_by_val::Id<int>)#6647322778693099135.704a07df7f1fd4912e21bd274744a5e0_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>); [line 59, column 10]\n  n$5=*&args:int& [line 59, column 35]\n  n$6=_fun_std::forward<int_&>(n$5:int&) [line 59, column 16]\n  n$7=*n$6:int [line 59, column 16]\n  n$8=*&args:int& [line 59, column 35]\n  n$9=_fun_std::forward<int_&>(n$8:int&) [line 59, column 16]\n  n$10=*&args:int& [line 59, column 35]\n  n$11=_fun_std::forward<int>(n$10:int&) [line 59, column 16]\n  n$12=_fun_pass_by_val::Id<int>::Id(&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>*,n$7:int,n$9:int&,n$11:int&) [line 59, column 10]\n " shape="box"]
 	
 
-	 "make_id<int,_int_&,_int_&,_int>#pass_by_val(class pass_by_val::Id<int>)#6647322778693099135.704a07df7f1fd4912e21bd274744a5e0_3" -> "make_id<int,_int_&,_int_&,_int>#pass_by_val(class pass_by_val::Id<int>)#6647322778693099135.704a07df7f1fd4912e21bd274744a5e0_4" ;
-"make_id<int,_int_&,_int_&,_int>#pass_by_val(class pass_by_val::Id<int>)#6647322778693099135.704a07df7f1fd4912e21bd274744a5e0_4" [label="4:  Return Stmt \n   n$0=*&__return_param:pass_by_val::Id<int>* [line 59, column 3]\n  n$13=_fun_pass_by_val::Id<int>::Id(n$0:pass_by_val::Id<int>*,&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>&) [line 59, column 10]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int> [line 59, column 43]\n  n$3=_fun_pass_by_val::Id<int>::~Id(&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>*) injected [line 59, column 43]\n " shape="box"]
+	 "make_id<int,_int_&,_int_&,_int>#pass_by_val(class pass_by_val::Id<int>)#6647322778693099135.704a07df7f1fd4912e21bd274744a5e0_3" -> "make_id<int,_int_&,_int_&,_int>#pass_by_val(class pass_by_val::Id<int>)#6647322778693099135.704a07df7f1fd4912e21bd274744a5e0_5" ;
+"make_id<int,_int_&,_int_&,_int>#pass_by_val(class pass_by_val::Id<int>)#6647322778693099135.704a07df7f1fd4912e21bd274744a5e0_4" [label="4:  Return Stmt \n   n$0=*&__return_param:pass_by_val::Id<int>* [line 59, column 3]\n " shape="box"]
 	
 
-	 "make_id<int,_int_&,_int_&,_int>#pass_by_val(class pass_by_val::Id<int>)#6647322778693099135.704a07df7f1fd4912e21bd274744a5e0_4" -> "make_id<int,_int_&,_int_&,_int>#pass_by_val(class pass_by_val::Id<int>)#6647322778693099135.704a07df7f1fd4912e21bd274744a5e0_2" ;
+	 "make_id<int,_int_&,_int_&,_int>#pass_by_val(class pass_by_val::Id<int>)#6647322778693099135.704a07df7f1fd4912e21bd274744a5e0_4" -> "make_id<int,_int_&,_int_&,_int>#pass_by_val(class pass_by_val::Id<int>)#6647322778693099135.704a07df7f1fd4912e21bd274744a5e0_3" ;
+"make_id<int,_int_&,_int_&,_int>#pass_by_val(class pass_by_val::Id<int>)#6647322778693099135.704a07df7f1fd4912e21bd274744a5e0_5" [label="5:  Return Stmt \n   n$13=_fun_pass_by_val::Id<int>::Id(n$0:pass_by_val::Id<int>*,&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>&) [line 59, column 10]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int> [line 59, column 43]\n  n$3=_fun_pass_by_val::Id<int>::~Id(&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>*) injected [line 59, column 43]\n " shape="box"]
+	
+
+	 "make_id<int,_int_&,_int_&,_int>#pass_by_val(class pass_by_val::Id<int>)#6647322778693099135.704a07df7f1fd4912e21bd274744a5e0_5" -> "make_id<int,_int_&,_int_&,_int>#pass_by_val(class pass_by_val::Id<int>)#6647322778693099135.704a07df7f1fd4912e21bd274744a5e0_6" ;
+"make_id<int,_int_&,_int_&,_int>#pass_by_val(class pass_by_val::Id<int>)#6647322778693099135.704a07df7f1fd4912e21bd274744a5e0_6" [label="6:  Return Stmt \n  " shape="box"]
+	
+
+	 "make_id<int,_int_&,_int_&,_int>#pass_by_val(class pass_by_val::Id<int>)#6647322778693099135.704a07df7f1fd4912e21bd274744a5e0_6" -> "make_id<int,_int_&,_int_&,_int>#pass_by_val(class pass_by_val::Id<int>)#6647322778693099135.704a07df7f1fd4912e21bd274744a5e0_2" ;
 "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_1" [label="1: Start pass_by_val::perfect_forwarding_by_ref\nFormals:  __return_param:pass_by_val::Id<int>*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$2:int 0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int> b:int a:int \n  " color=yellow style=filled]
 	
 
-	 "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_1" -> "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_8" ;
+	 "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_1" -> "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_10" ;
 "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_2" [label="2: Exit pass_by_val::perfect_forwarding_by_ref \n  " color=yellow style=filled]
 	
 
@@ -110,19 +142,27 @@ digraph cfg {
 "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_5" [label="5:  DeclStmt \n   n$7=_fun_pass_by_val::make_id<int,_int_&,_int_&,_int>(&a:int&,&b:int&,&0$?%__sil_tmpSIL_materialize_temp__n$2:int&,&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>*) assign_last [line 64, column 10]\n " shape="box"]
 	
 
-	 "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_5" -> "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_6" ;
-"perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_6" [label="6:  Return Stmt \n   n$0=*&__return_param:pass_by_val::Id<int>* [line 64, column 3]\n  n$8=_fun_pass_by_val::Id<int>::Id(n$0:pass_by_val::Id<int>*,&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>&) [line 64, column 10]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int> [line 64, column 30]\n  n$4=_fun_pass_by_val::Id<int>::~Id(&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>*) injected [line 64, column 30]\n " shape="box"]
+	 "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_5" -> "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_7" ;
+"perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_6" [label="6:  Return Stmt \n   n$0=*&__return_param:pass_by_val::Id<int>* [line 64, column 3]\n " shape="box"]
 	
 
-	 "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_6" -> "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_2" ;
-"perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(b:int); [line 63, column 3]\n  *&b:int=1 [line 63, column 3]\n " shape="box"]
+	 "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_6" -> "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_4" ;
+"perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_7" [label="7:  Return Stmt \n   n$8=_fun_pass_by_val::Id<int>::Id(n$0:pass_by_val::Id<int>*,&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>&) [line 64, column 10]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int> [line 64, column 30]\n  n$4=_fun_pass_by_val::Id<int>::~Id(&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>*) injected [line 64, column 30]\n " shape="box"]
 	
 
-	 "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_7" -> "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_4" ;
-"perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 63, column 3]\n  *&a:int=0 [line 63, column 3]\n " shape="box"]
+	 "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_7" -> "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_8" ;
+"perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_8" [label="8:  Return Stmt \n  " shape="box"]
 	
 
-	 "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_8" -> "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_7" ;
+	 "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_8" -> "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_2" ;
+"perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(b:int); [line 63, column 3]\n  *&b:int=1 [line 63, column 3]\n " shape="box"]
+	
+
+	 "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_9" -> "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_6" ;
+"perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 63, column 3]\n  *&a:int=0 [line 63, column 3]\n " shape="box"]
+	
+
+	 "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_10" -> "perfect_forwarding_by_ref#pass_by_val(class pass_by_val::Id<int>)#7578991627406493712.4a78b0c805a8de47693f8c723da2ec49_9" ;
 "plain_struct_by_ref#pass_by_val(class pass_by_val::PlainStruct)#2657428317109106311.ebb1ec27d296c7f7c7c76440cd2435a6_1" [label="1: Start pass_by_val::plain_struct_by_ref\nFormals:  lref:pass_by_val::PlainStruct& rref:pass_by_val::PlainStruct& ptr:pass_by_val::PlainStruct*\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -130,10 +170,14 @@ digraph cfg {
 "plain_struct_by_ref#pass_by_val(class pass_by_val::PlainStruct)#2657428317109106311.ebb1ec27d296c7f7c7c76440cd2435a6_2" [label="2: Exit pass_by_val::plain_struct_by_ref \n  " color=yellow style=filled]
 	
 
-"plain_struct_by_ref#pass_by_val(class pass_by_val::PlainStruct)#2657428317109106311.ebb1ec27d296c7f7c7c76440cd2435a6_3" [label="3:  Return Stmt \n   n$0=*&lref:pass_by_val::PlainStruct& [line 21, column 10]\n  n$1=*n$0.x:int [line 21, column 10]\n  n$2=*&rref:pass_by_val::PlainStruct& [line 21, column 19]\n  n$3=*n$2.x:int [line 21, column 19]\n  n$4=*&ptr:pass_by_val::PlainStruct* [line 21, column 28]\n  n$5=*n$4.x:int [line 21, column 28]\n  *&return:int=((n$1 + n$3) + n$5) [line 21, column 3]\n " shape="box"]
+"plain_struct_by_ref#pass_by_val(class pass_by_val::PlainStruct)#2657428317109106311.ebb1ec27d296c7f7c7c76440cd2435a6_3" [label="3:  Return Stmt \n   n$0=*&lref:pass_by_val::PlainStruct& [line 21, column 10]\n  n$1=*n$0.x:int [line 21, column 10]\n  n$2=*&rref:pass_by_val::PlainStruct& [line 21, column 19]\n  n$3=*n$2.x:int [line 21, column 19]\n  n$4=*&ptr:pass_by_val::PlainStruct* [line 21, column 28]\n  n$5=*n$4.x:int [line 21, column 28]\n " shape="box"]
 	
 
-	 "plain_struct_by_ref#pass_by_val(class pass_by_val::PlainStruct)#2657428317109106311.ebb1ec27d296c7f7c7c76440cd2435a6_3" -> "plain_struct_by_ref#pass_by_val(class pass_by_val::PlainStruct)#2657428317109106311.ebb1ec27d296c7f7c7c76440cd2435a6_2" ;
+	 "plain_struct_by_ref#pass_by_val(class pass_by_val::PlainStruct)#2657428317109106311.ebb1ec27d296c7f7c7c76440cd2435a6_3" -> "plain_struct_by_ref#pass_by_val(class pass_by_val::PlainStruct)#2657428317109106311.ebb1ec27d296c7f7c7c76440cd2435a6_4" ;
+"plain_struct_by_ref#pass_by_val(class pass_by_val::PlainStruct)#2657428317109106311.ebb1ec27d296c7f7c7c76440cd2435a6_4" [label="4:  Return Stmt \n   *&return:int=((n$1 + n$3) + n$5) [line 21, column 3]\n " shape="box"]
+	
+
+	 "plain_struct_by_ref#pass_by_val(class pass_by_val::PlainStruct)#2657428317109106311.ebb1ec27d296c7f7c7c76440cd2435a6_4" -> "plain_struct_by_ref#pass_by_val(class pass_by_val::PlainStruct)#2657428317109106311.ebb1ec27d296c7f7c7c76440cd2435a6_2" ;
 "plain_struct_by_val#pass_by_val#7415219466606029544.eb0e0bdde375e8d1716470ec792b2450_1" [label="1: Start pass_by_val::plain_struct_by_val\nFormals:  p:pass_by_val::PlainStruct&\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -141,10 +185,14 @@ digraph cfg {
 "plain_struct_by_val#pass_by_val#7415219466606029544.eb0e0bdde375e8d1716470ec792b2450_2" [label="2: Exit pass_by_val::plain_struct_by_val \n  " color=yellow style=filled]
 	
 
-"plain_struct_by_val#pass_by_val#7415219466606029544.eb0e0bdde375e8d1716470ec792b2450_3" [label="3:  Return Stmt \n   n$0=*&p:pass_by_val::PlainStruct& [line 17, column 49]\n  n$1=*n$0.x:int [line 17, column 49]\n  n$2=*&p:pass_by_val::PlainStruct& [line 17, column 57]\n  n$3=*n$2.y:int* [line 17, column 56]\n  n$4=*n$3:int [line 17, column 55]\n  *&return:int=(n$1 + n$4) [line 17, column 42]\n " shape="box"]
+"plain_struct_by_val#pass_by_val#7415219466606029544.eb0e0bdde375e8d1716470ec792b2450_3" [label="3:  Return Stmt \n   n$0=*&p:pass_by_val::PlainStruct& [line 17, column 49]\n  n$1=*n$0.x:int [line 17, column 49]\n  n$2=*&p:pass_by_val::PlainStruct& [line 17, column 57]\n  n$3=*n$2.y:int* [line 17, column 56]\n  n$4=*n$3:int [line 17, column 55]\n " shape="box"]
 	
 
-	 "plain_struct_by_val#pass_by_val#7415219466606029544.eb0e0bdde375e8d1716470ec792b2450_3" -> "plain_struct_by_val#pass_by_val#7415219466606029544.eb0e0bdde375e8d1716470ec792b2450_2" ;
+	 "plain_struct_by_val#pass_by_val#7415219466606029544.eb0e0bdde375e8d1716470ec792b2450_3" -> "plain_struct_by_val#pass_by_val#7415219466606029544.eb0e0bdde375e8d1716470ec792b2450_4" ;
+"plain_struct_by_val#pass_by_val#7415219466606029544.eb0e0bdde375e8d1716470ec792b2450_4" [label="4:  Return Stmt \n   *&return:int=(n$1 + n$4) [line 17, column 42]\n " shape="box"]
+	
+
+	 "plain_struct_by_val#pass_by_val#7415219466606029544.eb0e0bdde375e8d1716470ec792b2450_4" -> "plain_struct_by_val#pass_by_val#7415219466606029544.eb0e0bdde375e8d1716470ec792b2450_2" ;
 "to_double#pass_by_val#15152319343034292227.aa9254ca74e20265f2daa2c4c321444a_1" [label="1: Start pass_by_val::to_double\nFormals:  x:int\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -152,10 +200,14 @@ digraph cfg {
 "to_double#pass_by_val#15152319343034292227.aa9254ca74e20265f2daa2c4c321444a_2" [label="2: Exit pass_by_val::to_double \n  " color=yellow style=filled]
 	
 
-"to_double#pass_by_val#15152319343034292227.aa9254ca74e20265f2daa2c4c321444a_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 50, column 34]\n  *&return:double=n$0 [line 50, column 27]\n " shape="box"]
+"to_double#pass_by_val#15152319343034292227.aa9254ca74e20265f2daa2c4c321444a_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 50, column 34]\n " shape="box"]
 	
 
-	 "to_double#pass_by_val#15152319343034292227.aa9254ca74e20265f2daa2c4c321444a_3" -> "to_double#pass_by_val#15152319343034292227.aa9254ca74e20265f2daa2c4c321444a_2" ;
+	 "to_double#pass_by_val#15152319343034292227.aa9254ca74e20265f2daa2c4c321444a_3" -> "to_double#pass_by_val#15152319343034292227.aa9254ca74e20265f2daa2c4c321444a_4" ;
+"to_double#pass_by_val#15152319343034292227.aa9254ca74e20265f2daa2c4c321444a_4" [label="4:  Return Stmt \n   *&return:double=n$0 [line 50, column 27]\n " shape="box"]
+	
+
+	 "to_double#pass_by_val#15152319343034292227.aa9254ca74e20265f2daa2c4c321444a_4" -> "to_double#pass_by_val#15152319343034292227.aa9254ca74e20265f2daa2c4c321444a_2" ;
 "tricky_dependent_by_val#pass_by_val#11704838728234311959.2c9738321ba9545daa75926f2565403e_1" [label="1: Start pass_by_val::tricky_dependent_by_val\nFormals:  t:double\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -163,10 +215,14 @@ digraph cfg {
 "tricky_dependent_by_val#pass_by_val#11704838728234311959.2c9738321ba9545daa75926f2565403e_2" [label="2: Exit pass_by_val::tricky_dependent_by_val \n  " color=yellow style=filled]
 	
 
-"tricky_dependent_by_val#pass_by_val#11704838728234311959.2c9738321ba9545daa75926f2565403e_3" [label="3:  Return Stmt \n   n$0=*&t:double [line 55, column 62]\n  *&return:double=n$0 [line 55, column 55]\n " shape="box"]
+"tricky_dependent_by_val#pass_by_val#11704838728234311959.2c9738321ba9545daa75926f2565403e_3" [label="3:  Return Stmt \n   n$0=*&t:double [line 55, column 62]\n " shape="box"]
 	
 
-	 "tricky_dependent_by_val#pass_by_val#11704838728234311959.2c9738321ba9545daa75926f2565403e_3" -> "tricky_dependent_by_val#pass_by_val#11704838728234311959.2c9738321ba9545daa75926f2565403e_2" ;
+	 "tricky_dependent_by_val#pass_by_val#11704838728234311959.2c9738321ba9545daa75926f2565403e_3" -> "tricky_dependent_by_val#pass_by_val#11704838728234311959.2c9738321ba9545daa75926f2565403e_4" ;
+"tricky_dependent_by_val#pass_by_val#11704838728234311959.2c9738321ba9545daa75926f2565403e_4" [label="4:  Return Stmt \n   *&return:double=n$0 [line 55, column 55]\n " shape="box"]
+	
+
+	 "tricky_dependent_by_val#pass_by_val#11704838728234311959.2c9738321ba9545daa75926f2565403e_4" -> "tricky_dependent_by_val#pass_by_val#11704838728234311959.2c9738321ba9545daa75926f2565403e_2" ;
 "type_alias_by_ref#pass_by_val(class pass_by_val::PlainStruct,class pass_by_val::PlainStruct)#1261506.a3dda6b37896a0f836342db8df5fffd2_1" [label="1: Start pass_by_val::type_alias_by_ref\nFormals:  p1:pass_by_val::PlainStruct* p2:pass_by_val::PlainStruct const *\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -174,10 +230,14 @@ digraph cfg {
 "type_alias_by_ref#pass_by_val(class pass_by_val::PlainStruct,class pass_by_val::PlainStruct)#1261506.a3dda6b37896a0f836342db8df5fffd2_2" [label="2: Exit pass_by_val::type_alias_by_ref \n  " color=yellow style=filled]
 	
 
-"type_alias_by_ref#pass_by_val(class pass_by_val::PlainStruct,class pass_by_val::PlainStruct)#1261506.a3dda6b37896a0f836342db8df5fffd2_3" [label="3:  Return Stmt \n   n$0=*&p1:pass_by_val::PlainStruct* [line 33, column 10]\n  n$1=*n$0.x:int [line 33, column 10]\n  n$2=*&p2:pass_by_val::PlainStruct const * [line 33, column 18]\n  n$3=*n$2.x:int [line 33, column 18]\n  *&return:int=(n$1 + n$3) [line 33, column 3]\n " shape="box"]
+"type_alias_by_ref#pass_by_val(class pass_by_val::PlainStruct,class pass_by_val::PlainStruct)#1261506.a3dda6b37896a0f836342db8df5fffd2_3" [label="3:  Return Stmt \n   n$0=*&p1:pass_by_val::PlainStruct* [line 33, column 10]\n  n$1=*n$0.x:int [line 33, column 10]\n  n$2=*&p2:pass_by_val::PlainStruct const * [line 33, column 18]\n  n$3=*n$2.x:int [line 33, column 18]\n " shape="box"]
 	
 
-	 "type_alias_by_ref#pass_by_val(class pass_by_val::PlainStruct,class pass_by_val::PlainStruct)#1261506.a3dda6b37896a0f836342db8df5fffd2_3" -> "type_alias_by_ref#pass_by_val(class pass_by_val::PlainStruct,class pass_by_val::PlainStruct)#1261506.a3dda6b37896a0f836342db8df5fffd2_2" ;
+	 "type_alias_by_ref#pass_by_val(class pass_by_val::PlainStruct,class pass_by_val::PlainStruct)#1261506.a3dda6b37896a0f836342db8df5fffd2_3" -> "type_alias_by_ref#pass_by_val(class pass_by_val::PlainStruct,class pass_by_val::PlainStruct)#1261506.a3dda6b37896a0f836342db8df5fffd2_4" ;
+"type_alias_by_ref#pass_by_val(class pass_by_val::PlainStruct,class pass_by_val::PlainStruct)#1261506.a3dda6b37896a0f836342db8df5fffd2_4" [label="4:  Return Stmt \n   *&return:int=(n$1 + n$3) [line 33, column 3]\n " shape="box"]
+	
+
+	 "type_alias_by_ref#pass_by_val(class pass_by_val::PlainStruct,class pass_by_val::PlainStruct)#1261506.a3dda6b37896a0f836342db8df5fffd2_4" -> "type_alias_by_ref#pass_by_val(class pass_by_val::PlainStruct,class pass_by_val::PlainStruct)#1261506.a3dda6b37896a0f836342db8df5fffd2_2" ;
 "type_alias_by_val#pass_by_val#9273827923998572097.425db1bd7e6b48116fa99ed40b0b6415_1" [label="1: Start pass_by_val::type_alias_by_val\nFormals:  p1:pass_by_val::PlainStruct& p2:pass_by_val::PlainStruct&\nLocals:  0$?%__sil_tmp__temp_construct_n$0:pass_by_val::PlainStruct 0$?%__sil_tmp__temp_construct_n$4:pass_by_val::PlainStruct \n  " color=yellow style=filled]
 	
 
@@ -185,10 +245,14 @@ digraph cfg {
 "type_alias_by_val#pass_by_val#9273827923998572097.425db1bd7e6b48116fa99ed40b0b6415_2" [label="2: Exit pass_by_val::type_alias_by_val \n  " color=yellow style=filled]
 	
 
-"type_alias_by_val#pass_by_val#9273827923998572097.425db1bd7e6b48116fa99ed40b0b6415_3" [label="3:  Return Stmt \n   n$1=*&p1:pass_by_val::PlainStruct& [line 30, column 30]\n  n$2=_fun_pass_by_val::PlainStruct::PlainStruct(&0$?%__sil_tmp__temp_construct_n$0:pass_by_val::PlainStruct*,n$1:pass_by_val::PlainStruct&) [line 30, column 30]\n  n$3=_fun_pass_by_val::plain_struct_by_val(&0$?%__sil_tmp__temp_construct_n$0:pass_by_val::PlainStruct) [line 30, column 10]\n  n$5=*&p2:pass_by_val::PlainStruct& [line 30, column 56]\n  n$6=_fun_pass_by_val::PlainStruct::PlainStruct(&0$?%__sil_tmp__temp_construct_n$4:pass_by_val::PlainStruct*,n$5:pass_by_val::PlainStruct&) [line 30, column 56]\n  n$7=_fun_pass_by_val::plain_struct_by_val(&0$?%__sil_tmp__temp_construct_n$4:pass_by_val::PlainStruct) [line 30, column 36]\n  *&return:int=(n$3 + n$7) [line 30, column 3]\n " shape="box"]
+"type_alias_by_val#pass_by_val#9273827923998572097.425db1bd7e6b48116fa99ed40b0b6415_3" [label="3:  Return Stmt \n   n$1=*&p1:pass_by_val::PlainStruct& [line 30, column 30]\n  n$2=_fun_pass_by_val::PlainStruct::PlainStruct(&0$?%__sil_tmp__temp_construct_n$0:pass_by_val::PlainStruct*,n$1:pass_by_val::PlainStruct&) [line 30, column 30]\n  n$3=_fun_pass_by_val::plain_struct_by_val(&0$?%__sil_tmp__temp_construct_n$0:pass_by_val::PlainStruct) [line 30, column 10]\n  n$5=*&p2:pass_by_val::PlainStruct& [line 30, column 56]\n  n$6=_fun_pass_by_val::PlainStruct::PlainStruct(&0$?%__sil_tmp__temp_construct_n$4:pass_by_val::PlainStruct*,n$5:pass_by_val::PlainStruct&) [line 30, column 56]\n  n$7=_fun_pass_by_val::plain_struct_by_val(&0$?%__sil_tmp__temp_construct_n$4:pass_by_val::PlainStruct) [line 30, column 36]\n " shape="box"]
 	
 
-	 "type_alias_by_val#pass_by_val#9273827923998572097.425db1bd7e6b48116fa99ed40b0b6415_3" -> "type_alias_by_val#pass_by_val#9273827923998572097.425db1bd7e6b48116fa99ed40b0b6415_2" ;
+	 "type_alias_by_val#pass_by_val#9273827923998572097.425db1bd7e6b48116fa99ed40b0b6415_3" -> "type_alias_by_val#pass_by_val#9273827923998572097.425db1bd7e6b48116fa99ed40b0b6415_4" ;
+"type_alias_by_val#pass_by_val#9273827923998572097.425db1bd7e6b48116fa99ed40b0b6415_4" [label="4:  Return Stmt \n   *&return:int=(n$3 + n$7) [line 30, column 3]\n " shape="box"]
+	
+
+	 "type_alias_by_val#pass_by_val#9273827923998572097.425db1bd7e6b48116fa99ed40b0b6415_4" -> "type_alias_by_val#pass_by_val#9273827923998572097.425db1bd7e6b48116fa99ed40b0b6415_2" ;
 "Id#Id<int>#pass_by_val#{3384099991783983184}.e286af060b6cead08a43f9654ad715c7_1" [label="1: Start pass_by_val::Id<int>::Id\nFormals:  this:pass_by_val::Id<int>* __param_0:int __param_1:int& __param_2:int&\nLocals:  \n  " color=yellow style=filled]
 	
 

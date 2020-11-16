@@ -2848,58 +2848,74 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         ~exn:[] ;
       ret_node
     in
-    let trans_result =
-      match stmt_list with
-      | [stmt] ->
-          (* return exp; *)
-          let ret_type = Procdesc.get_ret_type procdesc in
-          let ret_exp, ret_typ, var_instrs =
-            match context.CContext.return_param_typ with
-            | Some ret_param_typ ->
-                let name = CFrontend_config.return_param in
-                let pvar = Pvar.mk (Mangled.from_string name) procname in
-                let id = Ident.create_fresh Ident.knormal in
-                let instr =
-                  Sil.Load
-                    {id; e= Exp.Lvar pvar; root_typ= ret_param_typ; typ= ret_param_typ; loc= sil_loc}
+    match stmt_list with
+    | [stmt] ->
+        (* return exp; *)
+        let ret_type = Procdesc.get_ret_type procdesc in
+        let ret_exp, ret_typ, var_control =
+          match context.CContext.return_param_typ with
+          | Some ret_param_typ ->
+              let name = CFrontend_config.return_param in
+              let pvar = Pvar.mk (Mangled.from_string name) procname in
+              let id = Ident.create_fresh Ident.knormal in
+              let instr =
+                Sil.Load
+                  {id; e= Exp.Lvar pvar; root_typ= ret_param_typ; typ= ret_param_typ; loc= sil_loc}
+              in
+              let ret_typ =
+                match ret_param_typ.desc with Typ.Tptr (t, _) -> t | _ -> assert false
+              in
+              (Exp.Var id, ret_typ, Some {empty_control with instrs= [instr]})
+          | None ->
+              (Exp.Lvar (Procdesc.get_ret_var procdesc), ret_type, None)
+        in
+        let trans_state' =
+          {trans_state_pri with succ_nodes= []; var_exp_typ= Some (ret_exp, ret_typ)}
+        in
+        L.debug Capture Verbose "Evaluating sub-expr of return@\n" ;
+        let res_trans_stmt = instruction trans_state' stmt in
+        L.debug Capture Verbose "Done evaluating sub-expr of return@\n" ;
+        let controls =
+          let var_control =
+            Option.map var_control ~f:(fun control ->
+                (* force node creation to place the load instruction [var_control] before the
+                   translation of the sub-expr *)
+                let trans_state =
+                  PriorityNode.force_claim_priority_node trans_state_pri stmt_info
                 in
-                let ret_typ =
-                  match ret_param_typ.desc with Typ.Tptr (t, _) -> t | _ -> assert false
-                in
-                (Exp.Var id, ret_typ, [instr])
-            | None ->
-                (Exp.Lvar (Procdesc.get_ret_var procdesc), ret_type, [])
+                PriorityNode.compute_control_to_parent trans_state sil_loc ~node_name:ReturnStmt
+                  stmt_info control )
           in
-          let trans_state' =
-            {trans_state_pri with succ_nodes= []; var_exp_typ= Some (ret_exp, ret_typ)}
-          in
-          let res_trans_stmt = instruction trans_state' stmt in
-          let ret_instrs =
-            if List.exists ~f:(Exp.equal ret_exp) res_trans_stmt.control.initd_exps then []
-            else
-              let sil_expr, _ = res_trans_stmt.return in
-              [Sil.Store {e1= ret_exp; root_typ= ret_type; typ= ret_typ; e2= sil_expr; loc= sil_loc}]
-          in
-          let instrs = var_instrs @ res_trans_stmt.control.instrs @ ret_instrs in
-          let ret_node = mk_ret_node instrs in
-          List.iter
-            ~f:(fun n -> Procdesc.node_set_succs procdesc n ~normal:[ret_node] ~exn:[])
-            res_trans_stmt.control.leaf_nodes ;
-          let root_nodes_to_parent =
-            if List.length res_trans_stmt.control.root_nodes > 0 then
-              res_trans_stmt.control.root_nodes
-            else [ret_node]
-          in
-          mk_trans_result res_trans_stmt.return {empty_control with root_nodes= root_nodes_to_parent}
-      | [] ->
-          (* return; *)
-          let ret_node = mk_ret_node [] in
-          mk_trans_result (mk_fresh_void_exp_typ ()) {empty_control with root_nodes= [ret_node]}
-      | _ ->
-          assert false
-    in
-    (* We expect a return with only one expression *)
-    trans_result
+          PriorityNode.compute_controls_to_parent trans_state' sil_loc ~node_name:ReturnStmt
+            stmt_info
+            (Option.to_list var_control @ [res_trans_stmt.control])
+        in
+        let ret_instrs =
+          if List.exists ~f:(Exp.equal ret_exp) res_trans_stmt.control.initd_exps then []
+          else
+            let sil_expr, _ = res_trans_stmt.return in
+            [Sil.Store {e1= ret_exp; root_typ= ret_type; typ= ret_typ; e2= sil_expr; loc= sil_loc}]
+        in
+        let ret_node = mk_ret_node ret_instrs in
+        L.debug Capture Verbose "Created return node %a with instrs [%a]@\n" Procdesc.Node.pp
+          ret_node
+          (Pp.seq ~sep:";" (Sil.pp_instr ~print_types:false Pp.text))
+          ret_instrs ;
+        assert (List.is_empty controls.instrs) ;
+        List.iter controls.leaf_nodes ~f:(fun leaf ->
+            Procdesc.set_succs leaf ~normal:(Some [ret_node]) ~exn:None ) ;
+        let ret_control =
+          {empty_control with root_nodes= [ret_node]; leaf_nodes= [ret_node]; instrs= []}
+        in
+        PriorityNode.compute_controls_to_parent trans_state_pri sil_loc ~node_name:ReturnStmt
+          stmt_info [controls; ret_control]
+        |> mk_trans_result res_trans_stmt.return
+    | [] ->
+        (* return; *)
+        let ret_node = mk_ret_node [] in
+        mk_trans_result (mk_fresh_void_exp_typ ()) {empty_control with root_nodes= [ret_node]}
+    | _ ->
+        assert false
 
 
   and parenExpr_trans trans_state source_range stmt_list =

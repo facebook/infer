@@ -7,8 +7,12 @@ digraph cfg {
 "simple#17639603251097432993.e5c9feb95ecff69f23df6ce422f34819_2" [label="2: Exit simple \n  " color=yellow style=filled]
 	
 
-"simple#17639603251097432993.e5c9feb95ecff69f23df6ce422f34819_3" [label="3:  Return Stmt \n   n$0=_fun___infer_skip(&vec:void&) [line 10, column 44]\n  n$1=*n$0:void [line 10, column 44]\n  *&return:void=n$1 [line 10, column 37]\n " shape="box"]
+"simple#17639603251097432993.e5c9feb95ecff69f23df6ce422f34819_3" [label="3:  Return Stmt \n   n$0=_fun___infer_skip(&vec:void&) [line 10, column 44]\n  n$1=*n$0:void [line 10, column 44]\n " shape="box"]
 	
 
-	 "simple#17639603251097432993.e5c9feb95ecff69f23df6ce422f34819_3" -> "simple#17639603251097432993.e5c9feb95ecff69f23df6ce422f34819_2" ;
+	 "simple#17639603251097432993.e5c9feb95ecff69f23df6ce422f34819_3" -> "simple#17639603251097432993.e5c9feb95ecff69f23df6ce422f34819_4" ;
+"simple#17639603251097432993.e5c9feb95ecff69f23df6ce422f34819_4" [label="4:  Return Stmt \n   *&return:void=n$1 [line 10, column 37]\n " shape="box"]
+	
+
+	 "simple#17639603251097432993.e5c9feb95ecff69f23df6ce422f34819_4" -> "simple#17639603251097432993.e5c9feb95ecff69f23df6ce422f34819_2" ;
 }

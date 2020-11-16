@@ -3,74 +3,86 @@ digraph cfg {
 "comma_1.bafaed8336991f5a2e612ee2580c1506_1" [label="1: Start comma_1\nFormals: \nLocals:  d:int b:int a:int \n  " color=yellow style=filled]
 	
 
-	 "comma_1.bafaed8336991f5a2e612ee2580c1506_1" -> "comma_1.bafaed8336991f5a2e612ee2580c1506_6" ;
+	 "comma_1.bafaed8336991f5a2e612ee2580c1506_1" -> "comma_1.bafaed8336991f5a2e612ee2580c1506_7" ;
 "comma_1.bafaed8336991f5a2e612ee2580c1506_2" [label="2: Exit comma_1 \n  " color=yellow style=filled]
 	
 
-"comma_1.bafaed8336991f5a2e612ee2580c1506_3" [label="3:  Return Stmt \n   n$0=*&d:int [line 11, column 10]\n  *&return:int=n$0 [line 11, column 3]\n " shape="box"]
+"comma_1.bafaed8336991f5a2e612ee2580c1506_3" [label="3:  Return Stmt \n   n$0=*&d:int [line 11, column 10]\n " shape="box"]
 	
 
-	 "comma_1.bafaed8336991f5a2e612ee2580c1506_3" -> "comma_1.bafaed8336991f5a2e612ee2580c1506_2" ;
-"comma_1.bafaed8336991f5a2e612ee2580c1506_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(d:int); [line 10, column 3]\n  n$1=*&a:int [line 10, column 16]\n  *&a:int=(n$1 * 2) [line 10, column 12]\n  n$2=*&a:int [line 10, column 12]\n  n$3=*&a:int [line 10, column 31]\n  *&a:int=(n$3 + 1) [line 10, column 31]\n  *&b:int=(7 * n$3) [line 10, column 23]\n  n$4=*&b:int [line 10, column 23]\n  *&d:int=n$4 [line 10, column 3]\n " shape="box"]
+	 "comma_1.bafaed8336991f5a2e612ee2580c1506_3" -> "comma_1.bafaed8336991f5a2e612ee2580c1506_4" ;
+"comma_1.bafaed8336991f5a2e612ee2580c1506_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 11, column 3]\n " shape="box"]
 	
 
-	 "comma_1.bafaed8336991f5a2e612ee2580c1506_4" -> "comma_1.bafaed8336991f5a2e612ee2580c1506_3" ;
-"comma_1.bafaed8336991f5a2e612ee2580c1506_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(b:int); [line 9, column 3]\n  *&b:int=7 [line 9, column 3]\n " shape="box"]
+	 "comma_1.bafaed8336991f5a2e612ee2580c1506_4" -> "comma_1.bafaed8336991f5a2e612ee2580c1506_2" ;
+"comma_1.bafaed8336991f5a2e612ee2580c1506_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(d:int); [line 10, column 3]\n  n$1=*&a:int [line 10, column 16]\n  *&a:int=(n$1 * 2) [line 10, column 12]\n  n$2=*&a:int [line 10, column 12]\n  n$3=*&a:int [line 10, column 31]\n  *&a:int=(n$3 + 1) [line 10, column 31]\n  *&b:int=(7 * n$3) [line 10, column 23]\n  n$4=*&b:int [line 10, column 23]\n  *&d:int=n$4 [line 10, column 3]\n " shape="box"]
 	
 
-	 "comma_1.bafaed8336991f5a2e612ee2580c1506_5" -> "comma_1.bafaed8336991f5a2e612ee2580c1506_4" ;
-"comma_1.bafaed8336991f5a2e612ee2580c1506_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 9, column 3]\n  *&a:int=9 [line 9, column 3]\n " shape="box"]
+	 "comma_1.bafaed8336991f5a2e612ee2580c1506_5" -> "comma_1.bafaed8336991f5a2e612ee2580c1506_3" ;
+"comma_1.bafaed8336991f5a2e612ee2580c1506_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(b:int); [line 9, column 3]\n  *&b:int=7 [line 9, column 3]\n " shape="box"]
 	
 
 	 "comma_1.bafaed8336991f5a2e612ee2580c1506_6" -> "comma_1.bafaed8336991f5a2e612ee2580c1506_5" ;
+"comma_1.bafaed8336991f5a2e612ee2580c1506_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 9, column 3]\n  *&a:int=9 [line 9, column 3]\n " shape="box"]
+	
+
+	 "comma_1.bafaed8336991f5a2e612ee2580c1506_7" -> "comma_1.bafaed8336991f5a2e612ee2580c1506_6" ;
 "comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_1" [label="1: Start comma_2\nFormals: \nLocals:  d:int b:int a:int \n  " color=yellow style=filled]
 	
 
-	 "comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_1" -> "comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_6" ;
+	 "comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_1" -> "comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_7" ;
 "comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_2" [label="2: Exit comma_2 \n  " color=yellow style=filled]
 	
 
-"comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_3" [label="3:  Return Stmt \n   n$0=*&d:int [line 17, column 10]\n  *&return:int=n$0 [line 17, column 3]\n " shape="box"]
+"comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_3" [label="3:  Return Stmt \n   n$0=*&d:int [line 17, column 10]\n " shape="box"]
 	
 
-	 "comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_3" -> "comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_2" ;
-"comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(d:int); [line 16, column 3]\n  n$1=*&a:int [line 16, column 16]\n  *&a:int=(n$1 * 2) [line 16, column 12]\n  n$2=*&a:int [line 16, column 12]\n  n$3=*&a:int [line 16, column 31]\n  *&a:int=(n$3 + 1) [line 16, column 31]\n  *&b:int=(7 * n$3) [line 16, column 23]\n  n$4=*&b:int [line 16, column 23]\n  n$5=*&a:int [line 16, column 36]\n  n$6=*&b:int [line 16, column 40]\n  *&d:int=((n$5 + n$6) + 9) [line 16, column 3]\n " shape="box"]
+	 "comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_3" -> "comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_4" ;
+"comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 17, column 3]\n " shape="box"]
 	
 
-	 "comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_4" -> "comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_3" ;
-"comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(b:int); [line 15, column 3]\n  *&b:int=7 [line 15, column 3]\n " shape="box"]
+	 "comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_4" -> "comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_2" ;
+"comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(d:int); [line 16, column 3]\n  n$1=*&a:int [line 16, column 16]\n  *&a:int=(n$1 * 2) [line 16, column 12]\n  n$2=*&a:int [line 16, column 12]\n  n$3=*&a:int [line 16, column 31]\n  *&a:int=(n$3 + 1) [line 16, column 31]\n  *&b:int=(7 * n$3) [line 16, column 23]\n  n$4=*&b:int [line 16, column 23]\n  n$5=*&a:int [line 16, column 36]\n  n$6=*&b:int [line 16, column 40]\n  *&d:int=((n$5 + n$6) + 9) [line 16, column 3]\n " shape="box"]
 	
 
-	 "comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_5" -> "comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_4" ;
-"comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 15, column 3]\n  *&a:int=9 [line 15, column 3]\n " shape="box"]
+	 "comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_5" -> "comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_3" ;
+"comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(b:int); [line 15, column 3]\n  *&b:int=7 [line 15, column 3]\n " shape="box"]
 	
 
 	 "comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_6" -> "comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_5" ;
+"comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 15, column 3]\n  *&a:int=9 [line 15, column 3]\n " shape="box"]
+	
+
+	 "comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_7" -> "comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_6" ;
 "comma_3.94b9d12e6a2f1dbb384d21928d4e092d_1" [label="1: Start comma_3\nFormals: \nLocals:  d:int c:int b:int a:int \n  " color=yellow style=filled]
 	
 
-	 "comma_3.94b9d12e6a2f1dbb384d21928d4e092d_1" -> "comma_3.94b9d12e6a2f1dbb384d21928d4e092d_7" ;
+	 "comma_3.94b9d12e6a2f1dbb384d21928d4e092d_1" -> "comma_3.94b9d12e6a2f1dbb384d21928d4e092d_8" ;
 "comma_3.94b9d12e6a2f1dbb384d21928d4e092d_2" [label="2: Exit comma_3 \n  " color=yellow style=filled]
 	
 
-"comma_3.94b9d12e6a2f1dbb384d21928d4e092d_3" [label="3:  Return Stmt \n   n$0=*&d:int [line 23, column 10]\n  *&return:int=n$0 [line 23, column 3]\n " shape="box"]
+"comma_3.94b9d12e6a2f1dbb384d21928d4e092d_3" [label="3:  Return Stmt \n   n$0=*&d:int [line 23, column 10]\n " shape="box"]
 	
 
-	 "comma_3.94b9d12e6a2f1dbb384d21928d4e092d_3" -> "comma_3.94b9d12e6a2f1dbb384d21928d4e092d_2" ;
-"comma_3.94b9d12e6a2f1dbb384d21928d4e092d_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(d:int); [line 22, column 3]\n  n$1=*&a:int [line 22, column 16]\n  *&a:int=(n$1 * 2) [line 22, column 12]\n  n$2=*&a:int [line 22, column 12]\n  n$3=*&a:int [line 22, column 31]\n  *&a:int=(n$3 + 1) [line 22, column 31]\n  *&b:int=(7 * n$3) [line 22, column 23]\n  n$4=*&b:int [line 22, column 23]\n  n$5=*&a:int [line 22, column 40]\n  n$6=*&b:int [line 22, column 44]\n  *&c:int=((n$5 + n$6) + 9) [line 22, column 36]\n  n$7=*&c:int [line 22, column 36]\n  n$8=*&c:int [line 22, column 51]\n  *&d:int=n$8 [line 22, column 3]\n " shape="box"]
+	 "comma_3.94b9d12e6a2f1dbb384d21928d4e092d_3" -> "comma_3.94b9d12e6a2f1dbb384d21928d4e092d_4" ;
+"comma_3.94b9d12e6a2f1dbb384d21928d4e092d_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 23, column 3]\n " shape="box"]
 	
 
-	 "comma_3.94b9d12e6a2f1dbb384d21928d4e092d_4" -> "comma_3.94b9d12e6a2f1dbb384d21928d4e092d_3" ;
-"comma_3.94b9d12e6a2f1dbb384d21928d4e092d_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(c:int); [line 21, column 3]\n  *&c:int=3 [line 21, column 3]\n " shape="box"]
+	 "comma_3.94b9d12e6a2f1dbb384d21928d4e092d_4" -> "comma_3.94b9d12e6a2f1dbb384d21928d4e092d_2" ;
+"comma_3.94b9d12e6a2f1dbb384d21928d4e092d_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(d:int); [line 22, column 3]\n  n$1=*&a:int [line 22, column 16]\n  *&a:int=(n$1 * 2) [line 22, column 12]\n  n$2=*&a:int [line 22, column 12]\n  n$3=*&a:int [line 22, column 31]\n  *&a:int=(n$3 + 1) [line 22, column 31]\n  *&b:int=(7 * n$3) [line 22, column 23]\n  n$4=*&b:int [line 22, column 23]\n  n$5=*&a:int [line 22, column 40]\n  n$6=*&b:int [line 22, column 44]\n  *&c:int=((n$5 + n$6) + 9) [line 22, column 36]\n  n$7=*&c:int [line 22, column 36]\n  n$8=*&c:int [line 22, column 51]\n  *&d:int=n$8 [line 22, column 3]\n " shape="box"]
 	
 
-	 "comma_3.94b9d12e6a2f1dbb384d21928d4e092d_5" -> "comma_3.94b9d12e6a2f1dbb384d21928d4e092d_4" ;
-"comma_3.94b9d12e6a2f1dbb384d21928d4e092d_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(b:int); [line 21, column 3]\n  *&b:int=7 [line 21, column 3]\n " shape="box"]
+	 "comma_3.94b9d12e6a2f1dbb384d21928d4e092d_5" -> "comma_3.94b9d12e6a2f1dbb384d21928d4e092d_3" ;
+"comma_3.94b9d12e6a2f1dbb384d21928d4e092d_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(c:int); [line 21, column 3]\n  *&c:int=3 [line 21, column 3]\n " shape="box"]
 	
 
 	 "comma_3.94b9d12e6a2f1dbb384d21928d4e092d_6" -> "comma_3.94b9d12e6a2f1dbb384d21928d4e092d_5" ;
-"comma_3.94b9d12e6a2f1dbb384d21928d4e092d_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 21, column 3]\n  *&a:int=9 [line 21, column 3]\n " shape="box"]
+"comma_3.94b9d12e6a2f1dbb384d21928d4e092d_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(b:int); [line 21, column 3]\n  *&b:int=7 [line 21, column 3]\n " shape="box"]
 	
 
 	 "comma_3.94b9d12e6a2f1dbb384d21928d4e092d_7" -> "comma_3.94b9d12e6a2f1dbb384d21928d4e092d_6" ;
+"comma_3.94b9d12e6a2f1dbb384d21928d4e092d_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 21, column 3]\n  *&a:int=9 [line 21, column 3]\n " shape="box"]
+	
+
+	 "comma_3.94b9d12e6a2f1dbb384d21928d4e092d_8" -> "comma_3.94b9d12e6a2f1dbb384d21928d4e092d_7" ;
 }

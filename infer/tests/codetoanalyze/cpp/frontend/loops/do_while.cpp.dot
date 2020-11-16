@@ -3,59 +3,63 @@ digraph cfg {
 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_1" [label="1: Start test1\nFormals:  a:_Bool b:_Bool\nLocals:  x:int \n  " color=yellow style=filled]
 	
 
-	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_1" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_14" ;
+	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_1" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_15" ;
 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_2" [label="2: Exit test1 \n  " color=yellow style=filled]
 	
 
-"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 20, column 10]\n  *&return:int=n$0 [line 20, column 3]\n " shape="box"]
+"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 20, column 10]\n " shape="box"]
 	
 
-	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_3" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_2" ;
-"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_4" [label="4: + \n  " ]
+	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_3" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_4" ;
+"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 20, column 3]\n " shape="box"]
 	
 
-	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_4" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_13" ;
-"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_5" [label="5: Prune (true branch, do while) \n   n$1=*&b:_Bool [line 19, column 12]\n  PRUNE(n$1, true); [line 19, column 12]\n " shape="invhouse"]
+	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_4" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_2" ;
+"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_5" [label="5: + \n  " ]
 	
 
-	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_5" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_4" ;
-"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_6" [label="6: Prune (false branch, do while) \n   n$1=*&b:_Bool [line 19, column 12]\n  PRUNE(!n$1, false); [line 19, column 12]\n " shape="invhouse"]
+	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_5" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_14" ;
+"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_6" [label="6: Prune (true branch, do while) \n   n$1=*&b:_Bool [line 19, column 12]\n  PRUNE(n$1, true); [line 19, column 12]\n " shape="invhouse"]
 	
 
-	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_6" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_3" ;
-"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_7" [label="7:  BinaryOperatorStmt: Assign \n   n$2=*&x:int [line 18, column 9]\n  *&x:int=(n$2 + 4) [line 18, column 5]\n " shape="box"]
+	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_6" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_5" ;
+"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_7" [label="7: Prune (false branch, do while) \n   n$1=*&b:_Bool [line 19, column 12]\n  PRUNE(!n$1, false); [line 19, column 12]\n " shape="invhouse"]
 	
 
-	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_7" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_5" ;
-	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_7" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_6" ;
-"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_8" [label="8: + \n  " ]
+	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_7" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_3" ;
+"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_8" [label="8:  BinaryOperatorStmt: Assign \n   n$2=*&x:int [line 18, column 9]\n  *&x:int=(n$2 + 4) [line 18, column 5]\n " shape="box"]
 	
 
+	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_8" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_6" ;
 	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_8" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_7" ;
-"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_9" [label="9: Prune (true branch, if) \n   n$3=*&a:_Bool [line 12, column 9]\n  PRUNE(n$3, true); [line 12, column 9]\n " shape="invhouse"]
+"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_9" [label="9: + \n  " ]
 	
 
-	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_9" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_11" ;
-"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_10" [label="10: Prune (false branch, if) \n   n$3=*&a:_Bool [line 12, column 9]\n  PRUNE(!n$3, false); [line 12, column 9]\n " shape="invhouse"]
+	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_9" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_8" ;
+"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_10" [label="10: Prune (true branch, if) \n   n$3=*&a:_Bool [line 12, column 9]\n  PRUNE(n$3, true); [line 12, column 9]\n " shape="invhouse"]
 	
 
 	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_10" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_12" ;
-"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_11" [label="11:  BinaryOperatorStmt: Assign \n   n$5=*&x:int [line 13, column 11]\n  *&x:int=(n$5 + 2) [line 13, column 7]\n " shape="box"]
+"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_11" [label="11: Prune (false branch, if) \n   n$3=*&a:_Bool [line 12, column 9]\n  PRUNE(!n$3, false); [line 12, column 9]\n " shape="invhouse"]
 	
 
-	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_11" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_5" ;
-	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_11" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_6" ;
-"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_12" [label="12:  BinaryOperatorStmt: Assign \n   n$6=*&x:int [line 16, column 11]\n  *&x:int=(n$6 + 3) [line 16, column 7]\n " shape="box"]
+	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_11" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_13" ;
+"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_12" [label="12:  BinaryOperatorStmt: Assign \n   n$5=*&x:int [line 13, column 11]\n  *&x:int=(n$5 + 2) [line 13, column 7]\n " shape="box"]
 	
 
-	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_12" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_8" ;
-"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_13" [label="13:  BinaryOperatorStmt: Assign \n   n$8=*&x:int [line 11, column 9]\n  *&x:int=(n$8 + 1) [line 11, column 5]\n " shape="box"]
+	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_12" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_6" ;
+	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_12" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_7" ;
+"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_13" [label="13:  BinaryOperatorStmt: Assign \n   n$6=*&x:int [line 16, column 11]\n  *&x:int=(n$6 + 3) [line 16, column 7]\n " shape="box"]
 	
 
 	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_13" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_9" ;
-	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_13" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_10" ;
-"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_14" [label="14:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 9, column 3]\n  *&x:int=0 [line 9, column 3]\n " shape="box"]
+"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_14" [label="14:  BinaryOperatorStmt: Assign \n   n$8=*&x:int [line 11, column 9]\n  *&x:int=(n$8 + 1) [line 11, column 5]\n " shape="box"]
 	
 
-	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_14" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_4" ;
+	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_14" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_10" ;
+	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_14" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_11" ;
+"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_15" [label="15:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 9, column 3]\n  *&x:int=0 [line 9, column 3]\n " shape="box"]
+	
+
+	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_15" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_5" ;
 }

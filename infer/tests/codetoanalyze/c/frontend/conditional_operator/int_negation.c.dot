@@ -100,10 +100,14 @@ digraph cfg {
 "identity.ff483d1ff591898a9942916050d2ca3f_2" [label="2: Exit identity \n  " color=yellow style=filled]
 	
 
-"identity.ff483d1ff591898a9942916050d2ca3f_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 8, column 30]\n  *&return:int=n$0 [line 8, column 23]\n " shape="box"]
+"identity.ff483d1ff591898a9942916050d2ca3f_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 8, column 30]\n " shape="box"]
 	
 
-	 "identity.ff483d1ff591898a9942916050d2ca3f_3" -> "identity.ff483d1ff591898a9942916050d2ca3f_2" ;
+	 "identity.ff483d1ff591898a9942916050d2ca3f_3" -> "identity.ff483d1ff591898a9942916050d2ca3f_4" ;
+"identity.ff483d1ff591898a9942916050d2ca3f_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 8, column 23]\n " shape="box"]
+	
+
+	 "identity.ff483d1ff591898a9942916050d2ca3f_4" -> "identity.ff483d1ff591898a9942916050d2ca3f_2" ;
 "neg.f24c2c15b9d03797c6874986a8d19516_1" [label="1: Start neg\nFormals:  x:int\nLocals:  \n  " color=yellow style=filled]
 	
 
