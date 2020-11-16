@@ -45,14 +45,14 @@ default: test
 %.ll : %.bc
 	@(cd $(@D) && llvm-dis -show-annotations -o $(@F) $(<F))
 
+%.bllair : %.bc
+	$(SLEDGE_DBG) llvm translate $< -output $@
+
 %.llair : %.bc
-	$(SLEDGE_DBG) llvm translate $< -llair-output $@
+	$(SLEDGE_DBG) llvm disassemble -no-models -no-internalize $< -llair-output $@
 
-%.llair.txt : %.bc
-	$(SLEDGE_DBG) llvm disassemble -no-models -no-internalize $< -llair-txt-output $@
-
-%.llair.txt : %.ll
-	$(SLEDGE_DBG) llvm disassemble -no-models -no-internalize $< -llair-txt-output $@
+%.llair : %.ll
+	$(SLEDGE_DBG) llvm disassemble -no-models -no-internalize $< -llair-output $@
 
 # code to test sledge translate
 TranslateCs:=$(shell find -L {,local/}translate -name '*.c' 2>/dev/null)
@@ -210,7 +210,7 @@ warnings:
 	@find -L * -name '*.out' | xargs grep -h "Warning:" | sort
 
 test-translate:
-	-@find -L {,local/,extra/}translate -name "*.sexp" -or -name "*.out" -or -name '*.err' -or -name '*.llair' -or -name '*.llair.txt' -delete 2>/dev/null
+	-@find -L {,local/,extra/}translate -name "*.sexp" -or -name "*.out" -or -name '*.err' -or -name '*.bllair' -or -name '*.llair' -delete 2>/dev/null
 	-@$(MAKE) --no-print-directory translate
 	@$(MAKE) --no-print-directory translate-status
 
@@ -225,7 +225,7 @@ test-smt:
 	@$(MAKE) --no-print-directory smt-status
 
 test-llvm:
-	-@find -L {,local/,extra/}llvm -name "*.sexp" -or -name "*.out" -or -name '*.err' -or -name '*.llair' -delete 2>/dev/null
+	-@find -L {,local/,extra/}llvm -name "*.sexp" -or -name "*.out" -or -name '*.err' -or -name '*.bllair' -delete 2>/dev/null
 	-@$(MAKE) --no-print-directory llvm
 	@$(MAKE) --no-print-directory llvm-status
 
@@ -253,7 +253,7 @@ cleanbc:
 
 # remove result files
 cleanout:
-	@find -L * -not -path 'baseline/*' -name "*.sexp" -or -name "*.out" -or -name '*.err' -or -name '*.llair' -or -name '*.llair.txt' \
+	@find -L * -not -path 'baseline/*' -name "*.sexp" -or -name "*.out" -or -name '*.err' -or -name '*.bllair' -or -name '*.llair' \
 	 | xargs rm -f
 
 clean: cleanbc cleanout
