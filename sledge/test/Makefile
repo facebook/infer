@@ -11,7 +11,7 @@ SLEDGE_DBG=$(CURDIR)/../_build/debug/cli/sledge_cli.exe
 SLEDGE_OPT=$(CURDIR)/../_build/release/cli/sledge_cli.exe
 
 # additional arguments to pass to sledge
-SLEDGE_ARGS?=
+SLEDGE_ARGS?=-bound 5
 
 # limits for each test run
 TIMEOUT?=100
@@ -108,9 +108,9 @@ translate-status: translate.sexp
 # run analyze tests
 .PHONY: analyze
 analyze: compile
-	-@parallel --bar $(sledge_dbg) llvm analyze -bound 5 -trace Report+Control $(SLEDGE_ARGS) ::: $(AnalyzeTests)
+	-@parallel --bar $(sledge_dbg) llvm analyze -trace Report+Control $(SLEDGE_ARGS) ::: $(AnalyzeTests)
 
-parallel_sledge_opt=parallel --shuf --bar $(sledge_opt) llvm analyze -append-report -bound 5 $(SLEDGE_ARGS) :::
+parallel_sledge_opt=parallel --shuf --bar $(sledge_opt) llvm analyze -append-report $(SLEDGE_ARGS) :::
 
 analyze-perf1: compile
 	@$(parallel_sledge_opt) $(AnalyzeTests)
