@@ -63,6 +63,8 @@ class Optional {
 
   constexpr Value* operator->() { return &value(); }
 
+  Value* get_pointer();
+
   template <class U>
   constexpr Value value_or(U&& dflt) const&;
 };
@@ -146,6 +148,32 @@ void emplace(folly::Optional<State> state) {
 }
 
 void operator_arrow_bad() { emplace(folly::none); }
+
+void get_pointer_check_none_check_ok() {
+  folly::Optional<int> foo{folly::none};
+  if (int* v = foo.get_pointer()) {
+    *v = 42;
+  }
+}
+
+void get_pointer_check_value_check_ok() {
+  folly::Optional<int> foo{5};
+  if (int* ptr = foo.get_pointer()) {
+    *ptr = 42;
+  }
+}
+
+void get_pointer_no_check_none_check_bad() {
+  folly::Optional<int> foo{folly::none};
+  int* ptr = foo.get_pointer();
+  *ptr = 42;
+}
+
+void get_pointer_no_check_value_check_ok() {
+  folly::Optional<int> foo{5};
+  int* ptr = foo.get_pointer();
+  *ptr = 42;
+}
 
 int value_or_check_empty_ok() {
   folly::Optional<int> foo{folly::none};
