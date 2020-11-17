@@ -1460,6 +1460,11 @@ and java_jar_compiler =
     ~meta:"path" "Specify the Java compiler jar used to generate the bytecode"
 
 
+and java_source_parser_experimental =
+  CLOpt.mk_bool ~long:"java-source-parser-experimental"
+    "The experimental Java source parser for declaration locations."
+
+
 and java_version =
   CLOpt.mk_int_opt ~long:"java-version" ?default:Version.java_version
     ~in_help:InferCommand.[(Capture, manual_java); (Analyze, manual_java)]
@@ -2926,6 +2931,8 @@ and iterations = !iterations
 and java_debug_source_file_info = !java_debug_source_file_info
 
 and java_jar_compiler = !java_jar_compiler
+
+and java_source_parser_experimental = !java_source_parser_experimental
 
 and java_version = !java_version
 

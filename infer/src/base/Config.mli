@@ -344,6 +344,8 @@ val java_debug_source_file_info : string option
 
 val java_jar_compiler : string option
 
+val java_source_parser_experimental : bool
+
 val java_version : int option
 
 val javac_classes_out : string

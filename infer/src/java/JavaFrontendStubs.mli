@@ -22,3 +22,7 @@ end
 module JSourceFileInfo : sig
   val debug_on_file : string -> unit
 end
+
+module JSourceLocations : sig
+  val debug_on_file : string -> unit
+end

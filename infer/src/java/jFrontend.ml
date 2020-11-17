@@ -217,7 +217,9 @@ let compute_source_icfg program tenv source_basename package_opt source_file =
     if test node then try procedure cn node with Bir.Subroutine -> ()
   in
   (* we must set the java location for all classes in the source file before translation *)
-  JSourceFileInfo.collect_class_location program source_file ;
+  if Config.java_source_parser_experimental then
+    JSourceLocations.collect_class_location program source_file
+  else JSourceFileInfo.collect_class_location program source_file ;
   let () =
     JBasics.ClassMap.iter
       (select

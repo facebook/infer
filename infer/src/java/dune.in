@@ -7,7 +7,8 @@
  *)
 (* NOTE: prepend dune.common to this file! *)
 
-let lexer = "(ocamllex jSourceFileInfo)"
+let lexer = "(ocamllex jSourceLexer jSourceFileInfo)"
+let jparser = "(menhir (modules jSourceParser))"
 
 let java =
   Printf.sprintf
@@ -30,4 +31,4 @@ let java =
 let documentation = "(documentation (package infer) (mld_files JavaFrontend))"
 
 ;;
-Jbuild_plugin.V1.send (String.concat "\n" [lexer; java; documentation])
+Jbuild_plugin.V1.send (String.concat "\n" [lexer; jparser; java; documentation])

@@ -1566,6 +1566,10 @@ INTERNAL OPTIONS
        --java-jar-compiler-reset
            Cancel the effect of --java-jar-compiler.
 
+       --java-source-parser-experimental
+           Activates: The experimental Java source parser for declaration
+           locations. (Conversely: --no-java-source-parser-experimental)
+
        --java-version-reset
            Cancel the effect of --java-version.
 
