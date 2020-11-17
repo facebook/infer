@@ -190,16 +190,24 @@ type control =
   { root_nodes: Procdesc.Node.t list
   ; leaf_nodes: Procdesc.Node.t list
   ; instrs: Sil.instr list
-  ; initd_exps: Exp.t list }
+  ; initd_exps: Exp.t list
+  ; cxx_temporary_markers_set: Pvar.t list }
 
-let pp_control fmt {root_nodes; leaf_nodes; instrs; initd_exps} =
-  F.fprintf fmt "@[{root_nodes=[%a];@;leaf_nodes=[%a];@;instrs=[%a];@;initd_exps=[%a]}@]"
+let pp_control fmt {root_nodes; leaf_nodes; instrs; initd_exps; cxx_temporary_markers_set} =
+  let pp_cxx_temporary_markers_set fmt =
+    if List.is_empty cxx_temporary_markers_set then ()
+    else
+      F.fprintf fmt ";@;cxx_temporary_markers_set=[%a]"
+        (Pp.seq ~sep:";" (Pvar.pp Pp.text))
+        cxx_temporary_markers_set
+  in
+  F.fprintf fmt "@[{root_nodes=[%a];@;leaf_nodes=[%a];@;instrs=[%a];@;initd_exps=[%a]%t}@]"
     (Pp.seq ~sep:";" Procdesc.Node.pp)
     root_nodes
     (Pp.seq ~sep:";" Procdesc.Node.pp)
     leaf_nodes
     (Pp.seq ~sep:";" (Sil.pp_instr ~print_types:false Pp.text_break))
-    instrs (Pp.seq ~sep:";" Exp.pp) initd_exps
+    instrs (Pp.seq ~sep:";" Exp.pp) initd_exps pp_cxx_temporary_markers_set
 
 
 type trans_result =
@@ -208,7 +216,9 @@ type trans_result =
   ; method_name: Procname.t option
   ; is_cpp_call_virtual: bool }
 
-let empty_control = {root_nodes= []; leaf_nodes= []; instrs= []; initd_exps= []}
+let empty_control =
+  {root_nodes= []; leaf_nodes= []; instrs= []; initd_exps= []; cxx_temporary_markers_set= []}
+
 
 let mk_trans_result ?method_name ?(is_cpp_call_virtual = false) return control =
   {control; return; method_name; is_cpp_call_virtual}
@@ -218,7 +228,8 @@ let undefined_expression () = Exp.Var (Ident.create_fresh Ident.knormal)
 
 (** Collect the results of translating a list of instructions, and link up the nodes created. *)
 let collect_controls pdesc l =
-  let collect_one result_rev {root_nodes; leaf_nodes; instrs; initd_exps} =
+  let collect_one result_rev {root_nodes; leaf_nodes; instrs; initd_exps; cxx_temporary_markers_set}
+      =
     if not (List.is_empty root_nodes) then
       List.iter
         ~f:(fun n -> Procdesc.node_set_succs pdesc n ~normal:root_nodes ~exn:[])
@@ -230,10 +241,12 @@ let collect_controls pdesc l =
     { root_nodes
     ; leaf_nodes
     ; instrs= List.rev_append instrs result_rev.instrs
-    ; initd_exps= List.rev_append initd_exps result_rev.initd_exps }
+    ; initd_exps= List.rev_append initd_exps result_rev.initd_exps
+    ; cxx_temporary_markers_set=
+        List.rev_append cxx_temporary_markers_set result_rev.cxx_temporary_markers_set }
   in
   let rev_result = List.fold l ~init:empty_control ~f:collect_one in
-  {rev_result with instrs= List.rev rev_result.instrs; initd_exps= List.rev rev_result.initd_exps}
+  {rev_result with instrs= List.rev rev_result.instrs}
 
 
 let collect_trans_results pdesc ~return trans_results =

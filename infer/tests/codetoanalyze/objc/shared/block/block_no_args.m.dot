@@ -74,7 +74,7 @@ digraph cfg {
 	
 
 	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_13" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_12" ;
-"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_14" [label="14:  BinaryOperatorStmt: Assign \n   n$7=*&z:int [line 23, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockBlock_no_args.m_1,([by ref]n$7 &z:int)) [line 23, column 3]\n " shape="box"]
+"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_14" [label="14:  Compound statement \n   n$7=*&z:int [line 23, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockBlock_no_args.m_1,([by ref]n$7 &z:int)) [line 23, column 3]\n  n$9=*&b:_fn_(*) [line 23, column 3]\n " shape="box"]
 	
 
 	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_14" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_13" ;

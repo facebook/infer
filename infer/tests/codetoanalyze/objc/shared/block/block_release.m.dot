@@ -64,15 +64,15 @@ digraph cfg {
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_9" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_6" ;
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_9" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_7" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_10" [label="10:  BinaryOperatorStmt: Assign \n   n$9=*&newImage:CGImage* [line 23, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockMy_manager.blockReleaseNoLeak_1,([by ref]n$9 &newImage:CGImage*)) [line 23, column 3]\n " shape="box"]
+"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_10" [label="10:  Compound statement \n   n$9=*&newImage:CGImage* [line 23, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockMy_manager.blockReleaseNoLeak_1,([by ref]n$9 &newImage:CGImage*)) [line 23, column 3]\n  n$15=*&b:_fn_(*) [line 23, column 3]\n " shape="box"]
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_10" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_9" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(newImage:CGImage*); [line 22, column 3]\n  n$15=*&context:CGContext* [line 22, column 52]\n  n$16=_fun_CGBitmapContextCreateImage(n$15:CGContext*) [line 22, column 25]\n  *&newImage:CGImage*=n$16 [line 22, column 3]\n " shape="box"]
+"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(newImage:CGImage*); [line 22, column 3]\n  n$16=*&context:CGContext* [line 22, column 52]\n  n$17=_fun_CGBitmapContextCreateImage(n$16:CGContext*) [line 22, column 25]\n  *&newImage:CGImage*=n$17 [line 22, column 3]\n " shape="box"]
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_11" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_10" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(context:CGContext*); [line 21, column 3]\n  n$17=_fun_CGBitmapContextCreate(null:void*,(unsigned long)0:unsigned long,(unsigned long)0:unsigned long,(unsigned long)8:unsigned long,(unsigned long)0:unsigned long,null:CGColorSpace*,(unsigned int)0:unsigned int) [line 21, column 26]\n  *&context:CGContext*=n$17 [line 21, column 3]\n " shape="box"]
+"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(context:CGContext*); [line 21, column 3]\n  n$18=_fun_CGBitmapContextCreate(null:void*,(unsigned long)0:unsigned long,(unsigned long)0:unsigned long,(unsigned long)8:unsigned long,(unsigned long)0:unsigned long,null:CGColorSpace*,(unsigned int)0:unsigned int) [line 21, column 26]\n  *&context:CGContext*=n$18 [line 21, column 3]\n " shape="box"]
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_12" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_11" ;

@@ -974,7 +974,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       { root_nodes
       ; leaf_nodes
       ; instrs= res_trans_a.control.instrs @ res_trans_idx.control.instrs
-      ; initd_exps= res_trans_idx.control.initd_exps @ res_trans_a.control.initd_exps }
+      ; initd_exps= res_trans_idx.control.initd_exps @ res_trans_a.control.initd_exps
+      ; cxx_temporary_markers_set=
+          res_trans_idx.control.cxx_temporary_markers_set
+          @ res_trans_a.control.cxx_temporary_markers_set }
     in
     mk_trans_result (array_exp, typ) control
 
@@ -1528,7 +1531,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info' in
       let all_res_trans =
         L.debug Capture Verbose "Destroying pointer %d@\n" stmt_info.Clang_ast_t.si_pointer ;
-        List.filter_map vars_to_destroy ~f:(fun (pvar, typ, qual_type) ->
+        List.filter_map vars_to_destroy ~f:(fun {CScope.pvar; typ; qual_type} ->
             let exp = Exp.Lvar pvar in
             let this_res_trans_destruct = mk_trans_result (exp, typ) empty_control in
             get_destructor_decl_ref qual_type.Clang_ast_t.qt_type_ptr
@@ -1567,7 +1570,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                     None
                   else
                     let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
-                    Some (pvar, typ, qual_type)
+                    Some {CScope.pvar; typ; qual_type; marker= None}
               | _ ->
                   assert false )
           in
@@ -1691,8 +1694,17 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       in
       res_trans_cond.control.initd_exps @ both_branches_initd_exps
     in
+    let cxx_temporary_markers_set =
+      res_trans_cond.control.cxx_temporary_markers_set
+      @ res_then_branch.control.cxx_temporary_markers_set
+      @ res_else_branch.control.cxx_temporary_markers_set
+    in
     mk_trans_result return
-      {root_nodes= res_trans_cond.control.root_nodes; leaf_nodes= [join_node]; instrs; initd_exps}
+      { root_nodes= res_trans_cond.control.root_nodes
+      ; leaf_nodes= [join_node]
+      ; instrs
+      ; initd_exps
+      ; cxx_temporary_markers_set }
 
 
   (** The GNU extension to the conditional operator which allows the middle operand to be omitted. *)
@@ -1821,7 +1833,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         { root_nodes= root_nodes_to_parent
         ; leaf_nodes= prune_to_short_c @ res_trans_s2.control.leaf_nodes
         ; instrs= res_trans_s1.control.instrs @ res_trans_s2.control.instrs
-        ; initd_exps= [] }
+        ; initd_exps= []
+        ; cxx_temporary_markers_set= [] }
     in
     L.debug Capture Verbose "Translating Condition for If-then-else/Loop/Conditional Operator@\n" ;
     let open Clang_ast_t in
@@ -2604,12 +2617,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | (VarDecl (_, _, qt, vdi) as var_decl) :: var_decls' ->
           (* Var are defined when procdesc is created, here we only take care of initialization *)
           let res_trans_tl = aux var_decls' in
-          let root_nodes_tl, instrs_tl, initd_exps_tl =
+          let root_nodes_tl, instrs_tl, initd_exps_tl, markers_tl =
             match res_trans_tl with
             | None ->
-                (next_nodes, [], [])
-            | Some {control= {root_nodes; instrs; initd_exps}} ->
-                (root_nodes, instrs, initd_exps)
+                (next_nodes, [], [], [])
+            | Some {control= {root_nodes; instrs; initd_exps; cxx_temporary_markers_set}} ->
+                (root_nodes, instrs, initd_exps, cxx_temporary_markers_set)
           in
           let res_trans_tmp = do_var_dec var_decl qt vdi root_nodes_tl in
           L.debug Capture Verbose "res_trans_tmp.control=%a@\n" pp_control res_trans_tmp.control ;
@@ -2626,7 +2639,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                { root_nodes= res_trans_tmp.control.root_nodes
                ; leaf_nodes
                ; instrs= res_trans_tmp.control.instrs @ instrs_tl
-               ; initd_exps= res_trans_tmp.control.initd_exps @ initd_exps_tl })
+               ; initd_exps= res_trans_tmp.control.initd_exps @ initd_exps_tl
+               ; cxx_temporary_markers_set=
+                   res_trans_tmp.control.cxx_temporary_markers_set @ markers_tl })
       | _ :: var_decls' ->
           (* Here we can get also record declarations or typedef declarations, which are dealt with
              somewhere else.  We just handle the variables here. *)
@@ -3811,26 +3826,214 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           stmt_info
 
 
+  and add_cxx_temporaries_dtor_calls destr_kind expr_trans_result trans_state stmt_info temporaries
+      =
+    (* The source location of destructor should reflect the end of the statement *)
+    let _, sloc2 = stmt_info.Clang_ast_t.si_source_range in
+    let stmt_info = {stmt_info with Clang_ast_t.si_source_range= (sloc2, sloc2)} in
+    (* ReturnStmt claims a priority with the same [stmt_info].
+       New pointer is generated to avoid premature node creation *)
+    let sil_loc =
+      CLocation.location_of_stmt_info trans_state.context.translation_unit_context.source_file
+        stmt_info
+    in
+    let dtor_call stmt_info trans_state destructor_decl_ref (temporary : CScope.var_to_destroy) =
+      L.debug Capture Verbose "Destroying pointer %d@\n" stmt_info.Clang_ast_t.si_pointer ;
+      let exp = Exp.Lvar temporary.pvar in
+      let this_res_trans_destruct = mk_trans_result (exp, temporary.typ) empty_control in
+      cxx_destructor_call_trans trans_state stmt_info this_res_trans_destruct destructor_decl_ref
+        ~is_injected_destructor:true ~is_inner_destructor:false
+    in
+    (* call the destructor for the given temporary, return [(created_conditional, trans_result)]
+       where [created_conditional] is true when we needed to create new nodes to conditionally
+       destroy the temporary (hence the next instruction should also create its own new node to
+       place before that) *)
+    let destroy_one stmt_info trans_state (temporary : CScope.var_to_destroy) =
+      L.debug Capture Verbose "destructing %a, trans_state=%a" (Pvar.pp Pp.text_break)
+        temporary.pvar pp_trans_state trans_state ;
+      let open IOption.Let_syntax in
+      let+ dtor_decl_ref = get_destructor_decl_ref temporary.qual_type.qt_type_ptr in
+      match temporary.marker with
+      | None ->
+          (* simple case: no marker instrumentation: unconditionally destroy the temporary variable
+             now *)
+          (false, dtor_call stmt_info trans_state dtor_decl_ref temporary)
+      | Some marker_var ->
+          (* generate [if marker_var then destroy_temporary() ;], i.e.:
+
+             - a prune node [prune_true] for the case where [marker_var] is true
+
+             - a prune node [prune_false] for the case where [marker_var] is false
+
+             - a node [dtor_trans_result] for actually calling the destructor, the successor of
+             [prune_true]
+
+             - [join_node] to join [dtor_trans_result] and [prune_false] and continue with the
+             successor node(s) of the translation [trans_state.succ_nodes] *)
+          let proc_desc = trans_state.context.procdesc in
+          let join_node = Procdesc.create_node proc_desc sil_loc Procdesc.Node.Join_node [] in
+          Procdesc.node_set_succs proc_desc join_node ~normal:trans_state.succ_nodes ~exn:[] ;
+          (* create dtor call as a new node connected to the join node, force new node creation by
+             creating a fresh pointer and calling [force_claim_priority_node] *)
+          let dtor_trans_result =
+            let stmt_info =
+              {stmt_info with Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()}
+            in
+            let dtor_trans_state =
+              let trans_state = PriorityNode.force_claim_priority_node trans_state stmt_info in
+              {trans_state with succ_nodes= [join_node]}
+            in
+            dtor_call stmt_info dtor_trans_state dtor_decl_ref temporary
+            |> PriorityNode.compute_result_to_parent dtor_trans_state sil_loc
+                 ~node_name:(Destruction destr_kind) stmt_info
+          in
+          (* create prune nodes *)
+          let marker_id = Ident.create_fresh Ident.knormal in
+          let deref_marker_var =
+            [ Sil.Load
+                { id= marker_id
+                ; e= Lvar marker_var
+                ; root_typ= StdTyp.boolean
+                ; typ= StdTyp.boolean
+                ; loc= sil_loc } ]
+          in
+          let prune_true =
+            create_prune_node proc_desc ~branch:true ~negate_cond:false (Var marker_id)
+              deref_marker_var sil_loc Ik_if
+          in
+          let prune_false =
+            create_prune_node proc_desc ~branch:false ~negate_cond:true (Var marker_id)
+              deref_marker_var sil_loc Ik_if
+          in
+          Procdesc.node_set_succs proc_desc prune_false ~normal:[join_node] ~exn:[] ;
+          Procdesc.node_set_succs proc_desc prune_true ~normal:dtor_trans_result.control.root_nodes
+            ~exn:[] ;
+          let trans_result =
+            let control =
+              {empty_control with root_nodes= [prune_true; prune_false]; leaf_nodes= [join_node]}
+            in
+            mk_trans_result (Var marker_id, StdTyp.boolean) control
+          in
+          (true, trans_result)
+    in
+    let rec destroy_all stmt_info trans_results_acc trans_state = function
+      | [] ->
+          trans_results_acc
+      | temporary :: temporaries -> (
+        match destroy_one stmt_info trans_state temporary with
+        | None ->
+            destroy_all stmt_info trans_results_acc trans_state temporaries
+        | Some (new_node_created, trans_result) ->
+            let stmt_info, trans_state =
+              if new_node_created then
+                (* force the creation of another new node so that it can be placed *before* (in CFG
+                   order) the translation of the previous temporary destruction *)
+                let stmt_info =
+                  {stmt_info with Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()}
+                in
+                (stmt_info, PriorityNode.force_claim_priority_node trans_state stmt_info)
+              else (stmt_info, trans_state)
+            in
+            destroy_all stmt_info (trans_result :: trans_results_acc) trans_state temporaries )
+    in
+    L.debug Capture Verbose "Destroying [%a] in state %a@\n"
+      (Pp.seq ~sep:";" (fun fmt (temporary : CScope.var_to_destroy) ->
+           Format.fprintf fmt "(%a,%a)" (Pvar.pp Pp.text_break) temporary.pvar
+             (Pp.option (Pvar.pp Pp.text_break))
+             temporary.marker ))
+      temporaries pp_trans_state trans_state ;
+    match destroy_all stmt_info [] trans_state (List.rev temporaries) with
+    | [] ->
+        expr_trans_result
+    | _ :: _ as destr_trans_results ->
+        (* wire [destr_trans_result] after [expr_trans_result] in CFG order *)
+        PriorityNode.compute_results_to_parent trans_state sil_loc
+          ~node_name:(Destruction destr_kind) stmt_info ~return:expr_trans_result.return
+          (expr_trans_result :: destr_trans_results)
+
+
   and exprWithCleanups_trans trans_state stmt_info stmt_list =
+    L.debug Capture Verbose "ExprWithCleanups trans_state={succ_nodes=[%a]}@."
+      (Pp.seq Procdesc.Node.pp) trans_state.succ_nodes ;
+    let loc =
+      CLocation.location_of_stmt_info trans_state.context.translation_unit_context.source_file
+        stmt_info
+    in
     let temporaries_to_destroy =
       CScope.CXXTemporaries.get_destroyable_temporaries trans_state.context stmt_list
     in
-    let destr_trans_result_opt =
-      destructor_calls Procdesc.Node.DestrTemporariesCleanup trans_state stmt_info
-        temporaries_to_destroy
-    in
     let[@warning "-8"] [stmt] = stmt_list in
-    let result = instruction trans_state stmt in
-    match destr_trans_result_opt with
-    | None ->
-        result
-    | Some destr_trans_result ->
-        let sil_loc =
-          CLocation.location_of_stmt_info trans_state.context.translation_unit_context.source_file
+    let temporaries_constructor_markers =
+      List.fold temporaries_to_destroy ~init:trans_state.context.temporaries_constructor_markers
+        ~f:(fun markers {CScope.pvar; typ; marker} ->
+          match marker with
+          | None ->
+              markers
+          | Some marker_pvar ->
+              Exp.Map.add (Lvar pvar) (marker_pvar, typ) markers )
+    in
+    (* translate the sub-expression in its own node(s) so we can inject code for managing
+       conditional destructor markers before and after its nodes *)
+    let trans_state =
+      PriorityNode.force_claim_priority_node
+        {trans_state with context= {trans_state.context with temporaries_constructor_markers}}
+        stmt_info
+    in
+    let sub_expr_result = instruction trans_state stmt in
+    let init_markers_to_zero_instrs =
+      List.fold temporaries_to_destroy ~init:[] ~f:(fun instrs {CScope.marker} ->
+          match marker with
+          | None ->
+              instrs
+          | Some marker_pvar ->
+              Sil.Metadata (VariableLifetimeBegins (marker_pvar, StdTyp.boolean, loc))
+              :: Sil.Store
+                   { e1= Lvar marker_pvar
+                   ; e2= Exp.zero
+                   ; typ= StdTyp.boolean
+                   ; loc
+                   ; root_typ= StdTyp.boolean }
+              :: instrs )
+    in
+    let markers_var_data =
+      List.fold temporaries_to_destroy ~init:[] ~f:(fun vds {CScope.marker} ->
+          match marker with
+          | None ->
+              vds
+          | Some marker_pvar ->
+              { ProcAttributes.name= Pvar.get_name marker_pvar
+              ; typ= StdTyp.boolean
+              ; modify_in_block= false
+              ; is_constexpr= false
+              ; is_declared_unused= false }
+              :: vds )
+    in
+    Procdesc.append_locals trans_state.context.procdesc markers_var_data ;
+    let init_then_sub_expr_result =
+      if List.is_empty init_markers_to_zero_instrs then sub_expr_result
+      else
+        (* another new node so the initialization of markers really happens before the current node
+           *)
+        let stmt_info = {stmt_info with Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()} in
+        let trans_state = PriorityNode.force_claim_priority_node trans_state stmt_info in
+        let markers_init_result =
+          PriorityNode.compute_result_to_parent trans_state loc ~node_name:ExprWithCleanups
             stmt_info
+            (mk_trans_result (Exp.zero, StdTyp.boolean)
+               {empty_control with instrs= init_markers_to_zero_instrs})
         in
-        PriorityNode.compute_results_to_parent trans_state sil_loc ~node_name:ExprWithCleanups
-          stmt_info ~return:result.return [result; destr_trans_result]
+        PriorityNode.compute_results_to_parent trans_state loc ~node_name:ExprWithCleanups stmt_info
+          ~return:sub_expr_result.return
+          [markers_init_result; sub_expr_result]
+    in
+    let result =
+      add_cxx_temporaries_dtor_calls Procdesc.Node.DestrTemporariesCleanup init_then_sub_expr_result
+        trans_state stmt_info temporaries_to_destroy
+    in
+    if List.is_empty result.control.cxx_temporary_markers_set then result
+    else
+      (* we know that there cannot be nested ExprWithCleanups so it's safe to remove all markers *)
+      {result with control= {result.control with cxx_temporary_markers_set= []}}
 
 
   (* Expect that this doesn't happen *)
@@ -3931,12 +4134,57 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | Some {control= {root_nodes}} ->
           {trans_state with succ_nodes= root_nodes}
     in
-    let stmt_result = instruction_translate trans_state stmt in
+    let stmt_result = instruction_insert_cxx_temporary_markers trans_state stmt in
     match destr_trans_result with
     | None | Some {control= {leaf_nodes= []}} ->
         stmt_result
     | Some {control= {leaf_nodes}} ->
         {stmt_result with control= {stmt_result.control with leaf_nodes}}
+
+
+  (** Instrument program to know when C++ temporaries created conditionally have indeed been created
+      and need to be destroyed. This is a common compilation scheme for temporary variables created
+      conditionally in expressions, due to either [a?b:c] or short-circuiting of [&&] or [||]. *)
+  and instruction_insert_cxx_temporary_markers trans_state stmt =
+    let stmt_result = instruction_translate trans_state stmt in
+    let stmt_info, _ = Clang_ast_proj.get_stmt_tuple stmt in
+    let loc =
+      CLocation.location_of_stmt_info trans_state.context.translation_unit_context.source_file
+        stmt_info
+    in
+    let instrs, cxx_temporary_markers_set =
+      List.fold stmt_result.control.initd_exps
+        ~init:([], stmt_result.control.cxx_temporary_markers_set)
+        ~f:(fun ((instrs, markers_set) as acc) initd_exp ->
+          match Exp.Map.find_opt initd_exp trans_state.context.temporaries_constructor_markers with
+          | Some (marker_var, _)
+            when not
+                   (List.mem ~equal:Pvar.equal stmt_result.control.cxx_temporary_markers_set
+                      marker_var) ->
+              (* to avoid adding the marker-setting instruction for every super-expression of the
+                 current one, add it to the list of marker variables set and do not create the
+                 instruction if it's already in that list *)
+              let store_marker =
+                Sil.Store
+                  { e1= Lvar marker_var
+                  ; root_typ= StdTyp.boolean
+                  ; typ= StdTyp.boolean
+                  ; e2= Exp.one
+                  ; loc }
+              in
+              (store_marker :: instrs, marker_var :: markers_set)
+          | _ ->
+              acc )
+    in
+    if List.is_empty instrs then stmt_result
+    else
+      let control =
+        PriorityNode.compute_controls_to_parent trans_state loc ~node_name:CXXTemporaryMarkerSet
+          stmt_info
+          [stmt_result.control; {empty_control with instrs}]
+      in
+      let control = {control with cxx_temporary_markers_set} in
+      {stmt_result with control}
 
 
   and instruction_translate trans_state (instr : Clang_ast_t.stmt) =
@@ -4358,16 +4606,15 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             ; leaf_nodes= res_trans_s.control.leaf_nodes
             ; instrs= List.rev_append res_trans_s.control.instrs control_tail_rev.instrs
             ; initd_exps= List.rev_append res_trans_s.control.initd_exps control_tail_rev.initd_exps
-            }
+            ; cxx_temporary_markers_set=
+                List.rev_append res_trans_s.control.cxx_temporary_markers_set
+                  control_tail_rev.cxx_temporary_markers_set }
           , res_trans_s.return :: returns_tail_rev )
     in
     let rev_control, rev_returns =
       exec_trans_instrs_rev trans_state (List.rev trans_stmt_fun_list)
     in
-    ( { rev_control with
-        instrs= List.rev rev_control.instrs
-      ; initd_exps= List.rev rev_control.initd_exps }
-    , List.rev rev_returns )
+    ({rev_control with instrs= List.rev rev_control.instrs}, List.rev rev_returns)
 
 
   and get_clang_stmt_trans node_name stmt trans_state =

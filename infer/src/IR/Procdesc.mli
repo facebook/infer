@@ -51,6 +51,7 @@ module Node : sig
     | CXXDynamicCast
     | CXXNewExpr
     | CXXStdInitializerListExpr
+    | CXXTemporaryMarkerSet
     | CXXTypeidExpr
     | DeclStmt
     | DefineBody

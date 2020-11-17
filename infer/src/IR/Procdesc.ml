@@ -70,6 +70,7 @@ module Node = struct
     | CXXDynamicCast
     | CXXNewExpr
     | CXXStdInitializerListExpr
+    | CXXTemporaryMarkerSet
     | CXXTypeidExpr
     | DeclStmt
     | DefineBody
@@ -306,6 +307,8 @@ module Node = struct
         F.pp_print_string fmt "CXXNewExpr"
     | CXXStdInitializerListExpr ->
         F.pp_print_string fmt "CXXStdInitializerListExpr"
+    | CXXTemporaryMarkerSet ->
+        F.pp_print_string fmt "CXXTemporaryMarkerSet"
     | CXXTypeidExpr ->
         F.pp_print_string fmt "CXXTypeidExpr"
     | DeclStmt ->

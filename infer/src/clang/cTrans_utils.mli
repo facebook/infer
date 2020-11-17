@@ -56,7 +56,10 @@ type control =
   ; instrs: Sil.instr list
         (** Instructions that need to be placed in the current CFG node being constructed, *after*
             [leaf_nodes]. *)
-  ; initd_exps: Exp.t list  (** list of expressions that are initialized by the instructions *) }
+  ; initd_exps: Exp.t list  (** list of expressions that are initialized by the instructions *)
+  ; cxx_temporary_markers_set: Pvar.t list
+        (** markers for C++ temporaries that have been set during the translation; used to avoid
+            adding the same marker several times *) }
 
 val pp_control : F.formatter -> control -> unit
 

@@ -46,7 +46,7 @@ digraph cfg {
 	
 
 	 "main1.38f534a9576db7ec6ebcbca8c111f942_8" -> "main1.38f534a9576db7ec6ebcbca8c111f942_7" ;
-"main1.38f534a9576db7ec6ebcbca8c111f942_9" [label="9:  BinaryOperatorStmt: Assign \n   n$9=*&x:int [line 16, column 14]\n  *&addblock:_fn_(*)=(_fun_objc_blockmain1_2,([by ref]n$9 &x:int)) [line 16, column 3]\n " shape="box"]
+"main1.38f534a9576db7ec6ebcbca8c111f942_9" [label="9:  Compound statement \n   n$9=*&x:int [line 16, column 14]\n  *&addblock:_fn_(*)=(_fun_objc_blockmain1_2,([by ref]n$9 &x:int)) [line 16, column 3]\n  n$22=*&addblock:_fn_(*) [line 16, column 3]\n " shape="box"]
 	
 
 	 "main1.38f534a9576db7ec6ebcbca8c111f942_9" -> "main1.38f534a9576db7ec6ebcbca8c111f942_8" ;
@@ -92,7 +92,7 @@ digraph cfg {
 	
 
 	 "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_5" -> "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_3" ;
-"objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_6" [label="6:  BinaryOperatorStmt: Assign \n   n$15=*&x:int [line 21, column 17]\n  n$16=*&bla:int [line 21, column 17]\n  *&addblock2:_fn_(*)=(_fun_objc_blockobjc_blockmain1_2_3,([by ref]n$15 &x:int),([by ref]n$16 &bla:int)) [line 21, column 5]\n " shape="box"]
+"objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_6" [label="6:  Compound statement \n   n$15=*&x:int [line 21, column 17]\n  n$16=*&bla:int [line 21, column 17]\n  *&addblock2:_fn_(*)=(_fun_objc_blockobjc_blockmain1_2_3,([by ref]n$15 &x:int),([by ref]n$16 &bla:int)) [line 21, column 5]\n  n$21=*&addblock2:_fn_(*) [line 21, column 5]\n " shape="box"]
 	
 
 	 "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_6" -> "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_5" ;
