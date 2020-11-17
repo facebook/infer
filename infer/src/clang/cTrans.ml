@@ -100,7 +100,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     else f trans_state e
 
 
-  let exec_with_node_creation ~f trans_state stmt =
+  let exec_with_node_creation node_name ~f trans_state stmt =
     let res_trans = f trans_state stmt in
     if not (List.is_empty res_trans.control.instrs) then
       let stmt_info, _ = Clang_ast_proj.get_stmt_tuple stmt in
@@ -110,8 +110,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         CLocation.location_of_stmt_info trans_state.context.translation_unit_context.source_file
           stmt_info'
       in
-      PriorityNode.compute_result_to_parent trans_state_pri sil_loc ~node_name:FallbackNode
-        stmt_info' res_trans
+      PriorityNode.compute_result_to_parent trans_state_pri sil_loc ~node_name stmt_info' res_trans
     else res_trans
 
 
@@ -1576,7 +1575,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   and compoundStmt_trans trans_state stmt_list =
-    let compound_control, returns = instructions trans_state stmt_list in
+    let compound_control, returns = instructions Procdesc.Node.CompoundStmt trans_state stmt_list in
     mk_trans_result (last_or_mk_fresh_void_exp_typ returns) compound_control
 
 
@@ -1939,7 +1938,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           assert false
     in
     L.debug Capture Verbose "translating a caseStmt@\n" ;
-    let body_trans_result = exec_with_node_creation ~f:instruction trans_state body in
+    let body_trans_result = exec_with_node_creation CaseStmt ~f:instruction trans_state body in
     L.debug Capture Verbose "result of translating a caseStmt: %a@\n" pp_control
       body_trans_result.control ;
     SwitchCase.add
@@ -2400,7 +2399,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             field_exps (List.length stmts)
             (Pp.seq ~sep:"," (Pp.of_string ~f:Clang_ast_proj.get_stmt_kind_string))
             stmts ;
-          let control, _ = instructions trans_state stmts in
+          let control, _ = instructions Procdesc.Node.InitListExp trans_state stmts in
           [mk_trans_result (var_exp, var_typ) control] )
 
 
@@ -3438,7 +3437,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       in
       let trans_state_placement = {trans_state with succ_nodes= []; var_exp_typ= None} in
       let res_trans_placement_control, res_trans_placement_exps =
-        instructions trans_state_placement placement_args
+        instructions Procdesc.Node.CXXNewExpr trans_state_placement placement_args
       in
       let res_trans_new =
         cpp_new_trans context.translation_unit_context.integer_type_widths sil_loc typ size_exp_opt
@@ -4096,7 +4095,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | ObjCAtSynchronizedStmt (_, stmt_list) ->
         objCAtSynchronizedStmt_trans trans_state stmt_list
     | ObjCIndirectCopyRestoreExpr (_, stmt_list, _) ->
-        let control, returns = instructions trans_state stmt_list in
+        let control, returns =
+          instructions Procdesc.Node.ObjCIndirectCopyRestoreExpr trans_state stmt_list
+        in
         mk_trans_result (last_or_mk_fresh_void_exp_typ returns) control
     | BlockExpr (stmt_info, _, expr_info, decl) ->
         blockExpr_trans trans_state stmt_info expr_info decl
@@ -4369,21 +4370,21 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     , List.rev rev_returns )
 
 
-  and get_clang_stmt_trans stmt trans_state =
-    exec_with_node_creation ~f:instruction trans_state stmt
+  and get_clang_stmt_trans node_name stmt trans_state =
+    exec_with_node_creation ~f:instruction node_name trans_state stmt
 
 
-  and get_custom_stmt_trans stmt =
-    match stmt with
-    | `ClangStmt stmt ->
-        get_clang_stmt_trans stmt
-    | `CXXConstructorInit instr ->
-        cxx_constructor_init_trans instr
+  and get_custom_stmt_trans stmt trans_state =
+    match (stmt : CFrontend_config.instr_type) with
+    | ClangStmt (node_name, stmt) ->
+        get_clang_stmt_trans node_name stmt trans_state
+    | CXXConstructorInit instr ->
+        cxx_constructor_init_trans instr trans_state
 
 
   (** Given a translation state, this function translates a list of clang statements. *)
-  and instructions trans_state stmt_list =
-    let stmt_trans_fun = List.map ~f:get_clang_stmt_trans stmt_list in
+  and instructions node_name trans_state stmt_list =
+    let stmt_trans_fun = List.map ~f:(get_clang_stmt_trans node_name) stmt_list in
     exec_trans_instrs trans_state stmt_trans_fun
 
 
@@ -4424,7 +4425,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           trans_state.succ_nodes
     in
     let trans_state' = {trans_state with succ_nodes} in
-    let instrs = extra_instrs @ [`ClangStmt body] in
+    let instrs = extra_instrs @ [CFrontend_config.ClangStmt (Procdesc.Node.DefineBody, body)] in
     let instrs_trans = List.map ~f:get_custom_stmt_trans instrs in
     let res_control, _ = exec_trans_instrs trans_state' instrs_trans in
     res_control.root_nodes

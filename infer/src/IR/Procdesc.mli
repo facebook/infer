@@ -43,7 +43,9 @@ module Node : sig
     | BinaryOperatorStmt of string
     | Call of string
     | CallObjCNew
+    | CaseStmt
     | ClassCastException
+    | CompoundStmt
     | ConditionalStmtBranch
     | ConstructorInit
     | CXXDynamicCast
@@ -56,7 +58,6 @@ module Node : sig
     | ExceptionHandler
     | ExceptionsSink
     | ExprWithCleanups
-    | FallbackNode
     | FinallyBranch
     | GCCAsmStmt
     | GenericSelectionExpr
@@ -68,6 +69,7 @@ module Node : sig
     | MonitorEnter
     | MonitorExit
     | ObjCCPPThrow
+    | ObjCIndirectCopyRestoreExpr
     | OutOfBound
     | ReturnStmt
     | Scope of string

@@ -23,8 +23,7 @@ val is_cpp_lambda_call_operator : Clang_ast_t.decl -> bool
 
 val is_cpp_virtual : Clang_ast_t.decl -> bool
 
-val get_init_list_instrs :
-  Clang_ast_t.decl -> [> `CXXConstructorInit of Clang_ast_t.cxx_ctor_initializer] list
+val get_init_list_instrs : Clang_ast_t.decl -> CFrontend_config.instr_type list
 
 val get_pointer_to_property : Clang_ast_t.decl -> Clang_ast_t.pointer option
 

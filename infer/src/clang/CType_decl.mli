@@ -63,9 +63,7 @@ val method_signature_body_of_decl :
   -> ?block_return_type:Clang_ast_t.qual_type
   -> ?passed_as_noescape_block_to:Procname.t option
   -> Procname.t
-  -> CMethodSignature.t
-     * Clang_ast_t.stmt option
-     * [> `CXXConstructorInit of Clang_ast_t.cxx_ctor_initializer] list
+  -> CMethodSignature.t * Clang_ast_t.stmt option * CFrontend_config.instr_type list
 
 val should_add_return_param : Typ.t -> is_objc_method:bool -> bool
 

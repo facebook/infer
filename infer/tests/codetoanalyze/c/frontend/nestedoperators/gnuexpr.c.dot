@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
-"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  Fallback node \n   n$0=*&X:int [line 13, column 5]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  Compound statement \n   n$0=*&X:int [line 13, column 5]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_4" -> "main.fad58de7366495db4650cfefac2fcd61_6" ;

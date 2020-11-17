@@ -32,7 +32,7 @@ digraph cfg {
 	
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_8" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_9" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_9" [label="9:  Fallback node \n   n$4=*n$3:int [line 14, column 3]\n " shape="box"]
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_9" [label="9:  Compound statement \n   n$4=*n$3:int [line 14, column 3]\n " shape="box"]
 	
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_9" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_2" ;

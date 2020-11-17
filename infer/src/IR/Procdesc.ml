@@ -62,7 +62,9 @@ module Node = struct
     | BinaryOperatorStmt of string
     | Call of string
     | CallObjCNew
+    | CaseStmt
     | ClassCastException
+    | CompoundStmt
     | ConditionalStmtBranch
     | ConstructorInit
     | CXXDynamicCast
@@ -75,7 +77,6 @@ module Node = struct
     | ExceptionHandler
     | ExceptionsSink
     | ExprWithCleanups
-    | FallbackNode
     | FinallyBranch
     | GCCAsmStmt
     | GenericSelectionExpr
@@ -87,6 +88,7 @@ module Node = struct
     | MonitorEnter
     | MonitorExit
     | ObjCCPPThrow
+    | ObjCIndirectCopyRestoreExpr
     | OutOfBound
     | ReturnStmt
     | Scope of string
@@ -288,8 +290,12 @@ module Node = struct
         F.fprintf fmt "Call %s" call
     | CallObjCNew ->
         F.pp_print_string fmt "Call objC new"
+    | CaseStmt ->
+        F.pp_print_string fmt "CaseStmt"
     | ClassCastException ->
         F.pp_print_string fmt "Class cast exception"
+    | CompoundStmt ->
+        F.pp_print_string fmt "Compound statement"
     | ConditionalStmtBranch ->
         F.pp_print_string fmt "ConditionalStmt Branch"
     | ConstructorInit ->
@@ -314,8 +320,6 @@ module Node = struct
         F.pp_print_string fmt "exceptions sink"
     | ExprWithCleanups ->
         F.pp_print_string fmt "ExprWithCleanups"
-    | FallbackNode ->
-        F.pp_print_string fmt "Fallback node"
     | FinallyBranch ->
         F.pp_print_string fmt "Finally branch"
     | GCCAsmStmt ->
@@ -338,6 +342,8 @@ module Node = struct
         F.pp_print_string fmt "MonitorExit"
     | ObjCCPPThrow ->
         F.pp_print_string fmt "ObjCCPPThrow"
+    | ObjCIndirectCopyRestoreExpr ->
+        F.pp_print_string fmt "ObjCIndirectCopyRestoreExpr"
     | OutOfBound ->
         F.pp_print_string fmt "Out of bound"
     | ReturnStmt ->

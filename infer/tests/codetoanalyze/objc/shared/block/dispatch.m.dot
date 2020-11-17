@@ -156,7 +156,7 @@ digraph cfg {
 "dispatch_a_block_variable_from_macro#DispatchA#class.92567a38d5ab3cf637f72030b1097441_2" [label="2: Exit DispatchA.dispatch_a_block_variable_from_macro \n  " color=yellow style=filled]
 	
 
-"dispatch_a_block_variable_from_macro#DispatchA#class.92567a38d5ab3cf637f72030b1097441_3" [label="3:  Fallback node \n   n$22=*&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA.dispatch_a_block_variable_from_macro.static_storage__:DispatchA* [line 70, column 5]\n " shape="box"]
+"dispatch_a_block_variable_from_macro#DispatchA#class.92567a38d5ab3cf637f72030b1097441_3" [label="3:  Compound statement \n   n$22=*&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA.dispatch_a_block_variable_from_macro.static_storage__:DispatchA* [line 70, column 5]\n " shape="box"]
 	
 
 	 "dispatch_a_block_variable_from_macro#DispatchA#class.92567a38d5ab3cf637f72030b1097441_3" -> "dispatch_a_block_variable_from_macro#DispatchA#class.92567a38d5ab3cf637f72030b1097441_6" ;
