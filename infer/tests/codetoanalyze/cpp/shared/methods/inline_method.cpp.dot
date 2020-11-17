@@ -18,18 +18,22 @@ digraph cfg {
 "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_1" [label="1: Start A::fun\nFormals:  this:A*\nLocals:  c:int \n  " color=yellow style=filled]
 	
 
-	 "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_1" -> "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_4" ;
+	 "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_1" -> "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_5" ;
 "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_2" [label="2: Exit A::fun \n  " color=yellow style=filled]
 	
 
-"fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_3" [label="3:  Return Stmt \n   n$0=*&c:int [line 17, column 12]\n  *&return:int=(n$0 + 1) [line 17, column 5]\n " shape="box"]
+"fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_3" [label="3:  Return Stmt \n   n$0=*&c:int [line 17, column 12]\n " shape="box"]
 	
 
-	 "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_3" -> "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_2" ;
-"fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(c:int); [line 16, column 5]\n  *&c:int=10 [line 16, column 5]\n " shape="box"]
+	 "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_3" -> "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_4" ;
+"fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_4" [label="4:  Return Stmt \n   *&return:int=(n$0 + 1) [line 17, column 5]\n " shape="box"]
 	
 
-	 "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_4" -> "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_3" ;
+	 "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_4" -> "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_2" ;
+"fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(c:int); [line 16, column 5]\n  *&c:int=10 [line 16, column 5]\n " shape="box"]
+	
+
+	 "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_5" -> "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_3" ;
 "fun#AIn#A#(17528145322324410262).de07a32bd66fbc8be90423f331f88c1d_1" [label="1: Start A::AIn::fun\nFormals:  this:A::AIn*\nLocals:  \n  " color=yellow style=filled]
 	
 

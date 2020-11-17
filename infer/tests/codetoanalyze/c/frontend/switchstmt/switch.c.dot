@@ -14,44 +14,48 @@ digraph cfg {
 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_1" [label="1: Start switch_gnu_range\nFormals:  c:char\nLocals:  i:int \n  " color=yellow style=filled]
 	
 
-	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_1" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_4" ;
+	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_1" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_5" ;
 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_2" [label="2: Exit switch_gnu_range \n  " color=yellow style=filled]
 	
 
-"switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_3" [label="3:  Return Stmt \n   n$0=*&i:int [line 209, column 10]\n  *&return:int=n$0 [line 209, column 3]\n " shape="box"]
+"switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_3" [label="3:  Return Stmt \n   n$0=*&i:int [line 209, column 10]\n " shape="box"]
 	
 
-	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_3" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_2" ;
-"switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_4" [label="4:  SwitchStmt \n   n$1=*&c:char [line 199, column 11]\n " shape="box"]
+	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_3" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_4" ;
+"switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 209, column 3]\n " shape="box"]
 	
 
-	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_4" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_9" ;
-	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_4" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_10" ;
-"switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_5" [label="5:  BinaryOperatorStmt: Assign \n   n$3=*&c:char [line 206, column 16]\n  n$4=_fun_atoi(n$3:int) [line 206, column 11]\n  *&i:int=n$4 [line 206, column 7]\n " shape="box"]
+	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_4" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_2" ;
+"switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_5" [label="5:  SwitchStmt \n   n$1=*&c:char [line 199, column 11]\n " shape="box"]
 	
 
-	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_5" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_3" ;
-"switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_6" [label="6:  Return Stmt \n   *&return:int=0 [line 201, column 7]\n " shape="box"]
+	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_5" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_10" ;
+	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_5" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_11" ;
+"switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_6" [label="6:  BinaryOperatorStmt: Assign \n   n$3=*&c:char [line 206, column 16]\n  n$4=_fun_atoi(n$3:int) [line 206, column 11]\n  *&i:int=n$4 [line 206, column 7]\n " shape="box"]
 	
 
-	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_6" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_2" ;
-"switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_7" [label="7: Prune (true branch, switch) \n   PRUNE((n$1 == 48), true); [line 203, column 5]\n " shape="invhouse"]
+	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_6" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_3" ;
+"switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_7" [label="7:  Return Stmt \n   *&return:int=0 [line 201, column 7]\n " shape="box"]
 	
 
-	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_7" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_5" ;
-"switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_8" [label="8: Prune (false branch, switch) \n   PRUNE(!(n$1 == 48), false); [line 203, column 5]\n " shape="invhouse"]
+	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_7" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_2" ;
+"switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_8" [label="8: Prune (true branch, switch) \n   PRUNE((n$1 == 48), true); [line 203, column 5]\n " shape="invhouse"]
 	
 
-	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_8" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_3" ;
-"switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_9" [label="9: Prune (true branch, switch) \n   PRUNE((n$1 == 97), true); [line 200, column 5]\n " shape="invhouse"]
+	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_8" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_6" ;
+"switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_9" [label="9: Prune (false branch, switch) \n   PRUNE(!(n$1 == 48), false); [line 203, column 5]\n " shape="invhouse"]
 	
 
-	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_9" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_6" ;
-"switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_10" [label="10: Prune (false branch, switch) \n   PRUNE(!(n$1 == 97), false); [line 200, column 5]\n " shape="invhouse"]
+	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_9" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_3" ;
+"switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_10" [label="10: Prune (true branch, switch) \n   PRUNE((n$1 == 97), true); [line 200, column 5]\n " shape="invhouse"]
 	
 
 	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_10" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_7" ;
-	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_10" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_8" ;
+"switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_11" [label="11: Prune (false branch, switch) \n   PRUNE(!(n$1 == 97), false); [line 200, column 5]\n " shape="invhouse"]
+	
+
+	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_11" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_8" ;
+	 "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_11" -> "switch_gnu_range.fe09b2428ff32c71bce6cc22d05f5102_9" ;
 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_1" [label="1: Start test_switch1\nFormals: \nLocals:  x:int value:int \n  " color=yellow style=filled]
 	
 
@@ -162,7 +166,7 @@ digraph cfg {
 	
 
 	 "test_switch10.8a4170d3888102a2491712a5ad55ad8d_5" -> "test_switch10.8a4170d3888102a2491712a5ad55ad8d_4" ;
-"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_1" [label="1: Start test_switch11\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int value:int \n  " color=yellow style=filled]
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_1" [label="1: Start test_switch11\nFormals: \nLocals:  value:int \n  " color=yellow style=filled]
 	
 
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_1" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_14" ;
@@ -177,41 +181,41 @@ digraph cfg {
 	
 
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_4" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_10" ;
-"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_5" [label="5:  BinaryOperatorStmt: EQ \n   n$1=*&value:int [line 190, column 20]\n " shape="box"]
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_5" [label="5:  BinaryOperatorStmt: EQ \n   n$0=*&value:int [line 190, column 20]\n " shape="box"]
 	
 
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_5" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_6" ;
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_5" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_7" ;
-"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_6" [label="6: Prune (true branch, boolean exp) \n   PRUNE((n$1 == 0), true); [line 190, column 20]\n " shape="invhouse"]
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_6" [label="6: Prune (true branch, boolean exp) \n   PRUNE((n$0 == 0), true); [line 190, column 20]\n " shape="invhouse"]
 	
 
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_6" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_8" ;
-"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_7" [label="7: Prune (false branch, boolean exp) \n   PRUNE(!(n$1 == 0), false); [line 190, column 20]\n " shape="invhouse"]
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_7" [label="7: Prune (false branch, boolean exp) \n   PRUNE(!(n$0 == 0), false); [line 190, column 20]\n " shape="invhouse"]
 	
 
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_7" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_9" ;
-"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_8" [label="8:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=7 [line 190, column 20]\n " shape="box"]
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_8" [label="8:  ConditionalStmt Branch \n   *&value:int=7 [line 190, column 20]\n " shape="box"]
 	
 
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_8" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_4" ;
-"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_9" [label="9:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=9 [line 190, column 20]\n " shape="box"]
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_9" [label="9:  ConditionalStmt Branch \n   *&value:int=9 [line 190, column 20]\n " shape="box"]
 	
 
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_9" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_4" ;
-"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_10" [label="10:  SwitchStmt \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 190, column 20]\n  *&value:int=n$2 [line 190, column 11]\n  n$3=*&value:int [line 190, column 11]\n " shape="box"]
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_10" [label="10:  SwitchStmt \n  " shape="box"]
 	
 
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_10" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_12" ;
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_10" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_13" ;
-"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_11" [label="11:  Call _fun_printf \n   n$4=_fun_printf(\"(0)HELLO WORLD!\":char*) [line 192, column 7]\n " shape="box"]
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_11" [label="11:  Call _fun_printf \n   n$1=_fun_printf(\"(0)HELLO WORLD!\":char*) [line 192, column 7]\n " shape="box"]
 	
 
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_11" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_3" ;
-"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_12" [label="12: Prune (true branch, switch) \n   PRUNE((n$3 == 0), true); [line 191, column 5]\n " shape="invhouse"]
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_12" [label="12: Prune (true branch, switch) \n   PRUNE((&value == 0), true); [line 191, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_12" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_11" ;
-"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_13" [label="13: Prune (false branch, switch) \n   PRUNE(!(n$3 == 0), false); [line 191, column 5]\n " shape="invhouse"]
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_13" [label="13: Prune (false branch, switch) \n   PRUNE(!(&value == 0), false); [line 191, column 5]\n " shape="invhouse"]
 	
 
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_13" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_3" ;

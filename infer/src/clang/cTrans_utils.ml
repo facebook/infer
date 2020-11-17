@@ -257,6 +257,8 @@ module PriorityNode = struct
 
 
   let force_claim_priority_node trans_state stmt_info =
+    L.debug Capture Verbose "Force-locking priority node in %d (was %a)@\n"
+      stmt_info.Clang_ast_t.si_pointer pp_priority_node trans_state.priority ;
     {trans_state with priority= Busy stmt_info.Clang_ast_t.si_pointer}
 
 
@@ -272,14 +274,16 @@ module PriorityNode = struct
   (* priority_node. It returns nodes, ids, instrs that should be passed to parent *)
   let compute_controls_to_parent trans_state loc ~node_name stmt_info res_states_children =
     let res_state = collect_controls trans_state.context.procdesc res_states_children in
+    L.debug Capture Verbose "collected controls: %a@\n" pp_control res_state ;
     let create_node =
       own_priority_node trans_state.priority stmt_info && not (List.is_empty res_state.instrs)
     in
     if create_node then (
       (* We need to create a node *)
       let node_kind = Procdesc.Node.Stmt_node node_name in
+      let node_instrs = res_state.instrs in
       let node =
-        Procdesc.create_node trans_state.context.CContext.procdesc loc node_kind res_state.instrs
+        Procdesc.create_node trans_state.context.CContext.procdesc loc node_kind node_instrs
       in
       Procdesc.node_set_succs trans_state.context.procdesc node ~normal:trans_state.succ_nodes
         ~exn:[] ;
@@ -292,8 +296,10 @@ module PriorityNode = struct
         if List.is_empty res_state.root_nodes then [node] else res_state.root_nodes
       in
       let res_state = {res_state with root_nodes; leaf_nodes= [node]; instrs= []} in
-      L.debug Capture Verbose "Created node %a, returning control %a@\n" Procdesc.Node.pp node
-        pp_control res_state ;
+      L.debug Capture Verbose "Created node %a with instrs [%a], returning control %a@\n"
+        Procdesc.Node.pp node
+        (Pp.seq ~sep:";" (Sil.pp_instr ~print_types:false Pp.text_break))
+        node_instrs pp_control res_state ;
       res_state )
     else (
       (* The node is created by the parent. We just pass back nodes/leafs params *)
@@ -315,6 +321,50 @@ module PriorityNode = struct
   let compute_result_to_parent trans_state loc ~node_name stmt_info trans_result =
     compute_control_to_parent trans_state loc ~node_name stmt_info trans_result.control
     |> mk_trans_result trans_result.return
+
+
+  let mk_sequential loc node_name trans_state stmt_info return ~first_result ~second_result =
+    (* force node creation for just the first result if needed *)
+    let first_result =
+      if
+        List.is_empty second_result.control.root_nodes
+        && List.is_empty second_result.control.leaf_nodes
+      then first_result
+      else compute_result_to_parent trans_state loc ~node_name stmt_info first_result
+    in
+    L.debug Capture Verbose "sequential composition :@\n@[<hv2>  %a@]@\n;@\n@[<hv2>  %a@]@\n"
+      pp_control first_result.control pp_control second_result.control ;
+    compute_results_to_parent trans_state loc ~node_name stmt_info ~return
+      [first_result; second_result]
+
+
+  let force_sequential loc node_name trans_state stmt_info ~mk_first_opt ~mk_second ~mk_return =
+    let trans_state = force_claim_priority_node trans_state stmt_info in
+    let second_result =
+      let stmt_info = {stmt_info with Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()} in
+      mk_second trans_state stmt_info
+    in
+    match mk_first_opt trans_state stmt_info with
+    | None ->
+        L.debug Capture Verbose "empty result for first instruction, skipping@\n" ;
+        second_result
+    | Some first_result ->
+        mk_sequential loc node_name trans_state stmt_info
+          (mk_return ~fst:first_result ~snd:second_result)
+          ~first_result ~second_result
+
+
+  let force_sequential_with_acc loc node_name trans_state stmt_info ~mk_first ~mk_second ~mk_return
+      =
+    let trans_state = force_claim_priority_node trans_state stmt_info in
+    let first_result, acc = mk_first {trans_state with succ_nodes= []} stmt_info in
+    let second_result =
+      let stmt_info = {stmt_info with Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()} in
+      mk_second acc trans_state stmt_info
+    in
+    mk_sequential loc node_name trans_state stmt_info
+      (mk_return ~fst:first_result ~snd:second_result)
+      ~first_result ~second_result
 end
 
 module Loops = struct

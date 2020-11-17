@@ -11,10 +11,10 @@ SLEDGE_DBG=$(CURDIR)/../_build/debug/cli/sledge_cli.exe
 SLEDGE_OPT=$(CURDIR)/../_build/release/cli/sledge_cli.exe
 
 # additional arguments to pass to sledge
-SLEDGE_ARGS?=
+SLEDGE_ARGS?=-bound 5
 
 # limits for each test run
-TIMEOUT?=90
+TIMEOUT?=100
 MEMOUT?=4096
 
 sledge_dbg=./wrap.sh $(TIMEOUT) $(MEMOUT) $(SLEDGE_DBG)
@@ -35,17 +35,24 @@ default: test
 
 # compile c to llvm bitcode
 %.bc : %.c
-	@(cd $(dir $*) && clang -g -c -emit-llvm -include $(CURDIR)/../model/llair_intrinsics.h -Wno-main-return-type $(CLANG_ARGS) $(notdir $*).c -o $(notdir $*).bc)
+	@(cd $(@D) && clang -g -c -emit-llvm -include $(CURDIR)/../model/llair_intrinsics.h -Wno-main-return-type $(CLANG_ARGS) -o $(@F) $(<F))
 
 # compile c++ to llvm bitcode
 %.bc : %.cpp
-	@(cd $(dir $*) && clang++ -g -c -emit-llvm $(CLANG_ARGS) $(notdir $*).cpp -o $(notdir $*).bc)
+	@(cd $(@D) && clang++ -g -c -emit-llvm $(CLANG_ARGS) -o $(@F) $(<F))
+
+# disassemble bitcode to llvm assembly
+%.ll : %.bc
+	@(cd $(@D) && llvm-dis -show-annotations -o $(@F) $(<F))
+
+%.bllair : %.bc
+	$(SLEDGE_DBG) llvm translate $< -output $@
 
 %.llair : %.bc
-	$(SLEDGE_DBG) llvm translate $< -llair-output $@
+	$(SLEDGE_DBG) llvm disassemble -no-models -no-internalize $< -llair-output $@
 
-%.llair.txt : %.llair
-	$(SLEDGE_DBG) disassemble $< -llair-txt-output $@
+%.llair : %.ll
+	$(SLEDGE_DBG) llvm disassemble -no-models -no-internalize $< -llair-output $@
 
 # code to test sledge translate
 TranslateCs:=$(shell find -L {,local/}translate -name '*.c' 2>/dev/null)
@@ -101,9 +108,9 @@ translate-status: translate.sexp
 # run analyze tests
 .PHONY: analyze
 analyze: compile
-	-@parallel --bar $(sledge_dbg) llvm analyze -bound 5 -trace Report+Control $(SLEDGE_ARGS) ::: $(AnalyzeTests)
+	-@parallel --bar $(sledge_dbg) llvm analyze -trace Report+Control $(SLEDGE_ARGS) ::: $(AnalyzeTests)
 
-parallel_sledge_opt=parallel --shuf --bar $(sledge_opt) llvm analyze -append-report -bound 5 $(SLEDGE_ARGS) :::
+parallel_sledge_opt=parallel --shuf --bar $(sledge_opt) llvm analyze -append-report $(SLEDGE_ARGS) :::
 
 analyze-perf1: compile
 	@$(parallel_sledge_opt) $(AnalyzeTests)
@@ -203,7 +210,7 @@ warnings:
 	@find -L * -name '*.out' | xargs grep -h "Warning:" | sort
 
 test-translate:
-	-@find -L {,local/,extra/}translate -name "*.sexp" -or -name "*.out" -or -name '*.err' -or -name '*.llair' -or -name '*.llair.txt' -delete 2>/dev/null
+	-@find -L {,local/,extra/}translate -name "*.sexp" -or -name "*.out" -or -name '*.err' -or -name '*.bllair' -or -name '*.llair' -delete 2>/dev/null
 	-@$(MAKE) --no-print-directory translate
 	@$(MAKE) --no-print-directory translate-status
 
@@ -218,12 +225,12 @@ test-smt:
 	@$(MAKE) --no-print-directory smt-status
 
 test-llvm:
-	-@find -L {,local/,extra/}llvm -name "*.sexp" -or -name "*.out" -or -name '*.err' -or -name '*.llair' -delete 2>/dev/null
+	-@find -L {,local/,extra/}llvm -name "*.sexp" -or -name "*.out" -or -name '*.err' -or -name '*.bllair' -delete 2>/dev/null
 	-@$(MAKE) --no-print-directory llvm
 	@$(MAKE) --no-print-directory llvm-status
 
 # run tests and check against expected results
-test: test-translate test-analyze test-smt test-llvm
+test: test-translate translate.html test-analyze analyze.html test-llvm llvm.html
 
 # set current results as new expected results
 promote: baseline/translate.sexp baseline/analyze.sexp baseline/smt.sexp baseline/llvm.sexp
@@ -246,7 +253,7 @@ cleanbc:
 
 # remove result files
 cleanout:
-	@find -L * -not -path 'baseline/*' -name "*.sexp" -or -name "*.out" -or -name '*.err' -or -name '*.llair' -or -name '*.llair.txt' \
+	@find -L * -not -path 'baseline/*' -name "*.sexp" -or -name "*.out" -or -name '*.err' -or -name '*.bllair' -or -name '*.llair' \
 	 | xargs rm -f
 
 clean: cleanbc cleanout

@@ -1,10 +1,9 @@
 /* @generated */
 digraph cfg {
-"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_1" [label="1: Start __infer_globals_initializer_global\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int \n  " color=yellow style=filled]
+"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_1" [label="1: Start __infer_globals_initializer_global\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_1" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_4" ;
-	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_1" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_5" ;
+	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_1" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_9" ;
 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" [label="2: Exit __infer_globals_initializer_global \n  " color=yellow style=filled]
 	
 
@@ -20,18 +19,23 @@ digraph cfg {
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_5" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_7" ;
-"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_6" [label="6:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=2 [line 8, column 20]\n " shape="box"]
+"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_6" [label="6:  ConditionalStmt Branch \n   *&#GB<codetoanalyze/cpp/frontend/globals/global_const2.cpp|ice>$global:int=2 [line 8, column 20]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_6" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" ;
-"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_7" [label="7:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=3 [line 8, column 20]\n " shape="box"]
+"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_7" [label="7:  ConditionalStmt Branch \n   *&#GB<codetoanalyze/cpp/frontend/globals/global_const2.cpp|ice>$global:int=3 [line 8, column 20]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_7" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" ;
-"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(#GB<codetoanalyze/cpp/frontend/globals/global_const2.cpp|ice>$global:int const ); [line 8, column 1]\n  n$1=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 8, column 20]\n  *&#GB<codetoanalyze/cpp/frontend/globals/global_const2.cpp|ice>$global:int=n$1 [line 8, column 1]\n " shape="box"]
+"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_8" [label="8:  between_join_and_exit \n  " shape="box"]
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_8" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" ;
+"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(#GB<codetoanalyze/cpp/frontend/globals/global_const2.cpp|ice>$global:int const ); [line 8, column 1]\n " shape="box"]
+	
+
+	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_9" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_4" ;
+	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_9" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_5" ;
 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" [label="1: Start test\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -39,8 +43,12 @@ digraph cfg {
 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/cpp/frontend/globals/global_const2.cpp|ice>$global:int [line 9, column 21]\n  *&return:int=n$0 [line 9, column 14]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/cpp/frontend/globals/global_const2.cpp|ice>$global:int [line 9, column 21]\n " shape="box"]
 	
 
-	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" ;
+	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" ;
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 9, column 14]\n " shape="box"]
+	
+
+	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" ;
 }

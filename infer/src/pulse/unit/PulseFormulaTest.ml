@@ -40,7 +40,7 @@ let of_binop bop f1 f2 phi =
   let* phi, op1 = f1 phi in
   let* phi, op2 = f2 phi in
   let v = Var.mk_fresh () in
-  let+ phi = and_equal_binop v bop op1 op2 phi in
+  let+ phi, _new_eqs = and_equal_binop v bop op1 op2 phi in
   (phi, AbstractValueOperand v)
 
 
@@ -59,13 +59,13 @@ let ( mod ) f1 f2 phi = of_binop Mod f1 f2 phi
 let ( = ) f1 f2 phi =
   let* phi, op1 = f1 phi in
   let* phi, op2 = f2 phi in
-  and_equal op1 op2 phi
+  and_equal op1 op2 phi >>| fst
 
 
 let ( < ) f1 f2 phi =
   let* phi, op1 = f1 phi in
   let* phi, op2 = f2 phi in
-  and_less_than op1 op2 phi
+  and_less_than op1 op2 phi >>| fst
 
 
 let ( && ) f1 f2 phi = f1 phi >>= f2
@@ -119,7 +119,7 @@ let normalized_pp fmt = function
 
 let test ~f phi =
   AbstractValue.State.set init_vars_state ;
-  phi ttrue >>= f |> F.printf "%a" normalized_pp
+  phi ttrue >>= f >>| fst |> F.printf "%a" normalized_pp
 
 
 let normalize phi = test ~f:normalize phi

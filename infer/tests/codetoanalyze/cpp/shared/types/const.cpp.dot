@@ -83,10 +83,14 @@ digraph cfg {
 "const_in_param1#18320019178437505814.a844808a0d69c55797f9fb0995e0aee5_2" [label="2: Exit const_in_param1 \n  " color=yellow style=filled]
 	
 
-"const_in_param1#18320019178437505814.a844808a0d69c55797f9fb0995e0aee5_3" [label="3:  Return Stmt \n   n$0=*&p:int const * [line 7, column 45]\n  n$1=*n$0:int [line 7, column 44]\n  *&return:int=n$1 [line 7, column 37]\n " shape="box"]
+"const_in_param1#18320019178437505814.a844808a0d69c55797f9fb0995e0aee5_3" [label="3:  Return Stmt \n   n$0=*&p:int const * [line 7, column 45]\n  n$1=*n$0:int [line 7, column 44]\n " shape="box"]
 	
 
-	 "const_in_param1#18320019178437505814.a844808a0d69c55797f9fb0995e0aee5_3" -> "const_in_param1#18320019178437505814.a844808a0d69c55797f9fb0995e0aee5_2" ;
+	 "const_in_param1#18320019178437505814.a844808a0d69c55797f9fb0995e0aee5_3" -> "const_in_param1#18320019178437505814.a844808a0d69c55797f9fb0995e0aee5_4" ;
+"const_in_param1#18320019178437505814.a844808a0d69c55797f9fb0995e0aee5_4" [label="4:  Return Stmt \n   *&return:int=n$1 [line 7, column 37]\n " shape="box"]
+	
+
+	 "const_in_param1#18320019178437505814.a844808a0d69c55797f9fb0995e0aee5_4" -> "const_in_param1#18320019178437505814.a844808a0d69c55797f9fb0995e0aee5_2" ;
 "const_in_param2#8428058276837502013.07a7436b2e073e84a0e279fb805bdcec_1" [label="1: Start const_in_param2\nFormals:  p:int const * const \nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -94,8 +98,12 @@ digraph cfg {
 "const_in_param2#8428058276837502013.07a7436b2e073e84a0e279fb805bdcec_2" [label="2: Exit const_in_param2 \n  " color=yellow style=filled]
 	
 
-"const_in_param2#8428058276837502013.07a7436b2e073e84a0e279fb805bdcec_3" [label="3:  Return Stmt \n   n$0=*&p:int const * [line 9, column 51]\n  n$1=*n$0:int [line 9, column 50]\n  *&return:int=n$1 [line 9, column 43]\n " shape="box"]
+"const_in_param2#8428058276837502013.07a7436b2e073e84a0e279fb805bdcec_3" [label="3:  Return Stmt \n   n$0=*&p:int const * [line 9, column 51]\n  n$1=*n$0:int [line 9, column 50]\n " shape="box"]
 	
 
-	 "const_in_param2#8428058276837502013.07a7436b2e073e84a0e279fb805bdcec_3" -> "const_in_param2#8428058276837502013.07a7436b2e073e84a0e279fb805bdcec_2" ;
+	 "const_in_param2#8428058276837502013.07a7436b2e073e84a0e279fb805bdcec_3" -> "const_in_param2#8428058276837502013.07a7436b2e073e84a0e279fb805bdcec_4" ;
+"const_in_param2#8428058276837502013.07a7436b2e073e84a0e279fb805bdcec_4" [label="4:  Return Stmt \n   *&return:int=n$1 [line 9, column 43]\n " shape="box"]
+	
+
+	 "const_in_param2#8428058276837502013.07a7436b2e073e84a0e279fb805bdcec_4" -> "const_in_param2#8428058276837502013.07a7436b2e073e84a0e279fb805bdcec_2" ;
 }

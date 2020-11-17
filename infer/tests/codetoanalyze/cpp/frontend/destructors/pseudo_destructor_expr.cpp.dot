@@ -18,22 +18,26 @@ digraph cfg {
 "f#10188173399311638112.8cffce40f5525757e791edeba0985326_1" [label="1: Start f\nFormals:  p:int*\nLocals:  x:int \n  " color=yellow style=filled]
 	
 
-	 "f#10188173399311638112.8cffce40f5525757e791edeba0985326_1" -> "f#10188173399311638112.8cffce40f5525757e791edeba0985326_5" ;
+	 "f#10188173399311638112.8cffce40f5525757e791edeba0985326_1" -> "f#10188173399311638112.8cffce40f5525757e791edeba0985326_6" ;
 "f#10188173399311638112.8cffce40f5525757e791edeba0985326_2" [label="2: Exit f \n  " color=yellow style=filled]
 	
 
-"f#10188173399311638112.8cffce40f5525757e791edeba0985326_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 12, column 10]\n  *&return:int=n$0 [line 12, column 3]\n " shape="box"]
+"f#10188173399311638112.8cffce40f5525757e791edeba0985326_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 12, column 10]\n " shape="box"]
 	
 
-	 "f#10188173399311638112.8cffce40f5525757e791edeba0985326_3" -> "f#10188173399311638112.8cffce40f5525757e791edeba0985326_2" ;
-"f#10188173399311638112.8cffce40f5525757e791edeba0985326_4" [label="4:  Call _fun___infer_skip_function \n   n$1=_fun___infer_skip_function() [line 11, column 3]\n " shape="box"]
+	 "f#10188173399311638112.8cffce40f5525757e791edeba0985326_3" -> "f#10188173399311638112.8cffce40f5525757e791edeba0985326_4" ;
+"f#10188173399311638112.8cffce40f5525757e791edeba0985326_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 12, column 3]\n " shape="box"]
 	
 
-	 "f#10188173399311638112.8cffce40f5525757e791edeba0985326_4" -> "f#10188173399311638112.8cffce40f5525757e791edeba0985326_3" ;
-"f#10188173399311638112.8cffce40f5525757e791edeba0985326_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 10, column 3]\n  n$2=*&p:int* [line 10, column 12]\n  n$3=*n$2:int [line 10, column 11]\n  *&x:int=n$3 [line 10, column 3]\n " shape="box"]
+	 "f#10188173399311638112.8cffce40f5525757e791edeba0985326_4" -> "f#10188173399311638112.8cffce40f5525757e791edeba0985326_2" ;
+"f#10188173399311638112.8cffce40f5525757e791edeba0985326_5" [label="5:  Call _fun___infer_skip_function \n   n$1=_fun___infer_skip_function() [line 11, column 3]\n " shape="box"]
 	
 
-	 "f#10188173399311638112.8cffce40f5525757e791edeba0985326_5" -> "f#10188173399311638112.8cffce40f5525757e791edeba0985326_4" ;
+	 "f#10188173399311638112.8cffce40f5525757e791edeba0985326_5" -> "f#10188173399311638112.8cffce40f5525757e791edeba0985326_3" ;
+"f#10188173399311638112.8cffce40f5525757e791edeba0985326_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 10, column 3]\n  n$2=*&p:int* [line 10, column 12]\n  n$3=*n$2:int [line 10, column 11]\n  *&x:int=n$3 [line 10, column 3]\n " shape="box"]
+	
+
+	 "f#10188173399311638112.8cffce40f5525757e791edeba0985326_6" -> "f#10188173399311638112.8cffce40f5525757e791edeba0985326_5" ;
 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" [label="1: Start test\nFormals: \nLocals:  t:int* \n  " color=yellow style=filled]
 	
 

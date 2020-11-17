@@ -29,8 +29,7 @@ let%test_module _ =
     let ( + ) = Term.add
     let ( - ) = Term.sub
     let ( = ) = Formula.eq
-    let f = Term.splat (* any uninterpreted function *)
-
+    let f x = Term.apply (Uninterp "f") [|x|]
     let wrt = Var.Set.empty
     let a_, wrt = Var.fresh "a" ~wrt
     let b_, wrt = Var.fresh "b" ~wrt
@@ -59,8 +58,8 @@ let%test_module _ =
     let%expect_test _ =
       pp
         (star
-           (seg {loc= x; bas= x; len= !16; siz= !8; seq= a})
-           (seg {loc= x + !8; bas= x; len= !16; siz= !8; seq= b})) ;
+           (seg {loc= x; bas= x; len= !16; siz= !8; cnt= a})
+           (seg {loc= x + !8; bas= x; len= !16; siz= !8; cnt= b})) ;
       [%expect {|
           %x_6 -[)-> ⟨8,%a_1⟩^⟨8,%b_2⟩ |}]
 
@@ -156,11 +155,11 @@ let%test_module _ =
       pp q' ;
       [%expect
         {|
-        ∃ %x_6 .   %x_6 = %x_6^ ∧ (-1 + %y_7) = %y_7^ ∧ emp
+        ∃ %x_6 .   %x_6 = f(%x_6) ∧ (-1 + %y_7) = f(%y_7) ∧ emp
 
-          ((1 + %y_7^) = %y_7) ∧ emp
+          ((1 + f(%y_7)) = %y_7) ∧ emp
 
-          (-1 + %y_7) = %y_7^ ∧ emp |}]
+          (-1 + %y_7) = f(%y_7) ∧ emp |}]
 
     let%expect_test _ =
       let q =

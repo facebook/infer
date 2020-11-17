@@ -29,8 +29,12 @@ digraph cfg {
 "fun#A#(6769534270530582672).0ab578f4190d39d2c1b23c6d46a310c6_2" [label="2: Exit A::fun \n  " color=yellow style=filled]
 	
 
-"fun#A#(6769534270530582672).0ab578f4190d39d2c1b23c6d46a310c6_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 13, column 32]\n  *&return:int=(1 / n$0) [line 13, column 21]\n " shape="box"]
+"fun#A#(6769534270530582672).0ab578f4190d39d2c1b23c6d46a310c6_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 13, column 32]\n " shape="box"]
 	
 
-	 "fun#A#(6769534270530582672).0ab578f4190d39d2c1b23c6d46a310c6_3" -> "fun#A#(6769534270530582672).0ab578f4190d39d2c1b23c6d46a310c6_2" ;
+	 "fun#A#(6769534270530582672).0ab578f4190d39d2c1b23c6d46a310c6_3" -> "fun#A#(6769534270530582672).0ab578f4190d39d2c1b23c6d46a310c6_4" ;
+"fun#A#(6769534270530582672).0ab578f4190d39d2c1b23c6d46a310c6_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$0) [line 13, column 21]\n " shape="box"]
+	
+
+	 "fun#A#(6769534270530582672).0ab578f4190d39d2c1b23c6d46a310c6_4" -> "fun#A#(6769534270530582672).0ab578f4190d39d2c1b23c6d46a310c6_2" ;
 }

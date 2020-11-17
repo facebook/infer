@@ -12,9 +12,7 @@ open PulseDomainInterface
 
 type t = AbductiveDomain.t
 
-type 'a access_result = ('a, Diagnostic.t * t) result
-
-let ok_continue post = Ok [ExecutionDomain.ContinueProgram post]
+type 'a access_result = 'a PulseReport.access_result
 
 let check_addr_access location (address, history) astate =
   let access_trace = Trace.Immediate {location; history} in
@@ -101,13 +99,11 @@ let eval location exp0 astate =
         Ok (eval_var [ValueHistory.VariableAccessed (pvar, location)] (Var.of_pvar pvar) astate)
     | Lfield (exp', field, _) ->
         let* astate, addr_hist = eval exp' astate in
-        let+ astate = check_addr_access location addr_hist astate in
-        Memory.eval_edge addr_hist (FieldAccess field) astate
+        eval_access location addr_hist (FieldAccess field) astate
     | Lindex (exp', exp_index) ->
         let* astate, addr_hist_index = eval exp_index astate in
         let* astate, addr_hist = eval exp' astate in
-        let+ astate = check_addr_access location addr_hist astate in
-        Memory.eval_edge addr_hist (ArrayAccess (StdTyp.void, fst addr_hist_index)) astate
+        eval_access location addr_hist (ArrayAccess (StdTyp.void, fst addr_hist_index)) astate
     | Closure {name; captured_vars} ->
         let+ astate, rev_captured =
           List.fold_result captured_vars ~init:(astate, [])
@@ -439,13 +435,14 @@ let unknown_call call_loc reason ~ret ~actuals ~formals_opt astate =
 
 let apply_callee ~caller_proc_desc callee_pname call_loc callee_exec_state ~ret
     ~captured_vars_with_actuals ~formals ~actuals astate =
-  let apply callee_prepost ~f =
-    PulseInterproc.apply_prepost callee_pname call_loc ~callee_prepost ~captured_vars_with_actuals
-      ~formals ~actuals astate
-    >>= function
-    | None ->
-        (* couldn't apply pre/post pair *) Ok None
-    | Some (post, return_val_opt) ->
+  let map_call_result callee_prepost ~f =
+    match
+      PulseInterproc.apply_prepost callee_pname call_loc ~callee_prepost ~captured_vars_with_actuals
+        ~formals ~actuals astate
+    with
+    | (FeasiblePath (Error _) | InfeasiblePath) as path_result ->
+        path_result
+    | FeasiblePath (Ok (post, return_val_opt)) ->
         let event = ValueHistory.Call {f= Call callee_pname; location= call_loc; in_call= []} in
         let post =
           match return_val_opt with
@@ -459,28 +456,30 @@ let apply_callee ~caller_proc_desc callee_pname call_loc callee_exec_state ~ret
   let open ExecutionDomain in
   match callee_exec_state with
   | AbortProgram astate ->
-      apply
+      map_call_result
         (astate :> AbductiveDomain.t)
         ~f:(fun astate ->
           let astate_summary = AbductiveDomain.summary_of_post caller_proc_desc astate in
-          Ok (Some (AbortProgram astate_summary)) )
+          FeasiblePath (Ok (AbortProgram astate_summary)) )
   | ContinueProgram astate ->
-      apply astate ~f:(fun astate -> Ok (Some (ContinueProgram astate)))
+      map_call_result astate ~f:(fun astate -> FeasiblePath (Ok (ContinueProgram astate)))
   | ExitProgram astate ->
-      apply astate ~f:(fun astate -> Ok (Some (ExitProgram astate)))
+      map_call_result astate ~f:(fun astate -> FeasiblePath (Ok (ExitProgram astate)))
   | LatentAbortProgram {astate; latent_issue} ->
-      apply
+      map_call_result
         (astate :> AbductiveDomain.t)
         ~f:(fun astate ->
           let astate_summary = AbductiveDomain.summary_of_post caller_proc_desc astate in
-          if PulseArithmetic.is_unsat_cheap (astate_summary :> AbductiveDomain.t) then Ok None
+          if PulseArithmetic.is_unsat_cheap (astate_summary :> AbductiveDomain.t) then
+            InfeasiblePath
           else
             let latent_issue =
               LatentIssue.add_call (CallEvent.Call callee_pname, call_loc) latent_issue
             in
-            if LatentIssue.should_report astate_summary then
-              Error (LatentIssue.to_diagnostic latent_issue, (astate_summary :> AbductiveDomain.t))
-            else Ok (Some (LatentAbortProgram {astate= astate_summary; latent_issue})) )
+            FeasiblePath
+              ( if LatentIssue.should_report astate_summary then
+                Error (LatentIssue.to_diagnostic latent_issue, (astate_summary :> AbductiveDomain.t))
+              else Ok (LatentAbortProgram {astate= astate_summary; latent_issue}) ) )
 
 
 let get_captured_actuals location ~captured_vars ~actual_closure astate =
@@ -495,9 +494,8 @@ let get_captured_actuals location ~captured_vars ~actual_closure astate =
   (astate, captured_vars_with_actuals)
 
 
-let call ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.t) option) call_loc
-    callee_pname ~ret ~actuals ~formals_opt (astate : AbductiveDomain.t) :
-    (ExecutionDomain.t list, Diagnostic.t * t) result =
+let call ~caller_proc_desc err_log ~(callee_data : (Procdesc.t * PulseSummary.t) option) call_loc
+    callee_pname ~ret ~actuals ~formals_opt (astate : AbductiveDomain.t) =
   match callee_data with
   | Some (callee_proc_desc, exec_states) ->
       let formals =
@@ -510,7 +508,7 @@ let call ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.t) option)
                let pvar = Pvar.mk mangled callee_pname in
                Var.of_pvar pvar )
       in
-      let* astate, captured_vars_with_actuals =
+      let+ astate, captured_vars_with_actuals =
         match actuals with
         | (actual_closure, _) :: _
           when not (Procname.is_objc_block callee_pname || List.is_empty captured_vars) ->
@@ -519,34 +517,35 @@ let call ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.t) option)
         | _ ->
             Ok (astate, [])
       in
-      let is_blacklist =
+      let should_keep_at_most_one_disjunct =
         Option.exists Config.pulse_cut_to_one_path_procedures_pattern ~f:(fun regex ->
             Str.string_match regex (Procname.to_string callee_pname) 0 )
       in
+      if should_keep_at_most_one_disjunct then
+        L.d_printfln "Will keep at most one disjunct because %a is in blacklist" Procname.pp
+          callee_pname ;
       (* call {!AbductiveDomain.PrePost.apply} on each pre/post pair in the summary. *)
-      IContainer.fold_result_until
+      List.fold ~init:[]
         (exec_states :> ExecutionDomain.t list)
-        ~fold:List.fold ~init:[]
         ~f:(fun posts callee_exec_state ->
-          (* apply all pre/post specs *)
-          match
-            apply_callee ~caller_proc_desc callee_pname call_loc callee_exec_state
-              ~captured_vars_with_actuals ~formals ~actuals ~ret astate
-          with
-          | Ok None ->
-              (* couldn't apply pre/post pair *)
-              Continue (Ok posts)
-          | Ok (Some post) when is_blacklist ->
-              L.d_printfln "Keep only one disjunct because %a is in blacklist" Procname.pp
-                callee_pname ;
-              Stop [post]
-          | Ok (Some post) ->
-              Continue (Ok (post :: posts))
-          | Error _ as x ->
-              Continue x )
-        ~finish:(fun x -> x)
+          if should_keep_at_most_one_disjunct && not (List.is_empty posts) then posts
+          else
+            (* apply all pre/post specs *)
+            match
+              apply_callee ~caller_proc_desc callee_pname call_loc callee_exec_state
+                ~captured_vars_with_actuals ~formals ~actuals ~ret astate
+            with
+            | InfeasiblePath ->
+                (* couldn't apply pre/post pair *)
+                posts
+            | FeasiblePath post -> (
+              match PulseReport.report_error caller_proc_desc err_log post with
+              | Error InfeasiblePath ->
+                  posts
+              | Error (FeasiblePath post) | Ok post ->
+                  post :: posts ) )
   | None ->
       (* no spec found for some reason (unknown function, ...) *)
       L.d_printfln "No spec found for %a@\n" Procname.pp callee_pname ;
       unknown_call call_loc (SkippedKnownCall callee_pname) ~ret ~actuals ~formals_opt astate
-      |> ok_continue
+      |> fun astate -> Ok [ExecutionDomain.ContinueProgram astate]

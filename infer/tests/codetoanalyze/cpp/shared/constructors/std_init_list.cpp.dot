@@ -3,14 +3,22 @@ digraph cfg {
 "main.fad58de7366495db4650cfefac2fcd61_1" [label="1: Start main\nFormals: \nLocals:  x:X 0$?%__sil_tmpSIL_materialize_temp__n$0:int const [5*4] const  \n  " color=yellow style=filled]
 	
 
-	 "main.fad58de7366495db4650cfefac2fcd61_1" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;
+	 "main.fad58de7366495db4650cfefac2fcd61_1" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
 "main.fad58de7366495db4650cfefac2fcd61_2" [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(x:X); [line 22, column 14]\n  VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$0:int const [5*4] const ); [line 22, column 20]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$0[0]:int=1 [line 22, column 20]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$0[1]:int=2 [line 22, column 20]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$0[2]:int=3 [line 22, column 20]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$0[3]:int=4 [line 22, column 20]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$0[4]:int=5 [line 22, column 20]\n  n$1=_fun___infer_initializer_list(&0$?%__sil_tmpSIL_materialize_temp__n$0:int const [5*4] const ) [line 22, column 20]\n  n$2=_fun_X::X(&x:X*,n$1:std::initializer_list<int>) [line 22, column 20]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$0:int const [5*4] const ); [line 22, column 20]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$0[0]:int=1 [line 22, column 20]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$0[1]:int=2 [line 22, column 20]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$0[2]:int=3 [line 22, column 20]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$0[3]:int=4 [line 22, column 20]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$0[4]:int=5 [line 22, column 20]\n " shape="box"]
 	
 
-	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
+	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_5" ;
+"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(x:X); [line 22, column 14]\n " shape="box"]
+	
+
+	 "main.fad58de7366495db4650cfefac2fcd61_4" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;
+"main.fad58de7366495db4650cfefac2fcd61_5" [label="5:  DeclStmt \n   n$1=_fun___infer_initializer_list(&0$?%__sil_tmpSIL_materialize_temp__n$0:int const [5*4] const ) [line 22, column 20]\n  n$2=_fun_X::X(&x:X*,n$1:std::initializer_list<int>) [line 22, column 20]\n " shape="box"]
+	
+
+	 "main.fad58de7366495db4650cfefac2fcd61_5" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
 "X#X#{15236476731743367432}.ce83f097b510e48ce3d42aa5df1bb3be_1" [label="1: Start X::X\nFormals:  this:X* list:std::initializer_list<int>&\nLocals:  i:int const * \n  " color=yellow style=filled]
 	
 

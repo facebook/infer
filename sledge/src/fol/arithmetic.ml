@@ -165,7 +165,7 @@ struct
 
     (* projections and embeddings *)
 
-    type view = Trm of trm | Const of Q.t | Compound
+    type kind = Trm of trm | Const of Q.t | Interpreted | Uninterpreted
 
     let classify poly =
       match Sum.classify poly with
@@ -173,9 +173,19 @@ struct
       | `One (mono, coeff) -> (
         match Prod.classify mono with
         | `Zero -> Const coeff
-        | `One (trm, 1) when Q.equal Q.one coeff -> Trm trm
-        | _ -> Compound )
-      | `Many -> Compound
+        | `One (trm, 1) ->
+            if Q.equal Q.one coeff then Trm trm else Interpreted
+        | _ -> Uninterpreted )
+      | `Many -> Interpreted
+
+    let is_noninterpreted poly =
+      match Sum.only_elt poly with
+      | Some (mono, _) -> (
+        match Prod.classify mono with
+        | `Zero -> false
+        | `One (_, n) -> n <> 1
+        | `Many -> true )
+      | None -> false
 
     let get_const poly =
       match Sum.classify poly with
@@ -192,7 +202,6 @@ struct
     module CM = struct
       type t = Q.t * Prod.t
 
-      let one = (Q.one, Mono.one)
       let mul (c1, m1) (c2, m2) = (Q.mul c1 c2, Mono.mul m1 m2)
 
       (** Monomials [Mono.t] have [trm] indeterminates, which include, via
@@ -230,6 +239,12 @@ struct
         | None -> Sum.of_ mono coeff )
         |> check invariant
     end
+
+    (** Embed a monomial into a term, flattening if possible *)
+    let trm_of_mono mono =
+      match Mono.get_trm mono with
+      | Some trm -> trm
+      | None -> Embed.to_trm (Sum.of_ mono Q.one)
 
     (** Embed a term into a polynomial, by projecting a polynomial out of
         the term if possible *)
@@ -271,21 +286,17 @@ struct
         ~call:(fun {pf} -> pf "%a" pp poly)
         ~retn:(fun {pf} -> pf "%a" pp)
       @@ fun () ->
-      let p, p' = (poly, Sum.empty) in
-      let p, p' =
-        Sum.fold poly (p, p') ~f:(fun mono coeff (p, p') ->
-            let m, cm' = (mono, CM.one) in
-            let m, cm' =
-              Prod.fold mono (m, cm') ~f:(fun trm power (m, cm') ->
-                  let trm' = f trm in
-                  if trm == trm' then (m, cm')
-                  else
-                    (Prod.remove trm m, CM.mul cm' (CM.of_trm trm' ~power)) )
-            in
-            ( Sum.remove mono p
-            , Sum.union p' (CM.to_poly (CM.mul (coeff, m) cm')) ) )
-      in
-      Sum.union p p' |> check invariant
+      ( if is_noninterpreted poly then poly
+      else
+        let p, p' =
+          Sum.fold poly (poly, Sum.empty) ~f:(fun mono coeff (p, p') ->
+              let e = trm_of_mono mono in
+              let e' = f e in
+              if e == e' then (p, p')
+              else (Sum.remove mono p, Sum.union p' (mulc coeff (trm e'))) )
+        in
+        Sum.union p p' )
+      |> check invariant
 
     (* traverse *)
 
@@ -293,11 +304,6 @@ struct
       Iter.from_iter (fun f -> Sum.iter poly ~f:(fun mono _ -> f mono))
 
     let trms poly = Iter.flat_map ~f:Mono.trms (monos poly)
-
-    type product = Prod.t
-
-    let fold_factors = Prod.fold
-    let fold_monomials = Sum.fold
 
     (* query *)
 

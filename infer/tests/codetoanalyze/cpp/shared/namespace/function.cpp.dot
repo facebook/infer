@@ -7,10 +7,14 @@ digraph cfg {
 "div0_namespace_resolution#14165120127941064123.2433829c6d52c7e69a43e89e30e4c7fc_2" [label="2: Exit div0_namespace_resolution \n  " color=yellow style=filled]
 	
 
-"div0_namespace_resolution#14165120127941064123.2433829c6d52c7e69a43e89e30e4c7fc_3" [label="3:  Return Stmt \n   n$0=_fun_f1::get() [line 22, column 47]\n  n$1=_fun_f2::get() [line 22, column 59]\n  *&return:int=(1 / (n$0 + n$1)) [line 22, column 35]\n " shape="box"]
+"div0_namespace_resolution#14165120127941064123.2433829c6d52c7e69a43e89e30e4c7fc_3" [label="3:  Return Stmt \n   n$0=_fun_f1::get() [line 22, column 47]\n  n$1=_fun_f2::get() [line 22, column 59]\n " shape="box"]
 	
 
-	 "div0_namespace_resolution#14165120127941064123.2433829c6d52c7e69a43e89e30e4c7fc_3" -> "div0_namespace_resolution#14165120127941064123.2433829c6d52c7e69a43e89e30e4c7fc_2" ;
+	 "div0_namespace_resolution#14165120127941064123.2433829c6d52c7e69a43e89e30e4c7fc_3" -> "div0_namespace_resolution#14165120127941064123.2433829c6d52c7e69a43e89e30e4c7fc_4" ;
+"div0_namespace_resolution#14165120127941064123.2433829c6d52c7e69a43e89e30e4c7fc_4" [label="4:  Return Stmt \n   *&return:int=(1 / (n$0 + n$1)) [line 22, column 35]\n " shape="box"]
+	
+
+	 "div0_namespace_resolution#14165120127941064123.2433829c6d52c7e69a43e89e30e4c7fc_4" -> "div0_namespace_resolution#14165120127941064123.2433829c6d52c7e69a43e89e30e4c7fc_2" ;
 "div0_using#4232634229583313075.9331f51b08b546cc4cf3f4b4f22e46ff_1" [label="1: Start div0_using\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -18,10 +22,14 @@ digraph cfg {
 "div0_using#4232634229583313075.9331f51b08b546cc4cf3f4b4f22e46ff_2" [label="2: Exit div0_using \n  " color=yellow style=filled]
 	
 
-"div0_using#4232634229583313075.9331f51b08b546cc4cf3f4b4f22e46ff_3" [label="3:  Return Stmt \n   n$0=_fun_f1::get0() [line 19, column 14]\n  *&return:int=(1 / n$0) [line 19, column 3]\n " shape="box"]
+"div0_using#4232634229583313075.9331f51b08b546cc4cf3f4b4f22e46ff_3" [label="3:  Return Stmt \n   n$0=_fun_f1::get0() [line 19, column 14]\n " shape="box"]
 	
 
-	 "div0_using#4232634229583313075.9331f51b08b546cc4cf3f4b4f22e46ff_3" -> "div0_using#4232634229583313075.9331f51b08b546cc4cf3f4b4f22e46ff_2" ;
+	 "div0_using#4232634229583313075.9331f51b08b546cc4cf3f4b4f22e46ff_3" -> "div0_using#4232634229583313075.9331f51b08b546cc4cf3f4b4f22e46ff_4" ;
+"div0_using#4232634229583313075.9331f51b08b546cc4cf3f4b4f22e46ff_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$0) [line 19, column 3]\n " shape="box"]
+	
+
+	 "div0_using#4232634229583313075.9331f51b08b546cc4cf3f4b4f22e46ff_4" -> "div0_using#4232634229583313075.9331f51b08b546cc4cf3f4b4f22e46ff_2" ;
 "get#f1#11182918362941702717.40a87222281cbcdb639beb16ed92bf79_1" [label="1: Start f1::get\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -58,18 +66,22 @@ digraph cfg {
 "type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_1" [label="1: Start type_alias_div0\nFormals: \nLocals:  x:int \n  " color=yellow style=filled]
 	
 
-	 "type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_1" -> "type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_4" ;
+	 "type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_1" -> "type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_5" ;
 "type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_2" [label="2: Exit type_alias_div0 \n  " color=yellow style=filled]
 	
 
-"type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 39, column 14]\n  *&return:int=(1 / n$0) [line 39, column 3]\n " shape="box"]
+"type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 39, column 14]\n " shape="box"]
 	
 
-	 "type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_3" -> "type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_2" ;
-"type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 38, column 3]\n  *&x:int=0 [line 38, column 3]\n " shape="box"]
+	 "type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_3" -> "type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_4" ;
+"type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$0) [line 39, column 3]\n " shape="box"]
 	
 
-	 "type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_4" -> "type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_3" ;
+	 "type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_4" -> "type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_2" ;
+"type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 38, column 3]\n  *&x:int=0 [line 38, column 3]\n " shape="box"]
+	
+
+	 "type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_5" -> "type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_3" ;
 "using_div0#15267107907897398237.0f32134dc9668df527885e12e16348fe_1" [label="1: Start using_div0\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -77,10 +89,14 @@ digraph cfg {
 "using_div0#15267107907897398237.0f32134dc9668df527885e12e16348fe_2" [label="2: Exit using_div0 \n  " color=yellow style=filled]
 	
 
-"using_div0#15267107907897398237.0f32134dc9668df527885e12e16348fe_3" [label="3:  Return Stmt \n   n$1=_fun_f3::C::ret_zero() [line 33, column 14]\n  *&return:int=(1 / n$1) [line 33, column 3]\n " shape="box"]
+"using_div0#15267107907897398237.0f32134dc9668df527885e12e16348fe_3" [label="3:  Return Stmt \n   n$1=_fun_f3::C::ret_zero() [line 33, column 14]\n " shape="box"]
 	
 
-	 "using_div0#15267107907897398237.0f32134dc9668df527885e12e16348fe_3" -> "using_div0#15267107907897398237.0f32134dc9668df527885e12e16348fe_2" ;
+	 "using_div0#15267107907897398237.0f32134dc9668df527885e12e16348fe_3" -> "using_div0#15267107907897398237.0f32134dc9668df527885e12e16348fe_4" ;
+"using_div0#15267107907897398237.0f32134dc9668df527885e12e16348fe_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$1) [line 33, column 3]\n " shape="box"]
+	
+
+	 "using_div0#15267107907897398237.0f32134dc9668df527885e12e16348fe_4" -> "using_div0#15267107907897398237.0f32134dc9668df527885e12e16348fe_2" ;
 "ret_zero#C#f3#(14815103288805165028).4dbfdc84a3e84f15300709ed03f3f5c1_1" [label="1: Start f3::C::ret_zero\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 

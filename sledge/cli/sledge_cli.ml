@@ -47,6 +47,7 @@ let command ~summary ?readme param =
     Trace.init ~colors ?margin ~config () ;
     Option.iter ~f:(Report.init ~append:append_report) report
   in
+  Llair.Loc.root := Some (Core.Filename.realpath (Sys.getcwd ())) ;
   let flush main () = Fun.protect main ~finally:Trace.flush in
   let report main () =
     try main () |> Report.status
@@ -75,6 +76,14 @@ let unmarshal file () =
     ~f:(fun ic -> (Marshal.from_channel ic : Llair.program))
     file
 
+let entry_points =
+  let void_to_void =
+    Llair.Typ.pointer
+      ~elt:(Llair.Typ.function_ ~args:IArray.empty ~return:None)
+  in
+  List.map (Config.find_list "entry-points") ~f:(fun name ->
+      Llair.Function.mk void_to_void name )
+
 let used_globals pgm preanalyze : Domain_used_globals.r =
   if preanalyze then
     let summary_table =
@@ -82,16 +91,16 @@ let used_globals pgm preanalyze : Domain_used_globals.r =
         { bound= 1
         ; skip_throw= false
         ; function_summaries= true
-        ; entry_points= Config.find_list "entry-points"
-        ; globals= Declared Llair.Reg.Set.empty }
+        ; entry_points
+        ; globals= Declared Llair.Global.Set.empty }
         pgm
     in
     Per_function
-      (Llair.Reg.Map.map summary_table ~f:Llair.Reg.Set.union_list)
+      (Llair.Function.Map.map summary_table ~f:Llair.Global.Set.union_list)
   else
     Declared
-      (Llair.Reg.Set.of_iter
-         (Iter.map ~f:(fun g -> g.reg) (IArray.to_iter pgm.globals)))
+      (Llair.Global.Set.of_iter
+         (Iter.map ~f:(fun g -> g.name) (IArray.to_iter pgm.globals)))
 
 let analyze =
   let%map_open bound =
@@ -128,11 +137,11 @@ let analyze =
   fun program () ->
     let pgm = program () in
     let globals = used_globals pgm preanalyze_globals in
-    let entry_points = Config.find_list "entry-points" in
     let skip_throw = not exceptions in
     Domain_sh.simplify_states := not no_simplify_states ;
     Timer.enabled := stats ;
     exec {bound; skip_throw; function_summaries; entry_points; globals} pgm ;
+    Report.coverage pgm ;
     Report.safe_or_unsafe ()
 
 let analyze_cmd =
@@ -147,15 +156,15 @@ let analyze_cmd =
   command ~summary ~readme param
 
 let disassemble =
-  let%map_open llair_txt_output =
-    flag "llair-txt-output" (optional string)
+  let%map_open llair_output =
+    flag "llair-output" (optional string)
       ~doc:
         "<file> write generated textual LLAIR to <file>, or to standard \
          output if omitted"
   in
   fun program () ->
     let pgm = program () in
-    ( match llair_txt_output with
+    ( match llair_output with
     | None -> Format.printf "%a@." Llair.Program.pp pgm
     | Some file ->
         Out_channel.with_file file ~f:(fun oc ->
@@ -175,9 +184,9 @@ let disassemble_cmd =
   command ~summary ~readme param
 
 let translate =
-  let%map_open llair_output =
-    flag "llair-output" (optional string)
-      ~doc:"<file> write generated LLAIR to <file>"
+  let%map_open output =
+    flag "output" (optional string)
+      ~doc:"<file> write generated binary LLAIR to <file>"
   and no_models =
     flag "no-models" no_arg
       ~doc:"do not add models for C/C++ runtime and standard libraries"
@@ -194,7 +203,7 @@ let translate =
       Frontend.translate ~models:(not no_models) ~fuzzer
         ~internalize:(not no_internalize) bitcode_inputs
     in
-    Option.iter ~f:(marshal program) llair_output ;
+    Option.iter ~f:(marshal program) output ;
     program
 
 let llvm_grp =
@@ -219,7 +228,9 @@ let llvm_grp =
        textual (.ll) form; or of the form @<argsfile>, where <argsfile> \
        names a file containing one <input> per line."
     in
-    let param = translate_inputs >>| fun _ () -> Report.Ok in
+    let param =
+      translate_inputs >*> Command.Param.return (fun _ -> Report.Ok)
+    in
     command ~summary ~readme param
   in
   let disassemble_cmd =

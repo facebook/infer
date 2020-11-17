@@ -172,12 +172,6 @@ module Out_channel = Stdio.Out_channel
 module Sys = Sys
 module Timer = Timer
 
-module Filename : sig
-  include module type of Filename
-
-  val realpath : string -> string
-end
-
 (** Invariants *)
 module Invariant : sig
   exception Violation of exn * Lexing.position * Sexp.t

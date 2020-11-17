@@ -3,70 +3,74 @@ digraph cfg {
 "main.fad58de7366495db4650cfefac2fcd61_1" [label="1: Start main\nFormals: \nLocals:  i:int j:int k:int \n  " color=yellow style=filled]
 	
 
-	 "main.fad58de7366495db4650cfefac2fcd61_1" -> "main.fad58de7366495db4650cfefac2fcd61_17" ;
+	 "main.fad58de7366495db4650cfefac2fcd61_1" -> "main.fad58de7366495db4650cfefac2fcd61_18" ;
 "main.fad58de7366495db4650cfefac2fcd61_2" [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  Return Stmt \n   n$0=*&k:int [line 15, column 10]\n  *&return:int=n$0 [line 15, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  Return Stmt \n   n$0=*&k:int [line 15, column 10]\n " shape="box"]
 	
 
-	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
-"main.fad58de7366495db4650cfefac2fcd61_4" [label="4: + \n  " ]
+	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
+"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 15, column 3]\n " shape="box"]
 	
 
-	 "main.fad58de7366495db4650cfefac2fcd61_4" -> "main.fad58de7366495db4650cfefac2fcd61_7" ;
-"main.fad58de7366495db4650cfefac2fcd61_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(i:int); [line 10, column 8]\n  *&i:int=0 [line 10, column 8]\n " shape="box"]
+	 "main.fad58de7366495db4650cfefac2fcd61_4" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
+"main.fad58de7366495db4650cfefac2fcd61_5" [label="5: + \n  " ]
 	
 
-	 "main.fad58de7366495db4650cfefac2fcd61_5" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
-"main.fad58de7366495db4650cfefac2fcd61_6" [label="6:  UnaryOperator \n   n$1=*&i:int [line 10, column 27]\n  *&i:int=(n$1 + 1) [line 10, column 27]\n " shape="box"]
+	 "main.fad58de7366495db4650cfefac2fcd61_5" -> "main.fad58de7366495db4650cfefac2fcd61_8" ;
+"main.fad58de7366495db4650cfefac2fcd61_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(i:int); [line 10, column 8]\n  *&i:int=0 [line 10, column 8]\n " shape="box"]
 	
 
-	 "main.fad58de7366495db4650cfefac2fcd61_6" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
-"main.fad58de7366495db4650cfefac2fcd61_7" [label="7:  BinaryOperatorStmt: LT \n   n$2=*&i:int [line 10, column 19]\n " shape="box"]
+	 "main.fad58de7366495db4650cfefac2fcd61_6" -> "main.fad58de7366495db4650cfefac2fcd61_5" ;
+"main.fad58de7366495db4650cfefac2fcd61_7" [label="7:  UnaryOperator \n   n$1=*&i:int [line 10, column 27]\n  *&i:int=(n$1 + 1) [line 10, column 27]\n " shape="box"]
 	
 
-	 "main.fad58de7366495db4650cfefac2fcd61_7" -> "main.fad58de7366495db4650cfefac2fcd61_8" ;
-	 "main.fad58de7366495db4650cfefac2fcd61_7" -> "main.fad58de7366495db4650cfefac2fcd61_9" ;
-"main.fad58de7366495db4650cfefac2fcd61_8" [label="8: Prune (true branch, for loop) \n   PRUNE((n$2 < 10), true); [line 10, column 19]\n " shape="invhouse"]
+	 "main.fad58de7366495db4650cfefac2fcd61_7" -> "main.fad58de7366495db4650cfefac2fcd61_5" ;
+"main.fad58de7366495db4650cfefac2fcd61_8" [label="8:  BinaryOperatorStmt: LT \n   n$2=*&i:int [line 10, column 19]\n " shape="box"]
 	
 
-	 "main.fad58de7366495db4650cfefac2fcd61_8" -> "main.fad58de7366495db4650cfefac2fcd61_11" ;
-"main.fad58de7366495db4650cfefac2fcd61_9" [label="9: Prune (false branch, for loop) \n   PRUNE(!(n$2 < 10), false); [line 10, column 19]\n " shape="invhouse"]
+	 "main.fad58de7366495db4650cfefac2fcd61_8" -> "main.fad58de7366495db4650cfefac2fcd61_9" ;
+	 "main.fad58de7366495db4650cfefac2fcd61_8" -> "main.fad58de7366495db4650cfefac2fcd61_10" ;
+"main.fad58de7366495db4650cfefac2fcd61_9" [label="9: Prune (true branch, for loop) \n   PRUNE((n$2 < 10), true); [line 10, column 19]\n " shape="invhouse"]
 	
 
-	 "main.fad58de7366495db4650cfefac2fcd61_9" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;
-"main.fad58de7366495db4650cfefac2fcd61_10" [label="10: + \n  " ]
+	 "main.fad58de7366495db4650cfefac2fcd61_9" -> "main.fad58de7366495db4650cfefac2fcd61_12" ;
+"main.fad58de7366495db4650cfefac2fcd61_10" [label="10: Prune (false branch, for loop) \n   PRUNE(!(n$2 < 10), false); [line 10, column 19]\n " shape="invhouse"]
 	
 
-	 "main.fad58de7366495db4650cfefac2fcd61_10" -> "main.fad58de7366495db4650cfefac2fcd61_13" ;
-"main.fad58de7366495db4650cfefac2fcd61_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(j:int); [line 11, column 10]\n  *&j:int=0 [line 11, column 10]\n " shape="box"]
+	 "main.fad58de7366495db4650cfefac2fcd61_10" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;
+"main.fad58de7366495db4650cfefac2fcd61_11" [label="11: + \n  " ]
 	
 
-	 "main.fad58de7366495db4650cfefac2fcd61_11" -> "main.fad58de7366495db4650cfefac2fcd61_10" ;
-"main.fad58de7366495db4650cfefac2fcd61_12" [label="12:  UnaryOperator \n   n$3=*&j:int [line 11, column 29]\n  *&j:int=(n$3 + 1) [line 11, column 29]\n " shape="box"]
+	 "main.fad58de7366495db4650cfefac2fcd61_11" -> "main.fad58de7366495db4650cfefac2fcd61_14" ;
+"main.fad58de7366495db4650cfefac2fcd61_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(j:int); [line 11, column 10]\n  *&j:int=0 [line 11, column 10]\n " shape="box"]
 	
 
-	 "main.fad58de7366495db4650cfefac2fcd61_12" -> "main.fad58de7366495db4650cfefac2fcd61_10" ;
-"main.fad58de7366495db4650cfefac2fcd61_13" [label="13:  BinaryOperatorStmt: LT \n   n$4=*&j:int [line 11, column 21]\n " shape="box"]
+	 "main.fad58de7366495db4650cfefac2fcd61_12" -> "main.fad58de7366495db4650cfefac2fcd61_11" ;
+"main.fad58de7366495db4650cfefac2fcd61_13" [label="13:  UnaryOperator \n   n$3=*&j:int [line 11, column 29]\n  *&j:int=(n$3 + 1) [line 11, column 29]\n " shape="box"]
 	
 
-	 "main.fad58de7366495db4650cfefac2fcd61_13" -> "main.fad58de7366495db4650cfefac2fcd61_14" ;
-	 "main.fad58de7366495db4650cfefac2fcd61_13" -> "main.fad58de7366495db4650cfefac2fcd61_15" ;
-"main.fad58de7366495db4650cfefac2fcd61_14" [label="14: Prune (true branch, for loop) \n   PRUNE((n$4 < 10), true); [line 11, column 21]\n " shape="invhouse"]
+	 "main.fad58de7366495db4650cfefac2fcd61_13" -> "main.fad58de7366495db4650cfefac2fcd61_11" ;
+"main.fad58de7366495db4650cfefac2fcd61_14" [label="14:  BinaryOperatorStmt: LT \n   n$4=*&j:int [line 11, column 21]\n " shape="box"]
 	
 
+	 "main.fad58de7366495db4650cfefac2fcd61_14" -> "main.fad58de7366495db4650cfefac2fcd61_15" ;
 	 "main.fad58de7366495db4650cfefac2fcd61_14" -> "main.fad58de7366495db4650cfefac2fcd61_16" ;
-"main.fad58de7366495db4650cfefac2fcd61_15" [label="15: Prune (false branch, for loop) \n   PRUNE(!(n$4 < 10), false); [line 11, column 21]\n " shape="invhouse"]
+"main.fad58de7366495db4650cfefac2fcd61_15" [label="15: Prune (true branch, for loop) \n   PRUNE((n$4 < 10), true); [line 11, column 21]\n " shape="invhouse"]
 	
 
-	 "main.fad58de7366495db4650cfefac2fcd61_15" -> "main.fad58de7366495db4650cfefac2fcd61_6" ;
-"main.fad58de7366495db4650cfefac2fcd61_16" [label="16:  BinaryOperatorStmt: Assign \n   n$5=*&k:int [line 12, column 11]\n  n$6=*&i:int [line 12, column 15]\n  *&k:int=(n$5 + n$6) [line 12, column 7]\n " shape="box"]
+	 "main.fad58de7366495db4650cfefac2fcd61_15" -> "main.fad58de7366495db4650cfefac2fcd61_17" ;
+"main.fad58de7366495db4650cfefac2fcd61_16" [label="16: Prune (false branch, for loop) \n   PRUNE(!(n$4 < 10), false); [line 11, column 21]\n " shape="invhouse"]
 	
 
-	 "main.fad58de7366495db4650cfefac2fcd61_16" -> "main.fad58de7366495db4650cfefac2fcd61_12" ;
-"main.fad58de7366495db4650cfefac2fcd61_17" [label="17:  DeclStmt \n   VARIABLE_DECLARED(k:int); [line 9, column 3]\n  *&k:int=0 [line 9, column 3]\n " shape="box"]
+	 "main.fad58de7366495db4650cfefac2fcd61_16" -> "main.fad58de7366495db4650cfefac2fcd61_7" ;
+"main.fad58de7366495db4650cfefac2fcd61_17" [label="17:  BinaryOperatorStmt: Assign \n   n$5=*&k:int [line 12, column 11]\n  n$6=*&i:int [line 12, column 15]\n  *&k:int=(n$5 + n$6) [line 12, column 7]\n " shape="box"]
 	
 
-	 "main.fad58de7366495db4650cfefac2fcd61_17" -> "main.fad58de7366495db4650cfefac2fcd61_5" ;
+	 "main.fad58de7366495db4650cfefac2fcd61_17" -> "main.fad58de7366495db4650cfefac2fcd61_13" ;
+"main.fad58de7366495db4650cfefac2fcd61_18" [label="18:  DeclStmt \n   VARIABLE_DECLARED(k:int); [line 9, column 3]\n  *&k:int=0 [line 9, column 3]\n " shape="box"]
+	
+
+	 "main.fad58de7366495db4650cfefac2fcd61_18" -> "main.fad58de7366495db4650cfefac2fcd61_6" ;
 }

@@ -28,11 +28,7 @@ void call_ifnotthenderef_false_null_bad() { ifnotthenderef(false, nullptr); }
 // should be FN given the current "all allocated addresses are assumed
 // disjoint unless specified otherwise" but we detect the bug because
 // we don't propagate pure equalities that we discover to the heap part
-//
-// Well, at the moment it *is* FN but because we mark the issue
-// "latent" because the "if" test is not conclusively true. This is
-// also ok.
-void alias_null_deref_latent(int* x, int* y) {
+void FN_alias_null_deref_latent(int* x, int* y) {
   *x = 32;
   *y = 52;
   if (x == y) {
@@ -53,4 +49,30 @@ void diverge_before_null_deref_ok(int* x) {
   diverge_if_alias_ok(x, x);
   int* p = nullptr;
   *p = 42;
+}
+
+// this test makes more sense in an inter-procedural setting
+void stack_addresses_are_not_null_ok() {
+  int x;
+  if (&x == nullptr) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
+void stack_addresses_are_distinct_ok() {
+  int x;
+  int y;
+  if (&x == &y) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
+void null_test_after_deref_ok(int* x) {
+  *x = 42;
+  if (x == nullptr) {
+    int* p = nullptr;
+    *p = 42;
+  }
 }

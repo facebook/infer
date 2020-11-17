@@ -13,7 +13,7 @@ module type State_domain_sig = sig
 
   val create_summary :
        locals:Llair.Reg.Set.t
-    -> formals:Llair.Reg.Set.t
+    -> formals:Llair.Reg.t list
     -> entry:t
     -> current:t
     -> summary * t

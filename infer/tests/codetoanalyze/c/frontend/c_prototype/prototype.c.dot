@@ -22,8 +22,12 @@ digraph cfg {
 "sum.1d623b89683f9ce4e074de1676d12416_2" [label="2: Exit sum \n  " color=yellow style=filled]
 	
 
-"sum.1d623b89683f9ce4e074de1676d12416_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 23, column 32]\n  n$1=*&b:int [line 23, column 36]\n  *&return:int=(n$0 + n$1) [line 23, column 25]\n " shape="box"]
+"sum.1d623b89683f9ce4e074de1676d12416_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 23, column 32]\n  n$1=*&b:int [line 23, column 36]\n " shape="box"]
 	
 
-	 "sum.1d623b89683f9ce4e074de1676d12416_3" -> "sum.1d623b89683f9ce4e074de1676d12416_2" ;
+	 "sum.1d623b89683f9ce4e074de1676d12416_3" -> "sum.1d623b89683f9ce4e074de1676d12416_4" ;
+"sum.1d623b89683f9ce4e074de1676d12416_4" [label="4:  Return Stmt \n   *&return:int=(n$0 + n$1) [line 23, column 25]\n " shape="box"]
+	
+
+	 "sum.1d623b89683f9ce4e074de1676d12416_4" -> "sum.1d623b89683f9ce4e074de1676d12416_2" ;
 }

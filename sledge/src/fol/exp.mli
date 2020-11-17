@@ -13,6 +13,7 @@ module rec Term : sig
   val ppx : Var.strength -> t pp
   val pp : t pp
 
+  module Set : Set.S with type elt := t
   module Map : Map.S with type key := t
 
   (** Construct *)
@@ -46,19 +47,6 @@ module rec Term : sig
   val concat : t array -> t
   (** Concatenation of sequences *)
 
-  (* records (with fixed indices) *)
-  val select : rcd:t -> idx:int -> t
-  (** Select an index from a record *)
-
-  val update : rcd:t -> idx:int -> elt:t -> t
-  (** Record updated with element at index *)
-
-  val record : t array -> t
-  (** Record constant *)
-
-  val ancestor : int -> t
-  (** Reference to ancestor recursive record *)
-
   (* uninterpreted *)
   val apply : Funsym.t -> t array -> t
 
@@ -91,6 +79,7 @@ module rec Term : sig
   (** Traverse *)
 
   val vars : t -> Var.t iter
+  val atoms : t -> t iter
 
   (** Transform *)
 

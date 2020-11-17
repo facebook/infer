@@ -14,7 +14,7 @@ module ReportableViolation = struct
   type t = {nullsafe_mode: NullsafeMode.t; violation: violation}
 
   type violation_type =
-    | InconsistentParam of {param_description: string; param_position: int}
+    | InconsistentParam of {param_description: string; param_index: int}
     | InconsistentReturn
   [@@deriving compare]
 
@@ -54,7 +54,7 @@ module ReportableViolation = struct
              declared as nullable, but parent method %a is missing `@Nullable` declaration. Either \
              mark the parent as `@Nullable` or ensure the child does not return `null`."
             MF.pp_monospaced overridden_method_descr MF.pp_monospaced base_method_descr
-      | InconsistentParam {param_description; param_position} ->
+      | InconsistentParam {param_description; param_index} ->
           if is_java_lang_object_equals base_proc_name then
             (* This is a popular enough case to make error message specific *)
             Format.asprintf
@@ -63,7 +63,7 @@ module ReportableViolation = struct
                false."
               MF.pp_monospaced param_description
           else
-            let translate_position = function
+            let position_to_human_readable_string = function
               | 1 ->
                   "First"
               | 2 ->
@@ -77,7 +77,8 @@ module ReportableViolation = struct
               "%s parameter %a of method %a is missing `@Nullable` declaration when overriding %a. \
                The parent method declared it can handle `null` for this param, so the child should \
                also declare that."
-              (translate_position param_position)
+              (position_to_human_readable_string
+                 ((* For the user reporting, index param positions from 1 *) param_index + 1))
               MF.pp_monospaced param_description MF.pp_monospaced overridden_method_descr
               MF.pp_monospaced base_method_descr
     in
@@ -86,8 +87,8 @@ module ReportableViolation = struct
       match violation_type with
       | InconsistentReturn ->
           (IssueType.eradicate_inconsistent_subclass_return_annotation, None)
-      | InconsistentParam {param_position} ->
-          (IssueType.eradicate_inconsistent_subclass_parameter_annotation, Some param_position)
+      | InconsistentParam {param_index} ->
+          (IssueType.eradicate_inconsistent_subclass_parameter_annotation, Some param_index)
     in
     NullsafeIssue.make ~description ~loc ~issue_type ~severity ~field_name:None
     |> NullsafeIssue.with_inconsistent_param_index param_index

@@ -3,18 +3,34 @@ digraph cfg {
 "__infer_globals_initializer_test.19c6153ea70b713d8d2a1a0fd4ae91e3_1" [label="1: Start __infer_globals_initializer_test\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$0:int const  0$?%__sil_tmpSIL_materialize_temp__n$1:int const  0$?%__sil_tmpSIL_materialize_temp__n$2:int const  \n  " color=yellow style=filled]
 	
 
-	 "__infer_globals_initializer_test.19c6153ea70b713d8d2a1a0fd4ae91e3_1" -> "__infer_globals_initializer_test.19c6153ea70b713d8d2a1a0fd4ae91e3_3" ;
+	 "__infer_globals_initializer_test.19c6153ea70b713d8d2a1a0fd4ae91e3_1" -> "__infer_globals_initializer_test.19c6153ea70b713d8d2a1a0fd4ae91e3_6" ;
 "__infer_globals_initializer_test.19c6153ea70b713d8d2a1a0fd4ae91e3_2" [label="2: Exit __infer_globals_initializer_test \n  " color=yellow style=filled]
 	
 
-"__infer_globals_initializer_test.19c6153ea70b713d8d2a1a0fd4ae91e3_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(#GB<codetoanalyze/cpp/shared/templates/sizeof_pack.cpp>$test:int); [line 21, column 1]\n  VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$0:int const ); [line 21, column 43]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$0:int=0 [line 21, column 43]\n  VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:int const ); [line 21, column 46]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$1:int=0 [line 21, column 46]\n  VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$2:int const ); [line 21, column 49]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$2:int=0 [line 21, column 49]\n  n$3=_fun_hash_combine_generic<MyHasher,_int,_int,_int>(&0$?%__sil_tmpSIL_materialize_temp__n$0:int const &,&0$?%__sil_tmpSIL_materialize_temp__n$1:int const &,&0$?%__sil_tmpSIL_materialize_temp__n$2:int const &) [line 21, column 12]\n  *&#GB<codetoanalyze/cpp/shared/templates/sizeof_pack.cpp>$test:int=n$3 [line 21, column 1]\n " shape="box"]
+"__infer_globals_initializer_test.19c6153ea70b713d8d2a1a0fd4ae91e3_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$0:int const ); [line 21, column 43]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$0:int=0 [line 21, column 43]\n " shape="box"]
 	
 
-	 "__infer_globals_initializer_test.19c6153ea70b713d8d2a1a0fd4ae91e3_3" -> "__infer_globals_initializer_test.19c6153ea70b713d8d2a1a0fd4ae91e3_2" ;
+	 "__infer_globals_initializer_test.19c6153ea70b713d8d2a1a0fd4ae91e3_3" -> "__infer_globals_initializer_test.19c6153ea70b713d8d2a1a0fd4ae91e3_4" ;
+"__infer_globals_initializer_test.19c6153ea70b713d8d2a1a0fd4ae91e3_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:int const ); [line 21, column 46]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$1:int=0 [line 21, column 46]\n " shape="box"]
+	
+
+	 "__infer_globals_initializer_test.19c6153ea70b713d8d2a1a0fd4ae91e3_4" -> "__infer_globals_initializer_test.19c6153ea70b713d8d2a1a0fd4ae91e3_5" ;
+"__infer_globals_initializer_test.19c6153ea70b713d8d2a1a0fd4ae91e3_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$2:int const ); [line 21, column 49]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$2:int=0 [line 21, column 49]\n " shape="box"]
+	
+
+	 "__infer_globals_initializer_test.19c6153ea70b713d8d2a1a0fd4ae91e3_5" -> "__infer_globals_initializer_test.19c6153ea70b713d8d2a1a0fd4ae91e3_7" ;
+"__infer_globals_initializer_test.19c6153ea70b713d8d2a1a0fd4ae91e3_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(#GB<codetoanalyze/cpp/shared/templates/sizeof_pack.cpp>$test:int); [line 21, column 1]\n " shape="box"]
+	
+
+	 "__infer_globals_initializer_test.19c6153ea70b713d8d2a1a0fd4ae91e3_6" -> "__infer_globals_initializer_test.19c6153ea70b713d8d2a1a0fd4ae91e3_3" ;
+"__infer_globals_initializer_test.19c6153ea70b713d8d2a1a0fd4ae91e3_7" [label="7:  DeclStmt \n   n$3=_fun_hash_combine_generic<MyHasher,_int,_int,_int>(&0$?%__sil_tmpSIL_materialize_temp__n$0:int const &,&0$?%__sil_tmpSIL_materialize_temp__n$1:int const &,&0$?%__sil_tmpSIL_materialize_temp__n$2:int const &) [line 21, column 12]\n  *&#GB<codetoanalyze/cpp/shared/templates/sizeof_pack.cpp>$test:int=n$3 [line 21, column 1]\n " shape="box"]
+	
+
+	 "__infer_globals_initializer_test.19c6153ea70b713d8d2a1a0fd4ae91e3_7" -> "__infer_globals_initializer_test.19c6153ea70b713d8d2a1a0fd4ae91e3_2" ;
 "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_1" [label="1: Start hash_combine_generic<MyHasher,_int,_int,_int>\nFormals:  t:int const & ts:int const & ts:int const &\nLocals:  seed:int \n  " color=yellow style=filled]
 	
 
-	 "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_1" -> "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_8" ;
+	 "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_1" -> "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_9" ;
 "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_2" [label="2: Exit hash_combine_generic<MyHasher,_int,_int,_int> \n  " color=yellow style=filled]
 	
 
@@ -34,15 +50,19 @@ digraph cfg {
 	
 
 	 "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_6" -> "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_4" ;
-"hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_7" [label="7:  Return Stmt \n   n$0=*&seed:int [line 16, column 12]\n  *&return:int=n$0 [line 16, column 5]\n " shape="box"]
+"hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_7" [label="7:  Return Stmt \n   n$0=*&seed:int [line 16, column 12]\n " shape="box"]
 	
 
-	 "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_7" -> "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_2" ;
-"hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(seed:int); [line 14, column 3]\n  n$4=*&t:int const & [line 14, column 27]\n  n$5=*n$4:int [line 14, column 27]\n  n$6=_fun_MyHasher::hash(n$5:int) [line 14, column 14]\n  *&seed:int=n$6 [line 14, column 3]\n " shape="box"]
+	 "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_7" -> "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_8" ;
+"hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_8" [label="8:  Return Stmt \n   *&return:int=n$0 [line 16, column 5]\n " shape="box"]
 	
 
-	 "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_8" -> "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_5" ;
-	 "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_8" -> "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_6" ;
+	 "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_8" -> "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_2" ;
+"hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(seed:int); [line 14, column 3]\n  n$4=*&t:int const & [line 14, column 27]\n  n$5=*n$4:int [line 14, column 27]\n  n$6=_fun_MyHasher::hash(n$5:int) [line 14, column 14]\n  *&seed:int=n$6 [line 14, column 3]\n " shape="box"]
+	
+
+	 "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_9" -> "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_5" ;
+	 "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_9" -> "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_6" ;
 "hash#MyHasher#(17640498711428072031).032c86352e5db68decc9e37acbed2615_1" [label="1: Start MyHasher::hash\nFormals:  t:int\nLocals:  \n  " color=yellow style=filled]
 	
 

@@ -3,20 +3,24 @@ digraph cfg {
 "main.fad58de7366495db4650cfefac2fcd61_1" [label="1: Start main\nFormals: \nLocals:  z:int x:int \n  " color=yellow style=filled]
 	
 
-	 "main.fad58de7366495db4650cfefac2fcd61_1" -> "main.fad58de7366495db4650cfefac2fcd61_5" ;
+	 "main.fad58de7366495db4650cfefac2fcd61_1" -> "main.fad58de7366495db4650cfefac2fcd61_6" ;
 "main.fad58de7366495db4650cfefac2fcd61_2" [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 11, column 10]\n  n$1=*&z:int [line 11, column 14]\n  *&return:int=(n$0 + n$1) [line 11, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 11, column 10]\n  n$1=*&z:int [line 11, column 14]\n " shape="box"]
 	
 
-	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
-"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(z:int); [line 10, column 3]\n  *&z:int=3 [line 10, column 3]\n " shape="box"]
+	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
+"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  Return Stmt \n   *&return:int=(n$0 + n$1) [line 11, column 3]\n " shape="box"]
 	
 
-	 "main.fad58de7366495db4650cfefac2fcd61_4" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;
-"main.fad58de7366495db4650cfefac2fcd61_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 9, column 3]\n  *&x:int=2 [line 9, column 3]\n " shape="box"]
+	 "main.fad58de7366495db4650cfefac2fcd61_4" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
+"main.fad58de7366495db4650cfefac2fcd61_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(z:int); [line 10, column 3]\n  *&z:int=3 [line 10, column 3]\n " shape="box"]
 	
 
-	 "main.fad58de7366495db4650cfefac2fcd61_5" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
+	 "main.fad58de7366495db4650cfefac2fcd61_5" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;
+"main.fad58de7366495db4650cfefac2fcd61_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 9, column 3]\n  *&x:int=2 [line 9, column 3]\n " shape="box"]
+	
+
+	 "main.fad58de7366495db4650cfefac2fcd61_6" -> "main.fad58de7366495db4650cfefac2fcd61_5" ;
 }

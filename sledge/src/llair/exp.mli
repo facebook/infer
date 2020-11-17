@@ -72,7 +72,9 @@ type opN = Record  (** Record (array / struct) constant *)
 [@@deriving compare, equal, hash, sexp]
 
 type t = private
-  | Reg of {name: string; global: bool; typ: Typ.t}  (** Virtual register *)
+  | Reg of {name: string; typ: Typ.t}  (** Virtual register *)
+  | Global of {name: string; typ: Typ.t [@ignore]}  (** Global constant *)
+  | Function of {name: string; typ: Typ.t [@ignore]}  (** Function name *)
   | Label of {parent: string; name: string}
       (** Address of named code block within parent function *)
   | Integer of {data: Z.t; typ: Typ.t}  (** Integer constant *)
@@ -81,12 +83,13 @@ type t = private
   | Ap2 of op2 * Typ.t * t * t
   | Ap3 of op3 * Typ.t * t * t * t
   | ApN of opN * Typ.t * t iarray
-  | RecRecord of int * Typ.t  (** Reference to ancestor recursive record *)
 [@@deriving compare, equal, hash, sexp]
 
 val pp : t pp
 
 include Invariant.S with type t := t
+
+val demangle : (string -> string option) ref
 
 (** Exp.Reg is re-exported as Reg *)
 module Reg : sig
@@ -96,25 +99,66 @@ module Reg : sig
   module Set : sig
     include Set.S with type elt := t
 
-    val sexp_of_t : t -> Sexp.t
-    val t_of_sexp : Sexp.t -> t
+    include sig
+        type t [@@deriving hash, sexp]
+      end
+      with type t := t
+
     val pp : t pp
   end
 
-  module Map : Map.S with type key := t
-
-  val demangle : (string -> string option) ref
   val pp : t pp
-  val pp_demangled : t pp
 
   include Invariant.S with type t := t
 
-  val of_ : exp -> t
   val of_exp : exp -> t option
-  val program : ?global:unit -> Typ.t -> string -> t
+  val mk : Typ.t -> string -> t
   val name : t -> string
   val typ : t -> Typ.t
-  val is_global : t -> bool
+end
+
+(** Exp.Global is re-exported as Global *)
+module Global : sig
+  type exp := t
+  type t = private exp [@@deriving compare, equal, hash, sexp]
+
+  module Set : sig
+    include Set.S with type elt := t
+
+    include sig
+        type t [@@deriving sexp]
+      end
+      with type t := t
+
+    val pp : t pp
+  end
+
+  val pp : t pp
+
+  include Invariant.S with type t := t
+
+  val of_exp : exp -> t option
+  val mk : Typ.t -> string -> t
+  val name : t -> string
+  val typ : t -> Typ.t
+end
+
+(** Exp.Function is re-exported as Function *)
+module Function : sig
+  type exp := t
+  type t = private exp [@@deriving compare, equal, hash, sexp]
+
+  module Map : Map.S with type key := t
+  module Tbl : HashTable.S with type key := t
+
+  val pp : t pp
+
+  include Invariant.S with type t := t
+
+  val of_exp : exp -> t option
+  val mk : Typ.t -> string -> t
+  val name : t -> string
+  val typ : t -> Typ.t
 end
 
 (** Construct *)
@@ -123,6 +167,8 @@ end
 val reg : Reg.t -> t
 
 (* constants *)
+val function_ : Function.t -> t
+val global : Global.t -> t
 val label : parent:string -> name:string -> t
 val null : t
 val bool : bool -> t
@@ -179,10 +225,10 @@ val splat : Typ.t -> t -> t
 val record : Typ.t -> t iarray -> t
 val select : Typ.t -> t -> int -> t
 val update : Typ.t -> rcd:t -> int -> elt:t -> t
-val rec_record : int -> Typ.t -> t
 
 (** Traverse *)
 
+val fold_exps : t -> 's -> f:(t -> 's -> 's) -> 's
 val fold_regs : t -> 's -> f:(Reg.t -> 's -> 's) -> 's
 
 (** Query *)

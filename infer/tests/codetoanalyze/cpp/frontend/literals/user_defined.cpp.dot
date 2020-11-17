@@ -7,10 +7,14 @@ digraph cfg {
 "foo#972162870672026475.86d7db357d6a36081d09067fb38ce85e_2" [label="2: Exit foo \n  " color=yellow style=filled]
 	
 
-"foo#972162870672026475.86d7db357d6a36081d09067fb38ce85e_3" [label="3:  Return Stmt \n   n$0=_fun_operator\"\"_literal(0:unsigned long long) [line 10, column 20]\n  *&return:int=n$0 [line 10, column 13]\n " shape="box"]
+"foo#972162870672026475.86d7db357d6a36081d09067fb38ce85e_3" [label="3:  Return Stmt \n   n$0=_fun_operator\"\"_literal(0:unsigned long long) [line 10, column 20]\n " shape="box"]
 	
 
-	 "foo#972162870672026475.86d7db357d6a36081d09067fb38ce85e_3" -> "foo#972162870672026475.86d7db357d6a36081d09067fb38ce85e_2" ;
+	 "foo#972162870672026475.86d7db357d6a36081d09067fb38ce85e_3" -> "foo#972162870672026475.86d7db357d6a36081d09067fb38ce85e_4" ;
+"foo#972162870672026475.86d7db357d6a36081d09067fb38ce85e_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 10, column 13]\n " shape="box"]
+	
+
+	 "foo#972162870672026475.86d7db357d6a36081d09067fb38ce85e_4" -> "foo#972162870672026475.86d7db357d6a36081d09067fb38ce85e_2" ;
 "operator\"\"_literal#10799417371478119160.892e3238d686eb1d16193b2534a5f062_1" [label="1: Start operator\"\"_literal\nFormals:  i:unsigned long long\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -18,8 +22,12 @@ digraph cfg {
 "operator\"\"_literal#10799417371478119160.892e3238d686eb1d16193b2534a5f062_2" [label="2: Exit operator\"\"_literal \n  " color=yellow style=filled]
 	
 
-"operator\"\"_literal#10799417371478119160.892e3238d686eb1d16193b2534a5f062_3" [label="3:  Return Stmt \n   n$0=*&i:unsigned long long [line 8, column 56]\n  *&return:int=n$0 [line 8, column 49]\n " shape="box"]
+"operator\"\"_literal#10799417371478119160.892e3238d686eb1d16193b2534a5f062_3" [label="3:  Return Stmt \n   n$0=*&i:unsigned long long [line 8, column 56]\n " shape="box"]
 	
 
-	 "operator\"\"_literal#10799417371478119160.892e3238d686eb1d16193b2534a5f062_3" -> "operator\"\"_literal#10799417371478119160.892e3238d686eb1d16193b2534a5f062_2" ;
+	 "operator\"\"_literal#10799417371478119160.892e3238d686eb1d16193b2534a5f062_3" -> "operator\"\"_literal#10799417371478119160.892e3238d686eb1d16193b2534a5f062_4" ;
+"operator\"\"_literal#10799417371478119160.892e3238d686eb1d16193b2534a5f062_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 8, column 49]\n " shape="box"]
+	
+
+	 "operator\"\"_literal#10799417371478119160.892e3238d686eb1d16193b2534a5f062_4" -> "operator\"\"_literal#10799417371478119160.892e3238d686eb1d16193b2534a5f062_2" ;
 }

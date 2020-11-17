@@ -20,6 +20,8 @@ type model =
   -> AbductiveDomain.t
   -> ExecutionDomain.t list PulseOperations.access_result
 
+let ok_continue post = Ok [ExecutionDomain.ContinueProgram post]
+
 let cpp_model_namespace = QualifiedCppName.of_list ["__infer_pulse_model"]
 
 module Misc = struct
@@ -54,7 +56,7 @@ module Misc = struct
     let i = IntLit.of_int64 i64 in
     let ret_addr = AbstractValue.Constants.get_int i in
     let astate = PulseArithmetic.and_eq_int ret_addr i astate in
-    PulseOperations.write_id ret_id (ret_addr, []) astate |> PulseOperations.ok_continue
+    PulseOperations.write_id ret_id (ret_addr, []) astate |> ok_continue
 
 
   let return_positive ~desc : model =
@@ -64,14 +66,14 @@ module Misc = struct
     let ret_value = (ret_addr, [event]) in
     PulseOperations.write_id ret_id ret_value astate
     |> PulseArithmetic.and_positive ret_addr
-    |> PulseOperations.ok_continue
+    |> ok_continue
 
 
   let return_unknown_size : model =
    fun _ ~callee_procname:_ _location ~ret:(ret_id, _) astate ->
     let ret_addr = AbstractValue.mk_fresh () in
     let astate = PulseArithmetic.and_nonnegative ret_addr astate in
-    PulseOperations.write_id ret_id (ret_addr, []) astate |> PulseOperations.ok_continue
+    PulseOperations.write_id ret_id (ret_addr, []) astate |> ok_continue
 
 
   (** Pretend the function call is a call to an "unknown" function, i.e. a function for which we
@@ -100,12 +102,12 @@ module Misc = struct
   let nondet ~fn_name : model =
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model fn_name; location; in_call= []} in
-    PulseOperations.havoc_id ret_id [event] astate |> PulseOperations.ok_continue
+    PulseOperations.havoc_id ret_id [event] astate |> ok_continue
 
 
   let id_first_arg arg_access_hist : model =
    fun _ ~callee_procname:_ _ ~ret astate ->
-    PulseOperations.write_id (fst ret) arg_access_hist astate |> PulseOperations.ok_continue
+    PulseOperations.write_id (fst ret) arg_access_hist astate |> ok_continue
 
 
   let free_or_delete operation deleted_access : model =
@@ -113,8 +115,7 @@ module Misc = struct
     (* NOTE: we could introduce a case-split explicitly on =0 vs ≠0 but instead only act on what we
        currently know about the value. This is purely to avoid contributing to path explosion. *)
     (* freeing 0 is a no-op *)
-    if PulseArithmetic.is_known_zero astate (fst deleted_access) then
-      PulseOperations.ok_continue astate
+    if PulseArithmetic.is_known_zero astate (fst deleted_access) then ok_continue astate
     else
       let astate = PulseArithmetic.and_positive (fst deleted_access) astate in
       let invalidation =
@@ -154,14 +155,14 @@ module C = struct
     let astate = PulseOperations.write_id ret_id ret_value astate in
     PulseOperations.allocate callee_procname location ret_value astate
     |> PulseArithmetic.and_positive ret_addr
-    |> PulseOperations.ok_continue
+    |> ok_continue
 end
 
 module ObjCCoreFoundation = struct
   let cf_bridging_release access : model =
    fun _ ~callee_procname:_ _ ~ret:(ret_id, _) astate ->
     let astate = PulseOperations.write_id ret_id access astate in
-    PulseOperations.remove_allocation_attr (fst access) astate |> PulseOperations.ok_continue
+    PulseOperations.remove_allocation_attr (fst access) astate |> ok_continue
 end
 
 module ObjC = struct
@@ -179,7 +180,7 @@ module ObjC = struct
     let astate = PulseOperations.write_id ret_id ret_value astate in
     PulseOperations.add_dynamic_type dynamic_type ret_addr astate
     |> PulseArithmetic.and_positive ret_addr
-    |> PulseOperations.ok_continue
+    |> ok_continue
 end
 
 module Optional = struct
@@ -245,14 +246,13 @@ module Optional = struct
     in
     (* Check dereference to show an error at the callsite of `value()` *)
     let* astate, _ = PulseOperations.eval_access location value Dereference astate in
-    PulseOperations.write_id ret_id (value_addr, event :: value_hist) astate
-    |> PulseOperations.ok_continue
+    PulseOperations.write_id ret_id (value_addr, event :: value_hist) astate |> ok_continue
 
 
   let has_value optional ~desc : model =
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let ret_addr = AbstractValue.mk_fresh () in
-    let ret_value = (ret_addr, [ValueHistory.Allocation {f= Model desc; location}]) in
+    let ret_value = (ret_addr, [ValueHistory.Call {f= Model desc; location; in_call= []}]) in
     let+ astate, (value_addr, _) = to_internal_value_deref location optional astate in
     let astate = PulseOperations.write_id ret_id ret_value astate in
     let astate_non_empty = PulseArithmetic.and_positive value_addr astate in
@@ -260,6 +260,25 @@ module Optional = struct
     let astate_empty = PulseArithmetic.and_eq_int value_addr IntLit.zero astate in
     let astate_false = PulseArithmetic.and_eq_int ret_addr IntLit.zero astate_empty in
     [ExecutionDomain.ContinueProgram astate_false; ExecutionDomain.ContinueProgram astate_true]
+
+
+  let get_pointer optional ~desc : model =
+   fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+    let* astate, value_addr = to_internal_value_deref location optional astate in
+    let value_update_hist = (fst value_addr, event :: snd value_addr) in
+    let astate_value_addr =
+      PulseOperations.write_id ret_id value_update_hist astate
+      |> PulseArithmetic.and_positive (fst value_addr)
+    in
+    let nullptr = (AbstractValue.mk_fresh (), [event]) in
+    let+ astate_null =
+      PulseOperations.write_id ret_id nullptr astate
+      |> PulseArithmetic.and_eq_int (fst value_addr) IntLit.zero
+      |> PulseArithmetic.and_eq_int (fst nullptr) IntLit.zero
+      |> PulseOperations.invalidate location (ConstantDereference IntLit.zero) nullptr
+    in
+    [ExecutionDomain.ContinueProgram astate_value_addr; ExecutionDomain.ContinueProgram astate_null]
 
 
   let value_or optional default ~desc : model =
@@ -292,7 +311,7 @@ module Cplusplus = struct
         PulseOperations.write_id ret_id (address, event :: hist) astate
     | _ ->
         PulseOperations.havoc_id ret_id [event] astate )
-    |> PulseOperations.ok_continue
+    |> ok_continue
 end
 
 module StdAtomicInteger = struct
@@ -483,7 +502,7 @@ end
 module StdFunction = struct
   let operator_call ProcnameDispatcher.Call.FuncArg.{arg_payload= lambda_ptr_hist; typ} actuals :
       model =
-   fun {analyze_dependency; proc_desc} ~callee_procname:_ location ~ret astate ->
+   fun {analyze_dependency; proc_desc; err_log} ~callee_procname:_ location ~ret astate ->
     let havoc_ret (ret_id, _) astate =
       let event = ValueHistory.Call {f= Model "std::function::operator()"; location; in_call= []} in
       [PulseOperations.havoc_id ret_id [event] astate]
@@ -495,14 +514,16 @@ module StdFunction = struct
     match AddressAttributes.get_closure_proc_name lambda astate with
     | None ->
         (* we don't know what proc name this lambda resolves to *)
-        Ok (havoc_ret ret astate |> List.map ~f:ExecutionDomain.continue)
+        Ok
+          ( havoc_ret ret astate
+          |> List.map ~f:(fun astate -> ExecutionDomain.ContinueProgram astate) )
     | Some callee_proc_name ->
         let actuals =
           (lambda_ptr_hist, typ)
           :: List.map actuals ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
                  (arg_payload, typ) )
         in
-        PulseOperations.call ~caller_proc_desc:proc_desc
+        PulseOperations.call ~caller_proc_desc:proc_desc err_log
           ~callee_data:(analyze_dependency callee_proc_name)
           location callee_proc_name ~ret ~actuals ~formals_opt:None astate
 
@@ -800,7 +821,7 @@ module StdVector = struct
     if AddressAttributes.is_std_vector_reserved (fst vector) astate then
       (* assume that any call to [push_back] is ok after one called [reserve] on the same vector
          (a perfect analysis would also make sure we don't exceed the reserved size) *)
-      PulseOperations.ok_continue astate
+      ok_continue astate
     else
       (* simulate a re-allocation of the underlying array every time an element is added *)
       reallocate_internal_array [crumb] vector PushBack location astate
@@ -967,6 +988,8 @@ module ProcNameDispatcher = struct
           $+...$--> Optional.assign_none ~desc:"folly::Optional::reset()"
         ; -"folly" &:: "Optional" &:: "value" <>$ capt_arg_payload
           $+...$--> Optional.value ~desc:"folly::Optional::value()"
+        ; -"folly" &:: "Optional" &:: "get_pointer" $ capt_arg_payload
+          $+...$--> Optional.get_pointer ~desc:"folly::Optional::get_pointer()"
         ; -"folly" &:: "Optional" &:: "value_or" $ capt_arg_payload $+ capt_arg_payload
           $+...$--> Optional.value_or ~desc:"folly::Optional::value_or()"
           (* std::optional *)

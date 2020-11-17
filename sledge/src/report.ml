@@ -14,12 +14,7 @@ let unknown_call call =
       (fun fs call -> Llair.Loc.pp fs (Llair.Term.loc call))
       call
       (fun fs (call : Llair.Term.t) ->
-        match call with
-        | Call {callee} -> (
-          match Llair.Reg.of_exp callee with
-          | Some reg -> Llair.Reg.pp_demangled fs reg
-          | None -> Llair.Exp.pp fs callee )
-        | _ -> () )
+        match call with Call {callee} -> Llair.Exp.pp fs callee | _ -> () )
       call Llair.Term.pp call]
 
 let invalid_access_count = ref 0
@@ -43,13 +38,25 @@ let invalid_access_term fmt_thunk term =
 (** Functional statistics *)
 
 let steps = ref 0
-let step () = Int.incr steps
+let hit_insts = Llair.Inst.Tbl.create ()
+let hit_terms = Llair.Term.Tbl.create ()
+
+let step_inst i =
+  Llair.Inst.Tbl.incr hit_insts i ;
+  Int.incr steps
+
+let step_term t =
+  Llair.Term.Tbl.incr hit_terms t ;
+  Int.incr steps
+
+let bound = ref (-1)
+let hit_bound n = bound := n
 
 (** Status reporting *)
 
 type status =
-  | Safe of {steps: int}
-  | Unsafe of {alarms: int; steps: int}
+  | Safe of {bound: int}
+  | Unsafe of {alarms: int; bound: int}
   | Ok
   | Unsound
   | Incomplete
@@ -65,8 +72,10 @@ type status =
 let pp_status ppf stat =
   let pf fmt = Format.fprintf ppf fmt in
   match stat with
-  | Safe {steps} -> pf "Safe (%i)" steps
-  | Unsafe {alarms; steps} -> pf "Unsafe: %i (%i)" alarms steps
+  | Safe {bound= -1} -> pf "Safe"
+  | Safe {bound} -> pf "Safe (%i)" bound
+  | Unsafe {alarms; bound= -1} -> pf "Unsafe: %i" alarms
+  | Unsafe {alarms; bound} -> pf "Unsafe: %i (%i)" alarms bound
   | Ok -> pf "Ok"
   | Unsound -> pf "Unsound"
   | Incomplete -> pf "Incomplete"
@@ -79,8 +88,8 @@ let pp_status ppf stat =
   | UnknownError msg -> pf "Unknown error: %s" msg
 
 let safe_or_unsafe () =
-  if !invalid_access_count = 0 then Safe {steps= !steps}
-  else Unsafe {alarms= !invalid_access_count; steps= !steps}
+  if !invalid_access_count = 0 then Safe {bound= !bound}
+  else Unsafe {alarms= !invalid_access_count; bound= !bound}
 
 type gc_stats = {allocated: float; promoted: float; peak_size: float}
 [@@deriving sexp]
@@ -89,10 +98,14 @@ type times =
   {etime: float; utime: float; stime: float; cutime: float; cstime: float}
 [@@deriving sexp]
 
+type coverage = {steps: int; hit: int; fraction: float}
+[@@deriving compare, equal, sexp]
+
 type entry =
   | ProcessTimes of times
   | GcStats of gc_stats
   | Status of status
+  | Coverage of coverage
 [@@deriving sexp]
 
 let process_times () =
@@ -144,5 +157,17 @@ let init ?append filename =
       output (process_times ()) ;
       output (gc_stats ()) ;
       Option.iter ~f:Out_channel.close_no_err !chan )
+
+let coverage (pgm : Llair.program) =
+  let size =
+    Llair.Function.Map.fold pgm.functions 0 ~f:(fun ~key:_ ~data:func n ->
+        Llair.Func.fold_cfg func n ~f:(fun blk n ->
+            n + IArray.length blk.cmnd + 1 ) )
+  in
+  let hit =
+    Llair.Inst.Tbl.length hit_insts + Llair.Term.Tbl.length hit_terms
+  in
+  let fraction = Float.(of_int hit /. of_int size) in
+  output (Coverage {steps= !steps; hit; fraction})
 
 let status s = output (Status s)

@@ -11,11 +11,19 @@ module type S = sig
   type elt
   type t [@@deriving compare, equal, sexp_of]
 
+  module Provide_hash (_ : sig
+    type t = elt [@@deriving hash]
+  end) : sig
+    type t [@@deriving hash]
+  end
+  with type t := t
+
   module Provide_of_sexp (_ : sig
     type t = elt [@@deriving of_sexp]
   end) : sig
-    val t_of_sexp : Sexp.t -> t
+    type t [@@deriving of_sexp]
   end
+  with type t := t
 
   (** {1 Construct} *)
 

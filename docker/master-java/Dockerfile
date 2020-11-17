@@ -37,7 +37,7 @@ RUN opam init --reinit --bare --disable-sandboxing
 
 # Download the latest Infer master
 RUN cd / && \
-    git clone https://github.com/facebook/infer/
+    git clone --depth 1 https://github.com/facebook/infer/
 
 # Build opam deps first, then infer. This way if any step fails we
 # don't lose the significant amount of work done in the previous

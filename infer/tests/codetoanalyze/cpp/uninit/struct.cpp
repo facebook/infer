@@ -159,3 +159,12 @@ short struct_partial_init_bad() {
   short* p = s.b;
   return *p;
 }
+
+struct Header {
+  uint8_t flags{};
+};
+
+int test_switch1(bool b) {
+  Header h;
+  h.flags |= b ? 1 : 0;
+}

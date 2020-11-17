@@ -196,6 +196,7 @@ module Term = struct
   end
 
   include T
+  module Set = Set.Make (T)
   module Map = Map.Make (T)
 
   let ppx = ppx
@@ -229,16 +230,6 @@ module Term = struct
 
   let concat elts = apNt Trm.concat elts
 
-  (* records *)
-
-  let select ~rcd ~idx = ap1t (fun rcd -> Trm.select ~rcd ~idx) rcd
-
-  let update ~rcd ~idx ~elt =
-    ap2t (fun rcd elt -> Trm.update ~rcd ~idx ~elt) rcd elt
-
-  let record elts = apNt Trm.record elts
-  let ancestor i = `Trm (Trm.ancestor i)
-
   (* uninterpreted *)
 
   let apply sym args = apNt (Trm.apply sym) args
@@ -269,20 +260,17 @@ module Term = struct
 
   (** Traverse *)
 
-  let rec iter_vars_c c ~f =
-    match c with
-    | `Ite (cnd, thn, els) ->
-        Iter.iter ~f (Fml.vars cnd) ;
-        iter_vars_c ~f thn ;
-        iter_vars_c ~f els
-    | `Trm t -> Iter.iter ~f (Trm.vars t)
+  let iter e ~f:iter_t =
+    let iter_f f = Iter.flat_map ~f:iter_t (Fml.trms f) in
+    let rec iter_c = function
+      | `Ite (cnd, thn, els) ->
+          Iter.(append (iter_f cnd) (append (iter_c thn) (iter_c els)))
+      | `Trm e -> iter_t e
+    in
+    match e with `Fml f -> iter_f f | #cnd as c -> iter_c c
 
-  let iter_vars e ~f =
-    match e with
-    | `Fml p -> Iter.iter ~f (Fml.vars p)
-    | #cnd as c -> iter_vars_c ~f c
-
-  let vars e = Iter.from_labelled_iter (iter_vars e)
+  let vars = iter ~f:Trm.vars
+  let atoms = iter ~f:(fun e -> Iter.map ~f:(fun a -> `Trm a) (Trm.atoms e))
 
   (** Transform *)
 

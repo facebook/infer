@@ -75,7 +75,7 @@
   (name sledge_report)
   (public_name sledge-report)
   (package sledge)
-  (libraries sledge)
+  (libraries sledge core)
   (flags
    (:standard -open NS -open Sledge))
   (preprocess
@@ -119,8 +119,8 @@
   (name sledge_cli)
   (public_name sledge)
   (package sledge)
-  (libraries apron apron.boxMPQ ctypes ctypes.foreign dune-build-info llvm
-    llvm.irreader llvm.analysis llvm.scalar_opts llvm.target llvm.ipo
+  (libraries apron apron.boxMPQ core ctypes ctypes.foreign dune-build-info
+    llvm llvm.irreader llvm.analysis llvm.scalar_opts llvm.target llvm.ipo
     llvm.linker shexp.process yojson trace nonstdlib sledge model
     smtlib-utils)
   (flags
@@ -132,8 +132,7 @@
 
 (rule
  (targets sledge-help.txt)
- (deps cli/sledge_cli.ml cli/sledge_buck.ml tools/gen_help.sh
-   cli/sledge_cli.exe)
+ (deps tools/gen_help.sh cli/sledge_cli.exe)
  (action
   (with-stdout-to
    sledge-help.txt

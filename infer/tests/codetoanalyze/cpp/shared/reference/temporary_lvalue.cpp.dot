@@ -7,10 +7,14 @@ digraph cfg {
 "div#1879538779647861770.84b17ea73594d098fb69bd947fc358c0_2" [label="2: Exit div \n  " color=yellow style=filled]
 	
 
-"div#1879538779647861770.84b17ea73594d098fb69bd947fc358c0_3" [label="3:  Return Stmt \n   n$0=*&v:int const & [line 8, column 36]\n  n$1=*n$0:int [line 8, column 36]\n  *&return:int=(1 / n$1) [line 8, column 25]\n " shape="box"]
+"div#1879538779647861770.84b17ea73594d098fb69bd947fc358c0_3" [label="3:  Return Stmt \n   n$0=*&v:int const & [line 8, column 36]\n  n$1=*n$0:int [line 8, column 36]\n " shape="box"]
 	
 
-	 "div#1879538779647861770.84b17ea73594d098fb69bd947fc358c0_3" -> "div#1879538779647861770.84b17ea73594d098fb69bd947fc358c0_2" ;
+	 "div#1879538779647861770.84b17ea73594d098fb69bd947fc358c0_3" -> "div#1879538779647861770.84b17ea73594d098fb69bd947fc358c0_4" ;
+"div#1879538779647861770.84b17ea73594d098fb69bd947fc358c0_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$1) [line 8, column 25]\n " shape="box"]
+	
+
+	 "div#1879538779647861770.84b17ea73594d098fb69bd947fc358c0_4" -> "div#1879538779647861770.84b17ea73594d098fb69bd947fc358c0_2" ;
 "div0_function_param_cast#10492767400319523474.071b9a9b757a9140938b53a95e971def_1" [label="1: Start div0_function_param_cast\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$0:int const  \n  " color=yellow style=filled]
 	
 
@@ -18,38 +22,62 @@ digraph cfg {
 "div0_function_param_cast#10492767400319523474.071b9a9b757a9140938b53a95e971def_2" [label="2: Exit div0_function_param_cast \n  " color=yellow style=filled]
 	
 
-"div0_function_param_cast#10492767400319523474.071b9a9b757a9140938b53a95e971def_3" [label="3:  Return Stmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$0:int const ); [line 15, column 45]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$0:int=0 [line 15, column 45]\n  n$1=_fun_div(&0$?%__sil_tmpSIL_materialize_temp__n$0:int const &) [line 15, column 41]\n  *&return:int=n$1 [line 15, column 34]\n " shape="box"]
+"div0_function_param_cast#10492767400319523474.071b9a9b757a9140938b53a95e971def_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$0:int const ); [line 15, column 45]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$0:int=0 [line 15, column 45]\n " shape="box"]
 	
 
-	 "div0_function_param_cast#10492767400319523474.071b9a9b757a9140938b53a95e971def_3" -> "div0_function_param_cast#10492767400319523474.071b9a9b757a9140938b53a95e971def_2" ;
+	 "div0_function_param_cast#10492767400319523474.071b9a9b757a9140938b53a95e971def_3" -> "div0_function_param_cast#10492767400319523474.071b9a9b757a9140938b53a95e971def_4" ;
+"div0_function_param_cast#10492767400319523474.071b9a9b757a9140938b53a95e971def_4" [label="4:  Return Stmt \n   n$1=_fun_div(&0$?%__sil_tmpSIL_materialize_temp__n$0:int const &) [line 15, column 41]\n " shape="box"]
+	
+
+	 "div0_function_param_cast#10492767400319523474.071b9a9b757a9140938b53a95e971def_4" -> "div0_function_param_cast#10492767400319523474.071b9a9b757a9140938b53a95e971def_5" ;
+"div0_function_param_cast#10492767400319523474.071b9a9b757a9140938b53a95e971def_5" [label="5:  Return Stmt \n   *&return:int=n$1 [line 15, column 34]\n " shape="box"]
+	
+
+	 "div0_function_param_cast#10492767400319523474.071b9a9b757a9140938b53a95e971def_5" -> "div0_function_param_cast#10492767400319523474.071b9a9b757a9140938b53a95e971def_2" ;
 "div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_1" [label="1: Start div0_init_expr\nFormals: \nLocals:  a:int const & 0$?%__sil_tmpSIL_materialize_temp__n$2:int const  \n  " color=yellow style=filled]
 	
 
-	 "div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_1" -> "div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_4" ;
+	 "div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_1" -> "div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_6" ;
 "div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_2" [label="2: Exit div0_init_expr \n  " color=yellow style=filled]
 	
 
-"div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_3" [label="3:  Return Stmt \n   n$0=*&a:int const & [line 12, column 14]\n  n$1=_fun_div(n$0:int const &) [line 12, column 10]\n  *&return:int=n$1 [line 12, column 3]\n " shape="box"]
+"div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_3" [label="3:  Return Stmt \n   n$0=*&a:int const & [line 12, column 14]\n  n$1=_fun_div(n$0:int const &) [line 12, column 10]\n " shape="box"]
 	
 
-	 "div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_3" -> "div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_2" ;
-"div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(a:int const &); [line 11, column 3]\n  VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$2:int const ); [line 11, column 18]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$2:int=0 [line 11, column 18]\n  *&a:int const &=&0$?%__sil_tmpSIL_materialize_temp__n$2 [line 11, column 3]\n " shape="box"]
+	 "div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_3" -> "div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_4" ;
+"div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_4" [label="4:  Return Stmt \n   *&return:int=n$1 [line 12, column 3]\n " shape="box"]
 	
 
-	 "div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_4" -> "div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_3" ;
+	 "div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_4" -> "div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_2" ;
+"div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$2:int const ); [line 11, column 18]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$2:int=0 [line 11, column 18]\n " shape="box"]
+	
+
+	 "div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_5" -> "div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_7" ;
+"div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(a:int const &); [line 11, column 3]\n " shape="box"]
+	
+
+	 "div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_6" -> "div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_5" ;
+"div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_7" [label="7:  DeclStmt \n   *&a:int const &=&0$?%__sil_tmpSIL_materialize_temp__n$2 [line 11, column 3]\n " shape="box"]
+	
+
+	 "div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_7" -> "div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_3" ;
 "div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_1" [label="1: Start div0_no_const_ref\nFormals: \nLocals:  a:int \n  " color=yellow style=filled]
 	
 
-	 "div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_1" -> "div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_4" ;
+	 "div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_1" -> "div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_5" ;
 "div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_2" [label="2: Exit div0_no_const_ref \n  " color=yellow style=filled]
 	
 
-"div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_3" [label="3:  Return Stmt \n   n$0=_fun_div(&a:int&) [line 20, column 10]\n  *&return:int=n$0 [line 20, column 3]\n " shape="box"]
+"div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_3" [label="3:  Return Stmt \n   n$0=_fun_div(&a:int&) [line 20, column 10]\n " shape="box"]
 	
 
-	 "div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_3" -> "div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_2" ;
-"div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 19, column 3]\n  *&a:int=0 [line 19, column 3]\n " shape="box"]
+	 "div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_3" -> "div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_4" ;
+"div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 20, column 3]\n " shape="box"]
 	
 
-	 "div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_4" -> "div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_3" ;
+	 "div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_4" -> "div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_2" ;
+"div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 19, column 3]\n  *&a:int=0 [line 19, column 3]\n " shape="box"]
+	
+
+	 "div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_5" -> "div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_3" ;
 }

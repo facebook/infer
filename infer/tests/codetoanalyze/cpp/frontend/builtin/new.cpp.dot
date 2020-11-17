@@ -7,14 +7,18 @@ digraph cfg {
 "operator_new#13351464032276683690.f7532bbe196cdd8520d944e0c3e1f7b4_2" [label="2: Exit operator_new \n  " color=yellow style=filled]
 	
 
-"operator_new#13351464032276683690.f7532bbe196cdd8520d944e0c3e1f7b4_3" [label="3:  Return Stmt \n   n$0=*&ptr2:void* [line 21, column 10]\n  *&return:void*=n$0 [line 21, column 3]\n " shape="box"]
+"operator_new#13351464032276683690.f7532bbe196cdd8520d944e0c3e1f7b4_3" [label="3:  Return Stmt \n   n$0=*&ptr2:void* [line 21, column 10]\n " shape="box"]
 	
 
-	 "operator_new#13351464032276683690.f7532bbe196cdd8520d944e0c3e1f7b4_3" -> "operator_new#13351464032276683690.f7532bbe196cdd8520d944e0c3e1f7b4_2" ;
+	 "operator_new#13351464032276683690.f7532bbe196cdd8520d944e0c3e1f7b4_3" -> "operator_new#13351464032276683690.f7532bbe196cdd8520d944e0c3e1f7b4_4" ;
+"operator_new#13351464032276683690.f7532bbe196cdd8520d944e0c3e1f7b4_4" [label="4:  Return Stmt \n   *&return:void*=n$0 [line 21, column 3]\n " shape="box"]
+	
+
+	 "operator_new#13351464032276683690.f7532bbe196cdd8520d944e0c3e1f7b4_4" -> "operator_new#13351464032276683690.f7532bbe196cdd8520d944e0c3e1f7b4_2" ;
 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" [label="1: Start test\nFormals: \nLocals:  i:int* x:int \n  " color=yellow style=filled]
 	
 
-	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" ;
+	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_8" ;
 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
@@ -26,23 +30,43 @@ digraph cfg {
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(i:int*); [line 10, column 3]\n  n$3=_fun___new(sizeof(t=int;nbytes=4):unsigned long) [line 10, column 12]\n  *&i:int*=n$3 [line 10, column 3]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" [label="5:  CXXNewExpr \n   n$3=_fun___new(sizeof(t=int;nbytes=4):unsigned long) [line 10, column 12]\n " shape="box"]
 	
 
-	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 9, column 3]\n  *&x:int=2 [line 9, column 3]\n " shape="box"]
+	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_7" ;
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(i:int*); [line 10, column 3]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" ;
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_7" [label="7:  DeclStmt \n   *&i:int*=n$3 [line 10, column 3]\n " shape="box"]
+	
+
+	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_7" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" ;
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 9, column 3]\n  *&x:int=2 [line 9, column 3]\n " shape="box"]
+	
+
+	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_8" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" ;
 "test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_1" [label="1: Start test_placement\nFormals:  ptr:void* ptr2:int*\nLocals:  p:A* \n  " color=yellow style=filled]
 	
 
-	 "test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_1" -> "test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_3" ;
+	 "test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_1" -> "test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_5" ;
 "test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_2" [label="2: Exit test_placement \n  " color=yellow style=filled]
 	
 
-"test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(p:A*); [line 24, column 45]\n  n$2=*&ptr:void* [line 24, column 60]\n  n$0=*&ptr2:int* [line 24, column 65]\n  *&ptr2:int*=(n$0 + 1) [line 24, column 65]\n  n$1=*&ptr2:int* [line 24, column 65]\n  n$3=_fun___placement_new(sizeof(t=A):unsigned long,n$2:void*,n$1:void*) [line 24, column 55]\n  n$4=_fun_A::A(n$3:A*) [line 24, column 73]\n  *&p:A*=n$3 [line 24, column 45]\n " shape="box"]
+"test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_3" [label="3:  CXXNewExpr \n   n$2=*&ptr:void* [line 24, column 60]\n  n$0=*&ptr2:int* [line 24, column 65]\n  *&ptr2:int*=(n$0 + 1) [line 24, column 65]\n  n$1=*&ptr2:int* [line 24, column 65]\n  n$3=_fun___placement_new(sizeof(t=A):unsigned long,n$2:void*,n$1:void*) [line 24, column 55]\n " shape="box"]
 	
 
-	 "test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_3" -> "test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_2" ;
+	 "test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_3" -> "test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_4" ;
+"test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_4" [label="4:  CXXNewExpr \n   n$4=_fun_A::A(n$3:A*) [line 24, column 73]\n " shape="box"]
+	
+
+	 "test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_4" -> "test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_6" ;
+"test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(p:A*); [line 24, column 45]\n " shape="box"]
+	
+
+	 "test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_5" -> "test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_3" ;
+"test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_6" [label="6:  DeclStmt \n   *&p:A*=n$3 [line 24, column 45]\n " shape="box"]
+	
+
+	 "test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_6" -> "test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_2" ;
 }

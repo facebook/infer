@@ -76,10 +76,14 @@ digraph cfg {
 "value#bar#16302148298864778751.e55afab5e7523c08687d7e6558d5dad5_2" [label="2: Exit bar::value \n  " color=yellow style=filled]
 	
 
-"value#bar#16302148298864778751.e55afab5e7523c08687d7e6558d5dad5_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/cpp/shared/namespace/namespace.cpp|ice>$bar::pi:double [line 28, column 29]\n  *&return:double=(2 * n$0) [line 28, column 18]\n " shape="box"]
+"value#bar#16302148298864778751.e55afab5e7523c08687d7e6558d5dad5_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/cpp/shared/namespace/namespace.cpp|ice>$bar::pi:double [line 28, column 29]\n " shape="box"]
 	
 
-	 "value#bar#16302148298864778751.e55afab5e7523c08687d7e6558d5dad5_3" -> "value#bar#16302148298864778751.e55afab5e7523c08687d7e6558d5dad5_2" ;
+	 "value#bar#16302148298864778751.e55afab5e7523c08687d7e6558d5dad5_3" -> "value#bar#16302148298864778751.e55afab5e7523c08687d7e6558d5dad5_4" ;
+"value#bar#16302148298864778751.e55afab5e7523c08687d7e6558d5dad5_4" [label="4:  Return Stmt \n   *&return:double=(2 * n$0) [line 28, column 18]\n " shape="box"]
+	
+
+	 "value#bar#16302148298864778751.e55afab5e7523c08687d7e6558d5dad5_4" -> "value#bar#16302148298864778751.e55afab5e7523c08687d7e6558d5dad5_2" ;
 "value#foo#118977410660901546.9623db3632a56e3cb17951602d147a29_1" [label="1: Start foo::value\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 

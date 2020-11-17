@@ -26,8 +26,12 @@ digraph cfg {
 "fun_default#A#(5743605731228394805).32785ab130b2379c4e3e1b8b23953e73_2" [label="2: Exit A::fun_default \n  " color=yellow style=filled]
 	
 
-"fun_default#A#(5743605731228394805).32785ab130b2379c4e3e1b8b23953e73_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 11, column 59]\n  n$1=*&b:int [line 11, column 63]\n  n$2=*&c:int [line 11, column 67]\n  *&return:int=((n$0 + n$1) + n$2) [line 11, column 52]\n " shape="box"]
+"fun_default#A#(5743605731228394805).32785ab130b2379c4e3e1b8b23953e73_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 11, column 59]\n  n$1=*&b:int [line 11, column 63]\n  n$2=*&c:int [line 11, column 67]\n " shape="box"]
 	
 
-	 "fun_default#A#(5743605731228394805).32785ab130b2379c4e3e1b8b23953e73_3" -> "fun_default#A#(5743605731228394805).32785ab130b2379c4e3e1b8b23953e73_2" ;
+	 "fun_default#A#(5743605731228394805).32785ab130b2379c4e3e1b8b23953e73_3" -> "fun_default#A#(5743605731228394805).32785ab130b2379c4e3e1b8b23953e73_4" ;
+"fun_default#A#(5743605731228394805).32785ab130b2379c4e3e1b8b23953e73_4" [label="4:  Return Stmt \n   *&return:int=((n$0 + n$1) + n$2) [line 11, column 52]\n " shape="box"]
+	
+
+	 "fun_default#A#(5743605731228394805).32785ab130b2379c4e3e1b8b23953e73_4" -> "fun_default#A#(5743605731228394805).32785ab130b2379c4e3e1b8b23953e73_2" ;
 }

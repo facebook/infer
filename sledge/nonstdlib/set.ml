@@ -16,6 +16,24 @@ end) : S with type elt = Elt.t = struct
   type elt = Elt.t
   type t = S.t [@@deriving compare, equal]
 
+  module Provide_hash (Elt : sig
+    type t = elt [@@deriving hash]
+  end) =
+  struct
+    let hash_fold_t h s =
+      let length = ref 0 in
+      let s =
+        S.fold
+          (fun x h ->
+            incr length ;
+            Elt.hash_fold_t h x )
+          s h
+      in
+      Hash.fold_int s !length
+
+    let hash = Hash.of_fold hash_fold_t
+  end
+
   let sexp_of_t s = S.to_list s |> Sexplib.Conv.sexp_of_list Elt.sexp_of_t
 
   module Provide_of_sexp (Elt : sig

@@ -3,156 +3,192 @@ digraph cfg {
 "div0_b1#17650173920024552929.38acfc238efbf35c1ac5da7290b49422_1" [label="1: Start div0_b1\nFormals:  s:Sub&\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "div0_b1#17650173920024552929.38acfc238efbf35c1ac5da7290b49422_1" -> "div0_b1#17650173920024552929.38acfc238efbf35c1ac5da7290b49422_4" ;
+	 "div0_b1#17650173920024552929.38acfc238efbf35c1ac5da7290b49422_1" -> "div0_b1#17650173920024552929.38acfc238efbf35c1ac5da7290b49422_5" ;
 "div0_b1#17650173920024552929.38acfc238efbf35c1ac5da7290b49422_2" [label="2: Exit div0_b1 \n  " color=yellow style=filled]
 	
 
-"div0_b1#17650173920024552929.38acfc238efbf35c1ac5da7290b49422_3" [label="3:  Return Stmt \n   n$0=*&s:Sub& [line 22, column 14]\n  n$1=*n$0.b1:int [line 22, column 14]\n  *&return:int=(1 / n$1) [line 22, column 3]\n " shape="box"]
+"div0_b1#17650173920024552929.38acfc238efbf35c1ac5da7290b49422_3" [label="3:  Return Stmt \n   n$0=*&s:Sub& [line 22, column 14]\n  n$1=*n$0.b1:int [line 22, column 14]\n " shape="box"]
 	
 
-	 "div0_b1#17650173920024552929.38acfc238efbf35c1ac5da7290b49422_3" -> "div0_b1#17650173920024552929.38acfc238efbf35c1ac5da7290b49422_2" ;
-"div0_b1#17650173920024552929.38acfc238efbf35c1ac5da7290b49422_4" [label="4:  BinaryOperatorStmt: Assign \n   n$2=*&s:Sub& [line 21, column 3]\n  *n$2.b1:int=0 [line 21, column 3]\n " shape="box"]
+	 "div0_b1#17650173920024552929.38acfc238efbf35c1ac5da7290b49422_3" -> "div0_b1#17650173920024552929.38acfc238efbf35c1ac5da7290b49422_4" ;
+"div0_b1#17650173920024552929.38acfc238efbf35c1ac5da7290b49422_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$1) [line 22, column 3]\n " shape="box"]
 	
 
-	 "div0_b1#17650173920024552929.38acfc238efbf35c1ac5da7290b49422_4" -> "div0_b1#17650173920024552929.38acfc238efbf35c1ac5da7290b49422_3" ;
+	 "div0_b1#17650173920024552929.38acfc238efbf35c1ac5da7290b49422_4" -> "div0_b1#17650173920024552929.38acfc238efbf35c1ac5da7290b49422_2" ;
+"div0_b1#17650173920024552929.38acfc238efbf35c1ac5da7290b49422_5" [label="5:  BinaryOperatorStmt: Assign \n   n$2=*&s:Sub& [line 21, column 3]\n  *n$2.b1:int=0 [line 21, column 3]\n " shape="box"]
+	
+
+	 "div0_b1#17650173920024552929.38acfc238efbf35c1ac5da7290b49422_5" -> "div0_b1#17650173920024552929.38acfc238efbf35c1ac5da7290b49422_3" ;
 "div0_b1_s(class Sub)#4574535260514480977.bea603e96ca808f341ce0e5424d96c83_1" [label="1: Start div0_b1_s\nFormals:  s:Sub*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "div0_b1_s(class Sub)#4574535260514480977.bea603e96ca808f341ce0e5424d96c83_1" -> "div0_b1_s(class Sub)#4574535260514480977.bea603e96ca808f341ce0e5424d96c83_5" ;
+	 "div0_b1_s(class Sub)#4574535260514480977.bea603e96ca808f341ce0e5424d96c83_1" -> "div0_b1_s(class Sub)#4574535260514480977.bea603e96ca808f341ce0e5424d96c83_6" ;
 "div0_b1_s(class Sub)#4574535260514480977.bea603e96ca808f341ce0e5424d96c83_2" [label="2: Exit div0_b1_s \n  " color=yellow style=filled]
 	
 
-"div0_b1_s(class Sub)#4574535260514480977.bea603e96ca808f341ce0e5424d96c83_3" [label="3:  Return Stmt \n   n$0=*&s:Sub* [line 50, column 15]\n  n$1=*n$0.b1:int [line 50, column 15]\n  n$2=*&s:Sub* [line 50, column 23]\n  n$3=*n$2.s:int [line 50, column 23]\n  *&return:int=(1 / (n$1 - n$3)) [line 50, column 3]\n " shape="box"]
+"div0_b1_s(class Sub)#4574535260514480977.bea603e96ca808f341ce0e5424d96c83_3" [label="3:  Return Stmt \n   n$0=*&s:Sub* [line 50, column 15]\n  n$1=*n$0.b1:int [line 50, column 15]\n  n$2=*&s:Sub* [line 50, column 23]\n  n$3=*n$2.s:int [line 50, column 23]\n " shape="box"]
 	
 
-	 "div0_b1_s(class Sub)#4574535260514480977.bea603e96ca808f341ce0e5424d96c83_3" -> "div0_b1_s(class Sub)#4574535260514480977.bea603e96ca808f341ce0e5424d96c83_2" ;
-"div0_b1_s(class Sub)#4574535260514480977.bea603e96ca808f341ce0e5424d96c83_4" [label="4:  BinaryOperatorStmt: Assign \n   n$4=*&s:Sub* [line 49, column 3]\n  *n$4.s:int=1 [line 49, column 3]\n " shape="box"]
+	 "div0_b1_s(class Sub)#4574535260514480977.bea603e96ca808f341ce0e5424d96c83_3" -> "div0_b1_s(class Sub)#4574535260514480977.bea603e96ca808f341ce0e5424d96c83_4" ;
+"div0_b1_s(class Sub)#4574535260514480977.bea603e96ca808f341ce0e5424d96c83_4" [label="4:  Return Stmt \n   *&return:int=(1 / (n$1 - n$3)) [line 50, column 3]\n " shape="box"]
 	
 
-	 "div0_b1_s(class Sub)#4574535260514480977.bea603e96ca808f341ce0e5424d96c83_4" -> "div0_b1_s(class Sub)#4574535260514480977.bea603e96ca808f341ce0e5424d96c83_3" ;
-"div0_b1_s(class Sub)#4574535260514480977.bea603e96ca808f341ce0e5424d96c83_5" [label="5:  BinaryOperatorStmt: Assign \n   n$5=*&s:Sub* [line 48, column 3]\n  *n$5.b1:int=1 [line 48, column 3]\n " shape="box"]
+	 "div0_b1_s(class Sub)#4574535260514480977.bea603e96ca808f341ce0e5424d96c83_4" -> "div0_b1_s(class Sub)#4574535260514480977.bea603e96ca808f341ce0e5424d96c83_2" ;
+"div0_b1_s(class Sub)#4574535260514480977.bea603e96ca808f341ce0e5424d96c83_5" [label="5:  BinaryOperatorStmt: Assign \n   n$4=*&s:Sub* [line 49, column 3]\n  *n$4.s:int=1 [line 49, column 3]\n " shape="box"]
 	
 
-	 "div0_b1_s(class Sub)#4574535260514480977.bea603e96ca808f341ce0e5424d96c83_5" -> "div0_b1_s(class Sub)#4574535260514480977.bea603e96ca808f341ce0e5424d96c83_4" ;
+	 "div0_b1_s(class Sub)#4574535260514480977.bea603e96ca808f341ce0e5424d96c83_5" -> "div0_b1_s(class Sub)#4574535260514480977.bea603e96ca808f341ce0e5424d96c83_3" ;
+"div0_b1_s(class Sub)#4574535260514480977.bea603e96ca808f341ce0e5424d96c83_6" [label="6:  BinaryOperatorStmt: Assign \n   n$5=*&s:Sub* [line 48, column 3]\n  *n$5.b1:int=1 [line 48, column 3]\n " shape="box"]
+	
+
+	 "div0_b1_s(class Sub)#4574535260514480977.bea603e96ca808f341ce0e5424d96c83_6" -> "div0_b1_s(class Sub)#4574535260514480977.bea603e96ca808f341ce0e5424d96c83_5" ;
 "div0_b2#6935029956526426132.ef88e6d1eac891cdde3f345b9b55439c_1" [label="1: Start div0_b2\nFormals:  s:Sub&\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "div0_b2#6935029956526426132.ef88e6d1eac891cdde3f345b9b55439c_1" -> "div0_b2#6935029956526426132.ef88e6d1eac891cdde3f345b9b55439c_4" ;
+	 "div0_b2#6935029956526426132.ef88e6d1eac891cdde3f345b9b55439c_1" -> "div0_b2#6935029956526426132.ef88e6d1eac891cdde3f345b9b55439c_5" ;
 "div0_b2#6935029956526426132.ef88e6d1eac891cdde3f345b9b55439c_2" [label="2: Exit div0_b2 \n  " color=yellow style=filled]
 	
 
-"div0_b2#6935029956526426132.ef88e6d1eac891cdde3f345b9b55439c_3" [label="3:  Return Stmt \n   n$0=*&s:Sub& [line 27, column 14]\n  n$1=*n$0.b2:int [line 27, column 14]\n  *&return:int=(1 / n$1) [line 27, column 3]\n " shape="box"]
+"div0_b2#6935029956526426132.ef88e6d1eac891cdde3f345b9b55439c_3" [label="3:  Return Stmt \n   n$0=*&s:Sub& [line 27, column 14]\n  n$1=*n$0.b2:int [line 27, column 14]\n " shape="box"]
 	
 
-	 "div0_b2#6935029956526426132.ef88e6d1eac891cdde3f345b9b55439c_3" -> "div0_b2#6935029956526426132.ef88e6d1eac891cdde3f345b9b55439c_2" ;
-"div0_b2#6935029956526426132.ef88e6d1eac891cdde3f345b9b55439c_4" [label="4:  BinaryOperatorStmt: Assign \n   n$2=*&s:Sub& [line 26, column 3]\n  *n$2.b2:int=0 [line 26, column 3]\n " shape="box"]
+	 "div0_b2#6935029956526426132.ef88e6d1eac891cdde3f345b9b55439c_3" -> "div0_b2#6935029956526426132.ef88e6d1eac891cdde3f345b9b55439c_4" ;
+"div0_b2#6935029956526426132.ef88e6d1eac891cdde3f345b9b55439c_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$1) [line 27, column 3]\n " shape="box"]
 	
 
-	 "div0_b2#6935029956526426132.ef88e6d1eac891cdde3f345b9b55439c_4" -> "div0_b2#6935029956526426132.ef88e6d1eac891cdde3f345b9b55439c_3" ;
+	 "div0_b2#6935029956526426132.ef88e6d1eac891cdde3f345b9b55439c_4" -> "div0_b2#6935029956526426132.ef88e6d1eac891cdde3f345b9b55439c_2" ;
+"div0_b2#6935029956526426132.ef88e6d1eac891cdde3f345b9b55439c_5" [label="5:  BinaryOperatorStmt: Assign \n   n$2=*&s:Sub& [line 26, column 3]\n  *n$2.b2:int=0 [line 26, column 3]\n " shape="box"]
+	
+
+	 "div0_b2#6935029956526426132.ef88e6d1eac891cdde3f345b9b55439c_5" -> "div0_b2#6935029956526426132.ef88e6d1eac891cdde3f345b9b55439c_3" ;
 "div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_1" [label="1: Start div0_cast\nFormals:  s:Sub*\nLocals:  b:Base1* \n  " color=yellow style=filled]
 	
 
-	 "div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_1" -> "div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_5" ;
+	 "div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_1" -> "div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_6" ;
 "div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_2" [label="2: Exit div0_cast \n  " color=yellow style=filled]
 	
 
-"div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_3" [label="3:  Return Stmt \n   n$0=*&b:Base1* [line 38, column 14]\n  n$1=*n$0.b1:int [line 38, column 14]\n  *&return:int=(1 / n$1) [line 38, column 3]\n " shape="box"]
+"div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_3" [label="3:  Return Stmt \n   n$0=*&b:Base1* [line 38, column 14]\n  n$1=*n$0.b1:int [line 38, column 14]\n " shape="box"]
 	
 
-	 "div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_3" -> "div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_2" ;
-"div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(b:Base1*); [line 37, column 3]\n  n$2=*&s:Sub* [line 37, column 14]\n  *&b:Sub*=n$2 [line 37, column 3]\n " shape="box"]
+	 "div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_3" -> "div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_4" ;
+"div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$1) [line 38, column 3]\n " shape="box"]
 	
 
-	 "div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_4" -> "div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_3" ;
-"div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_5" [label="5:  BinaryOperatorStmt: Assign \n   n$3=*&s:Sub* [line 36, column 3]\n  *n$3.b1:int=0 [line 36, column 3]\n " shape="box"]
+	 "div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_4" -> "div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_2" ;
+"div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(b:Base1*); [line 37, column 3]\n  n$2=*&s:Sub* [line 37, column 14]\n  *&b:Sub*=n$2 [line 37, column 3]\n " shape="box"]
 	
 
-	 "div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_5" -> "div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_4" ;
+	 "div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_5" -> "div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_3" ;
+"div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_6" [label="6:  BinaryOperatorStmt: Assign \n   n$3=*&s:Sub* [line 36, column 3]\n  *n$3.b1:int=0 [line 36, column 3]\n " shape="box"]
+	
+
+	 "div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_6" -> "div0_cast(class Sub)#5945090778893539301.57c132b2d87bb7310c8cb0085dede4d5_5" ;
 "div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_1" [label="1: Start div0_cast_ref\nFormals:  s:Sub&\nLocals:  b:Base1& \n  " color=yellow style=filled]
 	
 
-	 "div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_1" -> "div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_5" ;
+	 "div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_1" -> "div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_6" ;
 "div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_2" [label="2: Exit div0_cast_ref \n  " color=yellow style=filled]
 	
 
-"div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_3" [label="3:  Return Stmt \n   n$0=*&b:Base1& [line 44, column 14]\n  n$1=*n$0.b1:int [line 44, column 14]\n  *&return:int=(1 / n$1) [line 44, column 3]\n " shape="box"]
+"div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_3" [label="3:  Return Stmt \n   n$0=*&b:Base1& [line 44, column 14]\n  n$1=*n$0.b1:int [line 44, column 14]\n " shape="box"]
 	
 
-	 "div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_3" -> "div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_2" ;
-"div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(b:Base1&); [line 43, column 3]\n  n$2=*&s:Sub& [line 43, column 14]\n  *&b:Sub&=n$2 [line 43, column 3]\n " shape="box"]
+	 "div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_3" -> "div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_4" ;
+"div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$1) [line 44, column 3]\n " shape="box"]
 	
 
-	 "div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_4" -> "div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_3" ;
-"div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_5" [label="5:  BinaryOperatorStmt: Assign \n   n$3=*&s:Sub& [line 42, column 3]\n  *n$3.b1:int=0 [line 42, column 3]\n " shape="box"]
+	 "div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_4" -> "div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_2" ;
+"div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(b:Base1&); [line 43, column 3]\n  n$2=*&s:Sub& [line 43, column 14]\n  *&b:Sub&=n$2 [line 43, column 3]\n " shape="box"]
 	
 
-	 "div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_5" -> "div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_4" ;
+	 "div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_5" -> "div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_3" ;
+"div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_6" [label="6:  BinaryOperatorStmt: Assign \n   n$3=*&s:Sub& [line 42, column 3]\n  *n$3.b1:int=0 [line 42, column 3]\n " shape="box"]
+	
+
+	 "div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_6" -> "div0_cast_ref#11427648331886451822.4f535c7752ac1b6e5f35ab1a83dc2bd8_5" ;
 "div0_s#16566672704220882536.127f1e4fb94cf0b77844a4e153e0f991_1" [label="1: Start div0_s\nFormals:  s:Sub&\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "div0_s#16566672704220882536.127f1e4fb94cf0b77844a4e153e0f991_1" -> "div0_s#16566672704220882536.127f1e4fb94cf0b77844a4e153e0f991_4" ;
+	 "div0_s#16566672704220882536.127f1e4fb94cf0b77844a4e153e0f991_1" -> "div0_s#16566672704220882536.127f1e4fb94cf0b77844a4e153e0f991_5" ;
 "div0_s#16566672704220882536.127f1e4fb94cf0b77844a4e153e0f991_2" [label="2: Exit div0_s \n  " color=yellow style=filled]
 	
 
-"div0_s#16566672704220882536.127f1e4fb94cf0b77844a4e153e0f991_3" [label="3:  Return Stmt \n   n$0=*&s:Sub& [line 32, column 14]\n  n$1=*n$0.s:int [line 32, column 14]\n  *&return:int=(1 / n$1) [line 32, column 3]\n " shape="box"]
+"div0_s#16566672704220882536.127f1e4fb94cf0b77844a4e153e0f991_3" [label="3:  Return Stmt \n   n$0=*&s:Sub& [line 32, column 14]\n  n$1=*n$0.s:int [line 32, column 14]\n " shape="box"]
 	
 
-	 "div0_s#16566672704220882536.127f1e4fb94cf0b77844a4e153e0f991_3" -> "div0_s#16566672704220882536.127f1e4fb94cf0b77844a4e153e0f991_2" ;
-"div0_s#16566672704220882536.127f1e4fb94cf0b77844a4e153e0f991_4" [label="4:  BinaryOperatorStmt: Assign \n   n$2=*&s:Sub& [line 31, column 3]\n  *n$2.s:int=0 [line 31, column 3]\n " shape="box"]
+	 "div0_s#16566672704220882536.127f1e4fb94cf0b77844a4e153e0f991_3" -> "div0_s#16566672704220882536.127f1e4fb94cf0b77844a4e153e0f991_4" ;
+"div0_s#16566672704220882536.127f1e4fb94cf0b77844a4e153e0f991_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$1) [line 32, column 3]\n " shape="box"]
 	
 
-	 "div0_s#16566672704220882536.127f1e4fb94cf0b77844a4e153e0f991_4" -> "div0_s#16566672704220882536.127f1e4fb94cf0b77844a4e153e0f991_3" ;
+	 "div0_s#16566672704220882536.127f1e4fb94cf0b77844a4e153e0f991_4" -> "div0_s#16566672704220882536.127f1e4fb94cf0b77844a4e153e0f991_2" ;
+"div0_s#16566672704220882536.127f1e4fb94cf0b77844a4e153e0f991_5" [label="5:  BinaryOperatorStmt: Assign \n   n$2=*&s:Sub& [line 31, column 3]\n  *n$2.s:int=0 [line 31, column 3]\n " shape="box"]
+	
+
+	 "div0_s#16566672704220882536.127f1e4fb94cf0b77844a4e153e0f991_5" -> "div0_s#16566672704220882536.127f1e4fb94cf0b77844a4e153e0f991_3" ;
 "div0_s_b1(class Sub)#6365361903134380141.eab3ecee328fdfa57b4dc825af3f2f72_1" [label="1: Start div0_s_b1\nFormals:  s:Sub*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "div0_s_b1(class Sub)#6365361903134380141.eab3ecee328fdfa57b4dc825af3f2f72_1" -> "div0_s_b1(class Sub)#6365361903134380141.eab3ecee328fdfa57b4dc825af3f2f72_5" ;
+	 "div0_s_b1(class Sub)#6365361903134380141.eab3ecee328fdfa57b4dc825af3f2f72_1" -> "div0_s_b1(class Sub)#6365361903134380141.eab3ecee328fdfa57b4dc825af3f2f72_6" ;
 "div0_s_b1(class Sub)#6365361903134380141.eab3ecee328fdfa57b4dc825af3f2f72_2" [label="2: Exit div0_s_b1 \n  " color=yellow style=filled]
 	
 
-"div0_s_b1(class Sub)#6365361903134380141.eab3ecee328fdfa57b4dc825af3f2f72_3" [label="3:  Return Stmt \n   n$0=*&s:Sub* [line 56, column 15]\n  n$1=*n$0.b1:int [line 56, column 15]\n  n$2=*&s:Sub* [line 56, column 23]\n  n$3=*n$2.s:int [line 56, column 23]\n  *&return:int=(1 / (n$1 - n$3)) [line 56, column 3]\n " shape="box"]
+"div0_s_b1(class Sub)#6365361903134380141.eab3ecee328fdfa57b4dc825af3f2f72_3" [label="3:  Return Stmt \n   n$0=*&s:Sub* [line 56, column 15]\n  n$1=*n$0.b1:int [line 56, column 15]\n  n$2=*&s:Sub* [line 56, column 23]\n  n$3=*n$2.s:int [line 56, column 23]\n " shape="box"]
 	
 
-	 "div0_s_b1(class Sub)#6365361903134380141.eab3ecee328fdfa57b4dc825af3f2f72_3" -> "div0_s_b1(class Sub)#6365361903134380141.eab3ecee328fdfa57b4dc825af3f2f72_2" ;
-"div0_s_b1(class Sub)#6365361903134380141.eab3ecee328fdfa57b4dc825af3f2f72_4" [label="4:  BinaryOperatorStmt: Assign \n   n$4=*&s:Sub* [line 55, column 3]\n  *n$4.s:int=1 [line 55, column 3]\n " shape="box"]
+	 "div0_s_b1(class Sub)#6365361903134380141.eab3ecee328fdfa57b4dc825af3f2f72_3" -> "div0_s_b1(class Sub)#6365361903134380141.eab3ecee328fdfa57b4dc825af3f2f72_4" ;
+"div0_s_b1(class Sub)#6365361903134380141.eab3ecee328fdfa57b4dc825af3f2f72_4" [label="4:  Return Stmt \n   *&return:int=(1 / (n$1 - n$3)) [line 56, column 3]\n " shape="box"]
 	
 
-	 "div0_s_b1(class Sub)#6365361903134380141.eab3ecee328fdfa57b4dc825af3f2f72_4" -> "div0_s_b1(class Sub)#6365361903134380141.eab3ecee328fdfa57b4dc825af3f2f72_3" ;
-"div0_s_b1(class Sub)#6365361903134380141.eab3ecee328fdfa57b4dc825af3f2f72_5" [label="5:  BinaryOperatorStmt: Assign \n   n$5=*&s:Sub* [line 54, column 3]\n  *n$5.b1:int=1 [line 54, column 3]\n " shape="box"]
+	 "div0_s_b1(class Sub)#6365361903134380141.eab3ecee328fdfa57b4dc825af3f2f72_4" -> "div0_s_b1(class Sub)#6365361903134380141.eab3ecee328fdfa57b4dc825af3f2f72_2" ;
+"div0_s_b1(class Sub)#6365361903134380141.eab3ecee328fdfa57b4dc825af3f2f72_5" [label="5:  BinaryOperatorStmt: Assign \n   n$4=*&s:Sub* [line 55, column 3]\n  *n$4.s:int=1 [line 55, column 3]\n " shape="box"]
 	
 
-	 "div0_s_b1(class Sub)#6365361903134380141.eab3ecee328fdfa57b4dc825af3f2f72_5" -> "div0_s_b1(class Sub)#6365361903134380141.eab3ecee328fdfa57b4dc825af3f2f72_4" ;
+	 "div0_s_b1(class Sub)#6365361903134380141.eab3ecee328fdfa57b4dc825af3f2f72_5" -> "div0_s_b1(class Sub)#6365361903134380141.eab3ecee328fdfa57b4dc825af3f2f72_3" ;
+"div0_s_b1(class Sub)#6365361903134380141.eab3ecee328fdfa57b4dc825af3f2f72_6" [label="6:  BinaryOperatorStmt: Assign \n   n$5=*&s:Sub* [line 54, column 3]\n  *n$5.b1:int=1 [line 54, column 3]\n " shape="box"]
+	
+
+	 "div0_s_b1(class Sub)#6365361903134380141.eab3ecee328fdfa57b4dc825af3f2f72_6" -> "div0_s_b1(class Sub)#6365361903134380141.eab3ecee328fdfa57b4dc825af3f2f72_5" ;
 "div1_b1#14974413951234929464.2d37fbc87faf449081172c1e2711163f_1" [label="1: Start div1_b1\nFormals:  s:Sub&\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "div1_b1#14974413951234929464.2d37fbc87faf449081172c1e2711163f_1" -> "div1_b1#14974413951234929464.2d37fbc87faf449081172c1e2711163f_4" ;
+	 "div1_b1#14974413951234929464.2d37fbc87faf449081172c1e2711163f_1" -> "div1_b1#14974413951234929464.2d37fbc87faf449081172c1e2711163f_5" ;
 "div1_b1#14974413951234929464.2d37fbc87faf449081172c1e2711163f_2" [label="2: Exit div1_b1 \n  " color=yellow style=filled]
 	
 
-"div1_b1#14974413951234929464.2d37fbc87faf449081172c1e2711163f_3" [label="3:  Return Stmt \n   n$0=*&s:Sub& [line 61, column 14]\n  n$1=*n$0.b1:int [line 61, column 14]\n  *&return:int=(1 / n$1) [line 61, column 3]\n " shape="box"]
+"div1_b1#14974413951234929464.2d37fbc87faf449081172c1e2711163f_3" [label="3:  Return Stmt \n   n$0=*&s:Sub& [line 61, column 14]\n  n$1=*n$0.b1:int [line 61, column 14]\n " shape="box"]
 	
 
-	 "div1_b1#14974413951234929464.2d37fbc87faf449081172c1e2711163f_3" -> "div1_b1#14974413951234929464.2d37fbc87faf449081172c1e2711163f_2" ;
-"div1_b1#14974413951234929464.2d37fbc87faf449081172c1e2711163f_4" [label="4:  BinaryOperatorStmt: Assign \n   n$2=*&s:Sub& [line 60, column 3]\n  *n$2.b1:int=1 [line 60, column 3]\n " shape="box"]
+	 "div1_b1#14974413951234929464.2d37fbc87faf449081172c1e2711163f_3" -> "div1_b1#14974413951234929464.2d37fbc87faf449081172c1e2711163f_4" ;
+"div1_b1#14974413951234929464.2d37fbc87faf449081172c1e2711163f_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$1) [line 61, column 3]\n " shape="box"]
 	
 
-	 "div1_b1#14974413951234929464.2d37fbc87faf449081172c1e2711163f_4" -> "div1_b1#14974413951234929464.2d37fbc87faf449081172c1e2711163f_3" ;
+	 "div1_b1#14974413951234929464.2d37fbc87faf449081172c1e2711163f_4" -> "div1_b1#14974413951234929464.2d37fbc87faf449081172c1e2711163f_2" ;
+"div1_b1#14974413951234929464.2d37fbc87faf449081172c1e2711163f_5" [label="5:  BinaryOperatorStmt: Assign \n   n$2=*&s:Sub& [line 60, column 3]\n  *n$2.b1:int=1 [line 60, column 3]\n " shape="box"]
+	
+
+	 "div1_b1#14974413951234929464.2d37fbc87faf449081172c1e2711163f_5" -> "div1_b1#14974413951234929464.2d37fbc87faf449081172c1e2711163f_3" ;
 "div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_1" [label="1: Start div1_cast\nFormals:  s:Sub*\nLocals:  b:Base1* \n  " color=yellow style=filled]
 	
 
-	 "div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_1" -> "div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_5" ;
+	 "div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_1" -> "div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_6" ;
 "div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_2" [label="2: Exit div1_cast \n  " color=yellow style=filled]
 	
 
-"div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_3" [label="3:  Return Stmt \n   n$0=*&b:Base1* [line 67, column 14]\n  n$1=*n$0.b1:int [line 67, column 14]\n  *&return:int=(1 / n$1) [line 67, column 3]\n " shape="box"]
+"div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_3" [label="3:  Return Stmt \n   n$0=*&b:Base1* [line 67, column 14]\n  n$1=*n$0.b1:int [line 67, column 14]\n " shape="box"]
 	
 
-	 "div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_3" -> "div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_2" ;
-"div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(b:Base1*); [line 66, column 3]\n  n$2=*&s:Sub* [line 66, column 14]\n  *&b:Sub*=n$2 [line 66, column 3]\n " shape="box"]
+	 "div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_3" -> "div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_4" ;
+"div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$1) [line 67, column 3]\n " shape="box"]
 	
 
-	 "div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_4" -> "div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_3" ;
-"div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_5" [label="5:  BinaryOperatorStmt: Assign \n   n$3=*&s:Sub* [line 65, column 3]\n  *n$3.b1:int=1 [line 65, column 3]\n " shape="box"]
+	 "div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_4" -> "div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_2" ;
+"div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(b:Base1*); [line 66, column 3]\n  n$2=*&s:Sub* [line 66, column 14]\n  *&b:Sub*=n$2 [line 66, column 3]\n " shape="box"]
 	
 
-	 "div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_5" -> "div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_4" ;
+	 "div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_5" -> "div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_3" ;
+"div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_6" [label="6:  BinaryOperatorStmt: Assign \n   n$3=*&s:Sub* [line 65, column 3]\n  *n$3.b1:int=1 [line 65, column 3]\n " shape="box"]
+	
+
+	 "div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_6" -> "div1_cast(class Sub)#4700794712628779370.5f88f1a243823d843f8f8a851cbaf0d4_5" ;
 }

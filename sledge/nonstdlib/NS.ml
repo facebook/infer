@@ -50,9 +50,3 @@ module String = String
 module Sys = Sys
 module Timer = Timer
 module Z = Z_ext
-
-module Filename = struct
-  include Filename
-
-  let realpath = Core.Filename.realpath
-end

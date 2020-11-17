@@ -28,11 +28,12 @@ module type S = sig
   val get_trm : t -> trm option
   (** [get_trm a] is [Some x] iff [equal a (trm x)] *)
 
-  type view = Trm of trm | Const of Q.t | Compound
+  type kind = Trm of trm | Const of Q.t | Interpreted | Uninterpreted
 
-  val classify : t -> view
+  val classify : t -> kind
   (** [classify a] is [Trm x] iff [get_trm a] is [Some x], [Const q] iff
-      [get_const a] is [Some q], and [Compound] otherwise *)
+      [get_const a] is [Some q], [Interpreted] if the principal operation of
+      [a] is interpreted, and [Uninterpreted] otherwise *)
 
   (** Construct compound terms *)
 
@@ -56,10 +57,8 @@ module type S = sig
       coefficients in [p] and [n] are non-negative. *)
 
   val map : t -> f:(trm -> trm) -> t
-  (** [map ~f a] is [a] with each indeterminate transformed by [f]. Viewing
-      [a] as a polynomial,
-      [map ~f (Σᵢ₌₁ⁿ cᵢ × Πⱼ₌₁ᵐᵢ xᵢⱼ^pᵢⱼ)] is
-      [Σᵢ₌₁ⁿ cᵢ × Πⱼ₌₁ᵐᵢ (f xᵢⱼ)^pᵢⱼ]. *)
+  (** [map ~f a] is [a] with each maximal non-interpreted subterm
+      transformed by [f]. *)
 
   (** Traverse *)
 
@@ -72,13 +71,6 @@ module type S = sig
   (** [solve_zero_eq d] is [Some (e, f)] if [0 = d] can be equivalently
       expressed as [e = f] for some monomial subterm [e] of [d]. If [for_]
       is passed, then the subterm [e] must be [for_]. *)
-
-  (**/**)
-
-  type product
-
-  val fold_factors : product -> 's -> f:(trm -> int -> 's -> 's) -> 's
-  val fold_monomials : t -> 's -> f:(product -> Q.t -> 's -> 's) -> 's
 end
 
 (** Indeterminate terms, treated as atomic / variables except when they can
@@ -92,18 +84,20 @@ module type INDETERMINATE = sig
   val vars : trm -> var iter
 end
 
-(** An embedding of arithmetic terms [t] into indeterminates [trm],
-    expressed as a partial projection from [trm] to [t]. The inverse
-    embedding function is generally internal to the client. *)
+(** An embedding of arithmetic terms [t] into indeterminates [trm]. *)
 module type EMBEDDING = sig
   type trm
   type t
 
+  val to_trm : t -> trm
+  (** Embedding from [t] to [trm]: [to_trm a] is arithmetic term [a]
+      embedded in an indeterminate term. *)
+
   val get_arith : trm -> t option
-  (** [get_arith x] should be [Some a] if indeterminate [x] is equivalent to
-      [a] embedded into an indeterminate term. This is used to flatten
-      indeterminates that are actually arithmetic for the client, thereby
-      enabling arithmetic operations to be interpreted more often. *)
+  (** Partial projection from [trm] to [t]: [get_arith x] is [Some a] if
+      [x = to_trm a]. This is used to flatten indeterminates that are
+      actually arithmetic for the client, thereby enabling arithmetic
+      operations to be interpreted more often. *)
 end
 
 (** A type [t] representing arithmetic terms over indeterminates [trm]

@@ -7,10 +7,14 @@ digraph cfg {
 "fun_default#3756902107033500271.2ec7d2bd4212c5f505ea908a5f86109a_2" [label="2: Exit fun_default \n  " color=yellow style=filled]
 	
 
-"fun_default#3756902107033500271.2ec7d2bd4212c5f505ea908a5f86109a_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 8, column 48]\n  n$1=*&b:int [line 8, column 52]\n  *&return:int=(n$0 + n$1) [line 8, column 41]\n " shape="box"]
+"fun_default#3756902107033500271.2ec7d2bd4212c5f505ea908a5f86109a_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 8, column 48]\n  n$1=*&b:int [line 8, column 52]\n " shape="box"]
 	
 
-	 "fun_default#3756902107033500271.2ec7d2bd4212c5f505ea908a5f86109a_3" -> "fun_default#3756902107033500271.2ec7d2bd4212c5f505ea908a5f86109a_2" ;
+	 "fun_default#3756902107033500271.2ec7d2bd4212c5f505ea908a5f86109a_3" -> "fun_default#3756902107033500271.2ec7d2bd4212c5f505ea908a5f86109a_4" ;
+"fun_default#3756902107033500271.2ec7d2bd4212c5f505ea908a5f86109a_4" [label="4:  Return Stmt \n   *&return:int=(n$0 + n$1) [line 8, column 41]\n " shape="box"]
+	
+
+	 "fun_default#3756902107033500271.2ec7d2bd4212c5f505ea908a5f86109a_4" -> "fun_default#3756902107033500271.2ec7d2bd4212c5f505ea908a5f86109a_2" ;
 "fun_default_decl#2242811051034255145.cfa4c1bed9f6b81332cbfea2722a24d0_1" [label="1: Start fun_default_decl\nFormals:  a:int b:int\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -18,10 +22,14 @@ digraph cfg {
 "fun_default_decl#2242811051034255145.cfa4c1bed9f6b81332cbfea2722a24d0_2" [label="2: Exit fun_default_decl \n  " color=yellow style=filled]
 	
 
-"fun_default_decl#2242811051034255145.cfa4c1bed9f6b81332cbfea2722a24d0_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 12, column 45]\n  n$1=*&b:int [line 12, column 49]\n  *&return:int=(n$0 + n$1) [line 12, column 38]\n " shape="box"]
+"fun_default_decl#2242811051034255145.cfa4c1bed9f6b81332cbfea2722a24d0_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 12, column 45]\n  n$1=*&b:int [line 12, column 49]\n " shape="box"]
 	
 
-	 "fun_default_decl#2242811051034255145.cfa4c1bed9f6b81332cbfea2722a24d0_3" -> "fun_default_decl#2242811051034255145.cfa4c1bed9f6b81332cbfea2722a24d0_2" ;
+	 "fun_default_decl#2242811051034255145.cfa4c1bed9f6b81332cbfea2722a24d0_3" -> "fun_default_decl#2242811051034255145.cfa4c1bed9f6b81332cbfea2722a24d0_4" ;
+"fun_default_decl#2242811051034255145.cfa4c1bed9f6b81332cbfea2722a24d0_4" [label="4:  Return Stmt \n   *&return:int=(n$0 + n$1) [line 12, column 38]\n " shape="box"]
+	
+
+	 "fun_default_decl#2242811051034255145.cfa4c1bed9f6b81332cbfea2722a24d0_4" -> "fun_default_decl#2242811051034255145.cfa4c1bed9f6b81332cbfea2722a24d0_2" ;
 "fun_ignore_param#16945920541083530946.f4a6287781e779dff615587871d0273e_1" [label="1: Start fun_ignore_param\nFormals:  a:int __param_1:int __param_2:int\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -29,10 +37,14 @@ digraph cfg {
 "fun_ignore_param#16945920541083530946.f4a6287781e779dff615587871d0273e_2" [label="2: Exit fun_ignore_param \n  " color=yellow style=filled]
 	
 
-"fun_ignore_param#16945920541083530946.f4a6287781e779dff615587871d0273e_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 14, column 48]\n  *&return:int=n$0 [line 14, column 41]\n " shape="box"]
+"fun_ignore_param#16945920541083530946.f4a6287781e779dff615587871d0273e_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 14, column 48]\n " shape="box"]
 	
 
-	 "fun_ignore_param#16945920541083530946.f4a6287781e779dff615587871d0273e_3" -> "fun_ignore_param#16945920541083530946.f4a6287781e779dff615587871d0273e_2" ;
+	 "fun_ignore_param#16945920541083530946.f4a6287781e779dff615587871d0273e_3" -> "fun_ignore_param#16945920541083530946.f4a6287781e779dff615587871d0273e_4" ;
+"fun_ignore_param#16945920541083530946.f4a6287781e779dff615587871d0273e_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 14, column 41]\n " shape="box"]
+	
+
+	 "fun_ignore_param#16945920541083530946.f4a6287781e779dff615587871d0273e_4" -> "fun_ignore_param#16945920541083530946.f4a6287781e779dff615587871d0273e_2" ;
 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" [label="1: Start test\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 

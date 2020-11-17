@@ -3,111 +3,131 @@ digraph cfg {
 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_1" [label="1: Start struct_forward_declare::X_Y_div0\nFormals: \nLocals:  x:struct_forward_declare::X \n  " color=yellow style=filled]
 	
 
-	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_1" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_10" ;
+	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_1" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_11" ;
 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_2" [label="2: Exit struct_forward_declare::X_Y_div0 \n  " color=yellow style=filled]
 	
 
-"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_3" [label="3:  Return Stmt \n   _=*&x:struct_forward_declare::X [line 52, column 14]\n  n$1=_fun_struct_forward_declare::X::getF(&x:struct_forward_declare::X&) [line 52, column 14]\n  *&return:int=(1 / n$1) [line 52, column 3]\n " shape="box"]
+"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_3" [label="3:  Return Stmt \n   _=*&x:struct_forward_declare::X [line 52, column 14]\n  n$1=_fun_struct_forward_declare::X::getF(&x:struct_forward_declare::X&) [line 52, column 14]\n " shape="box"]
 	
 
-	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_3" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_2" ;
-"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_4" [label="4: + \n  " ]
+	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_3" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_4" ;
+"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$1) [line 52, column 3]\n " shape="box"]
 	
 
-	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_4" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_3" ;
-"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_5" [label="5: Prune (true branch, if) \n   n$2=*&x.y:struct_forward_declare::Y* [line 49, column 7]\n  PRUNE(n$2, true); [line 49, column 7]\n " shape="invhouse"]
+	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_4" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_2" ;
+"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_5" [label="5: + \n  " ]
 	
 
-	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_5" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_7" ;
-"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_6" [label="6: Prune (false branch, if) \n   n$2=*&x.y:struct_forward_declare::Y* [line 49, column 7]\n  PRUNE(!n$2, false); [line 49, column 7]\n " shape="invhouse"]
+	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_5" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_3" ;
+"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_6" [label="6: Prune (true branch, if) \n   n$2=*&x.y:struct_forward_declare::Y* [line 49, column 7]\n  PRUNE(n$2, true); [line 49, column 7]\n " shape="invhouse"]
 	
 
-	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_6" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_4" ;
-"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_7" [label="7:  Return Stmt \n   *&return:int=1 [line 50, column 5]\n " shape="box"]
+	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_6" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_8" ;
+"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_7" [label="7: Prune (false branch, if) \n   n$2=*&x.y:struct_forward_declare::Y* [line 49, column 7]\n  PRUNE(!n$2, false); [line 49, column 7]\n " shape="invhouse"]
 	
 
-	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_7" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_2" ;
-"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_8" [label="8:  BinaryOperatorStmt: Assign \n   *&x.f:int=0 [line 48, column 3]\n " shape="box"]
+	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_7" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_5" ;
+"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_8" [label="8:  Return Stmt \n   *&return:int=1 [line 50, column 5]\n " shape="box"]
 	
 
-	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_8" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_5" ;
-	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_8" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_6" ;
-"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_9" [label="9:  BinaryOperatorStmt: Assign \n   *&x.y:struct_forward_declare::Y*=null [line 47, column 3]\n " shape="box"]
+	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_8" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_2" ;
+"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_9" [label="9:  BinaryOperatorStmt: Assign \n   *&x.f:int=0 [line 48, column 3]\n " shape="box"]
 	
 
-	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_9" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_8" ;
-"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(x:struct_forward_declare::X); [line 46, column 3]\n  n$5=_fun_struct_forward_declare::X::X(&x:struct_forward_declare::X*) [line 46, column 5]\n " shape="box"]
+	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_9" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_6" ;
+	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_9" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_7" ;
+"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_10" [label="10:  BinaryOperatorStmt: Assign \n   *&x.y:struct_forward_declare::Y*=null [line 47, column 3]\n " shape="box"]
 	
 
 	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_10" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_9" ;
+"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(x:struct_forward_declare::X); [line 46, column 3]\n  n$5=_fun_struct_forward_declare::X::X(&x:struct_forward_declare::X*) [line 46, column 5]\n " shape="box"]
+	
+
+	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_11" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_10" ;
 "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_1" [label="1: Start struct_forward_declare::X_div0\nFormals: \nLocals:  x:struct_forward_declare::X \n  " color=yellow style=filled]
 	
 
-	 "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_1" -> "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_5" ;
+	 "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_1" -> "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_6" ;
 "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_2" [label="2: Exit struct_forward_declare::X_div0 \n  " color=yellow style=filled]
 	
 
-"X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_3" [label="3:  Return Stmt \n   _=*&x:struct_forward_declare::X [line 37, column 14]\n  n$1=_fun_struct_forward_declare::X::getF(&x:struct_forward_declare::X&) [line 37, column 14]\n  *&return:int=(1 / n$1) [line 37, column 3]\n " shape="box"]
+"X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_3" [label="3:  Return Stmt \n   _=*&x:struct_forward_declare::X [line 37, column 14]\n  n$1=_fun_struct_forward_declare::X::getF(&x:struct_forward_declare::X&) [line 37, column 14]\n " shape="box"]
 	
 
-	 "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_3" -> "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_2" ;
-"X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_4" [label="4:  BinaryOperatorStmt: Assign \n   *&x.f:int=0 [line 36, column 3]\n " shape="box"]
+	 "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_3" -> "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_4" ;
+"X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$1) [line 37, column 3]\n " shape="box"]
 	
 
-	 "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_4" -> "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_3" ;
-"X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(x:struct_forward_declare::X); [line 35, column 3]\n  n$2=_fun_struct_forward_declare::X::X(&x:struct_forward_declare::X*) [line 35, column 5]\n " shape="box"]
+	 "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_4" -> "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_2" ;
+"X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_5" [label="5:  BinaryOperatorStmt: Assign \n   *&x.f:int=0 [line 36, column 3]\n " shape="box"]
 	
 
-	 "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_5" -> "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_4" ;
+	 "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_5" -> "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_3" ;
+"X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(x:struct_forward_declare::X); [line 35, column 3]\n  n$2=_fun_struct_forward_declare::X::X(&x:struct_forward_declare::X*) [line 35, column 5]\n " shape="box"]
+	
+
+	 "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_6" -> "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_5" ;
 "X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_1" [label="1: Start struct_forward_declare::X_ptr_div0\nFormals:  x:struct_forward_declare::X*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_1" -> "X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_4" ;
+	 "X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_1" -> "X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_5" ;
 "X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_2" [label="2: Exit struct_forward_declare::X_ptr_div0 \n  " color=yellow style=filled]
 	
 
-"X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_3" [label="3:  Return Stmt \n   n$0=*&x:struct_forward_declare::X* [line 42, column 14]\n  _=*n$0:struct_forward_declare::X [line 42, column 14]\n  n$2=_fun_struct_forward_declare::X::getF(n$0:struct_forward_declare::X*) [line 42, column 14]\n  *&return:int=(1 / n$2) [line 42, column 3]\n " shape="box"]
+"X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_3" [label="3:  Return Stmt \n   n$0=*&x:struct_forward_declare::X* [line 42, column 14]\n  _=*n$0:struct_forward_declare::X [line 42, column 14]\n  n$2=_fun_struct_forward_declare::X::getF(n$0:struct_forward_declare::X*) [line 42, column 14]\n " shape="box"]
 	
 
-	 "X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_3" -> "X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_2" ;
-"X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_4" [label="4:  BinaryOperatorStmt: Assign \n   n$3=*&x:struct_forward_declare::X* [line 41, column 3]\n  *n$3.f:int=0 [line 41, column 3]\n " shape="box"]
+	 "X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_3" -> "X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_4" ;
+"X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$2) [line 42, column 3]\n " shape="box"]
 	
 
-	 "X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_4" -> "X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_3" ;
+	 "X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_4" -> "X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_2" ;
+"X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_5" [label="5:  BinaryOperatorStmt: Assign \n   n$3=*&x:struct_forward_declare::X* [line 41, column 3]\n  *n$3.f:int=0 [line 41, column 3]\n " shape="box"]
+	
+
+	 "X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_5" -> "X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_3" ;
 "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_1" [label="1: Start struct_forward_declare::Z_div0\nFormals: \nLocals:  z:struct_forward_declare::Z \n  " color=yellow style=filled]
 	
 
-	 "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_1" -> "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_5" ;
+	 "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_1" -> "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_6" ;
 "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_2" [label="2: Exit struct_forward_declare::Z_div0 \n  " color=yellow style=filled]
 	
 
-"Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_3" [label="3:  Return Stmt \n   _=*&z:struct_forward_declare::Z [line 58, column 14]\n  n$1=_fun_struct_forward_declare::Z::getF(&z:struct_forward_declare::Z&) [line 58, column 14]\n  *&return:int=(1 / n$1) [line 58, column 3]\n " shape="box"]
+"Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_3" [label="3:  Return Stmt \n   _=*&z:struct_forward_declare::Z [line 58, column 14]\n  n$1=_fun_struct_forward_declare::Z::getF(&z:struct_forward_declare::Z&) [line 58, column 14]\n " shape="box"]
 	
 
-	 "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_3" -> "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_2" ;
-"Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_4" [label="4:  BinaryOperatorStmt: Assign \n   *&z.f:int=0 [line 57, column 3]\n " shape="box"]
+	 "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_3" -> "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_4" ;
+"Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$1) [line 58, column 3]\n " shape="box"]
 	
 
-	 "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_4" -> "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_3" ;
-"Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(z:struct_forward_declare::Z); [line 56, column 3]\n  n$2=_fun_struct_forward_declare::Z::Z(&z:struct_forward_declare::Z*) [line 56, column 5]\n " shape="box"]
+	 "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_4" -> "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_2" ;
+"Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_5" [label="5:  BinaryOperatorStmt: Assign \n   *&z.f:int=0 [line 57, column 3]\n " shape="box"]
 	
 
-	 "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_5" -> "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_4" ;
+	 "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_5" -> "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_3" ;
+"Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(z:struct_forward_declare::Z); [line 56, column 3]\n  n$2=_fun_struct_forward_declare::Z::Z(&z:struct_forward_declare::Z*) [line 56, column 5]\n " shape="box"]
+	
+
+	 "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_6" -> "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_5" ;
 "Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_1" [label="1: Start struct_forward_declare::Z_ptr_div0\nFormals:  z:struct_forward_declare::Z*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_1" -> "Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_4" ;
+	 "Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_1" -> "Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_5" ;
 "Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_2" [label="2: Exit struct_forward_declare::Z_ptr_div0 \n  " color=yellow style=filled]
 	
 
-"Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_3" [label="3:  Return Stmt \n   n$0=*&z:struct_forward_declare::Z* [line 66, column 14]\n  _=*n$0:struct_forward_declare::Z [line 66, column 14]\n  n$2=_fun_struct_forward_declare::Z::getF(n$0:struct_forward_declare::Z*) [line 66, column 14]\n  *&return:int=(1 / n$2) [line 66, column 3]\n " shape="box"]
+"Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_3" [label="3:  Return Stmt \n   n$0=*&z:struct_forward_declare::Z* [line 66, column 14]\n  _=*n$0:struct_forward_declare::Z [line 66, column 14]\n  n$2=_fun_struct_forward_declare::Z::getF(n$0:struct_forward_declare::Z*) [line 66, column 14]\n " shape="box"]
 	
 
-	 "Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_3" -> "Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_2" ;
-"Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_4" [label="4:  BinaryOperatorStmt: Assign \n   n$3=*&z:struct_forward_declare::Z* [line 65, column 3]\n  *n$3.f:int=0 [line 65, column 3]\n " shape="box"]
+	 "Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_3" -> "Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_4" ;
+"Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$2) [line 66, column 3]\n " shape="box"]
 	
 
-	 "Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_4" -> "Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_3" ;
+	 "Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_4" -> "Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_2" ;
+"Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_5" [label="5:  BinaryOperatorStmt: Assign \n   n$3=*&z:struct_forward_declare::Z* [line 65, column 3]\n  *n$3.f:int=0 [line 65, column 3]\n " shape="box"]
+	
+
+	 "Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_5" -> "Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_3" ;
 "fun_with_Z#struct_forward_declare(class struct_forward_declare::Z)#10740368644462176169.d708d356d0748993ed722a0113d84853_1" [label="1: Start struct_forward_declare::fun_with_Z\nFormals:  z1:struct_forward_declare::Z*\nLocals:  z2:struct_forward_declare::Z* \n  " color=yellow style=filled]
 	
 
@@ -126,10 +146,14 @@ digraph cfg {
 "getF#X#struct_forward_declare#(234869530037436282).15dd2207cd05d172845e5598032cd97a_2" [label="2: Exit struct_forward_declare::X::getF \n  " color=yellow style=filled]
 	
 
-"getF#X#struct_forward_declare#(234869530037436282).15dd2207cd05d172845e5598032cd97a_3" [label="3:  Return Stmt \n   n$0=*&this:struct_forward_declare::X* [line 19, column 23]\n  n$1=*n$0.f:int [line 19, column 23]\n  *&return:int=n$1 [line 19, column 16]\n " shape="box"]
+"getF#X#struct_forward_declare#(234869530037436282).15dd2207cd05d172845e5598032cd97a_3" [label="3:  Return Stmt \n   n$0=*&this:struct_forward_declare::X* [line 19, column 23]\n  n$1=*n$0.f:int [line 19, column 23]\n " shape="box"]
 	
 
-	 "getF#X#struct_forward_declare#(234869530037436282).15dd2207cd05d172845e5598032cd97a_3" -> "getF#X#struct_forward_declare#(234869530037436282).15dd2207cd05d172845e5598032cd97a_2" ;
+	 "getF#X#struct_forward_declare#(234869530037436282).15dd2207cd05d172845e5598032cd97a_3" -> "getF#X#struct_forward_declare#(234869530037436282).15dd2207cd05d172845e5598032cd97a_4" ;
+"getF#X#struct_forward_declare#(234869530037436282).15dd2207cd05d172845e5598032cd97a_4" [label="4:  Return Stmt \n   *&return:int=n$1 [line 19, column 16]\n " shape="box"]
+	
+
+	 "getF#X#struct_forward_declare#(234869530037436282).15dd2207cd05d172845e5598032cd97a_4" -> "getF#X#struct_forward_declare#(234869530037436282).15dd2207cd05d172845e5598032cd97a_2" ;
 "X#X#struct_forward_declare#{12172734746422509138}.f95806aaac40e962cb02caab9f49a493_1" [label="1: Start struct_forward_declare::X::X\nFormals:  this:struct_forward_declare::X*\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -144,10 +168,14 @@ digraph cfg {
 "getF#Z#struct_forward_declare#(5569044973946019300).d77d2dfdba7ae36577dff1573b1c79e7_2" [label="2: Exit struct_forward_declare::Z::getF \n  " color=yellow style=filled]
 	
 
-"getF#Z#struct_forward_declare#(5569044973946019300).d77d2dfdba7ae36577dff1573b1c79e7_3" [label="3:  Return Stmt \n   n$0=*&this:struct_forward_declare::Z* [line 28, column 23]\n  n$1=*n$0.f:int [line 28, column 23]\n  *&return:int=n$1 [line 28, column 16]\n " shape="box"]
+"getF#Z#struct_forward_declare#(5569044973946019300).d77d2dfdba7ae36577dff1573b1c79e7_3" [label="3:  Return Stmt \n   n$0=*&this:struct_forward_declare::Z* [line 28, column 23]\n  n$1=*n$0.f:int [line 28, column 23]\n " shape="box"]
 	
 
-	 "getF#Z#struct_forward_declare#(5569044973946019300).d77d2dfdba7ae36577dff1573b1c79e7_3" -> "getF#Z#struct_forward_declare#(5569044973946019300).d77d2dfdba7ae36577dff1573b1c79e7_2" ;
+	 "getF#Z#struct_forward_declare#(5569044973946019300).d77d2dfdba7ae36577dff1573b1c79e7_3" -> "getF#Z#struct_forward_declare#(5569044973946019300).d77d2dfdba7ae36577dff1573b1c79e7_4" ;
+"getF#Z#struct_forward_declare#(5569044973946019300).d77d2dfdba7ae36577dff1573b1c79e7_4" [label="4:  Return Stmt \n   *&return:int=n$1 [line 28, column 16]\n " shape="box"]
+	
+
+	 "getF#Z#struct_forward_declare#(5569044973946019300).d77d2dfdba7ae36577dff1573b1c79e7_4" -> "getF#Z#struct_forward_declare#(5569044973946019300).d77d2dfdba7ae36577dff1573b1c79e7_2" ;
 "Z#Z#struct_forward_declare#{16651271592300819332}.ef9c70a1786f586f582ba5bab79ecd77_1" [label="1: Start struct_forward_declare::Z::Z\nFormals:  this:struct_forward_declare::Z*\nLocals:  \n  " color=yellow style=filled]
 	
 

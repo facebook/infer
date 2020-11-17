@@ -9,10 +9,13 @@
 
 open Fol
 
-(** Segment of memory starting at [loc] containing [seq] (a byte-array) of
-    size [siz], contained in an enclosing allocation-block starting at [bas]
-    of length [len]. *)
-type seg = {loc: Term.t; bas: Term.t; len: Term.t; siz: Term.t; seq: Term.t}
+(** Segment of memory. *)
+type seg =
+  { loc: Term.t  (** location (address) where segment starts *)
+  ; bas: Term.t  (** base address of enclosing allocation-block *)
+  ; len: Term.t  (** length of enclosing allocation-block *)
+  ; siz: Term.t  (** size of segment / length of the contents *)
+  ; cnt: Term.t  (** contents of segment, a sequence / byte array *) }
 
 type starjunction = private
   { us: Var.Set.t  (** vocabulary / variable context of formula *)

@@ -21,11 +21,6 @@ type t = private
   | Sized of {seq: t; siz: t}
   | Extract of {seq: t; off: t; len: t}
   | Concat of t array
-  (* records (with fixed indices) *)
-  | Select of {idx: int; rcd: t}
-  | Update of {idx: int; rcd: t; elt: t}
-  | Record of t array
-  | Ancestor of int
   (* uninterpreted *)
   | Apply of Funsym.t * t array
 [@@deriving compare, equal, sexp]
@@ -52,6 +47,8 @@ val ppx : Var.strength -> t pp
 val pp : t pp
 val pp_diff : (t * t) pp
 
+include Invariant.S with type t := t
+
 (** Construct *)
 
 (* variables *)
@@ -77,12 +74,6 @@ val sized : seq:t -> siz:t -> t
 val extract : seq:t -> off:t -> len:t -> t
 val concat : t array -> t
 
-(* records (with fixed indices) *)
-val select : rcd:t -> idx:int -> t
-val update : rcd:t -> idx:int -> elt:t -> t
-val record : t array -> t
-val ancestor : int -> t
-
 (* uninterpreted *)
 val apply : Funsym.t -> t array -> t
 
@@ -100,10 +91,17 @@ val map : t -> f:(t -> t) -> t
 
 val seq_size_exn : t -> t
 val seq_size : t -> t option
-val fv : t -> Var.Set.t
+val is_atomic : t -> bool
 val height : t -> int
+val fv : t -> Var.Set.t
 
 (** Traverse *)
 
+val trms : t -> t iter
+(** The immediate subterms of a term. *)
+
 val vars : t -> Var.t iter
-val subtrms : t -> t iter
+(** The variables that occur in a term. *)
+
+val atoms : t -> t iter
+(** The atomic reflexive-transitive subterms of a term. *)

@@ -30,7 +30,7 @@ module ReportableViolation : sig
   type t
 
   type violation_type =
-    | InconsistentParam of {param_description: string; param_position: int}
+    | InconsistentParam of {param_description: string; param_index: int}
     | InconsistentReturn
   [@@deriving compare]
 

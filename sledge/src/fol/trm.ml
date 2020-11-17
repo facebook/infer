@@ -56,6 +56,8 @@ and Arith :
   include Arith0
 
   include Make (struct
+    let to_trm = Trm._Arith
+
     let get_arith (e : Trm.t) =
       match e with
       | Z z -> Some (Arith.const (Q.of_z z))
@@ -80,29 +82,23 @@ and Trm : sig
     | Sized of {seq: t; siz: t}
     | Extract of {seq: t; off: t; len: t}
     | Concat of t array
-    (* records (with fixed indices) *)
-    | Select of {idx: int; rcd: t}
-    | Update of {idx: int; rcd: t; elt: t}
-    | Record of t array
-    | Ancestor of int
     (* uninterpreted *)
     | Apply of Funsym.t * t array
   [@@deriving compare, equal, sexp]
 
   val ppx : Var.strength -> t pp
   val pp : t pp
+
+  include Invariant.S with type t := t
+
   val _Var : int -> string -> t
   val _Z : Z.t -> t
   val _Q : Q.t -> t
   val _Arith : Arith.t -> t
   val _Splat : t -> t
-  val _Sized : t -> t -> t
-  val _Extract : t -> t -> t -> t
+  val _Sized : seq:t -> siz:t -> t
+  val _Extract : seq:t -> off:t -> len:t -> t
   val _Concat : t array -> t
-  val _Select : int -> t -> t
-  val _Update : int -> t -> t -> t
-  val _Record : t array -> t
-  val _Ancestor : int -> t
   val _Apply : Funsym.t -> t array -> t
   val add : t -> t -> t
   val sub : t -> t -> t
@@ -121,10 +117,6 @@ end = struct
     | Sized of {seq: t; siz: t}
     | Extract of {seq: t; off: t; len: t}
     | Concat of t array
-    | Select of {idx: int; rcd: t}
-    | Update of {idx: int; rcd: t; elt: t}
-    | Record of t array
-    | Ancestor of int
     | Apply of Funsym.t * t array
   [@@deriving compare, equal, sexp]
 
@@ -132,16 +124,16 @@ end = struct
     if x == y then 0
     else
       match (x, y) with
-      | Var {id= i; name= _}, Var {id= j; name= _} when i > 0 && j > 0 ->
-          Int.compare i j
+      | Var {id= 0; name= s}, Var {id= 0; name= t} -> String.compare s t
+      | Var {id= i; name= _}, Var {id= j; name= _} -> Int.compare i j
       | _ -> compare x y
 
   let equal x y =
     x == y
     ||
     match (x, y) with
-    | Var {id= i; name= _}, Var {id= j; name= _} when i > 0 && j > 0 ->
-        Int.equal i j
+    | Var {id= 0; name= s}, Var {id= 0; name= t} -> String.equal s t
+    | Var {id= i; name= _}, Var {id= j; name= _} -> Int.equal i j
     | _ -> equal x y
 
   let rec ppx strength fs trm =
@@ -156,12 +148,16 @@ end = struct
       | Sized {seq; siz} -> pf "@<1>⟨%a,%a@<1>⟩" pp siz pp seq
       | Extract {seq; off; len} -> pf "%a[%a,%a)" pp seq pp off pp len
       | Concat [||] -> pf "@<2>⟨⟩"
-      | Concat xs -> pf "(%a)" (Array.pp "@,^" pp) xs
-      | Select {idx; rcd} -> pf "%a[%i]" pp rcd idx
-      | Update {idx; rcd; elt} ->
-          pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
-      | Record xs -> pf "{%a}" (ppx_record strength) xs
-      | Ancestor i -> pf "(ancestor %i)" i
+      | Concat xs -> (
+          let exception Not_a_string in
+          try
+            pf "%S"
+              (String.init (Array.length xs) ~f:(fun i ->
+                   match xs.(i) with
+                   | Sized {siz= Z o; seq= Z c} when Z.equal Z.one o ->
+                       Char.of_int_exn (Z.to_int c)
+                   | _ -> raise_notrace Not_a_string ))
+          with _ -> pf "(%a)" (Array.pp "@,^" pp) xs )
       | Apply (f, [||]) -> pf "%a" Funsym.pp f
       | Apply
           ( ( (Rem | BitAnd | BitOr | BitXor | BitShl | BitLshr | BitAshr)
@@ -173,24 +169,6 @@ end = struct
     in
     pp fs trm
 
-  and ppx_record strength fs elts =
-    [%Trace.fprintf
-      fs "%a"
-        (fun fs elts ->
-          let exception Not_a_string in
-          match
-            String.init (Array.length elts) ~f:(fun i ->
-                match elts.(i) with
-                | Z c -> Char.of_int_exn (Z.to_int c)
-                | _ -> raise_notrace Not_a_string )
-          with
-          | s -> Format.fprintf fs "%S" s
-          | exception (Not_a_string | Z.Overflow | Failure _) ->
-              Format.fprintf fs "@[<h>%a@]"
-                (Array.pp ",@ " (ppx strength))
-                elts )
-        elts]
-
   let pp = ppx (fun _ -> None)
 
   let invariant e =
@@ -199,8 +177,8 @@ end = struct
     | Q q -> assert (not (Z.equal Z.one (Q.den q)))
     | Arith a -> (
       match Arith.classify a with
-      | Compound -> ()
-      | Trm _ | Const _ -> assert false )
+      | Trm _ | Const _ -> assert false
+      | _ -> () )
     | _ -> ()
 
   (** Destruct *)
@@ -228,12 +206,15 @@ end = struct
     ( match Arith.classify a with
     | Trm e -> e
     | Const q -> _Q q
-    | Compound -> Arith a )
+    | _ -> Arith a )
     |> check invariant
 
   let add x y = _Arith Arith.(add (trm x) (trm y))
   let sub x y = _Arith Arith.(sub (trm x) (trm y))
-  let _Splat x = Splat x |> check invariant
+
+  let _Splat x =
+    (* 0^ ==> 0 *)
+    (if x == zero then x else Splat x) |> check invariant
 
   let seq_size_exn =
     let invalid = Invalid_argument "seq_size_exn" in
@@ -248,7 +229,7 @@ end = struct
   let seq_size e =
     try Some (seq_size_exn e) with Invalid_argument _ -> None
 
-  let _Sized seq siz =
+  let _Sized ~seq ~siz =
     ( match seq_size seq with
     (* ⟨n,α⟩ ==> α when n ≡ |α| *)
     | Some n when equal siz n -> seq
@@ -266,7 +247,7 @@ end = struct
 
   let empty_seq = Concat [||]
 
-  let rec _Extract seq off len =
+  let rec _Extract ~seq ~off ~len =
     [%trace]
       ~call:(fun {pf} -> pf "%a" pp (Extract {seq; off; len}))
       ~retn:(fun {pf} -> pf "%a" pp)
@@ -278,10 +259,13 @@ end = struct
       match seq with
       (* α[m,k)[o,l) ==> α[m+o,l) when k ≥ o+l *)
       | Extract {seq= a; off= m; len= k} when partial_ge k o_l ->
-          _Extract a (add m off) len
+          _Extract ~seq:a ~off:(add m off) ~len
+      (* ⟨n,0⟩[o,l) ==> ⟨l,0⟩ when n ≥ o+l *)
+      | Sized {siz= n; seq} when seq == zero && partial_ge n o_l ->
+          _Sized ~seq ~siz:len
       (* ⟨n,E^⟩[o,l) ==> ⟨l,E^⟩ when n ≥ o+l *)
       | Sized {siz= n; seq= Splat _ as e} when partial_ge n o_l ->
-          _Sized e len
+          _Sized ~seq:e ~siz:len
       (* ⟨n,a⟩[0,n) ==> ⟨n,a⟩ *)
       | Sized {siz= n} when equal off zero && equal n len -> seq
       (* For (α₀^α₁)[o,l) there are 3 cases:
@@ -310,7 +294,7 @@ end = struct
             Array.fold_map_until na1N (l, off)
               ~f:(fun naI (l, oI) ->
                 if Z.equal Z.zero l then
-                  `Continue (_Extract naI oI zero, (l, oI))
+                  `Continue (_Extract ~seq:naI ~off:oI ~len:zero, (l, oI))
                 else
                   let nI = seq_size_exn naI in
                   let oI_nI = sub oI nI in
@@ -319,7 +303,8 @@ end = struct
                       let oJ = if Z.sign z <= 0 then zero else oI_nI in
                       let lI = Z.(max zero (min l (neg z))) in
                       let l = Z.(l - lI) in
-                      `Continue (_Extract naI oI (_Z lI), (l, oJ))
+                      `Continue
+                        (_Extract ~seq:naI ~off:oI ~len:(_Z lI), (l, oJ))
                   | _ -> `Stop (Extract {seq; off; len}) )
               ~finish:(fun (e1N, _) -> _Concat e1N)
         | _ -> Extract {seq; off; len} )
@@ -345,21 +330,20 @@ end = struct
         , Extract {seq= na'; off= o_k; len= l} )
         when equal na na' && equal o_k (add o k) && partial_ge n (add o_k l)
         ->
-          Some (_Extract na o (add k l))
+          Some (_Extract ~seq:na ~off:o ~len:(add k l))
+      (* ⟨m,0⟩^⟨n,0⟩ ==> ⟨m+n,0⟩ *)
+      | Sized {siz= m; seq= a}, Sized {siz= n; seq= a'}
+        when a == zero && a' == zero ->
+          Some (_Sized ~seq:a ~siz:(add m n))
       (* ⟨m,E^⟩^⟨n,E^⟩ ==> ⟨m+n,E^⟩ *)
       | Sized {siz= m; seq= Splat _ as a}, Sized {siz= n; seq= a'}
         when equal a a' ->
-          Some (_Sized a (add m n))
+          Some (_Sized ~seq:a ~siz:(add m n))
       | _ -> None
     in
     let xs = flatten xs in
     let xs = Array.reduce_adjacent ~f:simp_adjacent xs in
     (if Array.length xs = 1 then xs.(0) else Concat xs) |> check invariant
-
-  let _Select idx rcd = Select {idx; rcd} |> check invariant
-  let _Update idx rcd elt = Update {idx; rcd; elt} |> check invariant
-  let _Record es = Record es |> check invariant
-  let _Ancestor i = Ancestor i |> check invariant
 
   let _Apply f es =
     ( match Funsym.eval ~equal ~get_z ~ret_z:_Z ~get_q ~ret_q:_Q f es with
@@ -372,17 +356,16 @@ end = struct
   let rec iter_vars e ~f =
     match e with
     | Var _ as v -> f (Var.of_ v)
-    | Z _ | Q _ | Ancestor _ -> ()
-    | Splat x | Select {rcd= x} -> iter_vars ~f x
-    | Sized {seq= x; siz= y} | Update {rcd= x; elt= y} ->
+    | Z _ | Q _ -> ()
+    | Splat x -> iter_vars ~f x
+    | Sized {seq= x; siz= y} ->
         iter_vars ~f x ;
         iter_vars ~f y
     | Extract {seq= x; off= y; len= z} ->
         iter_vars ~f x ;
         iter_vars ~f y ;
         iter_vars ~f z
-    | Concat xs | Record xs | Apply (_, xs) ->
-        Array.iter ~f:(iter_vars ~f) xs
+    | Concat xs | Apply (_, xs) -> Array.iter ~f:(iter_vars ~f) xs
     | Arith a -> Iter.iter ~f:(iter_vars ~f) (Arith.trms a)
 
   let vars e = Iter.from_labelled_iter (iter_vars e)
@@ -427,16 +410,9 @@ let arith = _Arith
 (* sequences *)
 
 let splat = _Splat
-let sized ~seq ~siz = _Sized seq siz
-let extract ~seq ~off ~len = _Extract seq off len
+let sized = _Sized
+let extract = _Extract
 let concat elts = _Concat elts
-
-(* records *)
-
-let select ~rcd ~idx = _Select idx rcd
-let update ~rcd ~idx ~elt = _Update idx rcd elt
-let record elts = _Record elts
-let ancestor i = _Ancestor i
 
 (* uninterpreted *)
 
@@ -450,50 +426,45 @@ let rec map_vars e ~f =
   | Z _ | Q _ -> e
   | Arith a -> map1 (Arith.map ~f:(map_vars ~f)) e _Arith a
   | Splat x -> map1 (map_vars ~f) e _Splat x
-  | Sized {seq; siz} -> map2 (map_vars ~f) e _Sized seq siz
-  | Extract {seq; off; len} -> map3 (map_vars ~f) e _Extract seq off len
+  | Sized {seq; siz} ->
+      map2 (map_vars ~f) e (fun seq siz -> _Sized ~seq ~siz) seq siz
+  | Extract {seq; off; len} ->
+      map3 (map_vars ~f) e
+        (fun seq off len -> _Extract ~seq ~off ~len)
+        seq off len
   | Concat xs -> mapN (map_vars ~f) e _Concat xs
-  | Select {idx; rcd} -> map1 (map_vars ~f) e (_Select idx) rcd
-  | Update {idx; rcd; elt} -> map2 (map_vars ~f) e (_Update idx) rcd elt
-  | Record xs -> mapN (map_vars ~f) e _Record xs
-  | Ancestor _ -> e
   | Apply (g, xs) -> mapN (map_vars ~f) e (_Apply g) xs
 
 let map e ~f =
   match e with
   | Var _ | Z _ | Q _ -> e
-  | Arith a ->
-      let a' = Arith.map ~f a in
-      if a == a' then e else _Arith a'
+  | Arith a -> map1 (Arith.map ~f) e _Arith a
   | Splat x -> map1 f e _Splat x
-  | Sized {seq; siz} -> map2 f e _Sized seq siz
-  | Extract {seq; off; len} -> map3 f e _Extract seq off len
+  | Sized {seq; siz} -> map2 f e (fun seq siz -> _Sized ~seq ~siz) seq siz
+  | Extract {seq; off; len} ->
+      map3 f e (fun seq off len -> _Extract ~seq ~off ~len) seq off len
   | Concat xs -> mapN f e _Concat xs
-  | Select {idx; rcd} -> map1 f e (_Select idx) rcd
-  | Update {idx; rcd; elt} -> map2 f e (_Update idx) rcd elt
-  | Record xs -> mapN f e _Record xs
-  | Ancestor _ -> e
   | Apply (g, xs) -> mapN f e (_Apply g) xs
 
 (** Traverse *)
 
-let iter_subtrms e ~f =
-  match e with
-  | Var _ | Z _ | Q _ | Ancestor _ -> ()
-  | Arith a -> Iter.iter ~f (Arith.trms a)
-  | Splat x | Select {rcd= x} -> f x
-  | Sized {seq= x; siz= y} | Update {rcd= x; elt= y} ->
-      f x ;
-      f y
+let trms = function
+  | Var _ | Z _ | Q _ -> Iter.empty
+  | Arith a -> Arith.trms a
+  | Splat x -> Iter.(cons x empty)
+  | Sized {seq= x; siz= y} -> Iter.(cons x (cons y empty))
   | Extract {seq= x; off= y; len= z} ->
-      f x ;
-      f y ;
-      f z
-  | Concat xs | Record xs | Apply (_, xs) -> Array.iter ~f xs
+      Iter.(cons x (cons y (cons z empty)))
+  | Concat xs | Apply (_, xs) -> Iter.of_array xs
 
-let subtrms e = Iter.from_labelled_iter (iter_subtrms e)
+let is_atomic = function
+  | Var _ | Z _ | Q _ | Concat [||] | Apply (_, [||]) -> true
+  | Arith _ | Splat _ | Sized _ | Extract _ | Concat _ | Apply _ -> false
+
+let rec atoms e =
+  if is_atomic e then Iter.return e else Iter.flat_map ~f:atoms (trms e)
 
 (** Query *)
 
 let fv e = Var.Set.of_iter (vars e)
-let rec height e = 1 + Iter.fold ~f:(fun x -> max (height x)) (subtrms e) 0
+let rec height e = 1 + Iter.fold ~f:(fun x -> max (height x)) (trms e) 0

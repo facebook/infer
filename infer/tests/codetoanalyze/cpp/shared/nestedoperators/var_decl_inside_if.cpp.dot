@@ -1,10 +1,9 @@
 /* @generated */
 digraph cfg {
-"conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_1" [label="1: Start conditional_init_div0\nFormals: \nLocals:  a:int 0$?%__sil_tmpSIL_temp_conditional___n$1:int \n  " color=yellow style=filled]
+"conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_1" [label="1: Start conditional_init_div0\nFormals: \nLocals:  a:int \n  " color=yellow style=filled]
 	
 
-	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_1" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_8" ;
-	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_1" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_9" ;
+	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_1" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_12" ;
 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_2" [label="2: Exit conditional_init_div0 \n  " color=yellow style=filled]
 	
 
@@ -27,7 +26,8 @@ digraph cfg {
 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_7" [label="7: + \n  " ]
 	
 
-	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_7" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_12" ;
+	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_7" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_5" ;
+	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_7" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_6" ;
 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_8" [label="8: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 41, column 15]\n " shape="invhouse"]
 	
 
@@ -36,23 +36,27 @@ digraph cfg {
 	
 
 	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_9" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_11" ;
-"conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_10" [label="10:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=1 [line 41, column 15]\n " shape="box"]
+"conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_10" [label="10:  ConditionalStmt Branch \n   *&a:int=1 [line 41, column 15]\n " shape="box"]
 	
 
 	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_10" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_7" ;
-"conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_11" [label="11:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=0 [line 41, column 15]\n " shape="box"]
+"conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_11" [label="11:  ConditionalStmt Branch \n   *&a:int=0 [line 41, column 15]\n " shape="box"]
 	
 
 	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_11" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_7" ;
-"conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 41, column 7]\n  n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int [line 41, column 15]\n  *&a:int=n$2 [line 41, column 7]\n " shape="box"]
+"conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 41, column 7]\n " shape="box"]
 	
 
-	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_12" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_5" ;
-	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_12" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_6" ;
-"conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_13" [label="13:  Return Stmt \n   n$3=*&a:int [line 42, column 17]\n  *&return:int=(1 / (n$3 - 1)) [line 42, column 5]\n " shape="box"]
+	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_12" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_8" ;
+	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_12" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_9" ;
+"conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_13" [label="13:  Return Stmt \n   n$1=*&a:int [line 42, column 17]\n " shape="box"]
 	
 
-	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_13" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_2" ;
+	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_13" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_14" ;
+"conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_14" [label="14:  Return Stmt \n   *&return:int=(1 / (n$1 - 1)) [line 42, column 5]\n " shape="box"]
+	
+
+	 "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_14" -> "conditional_init_div0#15409862859031639280.1a402395676f14cae9f26917a820e9ed_2" ;
 "function_call_init_div0#7458225874916439501.0ec340f42ffbe340a808e1b8bee4f555_1" [label="1: Start function_call_init_div0\nFormals: \nLocals:  a:int \n  " color=yellow style=filled]
 	
 
@@ -81,10 +85,14 @@ digraph cfg {
 
 	 "function_call_init_div0#7458225874916439501.0ec340f42ffbe340a808e1b8bee4f555_7" -> "function_call_init_div0#7458225874916439501.0ec340f42ffbe340a808e1b8bee4f555_5" ;
 	 "function_call_init_div0#7458225874916439501.0ec340f42ffbe340a808e1b8bee4f555_7" -> "function_call_init_div0#7458225874916439501.0ec340f42ffbe340a808e1b8bee4f555_6" ;
-"function_call_init_div0#7458225874916439501.0ec340f42ffbe340a808e1b8bee4f555_8" [label="8:  Return Stmt \n   n$2=*&a:int [line 36, column 17]\n  *&return:int=(1 / (n$2 - 1)) [line 36, column 5]\n " shape="box"]
+"function_call_init_div0#7458225874916439501.0ec340f42ffbe340a808e1b8bee4f555_8" [label="8:  Return Stmt \n   n$2=*&a:int [line 36, column 17]\n " shape="box"]
 	
 
-	 "function_call_init_div0#7458225874916439501.0ec340f42ffbe340a808e1b8bee4f555_8" -> "function_call_init_div0#7458225874916439501.0ec340f42ffbe340a808e1b8bee4f555_2" ;
+	 "function_call_init_div0#7458225874916439501.0ec340f42ffbe340a808e1b8bee4f555_8" -> "function_call_init_div0#7458225874916439501.0ec340f42ffbe340a808e1b8bee4f555_9" ;
+"function_call_init_div0#7458225874916439501.0ec340f42ffbe340a808e1b8bee4f555_9" [label="9:  Return Stmt \n   *&return:int=(1 / (n$2 - 1)) [line 36, column 5]\n " shape="box"]
+	
+
+	 "function_call_init_div0#7458225874916439501.0ec340f42ffbe340a808e1b8bee4f555_9" -> "function_call_init_div0#7458225874916439501.0ec340f42ffbe340a808e1b8bee4f555_2" ;
 "get1#13610294053118758587.bb56087449b1c212bd814280133976bb_1" [label="1: Start get1\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -99,39 +107,43 @@ digraph cfg {
 "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_1" [label="1: Start reference_init_div0\nFormals: \nLocals:  a:int& r:int \n  " color=yellow style=filled]
 	
 
-	 "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_1" -> "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_9" ;
+	 "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_1" -> "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_10" ;
 "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_2" [label="2: Exit reference_init_div0 \n  " color=yellow style=filled]
 	
 
-"reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_3" [label="3:  Return Stmt \n   n$0=*&r:int [line 51, column 14]\n  *&return:int=(1 / n$0) [line 51, column 3]\n " shape="box"]
+"reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_3" [label="3:  Return Stmt \n   n$0=*&r:int [line 51, column 14]\n " shape="box"]
 	
 
-	 "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_3" -> "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_2" ;
-"reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_4" [label="4: + \n  " ]
+	 "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_3" -> "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_4" ;
+"reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$0) [line 51, column 3]\n " shape="box"]
 	
 
-	 "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_4" -> "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_3" ;
-"reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_5" [label="5: Prune (true branch, if) \n   n$1=*&a:int& [line 48, column 12]\n  n$2=*n$1:int [line 48, column 12]\n  PRUNE(n$2, true); [line 48, column 12]\n " shape="invhouse"]
+	 "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_4" -> "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_2" ;
+"reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_5" [label="5: + \n  " ]
 	
 
-	 "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_5" -> "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_8" ;
-"reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_6" [label="6: Prune (false branch, if) \n   n$1=*&a:int& [line 48, column 12]\n  n$2=*n$1:int [line 48, column 12]\n  PRUNE(!n$2, false); [line 48, column 12]\n " shape="invhouse"]
+	 "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_5" -> "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_3" ;
+"reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_6" [label="6: Prune (true branch, if) \n   n$1=*&a:int& [line 48, column 12]\n  n$2=*n$1:int [line 48, column 12]\n  PRUNE(n$2, true); [line 48, column 12]\n " shape="invhouse"]
 	
 
-	 "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_6" -> "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_4" ;
-"reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(a:int&); [line 48, column 7]\n  *&a:int&=&r [line 48, column 7]\n " shape="box"]
+	 "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_6" -> "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_9" ;
+"reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_7" [label="7: Prune (false branch, if) \n   n$1=*&a:int& [line 48, column 12]\n  n$2=*n$1:int [line 48, column 12]\n  PRUNE(!n$2, false); [line 48, column 12]\n " shape="invhouse"]
 	
 
 	 "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_7" -> "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_5" ;
-	 "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_7" -> "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_6" ;
-"reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_8" [label="8:  BinaryOperatorStmt: Assign \n   n$3=*&a:int& [line 49, column 5]\n  *n$3:int=0 [line 49, column 5]\n " shape="box"]
+"reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(a:int&); [line 48, column 7]\n  *&a:int&=&r [line 48, column 7]\n " shape="box"]
 	
 
-	 "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_8" -> "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_4" ;
-"reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(r:int); [line 47, column 3]\n  *&r:int=1 [line 47, column 3]\n " shape="box"]
+	 "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_8" -> "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_6" ;
+	 "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_8" -> "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_7" ;
+"reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_9" [label="9:  BinaryOperatorStmt: Assign \n   n$3=*&a:int& [line 49, column 5]\n  *n$3:int=0 [line 49, column 5]\n " shape="box"]
 	
 
-	 "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_9" -> "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_7" ;
+	 "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_9" -> "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_5" ;
+"reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(r:int); [line 47, column 3]\n  *&r:int=1 [line 47, column 3]\n " shape="box"]
+	
+
+	 "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_10" -> "reference_init_div0#8765531464226376816.66e8a6545ef6e4641561744b4125ae49_8" ;
 "simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_1" [label="1: Start simple_inif_elseif_div0\nFormals: \nLocals:  a:int b:int \n  " color=yellow style=filled]
 	
 
@@ -185,10 +197,14 @@ digraph cfg {
 	
 
 	 "simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_13" -> "simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_2" ;
-"simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_14" [label="14:  Return Stmt \n   n$2=*&a:int [line 28, column 17]\n  n$3=*&b:int [line 28, column 21]\n  *&return:int=(1 / (n$2 + n$3)) [line 28, column 5]\n " shape="box"]
+"simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_14" [label="14:  Return Stmt \n   n$2=*&a:int [line 28, column 17]\n  n$3=*&b:int [line 28, column 21]\n " shape="box"]
 	
 
-	 "simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_14" -> "simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_2" ;
+	 "simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_14" -> "simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_15" ;
+"simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_15" [label="15:  Return Stmt \n   *&return:int=(1 / (n$2 + n$3)) [line 28, column 5]\n " shape="box"]
+	
+
+	 "simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_15" -> "simple_inif_elseif_div0#1757541495273878703.c8ccefe72cee28b41298deb3c0060bd6_2" ;
 "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_1" [label="1: Start simple_init_div0\nFormals: \nLocals:  a:int \n  " color=yellow style=filled]
 	
 
@@ -211,20 +227,28 @@ digraph cfg {
 "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_6" [label="6: Prune (false branch, if) \n   n$0=*&a:int [line 15, column 11]\n  PRUNE(!n$0, false); [line 15, column 11]\n " shape="invhouse"]
 	
 
-	 "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_6" -> "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_9" ;
+	 "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_6" -> "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_10" ;
 "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 15, column 7]\n  *&a:int=0 [line 15, column 7]\n " shape="box"]
 	
 
 	 "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_7" -> "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_5" ;
 	 "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_7" -> "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_6" ;
-"simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_8" [label="8:  Return Stmt \n   n$1=*&a:int [line 16, column 12]\n  *&return:int=n$1 [line 16, column 5]\n " shape="box"]
+"simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_8" [label="8:  Return Stmt \n   n$1=*&a:int [line 16, column 12]\n " shape="box"]
 	
 
-	 "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_8" -> "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_2" ;
-"simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_9" [label="9:  Return Stmt \n   n$2=*&a:int [line 18, column 16]\n  *&return:int=(1 / n$2) [line 18, column 5]\n " shape="box"]
+	 "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_8" -> "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_9" ;
+"simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_9" [label="9:  Return Stmt \n   *&return:int=n$1 [line 16, column 5]\n " shape="box"]
 	
 
 	 "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_9" -> "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_2" ;
+"simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_10" [label="10:  Return Stmt \n   n$2=*&a:int [line 18, column 16]\n " shape="box"]
+	
+
+	 "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_10" -> "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_11" ;
+"simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_11" [label="11:  Return Stmt \n   *&return:int=(1 / n$2) [line 18, column 5]\n " shape="box"]
+	
+
+	 "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_11" -> "simple_init_div0#11745425529376514034.212fa73086397a0d668498a9c8eff99e_2" ;
 "simple_init_div1#11746272153330047279.0563640869475a4683e824c15c85a68a_1" [label="1: Start simple_init_div1\nFormals: \nLocals:  a:int \n  " color=yellow style=filled]
 	
 
@@ -253,10 +277,14 @@ digraph cfg {
 
 	 "simple_init_div1#11746272153330047279.0563640869475a4683e824c15c85a68a_7" -> "simple_init_div1#11746272153330047279.0563640869475a4683e824c15c85a68a_5" ;
 	 "simple_init_div1#11746272153330047279.0563640869475a4683e824c15c85a68a_7" -> "simple_init_div1#11746272153330047279.0563640869475a4683e824c15c85a68a_6" ;
-"simple_init_div1#11746272153330047279.0563640869475a4683e824c15c85a68a_8" [label="8:  Return Stmt \n   n$1=*&a:int [line 10, column 16]\n  *&return:int=(1 / n$1) [line 10, column 5]\n " shape="box"]
+"simple_init_div1#11746272153330047279.0563640869475a4683e824c15c85a68a_8" [label="8:  Return Stmt \n   n$1=*&a:int [line 10, column 16]\n " shape="box"]
 	
 
-	 "simple_init_div1#11746272153330047279.0563640869475a4683e824c15c85a68a_8" -> "simple_init_div1#11746272153330047279.0563640869475a4683e824c15c85a68a_2" ;
+	 "simple_init_div1#11746272153330047279.0563640869475a4683e824c15c85a68a_8" -> "simple_init_div1#11746272153330047279.0563640869475a4683e824c15c85a68a_9" ;
+"simple_init_div1#11746272153330047279.0563640869475a4683e824c15c85a68a_9" [label="9:  Return Stmt \n   *&return:int=(1 / n$1) [line 10, column 5]\n " shape="box"]
+	
+
+	 "simple_init_div1#11746272153330047279.0563640869475a4683e824c15c85a68a_9" -> "simple_init_div1#11746272153330047279.0563640869475a4683e824c15c85a68a_2" ;
 "simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_1" [label="1: Start simple_init_null_deref\nFormals: \nLocals:  p:int* \n  " color=yellow style=filled]
 	
 
@@ -289,8 +317,12 @@ digraph cfg {
 	
 
 	 "simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_8" -> "simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_2" ;
-"simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_9" [label="9:  Return Stmt \n   n$1=*&p:int* [line 58, column 13]\n  n$2=*n$1:int [line 58, column 12]\n  *&return:int=n$2 [line 58, column 5]\n " shape="box"]
+"simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_9" [label="9:  Return Stmt \n   n$1=*&p:int* [line 58, column 13]\n  n$2=*n$1:int [line 58, column 12]\n " shape="box"]
 	
 
-	 "simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_9" -> "simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_2" ;
+	 "simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_9" -> "simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_10" ;
+"simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_10" [label="10:  Return Stmt \n   *&return:int=n$2 [line 58, column 5]\n " shape="box"]
+	
+
+	 "simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_10" -> "simple_init_null_deref#4388790903269166010.3931bff4c48c8b02a470a54ec37db174_2" ;
 }

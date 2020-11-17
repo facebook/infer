@@ -37,8 +37,12 @@ digraph cfg {
 "init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_2" [label="2: Exit RRA.init \n  " color=yellow style=filled]
 	
 
-"init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_3" [label="3:  Return Stmt \n   n$0=*&self:RRA* [line 17, column 10]\n  *&return:objc_object*=n$0 [line 17, column 3]\n " shape="box"]
+"init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_3" [label="3:  Return Stmt \n   n$0=*&self:RRA* [line 17, column 10]\n " shape="box"]
 	
 
-	 "init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_3" -> "init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_2" ;
+	 "init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_3" -> "init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_4" ;
+"init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_4" [label="4:  Return Stmt \n   *&return:objc_object*=n$0 [line 17, column 3]\n " shape="box"]
+	
+
+	 "init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_4" -> "init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_2" ;
 }

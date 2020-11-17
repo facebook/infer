@@ -16,17 +16,21 @@ type kind = Interpreted | Atomic | Uninterpreted
 
 let classify e =
   match (e : Trm.t) with
-  | Arith _ | Sized _ | Extract _ | Concat _ -> Interpreted
-  | Var _ | Z _ | Q _ | Ancestor _ -> Atomic
-  | Splat _ | Select _ | Update _ | Record _ | Apply _ -> Uninterpreted
+  | Var _ | Z _ | Q _ | Concat [||] | Apply (_, [||]) -> Atomic
+  | Arith a -> (
+    match Trm.Arith.classify a with
+    | Trm _ | Const _ -> violates Trm.invariant e
+    | Interpreted -> Interpreted
+    | Uninterpreted -> Uninterpreted )
+  | Splat _ | Sized _ | Extract _ | Concat _ -> Interpreted
+  | Apply _ -> Uninterpreted
 
-let interpreted e = equal_kind (classify e) Interpreted
-let non_interpreted e = not (interpreted e)
-let uninterpreted e = equal_kind (classify e) Uninterpreted
+let is_interpreted e = equal_kind (classify e) Interpreted
+let is_uninterpreted e = equal_kind (classify e) Uninterpreted
 
 let rec max_solvables e =
-  if non_interpreted e then Iter.return e
-  else Iter.flat_map ~f:max_solvables (Trm.subtrms e)
+  if not (is_interpreted e) then Iter.return e
+  else Iter.flat_map ~f:max_solvables (Trm.trms e)
 
 let fold_max_solvables e s ~f = Iter.fold ~f (max_solvables e) s
 
@@ -96,7 +100,8 @@ end = struct
     [%trace]
       ~call:(fun {pf} -> pf "%a" Trm.pp a)
       ~retn:(fun {pf} -> pf "%a" Trm.pp)
-    @@ fun () -> if interpreted a then Trm.map ~f:(norm s) a else apply s a
+    @@ fun () ->
+    if is_interpreted a then Trm.map ~f:(norm s) a else apply s a
 
   (** compose two substitutions *)
   let compose r s =
@@ -162,8 +167,8 @@ end = struct
     in
     ( is_var_in xs e
     || is_var_in xs f
-    || (uninterpreted e && Iter.exists ~f:(is_var_in xs) (Trm.subtrms e))
-    || (uninterpreted f && Iter.exists ~f:(is_var_in xs) (Trm.subtrms f)) )
+    || (is_uninterpreted e && Iter.exists ~f:(is_var_in xs) (Trm.trms e))
+    || (is_uninterpreted f && Iter.exists ~f:(is_var_in xs) (Trm.trms f)) )
     $> fun b ->
     [%Trace.info
       "is_valid_eq %a%a=%a = %b" Var.Set.pp_xs xs Trm.pp e Trm.pp f b]
@@ -289,11 +294,48 @@ and solve_ ?f d e s =
   | None -> Some s
   (* i = j ==> false when i ≠ j *)
   | Some (Z _, Z _) | Some (Q _, Q _) -> None
+  (*
+   * Concat
+   *)
   (* ⟨0,a⟩ = β ==> a = β = ⟨⟩ *)
-  | Some (Sized {siz= n; seq= a}, b) when Trm.equal n Trm.zero ->
+  | Some (Sized {siz= n; seq= a}, b) when n == Trm.zero ->
       s |> solve_ ?f a (Trm.concat [||]) >>= solve_ ?f b (Trm.concat [||])
-  | Some (b, Sized {siz= n; seq= a}) when Trm.equal n Trm.zero ->
+  | Some (b, Sized {siz= n; seq= a}) when n == Trm.zero ->
       s |> solve_ ?f a (Trm.concat [||]) >>= solve_ ?f b (Trm.concat [||])
+  (* ⟨n,0⟩ = α₀^…^αᵥ ==> … ∧ αⱼ = ⟨n,0⟩[n₀+…+nᵢ,nⱼ) ∧ … *)
+  | Some ((Sized {siz= n; seq} as b), Concat a0V) when seq == Trm.zero ->
+      solve_concat ?f a0V b n s
+  (* ⟨n,e^⟩ = α₀^…^αᵥ ==> … ∧ αⱼ = ⟨n,e^⟩[n₀+…+nᵢ,nⱼ) ∧ … *)
+  | Some ((Sized {siz= n; seq= Splat _} as b), Concat a0V) ->
+      solve_concat ?f a0V b n s
+  | Some ((Var _ as v), (Concat a0V as c)) ->
+      if not (Var.Set.mem (Var.of_ v) (Trm.fv c)) then
+        (* v = α₀^…^αᵥ ==> v ↦ α₀^…^αᵥ when v ∉ fv(α₀^…^αᵥ) *)
+        compose1 ?f ~var:v ~rep:c s
+      else
+        (* v = α₀^…^αᵥ ==> ⟨|α₀^…^αᵥ|,v⟩ = α₀^…^αᵥ when v ∈ fv(α₀^…^αᵥ) *)
+        let m = Trm.seq_size_exn c in
+        solve_concat ?f a0V (Trm.sized ~siz:m ~seq:v) m s
+  (* α₀^…^αᵥ = β₀^…^βᵤ ==> … ∧ αⱼ = (β₀^…^βᵤ)[n₀+…+nᵢ,nⱼ) ∧ … *)
+  | Some (Concat a0V, (Concat _ as c)) ->
+      solve_concat ?f a0V c (Trm.seq_size_exn c) s
+  (* α[o,l) = α₀^…^αᵥ ==> … ∧ αⱼ = α[o,l)[n₀+…+nᵢ,nⱼ) ∧ … *)
+  | Some ((Extract {len= l} as e), Concat a0V) -> solve_concat ?f a0V e l s
+  (*
+   * Extract
+   *)
+  | Some ((Var _ as v), (Extract {len= l} as e)) ->
+      if not (Var.Set.mem (Var.of_ v) (Trm.fv e)) then
+        (* v = α[o,l) ==> v ↦ α[o,l) when v ∉ fv(α[o,l)) *)
+        compose1 ?f ~var:v ~rep:e s
+      else
+        (* v = α[o,l) ==> α[o,l) ↦ ⟨l,v⟩ when v ∈ fv(α[o,l)) *)
+        compose1 ?f ~var:e ~rep:(Trm.sized ~siz:l ~seq:v) s
+  (* α[o,l) = β ==> … ∧ α = _^β^_ *)
+  | Some (Extract {seq= a; off= o; len= l}, e) -> solve_extract ?f a o l e s
+  (*
+   * Sized
+   *)
   (* v = ⟨n,a⟩ ==> v = a *)
   | Some ((Var _ as v), Sized {seq= a}) -> s |> solve_ ?f v a
   (* ⟨n,a⟩ = ⟨m,b⟩ ==> n = m ∧ a = β *)
@@ -305,32 +347,25 @@ and solve_ ?f d e s =
       | None -> Some s
       | Some m -> solve_ ?f n m s )
       >>= solve_ ?f a b
-  | Some ((Var _ as v), (Extract {len= l} as e)) ->
-      if not (Var.Set.mem (Var.of_ v) (Trm.fv e)) then
-        (* v = α[o,l) ==> v ↦ α[o,l) when v ∉ fv(α[o,l)) *)
-        compose1 ?f ~var:v ~rep:e s
-      else
-        (* v = α[o,l) ==> α[o,l) ↦ ⟨l,v⟩ when v ∈ fv(α[o,l)) *)
-        compose1 ?f ~var:e ~rep:(Trm.sized ~siz:l ~seq:v) s
-  | Some ((Var _ as v), (Concat a0V as c)) ->
-      if not (Var.Set.mem (Var.of_ v) (Trm.fv c)) then
-        (* v = α₀^…^αᵥ ==> v ↦ α₀^…^αᵥ when v ∉ fv(α₀^…^αᵥ) *)
-        compose1 ?f ~var:v ~rep:c s
-      else
-        (* v = α₀^…^αᵥ ==> ⟨|α₀^…^αᵥ|,v⟩ = α₀^…^αᵥ when v ∈ fv(α₀^…^αᵥ) *)
-        let m = Trm.seq_size_exn c in
-        solve_concat ?f a0V (Trm.sized ~siz:m ~seq:v) m s
-  | Some ((Extract {len= l} as e), Concat a0V) -> solve_concat ?f a0V e l s
-  | Some (Concat a0V, (Concat _ as c)) ->
-      solve_concat ?f a0V c (Trm.seq_size_exn c) s
-  | Some (Extract {seq= a; off= o; len= l}, e) -> solve_extract ?f a o l e s
+  (*
+   * Splat
+   *)
+  (* a^ = b^ ==> a = b *)
+  | Some (Splat a, Splat b) -> s |> solve_ ?f a b
+  (*
+   * Arithmetic
+   *)
   (* p = q ==> p-q = 0 *)
   | Some (((Arith _ | Z _ | Q _) as p), q | q, ((Arith _ | Z _ | Q _) as p))
     ->
       solve_poly ?f p q s
+  (*
+   * Uninterpreted
+   *)
+  (* r = v ==> v ↦ r *)
   | Some (rep, var) ->
-      assert (non_interpreted var) ;
-      assert (non_interpreted rep) ;
+      assert (not (is_interpreted var)) ;
+      assert (not (is_interpreted rep)) ;
       compose1 ?f ~var ~rep s )
   |>
   [%Trace.retn fun {pf} ->
@@ -449,11 +484,12 @@ let pre_invariant r =
   let@ () = Invariant.invariant [%here] r [%sexp_of: t] in
   Subst.iteri r.rep ~f:(fun ~key:trm ~data:_ ->
       (* no interpreted terms in carrier *)
-      assert (non_interpreted trm || fail "non-interp %a" Trm.pp trm ()) ;
+      assert (
+        (not (is_interpreted trm)) || fail "non-interp %a" Trm.pp trm () ) ;
       (* carrier is closed under subterms *)
-      Iter.iter (Trm.subtrms trm) ~f:(fun subtrm ->
+      Iter.iter (Trm.trms trm) ~f:(fun subtrm ->
           assert (
-            (not (non_interpreted subtrm))
+            is_interpreted subtrm
             || (match subtrm with Z _ | Q _ -> true | _ -> false)
             || in_car r subtrm
             || fail "@[subterm %a@ of %a@ not in carrier of@ %a@]" Trm.pp
@@ -519,12 +555,12 @@ let rec extend_ a r =
   match (a : Trm.t) with
   | Z _ | Q _ -> r
   | _ -> (
-      if interpreted a then Iter.fold ~f:extend_ (Trm.subtrms a) r
+      if is_interpreted a then Iter.fold ~f:extend_ (Trm.trms a) r
       else
         (* add uninterpreted terms *)
         match Subst.extend a r with
         (* and their subterms if newly added *)
-        | Some r -> Iter.fold ~f:extend_ (Trm.subtrms a) r
+        | Some r -> Iter.fold ~f:extend_ (Trm.trms a) r
         | None -> r )
 
 (** add a term to the carrier *)
@@ -634,10 +670,10 @@ let ppx_diff var_strength fs parent_ctx fml ctx =
 let fold_uses_of r t s ~f =
   let rec fold_ e s ~f =
     let s =
-      Iter.fold (Trm.subtrms e) s ~f:(fun sub s ->
+      Iter.fold (Trm.trms e) s ~f:(fun sub s ->
           if Trm.equal t sub then f s e else s )
     in
-    if interpreted e then Iter.fold ~f:(fold_ ~f) (Trm.subtrms e) s else s
+    if is_interpreted e then Iter.fold ~f:(fold_ ~f) (Trm.trms e) s else s
   in
   Subst.fold r.rep s ~f:(fun ~key:trm ~data:rep s ->
       fold_ ~f trm (fold_ ~f rep s) )
@@ -850,7 +886,7 @@ let rec solve_interp_eqs us (cls, subst) =
     | [] -> (cls', subst)
     | trm :: cls ->
         let trm' = Subst.norm subst trm in
-        if interpreted trm' then
+        if is_interpreted trm' then
           match solve_interp_eq us trm' (cls, subst) with
           | Some subst -> solve_interp_eqs_ cls' (cls, subst)
           | None -> solve_interp_eqs_ (trm' :: cls') (cls, subst)
@@ -873,7 +909,7 @@ type cls_solve_state =
 let dom_trm e =
   match (e : Trm.t) with
   | Sized {seq= Var _ as v} -> Some v
-  | _ when non_interpreted e -> Some e
+  | _ when not (is_interpreted e) -> Some e
   | _ -> None
 
 (** move equations from [cls] (which is assumed to be normalized by [subst])

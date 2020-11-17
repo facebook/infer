@@ -14,40 +14,52 @@ digraph cfg {
 "derefFirstArg2#11387624487828646016.9777f67ce8b8da5c99a0e59eaaf6eb17_2" [label="2: Exit derefFirstArg2 \n  " color=yellow style=filled]
 	
 
-"derefFirstArg2#11387624487828646016.9777f67ce8b8da5c99a0e59eaaf6eb17_3" [label="3:  Return Stmt \n   n$0=*&b:int* [line 26, column 11]\n  n$1=*n$0:int [line 26, column 10]\n  *&return:int=n$1 [line 26, column 3]\n " shape="box"]
+"derefFirstArg2#11387624487828646016.9777f67ce8b8da5c99a0e59eaaf6eb17_3" [label="3:  Return Stmt \n   n$0=*&b:int* [line 26, column 11]\n  n$1=*n$0:int [line 26, column 10]\n " shape="box"]
 	
 
-	 "derefFirstArg2#11387624487828646016.9777f67ce8b8da5c99a0e59eaaf6eb17_3" -> "derefFirstArg2#11387624487828646016.9777f67ce8b8da5c99a0e59eaaf6eb17_2" ;
+	 "derefFirstArg2#11387624487828646016.9777f67ce8b8da5c99a0e59eaaf6eb17_3" -> "derefFirstArg2#11387624487828646016.9777f67ce8b8da5c99a0e59eaaf6eb17_4" ;
+"derefFirstArg2#11387624487828646016.9777f67ce8b8da5c99a0e59eaaf6eb17_4" [label="4:  Return Stmt \n   *&return:int=n$1 [line 26, column 3]\n " shape="box"]
+	
+
+	 "derefFirstArg2#11387624487828646016.9777f67ce8b8da5c99a0e59eaaf6eb17_4" -> "derefFirstArg2#11387624487828646016.9777f67ce8b8da5c99a0e59eaaf6eb17_2" ;
 "derefFirstArg2_null_deref#13631548499595216278.23fca23ff6728e4b72a2548ecb3b1ba0_1" [label="1: Start derefFirstArg2_null_deref\nFormals: \nLocals:  a:int \n  " color=yellow style=filled]
 	
 
-	 "derefFirstArg2_null_deref#13631548499595216278.23fca23ff6728e4b72a2548ecb3b1ba0_1" -> "derefFirstArg2_null_deref#13631548499595216278.23fca23ff6728e4b72a2548ecb3b1ba0_4" ;
+	 "derefFirstArg2_null_deref#13631548499595216278.23fca23ff6728e4b72a2548ecb3b1ba0_1" -> "derefFirstArg2_null_deref#13631548499595216278.23fca23ff6728e4b72a2548ecb3b1ba0_5" ;
 "derefFirstArg2_null_deref#13631548499595216278.23fca23ff6728e4b72a2548ecb3b1ba0_2" [label="2: Exit derefFirstArg2_null_deref \n  " color=yellow style=filled]
 	
 
-"derefFirstArg2_null_deref#13631548499595216278.23fca23ff6728e4b72a2548ecb3b1ba0_3" [label="3:  Return Stmt \n   n$0=*null:int [line 49, column 10]\n  *&return:int=n$0 [line 49, column 3]\n " shape="box"]
+"derefFirstArg2_null_deref#13631548499595216278.23fca23ff6728e4b72a2548ecb3b1ba0_3" [label="3:  Return Stmt \n   n$0=*null:int [line 49, column 10]\n " shape="box"]
 	
 
-	 "derefFirstArg2_null_deref#13631548499595216278.23fca23ff6728e4b72a2548ecb3b1ba0_3" -> "derefFirstArg2_null_deref#13631548499595216278.23fca23ff6728e4b72a2548ecb3b1ba0_2" ;
-"derefFirstArg2_null_deref#13631548499595216278.23fca23ff6728e4b72a2548ecb3b1ba0_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 48, column 3]\n  *&a:int=0 [line 48, column 3]\n " shape="box"]
+	 "derefFirstArg2_null_deref#13631548499595216278.23fca23ff6728e4b72a2548ecb3b1ba0_3" -> "derefFirstArg2_null_deref#13631548499595216278.23fca23ff6728e4b72a2548ecb3b1ba0_4" ;
+"derefFirstArg2_null_deref#13631548499595216278.23fca23ff6728e4b72a2548ecb3b1ba0_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 49, column 3]\n " shape="box"]
 	
 
-	 "derefFirstArg2_null_deref#13631548499595216278.23fca23ff6728e4b72a2548ecb3b1ba0_4" -> "derefFirstArg2_null_deref#13631548499595216278.23fca23ff6728e4b72a2548ecb3b1ba0_3" ;
+	 "derefFirstArg2_null_deref#13631548499595216278.23fca23ff6728e4b72a2548ecb3b1ba0_4" -> "derefFirstArg2_null_deref#13631548499595216278.23fca23ff6728e4b72a2548ecb3b1ba0_2" ;
+"derefFirstArg2_null_deref#13631548499595216278.23fca23ff6728e4b72a2548ecb3b1ba0_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 48, column 3]\n  *&a:int=0 [line 48, column 3]\n " shape="box"]
+	
+
+	 "derefFirstArg2_null_deref#13631548499595216278.23fca23ff6728e4b72a2548ecb3b1ba0_5" -> "derefFirstArg2_null_deref#13631548499595216278.23fca23ff6728e4b72a2548ecb3b1ba0_3" ;
 "derefFirstArg2_ok_deref#6873109919028202465.d57ab0b62c0ba18894b8b08d5a8f8e8a_1" [label="1: Start derefFirstArg2_ok_deref\nFormals: \nLocals:  a:int \n  " color=yellow style=filled]
 	
 
-	 "derefFirstArg2_ok_deref#6873109919028202465.d57ab0b62c0ba18894b8b08d5a8f8e8a_1" -> "derefFirstArg2_ok_deref#6873109919028202465.d57ab0b62c0ba18894b8b08d5a8f8e8a_4" ;
+	 "derefFirstArg2_ok_deref#6873109919028202465.d57ab0b62c0ba18894b8b08d5a8f8e8a_1" -> "derefFirstArg2_ok_deref#6873109919028202465.d57ab0b62c0ba18894b8b08d5a8f8e8a_5" ;
 "derefFirstArg2_ok_deref#6873109919028202465.d57ab0b62c0ba18894b8b08d5a8f8e8a_2" [label="2: Exit derefFirstArg2_ok_deref \n  " color=yellow style=filled]
 	
 
-"derefFirstArg2_ok_deref#6873109919028202465.d57ab0b62c0ba18894b8b08d5a8f8e8a_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 54, column 10]\n  *&return:int=n$0 [line 54, column 3]\n " shape="box"]
+"derefFirstArg2_ok_deref#6873109919028202465.d57ab0b62c0ba18894b8b08d5a8f8e8a_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 54, column 10]\n " shape="box"]
 	
 
-	 "derefFirstArg2_ok_deref#6873109919028202465.d57ab0b62c0ba18894b8b08d5a8f8e8a_3" -> "derefFirstArg2_ok_deref#6873109919028202465.d57ab0b62c0ba18894b8b08d5a8f8e8a_2" ;
-"derefFirstArg2_ok_deref#6873109919028202465.d57ab0b62c0ba18894b8b08d5a8f8e8a_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 53, column 3]\n  *&a:int=0 [line 53, column 3]\n " shape="box"]
+	 "derefFirstArg2_ok_deref#6873109919028202465.d57ab0b62c0ba18894b8b08d5a8f8e8a_3" -> "derefFirstArg2_ok_deref#6873109919028202465.d57ab0b62c0ba18894b8b08d5a8f8e8a_4" ;
+"derefFirstArg2_ok_deref#6873109919028202465.d57ab0b62c0ba18894b8b08d5a8f8e8a_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 54, column 3]\n " shape="box"]
 	
 
-	 "derefFirstArg2_ok_deref#6873109919028202465.d57ab0b62c0ba18894b8b08d5a8f8e8a_4" -> "derefFirstArg2_ok_deref#6873109919028202465.d57ab0b62c0ba18894b8b08d5a8f8e8a_3" ;
+	 "derefFirstArg2_ok_deref#6873109919028202465.d57ab0b62c0ba18894b8b08d5a8f8e8a_4" -> "derefFirstArg2_ok_deref#6873109919028202465.d57ab0b62c0ba18894b8b08d5a8f8e8a_2" ;
+"derefFirstArg2_ok_deref#6873109919028202465.d57ab0b62c0ba18894b8b08d5a8f8e8a_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 53, column 3]\n  *&a:int=0 [line 53, column 3]\n " shape="box"]
+	
+
+	 "derefFirstArg2_ok_deref#6873109919028202465.d57ab0b62c0ba18894b8b08d5a8f8e8a_5" -> "derefFirstArg2_ok_deref#6873109919028202465.d57ab0b62c0ba18894b8b08d5a8f8e8a_3" ;
 "derefFirstArg3#3150650678378709003.fb38cf6b9238ba2f8f6e25136f8beb95_1" [label="1: Start derefFirstArg3\nFormals:  a:int* b:int*\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -55,249 +67,305 @@ digraph cfg {
 "derefFirstArg3#3150650678378709003.fb38cf6b9238ba2f8f6e25136f8beb95_2" [label="2: Exit derefFirstArg3 \n  " color=yellow style=filled]
 	
 
-"derefFirstArg3#3150650678378709003.fb38cf6b9238ba2f8f6e25136f8beb95_3" [label="3:  Return Stmt \n   n$0=*&b:int* [line 33, column 11]\n  n$1=*n$0:int [line 33, column 10]\n  *&return:int=n$1 [line 33, column 3]\n " shape="box"]
+"derefFirstArg3#3150650678378709003.fb38cf6b9238ba2f8f6e25136f8beb95_3" [label="3:  Return Stmt \n   n$0=*&b:int* [line 33, column 11]\n  n$1=*n$0:int [line 33, column 10]\n " shape="box"]
 	
 
-	 "derefFirstArg3#3150650678378709003.fb38cf6b9238ba2f8f6e25136f8beb95_3" -> "derefFirstArg3#3150650678378709003.fb38cf6b9238ba2f8f6e25136f8beb95_2" ;
+	 "derefFirstArg3#3150650678378709003.fb38cf6b9238ba2f8f6e25136f8beb95_3" -> "derefFirstArg3#3150650678378709003.fb38cf6b9238ba2f8f6e25136f8beb95_4" ;
+"derefFirstArg3#3150650678378709003.fb38cf6b9238ba2f8f6e25136f8beb95_4" [label="4:  Return Stmt \n   *&return:int=n$1 [line 33, column 3]\n " shape="box"]
+	
+
+	 "derefFirstArg3#3150650678378709003.fb38cf6b9238ba2f8f6e25136f8beb95_4" -> "derefFirstArg3#3150650678378709003.fb38cf6b9238ba2f8f6e25136f8beb95_2" ;
 "derefFirstArg3_null_deref#3036141491555788229.605788dbf5e3c5625520098d1b5d320e_1" [label="1: Start derefFirstArg3_null_deref\nFormals: \nLocals:  a:int \n  " color=yellow style=filled]
 	
 
-	 "derefFirstArg3_null_deref#3036141491555788229.605788dbf5e3c5625520098d1b5d320e_1" -> "derefFirstArg3_null_deref#3036141491555788229.605788dbf5e3c5625520098d1b5d320e_4" ;
+	 "derefFirstArg3_null_deref#3036141491555788229.605788dbf5e3c5625520098d1b5d320e_1" -> "derefFirstArg3_null_deref#3036141491555788229.605788dbf5e3c5625520098d1b5d320e_5" ;
 "derefFirstArg3_null_deref#3036141491555788229.605788dbf5e3c5625520098d1b5d320e_2" [label="2: Exit derefFirstArg3_null_deref \n  " color=yellow style=filled]
 	
 
-"derefFirstArg3_null_deref#3036141491555788229.605788dbf5e3c5625520098d1b5d320e_3" [label="3:  Return Stmt \n   n$0=_fun_derefFirstArg3(&a:int*,null:int*) [line 64, column 10]\n  *&return:int=n$0 [line 64, column 3]\n " shape="box"]
+"derefFirstArg3_null_deref#3036141491555788229.605788dbf5e3c5625520098d1b5d320e_3" [label="3:  Return Stmt \n   n$0=_fun_derefFirstArg3(&a:int*,null:int*) [line 64, column 10]\n " shape="box"]
 	
 
-	 "derefFirstArg3_null_deref#3036141491555788229.605788dbf5e3c5625520098d1b5d320e_3" -> "derefFirstArg3_null_deref#3036141491555788229.605788dbf5e3c5625520098d1b5d320e_2" ;
-"derefFirstArg3_null_deref#3036141491555788229.605788dbf5e3c5625520098d1b5d320e_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 63, column 3]\n  *&a:int=0 [line 63, column 3]\n " shape="box"]
+	 "derefFirstArg3_null_deref#3036141491555788229.605788dbf5e3c5625520098d1b5d320e_3" -> "derefFirstArg3_null_deref#3036141491555788229.605788dbf5e3c5625520098d1b5d320e_4" ;
+"derefFirstArg3_null_deref#3036141491555788229.605788dbf5e3c5625520098d1b5d320e_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 64, column 3]\n " shape="box"]
 	
 
-	 "derefFirstArg3_null_deref#3036141491555788229.605788dbf5e3c5625520098d1b5d320e_4" -> "derefFirstArg3_null_deref#3036141491555788229.605788dbf5e3c5625520098d1b5d320e_3" ;
+	 "derefFirstArg3_null_deref#3036141491555788229.605788dbf5e3c5625520098d1b5d320e_4" -> "derefFirstArg3_null_deref#3036141491555788229.605788dbf5e3c5625520098d1b5d320e_2" ;
+"derefFirstArg3_null_deref#3036141491555788229.605788dbf5e3c5625520098d1b5d320e_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 63, column 3]\n  *&a:int=0 [line 63, column 3]\n " shape="box"]
+	
+
+	 "derefFirstArg3_null_deref#3036141491555788229.605788dbf5e3c5625520098d1b5d320e_5" -> "derefFirstArg3_null_deref#3036141491555788229.605788dbf5e3c5625520098d1b5d320e_3" ;
 "derefFirstArg3_ok_deref#12266654054137171150.c58c85ea4ba2ebfd89d0336e51301e7a_1" [label="1: Start derefFirstArg3_ok_deref\nFormals: \nLocals:  a:int \n  " color=yellow style=filled]
 	
 
-	 "derefFirstArg3_ok_deref#12266654054137171150.c58c85ea4ba2ebfd89d0336e51301e7a_1" -> "derefFirstArg3_ok_deref#12266654054137171150.c58c85ea4ba2ebfd89d0336e51301e7a_4" ;
+	 "derefFirstArg3_ok_deref#12266654054137171150.c58c85ea4ba2ebfd89d0336e51301e7a_1" -> "derefFirstArg3_ok_deref#12266654054137171150.c58c85ea4ba2ebfd89d0336e51301e7a_5" ;
 "derefFirstArg3_ok_deref#12266654054137171150.c58c85ea4ba2ebfd89d0336e51301e7a_2" [label="2: Exit derefFirstArg3_ok_deref \n  " color=yellow style=filled]
 	
 
-"derefFirstArg3_ok_deref#12266654054137171150.c58c85ea4ba2ebfd89d0336e51301e7a_3" [label="3:  Return Stmt \n   n$0=_fun_derefFirstArg3(null:int*,&a:int*) [line 59, column 10]\n  *&return:int=n$0 [line 59, column 3]\n " shape="box"]
+"derefFirstArg3_ok_deref#12266654054137171150.c58c85ea4ba2ebfd89d0336e51301e7a_3" [label="3:  Return Stmt \n   n$0=_fun_derefFirstArg3(null:int*,&a:int*) [line 59, column 10]\n " shape="box"]
 	
 
-	 "derefFirstArg3_ok_deref#12266654054137171150.c58c85ea4ba2ebfd89d0336e51301e7a_3" -> "derefFirstArg3_ok_deref#12266654054137171150.c58c85ea4ba2ebfd89d0336e51301e7a_2" ;
-"derefFirstArg3_ok_deref#12266654054137171150.c58c85ea4ba2ebfd89d0336e51301e7a_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 58, column 3]\n  *&a:int=0 [line 58, column 3]\n " shape="box"]
+	 "derefFirstArg3_ok_deref#12266654054137171150.c58c85ea4ba2ebfd89d0336e51301e7a_3" -> "derefFirstArg3_ok_deref#12266654054137171150.c58c85ea4ba2ebfd89d0336e51301e7a_4" ;
+"derefFirstArg3_ok_deref#12266654054137171150.c58c85ea4ba2ebfd89d0336e51301e7a_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 59, column 3]\n " shape="box"]
 	
 
-	 "derefFirstArg3_ok_deref#12266654054137171150.c58c85ea4ba2ebfd89d0336e51301e7a_4" -> "derefFirstArg3_ok_deref#12266654054137171150.c58c85ea4ba2ebfd89d0336e51301e7a_3" ;
+	 "derefFirstArg3_ok_deref#12266654054137171150.c58c85ea4ba2ebfd89d0336e51301e7a_4" -> "derefFirstArg3_ok_deref#12266654054137171150.c58c85ea4ba2ebfd89d0336e51301e7a_2" ;
+"derefFirstArg3_ok_deref#12266654054137171150.c58c85ea4ba2ebfd89d0336e51301e7a_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 58, column 3]\n  *&a:int=0 [line 58, column 3]\n " shape="box"]
+	
+
+	 "derefFirstArg3_ok_deref#12266654054137171150.c58c85ea4ba2ebfd89d0336e51301e7a_5" -> "derefFirstArg3_ok_deref#12266654054137171150.c58c85ea4ba2ebfd89d0336e51301e7a_3" ;
 "derefFirstArg_null_deref#14830687999166111591.325df3347d8f75d0292cfd33a485d28a_1" [label="1: Start derefFirstArg_null_deref\nFormals: \nLocals:  a:int \n  " color=yellow style=filled]
 	
 
-	 "derefFirstArg_null_deref#14830687999166111591.325df3347d8f75d0292cfd33a485d28a_1" -> "derefFirstArg_null_deref#14830687999166111591.325df3347d8f75d0292cfd33a485d28a_4" ;
+	 "derefFirstArg_null_deref#14830687999166111591.325df3347d8f75d0292cfd33a485d28a_1" -> "derefFirstArg_null_deref#14830687999166111591.325df3347d8f75d0292cfd33a485d28a_5" ;
 "derefFirstArg_null_deref#14830687999166111591.325df3347d8f75d0292cfd33a485d28a_2" [label="2: Exit derefFirstArg_null_deref \n  " color=yellow style=filled]
 	
 
-"derefFirstArg_null_deref#14830687999166111591.325df3347d8f75d0292cfd33a485d28a_3" [label="3:  Return Stmt \n   n$0=*null:int [line 39, column 10]\n  *&return:int=n$0 [line 39, column 3]\n " shape="box"]
+"derefFirstArg_null_deref#14830687999166111591.325df3347d8f75d0292cfd33a485d28a_3" [label="3:  Return Stmt \n   n$0=*null:int [line 39, column 10]\n " shape="box"]
 	
 
-	 "derefFirstArg_null_deref#14830687999166111591.325df3347d8f75d0292cfd33a485d28a_3" -> "derefFirstArg_null_deref#14830687999166111591.325df3347d8f75d0292cfd33a485d28a_2" ;
-"derefFirstArg_null_deref#14830687999166111591.325df3347d8f75d0292cfd33a485d28a_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 38, column 3]\n  *&a:int=0 [line 38, column 3]\n " shape="box"]
+	 "derefFirstArg_null_deref#14830687999166111591.325df3347d8f75d0292cfd33a485d28a_3" -> "derefFirstArg_null_deref#14830687999166111591.325df3347d8f75d0292cfd33a485d28a_4" ;
+"derefFirstArg_null_deref#14830687999166111591.325df3347d8f75d0292cfd33a485d28a_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 39, column 3]\n " shape="box"]
 	
 
-	 "derefFirstArg_null_deref#14830687999166111591.325df3347d8f75d0292cfd33a485d28a_4" -> "derefFirstArg_null_deref#14830687999166111591.325df3347d8f75d0292cfd33a485d28a_3" ;
+	 "derefFirstArg_null_deref#14830687999166111591.325df3347d8f75d0292cfd33a485d28a_4" -> "derefFirstArg_null_deref#14830687999166111591.325df3347d8f75d0292cfd33a485d28a_2" ;
+"derefFirstArg_null_deref#14830687999166111591.325df3347d8f75d0292cfd33a485d28a_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 38, column 3]\n  *&a:int=0 [line 38, column 3]\n " shape="box"]
+	
+
+	 "derefFirstArg_null_deref#14830687999166111591.325df3347d8f75d0292cfd33a485d28a_5" -> "derefFirstArg_null_deref#14830687999166111591.325df3347d8f75d0292cfd33a485d28a_3" ;
 "derefFirstArg_ok_deref#70986049112502156.78efafe2cdade07d4257a7cd671e75f5_1" [label="1: Start derefFirstArg_ok_deref\nFormals: \nLocals:  a:int \n  " color=yellow style=filled]
 	
 
-	 "derefFirstArg_ok_deref#70986049112502156.78efafe2cdade07d4257a7cd671e75f5_1" -> "derefFirstArg_ok_deref#70986049112502156.78efafe2cdade07d4257a7cd671e75f5_4" ;
+	 "derefFirstArg_ok_deref#70986049112502156.78efafe2cdade07d4257a7cd671e75f5_1" -> "derefFirstArg_ok_deref#70986049112502156.78efafe2cdade07d4257a7cd671e75f5_5" ;
 "derefFirstArg_ok_deref#70986049112502156.78efafe2cdade07d4257a7cd671e75f5_2" [label="2: Exit derefFirstArg_ok_deref \n  " color=yellow style=filled]
 	
 
-"derefFirstArg_ok_deref#70986049112502156.78efafe2cdade07d4257a7cd671e75f5_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 44, column 10]\n  *&return:int=n$0 [line 44, column 3]\n " shape="box"]
+"derefFirstArg_ok_deref#70986049112502156.78efafe2cdade07d4257a7cd671e75f5_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 44, column 10]\n " shape="box"]
 	
 
-	 "derefFirstArg_ok_deref#70986049112502156.78efafe2cdade07d4257a7cd671e75f5_3" -> "derefFirstArg_ok_deref#70986049112502156.78efafe2cdade07d4257a7cd671e75f5_2" ;
-"derefFirstArg_ok_deref#70986049112502156.78efafe2cdade07d4257a7cd671e75f5_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 43, column 3]\n  *&a:int=0 [line 43, column 3]\n " shape="box"]
+	 "derefFirstArg_ok_deref#70986049112502156.78efafe2cdade07d4257a7cd671e75f5_3" -> "derefFirstArg_ok_deref#70986049112502156.78efafe2cdade07d4257a7cd671e75f5_4" ;
+"derefFirstArg_ok_deref#70986049112502156.78efafe2cdade07d4257a7cd671e75f5_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 44, column 3]\n " shape="box"]
 	
 
-	 "derefFirstArg_ok_deref#70986049112502156.78efafe2cdade07d4257a7cd671e75f5_4" -> "derefFirstArg_ok_deref#70986049112502156.78efafe2cdade07d4257a7cd671e75f5_3" ;
+	 "derefFirstArg_ok_deref#70986049112502156.78efafe2cdade07d4257a7cd671e75f5_4" -> "derefFirstArg_ok_deref#70986049112502156.78efafe2cdade07d4257a7cd671e75f5_2" ;
+"derefFirstArg_ok_deref#70986049112502156.78efafe2cdade07d4257a7cd671e75f5_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 43, column 3]\n  *&a:int=0 [line 43, column 3]\n " shape="box"]
+	
+
+	 "derefFirstArg_ok_deref#70986049112502156.78efafe2cdade07d4257a7cd671e75f5_5" -> "derefFirstArg_ok_deref#70986049112502156.78efafe2cdade07d4257a7cd671e75f5_3" ;
 "getPtr_null_deref1#10685326586135592861.d05a7735c36f759fec001951cdc51035_1" [label="1: Start getPtr_null_deref1\nFormals: \nLocals:  t:int* \n  " color=yellow style=filled]
 	
 
-	 "getPtr_null_deref1#10685326586135592861.d05a7735c36f759fec001951cdc51035_1" -> "getPtr_null_deref1#10685326586135592861.d05a7735c36f759fec001951cdc51035_5" ;
+	 "getPtr_null_deref1#10685326586135592861.d05a7735c36f759fec001951cdc51035_1" -> "getPtr_null_deref1#10685326586135592861.d05a7735c36f759fec001951cdc51035_6" ;
 "getPtr_null_deref1#10685326586135592861.d05a7735c36f759fec001951cdc51035_2" [label="2: Exit getPtr_null_deref1 \n  " color=yellow style=filled]
 	
 
-"getPtr_null_deref1#10685326586135592861.d05a7735c36f759fec001951cdc51035_3" [label="3:  Return Stmt \n   _=*&t:int* [line 92, column 11]\n  n$1=*&t:int* [line 92, column 11]\n  n$2=*n$1:int [line 92, column 10]\n  *&return:int=n$2 [line 92, column 3]\n " shape="box"]
+"getPtr_null_deref1#10685326586135592861.d05a7735c36f759fec001951cdc51035_3" [label="3:  Return Stmt \n   _=*&t:int* [line 92, column 11]\n  n$1=*&t:int* [line 92, column 11]\n  n$2=*n$1:int [line 92, column 10]\n " shape="box"]
 	
 
-	 "getPtr_null_deref1#10685326586135592861.d05a7735c36f759fec001951cdc51035_3" -> "getPtr_null_deref1#10685326586135592861.d05a7735c36f759fec001951cdc51035_2" ;
-"getPtr_null_deref1#10685326586135592861.d05a7735c36f759fec001951cdc51035_4" [label="4:  Call _fun_TranslateAsPtr<int>::setPtr \n   _=*&t:int* [line 91, column 3]\n  n$4=_fun_TranslateAsPtr<int>::setPtr(&t:int*&,null:int*) [line 91, column 3]\n " shape="box"]
+	 "getPtr_null_deref1#10685326586135592861.d05a7735c36f759fec001951cdc51035_3" -> "getPtr_null_deref1#10685326586135592861.d05a7735c36f759fec001951cdc51035_4" ;
+"getPtr_null_deref1#10685326586135592861.d05a7735c36f759fec001951cdc51035_4" [label="4:  Return Stmt \n   *&return:int=n$2 [line 92, column 3]\n " shape="box"]
 	
 
-	 "getPtr_null_deref1#10685326586135592861.d05a7735c36f759fec001951cdc51035_4" -> "getPtr_null_deref1#10685326586135592861.d05a7735c36f759fec001951cdc51035_3" ;
-"getPtr_null_deref1#10685326586135592861.d05a7735c36f759fec001951cdc51035_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(t:int*); [line 90, column 3]\n  n$5=_fun_TranslateAsPtr<int>::TranslateAsPtr(&t:int**,null:int*) [line 90, column 23]\n " shape="box"]
+	 "getPtr_null_deref1#10685326586135592861.d05a7735c36f759fec001951cdc51035_4" -> "getPtr_null_deref1#10685326586135592861.d05a7735c36f759fec001951cdc51035_2" ;
+"getPtr_null_deref1#10685326586135592861.d05a7735c36f759fec001951cdc51035_5" [label="5:  Call _fun_TranslateAsPtr<int>::setPtr \n   _=*&t:int* [line 91, column 3]\n  n$4=_fun_TranslateAsPtr<int>::setPtr(&t:int*&,null:int*) [line 91, column 3]\n " shape="box"]
 	
 
-	 "getPtr_null_deref1#10685326586135592861.d05a7735c36f759fec001951cdc51035_5" -> "getPtr_null_deref1#10685326586135592861.d05a7735c36f759fec001951cdc51035_4" ;
+	 "getPtr_null_deref1#10685326586135592861.d05a7735c36f759fec001951cdc51035_5" -> "getPtr_null_deref1#10685326586135592861.d05a7735c36f759fec001951cdc51035_3" ;
+"getPtr_null_deref1#10685326586135592861.d05a7735c36f759fec001951cdc51035_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(t:int*); [line 90, column 3]\n  n$5=_fun_TranslateAsPtr<int>::TranslateAsPtr(&t:int**,null:int*) [line 90, column 23]\n " shape="box"]
+	
+
+	 "getPtr_null_deref1#10685326586135592861.d05a7735c36f759fec001951cdc51035_6" -> "getPtr_null_deref1#10685326586135592861.d05a7735c36f759fec001951cdc51035_5" ;
 "getPtr_null_deref2#10682492045158632578.de31216813faa493761802feb6f997f2_1" [label="1: Start getPtr_null_deref2\nFormals: \nLocals:  t:int* \n  " color=yellow style=filled]
 	
 
-	 "getPtr_null_deref2#10682492045158632578.de31216813faa493761802feb6f997f2_1" -> "getPtr_null_deref2#10682492045158632578.de31216813faa493761802feb6f997f2_5" ;
+	 "getPtr_null_deref2#10682492045158632578.de31216813faa493761802feb6f997f2_1" -> "getPtr_null_deref2#10682492045158632578.de31216813faa493761802feb6f997f2_6" ;
 "getPtr_null_deref2#10682492045158632578.de31216813faa493761802feb6f997f2_2" [label="2: Exit getPtr_null_deref2 \n  " color=yellow style=filled]
 	
 
-"getPtr_null_deref2#10682492045158632578.de31216813faa493761802feb6f997f2_3" [label="3:  Return Stmt \n   _=*&t:int* [line 98, column 11]\n  n$1=*&t:int* [line 98, column 11]\n  n$2=*n$1:int [line 98, column 10]\n  *&return:int=n$2 [line 98, column 3]\n " shape="box"]
+"getPtr_null_deref2#10682492045158632578.de31216813faa493761802feb6f997f2_3" [label="3:  Return Stmt \n   _=*&t:int* [line 98, column 11]\n  n$1=*&t:int* [line 98, column 11]\n  n$2=*n$1:int [line 98, column 10]\n " shape="box"]
 	
 
-	 "getPtr_null_deref2#10682492045158632578.de31216813faa493761802feb6f997f2_3" -> "getPtr_null_deref2#10682492045158632578.de31216813faa493761802feb6f997f2_2" ;
-"getPtr_null_deref2#10682492045158632578.de31216813faa493761802feb6f997f2_4" [label="4:  Call _fun_TranslateAsPtr<int>::setPtr \n   _=*&t:int* [line 97, column 3]\n  n$4=_fun_TranslateAsPtr<int>::setPtr(&t:int*&,null:int*) [line 97, column 3]\n " shape="box"]
+	 "getPtr_null_deref2#10682492045158632578.de31216813faa493761802feb6f997f2_3" -> "getPtr_null_deref2#10682492045158632578.de31216813faa493761802feb6f997f2_4" ;
+"getPtr_null_deref2#10682492045158632578.de31216813faa493761802feb6f997f2_4" [label="4:  Return Stmt \n   *&return:int=n$2 [line 98, column 3]\n " shape="box"]
 	
 
-	 "getPtr_null_deref2#10682492045158632578.de31216813faa493761802feb6f997f2_4" -> "getPtr_null_deref2#10682492045158632578.de31216813faa493761802feb6f997f2_3" ;
-"getPtr_null_deref2#10682492045158632578.de31216813faa493761802feb6f997f2_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(t:int*); [line 96, column 3]\n  n$5=_fun_TranslateAsPtr<int>::TranslateAsPtr(&t:int**,null:int*) [line 96, column 23]\n " shape="box"]
+	 "getPtr_null_deref2#10682492045158632578.de31216813faa493761802feb6f997f2_4" -> "getPtr_null_deref2#10682492045158632578.de31216813faa493761802feb6f997f2_2" ;
+"getPtr_null_deref2#10682492045158632578.de31216813faa493761802feb6f997f2_5" [label="5:  Call _fun_TranslateAsPtr<int>::setPtr \n   _=*&t:int* [line 97, column 3]\n  n$4=_fun_TranslateAsPtr<int>::setPtr(&t:int*&,null:int*) [line 97, column 3]\n " shape="box"]
 	
 
-	 "getPtr_null_deref2#10682492045158632578.de31216813faa493761802feb6f997f2_5" -> "getPtr_null_deref2#10682492045158632578.de31216813faa493761802feb6f997f2_4" ;
+	 "getPtr_null_deref2#10682492045158632578.de31216813faa493761802feb6f997f2_5" -> "getPtr_null_deref2#10682492045158632578.de31216813faa493761802feb6f997f2_3" ;
+"getPtr_null_deref2#10682492045158632578.de31216813faa493761802feb6f997f2_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(t:int*); [line 96, column 3]\n  n$5=_fun_TranslateAsPtr<int>::TranslateAsPtr(&t:int**,null:int*) [line 96, column 23]\n " shape="box"]
+	
+
+	 "getPtr_null_deref2#10682492045158632578.de31216813faa493761802feb6f997f2_6" -> "getPtr_null_deref2#10682492045158632578.de31216813faa493761802feb6f997f2_5" ;
 "getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_1" [label="1: Start getPtr_ok_deref\nFormals: \nLocals:  t:int* a:int \n  " color=yellow style=filled]
 	
 
-	 "getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_1" -> "getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_6" ;
+	 "getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_1" -> "getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_7" ;
 "getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_2" [label="2: Exit getPtr_ok_deref \n  " color=yellow style=filled]
 	
 
-"getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_3" [label="3:  Return Stmt \n   _=*&t:int* [line 105, column 11]\n  n$1=*&t:int* [line 105, column 11]\n  n$2=*n$1:int [line 105, column 10]\n  *&return:int=n$2 [line 105, column 3]\n " shape="box"]
+"getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_3" [label="3:  Return Stmt \n   _=*&t:int* [line 105, column 11]\n  n$1=*&t:int* [line 105, column 11]\n  n$2=*n$1:int [line 105, column 10]\n " shape="box"]
 	
 
-	 "getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_3" -> "getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_2" ;
-"getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_4" [label="4:  Call _fun_TranslateAsPtr<int>::setPtr \n   _=*&t:int* [line 104, column 3]\n  n$4=_fun_TranslateAsPtr<int>::setPtr(&t:int*&,&a:int*) [line 104, column 3]\n " shape="box"]
+	 "getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_3" -> "getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_4" ;
+"getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_4" [label="4:  Return Stmt \n   *&return:int=n$2 [line 105, column 3]\n " shape="box"]
 	
 
-	 "getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_4" -> "getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_3" ;
-"getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(t:int*); [line 103, column 3]\n  n$5=_fun_TranslateAsPtr<int>::TranslateAsPtr(&t:int**,null:int*) [line 103, column 23]\n " shape="box"]
+	 "getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_4" -> "getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_2" ;
+"getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_5" [label="5:  Call _fun_TranslateAsPtr<int>::setPtr \n   _=*&t:int* [line 104, column 3]\n  n$4=_fun_TranslateAsPtr<int>::setPtr(&t:int*&,&a:int*) [line 104, column 3]\n " shape="box"]
 	
 
-	 "getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_5" -> "getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_4" ;
-"getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 102, column 3]\n  *&a:int=0 [line 102, column 3]\n " shape="box"]
+	 "getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_5" -> "getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_3" ;
+"getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(t:int*); [line 103, column 3]\n  n$5=_fun_TranslateAsPtr<int>::TranslateAsPtr(&t:int**,null:int*) [line 103, column 23]\n " shape="box"]
 	
 
 	 "getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_6" -> "getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_5" ;
+"getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 102, column 3]\n  *&a:int=0 [line 102, column 3]\n " shape="box"]
+	
+
+	 "getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_7" -> "getPtr_ok_deref#15608473391071478730.49e56fac5bd82269c2093a9c1e438200_6" ;
 "getRef_null_deref1#4264296374417396044.654d24b6c4af017d90a5ceff83c121c2_1" [label="1: Start getRef_null_deref1\nFormals: \nLocals:  t:int* \n  " color=yellow style=filled]
 	
 
-	 "getRef_null_deref1#4264296374417396044.654d24b6c4af017d90a5ceff83c121c2_1" -> "getRef_null_deref1#4264296374417396044.654d24b6c4af017d90a5ceff83c121c2_5" ;
+	 "getRef_null_deref1#4264296374417396044.654d24b6c4af017d90a5ceff83c121c2_1" -> "getRef_null_deref1#4264296374417396044.654d24b6c4af017d90a5ceff83c121c2_6" ;
 "getRef_null_deref1#4264296374417396044.654d24b6c4af017d90a5ceff83c121c2_2" [label="2: Exit getRef_null_deref1 \n  " color=yellow style=filled]
 	
 
-"getRef_null_deref1#4264296374417396044.654d24b6c4af017d90a5ceff83c121c2_3" [label="3:  Return Stmt \n   _=*&t:int* [line 130, column 10]\n  n$1=*&t:int* [line 130, column 10]\n  n$2=*n$1:int [line 130, column 10]\n  *&return:int=n$2 [line 130, column 3]\n " shape="box"]
+"getRef_null_deref1#4264296374417396044.654d24b6c4af017d90a5ceff83c121c2_3" [label="3:  Return Stmt \n   _=*&t:int* [line 130, column 10]\n  n$1=*&t:int* [line 130, column 10]\n  n$2=*n$1:int [line 130, column 10]\n " shape="box"]
 	
 
-	 "getRef_null_deref1#4264296374417396044.654d24b6c4af017d90a5ceff83c121c2_3" -> "getRef_null_deref1#4264296374417396044.654d24b6c4af017d90a5ceff83c121c2_2" ;
-"getRef_null_deref1#4264296374417396044.654d24b6c4af017d90a5ceff83c121c2_4" [label="4:  Call _fun_TranslateAsPtr<int>::setPtr \n   _=*&t:int* [line 129, column 3]\n  n$4=_fun_TranslateAsPtr<int>::setPtr(&t:int*&,null:int*) [line 129, column 3]\n " shape="box"]
+	 "getRef_null_deref1#4264296374417396044.654d24b6c4af017d90a5ceff83c121c2_3" -> "getRef_null_deref1#4264296374417396044.654d24b6c4af017d90a5ceff83c121c2_4" ;
+"getRef_null_deref1#4264296374417396044.654d24b6c4af017d90a5ceff83c121c2_4" [label="4:  Return Stmt \n   *&return:int=n$2 [line 130, column 3]\n " shape="box"]
 	
 
-	 "getRef_null_deref1#4264296374417396044.654d24b6c4af017d90a5ceff83c121c2_4" -> "getRef_null_deref1#4264296374417396044.654d24b6c4af017d90a5ceff83c121c2_3" ;
-"getRef_null_deref1#4264296374417396044.654d24b6c4af017d90a5ceff83c121c2_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(t:int*); [line 128, column 3]\n  n$5=_fun_TranslateAsPtr<int>::TranslateAsPtr(&t:int**,null:int*) [line 128, column 23]\n " shape="box"]
+	 "getRef_null_deref1#4264296374417396044.654d24b6c4af017d90a5ceff83c121c2_4" -> "getRef_null_deref1#4264296374417396044.654d24b6c4af017d90a5ceff83c121c2_2" ;
+"getRef_null_deref1#4264296374417396044.654d24b6c4af017d90a5ceff83c121c2_5" [label="5:  Call _fun_TranslateAsPtr<int>::setPtr \n   _=*&t:int* [line 129, column 3]\n  n$4=_fun_TranslateAsPtr<int>::setPtr(&t:int*&,null:int*) [line 129, column 3]\n " shape="box"]
 	
 
-	 "getRef_null_deref1#4264296374417396044.654d24b6c4af017d90a5ceff83c121c2_5" -> "getRef_null_deref1#4264296374417396044.654d24b6c4af017d90a5ceff83c121c2_4" ;
+	 "getRef_null_deref1#4264296374417396044.654d24b6c4af017d90a5ceff83c121c2_5" -> "getRef_null_deref1#4264296374417396044.654d24b6c4af017d90a5ceff83c121c2_3" ;
+"getRef_null_deref1#4264296374417396044.654d24b6c4af017d90a5ceff83c121c2_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(t:int*); [line 128, column 3]\n  n$5=_fun_TranslateAsPtr<int>::TranslateAsPtr(&t:int**,null:int*) [line 128, column 23]\n " shape="box"]
+	
+
+	 "getRef_null_deref1#4264296374417396044.654d24b6c4af017d90a5ceff83c121c2_6" -> "getRef_null_deref1#4264296374417396044.654d24b6c4af017d90a5ceff83c121c2_5" ;
 "getRef_null_deref2#4263471740696427019.45bed1239309132cabf29f4cdd81f3cc_1" [label="1: Start getRef_null_deref2\nFormals: \nLocals:  t:int* \n  " color=yellow style=filled]
 	
 
-	 "getRef_null_deref2#4263471740696427019.45bed1239309132cabf29f4cdd81f3cc_1" -> "getRef_null_deref2#4263471740696427019.45bed1239309132cabf29f4cdd81f3cc_5" ;
+	 "getRef_null_deref2#4263471740696427019.45bed1239309132cabf29f4cdd81f3cc_1" -> "getRef_null_deref2#4263471740696427019.45bed1239309132cabf29f4cdd81f3cc_6" ;
 "getRef_null_deref2#4263471740696427019.45bed1239309132cabf29f4cdd81f3cc_2" [label="2: Exit getRef_null_deref2 \n  " color=yellow style=filled]
 	
 
-"getRef_null_deref2#4263471740696427019.45bed1239309132cabf29f4cdd81f3cc_3" [label="3:  Return Stmt \n   _=*&t:int* [line 136, column 10]\n  n$1=*&t:int* [line 136, column 10]\n  n$2=*n$1:int [line 136, column 10]\n  *&return:int=n$2 [line 136, column 3]\n " shape="box"]
+"getRef_null_deref2#4263471740696427019.45bed1239309132cabf29f4cdd81f3cc_3" [label="3:  Return Stmt \n   _=*&t:int* [line 136, column 10]\n  n$1=*&t:int* [line 136, column 10]\n  n$2=*n$1:int [line 136, column 10]\n " shape="box"]
 	
 
-	 "getRef_null_deref2#4263471740696427019.45bed1239309132cabf29f4cdd81f3cc_3" -> "getRef_null_deref2#4263471740696427019.45bed1239309132cabf29f4cdd81f3cc_2" ;
-"getRef_null_deref2#4263471740696427019.45bed1239309132cabf29f4cdd81f3cc_4" [label="4:  Call _fun_TranslateAsPtr<int>::setPtr \n   _=*&t:int* [line 135, column 3]\n  n$4=_fun_TranslateAsPtr<int>::setPtr(&t:int*&,null:int*) [line 135, column 3]\n " shape="box"]
+	 "getRef_null_deref2#4263471740696427019.45bed1239309132cabf29f4cdd81f3cc_3" -> "getRef_null_deref2#4263471740696427019.45bed1239309132cabf29f4cdd81f3cc_4" ;
+"getRef_null_deref2#4263471740696427019.45bed1239309132cabf29f4cdd81f3cc_4" [label="4:  Return Stmt \n   *&return:int=n$2 [line 136, column 3]\n " shape="box"]
 	
 
-	 "getRef_null_deref2#4263471740696427019.45bed1239309132cabf29f4cdd81f3cc_4" -> "getRef_null_deref2#4263471740696427019.45bed1239309132cabf29f4cdd81f3cc_3" ;
-"getRef_null_deref2#4263471740696427019.45bed1239309132cabf29f4cdd81f3cc_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(t:int*); [line 134, column 3]\n  n$5=_fun_TranslateAsPtr<int>::TranslateAsPtr(&t:int**,null:int*) [line 134, column 23]\n " shape="box"]
+	 "getRef_null_deref2#4263471740696427019.45bed1239309132cabf29f4cdd81f3cc_4" -> "getRef_null_deref2#4263471740696427019.45bed1239309132cabf29f4cdd81f3cc_2" ;
+"getRef_null_deref2#4263471740696427019.45bed1239309132cabf29f4cdd81f3cc_5" [label="5:  Call _fun_TranslateAsPtr<int>::setPtr \n   _=*&t:int* [line 135, column 3]\n  n$4=_fun_TranslateAsPtr<int>::setPtr(&t:int*&,null:int*) [line 135, column 3]\n " shape="box"]
 	
 
-	 "getRef_null_deref2#4263471740696427019.45bed1239309132cabf29f4cdd81f3cc_5" -> "getRef_null_deref2#4263471740696427019.45bed1239309132cabf29f4cdd81f3cc_4" ;
+	 "getRef_null_deref2#4263471740696427019.45bed1239309132cabf29f4cdd81f3cc_5" -> "getRef_null_deref2#4263471740696427019.45bed1239309132cabf29f4cdd81f3cc_3" ;
+"getRef_null_deref2#4263471740696427019.45bed1239309132cabf29f4cdd81f3cc_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(t:int*); [line 134, column 3]\n  n$5=_fun_TranslateAsPtr<int>::TranslateAsPtr(&t:int**,null:int*) [line 134, column 23]\n " shape="box"]
+	
+
+	 "getRef_null_deref2#4263471740696427019.45bed1239309132cabf29f4cdd81f3cc_6" -> "getRef_null_deref2#4263471740696427019.45bed1239309132cabf29f4cdd81f3cc_5" ;
 "getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_1" [label="1: Start getRef_ok_deref\nFormals: \nLocals:  t:int* a:int \n  " color=yellow style=filled]
 	
 
-	 "getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_1" -> "getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_6" ;
+	 "getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_1" -> "getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_7" ;
 "getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_2" [label="2: Exit getRef_ok_deref \n  " color=yellow style=filled]
 	
 
-"getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_3" [label="3:  Return Stmt \n   _=*&t:int* [line 143, column 10]\n  n$1=*&t:int* [line 143, column 10]\n  n$2=*n$1:int [line 143, column 10]\n  *&return:int=n$2 [line 143, column 3]\n " shape="box"]
+"getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_3" [label="3:  Return Stmt \n   _=*&t:int* [line 143, column 10]\n  n$1=*&t:int* [line 143, column 10]\n  n$2=*n$1:int [line 143, column 10]\n " shape="box"]
 	
 
-	 "getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_3" -> "getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_2" ;
-"getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_4" [label="4:  Call _fun_TranslateAsPtr<int>::setPtr \n   _=*&t:int* [line 142, column 3]\n  n$4=_fun_TranslateAsPtr<int>::setPtr(&t:int*&,&a:int*) [line 142, column 3]\n " shape="box"]
+	 "getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_3" -> "getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_4" ;
+"getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_4" [label="4:  Return Stmt \n   *&return:int=n$2 [line 143, column 3]\n " shape="box"]
 	
 
-	 "getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_4" -> "getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_3" ;
-"getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(t:int*); [line 141, column 3]\n  n$5=_fun_TranslateAsPtr<int>::TranslateAsPtr(&t:int**,null:int*) [line 141, column 23]\n " shape="box"]
+	 "getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_4" -> "getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_2" ;
+"getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_5" [label="5:  Call _fun_TranslateAsPtr<int>::setPtr \n   _=*&t:int* [line 142, column 3]\n  n$4=_fun_TranslateAsPtr<int>::setPtr(&t:int*&,&a:int*) [line 142, column 3]\n " shape="box"]
 	
 
-	 "getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_5" -> "getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_4" ;
-"getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 140, column 3]\n  *&a:int=0 [line 140, column 3]\n " shape="box"]
+	 "getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_5" -> "getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_3" ;
+"getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(t:int*); [line 141, column 3]\n  n$5=_fun_TranslateAsPtr<int>::TranslateAsPtr(&t:int**,null:int*) [line 141, column 23]\n " shape="box"]
 	
 
 	 "getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_6" -> "getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_5" ;
+"getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 140, column 3]\n  *&a:int=0 [line 140, column 3]\n " shape="box"]
+	
+
+	 "getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_7" -> "getRef_ok_deref#10111201054364386601.e514c65ac6978a31376e6032d81b3d16_6" ;
 "operator_star_null_deref1#14187169119337849630.74372e24230903d2d4cacecae74f498d_1" [label="1: Start operator_star_null_deref1\nFormals: \nLocals:  t:int* \n  " color=yellow style=filled]
 	
 
-	 "operator_star_null_deref1#14187169119337849630.74372e24230903d2d4cacecae74f498d_1" -> "operator_star_null_deref1#14187169119337849630.74372e24230903d2d4cacecae74f498d_5" ;
+	 "operator_star_null_deref1#14187169119337849630.74372e24230903d2d4cacecae74f498d_1" -> "operator_star_null_deref1#14187169119337849630.74372e24230903d2d4cacecae74f498d_6" ;
 "operator_star_null_deref1#14187169119337849630.74372e24230903d2d4cacecae74f498d_2" [label="2: Exit operator_star_null_deref1 \n  " color=yellow style=filled]
 	
 
-"operator_star_null_deref1#14187169119337849630.74372e24230903d2d4cacecae74f498d_3" [label="3:  Return Stmt \n   n$1=*&t:int* [line 111, column 10]\n  n$2=*n$1:int [line 111, column 10]\n  *&return:int=n$2 [line 111, column 3]\n " shape="box"]
+"operator_star_null_deref1#14187169119337849630.74372e24230903d2d4cacecae74f498d_3" [label="3:  Return Stmt \n   n$1=*&t:int* [line 111, column 10]\n  n$2=*n$1:int [line 111, column 10]\n " shape="box"]
 	
 
-	 "operator_star_null_deref1#14187169119337849630.74372e24230903d2d4cacecae74f498d_3" -> "operator_star_null_deref1#14187169119337849630.74372e24230903d2d4cacecae74f498d_2" ;
-"operator_star_null_deref1#14187169119337849630.74372e24230903d2d4cacecae74f498d_4" [label="4:  Call _fun_TranslateAsPtr<int>::setPtr \n   _=*&t:int* [line 110, column 3]\n  n$4=_fun_TranslateAsPtr<int>::setPtr(&t:int*&,null:int*) [line 110, column 3]\n " shape="box"]
+	 "operator_star_null_deref1#14187169119337849630.74372e24230903d2d4cacecae74f498d_3" -> "operator_star_null_deref1#14187169119337849630.74372e24230903d2d4cacecae74f498d_4" ;
+"operator_star_null_deref1#14187169119337849630.74372e24230903d2d4cacecae74f498d_4" [label="4:  Return Stmt \n   *&return:int=n$2 [line 111, column 3]\n " shape="box"]
 	
 
-	 "operator_star_null_deref1#14187169119337849630.74372e24230903d2d4cacecae74f498d_4" -> "operator_star_null_deref1#14187169119337849630.74372e24230903d2d4cacecae74f498d_3" ;
-"operator_star_null_deref1#14187169119337849630.74372e24230903d2d4cacecae74f498d_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(t:int*); [line 109, column 3]\n  n$5=_fun_TranslateAsPtr<int>::TranslateAsPtr(&t:int**,null:int*) [line 109, column 23]\n " shape="box"]
+	 "operator_star_null_deref1#14187169119337849630.74372e24230903d2d4cacecae74f498d_4" -> "operator_star_null_deref1#14187169119337849630.74372e24230903d2d4cacecae74f498d_2" ;
+"operator_star_null_deref1#14187169119337849630.74372e24230903d2d4cacecae74f498d_5" [label="5:  Call _fun_TranslateAsPtr<int>::setPtr \n   _=*&t:int* [line 110, column 3]\n  n$4=_fun_TranslateAsPtr<int>::setPtr(&t:int*&,null:int*) [line 110, column 3]\n " shape="box"]
 	
 
-	 "operator_star_null_deref1#14187169119337849630.74372e24230903d2d4cacecae74f498d_5" -> "operator_star_null_deref1#14187169119337849630.74372e24230903d2d4cacecae74f498d_4" ;
+	 "operator_star_null_deref1#14187169119337849630.74372e24230903d2d4cacecae74f498d_5" -> "operator_star_null_deref1#14187169119337849630.74372e24230903d2d4cacecae74f498d_3" ;
+"operator_star_null_deref1#14187169119337849630.74372e24230903d2d4cacecae74f498d_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(t:int*); [line 109, column 3]\n  n$5=_fun_TranslateAsPtr<int>::TranslateAsPtr(&t:int**,null:int*) [line 109, column 23]\n " shape="box"]
+	
+
+	 "operator_star_null_deref1#14187169119337849630.74372e24230903d2d4cacecae74f498d_6" -> "operator_star_null_deref1#14187169119337849630.74372e24230903d2d4cacecae74f498d_5" ;
 "operator_star_null_deref2#14189968475942707161.6f6b808f2059b0f1bd8edd63f3e0c27b_1" [label="1: Start operator_star_null_deref2\nFormals: \nLocals:  t:int* \n  " color=yellow style=filled]
 	
 
-	 "operator_star_null_deref2#14189968475942707161.6f6b808f2059b0f1bd8edd63f3e0c27b_1" -> "operator_star_null_deref2#14189968475942707161.6f6b808f2059b0f1bd8edd63f3e0c27b_5" ;
+	 "operator_star_null_deref2#14189968475942707161.6f6b808f2059b0f1bd8edd63f3e0c27b_1" -> "operator_star_null_deref2#14189968475942707161.6f6b808f2059b0f1bd8edd63f3e0c27b_6" ;
 "operator_star_null_deref2#14189968475942707161.6f6b808f2059b0f1bd8edd63f3e0c27b_2" [label="2: Exit operator_star_null_deref2 \n  " color=yellow style=filled]
 	
 
-"operator_star_null_deref2#14189968475942707161.6f6b808f2059b0f1bd8edd63f3e0c27b_3" [label="3:  Return Stmt \n   _=*&t:int* [line 117, column 10]\n  n$1=*&t:int* [line 117, column 10]\n  n$2=*n$1:int [line 117, column 10]\n  *&return:int=n$2 [line 117, column 3]\n " shape="box"]
+"operator_star_null_deref2#14189968475942707161.6f6b808f2059b0f1bd8edd63f3e0c27b_3" [label="3:  Return Stmt \n   _=*&t:int* [line 117, column 10]\n  n$1=*&t:int* [line 117, column 10]\n  n$2=*n$1:int [line 117, column 10]\n " shape="box"]
 	
 
-	 "operator_star_null_deref2#14189968475942707161.6f6b808f2059b0f1bd8edd63f3e0c27b_3" -> "operator_star_null_deref2#14189968475942707161.6f6b808f2059b0f1bd8edd63f3e0c27b_2" ;
-"operator_star_null_deref2#14189968475942707161.6f6b808f2059b0f1bd8edd63f3e0c27b_4" [label="4:  Call _fun_TranslateAsPtr<int>::setPtr \n   _=*&t:int* [line 116, column 3]\n  n$4=_fun_TranslateAsPtr<int>::setPtr(&t:int*&,null:int*) [line 116, column 3]\n " shape="box"]
+	 "operator_star_null_deref2#14189968475942707161.6f6b808f2059b0f1bd8edd63f3e0c27b_3" -> "operator_star_null_deref2#14189968475942707161.6f6b808f2059b0f1bd8edd63f3e0c27b_4" ;
+"operator_star_null_deref2#14189968475942707161.6f6b808f2059b0f1bd8edd63f3e0c27b_4" [label="4:  Return Stmt \n   *&return:int=n$2 [line 117, column 3]\n " shape="box"]
 	
 
-	 "operator_star_null_deref2#14189968475942707161.6f6b808f2059b0f1bd8edd63f3e0c27b_4" -> "operator_star_null_deref2#14189968475942707161.6f6b808f2059b0f1bd8edd63f3e0c27b_3" ;
-"operator_star_null_deref2#14189968475942707161.6f6b808f2059b0f1bd8edd63f3e0c27b_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(t:int*); [line 115, column 3]\n  n$5=_fun_TranslateAsPtr<int>::TranslateAsPtr(&t:int**,null:int*) [line 115, column 23]\n " shape="box"]
+	 "operator_star_null_deref2#14189968475942707161.6f6b808f2059b0f1bd8edd63f3e0c27b_4" -> "operator_star_null_deref2#14189968475942707161.6f6b808f2059b0f1bd8edd63f3e0c27b_2" ;
+"operator_star_null_deref2#14189968475942707161.6f6b808f2059b0f1bd8edd63f3e0c27b_5" [label="5:  Call _fun_TranslateAsPtr<int>::setPtr \n   _=*&t:int* [line 116, column 3]\n  n$4=_fun_TranslateAsPtr<int>::setPtr(&t:int*&,null:int*) [line 116, column 3]\n " shape="box"]
 	
 
-	 "operator_star_null_deref2#14189968475942707161.6f6b808f2059b0f1bd8edd63f3e0c27b_5" -> "operator_star_null_deref2#14189968475942707161.6f6b808f2059b0f1bd8edd63f3e0c27b_4" ;
+	 "operator_star_null_deref2#14189968475942707161.6f6b808f2059b0f1bd8edd63f3e0c27b_5" -> "operator_star_null_deref2#14189968475942707161.6f6b808f2059b0f1bd8edd63f3e0c27b_3" ;
+"operator_star_null_deref2#14189968475942707161.6f6b808f2059b0f1bd8edd63f3e0c27b_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(t:int*); [line 115, column 3]\n  n$5=_fun_TranslateAsPtr<int>::TranslateAsPtr(&t:int**,null:int*) [line 115, column 23]\n " shape="box"]
+	
+
+	 "operator_star_null_deref2#14189968475942707161.6f6b808f2059b0f1bd8edd63f3e0c27b_6" -> "operator_star_null_deref2#14189968475942707161.6f6b808f2059b0f1bd8edd63f3e0c27b_5" ;
 "operator_star_ok_deref#11345277927099423171.138b78e88dab5887cd2f20f2590c779f_1" [label="1: Start operator_star_ok_deref\nFormals: \nLocals:  t:int* a:int \n  " color=yellow style=filled]
 	
 
-	 "operator_star_ok_deref#11345277927099423171.138b78e88dab5887cd2f20f2590c779f_1" -> "operator_star_ok_deref#11345277927099423171.138b78e88dab5887cd2f20f2590c779f_5" ;
+	 "operator_star_ok_deref#11345277927099423171.138b78e88dab5887cd2f20f2590c779f_1" -> "operator_star_ok_deref#11345277927099423171.138b78e88dab5887cd2f20f2590c779f_6" ;
 "operator_star_ok_deref#11345277927099423171.138b78e88dab5887cd2f20f2590c779f_2" [label="2: Exit operator_star_ok_deref \n  " color=yellow style=filled]
 	
 
-"operator_star_ok_deref#11345277927099423171.138b78e88dab5887cd2f20f2590c779f_3" [label="3:  Return Stmt \n   _=*&t:int* [line 124, column 10]\n  n$1=*&t:int* [line 124, column 10]\n  n$2=*n$1:int [line 124, column 10]\n  *&return:int=n$2 [line 124, column 3]\n " shape="box"]
+"operator_star_ok_deref#11345277927099423171.138b78e88dab5887cd2f20f2590c779f_3" [label="3:  Return Stmt \n   _=*&t:int* [line 124, column 10]\n  n$1=*&t:int* [line 124, column 10]\n  n$2=*n$1:int [line 124, column 10]\n " shape="box"]
 	
 
-	 "operator_star_ok_deref#11345277927099423171.138b78e88dab5887cd2f20f2590c779f_3" -> "operator_star_ok_deref#11345277927099423171.138b78e88dab5887cd2f20f2590c779f_2" ;
-"operator_star_ok_deref#11345277927099423171.138b78e88dab5887cd2f20f2590c779f_4" [label="4:  Call _fun_TranslateAsPtr<int>::setPtr \n   _=*&t:int* [line 123, column 3]\n  n$4=_fun_TranslateAsPtr<int>::setPtr(&t:int*&,&a:int*) [line 123, column 3]\n " shape="box"]
+	 "operator_star_ok_deref#11345277927099423171.138b78e88dab5887cd2f20f2590c779f_3" -> "operator_star_ok_deref#11345277927099423171.138b78e88dab5887cd2f20f2590c779f_4" ;
+"operator_star_ok_deref#11345277927099423171.138b78e88dab5887cd2f20f2590c779f_4" [label="4:  Return Stmt \n   *&return:int=n$2 [line 124, column 3]\n " shape="box"]
 	
 
-	 "operator_star_ok_deref#11345277927099423171.138b78e88dab5887cd2f20f2590c779f_4" -> "operator_star_ok_deref#11345277927099423171.138b78e88dab5887cd2f20f2590c779f_3" ;
-"operator_star_ok_deref#11345277927099423171.138b78e88dab5887cd2f20f2590c779f_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(t:int*); [line 122, column 3]\n  n$5=_fun_TranslateAsPtr<int>::TranslateAsPtr(&t:int**,null:int*) [line 122, column 23]\n " shape="box"]
+	 "operator_star_ok_deref#11345277927099423171.138b78e88dab5887cd2f20f2590c779f_4" -> "operator_star_ok_deref#11345277927099423171.138b78e88dab5887cd2f20f2590c779f_2" ;
+"operator_star_ok_deref#11345277927099423171.138b78e88dab5887cd2f20f2590c779f_5" [label="5:  Call _fun_TranslateAsPtr<int>::setPtr \n   _=*&t:int* [line 123, column 3]\n  n$4=_fun_TranslateAsPtr<int>::setPtr(&t:int*&,&a:int*) [line 123, column 3]\n " shape="box"]
 	
 
-	 "operator_star_ok_deref#11345277927099423171.138b78e88dab5887cd2f20f2590c779f_5" -> "operator_star_ok_deref#11345277927099423171.138b78e88dab5887cd2f20f2590c779f_4" ;
+	 "operator_star_ok_deref#11345277927099423171.138b78e88dab5887cd2f20f2590c779f_5" -> "operator_star_ok_deref#11345277927099423171.138b78e88dab5887cd2f20f2590c779f_3" ;
+"operator_star_ok_deref#11345277927099423171.138b78e88dab5887cd2f20f2590c779f_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(t:int*); [line 122, column 3]\n  n$5=_fun_TranslateAsPtr<int>::TranslateAsPtr(&t:int**,null:int*) [line 122, column 23]\n " shape="box"]
+	
+
+	 "operator_star_ok_deref#11345277927099423171.138b78e88dab5887cd2f20f2590c779f_6" -> "operator_star_ok_deref#11345277927099423171.138b78e88dab5887cd2f20f2590c779f_5" ;
 "getPtr#TranslateAsPtr<int>#(11398425810130716395).657b6b87ee3e6dc84e17d734bcfc55b1_1" [label="1: Start TranslateAsPtr<int>::getPtr\nFormals:  this:int**\nLocals:  \n  " color=yellow style=filled]
 	
 

@@ -25,16 +25,20 @@ digraph cfg {
 "method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_1" [label="1: Start A::method\nFormals:  this:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_1" -> "method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_4" ;
+	 "method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_1" -> "method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_5" ;
 "method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_2" [label="2: Exit A::method \n  " color=yellow style=filled]
 	
 
-"method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_3" [label="3:  Return Stmt \n   n$0=*&this:A* [line 18, column 10]\n  n$1=*n$0.field:int [line 18, column 10]\n  *&return:int=n$1 [line 18, column 3]\n " shape="box"]
+"method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_3" [label="3:  Return Stmt \n   n$0=*&this:A* [line 18, column 10]\n  n$1=*n$0.field:int [line 18, column 10]\n " shape="box"]
 	
 
-	 "method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_3" -> "method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_2" ;
-"method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_4" [label="4:  Call _fun_A::init \n   n$2=*&this:A* [line 17, column 3]\n  _=*n$2:A [line 17, column 3]\n  n$4=_fun_A::init(n$2:A*,10:int) [line 17, column 3]\n " shape="box"]
+	 "method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_3" -> "method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_4" ;
+"method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_4" [label="4:  Return Stmt \n   *&return:int=n$1 [line 18, column 3]\n " shape="box"]
 	
 
-	 "method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_4" -> "method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_3" ;
+	 "method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_4" -> "method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_2" ;
+"method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_5" [label="5:  Call _fun_A::init \n   n$2=*&this:A* [line 17, column 3]\n  _=*n$2:A [line 17, column 3]\n  n$4=_fun_A::init(n$2:A*,10:int) [line 17, column 3]\n " shape="box"]
+	
+
+	 "method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_5" -> "method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_3" ;
 }

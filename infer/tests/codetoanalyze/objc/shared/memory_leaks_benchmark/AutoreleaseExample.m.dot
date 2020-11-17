@@ -116,33 +116,41 @@ digraph cfg {
 "createA.48a5d7f480131d59bba69d521715b836_1" [label="1: Start createA\nFormals: \nLocals:  s1:Auto* \n  " color=yellow style=filled]
 	
 
-	 "createA.48a5d7f480131d59bba69d521715b836_1" -> "createA.48a5d7f480131d59bba69d521715b836_4" ;
+	 "createA.48a5d7f480131d59bba69d521715b836_1" -> "createA.48a5d7f480131d59bba69d521715b836_5" ;
 "createA.48a5d7f480131d59bba69d521715b836_2" [label="2: Exit createA \n  " color=yellow style=filled]
 	
 
-"createA.48a5d7f480131d59bba69d521715b836_3" [label="3:  Return Stmt \n   n$0=*&s1:Auto* [line 29, column 11]\n  n$1=_fun_NSObject.autorelease(n$0:Auto*) virtual [line 29, column 10]\n  *&return:Auto*=n$1 [line 29, column 3]\n " shape="box"]
+"createA.48a5d7f480131d59bba69d521715b836_3" [label="3:  Return Stmt \n   n$0=*&s1:Auto* [line 29, column 11]\n  n$1=_fun_NSObject.autorelease(n$0:Auto*) virtual [line 29, column 10]\n " shape="box"]
 	
 
-	 "createA.48a5d7f480131d59bba69d521715b836_3" -> "createA.48a5d7f480131d59bba69d521715b836_2" ;
-"createA.48a5d7f480131d59bba69d521715b836_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(s1:Auto*); [line 28, column 3]\n  n$2=_fun___objc_alloc_no_fail(sizeof(t=Auto):unsigned long) [line 28, column 15]\n  n$3=_fun_NSObject.init(n$2:Auto*) virtual [line 28, column 14]\n  *&s1:Auto*=n$3 [line 28, column 3]\n " shape="box"]
+	 "createA.48a5d7f480131d59bba69d521715b836_3" -> "createA.48a5d7f480131d59bba69d521715b836_4" ;
+"createA.48a5d7f480131d59bba69d521715b836_4" [label="4:  Return Stmt \n   *&return:Auto*=n$1 [line 29, column 3]\n " shape="box"]
 	
 
-	 "createA.48a5d7f480131d59bba69d521715b836_4" -> "createA.48a5d7f480131d59bba69d521715b836_3" ;
+	 "createA.48a5d7f480131d59bba69d521715b836_4" -> "createA.48a5d7f480131d59bba69d521715b836_2" ;
+"createA.48a5d7f480131d59bba69d521715b836_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(s1:Auto*); [line 28, column 3]\n  n$2=_fun___objc_alloc_no_fail(sizeof(t=Auto):unsigned long) [line 28, column 15]\n  n$3=_fun_NSObject.init(n$2:Auto*) virtual [line 28, column 14]\n  *&s1:Auto*=n$3 [line 28, column 3]\n " shape="box"]
+	
+
+	 "createA.48a5d7f480131d59bba69d521715b836_5" -> "createA.48a5d7f480131d59bba69d521715b836_3" ;
 "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_1" [label="1: Start Auto.autorelease_main\nFormals:  self:Auto*\nLocals:  s:NSString* \n  " color=yellow style=filled]
 	
 
-	 "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_1" -> "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_4" ;
+	 "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_1" -> "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_5" ;
 "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_2" [label="2: Exit Auto.autorelease_main \n  " color=yellow style=filled]
 	
 
-"autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_3" [label="3:  Return Stmt \n   n$0=*&s:NSString* [line 22, column 11]\n  n$1=_fun_NSObject.autorelease(n$0:NSString*) virtual [line 22, column 10]\n  *&return:NSString*=n$1 [line 22, column 3]\n " shape="box"]
+"autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_3" [label="3:  Return Stmt \n   n$0=*&s:NSString* [line 22, column 11]\n  n$1=_fun_NSObject.autorelease(n$0:NSString*) virtual [line 22, column 10]\n " shape="box"]
 	
 
-	 "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_3" -> "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_2" ;
-"autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(s:NSString*); [line 21, column 3]\n  n$2=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 21, column 17]\n  *&s:NSString*=n$2 [line 21, column 3]\n " shape="box"]
+	 "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_3" -> "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_4" ;
+"autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_4" [label="4:  Return Stmt \n   *&return:NSString*=n$1 [line 22, column 3]\n " shape="box"]
 	
 
-	 "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_4" -> "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_3" ;
+	 "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_4" -> "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_2" ;
+"autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(s:NSString*); [line 21, column 3]\n  n$2=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 21, column 17]\n  *&s:NSString*=n$2 [line 21, column 3]\n " shape="box"]
+	
+
+	 "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_5" -> "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_3" ;
 "dealloc#Auto#instance.f75e3ca5aab8c1f0122d42fc04b27666_1" [label="1: Start Auto.dealloc\nFormals:  self:Auto*\nLocals:  \n  " color=yellow style=filled]
 	
 

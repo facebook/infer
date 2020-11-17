@@ -111,3 +111,20 @@ void access_to_invalidated_alias2_bad(struct X* x, struct X* y) {
   invalidate_and_set_to_null(&y);
   wraps_read(*x);
 }
+
+void set_first_non_null_ok(int* x, int* y) {
+  if (x) {
+    *x = 42;
+  } else {
+    *y = 42;
+  }
+}
+
+// should get two latent issues here, or at least one for the dereference of
+// [p=nullptr]
+void set_x_then_crash_double_latent(int* x) {
+  set_first_non_null_ok(x, nullptr);
+  set_first_non_null_ok(nullptr, x);
+  int* p = nullptr;
+  *p = 42;
+}

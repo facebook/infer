@@ -13,6 +13,7 @@ type 'a t = 'a array [@@deriving compare, equal, sexp]
 val of_ : 'a -> 'a t
 val of_list_rev : 'a list -> 'a t
 val map : 'a t -> f:('a -> 'b) -> 'b t
+val mapi : 'a t -> f:(int -> 'a -> 'b) -> 'b t
 
 val map_endo : 'a t -> f:('a -> 'a) -> 'a t
 (** Like [map], but specialized to require [f] to be an endofunction, which
