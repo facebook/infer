@@ -599,4 +599,14 @@ void binaryConditional_bad() {
   int j = 42;
 }
 
+X getXFromInt(int x);
+
+void switch_with_temporary_ok() {
+  int x = 44;
+  switch (42) {
+    case 0:
+      getXFromInt(x);
+  };
+}
+
 } // namespace dead_stores

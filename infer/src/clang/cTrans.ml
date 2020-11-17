@@ -1938,9 +1938,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | _ ->
           assert false
     in
-    let body_trans_result = instruction trans_state body in
-    (let open SwitchCase in
-    add {condition= Case condition; stmt_info; root_nodes= body_trans_result.control.root_nodes}) ;
+    L.debug Capture Verbose "translating a caseStmt@\n" ;
+    let body_trans_result = exec_with_node_creation ~f:instruction trans_state body in
+    L.debug Capture Verbose "result of translating a caseStmt: %a@\n" pp_control
+      body_trans_result.control ;
+    SwitchCase.add
+      {condition= Case condition; stmt_info; root_nodes= body_trans_result.control.root_nodes} ;
     body_trans_result
 
 
@@ -2013,7 +2016,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let switch_cases, (_ : trans_result) =
       SwitchCase.in_switch_body ~f:(instruction inner_trans_state) body
     in
-    let link_up_switch_cases curr_succ_nodes = function
+    let link_up_switch_cases curr_succ_nodes case =
+      L.debug Capture Verbose "switch: curr_succ_nodes=[%a], linking case %a@\n"
+        (Pp.semicolon_seq Procdesc.Node.pp)
+        curr_succ_nodes SwitchCase.pp case ;
+      match (case : SwitchCase.t) with
       | {SwitchCase.condition= Case case_condition; stmt_info; root_nodes} ->
           (* create case prune nodes, link the then branch to [root_nodes], the else branch to
              [curr_succ_nodes] *)
@@ -3894,7 +3901,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                   (Pp.of_string ~f:Clang_ast_proj.get_stmt_kind_string)
                   instr ) )
       in
-      L.(debug Capture Verbose) "@]" ;
+      L.debug Capture Verbose
+        "@]@\nResult of translating statement '%a' (pointer= '%a')@\ncontrol=%a@\n"
+        (Pp.of_string ~f:Clang_ast_proj.get_stmt_kind_string)
+        instr pp_pointer instr pp_control trans_result.control ;
       (* don't forget to reset this so we output messages for future errors too *)
       logged_error := false ;
       trans_result
