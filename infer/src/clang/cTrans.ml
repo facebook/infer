@@ -1635,7 +1635,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let var_typ = add_reference_if_glvalue typ expr_info in
     let join_node =
-      Procdesc.create_node trans_state.context.CContext.procdesc sil_loc Procdesc.Node.Join_node []
+      Procdesc.create_node trans_state.context.CContext.procdesc sil_loc Join_node []
     in
     Procdesc.node_set_succs context.procdesc join_node ~normal:succ_nodes ~exn:[] ;
     let var_exp_typ =
@@ -1882,7 +1882,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       let nodes_branch =
         match res_trans_b.control.root_nodes with
         | [] ->
-            [ Procdesc.create_node context.procdesc sil_loc (Procdesc.Node.Stmt_node IfStmtBranch)
+            [ Procdesc.create_node context.procdesc sil_loc (Stmt_node IfStmtBranch)
                 res_trans_b.control.instrs ]
         | _ ->
             res_trans_b.control.root_nodes
@@ -1893,7 +1893,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         ~f:(fun n -> Procdesc.node_set_succs context.procdesc n ~normal:nodes_branch ~exn:[])
         prune_nodes'
     in
-    let join_node = Procdesc.create_node context.procdesc sil_loc Procdesc.Node.Join_node [] in
+    let join_node = Procdesc.create_node context.procdesc sil_loc Join_node [] in
     Procdesc.node_set_succs context.procdesc join_node ~normal:trans_state.succ_nodes ~exn:[] ;
     let trans_state_join_succ = {trans_state with succ_nodes= [join_node]} in
     (* translate the condition expression *)
@@ -2116,7 +2116,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         List.iter
           ~f:(fun try_end ->
             match Procdesc.Node.get_kind try_end with
-            | Procdesc.Node.Stmt_node ReturnStmt ->
+            | Stmt_node ReturnStmt ->
                 ()
             | _ ->
                 Procdesc.set_succs try_end ~normal:None ~exn:(Some catch_start_nodes) )
@@ -2134,7 +2134,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let sil_loc =
       CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
     in
-    let join_node = Procdesc.create_node context.procdesc sil_loc Procdesc.Node.Join_node [] in
+    let join_node = Procdesc.create_node context.procdesc sil_loc Join_node [] in
     let continuation = Some {break= succ_nodes; continue= [join_node]; return_temp= false} in
     (* set the flag to inform that we are translating a condition of a if *)
     let continuation_cond = mk_cond_continuation outer_continuation in
@@ -2859,7 +2859,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       check_destructor_translation destructor_res ;
       let instrs_of = function Some {control= {instrs}} -> instrs | None -> [] in
       let ret_node =
-        Procdesc.create_node context.procdesc sil_loc (Procdesc.Node.Stmt_node ReturnStmt)
+        Procdesc.create_node context.procdesc sil_loc (Stmt_node ReturnStmt)
           (instrs @ instrs_of destr_trans_result @ instrs_of destructor_res)
       in
       Procdesc.node_set_succs context.procdesc ret_node
@@ -3867,7 +3867,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
              - [join_node] to join [dtor_trans_result] and [prune_false] and continue with the
              successor node(s) of the translation [trans_state.succ_nodes] *)
           let proc_desc = trans_state.context.procdesc in
-          let join_node = Procdesc.create_node proc_desc sil_loc Procdesc.Node.Join_node [] in
+          let join_node = Procdesc.create_node proc_desc sil_loc Join_node [] in
           Procdesc.node_set_succs proc_desc join_node ~normal:trans_state.succ_nodes ~exn:[] ;
           (* create dtor call as a new node connected to the join node, force new node creation by
              creating a fresh pointer and calling [force_claim_priority_node] *)
@@ -4666,7 +4666,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           trans_state.succ_nodes
     in
     let trans_state' = {trans_state with succ_nodes} in
-    let instrs = extra_instrs @ [CFrontend_config.ClangStmt (Procdesc.Node.DefineBody, body)] in
+    let instrs = extra_instrs @ [CFrontend_config.ClangStmt (DefineBody, body)] in
     let instrs_trans = List.map ~f:get_custom_stmt_trans instrs in
     let res_control, _ = exec_trans_instrs trans_state' instrs_trans in
     res_control.root_nodes
