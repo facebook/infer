@@ -247,7 +247,7 @@ everything. Note that only the modified files, and those dependent on them, are
 re-analyzed. This analysis mode can be significantly faster.
 
 You can learn more about the particulars of each solution in the
-[Infer workflow](docs/infer-workflow.html) page.
+[Infer workflow](infer-workflow) page.
 
 ## Hello world iOS
 
