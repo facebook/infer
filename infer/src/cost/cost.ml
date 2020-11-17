@@ -71,10 +71,8 @@ module InstrBasicCostWithReason = struct
     | None -> (
       match callee_cost_opt with
       | Some callee_cost ->
-          let () =
-            Logging.(debug Analysis Quiet)
-              "@.Instantiated cost : %a \n" BasicCostWithReason.pp_hum callee_cost
-          in
+          L.debug Analysis Verbose "@\nInstantiated cost : %a@\n" BasicCostWithReason.pp_hum
+            callee_cost ;
           callee_cost
       | _ ->
           ScubaLogging.cost_log_message ~label:"unmodeled_function_operation_cost"
@@ -225,7 +223,7 @@ module InstrBasicCostWithReason = struct
     let cost = get_instr_cost_record tenv extras cfg instr_node instr in
     let operation_cost = CostDomain.get_operation_cost cost in
     let log_msg top_or_bottom =
-      Logging.d_printfln_escaped "Statement's operation cost became %s at %a (%a)." top_or_bottom
+      L.d_printfln_escaped "Statement's operation cost became %s at %a (%a)." top_or_bottom
         InstrCFG.Node.pp_id (InstrCFG.Node.id instr_node)
         (Sil.pp_instr ~print_types:false Pp.text)
         instr
@@ -254,7 +252,7 @@ module WorstCaseCost = struct
     let node = InstrCFG.Node.underlying_node instr_node in
     let nb_exec = get_node_nb_exec node in
     if BasicCost.is_top nb_exec then
-      Logging.d_printfln_escaped "Node %a is analyzed to visit infinite (top) times." Node.pp_id
+      L.d_printfln_escaped "Node %a is analyzed to visit infinite (top) times." Node.pp_id
         (Node.id node) ;
     CostDomain.mult_by instr_cost_record ~nb_exec
 
@@ -275,8 +273,7 @@ module WorstCaseCost = struct
     Option.iter (CostDomain.get_operation_cost cost).top_pname_opt ~f:(fun top_pname ->
         ScubaLogging.cost_log_message ~label:"unmodeled_function_top_cost"
           ~message:(F.asprintf "Unmodeled Function[Top Cost] : %a" Procname.pp top_pname) ;
-        Logging.(debug Analysis Verbose)
-          "@ Unmodeled Function[Top Cost]: %a@\n" Procname.pp top_pname ) ;
+        L.debug Analysis Verbose "@\nUnmodeled Function[Top Cost]: %a@\n" Procname.pp top_pname ) ;
     cost
 end
 
