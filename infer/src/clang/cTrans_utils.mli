@@ -191,7 +191,7 @@ module PriorityNode : sig
   val compute_controls_to_parent :
        trans_state
     -> Location.t
-    -> node_name:Procdesc.Node.stmt_nodekind
+    -> Procdesc.Node.stmt_nodekind
     -> Clang_ast_t.stmt_info
     -> control list
     -> control
@@ -202,7 +202,7 @@ module PriorityNode : sig
   val compute_control_to_parent :
        trans_state
     -> Location.t
-    -> node_name:Procdesc.Node.stmt_nodekind
+    -> Procdesc.Node.stmt_nodekind
     -> Clang_ast_t.stmt_info
     -> control
     -> control
@@ -212,7 +212,7 @@ module PriorityNode : sig
   val compute_results_to_parent :
        trans_state
     -> Location.t
-    -> node_name:Procdesc.Node.stmt_nodekind
+    -> Procdesc.Node.stmt_nodekind
     -> Clang_ast_t.stmt_info
     -> return:Exp.t * Typ.t
     -> trans_result list
@@ -222,7 +222,7 @@ module PriorityNode : sig
   val compute_result_to_parent :
        trans_state
     -> Location.t
-    -> node_name:Procdesc.Node.stmt_nodekind
+    -> Procdesc.Node.stmt_nodekind
     -> Clang_ast_t.stmt_info
     -> trans_result
     -> trans_result

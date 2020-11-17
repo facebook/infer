@@ -285,7 +285,7 @@ module PriorityNode = struct
   (* It connects nodes returned by translation of stmt children and *)
   (* deals with creating or not a cfg node depending of owning the *)
   (* priority_node. It returns nodes, ids, instrs that should be passed to parent *)
-  let compute_controls_to_parent trans_state loc ~node_name stmt_info res_states_children =
+  let compute_controls_to_parent trans_state loc node_name stmt_info res_states_children =
     let res_state = collect_controls trans_state.context.procdesc res_states_children in
     L.debug Capture Verbose "collected controls: %a@\n" pp_control res_state ;
     let create_node =
@@ -321,18 +321,18 @@ module PriorityNode = struct
       res_state )
 
 
-  let compute_results_to_parent trans_state loc ~node_name stmt_info ~return trans_results =
+  let compute_results_to_parent trans_state loc node_name stmt_info ~return trans_results =
     List.map trans_results ~f:(fun trans_result -> trans_result.control)
-    |> compute_controls_to_parent trans_state loc ~node_name stmt_info
+    |> compute_controls_to_parent trans_state loc node_name stmt_info
     |> mk_trans_result return
 
 
-  let compute_control_to_parent trans_state loc ~node_name stmt_info control =
-    compute_controls_to_parent trans_state loc ~node_name stmt_info [control]
+  let compute_control_to_parent trans_state loc node_name stmt_info control =
+    compute_controls_to_parent trans_state loc node_name stmt_info [control]
 
 
-  let compute_result_to_parent trans_state loc ~node_name stmt_info trans_result =
-    compute_control_to_parent trans_state loc ~node_name stmt_info trans_result.control
+  let compute_result_to_parent trans_state loc node_name stmt_info trans_result =
+    compute_control_to_parent trans_state loc node_name stmt_info trans_result.control
     |> mk_trans_result trans_result.return
 
 
@@ -343,11 +343,11 @@ module PriorityNode = struct
         List.is_empty second_result.control.root_nodes
         && List.is_empty second_result.control.leaf_nodes
       then first_result
-      else compute_result_to_parent trans_state loc ~node_name stmt_info first_result
+      else compute_result_to_parent trans_state loc node_name stmt_info first_result
     in
     L.debug Capture Verbose "sequential composition :@\n@[<hv2>  %a@]@\n;@\n@[<hv2>  %a@]@\n"
       pp_control first_result.control pp_control second_result.control ;
-    compute_results_to_parent trans_state loc ~node_name stmt_info ~return
+    compute_results_to_parent trans_state loc node_name stmt_info ~return
       [first_result; second_result]
 
 
@@ -446,8 +446,7 @@ let alloc_trans trans_state ~alloc_builtin loc stmt_info function_type =
     create_alloc_instrs integer_type_widths ~alloc_builtin loc function_type
   in
   let control_tmp = {empty_control with instrs} in
-  PriorityNode.compute_control_to_parent trans_state loc ~node_name:(Call "alloc") stmt_info
-    control_tmp
+  PriorityNode.compute_control_to_parent trans_state loc (Call "alloc") stmt_info control_tmp
   |> mk_trans_result (exp, function_type)
 
 
@@ -472,7 +471,7 @@ let objc_new_trans trans_state ~alloc_builtin loc stmt_info cls_name function_ty
   let instrs = alloc_stmt_call @ [init_stmt_call] in
   let res_trans_tmp = {empty_control with instrs} in
   let node_name = Procdesc.Node.CallObjCNew in
-  PriorityNode.compute_control_to_parent trans_state loc ~node_name stmt_info res_trans_tmp
+  PriorityNode.compute_control_to_parent trans_state loc node_name stmt_info res_trans_tmp
   |> mk_trans_result (Exp.Var init_ret_id, alloc_ret_type)
 
 

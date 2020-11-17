@@ -110,7 +110,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         CLocation.location_of_stmt_info trans_state.context.translation_unit_context.source_file
           stmt_info'
       in
-      PriorityNode.compute_result_to_parent trans_state_pri sil_loc ~node_name stmt_info' res_trans
+      PriorityNode.compute_result_to_parent trans_state_pri sil_loc node_name stmt_info' res_trans
     else res_trans
 
 
@@ -1053,7 +1053,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             ([binop_control], return)
         in
         let all_res_trans = [res_trans_e1.control; res_trans_e2.control] @ binop_control in
-        PriorityNode.compute_controls_to_parent trans_state_pri sil_loc ~node_name stmt_info
+        PriorityNode.compute_controls_to_parent trans_state_pri sil_loc node_name stmt_info
           all_res_trans
         |> mk_trans_result return
     | _ ->
@@ -1118,7 +1118,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         in
         let node_name = Procdesc.Node.Call (Exp.to_string sil_fe) in
         let all_res_trans = res_trans_callee :: (result_trans_params @ [res_trans_call]) in
-        PriorityNode.compute_results_to_parent trans_state_pri sil_loc ~node_name si
+        PriorityNode.compute_results_to_parent trans_state_pri sil_loc node_name si
           ~return:res_trans_call.return all_res_trans
 
 
@@ -1137,7 +1137,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let node_name = Procdesc.Node.Call (Exp.to_string sil_fe) in
     let all_res_trans = [result_trans_param; res_trans_call] in
-    PriorityNode.compute_results_to_parent trans_state_pri sil_loc ~node_name si
+    PriorityNode.compute_results_to_parent trans_state_pri sil_loc node_name si
       ~return:res_trans_call.return all_res_trans
 
 
@@ -1178,7 +1178,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let all_res_trans =
           result_trans_params @ (res_trans_call :: Option.to_list extra_res_trans)
         in
-        PriorityNode.compute_results_to_parent trans_state_pri sil_loc ~node_name si
+        PriorityNode.compute_results_to_parent trans_state_pri sil_loc node_name si
           ~return:res_trans_call.return all_res_trans
 
 
@@ -1402,7 +1402,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let all_res_trans =
           res_trans_subexpr_list @ (res_trans_call :: Option.to_list assertion_trans_opt)
         in
-        PriorityNode.compute_results_to_parent trans_state_pri sil_loc ~node_name si
+        PriorityNode.compute_results_to_parent trans_state_pri sil_loc node_name si
           ~return:res_trans_call.return all_res_trans
 
 
@@ -1452,8 +1452,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       in
       Some
         (PriorityNode.compute_results_to_parent trans_state_pri sil_loc
-           ~node_name:(Destruction DestrVirtualBase) stmt_info_loc
-           ~return:(mk_fresh_void_exp_typ ()) all_res_trans)
+           (Destruction DestrVirtualBase) stmt_info_loc ~return:(mk_fresh_void_exp_typ ())
+           all_res_trans)
 
 
   and cxx_inject_field_destructors_in_destructor_body trans_state stmt_info =
@@ -1511,9 +1511,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
       in
       Some
-        (PriorityNode.compute_results_to_parent trans_state_pri sil_loc
-           ~node_name:(Destruction DestrFields) stmt_info' ~return:(mk_fresh_void_exp_typ ())
-           all_res_trans)
+        (PriorityNode.compute_results_to_parent trans_state_pri sil_loc (Destruction DestrFields)
+           stmt_info' ~return:(mk_fresh_void_exp_typ ()) all_res_trans)
 
 
   and destructor_calls destr_kind trans_state stmt_info vars_to_destroy =
@@ -1545,9 +1544,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
         in
         Some
-          (PriorityNode.compute_results_to_parent trans_state_pri sil_loc
-             ~node_name:(Destruction destr_kind) stmt_info' ~return:(mk_fresh_void_exp_typ ())
-             all_res_trans)
+          (PriorityNode.compute_results_to_parent trans_state_pri sil_loc (Destruction destr_kind)
+             stmt_info' ~return:(mk_fresh_void_exp_typ ()) all_res_trans)
 
 
   and inject_destructors destr_kind trans_state stmt_info =
@@ -1620,8 +1618,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             ([res_trans_b; tmp_var_res_trans], return)
       in
       let res_trans =
-        PriorityNode.compute_results_to_parent trans_state_pri sil_loc
-          ~node_name:ConditionalStmtBranch stmt_info ~return all_res_trans
+        PriorityNode.compute_results_to_parent trans_state_pri sil_loc ConditionalStmtBranch
+          stmt_info ~return all_res_trans
       in
       let prune_nodes_t, prune_nodes_f = List.partition_tf ~f:is_true_prune_node prune_nodes in
       let prune_nodes' = if branch then prune_nodes_t else prune_nodes_f in
@@ -1733,7 +1731,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         in
         L.debug Capture Verbose "op_res_trans.control=%a@\n" pp_control op_res_trans.control ;
         PriorityNode.compute_results_to_parent trans_state_pri sil_loc ~return:op_res_trans.return
-          ~node_name:BinaryConditionalStmtInit stmt_info [init_res_trans; op_res_trans]
+          BinaryConditionalStmtInit stmt_info [init_res_trans; op_res_trans]
     | _ ->
         CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
           "BinaryConditionalOperator not translated"
@@ -2472,8 +2470,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
               "InitListExp for var %a of type %a" Exp.pp var_exp (Typ.pp Pp.text) var_typ
       in
       let res_trans =
-        PriorityNode.compute_results_to_parent trans_state_pri sil_loc ~node_name:InitListExp
-          stmt_info ~return:(var_exp, var_typ) all_res_trans
+        PriorityNode.compute_results_to_parent trans_state_pri sil_loc InitListExp stmt_info
+          ~return:(var_exp, var_typ) all_res_trans
       in
       {res_trans with control= {res_trans.control with initd_exps= [var_exp]}}
 
@@ -2497,8 +2495,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       Sil.Call (ret_id_typ, call_exp, actuals, sil_loc, CallFlags.default)
     in
     let call_trans_control = {empty_control with instrs= [call_instr]} in
-    PriorityNode.compute_controls_to_parent trans_state_pri sil_loc
-      ~node_name:InitializeDynamicArrayLength dynlength_stmt_info
+    PriorityNode.compute_controls_to_parent trans_state_pri sil_loc InitializeDynamicArrayLength
+      dynlength_stmt_info
       [dynlength_trans_result.control; call_trans_control]
     |> mk_trans_result ret_exp_typ
 
@@ -2545,8 +2543,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let all_res_trans = res_trans_ie.control :: Option.to_list assign_trans_control_opt in
     L.debug Capture Verbose "sending init_expr_trans results to parent@\n" ;
     let control =
-      PriorityNode.compute_controls_to_parent trans_state_pri sil_loc ~node_name:DeclStmt
-        var_stmt_info all_res_trans
+      PriorityNode.compute_controls_to_parent trans_state_pri sil_loc DeclStmt var_stmt_info
+        all_res_trans
     in
     mk_trans_result var_exp_typ control
 
@@ -2817,8 +2815,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let unary_op_control = {empty_control with instrs= instr_op} in
     let all_control = [res_trans_stmt.control; unary_op_control] in
-    PriorityNode.compute_controls_to_parent trans_state_pri sil_loc ~node_name:UnaryOperator
-      stmt_info all_control
+    PriorityNode.compute_controls_to_parent trans_state_pri sil_loc UnaryOperator stmt_info
+      all_control
     |> mk_trans_result (exp_op, ret_typ)
 
 
@@ -2904,11 +2902,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                 let trans_state =
                   PriorityNode.force_claim_priority_node trans_state_pri stmt_info
                 in
-                PriorityNode.compute_control_to_parent trans_state sil_loc ~node_name:ReturnStmt
-                  stmt_info control )
+                PriorityNode.compute_control_to_parent trans_state sil_loc ReturnStmt stmt_info
+                  control )
           in
-          PriorityNode.compute_controls_to_parent trans_state' sil_loc ~node_name:ReturnStmt
-            stmt_info
+          PriorityNode.compute_controls_to_parent trans_state' sil_loc ReturnStmt stmt_info
             (Option.to_list var_control @ [res_trans_stmt.control])
         in
         let ret_instrs =
@@ -2928,8 +2925,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let ret_control =
           {empty_control with root_nodes= [ret_node]; leaf_nodes= [ret_node]; instrs= []}
         in
-        PriorityNode.compute_controls_to_parent trans_state_pri sil_loc ~node_name:ReturnStmt
-          stmt_info [controls; ret_control]
+        PriorityNode.compute_controls_to_parent trans_state_pri sil_loc ReturnStmt stmt_info
+          [controls; ret_control]
         |> mk_trans_result res_trans_stmt.return
     | [] ->
         (* return; *)
@@ -3462,8 +3459,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         Option.to_list control_size @ [res_trans_placement_control; res_trans_new.control]
       in
       let trans_result =
-        PriorityNode.compute_controls_to_parent trans_state sil_loc ~node_name:CXXNewExpr stmt_info
-          controls
+        PriorityNode.compute_controls_to_parent trans_state sil_loc CXXNewExpr stmt_info controls
         |> mk_trans_result res_trans_new.return
       in
       let var_exp_typ =
@@ -3499,7 +3495,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           let stmts = create_stmts stmt_opt size_exp_opt in
           let var_exp, var_typ = var_exp_typ in
           initListExpr_array_trans trans_state_init init_stmt_info stmts var_exp var_typ
-          |> PriorityNode.compute_results_to_parent trans_state_init sil_loc ~node_name:CXXNewExpr
+          |> PriorityNode.compute_results_to_parent trans_state_init sil_loc CXXNewExpr
                ~return:var_exp_typ init_stmt_info
       | _ ->
           init_expr_trans trans_state_init var_exp_typ init_stmt_info stmt_opt
@@ -3553,8 +3549,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         (* --- END OF DEAD CODE --- *)
       else [result_trans_param; call_res_trans]
     in
-    PriorityNode.compute_results_to_parent trans_state_pri sil_loc ~node_name:(Call "delete")
-      stmt_info ~return:call_return all_res_trans
+    PriorityNode.compute_results_to_parent trans_state_pri sil_loc (Call "delete") stmt_info
+      ~return:call_return all_res_trans
 
 
   and materializeTemporaryExpr_trans trans_state stmt_info stmt_list expr_info =
@@ -3617,8 +3613,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let res_ex = Exp.Var ret_id in
     let res_trans_dynamic_cast = {empty_control with instrs= [call]} in
     let all_res_trans = [res_trans_stmt.control; res_trans_dynamic_cast] in
-    PriorityNode.compute_controls_to_parent trans_state_pri sil_loc ~node_name:CXXDynamicCast
-      stmt_info all_res_trans
+    PriorityNode.compute_controls_to_parent trans_state_pri sil_loc CXXDynamicCast stmt_info
+      all_res_trans
     |> mk_trans_result (res_ex, cast_type)
 
 
@@ -3648,7 +3644,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       mk_trans_result (Exp.Var ret_id, ret_typ) {empty_control with instrs= [call_instr]}
     in
     let all_res_trans = res_trans_subexpr_list @ [res_trans_call] in
-    PriorityNode.compute_results_to_parent trans_state_pri sil_loc ~node_name:instr_name stmt_info
+    PriorityNode.compute_results_to_parent trans_state_pri sil_loc instr_name stmt_info
       ~return:res_trans_call.return all_res_trans
 
 
@@ -3729,8 +3725,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | None ->
           [res_control]
     in
-    PriorityNode.compute_controls_to_parent trans_state_pri sil_loc ~node_name:CXXTypeidExpr
-      stmt_info all_res_trans
+    PriorityNode.compute_controls_to_parent trans_state_pri sil_loc CXXTypeidExpr stmt_info
+      all_res_trans
     |> mk_trans_result (ret_exp, typ)
 
 
@@ -3754,8 +3750,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let res_trans_call = mk_trans_result (ret_exp, typ) {empty_control with instrs= [res_instr]} in
     let all_res_trans = res_trans_subexpr_list @ [res_trans_call] in
-    PriorityNode.compute_results_to_parent trans_state_pri sil_loc
-      ~node_name:CXXStdInitializerListExpr stmt_info ~return:res_trans_call.return all_res_trans
+    PriorityNode.compute_results_to_parent trans_state_pri sil_loc CXXStdInitializerListExpr
+      stmt_info ~return:res_trans_call.return all_res_trans
 
 
   and binaryOperator_trans_with_cond trans_state stmt_info stmt_list expr_info binop_info =
@@ -3885,7 +3881,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             in
             dtor_call stmt_info dtor_trans_state dtor_decl_ref temporary
             |> PriorityNode.compute_result_to_parent dtor_trans_state sil_loc
-                 ~node_name:(Destruction destr_kind) stmt_info
+                 (Destruction destr_kind) stmt_info
           in
           (* create prune nodes *)
           let marker_id = Ident.create_fresh Ident.knormal in
@@ -3947,8 +3943,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         expr_trans_result
     | _ :: _ as destr_trans_results ->
         (* wire [destr_trans_result] after [expr_trans_result] in CFG order *)
-        PriorityNode.compute_results_to_parent trans_state sil_loc
-          ~node_name:(Destruction destr_kind) stmt_info ~return:expr_trans_result.return
+        PriorityNode.compute_results_to_parent trans_state sil_loc (Destruction destr_kind)
+          stmt_info ~return:expr_trans_result.return
           (expr_trans_result :: destr_trans_results)
 
 
@@ -4017,12 +4013,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let stmt_info = {stmt_info with Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()} in
         let trans_state = PriorityNode.force_claim_priority_node trans_state stmt_info in
         let markers_init_result =
-          PriorityNode.compute_result_to_parent trans_state loc ~node_name:ExprWithCleanups
-            stmt_info
+          PriorityNode.compute_result_to_parent trans_state loc ExprWithCleanups stmt_info
             (mk_trans_result (Exp.zero, StdTyp.boolean)
                {empty_control with instrs= init_markers_to_zero_instrs})
         in
-        PriorityNode.compute_results_to_parent trans_state loc ~node_name:ExprWithCleanups stmt_info
+        PriorityNode.compute_results_to_parent trans_state loc ExprWithCleanups stmt_info
           ~return:sub_expr_result.return
           [markers_init_result; sub_expr_result]
     in
@@ -4179,8 +4174,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     if List.is_empty instrs then stmt_result
     else
       let control =
-        PriorityNode.compute_controls_to_parent trans_state loc ~node_name:CXXTemporaryMarkerSet
-          stmt_info
+        PriorityNode.compute_controls_to_parent trans_state loc CXXTemporaryMarkerSet stmt_info
           [stmt_result.control; {empty_control with instrs}]
       in
       let control = {control with cxx_temporary_markers_set} in
@@ -4582,8 +4576,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let var_exp_typ = var_res_trans.return in
     let init_expr = ctor_init.Clang_ast_t.xci_init_expr in
     let init_res_trans = init_expr_trans trans_state' var_exp_typ child_stmt_info init_expr in
-    PriorityNode.compute_results_to_parent trans_state' sil_loc ~node_name:ConstructorInit
-      this_stmt_info ~return:init_res_trans.return [var_res_trans; init_res_trans]
+    PriorityNode.compute_results_to_parent trans_state' sil_loc ConstructorInit this_stmt_info
+      ~return:init_res_trans.return [var_res_trans; init_res_trans]
 
 
   (** Given a translation state and list of translation functions it executes translation *)
