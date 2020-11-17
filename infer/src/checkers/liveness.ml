@@ -211,13 +211,21 @@ let get_captured_by_ref_invariant_map proc_desc =
   let cfg = ProcCfg.Exceptional.from_pdesc proc_desc in
   CapturedByRefAnalyzer.exec_cfg cfg () ~initial:VarSet.empty
 
+
 module IntLitSet = Caml.Set.Make (IntLit)
 
 let whitelisted_constants =
   let int_lit_constants =
-    List.map ~f:(fun el -> try IntLit.of_string el with Invalid_argument _ -> L.die UserError "Ill-formed option  '%s' for --liveness-whitelist-constant: an integer was expected" el) Config.liveness_whitelist_constant
+    List.map
+      ~f:(fun el ->
+        try IntLit.of_string el
+        with Invalid_argument _ ->
+          L.die UserError
+            "Ill-formed option  '%s' for --liveness-whitelist-constant: an integer was expected" el)
+      Config.liveness_whitelist_constant
   in
   IntLitSet.of_list int_lit_constants
+
 
 let checker {IntraproceduralAnalysis.proc_desc; err_log} =
   let captured_by_ref_invariant_map = get_captured_by_ref_invariant_map proc_desc in
