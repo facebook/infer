@@ -25,7 +25,7 @@ latest release, eg `VERSION=0.17.0`):
 VERSION=0.XX.Y; \
 curl -sSL "https://github.com/facebook/infer/releases/download/v$VERSION/infer-linux64-v$VERSION.tar.xz" \
 | sudo tar -C /opt -xJ && \
-ln -s "/opt/infer-linux64-v$VERSION/bin/infer" /usr/local/bin/infer
+sudo ln -s "/opt/infer-linux64-v$VERSION/bin/infer" /usr/local/bin/infer
 ```
 
 If the binaries do not work for you, or if you would rather build infer from
