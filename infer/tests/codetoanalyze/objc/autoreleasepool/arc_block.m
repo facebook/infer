@@ -49,7 +49,7 @@ BOOL x;
 
 - (void)callBlock:(dispatch_block_t)block {
   dispatch_block_t local_block = block;
-  local_block(); // pre-analysis can't specialize here and we drop the trace
+  local_block();
 }
 
 - (void)call_CallBlock_linear:(int)k {
