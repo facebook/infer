@@ -156,7 +156,7 @@ struct TupleSizeBase {
     return static_cast<Impl *>(this)->BASE##TupleSize(); \
   }
 #define ABSTRACT_TYPE(DERIVED, BASE) TYPE(DERIVED, BASE)
-#include <clang/AST/TypeNodes.def>
+#include <clang/AST/TypeNodes.inc>
 
   int tupleSizeOfTypeClass(const Type::TypeClass typeClass) {
     switch (typeClass) {
@@ -164,7 +164,7 @@ struct TupleSizeBase {
   case Type::DERIVED:       \
     return static_cast<Impl *>(this)->DERIVED##TypeTupleSize();
 #define ABSTRACT_TYPE(DERIVED, BASE)
-#include <clang/AST/TypeNodes.def>
+#include <clang/AST/TypeNodes.inc>
     }
     llvm_unreachable("Type that isn't part of TypeNodes.def!");
   }
@@ -1299,37 +1299,37 @@ void ASTExporter<ATDWriter>::dumpInputKind(InputKind kind) {
   // new info in InputKind that can still be used, e.g. whether the source is
   // preprocessed (PP), or precompiled.
   switch (kind.getLanguage()) {
-  case InputKind::Unknown:
+  case Language::Unknown:
     OF.emitSimpleVariant("IK_None");
     break;
-  case InputKind::Asm:
+  case Language::Asm:
     OF.emitSimpleVariant("IK_Asm");
     break;
-  case InputKind::C:
+  case Language::C:
     OF.emitSimpleVariant("IK_C");
     break;
-  case InputKind::CXX:
+  case Language::CXX:
     OF.emitSimpleVariant("IK_CXX");
     break;
-  case InputKind::ObjC:
+  case Language::ObjC:
     OF.emitSimpleVariant("IK_ObjC");
     break;
-  case InputKind::ObjCXX:
+  case Language::ObjCXX:
     OF.emitSimpleVariant("IK_ObjCXX");
     break;
-  case InputKind::OpenCL:
+  case Language::OpenCL:
     OF.emitSimpleVariant("IK_OpenCL");
     break;
-  case InputKind::CUDA:
+  case Language::CUDA:
     OF.emitSimpleVariant("IK_CUDA");
     break;
-  case InputKind::RenderScript:
+  case Language::RenderScript:
     OF.emitSimpleVariant("IK_RenderScript");
     break;
-  case InputKind::LLVM_IR:
+  case Language::LLVM_IR:
     OF.emitSimpleVariant("IK_LLVM_IR");
     break;
-  case InputKind::HIP:
+  case Language::HIP:
     OF.emitSimpleVariant("IK_HIP");
     break;
   }
@@ -4749,7 +4749,7 @@ void ASTExporter<ATDWriter>::visitComment(const Comment *C) {
 #define TYPE(DERIVED, BASE) //@atd #define @DERIVED@_type_tuple @BASE@_tuple
 #define ABSTRACT_TYPE(DERIVED, BASE) TYPE(DERIVED, BASE)
 TYPE(None, Type)
-#include <clang/AST/TypeNodes.def>
+#include <clang/AST/TypeNodes.inc>
 #undef TYPE
 #undef ABSTRACT_TYPE
 
@@ -4975,6 +4975,10 @@ int ASTExporter<ATDWriter>::BuiltinTypeTupleSize() {
 //@atd type builtin_type_kind = [
 #define BUILTIN_TYPE(TYPE, ID) //@atd   | TYPE
 #include <clang/AST/BuiltinTypes.def>
+#define SVE_PREDICATE_TYPE(Name, Id, SingletonId, ElKind) //@atd   | Id
+#define SVE_VECTOR_TYPE( \
+    Name, Id, SingletonId, ElKind, ElBits, IsSigned, IsFP) //@atd   | Id
+#include <clang/Basic/AArch64SVEACLETypes.def>
 //@atd ]
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitBuiltinType(const BuiltinType *T) {
@@ -4987,6 +4991,17 @@ void ASTExporter<ATDWriter>::VisitBuiltinType(const BuiltinType *T) {
     break;                     \
   }
 #include <clang/AST/BuiltinTypes.def>
+#define SVE_PREDICATE_TYPE(Name, Id, SingletonId, ElKind) \
+  case BuiltinType::Id: {                                 \
+    type_name = #Id;                                      \
+    break;                                                \
+  }
+#define SVE_VECTOR_TYPE(Name, Id, SingletonId, ElKind, ElBits, IsSigned, IsFP) \
+  case BuiltinType::Id: {                                                      \
+    type_name = #Id;                                                           \
+    break;                                                                     \
+  }
+#include <clang/Basic/AArch64SVEACLETypes.def>
 #define IMAGE_TYPE(ImgType, ID, SingletonId, Access, Suffix) \
   case BuiltinType::ID:
 #include <clang/Basic/OpenCLImageTypes.def>
@@ -5355,7 +5370,7 @@ void ASTExporter<ATDWriter>::VisitVisibilityAttr(const VisibilityAttr *A) {
 #define TYPE(CLASS, PARENT) //@atd   | CLASS@@Type of (@CLASS@_type_tuple)
 #define ABSTRACT_TYPE(CLASS, PARENT)
 TYPE(None, Type)
-#include <clang/AST/TypeNodes.def>
+#include <clang/AST/TypeNodes.inc>
 //@atd ] <ocaml repr="classic" validator="Clang_ast_visit.visit_type">
 
 template <class ATDWriter = JsonWriter, bool ForceYojson = false>

@@ -232,7 +232,9 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     | PragmaCommentDecl _
     | PragmaDetectMismatchDecl _
     | StaticAssertDecl _
-    | TranslationUnitDecl _ ->
+    | TranslationUnitDecl _
+    | LifetimeExtendedTemporaryDecl _
+    | RequiresExprBodyDecl _ ->
         (* TODO: some form of logging *)
         ()
 

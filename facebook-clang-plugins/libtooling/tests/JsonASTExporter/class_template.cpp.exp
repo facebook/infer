@@ -1769,7 +1769,7 @@
                       ],
                       {
                         "qual_type" : {
-                          "type_ptr" : 69,
+                          "type_ptr" : 35,
                           "is_const" : true
                         },
                         "value_kind" : "LValue"
