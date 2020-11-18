@@ -2859,8 +2859,8 @@ void ASTExporter<ATDWriter>::VisitObjCPropertyDecl(const ObjCPropertyDecl *D) {
     case ObjCPropertyDecl::Optional:
       OF.emitSimpleVariant("Optional");
       break;
-    case ObjCPropertyDecl::None:
-      llvm_unreachable("unreachable");
+    default:
+      OF.emitSimpleVariant("None");
       break;
     }
   }
