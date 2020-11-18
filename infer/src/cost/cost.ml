@@ -108,7 +108,8 @@ module InstrBasicCostWithReason = struct
     |> Option.value ~default:(Option.value callee_cost_opt ~default:BasicCostWithReason.zero)
 
 
-  let dispatch_func_ptr_call {inferbo_invariant_map; integer_type_widths} instr_node fun_exp =
+  let dispatch_func_ptr_call {inferbo_invariant_map; integer_type_widths} instr_node fun_exp
+      location =
     BufferOverrunAnalysis.extract_pre (InstrCFG.Node.id instr_node) inferbo_invariant_map
     |> Option.bind ~f:(fun inferbo_mem ->
            let func_ptrs =
@@ -118,7 +119,7 @@ module InstrBasicCostWithReason = struct
            match FuncPtr.Set.is_singleton_or_more func_ptrs with
            | Singleton (Path path) ->
                let symbolic_cost =
-                 BasicCost.of_func_ptr path |> BasicCostWithReason.of_basic_cost
+                 BasicCost.of_func_ptr path location |> BasicCostWithReason.of_basic_cost
                in
                Some (CostDomain.construct ~f:(fun _ -> symbolic_cost))
            | _ ->
@@ -190,8 +191,8 @@ module InstrBasicCostWithReason = struct
                       model_env ret cfg location inferbo_mem ) )
     | Sil.Call (_, Exp.Const (Const.Cfun _), _, _, _) ->
         CostDomain.zero_record
-    | Sil.Call (_, fun_exp, _, _location, _) ->
-        dispatch_func_ptr_call extras instr_node fun_exp
+    | Sil.Call (_, fun_exp, _, location, _) ->
+        dispatch_func_ptr_call extras instr_node fun_exp location
     | Sil.Load {id= lhs_id} when Ident.is_none lhs_id ->
         (* dummy deref inserted by frontend--don't count as a step. In
            JDK 11, dummy deref disappears and causes cost differences

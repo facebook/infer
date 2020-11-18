@@ -347,12 +347,13 @@ module NonNegativeNonTopPolynomial = struct
         body )
 
 
-  let singleton key =
-    { poly= {const= NonNegativeInt.zero; terms= M.singleton key one_poly}
-    ; autoreleasepool_trace= None }
+  let singleton ?autoreleasepool_trace key =
+    {poly= {const= NonNegativeInt.zero; terms= M.singleton key one_poly}; autoreleasepool_trace}
 
 
-  let of_func_ptr path = singleton (FuncPtr path)
+  let of_func_ptr path location =
+    singleton ~autoreleasepool_trace:(BoundTrace.of_function_ptr path location) (FuncPtr path)
+
 
   let rec of_valclass : (NonNegativeInt.t, Key.t, 't) valclass -> ('t, t, 't) below_above = function
     | ValTop trace ->
@@ -508,11 +509,24 @@ module NonNegativeNonTopPolynomial = struct
               plus_poly acc funcptr_p )
         terms (poly_of_non_negative_int const)
     in
+    let subst_autoreleasepool_trace autoreleasepool_trace =
+      let trace_of_path path =
+        match FuncPtr.Set.is_singleton_or_more (eval_func_ptrs path) with
+        | Singleton (Closure {name}) ->
+            get_closure_callee_cost name
+            |> Option.bind ~f:(fun {autoreleasepool_trace} -> autoreleasepool_trace)
+        | Singleton (Path path) ->
+            Some (BoundTrace.of_function_ptr path location)
+        | Empty | More ->
+            None
+      in
+      autoreleasepool_trace
+      |> Option.bind ~f:(BoundTrace.subst ~get_autoreleasepool_trace:trace_of_path)
+      |> Option.map ~f:(BoundTrace.call ~callee_pname ~location)
+    in
     match subst_poly poly with
     | poly ->
-        let autoreleasepool_trace =
-          Option.map autoreleasepool_trace ~f:(BoundTrace.call ~callee_pname ~location)
-        in
+        let autoreleasepool_trace = subst_autoreleasepool_trace autoreleasepool_trace in
         Val {poly; autoreleasepool_trace}
     | exception ReturnTop s_trace ->
         Above s_trace
@@ -816,7 +830,7 @@ module NonNegativePolynomial = struct
     |> make_trace_set ~map_above:TopTrace.unbounded_loop
 
 
-  let of_func_ptr path = Val (NonNegativeNonTopPolynomial.of_func_ptr path)
+  let of_func_ptr path location = Val (NonNegativeNonTopPolynomial.of_func_ptr path location)
 
   let is_symbolic = function
     | Below _ | Above _ ->
