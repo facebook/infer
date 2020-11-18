@@ -6,6 +6,7 @@
  *)
 open! IStd
 module CFG = ProcCfg.Normal
+module L = Logging
 
 module PPPVar = struct
   type t = Pvar.t [@@deriving compare, equal]
@@ -16,24 +17,26 @@ end
 module VDom = AbstractDomain.Flat (PPPVar)
 module Domain = AbstractDomain.SafeInvertedMap (Ident) (VDom)
 
+let eval_instr astate instr =
+  let open Sil in
+  match instr with
+  | Load {id; e= Exp.Lvar pvar} ->
+      Domain.add id (VDom.v pvar) astate
+  | Load {id} ->
+      Domain.add id VDom.top astate
+  | Call ((id, _), _, _, _, _) ->
+      Domain.add id VDom.top astate
+  | _ ->
+      astate
+
+
 module TransferFunctions = struct
   module CFG = CFG
   module Domain = Domain
 
   type analysis_data = unit
 
-  let exec_instr astate _analysis_data _node instr =
-    let open Sil in
-    match instr with
-    | Load {id; e= Exp.Lvar pvar} ->
-        Domain.add id (VDom.v pvar) astate
-    | Load {id} ->
-        Domain.add id VDom.top astate
-    | Call ((id, _), _, _, _, _) ->
-        Domain.add id VDom.top astate
-    | _ ->
-        astate
-
+  let exec_instr astate _ _node instr = eval_instr astate instr
 
   let pp_session_name node fmt =
     Format.fprintf fmt "Closure Subst Specialized Method %a" CFG.Node.pp_id (CFG.Node.id node)
@@ -41,7 +44,7 @@ end
 
 module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions)
 
-let exec_instr domain proc_name formals_to_blocks_map _node instr =
+let exec_instr proc_name formals_to_blocks_map domain instr =
   let open Sil in
   let res =
     let exec_exp exp =
@@ -71,6 +74,7 @@ let exec_instr domain proc_name formals_to_blocks_map _node instr =
                   extra_formals
                 |> List.unzip
               in
+              L.debug Capture Verbose "substituting specialized method@\n" ;
               load_instrs
               @ [ Call
                     (ret_id_typ, Const (Cfun procname), extra_args @ converted_args, loc, call_flags)
@@ -88,6 +92,14 @@ let exec_instr domain proc_name formals_to_blocks_map _node instr =
   Array.of_list res
 
 
+let analyze_at_node (map : Analyzer.invariant_map) node : Domain.t =
+  match Analyzer.InvariantMap.find_opt (Procdesc.Node.get_id node) map with
+  | Some abstate ->
+      abstate.pre
+  | None ->
+      Domain.top
+
+
 let process summary =
   let pdesc = Summary.get_proc_desc summary in
   let proc_name = Procdesc.get_proc_name pdesc in
@@ -95,19 +107,22 @@ let process summary =
   match proc_attributes.ProcAttributes.specialized_with_blocks_info with
   | Some spec_with_blocks_info -> (
     match AnalysisCallbacks.get_proc_desc spec_with_blocks_info.orig_proc with
-    | Some orig_proc_desc -> (
+    | Some orig_proc_desc ->
         let formals_to_blocks_map = spec_with_blocks_info.formals_to_procs_and_new_formals in
         Procdesc.shallow_copy_code_from_pdesc ~orig_pdesc:orig_proc_desc ~dest_pdesc:pdesc ;
-        let analysis_data = () in
-        match Analyzer.compute_post ~initial:Domain.empty analysis_data pdesc with
-        | Some domain ->
-            let used_ids = Domain.bindings domain |> List.map ~f:fst in
-            Ident.update_name_generator used_ids ;
-            Procdesc.replace_instrs_by pdesc ~f:(exec_instr domain proc_name formals_to_blocks_map)
-            |> ignore ;
-            ()
-        | None ->
-            () )
+        let node_cfg = CFG.from_pdesc pdesc in
+        let invariant_map = Analyzer.exec_cfg node_cfg () ~initial:Domain.empty in
+        let update_context = eval_instr in
+        CFG.fold_nodes node_cfg ~init:() ~f:(fun _ node ->
+            let used_ids = Instrs.instrs_get_normal_vars (CFG.instrs node) in
+            Ident.update_name_generator used_ids ) ;
+        let replace_instr _node = exec_instr proc_name formals_to_blocks_map in
+        let context_at_node node = analyze_at_node invariant_map node in
+        let _has_changed : bool =
+          Procdesc.replace_instrs_by_using_context pdesc ~f:replace_instr ~update_context
+            ~context_at_node
+        in
+        ()
     | _ ->
         () )
   | _ ->

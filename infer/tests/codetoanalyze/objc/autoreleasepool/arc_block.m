@@ -29,4 +29,37 @@
   int i = [x indexOfObjectPassingTest:b];
 }
 
+BOOL x;
+
+- (void)conditionalRunBlock:(dispatch_block_t)block {
+  if (x) {
+    block();
+  }
+}
+
+- (void)call_ConditionalRunBlock_linear:(int)k {
+  int i = 0;
+  while (i < k) {
+    [self conditionalRunBlock:^{
+      NoArcCallee* o = [NoArcCallee giveMeObject];
+    }];
+    i++;
+  }
+}
+
+- (void)callBlock:(dispatch_block_t)block {
+  dispatch_block_t local_block = block;
+  local_block(); // pre-analysis can't specialize here and we drop the trace
+}
+
+- (void)call_CallBlock_linear:(int)k {
+  int i = 0;
+  while (i < k) {
+    [self callBlock:^{
+      NoArcCallee* o = [NoArcCallee giveMeObject];
+    }];
+    i++;
+  }
+}
+
 @end

@@ -116,14 +116,25 @@ let map (t : not_reversed t) ~f =
   map_and_fold t ~f ~init:()
 
 
-let concat_map t ~f =
-  let instrs = get_underlying_not_reversed t in
-  let instrs' = Array.concat_map ~f instrs in
+let check_instr_equality t instrs instrs' =
   if
     Int.equal (Array.length instrs) (Array.length instrs')
     && Array.for_all2_exn ~f:phys_equal instrs instrs'
   then t
   else NotReversed instrs'
+
+
+let concat_map t ~f =
+  let instrs = get_underlying_not_reversed t in
+  let instrs' = Array.concat_map ~f instrs in
+  check_instr_equality t instrs instrs'
+
+
+let concat_map_and_fold t ~f ~init =
+  let cm ~f ~init t = Array.concat (Array.to_list (Array.folding_map ~init ~f t)) in
+  let instrs = get_underlying_not_reversed t in
+  let instrs' = cm ~init ~f instrs in
+  check_instr_equality t instrs instrs'
 
 
 let reverse_order t =
@@ -205,3 +216,15 @@ let find_map t ~f = Container.find_map ~iter t ~f
 
 let pp pe fmt t =
   iter t ~f:(fun instr -> F.fprintf fmt "%a;@\n" (Sil.pp_instr ~print_types:false pe) instr)
+
+
+(** Return the list of normal ids occurring in the instructions *)
+let instrs_get_normal_vars instrs =
+  let do_instr res instr =
+    Sil.exps_of_instr instr
+    |> List.fold_left ~init:res ~f:(fun res e ->
+           Exp.free_vars e
+           |> Sequence.filter ~f:Ident.is_normal
+           |> Ident.hashqueue_of_sequence ~init:res )
+  in
+  fold ~init:(Ident.HashQueue.create ()) ~f:do_instr instrs |> Ident.HashQueue.keys
