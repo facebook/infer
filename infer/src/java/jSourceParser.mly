@@ -20,7 +20,6 @@
 %token INTERFACE
 %token IMPLEMENTS
 %token EXTENDS
-%token SUPER
 %token ENUM
 %token NEW
 %token INSTANCEOF
@@ -108,25 +107,6 @@ import_name_end:
   | DOT IDENT import_name_end
     {}
 
-type_arguments:
-  | LANGLE type_argument_list RANGLE
-    {}
-
-type_argument_list:
-  | separated_nonempty_list(COMMA, type_argument)
-    {}
-
-type_argument:
-  | unann_reference_type // If we decide to parse annotations, it will
-                         // require change here
-  | QMARK wildcard_bounds?
-    {}
-
-wildcard_bounds:
-  | EXTENDS unann_reference_type
-  | SUPER unann_reference_type
-    {}
-
 package_declaration:
   | PACKAGE unann_class_or_interface_type SEMICOLON
     { $2 }
@@ -146,18 +126,18 @@ class_declaration:
 normal_class_declaration:
   | CLASS id=identifier superclass? superinterfaces? inner=class_body
     { {
-	location = location_of_pos $startpos(id);
-	kind = Class id;
-	inner_elements = inner;
+        location = location_of_pos $startpos(id);
+        kind = Class id;
+        inner_elements = inner;
       }
     }
 
 enum_declaration:
   | ENUM id=identifier superinterfaces? inner=enum_body
     { {
-	location = location_of_pos $startpos(id);
-	kind = Enum id;
-	inner_elements = inner;
+        location = location_of_pos $startpos(id);
+        kind = Enum id;
+        inner_elements = inner;
       }
     }
 
@@ -235,9 +215,9 @@ interface_declaration:
 normal_interface_declaration:
   | INTERFACE id=identifier inner=interface_body
     { {
-	location = location_of_pos $startpos(id);
-	kind = Interface id;
-	inner_elements = inner;
+        location = location_of_pos $startpos(id);
+        kind = Interface id;
+        inner_elements = inner;
       }
     }
 
@@ -697,11 +677,11 @@ unqualified_class_instance_creation_expression:
     { $4 }
   | NEW class_or_interface_type_to_instantiate LPAREN args=loption(argument_list) RPAREN inner=class_body
     {  args @
-	 [{
-	     location = location_of_pos $startpos(inner);
-	     kind = AnonymousClass;
-	     inner_elements = inner;
-	 }]
+         [{
+             location = location_of_pos $startpos(inner);
+             kind = AnonymousClass;
+             inner_elements = inner;
+         }]
     }
 
 conditional_expression:

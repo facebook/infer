@@ -91,8 +91,6 @@ rule class_scan = parse
         { VAR }
   | "extends"
         { EXTENDS }
-  | "super"
-        { SUPER }
   | "implements"
         { IMPLEMENTS }
   | "assert"
