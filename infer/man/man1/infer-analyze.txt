@@ -200,6 +200,9 @@ OPTIONS
            Deactivates: checker liveness: Detection of dead stores and unused
            variables. (Conversely: --liveness)
 
+       --liveness-ignored-constant +string
+           List of integer constants to be ignored by liveness analysis
+
        --liveness-only
            Activates: Enable liveness and disable all other checkers
            (Conversely: --no-liveness-only)

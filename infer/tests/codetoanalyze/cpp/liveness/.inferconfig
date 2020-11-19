@@ -1,4 +1,5 @@
 {
+  "liveness-ignored-constant" : ["44"],
   "liveness-dangerous-classes": [
     "dead_stores::BlacklistedStruct"
   ],

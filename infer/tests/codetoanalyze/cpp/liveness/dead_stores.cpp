@@ -609,4 +609,10 @@ void switch_with_temporary_ok() {
   };
 }
 
+void ignored_constants_ok() {
+  int x = 0;
+  float f = 0.0;
+  int z = 44;
+}
+
 } // namespace dead_stores
