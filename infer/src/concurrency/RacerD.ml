@@ -20,140 +20,118 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type nonrec analysis_data = analysis_data
 
-  let call_without_summary tenv ret_base callee_pname actuals astate =
+  let do_call_acquiring_ownership ret_access_exp astate =
+    let open Domain in
+    let ownership =
+      OwnershipDomain.add ret_access_exp OwnershipAbstractValue.owned astate.ownership
+    in
+    {astate with ownership}
+
+
+  let process_call_without_summary tenv ret_access_exp callee_pname actuals astate =
     let open Domain in
     if RacerDModels.is_synchronized_container_constructor tenv callee_pname actuals then
       apply_to_first_actual actuals astate ~f:(fun receiver ->
           let attribute_map = AttributeMapDomain.add receiver Synchronized astate.attribute_map in
           {astate with attribute_map} )
     else if RacerDModels.is_converter_to_synchronized_container tenv callee_pname actuals then
-      let attribute_map =
-        AttributeMapDomain.add (AccessExpression.base ret_base) Synchronized astate.attribute_map
-      in
+      let attribute_map = AttributeMapDomain.add ret_access_exp Synchronized astate.attribute_map in
       {astate with attribute_map}
     else if RacerDModels.is_box callee_pname then
       apply_to_first_actual actuals astate ~f:(fun actual_access_expr ->
           if AttributeMapDomain.is_functional astate.attribute_map actual_access_expr then
             (* TODO: check for constants, which are functional? *)
             let attribute_map =
-              AttributeMapDomain.add (AccessExpression.base ret_base) Functional
-                astate.attribute_map
+              AttributeMapDomain.add ret_access_exp Functional astate.attribute_map
             in
             {astate with attribute_map}
           else astate )
-    else
-      let ownership =
-        OwnershipDomain.add (AccessExpression.base ret_base) OwnershipAbstractValue.owned
-          astate.ownership
-      in
-      {astate with ownership}
+    else do_call_acquiring_ownership ret_access_exp astate
 
 
-  let do_call_acquiring_ownership ret_base astate =
+  let process_for_unannotated_interface_call tenv formals call_flags callee_pname actuals loc astate
+      =
+    if RacerDModels.should_flag_interface_call tenv actuals call_flags callee_pname then
+      Domain.add_unannotated_call_access formals callee_pname actuals loc astate
+    else astate
+
+
+  let process_for_thread_assert_effect ret_access_exp callee_pname (astate : Domain.t) =
     let open Domain in
-    let ownership =
-      OwnershipDomain.add (AccessExpression.base ret_base) OwnershipAbstractValue.owned
-        astate.ownership
-    in
-    {astate with ownership}
+    match ConcurrencyModels.get_thread_assert_effect callee_pname with
+    | BackgroundThread ->
+        {astate with threads= ThreadsDomain.AnyThread}
+    | MainThread ->
+        {astate with threads= ThreadsDomain.AnyThreadButSelf}
+    | MainThreadIfTrue ->
+        let attribute_map =
+          AttributeMapDomain.add ret_access_exp Attribute.OnMainThread astate.attribute_map
+        in
+        {astate with attribute_map}
+    | UnknownThread ->
+        astate
+
+
+  let process_call_summary analyze_dependency tenv formals ret_access_exp callee_pname actuals loc
+      astate =
+    match analyze_dependency callee_pname with
+    | Some (callee_proc_desc, summary) ->
+        Domain.integrate_summary formals ~callee_proc_desc summary ret_access_exp callee_pname
+          actuals loc astate
+    | None ->
+        process_call_without_summary tenv ret_access_exp callee_pname actuals astate
+
+
+  let process_lock_effect_or_summary analyze_dependency tenv formals ret_access_exp callee_pname
+      actuals loc (astate : Domain.t) =
+    let open Domain in
+    match ConcurrencyModels.get_lock_effect callee_pname actuals with
+    | Lock _ | GuardLock _ | GuardConstruct {acquire_now= true} ->
+        { astate with
+          locks= LockDomain.acquire_lock astate.locks
+        ; threads= ThreadsDomain.update_for_lock_use astate.threads }
+    | Unlock _ | GuardDestroy _ | GuardUnlock _ ->
+        { astate with
+          locks= LockDomain.release_lock astate.locks
+        ; threads= ThreadsDomain.update_for_lock_use astate.threads }
+    | LockedIfTrue _ | GuardLockedIfTrue _ ->
+        let attribute_map =
+          AttributeMapDomain.add ret_access_exp Attribute.LockHeld astate.attribute_map
+        in
+        {astate with attribute_map; threads= ThreadsDomain.update_for_lock_use astate.threads}
+    | GuardConstruct {acquire_now= false} ->
+        astate
+    | NoEffect ->
+        process_call_summary analyze_dependency tenv formals ret_access_exp callee_pname actuals loc
+          astate
+
+
+  let process_for_functional_values tenv ret_access_exp callee_pname (astate : Domain.t) =
+    let open Domain in
+    if PatternMatch.override_exists RacerDModels.is_functional tenv callee_pname then
+      let attribute_map = AttributeMapDomain.add ret_access_exp Functional astate.attribute_map in
+      {astate with attribute_map}
+    else astate
+
+
+  let process_for_onwership_acquisition tenv ret_access_exp callee_pname astate =
+    if
+      PatternMatch.override_exists
+        (RacerDModels.has_return_annot Annotations.ia_is_returns_ownership)
+        tenv callee_pname
+    then do_call_acquiring_ownership ret_access_exp astate
+    else astate
 
 
   let do_proc_call ret_base callee_pname actuals call_flags loc
       {interproc= {tenv; analyze_dependency}; formals} (astate : Domain.t) =
-    let open Domain in
-    let open RacerDModels in
-    let open ConcurrencyModels in
     let ret_access_exp = AccessExpression.base ret_base in
-    let astate =
-      if RacerDModels.should_flag_interface_call tenv actuals call_flags callee_pname then
-        Domain.add_unannotated_call_access formals callee_pname actuals loc astate
-      else astate
-    in
-    let astate =
-      match get_thread_assert_effect callee_pname with
-      | BackgroundThread ->
-          {astate with threads= ThreadsDomain.AnyThread}
-      | MainThread ->
-          {astate with threads= ThreadsDomain.AnyThreadButSelf}
-      | MainThreadIfTrue ->
-          let attribute_map =
-            AttributeMapDomain.add ret_access_exp Attribute.OnMainThread astate.attribute_map
-          in
-          {astate with attribute_map}
-      | UnknownThread ->
-          astate
-    in
-    let astate_callee =
-      (* assuming that modeled procedures do not have useful summaries *)
-      if is_thread_utils_method "assertMainThread" callee_pname then
-        {astate with threads= ThreadsDomain.AnyThreadButSelf}
-      else
-        (* if we don't have any evidence about whether the current function can run in parallel
-           with other threads or not, start assuming that it can. why use a lock if the function
-           can't run in a multithreaded context? *)
-        let update_for_lock_use = function
-          | ThreadsDomain.AnyThreadButSelf ->
-              ThreadsDomain.AnyThreadButSelf
-          | _ ->
-              ThreadsDomain.AnyThread
-        in
-        match get_lock_effect callee_pname actuals with
-        | Lock _ | GuardLock _ | GuardConstruct {acquire_now= true} ->
-            { astate with
-              locks= LockDomain.acquire_lock astate.locks
-            ; threads= update_for_lock_use astate.threads }
-        | Unlock _ | GuardDestroy _ | GuardUnlock _ ->
-            { astate with
-              locks= LockDomain.release_lock astate.locks
-            ; threads= update_for_lock_use astate.threads }
-        | LockedIfTrue _ | GuardLockedIfTrue _ ->
-            let attribute_map =
-              AttributeMapDomain.add ret_access_exp Attribute.LockHeld astate.attribute_map
-            in
-            {astate with attribute_map; threads= update_for_lock_use astate.threads}
-        | GuardConstruct {acquire_now= false} ->
-            astate
-        | NoEffect -> (
-          match analyze_dependency callee_pname with
-          | Some (callee_proc_desc, summary) ->
-              let callee_formals = FormalMap.make callee_proc_desc in
-              let {threads; locks; return_ownership; return_attribute} = summary in
-              let astate =
-                Domain.add_callee_accesses ~caller_formals:formals ~callee_formals
-                  ~callee_accesses:summary.accesses callee_pname actuals loc astate
-              in
-              let locks =
-                LockDomain.integrate_summary ~caller_astate:astate.locks ~callee_astate:locks
-              in
-              let ownership =
-                OwnershipDomain.propagate_return ret_access_exp return_ownership actuals
-                  astate.ownership
-              in
-              let attribute_map =
-                AttributeMapDomain.add ret_access_exp return_attribute astate.attribute_map
-              in
-              let threads =
-                ThreadsDomain.integrate_summary ~caller_astate:astate.threads ~callee_astate:threads
-              in
-              {astate with locks; threads; ownership; attribute_map}
-          | None ->
-              call_without_summary tenv ret_base callee_pname actuals astate )
-    in
-    let add_if_annotated predicate attribute attribute_map =
-      if PatternMatch.override_exists predicate tenv callee_pname then
-        AttributeMapDomain.add ret_access_exp attribute attribute_map
-      else attribute_map
-    in
-    let attribute_map = add_if_annotated is_functional Functional astate_callee.attribute_map in
-    let ownership =
-      if
-        PatternMatch.override_exists
-          (has_return_annot Annotations.ia_is_returns_ownership)
-          tenv callee_pname
-      then OwnershipDomain.add ret_access_exp OwnershipAbstractValue.owned astate_callee.ownership
-      else astate_callee.ownership
-    in
-    {astate_callee with ownership; attribute_map}
+    process_for_unannotated_interface_call tenv formals call_flags callee_pname actuals loc astate
+    |> process_for_thread_assert_effect ret_access_exp callee_pname
+    |> process_lock_effect_or_summary analyze_dependency tenv formals ret_access_exp callee_pname
+         actuals loc
+    |> process_for_functional_values tenv ret_access_exp callee_pname
+    |> process_for_onwership_acquisition tenv ret_access_exp callee_pname
 
 
   let do_assignment lhs_access_exp rhs_exp loc {interproc= {tenv}; formals} (astate : Domain.t) =
@@ -223,7 +201,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call (ret_base, Direct callee_pname, actuals, call_flags, loc) ->
         let astate = Domain.add_reads_of_hilexps tenv formals actuals loc astate in
         if RacerDModels.acquires_ownership callee_pname tenv then
-          do_call_acquiring_ownership ret_base astate
+          do_call_acquiring_ownership (AccessExpression.base ret_base) astate
         else if RacerDModels.is_container_write tenv callee_pname then
           Domain.add_container_access tenv formals ~is_write:true ret_base callee_pname actuals loc
             astate

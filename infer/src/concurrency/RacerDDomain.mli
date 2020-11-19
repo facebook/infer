@@ -38,9 +38,6 @@ module LockDomain : sig
 
   val release_lock : t -> t
   (** record release of a lock *)
-
-  val integrate_summary : caller_astate:t -> callee_astate:t -> t
-  (** integrate current state with a callee summary *)
 end
 
 (** Abstraction of threads that may run in parallel with the current thread. NoThread <
@@ -63,8 +60,8 @@ module ThreadsDomain : sig
 
   val is_any : t -> bool
 
-  val integrate_summary : caller_astate:t -> callee_astate:t -> t
-  (** integrate current state with a callee summary *)
+  val update_for_lock_use : t -> t
+  (** update thread status when a lock instruction is observed *)
 end
 
 module OwnershipAbstractValue : sig
@@ -113,8 +110,6 @@ module OwnershipDomain : sig
   val add : AccessExpression.t -> OwnershipAbstractValue.t -> t -> t
 
   val propagate_assignment : AccessExpression.t -> HilExp.t -> t -> t
-
-  val propagate_return : AccessExpression.t -> OwnershipAbstractValue.t -> HilExp.t list -> t -> t
 end
 
 module Attribute : sig
@@ -184,10 +179,11 @@ val add_container_access :
 
 val add_reads_of_hilexps : Tenv.t -> FormalMap.t -> HilExp.t list -> Location.t -> t -> t
 
-val add_callee_accesses :
-     caller_formals:FormalMap.t
-  -> callee_formals:FormalMap.t
-  -> callee_accesses:AccessDomain.t
+val integrate_summary :
+     FormalMap.t
+  -> callee_proc_desc:Procdesc.t
+  -> summary
+  -> HilExp.access_expression
   -> Procname.t
   -> HilExp.t list
   -> Location.t

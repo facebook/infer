@@ -219,6 +219,9 @@ module ThreadsDomain = struct
     (* if we know the callee runs on the main thread, assume the caller does too. otherwise, keep
        the caller's thread context *)
     match callee_astate with AnyThreadButSelf -> callee_astate | _ -> caller_astate
+
+
+  let update_for_lock_use = function AnyThreadButSelf -> AnyThreadButSelf | _ -> AnyThread
 end
 
 module OwnershipAbstractValue = struct
@@ -700,3 +703,22 @@ let add_callee_accesses ~caller_formals ~callee_formals ~callee_accesses callee_
   in
   let accesses = AccessDomain.fold process callee_accesses caller_astate.accesses in
   {caller_astate with accesses}
+
+
+let integrate_summary formals ~callee_proc_desc summary ret_access_exp callee_pname actuals loc
+    astate =
+  let callee_formals = FormalMap.make callee_proc_desc in
+  let {threads; locks; return_ownership; return_attribute} = summary in
+  let astate =
+    add_callee_accesses ~caller_formals:formals ~callee_formals ~callee_accesses:summary.accesses
+      callee_pname actuals loc astate
+  in
+  let locks = LockDomain.integrate_summary ~caller_astate:astate.locks ~callee_astate:locks in
+  let ownership =
+    OwnershipDomain.propagate_return ret_access_exp return_ownership actuals astate.ownership
+  in
+  let attribute_map = AttributeMapDomain.add ret_access_exp return_attribute astate.attribute_map in
+  let threads =
+    ThreadsDomain.integrate_summary ~caller_astate:astate.threads ~callee_astate:threads
+  in
+  {astate with locks; threads; ownership; attribute_map}
