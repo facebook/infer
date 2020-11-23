@@ -22,10 +22,6 @@ type lock_effect =
 
 type thread = BackgroundThread | MainThread | MainThreadIfTrue | UnknownThread
 
-val is_thread_utils_method : string -> Procname.t -> bool
-(** return true if the given method name is a utility class for checking what thread we're on TODO:
-    clean this up so it takes only a procname *)
-
 val get_lock_effect : Procname.t -> HilExp.t list -> lock_effect
 (** describe how this procedure behaves with respect to locking *)
 

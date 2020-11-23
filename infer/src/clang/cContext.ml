@@ -26,7 +26,8 @@ type t =
   ; mutable blocks_static_vars: (Pvar.t * Typ.t) list Procname.Map.t
   ; label_map: str_node_map
   ; vars_to_destroy: Clang_ast_t.decl list StmtMap.t
-  ; temporary_names: (Clang_ast_t.pointer, Pvar.t * Typ.t) Hashtbl.t }
+  ; temporary_names: (Clang_ast_t.pointer, Pvar.t * Typ.t) Hashtbl.t
+  ; temporaries_constructor_markers: (Pvar.t * Typ.t) Exp.Map.t }
 
 let create_context translation_unit_context tenv cfg procdesc immediate_curr_class return_param_typ
     outer_context vars_to_destroy =
@@ -40,7 +41,8 @@ let create_context translation_unit_context tenv cfg procdesc immediate_curr_cla
   ; blocks_static_vars= Procname.Map.empty
   ; label_map= Hashtbl.create 17
   ; vars_to_destroy
-  ; temporary_names= Hashtbl.create 0 }
+  ; temporary_names= Hashtbl.create 0
+  ; temporaries_constructor_markers= Exp.Map.empty }
 
 
 let rec is_objc_method context =

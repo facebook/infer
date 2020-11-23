@@ -13,25 +13,20 @@ type t = {dir: string; file: string; line: int; col: int}
 let none = {dir= ""; file= ""; line= 0; col= 0}
 
 let mk ?(dir = none.dir) ?(file = none.file) ?(col = none.col) ~line =
-  let dir =
-    if String.is_empty dir then dir
-    else try Filename.realpath dir with Unix.Unix_error _ -> dir
-  in
   {dir; file; line; col}
 
-let root = ref (Filename.realpath (Sys.getcwd ()))
+let root = ref None
 
 let pp fs ({dir; file; line; col} as loc) =
   if not (equal loc none) then Format.pp_print_string fs "; " ;
-  if not (String.is_empty dir) then (
-    let dir =
-      Option.map_or ~f:Fpath.to_string
-        (Fpath.relativize ~root:(Fpath.v !root) (Fpath.v dir))
-        ~default:dir
+  ( if not (String.is_empty dir) then
+    let dir_file = Fpath.append (Fpath.v dir) (Fpath.v file) in
+    let relative =
+      let* root = !root in
+      let+ relative = Fpath.relativize ~root:(Fpath.v root) dir_file in
+      relative
     in
-    Format.pp_print_string fs dir ;
-    Format.pp_print_string fs Filename.dir_sep ) ;
-  Format.pp_print_string fs file ;
+    Fpath.pp fs (Option.value relative ~default:dir_file) ) ;
   if not (String.is_empty file) then Format.pp_print_char fs ':' ;
   if line > 0 then (
     Format.pp_print_int fs line ;

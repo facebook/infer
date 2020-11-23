@@ -180,7 +180,7 @@ let get_type_tuple = function
 #define TYPE(DERIVED, BASE) | DERIVED@@Type (@DERIVED@_type_tuple) -> (type_tuple)
 #define ABSTRACT_TYPE(DERIVED, BASE)
 TYPE(None, Type) (*  special case for nullptr type *)
-#include <clang/AST/TypeNodes.def>
+#include <clang/AST/TypeNodes.inc>
 
 let is_valid_binop_kind_name = function
 #define BINARY_OPERATION(Name, Spelling) | s(Name) -> true

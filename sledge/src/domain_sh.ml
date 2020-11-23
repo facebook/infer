@@ -30,8 +30,8 @@ let init globals =
             | _ -> violates Llair.GlobalDefn.invariant global
           in
           let len = Term.integer (Z.of_int siz) in
-          let seq = X.term seq in
-          Sh.star q (Sh.seg {loc; bas= loc; len; siz= len; seq})
+          let cnt = X.term seq in
+          Sh.star q (Sh.seg {loc; bas= loc; len; siz= len; cnt})
       | _ -> q )
 
 let join p q =
@@ -93,7 +93,7 @@ let garbage_collect (q : Sh.t) ~wrt =
       let new_set =
         List.fold q.heap current ~f:(fun seg current ->
             if value_determined_by q.ctx current seg.loc then
-              List.fold (Context.class_of q.ctx seg.seq) current
+              List.fold (Context.class_of q.ctx seg.cnt) current
                 ~f:(fun e c ->
                   Term.Set.union c (Term.Set.of_iter (Term.atoms e)) )
             else current )
@@ -324,9 +324,9 @@ let%test_module _ =
     let b = Term.var b_
     let n = Term.var n_
     let endV = Term.var end_
-    let seg_main = Sh.seg {loc= main; bas= b; len= n; siz= n; seq= a}
-    let seg_a = Sh.seg {loc= a; bas= b; len= n; siz= n; seq= endV}
-    let seg_cycle = Sh.seg {loc= a; bas= b; len= n; siz= n; seq= main}
+    let seg_main = Sh.seg {loc= main; bas= b; len= n; siz= n; cnt= a}
+    let seg_a = Sh.seg {loc= a; bas= b; len= n; siz= n; cnt= endV}
+    let seg_cycle = Sh.seg {loc= a; bas= b; len= n; siz= n; cnt= main}
 
     let%expect_test _ =
       pp (garbage_collect seg_main ~wrt:(Term.Set.of_list [])) ;

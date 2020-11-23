@@ -22,10 +22,14 @@ digraph cfg {
 "fun#A#(11837362180710022838).bd816a84384ccf9d60cef41667a13288_2" [label="2: Exit A::fun \n  " color=yellow style=filled]
 	
 
-"fun#A#(11837362180710022838).bd816a84384ccf9d60cef41667a13288_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 14, column 42]\n  n$1=*&b:int [line 14, column 46]\n  n$2=*&c:int [line 14, column 50]\n  *&return:int=((n$0 + n$1) + n$2) [line 14, column 35]\n " shape="box"]
+"fun#A#(11837362180710022838).bd816a84384ccf9d60cef41667a13288_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 14, column 42]\n  n$1=*&b:int [line 14, column 46]\n  n$2=*&c:int [line 14, column 50]\n " shape="box"]
 	
 
-	 "fun#A#(11837362180710022838).bd816a84384ccf9d60cef41667a13288_3" -> "fun#A#(11837362180710022838).bd816a84384ccf9d60cef41667a13288_2" ;
+	 "fun#A#(11837362180710022838).bd816a84384ccf9d60cef41667a13288_3" -> "fun#A#(11837362180710022838).bd816a84384ccf9d60cef41667a13288_4" ;
+"fun#A#(11837362180710022838).bd816a84384ccf9d60cef41667a13288_4" [label="4:  Return Stmt \n   *&return:int=((n$0 + n$1) + n$2) [line 14, column 35]\n " shape="box"]
+	
+
+	 "fun#A#(11837362180710022838).bd816a84384ccf9d60cef41667a13288_4" -> "fun#A#(11837362180710022838).bd816a84384ccf9d60cef41667a13288_2" ;
 "fun#A#(8182299831707963163).ce97257c1f3f892cff78d992a175b48a_1" [label="1: Start A::fun\nFormals:  this:A* a:int b:int\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -33,8 +37,12 @@ digraph cfg {
 "fun#A#(8182299831707963163).ce97257c1f3f892cff78d992a175b48a_2" [label="2: Exit A::fun \n  " color=yellow style=filled]
 	
 
-"fun#A#(8182299831707963163).ce97257c1f3f892cff78d992a175b48a_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 16, column 35]\n  n$1=*&b:int [line 16, column 39]\n  *&return:int=(n$0 - n$1) [line 16, column 28]\n " shape="box"]
+"fun#A#(8182299831707963163).ce97257c1f3f892cff78d992a175b48a_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 16, column 35]\n  n$1=*&b:int [line 16, column 39]\n " shape="box"]
 	
 
-	 "fun#A#(8182299831707963163).ce97257c1f3f892cff78d992a175b48a_3" -> "fun#A#(8182299831707963163).ce97257c1f3f892cff78d992a175b48a_2" ;
+	 "fun#A#(8182299831707963163).ce97257c1f3f892cff78d992a175b48a_3" -> "fun#A#(8182299831707963163).ce97257c1f3f892cff78d992a175b48a_4" ;
+"fun#A#(8182299831707963163).ce97257c1f3f892cff78d992a175b48a_4" [label="4:  Return Stmt \n   *&return:int=(n$0 - n$1) [line 16, column 28]\n " shape="box"]
+	
+
+	 "fun#A#(8182299831707963163).ce97257c1f3f892cff78d992a175b48a_4" -> "fun#A#(8182299831707963163).ce97257c1f3f892cff78d992a175b48a_2" ;
 }

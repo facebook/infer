@@ -790,6 +790,10 @@ OPTIONS
            unique_ptr<type>) will count as dead stores when the variables are
            not read explicitly by the program.           See also infer-analyze(1).
 
+       --liveness-ignored-constant +string
+           List of integer constants to be ignored by liveness analysis       
+    See also infer-analyze(1).
+
        --liveness-only
            Activates: Enable liveness and disable all other checkers
            (Conversely: --no-liveness-only)           See also infer-analyze(1).
@@ -1566,6 +1570,10 @@ INTERNAL OPTIONS
        --java-jar-compiler-reset
            Cancel the effect of --java-jar-compiler.
 
+       --java-source-parser-experimental
+           Activates: The experimental Java source parser for declaration
+           locations. (Conversely: --no-java-source-parser-experimental)
+
        --java-version-reset
            Cancel the effect of --java-version.
 
@@ -1592,6 +1600,9 @@ INTERNAL OPTIONS
 
        --linters-doc-url-reset
            Set --linters-doc-url to the empty list.
+
+       --liveness-ignored-constant-reset
+           Set --liveness-ignored-constant to the empty list.
 
        --load-average-reset
            Cancel the effect of --load-average.

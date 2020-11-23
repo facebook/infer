@@ -37,8 +37,12 @@ digraph cfg {
 "call#X#(5770224879682844394).d055b894c8e89eaff4b8d412706da082_2" [label="2: Exit X::call \n  " color=yellow style=filled]
 	
 
-"call#X#(5770224879682844394).d055b894c8e89eaff4b8d412706da082_3" [label="3:  Return Stmt \n   n$0=*&this:X* [line 10, column 23]\n  n$1=*n$0.f:int [line 10, column 23]\n  *&return:int=n$1 [line 10, column 16]\n " shape="box"]
+"call#X#(5770224879682844394).d055b894c8e89eaff4b8d412706da082_3" [label="3:  Return Stmt \n   n$0=*&this:X* [line 10, column 23]\n  n$1=*n$0.f:int [line 10, column 23]\n " shape="box"]
 	
 
-	 "call#X#(5770224879682844394).d055b894c8e89eaff4b8d412706da082_3" -> "call#X#(5770224879682844394).d055b894c8e89eaff4b8d412706da082_2" ;
+	 "call#X#(5770224879682844394).d055b894c8e89eaff4b8d412706da082_3" -> "call#X#(5770224879682844394).d055b894c8e89eaff4b8d412706da082_4" ;
+"call#X#(5770224879682844394).d055b894c8e89eaff4b8d412706da082_4" [label="4:  Return Stmt \n   *&return:int=n$1 [line 10, column 16]\n " shape="box"]
+	
+
+	 "call#X#(5770224879682844394).d055b894c8e89eaff4b8d412706da082_4" -> "call#X#(5770224879682844394).d055b894c8e89eaff4b8d412706da082_2" ;
 }

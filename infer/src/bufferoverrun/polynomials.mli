@@ -73,7 +73,7 @@ module NonNegativePolynomial : sig
 
   val of_non_negative_bound : ?degree_kind:DegreeKind.t -> Bounds.NonNegativeBound.t -> t
 
-  val of_func_ptr : Symb.SymbolPath.partial -> t
+  val of_func_ptr : Symb.SymbolPath.partial -> Location.t -> t
 
   val plus : t -> t -> t
 

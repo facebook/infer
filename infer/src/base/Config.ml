@@ -1460,6 +1460,11 @@ and java_jar_compiler =
     ~meta:"path" "Specify the Java compiler jar used to generate the bytecode"
 
 
+and java_source_parser_experimental =
+  CLOpt.mk_bool ~long:"java-source-parser-experimental"
+    "The experimental Java source parser for declaration locations."
+
+
 and java_version =
   CLOpt.mk_int_opt ~long:"java-version" ?default:Version.java_version
     ~in_help:InferCommand.[(Capture, manual_java); (Analyze, manual_java)]
@@ -1490,6 +1495,12 @@ and liveness_dangerous_classes =
      words, assignement to variables of these types (or common wrappers around these types such as \
      $(i,unique_ptr<type>)) will count as dead stores when the variables are not read explicitly \
      by the program."
+
+
+and liveness_ignored_constant =
+  CLOpt.mk_string_list ~default:["0"] ~long:"liveness-ignored-constant"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "List of integer constants to be ignored by liveness analysis"
 
 
 and _log_events =
@@ -2929,6 +2940,8 @@ and java_debug_source_file_info = !java_debug_source_file_info
 
 and java_jar_compiler = !java_jar_compiler
 
+and java_source_parser_experimental = !java_source_parser_experimental
+
 and java_version = !java_version
 
 and javac_classes_out = !javac_classes_out
@@ -2956,6 +2969,8 @@ and list_checkers = !list_checkers
 and list_issue_types = !list_issue_types
 
 and liveness_dangerous_classes = !liveness_dangerous_classes
+
+and liveness_ignored_constant = !liveness_ignored_constant
 
 and load_average =
   match !load_average with None when !buck -> Some (float_of_int ncpu) | _ -> !load_average

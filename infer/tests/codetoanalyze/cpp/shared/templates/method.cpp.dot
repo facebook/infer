@@ -3,133 +3,157 @@ digraph cfg {
 "div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_1" [label="1: Start method::div0_getter\nFormals: \nLocals:  g:method::Getter x2:method::X2 \n  " color=yellow style=filled]
 	
 
-	 "div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_1" -> "div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_5" ;
+	 "div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_1" -> "div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_6" ;
 "div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_2" [label="2: Exit method::div0_getter \n  " color=yellow style=filled]
 	
 
-"div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_3" [label="3:  Return Stmt \n   _=*&g:method::Getter [line 40, column 14]\n  n$1=_fun_method::Getter::get<method::X2>(&g:method::Getter&,&x2:method::X2&) [line 40, column 14]\n  *&return:int=(1 / n$1) [line 40, column 3]\n " shape="box"]
+"div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_3" [label="3:  Return Stmt \n   _=*&g:method::Getter [line 40, column 14]\n  n$1=_fun_method::Getter::get<method::X2>(&g:method::Getter&,&x2:method::X2&) [line 40, column 14]\n " shape="box"]
 	
 
-	 "div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_3" -> "div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_2" ;
-"div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(g:method::Getter); [line 39, column 3]\n  n$2=_fun_method::Getter::Getter(&g:method::Getter*) [line 39, column 10]\n " shape="box"]
+	 "div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_3" -> "div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_4" ;
+"div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$1) [line 40, column 3]\n " shape="box"]
 	
 
-	 "div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_4" -> "div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_3" ;
-"div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(x2:method::X2); [line 38, column 3]\n  n$3=_fun_method::X2::X2(&x2:method::X2*) [line 38, column 6]\n " shape="box"]
+	 "div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_4" -> "div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_2" ;
+"div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(g:method::Getter); [line 39, column 3]\n  n$2=_fun_method::Getter::Getter(&g:method::Getter*) [line 39, column 10]\n " shape="box"]
 	
 
-	 "div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_5" -> "div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_4" ;
+	 "div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_5" -> "div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_3" ;
+"div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(x2:method::X2); [line 38, column 3]\n  n$3=_fun_method::X2::X2(&x2:method::X2*) [line 38, column 6]\n " shape="box"]
+	
+
+	 "div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_6" -> "div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_5" ;
 "div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_1" [label="1: Start method::div0_getter_templ\nFormals: \nLocals:  g:method::GetterTempl<method::X3> x3:method::X3 x2:method::X2 \n  " color=yellow style=filled]
 	
 
-	 "div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_1" -> "div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_6" ;
+	 "div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_1" -> "div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_7" ;
 "div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_2" [label="2: Exit method::div0_getter_templ \n  " color=yellow style=filled]
 	
 
-"div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_3" [label="3:  Return Stmt \n   _=*&g:method::GetterTempl<method::X3> [line 53, column 14]\n  n$1=_fun_method::GetterTempl<method::X3>::get<method::X2>(&g:method::GetterTempl<method::X3>&,&x3:method::X3&,&x2:method::X2&) [line 53, column 14]\n  *&return:int=(1 / n$1) [line 53, column 3]\n " shape="box"]
+"div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_3" [label="3:  Return Stmt \n   _=*&g:method::GetterTempl<method::X3> [line 53, column 14]\n  n$1=_fun_method::GetterTempl<method::X3>::get<method::X2>(&g:method::GetterTempl<method::X3>&,&x3:method::X3&,&x2:method::X2&) [line 53, column 14]\n " shape="box"]
 	
 
-	 "div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_3" -> "div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_2" ;
-"div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(g:method::GetterTempl<method::X3>); [line 52, column 3]\n  n$2=_fun_method::GetterTempl<method::X3>::GetterTempl(&g:method::GetterTempl<method::X3>*) [line 52, column 19]\n " shape="box"]
+	 "div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_3" -> "div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_4" ;
+"div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$1) [line 53, column 3]\n " shape="box"]
 	
 
-	 "div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_4" -> "div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_3" ;
-"div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(x3:method::X3); [line 51, column 3]\n  n$3=_fun_method::X3::X3(&x3:method::X3*) [line 51, column 6]\n " shape="box"]
+	 "div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_4" -> "div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_2" ;
+"div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(g:method::GetterTempl<method::X3>); [line 52, column 3]\n  n$2=_fun_method::GetterTempl<method::X3>::GetterTempl(&g:method::GetterTempl<method::X3>*) [line 52, column 19]\n " shape="box"]
 	
 
-	 "div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_5" -> "div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_4" ;
-"div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(x2:method::X2); [line 50, column 3]\n  n$4=_fun_method::X2::X2(&x2:method::X2*) [line 50, column 6]\n " shape="box"]
+	 "div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_5" -> "div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_3" ;
+"div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(x3:method::X3); [line 51, column 3]\n  n$3=_fun_method::X3::X3(&x3:method::X3*) [line 51, column 6]\n " shape="box"]
 	
 
 	 "div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_6" -> "div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_5" ;
+"div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(x2:method::X2); [line 50, column 3]\n  n$4=_fun_method::X2::X2(&x2:method::X2*) [line 50, column 6]\n " shape="box"]
+	
+
+	 "div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_7" -> "div0_getter_templ#method#6375326311998023520.359f49fd177ddd10abb56481c8c0c0e0_6" ;
 "div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_1" [label="1: Start method::div0_getter_templ2\nFormals: \nLocals:  g:method::GetterTempl<method::X2> x2_2:method::X2 x2_1:method::X2 \n  " color=yellow style=filled]
 	
 
-	 "div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_1" -> "div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_6" ;
+	 "div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_1" -> "div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_7" ;
 "div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_2" [label="2: Exit method::div0_getter_templ2 \n  " color=yellow style=filled]
 	
 
-"div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_3" [label="3:  Return Stmt \n   _=*&g:method::GetterTempl<method::X2> [line 60, column 14]\n  n$1=_fun_method::GetterTempl<method::X2>::get<method::X2>(&g:method::GetterTempl<method::X2>&,&x2_1:method::X2&,&x2_2:method::X2&) [line 60, column 14]\n  *&return:int=(1 / n$1) [line 60, column 3]\n " shape="box"]
+"div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_3" [label="3:  Return Stmt \n   _=*&g:method::GetterTempl<method::X2> [line 60, column 14]\n  n$1=_fun_method::GetterTempl<method::X2>::get<method::X2>(&g:method::GetterTempl<method::X2>&,&x2_1:method::X2&,&x2_2:method::X2&) [line 60, column 14]\n " shape="box"]
 	
 
-	 "div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_3" -> "div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_2" ;
-"div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(g:method::GetterTempl<method::X2>); [line 59, column 3]\n  n$2=_fun_method::GetterTempl<method::X2>::GetterTempl(&g:method::GetterTempl<method::X2>*) [line 59, column 19]\n " shape="box"]
+	 "div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_3" -> "div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_4" ;
+"div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$1) [line 60, column 3]\n " shape="box"]
 	
 
-	 "div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_4" -> "div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_3" ;
-"div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(x2_2:method::X2); [line 58, column 3]\n  n$3=_fun_method::X2::X2(&x2_2:method::X2*) [line 58, column 6]\n " shape="box"]
+	 "div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_4" -> "div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_2" ;
+"div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(g:method::GetterTempl<method::X2>); [line 59, column 3]\n  n$2=_fun_method::GetterTempl<method::X2>::GetterTempl(&g:method::GetterTempl<method::X2>*) [line 59, column 19]\n " shape="box"]
 	
 
-	 "div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_5" -> "div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_4" ;
-"div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(x2_1:method::X2); [line 57, column 3]\n  n$4=_fun_method::X2::X2(&x2_1:method::X2*) [line 57, column 6]\n " shape="box"]
+	 "div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_5" -> "div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_3" ;
+"div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(x2_2:method::X2); [line 58, column 3]\n  n$3=_fun_method::X2::X2(&x2_2:method::X2*) [line 58, column 6]\n " shape="box"]
 	
 
 	 "div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_6" -> "div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_5" ;
+"div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(x2_1:method::X2); [line 57, column 3]\n  n$4=_fun_method::X2::X2(&x2_1:method::X2*) [line 57, column 6]\n " shape="box"]
+	
+
+	 "div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_7" -> "div0_getter_templ2#method#6451937884879872417.49c23913cff8a0a59e8e2158ec845f0c_6" ;
 "div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_1" [label="1: Start method::div1_getter\nFormals: \nLocals:  g:method::Getter x1:method::X1 \n  " color=yellow style=filled]
 	
 
-	 "div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_1" -> "div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_5" ;
+	 "div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_1" -> "div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_6" ;
 "div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_2" [label="2: Exit method::div1_getter \n  " color=yellow style=filled]
 	
 
-"div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_3" [label="3:  Return Stmt \n   _=*&g:method::Getter [line 46, column 14]\n  n$1=_fun_method::Getter::get<method::X1>(&g:method::Getter&,&x1:method::X1&) [line 46, column 14]\n  *&return:int=(1 / n$1) [line 46, column 3]\n " shape="box"]
+"div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_3" [label="3:  Return Stmt \n   _=*&g:method::Getter [line 46, column 14]\n  n$1=_fun_method::Getter::get<method::X1>(&g:method::Getter&,&x1:method::X1&) [line 46, column 14]\n " shape="box"]
 	
 
-	 "div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_3" -> "div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_2" ;
-"div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(g:method::Getter); [line 45, column 3]\n  n$2=_fun_method::Getter::Getter(&g:method::Getter*) [line 45, column 10]\n " shape="box"]
+	 "div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_3" -> "div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_4" ;
+"div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$1) [line 46, column 3]\n " shape="box"]
 	
 
-	 "div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_4" -> "div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_3" ;
-"div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(x1:method::X1); [line 44, column 3]\n  n$3=_fun_method::X1::X1(&x1:method::X1*) [line 44, column 6]\n " shape="box"]
+	 "div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_4" -> "div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_2" ;
+"div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(g:method::Getter); [line 45, column 3]\n  n$2=_fun_method::Getter::Getter(&g:method::Getter*) [line 45, column 10]\n " shape="box"]
 	
 
-	 "div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_5" -> "div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_4" ;
+	 "div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_5" -> "div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_3" ;
+"div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(x1:method::X1); [line 44, column 3]\n  n$3=_fun_method::X1::X1(&x1:method::X1*) [line 44, column 6]\n " shape="box"]
+	
+
+	 "div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_6" -> "div1_getter#method#14010655706182645930.dfb00d82a62eb9bd9507d251472215d9_5" ;
 "div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_1" [label="1: Start method::div1_getter_templ\nFormals: \nLocals:  g:method::GetterTempl<method::X2> x2:method::X2 x1:method::X1 \n  " color=yellow style=filled]
 	
 
-	 "div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_1" -> "div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_6" ;
+	 "div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_1" -> "div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_7" ;
 "div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_2" [label="2: Exit method::div1_getter_templ \n  " color=yellow style=filled]
 	
 
-"div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_3" [label="3:  Return Stmt \n   _=*&g:method::GetterTempl<method::X2> [line 67, column 14]\n  n$1=_fun_method::GetterTempl<method::X2>::get<method::X1>(&g:method::GetterTempl<method::X2>&,&x2:method::X2&,&x1:method::X1&) [line 67, column 14]\n  *&return:int=(1 / n$1) [line 67, column 3]\n " shape="box"]
+"div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_3" [label="3:  Return Stmt \n   _=*&g:method::GetterTempl<method::X2> [line 67, column 14]\n  n$1=_fun_method::GetterTempl<method::X2>::get<method::X1>(&g:method::GetterTempl<method::X2>&,&x2:method::X2&,&x1:method::X1&) [line 67, column 14]\n " shape="box"]
 	
 
-	 "div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_3" -> "div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_2" ;
-"div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(g:method::GetterTempl<method::X2>); [line 66, column 3]\n  n$2=_fun_method::GetterTempl<method::X2>::GetterTempl(&g:method::GetterTempl<method::X2>*) [line 66, column 19]\n " shape="box"]
+	 "div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_3" -> "div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_4" ;
+"div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$1) [line 67, column 3]\n " shape="box"]
 	
 
-	 "div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_4" -> "div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_3" ;
-"div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(x2:method::X2); [line 65, column 3]\n  n$3=_fun_method::X2::X2(&x2:method::X2*) [line 65, column 6]\n " shape="box"]
+	 "div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_4" -> "div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_2" ;
+"div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(g:method::GetterTempl<method::X2>); [line 66, column 3]\n  n$2=_fun_method::GetterTempl<method::X2>::GetterTempl(&g:method::GetterTempl<method::X2>*) [line 66, column 19]\n " shape="box"]
 	
 
-	 "div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_5" -> "div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_4" ;
-"div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(x1:method::X1); [line 64, column 3]\n  n$4=_fun_method::X1::X1(&x1:method::X1*) [line 64, column 6]\n " shape="box"]
+	 "div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_5" -> "div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_3" ;
+"div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(x2:method::X2); [line 65, column 3]\n  n$3=_fun_method::X2::X2(&x2:method::X2*) [line 65, column 6]\n " shape="box"]
 	
 
 	 "div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_6" -> "div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_5" ;
+"div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(x1:method::X1); [line 64, column 3]\n  n$4=_fun_method::X1::X1(&x1:method::X1*) [line 64, column 6]\n " shape="box"]
+	
+
+	 "div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_7" -> "div1_getter_templ#method#11958064193628013457.8a8112afb18681951fdb43c93893e0c5_6" ;
 "div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_1" [label="1: Start method::div1_getter_templ2\nFormals: \nLocals:  g:method::GetterTempl<method::X1> x1_2:method::X1 x1_1:method::X1 \n  " color=yellow style=filled]
 	
 
-	 "div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_1" -> "div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_6" ;
+	 "div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_1" -> "div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_7" ;
 "div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_2" [label="2: Exit method::div1_getter_templ2 \n  " color=yellow style=filled]
 	
 
-"div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_3" [label="3:  Return Stmt \n   _=*&g:method::GetterTempl<method::X1> [line 74, column 14]\n  n$1=_fun_method::GetterTempl<method::X1>::get<method::X1>(&g:method::GetterTempl<method::X1>&,&x1_1:method::X1&,&x1_2:method::X1&) [line 74, column 14]\n  *&return:int=(1 / n$1) [line 74, column 3]\n " shape="box"]
+"div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_3" [label="3:  Return Stmt \n   _=*&g:method::GetterTempl<method::X1> [line 74, column 14]\n  n$1=_fun_method::GetterTempl<method::X1>::get<method::X1>(&g:method::GetterTempl<method::X1>&,&x1_1:method::X1&,&x1_2:method::X1&) [line 74, column 14]\n " shape="box"]
 	
 
-	 "div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_3" -> "div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_2" ;
-"div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(g:method::GetterTempl<method::X1>); [line 73, column 3]\n  n$2=_fun_method::GetterTempl<method::X1>::GetterTempl(&g:method::GetterTempl<method::X1>*) [line 73, column 19]\n " shape="box"]
+	 "div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_3" -> "div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_4" ;
+"div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$1) [line 74, column 3]\n " shape="box"]
 	
 
-	 "div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_4" -> "div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_3" ;
-"div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(x1_2:method::X1); [line 72, column 3]\n  n$3=_fun_method::X1::X1(&x1_2:method::X1*) [line 72, column 6]\n " shape="box"]
+	 "div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_4" -> "div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_2" ;
+"div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(g:method::GetterTempl<method::X1>); [line 73, column 3]\n  n$2=_fun_method::GetterTempl<method::X1>::GetterTempl(&g:method::GetterTempl<method::X1>*) [line 73, column 19]\n " shape="box"]
 	
 
-	 "div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_5" -> "div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_4" ;
-"div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(x1_1:method::X1); [line 71, column 3]\n  n$4=_fun_method::X1::X1(&x1_1:method::X1*) [line 71, column 6]\n " shape="box"]
+	 "div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_5" -> "div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_3" ;
+"div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(x1_2:method::X1); [line 72, column 3]\n  n$3=_fun_method::X1::X1(&x1_2:method::X1*) [line 72, column 6]\n " shape="box"]
 	
 
 	 "div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_6" -> "div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_5" ;
+"div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(x1_1:method::X1); [line 71, column 3]\n  n$4=_fun_method::X1::X1(&x1_1:method::X1*) [line 71, column 6]\n " shape="box"]
+	
+
+	 "div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_7" -> "div1_getter_templ2#method#7327429174804405806.fe61550d5271fa95726c7580c68f9015_6" ;
 "get<method::X2>#Getter#method#(114488311005334347).9c4c4261c299bcfcd879652b3f97fdce_1" [label="1: Start method::Getter::get<method::X2>\nFormals:  this:method::Getter* s:method::X2&\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -137,10 +161,14 @@ digraph cfg {
 "get<method::X2>#Getter#method#(114488311005334347).9c4c4261c299bcfcd879652b3f97fdce_2" [label="2: Exit method::Getter::get<method::X2> \n  " color=yellow style=filled]
 	
 
-"get<method::X2>#Getter#method#(114488311005334347).9c4c4261c299bcfcd879652b3f97fdce_3" [label="3:  Return Stmt \n   n$0=*&s:method::X2& [line 25, column 12]\n  _=*n$0:method::X2 [line 25, column 12]\n  n$2=_fun_method::X2::get(n$0:method::X2&) [line 25, column 12]\n  *&return:int=n$2 [line 25, column 5]\n " shape="box"]
+"get<method::X2>#Getter#method#(114488311005334347).9c4c4261c299bcfcd879652b3f97fdce_3" [label="3:  Return Stmt \n   n$0=*&s:method::X2& [line 25, column 12]\n  _=*n$0:method::X2 [line 25, column 12]\n  n$2=_fun_method::X2::get(n$0:method::X2&) [line 25, column 12]\n " shape="box"]
 	
 
-	 "get<method::X2>#Getter#method#(114488311005334347).9c4c4261c299bcfcd879652b3f97fdce_3" -> "get<method::X2>#Getter#method#(114488311005334347).9c4c4261c299bcfcd879652b3f97fdce_2" ;
+	 "get<method::X2>#Getter#method#(114488311005334347).9c4c4261c299bcfcd879652b3f97fdce_3" -> "get<method::X2>#Getter#method#(114488311005334347).9c4c4261c299bcfcd879652b3f97fdce_4" ;
+"get<method::X2>#Getter#method#(114488311005334347).9c4c4261c299bcfcd879652b3f97fdce_4" [label="4:  Return Stmt \n   *&return:int=n$2 [line 25, column 5]\n " shape="box"]
+	
+
+	 "get<method::X2>#Getter#method#(114488311005334347).9c4c4261c299bcfcd879652b3f97fdce_4" -> "get<method::X2>#Getter#method#(114488311005334347).9c4c4261c299bcfcd879652b3f97fdce_2" ;
 "get<method::X1>#Getter#method#(3247992624161763984).d85954e5db9a3e87e1f85274548baec1_1" [label="1: Start method::Getter::get<method::X1>\nFormals:  this:method::Getter* s:method::X1&\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -148,10 +176,14 @@ digraph cfg {
 "get<method::X1>#Getter#method#(3247992624161763984).d85954e5db9a3e87e1f85274548baec1_2" [label="2: Exit method::Getter::get<method::X1> \n  " color=yellow style=filled]
 	
 
-"get<method::X1>#Getter#method#(3247992624161763984).d85954e5db9a3e87e1f85274548baec1_3" [label="3:  Return Stmt \n   n$0=*&s:method::X1& [line 25, column 12]\n  _=*n$0:method::X1 [line 25, column 12]\n  n$2=_fun_method::X1::get(n$0:method::X1&) [line 25, column 12]\n  *&return:int=n$2 [line 25, column 5]\n " shape="box"]
+"get<method::X1>#Getter#method#(3247992624161763984).d85954e5db9a3e87e1f85274548baec1_3" [label="3:  Return Stmt \n   n$0=*&s:method::X1& [line 25, column 12]\n  _=*n$0:method::X1 [line 25, column 12]\n  n$2=_fun_method::X1::get(n$0:method::X1&) [line 25, column 12]\n " shape="box"]
 	
 
-	 "get<method::X1>#Getter#method#(3247992624161763984).d85954e5db9a3e87e1f85274548baec1_3" -> "get<method::X1>#Getter#method#(3247992624161763984).d85954e5db9a3e87e1f85274548baec1_2" ;
+	 "get<method::X1>#Getter#method#(3247992624161763984).d85954e5db9a3e87e1f85274548baec1_3" -> "get<method::X1>#Getter#method#(3247992624161763984).d85954e5db9a3e87e1f85274548baec1_4" ;
+"get<method::X1>#Getter#method#(3247992624161763984).d85954e5db9a3e87e1f85274548baec1_4" [label="4:  Return Stmt \n   *&return:int=n$2 [line 25, column 5]\n " shape="box"]
+	
+
+	 "get<method::X1>#Getter#method#(3247992624161763984).d85954e5db9a3e87e1f85274548baec1_4" -> "get<method::X1>#Getter#method#(3247992624161763984).d85954e5db9a3e87e1f85274548baec1_2" ;
 "Getter#Getter#method#{6538771732485235037|constexpr}.4e1a7679a514fd95621c9e075c8974f6_1" [label="1: Start method::Getter::Getter\nFormals:  this:method::Getter*\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -166,10 +198,14 @@ digraph cfg {
 "get<method::X1>#GetterTempl<method::X1>#method#(1597660249660822780).26089da113d1a8570a849aa988e4ebd3_2" [label="2: Exit method::GetterTempl<method::X1>::get<method::X1> \n  " color=yellow style=filled]
 	
 
-"get<method::X1>#GetterTempl<method::X1>#method#(1597660249660822780).26089da113d1a8570a849aa988e4ebd3_3" [label="3:  Return Stmt \n   n$0=*&t:method::X1& [line 33, column 12]\n  _=*n$0:method::X1 [line 33, column 12]\n  n$2=_fun_method::X1::get(n$0:method::X1&) [line 33, column 12]\n  n$3=*&s:method::X1& [line 33, column 22]\n  _=*n$3:method::X1 [line 33, column 22]\n  n$5=_fun_method::X1::get(n$3:method::X1&) [line 33, column 22]\n  *&return:int=(n$2 + n$5) [line 33, column 5]\n " shape="box"]
+"get<method::X1>#GetterTempl<method::X1>#method#(1597660249660822780).26089da113d1a8570a849aa988e4ebd3_3" [label="3:  Return Stmt \n   n$0=*&t:method::X1& [line 33, column 12]\n  _=*n$0:method::X1 [line 33, column 12]\n  n$2=_fun_method::X1::get(n$0:method::X1&) [line 33, column 12]\n  n$3=*&s:method::X1& [line 33, column 22]\n  _=*n$3:method::X1 [line 33, column 22]\n  n$5=_fun_method::X1::get(n$3:method::X1&) [line 33, column 22]\n " shape="box"]
 	
 
-	 "get<method::X1>#GetterTempl<method::X1>#method#(1597660249660822780).26089da113d1a8570a849aa988e4ebd3_3" -> "get<method::X1>#GetterTempl<method::X1>#method#(1597660249660822780).26089da113d1a8570a849aa988e4ebd3_2" ;
+	 "get<method::X1>#GetterTempl<method::X1>#method#(1597660249660822780).26089da113d1a8570a849aa988e4ebd3_3" -> "get<method::X1>#GetterTempl<method::X1>#method#(1597660249660822780).26089da113d1a8570a849aa988e4ebd3_4" ;
+"get<method::X1>#GetterTempl<method::X1>#method#(1597660249660822780).26089da113d1a8570a849aa988e4ebd3_4" [label="4:  Return Stmt \n   *&return:int=(n$2 + n$5) [line 33, column 5]\n " shape="box"]
+	
+
+	 "get<method::X1>#GetterTempl<method::X1>#method#(1597660249660822780).26089da113d1a8570a849aa988e4ebd3_4" -> "get<method::X1>#GetterTempl<method::X1>#method#(1597660249660822780).26089da113d1a8570a849aa988e4ebd3_2" ;
 "GetterTempl#GetterTempl<method::X1>#method#{11902154262179469385|constexpr}.419d9b7f14a1b25d173f0430e77d8bfb_1" [label="1: Start method::GetterTempl<method::X1>::GetterTempl\nFormals:  this:method::GetterTempl<method::X1>*\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -184,10 +220,14 @@ digraph cfg {
 "get<method::X2>#GetterTempl<method::X3>#method#(10966570090595029900).9a24a249e802c1b058a8d736330be11a_2" [label="2: Exit method::GetterTempl<method::X3>::get<method::X2> \n  " color=yellow style=filled]
 	
 
-"get<method::X2>#GetterTempl<method::X3>#method#(10966570090595029900).9a24a249e802c1b058a8d736330be11a_3" [label="3:  Return Stmt \n   n$0=*&t:method::X3& [line 33, column 12]\n  _=*n$0:method::X3 [line 33, column 12]\n  n$2=_fun_method::X3::get(n$0:method::X3&) [line 33, column 12]\n  n$3=*&s:method::X2& [line 33, column 22]\n  _=*n$3:method::X2 [line 33, column 22]\n  n$5=_fun_method::X2::get(n$3:method::X2&) [line 33, column 22]\n  *&return:int=(n$2 + n$5) [line 33, column 5]\n " shape="box"]
+"get<method::X2>#GetterTempl<method::X3>#method#(10966570090595029900).9a24a249e802c1b058a8d736330be11a_3" [label="3:  Return Stmt \n   n$0=*&t:method::X3& [line 33, column 12]\n  _=*n$0:method::X3 [line 33, column 12]\n  n$2=_fun_method::X3::get(n$0:method::X3&) [line 33, column 12]\n  n$3=*&s:method::X2& [line 33, column 22]\n  _=*n$3:method::X2 [line 33, column 22]\n  n$5=_fun_method::X2::get(n$3:method::X2&) [line 33, column 22]\n " shape="box"]
 	
 
-	 "get<method::X2>#GetterTempl<method::X3>#method#(10966570090595029900).9a24a249e802c1b058a8d736330be11a_3" -> "get<method::X2>#GetterTempl<method::X3>#method#(10966570090595029900).9a24a249e802c1b058a8d736330be11a_2" ;
+	 "get<method::X2>#GetterTempl<method::X3>#method#(10966570090595029900).9a24a249e802c1b058a8d736330be11a_3" -> "get<method::X2>#GetterTempl<method::X3>#method#(10966570090595029900).9a24a249e802c1b058a8d736330be11a_4" ;
+"get<method::X2>#GetterTempl<method::X3>#method#(10966570090595029900).9a24a249e802c1b058a8d736330be11a_4" [label="4:  Return Stmt \n   *&return:int=(n$2 + n$5) [line 33, column 5]\n " shape="box"]
+	
+
+	 "get<method::X2>#GetterTempl<method::X3>#method#(10966570090595029900).9a24a249e802c1b058a8d736330be11a_4" -> "get<method::X2>#GetterTempl<method::X3>#method#(10966570090595029900).9a24a249e802c1b058a8d736330be11a_2" ;
 "GetterTempl#GetterTempl<method::X3>#method#{18312978847092644663|constexpr}.45498dd9c6ecdd204d778582a0198bd9_1" [label="1: Start method::GetterTempl<method::X3>::GetterTempl\nFormals:  this:method::GetterTempl<method::X3>*\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -202,10 +242,14 @@ digraph cfg {
 "get<method::X2>#GetterTempl<method::X2>#method#(242818219889731161).ce1c035f50382c57a6002fb874c7d273_2" [label="2: Exit method::GetterTempl<method::X2>::get<method::X2> \n  " color=yellow style=filled]
 	
 
-"get<method::X2>#GetterTempl<method::X2>#method#(242818219889731161).ce1c035f50382c57a6002fb874c7d273_3" [label="3:  Return Stmt \n   n$0=*&t:method::X2& [line 33, column 12]\n  _=*n$0:method::X2 [line 33, column 12]\n  n$2=_fun_method::X2::get(n$0:method::X2&) [line 33, column 12]\n  n$3=*&s:method::X2& [line 33, column 22]\n  _=*n$3:method::X2 [line 33, column 22]\n  n$5=_fun_method::X2::get(n$3:method::X2&) [line 33, column 22]\n  *&return:int=(n$2 + n$5) [line 33, column 5]\n " shape="box"]
+"get<method::X2>#GetterTempl<method::X2>#method#(242818219889731161).ce1c035f50382c57a6002fb874c7d273_3" [label="3:  Return Stmt \n   n$0=*&t:method::X2& [line 33, column 12]\n  _=*n$0:method::X2 [line 33, column 12]\n  n$2=_fun_method::X2::get(n$0:method::X2&) [line 33, column 12]\n  n$3=*&s:method::X2& [line 33, column 22]\n  _=*n$3:method::X2 [line 33, column 22]\n  n$5=_fun_method::X2::get(n$3:method::X2&) [line 33, column 22]\n " shape="box"]
 	
 
-	 "get<method::X2>#GetterTempl<method::X2>#method#(242818219889731161).ce1c035f50382c57a6002fb874c7d273_3" -> "get<method::X2>#GetterTempl<method::X2>#method#(242818219889731161).ce1c035f50382c57a6002fb874c7d273_2" ;
+	 "get<method::X2>#GetterTempl<method::X2>#method#(242818219889731161).ce1c035f50382c57a6002fb874c7d273_3" -> "get<method::X2>#GetterTempl<method::X2>#method#(242818219889731161).ce1c035f50382c57a6002fb874c7d273_4" ;
+"get<method::X2>#GetterTempl<method::X2>#method#(242818219889731161).ce1c035f50382c57a6002fb874c7d273_4" [label="4:  Return Stmt \n   *&return:int=(n$2 + n$5) [line 33, column 5]\n " shape="box"]
+	
+
+	 "get<method::X2>#GetterTempl<method::X2>#method#(242818219889731161).ce1c035f50382c57a6002fb874c7d273_4" -> "get<method::X2>#GetterTempl<method::X2>#method#(242818219889731161).ce1c035f50382c57a6002fb874c7d273_2" ;
 "get<method::X1>#GetterTempl<method::X2>#method#(5585877041217346556).4f87183f5216c7461b5259807b1f72ac_1" [label="1: Start method::GetterTempl<method::X2>::get<method::X1>\nFormals:  this:method::GetterTempl<method::X2>* t:method::X2& s:method::X1&\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -213,10 +257,14 @@ digraph cfg {
 "get<method::X1>#GetterTempl<method::X2>#method#(5585877041217346556).4f87183f5216c7461b5259807b1f72ac_2" [label="2: Exit method::GetterTempl<method::X2>::get<method::X1> \n  " color=yellow style=filled]
 	
 
-"get<method::X1>#GetterTempl<method::X2>#method#(5585877041217346556).4f87183f5216c7461b5259807b1f72ac_3" [label="3:  Return Stmt \n   n$0=*&t:method::X2& [line 33, column 12]\n  _=*n$0:method::X2 [line 33, column 12]\n  n$2=_fun_method::X2::get(n$0:method::X2&) [line 33, column 12]\n  n$3=*&s:method::X1& [line 33, column 22]\n  _=*n$3:method::X1 [line 33, column 22]\n  n$5=_fun_method::X1::get(n$3:method::X1&) [line 33, column 22]\n  *&return:int=(n$2 + n$5) [line 33, column 5]\n " shape="box"]
+"get<method::X1>#GetterTempl<method::X2>#method#(5585877041217346556).4f87183f5216c7461b5259807b1f72ac_3" [label="3:  Return Stmt \n   n$0=*&t:method::X2& [line 33, column 12]\n  _=*n$0:method::X2 [line 33, column 12]\n  n$2=_fun_method::X2::get(n$0:method::X2&) [line 33, column 12]\n  n$3=*&s:method::X1& [line 33, column 22]\n  _=*n$3:method::X1 [line 33, column 22]\n  n$5=_fun_method::X1::get(n$3:method::X1&) [line 33, column 22]\n " shape="box"]
 	
 
-	 "get<method::X1>#GetterTempl<method::X2>#method#(5585877041217346556).4f87183f5216c7461b5259807b1f72ac_3" -> "get<method::X1>#GetterTempl<method::X2>#method#(5585877041217346556).4f87183f5216c7461b5259807b1f72ac_2" ;
+	 "get<method::X1>#GetterTempl<method::X2>#method#(5585877041217346556).4f87183f5216c7461b5259807b1f72ac_3" -> "get<method::X1>#GetterTempl<method::X2>#method#(5585877041217346556).4f87183f5216c7461b5259807b1f72ac_4" ;
+"get<method::X1>#GetterTempl<method::X2>#method#(5585877041217346556).4f87183f5216c7461b5259807b1f72ac_4" [label="4:  Return Stmt \n   *&return:int=(n$2 + n$5) [line 33, column 5]\n " shape="box"]
+	
+
+	 "get<method::X1>#GetterTempl<method::X2>#method#(5585877041217346556).4f87183f5216c7461b5259807b1f72ac_4" -> "get<method::X1>#GetterTempl<method::X2>#method#(5585877041217346556).4f87183f5216c7461b5259807b1f72ac_2" ;
 "GetterTempl#GetterTempl<method::X2>#method#{13405882915250525948|constexpr}.eb82a5c0e827f04da7e438cdbeef1353_1" [label="1: Start method::GetterTempl<method::X2>::GetterTempl\nFormals:  this:method::GetterTempl<method::X2>*\nLocals:  \n  " color=yellow style=filled]
 	
 

@@ -456,7 +456,7 @@ let check_inheritance_rule_for_return analysis_data find_canonical_duplicate loc
 
 
 let check_inheritance_rule_for_param analysis_data find_canonical_duplicate loc ~nullsafe_mode
-    ~overridden_param_name ~base_proc_name ~param_position ~base_nullability ~overridden_nullability
+    ~overridden_param_name ~base_proc_name ~param_index ~base_nullability ~overridden_nullability
     ~overridden_proc_name =
   Result.iter_error
     (InheritanceRule.check InheritanceRule.Param ~base:base_nullability
@@ -466,7 +466,7 @@ let check_inheritance_rule_for_param analysis_data find_canonical_duplicate loc 
            { inheritance_violation
            ; violation_type=
                InconsistentParam
-                 {param_position; param_description= Mangled.to_string overridden_param_name}
+                 {param_index; param_description= Mangled.to_string overridden_param_name}
            ; base_proc_name
            ; loc
            ; overridden_proc_name })
@@ -480,7 +480,7 @@ let check_inheritance_rule_for_params analysis_data find_canonical_duplicate loc
   let zipped_params = List.zip base_params overridden_params in
   match zipped_params with
   | Ok base_and_overridden_params ->
-      let should_index_from_zero = is_virtual base_params in
+      let has_implicit_this_param = is_virtual base_params in
       (* Check the rule for each pair of base and overridden param *)
       List.iteri base_and_overridden_params
         ~f:(fun index
@@ -491,7 +491,11 @@ let check_inheritance_rule_for_params analysis_data find_canonical_duplicate loc
            ->
           check_inheritance_rule_for_param analysis_data find_canonical_duplicate loc ~nullsafe_mode
             ~overridden_param_name ~base_proc_name
-            ~param_position:(if should_index_from_zero then index else index + 1)
+            ~param_index:
+              ( if has_implicit_this_param then
+                (* The first param in the list is implicit (not real part of the signature) and should not be counted *)
+                index - 1
+              else index )
             ~base_nullability:(AnnotatedNullability.get_nullability annotated_nullability_base)
             ~overridden_proc_name
             ~overridden_nullability:

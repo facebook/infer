@@ -47,6 +47,7 @@ let command ~summary ?readme param =
     Trace.init ~colors ?margin ~config () ;
     Option.iter ~f:(Report.init ~append:append_report) report
   in
+  Llair.Loc.root := Some (Core.Filename.realpath (Sys.getcwd ())) ;
   let flush main () = Fun.protect main ~finally:Trace.flush in
   let report main () =
     try main () |> Report.status
@@ -140,6 +141,7 @@ let analyze =
     Domain_sh.simplify_states := not no_simplify_states ;
     Timer.enabled := stats ;
     exec {bound; skip_throw; function_summaries; entry_points; globals} pgm ;
+    Report.coverage pgm ;
     Report.safe_or_unsafe ()
 
 let analyze_cmd =
@@ -154,15 +156,15 @@ let analyze_cmd =
   command ~summary ~readme param
 
 let disassemble =
-  let%map_open llair_txt_output =
-    flag "llair-txt-output" (optional string)
+  let%map_open llair_output =
+    flag "llair-output" (optional string)
       ~doc:
         "<file> write generated textual LLAIR to <file>, or to standard \
          output if omitted"
   in
   fun program () ->
     let pgm = program () in
-    ( match llair_txt_output with
+    ( match llair_output with
     | None -> Format.printf "%a@." Llair.Program.pp pgm
     | Some file ->
         Out_channel.with_file file ~f:(fun oc ->
@@ -182,9 +184,9 @@ let disassemble_cmd =
   command ~summary ~readme param
 
 let translate =
-  let%map_open llair_output =
-    flag "llair-output" (optional string)
-      ~doc:"<file> write generated LLAIR to <file>"
+  let%map_open output =
+    flag "output" (optional string)
+      ~doc:"<file> write generated binary LLAIR to <file>"
   and no_models =
     flag "no-models" no_arg
       ~doc:"do not add models for C/C++ runtime and standard libraries"
@@ -201,7 +203,7 @@ let translate =
       Frontend.translate ~models:(not no_models) ~fuzzer
         ~internalize:(not no_internalize) bitcode_inputs
     in
-    Option.iter ~f:(marshal program) llair_output ;
+    Option.iter ~f:(marshal program) output ;
     program
 
 let llvm_grp =

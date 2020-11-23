@@ -78,7 +78,7 @@ let%test_module _ =
 
     let%expect_test _ =
       check_frame
-        (Sh.seg {loc= l; bas= b; len= m; siz= n; seq= a})
+        (Sh.seg {loc= l; bas= b; len= m; siz= n; cnt= a})
         [] Sh.emp ;
       [%expect
         {|
@@ -87,9 +87,9 @@ let%test_module _ =
 
     let%expect_test _ =
       check_frame
-        (Sh.seg {loc= l; bas= b; len= m; siz= n; seq= a})
+        (Sh.seg {loc= l; bas= b; len= m; siz= n; cnt= a})
         []
-        (Sh.seg {loc= l; bas= b; len= m; siz= n; seq= a}) ;
+        (Sh.seg {loc= l; bas= b; len= m; siz= n; cnt= a}) ;
       [%expect
         {|
         ( infer_frame:
@@ -98,8 +98,8 @@ let%test_module _ =
         ) infer_frame:   emp |}]
 
     let%expect_test _ =
-      let common = Sh.seg {loc= l2; bas= b; len= !10; siz= !10; seq= a2} in
-      let seg1 = Sh.seg {loc= l; bas= b; len= !10; siz= !10; seq= a} in
+      let common = Sh.seg {loc= l2; bas= b; len= !10; siz= !10; cnt= a2} in
+      let seg1 = Sh.seg {loc= l; bas= b; len= !10; siz= !10; cnt= a} in
       let minued = Sh.star common seg1 in
       let subtrahend =
         Sh.and_ (Formula.eq m n)
@@ -120,10 +120,10 @@ let%test_module _ =
     let%expect_test _ =
       check_frame
         (Sh.star
-           (Sh.seg {loc= l; bas= b; len= m; siz= n; seq= a})
-           (Sh.seg {loc= l2; bas= b; len= m; siz= n; seq= a2}))
+           (Sh.seg {loc= l; bas= b; len= m; siz= n; cnt= a})
+           (Sh.seg {loc= l2; bas= b; len= m; siz= n; cnt= a2}))
         []
-        (Sh.seg {loc= l; bas= b; len= m; siz= n; seq= a}) ;
+        (Sh.seg {loc= l; bas= b; len= m; siz= n; cnt= a}) ;
       [%expect
         {|
         ( infer_frame:
@@ -135,10 +135,10 @@ let%test_module _ =
     let%expect_test _ =
       check_frame
         (Sh.star
-           (Sh.seg {loc= l; bas= l; len= !16; siz= !8; seq= a})
-           (Sh.seg {loc= l + !8; bas= l; len= !16; siz= !8; seq= a2}))
+           (Sh.seg {loc= l; bas= l; len= !16; siz= !8; cnt= a})
+           (Sh.seg {loc= l + !8; bas= l; len= !16; siz= !8; cnt= a2}))
         [a3_]
-        (Sh.seg {loc= l; bas= l; len= !16; siz= !16; seq= a3}) ;
+        (Sh.seg {loc= l; bas= l; len= !16; siz= !16; cnt= a3}) ;
       [%expect
         {|
         ( infer_frame:
@@ -148,10 +148,10 @@ let%test_module _ =
     let%expect_test _ =
       check_frame
         (Sh.star
-           (Sh.seg {loc= l; bas= l; len= !16; siz= !8; seq= a})
-           (Sh.seg {loc= l + !8; bas= l; len= !16; siz= !8; seq= a2}))
+           (Sh.seg {loc= l; bas= l; len= !16; siz= !8; cnt= a})
+           (Sh.seg {loc= l + !8; bas= l; len= !16; siz= !8; cnt= a2}))
         [a3_; m_]
-        (Sh.seg {loc= l; bas= l; len= m; siz= !16; seq= a3}) ;
+        (Sh.seg {loc= l; bas= l; len= m; siz= !16; cnt= a3}) ;
       [%expect
         {|
         ( infer_frame:
@@ -164,10 +164,10 @@ let%test_module _ =
     let%expect_test _ =
       check_frame
         (Sh.star
-           (Sh.seg {loc= l; bas= l; len= !16; siz= !8; seq= a})
-           (Sh.seg {loc= l + !8; bas= l; len= !16; siz= !8; seq= a2}))
+           (Sh.seg {loc= l; bas= l; len= !16; siz= !8; cnt= a})
+           (Sh.seg {loc= l + !8; bas= l; len= !16; siz= !8; cnt= a2}))
         [a3_; m_]
-        (Sh.seg {loc= l; bas= l; len= m; siz= m; seq= a3}) ;
+        (Sh.seg {loc= l; bas= l; len= m; siz= m; cnt= a3}) ;
       [%expect
         {|
         ( infer_frame:
@@ -180,12 +180,12 @@ let%test_module _ =
     let%expect_test _ =
       check_frame
         (Sh.star
-           (Sh.seg {loc= k; bas= k; len= !16; siz= !32; seq= a})
-           (Sh.seg {loc= l; bas= l; len= !8; siz= !8; seq= !16}))
+           (Sh.seg {loc= k; bas= k; len= !16; siz= !32; cnt= a})
+           (Sh.seg {loc= l; bas= l; len= !8; siz= !8; cnt= !16}))
         [a2_; m_; n_]
         (Sh.star
-           (Sh.seg {loc= l; bas= l; len= !8; siz= !8; seq= n})
-           (Sh.seg {loc= k; bas= k; len= m; siz= n; seq= a2})) ;
+           (Sh.seg {loc= l; bas= l; len= !8; siz= !8; cnt= n})
+           (Sh.seg {loc= k; bas= k; len= m; siz= n; cnt= a2})) ;
       [%expect
         {|
         ( infer_frame:
@@ -202,12 +202,12 @@ let%test_module _ =
     let%expect_test _ =
       infer_frame
         (Sh.star
-           (Sh.seg {loc= k; bas= k; len= !16; siz= !32; seq= a})
-           (Sh.seg {loc= l; bas= l; len= !8; siz= !8; seq= !16}))
+           (Sh.seg {loc= k; bas= k; len= !16; siz= !32; cnt= a})
+           (Sh.seg {loc= l; bas= l; len= !8; siz= !8; cnt= !16}))
         [a2_; m_; n_]
         (Sh.star
-           (Sh.seg {loc= k; bas= k; len= m; siz= n; seq= a2})
-           (Sh.seg {loc= l; bas= l; len= !8; siz= !8; seq= n})) ;
+           (Sh.seg {loc= k; bas= k; len= m; siz= n; cnt= a2})
+           (Sh.seg {loc= l; bas= l; len= !8; siz= !8; cnt= n})) ;
       [%expect
         {|
         ( infer_frame:
@@ -223,9 +223,9 @@ let%test_module _ =
 
     let seg_split_symbolically =
       Sh.star
-        (Sh.seg {loc= l; bas= l; len= !16; siz= 8 * n; seq= a2})
+        (Sh.seg {loc= l; bas= l; len= !16; siz= 8 * n; cnt= a2})
         (Sh.seg
-           {loc= l + (8 * n); bas= l; len= !16; siz= !16 - (8 * n); seq= a3})
+           {loc= l + (8 * n); bas= l; len= !16; siz= !16 - (8 * n); cnt= a3})
 
     let%expect_test _ =
       check_frame
@@ -233,7 +233,7 @@ let%test_module _ =
            Formula.(or_ (or_ (eq n !0) (eq n !1)) (eq n !2))
            seg_split_symbolically)
         [m_; a_]
-        (Sh.seg {loc= l; bas= l; len= m; siz= m; seq= a}) ;
+        (Sh.seg {loc= l; bas= l; len= m; siz= m; cnt= a}) ;
       [%expect
         {|
         ( infer_frame:
@@ -266,7 +266,7 @@ let%test_module _ =
       infer_frame
         (Sh.and_ (Formula.le n !2) seg_split_symbolically)
         [m_; a_]
-        (Sh.seg {loc= l; bas= l; len= m; siz= m; seq= a}) ;
+        (Sh.seg {loc= l; bas= l; len= m; siz= m; cnt= a}) ;
       [%expect
         {|
         ( infer_frame:

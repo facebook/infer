@@ -43,12 +43,15 @@ module Node : sig
     | BinaryOperatorStmt of string
     | Call of string
     | CallObjCNew
+    | CaseStmt
     | ClassCastException
+    | CompoundStmt
     | ConditionalStmtBranch
     | ConstructorInit
     | CXXDynamicCast
     | CXXNewExpr
     | CXXStdInitializerListExpr
+    | CXXTemporaryMarkerSet
     | CXXTypeidExpr
     | DeclStmt
     | DefineBody
@@ -56,7 +59,6 @@ module Node : sig
     | ExceptionHandler
     | ExceptionsSink
     | ExprWithCleanups
-    | FallbackNode
     | FinallyBranch
     | GCCAsmStmt
     | GenericSelectionExpr
@@ -68,6 +70,7 @@ module Node : sig
     | MonitorEnter
     | MonitorExit
     | ObjCCPPThrow
+    | ObjCIndirectCopyRestoreExpr
     | OutOfBound
     | ReturnStmt
     | Scope of string
@@ -289,6 +292,15 @@ val replace_instrs_using_context :
   -> bool
 (** Map and replace the instructions to be executed using a context that we built with previous
     instructions in the node. Returns true if at least one substitution occured. *)
+
+val replace_instrs_by_using_context :
+     t
+  -> f:(Node.t -> 'a -> Sil.instr -> Sil.instr array)
+  -> update_context:('a -> Sil.instr -> 'a)
+  -> context_at_node:(Node.t -> 'a)
+  -> bool
+(** Like [replace_instrs_using_context], but slower, and each instruction may be replaced by 0, 1,
+    or more instructions. *)
 
 val replace_instrs_by : t -> f:(Node.t -> Sil.instr -> Sil.instr array) -> bool
 (** Like [replace_instrs], but slower, and each instruction may be replaced by 0, 1, or more

@@ -8,6 +8,9 @@
 open! IStd
 module L = Logging
 
+type var_to_destroy =
+  {pvar: Pvar.t; typ: Typ.t; qual_type: Clang_ast_t.qual_type; marker: Pvar.t option}
+
 type scope_kind =
   | Breakable  (** loop or switch statement within which it's ok to [break;] *)
   | Compound  (** inside a CompoundStmt *)
@@ -216,7 +219,7 @@ module Variables = struct
 end
 
 module CXXTemporaries = struct
-  let rec visit_stmt_aux context stmt temporaries =
+  let rec visit_stmt_aux context stmt ~needs_marker temporaries =
     match (stmt : Clang_ast_t.stmt) with
     | MaterializeTemporaryExpr
         ( stmt_info
@@ -227,49 +230,57 @@ module CXXTemporaries = struct
                  the reference *)
               None } ) ->
         let pvar, typ = CVar_decl.materialize_cpp_temporary context stmt_info expr_info in
-        L.debug Capture Verbose "+%a@," (Pvar.pp Pp.text) pvar ;
-        let temporaries = (pvar, typ, expr_info.ei_qual_type) :: temporaries in
-        visit_stmt_list context stmt_list temporaries
-    | ExprWithCleanups _ ->
-        (* huho, we're stepping on someone else's toes (eg, a lambda literal); stop accumulating *)
-        temporaries
-    | ConditionalOperator _
-    | BinaryOperator (_, _, _, {boi_kind= `LAnd | `LOr | `LT | `GT | `LE | `GE | `EQ | `NE}) ->
-        (* Do not destroy temporaries created under a conditional operator. This is incorrect but
-           better than destroying temporaries that are created in only one branch unconditionally
-           after the conditional.
-
-           Note that destroying the variable inside the branch of the conditional would also be
-           incorrect since the conditional operator may be only part of the enclosing full
-           expression.
-
-           Example of tricky case: [foo(x?y:z, w)] or [cond && y] where [y] generates a C++
-           temporary. *)
-        temporaries
+        L.debug Capture Verbose "+%a:%a@," (Pvar.pp Pp.text) pvar (Typ.pp Pp.text) typ ;
+        let marker =
+          if needs_marker then (
+            let marker_pvar =
+              Pvar.mk_tmp "_temp_marker_" (Procdesc.get_proc_name context.CContext.procdesc)
+            in
+            L.debug Capture Verbose "Attaching marker %a to %a@," (Pvar.pp Pp.text) marker_pvar
+              (Pvar.pp Pp.text) pvar ;
+            Some marker_pvar )
+          else None
+        in
+        let temporaries = {pvar; typ; qual_type= expr_info.ei_qual_type; marker} :: temporaries in
+        visit_stmt_list context stmt_list ~needs_marker temporaries
+    | ConditionalOperator (_, [cond; then_; else_], _) ->
+        (* temporaries created in branches need instrumentation markers to remember if they have
+           been created or not during the evaluation of the expression *)
+        visit_stmt context cond ~needs_marker temporaries
+        |> visit_stmt context then_ ~needs_marker:true
+        |> visit_stmt context else_ ~needs_marker:true
+    | BinaryOperator (_, [lhs; rhs], _, {boi_kind= `LAnd | `LOr}) ->
+        (* similarly to above, due to possible short-circuiting we are not sure that the RHS of [a
+           && b] and [a || b] will be executed *)
+        visit_stmt context lhs ~needs_marker temporaries
+        |> visit_stmt context rhs ~needs_marker:true
     | LambdaExpr _ ->
         (* do not analyze the code of another function *) temporaries
+    | ExprWithCleanups _ ->
+        (* huho, we're stepping on someone else's toes (eg, a lambda literal); stop here *)
+        temporaries
     | _ ->
         let _, stmt_list = Clang_ast_proj.get_stmt_tuple stmt in
-        visit_stmt_list context stmt_list temporaries
+        visit_stmt_list context stmt_list ~needs_marker temporaries
 
 
-  and visit_stmt context stmt temporaries =
+  and visit_stmt context stmt ~needs_marker temporaries =
     L.debug Capture Verbose "<@[<hv2>%a|@,"
       (Pp.of_string ~f:Clang_ast_proj.get_stmt_kind_string)
       stmt ;
-    let r = visit_stmt_aux context stmt temporaries in
+    let r = visit_stmt_aux context stmt ~needs_marker temporaries in
     L.debug Capture Verbose "@]@;/%a>" (Pp.of_string ~f:Clang_ast_proj.get_stmt_kind_string) stmt ;
     r
 
 
-  and visit_stmt_list context stmt_list temporaries =
+  and visit_stmt_list context stmt_list ~needs_marker temporaries =
     List.fold stmt_list ~init:temporaries ~f:(fun temporaries stmt ->
         L.debug Capture Verbose "@;" ;
-        visit_stmt context stmt temporaries )
+        visit_stmt context stmt ~needs_marker temporaries )
 
 
   let get_destroyable_temporaries context stmt_list =
-    let temporaries = visit_stmt_list context stmt_list [] in
+    let temporaries = visit_stmt_list context stmt_list ~needs_marker:false [] in
     L.debug Capture Verbose "@\n" ;
     temporaries
 end

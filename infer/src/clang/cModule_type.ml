@@ -14,16 +14,13 @@ type block_data =
   ; procname: Procname.t
   ; return_type: Clang_ast_t.qual_type }
 
-type instr_type =
-  [`ClangStmt of Clang_ast_t.stmt | `CXXConstructorInit of Clang_ast_t.cxx_ctor_initializer]
-
 module type CTranslation = sig
   (** Translates instructions: (statements and expressions) from the ast into sil *)
 
   val instructions_trans :
        CContext.t
     -> Clang_ast_t.stmt
-    -> instr_type list
+    -> CFrontend_config.instr_type list
     -> Procdesc.Node.t
     -> is_destructor_wrapper:bool
     -> Procdesc.Node.t list

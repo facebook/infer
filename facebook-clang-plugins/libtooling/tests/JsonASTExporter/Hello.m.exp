@@ -314,12 +314,61 @@
             "result_type" : {
               "type_ptr" : 21
             },
+            "implicit_parameters" : [
+              ["ImplicitParamDecl" , [
+                {
+                  "pointer" : 22,
+                  "source_range" : [
+                    {
+                    },
+                    {
+                    }
+                  ],
+                  "is_implicit" : true
+                },
+                {
+                  "name" : "self",
+                  "qual_name" : [
+                    "self"
+                  ]
+                },
+                {
+                  "type_ptr" : 9,
+                  "is_const" : true
+                },
+                {
+                }
+              ]],
+              ["ImplicitParamDecl" , [
+                {
+                  "pointer" : 23,
+                  "source_range" : [
+                    {
+                    },
+                    {
+                    }
+                  ],
+                  "is_implicit" : true
+                },
+                {
+                  "name" : "_cmd",
+                  "qual_name" : [
+                    "_cmd"
+                  ]
+                },
+                {
+                  "type_ptr" : 5
+                },
+                {
+                }
+              ]]
+            ],
             "mangled_name" : "+[NSObject alloc]"
           }
         ]],
         ["ObjCMethodDecl" , [
           {
-            "pointer" : 22,
+            "pointer" : 24,
             "parent_pointer" : 18,
             "source_range" : [
               {
@@ -333,7 +382,7 @@
             "attributes" : [
               ["NSReturnsRetainedAttr" , [
                 {
-                  "pointer" : 23,
+                  "pointer" : 25,
                   "source_range" : [
                     {
                     },
@@ -355,12 +404,61 @@
             "result_type" : {
               "type_ptr" : 21
             },
+            "implicit_parameters" : [
+              ["ImplicitParamDecl" , [
+                {
+                  "pointer" : 26,
+                  "source_range" : [
+                    {
+                    },
+                    {
+                    }
+                  ],
+                  "is_implicit" : true
+                },
+                {
+                  "name" : "self",
+                  "qual_name" : [
+                    "self"
+                  ]
+                },
+                {
+                  "type_ptr" : 9,
+                  "is_const" : true
+                },
+                {
+                }
+              ]],
+              ["ImplicitParamDecl" , [
+                {
+                  "pointer" : 27,
+                  "source_range" : [
+                    {
+                    },
+                    {
+                    }
+                  ],
+                  "is_implicit" : true
+                },
+                {
+                  "name" : "_cmd",
+                  "qual_name" : [
+                    "_cmd"
+                  ]
+                },
+                {
+                  "type_ptr" : 5
+                },
+                {
+                }
+              ]]
+            ],
             "mangled_name" : "+[NSObject new]"
           }
         ]],
         ["ObjCMethodDecl" , [
           {
-            "pointer" : 24,
+            "pointer" : 28,
             "parent_pointer" : 18,
             "source_range" : [
               {
@@ -384,12 +482,61 @@
             "result_type" : {
               "type_ptr" : 21
             },
+            "implicit_parameters" : [
+              ["ImplicitParamDecl" , [
+                {
+                  "pointer" : 29,
+                  "source_range" : [
+                    {
+                    },
+                    {
+                    }
+                  ],
+                  "is_implicit" : true
+                },
+                {
+                  "name" : "self",
+                  "qual_name" : [
+                    "self"
+                  ]
+                },
+                {
+                  "type_ptr" : 30,
+                  "is_const" : true
+                },
+                {
+                }
+              ]],
+              ["ImplicitParamDecl" , [
+                {
+                  "pointer" : 31,
+                  "source_range" : [
+                    {
+                    },
+                    {
+                    }
+                  ],
+                  "is_implicit" : true
+                },
+                {
+                  "name" : "_cmd",
+                  "qual_name" : [
+                    "_cmd"
+                  ]
+                },
+                {
+                  "type_ptr" : 5
+                },
+                {
+                }
+              ]]
+            ],
             "mangled_name" : "-[NSObject autorelease]"
           }
         ]],
         ["ObjCMethodDecl" , [
           {
-            "pointer" : 25,
+            "pointer" : 32,
             "parent_pointer" : 18,
             "source_range" : [
               {
@@ -403,7 +550,7 @@
             "attributes" : [
               ["NSConsumesSelfAttr" , [
                 {
-                  "pointer" : 26,
+                  "pointer" : 33,
                   "source_range" : [
                     {
                     },
@@ -414,7 +561,7 @@
               ]],
               ["NSReturnsRetainedAttr" , [
                 {
-                  "pointer" : 27,
+                  "pointer" : 34,
                   "source_range" : [
                     {
                     },
@@ -437,12 +584,73 @@
             "result_type" : {
               "type_ptr" : 21
             },
+            "implicit_parameters" : [
+              ["ImplicitParamDecl" , [
+                {
+                  "pointer" : 35,
+                  "source_range" : [
+                    {
+                    },
+                    {
+                    }
+                  ],
+                  "is_implicit" : true,
+                  "attributes" : [
+                    ["NSConsumedAttr" , [
+                      {
+                        "pointer" : 36,
+                        "source_range" : [
+                          {
+                          },
+                          {
+                          }
+                        ]
+                      }
+                    ]]
+                  ]
+                },
+                {
+                  "name" : "self",
+                  "qual_name" : [
+                    "self"
+                  ]
+                },
+                {
+                  "type_ptr" : 30
+                },
+                {
+                }
+              ]],
+              ["ImplicitParamDecl" , [
+                {
+                  "pointer" : 37,
+                  "source_range" : [
+                    {
+                    },
+                    {
+                    }
+                  ],
+                  "is_implicit" : true
+                },
+                {
+                  "name" : "_cmd",
+                  "qual_name" : [
+                    "_cmd"
+                  ]
+                },
+                {
+                  "type_ptr" : 5
+                },
+                {
+                }
+              ]]
+            ],
             "mangled_name" : "-[NSObject init]"
           }
         ]],
         ["ObjCMethodDecl" , [
           {
-            "pointer" : 28,
+            "pointer" : 38,
             "parent_pointer" : 18,
             "source_range" : [
               {
@@ -466,12 +674,61 @@
             "result_type" : {
               "type_ptr" : 9
             },
+            "implicit_parameters" : [
+              ["ImplicitParamDecl" , [
+                {
+                  "pointer" : 39,
+                  "source_range" : [
+                    {
+                    },
+                    {
+                    }
+                  ],
+                  "is_implicit" : true
+                },
+                {
+                  "name" : "self",
+                  "qual_name" : [
+                    "self"
+                  ]
+                },
+                {
+                  "type_ptr" : 30,
+                  "is_const" : true
+                },
+                {
+                }
+              ]],
+              ["ImplicitParamDecl" , [
+                {
+                  "pointer" : 40,
+                  "source_range" : [
+                    {
+                    },
+                    {
+                    }
+                  ],
+                  "is_implicit" : true
+                },
+                {
+                  "name" : "_cmd",
+                  "qual_name" : [
+                    "_cmd"
+                  ]
+                },
+                {
+                  "type_ptr" : 5
+                },
+                {
+                }
+              ]]
+            ],
             "mangled_name" : "-[NSObject class]"
           }
         ]],
         ["ObjCMethodDecl" , [
           {
-            "pointer" : 29,
+            "pointer" : 41,
             "parent_pointer" : 18,
             "source_range" : [
               {
@@ -498,7 +755,7 @@
             "parameters" : [
               ["ParmVarDecl" , [
                 {
-                  "pointer" : 30,
+                  "pointer" : 42,
                   "source_range" : [
                     {
                       "column" : 29
@@ -522,12 +779,61 @@
                 }
               ]]
             ],
+            "implicit_parameters" : [
+              ["ImplicitParamDecl" , [
+                {
+                  "pointer" : 43,
+                  "source_range" : [
+                    {
+                    },
+                    {
+                    }
+                  ],
+                  "is_implicit" : true
+                },
+                {
+                  "name" : "self",
+                  "qual_name" : [
+                    "self"
+                  ]
+                },
+                {
+                  "type_ptr" : 30,
+                  "is_const" : true
+                },
+                {
+                }
+              ]],
+              ["ImplicitParamDecl" , [
+                {
+                  "pointer" : 44,
+                  "source_range" : [
+                    {
+                    },
+                    {
+                    }
+                  ],
+                  "is_implicit" : true
+                },
+                {
+                  "name" : "_cmd",
+                  "qual_name" : [
+                    "_cmd"
+                  ]
+                },
+                {
+                  "type_ptr" : 5
+                },
+                {
+                }
+              ]]
+            ],
             "mangled_name" : "-[NSObject respondsToSelector:]"
           }
         ]],
         ["ObjCMethodDecl" , [
           {
-            "pointer" : 31,
+            "pointer" : 45,
             "parent_pointer" : 18,
             "source_range" : [
               {
@@ -554,7 +860,7 @@
             "parameters" : [
               ["ParmVarDecl" , [
                 {
-                  "pointer" : 32,
+                  "pointer" : 46,
                   "source_range" : [
                     {
                       "column" : 29
@@ -571,10 +877,59 @@
                   ]
                 },
                 {
-                  "type_ptr" : 33
+                  "type_ptr" : 47
                 },
                 {
                   "parm_index_in_function" : 0
+                }
+              ]]
+            ],
+            "implicit_parameters" : [
+              ["ImplicitParamDecl" , [
+                {
+                  "pointer" : 48,
+                  "source_range" : [
+                    {
+                    },
+                    {
+                    }
+                  ],
+                  "is_implicit" : true
+                },
+                {
+                  "name" : "self",
+                  "qual_name" : [
+                    "self"
+                  ]
+                },
+                {
+                  "type_ptr" : 30,
+                  "is_const" : true
+                },
+                {
+                }
+              ]],
+              ["ImplicitParamDecl" , [
+                {
+                  "pointer" : 49,
+                  "source_range" : [
+                    {
+                    },
+                    {
+                    }
+                  ],
+                  "is_implicit" : true
+                },
+                {
+                  "name" : "_cmd",
+                  "qual_name" : [
+                    "_cmd"
+                  ]
+                },
+                {
+                  "type_ptr" : 5
+                },
+                {
                 }
               ]]
             ],
@@ -589,7 +944,7 @@
     ]],
     ["ObjCInterfaceDecl" , [
       {
-        "pointer" : 34,
+        "pointer" : 50,
         "parent_pointer" : 1,
         "source_range" : [
           {
@@ -611,8 +966,8 @@
       [
         ["ObjCMethodDecl" , [
           {
-            "pointer" : 35,
-            "parent_pointer" : 34,
+            "pointer" : 51,
+            "parent_pointer" : 50,
             "source_range" : [
               {
                 "line" : 30,
@@ -637,7 +992,7 @@
             "parameters" : [
               ["ParmVarDecl" , [
                 {
-                  "pointer" : 36,
+                  "pointer" : 52,
                   "source_range" : [
                     {
                       "column" : 32
@@ -654,10 +1009,59 @@
                   ]
                 },
                 {
-                  "type_ptr" : 37
+                  "type_ptr" : 53
                 },
                 {
                   "parm_index_in_function" : 0
+                }
+              ]]
+            ],
+            "implicit_parameters" : [
+              ["ImplicitParamDecl" , [
+                {
+                  "pointer" : 54,
+                  "source_range" : [
+                    {
+                    },
+                    {
+                    }
+                  ],
+                  "is_implicit" : true
+                },
+                {
+                  "name" : "self",
+                  "qual_name" : [
+                    "self"
+                  ]
+                },
+                {
+                  "type_ptr" : 9,
+                  "is_const" : true
+                },
+                {
+                }
+              ]],
+              ["ImplicitParamDecl" , [
+                {
+                  "pointer" : 55,
+                  "source_range" : [
+                    {
+                    },
+                    {
+                    }
+                  ],
+                  "is_implicit" : true
+                },
+                {
+                  "name" : "_cmd",
+                  "qual_name" : [
+                    "_cmd"
+                  ]
+                },
+                {
+                  "type_ptr" : 5
+                },
+                {
                 }
               ]]
             ],
@@ -682,7 +1086,7 @@
     ]],
     ["ObjCInterfaceDecl" , [
       {
-        "pointer" : 38,
+        "pointer" : 56,
         "parent_pointer" : 1,
         "source_range" : [
           {
@@ -704,8 +1108,8 @@
       [
         ["ObjCMethodDecl" , [
           {
-            "pointer" : 39,
-            "parent_pointer" : 38,
+            "pointer" : 57,
+            "parent_pointer" : 56,
             "source_range" : [
               {
                 "line" : 34,
@@ -728,6 +1132,55 @@
             "result_type" : {
               "type_ptr" : 17
             },
+            "implicit_parameters" : [
+              ["ImplicitParamDecl" , [
+                {
+                  "pointer" : 58,
+                  "source_range" : [
+                    {
+                    },
+                    {
+                    }
+                  ],
+                  "is_implicit" : true
+                },
+                {
+                  "name" : "self",
+                  "qual_name" : [
+                    "self"
+                  ]
+                },
+                {
+                  "type_ptr" : 59,
+                  "is_const" : true
+                },
+                {
+                }
+              ]],
+              ["ImplicitParamDecl" , [
+                {
+                  "pointer" : 60,
+                  "source_range" : [
+                    {
+                    },
+                    {
+                    }
+                  ],
+                  "is_implicit" : true
+                },
+                {
+                  "name" : "_cmd",
+                  "qual_name" : [
+                    "_cmd"
+                  ]
+                },
+                {
+                  "type_ptr" : 5
+                },
+                {
+                }
+              ]]
+            ],
             "mangled_name" : "-[NSString length]"
           }
         ]]
@@ -749,7 +1202,7 @@
     ]],
     ["ObjCInterfaceDecl" , [
       {
-        "pointer" : 40,
+        "pointer" : 61,
         "parent_pointer" : 1,
         "source_range" : [
           {
@@ -771,8 +1224,8 @@
       [
         ["ObjCMethodDecl" , [
           {
-            "pointer" : 41,
-            "parent_pointer" : 40,
+            "pointer" : 62,
+            "parent_pointer" : 61,
             "source_range" : [
               {
                 "line" : 38,
@@ -798,7 +1251,7 @@
             "parameters" : [
               ["ParmVarDecl" , [
                 {
-                  "pointer" : 42,
+                  "pointer" : 63,
                   "source_range" : [
                     {
                       "line" : 38,
@@ -816,7 +1269,7 @@
                   ]
                 },
                 {
-                  "type_ptr" : 43
+                  "type_ptr" : 64
                 },
                 {
                   "parm_index_in_function" : 0
@@ -824,7 +1277,7 @@
               ]],
               ["ParmVarDecl" , [
                 {
-                  "pointer" : 44,
+                  "pointer" : 65,
                   "source_range" : [
                     {
                       "line" : 39,
@@ -842,7 +1295,7 @@
                   ]
                 },
                 {
-                  "type_ptr" : 43
+                  "type_ptr" : 64
                 },
                 {
                   "parm_index_in_function" : 1
@@ -850,7 +1303,7 @@
               ]],
               ["ParmVarDecl" , [
                 {
-                  "pointer" : 45,
+                  "pointer" : 66,
                   "source_range" : [
                     {
                       "line" : 40,
@@ -875,13 +1328,62 @@
                 }
               ]]
             ],
+            "implicit_parameters" : [
+              ["ImplicitParamDecl" , [
+                {
+                  "pointer" : 67,
+                  "source_range" : [
+                    {
+                    },
+                    {
+                    }
+                  ],
+                  "is_implicit" : true
+                },
+                {
+                  "name" : "self",
+                  "qual_name" : [
+                    "self"
+                  ]
+                },
+                {
+                  "type_ptr" : 9,
+                  "is_const" : true
+                },
+                {
+                }
+              ]],
+              ["ImplicitParamDecl" , [
+                {
+                  "pointer" : 68,
+                  "source_range" : [
+                    {
+                    },
+                    {
+                    }
+                  ],
+                  "is_implicit" : true
+                },
+                {
+                  "name" : "_cmd",
+                  "qual_name" : [
+                    "_cmd"
+                  ]
+                },
+                {
+                  "type_ptr" : 5
+                },
+                {
+                }
+              ]]
+            ],
             "mangled_name" : "+[NSDictionary dictionaryWithObjects:forKeys:count:]"
           }
         ]],
         ["ObjCMethodDecl" , [
           {
-            "pointer" : 46,
-            "parent_pointer" : 40,
+            "pointer" : 69,
+            "parent_pointer" : 61,
             "source_range" : [
               {
                 "line" : 41,
@@ -907,7 +1409,7 @@
             "parameters" : [
               ["ParmVarDecl" , [
                 {
-                  "pointer" : 47,
+                  "pointer" : 70,
                   "source_range" : [
                     {
                       "column" : 32
@@ -928,6 +1430,55 @@
                 },
                 {
                   "parm_index_in_function" : 0
+                }
+              ]]
+            ],
+            "implicit_parameters" : [
+              ["ImplicitParamDecl" , [
+                {
+                  "pointer" : 71,
+                  "source_range" : [
+                    {
+                    },
+                    {
+                    }
+                  ],
+                  "is_implicit" : true
+                },
+                {
+                  "name" : "self",
+                  "qual_name" : [
+                    "self"
+                  ]
+                },
+                {
+                  "type_ptr" : 72,
+                  "is_const" : true
+                },
+                {
+                }
+              ]],
+              ["ImplicitParamDecl" , [
+                {
+                  "pointer" : 73,
+                  "source_range" : [
+                    {
+                    },
+                    {
+                    }
+                  ],
+                  "is_implicit" : true
+                },
+                {
+                  "name" : "_cmd",
+                  "qual_name" : [
+                    "_cmd"
+                  ]
+                },
+                {
+                  "type_ptr" : 5
+                },
+                {
                 }
               ]]
             ],
@@ -952,7 +1503,7 @@
     ]],
     ["ObjCInterfaceDecl" , [
       {
-        "pointer" : 48,
+        "pointer" : 74,
         "parent_pointer" : 1,
         "source_range" : [
           {
@@ -974,8 +1525,8 @@
       [
         ["ObjCMethodDecl" , [
           {
-            "pointer" : 49,
-            "parent_pointer" : 48,
+            "pointer" : 75,
+            "parent_pointer" : 74,
             "source_range" : [
               {
                 "line" : 45,
@@ -1000,7 +1551,7 @@
             "parameters" : [
               ["ParmVarDecl" , [
                 {
-                  "pointer" : 50,
+                  "pointer" : 76,
                   "source_range" : [
                     {
                       "column" : 35
@@ -1017,7 +1568,7 @@
                   ]
                 },
                 {
-                  "type_ptr" : 51
+                  "type_ptr" : 77
                 },
                 {
                   "parm_index_in_function" : 0
@@ -1025,7 +1576,7 @@
               ]],
               ["ParmVarDecl" , [
                 {
-                  "pointer" : 52,
+                  "pointer" : 78,
                   "source_range" : [
                     {
                       "column" : 52
@@ -1042,10 +1593,59 @@
                   ]
                 },
                 {
-                  "type_ptr" : 53
+                  "type_ptr" : 79
                 },
                 {
                   "parm_index_in_function" : 1
+                }
+              ]]
+            ],
+            "implicit_parameters" : [
+              ["ImplicitParamDecl" , [
+                {
+                  "pointer" : 80,
+                  "source_range" : [
+                    {
+                    },
+                    {
+                    }
+                  ],
+                  "is_implicit" : true
+                },
+                {
+                  "name" : "self",
+                  "qual_name" : [
+                    "self"
+                  ]
+                },
+                {
+                  "type_ptr" : 9,
+                  "is_const" : true
+                },
+                {
+                }
+              ]],
+              ["ImplicitParamDecl" , [
+                {
+                  "pointer" : 81,
+                  "source_range" : [
+                    {
+                    },
+                    {
+                    }
+                  ],
+                  "is_implicit" : true
+                },
+                {
+                  "name" : "_cmd",
+                  "qual_name" : [
+                    "_cmd"
+                  ]
+                },
+                {
+                  "type_ptr" : 5
+                },
+                {
                 }
               ]]
             ],
@@ -1054,8 +1654,8 @@
         ]],
         ["ObjCMethodDecl" , [
           {
-            "pointer" : 54,
-            "parent_pointer" : 48,
+            "pointer" : 82,
+            "parent_pointer" : 74,
             "source_range" : [
               {
                 "line" : 46,
@@ -1081,7 +1681,7 @@
             "parameters" : [
               ["ParmVarDecl" , [
                 {
-                  "pointer" : 55,
+                  "pointer" : 83,
                   "source_range" : [
                     {
                       "column" : 33
@@ -1102,6 +1702,55 @@
                 },
                 {
                   "parm_index_in_function" : 0
+                }
+              ]]
+            ],
+            "implicit_parameters" : [
+              ["ImplicitParamDecl" , [
+                {
+                  "pointer" : 84,
+                  "source_range" : [
+                    {
+                    },
+                    {
+                    }
+                  ],
+                  "is_implicit" : true
+                },
+                {
+                  "name" : "self",
+                  "qual_name" : [
+                    "self"
+                  ]
+                },
+                {
+                  "type_ptr" : 85,
+                  "is_const" : true
+                },
+                {
+                }
+              ]],
+              ["ImplicitParamDecl" , [
+                {
+                  "pointer" : 86,
+                  "source_range" : [
+                    {
+                    },
+                    {
+                    }
+                  ],
+                  "is_implicit" : true
+                },
+                {
+                  "name" : "_cmd",
+                  "qual_name" : [
+                    "_cmd"
+                  ]
+                },
+                {
+                  "type_ptr" : 5
+                },
+                {
                 }
               ]]
             ],
@@ -1126,7 +1775,7 @@
     ]],
     ["ObjCInterfaceDecl" , [
       {
-        "pointer" : 56,
+        "pointer" : 87,
         "parent_pointer" : 1,
         "source_range" : [
           {
@@ -1164,7 +1813,7 @@
     ]],
     ["FunctionDecl" , [
       {
-        "pointer" : 57,
+        "pointer" : 88,
         "source_range" : [
           {
             "line" : 52,
@@ -1179,7 +1828,7 @@
         "attributes" : [
           ["FormatAttr" , [
             {
-              "pointer" : 58,
+              "pointer" : 89,
               "source_range" : [
                 {
                   "column" : 13
@@ -1199,14 +1848,14 @@
         ]
       },
       {
-        "type_ptr" : 59
+        "type_ptr" : 90
       },
       {
         "is_variadic" : true,
         "parameters" : [
           ["ParmVarDecl" , [
             {
-              "pointer" : 60,
+              "pointer" : 91,
               "source_range" : [
                 {
                 },
@@ -1232,7 +1881,7 @@
     ]],
     ["FunctionDecl" , [
       {
-        "pointer" : 61,
+        "pointer" : 92,
         "source_range" : [
           {
             "column" : 1
@@ -1246,7 +1895,7 @@
         "attributes" : [
           ["FormatAttr" , [
             {
-              "pointer" : 62,
+              "pointer" : 93,
               "source_range" : [
                 {
                   "column" : 13
@@ -1266,14 +1915,14 @@
         ]
       },
       {
-        "type_ptr" : 59
+        "type_ptr" : 90
       },
       {
         "is_variadic" : true,
         "parameters" : [
           ["ParmVarDecl" , [
             {
-              "pointer" : 63,
+              "pointer" : 94,
               "source_range" : [
                 {
                   "column" : 19
@@ -1290,7 +1939,7 @@
               ]
             },
             {
-              "type_ptr" : 64
+              "type_ptr" : 59
             },
             {
               "parm_index_in_function" : 0
@@ -1301,7 +1950,7 @@
     ]],
     ["ObjCInterfaceDecl" , [
       {
-        "pointer" : 65,
+        "pointer" : 95,
         "parent_pointer" : 1,
         "source_range" : [
           {
@@ -1324,8 +1973,8 @@
       [
         ["ObjCMethodDecl" , [
           {
-            "pointer" : 66,
-            "parent_pointer" : 65,
+            "pointer" : 96,
+            "parent_pointer" : 95,
             "source_range" : [
               {
                 "line" : 11,
@@ -1346,12 +1995,12 @@
           {
             "is_instance_method" : true,
             "result_type" : {
-              "type_ptr" : 67
+              "type_ptr" : 97
             },
             "parameters" : [
               ["ParmVarDecl" , [
                 {
-                  "pointer" : 68,
+                  "pointer" : 98,
                   "source_range" : [
                     {
                       "column" : 14
@@ -1368,10 +2017,59 @@
                   ]
                 },
                 {
-                  "type_ptr" : 37
+                  "type_ptr" : 53
                 },
                 {
                   "parm_index_in_function" : 0
+                }
+              ]]
+            ],
+            "implicit_parameters" : [
+              ["ImplicitParamDecl" , [
+                {
+                  "pointer" : 99,
+                  "source_range" : [
+                    {
+                    },
+                    {
+                    }
+                  ],
+                  "is_implicit" : true
+                },
+                {
+                  "name" : "self",
+                  "qual_name" : [
+                    "self"
+                  ]
+                },
+                {
+                  "type_ptr" : 100,
+                  "is_const" : true
+                },
+                {
+                }
+              ]],
+              ["ImplicitParamDecl" , [
+                {
+                  "pointer" : 101,
+                  "source_range" : [
+                    {
+                    },
+                    {
+                    }
+                  ],
+                  "is_implicit" : true
+                },
+                {
+                  "name" : "_cmd",
+                  "qual_name" : [
+                    "_cmd"
+                  ]
+                },
+                {
+                  "type_ptr" : 5
+                },
+                {
                 }
               ]]
             ],
@@ -1394,7 +2092,7 @@
         },
         "implementation" : {
           "kind" : "ObjCImplementation",
-          "decl_pointer" : 69,
+          "decl_pointer" : 102,
           "name" : {
             "name" : "Hello",
             "qual_name" : [
@@ -1406,7 +2104,7 @@
     ]],
     ["ObjCImplementationDecl" , [
       {
-        "pointer" : 69,
+        "pointer" : 102,
         "parent_pointer" : 1,
         "source_range" : [
           {
@@ -1428,8 +2126,8 @@
       [
         ["ObjCMethodDecl" , [
           {
-            "pointer" : 70,
-            "parent_pointer" : 69,
+            "pointer" : 103,
+            "parent_pointer" : 102,
             "source_range" : [
               {
                 "line" : 15,
@@ -1451,12 +2149,12 @@
           {
             "is_instance_method" : true,
             "result_type" : {
-              "type_ptr" : 67
+              "type_ptr" : 97
             },
             "parameters" : [
               ["ParmVarDecl" , [
                 {
-                  "pointer" : 71,
+                  "pointer" : 104,
                   "source_range" : [
                     {
                       "line" : 15,
@@ -1476,7 +2174,7 @@
                   ]
                 },
                 {
-                  "type_ptr" : 37
+                  "type_ptr" : 53
                 },
                 {
                   "parm_index_in_function" : 0
@@ -1486,7 +2184,7 @@
             "implicit_parameters" : [
               ["ImplicitParamDecl" , [
                 {
-                  "pointer" : 72,
+                  "pointer" : 105,
                   "source_range" : [
                     {
                     },
@@ -1502,7 +2200,7 @@
                   ]
                 },
                 {
-                  "type_ptr" : 73,
+                  "type_ptr" : 100,
                   "is_const" : true
                 },
                 {
@@ -1510,7 +2208,7 @@
               ]],
               ["ImplicitParamDecl" , [
                 {
-                  "pointer" : 74,
+                  "pointer" : 106,
                   "source_range" : [
                     {
                     },
@@ -1534,7 +2232,7 @@
             ],
             "body" : ["CompoundStmt" , [
               {
-                "pointer" : 75,
+                "pointer" : 107,
                 "source_range" : [
                   {
                     "column" : 20
@@ -1548,7 +2246,7 @@
               [
                 ["IfStmt" , [
                   {
-                    "pointer" : 76,
+                    "pointer" : 108,
                     "source_range" : [
                       {
                         "line" : 16,
@@ -1563,7 +2261,7 @@
                   [
                     ["BinaryOperator" , [
                       {
-                        "pointer" : 77,
+                        "pointer" : 109,
                         "source_range" : [
                           {
                             "line" : 16,
@@ -1577,7 +2275,7 @@
                       [
                         ["ImplicitCastExpr" , [
                           {
-                            "pointer" : 78,
+                            "pointer" : 110,
                             "source_range" : [
                               {
                                 "column" : 7
@@ -1590,7 +2288,7 @@
                           [
                             ["DeclRefExpr" , [
                               {
-                                "pointer" : 79,
+                                "pointer" : 111,
                                 "source_range" : [
                                   {
                                     "column" : 7
@@ -1604,14 +2302,14 @@
                               ],
                               {
                                 "qual_type" : {
-                                  "type_ptr" : 37
+                                  "type_ptr" : 53
                                 },
                                 "value_kind" : "LValue"
                               },
                               {
                                 "decl_ref" : {
                                   "kind" : "ParmVar",
-                                  "decl_pointer" : 71,
+                                  "decl_pointer" : 104,
                                   "name" : {
                                     "name" : "i",
                                     "qual_name" : [
@@ -1619,7 +2317,7 @@
                                     ]
                                   },
                                   "qual_type" : {
-                                    "type_ptr" : 37
+                                    "type_ptr" : 53
                                   }
                                 }
                               }
@@ -1627,7 +2325,7 @@
                           ],
                           {
                             "qual_type" : {
-                              "type_ptr" : 37
+                              "type_ptr" : 53
                             }
                           },
                           {
@@ -1638,7 +2336,7 @@
                         ]],
                         ["IntegerLiteral" , [
                           {
-                            "pointer" : 80,
+                            "pointer" : 112,
                             "source_range" : [
                               {
                                 "column" : 11
@@ -1652,7 +2350,7 @@
                           ],
                           {
                             "qual_type" : {
-                              "type_ptr" : 37
+                              "type_ptr" : 53
                             }
                           },
                           {
@@ -1664,7 +2362,7 @@
                       ],
                       {
                         "qual_type" : {
-                          "type_ptr" : 37
+                          "type_ptr" : 53
                         }
                       },
                       {
@@ -1673,7 +2371,7 @@
                     ]],
                     ["CompoundStmt" , [
                       {
-                        "pointer" : 81,
+                        "pointer" : 113,
                         "source_range" : [
                           {
                             "column" : 14
@@ -1687,7 +2385,7 @@
                       [
                         ["CallExpr" , [
                           {
-                            "pointer" : 82,
+                            "pointer" : 114,
                             "source_range" : [
                               {
                                 "line" : 17,
@@ -1701,7 +2399,7 @@
                           [
                             ["ImplicitCastExpr" , [
                               {
-                                "pointer" : 83,
+                                "pointer" : 115,
                                 "source_range" : [
                                   {
                                     "column" : 5
@@ -1714,7 +2412,7 @@
                               [
                                 ["DeclRefExpr" , [
                                   {
-                                    "pointer" : 84,
+                                    "pointer" : 116,
                                     "source_range" : [
                                       {
                                         "column" : 5
@@ -1728,13 +2426,13 @@
                                   ],
                                   {
                                     "qual_type" : {
-                                      "type_ptr" : 59
+                                      "type_ptr" : 90
                                     }
                                   },
                                   {
                                     "decl_ref" : {
                                       "kind" : "Function",
-                                      "decl_pointer" : 61,
+                                      "decl_pointer" : 92,
                                       "name" : {
                                         "name" : "NSLog",
                                         "qual_name" : [
@@ -1742,7 +2440,7 @@
                                         ]
                                       },
                                       "qual_type" : {
-                                        "type_ptr" : 59
+                                        "type_ptr" : 90
                                       }
                                     }
                                   }
@@ -1750,7 +2448,7 @@
                               ],
                               {
                                 "qual_type" : {
-                                  "type_ptr" : 85
+                                  "type_ptr" : 117
                                 }
                               },
                               {
@@ -1761,7 +2459,7 @@
                             ]],
                             ["ImplicitCastExpr" , [
                               {
-                                "pointer" : 86,
+                                "pointer" : 118,
                                 "source_range" : [
                                   {
                                     "column" : 11
@@ -1774,7 +2472,7 @@
                               [
                                 ["ObjCStringLiteral" , [
                                   {
-                                    "pointer" : 87,
+                                    "pointer" : 119,
                                     "source_range" : [
                                       {
                                         "column" : 11
@@ -1787,7 +2485,7 @@
                                   [
                                     ["StringLiteral" , [
                                       {
-                                        "pointer" : 88,
+                                        "pointer" : 120,
                                         "source_range" : [
                                           {
                                             "column" : 12
@@ -1801,7 +2499,7 @@
                                       ],
                                       {
                                         "qual_type" : {
-                                          "type_ptr" : 89
+                                          "type_ptr" : 121
                                         },
                                         "value_kind" : "LValue"
                                       },
@@ -1812,7 +2510,7 @@
                                   ],
                                   {
                                     "qual_type" : {
-                                      "type_ptr" : 64
+                                      "type_ptr" : 59
                                     }
                                   }
                                 ]]
@@ -1830,7 +2528,7 @@
                             ]],
                             ["ImplicitCastExpr" , [
                               {
-                                "pointer" : 90,
+                                "pointer" : 122,
                                 "source_range" : [
                                   {
                                     "column" : 34
@@ -1843,7 +2541,7 @@
                               [
                                 ["DeclRefExpr" , [
                                   {
-                                    "pointer" : 91,
+                                    "pointer" : 123,
                                     "source_range" : [
                                       {
                                         "column" : 34
@@ -1857,14 +2555,14 @@
                                   ],
                                   {
                                     "qual_type" : {
-                                      "type_ptr" : 37
+                                      "type_ptr" : 53
                                     },
                                     "value_kind" : "LValue"
                                   },
                                   {
                                     "decl_ref" : {
                                       "kind" : "ParmVar",
-                                      "decl_pointer" : 71,
+                                      "decl_pointer" : 104,
                                       "name" : {
                                         "name" : "i",
                                         "qual_name" : [
@@ -1872,7 +2570,7 @@
                                         ]
                                       },
                                       "qual_type" : {
-                                        "type_ptr" : 37
+                                        "type_ptr" : 53
                                       }
                                     }
                                   }
@@ -1880,7 +2578,7 @@
                               ],
                               {
                                 "qual_type" : {
-                                  "type_ptr" : 37
+                                  "type_ptr" : 53
                                 }
                               },
                               {
@@ -1892,7 +2590,7 @@
                           ],
                           {
                             "qual_type" : {
-                              "type_ptr" : 67
+                              "type_ptr" : 97
                             }
                           }
                         ]]
@@ -1900,8 +2598,8 @@
                     ]]
                   ],
                   {
-                    "cond" : 77,
-                    "then" : 81
+                    "cond" : 109,
+                    "then" : 113
                   }
                 ]]
               ]
@@ -1915,7 +2613,7 @@
       {
         "class_interface" : {
           "kind" : "ObjCInterface",
-          "decl_pointer" : 65,
+          "decl_pointer" : 95,
           "name" : {
             "name" : "Hello",
             "qual_name" : [
@@ -1927,7 +2625,7 @@
     ]],
     ["FunctionDecl" , [
       {
-        "pointer" : 92,
+        "pointer" : 124,
         "source_range" : [
           {
             "line" : 22,
@@ -1946,13 +2644,13 @@
         ]
       },
       {
-        "type_ptr" : 93
+        "type_ptr" : 125
       },
       {
         "parameters" : [
           ["ParmVarDecl" , [
             {
-              "pointer" : 94,
+              "pointer" : 126,
               "source_range" : [
                 {
                   "line" : 22,
@@ -1970,7 +2668,7 @@
               ]
             },
             {
-              "type_ptr" : 37
+              "type_ptr" : 53
             },
             {
               "parm_index_in_function" : 0
@@ -1978,7 +2676,7 @@
           ]],
           ["ParmVarDecl" , [
             {
-              "pointer" : 95,
+              "pointer" : 127,
               "source_range" : [
                 {
                   "column" : 20
@@ -1995,17 +2693,17 @@
               ]
             },
             {
-              "type_ptr" : 96
+              "type_ptr" : 128
             },
             {
               "parm_index_in_function" : 1
             }
           ]]
         ],
-        "decl_ptr_with_body" : 92,
+        "decl_ptr_with_body" : 124,
         "body" : ["CompoundStmt" , [
           {
-            "pointer" : 97,
+            "pointer" : 129,
             "source_range" : [
               {
                 "column" : 34
@@ -2019,7 +2717,7 @@
           [
             ["ForStmt" , [
               {
-                "pointer" : 98,
+                "pointer" : 130,
                 "source_range" : [
                   {
                     "line" : 23,
@@ -2034,7 +2732,7 @@
               [
                 ["DeclStmt" , [
                   {
-                    "pointer" : 99,
+                    "pointer" : 131,
                     "source_range" : [
                       {
                         "line" : 23,
@@ -2048,7 +2746,7 @@
                   [
                     ["IntegerLiteral" , [
                       {
-                        "pointer" : 100,
+                        "pointer" : 132,
                         "source_range" : [
                           {
                             "column" : 16
@@ -2062,7 +2760,7 @@
                       ],
                       {
                         "qual_type" : {
-                          "type_ptr" : 37
+                          "type_ptr" : 53
                         }
                       },
                       {
@@ -2075,7 +2773,7 @@
                   [
                     ["VarDecl" , [
                       {
-                        "pointer" : 101,
+                        "pointer" : 133,
                         "source_range" : [
                           {
                             "column" : 8
@@ -2094,12 +2792,12 @@
                         ]
                       },
                       {
-                        "type_ptr" : 37
+                        "type_ptr" : 53
                       },
                       {
                         "init_expr" : ["IntegerLiteral" , [
                           {
-                            "pointer" : 100,
+                            "pointer" : 132,
                             "source_range" : [
                               {
                                 "column" : 16
@@ -2113,7 +2811,7 @@
                           ],
                           {
                             "qual_type" : {
-                              "type_ptr" : 37
+                              "type_ptr" : 53
                             }
                           },
                           {
@@ -2128,7 +2826,7 @@
                 ]],
                 ["NullStmt" , [
                   {
-                    "pointer" : 102,
+                    "pointer" : 134,
                     "source_range" : [
                       {
                       },
@@ -2141,7 +2839,7 @@
                 ]],
                 ["BinaryOperator" , [
                   {
-                    "pointer" : 103,
+                    "pointer" : 135,
                     "source_range" : [
                       {
                         "column" : 19
@@ -2154,7 +2852,7 @@
                   [
                     ["ImplicitCastExpr" , [
                       {
-                        "pointer" : 104,
+                        "pointer" : 136,
                         "source_range" : [
                           {
                             "column" : 19
@@ -2167,7 +2865,7 @@
                       [
                         ["DeclRefExpr" , [
                           {
-                            "pointer" : 105,
+                            "pointer" : 137,
                             "source_range" : [
                               {
                                 "column" : 19
@@ -2181,14 +2879,14 @@
                           ],
                           {
                             "qual_type" : {
-                              "type_ptr" : 37
+                              "type_ptr" : 53
                             },
                             "value_kind" : "LValue"
                           },
                           {
                             "decl_ref" : {
                               "kind" : "Var",
-                              "decl_pointer" : 101,
+                              "decl_pointer" : 133,
                               "name" : {
                                 "name" : "i",
                                 "qual_name" : [
@@ -2196,7 +2894,7 @@
                                 ]
                               },
                               "qual_type" : {
-                                "type_ptr" : 37
+                                "type_ptr" : 53
                               }
                             }
                           }
@@ -2204,7 +2902,7 @@
                       ],
                       {
                         "qual_type" : {
-                          "type_ptr" : 37
+                          "type_ptr" : 53
                         }
                       },
                       {
@@ -2215,7 +2913,7 @@
                     ]],
                     ["IntegerLiteral" , [
                       {
-                        "pointer" : 106,
+                        "pointer" : 138,
                         "source_range" : [
                           {
                             "column" : 23
@@ -2229,7 +2927,7 @@
                       ],
                       {
                         "qual_type" : {
-                          "type_ptr" : 37
+                          "type_ptr" : 53
                         }
                       },
                       {
@@ -2241,7 +2939,7 @@
                   ],
                   {
                     "qual_type" : {
-                      "type_ptr" : 37
+                      "type_ptr" : 53
                     }
                   },
                   {
@@ -2250,7 +2948,7 @@
                 ]],
                 ["UnaryOperator" , [
                   {
-                    "pointer" : 107,
+                    "pointer" : 139,
                     "source_range" : [
                       {
                         "column" : 26
@@ -2263,7 +2961,7 @@
                   [
                     ["DeclRefExpr" , [
                       {
-                        "pointer" : 108,
+                        "pointer" : 140,
                         "source_range" : [
                           {
                             "column" : 26
@@ -2277,14 +2975,14 @@
                       ],
                       {
                         "qual_type" : {
-                          "type_ptr" : 37
+                          "type_ptr" : 53
                         },
                         "value_kind" : "LValue"
                       },
                       {
                         "decl_ref" : {
                           "kind" : "Var",
-                          "decl_pointer" : 101,
+                          "decl_pointer" : 133,
                           "name" : {
                             "name" : "i",
                             "qual_name" : [
@@ -2292,7 +2990,7 @@
                             ]
                           },
                           "qual_type" : {
-                            "type_ptr" : 37
+                            "type_ptr" : 53
                           }
                         }
                       }
@@ -2300,7 +2998,7 @@
                   ],
                   {
                     "qual_type" : {
-                      "type_ptr" : 37
+                      "type_ptr" : 53
                     }
                   },
                   {
@@ -2310,7 +3008,7 @@
                 ]],
                 ["CompoundStmt" , [
                   {
-                    "pointer" : 109,
+                    "pointer" : 141,
                     "source_range" : [
                       {
                         "column" : 31
@@ -2324,7 +3022,7 @@
                   [
                     ["ObjCAutoreleasePoolStmt" , [
                       {
-                        "pointer" : 110,
+                        "pointer" : 142,
                         "source_range" : [
                           {
                             "line" : 24,
@@ -2339,7 +3037,7 @@
                       [
                         ["CompoundStmt" , [
                           {
-                            "pointer" : 111,
+                            "pointer" : 143,
                             "source_range" : [
                               {
                                 "line" : 24,
@@ -2354,7 +3052,7 @@
                           [
                             ["ExprWithCleanups" , [
                               {
-                                "pointer" : 112,
+                                "pointer" : 144,
                                 "source_range" : [
                                   {
                                     "line" : 25,
@@ -2368,7 +3066,7 @@
                               [
                                 ["ObjCMessageExpr" , [
                                   {
-                                    "pointer" : 113,
+                                    "pointer" : 145,
                                     "source_range" : [
                                       {
                                         "column" : 7
@@ -2381,7 +3079,7 @@
                                   [
                                     ["ImplicitCastExpr" , [
                                       {
-                                        "pointer" : 114,
+                                        "pointer" : 146,
                                         "source_range" : [
                                           {
                                             "column" : 8
@@ -2394,7 +3092,7 @@
                                       [
                                         ["ObjCMessageExpr" , [
                                           {
-                                            "pointer" : 115,
+                                            "pointer" : 147,
                                             "source_range" : [
                                               {
                                                 "column" : 8
@@ -2408,21 +3106,21 @@
                                           ],
                                           {
                                             "qual_type" : {
-                                              "type_ptr" : 73
+                                              "type_ptr" : 100
                                             }
                                           },
                                           {
                                             "selector" : "new",
-                                            "decl_pointer" : 22,
+                                            "decl_pointer" : 24,
                                             "receiver_kind" : ["Class" , {
-                                              "type_ptr" : 116
+                                              "type_ptr" : 148
                                             }]
                                           }
                                         ]]
                                       ],
                                       {
                                         "qual_type" : {
-                                          "type_ptr" : 73
+                                          "type_ptr" : 100
                                         }
                                       },
                                       {
@@ -2433,7 +3131,7 @@
                                     ]],
                                     ["ImplicitCastExpr" , [
                                       {
-                                        "pointer" : 117,
+                                        "pointer" : 149,
                                         "source_range" : [
                                           {
                                             "column" : 24
@@ -2446,7 +3144,7 @@
                                       [
                                         ["DeclRefExpr" , [
                                           {
-                                            "pointer" : 118,
+                                            "pointer" : 150,
                                             "source_range" : [
                                               {
                                                 "column" : 24
@@ -2460,14 +3158,14 @@
                                           ],
                                           {
                                             "qual_type" : {
-                                              "type_ptr" : 37
+                                              "type_ptr" : 53
                                             },
                                             "value_kind" : "LValue"
                                           },
                                           {
                                             "decl_ref" : {
                                               "kind" : "Var",
-                                              "decl_pointer" : 101,
+                                              "decl_pointer" : 133,
                                               "name" : {
                                                 "name" : "i",
                                                 "qual_name" : [
@@ -2475,7 +3173,7 @@
                                                 ]
                                               },
                                               "qual_type" : {
-                                                "type_ptr" : 37
+                                                "type_ptr" : 53
                                               }
                                             }
                                           }
@@ -2483,7 +3181,7 @@
                                       ],
                                       {
                                         "qual_type" : {
-                                          "type_ptr" : 37
+                                          "type_ptr" : 53
                                         }
                                       },
                                       {
@@ -2495,19 +3193,19 @@
                                   ],
                                   {
                                     "qual_type" : {
-                                      "type_ptr" : 67
+                                      "type_ptr" : 97
                                     }
                                   },
                                   {
                                     "selector" : "say:",
                                     "is_definition_found" : true,
-                                    "decl_pointer" : 70
+                                    "decl_pointer" : 103
                                   }
                                 ]]
                               ],
                               {
                                 "qual_type" : {
-                                  "type_ptr" : 67
+                                  "type_ptr" : 97
                                 }
                               },
                               {
@@ -2523,7 +3221,7 @@
             ]],
             ["ReturnStmt" , [
               {
-                "pointer" : 119,
+                "pointer" : 151,
                 "source_range" : [
                   {
                     "line" : 28,
@@ -2537,7 +3235,7 @@
               [
                 ["IntegerLiteral" , [
                   {
-                    "pointer" : 120,
+                    "pointer" : 152,
                     "source_range" : [
                       {
                         "column" : 10
@@ -2551,7 +3249,7 @@
                   ],
                   {
                     "qual_type" : {
-                      "type_ptr" : 37
+                      "type_ptr" : 53
                     }
                   },
                   {
@@ -2568,7 +3266,7 @@
     ]],
     ["TypedefDecl" , [
       {
-        "pointer" : 121,
+        "pointer" : 153,
         "source_range" : [
           {
           },
@@ -2604,471 +3302,471 @@
     "types" : [
       ["BuiltinType" , [
         {
-          "pointer" : 67
+          "pointer" : 97
         },
         "Void"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 122
+          "pointer" : 154
         },
         "Bool"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 123
+          "pointer" : 155
         },
         "Char_S"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 124
+          "pointer" : 156
         },
         "SChar"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 125
+          "pointer" : 157
         },
         "Short"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 37
+          "pointer" : 53
         },
         "Int"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 126
+          "pointer" : 158
         },
         "Long"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 127
+          "pointer" : 159
         },
         "LongLong"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 128
+          "pointer" : 160
         },
         "UChar"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 129
+          "pointer" : 161
         },
         "UShort"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 53
+          "pointer" : 79
         },
         "UInt"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 130
+          "pointer" : 162
         },
         "ULong"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 131
+          "pointer" : 163
         },
         "ULongLong"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 132
+          "pointer" : 164
         },
         "Float"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 133
+          "pointer" : 165
         },
         "Double"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 134
+          "pointer" : 166
         },
         "LongDouble"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 135
+          "pointer" : 167
         },
         "Float128"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 136
+          "pointer" : 168
         },
         "Float16"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 137
+          "pointer" : 169
         },
         "ShortAccum"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 138
+          "pointer" : 170
         },
         "Accum"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 139
+          "pointer" : 171
         },
         "LongAccum"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 140
+          "pointer" : 172
         },
         "UShortAccum"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 141
+          "pointer" : 173
         },
         "UAccum"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 142
+          "pointer" : 174
         },
         "ULongAccum"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 143
+          "pointer" : 175
         },
         "ShortFract"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 144
+          "pointer" : 176
         },
         "Fract"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 145
+          "pointer" : 177
         },
         "LongFract"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 146
+          "pointer" : 178
         },
         "UShortFract"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 147
+          "pointer" : 179
         },
         "UFract"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 148
+          "pointer" : 180
         },
         "ULongFract"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 149
+          "pointer" : 181
         },
         "SatShortAccum"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 150
+          "pointer" : 182
         },
         "SatAccum"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 151
+          "pointer" : 183
         },
         "SatLongAccum"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 152
+          "pointer" : 184
         },
         "SatUShortAccum"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 153
+          "pointer" : 185
         },
         "SatUAccum"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 154
+          "pointer" : 186
         },
         "SatULongAccum"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 155
+          "pointer" : 187
         },
         "SatShortFract"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 156
+          "pointer" : 188
         },
         "SatFract"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 157
+          "pointer" : 189
         },
         "SatLongFract"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 158
+          "pointer" : 190
         },
         "SatUShortFract"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 159
+          "pointer" : 191
         },
         "SatUFract"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 160
+          "pointer" : 192
         },
         "SatULongFract"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 161
+          "pointer" : 193
         },
         "Int128"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 162
+          "pointer" : 194
         },
         "UInt128"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 163
+          "pointer" : 195
         },
         "WChar_S"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 164
+          "pointer" : 196
         },
         "Char8"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 165
+          "pointer" : 197
         },
         "Dependent"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 166
+          "pointer" : 198
         },
         "Overload"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 167
+          "pointer" : 199
         },
         "BoundMember"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 168
+          "pointer" : 200
         },
         "PseudoObject"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 169
+          "pointer" : 201
         },
         "UnknownAny"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 170
+          "pointer" : 202
         },
         "ARCUnbridgedCast"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 171
+          "pointer" : 203
         },
         "BuiltinFn"
       ]],
       ["ComplexType" , [
         {
-          "pointer" : 172
+          "pointer" : 204
         }
       ]],
       ["ComplexType" , [
         {
-          "pointer" : 173
+          "pointer" : 205
         }
       ]],
       ["ComplexType" , [
         {
-          "pointer" : 174
+          "pointer" : 206
         }
       ]],
       ["ComplexType" , [
         {
-          "pointer" : 175
+          "pointer" : 207
         }
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 176
+          "pointer" : 208
         },
         "ObjCId"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 177
+          "pointer" : 209
         },
         "ObjCClass"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 178
+          "pointer" : 210
         },
         "ObjCSel"
       ]],
       ["PointerType" , [
         {
-          "pointer" : 179
+          "pointer" : 211
         },
         {
-          "type_ptr" : 67
+          "type_ptr" : 97
         }
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 180
+          "pointer" : 212
         },
         "NullPtr"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 181
+          "pointer" : 213
         },
         "Half"
       ]],
       ["PointerType" , [
         {
-          "pointer" : 182
+          "pointer" : 214
         },
         {
-          "type_ptr" : 178
+          "type_ptr" : 210
         }
       ]],
       ["ObjCObjectType" , [
         {
-          "pointer" : 183
+          "pointer" : 215
         },
         {
-          "base_type" : 176
+          "base_type" : 208
         }
       ]],
       ["ObjCObjectPointerType" , [
         {
-          "pointer" : 184
+          "pointer" : 216
         },
         {
-          "type_ptr" : 183
+          "type_ptr" : 215
         }
       ]],
       ["ObjCObjectType" , [
         {
-          "pointer" : 185
+          "pointer" : 217
         },
         {
-          "base_type" : 177
+          "base_type" : 209
         }
       ]],
       ["ObjCObjectPointerType" , [
         {
-          "pointer" : 186
+          "pointer" : 218
         },
         {
-          "type_ptr" : 185
+          "type_ptr" : 217
         }
       ]],
       ["ObjCInterfaceType" , [
         {
-          "pointer" : 187
+          "pointer" : 219
         },
         10
       ]],
       ["RecordType" , [
         {
-          "pointer" : 188
+          "pointer" : 220
         },
-        189
+        221
       ]],
       ["PointerType" , [
         {
-          "pointer" : 190
+          "pointer" : 222
         },
         {
-          "type_ptr" : 37,
+          "type_ptr" : 53,
           "is_const" : true
         }
       ]],
       ["PointerType" , [
         {
-          "pointer" : 191
+          "pointer" : 223
         },
         {
-          "type_ptr" : 123,
+          "type_ptr" : 155,
           "is_const" : true
         }
       ]],
       ["PointerType" , [
         {
-          "pointer" : 192
+          "pointer" : 224
         },
         {
-          "type_ptr" : 123
+          "type_ptr" : 155
         }
       ]],
       ["RecordType" , [
         {
-          "pointer" : 193
+          "pointer" : 225
         },
-        194
+        226
       ]],
       ["ConstantArrayType" , [
         {
-          "pointer" : 195
+          "pointer" : 227
         },
         {
           "element_type" : {
-            "type_ptr" : 193
+            "type_ptr" : 225
           },
           "stride" : 24
         },
@@ -3076,18 +3774,18 @@
       ]],
       ["ObjCInterfaceType" , [
         {
-          "pointer" : 196
+          "pointer" : 228
         },
         18
       ]],
       ["TypedefType" , [
         {
           "pointer" : 7,
-          "desugared_type" : 184
+          "desugared_type" : 216
         },
         {
           "child_type" : {
-            "type_ptr" : 184
+            "type_ptr" : 216
           },
           "decl_ptr" : 6
         }
@@ -3095,103 +3793,119 @@
       ["TypedefType" , [
         {
           "pointer" : 21,
-          "desugared_type" : 184
+          "desugared_type" : 216
         },
         {
           "child_type" : {
             "type_ptr" : 7
           },
-          "decl_ptr" : 121
+          "decl_ptr" : 153
         }
       ]],
       ["TypedefType" , [
         {
           "pointer" : 9,
-          "desugared_type" : 186
+          "desugared_type" : 218
         },
         {
           "child_type" : {
-            "type_ptr" : 186
+            "type_ptr" : 218
           },
           "decl_ptr" : 8
         }
       ]],
       ["TypedefType" , [
         {
-          "pointer" : 15,
-          "desugared_type" : 37
-        },
-        {
-          "child_type" : {
-            "type_ptr" : 37
-          },
-          "decl_ptr" : 14
-        }
-      ]],
-      ["TypedefType" , [
-        {
           "pointer" : 5,
-          "desugared_type" : 182
+          "desugared_type" : 214
         },
         {
           "child_type" : {
-            "type_ptr" : 182
+            "type_ptr" : 214
           },
           "decl_ptr" : 4
         }
       ]],
       ["ObjCObjectPointerType" , [
         {
-          "pointer" : 33
+          "pointer" : 30
         },
         {
-          "type_ptr" : 187
+          "type_ptr" : 228
         }
-      ]],
-      ["ObjCInterfaceType" , [
-        {
-          "pointer" : 197
-        },
-        34
-      ]],
-      ["ObjCInterfaceType" , [
-        {
-          "pointer" : 198
-        },
-        38
       ]],
       ["TypedefType" , [
         {
-          "pointer" : 17,
+          "pointer" : 15,
           "desugared_type" : 53
         },
         {
           "child_type" : {
             "type_ptr" : 53
           },
-          "decl_ptr" : 16
+          "decl_ptr" : 14
+        }
+      ]],
+      ["ObjCObjectPointerType" , [
+        {
+          "pointer" : 47
+        },
+        {
+          "type_ptr" : 219
         }
       ]],
       ["ObjCInterfaceType" , [
         {
-          "pointer" : 199
+          "pointer" : 229
         },
-        40
+        50
+      ]],
+      ["ObjCInterfaceType" , [
+        {
+          "pointer" : 230
+        },
+        56
+      ]],
+      ["TypedefType" , [
+        {
+          "pointer" : 17,
+          "desugared_type" : 79
+        },
+        {
+          "child_type" : {
+            "type_ptr" : 79
+          },
+          "decl_ptr" : 16
+        }
+      ]],
+      ["ObjCObjectPointerType" , [
+        {
+          "pointer" : 59
+        },
+        {
+          "type_ptr" : 230
+        }
+      ]],
+      ["ObjCInterfaceType" , [
+        {
+          "pointer" : 231
+        },
+        61
       ]],
       ["IncompleteArrayType" , [
         {
-          "pointer" : 200
+          "pointer" : 232
         },
         {
           "element_type" : {
-            "type_ptr" : 184
+            "type_ptr" : 216
           },
           "stride" : 8
         }
       ]],
       ["IncompleteArrayType" , [
         {
-          "pointer" : 201
+          "pointer" : 233
         },
         {
           "element_type" : {
@@ -3203,7 +3917,7 @@
       ]],
       ["IncompleteArrayType" , [
         {
-          "pointer" : 202
+          "pointer" : 234
         },
         {
           "element_type" : {
@@ -3215,16 +3929,16 @@
       ]],
       ["PointerType" , [
         {
-          "pointer" : 203
+          "pointer" : 235
         },
         {
-          "type_ptr" : 184,
+          "type_ptr" : 216,
           "is_const" : true
         }
       ]],
       ["PointerType" , [
         {
-          "pointer" : 204
+          "pointer" : 236
         },
         {
           "type_ptr" : 7,
@@ -3233,107 +3947,115 @@
       ]],
       ["DecayedType" , [
         {
-          "pointer" : 43,
-          "desugared_type" : 204
+          "pointer" : 64,
+          "desugared_type" : 236
         },
         {
-          "type_ptr" : 204
+          "type_ptr" : 236
+        }
+      ]],
+      ["ObjCObjectPointerType" , [
+        {
+          "pointer" : 72
+        },
+        {
+          "type_ptr" : 231
         }
       ]],
       ["ObjCInterfaceType" , [
         {
-          "pointer" : 205
+          "pointer" : 237
         },
-        48
+        74
       ]],
       ["PointerType" , [
         {
-          "pointer" : 206
+          "pointer" : 238
         },
         {
-          "type_ptr" : 184
+          "type_ptr" : 216
         }
       ]],
       ["PointerType" , [
         {
-          "pointer" : 51
+          "pointer" : 77
         },
         {
           "type_ptr" : 7
         }
       ]],
-      ["ObjCInterfaceType" , [
-        {
-          "pointer" : 207
-        },
-        56
-      ]],
       ["ObjCObjectPointerType" , [
         {
-          "pointer" : 64
+          "pointer" : 85
         },
         {
-          "type_ptr" : 198
+          "type_ptr" : 237
         }
+      ]],
+      ["ObjCInterfaceType" , [
+        {
+          "pointer" : 239
+        },
+        87
       ]],
       ["FunctionProtoType" , [
         {
-          "pointer" : 208
+          "pointer" : 240
         },
         {
           "return_type" : {
-            "type_ptr" : 67
+            "type_ptr" : 97
           }
         },
         {
           "params_type" : [
             {
-              "type_ptr" : 64
+              "type_ptr" : 59
             }
           ]
         }
       ]],
       ["FunctionProtoType" , [
         {
-          "pointer" : 209
+          "pointer" : 241
         },
         {
           "return_type" : {
-            "type_ptr" : 67
+            "type_ptr" : 97
           }
         },
         {
           "params_type" : [
             {
-              "type_ptr" : 64
+              "type_ptr" : 59
             }
           ]
         }
       ]],
       ["FunctionProtoType" , [
         {
-          "pointer" : 210
+          "pointer" : 242
         },
         {
           "return_type" : {
-            "type_ptr" : 67
+            "type_ptr" : 97
           }
         },
         {
           "params_type" : [
             {
-              "type_ptr" : 184
+              "type_ptr" : 216
             }
           ]
         }
       ]],
       ["FunctionProtoType" , [
         {
-          "pointer" : 59
+          "pointer" : 90
         },
         {
           "return_type" : {
-            "type_ptr" : 67
+            "type_ptr" : 97
           }
         },
         {
@@ -3346,25 +4068,25 @@
       ]],
       ["ObjCInterfaceType" , [
         {
-          "pointer" : 116
+          "pointer" : 148
         },
-        65
+        95
       ]],
       ["ObjCObjectPointerType" , [
         {
-          "pointer" : 73
+          "pointer" : 100
         },
         {
-          "type_ptr" : 116
+          "type_ptr" : 148
         }
       ]],
       ["ConstantArrayType" , [
         {
-          "pointer" : 89
+          "pointer" : 121
         },
         {
           "element_type" : {
-            "type_ptr" : 123
+            "type_ptr" : 155
           },
           "stride" : 1
         },
@@ -3372,84 +4094,84 @@
       ]],
       ["PointerType" , [
         {
-          "pointer" : 211
+          "pointer" : 243
         },
         {
-          "type_ptr" : 210
+          "type_ptr" : 242
         }
       ]],
       ["PointerType" , [
         {
-          "pointer" : 85
+          "pointer" : 117
         },
         {
-          "type_ptr" : 59
+          "type_ptr" : 90
         }
       ]],
       ["IncompleteArrayType" , [
         {
-          "pointer" : 212
+          "pointer" : 244
         },
         {
           "element_type" : {
-            "type_ptr" : 192
+            "type_ptr" : 224
           },
           "stride" : 8
         }
       ]],
       ["PointerType" , [
         {
-          "pointer" : 213
+          "pointer" : 245
         },
         {
-          "type_ptr" : 192
+          "type_ptr" : 224
         }
       ]],
       ["DecayedType" , [
         {
-          "pointer" : 96,
-          "desugared_type" : 213
+          "pointer" : 128,
+          "desugared_type" : 245
         },
         {
-          "type_ptr" : 213
+          "type_ptr" : 245
         }
       ]],
       ["FunctionProtoType" , [
         {
-          "pointer" : 214
+          "pointer" : 246
         },
         {
           "return_type" : {
-            "type_ptr" : 37
+            "type_ptr" : 53
           }
         },
         {
           "params_type" : [
             {
-              "type_ptr" : 37
+              "type_ptr" : 53
             },
             {
-              "type_ptr" : 213
+              "type_ptr" : 245
             }
           ]
         }
       ]],
       ["FunctionProtoType" , [
         {
-          "pointer" : 93
+          "pointer" : 125
         },
         {
           "return_type" : {
-            "type_ptr" : 37
+            "type_ptr" : 53
           }
         },
         {
           "params_type" : [
             {
-              "type_ptr" : 37
+              "type_ptr" : 53
             },
             {
-              "type_ptr" : 96
+              "type_ptr" : 128
             }
           ]
         }

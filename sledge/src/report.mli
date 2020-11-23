@@ -8,14 +8,16 @@
 (** Issue reporting *)
 
 val init : ?append:bool -> string -> unit
-val step : unit -> unit
+val step_inst : Llair.inst -> unit
+val step_term : Llair.term -> unit
+val hit_bound : int -> unit
 val unknown_call : Llair.term -> unit
 val invalid_access_inst : (Format.formatter -> unit) -> Llair.inst -> unit
 val invalid_access_term : (Format.formatter -> unit) -> Llair.term -> unit
 
 type status =
-  | Safe of {steps: int}
-  | Unsafe of {alarms: int; steps: int}
+  | Safe of {bound: int}
+  | Unsafe of {alarms: int; bound: int}
   | Ok
   | Unsound
   | Incomplete
@@ -31,17 +33,23 @@ type status =
 val pp_status : status pp
 val safe_or_unsafe : unit -> status
 val status : status -> unit
+val coverage : Llair.program -> unit
 
 type gc_stats = {allocated: float; promoted: float; peak_size: float}
 [@@deriving sexp]
 
 type times =
   {etime: float; utime: float; stime: float; cutime: float; cstime: float}
+[@@deriving sexp]
+
+type coverage = {steps: int; hit: int; fraction: float}
+[@@deriving compare, equal, sexp]
 
 type entry =
   | ProcessTimes of times
   | GcStats of gc_stats
   | Status of status
+  | Coverage of coverage
 [@@deriving sexp]
 
 type t = {name: string; entry: entry} [@@deriving sexp]

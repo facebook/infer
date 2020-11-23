@@ -124,7 +124,9 @@ let get_init_list_instrs method_decl =
   | CXXConstructorDecl (_, _, _, _, mdi)
   | CXXConversionDecl (_, _, _, _, mdi)
   | CXXDestructorDecl (_, _, _, _, mdi) ->
-      let create_custom_instr construct_instr = `CXXConstructorInit construct_instr in
+      let create_custom_instr construct_instr =
+        CFrontend_config.CXXConstructorInit construct_instr
+      in
       List.map ~f:create_custom_instr mdi.xmdi_cxx_ctor_initializers
   | _ ->
       []

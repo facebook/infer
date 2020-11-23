@@ -11,7 +11,7 @@ open Fol
 
 [@@@warning "+9"]
 
-type seg = {loc: Term.t; bas: Term.t; len: Term.t; siz: Term.t; seq: Term.t}
+type seg = {loc: Term.t; bas: Term.t; len: Term.t; siz: Term.t; cnt: Term.t}
 [@@deriving compare, equal, sexp]
 
 type starjunction =
@@ -46,18 +46,18 @@ let map_seg ~f h =
   let bas = f h.bas in
   let len = f h.len in
   let siz = f h.siz in
-  let seq = f h.seq in
+  let cnt = f h.cnt in
   if
     loc == h.loc
     && bas == h.bas
     && len == h.len
     && siz == h.siz
-    && seq == h.seq
+    && cnt == h.cnt
   then h
-  else {loc; bas; len; siz; seq}
+  else {loc; bas; len; siz; cnt}
 
-let fold_terms_seg {loc; bas; len; siz; seq} s ~f =
-  f loc (f bas (f len (f siz (f seq s))))
+let fold_terms_seg {loc; bas; len; siz; cnt} s ~f =
+  f loc (f bas (f len (f siz (f cnt s))))
 
 let fold_vars_seg seg s ~f =
   fold_terms_seg ~f:(Iter.fold ~f << Term.vars) seg s
@@ -109,15 +109,15 @@ let var_strength ?(xs = Var.Set.empty) q =
   in
   var_strength_ xs m q
 
-let pp_chunk x fs (siz, seq) = Term.ppx x fs (Term.sized ~siz ~seq)
+let pp_chunk x fs (siz, cnt) = Term.ppx x fs (Term.sized ~siz ~seq:cnt)
 
-let pp_seg x fs {loc; bas; len; siz; seq} =
+let pp_seg x fs {loc; bas; len; siz; cnt} =
   let term_pp = Term.ppx x in
   Format.fprintf fs "@[<2>%a@ @[@[-[%a)->@]@ %a@]@]" term_pp loc
     (fun fs (bas, len) ->
       if (not (Term.equal loc bas)) || not (Term.equal len siz) then
         Format.fprintf fs " %a, %a " term_pp bas term_pp len )
-    (bas, len) (pp_chunk x) (siz, seq)
+    (bas, len) (pp_chunk x) (siz, cnt)
 
 let pp_seg_norm ctx fs seg =
   let x _ = None in
@@ -144,7 +144,7 @@ let pp_block x fs segs =
   in
   let term_pp = Term.ppx x in
   let pp_chunks =
-    List.pp "@,^" (fun fs seg -> pp_chunk x fs (seg.siz, seg.seq))
+    List.pp "@,^" (fun fs seg -> pp_chunk x fs (seg.siz, seg.cnt))
   in
   match segs with
   | {loc; bas; len; _} :: _ ->

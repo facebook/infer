@@ -303,7 +303,7 @@ module Optional = struct
   let has_value optional ~desc : model =
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let ret_addr = AbstractValue.mk_fresh () in
-    let ret_value = (ret_addr, [ValueHistory.Allocation {f= Model desc; location}]) in
+    let ret_value = (ret_addr, [ValueHistory.Call {f= Model desc; location; in_call= []}]) in
     let+ astate, (value_addr, _) = to_internal_value_deref location optional astate in
     let astate = PulseOperations.write_id ret_id ret_value astate in
     let astate_non_empty = PulseArithmetic.and_positive value_addr astate in
@@ -311,6 +311,25 @@ module Optional = struct
     let astate_empty = PulseArithmetic.and_eq_int value_addr IntLit.zero astate in
     let astate_false = PulseArithmetic.and_eq_int ret_addr IntLit.zero astate_empty in
     [ExecutionDomain.ContinueProgram astate_false; ExecutionDomain.ContinueProgram astate_true]
+
+
+  let get_pointer optional ~desc : model =
+   fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+    let* astate, value_addr = to_internal_value_deref location optional astate in
+    let value_update_hist = (fst value_addr, event :: snd value_addr) in
+    let astate_value_addr =
+      PulseOperations.write_id ret_id value_update_hist astate
+      |> PulseArithmetic.and_positive (fst value_addr)
+    in
+    let nullptr = (AbstractValue.mk_fresh (), [event]) in
+    let+ astate_null =
+      PulseOperations.write_id ret_id nullptr astate
+      |> PulseArithmetic.and_eq_int (fst value_addr) IntLit.zero
+      |> PulseArithmetic.and_eq_int (fst nullptr) IntLit.zero
+      |> PulseOperations.invalidate location (ConstantDereference IntLit.zero) nullptr
+    in
+    [ExecutionDomain.ContinueProgram astate_value_addr; ExecutionDomain.ContinueProgram astate_null]
 
 
   let value_or optional default ~desc : model =
@@ -1031,6 +1050,8 @@ module ProcNameDispatcher = struct
           $+...$--> Optional.assign_none ~desc:"folly::Optional::reset()"
         ; -"folly" &:: "Optional" &:: "value" <>$ capt_arg_payload
           $+...$--> Optional.value ~desc:"folly::Optional::value()"
+        ; -"folly" &:: "Optional" &:: "get_pointer" $ capt_arg_payload
+          $+...$--> Optional.get_pointer ~desc:"folly::Optional::get_pointer()"
         ; -"folly" &:: "Optional" &:: "value_or" $ capt_arg_payload $+ capt_arg_payload
           $+...$--> Optional.value_or ~desc:"folly::Optional::value_or()"
           (* std::optional *)

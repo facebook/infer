@@ -29,10 +29,14 @@ digraph cfg {
 "layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_2" [label="2: Exit FBScrollViewDelegateProxy.layoutToUse \n  " color=yellow style=filled]
 	
 
-"layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout:FBVideoAdLayout [line 43, column 10]\n  *&return:FBVideoAdLayout=n$0 [line 43, column 3]\n " shape="box"]
+"layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout:FBVideoAdLayout [line 43, column 10]\n " shape="box"]
 	
 
-	 "layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_3" -> "layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_2" ;
+	 "layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_3" -> "layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_4" ;
+"layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_4" [label="4:  Return Stmt \n   *&return:FBVideoAdLayout=n$0 [line 43, column 3]\n " shape="box"]
+	
+
+	 "layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_4" -> "layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_2" ;
 "dealloc#FBScrollViewDelegateProxy#instance.be70c6b49a0df60d48868e383f3399dc_1" [label="1: Start FBScrollViewDelegateProxy.dealloc\nFormals:  self:FBScrollViewDelegateProxy*\nLocals:  \n  " color=yellow style=filled]
 	
 

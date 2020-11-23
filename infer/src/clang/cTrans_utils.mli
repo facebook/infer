@@ -56,7 +56,10 @@ type control =
   ; instrs: Sil.instr list
         (** Instructions that need to be placed in the current CFG node being constructed, *after*
             [leaf_nodes]. *)
-  ; initd_exps: Exp.t list  (** list of expressions that are initialized by the instructions *) }
+  ; initd_exps: Exp.t list  (** list of expressions that are initialized by the instructions *)
+  ; cxx_temporary_markers_set: Pvar.t list
+        (** markers for C++ temporaries that have been set during the translation; used to avoid
+            adding the same marker several times *) }
 
 val pp_control : F.formatter -> control -> unit
 
@@ -188,7 +191,7 @@ module PriorityNode : sig
   val compute_controls_to_parent :
        trans_state
     -> Location.t
-    -> node_name:Procdesc.Node.stmt_nodekind
+    -> Procdesc.Node.stmt_nodekind
     -> Clang_ast_t.stmt_info
     -> control list
     -> control
@@ -196,10 +199,20 @@ module PriorityNode : sig
       translation of stmt children and deals with creating or not a cfg node depending of owning the
       priority_node. It returns the [control] that should be passed to the parent. *)
 
+  val compute_control_to_parent :
+       trans_state
+    -> Location.t
+    -> Procdesc.Node.stmt_nodekind
+    -> Clang_ast_t.stmt_info
+    -> control
+    -> control
+  (** like [compute_controls_to_parent] but for a singleton, so the only possible effect is creating
+      a node *)
+
   val compute_results_to_parent :
        trans_state
     -> Location.t
-    -> node_name:Procdesc.Node.stmt_nodekind
+    -> Procdesc.Node.stmt_nodekind
     -> Clang_ast_t.stmt_info
     -> return:Exp.t * Typ.t
     -> trans_result list
@@ -209,7 +222,7 @@ module PriorityNode : sig
   val compute_result_to_parent :
        trans_state
     -> Location.t
-    -> node_name:Procdesc.Node.stmt_nodekind
+    -> Procdesc.Node.stmt_nodekind
     -> Clang_ast_t.stmt_info
     -> trans_result
     -> trans_result

@@ -3,7 +3,7 @@ digraph cfg {
 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_1" [label="1: Start DispatchMain\nFormals: \nLocals:  p:int* b:DispatchA* \n  " color=yellow style=filled]
 	
 
-	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_1" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_11" ;
+	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_1" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_12" ;
 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_2" [label="2: Exit DispatchMain \n  " color=yellow style=filled]
 	
 
@@ -27,23 +27,27 @@ digraph cfg {
 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == null), false); [line 85, column 7]\n " shape="invhouse"]
 	
 
-	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_7" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_9" ;
-"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_8" [label="8:  Return Stmt \n   n$1=*&p:int* [line 86, column 13]\n  n$2=*n$1:int [line 86, column 12]\n  *&return:int=n$2 [line 86, column 5]\n " shape="box"]
+	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_7" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_10" ;
+"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_8" [label="8:  Return Stmt \n   n$1=*&p:int* [line 86, column 13]\n  n$2=*n$1:int [line 86, column 12]\n " shape="box"]
 	
 
-	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_8" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_2" ;
-"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_9" [label="9:  Return Stmt \n   *&return:int=0 [line 88, column 5]\n " shape="box"]
+	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_8" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_9" ;
+"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_9" [label="9:  Return Stmt \n   *&return:int=n$2 [line 86, column 5]\n " shape="box"]
 	
 
 	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_9" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_2" ;
-"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(p:int*); [line 84, column 3]\n  *&p:int*=null [line 84, column 3]\n " shape="box"]
+"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_10" [label="10:  Return Stmt \n   *&return:int=0 [line 88, column 5]\n " shape="box"]
 	
 
-	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_10" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_5" ;
-"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(b:DispatchA*); [line 83, column 3]\n  n$4=_fun_DispatchA.sharedInstance() [line 83, column 18]\n  *&b:DispatchA*=n$4 [line 83, column 3]\n " shape="box"]
+	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_10" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_2" ;
+"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(p:int*); [line 84, column 3]\n  *&p:int*=null [line 84, column 3]\n " shape="box"]
 	
 
-	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_11" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_10" ;
+	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_11" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_5" ;
+"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(b:DispatchA*); [line 83, column 3]\n  n$4=_fun_DispatchA.sharedInstance() [line 83, column 18]\n  *&b:DispatchA*=n$4 [line 83, column 3]\n " shape="box"]
+	
+
+	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_12" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_11" ;
 "objc_blockDispatchA.block_attribute_2(class DispatchA).fbb5956dc6c8f95a8f2ae751ac2b44a1_1" [label="1: Start objc_blockDispatchA.block_attribute_2\nFormals:  a:DispatchA*\nLocals: \nCaptured:  [by ref]a:DispatchA* \n  " color=yellow style=filled]
 	
 
@@ -102,41 +106,49 @@ digraph cfg {
 "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_1" [label="1: Start DispatchA.block_attribute\nFormals: \nLocals:  a:DispatchA*(__block) \n  " color=yellow style=filled]
 	
 
-	 "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_1" -> "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_5" ;
+	 "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_1" -> "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_6" ;
 "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_2" [label="2: Exit DispatchA.block_attribute \n  " color=yellow style=filled]
 	
 
-"block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_3" [label="3:  Return Stmt \n   n$5=*&a:DispatchA* [line 40, column 10]\n  n$6=*n$5._x:int [line 40, column 10]\n  *&return:int=n$6 [line 40, column 3]\n " shape="box"]
+"block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_3" [label="3:  Return Stmt \n   n$5=*&a:DispatchA* [line 40, column 10]\n  n$6=*n$5._x:int [line 40, column 10]\n " shape="box"]
 	
 
-	 "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_3" -> "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_2" ;
-"block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_4" [label="4:  Call _fun__dispatch_once \n   n$7=*&a:DispatchA* [line 37, column 24]\n  n$9=_fun__dispatch_once(&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA.block_attribute.once:long*,(_fun_objc_blockDispatchA.block_attribute_2,([by ref]n$7 &a:DispatchA*)):_fn_(*)) [line 37, column 3]\n " shape="box"]
+	 "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_3" -> "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_4" ;
+"block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_4" [label="4:  Return Stmt \n   *&return:int=n$6 [line 40, column 3]\n " shape="box"]
 	
 
-	 "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_4" -> "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_3" ;
-"block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(a:DispatchA*); [line 36, column 3]\n  n$10=_fun___objc_alloc_no_fail(sizeof(t=DispatchA):unsigned long) [line 36, column 26]\n  n$11=_fun_NSObject.init(n$10:DispatchA*) virtual [line 36, column 26]\n  *&a:DispatchA*=n$11 [line 36, column 3]\n " shape="box"]
+	 "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_4" -> "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_2" ;
+"block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_5" [label="5:  Compound statement \n   n$7=*&a:DispatchA* [line 37, column 24]\n  n$9=_fun__dispatch_once(&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA.block_attribute.once:long*,(_fun_objc_blockDispatchA.block_attribute_2,([by ref]n$7 &a:DispatchA*)):_fn_(*)) [line 37, column 3]\n " shape="box"]
 	
 
-	 "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_5" -> "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_4" ;
+	 "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_5" -> "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_3" ;
+"block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(a:DispatchA*); [line 36, column 3]\n  n$10=_fun___objc_alloc_no_fail(sizeof(t=DispatchA):unsigned long) [line 36, column 26]\n  n$11=_fun_NSObject.init(n$10:DispatchA*) virtual [line 36, column 26]\n  *&a:DispatchA*=n$11 [line 36, column 3]\n " shape="box"]
+	
+
+	 "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_6" -> "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_5" ;
 "dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_1" [label="1: Start DispatchA.dispatch_a_block_variable\nFormals: \nLocals:  initialization_block__:_fn_(*) \n  " color=yellow style=filled]
 	
 
-	 "dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_1" -> "dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_5" ;
+	 "dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_1" -> "dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_6" ;
 "dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_2" [label="2: Exit DispatchA.dispatch_a_block_variable \n  " color=yellow style=filled]
 	
 
-"dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_3" [label="3:  Return Stmt \n   n$17=*&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA.dispatch_a_block_variable.static_storage__:DispatchA* [line 59, column 10]\n  *&return:objc_object*=n$17 [line 59, column 3]\n " shape="box"]
+"dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_3" [label="3:  Return Stmt \n   n$17=*&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA.dispatch_a_block_variable.static_storage__:DispatchA* [line 59, column 10]\n " shape="box"]
 	
 
-	 "dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_3" -> "dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_2" ;
-"dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_4" [label="4:  Call _fun__dispatch_once \n   n$18=*&initialization_block__:_fn_(*) [line 58, column 32]\n  n$19=_fun__dispatch_once(&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA.dispatch_a_block_variable.once_token__:long*,(_fun_objc_blockDispatchA.dispatch_a_block_variable_4):_fn_(*)) [line 58, column 3]\n " shape="box"]
+	 "dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_3" -> "dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_4" ;
+"dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_4" [label="4:  Return Stmt \n   *&return:objc_object*=n$17 [line 59, column 3]\n " shape="box"]
 	
 
-	 "dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_4" -> "dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_3" ;
-"dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(initialization_block__:_fn_(*)); [line 54, column 3]\n  *&initialization_block__:_fn_(*)=(_fun_objc_blockDispatchA.dispatch_a_block_variable_4) [line 54, column 3]\n " shape="box"]
+	 "dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_4" -> "dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_2" ;
+"dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_5" [label="5:  Call _fun__dispatch_once \n   n$18=*&initialization_block__:_fn_(*) [line 58, column 32]\n  n$19=_fun__dispatch_once(&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA.dispatch_a_block_variable.once_token__:long*,(_fun_objc_blockDispatchA.dispatch_a_block_variable_4):_fn_(*)) [line 58, column 3]\n " shape="box"]
 	
 
-	 "dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_5" -> "dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_4" ;
+	 "dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_5" -> "dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_3" ;
+"dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(initialization_block__:_fn_(*)); [line 54, column 3]\n  *&initialization_block__:_fn_(*)=(_fun_objc_blockDispatchA.dispatch_a_block_variable_4) [line 54, column 3]\n " shape="box"]
+	
+
+	 "dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_6" -> "dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_5" ;
 "dispatch_a_block_variable_from_macro#DispatchA#class.92567a38d5ab3cf637f72030b1097441_1" [label="1: Start DispatchA.dispatch_a_block_variable_from_macro\nFormals: \nLocals:  initialization_block__:_fn_(*) \n  " color=yellow style=filled]
 	
 
@@ -144,7 +156,7 @@ digraph cfg {
 "dispatch_a_block_variable_from_macro#DispatchA#class.92567a38d5ab3cf637f72030b1097441_2" [label="2: Exit DispatchA.dispatch_a_block_variable_from_macro \n  " color=yellow style=filled]
 	
 
-"dispatch_a_block_variable_from_macro#DispatchA#class.92567a38d5ab3cf637f72030b1097441_3" [label="3:  Fallback node \n   n$22=*&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA.dispatch_a_block_variable_from_macro.static_storage__:DispatchA* [line 70, column 5]\n " shape="box"]
+"dispatch_a_block_variable_from_macro#DispatchA#class.92567a38d5ab3cf637f72030b1097441_3" [label="3:  Compound statement \n   n$22=*&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA.dispatch_a_block_variable_from_macro.static_storage__:DispatchA* [line 70, column 5]\n " shape="box"]
 	
 
 	 "dispatch_a_block_variable_from_macro#DispatchA#class.92567a38d5ab3cf637f72030b1097441_3" -> "dispatch_a_block_variable_from_macro#DispatchA#class.92567a38d5ab3cf637f72030b1097441_6" ;
@@ -163,56 +175,68 @@ digraph cfg {
 "dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_1" [label="1: Start DispatchA.dispatch_a_block_variable_from_macro_delivers_initialised_object\nFormals: \nLocals:  a:DispatchA* \n  " color=yellow style=filled]
 	
 
-	 "dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_1" -> "dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_5" ;
+	 "dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_1" -> "dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_6" ;
 "dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_2" [label="2: Exit DispatchA.dispatch_a_block_variable_from_macro_delivers_initialised_object \n  " color=yellow style=filled]
 	
 
-"dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_3" [label="3:  Return Stmt \n   n$27=*&a:DispatchA* [line 77, column 15]\n  n$28=*n$27._x:int [line 77, column 15]\n  *&return:int=(1 / (n$28 - 5)) [line 77, column 3]\n " shape="box"]
+"dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_3" [label="3:  Return Stmt \n   n$27=*&a:DispatchA* [line 77, column 15]\n  n$28=*n$27._x:int [line 77, column 15]\n " shape="box"]
 	
 
-	 "dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_3" -> "dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_2" ;
-"dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_4" [label="4:  BinaryOperatorStmt: Assign \n   n$29=*&a:DispatchA* [line 76, column 3]\n  *n$29._x:int=5 [line 76, column 3]\n " shape="box"]
+	 "dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_3" -> "dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_4" ;
+"dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_4" [label="4:  Return Stmt \n   *&return:int=(1 / (n$28 - 5)) [line 77, column 3]\n " shape="box"]
 	
 
-	 "dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_4" -> "dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_3" ;
-"dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(a:DispatchA*); [line 75, column 3]\n  n$30=_fun_DispatchA.dispatch_a_block_variable_from_macro() [line 75, column 18]\n  *&a:DispatchA*=n$30 [line 75, column 3]\n " shape="box"]
+	 "dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_4" -> "dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_2" ;
+"dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_5" [label="5:  BinaryOperatorStmt: Assign \n   n$29=*&a:DispatchA* [line 76, column 3]\n  *n$29._x:int=5 [line 76, column 3]\n " shape="box"]
 	
 
-	 "dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_5" -> "dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_4" ;
+	 "dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_5" -> "dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_3" ;
+"dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(a:DispatchA*); [line 75, column 3]\n  n$30=_fun_DispatchA.dispatch_a_block_variable_from_macro() [line 75, column 18]\n  *&a:DispatchA*=n$30 [line 75, column 3]\n " shape="box"]
+	
+
+	 "dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_6" -> "dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_5" ;
 "sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_1" [label="1: Start DispatchA.sharedInstance\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_1" -> "sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_4" ;
+	 "sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_1" -> "sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_5" ;
 "sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_2" [label="2: Exit DispatchA.sharedInstance \n  " color=yellow style=filled]
 	
 
-"sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_3" [label="3:  Return Stmt \n   n$1=*&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA.sharedInstance.sharedInstance:objc_object* [line 31, column 10]\n  *&return:objc_object*=n$1 [line 31, column 3]\n " shape="box"]
+"sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_3" [label="3:  Return Stmt \n   n$1=*&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA.sharedInstance.sharedInstance:objc_object* [line 31, column 10]\n " shape="box"]
 	
 
-	 "sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_3" -> "sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_2" ;
-"sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_4" [label="4:  Call _fun__dispatch_once \n   n$4=_fun__dispatch_once(&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA.sharedInstance.once:long*,(_fun_objc_blockDispatchA.sharedInstance_1):_fn_(*)) [line 28, column 3]\n " shape="box"]
+	 "sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_3" -> "sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_4" ;
+"sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_4" [label="4:  Return Stmt \n   *&return:objc_object*=n$1 [line 31, column 3]\n " shape="box"]
 	
 
-	 "sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_4" -> "sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_3" ;
+	 "sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_4" -> "sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_2" ;
+"sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_5" [label="5:  Compound statement \n   n$4=_fun__dispatch_once(&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA.sharedInstance.once:long*,(_fun_objc_blockDispatchA.sharedInstance_1):_fn_(*)) [line 28, column 3]\n " shape="box"]
+	
+
+	 "sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_5" -> "sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_3" ;
 "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_1" [label="1: Start DispatchA.trans\nFormals: \nLocals:  dummy_block:_fn_(*) \n  " color=yellow style=filled]
 	
 
-	 "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_1" -> "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_5" ;
+	 "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_1" -> "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_6" ;
 "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_2" [label="2: Exit DispatchA.trans \n  " color=yellow style=filled]
 	
 
-"trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_3" [label="3:  Return Stmt \n   n$12=*&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA.trans.sharedInstance:objc_object* [line 49, column 10]\n  *&return:objc_object*=n$12 [line 49, column 3]\n " shape="box"]
+"trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_3" [label="3:  Return Stmt \n   n$12=*&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA.trans.sharedInstance:objc_object* [line 49, column 10]\n " shape="box"]
 	
 
-	 "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_3" -> "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_2" ;
-"trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_4" [label="4:  Call n$13 \n   n$13=*&dummy_block:_fn_(*) [line 48, column 3]\n  n$14=n$13() objc_block [line 48, column 3]\n " shape="box"]
+	 "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_3" -> "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_4" ;
+"trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_4" [label="4:  Return Stmt \n   *&return:objc_object*=n$12 [line 49, column 3]\n " shape="box"]
 	
 
-	 "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_4" -> "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_3" ;
-"trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(dummy_block:_fn_(*)); [line 45, column 3]\n  *&dummy_block:_fn_(*)=(_fun_objc_blockDispatchA.trans_3) [line 45, column 3]\n " shape="box"]
+	 "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_4" -> "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_2" ;
+"trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_5" [label="5:  Call n$13 \n   n$13=*&dummy_block:_fn_(*) [line 48, column 3]\n  n$14=n$13() objc_block [line 48, column 3]\n " shape="box"]
 	
 
-	 "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_5" -> "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_4" ;
+	 "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_5" -> "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_3" ;
+"trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(dummy_block:_fn_(*)); [line 45, column 3]\n  *&dummy_block:_fn_(*)=(_fun_objc_blockDispatchA.trans_3) [line 45, column 3]\n " shape="box"]
+	
+
+	 "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_6" -> "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_5" ;
 "dealloc#DispatchA#instance.efcbb5cd324f6ef16ae8c5197a17f974_1" [label="1: Start DispatchA.dealloc\nFormals:  self:DispatchA*\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -231,10 +255,14 @@ digraph cfg {
 "init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_2" [label="2: Exit DispatchA.init \n  " color=yellow style=filled]
 	
 
-"init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_3" [label="3:  Return Stmt \n   n$0=*&self:DispatchA* [line 22, column 10]\n  *&return:objc_object*=n$0 [line 22, column 3]\n " shape="box"]
+"init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_3" [label="3:  Return Stmt \n   n$0=*&self:DispatchA* [line 22, column 10]\n " shape="box"]
 	
 
-	 "init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_3" -> "init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_2" ;
+	 "init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_3" -> "init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_4" ;
+"init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_4" [label="4:  Return Stmt \n   *&return:objc_object*=n$0 [line 22, column 3]\n " shape="box"]
+	
+
+	 "init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_4" -> "init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_2" ;
 "setX:#DispatchA#instance.b6cea284a46ba947192a21fbc276649b_1" [label="1: Start DispatchA.setX:\nFormals:  self:DispatchA* x:int\nLocals:  \n  " color=yellow style=filled]
 	
 

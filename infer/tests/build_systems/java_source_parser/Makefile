@@ -6,23 +6,28 @@
 TESTS_DIR = ../..
 
 INFER_OPTIONS = --java-debug-source-file-info
+INFER_OPTIONS_EXPERIMENTAL = --java-source-parser-experimental --java-debug-source-file-info
 SOURCES = Main.java
 
-test: parser.output.test
+test: parser.output.test experimental_parser.output.test
 	$(call check_no_diff,parser.output,parser.output.test)
+	$(call check_no_diff,parser.output,experimental_parser.output.test)
 
 replace: parser.output.test
 	cp $< parser.output
 
 clean:
-	rm -fr infer-out parser.output.test *.class
+	$(REMOVE_DIR) infer-out* *.test *.class
 
 # we check if the java source file is valid for javac
 compile:
 	javac *.java
 
-.PHONY: parser.output.test
+.PHONY: parser.output.test experimental_parser.output.test
 parser.output.test: $(SOURCES) $(INFER_BIN)
-	$(INFER_BIN) $(INFER_OPTIONS) $(SOURCES) > parser.output.test
+	$(INFER_BIN) $(INFER_OPTIONS) $(SOURCES) > $@
+
+experimental_parser.output.test: $(SOURCES) $(INFER_BIN)
+	$(INFER_BIN) -o infer-out-experimental $(INFER_OPTIONS_EXPERIMENTAL) $(SOURCES) > $@
 
 include $(TESTS_DIR)/base.make

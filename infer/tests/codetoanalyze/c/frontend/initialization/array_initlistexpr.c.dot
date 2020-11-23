@@ -18,7 +18,7 @@ digraph cfg {
 "init_variable_array.8cdc6857adcb1fd04fb6555d8ce3e4c1_2" [label="2: Exit init_variable_array \n  " color=yellow style=filled]
 	
 
-"init_variable_array.8cdc6857adcb1fd04fb6555d8ce3e4c1_3" [label="3:  Fallback node \n   n$0=*&len:int [line 15, column 9]\n  n$1=*&x:int [line 15, column 15]\n  n$2=_fun___set_array_length(&a:int[_*4],((n$0 + n$1) + 1):int) [line 15, column 9]\n " shape="box"]
+"init_variable_array.8cdc6857adcb1fd04fb6555d8ce3e4c1_3" [label="3:  Compound statement \n   n$0=*&len:int [line 15, column 9]\n  n$1=*&x:int [line 15, column 15]\n  n$2=_fun___set_array_length(&a:int[_*4],((n$0 + n$1) + 1):int) [line 15, column 9]\n " shape="box"]
 	
 
 	 "init_variable_array.8cdc6857adcb1fd04fb6555d8ce3e4c1_3" -> "init_variable_array.8cdc6857adcb1fd04fb6555d8ce3e4c1_2" ;

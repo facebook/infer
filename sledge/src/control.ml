@@ -119,7 +119,9 @@ module Make (Dom : Domain_intf.Dom) = struct
         | _ -> acc
       in
       let n = count_f_in_stack 0 return stk in
-      ( if n > bound then None
+      ( if n > bound then (
+        Report.hit_bound n ;
+        None )
       else Some (push_throw throw (push_return call from_call stk)) )
       |>
       [%Trace.retn fun {pf} _ ->
@@ -219,6 +221,7 @@ module Make (Dom : Domain_intf.Dom) = struct
       let depth = if retreating then depth + 1 else depth in
       if depth > bound then (
         [%Trace.info "prune: %i: %a" depth Edge.pp edge] ;
+        Report.hit_bound bound ;
         work )
       else
         let pq = FHeap.add pq (depth, edge) in
@@ -395,7 +398,7 @@ module Make (Dom : Domain_intf.Dom) = struct
    fun opts pgm stk state block ->
     [%Trace.info
       "@[<2>exec term@\n@[%a@]@\n%a@]" Dom.pp state Llair.Term.pp block.term] ;
-    Report.step () ;
+    Report.step_term block.term ;
     match block.term with
     | Switch {key; tbl; els} ->
         IArray.fold
@@ -460,7 +463,7 @@ module Make (Dom : Domain_intf.Dom) = struct
    fun inst state ->
     [%Trace.info
       "@[<2>exec inst@\n@[%a@]@\n%a@]" Dom.pp state Llair.Inst.pp inst] ;
-    Report.step () ;
+    Report.step_inst inst ;
     Dom.exec_inst inst state
     |> function
     | Some state -> Result.Ok state | None -> Result.Error (state, inst)

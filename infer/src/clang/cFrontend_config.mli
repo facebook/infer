@@ -21,6 +21,10 @@ type translation_unit_context =
 
 type decl_trans_context = [`DeclTraversal | `Translation | `CppLambdaExprTranslation]
 
+type instr_type =
+  | ClangStmt of Procdesc.Node.stmt_nodekind * Clang_ast_t.stmt
+  | CXXConstructorInit of Clang_ast_t.cxx_ctor_initializer
+
 (** Constants *)
 
 val alloc : string

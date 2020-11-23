@@ -7,6 +7,14 @@
 
 open! IStd
 
+type var_to_destroy =
+  { pvar: Pvar.t
+  ; typ: Typ.t
+  ; qual_type: Clang_ast_t.qual_type
+  ; marker: Pvar.t option
+        (** [Some m] means that creating [pvar] should also set [m] to [1] so that we know whether
+            [pvar] needs to be destroyed after the current full-expression *) }
+
 val breaks_control_flow : Clang_ast_t.stmt -> bool
 
 module Variables : sig
@@ -14,6 +22,5 @@ module Variables : sig
 end
 
 module CXXTemporaries : sig
-  val get_destroyable_temporaries :
-    CContext.t -> Clang_ast_t.stmt list -> (Pvar.t * Typ.t * Clang_ast_t.qual_type) list
+  val get_destroyable_temporaries : CContext.t -> Clang_ast_t.stmt list -> var_to_destroy list
 end

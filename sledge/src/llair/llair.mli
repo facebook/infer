@@ -102,14 +102,14 @@ and func = private
   ; entry: block
   ; loc: Loc.t }
 
-type functions
+type functions = func Function.Map.t
 
 type program = private
   { globals: GlobalDefn.t iarray  (** Global definitions. *)
   ; functions: functions  (** (Global) function definitions. *) }
 
 module Inst : sig
-  type t = inst
+  type t = inst [@@deriving compare, equal, hash]
 
   val pp : t pp
   val move : reg_exps:(Reg.t * Exp.t) iarray -> loc:Loc.t -> inst
@@ -125,17 +125,19 @@ module Inst : sig
   val loc : inst -> Loc.t
   val locals : inst -> Reg.Set.t
   val fold_exps : inst -> 's -> f:(Exp.t -> 's -> 's) -> 's
+
+  module Tbl : HashTable.S with type key := t
 end
 
 module Jump : sig
-  type t = jump [@@deriving compare, equal, sexp_of]
+  type t = jump [@@deriving compare, equal, hash, sexp_of]
 
   val pp : jump pp
   val mk : string -> jump
 end
 
 module Term : sig
-  type t = term
+  type t = term [@@deriving compare, equal, hash]
 
   val pp : t pp
 
@@ -164,10 +166,12 @@ module Term : sig
   val throw : exc:Exp.t -> loc:Loc.t -> term
   val unreachable : term
   val loc : term -> Loc.t
+
+  module Tbl : HashTable.S with type key := t
 end
 
 module Block : sig
-  type t = block [@@deriving compare, equal, sexp_of]
+  type t = block [@@deriving compare, equal, hash, sexp_of]
 
   val pp : t pp
   val mk : lbl:label -> cmnd:cmnd -> term:term -> block
@@ -176,7 +180,7 @@ module Block : sig
 end
 
 module Func : sig
-  type t = func
+  type t = func [@@deriving compare, equal, hash]
 
   val pp : t pp
 
@@ -202,6 +206,9 @@ module Func : sig
 
   val find : Function.t -> functions -> t option
   (** Look up a function of the given name in the given functions. *)
+
+  val fold_cfg : func -> 'a -> f:(block -> 'a -> 'a) -> 'a
+  (** Fold over the blocks of the control-flow graph of a function. *)
 
   val is_undefined : t -> bool
   (** Holds of functions that are declared but not defined. *)

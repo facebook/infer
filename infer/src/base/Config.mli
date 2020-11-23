@@ -344,6 +344,8 @@ val java_debug_source_file_info : string option
 
 val java_jar_compiler : string option
 
+val java_source_parser_experimental : bool
+
 val java_version : int option
 
 val javac_classes_out : string
@@ -373,6 +375,8 @@ val list_checkers : bool
 val list_issue_types : bool
 
 val liveness_dangerous_classes : Yojson.Basic.t
+
+val liveness_ignored_constant : string list
 
 val max_nesting : int option
 

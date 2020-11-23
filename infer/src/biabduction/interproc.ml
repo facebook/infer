@@ -354,25 +354,13 @@ exception RE_EXE_ERROR
 
 let pp_name fmt = F.pp_print_string fmt "biabduction"
 
-(** Return the list of normal ids occurring in the instructions *)
-let instrs_get_normal_vars instrs =
-  let do_instr res instr =
-    Sil.exps_of_instr instr
-    |> List.fold_left ~init:res ~f:(fun res e ->
-           Exp.free_vars e
-           |> Sequence.filter ~f:Ident.is_normal
-           |> Ident.hashqueue_of_sequence ~init:res )
-  in
-  Instrs.fold ~init:(Ident.HashQueue.create ()) ~f:do_instr instrs |> Ident.HashQueue.keys
-
-
 (** Perform symbolic execution for a node starting from an initial prop *)
 let do_symbolic_execution ({InterproceduralAnalysis.tenv; _} as analysis_data) proc_cfg handle_exn
     (node : ProcCfg.Exceptional.Node.t) (prop : Prop.normal Prop.t) (path : Paths.Path.t) =
   State.mark_execution_start node ;
   let instrs = ProcCfg.Exceptional.instrs node in
   (* fresh normal vars must be fresh w.r.t. instructions *)
-  Ident.update_name_generator (instrs_get_normal_vars instrs) ;
+  Ident.update_name_generator (Instrs.instrs_get_normal_vars instrs) ;
   let pset =
     SymExec.node handle_exn analysis_data proc_cfg node
       (Paths.PathSet.from_renamed_list [(prop, path)])

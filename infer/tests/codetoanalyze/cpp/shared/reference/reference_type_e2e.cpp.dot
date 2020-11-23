@@ -3,195 +3,227 @@ digraph cfg {
 "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_1" [label="1: Start ptr_div0\nFormals: \nLocals:  p:int* a:int \n  " color=yellow style=filled]
 	
 
-	 "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_1" -> "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_6" ;
+	 "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_1" -> "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_7" ;
 "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_2" [label="2: Exit ptr_div0 \n  " color=yellow style=filled]
 	
 
-"ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 15, column 14]\n  *&return:int=(1 / n$0) [line 15, column 3]\n " shape="box"]
+"ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 15, column 14]\n " shape="box"]
 	
 
-	 "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_3" -> "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_2" ;
-"ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_4" [label="4:  BinaryOperatorStmt: Assign \n   n$1=*&p:int* [line 14, column 4]\n  *n$1:int=0 [line 14, column 3]\n " shape="box"]
+	 "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_3" -> "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_4" ;
+"ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$0) [line 15, column 3]\n " shape="box"]
 	
 
-	 "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_4" -> "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_3" ;
-"ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(p:int*); [line 13, column 3]\n  *&p:int*=&a [line 13, column 3]\n " shape="box"]
+	 "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_4" -> "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_2" ;
+"ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_5" [label="5:  BinaryOperatorStmt: Assign \n   n$1=*&p:int* [line 14, column 4]\n  *n$1:int=0 [line 14, column 3]\n " shape="box"]
 	
 
-	 "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_5" -> "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_4" ;
-"ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 12, column 3]\n  *&a:int=2 [line 12, column 3]\n " shape="box"]
+	 "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_5" -> "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_3" ;
+"ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(p:int*); [line 13, column 3]\n  *&p:int*=&a [line 13, column 3]\n " shape="box"]
 	
 
 	 "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_6" -> "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_5" ;
+"ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 12, column 3]\n  *&a:int=2 [line 12, column 3]\n " shape="box"]
+	
+
+	 "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_7" -> "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_6" ;
 "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_1" [label="1: Start ptr_div0_function\nFormals: \nLocals:  a:int \n  " color=yellow style=filled]
 	
 
-	 "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_1" -> "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_5" ;
+	 "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_1" -> "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_6" ;
 "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_2" [label="2: Exit ptr_div0_function \n  " color=yellow style=filled]
 	
 
-"ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 21, column 14]\n  *&return:int=(1 / n$0) [line 21, column 3]\n " shape="box"]
+"ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 21, column 14]\n " shape="box"]
 	
 
-	 "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_3" -> "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_2" ;
-"ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_4" [label="4:  Call _fun_zero_ptr \n   n$1=_fun_zero_ptr(&a:int*) [line 20, column 3]\n " shape="box"]
+	 "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_3" -> "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_4" ;
+"ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$0) [line 21, column 3]\n " shape="box"]
 	
 
-	 "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_4" -> "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_3" ;
-"ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 19, column 3]\n  *&a:int=2 [line 19, column 3]\n " shape="box"]
+	 "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_4" -> "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_2" ;
+"ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_5" [label="5:  Call _fun_zero_ptr \n   n$1=_fun_zero_ptr(&a:int*) [line 20, column 3]\n " shape="box"]
 	
 
-	 "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_5" -> "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_4" ;
+	 "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_5" -> "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_3" ;
+"ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 19, column 3]\n  *&a:int=2 [line 19, column 3]\n " shape="box"]
+	
+
+	 "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_6" -> "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_5" ;
 "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_1" [label="1: Start ptr_div0_function_temp_var\nFormals: \nLocals:  r:int* a:int \n  " color=yellow style=filled]
 	
 
-	 "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_1" -> "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_6" ;
+	 "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_1" -> "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_7" ;
 "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_2" [label="2: Exit ptr_div0_function_temp_var \n  " color=yellow style=filled]
 	
 
-"ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 28, column 14]\n  *&return:int=(1 / n$0) [line 28, column 3]\n " shape="box"]
+"ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 28, column 14]\n " shape="box"]
 	
 
-	 "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_3" -> "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_2" ;
-"ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_4" [label="4:  Call _fun_zero_ptr \n   n$1=*&r:int* [line 27, column 12]\n  n$2=_fun_zero_ptr(n$1:int*) [line 27, column 3]\n " shape="box"]
+	 "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_3" -> "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_4" ;
+"ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$0) [line 28, column 3]\n " shape="box"]
 	
 
-	 "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_4" -> "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_3" ;
-"ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(r:int*); [line 26, column 3]\n  *&r:int*=&a [line 26, column 3]\n " shape="box"]
+	 "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_4" -> "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_2" ;
+"ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_5" [label="5:  Call _fun_zero_ptr \n   n$1=*&r:int* [line 27, column 12]\n  n$2=_fun_zero_ptr(n$1:int*) [line 27, column 3]\n " shape="box"]
 	
 
-	 "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_5" -> "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_4" ;
-"ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 25, column 3]\n  *&a:int=2 [line 25, column 3]\n " shape="box"]
+	 "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_5" -> "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_3" ;
+"ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(r:int*); [line 26, column 3]\n  *&r:int*=&a [line 26, column 3]\n " shape="box"]
 	
 
 	 "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_6" -> "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_5" ;
+"ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 25, column 3]\n  *&a:int=2 [line 25, column 3]\n " shape="box"]
+	
+
+	 "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_7" -> "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_6" ;
 "ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_1" [label="1: Start ref_div0\nFormals: \nLocals:  r:int& a:int \n  " color=yellow style=filled]
 	
 
-	 "ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_1" -> "ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_6" ;
+	 "ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_1" -> "ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_7" ;
 "ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_2" [label="2: Exit ref_div0 \n  " color=yellow style=filled]
 	
 
-"ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 35, column 14]\n  *&return:int=(1 / n$0) [line 35, column 3]\n " shape="box"]
+"ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 35, column 14]\n " shape="box"]
 	
 
-	 "ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_3" -> "ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_2" ;
-"ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_4" [label="4:  BinaryOperatorStmt: Assign \n   n$1=*&r:int& [line 34, column 3]\n  *n$1:int=0 [line 34, column 3]\n " shape="box"]
+	 "ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_3" -> "ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_4" ;
+"ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$0) [line 35, column 3]\n " shape="box"]
 	
 
-	 "ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_4" -> "ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_3" ;
-"ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(r:int&); [line 33, column 3]\n  *&r:int&=&a [line 33, column 3]\n " shape="box"]
+	 "ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_4" -> "ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_2" ;
+"ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_5" [label="5:  BinaryOperatorStmt: Assign \n   n$1=*&r:int& [line 34, column 3]\n  *n$1:int=0 [line 34, column 3]\n " shape="box"]
 	
 
-	 "ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_5" -> "ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_4" ;
-"ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 32, column 3]\n  *&a:int=2 [line 32, column 3]\n " shape="box"]
+	 "ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_5" -> "ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_3" ;
+"ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(r:int&); [line 33, column 3]\n  *&r:int&=&a [line 33, column 3]\n " shape="box"]
 	
 
 	 "ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_6" -> "ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_5" ;
+"ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 32, column 3]\n  *&a:int=2 [line 32, column 3]\n " shape="box"]
+	
+
+	 "ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_7" -> "ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_6" ;
 "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_1" [label="1: Start ref_div0_function\nFormals: \nLocals:  a:int \n  " color=yellow style=filled]
 	
 
-	 "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_1" -> "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_5" ;
+	 "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_1" -> "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_6" ;
 "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_2" [label="2: Exit ref_div0_function \n  " color=yellow style=filled]
 	
 
-"ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 41, column 14]\n  *&return:int=(1 / n$0) [line 41, column 3]\n " shape="box"]
+"ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 41, column 14]\n " shape="box"]
 	
 
-	 "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_3" -> "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_2" ;
-"ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_4" [label="4:  Call _fun_zero_ref \n   n$1=_fun_zero_ref(&a:int&) [line 40, column 3]\n " shape="box"]
+	 "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_3" -> "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_4" ;
+"ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$0) [line 41, column 3]\n " shape="box"]
 	
 
-	 "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_4" -> "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_3" ;
-"ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 39, column 3]\n  *&a:int=2 [line 39, column 3]\n " shape="box"]
+	 "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_4" -> "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_2" ;
+"ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_5" [label="5:  Call _fun_zero_ref \n   n$1=_fun_zero_ref(&a:int&) [line 40, column 3]\n " shape="box"]
 	
 
-	 "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_5" -> "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_4" ;
+	 "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_5" -> "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_3" ;
+"ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 39, column 3]\n  *&a:int=2 [line 39, column 3]\n " shape="box"]
+	
+
+	 "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_6" -> "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_5" ;
 "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_1" [label="1: Start ref_div0_function_temp_var\nFormals: \nLocals:  r:int& a:int \n  " color=yellow style=filled]
 	
 
-	 "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_1" -> "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_6" ;
+	 "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_1" -> "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_7" ;
 "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_2" [label="2: Exit ref_div0_function_temp_var \n  " color=yellow style=filled]
 	
 
-"ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 48, column 14]\n  *&return:int=(1 / n$0) [line 48, column 3]\n " shape="box"]
+"ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 48, column 14]\n " shape="box"]
 	
 
-	 "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_3" -> "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_2" ;
-"ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_4" [label="4:  Call _fun_zero_ref \n   n$1=*&r:int& [line 47, column 12]\n  n$2=_fun_zero_ref(n$1:int&) [line 47, column 3]\n " shape="box"]
+	 "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_3" -> "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_4" ;
+"ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$0) [line 48, column 3]\n " shape="box"]
 	
 
-	 "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_4" -> "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_3" ;
-"ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(r:int&); [line 46, column 3]\n  *&r:int&=&a [line 46, column 3]\n " shape="box"]
+	 "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_4" -> "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_2" ;
+"ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_5" [label="5:  Call _fun_zero_ref \n   n$1=*&r:int& [line 47, column 12]\n  n$2=_fun_zero_ref(n$1:int&) [line 47, column 3]\n " shape="box"]
 	
 
-	 "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_5" -> "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_4" ;
-"ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 45, column 3]\n  *&a:int=2 [line 45, column 3]\n " shape="box"]
+	 "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_5" -> "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_3" ;
+"ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(r:int&); [line 46, column 3]\n  *&r:int&=&a [line 46, column 3]\n " shape="box"]
 	
 
 	 "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_6" -> "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_5" ;
+"ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 45, column 3]\n  *&a:int=2 [line 45, column 3]\n " shape="box"]
+	
+
+	 "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_7" -> "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_6" ;
 "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_1" [label="1: Start ref_div0_nested_assignment\nFormals: \nLocals:  r2:int& r1:int& b:int a:int \n  " color=yellow style=filled]
 	
 
-	 "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_1" -> "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_8" ;
+	 "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_1" -> "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_9" ;
 "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_2" [label="2: Exit ref_div0_nested_assignment \n  " color=yellow style=filled]
 	
 
-"ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 57, column 14]\n  *&return:int=(1 / n$0) [line 57, column 3]\n " shape="box"]
+"ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 57, column 14]\n " shape="box"]
 	
 
-	 "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_3" -> "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_2" ;
-"ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_4" [label="4:  BinaryOperatorStmt: Assign \n   n$1=*&r2:int& [line 56, column 3]\n  *n$1:int=0 [line 56, column 3]\n " shape="box"]
+	 "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_3" -> "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_4" ;
+"ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$0) [line 57, column 3]\n " shape="box"]
 	
 
-	 "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_4" -> "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_3" ;
-"ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(r2:int&); [line 55, column 3]\n  n$2=*&r1:int& [line 55, column 13]\n  *&b:int=1 [line 55, column 18]\n  n$3=*&b:int [line 55, column 18]\n  *n$2:int=n$3 [line 55, column 13]\n  *&r2:int&=n$2 [line 55, column 3]\n " shape="box"]
+	 "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_4" -> "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_2" ;
+"ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_5" [label="5:  BinaryOperatorStmt: Assign \n   n$1=*&r2:int& [line 56, column 3]\n  *n$1:int=0 [line 56, column 3]\n " shape="box"]
 	
 
-	 "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_5" -> "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_4" ;
-"ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(r1:int&); [line 54, column 3]\n  *&r1:int&=&a [line 54, column 3]\n " shape="box"]
+	 "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_5" -> "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_3" ;
+"ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(r2:int&); [line 55, column 3]\n  n$2=*&r1:int& [line 55, column 13]\n  *&b:int=1 [line 55, column 18]\n  n$3=*&b:int [line 55, column 18]\n  *n$2:int=n$3 [line 55, column 13]\n  *&r2:int&=n$2 [line 55, column 3]\n " shape="box"]
 	
 
 	 "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_6" -> "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_5" ;
-"ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(b:int); [line 53, column 3]\n  *&b:int=3 [line 53, column 3]\n " shape="box"]
+"ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(r1:int&); [line 54, column 3]\n  *&r1:int&=&a [line 54, column 3]\n " shape="box"]
 	
 
 	 "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_7" -> "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_6" ;
-"ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 52, column 3]\n  *&a:int=2 [line 52, column 3]\n " shape="box"]
+"ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(b:int); [line 53, column 3]\n  *&b:int=3 [line 53, column 3]\n " shape="box"]
 	
 
 	 "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_8" -> "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_7" ;
+"ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 52, column 3]\n  *&a:int=2 [line 52, column 3]\n " shape="box"]
+	
+
+	 "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_9" -> "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_8" ;
 "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_1" [label="1: Start ref_div1_nested_assignment\nFormals: \nLocals:  r2:int& r1:int& b:int a:int \n  " color=yellow style=filled]
 	
 
-	 "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_1" -> "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_8" ;
+	 "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_1" -> "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_9" ;
 "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_2" [label="2: Exit ref_div1_nested_assignment \n  " color=yellow style=filled]
 	
 
-"ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_3" [label="3:  Return Stmt \n   n$0=*&b:int [line 66, column 14]\n  *&return:int=(1 / n$0) [line 66, column 3]\n " shape="box"]
+"ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_3" [label="3:  Return Stmt \n   n$0=*&b:int [line 66, column 14]\n " shape="box"]
 	
 
-	 "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_3" -> "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_2" ;
-"ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_4" [label="4:  BinaryOperatorStmt: Assign \n   n$1=*&r2:int& [line 65, column 3]\n  *n$1:int=0 [line 65, column 3]\n " shape="box"]
+	 "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_3" -> "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_4" ;
+"ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$0) [line 66, column 3]\n " shape="box"]
 	
 
-	 "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_4" -> "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_3" ;
-"ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(r2:int&); [line 64, column 3]\n  n$2=*&r1:int& [line 64, column 13]\n  *&b:int=1 [line 64, column 18]\n  n$3=*&b:int [line 64, column 18]\n  *n$2:int=n$3 [line 64, column 13]\n  *&r2:int&=n$2 [line 64, column 3]\n " shape="box"]
+	 "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_4" -> "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_2" ;
+"ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_5" [label="5:  BinaryOperatorStmt: Assign \n   n$1=*&r2:int& [line 65, column 3]\n  *n$1:int=0 [line 65, column 3]\n " shape="box"]
 	
 
-	 "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_5" -> "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_4" ;
-"ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(r1:int&); [line 63, column 3]\n  *&r1:int&=&a [line 63, column 3]\n " shape="box"]
+	 "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_5" -> "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_3" ;
+"ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(r2:int&); [line 64, column 3]\n  n$2=*&r1:int& [line 64, column 13]\n  *&b:int=1 [line 64, column 18]\n  n$3=*&b:int [line 64, column 18]\n  *n$2:int=n$3 [line 64, column 13]\n  *&r2:int&=n$2 [line 64, column 3]\n " shape="box"]
 	
 
 	 "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_6" -> "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_5" ;
-"ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(b:int); [line 62, column 3]\n  *&b:int=3 [line 62, column 3]\n " shape="box"]
+"ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(r1:int&); [line 63, column 3]\n  *&r1:int&=&a [line 63, column 3]\n " shape="box"]
 	
 
 	 "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_7" -> "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_6" ;
-"ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 61, column 3]\n  *&a:int=2 [line 61, column 3]\n " shape="box"]
+"ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(b:int); [line 62, column 3]\n  *&b:int=3 [line 62, column 3]\n " shape="box"]
 	
 
 	 "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_8" -> "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_7" ;
+"ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 61, column 3]\n  *&a:int=2 [line 61, column 3]\n " shape="box"]
+	
+
+	 "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_9" -> "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_8" ;
 "zero_ptr#10962438709356261388.c1a1091e7e1d49bd9bd5d8cac96703e9_1" [label="1: Start zero_ptr\nFormals:  p:int*\nLocals:  \n  " color=yellow style=filled]
 	
 

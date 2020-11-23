@@ -16,3 +16,7 @@ end
 module JSourceFileInfo = struct
   let debug_on_file _ = ()
 end
+
+module JSourceLocations = struct
+  let debug_on_file _ = ()
+end

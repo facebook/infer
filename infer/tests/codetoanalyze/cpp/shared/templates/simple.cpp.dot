@@ -3,31 +3,39 @@ digraph cfg {
 "div0_struct_field#9739930445713322699.789b28ce09db76d69bc6373aefeacf6a_1" [label="1: Start div0_struct_field\nFormals:  v:X&\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "div0_struct_field#9739930445713322699.789b28ce09db76d69bc6373aefeacf6a_1" -> "div0_struct_field#9739930445713322699.789b28ce09db76d69bc6373aefeacf6a_4" ;
+	 "div0_struct_field#9739930445713322699.789b28ce09db76d69bc6373aefeacf6a_1" -> "div0_struct_field#9739930445713322699.789b28ce09db76d69bc6373aefeacf6a_5" ;
 "div0_struct_field#9739930445713322699.789b28ce09db76d69bc6373aefeacf6a_2" [label="2: Exit div0_struct_field \n  " color=yellow style=filled]
 	
 
-"div0_struct_field#9739930445713322699.789b28ce09db76d69bc6373aefeacf6a_3" [label="3:  Return Stmt \n   n$0=*&v:X& [line 24, column 14]\n  n$1=*n$0.field:int [line 24, column 14]\n  *&return:int=(1 / n$1) [line 24, column 3]\n " shape="box"]
+"div0_struct_field#9739930445713322699.789b28ce09db76d69bc6373aefeacf6a_3" [label="3:  Return Stmt \n   n$0=*&v:X& [line 24, column 14]\n  n$1=*n$0.field:int [line 24, column 14]\n " shape="box"]
 	
 
-	 "div0_struct_field#9739930445713322699.789b28ce09db76d69bc6373aefeacf6a_3" -> "div0_struct_field#9739930445713322699.789b28ce09db76d69bc6373aefeacf6a_2" ;
-"div0_struct_field#9739930445713322699.789b28ce09db76d69bc6373aefeacf6a_4" [label="4:  BinaryOperatorStmt: Assign \n   n$2=*&v:X& [line 23, column 3]\n  *n$2.field:int=0 [line 23, column 3]\n " shape="box"]
+	 "div0_struct_field#9739930445713322699.789b28ce09db76d69bc6373aefeacf6a_3" -> "div0_struct_field#9739930445713322699.789b28ce09db76d69bc6373aefeacf6a_4" ;
+"div0_struct_field#9739930445713322699.789b28ce09db76d69bc6373aefeacf6a_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$1) [line 24, column 3]\n " shape="box"]
 	
 
-	 "div0_struct_field#9739930445713322699.789b28ce09db76d69bc6373aefeacf6a_4" -> "div0_struct_field#9739930445713322699.789b28ce09db76d69bc6373aefeacf6a_3" ;
+	 "div0_struct_field#9739930445713322699.789b28ce09db76d69bc6373aefeacf6a_4" -> "div0_struct_field#9739930445713322699.789b28ce09db76d69bc6373aefeacf6a_2" ;
+"div0_struct_field#9739930445713322699.789b28ce09db76d69bc6373aefeacf6a_5" [label="5:  BinaryOperatorStmt: Assign \n   n$2=*&v:X& [line 23, column 3]\n  *n$2.field:int=0 [line 23, column 3]\n " shape="box"]
+	
+
+	 "div0_struct_field#9739930445713322699.789b28ce09db76d69bc6373aefeacf6a_5" -> "div0_struct_field#9739930445713322699.789b28ce09db76d69bc6373aefeacf6a_3" ;
 "div0_template_field#16893301392201012428.8e63a0ece60a1b5e4e7b3cfa5d3dddd8_1" [label="1: Start div0_template_field\nFormals:  v:Container<int>&\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "div0_template_field#16893301392201012428.8e63a0ece60a1b5e4e7b3cfa5d3dddd8_1" -> "div0_template_field#16893301392201012428.8e63a0ece60a1b5e4e7b3cfa5d3dddd8_4" ;
+	 "div0_template_field#16893301392201012428.8e63a0ece60a1b5e4e7b3cfa5d3dddd8_1" -> "div0_template_field#16893301392201012428.8e63a0ece60a1b5e4e7b3cfa5d3dddd8_5" ;
 "div0_template_field#16893301392201012428.8e63a0ece60a1b5e4e7b3cfa5d3dddd8_2" [label="2: Exit div0_template_field \n  " color=yellow style=filled]
 	
 
-"div0_template_field#16893301392201012428.8e63a0ece60a1b5e4e7b3cfa5d3dddd8_3" [label="3:  Return Stmt \n   n$0=*&v:Container<int>& [line 19, column 14]\n  n$1=*n$0.field:int [line 19, column 14]\n  *&return:int=(1 / n$1) [line 19, column 3]\n " shape="box"]
+"div0_template_field#16893301392201012428.8e63a0ece60a1b5e4e7b3cfa5d3dddd8_3" [label="3:  Return Stmt \n   n$0=*&v:Container<int>& [line 19, column 14]\n  n$1=*n$0.field:int [line 19, column 14]\n " shape="box"]
 	
 
-	 "div0_template_field#16893301392201012428.8e63a0ece60a1b5e4e7b3cfa5d3dddd8_3" -> "div0_template_field#16893301392201012428.8e63a0ece60a1b5e4e7b3cfa5d3dddd8_2" ;
-"div0_template_field#16893301392201012428.8e63a0ece60a1b5e4e7b3cfa5d3dddd8_4" [label="4:  BinaryOperatorStmt: Assign \n   n$2=*&v:Container<int>& [line 18, column 3]\n  *n$2.field:int=0 [line 18, column 3]\n " shape="box"]
+	 "div0_template_field#16893301392201012428.8e63a0ece60a1b5e4e7b3cfa5d3dddd8_3" -> "div0_template_field#16893301392201012428.8e63a0ece60a1b5e4e7b3cfa5d3dddd8_4" ;
+"div0_template_field#16893301392201012428.8e63a0ece60a1b5e4e7b3cfa5d3dddd8_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$1) [line 19, column 3]\n " shape="box"]
 	
 
-	 "div0_template_field#16893301392201012428.8e63a0ece60a1b5e4e7b3cfa5d3dddd8_4" -> "div0_template_field#16893301392201012428.8e63a0ece60a1b5e4e7b3cfa5d3dddd8_3" ;
+	 "div0_template_field#16893301392201012428.8e63a0ece60a1b5e4e7b3cfa5d3dddd8_4" -> "div0_template_field#16893301392201012428.8e63a0ece60a1b5e4e7b3cfa5d3dddd8_2" ;
+"div0_template_field#16893301392201012428.8e63a0ece60a1b5e4e7b3cfa5d3dddd8_5" [label="5:  BinaryOperatorStmt: Assign \n   n$2=*&v:Container<int>& [line 18, column 3]\n  *n$2.field:int=0 [line 18, column 3]\n " shape="box"]
+	
+
+	 "div0_template_field#16893301392201012428.8e63a0ece60a1b5e4e7b3cfa5d3dddd8_5" -> "div0_template_field#16893301392201012428.8e63a0ece60a1b5e4e7b3cfa5d3dddd8_3" ;
 }

@@ -26,12 +26,12 @@ let add switch_case = current_cases := switch_case :: !current_cases
 
 let pp_condition fmt = function
   | Case stmt ->
-      F.fprintf fmt "case %a:" (Pp.of_string ~f:Clang_ast_j.string_of_stmt) stmt
+      F.fprintf fmt "case %a:" (Pp.of_string ~f:Clang_ast_proj.get_stmt_kind_string) stmt
   | Default ->
       F.pp_print_string fmt "default:"
 
 
 let pp fmt {condition; root_nodes} =
-  F.fprintf fmt "%a -> @[<h>[%a]@]" pp_condition condition
+  F.fprintf fmt "%a->@[<h>[%a]@]" pp_condition condition
     (Pp.semicolon_seq Procdesc.Node.pp)
     root_nodes

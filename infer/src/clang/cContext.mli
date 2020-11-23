@@ -30,7 +30,13 @@ type t =
   ; vars_to_destroy: Clang_ast_t.decl list StmtMap.t
         (** mapping from a statement to a list of variables, that go out of scope after the end of
             the statement *)
-  ; temporary_names: (Clang_ast_t.pointer, Pvar.t * Typ.t) Caml.Hashtbl.t }
+  ; temporary_names: (Clang_ast_t.pointer, Pvar.t * Typ.t) Caml.Hashtbl.t
+  ; temporaries_constructor_markers: (Pvar.t * Typ.t) Exp.Map.t
+        (** In order to know when to destruct C++ temporaries created in expressions containing
+            conditionals (e.g. to hold the object created by [X()] in [b?foo(X()):goo()]), we
+            associate "markers" to each one of them, set to true if and only if the temporary has
+            been created. This is the map associating each such C++ temporary with its marker
+            variable. *) }
 
 val get_curr_class : t -> curr_class
 

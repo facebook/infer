@@ -212,6 +212,21 @@ let get_captured_by_ref_invariant_map proc_desc =
   CapturedByRefAnalyzer.exec_cfg cfg () ~initial:VarSet.empty
 
 
+module IntLitSet = Caml.Set.Make (IntLit)
+
+let ignored_constants =
+  let int_lit_constants =
+    List.map
+      ~f:(fun el ->
+        try IntLit.of_string el
+        with Invalid_argument _ ->
+          L.die UserError
+            "Ill-formed option  '%s' for --liveness-ignored-constant: an integer was expected" el )
+      Config.liveness_ignored_constant
+  in
+  IntLitSet.of_list int_lit_constants
+
+
 let checker {IntraproceduralAnalysis.proc_desc; err_log} =
   let captured_by_ref_invariant_map = get_captured_by_ref_invariant_map proc_desc in
   let cfg = CFG.from_pdesc proc_desc in
@@ -223,9 +238,13 @@ let checker {IntraproceduralAnalysis.proc_desc; err_log} =
     | Exp.Cast (_, e) ->
         is_sentinel_exp e
     | Exp.Const (Cint i) ->
-        IntLit.iszero i || IntLit.isnull i
-    | Exp.Const (Cfloat 0.0) ->
-        true
+        IntLitSet.mem i ignored_constants
+    | Exp.Const (Cfloat f) -> (
+      match Z.of_float f with
+      | z ->
+          IntLitSet.mem (IntLit.of_big_int z) ignored_constants
+      | exception Z.Overflow ->
+          false )
     | _ ->
         false
   in

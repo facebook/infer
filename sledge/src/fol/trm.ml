@@ -260,8 +260,9 @@ end = struct
       (* α[m,k)[o,l) ==> α[m+o,l) when k ≥ o+l *)
       | Extract {seq= a; off= m; len= k} when partial_ge k o_l ->
           _Extract ~seq:a ~off:(add m off) ~len
-      (* ⟨_,0⟩[_,_) ==> 0 *)
-      | Sized {seq} when seq == zero -> seq
+      (* ⟨n,0⟩[o,l) ==> ⟨l,0⟩ when n ≥ o+l *)
+      | Sized {siz= n; seq} when seq == zero && partial_ge n o_l ->
+          _Sized ~seq ~siz:len
       (* ⟨n,E^⟩[o,l) ==> ⟨l,E^⟩ when n ≥ o+l *)
       | Sized {siz= n; seq= Splat _ as e} when partial_ge n o_l ->
           _Sized ~seq:e ~siz:len

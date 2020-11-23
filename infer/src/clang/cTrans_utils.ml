@@ -190,16 +190,24 @@ type control =
   { root_nodes: Procdesc.Node.t list
   ; leaf_nodes: Procdesc.Node.t list
   ; instrs: Sil.instr list
-  ; initd_exps: Exp.t list }
+  ; initd_exps: Exp.t list
+  ; cxx_temporary_markers_set: Pvar.t list }
 
-let pp_control fmt {root_nodes; leaf_nodes; instrs; initd_exps} =
-  F.fprintf fmt "@[{root_nodes=[%a];@;leaf_nodes=[%a];@;instrs=[%a];@;initd_exps=[%a]}@]"
+let pp_control fmt {root_nodes; leaf_nodes; instrs; initd_exps; cxx_temporary_markers_set} =
+  let pp_cxx_temporary_markers_set fmt =
+    if List.is_empty cxx_temporary_markers_set then ()
+    else
+      F.fprintf fmt ";@;cxx_temporary_markers_set=[%a]"
+        (Pp.seq ~sep:";" (Pvar.pp Pp.text))
+        cxx_temporary_markers_set
+  in
+  F.fprintf fmt "@[{root_nodes=[%a];@;leaf_nodes=[%a];@;instrs=[%a];@;initd_exps=[%a]%t}@]"
     (Pp.seq ~sep:";" Procdesc.Node.pp)
     root_nodes
     (Pp.seq ~sep:";" Procdesc.Node.pp)
     leaf_nodes
     (Pp.seq ~sep:";" (Sil.pp_instr ~print_types:false Pp.text_break))
-    instrs (Pp.seq ~sep:";" Exp.pp) initd_exps
+    instrs (Pp.seq ~sep:";" Exp.pp) initd_exps pp_cxx_temporary_markers_set
 
 
 type trans_result =
@@ -208,7 +216,9 @@ type trans_result =
   ; method_name: Procname.t option
   ; is_cpp_call_virtual: bool }
 
-let empty_control = {root_nodes= []; leaf_nodes= []; instrs= []; initd_exps= []}
+let empty_control =
+  {root_nodes= []; leaf_nodes= []; instrs= []; initd_exps= []; cxx_temporary_markers_set= []}
+
 
 let mk_trans_result ?method_name ?(is_cpp_call_virtual = false) return control =
   {control; return; method_name; is_cpp_call_virtual}
@@ -218,7 +228,8 @@ let undefined_expression () = Exp.Var (Ident.create_fresh Ident.knormal)
 
 (** Collect the results of translating a list of instructions, and link up the nodes created. *)
 let collect_controls pdesc l =
-  let collect_one result_rev {root_nodes; leaf_nodes; instrs; initd_exps} =
+  let collect_one result_rev {root_nodes; leaf_nodes; instrs; initd_exps; cxx_temporary_markers_set}
+      =
     if not (List.is_empty root_nodes) then
       List.iter
         ~f:(fun n -> Procdesc.node_set_succs pdesc n ~normal:root_nodes ~exn:[])
@@ -230,10 +241,12 @@ let collect_controls pdesc l =
     { root_nodes
     ; leaf_nodes
     ; instrs= List.rev_append instrs result_rev.instrs
-    ; initd_exps= List.rev_append initd_exps result_rev.initd_exps }
+    ; initd_exps= List.rev_append initd_exps result_rev.initd_exps
+    ; cxx_temporary_markers_set=
+        List.rev_append cxx_temporary_markers_set result_rev.cxx_temporary_markers_set }
   in
   let rev_result = List.fold l ~init:empty_control ~f:collect_one in
-  {rev_result with instrs= List.rev rev_result.instrs; initd_exps= List.rev rev_result.initd_exps}
+  {rev_result with instrs= List.rev rev_result.instrs}
 
 
 let collect_trans_results pdesc ~return trans_results =
@@ -272,7 +285,7 @@ module PriorityNode = struct
   (* It connects nodes returned by translation of stmt children and *)
   (* deals with creating or not a cfg node depending of owning the *)
   (* priority_node. It returns nodes, ids, instrs that should be passed to parent *)
-  let compute_controls_to_parent trans_state loc ~node_name stmt_info res_states_children =
+  let compute_controls_to_parent trans_state loc node_name stmt_info res_states_children =
     let res_state = collect_controls trans_state.context.procdesc res_states_children in
     L.debug Capture Verbose "collected controls: %a@\n" pp_control res_state ;
     let create_node =
@@ -308,18 +321,18 @@ module PriorityNode = struct
       res_state )
 
 
-  let compute_results_to_parent trans_state loc ~node_name stmt_info ~return trans_results =
+  let compute_results_to_parent trans_state loc node_name stmt_info ~return trans_results =
     List.map trans_results ~f:(fun trans_result -> trans_result.control)
-    |> compute_controls_to_parent trans_state loc ~node_name stmt_info
+    |> compute_controls_to_parent trans_state loc node_name stmt_info
     |> mk_trans_result return
 
 
-  let compute_control_to_parent trans_state loc ~node_name stmt_info control =
-    compute_controls_to_parent trans_state loc ~node_name stmt_info [control]
+  let compute_control_to_parent trans_state loc node_name stmt_info control =
+    compute_controls_to_parent trans_state loc node_name stmt_info [control]
 
 
-  let compute_result_to_parent trans_state loc ~node_name stmt_info trans_result =
-    compute_control_to_parent trans_state loc ~node_name stmt_info trans_result.control
+  let compute_result_to_parent trans_state loc node_name stmt_info trans_result =
+    compute_control_to_parent trans_state loc node_name stmt_info trans_result.control
     |> mk_trans_result trans_result.return
 
 
@@ -330,11 +343,11 @@ module PriorityNode = struct
         List.is_empty second_result.control.root_nodes
         && List.is_empty second_result.control.leaf_nodes
       then first_result
-      else compute_result_to_parent trans_state loc ~node_name stmt_info first_result
+      else compute_result_to_parent trans_state loc node_name stmt_info first_result
     in
     L.debug Capture Verbose "sequential composition :@\n@[<hv2>  %a@]@\n;@\n@[<hv2>  %a@]@\n"
       pp_control first_result.control pp_control second_result.control ;
-    compute_results_to_parent trans_state loc ~node_name stmt_info ~return
+    compute_results_to_parent trans_state loc node_name stmt_info ~return
       [first_result; second_result]
 
 
@@ -433,8 +446,7 @@ let alloc_trans trans_state ~alloc_builtin loc stmt_info function_type =
     create_alloc_instrs integer_type_widths ~alloc_builtin loc function_type
   in
   let control_tmp = {empty_control with instrs} in
-  PriorityNode.compute_control_to_parent trans_state loc ~node_name:(Call "alloc") stmt_info
-    control_tmp
+  PriorityNode.compute_control_to_parent trans_state loc (Call "alloc") stmt_info control_tmp
   |> mk_trans_result (exp, function_type)
 
 
@@ -459,7 +471,7 @@ let objc_new_trans trans_state ~alloc_builtin loc stmt_info cls_name function_ty
   let instrs = alloc_stmt_call @ [init_stmt_call] in
   let res_trans_tmp = {empty_control with instrs} in
   let node_name = Procdesc.Node.CallObjCNew in
-  PriorityNode.compute_control_to_parent trans_state loc ~node_name stmt_info res_trans_tmp
+  PriorityNode.compute_control_to_parent trans_state loc node_name stmt_info res_trans_tmp
   |> mk_trans_result (Exp.Var init_ret_id, alloc_ret_type)
 
 

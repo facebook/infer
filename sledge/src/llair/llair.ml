@@ -28,10 +28,10 @@ type inst =
   | Free of {ptr: Exp.t; loc: Loc.t}
   | Nondet of {reg: Reg.t option; msg: string; loc: Loc.t}
   | Abort of {loc: Loc.t}
-[@@deriving sexp]
+[@@deriving compare, equal, hash, sexp]
 
-type cmnd = inst iarray [@@deriving sexp]
-type label = string [@@deriving sexp]
+type cmnd = inst iarray [@@deriving compare, equal, hash, sexp]
+type label = string [@@deriving compare, equal, hash, sexp]
 
 type jump = {mutable dst: block; mutable retreating: bool}
 
@@ -68,6 +68,106 @@ and func =
   ; locals: Reg.Set.t
   ; entry: block
   ; loc: Loc.t }
+
+(* compare *)
+
+(* functions are uniquely identified by [name] *)
+let compare_func x y = if x == y then 0 else Function.compare x.name y.name
+let equal_func x y = x == y || Function.equal x.name y.name
+let hash_fold_func s x = Function.hash_fold_t s x.name
+
+(* blocks in a [t] are uniquely identified by [sort_index] *)
+let compare_block x y =
+  if x == y then 0 else Int.compare x.sort_index y.sort_index
+
+let equal_block x y = x == y || Int.equal x.sort_index y.sort_index
+let hash_fold_block s x = Int.hash_fold_t s x.sort_index
+
+module Compare : sig
+  type nonrec jump = jump [@@deriving compare, equal]
+  type nonrec 'a call = 'a call [@@deriving compare, equal]
+  type nonrec term = term [@@deriving compare, equal]
+end
+with type jump := jump
+ and type 'a call := 'a call
+ and type term := term = struct
+  type nonrec jump = jump = {mutable dst: block; mutable retreating: bool}
+  [@@deriving compare, equal]
+
+  type nonrec 'a call = 'a call =
+    { callee: 'a
+    ; typ: Typ.t
+    ; actuals: Exp.t list
+    ; areturn: Reg.t option
+    ; return: jump
+    ; throw: jump option
+    ; mutable recursive: bool
+    ; loc: Loc.t }
+  [@@deriving compare, equal]
+
+  type nonrec term = term =
+    | Switch of
+        {key: Exp.t; tbl: (Exp.t * jump) iarray; els: jump; loc: Loc.t}
+    | Iswitch of {ptr: Exp.t; tbl: jump iarray; loc: Loc.t}
+    | Call of Exp.t call
+    | Return of {exp: Exp.t option; loc: Loc.t}
+    | Throw of {exc: Exp.t; loc: Loc.t}
+    | Unreachable
+  [@@deriving compare, equal]
+end
+
+include Compare
+
+(* hash *)
+
+let hash_fold_jump s {dst; retreating} =
+  let s = [%hash_fold: block] s dst in
+  let s = [%hash_fold: bool] s retreating in
+  s
+
+let hash_fold_term s = function
+  | Switch {key; tbl; els; loc} ->
+      let s = [%hash_fold: int] s 1 in
+      let s = [%hash_fold: Exp.t] s key in
+      let s = [%hash_fold: (Exp.t * jump) iarray] s tbl in
+      let s = [%hash_fold: jump] s els in
+      let s = [%hash_fold: Loc.t] s loc in
+      s
+  | Iswitch {ptr; tbl; loc} ->
+      let s = [%hash_fold: int] s 2 in
+      let s = [%hash_fold: Exp.t] s ptr in
+      let s = [%hash_fold: jump iarray] s tbl in
+      let s = [%hash_fold: Loc.t] s loc in
+      s
+  | Call {callee; typ; actuals; areturn; return; throw; recursive; loc} ->
+      let s = [%hash_fold: int] s 3 in
+      let s = [%hash_fold: Exp.t] s callee in
+      let s = [%hash_fold: Typ.t] s typ in
+      let s = [%hash_fold: Exp.t list] s actuals in
+      let s = [%hash_fold: Reg.t option] s areturn in
+      let s = [%hash_fold: jump] s return in
+      let s = [%hash_fold: jump option] s throw in
+      let s = [%hash_fold: bool] s recursive in
+      let s = [%hash_fold: Loc.t] s loc in
+      s
+  | Return {exp; loc} ->
+      let s = [%hash_fold: int] s 4 in
+      let s = [%hash_fold: Exp.t option] s exp in
+      let s = [%hash_fold: Loc.t] s loc in
+      s
+  | Throw {exc; loc} ->
+      let s = [%hash_fold: int] s 5 in
+      let s = [%hash_fold: Exp.t] s exc in
+      let s = [%hash_fold: Loc.t] s loc in
+      s
+  | Unreachable -> [%hash_fold: int] s 6
+
+let hash_func = Hash.of_fold hash_fold_func
+let hash_block = Hash.of_fold hash_fold_block
+let hash_jump = Hash.of_fold hash_fold_jump
+let hash_term = Hash.of_fold hash_fold_term
+
+(* sexp *)
 
 let sexp_cons (hd : Sexp.t) (tl : Sexp.t) =
   match tl with
@@ -120,14 +220,12 @@ let sexp_of_func {name; formals; freturn; fthrow; locals; entry; loc} =
     ; entry: block
     ; loc: Loc.t }]
 
-(* blocks in a [t] are uniquely identified by [sort_index] *)
-let compare_block x y = Int.compare x.sort_index y.sort_index
-let equal_block x y = Int.equal x.sort_index y.sort_index
-
 type functions = func Function.Map.t [@@deriving sexp_of]
 
 type program = {globals: GlobalDefn.t iarray; functions: functions}
 [@@deriving sexp_of]
+
+(* pp *)
 
 let pp_inst fs inst =
   let pf pp = Format.fprintf fs pp in
@@ -237,7 +335,12 @@ and dummy_func =
 (** Instructions *)
 
 module Inst = struct
-  type t = inst [@@deriving sexp]
+  module T = struct
+    type t = inst [@@deriving compare, equal, hash, sexp]
+  end
+
+  include T
+  module Tbl = HashTable.Make (T)
 
   let pp = pp_inst
   let move ~reg_exps ~loc = Move {reg_exps; loc}
@@ -295,7 +398,7 @@ end
 (** Jumps *)
 
 module Jump = struct
-  type t = jump [@@deriving sexp_of]
+  type t = jump [@@deriving compare, equal, hash, sexp_of]
 
   let compare x y = compare_block x.dst y.dst
   let equal x y = equal_block x.dst y.dst
@@ -306,7 +409,12 @@ end
 (** Basic-Block Terminators *)
 
 module Term = struct
-  type t = term [@@deriving sexp_of]
+  module T = struct
+    type t = term [@@deriving compare, equal, hash, sexp_of]
+  end
+
+  include T
+  module Tbl = HashTable.Make (T)
 
   let pp = pp_term
 
@@ -371,7 +479,7 @@ end
 
 module Block = struct
   module T = struct
-    type t = block [@@deriving compare, equal, sexp_of]
+    type t = block [@@deriving compare, equal, hash, sexp_of]
   end
 
   include T
@@ -415,13 +523,13 @@ module FuncQ = HashQueue.Make (Function)
 (** Functions *)
 
 module Func = struct
-  type t = func [@@deriving sexp_of]
+  type t = func [@@deriving compare, equal, hash, sexp_of]
 
   let is_undefined = function
     | {entry= {cmnd; term= Unreachable; _}; _} -> IArray.is_empty cmnd
     | _ -> false
 
-  let fold_cfg ~f func s =
+  let fold_cfg func s ~f =
     let seen = BlockS.create 0 in
     let rec fold_cfg_ blk s =
       if not (BlockS.add seen blk) then s

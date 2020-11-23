@@ -219,6 +219,9 @@ module ThreadsDomain = struct
     (* if we know the callee runs on the main thread, assume the caller does too. otherwise, keep
        the caller's thread context *)
     match callee_astate with AnyThreadButSelf -> callee_astate | _ -> caller_astate
+
+
+  let update_for_lock_use = function AnyThreadButSelf -> AnyThreadButSelf | _ -> AnyThread
 end
 
 module OwnershipAbstractValue = struct
@@ -321,18 +324,55 @@ module AccessSnapshot = struct
     make_if_not_owned formals access lock thread ownership_precondition loc
 
 
-  let map_opt formals ~f t =
-    map t ~f:(fun elem -> {elem with access= Access.map ~f elem.access}) |> filter formals
+  let subst_actuals_into_formals callee_formals actuals_array (t : t) =
+    let exp = Access.get_access_exp t.elem.access in
+    match FormalMap.get_formal_index (AccessExpression.get_base exp) callee_formals with
+    | None ->
+        (* non-param base variable, leave unchanged *)
+        Some t
+    | Some formal_index when formal_index >= Array.length actuals_array ->
+        (* vararg param which is missing, throw away *)
+        None
+    | Some formal_index -> (
+      match actuals_array.(formal_index) with
+      | None ->
+          (* no useful argument can be substituted, throw away *)
+          None
+      | Some actual ->
+          AccessExpression.append ~onto:actual exp
+          |> Option.map ~f:(fun new_exp ->
+                 map t ~f:(fun elem ->
+                     {elem with access= Access.map ~f:(fun _ -> new_exp) elem.access} ) ) )
 
 
-  let update_callee_access formals snapshot callsite ownership_precondition threads locks =
+  let update_callee_access threads locks actuals_ownership (snapshot : t) =
+    let update_ownership_precondition actual_index (acc : OwnershipAbstractValue.t) =
+      if actual_index >= Array.length actuals_ownership then
+        (* vararg methods can result into missing actuals so simply ignore *)
+        acc
+      else OwnershipAbstractValue.join acc actuals_ownership.(actual_index)
+    in
+    (* update precondition with caller ownership info *)
+    let ownership_precondition =
+      match snapshot.elem.ownership_precondition with
+      | OwnedIf indexes ->
+          IntSet.fold update_ownership_precondition indexes OwnershipAbstractValue.owned
+      | Unowned ->
+          snapshot.elem.ownership_precondition
+    in
     let thread =
       ThreadsDomain.integrate_summary ~callee_astate:snapshot.elem.thread ~caller_astate:threads
     in
     let lock = snapshot.elem.lock || LockDomain.is_locked locks in
-    with_callsite snapshot callsite
-    |> map ~f:(fun elem -> {elem with lock; thread; ownership_precondition})
-    |> filter formals
+    map snapshot ~f:(fun elem -> {elem with lock; thread; ownership_precondition})
+
+
+  let integrate_summary ~caller_formals ~callee_formals callsite threads locks actuals_array
+      actuals_ownership snapshot =
+    subst_actuals_into_formals callee_formals actuals_array snapshot
+    |> Option.map ~f:(update_callee_access threads locks actuals_ownership)
+    |> Option.map ~f:(fun snapshot -> with_callsite snapshot callsite)
+    |> Option.bind ~f:(filter caller_formals)
 
 
   let is_unprotected {elem= {thread; lock; ownership_precondition}} =
@@ -346,26 +386,6 @@ module AccessDomain = struct
 
   let add_opt snapshot_opt astate =
     Option.fold snapshot_opt ~init:astate ~f:(fun acc s -> add s acc)
-
-
-  let subst_actuals_into_formals ~caller_formals ~caller_actuals accesses ~callee_formals =
-    if is_empty accesses then accesses
-    else
-      let actuals_array = Array.of_list_map caller_actuals ~f:accexp_of_hilexp in
-      let expand_exp exp =
-        match FormalMap.get_formal_index (AccessExpression.get_base exp) callee_formals with
-        | None ->
-            exp
-        | Some formal_index when formal_index >= Array.length actuals_array ->
-            exp
-        | Some formal_index -> (
-          match actuals_array.(formal_index) with
-          | None ->
-              exp
-          | Some actual ->
-              AccessExpression.append ~onto:actual exp |> Option.value ~default:exp )
-      in
-      filter_map (AccessSnapshot.map_opt caller_formals ~f:expand_exp) accesses
 end
 
 module OwnershipDomain = struct
@@ -386,14 +406,14 @@ module OwnershipDomain = struct
           get_owned prefix astate )
 
 
-  let rec ownership_of_expr (expr : HilExp.t) ownership =
+  let rec ownership_of_expr ownership (expr : HilExp.t) =
     match expr with
     | AccessExpression access_expr ->
         get_owned access_expr ownership
     | Constant _ ->
         OwnershipAbstractValue.owned
     | Exception e (* treat exceptions as transparent wrt ownership *) | Cast (_, e) ->
-        ownership_of_expr e ownership
+        ownership_of_expr ownership e
     | _ ->
         OwnershipAbstractValue.unowned
 
@@ -403,7 +423,7 @@ module OwnershipDomain = struct
       (* do not assign ownership to access expressions rooted at globals *)
       ownership
     else
-      let rhs_ownership_value = ownership_of_expr rhs_exp ownership in
+      let rhs_ownership_value = ownership_of_expr ownership rhs_exp in
       add lhs_access_exp rhs_ownership_value ownership
 
 
@@ -412,7 +432,7 @@ module OwnershipDomain = struct
       List.nth actuals formal_index
       (* simply skip formal if we cannot find its actual, as opposed to assuming non-ownership *)
       |> Option.fold ~init ~f:(fun acc expr ->
-             OwnershipAbstractValue.join acc (ownership_of_expr expr ownership) )
+             OwnershipAbstractValue.join acc (ownership_of_expr ownership expr) )
     in
     let ret_ownership_wrt_actuals =
       match return_ownership with
@@ -671,35 +691,34 @@ let add_reads_of_hilexps tenv formals exps loc astate =
 let add_callee_accesses ~caller_formals ~callee_formals ~callee_accesses callee_pname actuals loc
     (caller_astate : t) =
   let callsite = CallSite.make callee_pname loc in
-  let callee_accesses =
-    AccessDomain.subst_actuals_into_formals ~caller_formals ~caller_actuals:actuals callee_accesses
-      ~callee_formals
-  in
+  (* precompute arrays for actuals and ownership for fast random access *)
+  let actuals_array = Array.of_list_map actuals ~f:accexp_of_hilexp in
   let actuals_ownership =
-    (* precompute array holding ownership of each actual for fast random access *)
-    Array.of_list_map actuals ~f:(fun actual_exp ->
-        OwnershipDomain.ownership_of_expr actual_exp caller_astate.ownership )
+    Array.of_list_map actuals ~f:(OwnershipDomain.ownership_of_expr caller_astate.ownership)
   in
-  let update_ownership_precondition actual_index (acc : OwnershipAbstractValue.t) =
-    if actual_index >= Array.length actuals_ownership then
-      (* vararg methods can result into missing actuals so simply ignore *)
-      acc
-    else OwnershipAbstractValue.join acc actuals_ownership.(actual_index)
+  let process snapshot acc =
+    AccessSnapshot.integrate_summary ~caller_formals ~callee_formals callsite caller_astate.threads
+      caller_astate.locks actuals_array actuals_ownership snapshot
+    |> fun snapshot_opt -> AccessDomain.add_opt snapshot_opt acc
   in
-  let update_callee_access (snapshot : AccessSnapshot.t) acc =
-    (* update precondition with caller ownership info *)
-    let ownership_precondition =
-      match snapshot.elem.ownership_precondition with
-      | OwnedIf indexes ->
-          IntSet.fold update_ownership_precondition indexes OwnershipAbstractValue.owned
-      | Unowned ->
-          snapshot.elem.ownership_precondition
-    in
-    let snapshot_opt =
-      AccessSnapshot.update_callee_access caller_formals snapshot callsite ownership_precondition
-        caller_astate.threads caller_astate.locks
-    in
-    AccessDomain.add_opt snapshot_opt acc
-  in
-  let accesses = AccessDomain.fold update_callee_access callee_accesses caller_astate.accesses in
+  let accesses = AccessDomain.fold process callee_accesses caller_astate.accesses in
   {caller_astate with accesses}
+
+
+let integrate_summary formals ~callee_proc_desc summary ret_access_exp callee_pname actuals loc
+    astate =
+  let callee_formals = FormalMap.make callee_proc_desc in
+  let {threads; locks; return_ownership; return_attribute} = summary in
+  let astate =
+    add_callee_accesses ~caller_formals:formals ~callee_formals ~callee_accesses:summary.accesses
+      callee_pname actuals loc astate
+  in
+  let locks = LockDomain.integrate_summary ~caller_astate:astate.locks ~callee_astate:locks in
+  let ownership =
+    OwnershipDomain.propagate_return ret_access_exp return_ownership actuals astate.ownership
+  in
+  let attribute_map = AttributeMapDomain.add ret_access_exp return_attribute astate.attribute_map in
+  let threads =
+    ThreadsDomain.integrate_summary ~caller_astate:astate.threads ~callee_astate:threads
+  in
+  {astate with locks; threads; ownership; attribute_map}

@@ -164,7 +164,7 @@ let standard_name kind =
   else Name.Primed
 
 
-(** Every identifier with a given stamp should unltimately be created using this function *)
+(** Every identifier with a given stamp should ultimately be created using this function *)
 let create_with_stamp kind name stamp =
   NameGenerator.update_name_hash name stamp ;
   {kind; name; stamp}

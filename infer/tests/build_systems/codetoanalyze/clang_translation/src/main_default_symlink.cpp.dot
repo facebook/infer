@@ -7,10 +7,14 @@ digraph cfg {
 "fun#internal#3922054098004616643.55c3f2ad552457f847bc1570fce79224_2" [label="2: Exit internal::fun \n  " color=yellow style=filled]
 	
 
-"fun#internal#3922054098004616643.55c3f2ad552457f847bc1570fce79224_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 10, column 25]\n  *&return:int=n$0 [line 10, column 18]\n " shape="box"]
+"fun#internal#3922054098004616643.55c3f2ad552457f847bc1570fce79224_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 10, column 25]\n " shape="box"]
 	
 
-	 "fun#internal#3922054098004616643.55c3f2ad552457f847bc1570fce79224_3" -> "fun#internal#3922054098004616643.55c3f2ad552457f847bc1570fce79224_2" ;
+	 "fun#internal#3922054098004616643.55c3f2ad552457f847bc1570fce79224_3" -> "fun#internal#3922054098004616643.55c3f2ad552457f847bc1570fce79224_4" ;
+"fun#internal#3922054098004616643.55c3f2ad552457f847bc1570fce79224_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 10, column 18]\n " shape="box"]
+	
+
+	 "fun#internal#3922054098004616643.55c3f2ad552457f847bc1570fce79224_4" -> "fun#internal#3922054098004616643.55c3f2ad552457f847bc1570fce79224_2" ;
 "main.fad58de7366495db4650cfefac2fcd61_1" [label="1: Start main\nFormals: \nLocals:  s:std::basic_string<char,std::char_traits<char>,std::allocator<char>> x:std::shared_ptr<int> \n  " color=yellow style=filled]
 	
 
@@ -22,7 +26,7 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
-"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(s:std::basic_string<char,std::char_traits<char>,std::allocator<char>>); [line 20, column 3]\n  n$5=_fun_std::basic_string<char,std::char_traits<char>,std::allocator<char>>::basic_string(&s:std::basic_string<char,std::char_traits<char>,std::allocator<char>>*,\"1234\":char const *) [line 20, column 15]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(s:std::basic_string<char,std::char_traits<char>,std::allocator<char>>); [line 20, column 3]\n  n$5=_fun_std::basic_string<char,std::char_traits<char>,std::allocator<char>>::basic_string<nullptr_t>(&s:std::basic_string<char,std::char_traits<char>,std::allocator<char>>*,\"1234\":char const *) [line 20, column 15]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_4" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;
@@ -45,18 +49,22 @@ digraph cfg {
 "unused_deref_in_header#15260603227785084028.ec2f844a26989dc35e9856ba0d7a485b_1" [label="1: Start unused_deref_in_header\nFormals:  a:int*\nLocals:  x:int \n  " color=yellow style=filled]
 	
 
-	 "unused_deref_in_header#15260603227785084028.ec2f844a26989dc35e9856ba0d7a485b_1" -> "unused_deref_in_header#15260603227785084028.ec2f844a26989dc35e9856ba0d7a485b_4" ;
+	 "unused_deref_in_header#15260603227785084028.ec2f844a26989dc35e9856ba0d7a485b_1" -> "unused_deref_in_header#15260603227785084028.ec2f844a26989dc35e9856ba0d7a485b_5" ;
 "unused_deref_in_header#15260603227785084028.ec2f844a26989dc35e9856ba0d7a485b_2" [label="2: Exit unused_deref_in_header \n  " color=yellow style=filled]
 	
 
-"unused_deref_in_header#15260603227785084028.ec2f844a26989dc35e9856ba0d7a485b_3" [label="3:  Return Stmt \n   n$0=*&a:int* [line 16, column 11]\n  n$1=*n$0:int [line 16, column 10]\n  *&return:int=n$1 [line 16, column 3]\n " shape="box"]
+"unused_deref_in_header#15260603227785084028.ec2f844a26989dc35e9856ba0d7a485b_3" [label="3:  Return Stmt \n   n$0=*&a:int* [line 16, column 11]\n  n$1=*n$0:int [line 16, column 10]\n " shape="box"]
 	
 
-	 "unused_deref_in_header#15260603227785084028.ec2f844a26989dc35e9856ba0d7a485b_3" -> "unused_deref_in_header#15260603227785084028.ec2f844a26989dc35e9856ba0d7a485b_2" ;
-"unused_deref_in_header#15260603227785084028.ec2f844a26989dc35e9856ba0d7a485b_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 15, column 3]\n  n$2=_fun_internal::used_in_main_header(0:int) [line 15, column 11]\n  *&x:int=n$2 [line 15, column 3]\n " shape="box"]
+	 "unused_deref_in_header#15260603227785084028.ec2f844a26989dc35e9856ba0d7a485b_3" -> "unused_deref_in_header#15260603227785084028.ec2f844a26989dc35e9856ba0d7a485b_4" ;
+"unused_deref_in_header#15260603227785084028.ec2f844a26989dc35e9856ba0d7a485b_4" [label="4:  Return Stmt \n   *&return:int=n$1 [line 16, column 3]\n " shape="box"]
 	
 
-	 "unused_deref_in_header#15260603227785084028.ec2f844a26989dc35e9856ba0d7a485b_4" -> "unused_deref_in_header#15260603227785084028.ec2f844a26989dc35e9856ba0d7a485b_3" ;
+	 "unused_deref_in_header#15260603227785084028.ec2f844a26989dc35e9856ba0d7a485b_4" -> "unused_deref_in_header#15260603227785084028.ec2f844a26989dc35e9856ba0d7a485b_2" ;
+"unused_deref_in_header#15260603227785084028.ec2f844a26989dc35e9856ba0d7a485b_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 15, column 3]\n  n$2=_fun_internal::used_in_main_header(0:int) [line 15, column 11]\n  *&x:int=n$2 [line 15, column 3]\n " shape="box"]
+	
+
+	 "unused_deref_in_header#15260603227785084028.ec2f844a26989dc35e9856ba0d7a485b_5" -> "unused_deref_in_header#15260603227785084028.ec2f844a26989dc35e9856ba0d7a485b_3" ;
 "used_in_main_header#internal#16695915931787022844.43e60de71a2b141c8436dddf68ff1b63_1" [label="1: Start internal::used_in_main_header\nFormals:  a:int\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -64,8 +72,12 @@ digraph cfg {
 "used_in_main_header#internal#16695915931787022844.43e60de71a2b141c8436dddf68ff1b63_2" [label="2: Exit internal::used_in_main_header \n  " color=yellow style=filled]
 	
 
-"used_in_main_header#internal#16695915931787022844.43e60de71a2b141c8436dddf68ff1b63_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 17, column 41]\n  *&return:int=n$0 [line 17, column 34]\n " shape="box"]
+"used_in_main_header#internal#16695915931787022844.43e60de71a2b141c8436dddf68ff1b63_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 17, column 41]\n " shape="box"]
 	
 
-	 "used_in_main_header#internal#16695915931787022844.43e60de71a2b141c8436dddf68ff1b63_3" -> "used_in_main_header#internal#16695915931787022844.43e60de71a2b141c8436dddf68ff1b63_2" ;
+	 "used_in_main_header#internal#16695915931787022844.43e60de71a2b141c8436dddf68ff1b63_3" -> "used_in_main_header#internal#16695915931787022844.43e60de71a2b141c8436dddf68ff1b63_4" ;
+"used_in_main_header#internal#16695915931787022844.43e60de71a2b141c8436dddf68ff1b63_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 17, column 34]\n " shape="box"]
+	
+
+	 "used_in_main_header#internal#16695915931787022844.43e60de71a2b141c8436dddf68ff1b63_4" -> "used_in_main_header#internal#16695915931787022844.43e60de71a2b141c8436dddf68ff1b63_2" ;
 }

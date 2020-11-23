@@ -26,10 +26,14 @@ digraph cfg {
 "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_2" [label="2: Exit X::div \n  " color=yellow style=filled]
 	
 
-"div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_3" [label="3:  Return Stmt \n   n$0=*&this:X* [line 13, column 26]\n  n$1=*n$0.f:int [line 13, column 26]\n  *&return:int=(1 / n$1) [line 13, column 15]\n " shape="box"]
+"div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_3" [label="3:  Return Stmt \n   n$0=*&this:X* [line 13, column 26]\n  n$1=*n$0.f:int [line 13, column 26]\n " shape="box"]
 	
 
-	 "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_3" -> "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_2" ;
+	 "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_3" -> "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_4" ;
+"div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$1) [line 13, column 15]\n " shape="box"]
+	
+
+	 "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_4" -> "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_2" ;
 "X#X#{14939599560045044604}.b28c8e2a1dd7783932fc838d8413f387_1" [label="1: Start X::X\nFormals:  this:X* a:int b:int\nLocals:  \n  " color=yellow style=filled]
 	
 
