@@ -680,11 +680,14 @@ let apply_callee ~caller_proc_desc callee_pname call_loc callee_exec_state ~ret
   let open ExecutionDomain in
   match callee_exec_state with
   | AbortProgram astate ->
+    if not Config.pulse_isl then
       map_call_result
         (astate :> AbductiveDomain.t)
         ~f:(fun astate ->
           let astate_summary = AbductiveDomain.summary_of_post caller_proc_desc astate in
-          FeasiblePath (Ok (AbortProgram astate_summary)) )
+          FeasiblePath (Ok ((AbortProgram astate_summary), (AbstractValue.Map.empty))) )
+     else
+        Ok ( (callee_exec_state, (AbstractValue.Map.empty)))
   | ContinueProgram astate ->
       map_call_result astate ~f:(fun astate -> FeasiblePath (Ok (ContinueProgram astate, subst)))
   | ExitProgram astate ->

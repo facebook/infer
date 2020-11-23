@@ -1922,11 +1922,6 @@ and pulse_widen_threshold =
   CLOpt.mk_int ~long:"pulse-widen-threshold" ~default:3
     "Under-approximate after $(i,int) loop iterations"
 
-and pil_max_disjuncts =
-  CLOpt.mk_int ~long:"pil-max-disjuncts" ~default:100
-    "Under-approximate after $(i,int) disjunctions in the domain"
-
-
 and pure_by_default =
   CLOpt.mk_bool ~long:"pure-by-default" ~default:false
     "[Purity]Consider unknown functions to be pure by default"
@@ -3075,8 +3070,6 @@ and pulse_isl = !pulse_isl
 and pulse_intraprocedural_only = !pulse_intraprocedural_only
 
 and pulse_max_disjuncts = !pulse_max_disjuncts
-
-and pil_max_disjuncts = !pil_max_disjuncts
 
 and pulse_model_abort = !pulse_model_abort
 

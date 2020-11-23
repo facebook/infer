@@ -27,15 +27,13 @@ let report_on_error {InterproceduralAnalysis.proc_desc; err_log} result =
   |> exec_list_of_list_result
 
 
-<<<<<<< HEAD
-let check_error_continue analysis_data result =
+(*let check_error_continue analysis_data result =
   check_error_transform analysis_data
     ~f:(fun astates -> List.map ~f:(fun astate -> ExecutionDomain.ContinueProgram astate) astates)
     result
-=======
+*)
 let report_on_error_list {InterproceduralAnalysis.proc_desc; err_log} result =
   PulseReport.report_error proc_desc err_log result |> exec_list_of_list_result
->>>>>>> upstream/master
 
 
 let proc_name_of_call call_exp =
@@ -251,13 +249,8 @@ module PulseTransferFunctions = struct
             let+ ls_astate_rhs_addr_hist = PulseOperations.eval_deref_biad proc_desc loc rhs_exp astate in
              PulseOperations.write_id_list lhs_id ls_astate_rhs_addr_hist
           in
-<<<<<<< HEAD
-          check_error_continue analysis_data result
-      | Store {e1= lhs_exp; e2= rhs_exp; loc} -> (
-=======
           report_on_error analysis_data result
-      | Store {e1= lhs_exp; e2= rhs_exp; loc} ->
->>>>>>> upstream/master
+      | Store {e1= lhs_exp; e2= rhs_exp; loc} -> (
           (* [*lhs_exp := rhs_exp] *)
           let event = ValueHistory.Assignment loc in
           let result =
@@ -305,11 +298,7 @@ module PulseTransferFunctions = struct
               | _ ->
                  Ok astates)
           in
-<<<<<<< HEAD
-          check_error_continue analysis_data result)
-=======
-          report_on_error analysis_data result
->>>>>>> upstream/master
+          report_on_error analysis_data result)
       | Prune (condition, loc, _is_then_branch, _if_kind) ->
           (let+ astate = PulseOperations.prune loc ~condition astate in
            if PulseArithmetic.is_unsat_cheap astate then
@@ -331,13 +320,8 @@ module PulseTransferFunctions = struct
                     [astate]
                 | ContinueProgram astate ->
                     let astate =
-<<<<<<< HEAD
                       PulseOperations.remove_vars (Procdesc.get_proc_name proc_desc) vars location astate
-                      |> check_error_continue analysis_data
-=======
-                      PulseOperations.remove_vars vars location astate
                       |> report_on_error analysis_data
->>>>>>> upstream/master
                     in
                     List.rev_append astate astates )
               ~init:[] astates
@@ -371,7 +355,7 @@ module DisjunctiveAnalyzer =
   AbstractInterpreter.MakeDisjunctive
     (PulseTransferFunctions)
     (struct
-      let join_policy = `UnderApproximateAfter (if not Config.pulse_isl then Config.pulse_max_disjuncts else Config.pil_max_disjuncts)
+      let join_policy = `UnderApproximateAfter Config.pulse_max_disjuncts
 
       let widen_policy = `UnderApproximateAfterNumIterations Config.pulse_widen_threshold
     end)
