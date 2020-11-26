@@ -1667,11 +1667,12 @@ INTERNAL OPTIONS
            This feature is needed for compatibility reasons. (Conversely:
            --no-nullsafe-disable-field-not-initialized-in-nonstrict-classes)
 
-       --no-nullsafe-optimistic-third-party-params-in-non-strict
-           Deactivates: Nullsafe: in this mode we treat non annotated third
-           party method params as if they were annotated as nullable.
-           (Conversely:
-           --nullsafe-optimistic-third-party-params-in-non-strict)
+       --no-nullsafe-optimistic-third-party-in-default-mode
+           Deactivates: Nullsafe: Unless @Nullsafe annotation is used, treat
+           not annotated third party method params as if they were annotated
+           as nullable, and return values as if they were annotated as
+           non-null (Conversely:
+           --nullsafe-optimistic-third-party-in-default-mode)
 
        --nullsafe-strict-containers
            Activates: Warn when containers are used with nullable keys or

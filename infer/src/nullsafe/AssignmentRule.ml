@@ -49,8 +49,9 @@ module ReportableViolation = struct
 
   let from nullsafe_mode ({lhs; rhs} as violation) =
     let falls_under_optimistic_third_party =
-      Config.nullsafe_optimistic_third_party_params_in_non_strict
+      Config.nullsafe_optimistic_third_party_in_default_mode
       && NullsafeMode.equal nullsafe_mode Default
+      (* Treat third party params as if they were [@Nullable] *)
       && Nullability.equal (AnnotatedNullability.get_nullability lhs) ThirdPartyNonnull
     in
     let is_non_reportable =

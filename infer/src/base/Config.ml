@@ -1650,17 +1650,15 @@ and nullsafe_disable_field_not_initialized_in_nonstrict_classes =
      marked as @NullsafeStrict. This feature is needed for compatibility reasons."
 
 
-and nullsafe_optimistic_third_party_params_in_non_strict =
+and nullsafe_optimistic_third_party_in_default_mode =
   CLOpt.mk_bool
     ~long:
-      "nullsafe-optimistic-third-party-params-in-non-strict"
-      (* Turned on for compatibility reasons.
-         Historically this is because there was no actionable way to change third party annotations.
-         Now that we have such a support, this behavior should be reconsidered, provided
-         our tooling and error reporting is friendly enough to be smoothly used by developers.
-      *) ~default:true
-    "Nullsafe: in this mode we treat non annotated third party method params as if they were \
-     annotated as nullable."
+      "nullsafe-optimistic-third-party-in-default-mode"
+      (* Turned on for compatibility reasons
+       *) ~default:true
+    "Nullsafe: Unless @Nullsafe annotation is used, treat not annotated third party method params \
+     as if they were annotated as nullable, and return values as if they were annotated as \
+     non-null"
 
 
 and nullsafe_third_party_signatures =
@@ -2996,8 +2994,8 @@ and nullsafe_disable_field_not_initialized_in_nonstrict_classes =
   !nullsafe_disable_field_not_initialized_in_nonstrict_classes
 
 
-and nullsafe_optimistic_third_party_params_in_non_strict =
-  !nullsafe_optimistic_third_party_params_in_non_strict
+and nullsafe_optimistic_third_party_in_default_mode =
+  !nullsafe_optimistic_third_party_in_default_mode
 
 
 and nullsafe_third_party_signatures = !nullsafe_third_party_signatures

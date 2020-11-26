@@ -150,12 +150,8 @@ let mk_recommendation_for_third_party_field nullsafe_mode field =
   match nullsafe_mode with
   | NullsafeMode.Strict ->
       F.sprintf "access %s via a nullsafe strict getter" field
-  | NullsafeMode.Local _ ->
+  | NullsafeMode.Local _ | NullsafeMode.Default ->
       F.sprintf "access %s via a nullsafe getter" field
-  | NullsafeMode.Default ->
-      Logging.die InternalError
-        "mk_recommendation_for_third_party_field:: Should not happen: we should tolerate third \
-         party in default mode"
 
 
 let get_info object_origin nullsafe_mode untrusted_kind =
