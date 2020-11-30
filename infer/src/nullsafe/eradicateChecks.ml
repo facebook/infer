@@ -399,7 +399,7 @@ let check_call_receiver analysis_data ~nullsafe_mode find_canonical_duplicate no
 
 
 type resolved_param =
-  { num: int
+  { param_index: int
   ; formal: AnnotatedSignature.param_signature
   ; actual: Exp.t * InferredNullability.t
   ; is_formal_propagates_nullable: bool }
@@ -408,7 +408,7 @@ type resolved_param =
 let check_call_parameters ({IntraproceduralAnalysis.tenv; _} as analysis_data) ~nullsafe_mode
     ~callee_pname ~callee_annotated_signature find_canonical_duplicate node resolved_params loc
     instr_ref : unit =
-  let check {num= param_position; formal; actual= orig_e2, nullability_actual} =
+  let check {param_index; formal; actual= orig_e2, nullability_actual} =
     let report ~nullsafe_mode assignment_violation =
       let actual_param_expression =
         match explain_expr tenv node orig_e2 with
@@ -425,7 +425,7 @@ let check_call_parameters ({IntraproceduralAnalysis.tenv; _} as analysis_data) ~
                PassingParamToFunction
                  { param_signature= formal
                  ; actual_param_expression
-                 ; param_position
+                 ; param_index
                  ; annotated_signature= callee_annotated_signature
                  ; procname= callee_pname } })
         (Some instr_ref) ~nullsafe_mode

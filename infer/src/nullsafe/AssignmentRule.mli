@@ -49,7 +49,7 @@ module ReportableViolation : sig
   and function_info =
     { param_signature: AnnotatedSignature.param_signature
     ; actual_param_expression: string
-    ; param_position: int
+    ; param_index: int
     ; annotated_signature: AnnotatedSignature.t
     ; procname: Procname.Java.t }
 

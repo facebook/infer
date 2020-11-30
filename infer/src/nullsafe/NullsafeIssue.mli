@@ -26,6 +26,9 @@ val with_nullable_methods : TypeOrigin.method_call_origin list -> t -> t
 val with_inconsistent_param_index : int option -> t -> t
 (** Only for the "Inconsistent subclass param annotation" issue *)
 
+val with_parameter_not_nullable_info : param_index:int -> proc_name:Procname.Java.t -> t -> t
+(** Only for the "Paremeter not nullable" issue *)
+
 val get_issue_type : t -> IssueType.t
 
 val get_description : t -> string
