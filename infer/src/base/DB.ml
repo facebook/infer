@@ -125,6 +125,9 @@ module Results_dir = struct
     filename_from_base base path
 
 
+  (** directory of spec files *)
+  let specs_dir = path_to_filename Abs_root [Config.specs_dir_name]
+  
   (** initialize the results directory *)
   let init ?(debug = false) source =
     if SourceFile.is_invalid source then L.(die InternalError) "Invalid source file passed" ;
@@ -133,6 +136,13 @@ module Results_dir = struct
       Utils.create_dir (path_to_filename (Abs_source_dir source) []) )
 
 
+  let clean_specs_dir () =
+    (* create dir just in case it doesn't exist to avoid errors *)
+    Utils.create_dir specs_dir ;
+    Array.iter (Sys.readdir specs_dir) ~f:(fun specs ->
+        Filename.concat specs_dir specs |> Sys.remove )
+
+        
   (** create a file at the given path, creating any missing directories *)
   let create_file pk path =
     let rec create = function

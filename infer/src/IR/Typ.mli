@@ -106,6 +106,7 @@ and name =
      args of its parent classes, for example: MyClass<int>::InnerClass<int> will store
      "MyClass<int>", "InnerClass" *)
   | CppClass of QualifiedCppName.t * template_spec_info
+  | CSharpClass of CSharpClassName.t
   | JavaClass of JavaClassName.t
   | ObjcClass of QualifiedCppName.t * name list
   (* ObjC class that conforms to a list of protocols,
@@ -191,6 +192,21 @@ module Name : sig
     val union_from_qual_name : QualifiedCppName.t -> t
   end
 
+  module CSharp : sig
+    module Split : sig
+      type t
+
+      val make : ?namespace:string -> string -> t
+    end
+    val from_string : string -> t
+
+    val is_class : t -> bool
+    (** [is_class name] holds if [name] names a CSharp class *)
+
+    val get_csharp_class_name_exn : t -> CSharpClassName.t
+    (** Ensure [name] is a java class name and return underlying CSharpClassName *)
+  end
+
   module Java : sig
     val from_string : string -> t
     (** Create a typename from a Java classname in the form "package.class" *)
@@ -259,6 +275,9 @@ val pp_desc : Pp.env -> F.formatter -> desc -> unit
 val pp_java : verbose:bool -> F.formatter -> t -> unit
 (** Pretty print a Java type. Raises if type isn't produced by the Java frontend *)
 
+val pp_cs : verbose:bool -> F.formatter -> t -> unit
+(** Pretty print a Java type. Raises if type isn't produced by the CSharp frontend *)
+
 val pp_protocols : Pp.env -> F.formatter -> name list -> unit
 
 val to_string : t -> string
@@ -311,6 +330,9 @@ val is_int : t -> bool
 val is_unsigned_int : t -> bool
 
 val is_char : t -> bool
+
+val is_csharp_type : t -> bool
+(** is [t] a type produced by the Java frontend? *)
 
 val is_java_type : t -> bool
 (** is [t] a type produced by the Java frontend? *)

@@ -2222,6 +2222,20 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
           in
           let fields = ["count"; "hash"; "offset"; "value"] in
           Predicates.Estruct (List.map ~f:mk_fld_sexp fields, Predicates.inst_none)
+      | CIL ->
+          let mk_fld_sexp field_name =
+            let fld = Fieldname.make StdTyp.Name.CSharp.system_string field_name in
+            let se = 
+              Predicates.Eexp (Exp.Var (Ident.create_fresh Ident.kprimed), Predicates.Inone) 
+            in
+            (fld, se)
+          in
+          let fields =
+            [ "System.String.Empty"
+            (* ; "System.String.Chars" *)
+            ; "System.String.Length" ]
+          in
+          Predicates.Estruct (List.map ~f:mk_fld_sexp fields, Predicates.inst_none)
     in
     let const_string_texp =
       match !Language.curr_language with
@@ -2233,6 +2247,15 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
             ; subtype= Subtype.exact }
       | Java ->
           let object_type = StdTyp.Name.Java.java_lang_string in
+          Exp.Sizeof
+            { typ= Typ.mk (Tstruct object_type)
+            ; nbytes= None
+            ; dynamic_length= None
+            ; subtype= Subtype.exact }
+      | CIL ->
+          (* cil todo *)
+          (* Logging.die Logging.InternalError "No string constant support for CIL yet." *)
+          let object_type = Typ.Name.CSharp.from_string "System.String" in
           Exp.Sizeof
             { typ= Typ.mk (Tstruct object_type)
             ; nbytes= None
