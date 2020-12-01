@@ -10,7 +10,7 @@ type trace = WrittenTo of PulseTrace.t | Invalid of (PulseInvalidation.t * Pulse
 
 module ModifiedVar : sig
   type t =
-    { var: Var.t
+    { pvar: Pvar.t
     ; access: unit HilExp.Access.t  (** accesses that are oblivious to modified array indices *)
     ; trace: trace }
 end

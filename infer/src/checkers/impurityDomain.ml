@@ -12,11 +12,13 @@ module SkippedCalls = PulseSkippedCalls
 type trace = WrittenTo of PulseTrace.t | Invalid of (PulseInvalidation.t * PulseTrace.t)
 [@@deriving compare]
 
+let pp_pvar fmt pv = F.pp_print_string fmt (Pvar.get_simplified_name pv)
+
 module ModifiedVar = struct
-  type t = {var: Var.t; access: unit HilExp.Access.t; trace: trace [@compare.ignore]}
+  type t = {pvar: Pvar.t; access: unit HilExp.Access.t; trace: trace [@compare.ignore]}
   [@@deriving compare]
 
-  let pp fmt {var} = F.fprintf fmt "@\n %a @\n" Var.pp var
+  let pp fmt {pvar} = F.fprintf fmt "@\n %a @\n" pp_pvar pvar
 end
 
 module ModifiedVarSet = AbstractDomain.FiniteSet (ModifiedVar)
@@ -65,16 +67,16 @@ let pp_param_source fmt = function
       F.pp_print_string fmt "global variable"
 
 
-let add_to_errlog ~nesting param_source ModifiedVar.{var; trace} errlog =
+let add_to_errlog ~nesting param_source ModifiedVar.{pvar; trace} errlog =
   match trace with
   | WrittenTo access_trace ->
       PulseTrace.add_to_errlog ~include_value_history:false ~nesting
         ~pp_immediate:(fun fmt ->
-          F.fprintf fmt "%a `%a` modified here" pp_param_source param_source Var.pp var )
+          F.fprintf fmt "%a `%a` modified here" pp_param_source param_source pp_pvar pvar )
         access_trace errlog
   | Invalid (invalidation, invalidation_trace) ->
       PulseTrace.add_to_errlog ~include_value_history:false ~nesting
         ~pp_immediate:(fun fmt ->
-          F.fprintf fmt "%a `%a` %a here" pp_param_source param_source Var.pp var
+          F.fprintf fmt "%a `%a` %a here" pp_param_source param_source pp_pvar pvar
             PulseInvalidation.describe invalidation )
         invalidation_trace errlog

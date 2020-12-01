@@ -42,7 +42,8 @@ let ignore_array_index (access : BaseMemory.Access.t) : unit HilExp.Access.t =
       TakeAddress
 
 
-let add_invalid_and_modified ~var ~access ~check_empty attrs acc : ImpurityDomain.ModifiedVarSet.t =
+let add_invalid_and_modified ~pvar ~access ~check_empty attrs acc : ImpurityDomain.ModifiedVarSet.t
+    =
   let modified =
     Attributes.get_written_to attrs
     |> Option.value_map ~default:[] ~f:(fun modified -> [ImpurityDomain.WrittenTo modified])
@@ -59,11 +60,11 @@ let add_invalid_and_modified ~var ~access ~check_empty attrs acc : ImpurityDomai
   else
     List.fold_left ~init:acc
       ~f:(fun acc trace ->
-        ImpurityDomain.ModifiedVarSet.add {var; access= ignore_array_index access; trace} acc )
+        ImpurityDomain.ModifiedVarSet.add {pvar; access= ignore_array_index access; trace} acc )
       invalid_and_modified
 
 
-let add_to_modified ~var ~access ~addr pre_heap post modified_vars =
+let add_to_modified ~pvar ~access ~addr pre_heap post modified_vars =
   let rec aux modified_vars ~addr_to_explore ~visited : ImpurityDomain.ModifiedVarSet.t =
     match addr_to_explore with
     | [] ->
@@ -82,18 +83,19 @@ let add_to_modified ~var ~access ~addr pre_heap post modified_vars =
                 "It is unexpected to have an address which has a binding in pre but not in post!"
           | None, Some (_, attrs_post) ->
               aux
-                (add_invalid_and_modified ~var ~access ~check_empty:false attrs_post modified_vars)
+                (add_invalid_and_modified ~pvar ~access ~check_empty:false attrs_post modified_vars)
                 ~addr_to_explore ~visited
           | Some edges_pre, Some (edges_post, attrs_post) -> (
             match get_matching_dest_addr_opt ~edges_pre ~edges_post with
             | Some addr_list ->
                 aux
-                  (add_invalid_and_modified ~var ~access attrs_post ~check_empty:false
+                  (add_invalid_and_modified ~pvar ~access attrs_post ~check_empty:false
                      modified_vars)
                   ~addr_to_explore:(addr_list @ addr_to_explore) ~visited
             | None ->
                 aux
-                  (add_invalid_and_modified ~var ~access ~check_empty:true attrs_post modified_vars)
+                  (add_invalid_and_modified ~pvar ~access ~check_empty:true attrs_post
+                     modified_vars)
                   ~addr_to_explore ~visited ) )
   in
   aux modified_vars ~addr_to_explore:[(access, addr)] ~visited:AbstractValue.Set.empty
@@ -101,13 +103,13 @@ let add_to_modified ~var ~access ~addr pre_heap post modified_vars =
 
 let get_modified_params pname post_stack pre_heap post formals =
   List.fold_left formals ~init:ImpurityDomain.ModifiedVarSet.empty ~f:(fun acc (name, typ) ->
-      let var = Var.of_pvar (Pvar.mk name pname) in
-      match BaseStack.find_opt var post_stack with
+      let pvar = Pvar.mk name pname in
+      match BaseStack.find_opt (Var.of_pvar pvar) post_stack with
       | Some (addr, _) when Typ.is_pointer typ -> (
         match BaseMemory.find_opt addr pre_heap with
         | Some edges_pre ->
             BaseMemory.Edges.fold edges_pre ~init:acc ~f:(fun acc (access, (addr, _)) ->
-                add_to_modified ~var ~access ~addr pre_heap post acc )
+                add_to_modified ~pvar ~access ~addr pre_heap post acc )
         | None ->
             debug "The address is not materialized in in pre-heap." ;
             acc )
@@ -122,7 +124,9 @@ let get_modified_globals pre_heap post post_stack =
         (* since global vars are rooted in the stack, we don't have
            access here but we still want to pick up changes to
            globals. *)
-        add_to_modified ~var ~access:HilExp.Access.Dereference ~addr pre_heap post modified_globals
+        add_to_modified
+          ~pvar:(Option.value_exn (Var.get_pvar var))
+          ~access:HilExp.Access.Dereference ~addr pre_heap post modified_globals
       else modified_globals )
     post_stack ImpurityDomain.ModifiedVarSet.empty
 
