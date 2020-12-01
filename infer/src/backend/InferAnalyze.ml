@@ -485,8 +485,6 @@ let parse_stmt_nodekind (json: Safe.json): Procdesc.Node.stmt_nodekind =
     Procdesc.Node.ExceptionHandler
   | "ExceptionsSink" ->
     Procdesc.Node.ExceptionsSink
-  | "FallbackNode" ->
-    Procdesc.Node.FallbackNode
   | "FinallyBranch" ->
     Procdesc.Node.FinallyBranch
   | "GCCAsmStmt" ->
