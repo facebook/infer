@@ -67,13 +67,19 @@ val default_failure_name : string
 
 val dotty_frontend_output : string
 
+val driver_stats_dir_name : string
+
 val etc_dir : string
+
+val events_dir_name : string
 
 val fail_on_issue_exit_code : int
 
 val fcp_dir : string
 
 val idempotent_getters : bool
+
+val infer_top_results_dir_env_var : string
 
 val initial_analysis_time : float
 
@@ -108,6 +114,8 @@ val patterns_skip_translation : string * Yojson.Basic.t
 
 val pp_version : Format.formatter -> unit -> unit
 
+val proc_stats_filename : string
+
 val property_attributes : string
 
 val relative_path_backtrack : int
@@ -120,6 +128,8 @@ val report_force_relative_path : bool
 
 val report_nullable_inconsistency : bool
 
+val reporting_stats_dir_name : string
+
 val save_compact_summaries : bool
 
 val smt_output : bool
@@ -131,6 +141,8 @@ val kotlin_source_extension : string
 val sourcepath : string option
 
 val sources : string list
+
+val specs_dir_name : string
 
 val trace_absarray : bool
 
@@ -193,6 +205,8 @@ val call_graph_schedule : bool
 val capture : bool
 
 val capture_blacklist : string option
+
+val cfg_json : string option
 
 val censor_report : ((bool * Str.regexp) * (bool * Str.regexp) * string) list
 
@@ -585,6 +599,8 @@ val suppress_lint_ignore_types : bool
 
 val symops_per_iteration : int option
 
+val tenv_json : string option
+
 val test_determinator : bool
 
 val export_changed_functions : bool
@@ -654,6 +670,9 @@ val is_in_custom_symbols : string -> string -> bool
 
 val java_package_is_external : string -> bool
 (** Check if a Java package is external to the repository *)
+
+val csharp_namespace_is_external : string -> bool
+(** Check if a CSharp namespace is external to the repository *)
 
 val scuba_execution_id : Int64.t option
 (** a random number to (hopefully) uniquely identify this run *)

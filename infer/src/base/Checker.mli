@@ -31,6 +31,7 @@ type t =
   | Quandary
   | RacerD
   | ResourceLeakLabExercise
+  | DOTNETResourceLeaks
   | SIOF
   | SelfInBlock
   | Starvation

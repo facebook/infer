@@ -119,6 +119,10 @@ let default_failure_name = "ASSERTION_FAILURE"
 (** Dotty output filename **)
 let dotty_frontend_output = "proc_cfgs_frontend.dot"
 
+let driver_stats_dir_name = "driver_stats"
+
+let events_dir_name = "events"
+
 (** exit code to use for the --fail-on-issue option *)
 let fail_on_issue_exit_code = 2
 
@@ -153,6 +157,8 @@ let manual_internal = "INTERNAL OPTIONS"
 
 let manual_java = "JAVA OPTIONS"
 
+let manual_csharp = "CSharp OPTIONS"
+
 let manual_quandary = "QUANDARY CHECKER OPTIONS"
 
 let manual_racerd = "RACERD CHECKER OPTIONS"
@@ -172,11 +178,15 @@ let meet_level = 1
 
 let nsnotification_center_checker_backend = false
 
+let proc_stats_filename = "proc_stats.json"
+
 let property_attributes = "property_attributes"
 
 (** If true, sanity-check inferred preconditions against Nullable annotations and report
     inconsistencies *)
 let report_nullable_inconsistency = true
+
+let reporting_stats_dir_name = "reporting_stats"
 
 (** If true, compact summaries before saving *)
 let save_compact_summaries = true
@@ -185,6 +195,8 @@ let save_compact_summaries = true
 let smt_output = false
 
 let source_file_extentions = [".java"; ".m"; ".mm"; ".c"; ".cc"; ".cpp"; ".h"]
+
+let specs_dir_name = "specs"
 
 let kotlin_source_extension = ".kt"
 
@@ -485,7 +497,7 @@ let () =
     match cmd with
     | Report ->
         `Add
-    | Analyze | Capture | Compile | Debug | Explore | Help | ReportDiff | Run ->
+    | Analyze | AnalyzeJson | Capture | Compile | Debug | Explore | Help | ReportDiff | Run ->
         `Reject
   in
   (* make sure we generate doc for all the commands we know about *)
@@ -790,6 +802,11 @@ and capture_blacklist =
     "Skip capture of files matched by the specified OCaml regular expression (only supported by \
      the javac integration for now)."
 
+and cfg_json = 
+  CLOpt.mk_path_opt ~long:"cfg-json" 
+    ~in_help:InferCommand.[(AnalyzeJson, manual_generic)]
+    ~meta:"file"
+    "Path to CFG json file"
 
 and censor_report =
   CLOpt.mk_string_list ~long:"censor-report" ~deprecated:["-filter-report"]
@@ -1022,7 +1039,7 @@ and ( bo_debug
         match command with
         | Debug | Explore | Help ->
             None
-        | (Analyze | Capture | Compile | Report | ReportDiff | Run) as command ->
+        | (Analyze | AnalyzeJson | Capture | Compile | Report | ReportDiff | Run) as command ->
             Some (command, manual_generic) )
   in
   let bo_debug =
@@ -1282,6 +1299,12 @@ and external_java_packages =
     "Specify a list of Java package prefixes for external Java packages. If set, the analysis will \
      not report non-actionable warnings on those packages."
 
+and external_csharp_namespaces =
+  CLOpt.mk_string_list ~long:"external-csharp-packages"
+    ~in_help:InferCommand.[(Analyze, manual_csharp)]
+    ~meta:"prefix"
+    "Specify a list of CSharp package prefixes for external CSharp packages. If set, the analysis will \
+     not report non-actionable warnings on those packages."
 
 and fail_on_bug =
   CLOpt.mk_bool ~deprecated:["-fail-on-bug"] ~long:"fail-on-issue" ~default:false
@@ -2327,6 +2350,12 @@ and starvation_strict_mode =
     "During starvation analysis, report strict mode violations (Android only)"
 
 
+and tenv_json = 
+  CLOpt.mk_path_opt ~long:"tenv-json" 
+    ~in_help:InferCommand.[(AnalyzeJson, manual_generic)]
+    ~meta:"file"
+    "Path to TEnv json file"
+    
 and testing_mode =
   CLOpt.mk_bool
     ~deprecated:["testing_mode"; "-testing_mode"; "tm"]
@@ -2356,7 +2385,6 @@ and trace_ondemand = CLOpt.mk_bool ~long:"trace-ondemand" ""
 and trace_rearrange =
   CLOpt.mk_bool ~deprecated:["trace_rearrange"] ~long:"trace-rearrange"
     "Detailed tracing information during prop re-arrangement operations"
-
 
 and trace_topl =
   CLOpt.mk_bool ~long:"trace-topl" "Detailed tracing information during TOPL analysis"
@@ -2742,6 +2770,8 @@ and capture = !capture
 
 and capture_blacklist = !capture_blacklist
 
+and cfg_json = !cfg_json
+
 and censor_report =
   List.map !censor_report ~f:(fun str ->
       match String.split str ~on:':' with
@@ -2852,6 +2882,8 @@ and eradicate_return_over_annotated = !eradicate_return_over_annotated
 and eradicate_verbose = !eradicate_verbose
 
 and external_java_packages = !external_java_packages
+
+and external_csharp_namespaces = !external_csharp_namespaces
 
 and fail_on_bug = !fail_on_bug
 
@@ -2970,7 +3002,6 @@ and liveness_ignored_constant = !liveness_ignored_constant
 
 and load_average =
   match !load_average with None when !buck -> Some (float_of_int ncpu) | _ -> !load_average
-
 
 and max_nesting = !max_nesting
 
@@ -3254,6 +3285,8 @@ and symops_per_iteration = !symops_per_iteration
 
 and keep_going = !keep_going
 
+and tenv_json = !tenv_json
+
 and test_determinator = !test_determinator
 
 and export_changed_functions = !export_changed_functions
@@ -3384,6 +3417,14 @@ let java_package_is_external package =
       List.exists external_java_packages ~f:(fun (prefix : string) ->
           String.is_prefix package ~prefix )
 
+(** Check if a CSharp package is external to the repository *)
+let csharp_namespace_is_external package =
+  match external_csharp_namespaces with
+  | [] ->
+      false
+  | _ ->
+      List.exists external_csharp_namespaces ~f:(fun (prefix : string) ->
+          String.is_prefix package ~prefix )
 
 let is_in_custom_symbols list_name symbol =
   match List.Assoc.find ~equal:String.equal custom_symbols list_name with

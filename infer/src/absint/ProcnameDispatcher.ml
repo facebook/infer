@@ -52,6 +52,8 @@ let templated_name_of_class_name class_name =
       (qual_name, template_args_of_template_spec_info template_spec_info)
   | JavaClass mangled_name ->
       (QualifiedCppName.of_list [JavaClassName.to_string mangled_name], [])
+  | CSharpClass mangled_name ->
+      (QualifiedCppName.of_list [CSharpClassName.to_string mangled_name], [])
 
 
 let templated_name_of_java java =
@@ -60,6 +62,12 @@ let templated_name_of_java java =
   in
   (qual_name, [])
 
+let templated_name_of_csharp csharp =
+  let qual_name =
+    QualifiedCppName.of_list
+      [Procname.CSharp.get_class_name csharp; Procname.CSharp.get_method csharp]
+  in
+  (qual_name, [])
 
 (* Intermediate matcher types *)
 
@@ -943,6 +951,10 @@ module ProcName = struct
       let templated_name = templated_name_of_java java in
       on_templated_name context templated_name
     in
+    let on_csharp context (csharp : Procname.CSharp.t) =
+      let templated_name = templated_name_of_csharp csharp in
+      on_templated_name context templated_name
+    in
     let on_c context (c : c) =
       let template_args = template_args_of_template_spec_info c.template_args in
       let templated_name = (c.name, template_args) in
@@ -956,6 +968,8 @@ module ProcName = struct
           on_c context c
       | Java java ->
           on_java context java
+      | CSharp cs ->
+          on_csharp context cs
       | _ ->
           None
 end

@@ -6,11 +6,11 @@
  *)
 open! IStd
 
-type t = Clang | Java [@@deriving compare, enumerate]
+type t = Clang | Java | CIL [@@deriving compare, enumerate]
 
 let equal = [%compare.equal: t]
 
-let language_to_string = [(Clang, "C/C++/ObjC"); (Java, "Java")]
+let language_to_string = [(Clang, "C/C++/ObjC"); (Java, "Java"); (CIL, "C#/.Net")]
 
 let to_string lang = List.Assoc.find_exn language_to_string ~equal lang
 

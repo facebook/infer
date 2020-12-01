@@ -72,7 +72,7 @@ let loc_trace_to_jsonbug_record trace_list ekind =
 
 
 let should_report issue_type error_desc =
-  if not Config.filtering then true
+  if (not Config.filtering || Language.curr_language_is CIL) then true
   else
     let issue_type_is_null_deref =
       let null_deref_issue_types =
@@ -332,7 +332,7 @@ let process_all_summaries_and_issues ~issues_outf ~costs_outf =
     ~f:(fun {Issue.proc_name; proc_location; err_key; err_data} ->
       let error_filter = mk_error_filter filters proc_name in
       IssuesJson.pp issues_outf.Utils.fmt
-        {error_filter; proc_name; proc_loc_opt= Some proc_location; err_key; err_data} )
+        {error_filter; proc_name; proc_loc_opt= Some proc_location; err_key; err_data} ) 
     !all_issues ;
   (* Issues that are generated and stored outside of summaries by linter and checkers *)
   List.iter (ResultsDirEntryName.get_issues_directories ()) ~f:(fun dir_name ->
