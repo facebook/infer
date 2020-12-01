@@ -16,6 +16,7 @@ type t =
   ; config_checks_between_markers: ConfigChecksBetweenMarkers.Summary.t option
   ; cost: CostDomain.summary option
   ; lab_resource_leaks: ResourceLeakDomain.summary option
+  ; dotnet_resource_leaks: ResourceLeakCSDomain.summary option
   ; litho_required_props: LithoDomain.summary option
   ; pulse: PulseSummary.t option
   ; purity: PurityDomain.summary option
@@ -52,6 +53,7 @@ let fields =
     ~quandary:(fun f -> mk f "Quandary" QuandarySummary.pp)
     ~racerd:(fun f -> mk f "RacerD" RacerDDomain.pp_summary)
     ~lab_resource_leaks:(fun f -> mk f "Resource Leaks Lab" ResourceLeakDomain.pp)
+    ~dotnet_resource_leaks:(fun f -> mk f "DOTNET Resource Leaks" ResourceLeakCSDomain.Summary.pp)
     ~siof:(fun f -> mk f "Siof" SiofDomain.Summary.pp)
     ~starvation:(fun f -> mk f "Starvation" StarvationDomain.pp_summary)
     ~nullsafe:(fun f -> mk f "Nullsafe" NullsafeSummary.pp)
@@ -71,6 +73,7 @@ let empty =
   ; config_checks_between_markers= None
   ; cost= None
   ; lab_resource_leaks= None
+  ; dotnet_resource_leaks= None
   ; litho_required_props= None
   ; pulse= None
   ; purity= None

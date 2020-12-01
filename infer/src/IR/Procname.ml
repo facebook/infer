@@ -58,6 +58,8 @@ module CSharp = struct
 
   let get_return_typ pname_csharp = Option.value ~default:StdTyp.void pname_csharp.return_type
 
+  let is_close {method_name} = String.equal method_name "Close" || String.equal method_name "Dispose"
+
   let replace_parameters parameters cs = {cs with parameters}
 
   let get_parameters cs = cs.parameters

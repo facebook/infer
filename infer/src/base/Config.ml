@@ -198,8 +198,6 @@ let source_file_extentions = [".java"; ".m"; ".mm"; ".c"; ".cc"; ".cpp"; ".h"]
 
 let specs_dir_name = "specs"
 
-let specs_files_suffix = ".specs"
-
 let kotlin_source_extension = ".kt"
 
 (** Enable detailed tracing information during array abstraction *)
@@ -1832,10 +1830,6 @@ and procedures_summary =
     ~in_help:InferCommand.[(Debug, manual_debug_procedures)]
     "Print the summaries of each procedure in the output of $(b,--procedures)"
 
-and specs_summary =
-  CLOpt.mk_bool ~long:"specs-summary" ~default:false
-    ~in_help:InferCommand.[(Debug, manual_debug_procedures)]
-    "Print the summaries of each procedure in specs files of $(b,--procedures)"
 
 and procedures_summary_json =
   CLOpt.mk_bool ~long:"procedures-summary-json" ~default:false
@@ -3075,8 +3069,6 @@ and procedures_name = !procedures_name
 and procedures_source_file = !procedures_source_file
 
 and procedures_summary = !procedures_summary
-
-and specs_summary = !specs_summary
 
 and procedures_summary_json = !procedures_summary_json
 

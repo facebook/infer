@@ -144,8 +144,6 @@ val sources : string list
 
 val specs_dir_name : string
 
-val specs_files_suffix : string
-
 val trace_absarray : bool
 
 val unsafe_unret : string
@@ -456,8 +454,6 @@ val procedures_name : bool
 val procedures_source_file : bool
 
 val procedures_summary : bool
-
-val specs_summary : bool
 
 val procedures_summary_json : bool
 

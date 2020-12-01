@@ -24,6 +24,9 @@ module CSharp : sig
   val get_method : t -> string
   (** Return the method name of a csharp procedure name. *)
   
+  val get_parameters : t -> Typ.t list
+  (** Return the parameters of a csharp procedure name. *)
+
   val is_static : t -> bool
   (** Check if the java procedure is static. *)
 
@@ -35,6 +38,9 @@ module CSharp : sig
 
   val get_return_typ : t -> Typ.t
   (** Return the return type of [pname_csharp]. return Tvoid if there's no return type *)
+
+  val is_close : t -> bool
+  (** Check if the method name is "Close" or "Dispose". *)
 
   val get_class_name : t -> string
   (** Return the class name of a java procedure name. *)
