@@ -9,10 +9,11 @@ open! IStd
 module BasicCost = CostDomain.BasicCost
 module BasicCostWithReason = CostDomain.BasicCostWithReason
 open BufferOverrunUtils.ModelEnv
+open CostUtils.CostModelEnv
 
-let unit_cost_model _get_summary _model_env ~ret:_ _inferbo_mem = BasicCost.one ()
+let unit_cost_model _model_env ~ret:_ _inferbo_mem = BasicCost.one ()
 
-let cost_of_exp exp ~degree_kind ~of_function _get_summary {integer_type_widths; location} ~ret:_
+let cost_of_exp exp ~degree_kind ~of_function {model_env= {integer_type_widths; location}} ~ret:_
     inferbo_mem =
   let itv =
     BufferOverrunSemantics.eval integer_type_widths exp inferbo_mem
@@ -25,7 +26,7 @@ let linear = cost_of_exp ~degree_kind:Polynomials.DegreeKind.Linear
 
 let log = cost_of_exp ~degree_kind:Polynomials.DegreeKind.Log
 
-let provider_get _get_summary {pname; location} ~ret:(_, ret_typ) _ : BasicCost.t =
+let provider_get {model_env= {pname; location}} ~ret:(_, ret_typ) _ : BasicCost.t =
   let callsite = CallSite.make pname location in
   let path = Symb.SymbolPath.of_callsite ~ret_typ callsite in
   let itv = Itv.of_modeled_path ~is_expensive:true path in
@@ -34,7 +35,7 @@ let provider_get _get_summary {pname; location} ~ret:(_, ret_typ) _ : BasicCost.
 
 
 module BoundsOf (Container : CostUtils.S) = struct
-  let of_length exp _get_summary {location} ~ret:_ mem ~of_function ~degree_kind =
+  let of_length exp {model_env= {location}} ~ret:_ mem ~of_function ~degree_kind =
     let itv = Container.length exp mem |> BufferOverrunDomain.Val.get_itv in
     CostUtils.of_itv ~itv ~degree_kind ~of_function location
 
@@ -43,14 +44,14 @@ module BoundsOf (Container : CostUtils.S) = struct
 
   let logarithmic_length = of_length ~degree_kind:Polynomials.DegreeKind.Log
 
-  let n_log_n_length exp get_summary env ~ret mem ~of_function =
-    let log_n = logarithmic_length exp ~of_function get_summary env mem ~ret in
-    let n = linear_length exp ~of_function get_summary env mem ~ret in
+  let n_log_n_length exp cost_model_env ~ret mem ~of_function =
+    let log_n = logarithmic_length exp ~of_function cost_model_env mem ~ret in
+    let n = linear_length exp ~of_function cost_model_env mem ~ret in
     BasicCost.mult n log_n
 end
 
 module IntHashMap = struct
-  let keys {ProcnameDispatcher.Call.FuncArg.exp; typ} _get_summary {location} ~ret:_ inferbo_mem =
+  let keys {ProcnameDispatcher.Call.FuncArg.exp; typ} {model_env= {location}} ~ret:_ inferbo_mem =
     let locs = BufferOverrunSemantics.eval_locs exp inferbo_mem in
     match AbsLoc.PowLoc.is_singleton_or_more locs with
     | Singleton this_loc -> (
@@ -66,7 +67,7 @@ module IntHashMap = struct
 end
 
 module JavaString = struct
-  let substring_aux ~begin_idx ~end_v _get_summary {integer_type_widths; location} inferbo_mem =
+  let substring_aux ~begin_idx ~end_v {integer_type_widths; location} inferbo_mem =
     let begin_v = BufferOverrunSemantics.eval integer_type_widths begin_idx inferbo_mem in
     let begin_itv = BufferOverrunDomain.Val.get_itv begin_v in
     let end_itv = BufferOverrunDomain.Val.get_itv end_v in
@@ -86,29 +87,29 @@ module JavaString = struct
       location
 
 
-  let substring_no_end exp begin_idx get_summary model_env ~ret:_ inferbo_mem =
+  let substring_no_end exp begin_idx {model_env} ~ret:_ inferbo_mem =
     substring_aux ~begin_idx
       ~end_v:(BufferOverrunModels.JavaString.get_length model_env exp inferbo_mem)
-      get_summary model_env inferbo_mem
+      model_env inferbo_mem
 
 
-  let substring begin_idx end_idx get_summary ({integer_type_widths} as model_env) ~ret:_
-      inferbo_mem =
+  let substring begin_idx end_idx {model_env= {integer_type_widths} as model_env} ~ret:_ inferbo_mem
+      =
     substring_aux ~begin_idx
       ~end_v:(BufferOverrunSemantics.eval integer_type_widths end_idx inferbo_mem)
-      get_summary model_env inferbo_mem
+      model_env inferbo_mem
 
 
   (** O(|m|) where m is the given string and |.| is the length function *)
-  let indexOf_char exp _get_summary ({location} as model_env) ~ret:_ inferbo_mem =
+  let indexOf_char exp {model_env= {location} as model_env} ~ret:_ inferbo_mem =
     let itv = CostUtils.string_len_range_itv model_env exp ~from:None inferbo_mem in
     CostUtils.of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function:"String.indexOf"
       location
 
 
   (** O(|m|-|n|) where m is the given string and n is the index to start searching from *)
-  let indexOf_char_starting_from exp start_exp _get_summary
-      ({integer_type_widths; location} as model_env) ~ret:_ inferbo_mem =
+  let indexOf_char_starting_from exp start_exp
+      {model_env= {integer_type_widths; location} as model_env} ~ret:_ inferbo_mem =
     let itv =
       CostUtils.string_len_range_itv model_env exp
         ~from:(Some (start_exp, integer_type_widths))
@@ -119,7 +120,7 @@ module JavaString = struct
 
 
   (** O(|m|.|n|) where m and n are the given strings *)
-  let indexOf_str exp index_exp _get_summary ({location} as model_env) ~ret:_ inferbo_mem =
+  let indexOf_str exp index_exp {model_env= {location} as model_env} ~ret:_ inferbo_mem =
     let itv =
       BufferOverrunModels.JavaString.get_length model_env exp inferbo_mem
       |> BufferOverrunDomain.Val.get_itv
@@ -145,15 +146,15 @@ module BoundsOfArray = BoundsOf (CostUtils.Array)
 module BoundsOfCString = BoundsOf (CostUtils.CString)
 
 module NSString = struct
-  let get_length str ~of_function _get_summary ({location} as model_env) ~ret:_ mem =
+  let get_length str ~of_function {model_env= {location} as model_env} ~ret:_ mem =
     let itv =
       BufferOverrunModels.NSString.get_length model_env str mem |> BufferOverrunDomain.Val.get_itv
     in
     CostUtils.of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function location
 
 
-  let op_on_two_str cost_op ~of_function str1 str2 get_summary model_env ~ret mem =
-    let get_length str = get_length str ~of_function get_summary model_env ~ret mem in
+  let op_on_two_str cost_op ~of_function str1 str2 cost_model_env ~ret mem =
+    let get_length str = get_length str ~of_function cost_model_env ~ret mem in
     cost_op (get_length str1) (get_length str2)
 
 
@@ -161,7 +162,7 @@ module NSString = struct
 end
 
 module NSCollection = struct
-  let get_length str ~of_function _get_summary {location} ~ret:_ mem =
+  let get_length str ~of_function {model_env= {location}} ~ret:_ mem =
     let itv =
       BufferOverrunModels.NSCollection.eval_collection_length str mem
       |> BufferOverrunDomain.Val.get_itv
@@ -169,12 +170,13 @@ module NSCollection = struct
     CostUtils.of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function location
 
 
-  let op_on_two_coll cost_op ~of_function coll1 coll2 get_summary model_env ~ret mem =
-    let get_length coll = get_length coll ~of_function get_summary model_env ~ret mem in
+  let op_on_two_coll cost_op ~of_function coll1 coll2 cost_model_env ~ret mem =
+    let get_length coll = get_length coll ~of_function cost_model_env ~ret mem in
     cost_op (get_length coll1) (get_length coll2)
 
 
-  let enumerate_using_block array get_summary ({pname} as model_env) ~ret inferbo_mem =
+  let enumerate_using_block array ({get_summary; model_env} as cost_model_env) ~ret inferbo_mem =
+    let pname = model_env.pname in
     match pname with
     | WithBlockParameters (_, [block_name]) -> (
       match get_summary (Procname.Block block_name) with
@@ -185,7 +187,7 @@ module NSCollection = struct
           let length =
             BoundsOfNSCollection.linear_length
               ~of_function:(Procname.to_simplified_string pname)
-              array get_summary model_env ~ret inferbo_mem
+              array cost_model_env ~ret inferbo_mem
           in
           BasicCost.mult_loop ~iter:length ~body:callee_cost
       | None ->
@@ -201,11 +203,7 @@ module ImmutableSet = struct
 end
 
 module Call = struct
-  let dispatch :
-      ( Tenv.t
-      , (Procname.t -> CostDomain.summary option) -> CostUtils.model
-      , unit )
-      ProcnameDispatcher.Call.dispatcher =
+  let dispatch : (Tenv.t, CostUtils.model, unit) ProcnameDispatcher.Call.dispatcher =
     let open ProcnameDispatcher.Call in
     let int_typ = Typ.mk (Typ.Tint Typ.IInt) in
     let dispatcher =

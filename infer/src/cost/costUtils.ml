@@ -8,9 +8,15 @@
 open! IStd
 module L = Logging
 module BasicCost = CostDomain.BasicCost
-open BufferOverrunUtils.ModelEnv
 
-type model = model_env -> ret:Ident.t * Typ.t -> BufferOverrunDomain.Mem.t -> BasicCost.t
+module CostModelEnv = struct
+  type cost_model_env =
+    { model_env: BufferOverrunUtils.ModelEnv.model_env
+    ; get_summary: Procname.t -> CostDomain.summary option }
+end
+
+type model =
+  CostModelEnv.cost_model_env -> ret:Ident.t * Typ.t -> BufferOverrunDomain.Mem.t -> BasicCost.t
 
 let unit_cost_of ~of_function loc =
   Bounds.NonNegativeBound.of_modeled_function of_function loc Bounds.Bound.one
