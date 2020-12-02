@@ -28,24 +28,36 @@ module Closures = struct
 
   let fake_capture_field_prefix = "__capture_"
 
-  let mk_fake_field ~id =
+  let string_of_capture_mode = function
+    | Pvar.ByReference ->
+        "by_ref_"
+    | Pvar.ByValue ->
+        "by_value_"
+
+
+  let fake_captured_by_ref_field_prefix =
+    Printf.sprintf "%s%s" fake_capture_field_prefix (string_of_capture_mode Pvar.ByReference)
+
+
+  let mk_fake_field ~id mode =
     Fieldname.make
       (Typ.CStruct (QualifiedCppName.of_list ["std"; "function"]))
-      (Printf.sprintf "%s%d" fake_capture_field_prefix id)
+      (Printf.sprintf "%s%s%d" fake_capture_field_prefix (string_of_capture_mode mode) id)
 
 
-  let is_captured_fake_access (access : _ HilExp.Access.t) =
+  let is_captured_by_ref_fake_access (access : _ HilExp.Access.t) =
     match access with
     | FieldAccess fieldname
-      when String.is_prefix ~prefix:fake_capture_field_prefix (Fieldname.to_string fieldname) ->
+      when String.is_prefix ~prefix:fake_captured_by_ref_field_prefix
+             (Fieldname.to_string fieldname) ->
         true
     | _ ->
         false
 
 
   let mk_capture_edges captured =
-    List.foldi captured ~init:Memory.Edges.empty ~f:(fun id edges captured_addr_trace ->
-        Memory.Edges.add (HilExp.Access.FieldAccess (mk_fake_field ~id)) captured_addr_trace edges )
+    List.foldi captured ~init:Memory.Edges.empty ~f:(fun id edges (mode, addr, trace) ->
+        Memory.Edges.add (HilExp.Access.FieldAccess (mk_fake_field ~id mode)) (addr, trace) edges )
 
 
   let check_captured_addresses action lambda_addr (astate : t) =
@@ -57,7 +69,7 @@ module Closures = struct
           IContainer.iter_result ~fold:Attributes.fold attributes ~f:(function
             | Attribute.Closure _ ->
                 IContainer.iter_result ~fold:Memory.Edges.fold edges ~f:(fun (access, addr_trace) ->
-                    if is_captured_fake_access access then
+                    if is_captured_by_ref_fake_access access then
                       let+ _ = check_addr_access action addr_trace astate in
                       ()
                     else Ok () )
@@ -71,7 +83,7 @@ module Closures = struct
     let captured_addresses =
       List.filter_map captured ~f:(fun (captured_as, (address_captured, trace_captured), mode) ->
           let new_trace = ValueHistory.Capture {captured_as; mode; location} :: trace_captured in
-          Some (address_captured, new_trace) )
+          Some (mode, address_captured, new_trace) )
     in
     let closure_addr_hist = (AbstractValue.mk_fresh (), [ValueHistory.Assignment location]) in
     let fake_capture_edges = mk_capture_edges captured_addresses in
@@ -487,9 +499,12 @@ let apply_callee ~caller_proc_desc callee_pname call_loc callee_exec_state ~ret
 let get_captured_actuals location ~captured_vars ~actual_closure astate =
   let* astate, this_value_addr = eval_access location actual_closure Dereference astate in
   let+ _, astate, captured_vars_with_actuals =
-    List.fold_result captured_vars ~init:(0, astate, []) ~f:(fun (id, astate, captured) var ->
+    List.fold_result captured_vars ~init:(0, astate, [])
+      ~f:(fun (id, astate, captured) (var, mode) ->
         let+ astate, captured_actual =
-          eval_access location this_value_addr (FieldAccess (Closures.mk_fake_field ~id)) astate
+          eval_access location this_value_addr
+            (FieldAccess (Closures.mk_fake_field ~id mode))
+            astate
         in
         (id + 1, astate, (var, captured_actual) :: captured) )
   in
@@ -506,9 +521,9 @@ let call ~caller_proc_desc err_log ~(callee_data : (Procdesc.t * PulseSummary.t)
       in
       let captured_vars =
         Procdesc.get_captured callee_proc_desc
-        |> List.map ~f:(fun (mangled, _, _) ->
+        |> List.map ~f:(fun (mangled, _, mode) ->
                let pvar = Pvar.mk mangled callee_pname in
-               Var.of_pvar pvar )
+               (Var.of_pvar pvar, mode) )
       in
       let+ astate, captured_vars_with_actuals =
         match actuals with
