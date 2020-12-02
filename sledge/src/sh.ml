@@ -531,7 +531,8 @@ let pure (p : Formula.t) =
     pf "%a" pp q ;
     invariant q]
 
-let and_ e q = star (pure e) q
+let and_ b q =
+  star (pure (Formula.map_terms ~f:(Context.normalize q.ctx) b)) q
 
 let and_subst subst q =
   [%Trace.call fun {pf} -> pf "%a@ %a" Context.Subst.pp subst pp q]
