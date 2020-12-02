@@ -17,6 +17,11 @@ class Iterators {
     i.next();
   }
 
+  /** Check that errors don't bubble up the call chain. */
+  void hasNextNotTooBadOk(List<Integer> xs) {
+    hasNextBad(xs);
+  }
+
   void hasNextInterproceduralBad(List<Integer> xs) {
     getSingleElementOk(xs.iterator());
   }

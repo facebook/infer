@@ -43,7 +43,6 @@ type step =
 
 and step_data = SmallStep of event | LargeStep of (Procname.t * (* post *) simple_state)
 
-(* TODO(rgrigore): | LargeStep of simple_state *)
 and simple_state =
   { pre: configuration  (** at the start of the procedure *)
   ; post: configuration  (** at the current program point *)
@@ -452,11 +451,32 @@ let report_errors proc_desc err_log state =
         in
         make_trace nesting trace step_predecessor
   in
+  let rec first_error_ss q =
+    match q.last_step with
+    | Some {step_predecessor} ->
+        if not (ToplAutomaton.is_error a step_predecessor.post.vertex) then q
+        else first_error_ss step_predecessor
+    | None ->
+        L.die InternalError "PulseTopl.report_errors inv broken"
+  in
+  let is_nested_large_step q =
+    match q.last_step with
+    | Some {step_data= LargeStep (_, prepost)}
+      when ToplAutomaton.is_start a prepost.pre.vertex
+           && ToplAutomaton.is_error a prepost.post.vertex ->
+        true
+    | _ ->
+        false
+  in
   let report_simple_state q =
     if ToplAutomaton.is_start a q.pre.vertex && ToplAutomaton.is_error a q.post.vertex then
-      let loc = Procdesc.get_loc proc_desc in
-      let ltr = make_trace 0 [] q in
-      let message = Format.asprintf "%a" ToplAutomaton.pp_message_of_state (a, q.post.vertex) in
-      Reporting.log_issue proc_desc err_log ~loc ~ltr ToplOnPulse IssueType.topl_pulse_error message
+      let q = first_error_ss q in
+      (* Only report at the innermost level where error appears. *)
+      if not (is_nested_large_step q) then
+        let loc = Procdesc.get_loc proc_desc in
+        let ltr = make_trace 0 [] q in
+        let message = Format.asprintf "%a" ToplAutomaton.pp_message_of_state (a, q.post.vertex) in
+        Reporting.log_issue proc_desc err_log ~loc ~ltr ToplOnPulse IssueType.topl_pulse_error
+          message
   in
   List.iter ~f:report_simple_state state
