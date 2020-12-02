@@ -180,7 +180,8 @@ let exec_move move_vec q =
         ( Llair.Reg.Set.add r defs
         , Llair.Exp.fold_regs ~f:Llair.Reg.Set.add e uses ) )
   in
-  assert (Llair.Reg.Set.disjoint defs uses) ;
+  if not (Llair.Reg.Set.disjoint defs uses) then
+    todo "overwritten variables in Domain_itv" () ;
   IArray.fold ~f:(fun (r, e) q -> assign r e q) move_vec q
 
 let exec_inst i q =
