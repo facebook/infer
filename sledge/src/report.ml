@@ -14,7 +14,10 @@ let unknown_call call =
       (fun fs call -> Llair.Loc.pp fs (Llair.Term.loc call))
       call
       (fun fs (call : Llair.Term.t) ->
-        match call with Call {callee} -> Llair.Exp.pp fs callee | _ -> () )
+        match call with
+        | Call {callee} -> Llair.Function.pp fs callee.name
+        | ICall {callee} -> Llair.Exp.pp fs callee
+        | _ -> () )
       call Llair.Term.pp call]
 
 let invalid_access_count = ref 0

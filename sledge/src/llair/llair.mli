@@ -54,11 +54,11 @@ type cmnd = inst iarray
 type label = string
 
 (** A jump to a block. *)
-type jump = {mutable dst: block; mutable retreating: bool}
+type jump = private {mutable dst: block; mutable retreating: bool}
 
 (** A call to a function. *)
 and 'a call =
-  { callee: 'a
+  { mutable callee: 'a
   ; typ: Typ.t  (** Type of the callee. *)
   ; actuals: Exp.t iarray  (** Actual arguments. *)
   ; areturn: Reg.t option  (** Register to receive return value. *)
@@ -75,8 +75,8 @@ and term = private
           [case] which is equal to [key], if any, otherwise invoke [els]. *)
   | Iswitch of {ptr: Exp.t; tbl: jump iarray; loc: Loc.t}
       (** Invoke the [jump] in [tbl] whose [dst] is equal to [ptr]. *)
-  | Call of Exp.t call
-      (** Call function with arguments. A [global] for non-virtual call. *)
+  | Call of func call  (** Call function with arguments. *)
+  | ICall of Exp.t call  (** Indirect call function with arguments. *)
   | Return of {exp: Exp.t option; loc: Loc.t}
       (** Invoke [return] of the dynamically most recent [Call]. *)
   | Throw of {exc: Exp.t; loc: Loc.t}
@@ -162,6 +162,16 @@ module Term : sig
   val iswitch : ptr:Exp.t -> tbl:jump iarray -> loc:Loc.t -> term
 
   val call :
+       name:string
+    -> typ:Typ.t
+    -> actuals:Exp.t iarray
+    -> areturn:Reg.t option
+    -> return:jump
+    -> throw:jump option
+    -> loc:Loc.t
+    -> t * (callee:func -> unit)
+
+  val icall :
        callee:Exp.t
     -> typ:Typ.t
     -> actuals:Exp.t iarray

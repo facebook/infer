@@ -52,11 +52,7 @@ let call ~summaries:_ ~globals:_ ~actuals ~areturn:_ ~formals:_ ~freturn:_
     ~locals:_ st =
   (empty, IArray.fold ~f:used_globals actuals st)
 
-let resolve_callee lookup ptr st =
-  let st = used_globals ptr st in
-  match Llair.Function.of_exp ptr with
-  | Some callee -> (lookup callee, st)
-  | None -> ([], st)
+let resolve_callee _ _ q = ([], q)
 
 (* A function summary is the set of global registers accessed by that
    function and its transitive callees *)

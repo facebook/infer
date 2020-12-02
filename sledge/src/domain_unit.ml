@@ -29,11 +29,7 @@ let recursion_beyond_bound = `skip
 let post _ _ () = ()
 let retn _ _ _ _ = ()
 let dnf () = [()]
-
-let resolve_callee lookup ptr _ =
-  match Llair.Function.of_exp ptr with
-  | Some callee -> (lookup callee, ())
-  | None -> ([], ())
+let resolve_callee _ _ q = ([], q)
 
 type summary = unit
 

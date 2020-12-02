@@ -53,7 +53,7 @@ type label = string [@@deriving compare, equal, hash, sexp]
 type jump = {mutable dst: block; mutable retreating: bool}
 
 and 'a call =
-  { callee: 'a
+  { mutable callee: 'a
   ; typ: Typ.t
   ; actuals: Exp.t iarray
   ; areturn: Reg.t option
@@ -65,7 +65,8 @@ and 'a call =
 and term =
   | Switch of {key: Exp.t; tbl: (Exp.t * jump) iarray; els: jump; loc: Loc.t}
   | Iswitch of {ptr: Exp.t; tbl: jump iarray; loc: Loc.t}
-  | Call of Exp.t call
+  | Call of func call
+  | ICall of Exp.t call
   | Return of {exp: Exp.t option; loc: Loc.t}
   | Throw of {exc: Exp.t; loc: Loc.t}
   | Unreachable
@@ -112,7 +113,7 @@ with type jump := jump
   [@@deriving compare, equal]
 
   type nonrec 'a call = 'a call =
-    { callee: 'a
+    { mutable callee: 'a
     ; typ: Typ.t
     ; actuals: Exp.t iarray
     ; areturn: Reg.t option
@@ -126,7 +127,8 @@ with type jump := jump
     | Switch of
         {key: Exp.t; tbl: (Exp.t * jump) iarray; els: jump; loc: Loc.t}
     | Iswitch of {ptr: Exp.t; tbl: jump iarray; loc: Loc.t}
-    | Call of Exp.t call
+    | Call of func call
+    | ICall of Exp.t call
     | Return of {exp: Exp.t option; loc: Loc.t}
     | Throw of {exc: Exp.t; loc: Loc.t}
     | Unreachable
@@ -140,6 +142,19 @@ include Compare
 let hash_fold_jump s {dst; retreating} =
   let s = [%hash_fold: block] s dst in
   let s = [%hash_fold: bool] s retreating in
+  s
+
+let hash_fold_call (type callee) hash_fold_callee s
+    {callee: callee; typ; actuals; areturn; return; throw; recursive; loc} =
+  let s = [%hash_fold: int] s 3 in
+  let s = [%hash_fold: callee] s callee in
+  let s = [%hash_fold: Typ.t] s typ in
+  let s = [%hash_fold: Exp.t iarray] s actuals in
+  let s = [%hash_fold: Reg.t option] s areturn in
+  let s = [%hash_fold: jump] s return in
+  let s = [%hash_fold: jump option] s throw in
+  let s = [%hash_fold: bool] s recursive in
+  let s = [%hash_fold: Loc.t] s loc in
   s
 
 let hash_fold_term s = function
@@ -156,28 +171,25 @@ let hash_fold_term s = function
       let s = [%hash_fold: jump iarray] s tbl in
       let s = [%hash_fold: Loc.t] s loc in
       s
-  | Call {callee; typ; actuals; areturn; return; throw; recursive; loc} ->
+  | Call call ->
       let s = [%hash_fold: int] s 3 in
-      let s = [%hash_fold: Exp.t] s callee in
-      let s = [%hash_fold: Typ.t] s typ in
-      let s = [%hash_fold: Exp.t iarray] s actuals in
-      let s = [%hash_fold: Reg.t option] s areturn in
-      let s = [%hash_fold: jump] s return in
-      let s = [%hash_fold: jump option] s throw in
-      let s = [%hash_fold: bool] s recursive in
-      let s = [%hash_fold: Loc.t] s loc in
+      let s = hash_fold_call hash_fold_func s call in
+      s
+  | ICall call ->
+      let s = [%hash_fold: int] s 4 in
+      let s = hash_fold_call Exp.hash_fold_t s call in
       s
   | Return {exp; loc} ->
-      let s = [%hash_fold: int] s 4 in
+      let s = [%hash_fold: int] s 5 in
       let s = [%hash_fold: Exp.t option] s exp in
       let s = [%hash_fold: Loc.t] s loc in
       s
   | Throw {exc; loc} ->
-      let s = [%hash_fold: int] s 5 in
+      let s = [%hash_fold: int] s 6 in
       let s = [%hash_fold: Exp.t] s exc in
       let s = [%hash_fold: Loc.t] s loc in
       s
-  | Unreachable -> [%hash_fold: int] s 6
+  | Unreachable -> [%hash_fold: int] s 7
 
 let hash_func = Hash.of_fold hash_fold_func
 let hash_block = Hash.of_fold hash_fold_block
@@ -196,6 +208,19 @@ let sexp_ctor label args = sexp_cons (Sexp.Atom label) args
 let sexp_of_jump {dst; retreating} =
   [%sexp {dst: label = dst.lbl; retreating: bool}]
 
+let sexp_of_call (type callee) tag sexp_of_callee
+    {callee: callee; typ; actuals; areturn; return; throw; recursive; loc} =
+  sexp_ctor tag
+    [%sexp
+      { callee: callee
+      ; typ: Typ.t
+      ; actuals: Exp.t iarray
+      ; areturn: Reg.t option
+      ; return: jump
+      ; throw: jump option
+      ; recursive: bool
+      ; loc: Loc.t }]
+
 let sexp_of_term = function
   | Switch {key; tbl; els; loc} ->
       sexp_ctor "Switch"
@@ -203,17 +228,9 @@ let sexp_of_term = function
           {key: Exp.t; tbl: (Exp.t * jump) iarray; els: jump; loc: Loc.t}]
   | Iswitch {ptr; tbl; loc} ->
       sexp_ctor "Iswitch" [%sexp {ptr: Exp.t; tbl: jump iarray; loc: Loc.t}]
-  | Call {callee; typ; actuals; areturn; return; throw; recursive; loc} ->
-      sexp_ctor "Call"
-        [%sexp
-          { callee: Exp.t
-          ; typ: Typ.t
-          ; actuals: Exp.t iarray
-          ; areturn: Reg.t option
-          ; return: jump
-          ; throw: jump option
-          ; recursive: bool
-          ; loc: Loc.t }]
+  | Call call ->
+      sexp_of_call "Call" (fun f -> Function.sexp_of_t f.name) call
+  | ICall call -> sexp_of_call "ICall" Exp.sexp_of_t call
   | Return {exp; loc} ->
       sexp_ctor "Return" [%sexp {exp: Exp.t option; loc: Loc.t}]
   | Throw {exc; loc} -> sexp_ctor "Throw" [%sexp {exc: Exp.t; loc: Loc.t}]
@@ -281,6 +298,17 @@ let pp_jump fs {dst; retreating} =
     (if retreating then "↑" else "")
     dst.lbl
 
+let pp_call tag pp_callee fs
+    {callee; actuals; areturn; return; throw; recursive; loc; _} =
+  Format.fprintf fs
+    "@[<2>@[<7>%a%s @[<2>%s%a%a@]@]@ @[returnto %a%a;@]@]\t%a"
+    (Option.pp "%a := " Reg.pp)
+    areturn tag
+    (if recursive then "↑" else "")
+    pp_callee callee (pp_actuals Exp.pp) actuals pp_jump return
+    (Option.pp "@ throwto %a" pp_jump)
+    throw Loc.pp loc
+
 let pp_term fs term =
   let pf pp = Format.fprintf fs pp in
   let pp_goto fs jmp = Format.fprintf fs "goto %a;" pp_jump jmp in
@@ -301,14 +329,8 @@ let pp_term fs term =
         (IArray.pp "@ " (fun fs jmp ->
              Format.fprintf fs "%s: %a" jmp.dst.lbl pp_goto jmp ))
         tbl Loc.pp loc
-  | Call {callee; actuals; areturn; return; throw; recursive; loc; _} ->
-      pf "@[<2>@[<7>%acall @[<2>%s%a%a@]@]@ @[returnto %a%a;@]@]\t%a"
-        (Option.pp "%a := " Reg.pp)
-        areturn
-        (if recursive then "↑" else "")
-        Exp.pp callee (pp_actuals Exp.pp) actuals pp_jump return
-        (Option.pp "@ throwto %a" pp_jump)
-        throw Loc.pp loc
+  | Call call -> pp_call "call" (fun fs f -> Function.pp fs f.name) fs call
+  | ICall call -> pp_call "icall" Exp.pp fs call
   | Return {exp; loc} ->
       pf "@[<2>return%a@]\t%a" (Option.pp " %a" Exp.pp) exp Loc.pp loc
   | Throw {exc; loc} -> pf "@[<2>throw %a@]\t%a" Exp.pp exc Loc.pp loc
@@ -431,7 +453,8 @@ module Term = struct
     let@ () = Invariant.invariant [%here] term [%sexp_of: t] in
     match term with
     | Switch _ | Iswitch _ -> assert true
-    | Call {typ; actuals; areturn; _} -> (
+    | Call {typ; actuals; areturn; _} | ICall {typ; actuals; areturn; _}
+      -> (
       match typ with
       | Pointer {elt= Function {args; return= retn_typ; _}} ->
           assert (IArray.length args = IArray.length actuals) ;
@@ -460,8 +483,22 @@ module Term = struct
 
   let iswitch ~ptr ~tbl ~loc = Iswitch {ptr; tbl; loc} |> check invariant
 
-  let call ~callee ~typ ~actuals ~areturn ~return ~throw ~loc =
-    Call
+  let call ~name ~typ ~actuals ~areturn ~return ~throw ~loc =
+    let cal =
+      { callee= {dummy_func with name= Function.mk typ name}
+      ; typ
+      ; actuals
+      ; areturn
+      ; return
+      ; throw
+      ; recursive= false
+      ; loc }
+    in
+    let k = Call cal in
+    (k |> check invariant, fun ~callee -> cal.callee <- callee)
+
+  let icall ~callee ~typ ~actuals ~areturn ~return ~throw ~loc =
+    ICall
       {callee; typ; actuals; areturn; return; throw; recursive= false; loc}
     |> check invariant
 
@@ -473,6 +510,7 @@ module Term = struct
     | Switch {loc; _}
      |Iswitch {loc; _}
      |Call {loc; _}
+     |ICall {loc; _}
      |Return {loc; _}
      |Throw {loc; _} ->
         loc
@@ -480,8 +518,9 @@ module Term = struct
 
   let union_locals term vs =
     match term with
-    | Call {areturn; _} -> Reg.Set.add_option areturn vs
-    | _ -> vs
+    | Call {areturn; _} | ICall {areturn; _} ->
+        Reg.Set.add_option areturn vs
+    | Switch _ | Iswitch _ | Return _ | Throw _ | Unreachable -> vs
 end
 
 (** Basic-Blocks *)
@@ -527,7 +566,6 @@ end
 
 module BlockS = HashSet.Make (Block_label)
 module BlockQ = HashQueue.Make (Block_label)
-module FuncQ = HashQueue.Make (Function)
 
 (** Functions *)
 
@@ -550,7 +588,8 @@ module Func = struct
               let s = IArray.fold ~f:(fun (_, j) -> f j) tbl s in
               f els s
           | Iswitch {tbl; _} -> IArray.fold ~f tbl s
-          | Call {return; throw; _} -> Option.fold ~f throw (f return s)
+          | Call {return; throw; _} | ICall {return; throw; _} ->
+              Option.fold ~f throw (f return s)
           | Return _ | Throw _ | Unreachable -> s
         in
         f blk s
@@ -624,7 +663,7 @@ module Func = struct
           IArray.iter tbl ~f:(fun (_, jmp) -> set_dst jmp) ;
           set_dst els
       | Iswitch {tbl; _} -> IArray.iter tbl ~f:set_dst
-      | Call {return; throw; _} ->
+      | Call {return; throw; _} | ICall {return; throw; _} ->
           set_dst return ;
           Option.iter throw ~f:set_dst
       | Return _ | Throw _ | Unreachable -> ()
@@ -643,23 +682,22 @@ end
 
 (** Derived meta-data *)
 
+module FuncQ = HashQueue.Make (Func)
+
 let set_derived_metadata functions =
   let compute_roots functions =
     let roots = FuncQ.create () in
     Function.Map.iter functions ~f:(fun func ->
-        FuncQ.enqueue_back_exn roots func.name func ) ;
+        FuncQ.enqueue_back_exn roots func func ) ;
     Function.Map.iter functions ~f:(fun func ->
         Func.iter_term func ~f:(fun term ->
             match term with
-            | Call {callee; _} -> (
-              match Function.of_exp callee with
-              | Some callee ->
-                  FuncQ.remove roots callee |> (ignore : [> ] -> unit)
-              | None -> () )
+            | Call {callee; _} ->
+                FuncQ.remove roots callee |> (ignore : [> ] -> unit)
             | _ -> () ) ) ;
     roots
   in
-  let topsort functions roots =
+  let topsort roots =
     let tips_to_roots = BlockQ.create () in
     let rec visit ancestors func src =
       if BlockQ.mem tips_to_roots src then ()
@@ -675,18 +713,15 @@ let set_derived_metadata functions =
             IArray.iter tbl ~f:(fun (_, jmp) -> jump jmp) ;
             jump els
         | Iswitch {tbl; _} -> IArray.iter tbl ~f:jump
-        | Call ({callee; return; throw; _} as call) ->
-            ( match
-                let* name = Function.of_exp callee in
-                Func.find name functions
-              with
-            | Some func ->
-                if Block_label.Set.mem func.entry ancestors then
-                  call.recursive <- true
-                else visit ancestors func func.entry
-            | None ->
-                (* conservatively assume all virtual calls are recursive *)
-                call.recursive <- true ) ;
+        | Call ({callee; return; throw; _} as cal) ->
+            if Block_label.Set.mem callee.entry ancestors then
+              cal.recursive <- true
+            else visit ancestors func callee.entry ;
+            jump return ;
+            Option.iter ~f:jump throw
+        | ICall ({return; throw; _} as call) ->
+            (* conservatively assume all indirect calls are recursive *)
+            call.recursive <- true ;
             jump return ;
             Option.iter ~f:jump throw
         | Return _ | Throw _ | Unreachable -> () ) ;
@@ -707,7 +742,7 @@ let set_derived_metadata functions =
         Function.Map.add_exn ~key:func.name ~data:func m )
   in
   let roots = compute_roots functions in
-  let tips_to_roots = topsort functions roots in
+  let tips_to_roots = topsort roots in
   set_sort_indices tips_to_roots ;
   functions
 

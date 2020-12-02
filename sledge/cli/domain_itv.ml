@@ -275,11 +275,7 @@ let call ~summaries ~globals:_ ~actuals ~areturn ~formals ~freturn:_
     (q''', {areturn; caller_q= q})
 
 let dnf q = [q]
-
-let resolve_callee lookup ptr q =
-  match Llair.Function.of_exp ptr with
-  | Some callee -> (lookup callee, q)
-  | None -> ([], q)
+let resolve_callee _ _ q = ([], q)
 
 type summary = t
 

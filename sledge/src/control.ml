@@ -308,6 +308,24 @@ module Make (Dom : Domain_intf.Dom) = struct
     |>
     [%Trace.retn fun {pf} _ -> pf ""]
 
+  let exec_skip_func :
+         Stack.t
+      -> Dom.t
+      -> Llair.block
+      -> Llair.Reg.t option
+      -> Llair.jump
+      -> Work.x =
+   fun stk state block areturn return ->
+    Report.unknown_call block.term ;
+    let state = Option.fold ~f:Dom.exec_kill areturn state in
+    exec_jump stk state block return
+
+  let exec_call opts stk state block
+      ({Llair.callee; areturn; return; _} as call) globals =
+    if Llair.Func.is_undefined callee then
+      exec_skip_func stk state block areturn return
+    else exec_call opts stk state block call globals
+
   let pp_st () =
     [%Trace.printf
       "@[<v>%t@]" (fun fs ->
@@ -376,18 +394,6 @@ module Make (Dom : Domain_intf.Dom) = struct
     |>
     [%Trace.retn fun {pf} _ -> pf ""]
 
-  let exec_skip_func :
-         Stack.t
-      -> Dom.t
-      -> Llair.block
-      -> Llair.Reg.t option
-      -> Llair.jump
-      -> Work.x =
-   fun stk state block areturn return ->
-    Report.unknown_call block.term ;
-    let state = Option.fold ~f:Dom.exec_kill areturn state in
-    exec_jump stk state block return
-
   let exec_term :
          exec_opts
       -> Llair.program
@@ -425,7 +431,10 @@ module Make (Dom : Domain_intf.Dom) = struct
             with
             | Some state -> exec_jump stk state block jump |> Work.seq x
             | None -> x )
-    | Call ({callee; areturn; return} as call) -> (
+    | Call ({callee} as call) ->
+        exec_call opts stk state block call
+          (Domain_used_globals.by_function opts.globals callee.name)
+    | ICall ({callee; areturn; return} as call) -> (
         let lookup name =
           Option.to_list (Llair.Func.find name pgm.functions)
         in
@@ -434,12 +443,8 @@ module Make (Dom : Domain_intf.Dom) = struct
         | [] -> exec_skip_func stk state block areturn return
         | callees ->
             List.fold callees Work.skip ~f:(fun callee x ->
-                ( if Llair.Func.is_undefined callee then
-                  exec_skip_func stk state block areturn return
-                else
-                  exec_call opts stk state block {call with callee}
-                    (Domain_used_globals.by_function opts.globals
-                       callee.name) )
+                exec_call opts stk state block {call with callee}
+                  (Domain_used_globals.by_function opts.globals callee.name)
                 |> Work.seq x ) )
     | Return {exp} -> exec_return ~opts stk state block exp
     | Throw {exc} ->
