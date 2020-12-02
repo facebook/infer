@@ -129,28 +129,31 @@ open struct
                 (ref 0, String.Tbl.create ()) )
           in
           let name =
-            match Llvm.classify_type (Llvm.type_of llv) with
-            | Void -> (
-                let fname =
-                  match Llvm.classify_value llv with
-                  | Instruction (Call | Invoke) -> (
-                    match
-                      Llvm.value_name
-                        (Llvm.operand llv (Llvm.num_operands llv - 1))
-                    with
-                    | "" -> Int.to_string (!next - 1)
-                    | s -> s )
-                  | _ -> "void"
-                in
-                match String.Tbl.find void_tbl fname with
-                | None ->
-                    String.Tbl.set void_tbl ~key:fname ~data:1 ;
-                    fname ^ ".void"
-                | Some count ->
-                    String.Tbl.set void_tbl ~key:fname ~data:(count + 1) ;
-                    String.concat ~sep:""
-                      [fname; ".void."; Int.to_string count] )
-            | _ -> (
+            if
+              Poly.(
+                Llvm.classify_value llv = Instruction Call
+                && Llvm.classify_type (Llvm.type_of llv) = Void)
+            then (
+              (* LLVM does not give unique names to the result of
+                 void-returning function calls. We need unique names for
+                 these as they determine the labels of newly-created return
+                 blocks. *)
+              let fname =
+                match
+                  Llvm.(value_name (operand llv (num_operands llv - 1)))
+                with
+                | "" -> Int.to_string (!next - 1)
+                | s -> s
+              in
+              match String.Tbl.find void_tbl fname with
+              | None ->
+                  String.Tbl.set void_tbl ~key:fname ~data:1 ;
+                  fname ^ ".void"
+              | Some count ->
+                  String.Tbl.set void_tbl ~key:fname ~data:(count + 1) ;
+                  String.concat ~sep:""
+                    [fname; ".void."; Int.to_string count] )
+            else
               match Llvm.value_name llv with
               | "" ->
                   (* anonymous values take the next SSA name *)
@@ -162,7 +165,7 @@ open struct
                 | Some _ ->
                     (* escape to avoid clash with names of anonymous values *)
                     "\"" ^ name ^ "\""
-                | None -> name ) )
+                | None -> name )
           in
           SymTbl.set sym_tbl ~key:llv ~data:(name, loc)
   end
