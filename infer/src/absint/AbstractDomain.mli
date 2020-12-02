@@ -250,6 +250,8 @@ include sig
     val mem : Key.t -> t -> bool [@@warning "-32"]
 
     val remove : Key.t -> Value.t -> t -> t [@@warning "-32"]
+
+    val fold : (Key.t -> Value.t -> 'a -> 'a) -> t -> 'a -> 'a
   end
 end
 

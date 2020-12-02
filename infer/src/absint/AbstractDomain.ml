@@ -734,6 +734,10 @@ struct
 
   let mem k m = M.mem k m
 
+  let fold f (m : t) acc =
+    M.fold (fun key values acc -> S.fold (fun v acc -> f key v acc) values acc) m acc
+
+
   let remove k v m =
     M.update k
       (function
