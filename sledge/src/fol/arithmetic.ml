@@ -353,11 +353,11 @@ struct
           | Some f, Some (c, _) -> assert (equal (trm f) c)
           | _ -> () )
       @@ fun () ->
-      let* a = Embed.get_arith e in
+      let a = trm e in
       match for_ with
       | None -> solve_poly Sum.empty a
       | Some for_ -> (
-          let* for_poly = Embed.get_arith for_ in
+          let for_poly = trm for_ in
           match get_mono for_poly with
           | Some m ->
               let* c, p = Sum.find_and_remove m a in
