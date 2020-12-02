@@ -21,7 +21,7 @@ end
 
 type vname = Vname.t
 
-type vindex = int
+type vindex = int [@@deriving compare]
 
 type tindex = int
 

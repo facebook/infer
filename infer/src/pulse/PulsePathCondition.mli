@@ -44,6 +44,7 @@ val and_callee :
 (** {2 Operations} *)
 
 type operand = LiteralOperand of IntLit.t | AbstractValueOperand of AbstractValue.t
+[@@deriving compare]
 
 val pp_operand : Formatter.t -> operand -> unit
 

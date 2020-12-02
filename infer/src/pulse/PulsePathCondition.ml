@@ -229,6 +229,7 @@ let and_callee subst phi ~callee:phi_callee =
 type operand = Formula.operand =
   | LiteralOperand of IntLit.t
   | AbstractValueOperand of AbstractValue.t
+[@@deriving compare]
 
 let pp_operand f = function
   | LiteralOperand i ->

@@ -9,11 +9,12 @@ open! IStd
 open PulseBasicInterface
 module L = Logging
 
-type value = AbstractValue.t
+type value = AbstractValue.t [@@deriving compare]
 
 type event =
   | ArrayWrite of {aw_array: value; aw_index: value}
   | Call of {return: value option; arguments: value list; procname: Procname.t}
+[@@deriving compare]
 
 let pp_comma_seq f xs = Pp.comma_seq ~print_env:Pp.text_break f xs
 
@@ -26,14 +27,14 @@ let pp_event f = function
         (pp_comma_seq AbstractValue.pp) arguments
 
 
-type vertex = ToplAutomaton.vindex
+type vertex = ToplAutomaton.vindex [@@deriving compare]
 
-type register = ToplAst.register_name
+type register = ToplAst.register_name [@@deriving compare]
 
 (* TODO(rgrigore): Change the memory assoc list to a Map. *)
-type configuration = {vertex: vertex; memory: (register * value) list}
+type configuration = {vertex: vertex; memory: (register * value) list} [@@deriving compare]
 
-type predicate = Binop.t * PathCondition.operand * PathCondition.operand
+type predicate = Binop.t * PathCondition.operand * PathCondition.operand [@@deriving compare]
 
 type step =
   { step_location: Location.t
@@ -47,7 +48,8 @@ and simple_state =
   { pre: configuration  (** at the start of the procedure *)
   ; post: configuration  (** at the current program point *)
   ; pruned: predicate list  (** path-condition for the automaton *)
-  ; last_step: step option  (** for trace error reporting *) }
+  ; last_step: step option [@compare.ignore]  (** for trace error reporting *) }
+[@@deriving compare]
 
 (* TODO: include a hash of the automaton in a summary to avoid caching problems. *)
 (* TODO: limit the number of simple_states to some configurable number (default ~5) *)
@@ -389,8 +391,11 @@ let large_step ~call_location ~callee_proc_name ~substitution ~condition ~callee
   in
   let _updated_substitution, callee_prepost = sub_state (substitution, callee_prepost) in
   (* TODO(rgrigore): may be worth optimizing the cartesian_product *)
-  let state = List.filter_map ~f:seq (List.cartesian_product state callee_prepost) in
-  drop_infeasible condition state
+  let new_state = List.filter_map ~f:seq (List.cartesian_product state callee_prepost) in
+  let result = drop_infeasible condition new_state in
+  L.d_printfln "@[<2>PulseTopl.large_step:@;callee_prepost=%a@;%a@ -> %a@]" pp_state callee_prepost
+    pp_state state pp_state result ;
+  result
 
 
 let filter_for_summary path_condition state =
@@ -414,7 +419,8 @@ let simplify ~keep state =
     let pruned = List.filter ~f:is_live_predicate pruned in
     {pre; post; pruned; last_step}
   in
-  List.map ~f:simplify_simple_state state
+  let state = List.map ~f:simplify_simple_state state in
+  List.dedup_and_sort ~compare:compare_simple_state state
 
 
 let description_of_step_data step_data =
