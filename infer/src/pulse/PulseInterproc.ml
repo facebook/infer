@@ -492,7 +492,7 @@ let apply_post callee_proc_name call_location pre_post ~captured_vars_with_actua
     record_post_remaining_attributes callee_proc_name call_location pre_post call_state
     |> record_skipped_calls callee_proc_name call_location pre_post
     |> conjoin_callee_arith pre_post
-    |> fun {astate; _} -> (astate, return_caller)
+    |> fun call_state -> (call_state, return_caller)
   in
   PerfEvent.(log (fun logger -> log_end_event logger ())) ;
   r
@@ -567,8 +567,18 @@ let apply_prepost callee_proc_name call_location ~callee_prepost:pre_post
         (* reset [visited] *)
         let call_state = {call_state with astate; visited= AddressSet.empty} in
         (* apply the postcondition *)
-        apply_post callee_proc_name call_location pre_post ~captured_vars_with_actuals ~formals
-          ~actuals call_state
+        let call_state, return_caller =
+          apply_post callee_proc_name call_location pre_post ~captured_vars_with_actuals ~formals
+            ~actuals call_state
+        in
+        let astate =
+          if Topl.is_deep_active () then
+            AbductiveDomain.Topl.large_step ~substitution:call_state.subst
+              ~condition:call_state.astate.path_condition
+              ~callee_prepost:pre_post.AbductiveDomain.topl call_state.astate
+          else call_state.astate
+        in
+        (astate, return_caller)
       with
       | post ->
           PulseReport.FeasiblePath post

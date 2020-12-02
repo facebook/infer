@@ -35,4 +35,6 @@ let start () = (* TODO *) []
 
 let small_step _condition _event state = (* TODO *) state
 
+let large_step ~substitution:_ ~condition:_ ~callee_prepost:_ _state = (* TODO *) []
+
 let pp_state _formatter _state = (* TODO *) ()

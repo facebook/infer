@@ -18,4 +18,15 @@ val start : unit -> state
 
 val small_step : PulsePathCondition.t -> event -> state -> state
 
+val large_step :
+     substitution:(PulseAbstractValue.t * PulseValueHistory.t) PulseAbstractValue.Map.t
+  -> condition:PulsePathCondition.t
+  -> callee_prepost:state
+  -> state
+  -> state
+(** [large_step ~substitution ~condition state ~callee_prepost] updates [state] according to
+    [callee_prepost]. The abstract values in [condition] and [state] are in one scope, and those in
+    [callee_prepost] in another scope: the [substitution] maps from the callee scope to the
+    condition&state scope. *)
+
 val pp_state : Format.formatter -> state -> unit

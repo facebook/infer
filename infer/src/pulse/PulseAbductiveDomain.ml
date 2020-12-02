@@ -491,5 +491,7 @@ module Topl = struct
   let small_step event astate =
     {astate with topl= PulseTopl.small_step astate.path_condition event astate.topl}
 
-  (* TODO: large_step *)
+
+  let large_step ~substitution ?(condition = PathCondition.true_) ~callee_prepost astate =
+    {astate with topl= PulseTopl.large_step ~substitution ~condition ~callee_prepost astate.topl}
 end

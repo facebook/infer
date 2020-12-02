@@ -182,4 +182,11 @@ val incorporate_new_eqs : t -> PathCondition.t * PathCondition.new_eqs -> PathCo
 
 module Topl : sig
   val small_step : PulseTopl.event -> t -> t
+
+  val large_step :
+       substitution:(AbstractValue.t * ValueHistory.t) AbstractValue.Map.t
+    -> ?condition:PathCondition.t
+    -> callee_prepost:PulseTopl.state
+    -> t
+    -> t
 end
