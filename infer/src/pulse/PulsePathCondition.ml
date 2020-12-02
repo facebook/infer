@@ -230,6 +230,13 @@ type operand = Formula.operand =
   | LiteralOperand of IntLit.t
   | AbstractValueOperand of AbstractValue.t
 
+let pp_operand f = function
+  | LiteralOperand i ->
+      IntLit.pp f i
+  | AbstractValueOperand v ->
+      AbstractValue.pp f v
+
+
 let eval_citv_binop binop_addr bop op_lhs op_rhs citvs =
   let citv_of_op op citvs =
     match op with

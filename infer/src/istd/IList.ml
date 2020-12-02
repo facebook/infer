@@ -212,6 +212,14 @@ let fold2_result ~init ~f l1 l2 =
 
 let eval_until_first_some thunks = List.find_map thunks ~f:(fun f -> f ())
 
+let rec product = function
+  | [] ->
+      [[]]
+  | xs :: xss ->
+      let yss = product xss in
+      List.concat_map ~f:(fun x -> List.map ~f:(fun ys -> x :: ys) yss) xs
+
+
 let move_last_to_first =
   let rec move_last_to_first_helper l rev_acc =
     match l with

@@ -115,14 +115,6 @@ let visit call_state ~pre ~addr_callee ~addr_hist_caller =
       ; rev_subst= AddressMap.add addr_caller addr_callee call_state.rev_subst } )
 
 
-let pp f {AbductiveDomain.pre; post; topl; path_condition; skipped_calls} =
-  F.fprintf f "COND:@\n  @[%a@]@\n" PathCondition.pp path_condition ;
-  F.fprintf f "PRE:@\n  @[%a@]@\n" BaseDomain.pp (pre :> BaseDomain.t) ;
-  F.fprintf f "POST:@\n  @[%a@]@\n" BaseDomain.pp (post :> BaseDomain.t) ;
-  F.fprintf f "SKIPPED_CALLS:@ @[%a@]@\n" SkippedCalls.pp skipped_calls ;
-  F.fprintf f "TOPL:@\n @[%a@]@\n" PulseTopl.pp_state topl
-
-
 (* {3 reading the pre from the current state} *)
 
 let add_call_to_trace proc_name call_location caller_history in_call =
@@ -542,7 +534,7 @@ let check_all_valid callee_proc_name call_location {AbductiveDomain.pre; _} call
 let apply_prepost callee_proc_name call_location ~callee_prepost:pre_post
     ~captured_vars_with_actuals ~formals ~actuals astate =
   L.d_printfln "Applying pre/post for %a(%a):@\n%a" Procname.pp callee_proc_name
-    (Pp.seq ~sep:"," Var.pp) formals pp pre_post ;
+    (Pp.seq ~sep:"," Var.pp) formals AbductiveDomain.pp pre_post ;
   let empty_call_state =
     {astate; subst= AddressMap.empty; rev_subst= AddressMap.empty; visited= AddressSet.empty}
   in

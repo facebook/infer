@@ -81,8 +81,8 @@ predicate:
 value:
     id=LID { ToplAst.Register id }
   | id=UID { ToplAst.Binding id }
-  | x=INTEGER { ToplAst.Constant (Exp.Const (Const.Cint (IntLit.of_int x))) }
-  | x=STRING  { ToplAst.Constant (Exp.Const (Const.Cstr x)) }
+  | x=INTEGER { ToplAst.Constant (LiteralInt x) (* (Exp.Const (Const.Cint (IntLit.of_int x)))*) }
+  (* TODO(rgrigore): Add string literals. *)
 
 predop_value: o=predop v=value { (o, v) }
 

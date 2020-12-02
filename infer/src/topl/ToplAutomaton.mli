@@ -39,6 +39,8 @@ val vcount : t -> int
 
 val transition : t -> tindex -> transition
 
+val tfilter_map : t -> f:(transition -> 'a option) -> 'a list
+
 val is_skip : t -> tindex -> bool
 (** A transition is *skip* when it has no action, its guard is implied by all other guards, and its
     target equals its source. [is_skip automaton t] returns true when it can prove that [t] is skip.*)
@@ -54,3 +56,9 @@ val get_start_error_pairs : t -> (vindex * vindex) list
 
 val pp_message_of_state : Format.formatter -> t * tindex -> unit
 (** Print "property P reaches state E". *)
+
+val starts : t -> vindex list
+
+val registers : t -> ToplAst.register_name list
+
+val pp_transition : Format.formatter -> transition -> unit

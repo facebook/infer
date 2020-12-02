@@ -45,6 +45,8 @@ val and_callee :
 
 type operand = LiteralOperand of IntLit.t | AbstractValueOperand of AbstractValue.t
 
+val pp_operand : Formatter.t -> operand -> unit
+
 val eval_binop : AbstractValue.t -> Binop.t -> operand -> operand -> t -> t * new_eqs
 
 val eval_unop : AbstractValue.t -> Unop.t -> AbstractValue.t -> t -> t * new_eqs

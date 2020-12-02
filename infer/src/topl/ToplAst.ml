@@ -13,7 +13,7 @@ type register_name = string
 
 type variable_name = string
 
-type constant = Exp.t
+type constant = LiteralInt of int
 
 type value = Constant of constant | Register of register_name | Binding of variable_name
 

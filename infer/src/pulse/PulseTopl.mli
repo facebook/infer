@@ -9,7 +9,7 @@ open! IStd
 
 type value = PulseAbstractValue.t
 
-type event = Call of {return: value option; arguments: value list}
+type event = Call of {return: value option; arguments: value list; procname: Procname.t}
 
 type state
 

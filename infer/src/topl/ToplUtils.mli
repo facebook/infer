@@ -34,3 +34,5 @@ val is_synthesized : Procname.t -> bool
 val debug : ('a, Format.formatter, unit) IStd.format -> 'a
 
 val make_field : string -> Fieldname.t
+
+val binop_to : ToplAst.binop -> Binop.t

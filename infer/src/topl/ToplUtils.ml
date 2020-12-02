@@ -52,6 +52,12 @@ let is_synthesized = function
       false
 
 
+let binop_to =
+  let open ToplAst in
+  let open Binop in
+  function OpEq -> Eq | OpNe -> Ne | OpGe -> Ge | OpGt -> Gt | OpLe -> Le | OpLt -> Lt
+
+
 let debug fmt =
   let mode = if Config.trace_topl then Logging.Quiet else Logging.Verbose in
   Logging.debug Analysis mode "ToplTrace: " ;

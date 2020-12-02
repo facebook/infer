@@ -180,7 +180,9 @@ let realloc_pvar pvar location astate =
 let write_id id new_addr_loc astate = Stack.add (Var.of_id id) new_addr_loc astate
 
 let havoc_id id loc_opt astate =
-  if Stack.mem (Var.of_id id) astate then write_id id (AbstractValue.mk_fresh (), loc_opt) astate
+  (* Topl needs to track the return value of a method; even if nondet now, it may be pruned later. *)
+  if Topl.is_deep_active () || Stack.mem (Var.of_id id) astate then
+    write_id id (AbstractValue.mk_fresh (), loc_opt) astate
   else astate
 
 

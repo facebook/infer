@@ -1289,7 +1289,7 @@ type t =
 let ttrue = {known= Formula.ttrue; pruned= Atom.Set.empty; both= Formula.ttrue}
 
 let pp_with_pp_var pp_var fmt {known; pruned; both} =
-  F.fprintf fmt "@[known=%a,@;pruned=%a,@;both=%a@]@." (Formula.pp_with_pp_var pp_var) known
+  F.fprintf fmt "@[known=%a,@;pruned=%a,@;both=%a@]" (Formula.pp_with_pp_var pp_var) known
     (Atom.Set.pp_with_pp_var pp_var) pruned (Formula.pp_with_pp_var pp_var) both
 
 

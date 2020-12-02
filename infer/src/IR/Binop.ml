@@ -158,3 +158,6 @@ let str pe binop =
         to_string binop )
   | _ ->
       to_string binop
+
+
+let pp f binop = Format.fprintf f "%s" (to_string binop)

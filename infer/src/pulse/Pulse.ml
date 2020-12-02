@@ -92,14 +92,14 @@ module PulseTransferFunctions = struct
         Ok exec_state
 
 
-  let topl_small_step arguments (return, _typ) exec_state_res =
+  let topl_small_step procname arguments (return, _typ) exec_state_res =
     let arguments =
       List.map arguments ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload} -> fst arg_payload)
     in
     let return = Var.of_id return in
     let do_astate astate =
       let return = Option.map ~f:fst (Stack.find_opt return astate) in
-      let topl_event = PulseTopl.Call {return; arguments} in
+      let topl_event = PulseTopl.Call {return; arguments; procname} in
       AbductiveDomain.Topl.small_step topl_event astate
     in
     let do_one_exec_state (exec_state : Domain.t) : Domain.t =
@@ -125,8 +125,9 @@ module PulseTransferFunctions = struct
             :: rev_func_args ) )
     in
     let func_args = List.rev rev_func_args in
+    let callee_pname = proc_name_of_call call_exp in
     let model =
-      match proc_name_of_call call_exp with
+      match callee_pname with
       | Some callee_pname ->
           PulseModels.dispatch tenv callee_pname func_args
           |> Option.map ~f:(fun model -> (model, callee_pname))
@@ -153,7 +154,12 @@ module PulseTransferFunctions = struct
           r
     in
     let exec_state_res =
-      if Topl.is_deep_active () then topl_small_step func_args ret exec_state_res
+      if Topl.is_deep_active () then
+        match callee_pname with
+        | Some callee_pname ->
+            topl_small_step callee_pname func_args ret exec_state_res
+        | None ->
+            (* skip, as above for non-topl *) exec_state_res
       else exec_state_res
     in
     match get_out_of_scope_object call_exp actuals flags with
