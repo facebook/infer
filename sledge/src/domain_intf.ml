@@ -24,7 +24,7 @@ module type Dom = sig
        skip_throw:bool
     -> Llair.Reg.t option
     -> Llair.Function.t
-    -> Llair.Exp.t list
+    -> Llair.Exp.t iarray
     -> t
     -> t option option
 
@@ -33,16 +33,16 @@ module type Dom = sig
   val call :
        summaries:bool
     -> globals:Llair.Global.Set.t
-    -> actuals:Llair.Exp.t list
+    -> actuals:Llair.Exp.t iarray
     -> areturn:Llair.Reg.t option
-    -> formals:Llair.Reg.t list
+    -> formals:Llair.Reg.t iarray
     -> freturn:Llair.Reg.t option
     -> locals:Llair.Reg.Set.t
     -> t
     -> t * from_call
 
   val post : Llair.Reg.Set.t -> from_call -> t -> t
-  val retn : Llair.Reg.t list -> Llair.Reg.t option -> from_call -> t -> t
+  val retn : Llair.Reg.t iarray -> Llair.Reg.t option -> from_call -> t -> t
 
   val resolve_callee :
        (Llair.Function.t -> Llair.func list)
@@ -57,7 +57,7 @@ module type Dom = sig
   val pp_summary : summary pp
 
   val create_summary :
-    locals:Llair.Reg.Set.t -> formals:Llair.Reg.t list -> t -> summary * t
+    locals:Llair.Reg.Set.t -> formals:Llair.Reg.t iarray -> t -> summary * t
 
   val apply_summary : t -> summary -> t option
 end

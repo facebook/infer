@@ -13,7 +13,7 @@ module type State_domain_sig = sig
 
   val create_summary :
        locals:Llair.Reg.Set.t
-    -> formals:Llair.Reg.t list
+    -> formals:Llair.Reg.t iarray
     -> entry:t
     -> current:t
     -> summary * t
@@ -76,11 +76,11 @@ module Make (State_domain : State_domain_sig) = struct
       pf
         "@[<v>@[actuals: (@[%a@])@ formals: (@[%a@])@]@ locals: {@[%a@]}@ \
          globals: {@[%a@]}@ current: %a@]"
-        (List.pp ",@ " Llair.Exp.pp)
-        (List.rev actuals)
-        (List.pp ",@ " Llair.Reg.pp)
-        (List.rev formals) Llair.Reg.Set.pp locals Llair.Global.Set.pp
-        globals State_domain.pp current]
+        (IArray.pp ",@ " Llair.Exp.pp)
+        actuals
+        (IArray.pp ",@ " Llair.Reg.pp)
+        formals Llair.Reg.Set.pp locals Llair.Global.Set.pp globals
+        State_domain.pp current]
     ;
     let caller_current, state_from_call =
       State_domain.call ~summaries ~globals ~actuals ~areturn ~formals

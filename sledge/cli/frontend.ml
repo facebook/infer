@@ -441,13 +441,12 @@ let rec xlate_intrinsic_exp :
   | _ -> None
 
 and xlate_values x len val_i =
-  let rec loop i (pre, args) =
-    if i < 0 then (pre, args)
-    else
-      let pre_i, arg_i = xlate_value x (val_i i) in
-      loop (i - 1) (pre_i @ pre, arg_i :: args)
+  let xlate_i j pre_0_i =
+    let pre_j, arg_j = xlate_value x (val_i j) in
+    (arg_j, Iter.append pre_0_i (Iter.of_list pre_j))
   in
-  loop (len - 1) ([], [])
+  let pre, vals = Iter.(fold_map (0 -- (len - 1)) empty ~f:xlate_i) in
+  (Iter.to_list pre, IArray.of_iter vals)
 
 and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t
     =
@@ -485,22 +484,22 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t
         let typ = xlate_type x (Llvm.type_of llv) in
         let len = Llvm.num_operands llv in
         let pre, args = xlate_values x len (Llvm.operand llv) in
-        (pre, Exp.record typ (IArray.of_list args))
+        (pre, Exp.record typ args)
     | ConstantDataVector ->
         let typ = xlate_type x (Llvm.type_of llv) in
         let len = Llvm.vector_size (Llvm.type_of llv) in
         let pre, args = xlate_values x len (Llvm.const_element llv) in
-        (pre, Exp.record typ (IArray.of_list args))
+        (pre, Exp.record typ args)
     | ConstantDataArray ->
         let typ = xlate_type x (Llvm.type_of llv) in
         let len = Llvm.array_length (Llvm.type_of llv) in
         let pre, args = xlate_values x len (Llvm.const_element llv) in
-        (pre, Exp.record typ (IArray.of_list args))
+        (pre, Exp.record typ args)
     | ConstantStruct ->
         let typ = xlate_type x (Llvm.type_of llv) in
         let len = Llvm.num_operands llv in
         let pre, args = xlate_values x len (Llvm.operand llv) in
-        (pre, Exp.record typ (IArray.of_list args))
+        (pre, Exp.record typ args)
     | BlockAddress ->
         let parent = find_name (Llvm.operand llv 0) in
         let name = find_name (Llvm.operand llv 1) in
@@ -1446,9 +1445,9 @@ let xlate_function : x -> Llvm.llvalue -> Llair.func =
   let typ = xlate_type x (Llvm.type_of llf) in
   let name = Function.mk typ (find_name llf) in
   let formals =
-    Llvm.fold_left_params
-      (fun rev_args param -> xlate_name x param :: rev_args)
-      [] llf
+    Iter.from_iter (fun f -> Llvm.iter_params f llf)
+    |> Iter.map ~f:(xlate_name x)
+    |> IArray.of_iter
   in
   let freturn =
     match typ with

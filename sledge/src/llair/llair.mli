@@ -56,7 +56,7 @@ type jump = {mutable dst: block; mutable retreating: bool}
 and 'a call =
   { callee: 'a
   ; typ: Typ.t  (** Type of the callee. *)
-  ; actuals: Exp.t list  (** Stack of arguments, first-arg-last. *)
+  ; actuals: Exp.t iarray  (** Actual arguments. *)
   ; areturn: Reg.t option  (** Register to receive return value. *)
   ; return: jump  (** Return destination. *)
   ; throw: jump option  (** Handler destination. *)
@@ -95,7 +95,7 @@ and block = private
     parameters are the function parameters. *)
 and func = private
   { name: Function.t
-  ; formals: Reg.t list  (** Formal parameters, first-param-last stack *)
+  ; formals: Reg.t iarray  (** Formal parameters *)
   ; freturn: Reg.t option
   ; fthrow: Reg.t
   ; locals: Reg.Set.t  (** Local registers *)
@@ -155,7 +155,7 @@ module Term : sig
   val call :
        callee:Exp.t
     -> typ:Typ.t
-    -> actuals:Exp.t list
+    -> actuals:Exp.t iarray
     -> areturn:Reg.t option
     -> return:jump
     -> throw:jump option
@@ -188,7 +188,7 @@ module Func : sig
 
   val mk :
        name:Function.t
-    -> formals:Reg.t list
+    -> formals:Reg.t iarray
     -> freturn:Reg.t option
     -> fthrow:Reg.t
     -> entry:block
@@ -198,7 +198,7 @@ module Func : sig
 
   val mk_undefined :
        name:Function.t
-    -> formals:Reg.t list
+    -> formals:Reg.t iarray
     -> freturn:Reg.t option
     -> fthrow:Reg.t
     -> loc:Loc.t

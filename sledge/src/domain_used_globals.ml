@@ -70,7 +70,7 @@ let exec_intrinsic ~skip_throw:_ _ intrinsic actuals st =
       ; "__cxa_allocate_exception"
       ; "_ZN5folly13usingJEMallocEv" ]
       ~f:(String.equal name)
-  then List.fold ~f:used_globals actuals st |> fun res -> Some (Some res)
+  then IArray.fold ~f:used_globals actuals st |> fun res -> Some (Some res)
   else None
 
 type from_call = t [@@deriving sexp]
@@ -78,7 +78,7 @@ type from_call = t [@@deriving sexp]
 (* Set abstract state to bottom (i.e. empty set) at function entry *)
 let call ~summaries:_ ~globals:_ ~actuals ~areturn:_ ~formals:_ ~freturn:_
     ~locals:_ st =
-  (empty, List.fold ~f:used_globals actuals st)
+  (empty, IArray.fold ~f:used_globals actuals st)
 
 let resolve_callee lookup ptr st =
   let st = used_globals ptr st in

@@ -38,7 +38,7 @@ type jump = {mutable dst: block; mutable retreating: bool}
 and 'a call =
   { callee: 'a
   ; typ: Typ.t
-  ; actuals: Exp.t list
+  ; actuals: Exp.t iarray
   ; areturn: Reg.t option
   ; return: jump
   ; throw: jump option
@@ -62,7 +62,7 @@ and block =
 
 and func =
   { name: Function.t
-  ; formals: Reg.t list
+  ; formals: Reg.t iarray
   ; freturn: Reg.t option
   ; fthrow: Reg.t
   ; locals: Reg.Set.t
@@ -97,7 +97,7 @@ with type jump := jump
   type nonrec 'a call = 'a call =
     { callee: 'a
     ; typ: Typ.t
-    ; actuals: Exp.t list
+    ; actuals: Exp.t iarray
     ; areturn: Reg.t option
     ; return: jump
     ; throw: jump option
@@ -143,7 +143,7 @@ let hash_fold_term s = function
       let s = [%hash_fold: int] s 3 in
       let s = [%hash_fold: Exp.t] s callee in
       let s = [%hash_fold: Typ.t] s typ in
-      let s = [%hash_fold: Exp.t list] s actuals in
+      let s = [%hash_fold: Exp.t iarray] s actuals in
       let s = [%hash_fold: Reg.t option] s areturn in
       let s = [%hash_fold: jump] s return in
       let s = [%hash_fold: jump option] s throw in
@@ -191,7 +191,7 @@ let sexp_of_term = function
         [%sexp
           { callee: Exp.t
           ; typ: Typ.t
-          ; actuals: Exp.t list
+          ; actuals: Exp.t iarray
           ; areturn: Reg.t option
           ; return: jump
           ; throw: jump option
@@ -213,7 +213,7 @@ let sexp_of_block {lbl; cmnd; term; parent; sort_index} =
 let sexp_of_func {name; formals; freturn; fthrow; locals; entry; loc} =
   [%sexp
     { name: Function.t
-    ; formals: Reg.t list
+    ; formals: Reg.t iarray
     ; freturn: Reg.t option
     ; fthrow: Reg.t
     ; locals: Reg.Set.t
@@ -260,8 +260,7 @@ let pp_inst fs inst =
   | Abort {loc} -> pf "@[<2>abort;@]\t%a" Loc.pp loc
 
 let pp_actuals pp_actual fs actuals =
-  Format.fprintf fs "@ (@[%a@])" (List.pp ",@ " pp_actual)
-    (List.rev actuals)
+  Format.fprintf fs "@ (@[%a@])" (IArray.pp ",@ " pp_actual) actuals
 
 let pp_formal fs reg = Reg.pp fs reg
 
@@ -325,7 +324,7 @@ and dummy_func =
       Function.mk
         (Typ.pointer ~elt:(Typ.function_ ~args:IArray.empty ~return:None))
         "dummy"
-  ; formals= []
+  ; formals= IArray.empty
   ; freturn= None
   ; fthrow= Reg.mk Typ.ptr "dummy"
   ; locals= Reg.Set.empty
@@ -425,7 +424,7 @@ module Term = struct
     | Call {typ; actuals; areturn; _} -> (
       match typ with
       | Pointer {elt= Function {args; return= retn_typ; _}} ->
-          assert (IArray.length args = List.length actuals) ;
+          assert (IArray.length args = IArray.length actuals) ;
           assert (Option.is_some retn_typ || Option.is_none areturn)
       | _ -> assert false )
     | Return {exp; _} -> (

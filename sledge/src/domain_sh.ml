@@ -75,7 +75,7 @@ let exec_inst inst pre =
 
 let exec_intrinsic ~skip_throw r i es q =
   Exec.intrinsic ~skip_throw q (Option.map ~f:X.reg r)
-    (Llair.Function.name i) (List.map ~f:X.term es)
+    (Llair.Function.name i) (IArray.map ~f:X.term es)
   |> Option.map ~f:(Option.map ~f:simplify)
 
 let value_determined_by ctx us a =
@@ -110,17 +110,17 @@ let and_eqs sub formals actuals q =
     let actual' = Term.rename sub actual in
     Sh.and_ (Formula.eq (Term.var formal) actual') q
   in
-  List.fold2_exn ~f:and_eq formals actuals q
+  IArray.fold2_exn ~f:and_eq formals actuals q
 
 let localize_entry globals actuals formals freturn locals shadow pre entry =
   (* Add the formals here to do garbage collection and then get rid of them *)
-  let formals_set = Var.Set.of_list formals in
+  let formals_set = Var.Set.of_iter (IArray.to_iter formals) in
   let freturn_locals = X.regs (Llair.Reg.Set.add_option freturn locals) in
   let wrt =
     Term.Set.of_iter
       (Iter.append
          (Iter.map ~f:X.global (Llair.Global.Set.to_iter globals))
-         (Iter.map ~f:Term.var (List.to_iter formals)))
+         (Iter.map ~f:Term.var (IArray.to_iter formals)))
   in
   let function_summary_pre = garbage_collect entry ~wrt in
   [%Trace.info "function summary pre %a" pp function_summary_pre] ;
@@ -147,32 +147,30 @@ let call ~summaries ~globals ~actuals ~areturn ~formals ~freturn ~locals q =
     pf
       "@[<hv>actuals: (@[%a@])@ formals: (@[%a@])@ locals: {@[%a@]}@ \
        globals: {@[%a@]}@ q: %a@]"
-      (List.pp ",@ " Llair.Exp.pp)
-      (List.rev actuals)
-      (List.pp ",@ " Llair.Reg.pp)
-      (List.rev formals) Llair.Reg.Set.pp locals Llair.Global.Set.pp globals
-      pp q]
+      (IArray.pp ",@ " Llair.Exp.pp)
+      actuals
+      (IArray.pp ",@ " Llair.Reg.pp)
+      formals Llair.Reg.Set.pp locals Llair.Global.Set.pp globals pp q]
   ;
-  let actuals = List.map ~f:X.term actuals in
+  let actuals = IArray.map ~f:X.term actuals in
   let areturn = Option.map ~f:X.reg areturn in
-  let formals = List.map ~f:X.reg formals in
+  let formals = IArray.map ~f:X.reg formals in
   let freturn_locals = X.regs (Llair.Reg.Set.add_option freturn locals) in
   let modifs = Var.Set.of_option areturn in
   (* quantify modifs, their current value will be overwritten and so does
      not need to be saved in the freshening renaming *)
   let q = Sh.exists modifs q in
   (* save current values of shadowed formals and locals with a renaming *)
-  let q', shadow =
-    Sh.freshen q ~wrt:(Var.Set.add_list formals freturn_locals)
+  let formals_freturn_locals =
+    Iter.fold ~f:Var.Set.add (IArray.to_iter formals) freturn_locals
   in
+  let q', shadow = Sh.freshen q ~wrt:formals_freturn_locals in
   let unshadow = Var.Subst.invert shadow in
   assert (Var.Set.disjoint modifs (Var.Subst.domain shadow)) ;
   (* pass arguments by conjoining equations between formals and actuals *)
   let entry = and_eqs shadow formals actuals q' in
   (* note: locals and formals are in scope *)
-  assert (
-    Var.Set.subset (Var.Set.add_list formals freturn_locals) ~of_:entry.us
-  ) ;
+  assert (Var.Set.subset formals_freturn_locals ~of_:entry.us) ;
   (* simplify *)
   let entry = simplify entry in
   ( if not summaries then (entry, {areturn; unshadow; frame= Sh.emp})
@@ -201,14 +199,16 @@ let post locals _ q =
 let retn formals freturn {areturn; unshadow; frame} q =
   [%Trace.call fun {pf} ->
     pf "@[<v>formals: {@[%a@]}%a%a@ unshadow: %a@ q: %a@ frame: %a@]"
-      (List.pp ", " Llair.Reg.pp)
+      (IArray.pp ", " Llair.Reg.pp)
       formals
       (Option.pp "@ freturn: %a" Llair.Reg.pp)
       freturn
       (Option.pp "@ areturn: %a" Var.pp)
       areturn Var.Subst.pp unshadow pp q pp frame]
   ;
-  let formals = List.map ~f:X.reg formals in
+  let formals =
+    Var.Set.of_iter (Iter.map ~f:X.reg (IArray.to_iter formals))
+  in
   let freturn = Option.map ~f:X.reg freturn in
   let q =
     match areturn with
@@ -223,9 +223,7 @@ let retn formals freturn {areturn; unshadow; frame} q =
     | None -> q
   in
   (* exit scope of formals *)
-  let q =
-    Sh.exists (Var.Set.add_list formals (Var.Set.of_option freturn)) q
-  in
+  let q = Sh.exists (Var.Set.union formals (Var.Set.of_option freturn)) q in
   (* reinstate shadowed values of locals *)
   let q = Sh.rename unshadow q in
   (* reconjoin frame *)
@@ -251,11 +249,11 @@ let pp_summary fs {xs; foot; post} =
 let create_summary ~locals ~formals ~entry ~current:(post : Sh.t) =
   [%Trace.call fun {pf} ->
     pf "formals %a@ entry: %a@ current: %a"
-      (List.pp ",@ " Llair.Reg.pp)
+      (IArray.pp ",@ " Llair.Reg.pp)
       formals pp entry pp post]
   ;
   let formals =
-    Var.Set.of_iter (Iter.map ~f:X.reg (List.to_iter formals))
+    Var.Set.of_iter (Iter.map ~f:X.reg (IArray.to_iter formals))
   in
   let locals = X.regs locals in
   let foot = Sh.exists locals entry in

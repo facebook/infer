@@ -27,5 +27,5 @@ val intrinsic :
   -> Sh.t
   -> Var.t option
   -> string
-  -> Term.t list
+  -> Term.t iarray
   -> Sh.t option option

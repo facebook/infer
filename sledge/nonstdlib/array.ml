@@ -12,6 +12,7 @@ include Array
 type 'a t = 'a array [@@deriving compare, equal, sexp]
 
 let of_ x = [|x|]
+let of_iter = Iter.to_array
 
 let of_list_rev = function
   | [] -> [||]
@@ -101,5 +102,6 @@ let fold_map_until xs s ~f ~finish =
         fold_map_until_ s 1
 
 let for_all2_exn xs ys ~f = for_all2 ~f xs ys
+let fold2_exn xs ys init ~f = fold2 ~f:(fun s x y -> f x y s) ~init xs ys
 let to_list_rev_map xs ~f = fold ~f:(fun x ys -> f x :: ys) xs []
 let pp sep pp_elt fs a = List.pp sep pp_elt fs (to_list a)

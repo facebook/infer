@@ -32,7 +32,7 @@ module Make (Dom : Domain_intf.Dom) = struct
          t
       -> 'a
       -> unwind:
-           (   Llair.Reg.t list
+           (   Llair.Reg.t iarray
             -> Llair.Reg.Set.t
             -> Dom.from_call
             -> 'a
@@ -43,7 +43,7 @@ module Make (Dom : Domain_intf.Dom) = struct
       | Return of
           { recursive: bool  (** return from a possibly-recursive call *)
           ; dst: Llair.Jump.t
-          ; formals: Llair.Reg.t list
+          ; formals: Llair.Reg.t iarray
           ; locals: Llair.Reg.Set.t
           ; from_call: Dom.from_call
           ; stk: t }
@@ -491,15 +491,16 @@ module Make (Dom : Domain_intf.Dom) = struct
       ~f:(fun entry_point -> Llair.Func.find entry_point pgm.functions)
       opts.entry_points
     |> function
-    | Some {name; formals= []; freturn; locals; entry} ->
+    | Some {name; formals; freturn; locals; entry}
+      when IArray.is_empty formals ->
         Some
           (Work.init
              (fst
                 (Dom.call ~summaries:opts.function_summaries
                    ~globals:
                      (Domain_used_globals.by_function opts.globals name)
-                   ~actuals:[] ~areturn:None ~formals:[] ~freturn ~locals
-                   (Dom.init pgm.globals)))
+                   ~actuals:IArray.empty ~areturn:None ~formals:IArray.empty
+                   ~freturn ~locals (Dom.init pgm.globals)))
              entry)
     | _ -> None
 

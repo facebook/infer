@@ -281,10 +281,12 @@ let call ~summaries ~globals:_ ~actuals ~areturn ~formals ~freturn:_
     let mangle r =
       Llair.Reg.mk (Llair.Reg.typ r) ("__tmp__" ^ Llair.Reg.name r)
     in
-    let args = List.combine_exn formals actuals in
-    let q' = List.fold ~f:(fun (f, a) q -> assign (mangle f) a q) args q in
+    let args = IArray.combine_exn formals actuals in
+    let q' =
+      IArray.fold ~f:(fun (f, a) q -> assign (mangle f) a q) args q
+    in
     let callee_env =
-      List.fold formals ([], []) ~f:(fun f (is, fs) ->
+      IArray.fold formals ([], []) ~f:(fun f (is, fs) ->
           match apron_typ_of_llair_typ (Llair.Reg.typ f) with
           | None -> (is, fs)
           | Some Texpr1.Int -> (apron_var_of_reg (mangle f) :: is, fs)
@@ -296,8 +298,10 @@ let call ~summaries ~globals:_ ~actuals ~areturn ~formals ~freturn:_
     let q'' = Abstract1.change_environment man q' callee_env false in
     let q''' =
       Abstract1.rename_array man q''
-        (Array.map ~f:(mangle >> apron_var_of_reg) (Array.of_list formals))
-        (Array.map ~f:apron_var_of_reg (Array.of_list formals))
+        (Array.map
+           ~f:(mangle >> apron_var_of_reg)
+           (IArray.to_array formals))
+        (Array.map ~f:apron_var_of_reg (IArray.to_array formals))
     in
     (q''', {areturn; caller_q= q})
 
