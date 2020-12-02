@@ -433,25 +433,24 @@ let description_of_step_data step_data =
 
 
 let report_errors proc_desc err_log state =
-  (* TODO(rgrigore): Calling f() that has implementation leads to a large_step followed by a small_step,
-     which currently results in two trace elements (that look the same to the user). This is confusing. *)
   let a = Topl.automaton () in
-  let rec make_trace nesting acc q =
+  let rec make_trace nesting trace q =
     match q.last_step with
     | None ->
-        acc
+        trace
     | Some {step_location; step_predecessor; step_data} ->
         let description = description_of_step_data step_data in
-        let acc =
-          Errlog.make_trace_element nesting step_location description []
-          ::
-          ( match step_data with
+        let trace =
+          let trace_element = Errlog.make_trace_element nesting step_location description [] in
+          match step_data with
           | SmallStep _ ->
-              acc
+              trace_element :: trace
+          | LargeStep (_, {last_step= None}) ->
+              trace (* skip trivial large steps (i.e., those with no steps) *)
           | LargeStep (_, qq) ->
-              make_trace (nesting + 1) acc qq )
+              trace_element :: make_trace (nesting + 1) trace qq
         in
-        make_trace nesting acc step_predecessor
+        make_trace nesting trace step_predecessor
   in
   let report_simple_state q =
     if ToplAutomaton.is_start a q.pre.vertex && ToplAutomaton.is_error a q.post.vertex then
