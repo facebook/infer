@@ -1080,11 +1080,11 @@ let xlate_instr :
       emit_inst ~prefix:(pre0 @ pre1) (Inst.store ~ptr ~exp ~len ~loc)
   | Alloca ->
       let reg = xlate_name x instr in
-      let rand = Llvm.operand instr 0 in
-      let prefix, arg = xlate_value x rand in
-      let num = convert_to_siz (xlate_type x (Llvm.type_of rand)) arg in
+      let num_elts = Llvm.operand instr 0 in
+      let prefix, num = xlate_value x num_elts in
+      let num = convert_to_siz (xlate_type x (Llvm.type_of num_elts)) num in
       assert (Poly.(Llvm.classify_type (Llvm.type_of instr) = Pointer)) ;
-      let len = size_of x (Llvm.type_of instr) in
+      let len = size_of x (Llvm.element_type (Llvm.type_of instr)) in
       emit_inst ~prefix (Inst.alloc ~reg ~num ~len ~loc)
   | Call -> (
       let llcallee = Llvm.operand instr (Llvm.num_operands instr - 1) in
