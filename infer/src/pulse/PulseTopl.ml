@@ -31,7 +31,6 @@ type vertex = ToplAutomaton.vindex [@@deriving compare]
 
 type register = ToplAst.register_name [@@deriving compare]
 
-(* TODO(rgrigore): Change the memory assoc list to a Map. *)
 type configuration = {vertex: vertex; memory: (register * value) list} [@@deriving compare]
 
 type predicate = Binop.t * PathCondition.operand * PathCondition.operand [@@deriving compare]
@@ -362,24 +361,48 @@ let sub_simple_state (sub, {pre; post; pruned; last_step}) =
   (sub, {pre; post; pruned; last_step})
 
 
-let sub_state = sub_list sub_simple_state
+let normalize_memory memory = List.sort ~compare:[%compare: register * value] memory
+
+let normalize_configuration {vertex; memory} = {vertex; memory= normalize_memory memory}
+
+let normalize_pruned pruned = List.sort ~compare:compare_predicate pruned
+
+let normalize_simple_state {pre; post; pruned; last_step} =
+  { pre= normalize_configuration pre
+  ; post= normalize_configuration post
+  ; pruned= normalize_pruned pruned
+  ; last_step }
+
+
+let normalize_state state = List.map ~f:normalize_simple_state state
 
 let large_step ~call_location ~callee_proc_name ~substitution ~condition ~callee_prepost state =
   let seq ((p : simple_state), (q : simple_state)) =
     if not (Int.equal p.post.vertex q.pre.vertex) then None
     else
-      let add_eq eqs (register, value_a) =
-        let value_b =
-          match List.Assoc.find ~equal:String.equal q.pre.memory register with
-          | Some x ->
-              x
-          | None ->
-              L.die InternalError "PulseTopl expects all registers in memory"
+      let substitution, new_eqs =
+        (* Update the substitution, matching formals with actuals. We work a bit to avoid introducing
+           equalities, because a growing [pruned] leads to quadratic behaviour. *)
+        let mk_eq val1 val2 =
+          let op x = PathCondition.AbstractValueOperand x in
+          (Binop.Eq, op val1, op val2)
         in
-        let op x = PathCondition.AbstractValueOperand x in
-        (Binop.Eq, op value_a, op value_b) :: eqs
+        let f (sub, eqs) (reg1, val1) (reg2, val2) =
+          if not (String.equal reg1 reg2) then
+            L.die InternalError
+              "PulseTopl: normalized memories are expected to have the same domain"
+          else
+            match AbstractValue.Map.find_opt val2 sub with
+            | Some (old_val1, _history) ->
+                if AbstractValue.equal old_val1 val1 then (sub, eqs)
+                else (sub, mk_eq old_val1 val1 :: eqs)
+            | None ->
+                (AbstractValue.Map.add val2 (val1, []) sub, eqs)
+        in
+        of_unequal (List.fold2 p.post.memory q.pre.memory ~init:(substitution, []) ~f)
       in
-      let pruned = List.fold ~init:(p.pruned @ q.pruned) ~f:add_eq p.post.memory in
+      let _substitution, q = sub_simple_state (substitution, q) in
+      let pruned = new_eqs @ q.pruned @ p.pruned in
       let last_step =
         Some
           { step_location= call_location
@@ -388,8 +411,9 @@ let large_step ~call_location ~callee_proc_name ~substitution ~condition ~callee
       in
       Some {pre= p.pre; post= q.post; pruned; last_step}
   in
-  let _updated_substitution, callee_prepost = sub_state (substitution, callee_prepost) in
   (* TODO(rgrigore): may be worth optimizing the cartesian_product *)
+  let state = normalize_state state in
+  let callee_prepost = normalize_state callee_prepost in
   let new_state = List.filter_map ~f:seq (List.cartesian_product state callee_prepost) in
   let result = drop_infeasible condition new_state in
   L.d_printfln "@[<2>PulseTopl.large_step:@;callee_prepost=%a@;%a@ -> %a@]" pp_state callee_prepost
