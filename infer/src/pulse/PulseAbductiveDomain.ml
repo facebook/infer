@@ -490,12 +490,16 @@ let get_pre {pre} = (pre :> BaseDomain.t)
 let get_post {post} = (post :> BaseDomain.t)
 
 module Topl = struct
-  let small_step event astate =
-    {astate with topl= PulseTopl.small_step astate.path_condition event astate.topl}
+  let small_step loc event astate =
+    {astate with topl= PulseTopl.small_step loc astate.path_condition event astate.topl}
 
 
-  let large_step ~substitution ?(condition = PathCondition.true_) ~callee_prepost astate =
-    {astate with topl= PulseTopl.large_step ~substitution ~condition ~callee_prepost astate.topl}
+  let large_step ~call_location ~callee_proc_name ~substitution ?(condition = PathCondition.true_)
+      ~callee_prepost astate =
+    { astate with
+      topl=
+        PulseTopl.large_step ~call_location ~callee_proc_name ~substitution ~condition
+          ~callee_prepost astate.topl }
 
 
   let get {topl} = topl

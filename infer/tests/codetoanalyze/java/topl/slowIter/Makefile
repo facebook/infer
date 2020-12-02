@@ -5,7 +5,7 @@
 
 TESTS_DIR = ../../../..
 
-INFER_OPTIONS = --pulse-max-disjuncts 1500 --topl-properties slowIter.topl --topl-pulse-only
+INFER_OPTIONS = --topl-properties slowIter.topl --pulse-only
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard *.java)

@@ -565,8 +565,8 @@ let apply_prepost callee_proc_name call_location ~callee_prepost:pre_post
         in
         let astate =
           if Topl.is_deep_active () then
-            AbductiveDomain.Topl.large_step ~substitution:call_state.subst
-              ~condition:call_state.astate.path_condition
+            AbductiveDomain.Topl.large_step ~call_location ~callee_proc_name
+              ~substitution:call_state.subst ~condition:call_state.astate.path_condition
               ~callee_prepost:pre_post.AbductiveDomain.topl call_state.astate
           else call_state.astate
         in

@@ -166,17 +166,6 @@ let get_start_error_pairs a =
   Hashtbl.data pairs
 
 
-let pp_message_of_state fmt (a, i) =
-  let property, state = vname a i in
-  Format.fprintf fmt "property %s reaches state %s" property state
-
-
-let starts a =
-  (* TODO(rgrigore): cache *)
-  let f i (_property, vname) = if String.equal vname "start" then Some i else None in
-  Array.to_list (Array.filter_mapi ~f a.states)
-
-
 let registers a =
   (* TODO(rgrigore): cache *)
   let do_assignment acc (r, _v) = String.Set.add acc r in
@@ -190,6 +179,11 @@ let registers a =
   let do_label_opt acc = Option.fold ~init:acc ~f:do_label in
   let do_transition acc {label} = do_label_opt acc label in
   String.Set.to_list (Array.fold ~init:String.Set.empty ~f:do_transition a.transitions)
+
+
+let pp_message_of_state fmt (a, i) =
+  let property, state = vname a i in
+  Format.fprintf fmt "property %s reaches state %s" property state
 
 
 let tfilter_map a ~f = Array.to_list (Array.filter_map ~f a.transitions)

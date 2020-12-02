@@ -54,12 +54,10 @@ val get_start_error_pairs : t -> (vindex * vindex) list
     vertex names, where [p] ranges over property names. POST: no vertex index occurs more than once
     in the result. *)
 
+val registers : t -> ToplAst.register_name list
+
 val pp_message_of_state : Format.formatter -> t * tindex -> unit
 (** Print "property P reaches state E". *)
-
-val starts : t -> vindex list
-
-val registers : t -> ToplAst.register_name list
 
 val is_start : t -> vindex -> bool
 

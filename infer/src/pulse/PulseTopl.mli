@@ -9,18 +9,19 @@ open! IStd
 
 type value = PulseAbstractValue.t
 
-type event =
-  | Call of {return: value option; arguments: value list; procname: Procname.t; loc: Location.t}
+type event = Call of {return: value option; arguments: value list; procname: Procname.t}
 
 type state
 
 val start : unit -> state
 (** Return the initial state of [Topl.automaton ()]. *)
 
-val small_step : PulsePathCondition.t -> event -> state -> state
+val small_step : Location.t -> PulsePathCondition.t -> event -> state -> state
 
 val large_step :
-     substitution:(PulseAbstractValue.t * PulseValueHistory.t) PulseAbstractValue.Map.t
+     call_location:Location.t
+  -> callee_proc_name:Procname.t
+  -> substitution:(PulseAbstractValue.t * PulseValueHistory.t) PulseAbstractValue.Map.t
   -> condition:PulsePathCondition.t
   -> callee_prepost:state
   -> state

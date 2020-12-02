@@ -109,8 +109,8 @@ module PulseTransferFunctions = struct
     let return = Var.of_id return in
     let do_astate astate =
       let return = Option.map ~f:fst (Stack.find_opt return astate) in
-      let topl_event = PulseTopl.Call {return; arguments; procname; loc} in
-      AbductiveDomain.Topl.small_step topl_event astate
+      let topl_event = PulseTopl.Call {return; arguments; procname} in
+      AbductiveDomain.Topl.small_step loc topl_event astate
     in
     let do_one_exec_state (exec_state : Domain.t) : Domain.t =
       match exec_state with
