@@ -215,8 +215,13 @@ let retn formals freturn {areturn; unshadow; frame} q =
         | None -> Exec.kill q areturn )
     | None -> q
   in
-  (* exit scope of formals *)
-  let q = Sh.exists (Var.Set.union formals (Var.Set.of_option freturn)) q in
+  (* exit scope of formals, except for areturn, which move/kill handled *)
+  let outscoped =
+    Var.Set.diff
+      (Var.Set.union formals (Var.Set.of_option freturn))
+      (Var.Set.of_option areturn)
+  in
+  let q = Sh.exists outscoped q in
   (* reinstate shadowed values of locals *)
   let q = Sh.rename unshadow q in
   (* reconjoin frame *)
