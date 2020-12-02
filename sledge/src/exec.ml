@@ -737,7 +737,7 @@ let free pre ~ptr = exec_spec pre (free_spec ptr)
 let nondet pre = function Some reg -> kill pre reg | None -> pre
 let abort _ = None
 
-let intrinsic ~skip_throw :
+let intrinsic_func ~skip_throw :
     Sh.t -> Var.t option -> string -> Term.t iarray -> Sh.t option option =
  fun pre areturn intrinsic actuals ->
   let name =

@@ -22,7 +22,7 @@ val free : Sh.t -> ptr:Term.t -> Sh.t option
 val nondet : Sh.t -> Var.t option -> Sh.t
 val abort : Sh.t -> Sh.t option
 
-val intrinsic :
+val intrinsic_func :
      skip_throw:bool
   -> Sh.t
   -> Var.t option
