@@ -212,8 +212,11 @@ and parse_constant (json : Safe.json) =
     let i = parse_intrep const_value in
     Const.Cint i
   else if String.equal const_kind "Float" then
-    let f = parse_floatrep const_value in
-    Const.Cfloat f
+    match const_value with
+    | string -> Const.Cfloat nan
+    | _ -> 
+      let f = parse_floatrep const_value in
+      Const.Cfloat f 
   else if String.equal const_kind "Fun" then
     let pname = parse_cil_procname const_value in
     Const.Cfun pname
