@@ -361,6 +361,7 @@ let calloc_spec reg num len =
   {foot; sub; ms; post}
 
 let size_of_ptr = Term.integer (Z.of_int Llair.Typ.(size_of ptr))
+let size_of_siz = Term.integer (Z.of_int Llair.Typ.(size_of siz))
 
 (* { p-[_;_)->⟨W,_⟩ }
  *   posix_memalign r p s
@@ -520,12 +521,13 @@ let nallocx_spec reg siz =
 
 let size_of_int_mul = Term.mulq (Q.of_int Llair.Typ.(size_of siz))
 
-(* { r-[_;_)->⟨m,_⟩ * i-[_;_)->⟨_,m⟩ * w=0 * n=0 }
- *   mallctl r i w n
- * { ∃α'. r-[_;_)->⟨m,α'⟩ * i-[_;_)->⟨_,m⟩ }
+(* { r-[_;_)->⟨m,_⟩ * i-[_;_)->⟨W,m⟩ * w=0 * n=0 }
+ *   mallctl (_, r, i, w, n)
+ * { ∃α'. r-[_;_)->⟨m,α'⟩ * i-[_;_)->⟨W,m⟩ }
+ * where W = sizeof size_t
  *)
 let mallctl_read_spec r i w n =
-  let* iseg = Fresh.seg i in
+  let* iseg = Fresh.seg i ~siz:size_of_siz in
   let* rseg = Fresh.seg r ~siz:iseg.cnt in
   let+ a = Fresh.var "a" in
   let foot =
@@ -558,7 +560,7 @@ let mallctlbymib_read_spec p l r i w n =
   {foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
 (* { r=0 * i=0 * w-[_;_)->⟨n,_⟩ }
- *   mallctl r i w n
+ *   mallctl (_, r, i, w, n)
  * { w-[_;_)->⟨n,_⟩ }
  *)
 let mallctl_write_spec r i w n =
@@ -568,7 +570,7 @@ let mallctl_write_spec r i w n =
   {foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
 (* { p-[_;_)->⟨W×l,_⟩ * r=0 * i=0 * w-[_;_)->⟨n,_⟩ }
- *   mallctl r i w n
+ *   mallctl (_, r, i, w, n)
  * { p-[_;_)->⟨W×l,_⟩ * w-[_;_)->⟨n,_⟩ }
  * where W = sizeof int
  *)
