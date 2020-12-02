@@ -1112,6 +1112,7 @@ let xlate_instr :
           | ["__llair_throw"] ->
               let pre, exc = xlate_value x (Llvm.operand instr 0) in
               emit_term ~prefix:(pop loc @ pre) (Term.throw ~exc ~loc)
+          | ["__llair_unreachable"] -> emit_term Term.unreachable
           (* dropped / handled elsewhere *)
           | ["llvm"; "dbg"; ("declare" | "value")]
            |"llvm" :: ("lifetime" | "invariant") :: ("start" | "end") :: _
@@ -1180,6 +1181,7 @@ let xlate_instr :
                   xlate_jump x instr unwind_blk loc []
                 in
                 emit_term ~prefix (Term.goto ~dst ~loc) ~blocks
+            | ["__llair_unreachable"] -> emit_term Term.unreachable
             (* unimplemented *)
             | "llvm" :: "experimental" :: "gc" :: "statepoint" :: _ ->
                 todo "statepoints:@ %a" pp_llvalue instr ()

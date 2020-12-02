@@ -13,9 +13,13 @@ extern "C" {
 
 __attribute__((noreturn)) void __llair_throw(void* thrown_exception);
 
-/* This models allocation that cannot fail. */
+/* express assumption that an execution is not possible */
+__attribute__((noreturn)) void __llair_unreachable();
+
+/* allocation that cannot fail. */
 void* __llair_alloc(unsigned size);
 
+/* non-deterministic choice */
 int __llair_choice();
 
 #ifdef __cplusplus
