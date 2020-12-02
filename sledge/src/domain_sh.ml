@@ -73,10 +73,8 @@ let exec_inst inst pre =
   | Abort _ -> Exec.abort pre
   | Intrinsic {reg; name; args; _} ->
       let areturn = Option.map ~f:X.reg reg in
-      let intrinsic = Llair.Intrinsic.to_string name in
       let actuals = IArray.map ~f:X.term args in
-      Exec.intrinsic_func ~skip_throw:true pre areturn intrinsic actuals
-      |> Option.get_lazy (fail "exec_inst: %a" Llair.Inst.pp inst) )
+      Exec.intrinsic ~skip_throw:true pre areturn name actuals )
   |> Option.map ~f:simplify
 
 let exec_intrinsic ~skip_throw r i es q =
