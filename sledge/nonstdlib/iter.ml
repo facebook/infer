@@ -66,6 +66,24 @@ let fold_opt seq s ~f =
     Some !state
   with Stop -> None
 
+let folding_map seq s ~f =
+  fold_map
+    ~f:(fun s x ->
+      let y, s = f x s in
+      (s, y) )
+    ~init:s seq
+
+let fold_map seq s ~f =
+  let r = ref s in
+  let seq' =
+    persistent (fun yield ->
+        seq (fun x ->
+            let y, s = f x !r in
+            r := s ;
+            yield y ) )
+  in
+  (!r, seq')
+
 let fold_until (type res) seq s ~f ~finish =
   let state = ref s in
   let exception Stop of res in
