@@ -196,3 +196,13 @@ let tfilter_map a ~f = Array.to_list (Array.filter_map ~f a.transitions)
 
 let pp_transition f {source; target; label} =
   Format.fprintf f "@[%d -> %d:@,%a@]" source target ToplAstOps.pp_label label
+
+
+let has_name n a i =
+  let _property, name = vname a i in
+  String.equal name n
+
+
+let is_start = has_name "start"
+
+let is_error = has_name "error"

@@ -31,6 +31,16 @@ let report_on_error_list {InterproceduralAnalysis.proc_desc; err_log} result =
   PulseReport.report_error proc_desc err_log result |> exec_list_of_list_result
 
 
+let report_topl_errors proc_desc err_log summary =
+  let f = function
+    | ExecutionDomain.ContinueProgram astate ->
+        PulseTopl.report_errors proc_desc err_log (AbductiveDomain.Topl.get astate)
+    | _ ->
+        ()
+  in
+  List.iter ~f summary
+
+
 let proc_name_of_call call_exp =
   match (call_exp : Exp.t) with
   | Const (Cfun proc_name) | Closure {name= proc_name} ->
@@ -92,14 +102,14 @@ module PulseTransferFunctions = struct
         Ok exec_state
 
 
-  let topl_small_step procname arguments (return, _typ) exec_state_res =
+  let topl_small_step loc procname arguments (return, _typ) exec_state_res =
     let arguments =
       List.map arguments ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload} -> fst arg_payload)
     in
     let return = Var.of_id return in
     let do_astate astate =
       let return = Option.map ~f:fst (Stack.find_opt return astate) in
-      let topl_event = PulseTopl.Call {return; arguments; procname} in
+      let topl_event = PulseTopl.Call {return; arguments; procname; loc} in
       AbductiveDomain.Topl.small_step topl_event astate
     in
     let do_one_exec_state (exec_state : Domain.t) : Domain.t =
@@ -157,7 +167,7 @@ module PulseTransferFunctions = struct
       if Topl.is_deep_active () then
         match callee_pname with
         | Some callee_pname ->
-            topl_small_step callee_pname func_args ret exec_state_res
+            topl_small_step call_loc callee_pname func_args ret exec_state_res
         | None ->
             (* skip, as above for non-topl *) exec_state_res
       else exec_state_res
@@ -330,11 +340,13 @@ module DisjunctiveAnalyzer =
       let widen_policy = `UnderApproximateAfterNumIterations Config.pulse_widen_threshold
     end)
 
-let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
+let checker ({InterproceduralAnalysis.proc_desc; err_log} as analysis_data) =
   AbstractValue.State.reset () ;
   let initial = [ExecutionDomain.mk_initial proc_desc] in
   match DisjunctiveAnalyzer.compute_post analysis_data ~initial proc_desc with
   | Some posts ->
-      Some (PulseSummary.of_posts proc_desc posts)
+      let summary = PulseSummary.of_posts proc_desc posts in
+      report_topl_errors proc_desc err_log summary ;
+      Some summary
   | None ->
       None

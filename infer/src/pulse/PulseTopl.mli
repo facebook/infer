@@ -9,7 +9,8 @@ open! IStd
 
 type value = PulseAbstractValue.t
 
-type event = Call of {return: value option; arguments: value list; procname: Procname.t}
+type event =
+  | Call of {return: value option; arguments: value list; procname: Procname.t; loc: Location.t}
 
 type state
 
@@ -35,5 +36,8 @@ val filter_for_summary : PulsePathCondition.t -> state -> state
     program path condition is updated later.) *)
 
 val simplify : keep:PulseAbstractValue.Set.t -> state -> state
+
+val report_errors : Procdesc.t -> Errlog.t -> state -> unit
+(** Calls [Reporting.log_issue] with error traces, if any. *)
 
 val pp_state : Format.formatter -> state -> unit

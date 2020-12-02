@@ -61,4 +61,8 @@ val starts : t -> vindex list
 
 val registers : t -> ToplAst.register_name list
 
+val is_start : t -> vindex -> bool
+
+val is_error : t -> vindex -> bool
+
 val pp_transition : Format.formatter -> transition -> unit

@@ -189,4 +189,6 @@ module Topl : sig
     -> callee_prepost:PulseTopl.state
     -> t
     -> t
+
+  val get : summary -> PulseTopl.state
 end

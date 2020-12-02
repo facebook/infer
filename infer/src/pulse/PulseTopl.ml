@@ -11,7 +11,8 @@ module L = Logging
 
 type value = AbstractValue.t
 
-type event = Call of {return: value option; arguments: value list; procname: Procname.t}
+type event =
+  | Call of {return: value option; arguments: value list; procname: Procname.t; loc: Location.t}
 
 let pp_comma_seq f xs = Pp.comma_seq ~print_env:Pp.text_break f xs
 
@@ -29,12 +30,19 @@ type configuration = {vertex: vertex; memory: (register * value) list}
 
 type predicate = Binop.t * PathCondition.operand * PathCondition.operand
 
-type simple_state =
+type step =
+  { step_event: event
+  ; step_predecessor: simple_state  (** state before this step *)
+  ; step_type: step_type }
+
+and step_type = SmallStep
+
+(* TODO(rgrigore): | LargeStep of simple_state *)
+and simple_state =
   { pre: configuration  (** at the start of the procedure *)
   ; post: configuration  (** at the current program point *)
-  ; pruned: predicate list  (** path-condition for the automaton *) }
-
-(* TODO(rgrigore): use Formula.Atom.Set for [pruned]?? *)
+  ; pruned: predicate list  (** path-condition for the automaton *)
+  ; last_step: step option  (** for trace error reporting *) }
 
 (* TODO: include a hash of the automaton in a summary to avoid caching problems. *)
 (* TODO: limit the number of simple_states to some configurable number (default ~5) *)
@@ -68,7 +76,7 @@ let start () =
       fun () -> List.map ~f:(fun r -> (r, AbstractValue.mk_fresh ())) registers
     in
     let configurations = List.map ~f:(fun vertex -> {vertex; memory= mk_memory ()}) starts in
-    List.map ~f:(fun c -> {pre= c; post= c; pruned= []}) configurations
+    List.map ~f:(fun c -> {pre= c; post= c; pruned= []; last_step= None}) configurations
   in
   if Topl.is_deep_active () then mk_simple_states () else (* Avoids work later *) []
 
@@ -214,38 +222,46 @@ let skip_pruned_of_nonskip_pruned nonskip_list =
 
 let small_step path_condition event simple_states =
   let tmatches = static_match event in
-  let evolve_transition memory (transition, tcontext) : (configuration * predicate list) list =
+  let evolve_transition (old : simple_state) (transition, tcontext) : state =
+    let mk ?(memory = old.post.memory) ?(pruned = []) significant =
+      let last_step =
+        if significant then Some {step_event= event; step_predecessor= old; step_type= SmallStep}
+        else old.last_step
+      in
+      (* NOTE: old pruned is discarded, because evolve_simple_state needs to see only new prunes
+         to determine skip transitions. It will then add back old prunes. *)
+      let post = {vertex= transition.ToplAutomaton.target; memory} in
+      {old with post; pruned; last_step}
+    in
     match transition.ToplAutomaton.label with
     | None ->
         (* "any" transition *)
-        [({vertex= transition.ToplAutomaton.target; memory}, [])]
+        let is_loop = Int.equal transition.ToplAutomaton.source transition.ToplAutomaton.target in
+        [mk (not is_loop)]
     | Some label ->
+        let memory = old.post.memory in
         let pruned = eval_guard memory tcontext label.ToplAst.condition in
         let memory = apply_action tcontext label.ToplAst.action memory in
-        [({vertex= transition.ToplAutomaton.target; memory}, pruned)]
+        [mk ~memory ~pruned true]
   in
-  let evolve_state_cond ({vertex; memory}, pruned) =
-    let path_condition = conjoin_pruned path_condition pruned in
+  let evolve_simple_state old =
+    let path_condition = conjoin_pruned path_condition old.pruned in
     let simplify result =
-      (* TODO(rgrigore): Remove from extra_pruned what is implied by path_condition *)
-      let f (_configuration, extra_pruned) = not (is_unsat path_condition extra_pruned) in
+      let f {pruned} = not (is_unsat path_condition pruned) in
       List.filter ~f result
     in
     let tmatches =
-      List.filter ~f:(fun (t, _) -> Int.equal vertex t.ToplAutomaton.source) tmatches
+      List.filter ~f:(fun (t, _) -> Int.equal old.post.vertex t.ToplAutomaton.source) tmatches
     in
-    let nonskip = simplify (List.concat_map ~f:(evolve_transition memory) tmatches) in
+    let nonskip = simplify (List.concat_map ~f:(evolve_transition old) tmatches) in
     let skip =
-      let nonskip_pruned_list = List.map ~f:snd nonskip in
+      let nonskip_pruned_list = List.map ~f:(fun {pruned} -> pruned) nonskip in
       let skip_pruned_list = skip_pruned_of_nonskip_pruned nonskip_pruned_list in
-      let f pruned = ({vertex; memory}, pruned) in
+      let f pruned = {old with pruned} (* keeps last_step from old *) in
       simplify (List.map ~f skip_pruned_list)
     in
-    let add_old_pruned (configuration, extra_pruned) = (configuration, extra_pruned @ pruned) in
+    let add_old_pruned s = {s with pruned= List.rev_append s.pruned old.pruned} in
     List.map ~f:add_old_pruned (List.rev_append nonskip skip)
-  in
-  let evolve_simple_state {pre; post; pruned} =
-    List.map ~f:(fun (post, pruned) -> {pre; post; pruned}) (evolve_state_cond (post, pruned))
   in
   let result = List.concat_map ~f:evolve_simple_state simple_states in
   L.d_printfln "@[<2>PulseTopl.small_step:@;%a@ -> %a@]" pp_state simple_states pp_state result ;
@@ -259,7 +275,7 @@ let filter_for_summary path_condition state =
 
 
 let simplify ~keep state =
-  let simplify_simple_state {pre; post; pruned} =
+  let simplify_simple_state {pre; post; pruned; last_step} =
     (* NOTE(rgrigore): registers could be considered live for the program path_condition as well.
        That should improve precision, but I'm wary of altering what the Pulse program state is just
        because Topl is enabled. *)
@@ -273,6 +289,31 @@ let simplify ~keep state =
     in
     let is_live_predicate (_op, l, r) = is_live_operand l && is_live_operand r in
     let pruned = List.filter ~f:is_live_predicate pruned in
-    {pre; post; pruned}
+    {pre; post; pruned; last_step}
   in
   List.map ~f:simplify_simple_state state
+
+
+let report_errors proc_desc err_log state =
+  let a = Topl.automaton () in
+  let rec make_trace acc q =
+    match q.last_step with
+    | None ->
+        acc
+    | Some {step_event; step_predecessor; step_type= SmallStep} ->
+        let (Call {loc; procname}) = step_event in
+        let description =
+          Format.fprintf Format.str_formatter "@[call to %a@]" Procname.pp procname ;
+          Format.flush_str_formatter ()
+        in
+        let e = Errlog.make_trace_element 0 loc description [] in
+        make_trace (e :: acc) step_predecessor
+  in
+  let report_simple_state q =
+    if ToplAutomaton.is_start a q.pre.vertex && ToplAutomaton.is_error a q.post.vertex then
+      let loc = Procdesc.get_loc proc_desc in
+      let ltr = make_trace [] q in
+      let message = Format.asprintf "%a" ToplAutomaton.pp_message_of_state (a, q.post.vertex) in
+      Reporting.log_issue proc_desc err_log ~loc ~ltr ToplOnPulse IssueType.topl_pulse_error message
+  in
+  List.iter ~f:report_simple_state state
