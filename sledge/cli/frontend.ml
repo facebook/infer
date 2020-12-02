@@ -981,7 +981,8 @@ let xlate_intrinsic_inst emit_inst x llname instr num_actuals loc =
       emit_inst ~prefix (Inst.alloc ~reg ~num ~len ~loc)
   | ["_Znwm" (* operator new(size_t num) *)]
    |[ "_ZnwmSt11align_val_t"
-      (* operator new(unsigned long, std::align_val_t) *) ] ->
+      (* operator new(unsigned long, std::align_val_t) *) ]
+    when num_actuals > 0 ->
       let reg = xlate_name x instr in
       let prefix, num = xlate_value x (Llvm.operand instr 0) in
       let len = size_of x (Llvm.type_of instr) in
@@ -1156,49 +1157,54 @@ let xlate_instr :
       let return_blk = Llvm.get_normal_dest instr in
       let unwind_blk = Llvm.get_unwind_dest instr in
       (* intrinsics *)
-      match String.split_on_char fname ~by:'.' with
-      | _ when Option.is_some (xlate_intrinsic_exp fname) ->
+      match xlate_intrinsic_exp fname with
+      | Some _ ->
+          (* instr will be translated to an exp by xlate_value, so only need
+             to wire up control flow here *)
           let prefix, dst, blocks = xlate_jump x instr return_blk loc [] in
           emit_term ~prefix (Term.goto ~dst ~loc) ~blocks
-      | ["__llair_throw"] ->
-          let prefix, dst, blocks = xlate_jump x instr unwind_blk loc [] in
-          emit_term ~prefix (Term.goto ~dst ~loc) ~blocks
-      | ["abort"] -> emit_term ~prefix:[Inst.abort ~loc] Term.unreachable
-      | ["_Znwm" (* operator new(size_t num) *)]
-       |[ "_ZnwmSt11align_val_t"
-          (* operator new(unsigned long num, std::align_val_t) *) ]
-        when num_actuals > 0 ->
-          let reg = xlate_name x instr in
-          let pre_0, num = xlate_value x (Llvm.operand instr 0) in
-          let len = size_of x (Llvm.type_of instr) in
-          let prefix, dst, blocks = xlate_jump x instr return_blk loc [] in
-          emit_term
-            ~prefix:(pre_0 @ (Inst.alloc ~reg ~num ~len ~loc :: prefix))
-            (Term.goto ~dst ~loc) ~blocks
-      (* unimplemented *)
-      | "llvm" :: "experimental" :: "gc" :: "statepoint" :: _ ->
-          todo "statepoints:@ %a" pp_llvalue instr ()
-      | _ when Poly.equal (Llvm.classify_value llfunc) InlineAsm ->
-          todo "inline asm: @ %a" pp_llvalue instr ()
-      (* general function call that may throw *)
-      | _ ->
-          let pre_0, callee = xlate_value x llfunc in
-          let typ = xlate_type x lltyp in
-          let pre_1, actuals =
-            xlate_values x num_actuals (Llvm.operand instr)
+      | None -> (
+          let k ?prefix:(pre_inst = []) inst =
+            let pre_jump, dst, blocks =
+              xlate_jump x instr return_blk loc []
+            in
+            let prefix = pre_inst @ (inst :: pre_jump) in
+            emit_term ~prefix (Term.goto ~dst ~loc) ~blocks
           in
-          let areturn = xlate_name_opt x instr in
-          let pre_2, return, blocks =
-            xlate_jump x instr return_blk loc []
-          in
-          let pre_3, throw, blocks =
-            xlate_jump x instr unwind_blk loc blocks
-          in
-          let throw = Some throw in
-          emit_term
-            ~prefix:(List.concat [pre_0; pre_1; pre_2; pre_3])
-            (Term.call ~callee ~typ ~actuals ~areturn ~return ~throw ~loc)
-            ~blocks )
+          match xlate_intrinsic_inst k x fname instr num_actuals loc with
+          | Some code -> code
+          | None -> (
+            match String.split_on_char fname ~by:'.' with
+            | ["__llair_throw"] ->
+                let prefix, dst, blocks =
+                  xlate_jump x instr unwind_blk loc []
+                in
+                emit_term ~prefix (Term.goto ~dst ~loc) ~blocks
+            (* unimplemented *)
+            | "llvm" :: "experimental" :: "gc" :: "statepoint" :: _ ->
+                todo "statepoints:@ %a" pp_llvalue instr ()
+            | _ when Poly.equal (Llvm.classify_value llfunc) InlineAsm ->
+                todo "inline asm: @ %a" pp_llvalue instr ()
+            (* general function call that may throw *)
+            | _ ->
+                let pre_0, callee = xlate_value x llfunc in
+                let typ = xlate_type x lltyp in
+                let pre_1, actuals =
+                  xlate_values x num_actuals (Llvm.operand instr)
+                in
+                let areturn = xlate_name_opt x instr in
+                let pre_2, return, blocks =
+                  xlate_jump x instr return_blk loc []
+                in
+                let pre_3, throw, blocks =
+                  xlate_jump x instr unwind_blk loc blocks
+                in
+                let throw = Some throw in
+                emit_term
+                  ~prefix:(List.concat [pre_0; pre_1; pre_2; pre_3])
+                  (Term.call ~callee ~typ ~actuals ~areturn ~return ~throw
+                     ~loc)
+                  ~blocks ) ) )
   | Ret ->
       let pre, exp =
         if Llvm.num_operands instr = 0 then ([], None)
