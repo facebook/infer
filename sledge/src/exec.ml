@@ -737,16 +737,98 @@ let free pre ~ptr = exec_spec pre (free_spec ptr)
 let nondet pre = function Some reg -> kill pre reg | None -> pre
 let abort _ = None
 
-let intrinsic ~skip_throw:_ :
+let intrinsic ~skip_throw :
        Sh.t
     -> Var.t option
     -> Llair.Intrinsic.t
     -> Term.t iarray
     -> Sh.t option =
- fun pre _areturn intrinsic _actuals ->
-  match intrinsic with `nop -> Some pre
+ fun pre areturn intrinsic actuals ->
+  match (areturn, intrinsic, IArray.to_array actuals) with
+  (*
+   * cstdlib - memory management
+   *)
+  (* void* malloc(size_t size) *)
+  | Some reg, `malloc, [|size|]
+  (* void* aligned_alloc(size_t alignment, size_t size) *)
+   |Some reg, `aligned_alloc, [|_; size|] ->
+      exec_spec pre (malloc_spec reg size)
+  (* void* calloc(size_t number, size_t size) *)
+  | Some reg, `calloc, [|number; size|] ->
+      exec_spec pre (calloc_spec reg number size)
+  (* int posix_memalign(void** ptr, size_t alignment, size_t size) *)
+  | Some reg, `posix_memalign, [|ptr; _; size|] ->
+      exec_spec pre (posix_memalign_spec reg ptr size)
+  (* void* realloc(void* ptr, size_t size) *)
+  | Some reg, `realloc, [|ptr; size|] ->
+      exec_spec pre (realloc_spec reg ptr size)
+  (*
+   * jemalloc - non-standard API
+   *)
+  (* void* mallocx(size_t size, int flags) *)
+  | Some reg, `mallocx, [|size; _|] -> exec_spec pre (mallocx_spec reg size)
+  (* void* rallocx(void* ptr, size_t size, int flags) *)
+  | Some reg, `rallocx, [|ptr; size; _|] ->
+      exec_spec pre (rallocx_spec reg ptr size)
+  (* size_t xallocx(void* ptr, size_t size, size_t extra, int flags) *)
+  | Some reg, `xallocx, [|ptr; size; extra; _|] ->
+      exec_spec pre (xallocx_spec reg ptr size extra)
+  (* size_t sallocx(void* ptr, int flags) *)
+  | Some reg, `sallocx, [|ptr; _|] -> exec_spec pre (sallocx_spec reg ptr)
+  (* void dallocx(void* ptr, int flags) *)
+  | None, `dallocx, [|ptr; _|]
+  (* void sdallocx(void* ptr, size_t size, int flags) *)
+   |None, `sdallocx, [|ptr; _; _|] ->
+      exec_spec pre (dallocx_spec ptr)
+  (* size_t nallocx(size_t size, int flags) *)
+  | Some reg, `nallocx, [|size; _|] -> exec_spec pre (nallocx_spec reg size)
+  (* size_t malloc_usable_size(void* ptr) *)
+  | Some reg, `malloc_usable_size, [|ptr|] ->
+      exec_spec pre (malloc_usable_size_spec reg ptr)
+  (* int mallctl(const char* name, void* oldp, size_t* oldlenp, void* newp,
+     size_t newlen) *)
+  | Some _, `mallctl, [|_; oldp; oldlenp; newp; newlen|] ->
+      exec_specs pre (mallctl_specs oldp oldlenp newp newlen)
+  (* int mallctlnametomib(const char* name, size_t* mibp, size_t* miblenp) *)
+  | Some _, `mallctlnametomib, [|_; mibp; miblenp|] ->
+      exec_spec pre (mallctlnametomib_spec mibp miblenp)
+  (* int mallctlbymib(const size_t* mib, size_t miblen, void* oldp, size_t*
+     oldlenp, void* newp, size_t newlen); *)
+  | Some _, `mallctlbymib, [|mib; miblen; oldp; oldlenp; newp; newlen|] ->
+      exec_specs pre
+        (mallctlbymib_specs mib miblen oldp oldlenp newp newlen)
+  | _, `malloc_stats_print, _ -> Some pre
+  (*
+   * cstring
+   *)
+  (* size_t strlen (const char* ptr) *)
+  | Some reg, `strlen, [|ptr|] -> exec_spec pre (strlen_spec reg ptr)
+  (*
+   * cxxabi
+   *)
+  | Some _, `__cxa_allocate_exception, [|_|] when skip_throw ->
+      Some (Sh.false_ pre.us)
+  (*
+   * folly
+   *)
+  (* bool folly::usingJEMalloc() *)
+  | Some _, `_ZN5folly13usingJEMallocEv, [||] -> Some pre
+  (*
+   * signature mismatch
+   *)
+  | ( _
+    , ( `malloc | `aligned_alloc | `calloc | `posix_memalign | `realloc
+      | `mallocx | `rallocx | `xallocx | `sallocx | `dallocx | `sdallocx
+      | `nallocx | `malloc_usable_size | `mallctl | `mallctlnametomib
+      | `mallctlbymib | `strlen | `__cxa_allocate_exception
+      | `_ZN5folly13usingJEMallocEv )
+    , _ ) ->
+      fail "%aintrinsic %a%a;"
+        (Option.pp "%a := " Var.pp)
+        areturn Llair.Intrinsic.pp intrinsic (IArray.pp "@ " Term.pp)
+        actuals ()
 
-let intrinsic_func ~skip_throw :
+let intrinsic_func ~skip_throw:_ :
     Sh.t -> Var.t option -> string -> Term.t iarray -> Sh.t option option =
  fun pre areturn intrinsic actuals ->
   let name =
@@ -754,82 +836,7 @@ let intrinsic_func ~skip_throw :
     | None -> intrinsic
     | Some i -> String.take i intrinsic
   in
-  let skip pre = Some (Some pre) in
-  ( match (areturn, name, IArray.to_array actuals) with
-  (*
-   * cstdlib - memory management
-   *)
-  (* void* malloc(size_t size) *)
-  | Some reg, "malloc", [|size|]
-  (* void* aligned_alloc(size_t alignment, size_t size) *)
-   |Some reg, "aligned_alloc", [|_; size|] ->
-      Some (exec_spec pre (malloc_spec reg size))
-  (* void* calloc(size_t number, size_t size) *)
-  | Some reg, "calloc", [|number; size|] ->
-      Some (exec_spec pre (calloc_spec reg number size))
-  (* int posix_memalign(void** ptr, size_t alignment, size_t size) *)
-  | Some reg, "posix_memalign", [|ptr; _; size|] ->
-      Some (exec_spec pre (posix_memalign_spec reg ptr size))
-  (* void* realloc(void* ptr, size_t size) *)
-  | Some reg, "realloc", [|ptr; size|] ->
-      Some (exec_spec pre (realloc_spec reg ptr size))
-  (*
-   * jemalloc - non-standard API
-   *)
-  (* void* mallocx(size_t size, int flags) *)
-  | Some reg, "mallocx", [|size; _|] ->
-      Some (exec_spec pre (mallocx_spec reg size))
-  (* void* rallocx(void* ptr, size_t size, int flags) *)
-  | Some reg, "rallocx", [|ptr; size; _|] ->
-      Some (exec_spec pre (rallocx_spec reg ptr size))
-  (* size_t xallocx(void* ptr, size_t size, size_t extra, int flags) *)
-  | Some reg, "xallocx", [|ptr; size; extra; _|] ->
-      Some (exec_spec pre (xallocx_spec reg ptr size extra))
-  (* size_t sallocx(void* ptr, int flags) *)
-  | Some reg, "sallocx", [|ptr; _|] ->
-      Some (exec_spec pre (sallocx_spec reg ptr))
-  (* void dallocx(void* ptr, int flags) *)
-  | None, "dallocx", [|ptr; _|]
-  (* void sdallocx(void* ptr, size_t size, int flags) *)
-   |None, "sdallocx", [|ptr; _; _|] ->
-      Some (exec_spec pre (dallocx_spec ptr))
-  (* size_t nallocx(size_t size, int flags) *)
-  | Some reg, "nallocx", [|size; _|] ->
-      Some (exec_spec pre (nallocx_spec reg size))
-  (* size_t malloc_usable_size(void* ptr) *)
-  | Some reg, "malloc_usable_size", [|ptr|] ->
-      Some (exec_spec pre (malloc_usable_size_spec reg ptr))
-  (* int mallctl(const char* name, void* oldp, size_t* oldlenp, void* newp,
-     size_t newlen) *)
-  | Some _, "mallctl", [|_; oldp; oldlenp; newp; newlen|] ->
-      Some (exec_specs pre (mallctl_specs oldp oldlenp newp newlen))
-  (* int mallctlnametomib(const char* name, size_t* mibp, size_t* miblenp) *)
-  | Some _, "mallctlnametomib", [|_; mibp; miblenp|] ->
-      Some (exec_spec pre (mallctlnametomib_spec mibp miblenp))
-  (* int mallctlbymib(const size_t* mib, size_t miblen, void* oldp, size_t*
-     oldlenp, void* newp, size_t newlen); *)
-  | Some _, "mallctlbymib", [|mib; miblen; oldp; oldlenp; newp; newlen|] ->
-      Some
-        (exec_specs pre
-           (mallctlbymib_specs mib miblen oldp oldlenp newp newlen))
-  | _, "malloc_stats_print", _ -> skip pre
-  (*
-   * cstring
-   *)
-  (* size_t strlen (const char* ptr) *)
-  | Some reg, "strlen", [|ptr|] ->
-      Some (exec_spec pre (strlen_spec reg ptr))
-  (*
-   * cxxabi
-   *)
-  | Some _, "__cxa_allocate_exception", [|_|] when skip_throw ->
-      skip (Sh.false_ pre.us)
-  (*
-   * folly
-   *)
-  (* bool folly::usingJEMalloc() *)
-  | Some _, "_ZN5folly13usingJEMallocEv", [||] -> skip pre
-  | _ -> None )
+  (match (areturn, name, IArray.to_array actuals) with _ -> None)
   $> function
   | None -> ()
   | Some _ ->

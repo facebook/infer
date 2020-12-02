@@ -205,26 +205,7 @@ let exec_intrinsic ~skip_throw:_ aret i _ pre =
   let name = Llair.Function.name i in
   if
     List.exists
-      [ "malloc"
-      ; "aligned_alloc"
-      ; "calloc"
-      ; "posix_memalign"
-      ; "realloc"
-      ; "mallocx"
-      ; "rallocx"
-      ; "xallocx"
-      ; "sallocx"
-      ; "dallocx"
-      ; "sdallocx"
-      ; "nallocx"
-      ; "malloc_usable_size"
-      ; "mallctl"
-      ; "mallctlnametomib"
-      ; "mallctlbymib"
-      ; "malloc_stats_print"
-      ; "strlen"
-      ; "__cxa_allocate_exception"
-      ; "_ZN5folly13usingJEMallocEv" ]
+      ["__cxa_allocate_exception"; "_ZN5folly13usingJEMallocEv"]
       ~f:(String.equal name)
   then
     let+ aret = aret in

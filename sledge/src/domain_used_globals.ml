@@ -49,26 +49,7 @@ let exec_intrinsic ~skip_throw:_ _ intrinsic actuals st =
   let name = Llair.Function.name intrinsic in
   if
     List.exists
-      [ "malloc"
-      ; "aligned_alloc"
-      ; "calloc"
-      ; "posix_memalign"
-      ; "realloc"
-      ; "mallocx"
-      ; "rallocx"
-      ; "xallocx"
-      ; "sallocx"
-      ; "dallocx"
-      ; "sdallocx"
-      ; "nallocx"
-      ; "malloc_usable_size"
-      ; "mallctl"
-      ; "mallctlnametomib"
-      ; "mallctlbymib"
-      ; "malloc_stats_print"
-      ; "strlen"
-      ; "__cxa_allocate_exception"
-      ; "_ZN5folly13usingJEMallocEv" ]
+      ["__cxa_allocate_exception"; "_ZN5folly13usingJEMallocEv"]
       ~f:(String.equal name)
   then IArray.fold ~f:used_globals actuals st |> fun res -> Some (Some res)
   else None

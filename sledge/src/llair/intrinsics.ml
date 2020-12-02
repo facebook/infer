@@ -7,4 +7,30 @@
 
 (** Intrinsic instruction opcodes *)
 
-type t = [`nop] [@@deriving compare, equal, hash, sexp, enumerate, variants]
+type t =
+  [ (* cstdlib - memory management *)
+    `malloc
+  | `aligned_alloc
+  | `calloc
+  | `posix_memalign
+  | `realloc
+  | (* jemalloc - non-standard API *)
+    `mallocx
+  | `rallocx
+  | `xallocx
+  | `sallocx
+  | `dallocx
+  | `sdallocx
+  | `nallocx
+  | `malloc_usable_size
+  | `mallctl
+  | `mallctlnametomib
+  | `mallctlbymib
+  | `malloc_stats_print
+  | (* cstring *)
+    `strlen
+  | (* cxxabi *)
+    `__cxa_allocate_exception
+  | (* folly *)
+    `_ZN5folly13usingJEMallocEv ]
+[@@deriving compare, equal, hash, sexp, enumerate, variants]
