@@ -443,7 +443,7 @@ let parse_pdesc (cfg : Cfg.t) (pd_id_to_pd : Procdesc.t IntTbl.t) (start_nd_tbl 
   IntTbl.add exit_nd_tbl _id (to_int (member "pd_exit_node" json));
   (* let open Procdesc in *)
   let pd =
-    Cfg.create_proc_desc cfg _attrs
+    Cfg.get_proc_desc cfg _attrs
   in
   IntTbl.add pd_id_to_pd _id pd
 
