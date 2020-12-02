@@ -7,7 +7,7 @@
 
 (** Used-globals abstract domain *)
 
-type t = Llair.Global.Set.t [@@deriving equal, sexp]
+type t = Llair.Global.Set.t [@@deriving compare, equal, sexp]
 
 let pp = Llair.Global.Set.pp
 let report_fmt_thunk = Fun.flip pp

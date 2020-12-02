@@ -131,7 +131,13 @@ end
 
 module Pair = Containers.Pair
 module Bijection = CCBijection [@@warning "-49"]
-module FHeap = Fheap [@@warning "-49"]
+
+module FHeap = struct
+  include Fheap
+
+  let remove_top_exn h = snd (pop_exn h)
+end
+
 module HashQueue = Core_kernel.Hash_queue
 
 (** Input / Output *)

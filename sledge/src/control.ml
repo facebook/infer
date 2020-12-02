@@ -18,6 +18,9 @@ type exec_opts =
 module Make (Dom : Domain_intf.Dom) = struct
   module Stack : sig
     type t
+
+    val pp : t pp
+
     type as_inlined_location = t [@@deriving compare, sexp_of]
 
     val empty : t
@@ -50,6 +53,15 @@ module Make (Dom : Domain_intf.Dom) = struct
       | Empty
     [@@deriving sexp_of]
 
+    let rec pp ppf = function
+      | Return {recursive= false; dst; stk= s} ->
+          Format.fprintf ppf "R#%i%a" dst.dst.sort_index pp s
+      | Return {recursive= true; dst; stk= s} ->
+          Format.fprintf ppf "R↑#%i%a" dst.dst.sort_index pp s
+      | Throw (dst, s) ->
+          Format.fprintf ppf "T#%i%a" dst.dst.sort_index pp s
+      | Empty -> ()
+
     type as_inlined_location = t [@@deriving sexp_of]
 
     (* Treat a stack as a code location in a hypothetical expansion of the
@@ -78,23 +90,11 @@ module Make (Dom : Domain_intf.Dom) = struct
         | _, Throw _ -> 1
         | Empty, Empty -> 0
 
-    let rec print_abbrev fs = function
-      | Return {recursive= false; stk= s} ->
-          print_abbrev fs s ;
-          Format.pp_print_char fs 'R'
-      | Return {recursive= true; stk= s} ->
-          print_abbrev fs s ;
-          Format.pp_print_string fs "R↑"
-      | Throw (_, s) ->
-          print_abbrev fs s ;
-          Format.pp_print_char fs 'T'
-      | Empty -> ()
-
     let invariant s =
       let@ () = Invariant.invariant [%here] s [%sexp_of: t] in
       match s with
       | Return _ | Throw (_, Return _) | Empty -> ()
-      | Throw _ -> fail "malformed stack: %a" print_abbrev s ()
+      | Throw _ -> fail "malformed stack: %a" pp s ()
 
     let empty = Empty |> check invariant
 
@@ -108,7 +108,7 @@ module Make (Dom : Domain_intf.Dom) = struct
       |> check invariant
 
     let push_call (Llair.{return; throw} as call) ~bound from_call stk =
-      [%Trace.call fun {pf} -> pf "%a" print_abbrev stk]
+      [%Trace.call fun {pf} -> pf "%a" pp stk]
       ;
       let rec count_f_in_stack acc f = function
         | Return {stk= next_frame; dst= dest_block} ->
@@ -184,7 +184,7 @@ module Make (Dom : Domain_intf.Dom) = struct
     module Depths = struct
       module M = Map.Make (Edge)
 
-      type t = int M.t
+      type t = int M.t [@@deriving compare, sexp_of]
 
       let empty = M.empty
       let find = M.find
@@ -196,62 +196,116 @@ module Make (Dom : Domain_intf.Dom) = struct
           | `Both (d1, d2) -> Some (Int.max d1 d2) )
     end
 
-    type priority = int * Edge.t [@@deriving compare]
-    type priority_queue = priority FHeap.t
-    type waiting_states = (Dom.t * Depths.t) list Llair.Block.Map.t
-    type t = priority_queue * waiting_states * int
+    module PrioQueue : sig
+      (** an edge at a depth with the domain and depths state it yielded *)
+      type elt = {depth: int; edge: Edge.t; state: Dom.t; depths: Depths.t}
+
+      type t
+
+      val pp : t pp
+
+      val create : unit -> t
+      (** create an empty queue *)
+
+      val add : elt -> t -> t
+      (** add an element *)
+
+      val remove : elt -> t -> t
+      (** remove an element *)
+
+      val pop : t -> (elt * elt list * t) option
+      (** the top element, the other elements with the same destination, the
+          queue without the top element *)
+    end = struct
+      type elt = {depth: int; edge: Edge.t; state: Dom.t; depths: Depths.t}
+      [@@deriving compare, sexp_of]
+
+      module Elts = Set.Make (struct
+        type t = elt [@@deriving compare, sexp_of]
+      end)
+
+      type t = {queue: elt FHeap.t; removed: Elts.t}
+
+      let pp_elt ppf {depth; edge} =
+        Format.fprintf ppf "%i: %a" depth Edge.pp edge
+
+      let pp ppf {queue; removed} =
+        let rev_elts =
+          FHeap.fold queue ~init:[] ~f:(fun rev_elts elt ->
+              if Elts.mem elt removed then rev_elts else elt :: rev_elts )
+        in
+        Format.fprintf ppf "@[%a@]" (List.pp " ::@ " pp_elt)
+          (List.rev rev_elts)
+
+      let create () =
+        {queue= FHeap.create ~cmp:compare_elt; removed= Elts.empty}
+
+      let add elt {queue; removed} =
+        let removed' = Elts.remove elt removed in
+        if removed' == removed then {queue= FHeap.add queue elt; removed}
+        else {queue; removed= removed'}
+
+      let remove elt {queue; removed} =
+        {queue; removed= Elts.add elt removed}
+
+      let rec pop {queue; removed} =
+        let* top, queue = FHeap.pop queue in
+        let removed' = Elts.remove top removed in
+        if removed' != removed then pop {queue; removed= removed'}
+        else
+          let elts =
+            FHeap.fold queue ~init:[] ~f:(fun elts elt ->
+                if
+                  Llair.Block.equal top.edge.dst elt.edge.dst
+                  && not (Elts.mem elt removed)
+                then elt :: elts
+                else elts )
+          in
+          Some (top, elts, {queue; removed})
+    end
+
+    type t = PrioQueue.t * int
     type x = Depths.t -> t -> t
-
-    let empty_waiting_states : waiting_states = Llair.Block.Map.empty
-    let pp_priority fs (n, e) = Format.fprintf fs "%i: %a" n Edge.pp e
-
-    let pp fs pq =
-      Format.fprintf fs "@[%a@]"
-        (List.pp " ::@ " pp_priority)
-        (FHeap.to_list pq)
 
     let skip _ w = w
     let seq x y d w = y d (x d w)
 
-    let add ?prev ~retreating stk state curr depths ((pq, ws, bound) as work)
-        =
+    let add ?prev ~retreating stk state curr depths (queue, bound) =
       let edge = {Edge.dst= curr; src= prev; stk} in
       let depth = Option.value (Depths.find edge depths) ~default:0 in
       let depth = if retreating then depth + 1 else depth in
-      if depth > bound then (
+      if depth <= bound then (
+        [%Trace.info
+          "@[<6>enqueue %i: %a [%a]@ | %a@]" depth Edge.pp edge Stack.pp
+            edge.stk PrioQueue.pp queue] ;
+        let depths = Depths.add ~key:edge ~data:depth depths in
+        (PrioQueue.add {depth; edge; state; depths} queue, bound) )
+      else (
         [%Trace.info "prune: %i: %a" depth Edge.pp edge] ;
         Report.hit_bound bound ;
-        work )
-      else
-        let pq = FHeap.add pq (depth, edge) in
-        [%Trace.info "@[<6>enqueue %i: %a@ | %a@]" depth Edge.pp edge pp pq] ;
-        let depths = Depths.add ~key:edge ~data:depth depths in
-        let ws =
-          Llair.Block.Map.add_multi ~key:curr ~data:(state, depths) ws
-        in
-        (pq, ws, bound)
+        (queue, bound) )
 
     let init state curr bound =
       add ~retreating:false Stack.empty state curr Depths.empty
-        (FHeap.create ~cmp:compare_priority, empty_waiting_states, bound)
+        (PrioQueue.create (), bound)
 
-    let rec run ~f (pq0, ws, bnd) =
-      match FHeap.pop pq0 with
-      | Some ((_, ({Edge.dst; stk} as edge)), pq) -> (
-        match Llair.Block.Map.find_and_remove dst ws with
-        | Some (q :: qs, ws) ->
-            let join (qa, da) (q, d) = (Dom.join q qa, Depths.join d da) in
-            let skipped, (qs, depths) =
-              List.fold qs ([], q) ~f:(fun curr (skipped, joined) ->
-                  match join curr joined with
-                  | Some joined, depths -> (skipped, (joined, depths))
-                  | None, _ -> (curr :: skipped, joined) )
-            in
-            let ws = Llair.Block.Map.add_exn ~key:dst ~data:skipped ws in
-            run ~f (f stk qs dst depths (pq, ws, bnd))
-        | _ ->
-            [%Trace.info "done: %a" Edge.pp edge] ;
-            run ~f (pq, ws, bnd) )
+    let rec run ~f (queue, bound) =
+      match PrioQueue.pop queue with
+      | Some ({depth; edge; state; depths}, elts, queue) ->
+          [%Trace.info
+            "@[<6>dequeue %i: %a [%a]@ | %a@]" depth Edge.pp edge Stack.pp
+              edge.stk PrioQueue.pp queue] ;
+          let state, depths, queue =
+            List.fold elts (state, depths, queue)
+              ~f:(fun elt (state, depths, queue) ->
+                match Dom.join elt.state state with
+                | Some state ->
+                    let depths = Depths.join elt.depths depths in
+                    let queue = PrioQueue.remove elt queue in
+                    (state, depths, queue)
+                | None -> (state, depths, queue) )
+          in
+          run ~f (f edge.stk state edge.dst depths (queue, bound))
       | None ->
           [%Trace.info "queue empty"] ;
           ()
@@ -466,7 +520,14 @@ module Make (Dom : Domain_intf.Dom) = struct
       -> Llair.block
       -> Work.x =
    fun opts pgm stk state block ->
-    [%Trace.info "exec block %%%s" block.lbl] ;
+    [%trace]
+      ~call:(fun {pf} ->
+        pf "#%i %%%s in %a" block.sort_index block.lbl Llair.Function.pp
+          block.parent.name )
+      ~retn:(fun {pf} _ ->
+        pf "#%i %%%s in %a" block.sort_index block.lbl Llair.Function.pp
+          block.parent.name )
+    @@ fun () ->
     match
       Iter.fold_result ~f:exec_inst (IArray.to_iter block.cmnd) state
     with

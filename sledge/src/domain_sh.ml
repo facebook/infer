@@ -10,7 +10,7 @@
 module X = Llair_to_Fol
 open Fol
 
-type t = Sh.t [@@deriving equal, sexp]
+type t = Sh.t [@@deriving compare, equal, sexp]
 
 let pp fs q = Format.fprintf fs "@[{ %a@ }@]" Sh.pp q
 let report_fmt_thunk = Fun.flip pp
