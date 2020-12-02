@@ -989,6 +989,21 @@ let xlate_intrinsic_inst emit_inst x llname instr loc =
         ~prefix:(pre_0 @ pre_1 @ pre_2)
         (Inst.memmov ~dst ~src ~len ~loc)
   | ["abort"] | ["llvm"; "trap"] -> emit_inst (Inst.abort ~loc)
+  | [fname] -> (
+    match Intrinsic.of_name fname with
+    | Some name ->
+        let reg = xlate_name_opt x instr in
+        let num_args = Llvm.num_operands instr - 2 in
+        let xlate_arg i pre =
+          let pre_i, arg_i = xlate_value x (Llvm.operand instr i) in
+          (arg_i, pre_i @ pre)
+        in
+        let prefix, args =
+          Iter.fold_map ~f:xlate_arg Iter.(0 -- num_args) []
+        in
+        let args = IArray.of_iter args in
+        emit_inst ~prefix (Inst.intrinsic ~reg ~name ~args ~loc)
+    | None -> None )
   | _ -> None
 
 let xlate_instr :
