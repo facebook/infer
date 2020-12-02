@@ -963,9 +963,9 @@ let num_actuals instr lltyp llfunc =
     ) ;
     Array.length (Llvm.param_types llelt)
 
-let xlate_intrinsic_inst emit_inst x llname instr num_actuals loc =
+let xlate_intrinsic_inst emit_inst x name_segs instr num_actuals loc =
   let emit_inst ?prefix inst = Some (emit_inst ?prefix inst) in
-  match String.split_on_char llname ~by:'.' with
+  match name_segs with
   | ["__llair_choice"] ->
       let reg = xlate_name x instr in
       let msg = "__llair_choice" in
@@ -1017,8 +1017,8 @@ let xlate_intrinsic_inst emit_inst x llname instr num_actuals loc =
         ~prefix:(pre_0 @ pre_1 @ pre_2)
         (Inst.memmov ~dst ~src ~len ~loc)
   | ["abort"] | ["llvm"; "trap"] -> emit_inst (Inst.abort ~loc)
-  | [fname] -> (
-    match Intrinsic.of_name fname with
+  | [iname] | "llvm" :: iname :: _ -> (
+    match Intrinsic.of_name iname with
     | Some name ->
         let reg = xlate_name_opt x instr in
         let xlate_arg i pre =
@@ -1094,6 +1094,7 @@ let xlate_instr :
       let llfunc = norm_callee llcallee in
       let num_actuals = num_actuals instr lltyp llfunc in
       let fname = Llvm.value_name llfunc in
+      let name_segs = String.split_on_char fname ~by:'.' in
       let skip msg =
         if StringS.add ignored_callees fname then
           warn "ignoring uninterpreted %s %s" msg fname () ;
@@ -1105,11 +1106,11 @@ let xlate_instr :
       | Some intrinsic -> inline_or_move (intrinsic x)
       | None -> (
         match
-          xlate_intrinsic_inst emit_inst x fname instr num_actuals loc
+          xlate_intrinsic_inst emit_inst x name_segs instr num_actuals loc
         with
         | Some code -> code
         | None -> (
-          match String.split_on_char fname ~by:'.' with
+          match name_segs with
           | ["__llair_throw"] ->
               let pre, exc = xlate_value x (Llvm.operand instr 0) in
               emit_term ~prefix:(pop loc @ pre) (Term.throw ~exc ~loc)
@@ -1154,6 +1155,7 @@ let xlate_instr :
       let llfunc = norm_callee llcallee in
       let num_actuals = num_actuals instr lltyp llfunc in
       let fname = Llvm.value_name llfunc in
+      let name_segs = String.split_on_char fname ~by:'.' in
       let return_blk = Llvm.get_normal_dest instr in
       let unwind_blk = Llvm.get_unwind_dest instr in
       (* intrinsics *)
@@ -1171,10 +1173,12 @@ let xlate_instr :
             let prefix = pre_inst @ (inst :: pre_jump) in
             emit_term ~prefix (Term.goto ~dst ~loc) ~blocks
           in
-          match xlate_intrinsic_inst k x fname instr num_actuals loc with
+          match
+            xlate_intrinsic_inst k x name_segs instr num_actuals loc
+          with
           | Some code -> code
           | None -> (
-            match String.split_on_char fname ~by:'.' with
+            match name_segs with
             | ["__llair_throw"] ->
                 let prefix, dst, blocks =
                   xlate_jump x instr unwind_blk loc []
