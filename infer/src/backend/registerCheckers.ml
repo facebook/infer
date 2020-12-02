@@ -148,7 +148,7 @@ let all_checkers =
   ; { checker= Pulse
     ; callbacks=
         (let checker =
-           if Config.is_checker_enabled ToplOnPulse then Topl.analyze_with_pulse Pulse.checker
+           if Config.is_checker_enabled ToplOnPulse then PulseToplShallow.analyze Pulse.checker
            else Pulse.checker
          in
          let pulse = interprocedural Payloads.Fields.pulse checker in

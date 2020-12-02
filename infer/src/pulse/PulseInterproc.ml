@@ -115,11 +115,12 @@ let visit call_state ~pre ~addr_callee ~addr_hist_caller =
       ; rev_subst= AddressMap.add addr_caller addr_callee call_state.rev_subst } )
 
 
-let pp f {AbductiveDomain.pre; post; path_condition; skipped_calls} =
+let pp f {AbductiveDomain.pre; post; topl; path_condition; skipped_calls} =
   F.fprintf f "COND:@\n  @[%a@]@\n" PathCondition.pp path_condition ;
   F.fprintf f "PRE:@\n  @[%a@]@\n" BaseDomain.pp (pre :> BaseDomain.t) ;
   F.fprintf f "POST:@\n  @[%a@]@\n" BaseDomain.pp (post :> BaseDomain.t) ;
-  F.fprintf f "SKIPPED_CALLS:@ @[%a@]@\n" SkippedCalls.pp skipped_calls
+  F.fprintf f "SKIPPED_CALLS:@ @[%a@]@\n" SkippedCalls.pp skipped_calls ;
+  F.fprintf f "TOPL:@\n @[%a@]@\n" PulseTopl.pp_state topl
 
 
 (* {3 reading the pre from the current state} *)

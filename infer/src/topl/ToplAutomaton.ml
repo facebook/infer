@@ -164,3 +164,8 @@ let get_start_error_pairs a =
   let f ~key:_ = function `Both (x, y) -> Some (x, y) | _ -> None in
   let pairs = Hashtbl.merge starts errors ~f in
   Hashtbl.data pairs
+
+
+let pp_message_of_state fmt (a, i) =
+  let property, state = vname a i in
+  Format.fprintf fmt "property %s reaches state %s" property state

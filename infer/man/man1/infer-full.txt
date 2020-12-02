@@ -1948,7 +1948,15 @@ INTERNAL OPTIONS
 
        --topl-properties +path
            [EXPERIMENTAL] Specify a file containing a temporal property
-           definition (e.g., jdk.topl).
+           definition (e.g., jdk.topl).           One needs to also select one of the three implementations, by
+           enabling one of the following checkers
+           --pulse       will run pulse with updated transfer functions
+           --topl-pulse  [SLOW] uses SIL-instrumentation, runs pulse, and
+           analyzes pulse summaries
+           --topl-biabd  [SLOW] uses SIL-instrumentation, runs biabduction,
+           and analyzes biabduction summaries
+           Note that enabling topl-pulse or topl-biabd will disable the
+           first implementation using updated pulse transfer functions.
 
        --topl-properties-reset
            Set --topl-properties to the empty list.

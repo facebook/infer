@@ -81,6 +81,7 @@ module PreDomain : BaseDomainSig = PostDomain
 type t =
   { post: PostDomain.t  (** state at the current program point*)
   ; pre: PreDomain.t  (** inferred pre at the current program point *)
+  ; topl: (PulseTopl.state[@yojson.opaque])
   ; skipped_calls: SkippedCalls.t  (** set of skipped calls *)
   ; path_condition: PathCondition.t }
 [@@deriving yojson_of]
@@ -140,6 +141,7 @@ module Stack = struct
         in
         ( { post= PostDomain.update astate.post ~stack:post_stack
           ; pre
+          ; topl= astate.topl
           ; skipped_calls= astate.skipped_calls
           ; path_condition= astate.path_condition }
         , addr_hist )
@@ -288,6 +290,7 @@ module Memory = struct
         in
         ( { post= PostDomain.update astate.post ~heap:post_heap
           ; pre= PreDomain.update astate.pre ~heap:foot_heap
+          ; topl= astate.topl
           ; skipped_calls= astate.skipped_calls
           ; path_condition= astate.path_condition }
         , addr_hist_dst )
@@ -326,7 +329,11 @@ let mk_initial proc_desc =
     PreDomain.update ~stack:initial_stack ~heap:initial_heap PreDomain.empty
   in
   let post = PostDomain.update ~stack:initial_stack PostDomain.empty in
-  {pre; post; skipped_calls= SkippedCalls.empty; path_condition= PathCondition.true_}
+  { pre
+  ; post
+  ; topl= PulseTopl.start ()
+  ; skipped_calls= SkippedCalls.empty
+  ; path_condition= PathCondition.true_ }
 
 
 let add_skipped_call pname trace astate =
@@ -479,3 +486,10 @@ let summary_of_post pdesc astate =
 let get_pre {pre} = (pre :> BaseDomain.t)
 
 let get_post {post} = (post :> BaseDomain.t)
+
+module Topl = struct
+  let small_step event astate =
+    {astate with topl= PulseTopl.small_step astate.path_condition event astate.topl}
+
+  (* TODO: large_step *)
+end

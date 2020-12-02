@@ -56,6 +56,7 @@ module PreDomain : BaseDomainSig
 type t = private
   { post: PostDomain.t  (** state at the current program point*)
   ; pre: PreDomain.t  (** inferred pre at the current program point *)
+  ; topl: PulseTopl.state  (** state at of the Topl monitor at the current program point *)
   ; skipped_calls: SkippedCalls.t  (** set of skipped calls *)
   ; path_condition: PathCondition.t  (** arithmetic facts *) }
 
@@ -178,3 +179,7 @@ val incorporate_new_eqs : t -> PathCondition.t * PathCondition.new_eqs -> PathCo
     e.g. [x = 0] is not compatible with [x] being allocated, and [x = y] is not compatible with [x]
     and [y] being allocated separately. In those cases, the resulting path condition is
     {!PathCondition.false_}. *)
+
+module Topl : sig
+  val small_step : PulseTopl.event -> t -> t
+end

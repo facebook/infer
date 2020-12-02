@@ -92,6 +92,26 @@ module PulseTransferFunctions = struct
         Ok exec_state
 
 
+  let topl_small_step arguments (return, _typ) exec_state_res =
+    let arguments =
+      List.map arguments ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload} -> fst arg_payload)
+    in
+    let return = Var.of_id return in
+    let do_astate astate =
+      let return = Option.map ~f:fst (Stack.find_opt return astate) in
+      let topl_event = PulseTopl.Call {return; arguments} in
+      AbductiveDomain.Topl.small_step topl_event astate
+    in
+    let do_one_exec_state (exec_state : Domain.t) : Domain.t =
+      match exec_state with
+      | ContinueProgram astate ->
+          ContinueProgram (do_astate astate)
+      | AbortProgram _ | LatentAbortProgram _ | ExitProgram _ ->
+          exec_state
+    in
+    Result.map ~f:(List.map ~f:do_one_exec_state) exec_state_res
+
+
   let dispatch_call ({InterproceduralAnalysis.tenv} as analysis_data) ret call_exp actuals call_loc
       flags astate =
     (* evaluate all actuals *)
@@ -131,6 +151,10 @@ module PulseTransferFunctions = struct
           in
           PerfEvent.(log (fun logger -> log_end_event logger ())) ;
           r
+    in
+    let exec_state_res =
+      if Topl.is_deep_active () then topl_small_step func_args ret exec_state_res
+      else exec_state_res
     in
     match get_out_of_scope_object call_exp actuals flags with
     | Some pvar_typ ->
