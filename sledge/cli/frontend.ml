@@ -982,7 +982,8 @@ let xlate_intrinsic_inst emit_inst x name_segs instr num_actuals loc =
       in
       let len = 1 in
       emit_inst ~prefix (Inst.alloc ~reg ~num ~len ~loc)
-  | ["_Znwm" (* operator new(size_t num) *)]
+  | ["_Znam" (* operator new[](unsigned long) *)]
+   |["_Znwm" (* operator new(size_t num) *)]
    |[ "_ZnwmSt11align_val_t"
       (* operator new(unsigned long, std::align_val_t) *) ]
     when num_actuals > 0 ->
