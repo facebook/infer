@@ -936,6 +936,15 @@ let ignored_callees = StringS.create 0
 let xlate_size_of x llv =
   Exp.integer Typ.siz (Z.of_int (size_of x (Llvm.type_of llv)))
 
+let norm_callee llfunc =
+  match Llvm.classify_value llfunc with
+  | Function | Instruction _ | InlineAsm | Argument -> llfunc
+  | ConstantExpr -> (
+    match Llvm.constexpr_opcode llfunc with
+    | BitCast -> Llvm.operand llfunc 0
+    | _ -> todo "callee kind %a" pp_llvalue llfunc () )
+  | _ -> todo "callee kind %a" pp_llvalue llfunc ()
+
 let xlate_intrinsic_inst emit_inst x llname instr loc =
   let emit_inst ?prefix inst = Some (emit_inst ?prefix inst) in
   match String.split_on_char llname ~by:'.' with
@@ -1062,23 +1071,10 @@ let xlate_instr :
       let len = size_of x (Llvm.type_of instr) in
       emit_inst ~prefix (Inst.alloc ~reg ~num ~len ~loc)
   | Call -> (
-      let maybe_llfunc = Llvm.operand instr (Llvm.num_operands instr - 1) in
-      let lltyp = Llvm.type_of maybe_llfunc in
+      let llcallee = Llvm.operand instr (Llvm.num_operands instr - 1) in
+      let lltyp = Llvm.type_of llcallee in
       assert (Poly.(Llvm.classify_type lltyp = Pointer)) ;
-      let llfunc =
-        let llfunc_valuekind = Llvm.classify_value maybe_llfunc in
-        match llfunc_valuekind with
-        | Function | Instruction _ | InlineAsm | Argument -> maybe_llfunc
-        | ConstantExpr -> (
-          match Llvm.constexpr_opcode maybe_llfunc with
-          | BitCast -> Llvm.operand maybe_llfunc 0
-          | _ ->
-              todo "opcode kind in call instruction %a" pp_llvalue
-                maybe_llfunc () )
-        | _ ->
-            todo "operand kind in call instruction %a" pp_llvalue
-              maybe_llfunc ()
-      in
+      let llfunc = norm_callee llcallee in
       let fname = Llvm.value_name llfunc in
       let skip msg =
         if StringS.add ignored_callees fname then
