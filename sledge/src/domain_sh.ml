@@ -68,7 +68,7 @@ let exec_inst inst pre =
   | Intrinsic {reg; name; args; _} ->
       let areturn = Option.map ~f:X.reg reg in
       let actuals = IArray.map ~f:X.term args in
-      Exec.intrinsic ~skip_throw:true pre areturn name actuals )
+      Exec.intrinsic pre areturn name actuals )
   |> Option.map ~f:simplify
 
 let value_determined_by ctx us a =

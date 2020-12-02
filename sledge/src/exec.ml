@@ -734,7 +734,7 @@ let free pre ~ptr = exec_spec pre (free_spec ptr)
 let nondet pre = function Some reg -> kill pre reg | None -> pre
 let abort _ = None
 
-let intrinsic ~skip_throw :
+let intrinsic :
        Sh.t
     -> Var.t option
     -> Llair.Intrinsic.t
@@ -810,11 +810,6 @@ let intrinsic ~skip_throw :
   (* size_t strlen (const char* ptr) *)
   | Some reg, `strlen, [|ptr|] -> exec_spec pre (strlen_spec reg ptr)
   (*
-   * cxxabi
-   *)
-  | Some _, `__cxa_allocate_exception, [|_|] when skip_throw ->
-      Some (Sh.false_ pre.us)
-  (*
    * folly
    *)
   (* bool folly::usingJEMalloc() *)
@@ -827,7 +822,7 @@ let intrinsic ~skip_throw :
       | `posix_memalign | `realloc | `mallocx | `rallocx | `xallocx
       | `sallocx | `dallocx | `sdallocx | `nallocx | `malloc_usable_size
       | `mallctl | `mallctlnametomib | `mallctlbymib | `strlen
-      | `__cxa_allocate_exception | `_ZN5folly13usingJEMallocEv )
+      | `_ZN5folly13usingJEMallocEv )
     , _ ) ->
       fail "%aintrinsic %a%a;"
         (Option.pp "%a := " Var.pp)

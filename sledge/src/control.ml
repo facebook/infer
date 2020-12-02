@@ -11,7 +11,6 @@
 
 type exec_opts =
   { bound: int
-  ; skip_throw: bool
   ; function_summaries: bool
   ; entry_points: string list
   ; globals: Domain_used_globals.r }
@@ -446,9 +445,7 @@ module Make (Dom : Domain_intf.Dom) = struct
                   (Domain_used_globals.by_function opts.globals callee.name)
                 |> Work.seq x ) )
     | Return {exp} -> exec_return ~opts stk state block exp
-    | Throw {exc} ->
-        if opts.skip_throw then Work.skip
-        else exec_throw stk state block exc
+    | Throw {exc} -> exec_throw stk state block exc
     | Unreachable -> Work.skip
 
   let exec_inst : Llair.inst -> Dom.t -> (Dom.t, Dom.t * Llair.inst) result

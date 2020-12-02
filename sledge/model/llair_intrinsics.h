@@ -11,16 +11,17 @@
 extern "C" {
 #endif
 
-__attribute__((noreturn)) void __llair_throw(void* thrown_exception);
-
-/* express assumption that an execution is not possible */
-__attribute__((noreturn)) void __llair_unreachable();
-
-/* allocation that cannot fail. */
+/* allocation that cannot fail */
 void* __llair_alloc(unsigned size);
 
 /* non-deterministic choice */
 int __llair_choice();
+
+/* throw an exception */
+__attribute__((noreturn)) void __llair_throw(void* thrown_exception);
+
+/* executions that call __llair_unreachable are assumed to be impossible */
+__attribute__((noreturn)) void __llair_unreachable();
 
 #ifdef __cplusplus
 }

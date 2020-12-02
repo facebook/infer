@@ -83,7 +83,6 @@ let used_globals pgm preanalyze : Domain_used_globals.r =
     let summary_table =
       Used_globals_executor.compute_summaries
         { bound= 1
-        ; skip_throw= false
         ; function_summaries= true
         ; entry_points
         ; globals= Declared Llair.Global.Set.empty }
@@ -101,9 +100,6 @@ let analyze =
     flag "bound"
       (optional_with_default 1 int)
       ~doc:"<int> stop execution exploration at depth <int>"
-  and exceptions =
-    flag "exceptions" no_arg
-      ~doc:"explore executions that throw and handle exceptions"
   and function_summaries =
     flag "function-summaries" no_arg
       ~doc:"use function summaries (in development)"
@@ -131,10 +127,9 @@ let analyze =
   fun program () ->
     let pgm = program () in
     let globals = used_globals pgm preanalyze_globals in
-    let skip_throw = not exceptions in
     Domain_sh.simplify_states := not no_simplify_states ;
     Timer.enabled := stats ;
-    exec {bound; skip_throw; function_summaries; entry_points; globals} pgm ;
+    exec {bound; function_summaries; entry_points; globals} pgm ;
     Report.coverage pgm ;
     Report.safe_or_unsafe ()
 

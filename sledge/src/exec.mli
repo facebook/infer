@@ -20,9 +20,4 @@ val nondet : Sh.t -> Var.t option -> Sh.t
 val abort : Sh.t -> Sh.t option
 
 val intrinsic :
-     skip_throw:bool
-  -> Sh.t
-  -> Var.t option
-  -> Llair.Intrinsic.t
-  -> Term.t iarray
-  -> Sh.t option
+  Sh.t -> Var.t option -> Llair.Intrinsic.t -> Term.t iarray -> Sh.t option

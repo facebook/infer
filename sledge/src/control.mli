@@ -9,7 +9,6 @@
 
 type exec_opts =
   { bound: int  (** Loop/recursion unrolling bound *)
-  ; skip_throw: bool  (** Treat throw as unreachable *)
   ; function_summaries: bool  (** Use function summarisation *)
   ; entry_points: string list  (** C linkage names of entry points *)
   ; globals: Domain_used_globals.r }

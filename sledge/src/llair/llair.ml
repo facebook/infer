@@ -572,9 +572,14 @@ module BlockQ = HashQueue.Make (Block_label)
 module Func = struct
   type t = func [@@deriving compare, equal, hash, sexp_of]
 
-  let is_undefined = function
-    | {entry= {cmnd; term= Unreachable; _}; _} -> IArray.is_empty cmnd
-    | _ -> false
+  let undefined_entry =
+    Block.mk ~lbl:"undefined" ~cmnd:IArray.empty ~term:Term.unreachable
+
+  let mk_undefined ~name ~formals ~freturn ~fthrow ~loc =
+    let locals = Reg.Set.empty in
+    {name; formals; freturn; fthrow; locals; entry= undefined_entry; loc}
+
+  let is_undefined func = func.entry == undefined_entry
 
   let fold_cfg func s ~f =
     let seen = BlockS.create 0 in
@@ -672,13 +677,6 @@ module Func = struct
     resolve_parent_and_jumps entry ;
     IArray.iter cfg ~f:resolve_parent_and_jumps ;
     func |> check invariant
-
-  let mk_undefined ~name ~formals ~freturn ~fthrow =
-    let entry =
-      Block.mk ~lbl:"" ~cmnd:IArray.empty ~term:Term.unreachable
-    in
-    let cfg = IArray.empty in
-    mk ~name ~entry ~formals ~freturn ~fthrow ~cfg
 end
 
 (** Derived meta-data *)

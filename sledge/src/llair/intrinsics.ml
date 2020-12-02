@@ -33,8 +33,6 @@ type t =
   | `malloc_stats_print
   | (* cstring *)
     `strlen
-  | (* cxxabi *)
-    `__cxa_allocate_exception
   | (* folly *)
     `_ZN5folly13usingJEMallocEv ]
 [@@deriving compare, equal, hash, sexp, enumerate, variants]
