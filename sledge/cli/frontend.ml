@@ -945,7 +945,25 @@ let norm_callee llfunc =
     | _ -> todo "callee kind %a" pp_llvalue llfunc () )
   | _ -> todo "callee kind %a" pp_llvalue llfunc ()
 
-let xlate_intrinsic_inst emit_inst x llname instr loc =
+let num_actuals instr lltyp llfunc =
+  assert (Poly.(Llvm.classify_type lltyp = Pointer)) ;
+  if not (Llvm.is_var_arg (Llvm.element_type lltyp)) then
+    Llvm.num_arg_operands instr
+  else
+    let fname = Llvm.value_name llfunc in
+    if StringS.add ignored_callees fname && not (Llvm.is_declaration llfunc)
+    then
+      warn "ignoring variable arguments to variadic function: %a" pp_llvalue
+        llfunc () ;
+    let llelt = Llvm.element_type lltyp in
+    ( match Llvm.classify_type llelt with
+    | Function -> ()
+    | _ ->
+        fail "called function not of function type: %a" pp_llvalue instr ()
+    ) ;
+    Array.length (Llvm.param_types llelt)
+
+let xlate_intrinsic_inst emit_inst x llname instr num_actuals loc =
   let emit_inst ?prefix inst = Some (emit_inst ?prefix inst) in
   match String.split_on_char llname ~by:'.' with
   | ["__llair_choice"] ->
@@ -1002,13 +1020,12 @@ let xlate_intrinsic_inst emit_inst x llname instr loc =
     match Intrinsic.of_name fname with
     | Some name ->
         let reg = xlate_name_opt x instr in
-        let num_args = Llvm.num_operands instr - 2 in
         let xlate_arg i pre =
           let pre_i, arg_i = xlate_value x (Llvm.operand instr i) in
           (arg_i, pre_i @ pre)
         in
         let prefix, args =
-          Iter.fold_map ~f:xlate_arg Iter.(0 -- num_args) []
+          Iter.fold_map ~f:xlate_arg Iter.(0 -- (num_actuals - 1)) []
         in
         let args = IArray.of_iter args in
         emit_inst ~prefix (Inst.intrinsic ~reg ~name ~args ~loc)
@@ -1073,8 +1090,8 @@ let xlate_instr :
   | Call -> (
       let llcallee = Llvm.operand instr (Llvm.num_operands instr - 1) in
       let lltyp = Llvm.type_of llcallee in
-      assert (Poly.(Llvm.classify_type lltyp = Pointer)) ;
       let llfunc = norm_callee llcallee in
+      let num_actuals = num_actuals instr lltyp llfunc in
       let fname = Llvm.value_name llfunc in
       let skip msg =
         if StringS.add ignored_callees fname then
@@ -1086,7 +1103,9 @@ let xlate_instr :
       match xlate_intrinsic_exp fname with
       | Some intrinsic -> inline_or_move (intrinsic x)
       | None -> (
-        match xlate_intrinsic_inst emit_inst x fname instr loc with
+        match
+          xlate_intrinsic_inst emit_inst x fname instr num_actuals loc
+        with
         | Some code -> code
         | None -> (
           match String.split_on_char fname ~by:'.' with
@@ -1117,27 +1136,6 @@ let xlate_instr :
               let lbl = name ^ ".ret" in
               let pre, call =
                 let pre, actuals =
-                  let num_actuals =
-                    if not (Llvm.is_var_arg (Llvm.element_type lltyp)) then
-                      Llvm.num_arg_operands instr
-                    else
-                      let fname = Llvm.value_name llfunc in
-                      if
-                        StringS.add ignored_callees fname
-                        && not (Llvm.is_declaration llfunc)
-                      then
-                        warn
-                          "ignoring variable arguments to variadic \
-                           function: %a"
-                          Exp.pp callee () ;
-                      let llfty = Llvm.element_type lltyp in
-                      ( match Llvm.classify_type llfty with
-                      | Function -> ()
-                      | _ ->
-                          fail "called function not of function type: %a"
-                            pp_llvalue instr () ) ;
-                      Array.length (Llvm.param_types llfty)
-                  in
                   xlate_values x num_actuals (Llvm.operand instr)
                 in
                 let areturn = xlate_name_opt x instr in
@@ -1150,25 +1148,13 @@ let xlate_instr :
                   let cmnd = IArray.of_list insts in
                   (pre0 @ pre, call, [Block.mk ~lbl ~cmnd ~term]) ) ) ) )
   | Invoke -> (
-      let llfunc = Llvm.operand instr (Llvm.num_operands instr - 3) in
-      let lltyp = Llvm.type_of llfunc in
-      assert (Poly.(Llvm.classify_type lltyp = Pointer)) ;
+      let llcallee = Llvm.operand instr (Llvm.num_operands instr - 3) in
+      let lltyp = Llvm.type_of llcallee in
+      let llfunc = norm_callee llcallee in
+      let num_actuals = num_actuals instr lltyp llfunc in
       let fname = Llvm.value_name llfunc in
       let return_blk = Llvm.get_normal_dest instr in
       let unwind_blk = Llvm.get_unwind_dest instr in
-      let num_actuals =
-        if not (Llvm.is_var_arg (Llvm.element_type lltyp)) then
-          Llvm.num_arg_operands instr
-        else (
-          if
-            StringS.add ignored_callees fname
-            && not (Llvm.is_declaration llfunc)
-          then
-            warn "ignoring variable arguments to variadic function: %a"
-              Global.pp (xlate_global x llfunc).name () ;
-          assert (Poly.(Llvm.classify_type lltyp = Pointer)) ;
-          Array.length (Llvm.param_types (Llvm.element_type lltyp)) )
-      in
       (* intrinsics *)
       match String.split_on_char fname ~by:'.' with
       | _ when Option.is_some (xlate_intrinsic_exp fname) ->
@@ -1197,7 +1183,7 @@ let xlate_instr :
       (* general function call that may throw *)
       | _ ->
           let pre_0, callee = xlate_value x llfunc in
-          let typ = xlate_type x (Llvm.type_of llfunc) in
+          let typ = xlate_type x lltyp in
           let pre_1, actuals =
             xlate_values x num_actuals (Llvm.operand instr)
           in
