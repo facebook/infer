@@ -70,7 +70,13 @@ let exec_inst inst pre =
       Exec.alloc pre ~reg:(X.reg reg) ~num:(X.term num) ~len
   | Free {ptr; _} -> Exec.free pre ~ptr:(X.term ptr)
   | Nondet {reg; _} -> Some (Exec.nondet pre (Option.map ~f:X.reg reg))
-  | Abort _ -> Exec.abort pre )
+  | Abort _ -> Exec.abort pre
+  | Intrinsic {reg; name; args; _} ->
+      let areturn = Option.map ~f:X.reg reg in
+      let intrinsic = Llair.Intrinsic.to_string name in
+      let actuals = IArray.map ~f:X.term args in
+      Exec.intrinsic ~skip_throw:true pre areturn intrinsic actuals
+      |> Option.get_lazy (fail "exec_inst: %a" Llair.Inst.pp inst) )
   |> Option.map ~f:simplify
 
 let exec_intrinsic ~skip_throw r i es q =

@@ -197,6 +197,8 @@ let exec_inst i q =
    |Alloc _ | Memset _ | Memcpy _ | Memmov _ | Free _ ->
       Some q
   | Abort _ -> None
+  | Intrinsic {reg= Some reg; _} -> Some (exec_kill reg q)
+  | Intrinsic {reg= None; _} -> Some q
 
 (** Treat any intrinsic function as havoc on the return register [aret] *)
 let exec_intrinsic ~skip_throw:_ aret i _ pre =
