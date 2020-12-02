@@ -729,9 +729,6 @@ let move pre reg_exps =
 
 let load pre ~reg ~ptr ~len = exec_spec pre (load_spec reg ptr len)
 let store pre ~ptr ~exp ~len = exec_spec pre (store_spec ptr exp len)
-let memset pre ~dst ~byt ~len = exec_spec pre (memset_spec dst byt len)
-let memcpy pre ~dst ~src ~len = exec_specs pre (memcpy_specs dst src len)
-let memmov pre ~dst ~src ~len = exec_specs pre (memmov_specs dst src len)
 let alloc pre ~reg ~num ~len = exec_spec pre (alloc_spec reg num len)
 let free pre ~ptr = exec_spec pre (free_spec ptr)
 let nondet pre = function Some reg -> kill pre reg | None -> pre
@@ -745,6 +742,15 @@ let intrinsic ~skip_throw :
     -> Sh.t option =
  fun pre areturn intrinsic actuals ->
   match (areturn, intrinsic, IArray.to_array actuals) with
+  (*
+   * llvm intrinsics
+   *)
+  | None, `memset, [|dst; byt; len; _isvolatile|] ->
+      exec_spec pre (memset_spec dst byt len)
+  | None, `memcpy, [|dst; src; len; _isvolatile|] ->
+      exec_specs pre (memcpy_specs dst src len)
+  | None, `memmove, [|dst; src; len; _isvolatile|] ->
+      exec_specs pre (memmov_specs dst src len)
   (*
    * cstdlib - memory management
    *)
@@ -817,11 +823,11 @@ let intrinsic ~skip_throw :
    * signature mismatch
    *)
   | ( _
-    , ( `malloc | `aligned_alloc | `calloc | `posix_memalign | `realloc
-      | `mallocx | `rallocx | `xallocx | `sallocx | `dallocx | `sdallocx
-      | `nallocx | `malloc_usable_size | `mallctl | `mallctlnametomib
-      | `mallctlbymib | `strlen | `__cxa_allocate_exception
-      | `_ZN5folly13usingJEMallocEv )
+    , ( `memset | `memcpy | `memmove | `malloc | `aligned_alloc | `calloc
+      | `posix_memalign | `realloc | `mallocx | `rallocx | `xallocx
+      | `sallocx | `dallocx | `sdallocx | `nallocx | `malloc_usable_size
+      | `mallctl | `mallctlnametomib | `mallctlbymib | `strlen
+      | `__cxa_allocate_exception | `_ZN5folly13usingJEMallocEv )
     , _ ) ->
       fail "%aintrinsic %a%a;"
         (Option.pp "%a := " Var.pp)

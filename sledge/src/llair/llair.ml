@@ -39,9 +39,6 @@ type inst =
   | Move of {reg_exps: (Reg.t * Exp.t) iarray; loc: Loc.t}
   | Load of {reg: Reg.t; ptr: Exp.t; len: Exp.t; loc: Loc.t}
   | Store of {ptr: Exp.t; exp: Exp.t; len: Exp.t; loc: Loc.t}
-  | Memset of {dst: Exp.t; byt: Exp.t; len: Exp.t; loc: Loc.t}
-  | Memcpy of {dst: Exp.t; src: Exp.t; len: Exp.t; loc: Loc.t}
-  | Memmov of {dst: Exp.t; src: Exp.t; len: Exp.t; loc: Loc.t}
   | Alloc of {reg: Reg.t; num: Exp.t; len: int; loc: Loc.t}
   | Free of {ptr: Exp.t; loc: Loc.t}
   | Nondet of {reg: Reg.t option; msg: string; loc: Loc.t}
@@ -260,15 +257,6 @@ let pp_inst fs inst =
   | Store {ptr; exp; len; loc} ->
       pf "@[<2>store %a@ %a@ %a;@]\t%a" Exp.pp len Exp.pp ptr Exp.pp exp
         Loc.pp loc
-  | Memset {dst; byt; len; loc} ->
-      pf "@[<2>memset %a %a %a;@]\t%a" Exp.pp len Exp.pp dst Exp.pp byt
-        Loc.pp loc
-  | Memcpy {dst; src; len; loc} ->
-      pf "@[<2>memcpy %a %a %a;@]\t%a" Exp.pp len Exp.pp dst Exp.pp src
-        Loc.pp loc
-  | Memmov {dst; src; len; loc} ->
-      pf "@[<2>memmov %a %a %a;@]\t%a" Exp.pp len Exp.pp dst Exp.pp src
-        Loc.pp loc
   | Alloc {reg; num; len; loc} ->
       pf "@[<2>%a@ := alloc [%a x %i];@]\t%a" Reg.pp reg Exp.pp num len
         Loc.pp loc
@@ -369,9 +357,6 @@ module Inst = struct
   let move ~reg_exps ~loc = Move {reg_exps; loc}
   let load ~reg ~ptr ~len ~loc = Load {reg; ptr; len; loc}
   let store ~ptr ~exp ~len ~loc = Store {ptr; exp; len; loc}
-  let memset ~dst ~byt ~len ~loc = Memset {dst; byt; len; loc}
-  let memcpy ~dst ~src ~len ~loc = Memcpy {dst; src; len; loc}
-  let memmov ~dst ~src ~len ~loc = Memmov {dst; src; len; loc}
   let alloc ~reg ~num ~len ~loc = Alloc {reg; num; len; loc}
   let free ~ptr ~loc = Free {ptr; loc}
   let nondet ~reg ~msg ~loc = Nondet {reg; msg; loc}
@@ -382,9 +367,6 @@ module Inst = struct
     | Move {loc; _}
      |Load {loc; _}
      |Store {loc; _}
-     |Memset {loc; _}
-     |Memcpy {loc; _}
-     |Memmov {loc; _}
      |Alloc {loc; _}
      |Free {loc; _}
      |Nondet {loc; _}
@@ -401,7 +383,7 @@ module Inst = struct
      |Nondet {reg= Some reg; _}
      |Intrinsic {reg= Some reg; _} ->
         Reg.Set.add reg vs
-    | Store _ | Memcpy _ | Memmov _ | Memset _ | Free _
+    | Store _ | Free _
      |Nondet {reg= None; _}
      |Abort _
      |Intrinsic {reg= None; _} ->
@@ -415,9 +397,6 @@ module Inst = struct
         IArray.fold ~f:(fun (_reg, exp) -> f exp) reg_exps s
     | Load {reg= _; ptr; len; loc= _} -> f len (f ptr s)
     | Store {ptr; exp; len; loc= _} -> f len (f exp (f ptr s))
-    | Memset {dst; byt; len; loc= _} -> f len (f byt (f dst s))
-    | Memcpy {dst; src; len; loc= _} | Memmov {dst; src; len; loc= _} ->
-        f len (f src (f dst s))
     | Alloc {reg= _; num; len= _; loc= _} -> f num s
     | Free {ptr; loc= _} -> f ptr s
     | Nondet {reg= _; msg= _; loc= _} -> s

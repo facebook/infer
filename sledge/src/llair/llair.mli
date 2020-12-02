@@ -34,13 +34,6 @@ type inst = private
           [ptr] into [reg]. *)
   | Store of {ptr: Exp.t; exp: Exp.t; len: Exp.t; loc: Loc.t}
       (** Write [len]-byte value [exp] into memory at address [ptr]. *)
-  | Memset of {dst: Exp.t; byt: Exp.t; len: Exp.t; loc: Loc.t}
-      (** Store byte [byt] into [len] memory addresses starting from [dst]. *)
-  | Memcpy of {dst: Exp.t; src: Exp.t; len: Exp.t; loc: Loc.t}
-      (** Copy [len] bytes starting from address [src] to [dst], undefined
-          if ranges overlap. *)
-  | Memmov of {dst: Exp.t; src: Exp.t; len: Exp.t; loc: Loc.t}
-      (** Copy [len] bytes starting from address [src] to [dst]. *)
   | Alloc of {reg: Reg.t; num: Exp.t; len: int; loc: Loc.t}
       (** Allocate a block of memory large enough to store [num] elements of
           [len] bytes each and bind [reg] to the first address. *)
@@ -126,9 +119,6 @@ module Inst : sig
   val move : reg_exps:(Reg.t * Exp.t) iarray -> loc:Loc.t -> inst
   val load : reg:Reg.t -> ptr:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
   val store : ptr:Exp.t -> exp:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
-  val memset : dst:Exp.t -> byt:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
-  val memcpy : dst:Exp.t -> src:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
-  val memmov : dst:Exp.t -> src:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
   val alloc : reg:Reg.t -> num:Exp.t -> len:int -> loc:Loc.t -> inst
   val free : ptr:Exp.t -> loc:Loc.t -> inst
   val nondet : reg:Reg.t option -> msg:string -> loc:Loc.t -> inst

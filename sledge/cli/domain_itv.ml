@@ -193,9 +193,7 @@ let exec_inst i q =
     | None -> Some q )
   | Load {reg; ptr; len= _; loc= _} -> Some (assign reg ptr q)
   | Nondet {reg= Some reg; msg= _; loc= _} -> Some (exec_kill reg q)
-  | Nondet {reg= None; msg= _; loc= _}
-   |Alloc _ | Memset _ | Memcpy _ | Memmov _ | Free _ ->
-      Some q
+  | Nondet {reg= None; msg= _; loc= _} | Alloc _ | Free _ -> Some q
   | Abort _ -> None
   | Intrinsic {reg= Some reg; _} -> Some (exec_kill reg q)
   | Intrinsic {reg= None; _} -> Some q

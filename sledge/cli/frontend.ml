@@ -995,27 +995,6 @@ let xlate_intrinsic_inst emit_inst x name_segs instr num_actuals loc =
    |["free" (* void free(void* ptr) *)] ->
       let prefix, ptr = xlate_value x (Llvm.operand instr 0) in
       emit_inst ~prefix (Inst.free ~ptr ~loc)
-  | "llvm" :: "memset" :: _ ->
-      let pre_0, dst = xlate_value x (Llvm.operand instr 0) in
-      let pre_1, byt = xlate_value x (Llvm.operand instr 1) in
-      let pre_2, len = xlate_value x (Llvm.operand instr 2) in
-      emit_inst
-        ~prefix:(pre_0 @ pre_1 @ pre_2)
-        (Inst.memset ~dst ~byt ~len ~loc)
-  | "llvm" :: "memcpy" :: _ ->
-      let pre_0, dst = xlate_value x (Llvm.operand instr 0) in
-      let pre_1, src = xlate_value x (Llvm.operand instr 1) in
-      let pre_2, len = xlate_value x (Llvm.operand instr 2) in
-      emit_inst
-        ~prefix:(pre_0 @ pre_1 @ pre_2)
-        (Inst.memcpy ~dst ~src ~len ~loc)
-  | "llvm" :: "memmove" :: _ ->
-      let pre_0, dst = xlate_value x (Llvm.operand instr 0) in
-      let pre_1, src = xlate_value x (Llvm.operand instr 1) in
-      let pre_2, len = xlate_value x (Llvm.operand instr 2) in
-      emit_inst
-        ~prefix:(pre_0 @ pre_1 @ pre_2)
-        (Inst.memmov ~dst ~src ~len ~loc)
   | ["abort"] | ["llvm"; "trap"] -> emit_inst (Inst.abort ~loc)
   | [iname] | "llvm" :: iname :: _ -> (
     match Intrinsic.of_name iname with

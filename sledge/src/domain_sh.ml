@@ -60,12 +60,6 @@ let exec_inst inst pre =
       Exec.load pre ~reg:(X.reg reg) ~ptr:(X.term ptr) ~len:(X.term len)
   | Store {ptr; exp; len; _} ->
       Exec.store pre ~ptr:(X.term ptr) ~exp:(X.term exp) ~len:(X.term len)
-  | Memset {dst; byt; len; _} ->
-      Exec.memset pre ~dst:(X.term dst) ~byt:(X.term byt) ~len:(X.term len)
-  | Memcpy {dst; src; len; _} ->
-      Exec.memcpy pre ~dst:(X.term dst) ~src:(X.term src) ~len:(X.term len)
-  | Memmov {dst; src; len; _} ->
-      Exec.memmov pre ~dst:(X.term dst) ~src:(X.term src) ~len:(X.term len)
   | Alloc {reg; num; len; _} ->
       Exec.alloc pre ~reg:(X.reg reg) ~num:(X.term num) ~len
   | Free {ptr; _} -> Exec.free pre ~ptr:(X.term ptr)

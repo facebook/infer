@@ -8,7 +8,11 @@
 (** Intrinsic instruction opcodes *)
 
 type t =
-  [ (* cstdlib - memory management *)
+  [ (* llvm intrinsics *)
+    `memset
+  | `memcpy
+  | `memmove
+  | (* cstdlib - memory management *)
     `malloc
   | `aligned_alloc
   | `calloc
