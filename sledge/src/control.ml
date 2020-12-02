@@ -425,7 +425,7 @@ module Make (Dom : Domain_intf.Dom) = struct
             with
             | Some state -> exec_jump stk state block jump |> Work.seq x
             | None -> x )
-    | Call ({callee; actuals; areturn; return} as call) -> (
+    | Call ({callee; areturn; return} as call) -> (
         let lookup name =
           Option.to_list (Llair.Func.find name pgm.functions)
         in
@@ -434,23 +434,12 @@ module Make (Dom : Domain_intf.Dom) = struct
         | [] -> exec_skip_func stk state block areturn return
         | callees ->
             List.fold callees Work.skip ~f:(fun callee x ->
-                ( match
-                    Dom.exec_intrinsic ~skip_throw:opts.skip_throw areturn
-                      callee.name actuals state
-                  with
-                | Some None ->
-                    Report.invalid_access_term
-                      (Dom.report_fmt_thunk state)
-                      block.term ;
-                    Work.skip
-                | Some (Some state) when Dom.is_false state -> Work.skip
-                | Some (Some state) -> exec_jump stk state block return
-                | None when Llair.Func.is_undefined callee ->
-                    exec_skip_func stk state block areturn return
-                | None ->
-                    exec_call opts stk state block {call with callee}
-                      (Domain_used_globals.by_function opts.globals
-                         callee.name) )
+                ( if Llair.Func.is_undefined callee then
+                  exec_skip_func stk state block areturn return
+                else
+                  exec_call opts stk state block {call with callee}
+                    (Domain_used_globals.by_function opts.globals
+                       callee.name) )
                 |> Work.seq x ) )
     | Return {exp} -> exec_return ~opts stk state block exp
     | Throw {exc} ->

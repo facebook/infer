@@ -77,11 +77,6 @@ let exec_inst inst pre =
       Exec.intrinsic ~skip_throw:true pre areturn name actuals )
   |> Option.map ~f:simplify
 
-let exec_intrinsic ~skip_throw r i es q =
-  Exec.intrinsic_func ~skip_throw q (Option.map ~f:X.reg r)
-    (Llair.Function.name i) (IArray.map ~f:X.term es)
-  |> Option.map ~f:(Option.map ~f:simplify)
-
 let value_determined_by ctx us a =
   List.exists (Context.class_of ctx a) ~f:(fun b ->
       Term.Set.subset (Term.Set.of_iter (Term.atoms b)) ~of_:us )

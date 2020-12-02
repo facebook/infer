@@ -827,20 +827,3 @@ let intrinsic ~skip_throw :
         (Option.pp "%a := " Var.pp)
         areturn Llair.Intrinsic.pp intrinsic (IArray.pp "@ " Term.pp)
         actuals ()
-
-let intrinsic_func ~skip_throw:_ :
-    Sh.t -> Var.t option -> string -> Term.t iarray -> Sh.t option option =
- fun pre areturn intrinsic actuals ->
-  let name =
-    match String.index intrinsic '.' with
-    | None -> intrinsic
-    | Some i -> String.take i intrinsic
-  in
-  (match (areturn, name, IArray.to_array actuals) with _ -> None)
-  $> function
-  | None -> ()
-  | Some _ ->
-      [%Trace.info
-        "@[<2>exec intrinsic@ @[%a%s(@[%a@])@] from@ @[{ %a@ }@]@]"
-          (Option.pp "%a := " Var.pp)
-          areturn intrinsic (IArray.pp ",@ " Term.pp) actuals Sh.pp pre]

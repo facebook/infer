@@ -45,15 +45,6 @@ let exec_inst inst st =
   [%Trace.retn fun {pf} ->
     Option.iter ~f:(fun uses -> pf "post:{%a}" pp uses)]
 
-let exec_intrinsic ~skip_throw:_ _ intrinsic actuals st =
-  let name = Llair.Function.name intrinsic in
-  if
-    List.exists
-      ["__cxa_allocate_exception"; "_ZN5folly13usingJEMallocEv"]
-      ~f:(String.equal name)
-  then IArray.fold ~f:used_globals actuals st |> fun res -> Some (Some res)
-  else None
-
 type from_call = t [@@deriving sexp]
 
 (* Set abstract state to bottom (i.e. empty set) at function entry *)

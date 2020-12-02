@@ -200,18 +200,6 @@ let exec_inst i q =
   | Intrinsic {reg= Some reg; _} -> Some (exec_kill reg q)
   | Intrinsic {reg= None; _} -> Some q
 
-(** Treat any intrinsic function as havoc on the return register [aret] *)
-let exec_intrinsic ~skip_throw:_ aret i _ pre =
-  let name = Llair.Function.name i in
-  if
-    List.exists
-      ["__cxa_allocate_exception"; "_ZN5folly13usingJEMallocEv"]
-      ~f:(String.equal name)
-  then
-    let+ aret = aret in
-    Some (exec_kill aret pre)
-  else None
-
 type from_call = {areturn: Llair.Reg.t option; caller_q: t}
 [@@deriving sexp_of]
 

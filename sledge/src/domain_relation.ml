@@ -55,15 +55,6 @@ module Make (State_domain : State_domain_sig) = struct
     let+ next = State_domain.exec_inst inst current in
     (entry, next)
 
-  let exec_intrinsic ~skip_throw areturn intrinsic actuals (entry, current)
-      =
-    let+ next_opt =
-      State_domain.exec_intrinsic ~skip_throw areturn intrinsic actuals
-        current
-    in
-    let+ next = next_opt in
-    (entry, next)
-
   type from_call =
     {state_from_call: State_domain.from_call; caller_entry: State_domain.t}
   [@@deriving sexp_of]

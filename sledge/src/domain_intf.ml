@@ -20,14 +20,6 @@ module type Dom = sig
   val exec_move : (Llair.Reg.t * Llair.Exp.t) iarray -> t -> t
   val exec_inst : Llair.inst -> t -> t option
 
-  val exec_intrinsic :
-       skip_throw:bool
-    -> Llair.Reg.t option
-    -> Llair.Function.t
-    -> Llair.Exp.t iarray
-    -> t
-    -> t option option
-
   type from_call [@@deriving sexp_of]
 
   val call :
