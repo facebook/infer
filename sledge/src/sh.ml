@@ -353,12 +353,9 @@ and rename_ Var.Subst.{sub; dom; rng} q =
     pf "@[%a@]@ %a" Var.Subst.pp sub pp q ;
     assert (Var.Set.subset dom ~of_:q.us)]
   ;
+  let q = extend_us rng q in
   ( if Var.Subst.is_empty sub then q
-  else
-    let us = Var.Set.union (Var.Set.diff q.us dom) rng in
-    assert (not (Var.Set.equal us q.us)) ;
-    let q' = apply_subst sub (freshen_xs q ~wrt:(Var.Set.union dom us)) in
-    {q' with us} )
+  else {(apply_subst sub q) with us= Var.Set.diff q.us dom} )
   |>
   [%Trace.retn fun {pf} q' ->
     pf "%a" pp q' ;
@@ -368,7 +365,7 @@ and rename_ Var.Subst.{sub; dom; rng} q =
 and rename sub q =
   [%Trace.call fun {pf} -> pf "@[%a@]@ %a" Var.Subst.pp sub pp q]
   ;
-  rename_ (Var.Subst.restrict sub q.us) q
+  rename_ (Var.Subst.restrict_dom sub q.us) q
   |>
   [%Trace.retn fun {pf} q' ->
     pf "%a" pp q' ;
@@ -395,7 +392,7 @@ and freshen_xs q ~wrt =
     assert (Var.Set.disjoint q'.xs (Var.Set.inter q.xs wrt)) ;
     invariant q']
 
-let extend_us us q =
+and extend_us us q =
   let us = Var.Set.union us q.us in
   (if us == q.us then q else {(freshen_xs q ~wrt:us) with us})
   |> check invariant

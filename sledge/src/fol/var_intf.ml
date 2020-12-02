@@ -60,7 +60,11 @@ module type VAR = sig
     val empty : t
     val freshen : Set.t -> wrt:Set.t -> x * Set.t
     val invert : t -> t
-    val restrict : t -> Set.t -> x
+
+    val restrict_dom : t -> Set.t -> x
+    (** restrict the domain of a substitution to a set, and yield the range
+        of the unrestricted substitution *)
+
     val is_empty : t -> bool
     val domain : t -> Set.t
     val range : t -> Set.t

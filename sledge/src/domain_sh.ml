@@ -200,7 +200,7 @@ let post locals _ q =
     restore the shadowed variables. *)
 let retn formals freturn {areturn; unshadow; frame} q =
   [%Trace.call fun {pf} ->
-    pf "@[<v>formals: {@[%a@]}%a%a@ shadows: %a@ q: %a@ frame: %a@]"
+    pf "@[<v>formals: {@[%a@]}%a%a@ unshadow: %a@ q: %a@ frame: %a@]"
       (List.pp ", " Llair.Reg.pp)
       formals
       (Option.pp "@ freturn: %a" Llair.Reg.pp)
