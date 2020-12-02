@@ -122,6 +122,19 @@ module PulseTransferFunctions = struct
     Result.map ~f:(List.map ~f:do_one_exec_state) exec_state_res
 
 
+  let topl_store_step loc ~lhs ~rhs:_ astate =
+    match (lhs : Exp.t) with
+    | Lindex (arr, index) ->
+        (let open IResult.Let_syntax in
+        let* _astate, (aw_array, _history) = PulseOperations.eval loc arr astate in
+        let+ _astate, (aw_index, _history) = PulseOperations.eval loc index astate in
+        let topl_event = PulseTopl.ArrayWrite {aw_array; aw_index} in
+        AbductiveDomain.Topl.small_step loc topl_event astate)
+        |> Result.ok (* don't emit Topl event if evals fail *) |> Option.value ~default:astate
+    | _ ->
+        astate
+
+
   let dispatch_call ({InterproceduralAnalysis.tenv} as analysis_data) ret call_exp actuals call_loc
       flags astate =
     (* evaluate all actuals *)
@@ -271,6 +284,10 @@ module PulseTransferFunctions = struct
               PulseOperations.write_deref loc ~ref:lhs_addr_hist
                 ~obj:(rhs_addr, event :: rhs_history)
                 astate
+            in
+            let astate =
+              if Topl.is_deep_active () then topl_store_step loc ~lhs:lhs_exp ~rhs:rhs_exp astate
+              else astate
             in
             match lhs_exp with
             | Lvar pvar when Pvar.is_return pvar ->

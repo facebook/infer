@@ -11,14 +11,19 @@ module L = Logging
 
 type value = AbstractValue.t
 
-type event = Call of {return: value option; arguments: value list; procname: Procname.t}
+type event =
+  | ArrayWrite of {aw_array: value; aw_index: value}
+  | Call of {return: value option; arguments: value list; procname: Procname.t}
 
 let pp_comma_seq f xs = Pp.comma_seq ~print_env:Pp.text_break f xs
 
-let pp_event f (Call {return; arguments; procname}) =
-  let procname = Procname.hashable_name procname (* as in [static_match] *) in
-  Format.fprintf f "@[call@ %a=%s(%a)@]" (Pp.option AbstractValue.pp) return procname
-    (pp_comma_seq AbstractValue.pp) arguments
+let pp_event f = function
+  | ArrayWrite {aw_array; aw_index} ->
+      Format.fprintf f "@[ArrayWrite %a[%a]@]" AbstractValue.pp aw_array AbstractValue.pp aw_index
+  | Call {return; arguments; procname} ->
+      let procname = Procname.hashable_name procname (* as in [static_match] *) in
+      Format.fprintf f "@[call@ %a=%s(%a)@]" (Pp.option AbstractValue.pp) return procname
+        (pp_comma_seq AbstractValue.pp) arguments
 
 
 type vertex = ToplAutomaton.vindex
@@ -138,50 +143,70 @@ let pp_tcontext f tcontext =
   Format.fprintf f "@[[%a]@]" (pp_comma_seq (Pp.pair ~fst:String.pp ~snd:AbstractValue.pp)) tcontext
 
 
+let static_match_array_write arr index label : tcontext option =
+  match label.ToplAst.pattern with
+  | ArrayWritePattern ->
+      let v1, v2 =
+        match label.ToplAst.arguments with
+        | Some [v1; v2] ->
+            (v1, v2)
+        | _ ->
+            L.die InternalError "Topl: #ArrayWrite should have exactly two arguments"
+      in
+      Some [(v1, arr); (v2, index)]
+  | _ ->
+      None
+
+
+let static_match_call return arguments procname label : tcontext option =
+  let rev_arguments = List.rev arguments in
+  let procname = Procname.hashable_name procname in
+  let match_name () : bool =
+    match label.ToplAst.pattern with
+    | ProcedureNamePattern pname ->
+        Str.string_match (Str.regexp pname) procname 0
+    | _ ->
+        false
+  in
+  let match_args () : tcontext option =
+    let match_formals formals : tcontext option =
+      let bind ~init rev_formals =
+        let f tcontext variable value = (variable, value) :: tcontext in
+        match List.fold2 ~init ~f rev_formals rev_arguments with
+        | Ok c ->
+            Some c
+        | Unequal_lengths ->
+            None
+      in
+      match (List.rev formals, return) with
+      | [], Some _ ->
+          None
+      | rev_formals, None ->
+          bind ~init:[] rev_formals
+      | r :: rev_formals, Some v ->
+          bind ~init:[(r, v)] rev_formals
+    in
+    Option.value_map ~default:(Some []) ~f:match_formals label.ToplAst.arguments
+  in
+  if match_name () then match_args () else None
+
+
 (** Returns a list of transitions whose pattern matches (e.g., event type matches). Each match
     produces a tcontext (transition context), which matches transition-local variables to abstract
     values. *)
-let static_match (Call {return; arguments; procname} as event) :
-    (ToplAutomaton.transition * tcontext) list =
-  (* TODO(rgrigore): if both [Topl.evaluate_static_guard] and [PulseTopl.static_match] remain, try to factor code. *)
-  let rev_arguments = List.rev arguments in
-  let procname = Procname.hashable_name procname in
-  let match_one t =
-    let ret c = Some (t, c) in
+let static_match event : (ToplAutomaton.transition * tcontext) list =
+  let match_one transition =
     let f label =
-      let match_name () : bool =
-        let re = Str.regexp label.ToplAst.procedure_name in
-        Str.string_match re procname 0
-      in
-      let match_args () : (ToplAutomaton.transition * tcontext) option =
-        let match_formals formals =
-          let bind ~init rev_formals =
-            let f tcontext variable value = (variable, value) :: tcontext in
-            match List.fold2 ~init ~f rev_formals rev_arguments with
-            | Ok c ->
-                ret c
-            | Unequal_lengths ->
-                None
-          in
-          match (List.rev formals, return) with
-          | [], Some _ ->
-              None
-          | rev_formals, None ->
-              bind ~init:[] rev_formals
-          | r :: rev_formals, Some v ->
-              bind ~init:[(r, v)] rev_formals
-        in
-        Option.value_map ~default:(ret []) ~f:match_formals label.ToplAst.arguments
-      in
-      if match_name () then match_args () else None
+      match event with
+      | ArrayWrite {aw_array; aw_index} ->
+          static_match_array_write aw_array aw_index label
+      | Call {return; arguments; procname} ->
+          static_match_call return arguments procname label
     in
-    let result = Option.value_map ~default:(ret []) ~f t.ToplAutomaton.label in
-    let pp_second pp f (_, x) = pp f x in
+    let tcontext_opt = Option.value_map ~default:(Some []) ~f transition.ToplAutomaton.label in
     L.d_printfln "@[<2>PulseTopl.static_match:@;transition %a@;event %a@;result %a@]"
-      ToplAutomaton.pp_transition t pp_event event
-      (Pp.option (pp_second pp_tcontext))
-      result ;
-    result
+      ToplAutomaton.pp_transition transition pp_event event (Pp.option pp_tcontext) tcontext_opt ;
+    Option.map ~f:(fun tcontext -> (transition, tcontext)) tcontext_opt
   in
   ToplAutomaton.tfilter_map (Topl.automaton ()) ~f:match_one
 
@@ -393,14 +418,17 @@ let simplify ~keep state =
 
 
 let description_of_step_data step_data =
-  let procname =
-    match step_data with SmallStep (Call {procname}) | LargeStep (procname, _) -> procname
-  in
-  Format.fprintf Format.str_formatter "@[call to %a@]" Procname.pp procname ;
+  ( match step_data with
+  | SmallStep (Call {procname}) | LargeStep (procname, _) ->
+      Format.fprintf Format.str_formatter "@[call to %a@]" Procname.pp procname
+  | SmallStep (ArrayWrite _) ->
+      Format.fprintf Format.str_formatter "@[write to array@]" ) ;
   Format.flush_str_formatter ()
 
 
 let report_errors proc_desc err_log state =
+  (* TODO(rgrigore): Calling f() that has implementation leads to a large_step followed by a small_step,
+     which currently results in two trace elements (that look the same to the user). This is confusing. *)
   let a = Topl.automaton () in
   let rec make_trace nesting acc q =
     match q.last_step with

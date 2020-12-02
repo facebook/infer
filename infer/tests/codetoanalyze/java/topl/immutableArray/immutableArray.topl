@@ -1,0 +1,7 @@
+property ImmutableArrayModified
+  prefix "ImmutableArray"
+  nondet (start)
+  start -> start: *
+  start -> tracking: getTestArray(IgnoreObject, Array) => a := Array
+  tracking -> error: #ArrayWrite(Array, IgnoreIndex) when a == Array
+

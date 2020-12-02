@@ -9,7 +9,9 @@ open! IStd
 
 type value = PulseAbstractValue.t
 
-type event = Call of {return: value option; arguments: value list; procname: Procname.t}
+type event =
+  | ArrayWrite of {aw_array: value; aw_index: value}
+  | Call of {return: value option; arguments: value list; procname: Procname.t}
 
 type state
 

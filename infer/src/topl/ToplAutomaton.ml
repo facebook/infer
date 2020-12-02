@@ -82,9 +82,12 @@ let make properties =
           let ps = List.map ~f:(fun p -> "\\|" ^ p ^ "\\.") p.ToplAst.prefixes in
           "^\\(" ^ String.concat ps ^ "\\)" ^ pname ^ "("
       in
-      let prefix_label label =
-        ToplAst.{label with procedure_name= prefix_pname label.procedure_name}
+      let prefix_pattern =
+        ToplAst.(
+          function
+          | ProcedureNamePattern pname -> ProcedureNamePattern (prefix_pname pname) | p -> p)
       in
+      let prefix_label label = ToplAst.{label with pattern= prefix_pattern label.pattern} in
       let f t =
         let source = vindex ToplAst.(p.name, t.source) in
         let target = vindex ToplAst.(p.name, t.target) in

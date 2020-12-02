@@ -50,16 +50,26 @@ let get_proc_attr proc_name =
 
 let get_transitions_count () = ToplAutomaton.tcount (Lazy.force automaton)
 
+(* NOTE: Code instrumentation only handles ProcedureNamePattern patterns. *)
+
 (** Checks whether the method name and the number of arguments matches the conditions in a
     transition label. Possible optimization: also evaluate if arguments equal certain constants. *)
 let evaluate_static_guard label_o (e_fun, arg_ts) =
+  let pname_of_label label =
+    match label.ToplAst.pattern with
+    | ProcedureNamePattern pname ->
+        pname
+    | _ ->
+        L.die UserError
+          "Topl: The implementation based on SIL-instrumentation only supports ProcedureNamePattern"
+  in
   let evaluate_nonany label =
     let match_name () =
       match e_fun with
       | Exp.Const (Const.Cfun n) ->
           (* TODO: perhaps handle inheritance *)
           let name = Procname.hashable_name n in
-          let re = Str.regexp label.ToplAst.procedure_name in
+          let re = Str.regexp (pname_of_label label) in
           let result = Str.string_match re name 0 in
           tt "  check name='%s'@\n" name ;
           result
@@ -74,8 +84,8 @@ let evaluate_static_guard label_o (e_fun, arg_ts) =
       tt "  check arg-len=%d@\n" arg_len ;
       Option.value_map ~default:true ~f:(Int.equal arg_len) pattern_len
     in
-    tt "match name-pattern='%s' arg-len-pattern=%a@\n" label.ToplAst.procedure_name
-      (Pp.option Int.pp) pattern_len ;
+    tt "match name-pattern='%s' arg-len-pattern=%a@\n" (pname_of_label label) (Pp.option Int.pp)
+      pattern_len ;
     let log f =
       f ()
       ||
