@@ -29,7 +29,7 @@ let recursion_beyond_bound = `skip
 let post _ _ () = ()
 let retn _ _ _ _ = ()
 let dnf () = [()]
-let resolve_callee _ _ q = ([], q)
+let resolve_callee _ _ _ = []
 
 type summary = unit
 

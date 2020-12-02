@@ -226,10 +226,10 @@ let retn formals freturn {areturn; unshadow; frame} q =
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp]
 
-let resolve_callee lookup ptr q =
-  match Llair.Function.of_exp ptr with
-  | Some callee -> (lookup callee, q)
-  | None -> ([], q)
+let resolve_callee lookup ptr (q : Sh.t) =
+  Context.class_of q.ctx (X.term ptr)
+  |> List.find_map ~f:(X.lookup_func lookup)
+  |> Option.to_list
 
 let recursion_beyond_bound = `prune
 

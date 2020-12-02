@@ -13,7 +13,7 @@ type exec_opts =
   { bound: int
   ; skip_throw: bool
   ; function_summaries: bool
-  ; entry_points: Llair.Function.t list
+  ; entry_points: string list
   ; globals: Domain_used_globals.r }
 
 module Make (Dom : Domain_intf.Dom) = struct
@@ -365,7 +365,9 @@ module Make (Dom : Domain_intf.Dom) = struct
         (* Create and store a function summary for main *)
         if
           opts.function_summaries
-          && List.exists ~f:(Llair.Function.equal name) opts.entry_points
+          && List.mem ~eq:String.equal
+               (Llair.Function.name name)
+               opts.entry_points
         then summarize exit_state |> (ignore : Dom.t -> unit) ;
         Work.skip )
     |>
@@ -435,11 +437,8 @@ module Make (Dom : Domain_intf.Dom) = struct
         exec_call opts stk state block call
           (Domain_used_globals.by_function opts.globals callee.name)
     | ICall ({callee; areturn; return} as call) -> (
-        let lookup name =
-          Option.to_list (Llair.Func.find name pgm.functions)
-        in
-        let callees, state = Dom.resolve_callee lookup callee state in
-        match callees with
+        let lookup name = Llair.Func.find name pgm.functions in
+        match Dom.resolve_callee lookup callee state with
         | [] -> exec_skip_func stk state block areturn return
         | callees ->
             List.fold callees Work.skip ~f:(fun callee x ->

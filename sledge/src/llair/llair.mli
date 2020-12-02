@@ -223,7 +223,7 @@ module Func : sig
     -> loc:Loc.t
     -> t
 
-  val find : Function.t -> functions -> t option
+  val find : string -> functions -> t option
   (** Look up a function of the given name in the given functions. *)
 
   val fold_cfg : func -> 'a -> f:(block -> 'a -> 'a) -> 'a

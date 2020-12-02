@@ -37,10 +37,7 @@ module type Dom = sig
   val retn : Llair.Reg.t iarray -> Llair.Reg.t option -> from_call -> t -> t
 
   val resolve_callee :
-       (Llair.Function.t -> Llair.func list)
-    -> Llair.Exp.t
-    -> t
-    -> Llair.func list * t
+    (string -> Llair.func option) -> Llair.Exp.t -> t -> Llair.func list
 
   val recursion_beyond_bound : [`skip | `prune]
 

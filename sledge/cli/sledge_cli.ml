@@ -76,13 +76,7 @@ let unmarshal file () =
     ~f:(fun ic -> (Marshal.from_channel ic : Llair.program))
     file
 
-let entry_points =
-  let void_to_void =
-    Llair.Typ.pointer
-      ~elt:(Llair.Typ.function_ ~args:IArray.empty ~return:None)
-  in
-  List.map (Config.find_list "entry-points") ~f:(fun name ->
-      Llair.Function.mk void_to_void name )
+let entry_points = Config.find_list "entry-points"
 
 let used_globals pgm preanalyze : Domain_used_globals.r =
   if preanalyze then

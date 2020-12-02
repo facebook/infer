@@ -638,7 +638,8 @@ module Func = struct
         iter_term func ~f:(fun term -> Term.invariant ~parent:func term)
     | _ -> assert false
 
-  let find functions name = Function.Map.find functions name
+  let find name functions =
+    Function.Map.find (Function.counterfeit name) functions
 
   let mk ~name ~formals ~freturn ~fthrow ~entry ~cfg ~loc =
     let locals =

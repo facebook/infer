@@ -52,7 +52,7 @@ let call ~summaries:_ ~globals:_ ~actuals ~areturn:_ ~formals:_ ~freturn:_
     ~locals:_ st =
   (empty, IArray.fold ~f:used_globals actuals st)
 
-let resolve_callee _ _ q = ([], q)
+let resolve_callee _ _ _ = []
 
 (* A function summary is the set of global registers accessed by that
    function and its transitive callees *)
