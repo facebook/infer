@@ -260,6 +260,8 @@ val missing_required_prop : t
 
 val mixed_self_weakself : t
 
+val modifies_immutable : t
+
 val multiple_weakself : t
 
 val mutable_local_variable_in_component_file : t

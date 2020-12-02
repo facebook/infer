@@ -490,6 +490,7 @@ OPTIONS
              MEMORY_LEAK (enabled by default),
              MISSING_REQUIRED_PROP (enabled by default),
              MIXED_SELF_WEAKSELF (enabled by default),
+             MODIFIES_IMMUTABLE (enabled by default),
              MULTIPLE_WEAKSELF (enabled by default),
              MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE (enabled by default),
              Missing_fld (enabled by default),
@@ -1035,6 +1036,10 @@ OPTIONS
 
        --report-formatter { none | phabricator }
            Which formatter to use when emitting the report           See also infer-report(1).
+
+       --report-immutable-modifications
+           Activates: Report modifications to immutable fields (Conversely:
+           --no-report-immutable-modifications)           See also infer-report(1) and infer-run(1).
 
        --report-previous path
            Report of the base revision to use for comparison           See also infer-reportdiff(1).

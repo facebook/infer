@@ -48,3 +48,5 @@ val add_to_errlog :
   -> Errlog.loc_trace_elem list
 
 val join : t -> t -> t
+
+val get_modified_immutables_opt : Tenv.t -> t -> (ModifiedVarMap.t * ModifiedVarMap.t) option

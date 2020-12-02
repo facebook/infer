@@ -738,6 +738,14 @@ struct
     M.fold (fun key values acc -> S.fold (fun v acc -> f key v acc) values acc) m acc
 
 
+  let filter f m =
+    M.filter_map
+      (fun key values ->
+        let res = S.filter (fun elt -> f key elt) values in
+        if S.is_empty res then None else Some res )
+      m
+
+
   let remove k v m =
     M.update k
       (function

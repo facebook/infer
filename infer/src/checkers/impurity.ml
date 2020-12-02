@@ -178,6 +178,10 @@ let extract_impurity tenv pname formals (exec_state : ExecutionDomain.t) : Impur
   {modified_globals; modified_params; skipped_calls; exited}
 
 
+let add_modified_ltr param_source set acc =
+  ImpurityDomain.ModifiedVarMap.fold (ImpurityDomain.add_to_errlog ~nesting:1 param_source) set acc
+
+
 let checker {IntraproceduralAnalysis.proc_desc; tenv; err_log}
     (pulse_summary_opt : PulseSummary.t option) =
   let proc_name = Procdesc.get_proc_name proc_desc in
@@ -207,27 +211,39 @@ let checker {IntraproceduralAnalysis.proc_desc; tenv; err_log}
             in
             ImpurityDomain.join acc modified )
       in
-      if PurityChecker.should_report proc_name && not (ImpurityDomain.is_pure impurity_astate) then
-        let modified_ltr param_source set acc =
-          ImpurityDomain.ModifiedVarMap.fold
-            (ImpurityDomain.add_to_errlog ~nesting:1 param_source)
-            set acc
-        in
-        let skipped_functions =
-          SkippedCalls.fold
-            (fun proc_name trace acc ->
-              Trace.add_to_errlog ~nesting:1 ~include_value_history:false
-                ~pp_immediate:(fun fmt ->
-                  F.fprintf fmt "call to skipped function %a occurs here" Procname.pp proc_name )
-                trace acc )
-            skipped_calls []
-        in
-        let impure_fun_desc = F.asprintf "Impure function %a" Procname.pp proc_name in
-        let impure_fun_ltr = Errlog.make_trace_element 0 pname_loc impure_fun_desc [] in
-        let ltr =
-          impure_fun_ltr
-          :: modified_ltr Formal modified_params
-               (modified_ltr Global modified_globals skipped_functions)
-        in
-        Reporting.log_issue proc_desc err_log ~loc:pname_loc ~ltr Impurity IssueType.impure_function
-          impure_fun_desc
+      if PurityChecker.should_report proc_name then (
+        if Config.report_immutable_modifications then
+          ImpurityDomain.get_modified_immutables_opt tenv impurity_astate
+          |> Option.iter ~f:(fun (modified_params, modified_globals) ->
+                 let immutable_fun_desc =
+                   F.asprintf "Function %a modifies immutable fields" Procname.pp proc_name
+                 in
+                 let immutable_fun_ltr =
+                   Errlog.make_trace_element 0 pname_loc immutable_fun_desc []
+                 in
+                 let ltr =
+                   immutable_fun_ltr
+                   :: add_modified_ltr Formal modified_params
+                        (add_modified_ltr Global modified_globals [])
+                 in
+                 Reporting.log_issue proc_desc err_log ~loc:pname_loc ~ltr Impurity
+                   IssueType.modifies_immutable immutable_fun_desc ) ;
+        if not (ImpurityDomain.is_pure impurity_astate) then
+          let skipped_functions =
+            SkippedCalls.fold
+              (fun proc_name trace acc ->
+                Trace.add_to_errlog ~nesting:1 ~include_value_history:false
+                  ~pp_immediate:(fun fmt ->
+                    F.fprintf fmt "call to skipped function %a occurs here" Procname.pp proc_name )
+                  trace acc )
+              skipped_calls []
+          in
+          let impure_fun_desc = F.asprintf "Impure function %a" Procname.pp proc_name in
+          let impure_fun_ltr = Errlog.make_trace_element 0 pname_loc impure_fun_desc [] in
+          let ltr =
+            impure_fun_ltr
+            :: add_modified_ltr Formal modified_params
+                 (add_modified_ltr Global modified_globals skipped_functions)
+          in
+          Reporting.log_issue proc_desc err_log ~loc:pname_loc ~ltr Impurity
+            IssueType.impure_function impure_fun_desc )

@@ -50,6 +50,41 @@ let pure =
   ; exited= Exited.bottom }
 
 
+let filter_modifies_immutable tenv ~f =
+  ModifiedVarMap.filter (fun _pvar ModifiedAccess.{ordered_access_list} ->
+      List.exists ordered_access_list ~f:(fun access ->
+          match access with
+          | HilExp.Access.FieldAccess fname -> (
+              let class_name = Fieldname.get_class_name fname in
+              match Tenv.lookup tenv class_name with
+              | Some mstruct ->
+                  f mstruct
+                  |> List.exists ~f:(fun (fieldname, _typ, annot) ->
+                         String.equal
+                           (Fieldname.get_field_name fieldname)
+                           (Fieldname.get_field_name fname)
+                         && Annotations.ia_has_annotation_with annot (fun annot ->
+                                Annotations.annot_ends_with annot Annotations.immutable ) )
+              | None ->
+                  false )
+          | _ ->
+              false ) )
+
+
+let get_modified_immutables_opt tenv {modified_params; modified_globals} =
+  let modified_immutable_params =
+    filter_modifies_immutable tenv modified_params ~f:(fun s -> s.fields)
+  in
+  let modified_immutable_globals =
+    filter_modifies_immutable tenv modified_globals ~f:(fun s -> s.statics)
+  in
+  if
+    ModifiedVarMap.is_bottom modified_immutable_params
+    && ModifiedVarMap.is_bottom modified_immutable_globals
+  then None
+  else Some (modified_immutable_params, modified_immutable_globals)
+
+
 let join astate1 astate2 =
   if phys_equal astate1 astate2 then astate1
   else

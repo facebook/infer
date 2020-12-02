@@ -118,6 +118,8 @@ val report_custom_error : bool
 
 val report_force_relative_path : bool
 
+val report_immutable_modifications : bool
+
 val report_nullable_inconsistency : bool
 
 val save_compact_summaries : bool

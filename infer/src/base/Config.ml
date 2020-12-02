@@ -2061,6 +2061,12 @@ and report_formatter =
     ~eq:PolyVariantEqual.( = ) "Which formatter to use when emitting the report"
 
 
+and report_immutable_modifications =
+  CLOpt.mk_bool ~long:"report-immutable-modifications" ~default:false
+    ~in_help:InferCommand.[(Report, manual_generic); (Run, manual_generic)]
+    "Report modifications to immutable fields"
+
+
 and report_previous =
   CLOpt.mk_path_opt ~long:"report-previous"
     ~in_help:InferCommand.[(ReportDiff, manual_generic)]
@@ -3156,6 +3162,8 @@ and report_custom_error = !report_custom_error
 and report_force_relative_path = !report_force_relative_path
 
 and report_formatter = !report_formatter
+
+and report_immutable_modifications = !report_immutable_modifications
 
 and report_path_regex_blacklist = !report_path_regex_blacklist
 
