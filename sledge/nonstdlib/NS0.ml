@@ -130,6 +130,7 @@ module Either = struct
 end
 
 module Pair = Containers.Pair
+module Bijection = CCBijection [@@warning "-49"]
 module FHeap = Fheap [@@warning "-49"]
 module HashQueue = Core_kernel.Hash_queue
 
