@@ -29,4 +29,11 @@ val large_step :
     [callee_prepost] in another scope: the [substitution] maps from the callee scope to the
     condition&state scope. *)
 
+val filter_for_summary : PulsePathCondition.t -> state -> state
+(** Remove from state those parts that are inconsistent with the path condition. (We do a cheap
+    check to not introduce inconsistent Topl states, but they mey become inconsistent because the
+    program path condition is updated later.) *)
+
+val simplify : keep:PulseAbstractValue.Set.t -> state -> state
+
 val pp_state : Format.formatter -> state -> unit

@@ -49,25 +49,28 @@ let pp_mapping f (x, value) = Format.fprintf f "@[%s↦%a@]@," x AbstractValue.p
 let pp_memory f memory = Format.fprintf f "@[<2>[%a]@]" (pp_comma_seq pp_mapping) memory
 
 let pp_configuration f {vertex; memory} =
-  Format.fprintf f "@[{topl-config@;vertex=%d@;memory=%a}@]" vertex pp_memory memory
+  Format.fprintf f "@[{ topl-config@;vertex=%d@;memory=%a }@]" vertex pp_memory memory
 
 
 let pp_simple_state f {pre; post; pruned} =
-  Format.fprintf f "@[<2>{topl-simple-state@;pre=%a@;post=%a@;pruned=(%a)}@]" pp_configuration pre
+  Format.fprintf f "@[<2>{ topl-simple-state@;pre=%a@;post=%a@;pruned=(%a) }@]" pp_configuration pre
     pp_configuration post (Pp.seq ~sep:"∧" pp_predicate) pruned
 
 
-let pp_state f = Format.fprintf f "@[<2>[ %a]@]" (pp_comma_seq pp_simple_state)
+let pp_state f = Format.fprintf f "@[<2>[ %a ]@]" (pp_comma_seq pp_simple_state)
 
 let start () =
-  let a = Topl.automaton () in
-  let starts = ToplAutomaton.starts a in
-  let mk_memory =
-    let registers = ToplAutomaton.registers a in
-    fun () -> List.map ~f:(fun r -> (r, AbstractValue.mk_fresh ())) registers
+  let mk_simple_states () =
+    let a = Topl.automaton () in
+    let starts = ToplAutomaton.starts a in
+    let mk_memory =
+      let registers = ToplAutomaton.registers a in
+      fun () -> List.map ~f:(fun r -> (r, AbstractValue.mk_fresh ())) registers
+    in
+    let configurations = List.map ~f:(fun vertex -> {vertex; memory= mk_memory ()}) starts in
+    List.map ~f:(fun c -> {pre= c; post= c; pruned= []}) configurations
   in
-  let configurations = List.map ~f:(fun vertex -> {vertex; memory= mk_memory ()}) starts in
-  List.map ~f:(fun c -> {pre= c; post= c; pruned= []}) configurations
+  if Topl.is_deep_active () then mk_simple_states () else (* Avoids work later *) []
 
 
 let get env x =
@@ -80,6 +83,14 @@ let get env x =
 
 let set = List.Assoc.add ~equal:String.equal
 
+let is_trivially_true (predicate : predicate) =
+  match predicate with
+  | Eq, AbstractValueOperand l, AbstractValueOperand r when AbstractValue.equal l r ->
+      true
+  | _ ->
+      false
+
+
 let eval_guard memory tcontext guard =
   let operand_of_value (value : ToplAst.value) : PathCondition.operand =
     match value with
@@ -90,17 +101,18 @@ let eval_guard memory tcontext guard =
     | Binding v ->
         AbstractValueOperand (get tcontext v)
   in
+  let add predicate pruned = if is_trivially_true predicate then pruned else predicate :: pruned in
   let conjoin_predicate pruned (predicate : ToplAst.predicate) =
     match predicate with
     | Binop (binop, l, r) ->
         let l = operand_of_value l in
         let r = operand_of_value r in
         let binop = ToplUtils.binop_to binop in
-        (binop, l, r) :: pruned
+        add (binop, l, r) pruned
     | Value v ->
         let v = operand_of_value v in
         let one = PathCondition.LiteralOperand IntLit.one in
-        (Binop.Ne, v, one) :: pruned
+        add (Binop.Ne, v, one) pruned
   in
   List.fold ~init:[] ~f:conjoin_predicate guard
 
@@ -241,3 +253,26 @@ let small_step path_condition event simple_states =
 
 
 let large_step ~substitution:_ ~condition:_ ~callee_prepost:_ _state = (* TODO *) []
+
+let filter_for_summary path_condition state =
+  List.filter ~f:(fun x -> not (is_unsat path_condition x.pruned)) state
+
+
+let simplify ~keep state =
+  let simplify_simple_state {pre; post; pruned} =
+    (* NOTE(rgrigore): registers could be considered live for the program path_condition as well.
+       That should improve precision, but I'm wary of altering what the Pulse program state is just
+       because Topl is enabled. *)
+    let collect memory keep =
+      List.fold ~init:keep ~f:(fun keep (_reg, value) -> AbstractValue.Set.add value keep) memory
+    in
+    let keep = keep |> collect pre.memory |> collect post.memory in
+    let is_live_operand =
+      PathCondition.(
+        function LiteralOperand _ -> true | AbstractValueOperand v -> AbstractValue.Set.mem v keep)
+    in
+    let is_live_predicate (_op, l, r) = is_live_operand l && is_live_operand r in
+    let pruned = List.filter ~f:is_live_predicate pruned in
+    {pre; post; pruned}
+  in
+  List.map ~f:simplify_simple_state state

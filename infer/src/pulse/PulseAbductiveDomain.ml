@@ -401,7 +401,8 @@ let filter_for_summary astate =
   let post_heap = deregister_empty (astate.post :> base_domain).heap in
   { astate with
     pre= PreDomain.update astate.pre ~heap:pre_heap
-  ; post= PostDomain.update ~stack:post_stack ~heap:post_heap astate.post }
+  ; post= PostDomain.update ~stack:post_stack ~heap:post_heap astate.post
+  ; topl= PulseTopl.filter_for_summary astate.path_condition astate.topl }
 
 
 let add_out_of_scope_attribute addr pvar location history heap typ =
@@ -478,7 +479,8 @@ let summary_of_post pdesc astate =
     { astate with
       path_condition=
         PathCondition.simplify ~keep:live_addresses astate.path_condition
-        |> incorporate_new_eqs astate }
+        |> incorporate_new_eqs astate
+    ; topl= PulseTopl.simplify ~keep:live_addresses astate.topl }
   in
   invalidate_locals pdesc astate
 
