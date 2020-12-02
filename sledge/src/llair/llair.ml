@@ -674,8 +674,34 @@ module Func = struct
           Option.iter throw ~f:set_dst
       | Return _ | Throw _ | Unreachable -> ()
     in
+    let elim_jumps_to_jumps block =
+      let rec find_dst retreating jmp =
+        match jmp.dst.term with
+        | Switch {tbl; els; _}
+          when IArray.is_empty tbl && IArray.is_empty jmp.dst.cmnd ->
+            find_dst (retreating || els.retreating) els
+        | _ -> jmp
+      in
+      let set_dst jmp =
+        let tgt = find_dst jmp.retreating jmp in
+        if tgt != jmp then (
+          jmp.dst <- tgt.dst ;
+          jmp.retreating <- tgt.retreating )
+      in
+      match block.term with
+      | Switch {tbl; els; _} ->
+          IArray.iter tbl ~f:(fun (_, jmp) -> set_dst jmp) ;
+          set_dst els
+      | Iswitch {tbl; _} -> IArray.iter tbl ~f:set_dst
+      | Call {return; throw; _} | ICall {return; throw; _} ->
+          set_dst return ;
+          Option.iter throw ~f:set_dst
+      | Return _ | Throw _ | Unreachable -> ()
+    in
     resolve_parent_and_jumps entry ;
     IArray.iter cfg ~f:resolve_parent_and_jumps ;
+    elim_jumps_to_jumps entry ;
+    IArray.iter cfg ~f:elim_jumps_to_jumps ;
     func |> check invariant
 end
 
