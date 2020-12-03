@@ -17,6 +17,14 @@ let inputs =
         LRUHash.replace map 0 10 ;
         map )
     , [(0, 10)] )
+  ; ( "LRU order"
+    , (fun () ->
+        let map = LRUHash.create ~initial_size:5 ~max_size:3 in
+        LRUHash.replace map 0 10 ;
+        LRUHash.replace map 1 10 ;
+        LRUHash.replace map 2 10 ;
+        map )
+    , [(2, 10); (1, 10); (0, 10)] )
   ; ( "LRU1"
     , (fun () ->
         let map = LRUHash.create ~initial_size:5 ~max_size:3 in
@@ -27,7 +35,7 @@ let inputs =
         LRUHash.replace map 3 10 ;
         LRUHash.replace map 4 10 ;
         map )
-    , [(1, 10); (3, 10); (4, 10)] )
+    , [(4, 10); (3, 10); (1, 10)] )
   ; ( "LRU2"
     , (fun () ->
         let map = LRUHash.create ~initial_size:5 ~max_size:3 in
@@ -37,7 +45,17 @@ let inputs =
         LRUHash.replace map 0 20 ;
         LRUHash.replace map 3 10 ;
         map )
-    , [(0, 20); (2, 10); (3, 10)] )
+    , [(3, 10); (0, 20); (2, 10)] )
+  ; ( "remove"
+    , (fun () ->
+        let map = LRUHash.create ~initial_size:5 ~max_size:3 in
+        LRUHash.replace map 0 10 ;
+        LRUHash.replace map 1 10 ;
+        LRUHash.replace map 2 10 ;
+        LRUHash.remove map 1 ;
+        LRUHash.replace map 3 10 ;
+        map )
+    , [(3, 10); (2, 10); (0, 10)] )
   ; ( "clear"
     , (fun () ->
         let map = LRUHash.create ~initial_size:5 ~max_size:3 in
@@ -50,11 +68,6 @@ let inputs =
 
 
 let tests =
-  let compare (k1, v1) (k2, v2) =
-    let c = k1 - k2 in
-    if c <> 0 then c else v1 - v2
-  in
   "LRUHashtble"
   >::: List.map inputs ~f:(fun (name, input, expected) ->
-           name
-           >:: fun _ -> assert_equal (input () |> LRUHash.bindings |> List.sort ~compare) expected )
+           name >:: fun _ -> assert_equal (input () |> LRUHash.bindings) expected )

@@ -32,6 +32,7 @@ module type S = sig
     -> unit
 
   val bindings : 'a t -> (key * 'a) list
+  (** visible for testing mainly; makes linear number of hashtable lookups *)
 end
 
 module Make (Key : Caml.Hashtbl.HashedType) : S with type key = Key.t
