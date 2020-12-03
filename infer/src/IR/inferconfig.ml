@@ -202,7 +202,7 @@ let patterns_of_json_with_key (json_key, json) =
     match detect_language assoc with
     | Ok language ->
         let is_method_pattern key = List.exists ~f:(String.equal key) ["class"; "method"]
-        and is_source_contains key = List.exists ~f:(String.equal key) ["source_contains"] in
+        and is_source_contains key = String.equal "source_contains" key in
         let rec loop = function
           | [] ->
               Error ("Unknown pattern for " ^ json_key)
