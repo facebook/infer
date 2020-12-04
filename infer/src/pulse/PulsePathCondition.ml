@@ -11,6 +11,7 @@ module L = Logging
 module AbstractValue = PulseAbstractValue
 module CItv = PulseCItv
 module Formula = PulseFormula
+module SatUnsat = PulseSatUnsat
 module ValueHistory = PulseValueHistory
 
 module BoItvs = struct
@@ -51,9 +52,7 @@ let map_sat phi f = if phi.is_unsat then (phi, []) else f phi
 
 let ( let+ ) phi f = map_sat phi f
 
-let map_formula_sat (x : 'a Formula.normalized) f =
-  match x with Unsat -> (false_, []) | Sat x' -> f x'
-
+let map_formula_sat (x : 'a SatUnsat.t) f = match x with Unsat -> (false_, []) | Sat x' -> f x'
 
 let ( let+| ) x f = map_formula_sat x f
 

@@ -18,4 +18,4 @@ val apply_prepost :
   -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
   -> AbductiveDomain.t
   -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t) option) PulseReport.access_result
-     PulseReport.path_feasibility
+     SatUnsat.t

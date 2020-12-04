@@ -454,9 +454,9 @@ let apply_callee ~caller_proc_desc callee_pname call_loc callee_exec_state ~ret
       PulseInterproc.apply_prepost callee_pname call_loc ~callee_prepost ~captured_vars_with_actuals
         ~formals ~actuals astate
     with
-    | (FeasiblePath (Error _) | InfeasiblePath) as path_result ->
+    | (Sat (Error _) | Unsat) as path_result ->
         path_result
-    | FeasiblePath (Ok (post, return_val_opt)) ->
+    | Sat (Ok (post, return_val_opt)) ->
         let event = ValueHistory.Call {f= Call callee_pname; location= call_loc; in_call= []} in
         let post =
           match return_val_opt with
@@ -474,23 +474,22 @@ let apply_callee ~caller_proc_desc callee_pname call_loc callee_exec_state ~ret
         (astate :> AbductiveDomain.t)
         ~f:(fun astate ->
           let astate_summary = AbductiveDomain.summary_of_post caller_proc_desc astate in
-          FeasiblePath (Ok (AbortProgram astate_summary)) )
+          Sat (Ok (AbortProgram astate_summary)) )
   | ContinueProgram astate ->
-      map_call_result astate ~f:(fun astate -> FeasiblePath (Ok (ContinueProgram astate)))
+      map_call_result astate ~f:(fun astate -> Sat (Ok (ContinueProgram astate)))
   | ExitProgram astate ->
-      map_call_result astate ~f:(fun astate -> FeasiblePath (Ok (ExitProgram astate)))
+      map_call_result astate ~f:(fun astate -> Sat (Ok (ExitProgram astate)))
   | LatentAbortProgram {astate; latent_issue} ->
       map_call_result
         (astate :> AbductiveDomain.t)
         ~f:(fun astate ->
           let astate_summary = AbductiveDomain.summary_of_post caller_proc_desc astate in
-          if PulseArithmetic.is_unsat_cheap (astate_summary :> AbductiveDomain.t) then
-            InfeasiblePath
+          if PulseArithmetic.is_unsat_cheap (astate_summary :> AbductiveDomain.t) then Unsat
           else
             let latent_issue =
               LatentIssue.add_call (CallEvent.Call callee_pname, call_loc) latent_issue
             in
-            FeasiblePath
+            Sat
               ( if LatentIssue.should_report astate_summary then
                 Error (LatentIssue.to_diagnostic latent_issue, (astate_summary :> AbductiveDomain.t))
               else Ok (LatentAbortProgram {astate= astate_summary; latent_issue}) ) )
@@ -550,14 +549,14 @@ let call ~caller_proc_desc err_log ~(callee_data : (Procdesc.t * PulseSummary.t)
               apply_callee ~caller_proc_desc callee_pname call_loc callee_exec_state
                 ~captured_vars_with_actuals ~formals ~actuals ~ret astate
             with
-            | InfeasiblePath ->
+            | Unsat ->
                 (* couldn't apply pre/post pair *)
                 posts
-            | FeasiblePath post -> (
+            | Sat post -> (
               match PulseReport.report_error caller_proc_desc err_log post with
-              | Error InfeasiblePath ->
+              | Error Unsat ->
                   posts
-              | Error (FeasiblePath post) | Ok post ->
+              | Error (Sat post) | Ok post ->
                   post :: posts ) )
   | None ->
       (* no spec found for some reason (unknown function, ...) *)

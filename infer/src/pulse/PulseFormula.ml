@@ -8,13 +8,11 @@
 open! IStd
 module F = Format
 module L = Logging
+module SatUnsat = PulseSatUnsat
 module Var = PulseAbstractValue
+open SatUnsat
 
 type operand = LiteralOperand of IntLit.t | AbstractValueOperand of Var.t
-
-(** "normalized" is not to be taken too seriously, it just means *some* normalization was applied
-    that could result in discovering something is unsatisfiable *)
-type 'a normalized = Unsat | Sat of 'a
 
 (** {!Q} from zarith with a few convenience functions added *)
 module Q = struct
@@ -66,7 +64,7 @@ module LinArith : sig
 
   val mult : Q.t -> t -> t
 
-  val solve_eq : t -> t -> (Var.t * t) option normalized
+  val solve_eq : t -> t -> (Var.t * t) option SatUnsat.t
   (** [solve_eq l1 l2] is [Sat (Some (x, l))] if [l1=l2 <=> x=l], [Sat None] if [l1 = l2] is always
       true, and [Unsat] if it is always false *)
 
@@ -953,20 +951,6 @@ module Atom = struct
   end
 end
 
-module SatUnsatMonad = struct
-  let map_normalized f norm = match norm with Unsat -> Unsat | Sat phi -> Sat (f phi)
-
-  let ( >>| ) phi f = map_normalized f phi
-
-  let ( let+ ) phi f = map_normalized f phi
-
-  let bind_normalized f norm = match norm with Unsat -> Unsat | Sat phi -> f phi
-
-  let ( >>= ) x f = bind_normalized f x
-
-  let ( let* ) phi f = bind_normalized f phi
-end
-
 let sat_of_eval_result (eval_result : Atom.eval_result) =
   match eval_result with True -> Sat None | False -> Unsat | Atom atom -> Sat (Some atom)
 
@@ -1025,20 +1009,20 @@ module Formula = struct
 
   (** module that breaks invariants more often that the rest, with an interface that is safer to use *)
   module Normalizer : sig
-    val and_var_linarith : Var.t -> LinArith.t -> t * new_eqs -> (t * new_eqs) normalized
+    val and_var_linarith : Var.t -> LinArith.t -> t * new_eqs -> (t * new_eqs) SatUnsat.t
 
-    val and_var_var : Var.t -> Var.t -> t * new_eqs -> (t * new_eqs) normalized
+    val and_var_var : Var.t -> Var.t -> t * new_eqs -> (t * new_eqs) SatUnsat.t
 
-    val and_atom : Atom.t -> t * new_eqs -> (t * new_eqs) normalized
+    val and_atom : Atom.t -> t * new_eqs -> (t * new_eqs) SatUnsat.t
 
-    val normalize_atom : t -> Atom.t -> Atom.t option normalized
+    val normalize_atom : t -> Atom.t -> Atom.t option SatUnsat.t
 
-    val normalize : t -> (t * new_eqs) normalized
+    val normalize : t -> (t * new_eqs) SatUnsat.t
 
     val implies_atom : t -> Atom.t -> bool
   end = struct
     (* Use the monadic notations when normalizing formulas. *)
-    open SatUnsatMonad
+    open SatUnsat.Import
 
     (** OVERVIEW: the best way to think about this is as a half-assed Shostak technique.
 
@@ -1296,7 +1280,7 @@ let pp_with_pp_var pp_var fmt {known; pruned; both} =
 let pp = pp_with_pp_var Var.pp
 
 let and_known_atom atom phi =
-  let open SatUnsatMonad in
+  let open SatUnsat.Import in
   let* known, _ = Formula.Normalizer.and_atom atom (phi.known, []) in
   let+ both, new_eqs = Formula.Normalizer.and_atom atom (phi.both, []) in
   ({phi with known; both}, new_eqs)
@@ -1322,7 +1306,7 @@ let and_equal_binop v (bop : Binop.t) x y phi =
 
 
 let prune_binop ~negated (bop : Binop.t) x y phi =
-  let open SatUnsatMonad in
+  let open SatUnsat.Import in
   let tx = Term.of_operand x in
   let ty = Term.of_operand y in
   let t = Term.of_binop bop tx ty in
@@ -1339,7 +1323,7 @@ let prune_binop ~negated (bop : Binop.t) x y phi =
 
 
 let normalize phi =
-  let open SatUnsatMonad in
+  let open SatUnsat.Import in
   let* both, new_eqs = Formula.Normalizer.normalize phi.both in
   let* known, _ = Formula.Normalizer.normalize phi.known in
   let+ pruned =
@@ -1366,7 +1350,7 @@ let and_fold_subst_variables phi0 ~up_to_f:phi_foreign ~init ~f:f_var =
   in
   (* propagate [Unsat] faster using this exception *)
   let exception Contradiction in
-  let sat_value_exn (norm : 'a normalized) =
+  let sat_value_exn (norm : 'a SatUnsat.t) =
     match norm with Unsat -> raise Contradiction | Sat x -> x
   in
   let and_var_eqs var_eqs_foreign acc_phi_new_eqs =
@@ -1402,7 +1386,7 @@ let and_fold_subst_variables phi0 ~up_to_f:phi_foreign ~init ~f:f_var =
         |> and_atoms phi_foreign.Formula.atoms )
     with Contradiction -> Unsat
   in
-  let open SatUnsatMonad in
+  let open SatUnsat.Import in
   let* acc, (both, new_eqs) = and_ phi_foreign.both init phi0.both in
   let* acc, (known, _) = and_ phi_foreign.known acc phi0.known in
   let and_pruned pruned_foreign acc_pruned =
@@ -1500,7 +1484,7 @@ let get_reachable_from graph vs =
 
 
 let simplify ~keep phi =
-  let open SatUnsatMonad in
+  let open SatUnsat.Import in
   let+ phi, new_eqs = normalize phi in
   L.d_printfln_escaped "Simplifying %a wrt {%a}" pp phi Var.Set.pp keep ;
   (* Get rid of atoms when they contain only variables that do not appear in atoms mentioning

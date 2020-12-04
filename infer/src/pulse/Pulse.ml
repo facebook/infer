@@ -15,9 +15,9 @@ open PulseDomainInterface
 let exec_list_of_list_result = function
   | Ok posts ->
       posts
-  | Error PulseReport.InfeasiblePath ->
+  | Error Unsat ->
       []
-  | Error (PulseReport.FeasiblePath post) ->
+  | Error (Sat post) ->
       [post]
 
 

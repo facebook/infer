@@ -8,7 +8,7 @@
 open! IStd
 module AbstractValue = PulseAbstractValue
 open PulseFormula
-open SatUnsatMonad
+open PulseSatUnsat.Import
 
 (** {2 Utilities for defining formulas easily}
 

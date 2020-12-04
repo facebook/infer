@@ -569,10 +569,10 @@ let apply_prepost callee_proc_name call_location ~callee_prepost:pre_post
       (* can't make sense of the pre-condition in the current context: give up on that particular
          pre/post pair *)
       L.d_printfln "Cannot apply precondition: %a" pp_contradiction reason ;
-      PulseReport.InfeasiblePath
+      Unsat
   | Error _ as error ->
       (* error: the function call requires to read some state known to be invalid *)
-      PulseReport.FeasiblePath error
+      Sat error
   | Ok call_state -> (
       L.d_printfln "Pre applied successfully. call_state=%a" pp_call_state call_state ;
       match
@@ -595,7 +595,7 @@ let apply_prepost callee_proc_name call_location ~callee_prepost:pre_post
         (astate, return_caller)
       with
       | post ->
-          PulseReport.FeasiblePath post
+          Sat post
       | exception Contradiction reason ->
           L.d_printfln "Cannot apply post-condition: %a" pp_contradiction reason ;
-          PulseReport.InfeasiblePath )
+          Unsat )
