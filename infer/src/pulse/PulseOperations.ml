@@ -521,9 +521,9 @@ let call ~caller_proc_desc err_log ~(callee_data : (Procdesc.t * PulseSummary.t)
       in
       let captured_vars =
         Procdesc.get_captured callee_proc_desc
-        |> List.map ~f:(fun (mangled, _, mode) ->
-               let pvar = Pvar.mk mangled callee_pname in
-               (Var.of_pvar pvar, mode) )
+        |> List.map ~f:(fun {CapturedVar.name; capture_mode} ->
+               let pvar = Pvar.mk name callee_pname in
+               (Var.of_pvar pvar, capture_mode) )
       in
       let+ astate, captured_vars_with_actuals =
         match actuals with

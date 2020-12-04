@@ -151,7 +151,8 @@ module TransferFunctions = struct
     let pvar_name = Pvar.get_name pvar in
     Pvar.is_self pvar
     && List.exists
-         ~f:(fun (captured, typ, _) -> Mangled.equal captured pvar_name && Typ.is_strong_pointer typ)
+         ~f:(fun {CapturedVar.name= captured; typ} ->
+           Mangled.equal captured pvar_name && Typ.is_strong_pointer typ )
          attributes.ProcAttributes.captured
 
 
@@ -159,7 +160,7 @@ module TransferFunctions = struct
   let is_captured_strong_self attributes pvar =
     (not (Pvar.is_self pvar))
     && List.exists
-         ~f:(fun (captured, typ, _) ->
+         ~f:(fun {CapturedVar.name= captured; typ} ->
            Typ.is_strong_pointer typ
            && Mangled.equal captured (Pvar.get_name pvar)
            && String.is_suffix ~suffix:"self" (String.lowercase (Mangled.to_string captured)) )
@@ -168,7 +169,7 @@ module TransferFunctions = struct
 
   let is_captured_weak_self attributes pvar =
     List.exists
-      ~f:(fun (captured, typ, _) ->
+      ~f:(fun {CapturedVar.name= captured; typ} ->
         Mangled.equal captured (Pvar.get_name pvar)
         && String.is_substring ~substring:"self" (String.lowercase (Mangled.to_string captured))
         && Typ.is_weak_pointer typ )

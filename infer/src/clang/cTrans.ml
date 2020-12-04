@@ -829,9 +829,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       match procname with
       | Procname.ObjC_Cpp cpp_pname when Procname.ObjC_Cpp.is_cpp_lambda cpp_pname ->
           let pvar_name = Pvar.get_name pvar in
-          List.find (Procdesc.get_captured context.procdesc) ~f:(fun (captured_var, _, _) ->
-              Mangled.equal captured_var pvar_name )
-          |> Option.value_map ~f:(fun (_, t, _) -> t) ~default:typ
+          List.find (Procdesc.get_captured context.procdesc)
+            ~f:(fun {CapturedVar.name= captured_var} -> Mangled.equal captured_var pvar_name)
+          |> Option.value_map ~f:(fun {CapturedVar.typ} -> typ) ~default:typ
       | _ ->
           typ
     in

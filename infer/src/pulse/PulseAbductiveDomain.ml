@@ -313,7 +313,7 @@ let mk_initial proc_desc =
       Procdesc.get_formals proc_desc |> List.map ~f:(fun (mangled, _) -> init_var mangled)
     in
     let captured =
-      Procdesc.get_captured proc_desc |> List.map ~f:(fun (mangled, _, _) -> init_var mangled)
+      Procdesc.get_captured proc_desc |> List.map ~f:(fun {CapturedVar.name} -> init_var name)
     in
     captured @ formals
   in

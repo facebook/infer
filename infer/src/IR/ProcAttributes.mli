@@ -27,7 +27,7 @@ type specialized_with_blocks_info =
 
 type t =
   { access: PredSymb.access  (** visibility access *)
-  ; captured: (Mangled.t * Typ.t * Pvar.capture_mode) list
+  ; captured: CapturedVar.t list
         (** name, type, and mode of variables captured in blocks and lambdas *)
   ; exceptions: string list  (** exceptions thrown by the procedure *)
   ; formals: (Mangled.t * Typ.t) list  (** name and type of formal parameters *)
