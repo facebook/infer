@@ -33,6 +33,159 @@ type register = ToplAst.register_name [@@deriving compare]
 
 type configuration = {vertex: vertex; memory: (register * value) list} [@@deriving compare]
 
+type substitution = (AbstractValue.t * ValueHistory.t) AbstractValue.Map.t
+
+type 'a substitutor = substitution * 'a -> substitution * 'a
+
+let sub_value (sub, value) =
+  match AbstractValue.Map.find_opt value sub with
+  | Some (v, _history) ->
+      (sub, v)
+  | None ->
+      let v = AbstractValue.mk_fresh () in
+      let sub = AbstractValue.Map.add value (v, []) sub in
+      (sub, v)
+
+
+let sub_list : 'a substitutor -> 'a list substitutor =
+ fun sub_elem (sub, xs) ->
+  let f (sub, xs) x =
+    let sub, x = sub_elem (sub, x) in
+    (sub, x :: xs)
+  in
+  let sub, xs = List.fold ~init:(sub, []) ~f xs in
+  (sub, List.rev xs)
+
+
+module Constraint : sig
+  type predicate
+
+  type t [@@deriving compare]
+
+  type operand = PathCondition.operand
+
+  val make : Binop.t -> operand -> operand -> predicate
+
+  val true_ : t
+
+  val and_predicate : predicate -> t -> t
+
+  val and_constr : t -> t -> t
+
+  val and_n : t list -> t
+
+  val normalize : t -> t
+
+  val negate : t list -> t list
+  (** computes ¬(c1∨...∨cm) as d1∨...∨dn, where n=|c1|x...x|cm| *)
+
+  val eliminate_exists : keep:AbstractValue.Set.t -> t -> t
+  (** quantifier elimination *)
+
+  val size : t -> int
+
+  val substitute : t substitutor
+
+  val prune_path : t -> PathCondition.t -> PathCondition.t
+
+  val pp : Format.formatter -> t -> unit
+end = struct
+  type predicate = Binop.t * PathCondition.operand * PathCondition.operand [@@deriving compare]
+
+  type t = predicate list [@@deriving compare]
+
+  type operand = PathCondition.operand
+
+  let make binop lhs rhs = (binop, lhs, rhs)
+
+  let true_ = []
+
+  let is_trivially_true (predicate : predicate) =
+    match predicate with
+    | Eq, AbstractValueOperand l, AbstractValueOperand r when AbstractValue.equal l r ->
+        true
+    | _ ->
+        false
+
+
+  let and_predicate predicate constr =
+    if is_trivially_true predicate then constr else predicate :: constr
+
+
+  let and_constr constr_a constr_b = List.rev_append constr_a constr_b
+
+  let and_n constraints = List.concat_no_order constraints
+
+  let normalize constr = List.dedup_and_sort ~compare:compare_predicate constr
+
+  let negate_predicate (predicate : predicate) : predicate =
+    match predicate with
+    | Eq, l, r ->
+        (Ne, l, r)
+    | Ne, l, r ->
+        (Eq, l, r)
+    | Ge, l, r ->
+        (Lt, r, l)
+    | Gt, l, r ->
+        (Le, r, l)
+    | Le, l, r ->
+        (Gt, r, l)
+    | Lt, l, r ->
+        (Ge, r, l)
+    | _ ->
+        L.die InternalError
+          "PulseTopl.negate_predicate should handle all outputs of ToplUtils.binop_to"
+
+
+  let negate disjunction = IList.product (List.map ~f:(List.map ~f:negate_predicate) disjunction)
+
+  let size constr = List.length constr
+
+  let substitute_predicate (sub, predicate) =
+    let avo x : PathCondition.operand = AbstractValueOperand x in
+    match (predicate : predicate) with
+    | op, AbstractValueOperand l, AbstractValueOperand r ->
+        let sub, l = sub_value (sub, l) in
+        let sub, r = sub_value (sub, r) in
+        (sub, (op, avo l, avo r))
+    | op, AbstractValueOperand l, r ->
+        let sub, l = sub_value (sub, l) in
+        (sub, (op, avo l, r))
+    | op, l, AbstractValueOperand r ->
+        let sub, r = sub_value (sub, r) in
+        (sub, (op, l, avo r))
+    | _ ->
+        (sub, predicate)
+
+
+  let substitute = sub_list substitute_predicate
+
+  let prune_path constr path_condition =
+    let f path_condition (op, l, r) =
+      let path_condition, _new_eqs =
+        PathCondition.prune_binop ~negated:false op l r path_condition
+      in
+      path_condition
+    in
+    List.fold ~init:path_condition ~f constr
+
+
+  let pp_predicate f (op, l, r) =
+    Format.fprintf f "@[%a%a%a@]" PathCondition.pp_operand l Binop.pp op PathCondition.pp_operand r
+
+
+  let pp = Pp.seq ~sep:"∧" pp_predicate
+
+  let eliminate_exists ~keep constr =
+    (* TODO(rgrigore): replace the current weak approximation *)
+    let is_live_operand =
+      PathCondition.(
+        function LiteralOperand _ -> true | AbstractValueOperand v -> AbstractValue.Set.mem v keep)
+    in
+    let is_live_predicate (_op, l, r) = is_live_operand l && is_live_operand r in
+    List.filter ~f:is_live_predicate constr
+end
+
 type predicate = Binop.t * PathCondition.operand * PathCondition.operand [@@deriving compare]
 
 type step =
@@ -45,17 +198,13 @@ and step_data = SmallStep of event | LargeStep of (Procname.t * (* post *) simpl
 and simple_state =
   { pre: configuration  (** at the start of the procedure *)
   ; post: configuration  (** at the current program point *)
-  ; pruned: predicate list  (** path-condition for the automaton *)
+  ; pruned: Constraint.t  (** path-condition for the automaton *)
   ; last_step: step option [@compare.ignore]  (** for trace error reporting *) }
 [@@deriving compare]
 
 (* TODO: include a hash of the automaton in a summary to avoid caching problems. *)
 (* TODO: limit the number of simple_states to some configurable number (default ~5) *)
 type state = simple_state list
-
-let pp_predicate f (op, l, r) =
-  Format.fprintf f "@[%a%a%a@]" PathCondition.pp_operand l Binop.pp op PathCondition.pp_operand r
-
 
 let pp_mapping f (x, value) = Format.fprintf f "@[%s↦%a@]@," x AbstractValue.pp value
 
@@ -67,7 +216,7 @@ let pp_configuration f {vertex; memory} =
 
 let pp_simple_state f {pre; post; pruned} =
   Format.fprintf f "@[<2>{ topl-simple-state@;pre=%a@;post=%a@;pruned=(%a) }@]" pp_configuration pre
-    pp_configuration post (Pp.seq ~sep:"∧" pp_predicate) pruned
+    pp_configuration post Constraint.pp pruned
 
 
 let pp_state f = Format.fprintf f "@[<2>[ %a ]@]" (pp_comma_seq pp_simple_state)
@@ -83,7 +232,9 @@ let start () =
       let f acc vertex = {vertex; memory} :: acc in
       IContainer.forto n ~init:[] ~f
     in
-    List.map ~f:(fun c -> {pre= c; post= c; pruned= []; last_step= None}) configurations
+    List.map
+      ~f:(fun c -> {pre= c; post= c; pruned= Constraint.true_; last_step= None})
+      configurations
   in
   if Topl.is_deep_active () then mk_simple_states () else (* Avoids work later *) []
 
@@ -98,15 +249,7 @@ let get env x =
 
 let set = List.Assoc.add ~equal:String.equal
 
-let is_trivially_true (predicate : predicate) =
-  match predicate with
-  | Eq, AbstractValueOperand l, AbstractValueOperand r when AbstractValue.equal l r ->
-      true
-  | _ ->
-      false
-
-
-let eval_guard memory tcontext guard =
+let eval_guard memory tcontext guard : Constraint.t =
   let operand_of_value (value : ToplAst.value) : PathCondition.operand =
     match value with
     | Constant (LiteralInt x) ->
@@ -116,20 +259,19 @@ let eval_guard memory tcontext guard =
     | Binding v ->
         AbstractValueOperand (get tcontext v)
   in
-  let add predicate pruned = if is_trivially_true predicate then pruned else predicate :: pruned in
   let conjoin_predicate pruned (predicate : ToplAst.predicate) =
     match predicate with
     | Binop (binop, l, r) ->
         let l = operand_of_value l in
         let r = operand_of_value r in
         let binop = ToplUtils.binop_to binop in
-        add (binop, l, r) pruned
+        Constraint.and_predicate (Constraint.make binop l r) pruned
     | Value v ->
         let v = operand_of_value v in
         let one = PathCondition.LiteralOperand IntLit.one in
-        add (Binop.Ne, v, one) pruned
+        Constraint.and_predicate (Constraint.make Binop.Ne v one) pruned
   in
-  List.fold ~init:[] ~f:conjoin_predicate guard
+  List.fold ~init:Constraint.true_ ~f:conjoin_predicate guard
 
 
 let apply_action tcontext assignments memory =
@@ -211,46 +353,15 @@ let static_match event : (ToplAutomaton.transition * tcontext) list =
   ToplAutomaton.tfilter_map (Topl.automaton ()) ~f:match_one
 
 
-let conjoin_pruned path_condition pruned =
-  let f path_condition (op, l, r) =
-    let path_condition, _new_eqs = PathCondition.prune_binop ~negated:false op l r path_condition in
-    path_condition
-  in
-  List.fold ~init:path_condition ~f pruned
-
-
 let is_unsat_cheap path_condition pruned =
-  PathCondition.is_unsat_cheap (conjoin_pruned path_condition pruned)
+  PathCondition.is_unsat_cheap (Constraint.prune_path pruned path_condition)
 
 
 let is_unsat_expensive path_condition pruned =
   let _path_condition, unsat, _new_eqs =
-    PathCondition.is_unsat_expensive (conjoin_pruned path_condition pruned)
+    PathCondition.is_unsat_expensive (Constraint.prune_path pruned path_condition)
   in
   unsat
-
-
-let negate_predicate (predicate : predicate) : predicate =
-  match predicate with
-  | Eq, l, r ->
-      (Ne, l, r)
-  | Ne, l, r ->
-      (Eq, l, r)
-  | Ge, l, r ->
-      (Lt, r, l)
-  | Gt, l, r ->
-      (Le, r, l)
-  | Le, l, r ->
-      (Gt, r, l)
-  | Lt, l, r ->
-      (Ge, r, l)
-  | _ ->
-      L.die InternalError
-        "PulseTopl.negate_predicate should handle all outputs of ToplUtils.binop_to"
-
-
-let skip_pruned_of_nonskip_pruned nonskip_list =
-  IList.product (List.map ~f:(List.map ~f:negate_predicate) nonskip_list)
 
 
 let drop_infeasible ?(expensive = false) path_condition state =
@@ -263,19 +374,17 @@ let normalize_memory memory = List.sort ~compare:[%compare: register * value] me
 
 let normalize_configuration {vertex; memory} = {vertex; memory= normalize_memory memory}
 
-let normalize_pruned pruned = List.dedup_and_sort ~compare:compare_predicate pruned
-
 let normalize_simple_state {pre; post; pruned; last_step} =
   { pre= normalize_configuration pre
   ; post= normalize_configuration post
-  ; pruned= normalize_pruned pruned
+  ; pruned= Constraint.normalize pruned
   ; last_step }
 
 
 let normalize_state state = List.map ~f:normalize_simple_state state
 
 let apply_conjuncts_limit state =
-  let f simple_state = List.length simple_state.pruned <= Config.topl_max_conjuncts in
+  let f simple_state = Constraint.size simple_state.pruned <= Config.topl_max_conjuncts in
   IList.filter_changed ~f state
 
 
@@ -283,7 +392,7 @@ let apply_disjuncts_limit state =
   if List.length state <= Config.topl_max_disjuncts then state
   else
     let new_len = (Config.topl_max_disjuncts / 2) + 1 in
-    let add_score simple_state = (List.length simple_state.pruned, simple_state) in
+    let add_score simple_state = (Constraint.size simple_state.pruned, simple_state) in
     let compare_score (score1, _simple_state1) (score2, _simple_state2) =
       Int.compare score1 score2
     in
@@ -298,7 +407,7 @@ let small_step loc path_condition event simple_states =
   let simple_states = apply_limits simple_states in
   let tmatches = static_match event in
   let evolve_transition (old : simple_state) (transition, tcontext) : state =
-    let mk ?(memory = old.post.memory) ?(pruned = []) significant =
+    let mk ?(memory = old.post.memory) ?(pruned = Constraint.true_) significant =
       let last_step =
         if significant then
           Some {step_location= loc; step_predecessor= old; step_data= SmallStep event}
@@ -321,7 +430,7 @@ let small_step loc path_condition event simple_states =
         [mk ~memory ~pruned true]
   in
   let evolve_simple_state old =
-    let path_condition = conjoin_pruned path_condition old.pruned in
+    let path_condition = Constraint.prune_path old.pruned path_condition in
     let tmatches =
       List.filter ~f:(fun (t, _) -> Int.equal old.post.vertex t.ToplAutomaton.source) tmatches
     in
@@ -329,36 +438,17 @@ let small_step loc path_condition event simple_states =
       drop_infeasible path_condition (List.concat_map ~f:(evolve_transition old) tmatches)
     in
     let skip =
-      let nonskip_pruned_list = List.map ~f:(fun {pruned} -> pruned) nonskip in
-      let skip_pruned_list = skip_pruned_of_nonskip_pruned nonskip_pruned_list in
+      let nonskip_disjunction = List.map ~f:(fun {pruned} -> pruned) nonskip in
+      let skip_disjunction = Constraint.negate nonskip_disjunction in
       let f pruned = {old with pruned} (* keeps last_step from old *) in
-      drop_infeasible path_condition (List.map ~f skip_pruned_list)
+      drop_infeasible path_condition (List.map ~f skip_disjunction)
     in
-    let add_old_pruned s = {s with pruned= List.rev_append s.pruned old.pruned} in
+    let add_old_pruned s = {s with pruned= Constraint.and_constr s.pruned old.pruned} in
     List.map ~f:add_old_pruned (List.rev_append nonskip skip)
   in
   let result = List.concat_map ~f:evolve_simple_state simple_states in
   L.d_printfln "@[<2>PulseTopl.small_step:@;%a@ -> %a@]" pp_state simple_states pp_state result ;
   result
-
-
-let sub_value (sub, value) =
-  match AbstractValue.Map.find_opt value sub with
-  | Some (v, _history) ->
-      (sub, v)
-  | None ->
-      let v = AbstractValue.mk_fresh () in
-      let sub = AbstractValue.Map.add value (v, []) sub in
-      (sub, v)
-
-
-let sub_list sub_elem (sub, xs) =
-  let f (sub, xs) x =
-    let sub, x = sub_elem (sub, x) in
-    (sub, x :: xs)
-  in
-  let sub, xs = List.fold ~init:(sub, []) ~f xs in
-  (sub, List.rev xs)
 
 
 let of_unequal (or_unequal : 'a List.Or_unequal_lengths.t) =
@@ -376,30 +466,11 @@ let sub_configuration (sub, {vertex; memory}) =
   (sub, {vertex; memory})
 
 
-let sub_predicate (sub, predicate) =
-  let avo x : PathCondition.operand = AbstractValueOperand x in
-  match (predicate : predicate) with
-  | op, AbstractValueOperand l, AbstractValueOperand r ->
-      let sub, l = sub_value (sub, l) in
-      let sub, r = sub_value (sub, r) in
-      (sub, (op, avo l, avo r))
-  | op, AbstractValueOperand l, r ->
-      let sub, l = sub_value (sub, l) in
-      (sub, (op, avo l, r))
-  | op, l, AbstractValueOperand r ->
-      let sub, r = sub_value (sub, r) in
-      (sub, (op, l, avo r))
-  | _ ->
-      (sub, predicate)
-
-
-let sub_pruned = sub_list sub_predicate
-
 (* Does not substitute in [last_step]: not usually needed, and takes much time. *)
 let sub_simple_state (sub, {pre; post; pruned; last_step}) =
   let sub, pre = sub_configuration (sub, pre) in
   let sub, post = sub_configuration (sub, post) in
-  let sub, pruned = sub_pruned (sub, pruned) in
+  let sub, pruned = Constraint.substitute (sub, pruned) in
   (sub, {pre; post; pruned; last_step})
 
 
@@ -413,7 +484,7 @@ let large_step ~call_location ~callee_proc_name ~substitution ~condition ~callee
            equalities, because a growing [pruned] leads to quadratic behaviour. *)
         let mk_eq val1 val2 =
           let op x = PathCondition.AbstractValueOperand x in
-          (Binop.Eq, op val1, op val2)
+          Constraint.make Binop.Eq (op val1) (op val2)
         in
         let f (sub, eqs) (reg1, val1) (reg2, val2) =
           if not (String.equal reg1 reg2) then
@@ -423,14 +494,14 @@ let large_step ~call_location ~callee_proc_name ~substitution ~condition ~callee
             match AbstractValue.Map.find_opt val2 sub with
             | Some (old_val1, _history) ->
                 if AbstractValue.equal old_val1 val1 then (sub, eqs)
-                else (sub, mk_eq old_val1 val1 :: eqs)
+                else (sub, Constraint.and_predicate (mk_eq old_val1 val1) eqs)
             | None ->
                 (AbstractValue.Map.add val2 (val1, []) sub, eqs)
         in
-        of_unequal (List.fold2 p.post.memory q.pre.memory ~init:(substitution, []) ~f)
+        of_unequal (List.fold2 p.post.memory q.pre.memory ~init:(substitution, Constraint.true_) ~f)
       in
       let _substitution, q = sub_simple_state (substitution, q) in
-      let pruned = new_eqs @ q.pruned @ p.pruned in
+      let pruned = Constraint.and_n [new_eqs; q.pruned; p.pruned] in
       let last_step =
         Some
           { step_location= call_location
@@ -460,12 +531,7 @@ let simplify ~keep state =
       List.fold ~init:keep ~f:(fun keep (_reg, value) -> AbstractValue.Set.add value keep) memory
     in
     let keep = keep |> collect pre.memory |> collect post.memory in
-    let is_live_operand =
-      PathCondition.(
-        function LiteralOperand _ -> true | AbstractValueOperand v -> AbstractValue.Set.mem v keep)
-    in
-    let is_live_predicate (_op, l, r) = is_live_operand l && is_live_operand r in
-    let pruned = List.filter ~f:is_live_predicate pruned in
+    let pruned = Constraint.eliminate_exists ~keep pruned in
     {pre; post; pruned; last_step}
   in
   let state = List.map ~f:simplify_simple_state state in
