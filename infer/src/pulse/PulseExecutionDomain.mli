@@ -11,7 +11,8 @@ module LatentIssue = PulseLatentIssue
 
 type 'abductive_domain_t base_t =
   | ContinueProgram of 'abductive_domain_t  (** represents the state at the program point *)
-  | ExitProgram of 'abductive_domain_t  (** represents the state originating at exit/divergence. *)
+  | ExitProgram of AbductiveDomain.summary
+      (** represents the state originating at exit/divergence. *)
   | AbortProgram of AbductiveDomain.summary
       (** represents the state at the program point that caused an error *)
   | LatentAbortProgram of {astate: AbductiveDomain.summary; latent_issue: LatentIssue.t}

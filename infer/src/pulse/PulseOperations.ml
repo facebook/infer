@@ -468,31 +468,31 @@ let apply_callee ~caller_proc_desc callee_pname call_loc callee_exec_state ~ret
         f post
   in
   let open ExecutionDomain in
+  let open SatUnsat.Import in
   match callee_exec_state with
-  | AbortProgram astate ->
-      map_call_result
-        (astate :> AbductiveDomain.t)
-        ~f:(fun astate ->
-          let astate_summary = AbductiveDomain.summary_of_post caller_proc_desc astate in
-          Sat (Ok (AbortProgram astate_summary)) )
   | ContinueProgram astate ->
       map_call_result astate ~f:(fun astate -> Sat (Ok (ContinueProgram astate)))
-  | ExitProgram astate ->
-      map_call_result astate ~f:(fun astate -> Sat (Ok (ExitProgram astate)))
-  | LatentAbortProgram {astate; latent_issue} ->
+  | AbortProgram astate | ExitProgram astate | LatentAbortProgram {astate} ->
       map_call_result
         (astate :> AbductiveDomain.t)
         ~f:(fun astate ->
-          let astate_summary = AbductiveDomain.summary_of_post caller_proc_desc astate in
-          if PulseArithmetic.is_unsat_cheap (astate_summary :> AbductiveDomain.t) then Unsat
-          else
-            let latent_issue =
-              LatentIssue.add_call (CallEvent.Call callee_pname, call_loc) latent_issue
-            in
-            Sat
-              ( if LatentIssue.should_report astate_summary then
-                Error (LatentIssue.to_diagnostic latent_issue, (astate_summary :> AbductiveDomain.t))
-              else Ok (LatentAbortProgram {astate= astate_summary; latent_issue}) ) )
+          let+ astate_summary = AbductiveDomain.summary_of_post caller_proc_desc astate in
+          match callee_exec_state with
+          | ContinueProgram _ ->
+              assert false
+          | AbortProgram _ ->
+              Ok (AbortProgram astate_summary)
+          | ExitProgram _ ->
+              Ok (ExitProgram astate_summary)
+          | LatentAbortProgram {latent_issue} ->
+              let latent_issue =
+                LatentIssue.add_call (CallEvent.Call callee_pname, call_loc) latent_issue
+              in
+              if LatentIssue.should_report astate_summary then
+                Error
+                  ( LatentIssue.to_diagnostic latent_issue
+                  , (astate_summary : AbductiveDomain.summary :> AbductiveDomain.t) )
+              else Ok (LatentAbortProgram {astate= astate_summary; latent_issue}) )
 
 
 let get_captured_actuals location ~captured_vars ~actual_closure astate =

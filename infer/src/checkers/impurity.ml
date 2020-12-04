@@ -158,7 +158,7 @@ let extract_impurity tenv pname formals (exec_state : ExecutionDomain.t) : Impur
   let astate, exited =
     match exec_state with
     | ExitProgram astate ->
-        (astate, true)
+        ((astate :> AbductiveDomain.t), true)
     | ContinueProgram astate ->
         (astate, false)
     | AbortProgram astate | LatentAbortProgram {astate} ->

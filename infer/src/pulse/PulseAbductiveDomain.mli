@@ -164,7 +164,7 @@ val set_path_condition : PathCondition.t -> t -> t
 (** private type to make sure {!summary_of_post} is always called when creating summaries *)
 type summary = private t [@@deriving yojson_of]
 
-val summary_of_post : Procdesc.t -> t -> summary
+val summary_of_post : Procdesc.t -> t -> summary SatUnsat.t
 (** trim the state down to just the procedure's interface (formals and globals), and simplify and
     normalize the state *)
 

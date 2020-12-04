@@ -456,31 +456,34 @@ let is_allocated {post; pre} v =
   || is_stack_allocated (post :> BaseDomain.t) v
 
 
-let incorporate_new_eqs astate (phi, new_eqs) =
-  List.fold_until new_eqs ~init:phi ~finish:Fn.id ~f:(fun phi (new_eq : PulseFormula.new_eq) ->
+let incorporate_new_eqs astate new_eqs =
+  List.fold_until new_eqs ~init:()
+    ~finish:(fun () -> Sat ())
+    ~f:(fun () (new_eq : PulseFormula.new_eq) ->
       match new_eq with
       | EqZero v when is_allocated astate v ->
           L.d_printfln "CONTRADICTION: %a = 0 but is allocated" AbstractValue.pp v ;
-          Stop PathCondition.false_
+          Stop Unsat
       | Equal (v1, v2)
         when (not (AbstractValue.equal v1 v2)) && is_allocated astate v1 && is_allocated astate v2
         ->
           L.d_printfln "CONTRADICTION: %a = %a but both are separately allocated" AbstractValue.pp
             v1 AbstractValue.pp v2 ;
-          Stop PathCondition.false_
+          Stop Unsat
       | _ ->
-          Continue phi )
+          Continue () )
 
 
 let summary_of_post pdesc astate =
+  let open SatUnsat.Import in
   let astate = filter_for_summary astate in
   let astate, live_addresses, _ = discard_unreachable astate in
+  let* path_condition, new_eqs =
+    PathCondition.simplify ~keep:live_addresses astate.path_condition
+  in
+  let+ () = incorporate_new_eqs astate new_eqs in
   let astate =
-    { astate with
-      path_condition=
-        PathCondition.simplify ~keep:live_addresses astate.path_condition
-        |> incorporate_new_eqs astate
-    ; topl= PulseTopl.simplify ~keep:live_addresses astate.topl }
+    {astate with path_condition; topl= PulseTopl.simplify ~keep:live_addresses astate.topl}
   in
   invalidate_locals pdesc astate
 
@@ -488,6 +491,12 @@ let summary_of_post pdesc astate =
 let get_pre {pre} = (pre :> BaseDomain.t)
 
 let get_post {post} = (post :> BaseDomain.t)
+
+(* re-exported for mli *)
+let incorporate_new_eqs astate (phi, new_eqs) =
+  if PathCondition.is_unsat_cheap phi then phi
+  else match incorporate_new_eqs astate new_eqs with Unsat -> PathCondition.false_ | Sat () -> phi
+
 
 module Topl = struct
   let small_step loc event astate =

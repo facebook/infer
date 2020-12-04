@@ -13,6 +13,7 @@ module CItv = PulseCItv
 module Formula = PulseFormula
 module SatUnsat = PulseSatUnsat
 module ValueHistory = PulseValueHistory
+open SatUnsat.Types
 
 module BoItvs = struct
   include PrettyPrintable.MakePPMonoMap (AbstractValue) (Itv.ItvPure)
@@ -100,14 +101,17 @@ let and_eq_vars v1 v2 phi =
 
 
 let simplify ~keep phi =
-  let+ {is_unsat; bo_itvs; citvs; formula} = phi in
-  let+| formula, new_eqs = Formula.simplify ~keep formula in
-  let is_in_keep v _ = AbstractValue.Set.mem v keep in
-  ( { is_unsat
-    ; bo_itvs= BoItvs.filter is_in_keep bo_itvs
-    ; citvs= CItvs.filter is_in_keep citvs
-    ; formula }
-  , new_eqs )
+  let result =
+    let+ {is_unsat; bo_itvs; citvs; formula} = phi in
+    let+| formula, new_eqs = Formula.simplify ~keep formula in
+    let is_in_keep v _ = AbstractValue.Set.mem v keep in
+    ( { is_unsat
+      ; bo_itvs= BoItvs.filter is_in_keep bo_itvs
+      ; citvs= CItvs.filter is_in_keep citvs
+      ; formula }
+    , new_eqs )
+  in
+  if (fst result).is_unsat then Unsat else Sat result
 
 
 let subst_find_or_new subst addr_callee =

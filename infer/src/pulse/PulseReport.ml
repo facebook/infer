@@ -32,15 +32,14 @@ let report_latent_issue proc_desc err_log latent_issue =
 
 
 let report_error proc_desc err_log access_result =
+  let open SatUnsat.Import in
   Result.map_error access_result ~f:(fun (diagnostic, astate) ->
-      let astate_summary = AbductiveDomain.summary_of_post proc_desc astate in
-      if PulseArithmetic.is_unsat_cheap (astate_summary :> AbductiveDomain.t) then Unsat
-      else
-        match LatentIssue.should_report_diagnostic astate_summary diagnostic with
-        | `ReportNow ->
-            report proc_desc err_log diagnostic ;
-            Sat (ExecutionDomain.AbortProgram astate_summary)
-        | `DelayReport latent_issue ->
-            if Config.pulse_report_latent_issues then
-              report_latent_issue proc_desc err_log latent_issue ;
-            Sat (ExecutionDomain.LatentAbortProgram {astate= astate_summary; latent_issue}) )
+      let+ astate_summary = AbductiveDomain.summary_of_post proc_desc astate in
+      match LatentIssue.should_report_diagnostic astate_summary diagnostic with
+      | `ReportNow ->
+          report proc_desc err_log diagnostic ;
+          ExecutionDomain.AbortProgram astate_summary
+      | `DelayReport latent_issue ->
+          if Config.pulse_report_latent_issues then
+            report_latent_issue proc_desc err_log latent_issue ;
+          ExecutionDomain.LatentAbortProgram {astate= astate_summary; latent_issue} )

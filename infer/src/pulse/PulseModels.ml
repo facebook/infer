@@ -48,7 +48,12 @@ module Misc = struct
 
 
   let early_exit : model =
-   fun _ ~callee_procname:_ _ ~ret:_ astate -> Ok [ExecutionDomain.ExitProgram astate]
+   fun {proc_desc} ~callee_procname:_ _ ~ret:_ astate ->
+    match AbductiveDomain.summary_of_post proc_desc astate with
+    | Unsat ->
+        Ok []
+    | Sat astate ->
+        Ok [ExecutionDomain.ExitProgram astate]
 
 
   let return_int : Int64.t -> model =
