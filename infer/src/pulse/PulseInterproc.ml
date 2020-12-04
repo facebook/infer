@@ -92,20 +92,42 @@ let fold_globals_of_stack call_loc stack call_state ~f =
           Ok call_state )
 
 
+let and_aliasing_arith ~addr_callee ~addr_caller0 call_state =
+  match AddressMap.find_opt addr_callee call_state.subst with
+  | Some (addr_caller', _) when not (AbstractValue.equal addr_caller' addr_caller0) ->
+      (* NOTE: discarding new equalities here instead of passing them to
+         {!AbductiveDomain.incorporate_new_eqs} because it would be too slow to do each time we
+         visit a new address. We should re-normalize at the end of the call instead (TODO). *)
+      let path_condition, _new_eqs =
+        PathCondition.and_eq_vars addr_caller0 addr_caller'
+          call_state.astate.AbductiveDomain.path_condition
+      in
+      if PathCondition.is_unsat_cheap path_condition then raise (Contradiction PathCondition)
+      else
+        {call_state with astate= AbductiveDomain.set_path_condition path_condition call_state.astate}
+  | _ ->
+      call_state
+
+
 let visit call_state ~pre ~addr_callee ~addr_hist_caller =
   let addr_caller = fst addr_hist_caller in
-  ( match AddressMap.find_opt addr_caller call_state.rev_subst with
-  | Some addr_callee' when not (AbstractValue.equal addr_callee addr_callee') ->
-      (* [addr_caller] corresponds to several values in the callee, see if that's a problem for
-         applying the pre-condition, i.e. if both values are addresses in the callee's heap, which
-         means they must be disjoint. If so, raise a contradiction, but if not then continue as it
-         just means that the callee doesn't care about the value of these variables. *)
-      if
-        BaseMemory.mem addr_callee pre.BaseDomain.heap
-        && BaseMemory.mem addr_callee' pre.BaseDomain.heap
-      then raise (Contradiction (Aliasing {addr_caller; addr_callee; addr_callee'; call_state}))
-  | _ ->
-      () ) ;
+  let call_state =
+    match AddressMap.find_opt addr_caller call_state.rev_subst with
+    | Some addr_callee' when not (AbstractValue.equal addr_callee addr_callee') ->
+        if
+          (* [addr_caller] corresponds to several values in the callee, see if that's a problem for
+             applying the pre-condition, i.e. if both values are addresses in the callee's heap,
+             which means they must be disjoint. If so, raise a contradiction, but if not then
+             continue as it just means that the callee doesn't care about the value of these
+             variables, but record that they are equal. *)
+          BaseMemory.mem addr_callee pre.BaseDomain.heap
+          && BaseMemory.mem addr_callee' pre.BaseDomain.heap
+        then raise (Contradiction (Aliasing {addr_caller; addr_callee; addr_callee'; call_state}))
+        else and_aliasing_arith ~addr_callee:addr_callee' ~addr_caller0:addr_caller call_state
+    | _ ->
+        call_state
+  in
+  let call_state = and_aliasing_arith ~addr_callee ~addr_caller0:addr_caller call_state in
   if AddressSet.mem addr_callee call_state.visited then (`AlreadyVisited, call_state)
   else
     ( `NotAlreadyVisited

@@ -91,6 +91,15 @@ let and_eq_int v i phi =
   , new_eqs )
 
 
+let and_eq_vars v1 v2 phi =
+  let+ {is_unsat; bo_itvs; citvs; formula} = phi in
+  let+| formula, new_eqs =
+    Formula.and_equal (AbstractValueOperand v1) (AbstractValueOperand v2) formula
+  in
+  (* TODO: add to non-formula domains? *)
+  ({is_unsat; bo_itvs; citvs; formula}, new_eqs)
+
+
 let simplify ~keep phi =
   let+ {is_unsat; bo_itvs; citvs; formula} = phi in
   let+| formula, new_eqs = Formula.simplify ~keep formula in

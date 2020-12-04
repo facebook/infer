@@ -31,6 +31,8 @@ val and_positive : AbstractValue.t -> t -> t * new_eqs
 val and_eq_int : AbstractValue.t -> IntLit.t -> t -> t * new_eqs
 (** [and_eq_int v i phi] is [phi ∧ v=i] *)
 
+val and_eq_vars : AbstractValue.t -> AbstractValue.t -> t -> t * new_eqs
+
 val simplify : keep:AbstractValue.Set.t -> t -> t * new_eqs
 (** [simplify ~keep phi] attempts to get rid of as many variables in [fv phi] but not in [keep] as
     possible *)
