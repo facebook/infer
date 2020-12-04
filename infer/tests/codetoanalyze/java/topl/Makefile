@@ -5,7 +5,8 @@
 
 TESTS_DIR = ../../..
 
-SUBDIRS = baos compareArgs hasnext immutableArray servlet slowIter
+# NOTE: If you wish to deactivate a Topl test, simply remove it from this list
+SUBDIRS = baos compareArgs hasnext immutableArray servlet slowIter taint
 
 test-%:
 	$(MAKE) -C $* test

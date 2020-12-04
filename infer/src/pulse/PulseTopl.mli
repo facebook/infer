@@ -39,6 +39,7 @@ val filter_for_summary : PulsePathCondition.t -> state -> state
     program path condition is updated later.) *)
 
 val simplify : keep:PulseAbstractValue.Set.t -> state -> state
+(** Keep only a subset of abstract values. This is used for extracting summaries. *)
 
 val report_errors : Procdesc.t -> Errlog.t -> state -> unit
 (** Calls [Reporting.log_issue] with error traces, if any. *)

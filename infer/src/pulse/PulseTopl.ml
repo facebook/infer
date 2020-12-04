@@ -219,35 +219,42 @@ let conjoin_pruned path_condition pruned =
   List.fold ~init:path_condition ~f pruned
 
 
-let is_unsat path_condition pruned =
+let is_unsat_cheap path_condition pruned =
   PathCondition.is_unsat_cheap (conjoin_pruned path_condition pruned)
 
 
-let negate_predicate =
-  Binop.(
-    function
-    | Eq, l, r ->
-        (Ne, l, r)
-    | Ne, l, r ->
-        (Eq, l, r)
-    | Ge, l, r ->
-        (Lt, r, l)
-    | Gt, l, r ->
-        (Le, r, l)
-    | Le, l, r ->
-        (Gt, r, l)
-    | Lt, l, r ->
-        (Ge, r, l)
-    | _ ->
-        L.die InternalError
-          "PulseTopl.negate_predicate should handle all outputs of ToplUtils.binop_to")
+let is_unsat_expensive path_condition pruned =
+  let _path_condition, unsat, _new_eqs =
+    PathCondition.is_unsat_expensive (conjoin_pruned path_condition pruned)
+  in
+  unsat
+
+
+let negate_predicate (predicate : predicate) : predicate =
+  match predicate with
+  | Eq, l, r ->
+      (Ne, l, r)
+  | Ne, l, r ->
+      (Eq, l, r)
+  | Ge, l, r ->
+      (Lt, r, l)
+  | Gt, l, r ->
+      (Le, r, l)
+  | Le, l, r ->
+      (Gt, r, l)
+  | Lt, l, r ->
+      (Ge, r, l)
+  | _ ->
+      L.die InternalError
+        "PulseTopl.negate_predicate should handle all outputs of ToplUtils.binop_to"
 
 
 let skip_pruned_of_nonskip_pruned nonskip_list =
   IList.product (List.map ~f:(List.map ~f:negate_predicate) nonskip_list)
 
 
-let drop_infeasible path_condition state =
+let drop_infeasible ?(expensive = false) path_condition state =
+  let is_unsat = if expensive then is_unsat_expensive else is_unsat_cheap in
   let f {pruned} = not (is_unsat path_condition pruned) in
   List.filter ~f state
 
@@ -442,9 +449,7 @@ let large_step ~call_location ~callee_proc_name ~substitution ~condition ~callee
   result
 
 
-let filter_for_summary path_condition state =
-  List.filter ~f:(fun x -> not (is_unsat path_condition x.pruned)) state
-
+let filter_for_summary path_condition state = drop_infeasible ~expensive:true path_condition state
 
 let simplify ~keep state =
   let simplify_simple_state {pre; post; pruned; last_step} =
