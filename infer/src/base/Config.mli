@@ -597,6 +597,10 @@ val testing_mode : bool
 
 val threadsafe_aliases : Yojson.Basic.t
 
+val topl_max_conjuncts : int
+
+val topl_max_disjuncts : int
+
 val topl_properties : string list
 
 val trace_error : bool

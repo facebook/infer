@@ -252,7 +252,43 @@ let drop_infeasible path_condition state =
   List.filter ~f state
 
 
+let normalize_memory memory = List.sort ~compare:[%compare: register * value] memory
+
+let normalize_configuration {vertex; memory} = {vertex; memory= normalize_memory memory}
+
+let normalize_pruned pruned = List.dedup_and_sort ~compare:compare_predicate pruned
+
+let normalize_simple_state {pre; post; pruned; last_step} =
+  { pre= normalize_configuration pre
+  ; post= normalize_configuration post
+  ; pruned= normalize_pruned pruned
+  ; last_step }
+
+
+let normalize_state state = List.map ~f:normalize_simple_state state
+
+let apply_conjuncts_limit state =
+  let f simple_state = List.length simple_state.pruned <= Config.topl_max_conjuncts in
+  IList.filter_changed ~f state
+
+
+let apply_disjuncts_limit state =
+  if List.length state <= Config.topl_max_disjuncts then state
+  else
+    let new_len = (Config.topl_max_disjuncts / 2) + 1 in
+    let add_score simple_state = (List.length simple_state.pruned, simple_state) in
+    let compare_score (score1, _simple_state1) (score2, _simple_state2) =
+      Int.compare score1 score2
+    in
+    let strip_score (_score, simple_state) = simple_state in
+    state |> List.map ~f:add_score |> List.sort ~compare:compare_score |> Fn.flip List.take new_len
+    |> List.map ~f:strip_score
+
+
+let apply_limits state = state |> apply_conjuncts_limit |> apply_disjuncts_limit
+
 let small_step loc path_condition event simple_states =
+  let simple_states = apply_limits simple_states in
   let tmatches = static_match event in
   let evolve_transition (old : simple_state) (transition, tcontext) : state =
     let mk ?(memory = old.post.memory) ?(pruned = []) significant =
@@ -318,13 +354,12 @@ let sub_list sub_elem (sub, xs) =
   (sub, List.rev xs)
 
 
-let of_unequal =
-  List.Or_unequal_lengths.(
-    function
-    | Ok x ->
-        x
-    | Unequal_lengths ->
-        L.die InternalError "PulseTopl expected lists to be of equal lengths")
+let of_unequal (or_unequal : 'a List.Or_unequal_lengths.t) =
+  match or_unequal with
+  | Ok x ->
+      x
+  | Unequal_lengths ->
+      L.die InternalError "PulseTopl expected lists to be of equal lengths"
 
 
 let sub_configuration (sub, {vertex; memory}) =
@@ -361,22 +396,8 @@ let sub_simple_state (sub, {pre; post; pruned; last_step}) =
   (sub, {pre; post; pruned; last_step})
 
 
-let normalize_memory memory = List.sort ~compare:[%compare: register * value] memory
-
-let normalize_configuration {vertex; memory} = {vertex; memory= normalize_memory memory}
-
-let normalize_pruned pruned = List.sort ~compare:compare_predicate pruned
-
-let normalize_simple_state {pre; post; pruned; last_step} =
-  { pre= normalize_configuration pre
-  ; post= normalize_configuration post
-  ; pruned= normalize_pruned pruned
-  ; last_step }
-
-
-let normalize_state state = List.map ~f:normalize_simple_state state
-
 let large_step ~call_location ~callee_proc_name ~substitution ~condition ~callee_prepost state =
+  let state = apply_limits state in
   let seq ((p : simple_state), (q : simple_state)) =
     if not (Int.equal p.post.vertex q.pre.vertex) then None
     else

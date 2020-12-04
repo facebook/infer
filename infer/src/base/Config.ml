@@ -2317,6 +2317,16 @@ and test_filtering =
     "List all the files Infer can report on (should be called from the root of the project)"
 
 
+and topl_max_conjuncts =
+  CLOpt.mk_int ~long:"topl-max-conjuncts" ~default:20
+    "Stop tracking states that reach have at least $(i,int) conjuncts"
+
+
+and topl_max_disjuncts =
+  CLOpt.mk_int ~long:"topl-max-disjuncts" ~default:20
+    "Under-approximate after $(i,int) disjunctions in the domain"
+
+
 and topl_properties =
   CLOpt.mk_path_list ~default:[] ~long:"topl-properties"
     "[EXPERIMENTAL] Specify a file containing a temporal property definition (e.g., jdk.topl).\n\
@@ -3281,6 +3291,10 @@ and profiler_samples = !profiler_samples
 and testing_mode = !testing_mode
 
 and threadsafe_aliases = !threadsafe_aliases
+
+and topl_max_conjuncts = !topl_max_conjuncts
+
+and topl_max_disjuncts = !topl_max_disjuncts
 
 and topl_properties = !topl_properties
 
