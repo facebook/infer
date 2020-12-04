@@ -24,7 +24,7 @@ let pp_var_list fmt etl =
   List.iter etl ~f:(fun {CapturedVar.name; typ; capture_mode} ->
       Format.fprintf fmt " [%s]%a:%a"
         (Pvar.string_of_capture_mode capture_mode)
-        Mangled.pp name (Typ.pp_full Pp.text) typ )
+        (Pvar.pp Pp.text) name (Typ.pp_full Pp.text) typ )
 
 
 let pp_local_list fmt etl = List.iter ~f:(Procdesc.pp_local fmt) etl

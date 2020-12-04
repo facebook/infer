@@ -148,11 +148,10 @@ module TransferFunctions = struct
   let pp_session_name _node fmt = F.pp_print_string fmt "SelfCapturedInBlock"
 
   let is_captured_self attributes pvar =
-    let pvar_name = Pvar.get_name pvar in
     Pvar.is_self pvar
     && List.exists
          ~f:(fun {CapturedVar.name= captured; typ} ->
-           Mangled.equal captured pvar_name && Typ.is_strong_pointer typ )
+           Pvar.equal captured pvar && Typ.is_strong_pointer typ )
          attributes.ProcAttributes.captured
 
 
@@ -161,17 +160,16 @@ module TransferFunctions = struct
     (not (Pvar.is_self pvar))
     && List.exists
          ~f:(fun {CapturedVar.name= captured; typ} ->
-           Typ.is_strong_pointer typ
-           && Mangled.equal captured (Pvar.get_name pvar)
-           && String.is_suffix ~suffix:"self" (String.lowercase (Mangled.to_string captured)) )
+           Typ.is_strong_pointer typ && Pvar.equal captured pvar
+           && String.is_suffix ~suffix:"self" (String.lowercase (Pvar.to_string captured)) )
          attributes.ProcAttributes.captured
 
 
   let is_captured_weak_self attributes pvar =
     List.exists
       ~f:(fun {CapturedVar.name= captured; typ} ->
-        Mangled.equal captured (Pvar.get_name pvar)
-        && String.is_substring ~substring:"self" (String.lowercase (Mangled.to_string captured))
+        Pvar.equal captured pvar
+        && String.is_substring ~substring:"self" (String.lowercase (Pvar.to_string captured))
         && Typ.is_weak_pointer typ )
       attributes.ProcAttributes.captured
 

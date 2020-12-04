@@ -7,6 +7,6 @@
 
 open! IStd
 
-type t = {name: Mangled.t; typ: Typ.t; capture_mode: Pvar.capture_mode} [@@deriving compare]
+type t = {name: Pvar.t; typ: Typ.t; capture_mode: Pvar.capture_mode} [@@deriving compare]
 
 val pp : Format.formatter -> t -> unit

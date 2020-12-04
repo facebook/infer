@@ -792,7 +792,7 @@ let pp_captured_list fmt etl =
     ~f:(fun {CapturedVar.name; typ; capture_mode} ->
       Format.fprintf fmt " [%s] %a:%a"
         (Pvar.string_of_capture_mode capture_mode)
-        Mangled.pp name (Typ.pp_full Pp.text) typ )
+        (Pvar.pp Pp.text) name (Typ.pp_full Pp.text) typ )
     etl
 
 
@@ -847,7 +847,7 @@ let is_captured_pvar procdesc pvar =
     | _ ->
         false
   in
-  let pvar_matches_in_captured {CapturedVar.name} = Mangled.equal name pvar_name in
+  let pvar_matches_in_captured {CapturedVar.name} = Pvar.equal name pvar in
   let is_captured_var_objc_block =
     (* var is captured if the procedure is a objc block and the var is in the captured *)
     Procname.is_objc_block procname

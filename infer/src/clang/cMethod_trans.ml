@@ -207,7 +207,7 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) ?(record_lambda_capt
   in
   let captured_mangled =
     List.map
-      ~f:(fun (var, typ, capture_mode) -> {CapturedVar.name= Pvar.get_name var; typ; capture_mode})
+      ~f:(fun (var, typ, capture_mode) -> {CapturedVar.name= var; typ; capture_mode})
       captured
   in
   (* Retrieve captured variables from procdesc created when translating captured variables in lambda expression *)
@@ -235,7 +235,7 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) ?(record_lambda_capt
     (* Captured variables for blocks are treated as parameters, but not for cpp lambdas *)
     let captured_as_formals =
       if is_cpp_lambda_call_operator then []
-      else List.map ~f:(fun {CapturedVar.name; typ} -> (name, typ)) captured_mangled
+      else List.map ~f:(fun {CapturedVar.name; typ} -> (Pvar.get_name name, typ)) captured_mangled
     in
     let formals = captured_as_formals @ formals in
     let const_formals =

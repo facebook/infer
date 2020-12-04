@@ -8,8 +8,8 @@
 open! IStd
 module F = Format
 
-type t = {name: Mangled.t; typ: Typ.t; capture_mode: Pvar.capture_mode} [@@deriving compare]
+type t = {name: Pvar.t; typ: Typ.t; capture_mode: Pvar.capture_mode} [@@deriving compare]
 
 let pp fmt {name; typ; capture_mode} =
-  F.fprintf fmt "(%a,@,%a,@,%s)" Mangled.pp name (Typ.pp_full Pp.text) typ
+  F.fprintf fmt "(%a,@,%a,@,%s)" (Pvar.pp Pp.text) name (Typ.pp_full Pp.text) typ
     (Pvar.string_of_capture_mode capture_mode)
