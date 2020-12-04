@@ -84,21 +84,6 @@ let store ~proc_desc (attr : ProcAttributes.t) =
       ~callees
 
 
-let find_file_capturing_procedure pname =
-  Option.map (load pname) ~f:(fun proc_attributes ->
-      let source_file = proc_attributes.ProcAttributes.translation_unit in
-      let origin =
-        (* Procedure coming from include files if it has different location than the file where it
-           was captured. *)
-        match SourceFile.compare source_file proc_attributes.ProcAttributes.loc.file <> 0 with
-        | true ->
-            `Include
-        | false ->
-            `Source
-      in
-      (source_file, origin) )
-
-
 let pp_attributes_kind f = function
   | ProcUndefined ->
       F.pp_print_string f "<undefined>"
