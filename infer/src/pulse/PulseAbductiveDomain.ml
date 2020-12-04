@@ -305,12 +305,12 @@ let mk_initial proc_desc =
   let formals_and_captured =
     let proc_name = Procdesc.get_proc_name proc_desc in
     let location = Procdesc.get_loc proc_desc in
-    let init_var pvar =
+    let init_var mangled =
+      let pvar = Pvar.mk mangled proc_name in
       (Var.of_pvar pvar, (AbstractValue.mk_fresh (), [ValueHistory.FormalDeclared (pvar, location)]))
     in
-    let init_mangled mangled = init_var (Pvar.mk mangled proc_name) in
     let formals =
-      Procdesc.get_formals proc_desc |> List.map ~f:(fun (mangled, _) -> init_mangled mangled)
+      Procdesc.get_formals proc_desc |> List.map ~f:(fun (mangled, _) -> init_var mangled)
     in
     let captured =
       Procdesc.get_captured proc_desc |> List.map ~f:(fun {CapturedVar.name} -> init_var name)
