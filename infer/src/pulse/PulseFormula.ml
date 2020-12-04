@@ -1020,6 +1020,8 @@ module Formula = struct
     val normalize : t -> (t * new_eqs) SatUnsat.t
 
     val implies_atom : t -> Atom.t -> bool
+
+    val get_repr : t -> Var.t -> VarUF.repr
   end = struct
     (* Use the monadic notations when normalizing formulas. *)
     open SatUnsat.Import
@@ -1190,7 +1192,7 @@ module Formula = struct
     let normalize_atom phi (atom : Atom.t) =
       let normalize_term phi t =
         Term.subst_variables t ~f:(fun v ->
-            let v_canon = (VarUF.find phi.var_eqs v :> Var.t) in
+            let v_canon = (get_repr phi v :> Var.t) in
             match Var.Map.find_opt v_canon phi.linear_eqs with
             | None ->
                 VarSubst v_canon
@@ -1533,3 +1535,6 @@ let as_int phi v =
 (** test if [phi.known ⊢ phi.pruned] *)
 let has_no_assumptions phi =
   Atom.Set.for_all (fun atom -> Formula.Normalizer.implies_atom phi.known atom) phi.pruned
+
+
+let get_var_repr phi v = (Formula.Normalizer.get_repr phi.both v :> Var.t)

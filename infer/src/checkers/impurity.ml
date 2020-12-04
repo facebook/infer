@@ -67,7 +67,7 @@ let add_invalid_and_modified ~pvar ~access ~check_empty attrs access_list acc =
         invalid_and_modified )
 
 
-let add_to_modified ~pvar ~access ~addr pre_heap post modified_vars =
+let add_to_modified pname ~pvar ~access ~addr pre_heap post modified_vars =
   let rec aux (access_list, modified_vars) ~addr_to_explore ~visited =
     match addr_to_explore with
     | [] ->
@@ -83,8 +83,12 @@ let add_to_modified ~pvar ~access ~addr pre_heap post modified_vars =
           | None, None ->
               aux (access_list, modified_vars) ~addr_to_explore ~visited
           | Some _, None ->
-              L.(die InternalError)
-                "It is unexpected to have an address which has a binding in pre but not in post!"
+              L.die InternalError
+                "It is unexpected to have an address which has a binding in pre but not in post!@\n\
+                 %a is in the pre but not the post of the call to %a@\n\
+                 callee heap pre: @[%a@]@\n\
+                 callee post: @[%a@]@\n"
+                AbstractValue.pp addr Procname.pp pname BaseMemory.pp pre_heap BaseDomain.pp post
           | None, Some (_, attrs_post) ->
               aux
                 (add_invalid_and_modified ~pvar ~access ~check_empty:false attrs_post access_list
@@ -107,7 +111,7 @@ let add_to_modified ~pvar ~access ~addr pre_heap post modified_vars =
                   addr_list
             | None ->
                 aux
-                  (add_invalid_and_modified ~pvar ~access ~check_empty:true attrs_post access_list
+                  (add_invalid_and_modified ~pvar ~access ~check_empty:false attrs_post access_list
                      modified_vars)
                   ~addr_to_explore ~visited ) )
   in
@@ -122,7 +126,7 @@ let get_modified_params pname post_stack pre_heap post formals =
         match BaseMemory.find_opt addr pre_heap with
         | Some edges_pre ->
             BaseMemory.Edges.fold edges_pre ~init:acc ~f:(fun acc (access, (addr, _)) ->
-                add_to_modified ~pvar ~access ~addr pre_heap post acc )
+                add_to_modified pname ~pvar ~access ~addr pre_heap post acc )
         | None ->
             debug "The address is not materialized in in pre-heap." ;
             acc )
@@ -130,14 +134,14 @@ let get_modified_params pname post_stack pre_heap post formals =
           acc )
 
 
-let get_modified_globals pre_heap post post_stack =
+let get_modified_globals pname pre_heap post post_stack =
   BaseStack.fold
     (fun var (addr, _) modified_globals ->
       if Var.is_global var then
         (* since global vars are rooted in the stack, we don't have
            access here but we still want to pick up changes to
            globals. *)
-        add_to_modified
+        add_to_modified pname
           ~pvar:(Option.value_exn (Var.get_pvar var))
           ~access:HilExp.Access.Dereference ~addr pre_heap post modified_globals
       else modified_globals )
@@ -168,7 +172,7 @@ let extract_impurity tenv pname formals (exec_state : ExecutionDomain.t) : Impur
   let post = AbductiveDomain.get_post astate in
   let post_stack = post.BaseDomain.stack in
   let modified_params = get_modified_params pname post_stack pre_heap post formals in
-  let modified_globals = get_modified_globals pre_heap post post_stack in
+  let modified_globals = get_modified_globals pname pre_heap post post_stack in
   let skipped_calls =
     SkippedCalls.filter
       (fun proc_name _ ->

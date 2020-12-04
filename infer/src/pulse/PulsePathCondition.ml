@@ -423,3 +423,5 @@ let as_int phi v =
 
 
 let has_no_assumptions phi = Formula.has_no_assumptions phi.formula
+
+let get_var_repr phi v = Formula.get_var_repr phi.formula v

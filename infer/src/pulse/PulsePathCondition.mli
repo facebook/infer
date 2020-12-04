@@ -75,3 +75,6 @@ val as_int : t -> AbstractValue.t -> int option
 
 val has_no_assumptions : t -> bool
 (** whether the current path is independent of any calling context *)
+
+val get_var_repr : t -> AbstractValue.t -> AbstractValue.t
+(** get the canonical representative for the variable according to the equality relation *)

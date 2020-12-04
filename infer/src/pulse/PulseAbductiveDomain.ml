@@ -387,22 +387,13 @@ let set_post_cell (addr, history) (edges, attr_set) location astate =
          |> BaseAddressAttributes.add addr attr_set )
 
 
-let filter_for_summary astate =
+let filter_stack_for_summary astate =
   let post_stack =
     BaseStack.filter
       (fun var _ -> Var.appears_in_source_code var && not (is_local var astate))
       (astate.post :> BaseDomain.t).stack
   in
-  (* deregister empty edges *)
-  let deregister_empty heap =
-    BaseMemory.filter (fun _addr edges -> not (BaseMemory.Edges.is_empty edges)) heap
-  in
-  let pre_heap = deregister_empty (astate.pre :> base_domain).heap in
-  let post_heap = deregister_empty (astate.post :> base_domain).heap in
-  { astate with
-    pre= PreDomain.update astate.pre ~heap:pre_heap
-  ; post= PostDomain.update ~stack:post_stack ~heap:post_heap astate.post
-  ; topl= PulseTopl.filter_for_summary astate.path_condition astate.topl }
+  {astate with post= PostDomain.update ~stack:post_stack astate.post}
 
 
 let add_out_of_scope_attribute addr pvar location history heap typ =
@@ -440,10 +431,6 @@ let invalidate_locals pdesc astate : t =
 type summary = t [@@deriving yojson_of]
 
 let is_allocated {post; pre} v =
-  let is_heap_allocated base_mem v =
-    BaseMemory.find_opt v base_mem.heap
-    |> Option.exists ~f:(fun edges -> not (BaseMemory.Edges.is_empty edges))
-  in
   let is_pvar = function Var.ProgramVar _ -> true | Var.LogicalVar _ -> false in
   let is_stack_allocated base_mem v =
     BaseStack.exists
@@ -451,8 +438,8 @@ let is_allocated {post; pre} v =
       base_mem.stack
   in
   (* OPTIM: the post stack contains at least the pre stack so no need to check both *)
-  is_heap_allocated (post :> BaseDomain.t) v
-  || is_heap_allocated (pre :> BaseDomain.t) v
+  BaseMemory.is_allocated (post :> BaseDomain.t).heap v
+  || BaseMemory.is_allocated (pre :> BaseDomain.t).heap v
   || is_stack_allocated (post :> BaseDomain.t) v
 
 
@@ -474,18 +461,58 @@ let incorporate_new_eqs astate new_eqs =
           Continue () )
 
 
+(** it's a good idea to normalize the path condition before calling this function *)
+let canonicalize astate =
+  let open SatUnsat.Import in
+  let get_var_repr v = PathCondition.get_var_repr astate.path_condition v in
+  let canonicalize_base stack heap =
+    let stack' = BaseStack.canonicalize ~get_var_repr stack in
+    (* note: this step also de-registers addresses pointing to empty edges *)
+    let+ heap' = BaseMemory.canonicalize ~get_var_repr heap in
+    (stack', heap')
+  in
+  (* need different functions for pre and post to appease the type system *)
+  let canonicalize_pre (pre : PreDomain.t) =
+    let+ stack', heap' = canonicalize_base (pre :> BaseDomain.t).stack (pre :> BaseDomain.t).heap in
+    PreDomain.update ~stack:stack' ~heap:heap' pre
+  in
+  let canonicalize_post (post : PostDomain.t) =
+    let+ stack', heap' =
+      canonicalize_base (post :> BaseDomain.t).stack (post :> BaseDomain.t).heap
+    in
+    PostDomain.update ~stack:stack' ~heap:heap' post
+  in
+  let* pre = canonicalize_pre astate.pre in
+  let+ post = canonicalize_post astate.post in
+  {astate with pre; post}
+
+
 let summary_of_post pdesc astate =
   let open SatUnsat.Import in
-  let astate = filter_for_summary astate in
-  let astate, live_addresses, _ = discard_unreachable astate in
-  let* path_condition, new_eqs =
-    PathCondition.simplify ~keep:live_addresses astate.path_condition
-  in
-  let+ () = incorporate_new_eqs astate new_eqs in
-  let astate =
-    {astate with path_condition; topl= PulseTopl.simplify ~keep:live_addresses astate.topl}
-  in
-  invalidate_locals pdesc astate
+  (* NOTE: we normalize (to strengthen the equality relation used by canonicalization) then
+     canonicalize *before* garbage collecting unused addresses in case we detect any last-minute
+     contradictions about addresses we are about to garbage collect *)
+  let path_condition, is_unsat, new_eqs = PathCondition.is_unsat_expensive astate.path_condition in
+  if is_unsat then Unsat
+  else
+    let astate = {astate with path_condition} in
+    let* () = incorporate_new_eqs astate new_eqs in
+    L.d_printfln "Canonicalizing...@\n" ;
+    let* astate = canonicalize astate in
+    L.d_printfln "Canonicalized state: %a@\n" pp astate ;
+    let astate = filter_stack_for_summary astate in
+    let astate =
+      {astate with topl= PulseTopl.filter_for_summary astate.path_condition astate.topl}
+    in
+    let astate, live_addresses, _ = discard_unreachable astate in
+    let* path_condition, new_eqs =
+      PathCondition.simplify ~keep:live_addresses astate.path_condition
+    in
+    let+ () = incorporate_new_eqs astate new_eqs in
+    let astate =
+      {astate with path_condition; topl= PulseTopl.simplify ~keep:live_addresses astate.topl}
+    in
+    invalidate_locals pdesc astate
 
 
 let get_pre {pre} = (pre :> BaseDomain.t)

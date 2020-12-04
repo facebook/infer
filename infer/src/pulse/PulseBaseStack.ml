@@ -27,15 +27,31 @@ module AddrHistPair = struct
     else AbstractValue.pp f (fst addr_trace)
 end
 
-include PrettyPrintable.MakePPMonoMap (VarAddress) (AddrHistPair)
+module M = PrettyPrintable.MakePPMonoMap (VarAddress) (AddrHistPair)
+
+let yojson_of_t m = [%yojson_of: (VarAddress.t * AddrHistPair.t) list] (M.bindings m)
+
+let canonicalize ~get_var_repr stack =
+  let changed = ref false in
+  let stack' =
+    M.map
+      (fun ((addr, hist) as addr_hist) ->
+        let addr' = get_var_repr addr in
+        if phys_equal addr addr' then addr_hist
+        else (
+          changed := true ;
+          (addr', hist) ) )
+      stack
+  in
+  if !changed then stack' else stack
+
+
+include M
+
+let compare = M.compare AddrHistPair.compare
 
 let pp fmt m =
   let pp_item fmt (var_address, v) =
     F.fprintf fmt "%a=%a" VarAddress.pp var_address AddrHistPair.pp v
   in
-  PrettyPrintable.pp_collection ~pp_item fmt (bindings m)
-
-
-let compare = compare AddrHistPair.compare
-
-let yojson_of_t m = [%yojson_of: (VarAddress.t * AddrHistPair.t) list] (bindings m)
+  PrettyPrintable.pp_collection ~pp_item fmt (M.bindings m)
