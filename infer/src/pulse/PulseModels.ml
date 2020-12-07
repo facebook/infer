@@ -138,27 +138,26 @@ let free_or_delete operation deleted_access : model =
        currently know about the value. This is purely to avoid contributing to path explosion. *)
     (* freeing 0 is a no-op *)
     if PulseArithmetic.is_known_zero astate (fst deleted_access) then ok_continue astate
-    else
-      (
+    else (
         if not Config.pulse_isl then
-          let astate = PulseArithmetic.and_positive (fst deleted_access) astate in
-          let invalidation =
-            match operation with `Free -> Invalidation.CFree | `Delete -> Invalidation.CppDelete
-          in
-          let+ astate = PulseOperations.invalidate location invalidation deleted_access astate in
-          [ExecutionDomain.ContinueProgram astate]
-        else
-          let live_addresses_before_free = BaseDomain.reachable_addresses_from Var.appears_in_source_code (astate.AbductiveDomain.post :> BaseDomain.t) in
-          let invalidation =
-            match operation with `Free -> Invalidation.CFree | `Delete -> Invalidation.CppDelete
-          in
-          let* astates = PulseOperations.invalidate_biad callee_procname location invalidation ~null_noop:true deleted_access astate in
-          let+ () = check_memory_leak_after_free callee_procname location (fst deleted_access) live_addresses_before_free astates in
-          List.map astates ~f:(fun astate ->
+        let astate = PulseArithmetic.and_positive (fst deleted_access) astate in
+      let invalidation =
+        match operation with `Free -> Invalidation.CFree | `Delete -> Invalidation.CppDelete
+      in
+      let+ astate = PulseOperations.invalidate location invalidation deleted_access astate in
+      [ExecutionDomain.ContinueProgram astate]
+     else
+        let live_addresses_before_free = BaseDomain.reachable_addresses_from Var.appears_in_source_code (astate.AbductiveDomain.post :> BaseDomain.t) in
+        let invalidation =
+          match operation with `Free -> Invalidation.CFree | `Delete -> Invalidation.CppDelete
+        in
+        let* astates = PulseOperations.invalidate_biad callee_procname location invalidation ~null_noop:true deleted_access astate in
+        let+ () = check_memory_leak_after_free callee_procname location (fst deleted_access) live_addresses_before_free astates in
+        List.map astates ~f:(fun astate ->
               let modified_vars = BaseDomain.reachable_vars_from (fst deleted_access) (fun v -> Var.Set.mem v astate.AbductiveDomain.imm_params) (astate.AbductiveDomain.post :> BaseDomain.t) in
               let astate = Var.Set.fold (fun v astate -> AbductiveDomain.remove_imm_param v astate) modified_vars astate in
-              ExecutionDomain.ContinueProgram astate)
-      )
+             ExecutionDomain.ContinueProgram astate)
+     )
      
 end
 

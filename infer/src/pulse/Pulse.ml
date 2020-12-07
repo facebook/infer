@@ -242,14 +242,14 @@ module PulseTransferFunctions = struct
           (* [lhs_id := *rhs_exp] *)
          let result =
            if not Config.pulse_isl then
-            let+ astate, rhs_addr_hist = PulseOperations.eval_deref loc rhs_exp astate in
-            let astate = PulseOperations.write_id lhs_id rhs_addr_hist astate in
-            [astate]
+             let+ astate, rhs_addr_hist = PulseOperations.eval_deref loc rhs_exp astate in
+             let astate = PulseOperations.write_id lhs_id rhs_addr_hist astate in
+             [astate]
            else
-            let+ ls_astate_rhs_addr_hist = PulseOperations.eval_deref_biad proc_desc loc rhs_exp astate in
+             let+ ls_astate_rhs_addr_hist = PulseOperations.eval_deref_biad proc_desc loc rhs_exp astate in
              PulseOperations.write_id_list lhs_id ls_astate_rhs_addr_hist
-          in
-          report_on_error analysis_data result
+         in
+         report_on_error analysis_data result
       | Store {e1= lhs_exp; e2= rhs_exp; loc} -> (
           (* [*lhs_exp := rhs_exp] *)
           let event = ValueHistory.Assignment loc in

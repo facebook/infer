@@ -11,10 +11,8 @@ open PulseBasicInterface
 (** Stacks: map addresses of variables to values and histoy. *)
 
 module VarAddress = struct
-  type t = Var.t [@@deriving compare]
-
-  let equal = [%compare.equal: t]
-             
+  include Var
+            
   let pp f var =
     let pp_ampersand f = function Var.ProgramVar _ -> F.pp_print_string f "&" | Var.LogicalVar _ -> () in
     F.fprintf f "%a%a" pp_ampersand var Var.pp var

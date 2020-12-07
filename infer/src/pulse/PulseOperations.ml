@@ -238,7 +238,7 @@ let eval_structure pdesc loc exp astate =
      let* astate, addr_hist_index = eval loc exp_index astate in
      let* astate, addr_hist = eval loc exp' astate in
      let+ astates = check_and_abduce_addr_access procname loc addr_hist astate in
-     false, map_ok (HilExp.Access.ArrayAccess (Typ.void, fst addr_hist_index)) addr_hist astates
+     false, map_ok (HilExp.Access.ArrayAccess (StdTyp.void, fst addr_hist_index)) addr_hist astates
   | _ -> (
      let+ (astate, (addr, history )) = eval loc exp astate in
      true, [(astate, (addr, history ))]
