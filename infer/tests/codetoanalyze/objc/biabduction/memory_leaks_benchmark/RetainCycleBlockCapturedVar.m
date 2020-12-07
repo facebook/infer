@@ -26,7 +26,7 @@
 
 @implementation LinkResolver
 
-- (void)test_bad {
+- (void)test_bad_FN {
   Listener* listener = [[Listener alloc] init];
   __block Listener* retainedListener = listener;
   listener.didFinishLoad = ^() {
@@ -44,6 +44,6 @@
 
 int main() {
   LinkResolver* a = [LinkResolver new];
-  [a test_bad];
+  [a test_bad_FN];
   return 0;
 }

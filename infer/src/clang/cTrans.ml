@@ -297,9 +297,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   (** Given a captured var, return the instruction to assign it to a temp *)
   let assign_captured_var loc (cvar, typ, mode) =
-    let id = Ident.create_fresh Ident.knormal in
-    let instr = Sil.Load {id; e= Exp.Lvar cvar; root_typ= typ; typ; loc} in
-    ((Exp.Var id, cvar, typ, mode), instr)
+    match mode with
+    | Pvar.ByReference ->
+        ((Exp.Lvar cvar, cvar, Typ.mk_ptr ~ptr_kind:Pk_reference typ, mode), None)
+    | Pvar.ByValue ->
+        let id = Ident.create_fresh Ident.knormal in
+        let instr = Sil.Load {id; e= Exp.Lvar cvar; root_typ= typ; typ; loc} in
+        ((Exp.Var id, cvar, typ, mode), Some instr)
 
 
   let closure_trans closure_pname captured_vars context stmt_info expr_info =
@@ -311,6 +315,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
     let ids_instrs = List.map ~f:(assign_captured_var loc) captured_vars in
     let captured_vars, instrs = List.unzip ids_instrs in
+    let instrs = List.filter_opt instrs in
     let closure = Exp.Closure {name= closure_pname; captured_vars} in
     mk_trans_result (closure, typ) {empty_control with instrs}
 
@@ -3263,9 +3268,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             block_decl_info.Clang_ast_t.bdi_captured_variables
         in
         let passed_as_noescape_block_to = trans_state.passed_as_noescape_block_to in
-        (* TODO: set correct capture mode *)
         let captured_vars =
-          List.map captured_vars_no_mode ~f:(fun (var, typ) -> (var, typ, Pvar.ByReference))
+          List.map captured_vars_no_mode ~f:(fun (var, typ, modify_in_block) ->
+              let mode =
+                if modify_in_block || Pvar.is_global var then Pvar.ByReference else Pvar.ByValue
+              in
+              (var, typ, mode) )
         in
         let res = closure_trans procname captured_vars context stmt_info expr_info in
         let block_data =
@@ -3288,6 +3296,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let get_captured_pvar_typ decl_ref =
       CVar_decl.sil_var_of_captured_var context stmt_info.Clang_ast_t.si_source_range procname
         decl_ref
+      |> Option.map ~f:(fun (var, typ, _modify_in_block) -> (var, typ))
     in
     let loc =
       CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info

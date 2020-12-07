@@ -104,8 +104,14 @@ let sil_var_of_captured_var context source_range procname decl_ref =
   in
   match (var_opt, typ_opt) with
   | Some var, Some typ ->
-      (* TODO: set correct capture mode *)
-      Some (var, typ)
+      let modify_in_block =
+        match CAst_utils.get_decl decl_ref.Clang_ast_t.dr_decl_pointer with
+        | Some (VarDecl (decl_info, _, _, _)) ->
+            has_block_attribute decl_info
+        | _ ->
+            false
+      in
+      Some (var, typ, modify_in_block)
   | None, None ->
       None
   | _ ->
