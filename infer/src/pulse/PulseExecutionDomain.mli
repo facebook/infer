@@ -26,6 +26,9 @@ val continue : AbductiveDomain.t -> t
 
 val mk_initial : Procdesc.t -> t
 
+val is_unsat_cheap : t -> bool
+(** see {!PulsePathCondition.is_unsat_cheap} *)
+
 type summary = AbductiveDomain.summary base_t [@@deriving yojson_of]
 
 val summary_of_posts : Procdesc.t -> t list -> summary list

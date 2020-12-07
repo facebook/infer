@@ -255,7 +255,7 @@ module PulseTransferFunctions = struct
     (astates, ret_vars)
 
 
-  let exec_instr (astate : Domain.t) ({InterproceduralAnalysis.proc_desc} as analysis_data)
+  let exec_instr_aux (astate : Domain.t) ({InterproceduralAnalysis.proc_desc} as analysis_data)
       _cfg_node (instr : Sil.instr) : Domain.t list =
     match astate with
     | AbortProgram _ | LatentAbortProgram _ ->
@@ -343,6 +343,13 @@ module PulseTransferFunctions = struct
           [PulseOperations.realloc_pvar pvar location astate |> Domain.continue]
       | Metadata (Abstract _ | VariableLifetimeBegins _ | Nullify _ | Skip) ->
           [Domain.ContinueProgram astate] )
+
+
+  let exec_instr astate analysis_data cfg_node instr =
+    (* Sometimes instead of stopping on contradictions a false path condition is recorded
+       instead. Prune these early here so they don't spuriously count towards the disjunct limit. *)
+    exec_instr_aux astate analysis_data cfg_node instr
+    |> List.filter ~f:(fun exec_state -> not (Domain.is_unsat_cheap exec_state))
 
 
   let pp_session_name _node fmt = F.pp_print_string fmt "Pulse"
