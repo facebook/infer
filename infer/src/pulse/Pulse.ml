@@ -15,9 +15,9 @@ open PulseDomainInterface
 let exec_list_of_list_result = function
   | Ok posts ->
       posts
-  | Error PulseReport.InfeasiblePath ->
+  | Error Unsat ->
       []
-  | Error (PulseReport.FeasiblePath post) ->
+  | Error (Sat post) ->
       [post]
 
 
@@ -34,6 +34,16 @@ let report_on_error {InterproceduralAnalysis.proc_desc; err_log} result =
 *)
 let report_on_error_list {InterproceduralAnalysis.proc_desc; err_log} result =
   PulseReport.report_error proc_desc err_log result |> exec_list_of_list_result
+
+
+let report_topl_errors proc_desc err_log summary =
+  let f = function
+    | ExecutionDomain.ContinueProgram astate ->
+        PulseTopl.report_errors proc_desc err_log (AbductiveDomain.Topl.get astate)
+    | _ ->
+        ()
+  in
+  List.iter ~f summary
 
 
 let proc_name_of_call call_exp =
@@ -97,6 +107,39 @@ module PulseTransferFunctions = struct
         Ok exec_state
 
 
+  let topl_small_step loc procname arguments (return, _typ) exec_state_res =
+    let arguments =
+      List.map arguments ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload} -> fst arg_payload)
+    in
+    let return = Var.of_id return in
+    let do_astate astate =
+      let return = Option.map ~f:fst (Stack.find_opt return astate) in
+      let topl_event = PulseTopl.Call {return; arguments; procname} in
+      AbductiveDomain.Topl.small_step loc topl_event astate
+    in
+    let do_one_exec_state (exec_state : Domain.t) : Domain.t =
+      match exec_state with
+      | ContinueProgram astate ->
+          ContinueProgram (do_astate astate)
+      | AbortProgram _ | LatentAbortProgram _ | ExitProgram _ ->
+          exec_state
+    in
+    Result.map ~f:(List.map ~f:do_one_exec_state) exec_state_res
+
+
+  let topl_store_step loc ~lhs ~rhs:_ astate =
+    match (lhs : Exp.t) with
+    | Lindex (arr, index) ->
+        (let open IResult.Let_syntax in
+        let* _astate, (aw_array, _history) = PulseOperations.eval loc arr astate in
+        let+ _astate, (aw_index, _history) = PulseOperations.eval loc index astate in
+        let topl_event = PulseTopl.ArrayWrite {aw_array; aw_index} in
+        AbductiveDomain.Topl.small_step loc topl_event astate)
+        |> Result.ok (* don't emit Topl event if evals fail *) |> Option.value ~default:astate
+    | _ ->
+        astate
+
+
   let dispatch_call ({InterproceduralAnalysis.tenv} as analysis_data) ret call_exp actuals call_loc
       flags astate =
     (* evaluate all actuals *)
@@ -110,8 +153,9 @@ module PulseTransferFunctions = struct
             :: rev_func_args ) )
     in
     let func_args = List.rev rev_func_args in
+    let callee_pname = proc_name_of_call call_exp in
     let model =
-      match proc_name_of_call call_exp with
+      match callee_pname with
       | Some callee_pname ->
           PulseModels.dispatch tenv callee_pname func_args
           |> Option.map ~f:(fun model -> (model, callee_pname))
@@ -136,6 +180,15 @@ module PulseTransferFunctions = struct
           in
           PerfEvent.(log (fun logger -> log_end_event logger ())) ;
           r
+    in
+    let exec_state_res =
+      if Topl.is_deep_active () then
+        match callee_pname with
+        | Some callee_pname ->
+            topl_small_step call_loc callee_pname func_args ret exec_state_res
+        | None ->
+            (* skip, as above for non-topl *) exec_state_res
+      else exec_state_res
     in
     match get_out_of_scope_object call_exp actuals flags with
     | Some pvar_typ ->
@@ -254,6 +307,7 @@ module PulseTransferFunctions = struct
           (* [*lhs_exp := rhs_exp] *)
           let event = ValueHistory.Assignment loc in
           let result =
+<<<<<<< HEAD
             if not Config.pulse_isl then
               (let* astate, (rhs_addr, rhs_history) = PulseOperations.eval loc rhs_exp astate in
               let* astate, lhs_addr_hist = PulseOperations.eval loc lhs_exp astate in
@@ -297,6 +351,24 @@ module PulseTransferFunctions = struct
                  PulseOperations.check_address_escape_list loc proc_desc rhs_addr rhs_history astates
               | _ ->
                  Ok astates)
+=======
+            let* astate, (rhs_addr, rhs_history) = PulseOperations.eval loc rhs_exp astate in
+            let* astate, lhs_addr_hist = PulseOperations.eval loc lhs_exp astate in
+            let* astate =
+              PulseOperations.write_deref loc ~ref:lhs_addr_hist
+                ~obj:(rhs_addr, event :: rhs_history)
+                astate
+            in
+            let astate =
+              if Topl.is_deep_active () then topl_store_step loc ~lhs:lhs_exp ~rhs:rhs_exp astate
+              else astate
+            in
+            match lhs_exp with
+            | Lvar pvar when Pvar.is_return pvar ->
+                PulseOperations.check_address_escape loc proc_desc rhs_addr rhs_history astate
+            | _ ->
+                Ok astate
+>>>>>>> upstream/master
           in
           report_on_error analysis_data result)
       | Prune (condition, loc, _is_then_branch, _if_kind) ->
@@ -365,6 +437,7 @@ let checker ({InterproceduralAnalysis.proc_desc; err_log} as analysis_data) =
   let initial = [ExecutionDomain.mk_initial proc_desc] in
   match DisjunctiveAnalyzer.compute_post analysis_data ~initial proc_desc with
   | Some posts ->
+<<<<<<< HEAD
      if not Config.pulse_isl then
        Some (PulseSummary.of_posts proc_desc posts)
      else
@@ -392,5 +465,10 @@ let checker ({InterproceduralAnalysis.proc_desc; err_log} as analysis_data) =
         in
         let simpl_posts = (List.map simpl_er_posts ~f:(fun astate -> ExecutionDomain.ContinueProgram astate))@re_posts@abort_posts in
         Some (PulseSummary.of_posts proc_desc simpl_posts))
+=======
+      let summary = PulseSummary.of_posts proc_desc posts in
+      report_topl_errors proc_desc err_log summary ;
+      Some summary
+>>>>>>> upstream/master
   | None ->
       None

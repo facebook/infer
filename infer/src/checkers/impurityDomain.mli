@@ -8,22 +8,28 @@ open! IStd
 
 type trace = WrittenTo of PulseTrace.t | Invalid of (PulseInvalidation.t * PulseTrace.t)
 
-module ModifiedVar : sig
+module ModifiedAccess : sig
   type t =
-    { var: Var.t
-    ; access: unit HilExp.Access.t  (** accesses that are oblivious to modified array indices *)
+    { ordered_access_list: unit HilExp.Access.t list
+          (** list of ordered accesses that are oblivious to modified array indices *)
     ; trace: trace }
 end
 
-module ModifiedVarSet : sig
-  include AbstractDomain.FiniteSetS with type elt = ModifiedVar.t
+module ModifiedVarMap : sig
+  type t
+
+  val bottom : t
+
+  val add : Pvar.t -> ModifiedAccess.t -> t -> t
+
+  val fold : (Pvar.t -> ModifiedAccess.t -> 'a -> 'a) -> t -> 'a -> 'a
 end
 
 module Exited = AbstractDomain.BooleanOr
 
 type t =
-  { modified_params: ModifiedVarSet.t
-  ; modified_globals: ModifiedVarSet.t
+  { modified_params: ModifiedVarMap.t
+  ; modified_globals: ModifiedVarMap.t
   ; skipped_calls: PulseSkippedCalls.t
   ; exited: Exited.t }
 
@@ -36,8 +42,11 @@ type param_source = Formal | Global
 val add_to_errlog :
      nesting:int
   -> param_source
-  -> ModifiedVar.t
+  -> Pvar.t
+  -> ModifiedAccess.t
   -> Errlog.loc_trace_elem list
   -> Errlog.loc_trace_elem list
 
 val join : t -> t -> t
+
+val get_modified_immutables_opt : Tenv.t -> t -> (ModifiedVarMap.t * ModifiedVarMap.t) option

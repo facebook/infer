@@ -62,6 +62,7 @@ end
 type t = private
   { post: PostDomain.t  (** state at the current program point*)
   ; pre: PreDomain.t  (** inferred pre at the current program point *)
+  ; topl: PulseTopl.state  (** state at of the Topl monitor at the current program point *)
   ; skipped_calls: SkippedCalls.t  (** set of skipped calls *)
   ; path_condition: PathCondition.t  (** arithmetic facts *)
   ; status: PostStatus.t
@@ -225,7 +226,7 @@ val set_path_condition : PathCondition.t -> t -> t
 (** private type to make sure {!summary_of_post} is always called when creating summaries *)
 type summary = private t [@@deriving yojson_of]
 
-val summary_of_post : Procdesc.t -> t -> summary
+val summary_of_post : Procdesc.t -> t -> summary SatUnsat.t
 (** trim the state down to just the procedure's interface (formals and globals), and simplify and
     normalize the state *)
 
@@ -243,3 +244,18 @@ val incorporate_new_eqs : t -> PathCondition.t * PathCondition.new_eqs -> PathCo
     and [y] being allocated separately. In those cases, the resulting path condition is
     {!PathCondition.false_}. *)
 
+
+module Topl : sig
+  val small_step : Location.t -> PulseTopl.event -> t -> t
+
+  val large_step :
+       call_location:Location.t
+    -> callee_proc_name:Procname.t
+    -> substitution:(AbstractValue.t * ValueHistory.t) AbstractValue.Map.t
+    -> ?condition:PathCondition.t
+    -> callee_prepost:PulseTopl.state
+    -> t
+    -> t
+
+  val get : summary -> PulseTopl.state
+end

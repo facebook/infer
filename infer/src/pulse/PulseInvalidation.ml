@@ -77,14 +77,13 @@ let equal v1 v2=
   match v1, v2 with
     | CFree, CFree -> true
     | ConstantDereference i1, ConstantDereference i2 -> IntLit.eq i1 i2
-    | CppDelete, CppDelete
-      | CFree, CppDelete
-      | UninitializedDereference, UninitializedDereference
-      | EndIterator, EndIterator
-      | GoneOutOfScope _, GoneOutOfScope _
-      | OptionalEmpty, OptionalEmpty
-      | StdVector _, StdVector _
-      | JavaIterator _, JavaIterator _ -> true
+    | CppDelete, CppDelete | CFree, CppDelete | CppDelete, CFree
+    | UninitializedDereference, UninitializedDereference
+    | EndIterator, EndIterator
+    | GoneOutOfScope _, GoneOutOfScope _
+    | OptionalEmpty, OptionalEmpty
+    | StdVector _, StdVector _
+    | JavaIterator _, JavaIterator _ -> true
     | _ -> false
 
      

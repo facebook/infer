@@ -14,6 +14,7 @@
 %token <string> STRING
 %token <string> UID
 %token AND
+%token ARRAYWRITE
 %token ARROW
 %token ARROWARROW
 %token COLON
@@ -63,11 +64,17 @@ state: i=identifier { i }
 
 label:
     STAR { None }
-  | procedure_name=procedure_pattern arguments=arguments_pattern?
+  | pattern=procedure_pattern arguments=arguments_pattern?
     condition=condition? action=action?
     { let condition = Option.value ~default:[] condition in
       let action = Option.value ~default:[] action in
-      Some ToplAst.{ arguments; condition; action; procedure_name } }
+      Some ToplAst.{ arguments; condition; action; pattern } }
+  | ARRAYWRITE LP arr=UID COMMA index=UID RP
+    condition=condition? action=action?
+    { let arguments = Some [arr; index] in
+      let condition = Option.value ~default:[] condition in
+      let action = Option.value ~default:[] action in
+      Some ToplAst.{ arguments; condition; action; pattern= ToplAst.ArrayWritePattern } }
 
 condition: WHEN ps=condition_expression { ps }
 
@@ -81,8 +88,8 @@ predicate:
 value:
     id=LID { ToplAst.Register id }
   | id=UID { ToplAst.Binding id }
-  | x=INTEGER { ToplAst.Constant (Exp.Const (Const.Cint (IntLit.of_int x))) }
-  | x=STRING  { ToplAst.Constant (Exp.Const (Const.Cstr x)) }
+  | x=INTEGER { ToplAst.Constant (LiteralInt x) (* (Exp.Const (Const.Cint (IntLit.of_int x)))*) }
+  (* TODO(rgrigore): Add string literals. *)
 
 predop_value: o=predop v=value { (o, v) }
 
@@ -97,8 +104,8 @@ predop:
 and_predicate: AND p=predicate { p }
 
 procedure_pattern:
-    i=identifier { i }
-  | s=STRING { s }
+    i=identifier { ToplAst.ProcedureNamePattern i }
+  | s=STRING { ToplAst.ProcedureNamePattern s }
 
 arguments_pattern: LP a=separated_list(COMMA, UID) RP { a }
 

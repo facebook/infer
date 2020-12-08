@@ -100,21 +100,21 @@ module Make (T : REPR) = struct
           Map.add_exn ~key:data ~data:key sub' )
       |> check invariant
 
-    let restrict sub vs =
-      Map.fold sub {sub; dom= Set.empty; rng= Set.empty}
+    let restrict_dom sub0 vs =
+      Map.fold sub0 {sub= sub0; dom= Set.empty; rng= Set.empty}
         ~f:(fun ~key ~data z ->
-          if Set.mem key vs then
-            {z with dom= Set.add key z.dom; rng= Set.add data z.rng}
+          let rng = Set.add data z.rng in
+          if Set.mem key vs then {z with dom= Set.add key z.dom; rng}
           else (
             assert (
               (* all substs are injective, so the current mapping is the
                  only one that can cause [data] to be in [rng] *)
-              (not (Set.mem data (range (Map.remove key sub))))
-              || violates invariant sub ) ;
-            {z with sub= Map.remove key z.sub} ) )
+              (not (Set.mem data (range (Map.remove key sub0))))
+              || violates invariant sub0 ) ;
+            {z with sub= Map.remove key z.sub; rng} ) )
       |> check (fun {sub; dom; rng} ->
              assert (Set.equal dom (domain sub)) ;
-             assert (Set.equal rng (range sub)) )
+             assert (Set.equal rng (range sub0)) )
 
     let apply sub v = Map.find v sub |> Option.value ~default:v
   end

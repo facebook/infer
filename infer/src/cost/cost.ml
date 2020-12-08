@@ -67,7 +67,7 @@ module InstrBasicCostWithReason = struct
     match CostModels.Call.dispatch tenv callee_pname fun_arg_list with
     | Some model ->
         BasicCostWithReason.of_basic_cost
-          (model get_summary (Lazy.force model_env) ~ret inferbo_mem)
+          (model {get_summary; model_env= Lazy.force model_env} ~ret inferbo_mem)
     | None -> (
       match callee_cost_opt with
       | Some callee_cost ->
@@ -85,7 +85,9 @@ module InstrBasicCostWithReason = struct
       BasicCostWithReason.t =
     match CostAutoreleaseModels.Call.dispatch tenv callee_pname fun_arg_list with
     | Some model ->
-        let autoreleasepool_size = model get_summary (Lazy.force model_env) ~ret inferbo_mem in
+        let autoreleasepool_size =
+          model {get_summary; model_env= Lazy.force model_env} ~ret inferbo_mem
+        in
         BasicCostWithReason.of_basic_cost autoreleasepool_size
     | None ->
         let fun_cost =

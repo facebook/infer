@@ -289,30 +289,16 @@ let generate_execute_state automaton proc_name =
       let exp_of_value =
         let open ToplAst in
         function
-        | Constant c ->
-            c
+        | Constant (LiteralInt x) ->
+            Exp.Const (Const.Cint (IntLit.of_int x))
         | Register i ->
             ToplUtils.static_var (ToplName.reg i)
         | Binding v ->
             ToplUtils.static_var (binding_of v)
       in
-      let expbinop = function
-        | ToplAst.OpEq ->
-            Binop.Eq
-        | ToplAst.OpNe ->
-            Binop.Ne
-        | ToplAst.OpGe ->
-            Binop.Ge
-        | ToplAst.OpGt ->
-            Binop.Gt
-        | ToplAst.OpLe ->
-            Binop.Le
-        | ToplAst.OpLt ->
-            Binop.Lt
-      in
       let predicate = function
         | ToplAst.Binop (op, v1, v2) ->
-            Exp.BinOp (expbinop op, exp_of_value v1, exp_of_value v2)
+            Exp.BinOp (ToplUtils.binop_to op, exp_of_value v1, exp_of_value v2)
         | ToplAst.Value v ->
             exp_of_value v
       in

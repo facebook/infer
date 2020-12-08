@@ -7,6 +7,9 @@
 
 open! IStd
 
+type parameter_not_nullable_info =
+  {param_index: int; proc_name: Procname.Java.t  (** Offending method called *)}
+
 type t =
   { issue_type: IssueType.t
   ; description: string  (** Human-readable description *)
@@ -14,6 +17,8 @@ type t =
   ; field_name: Fieldname.t option  (** If the issue is about a field, here's this field *)
   ; inconsistent_param_index: int option
         (** Only for "inconsistent subclass param annotation" issue *)
+  ; parameter_not_nullable_info: parameter_not_nullable_info option
+        (** Only for "Parameter Not Nullable" issue *)
   ; severity: IssueType.severity
   ; nullable_methods: TypeOrigin.method_call_origin list
         (** If the issue is associated with misusing nullable values coming from method calls,
@@ -25,6 +30,7 @@ let make ~issue_type ~description ~loc ~severity ~field_name =
   ; description
   ; loc
   ; inconsistent_param_index= None
+  ; parameter_not_nullable_info= None
   ; severity
   ; third_party_dependent_methods= []
   ; nullable_methods= []
@@ -36,6 +42,10 @@ let with_third_party_dependent_methods methods t = {t with third_party_dependent
 let with_nullable_methods methods t = {t with nullable_methods= methods}
 
 let with_inconsistent_param_index index t = {t with inconsistent_param_index= index}
+
+let with_parameter_not_nullable_info ~param_index ~proc_name t =
+  {t with parameter_not_nullable_info= Some {param_index; proc_name}}
+
 
 let get_issue_type {issue_type} = issue_type
 
@@ -93,9 +103,26 @@ let to_nullable_method_json nullable_methods =
 
 let java_type_to_string java_type = Pp.string_of_pp (Typ.pp_java ~verbose:true) java_type
 
+let get_params_string_list procname =
+  Procname.Java.get_parameters procname |> List.map ~f:java_type_to_string
+
+
+let parameter_not_nullable_info_to_json {param_index; proc_name} :
+    Jsonbug_t.parameter_not_nullable_info =
+  let package_name = Procname.Java.get_package proc_name in
+  let class_name = Procname.Java.get_simple_class_name proc_name in
+  let method_info =
+    Jsonbug_t.{name= Procname.Java.get_method proc_name; params= get_params_string_list proc_name}
+  in
+  Jsonbug_t.{class_name; package_name; method_info; param_index}
+
+
 let get_nullsafe_extra
-    {third_party_dependent_methods; nullable_methods; inconsistent_param_index; field_name}
-    proc_name =
+    { third_party_dependent_methods
+    ; nullable_methods
+    ; inconsistent_param_index
+    ; parameter_not_nullable_info
+    ; field_name } proc_name =
   let class_name = Procname.Java.get_simple_class_name proc_name in
   let package = Procname.Java.get_package proc_name in
   let unvetted_3rd_party_list =
@@ -119,13 +146,17 @@ let get_nullsafe_extra
           ; package_name= JavaClassName.package java_class_name
           ; field } )
   in
-  let method_params = Procname.Java.get_parameters proc_name |> List.map ~f:java_type_to_string in
+  let method_params = get_params_string_list proc_name in
   let method_info = Jsonbug_t.{name= Procname.Java.get_method proc_name; params= method_params} in
+  let parameter_not_nullable_info =
+    Option.map ~f:parameter_not_nullable_info_to_json parameter_not_nullable_info
+  in
   Jsonbug_t.
     { class_name
     ; package
     ; method_info= Some method_info
     ; inconsistent_param_index
+    ; parameter_not_nullable_info
     ; meta_issue_info= None
     ; unvetted_3rd_party
     ; nullable_methods

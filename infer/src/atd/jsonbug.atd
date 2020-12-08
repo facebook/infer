@@ -67,12 +67,20 @@ type issue_method = {
   params: string list;
 }
 
+type parameter_not_nullable_info = {
+  class_name: string;
+  package_name: string nullable;
+  method_info: issue_method;
+  param_index: int;
+}
+
 type nullsafe_extra = {
   class_name: string;
   package: string nullable;
   ?method_info: issue_method option; (* The method the issue is detected on. Not present for issues not associated with a method (e.g. meta issues) *)
   ?field: field_name option; (* For field-specific issues (e.g. Field Not Nullable and Field Not Initialized). *)
   ?inconsistent_param_index: int option; (* Iff the issue is "Inconsistent subclass param annotation", this is the index of the offending param *)
+  ?parameter_not_nullable_info: parameter_not_nullable_info option; (* Iff the issue is "Parameter Not Nullable", this is the details of the offending method *)
   ?nullable_methods: method_info list option; (* If the issue is related to unsafe use of methods being nullable, here's the list of them *)
   ?unvetted_3rd_party: string list option; (* If the issue is related to the use of a not yet registered third-party methods, here's the list of their signatures *)
   ?meta_issue_info: nullsafe_meta_issue_info option; (* Should be present if the issue is "nullsafe meta issue" *)

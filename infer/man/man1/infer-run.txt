@@ -118,6 +118,10 @@ OPTIONS
            Activates: Force converting an absolute path to a relative path to
            the root directory (Conversely: --no-report-force-relative-path)
 
+       --report-immutable-modifications
+           Activates: Report modifications to immutable fields (Conversely:
+           --no-report-immutable-modifications)
+
        --report-suppress-errors +error_name
            do not report a type of errors
 

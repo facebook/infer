@@ -750,6 +750,11 @@ let mixed_self_weakself =
     ~user_documentation:[%blob "../../documentation/issues/MIXED_SELF_WEAKSELF.md"]
 
 
+let modifies_immutable =
+  register ~id:"MODIFIES_IMMUTABLE" Error Impurity
+    ~user_documentation:[%blob "../../documentation/issues/MODIFIES_IMMUTABLE.md"]
+
+
 let multiple_weakself =
   register ~id:"MULTIPLE_WEAKSELF" ~hum:"Multiple WeakSelf Use" Error SelfInBlock
     ~user_documentation:[%blob "../../documentation/issues/MULTIPLE_WEAKSELF.md"]

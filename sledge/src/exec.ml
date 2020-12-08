@@ -361,6 +361,7 @@ let calloc_spec reg num len =
   {foot; sub; ms; post}
 
 let size_of_ptr = Term.integer (Z.of_int Llair.Typ.(size_of ptr))
+let size_of_siz = Term.integer (Z.of_int Llair.Typ.(size_of siz))
 
 (* { p-[_;_)->⟨W,_⟩ }
  *   posix_memalign r p s
@@ -520,12 +521,13 @@ let nallocx_spec reg siz =
 
 let size_of_int_mul = Term.mulq (Q.of_int Llair.Typ.(size_of siz))
 
-(* { r-[_;_)->⟨m,_⟩ * i-[_;_)->⟨_,m⟩ * w=0 * n=0 }
- *   mallctl r i w n
- * { ∃α'. r-[_;_)->⟨m,α'⟩ * i-[_;_)->⟨_,m⟩ }
+(* { r-[_;_)->⟨m,_⟩ * i-[_;_)->⟨W,m⟩ * w=0 * n=0 }
+ *   mallctl (_, r, i, w, n)
+ * { ∃α'. r-[_;_)->⟨m,α'⟩ * i-[_;_)->⟨W,m⟩ }
+ * where W = sizeof size_t
  *)
 let mallctl_read_spec r i w n =
-  let* iseg = Fresh.seg i in
+  let* iseg = Fresh.seg i ~siz:size_of_siz in
   let* rseg = Fresh.seg r ~siz:iseg.cnt in
   let+ a = Fresh.var "a" in
   let foot =
@@ -558,7 +560,7 @@ let mallctlbymib_read_spec p l r i w n =
   {foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
 (* { r=0 * i=0 * w-[_;_)->⟨n,_⟩ }
- *   mallctl r i w n
+ *   mallctl (_, r, i, w, n)
  * { w-[_;_)->⟨n,_⟩ }
  *)
 let mallctl_write_spec r i w n =
@@ -568,7 +570,7 @@ let mallctl_write_spec r i w n =
   {foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
 (* { p-[_;_)->⟨W×l,_⟩ * r=0 * i=0 * w-[_;_)->⟨n,_⟩ }
- *   mallctl r i w n
+ *   mallctl (_, r, i, w, n)
  * { p-[_;_)->⟨W×l,_⟩ * w-[_;_)->⟨n,_⟩ }
  * where W = sizeof int
  *)
@@ -729,102 +731,102 @@ let move pre reg_exps =
 
 let load pre ~reg ~ptr ~len = exec_spec pre (load_spec reg ptr len)
 let store pre ~ptr ~exp ~len = exec_spec pre (store_spec ptr exp len)
-let memset pre ~dst ~byt ~len = exec_spec pre (memset_spec dst byt len)
-let memcpy pre ~dst ~src ~len = exec_specs pre (memcpy_specs dst src len)
-let memmov pre ~dst ~src ~len = exec_specs pre (memmov_specs dst src len)
 let alloc pre ~reg ~num ~len = exec_spec pre (alloc_spec reg num len)
 let free pre ~ptr = exec_spec pre (free_spec ptr)
 let nondet pre = function Some reg -> kill pre reg | None -> pre
 let abort _ = None
 
-let intrinsic ~skip_throw :
-    Sh.t -> Var.t option -> string -> Term.t list -> Sh.t option option =
+let intrinsic :
+       Sh.t
+    -> Var.t option
+    -> Llair.Intrinsic.t
+    -> Term.t iarray
+    -> Sh.t option =
  fun pre areturn intrinsic actuals ->
-  let name =
-    match String.index intrinsic '.' with
-    | None -> intrinsic
-    | Some i -> String.take i intrinsic
-  in
-  let skip pre = Some (Some pre) in
-  ( match (areturn, name, actuals) with
+  match (areturn, intrinsic, IArray.to_array actuals) with
+  (*
+   * llvm intrinsics
+   *)
+  | None, `memset, [|dst; byt; len; _isvolatile|] ->
+      exec_spec pre (memset_spec dst byt len)
+  | None, `memcpy, [|dst; src; len; _isvolatile|] ->
+      exec_specs pre (memcpy_specs dst src len)
+  | None, `memmove, [|dst; src; len; _isvolatile|] ->
+      exec_specs pre (memmov_specs dst src len)
   (*
    * cstdlib - memory management
    *)
   (* void* malloc(size_t size) *)
-  | Some reg, "malloc", [size]
+  | Some reg, `malloc, [|size|]
   (* void* aligned_alloc(size_t alignment, size_t size) *)
-   |Some reg, "aligned_alloc", [size; _] ->
-      Some (exec_spec pre (malloc_spec reg size))
+   |Some reg, `aligned_alloc, [|_; size|] ->
+      exec_spec pre (malloc_spec reg size)
   (* void* calloc(size_t number, size_t size) *)
-  | Some reg, "calloc", [size; number] ->
-      Some (exec_spec pre (calloc_spec reg number size))
+  | Some reg, `calloc, [|number; size|] ->
+      exec_spec pre (calloc_spec reg number size)
   (* int posix_memalign(void** ptr, size_t alignment, size_t size) *)
-  | Some reg, "posix_memalign", [size; _; ptr] ->
-      Some (exec_spec pre (posix_memalign_spec reg ptr size))
+  | Some reg, `posix_memalign, [|ptr; _; size|] ->
+      exec_spec pre (posix_memalign_spec reg ptr size)
   (* void* realloc(void* ptr, size_t size) *)
-  | Some reg, "realloc", [size; ptr] ->
-      Some (exec_spec pre (realloc_spec reg ptr size))
+  | Some reg, `realloc, [|ptr; size|] ->
+      exec_spec pre (realloc_spec reg ptr size)
   (*
    * jemalloc - non-standard API
    *)
   (* void* mallocx(size_t size, int flags) *)
-  | Some reg, "mallocx", [_; size] ->
-      Some (exec_spec pre (mallocx_spec reg size))
+  | Some reg, `mallocx, [|size; _|] -> exec_spec pre (mallocx_spec reg size)
   (* void* rallocx(void* ptr, size_t size, int flags) *)
-  | Some reg, "rallocx", [_; size; ptr] ->
-      Some (exec_spec pre (rallocx_spec reg ptr size))
+  | Some reg, `rallocx, [|ptr; size; _|] ->
+      exec_spec pre (rallocx_spec reg ptr size)
   (* size_t xallocx(void* ptr, size_t size, size_t extra, int flags) *)
-  | Some reg, "xallocx", [_; extra; size; ptr] ->
-      Some (exec_spec pre (xallocx_spec reg ptr size extra))
+  | Some reg, `xallocx, [|ptr; size; extra; _|] ->
+      exec_spec pre (xallocx_spec reg ptr size extra)
   (* size_t sallocx(void* ptr, int flags) *)
-  | Some reg, "sallocx", [_; ptr] ->
-      Some (exec_spec pre (sallocx_spec reg ptr))
+  | Some reg, `sallocx, [|ptr; _|] -> exec_spec pre (sallocx_spec reg ptr)
   (* void dallocx(void* ptr, int flags) *)
-  | None, "dallocx", [_; ptr]
+  | None, `dallocx, [|ptr; _|]
   (* void sdallocx(void* ptr, size_t size, int flags) *)
-   |None, "sdallocx", [_; _; ptr] ->
-      Some (exec_spec pre (dallocx_spec ptr))
+   |None, `sdallocx, [|ptr; _; _|] ->
+      exec_spec pre (dallocx_spec ptr)
   (* size_t nallocx(size_t size, int flags) *)
-  | Some reg, "nallocx", [_; size] ->
-      Some (exec_spec pre (nallocx_spec reg size))
+  | Some reg, `nallocx, [|size; _|] -> exec_spec pre (nallocx_spec reg size)
   (* size_t malloc_usable_size(void* ptr) *)
-  | Some reg, "malloc_usable_size", [ptr] ->
-      Some (exec_spec pre (malloc_usable_size_spec reg ptr))
+  | Some reg, `malloc_usable_size, [|ptr|] ->
+      exec_spec pre (malloc_usable_size_spec reg ptr)
   (* int mallctl(const char* name, void* oldp, size_t* oldlenp, void* newp,
      size_t newlen) *)
-  | Some _, "mallctl", [newlen; newp; oldlenp; oldp; _] ->
-      Some (exec_specs pre (mallctl_specs oldp oldlenp newp newlen))
+  | Some _, `mallctl, [|_; oldp; oldlenp; newp; newlen|] ->
+      exec_specs pre (mallctl_specs oldp oldlenp newp newlen)
   (* int mallctlnametomib(const char* name, size_t* mibp, size_t* miblenp) *)
-  | Some _, "mallctlnametomib", [miblenp; mibp; _] ->
-      Some (exec_spec pre (mallctlnametomib_spec mibp miblenp))
+  | Some _, `mallctlnametomib, [|_; mibp; miblenp|] ->
+      exec_spec pre (mallctlnametomib_spec mibp miblenp)
   (* int mallctlbymib(const size_t* mib, size_t miblen, void* oldp, size_t*
      oldlenp, void* newp, size_t newlen); *)
-  | Some _, "mallctlbymib", [newlen; newp; oldlenp; oldp; miblen; mib] ->
-      Some
-        (exec_specs pre
-           (mallctlbymib_specs mib miblen oldp oldlenp newp newlen))
-  | _, "malloc_stats_print", _ -> skip pre
+  | Some _, `mallctlbymib, [|mib; miblen; oldp; oldlenp; newp; newlen|] ->
+      exec_specs pre
+        (mallctlbymib_specs mib miblen oldp oldlenp newp newlen)
+  | _, `malloc_stats_print, _ -> Some pre
   (*
    * cstring
    *)
   (* size_t strlen (const char* ptr) *)
-  | Some reg, "strlen", [ptr] -> Some (exec_spec pre (strlen_spec reg ptr))
-  (*
-   * cxxabi
-   *)
-  | Some _, "__cxa_allocate_exception", [_] when skip_throw ->
-      skip (Sh.false_ pre.us)
+  | Some reg, `strlen, [|ptr|] -> exec_spec pre (strlen_spec reg ptr)
   (*
    * folly
    *)
   (* bool folly::usingJEMalloc() *)
-  | Some _, "_ZN5folly13usingJEMallocEv", [] -> skip pre
-  | _ -> None )
-  $> function
-  | None -> ()
-  | Some _ ->
-      [%Trace.info
-        "@[<2>exec intrinsic@ @[%a%s(@[%a@])@] from@ @[{ %a@ }@]@]"
-          (Option.pp "%a := " Var.pp)
-          areturn intrinsic (List.pp ",@ " Term.pp) (List.rev actuals) Sh.pp
-          pre]
+  | Some _, `_ZN5folly13usingJEMallocEv, [||] -> Some pre
+  (*
+   * signature mismatch
+   *)
+  | ( _
+    , ( `memset | `memcpy | `memmove | `malloc | `aligned_alloc | `calloc
+      | `posix_memalign | `realloc | `mallocx | `rallocx | `xallocx
+      | `sallocx | `dallocx | `sdallocx | `nallocx | `malloc_usable_size
+      | `mallctl | `mallctlnametomib | `mallctlbymib | `strlen
+      | `_ZN5folly13usingJEMallocEv )
+    , _ ) ->
+      fail "%aintrinsic %a%a;"
+        (Option.pp "%a := " Var.pp)
+        areturn Llair.Intrinsic.pp intrinsic (IArray.pp "@ " Term.pp)
+        actuals ()

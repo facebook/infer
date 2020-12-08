@@ -9,7 +9,12 @@ open Fol
 module T = Term
 module F = Formula
 
-let uconst name = T.apply (Funsym.uninterp ("@" ^ name)) [||]
+let lookup_func lookup term =
+  match Term.get_trm term with
+  | Some (Apply (Uninterp name, [||])) -> lookup name
+  | _ -> None
+
+let uconst name = T.apply (Funsym.uninterp name) [||]
 let global g = uconst (Llair.Global.name g)
 let reg r = Var.program ~name:(Llair.Reg.name r)
 let regs rs = Var.Set.of_iter (Iter.map ~f:reg (Llair.Reg.Set.to_iter rs))

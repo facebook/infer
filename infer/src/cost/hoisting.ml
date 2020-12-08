@@ -131,7 +131,7 @@ let get_cost_if_expensive tenv integer_type_widths get_callee_cost_summary_and_f
                  BufferOverrunUtils.ModelEnv.mk_model_env pname ~node_hash loc tenv
                    integer_type_widths inferbo_get_summary
                in
-               model get_summary model_env ~ret inferbo_mem )
+               model CostUtils.CostModelEnv.{get_summary; model_env} ~ret inferbo_mem )
   in
   Option.filter cost_opt ~f:CostDomain.BasicCost.is_symbolic
 

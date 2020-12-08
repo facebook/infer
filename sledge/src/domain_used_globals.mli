@@ -9,9 +9,4 @@
 
 include Domain_intf.Dom with type summary = Llair.Global.Set.t
 
-type r =
-  | Per_function of Llair.Global.Set.t Llair.Function.Map.t
-      (** per-function used-globals map *)
-  | Declared of Llair.Global.Set.t  (** program-wide set *)
-
-val by_function : r -> Llair.Function.t -> summary
+val by_function : Domain_intf.used_globals -> Llair.Function.t -> summary

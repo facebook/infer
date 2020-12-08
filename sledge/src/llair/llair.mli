@@ -16,6 +16,14 @@ module Function = Function
 module Global = Global
 module GlobalDefn = GlobalDefn
 
+module Intrinsic : sig
+  include module type of Intrinsics
+
+  val to_string : t -> string
+  val of_name : string -> t option
+  val pp : t pp
+end
+
 (** Instructions for memory manipulation or other non-control effects. *)
 type inst = private
   | Move of {reg_exps: (Reg.t * Exp.t) iarray; loc: Loc.t}
@@ -26,13 +34,6 @@ type inst = private
           [ptr] into [reg]. *)
   | Store of {ptr: Exp.t; exp: Exp.t; len: Exp.t; loc: Loc.t}
       (** Write [len]-byte value [exp] into memory at address [ptr]. *)
-  | Memset of {dst: Exp.t; byt: Exp.t; len: Exp.t; loc: Loc.t}
-      (** Store byte [byt] into [len] memory addresses starting from [dst]. *)
-  | Memcpy of {dst: Exp.t; src: Exp.t; len: Exp.t; loc: Loc.t}
-      (** Copy [len] bytes starting from address [src] to [dst], undefined
-          if ranges overlap. *)
-  | Memmov of {dst: Exp.t; src: Exp.t; len: Exp.t; loc: Loc.t}
-      (** Copy [len] bytes starting from address [src] to [dst]. *)
   | Alloc of {reg: Reg.t; num: Exp.t; len: int; loc: Loc.t}
       (** Allocate a block of memory large enough to store [num] elements of
           [len] bytes each and bind [reg] to the first address. *)
@@ -42,6 +43,9 @@ type inst = private
       (** Bind [reg] to an arbitrary value, representing non-deterministic
           approximation of behavior described by [msg]. *)
   | Abort of {loc: Loc.t}  (** Trigger abnormal program termination *)
+  | Intrinsic of
+      {reg: Reg.t option; name: Intrinsic.t; args: Exp.t iarray; loc: Loc.t}
+      (** Bind [reg] to the value of applying intrinsic [name] to [args]. *)
 
 (** A (straight-line) command is a sequence of instructions. *)
 type cmnd = inst iarray
@@ -50,13 +54,13 @@ type cmnd = inst iarray
 type label = string
 
 (** A jump to a block. *)
-type jump = {mutable dst: block; mutable retreating: bool}
+type jump = private {mutable dst: block; mutable retreating: bool}
 
 (** A call to a function. *)
 and 'a call =
-  { callee: 'a
+  { mutable callee: 'a
   ; typ: Typ.t  (** Type of the callee. *)
-  ; actuals: Exp.t list  (** Stack of arguments, first-arg-last. *)
+  ; actuals: Exp.t iarray  (** Actual arguments. *)
   ; areturn: Reg.t option  (** Register to receive return value. *)
   ; return: jump  (** Return destination. *)
   ; throw: jump option  (** Handler destination. *)
@@ -71,8 +75,8 @@ and term = private
           [case] which is equal to [key], if any, otherwise invoke [els]. *)
   | Iswitch of {ptr: Exp.t; tbl: jump iarray; loc: Loc.t}
       (** Invoke the [jump] in [tbl] whose [dst] is equal to [ptr]. *)
-  | Call of Exp.t call
-      (** Call function with arguments. A [global] for non-virtual call. *)
+  | Call of func call  (** Call function with arguments. *)
+  | ICall of Exp.t call  (** Indirect call function with arguments. *)
   | Return of {exp: Exp.t option; loc: Loc.t}
       (** Invoke [return] of the dynamically most recent [Call]. *)
   | Throw of {exc: Exp.t; loc: Loc.t}
@@ -95,7 +99,7 @@ and block = private
     parameters are the function parameters. *)
 and func = private
   { name: Function.t
-  ; formals: Reg.t list  (** Formal parameters, first-param-last stack *)
+  ; formals: Reg.t iarray  (** Formal parameters *)
   ; freturn: Reg.t option
   ; fthrow: Reg.t
   ; locals: Reg.Set.t  (** Local registers *)
@@ -115,13 +119,18 @@ module Inst : sig
   val move : reg_exps:(Reg.t * Exp.t) iarray -> loc:Loc.t -> inst
   val load : reg:Reg.t -> ptr:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
   val store : ptr:Exp.t -> exp:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
-  val memset : dst:Exp.t -> byt:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
-  val memcpy : dst:Exp.t -> src:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
-  val memmov : dst:Exp.t -> src:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
   val alloc : reg:Reg.t -> num:Exp.t -> len:int -> loc:Loc.t -> inst
   val free : ptr:Exp.t -> loc:Loc.t -> inst
   val nondet : reg:Reg.t option -> msg:string -> loc:Loc.t -> inst
   val abort : loc:Loc.t -> inst
+
+  val intrinsic :
+       reg:Reg.t option
+    -> name:Intrinsic.t
+    -> args:Exp.t iarray
+    -> loc:Loc.t
+    -> t
+
   val loc : inst -> Loc.t
   val locals : inst -> Reg.Set.t
   val fold_exps : inst -> 's -> f:(Exp.t -> 's -> 's) -> 's
@@ -153,9 +162,19 @@ module Term : sig
   val iswitch : ptr:Exp.t -> tbl:jump iarray -> loc:Loc.t -> term
 
   val call :
+       name:string
+    -> typ:Typ.t
+    -> actuals:Exp.t iarray
+    -> areturn:Reg.t option
+    -> return:jump
+    -> throw:jump option
+    -> loc:Loc.t
+    -> t * (callee:func -> unit)
+
+  val icall :
        callee:Exp.t
     -> typ:Typ.t
-    -> actuals:Exp.t list
+    -> actuals:Exp.t iarray
     -> areturn:Reg.t option
     -> return:jump
     -> throw:jump option
@@ -188,7 +207,7 @@ module Func : sig
 
   val mk :
        name:Function.t
-    -> formals:Reg.t list
+    -> formals:Reg.t iarray
     -> freturn:Reg.t option
     -> fthrow:Reg.t
     -> entry:block
@@ -198,13 +217,13 @@ module Func : sig
 
   val mk_undefined :
        name:Function.t
-    -> formals:Reg.t list
+    -> formals:Reg.t iarray
     -> freturn:Reg.t option
     -> fthrow:Reg.t
     -> loc:Loc.t
     -> t
 
-  val find : Function.t -> functions -> t option
+  val find : string -> functions -> t option
   (** Look up a function of the given name in the given functions. *)
 
   val fold_cfg : func -> 'a -> f:(block -> 'a -> 'a) -> 'a

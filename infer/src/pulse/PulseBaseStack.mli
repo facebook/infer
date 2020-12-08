@@ -33,3 +33,6 @@ val get_vars : t -> VarAddress.t list
 
 val yojson_of_t : t -> Yojson.Safe.t
 
+val canonicalize : get_var_repr:(AbstractValue.t -> AbstractValue.t) -> t -> t
+(** replace each address in the stack by its canonical representative according to the current
+    equality relation, represented by [get_var_repr] *)

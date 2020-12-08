@@ -11,6 +11,7 @@ include module type of ContainersLabels.Array
 type 'a t = 'a array [@@deriving compare, equal, sexp]
 
 val of_ : 'a -> 'a t
+val of_iter : 'a iter -> 'a t
 val of_list_rev : 'a list -> 'a t
 val map : 'a t -> f:('a -> 'b) -> 'b t
 val mapi : 'a t -> f:(int -> 'a -> 'b) -> 'b t
@@ -41,5 +42,6 @@ val fold_map_until :
   -> finish:('b t * 's -> 'c)
   -> 'c
 
+val fold2_exn : 'a t -> 'b t -> 's -> f:('a -> 'b -> 's -> 's) -> 's
 val to_list_rev_map : 'a array -> f:('a -> 'b) -> 'b list
 val pp : (unit, unit) fmt -> 'a pp -> 'a array pp

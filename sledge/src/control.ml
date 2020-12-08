@@ -9,30 +9,23 @@
 
     The analysis' semantics of control flow. *)
 
-type exec_opts =
-  { bound: int
-  ; skip_throw: bool
-  ; function_summaries: bool
-  ; entry_points: Llair.Function.t list
-  ; globals: Domain_used_globals.r }
-
-module Make (Dom : Domain_intf.Dom) = struct
+module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
   module Stack : sig
     type t
+
+    val pp : t pp
+
     type as_inlined_location = t [@@deriving compare, sexp_of]
 
     val empty : t
-
-    val push_call :
-      Llair.func Llair.call -> bound:int -> Dom.from_call -> t -> t option
-
+    val push_call : Llair.func Llair.call -> Dom.from_call -> t -> t option
     val pop_return : t -> (Dom.from_call * Llair.jump * t) option
 
     val pop_throw :
          t
       -> 'a
       -> unwind:
-           (   Llair.Reg.t list
+           (   Llair.Reg.t iarray
             -> Llair.Reg.Set.t
             -> Dom.from_call
             -> 'a
@@ -43,13 +36,22 @@ module Make (Dom : Domain_intf.Dom) = struct
       | Return of
           { recursive: bool  (** return from a possibly-recursive call *)
           ; dst: Llair.Jump.t
-          ; formals: Llair.Reg.t list
+          ; formals: Llair.Reg.t iarray
           ; locals: Llair.Reg.Set.t
           ; from_call: Dom.from_call
           ; stk: t }
       | Throw of Llair.Jump.t * t
       | Empty
     [@@deriving sexp_of]
+
+    let rec pp ppf = function
+      | Return {recursive= false; dst; stk= s} ->
+          Format.fprintf ppf "R#%i%a" dst.dst.sort_index pp s
+      | Return {recursive= true; dst; stk= s} ->
+          Format.fprintf ppf "R↑#%i%a" dst.dst.sort_index pp s
+      | Throw (dst, s) ->
+          Format.fprintf ppf "T#%i%a" dst.dst.sort_index pp s
+      | Empty -> ()
 
     type as_inlined_location = t [@@deriving sexp_of]
 
@@ -79,23 +81,11 @@ module Make (Dom : Domain_intf.Dom) = struct
         | _, Throw _ -> 1
         | Empty, Empty -> 0
 
-    let rec print_abbrev fs = function
-      | Return {recursive= false; stk= s} ->
-          print_abbrev fs s ;
-          Format.pp_print_char fs 'R'
-      | Return {recursive= true; stk= s} ->
-          print_abbrev fs s ;
-          Format.pp_print_string fs "R↑"
-      | Throw (_, s) ->
-          print_abbrev fs s ;
-          Format.pp_print_char fs 'T'
-      | Empty -> ()
-
     let invariant s =
       let@ () = Invariant.invariant [%here] s [%sexp_of: t] in
       match s with
       | Return _ | Throw (_, Return _) | Empty -> ()
-      | Throw _ -> fail "malformed stack: %a" print_abbrev s ()
+      | Throw _ -> fail "malformed stack: %a" pp s ()
 
     let empty = Empty |> check invariant
 
@@ -108,8 +98,8 @@ module Make (Dom : Domain_intf.Dom) = struct
       (match jmp with None -> stk | Some jmp -> Throw (jmp, stk))
       |> check invariant
 
-    let push_call (Llair.{return; throw} as call) ~bound from_call stk =
-      [%Trace.call fun {pf} -> pf "%a" print_abbrev stk]
+    let push_call (Llair.{return; throw} as call) from_call stk =
+      [%Trace.call fun {pf} -> pf "%a" pp stk]
       ;
       let rec count_f_in_stack acc f = function
         | Return {stk= next_frame; dst= dest_block} ->
@@ -119,7 +109,7 @@ module Make (Dom : Domain_intf.Dom) = struct
         | _ -> acc
       in
       let n = count_f_in_stack 0 return stk in
-      ( if n > bound then (
+      ( if n > Opts.bound then (
         Report.hit_bound n ;
         None )
       else Some (push_throw throw (push_return call from_call stk)) )
@@ -147,7 +137,7 @@ module Make (Dom : Domain_intf.Dom) = struct
   module Work : sig
     type t
 
-    val init : Dom.t -> Llair.block -> int -> t
+    val init : Dom.t -> Llair.block -> t
 
     type x
 
@@ -185,7 +175,7 @@ module Make (Dom : Domain_intf.Dom) = struct
     module Depths = struct
       module M = Map.Make (Edge)
 
-      type t = int M.t
+      type t = int M.t [@@deriving compare, sexp_of]
 
       let empty = M.empty
       let find = M.find
@@ -197,62 +187,116 @@ module Make (Dom : Domain_intf.Dom) = struct
           | `Both (d1, d2) -> Some (Int.max d1 d2) )
     end
 
-    type priority = int * Edge.t [@@deriving compare]
-    type priority_queue = priority FHeap.t
-    type waiting_states = (Dom.t * Depths.t) list Llair.Block.Map.t
-    type t = priority_queue * waiting_states * int
+    module PrioQueue : sig
+      (** an edge at a depth with the domain and depths state it yielded *)
+      type elt = {depth: int; edge: Edge.t; state: Dom.t; depths: Depths.t}
+
+      type t
+
+      val pp : t pp
+
+      val create : unit -> t
+      (** create an empty queue *)
+
+      val add : elt -> t -> t
+      (** add an element *)
+
+      val remove : elt -> t -> t
+      (** remove an element *)
+
+      val pop : t -> (elt * elt list * t) option
+      (** the top element, the other elements with the same destination, the
+          queue without the top element *)
+    end = struct
+      type elt = {depth: int; edge: Edge.t; state: Dom.t; depths: Depths.t}
+      [@@deriving compare, sexp_of]
+
+      module Elts = Set.Make (struct
+        type t = elt [@@deriving compare, sexp_of]
+      end)
+
+      type t = {queue: elt FHeap.t; removed: Elts.t}
+
+      let pp_elt ppf {depth; edge} =
+        Format.fprintf ppf "%i: %a" depth Edge.pp edge
+
+      let pp ppf {queue; removed} =
+        let rev_elts =
+          FHeap.fold queue ~init:[] ~f:(fun rev_elts elt ->
+              if Elts.mem elt removed then rev_elts else elt :: rev_elts )
+        in
+        Format.fprintf ppf "@[%a@]" (List.pp " ::@ " pp_elt)
+          (List.rev rev_elts)
+
+      let create () =
+        {queue= FHeap.create ~cmp:compare_elt; removed= Elts.empty}
+
+      let add elt {queue; removed} =
+        let removed' = Elts.remove elt removed in
+        if removed' == removed then {queue= FHeap.add queue elt; removed}
+        else {queue; removed= removed'}
+
+      let remove elt {queue; removed} =
+        {queue; removed= Elts.add elt removed}
+
+      let rec pop {queue; removed} =
+        let* top, queue = FHeap.pop queue in
+        let removed' = Elts.remove top removed in
+        if removed' != removed then pop {queue; removed= removed'}
+        else
+          let elts =
+            FHeap.fold queue ~init:[] ~f:(fun elts elt ->
+                if
+                  Llair.Block.equal top.edge.dst elt.edge.dst
+                  && not (Elts.mem elt removed)
+                then elt :: elts
+                else elts )
+          in
+          Some (top, elts, {queue; removed})
+    end
+
+    type t = PrioQueue.t
     type x = Depths.t -> t -> t
-
-    let empty_waiting_states : waiting_states = Llair.Block.Map.empty
-    let pp_priority fs (n, e) = Format.fprintf fs "%i: %a" n Edge.pp e
-
-    let pp fs pq =
-      Format.fprintf fs "@[%a@]"
-        (List.pp " ::@ " pp_priority)
-        (FHeap.to_list pq)
 
     let skip _ w = w
     let seq x y d w = y d (x d w)
 
-    let add ?prev ~retreating stk state curr depths ((pq, ws, bound) as work)
-        =
+    let add ?prev ~retreating stk state curr depths queue =
       let edge = {Edge.dst= curr; src= prev; stk} in
       let depth = Option.value (Depths.find edge depths) ~default:0 in
       let depth = if retreating then depth + 1 else depth in
-      if depth > bound then (
-        [%Trace.info "prune: %i: %a" depth Edge.pp edge] ;
-        Report.hit_bound bound ;
-        work )
-      else
-        let pq = FHeap.add pq (depth, edge) in
-        [%Trace.info "@[<6>enqueue %i: %a@ | %a@]" depth Edge.pp edge pp pq] ;
+      if depth <= Opts.bound then (
+        [%Trace.info
+          "@[<6>enqueue %i: %a [%a]@ | %a@]" depth Edge.pp edge Stack.pp
+            edge.stk PrioQueue.pp queue] ;
         let depths = Depths.add ~key:edge ~data:depth depths in
-        let ws =
-          Llair.Block.Map.add_multi ~key:curr ~data:(state, depths) ws
-        in
-        (pq, ws, bound)
+        PrioQueue.add {depth; edge; state; depths} queue )
+      else (
+        [%Trace.info "prune: %i: %a" depth Edge.pp edge] ;
+        Report.hit_bound Opts.bound ;
+        queue )
 
-    let init state curr bound =
+    let init state curr =
       add ~retreating:false Stack.empty state curr Depths.empty
-        (FHeap.create ~cmp:compare_priority, empty_waiting_states, bound)
+        (PrioQueue.create ())
 
-    let rec run ~f (pq0, ws, bnd) =
-      match FHeap.pop pq0 with
-      | Some ((_, ({Edge.dst; stk} as edge)), pq) -> (
-        match Llair.Block.Map.find_and_remove dst ws with
-        | Some (q :: qs, ws) ->
-            let join (qa, da) (q, d) = (Dom.join q qa, Depths.join d da) in
-            let skipped, (qs, depths) =
-              List.fold qs ([], q) ~f:(fun curr (skipped, joined) ->
-                  match join curr joined with
-                  | Some joined, depths -> (skipped, (joined, depths))
-                  | None, _ -> (curr :: skipped, joined) )
-            in
-            let ws = Llair.Block.Map.add_exn ~key:dst ~data:skipped ws in
-            run ~f (f stk qs dst depths (pq, ws, bnd))
-        | _ ->
-            [%Trace.info "done: %a" Edge.pp edge] ;
-            run ~f (pq, ws, bnd) )
+    let rec run ~f queue =
+      match PrioQueue.pop queue with
+      | Some ({depth; edge; state; depths}, elts, queue) ->
+          [%Trace.info
+            "@[<6>dequeue %i: %a [%a]@ | %a@]" depth Edge.pp edge Stack.pp
+              edge.stk PrioQueue.pp queue] ;
+          let state, depths, queue =
+            List.fold elts (state, depths, queue)
+              ~f:(fun elt (state, depths, queue) ->
+                match Dom.join elt.state state with
+                | Some state ->
+                    let depths = Depths.join elt.depths depths in
+                    let queue = PrioQueue.remove elt queue in
+                    (state, depths, queue)
+                | None -> (state, depths, queue) )
+          in
+          run ~f (f edge.stk state edge.dst depths queue)
       | None ->
           [%Trace.info "queue empty"] ;
           ()
@@ -263,7 +307,7 @@ module Make (Dom : Domain_intf.Dom) = struct
 
   let summary_table = Llair.Function.Tbl.create ()
 
-  let exec_call opts stk state block call globals =
+  let exec_call stk state block call globals =
     let Llair.{callee; actuals; areturn; return; recursive} = call in
     let Llair.{name; formals; freturn; locals; entry} = callee in
     [%Trace.call fun {pf} ->
@@ -271,14 +315,14 @@ module Make (Dom : Domain_intf.Dom) = struct
         Llair.Function.pp return.dst.parent.name Dom.pp state]
     ;
     let dnf_states =
-      if opts.function_summaries then Dom.dnf state else [state]
+      if Opts.function_summaries then Dom.dnf state else [state]
     in
     let domain_call =
       Dom.call ~globals ~actuals ~areturn ~formals ~freturn ~locals
     in
     List.fold dnf_states Work.skip ~f:(fun state acc ->
         match
-          if not opts.function_summaries then None
+          if not Opts.function_summaries then None
           else
             let maybe_summary_post =
               let state = fst (domain_call ~summaries:false state) in
@@ -292,12 +336,10 @@ module Make (Dom : Domain_intf.Dom) = struct
         with
         | None ->
             let state, from_call =
-              domain_call ~summaries:opts.function_summaries state
+              domain_call ~summaries:Opts.function_summaries state
             in
             Work.seq acc
-              ( match
-                  Stack.push_call call ~bound:opts.bound from_call stk
-                with
+              ( match Stack.push_call call from_call stk with
               | Some stk ->
                   Work.add stk ~prev:block ~retreating:recursive state entry
               | None -> (
@@ -308,6 +350,24 @@ module Make (Dom : Domain_intf.Dom) = struct
     |>
     [%Trace.retn fun {pf} _ -> pf ""]
 
+  let exec_skip_func :
+         Stack.t
+      -> Dom.t
+      -> Llair.block
+      -> Llair.Reg.t option
+      -> Llair.jump
+      -> Work.x =
+   fun stk state block areturn return ->
+    Report.unknown_call block.term ;
+    let state = Option.fold ~f:Dom.exec_kill areturn state in
+    exec_jump stk state block return
+
+  let exec_call stk state block ({Llair.callee; areturn; return; _} as call)
+      globals =
+    if Llair.Func.is_undefined callee then
+      exec_skip_func stk state block areturn return
+    else exec_call stk state block call globals
+
   let pp_st () =
     [%Trace.printf
       "@[<v>%t@]" (fun fs ->
@@ -316,12 +376,12 @@ module Make (Dom : Domain_intf.Dom) = struct
                 (List.pp "@," Dom.pp_summary)
                 data ) )]
 
-  let exec_return ~opts stk pre_state (block : Llair.block) exp =
+  let exec_return stk pre_state (block : Llair.block) exp =
     let Llair.{name; formals; freturn; locals} = block.parent in
     [%Trace.call fun {pf} -> pf "from: %a" Llair.Function.pp name]
     ;
     let summarize post_state =
-      if not opts.function_summaries then post_state
+      if not Opts.function_summaries then post_state
       else
         let function_summary, post_state =
           Dom.create_summary ~locals ~formals post_state
@@ -346,8 +406,10 @@ module Make (Dom : Domain_intf.Dom) = struct
     | None ->
         (* Create and store a function summary for main *)
         if
-          opts.function_summaries
-          && List.exists ~f:(Llair.Function.equal name) opts.entry_points
+          Opts.function_summaries
+          && List.mem ~eq:String.equal
+               (Llair.Function.name name)
+               Opts.entry_points
         then summarize exit_state |> (ignore : Dom.t -> unit) ;
         Work.skip )
     |>
@@ -376,26 +438,9 @@ module Make (Dom : Domain_intf.Dom) = struct
     |>
     [%Trace.retn fun {pf} _ -> pf ""]
 
-  let exec_skip_func :
-         Stack.t
-      -> Dom.t
-      -> Llair.block
-      -> Llair.Reg.t option
-      -> Llair.jump
-      -> Work.x =
-   fun stk state block areturn return ->
-    Report.unknown_call block.term ;
-    let state = Option.fold ~f:Dom.exec_kill areturn state in
-    exec_jump stk state block return
-
-  let exec_term :
-         exec_opts
-      -> Llair.program
-      -> Stack.t
-      -> Dom.t
-      -> Llair.block
-      -> Work.x =
-   fun opts pgm stk state block ->
+  let exec_term : Llair.program -> Stack.t -> Dom.t -> Llair.block -> Work.x
+      =
+   fun pgm stk state block ->
     [%Trace.info
       "@[<2>exec term@\n@[%a@]@\n%a@]" Dom.pp state Llair.Term.pp block.term] ;
     Report.step_term block.term ;
@@ -425,37 +470,20 @@ module Make (Dom : Domain_intf.Dom) = struct
             with
             | Some state -> exec_jump stk state block jump |> Work.seq x
             | None -> x )
-    | Call ({callee; actuals; areturn; return} as call) -> (
-        let lookup name =
-          Option.to_list (Llair.Func.find name pgm.functions)
-        in
-        let callees, state = Dom.resolve_callee lookup callee state in
-        match callees with
+    | Call ({callee} as call) ->
+        exec_call stk state block call
+          (Domain_used_globals.by_function Opts.globals callee.name)
+    | ICall ({callee; areturn; return} as call) -> (
+        let lookup name = Llair.Func.find name pgm.functions in
+        match Dom.resolve_callee lookup callee state with
         | [] -> exec_skip_func stk state block areturn return
         | callees ->
             List.fold callees Work.skip ~f:(fun callee x ->
-                ( match
-                    Dom.exec_intrinsic ~skip_throw:opts.skip_throw areturn
-                      callee.name actuals state
-                  with
-                | Some None ->
-                    Report.invalid_access_term
-                      (Dom.report_fmt_thunk state)
-                      block.term ;
-                    Work.skip
-                | Some (Some state) when Dom.is_false state -> Work.skip
-                | Some (Some state) -> exec_jump stk state block return
-                | None when Llair.Func.is_undefined callee ->
-                    exec_skip_func stk state block areturn return
-                | None ->
-                    exec_call opts stk state block {call with callee}
-                      (Domain_used_globals.by_function opts.globals
-                         callee.name) )
+                exec_call stk state block {call with callee}
+                  (Domain_used_globals.by_function Opts.globals callee.name)
                 |> Work.seq x ) )
-    | Return {exp} -> exec_return ~opts stk state block exp
-    | Throw {exc} ->
-        if opts.skip_throw then Work.skip
-        else exec_throw stk state block exc
+    | Return {exp} -> exec_return stk state block exp
+    | Throw {exc} -> exec_throw stk state block exc
     | Unreachable -> Work.skip
 
   let exec_inst : Llair.inst -> Dom.t -> (Dom.t, Dom.t * Llair.inst) result
@@ -469,49 +497,52 @@ module Make (Dom : Domain_intf.Dom) = struct
     | Some state -> Result.Ok state | None -> Result.Error (state, inst)
 
   let exec_block :
-         exec_opts
-      -> Llair.program
-      -> Stack.t
-      -> Dom.t
-      -> Llair.block
-      -> Work.x =
-   fun opts pgm stk state block ->
-    [%Trace.info "exec block %%%s" block.lbl] ;
+      Llair.program -> Stack.t -> Dom.t -> Llair.block -> Work.x =
+   fun pgm stk state block ->
+    [%trace]
+      ~call:(fun {pf} ->
+        pf "#%i %%%s in %a" block.sort_index block.lbl Llair.Function.pp
+          block.parent.name )
+      ~retn:(fun {pf} _ ->
+        pf "#%i %%%s in %a" block.sort_index block.lbl Llair.Function.pp
+          block.parent.name )
+    @@ fun () ->
     match
       Iter.fold_result ~f:exec_inst (IArray.to_iter block.cmnd) state
     with
-    | Ok state -> exec_term opts pgm stk state block
+    | Ok state -> exec_term pgm stk state block
     | Error (state, inst) ->
         Report.invalid_access_inst (Dom.report_fmt_thunk state) inst ;
         Work.skip
 
-  let harness : exec_opts -> Llair.program -> (int -> Work.t) option =
-   fun opts pgm ->
+  let harness : Llair.program -> Work.t option =
+   fun pgm ->
     List.find_map
       ~f:(fun entry_point -> Llair.Func.find entry_point pgm.functions)
-      opts.entry_points
+      Opts.entry_points
     |> function
-    | Some {name; formals= []; freturn; locals; entry} ->
+    | Some {name; formals; freturn; locals; entry}
+      when IArray.is_empty formals ->
         Some
           (Work.init
              (fst
-                (Dom.call ~summaries:opts.function_summaries
+                (Dom.call ~summaries:Opts.function_summaries
                    ~globals:
-                     (Domain_used_globals.by_function opts.globals name)
-                   ~actuals:[] ~areturn:None ~formals:[] ~freturn ~locals
-                   (Dom.init pgm.globals)))
+                     (Domain_used_globals.by_function Opts.globals name)
+                   ~actuals:IArray.empty ~areturn:None ~formals:IArray.empty
+                   ~freturn ~locals (Dom.init pgm.globals)))
              entry)
     | _ -> None
 
-  let exec_pgm : exec_opts -> Llair.program -> unit =
-   fun opts pgm ->
-    match harness opts pgm with
-    | Some work -> Work.run ~f:(exec_block opts pgm) (work opts.bound)
+  let exec_pgm : Llair.program -> unit =
+   fun pgm ->
+    match harness pgm with
+    | Some work -> Work.run ~f:(exec_block pgm) work
     | None -> fail "no applicable harness" ()
 
-  let compute_summaries opts pgm : Dom.summary list Llair.Function.Map.t =
-    assert opts.function_summaries ;
-    exec_pgm opts pgm ;
+  let compute_summaries pgm : Dom.summary list Llair.Function.Map.t =
+    assert Opts.function_summaries ;
+    exec_pgm pgm ;
     Llair.Function.Tbl.fold summary_table Llair.Function.Map.empty
       ~f:(fun ~key ~data map ->
         match data with

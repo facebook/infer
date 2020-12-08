@@ -74,6 +74,9 @@ val fold_opt : 'a t -> 's -> f:('a -> 's -> 's option) -> 's option
     the [Option] monad. If [f] returns [None], [None] is returned without
     any additional invocations of [f]. *)
 
+val fold_map : 'a t -> 's -> f:('a -> 's -> 'b * 's) -> 's * 'b t
+val folding_map : 'a t -> 's -> f:('a -> 's -> 'b * 's) -> 'b t
+
 val fold_until :
      'a t
   -> 's

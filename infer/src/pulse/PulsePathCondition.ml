@@ -11,7 +11,9 @@ module L = Logging
 module AbstractValue = PulseAbstractValue
 module CItv = PulseCItv
 module Formula = PulseFormula
+module SatUnsat = PulseSatUnsat
 module ValueHistory = PulseValueHistory
+open SatUnsat.Types
 
 module BoItvs = struct
   include PrettyPrintable.MakePPMonoMap (AbstractValue) (Itv.ItvPure)
@@ -55,9 +57,7 @@ let map_sat phi f = if phi.is_unsat then (phi, []) else f phi
 
 let ( let+ ) phi f = map_sat phi f
 
-let map_formula_sat (x : 'a Formula.normalized) f =
-  match x with Unsat -> (false_, []) | Sat x' -> f x'
-
+let map_formula_sat (x : 'a SatUnsat.t) f = match x with Unsat -> (false_, []) | Sat x' -> f x'
 
 let ( let+| ) x f = map_formula_sat x f
 
@@ -95,15 +95,27 @@ let and_eq_int v i phi =
   , new_eqs )
 
 
-let simplify ~keep phi =
+let and_eq_vars v1 v2 phi =
   let+ {is_unsat; bo_itvs; citvs; formula} = phi in
-  let+| formula, new_eqs = Formula.simplify ~keep formula in
-  let is_in_keep v _ = AbstractValue.Set.mem v keep in
-  ( { is_unsat
-    ; bo_itvs= BoItvs.filter is_in_keep bo_itvs
-    ; citvs= CItvs.filter is_in_keep citvs
-    ; formula }
-  , new_eqs )
+  let+| formula, new_eqs =
+    Formula.and_equal (AbstractValueOperand v1) (AbstractValueOperand v2) formula
+  in
+  (* TODO: add to non-formula domains? *)
+  ({is_unsat; bo_itvs; citvs; formula}, new_eqs)
+
+
+let simplify ~keep phi =
+  let result =
+    let+ {is_unsat; bo_itvs; citvs; formula} = phi in
+    let+| formula, new_eqs = Formula.simplify ~keep formula in
+    let is_in_keep v _ = AbstractValue.Set.mem v keep in
+    ( { is_unsat
+      ; bo_itvs= BoItvs.filter is_in_keep bo_itvs
+      ; citvs= CItvs.filter is_in_keep citvs
+      ; formula }
+    , new_eqs )
+  in
+  if (fst result).is_unsat then Unsat else Sat result
 
 
 let subst_find_or_new subst addr_callee =
@@ -233,6 +245,14 @@ let and_callee subst phi ~callee:phi_callee =
 type operand = Formula.operand =
   | LiteralOperand of IntLit.t
   | AbstractValueOperand of AbstractValue.t
+[@@deriving compare]
+
+let pp_operand f = function
+  | LiteralOperand i ->
+      IntLit.pp f i
+  | AbstractValueOperand v ->
+      AbstractValue.pp f v
+
 
 let eval_citv_binop binop_addr bop op_lhs op_rhs citvs =
   let citv_of_op op citvs =
@@ -419,3 +439,5 @@ let as_int phi v =
 
 
 let has_no_assumptions phi = Formula.has_no_assumptions phi.formula
+
+let get_var_repr phi v = Formula.get_var_repr phi.formula v

@@ -37,6 +37,8 @@ type t =
 
 val str : Pp.env -> t -> string
 
+val pp : Formatter.t -> t -> unit
+
 val equal : t -> t -> bool
 
 val injective : t -> bool

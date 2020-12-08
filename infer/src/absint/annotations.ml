@@ -43,6 +43,8 @@ let guarded_by = "GuardedBy"
 
 let ignore_allocations = "IgnoreAllocations"
 
+let immutable = "Immutable"
+
 let initializer_ = "Initializer"
 
 let inject = "Inject"

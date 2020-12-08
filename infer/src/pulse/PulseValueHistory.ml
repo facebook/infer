@@ -38,7 +38,7 @@ let pp_event_no_location fmt event =
   | Allocation {f} ->
       F.fprintf fmt "allocated by call to %a" CallEvent.pp f
   | Capture {captured_as; mode; location= _} ->
-      F.fprintf fmt "value captured by %s as `%a`"
+      F.fprintf fmt "value captured %s as `%a`"
         (Pvar.string_of_capture_mode mode)
         Pvar.pp_value_non_verbose captured_as
   | Conditional {is_then_branch; if_kind; location= _} ->

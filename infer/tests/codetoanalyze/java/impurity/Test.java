@@ -102,4 +102,9 @@ class Test {
   void while_true_impure() {
     while (true) {}
   }
+
+  void modify_both_impure() {
+    set_impure(0, 1);
+    global_array_set_impure(3, 1);
+  }
 }

@@ -157,6 +157,12 @@ module Function : sig
 
   val of_exp : exp -> t option
   val mk : Typ.t -> string -> t
+
+  val counterfeit : string -> t
+  (** [compare] ignores [Function.typ], so it is possible to construct
+      [Function] names using a dummy type that compare equal to their
+      genuine counterparts. *)
+
   val name : t -> string
   val typ : t -> Typ.t
 end

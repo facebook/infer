@@ -68,8 +68,10 @@ let is_considered_nonnull ~nullsafe_mode nullability =
       | NullsafeMode.Local NullsafeMode.Trust.All ->
           UncheckedNonnull
       | NullsafeMode.Default ->
-          (* In default mode, we trust everything, even not annotated third party. *)
-          ThirdPartyNonnull
+          (* We trust all internal method declarations, and, if specified separately,
+             even not annotated third party. *)
+          if Config.nullsafe_optimistic_third_party_in_default_mode then ThirdPartyNonnull
+          else UncheckedNonnull
     in
     is_subtype ~subtype:nullability ~supertype:least_required
 

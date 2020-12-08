@@ -16,6 +16,7 @@ let pp fmt pp_elt fs = function
   | None -> ()
 
 let map_or xo ~default ~f = map_or ~default f xo
+let flat_map xo ~f = flat_map f xo
 let iter xo ~f = iter f xo
 let exists xo ~f = exists f xo
 let for_all xo ~f = for_all f xo

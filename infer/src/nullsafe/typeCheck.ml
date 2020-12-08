@@ -1022,7 +1022,7 @@ let calc_typestate_after_call
     find_canonical_duplicate calls_this checks idenv instr_ref signature_params cflags call_params
     ~is_anonymous_inner_class_constructor ~callee_annotated_signature ~callee_attributes
     ~callee_pname ~curr_annotated_signature ~nullsafe_mode ~typestate ~typestate1 loc node =
-  let resolve_param i (formal_param, actual_param) =
+  let resolve_param param_index (formal_param, actual_param) =
     let (orig_e2, e2), t2 = actual_param in
     let _, inferred_nullability_actual =
       typecheck_expr analysis_data ~nullsafe_mode find_canonical_duplicate calls_this checks node
@@ -1032,12 +1032,11 @@ let calc_typestate_after_call
         loc
     in
     let actual = (orig_e2, inferred_nullability_actual) in
-    let num = i + 1 in
     let is_formal_propagates_nullable =
       Annotations.ia_is_propagates_nullable
         formal_param.AnnotatedSignature.param_annotation_deprecated
     in
-    EradicateChecks.{num; formal= formal_param; actual; is_formal_propagates_nullable}
+    EradicateChecks.{param_index; formal= formal_param; actual; is_formal_propagates_nullable}
   in
   (* Infer nullability of function call result based on its signature *)
   let preliminary_resolved_ret =

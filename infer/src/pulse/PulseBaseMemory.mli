@@ -37,3 +37,10 @@ val exist_edge_dest : AbstractValue.t -> t -> bool
 
 val yojson_of_t : t -> Yojson.Safe.t
 
+val is_allocated : t -> AbstractValue.t -> bool
+(** whether the address has a non-empty set of edges *)
+
+val canonicalize : get_var_repr:(AbstractValue.t -> AbstractValue.t) -> t -> t SatUnsat.t
+(** replace each address in the heap by its canonical representative according to the current
+    equality relation, represented by [get_var_repr]; also remove addresses that point to empty
+    edges *)

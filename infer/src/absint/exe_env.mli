@@ -8,14 +8,10 @@
 
 open! IStd
 
-(** Execution environments: basically a cache of where procedures are and what is their type
-    environment *)
+(** Execution environments are a means to get a function's type environment and integer widths and
+    cache those *)
 
-type file_data
-
-type t = private
-  { proc_map: file_data Procname.Hash.t  (** map from procedure name to file data *)
-  ; file_map: file_data SourceFile.Hash.t  (** map from source files to file data *) }
+type t
 
 val mk : unit -> t
 (** Create a new cache *)

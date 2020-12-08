@@ -100,6 +100,7 @@ end
 type t =
   { post: PostDomain.t  (** state at the current program point*)
   ; pre: PreDomain.t  (** inferred pre at the current program point *)
+  ; topl: (PulseTopl.state[@yojson.opaque])
   ; skipped_calls: SkippedCalls.t  (** set of skipped calls *)
   ; path_condition: PathCondition.t
   ; status: PostStatus.t
@@ -109,11 +110,12 @@ type t =
   ; mod_addrs : AbstractValue.Set.t }
   [@@deriving yojson_of]
 
-let pp f {post; pre; path_condition; skipped_calls; local_ptrvars; nonref_formals; imm_params;mod_addrs; status} =
-  F.fprintf f "@[<v>%a\n%a@;%a@;PRE=[%a]@;skipped_calls=%a@;local_ptrvars=%a@; nonref_formals=%a@;imm_params=%a@;mod_addrs=%a@]" PathCondition.pp path_condition
+let pp f {post; pre; topl; path_condition; skipped_calls; local_ptrvars; nonref_formals; imm_params;mod_addrs; status} =
+  F.fprintf f "@[<v>%a\n%a@;%a@;PRE=[%a]@;skipped_calls=%a@;local_ptrvars=%a@; nonref_formals=%a@;imm_params=%a@;mod_addrs=%a;TOPL=%a]" PathCondition.pp path_condition
       PostStatus.pp status PostDomain.pp post PreDomain.pp pre SkippedCalls.pp skipped_calls
       VarSet.pp local_ptrvars VarSet.pp nonref_formals
       VarSet.pp imm_params AbstractValue.Set.pp mod_addrs
+      PulseTopl.pp_state topl
 
 let set_status status astate = {astate with status}
 
@@ -184,6 +186,7 @@ module Stack = struct
         in
         ( { post= PostDomain.update astate.post ~stack:post_stack ~heap:post_heap ~attrs:post_attrs
           ; pre
+          ; topl= astate.topl
           ; skipped_calls= astate.skipped_calls
           ; path_condition= astate.path_condition
           ; status = astate.status
@@ -368,31 +371,31 @@ module AddressAttributes = struct
                 else []
               in
               if is_pc_eq_null then Ok null_astates else
-                  let valid_astate =
-                    let abdalloc = Attribute.AbdAllocated (procname, access_trace) in
-                    let valid_attr = (Attribute.MustBeValid access_trace) in
-                    add_one addr abdalloc astate (* {astate with path_condition = PathCondition.and_positive addr astate.path_condition} *)
-                    (* |> add_one addr valid_attr *) (* must be valid attribute just for pre *)
-                    |> abduce_attribute addr valid_attr
-                    |> abduce_attribute addr abdalloc in
-              (* invalid free *)
-              let invalid_free =
-                (*C or Cpp?*)
-                let invalid_attr = Attribute.Invalid (CFree, access_trace) in
-                { astate with status = PostStatus.Er None;(* path_condition = PathCondition.and_positive addr astate.path_condition *)}
-                (* abduce invalid heap into both pre and post *)
-                |> abduce_attribute addr invalid_attr
-                |> add_one addr invalid_attr
-              in
-              (* invalid uninit *)
-              let invalid_uninit =
-                let invalid_attr = Attribute.Invalid (UninitializedDereference, access_trace) in
-                { astate with status = PostStatus.Er None;}
-                (* abduce invalid heap into both pre and post *)
-                |> abduce_attribute addr invalid_attr
-                |> add_one addr invalid_attr
-              in
-              Ok ([valid_astate;invalid_free]@null_astates@[invalid_uninit]))
+                let valid_astate =
+                  let abdalloc = Attribute.AbdAllocated (procname, access_trace) in
+                  let valid_attr = (Attribute.MustBeValid access_trace) in
+                  add_one addr abdalloc astate (* {astate with path_condition = PathCondition.and_positive addr astate.path_condition} *)
+                  (* |> add_one addr valid_attr *) (* must be valid attribute just for pre *)
+                  |> abduce_attribute addr valid_attr
+                  |> abduce_attribute addr abdalloc in
+                (* invalid free *)
+                let invalid_free =
+                  (*C or Cpp?*)
+                  let invalid_attr = Attribute.Invalid (CFree, access_trace) in
+                  { astate with status = PostStatus.Er None;(* path_condition = PathCondition.and_positive addr astate.path_condition *)}
+                  (* abduce invalid heap into both pre and post *)
+                  |> abduce_attribute addr invalid_attr
+                  |> add_one addr invalid_attr
+                in
+                (* invalid uninit *)
+                let invalid_uninit =
+                  let invalid_attr = Attribute.Invalid (UninitializedDereference, access_trace) in
+                  { astate with status = PostStatus.Er None;}
+                  (* abduce invalid heap into both pre and post *)
+                  |> abduce_attribute addr invalid_attr
+                  |> add_one addr invalid_attr
+                in
+                Ok ([valid_astate;invalid_free]@null_astates@[invalid_uninit]))
           | Some _ -> (
               (* presume MustBeValid and Invalid were not added together *)
               (* dont need abduce *)
@@ -456,6 +459,7 @@ module Memory = struct
         in
         ( { post= PostDomain.update astate.post ~heap:post_heap
           ; pre= PreDomain.update astate.pre ~heap:foot_heap
+          ; topl= astate.topl
           ; skipped_calls= astate.skipped_calls
           ; path_condition= astate.path_condition
           ; status=astate.status
@@ -474,15 +478,21 @@ let mk_initial proc_desc =
      correspond to formals *)
   let location = Procdesc.get_loc proc_desc in
   let proc_name = Procdesc.get_proc_name proc_desc in
-  let formals=
-    ((Procdesc.get_formals proc_desc)@(List.map  (Procdesc.get_captured proc_desc) ~f:(fun (a,b,_) -> (a, b))))
-    |> List.map ~f:(fun (mangled, typ) ->
-               let pvar = Pvar.mk mangled proc_name in
-               ( Var.of_pvar pvar, typ
-                 ,  (AbstractValue.mk_fresh (), [ValueHistory.FormalDeclared (pvar, typ, location)]) ) )
+  let formals_and_captured =
+    let init_var mangled =
+      let pvar = Pvar.mk mangled proc_name in
+      (Var.of_pvar pvar, (AbstractValue.mk_fresh (), [ValueHistory.FormalDeclared (pvar, location)]))
+    in
+    let formals =
+      Procdesc.get_formals proc_desc |> List.map ~f:(fun (mangled, _) -> init_var mangled)
+    in
+    let captured =
+      Procdesc.get_captured proc_desc |> List.map ~f:(fun {CapturedVar.name} -> init_var name)
+    in
+    captured @ formals
   in
   let formal_vars, initial_stack =
-    List.fold formals ~init:([], (PreDomain.empty :> BaseDomain.t).stack)
+    List.fold formals_and_captured ~init:([], (PreDomain.empty :> BaseDomain.t).stack)
       ~f:(fun (vars, stack) (formal, typ, addr_loc) -> vars@[(formal,typ)],BaseStack.add formal addr_loc stack)
   in
   let access_trace = Trace.Immediate {location; history=[]} in
@@ -515,24 +525,24 @@ let mk_initial proc_desc =
     else
     (Procdesc.get_locals proc_desc)
       |> List.fold ~init:(Var.Set.empty, initial_stack, initial_heap, initial_attrs) ~f:(fun (vars, stack, heap, attrs) {ProcAttributes.name;ProcAttributes.typ} ->
-                 let pvar = Pvar.mk name proc_name in
-                 match typ.Typ.desc with
-                 | Typ.Tptr _ when not (Pvar.is_frontend_tmp pvar) ->
-                    let var = Var.of_pvar pvar in
-                    let n_addr = AbstractValue.mk_fresh () in
-                    let stack = BaseStack.add var (n_addr, [ValueHistory.VariableDeclared (pvar, location)]) stack in
-                    let addr_dst = AbstractValue.mk_fresh () in
-                    let heap =
-                      BaseMemory.register_address n_addr heap
-                      |> BaseMemory.add_edge n_addr Dereference (addr_dst, [])
-                    in
-                    let attrs =
-                      BaseAddressAttributes.add_one n_addr (MustBeValid access_trace) attrs
-                      |> BaseAddressAttributes.add_one addr_dst (Invalid (UninitializedDereference, access_trace))
-                    in
-                    (Var.Set.add var vars, stack, heap, attrs)
-                 | _ ->
-                    vars, stack, heap, attrs)
+        let pvar = Pvar.mk name proc_name in
+        match typ.Typ.desc with
+        | Typ.Tptr _ when not (Pvar.is_frontend_tmp pvar) ->
+            let var = Var.of_pvar pvar in
+            let n_addr = AbstractValue.mk_fresh () in
+            let stack = BaseStack.add var (n_addr, [ValueHistory.VariableDeclared (pvar, location)]) stack in
+            let addr_dst = AbstractValue.mk_fresh () in
+            let heap =
+              BaseMemory.register_address n_addr heap
+              |> BaseMemory.add_edge n_addr Dereference (addr_dst, [])
+            in
+            let attrs =
+              BaseAddressAttributes.add_one n_addr (MustBeValid access_trace) attrs
+              |> BaseAddressAttributes.add_one addr_dst (Invalid (UninitializedDereference, access_trace))
+            in
+            (Var.Set.add var vars, stack, heap, attrs)
+        | _ ->
+             vars, stack, heap, attrs)
   in
   let post =  PostDomain.update ~stack:initial_stack ~heap:initial_heap ~attrs:initial_attrs PostDomain.empty in
   let nonref_formals, imm_params =
@@ -548,8 +558,9 @@ let mk_initial proc_desc =
                      )
                  | _ -> Var.Set.add v acc_nonref), Var.Set.add v acc_imm)
   in
-  {pre; post; skipped_calls= SkippedCalls.empty; path_condition= PathCondition.true_;
-     status = Ok
+  {pre; post; topl= PulseTopl.start ()
+   ; skipped_calls= SkippedCalls.empty; path_condition= PathCondition.true_
+   ; status = Ok
    ; local_ptrvars = local_ptrvars
    ; nonref_formals = nonref_formals
    ; imm_params = imm_params
@@ -607,21 +618,13 @@ let set_post_cell (addr, history) (edges, attr_set) location astate =
          |> BaseAddressAttributes.add addr attr_set )
 
 
-let filter_for_summary astate =
+let filter_stack_for_summary astate =
   let post_stack =
     BaseStack.filter
       (fun var _ -> Var.appears_in_source_code var && not (is_local var astate))
       (astate.post :> BaseDomain.t).stack
   in
-  (* deregister empty edges *)
-  let deregister_empty heap =
-    BaseMemory.filter (fun _addr edges -> not (BaseMemory.Edges.is_empty edges)) heap
-  in
-  let pre_heap = deregister_empty (astate.pre :> base_domain).heap in
-  let post_heap = deregister_empty (astate.post :> base_domain).heap in
-  { astate with
-    pre= PreDomain.update astate.pre ~heap:pre_heap
-  ; post= PostDomain.update ~stack:post_stack ~heap:post_heap astate.post }
+  {astate with post= PostDomain.update ~stack:post_stack astate.post}
 
 
 let add_out_of_scope_attribute addr pvar location history heap typ =
@@ -659,10 +662,6 @@ let invalidate_locals pdesc astate : t =
 type summary = t [@@deriving yojson_of]
 
 let is_allocated {post; pre} v =
-  let is_heap_allocated base_mem v =
-    BaseMemory.find_opt v base_mem.heap
-    |> Option.exists ~f:(fun edges -> not (BaseMemory.Edges.is_empty edges))
-  in
   let is_pvar = function Var.ProgramVar _ -> true | Var.LogicalVar _ -> false in
   let is_stack_allocated base_mem v =
     BaseStack.exists
@@ -670,39 +669,104 @@ let is_allocated {post; pre} v =
       base_mem.stack
   in
   (* OPTIM: the post stack contains at least the pre stack so no need to check both *)
-  is_heap_allocated (post :> BaseDomain.t) v
-  || is_heap_allocated (pre :> BaseDomain.t) v
+  BaseMemory.is_allocated (post :> BaseDomain.t).heap v
+  || BaseMemory.is_allocated (pre :> BaseDomain.t).heap v
   || is_stack_allocated (post :> BaseDomain.t) v
 
 
-let incorporate_new_eqs astate (phi, new_eqs) =
-  List.fold_until new_eqs ~init:phi ~finish:Fn.id ~f:(fun phi (new_eq : PulseFormula.new_eq) ->
+let incorporate_new_eqs astate new_eqs =
+  List.fold_until new_eqs ~init:()
+    ~finish:(fun () -> Sat ())
+    ~f:(fun () (new_eq : PulseFormula.new_eq) ->
       match new_eq with
       | EqZero v when is_allocated astate v ->
           L.d_printfln "CONTRADICTION: %a = 0 but is allocated" AbstractValue.pp v ;
-          Stop PathCondition.false_
+          Stop Unsat
       | Equal (v1, v2)
         when (not (AbstractValue.equal v1 v2)) && is_allocated astate v1 && is_allocated astate v2
         ->
           L.d_printfln "CONTRADICTION: %a = %a but both are separately allocated" AbstractValue.pp
             v1 AbstractValue.pp v2 ;
-          Stop PathCondition.false_
+          Stop Unsat
       | _ ->
-          Continue phi )
+          Continue () )
 
+
+(** it's a good idea to normalize the path condition before calling this function *)
+let canonicalize astate =
+  let open SatUnsat.Import in
+  let get_var_repr v = PathCondition.get_var_repr astate.path_condition v in
+  let canonicalize_base stack heap =
+    let stack' = BaseStack.canonicalize ~get_var_repr stack in
+    (* note: this step also de-registers addresses pointing to empty edges *)
+    let+ heap' = BaseMemory.canonicalize ~get_var_repr heap in
+    (stack', heap')
+  in
+  (* need different functions for pre and post to appease the type system *)
+  let canonicalize_pre (pre : PreDomain.t) =
+    let+ stack', heap' = canonicalize_base (pre :> BaseDomain.t).stack (pre :> BaseDomain.t).heap in
+    PreDomain.update ~stack:stack' ~heap:heap' pre
+  in
+  let canonicalize_post (post : PostDomain.t) =
+    let+ stack', heap' =
+      canonicalize_base (post :> BaseDomain.t).stack (post :> BaseDomain.t).heap
+    in
+    PostDomain.update ~stack:stack' ~heap:heap' post
+  in
+  let* pre = canonicalize_pre astate.pre in
+  let+ post = canonicalize_post astate.post in
+  {astate with pre; post}
 
 let summary_of_post pdesc astate =
-  let astate = filter_for_summary astate in
-  let astate, live_addresses, _ = discard_unreachable astate in
-  let astate =
-    { astate with
-      path_condition=
-        PathCondition.simplify ~keep:live_addresses astate.path_condition
-        |> incorporate_new_eqs astate }
-  in
-  invalidate_locals pdesc astate
+  let open SatUnsat.Import in
+  (* NOTE: we normalize (to strengthen the equality relation used by canonicalization) then
+     canonicalize *before* garbage collecting unused addresses in case we detect any last-minute
+     contradictions about addresses we are about to garbage collect *)
+  let path_condition, is_unsat, new_eqs = PathCondition.is_unsat_expensive astate.path_condition in
+  if is_unsat then Unsat
+  else
+    let astate = {astate with path_condition} in
+    let* () = incorporate_new_eqs astate new_eqs in
+    L.d_printfln "Canonicalizing...@\n" ;
+    let* astate = canonicalize astate in
+    L.d_printfln "Canonicalized state: %a@\n" pp astate ;
+    let astate = filter_stack_for_summary astate in
+    let astate =
+      {astate with topl= PulseTopl.filter_for_summary astate.path_condition astate.topl}
+    in
+    let astate, live_addresses, _ = discard_unreachable astate in
+    let* path_condition, new_eqs =
+      PathCondition.simplify ~keep:live_addresses astate.path_condition
+    in
+    let+ () = incorporate_new_eqs astate new_eqs in
+    let astate =
+      {astate with path_condition; topl= PulseTopl.simplify ~keep:live_addresses astate.topl}
+    in
+    invalidate_locals pdesc astate
 
 
 let get_pre {pre} = (pre :> BaseDomain.t)
 
 let get_post {post} = (post :> BaseDomain.t)
+
+(* re-exported for mli *)
+let incorporate_new_eqs astate (phi, new_eqs) =
+  if PathCondition.is_unsat_cheap phi then phi
+  else match incorporate_new_eqs astate new_eqs with Unsat -> PathCondition.false_ | Sat () -> phi
+
+
+module Topl = struct
+  let small_step loc event astate =
+    {astate with topl= PulseTopl.small_step loc astate.path_condition event astate.topl}
+
+
+  let large_step ~call_location ~callee_proc_name ~substitution ?(condition = PathCondition.true_)
+      ~callee_prepost astate =
+    { astate with
+      topl=
+        PulseTopl.large_step ~call_location ~callee_proc_name ~substitution ~condition
+          ~callee_prepost astate.topl }
+
+
+  let get {topl} = topl
+end

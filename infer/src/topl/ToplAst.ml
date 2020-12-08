@@ -9,11 +9,11 @@ open! IStd
 
 type property_name = string [@@deriving compare, hash, sexp]
 
-type register_name = string
+type register_name = string [@@deriving compare]
 
 type variable_name = string
 
-type constant = Exp.t
+type constant = LiteralInt of int
 
 type value = Constant of constant | Register of register_name | Binding of variable_name
 
@@ -29,13 +29,17 @@ type assignment = register_name * variable_name
 (** a regular expression *)
 type procedure_name_pattern = string
 
+type label_pattern = ArrayWritePattern | ProcedureNamePattern of procedure_name_pattern
+
 (* TODO(rgrigore): Check that variable names don't repeat.  *)
 (* TODO(rgrigore): Check that registers are written at most once. *)
+(* INV: if [pattern] is ArrayWritePattern, then [arguments] has length 2.
+    (Now ensured by parser. TODO: refactor to ensure with types.) *)
 type label =
   { arguments: variable_name list option
   ; condition: condition
   ; action: assignment list
-  ; procedure_name: procedure_name_pattern }
+  ; pattern: label_pattern }
 
 type vertex = string [@@deriving compare, hash, sexp]
 

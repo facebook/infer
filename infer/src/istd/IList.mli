@@ -53,6 +53,9 @@ val force_until_first_some : 'a option lazy_t list -> 'a option
 val eval_until_first_some : (unit -> 'a option) list -> 'a option
 (** given a list of functions taking unit, evaluate and return the first one to return [Some x] *)
 
+val product : 'a list list -> 'a list list
+(** n-ary cartesian product *)
+
 val pp_print_list :
      max:int
   -> ?pp_sep:(Format.formatter -> unit -> unit)

@@ -48,7 +48,12 @@ module Misc = struct
 
 
   let early_exit : model =
-   fun _ ~callee_procname:_ _ ~ret:_ astate -> Ok [ExecutionDomain.ExitProgram astate]
+   fun {proc_desc} ~callee_procname:_ _ ~ret:_ astate ->
+    match AbductiveDomain.summary_of_post proc_desc astate with
+    | Unsat ->
+        Ok []
+    | Sat astate ->
+        Ok [ExecutionDomain.ExitProgram astate]
 
 
   let return_int : Int64.t -> model =
@@ -139,7 +144,7 @@ let free_or_delete operation deleted_access : model =
     (* freeing 0 is a no-op *)
     if PulseArithmetic.is_known_zero astate (fst deleted_access) then ok_continue astate
     else (
-        if not Config.pulse_isl then
+      if not Config.pulse_isl then
         let astate = PulseArithmetic.and_positive (fst deleted_access) astate in
       let invalidation =
         match operation with `Free -> Invalidation.CFree | `Delete -> Invalidation.CppDelete

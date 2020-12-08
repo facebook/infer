@@ -23,13 +23,13 @@ val sil_var_of_captured_var :
   -> Clang_ast_t.source_range
   -> Procname.t
   -> Clang_ast_t.decl_ref
-  -> (Pvar.t * Typ.t) option
+  -> (Pvar.t * Typ.t * bool) option
 
 val captured_vars_from_block_info :
      CContext.t
   -> Clang_ast_t.source_range
   -> Clang_ast_t.block_captured_variable list
-  -> (Pvar.t * Typ.t) list
+  -> (Pvar.t * Typ.t * bool) list
 
 val mk_temp_sil_var : Procdesc.t -> name:string -> Pvar.t
 

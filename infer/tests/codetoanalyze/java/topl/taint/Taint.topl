@@ -1,0 +1,20 @@
+property TaintTrack
+  prefix "StringBuilder"
+  prefix "Taint"
+  nondet (start building track)
+
+  // We start tracking when we see calls to Taint.badString
+  start -> start: *
+  start -> track: badString(IgnoreThis, Ret) => s := Ret
+
+  // Whatever we track, we'll keep tracking forever ...
+  track -> track: *
+
+  // ... but we also keep an eye for derived strings
+  track -> building:    StringBuilder(Builder, Void) => b := Builder
+  building -> building: *
+  building -> dirty:    append(Builder, S) when S == s
+  dirty -> track:       toString(Builder, S) => s := S
+
+  // If anything we track is sent to Taint.sendToDb, we warn
+  track -> error: sendToDb(IgnoreThis, S, Void) when S == s

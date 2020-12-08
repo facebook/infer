@@ -601,10 +601,10 @@ let pp fmt {threads; locks; accesses; ownership; attribute_map} =
 
 let add_unannotated_call_access formals pname actuals loc (astate : t) =
   apply_to_first_actual actuals astate ~f:(fun receiver ->
+      let ownership = OwnershipDomain.get_owned receiver astate.ownership in
       let access_opt =
-        (* FIXME this should use the ownership of the receiver! *)
         AccessSnapshot.make_unannotated_call_access formals receiver pname astate.locks
-          astate.threads Unowned loc
+          astate.threads ownership loc
       in
       {astate with accesses= AccessDomain.add_opt access_opt astate.accesses} )
 

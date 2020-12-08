@@ -18,7 +18,7 @@ module LatentIssue = PulseLatentIssue
    normalized them and don't need to normalize them again. *)
 type 'abductive_domain_t base_t =
   | ContinueProgram of 'abductive_domain_t
-  | ExitProgram of 'abductive_domain_t
+  | ExitProgram of AbductiveDomain.summary
   | AbortProgram of AbductiveDomain.summary
   | LatentAbortProgram of {astate: AbductiveDomain.summary; latent_issue: LatentIssue.t}
 [@@deriving yojson_of]
@@ -31,10 +31,10 @@ let mk_initial pdesc = ContinueProgram (AbductiveDomain.mk_initial pdesc)
 
 let leq ~lhs ~rhs =
   match (lhs, rhs) with
-  | AbortProgram astate1, AbortProgram astate2 ->
+  | AbortProgram astate1, AbortProgram astate2 | ExitProgram astate1, ExitProgram astate2 ->
       AbductiveDomain.leq ~lhs:(astate1 :> AbductiveDomain.t) ~rhs:(astate2 :> AbductiveDomain.t)
-  | ContinueProgram astate1, ContinueProgram astate2 | ExitProgram astate1, ExitProgram astate2 ->
-      AbductiveDomain.leq ~lhs:(astate1 :> AbductiveDomain.t) ~rhs:(astate2 :> AbductiveDomain.t)
+  | ContinueProgram astate1, ContinueProgram astate2 ->
+      AbductiveDomain.leq ~lhs:astate1 ~rhs:astate2
   | ( LatentAbortProgram {astate= astate1; latent_issue= issue1}
     , LatentAbortProgram {astate= astate2; latent_issue= issue2} ) ->
       LatentIssue.equal issue1 issue2
@@ -59,34 +59,22 @@ let pp fmt = function
         (astate :> AbductiveDomain.t)
 
 
-let map ~f exec_state =
-  match exec_state with
-  | ContinueProgram astate ->
-      ContinueProgram (f astate)
-  | ExitProgram astate ->
-      ExitProgram (f astate)
-  | AbortProgram astate ->
-      AbortProgram astate
-  | LatentAbortProgram {astate; latent_issue} ->
-      LatentAbortProgram {astate; latent_issue}
-
-
 type summary = AbductiveDomain.summary base_t [@@deriving yojson_of]
 
 let summary_of_posts pdesc posts =
   List.filter_mapi posts ~f:(fun i exec_state ->
-      let astate =
-        match exec_state with
-        | AbortProgram astate | LatentAbortProgram {astate} ->
-            (astate :> AbductiveDomain.t)
-        | ContinueProgram astate | ExitProgram astate ->
-            astate
-      in
       L.d_printfln "Creating spec out of state #%d:@\n%a" i pp exec_state ;
-      let astate, is_unsat = PulseArithmetic.is_unsat_expensive astate in
-      if is_unsat then None
-      else
-        Some
-          (map exec_state ~f:(fun _astate ->
-               (* prefer [astate] since it is an equivalent state that has been normalized *)
-               AbductiveDomain.summary_of_post pdesc astate )) )
+      match exec_state with
+      | ContinueProgram astate -> (
+        match AbductiveDomain.summary_of_post pdesc astate with
+        | Unsat ->
+            None
+        | Sat astate ->
+            Some (ContinueProgram astate) )
+      (* already a summary but need to reconstruct the variants to make the type system happy *)
+      | AbortProgram astate ->
+          Some (AbortProgram astate)
+      | ExitProgram astate ->
+          Some (ExitProgram astate)
+      | LatentAbortProgram {astate; latent_issue} ->
+          Some (LatentAbortProgram {astate; latent_issue}) )

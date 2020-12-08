@@ -23,11 +23,11 @@ open! IStd
 *)
 type t
 
-type vname = ToplAst.property_name * ToplAst.vertex
+(** from 0 to vcount()-1, inclusive *)
+type vindex = int [@@deriving compare]
 
-type vindex = int (* from 0 to vcount()-1, inclusive *)
-
-type tindex = int (* from 0 to tcount()-1, inclusive *)
+(** from 0 to tcount()-1, inclusive *)
+type tindex = int
 
 type transition = {source: vindex; target: vindex; label: ToplAst.label option}
 
@@ -35,13 +35,13 @@ val make : ToplAst.t list -> t
 
 val outgoing : t -> vindex -> tindex list
 
-val vname : t -> vindex -> vname
-
 val is_nondet : t -> vindex -> bool
 
 val vcount : t -> int
 
 val transition : t -> tindex -> transition
+
+val tfilter_map : t -> f:(transition -> 'a option) -> 'a list
 
 val is_skip : t -> tindex -> bool
 (** A transition is *skip* when it has no action, its guard is implied by all other guards, and its
@@ -52,6 +52,17 @@ val tcount : t -> int
 val max_args : t -> int
 
 val get_start_error_pairs : t -> (vindex * vindex) list
-(** Returns pairs [(i,j)] of vertex indices corresponding to pairs [((p, "start"), (p, "error"))] of
+(** Return pairs [(i,j)] of vertex indices corresponding to pairs [((p, "start"), (p, "error"))] of
     vertex names, where [p] ranges over property names. POST: no vertex index occurs more than once
     in the result. *)
+
+val registers : t -> ToplAst.register_name list
+
+val pp_message_of_state : Format.formatter -> t * tindex -> unit
+(** Print "property P reaches state E". *)
+
+val is_start : t -> vindex -> bool
+
+val is_error : t -> vindex -> bool
+
+val pp_transition : Format.formatter -> transition -> unit

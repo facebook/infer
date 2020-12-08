@@ -7,7 +7,7 @@
 
 (** Used-globals abstract domain *)
 
-type t = Llair.Global.Set.t [@@deriving equal, sexp]
+type t = Llair.Global.Set.t [@@deriving compare, equal, sexp]
 
 let pp = Llair.Global.Set.pp
 let report_fmt_thunk = Fun.flip pp
@@ -45,46 +45,14 @@ let exec_inst inst st =
   [%Trace.retn fun {pf} ->
     Option.iter ~f:(fun uses -> pf "post:{%a}" pp uses)]
 
-let exec_intrinsic ~skip_throw:_ _ intrinsic actuals st =
-  let name = Llair.Function.name intrinsic in
-  if
-    List.exists
-      [ "malloc"
-      ; "aligned_alloc"
-      ; "calloc"
-      ; "posix_memalign"
-      ; "realloc"
-      ; "mallocx"
-      ; "rallocx"
-      ; "xallocx"
-      ; "sallocx"
-      ; "dallocx"
-      ; "sdallocx"
-      ; "nallocx"
-      ; "malloc_usable_size"
-      ; "mallctl"
-      ; "mallctlnametomib"
-      ; "mallctlbymib"
-      ; "malloc_stats_print"
-      ; "strlen"
-      ; "__cxa_allocate_exception"
-      ; "_ZN5folly13usingJEMallocEv" ]
-      ~f:(String.equal name)
-  then List.fold ~f:used_globals actuals st |> fun res -> Some (Some res)
-  else None
-
 type from_call = t [@@deriving sexp]
 
 (* Set abstract state to bottom (i.e. empty set) at function entry *)
 let call ~summaries:_ ~globals:_ ~actuals ~areturn:_ ~formals:_ ~freturn:_
     ~locals:_ st =
-  (empty, List.fold ~f:used_globals actuals st)
+  (empty, IArray.fold ~f:used_globals actuals st)
 
-let resolve_callee lookup ptr st =
-  let st = used_globals ptr st in
-  match Llair.Function.of_exp ptr with
-  | Some callee -> (lookup callee, st)
-  | None -> ([], st)
+let resolve_callee _ _ _ = []
 
 (* A function summary is the set of global registers accessed by that
    function and its transitive callees *)
@@ -96,11 +64,7 @@ let apply_summary st summ = Some (Llair.Global.Set.union st summ)
 
 (** Query *)
 
-type r =
-  | Per_function of Llair.Global.Set.t Llair.Function.Map.t
-  | Declared of Llair.Global.Set.t
-
-let by_function : r -> Llair.Function.t -> t =
+let by_function : Domain_intf.used_globals -> Llair.Function.t -> t =
  fun s fn ->
   [%Trace.call fun {pf} -> pf "%a" Llair.Function.pp fn]
   ;

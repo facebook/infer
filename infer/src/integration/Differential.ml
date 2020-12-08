@@ -246,10 +246,7 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; unreachable_issue;
       in
       let pp_extra_msg fmt () =
         if Config.developer_mode then CostItem.pp_cost_msg fmt curr_item
-        else
-          Format.fprintf fmt
-            "Please make sure this is an expected change. You can inspect the trace to understand \
-             the complexity increase:"
+        else Format.fprintf fmt "Please make sure this is an expected change."
       in
       let ui_msg =
         if is_on_ui_thread then

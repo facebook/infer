@@ -6,17 +6,9 @@
 TESTS_DIR = ../../../..
 
 INFER_OPTIONS = --seconds-per-iteration 100 --symops-per-iteration 100000 --topl-properties SkipAfterRemove.topl --topl-biabd-only
+#INFER_OPTIONS = --topl-properties SkipAfterRemove.topl --pulse-only
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard *.java)
 
-# include $(TESTS_DIR)/javac.make
-
-.PHONY: test
-test: ;
-
-.PHONY: replace
-replace: ;
-
-.PHONY: clean
-clean: ;
+include $(TESTS_DIR)/javac.make

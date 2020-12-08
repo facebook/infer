@@ -118,6 +118,8 @@ val report_custom_error : bool
 
 val report_force_relative_path : bool
 
+val report_immutable_modifications : bool
+
 val report_nullable_inconsistency : bool
 
 val save_compact_summaries : bool
@@ -401,7 +403,7 @@ val nullsafe_annotation_graph : bool
 
 val nullsafe_disable_field_not_initialized_in_nonstrict_classes : bool
 
-val nullsafe_optimistic_third_party_params_in_non_strict : bool
+val nullsafe_optimistic_third_party_in_default_mode : bool
 
 val nullsafe_third_party_signatures : string option
 
@@ -596,6 +598,10 @@ val test_filtering : bool
 val testing_mode : bool
 
 val threadsafe_aliases : Yojson.Basic.t
+
+val topl_max_conjuncts : int
+
+val topl_max_disjuncts : int
 
 val topl_properties : string list
 

@@ -56,24 +56,36 @@ module Closures = struct
 
   let fake_capture_field_prefix = "__capture_"
 
-  let mk_fake_field ~id =
+  let string_of_capture_mode = function
+    | Pvar.ByReference ->
+        "by_ref_"
+    | Pvar.ByValue ->
+        "by_value_"
+
+
+  let fake_captured_by_ref_field_prefix =
+    Printf.sprintf "%s%s" fake_capture_field_prefix (string_of_capture_mode Pvar.ByReference)
+
+
+  let mk_fake_field ~id mode =
     Fieldname.make
       (Typ.CStruct (QualifiedCppName.of_list ["std"; "function"]))
-      (Printf.sprintf "%s%d" fake_capture_field_prefix id)
+      (Printf.sprintf "%s%s%d" fake_capture_field_prefix (string_of_capture_mode mode) id)
 
 
-  let is_captured_fake_access (access : _ HilExp.Access.t) =
+  let is_captured_by_ref_fake_access (access : _ HilExp.Access.t) =
     match access with
     | FieldAccess fieldname
-      when String.is_prefix ~prefix:fake_capture_field_prefix (Fieldname.to_string fieldname) ->
+      when String.is_prefix ~prefix:fake_captured_by_ref_field_prefix
+             (Fieldname.to_string fieldname) ->
         true
     | _ ->
         false
 
 
   let mk_capture_edges captured =
-    List.foldi captured ~init:Memory.Edges.empty ~f:(fun id edges captured_addr_trace ->
-        Memory.Edges.add (HilExp.Access.FieldAccess (mk_fake_field ~id)) captured_addr_trace edges )
+    List.foldi captured ~init:Memory.Edges.empty ~f:(fun id edges (mode, addr, trace) ->
+        Memory.Edges.add (HilExp.Access.FieldAccess (mk_fake_field ~id mode)) (addr, trace) edges )
 
 
   let check_captured_addresses action lambda_addr (astate : t) =
@@ -85,7 +97,7 @@ module Closures = struct
           IContainer.iter_result ~fold:Attributes.fold attributes ~f:(function
             | Attribute.Closure _ ->
                 IContainer.iter_result ~fold:Memory.Edges.fold edges ~f:(fun (access, addr_trace) ->
-                    if is_captured_fake_access access then
+                    if is_captured_by_ref_fake_access access then
                       let+ _ = check_addr_access action addr_trace astate in
                       ()
                     else Ok () )
@@ -99,7 +111,7 @@ module Closures = struct
     let captured_addresses =
       List.filter_map captured ~f:(fun (captured_as, (address_captured, trace_captured), mode) ->
           let new_trace = ValueHistory.Capture {captured_as; mode; location} :: trace_captured in
-          Some (address_captured, new_trace) )
+          Some (mode, address_captured, new_trace) )
     in
     let closure_addr_hist = (AbstractValue.mk_fresh (), [ValueHistory.Assignment location]) in
     let fake_capture_edges = mk_capture_edges captured_addresses in
@@ -289,7 +301,9 @@ let write_id_list id astate_new_addr_loc_list =
            write_id id new_addr_loc astate)
 
 let havoc_id id loc_opt astate =
-  if Stack.mem (Var.of_id id) astate then write_id id (AbstractValue.mk_fresh (), loc_opt) astate
+  (* Topl needs to track the return value of a method; even if nondet now, it may be pruned later. *)
+  if Topl.is_deep_active () || Stack.mem (Var.of_id id) astate then
+    write_id id (AbstractValue.mk_fresh (), loc_opt) astate
   else astate
 
 
@@ -348,7 +362,7 @@ let check_memory_leak pname location unreachable_addrs astate=
 let write_access_update pname location addr_trace_ref access addr_trace_obj astate=
   let live_addresses = BaseDomain.reachable_addresses_from Var.appears_in_source_code (astate.AbductiveDomain.post :> BaseDomain.t) in
   let astate = Memory.add_edge addr_trace_ref access addr_trace_obj location astate
-             (* |> Memory.map_pre_heap ~f:(BaseMemory.add_edge (fst addr_trace_ref) access addr_trace_obj) *)  in
+    (* |> Memory.map_pre_heap ~f:(BaseMemory.add_edge (fst addr_trace_ref) access addr_trace_obj) *)  in
   let live_addresses_after = BaseDomain.reachable_addresses_from Var.appears_in_source_code (astate.AbductiveDomain.post :> BaseDomain.t) in
   let unreachable_addrs = AbstractValue.Set.diff live_addresses live_addresses_after in
   check_memory_leak pname location unreachable_addrs astate
@@ -538,16 +552,16 @@ let check_memory_leak_unreachable_comb pname unreachable_addrs location astate =
   if Procname.is_java pname then
       Ok astate
   else
-      let check_memory_leak result attributes = check_memory_abdleak_attrs location astate result attributes in
-      match astate.AbductiveDomain.status with
-      | AbductiveDomain.PostStatus.Ok ->
-         List.fold unreachable_addrs (* ~init:(Ok ()) *) ~init:(Ok astate) ~f:(fun res addr ->
-                 match AbductiveDomain.AddressAttributes.find_opt addr astate with
-                 | Some unreachable_attrs ->
-                    check_memory_leak res unreachable_attrs
-                 | None ->
-                    res )
-      | AbductiveDomain.PostStatus.Er _ -> Ok astate
+    let check_memory_leak result attributes = check_memory_abdleak_attrs location astate result attributes in
+    match astate.AbductiveDomain.status with
+    | AbductiveDomain.PostStatus.Ok ->
+        List.fold unreachable_addrs (* ~init:(Ok ()) *) ~init:(Ok astate) ~f:(fun res addr ->
+            match AbductiveDomain.AddressAttributes.find_opt addr astate with
+            | Some unreachable_attrs ->
+                check_memory_leak res unreachable_attrs
+            | None ->
+                res )
+    | AbductiveDomain.PostStatus.Er _ -> Ok astate
 
 let get_dynamic_type_unreachable_values vars astate =
   (* For each unreachable address we find a root variable for it; if there is
@@ -664,9 +678,9 @@ let apply_callee ~caller_proc_desc callee_pname call_loc callee_exec_state ~ret
       PulseInterproc.apply_prepost callee_pname call_loc ~callee_prepost ~captured_vars_with_actuals
         ~formals ~actuals astate
     with
-    | (FeasiblePath (Error _) | InfeasiblePath) as path_result ->
+    | (Sat (Error _) | Unsat) as path_result ->
         path_result
-    | FeasiblePath (Ok (post, return_val_opt, subst)) ->
+    | Sat (Ok (post, return_val_opt, subst)) ->
         let event = ValueHistory.Call {f= Call callee_pname; location= call_loc; in_call= []} in
         let post =
           match return_val_opt with
@@ -678,35 +692,29 @@ let apply_callee ~caller_proc_desc callee_pname call_loc callee_exec_state ~ret
         (f post subst)
   in
   let open ExecutionDomain in
+  let open SatUnsat.Import in
   match callee_exec_state with
-  | AbortProgram astate ->
-    if not Config.pulse_isl then
-      map_call_result
-        (astate :> AbductiveDomain.t)
-        ~f:(fun astate ->
-          let astate_summary = AbductiveDomain.summary_of_post caller_proc_desc astate in
-          FeasiblePath (Ok ((AbortProgram astate_summary), (AbstractValue.Map.empty))) )
-     else
-        Ok ( (callee_exec_state, (AbstractValue.Map.empty)))
   | ContinueProgram astate ->
-      map_call_result astate ~f:(fun astate -> FeasiblePath (Ok (ContinueProgram astate, subst)))
-  | ExitProgram astate ->
-      map_call_result astate ~f:(fun astate -> FeasiblePath (Ok (ExitProgram astate, subst)))
-  | LatentAbortProgram {astate; latent_issue} ->
+      map_call_result astate ~f:(fun astate -> Sat (Ok (ContinueProgram astate, subst)))
+  | AbortProgram astate | ExitProgram astate | LatentAbortProgram {astate} ->
       map_call_result
         (astate :> AbductiveDomain.t)
         ~f:(fun astate subst ->
-          let astate_summary = AbductiveDomain.summary_of_post caller_proc_desc astate in
-          if PulseArithmetic.is_unsat_cheap (astate_summary :> AbductiveDomain.t) then
-            InfeasiblePath
-          else
-            let latent_issue =
-              LatentIssue.add_call (CallEvent.Call callee_pname, call_loc) latent_issue
-            in
-            FeasiblePath
-              ( if LatentIssue.should_report astate_summary then
+            let astate_summary = AbductiveDomain.summary_of_post caller_proc_desc astate in
+            match callee_exec_state with
+            | ContinueProgram _ ->
+                assert false
+            | AbortProgram _ ->
+                Ok (AbortProgram astate_summary)
+            | ExitProgram _ ->
+                Ok (ExitProgram astate_summary)
+            | LatentAbortProgram {latent_issue} ->
+                let latent_issue =
+                  LatentIssue.add_call (CallEvent.Call callee_pname, call_loc) latent_issue
+                in
+                if LatentIssue.should_report astate_summary then
                   Error (LatentIssue.to_diagnostic latent_issue, (astate_summary :> AbductiveDomain.t))
-                else Ok ((LatentAbortProgram {astate= astate_summary; latent_issue}), subst) ) )
+                else Ok ((LatentAbortProgram {astate= astate_summary; latent_issue}), subst) )
 
 let check_all_invalid callees_callers_match callee_proc_name call_location astate =
   let res = (match astate.AbductiveDomain.status with
@@ -758,9 +766,12 @@ let check_imply_er callers_invalids callee_proc_name call_location call_astate =
 let get_captured_actuals location ~captured_vars ~actual_closure astate =
   let* astate, this_value_addr = eval_access location actual_closure Dereference astate in
   let+ _, astate, captured_vars_with_actuals =
-    List.fold_result captured_vars ~init:(0, astate, []) ~f:(fun (id, astate, captured) var ->
+    List.fold_result captured_vars ~init:(0, astate, [])
+      ~f:(fun (id, astate, captured) (var, mode) ->
         let+ astate, captured_actual =
-          eval_access location this_value_addr (FieldAccess (Closures.mk_fake_field ~id)) astate
+          eval_access location this_value_addr
+            (FieldAccess (Closures.mk_fake_field ~id mode))
+            astate
         in
         (id + 1, astate, (var, captured_actual) :: captured) )
   in
@@ -777,9 +788,9 @@ let call ~caller_proc_desc err_log ~(callee_data : (Procdesc.t * PulseSummary.t)
       in
       let captured_vars =
         Procdesc.get_captured callee_proc_desc
-        |> List.map ~f:(fun (mangled, _, _) ->
-            let pvar = Pvar.mk mangled callee_pname in
-            Var.of_pvar pvar )
+        |> List.map ~f:(fun {CapturedVar.name; capture_mode} ->
+               let pvar = Pvar.mk name callee_pname in
+               (Var.of_pvar pvar, capture_mode) )
       in
       let+ astate, captured_vars_with_actuals =
         match actuals with
@@ -842,14 +853,14 @@ let call ~caller_proc_desc err_log ~(callee_data : (Procdesc.t * PulseSummary.t)
               apply_callee ~caller_proc_desc callee_pname call_loc callee_exec_state
                 ~captured_vars_with_actuals ~formals ~actuals ~ret astate
             with
-            | InfeasiblePath ->
+            | Unsat ->
                 (* couldn't apply pre/post pair *)
                 posts
-            | FeasiblePath post -> (
+            | Sat post -> (
               match PulseReport.report_error caller_proc_desc err_log post with
-              | Error InfeasiblePath ->
+              | Error Unsat ->
                   posts
-              | Error (FeasiblePath post) | Ok post ->
+              | Error (Sat post) | Ok post ->
                   post :: posts ) )
     | None ->
       (* no spec found for some reason (unknown function, ...) *)
