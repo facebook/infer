@@ -74,8 +74,7 @@ module FileContainsStringMatcher = struct
           hence we read the file twice to check if it doesn't contain
           regexp_not *)
     Option.value_map regexp_not_opt ~default:true ~f:(fun regexp_not ->
-        let file_in = In_channel.create path in
-        not (loop regexp_not file_in) )
+        Utils.with_file_in path ~f:(fun file_in -> not (loop regexp_not file_in)) )
 
 
   let create_matcher (s_patterns : contains_pattern list) =
