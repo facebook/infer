@@ -50,45 +50,73 @@ let match_method language proc_name method_name =
   && String.equal (Procname.get_method proc_name) method_name
 
 
+type contains_pattern = {contains: string; not_contains: string option}
+
 (* Module to create matcher based on strings present in the source file *)
 module FileContainsStringMatcher = struct
   type matcher = SourceFile.t -> bool
 
   let default_matcher : matcher = fun _ -> false
 
-  let file_contains regexp file_in =
-    let rec loop () =
+  (* check if the file contains the regexp but not regexp_not *)
+  let file_contains regexp regexp_not_opt source_file =
+    let rec loop regexp file_in =
       try Str.search_forward regexp (In_channel.input_line_exn file_in) 0 >= 0 with
       | Caml.Not_found ->
-          loop ()
+          loop regexp file_in
       | End_of_file ->
           false
     in
-    loop ()
+    let path = SourceFile.to_abs_path source_file in
+    let contains_regexp = Utils.with_file_in path ~f:(fun file_in -> loop regexp file_in) in
+    contains_regexp
+    && (* [loop] leaves the read position where it found the match,
+          hence we read the file twice to check if it doesn't contain
+          regexp_not *)
+    Option.value_map regexp_not_opt ~default:true ~f:(fun regexp_not ->
+        let file_in = In_channel.create path in
+        not (loop regexp_not file_in) )
 
 
-  let create_matcher s_patterns =
+  let create_matcher (s_patterns : contains_pattern list) =
     if List.is_empty s_patterns then default_matcher
     else
       let source_map = ref SourceFile.Map.empty in
-      let regexp = Str.regexp (String.concat ~sep:"\\|" s_patterns) in
-      fun source_file ->
-        try SourceFile.Map.find source_file !source_map
-        with Caml.Not_found -> (
-          try
-            let file_in = In_channel.create (SourceFile.to_abs_path source_file) in
-            let pattern_found = file_contains regexp file_in in
-            In_channel.close file_in ;
-            source_map := SourceFile.Map.add source_file pattern_found !source_map ;
-            pattern_found
-          with Sys_error _ -> false )
+      let not_contains_patterns =
+        List.exists ~f:(fun {not_contains} -> Option.is_some not_contains) s_patterns
+      in
+      let disjunctive_regexp =
+        Str.regexp (String.concat ~sep:"\\|" (List.map ~f:(fun {contains} -> contains) s_patterns))
+      in
+      let cond check_regexp =
+        if not_contains_patterns then
+          List.exists
+            ~f:(fun {contains; not_contains} ->
+              check_regexp (Str.regexp contains) (Option.map not_contains ~f:Str.regexp) )
+            s_patterns
+        else check_regexp disjunctive_regexp None
+      in
+      function
+      | source_file ->
+          let check_regexp regexp regexp_not_opt =
+            match SourceFile.Map.find_opt source_file !source_map with
+            | Some result ->
+                result
+            | None -> (
+              try
+                let pattern_found = file_contains regexp regexp_not_opt source_file in
+                source_map := SourceFile.Map.add source_file pattern_found !source_map ;
+                pattern_found
+              with Sys_error _ -> false )
+          in
+          cond check_regexp
 end
 
 type method_pattern = {class_name: string; method_name: string option}
 
 type pattern =
   | Method_pattern of Language.t * method_pattern
-  | Source_contains of Language.t * string
+  | Source_pattern of Language.t * contains_pattern
 
 (* Module to create matcher based on source file names or class names and method names *)
 module FileOrProcMatcher = struct
@@ -127,7 +155,7 @@ module FileOrProcMatcher = struct
   let create_file_matcher patterns =
     let s_patterns, m_patterns =
       let collect (s_patterns, m_patterns) = function
-        | Source_contains (_, s) ->
+        | Source_pattern (_, s) ->
             (s :: s_patterns, m_patterns)
         | Method_pattern (_, mp) ->
             (s_patterns, mp :: m_patterns)
@@ -158,9 +186,12 @@ module FileOrProcMatcher = struct
     | Method_pattern (language, mp) ->
         Format.fprintf fmt "Method pattern (%s) {@\n%a}@\n" (Language.to_string language)
           pp_method_pattern mp
-    | Source_contains (language, sc) ->
+    | Source_pattern (language, {contains= sc; not_contains= None}) ->
         Format.fprintf fmt "Source contains (%s) {@\n%a}@\n" (Language.to_string language)
           pp_source_contains sc
+    | Source_pattern (language, {contains= sc; not_contains= Some snc}) ->
+        Format.fprintf fmt "Source contains (%s) {@\n%a} and not contains  {@\n%a} @\n"
+          (Language.to_string language) pp_source_contains sc pp_source_contains snc
 end
 
 (* of module FileOrProcMatcher *)
@@ -180,6 +211,7 @@ end
 let patterns_of_json_with_key (json_key, json) =
   let default_method_pattern = {class_name= ""; method_name= None} in
   let default_source_contains = "" in
+  let default_not_contains = {contains= default_source_contains; not_contains= None} in
   let language_of_string s =
     match Language.of_string s with
     | Some Language.Java ->
@@ -209,7 +241,7 @@ let patterns_of_json_with_key (json_key, json) =
           | (key, _) :: _ when is_method_pattern key ->
               Ok (Method_pattern (language, default_method_pattern))
           | (key, _) :: _ when is_source_contains key ->
-              Ok (Source_contains (language, default_source_contains))
+              Ok (Source_pattern (language, default_not_contains))
           | _ :: tl ->
               loop tl
         in
@@ -232,21 +264,23 @@ let patterns_of_json_with_key (json_key, json) =
       in
       List.fold ~f:loop ~init:default_method_pattern assoc
     and create_string_contains assoc =
-      let loop sc = function
+      let loop cp = function
         | key, `String pattern when String.equal key "source_contains" ->
-            pattern
+            {cp with contains= pattern}
+        | key, `String pattern when String.equal key "source_not_contains" ->
+            {cp with not_contains= Some pattern}
         | key, _ when String.equal key "language" ->
-            sc
+            cp
         | _ ->
-            L.(die UserError) "Failed to parse %s" (Yojson.Basic.to_string (`Assoc assoc))
+            L.(die UserError) "Failed to parse here %s" (Yojson.Basic.to_string (`Assoc assoc))
       in
-      List.fold ~f:loop ~init:default_source_contains assoc
+      List.fold ~f:loop ~init:default_not_contains assoc
     in
     match detect_pattern assoc with
     | Ok (Method_pattern (language, _)) ->
         Ok (Method_pattern (language, create_method_pattern assoc))
-    | Ok (Source_contains (language, _)) ->
-        Ok (Source_contains (language, create_string_contains assoc))
+    | Ok (Source_pattern (language, _)) ->
+        Ok (Source_pattern (language, create_string_contains assoc))
     | Error _ as error ->
         error
   in
@@ -304,7 +338,10 @@ let filters_from_inferconfig inferconfig : filters =
       is_matching (List.map ~f:Str.regexp inferconfig.blacklist)
     in
     let blacklist_files_containing_filter : path_filter =
-      FileContainsStringMatcher.create_matcher inferconfig.blacklist_files_containing
+      FileContainsStringMatcher.create_matcher
+        (List.map
+           ~f:(fun s -> {contains= s; not_contains= None})
+           inferconfig.blacklist_files_containing)
     in
     function
     | source_file ->
