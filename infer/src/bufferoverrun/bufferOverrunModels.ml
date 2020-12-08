@@ -58,22 +58,23 @@ let eval_binop ~f e1 e2 =
   {exec; check= no_check}
 
 
-(* It returns a tuple of:
-     - type of array element
-     - stride of the type
-     - array size
-     - flexible array size *)
-let get_malloc_info : Exp.t -> Typ.t * Int.t option * Exp.t * Exp.t option = function
+let get_malloc_info_opt = function
   | Exp.BinOp (Binop.Mult _, Exp.Sizeof {typ; nbytes}, length)
   | Exp.BinOp (Binop.Mult _, length, Exp.Sizeof {typ; nbytes}) ->
-      (typ, nbytes, length, None)
+      Some (typ, nbytes, length, None)
   (* In Java all arrays are dynamically allocated *)
   | Exp.Sizeof {typ; nbytes; dynamic_length= Some arr_length} when Language.curr_language_is Java ->
-      (typ, nbytes, arr_length, Some arr_length)
+      Some (typ, nbytes, arr_length, Some arr_length)
   | Exp.Sizeof {typ; nbytes; dynamic_length} ->
-      (typ, nbytes, Exp.one, dynamic_length)
-  | x ->
-      (Typ.mk (Typ.Tint Typ.IChar), Some 1, x, None)
+      Some (typ, nbytes, Exp.one, dynamic_length)
+  | _ ->
+      None
+
+
+let get_malloc_info : Exp.t -> Typ.t * Int.t option * Exp.t * Exp.t option =
+ fun x ->
+  get_malloc_info_opt x
+  |> IOption.if_none_eval ~f:(fun () -> (Typ.mk (Typ.Tint Typ.IChar), Some 1, x, None))
 
 
 let check_alloc_size ~can_be_zero size_exp {location; integer_type_widths} mem cond_set =

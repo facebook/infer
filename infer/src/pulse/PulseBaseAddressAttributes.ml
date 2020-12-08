@@ -85,6 +85,15 @@ let check_valid address attrs =
       Error invalidation
 
 
+let check_initialized address attrs =
+  L.d_printfln "Checking if %a is initialized" AbstractValue.pp address ;
+  match Graph.find_opt address attrs |> Option.bind ~f:Attributes.get_uninitialized with
+  | Some trace ->
+      Error trace
+  | None ->
+      Ok ()
+
+
 let get_attribute getter address attrs =
   let open Option.Monad_infix in
   Graph.find_opt address attrs >>= getter
@@ -96,6 +105,14 @@ let remove_allocation_attr address memory =
       remove_one address (Attribute.Allocated (procname, trace)) memory
   | None ->
       memory
+
+
+let initialize address attrs =
+  match get_attribute Attributes.get_uninitialized address attrs with
+  | Some trace ->
+      remove_one address (Attribute.Uninitialized trace) attrs
+  | None ->
+      attrs
 
 
 let get_closure_proc_name = get_attribute Attributes.get_closure_proc_name

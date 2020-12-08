@@ -34,6 +34,7 @@ module Attribute = struct
     | Invalid of Invalidation.t * Trace.t
     | MustBeValid of Trace.t
     | StdVectorReserve
+    | Uninitialized of Trace.t
     | WrittenTo of Trace.t
   [@@deriving compare, variants]
 
@@ -70,6 +71,8 @@ module Attribute = struct
 
   let end_of_collection_rank = Variants.to_rank EndOfCollection
 
+  let uninitialized_rank = Variants.to_rank (Uninitialized dummy_trace)
+
   let pp f attribute =
     let pp_string_if_debug string fmt =
       if Config.debug_level_analysis >= 3 then F.pp_print_string fmt string
@@ -98,6 +101,10 @@ module Attribute = struct
         F.fprintf f "MustBeValid %a" (Trace.pp ~pp_immediate:(pp_string_if_debug "access")) trace
     | StdVectorReserve ->
         F.pp_print_string f "std::vector::reserve()"
+    | Uninitialized trace ->
+        F.fprintf f "Uninitialized %a"
+          (Trace.pp ~pp_immediate:(pp_string_if_debug "declaration"))
+          trace
     | WrittenTo trace ->
         F.fprintf f "WrittenTo %a" (Trace.pp ~pp_immediate:(pp_string_if_debug "mutation")) trace
 end
@@ -167,6 +174,13 @@ module Attributes = struct
            typ )
 
 
+  let get_uninitialized attrs =
+    Set.find_rank attrs Attribute.uninitialized_rank
+    |> Option.map ~f:(fun attr ->
+           let[@warning "-8"] (Attribute.Uninitialized trace) = attr in
+           trace )
+
+
   include Set
 end
 
@@ -183,6 +197,7 @@ let is_suitable_for_pre = function
   | EndOfCollection
   | Invalid _
   | StdVectorReserve
+  | Uninitialized _
   | WrittenTo _ ->
       false
 
@@ -194,6 +209,8 @@ let map_trace ~f = function
       Invalid (invalidation, f trace)
   | MustBeValid trace ->
       MustBeValid (f trace)
+  | Uninitialized trace ->
+      Uninitialized (f trace)
   | WrittenTo trace ->
       WrittenTo (f trace)
   | ( AddressOfCppTemporary _

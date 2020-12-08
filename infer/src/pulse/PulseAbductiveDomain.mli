@@ -126,6 +126,8 @@ module AddressAttributes : sig
 
   val check_valid : Trace.t -> AbstractValue.t -> t -> (t, Invalidation.t * Trace.t) result
 
+  val check_initialized : AbstractValue.t -> t -> (unit, Trace.t) result
+
   val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
   val allocate : Procname.t -> AbstractValue.t * ValueHistory.t -> Location.t -> t -> t
@@ -179,6 +181,20 @@ val incorporate_new_eqs : t -> PathCondition.t * PathCondition.new_eqs -> PathCo
     e.g. [x = 0] is not compatible with [x] being allocated, and [x = y] is not compatible with [x]
     and [y] being allocated separately. In those cases, the resulting path condition is
     {!PathCondition.false_}. *)
+
+val initialize : AbstractValue.t -> t -> t
+(** Remove "Uninitialized" attribute of the given address *)
+
+val set_uninitialized :
+     [ `LocalDecl of Pvar.t * AbstractValue.t option
+       (** the second optional parameter is for the address of the variable *)
+     | `Malloc of AbstractValue.t * ValueHistory.t
+       (** the address parameter is a newly allocated address *) ]
+  -> Typ.t
+  -> Location.t
+  -> t
+  -> t
+(** Add "Uninitialized" attributes when a variable is declared or a memory is allocated by malloc. *)
 
 module Topl : sig
   val small_step : Location.t -> PulseTopl.event -> t -> t

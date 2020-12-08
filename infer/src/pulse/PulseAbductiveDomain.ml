@@ -42,7 +42,11 @@ type base_domain = BaseDomain.t =
   {heap: BaseMemory.t; stack: BaseStack.t; attrs: BaseAddressAttributes.t}
 
 (** represents the post abstract state at each program point *)
-module PostDomain : BaseDomainSig = struct
+module PostDomain : sig
+  include BaseDomainSig
+
+  val initialize : AbstractValue.t -> t -> t
+end = struct
   include BaseDomain
 
   let update ?stack ?heap ?attrs foot =
@@ -70,6 +74,11 @@ module PostDomain : BaseDomainSig = struct
       BaseAddressAttributes.filter_with_discarded_addrs (fun address _ -> f address) foot.attrs
     in
     (update ~heap:heap' ~attrs:attrs' foot, discarded_addresses)
+
+
+  let initialize address x =
+    let attrs = BaseAddressAttributes.initialize address x.attrs in
+    update ~attrs x
 end
 
 (* NOTE: [PreDomain] and [Domain] theoretically differ in that [PreDomain] should be the inverted lattice of [Domain], but since we never actually join states or check implication the two collapse into one. *)
@@ -193,6 +202,11 @@ module AddressAttributes = struct
     abduce_attribute addr (MustBeValid access_trace) astate
 
 
+  let check_initialized addr astate =
+    let+ () = BaseAddressAttributes.check_initialized addr (astate.post :> base_domain).attrs in
+    ()
+
+
   (** [astate] with [astate.post.attrs = f astate.post.attrs] *)
   let map_post_attrs ~f astate =
     let new_post = PostDomain.update astate.post ~attrs:(f (astate.post :> base_domain).attrs) in
@@ -299,12 +313,51 @@ module Memory = struct
   let find_opt address astate = BaseMemory.find_opt address (astate.post :> base_domain).heap
 end
 
+let set_uninitialized_post src typ location (post : PostDomain.t) =
+  match typ.Typ.desc with
+  | Tint _ | Tfloat _ | Tptr _ ->
+      let {stack; attrs} = (post :> base_domain) in
+      let stack, addr, history =
+        match src with
+        | `LocalDecl (pvar, addr_opt) ->
+            let history = [ValueHistory.VariableDeclared (pvar, location)] in
+            let stack, addr =
+              match addr_opt with
+              | None ->
+                  let addr = AbstractValue.mk_fresh () in
+                  (BaseStack.add (Var.of_pvar pvar) (addr, history) stack, addr)
+              | Some addr ->
+                  (stack, addr)
+            in
+            (stack, addr, history)
+        | `Malloc (addr, history) ->
+            (stack, addr, history)
+      in
+      let attrs =
+        BaseAddressAttributes.add_one addr (Uninitialized (Immediate {location; history})) attrs
+      in
+      PostDomain.update ~stack ~attrs post
+  | Tstruct _ ->
+      (* TODO: set uninitialized attributes for fields *)
+      post
+  | Tarray _ ->
+      (* TODO: set uninitialized attributes for elements *)
+      post
+  | Tvoid | Tfun | TVar _ ->
+      (* We ignore tricky types to mark uninitialized addresses. *)
+      post
+
+
+let set_uninitialized src typ location x =
+  {x with post= set_uninitialized_post src typ location x.post}
+
+
 let mk_initial proc_desc =
   (* HACK: save the formals in the stacks of the pre and the post to remember which local variables
      correspond to formals *)
+  let proc_name = Procdesc.get_proc_name proc_desc in
+  let location = Procdesc.get_loc proc_desc in
   let formals_and_captured =
-    let proc_name = Procdesc.get_proc_name proc_desc in
-    let location = Procdesc.get_loc proc_desc in
     let init_var mangled =
       let pvar = Pvar.mk mangled proc_name in
       (Var.of_pvar pvar, (AbstractValue.mk_fresh (), [ValueHistory.FormalDeclared (pvar, location)]))
@@ -328,7 +381,12 @@ let mk_initial proc_desc =
     in
     PreDomain.update ~stack:initial_stack ~heap:initial_heap PreDomain.empty
   in
+  let locals = Procdesc.get_locals proc_desc in
   let post = PostDomain.update ~stack:initial_stack PostDomain.empty in
+  let post =
+    List.fold locals ~init:post ~f:(fun (acc : PostDomain.t) {ProcAttributes.name; typ} ->
+        set_uninitialized_post (`LocalDecl (Pvar.mk name proc_name, None)) typ location acc )
+  in
   { pre
   ; post
   ; topl= PulseTopl.start ()
@@ -518,6 +576,8 @@ let summary_of_post pdesc astate =
 let get_pre {pre} = (pre :> BaseDomain.t)
 
 let get_post {post} = (post :> BaseDomain.t)
+
+let initialize address x = {x with post= PostDomain.initialize address x.post}
 
 (* re-exported for mli *)
 let incorporate_new_eqs astate (phi, new_eqs) =

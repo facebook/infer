@@ -50,6 +50,7 @@ type t =
   | OptionalEmpty
   | StdVector of std_vector_function
   | JavaIterator of java_iterator_function
+  | Uninitialized
 [@@deriving compare, equal]
 
 let issue_type_of_cause = function
@@ -69,6 +70,8 @@ let issue_type_of_cause = function
       IssueType.optional_empty_access
   | JavaIterator _ | StdVector _ ->
       IssueType.vector_invalidation
+  | Uninitialized ->
+      IssueType.uninitialized_value_pulse
 
 
 let describe f cause =
@@ -96,6 +99,8 @@ let describe f cause =
       F.fprintf f "was potentially invalidated by `%a()`" pp_std_vector_function std_vector_f
   | JavaIterator java_iterator_f ->
       F.fprintf f "was potentially invalidated by `%a()`" pp_java_iterator_function java_iterator_f
+  | Uninitialized ->
+      F.pp_print_string f "was uninitialized"
 
 
 let pp f invalidation =
@@ -112,3 +117,5 @@ let pp f invalidation =
       F.fprintf f "StdVector(%a)" describe invalidation
   | JavaIterator _ ->
       F.fprintf f "JavaIterator(%a)" describe invalidation
+  | Uninitialized ->
+      F.pp_print_string f "Uninitialized"

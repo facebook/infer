@@ -31,6 +31,8 @@ val fold : (AbstractValue.t -> Attributes.t -> 'a -> 'a) -> t -> 'a -> 'a
 
 val check_valid : AbstractValue.t -> t -> (unit, Invalidation.t * Trace.t) result
 
+val check_initialized : AbstractValue.t -> t -> (unit, Trace.t) result
+
 val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
 val get_closure_proc_name : AbstractValue.t -> t -> Procname.t option
@@ -48,3 +50,5 @@ val is_end_of_collection : AbstractValue.t -> t -> bool
 val pp : F.formatter -> t -> unit
 
 val remove_allocation_attr : AbstractValue.t -> t -> t
+
+val initialize : AbstractValue.t -> t -> t

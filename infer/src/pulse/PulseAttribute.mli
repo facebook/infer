@@ -21,6 +21,7 @@ type t =
   | Invalid of Invalidation.t * Trace.t
   | MustBeValid of Trace.t
   | StdVectorReserve
+  | Uninitialized of Trace.t
   | WrittenTo of Trace.t
 [@@deriving compare]
 
@@ -53,4 +54,6 @@ module Attributes : sig
   val is_modified : t -> bool
 
   val is_std_vector_reserved : t -> bool
+
+  val get_uninitialized : t -> Trace.t option
 end

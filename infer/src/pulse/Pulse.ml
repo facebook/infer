@@ -94,7 +94,9 @@ module PulseTransferFunctions = struct
     match (exec_state : ExecutionDomain.t) with
     | ContinueProgram astate ->
         let gone_out_of_scope = Invalidation.GoneOutOfScope (pvar, typ) in
-        let* astate, out_of_scope_base = PulseOperations.eval call_loc (Exp.Lvar pvar) astate in
+        let* astate, out_of_scope_base =
+          PulseOperations.eval NoAccess call_loc (Exp.Lvar pvar) astate
+        in
         (* invalidate [&x] *)
         PulseOperations.invalidate call_loc gone_out_of_scope out_of_scope_base astate
         >>| ExecutionDomain.continue
@@ -126,13 +128,23 @@ module PulseTransferFunctions = struct
     match (lhs : Exp.t) with
     | Lindex (arr, index) ->
         (let open IResult.Let_syntax in
-        let* _astate, (aw_array, _history) = PulseOperations.eval loc arr astate in
-        let+ _astate, (aw_index, _history) = PulseOperations.eval loc index astate in
+        let* _astate, (aw_array, _history) = PulseOperations.eval Read loc arr astate in
+        let+ _astate, (aw_index, _history) = PulseOperations.eval Read loc index astate in
         let topl_event = PulseTopl.ArrayWrite {aw_array; aw_index} in
         AbductiveDomain.Topl.small_step loc topl_event astate)
         |> Result.ok (* don't emit Topl event if evals fail *) |> Option.value ~default:astate
     | _ ->
         astate
+
+
+  (* NOTE: At the moment, it conservatively assumes that all reachable addresses from function
+     arguments are initialized by callee. *)
+  let conservatively_initialize_args func_args ({AbductiveDomain.post} as astate) =
+    let arg_values =
+      List.map func_args ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= value, _} -> value)
+    in
+    let reachable_values = BaseDomain.reachable_addresses_from arg_values (post :> BaseDomain.t) in
+    AbstractValue.Set.fold AbductiveDomain.initialize reachable_values astate
 
 
   let dispatch_call ({InterproceduralAnalysis.tenv} as analysis_data) ret call_exp actuals call_loc
@@ -141,13 +153,14 @@ module PulseTransferFunctions = struct
     let* astate, rev_func_args =
       List.fold_result actuals ~init:(astate, [])
         ~f:(fun (astate, rev_func_args) (actual_exp, actual_typ) ->
-          let+ astate, actual_evaled = PulseOperations.eval call_loc actual_exp astate in
+          let+ astate, actual_evaled = PulseOperations.eval Read call_loc actual_exp astate in
           ( astate
           , ProcnameDispatcher.Call.FuncArg.
               {exp= actual_exp; arg_payload= actual_evaled; typ= actual_typ}
             :: rev_func_args ) )
     in
     let func_args = List.rev rev_func_args in
+    let astate = conservatively_initialize_args func_args astate in
     let callee_pname = proc_name_of_call call_exp in
     let model =
       match callee_pname with
@@ -278,8 +291,10 @@ module PulseTransferFunctions = struct
           (* [*lhs_exp := rhs_exp] *)
           let event = ValueHistory.Assignment loc in
           let result =
-            let* astate, (rhs_addr, rhs_history) = PulseOperations.eval loc rhs_exp astate in
-            let* astate, lhs_addr_hist = PulseOperations.eval loc lhs_exp astate in
+            let* astate, (rhs_addr, rhs_history) =
+              PulseOperations.eval NoAccess loc rhs_exp astate
+            in
+            let* astate, lhs_addr_hist = PulseOperations.eval Write loc lhs_exp astate in
             let* astate =
               PulseOperations.write_deref loc ~ref:lhs_addr_hist
                 ~obj:(rhs_addr, event :: rhs_history)
@@ -339,8 +354,8 @@ module PulseTransferFunctions = struct
               if List.is_empty ret_vars then vars else List.rev_append vars ret_vars
             in
             remove_vars vars_to_remove astates
-      | Metadata (VariableLifetimeBegins (pvar, _, location)) when not (Pvar.is_global pvar) ->
-          [PulseOperations.realloc_pvar pvar location astate |> Domain.continue]
+      | Metadata (VariableLifetimeBegins (pvar, typ, location)) when not (Pvar.is_global pvar) ->
+          [PulseOperations.realloc_pvar pvar typ location astate |> Domain.continue]
       | Metadata (Abstract _ | VariableLifetimeBegins _ | Nullify _ | Skip) ->
           [Domain.ContinueProgram astate] )
 
