@@ -7,8 +7,6 @@
 
 open! IStd
 
-exception UnlockNotLocked of Procname.t
-
 val setup : unit -> unit
 (** This should be called once before trying to lock Anything. *)
 
@@ -18,9 +16,5 @@ val try_lock : Procname.t -> bool
 val unlock : Procname.t -> unit
 (** This will work as a cleanup function because after calling unlock all the workers that need an
     unlocked Proc should find it's summary already Cached. Throws if the lock had not been taken. *)
-
-val clean : unit -> unit
-(** This should be called when locks will no longer be used to remove any files or state that's not
-    necessary. *)
 
 val is_locked : proc_filename:string -> bool

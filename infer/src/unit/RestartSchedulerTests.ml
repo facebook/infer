@@ -30,7 +30,10 @@ let tests_wrapper _test_ctxt =
     (* When an unlock is performed over a non-locked Procname it fails *)
     try_lock a_pname |> ignore ;
     unlock a_pname ;
-    assert_raises (UnlockNotLocked a_pname) (fun () -> unlock a_pname))
+    try
+      unlock a_pname ;
+      assert_failure "Should have raised an exception."
+    with Die.InferInternalError _ -> ())
 
 
 let tests = "restart_scheduler_suite" >:: tests_wrapper
