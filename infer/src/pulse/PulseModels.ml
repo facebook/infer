@@ -582,6 +582,8 @@ module GenericArrayBackedCollection = struct
 
   let last_field = Fieldname.make (Typ.CStruct cpp_model_namespace) "past_the_end"
 
+  let is_empty = Fieldname.make (Typ.CStruct cpp_model_namespace) "is_empty"
+
   let access = HilExp.Access.FieldAccess field
 
   let eval mode location collection astate =
@@ -605,6 +607,10 @@ module GenericArrayBackedCollection = struct
     in
     let astate = AddressAttributes.mark_as_end_of_collection (fst pointer) astate in
     (astate, pointer)
+
+
+  let eval_is_empty location collection astate =
+    PulseOperations.eval_access Write location collection (FieldAccess is_empty) astate
 end
 
 module GenericArrayBackedCollectionIterator = struct
@@ -863,6 +869,16 @@ module StdVector = struct
       (* simulate a re-allocation of the underlying array every time an element is added *)
       reallocate_internal_array [crumb] vector PushBack location astate
       >>| ExecutionDomain.continue >>| List.return
+
+
+  let empty vector : model =
+   fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
+    let crumb = ValueHistory.Call {f= Model "std::vector::empty()"; location; in_call= []} in
+    let+ astate, (value_addr, value_hist) =
+      GenericArrayBackedCollection.eval_is_empty location vector astate
+    in
+    let astate = PulseOperations.write_id ret_id (value_addr, crumb :: value_hist) astate in
+    [ExecutionDomain.ContinueProgram astate]
 end
 
 module JavaCollection = struct
@@ -1173,6 +1189,7 @@ module ProcNameDispatcher = struct
         ; -"std" &:: "vector" &:: "shrink_to_fit" <>$ capt_arg_payload
           $--> StdVector.invalidate_references ShrinkToFit
         ; -"std" &:: "vector" &:: "push_back" <>$ capt_arg_payload $+...$--> StdVector.push_back
+        ; -"std" &:: "vector" &:: "empty" <>$ capt_arg_payload $+...$--> StdVector.empty
         ; +map_context_tenv PatternMatch.Java.implements_collection
           &:: "add" <>$ capt_arg_payload $+ capt_arg_payload $--> JavaCollection.add
         ; +map_context_tenv PatternMatch.Java.implements_list

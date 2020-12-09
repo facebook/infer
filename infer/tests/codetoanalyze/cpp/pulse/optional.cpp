@@ -305,3 +305,22 @@ int std_value_or_check_value_ok_FP() {
   }
   return -1;
 }
+struct Container final {
+  std::vector<int> _vec;
+
+  Container() : _vec(std::vector<int>{}) {}
+
+  folly::Optional<int> getFirst() const {
+    if (_vec.empty()) {
+      return folly::none;
+    }
+    return _vec.front();
+  }
+
+  int optional_check_ok(const Container& c) {
+    if (!c._vec.empty()) {
+      return c.getFirst().value();
+    }
+    return -1;
+  }
+};
