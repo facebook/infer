@@ -151,6 +151,16 @@ let subst_find_or_new subst addr_callee ~default_hist_caller =
       (subst, addr_hist_caller)
 
 
+let translate_access_to_caller subst (access_callee : BaseMemory.Access.t) : _ * BaseMemory.Access.t
+    =
+  match access_callee with
+  | ArrayAccess (typ, val_callee) ->
+      let subst, (val_caller, _) = subst_find_or_new subst val_callee ~default_hist_caller:[] in
+      (subst, ArrayAccess (typ, val_caller))
+  | FieldAccess _ | TakeAddress | Dereference ->
+      (subst, access_callee)
+
+
 (* {3 reading the pre from the current state} *)
 
 let add_call_to_trace proc_name call_location caller_history in_call =
@@ -171,11 +181,12 @@ let rec materialize_pre_from_address callee_proc_name call_location ~pre ~addr_p
         Ok call_state
     | Some edges_pre ->
         Container.fold_result ~fold:Memory.Edges.fold ~init:call_state edges_pre
-          ~f:(fun call_state (access, (addr_pre_dest, _)) ->
+          ~f:(fun call_state (access_callee, (addr_pre_dest, _)) ->
+            let subst, access_caller = translate_access_to_caller call_state.subst access_callee in
             let astate, addr_hist_dest_caller =
-              Memory.eval_edge addr_hist_caller access call_state.astate
+              Memory.eval_edge addr_hist_caller access_caller call_state.astate
             in
-            let call_state = {call_state with astate} in
+            let call_state = {call_state with astate; subst} in
             materialize_pre_from_address callee_proc_name call_location ~pre ~addr_pre:addr_pre_dest
               ~addr_hist_caller:addr_hist_dest_caller call_state ) )
 
@@ -311,17 +322,24 @@ let delete_edges_in_callee_pre_from_caller ~edges_pre_opt addr_caller call_state
     BaseMemory.find_opt addr_caller (call_state.astate.AbductiveDomain.post :> BaseDomain.t).heap
   with
   | None ->
-      BaseMemory.Edges.empty
+      (call_state.subst, BaseMemory.Edges.empty)
   | Some old_post_edges -> (
     match edges_pre_opt with
     | None ->
-        old_post_edges
+        (call_state.subst, old_post_edges)
     | Some edges_pre ->
-        (* TODO: should apply [call_state.subst] to [_access]! Actually, should rewrite the
-           whole [cell_pre] beforehand so that [Edges.merge] makes sense. *)
-        BaseMemory.Edges.filter old_post_edges ~f:(fun (access, _) ->
-            (* delete edge if some edge for the same access exists in the pre *)
-            not (BaseMemory.Edges.mem edges_pre access) ) )
+        let subst, translated_accesses_pre =
+          BaseMemory.Edges.fold ~init:(call_state.subst, BaseMemory.AccessSet.empty) edges_pre
+            ~f:(fun (subst, accesses) (access_callee, _) ->
+              let subst, access = translate_access_to_caller subst access_callee in
+              (subst, BaseMemory.AccessSet.add access accesses) )
+        in
+        let post_edges =
+          BaseMemory.Edges.filter old_post_edges ~f:(fun (access_caller, _) ->
+              (* delete edge if some edge for the same access exists in the pre *)
+              not (BaseMemory.AccessSet.mem access_caller translated_accesses_pre) )
+        in
+        (subst, post_edges) )
 
 
 let record_post_cell callee_proc_name call_loc ~edges_pre_opt
@@ -334,26 +352,31 @@ let record_post_cell callee_proc_name call_loc ~edges_pre_opt
     {call_state with astate}
   in
   let subst, translated_post_edges =
-    BaseMemory.Edges.fold_map ~init:call_state.subst edges_callee_post
-      ~f:(fun subst (addr_callee, trace_post) ->
+    BaseMemory.Edges.fold ~init:(call_state.subst, BaseMemory.Edges.empty) edges_callee_post
+      ~f:(fun (subst, translated_edges) (access_callee, (addr_callee, trace_post)) ->
         let subst, (addr_curr, hist_curr) =
           subst_find_or_new subst addr_callee ~default_hist_caller:hist_caller
         in
-        ( subst
-        , ( addr_curr
-          , ValueHistory.Call {f= Call callee_proc_name; location= call_loc; in_call= trace_post}
-            :: hist_curr ) ) )
+        let subst, access = translate_access_to_caller subst access_callee in
+        let translated_edges =
+          BaseMemory.Edges.add access
+            ( addr_curr
+            , ValueHistory.Call {f= Call callee_proc_name; location= call_loc; in_call= trace_post}
+              :: hist_curr )
+            translated_edges
+        in
+        (subst, translated_edges) )
   in
-  let astate =
-    let post_edges_minus_pre =
-      delete_edges_in_callee_pre_from_caller ~edges_pre_opt addr_caller call_state
-    in
-    let edges_post_caller =
-      BaseMemory.Edges.union_left_biased translated_post_edges post_edges_minus_pre
-    in
-    AbductiveDomain.set_post_edges addr_caller edges_post_caller call_state.astate
+  let call_state = {call_state with subst} in
+  let subst, post_edges_minus_pre =
+    delete_edges_in_callee_pre_from_caller ~edges_pre_opt addr_caller call_state
   in
-  {call_state with subst; astate}
+  let edges_post_caller =
+    BaseMemory.Edges.union_left_biased translated_post_edges post_edges_minus_pre
+  in
+  { call_state with
+    subst
+  ; astate= AbductiveDomain.set_post_edges addr_caller edges_post_caller call_state.astate }
 
 
 let rec record_post_for_address callee_proc_name call_loc ({AbductiveDomain.pre; _} as pre_post)

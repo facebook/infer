@@ -26,6 +26,8 @@ module Access = struct
         access
 end
 
+module AccessSet = Caml.Set.Make (Access)
+
 module AddrTrace = struct
   type t = AbstractValue.t * ValueHistory.t [@@deriving compare, yojson_of]
 

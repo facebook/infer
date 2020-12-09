@@ -14,6 +14,8 @@ module Access : sig
   val equal : t -> t -> bool
 end
 
+module AccessSet : Caml.Set.S with type elt = Access.t
+
 module AddrTrace : sig
   type t = AbstractValue.t * ValueHistory.t
 end
