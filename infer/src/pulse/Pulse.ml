@@ -61,8 +61,8 @@ module PulseTransferFunctions = struct
 
 
   let interprocedural_call {InterproceduralAnalysis.analyze_dependency; proc_desc; err_log} ret
-      call_exp actuals call_loc astate =
-    match proc_name_of_call call_exp with
+      callee_pname call_exp actuals call_loc astate =
+    match callee_pname with
     | Some callee_pname when not Config.pulse_intraprocedural_only ->
         let formals_opt = get_pvar_formals callee_pname in
         let callee_data = analyze_dependency callee_pname in
@@ -77,10 +77,10 @@ module PulseTransferFunctions = struct
 
 
   (** has an object just gone out of scope? *)
-  let get_out_of_scope_object call_exp actuals (flags : CallFlags.t) =
+  let get_out_of_scope_object callee_pname actuals (flags : CallFlags.t) =
     (* injected destructors are precisely inserted where an object goes out of scope *)
     if flags.cf_injected_destructor then
-      match (proc_name_of_call call_exp, actuals) with
+      match (callee_pname, actuals) with
       | Some (Procname.ObjC_Cpp pname), [(Exp.Lvar pvar, typ)]
         when Pvar.is_local pvar && not (Procname.ObjC_Cpp.is_inner_destructor pname) ->
           (* ignore inner destructors, only trigger out of scope on the final destructor call *)
@@ -185,7 +185,8 @@ module PulseTransferFunctions = struct
                 (arg_payload, typ) )
           in
           let r =
-            interprocedural_call analysis_data ret call_exp only_actuals_evaled call_loc astate
+            interprocedural_call analysis_data ret callee_pname call_exp only_actuals_evaled
+              call_loc astate
           in
           PerfEvent.(log (fun logger -> log_end_event logger ())) ;
           r
@@ -200,7 +201,7 @@ module PulseTransferFunctions = struct
       else exec_state_res
     in
     let+ exec_state =
-      match get_out_of_scope_object call_exp actuals flags with
+      match get_out_of_scope_object callee_pname actuals flags with
       | Some pvar_typ ->
           L.d_printfln "%a is going out of scope" Pvar.pp_value (fst pvar_typ) ;
           let* exec_states = exec_state_res in
