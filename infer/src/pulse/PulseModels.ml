@@ -208,6 +208,24 @@ module ObjC = struct
     PulseOperations.add_dynamic_type dynamic_type ret_addr astate
     |> PulseArithmetic.and_positive ret_addr
     |> ok_continue
+
+
+  let dispatch_sync args : model =
+   fun {analyze_dependency; proc_desc; err_log} ~callee_procname:_ location ~ret astate ->
+    match List.last args with
+    | None ->
+        Ok [ExecutionDomain.ContinueProgram astate]
+    | Some {ProcnameDispatcher.Call.FuncArg.arg_payload= lambda_ptr_hist} -> (
+        let* astate, (lambda, _) =
+          PulseOperations.eval_access Read location lambda_ptr_hist Dereference astate
+        in
+        match AddressAttributes.get_closure_proc_name lambda astate with
+        | None ->
+            Ok [ExecutionDomain.ContinueProgram astate]
+        | Some callee_proc_name ->
+            PulseOperations.call ~caller_proc_desc:proc_desc err_log
+              ~callee_data:(analyze_dependency callee_proc_name)
+              location callee_proc_name ~ret ~actuals:[] ~formals_opt:None astate )
 end
 
 module Optional = struct
@@ -1248,6 +1266,7 @@ module ProcNameDispatcher = struct
           &:: "nextElement" <>$ capt_arg_payload
           $!--> fun x ->
           StdVector.at ~desc:"Enumeration.nextElement" x (AbstractValue.mk_fresh (), []) )
+        ; -"dispatch_sync" &++> ObjC.dispatch_sync
         ; +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_create_or_copy
           &--> C.malloc_no_param
         ; +map_context_tenv PatternMatch.ObjectiveC.is_core_foundation_create_or_copy

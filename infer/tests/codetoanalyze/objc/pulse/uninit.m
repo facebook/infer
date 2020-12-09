@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-#import <Foundation/NSObject.h>
+#import <Foundation/Foundation.h>
 
 @interface Uninit : NSObject
 @end
@@ -58,6 +58,25 @@
   };
 
   block();
+}
+
+- (BOOL)dispatch_sync_closure_ok:(dispatch_queue_t)queue {
+  __block BOOL x;
+
+  dispatch_sync(queue, ^() {
+    x = true;
+  });
+  return x;
+}
+
+- (BOOL)dispatch_sync_variable_closure_ok:(dispatch_queue_t)queue {
+  __block BOOL x;
+
+  void (^block)() = ^() {
+    x = true;
+  };
+  dispatch_sync(queue, block);
+  return x;
 }
 
 @end
