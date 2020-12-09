@@ -156,3 +156,5 @@ val unknown_call :
   -> t
 (** performs a call to a function with no summary by optimistically havoc'ing the by-ref actuals and
     the return value as appropriate *)
+
+val conservatively_initialize_args : AbstractValue.t list -> t -> t

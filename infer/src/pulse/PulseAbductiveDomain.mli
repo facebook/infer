@@ -126,7 +126,7 @@ module AddressAttributes : sig
 
   val check_valid : Trace.t -> AbstractValue.t -> t -> (t, Invalidation.t * Trace.t) result
 
-  val check_initialized : AbstractValue.t -> t -> (unit, Trace.t) result
+  val check_initialized : Trace.t -> AbstractValue.t -> t -> (t, Trace.t) result
 
   val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 

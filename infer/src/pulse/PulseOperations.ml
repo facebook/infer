@@ -27,8 +27,8 @@ let check_addr_access access_mode location (address, history) astate =
   in
   match access_mode with
   | Read ->
-      let+ () =
-        AddressAttributes.check_initialized address astate
+      let+ astate =
+        AddressAttributes.check_initialized access_trace address astate
         |> Result.map_error ~f:(fun invalidation_trace ->
                ( Diagnostic.AccessToInvalidAddress
                    { calling_context= []
@@ -533,10 +533,24 @@ let get_captured_actuals location ~captured_vars ~actual_closure astate =
   (astate, captured_vars_with_actuals)
 
 
+let conservatively_initialize_args arg_values ({AbductiveDomain.post} as astate) =
+  let reachable_values = BaseDomain.reachable_addresses_from arg_values (post :> BaseDomain.t) in
+  AbstractValue.Set.fold AbductiveDomain.initialize reachable_values astate
+
+
 let call ~caller_proc_desc err_log ~(callee_data : (Procdesc.t * PulseSummary.t) option) call_loc
     callee_pname ~ret ~actuals ~formals_opt (astate : AbductiveDomain.t) =
+  let get_arg_values () = List.map actuals ~f:(fun ((value, _), _) -> value) in
   match callee_data with
   | Some (callee_proc_desc, exec_states) ->
+      let astate =
+        (* NOTE: This conservatively initializes all reachable addresses from captured variables
+           when calling ObjC blocks, because the captured variables with call-by-reference in ObjC
+           are incorrectly translated in the frontend.  See T80743637. *)
+        if Procname.is_objc_block callee_pname then
+          conservatively_initialize_args (get_arg_values ()) astate
+        else astate
+      in
       let formals =
         Procdesc.get_formals callee_proc_desc
         |> List.map ~f:(fun (mangled, _) -> Pvar.mk mangled callee_pname |> Var.of_pvar)
@@ -586,5 +600,6 @@ let call ~caller_proc_desc err_log ~(callee_data : (Procdesc.t * PulseSummary.t)
   | None ->
       (* no spec found for some reason (unknown function, ...) *)
       L.d_printfln "No spec found for %a@\n" Procname.pp callee_pname ;
+      let astate = conservatively_initialize_args (get_arg_values ()) astate in
       unknown_call call_loc (SkippedKnownCall callee_pname) ~ret ~actuals ~formals_opt astate
       |> fun astate -> Ok [ExecutionDomain.ContinueProgram astate]

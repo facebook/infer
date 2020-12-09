@@ -32,6 +32,7 @@ module Attribute = struct
     | DynamicType of Typ.Name.t
     | EndOfCollection
     | Invalid of Invalidation.t * Trace.t
+    | MustBeInitialized of Trace.t
     | MustBeValid of Trace.t
     | StdVectorReserve
     | Uninitialized of Trace.t
@@ -73,6 +74,8 @@ module Attribute = struct
 
   let uninitialized_rank = Variants.to_rank (Uninitialized dummy_trace)
 
+  let must_be_initialized_rank = Variants.to_rank (MustBeInitialized dummy_trace)
+
   let pp f attribute =
     let pp_string_if_debug string fmt =
       if Config.debug_level_analysis >= 3 then F.pp_print_string fmt string
@@ -96,6 +99,10 @@ module Attribute = struct
     | Invalid (invalidation, trace) ->
         F.fprintf f "Invalid %a"
           (Trace.pp ~pp_immediate:(fun fmt -> Invalidation.pp fmt invalidation))
+          trace
+    | MustBeInitialized trace ->
+        F.fprintf f "MustBeInitialized %a"
+          (Trace.pp ~pp_immediate:(pp_string_if_debug "read"))
           trace
     | MustBeValid trace ->
         F.fprintf f "MustBeValid %a" (Trace.pp ~pp_immediate:(pp_string_if_debug "access")) trace
@@ -181,13 +188,20 @@ module Attributes = struct
            trace )
 
 
+  let get_must_be_initialized attrs =
+    Set.find_rank attrs Attribute.must_be_initialized_rank
+    |> Option.map ~f:(fun attr ->
+           let[@warning "-8"] (Attribute.MustBeInitialized trace) = attr in
+           trace )
+
+
   include Set
 end
 
 include Attribute
 
 let is_suitable_for_pre = function
-  | MustBeValid _ ->
+  | MustBeValid _ | MustBeInitialized _ ->
       true
   | AddressOfCppTemporary _
   | AddressOfStackVariable _
@@ -213,6 +227,8 @@ let map_trace ~f = function
       Uninitialized (f trace)
   | WrittenTo trace ->
       WrittenTo (f trace)
+  | MustBeInitialized trace ->
+      MustBeInitialized (f trace)
   | ( AddressOfCppTemporary _
     | AddressOfStackVariable _
     | Closure _

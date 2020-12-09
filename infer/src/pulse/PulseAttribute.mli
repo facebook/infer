@@ -19,6 +19,7 @@ type t =
   | DynamicType of Typ.Name.t
   | EndOfCollection
   | Invalid of Invalidation.t * Trace.t
+  | MustBeInitialized of Trace.t
   | MustBeValid of Trace.t
   | StdVectorReserve
   | Uninitialized of Trace.t
@@ -56,4 +57,6 @@ module Attributes : sig
   val is_std_vector_reserved : t -> bool
 
   val get_uninitialized : t -> Trace.t option
+
+  val get_must_be_initialized : t -> Trace.t option
 end

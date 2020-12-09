@@ -40,4 +40,24 @@
   return x;
 }
 
+- (BOOL)not_set_in_closure_bad {
+  __block BOOL x;
+
+  void (^block)() = ^() {
+  };
+
+  block();
+  return x;
+}
+
+- (BOOL)use_in_closure_bad_FN {
+  __block BOOL x;
+
+  void (^block)() = ^() {
+    BOOL y = x;
+  };
+
+  block();
+}
+
 @end

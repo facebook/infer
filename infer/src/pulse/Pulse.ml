@@ -70,6 +70,10 @@ module PulseTransferFunctions = struct
           ~ret ~actuals ~formals_opt astate
     | _ ->
         L.d_printfln "Skipping indirect call %a@\n" Exp.pp call_exp ;
+        let astate =
+          let arg_values = List.map actuals ~f:(fun ((value, _), _) -> value) in
+          PulseOperations.conservatively_initialize_args arg_values astate
+        in
         Ok
           [ Domain.ContinueProgram
               (PulseOperations.unknown_call call_loc (SkippedUnknownCall call_exp) ~ret ~actuals
@@ -138,16 +142,6 @@ module PulseTransferFunctions = struct
         astate
 
 
-  (* NOTE: At the moment, it conservatively assumes that all reachable addresses from function
-     arguments are initialized by callee. *)
-  let conservatively_initialize_args func_args ({AbductiveDomain.post} as astate) =
-    let arg_values =
-      List.map func_args ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= value, _} -> value)
-    in
-    let reachable_values = BaseDomain.reachable_addresses_from arg_values (post :> BaseDomain.t) in
-    AbstractValue.Set.fold AbductiveDomain.initialize reachable_values astate
-
-
   let dispatch_call ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data) ret call_exp
       actuals call_loc flags astate =
     (* evaluate all actuals *)
@@ -161,7 +155,6 @@ module PulseTransferFunctions = struct
             :: rev_func_args ) )
     in
     let func_args = List.rev rev_func_args in
-    let astate = conservatively_initialize_args func_args astate in
     let callee_pname = proc_name_of_call call_exp in
     let model =
       match callee_pname with
@@ -177,6 +170,13 @@ module PulseTransferFunctions = struct
       match model with
       | Some (model, callee_procname) ->
           L.d_printfln "Found model for call@\n" ;
+          let astate =
+            let arg_values =
+              List.map func_args ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= value, _} ->
+                  value )
+            in
+            PulseOperations.conservatively_initialize_args arg_values astate
+          in
           model analysis_data ~callee_procname call_loc ~ret astate
       | None ->
           PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;

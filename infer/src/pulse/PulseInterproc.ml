@@ -515,27 +515,42 @@ let apply_post callee_proc_name call_location pre_post ~captured_vars_with_actua
 let check_all_valid callee_proc_name call_location {AbductiveDomain.pre; _} call_state =
   AddressMap.fold
     (fun addr_pre (addr_caller, hist_caller) astate_result ->
-      match astate_result with
-      | Error _ ->
-          astate_result
-      | Ok astate -> (
+      let mk_access_trace callee_access_trace =
+        Trace.ViaCall
+          { in_call= callee_access_trace
+          ; f= Call callee_proc_name
+          ; location= call_location
+          ; history= hist_caller }
+      in
+      let open IResult.Let_syntax in
+      let* astate = astate_result in
+      let* astate =
         match BaseAddressAttributes.get_must_be_valid addr_pre (pre :> BaseDomain.t).attrs with
         | None ->
             astate_result
         | Some callee_access_trace ->
-            let access_trace =
-              Trace.ViaCall
-                { in_call= callee_access_trace
-                ; f= Call callee_proc_name
-                ; location= call_location
-                ; history= hist_caller }
-            in
+            let access_trace = mk_access_trace callee_access_trace in
             AddressAttributes.check_valid access_trace addr_caller astate
             |> Result.map_error ~f:(fun (invalidation, invalidation_trace) ->
                    L.d_printfln "ERROR: caller's %a invalid!" AbstractValue.pp addr_caller ;
                    ( Diagnostic.AccessToInvalidAddress
                        {calling_context= []; invalidation; invalidation_trace; access_trace}
-                   , astate ) ) ) )
+                   , astate ) )
+      in
+      match BaseAddressAttributes.get_must_be_initialized addr_pre (pre :> BaseDomain.t).attrs with
+      | None ->
+          astate_result
+      | Some callee_access_trace ->
+          let access_trace = mk_access_trace callee_access_trace in
+          AddressAttributes.check_initialized access_trace addr_caller astate
+          |> Result.map_error ~f:(fun invalidation_trace ->
+                 L.d_printfln "ERROR: caller's %a is uninitialized!" AbstractValue.pp addr_caller ;
+                 ( Diagnostic.AccessToInvalidAddress
+                     { calling_context= []
+                     ; invalidation= Uninitialized
+                     ; invalidation_trace
+                     ; access_trace }
+                 , astate ) ) )
     call_state.subst (Ok call_state.astate)
 
 

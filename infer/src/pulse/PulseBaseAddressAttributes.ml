@@ -119,6 +119,8 @@ let get_closure_proc_name = get_attribute Attributes.get_closure_proc_name
 
 let get_must_be_valid = get_attribute Attributes.get_must_be_valid
 
+let get_must_be_initialized = get_attribute Attributes.get_must_be_initialized
+
 let std_vector_reserve address memory = add_one address Attribute.StdVectorReserve memory
 
 let is_end_of_collection address attrs =

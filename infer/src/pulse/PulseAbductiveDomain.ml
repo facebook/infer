@@ -118,6 +118,8 @@ let leq ~lhs ~rhs =
         ~rhs:(rhs.post :> BaseDomain.t)
 
 
+let initialize address astate = {astate with post= PostDomain.initialize address astate.post}
+
 module Stack = struct
   let is_abducible astate var =
     (* HACK: formals are pre-registered in the initial state *)
@@ -202,9 +204,14 @@ module AddressAttributes = struct
     abduce_attribute addr (MustBeValid access_trace) astate
 
 
-  let check_initialized addr astate =
-    let+ () = BaseAddressAttributes.check_initialized addr (astate.post :> base_domain).attrs in
-    ()
+  let check_initialized access_trace addr astate =
+    let attrs = (astate.post :> base_domain).attrs in
+    let+ () = BaseAddressAttributes.check_initialized addr attrs in
+    let is_written_to =
+      Option.exists (BaseAddressAttributes.find_opt addr attrs) ~f:(fun attrs ->
+          Attribute.Attributes.get_written_to attrs |> Option.is_some )
+    in
+    if is_written_to then astate else abduce_attribute addr (MustBeInitialized access_trace) astate
 
 
   (** [astate] with [astate.post.attrs = f astate.post.attrs] *)
@@ -258,7 +265,8 @@ module AddressAttributes = struct
         let astate =
           if Attribute.is_suitable_for_pre attr then abduce_attribute value attr astate else astate
         in
-        add_one value attr astate )
+        let astate = add_one value attr astate in
+        match attr with Attribute.WrittenTo _ -> initialize value astate | _ -> astate )
 
 
   let find_opt address astate =
@@ -576,8 +584,6 @@ let summary_of_post pdesc astate =
 let get_pre {pre} = (pre :> BaseDomain.t)
 
 let get_post {post} = (post :> BaseDomain.t)
-
-let initialize address x = {x with post= PostDomain.initialize address x.post}
 
 (* re-exported for mli *)
 let incorporate_new_eqs astate (phi, new_eqs) =

@@ -41,18 +41,34 @@ void malloc_bad() {
 
 void init_int_ref(int* p) { *p = 5; }
 
-void nop(int* p) {}
-
-void interprocedural_good() {
+void interprocedural_init_in_callee_good() {
   int x;
   init_int_ref(&x);
   int y = x;
 }
 
-void interprocedural_bad_FN() {
+void nop(int* p) {}
+
+void interprocedural_nop_in_callee_bad() {
   int x;
   nop(&x);
   int y = x;
+}
+
+void read_int_ref(int* p) { int x = *p; }
+
+void interprocedural_read_in_callee_bad() {
+  int x;
+  read_int_ref(&x);
+}
+
+int* uninit() { return (int*)malloc(sizeof(int)); }
+
+void interprocedural_uninit_in_callee_bad() {
+  int* p = uninit();
+  if (p) {
+    int x = *p;
+  }
 }
 
 struct uninit_s {
