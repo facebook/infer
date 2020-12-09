@@ -66,6 +66,8 @@ let find =
 
 let load pname = find (Procname.to_unique_id pname)
 
+let is_no_return pname = match load pname with Some {is_no_return} -> is_no_return | _ -> false
+
 let store ~proc_desc (attr : ProcAttributes.t) =
   let pname = attr.proc_name in
   let akind = proc_kind_of_attr attr in

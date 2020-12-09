@@ -72,7 +72,7 @@ let is_unsat_cheap exec_state = PathCondition.is_unsat_cheap (get_astate exec_st
 
 type summary = AbductiveDomain.summary base_t [@@deriving yojson_of]
 
-let summary_of_posts pdesc posts =
+let summary_of_posts_common ~continue_program pdesc posts =
   List.filter_mapi posts ~f:(fun i exec_state ->
       L.d_printfln "Creating spec out of state #%d:@\n%a" i pp exec_state ;
       match exec_state with
@@ -81,7 +81,7 @@ let summary_of_posts pdesc posts =
         | Unsat ->
             None
         | Sat astate ->
-            Some (ContinueProgram astate) )
+            Some (continue_program astate) )
       (* already a summary but need to reconstruct the variants to make the type system happy *)
       | AbortProgram astate ->
           Some (AbortProgram astate)
@@ -89,3 +89,11 @@ let summary_of_posts pdesc posts =
           Some (ExitProgram astate)
       | LatentAbortProgram {astate; latent_issue} ->
           Some (LatentAbortProgram {astate; latent_issue}) )
+
+
+let summary_of_posts =
+  summary_of_posts_common ~continue_program:(fun astate -> ContinueProgram astate)
+
+
+let force_exit_program =
+  summary_of_posts_common ~continue_program:(fun astate -> ExitProgram astate)

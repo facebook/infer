@@ -19,4 +19,6 @@ val store : proc_desc:Procdesc.t option -> ProcAttributes.t -> unit
 val load : Procname.t -> ProcAttributes.t option
 (** Load the attributes for the procedure from the attributes database. *)
 
+val is_no_return : Procname.t -> bool
+
 val pp_attributes_kind : Format.formatter -> attributes_kind -> unit

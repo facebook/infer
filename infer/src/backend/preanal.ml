@@ -443,12 +443,9 @@ module NoReturn = struct
     Procdesc.Node.get_instrs node
     |> Instrs.exists ~f:(fun (instr : Sil.instr) ->
            match instr with
-           | Call (_, Const (Cfun proc_name), _, _, _) -> (
-             match Attributes.load proc_name with
-             | Some {ProcAttributes.is_no_return= true} ->
-                 true
-             | _ ->
-                 NoReturnModels.dispatch tenv proc_name |> Option.value ~default:false )
+           | Call (_, Const (Cfun proc_name), _, _, _) ->
+               Attributes.is_no_return proc_name
+               || NoReturnModels.dispatch tenv proc_name |> Option.value ~default:false
            | _ ->
                false )
 

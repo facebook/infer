@@ -6,6 +6,7 @@
  */
 
 #include <stdlib.h>
+#include <stdnoreturn.h>
 
 int* malloc_no_check_bad() {
   int* p = (int*)malloc(sizeof(int));
@@ -76,4 +77,20 @@ void wrap_free(void* p) { free(p); }
 void interproc_free_ok() {
   int* p = (int*)malloc(sizeof(int));
   wrap_free(p);
+}
+
+noreturn void no_return();
+
+void wrap_malloc(int** x) {
+  *x = (int*)malloc(sizeof(int));
+  if (!*x) {
+    no_return();
+  }
+}
+
+void call_no_return_good() {
+  int* x = NULL;
+  wrap_malloc(&x);
+  *x = 5;
+  free(x);
 }

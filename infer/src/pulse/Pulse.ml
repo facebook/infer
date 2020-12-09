@@ -9,6 +9,7 @@ open! IStd
 module F = Format
 module L = Logging
 open IResult.Let_syntax
+module IRAttributes = Attributes
 open PulseBasicInterface
 open PulseDomainInterface
 
@@ -147,8 +148,8 @@ module PulseTransferFunctions = struct
     AbstractValue.Set.fold AbductiveDomain.initialize reachable_values astate
 
 
-  let dispatch_call ({InterproceduralAnalysis.tenv} as analysis_data) ret call_exp actuals call_loc
-      flags astate =
+  let dispatch_call ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data) ret call_exp
+      actuals call_loc flags astate =
     (* evaluate all actuals *)
     let* astate, rev_func_args =
       List.fold_result actuals ~init:(astate, [])
@@ -198,15 +199,20 @@ module PulseTransferFunctions = struct
             (* skip, as above for non-topl *) exec_state_res
       else exec_state_res
     in
-    match get_out_of_scope_object call_exp actuals flags with
-    | Some pvar_typ ->
-        L.d_printfln "%a is going out of scope" Pvar.pp_value (fst pvar_typ) ;
-        let* exec_states = exec_state_res in
-        List.map exec_states ~f:(fun exec_state ->
-            exec_object_out_of_scope call_loc pvar_typ exec_state )
-        |> Result.all
-    | None ->
-        exec_state_res
+    let+ exec_state =
+      match get_out_of_scope_object call_exp actuals flags with
+      | Some pvar_typ ->
+          L.d_printfln "%a is going out of scope" Pvar.pp_value (fst pvar_typ) ;
+          let* exec_states = exec_state_res in
+          List.map exec_states ~f:(fun exec_state ->
+              exec_object_out_of_scope call_loc pvar_typ exec_state )
+          |> Result.all
+      | None ->
+          exec_state_res
+    in
+    if Option.exists callee_pname ~f:IRAttributes.is_no_return then
+      ExecutionDomain.force_exit_program proc_desc exec_state
+    else exec_state
 
 
   (* [get_dealloc_from_dynamic_types vars_types loc] returns a dealloc procname and vars and
