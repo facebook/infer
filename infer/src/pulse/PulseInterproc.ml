@@ -306,7 +306,7 @@ let call_state_subst_find_or_new call_state addr_callee ~default_hist_caller =
   else ({call_state with subst= new_subst}, addr_hist_caller)
 
 
-let delete_edges_in_callee_pre_from_caller ~addr_callee:_ ~edges_pre_opt ~addr_caller call_state =
+let delete_edges_in_callee_pre_from_caller ~edges_pre_opt addr_caller call_state =
   match
     BaseMemory.find_opt addr_caller (call_state.astate.AbductiveDomain.post :> BaseDomain.t).heap
   with
@@ -324,9 +324,8 @@ let delete_edges_in_callee_pre_from_caller ~addr_callee:_ ~edges_pre_opt ~addr_c
             not (BaseMemory.Edges.mem edges_pre access) ) )
 
 
-let record_post_cell callee_proc_name call_loc ~addr_callee ~edges_pre_opt
-    ~cell_callee_post:(edges_callee_post, attrs_callee_post)
-    ~addr_hist_caller:(addr_caller, hist_caller) call_state =
+let record_post_cell callee_proc_name call_loc ~edges_pre_opt
+    ~cell_callee_post:(edges_callee_post, attrs_callee_post) (addr_caller, hist_caller) call_state =
   let call_state =
     let attrs_post_caller =
       add_call_to_attributes callee_proc_name call_loc hist_caller attrs_callee_post
@@ -347,7 +346,7 @@ let record_post_cell callee_proc_name call_loc ~addr_callee ~edges_pre_opt
   in
   let astate =
     let post_edges_minus_pre =
-      delete_edges_in_callee_pre_from_caller ~addr_callee ~edges_pre_opt ~addr_caller call_state
+      delete_edges_in_callee_pre_from_caller ~edges_pre_opt addr_caller call_state
     in
     let edges_post_caller =
       BaseMemory.Edges.union_left_biased translated_post_edges post_edges_minus_pre
@@ -372,7 +371,7 @@ let rec record_post_for_address callee_proc_name call_loc ({AbductiveDomain.pre;
         let call_state_after_post =
           if is_cell_read_only ~edges_pre_opt ~cell_post:cell_callee_post then call_state
           else
-            record_post_cell callee_proc_name call_loc ~addr_callee ~edges_pre_opt ~addr_hist_caller
+            record_post_cell callee_proc_name call_loc ~edges_pre_opt addr_hist_caller
               ~cell_callee_post call_state
         in
         Memory.Edges.fold ~init:call_state_after_post edges_post
