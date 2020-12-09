@@ -137,6 +137,20 @@ let visit call_state ~pre ~addr_callee ~addr_hist_caller =
       ; rev_subst= AddressMap.add addr_caller addr_callee call_state.rev_subst } )
 
 
+(** HACK: we don't need to update the [rev_subst] of a call state when generating a fresh value for
+    the caller because there's no chance that value appears anywhere else in the caller state, hence
+    we cannot possibly get clashes about that caller value, which is the only thing [rev_subst] is
+    used for. This is why this function is allowed to take only [subst] as argument and not a full
+    call state. *)
+let subst_find_or_new subst addr_callee ~default_hist_caller =
+  match AddressMap.find_opt addr_callee subst with
+  | None ->
+      let addr_hist_fresh = (AbstractValue.mk_fresh (), default_hist_caller) in
+      (AddressMap.add addr_callee addr_hist_fresh subst, addr_hist_fresh)
+  | Some addr_hist_caller ->
+      (subst, addr_hist_caller)
+
+
 (* {3 reading the pre from the current state} *)
 
 let add_call_to_trace proc_name call_location caller_history in_call =
@@ -220,15 +234,6 @@ let add_call_to_attributes proc_name call_location caller_history attrs =
   Attributes.map attrs ~f:(fun attr ->
       Attribute.map_trace attr ~f:(fun trace ->
           add_call_to_trace proc_name call_location caller_history trace ) )
-
-
-let subst_find_or_new subst addr_callee ~default_hist_caller =
-  match AddressMap.find_opt addr_callee subst with
-  | None ->
-      let addr_hist_fresh = (AbstractValue.mk_fresh (), default_hist_caller) in
-      (AddressMap.add addr_callee addr_hist_fresh subst, addr_hist_fresh)
-  | Some addr_hist_caller ->
-      (subst, addr_hist_caller)
 
 
 let conjoin_callee_arith pre_post call_state =
