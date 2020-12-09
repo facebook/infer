@@ -16,16 +16,12 @@ let () =
     ; proc_resolve_attributes_f= Summary.OnDisk.proc_resolve_attributes }
 
 
-let mk_interprocedural_t ~f_analyze_dep ~f_analyze_pdesc_dep ~get_payload exe_env summary
+let mk_interprocedural_t ~f_analyze_dep ~get_payload exe_env summary
     ?(tenv = Exe_env.get_tenv exe_env (Summary.get_proc_name summary)) () =
   let analyze_dependency proc_name =
     let summary = Ondemand.analyze_proc_name exe_env ~caller_summary:summary proc_name in
     Option.bind summary ~f:(fun {Summary.payloads; proc_desc; _} ->
         f_analyze_dep proc_desc (get_payload payloads) )
-  in
-  let analyze_pdesc_dependency proc_desc =
-    let summary = Ondemand.analyze_proc_desc exe_env ~caller_summary:summary proc_desc in
-    Option.bind summary ~f:(fun {Summary.payloads; _} -> f_analyze_pdesc_dep (get_payload payloads))
   in
   let stats = ref summary.Summary.stats in
   let update_stats ?add_symops ?failure_kind () =
@@ -36,7 +32,6 @@ let mk_interprocedural_t ~f_analyze_dep ~f_analyze_pdesc_dep ~get_payload exe_en
     ; err_log= Summary.get_err_log summary
     ; exe_env
     ; analyze_dependency
-    ; analyze_pdesc_dependency
     ; update_stats }
   , stats )
 
@@ -45,13 +40,12 @@ let mk_interprocedural_field_t payload_field exe_env summary =
   mk_interprocedural_t
     ~f_analyze_dep:(fun pdesc payload_opt ->
       Option.map payload_opt ~f:(fun payload -> (pdesc, payload)) )
-    ~f_analyze_pdesc_dep:Fn.id ~get_payload:(Field.get payload_field) exe_env summary
+    ~get_payload:(Field.get payload_field) exe_env summary
 
 
-let interprocedural ~f_analyze_dep ~f_analyze_pdesc_dep ~get_payload ~set_payload checker
-    {Callbacks.summary; exe_env} =
+let interprocedural ~f_analyze_dep ~get_payload ~set_payload checker {Callbacks.summary; exe_env} =
   let analysis_data, stats_ref =
-    mk_interprocedural_t ~f_analyze_dep ~f_analyze_pdesc_dep ~get_payload exe_env summary ()
+    mk_interprocedural_t ~f_analyze_dep ~get_payload exe_env summary ()
   in
   let result = checker analysis_data in
   {summary with payloads= set_payload summary.payloads result; stats= !stats_ref}

@@ -585,8 +585,7 @@ type resolve_and_analyze_result =
 
 (** Resolve the procedure name and run the analysis of the resolved procedure if not already
     analyzed *)
-let resolve_and_analyze
-    {InterproceduralAnalysis.analyze_dependency; analyze_pdesc_dependency; proc_desc; tenv}
+let resolve_and_analyze {InterproceduralAnalysis.analyze_dependency; proc_desc; tenv}
     ~has_clang_model prop args callee_proc_name call_flags : resolve_and_analyze_result =
   if has_clang_model then
     {resolved_pname= callee_proc_name; resolved_procdesc_opt= None; resolved_summary_opt= None}
@@ -612,8 +611,8 @@ let resolve_and_analyze
                     resolved_args )
         in
         ( resolved_proc_desc_option
-        , Option.bind resolved_proc_desc_option ~f:(fun pdesc ->
-              analyze_pdesc_dependency pdesc |> Option.map ~f:(fun summary -> (pdesc, summary)) ) )
+        , Option.bind resolved_proc_desc_option ~f:(fun _pdesc ->
+              analyze_dependency resolved_pname ) )
     in
     let resolved_pname =
       resolve_pname ~caller_pdesc:proc_desc tenv prop args callee_proc_name call_flags

@@ -304,31 +304,7 @@ let get_proc_desc callee_pname =
     ; lazy (Topl.get_proc_desc callee_pname) ]
 
 
-type callee = ProcName of Procname.t | ProcDesc of Procdesc.t
-
-let proc_name_of_callee = function
-  | ProcName proc_name ->
-      proc_name
-  | ProcDesc proc_desc ->
-      Procdesc.get_proc_name proc_desc
-
-
-let callee_should_be_analyzed = function
-  | ProcName proc_name ->
-      procedure_should_be_analyzed proc_name
-  | ProcDesc proc_desc ->
-      should_be_analyzed (Procdesc.get_attributes proc_desc)
-
-
-let get_callee_proc_desc = function
-  | ProcDesc proc_desc ->
-      Some proc_desc
-  | ProcName proc_name ->
-      get_proc_desc proc_name
-
-
-let analyze_callee exe_env ?caller_summary callee =
-  let callee_pname = proc_name_of_callee callee in
+let analyze_callee exe_env ?caller_summary callee_pname =
   register_callee ?caller_summary callee_pname ;
   if is_active callee_pname then None
   else
@@ -337,8 +313,8 @@ let analyze_callee exe_env ?caller_summary callee =
         callee_summary_option
     | None ->
         let summ_opt =
-          if callee_should_be_analyzed callee then
-            match get_callee_proc_desc callee with
+          if procedure_should_be_analyzed callee_pname then
+            match get_proc_desc callee_pname with
             | Some callee_pdesc ->
                 RestartScheduler.lock_exn callee_pname ;
                 let callee_summary =
@@ -356,16 +332,12 @@ let analyze_callee exe_env ?caller_summary callee =
         summ_opt
 
 
-let analyze_proc_desc exe_env ~caller_summary callee_pdesc =
-  analyze_callee exe_env ~caller_summary (ProcDesc callee_pdesc)
-
-
 let analyze_proc_name exe_env ~caller_summary callee_pname =
-  analyze_callee exe_env ~caller_summary (ProcName callee_pname)
+  analyze_callee exe_env ~caller_summary callee_pname
 
 
 let analyze_proc_name_no_caller exe_env callee_pname =
-  analyze_callee exe_env ?caller_summary:None (ProcName callee_pname)
+  analyze_callee exe_env ?caller_summary:None callee_pname
 
 
 let analyze_procedures exe_env procs_to_analyze source_file_opt =
