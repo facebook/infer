@@ -114,8 +114,6 @@ let tests =
     make_load_fld ~rhs_typ:StdTyp.void lhs_id_str fld_str (Exp.Var (ident_of_str root_str))
   in
   let assert_empty = invariant "{ }" in
-  let exe_env = Exe_env.mk () in
-  Ondemand.set_exe_env exe_env ;
   let test_list =
     [ ("source recorded", [assign_to_source "ret_id"; invariant "{ ret_id$0* => (SOURCE -> ?) }"])
     ; ("non-source not recorded", [assign_to_non_source "ret_id"; assert_empty])
