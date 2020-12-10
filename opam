@@ -30,6 +30,7 @@ depends: [
   "conf-zlib" {build}
   "ctypes" {>="0.9.2"}
   "dune" {build & >="2.0"}
+  "iter"
   "javalib" {>="3.2.1"}
   "mlgmpidl" {>="1.2.12"}
   "mtime"
