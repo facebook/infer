@@ -259,6 +259,7 @@ module PulseTransferFunctions = struct
     let astates = List.fold ~f:call_dealloc dealloc_data ~init:[Domain.ContinueProgram astate] in
     (astates, ret_vars)
 
+
   let update_imm_var lhs_exp astate=
     let rec update exp=
       match (exp : Exp.t) with
@@ -270,7 +271,7 @@ module PulseTransferFunctions = struct
     in
     update lhs_exp
  
-  let exec_instr (astate : Domain.t) ({InterproceduralAnalysis.proc_desc} as analysis_data)
+  let exec_instr_aux (astate : Domain.t) ({InterproceduralAnalysis.proc_desc} as analysis_data)
       _cfg_node (instr : Sil.instr) : Domain.t list =
     match astate with
     | AbortProgram _ | LatentAbortProgram _ ->
@@ -307,7 +308,6 @@ module PulseTransferFunctions = struct
           (* [*lhs_exp := rhs_exp] *)
           let event = ValueHistory.Assignment loc in
           let result =
-<<<<<<< HEAD
             if not Config.pulse_isl then
               (let* astate, (rhs_addr, rhs_history) = PulseOperations.eval loc rhs_exp astate in
               let* astate, lhs_addr_hist = PulseOperations.eval loc lhs_exp astate in
@@ -315,6 +315,10 @@ module PulseTransferFunctions = struct
                 PulseOperations.write_deref loc ~ref:lhs_addr_hist
                     ~obj:(rhs_addr, event :: rhs_history)
                     astate
+              in
+	      let astate =
+                if Topl.is_deep_active () then topl_store_step loc ~lhs:lhs_exp ~rhs:rhs_exp astate
+                 else astate
               in
               match lhs_exp with
               | Lvar pvar when Pvar.is_return pvar ->
@@ -351,24 +355,6 @@ module PulseTransferFunctions = struct
                  PulseOperations.check_address_escape_list loc proc_desc rhs_addr rhs_history astates
               | _ ->
                  Ok astates)
-=======
-            let* astate, (rhs_addr, rhs_history) = PulseOperations.eval loc rhs_exp astate in
-            let* astate, lhs_addr_hist = PulseOperations.eval loc lhs_exp astate in
-            let* astate =
-              PulseOperations.write_deref loc ~ref:lhs_addr_hist
-                ~obj:(rhs_addr, event :: rhs_history)
-                astate
-            in
-            let astate =
-              if Topl.is_deep_active () then topl_store_step loc ~lhs:lhs_exp ~rhs:rhs_exp astate
-              else astate
-            in
-            match lhs_exp with
-            | Lvar pvar when Pvar.is_return pvar ->
-                PulseOperations.check_address_escape loc proc_desc rhs_addr rhs_history astate
-            | _ ->
-                Ok astate
->>>>>>> upstream/master
           in
           report_on_error analysis_data result)
       | Prune (condition, loc, _is_then_branch, _if_kind) ->
@@ -419,8 +405,14 @@ module PulseTransferFunctions = struct
       | Metadata (Abstract _ | VariableLifetimeBegins _ | Nullify _ | Skip) ->
           [Domain.ContinueProgram astate] ))
 
+  let exec_instr astate analysis_data cfg_node instr =
+    (* Sometimes instead of stopping on contradictions a false path condition is recorded
+       instead. Prune these early here so they don't spuriously count towards the disjunct limit. *)
+    exec_instr_aux astate analysis_data cfg_node instr
+    |> List.filter ~f:(fun exec_state -> not (Domain.is_unsat_cheap exec_state))
 
-  let pp_session_name _node fmt = F.pp_print_string fmt (if not Config.pulse_isl then "Pulse" else "Pil")
+
+  let pp_session_name _node fmt = F.pp_print_string fmt "Pulse"
 end
 
 module DisjunctiveAnalyzer =
@@ -437,9 +429,10 @@ let checker ({InterproceduralAnalysis.proc_desc; err_log} as analysis_data) =
   let initial = [ExecutionDomain.mk_initial proc_desc] in
   match DisjunctiveAnalyzer.compute_post analysis_data ~initial proc_desc with
   | Some posts ->
-<<<<<<< HEAD
-     if not Config.pulse_isl then
-       Some (PulseSummary.of_posts proc_desc posts)
+      if not Config.pulse_isl then
+        let summary = PulseSummary.of_posts proc_desc posts in
+        report_topl_errors proc_desc err_log summary ;
+        Some summary
      else
        (let simpl_er_posts, re_posts, abort_posts, is_raised_er =
           List.fold posts ~init:([], [], [], false) ~f:(fun (r1, re, ra, r3) post ->
@@ -464,11 +457,8 @@ let checker ({InterproceduralAnalysis.proc_desc; err_log} as analysis_data) =
             ()
         in
         let simpl_posts = (List.map simpl_er_posts ~f:(fun astate -> ExecutionDomain.ContinueProgram astate))@re_posts@abort_posts in
-        Some (PulseSummary.of_posts proc_desc simpl_posts))
-=======
-      let summary = PulseSummary.of_posts proc_desc posts in
-      report_topl_errors proc_desc err_log summary ;
-      Some summary
->>>>>>> upstream/master
+        et summary = PulseSummary.of_posts proc_desc simpl_posts in
+        report_topl_errors proc_desc err_log summary ;
+        Some summary)
   | None ->
       None

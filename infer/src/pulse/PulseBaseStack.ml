@@ -58,6 +58,6 @@ let pp fmt m =
 let compare = compare AddrHistPair.compare
 
 let get_vars (stack: t)=
-  Stack.fold (fun v _ acc -> acc@[v]) stack []
+  M.fold (fun v _ acc -> acc@[v]) stack []
 
 

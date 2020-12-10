@@ -700,7 +700,7 @@ let apply_callee ~caller_proc_desc callee_pname call_loc callee_exec_state ~ret
       map_call_result
         (astate :> AbductiveDomain.t)
         ~f:(fun astate subst ->
-            let astate_summary = AbductiveDomain.summary_of_post caller_proc_desc astate in
+          let+ astate_summary = AbductiveDomain.summary_of_post caller_proc_desc astate in
             match callee_exec_state with
             | ContinueProgram _ ->
                 assert false
@@ -709,12 +709,12 @@ let apply_callee ~caller_proc_desc callee_pname call_loc callee_exec_state ~ret
             | ExitProgram _ ->
                 Ok (ExitProgram astate_summary)
             | LatentAbortProgram {latent_issue} ->
-                let latent_issue =
-                  LatentIssue.add_call (CallEvent.Call callee_pname, call_loc) latent_issue
-                in
-                if LatentIssue.should_report astate_summary then
-                  Error (LatentIssue.to_diagnostic latent_issue, (astate_summary :> AbductiveDomain.t))
-                else Ok ((LatentAbortProgram {astate= astate_summary; latent_issue}), subst) )
+            let latent_issue =
+              LatentIssue.add_call (CallEvent.Call callee_pname, call_loc) latent_issue
+            in
+             if LatentIssue.should_report astate_summary then
+               Error (LatentIssue.to_diagnostic latent_issue, (astate_summary :> AbductiveDomain.t))
+             else Ok ((LatentAbortProgram {astate= astate_summary; latent_issue}), subst) )
 
 let check_all_invalid callees_callers_match callee_proc_name call_location astate =
   let res = (match astate.AbductiveDomain.status with
@@ -862,12 +862,11 @@ let call ~caller_proc_desc err_log ~(callee_data : (Procdesc.t * PulseSummary.t)
                   posts
               | Error (Sat post) | Ok post ->
                   post :: posts ) )
-    | None ->
+  | None ->
       (* no spec found for some reason (unknown function, ...) *)
       L.d_printfln "No spec found for %a@\n" Procname.pp callee_pname ;
       unknown_call call_loc (SkippedKnownCall callee_pname) ~ret ~actuals ~formals_opt astate
       |> fun astate -> Ok [ExecutionDomain.ContinueProgram astate]
-      (* |> ok_continue *)
 
 let merge_spec location astates=
   let extract_abd_attr addr_attrs formals base_domain=

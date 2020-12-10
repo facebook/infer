@@ -157,9 +157,10 @@ let update_taskbar callee_pdesc =
 
 
 let analyze callee_summary =
-  BackendStats.incr_ondemand_procs_analyzed () ;
   let exe_env = Option.value_exn !exe_env_ref in
-  Callbacks.iterate_procedure_callbacks exe_env callee_summary
+  let summary = Callbacks.iterate_procedure_callbacks exe_env callee_summary in
+  BackendStats.incr_ondemand_procs_analyzed () ;
+  summary
 
 
 let run_proc_analysis ~caller_pdesc callee_pdesc =
