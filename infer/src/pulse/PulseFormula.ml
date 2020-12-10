@@ -1073,7 +1073,7 @@ module Formula = struct
           new_eqs
 
 
-    let rec solve_normalized_eq ~fuel new_eqs l1 l2 phi =
+    let rec solve_normalized_lin_eq ~fuel new_eqs l1 l2 phi =
       LinArith.solve_eq l1 l2
       >>= function
       | None ->
@@ -1098,7 +1098,7 @@ module Formula = struct
                  normalize it *)
               if fuel > 0 then (
                 L.d_printfln "Consuming fuel solving linear equality (from %d)" fuel ;
-                solve_normalized_eq ~fuel:(fuel - 1) new_eqs l (apply phi l') phi )
+                solve_normalized_lin_eq ~fuel:(fuel - 1) new_eqs l (apply phi l') phi )
               else (
                 (* [fuel = 0]: give up simplifying further for fear of diverging *)
                 L.d_printfln "Ran out of fuel solving linear equality" ;
@@ -1154,17 +1154,17 @@ module Formula = struct
               (* no need to consume fuel here as we can only go through this branch finitely many
                  times because there are finitely many variables in a given formula *)
               (* TODO: we may want to keep the "simpler" representative for [v_new] between [l1] and [l2] *)
-              solve_normalized_eq ~fuel new_eqs l1 l2 phi )
+              solve_normalized_lin_eq ~fuel new_eqs l1 l2 phi )
 
 
     (** an arbitrary value *)
     let base_fuel = 5
 
-    let solve_eq new_eqs t1 t2 phi =
-      solve_normalized_eq ~fuel:base_fuel new_eqs (apply phi t1) (apply phi t2) phi
+    let solve_lin_eq new_eqs t1 t2 phi =
+      solve_normalized_lin_eq ~fuel:base_fuel new_eqs (apply phi t1) (apply phi t2) phi
 
 
-    let and_var_linarith v l (phi, new_eqs) = solve_eq new_eqs l (LinArith.of_var v) phi
+    let and_var_linarith v l (phi, new_eqs) = solve_lin_eq new_eqs l (LinArith.of_var v) phi
 
     let rec normalize_linear_eqs ~fuel (phi0, new_eqs) =
       let* changed, phi_new_eqs' =
@@ -1214,7 +1214,7 @@ module Formula = struct
           (* NOTE: {!normalize_atom} calls {!Atom.eval}, which normalizes linear equalities so
              they end up only on one side, hence only this match case is needed to detect linear
              equalities *)
-          let+ phi', new_eqs = solve_eq new_eqs l (LinArith.of_q c) phi in
+          let+ phi', new_eqs = solve_lin_eq new_eqs l (LinArith.of_q c) phi in
           (true, (phi', new_eqs))
       | Some atom' ->
           Sat (false, ({phi with atoms= Atom.Set.add atom' phi.atoms}, new_eqs))
