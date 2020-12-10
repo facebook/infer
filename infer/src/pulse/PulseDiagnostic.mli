@@ -24,10 +24,20 @@ type access_to_invalid_address =
             invalidated in [invalidation_trace] without further assumptions *) }
 [@@deriving equal, yojson_of]
 
+type read_uninitialized_value =
+  { calling_context: (CallEvent.t * Location.t) list
+        (** the list of function calls leading to the issue being realised, which is an additional
+            common prefix to the traces in the record *)
+  ; trace: Trace.t
+        (** assuming we are in the calling context, the trace leads to read of the uninitialized
+            value *) }
+[@@deriving equal, yojson_of]
+
 (** an error to report to the user *)
 type t =
   | AccessToInvalidAddress of access_to_invalid_address
   | MemoryLeak of {procname: Procname.t; allocation_trace: Trace.t; location: Location.t}
+  | ReadUninitializedValue of read_uninitialized_value
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
 [@@deriving equal]
 

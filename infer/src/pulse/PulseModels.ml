@@ -152,7 +152,7 @@ module C = struct
     let astate_alloc =
       PulseArithmetic.and_positive ret_addr astate
       |> PulseOperations.allocate callee_procname location ret_value
-      |> set_uninitialized size_exp_opt location ret_value
+      |> set_uninitialized size_exp_opt location ret_addr
     in
     let+ astate_null =
       PulseArithmetic.and_eq_int ret_addr IntLit.zero astate
@@ -171,7 +171,7 @@ module C = struct
     let astate =
       PulseOperations.allocate callee_procname location ret_value astate
       |> PulseArithmetic.and_positive ret_addr
-      |> set_uninitialized size_exp_opt location ret_value
+      |> set_uninitialized size_exp_opt location ret_addr
     in
     ok_continue astate
 

@@ -325,25 +325,20 @@ let set_uninitialized_post src typ location (post : PostDomain.t) =
   match typ.Typ.desc with
   | Tint _ | Tfloat _ | Tptr _ ->
       let {stack; attrs} = (post :> base_domain) in
-      let stack, addr, history =
+      let stack, addr =
         match src with
-        | `LocalDecl (pvar, addr_opt) ->
-            let history = [ValueHistory.VariableDeclared (pvar, location)] in
-            let stack, addr =
-              match addr_opt with
-              | None ->
-                  let addr = AbstractValue.mk_fresh () in
-                  (BaseStack.add (Var.of_pvar pvar) (addr, history) stack, addr)
-              | Some addr ->
-                  (stack, addr)
-            in
-            (stack, addr, history)
-        | `Malloc (addr, history) ->
-            (stack, addr, history)
+        | `LocalDecl (pvar, addr_opt) -> (
+          match addr_opt with
+          | None ->
+              let addr = AbstractValue.mk_fresh () in
+              let history = [ValueHistory.VariableDeclared (pvar, location)] in
+              (BaseStack.add (Var.of_pvar pvar) (addr, history) stack, addr)
+          | Some addr ->
+              (stack, addr) )
+        | `Malloc addr ->
+            (stack, addr)
       in
-      let attrs =
-        BaseAddressAttributes.add_one addr (Uninitialized (Immediate {location; history})) attrs
-      in
+      let attrs = BaseAddressAttributes.add_one addr Uninitialized attrs in
       PostDomain.update ~stack ~attrs post
   | Tstruct _ ->
       (* TODO: set uninitialized attributes for fields *)

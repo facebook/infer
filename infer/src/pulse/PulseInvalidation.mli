@@ -31,7 +31,6 @@ type t =
   | OptionalEmpty
   | StdVector of std_vector_function
   | JavaIterator of java_iterator_function
-  | Uninitialized
 [@@deriving compare, equal]
 
 val pp : F.formatter -> t -> unit

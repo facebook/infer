@@ -35,7 +35,7 @@ module Attribute = struct
     | MustBeInitialized of Trace.t
     | MustBeValid of Trace.t
     | StdVectorReserve
-    | Uninitialized of Trace.t
+    | Uninitialized
     | WrittenTo of Trace.t
   [@@deriving compare, variants]
 
@@ -72,7 +72,7 @@ module Attribute = struct
 
   let end_of_collection_rank = Variants.to_rank EndOfCollection
 
-  let uninitialized_rank = Variants.to_rank (Uninitialized dummy_trace)
+  let uninitialized_rank = Variants.to_rank Uninitialized
 
   let must_be_initialized_rank = Variants.to_rank (MustBeInitialized dummy_trace)
 
@@ -108,10 +108,8 @@ module Attribute = struct
         F.fprintf f "MustBeValid %a" (Trace.pp ~pp_immediate:(pp_string_if_debug "access")) trace
     | StdVectorReserve ->
         F.pp_print_string f "std::vector::reserve()"
-    | Uninitialized trace ->
-        F.fprintf f "Uninitialized %a"
-          (Trace.pp ~pp_immediate:(pp_string_if_debug "declaration"))
-          trace
+    | Uninitialized ->
+        F.pp_print_string f "Uninitialized"
     | WrittenTo trace ->
         F.fprintf f "WrittenTo %a" (Trace.pp ~pp_immediate:(pp_string_if_debug "mutation")) trace
 end
@@ -167,6 +165,8 @@ module Attributes = struct
     || Option.is_some (Set.find_rank attrs Attribute.invalid_rank)
 
 
+  let is_uninitialized attrs = Set.find_rank attrs Attribute.uninitialized_rank |> Option.is_some
+
   let get_allocation attrs =
     Set.find_rank attrs Attribute.allocated_rank
     |> Option.map ~f:(fun attr ->
@@ -179,13 +179,6 @@ module Attributes = struct
     |> Option.map ~f:(fun attr ->
            let[@warning "-8"] (Attribute.DynamicType typ) = attr in
            typ )
-
-
-  let get_uninitialized attrs =
-    Set.find_rank attrs Attribute.uninitialized_rank
-    |> Option.map ~f:(fun attr ->
-           let[@warning "-8"] (Attribute.Uninitialized trace) = attr in
-           trace )
 
 
   let get_must_be_initialized attrs =
@@ -211,7 +204,7 @@ let is_suitable_for_pre = function
   | EndOfCollection
   | Invalid _
   | StdVectorReserve
-  | Uninitialized _
+  | Uninitialized
   | WrittenTo _ ->
       false
 
@@ -223,8 +216,6 @@ let map_trace ~f = function
       Invalid (invalidation, f trace)
   | MustBeValid trace ->
       MustBeValid (f trace)
-  | Uninitialized trace ->
-      Uninitialized (f trace)
   | WrittenTo trace ->
       WrittenTo (f trace)
   | MustBeInitialized trace ->
@@ -234,5 +225,6 @@ let map_trace ~f = function
     | Closure _
     | DynamicType _
     | EndOfCollection
-    | StdVectorReserve ) as attr ->
+    | StdVectorReserve
+    | Uninitialized ) as attr ->
       attr

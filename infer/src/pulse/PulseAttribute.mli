@@ -22,7 +22,7 @@ type t =
   | MustBeInitialized of Trace.t
   | MustBeValid of Trace.t
   | StdVectorReserve
-  | Uninitialized of Trace.t
+  | Uninitialized
   | WrittenTo of Trace.t
 [@@deriving compare]
 
@@ -56,7 +56,7 @@ module Attributes : sig
 
   val is_std_vector_reserved : t -> bool
 
-  val get_uninitialized : t -> Trace.t option
+  val is_uninitialized : t -> bool
 
   val get_must_be_initialized : t -> Trace.t option
 end

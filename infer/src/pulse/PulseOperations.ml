@@ -27,17 +27,9 @@ let check_addr_access access_mode location (address, history) astate =
   in
   match access_mode with
   | Read ->
-      let+ astate =
-        AddressAttributes.check_initialized access_trace address astate
-        |> Result.map_error ~f:(fun invalidation_trace ->
-               ( Diagnostic.AccessToInvalidAddress
-                   { calling_context= []
-                   ; invalidation= Uninitialized
-                   ; invalidation_trace
-                   ; access_trace }
-               , astate ) )
-      in
-      astate
+      AddressAttributes.check_initialized access_trace address astate
+      |> Result.map_error ~f:(fun () ->
+             (Diagnostic.ReadUninitializedValue {calling_context= []; trace= access_trace}, astate) )
   | Write ->
       Ok (AbductiveDomain.initialize address astate)
   | NoAccess ->

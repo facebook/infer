@@ -573,13 +573,9 @@ let check_all_valid callee_proc_name call_location {AbductiveDomain.pre; _} call
       | Some callee_access_trace ->
           let access_trace = mk_access_trace callee_access_trace in
           AddressAttributes.check_initialized access_trace addr_caller astate
-          |> Result.map_error ~f:(fun invalidation_trace ->
+          |> Result.map_error ~f:(fun () ->
                  L.d_printfln "ERROR: caller's %a is uninitialized!" AbstractValue.pp addr_caller ;
-                 ( Diagnostic.AccessToInvalidAddress
-                     { calling_context= []
-                     ; invalidation= Uninitialized
-                     ; invalidation_trace
-                     ; access_trace }
+                 ( Diagnostic.ReadUninitializedValue {calling_context= []; trace= access_trace}
                  , astate ) ) )
     call_state.subst (Ok call_state.astate)
 

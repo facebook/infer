@@ -126,7 +126,7 @@ module AddressAttributes : sig
 
   val check_valid : Trace.t -> AbstractValue.t -> t -> (t, Invalidation.t * Trace.t) result
 
-  val check_initialized : Trace.t -> AbstractValue.t -> t -> (t, Trace.t) result
+  val check_initialized : Trace.t -> AbstractValue.t -> t -> (t, unit) result
 
   val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
@@ -188,8 +188,7 @@ val initialize : AbstractValue.t -> t -> t
 val set_uninitialized :
      [ `LocalDecl of Pvar.t * AbstractValue.t option
        (** the second optional parameter is for the address of the variable *)
-     | `Malloc of AbstractValue.t * ValueHistory.t
-       (** the address parameter is a newly allocated address *) ]
+     | `Malloc of AbstractValue.t  (** the address parameter is a newly allocated address *) ]
   -> Typ.t
   -> Location.t
   -> t
