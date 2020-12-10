@@ -531,22 +531,27 @@ let incorporate_new_eqs astate new_eqs =
 let canonicalize astate =
   let open SatUnsat.Import in
   let get_var_repr v = PathCondition.get_var_repr astate.path_condition v in
-  let canonicalize_base stack heap =
+  let canonicalize_base stack heap attrs =
     let stack' = BaseStack.canonicalize ~get_var_repr stack in
     (* note: this step also de-registers addresses pointing to empty edges *)
     let+ heap' = BaseMemory.canonicalize ~get_var_repr heap in
-    (stack', heap')
+    let attrs' = BaseAddressAttributes.canonicalize ~get_var_repr attrs in
+    (stack', heap', attrs')
   in
   (* need different functions for pre and post to appease the type system *)
   let canonicalize_pre (pre : PreDomain.t) =
-    let+ stack', heap' = canonicalize_base (pre :> BaseDomain.t).stack (pre :> BaseDomain.t).heap in
-    PreDomain.update ~stack:stack' ~heap:heap' pre
+    let+ stack', heap', attrs' =
+      canonicalize_base (pre :> BaseDomain.t).stack (pre :> BaseDomain.t).heap
+        (pre :> BaseDomain.t).attrs
+    in
+    PreDomain.update ~stack:stack' ~heap:heap' ~attrs:attrs' pre
   in
   let canonicalize_post (post : PostDomain.t) =
-    let+ stack', heap' =
+    let+ stack', heap', attrs' =
       canonicalize_base (post :> BaseDomain.t).stack (post :> BaseDomain.t).heap
+        (post :> BaseDomain.t).attrs
     in
-    PostDomain.update ~stack:stack' ~heap:heap' post
+    PostDomain.update ~stack:stack' ~heap:heap' ~attrs:attrs' post
   in
   let* pre = canonicalize_pre astate.pre in
   let+ post = canonicalize_post astate.post in

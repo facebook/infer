@@ -54,3 +54,7 @@ val pp : F.formatter -> t -> unit
 val remove_allocation_attr : AbstractValue.t -> t -> t
 
 val initialize : AbstractValue.t -> t -> t
+
+val canonicalize : get_var_repr:(AbstractValue.t -> AbstractValue.t) -> t -> t
+(** merge the attributes of all the variables that are equal according to [get_var_repr] and remove
+    non-canonical variables in favor of their rerpresentative *)

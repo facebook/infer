@@ -130,3 +130,17 @@ let is_end_of_collection address attrs =
 let is_std_vector_reserved address attrs =
   Graph.find_opt address attrs
   |> Option.value_map ~default:false ~f:Attributes.is_std_vector_reserved
+
+
+let canonicalize ~get_var_repr attrs_map =
+  (* TODO: merging attributes together can produce contradictory attributes, eg [MustBeValid] +
+     [Invalid]. We could detect these and abort execution. This is not really restricted to merging
+     as it might be possible to get a contradiction by accident too so maybe here is not the best
+     place to detect these. *)
+  Graph.fold
+    (fun addr attrs g ->
+      if Attributes.is_empty attrs then g
+      else
+        let addr' = get_var_repr addr in
+        add addr' attrs g )
+    attrs_map Graph.empty
