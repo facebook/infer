@@ -245,11 +245,23 @@ end = struct
     let finish visited_accum = Continue visited_accum in
     Container.fold_until edges ~fold:Memory.Edges.fold ~finish ~init:visited_accum
       ~f:(fun visited_accum (access, (address, _trace)) ->
-        match visit_address address ~f (access :: rev_accesses) astate visited_accum with
-        | Continue _ as cont ->
-            cont
+        match visit_access ~f access astate visited_accum with
         | Stop fin ->
-            Stop (Stop fin) )
+            Stop (Stop fin)
+        | Continue visited_accum -> (
+          match visit_address address ~f (access :: rev_accesses) astate visited_accum with
+          | Continue _ as cont ->
+              cont
+          | Stop fin ->
+              Stop (Stop fin) ) )
+
+
+  and visit_access ~f (access : Memory.Access.t) astate visited_accum =
+    match access with
+    | ArrayAccess (_, addr) ->
+        visit_address addr ~f [] astate visited_accum
+    | FieldAccess _ | TakeAddress | Dereference ->
+        Continue visited_accum
 
 
   let visit_address_from_var (orig_var, (address, _loc)) ~f rev_accesses astate visited_accum =

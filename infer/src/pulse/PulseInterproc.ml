@@ -182,6 +182,9 @@ let rec materialize_pre_from_address callee_proc_name call_location ~pre ~addr_p
     | Some edges_pre ->
         Container.fold_result ~fold:Memory.Edges.fold ~init:call_state edges_pre
           ~f:(fun call_state (access_callee, (addr_pre_dest, _)) ->
+            (* HACK: we should probably visit the value in the (array) access too, but since it's
+               a value normally it shouldn't appear in the heap anyway so there should be nothing
+               to visit. *)
             let subst, access_caller = translate_access_to_caller call_state.subst access_callee in
             let astate, addr_hist_dest_caller =
               Memory.eval_edge addr_hist_caller access_caller call_state.astate
