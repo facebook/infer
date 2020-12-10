@@ -43,7 +43,11 @@ type base_domain = BaseDomain.t =
   {heap: BaseMemory.t; stack: BaseStack.t; attrs: BaseAddressAttributes.t}
 
 (** represents the post abstract state at each program point *)
-module PostDomain : BaseDomainSig = struct
+module PostDomain : sig
+  include BaseDomainSig
+
+  val initialize : AbstractValue.t -> t -> t
+end = struct
   include BaseDomain
 
   let update ?stack ?heap ?attrs foot =
@@ -71,6 +75,11 @@ module PostDomain : BaseDomainSig = struct
       BaseAddressAttributes.filter_with_discarded_addrs (fun address _ -> f address) foot.attrs
     in
     (update ~heap:heap' ~attrs:attrs' foot, discarded_addresses)
+
+
+  let initialize address x =
+    let attrs = BaseAddressAttributes.initialize address x.attrs in
+    update ~attrs x
 end
 
 (* NOTE: [PreDomain] and [Domain] theoretically differ in that [PreDomain] should be the inverted lattice of [Domain], but since we never actually join states or check implication the two collapse into one. *)
@@ -150,6 +159,8 @@ let leq ~lhs ~rhs =
         ~lhs:(lhs.post :> BaseDomain.t)
         ~rhs:(rhs.post :> BaseDomain.t)
 
+
+let initialize address astate = {astate with post= PostDomain.initialize address astate.post}
 
 module Stack = struct
   let is_abducible astate var =
@@ -259,6 +270,19 @@ module AddressAttributes = struct
         |> add_one addr (MustBeValid access_trace)
 
 
+  let check_initialized access_trace addr astate =
+    let attrs = (astate.post :> base_domain).attrs in
+    let+ () = BaseAddressAttributes.check_initialized addr attrs in
+    let is_written_to =
+      Option.exists (BaseAddressAttributes.find_opt addr attrs) ~f:(fun attrs ->
+          Attribute.Attributes.get_written_to attrs |> Option.is_some )
+    in
+    if is_written_to then astate else abduce_attribute addr (MustBeInitialized access_trace) astate
+
+  (** [astate] with [astate.post.attrs = f astate.post.attrs] *)
+  let map_post_attrs ~f astate =
+    let new_post = PostDomain.update astate.post ~attrs:(f (astate.post :> base_domain).attrs) in
+    if phys_equal new_post astate.post then astate else {astate with post= new_post}
 
   let invalidate address invalidation location astate =
     if not Config.pulse_isl then
@@ -313,7 +337,8 @@ module AddressAttributes = struct
         let astate =
           if Attribute.is_suitable_for_pre attr then abduce_attribute value attr astate else astate
         in
-        add_one value attr astate )
+        let astate = add_one value attr astate in
+        match attr with Attribute.WrittenTo _ -> initialize value astate | _ -> astate )
 
 
    let abduce_attrs value attrs astate =
@@ -473,11 +498,45 @@ module Memory = struct
   let find_opt address astate = BaseMemory.find_opt address (astate.post :> base_domain).heap
 end
 
+let set_uninitialized_post src typ location (post : PostDomain.t) =
+  match typ.Typ.desc with
+  | Tint _ | Tfloat _ | Tptr _ ->
+      let {stack; attrs} = (post :> base_domain) in
+      let stack, addr =
+        match src with
+        | `LocalDecl (pvar, addr_opt) -> (
+          match addr_opt with
+          | None ->
+              let addr = AbstractValue.mk_fresh () in
+              let history = [ValueHistory.VariableDeclared (pvar, location)] in
+              (BaseStack.add (Var.of_pvar pvar) (addr, history) stack, addr)
+          | Some addr ->
+              (stack, addr) )
+        | `Malloc addr ->
+            (stack, addr)
+      in
+      let attrs = BaseAddressAttributes.add_one addr Uninitialized attrs in
+      PostDomain.update ~stack ~attrs post
+  | Tstruct _ ->
+      (* TODO: set uninitialized attributes for fields *)
+      post
+  | Tarray _ ->
+      (* TODO: set uninitialized attributes for elements *)
+      post
+  | Tvoid | Tfun | TVar _ ->
+      (* We ignore tricky types to mark uninitialized addresses. *)
+      post
+
+
+let set_uninitialized src typ location x =
+  {x with post= set_uninitialized_post src typ location x.post}
+
+
 let mk_initial proc_desc =
   (* HACK: save the formals in the stacks of the pre and the post to remember which local variables
      correspond to formals *)
-  let location = Procdesc.get_loc proc_desc in
   let proc_name = Procdesc.get_proc_name proc_desc in
+  let location = Procdesc.get_loc proc_desc in
   let formals_and_captured =
     let init_var mangled =
       let pvar = Pvar.mk mangled proc_name in
@@ -557,15 +616,22 @@ let mk_initial proc_desc =
                       | _ -> Var.Set.add v acc_nonref
                      )
                  | _ -> Var.Set.add v acc_nonref), Var.Set.add v acc_imm)
+in
+let locals = Procdesc.get_locals proc_desc in
+let post =
+    List.fold locals ~init:post ~f:(fun (acc : PostDomain.t) {ProcAttributes.name; typ} ->
+        set_uninitialized_post (`LocalDecl (Pvar.mk name proc_name, None)) typ location acc )
   in
-  {pre; post; topl= PulseTopl.start ()
-   ; skipped_calls= SkippedCalls.empty; path_condition= PathCondition.true_
-   ; status = Ok
-   ; local_ptrvars = local_ptrvars
-   ; nonref_formals = nonref_formals
-   ; imm_params = imm_params
-   ; mod_addrs = AbstractValue.Set.empty}
-
+  {pre
+  ; post
+  ; topl= PulseTopl.start ()
+  ; skipped_calls= SkippedCalls.empty
+  ; path_condition= PathCondition.true_
+  ; status = Ok
+  ; local_ptrvars = local_ptrvars
+  ; nonref_formals = nonref_formals
+  ; imm_params = imm_params
+  ; mod_addrs = AbstractValue.Set.empty }
 
 let add_skipped_call pname trace astate =
   let new_skipped_calls = SkippedCalls.add pname trace astate.skipped_calls in
@@ -696,22 +762,27 @@ let incorporate_new_eqs astate new_eqs =
 let canonicalize astate =
   let open SatUnsat.Import in
   let get_var_repr v = PathCondition.get_var_repr astate.path_condition v in
-  let canonicalize_base stack heap =
+  let canonicalize_base stack heap attrs =
     let stack' = BaseStack.canonicalize ~get_var_repr stack in
     (* note: this step also de-registers addresses pointing to empty edges *)
     let+ heap' = BaseMemory.canonicalize ~get_var_repr heap in
-    (stack', heap')
+    let attrs' = BaseAddressAttributes.canonicalize ~get_var_repr attrs in
+    (stack', heap', attrs')
   in
   (* need different functions for pre and post to appease the type system *)
   let canonicalize_pre (pre : PreDomain.t) =
-    let+ stack', heap' = canonicalize_base (pre :> BaseDomain.t).stack (pre :> BaseDomain.t).heap in
-    PreDomain.update ~stack:stack' ~heap:heap' pre
+    let+ stack', heap', attrs' =
+      canonicalize_base (pre :> BaseDomain.t).stack (pre :> BaseDomain.t).heap
+        (pre :> BaseDomain.t).attrs
+    in
+    PreDomain.update ~stack:stack' ~heap:heap' ~attrs:attrs' pre
   in
   let canonicalize_post (post : PostDomain.t) =
-    let+ stack', heap' =
+    let+ stack', heap', attrs' =
       canonicalize_base (post :> BaseDomain.t).stack (post :> BaseDomain.t).heap
+        (post :> BaseDomain.t).attrs
     in
-    PostDomain.update ~stack:stack' ~heap:heap' post
+    PostDomain.update ~stack:stack' ~heap:heap' ~attrs:attrs' post
   in
   let* pre = canonicalize_pre astate.pre in
   let+ post = canonicalize_post astate.post in

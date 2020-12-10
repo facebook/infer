@@ -20,7 +20,6 @@ val mk_interprocedural_field_t :
 
 val interprocedural :
      f_analyze_dep:(Procdesc.t -> 'payloads_orig -> (Procdesc.t * 'payloads) option)
-  -> f_analyze_pdesc_dep:('payloads_orig -> 'payloads option)
   -> get_payload:(Payloads.t -> 'payloads_orig)
   -> set_payload:(Payloads.t -> 'payload_checker -> Payloads.t)
   -> ('payloads InterproceduralAnalysis.t -> 'payload_checker)

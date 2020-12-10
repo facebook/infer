@@ -93,7 +93,7 @@ struct A {
 A getA();
 
 int struct_inside_loop_ok(std::vector<int> numbers) {
-  int sum;
+  int sum = 0;
   for (auto number : numbers) {
     A a = getA();
     sum += a.f(number);
@@ -102,7 +102,7 @@ int struct_inside_loop_ok(std::vector<int> numbers) {
 }
 
 int struct_inside_loop_break_ok(std::vector<int> numbers) {
-  int sum;
+  int sum = 0;
   for (auto number : numbers) {
     A a = getA();
     if (number < 0) {
@@ -114,7 +114,7 @@ int struct_inside_loop_break_ok(std::vector<int> numbers) {
 }
 
 int struct_inside_loop_continue_ok(std::vector<int> numbers) {
-  int sum;
+  int sum = 0;
   for (auto number : numbers) {
     A a = getA();
     if (number < 0) {

@@ -33,8 +33,10 @@ module Attribute = struct
     | DynamicType of Typ.Name.t
     | EndOfCollection
     | Invalid of Invalidation.t * Trace.t
+    | MustBeInitialized of Trace.t
     | MustBeValid of Trace.t
     | StdVectorReserve
+    | Uninitialized
     | WrittenTo of Trace.t
   [@@deriving compare, variants]
 
@@ -80,6 +82,10 @@ module Attribute = struct
       | Invalid (v1, _), Invalid (v2, _) -> Invalidation.equal v1 v2
       | _ -> true
  
+  let uninitialized_rank = Variants.to_rank Uninitialized
+
+  let must_be_initialized_rank = Variants.to_rank (MustBeInitialized dummy_trace)
+
   let pp f attribute =
     let pp_string_if_debug string fmt =
       if Config.debug_level_analysis >= 3 then F.pp_print_string fmt string
@@ -109,10 +115,16 @@ module Attribute = struct
         F.fprintf f "Invalid %a"
           (Trace.pp ~pp_immediate:(fun fmt -> Invalidation.pp fmt invalidation))
           trace
+    | MustBeInitialized trace ->
+        F.fprintf f "MustBeInitialized %a"
+          (Trace.pp ~pp_immediate:(pp_string_if_debug "read"))
+          trace
     | MustBeValid trace ->
         F.fprintf f "MustBeValid %a" (Trace.pp ~pp_immediate:(pp_string_if_debug "access")) trace
     | StdVectorReserve ->
         F.pp_print_string f "std::vector::reserve()"
+    | Uninitialized ->
+        F.pp_print_string f "Uninitialized"
     | WrittenTo trace ->
         F.fprintf f "WrittenTo %a" (Trace.pp ~pp_immediate:(pp_string_if_debug "mutation")) trace
 end
@@ -174,6 +186,8 @@ module Attributes = struct
     || Option.is_some (Set.find_rank attrs Attribute.invalid_rank)
 
 
+  let is_uninitialized attrs = Set.find_rank attrs Attribute.uninitialized_rank |> Option.is_some
+
   let get_allocation attrs =
     Set.find_rank attrs Attribute.allocated_rank
     |> Option.map ~f:(fun attr ->
@@ -230,13 +244,20 @@ module Attributes = struct
            typ )
 
 
+  let get_must_be_initialized attrs =
+    Set.find_rank attrs Attribute.must_be_initialized_rank
+    |> Option.map ~f:(fun attr ->
+           let[@warning "-8"] (Attribute.MustBeInitialized trace) = attr in
+           trace )
+
+
   include Set
 end
 
 include Attribute
 
 let is_suitable_for_pre = function
-  | MustBeValid _ ->
+  | MustBeValid _ | MustBeInitialized _ ->
       true
   | Invalid _ | Allocated _ | AbdAllocated _ ->
      if not Config.pulse_isl then false else true
@@ -246,6 +267,7 @@ let is_suitable_for_pre = function
   | DynamicType _
   | EndOfCollection
   | StdVectorReserve
+  | Uninitialized
   | WrittenTo _ ->
       false
 
@@ -261,10 +283,13 @@ let map_trace ~f = function
       MustBeValid (f trace)
   | WrittenTo trace ->
       WrittenTo (f trace)
+  | MustBeInitialized trace ->
+      MustBeInitialized (f trace)
   | ( AddressOfCppTemporary _
     | AddressOfStackVariable _
     | Closure _
     | DynamicType _
     | EndOfCollection
-    | StdVectorReserve ) as attr ->
+    | StdVectorReserve
+    | Uninitialized ) as attr ->
       attr

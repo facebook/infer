@@ -20,8 +20,10 @@ type t =
   | DynamicType of Typ.Name.t
   | EndOfCollection
   | Invalid of Invalidation.t * Trace.t
+  | MustBeInitialized of Trace.t
   | MustBeValid of Trace.t
   | StdVectorReserve
+  | Uninitialized
   | WrittenTo of Trace.t
 [@@deriving compare]
 
@@ -65,4 +67,8 @@ module Attributes : sig
 
   val is_not_empty_heap : t -> bool
     
+  val is_uninitialized : t -> bool
+
+  val get_must_be_initialized : t -> Trace.t option
+
 end

@@ -323,6 +323,8 @@ val topl_pulse_error : t
 
 val uninitialized_value : t
 
+val uninitialized_value_pulse : t
+
 val unreachable_code_after : t
 
 val use_after_delete : t

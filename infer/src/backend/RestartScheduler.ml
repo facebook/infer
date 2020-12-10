@@ -127,5 +127,3 @@ let unlock pname =
 
 
 let setup () = if_restart_scheduler ProcLocker.setup
-
-let clean () = if_restart_scheduler ProcLocker.clean

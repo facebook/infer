@@ -13,7 +13,9 @@ module AbductiveDomain = PulseAbductiveDomain
     but we want to delay reporting until we see the conditions for the bug manifest themselves in
     some calling context. *)
 
-type t = AccessToInvalidAddress of Diagnostic.access_to_invalid_address
+type t =
+  | AccessToInvalidAddress of Diagnostic.access_to_invalid_address
+  | ReadUninitializedValue of Diagnostic.read_uninitialized_value
 [@@deriving equal, yojson_of]
 
 val to_diagnostic : t -> Diagnostic.t

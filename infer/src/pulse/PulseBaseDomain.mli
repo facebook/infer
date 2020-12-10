@@ -24,6 +24,9 @@ val reachable_addresses_from : (Var.t -> bool) -> t -> AbstractValue.Set.t
 (** compute the set of abstract addresses that are "used" in the abstract state, i.e. reachable from
     the stack variables *)
 
+val reachable_addresses_from : AbstractValue.t list -> t -> AbstractValue.Set.t
+(** compute the set of abstract addresses that are reachable from given abstract addresses *)
+
 type mapping
 
 val empty_mapping : mapping

@@ -187,7 +187,6 @@ let analyze source_files_to_analyze =
         ~tasks:build_tasks_generator
     in
     let workers_stats = Tasks.Runner.run runner in
-    RestartScheduler.clean () ;
     let collected_stats =
       Array.fold workers_stats ~init:([], [])
         ~f:(fun ((backend_stats_list, gc_stats_list) as stats_list) stats_opt ->

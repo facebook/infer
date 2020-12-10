@@ -36,7 +36,9 @@ module Misc = struct
 
 
   let shallow_copy location event ret_id dest_pointer_hist src_pointer_hist astate =
-    let* astate, obj = PulseOperations.eval_access location src_pointer_hist Dereference astate in
+    let* astate, obj =
+      PulseOperations.eval_access Read location src_pointer_hist Dereference astate
+    in
     shallow_copy_value location event ret_id dest_pointer_hist obj astate
 
 
@@ -169,7 +171,14 @@ end
 module C = struct
   let free deleted_access : model = Misc.free_or_delete `Free deleted_access
 
-  let malloc _ : model =
+  let set_uninitialized size_exp_opt location ret_value astate =
+    Option.value_map size_exp_opt ~default:astate ~f:(fun size_exp ->
+        BufferOverrunModels.get_malloc_info_opt size_exp
+        |> Option.value_map ~default:astate ~f:(fun (obj_typ, _, _, _) ->
+               AbductiveDomain.set_uninitialized (`Malloc ret_value) obj_typ location astate ) )
+
+
+  let malloc_common ~size_exp_opt : model =
    fun _ ~callee_procname location ~ret:(ret_id, _) astate ->
     let ret_addr = AbstractValue.mk_fresh () in
     let ret_value =
@@ -179,6 +188,7 @@ module C = struct
     let astate_alloc =
       PulseArithmetic.and_positive ret_addr astate
       |> PulseOperations.allocate callee_procname location ret_value
+      |> set_uninitialized size_exp_opt location ret_addr
     in
     let+ astate_null =
       PulseArithmetic.and_eq_int ret_addr IntLit.zero astate
@@ -187,16 +197,28 @@ module C = struct
     [ExecutionDomain.ContinueProgram astate_alloc; ExecutionDomain.ContinueProgram astate_null]
 
 
-  let malloc_not_null _ : model =
+  let malloc_not_null_common ~size_exp_opt : model =
    fun _ ~callee_procname location ~ret:(ret_id, _) astate ->
     let ret_addr = AbstractValue.mk_fresh () in
     let ret_value =
       (ret_addr, [ValueHistory.Allocation {f= Model (Procname.to_string callee_procname); location}])
     in
     let astate = PulseOperations.write_id ret_id ret_value astate in
-    PulseOperations.allocate callee_procname location ret_value astate
-    |> PulseArithmetic.and_positive ret_addr
-    |> ok_continue
+    let astate =
+      PulseOperations.allocate callee_procname location ret_value astate
+      |> PulseArithmetic.and_positive ret_addr
+      |> set_uninitialized size_exp_opt location ret_addr
+    in
+    ok_continue astate
+
+
+  let malloc size_exp = malloc_common ~size_exp_opt:(Some size_exp)
+
+  let malloc_no_param = malloc_common ~size_exp_opt:None
+
+  let malloc_not_null size_exp = malloc_not_null_common ~size_exp_opt:(Some size_exp)
+
+  let malloc_not_null_no_param = malloc_not_null_common ~size_exp_opt:None
 end
 
 module ObjCCoreFoundation = struct
@@ -222,6 +244,24 @@ module ObjC = struct
     PulseOperations.add_dynamic_type dynamic_type ret_addr astate
     |> PulseArithmetic.and_positive ret_addr
     |> ok_continue
+
+
+  let dispatch_sync args : model =
+   fun {analyze_dependency; proc_desc; err_log} ~callee_procname:_ location ~ret astate ->
+    match List.last args with
+    | None ->
+        Ok [ExecutionDomain.ContinueProgram astate]
+    | Some {ProcnameDispatcher.Call.FuncArg.arg_payload= lambda_ptr_hist} -> (
+        let* astate, (lambda, _) =
+          PulseOperations.eval_access Read location lambda_ptr_hist Dereference astate
+        in
+        match AddressAttributes.get_closure_proc_name lambda astate with
+        | None ->
+            Ok [ExecutionDomain.ContinueProgram astate]
+        | Some callee_proc_name ->
+            PulseOperations.call ~caller_proc_desc:proc_desc err_log
+              ~callee_data:(analyze_dependency callee_proc_name)
+              location callee_proc_name ~ret ~actuals:[] ~formals_opt:None astate )
 end
 
 module Optional = struct
@@ -229,18 +269,18 @@ module Optional = struct
 
   let internal_value_access = HilExp.Access.FieldAccess internal_value
 
-  let to_internal_value location optional astate =
-    PulseOperations.eval_access location optional internal_value_access astate
+  let to_internal_value mode location optional astate =
+    PulseOperations.eval_access mode location optional internal_value_access astate
 
 
-  let to_internal_value_deref location optional astate =
-    let* astate, pointer = to_internal_value location optional astate in
-    PulseOperations.eval_access location pointer Dereference astate
+  let to_internal_value_deref mode location optional astate =
+    let* astate, pointer = to_internal_value Read location optional astate in
+    PulseOperations.eval_access mode location pointer Dereference astate
 
 
   let write_value location this ~value ~desc astate =
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
-    let* astate, value_field = to_internal_value location this astate in
+    let* astate, value_field = to_internal_value Read location this astate in
     let value_hist = (fst value, event :: snd value) in
     let+ astate = PulseOperations.write_deref location ~ref:value_field ~obj:value_hist astate in
     let astate =
@@ -282,7 +322,7 @@ module Optional = struct
 
   let assign_optional_value this init ~desc : model =
    fun _ ~callee_procname:_ location ~ret:_ astate ->
-    let* astate, value = to_internal_value_deref location init astate in
+    let* astate, value = to_internal_value_deref Read location init astate in
     let+ astate, _ = write_value location this ~value ~desc astate in
     [ExecutionDomain.ContinueProgram astate]
 
@@ -297,10 +337,10 @@ module Optional = struct
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let* astate, ((value_addr, value_hist) as value) =
-      to_internal_value_deref location optional astate
+      to_internal_value_deref Write location optional astate
     in
     (* Check dereference to show an error at the callsite of `value()` *)
-    let* astate, _ = PulseOperations.eval_access location value Dereference astate in
+    let* astate, _ = PulseOperations.eval_access Write location value Dereference astate in
     PulseOperations.write_id ret_id (value_addr, event :: value_hist) astate |> ok_continue
 
 
@@ -308,7 +348,7 @@ module Optional = struct
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let ret_addr = AbstractValue.mk_fresh () in
     let ret_value = (ret_addr, [ValueHistory.Call {f= Model desc; location; in_call= []}]) in
-    let+ astate, (value_addr, _) = to_internal_value_deref location optional astate in
+    let+ astate, (value_addr, _) = to_internal_value_deref Read location optional astate in
     let astate = PulseOperations.write_id ret_id ret_value astate in
     let astate_non_empty = PulseArithmetic.and_positive value_addr astate in
     let astate_true = PulseArithmetic.and_positive ret_addr astate_non_empty in
@@ -320,7 +360,7 @@ module Optional = struct
   let get_pointer optional ~desc : model =
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
-    let* astate, value_addr = to_internal_value_deref location optional astate in
+    let* astate, value_addr = to_internal_value_deref Read location optional astate in
     let value_update_hist = (fst value_addr, event :: snd value_addr) in
     let astate_value_addr =
       PulseOperations.write_id ret_id value_update_hist astate
@@ -339,15 +379,15 @@ module Optional = struct
   let value_or optional default ~desc : model =
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
-    let* astate, value_addr = to_internal_value_deref location optional astate in
+    let* astate, value_addr = to_internal_value_deref Read location optional astate in
     let astate_non_empty = PulseArithmetic.and_positive (fst value_addr) astate in
     let* astate_non_empty, value =
-      PulseOperations.eval_access location value_addr Dereference astate_non_empty
+      PulseOperations.eval_access Read location value_addr Dereference astate_non_empty
     in
     let value_update_hist = (fst value, event :: snd value) in
     let astate_value = PulseOperations.write_id ret_id value_update_hist astate_non_empty in
     let+ astate, (default_val, default_hist) =
-      PulseOperations.eval_access location default Dereference astate
+      PulseOperations.eval_access Read location default Dereference astate
     in
     let default_value_hist = (default_val, event :: default_hist) in
     let astate_empty = PulseArithmetic.and_eq_int (fst value_addr) IntLit.zero astate in
@@ -377,11 +417,11 @@ module StdAtomicInteger = struct
 
 
   let load_backing_int location this astate =
-    let* astate, obj = PulseOperations.eval_access location this Dereference astate in
+    let* astate, obj = PulseOperations.eval_access Read location this Dereference astate in
     let* astate, int_addr =
-      PulseOperations.eval_access location obj (FieldAccess internal_int) astate
+      PulseOperations.eval_access Read location obj (FieldAccess internal_int) astate
     in
-    let+ astate, int_val = PulseOperations.eval_access location int_addr Dereference astate in
+    let+ astate, int_val = PulseOperations.eval_access Read location int_addr Dereference astate in
     (astate, int_addr, int_val)
 
 
@@ -390,7 +430,7 @@ module StdAtomicInteger = struct
     let event = ValueHistory.Call {f= Model "std::atomic::atomic()"; location; in_call= []} in
     let this = (AbstractValue.mk_fresh (), [event]) in
     let* astate, int_field =
-      PulseOperations.eval_access location this (FieldAccess internal_int) astate
+      PulseOperations.eval_access Write location this (FieldAccess internal_int) astate
     in
     let* astate = PulseOperations.write_deref location ~ref:int_field ~obj:init_value astate in
     let+ astate = PulseOperations.write_deref location ~ref:this_address ~obj:this astate in
@@ -483,9 +523,9 @@ module StdAtomicInteger = struct
   let operator_t = load_instr "std::atomic<T>::operator_T()"
 
   let store_backing_int location this_address new_value astate =
-    let* astate, this = PulseOperations.eval_access location this_address Dereference astate in
+    let* astate, this = PulseOperations.eval_access Read location this_address Dereference astate in
     let* astate, int_field =
-      PulseOperations.eval_access location this (FieldAccess internal_int) astate
+      PulseOperations.eval_access Write location this (FieldAccess internal_int) astate
     in
     PulseOperations.write_deref location ~ref:int_field ~obj:new_value astate
 
@@ -511,7 +551,9 @@ module JavaObject = struct
   let clone src_pointer_hist : model =
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model "Object.clone"; location; in_call= []} in
-    let* astate, obj = PulseOperations.eval_access location src_pointer_hist Dereference astate in
+    let* astate, obj =
+      PulseOperations.eval_access Read location src_pointer_hist Dereference astate
+    in
     let+ astate, obj_copy = PulseOperations.shallow_copy location obj astate in
     let astate = PulseOperations.write_id ret_id (fst obj_copy, event :: snd obj_copy) astate in
     [ExecutionDomain.ContinueProgram astate]
@@ -527,7 +569,7 @@ module StdBasicString = struct
   let internal_string_access = HilExp.Access.FieldAccess internal_string
 
   let to_internal_string location bstring astate =
-    PulseOperations.eval_access location bstring internal_string_access astate
+    PulseOperations.eval_access Read location bstring internal_string_access astate
 
 
   let data this_hist : model =
@@ -535,7 +577,7 @@ module StdBasicString = struct
     let event = ValueHistory.Call {f= Model "std::basic_string::data()"; location; in_call= []} in
     let* astate, string_addr_hist = to_internal_string location this_hist astate in
     let+ astate, (string, hist) =
-      PulseOperations.eval_access location string_addr_hist Dereference astate
+      PulseOperations.eval_access Read location string_addr_hist Dereference astate
     in
     let astate = PulseOperations.write_id ret_id (string, event :: hist) astate in
     [ExecutionDomain.ContinueProgram astate]
@@ -563,7 +605,7 @@ module StdFunction = struct
       [PulseOperations.havoc_id ret_id [event] astate]
     in
     let* astate, (lambda, _) =
-      PulseOperations.eval_access location lambda_ptr_hist Dereference astate
+      PulseOperations.eval_access Read location lambda_ptr_hist Dereference astate
     in
     let* astate = PulseOperations.Closures.check_captured_addresses location lambda astate in
     match AddressAttributes.get_closure_proc_name lambda astate with
@@ -608,29 +650,37 @@ module GenericArrayBackedCollection = struct
 
   let last_field = Fieldname.make (Typ.CStruct cpp_model_namespace) "past_the_end"
 
+  let is_empty = Fieldname.make (Typ.CStruct cpp_model_namespace) "is_empty"
+
   let access = HilExp.Access.FieldAccess field
 
-  let eval location collection astate =
-    PulseOperations.eval_access location collection access astate
+  let eval mode location collection astate =
+    PulseOperations.eval_access mode location collection access astate
 
 
   let eval_element location internal_array index astate =
-    PulseOperations.eval_access location internal_array (ArrayAccess (StdTyp.void, index)) astate
+    PulseOperations.eval_access Read location internal_array
+      (ArrayAccess (StdTyp.void, index))
+      astate
 
   let get_array_access internal_array ati astate =
     PulseOperations.get_array_access internal_array ati astate
     
   let element location collection index astate =
-    let* astate, internal_array = eval location collection astate in
+    let* astate, internal_array = eval Read location collection astate in
     eval_element location internal_array index astate
 
 
   let eval_pointer_to_last_element location collection astate =
     let+ astate, pointer =
-      PulseOperations.eval_access location collection (FieldAccess last_field) astate
+      PulseOperations.eval_access Write location collection (FieldAccess last_field) astate
     in
     let astate = AddressAttributes.mark_as_end_of_collection (fst pointer) astate in
     (astate, pointer)
+
+
+  let eval_is_empty location collection astate =
+    PulseOperations.eval_access Write location collection (FieldAccess is_empty) astate
 end
 
 module GenericArrayBackedCollectionIterator = struct
@@ -638,19 +688,19 @@ module GenericArrayBackedCollectionIterator = struct
 
   let internal_pointer_access = HilExp.Access.FieldAccess internal_pointer
 
-  let to_internal_pointer location iterator astate =
-    PulseOperations.eval_access location iterator internal_pointer_access astate
+  let to_internal_pointer mode location iterator astate =
+    PulseOperations.eval_access mode location iterator internal_pointer_access astate
 
 
-  let to_internal_pointer_deref location iterator astate =
-    let* astate, pointer = to_internal_pointer location iterator astate in
-    let+ astate, index = PulseOperations.eval_access location pointer Dereference astate in
+  let to_internal_pointer_deref mode location iterator astate =
+    let* astate, pointer = to_internal_pointer Read location iterator astate in
+    let+ astate, index = PulseOperations.eval_access mode location pointer Dereference astate in
     (astate, pointer, index)
 
 
-  let to_elem_pointed_by_iterator ?(step = None) location iterator astate =
-    let* astate, pointer = to_internal_pointer location iterator astate in
-    let* astate, index = PulseOperations.eval_access location pointer Dereference astate in
+  let to_elem_pointed_by_iterator mode ?(step = None) location iterator astate =
+    let* astate, pointer = to_internal_pointer Read location iterator astate in
+    let* astate, index = PulseOperations.eval_access mode location pointer Dereference astate in
     (* Check if not end iterator *)
     let is_minus_minus = match step with Some `MinusMinus -> true | _ -> false in
     let* astate =
@@ -664,19 +714,21 @@ module GenericArrayBackedCollectionIterator = struct
       else Ok astate
     in
     (* We do not want to create internal array if iterator pointer has an invalid value *)
-    let* astate = PulseOperations.check_addr_access location index astate in
+    let* astate = PulseOperations.check_addr_access Read location index astate in
     let+ astate, elem = GenericArrayBackedCollection.element location iterator (fst index) astate in
     (astate, pointer, elem)
 
 
   let construct location event ~init ~ref astate =
-    let* astate, (arr_addr, arr_hist) = GenericArrayBackedCollection.eval location init astate in
+    let* astate, (arr_addr, arr_hist) =
+      GenericArrayBackedCollection.eval Read location init astate
+    in
     let* astate =
       PulseOperations.write_field location ~ref GenericArrayBackedCollection.field
         ~obj:(arr_addr, event :: arr_hist)
         astate
     in
-    let* astate, (p_addr, p_hist) = to_internal_pointer location init astate in
+    let* astate, (p_addr, p_hist) = to_internal_pointer Read location init astate in
     PulseOperations.write_field location ~ref internal_pointer ~obj:(p_addr, event :: p_hist) astate
 
 
@@ -689,8 +741,8 @@ module GenericArrayBackedCollectionIterator = struct
   let operator_compare comparison ~desc iter_lhs iter_rhs _ ~callee_procname:_ location
       ~ret:(ret_id, _) astate =
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
-    let* astate, _, (index_lhs, _) = to_internal_pointer_deref location iter_lhs astate in
-    let+ astate, _, (index_rhs, _) = to_internal_pointer_deref location iter_rhs astate in
+    let* astate, _, (index_lhs, _) = to_internal_pointer_deref Read location iter_lhs astate in
+    let+ astate, _, (index_rhs, _) = to_internal_pointer_deref Read location iter_rhs astate in
     let ret_val = AbstractValue.mk_fresh () in
     let astate = PulseOperations.write_id ret_id (ret_val, [event]) astate in
     let ret_val_equal, ret_val_notequal =
@@ -715,7 +767,7 @@ module GenericArrayBackedCollectionIterator = struct
 
   let operator_star ~desc iter _ ~callee_procname:_ location ~ret astate =
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
-    let+ astate, pointer, (elem, _) = to_elem_pointed_by_iterator location iter astate in
+    let+ astate, pointer, (elem, _) = to_elem_pointed_by_iterator Read location iter astate in
     let astate = PulseOperations.write_id (fst ret) (elem, event :: snd pointer) astate in
     [ExecutionDomain.ContinueProgram astate]
 
@@ -723,7 +775,9 @@ module GenericArrayBackedCollectionIterator = struct
   let operator_step step ~desc iter _ ~callee_procname:_ location ~ret:_ astate =
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let index_new = AbstractValue.mk_fresh () in
-    let* astate, pointer, _ = to_elem_pointed_by_iterator ~step:(Some step) location iter astate in
+    let* astate, pointer, _ =
+      to_elem_pointed_by_iterator Read ~step:(Some step) location iter astate
+    in
     PulseOperations.write_deref location ~ref:pointer ~obj:(index_new, event :: snd pointer) astate
     >>| ExecutionDomain.continue >>| List.return
 end
@@ -743,7 +797,7 @@ module JavaIterator = struct
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let new_index = AbstractValue.mk_fresh () in
     let* astate, (curr_index, curr_index_hist) =
-      GenericArrayBackedCollectionIterator.to_internal_pointer location iter astate
+      GenericArrayBackedCollectionIterator.to_internal_pointer Read location iter astate
     in
     let* astate, (curr_elem_val, curr_elem_hist) =
       GenericArrayBackedCollection.element location iter curr_index astate
@@ -765,7 +819,7 @@ module JavaIterator = struct
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let new_index = AbstractValue.mk_fresh () in
     let* astate, (curr_index, curr_index_hist) =
-      GenericArrayBackedCollectionIterator.to_internal_pointer location iter astate
+      GenericArrayBackedCollectionIterator.to_internal_pointer Read location iter astate
     in
     let* astate =
       PulseOperations.write_field location ~ref:iter
@@ -774,7 +828,7 @@ module JavaIterator = struct
         astate
     in
     let new_elem = AbstractValue.mk_fresh () in
-    let* astate, arr = GenericArrayBackedCollection.eval location iter astate in
+    let* astate, arr = GenericArrayBackedCollection.eval Read location iter astate in
     let+ astate =
       PulseOperations.write_arr_index location ~ref:arr ~index:curr_index
         ~obj:(new_elem, event :: curr_index_hist)
@@ -785,7 +839,9 @@ end
 
 module StdVector = struct
   let reallocate_internal_array trace vector vector_f location astate =
-    let* astate, array_address = GenericArrayBackedCollection.eval location vector astate in
+    let* astate, array_address =
+      GenericArrayBackedCollection.eval NoAccess location vector astate
+    in
     PulseOperations.invalidate_array_elements location (StdVector vector_f) array_address astate
     >>= PulseOperations.invalidate_access location (StdVector vector_f) vector
           GenericArrayBackedCollection.access
@@ -831,7 +887,7 @@ module StdVector = struct
     let pointer_hist = event :: snd iter in
     let pointer_val = (AbstractValue.mk_fresh (), pointer_hist) in
     let* astate, ((arr_addr, _) as arr) =
-      GenericArrayBackedCollection.eval location vector astate
+      GenericArrayBackedCollection.eval Read location vector astate
     in
     let index_zero , astate =
       if not Config.pulse_isl then
@@ -856,7 +912,7 @@ module StdVector = struct
   let vector_end vector iter : model =
    fun _ ~callee_procname:_ location ~ret:_ astate ->
     let event = ValueHistory.Call {f= Model "std::vector::end()"; location; in_call= []} in
-    let* astate, (arr_addr, _) = GenericArrayBackedCollection.eval location vector astate in
+    let* astate, (arr_addr, _) = GenericArrayBackedCollection.eval Read location vector astate in
     let* astate, (pointer_addr, _) =
       GenericArrayBackedCollection.eval_pointer_to_last_element location vector astate
     in
@@ -892,6 +948,16 @@ module StdVector = struct
       (* simulate a re-allocation of the underlying array every time an element is added *)
       reallocate_internal_array [crumb] vector PushBack location astate
       >>| ExecutionDomain.continue >>| List.return
+
+
+  let empty vector : model =
+   fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
+    let crumb = ValueHistory.Call {f= Model "std::vector::empty()"; location; in_call= []} in
+    let+ astate, (value_addr, value_hist) =
+      GenericArrayBackedCollection.eval_is_empty location vector astate
+    in
+    let astate = PulseOperations.write_id ret_id (value_addr, crumb :: value_hist) astate in
+    [ExecutionDomain.ContinueProgram astate]
 end
 
 module JavaCollection = struct
@@ -899,7 +965,7 @@ module JavaCollection = struct
   let set coll (index, _) (new_elem, new_elem_hist) : model =
    fun _ ~callee_procname:_ location ~ret astate ->
     let event = ValueHistory.Call {f= Model "Collection.set"; location; in_call= []} in
-    let* astate, arr = GenericArrayBackedCollection.eval location coll astate in
+    let* astate, arr = GenericArrayBackedCollection.eval Read location coll astate in
     let* astate, (old_addr, old_hist) =
       GenericArrayBackedCollection.element location coll index astate
     in
@@ -916,7 +982,7 @@ module JavaCollection = struct
   let add_at coll (index, _) (new_elem, new_elem_hist) : model =
    fun _ ~callee_procname:_ location ~ret:_ astate ->
     let event = ValueHistory.Call {f= Model "Collection.add"; location; in_call= []} in
-    let* astate, arr = GenericArrayBackedCollection.eval location coll astate in
+    let* astate, arr = GenericArrayBackedCollection.eval Read location coll astate in
     let+ astate =
       PulseOperations.write_arr_index location ~ref:arr ~index
         ~obj:(new_elem, event :: new_elem_hist)
@@ -935,7 +1001,7 @@ module JavaCollection = struct
   let remove_at coll (index, _) : model =
    fun _ ~callee_procname:_ location ~ret:_ astate ->
     let event = ValueHistory.Call {f= Model "Collection.add"; location; in_call= []} in
-    let* astate, arr = GenericArrayBackedCollection.eval location coll astate in
+    let* astate, arr = GenericArrayBackedCollection.eval Read location coll astate in
     let fresh_elem = AbstractValue.mk_fresh () in
     let+ astate =
       PulseOperations.write_arr_index location ~ref:arr ~index
@@ -1004,7 +1070,7 @@ module ProcNameDispatcher = struct
     make_dispatcher
       ( transfer_ownership_matchers @ abort_matchers @ return_nonnull_matchers
       @ [ +match_builtin BuiltinDecl.free <>$ capt_arg_payload $--> C.free
-        ; +match_builtin BuiltinDecl.malloc <>$ capt_arg_payload $--> C.malloc
+        ; +match_builtin BuiltinDecl.malloc <>$ capt_exp $--> C.malloc
         ; +match_builtin BuiltinDecl.__delete <>$ capt_arg_payload $--> Cplusplus.delete
         ; +match_builtin BuiltinDecl.__new &--> (if not Config.pulse_isl then Misc.return_positive else Misc.cpp_new) ~desc:"new"
         ; +match_builtin BuiltinDecl.__placement_new &++> Cplusplus.placement_new
@@ -1202,6 +1268,7 @@ module ProcNameDispatcher = struct
         ; -"std" &:: "vector" &:: "shrink_to_fit" <>$ capt_arg_payload
           $--> StdVector.invalidate_references ShrinkToFit
         ; -"std" &:: "vector" &:: "push_back" <>$ capt_arg_payload $+...$--> StdVector.push_back
+        ; -"std" &:: "vector" &:: "empty" <>$ capt_arg_payload $+...$--> StdVector.empty
         ; +map_context_tenv PatternMatch.Java.implements_collection
           &:: "add" <>$ capt_arg_payload $+ capt_arg_payload $--> JavaCollection.add
         ; +map_context_tenv PatternMatch.Java.implements_list
@@ -1260,10 +1327,14 @@ module ProcNameDispatcher = struct
           &:: "nextElement" <>$ capt_arg_payload
           $!--> fun x ->
           StdVector.at ~desc:"Enumeration.nextElement" x (AbstractValue.mk_fresh (), []) )
-        ; +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_create_or_copy &++> C.malloc
-        ; +map_context_tenv PatternMatch.ObjectiveC.is_core_foundation_create_or_copy &++> C.malloc
-        ; +match_builtin BuiltinDecl.malloc_no_fail <>$ capt_arg_payload $--> C.malloc_not_null
-        ; +map_context_tenv PatternMatch.ObjectiveC.is_modelled_as_alloc &++> C.malloc_not_null
+        ; -"dispatch_sync" &++> ObjC.dispatch_sync
+        ; +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_create_or_copy
+          &--> C.malloc_no_param
+        ; +map_context_tenv PatternMatch.ObjectiveC.is_core_foundation_create_or_copy
+          &--> C.malloc_no_param
+        ; +match_builtin BuiltinDecl.malloc_no_fail <>$ capt_exp $--> C.malloc_not_null
+        ; +map_context_tenv PatternMatch.ObjectiveC.is_modelled_as_alloc
+          &--> C.malloc_not_null_no_param
         ; +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_release
           <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; -"CFRelease" <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release

@@ -9,6 +9,7 @@ open! IStd
 module F = Format
 module L = Logging
 open IResult.Let_syntax
+module IRAttributes = Attributes
 open PulseBasicInterface
 open PulseDomainInterface
 
@@ -65,8 +66,8 @@ module PulseTransferFunctions = struct
 
 
   let interprocedural_call {InterproceduralAnalysis.analyze_dependency; proc_desc; err_log} ret
-      call_exp actuals call_loc astate =
-    match proc_name_of_call call_exp with
+      callee_pname call_exp actuals call_loc astate =
+    match callee_pname with
     | Some callee_pname when not Config.pulse_intraprocedural_only ->
         let formals_opt = get_pvar_formals callee_pname in
         let callee_data = analyze_dependency callee_pname in
@@ -74,6 +75,10 @@ module PulseTransferFunctions = struct
           ~ret ~actuals ~formals_opt astate
     | _ ->
         L.d_printfln "Skipping indirect call %a@\n" Exp.pp call_exp ;
+        let astate =
+          let arg_values = List.map actuals ~f:(fun ((value, _), _) -> value) in
+          PulseOperations.conservatively_initialize_args arg_values astate
+        in
         Ok
           [ Domain.ContinueProgram
               (PulseOperations.unknown_call call_loc (SkippedUnknownCall call_exp) ~ret ~actuals
@@ -81,10 +86,10 @@ module PulseTransferFunctions = struct
 
 
   (** has an object just gone out of scope? *)
-  let get_out_of_scope_object call_exp actuals (flags : CallFlags.t) =
+  let get_out_of_scope_object callee_pname actuals (flags : CallFlags.t) =
     (* injected destructors are precisely inserted where an object goes out of scope *)
     if flags.cf_injected_destructor then
-      match (proc_name_of_call call_exp, actuals) with
+      match (callee_pname, actuals) with
       | Some (Procname.ObjC_Cpp pname), [(Exp.Lvar pvar, typ)]
         when Pvar.is_local pvar && not (Procname.ObjC_Cpp.is_inner_destructor pname) ->
           (* ignore inner destructors, only trigger out of scope on the final destructor call *)
@@ -99,7 +104,9 @@ module PulseTransferFunctions = struct
     match (exec_state : ExecutionDomain.t) with
     | ContinueProgram astate ->
         let gone_out_of_scope = Invalidation.GoneOutOfScope (pvar, typ) in
-        let* astate, out_of_scope_base = PulseOperations.eval call_loc (Exp.Lvar pvar) astate in
+        let* astate, out_of_scope_base =
+          PulseOperations.eval NoAccess call_loc (Exp.Lvar pvar) astate
+        in
         (* invalidate [&x] *)
         PulseOperations.invalidate call_loc gone_out_of_scope out_of_scope_base astate
         >>| ExecutionDomain.continue
@@ -131,8 +138,8 @@ module PulseTransferFunctions = struct
     match (lhs : Exp.t) with
     | Lindex (arr, index) ->
         (let open IResult.Let_syntax in
-        let* _astate, (aw_array, _history) = PulseOperations.eval loc arr astate in
-        let+ _astate, (aw_index, _history) = PulseOperations.eval loc index astate in
+        let* _astate, (aw_array, _history) = PulseOperations.eval Read loc arr astate in
+        let+ _astate, (aw_index, _history) = PulseOperations.eval Read loc index astate in
         let topl_event = PulseTopl.ArrayWrite {aw_array; aw_index} in
         AbductiveDomain.Topl.small_step loc topl_event astate)
         |> Result.ok (* don't emit Topl event if evals fail *) |> Option.value ~default:astate
@@ -140,13 +147,13 @@ module PulseTransferFunctions = struct
         astate
 
 
-  let dispatch_call ({InterproceduralAnalysis.tenv} as analysis_data) ret call_exp actuals call_loc
-      flags astate =
+  let dispatch_call ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data) ret call_exp
+      actuals call_loc flags astate =
     (* evaluate all actuals *)
     let* astate, rev_func_args =
       List.fold_result actuals ~init:(astate, [])
         ~f:(fun (astate, rev_func_args) (actual_exp, actual_typ) ->
-          let+ astate, actual_evaled = PulseOperations.eval call_loc actual_exp astate in
+          let+ astate, actual_evaled = PulseOperations.eval Read call_loc actual_exp astate in
           ( astate
           , ProcnameDispatcher.Call.FuncArg.
               {exp= actual_exp; arg_payload= actual_evaled; typ= actual_typ}
@@ -168,6 +175,13 @@ module PulseTransferFunctions = struct
       match model with
       | Some (model, callee_procname) ->
           L.d_printfln "Found model for call@\n" ;
+          let astate =
+            let arg_values =
+              List.map func_args ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= value, _} ->
+                  value )
+            in
+            PulseOperations.conservatively_initialize_args arg_values astate
+          in
           model analysis_data ~callee_procname call_loc ~ret astate
       | None ->
           PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;
@@ -176,7 +190,8 @@ module PulseTransferFunctions = struct
                 (arg_payload, typ) )
           in
           let r =
-            interprocedural_call analysis_data ret call_exp only_actuals_evaled call_loc astate
+            interprocedural_call analysis_data ret callee_pname call_exp only_actuals_evaled
+              call_loc astate
           in
           PerfEvent.(log (fun logger -> log_end_event logger ())) ;
           r
@@ -190,15 +205,20 @@ module PulseTransferFunctions = struct
             (* skip, as above for non-topl *) exec_state_res
       else exec_state_res
     in
-    match get_out_of_scope_object call_exp actuals flags with
-    | Some pvar_typ ->
-        L.d_printfln "%a is going out of scope" Pvar.pp_value (fst pvar_typ) ;
-        let* exec_states = exec_state_res in
-        List.map exec_states ~f:(fun exec_state ->
-            exec_object_out_of_scope call_loc pvar_typ exec_state )
-        |> Result.all
-    | None ->
-        exec_state_res
+    let+ exec_state =
+      match get_out_of_scope_object callee_pname actuals flags with
+      | Some pvar_typ ->
+          L.d_printfln "%a is going out of scope" Pvar.pp_value (fst pvar_typ) ;
+          let* exec_states = exec_state_res in
+          List.map exec_states ~f:(fun exec_state ->
+              exec_object_out_of_scope call_loc pvar_typ exec_state )
+          |> Result.all
+      | None ->
+          exec_state_res
+    in
+    if Option.exists callee_pname ~f:IRAttributes.is_no_return then
+      ExecutionDomain.force_exit_program proc_desc exec_state
+    else exec_state
 
 
   (* [get_dealloc_from_dynamic_types vars_types loc] returns a dealloc procname and vars and
@@ -309,24 +329,26 @@ module PulseTransferFunctions = struct
           let event = ValueHistory.Assignment loc in
           let result =
             if not Config.pulse_isl then
-              (let* astate, (rhs_addr, rhs_history) = PulseOperations.eval loc rhs_exp astate in
-              let* astate, lhs_addr_hist = PulseOperations.eval loc lhs_exp astate in
-              let* astate =
-                PulseOperations.write_deref loc ~ref:lhs_addr_hist
-                    ~obj:(rhs_addr, event :: rhs_history)
-                    astate
-              in
-	      let astate =
-                if Topl.is_deep_active () then topl_store_step loc ~lhs:lhs_exp ~rhs:rhs_exp astate
-                 else astate
-              in
-              match lhs_exp with
-              | Lvar pvar when Pvar.is_return pvar ->
-                 PulseOperations.check_address_escape_list loc proc_desc rhs_addr rhs_history [astate]
-              | _ ->
-                 Ok [astate])
+              (let* astate, (rhs_addr, rhs_history) =
+              PulseOperations.eval NoAccess loc rhs_exp astate
+            in
+            let* astate, lhs_addr_hist = PulseOperations.eval Write loc lhs_exp astate in
+            let* astate =
+              PulseOperations.write_deref loc ~ref:lhs_addr_hist
+                ~obj:(rhs_addr, event :: rhs_history)
+                astate
+            in
+            let astate =
+              if Topl.is_deep_active () then topl_store_step loc ~lhs:lhs_exp ~rhs:rhs_exp astate
+              else astate
+            in
+            match lhs_exp with
+            | Lvar pvar when Pvar.is_return pvar ->
+                PulseOperations.check_address_escape loc proc_desc rhs_addr rhs_history astate
+            | _ ->
+                Ok astate)
             else
-              (let* astate, (rhs_addr, rhs_history) = PulseOperations.eval loc rhs_exp astate in
+              (let* astate, (rhs_addr, rhs_history) = PulseOperations.eval NoAccess loc rhs_exp astate in
                let astate = AbductiveDomain.add_mod_addr rhs_addr astate in
                let astate = update_imm_var lhs_exp astate in
                let* is_biad, ls_astate_lhs_addr_hist = PulseOperations.eval_structure proc_desc loc lhs_exp astate in
@@ -400,8 +422,8 @@ module PulseTransferFunctions = struct
               if List.is_empty ret_vars then vars else List.rev_append vars ret_vars
             in
             remove_vars vars_to_remove astates
-      | Metadata (VariableLifetimeBegins (pvar, _, location)) when not (Pvar.is_global pvar) ->
-          [PulseOperations.realloc_pvar pvar location astate |> Domain.continue]
+      | Metadata (VariableLifetimeBegins (pvar, typ, location)) when not (Pvar.is_global pvar) ->
+          [PulseOperations.realloc_pvar pvar typ location astate |> Domain.continue]
       | Metadata (Abstract _ | VariableLifetimeBegins _ | Nullify _ | Skip) ->
           [Domain.ContinueProgram astate] ))
 

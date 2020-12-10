@@ -144,17 +144,28 @@ let visit call_state ~pre ~addr_callee ~addr_hist_caller =
       ; rev_subst= AddressMap.add addr_caller addr_callee call_state.rev_subst } )
 
 
-let pp f {AbductiveDomain.pre; post; path_condition; skipped_calls; status; local_ptrvars; nonref_formals;imm_params;mod_addrs} =
-  F.fprintf f "COND:@\n  @[%a@]@\n" PathCondition.pp path_condition ;
-  F.fprintf f "PRE:@\n  @[%a@]@\n" BaseDomain.pp (pre :> BaseDomain.t) ;
-  F.fprintf f "POST:@\n  @[%a@]@\n" BaseDomain.pp (post :> BaseDomain.t) ;
-  F.fprintf f "SKIPPED_CALLS:@ @[%a@]@\n" SkippedCalls.pp skipped_calls;
-  F.fprintf f "STATUS: @[%a]@\n" AbductiveDomain.PostStatus.pp status;
-  F.fprintf f "LOCAL PTRVARS: @[%a]@\n" Var.Set.pp local_ptrvars;
-  F.fprintf f "NONREF FORMALS: @[%a]@\n" Var.Set.pp nonref_formals;
-  F.fprintf f "IMM PARAMS: @[%a]@\n" Var.Set.pp imm_params;
-  F.fprintf f "MOD ADDRS: @[%a]@\n" AbstractValue.Set.pp mod_addrs
+(** HACK: we don't need to update the [rev_subst] of a call state when generating a fresh value for
+    the caller because there's no chance that value appears anywhere else in the caller state, hence
+    we cannot possibly get clashes about that caller value, which is the only thing [rev_subst] is
+    used for. This is why this function is allowed to take only [subst] as argument and not a full
+    call state. *)
+let subst_find_or_new subst addr_callee ~default_hist_caller =
+  match AddressMap.find_opt addr_callee subst with
+  | None ->
+      let addr_hist_fresh = (AbstractValue.mk_fresh (), default_hist_caller) in
+      (AddressMap.add addr_callee addr_hist_fresh subst, addr_hist_fresh)
+  | Some addr_hist_caller ->
+      (subst, addr_hist_caller)
 
+
+let translate_access_to_caller subst (access_callee : BaseMemory.Access.t) : _ * BaseMemory.Access.t
+    =
+  match access_callee with
+  | ArrayAccess (typ, val_callee) ->
+      let subst, (val_caller, _) = subst_find_or_new subst val_callee ~default_hist_caller:[] in
+      (subst, ArrayAccess (typ, val_caller))
+  | FieldAccess _ | TakeAddress | Dereference ->
+      (subst, access_callee)
 
 (* {3 reading the pre from the current state} *)
 
@@ -176,11 +187,15 @@ let rec materialize_pre_from_address callee_proc_name call_location ~pre ~addr_p
         Ok call_state
     | Some edges_pre ->
         Container.fold_result ~fold:Memory.Edges.fold ~init:call_state edges_pre
-          ~f:(fun call_state (access, (addr_pre_dest, _)) ->
+          ~f:(fun call_state (access_callee, (addr_pre_dest, _)) ->
+            (* HACK: we should probably visit the value in the (array) access too, but since it's
+               a value normally it shouldn't appear in the heap anyway so there should be nothing
+               to visit. *)
+            let subst, access_caller = translate_access_to_caller call_state.subst access_callee in
             let astate, addr_hist_dest_caller =
-              Memory.eval_edge addr_hist_caller access call_state.astate
+              Memory.eval_edge addr_hist_caller access_caller call_state.astate
             in
-            let call_state = {call_state with astate} in
+            let call_state = {call_state with astate; subst} in
             materialize_pre_from_address callee_proc_name call_location ~pre ~addr_pre:addr_pre_dest
               ~addr_hist_caller:addr_hist_dest_caller call_state ) )
 
@@ -239,15 +254,6 @@ let add_call_to_attributes proc_name call_location caller_history attrs =
   Attributes.map attrs ~f:(fun attr ->
       Attribute.map_trace attr ~f:(fun trace ->
           add_call_to_trace proc_name call_location caller_history trace ) )
-
-
-let subst_find_or_new subst addr_callee ~default_hist_caller =
-  match AddressMap.find_opt addr_callee subst with
-  | None ->
-      let addr_hist_fresh = (AbstractValue.mk_fresh (), default_hist_caller) in
-      (AddressMap.add addr_callee addr_hist_fresh subst, addr_hist_fresh)
-  | Some addr_hist_caller ->
-      (subst, addr_hist_caller)
 
 
 let conjoin_callee_arith pre_post call_state =
@@ -353,27 +359,33 @@ let call_state_subst_find_or_new call_state addr_callee ~default_hist_caller =
   else ({call_state with subst= new_subst}, addr_hist_caller)
 
 
-let delete_edges_in_callee_pre_from_caller ~addr_callee:_ ~edges_pre_opt ~addr_caller call_state =
+let delete_edges_in_callee_pre_from_caller ~edges_pre_opt addr_caller call_state =
   match
     BaseMemory.find_opt addr_caller (call_state.astate.AbductiveDomain.post :> BaseDomain.t).heap
   with
   | None ->
-      BaseMemory.Edges.empty
+      (call_state.subst, BaseMemory.Edges.empty)
   | Some old_post_edges -> (
-      match edges_pre_opt with
-      | None ->
-          old_post_edges
-      | Some edges_pre ->
-          (* TODO: should apply [call_state.subst] to [_access]! Actually, should rewrite the
-             whole [cell_pre] beforehand so that [Edges.merge] makes sense. *)
-          BaseMemory.Edges.filter old_post_edges ~f:(fun (access, _) ->
+    match edges_pre_opt with
+    | None ->
+        (call_state.subst, old_post_edges)
+    | Some edges_pre ->
+        let subst, translated_accesses_pre =
+          BaseMemory.Edges.fold ~init:(call_state.subst, BaseMemory.AccessSet.empty) edges_pre
+            ~f:(fun (subst, accesses) (access_callee, _) ->
+              let subst, access = translate_access_to_caller subst access_callee in
+              (subst, BaseMemory.AccessSet.add access accesses) )
+        in
+        let post_edges =
+          BaseMemory.Edges.filter old_post_edges ~f:(fun (access_caller, _) ->
               (* delete edge if some edge for the same access exists in the pre *)
-              not (BaseMemory.Edges.mem edges_pre access) ) )
+              not (BaseMemory.AccessSet.mem access_caller translated_accesses_pre) )
+        in
+        (subst, post_edges) )
 
 
-let record_post_cell callee_proc_name call_loc ~addr_callee ~edges_pre_opt
-    ~cell_callee_post:(edges_callee_post, attrs_callee_post)
-    ~addr_hist_caller:(addr_caller, hist_caller) call_state =
+let record_post_cell callee_proc_name call_loc ~edges_pre_opt
+    ~cell_callee_post:(edges_callee_post, attrs_callee_post) (addr_caller, hist_caller) call_state =
   let call_state =
     let attrs_post_caller =
       add_call_to_attributes callee_proc_name call_loc hist_caller attrs_callee_post
@@ -382,26 +394,31 @@ let record_post_cell callee_proc_name call_loc ~addr_callee ~edges_pre_opt
     {call_state with astate}
   in
   let subst, translated_post_edges =
-    BaseMemory.Edges.fold_map ~init:call_state.subst edges_callee_post
-      ~f:(fun subst (addr_callee, trace_post) ->
+    BaseMemory.Edges.fold ~init:(call_state.subst, BaseMemory.Edges.empty) edges_callee_post
+      ~f:(fun (subst, translated_edges) (access_callee, (addr_callee, trace_post)) ->
         let subst, (addr_curr, hist_curr) =
           subst_find_or_new subst addr_callee ~default_hist_caller:hist_caller
         in
-        ( subst
-        , ( addr_curr
-          , ValueHistory.Call {f= Call callee_proc_name; location= call_loc; in_call= trace_post}
-            :: hist_curr ) ) )
+        let subst, access = translate_access_to_caller subst access_callee in
+        let translated_edges =
+          BaseMemory.Edges.add access
+            ( addr_curr
+            , ValueHistory.Call {f= Call callee_proc_name; location= call_loc; in_call= trace_post}
+              :: hist_curr )
+            translated_edges
+        in
+        (subst, translated_edges) )
   in
-  let astate =
-    let post_edges_minus_pre =
-      delete_edges_in_callee_pre_from_caller ~addr_callee ~edges_pre_opt ~addr_caller call_state
-    in
-    let edges_post_caller =
-      BaseMemory.Edges.union_left_biased translated_post_edges post_edges_minus_pre
-    in
-    AbductiveDomain.set_post_edges addr_caller edges_post_caller call_state.astate
+  let call_state = {call_state with subst} in
+  let subst, post_edges_minus_pre =
+    delete_edges_in_callee_pre_from_caller ~edges_pre_opt addr_caller call_state
   in
-  {call_state with subst; astate}
+  let edges_post_caller =
+    BaseMemory.Edges.union_left_biased translated_post_edges post_edges_minus_pre
+  in
+  { call_state with
+    subst
+  ; astate= AbductiveDomain.set_post_edges addr_caller edges_post_caller call_state.astate }
 
 
 let rec record_post_for_address callee_proc_name call_loc ({AbductiveDomain.pre; _} as pre_post)
@@ -586,27 +603,38 @@ let update_modified_vars pre_post post_subst astate=
 let check_all_valid callee_proc_name call_location {AbductiveDomain.pre; _} call_state =
   AddressMap.fold
     (fun addr_pre (addr_caller, hist_caller) astate_result ->
-      match astate_result with
-      | Error _ ->
-          astate_result
-      | Ok astate -> (
+      let mk_access_trace callee_access_trace =
+        Trace.ViaCall
+          { in_call= callee_access_trace
+          ; f= Call callee_proc_name
+          ; location= call_location
+          ; history= hist_caller }
+      in
+      let open IResult.Let_syntax in
+      let* astate = astate_result in
+      let* astate =
         match BaseAddressAttributes.get_must_be_valid addr_pre (pre :> BaseDomain.t).attrs with
         | None ->
             astate_result
         | Some callee_access_trace ->
-            let access_trace =
-              Trace.ViaCall
-                { in_call= callee_access_trace
-                ; f= Call callee_proc_name
-                ; location= call_location
-                ; history= hist_caller }
-            in
+            let access_trace = mk_access_trace callee_access_trace in
             AddressAttributes.check_valid access_trace addr_caller astate
             |> Result.map_error ~f:(fun (invalidation, invalidation_trace) ->
                    L.d_printfln "ERROR: caller's %a invalid!" AbstractValue.pp addr_caller ;
                    ( Diagnostic.AccessToInvalidAddress
                        {calling_context= []; invalidation; invalidation_trace; access_trace}
-                   , astate ) ) ) )
+                   , astate ) )
+      in
+      match BaseAddressAttributes.get_must_be_initialized addr_pre (pre :> BaseDomain.t).attrs with
+      | None ->
+          astate_result
+      | Some callee_access_trace ->
+          let access_trace = mk_access_trace callee_access_trace in
+          AddressAttributes.check_initialized access_trace addr_caller astate
+          |> Result.map_error ~f:(fun () ->
+                 L.d_printfln "ERROR: caller's %a is uninitialized!" AbstractValue.pp addr_caller ;
+                 ( Diagnostic.ReadUninitializedValue {calling_context= []; trace= access_trace}
+                 , astate ) ) )
     call_state.subst (Ok call_state.astate)
 
 

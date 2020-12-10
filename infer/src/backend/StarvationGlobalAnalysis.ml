@@ -71,7 +71,7 @@ let report exe_env work_set =
            let acc =
              Starvation.report_on_pair
                ~analyze_ondemand:(fun pname ->
-                 Ondemand.analyze_proc_name ~caller_summary:summary pname
+                 Ondemand.analyze_proc_name exe_env ~caller_summary:summary pname
                  |> Option.bind ~f:(fun summary ->
                         Option.map summary.Summary.payloads.starvation ~f:(fun starvation ->
                             (Summary.get_proc_desc summary, starvation) ) ) )

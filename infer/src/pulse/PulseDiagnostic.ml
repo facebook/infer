@@ -19,24 +19,41 @@ type access_to_invalid_address =
   ; access_trace: Trace.t }
 [@@deriving compare,equal]
 
+type read_uninitialized_value = {calling_context: (CallEvent.t * Location.t) list; trace: Trace.t}
+[@@deriving equal]
+
 let yojson_of_access_to_invalid_address = [%yojson_of: _]
+
+let yojson_of_read_uninitialized_value = [%yojson_of: _]
 
 type t =
   | AccessToInvalidAddress of access_to_invalid_address
   | MemoryLeak of {procname: Procname.t; allocation_trace: Trace.t; location: Location.t}
+  | ReadUninitializedValue of read_uninitialized_value
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
   | OrError of (t list * Location.t)
 [@@deriving compare,equal]
 
 let get_location = function
-  | AccessToInvalidAddress {calling_context= []; access_trace} ->
+  | AccessToInvalidAddress {calling_context= []; access_trace}
+  | ReadUninitializedValue {calling_context= []; trace= access_trace} ->
       Trace.get_outer_location access_trace
-  | AccessToInvalidAddress {calling_context= (_, location) :: _} ->
+  | AccessToInvalidAddress {calling_context= (_, location) :: _}
+  | ReadUninitializedValue {calling_context= (_, location) :: _} ->
       (* report at the call site that triggers the bug *) location
   | MemoryLeak {location} | StackVariableAddressEscape {location} ->
      location
   | OrError (_, location) -> location
 
+
+
+(* whether the [calling_context + trace] starts with a call or contains only an immediate event *)
+let immediate_or_first_call calling_context (trace : Trace.t) =
+  match (calling_context, trace) with
+  | [], Immediate _ ->
+      `Immediate
+  | (f, _) :: _, _ | [], ViaCall {f; _} ->
+      `Call f
 
 
 let rec get_message ?print_loc:(pr=false) = function
@@ -111,6 +128,16 @@ let rec get_message ?print_loc:(pr=false) = function
       F.asprintf
         "memory dynamically allocated at line %d %a, is not freed after the last access at %a"
         allocation_line pp_allocation_trace allocation_trace Location.pp location
+  | ReadUninitializedValue {calling_context; trace} ->
+      let pp_trace fmt (trace : Trace.t) =
+        let {Location.line} = Trace.get_outer_location trace in
+        match immediate_or_first_call calling_context trace with
+        | `Immediate ->
+            F.fprintf fmt "on line %d" line
+        | `Call f ->
+            F.fprintf fmt "during the call to %a on line %d" CallEvent.describe f line
+      in
+      F.asprintf "uninitialized value is read %a" pp_trace trace
   | StackVariableAddressEscape {variable; _} ->
       let pp_var f var =
         if Var.is_cpp_temporary var then F.pp_print_string f "C++ temporary"
@@ -126,21 +153,24 @@ let add_errlog_header ~title location errlog =
   Errlog.make_trace_element depth location title tags :: errlog
 
 
+let get_trace_calling_context calling_context errlog =
+  match calling_context with
+  | [] ->
+      errlog
+  | (_, first_call_loc) :: _ ->
+      add_errlog_header ~title:"calling context starts here" first_call_loc
+      @@ ( List.fold calling_context ~init:(errlog, 0) ~f:(fun (errlog, depth) (call, loc) ->
+               ( Errlog.make_trace_element depth loc
+                   (F.asprintf "in call to %a" CallEvent.pp call)
+                   []
+                 :: errlog
+               , depth + 1 ) )
+         |> fst )
+
+
 let get_trace = function
   | AccessToInvalidAddress {calling_context; invalidation; invalidation_trace; access_trace} ->
-      (fun errlog ->
-        match calling_context with
-        | [] ->
-            errlog
-        | (_, first_call_loc) :: _ ->
-            add_errlog_header ~title:"calling context starts here" first_call_loc
-            @@ ( List.fold calling_context ~init:(errlog, 0) ~f:(fun (errlog, depth) (call, loc) ->
-                     ( Errlog.make_trace_element depth loc
-                         (F.asprintf "in call to %a" CallEvent.pp call)
-                         []
-                       :: errlog
-                     , depth + 1 ) )
-               |> fst ) )
+      get_trace_calling_context calling_context
       @@
       let start_location = Trace.get_start_location invalidation_trace in
       add_errlog_header ~title:"invalidation part of the trace starts here" start_location
@@ -162,6 +192,12 @@ let get_trace = function
            ~pp_immediate:(fun fmt -> F.pp_print_string fmt "allocation part of the trace ends here")
            allocation_trace
       @@ [Errlog.make_trace_element 0 location "memory becomes unreachable here" []]
+  | ReadUninitializedValue {calling_context; trace} ->
+      get_trace_calling_context calling_context
+      @@ Trace.add_to_errlog ~nesting:0
+           ~pp_immediate:(fun fmt -> F.pp_print_string fmt "read to uninitialized value occurs here")
+           trace
+      @@ []
   | StackVariableAddressEscape {history; location; _} ->
       ValueHistory.add_to_errlog ~nesting:0 history
       @@
@@ -176,6 +212,8 @@ let get_issue_type = function
       Invalidation.issue_type_of_cause invalidation
   | MemoryLeak _ ->
       IssueType.pulse_memory_leak
+  | ReadUninitializedValue _ ->
+      IssueType.uninitialized_value_pulse
   | StackVariableAddressEscape _ ->
       IssueType.stack_variable_address_escape
   | OrError _ ->

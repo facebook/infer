@@ -904,6 +904,11 @@ let uninitialized_value =
     ~user_documentation:[%blob "../../documentation/issues/UNINITIALIZED_VALUE.md"]
 
 
+let uninitialized_value_pulse =
+  register ~enabled:false ~id:"PULSE_UNINITIALIZED_VALUE" Error Pulse ~hum:"Unitialized Value"
+    ~user_documentation:"See [UNITIALIZED_VALUE](#uninitialized_value). Re-implemented using Pulse."
+
+
 let unreachable_code_after =
   register ~id:"UNREACHABLE_CODE" Error BufferOverrunChecker
     ~user_documentation:"A program point is unreachable."

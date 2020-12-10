@@ -12,8 +12,6 @@ open! IStd
 module L = Logging
 module F = Format
 
-let exe_env_ref = ref None
-
 module LocalCache = struct
   let results =
     lazy
@@ -35,10 +33,6 @@ module LocalCache = struct
   let add proc_name summary_option =
     Procname.LRUHash.replace (Lazy.force results) proc_name summary_option
 end
-
-let set_exe_env (env : Exe_env.t) = exe_env_ref := Some env
-
-let unset_exe_env () = exe_env_ref := None
 
 (* always incremented before use *)
 let nesting = ref (-1)
@@ -156,14 +150,13 @@ let update_taskbar callee_pdesc =
   !ProcessPoolState.update_status t0 status
 
 
-let analyze callee_summary =
-  let exe_env = Option.value_exn !exe_env_ref in
+let analyze exe_env callee_summary =
   let summary = Callbacks.iterate_procedure_callbacks exe_env callee_summary in
   BackendStats.incr_ondemand_procs_analyzed () ;
   summary
 
 
-let run_proc_analysis ~caller_pdesc callee_pdesc =
+let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
   let callee_pname = Procdesc.get_proc_name callee_pdesc in
   let log_elapsed_time =
     let start_time = Mtime_clock.counter () in
@@ -179,7 +172,7 @@ let run_proc_analysis ~caller_pdesc callee_pdesc =
   let preprocess () =
     incr nesting ;
     update_taskbar callee_pdesc ;
-    Preanal.do_preanalysis (Option.value_exn !exe_env_ref) callee_pdesc ;
+    Preanal.do_preanalysis exe_env callee_pdesc ;
     if Config.debug_mode then
       DotCfg.emit_proc_desc (Procdesc.get_attributes callee_pdesc).translation_unit callee_pdesc
       |> ignore ;
@@ -216,7 +209,7 @@ let run_proc_analysis ~caller_pdesc callee_pdesc =
   let attributes = Procdesc.get_attributes callee_pdesc in
   try
     let callee_summary =
-      if attributes.ProcAttributes.is_defined then analyze initial_callee_summary
+      if attributes.ProcAttributes.is_defined then analyze exe_env initial_callee_summary
       else initial_callee_summary
     in
     let final_callee_summary = postprocess callee_summary in
@@ -254,14 +247,14 @@ let run_proc_analysis ~caller_pdesc callee_pdesc =
 
 
 (* shadowed for tracing *)
-let run_proc_analysis ~caller_pdesc callee_pdesc =
+let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
   PerfEvent.(
     log (fun logger ->
         let callee_pname = Procdesc.get_proc_name callee_pdesc in
         log_begin_event logger ~name:"ondemand" ~categories:["backend"]
           ~arguments:[("proc", `String (Procname.to_string callee_pname))]
           () )) ;
-  let summary = run_proc_analysis ~caller_pdesc callee_pdesc in
+  let summary = run_proc_analysis exe_env ~caller_pdesc callee_pdesc in
   PerfEvent.(log (fun logger -> log_end_event logger ())) ;
   summary
 
@@ -311,31 +304,7 @@ let get_proc_desc callee_pname =
     ; lazy (Topl.get_proc_desc callee_pname) ]
 
 
-type callee = ProcName of Procname.t | ProcDesc of Procdesc.t
-
-let proc_name_of_callee = function
-  | ProcName proc_name ->
-      proc_name
-  | ProcDesc proc_desc ->
-      Procdesc.get_proc_name proc_desc
-
-
-let callee_should_be_analyzed = function
-  | ProcName proc_name ->
-      procedure_should_be_analyzed proc_name
-  | ProcDesc proc_desc ->
-      should_be_analyzed (Procdesc.get_attributes proc_desc)
-
-
-let get_callee_proc_desc = function
-  | ProcDesc proc_desc ->
-      Some proc_desc
-  | ProcName proc_name ->
-      get_proc_desc proc_name
-
-
-let analyze_callee ?caller_summary callee =
-  let callee_pname = proc_name_of_callee callee in
+let analyze_callee exe_env ?caller_summary callee_pname =
   register_callee ?caller_summary callee_pname ;
   if is_active callee_pname then None
   else
@@ -344,12 +313,12 @@ let analyze_callee ?caller_summary callee =
         callee_summary_option
     | None ->
         let summ_opt =
-          if callee_should_be_analyzed callee then
-            match get_callee_proc_desc callee with
+          if procedure_should_be_analyzed callee_pname then
+            match get_proc_desc callee_pname with
             | Some callee_pdesc ->
                 RestartScheduler.lock_exn callee_pname ;
                 let callee_summary =
-                  run_proc_analysis
+                  run_proc_analysis exe_env
                     ~caller_pdesc:(Option.map ~f:Summary.get_proc_desc caller_summary)
                     callee_pdesc
                 in
@@ -363,39 +332,32 @@ let analyze_callee ?caller_summary callee =
         summ_opt
 
 
-let analyze_proc_desc ~caller_summary callee_pdesc =
-  analyze_callee ~caller_summary (ProcDesc callee_pdesc)
+let analyze_proc_name exe_env ~caller_summary callee_pname =
+  analyze_callee exe_env ~caller_summary callee_pname
 
 
-let analyze_proc_name ~caller_summary callee_pname =
-  analyze_callee ~caller_summary (ProcName callee_pname)
-
-
-let analyze_proc_name_no_caller callee_pname =
-  analyze_callee ?caller_summary:None (ProcName callee_pname)
+let analyze_proc_name_no_caller exe_env callee_pname =
+  analyze_callee exe_env ?caller_summary:None callee_pname
 
 
 let analyze_procedures exe_env procs_to_analyze source_file_opt =
   let saved_language = !Language.curr_language in
-  set_exe_env exe_env ;
   let analyze_proc_name_call pname =
-    ignore (analyze_proc_name_no_caller pname : Summary.t option)
+    ignore (analyze_proc_name_no_caller exe_env pname : Summary.t option)
   in
   List.iter ~f:analyze_proc_name_call procs_to_analyze ;
   Option.iter source_file_opt ~f:(fun source_file ->
       if Config.dump_duplicate_symbols then dump_duplicate_procs source_file procs_to_analyze ) ;
   Option.iter source_file_opt ~f:(fun source_file ->
       Callbacks.iterate_file_callbacks_and_store_issues procs_to_analyze exe_env source_file ) ;
-  unset_exe_env () ;
   Language.curr_language := saved_language
 
 
 (** Invoke all procedure-level and file-level callbacks on a given environment. *)
-let analyze_file (exe_env : Exe_env.t) source_file =
+let analyze_file exe_env source_file =
   let procs_to_analyze = SourceFiles.proc_names_of_source source_file in
   analyze_procedures exe_env procs_to_analyze (Some source_file)
 
 
 (** Invoke procedure callbacks on a given environment. *)
-let analyze_proc_name_toplevel (exe_env : Exe_env.t) proc_name =
-  analyze_procedures exe_env [proc_name] None
+let analyze_proc_name_toplevel exe_env proc_name = analyze_procedures exe_env [proc_name] None
