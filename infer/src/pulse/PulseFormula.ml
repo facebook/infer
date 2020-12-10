@@ -928,6 +928,8 @@ module Atom = struct
     fold_map_terms a ~init ~f:(fun acc t -> Term.fold_subst_variables t ~init:acc ~f)
 
 
+  let subst_variables l ~f = fold_subst_variables l ~init:() ~f:(fun () v -> ((), f v)) |> snd
+
   let has_var_notin vars atom =
     let t1, t2 = get_terms atom in
     Term.has_var_notin vars t1 || Term.has_var_notin vars t2
@@ -958,11 +960,12 @@ let sat_of_eval_result (eval_result : Atom.eval_result) =
 module VarUF =
   UnionFind.Make
     (struct
-      type t = Var.t [@@deriving compare]
+      type t = Var.t [@@deriving compare, equal]
 
       let is_simpler_than (v1 : Var.t) (v2 : Var.t) = (v1 :> int) < (v2 :> int)
     end)
     (Var.Set)
+    (Var.Map)
 
 type new_eq = EqZero of Var.t | Equal of Var.t * Var.t
 
@@ -1407,117 +1410,179 @@ let and_fold_subst_variables phi0 ~up_to_f:phi_foreign ~init ~f:f_var =
   (acc, {known; pruned; both}, new_eqs)
 
 
-(** Intermediate step of [simplify]: build an (undirected) graph between variables where an edge
-    between two variables means that they appear together in an atom, a linear equation, or an
-    equivalence class. *)
-let build_var_graph phi =
-  (* pretty naive representation of an undirected graph: a map where a vertex maps to the set of
-     destination vertices and each edge has its symmetric in the map *)
-  (* unused but can be useful for debugging *)
-  let _pp_graph fmt graph =
-    Caml.Hashtbl.iter (fun v vs -> F.fprintf fmt "%a->{%a}" Var.pp v Var.Set.pp vs) graph
-  in
-  (* 16 because why not *)
-  let graph = Caml.Hashtbl.create 16 in
-  (* add edges between all pairs of [vs] *)
-  let add_all vs =
-    (* add [src->vs] to [graph] (but not the symmetric edges) *)
-    let add_set graph src vs =
-      let dest =
-        match Caml.Hashtbl.find_opt graph src with
-        | None ->
-            vs
-        | Some dest0 ->
-            Var.Set.union vs dest0
+module QuantifierElimination : sig
+  val eliminate_vars : keep:Var.Set.t -> t -> t SatUnsat.t
+  (** [eliminate_vars ~keep φ] substitutes every variable [x] in [φ] with [x'] whenever [x'] is a
+      distinguished representative of the equivalence class of [x] in [φ] such that [x' ∈ keep] *)
+end = struct
+  exception Contradiction
+
+  let subst_f subst x = match Var.Map.find_opt x subst with Some y -> y | None -> x
+
+  let targetted_subst_var subst_var x = VarSubst (subst_f subst_var x)
+
+  let subst_var_linear_eqs subst linear_eqs =
+    Var.Map.fold
+      (fun x l new_map ->
+        let x' = subst_f subst x in
+        let l' = LinArith.subst_variables ~f:(targetted_subst_var subst) l in
+        match LinArith.solve_eq (LinArith.of_var x') l' with
+        | Unsat ->
+            L.d_printfln "Contradiction found: %a=%a became %a=%a with is Unsat" Var.pp x
+              (LinArith.pp Var.pp) l Var.pp x' (LinArith.pp Var.pp) l' ;
+            raise Contradiction
+        | Sat None ->
+            new_map
+        | Sat (Some (x'', l'')) ->
+            Var.Map.add x'' l'' new_map )
+      linear_eqs Var.Map.empty
+
+
+  let subst_var_atoms subst atoms =
+    Atom.Set.fold
+      (fun atom atoms ->
+        let atom' = Atom.subst_variables ~f:(targetted_subst_var subst) atom in
+        Atom.Set.add atom' atoms )
+      atoms Atom.Set.empty
+
+
+  let subst_var_formula subst {Formula.var_eqs; linear_eqs; atoms} =
+    { Formula.var_eqs= VarUF.apply_subst subst var_eqs
+    ; linear_eqs= subst_var_linear_eqs subst linear_eqs
+    ; atoms= subst_var_atoms subst atoms }
+
+
+  let subst_var subst phi =
+    { known= subst_var_formula subst phi.known
+    ; pruned= subst_var_atoms subst phi.pruned
+    ; both= subst_var_formula subst phi.both }
+
+
+  let eliminate_vars ~keep phi =
+    let subst = VarUF.reorient ~keep phi.both.var_eqs in
+    try Sat (subst_var subst phi) with Contradiction -> Unsat
+end
+
+module DeadVariables = struct
+  (** Intermediate step of [simplify]: build an (undirected) graph between variables where an edge
+      between two variables means that they appear together in an atom, a linear equation, or an
+      equivalence class. *)
+  let build_var_graph phi =
+    (* pretty naive representation of an undirected graph: a map where a vertex maps to the set of
+       destination vertices and each edge has its symmetric in the map *)
+    (* unused but can be useful for debugging *)
+    let _pp_graph fmt graph =
+      Caml.Hashtbl.iter (fun v vs -> F.fprintf fmt "%a->{%a}" Var.pp v Var.Set.pp vs) graph
+    in
+    (* 16 because why not *)
+    let graph = Caml.Hashtbl.create 16 in
+    (* add edges between all pairs of [vs] *)
+    let add_all vs =
+      (* add [src->vs] to [graph] (but not the symmetric edges) *)
+      let add_set graph src vs =
+        let dest =
+          match Caml.Hashtbl.find_opt graph src with
+          | None ->
+              vs
+          | Some dest0 ->
+              Var.Set.union vs dest0
+        in
+        Caml.Hashtbl.replace graph src dest
       in
-      Caml.Hashtbl.replace graph src dest
+      Var.Set.iter (fun v -> add_set graph v vs) vs
     in
-    Var.Set.iter (fun v -> add_set graph v vs) vs
-  in
-  Container.iter ~fold:VarUF.fold_congruences phi.Formula.var_eqs
-    ~f:(fun ((repr : VarUF.repr), vs) -> add_all (Var.Set.add (repr :> Var.t) vs)) ;
-  Var.Map.iter
-    (fun v l ->
-      LinArith.get_variables l
-      |> Seq.fold_left (fun vs v -> Var.Set.add v vs) (Var.Set.singleton v)
-      |> add_all )
-    phi.Formula.linear_eqs ;
-  (* add edges between all pairs of variables appearing in [t1] or [t2] (yes this is quadratic in
-     the number of variables of these terms) *)
-  let add_from_terms t1 t2 =
-    (* compute [vs U vars(t)] *)
-    let union_vars_of_term t vs =
-      Term.fold_variables t ~init:vs ~f:(fun vs v -> Var.Set.add v vs)
+    Container.iter ~fold:VarUF.fold_congruences phi.Formula.var_eqs
+      ~f:(fun ((repr : VarUF.repr), vs) -> add_all (Var.Set.add (repr :> Var.t) vs)) ;
+    Var.Map.iter
+      (fun v l ->
+        LinArith.get_variables l
+        |> Seq.fold_left (fun vs v -> Var.Set.add v vs) (Var.Set.singleton v)
+        |> add_all )
+      phi.Formula.linear_eqs ;
+    (* add edges between all pairs of variables appearing in [t1] or [t2] (yes this is quadratic in
+       the number of variables of these terms) *)
+    let add_from_terms t1 t2 =
+      (* compute [vs U vars(t)] *)
+      let union_vars_of_term t vs =
+        Term.fold_variables t ~init:vs ~f:(fun vs v -> Var.Set.add v vs)
+      in
+      union_vars_of_term t1 Var.Set.empty |> union_vars_of_term t2 |> add_all
     in
-    union_vars_of_term t1 Var.Set.empty |> union_vars_of_term t2 |> add_all
-  in
-  Atom.Set.iter
-    (fun atom ->
-      let t1, t2 = Atom.get_terms atom in
-      add_from_terms t1 t2 )
-    phi.Formula.atoms ;
-  graph
+    Atom.Set.iter
+      (fun atom ->
+        let t1, t2 = Atom.get_terms atom in
+        add_from_terms t1 t2 )
+      phi.Formula.atoms ;
+    graph
 
 
-(** Intermediate step of [simplify]: construct transitive closure of variables reachable from [vs]
-    in [graph]. *)
-let get_reachable_from graph vs =
-  (* HashSet represented as a [Hashtbl.t] mapping items to [()], start with the variables in [vs] *)
-  let reachable = Caml.Hashtbl.create (Var.Set.cardinal vs) in
-  Var.Set.iter (fun v -> Caml.Hashtbl.add reachable v ()) vs ;
-  (* Do a Dijkstra-style graph transitive closure in [graph] starting from [vs]. At each step,
-     [new_vs] contains the variables to explore next. Iterative to avoid blowing the stack. *)
-  let new_vs = ref (Var.Set.elements vs) in
-  while not (List.is_empty !new_vs) do
-    (* pop [new_vs] *)
-    let[@warning "-8"] (v :: rest) = !new_vs in
-    new_vs := rest ;
-    Caml.Hashtbl.find_opt graph v
-    |> Option.iter ~f:(fun vs' ->
-           Var.Set.iter
-             (fun v' ->
-               if not (Caml.Hashtbl.mem reachable v') then (
-                 (* [v'] seen for the first time: we need to explore it *)
-                 Caml.Hashtbl.replace reachable v' () ;
-                 new_vs := v' :: !new_vs ) )
-             vs' )
-  done ;
-  Caml.Hashtbl.to_seq_keys reachable |> Var.Set.of_seq
+  (** Intermediate step of [simplify]: construct transitive closure of variables reachable from [vs]
+      in [graph]. *)
+  let get_reachable_from graph vs =
+    (* HashSet represented as a [Hashtbl.t] mapping items to [()], start with the variables in [vs] *)
+    let reachable = Caml.Hashtbl.create (Var.Set.cardinal vs) in
+    Var.Set.iter (fun v -> Caml.Hashtbl.add reachable v ()) vs ;
+    (* Do a Dijkstra-style graph transitive closure in [graph] starting from [vs]. At each step,
+       [new_vs] contains the variables to explore next. Iterative to avoid blowing the stack. *)
+    let new_vs = ref (Var.Set.elements vs) in
+    while not (List.is_empty !new_vs) do
+      (* pop [new_vs] *)
+      let[@warning "-8"] (v :: rest) = !new_vs in
+      new_vs := rest ;
+      Caml.Hashtbl.find_opt graph v
+      |> Option.iter ~f:(fun vs' ->
+             Var.Set.iter
+               (fun v' ->
+                 if not (Caml.Hashtbl.mem reachable v') then (
+                   (* [v'] seen for the first time: we need to explore it *)
+                   Caml.Hashtbl.replace reachable v' () ;
+                   new_vs := v' :: !new_vs ) )
+               vs' )
+    done ;
+    Caml.Hashtbl.to_seq_keys reachable |> Var.Set.of_seq
 
+
+  (** Get rid of atoms when they contain only variables that do not appear in atoms mentioning
+      variables in [keep], or variables appearing in atoms together with variables in [keep], and so
+      on. In other words, the variables to keep are all the ones transitively reachable from
+      variables in [keep] in the graph connecting two variables whenever they appear together in a
+      same atom of the formula. *)
+  let eliminate ~keep phi =
+    (* We only consider [phi.both] when building the relation. Considering [phi.known] and
+       [phi.pruned] as well could lead to us keeping more variables around, but that's not necessarily
+       a good idea. Ignoring them means we err on the side of reporting potentially slightly more
+       issues than we would otherwise, as some atoms in [phi.pruned] may vanish unfairly as a
+       result. *)
+    let var_graph = build_var_graph phi.both in
+    let vars_to_keep = get_reachable_from var_graph keep in
+    L.d_printfln "Reachable vars: {%a}" Var.Set.pp vars_to_keep ;
+    (* discard atoms which have variables *not* in [vars_to_keep], which in particular is enough
+       to guarantee that *none* of their variables are in [vars_to_keep] thanks to transitive
+       closure on the graph above *)
+    let filter_atom atom = not (Atom.has_var_notin vars_to_keep atom) in
+    let simplify_phi phi =
+      let var_eqs = VarUF.filter_not_in_closed_set ~keep:vars_to_keep phi.Formula.var_eqs in
+      let linear_eqs =
+        Var.Map.filter (fun v _ -> Var.Set.mem v vars_to_keep) phi.Formula.linear_eqs
+      in
+      let atoms = Atom.Set.filter filter_atom phi.Formula.atoms in
+      {Formula.var_eqs; linear_eqs; atoms}
+    in
+    let known = simplify_phi phi.known in
+    let both = simplify_phi phi.both in
+    let pruned = Atom.Set.filter filter_atom phi.pruned in
+    {known; pruned; both}
+end
 
 let simplify ~keep phi =
   let open SatUnsat.Import in
-  let+ phi, new_eqs = normalize phi in
+  let* phi, new_eqs = normalize phi in
   L.d_printfln_escaped "Simplifying %a wrt {%a}" pp phi Var.Set.pp keep ;
-  (* Get rid of atoms when they contain only variables that do not appear in atoms mentioning
-     variables in [keep], or variables appearing in atoms together with variables in [keep], and
-     so on. In other words, the variables to keep are all the ones transitively reachable from
-     variables in [keep] in the graph connecting two variables whenever they appear together in
-     a same atom of the formula. *)
-  (* We only consider [phi.both] when building the relation. Considering [phi.known] and
-     [phi.pruned] as well could lead to us keeping more variables around, but that's not necessarily
-     a good idea. Ignoring them means we err on the side of reporting potentially slightly more
-     issues than we would otherwise, as some atoms in [phi.pruned] may vanish unfairly as a
-     result. *)
-  let var_graph = build_var_graph phi.both in
-  let vars_to_keep = get_reachable_from var_graph keep in
-  L.d_printfln "Reachable vars: {%a}" Var.Set.pp vars_to_keep ;
-  (* discard atoms which have variables *not* in [vars_to_keep], which in particular is enough
-     to guarantee that *none* of their variables are in [vars_to_keep] thanks to transitive
-     closure on the graph above *)
-  let filter_atom atom = not (Atom.has_var_notin vars_to_keep atom) in
-  let simplify_phi phi =
-    let var_eqs = VarUF.filter_not_in_closed_set ~keep:vars_to_keep phi.Formula.var_eqs in
-    let linear_eqs =
-      Var.Map.filter (fun v _ -> Var.Set.mem v vars_to_keep) phi.Formula.linear_eqs
-    in
-    let atoms = Atom.Set.filter filter_atom phi.Formula.atoms in
-    {Formula.var_eqs; linear_eqs; atoms}
-  in
-  let known = simplify_phi phi.known in
-  let both = simplify_phi phi.both in
-  let pruned = Atom.Set.filter filter_atom phi.pruned in
-  ({known; pruned; both}, new_eqs)
+  (* get rid of as many variables as possible *)
+  let+ phi = QuantifierElimination.eliminate_vars ~keep phi in
+  (* TODO: doing [QuantifierElimination.eliminate_vars; DeadVariables.eliminate] a few times may
+     eliminate even more variables *)
+  (DeadVariables.eliminate ~keep phi, new_eqs)
 
 
 let is_known_zero phi v =

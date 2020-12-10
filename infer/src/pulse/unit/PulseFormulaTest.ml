@@ -232,6 +232,13 @@ let%test_module "normalization" =
 let%test_module "variable elimination" =
   ( module struct
     let%expect_test _ =
+      simplify ~keep:[x_var; y_var] (x = y) ;
+      [%expect
+        {|
+        known=x=y && true (no linear) && true (no atoms), pruned=true (no atoms),
+        both=x=y && true (no linear) && true (no atoms)|}]
+
+    let%expect_test _ =
       simplify ~keep:[x_var] (x = i 0 && y = i 1 && z = i 2 && w = i 3) ;
       [%expect
         {|
@@ -242,8 +249,8 @@ let%test_module "variable elimination" =
       simplify ~keep:[x_var] (x = y + i 1 && x = i 0) ;
       [%expect
         {|
-          known=x=v6 && x = 0 && true (no atoms), pruned=true (no atoms),
-          both=x=v6 && x = 0 && true (no atoms)|}]
+          known=true (no var=var) && x = 0 && true (no atoms), pruned=true (no atoms),
+          both=true (no var=var) && x = 0 && true (no atoms)|}]
 
     let%expect_test _ =
       simplify ~keep:[y_var] (x = y + i 1 && x = i 0) ;
@@ -257,20 +264,20 @@ let%test_module "variable elimination" =
       simplify ~keep:[y_var; z_var] (x = y + z && w = x - y && v = w + i 1 && v = i 0) ;
       [%expect
         {|
-        known=x=v6 ∧ z=w=v7 && x = y -1 ∧ z = -1 && true (no atoms), pruned=true (no atoms),
-        both=x=v6 ∧ z=w=v7 && x = y -1 ∧ z = -1 && true (no atoms)|}]
+        known=true (no var=var) && x = y -1 ∧ z = -1 && true (no atoms), pruned=true (no atoms),
+        both=true (no var=var) && x = y -1 ∧ z = -1 && true (no atoms)|}]
 
     let%expect_test _ =
       simplify ~keep:[x_var; y_var] (x = y + z && w + x + y = i 0 && v = w + i 1) ;
       [%expect
         {|
-          known=x=v6 ∧ v=v9
+          known=true (no var=var)
                 &&
                 x = -v + v7 +1 ∧ y = -v7 ∧ z = -v + 2·v7 +1 ∧ w = v -1
                 &&
                 true (no atoms),
           pruned=true (no atoms),
-          both=x=v6 ∧ v=v9
+          both=true (no var=var)
                &&
                x = -v + v7 +1 ∧ y = -v7 ∧ z = -v + 2·v7 +1 ∧ w = v -1
                &&
@@ -280,8 +287,8 @@ let%test_module "variable elimination" =
       simplify ~keep:[x_var; y_var] (x = y + i 4 && x = w && y = z) ;
       [%expect
         {|
-        known=x=w=v6 ∧ y=z && x = y +4 && true (no atoms), pruned=true (no atoms),
-        both=x=w=v6 ∧ y=z && x = y +4 && true (no atoms)|}]
+        known=true (no var=var) && x = y +4 && true (no atoms), pruned=true (no atoms),
+        both=true (no var=var) && x = y +4 && true (no atoms)|}]
   end )
 
 let%test_module "non-linear simplifications" =
