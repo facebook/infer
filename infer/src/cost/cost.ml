@@ -202,13 +202,7 @@ module InstrBasicCostWithReason = struct
         CostDomain.zero_record
     | Sil.Load _ | Sil.Store _ | Sil.Prune _ ->
         CostDomain.unit_cost_atomic_operation
-    | Sil.Metadata Skip -> (
-      match InstrCFG.Node.kind instr_node with
-      | Procdesc.Node.Start_node ->
-          CostDomain.unit_cost_atomic_operation
-      | _ ->
-          CostDomain.zero_record )
-    | Sil.Metadata (Abstract _ | ExitScope _ | Nullify _ | VariableLifetimeBegins _) ->
+    | Sil.Metadata (Abstract _ | ExitScope _ | Nullify _ | Skip | VariableLifetimeBegins _) ->
         CostDomain.zero_record
 
 

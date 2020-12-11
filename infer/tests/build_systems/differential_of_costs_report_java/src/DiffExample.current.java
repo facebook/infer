@@ -5,14 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import java.util.ArrayList;
 import com.google.common.base.Preconditions;
+import java.util.ArrayList;
 
 // This class has the following costs:
 // constructor: constant
-// private access$000 method for accessing f8 
+// private access$000 method for accessing f8
 // f1: top
-// f2: bottom (zero)
+// f2: 0
 // f3: constant
 // f4: linear
 // f5: n log n
@@ -41,8 +41,8 @@ public class DiffExample {
         }
     }
 
-    // cost: bottom (0)
-    private static void f2(int k) {}
+  // cost: constant (0)
+  private static void f2(int k) {}
 
     // cost: constant (5)
     private static int f3() {
