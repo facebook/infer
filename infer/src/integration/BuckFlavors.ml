@@ -114,7 +114,9 @@ let capture build_cmd =
   else
     let all_args = List.rev_append rev_not_targets targets in
     let updated_buck_cmd =
-      command :: List.rev_append Config.buck_build_args_no_inline (Buck.store_args_in_file all_args)
+      command
+      :: List.rev_append Config.buck_build_args_no_inline
+           (Buck.store_args_in_file ~identifier:"clang_flavor_build" all_args)
     in
     L.debug Capture Quiet "Processed buck command '%a'@\n" (Pp.seq F.pp_print_string)
       updated_buck_cmd ;
