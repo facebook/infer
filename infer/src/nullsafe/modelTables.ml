@@ -156,29 +156,29 @@ let check_not_null_parameter_list, check_not_null_list =
 
 
 let check_state_list =
-  [ ((o, [n]), "Preconditions.checkState(boolean):void")
-  ; ((o, [n]), "com.facebook.common.internal.Preconditions.checkState(boolean):void")
-  ; ( (o, [n; n])
+  [ ((o, [o]), "Preconditions.checkState(boolean):void")
+  ; ((o, [o]), "com.facebook.common.internal.Preconditions.checkState(boolean):void")
+  ; ( (o, [o; n])
     , "com.facebook.common.internal.Preconditions.checkState(boolean,java.lang.Object):void" )
-  ; ( (o, [n; n; n])
+  ; ( (o, [o; n; n])
     , "com.facebook.common.internal.Preconditions.checkState(boolean,java.lang.String,java.lang.Object[]):void"
     )
-  ; ((o, [n]), "com.facebook.common.preconditions.Preconditions.checkState(boolean):void")
-  ; ( (o, [n; n])
+  ; ((o, [o]), "com.facebook.common.preconditions.Preconditions.checkState(boolean):void")
+  ; ( (o, [o; n])
     , "com.facebook.common.preconditions.Preconditions.checkState(boolean,java.lang.Object):void" )
-  ; ( (o, [n; n; n])
+  ; ( (o, [o; n; n])
     , "com.facebook.common.preconditions.Preconditions.checkState(boolean,java.lang.String,java.lang.Object[]):void"
     )
-  ; ((o, [n]), "com.google.common.base.Preconditions.checkState(boolean):void")
-  ; ((o, [n; n]), "com.google.common.base.Preconditions.checkState(boolean,java.lang.Object):void")
-  ; ( (o, [n; n; n])
+  ; ((o, [o]), "com.google.common.base.Preconditions.checkState(boolean):void")
+  ; ((o, [o; n]), "com.google.common.base.Preconditions.checkState(boolean,java.lang.Object):void")
+  ; ( (o, [o; n; n])
     , "com.google.common.base.Preconditions.checkState(boolean,java.lang.String,java.lang.Object[]):void"
     )
-  ; ((o, [n]), "com.facebook.infer.annotation.Assertions.assertCondition(boolean):void")
-  ; ( (o, [n; o])
+  ; ((o, [o]), "com.facebook.infer.annotation.Assertions.assertCondition(boolean):void")
+  ; ( (o, [o; o])
     , "com.facebook.infer.annotation.Assertions.assertCondition(boolean,java.lang.String):void" )
-  ; ((o, [n]), "com.facebook.infer.annotation.Assertions.assumeCondition(boolean):void")
-  ; ( (o, [n; o])
+  ; ((o, [o]), "com.facebook.infer.annotation.Assertions.assumeCondition(boolean):void")
+  ; ( (o, [o; o])
     , "com.facebook.infer.annotation.Assertions.assumeCondition(boolean,java.lang.String):void" ) ]
 
 
