@@ -60,6 +60,8 @@ module Make (Key : Hashtbl.HashedType) = struct
     let remove {list} n = Doubly_linked.remove list n
 
     let clear {list} = Doubly_linked.clear list
+
+    let to_list {list} = Doubly_linked.to_list list
   end
 
   type 'a t = {map: ('a * key Doubly_linked.Elt.t) Hash.t; lru: LRU.t}
@@ -114,5 +116,6 @@ module Make (Key : Hashtbl.HashedType) = struct
     F.pp_print_string f "}"
 
 
-  let bindings {map} = Seq.fold_left (fun acc (k, (v, _node)) -> (k, v) :: acc) [] (Hash.to_seq map)
+  let bindings {map; lru} =
+    LRU.to_list lru |> List.map ~f:(fun key -> (key, Hash.find map key |> fst))
 end

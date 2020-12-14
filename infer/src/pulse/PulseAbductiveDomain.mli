@@ -56,6 +56,7 @@ module PreDomain : BaseDomainSig
 type t = private
   { post: PostDomain.t  (** state at the current program point*)
   ; pre: PreDomain.t  (** inferred pre at the current program point *)
+  ; topl: PulseTopl.state  (** state at of the Topl monitor at the current program point *)
   ; skipped_calls: SkippedCalls.t  (** set of skipped calls *)
   ; path_condition: PathCondition.t  (** arithmetic facts *) }
 
@@ -125,6 +126,8 @@ module AddressAttributes : sig
 
   val check_valid : Trace.t -> AbstractValue.t -> t -> (t, Invalidation.t * Trace.t) result
 
+  val check_initialized : Trace.t -> AbstractValue.t -> t -> (t, unit) result
+
   val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
   val allocate : Procname.t -> AbstractValue.t * ValueHistory.t -> Location.t -> t -> t
@@ -163,7 +166,7 @@ val set_path_condition : PathCondition.t -> t -> t
 (** private type to make sure {!summary_of_post} is always called when creating summaries *)
 type summary = private t [@@deriving yojson_of]
 
-val summary_of_post : Procdesc.t -> t -> summary
+val summary_of_post : Procdesc.t -> t -> summary SatUnsat.t
 (** trim the state down to just the procedure's interface (formals and globals), and simplify and
     normalize the state *)
 
@@ -178,3 +181,31 @@ val incorporate_new_eqs : t -> PathCondition.t * PathCondition.new_eqs -> PathCo
     e.g. [x = 0] is not compatible with [x] being allocated, and [x = y] is not compatible with [x]
     and [y] being allocated separately. In those cases, the resulting path condition is
     {!PathCondition.false_}. *)
+
+val initialize : AbstractValue.t -> t -> t
+(** Remove "Uninitialized" attribute of the given address *)
+
+val set_uninitialized :
+     [ `LocalDecl of Pvar.t * AbstractValue.t option
+       (** the second optional parameter is for the address of the variable *)
+     | `Malloc of AbstractValue.t  (** the address parameter is a newly allocated address *) ]
+  -> Typ.t
+  -> Location.t
+  -> t
+  -> t
+(** Add "Uninitialized" attributes when a variable is declared or a memory is allocated by malloc. *)
+
+module Topl : sig
+  val small_step : Location.t -> PulseTopl.event -> t -> t
+
+  val large_step :
+       call_location:Location.t
+    -> callee_proc_name:Procname.t
+    -> substitution:(AbstractValue.t * ValueHistory.t) AbstractValue.Map.t
+    -> ?condition:PathCondition.t
+    -> callee_prepost:PulseTopl.state
+    -> t
+    -> t
+
+  val get : summary -> PulseTopl.state
+end

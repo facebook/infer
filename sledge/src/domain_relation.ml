@@ -13,14 +13,15 @@ module type State_domain_sig = sig
 
   val create_summary :
        locals:Llair.Reg.Set.t
-    -> formals:Llair.Reg.t list
+    -> formals:Llair.Reg.t iarray
     -> entry:t
     -> current:t
     -> summary * t
 end
 
 module Make (State_domain : State_domain_sig) = struct
-  type t = State_domain.t * State_domain.t [@@deriving equal, sexp_of]
+  type t = State_domain.t * State_domain.t
+  [@@deriving compare, equal, sexp_of]
 
   let embed b = (b, b)
 
@@ -55,15 +56,6 @@ module Make (State_domain : State_domain_sig) = struct
     let+ next = State_domain.exec_inst inst current in
     (entry, next)
 
-  let exec_intrinsic ~skip_throw areturn intrinsic actuals (entry, current)
-      =
-    let+ next_opt =
-      State_domain.exec_intrinsic ~skip_throw areturn intrinsic actuals
-        current
-    in
-    let+ next = next_opt in
-    (entry, next)
-
   type from_call =
     {state_from_call: State_domain.from_call; caller_entry: State_domain.t}
   [@@deriving sexp_of]
@@ -76,11 +68,11 @@ module Make (State_domain : State_domain_sig) = struct
       pf
         "@[<v>@[actuals: (@[%a@])@ formals: (@[%a@])@]@ locals: {@[%a@]}@ \
          globals: {@[%a@]}@ current: %a@]"
-        (List.pp ",@ " Llair.Exp.pp)
-        (List.rev actuals)
-        (List.pp ",@ " Llair.Reg.pp)
-        (List.rev formals) Llair.Reg.Set.pp locals Llair.Global.Set.pp
-        globals State_domain.pp current]
+        (IArray.pp ",@ " Llair.Exp.pp)
+        actuals
+        (IArray.pp ",@ " Llair.Reg.pp)
+        formals Llair.Reg.Set.pp locals Llair.Global.Set.pp globals
+        State_domain.pp current]
     ;
     let caller_current, state_from_call =
       State_domain.call ~summaries ~globals ~actuals ~areturn ~formals
@@ -108,9 +100,8 @@ module Make (State_domain : State_domain_sig) = struct
   let dnf (entry, current) =
     List.map ~f:(fun c -> (entry, c)) (State_domain.dnf current)
 
-  let resolve_callee f e (entry, current) =
-    let callees, next = State_domain.resolve_callee f e current in
-    (callees, (entry, next))
+  let resolve_callee f e (_, current) =
+    State_domain.resolve_callee f e current
 
   type summary = State_domain.summary
 

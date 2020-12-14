@@ -19,8 +19,6 @@ val store : proc_desc:Procdesc.t option -> ProcAttributes.t -> unit
 val load : Procname.t -> ProcAttributes.t option
 (** Load the attributes for the procedure from the attributes database. *)
 
-val find_file_capturing_procedure : Procname.t -> (SourceFile.t * [`Include | `Source]) option
-(** Find the file where the procedure was captured, if a cfg for that file exists. Return also a
-    boolean indicating whether the procedure is defined in an include file. *)
+val is_no_return : Procname.t -> bool
 
 val pp_attributes_kind : Format.formatter -> attributes_kind -> unit

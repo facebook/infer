@@ -10,17 +10,23 @@ open PulseBasicInterface
 module AbductiveDomain = PulseAbductiveDomain
 module Arithmetic = PulseArithmetic
 
-type t = AccessToInvalidAddress of Diagnostic.access_to_invalid_address
+type t =
+  | AccessToInvalidAddress of Diagnostic.access_to_invalid_address
+  | ReadUninitializedValue of Diagnostic.read_uninitialized_value
 [@@deriving equal, yojson_of]
 
 let to_diagnostic = function
   | AccessToInvalidAddress access_to_invalid_address ->
       Diagnostic.AccessToInvalidAddress access_to_invalid_address
+  | ReadUninitializedValue read_uninitialized_value ->
+      Diagnostic.ReadUninitializedValue read_uninitialized_value
 
 
 let add_call call_and_loc = function
   | AccessToInvalidAddress access ->
       AccessToInvalidAddress {access with calling_context= call_and_loc :: access.calling_context}
+  | ReadUninitializedValue read ->
+      ReadUninitializedValue {read with calling_context= call_and_loc :: read.calling_context}
 
 
 let should_report (astate : AbductiveDomain.summary) =
@@ -37,3 +43,5 @@ let should_report_diagnostic (astate : AbductiveDomain.summary) (diagnostic : Di
       `ReportNow
   | AccessToInvalidAddress diag ->
       if should_report astate then `ReportNow else `DelayReport (AccessToInvalidAddress diag)
+  | ReadUninitializedValue diag ->
+      if should_report astate then `ReportNow else `DelayReport (ReadUninitializedValue diag)

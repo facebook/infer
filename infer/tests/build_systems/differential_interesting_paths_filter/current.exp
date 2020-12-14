@@ -1,5 +1,4 @@
 NULL_DEREFERENCE, no_bucket, src/com/example/DiffClass1.java, com.example.DiffClass1.triggerNpe():int, 1
 RESOURCE_LEAK, no_bucket, src/com/example/DiffClass2.java, com.example.DiffClass2.openResource():void, 5
-NULL_DEREFERENCE, no_bucket, src/com/example/DiffClass3.java, com.example.DiffClassThree.doStuff3():int, 1
+NULL_DEREFERENCE, no_bucket, src/com/example/DiffClass3.java, com.example.DiffClass3.doStuff3():int, 1
 NULL_DEREFERENCE, no_bucket, src/com/example/DiffClassUnchanged.java, com.example.DiffClassUnchanged.doWrongStuff():int, 1
-NULL_DEREFERENCE, no_bucket, src/com/example/DiffClassUnchanged.java, com.example.DiffClassUnchanged.tellMeTheLength():int, 1

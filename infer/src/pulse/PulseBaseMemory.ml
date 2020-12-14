@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module L = Logging
 open PulseBasicInterface
 
 (* {3 Heap domain } *)
@@ -16,7 +17,16 @@ module Access = struct
   let equal = [%compare.equal: t]
 
   let pp = HilExp.Access.pp AbstractValue.pp
+
+  let canonicalize ~get_var_repr (access : t) =
+    match access with
+    | ArrayAccess (typ, addr) ->
+        HilExp.Access.ArrayAccess (typ, get_var_repr addr)
+    | FieldAccess _ | TakeAddress | Dereference ->
+        access
 end
+
+module AccessSet = Caml.Set.Make (Access)
 
 module AddrTrace = struct
   type t = AbstractValue.t * ValueHistory.t [@@deriving compare, yojson_of]
@@ -28,12 +38,22 @@ module AddrTrace = struct
 end
 
 module Edges = struct
-  include RecencyMap.Make (Access) (AddrTrace)
-            (struct
-              let limit = Config.pulse_recency_limit
-            end)
+  module M =
+    RecencyMap.Make (Access) (AddrTrace)
+      (struct
+        let limit = Config.pulse_recency_limit
+      end)
 
-  let yojson_of_t edges = [%yojson_of: (Access.t * AddrTrace.t) list] (bindings edges)
+  let yojson_of_t edges = [%yojson_of: (Access.t * AddrTrace.t) list] (M.bindings edges)
+
+  let canonicalize ~get_var_repr edges =
+    M.fold ~init:M.empty edges ~f:(fun edges' (access, (addr, hist)) ->
+        let addr' = get_var_repr addr in
+        let access' = Access.canonicalize ~get_var_repr access in
+        M.add access' (addr', hist) edges' )
+
+
+  include M
 end
 
 module Graph = PrettyPrintable.MakePPMonoMap (AbstractValue) (Edges)
@@ -54,5 +74,31 @@ let find_edge_opt addr access memory =
 
 
 let yojson_of_t g = [%yojson_of: (AbstractValue.t * Edges.t) list] (Graph.bindings g)
+
+let is_allocated memory v =
+  Graph.find_opt v memory |> Option.exists ~f:(fun edges -> not (Edges.is_empty edges))
+
+
+let canonicalize ~get_var_repr memory =
+  let exception AliasingContradiction in
+  try
+    let memory =
+      Graph.fold
+        (fun addr edges g ->
+          if Edges.is_empty edges then g
+          else
+            let addr' = get_var_repr addr in
+            if is_allocated g addr' then (
+              L.d_printfln "CONTRADICTION: %a = %a, which is already allocated in %a@\n"
+                AbstractValue.pp addr AbstractValue.pp addr' Graph.pp g ;
+              raise_notrace AliasingContradiction )
+            else
+              let edges' = Edges.canonicalize ~get_var_repr edges in
+              Graph.add addr' edges' g )
+        memory Graph.empty
+    in
+    Sat memory
+  with AliasingContradiction -> Unsat
+
 
 include Graph

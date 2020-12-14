@@ -129,28 +129,31 @@ open struct
                 (ref 0, String.Tbl.create ()) )
           in
           let name =
-            match Llvm.classify_type (Llvm.type_of llv) with
-            | Void -> (
-                let fname =
-                  match Llvm.classify_value llv with
-                  | Instruction (Call | Invoke) -> (
-                    match
-                      Llvm.value_name
-                        (Llvm.operand llv (Llvm.num_operands llv - 1))
-                    with
-                    | "" -> Int.to_string (!next - 1)
-                    | s -> s )
-                  | _ -> "void"
-                in
-                match String.Tbl.find void_tbl fname with
-                | None ->
-                    String.Tbl.set void_tbl ~key:fname ~data:1 ;
-                    fname ^ ".void"
-                | Some count ->
-                    String.Tbl.set void_tbl ~key:fname ~data:(count + 1) ;
-                    String.concat ~sep:""
-                      [fname; ".void."; Int.to_string count] )
-            | _ -> (
+            if
+              Poly.(
+                Llvm.classify_value llv = Instruction Call
+                && Llvm.classify_type (Llvm.type_of llv) = Void)
+            then (
+              (* LLVM does not give unique names to the result of
+                 void-returning function calls. We need unique names for
+                 these as they determine the labels of newly-created return
+                 blocks. *)
+              let fname =
+                match
+                  Llvm.(value_name (operand llv (num_operands llv - 1)))
+                with
+                | "" -> Int.to_string (!next - 1)
+                | s -> s
+              in
+              match String.Tbl.find void_tbl fname with
+              | None ->
+                  String.Tbl.set void_tbl ~key:fname ~data:1 ;
+                  fname ^ ".void"
+              | Some count ->
+                  String.Tbl.set void_tbl ~key:fname ~data:(count + 1) ;
+                  String.concat ~sep:""
+                    [fname; ".void."; Int.to_string count] )
+            else
               match Llvm.value_name llv with
               | "" ->
                   (* anonymous values take the next SSA name *)
@@ -162,7 +165,7 @@ open struct
                 | Some _ ->
                     (* escape to avoid clash with names of anonymous values *)
                     "\"" ^ name ^ "\""
-                | None -> name ) )
+                | None -> name )
           in
           SymTbl.set sym_tbl ~key:llv ~data:(name, loc)
   end
@@ -375,6 +378,10 @@ let pp_prefix_exp fs (insts, exp) =
    of 'undef' to a distinct register *)
 let undef_count = ref 0
 
+module GlobTbl = LlvalueTbl
+
+let memo_global : GlobalDefn.t GlobTbl.t = GlobTbl.create ()
+
 module ValTbl = HashTable.Make (struct
   type t = bool * Llvm.llvalue
 
@@ -382,10 +389,6 @@ module ValTbl = HashTable.Make (struct
 end)
 
 let memo_value : (Inst.t list * Exp.t) ValTbl.t = ValTbl.create ()
-
-module GlobTbl = LlvalueTbl
-
-let memo_global : GlobalDefn.t GlobTbl.t = GlobTbl.create ()
 
 let should_inline : Llvm.llvalue -> bool =
  fun llv ->
@@ -441,13 +444,12 @@ let rec xlate_intrinsic_exp :
   | _ -> None
 
 and xlate_values x len val_i =
-  let rec loop i (pre, args) =
-    if i < 0 then (pre, args)
-    else
-      let pre_i, arg_i = xlate_value x (val_i i) in
-      loop (i - 1) (pre_i @ pre, arg_i :: args)
+  let xlate_i j pre_0_i =
+    let pre_j, arg_j = xlate_value x (val_i j) in
+    (arg_j, Iter.append pre_0_i (Iter.of_list pre_j))
   in
-  loop (len - 1) ([], [])
+  let pre, vals = Iter.(fold_map (0 -- (len - 1)) empty ~f:xlate_i) in
+  (Iter.to_list pre, IArray.of_iter vals)
 
 and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t
     =
@@ -485,22 +487,22 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t
         let typ = xlate_type x (Llvm.type_of llv) in
         let len = Llvm.num_operands llv in
         let pre, args = xlate_values x len (Llvm.operand llv) in
-        (pre, Exp.record typ (IArray.of_list args))
+        (pre, Exp.record typ args)
     | ConstantDataVector ->
         let typ = xlate_type x (Llvm.type_of llv) in
         let len = Llvm.vector_size (Llvm.type_of llv) in
         let pre, args = xlate_values x len (Llvm.const_element llv) in
-        (pre, Exp.record typ (IArray.of_list args))
+        (pre, Exp.record typ args)
     | ConstantDataArray ->
         let typ = xlate_type x (Llvm.type_of llv) in
         let len = Llvm.array_length (Llvm.type_of llv) in
         let pre, args = xlate_values x len (Llvm.const_element llv) in
-        (pre, Exp.record typ (IArray.of_list args))
+        (pre, Exp.record typ args)
     | ConstantStruct ->
         let typ = xlate_type x (Llvm.type_of llv) in
         let len = Llvm.num_operands llv in
         let pre, args = xlate_values x len (Llvm.operand llv) in
-        (pre, Exp.record typ (IArray.of_list args))
+        (pre, Exp.record typ args)
     | BlockAddress ->
         let parent = find_name (Llvm.operand llv 0) in
         let name = find_name (Llvm.operand llv 1) in
@@ -937,6 +939,99 @@ let ignored_callees = StringS.create 0
 let xlate_size_of x llv =
   Exp.integer Typ.siz (Z.of_int (size_of x (Llvm.type_of llv)))
 
+let norm_callee llfunc =
+  match Llvm.classify_value llfunc with
+  | Function | Instruction _ | InlineAsm | Argument -> llfunc
+  | ConstantExpr -> (
+    match Llvm.constexpr_opcode llfunc with
+    | BitCast -> Llvm.operand llfunc 0
+    | _ -> todo "callee kind %a" pp_llvalue llfunc () )
+  | _ -> todo "callee kind %a" pp_llvalue llfunc ()
+
+let num_actuals instr lltyp llfunc =
+  assert (Poly.(Llvm.classify_type lltyp = Pointer)) ;
+  if not (Llvm.is_var_arg (Llvm.element_type lltyp)) then
+    Llvm.num_arg_operands instr
+  else
+    let fname = Llvm.value_name llfunc in
+    if StringS.add ignored_callees fname && not (Llvm.is_declaration llfunc)
+    then
+      warn "ignoring variable arguments to variadic function: %a" pp_llvalue
+        llfunc () ;
+    let llelt = Llvm.element_type lltyp in
+    ( match Llvm.classify_type llelt with
+    | Function -> ()
+    | _ ->
+        fail "called function not of function type: %a" pp_llvalue instr ()
+    ) ;
+    Array.length (Llvm.param_types llelt)
+
+let xlate_intrinsic_inst emit_inst x name_segs instr num_actuals loc =
+  let emit_inst ?prefix inst = Some (emit_inst ?prefix inst) in
+  match name_segs with
+  | ["__llair_choice"] ->
+      let reg = xlate_name x instr in
+      let msg = "__llair_choice" in
+      emit_inst (Inst.nondet ~reg:(Some reg) ~msg ~loc)
+  | ["__llair_alloc" (* void* __llair_alloc(unsigned size) *)] ->
+      let reg = xlate_name x instr in
+      let num_operand = Llvm.operand instr 0 in
+      let prefix, arg = xlate_value x num_operand in
+      let num =
+        convert_to_siz (xlate_type x (Llvm.type_of num_operand)) arg
+      in
+      let len = 1 in
+      emit_inst ~prefix (Inst.alloc ~reg ~num ~len ~loc)
+  | ["_Znam" (* operator new[](unsigned long) *)]
+   |["_Znwm" (* operator new(size_t num) *)]
+   |[ "_ZnwmSt11align_val_t"
+      (* operator new(unsigned long, std::align_val_t) *) ]
+    when num_actuals > 0 ->
+      let reg = xlate_name x instr in
+      let prefix, num = xlate_value x (Llvm.operand instr 0) in
+      let len = size_of x (Llvm.type_of instr) in
+      emit_inst ~prefix (Inst.alloc ~reg ~num ~len ~loc)
+  | ["_ZdlPv" (* operator delete(void* ptr) *)]
+   |[ "_ZdlPvSt11align_val_t"
+      (* operator delete(void* ptr, std::align_val_t) *) ]
+   |[ "_ZdlPvmSt11align_val_t"
+      (* operator delete(void* ptr, unsigned long, std::align_val_t) *) ]
+   |["free" (* void free(void* ptr) *)] ->
+      let prefix, ptr = xlate_value x (Llvm.operand instr 0) in
+      emit_inst ~prefix (Inst.free ~ptr ~loc)
+  | ["abort"] | ["llvm"; "trap"] -> emit_inst (Inst.abort ~loc)
+  | [iname] | "llvm" :: iname :: _ -> (
+    match Intrinsic.of_name iname with
+    | Some name ->
+        let reg = xlate_name_opt x instr in
+        let xlate_arg i pre =
+          let pre_i, arg_i = xlate_value x (Llvm.operand instr i) in
+          (arg_i, pre_i @ pre)
+        in
+        let prefix, args =
+          Iter.fold_map ~f:xlate_arg Iter.(0 -- (num_actuals - 1)) []
+        in
+        let args = IArray.of_iter args in
+        emit_inst ~prefix (Inst.intrinsic ~reg ~name ~args ~loc)
+    | None -> None )
+  | _ -> None
+
+let calls_to_backpatch = ref []
+
+let term_call x llcallee ~typ ~actuals ~areturn ~return ~throw ~loc =
+  match Llvm.classify_value llcallee with
+  | Function ->
+      let name = Llvm.value_name llcallee in
+      let call, backpatch =
+        Term.call ~name ~typ ~actuals ~areturn ~return ~throw ~loc
+      in
+      calls_to_backpatch :=
+        (llcallee, typ, backpatch) :: !calls_to_backpatch ;
+      ([], call)
+  | _ ->
+      let prefix, callee = xlate_value x llcallee in
+      (prefix, Term.icall ~callee ~typ ~actuals ~areturn ~return ~throw ~loc)
+
 let xlate_instr :
        pop_thunk
     -> x
@@ -986,31 +1081,19 @@ let xlate_instr :
       emit_inst ~prefix:(pre0 @ pre1) (Inst.store ~ptr ~exp ~len ~loc)
   | Alloca ->
       let reg = xlate_name x instr in
-      let rand = Llvm.operand instr 0 in
-      let prefix, arg = xlate_value x rand in
-      let num = convert_to_siz (xlate_type x (Llvm.type_of rand)) arg in
+      let num_elts = Llvm.operand instr 0 in
+      let prefix, num = xlate_value x num_elts in
+      let num = convert_to_siz (xlate_type x (Llvm.type_of num_elts)) num in
       assert (Poly.(Llvm.classify_type (Llvm.type_of instr) = Pointer)) ;
-      let len = size_of x (Llvm.type_of instr) in
+      let len = size_of x (Llvm.element_type (Llvm.type_of instr)) in
       emit_inst ~prefix (Inst.alloc ~reg ~num ~len ~loc)
   | Call -> (
-      let maybe_llfunc = Llvm.operand instr (Llvm.num_operands instr - 1) in
-      let lltyp = Llvm.type_of maybe_llfunc in
-      assert (Poly.(Llvm.classify_type lltyp = Pointer)) ;
-      let llfunc =
-        let llfunc_valuekind = Llvm.classify_value maybe_llfunc in
-        match llfunc_valuekind with
-        | Function | Instruction _ | InlineAsm | Argument -> maybe_llfunc
-        | ConstantExpr -> (
-          match Llvm.constexpr_opcode maybe_llfunc with
-          | BitCast -> Llvm.operand maybe_llfunc 0
-          | _ ->
-              todo "opcode kind in call instruction %a" pp_llvalue
-                maybe_llfunc () )
-        | _ ->
-            todo "operand kind in call instruction %a" pp_llvalue
-              maybe_llfunc ()
-      in
-      let fname = Llvm.value_name llfunc in
+      let llcallee = Llvm.operand instr (Llvm.num_operands instr - 1) in
+      let lltyp = Llvm.type_of llcallee in
+      let llcallee = norm_callee llcallee in
+      let num_actuals = num_actuals instr lltyp llcallee in
+      let fname = Llvm.value_name llcallee in
+      let name_segs = String.split_on_char fname ~by:'.' in
       let skip msg =
         if StringS.add ignored_callees fname then
           warn "ignoring uninterpreted %s %s" msg fname () ;
@@ -1021,180 +1104,109 @@ let xlate_instr :
       match xlate_intrinsic_exp fname with
       | Some intrinsic -> inline_or_move (intrinsic x)
       | None -> (
-        match String.split_on_char fname ~by:'.' with
-        | ["__llair_choice"] ->
-            let reg = xlate_name x instr in
-            let msg = "__llair_choice" in
-            emit_inst (Inst.nondet ~reg:(Some reg) ~msg ~loc)
-        | ["__llair_throw"] ->
-            let pre, exc = xlate_value x (Llvm.operand instr 0) in
-            emit_term ~prefix:(pop loc @ pre) (Term.throw ~exc ~loc)
-        | ["__llair_alloc" (* void* __llair_alloc(unsigned size) *)] ->
-            let reg = xlate_name x instr in
-            let num_operand = Llvm.operand instr 0 in
-            let prefix, arg = xlate_value x num_operand in
-            let num =
-              convert_to_siz (xlate_type x (Llvm.type_of num_operand)) arg
-            in
-            let len = 1 in
-            emit_inst ~prefix (Inst.alloc ~reg ~num ~len ~loc)
-        | ["_Znwm" (* operator new(size_t num) *)]
-         |[ "_ZnwmSt11align_val_t"
-            (* operator new(unsigned long, std::align_val_t) *) ] ->
-            let reg = xlate_name x instr in
-            let prefix, num = xlate_value x (Llvm.operand instr 0) in
-            let len = size_of x (Llvm.type_of instr) in
-            emit_inst ~prefix (Inst.alloc ~reg ~num ~len ~loc)
-        | ["_ZdlPv" (* operator delete(void* ptr) *)]
-         |[ "_ZdlPvSt11align_val_t"
-            (* operator delete(void* ptr, std::align_val_t) *) ]
-         |[ "_ZdlPvmSt11align_val_t"
-            (* operator delete(void* ptr, unsigned long, std::align_val_t) *)
-          ]
-         |["free" (* void free(void* ptr) *)] ->
-            let prefix, ptr = xlate_value x (Llvm.operand instr 0) in
-            emit_inst ~prefix (Inst.free ~ptr ~loc)
-        | "llvm" :: "memset" :: _ ->
-            let pre_0, dst = xlate_value x (Llvm.operand instr 0) in
-            let pre_1, byt = xlate_value x (Llvm.operand instr 1) in
-            let pre_2, len = xlate_value x (Llvm.operand instr 2) in
-            emit_inst
-              ~prefix:(pre_0 @ pre_1 @ pre_2)
-              (Inst.memset ~dst ~byt ~len ~loc)
-        | "llvm" :: "memcpy" :: _ ->
-            let pre_0, dst = xlate_value x (Llvm.operand instr 0) in
-            let pre_1, src = xlate_value x (Llvm.operand instr 1) in
-            let pre_2, len = xlate_value x (Llvm.operand instr 2) in
-            emit_inst
-              ~prefix:(pre_0 @ pre_1 @ pre_2)
-              (Inst.memcpy ~dst ~src ~len ~loc)
-        | "llvm" :: "memmove" :: _ ->
-            let pre_0, dst = xlate_value x (Llvm.operand instr 0) in
-            let pre_1, src = xlate_value x (Llvm.operand instr 1) in
-            let pre_2, len = xlate_value x (Llvm.operand instr 2) in
-            emit_inst
-              ~prefix:(pre_0 @ pre_1 @ pre_2)
-              (Inst.memmov ~dst ~src ~len ~loc)
-        | ["abort"] | ["llvm"; "trap"] -> emit_inst (Inst.abort ~loc)
-        (* dropped / handled elsewhere *)
-        | ["llvm"; "dbg"; ("declare" | "value")]
-         |"llvm" :: ("lifetime" | "invariant") :: ("start" | "end") :: _ ->
-            nop ()
-        (* unimplemented *)
-        | ["llvm"; ("stacksave" | "stackrestore")] ->
-            skip "dynamic stack deallocation"
-        | "llvm" :: "coro" :: _ ->
-            todo "coroutines:@ %a" pp_llvalue instr ()
-        | "llvm" :: "experimental" :: "gc" :: "statepoint" :: _ ->
-            todo "statepoints:@ %a" pp_llvalue instr ()
-        | ["llvm"; ("va_start" | "va_copy" | "va_end")] ->
-            skip "variadic function intrinsic"
-        | "llvm" :: _ -> skip "intrinsic"
-        | _ when Poly.equal (Llvm.classify_value llfunc) InlineAsm ->
-            skip "inline asm"
-        (* general function call that may not throw *)
-        | _ ->
-            let pre0, callee = xlate_value x llfunc in
-            let typ = xlate_type x lltyp in
-            let lbl = name ^ ".ret" in
-            let pre, call =
-              let pre, actuals =
-                let num_actuals =
-                  if not (Llvm.is_var_arg (Llvm.element_type lltyp)) then
-                    Llvm.num_arg_operands instr
-                  else
-                    let fname = Llvm.value_name llfunc in
-                    if
-                      StringS.add ignored_callees fname
-                      && not (Llvm.is_declaration llfunc)
-                    then
-                      warn
-                        "ignoring variable arguments to variadic function: \
-                         %a"
-                        Exp.pp callee () ;
-                    let llfty = Llvm.element_type lltyp in
-                    ( match Llvm.classify_type llfty with
-                    | Function -> ()
-                    | _ ->
-                        fail "called function not of function type: %a"
-                          pp_llvalue instr () ) ;
-                    Array.length (Llvm.param_types llfty)
-                in
+        match
+          xlate_intrinsic_inst emit_inst x name_segs instr num_actuals loc
+        with
+        | Some code -> code
+        | None -> (
+          match name_segs with
+          | ["__llair_throw"] ->
+              let pre, exc = xlate_value x (Llvm.operand instr 0) in
+              emit_term ~prefix:(pop loc @ pre) (Term.throw ~exc ~loc)
+          | ["__llair_unreachable"] -> emit_term Term.unreachable
+          (* dropped / handled elsewhere *)
+          | ["llvm"; "dbg"; ("declare" | "value")]
+           |"llvm" :: ("lifetime" | "invariant") :: ("start" | "end") :: _
+            ->
+              nop ()
+          (* unimplemented *)
+          | ["llvm"; ("stacksave" | "stackrestore")] ->
+              skip "dynamic stack deallocation"
+          | "llvm" :: "coro" :: _ ->
+              todo "coroutines:@ %a" pp_llvalue instr ()
+          | "llvm" :: "experimental" :: "gc" :: "statepoint" :: _ ->
+              todo "statepoints:@ %a" pp_llvalue instr ()
+          | ["llvm"; ("va_start" | "va_copy" | "va_end")] ->
+              skip "variadic function intrinsic"
+          | "llvm" :: _ -> skip "intrinsic"
+          | _ when Poly.equal (Llvm.classify_value llcallee) InlineAsm ->
+              skip "inline asm"
+          (* general function call that may not throw *)
+          | _ ->
+              let typ = xlate_type x lltyp in
+              let lbl = name ^ ".ret" in
+              let pre_1, actuals =
                 xlate_values x num_actuals (Llvm.operand instr)
               in
               let areturn = xlate_name_opt x instr in
               let return = Jump.mk lbl in
-              ( pre
-              , Term.call ~callee ~typ ~actuals ~areturn ~return ~throw:None
-                  ~loc )
-            in
-            continue (fun (insts, term) ->
-                let cmnd = IArray.of_list insts in
-                (pre0 @ pre, call, [Block.mk ~lbl ~cmnd ~term]) ) ) )
+              let pre_0, call =
+                term_call x llcallee ~typ ~actuals ~areturn ~return
+                  ~throw:None ~loc
+              in
+              continue (fun (insts, term) ->
+                  let cmnd = IArray.of_list insts in
+                  (pre_0 @ pre_1, call, [Block.mk ~lbl ~cmnd ~term]) ) ) ) )
   | Invoke -> (
-      let llfunc = Llvm.operand instr (Llvm.num_operands instr - 3) in
-      let lltyp = Llvm.type_of llfunc in
-      assert (Poly.(Llvm.classify_type lltyp = Pointer)) ;
-      let fname = Llvm.value_name llfunc in
+      let llcallee = Llvm.operand instr (Llvm.num_operands instr - 3) in
+      let lltyp = Llvm.type_of llcallee in
+      let llcallee = norm_callee llcallee in
+      let num_actuals = num_actuals instr lltyp llcallee in
+      let fname = Llvm.value_name llcallee in
+      let name_segs = String.split_on_char fname ~by:'.' in
       let return_blk = Llvm.get_normal_dest instr in
       let unwind_blk = Llvm.get_unwind_dest instr in
-      let num_actuals =
-        if not (Llvm.is_var_arg (Llvm.element_type lltyp)) then
-          Llvm.num_arg_operands instr
-        else (
-          if
-            StringS.add ignored_callees fname
-            && not (Llvm.is_declaration llfunc)
-          then
-            warn "ignoring variable arguments to variadic function: %a"
-              Global.pp (xlate_global x llfunc).name () ;
-          assert (Poly.(Llvm.classify_type lltyp = Pointer)) ;
-          Array.length (Llvm.param_types (Llvm.element_type lltyp)) )
-      in
       (* intrinsics *)
-      match String.split_on_char fname ~by:'.' with
-      | _ when Option.is_some (xlate_intrinsic_exp fname) ->
+      match xlate_intrinsic_exp fname with
+      | Some _ ->
+          (* instr will be translated to an exp by xlate_value, so only need
+             to wire up control flow here *)
           let prefix, dst, blocks = xlate_jump x instr return_blk loc [] in
           emit_term ~prefix (Term.goto ~dst ~loc) ~blocks
-      | ["__llair_throw"] ->
-          let prefix, dst, blocks = xlate_jump x instr unwind_blk loc [] in
-          emit_term ~prefix (Term.goto ~dst ~loc) ~blocks
-      | ["abort"] -> emit_term ~prefix:[Inst.abort ~loc] Term.unreachable
-      | ["_Znwm" (* operator new(size_t num) *)]
-       |[ "_ZnwmSt11align_val_t"
-          (* operator new(unsigned long num, std::align_val_t) *) ]
-        when num_actuals > 0 ->
-          let reg = xlate_name x instr in
-          let pre_0, num = xlate_value x (Llvm.operand instr 0) in
-          let len = size_of x (Llvm.type_of instr) in
-          let prefix, dst, blocks = xlate_jump x instr return_blk loc [] in
-          emit_term
-            ~prefix:(pre_0 @ (Inst.alloc ~reg ~num ~len ~loc :: prefix))
-            (Term.goto ~dst ~loc) ~blocks
-      (* unimplemented *)
-      | "llvm" :: "experimental" :: "gc" :: "statepoint" :: _ ->
-          todo "statepoints:@ %a" pp_llvalue instr ()
-      | _ when Poly.equal (Llvm.classify_value llfunc) InlineAsm ->
-          todo "inline asm: @ %a" pp_llvalue instr ()
-      (* general function call that may throw *)
-      | _ ->
-          let pre_0, callee = xlate_value x llfunc in
-          let typ = xlate_type x (Llvm.type_of llfunc) in
-          let pre_1, actuals =
-            xlate_values x num_actuals (Llvm.operand instr)
+      | None -> (
+          let k ?prefix:(pre_inst = []) inst =
+            let pre_jump, dst, blocks =
+              xlate_jump x instr return_blk loc []
+            in
+            let prefix = pre_inst @ (inst :: pre_jump) in
+            emit_term ~prefix (Term.goto ~dst ~loc) ~blocks
           in
-          let areturn = xlate_name_opt x instr in
-          let pre_2, return, blocks =
-            xlate_jump x instr return_blk loc []
-          in
-          let pre_3, throw, blocks =
-            xlate_jump x instr unwind_blk loc blocks
-          in
-          let throw = Some throw in
-          emit_term
-            ~prefix:(List.concat [pre_0; pre_1; pre_2; pre_3])
-            (Term.call ~callee ~typ ~actuals ~areturn ~return ~throw ~loc)
-            ~blocks )
+          match
+            xlate_intrinsic_inst k x name_segs instr num_actuals loc
+          with
+          | Some code -> code
+          | None -> (
+            match name_segs with
+            | ["__llair_throw"] ->
+                let prefix, dst, blocks =
+                  xlate_jump x instr unwind_blk loc []
+                in
+                emit_term ~prefix (Term.goto ~dst ~loc) ~blocks
+            | ["__llair_unreachable"] -> emit_term Term.unreachable
+            (* unimplemented *)
+            | "llvm" :: "experimental" :: "gc" :: "statepoint" :: _ ->
+                todo "statepoints:@ %a" pp_llvalue instr ()
+            | _ when Poly.equal (Llvm.classify_value llcallee) InlineAsm ->
+                todo "inline asm: @ %a" pp_llvalue instr ()
+            (* general function call that may throw *)
+            | _ ->
+                let typ = xlate_type x lltyp in
+                let pre_1, actuals =
+                  xlate_values x num_actuals (Llvm.operand instr)
+                in
+                let areturn = xlate_name_opt x instr in
+                let pre_2, return, blocks =
+                  xlate_jump x instr return_blk loc []
+                in
+                let pre_3, throw, blocks =
+                  xlate_jump x instr unwind_blk loc blocks
+                in
+                let pre_0, call =
+                  term_call x llcallee ~typ ~actuals ~areturn ~return
+                    ~throw:(Some throw) ~loc
+                in
+                let prefix = List.concat [pre_0; pre_1; pre_2; pre_3] in
+                emit_term ~prefix call ~blocks ) ) )
   | Ret ->
       let pre, exp =
         if Llvm.num_operands instr = 0 then ([], None)
@@ -1400,6 +1412,16 @@ let xlate_instr :
       fail "xlate_instr: %a" pp_llvalue instr ()
   | PHI | Invalid | Invalid2 | UserOp1 | UserOp2 -> assert false
 
+let rec xlate_instrs : pop_thunk -> x -> _ Llvm.llpos -> code =
+ fun pop x -> function
+  | Before instrI ->
+      xlate_instr pop x instrI (fun xlate_instrI ->
+          let instrJ = Llvm.instr_succ instrI in
+          let instsJ, termJ, blocksJN = xlate_instrs pop x instrJ in
+          let instsI, termI, blocksI = xlate_instrI (instsJ, termJ) in
+          (instsI, termI, blocksI @ blocksJN) )
+  | At_end blk -> fail "xlate_instrs: %a" pp_llblock blk ()
+
 let skip_phis : Llvm.llbasicblock -> _ Llvm.llpos =
  fun blk ->
   let rec skip_phis_ (pos : _ Llvm.llpos) =
@@ -1411,16 +1433,6 @@ let skip_phis : Llvm.llbasicblock -> _ Llvm.llpos =
     | _ -> pos
   in
   skip_phis_ (Llvm.instr_begin blk)
-
-let rec xlate_instrs : pop_thunk -> x -> _ Llvm.llpos -> code =
- fun pop x -> function
-  | Before instrI ->
-      xlate_instr pop x instrI (fun xlate_instrI ->
-          let instrJ = Llvm.instr_succ instrI in
-          let instsJ, termJ, blocksJN = xlate_instrs pop x instrJ in
-          let instsI, termI, blocksI = xlate_instrI (instsJ, termJ) in
-          (instsI, termI, blocksI @ blocksJN) )
-  | At_end blk -> fail "xlate_instrs: %a" pp_llblock blk ()
 
 let xlate_block : pop_thunk -> x -> Llvm.llbasicblock -> Llair.block list =
  fun pop x blk ->
@@ -1437,18 +1449,13 @@ let report_undefined func name =
   if Option.is_some (Llvm.use_begin func) then
     [%Trace.info "undefined function: %a" Function.pp name]
 
-let xlate_function : x -> Llvm.llvalue -> Llair.func =
- fun x llf ->
-  [%Trace.call fun {pf} -> pf "%a" pp_llvalue llf]
-  ;
-  undef_count := 0 ;
-  let loc = find_loc llf in
-  let typ = xlate_type x (Llvm.type_of llf) in
-  let name = Function.mk typ (find_name llf) in
+let xlate_function_decl x llfunc typ k =
+  let loc = find_loc llfunc in
+  let name = Function.mk typ (find_name llfunc) in
   let formals =
-    Llvm.fold_left_params
-      (fun rev_args param -> xlate_name x param :: rev_args)
-      [] llf
+    Iter.from_iter (fun f -> Llvm.iter_params f llfunc)
+    |> Iter.map ~f:(xlate_name x)
+    |> IArray.of_iter
   in
   let freturn =
     match typ with
@@ -1458,6 +1465,16 @@ let xlate_function : x -> Llvm.llvalue -> Llair.func =
   in
   let _, _, exc_typ = exception_typs in
   let fthrow = Reg.mk exc_typ "fthrow" in
+  k ~name ~formals ~freturn ~fthrow ~loc
+
+let xlate_function : x -> Llvm.llvalue -> Llair.func =
+ fun x llf ->
+  [%Trace.call fun {pf} -> pf "%a" pp_llvalue llf]
+  ;
+  undef_count := 0 ;
+  let typ = xlate_type x (Llvm.type_of llf) in
+  xlate_function_decl x llf typ
+  @@ fun ~name ~formals ~freturn ~fthrow ~loc ->
   ( match Llvm.block_begin llf with
   | Before entry_blk ->
       let pop = pop_stack_frame_of_function x llf entry_blk in
@@ -1485,6 +1502,18 @@ let xlate_function : x -> Llvm.llvalue -> Llair.func =
       Func.mk_undefined ~name ~formals ~freturn ~fthrow ~loc )
   |>
   [%Trace.retn fun {pf} -> pf "@\n%a" Func.pp]
+
+let backpatch_calls x func_tbl =
+  List.iter !calls_to_backpatch ~f:(fun (llfunc, typ, backpatch) ->
+      match LlvalueTbl.find func_tbl llfunc with
+      | Some callee -> backpatch ~callee
+      | None ->
+          xlate_function_decl x llfunc typ
+          @@ fun ~name ~formals ~freturn ~fthrow ~loc ->
+          let callee =
+            Func.mk_undefined ~name ~formals ~freturn ~fthrow ~loc
+          in
+          backpatch ~callee )
 
 let transform ~internalize : Llvm.llmodule -> unit =
  fun llmodule ->
@@ -1562,13 +1591,14 @@ let check_datalayout llcontext lldatalayout =
    Llvm.dispose_context. *)
 let cleanup llmodule llcontext =
   SymTbl.clear sym_tbl ;
-  String.Tbl.clear realpath_tbl ;
   ScopeTbl.clear scope_tbl ;
+  String.Tbl.clear realpath_tbl ;
   LltypeTbl.clear anon_struct_name ;
   LltypeTbl.clear memo_type ;
   GlobTbl.clear memo_global ;
   ValTbl.clear memo_value ;
   StringS.clear ignored_callees ;
+  calls_to_backpatch := [] ;
   Gc.full_major () ;
   Llvm.dispose_module llmodule ;
   Llvm.dispose_context llcontext
@@ -1612,6 +1642,7 @@ let translate ~models ~fuzzer ~internalize : string list -> Llair.program =
         else xlate_global x llg :: globals )
       [] llmodule
   in
+  let func_tbl : Func.t LlvalueTbl.t = LlvalueTbl.create () in
   let functions =
     Llvm.fold_left_functions
       (fun functions llf ->
@@ -1620,9 +1651,13 @@ let translate ~models ~fuzzer ~internalize : string list -> Llair.program =
           String.prefix name ~pre:"__llair_"
           || String.prefix name ~pre:"llvm."
         then functions
-        else xlate_function x llf :: functions )
+        else
+          let func = xlate_function x llf in
+          LlvalueTbl.set func_tbl ~key:llf ~data:func ;
+          func :: functions )
       [] llmodule
   in
+  backpatch_calls x func_tbl ;
   cleanup llmodule llcontext ;
   Llair.Program.mk ~globals ~functions
   |>

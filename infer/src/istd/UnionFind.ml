@@ -9,15 +9,17 @@ open! IStd
 module F = Format
 
 module type Element = sig
-  type t [@@deriving compare]
+  type t [@@deriving compare, equal]
 
   val is_simpler_than : t -> t -> bool
 end
 
-module Make (X : Element) (XSet : Caml.Set.S with type elt = X.t) = struct
-  module Map = Caml.Map.Make (X)
-
-  let equal_x = [%compare.equal: X.t]
+module Make
+    (X : Element)
+    (XSet : Caml.Set.S with type elt = X.t)
+    (XMap : Caml.Map.S with type key = X.t) =
+struct
+  module XSet = Iter.Set.Adapt (XSet)
 
   (** the union-find backing data structure: maps elements to their representatives *)
   module UF : sig
@@ -41,14 +43,14 @@ module Make (X : Element) (XSet : Caml.Set.S with type elt = X.t) = struct
   end = struct
     type repr = X.t
 
-    type t = X.t Map.t
+    type t = X.t XMap.t
 
-    let empty = Map.empty
+    let empty = XMap.empty
 
     let find_opt reprs x =
       let rec find_opt_aux candidate_repr =
         (* [x] is in the relation and now we are climbing up to the final representative *)
-        match Map.find_opt candidate_repr reprs with
+        match XMap.find_opt candidate_repr reprs with
         | None ->
             (* [candidate_repr] is the representative *)
             candidate_repr
@@ -56,16 +58,16 @@ module Make (X : Element) (XSet : Caml.Set.S with type elt = X.t) = struct
             (* keep climbing *)
             find_opt_aux candidate_repr'
       in
-      Map.find_opt x reprs |> Option.map ~f:find_opt_aux
+      XMap.find_opt x reprs |> Option.map ~f:find_opt_aux
 
 
     let find reprs x = find_opt reprs x |> Option.value ~default:x
 
-    let merge reprs x ~into:y = (* TODO: implement path compression *) Map.add x y reprs
+    let merge reprs x ~into:y = (* TODO: implement path compression *) XMap.add x y reprs
 
-    let add_disjoint_class repr xs reprs = XSet.fold (fun x reprs -> Map.add x repr reprs) xs reprs
+    let add_disjoint_class repr xs reprs = XSet.fold (fun x reprs -> XMap.add x repr reprs) xs reprs
 
-    module Map = Map
+    module Map = XMap
   end
 
   type repr = UF.repr
@@ -89,7 +91,7 @@ module Make (X : Element) (XSet : Caml.Set.S with type elt = X.t) = struct
   let union uf x1 x2 =
     let repr1 = find uf x1 in
     let repr2 = find uf x2 in
-    if equal_x (repr1 :> X.t) (repr2 :> X.t) then
+    if X.equal (repr1 :> X.t) (repr2 :> X.t) then
       (* avoid creating loops in the relation *)
       (uf, None)
     else
@@ -124,6 +126,70 @@ module Make (X : Element) (XSet : Caml.Set.S with type elt = X.t) = struct
     F.fprintf fmt "@[<hv>%a@]" pp_aux uf
 
 
+  let of_classes classes =
+    let reprs =
+      UF.Map.fold (fun repr xs reprs -> UF.add_disjoint_class repr xs reprs) classes UF.empty
+    in
+    {reprs; classes}
+
+
+  let apply_subst subst uf =
+    let in_subst x = XMap.mem x subst in
+    (* any variable that doesn't have a better representative according to the substitution should
+       be kept *)
+    let should_keep x = not (in_subst x) in
+    let classes_keep =
+      fold_congruences uf ~init:UF.Map.empty ~f:(fun classes_keep (repr, clazz) ->
+          let repr_in_range_opt =
+            if should_keep (repr :> X.t) then Some repr
+            else
+              (* [repr] is not a good representative for the class as the substitution prefers it
+                 another element. Try to find a better representative. *)
+              XSet.to_seq clazz |> Iter.find_pred should_keep
+              |> (* HACK: trick [Repr] into casting [repr'] to a [repr], bypassing the private type
+                    *)
+              Option.map ~f:(fun x_repr -> UF.find UF.empty x_repr)
+          in
+          match repr_in_range_opt with
+          | Some repr_in_range ->
+              let class_keep =
+                XSet.filter
+                  (fun x -> (not (X.equal x (repr_in_range :> X.t))) && should_keep x)
+                  clazz
+              in
+              if XSet.is_empty class_keep then classes_keep
+              else UF.Map.add repr_in_range class_keep classes_keep
+          | None ->
+              (* none of the elements in the class should be kept; note that this cannot happen if
+                 [subst = reorient ~keep uf] *)
+              classes_keep )
+    in
+    of_classes classes_keep
+
+
+  let reorient ~keep uf =
+    let should_keep x = XSet.mem x keep in
+    fold_congruences uf ~init:XMap.empty ~f:(fun subst (repr, clazz) ->
+        (* map every variable in [repr::clazz] to either [repr] if [repr ∈ keep], or to the smallest
+           representative of [clazz] that's in [keep], if any *)
+        if should_keep (repr :> X.t) then
+          XSet.fold
+            (fun x subst -> if should_keep x then subst else XMap.add x (repr :> X.t) subst)
+            clazz subst
+        else
+          match XSet.to_seq clazz |> Iter.find_pred should_keep with
+          | None ->
+              (* no good representative: just substitute as in the original [uf] relation so that we
+                 can get rid of non-representative variables *)
+              XSet.fold (fun x subst -> XMap.add x (repr :> X.t) subst) clazz subst
+          | Some repr' ->
+              let subst = XMap.add (repr :> X.t) repr' subst in
+              XSet.fold
+                (fun x subst ->
+                  if X.equal x repr' || should_keep x then subst else XMap.add x repr' subst )
+                clazz subst )
+
+
   let filter_not_in_closed_set ~keep uf =
     let classes =
       UF.Map.filter
@@ -136,8 +202,5 @@ module Make (X : Element) (XSet : Caml.Set.S with type elt = X.t) = struct
     in
     (* rebuild [reprs] directly from [classes]: does path compression and garbage collection on the
        old [reprs] *)
-    let reprs =
-      UF.Map.fold (fun repr xs reprs -> UF.add_disjoint_class repr xs reprs) classes UF.empty
-    in
-    {reprs; classes}
+    of_classes classes
 end

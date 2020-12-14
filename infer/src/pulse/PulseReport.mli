@@ -11,10 +11,5 @@ open PulseDomainInterface
 
 type 'a access_result = ('a, Diagnostic.t * AbductiveDomain.t) result
 
-type 'a path_feasibility = InfeasiblePath | FeasiblePath of 'a
-
 val report_error :
-     Procdesc.t
-  -> Errlog.t
-  -> 'ok access_result
-  -> ('ok, _ ExecutionDomain.base_t path_feasibility) result
+  Procdesc.t -> Errlog.t -> 'ok access_result -> ('ok, _ ExecutionDomain.base_t SatUnsat.t) result

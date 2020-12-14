@@ -9,6 +9,26 @@ open! IStd
 module F = Format
 module L = Logging
 
+let max_command_line_length = 50
+
+let store_args_in_file ~identifier args =
+  let rec exceed_length ~max = function
+    | _ when max < 0 ->
+        true
+    | [] ->
+        false
+    | h :: t ->
+        exceed_length ~max:(max - String.length h) t
+  in
+  if exceed_length ~max:max_command_line_length args then (
+    let file = Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) identifier ".txt" in
+    let write_args outc = Out_channel.output_string outc (String.concat ~sep:"\n" args) in
+    Utils.with_file_out file ~f:write_args ;
+    L.debug Capture Quiet "Buck targets options stored in file '%s'@\n" file ;
+    [Printf.sprintf "@%s" file] )
+  else args
+
+
 (** Wrap a call to buck while (i) logging standard error to our standard error in real time; (ii)
     redirecting standard out to a file, the contents of which are returned; (iii) protect the child
     process from [SIGQUIT].
@@ -272,10 +292,10 @@ module Query = struct
       | _ ->
           []
     in
-    let cmd =
-      ("buck" :: "query" :: buck_config)
-      @ List.rev_append Config.buck_build_args_no_inline (query :: buck_output_options)
+    let bounded_args =
+      store_args_in_file ~identifier:"buck_query_args" (buck_config @ buck_output_options @ [query])
     in
+    let cmd = ["buck"; "query"] @ Config.buck_build_args_no_inline @ bounded_args in
     wrap_buck_call ~label:"query" cmd |> parse_query_output ?buck_mode
 end
 
@@ -311,8 +331,6 @@ let get_accepted_buck_kinds_pattern (mode : BuckMode.t) =
   | JavaGenruleMaster | JavaFlavor ->
       "^(java|android)_library$"
 
-
-let max_command_line_length = 50
 
 (** for genrule_master_mode, this is the label expected on the capture genrules *)
 let infer_enabled_label = "infer_enabled"
@@ -478,25 +496,6 @@ let parse_command_and_targets (buck_mode : BuckMode.t) original_buck_args =
   in
   ScubaLogging.log_count ~label:"buck_targets" ~value:(List.length targets) ;
   (command, parsed_args.rev_not_targets', targets)
-
-
-let rec exceed_length ~max = function
-  | _ when max < 0 ->
-      true
-  | [] ->
-      false
-  | h :: t ->
-      exceed_length ~max:(max - String.length h) t
-
-
-let store_args_in_file args =
-  if exceed_length ~max:max_command_line_length args then (
-    let file = Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) "buck_targets" ".txt" in
-    let write_args outc = Out_channel.output_string outc (String.concat ~sep:"\n" args) in
-    let () = Utils.with_file_out file ~f:write_args in
-    L.(debug Capture Quiet) "Buck targets options stored in file '%s'@\n" file ;
-    [Printf.sprintf "@%s" file] )
-  else args
 
 
 let filter_compatible subcommand args =

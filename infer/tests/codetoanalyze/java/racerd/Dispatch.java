@@ -87,6 +87,21 @@ public class Dispatch {
     UnannotatedInterface owned = new UnannotadedImplementation();
     privateCallUnnanotatedInterfaceOk(owned);
   }
+
+  UnannotatedInterface mUnannotated;
+
+  private void privateCallOk() {
+    mUnannotated.foo();
+  }
+
+  public void publicCallBad() {
+    privateCallOk();
+  }
+
+  public Dispatch() {
+    // this is OK even though public, since the object is owned
+    privateCallOk();
+  }
 }
 
 class Some {

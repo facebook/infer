@@ -32,11 +32,7 @@ let pp ppf f =
   | BitAshr -> pf "ashr"
   | Signed n -> pf "(s%i)" n
   | Unsigned n -> pf "(u%i)" n
-  | Uninterp sym ->
-      if String.is_empty sym then pf ""
-      else if Char.equal sym.[0] '@' || Char.equal sym.[0] '%' then
-        Trace.pp_styled `Bold "%s" ppf sym
-      else pf "%s" sym
+  | Uninterp sym -> Trace.pp_styled `Bold "%s" ppf sym
 
 let uninterp s = Uninterp s
 

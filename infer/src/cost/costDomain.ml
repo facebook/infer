@@ -104,6 +104,8 @@ let set_autoreleasepool_size_zero cost_record =
   VariantCostMap.remove CostKind.AutoreleasepoolSize cost_record
 
 
+let set_operation_cost_zero cost_record = VariantCostMap.remove CostKind.OperationCost cost_record
+
 let map ~f cost_record = VariantCostMap.map f cost_record
 
 let find_opt = VariantCostMap.find_opt

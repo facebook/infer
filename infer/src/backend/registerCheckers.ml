@@ -30,7 +30,6 @@ let interprocedural2 payload_field1 payload_field2 checker =
   Procedure
     (CallbackOfChecker.interprocedural
        ~f_analyze_dep:(fun proc_desc payloads -> Some (proc_desc, payloads))
-       ~f_analyze_pdesc_dep:Option.some
        ~get_payload:(fun payloads ->
          (Field.get payload_field1 payloads, Field.get payload_field2 payloads) )
        ~set_payload:(fun payloads payload1 -> Field.fset payload_field1 payloads payload1)
@@ -42,7 +41,6 @@ let interprocedural3 payload_field1 payload_field2 payload_field3 ~set_payload c
   Procedure
     (CallbackOfChecker.interprocedural
        ~f_analyze_dep:(fun proc_desc payloads -> Some (proc_desc, payloads))
-       ~f_analyze_pdesc_dep:Option.some
        ~get_payload:(fun payloads ->
          ( Field.get payload_field1 payloads
          , Field.get payload_field2 payloads
@@ -161,7 +159,7 @@ let all_checkers =
   ; { checker= Pulse
     ; callbacks=
         (let checker =
-           if Config.is_checker_enabled ToplOnPulse then Topl.analyze_with_pulse Pulse.checker
+           if Config.is_checker_enabled ToplOnPulse then PulseToplShallow.analyze Pulse.checker
            else Pulse.checker
          in
          let pulse = interprocedural Payloads.Fields.pulse checker in

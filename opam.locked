@@ -60,6 +60,7 @@ depends: [
   "extlib" {= "1.7.7"}
   "fieldslib" {= "v0.14.0"}
   "integers" {= "0.4.0"}
+  "iter" {= "1.2.1"}
   "jane-street-headers" {= "v0.14.0"}
   "javalib" {= "3.2.1"}
   "jst-config" {= "v0.14.0"}
@@ -71,7 +72,6 @@ depends: [
   "num" {= "1.3"}
   "ocaml" {= "4.11.1"}
   "ocaml-compiler-libs" {= "v0.12.1"}
-  "ocaml-config" {= "1"}
   "ocaml-migrate-parsetree" {= "1.7.3"}
   "ocaml-variants" {= "4.11.1+flambda"}
   "ocamlbuild" {= "0.14.0"}

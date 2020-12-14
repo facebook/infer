@@ -6,7 +6,8 @@
 TESTS_DIR = ../../..
 
 CLANG_OPTIONS = -c
-INFER_OPTIONS = --pulse-only --debug-exceptions --project-root $(TESTS_DIR)
+INFER_OPTIONS = --pulse-only --debug-exceptions --project-root $(TESTS_DIR) \
+  --pulse-report-latent-issues
 
 INFERPRINT_OPTIONS = --issues-tests
 

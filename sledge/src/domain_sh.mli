@@ -11,7 +11,7 @@ include Domain_intf.Dom
 
 val create_summary :
      locals:Llair.Reg.Set.t
-  -> formals:Llair.Reg.t list
+  -> formals:Llair.Reg.t iarray
   -> entry:t
   -> current:t
   -> summary * t

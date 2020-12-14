@@ -81,7 +81,7 @@ let get_compilation_database_files_buck db_deps ~prog ~args =
       L.external_warning "WARNING: found no buck targets to analyze.@." ;
       []
   | {command= "build" as command; rev_not_targets; targets} ->
-      let targets_args = Buck.store_args_in_file targets in
+      let targets_args = Buck.store_args_in_file ~identifier:"compdb_build_args" targets in
       let build_args =
         (command :: List.rev_append rev_not_targets (List.rev Config.buck_build_args_no_inline))
         @ (* Infer doesn't support C++ modules nor precompiled headers yet (T35656509) *)

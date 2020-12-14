@@ -11,6 +11,7 @@ SOURCES = \
   ../block/retain_cycle.m \
   ../block/static.m \
   ../block/specialized_method_with_block_params.m \
+  ../block/escaping_byref.m \
   ../boxing/Boxing.m \
   ../boxing/array.m \
   ../boxing/array_literal.c \

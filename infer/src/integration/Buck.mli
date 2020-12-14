@@ -38,8 +38,9 @@ val parse_command_and_targets : BuckMode.t -> string list -> string * string lis
 (** parses given buck command, using the buck configuration returned by [config] above and returns a
     triple [(buck_command, non_target_params, target_params)] *)
 
-val store_args_in_file : string list -> string list
-(** Given a list of arguments, stores them in a file if needed and returns the new command line *)
+val store_args_in_file : identifier:string -> string list -> string list
+(** Given a list of arguments, stores them in a file if needed and returns the new command line ;
+    [identifier] is the temporary filename prefix *)
 
 val filter_compatible : [> `Targets] -> string list -> string list
 (** keep only the options compatible with the given Buck subcommand *)

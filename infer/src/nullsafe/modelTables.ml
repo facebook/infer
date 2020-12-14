@@ -156,29 +156,29 @@ let check_not_null_parameter_list, check_not_null_list =
 
 
 let check_state_list =
-  [ ((o, [n]), "Preconditions.checkState(boolean):void")
-  ; ((o, [n]), "com.facebook.common.internal.Preconditions.checkState(boolean):void")
-  ; ( (o, [n; n])
+  [ ((o, [o]), "Preconditions.checkState(boolean):void")
+  ; ((o, [o]), "com.facebook.common.internal.Preconditions.checkState(boolean):void")
+  ; ( (o, [o; n])
     , "com.facebook.common.internal.Preconditions.checkState(boolean,java.lang.Object):void" )
-  ; ( (o, [n; n; n])
+  ; ( (o, [o; n; n])
     , "com.facebook.common.internal.Preconditions.checkState(boolean,java.lang.String,java.lang.Object[]):void"
     )
-  ; ((o, [n]), "com.facebook.common.preconditions.Preconditions.checkState(boolean):void")
-  ; ( (o, [n; n])
+  ; ((o, [o]), "com.facebook.common.preconditions.Preconditions.checkState(boolean):void")
+  ; ( (o, [o; n])
     , "com.facebook.common.preconditions.Preconditions.checkState(boolean,java.lang.Object):void" )
-  ; ( (o, [n; n; n])
+  ; ( (o, [o; n; n])
     , "com.facebook.common.preconditions.Preconditions.checkState(boolean,java.lang.String,java.lang.Object[]):void"
     )
-  ; ((o, [n]), "com.google.common.base.Preconditions.checkState(boolean):void")
-  ; ((o, [n; n]), "com.google.common.base.Preconditions.checkState(boolean,java.lang.Object):void")
-  ; ( (o, [n; n; n])
+  ; ((o, [o]), "com.google.common.base.Preconditions.checkState(boolean):void")
+  ; ((o, [o; n]), "com.google.common.base.Preconditions.checkState(boolean,java.lang.Object):void")
+  ; ( (o, [o; n; n])
     , "com.google.common.base.Preconditions.checkState(boolean,java.lang.String,java.lang.Object[]):void"
     )
-  ; ((o, [n]), "com.facebook.infer.annotation.Assertions.assertCondition(boolean):void")
-  ; ( (o, [n; o])
+  ; ((o, [o]), "com.facebook.infer.annotation.Assertions.assertCondition(boolean):void")
+  ; ( (o, [o; o])
     , "com.facebook.infer.annotation.Assertions.assertCondition(boolean,java.lang.String):void" )
-  ; ((o, [n]), "com.facebook.infer.annotation.Assertions.assumeCondition(boolean):void")
-  ; ( (o, [n; o])
+  ; ((o, [o]), "com.facebook.infer.annotation.Assertions.assumeCondition(boolean):void")
+  ; ( (o, [o; o])
     , "com.facebook.infer.annotation.Assertions.assumeCondition(boolean,java.lang.String):void" ) ]
 
 
@@ -747,6 +747,18 @@ let field_nullability =
   ; ( "android.content.pm.ResolveInfo.providerInfo"
     , n (* Exactly one of activityInfo, serviceInfo, or providerInfo will be non-null. *) )
   ; ("android.content.res.Configuration.locale", o)
+  ; ("android.graphics.Paint.Align.CENTER", o)
+  ; ("android.graphics.Paint.Align.LEFT", o)
+  ; ("android.graphics.Paint.Align.RIGHT", o)
+  ; ("android.graphics.Paint.Cap.BUTT", o)
+  ; ("android.graphics.Paint.Cap.ROUND", o)
+  ; ("android.graphics.Paint.Cap.SQUARE", o)
+  ; ("android.graphics.Paint.Join.BEVEL", o)
+  ; ("android.graphics.Paint.Join.MITER", o)
+  ; ("android.graphics.Paint.Join.ROUND", o)
+  ; ("android.graphics.Paint.Style.FILL", o)
+  ; ("android.graphics.Paint.Style.FILL_AND_STROKE", o)
+  ; ("android.graphics.Paint.Style.STROKE", o)
   ; ("android.graphics.Typeface.BOLD", o)
   ; ("android.graphics.Typeface.DEFAULT", o)
   ; ("android.graphics.Typeface.DEFAULT_BOLD", o)

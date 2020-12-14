@@ -405,3 +405,12 @@ S* update_inside_lambda_as_argument(S* s) {
 int update_inside_lambda_as_argument_ok_FP(S* param_s) {
   return update_inside_lambda_as_argument(param_s)->f;
 }
+
+std::function<void()> get_lambda(bool b) {
+  return [b]() -> void { return; };
+}
+
+void capture_false_by_value_ok() {
+  const auto& f = get_lambda(false);
+  f();
+}

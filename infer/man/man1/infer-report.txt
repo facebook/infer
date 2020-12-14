@@ -198,6 +198,7 @@ OPTIONS
              MEMORY_LEAK (enabled by default),
              MISSING_REQUIRED_PROP (enabled by default),
              MIXED_SELF_WEAKSELF (enabled by default),
+             MODIFIES_IMMUTABLE (enabled by default),
              MULTIPLE_WEAKSELF (enabled by default),
              MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE (enabled by default),
              Missing_fld (enabled by default),
@@ -209,6 +210,7 @@ OPTIONS
              PRECONDITION_NOT_FOUND (enabled by default),
              PRECONDITION_NOT_MET (enabled by default),
              PREMATURE_NIL_TERMINATION_ARGUMENT (enabled by default),
+             PULSE_UNINITIALIZED_VALUE (disabled by default),
              PURE_FUNCTION (enabled by default),
              QUANDARY_TAINT_ERROR (enabled by default),
              RESOURCE_LEAK (enabled by default),
@@ -313,6 +315,10 @@ OPTIONS
 
        --report-formatter { none | phabricator }
            Which formatter to use when emitting the report
+
+       --report-immutable-modifications
+           Activates: Report modifications to immutable fields (Conversely:
+           --no-report-immutable-modifications)
 
        --report-suppress-errors +error_name
            do not report a type of errors

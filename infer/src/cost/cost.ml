@@ -202,13 +202,7 @@ module InstrBasicCostWithReason = struct
         CostDomain.zero_record
     | Sil.Load _ | Sil.Store _ | Sil.Prune _ ->
         CostDomain.unit_cost_atomic_operation
-    | Sil.Metadata Skip -> (
-      match InstrCFG.Node.kind instr_node with
-      | Procdesc.Node.Start_node ->
-          CostDomain.unit_cost_atomic_operation
-      | _ ->
-          CostDomain.zero_record )
-    | Sil.Metadata (Abstract _ | ExitScope _ | Nullify _ | VariableLifetimeBegins _) ->
+    | Sil.Metadata (Abstract _ | ExitScope _ | Nullify _ | Skip | VariableLifetimeBegins _) ->
         CostDomain.zero_record
 
 
@@ -369,6 +363,12 @@ let compute_get_node_nb_exec node_cfg bound_map : get_node_nb_exec =
 
 let get_cost_summary ~is_on_ui_thread astate = {CostDomain.post= astate; is_on_ui_thread}
 
+let just_throws_exception proc_desc =
+  Procdesc.get_nodes proc_desc |> List.length <= 5
+  && Procdesc.fold_instrs proc_desc ~init:false ~f:(fun acc _node instr ->
+         match instr with Sil.Store {e1= Lvar pvar; e2= Exn _} -> Pvar.is_return pvar | _ -> acc )
+
+
 let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as analysis_data) =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let tenv = Exe_env.get_tenv exe_env proc_name in
@@ -437,6 +437,13 @@ let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as
       "@\n[COST ANALYSIS] PROCEDURE '%a' |CFG| = %i FINAL COST = %a @\n" Procname.pp proc_name
       (Container.length ~fold:NodeCFG.fold_nodes node_cfg)
       CostDomain.VariantCostMap.pp astate
+  in
+  let astate =
+    (* Heuristic: if the original function simply throws an exception,
+       we don't want to report any execution time complexity increase
+       on it to prevent noisy complexity increases. Hence, we set its
+       operation cost to 0 which is filtered in differential mode *)
+    if just_throws_exception proc_desc then CostDomain.set_operation_cost_zero astate else astate
   in
   Check.check_and_report analysis_data astate ;
   Some (get_cost_summary ~is_on_ui_thread astate)

@@ -42,8 +42,7 @@ let ignore_array_index (access : BaseMemory.Access.t) : unit HilExp.Access.t =
       TakeAddress
 
 
-let add_invalid_and_modified ~pvar ~access ~check_empty attrs acc : ImpurityDomain.ModifiedVarSet.t
-    =
+let add_invalid_and_modified ~pvar ~access ~check_empty attrs access_list acc =
   let modified =
     Attributes.get_written_to attrs
     |> Option.value_map ~default:[] ~f:(fun modified -> [ImpurityDomain.WrittenTo modified])
@@ -58,58 +57,76 @@ let add_invalid_and_modified ~pvar ~access ~check_empty attrs acc : ImpurityDoma
   if check_empty && List.is_empty invalid_and_modified then
     L.(die InternalError) "Address is modified without being written to or invalidated."
   else
-    List.fold_left ~init:acc
-      ~f:(fun acc trace ->
-        ImpurityDomain.ModifiedVarSet.add {pvar; access= ignore_array_index access; trace} acc )
-      invalid_and_modified
+    let access_list = ignore_array_index access :: access_list in
+    ( access_list
+    , List.fold_left ~init:acc
+        ~f:(fun acc trace ->
+          ImpurityDomain.ModifiedVarMap.add pvar
+            {ordered_access_list= List.rev access_list; trace}
+            acc )
+        invalid_and_modified )
 
 
-let add_to_modified ~pvar ~access ~addr pre_heap post modified_vars =
-  let rec aux modified_vars ~addr_to_explore ~visited : ImpurityDomain.ModifiedVarSet.t =
+let add_to_modified pname ~pvar ~access ~addr pre_heap post modified_vars =
+  let rec aux (access_list, modified_vars) ~addr_to_explore ~visited =
     match addr_to_explore with
     | [] ->
         modified_vars
     | (access, addr) :: addr_to_explore -> (
-        if AbstractValue.Set.mem addr visited then aux modified_vars ~addr_to_explore ~visited
+        if AbstractValue.Set.mem addr visited then
+          aux (access_list, modified_vars) ~addr_to_explore ~visited
         else
           let edges_pre_opt = BaseMemory.find_opt addr pre_heap in
           let cell_post_opt = BaseDomain.find_cell_opt addr post in
           let visited = AbstractValue.Set.add addr visited in
           match (edges_pre_opt, cell_post_opt) with
           | None, None ->
-              aux modified_vars ~addr_to_explore ~visited
+              aux (access_list, modified_vars) ~addr_to_explore ~visited
           | Some _, None ->
-              L.(die InternalError)
-                "It is unexpected to have an address which has a binding in pre but not in post!"
+              L.die InternalError
+                "It is unexpected to have an address which has a binding in pre but not in post!@\n\
+                 %a is in the pre but not the post of the call to %a@\n\
+                 callee heap pre: @[%a@]@\n\
+                 callee post: @[%a@]@\n"
+                AbstractValue.pp addr Procname.pp pname BaseMemory.pp pre_heap BaseDomain.pp post
           | None, Some (_, attrs_post) ->
               aux
-                (add_invalid_and_modified ~pvar ~access ~check_empty:false attrs_post modified_vars)
+                (add_invalid_and_modified ~pvar ~access ~check_empty:false attrs_post access_list
+                   modified_vars)
                 ~addr_to_explore ~visited
           | Some edges_pre, Some (edges_post, attrs_post) -> (
             match get_matching_dest_addr_opt ~edges_pre ~edges_post with
             | Some addr_list ->
-                aux
-                  (add_invalid_and_modified ~pvar ~access attrs_post ~check_empty:false
-                     modified_vars)
-                  ~addr_to_explore:(addr_list @ addr_to_explore) ~visited
+                (* we have multiple accesses to check here up to
+                   currently accumulated point. We need to check them
+                   one by one rather than all at once to ensure that
+                   accesses are not collapsed together but kept
+                   separately. *)
+                List.fold ~init:modified_vars
+                  ~f:(fun acc addr ->
+                    aux
+                      (add_invalid_and_modified ~pvar ~access attrs_post ~check_empty:false
+                         access_list acc)
+                      ~addr_to_explore:(addr :: addr_to_explore) ~visited )
+                  addr_list
             | None ->
                 aux
-                  (add_invalid_and_modified ~pvar ~access ~check_empty:true attrs_post
+                  (add_invalid_and_modified ~pvar ~access ~check_empty:false attrs_post access_list
                      modified_vars)
                   ~addr_to_explore ~visited ) )
   in
-  aux modified_vars ~addr_to_explore:[(access, addr)] ~visited:AbstractValue.Set.empty
+  aux ([], modified_vars) ~addr_to_explore:[(access, addr)] ~visited:AbstractValue.Set.empty
 
 
 let get_modified_params pname post_stack pre_heap post formals =
-  List.fold_left formals ~init:ImpurityDomain.ModifiedVarSet.empty ~f:(fun acc (name, typ) ->
+  List.fold_left formals ~init:ImpurityDomain.ModifiedVarMap.bottom ~f:(fun acc (name, typ) ->
       let pvar = Pvar.mk name pname in
       match BaseStack.find_opt (Var.of_pvar pvar) post_stack with
       | Some (addr, _) when Typ.is_pointer typ -> (
         match BaseMemory.find_opt addr pre_heap with
         | Some edges_pre ->
             BaseMemory.Edges.fold edges_pre ~init:acc ~f:(fun acc (access, (addr, _)) ->
-                add_to_modified ~pvar ~access ~addr pre_heap post acc )
+                add_to_modified pname ~pvar ~access ~addr pre_heap post acc )
         | None ->
             debug "The address is not materialized in in pre-heap." ;
             acc )
@@ -117,18 +134,18 @@ let get_modified_params pname post_stack pre_heap post formals =
           acc )
 
 
-let get_modified_globals pre_heap post post_stack =
+let get_modified_globals pname pre_heap post post_stack =
   BaseStack.fold
     (fun var (addr, _) modified_globals ->
       if Var.is_global var then
         (* since global vars are rooted in the stack, we don't have
            access here but we still want to pick up changes to
            globals. *)
-        add_to_modified
+        add_to_modified pname
           ~pvar:(Option.value_exn (Var.get_pvar var))
           ~access:HilExp.Access.Dereference ~addr pre_heap post modified_globals
       else modified_globals )
-    post_stack ImpurityDomain.ModifiedVarSet.empty
+    post_stack ImpurityDomain.ModifiedVarMap.bottom
 
 
 let is_modeled_pure tenv pname =
@@ -145,17 +162,17 @@ let extract_impurity tenv pname formals (exec_state : ExecutionDomain.t) : Impur
   let astate, exited =
     match exec_state with
     | ExitProgram astate ->
-        (astate, true)
+        ((astate :> AbductiveDomain.t), true)
     | ContinueProgram astate ->
         (astate, false)
-    | AbortProgram astate | LatentAbortProgram {astate} ->
+    | ISLLatentMemoryError astate | AbortProgram astate | LatentAbortProgram {astate} ->
         ((astate :> AbductiveDomain.t), false)
   in
   let pre_heap = (AbductiveDomain.get_pre astate).BaseDomain.heap in
   let post = AbductiveDomain.get_post astate in
   let post_stack = post.BaseDomain.stack in
   let modified_params = get_modified_params pname post_stack pre_heap post formals in
-  let modified_globals = get_modified_globals pre_heap post post_stack in
+  let modified_globals = get_modified_globals pname pre_heap post post_stack in
   let skipped_calls =
     SkippedCalls.filter
       (fun proc_name _ ->
@@ -163,6 +180,10 @@ let extract_impurity tenv pname formals (exec_state : ExecutionDomain.t) : Impur
       astate.AbductiveDomain.skipped_calls
   in
   {modified_globals; modified_params; skipped_calls; exited}
+
+
+let add_modified_ltr param_source set acc =
+  ImpurityDomain.ModifiedVarMap.fold (ImpurityDomain.add_to_errlog ~nesting:1 param_source) set acc
 
 
 let checker {IntraproceduralAnalysis.proc_desc; tenv; err_log}
@@ -194,27 +215,39 @@ let checker {IntraproceduralAnalysis.proc_desc; tenv; err_log}
             in
             ImpurityDomain.join acc modified )
       in
-      if PurityChecker.should_report proc_name && not (ImpurityDomain.is_pure impurity_astate) then
-        let modified_ltr param_source set acc =
-          ImpurityDomain.ModifiedVarSet.fold
-            (ImpurityDomain.add_to_errlog ~nesting:1 param_source)
-            set acc
-        in
-        let skipped_functions =
-          SkippedCalls.fold
-            (fun proc_name trace acc ->
-              Trace.add_to_errlog ~nesting:1 ~include_value_history:false
-                ~pp_immediate:(fun fmt ->
-                  F.fprintf fmt "call to skipped function %a occurs here" Procname.pp proc_name )
-                trace acc )
-            skipped_calls []
-        in
-        let impure_fun_desc = F.asprintf "Impure function %a" Procname.pp proc_name in
-        let impure_fun_ltr = Errlog.make_trace_element 0 pname_loc impure_fun_desc [] in
-        let ltr =
-          impure_fun_ltr
-          :: modified_ltr Formal modified_params
-               (modified_ltr Global modified_globals skipped_functions)
-        in
-        Reporting.log_issue proc_desc err_log ~loc:pname_loc ~ltr Impurity IssueType.impure_function
-          impure_fun_desc
+      if PurityChecker.should_report proc_name then (
+        if Config.report_immutable_modifications then
+          ImpurityDomain.get_modified_immutables_opt tenv impurity_astate
+          |> Option.iter ~f:(fun (modified_params, modified_globals) ->
+                 let immutable_fun_desc =
+                   F.asprintf "Function %a modifies immutable fields" Procname.pp proc_name
+                 in
+                 let immutable_fun_ltr =
+                   Errlog.make_trace_element 0 pname_loc immutable_fun_desc []
+                 in
+                 let ltr =
+                   immutable_fun_ltr
+                   :: add_modified_ltr Formal modified_params
+                        (add_modified_ltr Global modified_globals [])
+                 in
+                 Reporting.log_issue proc_desc err_log ~loc:pname_loc ~ltr Impurity
+                   IssueType.modifies_immutable immutable_fun_desc ) ;
+        if not (ImpurityDomain.is_pure impurity_astate) then
+          let skipped_functions =
+            SkippedCalls.fold
+              (fun proc_name trace acc ->
+                Trace.add_to_errlog ~nesting:1 ~include_value_history:false
+                  ~pp_immediate:(fun fmt ->
+                    F.fprintf fmt "call to skipped function %a occurs here" Procname.pp proc_name )
+                  trace acc )
+              skipped_calls []
+          in
+          let impure_fun_desc = F.asprintf "Impure function %a" Procname.pp proc_name in
+          let impure_fun_ltr = Errlog.make_trace_element 0 pname_loc impure_fun_desc [] in
+          let ltr =
+            impure_fun_ltr
+            :: add_modified_ltr Formal modified_params
+                 (add_modified_ltr Global modified_globals skipped_functions)
+          in
+          Reporting.log_issue proc_desc err_log ~loc:pname_loc ~ltr Impurity
+            IssueType.impure_function impure_fun_desc )

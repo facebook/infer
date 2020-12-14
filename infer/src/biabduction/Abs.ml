@@ -486,10 +486,10 @@ let typ_get_recursive_flds tenv typ_exp =
       | Some {fields} ->
           List.map ~f:fst3 (List.filter ~f:(filter typ) fields)
       | None ->
-          L.(debug Analysis Quiet)
-            "@\ntyp_get_recursive_flds: unexpected %a unknown struct type: %a@." Exp.pp typ_exp
+          L.(debug Analysis Verbose)
+            "@\ntyp_get_recursive_flds: unexpected %a unknown struct type: %a@\n" Exp.pp typ_exp
             Typ.Name.pp name ;
-          [] (* ToDo: assert false *) )
+          [] )
     | Tint _ | Tvoid | Tfun | Tptr _ | Tfloat _ | Tarray _ | TVar _ ->
         [] )
   | Exp.Var _ ->

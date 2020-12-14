@@ -8,14 +8,9 @@
 package com.example;
 
 class DiffClassUnchanged {
-  private int tellMeTheLength() {
-      return DiffClassThree.createString3().length();
-  }
-
   private String createNullString() {
       return null;
   }
-
 
   private int doWrongStuff() {
       return this.createNullString().length();

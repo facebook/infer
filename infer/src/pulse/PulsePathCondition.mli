@@ -8,6 +8,7 @@
 open! IStd
 module F = Format
 module AbstractValue = PulseAbstractValue
+module SatUnsat = PulseSatUnsat
 module ValueHistory = PulseValueHistory
 
 type t [@@deriving yojson_of]
@@ -31,7 +32,9 @@ val and_positive : AbstractValue.t -> t -> t * new_eqs
 val and_eq_int : AbstractValue.t -> IntLit.t -> t -> t * new_eqs
 (** [and_eq_int v i phi] is [phi ∧ v=i] *)
 
-val simplify : keep:AbstractValue.Set.t -> t -> t * new_eqs
+val and_eq_vars : AbstractValue.t -> AbstractValue.t -> t -> t * new_eqs
+
+val simplify : keep:AbstractValue.Set.t -> t -> (t * new_eqs) SatUnsat.t
 (** [simplify ~keep phi] attempts to get rid of as many variables in [fv phi] but not in [keep] as
     possible *)
 
@@ -44,6 +47,9 @@ val and_callee :
 (** {2 Operations} *)
 
 type operand = LiteralOperand of IntLit.t | AbstractValueOperand of AbstractValue.t
+[@@deriving compare]
+
+val pp_operand : Formatter.t -> operand -> unit
 
 val eval_binop : AbstractValue.t -> Binop.t -> operand -> operand -> t -> t * new_eqs
 
@@ -60,6 +66,7 @@ val is_unsat_cheap : t -> bool
 (** whether the state contains a contradiction, call this as often as you want *)
 
 val is_unsat_expensive : t -> t * bool * new_eqs
+  [@@warning "-32"]
 (** whether the state contains a contradiction, only call this when you absolutely have to *)
 
 val as_int : t -> AbstractValue.t -> int option
@@ -68,3 +75,6 @@ val as_int : t -> AbstractValue.t -> int option
 
 val has_no_assumptions : t -> bool
 (** whether the current path is independent of any calling context *)
+
+val get_var_repr : t -> AbstractValue.t -> AbstractValue.t
+(** get the canonical representative for the variable according to the equality relation *)

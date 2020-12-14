@@ -7,6 +7,12 @@
 
 open! IStd
 
-let pp_raw_label f {ToplAst.procedure_name} = Format.fprintf f "%s" procedure_name
+let pp_raw_label f label =
+  match label.ToplAst.pattern with
+  | ArrayWritePattern ->
+      Format.fprintf f "#ArrayWrite"
+  | ProcedureNamePattern procedure_name ->
+      Format.fprintf f "%s" procedure_name
+
 
 let pp_label = Pp.option pp_raw_label

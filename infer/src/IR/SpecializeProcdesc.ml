@@ -135,7 +135,7 @@ exception UnmatchedParameters
     typ) where name is a parameter. The resulting proc desc is isomorphic but all the type of the
     parameters are replaced in the instructions according to the list. The virtual calls are also
     replaced to match the parameter types *)
-let with_formals_types ?(has_clang_model = false) callee_pdesc resolved_pname args =
+let with_formals_types callee_pdesc resolved_pname args =
   let callee_attributes = Procdesc.get_attributes callee_pdesc in
   let resolved_params, substitutions =
     match
@@ -158,33 +158,13 @@ let with_formals_types ?(has_clang_model = false) callee_pdesc resolved_pname ar
           (List.length args) ;
         raise UnmatchedParameters
   in
-  let translation_unit =
-    (* If it is a model, and we are using the procdesc stored in the summary, the default translation unit
-       won't be useful because we don't store that tenv, so we aim to find the source file of the caller to
-       use its tenv. *)
-    if has_clang_model then
-      let pname = Procdesc.get_proc_name callee_pdesc in
-      match Attributes.find_file_capturing_procedure pname with
-      | Some (source_file, _) ->
-          source_file
-      | None ->
-          Logging.die InternalError
-            "specialize_types should only be called with defined procedures, but we cannot find \
-             the captured file of procname %a"
-            Procname.pp pname
-    else callee_attributes.translation_unit
-  in
   let resolved_attributes =
     { callee_attributes with
       formals= List.rev resolved_params
     ; proc_name= resolved_pname
-    ; is_specialized= true
-    ; translation_unit }
+    ; is_specialized= true }
   in
   let resolved_proc_desc = Procdesc.from_proc_attributes resolved_attributes in
   let resolved_proc_desc = with_formals_types_proc callee_pdesc resolved_proc_desc substitutions in
-  (* The attributes here are used to retrieve the per-file type environment for Clang languages.
-     The analysis for Java is using a global type environment *)
-  if not (Procname.is_java resolved_pname || Procname.is_csharp resolved_pname) then
-    Attributes.store ~proc_desc:(Some resolved_proc_desc) resolved_attributes ;
+  Attributes.store ~proc_desc:(Some resolved_proc_desc) resolved_attributes ;
   resolved_proc_desc

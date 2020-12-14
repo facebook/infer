@@ -12,11 +12,6 @@ open Command.Let_syntax
 
 type 'a param = 'a Command.Param.t
 
-module Sh_executor = Control.Make (Domain_relation.Make (Domain_sh))
-module Unit_executor = Control.Make (Domain_unit)
-module Used_globals_executor = Control.Make (Domain_used_globals)
-module Itv_executor = Control.Make (Domain_itv)
-
 (* reverse application in the Command.Param applicative *)
 let ( |*> ) : 'a param -> ('a -> 'b) param -> 'b param =
  fun x f -> x |> Command.Param.apply f
@@ -76,25 +71,18 @@ let unmarshal file () =
     ~f:(fun ic -> (Marshal.from_channel ic : Llair.program))
     file
 
-let entry_points =
-  let void_to_void =
-    Llair.Typ.pointer
-      ~elt:(Llair.Typ.function_ ~args:IArray.empty ~return:None)
-  in
-  List.map (Config.find_list "entry-points") ~f:(fun name ->
-      Llair.Function.mk void_to_void name )
+let entry_points = Config.find_list "entry-points"
 
-let used_globals pgm preanalyze : Domain_used_globals.r =
+let used_globals pgm entry_points preanalyze : Domain_intf.used_globals =
   if preanalyze then
-    let summary_table =
-      Used_globals_executor.compute_summaries
-        { bound= 1
-        ; skip_throw= false
-        ; function_summaries= true
-        ; entry_points
-        ; globals= Declared Llair.Global.Set.empty }
-        pgm
-    in
+    let module Opts = struct
+      let bound = 1
+      let function_summaries = true
+      let entry_points = entry_points
+      let globals = Domain_intf.Declared Llair.Global.Set.empty
+    end in
+    let module Analysis = Control.Make (Opts) (Domain_used_globals) in
+    let summary_table = Analysis.compute_summaries pgm in
     Per_function
       (Llair.Function.Map.map summary_table ~f:Llair.Global.Set.union_list)
   else
@@ -107,23 +95,20 @@ let analyze =
     flag "bound"
       (optional_with_default 1 int)
       ~doc:"<int> stop execution exploration at depth <int>"
-  and exceptions =
-    flag "exceptions" no_arg
-      ~doc:"explore executions that throw and handle exceptions"
   and function_summaries =
     flag "function-summaries" no_arg
       ~doc:"use function summaries (in development)"
   and preanalyze_globals =
     flag "preanalyze-globals" no_arg
       ~doc:"pre-analyze global variables used by each function"
-  and exec =
+  and domain =
     flag "domain"
-      (optional_with_default Sh_executor.exec_pgm
+      (optional_with_default `sh
          (Arg_type.of_alist_exn
-            [ ("sh", Sh_executor.exec_pgm)
-            ; ("globals", Used_globals_executor.exec_pgm)
-            ; ("unit", Unit_executor.exec_pgm)
-            ; ("itv", Itv_executor.exec_pgm) ]))
+            [ ("sh", `sh)
+            ; ("globals", `globals)
+            ; ("itv", `itv)
+            ; ("unit", `unit) ]))
       ~doc:
         "<string> select abstract domain; must be one of \"sh\" (default, \
          symbolic heap domain), \"globals\" (used-globals domain), or \
@@ -135,12 +120,26 @@ let analyze =
     flag "stats" no_arg ~doc:"output performance statistics to stderr"
   in
   fun program () ->
-    let pgm = program () in
-    let globals = used_globals pgm preanalyze_globals in
-    let skip_throw = not exceptions in
-    Domain_sh.simplify_states := not no_simplify_states ;
     Timer.enabled := stats ;
-    exec {bound; skip_throw; function_summaries; entry_points; globals} pgm ;
+    let pgm = program () in
+    let globals = used_globals pgm entry_points preanalyze_globals in
+    let module Opts = struct
+      let bound = bound
+      let function_summaries = function_summaries
+      let entry_points = entry_points
+      let globals = globals
+    end in
+    let dom : (module Domain_intf.Dom) =
+      match domain with
+      | `sh -> (module Domain_relation.Make (Domain_sh))
+      | `globals -> (module Domain_used_globals)
+      | `itv -> (module Domain_itv)
+      | `unit -> (module Domain_unit)
+    in
+    let module Dom = (val dom) in
+    let module Analysis = Control.Make (Opts) (Dom) in
+    Domain_sh.simplify_states := not no_simplify_states ;
+    Analysis.exec_pgm pgm ;
     Report.coverage pgm ;
     Report.safe_or_unsafe ()
 

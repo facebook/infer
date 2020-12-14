@@ -352,6 +352,12 @@ module Function = struct
 
   let mk typ name = Function {name; typ} |> check invariant
 
+  let counterfeit =
+    let dummy_function_type =
+      Typ.pointer ~elt:(Typ.function_ ~args:IArray.empty ~return:None)
+    in
+    fun name -> mk dummy_function_type name
+
   module Map = Map
   module Tbl = Tbl
 end

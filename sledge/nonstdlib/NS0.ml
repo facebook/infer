@@ -130,7 +130,14 @@ module Either = struct
 end
 
 module Pair = Containers.Pair
-module FHeap = Fheap [@@warning "-49"]
+module Bijection = CCBijection [@@warning "-49"]
+
+module FHeap = struct
+  include Fheap
+
+  let remove_top_exn h = snd (pop_exn h)
+end
+
 module HashQueue = Core_kernel.Hash_queue
 
 (** Input / Output *)

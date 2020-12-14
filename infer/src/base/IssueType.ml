@@ -748,6 +748,11 @@ let mixed_self_weakself =
     ~user_documentation:[%blob "../../documentation/issues/MIXED_SELF_WEAKSELF.md"]
 
 
+let modifies_immutable =
+  register ~id:"MODIFIES_IMMUTABLE" Error Impurity
+    ~user_documentation:[%blob "../../documentation/issues/MODIFIES_IMMUTABLE.md"]
+
+
 let multiple_weakself =
   register ~id:"MULTIPLE_WEAKSELF" ~hum:"Multiple WeakSelf Use" Error SelfInBlock
     ~user_documentation:[%blob "../../documentation/issues/MULTIPLE_WEAKSELF.md"]
@@ -895,6 +900,11 @@ let topl_pulse_error =
 let uninitialized_value =
   register ~id:"UNINITIALIZED_VALUE" Error Uninit
     ~user_documentation:[%blob "../../documentation/issues/UNINITIALIZED_VALUE.md"]
+
+
+let uninitialized_value_pulse =
+  register ~enabled:false ~id:"PULSE_UNINITIALIZED_VALUE" Error Pulse ~hum:"Unitialized Value"
+    ~user_documentation:"See [UNITIALIZED_VALUE](#uninitialized_value). Re-implemented using Pulse."
 
 
 let unreachable_code_after =

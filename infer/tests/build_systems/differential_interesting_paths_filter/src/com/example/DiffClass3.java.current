@@ -7,13 +7,13 @@
 
 package com.example;
 
-class DiffClassThree {
+class DiffClass3 {
   public static String createString3() {
       return null;
   }
 
 
   private int doStuff3() {
-      return DiffClassThree.createString3().length();
+      return DiffClass3.createString3().length();
   }
 }

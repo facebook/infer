@@ -35,6 +35,7 @@ val of_array : 'a array -> 'a t
 
 val empty : 'a t
 val of_ : 'a -> 'a t
+val of_iter : 'a iter -> 'a t
 val of_list : 'a list -> 'a t
 val of_list_rev : 'a list -> 'a t
 val init : int -> f:(int -> 'a) -> 'a t
@@ -49,6 +50,8 @@ val map_endo : 'a t -> f:('a -> 'a) -> 'a t
 
 val reduce_adjacent : 'a t -> f:('a -> 'a -> 'a option) -> 'a t
 val split : ('a * 'b) t -> 'a t * 'b t
+val combine : 'a t -> 'b t -> ('a * 'b) t option
+val combine_exn : 'a t -> 'b t -> ('a * 'b) t
 val is_empty : 'a t -> bool
 val length : 'a t -> int
 val get : 'a t -> int -> 'a
@@ -68,3 +71,5 @@ val fold_map_until :
   -> f:('a -> 's -> [`Continue of 'b * 's | `Stop of 'c])
   -> finish:('b t * 's -> 'c)
   -> 'c
+
+val fold2_exn : 'a t -> 'b t -> 's -> f:('a -> 'b -> 's -> 's) -> 's

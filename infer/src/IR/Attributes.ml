@@ -66,6 +66,8 @@ let find =
 
 let load pname = find (Procname.to_unique_id pname)
 
+let is_no_return pname = match load pname with Some {is_no_return} -> is_no_return | _ -> false
+
 let store ~proc_desc (attr : ProcAttributes.t) =
   let pname = attr.proc_name in
   let akind = proc_kind_of_attr attr in
@@ -82,21 +84,6 @@ let store ~proc_desc (attr : ProcAttributes.t) =
     in
     DBWriter.replace_attributes ~proc_uid ~proc_name ~attr_kind ~source_file ~proc_attributes ~cfg
       ~callees
-
-
-let find_file_capturing_procedure pname =
-  Option.map (load pname) ~f:(fun proc_attributes ->
-      let source_file = proc_attributes.ProcAttributes.translation_unit in
-      let origin =
-        (* Procedure coming from include files if it has different location than the file where it
-           was captured. *)
-        match SourceFile.compare source_file proc_attributes.ProcAttributes.loc.file <> 0 with
-        | true ->
-            `Include
-        | false ->
-            `Source
-      in
-      (source_file, origin) )
 
 
 let pp_attributes_kind f = function

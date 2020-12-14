@@ -1,0 +1,4 @@
+codetoanalyze/java/topl/immutableArray/ImmutableArray.java, ImmutableArray.badA():void, 0, TOPL_PULSE_ERROR, no_bucket, ERROR, [call to int[] ImmutableArray.getTestArray(),write to array]
+codetoanalyze/java/topl/immutableArray/ImmutableArray.java, ImmutableArray.badABC():void, 0, TOPL_PULSE_ERROR, no_bucket, ERROR, [call to int[] ImmutableArray.getTestArray(),write to array]
+codetoanalyze/java/topl/immutableArray/ImmutableArray.java, ImmutableArray.badB():void, 0, TOPL_PULSE_ERROR, no_bucket, ERROR, [call to int[] ImmutableArray.getTestArray(),write to array]
+codetoanalyze/java/topl/immutableArray/ImmutableArray.java, ImmutableArray.badC():void, 0, TOPL_PULSE_ERROR, no_bucket, ERROR, [call to int[] ImmutableArray.getTestArray(),call to void ImmutableArray.otherMutateArray(int[]),write to array]

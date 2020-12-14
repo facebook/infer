@@ -78,6 +78,8 @@ val get_operation_cost : t -> BasicCostWithReason.t
 
 val set_autoreleasepool_size_zero : t -> t
 
+val set_operation_cost_zero : t -> t
+
 val find_opt : CostKind.t -> t -> BasicCostWithReason.t option
 
 val construct : f:(CostKind.t -> BasicCostWithReason.t) -> t

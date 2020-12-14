@@ -13,7 +13,16 @@ type t = AbductiveDomain.t
 
 type 'a access_result = 'a PulseReport.access_result
 
-val check_addr_access : Location.t -> AbstractValue.t * ValueHistory.t -> t -> t access_result
+type access_mode =
+  | Read
+  | Write
+  | NoAccess
+      (** The initialized-ness of the address is not checked when it evaluates a heap address
+          without actual memory access, for example, when evaluating [&x.f] we need to check
+          initialized-ness of [x], not that of [x.f]. *)
+
+val check_addr_access :
+  access_mode -> Location.t -> AbstractValue.t * ValueHistory.t -> t -> t access_result
 (** Check that the [address] is not known to be invalid *)
 
 module Closures : sig
@@ -21,7 +30,8 @@ module Closures : sig
   (** assert the validity of the addresses captured by the lambda *)
 end
 
-val eval : Location.t -> Exp.t -> t -> (t * (AbstractValue.t * ValueHistory.t)) access_result
+val eval :
+  access_mode -> Location.t -> Exp.t -> t -> (t * (AbstractValue.t * ValueHistory.t)) access_result
 (** Use the stack and heap to evaluate the given expression down to an abstract address representing
     its value.
 
@@ -34,7 +44,8 @@ val eval_deref : Location.t -> Exp.t -> t -> (t * (AbstractValue.t * ValueHistor
 (** Like [eval] but evaluates [*exp]. *)
 
 val eval_access :
-     Location.t
+     access_mode
+  -> Location.t
   -> AbstractValue.t * ValueHistory.t
   -> BaseMemory.Access.t
   -> t
@@ -52,7 +63,7 @@ val havoc_field :
   -> t
   -> t access_result
 
-val realloc_pvar : Pvar.t -> Location.t -> t -> t
+val realloc_pvar : Pvar.t -> Typ.t -> Location.t -> t -> t
 
 val write_id : Ident.t -> AbstractValue.t * ValueHistory.t -> t -> t
 
@@ -145,3 +156,5 @@ val unknown_call :
   -> t
 (** performs a call to a function with no summary by optimistically havoc'ing the by-ref actuals and
     the return value as appropriate *)
+
+val conservatively_initialize_args : AbstractValue.t list -> t -> t

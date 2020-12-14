@@ -85,6 +85,12 @@ let check_valid address attrs =
       Error invalidation
 
 
+let check_initialized address attrs =
+  L.d_printfln "Checking if %a is initialized" AbstractValue.pp address ;
+  if Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_uninitialized then Error ()
+  else Ok ()
+
+
 let get_attribute getter address attrs =
   let open Option.Monad_infix in
   Graph.find_opt address attrs >>= getter
@@ -98,9 +104,17 @@ let remove_allocation_attr address memory =
       memory
 
 
+let initialize address attrs =
+  if Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_uninitialized then
+    remove_one address Attribute.Uninitialized attrs
+  else attrs
+
+
 let get_closure_proc_name = get_attribute Attributes.get_closure_proc_name
 
 let get_must_be_valid = get_attribute Attributes.get_must_be_valid
+
+let get_must_be_initialized = get_attribute Attributes.get_must_be_initialized
 
 let std_vector_reserve address memory = add_one address Attribute.StdVectorReserve memory
 
@@ -111,3 +125,17 @@ let is_end_of_collection address attrs =
 let is_std_vector_reserved address attrs =
   Graph.find_opt address attrs
   |> Option.value_map ~default:false ~f:Attributes.is_std_vector_reserved
+
+
+let canonicalize ~get_var_repr attrs_map =
+  (* TODO: merging attributes together can produce contradictory attributes, eg [MustBeValid] +
+     [Invalid]. We could detect these and abort execution. This is not really restricted to merging
+     as it might be possible to get a contradiction by accident too so maybe here is not the best
+     place to detect these. *)
+  Graph.fold
+    (fun addr attrs g ->
+      if Attributes.is_empty attrs then g
+      else
+        let addr' = get_var_repr addr in
+        add addr' attrs g )
+    attrs_map Graph.empty

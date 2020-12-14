@@ -71,4 +71,7 @@ public class DiffExample {
        int x = 0;
    }
 
+  void f10(int x) {
+    throw new IllegalArgumentException("Not implemented yet");
+  }
 }

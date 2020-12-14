@@ -1888,15 +1888,15 @@ and pulse_cut_to_one_path_procedures_pattern =
      large procedures to prevent too-big states from being produced."
 
 
-and pulse_recency_limit =
-  CLOpt.mk_int ~long:"pulse-recency-limit" ~default:32
-    "Maximum number of array elements and structure fields to keep track of for a given array \
-     address."
-
-
 and pulse_intraprocedural_only =
   CLOpt.mk_bool ~long:"pulse-intraprocedural-only"
     "Disable inter-procedural analysis in Pulse. Used for experimentations only."
+
+
+and pulse_isl =
+  CLOpt.mk_bool ~long:"pulse-isl" ~default:false
+    "[Pulse] Incorrectness Separation Logic (ISL) mode: explicit Ok/Error summaries are recorded. \
+     For experiments only."
 
 
 and pulse_max_disjuncts =
@@ -1939,6 +1939,12 @@ and pulse_model_transfer_ownership =
     ~in_help:InferCommand.[(Analyze, manual_generic)]
     "Methods that should be modelled as transfering memory ownership in Pulse. Accepted formats \
      are method or namespace::method"
+
+
+and pulse_recency_limit =
+  CLOpt.mk_int ~long:"pulse-recency-limit" ~default:32
+    "Maximum number of array elements and structure fields to keep track of for a given array \
+     address."
 
 
 and pulse_report_latent_issues =
@@ -2082,6 +2088,12 @@ and report_formatter =
     ~default:`Phabricator_formatter
     ~symbols:[("none", `No_formatter); ("phabricator", `Phabricator_formatter)]
     ~eq:PolyVariantEqual.( = ) "Which formatter to use when emitting the report"
+
+
+and report_immutable_modifications =
+  CLOpt.mk_bool ~long:"report-immutable-modifications" ~default:false
+    ~in_help:InferCommand.[(Report, manual_generic); (Run, manual_generic)]
+    "Report modifications to immutable fields"
 
 
 and report_previous =
@@ -2334,9 +2346,27 @@ and test_filtering =
     "List all the files Infer can report on (should be called from the root of the project)"
 
 
+and topl_max_conjuncts =
+  CLOpt.mk_int ~long:"topl-max-conjuncts" ~default:20
+    "Stop tracking states that reach have at least $(i,int) conjuncts"
+
+
+and topl_max_disjuncts =
+  CLOpt.mk_int ~long:"topl-max-disjuncts" ~default:20
+    "Under-approximate after $(i,int) disjunctions in the domain"
+
+
 and topl_properties =
   CLOpt.mk_path_list ~default:[] ~long:"topl-properties"
-    "[EXPERIMENTAL] Specify a file containing a temporal property definition (e.g., jdk.topl)."
+    "[EXPERIMENTAL] Specify a file containing a temporal property definition (e.g., jdk.topl).\n\
+     One needs to also select one of the three implementations, by enabling one of the following \
+     checkers\n\
+     $(b,--pulse)       will run pulse with updated transfer functions\n\
+     $(b,--topl-pulse)  [SLOW] uses SIL-instrumentation, runs pulse, and analyzes pulse summaries\n\
+     $(b,--topl-biabd)  [SLOW] uses SIL-instrumentation, runs biabduction, and analyzes \
+     biabduction summaries\n\
+     Note that enabling topl-pulse or topl-biabd will disable the first implementation using \
+     updated pulse transfer functions."
 
 
 and profiler_samples =
@@ -3105,9 +3135,9 @@ and pulse_cut_to_one_path_procedures_pattern =
   Option.map ~f:Str.regexp !pulse_cut_to_one_path_procedures_pattern
 
 
-and pulse_recency_limit = !pulse_recency_limit
-
 and pulse_intraprocedural_only = !pulse_intraprocedural_only
+
+and pulse_isl = !pulse_isl
 
 and pulse_max_disjuncts = !pulse_max_disjuncts
 
@@ -3141,6 +3171,8 @@ and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
   in
   List.partition_map ~f:aux models
 
+
+and pulse_recency_limit = !pulse_recency_limit
 
 and pulse_report_latent_issues = !pulse_report_latent_issues
 
@@ -3179,6 +3211,8 @@ and report_custom_error = !report_custom_error
 and report_force_relative_path = !report_force_relative_path
 
 and report_formatter = !report_formatter
+
+and report_immutable_modifications = !report_immutable_modifications
 
 and report_path_regex_blacklist = !report_path_regex_blacklist
 
@@ -3298,6 +3332,10 @@ and profiler_samples = !profiler_samples
 and testing_mode = !testing_mode
 
 and threadsafe_aliases = !threadsafe_aliases
+
+and topl_max_conjuncts = !topl_max_conjuncts
+
+and topl_max_disjuncts = !topl_max_disjuncts
 
 and topl_properties = !topl_properties
 

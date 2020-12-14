@@ -126,6 +126,8 @@ val report_custom_error : bool
 
 val report_force_relative_path : bool
 
+val report_immutable_modifications : bool
+
 val report_nullable_inconsistency : bool
 
 val reporting_stats_dir_name : string
@@ -473,9 +475,9 @@ val project_root : string
 
 val pulse_cut_to_one_path_procedures_pattern : Str.regexp option
 
-val pulse_recency_limit : int
-
 val pulse_intraprocedural_only : bool
+
+val pulse_isl : bool [@@warning "-32"]
 
 val pulse_max_disjuncts : int
 
@@ -494,6 +496,8 @@ val pulse_model_transfer_ownership_namespace : (string * string) list
 val pulse_model_transfer_ownership : string list
 
 val pulse_report_latent_issues : bool
+
+val pulse_recency_limit : int
 
 val pulse_widen_threshold : int
 
@@ -610,6 +614,10 @@ val test_filtering : bool
 val testing_mode : bool
 
 val threadsafe_aliases : Yojson.Basic.t
+
+val topl_max_conjuncts : int
+
+val topl_max_disjuncts : int
 
 val topl_properties : string list
 

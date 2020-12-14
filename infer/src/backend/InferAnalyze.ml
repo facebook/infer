@@ -670,12 +670,12 @@ let proc_name_of_uid =
 
 let analyze_target : (TaskSchedulerTypes.target, string) Tasks.doer =
   let analyze_source_file exe_env source_file =
-    if Topl.is_active () then DB.Results_dir.init (Topl.sourcefile ()) ;
+    if Topl.is_shallow_active () then DB.Results_dir.init (Topl.sourcefile ()) ;
     DB.Results_dir.init source_file ;
     L.task_progress SourceFile.pp source_file ~f:(fun () ->
         try
           Ondemand.analyze_file exe_env source_file ;
-          if Topl.is_active () && Config.debug_mode then
+          if Topl.is_shallow_active () && Config.debug_mode then
             DotCfg.emit_frontend_cfg (Topl.sourcefile ()) (Topl.cfg ()) ;
           if Config.write_html then Printer.write_all_html_files source_file ;
           None
@@ -812,7 +812,6 @@ let analyze source_files_to_analyze =
         ~tasks:build_tasks_generator
     in
     let workers_stats = Tasks.Runner.run runner in
-    RestartScheduler.clean () ;
     let collected_stats =
       Array.fold workers_stats ~init:([], [])
         ~f:(fun ((backend_stats_list, gc_stats_list) as stats_list) stats_opt ->

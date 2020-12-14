@@ -5,7 +5,7 @@
 
 TESTS_DIR = ../../../..
 
-INFER_OPTIONS = --pulse-max-disjuncts 100 --topl-properties servlet.topl --topl-pulse-only
+INFER_OPTIONS = --topl-properties servlet.topl --pulse-only
 INFERPRINT_OPTIONS = --issues-tests
 TEST_CLASSPATH = javax.servlet-api-4.0.1.jar
 

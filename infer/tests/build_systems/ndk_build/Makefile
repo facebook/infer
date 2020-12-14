@@ -15,10 +15,10 @@ include $(TESTS_DIR)/infer.make
 
 $(OBJECTS): $(SOURCES)
 	cd $(PROJECT_ROOT) && \
-	$(NDKBUILD) -B NDK_LIBS_OUT=./libs NDK_OUT=./obj
+	$(NDKBUILD) -B APP_ABI=x86 NDK_LIBS_OUT=./libs NDK_OUT=./obj
 
 infer-out/report.json: $(CLANG_DEPS) $(SOURCES)
 	$(QUIET)cd $(PROJECT_ROOT) && \
 	$(call silent_on_success,Testing ndk-build clang integration,\
 	  $(INFER_BIN) --results-dir $(CURDIR)/infer-out -- \
-	    $(NDKBUILD) -B NDK_LIBS_OUT=./libs NDK_OUT=./obj V=1)
+	    $(NDKBUILD) -B APP_ABI=x86 NDK_LIBS_OUT=./libs NDK_OUT=./obj V=1)

@@ -169,7 +169,7 @@ module CostItem = struct
   let is_unreachable = lift ~f_poly:CostDomain.BasicCost.is_unreachable ~f_deg:(fun _ -> false)
 
   (* NOTE: incorrect when using [f_deg] *)
-  let is_one = lift ~f_poly:CostDomain.BasicCost.is_one ~f_deg:(fun _ -> false)
+  let is_zero = lift ~f_poly:CostDomain.BasicCost.is_zero ~f_deg:(fun _ -> false)
 
   let compare_by_degree {polynomial= p1; degree= d1} {polynomial= p2; degree= d2} =
     match (p1, p2) with
@@ -246,10 +246,7 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; unreachable_issue;
       in
       let pp_extra_msg fmt () =
         if Config.developer_mode then CostItem.pp_cost_msg fmt curr_item
-        else
-          Format.fprintf fmt
-            "Please make sure this is an expected change. You can inspect the trace to understand \
-             the complexity increase:"
+        else Format.fprintf fmt "Please make sure this is an expected change."
       in
       let ui_msg =
         if is_on_ui_thread then
@@ -333,8 +330,10 @@ let of_costs ~(current_costs : Jsonbug_t.costs_report) ~(previous_costs : Jsonbu
         in
         let curr_item = max_degree_polynomial current in
         let prev_item = max_degree_polynomial previous in
-        if Config.filtering && (CostItem.is_one curr_item || CostItem.is_one prev_item) then
-          (* transitions to/from unreachable costs are obvious, no need to flag them *)
+        if Config.filtering && (CostItem.is_zero curr_item || CostItem.is_zero prev_item) then
+          (* transitions to/from zero costs are obvious (they
+             correspond to adding/removing code to a function with
+             empty body), no need to flag them *)
           (left, both, right)
         else
           let cmp = CostItem.compare_by_degree curr_item prev_item in

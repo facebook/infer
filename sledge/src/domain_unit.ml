@@ -7,7 +7,7 @@
 
 (** "Unit" abstract domain *)
 
-type t = unit [@@deriving equal, sexp]
+type t = unit [@@deriving compare, equal, sexp]
 
 let pp fs () = Format.pp_print_string fs "()"
 let report_fmt_thunk () fs = pp fs ()
@@ -18,7 +18,6 @@ let exec_assume () _ = Some ()
 let exec_kill _ () = ()
 let exec_move _ () = ()
 let exec_inst _ () = Some ()
-let exec_intrinsic ~skip_throw:_ _ _ _ _ : t option option = None
 
 type from_call = unit [@@deriving compare, equal, sexp]
 
@@ -30,11 +29,7 @@ let recursion_beyond_bound = `skip
 let post _ _ () = ()
 let retn _ _ _ _ = ()
 let dnf () = [()]
-
-let resolve_callee lookup ptr _ =
-  match Llair.Function.of_exp ptr with
-  | Some callee -> (lookup callee, ())
-  | None -> ([], ())
+let resolve_callee _ _ _ = []
 
 type summary = unit
 

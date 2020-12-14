@@ -11,13 +11,16 @@ module F = Format
 (** A union-find data structure. *)
 
 module type Element = sig
-  type t [@@deriving compare]
+  type t [@@deriving compare, equal]
 
   val is_simpler_than : t -> t -> bool
   (** will be used to choose a "simpler" representative for a given equivalence class when possible *)
 end
 
-module Make (X : Element) (XSet : Caml.Set.S with type elt = X.t) : sig
+module Make
+    (X : Element)
+    (XSet : Caml.Set.S with type elt = X.t)
+    (XMap : Caml.Map.S with type key = X.t) : sig
   type t
 
   val pp :
@@ -38,6 +41,16 @@ module Make (X : Element) (XSet : Caml.Set.S with type elt = X.t) : sig
   val fold_congruences : (t, repr * XSet.t, 'acc) Container.fold
   (** fold over the equivalence classes of the relation, singling out the representative for each
       class *)
+
+  val reorient : keep:XSet.t -> t -> X.t XMap.t
+  (** the relation [x -> x'] derived from the equality relation that relates all [x], [x'] such that
+      [x∉keep], [x'∈keep], and [x=x'], as well as [y -> y'] when no element in the equivalence
+      class of [y] belongs to [keep] and [y'] is the representative of the class *)
+
+  val apply_subst : _ XMap.t -> t -> t
+  (** [apply_subst subst uf] eliminate all variables in the domain of [subst] from [uf], keeping the
+      smallest representative not in the domain of [subst] for each class. Classes without any such
+      elements are kept intact. *)
 
   val filter_not_in_closed_set : keep:XSet.t -> t -> t
   (** only keep items in [keep], assuming that [keep] is closed under the relation, i.e. that if an

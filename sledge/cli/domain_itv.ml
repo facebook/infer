@@ -16,9 +16,10 @@ let equal_apron_typ =
 (** Apron-managed map from variables to intervals *)
 type t = Box.t Abstract1.t
 
+let equal : t -> t -> bool = Poly.equal
+let compare : t -> t -> int = Poly.compare
 let man = lazy (Box.manager_alloc ())
 let join l r = Some (Abstract1.join (Lazy.force man) l r)
-let equal l r = Abstract1.is_eq (Lazy.force man) l r
 let is_false x = Abstract1.is_bottom (Lazy.force man) x
 
 let bindings (itv : t) =
@@ -180,7 +181,8 @@ let exec_move move_vec q =
         ( Llair.Reg.Set.add r defs
         , Llair.Exp.fold_regs ~f:Llair.Reg.Set.add e uses ) )
   in
-  assert (Llair.Reg.Set.disjoint defs uses) ;
+  if not (Llair.Reg.Set.disjoint defs uses) then
+    todo "overwritten variables in Domain_itv" () ;
   IArray.fold ~f:(fun (r, e) q -> assign r e q) move_vec q
 
 let exec_inst i q =
@@ -192,41 +194,10 @@ let exec_inst i q =
     | None -> Some q )
   | Load {reg; ptr; len= _; loc= _} -> Some (assign reg ptr q)
   | Nondet {reg= Some reg; msg= _; loc= _} -> Some (exec_kill reg q)
-  | Nondet {reg= None; msg= _; loc= _}
-   |Alloc _ | Memset _ | Memcpy _ | Memmov _ | Free _ ->
-      Some q
+  | Nondet {reg= None; msg= _; loc= _} | Alloc _ | Free _ -> Some q
   | Abort _ -> None
-
-(** Treat any intrinsic function as havoc on the return register [aret] *)
-let exec_intrinsic ~skip_throw:_ aret i _ pre =
-  let name = Llair.Function.name i in
-  if
-    List.exists
-      [ "malloc"
-      ; "aligned_alloc"
-      ; "calloc"
-      ; "posix_memalign"
-      ; "realloc"
-      ; "mallocx"
-      ; "rallocx"
-      ; "xallocx"
-      ; "sallocx"
-      ; "dallocx"
-      ; "sdallocx"
-      ; "nallocx"
-      ; "malloc_usable_size"
-      ; "mallctl"
-      ; "mallctlnametomib"
-      ; "mallctlbymib"
-      ; "malloc_stats_print"
-      ; "strlen"
-      ; "__cxa_allocate_exception"
-      ; "_ZN5folly13usingJEMallocEv" ]
-      ~f:(String.equal name)
-  then
-    let+ aret = aret in
-    Some (exec_kill aret pre)
-  else None
+  | Intrinsic {reg= Some reg; _} -> Some (exec_kill reg q)
+  | Intrinsic {reg= None; _} -> Some q
 
 type from_call = {areturn: Llair.Reg.t option; caller_q: t}
 [@@deriving sexp_of]
@@ -280,10 +251,12 @@ let call ~summaries ~globals:_ ~actuals ~areturn ~formals ~freturn:_
     let mangle r =
       Llair.Reg.mk (Llair.Reg.typ r) ("__tmp__" ^ Llair.Reg.name r)
     in
-    let args = List.combine_exn formals actuals in
-    let q' = List.fold ~f:(fun (f, a) q -> assign (mangle f) a q) args q in
+    let args = IArray.combine_exn formals actuals in
+    let q' =
+      IArray.fold ~f:(fun (f, a) q -> assign (mangle f) a q) args q
+    in
     let callee_env =
-      List.fold formals ([], []) ~f:(fun f (is, fs) ->
+      IArray.fold formals ([], []) ~f:(fun f (is, fs) ->
           match apron_typ_of_llair_typ (Llair.Reg.typ f) with
           | None -> (is, fs)
           | Some Texpr1.Int -> (apron_var_of_reg (mangle f) :: is, fs)
@@ -295,17 +268,15 @@ let call ~summaries ~globals:_ ~actuals ~areturn ~formals ~freturn:_
     let q'' = Abstract1.change_environment man q' callee_env false in
     let q''' =
       Abstract1.rename_array man q''
-        (Array.map ~f:(mangle >> apron_var_of_reg) (Array.of_list formals))
-        (Array.map ~f:apron_var_of_reg (Array.of_list formals))
+        (Array.map
+           ~f:(mangle >> apron_var_of_reg)
+           (IArray.to_array formals))
+        (Array.map ~f:apron_var_of_reg (IArray.to_array formals))
     in
     (q''', {areturn; caller_q= q})
 
 let dnf q = [q]
-
-let resolve_callee lookup ptr q =
-  match Llair.Function.of_exp ptr with
-  | Some callee -> (lookup callee, q)
-  | None -> ([], q)
+let resolve_callee _ _ _ = []
 
 type summary = t
 

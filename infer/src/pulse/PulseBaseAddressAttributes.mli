@@ -31,11 +31,15 @@ val fold : (AbstractValue.t -> Attributes.t -> 'a -> 'a) -> t -> 'a -> 'a
 
 val check_valid : AbstractValue.t -> t -> (unit, Invalidation.t * Trace.t) result
 
+val check_initialized : AbstractValue.t -> t -> (unit, unit) result
+
 val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
 val get_closure_proc_name : AbstractValue.t -> t -> Procname.t option
 
 val get_must_be_valid : AbstractValue.t -> t -> Trace.t option
+
+val get_must_be_initialized : AbstractValue.t -> t -> Trace.t option
 
 val std_vector_reserve : AbstractValue.t -> t -> t
 
@@ -48,3 +52,9 @@ val is_end_of_collection : AbstractValue.t -> t -> bool
 val pp : F.formatter -> t -> unit
 
 val remove_allocation_attr : AbstractValue.t -> t -> t
+
+val initialize : AbstractValue.t -> t -> t
+
+val canonicalize : get_var_repr:(AbstractValue.t -> AbstractValue.t) -> t -> t
+(** merge the attributes of all the variables that are equal according to [get_var_repr] and remove
+    non-canonical variables in favor of their rerpresentative *)
