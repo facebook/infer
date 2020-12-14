@@ -185,7 +185,7 @@ let execute_analyze ~changed_files =
 let execute_analyze_json () =
   match (Config.cfg_json, Config.tenv_json) with
   | (Some cfg_json, Some tenv_json) ->
-    InferAnalyze.analyze_json cfg_json tenv_json ;
+    InferAnalyzeJson.analyze_json cfg_json tenv_json ;
   | (_,_) ->
     L.user_warning "** Missing cfg or tenv json files. Provide them as arguments throught '--cfg-json' and '--tenv-json' **\n" ;
   ()
