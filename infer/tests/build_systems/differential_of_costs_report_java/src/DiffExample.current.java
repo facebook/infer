@@ -88,4 +88,7 @@ public class DiffExample {
         }
     }
 
+  void f10(int x) {
+    f4(x); // don't report here since previous version just throw exception
+  }
 }

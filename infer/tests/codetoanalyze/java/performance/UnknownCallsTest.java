@@ -63,6 +63,7 @@ class UnknownCallsTest {
     }
   }
 
+  // functions that just throw have 0 cost to prevent diff reporting
   int throw_exception() {
     throw new IllegalStateException();
   }

@@ -377,7 +377,7 @@ codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.loop_over
 codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.may_throw_exception():int, 12,  OnUIThread:false, []
 codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.read_max_cost(java.io.InputStream,byte[],int,int,java.util.ArrayList):int, 24 + 5 ⋅ (byteCount + 1),  OnUIThread:false, [{byteCount + 1},Loop]
 codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.read_sum_cost(java.io.InputStream,byte[],int,int,java.util.ArrayList):int, 19 + 6 ⋅ 2⋅byteCount,  OnUIThread:false, [{2⋅byteCount},Loop]
-codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.throw_exception():int, 5,  OnUIThread:false, []
+codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.throw_exception():int, 0,  OnUIThread:false, []
 codetoanalyze/java/performance/UnknownCallsTest.java, UnknownCallsTest.unmodeled_impure_linear(java.util.ArrayList):void, 4 + 13 ⋅ list.length + 3 ⋅ (list.length + 1),  OnUIThread:false, [{list.length + 1},Loop,{list.length},Loop]
 codetoanalyze/java/performance/UnreachableAtExitTest.java, UnreachableAtExitTest.<init>(), 2,  OnUIThread:false, []
 codetoanalyze/java/performance/UnreachableAtExitTest.java, UnreachableAtExitTest.double_prune_unreachable_FN(double):void, 12,  OnUIThread:false, []
