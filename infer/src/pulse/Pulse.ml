@@ -105,7 +105,7 @@ module PulseTransferFunctions = struct
         (* invalidate [&x] *)
         PulseOperations.invalidate call_loc gone_out_of_scope out_of_scope_base astate
         >>| ExecutionDomain.continue
-    | AbortProgram _ | ExitProgram _ | LatentAbortProgram _ ->
+    | ISLLatentMemoryError _ | AbortProgram _ | ExitProgram _ | LatentAbortProgram _ ->
         Ok exec_state
 
 
@@ -123,7 +123,7 @@ module PulseTransferFunctions = struct
       match exec_state with
       | ContinueProgram astate ->
           ContinueProgram (do_astate astate)
-      | AbortProgram _ | LatentAbortProgram _ | ExitProgram _ ->
+      | ISLLatentMemoryError _ | AbortProgram _ | LatentAbortProgram _ | ExitProgram _ ->
           exec_state
     in
     Result.map ~f:(List.map ~f:do_one_exec_state) exec_state_res
@@ -254,7 +254,7 @@ module PulseTransferFunctions = struct
         ~f:(fun astates (astate : Domain.t) ->
           let astate =
             match astate with
-            | AbortProgram _ | ExitProgram _ | LatentAbortProgram _ ->
+            | ISLLatentMemoryError _ | AbortProgram _ | ExitProgram _ | LatentAbortProgram _ ->
                 [astate]
             | ContinueProgram astate ->
                 dispatch_call analysis_data ret call_exp actuals location call_flags astate
@@ -278,7 +278,7 @@ module PulseTransferFunctions = struct
   let exec_instr_aux (astate : Domain.t) ({InterproceduralAnalysis.proc_desc} as analysis_data)
       _cfg_node (instr : Sil.instr) : Domain.t list =
     match astate with
-    | AbortProgram _ | LatentAbortProgram _ ->
+    | ISLLatentMemoryError _ | AbortProgram _ | LatentAbortProgram _ ->
         (* We can also continue the analysis with the error state here
                  but there might be a risk we would get nonsense. *)
         [astate]
@@ -335,7 +335,7 @@ module PulseTransferFunctions = struct
             List.fold
               ~f:(fun astates (astate : Domain.t) ->
                 match astate with
-                | AbortProgram _ | ExitProgram _ | LatentAbortProgram _ ->
+                | ISLLatentMemoryError _ | AbortProgram _ | ExitProgram _ | LatentAbortProgram _ ->
                     [astate]
                 | ContinueProgram astate ->
                     let astate =

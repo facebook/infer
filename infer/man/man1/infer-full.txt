@@ -1767,6 +1767,11 @@ INTERNAL OPTIONS
            experimentations only. (Conversely:
            --no-pulse-intraprocedural-only)
 
+       --pulse-isl
+           Activates: [Pulse] Incorrectness Separation Logic (ISL) mode:
+           explicit Ok/Error summaries are recorded. For experiments only.
+           (Conversely: --no-pulse-isl)
+
        --pulse-max-disjuncts int
            Under-approximate after int disjunctions in the domain
 

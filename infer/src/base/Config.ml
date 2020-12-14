@@ -1865,15 +1865,15 @@ and pulse_cut_to_one_path_procedures_pattern =
      large procedures to prevent too-big states from being produced."
 
 
-and pulse_recency_limit =
-  CLOpt.mk_int ~long:"pulse-recency-limit" ~default:32
-    "Maximum number of array elements and structure fields to keep track of for a given array \
-     address."
-
-
 and pulse_intraprocedural_only =
   CLOpt.mk_bool ~long:"pulse-intraprocedural-only"
     "Disable inter-procedural analysis in Pulse. Used for experimentations only."
+
+
+and pulse_isl =
+  CLOpt.mk_bool ~long:"pulse-isl" ~default:false
+    "[Pulse] Incorrectness Separation Logic (ISL) mode: explicit Ok/Error summaries are recorded. \
+     For experiments only."
 
 
 and pulse_max_disjuncts =
@@ -1916,6 +1916,12 @@ and pulse_model_transfer_ownership =
     ~in_help:InferCommand.[(Analyze, manual_generic)]
     "Methods that should be modelled as transfering memory ownership in Pulse. Accepted formats \
      are method or namespace::method"
+
+
+and pulse_recency_limit =
+  CLOpt.mk_int ~long:"pulse-recency-limit" ~default:32
+    "Maximum number of array elements and structure fields to keep track of for a given array \
+     address."
 
 
 and pulse_report_latent_issues =
@@ -3098,9 +3104,9 @@ and pulse_cut_to_one_path_procedures_pattern =
   Option.map ~f:Str.regexp !pulse_cut_to_one_path_procedures_pattern
 
 
-and pulse_recency_limit = !pulse_recency_limit
-
 and pulse_intraprocedural_only = !pulse_intraprocedural_only
+
+and pulse_isl = !pulse_isl
 
 and pulse_max_disjuncts = !pulse_max_disjuncts
 
@@ -3134,6 +3140,8 @@ and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
   in
   List.partition_map ~f:aux models
 
+
+and pulse_recency_limit = !pulse_recency_limit
 
 and pulse_report_latent_issues = !pulse_report_latent_issues
 

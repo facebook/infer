@@ -487,12 +487,18 @@ let apply_callee ~caller_proc_desc callee_pname call_loc callee_exec_state ~ret
   match callee_exec_state with
   | ContinueProgram astate ->
       map_call_result astate ~f:(fun astate -> Sat (Ok (ContinueProgram astate)))
-  | AbortProgram astate | ExitProgram astate | LatentAbortProgram {astate} ->
+  | ISLLatentMemoryError astate
+  | AbortProgram astate
+  | ExitProgram astate
+  | LatentAbortProgram {astate} ->
       map_call_result
         (astate :> AbductiveDomain.t)
         ~f:(fun astate ->
           let+ astate_summary = AbductiveDomain.summary_of_post caller_proc_desc astate in
           match callee_exec_state with
+          | ISLLatentMemoryError _ ->
+              (* TODO: check invalid of inter-procedural analysis *)
+              Ok (ISLLatentMemoryError astate_summary)
           | ContinueProgram _ ->
               assert false
           | AbortProgram _ ->

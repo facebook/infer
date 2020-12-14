@@ -21,6 +21,7 @@ type 'abductive_domain_t base_t =
   | ExitProgram of AbductiveDomain.summary
   | AbortProgram of AbductiveDomain.summary
   | LatentAbortProgram of {astate: AbductiveDomain.summary; latent_issue: LatentIssue.t}
+  | ISLLatentMemoryError of AbductiveDomain.summary
 [@@deriving yojson_of]
 
 type t = AbductiveDomain.t base_t
@@ -31,7 +32,9 @@ let mk_initial pdesc = ContinueProgram (AbductiveDomain.mk_initial pdesc)
 
 let leq ~lhs ~rhs =
   match (lhs, rhs) with
-  | AbortProgram astate1, AbortProgram astate2 | ExitProgram astate1, ExitProgram astate2 ->
+  | AbortProgram astate1, AbortProgram astate2
+  | ISLLatentMemoryError astate1, ISLLatentMemoryError astate2
+  | ExitProgram astate1, ExitProgram astate2 ->
       AbductiveDomain.leq ~lhs:(astate1 :> AbductiveDomain.t) ~rhs:(astate2 :> AbductiveDomain.t)
   | ContinueProgram astate1, ContinueProgram astate2 ->
       AbductiveDomain.leq ~lhs:astate1 ~rhs:astate2
@@ -46,6 +49,8 @@ let leq ~lhs ~rhs =
 let pp fmt = function
   | ContinueProgram astate ->
       AbductiveDomain.pp fmt astate
+  | ISLLatentMemoryError astate ->
+      F.fprintf fmt "{ISLLatentMemoryError %a}" AbductiveDomain.pp (astate :> AbductiveDomain.t)
   | ExitProgram astate ->
       F.fprintf fmt "{ExitProgram %a}" AbductiveDomain.pp (astate :> AbductiveDomain.t)
   | AbortProgram astate ->
@@ -64,7 +69,10 @@ let pp fmt = function
 let get_astate : t -> AbductiveDomain.t = function
   | ContinueProgram astate ->
       astate
-  | ExitProgram astate | AbortProgram astate | LatentAbortProgram {astate} ->
+  | ISLLatentMemoryError astate
+  | ExitProgram astate
+  | AbortProgram astate
+  | LatentAbortProgram {astate} ->
       (astate :> AbductiveDomain.t)
 
 
@@ -83,6 +91,8 @@ let summary_of_posts_common ~continue_program pdesc posts =
         | Sat astate ->
             Some (continue_program astate) )
       (* already a summary but need to reconstruct the variants to make the type system happy *)
+      | ISLLatentMemoryError astate ->
+          Some (ISLLatentMemoryError astate)
       | AbortProgram astate ->
           Some (AbortProgram astate)
       | ExitProgram astate ->
