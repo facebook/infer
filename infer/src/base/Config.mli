@@ -178,7 +178,7 @@ val buck_blacklist : string list
 
 val buck_build_args : string list
 
-val buck_build_args_no_inline : string list
+val buck_build_args_no_inline_rev : string list
 
 val buck_cache_mode : bool
 

@@ -684,7 +684,7 @@ and buck_build_args =
      $(b,--buck-clang)."
 
 
-and buck_build_args_no_inline =
+and buck_build_args_no_inline_rev =
   CLOpt.mk_string_list ~long:"Xbuck-no-inline"
     ~in_help:InferCommand.[(Capture, manual_buck)]
     "Pass values as command-line arguments to invocations of $(i,`buck build`), don't inline any \
@@ -2736,7 +2736,7 @@ and buck_blacklist = !buck_blacklist
 
 and buck_build_args = !buck_build_args
 
-and buck_build_args_no_inline = !buck_build_args_no_inline
+and buck_build_args_no_inline_rev = !buck_build_args_no_inline_rev
 
 and buck_cache_mode = (!buck || !genrule_mode) && not !debug
 
