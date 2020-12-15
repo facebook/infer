@@ -95,7 +95,7 @@ let reset_type_map = Hashtbl.reset !type_map
 let acquire_resource access_path class_name held =
   let add_resource_to_hash = 
     match ResourcesHeld.find_opt access_path held with
-    | Some count -> ()
+    | Some _ -> ()
     | None -> 
       Hashtbl.add !type_map access_path class_name 
   in

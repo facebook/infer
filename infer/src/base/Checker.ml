@@ -353,7 +353,7 @@ let config_unsafe checker =
             ; markdown_body=
                 ""
             }
-      ; support= (function CIL -> Support)
+      ; support= (function Clang -> NoSupport | Java -> NoSupport | CIL -> Support)
       ; short_documentation=
           "\"resource leak\" checker for .NET."
       ; cli_flags= Some {deprecated= []; show_in_help= false}

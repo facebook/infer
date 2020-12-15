@@ -52,7 +52,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let releases_resource tenv procname =
     (* We assume the close method of a Closeable releases all of its resources *)
     match procname with
-    | Procname.CSharp csharp_procname ->
+    | Procname.CSharp _ ->
         (String.equal "Close" (Procname.get_method procname) ||  String.equal "Dispose" (Procname.get_method procname)) && is_closeable_procname tenv procname
     | _ ->
         String.equal "close" (Procname.get_method procname) && is_closeable_procname tenv procname
@@ -67,7 +67,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let re = Str.regexp_string s2
         in
         try ignore (Str.search_forward re s1 0); false
-        with Not_found -> true
+        with Not_found_s _ | Caml.Not_found -> true
       in 
       contains (Procname.to_string (Procdesc.get_proc_name proc_desc)) "IEnumerable" && contains (Procname.to_string (Procdesc.get_proc_name proc_desc)) "Enumerator"
     in
@@ -80,6 +80,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             Procname.Java.get_class_name java_procname
           | Procname.CSharp csharp_procname ->
             Procname.CSharp.get_class_name csharp_procname
+          | _ ->
+            L.die InternalError "Unsupported procname kind! Only Java and .NET is supported"
         in
         ResourceLeakCSDomain.acquire_resource
           (HilExp.AccessExpression.to_access_path allocated)
