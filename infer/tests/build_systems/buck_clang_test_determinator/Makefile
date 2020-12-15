@@ -25,12 +25,13 @@ $(DIFF_OUTPUT):
 	$(QUIET)echo >> diff.mod.test
 
 $(TEST_DETERMINATOR_RESULT): $(DIFF_OUTPUT)
-	$(QUIET)$(call silent_on_success,Testing test-determinator for clang with set of changes,\
-		$(INFER_BIN) $(INFER_OPTIONS) -- buck build --no-cache $(BUCK_TARGET))
+	$(QUIET)$(BUCK) clean
+	$(call silent_on_success,Testing test-determinator for clang with set of changes,\
+	  $(INFER_BIN) $(INFER_OPTIONS) -- $(BUCK) build --no-cache $(BUCK_TARGET))
 
 .PHONY: test
 test: $(TEST_DETERMINATOR_RESULT)
-	$(QUIET)$(call check_no_diff,test_determinator.json.exp,$(TEST_DETERMINATOR_RESULT))
+	$(call check_no_diff,test_determinator.json.exp,$(TEST_DETERMINATOR_RESULT))
 
 .PHONY: replace
 replace: $(TEST_DETERMINATOR_RESULT)
