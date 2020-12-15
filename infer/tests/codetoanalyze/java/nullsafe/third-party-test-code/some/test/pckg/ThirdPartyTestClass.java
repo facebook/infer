@@ -16,12 +16,19 @@ import javax.annotation.Nullable;
  */
 public class ThirdPartyTestClass {
 
+  // Inner classes
+
   public static class UncheckedLong {
     public long mInner;
 
     public UncheckedLong(long inner) {
       mInner = inner;
     }
+  }
+
+  public enum InnerEnum {
+    EA,
+    EB,
   }
 
   // Fields.

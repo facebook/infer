@@ -75,7 +75,11 @@ let get tenv field_name ~class_typ ~class_under_analysis =
       ~is_third_party field_typ annotations
   in
   let special_case_nullability =
-    if Nullability.is_nonnullish (AnnotatedNullability.get_nullability nullability) then
+    if
+      Nullability.is_subtype
+        ~subtype:(AnnotatedNullability.get_nullability nullability)
+        ~supertype:Nullability.ThirdPartyNonnull
+    then
       if
         is_enum_value
         (* Enum values are the special case - they can not be null. So we can strengten nullability.
