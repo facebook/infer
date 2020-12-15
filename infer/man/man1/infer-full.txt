@@ -822,6 +822,15 @@ OPTIONS
            maximum nesting level are skipped. If omitted, all levels are
            shown.           See also infer-explore(1).
 
+       --memtrace-analysis-profiling
+           Activates: Generate OCaml analysis allocation traces in
+           `infer-out/memtrace`. (Conversely:
+           --no-memtrace-analysis-profiling)           See also infer-analyze(1).
+
+       --memtrace-sampling-rate float
+           Sampling rate for Memtrace allocation profiling. Default is 1e-6.       
+    See also infer-analyze(1).
+
        --merge
            Activates: Merge the captured results directories specified in the
            dependency file. (Conversely: --no-merge)           See also infer-analyze(1).
@@ -1621,6 +1630,9 @@ INTERNAL OPTIONS
 
        --max-nesting-reset
            Cancel the effect of --max-nesting.
+
+       --memtrace-sampling-rate-reset
+           Cancel the effect of --memtrace-sampling-rate.
 
        --method-decls-info method_decls_info.json
            Specifies the file containing the method declarations info (eg.

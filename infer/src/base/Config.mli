@@ -382,6 +382,10 @@ val liveness_ignored_constant : string list
 
 val max_nesting : int option
 
+val memtrace_analysis : bool
+
+val memtrace_sampling_rate : float
+
 val merge : bool
 
 val method_decls_info : string option
