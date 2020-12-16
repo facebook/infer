@@ -231,13 +231,14 @@ end = struct
 
 
   let is_whitelisted =
-    if RevList.is_empty Config.write_html_whitelist_regex then fun _ -> true
-    else
-      let reg_list = RevList.to_list Config.write_html_whitelist_regex in
-      let regex = Str.regexp (String.concat ~sep:"\\|" reg_list) in
-      fun file ->
-        let fname = SourceFile.to_rel_path file in
-        Str.string_match regex fname 0
+    match Config.write_html_whitelist_regex with
+    | [] ->
+        fun _ -> true
+    | _ as reg_list ->
+        let regex = Str.regexp (String.concat ~sep:"\\|" reg_list) in
+        fun file ->
+          let fname = SourceFile.to_rel_path file in
+          Str.string_match regex fname 0
 
 
   (*

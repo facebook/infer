@@ -331,14 +331,13 @@ let context_with_ck_set context decl_list =
 
 
 let find_linters_files () =
-  RevList.rev_concat_map
+  List.concat_map
     ~f:(fun folder -> Utils.find_files ~path:folder ~extension:".al")
     Config.linters_def_folder
 
 
 let linters_files =
-  RevList.dedup_and_sort ~compare:String.compare
-    (RevList.rev_append (find_linters_files ()) Config.linters_def_file)
+  List.dedup_and_sort ~compare:String.compare (find_linters_files () @ Config.linters_def_file)
 
 
 let is_decl_allowed lcxt decl =

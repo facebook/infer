@@ -10,7 +10,7 @@ module F = Format
 module L = Logging
 
 let parse_clang_procedure procedure kinds index =
-  try Some (QualifiedCppName.Match.of_fuzzy_qual_names (RevList.of_list [procedure]), kinds, index)
+  try Some (QualifiedCppName.Match.of_fuzzy_qual_names [procedure], kinds, index)
   with QualifiedCppName.ParseError _ ->
     (* Java and Clang sources/sinks live in the same inferconfig entry. If we try to parse a Java
        procedure that happens to be an invalid Clang qualified name (e.g., MyClass.<init>),
@@ -423,8 +423,7 @@ module CppSanitizer = struct
   let external_sanitizers =
     List.map
       ~f:(fun {QuandaryConfig.Sanitizer.procedure; kind} ->
-        (QualifiedCppName.Match.of_fuzzy_qual_names (RevList.of_list [procedure]), of_string kind)
-        )
+        (QualifiedCppName.Match.of_fuzzy_qual_names [procedure], of_string kind) )
       (QuandaryConfig.Sanitizer.of_json Config.quandary_sanitizers)
 
 

@@ -982,7 +982,7 @@ module ProcNameDispatcher = struct
     in
     let get_cpp_matchers config ~model =
       let cpp_separator_regex = Str.regexp_string "::" in
-      RevList.rev_filter_map
+      List.filter_map
         ~f:(fun m ->
           match Str.split cpp_separator_regex m with
           | [] ->

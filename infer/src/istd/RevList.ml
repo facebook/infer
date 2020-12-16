@@ -27,14 +27,3 @@ let rev_partition_map t ~f =
           loop t fst (y :: snd) )
   in
   loop t [] []
-
-
-let rev_concat_map rev ~f =
-  let rec aux acc = function [] -> acc | hd :: tl -> aux (rev_append (f hd) acc) tl in
-  aux [] rev
-
-
-let rev_append2 = rev_append
-
-let rec to_rev_seq rev =
-  match rev with [] -> fun () -> Seq.Nil | hd :: tl -> fun () -> Seq.Cons (hd, to_rev_seq tl)

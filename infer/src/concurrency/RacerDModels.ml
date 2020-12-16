@@ -119,7 +119,7 @@ let is_cpp_container_read =
     QualifiedCppName.extract_last pname_qualifiers
     |> Option.exists ~f:(fun (last, _) -> String.equal last "operator[]")
   in
-  let matcher = QualifiedCppName.Match.of_fuzzy_qual_names (RevList.of_list ["std::map::find"]) in
+  let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::map::find"] in
   fun pname ->
     let pname_qualifiers = Procname.get_qualifiers pname in
     QualifiedCppName.Match.match_qualifiers matcher pname_qualifiers
@@ -128,8 +128,7 @@ let is_cpp_container_read =
 
 let is_cpp_container_write =
   let matcher =
-    QualifiedCppName.Match.of_fuzzy_qual_names
-      (RevList.of_list ["std::map::operator[]"; "std::map::erase"])
+    QualifiedCppName.Match.of_fuzzy_qual_names ["std::map::operator[]"; "std::map::erase"]
   in
   fun pname -> QualifiedCppName.Match.match_qualifiers matcher (Procname.get_qualifiers pname)
 
@@ -163,18 +162,17 @@ let should_skip =
   let matcher =
     lazy
       (QualifiedCppName.Match.of_fuzzy_qual_names ~prefix:true
-         (RevList.of_list
-            [ "folly::AtomicStruct"
-            ; "folly::fbstring_core"
-            ; "folly::Future"
-            ; "folly::futures"
-            ; "folly::LockedPtr"
-            ; "folly::Optional"
-            ; "folly::Promise"
-            ; "folly::ThreadLocal"
-            ; "folly::detail::SingletonHolder"
-            ; "std::atomic"
-            ; "std::vector" ]))
+         [ "folly::AtomicStruct"
+         ; "folly::fbstring_core"
+         ; "folly::Future"
+         ; "folly::futures"
+         ; "folly::LockedPtr"
+         ; "folly::Optional"
+         ; "folly::Promise"
+         ; "folly::ThreadLocal"
+         ; "folly::detail::SingletonHolder"
+         ; "std::atomic"
+         ; "std::vector" ])
   in
   function
   | Procname.ObjC_Cpp cpp_pname as pname ->

@@ -147,7 +147,7 @@ val mk_rest_actions :
   -> string
   -> usage:string
   -> (string -> parse_mode)
-  -> string RevList.t ref
+  -> string list ref
 (** [mk_rest_actions doc ~usage command_to_parse_mode] defines a [string list ref] of the command
     line arguments following ["--"], in the reverse order they appeared on the command line. [usage]
     is the usage message in case of parse errors or if --help is passed. For example, calling

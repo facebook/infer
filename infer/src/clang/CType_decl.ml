@@ -331,7 +331,7 @@ let get_superclass_decls decl =
 
 
 let translate_as_type_ptr_matcher =
-  QualifiedCppName.Match.of_fuzzy_qual_names (RevList.of_list ["infer_traits::TranslateAsType"])
+  QualifiedCppName.Match.of_fuzzy_qual_names ["infer_traits::TranslateAsType"]
 
 
 let get_translate_as_friend_decl decl_list =

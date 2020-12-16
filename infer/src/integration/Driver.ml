@@ -372,8 +372,7 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
       | BBuck, Some CombinedGenrule ->
           BuckCombinedGenrule {build_cmd}
       | BBuck, Some (ClangCompilationDB deps) ->
-          BuckCompilationDB
-            {deps; prog; args= List.append args (RevList.to_list Config.buck_build_args)}
+          BuckCompilationDB {deps; prog; args= List.append args Config.buck_build_args}
       | BBuck, Some ClangFlavors when Config.is_checker_enabled Linters ->
           L.user_warning
             "WARNING: the linters require --buck-compilation-database to be set.@ Alternatively, \
@@ -427,7 +426,7 @@ let mode_from_command_line =
         assert_supported_mode `Java "Buck genrule" ;
         BuckGenrule {prog= path}
     | None ->
-        mode_of_build_command (RevList.to_list Config.rest) Config.buck_mode )
+        mode_of_build_command Config.rest Config.buck_mode )
 
 
 let run_prologue mode =

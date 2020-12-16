@@ -82,7 +82,7 @@ let do_all_files sources program =
   let tenv = load_tenv () in
   let skip source_file =
     let is_path_matching path =
-      RevList.exists
+      List.exists
         ~f:(fun pattern -> Str.string_match (Str.regexp pattern) path 0)
         Config.skip_analysis_in_path
     in

@@ -2731,7 +2731,7 @@ and annotation_reachability_cxx_sources = !annotation_reachability_cxx_sources
 
 and annotation_reachability_custom_pairs = !annotation_reachability_custom_pairs
 
-and append_buck_flavors = !append_buck_flavors
+and append_buck_flavors = RevList.to_list !append_buck_flavors
 
 and array_level = !array_level
 
@@ -2745,11 +2745,11 @@ and bo_field_depth_limit = !bo_field_depth_limit
 
 and buck = !buck
 
-and buck_blacklist = !buck_blacklist
+and buck_blacklist = RevList.to_list !buck_blacklist
 
-and buck_build_args = !buck_build_args
+and buck_build_args = RevList.to_list !buck_build_args
 
-and buck_build_args_no_inline_rev = !buck_build_args_no_inline_rev
+and buck_build_args_no_inline = RevList.to_list !buck_build_args_no_inline_rev
 
 and buck_cache_mode = (!buck || !genrule_mode) && not !debug
 
@@ -2777,7 +2777,7 @@ and buck_mode : BuckMode.t option =
       Some JavaFlavor
 
 
-and buck_targets_blacklist = !buck_targets_blacklist
+and buck_targets_blacklist = RevList.to_list !buck_targets_blacklist
 
 and call_graph_schedule = !call_graph_schedule
 
@@ -2786,7 +2786,7 @@ and capture = !capture
 and capture_blacklist = !capture_blacklist
 
 and censor_report =
-  RevList.map !censor_report ~f:(fun str ->
+  RevList.rev_map !censor_report ~f:(fun str ->
       match String.split str ~on:':' with
       | [issue_type_re; filename_re; reason_str]
         when not String.(is_empty issue_type_re || is_empty filename_re || is_empty reason_str) ->
@@ -2822,11 +2822,11 @@ and clang_compilation_dbs = !clang_compilation_dbs
 
 and clang_compound_literal_init_limit = !clang_compound_literal_init_limit
 
-and clang_extra_flags = !clang_extra_flags
+and clang_extra_flags = RevList.to_list !clang_extra_flags
 
-and clang_blacklisted_flags = !clang_blacklisted_flags
+and clang_blacklisted_flags = RevList.to_list !clang_blacklisted_flags
 
-and clang_blacklisted_flags_with_arg = !clang_blacklisted_flags_with_arg
+and clang_blacklisted_flags_with_arg = RevList.to_list !clang_blacklisted_flags_with_arg
 
 and clang_ignore_regex = !clang_ignore_regex
 
@@ -2935,7 +2935,7 @@ and genrule_mode = !genrule_mode
 and get_linter_doc_url = process_linters_doc_url !linters_doc_url
 
 and help_checker =
-  RevList.map !help_checker ~f:(fun checker_string ->
+  RevList.rev_map !help_checker ~f:(fun checker_string ->
       match Checker.from_id checker_string with
       | Some checker ->
           checker
@@ -2947,7 +2947,7 @@ and help_checker =
 
 
 and help_issue_type =
-  RevList.map !help_issue_type ~f:(fun id ->
+  RevList.rev_map !help_issue_type ~f:(fun id ->
       match IssueType.find_from_string ~id with
       | Some issue_type ->
           issue_type
@@ -2993,9 +2993,9 @@ and join_cond = !join_cond
 
 and linter = !linter
 
-and linters_def_file = !linters_def_file
+and linters_def_file = RevList.to_list !linters_def_file
 
-and linters_def_folder = !linters_def_folder
+and linters_def_folder = RevList.to_list !linters_def_folder
 
 and linters_developer_mode = !linters_developer_mode
 
@@ -3009,7 +3009,7 @@ and list_issue_types = !list_issue_types
 
 and liveness_dangerous_classes = !liveness_dangerous_classes
 
-and liveness_ignored_constant = !liveness_ignored_constant
+and liveness_ignored_constant = RevList.to_list !liveness_ignored_constant
 
 and load_average =
   match !load_average with None when !buck -> Some (float_of_int ncpu) | _ -> !load_average
@@ -3127,13 +3127,13 @@ and pulse_isl = !pulse_isl
 
 and pulse_max_disjuncts = !pulse_max_disjuncts
 
-and pulse_model_abort = !pulse_model_abort
+and pulse_model_abort = RevList.to_list !pulse_model_abort
 
 and pulse_model_alloc_pattern = Option.map ~f:Str.regexp !pulse_model_alloc_pattern
 
 and pulse_model_release_pattern = Option.map ~f:Str.regexp !pulse_model_release_pattern
 
-and pulse_model_return_nonnull = !pulse_model_return_nonnull
+and pulse_model_return_nonnull = RevList.to_list !pulse_model_return_nonnull
 
 and pulse_model_skip_pattern = Option.map ~f:Str.regexp !pulse_model_skip_pattern
 
@@ -3186,7 +3186,7 @@ and relative_path_backtrack = !relative_path_backtrack
 
 and report = !report
 
-and report_blacklist_files_containing = !report_blacklist_files_containing
+and report_blacklist_files_containing = RevList.to_list !report_blacklist_files_containing
 
 and report_console_limit = !report_console_limit
 
@@ -3200,13 +3200,13 @@ and report_formatter = !report_formatter
 
 and report_immutable_modifications = !report_immutable_modifications
 
-and report_path_regex_blacklist = !report_path_regex_blacklist
+and report_path_regex_blacklist = RevList.to_list !report_path_regex_blacklist
 
-and report_path_regex_whitelist = !report_path_regex_whitelist
+and report_path_regex_whitelist = RevList.to_list !report_path_regex_whitelist
 
 and report_previous = !report_previous
 
-and report_suppress_errors = !report_suppress_errors
+and report_suppress_errors = RevList.to_list !report_suppress_errors
 
 and reports_include_ml_loc = !reports_include_ml_loc
 
@@ -3240,15 +3240,15 @@ and print_jbir = !print_jbir
 
 and siof_check_iostreams = !siof_check_iostreams
 
-and siof_safe_methods = !siof_safe_methods
+and siof_safe_methods = RevList.to_list !siof_safe_methods
 
-and skip_analysis_in_path = !skip_analysis_in_path
+and skip_analysis_in_path = RevList.to_list !skip_analysis_in_path
 
 and skip_analysis_in_path_skips_compilation = !skip_analysis_in_path_skips_compilation
 
 and skip_duplicated_types = !skip_duplicated_types
 
-and skip_translation_headers = !skip_translation_headers
+and skip_translation_headers = RevList.to_list !skip_translation_headers
 
 and source_preview = !source_preview
 
@@ -3264,7 +3264,7 @@ and source_files_procedure_names = !source_files_procedure_names
 
 and source_files_freshly_captured = !source_files_freshly_captured
 
-and sources = !sources
+and sources = RevList.to_list !sources
 
 and sourcepath = !sourcepath
 
@@ -3321,7 +3321,7 @@ and topl_max_conjuncts = !topl_max_conjuncts
 
 and topl_max_disjuncts = !topl_max_disjuncts
 
-and topl_properties = !topl_properties
+and topl_properties = RevList.to_list !topl_properties
 
 and trace_error = !trace_error
 
@@ -3357,7 +3357,7 @@ and write_dotty = !write_dotty
 
 and write_html = !write_html
 
-and write_html_whitelist_regex = !write_html_whitelist_regex
+and write_html_whitelist_regex = RevList.to_list !write_html_whitelist_regex
 
 and write_website = !write_website
 

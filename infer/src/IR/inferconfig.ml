@@ -30,14 +30,14 @@ let do_not_filter : filters =
 
 
 type filter_config =
-  { whitelist: string RevList.t
-  ; blacklist: string RevList.t
-  ; blacklist_files_containing: string RevList.t
-  ; suppress_errors: string RevList.t }
+  { whitelist: string list
+  ; blacklist: string list
+  ; blacklist_files_containing: string list
+  ; suppress_errors: string list }
 
 let is_matching patterns source_file =
   let path = SourceFile.to_rel_path source_file in
-  RevList.exists
+  List.exists
     ~f:(fun pattern ->
       try Int.equal (Str.search_forward pattern path 0) 0 with Caml.Not_found -> false )
     patterns
@@ -77,20 +77,19 @@ module FileContainsStringMatcher = struct
         Utils.with_file_in path ~f:(fun file_in -> not (loop regexp_not file_in)) )
 
 
-  let create_matcher (s_patterns : contains_pattern RevList.t) =
-    if RevList.is_empty s_patterns then default_matcher
+  let create_matcher (s_patterns : contains_pattern list) =
+    if List.is_empty s_patterns then default_matcher
     else
       let source_map = ref SourceFile.Map.empty in
       let not_contains_patterns =
-        RevList.exists ~f:(fun {not_contains} -> Option.is_some not_contains) s_patterns
+        List.exists ~f:(fun {not_contains} -> Option.is_some not_contains) s_patterns
       in
       let disjunctive_regexp =
-        Str.regexp
-          (String.concat ~sep:"\\|" (RevList.rev_map ~f:(fun {contains} -> contains) s_patterns))
+        Str.regexp (String.concat ~sep:"\\|" (List.map ~f:(fun {contains} -> contains) s_patterns))
       in
       let cond check_regexp =
         if not_contains_patterns then
-          RevList.exists
+          List.exists
             ~f:(fun {contains; not_contains} ->
               check_regexp (Str.regexp contains) (Option.map not_contains ~f:Str.regexp) )
             s_patterns
@@ -125,10 +124,10 @@ module FileOrProcMatcher = struct
   let default_matcher : matcher = fun _ _ -> false
 
   let create_method_matcher m_patterns =
-    if RevList.is_empty m_patterns then default_matcher
+    if List.is_empty m_patterns then default_matcher
     else
       let pattern_map =
-        RevList.fold
+        List.fold
           ~f:(fun map pattern ->
             let previous =
               try String.Map.find_exn map pattern.class_name
@@ -162,6 +161,7 @@ module FileOrProcMatcher = struct
       in
       List.fold ~f:collect ~init:(RevList.empty, RevList.empty) patterns
     in
+    let s_patterns, m_patterns = (RevList.to_list s_patterns, RevList.to_list m_patterns) in
     let s_matcher =
       let matcher = FileContainsStringMatcher.create_matcher s_patterns in
       fun source_file _ -> matcher source_file
@@ -331,15 +331,15 @@ let load_filters () =
 let filters_from_inferconfig inferconfig : filters =
   let path_filter =
     let whitelist_filter : path_filter =
-      if RevList.is_empty inferconfig.whitelist then default_path_filter
-      else is_matching (RevList.map ~f:Str.regexp inferconfig.whitelist)
+      if List.is_empty inferconfig.whitelist then default_path_filter
+      else is_matching (List.map ~f:Str.regexp inferconfig.whitelist)
     in
     let blacklist_filter : path_filter =
-      is_matching (RevList.map ~f:Str.regexp inferconfig.blacklist)
+      is_matching (List.map ~f:Str.regexp inferconfig.blacklist)
     in
     let blacklist_files_containing_filter : path_filter =
       FileContainsStringMatcher.create_matcher
-        (RevList.map
+        (List.map
            ~f:(fun s -> {contains= s; not_contains= None})
            inferconfig.blacklist_files_containing)
     in
@@ -352,7 +352,7 @@ let filters_from_inferconfig inferconfig : filters =
   let error_filter = function
     | error_name ->
         let error_str = error_name.IssueType.unique_id in
-        not (RevList.exists ~f:(String.equal error_str) inferconfig.suppress_errors)
+        not (List.exists ~f:(String.equal error_str) inferconfig.suppress_errors)
   in
   {path_filter; error_filter; proc_filter= default_proc_filter}
 

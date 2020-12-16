@@ -100,7 +100,7 @@ let censored_reason (issue_type : IssueType.t) source_file =
     in
     Option.some_if (not accepted) reason
   in
-  RevList.find_map Config.censor_report ~f:rejected_by
+  List.find_map Config.censor_report ~f:rejected_by
 
 
 let potential_exception_message = "potential exception at line"

@@ -14,7 +14,7 @@ module L = Logging
 module F = Format
 module DExp = DecompiledExp
 
-let vector_matcher = QualifiedCppName.Match.of_fuzzy_qual_names (RevList.of_list ["std::vector"])
+let vector_matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::vector"]
 
 let is_one_of_classes = QualifiedCppName.Match.match_qualifiers
 

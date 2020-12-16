@@ -809,12 +809,11 @@ let string_of_command command =
 
 
 let mk_rest_actions ?(parse_mode = InferCommand) ?(in_help = []) doc ~usage decode_action =
-  let rest = ref RevList.empty in
+  let rest = ref [] in
   let spec =
     String
       (fun arg ->
-        rest :=
-          RevList.of_list (Array.to_list (Array.slice !args_to_parse (!arg_being_parsed + 1) 0)) ;
+        rest := Array.to_list (Array.slice !args_to_parse (!arg_being_parsed + 1) 0) ;
         select_parse_mode ~usage (decode_action arg) |> ignore )
   in
   add parse_mode in_help

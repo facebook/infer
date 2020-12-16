@@ -50,8 +50,7 @@ let models = List.map ~f:parse_siof_model [("std::ios_base::Init::Init", standar
 
 let is_modelled =
   let models_matcher =
-    List.map models ~f:(fun {qual_name} -> qual_name)
-    |> RevList.of_list |> QualifiedCppName.Match.of_fuzzy_qual_names
+    List.map models ~f:(fun {qual_name} -> qual_name) |> QualifiedCppName.Match.of_fuzzy_qual_names
   in
   fun pname ->
     Procname.get_qualifiers pname |> QualifiedCppName.Match.match_qualifiers models_matcher
@@ -76,8 +75,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let filter_global_accesses initialized =
     let initialized_matcher =
-      Domain.VarNames.elements initialized
-      |> RevList.of_list |> QualifiedCppName.Match.of_fuzzy_qual_names
+      Domain.VarNames.elements initialized |> QualifiedCppName.Match.of_fuzzy_qual_names
     in
     Staged.stage (fun (* gvar \notin initialized, up to some fuzzing *)
                         gvar ->
@@ -155,7 +153,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let init =
           List.find_map_exn models ~f:(fun {qual_name; initialized_globals} ->
               if
-                QualifiedCppName.Match.of_fuzzy_qual_names (RevList.of_list [qual_name])
+                QualifiedCppName.Match.of_fuzzy_qual_names [qual_name]
                 |> Fn.flip QualifiedCppName.Match.match_qualifiers
                      (Procname.get_qualifiers callee_pname)
               then Some initialized_globals

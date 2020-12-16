@@ -10,39 +10,28 @@ open! IStd
 type 'a t
 
 val empty : 'a t
-
-val is_empty : 'a t -> bool
+(** Return empty list *)
 
 val cons : 'a -> 'a t -> 'a t
+(** Add an element to the end of list *)
 
 val to_list : 'a t -> 'a list
+(** Return normal-ordered list *)
 
 val of_list : 'a list -> 'a t
-
-val fold : 'a t -> init:'b -> f:('b -> 'a -> 'b) -> 'b
-
-val mem : 'a t -> 'a -> equal:('a -> 'a -> bool) -> bool
+(** Make reverse-ordered list from normal-ordered one *)
 
 val exists : 'a t -> f:('a -> bool) -> bool
+(** Similar to [List.exists] *)
 
 val map : 'a t -> f:('a -> 'b) -> 'b t
+(** Similar to [List.map] *)
 
 val rev_map : 'a t -> f:('a -> 'b) -> 'b list
+(** Similar to [List.rev_map], so return normal-ordered list *)
 
 val rev_map_append : 'a t -> 'b list -> f:('a -> 'b) -> 'b list
+(** Similar to [List.rev_map_append] *)
 
 val rev_partition_map : 'a t -> f:('a -> ('b, 'c) Either.t) -> 'b list * 'c list
-
-val find_map : 'a t -> f:('a -> 'b option) -> 'b option
-
-val rev_filter_map : 'a t -> f:('a -> 'b option) -> 'b list
-
-val rev_concat_map : 'a t -> f:('a -> 'b list) -> 'b list
-
-val rev_append : 'a list -> 'a t -> 'a t
-
-val rev_append2 : 'a t -> 'a list -> 'a list
-
-val dedup_and_sort : compare:('a -> 'a -> int) -> 'a t -> 'a list
-
-val to_rev_seq : 'a t -> 'a Seq.t
+(** Similar to [List.partition_map], but return normal-ordered lists *)

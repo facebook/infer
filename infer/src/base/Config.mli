@@ -39,7 +39,7 @@ val anonymous_block_num_sep : string
 
 val anonymous_block_prefix : string
 
-val append_buck_flavors : string RevList.t
+val append_buck_flavors : string list
 
 val assign : string
 
@@ -132,7 +132,7 @@ val kotlin_source_extension : string
 
 val sourcepath : string option
 
-val sources : string RevList.t
+val sources : string list
 
 val trace_absarray : bool
 
@@ -174,11 +174,11 @@ val bootclasspath : string option
 
 val buck : bool
 
-val buck_blacklist : string RevList.t
+val buck_blacklist : string list
 
-val buck_build_args : string RevList.t
+val buck_build_args : string list
 
-val buck_build_args_no_inline_rev : string RevList.t
+val buck_build_args_no_inline : string list
 
 val buck_cache_mode : bool
 
@@ -188,7 +188,7 @@ val buck_mode : BuckMode.t option
 
 val buck_out_gen : string
 
-val buck_targets_blacklist : string RevList.t
+val buck_targets_blacklist : string list
 
 val call_graph_schedule : bool
 
@@ -196,7 +196,7 @@ val capture : bool
 
 val capture_blacklist : string option
 
-val censor_report : ((bool * Str.regexp) * (bool * Str.regexp) * string) RevList.t
+val censor_report : ((bool * Str.regexp) * (bool * Str.regexp) * string) list
 
 val changed_files_index : string option
 
@@ -206,11 +206,11 @@ val clang_ast_file : [`Biniou of string | `Yojson of string] option
 
 val clang_compound_literal_init_limit : int
 
-val clang_extra_flags : string RevList.t
+val clang_extra_flags : string list
 
-val clang_blacklisted_flags : string RevList.t
+val clang_blacklisted_flags : string list
 
-val clang_blacklisted_flags_with_arg : string RevList.t
+val clang_blacklisted_flags_with_arg : string list
 
 val clang_ignore_regex : string option
 
@@ -310,9 +310,9 @@ val genrule_mode : bool
 
 val get_linter_doc_url : linter_id:string -> string option
 
-val help_checker : Checker.t RevList.t
+val help_checker : Checker.t list
 
-val help_issue_type : IssueType.t RevList.t
+val help_issue_type : IssueType.t list
 
 val hoisting_report_only_expensive : bool
 
@@ -362,9 +362,9 @@ val keep_going : bool
 
 val linter : string option
 
-val linters_def_file : string RevList.t
+val linters_def_file : string list
 
-val linters_def_folder : string RevList.t
+val linters_def_folder : string list
 
 val linters_developer_mode : bool
 
@@ -378,7 +378,7 @@ val list_issue_types : bool
 
 val liveness_dangerous_classes : Yojson.Basic.t
 
-val liveness_ignored_constant : string RevList.t
+val liveness_ignored_constant : string list
 
 val max_nesting : int option
 
@@ -471,13 +471,13 @@ val pulse_isl : bool [@@warning "-32"]
 
 val pulse_max_disjuncts : int
 
-val pulse_model_abort : string RevList.t
+val pulse_model_abort : string list
 
 val pulse_model_alloc_pattern : Str.regexp option
 
 val pulse_model_release_pattern : Str.regexp option
 
-val pulse_model_return_nonnull : string RevList.t
+val pulse_model_return_nonnull : string list
 
 val pulse_model_skip_pattern : Str.regexp option
 
@@ -509,7 +509,7 @@ val reactive_mode : bool
 
 val reanalyze : bool
 
-val report_blacklist_files_containing : string RevList.t
+val report_blacklist_files_containing : string list
 
 val report_console_limit : int option
 
@@ -517,17 +517,17 @@ val report_current : string option
 
 val report_formatter : [`No_formatter | `Phabricator_formatter]
 
-val report_path_regex_blacklist : string RevList.t
+val report_path_regex_blacklist : string list
 
-val report_path_regex_whitelist : string RevList.t
+val report_path_regex_whitelist : string list
 
 val report_previous : string option
 
-val report_suppress_errors : string RevList.t
+val report_suppress_errors : string list
 
 val reports_include_ml_loc : bool
 
-val rest : string RevList.t
+val rest : string list
 
 val results_dir : string
 
@@ -547,15 +547,15 @@ val show_buckets : bool
 
 val siof_check_iostreams : bool
 
-val siof_safe_methods : string RevList.t
+val siof_safe_methods : string list
 
-val skip_analysis_in_path : string RevList.t
+val skip_analysis_in_path : string list
 
 val skip_analysis_in_path_skips_compilation : bool
 
 val skip_duplicated_types : bool
 
-val skip_translation_headers : string RevList.t
+val skip_translation_headers : string list
 
 val source_files : bool
 
@@ -607,7 +607,7 @@ val topl_max_conjuncts : int
 
 val topl_max_disjuncts : int
 
-val topl_properties : string RevList.t
+val topl_properties : string list
 
 val trace_error : bool
 
@@ -641,7 +641,7 @@ val write_dotty : bool
 
 val write_html : bool
 
-val write_html_whitelist_regex : string RevList.t
+val write_html_whitelist_regex : string list
 
 val write_website : string option
 
