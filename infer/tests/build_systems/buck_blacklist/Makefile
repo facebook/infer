@@ -21,7 +21,7 @@ $(OBJECTS): $(JAVA_SOURCE_FILES)
 	$(BUCK) build --no-cache $(BUCK_TARGET))
 
 infer-out/report.json: $(CLANG_DEPS) $(SOURCES) $(MAKEFILE_LIST)
-	$(QUIET)$(REMOVE_DIR) buck-out && \
+	$(QUIET)$(BUCK) clean
 	$(call silent_on_success,Testing Buck flavors integration,\
 	$(INFER_BIN) $(INFER_OPTIONS) capture --buck-clang --results-dir $(CURDIR)/infer-out \
 	  @blacklist.txt --buck-blacklist '.*src/hello2\.c' \

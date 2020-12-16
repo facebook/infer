@@ -190,7 +190,7 @@ val buck_blacklist : string list
 
 val buck_build_args : string list
 
-val buck_build_args_no_inline : string list
+val buck_build_args_no_inline_rev : string list
 
 val buck_cache_mode : bool
 
@@ -395,6 +395,10 @@ val liveness_dangerous_classes : Yojson.Basic.t
 val liveness_ignored_constant : string list
 
 val max_nesting : int option
+
+val memtrace_analysis : bool
+
+val memtrace_sampling_rate : float
 
 val merge : bool
 

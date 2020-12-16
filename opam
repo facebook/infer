@@ -32,6 +32,7 @@ depends: [
   "dune" {build & >="2.0"}
   "iter"
   "javalib" {>="3.2.1"}
+  "memtrace" {>="0.1.2"}
   "mlgmpidl" {>="1.2.12"}
   "mtime"
   "ocaml" {>="4.09.0"}

@@ -39,7 +39,7 @@ print: current.exp.test previous.exp.test
 replace: replace_reports
 
 $(CURRENT_REPORT):
-	$(QUIET)$(REMOVE_DIR) buck-out
+	$(QUIET)$(BUCK) clean
 	$(QUIET)$(COPY) $(CODETOANALYZE)/some_bugs.c src/hello.c
 	$(QUIET)$(call silent_on_success,Running Buck diff analysis: current,\
 	  $(INFER_BIN) $(INFER_OPTIONS) run --results-dir $(CURRENT_DIR) -- \

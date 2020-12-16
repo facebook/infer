@@ -17,6 +17,5 @@ include $(TESTS_DIR)/infer.make
 include $(TESTS_DIR)/objc.make
 
 infer-out/report.json: $(CLANG_DEPS) $(SOURCES) $(MAKEFILE_LIST)
-	$(QUIET)$(REMOVE_DIR) buck-out && \
 	$(call silent_on_success,Testing analysis with Objective-C Missing_fld,\
 	$(INFER_BIN) $(INFER_OPTIONS) --results-dir $(CURDIR)/infer-out -- clang $(CLANG_OPTIONS)  $(SOURCES))

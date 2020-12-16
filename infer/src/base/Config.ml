@@ -696,7 +696,7 @@ and buck_build_args =
      $(b,--buck-clang)."
 
 
-and buck_build_args_no_inline =
+and buck_build_args_no_inline_rev =
   CLOpt.mk_string_list ~long:"Xbuck-no-inline"
     ~in_help:InferCommand.[(Capture, manual_buck)]
     "Pass values as command-line arguments to invocations of $(i,`buck build`), don't inline any \
@@ -1622,16 +1622,28 @@ and max_nesting =
      skipped. If omitted, all levels are shown."
 
 
-and method_decls_info =
-  CLOpt.mk_path_opt ~long:"method-decls-info" ~meta:"method_decls_info.json"
-    "Specifies the file containing the method declarations info (eg. start line, end line, class, \
-     method name, etc.) when Infer is run Test Determinator mode with $(b,--test-determinator)."
+and memtrace_analysis =
+  CLOpt.mk_bool ~long:"memtrace-analysis-profiling"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Generate OCaml analysis allocation traces in `infer-out/memtrace`."
+
+
+and memtrace_sampling_rate =
+  CLOpt.mk_float_opt ~long:"memtrace-sampling-rate" ~default:1e-6
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Sampling rate for Memtrace allocation profiling. Default is 1e-6."
 
 
 and merge =
   CLOpt.mk_bool ~deprecated:["merge"] ~long:"merge"
     ~in_help:InferCommand.[(Analyze, manual_buck)]
     "Merge the captured results directories specified in the dependency file."
+
+
+and method_decls_info =
+  CLOpt.mk_path_opt ~long:"method-decls-info" ~meta:"method_decls_info.json"
+    "Specifies the file containing the method declarations info (eg. start line, end line, class, \
+     method name, etc.) when Infer is run Test Determinator mode with $(b,--test-determinator)."
 
 
 and ml_buckets =
@@ -2764,7 +2776,7 @@ and buck_blacklist = !buck_blacklist
 
 and buck_build_args = !buck_build_args
 
-and buck_build_args_no_inline = !buck_build_args_no_inline
+and buck_build_args_no_inline_rev = !buck_build_args_no_inline_rev
 
 and buck_cache_mode = (!buck || !genrule_mode) && not !debug
 
@@ -3035,9 +3047,13 @@ and load_average =
 
 and max_nesting = !max_nesting
 
-and method_decls_info = !method_decls_info
+and memtrace_analysis = !memtrace_analysis
+
+and memtrace_sampling_rate = Option.value_exn !memtrace_sampling_rate
 
 and merge = !merge
+
+and method_decls_info = !method_decls_info
 
 and ml_buckets = !ml_buckets
 
