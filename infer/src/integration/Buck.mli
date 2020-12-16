@@ -14,7 +14,7 @@ module Target : sig
 
   val to_string : t -> string
 
-  val add_flavor : BuckMode.t -> InferCommand.t -> extra_flavors:string list -> t -> t
+  val add_flavor : BuckMode.t -> InferCommand.t -> extra_flavors:string RevList.t -> t -> t
 end
 
 val wrap_buck_call :

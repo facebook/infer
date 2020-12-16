@@ -1200,7 +1200,7 @@ and differential_filter_set =
 
 and () =
   let mk b ?deprecated ~long ?default doc =
-    let (_ : string list ref) =
+    let (_ : string RevList.t ref) =
       CLOpt.mk_string_list ?deprecated ~long
         ~f:(fun issue_id ->
           let issue =
@@ -1534,7 +1534,7 @@ and linters_def_folder =
       ~meta:"dir" "Specify the folder containing linters files with extension .al"
   in
   let () =
-    CLOpt.mk_set linters_def_folder [] ~long:"reset-linters-def-folder"
+    CLOpt.mk_set linters_def_folder RevList.empty ~long:"reset-linters-def-folder"
       "Reset the list of folders containing linters definitions to be empty (see \
        $(b,linters-def-folder))."
   in
@@ -2677,11 +2677,12 @@ let post_parsing_initialization command_opt =
   if is_none !symops_per_iteration then symops_per_iteration := symops_timeout ;
   if is_none !seconds_per_iteration then seconds_per_iteration := seconds_timeout ;
   clang_compilation_dbs :=
-    List.rev_map ~f:(fun x -> `Raw x) !compilation_database
-    |> List.rev_map_append ~f:(fun x -> `Escaped x) !compilation_database_escaped ;
+    RevList.rev_map ~f:(fun x -> `Raw x) !compilation_database
+    |> RevList.rev_map_append ~f:(fun x -> `Escaped x) !compilation_database_escaped ;
   (* set analyzer mode to linters in linters developer mode *)
   if !linters_developer_mode then enable_checker Linters ;
-  if !default_linters then linters_def_file := linters_def_default_file :: !linters_def_file ;
+  if !default_linters then
+    linters_def_file := RevList.cons linters_def_default_file !linters_def_file ;
   ( match !analyzer with
   | Linters ->
       disable_all_checkers () ;
@@ -2710,7 +2711,7 @@ let process_linters_doc_url args =
            but got %s"
           arg
   in
-  let linter_doc_url_assocs = List.rev_map ~f:linters_doc_url args in
+  let linter_doc_url_assocs = RevList.rev_map ~f:linters_doc_url args in
   fun ~linter_id -> List.Assoc.find ~equal:String.equal linter_doc_url_assocs linter_id
 
 
@@ -2785,7 +2786,7 @@ and capture = !capture
 and capture_blacklist = !capture_blacklist
 
 and censor_report =
-  List.map !censor_report ~f:(fun str ->
+  RevList.map !censor_report ~f:(fun str ->
       match String.split str ~on:':' with
       | [issue_type_re; filename_re; reason_str]
         when not String.(is_empty issue_type_re || is_empty filename_re || is_empty reason_str) ->
@@ -2934,7 +2935,7 @@ and genrule_mode = !genrule_mode
 and get_linter_doc_url = process_linters_doc_url !linters_doc_url
 
 and help_checker =
-  List.map !help_checker ~f:(fun checker_string ->
+  RevList.map !help_checker ~f:(fun checker_string ->
       match Checker.from_id checker_string with
       | Some checker ->
           checker
@@ -2946,7 +2947,7 @@ and help_checker =
 
 
 and help_issue_type =
-  List.map !help_issue_type ~f:(fun id ->
+  RevList.map !help_issue_type ~f:(fun id ->
       match IssueType.find_from_string ~id with
       | Some issue_type ->
           issue_type
@@ -3139,7 +3140,7 @@ and pulse_model_skip_pattern = Option.map ~f:Str.regexp !pulse_model_skip_patter
 and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
   let models =
     let re = Str.regexp "::" in
-    List.map ~f:(fun model -> (model, Str.split re model)) !pulse_model_transfer_ownership
+    RevList.map ~f:(fun model -> (model, Str.split re model)) !pulse_model_transfer_ownership
   in
   let aux el =
     match el with
@@ -3154,7 +3155,7 @@ and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
           option
           (List.length splits - 1)
   in
-  List.partition_map ~f:aux models
+  RevList.rev_partition_map ~f:aux models
 
 
 and pulse_recency_limit = !pulse_recency_limit
@@ -3431,12 +3432,8 @@ let dynamic_dispatch = is_checker_enabled Biabduction
 
 (** Check if a Java package is external to the repository *)
 let java_package_is_external package =
-  match external_java_packages with
-  | [] ->
-      false
-  | _ ->
-      List.exists external_java_packages ~f:(fun (prefix : string) ->
-          String.is_prefix package ~prefix )
+  RevList.exists external_java_packages ~f:(fun (prefix : string) ->
+      String.is_prefix package ~prefix )
 
 
 let is_in_custom_symbols list_name symbol =

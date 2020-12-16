@@ -29,7 +29,7 @@ let validate_al_files () =
       None
     with CTLExceptions.ALFileException exc_info -> Some (CTLExceptions.json_of_exc_info exc_info)
   in
-  match List.filter_map ~f:validate_al_file Config.linters_def_file with
+  match RevList.rev_filter_map ~f:validate_al_file Config.linters_def_file with
   | [] ->
       Ok ()
   | _ as errors ->

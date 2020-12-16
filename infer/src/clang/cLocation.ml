@@ -24,7 +24,7 @@ let source_file_in_project source_file =
   let file_in_project = SourceFile.is_under_project_root source_file in
   let rel_source_file = SourceFile.to_string source_file in
   let file_should_be_skipped =
-    List.exists
+    RevList.exists
       ~f:(fun path -> String.is_prefix ~prefix:path rel_source_file)
       Config.skip_translation_headers
   in
@@ -83,7 +83,7 @@ let should_translate_lib translation_unit source_range decl_trans_context ~trans
 let is_file_blacklisted file =
   let paths = Config.skip_analysis_in_path in
   let is_file_blacklisted =
-    List.exists ~f:(fun path -> Str.string_match (Str.regexp ("^.*/" ^ path)) file 0) paths
+    RevList.exists ~f:(fun path -> Str.string_match (Str.regexp ("^.*/" ^ path)) file 0) paths
   in
   is_file_blacklisted
 

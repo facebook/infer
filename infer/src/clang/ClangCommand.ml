@@ -114,15 +114,16 @@ let filter_and_replace_unsupported_args ?(replace_options_arg = fun _ s -> s) ?(
               (Exn.to_string e) ;
             aux in_argfiles' (false, at_argfile :: res_rev, changed) tl )
     | flag :: tl
-      when List.mem ~equal:String.equal Config.clang_blacklisted_flags flag
+      when RevList.mem ~equal:String.equal Config.clang_blacklisted_flags flag
            || String.lsplit2 ~on:'=' flag
               |> function
               | Some (flag, _arg) ->
-                  List.mem ~equal:String.equal Config.clang_blacklisted_flags_with_arg flag
+                  RevList.mem ~equal:String.equal Config.clang_blacklisted_flags_with_arg flag
               | None ->
                   false ->
         aux in_argfiles (false, res_rev, true) tl
-    | flag :: tl when List.mem ~equal:String.equal Config.clang_blacklisted_flags_with_arg flag ->
+    | flag :: tl when RevList.mem ~equal:String.equal Config.clang_blacklisted_flags_with_arg flag
+      ->
         (* remove the flag and its arg separately in case we are at the end of an argfile *)
         aux in_argfiles (true, res_rev, true) tl
     | arg :: tl ->
@@ -204,7 +205,7 @@ let mk ~is_driver quoting_style ~prog ~args =
   (* Some arguments break the compiler so they need to be removed even before the normalization step *)
   let sanitized_args = filter_and_replace_unsupported_args args in
   let sanitized_args =
-    if is_driver then sanitized_args @ List.rev Config.clang_extra_flags else sanitized_args
+    if is_driver then sanitized_args @ RevList.to_list Config.clang_extra_flags else sanitized_args
   in
   {exec= prog; orig_argv= sanitized_args; argv= sanitized_args; quoting_style; is_driver}
 

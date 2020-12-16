@@ -108,7 +108,7 @@ module Match = struct
 
 
   let of_fuzzy_qual_names ?prefix fuzzy_qual_names =
-    List.rev_map fuzzy_qual_names ~f:qualifiers_of_fuzzy_qual_name
+    RevList.rev_map fuzzy_qual_names ~f:qualifiers_of_fuzzy_qual_name
     |> qualifiers_list_matcher ?prefix
 
 

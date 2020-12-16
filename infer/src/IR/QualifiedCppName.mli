@@ -87,7 +87,7 @@ val pp : Format.formatter -> t -> unit
 module Match : sig
   type quals_matcher
 
-  val of_fuzzy_qual_names : ?prefix:bool -> string list -> quals_matcher
+  val of_fuzzy_qual_names : ?prefix:bool -> string RevList.t -> quals_matcher
 
   val match_qualifiers : quals_matcher -> t -> bool
 end

@@ -168,14 +168,15 @@ let () =
       if
         Config.(
           list_checkers || list_issue_types || Option.is_some write_website
-          || (not (List.is_empty help_checker))
-          || not (List.is_empty help_issue_type))
+          || (not (RevList.is_empty help_checker))
+          || not (RevList.is_empty help_issue_type))
       then (
         if Config.list_checkers then Help.list_checkers () ;
         if Config.list_issue_types then Help.list_issue_types () ;
-        if not (List.is_empty Config.help_checker) then Help.show_checkers Config.help_checker ;
-        if not (List.is_empty Config.help_issue_type) then
-          Help.show_issue_types Config.help_issue_type ;
+        if not (RevList.is_empty Config.help_checker) then
+          Help.show_checkers (RevList.to_list Config.help_checker) ;
+        if not (RevList.is_empty Config.help_issue_type) then
+          Help.show_issue_types (RevList.to_list Config.help_issue_type) ;
         Option.iter Config.write_website ~f:(fun website_root -> Help.write_website ~website_root) ;
         () )
       else

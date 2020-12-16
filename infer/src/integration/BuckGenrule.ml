@@ -170,7 +170,7 @@ let capture buck_mode build_cmd =
   let updated_buck_cmd =
     (* make buck tell us where in buck-out are the capture directories for merging *)
     (prog :: command :: "--build-report" :: build_report_file :: Buck.config buck_mode)
-    @ List.rev_append Config.buck_build_args_no_inline_rev
+    @ RevList.rev_append2 Config.buck_build_args_no_inline_rev
         (Buck.store_args_in_file ~identifier:"genrule_build" all_args)
   in
   L.(debug Capture Quiet)

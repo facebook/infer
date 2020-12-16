@@ -54,13 +54,15 @@ end
 module CheckerMode : LivenessConfig = struct
   let blacklisted_destructor_matcher =
     QualifiedCppName.Match.of_fuzzy_qual_names
-      (string_list_of_json ~option_name:"liveness-dangerous-classes" ~init:[]
-         Config.liveness_dangerous_classes)
+      (RevList.of_list
+         (string_list_of_json ~option_name:"liveness-dangerous-classes" ~init:[]
+            Config.liveness_dangerous_classes))
 
 
   (** hardcoded list of wrappers, mostly because they are impossible to specify as config options *)
   let standard_wrappers_matcher =
-    QualifiedCppName.Match.of_fuzzy_qual_names ["std::unique_ptr"; "std::shared_ptr"]
+    QualifiedCppName.Match.of_fuzzy_qual_names
+      (RevList.of_list ["std::unique_ptr"; "std::shared_ptr"])
 
 
   let is_blacklisted_class_name class_name =
@@ -176,7 +178,7 @@ let matcher_scope_guard =
   let default_scope_guards = ["CKComponentKey"; "CKComponentScope"] in
   string_list_of_json ~option_name:"cxx-scope_guards" ~init:default_scope_guards
     Config.cxx_scope_guards
-  |> QualifiedCppName.Match.of_fuzzy_qual_names
+  |> RevList.of_list |> QualifiedCppName.Match.of_fuzzy_qual_names
 
 
 module CapturedByRefTransferFunctions (CFG : ProcCfg.S) = struct
@@ -216,7 +218,7 @@ module IntLitSet = Caml.Set.Make (IntLit)
 
 let ignored_constants =
   let int_lit_constants =
-    List.map
+    RevList.map
       ~f:(fun el ->
         try IntLit.of_string el
         with Invalid_argument _ ->
@@ -224,7 +226,7 @@ let ignored_constants =
             "Ill-formed option  '%s' for --liveness-ignored-constant: an integer was expected" el )
       Config.liveness_ignored_constant
   in
-  IntLitSet.of_list int_lit_constants
+  IntLitSet.of_seq (RevList.to_rev_seq int_lit_constants)
 
 
 let checker {IntraproceduralAnalysis.proc_desc; err_log} =

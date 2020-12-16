@@ -14,7 +14,7 @@ let capture build_cmd =
   L.progress "Querying buck for java flavor capture targets...@." ;
   let time0 = Mtime_clock.counter () in
   let BuckFlavors.{command; rev_not_targets; targets} =
-    BuckFlavors.add_flavors_to_buck_arguments JavaFlavor ~extra_flavors:[] buck_cmd
+    BuckFlavors.add_flavors_to_buck_arguments JavaFlavor ~extra_flavors:RevList.empty buck_cmd
   in
   L.progress "Found %d java flavor capture targets in %a.@." (List.length targets) Mtime.Span.pp
     (Mtime_clock.count time0) ;
@@ -25,7 +25,7 @@ let capture build_cmd =
   let updated_buck_cmd =
     (* make buck tell us where in buck-out are the capture directories for merging *)
     (prog :: command :: "--build-report" :: build_report_file :: Buck.config JavaFlavor)
-    @ List.rev_append Config.buck_build_args_no_inline_rev
+    @ RevList.rev_append2 Config.buck_build_args_no_inline_rev
         (Buck.store_args_in_file ~identifier:"java_flavor_build" all_args)
   in
   L.(debug Capture Quiet)

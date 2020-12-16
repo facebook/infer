@@ -123,12 +123,12 @@ end = struct
         List.concat_map lock_models ~f:(fun mdl ->
             List.map (f mdl) ~f:(fun mtd -> mdl.classname ^ "::" ^ mtd) )
       in
-      mk_matcher lock_methods
+      mk_matcher (RevList.of_list lock_methods)
     in
     ( mk_model_matcher ~f:(fun mdl -> mdl.lock)
     , mk_model_matcher ~f:(fun mdl -> mdl.unlock)
     , mk_model_matcher ~f:(fun mdl -> mdl.trylock)
-    , mk_matcher ["std::lock"] )
+    , mk_matcher (RevList.of_list ["std::lock"]) )
 
 
   (** C++ guard classes used for scope-based lock management. NB we pretend all classes below
@@ -192,11 +192,11 @@ end = struct
   let is_guard_constructor, is_guard_destructor, is_guard_unlock, is_guard_lock, is_guard_trylock =
     let make ~f =
       let constructors = List.map guards ~f in
-      mk_matcher constructors
+      mk_matcher (RevList.of_list constructors)
     in
     let make_trylock ~f =
       let methods = List.concat_map guards ~f in
-      mk_matcher methods
+      mk_matcher (RevList.of_list methods)
     in
     ( make ~f:get_guard_constructor
     , make ~f:get_guard_destructor

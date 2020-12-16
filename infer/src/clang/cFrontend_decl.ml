@@ -300,9 +300,11 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
       method should be translated based on method and class whitelists *)
   let is_whitelisted_cpp_method =
     let method_matcher =
-      QualifiedCppName.Match.of_fuzzy_qual_names Config.whitelisted_cpp_methods
+      QualifiedCppName.Match.of_fuzzy_qual_names (RevList.of_list Config.whitelisted_cpp_methods)
     in
-    let class_matcher = QualifiedCppName.Match.of_fuzzy_qual_names Config.whitelisted_cpp_classes in
+    let class_matcher =
+      QualifiedCppName.Match.of_fuzzy_qual_names (RevList.of_list Config.whitelisted_cpp_classes)
+    in
     fun qual_name ->
       (* either the method is explictely whitelisted, or the whole class is whitelisted *)
       QualifiedCppName.Match.match_qualifiers method_matcher qual_name

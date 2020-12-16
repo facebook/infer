@@ -77,7 +77,7 @@ include TaintAnalysis.Make (struct
      when folly::Subprocess calls exec), in addition some folly functions are heavily optimized in
      a way that obscures what they're actually doing (e.g., they use assembly code). it's better
      to write models for these functions or treat them as unknown *)
-  let models_matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["folly"]
+  let models_matcher = QualifiedCppName.Match.of_fuzzy_qual_names (RevList.of_list ["folly"])
 
   let get_model pname ret_typ actuals tenv summary =
     (* hack for default C++ constructors, which get translated as an empty body (and will thus

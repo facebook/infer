@@ -45,7 +45,7 @@ let test_fuzzy_match =
   ; ("test_std_fuzzy_no_match1", ["std::foo"], ["std"; "__1"; "__2"; "foo"], false)
   ; ("test_std_fuzzy_no_match2", ["std::foo"], ["std"; "__1"; "foo"; "bad"], false) ]
   |> List.map ~f:(fun (name, fuzzy_qual_names, qualifiers, expected_output) ->
-         name >:: create_test fuzzy_qual_names qualifiers expected_output )
+         name >:: create_test (RevList.of_list fuzzy_qual_names) qualifiers expected_output )
 
 
 let tests = "qualified_cpp_name_fuzzy_match" >::: test_fuzzy_match

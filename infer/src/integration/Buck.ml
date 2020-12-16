@@ -97,7 +97,7 @@ module Target = struct
 
 
   let add_flavor (mode : BuckMode.t) (command : InferCommand.t) ~extra_flavors target =
-    let target = List.fold_left ~f:add_flavor_internal ~init:target extra_flavors in
+    let target = RevList.fold ~f:add_flavor_internal ~init:target extra_flavors in
     match (mode, command) with
     | ClangCompilationDB _, _ ->
         add_flavor_internal target "compilation-database"
@@ -137,10 +137,10 @@ let config =
       | None ->
           [] )
     @
-    if List.is_empty Config.buck_blacklist then []
+    if RevList.is_empty Config.buck_blacklist then []
     else
       [ Printf.sprintf "*//infer.blacklist_regex=(%s)"
-          (String.concat ~sep:")|(" Config.buck_blacklist) ]
+          (String.concat ~sep:")|(" (RevList.to_list Config.buck_blacklist)) ]
   in
   fun buck_mode ->
     let args =
@@ -296,7 +296,7 @@ module Query = struct
       store_args_in_file ~identifier:"buck_query_args" (buck_config @ buck_output_options @ [query])
     in
     let cmd =
-      "buck" :: "query" :: List.rev_append Config.buck_build_args_no_inline_rev bounded_args
+      "buck" :: "query" :: RevList.rev_append2 Config.buck_build_args_no_inline_rev bounded_args
     in
     wrap_buck_call ~label:"query" cmd |> parse_query_output ?buck_mode
 end
@@ -368,10 +368,10 @@ let config =
       | None ->
           [] )
     @
-    if List.is_empty Config.buck_blacklist then []
+    if RevList.is_empty Config.buck_blacklist then []
     else
       [ Printf.sprintf "*//infer.blacklist_regex=(%s)"
-          (String.concat ~sep:")|(" Config.buck_blacklist) ]
+          (String.concat ~sep:")|(" (RevList.to_list Config.buck_blacklist)) ]
   in
   fun buck_mode ->
     let args =
@@ -455,10 +455,13 @@ let parse_command_and_targets (buck_mode : BuckMode.t) original_buck_args =
   let expanded_buck_args = inline_argument_files original_buck_args in
   let command, args = split_buck_command expanded_buck_args in
   let buck_targets_blacklist_regexp =
-    if List.is_empty Config.buck_targets_blacklist then None
+    if RevList.is_empty Config.buck_targets_blacklist then None
     else
       Some
-        (Str.regexp ("\\(" ^ String.concat ~sep:"\\)\\|\\(" Config.buck_targets_blacklist ^ "\\)"))
+        (Str.regexp
+           ( "\\("
+           ^ String.concat ~sep:"\\)\\|\\(" (RevList.to_list Config.buck_targets_blacklist)
+           ^ "\\)" ))
   in
   let rec parse_cmd_args parsed_args = function
     | [] ->

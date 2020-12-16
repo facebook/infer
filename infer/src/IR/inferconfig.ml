@@ -30,14 +30,14 @@ let do_not_filter : filters =
 
 
 type filter_config =
-  { whitelist: string list
-  ; blacklist: string list
-  ; blacklist_files_containing: string list
-  ; suppress_errors: string list }
+  { whitelist: string RevList.t
+  ; blacklist: string RevList.t
+  ; blacklist_files_containing: string RevList.t
+  ; suppress_errors: string RevList.t }
 
 let is_matching patterns source_file =
   let path = SourceFile.to_rel_path source_file in
-  List.exists
+  RevList.exists
     ~f:(fun pattern ->
       try Int.equal (Str.search_forward pattern path 0) 0 with Caml.Not_found -> false )
     patterns
@@ -77,19 +77,20 @@ module FileContainsStringMatcher = struct
         Utils.with_file_in path ~f:(fun file_in -> not (loop regexp_not file_in)) )
 
 
-  let create_matcher (s_patterns : contains_pattern list) =
-    if List.is_empty s_patterns then default_matcher
+  let create_matcher (s_patterns : contains_pattern RevList.t) =
+    if RevList.is_empty s_patterns then default_matcher
     else
       let source_map = ref SourceFile.Map.empty in
       let not_contains_patterns =
-        List.exists ~f:(fun {not_contains} -> Option.is_some not_contains) s_patterns
+        RevList.exists ~f:(fun {not_contains} -> Option.is_some not_contains) s_patterns
       in
       let disjunctive_regexp =
-        Str.regexp (String.concat ~sep:"\\|" (List.map ~f:(fun {contains} -> contains) s_patterns))
+        Str.regexp
+          (String.concat ~sep:"\\|" (RevList.rev_map ~f:(fun {contains} -> contains) s_patterns))
       in
       let cond check_regexp =
         if not_contains_patterns then
-          List.exists
+          RevList.exists
             ~f:(fun {contains; not_contains} ->
               check_regexp (Str.regexp contains) (Option.map not_contains ~f:Str.regexp) )
             s_patterns
@@ -124,10 +125,10 @@ module FileOrProcMatcher = struct
   let default_matcher : matcher = fun _ _ -> false
 
   let create_method_matcher m_patterns =
-    if List.is_empty m_patterns then default_matcher
+    if RevList.is_empty m_patterns then default_matcher
     else
       let pattern_map =
-        List.fold
+        RevList.fold
           ~f:(fun map pattern ->
             let previous =
               try String.Map.find_exn map pattern.class_name
@@ -155,11 +156,11 @@ module FileOrProcMatcher = struct
     let s_patterns, m_patterns =
       let collect (s_patterns, m_patterns) = function
         | Source_pattern (_, s) ->
-            (s :: s_patterns, m_patterns)
+            (RevList.cons s s_patterns, m_patterns)
         | Method_pattern (_, mp) ->
-            (s_patterns, mp :: m_patterns)
+            (s_patterns, RevList.cons mp m_patterns)
       in
-      List.fold ~f:collect ~init:([], []) patterns
+      List.fold ~f:collect ~init:(RevList.empty, RevList.empty) patterns
     in
     let s_matcher =
       let matcher = FileContainsStringMatcher.create_matcher s_patterns in
@@ -330,15 +331,15 @@ let load_filters () =
 let filters_from_inferconfig inferconfig : filters =
   let path_filter =
     let whitelist_filter : path_filter =
-      if List.is_empty inferconfig.whitelist then default_path_filter
-      else is_matching (List.map ~f:Str.regexp inferconfig.whitelist)
+      if RevList.is_empty inferconfig.whitelist then default_path_filter
+      else is_matching (RevList.map ~f:Str.regexp inferconfig.whitelist)
     in
     let blacklist_filter : path_filter =
-      is_matching (List.map ~f:Str.regexp inferconfig.blacklist)
+      is_matching (RevList.map ~f:Str.regexp inferconfig.blacklist)
     in
     let blacklist_files_containing_filter : path_filter =
       FileContainsStringMatcher.create_matcher
-        (List.map
+        (RevList.map
            ~f:(fun s -> {contains= s; not_contains= None})
            inferconfig.blacklist_files_containing)
     in
@@ -351,7 +352,7 @@ let filters_from_inferconfig inferconfig : filters =
   let error_filter = function
     | error_name ->
         let error_str = error_name.IssueType.unique_id in
-        not (List.exists ~f:(String.equal error_str) inferconfig.suppress_errors)
+        not (RevList.exists ~f:(String.equal error_str) inferconfig.suppress_errors)
   in
   {path_filter; error_filter; proc_filter= default_proc_filter}
 

@@ -23,7 +23,7 @@ let parse topl_file =
   with Sys_error msg -> L.die UserError "@[topl:%s: %s@]@\n@?" topl_file msg
 
 
-let properties = lazy (List.concat_map ~f:parse Config.topl_properties)
+let properties = lazy (RevList.rev_concat_map ~f:parse Config.topl_properties)
 
 let automaton = lazy (ToplAutomaton.make (Lazy.force properties))
 

@@ -173,7 +173,7 @@ let search_classes path =
 
 let search_sources () =
   let initial_map =
-    List.fold ~f:(fun map path -> add_source_file path map) ~init:String.Map.empty Config.sources
+    RevList.fold ~f:(fun map path -> add_source_file path map) ~init:String.Map.empty Config.sources
   in
   match Config.sourcepath with
   | None ->
