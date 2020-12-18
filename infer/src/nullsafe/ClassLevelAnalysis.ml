@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module L = Logging
 
 let log_issue ?proc_name ~issue_log ~loc ~severity ~nullsafe_extra issue_type error_message =
   let extras =
@@ -91,7 +92,7 @@ let calc_mode_to_promote_to curr_mode all_issues =
 let make_meta_issue modes_and_issues top_level_class_mode top_level_class_name =
   let currently_reportable_issues = get_reportable_typing_rules_violations modes_and_issues in
   List.iter currently_reportable_issues ~f:(fun issue ->
-      Logging.debug Analysis Medium "Issue: %a@\n" TypeErr.pp_err_instance issue ) ;
+      L.debug Analysis Medium "Issue: %a@\n" TypeErr.pp_err_instance issue ) ;
   let currently_reportable_issue_count = List.length currently_reportable_issues in
   let all_issues = List.map modes_and_issues ~f:(fun (_, a) -> a) in
   let mode_to_promote_to =
@@ -151,12 +152,14 @@ let make_meta_issue modes_and_issues top_level_class_mode top_level_class_name =
 
 
 let get_class_loc source_file Struct.{java_class_info} =
+  let default = {Location.file= source_file; line= 1; col= 0} in
   match java_class_info with
   | Some {loc} ->
       (* In rare cases location is not present, fall back to the first line of the file *)
-      Option.value loc ~default:Location.{file= source_file; line= 1; col= 0}
+      Option.value loc ~default
   | None ->
-      Logging.die InternalError "java_class_info should be present for Java classes"
+      L.internal_error "java_class_info should be present for Java classes" ;
+      default
 
 
 (* Meta issues are those related to null-safety of the class in general, not concrete nullability violations *)
@@ -315,7 +318,7 @@ let analyze_class tenv source_file class_info issue_log =
   | Some class_struct ->
       analyze_class_impl tenv source_file class_name class_struct class_info issue_log
   | None ->
-      Logging.debug Analysis Medium
+      L.debug Analysis Medium
         "%a: could not load class info in environment: skipping class analysis@\n" JavaClassName.pp
         class_name ;
       issue_log
