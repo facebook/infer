@@ -252,15 +252,15 @@ module PulseTransferFunctions = struct
         call_instr ;
       List.fold
         ~f:(fun astates (astate : Domain.t) ->
-          let astate =
-            match astate with
-            | ISLLatentMemoryError _ | AbortProgram _ | ExitProgram _ | LatentAbortProgram _ ->
-                [astate]
-            | ContinueProgram astate ->
+          match astate with
+          | ISLLatentMemoryError _ | AbortProgram _ | ExitProgram _ | LatentAbortProgram _ ->
+              astate :: astates
+          | ContinueProgram astate ->
+              let astate =
                 dispatch_call analysis_data ret call_exp actuals location call_flags astate
                 |> report_on_error_list analysis_data
-          in
-          List.rev_append astate astates )
+              in
+              List.rev_append astate astates )
         ~init:[] astate_list
     in
     let dynamic_types_unreachable =
@@ -336,7 +336,7 @@ module PulseTransferFunctions = struct
               ~f:(fun astates (astate : Domain.t) ->
                 match astate with
                 | ISLLatentMemoryError _ | AbortProgram _ | ExitProgram _ | LatentAbortProgram _ ->
-                    [astate]
+                    astate :: astates
                 | ContinueProgram astate ->
                     let astate =
                       PulseOperations.remove_vars vars location astate

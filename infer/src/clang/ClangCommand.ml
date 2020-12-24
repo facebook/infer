@@ -204,7 +204,7 @@ let mk ~is_driver quoting_style ~prog ~args =
   (* Some arguments break the compiler so they need to be removed even before the normalization step *)
   let sanitized_args = filter_and_replace_unsupported_args args in
   let sanitized_args =
-    if is_driver then sanitized_args @ List.rev Config.clang_extra_flags else sanitized_args
+    if is_driver then sanitized_args @ Config.clang_extra_flags else sanitized_args
   in
   {exec= prog; orig_argv= sanitized_args; argv= sanitized_args; quoting_style; is_driver}
 

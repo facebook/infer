@@ -155,12 +155,13 @@ module FileOrProcMatcher = struct
     let s_patterns, m_patterns =
       let collect (s_patterns, m_patterns) = function
         | Source_pattern (_, s) ->
-            (s :: s_patterns, m_patterns)
+            (RevList.cons s s_patterns, m_patterns)
         | Method_pattern (_, mp) ->
-            (s_patterns, mp :: m_patterns)
+            (s_patterns, RevList.cons mp m_patterns)
       in
-      List.fold ~f:collect ~init:([], []) patterns
+      List.fold ~f:collect ~init:(RevList.empty, RevList.empty) patterns
     in
+    let s_patterns, m_patterns = (RevList.to_list s_patterns, RevList.to_list m_patterns) in
     let s_matcher =
       let matcher = FileContainsStringMatcher.create_matcher s_patterns in
       fun source_file _ -> matcher source_file

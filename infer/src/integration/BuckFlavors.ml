@@ -26,7 +26,7 @@ let add_flavors_to_buck_arguments buck_mode ~extra_flavors original_buck_args =
 let capture_buck_args () =
   ("--show-output" :: (if Config.keep_going then ["--keep-going"] else []))
   @ (match Config.load_average with Some l -> ["-L"; Float.to_string l] | None -> [])
-  @ Buck.config ClangFlavors @ List.rev Config.buck_build_args
+  @ Buck.config ClangFlavors @ Config.buck_build_args
 
 
 let run_buck_build prog buck_build_args =
@@ -115,8 +115,8 @@ let capture build_cmd =
     let all_args = List.rev_append rev_not_targets targets in
     let updated_buck_cmd =
       command
-      :: List.rev_append Config.buck_build_args_no_inline_rev
-           (Buck.store_args_in_file ~identifier:"clang_flavor_build" all_args)
+      :: ( Config.buck_build_args_no_inline
+         @ Buck.store_args_in_file ~identifier:"clang_flavor_build" all_args )
     in
     L.debug Capture Quiet "Processed buck command '%a'@\n" (Pp.seq F.pp_print_string)
       updated_buck_cmd ;

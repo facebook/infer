@@ -321,7 +321,7 @@ let subcommands = ref []
 
 let subcommand_actions = ref []
 
-let rev_anon_args = ref []
+let rev_anon_args = ref RevList.empty
 
 (* keep track of the current active command to drive the remainder of the program *)
 let curr_command = ref None
@@ -539,14 +539,15 @@ let mk_string_list ?(default = []) ?(default_to_string = String.concat ~sep:",")
     ?(deprecated = []) ~long ?short ?parse_mode ?in_help ?(meta = "string") doc =
   let flag = mk_flag ~deprecated ?short ~long in
   let mk () =
-    mk ~deprecated ~long ?short ~default ?parse_mode ?in_help ~meta:("+" ^ meta) doc
-      ~default_to_string
-      ~mk_setter:(fun var str -> var := f str :: !var)
+    mk ~deprecated ~long ?short ~default:(RevList.of_list default) ?parse_mode ?in_help
+      ~meta:("+" ^ meta) doc
+      ~default_to_string:(fun rev -> RevList.to_list rev |> default_to_string)
+      ~mk_setter:(fun var str -> var := RevList.cons (f str) !var)
       ~decode_json:(list_json_decoder (string_json_decoder ~flag))
       ~mk_spec:(fun set -> String set)
   in
   let reset_doc = reset_doc_list ~long in
-  mk_with_reset [] ~reset_doc ~long ?parse_mode mk
+  mk_with_reset RevList.empty ~reset_doc ~long ?parse_mode mk
 
 
 let map_to_str map =
@@ -634,13 +635,14 @@ let mk_path_list ?(default = []) ?(default_to_string = String.concat ~sep:", ") 
   let flag = mk_flag ~deprecated ?short ~long in
   let mk () =
     mk_path_helper
-      ~setter:(fun var x -> var := x :: !var)
+      ~setter:(fun var x -> var := RevList.cons x !var)
       ~decode_json:(list_json_decoder (path_json_decoder ~flag))
-      ~default_to_string ~default ~deprecated ~long ~short ~parse_mode ~in_help ~meta:("+" ^ meta)
-      doc
+      ~default_to_string:(fun rev -> RevList.to_list rev |> default_to_string)
+      ~default:(RevList.of_list default) ~deprecated ~long ~short ~parse_mode ~in_help
+      ~meta:("+" ^ meta) doc
   in
   let reset_doc = reset_doc_list ~long in
-  mk_with_reset [] ~reset_doc ~long ?parse_mode mk
+  mk_with_reset RevList.empty ~reset_doc ~long ?parse_mode mk
 
 
 let mk_symbols_meta symbols =
@@ -811,7 +813,7 @@ let mk_rest_actions ?(parse_mode = InferCommand) ?(in_help = []) doc ~usage deco
   let spec =
     String
       (fun arg ->
-        rest := List.rev (Array.to_list (Array.slice !args_to_parse (!arg_being_parsed + 1) 0)) ;
+        rest := Array.to_list (Array.slice !args_to_parse (!arg_being_parsed + 1) 0) ;
         select_parse_mode ~usage (decode_action arg) |> ignore )
   in
   add parse_mode in_help
@@ -882,7 +884,7 @@ let anon_fun arg =
   else
     match !anon_arg_action.on_unknown with
     | `Add ->
-        rev_anon_args := arg :: !rev_anon_args
+        rev_anon_args := RevList.cons arg !rev_anon_args
     | `Skip ->
         ()
     | `Reject ->

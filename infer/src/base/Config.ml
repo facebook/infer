@@ -1217,7 +1217,7 @@ and differential_filter_set =
 
 and () =
   let mk b ?deprecated ~long ?default doc =
-    let (_ : string list ref) =
+    let (_ : string RevList.t ref) =
       CLOpt.mk_string_list ?deprecated ~long
         ~f:(fun issue_id ->
           let issue =
@@ -1557,7 +1557,7 @@ and linters_def_folder =
       ~meta:"dir" "Specify the folder containing linters files with extension .al"
   in
   let () =
-    CLOpt.mk_set linters_def_folder [] ~long:"reset-linters-def-folder"
+    CLOpt.mk_set linters_def_folder RevList.empty ~long:"reset-linters-def-folder"
       "Reset the list of folders containing linters definitions to be empty (see \
        $(b,linters-def-folder))."
   in
@@ -2705,11 +2705,12 @@ let post_parsing_initialization command_opt =
   if is_none !symops_per_iteration then symops_per_iteration := symops_timeout ;
   if is_none !seconds_per_iteration then seconds_per_iteration := seconds_timeout ;
   clang_compilation_dbs :=
-    List.rev_map ~f:(fun x -> `Raw x) !compilation_database
-    |> List.rev_map_append ~f:(fun x -> `Escaped x) !compilation_database_escaped ;
+    RevList.rev_map ~f:(fun x -> `Raw x) !compilation_database
+    |> RevList.rev_map_append ~f:(fun x -> `Escaped x) !compilation_database_escaped ;
   (* set analyzer mode to linters in linters developer mode *)
   if !linters_developer_mode then enable_checker Linters ;
-  if !default_linters then linters_def_file := linters_def_default_file :: !linters_def_file ;
+  if !default_linters then
+    linters_def_file := RevList.cons linters_def_default_file !linters_def_file ;
   ( match !analyzer with
   | Linters ->
       disable_all_checkers () ;
@@ -2738,7 +2739,7 @@ let process_linters_doc_url args =
            but got %s"
           arg
   in
-  let linter_doc_url_assocs = List.rev_map ~f:linters_doc_url args in
+  let linter_doc_url_assocs = RevList.rev_map ~f:linters_doc_url args in
   fun ~linter_id -> List.Assoc.find ~equal:String.equal linter_doc_url_assocs linter_id
 
 
@@ -2758,7 +2759,7 @@ and annotation_reachability_cxx_sources = !annotation_reachability_cxx_sources
 
 and annotation_reachability_custom_pairs = !annotation_reachability_custom_pairs
 
-and append_buck_flavors = !append_buck_flavors
+and append_buck_flavors = RevList.to_list !append_buck_flavors
 
 and array_level = !array_level
 
@@ -2772,11 +2773,11 @@ and bo_field_depth_limit = !bo_field_depth_limit
 
 and buck = !buck
 
-and buck_blacklist = !buck_blacklist
+and buck_blacklist = RevList.to_list !buck_blacklist
 
-and buck_build_args = !buck_build_args
+and buck_build_args = RevList.to_list !buck_build_args
 
-and buck_build_args_no_inline_rev = !buck_build_args_no_inline_rev
+and buck_build_args_no_inline = RevList.to_list !buck_build_args_no_inline_rev
 
 and buck_cache_mode = (!buck || !genrule_mode) && not !debug
 
@@ -2804,7 +2805,7 @@ and buck_mode : BuckMode.t option =
       Some JavaFlavor
 
 
-and buck_targets_blacklist = !buck_targets_blacklist
+and buck_targets_blacklist = RevList.to_list !buck_targets_blacklist
 
 and call_graph_schedule = !call_graph_schedule
 
@@ -2815,7 +2816,7 @@ and capture_blacklist = !capture_blacklist
 and cfg_json = !cfg_json
 
 and censor_report =
-  List.map !censor_report ~f:(fun str ->
+  RevList.rev_map !censor_report ~f:(fun str ->
       match String.split str ~on:':' with
       | [issue_type_re; filename_re; reason_str]
         when not String.(is_empty issue_type_re || is_empty filename_re || is_empty reason_str) ->
@@ -2851,11 +2852,11 @@ and clang_compilation_dbs = !clang_compilation_dbs
 
 and clang_compound_literal_init_limit = !clang_compound_literal_init_limit
 
-and clang_extra_flags = !clang_extra_flags
+and clang_extra_flags = RevList.to_list !clang_extra_flags
 
-and clang_blacklisted_flags = !clang_blacklisted_flags
+and clang_blacklisted_flags = RevList.to_list !clang_blacklisted_flags
 
-and clang_blacklisted_flags_with_arg = !clang_blacklisted_flags_with_arg
+and clang_blacklisted_flags_with_arg = RevList.to_list !clang_blacklisted_flags_with_arg
 
 and clang_ignore_regex = !clang_ignore_regex
 
@@ -2966,7 +2967,7 @@ and genrule_mode = !genrule_mode
 and get_linter_doc_url = process_linters_doc_url !linters_doc_url
 
 and help_checker =
-  List.map !help_checker ~f:(fun checker_string ->
+  RevList.rev_map !help_checker ~f:(fun checker_string ->
       match Checker.from_id checker_string with
       | Some checker ->
           checker
@@ -2978,7 +2979,7 @@ and help_checker =
 
 
 and help_issue_type =
-  List.map !help_issue_type ~f:(fun id ->
+  RevList.rev_map !help_issue_type ~f:(fun id ->
       match IssueType.find_from_string ~id with
       | Some issue_type ->
           issue_type
@@ -3024,9 +3025,9 @@ and join_cond = !join_cond
 
 and linter = !linter
 
-and linters_def_file = !linters_def_file
+and linters_def_file = RevList.to_list !linters_def_file
 
-and linters_def_folder = !linters_def_folder
+and linters_def_folder = RevList.to_list !linters_def_folder
 
 and linters_developer_mode = !linters_developer_mode
 
@@ -3040,7 +3041,7 @@ and list_issue_types = !list_issue_types
 
 and liveness_dangerous_classes = !liveness_dangerous_classes
 
-and liveness_ignored_constant = !liveness_ignored_constant
+and liveness_ignored_constant = RevList.to_list !liveness_ignored_constant
 
 and load_average =
   match !load_average with None when !buck -> Some (float_of_int ncpu) | _ -> !load_average
@@ -3157,20 +3158,20 @@ and pulse_isl = !pulse_isl
 
 and pulse_max_disjuncts = !pulse_max_disjuncts
 
-and pulse_model_abort = !pulse_model_abort
+and pulse_model_abort = RevList.to_list !pulse_model_abort
 
 and pulse_model_alloc_pattern = Option.map ~f:Str.regexp !pulse_model_alloc_pattern
 
 and pulse_model_release_pattern = Option.map ~f:Str.regexp !pulse_model_release_pattern
 
-and pulse_model_return_nonnull = !pulse_model_return_nonnull
+and pulse_model_return_nonnull = RevList.to_list !pulse_model_return_nonnull
 
 and pulse_model_skip_pattern = Option.map ~f:Str.regexp !pulse_model_skip_pattern
 
 and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
   let models =
     let re = Str.regexp "::" in
-    List.map ~f:(fun model -> (model, Str.split re model)) !pulse_model_transfer_ownership
+    RevList.map ~f:(fun model -> (model, Str.split re model)) !pulse_model_transfer_ownership
   in
   let aux el =
     match el with
@@ -3185,7 +3186,7 @@ and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
           option
           (List.length splits - 1)
   in
-  List.partition_map ~f:aux models
+  RevList.rev_partition_map ~f:aux models
 
 
 and pulse_recency_limit = !pulse_recency_limit
@@ -3216,7 +3217,7 @@ and relative_path_backtrack = !relative_path_backtrack
 
 and report = !report
 
-and report_blacklist_files_containing = !report_blacklist_files_containing
+and report_blacklist_files_containing = RevList.to_list !report_blacklist_files_containing
 
 and report_console_limit = !report_console_limit
 
@@ -3230,13 +3231,13 @@ and report_formatter = !report_formatter
 
 and report_immutable_modifications = !report_immutable_modifications
 
-and report_path_regex_blacklist = !report_path_regex_blacklist
+and report_path_regex_blacklist = RevList.to_list !report_path_regex_blacklist
 
-and report_path_regex_whitelist = !report_path_regex_whitelist
+and report_path_regex_whitelist = RevList.to_list !report_path_regex_whitelist
 
 and report_previous = !report_previous
 
-and report_suppress_errors = !report_suppress_errors
+and report_suppress_errors = RevList.to_list !report_suppress_errors
 
 and reports_include_ml_loc = !reports_include_ml_loc
 
@@ -3270,15 +3271,15 @@ and print_jbir = !print_jbir
 
 and siof_check_iostreams = !siof_check_iostreams
 
-and siof_safe_methods = !siof_safe_methods
+and siof_safe_methods = RevList.to_list !siof_safe_methods
 
-and skip_analysis_in_path = !skip_analysis_in_path
+and skip_analysis_in_path = RevList.to_list !skip_analysis_in_path
 
 and skip_analysis_in_path_skips_compilation = !skip_analysis_in_path_skips_compilation
 
 and skip_duplicated_types = !skip_duplicated_types
 
-and skip_translation_headers = !skip_translation_headers
+and skip_translation_headers = RevList.to_list !skip_translation_headers
 
 and source_preview = !source_preview
 
@@ -3294,7 +3295,7 @@ and source_files_procedure_names = !source_files_procedure_names
 
 and source_files_freshly_captured = !source_files_freshly_captured
 
-and sources = !sources
+and sources = RevList.to_list !sources
 
 and sourcepath = !sourcepath
 
@@ -3353,7 +3354,7 @@ and topl_max_conjuncts = !topl_max_conjuncts
 
 and topl_max_disjuncts = !topl_max_disjuncts
 
-and topl_properties = !topl_properties
+and topl_properties = RevList.to_list !topl_properties
 
 and trace_error = !trace_error
 
@@ -3389,7 +3390,7 @@ and write_dotty = !write_dotty
 
 and write_html = !write_html
 
-and write_html_whitelist_regex = !write_html_whitelist_regex
+and write_html_whitelist_regex = RevList.to_list !write_html_whitelist_regex
 
 and write_website = !write_website
 
@@ -3464,12 +3465,8 @@ let dynamic_dispatch = is_checker_enabled Biabduction
 
 (** Check if a Java package is external to the repository *)
 let java_package_is_external package =
-  match external_java_packages with
-  | [] ->
-      false
-  | _ ->
-      List.exists external_java_packages ~f:(fun (prefix : string) ->
-          String.is_prefix package ~prefix )
+  RevList.exists external_java_packages ~f:(fun (prefix : string) ->
+      String.is_prefix package ~prefix )
 
 (** Check if a CSharp package is external to the repository *)
 let csharp_namespace_is_external package =
