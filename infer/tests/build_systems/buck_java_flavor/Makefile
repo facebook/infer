@@ -16,6 +16,6 @@ INFER_OPTIONS = --buck-java-flavor --debug-exceptions
 include $(TESTS_DIR)/infer.make
 
 $(INFER_OUT)/report.json: $(MAKEFILE_LIST) $(SOURCES)
-	$(QUIET) $(REMOVE_DIR) buck-out && \
+	$(QUIET)$(BUCK) clean
 	$(call silent_on_success,Testing java flavor integration in $(TEST_REL_DIR),\
-	  $(INFER_BIN) --results-dir $(@D) $(INFER_OPTIONS) -- buck build --no-cache $(BUCK_TARGET))
+	  $(INFER_BIN) --results-dir $(@D) $(INFER_OPTIONS) -- $(BUCK) build --no-cache $(BUCK_TARGET))

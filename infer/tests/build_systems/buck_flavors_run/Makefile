@@ -20,7 +20,7 @@ $(OBJECTS): $(SOURCES)
 	$(BUCK) build --no-cache $(BUCK_TARGET))
 
 infer-out/report.json: $(CLANG_DEPS) $(SOURCES) $(MAKEFILE_LIST)
-	$(QUIET)$(REMOVE_DIR) buck-out && \
+	$(QUIET)$(BUCK) clean
 	$(call silent_on_success,Testing infer-run Buck flavors integration,\
 	$(INFER_BIN) $(INFER_OPTIONS) run --results-dir $(CURDIR)/infer-out --reactive -- \
 	  $(BUCK) build --no-cache $(BUCK_TARGET))

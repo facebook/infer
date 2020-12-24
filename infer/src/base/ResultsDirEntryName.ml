@@ -10,6 +10,7 @@ open! IStd
 let buck_infer_deps_file_name = "infer-deps.txt"
 
 type id =
+  | AllocationTraces
   | CaptureDB
   | CaptureDependencies
   | ChangedFunctions
@@ -52,6 +53,11 @@ type t =
             e.g., a distributed Buck cache. *) }
 
 let of_id = function
+  | AllocationTraces ->
+      { rel_path= "memtrace"
+      ; kind= Directory
+      ; before_incremental_analysis= Delete
+      ; before_caching_capture= Delete }
   | CaptureDependencies ->
       { rel_path= buck_infer_deps_file_name
       ; kind= File

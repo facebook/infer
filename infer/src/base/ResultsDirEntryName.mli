@@ -10,6 +10,7 @@ open! IStd
     directory you probably want to use {!ResultsDir.Entry} instead of this module. *)
 
 type id =
+  | AllocationTraces  (** directory for storing allocation traces *)
   | CaptureDB  (** the capture database *)
   | CaptureDependencies  (** list of infer-out/ directories that contain capture artefacts *)
   | ChangedFunctions  (** results of the clang test determinator *)

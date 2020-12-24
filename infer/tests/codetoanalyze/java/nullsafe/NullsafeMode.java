@@ -118,6 +118,10 @@ public class NullsafeMode {
       UncheckedParams second = new UncheckedParams(first.copy());
       return second;
     }
+
+    int OK_enumElementsAreNotNull() {
+      return ThirdPartyTestClass.InnerEnum.EA.ordinal();
+    }
   }
 
   @Nullsafe(value = Nullsafe.Mode.LOCAL, trustOnly = @Nullsafe.TrustList({NonNullsafe.class}))

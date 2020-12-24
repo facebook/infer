@@ -83,7 +83,7 @@ let get_compilation_database_files_buck db_deps ~prog ~args =
   | {command= "build" as command; rev_not_targets; targets} ->
       let targets_args = Buck.store_args_in_file ~identifier:"compdb_build_args" targets in
       let build_args =
-        (command :: List.rev_append rev_not_targets (List.rev Config.buck_build_args_no_inline))
+        (command :: List.rev_append rev_not_targets (List.rev Config.buck_build_args_no_inline_rev))
         @ (* Infer doesn't support C++ modules nor precompiled headers yet (T35656509) *)
         "--config" :: "*//cxx.pch_enabled=false" :: "--config" :: "*//cxx.modules_default=false"
         :: "--config" :: "*//cxx.modules=False" :: targets_args
@@ -95,7 +95,7 @@ let get_compilation_database_files_buck db_deps ~prog ~args =
         prog :: "targets"
         :: List.rev_append
              (Buck.filter_compatible `Targets rev_not_targets)
-             (List.rev Config.buck_build_args_no_inline)
+             (List.rev Config.buck_build_args_no_inline_rev)
         @ ("--show-output" :: targets_args)
       in
       let on_target_lines = function

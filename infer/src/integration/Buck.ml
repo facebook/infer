@@ -295,7 +295,9 @@ module Query = struct
     let bounded_args =
       store_args_in_file ~identifier:"buck_query_args" (buck_config @ buck_output_options @ [query])
     in
-    let cmd = ["buck"; "query"] @ Config.buck_build_args_no_inline @ bounded_args in
+    let cmd =
+      "buck" :: "query" :: List.rev_append Config.buck_build_args_no_inline_rev bounded_args
+    in
     wrap_buck_call ~label:"query" cmd |> parse_query_output ?buck_mode
 end
 
