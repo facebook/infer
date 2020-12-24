@@ -3470,12 +3470,8 @@ let java_package_is_external package =
 
 (** Check if a CSharp package is external to the repository *)
 let csharp_namespace_is_external package =
-  match external_csharp_namespaces with
-  | [] ->
-      false
-  | _ ->
-      List.exists external_csharp_namespaces ~f:(fun (prefix : string) ->
-          String.is_prefix package ~prefix )
+  RevList.exists external_csharp_namespaces ~f:(fun (prefix : string) ->
+      String.is_prefix package ~prefix )
 
 let is_in_custom_symbols list_name symbol =
   match List.Assoc.find ~equal:String.equal custom_symbols list_name with
