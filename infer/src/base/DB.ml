@@ -134,14 +134,7 @@ module Results_dir = struct
     if debug || Config.html || Config.debug_mode || Config.frontend_tests then (
       Utils.create_dir (ResultsDir.get_path Debug) ;
       Utils.create_dir (path_to_filename (Abs_source_dir source) []) )
-
-
-  let clean_specs_dir () =
-    (* create dir just in case it doesn't exist to avoid errors *)
-    Utils.create_dir specs_dir ;
-    Array.iter (Sys.readdir specs_dir) ~f:(fun specs ->
-        Filename.concat specs_dir specs |> Sys.remove )
-
+      
         
   (** create a file at the given path, creating any missing directories *)
   let create_file pk path =

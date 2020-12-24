@@ -39,15 +39,6 @@ let create_proc_desc cfg (proc_attributes : ProcAttributes.t) =
   Procname.Hash.add cfg pname pdesc ;
   pdesc
 
-(** Get a procdesc or create if it is a new one*)
-let get_proc_desc cfg (proc_attributes : ProcAttributes.t) =
-  let pdesc = Procdesc.from_proc_attributes proc_attributes in
-  let pname = proc_attributes.proc_name in
-  if not (Procname.Hash.mem cfg pname) then
-    Procname.Hash.add cfg pname pdesc ;
-  pdesc
-
-
 let iter_sorted cfg ~f = iter_over_sorted_procs cfg ~f
 
 let store source_file cfg =

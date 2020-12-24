@@ -139,12 +139,10 @@ let all_checkers =
           , Java )
           ;( interprocedural Payloads.Fields.lab_resource_leaks ResourceLeaks.checker
           , CIL ) ] }
-  ; (* toy resource analysis to use in the infer lab, see the lab/ directory *)
+  ; (* .NET resource analysis, based on the toy resource analysis in the infer lab *)
     { checker= DOTNETResourceLeaks
     ; callbacks=
-        [ ( (* the checked-in version is intraprocedural, but the lab asks to make it
-               interprocedural later on *)
-            interprocedural Payloads.Fields.dotnet_resource_leaks ResourceLeaksCS.checker
+        [ ( interprocedural Payloads.Fields.dotnet_resource_leaks ResourceLeaksCS.checker
           , CIL )] }
   ; { checker= RacerD
     ; callbacks=

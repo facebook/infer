@@ -652,11 +652,6 @@ let set_start_node pdesc node = pdesc.start_node <- node
 (** Append the locals to the list of local variables *)
 let append_locals pdesc new_locals = pdesc.attributes.locals <- pdesc.attributes.locals @ new_locals
 
-(** Set the successor nodes and exception nodes, and build predecessor links *)
-let set_succs_exn_base (node : Node.t) succs exn =
-  node.succs <- succs ;
-  node.exn <- exn ;
-  List.iter ~f:(fun (n : Node.t) -> n.preds <- node :: n.preds) succs
   
 let set_succs (node : Node.t) ~normal:succs_opt ~exn:exn_opt =
   let remove_pred pred_node (from_node : Node.t) =

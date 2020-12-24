@@ -30,9 +30,6 @@ val create : unit -> t
 val create_proc_desc : t -> ProcAttributes.t -> Procdesc.t
 (** Create a new procdesc and add it to the cfg *)
 
-val get_proc_desc : t -> ProcAttributes.t -> Procdesc.t
-(** Get a procdesc and add it to the cfg if it is new*)
-
 val iter_sorted : t -> f:(Procdesc.t -> unit) -> unit
 (** Iterate over all the proc descs in the cfg in ascending order *)
 

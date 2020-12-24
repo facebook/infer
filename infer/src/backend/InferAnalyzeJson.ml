@@ -1,5 +1,4 @@
 (*
- * Copyright (c) 2009-2013, Monoidics ltd.
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -14,6 +13,7 @@ open Yojson
 open Yojson.Safe.Util
 
 (* We use Yojson.Safe to parse json so it handles long integers, which cannot be handled by OCaml's basic integers *)
+module L = Logging
 module Hashtbl = Caml.Hashtbl
 
 module IntHash =
@@ -402,7 +402,6 @@ let parse_call_flags (json : Safe.t) =
   {
     CallFlags.default with
     CallFlags.cf_virtual = to_bool (member "cf_virtual" json) ;
-    CallFlags.cf_noreturn = to_bool (member "cf_noreturn" json) ;
     CallFlags.cf_is_objc_block = to_bool (member "cf_is_objc_block" json) ;
   }
 
@@ -447,7 +446,12 @@ let parse_pdesc (cfg : Cfg.t) (pd_id_to_pd : Procdesc.t IntTbl.t) (start_nd_tbl 
   IntTbl.add exit_nd_tbl _id (to_int (member "pd_exit_node" json));
   (* let open Procdesc in *)
   let pd =
-    Cfg.get_proc_desc cfg _attrs
+    let pname = _attrs.proc_name in
+    match Procname.Hash.find_opt cfg pname with
+    | Some pdesc ->
+      pdesc
+    | None ->
+      Cfg.create_proc_desc cfg _attrs
   in
   IntTbl.add pd_id_to_pd _id pd
 
@@ -615,7 +619,7 @@ let parse_cfg (json : Safe.t) =
     (fun (nd_id: int) (node: Procdesc.Node.t) ->
      let exn_nodes = List.map ~f:(IntTbl.find nd_id_to_node) (IntTbl.find nd_id_to_exn_nodes nd_id) in
      let succ_nodes = List.map ~f:(IntTbl.find nd_id_to_node) (IntTbl.find nd_id_to_succ_nodes nd_id) in
-      Procdesc.set_succs_exn_base node succ_nodes exn_nodes )
+      Procdesc.set_succs node ~normal:(Some succ_nodes) ~exn:(Some exn_nodes) )
     nd_id_to_node;
 
   cfg
@@ -641,8 +645,12 @@ let clear_caches () =
 let analyze_json cfg_json tenv_json =
   clear_caches () ;
   InferAnalyze.register_active_checkers () ;
-  if Config.reanalyze then Summary.OnDisk.reset_all ~filter:(Lazy.force Filtering.procedures_filter) ()
-  else DB.Results_dir.clean_specs_dir () ;
+  if not Config.continue_analysis then
+    if Config.reanalyze then (
+      L.progress "Invalidating procedures to be reanalyzed@." ;
+      Summary.OnDisk.reset_all ~filter:(Lazy.force Filtering.procedures_filter) () ;
+      L.progress "Done@." )
+    else if not Config.incremental_analysis then DBWriter.delete_all_specs () ;
 
   Printexc.record_backtrace true;
 
