@@ -1,0 +1,4 @@
+NullDerefFieldDeref.cs, Void TestCodeFieldDeref.NullExceptionFieldDeref1Bad(), 4, NULL_DEREFERENCE, B5
+NullDerefFieldDeref.cs, Void TestCodeFieldDeref.NullExceptionFieldDeref2Bad(), 4, NULL_DEREFERENCE, B5
+NullDerefFieldDeref.cs, Void TestCodeFieldDeref.NullExceptionStaticDeref1Bad(), 2, NULL_DEREFERENCE, B1
+NullDerefFieldDeref.cs, Void TestCodeFieldDeref.NullExceptionStaticDeref2Bad(), 2, NULL_DEREFERENCE, B1
