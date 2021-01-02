@@ -435,7 +435,7 @@ and access_exprs_of_exp ~include_array_indexes ~f_resolve_id ~add_deref exp0 typ
           in
           add_accesses access_expr' :: acc
       | None ->
-          let access_expr = AccessExpression.of_id id typ in
+          let access_expr = AccessExpression.address_of_base (AccessExpression.base_of_id id typ) in
           let access_expr' =
             if add_deref then AccessExpression.dereference access_expr else access_expr
           in
