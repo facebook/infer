@@ -3854,7 +3854,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
        destroy the temporary (hence the next instruction should also create its own new node to
        place before that) *)
     let destroy_one stmt_info trans_state (temporary : CScope.var_to_destroy) =
-      L.debug Capture Verbose "destructing %a, trans_state=%a" (Pvar.pp Pp.text_break)
+      L.debug Capture Verbose "destructing %a, trans_state=%a@\n" (Pvar.pp Pp.text_break)
         temporary.pvar pp_trans_state trans_state ;
       let open IOption.Let_syntax in
       let+ dtor_decl_ref = get_destructor_decl_ref temporary.qual_type.qt_type_ptr in
