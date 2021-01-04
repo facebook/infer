@@ -17,7 +17,7 @@ type 'abductive_domain_t base_t =
       (** represents the state at the program point that caused an error *)
   | LatentAbortProgram of {astate: AbductiveDomain.summary; latent_issue: LatentIssue.t}
       (** this path leads to an error but we don't have conclusive enough data to report it yet *)
-  | ISLLatentMemoryError of AbductiveDomain.summary
+  | ISLLatentMemoryError of 'abductive_domain_t
       (** represents the state at the program point that might cause an error; used for
           {!Config.pulse_isl} *)
 

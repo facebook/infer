@@ -15,6 +15,9 @@ val equal_to : IntLit.t -> t
 
 val is_equal_to_zero : t -> bool
 
+val is_not_equal_to_zero : t -> bool
+(** whether this is literally [≠0] *)
+
 val as_int : t -> int option
 (** [as_int v] returns [Some x] if [v] is known to be [x] *)
 

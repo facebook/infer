@@ -174,6 +174,13 @@ let is_equal_to_zero = function
       false
 
 
+let is_not_equal_to_zero = function
+  | Outside (l, u) ->
+      IntLit.iszero l && IntLit.iszero u
+  | _ ->
+      false
+
+
 let as_int = function Between (Int l, Int u) when IntLit.eq l u -> IntLit.to_int l | _ -> None
 
 let has_empty_intersection a1 a2 =

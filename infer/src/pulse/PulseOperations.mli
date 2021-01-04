@@ -43,6 +43,9 @@ val prune : Location.t -> condition:Exp.t -> t -> t access_result
 val eval_deref : Location.t -> Exp.t -> t -> (t * (AbstractValue.t * ValueHistory.t)) access_result
 (** Like [eval] but evaluates [*exp]. *)
 
+val eval_deref_isl :
+  Location.t -> Exp.t -> t -> (t * (AbstractValue.t * ValueHistory.t)) list access_result
+
 val eval_access :
      access_mode
   -> Location.t
