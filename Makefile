@@ -190,7 +190,6 @@ BUILD_SYSTEMS_TESTS += mvn
 endif
 endif
 
-ifeq ($(BUILD_DOTNET_ANALYZERS),yes)
 DIRECT_TESTS += \
   dotnet_arithmetic \
   dotnet_array \
@@ -207,7 +206,6 @@ DIRECT_TESTS += \
   dotnet_reference \
   dotnet_resourceleak \
   dotnet_starg
-endif
 
 ifeq ($(BUILD_C_ANALYZERS)+$(BUILD_JAVA_ANALYZERS),yes+yes)
 BUILD_SYSTEMS_TESTS += make utf8_in_pwd waf
