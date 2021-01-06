@@ -52,17 +52,24 @@ module PostDomain : BaseDomainSig
     collapse into one. * *)
 module PreDomain : BaseDomainSig
 
+module PostStatus : sig
+  type t = ISLOk | ISLError [@@deriving equal]
+end
+
 (** biabduction-style pre/post state + skipped calls *)
 type t = private
   { post: PostDomain.t  (** state at the current program point*)
   ; pre: PreDomain.t  (** inferred pre at the current program point *)
   ; topl: PulseTopl.state  (** state at of the Topl monitor at the current program point *)
   ; skipped_calls: SkippedCalls.t  (** set of skipped calls *)
-  ; path_condition: PathCondition.t  (** arithmetic facts *) }
+  ; path_condition: PathCondition.t  (** arithmetic facts *)
+  ; isl_status: PostStatus.t  (** isl summary status *) }
 
 val leq : lhs:t -> rhs:t -> bool
 
 val pp : Format.formatter -> t -> unit
+
+val set_isl_error_status : t -> t
 
 val mk_initial : Procdesc.t -> t
 
@@ -147,6 +154,13 @@ module AddressAttributes : sig
   val std_vector_reserve : AbstractValue.t -> t -> t
 
   val find_opt : AbstractValue.t -> t -> Attributes.t option
+
+  val check_valid_isl :
+       Trace.t
+    -> AbstractValue.t
+    -> ?null_noop:bool
+    -> t
+    -> (t list, Invalidation.t * Trace.t * t) result
 end
 
 val is_local : Var.t -> t -> bool

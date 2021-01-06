@@ -401,6 +401,10 @@ let is_known_zero phi v =
   || Formula.is_known_zero phi.formula v
 
 
+let is_known_neq_zero phi v =
+  CItvs.find_opt v phi.citvs |> Option.exists ~f:CItv.is_not_equal_to_zero
+
+
 let is_unsat_cheap phi = phi.is_unsat
 
 let is_unsat_expensive phi =

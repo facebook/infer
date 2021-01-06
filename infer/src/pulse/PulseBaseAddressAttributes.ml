@@ -112,7 +112,21 @@ let initialize address attrs =
 
 let get_closure_proc_name = get_attribute Attributes.get_closure_proc_name
 
+let get_invalid = get_attribute Attributes.get_invalid
+
 let get_must_be_valid = get_attribute Attributes.get_must_be_valid
+
+let get_must_be_valid_or_allocated_isl address attrs =
+  match get_must_be_valid address attrs with
+  | Some trace ->
+      Some trace
+  | None -> (
+    match get_attribute Attributes.get_allocation address attrs with
+    | Some (_, trace) ->
+        Some trace
+    | None ->
+        get_attribute Attributes.get_isl_abduced address attrs )
+
 
 let get_must_be_initialized = get_attribute Attributes.get_must_be_initialized
 

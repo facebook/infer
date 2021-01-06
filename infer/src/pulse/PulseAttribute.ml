@@ -32,6 +32,7 @@ module Attribute = struct
     | DynamicType of Typ.Name.t
     | EndOfCollection
     | Invalid of Invalidation.t * Trace.t
+    | ISLAbduced of Trace.t
     | MustBeInitialized of Trace.t
     | MustBeValid of Trace.t
     | StdVectorReserve
@@ -72,6 +73,8 @@ module Attribute = struct
 
   let end_of_collection_rank = Variants.to_rank EndOfCollection
 
+  let isl_abduced_rank = Variants.to_rank (ISLAbduced dummy_trace)
+
   let uninitialized_rank = Variants.to_rank Uninitialized
 
   let must_be_initialized_rank = Variants.to_rank (MustBeInitialized dummy_trace)
@@ -100,6 +103,8 @@ module Attribute = struct
         F.fprintf f "Invalid %a"
           (Trace.pp ~pp_immediate:(fun fmt -> Invalidation.pp fmt invalidation))
           trace
+    | ISLAbduced trace ->
+        F.fprintf f "ISLAbduced %a" (Trace.pp ~pp_immediate:(pp_string_if_debug "ISLAbduced")) trace
     | MustBeInitialized trace ->
         F.fprintf f "MustBeInitialized %a"
           (Trace.pp ~pp_immediate:(pp_string_if_debug "read"))
@@ -174,6 +179,13 @@ module Attributes = struct
            (procname, trace) )
 
 
+  let get_isl_abduced attrs =
+    Set.find_rank attrs Attribute.isl_abduced_rank
+    |> Option.map ~f:(fun attr ->
+           let[@warning "-8"] (Attribute.ISLAbduced trace) = attr in
+           trace )
+
+
   let get_dynamic_type attrs =
     Set.find_rank attrs Attribute.dynamic_type_rank
     |> Option.map ~f:(fun attr ->
@@ -196,13 +208,13 @@ include Attribute
 let is_suitable_for_pre = function
   | MustBeValid _ | MustBeInitialized _ ->
       true
+  | Invalid _ | Allocated _ | ISLAbduced _ ->
+      Config.pulse_isl
   | AddressOfCppTemporary _
   | AddressOfStackVariable _
-  | Allocated _
   | Closure _
   | DynamicType _
   | EndOfCollection
-  | Invalid _
   | StdVectorReserve
   | Uninitialized
   | WrittenTo _ ->
@@ -212,6 +224,8 @@ let is_suitable_for_pre = function
 let map_trace ~f = function
   | Allocated (procname, trace) ->
       Allocated (procname, f trace)
+  | ISLAbduced trace ->
+      ISLAbduced (f trace)
   | Invalid (invalidation, trace) ->
       Invalid (invalidation, f trace)
   | MustBeValid trace ->

@@ -24,7 +24,7 @@ let exec_list_of_list_result = function
 
 let report_on_error {InterproceduralAnalysis.proc_desc; err_log} result =
   PulseReport.report_error proc_desc err_log result
-  >>| (fun post -> [ExecutionDomain.ContinueProgram post])
+  >>| List.map ~f:(fun post -> ExecutionDomain.ContinueProgram post)
   |> exec_list_of_list_result
 
 
@@ -285,13 +285,27 @@ module PulseTransferFunctions = struct
     | ExitProgram _ ->
         (* program already exited, simply propagate the exited state upwards  *)
         [astate]
-    | ContinueProgram astate -> (
+    | ContinueProgram ({isl_status= ISLError} as astate) -> (
+      match instr with
+      | Prune (_, _, is_then_branch, _) when is_then_branch ->
+          []
+      | _ ->
+          [ContinueProgram astate] )
+    | ContinueProgram ({isl_status= ISLOk} as astate) -> (
       match instr with
       | Load {id= lhs_id; e= rhs_exp; loc} ->
           (* [lhs_id := *rhs_exp] *)
           let result =
-            let+ astate, rhs_addr_hist = PulseOperations.eval_deref loc rhs_exp astate in
-            PulseOperations.write_id lhs_id rhs_addr_hist astate
+            let+ astate_rhs_addr_hists =
+              if Config.pulse_isl then
+                let+ astate_rhs_addr_hists = PulseOperations.eval_deref_isl loc rhs_exp astate in
+                astate_rhs_addr_hists
+              else
+                let+ astate_rhs_addr_hist = PulseOperations.eval_deref loc rhs_exp astate in
+                [astate_rhs_addr_hist]
+            in
+            List.map astate_rhs_addr_hists ~f:(fun (astate, rhs_addr_hist) ->
+                PulseOperations.write_id lhs_id rhs_addr_hist astate )
           in
           report_on_error analysis_data result
       | Store {e1= lhs_exp; e2= rhs_exp; loc} ->
@@ -313,9 +327,12 @@ module PulseTransferFunctions = struct
             in
             match lhs_exp with
             | Lvar pvar when Pvar.is_return pvar ->
-                PulseOperations.check_address_escape loc proc_desc rhs_addr rhs_history astate
+                let+ astate =
+                  PulseOperations.check_address_escape loc proc_desc rhs_addr rhs_history astate
+                in
+                [astate]
             | _ ->
-                Ok astate
+                Ok [astate]
           in
           report_on_error analysis_data result
       | Prune (condition, loc, _is_then_branch, _if_kind) ->
@@ -339,7 +356,11 @@ module PulseTransferFunctions = struct
                     astate :: astates
                 | ContinueProgram astate ->
                     let astate =
-                      PulseOperations.remove_vars vars location astate
+                      ( match PulseOperations.remove_vars vars location astate with
+                      | Ok astate ->
+                          Ok [astate]
+                      | Error _ as error ->
+                          error )
                       |> report_on_error analysis_data
                     in
                     List.rev_append astate astates )

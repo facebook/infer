@@ -19,6 +19,7 @@ type t =
   | DynamicType of Typ.Name.t
   | EndOfCollection
   | Invalid of Invalidation.t * Trace.t
+  | ISLAbduced of Trace.t  (** The allocation is abduced so as the analysis could run normally *)
   | MustBeInitialized of Trace.t
   | MustBeValid of Trace.t
   | StdVectorReserve
@@ -47,6 +48,8 @@ module Attributes : sig
   val is_end_of_collection : t -> bool
 
   val get_invalid : t -> (Invalidation.t * Trace.t) option
+
+  val get_isl_abduced : t -> Trace.t option
 
   val get_must_be_valid : t -> Trace.t option
 
