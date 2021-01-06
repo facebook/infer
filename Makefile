@@ -190,6 +190,25 @@ BUILD_SYSTEMS_TESTS += mvn
 endif
 endif
 
+ifeq ($(BUILD_DOTNET_ANALYZERS),yes)
+DIRECT_TESTS += \
+  dotnet_arithmetic \
+  dotnet_array \
+  dotnet_bgeble \
+  dotnet_box \
+  dotnet_fieldderef \
+  dotnet_isinst \
+  dotnet_ldstr \
+  dotnet_logical \
+  dotnet_nullderef-interproc \
+  dotnet_nullderef-simple \
+  dotnet_nullparam \
+  dotnet_numcomparison \
+  dotnet_reference \
+  dotnet_resourceleak \
+  dotnet_starg
+endif
+
 ifeq ($(BUILD_C_ANALYZERS)+$(BUILD_JAVA_ANALYZERS),yes+yes)
 BUILD_SYSTEMS_TESTS += make utf8_in_pwd waf
 endif
