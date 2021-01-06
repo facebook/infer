@@ -11,4 +11,4 @@ type t = {name: Mangled.t; typ: Typ.t; capture_mode: Pvar.capture_mode} [@@deriv
 
 val pp : Format.formatter -> t -> unit
 
-val make : name:Mangled.t -> typ:Typ.t -> capture_mode: Pvar.capture_mode -> t
+val make : name:Mangled.t -> typ:Typ.t -> capture_mode:Pvar.capture_mode -> t

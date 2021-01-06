@@ -802,11 +802,12 @@ and capture_blacklist =
     "Skip capture of files matched by the specified OCaml regular expression (only supported by \
      the javac integration for now)."
 
-and cfg_json = 
-  CLOpt.mk_path_opt ~long:"cfg-json" 
+
+and cfg_json =
+  CLOpt.mk_path_opt ~long:"cfg-json"
     ~in_help:InferCommand.[(AnalyzeJson, manual_generic)]
-    ~meta:"file"
-    "Path to CFG json file"
+    ~meta:"file" "Path to CFG json file"
+
 
 and censor_report =
   CLOpt.mk_string_list ~long:"censor-report" ~deprecated:["-filter-report"]
@@ -1299,12 +1300,14 @@ and external_java_packages =
     "Specify a list of Java package prefixes for external Java packages. If set, the analysis will \
      not report non-actionable warnings on those packages."
 
+
 and external_csharp_namespaces =
   CLOpt.mk_string_list ~long:"external-csharp-packages"
     ~in_help:InferCommand.[(Analyze, manual_csharp)]
     ~meta:"prefix"
-    "Specify a list of CSharp package prefixes for external CSharp packages. If set, the analysis will \
-     not report non-actionable warnings on those packages."
+    "Specify a list of CSharp package prefixes for external CSharp packages. If set, the analysis \
+     will not report non-actionable warnings on those packages."
+
 
 and fail_on_bug =
   CLOpt.mk_bool ~deprecated:["-fail-on-bug"] ~long:"fail-on-issue" ~default:false
@@ -2392,12 +2395,12 @@ and starvation_strict_mode =
     "During starvation analysis, report strict mode violations (Android only)"
 
 
-and tenv_json = 
-  CLOpt.mk_path_opt ~long:"tenv-json" 
+and tenv_json =
+  CLOpt.mk_path_opt ~long:"tenv-json"
     ~in_help:InferCommand.[(AnalyzeJson, manual_generic)]
-    ~meta:"file"
-    "Path to TEnv json file"
-    
+    ~meta:"file" "Path to TEnv json file"
+
+
 and testing_mode =
   CLOpt.mk_bool
     ~deprecated:["testing_mode"; "-testing_mode"; "tm"]
@@ -2427,6 +2430,7 @@ and trace_ondemand = CLOpt.mk_bool ~long:"trace-ondemand" ""
 and trace_rearrange =
   CLOpt.mk_bool ~deprecated:["trace_rearrange"] ~long:"trace-rearrange"
     "Detailed tracing information during prop re-arrangement operations"
+
 
 and trace_topl =
   CLOpt.mk_bool ~long:"trace-topl" "Detailed tracing information during TOPL analysis"
@@ -3046,6 +3050,7 @@ and liveness_ignored_constant = RevList.to_list !liveness_ignored_constant
 and load_average =
   match !load_average with None when !buck -> Some (float_of_int ncpu) | _ -> !load_average
 
+
 and max_nesting = !max_nesting
 
 and memtrace_analysis = !memtrace_analysis
@@ -3468,10 +3473,12 @@ let java_package_is_external package =
   RevList.exists external_java_packages ~f:(fun (prefix : string) ->
       String.is_prefix package ~prefix )
 
+
 (** Check if a CSharp package is external to the repository *)
 let csharp_namespace_is_external package =
   RevList.exists external_csharp_namespaces ~f:(fun (prefix : string) ->
       String.is_prefix package ~prefix )
+
 
 let is_in_custom_symbols list_name symbol =
   match List.Assoc.find ~equal:String.equal custom_symbols list_name with

@@ -34,8 +34,7 @@ let setup () =
         already_started := true )
   in
   ( match Config.command with
-  | Analyze
-  | AnalyzeJson ->
+  | Analyze | AnalyzeJson ->
       ResultsDir.assert_results_dir "have you run capture before?"
   | Report | ReportDiff ->
       ResultsDir.create_results_dir ()

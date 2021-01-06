@@ -104,9 +104,9 @@ let all_checkers =
          [ (starvation, Java)
          ; (starvation_file_reporting, Java)
          ; (starvation, Clang)
-         ; (starvation_file_reporting, Clang) 
+         ; (starvation_file_reporting, Clang)
          ; (starvation, CIL)
-         ; (starvation_file_reporting, CIL)] ) }
+         ; (starvation_file_reporting, CIL) ] ) }
   ; { checker= LoopHoisting
     ; callbacks=
         (let hoisting =
@@ -127,9 +127,9 @@ let all_checkers =
   ; {checker= Uninit; callbacks= [(interprocedural Payloads.Fields.uninit Uninit.checker, Clang)]}
   ; {checker= SIOF; callbacks= [(interprocedural Payloads.Fields.siof Siof.checker, Clang)]}
   ; { checker= LithoRequiredProps
-    ; callbacks= [(interprocedural Payloads.Fields.litho_required_props RequiredProps.checker, Java)
-                 ;(interprocedural Payloads.Fields.litho_required_props RequiredProps.checker, CIL)]
-    }
+    ; callbacks=
+        [ (interprocedural Payloads.Fields.litho_required_props RequiredProps.checker, Java)
+        ; (interprocedural Payloads.Fields.litho_required_props RequiredProps.checker, CIL) ] }
   ; (* toy resource analysis to use in the infer lab, see the lab/ directory *)
     { checker= ResourceLeakLabExercise
     ; callbacks=
@@ -137,13 +137,11 @@ let all_checkers =
                interprocedural later on *)
             interprocedural Payloads.Fields.lab_resource_leaks ResourceLeaks.checker
           , Java )
-          ;( interprocedural Payloads.Fields.lab_resource_leaks ResourceLeaks.checker
-          , CIL ) ] }
+        ; (interprocedural Payloads.Fields.lab_resource_leaks ResourceLeaks.checker, CIL) ] }
   ; (* .NET resource analysis, based on the toy resource analysis in the infer lab *)
     { checker= DOTNETResourceLeaks
     ; callbacks=
-        [ ( interprocedural Payloads.Fields.dotnet_resource_leaks ResourceLeaksCS.checker
-          , CIL )] }
+        [(interprocedural Payloads.Fields.dotnet_resource_leaks ResourceLeaksCS.checker, CIL)] }
   ; { checker= RacerD
     ; callbacks=
         (let racerd_proc = interprocedural Payloads.Fields.racerd RacerD.analyze_procedure in
@@ -168,20 +166,22 @@ let all_checkers =
            intraprocedural_with_field_dependency Payloads.Fields.pulse Impurity.checker
          in
          [(impurity, Java); (impurity, Clang); (impurity, CIL)] ) }
-  ; {checker= PrintfArgs; callbacks= [(intraprocedural PrintfArgs.checker, Java)
-                                     ;(intraprocedural PrintfArgs.checker, CIL)]}
+  ; { checker= PrintfArgs
+    ; callbacks=
+        [(intraprocedural PrintfArgs.checker, Java); (intraprocedural PrintfArgs.checker, CIL)] }
   ; {checker= Liveness; callbacks= [(intraprocedural Liveness.checker, Clang)]}
   ; { checker= InefficientKeysetIterator
-    ; callbacks= [(intraprocedural InefficientKeysetIterator.checker, Java)
-                 ;(intraprocedural InefficientKeysetIterator.checker, CIL)] }
+    ; callbacks=
+        [ (intraprocedural InefficientKeysetIterator.checker, Java)
+        ; (intraprocedural InefficientKeysetIterator.checker, CIL) ] }
   ; { checker= ImmutableCast
     ; callbacks=
-        [(intraprocedural_with_payload Payloads.Fields.nullsafe ImmutableChecker.analyze, Java)
-        ;(intraprocedural_with_payload Payloads.Fields.nullsafe ImmutableChecker.analyze, CIL)] }
+        [ (intraprocedural_with_payload Payloads.Fields.nullsafe ImmutableChecker.analyze, Java)
+        ; (intraprocedural_with_payload Payloads.Fields.nullsafe ImmutableChecker.analyze, CIL) ] }
   ; { checker= FragmentRetainsView
-    ; callbacks= [(intraprocedural FragmentRetainsViewChecker.callback_fragment_retains_view, Java)
-                 ;(intraprocedural FragmentRetainsViewChecker.callback_fragment_retains_view, CIL)]
-    }
+    ; callbacks=
+        [ (intraprocedural FragmentRetainsViewChecker.callback_fragment_retains_view, Java)
+        ; (intraprocedural FragmentRetainsViewChecker.callback_fragment_retains_view, CIL) ] }
   ; { checker= Eradicate
     ; callbacks=
         [ (intraprocedural_with_payload Payloads.Fields.nullsafe Eradicate.analyze_procedure, Java)

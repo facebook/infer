@@ -347,15 +347,9 @@ let config_unsafe checker =
       ; activates= [] }
   | DOTNETResourceLeaks ->
       { id= "dotnet-resource-leak"
-      ; kind=
-          UserFacing
-            { title= "Resource Leak checker for .NET"
-            ; markdown_body=
-                ""
-            }
+      ; kind= UserFacing {title= "Resource Leak checker for .NET"; markdown_body= ""}
       ; support= (function Clang -> NoSupport | Java -> NoSupport | CIL -> Support)
-      ; short_documentation=
-          "\"resource leak\" checker for .NET."
+      ; short_documentation= "\"resource leak\" checker for .NET."
       ; cli_flags= Some {deprecated= []; show_in_help= false}
       ; enabled_by_default= true
       ; activates= [] }

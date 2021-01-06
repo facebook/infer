@@ -452,14 +452,16 @@ module Node = struct
     let succs = get_succs node in
     let preds = get_preds node in
     NodeKey.compute node ~simple_key ~succs ~preds
-  
+
+
   let print_node node =
-    let print_node_list nl =
-      List.iter ~f:(fun n -> Printf.printf "%d " (get_id n)) nl
-    in
-    Printf.printf "id: %d preds: " (get_id node) ; print_node_list node.preds ;
-    Printf.printf "succs: " ; print_node_list node.succs;
-    Printf.printf "exn: "; print_node_list node.exn;
+    let print_node_list nl = List.iter ~f:(fun n -> Printf.printf "%d " (get_id n)) nl in
+    Printf.printf "id: %d preds: " (get_id node) ;
+    print_node_list node.preds ;
+    Printf.printf "succs: " ;
+    print_node_list node.succs ;
+    Printf.printf "exn: " ;
+    print_node_list node.exn ;
     Location.pp_line Format.std_formatter node.loc ;
     print_endline "" ;
     print_endline (get_description Pp.text node) ;
@@ -652,7 +654,6 @@ let set_start_node pdesc node = pdesc.start_node <- node
 (** Append the locals to the list of local variables *)
 let append_locals pdesc new_locals = pdesc.attributes.locals <- pdesc.attributes.locals @ new_locals
 
-  
 let set_succs (node : Node.t) ~normal:succs_opt ~exn:exn_opt =
   let remove_pred pred_node (from_node : Node.t) =
     from_node.preds <- List.filter from_node.preds ~f:(fun pred -> not (Node.equal pred pred_node))
@@ -895,6 +896,7 @@ let load =
         SqliteUtils.result_single_column_option ~finalize:false ~log:"Procdesc.load" db stmt
         |> Option.bind ~f:SQLite.deserialize )
 
+
 let print_pdesc_nodes pdesc =
   List.iter ~f:Node.print_node pdesc.nodes ;
-  print_endline "" 
+  print_endline ""

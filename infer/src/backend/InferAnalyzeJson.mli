@@ -9,4 +9,4 @@ open! IStd
 
 (** Main module for the analyzejson analysis after the capture phase *)
 
-val analyze_json: string -> string -> unit
+val analyze_json : string -> string -> unit

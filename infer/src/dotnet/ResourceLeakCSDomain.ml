@@ -7,7 +7,6 @@
  *)
 
 open! IStd
-
 module F = Format
 module Hashtbl = Caml.Hashtbl
 
@@ -18,13 +17,16 @@ module LeakList = struct
 
   let remove_exn ?(equal = phys_equal) leakList typeWithLeak =
     let rec remove_ xs = function
-      | [] -> raise Caml.Not_found
+      | [] ->
+          raise Caml.Not_found
       | item :: leakList ->
           if equal typeWithLeak item then rev_append xs leakList else remove_ (item :: xs) leakList
     in
     remove_ [] leakList
 
-  let remove leakList typeWithLeak = try Some (remove_exn leakList typeWithLeak) with Caml.Not_found -> None
+
+  let remove leakList typeWithLeak =
+    try Some (remove_exn leakList typeWithLeak) with Caml.Not_found -> None
 end
 
 (** Resource analysis in loop and branch*)
@@ -40,7 +42,7 @@ module FiniteBounds = struct
   let pp fmt astate = F.fprintf fmt "%d" astate
 end
 
-(**  Resource analysis in loop *)
+(** Resource analysis in loop *)
 module BoundsWithTop = struct
   open AbstractDomain.Types
   include AbstractDomain.TopLifted (FiniteBounds)
@@ -79,13 +81,12 @@ let decr_count count = update_count count (-1)
 let find_count access_path held =
   match ResourcesHeld.find_opt access_path held with Some count -> count | None -> NonTop 0
 
+
 (** Checks the count of resources held if resource exists, otherwise returns false*)
 let check_count access_path held =
   let old_count = find_count access_path held in
-  match old_count with 
-  | NonTop count when count > 0 -> 
-    true
-  | _ -> false
+  match old_count with NonTop count when count > 0 -> true | _ -> false
+
 
 let get_type_map = !type_map
 
@@ -93,52 +94,57 @@ let reset_type_map = Hashtbl.reset !type_map
 
 (** Adds resources acquired to records *)
 let acquire_resource access_path class_name held =
-  let add_resource_to_hash = 
+  let add_resource_to_hash =
     match ResourcesHeld.find_opt access_path held with
-    | Some _ -> ()
-    | None -> 
-      Hashtbl.add !type_map access_path class_name 
+    | Some _ ->
+        ()
+    | None ->
+        Hashtbl.add !type_map access_path class_name
   in
   add_resource_to_hash ;
   let old_count = find_count access_path held in
   ResourcesHeld.add access_path (incr_count old_count) held
 
+
 (** Releases acquired resources from records when release function is called*)
 let release_resource access_path held =
   let old_count = find_count access_path held in
-  let remove_resource_from_hash = 
+  let remove_resource_from_hash =
     match old_count with
-    | NonTop count when count < 2 -> 
-      Hashtbl.remove !type_map access_path
-    | _ -> ()
+    | NonTop count when count < 2 ->
+        Hashtbl.remove !type_map access_path
+    | _ ->
+        ()
   in
   remove_resource_from_hash ;
   ResourcesHeld.add access_path (decr_count old_count) held
 
+
 (** Re-assigns resources when transferred to other objects*)
 let assign lhs_access_path rhs_access_path held =
-  let add_type_map search_access_path access_path = 
+  let add_type_map search_access_path access_path =
     match Hashtbl.find !type_map search_access_path with
-    | class_name -> 
-      Hashtbl.add !type_map access_path class_name ;
-      Hashtbl.remove !type_map search_access_path
-    | exception Caml.Not_found -> ()
-  in 
+    | class_name ->
+        Hashtbl.add !type_map access_path class_name ;
+        Hashtbl.remove !type_map search_access_path
+    | exception Caml.Not_found ->
+        ()
+  in
   let one_binding access_path count held =
     match
       AccessPath.replace_prefix ~prefix:rhs_access_path ~replace_with:access_path lhs_access_path
     with
-    | Some base_access_path -> (
+    | Some base_access_path ->
         add_type_map access_path base_access_path ;
-        ResourcesHeld.add base_access_path count held )
+        ResourcesHeld.add base_access_path count held
     | None ->
-      if AccessPath.equal rhs_access_path access_path then (
-        add_type_map access_path lhs_access_path ;
-        ResourcesHeld.add lhs_access_path count held )
-      else
-        ResourcesHeld.add access_path count held
+        if AccessPath.equal rhs_access_path access_path then (
+          add_type_map access_path lhs_access_path ;
+          ResourcesHeld.add lhs_access_path count held )
+        else ResourcesHeld.add access_path count held
   in
   ResourcesHeld.fold one_binding held ResourcesHeld.empty
+
 
 (** Checks if there is a resource leak*)
 let has_leak formal_map held =
@@ -163,6 +169,7 @@ let has_leak formal_map held =
         true
   in
   ResourcesHeld.exists is_local_leak held
+
 
 (** module for resource leak summary *)
 module Summary = struct
@@ -204,21 +211,22 @@ module Summary = struct
       | None ->
           if Var.is_return (fst base) then Some (InterfaceAccessPath.Return, accesses) else None
     in
-    let add_resource_to_hash interface_access_path class_name = 
-      Hashtbl.add !interface_type_map interface_access_path class_name 
+    let add_resource_to_hash interface_access_path class_name =
+      Hashtbl.add !interface_type_map interface_access_path class_name
     in
-    let add_to_type_map search_access_path interface_access_path = 
+    let add_to_type_map search_access_path interface_access_path =
       match Hashtbl.find !type_map search_access_path with
-      | class_name -> 
-        add_resource_to_hash interface_access_path class_name 
-      | exception Caml.Not_found -> ()
-    in 
+      | class_name ->
+          add_resource_to_hash interface_access_path class_name
+      | exception Caml.Not_found ->
+          ()
+    in
     ResourcesHeld.fold
       (fun access_path count acquired ->
         match to_interface access_path with
-        | Some interface_access_path -> (
+        | Some interface_access_path ->
             add_to_type_map access_path interface_access_path ;
-            ResourcesFromFormals.add interface_access_path count acquired )
+            ResourcesFromFormals.add interface_access_path count acquired
         | None ->
             acquired )
       held ResourcesFromFormals.empty
@@ -237,12 +245,13 @@ module Summary = struct
           | _ ->
               None )
       in
-      let add_type_map search_access_path = 
+      let add_type_map search_access_path =
         match Hashtbl.find !interface_type_map (base, accesses) with
         | class_name ->
-           Hashtbl.add !type_map search_access_path class_name
-        | exception Caml.Not_found -> ()
-      in 
+            Hashtbl.add !type_map search_access_path class_name
+        | exception Caml.Not_found ->
+            ()
+      in
       match access_path_opt with
       | None ->
           held
@@ -257,11 +266,8 @@ module Summary = struct
                 in
                 update_count old_count callee_count
           in
-          let add_resource_to_hash = 
-            match new_count with
-            | NonTop count when count > 0 -> 
-              add_type_map access_path ;
-            | _ -> ()
+          let add_resource_to_hash =
+            match new_count with NonTop count when count > 0 -> add_type_map access_path | _ -> ()
           in
           add_resource_to_hash ;
           ResourcesHeld.add access_path new_count held

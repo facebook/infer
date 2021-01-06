@@ -499,7 +499,7 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Procname.t
       (* if this is not a virtual or interface call, there's no need for resolution *)
       [callee_pname]
   | (receiver_exp, actual_receiver_typ) :: _ ->
-      if not (Language.curr_language_is Java || Language.curr_language_is CIL ) then
+      if not (Language.curr_language_is Java || Language.curr_language_is CIL) then
         (* default mode for Obj-C/C++/Java virtual calls: resolution only *)
         [do_resolve callee_pname receiver_exp actual_receiver_typ]
       else
@@ -847,7 +847,10 @@ let add_constraints_on_retval tenv pdesc prop ret_exp ~has_nonnull_annot typ cal
       let prop_with_abduced_var =
         let abduced_ret_pv =
           (* in Java, always re-use the same abduced ret var to prevent false alarms with repeated method calls *)
-          let loc = if (Procname.is_java callee_pname || Procname.is_csharp callee_pname) then Location.dummy else callee_loc in
+          let loc =
+            if Procname.is_java callee_pname || Procname.is_csharp callee_pname then Location.dummy
+            else callee_loc
+          in
           Pvar.mk_abduced_ret callee_pname loc
         in
         if !BiabductionConfig.footprint then
@@ -1535,7 +1538,11 @@ and unknown_or_scan_call ~is_scan ~reason ret_typ ret_annots
   let has_nonnull_annot = Annotations.ia_is_nonnull ret_annots in
   let pre_final =
     (* in Java, assume that skip functions close resources passed as params *)
-    let pre_1 = if (Procname.is_java callee_pname || Procname.is_csharp callee_pname) then remove_file_attribute pre else pre in
+    let pre_1 =
+      if Procname.is_java callee_pname || Procname.is_csharp callee_pname then
+        remove_file_attribute pre
+      else pre
+    in
     let pre_2 =
       (* TODO(jjb): Should this use the type of ret_id, or ret_type from the procedure type? *)
       add_constraints_on_retval tenv proc_desc pre_1

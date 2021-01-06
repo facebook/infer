@@ -84,6 +84,7 @@ let clean_compilation_command mode =
   | _ ->
       None
 
+
 let reset_duplicates_file () =
   let start = ResultsDir.get_path DuplicateFunctions in
   let delete () = Unix.unlink start in
@@ -107,8 +108,7 @@ let check_xcpretty () =
 
 
 let capture ~changed_files = function
-  | Analyze
-  | AnalyzeJson ->
+  | Analyze | AnalyzeJson ->
       ()
   | Ant {prog; args} ->
       L.progress "Capturing in ant mode...@." ;
@@ -182,13 +182,16 @@ let execute_analyze ~changed_files =
   InferAnalyze.main ~changed_files ;
   PerfEvent.(log (fun logger -> log_end_event logger ()))
 
+
 let execute_analyze_json () =
   match (Config.cfg_json, Config.tenv_json) with
-  | (Some cfg_json, Some tenv_json) ->
-    InferAnalyzeJson.analyze_json cfg_json tenv_json ;
-  | (_,_) ->
-    L.user_warning "** Missing cfg or tenv json files. Provide them as arguments throught '--cfg-json' and '--tenv-json' **\n" ;
-  ()
+  | Some cfg_json, Some tenv_json ->
+      InferAnalyzeJson.analyze_json cfg_json tenv_json
+  | _, _ ->
+      L.user_warning
+        "** Missing cfg or tenv json files. Provide them as arguments throught '--cfg-json' and \
+         '--tenv-json' **\n" ;
+      ()
 
 
 let report ?(suppress_console = false) () =
@@ -270,19 +273,17 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
     | _ ->
         false
   in
-  let analyze_json = match mode with | AnalyzeJson -> true | _ -> false in
+  let analyze_json = match mode with AnalyzeJson -> true | _ -> false in
   if should_merge then (
     if Config.export_changed_functions then MergeCapture.merge_changed_functions () ;
     MergeCapture.merge_captured_targets () ;
     ResultsDir.RunState.set_merge_capture false ) ;
-
   if should_analyze then
-    (if analyze_json then
-      (execute_analyze_json () ;)
+    if analyze_json then execute_analyze_json ()
     else if SourceFiles.is_empty () && Config.capture then error_nothing_to_analyze mode
     else (
       execute_analyze ~changed_files ;
-      if Config.starvation_whole_program then StarvationGlobalAnalysis.whole_program_analysis () )) ;
+      if Config.starvation_whole_program then StarvationGlobalAnalysis.whole_program_analysis () ) ;
   if should_report && Config.report then report ?suppress_console:suppress_console_report ()
 
 

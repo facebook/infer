@@ -127,15 +127,15 @@ module Results_dir = struct
 
   (** directory of spec files *)
   let specs_dir = path_to_filename Abs_root [Config.specs_dir_name]
-  
+
   (** initialize the results directory *)
   let init ?(debug = false) source =
     if SourceFile.is_invalid source then L.(die InternalError) "Invalid source file passed" ;
     if debug || Config.html || Config.debug_mode || Config.frontend_tests then (
       Utils.create_dir (ResultsDir.get_path Debug) ;
       Utils.create_dir (path_to_filename (Abs_source_dir source) []) )
-      
-        
+
+
   (** create a file at the given path, creating any missing directories *)
   let create_file pk path =
     let rec create = function

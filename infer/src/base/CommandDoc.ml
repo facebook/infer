@@ -57,18 +57,23 @@ $(b,infer) $(i,[options])|}
     ~description:[`P "Analyze the files captured in the project results directory and report."]
     ~see_also:InferCommand.[Report; Run]
 
-let analyze_json = 
-  mk_command_doc ~title:"Infer JSON Analysis" ~short_description:"analyze the cfg and tenv json files captured by infersharp"
-    ~synopsis:{|$(b,infer) $(b,analyzejson) $(b,--debug) $(b,--cfg-json) $(i,[options])
+
+let analyze_json =
+  mk_command_doc ~title:"Infer JSON Analysis"
+    ~short_description:"analyze the cfg and tenv json files captured by infersharp"
+    ~synopsis:
+      {|$(b,infer) $(b,analyzejson) $(b,--debug) $(b,--cfg-json) $(i,[options])
     $(b,--tenv-json) $(i,[options]))|}
-    ~description:[`P 
-                    "Analyze the cfg and tenv json files captured in the project results directory \
-                    and report."]
+    ~description:
+      [ `P
+          "Analyze the cfg and tenv json files captured in the project results directory and \
+           report." ]
     ~examples:
       [ `P
           "To analyze cfg json and tenv json, one should start with configuring infer environment \
-          and then run analyzejson command, for instance:"
-      ; `Pre {|  infer capture
+           and then run analyzejson command, for instance:"
+      ; `Pre
+          {|  infer capture
   mkdir infer-out/captured
   infer analyzejson --debug --cfg-json [path_to_cfg.json] --tenv-json [path_to_tenv.json]|}
       ]

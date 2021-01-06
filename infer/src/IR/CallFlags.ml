@@ -36,5 +36,5 @@ let default =
   { cf_assign_last_arg= false
   ; cf_injected_destructor= false
   ; cf_interface= false
-  ; cf_is_objc_block= false 
-  ; cf_virtual= false}
+  ; cf_is_objc_block= false
+  ; cf_virtual= false }
