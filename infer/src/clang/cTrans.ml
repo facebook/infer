@@ -3958,7 +3958,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   and exprWithCleanups_trans trans_state stmt_info stmt_list =
-    L.debug Capture Verbose "ExprWithCleanups trans_state={succ_nodes=[%a]}@."
+    L.debug Capture Verbose "ExprWithCleanups trans_state={succ_nodes=[%a]}@\n"
       (Pp.seq Procdesc.Node.pp) trans_state.succ_nodes ;
     let loc =
       CLocation.location_of_stmt_info trans_state.context.translation_unit_context.source_file
@@ -3985,6 +3985,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         stmt_info
     in
     let sub_expr_result = instruction trans_state stmt in
+    L.debug Capture Verbose "sub_expr_result.control=%a@\n" pp_control sub_expr_result.control ;
     let init_markers_to_zero_instrs =
       List.fold temporaries_to_destroy ~init:[] ~f:(fun instrs {CScope.marker} ->
           match marker with
@@ -4564,6 +4565,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
   (** Function similar to instruction function, but it takes C++ constructor initializer as an input
       parameter. *)
   and cxx_constructor_init_trans ctor_init trans_state =
+    L.debug Capture Verbose "cxx_constructor_init_trans@\n  @[" ;
     let context = trans_state.context in
     let source_range = ctor_init.Clang_ast_t.xci_source_range in
     let sil_loc =
@@ -4577,7 +4579,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       {(CAst_utils.dummy_stmt_info ()) with Clang_ast_t.si_source_range= source_range}
     in
     let trans_state' = PriorityNode.try_claim_priority_node trans_state this_stmt_info in
-    let this_res_trans = this_expr_trans child_stmt_info trans_state' sil_loc in
+    let this_res_trans =
+      this_expr_trans child_stmt_info trans_state' sil_loc
+      |> PriorityNode.compute_result_to_parent trans_state' sil_loc ConstructorInit this_stmt_info
+    in
     let var_res_trans =
       match ctor_init.Clang_ast_t.xci_subject with
       | `Delegating _ | `BaseClass _ ->
@@ -4593,8 +4598,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let var_exp_typ = var_res_trans.return in
     let init_expr = ctor_init.Clang_ast_t.xci_init_expr in
     let init_res_trans = init_expr_trans trans_state' var_exp_typ child_stmt_info init_expr in
-    PriorityNode.compute_results_to_parent trans_state' sil_loc ConstructorInit this_stmt_info
-      ~return:init_res_trans.return [var_res_trans; init_res_trans]
+    let result =
+      PriorityNode.compute_results_to_parent trans_state' sil_loc ConstructorInit this_stmt_info
+        ~return:init_res_trans.return [var_res_trans; init_res_trans]
+    in
+    L.debug Capture Verbose "@]@\n" ;
+    result
 
 
   (** Given a translation state and list of translation functions it executes translation *)

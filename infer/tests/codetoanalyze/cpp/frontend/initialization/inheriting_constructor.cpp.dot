@@ -32,8 +32,12 @@ digraph cfg {
 "A#B#{18258347749069050656}.8db05fedcc195ce779d29dca399277d8_2" [label="2: Exit B::A \n  " color=yellow style=filled]
 	
 
-"A#B#{18258347749069050656}.8db05fedcc195ce779d29dca399277d8_3" [label="3:  Constructor Init \n   n$1=*&this:B* [line 13, column 12]\n  n$3=*&__param_0:int [line 13, column 12]\n  n$2=_fun_A::A(n$1:B*,n$3:int) [line 13, column 12]\n " shape="box"]
+"A#B#{18258347749069050656}.8db05fedcc195ce779d29dca399277d8_3" [label="3:  Constructor Init \n   n$1=*&this:B* [line 13, column 12]\n " shape="box"]
 	
 
-	 "A#B#{18258347749069050656}.8db05fedcc195ce779d29dca399277d8_3" -> "A#B#{18258347749069050656}.8db05fedcc195ce779d29dca399277d8_2" ;
+	 "A#B#{18258347749069050656}.8db05fedcc195ce779d29dca399277d8_3" -> "A#B#{18258347749069050656}.8db05fedcc195ce779d29dca399277d8_4" ;
+"A#B#{18258347749069050656}.8db05fedcc195ce779d29dca399277d8_4" [label="4:  Constructor Init \n   n$3=*&__param_0:int [line 13, column 12]\n  n$2=_fun_A::A(n$1:B*,n$3:int) [line 13, column 12]\n " shape="box"]
+	
+
+	 "A#B#{18258347749069050656}.8db05fedcc195ce779d29dca399277d8_4" -> "A#B#{18258347749069050656}.8db05fedcc195ce779d29dca399277d8_2" ;
 }

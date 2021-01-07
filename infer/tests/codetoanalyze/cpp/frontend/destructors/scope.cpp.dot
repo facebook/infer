@@ -193,10 +193,14 @@ digraph cfg {
 "S#S#destructor_scope#{12210000843635331998|constexpr}.cb28b79e3a75cf83720c23a83cf5bf01_2" [label="2: Exit destructor_scope::S::S \n  " color=yellow style=filled]
 	
 
-"S#S#destructor_scope#{12210000843635331998|constexpr}.cb28b79e3a75cf83720c23a83cf5bf01_3" [label="3:  Constructor Init \n   n$1=*&this:destructor_scope::S* [line 19, column 8]\n  n$2=_fun_destructor_scope::X::X(n$1.x1:destructor_scope::X*) [line 19, column 8]\n " shape="box"]
+"S#S#destructor_scope#{12210000843635331998|constexpr}.cb28b79e3a75cf83720c23a83cf5bf01_3" [label="3:  Constructor Init \n   n$1=*&this:destructor_scope::S* [line 19, column 8]\n " shape="box"]
 	
 
-	 "S#S#destructor_scope#{12210000843635331998|constexpr}.cb28b79e3a75cf83720c23a83cf5bf01_3" -> "S#S#destructor_scope#{12210000843635331998|constexpr}.cb28b79e3a75cf83720c23a83cf5bf01_2" ;
+	 "S#S#destructor_scope#{12210000843635331998|constexpr}.cb28b79e3a75cf83720c23a83cf5bf01_3" -> "S#S#destructor_scope#{12210000843635331998|constexpr}.cb28b79e3a75cf83720c23a83cf5bf01_4" ;
+"S#S#destructor_scope#{12210000843635331998|constexpr}.cb28b79e3a75cf83720c23a83cf5bf01_4" [label="4:  Constructor Init \n   n$2=_fun_destructor_scope::X::X(n$1.x1:destructor_scope::X*) [line 19, column 8]\n " shape="box"]
+	
+
+	 "S#S#destructor_scope#{12210000843635331998|constexpr}.cb28b79e3a75cf83720c23a83cf5bf01_4" -> "S#S#destructor_scope#{12210000843635331998|constexpr}.cb28b79e3a75cf83720c23a83cf5bf01_2" ;
 "__infer_inner_destructor_~S#S#destructor_scope#(9287491061312513566).4ef80b764b293fdc4260c9ce06a110d3_1" [label="1: Start destructor_scope::S::__infer_inner_destructor_~S\nFormals:  this:destructor_scope::S*\nLocals:  \n  " color=yellow style=filled]
 	
 

@@ -126,8 +126,12 @@ digraph cfg {
 "Sub#Sub#{11878357359117042972|constexpr}.886e3a99a94b49e456c4d39277ccc93b_2" [label="2: Exit Sub::Sub \n  " color=yellow style=filled]
 	
 
-"Sub#Sub#{11878357359117042972|constexpr}.886e3a99a94b49e456c4d39277ccc93b_3" [label="3:  Constructor Init \n   n$1=*&this:Sub* [line 14, column 7]\n  n$2=_fun_Base::Base(n$1:Sub*) [line 14, column 7]\n " shape="box"]
+"Sub#Sub#{11878357359117042972|constexpr}.886e3a99a94b49e456c4d39277ccc93b_3" [label="3:  Constructor Init \n   n$1=*&this:Sub* [line 14, column 7]\n " shape="box"]
 	
 
-	 "Sub#Sub#{11878357359117042972|constexpr}.886e3a99a94b49e456c4d39277ccc93b_3" -> "Sub#Sub#{11878357359117042972|constexpr}.886e3a99a94b49e456c4d39277ccc93b_2" ;
+	 "Sub#Sub#{11878357359117042972|constexpr}.886e3a99a94b49e456c4d39277ccc93b_3" -> "Sub#Sub#{11878357359117042972|constexpr}.886e3a99a94b49e456c4d39277ccc93b_4" ;
+"Sub#Sub#{11878357359117042972|constexpr}.886e3a99a94b49e456c4d39277ccc93b_4" [label="4:  Constructor Init \n   n$2=_fun_Base::Base(n$1:Sub*) [line 14, column 7]\n " shape="box"]
+	
+
+	 "Sub#Sub#{11878357359117042972|constexpr}.886e3a99a94b49e456c4d39277ccc93b_4" -> "Sub#Sub#{11878357359117042972|constexpr}.886e3a99a94b49e456c4d39277ccc93b_2" ;
 }

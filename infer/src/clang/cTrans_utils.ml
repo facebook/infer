@@ -159,13 +159,13 @@ let pp_trans_state fmt
      ; is_fst_arg_objc_instance_method_call
      ; passed_as_noescape_block_to }[@warning "+9"]) =
   F.fprintf fmt
-    "@[{succ_nodes=[%a];@;\
+    "{@[succ_nodes=[%a];@;\
      continuation=%a@;\
      priority=%a;@;\
      var_exp_typ=%a;@;\
      opaque_exp=%a;@;\
      is_fst_arg_objc_instance_method_call=%b;@;\
-     passed_as_noescape_block_to=%a}@]"
+     passed_as_noescape_block_to=%a@]}"
     (Pp.seq ~sep:";" Procdesc.Node.pp)
     succ_nodes (Pp.option pp_continuation) continuation pp_priority_node priority
     (Pp.option (Pp.pair ~fst:Exp.pp ~snd:(Typ.pp_full Pp.text_break)))

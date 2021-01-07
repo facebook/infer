@@ -70,10 +70,14 @@ digraph cfg {
 "Derived#Derived<int*>#class_specialization#{6947111178756325946}.2484a8b63b0d0003a390b6e57428fee2_2" [label="2: Exit class_specialization::Derived<int*>::Derived \n  " color=yellow style=filled]
 	
 
-"Derived#Derived<int*>#class_specialization#{6947111178756325946}.2484a8b63b0d0003a390b6e57428fee2_3" [label="3:  Constructor Init \n   n$1=*&this:class_specialization::Derived<int*>* [line 20, column 8]\n  n$2=_fun_class_specialization::Base<int*>::Base(n$1:class_specialization::Derived<int*>*) [line 20, column 8]\n " shape="box"]
+"Derived#Derived<int*>#class_specialization#{6947111178756325946}.2484a8b63b0d0003a390b6e57428fee2_3" [label="3:  Constructor Init \n   n$1=*&this:class_specialization::Derived<int*>* [line 20, column 8]\n " shape="box"]
 	
 
-	 "Derived#Derived<int*>#class_specialization#{6947111178756325946}.2484a8b63b0d0003a390b6e57428fee2_3" -> "Derived#Derived<int*>#class_specialization#{6947111178756325946}.2484a8b63b0d0003a390b6e57428fee2_2" ;
+	 "Derived#Derived<int*>#class_specialization#{6947111178756325946}.2484a8b63b0d0003a390b6e57428fee2_3" -> "Derived#Derived<int*>#class_specialization#{6947111178756325946}.2484a8b63b0d0003a390b6e57428fee2_4" ;
+"Derived#Derived<int*>#class_specialization#{6947111178756325946}.2484a8b63b0d0003a390b6e57428fee2_4" [label="4:  Constructor Init \n   n$2=_fun_class_specialization::Base<int*>::Base(n$1:class_specialization::Derived<int*>*) [line 20, column 8]\n " shape="box"]
+	
+
+	 "Derived#Derived<int*>#class_specialization#{6947111178756325946}.2484a8b63b0d0003a390b6e57428fee2_4" -> "Derived#Derived<int*>#class_specialization#{6947111178756325946}.2484a8b63b0d0003a390b6e57428fee2_2" ;
 "foo#Derived<int>#class_specialization#(3691368771332090182).157c4cba925bdfdc131986d2b52af05d_1" [label="1: Start class_specialization::Derived<int>::foo\nFormals:  this:class_specialization::Derived<int>* t:int\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -92,8 +96,12 @@ digraph cfg {
 "Derived#Derived<int>#class_specialization#{14157761386473130888}.40e79d469e516a33fdff720996ff80ab_2" [label="2: Exit class_specialization::Derived<int>::Derived \n  " color=yellow style=filled]
 	
 
-"Derived#Derived<int>#class_specialization#{14157761386473130888}.40e79d469e516a33fdff720996ff80ab_3" [label="3:  Constructor Init \n   n$1=*&this:class_specialization::Derived<int>* [line 15, column 8]\n  n$2=_fun_class_specialization::Base<int>::Base(n$1:class_specialization::Derived<int>*) [line 15, column 8]\n " shape="box"]
+"Derived#Derived<int>#class_specialization#{14157761386473130888}.40e79d469e516a33fdff720996ff80ab_3" [label="3:  Constructor Init \n   n$1=*&this:class_specialization::Derived<int>* [line 15, column 8]\n " shape="box"]
 	
 
-	 "Derived#Derived<int>#class_specialization#{14157761386473130888}.40e79d469e516a33fdff720996ff80ab_3" -> "Derived#Derived<int>#class_specialization#{14157761386473130888}.40e79d469e516a33fdff720996ff80ab_2" ;
+	 "Derived#Derived<int>#class_specialization#{14157761386473130888}.40e79d469e516a33fdff720996ff80ab_3" -> "Derived#Derived<int>#class_specialization#{14157761386473130888}.40e79d469e516a33fdff720996ff80ab_4" ;
+"Derived#Derived<int>#class_specialization#{14157761386473130888}.40e79d469e516a33fdff720996ff80ab_4" [label="4:  Constructor Init \n   n$2=_fun_class_specialization::Base<int>::Base(n$1:class_specialization::Derived<int>*) [line 15, column 8]\n " shape="box"]
+	
+
+	 "Derived#Derived<int>#class_specialization#{14157761386473130888}.40e79d469e516a33fdff720996ff80ab_4" -> "Derived#Derived<int>#class_specialization#{14157761386473130888}.40e79d469e516a33fdff720996ff80ab_2" ;
 }

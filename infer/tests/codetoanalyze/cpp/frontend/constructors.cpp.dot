@@ -1,0 +1,36 @@
+/* @generated */
+digraph cfg {
+"C#C#{3580560627344463844|constexpr}.e3694fd364611ec17124e012297a2e86_1" [label="1: Start C::C\nFormals:  this:C* __param_0:C&\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "C#C#{3580560627344463844|constexpr}.e3694fd364611ec17124e012297a2e86_1" -> "C#C#{3580560627344463844|constexpr}.e3694fd364611ec17124e012297a2e86_2" ;
+"C#C#{3580560627344463844|constexpr}.e3694fd364611ec17124e012297a2e86_2" [label="2: Exit C::C \n  " color=yellow style=filled]
+	
+
+"D#D#{14859184625718510620}.5a45d8adce2fa330a108d14c6d9e7ad2_1" [label="1: Start D::D\nFormals:  this:D*\nLocals:  0$?%__sil_tmp__temp_construct_n$3:C 0$?%__sil_tmpSIL_materialize_temp__n$2:C \n  " color=yellow style=filled]
+	
+
+	 "D#D#{14859184625718510620}.5a45d8adce2fa330a108d14c6d9e7ad2_1" -> "D#D#{14859184625718510620}.5a45d8adce2fa330a108d14c6d9e7ad2_3" ;
+"D#D#{14859184625718510620}.5a45d8adce2fa330a108d14c6d9e7ad2_2" [label="2: Exit D::D \n  " color=yellow style=filled]
+	
+
+"D#D#{14859184625718510620}.5a45d8adce2fa330a108d14c6d9e7ad2_3" [label="3:  Constructor Init \n   n$1=*&this:D* [line 14, column 9]\n " shape="box"]
+	
+
+	 "D#D#{14859184625718510620}.5a45d8adce2fa330a108d14c6d9e7ad2_3" -> "D#D#{14859184625718510620}.5a45d8adce2fa330a108d14c6d9e7ad2_4" ;
+"D#D#{14859184625718510620}.5a45d8adce2fa330a108d14c6d9e7ad2_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$2:C); [line 14, column 11]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$2:C=0 [line 14, column 11]\n " shape="box"]
+	
+
+	 "D#D#{14859184625718510620}.5a45d8adce2fa330a108d14c6d9e7ad2_4" -> "D#D#{14859184625718510620}.5a45d8adce2fa330a108d14c6d9e7ad2_5" ;
+"D#D#{14859184625718510620}.5a45d8adce2fa330a108d14c6d9e7ad2_5" [label="5:  Destruction(temporaries cleanup) \n   n$4=_fun_C::C(&0$?%__sil_tmp__temp_construct_n$3:C*,&0$?%__sil_tmpSIL_materialize_temp__n$2:C&) [line 14, column 11]\n  n$5=_fun_D::D(n$1:D*,&0$?%__sil_tmp__temp_construct_n$3:C) [line 14, column 9]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$2:C [line 14, column 14]\n  n$7=_fun_C::~C(&0$?%__sil_tmpSIL_materialize_temp__n$2:C*) injected [line 14, column 14]\n " shape="box"]
+	
+
+	 "D#D#{14859184625718510620}.5a45d8adce2fa330a108d14c6d9e7ad2_5" -> "D#D#{14859184625718510620}.5a45d8adce2fa330a108d14c6d9e7ad2_2" ;
+"D#D#{5432425317638667422}.a4365e545a16987608e4a4e42a8d1c69_1" [label="1: Start D::D\nFormals:  this:D* x:C&\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "D#D#{5432425317638667422}.a4365e545a16987608e4a4e42a8d1c69_1" -> "D#D#{5432425317638667422}.a4365e545a16987608e4a4e42a8d1c69_2" ;
+"D#D#{5432425317638667422}.a4365e545a16987608e4a4e42a8d1c69_2" [label="2: Exit D::D \n  " color=yellow style=filled]
+	
+
+}
