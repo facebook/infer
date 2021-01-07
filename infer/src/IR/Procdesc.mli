@@ -65,6 +65,7 @@ module Node : sig
     | IfStmtBranch
     | InitializeDynamicArrayLength
     | InitListExp
+    | LoopBody
     | MessageCall of string
     | MethodBody
     | MonitorEnter

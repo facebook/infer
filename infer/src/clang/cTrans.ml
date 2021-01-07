@@ -2194,7 +2194,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       let trans_state_body =
         {trans_state with succ_nodes= body_succ_nodes; continuation= body_continuation}
       in
-      instruction trans_state_body (Loops.get_body loop_kind)
+      exec_with_node_creation LoopBody ~f:instruction trans_state_body (Loops.get_body loop_kind)
     in
     let join_succ_nodes =
       match loop_kind with

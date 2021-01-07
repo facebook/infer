@@ -84,6 +84,7 @@ module Node = struct
     | IfStmtBranch
     | InitializeDynamicArrayLength
     | InitListExp
+    | LoopBody
     | MessageCall of string
     | MethodBody
     | MonitorEnter
@@ -345,6 +346,8 @@ module Node = struct
         F.pp_print_string fmt "Initialize dynamic array length"
     | InitListExp ->
         F.pp_print_string fmt "InitListExp"
+    | LoopBody ->
+        F.pp_print_string fmt "LoopBody"
     | MessageCall selector ->
         F.fprintf fmt "Message Call: %s" selector
     | MethodBody ->
