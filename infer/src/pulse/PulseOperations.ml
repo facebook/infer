@@ -367,6 +367,20 @@ let invalidate location cause addr_trace astate =
   >>| AddressAttributes.invalidate addr_trace cause location
 
 
+let invalidate_biad_isl location cause (address, history) astate =
+  let+ astates =
+    check_and_abduce_addr_access_isl NoAccess location (address, history) ~null_noop:true astate
+  in
+  List.map
+    ~f:(fun astate ->
+      match astate.AbductiveDomain.isl_status with
+      | ISLOk ->
+          AddressAttributes.invalidate (address, history) cause location astate
+      | ISLError ->
+          astate )
+    astates
+
+
 let invalidate_access location cause ref_addr_hist access astate =
   let astate, (addr_obj, _) = Memory.eval_edge ref_addr_hist access astate in
   invalidate location cause (addr_obj, snd ref_addr_hist) astate

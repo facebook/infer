@@ -128,8 +128,14 @@ module Misc = struct
       let invalidation =
         match operation with `Free -> Invalidation.CFree | `Delete -> Invalidation.CppDelete
       in
-      let+ astate = PulseOperations.invalidate location invalidation deleted_access astate in
-      [ExecutionDomain.ContinueProgram astate]
+      if Config.pulse_isl then
+        let+ astates =
+          PulseOperations.invalidate_biad_isl location invalidation deleted_access astate
+        in
+        List.map astates ~f:(fun astate -> ExecutionDomain.ContinueProgram astate)
+      else
+        let+ astate = PulseOperations.invalidate location invalidation deleted_access astate in
+        [ExecutionDomain.ContinueProgram astate]
 end
 
 module C = struct

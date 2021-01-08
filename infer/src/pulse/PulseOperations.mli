@@ -117,6 +117,11 @@ val invalidate :
   Location.t -> Invalidation.t -> AbstractValue.t * ValueHistory.t -> t -> t access_result
 (** record that the address is invalid *)
 
+val invalidate_biad_isl :
+  Location.t -> Invalidation.t -> AbstractValue.t * ValueHistory.t -> t -> t list access_result
+(** record that the address is invalid. If the address has not been allocated, abduce ISL specs for
+    both invalid (null, free, unint) and allocated heap. *)
+
 val allocate : Procname.t -> Location.t -> AbstractValue.t * ValueHistory.t -> t -> t
 
 val add_dynamic_type : Typ.Name.t -> AbstractValue.t -> t -> t
