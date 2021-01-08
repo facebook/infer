@@ -315,24 +315,50 @@ module PulseTransferFunctions = struct
             let* astate, (rhs_addr, rhs_history) =
               PulseOperations.eval NoAccess loc rhs_exp astate
             in
-            let* astate, lhs_addr_hist = PulseOperations.eval Write loc lhs_exp astate in
-            let* astate =
-              PulseOperations.write_deref loc ~ref:lhs_addr_hist
-                ~obj:(rhs_addr, event :: rhs_history)
-                astate
+            let* is_structured, ls_astate_lhs_addr_hist =
+              if Config.pulse_isl then PulseOperations.eval_structure_isl Write loc lhs_exp astate
+              else
+                let* astate, lhs_addr_hist = PulseOperations.eval Write loc lhs_exp astate in
+                Ok (false, [(astate, lhs_addr_hist)])
             in
-            let astate =
-              if Topl.is_deep_active () then topl_store_step loc ~lhs:lhs_exp ~rhs:rhs_exp astate
-              else astate
+            let write_function lhs_addr_hist astate =
+              if is_structured then
+                PulseOperations.write_deref_biad_isl loc ~ref:lhs_addr_hist Dereference
+                  ~obj:(rhs_addr, event :: rhs_history)
+                  astate
+              else
+                let+ astate =
+                  PulseOperations.write_deref loc ~ref:lhs_addr_hist
+                    ~obj:(rhs_addr, event :: rhs_history)
+                    astate
+                in
+                [astate]
+            in
+            let* astates =
+              List.fold_result ls_astate_lhs_addr_hist ~init:[]
+                ~f:(fun acc_astates (astate, lhs_addr_hist) ->
+                  match (Config.pulse_isl, astate.AbductiveDomain.isl_status) with
+                  | false, _ | true, ISLOk ->
+                      let+ astates = write_function lhs_addr_hist astate in
+                      List.rev_append astates acc_astates
+                  | true, ISLError ->
+                      Ok (astate :: acc_astates) )
+            in
+            let astates =
+              if Topl.is_deep_active () then
+                List.map astates ~f:(fun astate ->
+                    topl_store_step loc ~lhs:lhs_exp ~rhs:rhs_exp astate )
+              else astates
             in
             match lhs_exp with
             | Lvar pvar when Pvar.is_return pvar ->
-                let+ astate =
-                  PulseOperations.check_address_escape loc proc_desc rhs_addr rhs_history astate
-                in
-                [astate]
+                List.fold_result astates ~init:[] ~f:(fun acc astate ->
+                    let+ astate =
+                      PulseOperations.check_address_escape loc proc_desc rhs_addr rhs_history astate
+                    in
+                    astate :: acc )
             | _ ->
-                Ok [astate]
+                Ok astates
           in
           report_on_error analysis_data result
       | Prune (condition, loc, _is_then_branch, _if_kind) ->

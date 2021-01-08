@@ -320,8 +320,26 @@ let write_access location addr_trace_ref access addr_trace_obj astate =
   >>| Memory.add_edge addr_trace_ref access addr_trace_obj location
 
 
+let write_access_biad_isl location addr_trace_ref access addr_trace_obj astate =
+  let* astates = check_and_abduce_addr_access_isl Write location addr_trace_ref astate in
+  List.fold_result astates ~init:[] ~f:(fun acc ast ->
+      let astate =
+        match ast.AbductiveDomain.isl_status with
+        | ISLOk ->
+            Memory.add_edge addr_trace_ref access addr_trace_obj location ast
+        | ISLError ->
+            ast
+      in
+      Ok (astate :: acc) )
+
+
 let write_deref location ~ref:addr_trace_ref ~obj:addr_trace_obj astate =
   write_access location addr_trace_ref Dereference addr_trace_obj astate
+
+
+let write_deref_biad_isl location ~ref:(addr_ref, addr_ref_history) access ~obj:addr_trace_obj
+    astate =
+  write_access_biad_isl location (addr_ref, addr_ref_history) access addr_trace_obj astate
 
 
 let write_field location ~ref:addr_trace_ref field ~obj:addr_trace_obj astate =

@@ -38,6 +38,15 @@ val eval :
     Return an error state if it traverses some known invalid address or if the end destination is
     known to be invalid. *)
 
+val eval_structure_isl :
+     access_mode
+  -> Location.t
+  -> Exp.t
+  -> t
+  -> (bool * (t * (AbstractValue.t * ValueHistory.t)) list) access_result
+(** Similar to eval but apply to data structures and ISL abduction. Return a list of abduced states
+    (ISLOk and ISLErs); The boolean indicates whether it is data structures or not. *)
+
 val prune : Location.t -> condition:Exp.t -> t -> t access_result
 
 val eval_deref : Location.t -> Exp.t -> t -> (t * (AbstractValue.t * ValueHistory.t)) access_result
@@ -95,6 +104,14 @@ val write_deref :
   -> t
   -> t access_result
 (** write the edge [ref --*--> obj] *)
+
+val write_deref_biad_isl :
+     Location.t
+  -> ref:AbstractValue.t * ValueHistory.t
+  -> AbstractValue.t HilExp.Access.t
+  -> obj:AbstractValue.t * ValueHistory.t
+  -> t
+  -> t list access_result
 
 val invalidate :
   Location.t -> Invalidation.t -> AbstractValue.t * ValueHistory.t -> t -> t access_result
