@@ -8,6 +8,7 @@
 #include <vector>
 #include <string>
 #include <optional>
+#include <memory>
 
 namespace folly {
 
@@ -348,4 +349,59 @@ std::string reassing_non_empty_ok(const std::string& x) {
   }
 
   return foo.value();
+}
+
+constexpr const char* envVar = "ENV_VAR";
+
+enum E { OP1, OP2 };
+
+std::optional<std::string> getOptionalValue() {
+  auto value = std::getenv(envVar);
+  if (value) {
+    return std::string{value};
+  }
+  return std::nullopt;
+}
+
+E getEnum() {
+  auto value = std::getenv(envVar);
+  if (value) {
+    return E::OP1;
+  }
+
+  return E::OP2;
+}
+
+std::optional<std::string> cannot_be_empty_FP() {
+  if (getEnum() == E::OP1) {
+    return getOptionalValue().value();
+  }
+  return std::nullopt;
+}
+
+std::string inside_try_catch_FP(const std::string& x) {
+  std::optional<std::string> foo = might_return_none(true, x);
+  try {
+    return foo.value();
+  } catch (...) {
+    return "";
+  }
+}
+
+struct Node {
+  std::shared_ptr<int> shared;
+
+  folly::Optional<std::shared_ptr<int>> getShared() const {
+    if (shared == nullptr) {
+      return folly::none;
+    }
+    return shared;
+  }
+};
+
+int smart_pointer_FP(const Node& node) {
+  if (node.getShared().has_value()) {
+    return *(node.getShared().value());
+  }
+  return -1;
 }
