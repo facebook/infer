@@ -27,6 +27,9 @@ include Invariant.S with type t := t
 val empty : t
 (** The empty context of assumptions. *)
 
+val unsat : t
+(** An unsatisfiable context of assumptions. *)
+
 val add : Var.Set.t -> Formula.t -> t -> Var.Set.t * t
 (** Add (that is, conjoin) an assumption to a context. *)
 

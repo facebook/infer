@@ -66,8 +66,8 @@ let%test_module _ =
       check_frame (Sh.false_ Var.Set.empty) [] Sh.emp ;
       [%expect
         {|
-        ( infer_frame:   false \-   emp
-        ) infer_frame:   false |}]
+        ( infer_frame: false \-   emp
+        ) infer_frame: false |}]
 
     let%expect_test _ =
       check_frame Sh.emp [n_; m_] (Sh.and_ (Formula.eq m n) Sh.emp) ;
