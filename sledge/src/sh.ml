@@ -703,20 +703,25 @@ let rec propagate_context_ ancestor_vs ancestor_ctx q =
   (* strengthen context with that from above *)
   let ancestor_stem = and_ctx_ ancestor_ctx stem in
   let ancestor_ctx = ancestor_stem.ctx in
-  exists xs
-    (List.fold djns ancestor_stem ~f:(fun djn q' ->
-         let dj_ctxs, djn =
-           List.rev_map_split djn ~f:(fun dj ->
-               let dj = propagate_context_ ancestor_vs ancestor_ctx dj in
-               (dj.ctx, dj) )
-         in
-         let new_xs, djn_ctx = Context.interN ancestor_vs dj_ctxs in
-         (* hoist xs appearing in disjunction's context *)
-         let djn_xs = Var.Set.diff (Context.fv djn_ctx) q'.us in
-         let djn = List.map ~f:(elim_exists djn_xs) djn in
-         let ctx_djn = and_ctx_ djn_ctx (orN djn) in
-         assert (is_unsat ctx_djn || Var.Set.subset new_xs ~of_:djn_xs) ;
-         star (exists djn_xs ctx_djn) q' ))
+  let q' =
+    List.fold djns ancestor_stem ~f:(fun djn q' ->
+        let dj_ctxs, djn =
+          List.rev_map_split djn ~f:(fun dj ->
+              let dj = propagate_context_ ancestor_vs ancestor_ctx dj in
+              (dj.ctx, dj) )
+        in
+        let new_xs, djn_ctx = Context.interN ancestor_vs dj_ctxs in
+        (* hoist xs appearing in disjunction's context *)
+        let djn_xs = Var.Set.diff (Context.fv djn_ctx) q'.us in
+        let djn = List.map ~f:(elim_exists djn_xs) djn in
+        let ctx_djn = and_ctx_ djn_ctx (orN djn) in
+        assert (is_false ctx_djn || Var.Set.subset new_xs ~of_:djn_xs) ;
+        star (exists djn_xs ctx_djn) q' )
+  in
+  (* requantify existentials *)
+  let q' = exists xs q' in
+  (* strengthening contexts can reveal inconsistency *)
+  (if is_false q' then false_ q'.us else q')
   |>
   [%Trace.retn fun {pf} q' ->
     pf "%a" pp q' ;
@@ -776,9 +781,7 @@ let rec simplify_ us rev_xss q =
   (* try to solve equations in ctx for variables in xss *)
   let subst = Context.solve_for_vars (us :: List.rev rev_xss) q.ctx in
   let removed, q =
-    (* simplification can reveal inconsistency *)
-    if is_unsat q then (Var.Set.empty, false_ q.us)
-    else if Context.Subst.is_empty subst then (Var.Set.empty, q)
+    if Context.Subst.is_empty subst then (Var.Set.empty, q)
     else
       (* normalize wrt solutions *)
       let q = norm subst q in
