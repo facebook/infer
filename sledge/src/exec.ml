@@ -719,7 +719,7 @@ let exec_specs pre specs =
 
 let assume pre cnd =
   let post = Sh.and_ cnd pre in
-  if Sh.is_false post then None else Some post
+  if Sh.is_unsat post then None else Some post
 
 let kill pre reg =
   let ms = Var.Set.of_ reg in

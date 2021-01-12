@@ -639,10 +639,10 @@ let pure_entails x q = Sh.is_empty q && Context.implies x (Sh.pure_approx q)
 
 let rec excise ({min; xs; sub; zs; pgs} as goal) =
   [%Trace.info "@[<2>excise@ %a@]" pp goal] ;
-  if Sh.is_false min then Some (Sh.false_ (Var.Set.diff sub.us zs))
+  if Sh.is_unsat min then Some (Sh.false_ (Var.Set.diff sub.us zs))
   else if pure_entails min.ctx sub then
     Some (Sh.exists zs (Sh.extend_us xs min))
-  else if Sh.is_false sub then None
+  else if Sh.is_unsat sub then None
   else if pgs then
     goal |> with_ ~pgs:false |> excise_exists |> excise_heap >>= excise
   else None $> fun _ -> [%Trace.info "@[<2>excise fail@ %a@]" pp goal]

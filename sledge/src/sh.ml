@@ -592,7 +592,9 @@ let pure_approx q =
   |>
   [%Trace.retn fun {pf} -> pf "%a" Formula.pp]
 
-let is_false q = Context.refutes q.ctx (pure_approx q)
+(** test if pure constraints are inconsistent with first-order consequences
+    of spatial constraints *)
+let is_unsat q = Context.refutes q.ctx (pure_approx q)
 
 let fold_dnf ~conj ~disj sjn (xs, conjuncts) disjuncts =
   let rec add_disjunct pending_splits sjn (xs, conjuncts) disjuncts =
@@ -696,7 +698,7 @@ let rec propagate_context_ ancestor_vs ancestor_ctx q =
          let djn_xs = Var.Set.diff (Context.fv djn_ctx) q'.us in
          let djn = List.map ~f:(elim_exists djn_xs) djn in
          let ctx_djn = and_ctx_ djn_ctx (orN djn) in
-         assert (is_false ctx_djn || Var.Set.subset new_xs ~of_:djn_xs) ;
+         assert (is_unsat ctx_djn || Var.Set.subset new_xs ~of_:djn_xs) ;
          star (exists djn_xs ctx_djn) q' ))
   |>
   [%Trace.retn fun {pf} q' ->
@@ -754,7 +756,7 @@ let rec simplify_ us rev_xss q =
   let subst = Context.solve_for_vars (us :: List.rev rev_xss) q.ctx in
   let removed, q =
     (* simplification can reveal inconsistency *)
-    if is_false q then (Var.Set.empty, false_ q.us)
+    if is_unsat q then (Var.Set.empty, false_ q.us)
     else if Context.Subst.is_empty subst then (Var.Set.empty, q)
     else
       (* normalize wrt solutions *)

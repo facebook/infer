@@ -41,7 +41,7 @@ let join p q =
   |>
   [%Trace.retn fun {pf} -> pf "%a" (Option.pp "%a" pp)]
 
-let is_false = Sh.is_false
+let is_false = Sh.is_unsat
 let dnf = Sh.dnf
 let exec_assume q b = Exec.assume q (X.formula b) |> Option.map ~f:simplify
 let exec_kill r q = Exec.kill q (X.reg r) |> simplify

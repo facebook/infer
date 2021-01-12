@@ -113,7 +113,7 @@ val extend_us : Var.Set.t -> t -> t
 
 (** Query *)
 
-val is_false : t -> bool
+val is_unsat : t -> bool
 (** Holds only of inconsistent formulas, does not hold of all inconsistent
     formulas. *)
 
