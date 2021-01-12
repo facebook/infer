@@ -177,6 +177,11 @@ end = struct
       and ν are maximal where ∃ks. ν is universally valid, xs ⊇ ks and
       ks ∩ fv(τ) = ∅. *)
   let partition_valid xs s =
+    [%trace]
+      ~call:(fun {pf} -> pf "%a@ %a" Var.Set.pp_xs xs pp s)
+      ~retn:(fun {pf} (t, ks, u) ->
+        pf "%a@ %a@ %a" pp t Var.Set.pp_xs ks pp u )
+    @@ fun () ->
     (* Move equations e=f from s to t when ∃ks.e=f fails to be provably
        valid. When moving an equation, reduce ks by fv(e=f) to maintain ks ∩
        fv(t) = ∅. This reduction may cause equations in s to no longer be
@@ -258,6 +263,15 @@ let solve_poly ?f p q s =
 (* α[o,l) = β ==> l = |β| ∧ α = (⟨n,c⟩[0,o) ^ β ^ ⟨n,c⟩[o+l,n-o-l)) where n
    = |α| and c fresh *)
 let rec solve_extract ?f a o l b s =
+  [%trace]
+    ~call:(fun {pf} ->
+      pf "%a = %a@ %a%a" Trm.pp
+        (Trm.extract ~seq:a ~off:o ~len:l)
+        Trm.pp b Var.Set.pp_xs (snd3 s) Subst.pp (trd3 s) )
+    ~retn:(fun {pf} -> function
+      | Some (_, xs, s) -> pf "%a%a" Var.Set.pp_xs xs Subst.pp s
+      | None -> pf "false" )
+  @@ fun () ->
   let n = Trm.seq_size_exn a in
   let c, s = fresh "c" s in
   let n_c = Trm.sized ~siz:n ~seq:c in
@@ -275,6 +289,14 @@ let rec solve_extract ?f a o l b s =
 (* α₀^…^αᵢ^αⱼ^…^αᵥ = β ==> |α₀^…^αᵥ| = |β| ∧ … ∧ αⱼ = β[n₀+…+nᵢ,nⱼ) ∧ …
    where nₓ ≡ |αₓ| and m = |β| *)
 and solve_concat ?f a0V b m s =
+  [%trace]
+    ~call:(fun {pf} ->
+      pf "%a = %a@ %a%a" Trm.pp (Trm.concat a0V) Trm.pp b Var.Set.pp_xs
+        (snd3 s) Subst.pp (trd3 s) )
+    ~retn:(fun {pf} -> function
+      | Some (_, xs, s) -> pf "%a%a" Var.Set.pp_xs xs Subst.pp s
+      | None -> pf "false" )
+  @@ fun () ->
   Iter.fold_until (Array.to_iter a0V) (s, Trm.zero)
     ~f:(fun aJ (s, oI) ->
       let nJ = Trm.seq_size_exn aJ in

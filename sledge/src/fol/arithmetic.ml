@@ -49,6 +49,8 @@ struct
         Format.fprintf ppf "@[<2>%a@]" pp_num num
       else Format.fprintf ppf "@[<2>(%a%a)@]" pp_num num pp_den den
 
+    let pp = ppx (fun _ -> None)
+
     (** [one] is the empty product Πᵢ₌₁⁰ xᵢ^pᵢ *)
     let one = Prod.empty
 
@@ -317,6 +319,16 @@ struct
     (** [solve_for_mono r c m p] solves [0 = r + (c×m) + p] as [m = q]
         ([Some (m, q)]) such that [r + (c×m) + p = m - q] *)
     let solve_for_mono rejected_poly coeff mono poly =
+      [%trace]
+        ~call:(fun {pf} ->
+          pf "0 = %a + (%a×%a) + %a" pp rejected_poly Q.pp coeff Mono.pp
+            mono pp poly )
+        ~retn:(fun {pf} s ->
+          pf "%a"
+            (Option.pp "%a" (fun fs (v, q) ->
+                 Format.fprintf fs "%a ↦ %a" pp v pp q ))
+            s )
+      @@ fun () ->
       if Mono.equal_one mono || exists_fv_in (Mono.fv mono) poly then None
       else
         Some

@@ -290,7 +290,7 @@ let rec invariant q =
             invariant sjn ) )
   with exc ->
     let bt = Printexc.get_raw_backtrace () in
-    [%Trace.info "%a" pp q] ;
+    [%Trace.info "%a" pp_raw q] ;
     Printexc.raise_with_backtrace exc bt
 
 (** Quantification and Vocabulary *)
@@ -446,9 +446,14 @@ let and_ctx ctx q =
     invariant q]
 
 let star q1 q2 =
-  [%Trace.call fun {pf} -> pf "(%a)@ (%a)" pp q1 pp q2]
-  ;
-  ( match (q1, q2) with
+  [%trace]
+    ~call:(fun {pf} -> pf "(%a)@ (%a)" pp q1 pp q2)
+    ~retn:(fun {pf} q ->
+      pf "%a" pp q ;
+      invariant q ;
+      assert (Var.Set.equal q.us (Var.Set.union q1.us q2.us)) )
+  @@ fun () ->
+  match (q1, q2) with
   | {djns= [[]]; _}, _ | _, {djns= [[]]; _} ->
       false_ (Var.Set.union q1.us q2.us)
   | {us= _; xs= _; ctx; pure; heap= []; djns= []}, _
@@ -479,12 +484,7 @@ let star q1 q2 =
           ; ctx
           ; pure
           ; heap= List.append h1 h2
-          ; djns= List.append d1 d2 } )
-  |>
-  [%Trace.retn fun {pf} q ->
-    pf "%a" pp q ;
-    invariant q ;
-    assert (Var.Set.equal q.us (Var.Set.union q1.us q2.us))]
+          ; djns= List.append d1 d2 }
 
 let starN = function
   | [] -> emp
@@ -725,6 +725,10 @@ let pp_vss fs vss =
     vss
 
 let remove_absent_xs ks q =
+  [%trace]
+    ~call:(fun {pf} -> pf "%a%a" Var.Set.pp_xs ks pp q)
+    ~retn:(fun {pf} -> pf "%a" pp)
+  @@ fun () ->
   let ks = Var.Set.inter ks q.xs in
   if Var.Set.is_empty ks then q
   else
