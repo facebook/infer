@@ -681,11 +681,13 @@ let fold_uses_of r t s ~f =
 let apply_subst wrt s r =
   [%Trace.call fun {pf} -> pf "%a@ %a" Subst.pp s pp r]
   ;
-  Trm.Map.fold (classes r) empty ~f:(fun ~key:rep ~data:cls r ->
-      let rep' = Subst.subst_ s rep in
-      List.fold cls r ~f:(fun trm r ->
-          let trm' = Subst.subst_ s trm in
-          and_eq_ ~wrt trm' rep' r ) )
+  ( if Subst.is_empty s then r
+  else
+    Trm.Map.fold (classes r) empty ~f:(fun ~key:rep ~data:cls r ->
+        let rep' = Subst.subst_ s rep in
+        List.fold cls r ~f:(fun trm r ->
+            let trm' = Subst.subst_ s trm in
+            and_eq_ ~wrt trm' rep' r ) ) )
   |> extract_xs
   |>
   [%Trace.retn fun {pf} (xs, r') ->
