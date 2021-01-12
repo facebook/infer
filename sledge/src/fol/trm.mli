@@ -41,6 +41,7 @@ module Set : sig
   include Set.S with type elt := t
 
   val t_of_sexp : Sexp.t -> t
+  val pp : t pp
 end
 
 module Map : sig

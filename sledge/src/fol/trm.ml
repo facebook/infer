@@ -385,11 +385,14 @@ end
 
 module T = struct
   type t = Trm.t [@@deriving compare, sexp]
+
+  let pp = Trm.pp
 end
 
 module Set = struct
   include Set.Make (T)
   include Provide_of_sexp (T)
+  include Provide_pp (T)
 end
 
 module Map = struct
