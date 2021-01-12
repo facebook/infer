@@ -560,7 +560,7 @@ let congruent r a b = semi_congruent r (Trm.map ~f:(Subst.norm r.rep) a) b
 
 let pre_invariant r =
   let@ () = Invariant.invariant [%here] r [%sexp_of: t] in
-  Subst.iteri r.rep ~f:(fun ~key:trm ~data:_ ->
+  Subst.iteri r.rep ~f:(fun ~key:trm ~data:rep ->
       (* no interpreted terms in carrier *)
       assert (
         (not (is_interpreted trm)) || fail "non-interp %a" Trm.pp trm () ) ;
@@ -571,7 +571,13 @@ let pre_invariant r =
             || (match subtrm with Z _ | Q _ -> true | _ -> false)
             || in_car r subtrm
             || fail "@[subterm %a@ of %a@ not in carrier of@ %a@]" Trm.pp
-                 subtrm Trm.pp trm pp r () ) ) )
+                 subtrm Trm.pp trm pp r () ) ) ;
+      (* rep is idempotent *)
+      assert (
+        let rep' = Subst.norm r.rep rep in
+        Trm.equal rep rep'
+        || fail "not idempotent: %a != %a in@ %a" Trm.pp rep Trm.pp rep'
+             Subst.pp r.rep () ) )
 
 let invariant r =
   let@ () = Invariant.invariant [%here] r [%sexp_of: t] in
