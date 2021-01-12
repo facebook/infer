@@ -36,6 +36,7 @@ module type VAR = sig
     val ppx : strength -> t pp
     val pp : t pp
     val pp_xs : t pp
+    val pp_diff : (t * t) pp
   end
 
   val id : t -> int

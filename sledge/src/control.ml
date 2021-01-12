@@ -211,21 +211,23 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
       type elt = {depth: int; edge: Edge.t; state: Dom.t; depths: Depths.t}
       [@@deriving compare, sexp_of]
 
-      module Elts = Set.Make (struct
+      module Elt = struct
         type t = elt [@@deriving compare, sexp_of]
-      end)
+
+        let pp ppf {depth; edge} =
+          Format.fprintf ppf "%i: %a" depth Edge.pp edge
+      end
+
+      module Elts = Set.Make (Elt)
 
       type t = {queue: elt FHeap.t; removed: Elts.t}
-
-      let pp_elt ppf {depth; edge} =
-        Format.fprintf ppf "%i: %a" depth Edge.pp edge
 
       let pp ppf {queue; removed} =
         let rev_elts =
           FHeap.fold queue ~init:[] ~f:(fun rev_elts elt ->
               if Elts.mem elt removed then rev_elts else elt :: rev_elts )
         in
-        Format.fprintf ppf "@[%a@]" (List.pp " ::@ " pp_elt)
+        Format.fprintf ppf "@[%a@]" (List.pp " ::@ " Elt.pp)
           (List.rev rev_elts)
 
       let create () =

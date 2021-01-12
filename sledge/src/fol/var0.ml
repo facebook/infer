@@ -9,23 +9,28 @@ open Var_intf
 
 (** Variables, parameterized over their representation *)
 module Make (T : REPR) = struct
+  module T = struct
+    include T
+
+    type nonrec strength = t strength
+
+    let ppx strength ppf v =
+      let id = id v in
+      let name = name v in
+      let pp_id ppf id = if id <> 0 then Format.fprintf ppf "_%d" id in
+      match strength v with
+      | None ->
+          if id = 0 then Trace.pp_styled `Bold "%%%s" ppf name
+          else Format.fprintf ppf "%%%s%a" name pp_id id
+      | Some `Universal -> Trace.pp_styled `Bold "%%%s%a" ppf name pp_id id
+      | Some `Existential ->
+          Trace.pp_styled `Cyan "%%%s%a" ppf name pp_id id
+      | Some `Anonymous -> Trace.pp_styled `Cyan "_" ppf
+
+    let pp = ppx (fun _ -> None)
+  end
+
   include T
-
-  type nonrec strength = t strength
-
-  let ppx strength ppf v =
-    let id = id v in
-    let name = name v in
-    let pp_id ppf id = if id <> 0 then Format.fprintf ppf "_%d" id in
-    match strength v with
-    | None ->
-        if id = 0 then Trace.pp_styled `Bold "%%%s" ppf name
-        else Format.fprintf ppf "%%%s%a" name pp_id id
-    | Some `Universal -> Trace.pp_styled `Bold "%%%s%a" ppf name pp_id id
-    | Some `Existential -> Trace.pp_styled `Cyan "%%%s%a" ppf name pp_id id
-    | Some `Anonymous -> Trace.pp_styled `Cyan "_" ppf
-
-  let pp = ppx (fun _ -> None)
 
   module Map = struct
     include NS.Map.Make (T)
@@ -33,13 +38,12 @@ module Make (T : REPR) = struct
   end
 
   module Set = struct
-    let pp_t = pp
-
-    include NS.Set.Make (T)
+    module S = NS.Set.Make (T)
+    include S
     include Provide_of_sexp (T)
+    include Provide_pp (T)
 
-    let ppx strength vs = pp (ppx strength) vs
-    let pp vs = pp pp_t vs
+    let ppx strength vs = S.pp_full (ppx strength) vs
 
     let pp_xs fs xs =
       if not (is_empty xs) then

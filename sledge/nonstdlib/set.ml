@@ -118,11 +118,20 @@ end) : S with type elt = Elt.t = struct
   let to_iter = S.to_iter
   let of_iter = S.of_iter
 
-  let pp ?pre ?suf ?(sep = (",@ " : (unit, unit) fmt)) pp_elt fs x =
+  let pp_full ?pre ?suf ?(sep = (",@ " : (unit, unit) fmt)) pp_elt fs x =
     List.pp ?pre ?suf sep pp_elt fs (S.elements x)
 
-  let pp_diff pp_elt fs (xs, ys) =
-    let lose = diff xs ys and gain = diff ys xs in
-    if not (is_empty lose) then Format.fprintf fs "-- %a" (pp pp_elt) lose ;
-    if not (is_empty gain) then Format.fprintf fs "++ %a" (pp pp_elt) gain
+  module Provide_pp (Elt : sig
+    type t = elt
+
+    val pp : t pp
+  end) =
+  struct
+    let pp = pp_full Elt.pp
+
+    let pp_diff fs (xs, ys) =
+      let lose = diff xs ys and gain = diff ys xs in
+      if not (is_empty lose) then Format.fprintf fs "-- %a" pp lose ;
+      if not (is_empty gain) then Format.fprintf fs "++ %a" pp gain
+  end
 end

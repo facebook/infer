@@ -43,11 +43,11 @@ let ppx strength fs fml =
       else pp_arith_op p_c op n_d
     in
     let pp_join sep pos neg =
-      pf "(%a%t%a)" (Set.pp ~sep pp) pos
+      pf "(%a%t%a)" (Set.pp_full ~sep pp) pos
         (fun ppf ->
           if (not (Set.is_empty pos)) && not (Set.is_empty neg) then
             Format.fprintf ppf sep )
-        (Set.pp ~sep (fun fs fml -> pp fs (_Not fml)))
+        (Set.pp_full ~sep (fun fs fml -> pp fs (_Not fml)))
         neg
     in
     match fml with

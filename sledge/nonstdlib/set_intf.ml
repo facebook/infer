@@ -25,6 +25,27 @@ module type S = sig
   end
   with type t := t
 
+  (** {1 Pretty-print} *)
+
+  val pp_full :
+       ?pre:(unit, unit) fmt
+    -> ?suf:(unit, unit) fmt
+    -> ?sep:(unit, unit) fmt
+    -> elt pp
+    -> t pp
+
+  module Provide_pp (_ : sig
+    type t = elt
+
+    val pp : t pp
+  end) : sig
+    type t
+
+    val pp : t pp
+    val pp_diff : (t * t) pp
+  end
+  with type t := t
+
   (** {1 Construct} *)
 
   val empty : t
@@ -75,15 +96,4 @@ module type S = sig
 
   val to_iter : t -> elt iter
   val of_iter : elt iter -> t
-
-  (** {1 Pretty-print} *)
-
-  val pp :
-       ?pre:(unit, unit) fmt
-    -> ?suf:(unit, unit) fmt
-    -> ?sep:(unit, unit) fmt
-    -> elt pp
-    -> t pp
-
-  val pp_diff : elt pp -> (t * t) pp
 end

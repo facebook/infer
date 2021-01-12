@@ -73,6 +73,89 @@ module T = struct
     | Ap3 of op3 * Typ.t * t * t * t
     | ApN of opN * Typ.t * t iarray
   [@@deriving compare, equal, hash, sexp]
+
+  let demangle = ref (fun _ -> None)
+
+  let pp_demangled ppf name =
+    match !demangle name with
+    | Some demangled when not (String.equal name demangled) ->
+        Format.fprintf ppf "“%s”" demangled
+    | _ -> ()
+
+  let pp_op2 fs op =
+    let pf fmt = Format.fprintf fs fmt in
+    match op with
+    | Eq -> pf "="
+    | Dq -> pf "@<1>≠"
+    | Gt -> pf ">"
+    | Ge -> pf "@<1>≥"
+    | Lt -> pf "<"
+    | Le -> pf "@<1>≤"
+    | Ugt -> pf "u>"
+    | Uge -> pf "@<2>u≥"
+    | Ult -> pf "u<"
+    | Ule -> pf "@<2>u≤"
+    | Ord -> pf "ord"
+    | Uno -> pf "uno"
+    | Add -> pf "+"
+    | Sub -> pf "-"
+    | Mul -> pf "@<1>×"
+    | Div -> pf "/"
+    | Udiv -> pf "udiv"
+    | Rem -> pf "rem"
+    | Urem -> pf "urem"
+    | And -> pf "&&"
+    | Or -> pf "||"
+    | Xor -> pf "xor"
+    | Shl -> pf "shl"
+    | Lshr -> pf "lshr"
+    | Ashr -> pf "ashr"
+    | Update idx -> pf "[_|%i→_]" idx
+
+  let rec pp fs exp =
+    let pf fmt =
+      Format.pp_open_box fs 2 ;
+      Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
+    in
+    match exp with
+    | Reg {name} -> pf "%%%s" name
+    | Global {name} -> pf "%@%s%a" name pp_demangled name
+    | Function {name} -> pf "&%s%a" name pp_demangled name
+    | Label {name} -> pf "%s" name
+    | Integer {data; typ= Pointer _} when Z.equal Z.zero data -> pf "null"
+    | Integer {data} -> Trace.pp_styled `Magenta "%a" fs Z.pp data
+    | Float {data} -> pf "%s" data
+    | Ap1 (Signed {bits}, dst, arg) ->
+        pf "((%a)(s%i)@ %a)" Typ.pp dst bits pp arg
+    | Ap1 (Unsigned {bits}, dst, arg) ->
+        pf "((%a)(u%i)@ %a)" Typ.pp dst bits pp arg
+    | Ap1 (Convert {src}, dst, arg) ->
+        pf "((%a)(%a)@ %a)" Typ.pp dst Typ.pp src pp arg
+    | Ap1 (Splat, _, byt) -> pf "%a^" pp byt
+    | Ap1 (Select idx, _, rcd) -> pf "%a[%i]" pp rcd idx
+    | Ap2 (Update idx, _, rcd, elt) ->
+        pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
+    | Ap2 (Xor, Integer {bits= 1}, Integer {data}, x) when Z.is_true data ->
+        pf "¬%a" pp x
+    | Ap2 (Xor, Integer {bits= 1}, x, Integer {data}) when Z.is_true data ->
+        pf "¬%a" pp x
+    | Ap2 (op, _, x, y) -> pf "(%a@ %a %a)" pp x pp_op2 op pp y
+    | Ap3 (Conditional, _, cnd, thn, els) ->
+        pf "(%a@ ? %a@ : %a)" pp cnd pp thn pp els
+    | ApN (Record, _, elts) -> pf "{%a}" pp_record elts
+    [@@warning "-9"]
+
+  and pp_record fs elts =
+    match
+      String.init (IArray.length elts) ~f:(fun i ->
+          match IArray.get elts i with
+          | Integer {data; typ= Integer {byts= 1; _}} ->
+              Char.of_int_exn (Z.to_int data)
+          | _ -> raise_notrace (Invalid_argument "not a string") )
+    with
+    | s -> Format.fprintf fs "@[<h>%s@]" (String.escaped s)
+    | exception _ ->
+        Format.fprintf fs "@[<hv>%a@]" (IArray.pp ",@ " pp) elts
 end
 
 include T
@@ -85,88 +168,6 @@ end
 
 module Map = Map.Make (T)
 module Tbl = HashTable.Make (T)
-
-let demangle = ref (fun _ -> None)
-
-let pp_demangled ppf name =
-  match !demangle name with
-  | Some demangled when not (String.equal name demangled) ->
-      Format.fprintf ppf "“%s”" demangled
-  | _ -> ()
-
-let pp_op2 fs op =
-  let pf fmt = Format.fprintf fs fmt in
-  match op with
-  | Eq -> pf "="
-  | Dq -> pf "@<1>≠"
-  | Gt -> pf ">"
-  | Ge -> pf "@<1>≥"
-  | Lt -> pf "<"
-  | Le -> pf "@<1>≤"
-  | Ugt -> pf "u>"
-  | Uge -> pf "@<2>u≥"
-  | Ult -> pf "u<"
-  | Ule -> pf "@<2>u≤"
-  | Ord -> pf "ord"
-  | Uno -> pf "uno"
-  | Add -> pf "+"
-  | Sub -> pf "-"
-  | Mul -> pf "@<1>×"
-  | Div -> pf "/"
-  | Udiv -> pf "udiv"
-  | Rem -> pf "rem"
-  | Urem -> pf "urem"
-  | And -> pf "&&"
-  | Or -> pf "||"
-  | Xor -> pf "xor"
-  | Shl -> pf "shl"
-  | Lshr -> pf "lshr"
-  | Ashr -> pf "ashr"
-  | Update idx -> pf "[_|%i→_]" idx
-
-let rec pp fs exp =
-  let pf fmt =
-    Format.pp_open_box fs 2 ;
-    Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
-  in
-  match exp with
-  | Reg {name} -> pf "%%%s" name
-  | Global {name} -> pf "%@%s%a" name pp_demangled name
-  | Function {name} -> pf "&%s%a" name pp_demangled name
-  | Label {name} -> pf "%s" name
-  | Integer {data; typ= Pointer _} when Z.equal Z.zero data -> pf "null"
-  | Integer {data} -> Trace.pp_styled `Magenta "%a" fs Z.pp data
-  | Float {data} -> pf "%s" data
-  | Ap1 (Signed {bits}, dst, arg) ->
-      pf "((%a)(s%i)@ %a)" Typ.pp dst bits pp arg
-  | Ap1 (Unsigned {bits}, dst, arg) ->
-      pf "((%a)(u%i)@ %a)" Typ.pp dst bits pp arg
-  | Ap1 (Convert {src}, dst, arg) ->
-      pf "((%a)(%a)@ %a)" Typ.pp dst Typ.pp src pp arg
-  | Ap1 (Splat, _, byt) -> pf "%a^" pp byt
-  | Ap1 (Select idx, _, rcd) -> pf "%a[%i]" pp rcd idx
-  | Ap2 (Update idx, _, rcd, elt) ->
-      pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
-  | Ap2 (Xor, Integer {bits= 1}, Integer {data}, x) when Z.is_true data ->
-      pf "¬%a" pp x
-  | Ap2 (Xor, Integer {bits= 1}, x, Integer {data}) when Z.is_true data ->
-      pf "¬%a" pp x
-  | Ap2 (op, _, x, y) -> pf "(%a@ %a %a)" pp x pp_op2 op pp y
-  | Ap3 (Conditional, _, cnd, thn, els) ->
-      pf "(%a@ ? %a@ : %a)" pp cnd pp thn pp els
-  | ApN (Record, _, elts) -> pf "{%a}" pp_record elts
-  [@@warning "-9"]
-
-and pp_record fs elts =
-  match
-    String.init (IArray.length elts) ~f:(fun i ->
-        match IArray.get elts i with
-        | Integer {data; typ= Integer {byts= 1; _}} ->
-            Char.of_int_exn (Z.to_int data)
-        | _ -> raise_notrace (Invalid_argument "not a string") )
-  with
-  | s -> Format.fprintf fs "@[<h>%s@]" (String.escaped s)
-  | exception _ -> Format.fprintf fs "@[<hv>%a@]" (IArray.pp ",@ " pp) elts
 
 (** Invariant *)
 
@@ -281,18 +282,13 @@ and typ_of exp =
       typ
   [@@warning "-9"]
 
-let pp_exp = pp
-
 (** Registers are the expressions constructed by [Reg] *)
 module Reg = struct
   include T
 
-  let pp = pp
-
   module Set = struct
     include Set
-
-    let pp = Set.pp pp_exp
+    include Provide_pp (T)
   end
 
   let invariant x =
@@ -313,12 +309,9 @@ end
 module Global = struct
   include T
 
-  let pp = pp
-
   module Set = struct
     include Set
-
-    let pp = Set.pp pp_exp
+    include Provide_pp (T)
   end
 
   let invariant x =
@@ -339,7 +332,6 @@ end
 module Function = struct
   include T
 
-  let pp = pp
   let name = function Function x -> x.name | r -> violates invariant r
   let typ = function Function x -> x.typ | r -> violates invariant r
 

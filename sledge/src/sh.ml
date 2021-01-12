@@ -182,8 +182,7 @@ let pp_us ?vs fs us =
         [%Trace.fprintf fs "@<2>∀ @[%a@] .@ " Var.Set.pp us]
   | Some vs ->
       if not (Var.Set.equal vs us) then
-        [%Trace.fprintf
-          fs "@<2>∀ @[%a@] .@ " (Var.Set.pp_diff Var.pp) (vs, us)]
+        [%Trace.fprintf fs "@<2>∀ @[%a@] .@ " Var.Set.pp_diff (vs, us)]
 
 let rec pp_ ?var_strength ?vs ancestor_xs parent_ctx fs
     {us; xs; ctx; pure; heap; djns} =
