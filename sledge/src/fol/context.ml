@@ -199,7 +199,8 @@ end = struct
       in
       if s' != s then partition_valid_ t' ks' s' else (t', ks', s')
     in
-    partition_valid_ empty xs s
+    if Var.Set.is_empty xs then (s, Var.Set.empty, empty)
+    else partition_valid_ empty xs s
 
   (* direct representation manipulation *)
 
