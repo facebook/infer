@@ -710,7 +710,7 @@ let fold_uses_of r t s ~f =
   let rec fold_ e s ~f =
     let s =
       Iter.fold (Trm.trms e) s ~f:(fun sub s ->
-          if Trm.equal t sub then f e s else s )
+          fold_ ~f sub (if Trm.equal t sub then f e s else s) )
     in
     if is_interpreted e then Iter.fold ~f:(fold_ ~f) (Trm.trms e) s else s
   in
