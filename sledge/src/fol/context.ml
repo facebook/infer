@@ -710,7 +710,7 @@ let fold_uses_of r t s ~f =
   let rec fold_ e s ~f =
     let s =
       Iter.fold (Trm.trms e) s ~f:(fun sub s ->
-          if Trm.equal t sub then f s e else s )
+          if Trm.equal t sub then f e s else s )
     in
     if is_interpreted e then Iter.fold ~f:(fold_ ~f) (Trm.trms e) s else s
   in
@@ -1053,11 +1053,12 @@ let solve_concat_extracts_eq r x =
   [%Trace.call fun {pf} -> pf "%a@ %a" Trm.pp x pp r]
   ;
   let uses =
-    fold_uses_of r x [] ~f:(fun uses -> function
-      | Sized _ as m ->
-          fold_uses_of r m uses ~f:(fun uses -> function
-            | Extract _ as e -> e :: uses | _ -> uses )
-      | _ -> uses )
+    fold_uses_of r x [] ~f:(fun use uses ->
+        match use with
+        | Sized _ as m ->
+            fold_uses_of r m uses ~f:(fun use uses ->
+                match use with Extract _ as e -> e :: uses | _ -> uses )
+        | _ -> uses )
   in
   let find_extracts_at_off off =
     List.filter uses ~f:(fun use ->
