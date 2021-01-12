@@ -753,25 +753,19 @@ let remove_absent_xs ks q =
   let ks = Var.Set.inter ks q.xs in
   if Var.Set.is_empty ks then q
   else
-    let ks, ctx = Context.elim ks q.ctx in
-    if Var.Set.is_empty ks then q
-    else
-      let xs = Var.Set.diff q.xs ks in
-      let djns =
-        let rec trim_ks ks djns =
-          List.map djns ~f:(fun djn ->
-              List.map djn ~f:(fun sjn ->
-                  let ks, ctx = Context.elim ks sjn.ctx in
-                  if Var.Set.is_empty ks then sjn
-                  else
-                    { sjn with
-                      us= Var.Set.diff sjn.us ks
-                    ; ctx
-                    ; djns= trim_ks ks sjn.djns } ) )
-        in
-        trim_ks ks q.djns
+    let xs = Var.Set.diff q.xs ks in
+    let djns =
+      let rec trim_ks ks djns =
+        List.map_endo djns ~f:(fun djn ->
+            List.map_endo djn ~f:(fun sjn ->
+                let us = Var.Set.diff sjn.us ks in
+                let djns = trim_ks ks sjn.djns in
+                if us == sjn.us && djns == sjn.djns then sjn
+                else {sjn with us; djns} ) )
       in
-      {q with xs; ctx; djns}
+      trim_ks ks q.djns
+    in
+    {q with xs; djns}
 
 let rec simplify_ us rev_xss q =
   [%Trace.call fun {pf} -> pf "%a@ %a" pp_vss (List.rev rev_xss) pp_raw q]
@@ -788,31 +782,32 @@ let rec simplify_ us rev_xss q =
       )
   in
   (* try to solve equations in ctx for variables in xss *)
-  let subst = Context.solve_for_vars (us :: List.rev rev_xss) q.ctx in
-  let removed, q =
-    if Context.Subst.is_empty subst then (Var.Set.empty, q)
-    else
-      (* normalize wrt solutions *)
-      let q = norm subst q in
-      if is_false q then (Var.Set.empty, false_ q.us)
-      else
-        let removed, ctx =
-          Context.elim (Var.Set.union_list rev_xss) q.ctx
-        in
-        let q = {q with ctx} in
-        let removed =
-          Var.Set.diff removed (fv ~ignore_ctx:() (elim_exists q.xs q))
-        in
-        let keep, removed, _ =
-          Context.Subst.partition_valid removed subst
-        in
-        let q = and_subst keep q in
-        (removed, q)
+  let xss = List.rev rev_xss in
+  let subst = Context.solve_for_vars (us :: xss) q.ctx in
+  let union_xss = Var.Set.union_list rev_xss in
+  let wrt = Var.Set.union us union_xss in
+  let fresh, ctx, removed =
+    Context.apply_and_elim ~wrt union_xss subst q.ctx
   in
-  (* re-quantify existentials *)
-  let q = exists xs q in
-  (* remove the eliminated variables from xs and subformulas' us *)
-  remove_absent_xs removed q
+  ( if Context.is_unsat ctx then false_ q.us
+  else if Context.Subst.is_empty subst then exists xs q
+  else
+    (* normalize wrt solutions *)
+    let q = extend_us fresh q in
+    (* opt: ctx already normalized wrt subst, so just preserve it *)
+    let q = {(norm subst {q with ctx= Context.empty}) with ctx} in
+    if is_false q then false_ q.us
+    else
+      (* opt: removed already disjoint from ctx, so ignore it *)
+      let removed =
+        Var.Set.diff removed (fv ~ignore_ctx:() (elim_exists q.xs q))
+      in
+      let keep, removed, _ = Context.Subst.partition_valid removed subst in
+      let q = and_subst keep q in
+      (* (re)quantify existentials *)
+      let q = exists (Var.Set.union fresh xs) q in
+      (* remove the eliminated variables from xs and subformulas' us *)
+      remove_absent_xs removed q )
   |>
   [%Trace.retn fun {pf} q' ->
     pf "%a@ %a" Context.Subst.pp subst pp_raw q' ;

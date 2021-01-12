@@ -108,12 +108,12 @@ val solve_for_vars : Var.Set.t list -> t -> Subst.t
     terms [e] with free variables contained in as short a prefix of [uss] as
     possible. *)
 
-val elim : Var.Set.t -> t -> Var.Set.t * t
-(** [elim vs x] is [(ks, y)] where [ks] is such that [vs ⊇ ks] and
-    [ks ∩ fv y = ∅] and [y] is such that [∃vs-ks. y] is equivalent to
-    [∃vs. x]. [elim] only removes terms from the existing representation,
-    without performing any additional solving. This means that if a variable
-    in [vs] occurs in an interpreted term in [x], it will not be eliminated. *)
+val apply_and_elim :
+  wrt:Var.Set.t -> Var.Set.t -> Subst.t -> t -> Var.Set.t * t * Var.Set.t
+(** Apply a solution substitution to eliminate the solved variables. That
+    is, [apply_and_elim ~wrt vs s x] is [(zs, x', ks)] where
+    [∃zs. r' ∧ ∃ks. s] is equivalent to [∃xs. r] where [zs] are
+    fresh with respect to [wrt] and [ks ⊆ xs] and is maximal. *)
 
 (**/**)
 

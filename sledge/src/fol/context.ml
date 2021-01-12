@@ -1270,6 +1270,22 @@ let elim xs r =
   in
   (ks, {r with rep})
 
+let apply_and_elim ~wrt xs s r =
+  [%trace]
+    ~call:(fun {pf} -> pf "%a%a@ %a" Var.Set.pp_xs xs Subst.pp s pp_raw r)
+    ~retn:(fun {pf} (zs, r', ks) ->
+      pf "%a@ %a@ %a" Var.Set.pp_xs zs pp_raw r' Var.Set.pp_xs ks ;
+      assert (Var.Set.subset ks ~of_:xs) ;
+      assert (Var.Set.disjoint ks (fv r')) )
+  @@ fun () ->
+  if Subst.is_empty s then (Var.Set.empty, r, Var.Set.empty)
+  else
+    let zs, r = apply_subst wrt s r in
+    if is_unsat r then (Var.Set.empty, unsat, Var.Set.empty)
+    else
+      let ks, r = elim xs r in
+      (zs, r, ks)
+
 (*
  * Replay debugging
  *)
@@ -1286,7 +1302,7 @@ type call =
   | Normalize of t * Term.t
   | Apply_subst of Var.Set.t * Subst.t * t
   | Solve_for_vars of Var.Set.t list * t
-  | Elim of Var.Set.t * t
+  | Apply_and_elim of Var.Set.t * Var.Set.t * Subst.t * t
 [@@deriving sexp]
 
 let replay c =
@@ -1302,7 +1318,7 @@ let replay c =
   | Normalize (r, e) -> normalize r e |> ignore
   | Apply_subst (us, s, r) -> apply_subst us s r |> ignore
   | Solve_for_vars (vss, r) -> solve_for_vars vss r |> ignore
-  | Elim (ks, r) -> elim ks r |> ignore
+  | Apply_and_elim (wrt, xs, s, r) -> apply_and_elim ~wrt xs s r |> ignore
 
 (* Debug wrappers *)
 
@@ -1342,7 +1358,7 @@ let refutes_tmr = Timer.create "refutes" ~at_exit:report
 let normalize_tmr = Timer.create "normalize" ~at_exit:report
 let apply_subst_tmr = Timer.create "apply_subst" ~at_exit:report
 let solve_for_vars_tmr = Timer.create "solve_for_vars" ~at_exit:report
-let elim_tmr = Timer.create "elim" ~at_exit:report
+let apply_and_elim_tmr = Timer.create "apply_and_elim" ~at_exit:report
 
 let add us e r =
   wrap add_tmr (fun () -> add us e r) (fun () -> Add (us, e, r))
@@ -1381,4 +1397,7 @@ let solve_for_vars vss r =
     (fun () -> solve_for_vars vss r)
     (fun () -> Solve_for_vars (vss, r))
 
-let elim ks r = wrap elim_tmr (fun () -> elim ks r) (fun () -> Elim (ks, r))
+let apply_and_elim ~wrt xs s r =
+  wrap apply_and_elim_tmr
+    (fun () -> apply_and_elim ~wrt xs s r)
+    (fun () -> Apply_and_elim (wrt, xs, s, r))
