@@ -237,12 +237,8 @@ let orient e f =
 
 let norm (_, _, s) e = Subst.norm s e
 
-let compose1 ?f ~var ~rep (us, xs, s) =
-  let s =
-    match f with
-    | Some f when not (f var rep) -> s
-    | _ -> Subst.compose1 ~key:var ~data:rep s
-  in
+let compose1 ~var ~rep (us, xs, s) =
+  let s = Subst.compose1 ~key:var ~data:rep s in
   Some (us, xs, s)
 
 let fresh name (wrt, xs, s) =
@@ -250,7 +246,7 @@ let fresh name (wrt, xs, s) =
   let xs = Var.Set.add x xs in
   (Trm.var x, (wrt, xs, s))
 
-let solve_poly ?f p q s =
+let solve_poly p q s =
   [%trace]
     ~call:(fun {pf} -> pf "@ %a = %a" Trm.pp p Trm.pp q)
     ~retn:(fun {pf} -> function
@@ -259,16 +255,16 @@ let solve_poly ?f p q s =
   @@ fun () ->
   match Trm.sub p q with
   | Z z -> if Z.equal Z.zero z then Some s else None
-  | Var _ as var -> compose1 ?f ~var ~rep:Trm.zero s
+  | Var _ as var -> compose1 ~var ~rep:Trm.zero s
   | p_q -> (
     match Trm.Arith.solve_zero_eq p_q with
     | Some (var, rep) ->
-        compose1 ?f ~var:(Trm.arith var) ~rep:(Trm.arith rep) s
-    | None -> compose1 ?f ~var:p_q ~rep:Trm.zero s )
+        compose1 ~var:(Trm.arith var) ~rep:(Trm.arith rep) s
+    | None -> compose1 ~var:p_q ~rep:Trm.zero s )
 
 (* α[o,l) = β ==> l = |β| ∧ α = (⟨n,c⟩[0,o) ^ β ^ ⟨n,c⟩[o+l,n-o-l)) where n
    = |α| and c fresh *)
-let rec solve_extract ?f a o l b s =
+let rec solve_extract ?(no_fresh = false) a o l b s =
   [%trace]
     ~call:(fun {pf} ->
       pf "@ %a = %a@ %a%a" Trm.pp
@@ -278,23 +274,25 @@ let rec solve_extract ?f a o l b s =
       | Some (_, xs, s) -> pf "%a%a" Var.Set.pp_xs xs Subst.pp s
       | None -> pf "false" )
   @@ fun () ->
-  let n = Trm.seq_size_exn a in
-  let c, s = fresh "c" s in
-  let n_c = Trm.sized ~siz:n ~seq:c in
-  let o_l = Trm.add o l in
-  let n_o_l = Trm.sub n o_l in
-  let c0 = Trm.extract ~seq:n_c ~off:Trm.zero ~len:o in
-  let c1 = Trm.extract ~seq:n_c ~off:o_l ~len:n_o_l in
-  let b, s =
-    match Trm.seq_size b with
-    | None -> (Trm.sized ~siz:l ~seq:b, Some s)
-    | Some m -> (b, solve_ ?f l m s)
-  in
-  s >>= solve_ ?f a (Trm.concat [|c0; b; c1|])
+  if no_fresh then Some s
+  else
+    let n = Trm.seq_size_exn a in
+    let c, s = fresh "c" s in
+    let n_c = Trm.sized ~siz:n ~seq:c in
+    let o_l = Trm.add o l in
+    let n_o_l = Trm.sub n o_l in
+    let c0 = Trm.extract ~seq:n_c ~off:Trm.zero ~len:o in
+    let c1 = Trm.extract ~seq:n_c ~off:o_l ~len:n_o_l in
+    let b, s =
+      match Trm.seq_size b with
+      | None -> (Trm.sized ~siz:l ~seq:b, Some s)
+      | Some m -> (b, solve_ l m s)
+    in
+    s >>= solve_ a (Trm.concat [|c0; b; c1|])
 
 (* α₀^…^αᵢ^αⱼ^…^αᵥ = β ==> |α₀^…^αᵥ| = |β| ∧ … ∧ αⱼ = β[n₀+…+nᵢ,nⱼ) ∧ …
    where nₓ ≡ |αₓ| and m = |β| *)
-and solve_concat ?f a0V b m s =
+and solve_concat ?no_fresh a0V b m s =
   [%trace]
     ~call:(fun {pf} ->
       pf "@ %a = %a@ %a%a" Trm.pp (Trm.concat a0V) Trm.pp b Var.Set.pp_xs
@@ -307,12 +305,12 @@ and solve_concat ?f a0V b m s =
     ~f:(fun aJ (s, oI) ->
       let nJ = Trm.seq_size_exn aJ in
       let oJ = Trm.add oI nJ in
-      match solve_ ?f aJ (Trm.extract ~seq:b ~off:oI ~len:nJ) s with
+      match solve_ ?no_fresh aJ (Trm.extract ~seq:b ~off:oI ~len:nJ) s with
       | Some s -> `Continue (s, oJ)
       | None -> `Stop None )
-    ~finish:(fun (s, n0V) -> solve_ ?f n0V m s)
+    ~finish:(fun (s, n0V) -> solve_ ?no_fresh n0V m s)
 
-and solve_ ?f d e s =
+and solve_ ?no_fresh d e s =
   [%Trace.call fun {pf} ->
     pf "@ %a@[%a@ %a@ %a@]" Var.Set.pp_xs (snd3 s) Trm.pp d Trm.pp e
       Subst.pp (trd3 s)]
@@ -327,66 +325,72 @@ and solve_ ?f d e s =
    *)
   (* ⟨0,a⟩ = β ==> a = β = ⟨⟩ *)
   | Some (Sized {siz= n; seq= a}, b) when n == Trm.zero ->
-      s |> solve_ ?f a (Trm.concat [||]) >>= solve_ ?f b (Trm.concat [||])
+      s
+      |> solve_ ?no_fresh a (Trm.concat [||])
+      >>= solve_ ?no_fresh b (Trm.concat [||])
   | Some (b, Sized {siz= n; seq= a}) when n == Trm.zero ->
-      s |> solve_ ?f a (Trm.concat [||]) >>= solve_ ?f b (Trm.concat [||])
+      s
+      |> solve_ ?no_fresh a (Trm.concat [||])
+      >>= solve_ ?no_fresh b (Trm.concat [||])
   (* ⟨n,0⟩ = α₀^…^αᵥ ==> … ∧ αⱼ = ⟨n,0⟩[n₀+…+nᵢ,nⱼ) ∧ … *)
   | Some ((Sized {siz= n; seq} as b), Concat a0V) when seq == Trm.zero ->
-      solve_concat ?f a0V b n s
+      solve_concat ?no_fresh a0V b n s
   (* ⟨n,e^⟩ = α₀^…^αᵥ ==> … ∧ αⱼ = ⟨n,e^⟩[n₀+…+nᵢ,nⱼ) ∧ … *)
   | Some ((Sized {siz= n; seq= Splat _} as b), Concat a0V) ->
-      solve_concat ?f a0V b n s
+      solve_concat ?no_fresh a0V b n s
   | Some ((Var _ as v), (Concat a0V as c)) ->
       if not (Var.Set.mem (Var.of_ v) (Trm.fv c)) then
         (* v = α₀^…^αᵥ ==> v ↦ α₀^…^αᵥ when v ∉ fv(α₀^…^αᵥ) *)
-        compose1 ?f ~var:v ~rep:c s
+        compose1 ~var:v ~rep:c s
       else
         (* v = α₀^…^αᵥ ==> ⟨|α₀^…^αᵥ|,v⟩ = α₀^…^αᵥ when v ∈ fv(α₀^…^αᵥ) *)
         let m = Trm.seq_size_exn c in
-        solve_concat ?f a0V (Trm.sized ~siz:m ~seq:v) m s
+        solve_concat ?no_fresh a0V (Trm.sized ~siz:m ~seq:v) m s
   (* α₀^…^αᵥ = β₀^…^βᵤ ==> … ∧ αⱼ = (β₀^…^βᵤ)[n₀+…+nᵢ,nⱼ) ∧ … *)
   | Some (Concat a0V, (Concat _ as c)) ->
-      solve_concat ?f a0V c (Trm.seq_size_exn c) s
+      solve_concat ?no_fresh a0V c (Trm.seq_size_exn c) s
   (* α[o,l) = α₀^…^αᵥ ==> … ∧ αⱼ = α[o,l)[n₀+…+nᵢ,nⱼ) ∧ … *)
-  | Some ((Extract {len= l} as e), Concat a0V) -> solve_concat ?f a0V e l s
+  | Some ((Extract {len= l} as e), Concat a0V) ->
+      solve_concat ?no_fresh a0V e l s
   (*
    * Extract
    *)
   | Some ((Var _ as v), (Extract {len= l} as e)) ->
       if not (Var.Set.mem (Var.of_ v) (Trm.fv e)) then
         (* v = α[o,l) ==> v ↦ α[o,l) when v ∉ fv(α[o,l)) *)
-        compose1 ?f ~var:v ~rep:e s
+        compose1 ~var:v ~rep:e s
       else
         (* v = α[o,l) ==> α[o,l) ↦ ⟨l,v⟩ when v ∈ fv(α[o,l)) *)
-        compose1 ?f ~var:e ~rep:(Trm.sized ~siz:l ~seq:v) s
+        compose1 ~var:e ~rep:(Trm.sized ~siz:l ~seq:v) s
   (* α[o,l) = β ==> … ∧ α = _^β^_ *)
-  | Some (Extract {seq= a; off= o; len= l}, e) -> solve_extract ?f a o l e s
+  | Some (Extract {seq= a; off= o; len= l}, e) ->
+      solve_extract ?no_fresh a o l e s
   (*
    * Sized
    *)
   (* v = ⟨n,a⟩ ==> v = a *)
-  | Some ((Var _ as v), Sized {seq= a}) -> s |> solve_ ?f v a
+  | Some ((Var _ as v), Sized {seq= a}) -> s |> solve_ ?no_fresh v a
   (* ⟨n,a⟩ = ⟨m,b⟩ ==> n = m ∧ a = β *)
   | Some (Sized {siz= n; seq= a}, Sized {siz= m; seq= b}) ->
-      s |> solve_ ?f n m >>= solve_ ?f a b
+      s |> solve_ ?no_fresh n m >>= solve_ ?no_fresh a b
   (* ⟨n,a⟩ = β ==> n = |β| ∧ a = β *)
   | Some (Sized {siz= n; seq= a}, b) ->
       ( match Trm.seq_size b with
       | None -> Some s
-      | Some m -> solve_ ?f n m s )
-      >>= solve_ ?f a b
+      | Some m -> solve_ ?no_fresh n m s )
+      >>= solve_ ?no_fresh a b
   (*
    * Splat
    *)
   (* a^ = b^ ==> a = b *)
-  | Some (Splat a, Splat b) -> s |> solve_ ?f a b
+  | Some (Splat a, Splat b) -> s |> solve_ ?no_fresh a b
   (*
    * Arithmetic
    *)
   (* p = q ==> p-q = 0 *)
   | Some (((Arith _ | Z _ | Q _) as p), q | q, ((Arith _ | Z _ | Q _) as p))
     ->
-      solve_poly ?f p q s
+      solve_poly p q s
   (*
    * Uninterpreted
    *)
@@ -394,17 +398,17 @@ and solve_ ?f d e s =
   | Some (rep, var) ->
       assert (not (is_interpreted var)) ;
       assert (not (is_interpreted rep)) ;
-      compose1 ?f ~var ~rep s )
+      compose1 ~var ~rep s )
   |>
   [%Trace.retn fun {pf} ->
     function
     | Some (_, xs, s) -> pf "%a%a" Var.Set.pp_xs xs Subst.pp s
     | None -> pf "false"]
 
-let solve ?f ~wrt ~xs d e =
+let solve ~wrt ~xs d e =
   [%Trace.call fun {pf} -> pf "@ %a@ %a" Trm.pp d Trm.pp e]
   ;
-  ( solve_ ?f d e (wrt, xs, Subst.empty)
+  ( solve_ d e (wrt, xs, Subst.empty)
   |>= fun (_, xs, s) ->
   let xs = Var.Set.inter xs (Subst.fv s) in
   (xs, s) )
@@ -921,7 +925,7 @@ let solve_poly_eq us p' q' subst =
 let solve_seq_eq ~wrt us e' f' subst =
   [%Trace.call fun {pf} -> pf "@ %a = %a" Trm.pp e' Trm.pp f']
   ;
-  let f x u =
+  let x_ito_us x u =
     (not (Var.Set.subset (Trm.fv x) ~of_:us))
     && Var.Set.subset (Trm.fv u) ~of_:us
   in
@@ -931,16 +935,20 @@ let solve_seq_eq ~wrt us e' f' subst =
       | Some n -> (a, n)
       | None -> (Trm.sized ~siz:n ~seq:a, n)
     in
-    let+ _, xs, s = solve_concat ~f ms a n (wrt, Var.Set.empty, subst) in
-    assert (Var.Set.disjoint xs (Subst.fv s)) ;
+    let+ _, xs, s =
+      solve_concat ~no_fresh:true ms a n (wrt, Var.Set.empty, subst)
+    in
+    assert (Var.Set.is_empty xs) ;
     s
   in
   ( match ((e' : Trm.t), (f' : Trm.t)) with
-  | (Concat ms as c), a when f c a -> solve_concat ms (Trm.seq_size_exn c) a
-  | a, (Concat ms as c) when f c a -> solve_concat ms (Trm.seq_size_exn c) a
-  | (Sized {seq= Var _ as v} as m), u when f m u ->
+  | (Concat ms as c), a when x_ito_us c a ->
+      solve_concat ms (Trm.seq_size_exn c) a
+  | a, (Concat ms as c) when x_ito_us c a ->
+      solve_concat ms (Trm.seq_size_exn c) a
+  | (Sized {seq= Var _ as v} as m), u when x_ito_us m u ->
       Some (Subst.compose1 ~key:v ~data:u subst)
-  | u, (Sized {seq= Var _ as v} as m) when f m u ->
+  | u, (Sized {seq= Var _ as v} as m) when x_ito_us m u ->
       Some (Subst.compose1 ~key:v ~data:u subst)
   | _ -> None )
   |>

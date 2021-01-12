@@ -15,7 +15,10 @@ let%test_module _ =
 
     (* let () =
      *   Trace.init ~margin:160
-     *     ~config:(Result.get_ok (Trace.parse "+Equality"))
+     *     ~config:
+     *       (Result.get_ok
+     *          (Trace.parse
+     *             "+Context-Context.canon-Context.canon_f-Context.norm"))
      *     () *)
 
     [@@@warning "-32"]
@@ -60,7 +63,7 @@ let%test_module _ =
         {|
         %t_1 = g(%y_6, %z_7) = g(%y_6, %v_3) = %z_7 = %x_5 = %w_4 = %v_3
         = %u_2
-
+    
       {sat= true;
        rep= [[%t_1 ↦ ];
              [%u_2 ↦ %t_1];
@@ -84,4 +87,27 @@ let%test_module _ =
 
     let%test _ = implies_eq r15 (Term.neg b) (Term.apply (Signed 1) [|!1|])
     let%test _ = implies_eq r15 (Term.apply (Unsigned 1) [|b|]) !1
+
+    let%expect_test _ =
+      replay
+        {|(Solve_for_vars
+            (((Var (id 0) (name 2)) (Var (id 0) (name 6)) (Var (id 0) (name 8)))
+              ((Var (id 5) (name a0)) (Var (id 6) (name b)) (Var (id 7) (name m))
+                (Var (id 8) (name a)) (Var (id 9) (name a0))))
+            ((xs ()) (sat true)
+              (rep
+                (((Var (id 9) (name a0)) (Var (id 5) (name a0)))
+                  ((Var (id 8) (name a))
+                    (Concat
+                      ((Sized (seq (Var (id 5) (name a0))) (siz (Z 4)))
+                        (Sized (seq (Z 0)) (siz (Z 4))))))
+                  ((Var (id 7) (name m)) (Z 8))
+                  ((Var (id 6) (name b)) (Var (id 0) (name 2)))
+                  ((Var (id 5) (name a0)) (Var (id 5) (name a0)))
+                  ((Var (id 0) (name 6))
+                    (Concat
+                      ((Sized (seq (Var (id 5) (name a0))) (siz (Z 4)))
+                        (Sized (seq (Z 0)) (siz (Z 4))))))
+                  ((Var (id 0) (name 2)) (Var (id 0) (name 2)))))))|} ;
+      [%expect {| |}]
   end )
