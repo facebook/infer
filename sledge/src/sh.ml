@@ -767,7 +767,7 @@ let remove_absent_xs ks q =
     in
     {q with xs; djns}
 
-let rec simplify_ us rev_xss ancestor_subst q =
+let rec simplify_ us rev_xss survived ancestor_subst q =
   [%Trace.call fun {pf} ->
     pf "%a@ %a@ %a" pp_vss (List.rev rev_xss) Context.Subst.pp
       ancestor_subst pp_raw q]
@@ -795,14 +795,17 @@ let rec simplify_ us rev_xss ancestor_subst q =
       {(norm subst {q with djns= emp.djns; ctx= emp.ctx}) with ctx= q.ctx}
     in
     (* recursively simplify subformulas *)
+    let survived = Var.Set.union survived (fv (elim_exists stem.xs stem)) in
     let q =
       starN
         ( stem
         :: List.map q.djns ~f:(fun djn ->
-               orN (List.map ~f:(simplify_ us rev_xss subst) djn) ) )
+               orN (List.map ~f:(simplify_ us rev_xss survived subst) djn) )
+        )
     in
     if is_false q then false_ q.us
     else
+      let removed = Var.Set.diff removed survived in
       let removed =
         if Var.Set.is_empty removed then Var.Set.empty
         else (
@@ -836,7 +839,7 @@ let simplify q =
     let q = propagate_context Var.Set.empty Context.empty q in
     if is_false q then false_ q.us
     else
-      let q = simplify_ q.us [] Context.Subst.empty q in
+      let q = simplify_ q.us [] Var.Set.empty Context.Subst.empty q in
       q )
   |>
   [%Trace.retn fun {pf} q' ->
