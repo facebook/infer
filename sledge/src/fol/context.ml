@@ -178,7 +178,7 @@ end = struct
       ks ∩ fv(τ) = ∅. *)
   let partition_valid xs s =
     [%trace]
-      ~call:(fun {pf} -> pf "@ %a@ %a" Var.Set.pp_xs xs pp s)
+      ~call:(fun {pf} -> pf "@ @[%a@ %a@]" Var.Set.pp_xs xs pp s)
       ~retn:(fun {pf} (t, ks, u) ->
         pf "%a@ %a@ %a" pp t Var.Set.pp_xs ks pp u )
     @@ fun () ->
@@ -1010,6 +1010,8 @@ let solve_uninterp_eqs us (cls, subst) =
       in
       let subst =
         List.fold cls_xs subst ~f:(fun trm_xs subst ->
+            let trm_xs = Subst.subst_ subst trm_xs in
+            let rep_us = Subst.subst_ subst rep_us in
             Subst.compose1 ~key:trm_xs ~data:rep_us subst )
       in
       (cls, subst)
