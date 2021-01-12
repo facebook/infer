@@ -83,6 +83,7 @@ module type S = sig
 
   val map : t -> f:(elt -> elt) -> t
   val filter : t -> f:(elt -> bool) -> t
+  val partition : t -> f:(elt -> bool) -> t * t
 
   (** {1 Traverse} *)
 

@@ -107,6 +107,7 @@ end) : S with type elt = Elt.t = struct
 
   let map s ~f = S.map f s
   let filter s ~f = S.filter f s
+  let partition s ~f = S.partition f s
   let iter s ~f = S.iter f s
   let exists s ~f = S.exists f s
   let for_all s ~f = S.for_all f s

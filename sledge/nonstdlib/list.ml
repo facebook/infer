@@ -35,6 +35,7 @@ let remove_one ~eq x xs =
 
 let remove ~eq x xs = remove ~eq ~key:x xs
 let filter xs ~f = filter ~f xs
+let partition xs ~f = partition ~f xs
 let map xs ~f = map ~f xs
 let map_endo t ~f = map_endo map t ~f
 

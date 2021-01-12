@@ -44,6 +44,7 @@ val remove_one_exn : eq:('a -> 'a -> bool) -> 'a -> 'a list -> 'a list
 val remove_one : eq:('a -> 'a -> bool) -> 'a -> 'a list -> 'a list option
 val remove : eq:('a -> 'a -> bool) -> 'a -> 'a list -> 'a list
 val filter : 'a list -> f:('a -> bool) -> 'a list
+val partition : 'a list -> f:('a -> bool) -> 'a list * 'a list
 val map : 'a t -> f:('a -> 'b) -> 'b t
 
 val map_endo : 'a t -> f:('a -> 'a) -> 'a t
