@@ -112,7 +112,7 @@ let%test_module _ =
 
     let%expect_test _ =
       pp r0 ;
-      [%expect {||}]
+      [%expect {| tt |}]
 
     let%test _ = difference r0 (f x) (f x) |> Poly.equal (Some (Z.of_int 0))
     let%test _ = difference r0 !4 !3 |> Poly.equal (Some (Z.of_int 1))
@@ -138,7 +138,7 @@ let%test_module _ =
       pp_raw r2 ;
       [%expect
         {|
-        %x_5 = %y_6 = %z_7 = f(%x_5)
+        %x_5 = f(%x_5) = %z_7 = %y_6
 
       {sat= true;
        rep= [[%x_5 ↦ ]; [%y_6 ↦ %x_5]; [%z_7 ↦ %x_5]; [f(%x_5) ↦ %x_5]]} |}]
@@ -181,8 +181,8 @@ let%test_module _ =
       pp_raw r3 ;
       [%expect
         {|
-        %t_1 = %u_2 = %v_3 = %w_4 = %x_5 = %z_7 = g(%y_6, %t_1)
-        = g(%y_6, %t_1)
+        %t_1 = g(%y_6, %t_1) = g(%y_6, %t_1) = %z_7 = %x_5 = %w_4 = %v_3
+        = %u_2
 
       {sat= true;
        rep= [[%t_1 ↦ ];
@@ -228,7 +228,7 @@ let%test_module _ =
       pp_raw r6 ;
       [%expect
         {|
-        1 = %x_5 = %y_6
+        1 = %y_6 = %x_5
 
       {sat= true; rep= [[%x_5 ↦ 1]; [%y_6 ↦ 1]]} |}]
 
@@ -241,7 +241,7 @@ let%test_module _ =
       pp_raw r7 ;
       [%expect
         {|
-          %v_3 = %x_5 ∧ %w_4 = %y_6 = %z_7
+          %v_3 = %x_5 ∧ %w_4 = %z_7 = %y_6
     
         {sat= true;
          rep= [[%v_3 ↦ ];
@@ -257,7 +257,7 @@ let%test_module _ =
       pp_raw r7' ;
       [%expect
         {|
-        %v_3 = %w_4 = %x_5 = %y_6 = %z_7
+        %v_3 = %z_7 = %y_6 = %x_5 = %w_4
 
       {sat= true;
        rep= [[%v_3 ↦ ];

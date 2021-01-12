@@ -445,8 +445,8 @@ let pp_diff_cls = List.pp_diff ~cmp:Trm.compare "@ = " Trm.pp
 let ppx_classes x fs clss =
   List.pp "@ @<2>∧ "
     (fun fs (rep, cls) ->
-      Format.fprintf fs "@[%a@ = %a@]" (Trm.ppx x) rep (ppx_cls x)
-        (List.sort ~cmp:Trm.compare cls) )
+      if not (List.is_empty cls) then
+        Format.fprintf fs "@[%a@ = %a@]" (Trm.ppx x) rep (ppx_cls x) cls )
     fs
     (Iter.to_list (Trm.Map.to_iter clss))
 
@@ -455,9 +455,26 @@ let pp_classes fs r = ppx_classes (fun _ -> None) fs (classes r)
 let pp_diff_clss =
   Trm.Map.pp_diff ~eq:(List.equal Trm.equal) Trm.pp pp_cls pp_diff_cls
 
-let pp fs r = ppx_classes (fun _ -> None) fs (classes r)
+let pp fs r =
+  let clss = classes r in
+  if Trm.Map.is_empty clss then
+    Format.fprintf fs (if r.sat then "tt" else "ff")
+  else ppx_classes (fun _ -> None) fs clss
 
 let ppx var_strength fs clss noneqs =
+  let without_anon_vars =
+    List.filter ~f:(fun e ->
+        match Var.of_trm e with
+        | Some v -> Poly.(var_strength v <> Some `Anonymous)
+        | None -> true )
+  in
+  let clss =
+    Trm.Map.fold clss Trm.Map.empty ~f:(fun ~key:rep ~data:cls m ->
+        let cls = without_anon_vars cls in
+        if not (List.is_empty cls) then
+          Trm.Map.add ~key:rep ~data:(List.sort ~cmp:Trm.compare cls) m
+        else m )
+  in
   let first = Trm.Map.is_empty clss in
   if not first then Format.fprintf fs "  " ;
   ppx_classes var_strength fs clss ;
@@ -547,7 +564,7 @@ let rec canon r a =
 
 let canon_f r b =
   [%trace]
-    ~call:(fun {pf} -> pf "%a@ %a" Fml.pp b pp r)
+    ~call:(fun {pf} -> pf "%a@ %a" Fml.pp b pp_raw r)
     ~retn:(fun {pf} -> pf "%a" Fml.pp)
   @@ fun () -> Fml.map_trms ~f:(canon r) b
 
@@ -773,7 +790,7 @@ let dnf f =
   Fml.fold_dnf ~meet1 ~join1 ~top ~bot f
 
 let rename r sub =
-  [%Trace.call fun {pf} -> pf "%a" pp r]
+  [%Trace.call fun {pf} -> pf "@[%a@]@ %a" Var.Subst.pp sub pp r]
   ;
   let rep =
     Subst.map_entries ~f:(Trm.map_vars ~f:(Var.Subst.apply sub)) r.rep
@@ -1103,7 +1120,7 @@ let pp_vss fs vss =
     [fv u ⊆ ⋃ⱼ₌₁ⁱ vⱼ] *)
 let solve_for_vars vss r =
   [%Trace.call fun {pf} ->
-    pf "%a@ @[%a@]@ @[%a@]" pp_vss vss pp_classes r pp r ;
+    pf "%a@ @[%a@]" pp_vss vss pp r ;
     invariant r]
   ;
   let wrt = Var.Set.union_list vss in

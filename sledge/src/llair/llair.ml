@@ -284,7 +284,7 @@ let pp_inst fs inst =
         reg msg Loc.pp loc
   | Abort {loc} -> pf "@[<2>abort;@]\t%a" Loc.pp loc
   | Intrinsic {reg; name; args; loc} ->
-      pf "@[<2>%aintrinsic %a(%a);@]\t%a"
+      pf "@[<2>%aintrinsic@ %a(@,@[<hv>%a@]);@]\t%a"
         (Option.pp "%a := " Reg.pp)
         reg Intrinsic.pp name (IArray.pp ",@ " Exp.pp) args Loc.pp loc
 

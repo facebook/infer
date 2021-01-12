@@ -58,8 +58,8 @@ let%test_module _ =
       pp r3 ;
       [%expect
         {|
-        %t_1 = %u_2 = %v_3 = %w_4 = %x_5 = %z_7 = g(%y_6, %t_1)
-        = g(%y_6, %t_1)
+        %t_1 = g(%y_6, %t_1) = g(%y_6, %t_1) = %z_7 = %x_5 = %w_4 = %v_3
+        = %u_2
 
       {sat= true;
        rep= [[%t_1 ↦ ];

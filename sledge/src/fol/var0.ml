@@ -16,13 +16,14 @@ module Make (T : REPR) = struct
   let ppx strength ppf v =
     let id = id v in
     let name = name v in
-    if id = 0 then Trace.pp_styled `Bold "%%%s" ppf name
-    else
-      match strength v with
-      | None -> Format.fprintf ppf "%%%s_%d" name id
-      | Some `Universal -> Trace.pp_styled `Bold "%%%s_%d" ppf name id
-      | Some `Existential -> Trace.pp_styled `Cyan "%%%s_%d" ppf name id
-      | Some `Anonymous -> Trace.pp_styled `Cyan "_" ppf
+    let pp_id ppf id = if id <> 0 then Format.fprintf ppf "_%d" id in
+    match strength v with
+    | None ->
+        if id = 0 then Trace.pp_styled `Bold "%%%s" ppf name
+        else Format.fprintf ppf "%%%s%a" name pp_id id
+    | Some `Universal -> Trace.pp_styled `Bold "%%%s%a" ppf name pp_id id
+    | Some `Existential -> Trace.pp_styled `Cyan "%%%s%a" ppf name pp_id id
+    | Some `Anonymous -> Trace.pp_styled `Cyan "_" ppf
 
   let pp = ppx (fun _ -> None)
 

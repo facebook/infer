@@ -636,6 +636,8 @@ let strlen_spec reg ptr =
 
 open Option.Import
 
+let pp ppf q = Sh.pp ppf (Option.value q ~default:(Sh.false_ Var.Set.empty))
+
 let check_preserve_us (q0 : Sh.t) (q1 : Sh.t) =
   let gain_us = Var.Set.diff q1.us q0.us in
   let lose_us = Var.Set.diff q0.us q1.us in
@@ -679,7 +681,7 @@ let exec_spec_ (xs, pre) (gs, {foot; sub; ms; post}) =
     (Sh.star post (Sh.exists ms (Sh.rename sub frame))))
   |>
   [%Trace.retn fun {pf} r ->
-    pf "%a" (Option.pp "%a" Sh.pp) r ;
+    pf "%a" pp r ;
     assert (Option.for_all ~f:(check_preserve_us (Sh.exists xs pre)) r)]
 
 (* execute a command with given spec from pre *)

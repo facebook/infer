@@ -136,6 +136,24 @@ end = struct
     | Var {id= i; name= _}, Var {id= j; name= _} -> Int.equal i j
     | _ -> equal x y
 
+  (* nul-terminated string value represented by a concatenation *)
+  let string_of_concat xs =
+    let exception Not_a_string in
+    try
+      let len_1 = Array.length xs - 1 in
+      ( match xs.(len_1) with
+      | Sized {siz= Z o; seq= Z c} when Z.equal Z.one o && Z.equal Z.zero c
+        ->
+          ()
+      | _ -> raise_notrace Not_a_string ) ;
+      Some
+        (String.init len_1 ~f:(fun i ->
+             match xs.(i) with
+             | Sized {siz= Z o; seq= Z c} when Z.equal Z.one o ->
+                 Char.of_int_exn (Z.to_int c)
+             | _ -> raise_notrace Not_a_string ))
+    with _ -> None
+
   let rec ppx strength fs trm =
     let rec pp fs trm =
       let pf fmt = pp_boxed fs fmt in
@@ -149,15 +167,9 @@ end = struct
       | Extract {seq; off; len} -> pf "%a[%a,%a)" pp seq pp off pp len
       | Concat [||] -> pf "@<2>⟨⟩"
       | Concat xs -> (
-          let exception Not_a_string in
-          try
-            pf "%S"
-              (String.init (Array.length xs) ~f:(fun i ->
-                   match xs.(i) with
-                   | Sized {siz= Z o; seq= Z c} when Z.equal Z.one o ->
-                       Char.of_int_exn (Z.to_int c)
-                   | _ -> raise_notrace Not_a_string ))
-          with _ -> pf "(%a)" (Array.pp "@,^" pp) xs )
+        match string_of_concat xs with
+        | Some s -> pf "%S" s
+        | None -> pf "(%a)" (Array.pp "@,^" pp) xs )
       | Apply (f, [||]) -> pf "%a" Funsym.pp f
       | Apply
           ( ( (Rem | BitAnd | BitOr | BitXor | BitShl | BitLshr | BitAshr)

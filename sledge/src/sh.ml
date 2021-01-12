@@ -181,41 +181,46 @@ let pp_us ?(pre = ("" : _ fmt)) ?vs () fs us =
         [%Trace.fprintf
           fs "%( %)@[%a@] .@ " pre (Var.Set.pp_diff Var.pp) (vs, us)]
 
-let rec pp_ ?var_strength vs parent_xs parent_ctx fs
+let rec pp_ ?var_strength ?vs ancestor_xs parent_ctx fs
     {us; xs; ctx; pure; heap; djns} =
   Format.pp_open_hvbox fs 0 ;
   let x v = Option.bind ~f:(fun (_, m) -> Var.Map.find v m) var_strength in
-  pp_us ~vs () fs us ;
+  pp_us ~pre:"@<2>∀ " ?vs () fs us ;
+  let vs = Option.value vs ~default:Var.Set.empty in
   let xs_d_vs, xs_i_vs =
     Var.Set.diff_inter
       (Var.Set.filter xs ~f:(fun v -> Poly.(x v <> Some `Anonymous)))
       vs
   in
   if not (Var.Set.is_empty xs_i_vs) then (
-    Format.fprintf fs "@<2>∃ @[%a@] ." (Var.Set.ppx x) xs_i_vs ;
+    Format.fprintf fs "@<3>∃↑ @[%a@] ." (Var.Set.ppx x) xs_i_vs ;
     if not (Var.Set.is_empty xs_d_vs) then Format.fprintf fs "@ " ) ;
   if not (Var.Set.is_empty xs_d_vs) then
     Format.fprintf fs "@<2>∃ @[%a@] .@ " (Var.Set.ppx x) xs_d_vs ;
   let first =
     if Option.is_some var_strength then
       Context.ppx_diff x fs parent_ctx pure ctx
-    else if Formula.equal Formula.tt pure then true
     else (
-      Format.fprintf fs "@[  %a@]" Formula.pp pure ;
+      Format.fprintf fs "@[  %a@ @<2>∧ %a@]" Context.pp ctx Formula.pp
+        pure ;
       false )
   in
   if List.is_empty heap then
     Format.fprintf fs
       ( if first then if List.is_empty djns then "  emp" else ""
       else "@ @<5>∧ emp" )
-  else pp_heap x ~pre:(if first then "  " else "@ @<2>∧ ") ctx fs heap ;
+  else
+    pp_heap x
+      ~pre:(if first then "  " else "@ @<2>∧ ")
+      (if Option.is_some var_strength then ctx else emp.ctx)
+      fs heap ;
   let first = first && List.is_empty heap in
   List.pp
     ~pre:(if first then "  " else "@ * ")
     "@ * "
     (pp_djn ?var_strength
        (Var.Set.union vs (Var.Set.union us xs))
-       (Var.Set.union parent_xs xs)
+       (Var.Set.union ancestor_xs xs)
        ctx)
     fs djns ;
   Format.pp_close_box fs ()
@@ -230,12 +235,12 @@ and pp_djn ?var_strength vs xs ctx fs = function
                var_strength_ xs var_strength_stem sjn
              in
              Format.fprintf fs "@[<hv 1>(%a)@]"
-               (pp_ ?var_strength vs (Var.Set.union xs sjn.xs) ctx)
+               (pp_ ?var_strength ~vs (Var.Set.union xs sjn.xs) ctx)
                sjn ))
         djn
 
-let pp_diff_eq ?(us = Var.Set.empty) ?(xs = Var.Set.empty) ctx fs q =
-  pp_ ~var_strength:(var_strength ~xs q) us xs ctx fs q
+let pp_diff_eq ?us ?(xs = Var.Set.empty) ctx fs q =
+  pp_ ~var_strength:(var_strength ~xs q) ?vs:us xs ctx fs q
 
 let pp fs q = pp_diff_eq Context.empty fs q
 
@@ -243,7 +248,7 @@ let pp_djn fs d =
   pp_djn ?var_strength:None Var.Set.empty Var.Set.empty Context.empty fs d
 
 let pp_raw fs q =
-  pp_ ?var_strength:None Var.Set.empty Var.Set.empty Context.empty fs q
+  pp_ ?var_strength:None ?vs:None Var.Set.empty Context.empty fs q
 
 let fv_seg seg = fold_vars_seg ~f:Var.Set.add seg Var.Set.empty
 
@@ -794,5 +799,5 @@ let simplify q =
   q
   |>
   [%Trace.retn fun {pf} q' ->
-    pf "@\n" ;
+    pf "%a" pp_raw q' ;
     invariant q']

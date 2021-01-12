@@ -161,7 +161,8 @@ and pp_record fs elts =
   match
     String.init (IArray.length elts) ~f:(fun i ->
         match IArray.get elts i with
-        | Integer {data; _} -> Char.of_int_exn (Z.to_int data)
+        | Integer {data; typ= Integer {byts= 1; _}} ->
+            Char.of_int_exn (Z.to_int data)
         | _ -> raise_notrace (Invalid_argument "not a string") )
   with
   | s -> Format.fprintf fs "@[<h>%s@]" (String.escaped s)
