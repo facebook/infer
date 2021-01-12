@@ -20,7 +20,6 @@ let init globals =
 
 let join l r = Some (Llair.Global.Set.union l r)
 let recursion_beyond_bound = `skip
-let is_false _ = false
 let post _ _ state = state
 let retn _ _ from_call post = Llair.Global.Set.union from_call post
 let dnf t = [t]

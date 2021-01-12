@@ -40,8 +40,6 @@ module Make (State_domain : State_domain_sig) = struct
       (entry_a, next)
     else None
 
-  let is_false (_, curr) = State_domain.is_false curr
-
   let exec_assume (entry, current) cnd =
     let+ next = State_domain.exec_assume current cnd in
     (entry, next)
