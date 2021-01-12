@@ -722,10 +722,8 @@ let exec_specs pre specs =
 let assume pre cnd =
   [%trace]
     ~call:(fun {pf} -> pf "%a" Formula.pp cnd)
-    ~retn:(fun {pf} -> pf "%a" pp)
-  @@ fun () ->
-  let post = Sh.and_ cnd pre in
-  if Sh.is_unsat post then None else Some post
+    ~retn:(fun {pf} -> pf "%a" Sh.pp)
+  @@ fun () -> Sh.and_ cnd pre
 
 let kill pre reg =
   let ms = Var.Set.of_ reg in

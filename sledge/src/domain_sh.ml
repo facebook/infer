@@ -42,7 +42,12 @@ let join p q =
   [%Trace.retn fun {pf} -> pf "%a" (Option.pp "%a" pp)]
 
 let dnf = Sh.dnf
-let exec_assume q b = Exec.assume q (X.formula b) |> Option.map ~f:simplify
+
+let exec_assume q b =
+  Exec.assume q (X.formula b)
+  |> simplify
+  |> fun q -> if Sh.is_unsat q then None else Some q
+
 let exec_kill r q = Exec.kill q (X.reg r) |> simplify
 
 let exec_move res q =
