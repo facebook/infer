@@ -110,8 +110,10 @@ end = struct
   let compose r s =
     [%Trace.call fun {pf} -> pf "%a@ %a" pp r pp s]
     ;
-    let r' = Trm.Map.map_endo ~f:(norm s) r in
-    Trm.Map.union_absent r' s
+    ( if is_empty s then r
+    else
+      let r' = Trm.Map.map_endo ~f:(norm s) r in
+      Trm.Map.union_absent r' s )
     |>
     [%Trace.retn fun {pf} r' ->
       pf "%a" pp_diff (r, r') ;
