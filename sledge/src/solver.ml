@@ -639,6 +639,7 @@ let pure_entails x q = Sh.is_empty q && Context.implies x (Sh.pure_approx q)
 
 let rec excise ({min; xs; sub; zs; pgs} as goal) =
   [%Trace.info "@[<2>excise@ %a@]" pp goal] ;
+  Report.step_solver () ;
   if Sh.is_unsat min then Some (Sh.false_ (Var.Set.diff sub.us zs))
   else if pure_entails min.ctx sub then
     Some (Sh.exists zs (Sh.extend_us xs min))

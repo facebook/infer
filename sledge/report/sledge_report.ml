@@ -90,7 +90,8 @@ let add_cov base_cov cov row =
             Report.
               { steps= cov.steps - base_cov.steps
               ; hit= cov.hit - base_cov.hit
-              ; fraction= cov.fraction -. base_cov.fraction }
+              ; fraction= cov.fraction -. base_cov.fraction
+              ; solver_steps= cov.solver_steps - base_cov.solver_steps }
           in
           Some (covd :: Option.value row.cov_deltas ~default:[])
       | _ -> None
@@ -333,6 +334,8 @@ let write_html ranges rows chan =
           <th>%%</th>
           <th>&Delta;<br></th>
           <th>&Delta;%%<br></th>
+          <th>Solver<br>Steps</th>
+          <th>&Delta;<br></th>
         </tr>|} ;
   pf "\n" ;
   Iter.iter rows ~f:(fun row ->
@@ -407,6 +410,15 @@ let write_html ranges rows chan =
                 else
                   Printf.fprintf ppf "<td %s align=\"right\">%i</td>\n" attr
                     steps )
+      in
+      let solver_steps attr ppf = function
+        | [] -> Printf.fprintf ppf "<td %s></td>\n" attr
+        | cs ->
+            List.iter cs ~f:(fun {Report.solver_steps} ->
+                if solver_steps = 0 then Printf.fprintf ppf "<td></td>\n"
+                else
+                  Printf.fprintf ppf "<td %s align=\"right\">%i</td>\n" attr
+                    solver_steps )
       in
       let hit attr ppf = function
         | [] -> Printf.fprintf ppf "<td %s></td>\n" attr
@@ -520,6 +532,9 @@ let write_html ranges rows chan =
         (hit " style=\"border-left: 2px solid #eee8d5\";")
         cov (coverage "") cov ;
       pf "%a%a" (coveraged hit) cov_deltas (coveraged coverage) cov_deltas ;
+      pf "%a%a"
+        (solver_steps " style=\"border-left: 2px solid #eee8d5\";")
+        cov (coveraged solver_steps) cov_deltas ;
       pf "</tr>\n" ) ;
   pf "<table>\n" ;
   pf "</body></html>\n"
