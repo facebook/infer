@@ -812,10 +812,14 @@ let rec simplify_ us rev_xss q =
 let simplify q =
   [%Trace.call fun {pf} -> pf "%a" pp_raw q]
   ;
-  let q = freshen_nested_xs q in
-  let q = propagate_context Var.Set.empty Context.empty q in
-  let q = simplify_ q.us [] q in
-  q
+  ( if is_false q then false_ q.us
+  else
+    let q = freshen_nested_xs q in
+    let q = propagate_context Var.Set.empty Context.empty q in
+    if is_false q then false_ q.us
+    else
+      let q = simplify_ q.us [] q in
+      q )
   |>
   [%Trace.retn fun {pf} q' ->
     pf "%a" pp_raw q' ;
