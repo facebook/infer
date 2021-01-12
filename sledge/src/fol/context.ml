@@ -721,6 +721,9 @@ let fold_uses_of r t s ~f =
   Subst.fold r.rep s ~f:(fun ~key:trm ~data:rep s ->
       fold_ ~f trm (fold_ ~f rep s) )
 
+let iter_uses_of t r ~f = fold_uses_of r t () ~f:(fun use () -> f use)
+let uses_of t r = Iter.from_labelled_iter (iter_uses_of t r)
+
 let apply_subst wrt s r =
   [%Trace.call fun {pf} -> pf "%a@ %a" Subst.pp s pp r]
   ;
@@ -1179,60 +1182,27 @@ let solve_for_vars vss r =
               else `Continue us_xs )
             ~finish:(fun _ -> false) ) )]
 
-(* [elim] removes variables from a context by rearranging the existing
-   equality classes. Non-representative terms that contain a variable to
-   eliminate can be simply dropped. If a representative needs to be removed,
-   a new representative is chosen. This basic approach is insufficient if
-   interpreted terms are to be removed. For example, eliminating x from x +
-   1 = y = z ∧ w = x by just preserving the existing classes between terms
-   that do not mention x would yield y = z. This would lose provability of
-   the equality w = y - 1. So variables with interpreted uses are not
-   eliminated. *)
-let elim xs r =
+let trivial vs r =
   [%trace]
-    ~call:(fun {pf} -> pf "%a@ %a" Var.Set.pp_xs xs pp_raw r)
-    ~retn:(fun {pf} (ks, r') ->
-      pf "%a@ %a" Var.Set.pp_xs ks pp_raw r' ;
-      assert (Var.Set.subset ks ~of_:xs) ;
+    ~call:(fun {pf} -> pf "%a@ %a" Var.Set.pp_xs vs pp_raw r)
+    ~retn:(fun {pf} ks -> pf "%a" Var.Set.pp_xs ks)
+  @@ fun () ->
+  Var.Set.fold vs Var.Set.empty ~f:(fun v ks ->
+      let x = Trm.var v in
+      match Subst.find x r.rep with
+      | None -> Var.Set.add v ks
+      | Some x' when Trm.equal x x' && Iter.is_empty (uses_of x r) ->
+          Var.Set.add v ks
+      | _ -> ks )
+
+let trim ks r =
+  [%trace]
+    ~call:(fun {pf} -> pf "%a@ %a" Var.Set.pp_xs ks pp_raw r)
+    ~retn:(fun {pf} r' ->
+      pf "%a" pp_raw r' ;
       assert (Var.Set.disjoint ks (fv r')) )
   @@ fun () ->
-  (* add the uninterpreted uses of terms in delta to approx, and the
-     interpreted uses to interp *)
-  let rec add_uninterp_uses approx interp delta =
-    if not (Trm.Set.is_empty delta) then
-      let approx = Trm.Set.union approx delta in
-      let delta, interp =
-        Trm.Set.fold delta
-          (Trm.Set.empty, Trm.Set.empty)
-          ~f:
-            (fold_uses_of r ~f:(fun use (delta, interp) ->
-                 if is_interpreted use then (delta, Trm.Set.add use interp)
-                 else (Trm.Set.add use delta, interp) ))
-      in
-      add_uninterp_uses approx interp delta
-    else
-      (* remove the subterms of interpreted uses from approx *)
-      let rec remove_subtrms misses approx =
-        if not (Trm.Set.is_empty misses) then
-          let approx = Trm.Set.diff approx misses in
-          let misses =
-            Trm.Set.of_iter
-              (Iter.flat_map ~f:Trm.trms (Trm.Set.to_iter misses))
-          in
-          remove_subtrms misses approx
-        else approx
-      in
-      remove_subtrms interp approx
-  in
-  (* compute terms in relation mentioning vars to eliminate *)
-  let kills =
-    add_uninterp_uses Trm.Set.empty Trm.Set.empty
-      (Trm.Set.of_iter (Iter.map ~f:Trm.var (Var.Set.to_iter xs)))
-  in
-  let ks =
-    Trm.Set.fold kills Var.Set.empty ~f:(fun kill ks ->
-        match Var.of_trm kill with Some k -> Var.Set.add k ks | None -> ks )
-  in
+  let kills = Trm.Set.of_iter (Iter.map ~f:Trm.var (Var.Set.to_iter ks)) in
   (* compute classes including reps *)
   let reps =
     Subst.fold r.rep Trm.Set.empty ~f:(fun ~key:_ ~data:rep reps ->
@@ -1268,7 +1238,7 @@ let elim xs r =
                   Subst.add ~key:elt ~data:rep' s )
           | None -> s )
   in
-  (ks, {r with rep})
+  {r with rep}
 
 let apply_and_elim ~wrt xs s r =
   [%trace]
@@ -1283,7 +1253,8 @@ let apply_and_elim ~wrt xs s r =
     let zs, r = apply_subst wrt s r in
     if is_unsat r then (Var.Set.empty, unsat, Var.Set.empty)
     else
-      let ks, r = elim xs r in
+      let ks = trivial xs r in
+      let r = trim ks r in
       (zs, r, ks)
 
 (*

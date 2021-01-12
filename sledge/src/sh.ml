@@ -767,42 +767,56 @@ let remove_absent_xs ks q =
     in
     {q with xs; djns}
 
-let rec simplify_ us rev_xss q =
-  [%Trace.call fun {pf} -> pf "%a@ %a" pp_vss (List.rev rev_xss) pp_raw q]
+let rec simplify_ us rev_xss ancestor_subst q =
+  [%Trace.call fun {pf} ->
+    pf "%a@ %a@ %a" pp_vss (List.rev rev_xss) Context.Subst.pp
+      ancestor_subst pp_raw q]
   ;
+  assert (not (is_false q)) ;
+  let q0 = q in
   (* bind existentials *)
   let xs, q = bind_exists ~wrt:emp.us q in
   let rev_xss = xs :: rev_xss in
-  (* recursively simplify subformulas *)
-  let q =
-    starN
-      ( {q with djns= []}
-      :: List.map q.djns ~f:(fun djn ->
-             orN (List.map djn ~f:(fun sjn -> simplify_ us rev_xss sjn)) )
-      )
-  in
   (* try to solve equations in ctx for variables in xss *)
-  let xss = List.rev rev_xss in
-  let subst = Context.solve_for_vars (us :: xss) q.ctx in
-  let union_xss = Var.Set.union_list rev_xss in
-  let wrt = Var.Set.union us union_xss in
-  let fresh, ctx, removed =
-    Context.apply_and_elim ~wrt union_xss subst q.ctx
-  in
-  ( if Context.is_unsat ctx then false_ q.us
-  else if Context.Subst.is_empty subst then exists xs q
+  let stem_subst = Context.solve_for_vars (us :: List.rev rev_xss) q.ctx in
+  let subst = Context.Subst.compose ancestor_subst stem_subst in
+  ( if Context.Subst.is_empty subst then q0
   else
-    (* normalize wrt solutions *)
-    let q = extend_us fresh q in
-    (* opt: ctx already normalized wrt subst, so just preserve it *)
-    let q = {(norm subst {q with ctx= Context.empty}) with ctx} in
+    (* normalize context wrt solutions *)
+    let union_xss = Var.Set.union_list rev_xss in
+    let wrt = Var.Set.union us union_xss in
+    let fresh, ctx, removed =
+      Context.apply_and_elim ~wrt union_xss subst q.ctx
+    in
+    let q = {(extend_us fresh q) with ctx} in
+    (* normalize stem wrt both ancestor and current solutions *)
+    let stem =
+      (* opt: ctx already normalized so just preserve it *)
+      {(norm subst {q with djns= emp.djns; ctx= emp.ctx}) with ctx= q.ctx}
+    in
+    (* recursively simplify subformulas *)
+    let q =
+      starN
+        ( stem
+        :: List.map q.djns ~f:(fun djn ->
+               orN (List.map ~f:(simplify_ us rev_xss subst) djn) ) )
+    in
     if is_false q then false_ q.us
     else
-      (* opt: removed already disjoint from ctx, so ignore it *)
       let removed =
-        Var.Set.diff removed (fv ~ignore_ctx:() (elim_exists q.xs q))
+        if Var.Set.is_empty removed then Var.Set.empty
+        else (
+          (* opt: removed already disjoint from ctx, so ignore_ctx *)
+          assert (Var.Set.disjoint removed (Context.fv q.ctx)) ;
+          Var.Set.diff removed (fv ~ignore_ctx:() (elim_exists q.xs q)) )
       in
-      let keep, removed, _ = Context.Subst.partition_valid removed subst in
+      (* removed may not contain all variables stem_subst has solutions for,
+         so the equations in [∃ removed. stem_subst] that are not
+         universally valid need to be re-conjoined since they have alredy
+         been normalized out *)
+      let keep, removed, _ =
+        Context.Subst.partition_valid removed stem_subst
+      in
       let q = and_subst keep q in
       (* (re)quantify existentials *)
       let q = exists (Var.Set.union fresh xs) q in
@@ -810,7 +824,7 @@ let rec simplify_ us rev_xss q =
       remove_absent_xs removed q )
   |>
   [%Trace.retn fun {pf} q' ->
-    pf "%a@ %a" Context.Subst.pp subst pp_raw q' ;
+    pf "%a@ %a" Context.Subst.pp stem_subst pp_raw q' ;
     invariant q']
 
 let simplify q =
@@ -822,7 +836,7 @@ let simplify q =
     let q = propagate_context Var.Set.empty Context.empty q in
     if is_false q then false_ q.us
     else
-      let q = simplify_ q.us [] q in
+      let q = simplify_ q.us [] Context.Subst.empty q in
       q )
   |>
   [%Trace.retn fun {pf} q' ->

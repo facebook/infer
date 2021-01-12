@@ -85,6 +85,8 @@ module Subst : sig
   type t
 
   val pp : t pp
+  val empty : t
+  val compose : t -> t -> t
   val is_empty : t -> bool
   val fold_eqs : t -> 's -> f:(Formula.t -> 's -> 's) -> 's
 
