@@ -314,25 +314,6 @@ let rec is_empty q =
 (** syntactically inconsistent *)
 let is_false q = match q.djns with [[]] -> true | _ -> false
 
-(** first-order approximation of heap constraints *)
-let rec pure_approx q =
-  Formula.andN
-    ( [q.pure]
-    |> List.fold q.heap ~f:(fun seg p -> Formula.dq0 seg.loc :: p)
-    |> List.fold q.djns ~f:(fun djn p ->
-           Formula.orN (List.map djn ~f:pure_approx) :: p ) )
-
-let pure_approx q =
-  [%Trace.call fun {pf} -> pf "%a" pp q]
-  ;
-  pure_approx q
-  |>
-  [%Trace.retn fun {pf} -> pf "%a" Formula.pp]
-
-(** test if pure constraints are inconsistent with first-order consequences
-    of spatial constraints *)
-let is_unsat q = Context.refutes q.ctx (pure_approx q)
-
 (** Quantification and Vocabulary *)
 
 let exists_fresh xs q =
@@ -645,6 +626,52 @@ let dnf q =
   fold_dnf ~conj ~disj q (Var.Set.empty, []) []
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp_djn]
+
+(** Logical query *)
+
+(** first-order approximation of heap constraints *)
+let rec pure_approx q =
+  Formula.andN
+    ( [q.pure]
+    |> List.fold q.heap ~f:(fun seg p -> Formula.dq0 seg.loc :: p)
+    |> List.fold q.djns ~f:(fun djn p ->
+           Formula.orN (List.map djn ~f:pure_approx) :: p ) )
+
+let pure_approx q =
+  [%Trace.call fun {pf} -> pf "%a" pp q]
+  ;
+  pure_approx q
+  |>
+  [%Trace.retn fun {pf} -> pf "%a" Formula.pp]
+
+(** enumerate a DNF-expansion of a symbolic heap's first-order constraints
+    conjoined with a first-order approximation of the heap constraints until
+    a branch that is not unsatisfiable is found *)
+let is_unsat_dnf q =
+  let exception NotUnsat in
+  let conj sjn (wrt, ctx, fml) =
+    let wrt = Var.Set.union wrt sjn.xs in
+    let zs, ctx = Context.union wrt ctx sjn.ctx in
+    let wrt = Var.Set.union wrt zs in
+    let fml = Formula.and_ fml sjn.pure in
+    let fml =
+      List.fold sjn.heap fml ~f:(fun seg ->
+          Formula.and_ (Formula.dq0 seg.loc) )
+    in
+    (wrt, ctx, fml)
+  in
+  let disj (_, (_, ctx, fml)) () =
+    if not (Context.is_unsat ctx || Context.refutes ctx fml) then
+      raise_notrace NotUnsat
+  in
+  try
+    fold_dnf ~conj ~disj q (Var.Set.empty, (q.us, emp.ctx, emp.pure)) () ;
+    true
+  with NotUnsat -> false
+
+let is_unsat q =
+  if strong_unsat then is_unsat_dnf q
+  else Context.refutes q.ctx (pure_approx q)
 
 (** Simplify *)
 
