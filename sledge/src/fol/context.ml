@@ -1070,10 +1070,9 @@ let solve_concat_extracts_eq r x =
         | _ -> uses )
   in
   let find_extracts_at_off off =
-    List.filter uses ~f:(fun use ->
-        match (use : Trm.t) with
-        | Extract {off= o} -> implies r (Fml.eq o off)
-        | _ -> false )
+    List.filter uses ~f:(function
+      | Extract {off= o} -> implies r (Fml.eq o off)
+      | _ -> false )
   in
   let rec find_extracts full_rev_extracts rev_prefix off =
     List.fold (find_extracts_at_off off) full_rev_extracts
