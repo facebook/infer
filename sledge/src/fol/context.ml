@@ -683,7 +683,8 @@ let apply_subst wrt s r =
   ;
   ( if Subst.is_empty s then r
   else
-    Trm.Map.fold (classes r) empty ~f:(fun ~key:rep ~data:cls r ->
+    Trm.Map.fold (classes r) {r with rep= Subst.empty}
+      ~f:(fun ~key:rep ~data:cls r ->
         let rep' = Subst.subst_ s rep in
         List.fold cls r ~f:(fun trm r ->
             let trm' = Subst.subst_ s trm in
