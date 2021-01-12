@@ -15,3 +15,8 @@ val infer_frame : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option
     to be strong enough that for every model of [r], there exists an
     extension of it satisfying [q], such that the combination (with [xs]
     projected out) satisfies [p]. *)
+
+(**/**)
+
+val dump_query : int ref
+val replay : string -> unit

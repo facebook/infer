@@ -674,12 +674,14 @@ let excise_dnf : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
       in
       Sh.or_ remainders remainder )
 
+let query_count = ref (-1)
+
 let infer_frame : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
  fun minuend xs subtrahend ->
   [%trace]
     ~call:(fun {pf} ->
-      pf "@ @[<hv>%a@ \\- %a%a@]" Sh.pp minuend Var.Set.pp_xs xs Sh.pp
-        subtrahend )
+      pf " %i@ @[<hv>%a@ \\- %a%a@]" !query_count Sh.pp minuend
+        Var.Set.pp_xs xs Sh.pp subtrahend )
     ~retn:(fun {pf} r ->
       pf "%a" (Option.pp "%a" Sh.pp) r ;
       Option.iter r ~f:(fun frame ->
@@ -695,3 +697,24 @@ let infer_frame : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
   assert (Var.Set.subset xs ~of_:subtrahend.us) ;
   assert (Var.Set.subset (Var.Set.diff subtrahend.us xs) ~of_:minuend.us) ;
   excise_dnf minuend xs subtrahend
+
+(*
+ * Replay debugging
+ *)
+
+type call = Infer_frame of Sh.t * Var.Set.t * Sh.t [@@deriving sexp]
+
+let replay c =
+  match call_of_sexp (Sexp.of_string c) with
+  | Infer_frame (minuend, xs, subtrahend) ->
+      infer_frame minuend xs subtrahend |> ignore
+
+let dump_query = ref (-1)
+
+let infer_frame minuend xs subtrahend =
+  Int.incr query_count ;
+  if !query_count = !dump_query then
+    fail "%a" Sexp.pp_hum
+      (sexp_of_call (Infer_frame (minuend, xs, subtrahend)))
+      ()
+  else infer_frame minuend xs subtrahend
