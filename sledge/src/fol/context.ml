@@ -101,14 +101,14 @@ end = struct
   (** apply a substitution to maximal non-interpreted subterms *)
   let rec norm s a =
     [%trace]
-      ~call:(fun {pf} -> pf "%a" Trm.pp a)
+      ~call:(fun {pf} -> pf "@ %a" Trm.pp a)
       ~retn:(fun {pf} -> pf "%a" Trm.pp)
     @@ fun () ->
     if is_interpreted a then Trm.map ~f:(norm s) a else apply s a
 
   (** compose two substitutions *)
   let compose r s =
-    [%Trace.call fun {pf} -> pf "%a@ %a" pp r pp s]
+    [%Trace.call fun {pf} -> pf "@ %a@ %a" pp r pp s]
     ;
     ( if is_empty s then r
     else
@@ -178,7 +178,7 @@ end = struct
       ks ∩ fv(τ) = ∅. *)
   let partition_valid xs s =
     [%trace]
-      ~call:(fun {pf} -> pf "%a@ %a" Var.Set.pp_xs xs pp s)
+      ~call:(fun {pf} -> pf "@ %a@ %a" Var.Set.pp_xs xs pp s)
       ~retn:(fun {pf} (t, ks, u) ->
         pf "%a@ %a@ %a" pp t Var.Set.pp_xs ks pp u )
     @@ fun () ->
@@ -252,7 +252,7 @@ let fresh name (wrt, xs, s) =
 
 let solve_poly ?f p q s =
   [%trace]
-    ~call:(fun {pf} -> pf "%a = %a" Trm.pp p Trm.pp q)
+    ~call:(fun {pf} -> pf "@ %a = %a" Trm.pp p Trm.pp q)
     ~retn:(fun {pf} -> function
       | Some (_, xs, s) -> pf "%a%a" Var.Set.pp_xs xs Subst.pp s
       | None -> pf "false" )
@@ -271,7 +271,7 @@ let solve_poly ?f p q s =
 let rec solve_extract ?f a o l b s =
   [%trace]
     ~call:(fun {pf} ->
-      pf "%a = %a@ %a%a" Trm.pp
+      pf "@ %a = %a@ %a%a" Trm.pp
         (Trm.extract ~seq:a ~off:o ~len:l)
         Trm.pp b Var.Set.pp_xs (snd3 s) Subst.pp (trd3 s) )
     ~retn:(fun {pf} -> function
@@ -297,7 +297,7 @@ let rec solve_extract ?f a o l b s =
 and solve_concat ?f a0V b m s =
   [%trace]
     ~call:(fun {pf} ->
-      pf "%a = %a@ %a%a" Trm.pp (Trm.concat a0V) Trm.pp b Var.Set.pp_xs
+      pf "@ %a = %a@ %a%a" Trm.pp (Trm.concat a0V) Trm.pp b Var.Set.pp_xs
         (snd3 s) Subst.pp (trd3 s) )
     ~retn:(fun {pf} -> function
       | Some (_, xs, s) -> pf "%a%a" Var.Set.pp_xs xs Subst.pp s
@@ -314,8 +314,8 @@ and solve_concat ?f a0V b m s =
 
 and solve_ ?f d e s =
   [%Trace.call fun {pf} ->
-    pf "%a@[%a@ %a@ %a@]" Var.Set.pp_xs (snd3 s) Trm.pp d Trm.pp e Subst.pp
-      (trd3 s)]
+    pf "@ %a@[%a@ %a@ %a@]" Var.Set.pp_xs (snd3 s) Trm.pp d Trm.pp e
+      Subst.pp (trd3 s)]
   ;
   ( match orient (norm s d) (norm s e) with
   (* e' = f' ==> true when e' ≡ f' *)
@@ -402,7 +402,7 @@ and solve_ ?f d e s =
     | None -> pf "false"]
 
 let solve ?f ~wrt ~xs d e =
-  [%Trace.call fun {pf} -> pf "%a@ %a" Trm.pp d Trm.pp e]
+  [%Trace.call fun {pf} -> pf "@ %a@ %a" Trm.pp d Trm.pp e]
   ;
   ( solve_ ?f d e (wrt, xs, Subst.empty)
   |>= fun (_, xs, s) ->
@@ -565,7 +565,7 @@ let unsat = {empty with sat= false}
 
 (** [lookup r a] is [b'] if [a ~ b = b'] for some equation [b = b'] in rep *)
 let lookup r a =
-  ([%Trace.call fun {pf} -> pf "%a" Trm.pp a]
+  ([%Trace.call fun {pf} -> pf "@ %a" Trm.pp a]
   ;
   Iter.find_map (Subst.to_iter r.rep) ~f:(fun (b, b') ->
       Option.return_if (semi_congruent r a b) b' )
@@ -576,7 +576,7 @@ let lookup r a =
 (** rewrite a term into canonical form using rep and, for non-interpreted
     terms, congruence composed with rep *)
 let rec canon r a =
-  [%Trace.call fun {pf} -> pf "%a" Trm.pp a]
+  [%Trace.call fun {pf} -> pf "@ %a" Trm.pp a]
   ;
   ( match classify a with
   | Atomic -> Subst.apply r.rep a
@@ -592,7 +592,7 @@ let rec canon r a =
 
 let canon_f r b =
   [%trace]
-    ~call:(fun {pf} -> pf "%a@ %a" Fml.pp b pp_raw r)
+    ~call:(fun {pf} -> pf "@ %a@ %a" Fml.pp b pp_raw r)
     ~retn:(fun {pf} -> pf "%a" Fml.pp)
   @@ fun () -> Fml.map_trms ~f:(canon r) b
 
@@ -614,7 +614,7 @@ let extend a r =
   if rep == r.rep then r else {r with rep} |> check pre_invariant
 
 let merge ~wrt a b r =
-  [%Trace.call fun {pf} -> pf "%a@ %a@ %a" Trm.pp a Trm.pp b pp r]
+  [%Trace.call fun {pf} -> pf "@ %a@ %a@ %a" Trm.pp a Trm.pp b pp r]
   ;
   ( match solve ~wrt ~xs:r.xs a b with
   | Some (xs, s) ->
@@ -649,7 +649,7 @@ let rec close ~wrt r =
     | None -> r
 
 let close ~wrt r =
-  [%Trace.call fun {pf} -> pf "%a" pp r]
+  [%Trace.call fun {pf} -> pf "@ %a" pp r]
   ;
   close ~wrt r
   |>
@@ -683,7 +683,7 @@ let is_empty {sat; rep} =
 let is_unsat {sat} = not sat
 
 let implies r b =
-  [%Trace.call fun {pf} -> pf "%a@ %a" Fml.pp b pp r]
+  [%Trace.call fun {pf} -> pf "@ %a@ %a" Fml.pp b pp r]
   ;
   Fml.equal Fml.tt (canon_f r b)
   |>
@@ -727,7 +727,7 @@ let iter_uses_of t r ~f = fold_uses_of r t () ~f:(fun use () -> f use)
 let uses_of t r = Iter.from_labelled_iter (iter_uses_of t r)
 
 let apply_subst wrt s r =
-  [%Trace.call fun {pf} -> pf "%a@ %a" Subst.pp s pp r]
+  [%Trace.call fun {pf} -> pf "@ %a@ %a" Subst.pp s pp r]
   ;
   ( if Subst.is_empty s then r
   else
@@ -744,7 +744,7 @@ let apply_subst wrt s r =
     invariant r']
 
 let union wrt r s =
-  [%Trace.call fun {pf} -> pf "@[<hv 1>   %a@ @<2>∧ %a@]" pp r pp s]
+  [%Trace.call fun {pf} -> pf "@ @[<hv 1>   %a@ @<2>∧ %a@]" pp r pp s]
   ;
   ( if not r.sat then r
   else if not s.sat then s
@@ -760,7 +760,7 @@ let union wrt r s =
     invariant r']
 
 let inter wrt r s =
-  [%Trace.call fun {pf} -> pf "@[<hv 1>   %a@ @<2>∨ %a@]" pp r pp s]
+  [%Trace.call fun {pf} -> pf "@ @[<hv 1>   %a@ @<2>∨ %a@]" pp r pp s]
   ;
   ( if not s.sat then r
   else if not r.sat then s
@@ -802,7 +802,7 @@ let rec add_ wrt b r =
   | Pos _ | Not _ | Or _ | Iff _ | Cond _ | Lit _ -> r
 
 let add us b r =
-  [%Trace.call fun {pf} -> pf "%a@ %a" Fml.pp b pp r]
+  [%Trace.call fun {pf} -> pf "@ %a@ %a" Fml.pp b pp r]
   ;
   add_ us b r |> extract_xs
   |>
@@ -821,7 +821,7 @@ let dnf f =
   Fml.fold_dnf ~meet1 ~join1 ~top ~bot f
 
 let rename r sub =
-  [%Trace.call fun {pf} -> pf "@[%a@]@ %a" Var.Subst.pp sub pp r]
+  [%Trace.call fun {pf} -> pf "@ @[%a@]@ %a" Var.Subst.pp sub pp r]
   ;
   let rep =
     Subst.map_entries ~f:(Trm.map_vars ~f:(Var.Subst.apply sub)) r.rep
@@ -861,7 +861,7 @@ type 'a zom = Zero | One of 'a | Many
     [fv kill ⊈ us]; solve [p = q] for [kill]; extend subst mapping [kill]
     to the solution *)
 let solve_poly_eq us p' q' subst =
-  [%Trace.call fun {pf} -> pf "%a = %a" Trm.pp p' Trm.pp q']
+  [%Trace.call fun {pf} -> pf "@ %a = %a" Trm.pp p' Trm.pp q']
   ;
   let diff = Trm.sub p' q' in
   let max_solvables_not_ito_us =
@@ -881,7 +881,7 @@ let solve_poly_eq us p' q' subst =
     pf "@[%a@]" Subst.pp_diff (subst, Option.value subst' ~default:subst)]
 
 let solve_seq_eq ~wrt us e' f' subst =
-  [%Trace.call fun {pf} -> pf "%a = %a" Trm.pp e' Trm.pp f']
+  [%Trace.call fun {pf} -> pf "@ %a = %a" Trm.pp e' Trm.pp f']
   ;
   let f x u =
     (not (Var.Set.subset (Trm.fv x) ~of_:us))
@@ -911,7 +911,7 @@ let solve_seq_eq ~wrt us e' f' subst =
 
 let solve_interp_eq ~wrt us e' (cls, subst) =
   [%Trace.call fun {pf} ->
-    pf "trm: @[%a@]@ cls: @[%a@]@ subst: @[%a@]" Trm.pp e' pp_cls cls
+    pf "@ trm: @[%a@]@ cls: @[%a@]@ subst: @[%a@]" Trm.pp e' pp_cls cls
       Subst.pp subst]
   ;
   List.find_map cls ~f:(fun f ->
@@ -930,7 +930,7 @@ let solve_interp_eq ~wrt us e' (cls, subst) =
     [fv u ⊆ us ∪ xs] *)
 let rec solve_interp_eqs ~wrt us (cls, subst) =
   [%Trace.call fun {pf} ->
-    pf "cls: @[%a@]@ subst: @[%a@]" pp_cls cls Subst.pp subst]
+    pf "@ cls: @[%a@]@ subst: @[%a@]" pp_cls cls Subst.pp subst]
   ;
   let rec solve_interp_eqs_ cls' (cls, subst) =
     match cls with
@@ -969,7 +969,7 @@ let dom_trm e =
     [fv u ⊆ us ∪ xs] *)
 let solve_uninterp_eqs us (cls, subst) =
   [%Trace.call fun {pf} ->
-    pf "cls: @[%a@]@ subst: @[%a@]" pp_cls cls Subst.pp subst]
+    pf "@ cls: @[%a@]@ subst: @[%a@]" pp_cls cls Subst.pp subst]
   ;
   let compare e f =
     [%compare: kind * Trm.t] (classify e, e) (classify f, f)
@@ -1036,7 +1036,7 @@ let solve_uninterp_eqs us (cls, subst) =
 let solve_class ~wrt us us_xs ~key:rep ~data:cls (classes, subst) =
   let classes0 = classes in
   [%Trace.call fun {pf} ->
-    pf "rep: @[%a@]@ cls: @[%a@]@ subst: @[%a@]" Trm.pp rep pp_cls cls
+    pf "@ rep: @[%a@]@ cls: @[%a@]@ subst: @[%a@]" Trm.pp rep pp_cls cls
       Subst.pp subst]
   ;
   let cls, cls_not_ito_us_xs =
@@ -1059,7 +1059,7 @@ let solve_class ~wrt us us_xs ~key:rep ~data:cls (classes, subst) =
       pp_diff_clss (classes0, classes')]
 
 let solve_concat_extracts_eq r x =
-  [%Trace.call fun {pf} -> pf "%a@ %a" Trm.pp x pp r]
+  [%Trace.call fun {pf} -> pf "@ %a@ %a" Trm.pp x pp r]
   ;
   let uses =
     fold_uses_of r x [] ~f:(fun use uses ->
@@ -1122,7 +1122,7 @@ let solve_for_xs r us xs =
     and [fv u ⊆ us] or else [fv u ⊆ us ∪ xs]. *)
 let solve_classes ~wrt r xs (classes, subst, us) =
   [%Trace.call fun {pf} ->
-    pf "us: {@[%a@]}@ xs: {@[%a@]}" Var.Set.pp us Var.Set.pp xs]
+    pf "@ us: {@[%a@]}@ xs: {@[%a@]}" Var.Set.pp us Var.Set.pp xs]
   ;
   let rec solve_classes_ (classes0, subst0, us_xs) =
     let classes, subst =
@@ -1151,7 +1151,7 @@ let pp_vss fs vss =
     [fv u ⊆ ⋃ⱼ₌₁ⁱ vⱼ] *)
 let solve_for_vars vss r =
   [%Trace.call fun {pf} ->
-    pf "%a@ @[%a@]" pp_vss vss pp r ;
+    pf "@ %a@ @[%a@]" pp_vss vss pp r ;
     invariant r]
   ;
   let wrt = Var.Set.union_list vss in
@@ -1185,7 +1185,7 @@ let solve_for_vars vss r =
 
 let trivial vs r =
   [%trace]
-    ~call:(fun {pf} -> pf "%a@ %a" Var.Set.pp_xs vs pp_raw r)
+    ~call:(fun {pf} -> pf "@ %a@ %a" Var.Set.pp_xs vs pp_raw r)
     ~retn:(fun {pf} ks -> pf "%a" Var.Set.pp_xs ks)
   @@ fun () ->
   Var.Set.fold vs Var.Set.empty ~f:(fun v ks ->
@@ -1198,7 +1198,7 @@ let trivial vs r =
 
 let trim ks r =
   [%trace]
-    ~call:(fun {pf} -> pf "%a@ %a" Var.Set.pp_xs ks pp_raw r)
+    ~call:(fun {pf} -> pf "@ %a@ %a" Var.Set.pp_xs ks pp_raw r)
     ~retn:(fun {pf} r' ->
       pf "%a" pp_raw r' ;
       assert (Var.Set.disjoint ks (fv r')) )
@@ -1243,7 +1243,7 @@ let trim ks r =
 
 let apply_and_elim ~wrt xs s r =
   [%trace]
-    ~call:(fun {pf} -> pf "%a%a@ %a" Var.Set.pp_xs xs Subst.pp s pp_raw r)
+    ~call:(fun {pf} -> pf "@ %a%a@ %a" Var.Set.pp_xs xs Subst.pp s pp_raw r)
     ~retn:(fun {pf} (zs, r', ks) ->
       pf "%a@ %a@ %a" Var.Set.pp_xs zs pp_raw r' Var.Set.pp_xs ks ;
       assert (Var.Set.subset ks ~of_:xs) ;

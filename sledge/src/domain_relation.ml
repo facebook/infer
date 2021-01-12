@@ -64,8 +64,8 @@ module Make (State_domain : State_domain_sig) = struct
       (entry, current) =
     [%Trace.call fun {pf} ->
       pf
-        "@[<v>@[actuals: (@[%a@])@ formals: (@[%a@])@]@ locals: {@[%a@]}@ \
-         globals: {@[%a@]}@ current: %a@]"
+        "@ @[<v>@[actuals: (@[%a@])@ formals: (@[%a@])@]@ locals: \
+         {@[%a@]}@ globals: {@[%a@]}@ current: %a@]"
         (IArray.pp ",@ " Llair.Exp.pp)
         actuals
         (IArray.pp ",@ " Llair.Reg.pp)
@@ -82,18 +82,18 @@ module Make (State_domain : State_domain_sig) = struct
     [%Trace.retn fun {pf} (reln, _) -> pf "@,%a" pp reln]
 
   let post locals {state_from_call; caller_entry} (_, current) =
-    [%Trace.call fun {pf} -> pf "locals: %a" Llair.Reg.Set.pp locals]
+    [%Trace.call fun {pf} -> pf "@ locals: %a" Llair.Reg.Set.pp locals]
     ;
     (caller_entry, State_domain.post locals state_from_call current)
     |>
-    [%Trace.retn fun {pf} -> pf "@,%a" pp]
+    [%Trace.retn fun {pf} -> pf "%a" pp]
 
   let retn formals freturn {caller_entry; state_from_call} (_, current) =
-    [%Trace.call fun {pf} -> pf "@,%a" State_domain.pp current]
+    [%Trace.call fun {pf} -> pf "@ %a" State_domain.pp current]
     ;
     (caller_entry, State_domain.retn formals freturn state_from_call current)
     |>
-    [%Trace.retn fun {pf} -> pf "@,%a" pp]
+    [%Trace.retn fun {pf} -> pf "%a" pp]
 
   let dnf (entry, current) =
     List.map ~f:(fun c -> (entry, c)) (State_domain.dnf current)

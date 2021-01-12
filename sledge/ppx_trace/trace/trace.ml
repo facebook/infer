@@ -176,7 +176,7 @@ let infok mod_name fun_name k =
 let incf mod_name fun_name fmt =
   if not (enabled mod_name fun_name) then Format.ifprintf fs fmt
   else (
-    Format.fprintf fs "@\n@[<2>@[<hv 2>( %s:@ " fun_name ;
+    Format.fprintf fs "@\n@[<2>@[<hv 2>( %s:" fun_name ;
     Format.kfprintf (fun fs -> Format.fprintf fs "@]") fs fmt )
 
 let decf mod_name fun_name fmt =

@@ -99,7 +99,7 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
       |> check invariant
 
     let push_call (Llair.{return; throw} as call) from_call stk =
-      [%Trace.call fun {pf} -> pf "%a" pp stk]
+      [%Trace.call fun {pf} -> pf "@ %a" pp stk]
       ;
       let rec count_f_in_stack acc f = function
         | Return {stk= next_frame; dst= dest_block} ->
@@ -313,7 +313,7 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
     let Llair.{callee; actuals; areturn; return; recursive} = call in
     let Llair.{name; formals; freturn; locals; entry} = callee in
     [%Trace.call fun {pf} ->
-      pf "%a from %a with state@ %a" Llair.Function.pp name
+      pf "@ %a from %a with state@ %a" Llair.Function.pp name
         Llair.Function.pp return.dst.parent.name Dom.pp state]
     ;
     let dnf_states =
@@ -380,7 +380,7 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
 
   let exec_return stk pre_state (block : Llair.block) exp =
     let Llair.{name; formals; freturn; locals} = block.parent in
-    [%Trace.call fun {pf} -> pf "from: %a" Llair.Function.pp name]
+    [%Trace.call fun {pf} -> pf "@ from: %a" Llair.Function.pp name]
     ;
     let summarize post_state =
       if not Opts.function_summaries then post_state
@@ -419,7 +419,7 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
 
   let exec_throw stk pre_state (block : Llair.block) exc =
     let func = block.parent in
-    [%Trace.call fun {pf} -> pf "from %a" Llair.Function.pp func.name]
+    [%Trace.call fun {pf} -> pf "@ from %a" Llair.Function.pp func.name]
     ;
     let unwind formals scope from_call state =
       Dom.retn formals (Some func.fthrow) from_call
@@ -506,7 +506,7 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
    fun pgm stk state block ->
     [%trace]
       ~call:(fun {pf} ->
-        pf "#%i %%%s in %a" block.sort_index block.lbl Llair.Function.pp
+        pf "@ #%i %%%s in %a" block.sort_index block.lbl Llair.Function.pp
           block.parent.name )
       ~retn:(fun {pf} _ ->
         pf "#%i %%%s in %a" block.sort_index block.lbl Llair.Function.pp

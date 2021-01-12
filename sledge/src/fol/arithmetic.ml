@@ -285,7 +285,7 @@ struct
 
     let map poly ~f =
       [%trace]
-        ~call:(fun {pf} -> pf "%a" pp poly)
+        ~call:(fun {pf} -> pf "@ %a" pp poly)
         ~retn:(fun {pf} -> pf "%a" pp)
       @@ fun () ->
       ( if is_noninterpreted poly then poly
@@ -321,7 +321,7 @@ struct
     let solve_for_mono rejected_poly coeff mono poly =
       [%trace]
         ~call:(fun {pf} ->
-          pf "0 = %a + (%a×%a) + %a" pp rejected_poly Q.pp coeff Mono.pp
+          pf "@ 0 = %a + (%a×%a) + %a" pp rejected_poly Q.pp coeff Mono.pp
             mono pp poly )
         ~retn:(fun {pf} s ->
           pf "%a"
@@ -339,7 +339,7 @@ struct
         that [r + p = m - q] *)
     let rec solve_poly rejected poly =
       [%trace]
-        ~call:(fun {pf} -> pf "0 = (%a) + (%a)" pp rejected pp poly)
+        ~call:(fun {pf} -> pf "@ 0 = (%a) + (%a)" pp rejected pp poly)
         ~retn:(fun {pf} s ->
           pf "%a"
             (Option.pp "%a" (fun fs (v, q) ->
@@ -355,7 +355,7 @@ struct
     let solve_zero_eq ?for_ e =
       [%trace]
         ~call:(fun {pf} ->
-          pf "0 = %a%a" Trm.pp e (Option.pp " for %a" Trm.pp) for_ )
+          pf "@ 0 = %a%a" Trm.pp e (Option.pp " for %a" Trm.pp) for_ )
         ~retn:(fun {pf} s ->
           pf "%a"
             (Option.pp "%a" (fun fs (c, r) ->

@@ -261,7 +261,7 @@ end = struct
 
   let rec _Extract ~seq ~off ~len =
     [%trace]
-      ~call:(fun {pf} -> pf "%a" pp (Extract {seq; off; len}))
+      ~call:(fun {pf} -> pf "@ %a" pp (Extract {seq; off; len}))
       ~retn:(fun {pf} -> pf "%a" pp)
     @@ fun () ->
     (* _[_,0) ==> ⟨⟩ *)
@@ -326,7 +326,7 @@ end = struct
 
   and _Concat xs =
     [%trace]
-      ~call:(fun {pf} -> pf "%a" pp (Concat xs))
+      ~call:(fun {pf} -> pf "@ %a" pp (Concat xs))
       ~retn:(fun {pf} -> pf "%a" pp)
     @@ fun () ->
     (* (α^(β^γ)^δ) ==> (α^β^γ^δ) *)

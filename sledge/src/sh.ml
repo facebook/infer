@@ -319,7 +319,7 @@ let is_false q = match q.djns with [[]] -> true | _ -> false
 
 let exists_fresh xs q =
   [%Trace.call fun {pf} ->
-    pf "{@[%a@]}@ %a" Var.Set.pp xs pp q ;
+    pf "@ {@[%a@]}@ %a" Var.Set.pp xs pp q ;
     assert (
       Var.Set.disjoint xs q.us
       || fail "Sh.exists_fresh xs ∩ q.us: %a" Var.Set.pp
@@ -331,7 +331,7 @@ let exists_fresh xs q =
   [%Trace.retn fun {pf} -> pf "%a" pp]
 
 let exists xs q =
-  [%Trace.call fun {pf} -> pf "{@[%a@]}@ %a" Var.Set.pp xs pp q]
+  [%Trace.call fun {pf} -> pf "@ {@[%a@]}@ %a" Var.Set.pp xs pp q]
   ;
   assert (
     Var.Set.subset xs ~of_:q.us
@@ -381,7 +381,7 @@ let rec apply_subst sub q =
 
 and rename_ Var.Subst.{sub; dom; rng} q =
   [%Trace.call fun {pf} ->
-    pf "@[%a@]@ %a" Var.Subst.pp sub pp q ;
+    pf "@ @[%a@]@ %a" Var.Subst.pp sub pp q ;
     assert (Var.Set.subset dom ~of_:q.us)]
   ;
   let q = extend_us rng q in
@@ -394,7 +394,7 @@ and rename_ Var.Subst.{sub; dom; rng} q =
     assert (Var.Set.disjoint q'.us (Var.Subst.domain sub))]
 
 and rename sub q =
-  [%Trace.call fun {pf} -> pf "@[%a@]@ %a" Var.Subst.pp sub pp q]
+  [%Trace.call fun {pf} -> pf "@ @[%a@]@ %a" Var.Subst.pp sub pp q]
   ;
   rename_ (Var.Subst.restrict_dom sub q.us) q
   |>
@@ -406,7 +406,7 @@ and rename sub q =
 (** freshen existentials, preserving vocabulary *)
 and freshen_xs q ~wrt =
   [%Trace.call fun {pf} ->
-    pf "{@[%a@]}@ %a" Var.Set.pp wrt pp q ;
+    pf "@ {@[%a@]}@ %a" Var.Set.pp wrt pp q ;
     assert (Var.Set.subset q.us ~of_:wrt)]
   ;
   let Var.Subst.{sub; dom; rng}, _ = Var.Subst.freshen q.xs ~wrt in
@@ -429,7 +429,7 @@ and extend_us us q =
   |> check invariant
 
 let freshen q ~wrt =
-  [%Trace.call fun {pf} -> pf "{@[%a@]}@ %a" Var.Set.pp wrt pp q]
+  [%Trace.call fun {pf} -> pf "@ {@[%a@]}@ %a" Var.Set.pp wrt pp q]
   ;
   let xsub, _ = Var.Subst.freshen q.us ~wrt:(Var.Set.union wrt q.xs) in
   let q' = extend_us wrt (rename_ xsub q) in
@@ -442,7 +442,7 @@ let freshen q ~wrt =
     assert (Var.Set.disjoint wrt (fv q'))]
 
 let bind_exists q ~wrt =
-  [%Trace.call fun {pf} -> pf "{@[%a@]}@ %a" Var.Set.pp wrt pp q]
+  [%Trace.call fun {pf} -> pf "@ {@[%a@]}@ %a" Var.Set.pp wrt pp q]
   ;
   let q' =
     if Var.Set.is_empty wrt then q
@@ -461,7 +461,7 @@ let and_ctx_ ctx q =
   if Context.is_unsat ctx then false_ q.us else exists_fresh xs {q with ctx}
 
 let and_ctx ctx q =
-  [%Trace.call fun {pf} -> pf "%a@ %a" Context.pp ctx pp q]
+  [%Trace.call fun {pf} -> pf "@ %a@ %a" Context.pp ctx pp q]
   ;
   (if is_false q then q else and_ctx_ ctx (extend_us (Context.fv ctx) q))
   |>
@@ -471,7 +471,7 @@ let and_ctx ctx q =
 
 let star q1 q2 =
   [%trace]
-    ~call:(fun {pf} -> pf "(%a)@ (%a)" pp q1 pp q2)
+    ~call:(fun {pf} -> pf "@ (%a)@ (%a)" pp q1 pp q2)
     ~retn:(fun {pf} q ->
       pf "%a" pp q ;
       invariant q ;
@@ -509,7 +509,7 @@ let starN = function
   | q :: qs -> List.fold ~f:star qs q
 
 let or_ q1 q2 =
-  [%Trace.call fun {pf} -> pf "(%a)@ (%a)" pp_raw q1 pp_raw q2]
+  [%Trace.call fun {pf} -> pf "@ (%a)@ (%a)" pp_raw q1 pp_raw q2]
   ;
   ( match (q1, q2) with
   | _ when is_false q1 -> extend_us q1.us q2
@@ -541,7 +541,7 @@ let orN = function
   | q :: qs -> List.fold ~f:or_ qs q
 
 let pure (p : Formula.t) =
-  [%Trace.call fun {pf} -> pf "%a" Formula.pp p]
+  [%Trace.call fun {pf} -> pf "@ %a" Formula.pp p]
   ;
   Iter.fold (Context.dnf p) (false_ Var.Set.empty)
     ~f:(fun (xs, pure, ctx) q ->
@@ -558,7 +558,7 @@ let and_ b q =
   star (pure (Formula.map_terms ~f:(Context.normalize q.ctx) b)) q
 
 let and_subst subst q =
-  [%Trace.call fun {pf} -> pf "%a@ %a" Context.Subst.pp subst pp q]
+  [%Trace.call fun {pf} -> pf "@ %a@ %a" Context.Subst.pp subst pp q]
   ;
   Context.Subst.fold_eqs ~f:and_ subst q
   |>
@@ -567,7 +567,7 @@ let and_subst subst q =
     invariant q]
 
 let subst sub q =
-  [%Trace.call fun {pf} -> pf "@[%a@]@ %a" Var.Subst.pp sub pp q]
+  [%Trace.call fun {pf} -> pf "@ @[%a@]@ %a" Var.Subst.pp sub pp q]
   ;
   let dom, eqs =
     Var.Subst.fold sub (Var.Set.empty, Formula.tt)
@@ -618,7 +618,7 @@ let fold_dnf ~conj ~disj sjn (xs, conjuncts) disjuncts =
   add_disjunct Iter.empty sjn (xs, conjuncts) disjuncts
 
 let dnf q =
-  [%Trace.call fun {pf} -> pf "%a" pp q]
+  [%Trace.call fun {pf} -> pf "@ %a" pp q]
   ;
   let conj sjn conjuncts = sjn :: conjuncts in
   let disj (xs, conjuncts) disjuncts =
@@ -639,7 +639,7 @@ let rec pure_approx q =
            Formula.orN (List.map djn ~f:pure_approx) :: p ) )
 
 let pure_approx q =
-  [%Trace.call fun {pf} -> pf "%a" pp q]
+  [%Trace.call fun {pf} -> pf "@ %a" pp q]
   ;
   pure_approx q
   |>
@@ -677,7 +677,7 @@ let is_unsat q =
 (** Simplify *)
 
 let rec norm_ s q =
-  [%Trace.call fun {pf} -> pf "@[%a@]@ %a" Context.Subst.pp s pp_raw q]
+  [%Trace.call fun {pf} -> pf "@ @[%a@]@ %a" Context.Subst.pp s pp_raw q]
   ;
   map q ~f_sjn:(norm_ s)
     ~f_ctx:(Context.apply_subst (Var.Set.union q.us q.xs) s)
@@ -689,7 +689,7 @@ let rec norm_ s q =
     invariant q']
 
 let norm s q =
-  [%Trace.call fun {pf} -> pf "@[%a@]@ %a" Context.Subst.pp s pp_raw q]
+  [%Trace.call fun {pf} -> pf "@ @[%a@]@ %a" Context.Subst.pp s pp_raw q]
   ;
   (if Context.Subst.is_empty s then q else norm_ s q)
   |>
@@ -700,7 +700,7 @@ let norm s q =
 (** rename existentially quantified variables to avoid shadowing, and reduce
     quantifier scopes by sinking them as low as possible into disjunctions *)
 let rec freshen_nested_xs us q =
-  [%Trace.call fun {pf} -> pf "%a" pp q]
+  [%Trace.call fun {pf} -> pf "@ %a" pp q]
   ;
   (* trim xs to those that appear in the stem and sink the rest *)
   let fv_stem = fv {q with xs= Var.Set.empty; djns= []} in
@@ -727,7 +727,7 @@ let rec freshen_nested_xs us q =
     invariant q']
 
 let rec propagate_context_ ancestor_vs ancestor_ctx q =
-  [%Trace.call fun {pf} -> pf "(%a)@ %a" Context.pp ancestor_ctx pp q]
+  [%Trace.call fun {pf} -> pf "@ (%a)@ %a" Context.pp ancestor_ctx pp q]
   ;
   (* extend vocabulary with variables in scope above *)
   let ancestor_vs = Var.Set.union ancestor_vs (Var.Set.union q.us q.xs) in
@@ -763,7 +763,7 @@ let rec propagate_context_ ancestor_vs ancestor_ctx q =
     invariant q']
 
 let propagate_context ancestor_vs ancestor_ctx q =
-  [%Trace.call fun {pf} -> pf "(%a)@ %a" Context.pp ancestor_ctx pp q]
+  [%Trace.call fun {pf} -> pf "@ (%a)@ %a" Context.pp ancestor_ctx pp q]
   ;
   propagate_context_ ancestor_vs ancestor_ctx q
   |>
@@ -778,7 +778,7 @@ let pp_vss fs vss =
 
 let remove_absent_xs ks q =
   [%trace]
-    ~call:(fun {pf} -> pf "%a%a" Var.Set.pp_xs ks pp q)
+    ~call:(fun {pf} -> pf "@ %a%a" Var.Set.pp_xs ks pp q)
     ~retn:(fun {pf} -> pf "%a" pp)
   @@ fun () ->
   let ks = Var.Set.inter ks q.xs in
@@ -800,7 +800,7 @@ let remove_absent_xs ks q =
 
 let rec simplify_ us rev_xss survived ancestor_subst q =
   [%Trace.call fun {pf} ->
-    pf "%a@ %a@ %a" pp_vss (List.rev rev_xss) Context.Subst.pp
+    pf "@ %a@ %a@ %a" pp_vss (List.rev rev_xss) Context.Subst.pp
       ancestor_subst pp_raw q]
   ;
   assert (not (is_false q)) ;
@@ -866,7 +866,7 @@ let rec simplify_ us rev_xss survived ancestor_subst q =
     invariant q']
 
 let simplify q =
-  [%Trace.call fun {pf} -> pf "%a" pp_raw q]
+  [%Trace.call fun {pf} -> pf "@ %a" pp_raw q]
   ;
   ( if is_false q then false_ q.us
   else
