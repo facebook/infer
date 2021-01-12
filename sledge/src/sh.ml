@@ -9,6 +9,9 @@
 
 open Fol
 
+(** enable stronger unsat checking during normalization *)
+let strong_unsat = false
+
 [@@@warning "+9"]
 
 type seg = {loc: Term.t; bas: Term.t; len: Term.t; siz: Term.t; cnt: Term.t}
@@ -794,37 +797,41 @@ let rec simplify_ us rev_xss survived ancestor_subst q =
       (* opt: ctx already normalized so just preserve it *)
       {(norm subst {q with djns= emp.djns; ctx= emp.ctx}) with ctx= q.ctx}
     in
-    (* recursively simplify subformulas *)
-    let survived = Var.Set.union survived (fv (elim_exists stem.xs stem)) in
-    let q =
-      starN
-        ( stem
-        :: List.map q.djns ~f:(fun djn ->
-               orN (List.map ~f:(simplify_ us rev_xss survived subst) djn) )
-        )
-    in
-    if is_false q then false_ q.us
+    if strong_unsat && is_unsat stem then false_ stem.us
     else
-      let removed = Var.Set.diff removed survived in
-      let removed =
-        if Var.Set.is_empty removed then Var.Set.empty
-        else (
-          (* opt: removed already disjoint from ctx, so ignore_ctx *)
-          assert (Var.Set.disjoint removed (Context.fv q.ctx)) ;
-          Var.Set.diff removed (fv ~ignore_ctx:() (elim_exists q.xs q)) )
+      (* recursively simplify subformulas *)
+      let survived =
+        Var.Set.union survived (fv (elim_exists stem.xs stem))
       in
-      (* removed may not contain all variables stem_subst has solutions for,
-         so the equations in [∃ removed. stem_subst] that are not
-         universally valid need to be re-conjoined since they have alredy
-         been normalized out *)
-      let keep, removed, _ =
-        Context.Subst.partition_valid removed stem_subst
+      let q =
+        starN
+          ( stem
+          :: List.map q.djns ~f:(fun djn ->
+                 orN (List.map ~f:(simplify_ us rev_xss survived subst) djn) )
+          )
       in
-      let q = and_subst keep q in
-      (* (re)quantify existentials *)
-      let q = exists (Var.Set.union fresh xs) q in
-      (* remove the eliminated variables from xs and subformulas' us *)
-      remove_absent_xs removed q )
+      if is_false q then false_ q.us
+      else
+        let removed = Var.Set.diff removed survived in
+        let removed =
+          if Var.Set.is_empty removed then Var.Set.empty
+          else (
+            (* opt: removed already disjoint from ctx, so ignore_ctx *)
+            assert (Var.Set.disjoint removed (Context.fv q.ctx)) ;
+            Var.Set.diff removed (fv ~ignore_ctx:() (elim_exists q.xs q)) )
+        in
+        (* removed may not contain all variables stem_subst has solutions
+           for, so the equations in [∃ removed. stem_subst] that are not
+           universally valid need to be re-conjoined since they have alredy
+           been normalized out *)
+        let keep, removed, _ =
+          Context.Subst.partition_valid removed stem_subst
+        in
+        let q = and_subst keep q in
+        (* (re)quantify existentials *)
+        let q = exists (Var.Set.union fresh xs) q in
+        (* remove the eliminated variables from xs and subformulas' us *)
+        remove_absent_xs removed q )
   |>
   [%Trace.retn fun {pf} q' ->
     pf "%a@ %a" Context.Subst.pp stem_subst pp_raw q' ;
