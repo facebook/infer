@@ -175,21 +175,21 @@ let pp_heap x ?pre ctx fs heap =
   let blocks = List.group_succ ~eq (List.sort ~cmp heap) in
   List.pp ?pre "@ * " (pp_block x) fs blocks
 
-let pp_us ?(pre = ("" : _ fmt)) ?vs () fs us =
+let pp_us ?vs fs us =
   match vs with
   | None ->
       if not (Var.Set.is_empty us) then
-        [%Trace.fprintf fs "%( %)@[%a@] .@ " pre Var.Set.pp us]
+        [%Trace.fprintf fs "@<2>∀ @[%a@] .@ " Var.Set.pp us]
   | Some vs ->
       if not (Var.Set.equal vs us) then
         [%Trace.fprintf
-          fs "%( %)@[%a@] .@ " pre (Var.Set.pp_diff Var.pp) (vs, us)]
+          fs "@<2>∀ @[%a@] .@ " (Var.Set.pp_diff Var.pp) (vs, us)]
 
 let rec pp_ ?var_strength ?vs ancestor_xs parent_ctx fs
     {us; xs; ctx; pure; heap; djns} =
   Format.pp_open_hvbox fs 0 ;
   let x v = Option.bind ~f:(fun (_, m) -> Var.Map.find v m) var_strength in
-  pp_us ~pre:"@<2>∀ " ?vs () fs us ;
+  pp_us ?vs fs us ;
   ( match djns with
   | [[]] when Option.is_some var_strength -> Format.fprintf fs "false"
   | _ ->
@@ -245,6 +245,8 @@ and pp_djn ?var_strength vs xs ctx fs = function
                (pp_ ?var_strength ~vs (Var.Set.union xs sjn.xs) ctx)
                sjn ))
         djn
+
+let pp_us fs us = pp_us fs us
 
 let pp_diff_eq ?us ?(xs = Var.Set.empty) ctx fs q =
   pp_ ~var_strength:(var_strength ~xs q) ?vs:us xs ctx fs q
