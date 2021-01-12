@@ -438,6 +438,15 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
     |>
     [%Trace.retn fun {pf} _ -> pf ""]
 
+  let exec_assume cond jump stk state block =
+    match Dom.exec_assume state cond with
+    | Some state -> exec_jump stk state block jump
+    | None ->
+        [%Trace.info
+          "@[<2>infeasible assume %a@\n@[%a@]@]" Llair.Exp.pp cond Dom.pp
+            state] ;
+        Work.skip
+
   let exec_term : Llair.program -> Stack.t -> Dom.t -> Llair.block -> Work.x
       =
    fun pgm stk state block ->
@@ -448,28 +457,22 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
     | Switch {key; tbl; els} ->
         IArray.fold
           ~f:(fun (case, jump) x ->
-            match Dom.exec_assume state (Llair.Exp.eq key case) with
-            | Some state -> exec_jump stk state block jump |> Work.seq x
-            | None -> x )
+            exec_assume (Llair.Exp.eq key case) jump stk state block
+            |> Work.seq x )
           tbl
-          ( match
-              Dom.exec_assume state
-                (IArray.fold tbl Llair.Exp.true_ ~f:(fun (case, _) b ->
-                     Llair.Exp.and_ (Llair.Exp.dq key case) b ))
-            with
-          | Some state -> exec_jump stk state block els
-          | None -> Work.skip )
+          (exec_assume
+             (IArray.fold tbl Llair.Exp.true_ ~f:(fun (case, _) b ->
+                  Llair.Exp.and_ (Llair.Exp.dq key case) b ))
+             els stk state block)
     | Iswitch {ptr; tbl} ->
         IArray.fold tbl Work.skip ~f:(fun (jump : Llair.jump) x ->
-            match
-              Dom.exec_assume state
-                (Llair.Exp.eq ptr
-                   (Llair.Exp.label
-                      ~parent:(Llair.Function.name jump.dst.parent.name)
-                      ~name:jump.dst.lbl))
-            with
-            | Some state -> exec_jump stk state block jump |> Work.seq x
-            | None -> x )
+            exec_assume
+              (Llair.Exp.eq ptr
+                 (Llair.Exp.label
+                    ~parent:(Llair.Function.name jump.dst.parent.name)
+                    ~name:jump.dst.lbl))
+              jump stk state block
+            |> Work.seq x )
     | Call ({callee} as call) ->
         exec_call stk state block call
           (Domain_used_globals.by_function Opts.globals callee.name)
