@@ -668,21 +668,25 @@ let norm s q =
 
 (** rename existentially quantified variables to avoid shadowing, and reduce
     quantifier scopes by sinking them as low as possible into disjunctions *)
-let rec freshen_nested_xs q =
+let rec freshen_nested_xs us q =
   [%Trace.call fun {pf} -> pf "%a" pp q]
   ;
   (* trim xs to those that appear in the stem and sink the rest *)
   let fv_stem = fv {q with xs= Var.Set.empty; djns= []} in
   let xs_sink, xs = Var.Set.diff_inter q.xs fv_stem in
+  let us = Var.Set.union us q.us in
   let djns, xs_below =
     List.fold_map q.djns Var.Set.empty ~f:(fun djn xs_below ->
         List.fold_map djn xs_below ~f:(fun dj xs_below ->
+            (* freshen xs that shadow ancestor us *)
+            let us = Var.Set.union us dj.us in
+            let dj = freshen_xs dj ~wrt:us in
             (* quantify xs not in stem and freshen disjunct *)
-            let dj' =
-              freshen_nested_xs (exists (Var.Set.inter xs_sink dj.us) dj)
+            let dj =
+              freshen_nested_xs us (exists (Var.Set.inter xs_sink dj.us) dj)
             in
-            let xs_below' = Var.Set.union xs_below dj'.xs in
-            (dj', xs_below') ) )
+            let xs_below = Var.Set.union xs_below dj.xs in
+            (dj, xs_below) ) )
   in
   (* rename xs to miss all xs in subformulas *)
   freshen_xs {q with xs; djns} ~wrt:(Var.Set.union q.us xs_below)
@@ -814,7 +818,7 @@ let simplify q =
   ;
   ( if is_false q then false_ q.us
   else
-    let q = freshen_nested_xs q in
+    let q = freshen_nested_xs Var.Set.empty q in
     let q = propagate_context Var.Set.empty Context.empty q in
     if is_false q then false_ q.us
     else
