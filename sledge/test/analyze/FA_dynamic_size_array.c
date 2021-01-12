@@ -5,13 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-void mutal_rec_d();
-void mutal_rec_a() { mutal_rec_d(); }
-void mutal_rec_d() { mutal_rec_a(); }
-void recurse() { recurse(); }
+void main() {
+  size_t n = __llair_choice();
+  n = (n < 0 ? -n : n) + 1;
+  int* a = __llair_alloc(n * sizeof(int));
 
-int main() {
-  recurse();
-  mutal_rec_a();
-  return 0;
+  for (int i = 0; i < n; i++) {
+    a[i] = i;
+  }
+
+  free(a);
+
+  return;
 }

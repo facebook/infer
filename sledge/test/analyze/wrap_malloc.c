@@ -8,6 +8,7 @@
 #include <stdlib.h>
 
 char* c() { return malloc(12); }
+
 int main() {
   char* s = c();
   return s ? *s : 1;

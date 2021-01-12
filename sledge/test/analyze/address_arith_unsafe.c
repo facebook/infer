@@ -5,13 +5,21 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-void mutal_rec_d();
-void mutal_rec_a() { mutal_rec_d(); }
-void mutal_rec_d() { mutal_rec_a(); }
-void recurse() { recurse(); }
+typedef struct _ {
+  int* f;
+  int* g;
+} S;
 
-int main() {
-  recurse();
-  mutal_rec_a();
-  return 0;
+void main() {
+  S x;
+  int** p;
+  int y;
+
+  /* safe */
+  x.f = &y;
+  p = &x.f;
+  p++;
+  /* unsafe */
+  *p = 0;
+  *x.g = 0;
 }

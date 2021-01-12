@@ -5,13 +5,22 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-void mutal_rec_d();
-void mutal_rec_a() { mutal_rec_d(); }
-void mutal_rec_d() { mutal_rec_a(); }
-void recurse() { recurse(); }
+void main() {
+  int x, y;
 
-int main() {
-  recurse();
-  mutal_rec_a();
-  return 0;
+  x++;
+  if (x / 2) {
+  L0:
+    if (x <= 0)
+      goto L3;
+    x--;
+    goto L1;
+  } else {
+  L1:
+    y++;
+    goto L0;
+  }
+L3:
+
+  return;
 }

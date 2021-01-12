@@ -5,13 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-void mutal_rec_d();
-void mutal_rec_a() { mutal_rec_d(); }
-void mutal_rec_d() { mutal_rec_a(); }
-void recurse() { recurse(); }
+int x;
 
-int main() {
-  recurse();
-  mutal_rec_a();
-  return 0;
+void main() {
+  int n = 4;
+  int* A = (int*)__llair_alloc(n * sizeof(int));
+  /* safe */
+  x = A[0];
+  x = A[1];
+  x = A[2];
+  x = A[3];
 }

@@ -13,8 +13,8 @@ int f(int x) { // x= 0, 1, 2, ...
 }
 
 int g(int y) { // y= 2, 3, 4, ...
-  if (y > 5) {
-    return y;
+  if (y > 5) { // catch this crash only when depth bound >= 4
+    abort();
   }
   return f(y - 1); // Back edge!
 }
