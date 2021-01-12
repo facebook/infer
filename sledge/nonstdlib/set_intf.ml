@@ -52,6 +52,9 @@ module type S = sig
   val only_elt : t -> elt option
   val classify : t -> [`Zero | `One of elt | `Many]
 
+  val pop : t -> (elt * t) option
+  (** Find and remove an unspecified element. [O(1)]. *)
+
   val pop_exn : t -> elt * t
   (** Find and remove an unspecified element. [O(1)]. *)
 
@@ -66,6 +69,7 @@ module type S = sig
   val exists : t -> f:(elt -> bool) -> bool
   val for_all : t -> f:(elt -> bool) -> bool
   val fold : t -> 's -> f:(elt -> 's -> 's) -> 's
+  val reduce : t -> f:(elt -> elt -> elt) -> elt option
 
   (** {1 Convert} *)
 

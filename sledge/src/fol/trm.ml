@@ -387,6 +387,11 @@ module T = struct
   type t = Trm.t [@@deriving compare, sexp]
 end
 
+module Set = struct
+  include Set.Make (T)
+  include Provide_of_sexp (T)
+end
+
 module Map = struct
   include Map.Make (T)
   include Provide_of_sexp (T)

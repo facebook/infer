@@ -56,11 +56,14 @@ module Subst : sig
   val compose : t -> t -> t
   val compose1 : key:Trm.t -> data:Trm.t -> t -> t
   val extend : Trm.t -> t -> t option
-  val remove : Var.Set.t -> t -> t
   val map_entries : f:(Trm.t -> Trm.t) -> t -> t
   val to_iter : t -> (Trm.t * Trm.t) iter
   val fv : t -> Var.Set.t
   val partition_valid : Var.Set.t -> t -> t * Var.Set.t * t
+
+  (* direct representation manipulation *)
+  val add : key:Trm.t -> data:Trm.t -> t -> t
+  val remove : Trm.t -> t -> t
 end = struct
   type t = Trm.t Trm.Map.t [@@deriving compare, equal, sexp_of]
 
@@ -139,10 +142,6 @@ end = struct
     | exception Found -> None
     | s -> Some s
 
-  (** remove entries for vars *)
-  let remove xs s =
-    Var.Set.fold ~f:(fun x -> Trm.Map.remove (Trm.var x)) xs s
-
   (** map over a subst, applying [f] to both domain and range, requires that
       [f] is injective and for any set of terms [E], [f\[E\]] is disjoint
       from [E] *)
@@ -200,6 +199,11 @@ end = struct
       if s' != s then partition_valid_ t' ks' s' else (t', ks', s')
     in
     partition_valid_ empty xs s
+
+  (* direct representation manipulation *)
+
+  let add = Trm.Map.add
+  let remove = Trm.Map.remove
 end
 
 (** Theory Solver *)
@@ -1175,7 +1179,96 @@ let solve_for_vars vss r =
               else `Continue us_xs )
             ~finish:(fun _ -> false) ) )]
 
-let elim xs r = {r with rep= Subst.remove xs r.rep}
+(* [elim] removes variables from a context by rearranging the existing
+   equality classes. Non-representative terms that contain a variable to
+   eliminate can be simply dropped. If a representative needs to be removed,
+   a new representative is chosen. This basic approach is insufficient if
+   interpreted terms are to be removed. For example, eliminating x from x +
+   1 = y = z ∧ w = x by just preserving the existing classes between terms
+   that do not mention x would yield y = z. This would lose provability of
+   the equality w = y - 1. So variables with interpreted uses are not
+   eliminated. *)
+let elim xs r =
+  [%trace]
+    ~call:(fun {pf} -> pf "%a@ %a" Var.Set.pp_xs xs pp_raw r)
+    ~retn:(fun {pf} (ks, r') ->
+      pf "%a@ %a" Var.Set.pp_xs ks pp_raw r' ;
+      assert (Var.Set.subset ks ~of_:xs) ;
+      assert (Var.Set.disjoint ks (fv r')) )
+  @@ fun () ->
+  (* add the uninterpreted uses of terms in delta to approx, and the
+     interpreted uses to interp *)
+  let rec add_uninterp_uses approx interp delta =
+    if not (Trm.Set.is_empty delta) then
+      let approx = Trm.Set.union approx delta in
+      let delta, interp =
+        Trm.Set.fold delta
+          (Trm.Set.empty, Trm.Set.empty)
+          ~f:
+            (fold_uses_of r ~f:(fun use (delta, interp) ->
+                 if is_interpreted use then (delta, Trm.Set.add use interp)
+                 else (Trm.Set.add use delta, interp) ))
+      in
+      add_uninterp_uses approx interp delta
+    else
+      (* remove the subterms of interpreted uses from approx *)
+      let rec remove_subtrms misses approx =
+        if not (Trm.Set.is_empty misses) then
+          let approx = Trm.Set.diff approx misses in
+          let misses =
+            Trm.Set.of_iter
+              (Iter.flat_map ~f:Trm.trms (Trm.Set.to_iter misses))
+          in
+          remove_subtrms misses approx
+        else approx
+      in
+      remove_subtrms interp approx
+  in
+  (* compute terms in relation mentioning vars to eliminate *)
+  let kills =
+    add_uninterp_uses Trm.Set.empty Trm.Set.empty
+      (Trm.Set.of_iter (Iter.map ~f:Trm.var (Var.Set.to_iter xs)))
+  in
+  let ks =
+    Trm.Set.fold kills Var.Set.empty ~f:(fun kill ks ->
+        match Var.of_trm kill with Some k -> Var.Set.add k ks | None -> ks )
+  in
+  (* compute classes including reps *)
+  let reps =
+    Subst.fold r.rep Trm.Set.empty ~f:(fun ~key:_ ~data:rep reps ->
+        Trm.Set.add rep reps )
+  in
+  let clss =
+    Trm.Set.fold reps (classes r) ~f:(fun rep clss ->
+        Trm.Map.add_multi ~key:rep ~data:rep clss )
+  in
+  (* trim classes to those that intersect kills *)
+  let clss =
+    Trm.Map.filter_mapi clss ~f:(fun ~key:_ ~data:cls ->
+        let cls = Trm.Set.of_list cls in
+        if Trm.Set.disjoint kills cls then None else Some cls )
+  in
+  (* enumerate affected classes and update solution subst *)
+  let rep =
+    Trm.Map.fold clss r.rep ~f:(fun ~key:rep ~data:cls s ->
+        (* remove mappings for non-rep class elements to kill *)
+        let drop = Trm.Set.inter cls kills in
+        let s = Trm.Set.fold ~f:Subst.remove drop s in
+        if not (Trm.Set.mem rep kills) then s
+        else
+          (* if rep is to be removed, choose new one from the keepers *)
+          let keep = Trm.Set.diff cls drop in
+          match
+            Trm.Set.reduce keep ~f:(fun x y ->
+                if prefer x y < 0 then x else y )
+          with
+          | Some rep' ->
+              (* add mappings from each keeper to the new representative *)
+              Trm.Set.fold keep s ~f:(fun elt s ->
+                  Subst.add ~key:elt ~data:rep' s )
+          | None -> s )
+  in
+  (ks, {r with rep})
 
 (*
  * Replay debugging

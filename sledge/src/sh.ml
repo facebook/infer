@@ -753,20 +753,25 @@ let remove_absent_xs ks q =
   let ks = Var.Set.inter ks q.xs in
   if Var.Set.is_empty ks then q
   else
-    let xs = Var.Set.diff q.xs ks in
-    let ctx = Context.elim ks q.ctx in
-    let djns =
-      let rec trim_ks ks djns =
-        List.map djns ~f:(fun djn ->
-            List.map djn ~f:(fun sjn ->
-                { sjn with
-                  us= Var.Set.diff sjn.us ks
-                ; ctx= Context.elim ks sjn.ctx
-                ; djns= trim_ks ks sjn.djns } ) )
+    let ks, ctx = Context.elim ks q.ctx in
+    if Var.Set.is_empty ks then q
+    else
+      let xs = Var.Set.diff q.xs ks in
+      let djns =
+        let rec trim_ks ks djns =
+          List.map djns ~f:(fun djn ->
+              List.map djn ~f:(fun sjn ->
+                  let ks, ctx = Context.elim ks sjn.ctx in
+                  if Var.Set.is_empty ks then sjn
+                  else
+                    { sjn with
+                      us= Var.Set.diff sjn.us ks
+                    ; ctx
+                    ; djns= trim_ks ks sjn.djns } ) )
+        in
+        trim_ks ks q.djns
       in
-      trim_ks ks q.djns
-    in
-    {q with xs; ctx; djns}
+      {q with xs; ctx; djns}
 
 let rec simplify_ us rev_xss q =
   [%Trace.call fun {pf} -> pf "%a@ %a" pp_vss (List.rev rev_xss) pp_raw q]

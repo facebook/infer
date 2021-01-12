@@ -96,6 +96,11 @@ end) : S with type elt = Elt.t = struct
       | l, true, r when is_empty l && is_empty r -> `One elt
       | _ -> `Many )
 
+  let pop s =
+    match choose s with
+    | Some elt -> Some (elt, S.remove elt s)
+    | None -> None
+
   let pop_exn s =
     let elt = choose_exn s in
     (elt, S.remove elt s)
@@ -106,6 +111,10 @@ end) : S with type elt = Elt.t = struct
   let exists s ~f = S.exists f s
   let for_all s ~f = S.for_all f s
   let fold s z ~f = S.fold f s z
+
+  let reduce xs ~f =
+    match pop xs with Some (x, xs) -> Some (fold ~f xs x) | None -> None
+
   let to_iter = S.to_iter
   let of_iter = S.of_iter
 

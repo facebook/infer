@@ -37,6 +37,12 @@ end
 module Arith :
   Arithmetic.S with type var := Var.t with type trm := t with type t = arith
 
+module Set : sig
+  include Set.S with type elt := t
+
+  val t_of_sexp : Sexp.t -> t
+end
+
 module Map : sig
   include Map.S with type key := t
 
