@@ -794,20 +794,20 @@ let rec simplify_ us rev_xss q =
     else
       (* normalize wrt solutions *)
       let q = norm subst q in
-      (* reconjoin only non-redundant equations *)
-      let _, ctx =
-        Context.apply_subst
-          (Var.Set.union us (Var.Set.union_list rev_xss))
-          subst q.ctx
-      in
-      let removed =
-        Var.Set.diff
-          (Var.Set.union_list rev_xss)
-          (Var.Set.union (Context.fv ctx)
-             (fv ~ignore_ctx:() (elim_exists q.xs q)))
-      in
-      let keep, removed, _ = Context.Subst.partition_valid removed subst in
-      (removed, and_subst keep {q with ctx})
+      if is_false q then (Var.Set.empty, false_ q.us)
+      else
+        let removed, ctx =
+          Context.elim (Var.Set.union_list rev_xss) q.ctx
+        in
+        let q = {q with ctx} in
+        let removed =
+          Var.Set.diff removed (fv ~ignore_ctx:() (elim_exists q.xs q))
+        in
+        let keep, removed, _ =
+          Context.Subst.partition_valid removed subst
+        in
+        let q = and_subst keep q in
+        (removed, q)
   in
   (* re-quantify existentials *)
   let q = exists xs q in
