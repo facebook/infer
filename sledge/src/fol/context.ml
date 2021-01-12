@@ -428,14 +428,9 @@ type t =
 [@@deriving compare, equal, sexp]
 
 let classes r =
-  let add elt rep cls =
-    if Trm.equal elt rep then cls
-    else Trm.Map.add_multi ~key:rep ~data:elt cls
-  in
   Subst.fold r.rep Trm.Map.empty ~f:(fun ~key:elt ~data:rep cls ->
-      match classify elt with
-      | Interpreted | Atomic -> add elt rep cls
-      | Uninterpreted -> add (Trm.map ~f:(Subst.apply r.rep) elt) rep cls )
+      if Trm.equal elt rep then cls
+      else Trm.Map.add_multi ~key:rep ~data:elt cls )
 
 let cls_of r e =
   let e' = Subst.apply r.rep e in

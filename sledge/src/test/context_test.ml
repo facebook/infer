@@ -16,9 +16,9 @@ let%test_module _ =
     (* let () =
      *   Trace.init ~margin:160
      *     ~config:(Result.get_ok (Trace.parse "+Equality"))
-     *     ()
-     *
-     * [@@@warning "-32"] *)
+     *     () *)
+
+    [@@@warning "-32"]
 
     let printf pp = Format.printf "@\n%a@." pp
     let pp = printf Context.pp_raw
@@ -58,7 +58,7 @@ let%test_module _ =
       pp r3 ;
       [%expect
         {|
-        %t_1 = g(%y_6, %t_1) = g(%y_6, %t_1) = %z_7 = %x_5 = %w_4 = %v_3
+        %t_1 = g(%y_6, %z_7) = g(%y_6, %v_3) = %z_7 = %x_5 = %w_4 = %v_3
         = %u_2
 
       {sat= true;

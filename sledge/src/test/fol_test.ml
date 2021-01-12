@@ -181,7 +181,7 @@ let%test_module _ =
       pp_raw r3 ;
       [%expect
         {|
-        %t_1 = g(%y_6, %t_1) = g(%y_6, %t_1) = %z_7 = %x_5 = %w_4 = %v_3
+        %t_1 = g(%y_6, %z_7) = g(%y_6, %v_3) = %z_7 = %x_5 = %w_4 = %v_3
         = %u_2
 
       {sat= true;
