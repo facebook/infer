@@ -48,6 +48,12 @@ module type S = sig
       every value. *)
 
   val union : 'a t -> 'a t -> f:(key -> 'a -> 'a -> 'a option) -> 'a t
+
+  val union_absent : 'a t -> 'a t -> 'a t
+  (** [union_absent m1 m2] contains all the bindings of [m1] as well as
+      those of [m2] for keys not contained by [m1].
+      [union_absent m1 m2 == m1] if no bindings from [m2] are added. *)
+
   val partition : 'a t -> f:(key -> 'a -> bool) -> 'a t * 'a t
 
   val partition_map :

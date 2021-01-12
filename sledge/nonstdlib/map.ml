@@ -63,6 +63,21 @@ end) : S with type key = Key.t = struct
     if !change then t' else t
 
   let union x y ~f = M.union f x y
+
+  let union_absent t u =
+    let change = ref false in
+    let t' =
+      M.merge
+        (fun _ v1 v2 ->
+          match v1 with
+          | Some _ -> v1
+          | None ->
+              change := true ;
+              v2 )
+        t u
+    in
+    if !change then t' else t
+
   let partition m ~f = M.partition f m
 
   let partition_map m ~f =

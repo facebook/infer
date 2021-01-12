@@ -111,13 +111,7 @@ end = struct
     [%Trace.call fun {pf} -> pf "%a@ %a" pp r pp s]
     ;
     let r' = Trm.Map.map_endo ~f:(norm s) r in
-    Trm.Map.merge_endo r' s ~f:(fun key -> function
-      | `Both (data_r, data_s) ->
-          assert (
-            Trm.equal data_s data_r
-            || fail "domains intersect: %a" Trm.pp key () ) ;
-          Some data_r
-      | `Left data | `Right data -> Some data )
+    Trm.Map.union_absent r' s
     |>
     [%Trace.retn fun {pf} r' ->
       pf "%a" pp_diff (r, r') ;
@@ -129,7 +123,11 @@ end = struct
     | Z _ | Q _ -> s
     | _ ->
         if Trm.equal key data then s
-        else compose s (Trm.Map.singleton key data)
+        else (
+          assert (
+            (not (Trm.Map.mem key s))
+            || fail "domains intersect: %a" Trm.pp key () ) ;
+          compose s (Trm.Map.singleton key data) )
 
   (** add an identity entry if the term is not already present *)
   let extend e s =
