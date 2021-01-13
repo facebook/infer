@@ -55,7 +55,7 @@ let get_start_location_heuristics =
   fun ~default pname ->
     let name = Procname.get_method pname in
     if
-      (not (Procname.Java.is_autogen_method_name name))
+      (not (Procname.is_java_autogen_method pname))
       && (not (String.equal name Procname.Java.constructor_method_name))
       && not (String.equal name Procname.Java.class_initializer_method_name)
     then Option.value ~default (find_proc_loc_backward name ~lines_to_find default)

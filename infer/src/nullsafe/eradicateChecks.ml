@@ -210,13 +210,6 @@ let get_nullability_upper_bound field_name typestate_list =
         (get_nullability_upper_bound_for_typestate proc_name field_name typestate) )
 
 
-let is_generated_field field_name =
-  (* Annotation transformers might generate hidden fields in the class.
-     We distinguish such fields by their prefix.
-  *)
-  String.is_prefix ~prefix:"$" (Fieldname.get_field_name field_name)
-
-
 (** Check field initialization for a given constructor *)
 let check_constructor_initialization
     ({IntraproceduralAnalysis.tenv; proc_desc= curr_constructor_pdesc; _} as analysis_data)
@@ -281,7 +274,7 @@ let check_constructor_initialization
               && in_current_class
               && (not (Fieldname.is_java_outer_instance field_name))
               (* not user code, unactionable errors *)
-              && not (is_generated_field field_name)
+              && not (Fieldname.is_java_synthetic field_name)
             in
             if should_check_field_initialization then (
               (* Check if non-null field is not initialized. *)

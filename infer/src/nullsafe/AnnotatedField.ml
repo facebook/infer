@@ -36,8 +36,6 @@ let is_enum_value tenv ~class_typ (field_info : Struct.field_info) =
         false
 
 
-let is_synthetic field_name = String.contains field_name '$'
-
 (* For the special mode, return the provisionally nullable annotation, otherwise return the unchaged nullability *)
 let maybe_provisionally_nullable field_name ~field_class ~class_under_analysis nullability =
   if
@@ -87,7 +85,7 @@ let get tenv field_name ~class_typ ~class_under_analysis =
            not an enum value, but just a static field annotated as nullable.
         *)
       then AnnotatedNullability.StrictNonnull EnumValue
-      else if is_synthetic (Fieldname.get_field_name field_name) then
+      else if Fieldname.is_java_synthetic field_name then
         (* This field is artifact of codegen and is not visible to the user.
            Surfacing it as non-strict is non-actionable for the user *)
         AnnotatedNullability.StrictNonnull SyntheticField

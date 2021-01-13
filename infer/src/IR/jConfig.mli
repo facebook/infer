@@ -54,3 +54,5 @@ val field_cst : string
 val field_st : Mangled.t
 
 val infer_builtins_cl : string
+
+val is_synthetic_name : string -> bool
