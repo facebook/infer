@@ -134,3 +134,11 @@ void threshold_by_comparison_2_Bad() {
     arr[j] = 0;
   }
 }
+
+void infinite_for_loop_Good() {
+  int arr[5];
+  int x = 0;
+  for (x;;) {
+  }
+  arr[10] = 0;
+}

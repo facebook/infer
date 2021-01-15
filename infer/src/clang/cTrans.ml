@@ -2224,7 +2224,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let root_nodes =
       match loop_kind with
       | Loops.For _ -> (
-        match init_incr_nodes with Some (nodes_init, _) -> nodes_init | None -> assert false )
+        match init_incr_nodes with
+        | Some (nodes_init, _) ->
+            if List.is_empty nodes_init then [join_node] else nodes_init
+        | None ->
+            assert false )
       | Loops.While _ | Loops.DoWhile _ ->
           [join_node]
     in
