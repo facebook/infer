@@ -683,6 +683,9 @@ let should_report_on_proc tenv procdesc =
       || (not (PredSymb.equal_access (Procdesc.get_access procdesc) Private))
          && (not (Procname.Java.is_autogen_method java_pname))
          && not (Annotations.pdesc_return_annot_ends_with procdesc Annotations.visibleForTesting)
+  | ObjC_Cpp objc_cpp when Procname.ObjC_Cpp.is_cpp_lambda objc_cpp ->
+      (* do not report on lambdas; they are essentially private though do not appear as such *)
+      false
   | ObjC_Cpp {kind= CPPMethod _ | CPPConstructor _ | CPPDestructor _} ->
       not (PredSymb.equal_access (Procdesc.get_access procdesc) Private)
   | ObjC_Cpp {kind= ObjCClassMethod | ObjCInstanceMethod | ObjCInternalMethod; class_name} ->
