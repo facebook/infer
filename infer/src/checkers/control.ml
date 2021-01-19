@@ -49,15 +49,14 @@ module LoopHeadToGuardNodes = Procdesc.NodeMap
 
 type loop_control_maps =
   { exit_map: LoopHeads.t ExitNodeToLoopHeads.t
-  ; loop_head_to_guard_nodes: GuardNodes.t LoopHeadToGuardNodes.t
-  ; nodes: Procdesc.Node.t list Lazy.t }
+  ; loop_head_to_guard_nodes: GuardNodes.t LoopHeadToGuardNodes.t }
 
 (* forward transfer function for control dependencies *)
 module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = ControlDepSet
 
-  type analysis_data = loop_control_maps
+  type analysis_data = Procdesc.Node.t list * loop_control_maps
 
   let collect_vars_in_exp exp loop_head =
     Var.get_all_vars_in_exp exp
@@ -90,27 +89,26 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
            | Some deps ->
                ControlDepSet.union deps acc
            | None -> (
-               (* the variables in the prone node do not appear in
-                  predecessor nodes. This could happen if the variable
-                  is defined in a dangling node due to a frontend
-                  issue (when reading from a global variable). In that
-                  case, we find that node among all the nodes of the
-                  cfg and pick up the control variables. *)
-               let all_nodes = force nodes in
-               match
-                 List.find_map all_nodes ~f:(fun node ->
-                     if Procdesc.Node.is_dangling node then
-                       let instrs = Procdesc.Node.get_instrs node in
-                       Instrs.find_map instrs ~f:(find_vars_in_decl id loop_head prune_node)
-                     else None )
-               with
-               | Some deps ->
-                   ControlDepSet.union deps acc
-               | None ->
-                   L.internal_error
-                     "Failed to get the definition of the control variable %a in exp %a \n" Ident.pp
-                     id Exp.pp exp ;
-                   acc ) )
+             (* the variables in the prune node do not appear in
+                predecessor nodes. This could happen if the variable
+                is defined in a dangling node due to a frontend
+                issue (when reading from a global variable). In that
+                case, we find that node among all the nodes of the
+                cfg and pick up the control variables. *)
+             match
+               List.find_map nodes ~f:(fun node ->
+                   if Procdesc.Node.is_dangling node then
+                     let instrs = Procdesc.Node.get_instrs node in
+                     Instrs.find_map instrs ~f:(find_vars_in_decl id loop_head prune_node)
+                   else None )
+             with
+             | Some deps ->
+                 ControlDepSet.union deps acc
+             | None ->
+                 L.internal_error
+                   "Failed to get the definition of the control variable %a in exp %a \n" Ident.pp
+                   id Exp.pp exp ;
+                 acc ) )
 
 
   (* extract vars from the prune instructions in the node *)
@@ -135,7 +133,7 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
      along with the loop header that CV is originating from
      - a loop exit node, remove control variables of its guard nodes
      This is correct because the CVs are only going to be temporaries. *)
-  let exec_instr astate {exit_map; nodes; loop_head_to_guard_nodes} (node : CFG.Node.t) _ =
+  let exec_instr astate (nodes, {exit_map; loop_head_to_guard_nodes}) (node : CFG.Node.t) _ =
     let node = CFG.Node.underlying_node node in
     let astate' =
       match LoopHeadToGuardNodes.find_opt node loop_head_to_guard_nodes with
@@ -179,7 +177,9 @@ type invariant_map = ControlDepAnalyzer.invariant_map
 
 let compute_invariant_map proc_desc control_maps : invariant_map =
   let node_cfg = CFG.from_pdesc proc_desc in
-  ControlDepAnalyzer.exec_cfg node_cfg control_maps ~initial:ControlDepSet.empty
+  ControlDepAnalyzer.exec_cfg node_cfg
+    (Procdesc.get_nodes proc_desc, control_maps)
+    ~initial:ControlDepSet.empty
 
 
 (* Filter CVs which are invariant in the loop where the CV originated from *)
