@@ -164,7 +164,8 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
           astate' )
     | _ ->
         (* Exit node must be a prune node *)
-        assert (not (ExitNodeToLoopHeads.mem node exit_map)) ;
+        if ExitNodeToLoopHeads.mem node exit_map then
+          L.internal_error "Exit node must be a prune node!" ;
         astate'
 
 
