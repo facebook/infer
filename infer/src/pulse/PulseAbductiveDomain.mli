@@ -69,7 +69,7 @@ val leq : lhs:t -> rhs:t -> bool
 
 val pp : Format.formatter -> t -> unit
 
-val set_isl_error_status : t -> t
+val set_isl_status : PostStatus.t -> t -> t
 
 val mk_initial : Procdesc.t -> t
 
@@ -88,7 +88,7 @@ module Stack : sig
 
   val find_opt : Var.t -> t -> BaseStack.value option
 
-  val eval : ValueHistory.t -> Var.t -> t -> t * (AbstractValue.t * ValueHistory.t)
+  val eval : Location.t -> ValueHistory.t -> Var.t -> t -> t * (AbstractValue.t * ValueHistory.t)
   (** return the value of the variable in the stack or create a fresh one if needed *)
 
   val mem : Var.t -> t -> bool
@@ -130,6 +130,8 @@ module AddressAttributes : sig
 
   val add_one : AbstractValue.t -> Attribute.t -> t -> t
   (** add the attribute only to the post *)
+
+  val add_attrs : AbstractValue.t -> Attributes.t -> t -> t
 
   val check_valid : Trace.t -> AbstractValue.t -> t -> (t, Invalidation.t * Trace.t) result
 

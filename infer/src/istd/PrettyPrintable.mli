@@ -190,6 +190,8 @@ module type PPUniqRankSet = sig
 
   val fold_map : t -> init:'accum -> f:('accum -> elt -> 'accum * elt) -> 'accum * t
 
+  val for_all : f:(elt -> bool) -> t -> bool
+
   val is_empty : t -> bool
 
   val is_singleton : t -> bool

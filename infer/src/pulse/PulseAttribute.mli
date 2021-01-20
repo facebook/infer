@@ -62,4 +62,12 @@ module Attributes : sig
   val is_uninitialized : t -> bool
 
   val get_must_be_initialized : t -> Trace.t option
+
+  val isl_subset : t -> t -> bool
+  (** check whether for each attr in the second list, there exists a corresponding attr in the first
+      according to {!Attributes.isl_equiv}. *)
+
+  val replace_isl_abduced : t -> t -> t
+  (** While applying a spec, replacing ISLAbduced by Allocated and Invalidation.Cfree by
+      Invalidation.delete, if applicable *)
 end

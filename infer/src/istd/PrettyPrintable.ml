@@ -239,6 +239,8 @@ module type PPUniqRankSet = sig
 
   val fold_map : t -> init:'accum -> f:('accum -> elt -> 'accum * elt) -> 'accum * t
 
+  val for_all : f:(elt -> bool) -> t -> bool
+
   val is_empty : t -> bool
 
   val is_singleton : t -> bool
@@ -281,6 +283,8 @@ module MakePPUniqRankSet
   let find_rank m rank = Map.find_opt rank m
 
   let fold map ~init ~f = Map.fold (fun _key value accum -> f accum value) map init
+
+  let for_all ~f map = Map.for_all (fun _rank value -> f value) map
 
   let is_empty = Map.is_empty
 

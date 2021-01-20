@@ -53,7 +53,7 @@ let check_and_abduce_addr_access_isl access_mode location (address, history) ?(n
           | Error _ ->
               Error
                 ( Diagnostic.ReadUninitializedValue {calling_context= []; trace= access_trace}
-                , AbductiveDomain.set_isl_error_status astate )
+                , AbductiveDomain.set_isl_status ISLError astate )
           | Ok ok_astate ->
               Ok (ok_astate :: astates) )
   | Write ->
@@ -140,7 +140,7 @@ module Closures = struct
     (astate, closure_addr_hist)
 end
 
-let eval_var var astate = Stack.eval var astate
+let eval_var location hist var astate = Stack.eval location hist var astate
 
 let eval_access mode location addr_hist access astate =
   let+ astate = check_addr_access mode location addr_hist astate in
@@ -166,9 +166,12 @@ let eval mode location exp0 astate =
   let rec eval mode exp astate =
     match (exp : Exp.t) with
     | Var id ->
-        Ok (eval_var (* error in case of missing history? *) [] (Var.of_id id) astate)
+        Ok (eval_var location (* error in case of missing history? *) [] (Var.of_id id) astate)
     | Lvar pvar ->
-        Ok (eval_var [ValueHistory.VariableAccessed (pvar, location)] (Var.of_pvar pvar) astate)
+        Ok
+          (eval_var location
+             [ValueHistory.VariableAccessed (pvar, location)]
+             (Var.of_pvar pvar) astate)
     | Lfield (exp', field, _) ->
         let* astate, addr_hist = eval Read exp' astate in
         eval_access mode location addr_hist (FieldAccess field) astate
@@ -285,17 +288,13 @@ let eval_deref_isl location exp astate =
       let+ astate = eval_deref location exp astate in
       [astate]
   in
-  List.fold ls_astate_addr_hist ~init:(Ok []) ~f:(fun acc ((astate, _) as astate_addr) ->
-      match acc with
-      | Ok acc_astates -> (
-        match astate.AbductiveDomain.isl_status with
-        | ISLOk ->
-            let+ astates = eval_deref_function astate_addr in
-            acc_astates @ astates
-        | ISLError ->
-            Ok (acc_astates @ [astate_addr]) )
-      | Error _ as a ->
-          a )
+  List.fold_result ls_astate_addr_hist ~init:[] ~f:(fun acc_astates ((astate, _) as astate_addr) ->
+      match astate.AbductiveDomain.isl_status with
+      | ISLOk ->
+          let+ astates = eval_deref_function astate_addr in
+          acc_astates @ astates
+      | ISLError ->
+          Ok (acc_astates @ [astate_addr]) )
 
 
 let realloc_pvar pvar typ location astate =

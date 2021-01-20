@@ -104,6 +104,22 @@ let remove_allocation_attr address memory =
       memory
 
 
+let remove_isl_abduced_attr address memory =
+  match get_attribute Attributes.get_isl_abduced address memory with
+  | Some trace ->
+      remove_one address (Attribute.ISLAbduced trace) memory
+  | None ->
+      memory
+
+
+let remove_must_be_valid_attr address memory =
+  match get_attribute Attributes.get_must_be_valid address memory with
+  | Some trace ->
+      remove_one address (Attribute.MustBeValid trace) memory
+  | None ->
+      memory
+
+
 let initialize address attrs =
   if Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_uninitialized then
     remove_one address Attribute.Uninitialized attrs

@@ -401,7 +401,7 @@ let is_known_zero phi v =
   || Formula.is_known_zero phi.formula v
 
 
-let is_known_neq_zero phi v =
+let is_known_not_equal_zero phi v =
   CItvs.find_opt v phi.citvs |> Option.exists ~f:CItv.is_not_equal_to_zero
 
 

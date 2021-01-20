@@ -62,8 +62,9 @@ val prune_binop : negated:bool -> Binop.t -> operand -> operand -> t -> t * new_
 val is_known_zero : t -> AbstractValue.t -> bool
 (** [is_known_zero phi t] returns [true] if [phi |- t = 0], [false] if we don't know for sure *)
 
-val is_known_neq_zero : t -> AbstractValue.t -> bool
-(** [is_known_neq_zero phi t] returns [true] if [phi |- t != 0], [false] if we don't know for sure *)
+val is_known_not_equal_zero : t -> AbstractValue.t -> bool
+(** [is_known_not_equal_zero phi t] returns [true] if [phi |- t != 0], [false] if we don't know for
+    sure *)
 
 (* this only consults the concrete intervals domain for now *)
 

@@ -113,7 +113,7 @@ let pp f {post; pre; topl; path_condition; skipped_calls; isl_status} =
     skipped_calls PulseTopl.pp_state topl
 
 
-let set_isl_error_status astate = {astate with isl_status= PostStatus.ISLError}
+let set_isl_status status astate = {astate with isl_status= status}
 
 let set_path_condition path_condition astate = {astate with path_condition}
 
@@ -148,7 +148,7 @@ module Stack = struct
     if phys_equal new_post astate.post then astate else {astate with post= new_post}
 
 
-  let eval origin var astate =
+  let eval location origin var astate =
     match BaseStack.find_opt var (astate.post :> base_domain).stack with
     | Some addr_hist ->
         (astate, addr_hist)
@@ -156,6 +156,18 @@ module Stack = struct
         let addr = AbstractValue.mk_fresh () in
         let addr_hist = (addr, origin) in
         let post_stack = BaseStack.add var addr_hist (astate.post :> base_domain).stack in
+        let post_heap =
+          if Config.pulse_isl then
+            BaseMemory.register_address addr (astate.post :> base_domain).heap
+          else (astate.post :> base_domain).heap
+        in
+        let post_attrs =
+          if Config.pulse_isl then
+            let access_trace = Trace.Immediate {location; history= []} in
+            BaseAddressAttributes.add_one addr (MustBeValid access_trace)
+              (astate.post :> base_domain).attrs
+          else (astate.post :> base_domain).attrs
+        in
         let pre =
           (* do not overwrite values of variables already in the pre *)
           if (not (BaseStack.mem var (astate.pre :> base_domain).stack)) && is_abducible astate var
@@ -166,7 +178,7 @@ module Stack = struct
             PreDomain.update ~stack:foot_stack ~heap:foot_heap astate.pre
           else astate.pre
         in
-        ( { post= PostDomain.update astate.post ~stack:post_stack
+        ( { post= PostDomain.update astate.post ~stack:post_stack ~heap:post_heap ~attrs:post_attrs
           ; pre
           ; topl= astate.topl
           ; skipped_calls= astate.skipped_calls
@@ -238,7 +250,14 @@ module AddressAttributes = struct
 
 
   let invalidate address invalidation location astate =
-    map_post_attrs astate ~f:(BaseAddressAttributes.invalidate address invalidation location)
+    let astate =
+      map_post_attrs ~f:(BaseAddressAttributes.invalidate address invalidation location) astate
+    in
+    if Config.pulse_isl then
+      map_post_attrs ~f:(BaseAddressAttributes.remove_must_be_valid_attr (fst address)) astate
+      |> map_post_attrs ~f:(BaseAddressAttributes.remove_isl_abduced_attr (fst address))
+      |> map_post_attrs ~f:(BaseAddressAttributes.remove_allocation_attr (fst address))
+    else astate
 
 
   let allocate procname address location astate =
@@ -255,6 +274,14 @@ module AddressAttributes = struct
 
   let add_one address attributes astate =
     map_post_attrs astate ~f:(BaseAddressAttributes.add_one address attributes)
+
+
+  let remove_islabduced_attr address astate =
+    map_post_attrs astate ~f:(BaseAddressAttributes.remove_isl_abduced_attr address)
+
+
+  let remove_must_be_valid_attr address astate =
+    map_post_attrs astate ~f:(BaseAddressAttributes.remove_must_be_valid_attr address)
 
 
   let get_closure_proc_name addr astate =
@@ -286,6 +313,20 @@ module AddressAttributes = struct
         match attr with Attribute.WrittenTo _ -> initialize value astate | _ -> astate )
 
 
+  let add_attrs value attrs astate =
+    let astate =
+      match Attributes.get_invalid attrs with
+      | Some _ ->
+          remove_must_be_valid_attr value astate
+          |> remove_allocation_attr value |> remove_islabduced_attr value
+      | None ->
+          astate
+    in
+    Attributes.fold attrs ~init:astate ~f:(fun astate attr ->
+        let astate = add_one value attr astate in
+        match attr with Attribute.WrittenTo _ -> initialize value astate | _ -> astate )
+
+
   let find_opt address astate =
     BaseAddressAttributes.find_opt address (astate.post :> base_domain).attrs
 
@@ -301,7 +342,7 @@ module AddressAttributes = struct
       | None ->
           let is_eq_null = PathCondition.is_known_zero astate.path_condition addr in
           let null_astates =
-            if PathCondition.is_known_neq_zero astate.path_condition addr then []
+            if PathCondition.is_known_not_equal_zero astate.path_condition addr then []
             else
               let null_attr =
                 Attribute.Invalid (Invalidation.ConstantDereference IntLit.zero, access_trace)
@@ -470,7 +511,6 @@ let mk_initial proc_desc =
   let pre =
     PreDomain.update ~stack:initial_stack ~heap:initial_heap ~attrs:initial_attrs PreDomain.empty
   in
-  let locals = Procdesc.get_locals proc_desc in
   let initial_heap, initial_attrs =
     if Config.pulse_isl then (initial_heap, initial_attrs)
     else ((PreDomain.empty :> base_domain).heap, (PreDomain.empty :> base_domain).attrs)
@@ -478,6 +518,7 @@ let mk_initial proc_desc =
   let post =
     PostDomain.update ~stack:initial_stack ~heap:initial_heap ~attrs:initial_attrs PostDomain.empty
   in
+  let locals = Procdesc.get_locals proc_desc in
   let post =
     List.fold locals ~init:post ~f:(fun (acc : PostDomain.t) {ProcAttributes.name; typ} ->
         set_uninitialized_post (`LocalDecl (Pvar.mk name proc_name, None)) typ location acc )

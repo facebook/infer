@@ -71,6 +71,24 @@ let issue_type_of_cause = function
       IssueType.vector_invalidation
 
 
+let isl_equiv v1 v2 =
+  match (v1, v2) with
+  | ConstantDereference i1, ConstantDereference i2 ->
+      IntLit.eq i1 i2
+  | CFree, CFree
+  | CppDelete, CppDelete
+  | CFree, CppDelete
+  | CppDelete, CFree
+  | EndIterator, EndIterator
+  | GoneOutOfScope _, GoneOutOfScope _
+  | OptionalEmpty, OptionalEmpty
+  | StdVector _, StdVector _
+  | JavaIterator _, JavaIterator _ ->
+      true
+  | _ ->
+      false
+
+
 let describe f cause =
   match cause with
   | CFree ->
