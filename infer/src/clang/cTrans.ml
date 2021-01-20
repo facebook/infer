@@ -987,6 +987,25 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     mk_trans_result (array_exp, typ) control
 
 
+  and struct_copy tenv loc e1 e2 typ struct_name =
+    let rec struct_copy_helper e1 e2 typ struct_name rev_acc =
+      let {Struct.fields} = Option.value_exn (Tenv.lookup tenv struct_name) in
+      List.fold fields ~init:rev_acc ~f:(fun rev_acc (field_name, field_typ, _) ->
+          let mk_field e = Exp.Lfield (e, field_name, typ) in
+          let e1 = mk_field e1 in
+          let e2 = mk_field e2 in
+          match field_typ.Typ.desc with
+          | Tstruct (CStruct _ as struct_name) ->
+              struct_copy_helper e1 e2 field_typ struct_name rev_acc
+          | _ ->
+              let id = Ident.create_fresh Ident.knormal in
+              Sil.Store {e1; root_typ= field_typ; typ= field_typ; e2= Exp.Var id; loc}
+              :: Sil.Load {id; e= e2; root_typ= field_typ; typ= field_typ; loc}
+              :: rev_acc )
+    in
+    if Exp.equal e1 e2 then [] else struct_copy_helper e1 e2 typ struct_name [] |> List.rev
+
+
   and binaryOperator_trans trans_state binary_operator_info stmt_info expr_info stmt_list =
     L.debug Capture Verbose "  BinaryOperator '%a' "
       (Pp.of_string ~f:Clang_ast_j.string_of_binary_operator_kind)
@@ -1003,8 +1022,21 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let res_typ =
       CType_decl.qual_type_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_qual_type
     in
-    match stmt_list with
-    | [s1; s2] ->
+    match (stmt_list, res_typ.desc, binary_operator_info.Clang_ast_t.boi_kind) with
+    | ( [s1; Clang_ast_t.ImplicitCastExpr (_, [s2], _, _)]
+      , Tstruct (CStruct _ as struct_name)
+      , `Assign ) ->
+        let res_trans_e1, res_trans_e2 =
+          (instruction trans_state' s1, instruction trans_state' s2)
+        in
+        let instrs =
+          struct_copy context.CContext.tenv sil_loc (fst res_trans_e1.return)
+            (fst res_trans_e2.return) res_typ struct_name
+        in
+        [res_trans_e1.control; res_trans_e2.control; {empty_control with instrs}]
+        |> PriorityNode.compute_controls_to_parent trans_state_pri sil_loc node_name stmt_info
+        |> mk_trans_result res_trans_e1.return
+    | [s1; s2], _, _ ->
         (* Assumption: We expect precisely 2 stmt corresponding to the 2 operands*)
         (* NOTE: we create a node only if required. In that case this node *)
         (* becomes the successor of the nodes that may be created when     *)
@@ -1061,7 +1093,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         PriorityNode.compute_controls_to_parent trans_state_pri sil_loc node_name stmt_info
           all_res_trans
         |> mk_trans_result return
-    | _ ->
+    | _, _, _ ->
         (* Binary operator should have two operands *)
         assert false
 
@@ -2512,7 +2544,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   and init_expr_trans_aux trans_state var_exp_typ var_stmt_info init_expr =
     (* For init expr, translate how to compute it and assign to the var *)
-    let var_exp, _var_typ = var_exp_typ in
+    let var_exp, var_typ = var_exp_typ in
+    let cstruct_name_opt =
+      match var_typ.Typ.desc with
+      | Tstruct (CStruct _ as struct_name) ->
+          Some struct_name
+      | _ ->
+          None
+    in
     let context = trans_state.context in
     let sil_loc =
       CLocation.location_of_stmt_info context.translation_unit_context.source_file var_stmt_info
@@ -2523,6 +2562,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let res_trans_ie =
       let trans_state' = {trans_state_pri with succ_nodes= []; var_exp_typ= Some var_exp_typ} in
       let instruction' = exec_with_glvalue_as_reference instruction in
+      let init_expr =
+        match init_expr with
+        | Clang_ast_t.ImplicitCastExpr (_, [init_expr], _, _) when Option.is_some cstruct_name_opt
+          ->
+            init_expr
+        | _ ->
+            init_expr
+      in
       exec_with_block_priority_exception instruction' trans_state' init_expr var_stmt_info
     in
     L.debug Capture Verbose "init expr result: %a@\n" pp_control res_trans_ie.control ;
@@ -2544,10 +2591,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let sil_e1', ie_typ = res_trans_ie.return in
         L.debug Capture Verbose "Sub-expr did not initialize %a, initializing with %a@\n" Exp.pp
           var_exp Exp.pp sil_e1' ;
-        Some
-          { empty_control with
-            instrs=
-              [Sil.Store {e1= var_exp; root_typ= ie_typ; typ= ie_typ; e2= sil_e1'; loc= sil_loc}] }
+        let instrs =
+          match cstruct_name_opt with
+          | Some struct_name ->
+              struct_copy context.CContext.tenv sil_loc var_exp sil_e1' var_typ struct_name
+          | None ->
+              [Sil.Store {e1= var_exp; root_typ= ie_typ; typ= ie_typ; e2= sil_e1'; loc= sil_loc}]
+        in
+        Some {empty_control with instrs}
     in
     let all_res_trans = res_trans_ie.control :: Option.to_list assign_trans_control_opt in
     L.debug Capture Verbose "sending init_expr_trans results to parent@\n" ;
@@ -2876,72 +2927,77 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         ~exn:[] ;
       ret_node
     in
-    match stmt_list with
-    | [stmt] ->
+    let return_stmt stmt ~mk_ret_instrs =
+      let ret_typ_of_pdesc = Procdesc.get_ret_type procdesc in
+      let ret_exp, ret_typ, var_control =
+        match context.CContext.return_param_typ with
+        | Some ret_param_typ ->
+            let name = CFrontend_config.return_param in
+            let pvar = Pvar.mk (Mangled.from_string name) procname in
+            let id = Ident.create_fresh Ident.knormal in
+            let instr =
+              Sil.Load
+                {id; e= Exp.Lvar pvar; root_typ= ret_param_typ; typ= ret_param_typ; loc= sil_loc}
+            in
+            let ret_typ =
+              match ret_param_typ.desc with Typ.Tptr (t, _) -> t | _ -> assert false
+            in
+            (Exp.Var id, ret_typ, Some {empty_control with instrs= [instr]})
+        | None ->
+            (Exp.Lvar (Procdesc.get_ret_var procdesc), ret_typ_of_pdesc, None)
+      in
+      let trans_state' =
+        {trans_state_pri with succ_nodes= []; var_exp_typ= Some (ret_exp, ret_typ)}
+      in
+      L.debug Capture Verbose "Evaluating sub-expr of return@\n" ;
+      let res_trans_stmt = instruction trans_state' stmt in
+      L.debug Capture Verbose "Done evaluating sub-expr of return@\n" ;
+      let controls =
+        let var_control =
+          Option.map var_control ~f:(fun control ->
+              (* force node creation to place the load instruction [var_control] before the
+                 translation of the sub-expr *)
+              let trans_state = PriorityNode.force_claim_priority_node trans_state_pri stmt_info in
+              PriorityNode.compute_control_to_parent trans_state sil_loc ReturnStmt stmt_info
+                control )
+        in
+        PriorityNode.compute_controls_to_parent trans_state' sil_loc ReturnStmt stmt_info
+          (Option.to_list var_control @ [res_trans_stmt.control])
+      in
+      let ret_instrs = mk_ret_instrs ret_exp ret_typ_of_pdesc ret_typ res_trans_stmt in
+      let ret_node = mk_ret_node ret_instrs in
+      L.debug Capture Verbose "Created return node %a with instrs [%a]@\n" Procdesc.Node.pp ret_node
+        (Pp.seq ~sep:";" (Sil.pp_instr ~print_types:false Pp.text))
+        ret_instrs ;
+      assert (List.is_empty controls.instrs) ;
+      List.iter controls.leaf_nodes ~f:(fun leaf ->
+          Procdesc.set_succs leaf ~normal:(Some [ret_node]) ~exn:None ) ;
+      let ret_control =
+        {empty_control with root_nodes= [ret_node]; leaf_nodes= [ret_node]; instrs= []}
+      in
+      PriorityNode.compute_controls_to_parent trans_state_pri sil_loc ReturnStmt stmt_info
+        [controls; ret_control]
+      |> mk_trans_result res_trans_stmt.return
+    in
+    match (stmt_list, context.CContext.return_param_typ) with
+    | ( ([Clang_ast_t.ImplicitCastExpr (_, [stmt], _, _)] | [stmt])
+      , Some {desc= Tptr ({desc= Tstruct (CStruct _ as struct_name)}, _)} ) ->
+        (* return (exp:struct); *)
+        return_stmt stmt ~mk_ret_instrs:(fun ret_exp _root_typ ret_typ res_trans_stmt ->
+            struct_copy context.CContext.tenv sil_loc ret_exp (fst res_trans_stmt.return) ret_typ
+              struct_name )
+    | [stmt], _ ->
         (* return exp; *)
-        let ret_type = Procdesc.get_ret_type procdesc in
-        let ret_exp, ret_typ, var_control =
-          match context.CContext.return_param_typ with
-          | Some ret_param_typ ->
-              let name = CFrontend_config.return_param in
-              let pvar = Pvar.mk (Mangled.from_string name) procname in
-              let id = Ident.create_fresh Ident.knormal in
-              let instr =
-                Sil.Load
-                  {id; e= Exp.Lvar pvar; root_typ= ret_param_typ; typ= ret_param_typ; loc= sil_loc}
-              in
-              let ret_typ =
-                match ret_param_typ.desc with Typ.Tptr (t, _) -> t | _ -> assert false
-              in
-              (Exp.Var id, ret_typ, Some {empty_control with instrs= [instr]})
-          | None ->
-              (Exp.Lvar (Procdesc.get_ret_var procdesc), ret_type, None)
-        in
-        let trans_state' =
-          {trans_state_pri with succ_nodes= []; var_exp_typ= Some (ret_exp, ret_typ)}
-        in
-        L.debug Capture Verbose "Evaluating sub-expr of return@\n" ;
-        let res_trans_stmt = instruction trans_state' stmt in
-        L.debug Capture Verbose "Done evaluating sub-expr of return@\n" ;
-        let controls =
-          let var_control =
-            Option.map var_control ~f:(fun control ->
-                (* force node creation to place the load instruction [var_control] before the
-                   translation of the sub-expr *)
-                let trans_state =
-                  PriorityNode.force_claim_priority_node trans_state_pri stmt_info
-                in
-                PriorityNode.compute_control_to_parent trans_state sil_loc ReturnStmt stmt_info
-                  control )
-          in
-          PriorityNode.compute_controls_to_parent trans_state' sil_loc ReturnStmt stmt_info
-            (Option.to_list var_control @ [res_trans_stmt.control])
-        in
-        let ret_instrs =
-          if List.exists ~f:(Exp.equal ret_exp) res_trans_stmt.control.initd_exps then []
-          else
-            let sil_expr, _ = res_trans_stmt.return in
-            [Sil.Store {e1= ret_exp; root_typ= ret_type; typ= ret_typ; e2= sil_expr; loc= sil_loc}]
-        in
-        let ret_node = mk_ret_node ret_instrs in
-        L.debug Capture Verbose "Created return node %a with instrs [%a]@\n" Procdesc.Node.pp
-          ret_node
-          (Pp.seq ~sep:";" (Sil.pp_instr ~print_types:false Pp.text))
-          ret_instrs ;
-        assert (List.is_empty controls.instrs) ;
-        List.iter controls.leaf_nodes ~f:(fun leaf ->
-            Procdesc.set_succs leaf ~normal:(Some [ret_node]) ~exn:None ) ;
-        let ret_control =
-          {empty_control with root_nodes= [ret_node]; leaf_nodes= [ret_node]; instrs= []}
-        in
-        PriorityNode.compute_controls_to_parent trans_state_pri sil_loc ReturnStmt stmt_info
-          [controls; ret_control]
-        |> mk_trans_result res_trans_stmt.return
-    | [] ->
+        return_stmt stmt ~mk_ret_instrs:(fun ret_exp root_typ ret_typ res_trans_stmt ->
+            if List.exists ~f:(Exp.equal ret_exp) res_trans_stmt.control.initd_exps then []
+            else
+              let sil_expr, _ = res_trans_stmt.return in
+              [Sil.Store {e1= ret_exp; root_typ; typ= ret_typ; e2= sil_expr; loc= sil_loc}] )
+    | [], _ ->
         (* return; *)
         let ret_node = mk_ret_node [] in
         mk_trans_result (mk_fresh_void_exp_typ ()) {empty_control with root_nodes= [ret_node]}
-    | _ ->
+    | _, _ ->
         assert false
 
 
