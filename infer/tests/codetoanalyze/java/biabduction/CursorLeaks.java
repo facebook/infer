@@ -29,7 +29,7 @@ public class CursorLeaks {
     }
   }
 
-  public Object cursorClosedCheckNull(SQLiteDatabase sqLiteDatabase) {
+  public Object cursorClosedCheckNullOk(SQLiteDatabase sqLiteDatabase) {
     Cursor cursor = sqLiteDatabase.query("events", null, null, null, null, null, null);
     Object value = null;
 
@@ -47,7 +47,7 @@ public class CursorLeaks {
     return value;
   }
 
-  public Object cursorClosedCheckNullCheckClosed_FP(SQLiteDatabase sqLiteDatabase) {
+  public Object FP_cursorClosedCheckNullCheckClosedOk(SQLiteDatabase sqLiteDatabase) {
     Cursor cursor = sqLiteDatabase.query("events", null, null, null, null, null, null);
     Object value = null;
 
@@ -65,7 +65,7 @@ public class CursorLeaks {
     return value;
   }
 
-  public int cursorNotClosed(SQLiteDatabase sqLiteDatabase) {
+  public int cursorNotClosedBad(SQLiteDatabase sqLiteDatabase) {
     Cursor cursor = sqLiteDatabase.query("events", null, null, null, null, null, null);
     return cursor.getCount();
   }
@@ -73,7 +73,7 @@ public class CursorLeaks {
   Context mContext;
   ContentResolver mContentResolver;
 
-  public int getImageCountHelperNotClosed(String customClause) {
+  public int getImageCountHelperNotClosedBad(String customClause) {
     String[] projection = {"COUNT(*)"};
 
     String selectionClause = selectionClause = customClause;
@@ -90,7 +90,7 @@ public class CursorLeaks {
     }
   }
 
-  public int getImageCountHelperClosed(String customClause) {
+  public int getImageCountHelperClosedOk(String customClause) {
     String[] projection = {"COUNT(*)"};
 
     String selectionClause = selectionClause = customClause;
@@ -107,7 +107,7 @@ public class CursorLeaks {
     }
   }
 
-  public int getBucketCountNotClosed() {
+  public int getBucketCountNotClosedBad() {
     Cursor cursor = MediaStore.Images.Media.query(mContentResolver, null, null, null, null, null);
     if (cursor == null) {
       return 0;
@@ -120,7 +120,7 @@ public class CursorLeaks {
     }
   }
 
-  public int getBucketCountClosed() {
+  public int getBucketCountClosedOk() {
     Cursor cursor = MediaStore.Images.Media.query(mContentResolver, null, null, null, null, null);
     if (cursor == null) {
       return 0;
@@ -137,21 +137,21 @@ public class CursorLeaks {
     }
   }
 
-  private void queryUVMLegacyDbNotClosed() {
+  private void queryUVMLegacyDbNotClosedBad() {
     SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
     builder.setTables("");
     Cursor cursor = builder.query(null, null, "", null, null, null, null);
     if (cursor != null) cursor.moveToFirst();
   }
 
-  private void queryUVMLegacyDbClosed() {
+  private void queryUVMLegacyDbClosedOk() {
     SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
     builder.setTables("");
     Cursor cursor = builder.query(null, null, "", null, null, null, null);
     if (cursor != null) cursor.close();
   }
 
-  public int completeDownloadClosed(DownloadManager downloadManager) {
+  public int completeDownloadClosedOk(DownloadManager downloadManager) {
     DownloadManager.Query query = new DownloadManager.Query();
     Cursor cursor = (Cursor) null;
     try {
@@ -166,7 +166,7 @@ public class CursorLeaks {
     }
   }
 
-  public int completeDownloadNotClosed(DownloadManager downloadManager) {
+  public int completeDownloadNotClosedBad(DownloadManager downloadManager) {
     DownloadManager.Query query = new DownloadManager.Query();
     Cursor cursor = null;
     try {
@@ -181,7 +181,7 @@ public class CursorLeaks {
     }
   }
 
-  private void loadPrefsFromContentProviderClosed() {
+  private void loadPrefsFromContentProviderClosedOk() {
     ContentProviderClient contentProviderClient = mContentResolver.acquireContentProviderClient("");
     if (contentProviderClient != null) {
       Cursor cursor = null;
@@ -198,7 +198,7 @@ public class CursorLeaks {
     }
   }
 
-  private void loadPrefsFromContentProviderNotClosed() {
+  private void loadPrefsFromContentProviderNotClosedBad() {
     ContentProviderClient contentProviderClient = mContentResolver.acquireContentProviderClient("");
     if (contentProviderClient == null) return;
     Cursor cursor = null;
@@ -223,7 +223,7 @@ public class CursorLeaks {
     }
   }
 
-  public Cursor cursorWrapperReturned(SQLiteDatabase sqLiteDatabase) {
+  public Cursor cursorWrapperReturnedOk(SQLiteDatabase sqLiteDatabase) {
     Cursor cursor = sqLiteDatabase.query("events", null, null, null, null, null, null);
     return new NamedCursor(cursor, "abc");
   }
@@ -237,7 +237,7 @@ public class CursorLeaks {
 
   native NamedCursor createWrapper(Cursor cursor);
 
-  public NamedCursor cursorAttachedTheWrapper(SQLiteDatabase sqLiteDatabase) {
+  public NamedCursor cursorAttachedTheWrapperOk(SQLiteDatabase sqLiteDatabase) {
     Cursor cursor = sqLiteDatabase.query("events", null, null, null, null, null, null);
     return createWrapper(cursor);
   }

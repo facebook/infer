@@ -33,7 +33,7 @@ public class IntegerExample {
     }
   }
 
-  private static void testIntegerEqualsFN() {
+  private static void testIntegerEqualsOk() {
     Integer a = new Integer(42);
     Integer b = new Integer(42);
     Integer c = null;

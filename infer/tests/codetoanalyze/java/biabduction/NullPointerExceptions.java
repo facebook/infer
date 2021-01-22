@@ -325,7 +325,7 @@ public class NullPointerExceptions {
   }
 
   void someNPEAfterResourceLeak() {
-    T t = CloseableAsResourceExample.sourceOfNullWithResourceLeak();
+    T t = CloseableAsResourceExample.sourceOfNullWithResourceLeakBad();
     t.f();
   }
 

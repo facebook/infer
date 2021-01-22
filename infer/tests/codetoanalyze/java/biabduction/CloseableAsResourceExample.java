@@ -100,28 +100,28 @@ public class CloseableAsResourceExample {
     }
   }
 
-  void withException() throws LocalException {
+  void withExceptionBad() throws LocalException {
     SomeResource res = new SomeResource();
     res.doSomething();
     res.close();
   } // should report a resource leak
 
-  void closingWrapper() {
+  void closingWrapperOk() {
     Resource r = new Resource();
     Sub s = new Sub(r);
     s.close();
   }
 
-  void notClosingWrapper() {
+  void notClosingWrapperBad() {
     Sub s = new Sub(new Resource());
     s.mR.close();
   } // should report a resource leak
 
-  void noNeedToCloseStringReader() {
+  void noNeedToCloseStringReaderOk() {
     StringReader stringReader = new StringReader("paf!");
   }
 
-  void noNeedToCloseByteArrayOutputStream() {
+  void noNeedToCloseByteArrayOutputStreamOk() {
     ByteArrayOutputStream stream = new ByteArrayOutputStream(42);
   }
 
@@ -130,11 +130,11 @@ public class CloseableAsResourceExample {
     ByteArrayInputStreamWrapper stream2 = new ByteArrayInputStreamWrapper(array);
   }
 
-  void noNeedToCloseByteArrayInputStream(byte[] array) {
+  void noNeedToCloseByteArrayInputStreamOk(byte[] array) {
     ByteArrayInputStream stream = new ByteArrayInputStream(array);
   }
 
-  void closingWithCloseQuietly() {
+  void closingWithCloseQuietlyOk() {
     SomeResource r = null;
     try {
       r = new SomeResource();
@@ -145,7 +145,7 @@ public class CloseableAsResourceExample {
     }
   }
 
-  void failToCloseWithCloseQuietly() {
+  void failToCloseWithCloseQuietlyBad() {
     try {
       SomeResource r = new SomeResource();
       r.doSomething();
@@ -154,17 +154,17 @@ public class CloseableAsResourceExample {
     }
   }
 
-  void noLeakwithExceptionOnClose() throws IOException {
+  void noLeakwithExceptionOnCloseOk() throws IOException {
     ResourceWithException res = new ResourceWithException();
     res.close();
   }
 
-  void noLeakWithCloseQuietlyAndExceptionOnClose() {
+  void noLeakWithCloseQuietlyAndExceptionOnCloseOk() {
     ResourceWithException res = new ResourceWithException();
     Utils.closeQuietly(res);
   }
 
-  static T sourceOfNullWithResourceLeak() {
+  static T sourceOfNullWithResourceLeakBad() {
     SomeResource r = new SomeResource();
     return null;
   }
@@ -175,16 +175,16 @@ public class CloseableAsResourceExample {
     public void close() {}
   }
 
-  void leakFoundWhenIndirectlyImplementingCloseable() {
+  void leakFoundWhenIndirectlyImplementingCloseableBad() {
     MyResource res = new MyResource();
   }
 
-  void skippedCallClosesResourceOnArgs() {
+  void skippedCallClosesResourceOnArgsOk() {
     SomeResource res = new SomeResource();
     SomeResource.bar(res);
   }
 
-  void skippedVritualCallDoesNotCloseResourceOnReceiver() {
+  void skippedVirtualCallDoesNotCloseResourceOnReceiverOk() {
     SomeResource res = new SomeResource();
     res.foo(42);
   }

@@ -13,7 +13,7 @@ public class AnalysisStops {
 
   private native Object externalFunc();
 
-  public void skipPointerDerefMayCauseLocalFalseNegative() {
+  public void skipPointerDerefMayCauseLocalFalseNegativeBad() {
     Object ret = externalFunc();
     ret.toString();
     int i = 1 / 0;
@@ -25,7 +25,7 @@ public class AnalysisStops {
     return new Object();
   }
 
-  public void skipPointerDerefMayCauseCalleeFalsePositive() {
+  public void skipPointerDerefMayCauseCalleeFalsePositiveOk() {
     Object o = skipPointerDerefPreventsSpecInferenceRetObj();
     o.toString();
   }
@@ -36,7 +36,7 @@ public class AnalysisStops {
     return 0;
   }
 
-  public void skipPointerDerefMayCauseCalleeFalseNegative() {
+  public void skipPointerDerefMayCauseCalleeFalseNegativeBad() {
     int ret = skipPointerDerefPreventsSpecInferenceRetZero();
     int i = 1 / ret;
   }
@@ -45,7 +45,7 @@ public class AnalysisStops {
     int j = 1 / i;
   }
 
-  public void skipPointerDerefMayCauseInterprocFalseNegative() {
+  public void skipPointerDerefMayCauseInterprocFalseNegativeBad() {
     int i = skipPointerDerefPreventsSpecInferenceRetZero();
     divideByParam(i);
   }
@@ -54,12 +54,12 @@ public class AnalysisStops {
     return (String) externalFunc();
   }
 
-  public void castFailureOnUndefinedObjMayCauseFalseNegative() {
+  public void castFailureOnUndefinedObjMayCauseFalseNegativeBad() {
     castExternalPreventsSpecInference();
     int i = 1 / 0;
   }
 
-  public void callOnCastUndefinedObjMayCauseFalseNegative() {
+  public void callOnCastUndefinedObjMayCauseFalseNegativeBad() {
     String s = castExternalPreventsSpecInference();
     s.toString();
     int i = 1 / 0;
@@ -81,54 +81,54 @@ public class AnalysisStops {
 
   private native MyObj externalFunc2();
 
-  public void callOnUndefinedObjMayCauseFalseNegative() {
+  public void callOnUndefinedObjMayCauseFalseNegativeBad() {
     MyObj ret = externalFunc2();
     int i = 1 / ret.retZero();
   }
 
-  public void callOnUndefinedObjMayCauseFalsePositive() {
+  public void callOnUndefinedObjMayCauseFalsePositiveOk() {
     MyObj ret = externalFunc2();
     int i = 1 / ret.retOne();
   }
 
-  public void fieldWriteOnUndefinedObjMayCauseFalseNegative() {
+  public void fieldWriteOnUndefinedObjMayCauseFalseNegativeBad() {
     MyObj ret = externalFunc2();
     ret.f = new Object();
     int i = 1 / 0;
   }
 
-  public void fieldWriteOnUndefinedObjMayCauseFalsePositive() {
+  public void fieldWriteOnUndefinedObjMayCauseFalsePositiveOk() {
     MyObj ret = externalFunc2();
     ret.f = new Object();
     ret.f.toString();
   }
 
-  public void fieldReadOnUndefinedObjMayCauseFalseNegative() {
+  public void fieldReadOnUndefinedObjMayCauseFalseNegativeBad() {
     MyObj ret = externalFunc2();
     Object o = ret.f;
     int i = 1 / 0;
   }
 
-  public void fieldReadOnUndefinedObjMayCauseFalsePositive() {
+  public void fieldReadOnUndefinedObjMayCauseFalsePositiveOk() {
     MyObj ret = externalFunc2();
     Object o = ret.f;
     o.toString();
   }
 
-  public void recursiveAngelicTypesMayCauseFalseNegative() {
+  public void recursiveAngelicTypesMayCauseFalseNegativeBad() {
     MyObj ret = externalFunc2();
     MyObj rec1 = ret.rec;
     MyObj rec2 = rec1.rec;
     int i = 1 / 0;
   }
 
-  public void recursiveAngelicTypesMayCauseFalsePositive() {
+  public void recursiveAngelicTypesMayCauseFalsePositiveOk() {
     MyObj ret = externalFunc2();
     MyObj rec1 = ret.rec;
     rec1.rec.toString();
   }
 
-  public void infiniteMaterializationMayCauseFalseNegative(boolean b) {
+  public void infiniteMaterializationMayCauseFalseNegativeBad(boolean b) {
     MyObj rec = externalFunc2();
     while (b) {
       rec = rec.rec;
@@ -136,7 +136,7 @@ public class AnalysisStops {
     int i = 1 / 0;
   }
 
-  public void infiniteMaterializationMayCauseFalsePositive(boolean b) {
+  public void infiniteMaterializationMayCauseFalsePositiveOk(boolean b) {
     MyObj rec = externalFunc2();
     while (b) {
       rec = rec.rec;
@@ -144,7 +144,7 @@ public class AnalysisStops {
     rec.toString();
   }
 
-  public void primitiveFieldOfAngelicObjMayCauseFalseNegative() {
+  public void primitiveFieldOfAngelicObjMayCauseFalseNegativeBad() {
     MyObj ret = externalFunc2();
     if (ret.i == 0) {
       int i = 1 / 0;
@@ -153,14 +153,14 @@ public class AnalysisStops {
     }
   }
 
-  public void primitiveFieldOfAngelicObjMayCauseFalsePositive() {
+  public void primitiveFieldOfAngelicObjMayCauseFalsePositiveOk() {
     MyObj ret = externalFunc2();
     if (ret.i != 0) {
       int i = 1 / ret.i;
     }
   }
 
-  public void heapFieldOfAngelicObjMayCauseFalseNegative() {
+  public void heapFieldOfAngelicObjMayCauseFalseNegativeBad() {
     MyObj ret = externalFunc2();
     Object obj = ret.f;
     if (obj == ret.f) {
@@ -168,7 +168,7 @@ public class AnalysisStops {
     }
   }
 
-  public void heapFieldOfAngelicObjMayCauseFalsePositive() {
+  public void heapFieldOfAngelicObjMayCauseFalsePositiveOk() {
     MyObj ret = externalFunc2();
     Object obj = ret.f;
     if (obj != ret.f) {
@@ -176,7 +176,7 @@ public class AnalysisStops {
     }
   }
 
-  public void fieldReadAferCastMayCauseFalseNegative(Iterator<MyObj> iter) {
+  public void fieldReadAferCastMayCauseFalseNegativeBad(Iterator<MyObj> iter) {
     MyObj ret = iter.next();
     Object obj = ret.f;
     obj.toString();
@@ -186,51 +186,51 @@ public class AnalysisStops {
     }
   }
 
-  public void derefParam(MyObj obj) {
+  public void derefParamOk(MyObj obj) {
     Object f = obj.f;
     f.toString();
   }
 
-  public void fieldReadInCalleeMayCauseFalsePositive() {
+  public void fieldReadInCalleeMayCauseFalsePositiveOk() {
     MyObj ret = externalFunc2();
-    derefParam(ret);
+    derefParamOk(ret);
   }
 
-  public void fieldReadInCalleeMayCauseFalseNegative() {
+  public void fieldReadInCalleeMayCauseFalseNegativeBad() {
     MyObj ret = externalFunc2();
     ret.f = null;
-    derefParam(ret);
+    derefParamOk(ret);
   }
 
-  public void fieldReadInCalleeWithAngelicObjFieldMayCauseFalsePositive() {
+  public void fieldReadInCalleeWithAngelicObjFieldMayCauseFalsePositiveOk() {
     MyObj ret = externalFunc2();
-    derefParam(ret.rec);
+    derefParamOk(ret.rec);
   }
 
-  public void fieldReadInCalleeWithAngelicObjFieldMayCauseFalseNegative() {
+  public void fieldReadInCalleeWithAngelicObjFieldMayCauseFalseNegativeBad() {
     MyObj ret = externalFunc2();
     ret.rec.f = null;
-    derefParam(ret.rec);
+    derefParamOk(ret.rec);
   }
 
-  public void accessPathOnParam(MyObj obj) {
+  public void accessPathOnParamOk(MyObj obj) {
     MyObj ret = obj.rec;
     Object f = ret.f;
     f.toString();
   }
 
-  public void accessPathInCalleeMayCauseFalsePositive() {
+  public void accessPathInCalleeMayCauseFalsePositiveOk() {
     MyObj ret = externalFunc2();
-    accessPathOnParam(ret);
+    accessPathOnParamOk(ret);
   }
 
-  public void accessPathInCalleeMayCauseFalseNegative() {
+  public void accessPathInCalleeMayCauseFalseNegativeBad() {
     MyObj ret = externalFunc2();
     ret.rec.f = null;
-    accessPathOnParam(ret);
+    accessPathOnParamOk(ret);
   }
 
-  public void skipFunctionInLoopMayCauseFalseNegative() {
+  public void skipFunctionInLoopMayCauseFalseNegativeBad() {
     Object o = null;
     for (int i = 0; i < 10; i++) {
       externalFunc();
@@ -239,32 +239,32 @@ public class AnalysisStops {
   }
 
   // will fail to find error unless spec inference succeeds for all callees
-  public void specInferenceMayFailAndCauseFalseNegative(boolean b, Iterator<MyObj> iter) {
-    skipPointerDerefMayCauseLocalFalseNegative();
+  public void specInferenceMayFailAndCauseFalseNegativeBad(boolean b, Iterator<MyObj> iter) {
+    skipPointerDerefMayCauseLocalFalseNegativeBad();
     skipPointerDerefPreventsSpecInferenceRetObj();
     skipPointerDerefPreventsSpecInferenceRetZero();
-    skipPointerDerefMayCauseCalleeFalseNegative();
-    skipPointerDerefMayCauseInterprocFalseNegative();
-    castFailureOnUndefinedObjMayCauseFalseNegative();
-    callOnCastUndefinedObjMayCauseFalseNegative();
-    callOnUndefinedObjMayCauseFalseNegative();
-    callOnUndefinedObjMayCauseFalsePositive();
-    fieldWriteOnUndefinedObjMayCauseFalseNegative();
-    fieldWriteOnUndefinedObjMayCauseFalsePositive();
-    fieldReadOnUndefinedObjMayCauseFalseNegative();
-    fieldReadOnUndefinedObjMayCauseFalsePositive();
-    recursiveAngelicTypesMayCauseFalseNegative();
-    recursiveAngelicTypesMayCauseFalsePositive();
-    infiniteMaterializationMayCauseFalseNegative(b);
-    infiniteMaterializationMayCauseFalsePositive(b);
-    primitiveFieldOfAngelicObjMayCauseFalsePositive();
-    primitiveFieldOfAngelicObjMayCauseFalseNegative();
-    heapFieldOfAngelicObjMayCauseFalsePositive();
-    heapFieldOfAngelicObjMayCauseFalseNegative();
-    fieldReadAferCastMayCauseFalseNegative(iter);
-    fieldReadInCalleeMayCauseFalsePositive();
-    fieldReadInCalleeWithAngelicObjFieldMayCauseFalsePositive();
-    accessPathInCalleeMayCauseFalsePositive();
+    skipPointerDerefMayCauseCalleeFalseNegativeBad();
+    skipPointerDerefMayCauseInterprocFalseNegativeBad();
+    castFailureOnUndefinedObjMayCauseFalseNegativeBad();
+    callOnCastUndefinedObjMayCauseFalseNegativeBad();
+    callOnUndefinedObjMayCauseFalseNegativeBad();
+    callOnUndefinedObjMayCauseFalsePositiveOk();
+    fieldWriteOnUndefinedObjMayCauseFalseNegativeBad();
+    fieldWriteOnUndefinedObjMayCauseFalsePositiveOk();
+    fieldReadOnUndefinedObjMayCauseFalseNegativeBad();
+    fieldReadOnUndefinedObjMayCauseFalsePositiveOk();
+    recursiveAngelicTypesMayCauseFalseNegativeBad();
+    recursiveAngelicTypesMayCauseFalsePositiveOk();
+    infiniteMaterializationMayCauseFalseNegativeBad(b);
+    infiniteMaterializationMayCauseFalsePositiveOk(b);
+    primitiveFieldOfAngelicObjMayCauseFalsePositiveOk();
+    primitiveFieldOfAngelicObjMayCauseFalseNegativeBad();
+    heapFieldOfAngelicObjMayCauseFalsePositiveOk();
+    heapFieldOfAngelicObjMayCauseFalseNegativeBad();
+    fieldReadAferCastMayCauseFalseNegativeBad(iter);
+    fieldReadInCalleeMayCauseFalsePositiveOk();
+    fieldReadInCalleeWithAngelicObjFieldMayCauseFalsePositiveOk();
+    accessPathInCalleeMayCauseFalsePositiveOk();
     int i = 1 / 0;
   }
 }

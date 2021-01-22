@@ -36,31 +36,31 @@ class AnotherImplementationOfInterface implements MyInterface {
 
 public class ClassCastExceptions {
 
-  public void classCastException() {
+  public void classCastExceptionBad() {
     SuperClass a = new SubClassA();
     SubClassB b = (SubClassB) a;
   }
 
-  public int classCastExceptionImplementsInterfaceCallee(MyInterface i) {
+  public int classCastExceptionImplementsInterfaceCalleeOk(MyInterface i) {
     ImplementationOfInterface impl = (ImplementationOfInterface) i;
     return impl.getInt();
   }
 
-  public int classCastExceptionImplementsInterface() {
-    return classCastExceptionImplementsInterfaceCallee(new AnotherImplementationOfInterface());
+  public int classCastExceptionImplementsInterfaceBad() {
+    return classCastExceptionImplementsInterfaceCalleeOk(new AnotherImplementationOfInterface());
   }
 
   public String getURL() {
     return "http://bla.com";
   }
 
-  public void openHttpURLConnection() throws IOException {
+  public void openHttpURLConnectionOk() throws IOException {
     URL url = new URL(getURL());
     HttpURLConnection connection = (HttpURLConnection) url.openConnection();
     connection.disconnect();
   }
 
-  public void castingArrayOfPrimitiveTypeOK(int[] a) {
+  public void castingArrayOfPrimitiveTypeOk(int[] a) {
     int[] b = (int[]) a;
   }
 }

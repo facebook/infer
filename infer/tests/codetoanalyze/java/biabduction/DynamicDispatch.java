@@ -68,7 +68,7 @@ public class DynamicDispatch {
     o.bar().toString();
   }
 
-  static void dynamicDispatchShouldNotReportWhenCallingSupertype(Supertype o) {
+  static void FP_dynamicDispatchShouldNotReportWhenCallingSupertype(Supertype o) {
     // should not report a warning because the Supertype implementation
     // of foo() does not return null
     o.foo().toString();
@@ -77,7 +77,7 @@ public class DynamicDispatch {
   static void dynamicDispatchShouldReportWhenCalledWithSubtypeParameter(Subtype o) {
     // should report a warning because the Subtype implementation
     // of foo() returns null
-    dynamicDispatchShouldNotReportWhenCallingSupertype(o);
+    FP_dynamicDispatchShouldNotReportWhenCallingSupertype(o);
   }
 
   static Object dynamicDispatchWrapperFoo(Supertype o) {
@@ -120,7 +120,7 @@ public class DynamicDispatch {
       mField = t;
     }
 
-    static void dispatchOnFieldGood() {
+    static void dispatchOnFieldOk() {
       Supertype subtype = new Subtype();
       WithField object = new WithField(subtype);
       object.mField.bar().toString();
