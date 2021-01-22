@@ -301,6 +301,7 @@ codetoanalyze/java/performance/Loops.java, codetoanalyze.java.performance.Loops.
 codetoanalyze/java/performance/Loops.java, codetoanalyze.java.performance.Loops.unboundedSymbol_FP():void, ⊤,  OnUIThread:false, [Unbounded value x,Call to void Loops.loop_linear(int),Loop]
 codetoanalyze/java/performance/Loops.java, codetoanalyze.java.performance.Loops.zeropad_linear_FN(java.lang.String,java.lang.String):void, 17,  OnUIThread:false, []
 codetoanalyze/java/performance/MapTest.java, MapTest.<init>(), 2,  OnUIThread:false, []
+codetoanalyze/java/performance/MapTest.java, MapTest.containsNullValue_linear(java.util.HashMap):boolean, 4 + keyMap.length,  OnUIThread:false, [{keyMap.length},Modeled call to Map.containsValue]
 codetoanalyze/java/performance/MapTest.java, MapTest.entrySet_linear(java.util.Map):void, 8 + 8 ⋅ map.length + 3 ⋅ (map.length + 1),  OnUIThread:false, [{map.length + 1},Loop,{map.length},Loop]
 codetoanalyze/java/performance/MapTest.java, MapTest.keySet_linear(java.util.Map):void, 8 + 8 ⋅ map.length + 3 ⋅ (map.length + 1),  OnUIThread:false, [{map.length + 1},Loop,{map.length},Loop]
 codetoanalyze/java/performance/MapTest.java, MapTest.putAll_linear(java.util.Map):void, 14 + 8 ⋅ map.length + 3 ⋅ (map.length + 1),  OnUIThread:false, [{map.length + 1},Loop,{map.length},Loop]

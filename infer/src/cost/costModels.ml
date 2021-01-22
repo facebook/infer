@@ -303,6 +303,8 @@ module Call = struct
           $+...$--> BoundsOfCollection.linear_length ~of_function:"Iterable.forEach"
         ; +PatternMatch.Java.implements_map &:: "forEach" $ capt_exp
           $+...$--> BoundsOfCollection.linear_length ~of_function:"Map.forEach"
+        ; +PatternMatch.Java.implements_map &:: "containsValue" $ capt_exp
+          $+...$--> BoundsOfCollection.linear_length ~of_function:"Map.containsValue"
         ; +PatternMatch.Java.implements_collections
           &:: "fill" <>$ capt_exp
           $+...$--> BoundsOfCollection.linear_length ~of_function:"Collections.fill"
