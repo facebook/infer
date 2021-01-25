@@ -699,6 +699,12 @@ and buck_compilation_database_depth =
     ~meta:"int"
 
 
+and buck_java_heap_size_gb =
+  CLOpt.mk_int_opt ~long:"buck-java-heap-size-gb"
+    ~in_help:InferCommand.[(Capture, manual_buck)]
+    "Explicitly set the size of the Java heap of Buck processes, in gigabytes." ~meta:"int"
+
+
 and buck_java_flavor_suppress_config =
   CLOpt.mk_bool ~long:"buck-java-flavor-suppress-config" ~default:false
     ~in_help:InferCommand.[(Capture, manual_buck)]
@@ -2757,6 +2763,8 @@ and buck_build_args = RevList.to_list !buck_build_args
 and buck_build_args_no_inline = RevList.to_list !buck_build_args_no_inline_rev
 
 and buck_cache_mode = (!buck || !genrule_mode) && not !debug
+
+and buck_java_heap_size_gb = !buck_java_heap_size_gb
 
 and buck_java_flavor_suppress_config = !buck_java_flavor_suppress_config
 

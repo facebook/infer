@@ -51,18 +51,25 @@ let wrap_buck_call ?(extend_env = []) ~label cmd =
     Printf.sprintf "trap '' SIGQUIT ; exec %s >'%s'" escaped_cmd stdout_file
   in
   let env =
+    let explicit_buck_java_heap_size =
+      Option.map Config.buck_java_heap_size_gb ~f:(fun size -> Printf.sprintf "-Xmx%dG" size)
+      |> Option.to_list
+    in
     let existing_buck_extra_java_args = Sys.getenv buck_extra_java_args_env_var |> Option.to_list in
     let new_buck_extra_java_args =
       (* Instruct the JVM to avoid using signals. *)
-      String.concat ~sep:" " (existing_buck_extra_java_args @ ["-Xrs"])
+      String.concat ~sep:" "
+        (existing_buck_extra_java_args @ explicit_buck_java_heap_size @ ["-Xrs"])
     in
+    L.environment_info "Buck: setting %s to '%s'@\n" buck_extra_java_args_env_var
+      new_buck_extra_java_args ;
     `Extend ((buck_extra_java_args_env_var, new_buck_extra_java_args) :: extend_env)
   in
   let Unix.Process_info.{stdin; stdout; stderr; pid} =
     Unix.create_process_env ~prog:"sh" ~args:["-c"; sigquit_protected_cmd] ~env ()
   in
   let buck_stderr = Unix.in_channel_of_descr stderr in
-  Utils.with_channel_in buck_stderr ~f:(L.progress "BUCK: %s@.") ;
+  Utils.with_channel_in buck_stderr ~f:(L.progress "BUCK: %s@\n") ;
   Unix.close stdin ;
   Unix.close stdout ;
   In_channel.close buck_stderr ;
@@ -254,7 +261,7 @@ module Query = struct
       | `Assoc fields ->
           fields
       | _ ->
-          L.internal_error "Could not parse target json: %s@." (Yojson.Basic.to_string json) ;
+          L.internal_error "Could not parse target json: %s@\n" (Yojson.Basic.to_string json) ;
           []
     in
     let get_json_field fieldname = function
@@ -269,7 +276,7 @@ module Query = struct
           String.is_suffix ~suffix:".java" source_path
           && not (String.is_suffix ~suffix:"MetagenRoot.java" source_path)
       | _ ->
-          L.internal_error "Could not parse source path json: %s@."
+          L.internal_error "Could not parse source path json: %s@\n"
             (Yojson.Basic.to_string source_path_json) ;
           false
     in
@@ -447,7 +454,7 @@ let inline_argument_files buck_args =
         let expanded_args =
           try Utils.with_file_in file_name ~f:In_channel.input_lines
           with exn ->
-            Logging.die UserError "Could not read from file '%s': %a@." file_name Exn.pp exn
+            Logging.die UserError "Could not read from file '%s': %a@\n" file_name Exn.pp exn
         in
         expanded_args
     else [buck_arg]

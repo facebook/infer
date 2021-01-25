@@ -182,6 +182,8 @@ val buck_build_args_no_inline : string list
 
 val buck_cache_mode : bool
 
+val buck_java_heap_size_gb : int option
+
 val buck_merge_all_deps : bool
 
 val buck_mode : BuckMode.t option
