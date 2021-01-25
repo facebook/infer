@@ -962,6 +962,65 @@ module JavaCollection = struct
     remove_at coll (index, [])
 end
 
+module JavaInteger = struct
+  let internal_int =
+    Fieldname.make
+      (Typ.JavaClass (JavaClassName.make ~package:(Some "java.lang") ~classname:"Integer"))
+      "__infer_model_backing_int"
+
+
+  let load_backing_int location this astate =
+    let* astate, obj = PulseOperations.eval_access Read location this Dereference astate in
+    let* astate, int_addr =
+      PulseOperations.eval_access Read location obj (FieldAccess internal_int) astate
+    in
+    let+ astate, int_val = PulseOperations.eval_access Read location int_addr Dereference astate in
+    (astate, int_addr, int_val)
+
+
+  let construct this_address init_value event location astate =
+    let this = (AbstractValue.mk_fresh (), [event]) in
+    let* astate, int_field =
+      PulseOperations.eval_access Write location this (FieldAccess internal_int) astate
+    in
+    let* astate = PulseOperations.write_deref location ~ref:int_field ~obj:init_value astate in
+    PulseOperations.write_deref location ~ref:this_address ~obj:this astate
+
+
+  let constructor this_address init_value : model =
+   fun _ ~callee_procname:_ location ~ret:_ astate ->
+    let event = ValueHistory.Call {f= Model "Integer.init"; location; in_call= []} in
+    let+ state = construct this_address init_value event location astate in
+    [ExecutionDomain.continue state]
+
+
+  let equals this arg : model =
+   fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
+    let* astate, _int_addr1, (int1, hist) = load_backing_int location this astate in
+    let* astate, _int_addr2, (int2, _) = load_backing_int location arg astate in
+    let binop_addr = AbstractValue.mk_fresh () in
+    let astate =
+      PulseArithmetic.eval_binop binop_addr Binop.Eq (AbstractValueOperand int1)
+        (AbstractValueOperand int2) astate
+    in
+    PulseOperations.write_id ret_id (binop_addr, hist) astate |> ok_continue
+
+
+  let int_val this : model =
+   fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
+    let* astate, _int_addr1, int_value_hist = load_backing_int location this astate in
+    PulseOperations.write_id ret_id int_value_hist astate |> ok_continue
+
+
+  let value_of init_value : model =
+   fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
+    let event = ValueHistory.Call {f= Model "Integer.valueOf"; location; in_call= []} in
+    let new_alloc = (AbstractValue.mk_fresh (), [event]) in
+    let+ astate = construct new_alloc init_value event location astate in
+    let astate = PulseOperations.write_id ret_id new_alloc astate in
+    [ExecutionDomain.continue astate]
+end
+
 module StringSet = Caml.Set.Make (String)
 
 module ProcNameDispatcher = struct
@@ -1241,6 +1300,14 @@ module ProcNameDispatcher = struct
         ; +map_context_tenv (PatternMatch.Java.implements_lang "String")
           &::+ (fun _ str -> StringSet.mem str pushback_modeled)
           <>$ capt_arg_payload $+...$--> StdVector.push_back
+        ; +map_context_tenv (PatternMatch.Java.implements_lang "Integer")
+          &:: "<init>" $ capt_arg_payload $+ capt_arg_payload $--> JavaInteger.constructor
+        ; +map_context_tenv (PatternMatch.Java.implements_lang "Integer")
+          &:: "equals" $ capt_arg_payload $+ capt_arg_payload $--> JavaInteger.equals
+        ; +map_context_tenv (PatternMatch.Java.implements_lang "Integer")
+          &:: "intValue" <>$ capt_arg_payload $--> JavaInteger.int_val
+        ; +map_context_tenv (PatternMatch.Java.implements_lang "Integer")
+          &:: "valueOf" <>$ capt_arg_payload $--> JavaInteger.value_of
         ; +map_context_tenv PatternMatch.Java.implements_iterator
           &:: "remove" <>$ capt_arg_payload
           $+...$--> JavaIterator.remove ~desc:"remove"
