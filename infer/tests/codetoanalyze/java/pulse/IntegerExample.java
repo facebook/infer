@@ -9,7 +9,7 @@ package codetoanalyze.java.infer;
 
 public class IntegerExample {
 
-  private static void testIntegerEqualsGood() {
+  private static void FP_testIntegerEqualsGood() {
     Integer a = new Integer(42);
     Integer b = new Integer(42);
     Integer c = null;

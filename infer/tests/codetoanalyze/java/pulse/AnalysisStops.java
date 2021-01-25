@@ -230,7 +230,7 @@ public class AnalysisStops {
     accessPathOnParamOk(ret);
   }
 
-  public void skipFunctionInLoopMayCauseFalseNegativeBad() {
+  public void FN_skipFunctionInLoopMayCauseFalseNegativeBad() {
     Object o = null;
     for (int i = 0; i < 10; i++) {
       externalFunc();

@@ -89,7 +89,7 @@ public class NullPointerExceptions {
     B b;
   }
 
-  public int nullPointerExceptionWithAChainOfFields(C c) {
+  public int FN_nullPointerExceptionWithAChainOfFields(C c) {
     c.b = new B();
     return c.b.a.x;
   }
@@ -162,7 +162,7 @@ public class NullPointerExceptions {
     if (s == null) {}
   }
 
-  public void FP_noNullPointerExceptionAfterSkipFunction() {
+  public void noNullPointerExceptionAfterSkipFunction() {
     String t = new String("Hello!");
     String s = t.toString();
     genericMethodSomewhereCheckingForNull(s);
@@ -227,13 +227,13 @@ public class NullPointerExceptions {
     arrayReadShouldNotCauseSymexMemoryError(0).toString();
   }
 
-  public void sinkWithNeverNullSource() {
+  public void FP_sinkWithNeverNullSource() {
     NeverNullSource source = new NeverNullSource();
     T t = source.get();
     t.f();
   }
 
-  public void otherSinkWithNeverNullSource() {
+  public void FP_otherSinkWithNeverNullSource() {
     SomeLibrary source = new SomeLibrary();
     T t = source.get();
     t.f();
@@ -241,7 +241,7 @@ public class NullPointerExceptions {
 
   private @Nullable Object mFld;
 
-  void nullableFieldNPE() {
+  void FN_nullableFieldNPE() {
     mFld.toString();
   }
 
@@ -285,17 +285,17 @@ public class NullPointerExceptions {
     }
   }
 
-  void derefGetterAfterCheckShouldNotCauseNPE() {
+  void FP_derefGetterAfterCheckShouldNotCauseNPE() {
     if (getObj() != null) {
       getObj().toString();
     }
   }
 
-  void derefBoxedGetterAfterCheckShouldNotCauseNPE() {
+  void FP_derefBoxedGetterAfterCheckShouldNotCauseNPE() {
     boolean b = getBool() != null && getBool();
   }
 
-  static void derefNonThisGetterAfterCheckShouldNotCauseNPE() {
+  static void FP_derefNonThisGetterAfterCheckShouldNotCauseNPE() {
     NullPointerExceptions c = new NullPointerExceptions();
     if (c.getObj() != null) {
       c.getObj().toString();
@@ -370,7 +370,7 @@ public class NullPointerExceptions {
     return mNullableField;
   }
 
-  public void derefNullableGetter() {
+  public void FN_derefNullableGetter() {
     Object o = nullableGetter();
     o.toString();
   }
@@ -436,12 +436,12 @@ public class NullPointerExceptions {
     }
   }
 
-  public @Nullable String testSystemGetPropertyArgument() {
+  public @Nullable String FN_testSystemGetPropertyArgument() {
     String s = System.getProperty(null);
     return s;
   }
 
-  public void testSystemGetPropertyReturn() {
+  public void FN_testSystemGetPropertyReturn() {
     String s = System.getProperty("");
     int n = s.length();
   }
@@ -462,7 +462,7 @@ public class NullPointerExceptions {
   }
 
   @SuppressLint("NULL_DEREFERENCE")
-  void shouldNotReportNPE() {
+  void FP_shouldNotReportNPE() {
     Object o = null;
     o.toString();
   }
@@ -570,7 +570,7 @@ public class NullPointerExceptions {
     o.orNull().toString();
   }
 
-  void stringConstantEqualsTrueNotNPE() {
+  void FP_stringConstantEqualsTrueNotNPE() {
     final String c1 = "Test string!";
     final String c2 = "Test string!";
     String s = null;
@@ -621,7 +621,7 @@ public class NullPointerExceptions {
 
   class E implements I {
 
-    void dereferenceNullableInterfaceFieldBad() {
+    void FN_dereferenceNullableInterfaceFieldBad() {
       mObject.toString();
     }
   }
@@ -630,7 +630,7 @@ public class NullPointerExceptions {
     return null;
   }
 
-  void addNullToImmutableListBuilderBad() {
+  void FN_addNullToImmutableListBuilderBad() {
     ImmutableList.Builder<Object> listBuilder = ImmutableList.builder();
     listBuilder.add(getObject());
   }

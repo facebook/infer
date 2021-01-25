@@ -26,12 +26,12 @@ public class DynamicDispatch {
     i.foo().toString();
   }
 
-  static void interfaceShouldNotCauseFalseNegativeHardOK(Interface i) {
+  static void FN_interfaceShouldNotCauseFalseNegativeHardOK(Interface i) {
     i.foo().toString();
   }
 
   static void callWithBadImplementationBad_FN(Impl impl) {
-    interfaceShouldNotCauseFalseNegativeHardOK(impl);
+    FN_interfaceShouldNotCauseFalseNegativeHardOK(impl);
   }
 
   static class Supertype {
@@ -100,13 +100,13 @@ public class DynamicDispatch {
     dynamicDispatchWrapperBar(o).toString();
   }
 
-  static void dynamicDispatchCallsWrapperWithSubtypeBad_FN() {
+  static void FN_dynamicDispatchCallsWrapperWithSubtypeBad() {
     // Should report because Subtype.foo() returns null
     Supertype o = new Subtype();
     dynamicDispatchWrapperFoo(o).toString();
   }
 
-  static void dynamicDispatchCallsWrapperWithSubtypeOK_FP() {
+  static void FP_dynamicDispatchCallsWrapperWithSubtypeOK() {
     // Should not report because Subtype.bar() does not returns null
     Supertype o = new Subtype();
     dynamicDispatchWrapperBar(o).toString();
@@ -137,7 +137,7 @@ public class DynamicDispatch {
     return o.foo();
   }
 
-  void dynamicResolutionWithPrivateMethodBad_FN() {
+  void FN_dynamicResolutionWithPrivateMethodBad() {
     Supertype subtype = new Subtype();
     callFoo(subtype).toString();
   }

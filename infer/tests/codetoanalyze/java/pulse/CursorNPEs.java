@@ -31,7 +31,7 @@ public class CursorNPEs {
   Context mContext;
   ContentResolver mContentResolver;
 
-  public void cursorFromContentResolverNPE(String customClause) {
+  public void FN_cursorFromContentResolverNPE(String customClause) {
     String[] projection = {"COUNT(*)"};
 
     String selectionClause = selectionClause = customClause;
@@ -42,7 +42,7 @@ public class CursorNPEs {
     cursor.close();
   }
 
-  public void cursorFromMediaNPE() {
+  public void FN_cursorFromMediaNPE() {
     Cursor cursor = MediaStore.Images.Media.query(mContentResolver, null, null, null, null, null);
     cursor.close();
   }
@@ -54,7 +54,7 @@ public class CursorNPEs {
     cursor.close();
   }
 
-  public int cursorFromDownloadManagerNPE(DownloadManager downloadManager) {
+  public int FN_cursorFromDownloadManagerNPE(DownloadManager downloadManager) {
     DownloadManager.Query query = new DownloadManager.Query();
     Cursor cursor = null;
     try {

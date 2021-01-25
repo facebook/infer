@@ -37,7 +37,7 @@ public class HashMapExample {
     }
   }
 
-  public static int getOneIntegerWithoutCheck() {
+  public static int FN_getOneIntegerWithoutCheck() {
     HashMap<Integer, Integer> hashMap = new HashMap<>();
     Integer i32 = new Integer(32);
 
@@ -46,7 +46,7 @@ public class HashMapExample {
     return a.intValue();
   }
 
-  public static void getTwoIntegersWithOneCheck(Integer i, Integer j) {
+  public static void FN_getTwoIntegersWithOneCheck(Integer i, Integer j) {
     HashMap<Integer, Integer> hashMap = new HashMap<>();
 
     if (hashMap.containsKey(i) && !i.equals(j)) {
@@ -75,7 +75,7 @@ public class HashMapExample {
     x.toString();
   }
 
-  void getAfterRemovingTheKeyBad() {
+  void FN_getAfterRemovingTheKeyBad() {
     HashMap<Integer, Object> map = new HashMap();
     Integer key = 42;
     map.put(key, new Object());
@@ -91,7 +91,7 @@ public class HashMapExample {
     map.get(key).toString();
   }
 
-  void getAfterClearBad() {
+  void FN_getAfterClearBad() {
     HashMap<Integer, Object> map = new HashMap();
     Integer key = 42;
     map.put(key, new Object());
@@ -99,7 +99,7 @@ public class HashMapExample {
     map.get(key).toString(); // NPE here
   }
 
-  void getFromKeySetGood_FP(HashMap<String, String> map) {
+  void getFromKeySetGood(HashMap<String, String> map) {
     for (String key : map.keySet()) {
       String s = map.get(key);
       if (s.equals("foo")) {

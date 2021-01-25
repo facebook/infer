@@ -11,7 +11,7 @@ import com.facebook.infer.builtins.InferBuiltins;
 
 public class Builtins {
 
-  void blockErrorOk() {
+  void FP_blockErrorOk() {
     Object x = null;
     InferBuiltins.assume(x != null);
     x.toString();
@@ -23,14 +23,14 @@ public class Builtins {
     y.toString();
   }
 
-  void blockErrorIntAssumeOk(Object x) {
+  void FP_blockErrorIntAssumeOk(Object x) {
     Object y = null;
     int i = 0;
     InferBuiltins.assume(i != 0);
     y.toString();
   }
 
-  void causeErrorBad(Object x) {
+  void FN_causeErrorBad(Object x) {
     InferBuiltins.assume(x == null);
     x.toString();
   }

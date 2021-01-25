@@ -11,7 +11,7 @@ import java.util.List;
 
 class Lists {
 
-  void emptyRemembersOk(List l) {
+  void FP_emptyRemembersOk(List l) {
     boolean empty = l.isEmpty();
     Object o = null;
     if (empty != l.isEmpty()) {
@@ -48,7 +48,7 @@ class Lists {
     return l.isEmpty() ? null : l.get(0);
   }
 
-  void getElementOk(List l) {
+  void FP_getElementOk(List l) {
     if (l.isEmpty()) {
       return;
     }
@@ -63,7 +63,7 @@ class Lists {
   }
 
   // don't fully understand why we don't get this one; model should allow it
-  void FN_addInvalidatesEmptinessNPE(List l) {
+  void addInvalidatesEmptinessNPE(List l) {
     if (l.isEmpty()) {
       l.add(0, new Object());
       Object o = null;
