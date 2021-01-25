@@ -11,6 +11,8 @@ module L = Logging
 
 let max_command_line_length = 50
 
+let buck_extra_java_args_env_var = "BUCK_EXTRA_JAVA_ARGS"
+
 let store_args_in_file ~identifier args =
   let rec exceed_length ~max = function
     | _ when max < 0 ->
@@ -49,8 +51,12 @@ let wrap_buck_call ?(extend_env = []) ~label cmd =
     Printf.sprintf "trap '' SIGQUIT ; exec %s >'%s'" escaped_cmd stdout_file
   in
   let env =
-    (* Instruct the JVM to avoid using signals. *)
-    `Extend (("BUCK_EXTRA_JAVA_ARGS", "-Xrs") :: extend_env)
+    let existing_buck_extra_java_args = Sys.getenv buck_extra_java_args_env_var |> Option.to_list in
+    let new_buck_extra_java_args =
+      (* Instruct the JVM to avoid using signals. *)
+      String.concat ~sep:" " (existing_buck_extra_java_args @ ["-Xrs"])
+    in
+    `Extend ((buck_extra_java_args_env_var, new_buck_extra_java_args) :: extend_env)
   in
   let Unix.Process_info.{stdin; stdout; stderr; pid} =
     Unix.create_process_env ~prog:"sh" ~args:["-c"; sigquit_protected_cmd] ~env ()
