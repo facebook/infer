@@ -665,8 +665,8 @@ let conservatively_initialize_args arg_values ({AbductiveDomain.post} as astate)
   AbstractValue.Set.fold AbductiveDomain.initialize reachable_values astate
 
 
-let call ~caller_proc_desc err_log ~(callee_data : (Procdesc.t * PulseSummary.t) option) call_loc
-    callee_pname ~ret ~actuals ~formals_opt (astate : AbductiveDomain.t) =
+let call ~caller_proc_desc tenv err_log ~(callee_data : (Procdesc.t * PulseSummary.t) option)
+    call_loc callee_pname ~ret ~actuals ~formals_opt (astate : AbductiveDomain.t) =
   let get_arg_values () = List.map actuals ~f:(fun ((value, _), _) -> value) in
   match callee_data with
   | Some (callee_proc_desc, exec_states) ->
@@ -719,7 +719,7 @@ let call ~caller_proc_desc err_log ~(callee_data : (Procdesc.t * PulseSummary.t)
                 (* couldn't apply pre/post pair *)
                 posts
             | Sat post -> (
-              match PulseReport.report_error caller_proc_desc err_log post with
+              match PulseReport.report_error caller_proc_desc tenv err_log post with
               | Error Unsat ->
                   posts
               | Error (Sat post) | Ok post ->

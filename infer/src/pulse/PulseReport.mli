@@ -12,4 +12,8 @@ open PulseDomainInterface
 type 'a access_result = ('a, Diagnostic.t * AbductiveDomain.t) result
 
 val report_error :
-  Procdesc.t -> Errlog.t -> 'ok access_result -> ('ok, _ ExecutionDomain.base_t SatUnsat.t) result
+     Procdesc.t
+  -> Tenv.t
+  -> Errlog.t
+  -> 'ok access_result
+  -> ('ok, _ ExecutionDomain.base_t SatUnsat.t) result

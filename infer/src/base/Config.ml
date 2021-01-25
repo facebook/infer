@@ -1947,6 +1947,11 @@ and pulse_widen_threshold =
     "Under-approximate after $(i,int) loop iterations"
 
 
+and pulse_nullsafe_report_npe =
+  CLOpt.mk_bool ~long:"pulse-nullsafe-report-npe" ~default:true
+    "[Pulse] Suppress NPE reports on files marked @Nullsafe."
+
+
 and pure_by_default =
   CLOpt.mk_bool ~long:"pure-by-default" ~default:false
     "[Purity]Consider unknown functions to be pure by default"
@@ -3163,6 +3168,8 @@ and pulse_recency_limit = !pulse_recency_limit
 and pulse_report_latent_issues = !pulse_report_latent_issues
 
 and pulse_widen_threshold = !pulse_widen_threshold
+
+and pulse_nullsafe_report_npe = !pulse_nullsafe_report_npe
 
 and pure_by_default = !pure_by_default
 

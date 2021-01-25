@@ -22,14 +22,14 @@ let exec_list_of_list_result = function
       [post]
 
 
-let report_on_error {InterproceduralAnalysis.proc_desc; err_log} result =
-  PulseReport.report_error proc_desc err_log result
+let report_on_error {InterproceduralAnalysis.proc_desc; tenv; err_log} result =
+  PulseReport.report_error proc_desc tenv err_log result
   >>| List.map ~f:(fun post -> ExecutionDomain.ContinueProgram post)
   |> exec_list_of_list_result
 
 
-let report_on_error_list {InterproceduralAnalysis.proc_desc; err_log} result =
-  PulseReport.report_error proc_desc err_log result |> exec_list_of_list_result
+let report_on_error_list {InterproceduralAnalysis.proc_desc; tenv; err_log} result =
+  PulseReport.report_error proc_desc tenv err_log result |> exec_list_of_list_result
 
 
 let report_topl_errors proc_desc err_log summary =
@@ -60,14 +60,14 @@ module PulseTransferFunctions = struct
     AnalysisCallbacks.proc_resolve_attributes pname |> Option.map ~f:ProcAttributes.get_pvar_formals
 
 
-  let interprocedural_call {InterproceduralAnalysis.analyze_dependency; proc_desc; err_log} ret
-      callee_pname call_exp actuals call_loc astate =
+  let interprocedural_call {InterproceduralAnalysis.analyze_dependency; proc_desc; tenv; err_log}
+      ret callee_pname call_exp actuals call_loc astate =
     match callee_pname with
     | Some callee_pname when not Config.pulse_intraprocedural_only ->
         let formals_opt = get_pvar_formals callee_pname in
         let callee_data = analyze_dependency callee_pname in
-        PulseOperations.call ~caller_proc_desc:proc_desc err_log ~callee_data call_loc callee_pname
-          ~ret ~actuals ~formals_opt astate
+        PulseOperations.call ~caller_proc_desc:proc_desc tenv err_log ~callee_data call_loc
+          callee_pname ~ret ~actuals ~formals_opt astate
     | _ ->
         L.d_printfln "Skipping indirect call %a@\n" Exp.pp call_exp ;
         let astate =

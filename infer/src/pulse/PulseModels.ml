@@ -217,7 +217,7 @@ module ObjC = struct
 
 
   let dispatch_sync args : model =
-   fun {analyze_dependency; proc_desc; err_log} ~callee_procname:_ location ~ret astate ->
+   fun {analyze_dependency; proc_desc; tenv; err_log} ~callee_procname:_ location ~ret astate ->
     match List.last args with
     | None ->
         Ok [ExecutionDomain.ContinueProgram astate]
@@ -229,7 +229,7 @@ module ObjC = struct
         | None ->
             Ok [ExecutionDomain.ContinueProgram astate]
         | Some callee_proc_name ->
-            PulseOperations.call ~caller_proc_desc:proc_desc err_log
+            PulseOperations.call ~caller_proc_desc:proc_desc tenv err_log
               ~callee_data:(analyze_dependency callee_proc_name)
               location callee_proc_name ~ret ~actuals:[] ~formals_opt:None astate )
 end
@@ -555,7 +555,7 @@ end
 module StdFunction = struct
   let operator_call ProcnameDispatcher.Call.FuncArg.{arg_payload= lambda_ptr_hist; typ} actuals :
       model =
-   fun {analyze_dependency; proc_desc; err_log} ~callee_procname:_ location ~ret astate ->
+   fun {analyze_dependency; proc_desc; tenv; err_log} ~callee_procname:_ location ~ret astate ->
     let havoc_ret (ret_id, _) astate =
       let event = ValueHistory.Call {f= Model "std::function::operator()"; location; in_call= []} in
       [PulseOperations.havoc_id ret_id [event] astate]
@@ -576,7 +576,7 @@ module StdFunction = struct
           :: List.map actuals ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
                  (arg_payload, typ) )
         in
-        PulseOperations.call ~caller_proc_desc:proc_desc err_log
+        PulseOperations.call ~caller_proc_desc:proc_desc tenv err_log
           ~callee_data:(analyze_dependency callee_proc_name)
           location callee_proc_name ~ret ~actuals ~formals_opt:None astate
 

@@ -159,6 +159,7 @@ val check_address_escape :
 
 val call :
      caller_proc_desc:Procdesc.t
+  -> Tenv.t
   -> Errlog.t
   -> callee_data:(Procdesc.t * PulseSummary.t) option
   -> Location.t
