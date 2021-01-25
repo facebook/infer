@@ -355,6 +355,20 @@ let desc_to_string desc =
 module Name = struct
   type t = name [@@deriving compare, equal, yojson_of]
 
+  (* NOTE: When a same struct type is used in C/C++/ObjC/ObjC++, their struct types may different,
+     eg [CStruct] in, C but [CppClass] in C++.  On the other hand, since [Fieldname.t] includes the
+     class names, even for the same field, its field name used in C and C++ can be different.
+     However, in analyses, we may want to *not* distinguish fieldnames of the same struct type.  For
+     that, we can use these loosened compare functions instead. *)
+  let loose_compare x y =
+    match (x, y) with
+    | (CStruct name1 | CppClass (name1, NoTemplate)), (CStruct name2 | CppClass (name2, NoTemplate))
+      ->
+        QualifiedCppName.compare name1 name2
+    | _ ->
+        compare x y
+
+
   let hash = Hashtbl.hash
 
   let qual_name = function

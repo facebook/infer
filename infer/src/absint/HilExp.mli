@@ -9,12 +9,17 @@ open! IStd
 module F = Format
 
 module Access : sig
-  type 'array_index t =
-    | FieldAccess of Fieldname.t
+  type ('fieldname, 'array_index) t_ =
+    | FieldAccess of 'fieldname
     | ArrayAccess of Typ.t * 'array_index
     | TakeAddress
     | Dereference
   [@@deriving compare, yojson_of]
+
+  type 'array_index t = (Fieldname.t, 'array_index) t_ [@@deriving compare, yojson_of]
+
+  val loose_compare :
+    ('array_index -> 'array_index -> int) -> 'array_index t -> 'array_index t -> int
 
   val pp : (Format.formatter -> 'array_index -> unit) -> Format.formatter -> 'array_index t -> unit
 

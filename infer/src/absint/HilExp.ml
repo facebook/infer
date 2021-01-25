@@ -16,12 +16,16 @@ let yojson_of_typ_ = [%yojson_of: _]
 let compare_typ_ _ _ = 0
 
 module Access = struct
-  type 'array_index t =
-    | FieldAccess of Fieldname.t
+  type ('fieldname, 'array_index) t_ =
+    | FieldAccess of 'fieldname
     | ArrayAccess of typ_ * 'array_index
     | TakeAddress
     | Dereference
   [@@deriving compare, yojson_of]
+
+  type 'array_index t = (Fieldname.t, 'array_index) t_ [@@deriving compare, yojson_of]
+
+  let loose_compare compare_array_index = compare_t_ Fieldname.loose_compare compare_array_index
 
   let pp pp_array_index fmt = function
     | FieldAccess field_name ->

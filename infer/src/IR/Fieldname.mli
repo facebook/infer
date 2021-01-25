@@ -11,6 +11,9 @@ module F = Format
 (** Names for fields of class/struct/union *)
 type t [@@deriving compare, equal, yojson_of]
 
+val loose_compare : t -> t -> int
+(** Similar to compare, but addresses [CStruct x] and [CppClass x] as equal. *)
+
 val make : Typ.Name.t -> string -> t
 (** create a field of the given class and fieldname *)
 

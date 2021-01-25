@@ -8,7 +8,12 @@
 open! IStd
 module F = Format
 
-type t = {class_name: Typ.Name.t; field_name: string} [@@deriving compare, equal, yojson_of]
+type 'typ_name t_ = {class_name: 'typ_name; field_name: string}
+[@@deriving compare, equal, yojson_of]
+
+type t = Typ.Name.t t_ [@@deriving compare, equal, yojson_of]
+
+let loose_compare = compare_t_ Typ.Name.loose_compare
 
 let make class_name field_name = {class_name; field_name}
 

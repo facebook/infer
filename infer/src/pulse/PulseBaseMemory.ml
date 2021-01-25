@@ -12,7 +12,9 @@ open PulseBasicInterface
 (* {3 Heap domain } *)
 
 module Access = struct
-  type t = AbstractValue.t HilExp.Access.t [@@deriving compare, yojson_of]
+  type t = AbstractValue.t HilExp.Access.t [@@deriving yojson_of]
+
+  let compare = HilExp.Access.loose_compare AbstractValue.compare
 
   let equal = [%compare.equal: t]
 
