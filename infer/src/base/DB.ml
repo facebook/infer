@@ -15,6 +15,8 @@ module L = Logging
 
 let cutoff_length = 100
 
+let crc_only = Stdlib.( = ) Version.Windows Version.build_platform
+
 let crc_token = '.'
 
 let append_crc_cutoff ?(key = "") name =
@@ -23,9 +25,10 @@ let append_crc_cutoff ?(key = "") name =
   in
   let crc_str =
     let name_for_crc = name ^ key in
-    Utils.string_crc_hex32 name_for_crc
+    String.sub (Utils.string_crc_hex32 name_for_crc) ~pos:0 ~len:16
   in
-  (Printf.sprintf "%s%c%s" name_up_to_cutoff crc_token crc_str, crc_str)
+  if crc_only then (crc_str, crc_str)
+  else (Printf.sprintf "%s%c%s" name_up_to_cutoff crc_token crc_str, crc_str)
 
 
 let curr_source_file_encoding = `Enc_crc
