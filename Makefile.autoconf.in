@@ -82,14 +82,7 @@ XCODE_BASE = @XCODE_BASE@
 XCODE_SELECT = @XCODE_SELECT@
 XCPRETTY = @XCPRETTY@
 XCRUN = @XCRUN@
-
-ifneq (,$(findstring s,$(MAKEFLAGS)))
-# quiet mode
 LN_S = @LN_S@
-else
-LN_S = @LN_S@ -v
-endif
-
 # Export parts of the config relevant to running other programs
 export PATH := $(PATH)
 export CPATH := $(CPATH)
