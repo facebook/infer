@@ -31,3 +31,6 @@ val escape_in_single_quotes : string -> string
 
 val escape_shell : string -> string
 (** escape the string so it can be passed to the shell without remorse *)
+
+val escape_filename : string -> string
+(** escape the characters that cannot be used in filenames *)

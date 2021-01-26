@@ -947,7 +947,7 @@ let to_filename pname =
     | _ ->
         F.asprintf "%a" pp_unique_id pname
   in
-  DB.append_crc_cutoff proc_id |> fst
+  DB.append_crc_cutoff proc_id |> fst |> Escape.escape_filename
 
 
 module SQLite = struct
