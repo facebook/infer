@@ -107,21 +107,9 @@ module TransferFunctions (LConfig : LivenessConfig) (CFG : ProcCfg.S) = struct
            Domain.add (Var.of_pvar pvar) astate_acc )
 
 
-  let add_live_actuals actuals call_exp live_acc =
-    let add_live_actuals_ exps acc =
-      List.fold exps ~f:(fun acc_ exp -> exp_add_live exp acc_) ~init:acc
-    in
+  let add_live_actuals actuals live_acc =
     let actuals = List.map actuals ~f:(fun (e, _) -> Exp.ignore_cast e) in
-    match Exp.ignore_cast call_exp with
-    | Exp.Const (Cfun (Procname.ObjC_Cpp _ as pname)) when Procname.is_constructor pname -> (
-      (* first actual passed to a C++ constructor is actually written, not read *)
-      match actuals with
-      | Exp.Lvar pvar :: exps ->
-          Domain.remove (Var.of_pvar pvar) live_acc |> add_live_actuals_ exps
-      | exps ->
-          add_live_actuals_ exps live_acc )
-    | _ ->
-        add_live_actuals_ actuals live_acc
+    List.fold actuals ~f:(fun acc_ exp -> exp_add_live exp acc_) ~init:live_acc
 
 
   let exec_instr astate proc_desc _ = function
@@ -156,8 +144,7 @@ module TransferFunctions (LConfig : LivenessConfig) (CFG : ProcCfg.S) = struct
           else (actuals, astate)
         in
         Domain.remove (Var.of_id ret_id) astate
-        |> exp_add_live call_exp
-        |> add_live_actuals actuals_to_read call_exp
+        |> exp_add_live call_exp |> add_live_actuals actuals_to_read
     | Sil.Metadata _ ->
         astate
 
