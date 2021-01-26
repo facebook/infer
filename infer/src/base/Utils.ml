@@ -323,7 +323,10 @@ let realpath ?(warn_on_error = true) path =
 
 
 (* never closed *)
-let devnull = lazy (Unix.openfile "/dev/null" ~mode:[Unix.O_WRONLY])
+let devnull =
+  let file = if String.equal Sys.os_type "Win32" then "NUL" else "/dev/null" in
+  lazy (Unix.openfile file ~mode:[Unix.O_WRONLY])
+
 
 let suppress_stderr2 f2 x1 x2 =
   let restore_stderr src =
