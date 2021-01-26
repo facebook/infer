@@ -524,7 +524,23 @@ let physical_cores () =
       sockets * cores_per_socket )
 
 
-let cpus = Setcore.numcores ()
+module Setcore = struct
+  external number_of_cpus : unit -> int = "number_of_cpus"
+
+  let ncpu =
+    (* Use this environment variable to restrict the number of cores visible to Infer.
+       If we do not manage to find an interesting information in that variable, default to 0. *)
+    match Int.of_string (Option.value (Sys.getenv "INFER_CPUS") ~default:"") with
+    | exception _ ->
+        number_of_cpus ()
+    | i ->
+        if i > 0 then i else number_of_cpus ()
+
+
+  let setcore _ = () (* TODO: to improve *)
+end
+
+let cpus = Setcore.ncpu
 
 let numcores =
   match Version.build_platform with Darwin | Windows -> cpus / 2 | Linux -> physical_cores ()

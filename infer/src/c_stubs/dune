@@ -8,4 +8,4 @@
  (public_name infer.CStubs)
  (foreign_stubs
   (language c)
-  (names fnv64_hash)))
+  (names fnv64_hash cpu_stubs)))
