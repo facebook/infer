@@ -32,7 +32,7 @@ struct UniquePtr {
 struct A {
   int s_;
   ~A() {}
-  A() { A(42); }
+  A() : A(42) {}
   A(int s) { s_ = s; }
   A(A& a) { s_ = a.s_; }
 };

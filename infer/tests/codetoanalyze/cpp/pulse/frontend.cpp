@@ -99,4 +99,80 @@ int conditional_expression_bad(bool b) {
   }
 }
 
+class Frontend {
+ public:
+  int a;
+
+  Frontend(int n) { a = (n == 0) ? 0 : 1; }
+
+  Frontend(Frontend x, int n) {
+    x.a = (n == 0) ? 0 : 1;
+    a = x.a;
+  }
+
+  void set_field_via_local(int n) {
+    int* b = (int*)malloc(sizeof(int));
+    if (b) {
+      *b = 0;
+      *b = (n == 0) ? 0 : 1;
+      a = *b;
+      free(b);
+    } else {
+      a = (n == 0) ? 0 : 1;
+    }
+  }
+};
+
+void call_Frontend_constructor_ok() {
+  Frontend x = Frontend(10); // x.a is 1
+  if (x.a != 1) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
+void call_Frontend_constructor_bad() {
+  Frontend x = Frontend(10); // x.a is 1
+  if (x.a == 1) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
+void call_Frontend_constructor2_ok() {
+  Frontend x = Frontend(0); // x.a is 0
+  Frontend y = Frontend(x, 10); // y.a is 1
+  if (y.a != 1) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
+void call_Frontend_constructor2_bad() {
+  Frontend x = Frontend(0); // x.a is 0
+  Frontend y = Frontend(x, 10); // y.a is 1
+  if (y.a == 1) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
+void call_set_field_via_local_ok() {
+  Frontend x = Frontend(0); // x.a is 0
+  x.set_field_via_local(10); // x.a is 1
+  if (x.a != 1) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
+void call_set_field_via_local_bad() {
+  Frontend x = Frontend(0); // x.a is 0
+  x.set_field_via_local(10); // x.a is 1
+  if (x.a == 1) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
 } // namespace frontend
