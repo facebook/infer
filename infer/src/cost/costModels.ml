@@ -231,7 +231,7 @@ module Call = struct
         ; +PatternMatch.ObjectiveC.implements "NSString"
           &:: "substringFromIndex:" <>$ capt_exp $+ capt_exp $!--> NSString.substring_from_index
         ; +PatternMatch.ObjectiveC.implements "NSString"
-          &:: "rangeOfString:" <>$ capt_exp $+ capt_exp
+          &:: "rangeOfString:" <>$ capt_exp $+ capt_exp $+ any_arg
           $!--> NSString.op_on_two_str BasicCost.mult ~of_function:"NSString.rangeOfString:"
         ; +PatternMatch.ObjectiveC.implements "NSMutableString"
           &:: "appendString:" <>$ any_arg $+ capt_exp

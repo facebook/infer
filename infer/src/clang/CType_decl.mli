@@ -65,7 +65,7 @@ val method_signature_body_of_decl :
   -> Procname.t
   -> CMethodSignature.t * Clang_ast_t.stmt option * CFrontend_config.instr_type list
 
-val should_add_return_param : Typ.t -> is_objc_method:bool -> bool
+val should_add_return_param : Typ.t -> bool
 
 val type_of_captured_var :
   Tenv.t -> is_block_inside_objc_class_method:bool -> Clang_ast_t.decl_ref -> Typ.t option

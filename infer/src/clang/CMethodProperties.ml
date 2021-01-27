@@ -145,10 +145,6 @@ let get_pointer_to_property method_decl =
       None
 
 
-let is_objc_method method_decl =
-  match method_decl with Clang_ast_t.ObjCMethodDecl _ -> true | _ -> false
-
-
 let is_no_return method_decl =
   match Clang_ast_proj.get_function_decl_tuple method_decl with
   | Some (_, _, _, {Clang_ast_t.fdi_is_no_return= true}) ->

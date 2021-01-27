@@ -53,12 +53,11 @@ module BuildMethodSignature = struct
         raise CFrontend_errors.Invalid_declaration
 
 
-  let should_add_return_param return_type ~is_objc_method =
-    match return_type.Typ.desc with Tstruct _ -> not is_objc_method | _ -> false
+  let should_add_return_param return_type =
+    match return_type.Typ.desc with Tstruct _ -> true | _ -> false
 
 
   let get_return_param qual_type_to_sil_type tenv ~block_return_type method_decl =
-    let is_objc_method = CMethodProperties.is_objc_method method_decl in
     let return_qual_type =
       match block_return_type with
       | Some return_type ->
@@ -67,7 +66,7 @@ module BuildMethodSignature = struct
           CMethodProperties.get_return_type method_decl
     in
     let return_typ = qual_type_to_sil_type tenv return_qual_type in
-    if should_add_return_param return_typ ~is_objc_method then
+    if should_add_return_param return_typ then
       let name = Mangled.from_string CFrontend_config.return_param in
       let return_qual_type = Ast_expressions.create_pointer_qual_type return_qual_type in
       param_type_of_qual_type qual_type_to_sil_type tenv name return_qual_type
@@ -149,8 +148,7 @@ module BuildMethodSignature = struct
     in
     let return_typ = qual_type_to_sil_type tenv return_qual_type in
     let return_typ_annot = CAst_utils.sil_annot_of_type return_qual_type in
-    let is_objc_method = CMethodProperties.is_objc_method method_decl in
-    if should_add_return_param return_typ ~is_objc_method then
+    if should_add_return_param return_typ then
       (StdTyp.void, Some (CType.add_pointer_to_typ return_typ), Annot.Item.empty, true)
     else (return_typ, None, return_typ_annot, false)
 

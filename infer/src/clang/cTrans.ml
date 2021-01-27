@@ -233,11 +233,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   let create_call_instr trans_state (return_type : Typ.t) function_sil params_sil sil_loc call_flags
-      ~is_objc_method ~is_inherited_ctor =
+      ~is_inherited_ctor =
     let ret_id_typ = (Ident.create_fresh Ident.knormal, return_type) in
     let ret_id', params, initd_exps, ret_exps, call_flags =
       (* Assumption: should_add_return_param will return true only for struct types *)
-      if CType_decl.should_add_return_param return_type ~is_objc_method then
+      if CType_decl.should_add_return_param return_type then
         let param_type = Typ.mk (Typ.Tptr (return_type, Typ.Pk_pointer)) in
         let var_exp =
           match trans_state.var_exp_typ with
@@ -1151,7 +1151,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           let is_call_to_block = objc_exp_of_type_block fun_exp_stmt in
           let call_flags = {CallFlags.default with CallFlags.cf_is_objc_block= is_call_to_block} in
           create_call_instr trans_state function_type sil_fe act_params sil_loc call_flags
-            ~is_objc_method:false ~is_inherited_ctor:false
+            ~is_inherited_ctor:false
         in
         let node_name = Procdesc.Node.Call (Exp.to_string sil_fe) in
         let all_res_trans = res_trans_callee :: (result_trans_params @ [res_trans_call]) in
@@ -1170,7 +1170,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let result_trans_param = exec_with_glvalue_as_reference instruction trans_state_param stmt in
     let res_trans_call =
       create_call_instr trans_state function_type sil_fe [result_trans_param.return] sil_loc
-        CallFlags.default ~is_objc_method:false ~is_inherited_ctor:false
+        CallFlags.default ~is_inherited_ctor:false
     in
     let node_name = Procdesc.Node.Call (Exp.to_string sil_fe) in
     let all_res_trans = [result_trans_param; res_trans_call] in
@@ -1209,7 +1209,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         in
         let res_trans_call =
           create_call_instr trans_state_pri function_type sil_method actual_params sil_loc
-            call_flags ~is_objc_method:false ~is_inherited_ctor
+            call_flags ~is_inherited_ctor
         in
         let node_name = Procdesc.Node.Call (Exp.to_string sil_method) in
         let all_res_trans =
@@ -1427,7 +1427,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let method_sil = Exp.Const (Const.Cfun callee_name) in
         let res_trans_call =
           create_call_instr trans_state method_type method_sil subexpr_exprs sil_loc call_flags
-            ~is_objc_method:true ~is_inherited_ctor:false
+            ~is_inherited_ctor:false
         in
         let selector = obj_c_message_expr_info.Clang_ast_t.omei_selector in
         let node_name = Procdesc.Node.MessageCall selector in
@@ -3132,7 +3132,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         }
       in
       create_call_instr trans_state method_type method_sil actuals loc call_flags
-        ~is_objc_method:true ~is_inherited_ctor:false
+        ~is_inherited_ctor:false
     in
     collect_trans_results procdesc ~return:res_trans_call.return
       (res_trans_elems @ [res_trans_array; res_trans_call])
@@ -3255,7 +3255,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         }
       in
       create_call_instr trans_state method_type method_sil actuals loc call_flags
-        ~is_objc_method:true ~is_inherited_ctor:false
+        ~is_inherited_ctor:false
     in
     collect_trans_results procdesc ~return:res_trans_call.return
       (res_trans_elems @ [res_trans_array1; res_trans_array2; res_trans_call])
