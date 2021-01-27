@@ -227,7 +227,22 @@ let try_finally_swallow_timeout ~f ~finally =
 
 
 let with_file_in file ~f =
-  let ic = In_channel.create file in
+  let ic =
+    let open Unix in
+    let fd =
+      try openfile ~mode:[O_RDONLY; O_SHARE_DELETE] file
+      with Unix_error (e, _, _) ->
+        let msg =
+          match e with
+          | ENOENT ->
+              ": no such file or directory"
+          | _ ->
+              ": error " ^ Unix.Error.message e
+        in
+        raise (Sys_error (file ^ msg))
+    in
+    in_channel_of_descr fd
+  in
   let f () = f ic in
   let finally () = In_channel.close ic in
   try_finally_swallow_timeout ~f ~finally
