@@ -1094,7 +1094,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
            to avoid an incorrect statement order. *)
         let e1_control =
           match (binary_operator_info.Clang_ast_t.boi_kind, s2) with
-          | `Assign, Clang_ast_t.(ConditionalOperator _ | UnaryOperator _) ->
+          | ( `Assign
+            , Clang_ast_t.(
+                ( ConditionalOperator _
+                | UnaryOperator _
+                | ImplicitCastExpr (_, ([ConditionalOperator _] | [UnaryOperator _]), _, _) )) ) ->
               let trans_state' = PriorityNode.try_claim_priority_node trans_state' stmt_info in
               PriorityNode.compute_controls_to_parent trans_state' sil_loc node_name stmt_info
                 [res_trans_e1.control]
