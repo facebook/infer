@@ -172,7 +172,7 @@ end
 
 (** set where at most one element of a given rank can be present *)
 module type PPUniqRankSet = sig
-  type t
+  type t [@@deriving compare, equal]
 
   type rank
 
@@ -181,8 +181,6 @@ module type PPUniqRankSet = sig
   val add : t -> elt -> t
 
   val empty : t
-
-  val equal : t -> t -> bool
 
   val find_rank : t -> rank -> elt option
 

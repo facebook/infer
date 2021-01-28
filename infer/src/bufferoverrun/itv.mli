@@ -19,7 +19,7 @@ module ItvRange : sig
 end
 
 module ItvPure : sig
-  type t [@@deriving compare]
+  type t [@@deriving compare, equal]
 
   val pp : F.formatter -> t -> unit
 

@@ -15,13 +15,15 @@ let yojson_of_typ_ = [%yojson_of: _]
 
 let compare_typ_ _ _ = 0
 
+let equal_typ_ = [%compare.equal: typ_]
+
 module Access = struct
   type ('fieldname, 'array_index) t_ =
     | FieldAccess of 'fieldname
     | ArrayAccess of typ_ * 'array_index
     | TakeAddress
     | Dereference
-  [@@deriving compare, yojson_of]
+  [@@deriving compare, equal, yojson_of]
 
   type 'array_index t = (Fieldname.t, 'array_index) t_ [@@deriving compare, yojson_of]
 

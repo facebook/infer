@@ -11,7 +11,7 @@ module AbstractValue = PulseAbstractValue
 module SatUnsat = PulseSatUnsat
 module ValueHistory = PulseValueHistory
 
-type t [@@deriving yojson_of]
+type t [@@deriving compare, equal, yojson_of]
 
 val true_ : t
 

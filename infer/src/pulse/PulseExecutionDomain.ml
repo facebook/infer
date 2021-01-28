@@ -22,7 +22,7 @@ type 'abductive_domain_t base_t =
   | AbortProgram of AbductiveDomain.summary
   | LatentAbortProgram of {astate: AbductiveDomain.summary; latent_issue: LatentIssue.t}
   | ISLLatentMemoryError of 'abductive_domain_t
-[@@deriving yojson_of]
+[@@deriving equal, compare, yojson_of]
 
 type t = AbductiveDomain.t base_t
 
@@ -76,7 +76,7 @@ let get_astate : t -> AbductiveDomain.t = function
 
 let is_unsat_cheap exec_state = PathCondition.is_unsat_cheap (get_astate exec_state).path_condition
 
-type summary = AbductiveDomain.summary base_t [@@deriving yojson_of]
+type summary = AbductiveDomain.summary base_t [@@deriving compare, equal, yojson_of]
 
 let summary_of_posts_common ~continue_program pdesc posts =
   List.filter_mapi posts ~f:(fun i exec_state ->

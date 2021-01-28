@@ -19,7 +19,7 @@ module BaseAddressAttributes = PulseBaseAddressAttributes
 module type BaseDomainSig = sig
   (* private because the lattice is not the same for preconditions and postconditions so we don't
      want to confuse them *)
-  type t = private BaseDomain.t [@@deriving yojson_of]
+  type t = private BaseDomain.t [@@deriving compare, equal, yojson_of]
 
   val empty : t
 
@@ -86,7 +86,7 @@ end
 (** represents the inferred pre-condition at each program point, biabduction style *)
 module PreDomain : BaseDomainSig = PostDomain
 
-type isl_status = ISLOk | ISLError [@@deriving equal, yojson_of]
+type isl_status = ISLOk | ISLError [@@deriving compare, equal, yojson_of]
 
 let pp_isl_status f s =
   if Config.pulse_isl then
@@ -106,7 +106,7 @@ type t =
   ; topl: (PulseTopl.state[@yojson.opaque])
   ; skipped_calls: SkippedCalls.t
   ; isl_status: isl_status }
-[@@deriving yojson_of]
+[@@deriving compare, equal, yojson_of]
 
 let pp f {post; pre; topl; path_condition; skipped_calls; isl_status} =
   F.fprintf f "@[<v>%a@;%a@;%a@;PRE=[%a]@;skipped_calls=%a@;TOPL=%a@]" PathCondition.pp
@@ -628,7 +628,7 @@ let invalidate_locals pdesc astate : t =
   else {astate with post= PostDomain.update astate.post ~attrs:attrs'}
 
 
-type summary = t [@@deriving yojson_of]
+type summary = t [@@deriving compare, equal, yojson_of]
 
 let is_allocated {post; pre} v =
   let is_pvar = function Var.ProgramVar _ -> true | Var.LogicalVar _ -> false in

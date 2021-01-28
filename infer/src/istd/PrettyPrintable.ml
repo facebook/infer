@@ -221,7 +221,7 @@ module type PrintableRankedType = sig
 end
 
 module type PPUniqRankSet = sig
-  type t
+  type t [@@deriving compare, equal]
 
   type rank
 
@@ -230,8 +230,6 @@ module type PPUniqRankSet = sig
   val add : t -> elt -> t
 
   val empty : t
-
-  val equal : t -> t -> bool
 
   val find_rank : t -> rank -> elt option
 
@@ -277,6 +275,8 @@ module MakePPUniqRankSet
   let add map value = Map.add (Val.to_rank value) value map
 
   let empty = Map.empty
+
+  let compare = Map.compare Val.compare
 
   let equal = Map.equal Val.equal
 

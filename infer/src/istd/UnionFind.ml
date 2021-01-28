@@ -26,7 +26,7 @@ struct
     (** to get a little bit of type safety *)
     type repr = private X.t
 
-    type t
+    type t [@@deriving compare, equal]
 
     val empty : t
 
@@ -43,7 +43,7 @@ struct
   end = struct
     type repr = X.t
 
-    type t = X.t XMap.t
+    type t = X.t XMap.t [@@deriving compare, equal]
 
     let empty = XMap.empty
 
@@ -82,7 +82,7 @@ struct
       UF.Map.remove x1 classes |> UF.Map.add x2 new_class
   end
 
-  type t = {reprs: UF.t; classes: XSet.t UF.Map.t}
+  type t = {reprs: UF.t; classes: XSet.t UF.Map.t} [@@deriving compare, equal]
 
   let empty = {reprs= UF.empty; classes= UF.Map.empty}
 

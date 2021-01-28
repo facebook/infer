@@ -36,6 +36,13 @@ type t =
   ; citvs: CItvs.t
   ; formula: Formula.t }
 
+let compare phi1 phi2 =
+  if phys_equal phi1 phi2 || (phi1.is_unsat && phi2.is_unsat) then 0
+  else [%compare: bool * Formula.t] (phi1.is_unsat, phi1.formula) (phi2.is_unsat, phi2.formula)
+
+
+let equal = [%compare.equal: t]
+
 let yojson_of_t {formula} = [%yojson_of: Formula.t] formula
 
 let pp fmt {is_unsat; bo_itvs; citvs; formula} =

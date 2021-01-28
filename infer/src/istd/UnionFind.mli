@@ -21,7 +21,7 @@ module Make
     (X : Element)
     (XSet : Caml.Set.S with type elt = X.t)
     (XMap : Caml.Map.S with type key = X.t) : sig
-  type t
+  type t [@@deriving compare, equal]
 
   val pp :
     pp_empty:(F.formatter -> unit) -> (F.formatter -> X.t -> unit) -> F.formatter -> t -> unit

@@ -43,7 +43,7 @@ end
 
 module ItvPure = struct
   (** (l, u) represents the closed interval [l; u] (of course infinite bounds are open) *)
-  type t = Bound.t * Bound.t [@@deriving compare]
+  type t = Bound.t * Bound.t [@@deriving compare, equal]
 
   let lb : t -> Bound.t = fst
 

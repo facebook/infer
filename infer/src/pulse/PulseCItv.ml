@@ -10,7 +10,7 @@ module F = Format
 module L = Logging
 
 module Bound = struct
-  type t = Int of IntLit.t | MinusInfinity | PlusInfinity [@@deriving compare]
+  type t = Int of IntLit.t | MinusInfinity | PlusInfinity [@@deriving compare, equal]
 
   let pp fmt = function
     | Int i ->
@@ -112,7 +112,7 @@ module Unsafe : sig
   type t = private
     | Between of Bound.t * Bound.t  (** we write \[b1,b2\] for these *)
     | Outside of IntLit.t * IntLit.t  (** we write i1\]\[i2 for these *)
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   val between : Bound.t -> Bound.t -> t
 
@@ -124,7 +124,8 @@ module Unsafe : sig
 
   val ge_to : IntLit.t -> t
 end = struct
-  type t = Between of Bound.t * Bound.t | Outside of IntLit.t * IntLit.t [@@deriving compare]
+  type t = Between of Bound.t * Bound.t | Outside of IntLit.t * IntLit.t
+  [@@deriving compare, equal]
 
   let between b1 b2 =
     assert (Bound.is_interval b1 b2) ;

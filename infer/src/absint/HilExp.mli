@@ -14,7 +14,7 @@ module Access : sig
     | ArrayAccess of Typ.t * 'array_index
     | TakeAddress
     | Dereference
-  [@@deriving compare, yojson_of]
+  [@@deriving compare, equal, yojson_of]
 
   type 'array_index t = (Fieldname.t, 'array_index) t_ [@@deriving compare, yojson_of]
 

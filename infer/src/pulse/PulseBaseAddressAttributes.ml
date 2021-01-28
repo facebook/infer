@@ -19,6 +19,10 @@ module Graph = PrettyPrintable.MakePPMonoMap (AbstractValue) (AttributesNoRank)
 
 type t = Graph.t
 
+let compare = Graph.compare AttributesNoRank.compare
+
+let equal = Graph.equal AttributesNoRank.equal
+
 let yojson_of_t = [%yojson_of: _]
 
 let add_one addr attribute attrs =

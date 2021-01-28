@@ -104,3 +104,7 @@ let canonicalize ~get_var_repr memory =
 
 
 include Graph
+
+let compare = Graph.compare Edges.compare
+
+let equal = Graph.equal Edges.equal

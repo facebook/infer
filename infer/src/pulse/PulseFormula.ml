@@ -48,7 +48,7 @@ end
 (** Linear Arithmetic *)
 module LinArith : sig
   (** linear combination of variables, eg [2·x + 3/4·y + 12] *)
-  type t [@@deriving compare, yojson_of]
+  type t [@@deriving compare, yojson_of, equal]
 
   type subst_target = QSubst of Q.t | VarSubst of Var.t | LinSubst of t
 
@@ -239,7 +239,7 @@ module Term = struct
     | BitShiftLeft of t * t
     | BitShiftRight of t * t
     | BitXor of t * t
-  [@@deriving compare, yojson_of]
+  [@@deriving compare, equal, yojson_of]
 
   let equal_syntax = [%compare.equal: t]
 
@@ -703,7 +703,7 @@ module Atom = struct
     | LessThan of Term.t * Term.t
     | Equal of Term.t * Term.t
     | NotEqual of Term.t * Term.t
-  [@@deriving compare, yojson_of]
+  [@@deriving compare, equal, yojson_of]
 
   let pp_with_pp_var pp_var fmt atom =
     (* add parens around terms that look like atoms to disambiguate *)
@@ -973,7 +973,7 @@ type new_eqs = new_eq list
 
 module Formula = struct
   (* redefined for yojson output *)
-  type var_eqs = VarUF.t
+  type var_eqs = VarUF.t [@@deriving compare, equal]
 
   let yojson_of_var_eqs var_eqs =
     `List
@@ -983,7 +983,7 @@ module Formula = struct
            :: jsons ))
 
 
-  type linear_eqs = LinArith.t Var.Map.t
+  type linear_eqs = LinArith.t Var.Map.t [@@deriving compare, equal]
 
   let yojson_of_linear_eqs linear_eqs = Var.Map.yojson_of_t LinArith.yojson_of_t linear_eqs
 
@@ -992,7 +992,7 @@ module Formula = struct
     ; linear_eqs: linear_eqs
           (** equalities of the form [x = l] where [l] is from linear arithmetic *)
     ; atoms: Atom.Set.t  (** not always normalized w.r.t. [var_eqs] and [linear_eqs] *) }
-  [@@deriving yojson_of]
+  [@@deriving compare, equal, yojson_of]
 
   let ttrue = {var_eqs= VarUF.empty; linear_eqs= Var.Map.empty; atoms= Atom.Set.empty}
 
@@ -1274,6 +1274,13 @@ type t =
   ; pruned: Atom.Set.t  (** collection of conditions that have to be true along the path *)
   ; both: Formula.t  (** [both = known ∧ pruned], allows us to detect contradictions *) }
 [@@deriving yojson_of]
+
+let compare phi1 phi2 =
+  if phys_equal phi1 phi2 then 0
+  else [%compare: Atom.Set.t * Formula.t] (phi1.pruned, phi1.known) (phi2.pruned, phi2.known)
+
+
+let equal = [%compare.equal: t]
 
 let ttrue = {known= Formula.ttrue; pruned= Atom.Set.empty; both= Formula.ttrue}
 
