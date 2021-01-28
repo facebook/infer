@@ -637,9 +637,9 @@ let check_all_valid callee_proc_name call_location {AbductiveDomain.pre; _} call
 let isl_check_all_invalid invalid_addr_callers callee_proc_name call_location
     {AbductiveDomain.pre; _} pre_astate astate =
   match astate.AbductiveDomain.isl_status with
-  | AbductiveDomain.PostStatus.ISLOk ->
+  | ISLOk ->
       Ok astate
-  | AbductiveDomain.PostStatus.ISLError ->
+  | ISLError ->
       AbstractValue.Map.fold
         (fun addr_pre (addr_caller, hist_caller) astate_result ->
           let mk_access_trace callee_access_trace =

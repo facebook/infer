@@ -52,24 +52,33 @@ module PostDomain : BaseDomainSig
     collapse into one. * *)
 module PreDomain : BaseDomainSig
 
-module PostStatus : sig
-  type t = ISLOk | ISLError [@@deriving equal]
-end
+(** Execution status, similar to {!PulseExecutionDomain} but for ISL (Incorrectness Separation
+    Logic) mode, where {!PulseExecutionDomain.ContinueProgram} can also contain "error specs" that
+    describe what happens when some addresses are invalid explicitly instead of relying on
+    [MustBeValid] attributes. *)
+type isl_status =
+  | ISLOk  (** ok triple: the program executes without error *)
+  | ISLError
+      (** Error specification: an invalid address recorded in the precondition will cause an error *)
+[@@deriving equal]
 
-(** biabduction-style pre/post state + skipped calls *)
+(** pre/post on a single program path *)
 type t = private
   { post: PostDomain.t  (** state at the current program point*)
-  ; pre: PreDomain.t  (** inferred pre at the current program point *)
-  ; topl: PulseTopl.state  (** state at of the Topl monitor at the current program point *)
-  ; skipped_calls: SkippedCalls.t  (** set of skipped calls *)
-  ; path_condition: PathCondition.t  (** arithmetic facts *)
-  ; isl_status: PostStatus.t  (** isl summary status *) }
+  ; pre: PreDomain.t  (** inferred procedure pre-condition leading to the current program point *)
+  ; path_condition: PathCondition.t
+        (** arithmetic facts true along the path (holding for both [pre] and [post] since abstract
+            values are immutable) *)
+  ; topl: PulseTopl.state
+        (** state at of the Topl monitor at the current program point, when Topl is enabled *)
+  ; skipped_calls: SkippedCalls.t  (** metadata: procedure calls for which no summary was found *)
+  ; isl_status: isl_status }
 
 val leq : lhs:t -> rhs:t -> bool
 
 val pp : Format.formatter -> t -> unit
 
-val set_isl_status : PostStatus.t -> t -> t
+val set_isl_status : isl_status -> t -> t
 
 val mk_initial : Procdesc.t -> t
 

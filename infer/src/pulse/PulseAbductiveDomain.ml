@@ -86,30 +86,31 @@ end
 (** represents the inferred pre-condition at each program point, biabduction style *)
 module PreDomain : BaseDomainSig = PostDomain
 
-module PostStatus = struct
-  type t = ISLOk | ISLError [@@deriving equal]
+type isl_status = ISLOk | ISLError [@@deriving equal, yojson_of]
 
-  let pp f s =
+let pp_isl_status f s =
+  if Config.pulse_isl then
     match s with
     | ISLOk ->
         F.pp_print_string f "ISLOk:"
     | ISLError ->
         F.pp_print_string f "ISLError:"
-end
+  else ()
 
-(** biabduction-style pre/post state + skipped calls *)
+
+(* see documentation in this file's .mli *)
 type t =
-  { post: PostDomain.t  (** state at the current program point*)
-  ; pre: PreDomain.t  (** inferred pre at the current program point *)
-  ; topl: (PulseTopl.state[@yojson.opaque])
-  ; skipped_calls: SkippedCalls.t  (** set of skipped calls *)
+  { post: PostDomain.t
+  ; pre: PreDomain.t
   ; path_condition: PathCondition.t
-  ; isl_status: (PostStatus.t[@yojson.opaque]) }
+  ; topl: (PulseTopl.state[@yojson.opaque])
+  ; skipped_calls: SkippedCalls.t
+  ; isl_status: isl_status }
 [@@deriving yojson_of]
 
 let pp f {post; pre; topl; path_condition; skipped_calls; isl_status} =
   F.fprintf f "@[<v>%a@;%a@;%a@;PRE=[%a]@;skipped_calls=%a@;TOPL=%a@]" PathCondition.pp
-    path_condition PostStatus.pp isl_status PostDomain.pp post PreDomain.pp pre SkippedCalls.pp
+    path_condition pp_isl_status isl_status PostDomain.pp post PreDomain.pp pre SkippedCalls.pp
     skipped_calls PulseTopl.pp_state topl
 
 
@@ -119,7 +120,7 @@ let set_path_condition path_condition astate = {astate with path_condition}
 
 let leq ~lhs ~rhs =
   SkippedCalls.leq ~lhs:lhs.skipped_calls ~rhs:rhs.skipped_calls
-  && PostStatus.equal lhs.isl_status rhs.isl_status
+  && equal_isl_status lhs.isl_status rhs.isl_status
   &&
   match
     BaseDomain.isograph_map BaseDomain.empty_mapping
