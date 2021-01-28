@@ -175,4 +175,32 @@ void call_set_field_via_local_bad() {
   }
 }
 
+void not_boolean_ok() {
+  bool t = true;
+  bool* b = (bool*)malloc(sizeof(bool));
+  if (b) {
+    *b = true;
+    *b = !t; // *b is false
+    if (*b) {
+      int* p = nullptr;
+      *p = 42;
+    }
+    free(b);
+  }
+}
+
+void not_boolean_bad() {
+  bool f = false;
+  bool* b = (bool*)malloc(sizeof(bool));
+  if (b) {
+    *b = false;
+    *b = !f; // *b is true
+    if (*b) {
+      int* p = nullptr;
+      *p = 42;
+    }
+    free(b);
+  }
+}
+
 } // namespace frontend
