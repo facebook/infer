@@ -119,20 +119,21 @@ let set_isl_status status astate = {astate with isl_status= status}
 let set_path_condition path_condition astate = {astate with path_condition}
 
 let leq ~lhs ~rhs =
-  SkippedCalls.leq ~lhs:lhs.skipped_calls ~rhs:rhs.skipped_calls
-  && equal_isl_status lhs.isl_status rhs.isl_status
-  &&
-  match
-    BaseDomain.isograph_map BaseDomain.empty_mapping
-      ~lhs:(rhs.pre :> BaseDomain.t)
-      ~rhs:(lhs.pre :> BaseDomain.t)
-  with
-  | NotIsomorphic ->
-      false
-  | IsomorphicUpTo foot_mapping ->
-      BaseDomain.is_isograph foot_mapping
-        ~lhs:(lhs.post :> BaseDomain.t)
-        ~rhs:(rhs.post :> BaseDomain.t)
+  phys_equal lhs rhs
+  || SkippedCalls.leq ~lhs:lhs.skipped_calls ~rhs:rhs.skipped_calls
+     && ((not Config.pulse_isl) || equal_isl_status lhs.isl_status rhs.isl_status)
+     &&
+     match
+       BaseDomain.isograph_map BaseDomain.empty_mapping
+         ~lhs:(rhs.pre :> BaseDomain.t)
+         ~rhs:(lhs.pre :> BaseDomain.t)
+     with
+     | NotIsomorphic ->
+         false
+     | IsomorphicUpTo foot_mapping ->
+         BaseDomain.is_isograph foot_mapping
+           ~lhs:(lhs.post :> BaseDomain.t)
+           ~rhs:(rhs.post :> BaseDomain.t)
 
 
 let initialize address astate = {astate with post= PostDomain.initialize address astate.post}

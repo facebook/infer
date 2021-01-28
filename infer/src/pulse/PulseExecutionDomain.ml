@@ -31,6 +31,8 @@ let continue astate = ContinueProgram astate
 let mk_initial pdesc = ContinueProgram (AbductiveDomain.mk_initial pdesc)
 
 let leq ~lhs ~rhs =
+  phys_equal lhs rhs
+  ||
   match (lhs, rhs) with
   | AbortProgram astate1, AbortProgram astate2 | ExitProgram astate1, ExitProgram astate2 ->
       AbductiveDomain.leq ~lhs:(astate1 :> AbductiveDomain.t) ~rhs:(astate2 :> AbductiveDomain.t)
