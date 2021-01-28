@@ -1,6 +1,0 @@
-java_library(
-  name='hello',
-  srcs=glob(["*.java"]),
-  deps=[],
-  visibility=['PUBLIC'],
-)

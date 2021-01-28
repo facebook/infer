@@ -114,7 +114,7 @@ module Target = struct
     match (mode, command) with
     | ClangCompilationDB _, _ ->
         add_flavor_internal target "compilation-database"
-    | ClangFlavors, Compile | JavaGenruleMaster, _ | CombinedGenrule, _ ->
+    | ClangFlavors, Compile ->
         target
     | JavaFlavor, _ ->
         add_flavor_internal target "infer-java-capture"
@@ -125,9 +125,6 @@ end
 let config =
   let clang_path =
     List.fold ["clang"; "install"; "bin"; "clang"] ~init:Config.fcp_dir ~f:Filename.concat
-  in
-  let get_java_genrule_config () =
-    ["infer.version=" ^ Version.versionString; "infer.mode=capture"]
   in
   let get_java_flavor_config () =
     if Config.buck_java_flavor_suppress_config then []
@@ -158,14 +155,10 @@ let config =
   fun buck_mode ->
     let args =
       match (buck_mode : BuckMode.t) with
-      | JavaGenruleMaster ->
-          get_java_genrule_config ()
       | JavaFlavor ->
           get_java_flavor_config ()
       | ClangFlavors ->
           get_flavors_config ()
-      | CombinedGenrule ->
-          get_java_genrule_config () @ get_flavors_config ()
       | ClangCompilationDB _ ->
           []
     in
@@ -201,7 +194,6 @@ module Query = struct
     | Set of string list
     | Target of string
     | Union of expr list
-    | Labelfilter of {label: string; expr: expr}
 
   exception NotATarget
 
@@ -226,8 +218,6 @@ module Query = struct
         Union exprs
 
 
-  let label_filter ~label expr = Labelfilter {label; expr}
-
   let rec pp fmt = function
     | Target s ->
         F.pp_print_string fmt s
@@ -241,8 +231,6 @@ module Query = struct
         F.fprintf fmt "set(%a)" (Pp.seq F.pp_print_string) sl
     | Union exprs ->
         Pp.seq ~sep:" + " pp fmt exprs
-    | Labelfilter {label; expr} ->
-        F.fprintf fmt "attrfilter(labels, %s, %a)" label pp expr
 
 
   (* example query json output
@@ -335,70 +323,12 @@ let parameters_with_argument =
 
 let get_accepted_buck_kinds_pattern (mode : BuckMode.t) =
   match mode with
-  | CombinedGenrule ->
-      "^(android|apple|cxx|java)_(binary|library)$"
   | ClangCompilationDB _ ->
       "^(apple|cxx)_(binary|library|test)$"
   | ClangFlavors ->
       "^(apple|cxx)_(binary|library)$"
-  | JavaGenruleMaster | JavaFlavor ->
+  | JavaFlavor ->
       "^(java|android)_library$"
-
-
-(** for genrule_master_mode, this is the label expected on the capture genrules *)
-let infer_enabled_label = "infer_enabled"
-
-(** for genrule_master_mode, this is the target name suffix for the capture genrules *)
-let genrule_suffix = "_infer"
-
-let config =
-  let clang_path =
-    List.fold ["clang"; "install"; "bin"; "clang"] ~init:Config.fcp_dir ~f:Filename.concat
-  in
-  let get_java_genrule_config () =
-    ["infer.version=" ^ Version.versionString; "infer.mode=capture"]
-  in
-  let get_java_flavor_config () =
-    if Config.buck_java_flavor_suppress_config then []
-    else
-      [ "infer_java.version=" ^ Version.versionString
-      ; Printf.sprintf "infer_java.binary=%s/infer" Config.bin_dir ]
-  in
-  let get_flavors_config () =
-    [ "client.id=infer.clang"
-    ; Printf.sprintf "*//infer.infer_bin=%s" Config.bin_dir
-    ; Printf.sprintf "*//infer.clang_compiler=%s" clang_path
-    ; Printf.sprintf "*//infer.clang_plugin=%s" Config.clang_plugin_path
-    ; "*//cxx.pch_enabled=false"
-    ; (* Infer doesn't support C++ modules yet (T35656509) *)
-      "*//cxx.modules_default=false"
-    ; "*//cxx.modules=false" ]
-    @ ( match Config.xcode_developer_dir with
-      | Some d ->
-          [Printf.sprintf "apple.xcode_developer_dir=%s" d]
-      | None ->
-          [] )
-    @
-    if List.is_empty Config.buck_blacklist then []
-    else
-      [ Printf.sprintf "*//infer.blacklist_regex=(%s)"
-          (String.concat ~sep:")|(" Config.buck_blacklist) ]
-  in
-  fun buck_mode ->
-    let args =
-      match (buck_mode : BuckMode.t) with
-      | JavaGenruleMaster ->
-          get_java_genrule_config ()
-      | JavaFlavor ->
-          get_java_flavor_config ()
-      | ClangFlavors ->
-          get_flavors_config ()
-      | CombinedGenrule ->
-          get_java_genrule_config () @ get_flavors_config ()
-      | ClangCompilationDB _ ->
-          []
-    in
-    List.fold args ~init:[] ~f:(fun acc f -> "--config" :: f :: acc)
 
 
 let resolve_pattern_targets (buck_mode : BuckMode.t) targets =
@@ -406,19 +336,12 @@ let resolve_pattern_targets (buck_mode : BuckMode.t) targets =
   |> ( match buck_mode with
      | ClangFlavors | ClangCompilationDB NoDependencies ->
          Fn.id
-     | CombinedGenrule | ClangCompilationDB DepsAllDepths | JavaGenruleMaster | JavaFlavor ->
+     | ClangCompilationDB DepsAllDepths | JavaFlavor ->
          Query.deps None
      | ClangCompilationDB (DepsUpToDepth depth) ->
          Query.deps (Some depth) )
   |> Query.kind ~pattern:(get_accepted_buck_kinds_pattern buck_mode)
-  |> ( if BuckMode.is_java_genrule_master_or_combined buck_mode then
-       Query.label_filter ~label:infer_enabled_label
-     else Fn.id )
   |> Query.exec ~buck_mode
-  |>
-  if BuckMode.is_java_genrule_master_or_combined buck_mode then
-    List.rev_map ~f:(fun s -> s ^ genrule_suffix)
-  else Fn.id
 
 
 type parsed_args =
@@ -497,7 +420,7 @@ let parse_command_and_targets (buck_mode : BuckMode.t) original_buck_args =
     match (buck_mode, parsed_args) with
     | ClangFlavors, {pattern_targets= []; alias_targets= []; normal_targets} ->
         normal_targets
-    | ( (ClangFlavors | CombinedGenrule | JavaGenruleMaster | ClangCompilationDB _ | JavaFlavor)
+    | ( (ClangFlavors | ClangCompilationDB _ | JavaFlavor)
       , {pattern_targets; alias_targets; normal_targets} ) ->
         pattern_targets |> List.rev_append alias_targets |> List.rev_append normal_targets
         |> resolve_pattern_targets buck_mode

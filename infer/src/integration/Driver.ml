@@ -18,10 +18,8 @@ type mode =
   | Analyze
   | Ant of {prog: string; args: string list}
   | BuckClangFlavor of {build_cmd: string list}
-  | BuckCombinedGenrule of {build_cmd: string list}
   | BuckCompilationDB of {deps: BuckMode.clang_compilation_db_deps; prog: string; args: string list}
   | BuckGenrule of {prog: string}
-  | BuckGenruleMaster of {build_cmd: string list}
   | BuckJavaFlavor of {build_cmd: string list}
   | Clang of {compiler: Clang.compiler; prog: string; args: string list}
   | ClangCompilationDB of {db_files: [`Escaped of string | `Raw of string] list}
@@ -41,15 +39,11 @@ let pp_mode fmt = function
       F.fprintf fmt "Ant driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | BuckClangFlavor {build_cmd} ->
       F.fprintf fmt "BuckClangFlavor driver mode: build_cmd = %a" Pp.cli_args build_cmd
-  | BuckCombinedGenrule {build_cmd} ->
-      F.fprintf fmt "BuckCombinedGenrule driver mode: build_cmd = %a" Pp.cli_args build_cmd
   | BuckCompilationDB {deps; prog; args} ->
       F.fprintf fmt "BuckCompilationDB driver mode:@\nprog = '%s'@\nargs = %a@\ndeps = %a" prog
         Pp.cli_args args BuckMode.pp_clang_compilation_db_deps deps
   | BuckGenrule {prog} ->
       F.fprintf fmt "BuckGenRule driver mode:@\nprog = '%s'" prog
-  | BuckGenruleMaster {build_cmd} ->
-      F.fprintf fmt "BuckGenrule driver mode:@\nbuild command = %a" Pp.cli_args build_cmd
   | BuckJavaFlavor {build_cmd} ->
       F.fprintf fmt "BuckJavaFlavor driver mode:@\nbuild command = %a" Pp.cli_args build_cmd
   | Clang {prog; args} ->
@@ -113,9 +107,6 @@ let capture ~changed_files = function
   | BuckClangFlavor {build_cmd} ->
       L.progress "Capturing in buck mode...@." ;
       BuckFlavors.capture build_cmd
-  | BuckCombinedGenrule {build_cmd} ->
-      L.progress "Capturing in buck combined genrule mode...@." ;
-      BuckGenrule.capture CombinedGenrule build_cmd
   | BuckCompilationDB {deps; prog; args} ->
       L.progress "Capturing using Buck's compilation database...@." ;
       let db_files =
@@ -125,9 +116,6 @@ let capture ~changed_files = function
   | BuckGenrule {prog} ->
       L.progress "Capturing for Buck genrule compatibility...@." ;
       JMain.from_arguments prog
-  | BuckGenruleMaster {build_cmd} ->
-      L.progress "Capturing for BuckGenruleMaster integration...@." ;
-      BuckGenrule.capture JavaGenruleMaster build_cmd
   | BuckJavaFlavor {build_cmd} ->
       L.progress "Capturing for BuckJavaFlavor integration...@." ;
       BuckJavaFlavor.capture build_cmd
@@ -252,7 +240,7 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
            && InferCommand.equal Run Config.command ->
         (* if doing capture + analysis of buck with flavors, we always need to merge targets before the analysis phase *)
         true
-    | Analyze | BuckGenruleMaster _ | BuckCombinedGenrule _ | BuckJavaFlavor _ | Gradle _ ->
+    | Analyze | BuckJavaFlavor _ | Gradle _ ->
         ResultsDir.RunState.get_merge_capture ()
     | _ ->
         false
@@ -336,13 +324,11 @@ let assert_supported_build_system build_system =
         match Config.buck_mode with
         | None ->
             error_no_buck_mode_specified ()
-        | Some CombinedGenrule ->
-            (`ClangJava, "buck combined genrule")
         | Some ClangFlavors ->
             (`Clang, "buck with flavors")
         | Some (ClangCompilationDB _) ->
             (`Clang, "buck compilation database")
-        | Some (JavaGenruleMaster | JavaFlavor) ->
+        | Some JavaFlavor ->
             (`Java, Config.string_of_build_system build_system)
       in
       assert_supported_mode analyzer build_string
@@ -369,8 +355,6 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
           Ant {prog; args}
       | BBuck, None ->
           error_no_buck_mode_specified ()
-      | BBuck, Some CombinedGenrule ->
-          BuckCombinedGenrule {build_cmd}
       | BBuck, Some (ClangCompilationDB deps) ->
           BuckCompilationDB {deps; prog; args= List.append args Config.buck_build_args}
       | BBuck, Some ClangFlavors when Config.is_checker_enabled Linters ->
@@ -378,8 +362,6 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
             "WARNING: the linters require --buck-compilation-database to be set.@ Alternatively, \
              set --no-linters to disable them and this warning.@." ;
           BuckClangFlavor {build_cmd}
-      | BBuck, Some JavaGenruleMaster ->
-          BuckGenruleMaster {build_cmd}
       | BBuck, Some JavaFlavor ->
           BuckJavaFlavor {build_cmd}
       | BBuck, Some ClangFlavors ->

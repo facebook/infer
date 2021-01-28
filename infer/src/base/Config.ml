@@ -730,20 +730,6 @@ and buck_mode =
     ~f:(set_mode `ClangFlavors)
     "Buck integration for clang-based targets (C/C++/Objective-C/Objective-C++)."
   |> ignore ;
-  CLOpt.mk_bool ~long:"buck-java"
-    ~deprecated:
-      [ "-genrule-master-mode"
-      ; "-no-genrule-master-mode"
-        (* --no-genrule-master-mode was used in the past to enable a now-defunct Java integration,
-           so both --genrule-master-mode and --no-genrule-master-mode enable the Java
-           integration... sorry about that. *)
-      ; "-no-flavors"
-        (* --no-flavors was used in the past to enable the Java integration in some cases, let's
-           keep it that way for compatibility for now *) ]
-    ~in_help:InferCommand.[(Capture, manual_buck)]
-    ~f:(set_mode `Java)
-    "Buck integration for Java targets."
-  |> ignore ;
   CLOpt.mk_symbol_opt ~long:"buck-compilation-database" ~deprecated:["-use-compilation-database"]
     ~in_help:InferCommand.[(Capture, manual_buck)]
     ~f:(fun s ->
@@ -752,11 +738,6 @@ and buck_mode =
     "Buck integration using the compilation database, with or without dependencies. Only includes \
      clang targets, as per Buck's $(i,#compilation-database) flavor."
     ~symbols:[("no-deps", `NoDeps); ("deps", `DepsTmp)]
-  |> ignore ;
-  CLOpt.mk_bool ~long:"buck-combined"
-    ~in_help:InferCommand.[(Capture, manual_buck)]
-    ~f:(set_mode `CombinedGenrule)
-    "Buck integration for clang-based and Java targets."
   |> ignore ;
   CLOpt.mk_bool ~long:"buck-java-flavor"
     ~in_help:InferCommand.[(Capture, manual_buck)]
@@ -2776,16 +2757,12 @@ and buck_mode : BuckMode.t option =
       None
   | `ClangFlavors, _ ->
       Some ClangFlavors
-  | `Java, _ ->
-      Some JavaGenruleMaster
   | `ClangCompilationDB `NoDeps, _ ->
       Some (ClangCompilationDB NoDependencies)
   | `ClangCompilationDB `DepsTmp, None ->
       Some (ClangCompilationDB DepsAllDepths)
   | `ClangCompilationDB `DepsTmp, Some depth ->
       Some (ClangCompilationDB (DepsUpToDepth depth))
-  | `CombinedGenrule, _ ->
-      Some CombinedGenrule
   | `JavaFlavor, _ ->
       Some JavaFlavor
 

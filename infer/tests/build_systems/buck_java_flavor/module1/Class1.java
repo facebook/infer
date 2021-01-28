@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package genrulecapture.module1;
+package buck_java_flavor.module1;
 
 public class Class1 {
   int x;
