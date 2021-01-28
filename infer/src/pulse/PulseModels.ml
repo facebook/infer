@@ -1027,6 +1027,11 @@ module JavaPreconditions = struct
     let event = ValueHistory.Call {f= Model "Preconditions.checkNotNull"; location; in_call= []} in
     let astate = PulseArithmetic.and_positive address astate in
     PulseOperations.write_id ret_id (address, event :: hist) astate |> ok_continue
+
+
+  let check_state_argument (address, _) : model =
+   fun _ ~callee_procname:_ _ ~ret:_ astate ->
+    PulseArithmetic.and_positive address astate |> ok_continue
 end
 
 module StringSet = Caml.Set.Make (String)
@@ -1318,6 +1323,10 @@ module ProcNameDispatcher = struct
           &:: "valueOf" <>$ capt_arg_payload $--> JavaInteger.value_of
         ; +map_context_tenv (PatternMatch.Java.implements_google "common.base.Preconditions")
           &:: "checkNotNull" $ capt_arg_payload $+...$--> JavaPreconditions.check_not_null
+        ; +map_context_tenv (PatternMatch.Java.implements_google "common.base.Preconditions")
+          &:: "checkState" $ capt_arg_payload $+...$--> JavaPreconditions.check_state_argument
+        ; +map_context_tenv (PatternMatch.Java.implements_google "common.base.Preconditions")
+          &:: "checkArgument" $ capt_arg_payload $+...$--> JavaPreconditions.check_state_argument
         ; +map_context_tenv PatternMatch.Java.implements_iterator
           &:: "remove" <>$ capt_arg_payload
           $+...$--> JavaIterator.remove ~desc:"remove"
