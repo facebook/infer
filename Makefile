@@ -464,6 +464,11 @@ endef
 
 .PHONY: $(DIRECT_TESTS:%=direct_%_test)
 $(DIRECT_TESTS:%=direct_%_test): infer
+	$(QUIET)$(call silent_on_success,Extracting test data, \
+	  if [[ -d $(INFER_DIR)/tests/codetoanalyze/dotnet/$(patsubst direct_dotnet_%_test,%,$@) ]]; then \
+	    cd $(INFER_DIR)/tests/codetoanalyze/dotnet/$(patsubst direct_dotnet_%_test,%,$@)/ && \
+	  	tar xJvf $(INFER_DIR)/tests/codetoanalyze/dotnet/$(patsubst direct_dotnet_%_test,%,$@)/jsons.tar.xz; \
+	  fi)
 	$(QUIET)$(call silent_on_success,Running test: $(subst _, ,$@),\
 	$(call silence_make,\
 	$(MAKE) -C \
