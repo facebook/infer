@@ -122,6 +122,7 @@ let leq ~lhs ~rhs =
   phys_equal lhs rhs
   || SkippedCalls.leq ~lhs:lhs.skipped_calls ~rhs:rhs.skipped_calls
      && ((not Config.pulse_isl) || equal_isl_status lhs.isl_status rhs.isl_status)
+     && PathCondition.equal lhs.path_condition rhs.path_condition
      &&
      match
        BaseDomain.isograph_map BaseDomain.empty_mapping
