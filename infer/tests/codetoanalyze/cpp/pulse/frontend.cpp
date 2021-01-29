@@ -203,4 +203,42 @@ void not_boolean_bad() {
   }
 }
 
+struct double_fields_struct {
+  int v;
+  int a;
+};
+
+double_fields_struct get_double_fields_struct() {
+  double_fields_struct b;
+  b.v = 42;
+  b.a = 42;
+  return b;
+}
+
+void init_double_fields_struct_ok() {
+  double_fields_struct y{get_double_fields_struct()};
+  if (y.v != 42) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
+struct single_field_struct {
+  int v;
+};
+
+single_field_struct get_single_field_struct() {
+  single_field_struct b;
+  b.v = 42;
+  return b;
+}
+
+void FP_init_single_field_struct_ok() {
+  single_field_struct y{get_single_field_struct()};
+  if (y.v != 42) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
 } // namespace frontend
