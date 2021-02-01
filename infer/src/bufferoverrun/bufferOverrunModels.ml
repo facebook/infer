@@ -279,7 +279,7 @@ let placement_new size_exp {exp= src_exp1; typ= t1} src_arg2_opt =
   match (t1.Typ.desc, src_arg2_opt) with
   | Tint _, None | Tint _, Some {typ= {Typ.desc= Tint _}} ->
       malloc ~can_be_zero:true (Exp.BinOp (Binop.PlusA (Some Typ.size_t), size_exp, src_exp1))
-  | Tstruct (CppClass (name, _)), None
+  | Tstruct (CppClass {name}), None
     when [%compare.equal: string list] (QualifiedCppName.to_list name) ["std"; "nothrow_t"] ->
       malloc ~can_be_zero:true size_exp
   | _, _ ->
@@ -668,7 +668,11 @@ end
 module Split = struct
   let std_vector model_env ~adds_at_least_one ({typ= vector_typ} as vec_arg) mem =
     match vector_typ with
-    | Typ.{desc= Tptr ({desc= Tstruct (CppClass (_, Template {args= TType elt_typ :: _}))}, _)} ->
+    | Typ.
+        { desc=
+            Tptr
+              ( {desc= Tstruct (CppClass {template_spec_info= Template {args= TType elt_typ :: _}})}
+              , _ ) } ->
         let arr_locs = StdVector.deref_of model_env elt_typ vec_arg mem in
         let size = if adds_at_least_one then Dom.Val.Itv.pos else Dom.Val.Itv.nat in
         StdVector.set_size model_env arr_locs size mem

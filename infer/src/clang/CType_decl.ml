@@ -299,7 +299,7 @@ let create_c_record_typename (tag_kind : Clang_ast_t.tag_kind) =
   | `TTK_Union ->
       Typ.Name.C.union_from_qual_name
   | `TTK_Class ->
-      Typ.Name.Cpp.from_qual_name Typ.NoTemplate
+      Typ.Name.Cpp.from_qual_name Typ.NoTemplate ~is_union:false
 
 
 let get_class_template_name = function
@@ -449,10 +449,12 @@ and get_record_friend_decl_type tenv definition_decl =
 and get_record_typename ?tenv decl =
   let open Clang_ast_t in
   let linters_mode = match tenv with Some _ -> false | None -> true in
+  let is_union_tag tag_kind = match tag_kind with `TTK_Union -> true | _ -> false in
   match (decl, tenv) with
   | RecordDecl (_, name_info, _, _, _, tag_kind, _), _ ->
       CAst_utils.get_qualified_name ~linters_mode name_info |> create_c_record_typename tag_kind
-  | ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, _, mangling, spec_info), Some tenv ->
+  | ClassTemplateSpecializationDecl (_, _, _, _, _, tag_kind, _, _, mangling, spec_info), Some tenv
+    ->
       let tname =
         match CAst_utils.get_decl spec_info.tsi_template_decl with
         | Some dec ->
@@ -462,15 +464,17 @@ and get_record_typename ?tenv decl =
       in
       let args = get_template_args tenv spec_info in
       let mangled = if String.equal "" mangling then None else Some mangling in
-      Typ.Name.Cpp.from_qual_name (Typ.Template {mangled; args}) tname
+      Typ.Name.Cpp.from_qual_name
+        (Typ.Template {mangled; args})
+        ~is_union:(is_union_tag tag_kind) tname
   | CXXRecordDecl (_, name_info, _, _, _, `TTK_Union, _, _), _ ->
       Typ.CUnion (CAst_utils.get_qualified_name ~linters_mode name_info)
-  | CXXRecordDecl (_, name_info, _, _, _, _, _, _), _
-  | ClassTemplatePartialSpecializationDecl (_, name_info, _, _, _, _, _, _, _, _), _
-  | ClassTemplateSpecializationDecl (_, name_info, _, _, _, _, _, _, _, _), _ ->
+  | CXXRecordDecl (_, name_info, _, _, _, tag_kind, _, _), _
+  | ClassTemplatePartialSpecializationDecl (_, name_info, _, _, _, tag_kind, _, _, _, _), _
+  | ClassTemplateSpecializationDecl (_, name_info, _, _, _, tag_kind, _, _, _, _), _ ->
       (* we use Typ.CppClass for C++ because we expect Typ.CppClass from *)
       (* types that have methods. And in C++ struct/class/union can have methods *)
-      Typ.Name.Cpp.from_qual_name Typ.NoTemplate
+      Typ.Name.Cpp.from_qual_name Typ.NoTemplate ~is_union:(is_union_tag tag_kind)
         (CAst_utils.get_qualified_name ~linters_mode name_info)
   | ObjCInterfaceDecl (_, name_info, _, _, _), _ | ObjCImplementationDecl (_, name_info, _, _, _), _
     ->

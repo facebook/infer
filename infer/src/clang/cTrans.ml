@@ -586,7 +586,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           builtin_pname
       | None ->
           let class_typename =
-            Typ.Name.Cpp.from_qual_name Typ.NoTemplate
+            Typ.Name.Cpp.from_qual_name Typ.NoTemplate ~is_union:false
               (CAst_utils.get_class_name_from_member name_info)
           in
           if is_inner_destructor then
@@ -3791,7 +3791,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       (Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact}, void_typ)
     in
     let class_tname =
-      Typ.Name.Cpp.from_qual_name Typ.NoTemplate (QualifiedCppName.of_list ["std"; "type_info"])
+      Typ.Name.Cpp.from_qual_name Typ.NoTemplate ~is_union:false
+        (QualifiedCppName.of_list ["std"; "type_info"])
     in
     let field_name = CGeneral_utils.mk_class_field_name class_tname "__type_name" in
     let ret_exp = Exp.Var ret_id in

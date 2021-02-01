@@ -102,14 +102,13 @@ and desc =
 and name =
   | CStruct of QualifiedCppName.t
   | CUnion of QualifiedCppName.t
-  (* qualified name does NOT contain template arguments of the class. It will contain template
-     args of its parent classes, for example: MyClass<int>::InnerClass<int> will store
-     "MyClass<int>", "InnerClass" *)
-  | CppClass of QualifiedCppName.t * template_spec_info
+      (** qualified name does NOT contain template arguments of the class. It will contain template
+          args of its parent classes, for example: MyClass<int>::InnerClass<int> will store
+          "MyClass<int>", "InnerClass" *)
+  | CppClass of {name: QualifiedCppName.t; template_spec_info: template_spec_info; is_union: bool}
   | JavaClass of JavaClassName.t
   | ObjcClass of QualifiedCppName.t * name list
-  (* ObjC class that conforms to a list of protocols,
-     e.g. id<NSFastEnumeration, NSCopying> *)
+      (** ObjC class that conforms to a list of protocols, e.g. id<NSFastEnumeration, NSCopying> *)
   | ObjcProtocol of QualifiedCppName.t
 
 and template_arg = TType of t | TInt of Int64.t | TNull | TNullPtr | TOpaque
@@ -215,7 +214,7 @@ module Name : sig
   end
 
   module Cpp : sig
-    val from_qual_name : template_spec_info -> QualifiedCppName.t -> t
+    val from_qual_name : template_spec_info -> is_union:bool -> QualifiedCppName.t -> t
     (** Create a typename from a C++ classname *)
 
     val is_class : t -> bool

@@ -182,7 +182,10 @@ module T = struct
   and name =
     | CStruct of QualifiedCppName.t
     | CUnion of QualifiedCppName.t
-    | CppClass of QualifiedCppName.t * template_spec_info
+    | CppClass of
+        { name: QualifiedCppName.t
+        ; template_spec_info: template_spec_info
+        ; is_union: bool [@compare.ignore] }
     | JavaClass of JavaClassName.t
     | ObjcClass of QualifiedCppName.t * name list
     | ObjcProtocol of QualifiedCppName.t
@@ -306,8 +309,8 @@ and pp_name_c_syntax pe f = function
       QualifiedCppName.pp f name
   | ObjcClass (name, protocol_names) ->
       F.fprintf f "%a%a" QualifiedCppName.pp name (pp_protocols pe) protocol_names
-  | CppClass (name, template_spec) ->
-      F.fprintf f "%a%a" QualifiedCppName.pp name (pp_template_spec_info pe) template_spec
+  | CppClass {name; template_spec_info} ->
+      F.fprintf f "%a%a" QualifiedCppName.pp name (pp_template_spec_info pe) template_spec_info
   | JavaClass name ->
       JavaClassName.pp f name
 
@@ -362,8 +365,8 @@ module Name = struct
      that, we can use these loosened compare functions instead. *)
   let loose_compare x y =
     match (x, y) with
-    | (CStruct name1 | CppClass (name1, NoTemplate)), (CStruct name2 | CppClass (name2, NoTemplate))
-      ->
+    | ( (CStruct name1 | CppClass {name= name1; template_spec_info= NoTemplate})
+      , (CStruct name2 | CppClass {name= name2; template_spec_info= NoTemplate}) ) ->
         QualifiedCppName.compare name1 name2
     | _ ->
         compare x y
@@ -377,8 +380,8 @@ module Name = struct
     | ObjcClass (name, protocol_names) ->
         let protocols = F.asprintf "%a" (pp_protocols Pp.text) protocol_names in
         QualifiedCppName.append_protocols name ~protocols
-    | CppClass (name, templ_args) ->
-        let template_suffix = F.asprintf "%a" (pp_template_spec_info Pp.text) templ_args in
+    | CppClass {name; template_spec_info} ->
+        let template_suffix = F.asprintf "%a" (pp_template_spec_info Pp.text) template_spec_info in
         QualifiedCppName.append_template_args_to_last name ~args:template_suffix
     | JavaClass _ ->
         QualifiedCppName.empty
@@ -387,13 +390,18 @@ module Name = struct
   let unqualified_name = function
     | CStruct name | CUnion name | ObjcProtocol name | ObjcClass (name, _) ->
         name
-    | CppClass (name, _) ->
+    | CppClass {name} ->
         name
     | JavaClass _ ->
         QualifiedCppName.empty
 
 
-  let get_template_spec_info = function CppClass (_, templ_args) -> Some templ_args | _ -> None
+  let get_template_spec_info = function
+    | CppClass {template_spec_info} ->
+        Some template_spec_info
+    | _ ->
+        None
+
 
   let name n =
     match n with
@@ -479,7 +487,9 @@ module Name = struct
   end
 
   module Cpp = struct
-    let from_qual_name template_spec_info qual_name = CppClass (qual_name, template_spec_info)
+    let from_qual_name template_spec_info ~is_union qual_name =
+      CppClass {name= qual_name; template_spec_info; is_union}
+
 
     let is_class = function CppClass _ -> true | _ -> false
   end

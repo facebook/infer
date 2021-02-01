@@ -48,7 +48,7 @@ let templated_name_of_class_name class_name =
   | ObjcClass (qual_name, protocol_names) ->
       let protocols = F.asprintf "%a" (Typ.pp_protocols Pp.text) protocol_names in
       (QualifiedCppName.append_protocols qual_name ~protocols, [])
-  | CppClass (qual_name, template_spec_info) ->
+  | CppClass {name= qual_name; template_spec_info} ->
       (qual_name, template_args_of_template_spec_info template_spec_info)
   | JavaClass mangled_name ->
       (QualifiedCppName.of_list [JavaClassName.to_string mangled_name], [])
