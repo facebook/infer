@@ -116,15 +116,12 @@ module Misc = struct
 
   let free_or_delete operation deleted_access : model =
    fun _ ~callee_procname:_ location ~ret:_ astate ->
-    (* NOTE: we could introduce a case-split explicitly on =0 vs ≠0 but instead only act on what we
-       currently know about the value. This is purely to avoid contributing to path explosion. *)
-    (* freeing 0 is a no-op *)
-    if PulseArithmetic.is_known_zero astate (fst deleted_access) then ok_continue astate
-    else
+    (* NOTE: freeing 0 is a no-op so we introduce a case split *)
+    let invalidation =
+      match operation with `Free -> Invalidation.CFree | `Delete -> Invalidation.CppDelete
+    in
+    let astates_alloc =
       let astate = PulseArithmetic.and_positive (fst deleted_access) astate in
-      let invalidation =
-        match operation with `Free -> Invalidation.CFree | `Delete -> Invalidation.CppDelete
-      in
       if Config.pulse_isl then
         match PulseOperations.invalidate_biad_isl location invalidation deleted_access astate with
         | Error _ as err ->
@@ -134,6 +131,9 @@ module Misc = struct
       else
         let<+> astate = PulseOperations.invalidate location invalidation deleted_access astate in
         astate
+    in
+    let astate_zero = PulseArithmetic.and_eq_int (fst deleted_access) IntLit.zero astate in
+    Ok (ContinueProgram astate_zero) :: astates_alloc
 end
 
 module C = struct

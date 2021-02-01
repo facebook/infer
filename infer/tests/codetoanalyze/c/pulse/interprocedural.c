@@ -13,10 +13,10 @@ void if_freed_invalid_latent(int x, int* y) {
   }
 }
 
-void FN_call_if_freed_invalid_latent(int x) {
+void call_if_freed_invalid_latent(int x) {
   if (x > 0) {
     if_freed_invalid_latent(x, NULL);
   }
 }
 
-void FN_call_if_freed_invalid2_bad() { FN_call_if_freed_invalid_latent(7); }
+void call_if_freed_invalid2_bad() { call_if_freed_invalid_latent(7); }
