@@ -36,4 +36,4 @@ type summary = AbductiveDomain.summary base_t [@@deriving compare, equal, yojson
 
 val summary_of_posts : Procdesc.t -> t list -> summary list
 
-val force_exit_program : Procdesc.t -> t list -> t list
+val force_exit_program : Procdesc.t -> t -> t option

@@ -4,17 +4,35 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
+
 open! IStd
 module L = Logging
-open IResult.Let_syntax
 open PulseBasicInterface
 open PulseDomainInterface
 
 type t = AbductiveDomain.t
 
-type 'a access_result = 'a PulseReport.access_result
+module Import = struct
+  type access_mode = Read | Write | NoAccess
 
-type access_mode = Read | Write | NoAccess
+  type 'abductive_domain_t base_t = 'abductive_domain_t ExecutionDomain.base_t =
+    | ContinueProgram of 'abductive_domain_t
+    | ExitProgram of AbductiveDomain.summary
+    | AbortProgram of AbductiveDomain.summary
+    | LatentAbortProgram of {astate: AbductiveDomain.summary; latent_issue: LatentIssue.t}
+    | ISLLatentMemoryError of 'abductive_domain_t
+
+  type 'a access_result = 'a PulseReport.access_result
+
+  include IResult.Let_syntax
+
+  let ( let<*> ) x f = match x with Error _ as err -> [err] | Ok y -> f y
+
+  let ( let<+> ) x f =
+    match x with Error _ as err -> [err] | Ok y -> [Ok (ExecutionDomain.ContinueProgram (f y))]
+end
+
+include Import
 
 let check_addr_access access_mode location (address, history) astate =
   let access_trace = Trace.Immediate {location; history} in
@@ -665,8 +683,8 @@ let conservatively_initialize_args arg_values ({AbductiveDomain.post} as astate)
   AbstractValue.Set.fold AbductiveDomain.initialize reachable_values astate
 
 
-let call ~caller_proc_desc tenv err_log ~(callee_data : (Procdesc.t * PulseSummary.t) option)
-    call_loc callee_pname ~ret ~actuals ~formals_opt (astate : AbductiveDomain.t) =
+let call ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.t) option) call_loc
+    callee_pname ~ret ~actuals ~formals_opt (astate : AbductiveDomain.t) =
   let get_arg_values () = List.map actuals ~f:(fun ((value, _), _) -> value) in
   match callee_data with
   | Some (callee_proc_desc, exec_states) ->
@@ -688,7 +706,7 @@ let call ~caller_proc_desc tenv err_log ~(callee_data : (Procdesc.t * PulseSumma
                let pvar = Pvar.mk name callee_pname in
                (Var.of_pvar pvar, capture_mode) )
       in
-      let+ astate, captured_vars_with_actuals =
+      let<*> astate, captured_vars_with_actuals =
         match actuals with
         | (actual_closure, _) :: _
           when not (Procname.is_objc_block callee_pname || List.is_empty captured_vars) ->
@@ -718,15 +736,13 @@ let call ~caller_proc_desc tenv err_log ~(callee_data : (Procdesc.t * PulseSumma
             | Unsat ->
                 (* couldn't apply pre/post pair *)
                 posts
-            | Sat post -> (
-              match PulseReport.report_error caller_proc_desc tenv err_log post with
-              | Error Unsat ->
-                  posts
-              | Error (Sat post) | Ok post ->
-                  post :: posts ) )
+            | Sat post ->
+                post :: posts )
   | None ->
       (* no spec found for some reason (unknown function, ...) *)
       L.d_printfln "No spec found for %a@\n" Procname.pp callee_pname ;
-      let astate = conservatively_initialize_args (get_arg_values ()) astate in
-      unknown_call call_loc (SkippedKnownCall callee_pname) ~ret ~actuals ~formals_opt astate
-      |> fun astate -> Ok [ExecutionDomain.ContinueProgram astate]
+      let astate =
+        conservatively_initialize_args (get_arg_values ()) astate
+        |> unknown_call call_loc (SkippedKnownCall callee_pname) ~ret ~actuals ~formals_opt
+      in
+      [Ok (ContinueProgram astate)]
