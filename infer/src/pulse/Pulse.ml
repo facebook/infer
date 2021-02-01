@@ -433,13 +433,21 @@ module DisjunctiveAnalyzer =
       let widen_policy = `UnderApproximateAfterNumIterations Config.pulse_widen_threshold
     end)
 
+let with_debug_exit_node proc_desc ~f =
+  AnalysisCallbacks.html_debug_new_node_session
+    (Procdesc.get_exit_node proc_desc)
+    ~pp_name:(fun fmt -> F.pp_print_string fmt "pulse summary creation")
+    ~f
+
+
 let checker ({InterproceduralAnalysis.proc_desc; err_log} as analysis_data) =
   AbstractValue.State.reset () ;
   let initial = [ExecutionDomain.mk_initial proc_desc] in
   match DisjunctiveAnalyzer.compute_post analysis_data ~initial proc_desc with
   | Some posts ->
-      let summary = PulseSummary.of_posts proc_desc posts in
-      report_topl_errors proc_desc err_log summary ;
-      Some summary
+      with_debug_exit_node proc_desc ~f:(fun () ->
+          let summary = PulseSummary.of_posts proc_desc posts in
+          report_topl_errors proc_desc err_log summary ;
+          Some summary )
   | None ->
       None
