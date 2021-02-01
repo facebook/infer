@@ -35,3 +35,31 @@ void assign_implicit_cast_bad() {
     free(b);
   }
 }
+
+void assign_paren_ok() {
+  bool* b = (bool*)malloc(sizeof(bool));
+  int x = 42, y = 33;
+  if (b) {
+    *b = true;
+    *b = (x == y);
+    if (*b) {
+      int* p = 0;
+      *p = 5;
+    }
+    free(b);
+  }
+}
+
+void assign_paren_bad() {
+  bool* b = (bool*)malloc(sizeof(bool));
+  int x = 42, y = 42;
+  if (b) {
+    *b = false;
+    *b = (x == y);
+    if (*b) {
+      int* p = 0;
+      *p = 5;
+    }
+    free(b);
+  }
+}

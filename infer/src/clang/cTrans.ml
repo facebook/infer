@@ -1092,17 +1092,28 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         (* In the translation of [LHS=RHS;], if [RHS] is a complicated expression that introduced
            new nodes, eg a conditional expression, it forces to introduce nodes for [LHS], in order
            to avoid an incorrect statement order. *)
+        let rec is_complex_rhs stmt =
+          match (stmt : Clang_ast_t.stmt) with
+          | ConditionalOperator _
+          | UnaryOperator (_, _, _, {uoi_kind= `LNot})
+          | BinaryOperator
+              (_, _, _, {boi_kind= `Cmp | `LT | `GT | `LE | `GE | `EQ | `NE | `LAnd | `LOr}) ->
+              true
+          | UnaryOperator (_, stmts, _, _)
+          | BinaryOperator (_, stmts, _, _)
+          | ImplicitCastExpr (_, stmts, _, _)
+          | ParenExpr (_, stmts, _) ->
+              List.exists stmts ~f:is_complex_rhs
+          | _ ->
+              false
+        in
         let e1_control =
-          match (binary_operator_info.Clang_ast_t.boi_kind, s2) with
-          | ( `Assign
-            , Clang_ast_t.(
-                ( ConditionalOperator _
-                | UnaryOperator _
-                | ImplicitCastExpr (_, ([ConditionalOperator _] | [UnaryOperator _]), _, _) )) ) ->
+          match binary_operator_info.Clang_ast_t.boi_kind with
+          | `Assign when is_complex_rhs s2 ->
               let trans_state' = PriorityNode.try_claim_priority_node trans_state' stmt_info in
               PriorityNode.compute_controls_to_parent trans_state' sil_loc node_name stmt_info
                 [res_trans_e1.control]
-          | _, _ ->
+          | _ ->
               res_trans_e1.control
         in
         let all_res_trans = [e1_control; res_trans_e2.control] @ binop_control in
