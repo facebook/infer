@@ -133,12 +133,13 @@ end = struct
     let is_var_in xs e =
       Option.exists ~f:(fun x -> Var.Set.mem x xs) (Var.of_trm e)
     in
-    ( is_var_in xs e
-    || is_var_in xs f
-    || Theory.is_uninterpreted e
-       && Iter.exists ~f:(is_var_in xs) (Trm.trms e)
-    || Theory.is_uninterpreted f
-       && Iter.exists ~f:(is_var_in xs) (Trm.trms f) )
+    let noninterp_with_solvable_var_in xs e =
+      is_var_in xs e
+      || Theory.is_noninterpreted e
+         && Iter.exists ~f:(is_var_in xs) (Theory.solvable_trms e)
+    in
+    ( noninterp_with_solvable_var_in xs e
+    || noninterp_with_solvable_var_in xs f )
     $> fun b ->
     [%Trace.info
       "is_valid_eq %a%a=%a = %b" Var.Set.pp_xs xs Trm.pp e Trm.pp f b]
