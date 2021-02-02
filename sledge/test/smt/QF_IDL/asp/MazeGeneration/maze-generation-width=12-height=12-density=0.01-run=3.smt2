@@ -1,0 +1,11 @@
+(set-info :smt-lib-version 2.6)
+(set-logic QF_IDL)
+(set-info :category "industrial")
+(set-info :status unsat)
+(declare-fun var_1 () Bool)
+(assert (and
+  (= var_1 true)
+  (not var_1)
+))
+(check-sat)
+(exit)
