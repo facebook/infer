@@ -88,16 +88,14 @@ end = struct
 
   (** compose a substitution with a mapping *)
   let compose1 ~key ~data r =
-    match (key : Trm.t) with
-    | Z _ | Q _ -> r
-    | _ when Trm.equal key data -> r
-    | _ ->
-        assert (
-          Option.for_all ~f:(Trm.equal key) (Trm.Map.find key r)
-          || fail "domains intersect: %a" Trm.pp key () ) ;
-        let s = Trm.Map.singleton key data in
-        let r' = Trm.Map.map_endo ~f:(norm s) r in
-        Trm.Map.add ~key ~data r'
+    if Trm.equal key data then r
+    else (
+      assert (
+        Option.for_all ~f:(Trm.equal key) (Trm.Map.find key r)
+        || fail "domains intersect: %a" Trm.pp key () ) ;
+      let s = Trm.Map.singleton key data in
+      let r' = Trm.Map.map_endo ~f:(norm s) r in
+      Trm.Map.add ~key ~data r' )
 
   (** add an identity entry if the term is not already present *)
   let extend e s =
