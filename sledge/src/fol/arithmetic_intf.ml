@@ -35,6 +35,9 @@ module type S = sig
       [get_const a] is [Some q], [Interpreted] if the principal operation of
       [a] is interpreted, and [Uninterpreted] otherwise. *)
 
+  val is_uninterpreted : t -> bool
+  (** [is_uninterpreted a] iff [classify a = Uninterpreted] *)
+
   (** Construct compound terms *)
 
   val neg : t -> t

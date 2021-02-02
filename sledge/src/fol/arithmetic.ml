@@ -180,6 +180,15 @@ struct
         | _ -> Uninterpreted )
       | `Many -> Interpreted
 
+    let is_uninterpreted poly =
+      match Sum.only_elt poly with
+      | Some (mono, _) -> (
+        match Prod.classify mono with
+        | `Zero -> false
+        | `One (_, 1) -> false
+        | _ -> true )
+      | None -> false
+
     let get_const poly =
       match Sum.classify poly with
       | `Zero -> Some Q.zero
