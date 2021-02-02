@@ -59,7 +59,13 @@ module type S = sig
   (** Traverse *)
 
   val trms : t -> trm iter
-  (** [trms a] enumerates the indeterminate terms appearing in [a] *)
+  (** [trms a] is the maximal foreign or noninterpreted proper subterms of
+      [a]. Considering an arithmetic term as a polynomial,
+      [trms (c × (Σᵢ₌₁ⁿ cᵢ × Πⱼ₌₁ᵐᵢ
+      Xᵢⱼ^pᵢⱼ))] is the sequence of monomials
+      [Πⱼ₌₁ᵐᵢ Xᵢⱼ^pᵢⱼ] for each [i]. If the arithmetic
+      term is a monomial, [trms (Πⱼ₌₁ᵐ Xⱼ^pⱼ)] is the sequence
+      of factors [Xⱼ] for each [j]. *)
 
   val map : t -> f:(trm -> trm) -> t
   (** [map ~f a] is [a] with each maximal non-interpreted subterm

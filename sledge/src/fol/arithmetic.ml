@@ -298,7 +298,10 @@ struct
           Sum.iter poly ~f:(fun mono _ ->
               if not (Mono.equal_one mono) then f mono ) )
 
-    let trms poly = Iter.flat_map ~f:Mono.trms (monos poly)
+    let trms poly =
+      match get_mono poly with
+      | Some mono -> Mono.trms mono
+      | None -> Iter.map ~f:trm_of_mono (monos poly)
 
     let map poly ~f =
       [%trace]
