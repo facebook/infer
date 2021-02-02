@@ -169,6 +169,19 @@ end) : S with type key = Key.t = struct
     in
     Option.map ~f:(fun v -> (v, m)) !found
 
+  let find_or_add k v m =
+    let found = ref None in
+    let m =
+      M.update k
+        (function
+          | None -> Some v
+          | v ->
+              found := v ;
+              v )
+        m
+    in
+    match !found with Some v -> `Found v | None -> `Added m
+
   let pop m = choose m |> Option.map ~f:(fun (k, v) -> (k, v, remove k m))
 
   let pop_min_binding m =

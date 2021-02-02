@@ -113,4 +113,34 @@ let%test_module _ =
                      (Var (id 0) (name 2))))))
               (pnd ())))|} ;
       [%expect {| |}]
+
+    let%expect_test _ =
+      replay
+        {|(Dnf
+            (Eq0
+              (Arith
+                (((((Var (id 0) (name 11)) 1) ((Var (id 0) (name 12)) 1)) 1)
+                  ((((Var (id 11) (name a)) 1)) -1)))))|} ;
+      [%expect {| |}]
+
+    let%expect_test _ =
+      replay
+        {|(Normalize
+            ((xs ()) (sat true)
+              (rep
+                (((Var (id 7) (name 16)) (Z 8)) ((Var (id 0) (name 8)) (Q 3/2))
+                  ((Var (id 0) (name 17)) (Z 3)) ((Var (id 0) (name 12)) (Z 8))
+                  ((Var (id 0) (name 11)) (Z 8))
+                  ((Var (id 0) (name 10)) (Var (id 0) (name 10)))
+                  ((Var (id 0) (name 1)) (Z 3)) ((Var (id 0) (name 0)) (Z 8))))
+              (cls
+                (((Q 3/2) ((Var (id 0) (name 8))))
+                  ((Z 8)
+                    ((Var (id 0) (name 12)) (Var (id 0) (name 0))
+                      (Var (id 7) (name 16)) (Var (id 0) (name 11))))
+                  ((Z 3) ((Var (id 0) (name 17)) (Var (id 0) (name 1))))))
+              (pnd ()))
+            (Trm
+              (Arith (((((Var (id 0) (name 11)) 1) ((Var (id 0) (name 12)) 1)) 1)))))|} ;
+      [%expect {| |}]
   end )

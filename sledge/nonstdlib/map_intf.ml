@@ -88,6 +88,10 @@ module type S = sig
   val find_and_remove : key -> 'a t -> ('a * 'a t) option
   (** Find and remove the binding for a key. *)
 
+  val find_or_add : key -> 'a -> 'a t -> [`Added of 'a t | `Found of 'a]
+  (** Find the value bound to the given key if there is one, or otherwise
+      add a binding for the given key and value. *)
+
   val pop : 'a t -> (key * 'a * 'a t) option
   (** Find and remove an unspecified binding. Different bindings may be
       chosen for equivalent maps. [O(1)]. *)

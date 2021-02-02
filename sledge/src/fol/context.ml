@@ -31,7 +31,6 @@ module Subst : sig
   val for_alli : t -> f:(key:Trm.t -> data:Trm.t -> bool) -> bool
   val to_iter : t -> (Trm.t * Trm.t) iter
   val to_list : t -> (Trm.t * Trm.t) list
-  val extend : Trm.t -> t -> t option
   val compose1 : key:Trm.t -> data:Trm.t -> t -> t
   val compose : t -> t -> t
   val map_entries : f:(Trm.t -> Trm.t) -> t -> t
@@ -104,17 +103,6 @@ end = struct
       let s = Trm.Map.singleton key data in
       let r' = Trm.Map.map_endo ~f:(norm s) r in
       Trm.Map.add ~key ~data r' )
-
-  (** add an identity entry if the term is not already present *)
-  let extend e s =
-    let exception Found in
-    match
-      Trm.Map.update e s ~f:(function
-        | Some _ -> raise_notrace Found
-        | None -> e )
-    with
-    | exception Found -> None
-    | s -> Some s
 
   (** map over a subst, applying [f] to both domain and range, requires that
       [f] is injective and for any set of terms [E], [f\[E\]] is disjoint
@@ -405,23 +393,34 @@ let invariant r =
 
 (* Extending the carrier ==================================================*)
 
-let rec extend_ a s =
+let rec norm_extend_ a x =
   [%trace]
-    ~call:(fun {pf} -> pf "@ %a@ %a" Trm.pp a Subst.pp s)
-    ~retn:(fun {pf} s' -> pf "%a" Subst.pp_diff (s, s'))
+    ~call:(fun {pf} -> pf "@ %a@ %a" Trm.pp a pp_raw x)
+    ~retn:(fun {pf} (a', x') ->
+      pf "%a@ %a" Trm.pp a' pp_diff (x, x') ;
+      assert (Trm.equal a' (Subst.norm x'.rep a)) )
   @@ fun () ->
-  match Theory.classify a with
-  | InterpAtom -> s
-  | InterpApp -> Iter.fold ~f:extend_ (Trm.trms a) s
-  | NonInterpAtom ->
-      (* add uninterpreted terms if missing *)
-      Trm.Map.change a s ~f:(function None -> Some a | a' -> a')
-  | UninterpApp -> (
-    (* add uninterpreted terms if missing *)
-    match Subst.extend a s with
-    | None -> s
-    (* and their subterms if newly added *)
-    | Some s -> Iter.fold ~f:extend_ (Trm.trms a) s )
+  if Theory.is_noninterpreted a then
+    (* add noninterpreted terms *)
+    match Trm.Map.find_or_add a a x.rep with
+    | `Found a' -> (a', x)
+    | `Added rep ->
+        (* and their subterms if newly added *)
+        let x = {x with rep} in
+        let a', x = Trm.fold_map ~f:norm_extend_ a x in
+        (a', x)
+  else
+    (* add subterms of interpreted terms *)
+    Trm.fold_map ~f:norm_extend_ a x
+
+let norm_extend a x =
+  [%trace]
+    ~call:(fun {pf} -> pf "@ %a@ %a" Trm.pp a pp_raw x)
+    ~retn:(fun {pf} (a', x') ->
+      pf "%a@ %a" Trm.pp a' pp_diff (x, x') ;
+      pre_invariant x' ;
+      assert (Trm.equal a' (Subst.norm x'.rep a)) )
+  @@ fun () -> norm_extend_ a x
 
 (** add a term to the carrier *)
 let extend a x =
@@ -430,9 +429,7 @@ let extend a x =
     ~retn:(fun {pf} x' ->
       pf "%a" pp_diff (x, x') ;
       pre_invariant x' )
-  @@ fun () ->
-  let rep = extend_ a x.rep in
-  if rep == x.rep then x else {x with rep}
+  @@ fun () -> snd (norm_extend a x)
 
 (* Propagation ============================================================*)
 
@@ -614,7 +611,12 @@ let implies r b =
   [%Trace.retn fun {pf} -> pf "%b"]
 
 let refutes r b = Fml.equal Fml.ff (canon_f r b)
-let normalize r e = Term.map_trms ~f:(canon r) e
+
+let normalize x a =
+  [%trace]
+    ~call:(fun {pf} -> pf "@ %a@ %a" Term.pp a pp x)
+    ~retn:(fun {pf} -> pf "%a" Term.pp)
+  @@ fun () -> Term.map_trms ~f:(canon x) a
 
 let cls_of r e =
   let e' = Subst.apply r.rep e in
