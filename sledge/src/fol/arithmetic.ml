@@ -294,7 +294,9 @@ struct
     (* traverse *)
 
     let monos poly =
-      Iter.from_iter (fun f -> Sum.iter poly ~f:(fun mono _ -> f mono))
+      Iter.from_iter (fun f ->
+          Sum.iter poly ~f:(fun mono _ ->
+              if not (Mono.equal_one mono) then f mono ) )
 
     let trms poly = Iter.flat_map ~f:Mono.trms (monos poly)
 
