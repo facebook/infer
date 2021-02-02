@@ -10,15 +10,16 @@ CLANG_ARGS?=-O0
 SLEDGE_DBG=$(CURDIR)/../_build/debug/cli/sledge_cli.exe
 SLEDGE_OPT=$(CURDIR)/../_build/release/cli/sledge_cli.exe
 
-# additional arguments to pass to sledge translate, disassemble, analyze, and smt
+# additional arguments to pass to sledge translate, disassemble, analyze, smt, and report
 SLEDGE_T_ARGS?=
 SLEDGE_D_ARGS?=
 SLEDGE_A_ARGS?=-bound 5
 SLEDGE_S_ARGS?=
+SLEDGE_R_ARGS?=
 
 # limits for each test run
 TIMEOUT?=300
-MEMOUT?=4096
+MEMOUT?=6
 
 sledge_dbg=./wrap.sh $(TIMEOUT) $(MEMOUT) $(SLEDGE_DBG)
 sledge_opt=./wrap.sh $(TIMEOUT) $(MEMOUT) $(SLEDGE_OPT)
@@ -98,7 +99,7 @@ baseline/translate.sexp: translate.sexp
 	cp translate.sexp $@
 
 translate.html: translate.sexp
-	$(sledge_report) html -baseline baseline/translate.sexp translate.sexp -output $@
+	$(sledge_report) html $(SLEDGE_R_ARGS) -baseline baseline/translate.sexp translate.sexp -output $@
 
 translate-status: translate.sexp
 	$(sledge_report) status -baseline baseline/translate.sexp translate.sexp | column -ts$$'\t'
@@ -150,19 +151,19 @@ SmtTests:=$(shell find smt -name '*.smt2' 2>/dev/null)
 smt:
 	-parallel --bar $(sledge_dbg) smt $(SLEDGE_S_ARGS) ::: $(SmtTests)
 
-parallel_sledge_opt_smt=parallel --shuf --bar $(sledge_opt) smt -append-report $(SLEDGE_S_ARGS) :::
+parallel_sledge_opt_smt=parallel --use-cores-instead-of-threads --shuf --bar $(sledge_opt) smt -append-report $(SLEDGE_S_ARGS) :::
 
 smt-perf1:
-	@$(parallel_sledge_opt_smt) $(SmtTests)
+	-@$(parallel_sledge_opt_smt) $(SmtTests)
 
 smt-perf3:
-	@$(parallel_sledge_opt_smt) $(SmtTests) $(SmtTests) $(SmtTests)
+	-@$(parallel_sledge_opt_smt) $(SmtTests) $(SmtTests) $(SmtTests)
 
 smt-perf5:
-	@$(parallel_sledge_opt_smt) $(SmtTests) $(SmtTests) $(SmtTests) $(SmtTests) $(SmtTests)
+	-@$(parallel_sledge_opt_smt) $(SmtTests) $(SmtTests) $(SmtTests) $(SmtTests) $(SmtTests)
 
 smt-perf7:
-	@$(parallel_sledge_opt_smt) $(SmtTests) $(SmtTests) $(SmtTests) $(SmtTests) $(SmtTests) $(SmtTests) $(SmtTests)
+	-@$(parallel_sledge_opt_smt) $(SmtTests) $(SmtTests) $(SmtTests) $(SmtTests) $(SmtTests) $(SmtTests) $(SmtTests)
 
 .PHONY: smt.sexp
 smt.sexp:
@@ -172,7 +173,7 @@ baseline/smt.sexp: smt.sexp
 	cp smt.sexp $@
 
 smt.html: smt.sexp
-	$(sledge_report) html -baseline baseline/smt.sexp smt.sexp -output $@
+	$(sledge_report) html $(SLEDGE_R_ARGS) -baseline baseline/smt.sexp smt.sexp -output $@
 
 smt-status: smt.sexp
 	$(sledge_report) status -baseline baseline/smt.sexp smt.sexp | column -ts$$'\t'
@@ -194,7 +195,7 @@ baseline/llvm.sexp: llvm.sexp
 	cp llvm.sexp $@
 
 llvm.html: llvm.sexp
-	$(sledge_report) html -baseline baseline/llvm.sexp llvm.sexp -output $@
+	$(sledge_report) html $(SLEDGE_R_ARGS) -baseline baseline/llvm.sexp llvm.sexp -output $@
 
 llvm-status: llvm.sexp
 	$(sledge_report) status -baseline baseline/llvm.sexp llvm.sexp | column -ts$$'\t'

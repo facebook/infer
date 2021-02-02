@@ -661,7 +661,8 @@ let cmp perf x y =
       if o <> 0 then o
       else
         match (List.hd x.status, List.hd y.status) with
-        | Some (Safe _ | Unsafe _ | Ok), Some (Safe _ | Unsafe _ | Ok)
+        | ( Some (Safe _ | Unsafe _ | Ok | Unsound | Incomplete)
+          , Some (Safe _ | Unsafe _ | Ok | Unsound | Incomplete) )
           when perf -> (
           match (x.times_deltas, y.times_deltas) with
           | Some xtd, Some ytd ->
@@ -670,7 +671,8 @@ let cmp perf x y =
           | Some _, None -> 1
           | None, Some _ -> -1
           | None, None -> String.compare x.name y.name )
-        | Some (Safe _ | Unsafe _ | Ok), Some (Safe _ | Unsafe _ | Ok) -> (
+        | ( Some (Safe _ | Unsafe _ | Ok | Unsound | Incomplete)
+          , Some (Safe _ | Unsafe _ | Ok | Unsound | Incomplete) ) -> (
           match (x.gcs_deltas, y.gcs_deltas) with
           | Some xgc, Some ygc ->
               -Float.(
@@ -681,8 +683,8 @@ let cmp perf x y =
           | Some _, None -> 1
           | None, Some _ -> -1
           | None, None -> String.compare x.name y.name )
-        | _, Some (Safe _ | Unsafe _ | Ok) -> -1
-        | Some (Safe _ | Unsafe _ | Ok), _ -> 1
+        | _, Some (Safe _ | Unsafe _ | Ok | Unsound | Incomplete) -> -1
+        | Some (Safe _ | Unsafe _ | Ok | Unsound | Incomplete), _ -> 1
         | s, t ->
             Option.compare (Ord.opp Report.compare_status) s t
             |> fun o -> if o <> 0 then o else String.compare x.name y.name )

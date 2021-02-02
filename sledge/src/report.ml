@@ -126,7 +126,7 @@ let process_times () =
     ; cstime= tms_cstime }
 
 let gc_stats () =
-  let words_to_MB n = n /. float (Sys.word_size / 8) /. (1024. *. 1024.) in
+  let words_to_MB n = n *. float (Sys.word_size / 8) /. (1024. *. 1024.) in
   let ctrl = Gc.get () in
   let stat = Gc.quick_stat () in
   let allocated =

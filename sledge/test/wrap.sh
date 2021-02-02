@@ -8,12 +8,12 @@
 # wrap execution of sledge with time and memory limits
 # and add status entries to report in case of an unexpected exit
 
-# usage: wrap.sh <timeout(sec)> <memout(MB)> <command> <testdir/testname>
+# usage: wrap.sh <timeout(sec)> <memout(GB)> <command> <testdir/testname>
 
 set -u
 
 timeout=$1
-memout=$(( $2*1024 ))
+memout=$(( $2*1024*1024 ))
 command=${@: 3: $#-3}
 test=${@: -1}
 
