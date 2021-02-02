@@ -179,14 +179,18 @@ let wait_for_updates pool buffer =
   update
 
 
-let killall pool ~slot status =
-  Array.iter pool.slots ~f:(fun {pid} ->
+let killall_silently slots =
+  (* Note: do not write anything in this function, as it may execute after the file
+     descriptors to stdout/stderr have been closed. *)
+  Array.iter slots ~f:(fun {pid} ->
       match Signal.send Signal.term (`Pid pid) with `Ok | `No_such_process -> () ) ;
-  Array.iter pool.slots ~f:(fun {pid} ->
+  Array.iter slots ~f:(fun {pid} ->
       try Unix.wait (`Pid pid) |> ignore
-      with Unix.Unix_error (ECHILD, _, _) ->
-        (* some children may have died already, it's fine *) () ) ;
-  ProcessPoolState.has_running_children := false ;
+      with Unix.Unix_error _ -> (* some children may have died already, it's fine *) () )
+
+
+let killall slots ~slot status =
+  killall_silently slots ;
   L.die InternalError "Subprocess %d: %s" slot status
 
 
@@ -243,7 +247,7 @@ let process_updates pool buffer =
   (* abort everything if some child has died unexpectedly *)
   has_dead_child pool
   |> Option.iter ~f:(fun (slot, status) ->
-         killall pool ~slot (Unix.Exit_or_signal.to_string_hum status) ) ;
+         killall pool.slots ~slot (Unix.Exit_or_signal.to_string_hum status) ) ;
   wait_for_updates pool buffer
   |> List.iter ~f:(function
        | UpdateStatus (slot, t, status) ->
@@ -254,7 +258,7 @@ let process_updates pool buffer =
            let {pid} = pool.slots.(slot) in
            (* clean crash, give the child process a chance to cleanup *)
            Unix.wait (`Pid pid) |> ignore ;
-           killall pool ~slot "see backtrace above"
+           killall pool.slots ~slot "see backtrace above"
        | Ready {worker= slot; result} ->
            ( match pool.children_states.(slot) with
            | Initializing ->
@@ -290,7 +294,7 @@ let collect_results (pool : (_, 'final, _) t) =
         | FinalCrash slot ->
             (* NOTE: the workers only send this message if {!Config.keep_going} is not [true] so if
                we receive it we know we should fail hard *)
-            killall pool ~slot "see backtrace above"
+            killall pool.slots ~slot "see backtrace above"
         | Finished (_slot, data) ->
             data )
 
@@ -313,7 +317,6 @@ let wait_all pool =
             (* Collect all children errors and die only at the end to avoid creating zombies. *)
             (slot, status) :: errors )
   in
-  ProcessPoolState.has_running_children := false ;
   ( if not (List.is_empty errors) then
     let pp_error f (slot, status) =
       F.fprintf f "Error in infer subprocess %d: %s@." slot
@@ -478,6 +481,23 @@ let run_as_child () =
   child slot ~child_prologue ~f ~updates_oc ~orders_ic ~epilogue
 
 
+let active_children_slots = ref None
+
+let () =
+  (* Register an at-exit callback that forcefully kills any remaining sub-process when the parent
+     process is going to terminate. If there is something to do at this point (i.e. if !active_pool
+     is not None), this means that the parent process is crashing or being stopped by the user.
+     In this case, we want to be aggressive with the sub-processes.
+
+     And we do not do this if we are a sub-process ourselves, since we are not going to spawn
+     new processes in this case. This is just a minor optimisation.
+  *)
+  if Option.is_none Config.run_as_child then
+    Epilogues.register_late
+      ~f:(fun () -> Option.iter !active_children_slots ~f:killall_silently)
+      ~description:"killing sub-processes"
+
+
 let rec create_pipes n = if Int.equal n 0 then [] else Unix.pipe () :: create_pipes (n - 1)
 
 let create :
@@ -496,16 +516,12 @@ let create :
         let child_pipe = List.nth_exn children_pipes slot in
         make_child ~child_prologue ~slot child_pipe ~f ~epilogue:child_epilogue )
   in
-  ProcessPoolState.has_running_children := true ;
-  Epilogues.register ~description:"Wait children processes exit" ~f:(fun () ->
-      if !ProcessPoolState.has_running_children then (
-        Array.iter slots ~f:(fun {pid} ->
-            ignore (Unix.wait (`Pid pid) : Pid.t * Unix.Exit_or_signal.t) ) ;
-        ProcessPoolState.has_running_children := false ) ) ;
   (* we have forked the child processes and are now in the parent *)
   let children_updates = List.map children_pipes ~f:(fun (pipe_child_r, _) -> pipe_child_r) in
   let children_states = Array.create ~len:jobs Initializing in
-  {slots; children_updates; jobs; task_bar; tasks= tasks (); children_states}
+  let pool = {slots; children_updates; jobs; task_bar; tasks= tasks (); children_states} in
+  active_children_slots := Some slots ;
+  pool
 
 
 let run pool =
