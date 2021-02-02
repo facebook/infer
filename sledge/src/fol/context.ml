@@ -21,20 +21,20 @@ module Subst : sig
   val length : t -> int
   val mem : Trm.t -> t -> bool
   val find : Trm.t -> t -> Trm.t option
+  val apply : t -> Trm.t -> Trm.t
+  val norm : t -> Trm.t -> Trm.t
+  val apply_rec : t -> Trm.t -> Trm.t
+  val subst : t -> Term.t -> Term.t
   val fold : t -> 's -> f:(key:Trm.t -> data:Trm.t -> 's -> 's) -> 's
   val fold_eqs : t -> 's -> f:(Fml.t -> 's -> 's) -> 's
   val iteri : t -> f:(key:Trm.t -> data:Trm.t -> unit) -> unit
   val for_alli : t -> f:(key:Trm.t -> data:Trm.t -> bool) -> bool
-  val apply : t -> Trm.t -> Trm.t
-  val subst_ : t -> Trm.t -> Trm.t
-  val subst : t -> Term.t -> Term.t
-  val norm : t -> Trm.t -> Trm.t
-  val compose : t -> t -> t
-  val compose1 : key:Trm.t -> data:Trm.t -> t -> t
-  val extend : Trm.t -> t -> t option
-  val map_entries : f:(Trm.t -> Trm.t) -> t -> t
   val to_iter : t -> (Trm.t * Trm.t) iter
   val to_list : t -> (Trm.t * Trm.t) list
+  val extend : Trm.t -> t -> t option
+  val compose1 : key:Trm.t -> data:Trm.t -> t -> t
+  val compose : t -> t -> t
+  val map_entries : f:(Trm.t -> Trm.t) -> t -> t
   val partition_valid : Var.Set.t -> t -> t * Var.Set.t * t
 
   (* direct representation manipulation *)
@@ -50,7 +50,6 @@ end = struct
   let is_empty = Trm.Map.is_empty
   let length = Trm.Map.length
   let mem = Trm.Map.mem
-  let find = Trm.Map.find
   let fold = Trm.Map.fold
 
   let fold_eqs s z ~f =
@@ -62,17 +61,24 @@ end = struct
   let to_list = Trm.Map.to_list
 
   (** look up a term in a substitution *)
+  let find = Trm.Map.find
+
+  (** apply a substitution, considered as the identity function overridden
+      for finitely-many terms *)
   let apply s a = Trm.Map.find a s |> Option.value ~default:a
 
-  let rec subst_ s a = apply s (Trm.map ~f:(subst_ s) a)
-  let subst s e = Term.map_trms ~f:(subst_ s) e
-
-  (** apply a substitution to maximal non-interpreted subterms *)
+  (** apply a substitution to maximal noninterpreted subterms *)
   let norm s a =
     [%trace]
       ~call:(fun {pf} -> pf "@ %a" Trm.pp a)
       ~retn:(fun {pf} -> pf "%a" Trm.pp)
     @@ fun () -> Theory.map_solvables ~f:(apply s) a
+
+  (** apply a substitution recursively, bottom-up *)
+  let rec apply_rec s a = apply s (Trm.map ~f:(apply_rec s) a)
+
+  (** lift apply from trm to term *)
+  let subst s e = Term.map_trms ~f:(apply_rec s) e
 
   (** compose two substitutions *)
   let compose r s =
@@ -505,7 +511,7 @@ let lookup r a =
   |>
   [%Trace.retn fun {pf} -> pf "%a" Trm.pp]
 
-(** rewrite a term into canonical form using rep and, for non-interpreted
+(** rewrite a term into canonical form using rep and, for noninterpreted
     terms, congruence composed with rep *)
 let rec canon r a =
   [%Trace.call fun {pf} -> pf "@ %a" Trm.pp a]
@@ -655,9 +661,9 @@ let apply_subst wrt s r =
   else
     Trm.Map.fold r.cls {r with rep= Subst.empty; cls= Trm.Map.empty}
       ~f:(fun ~key:rep ~data:cls r ->
-        let rep' = Subst.subst_ s rep in
+        let rep' = Subst.apply_rec s rep in
         Cls.fold cls r ~f:(fun trm r ->
-            let trm' = Subst.subst_ s trm in
+            let trm' = Subst.apply_rec s trm in
             and_eq_ ~wrt trm' rep' r ) ) )
   |> extract_xs
   |>
@@ -1000,7 +1006,7 @@ let dom_trm e =
 
 (** move equations from [cls] (which is assumed to be normalized by [subst])
     to [subst] which can be expressed as [x ↦ u] where [x] is
-    non-interpreted [us ∪ xs ⊇ fv x ⊈ us] and [fv u ⊆ us] or else
+    noninterpreted [us ∪ xs ⊇ fv x ⊈ us] and [fv u ⊆ us] or else
     [fv u ⊆ us ∪ xs] *)
 let solve_uninterp_eqs us (cls, subst) =
   [%Trace.call fun {pf} ->
@@ -1049,8 +1055,8 @@ let solve_uninterp_eqs us (cls, subst) =
       in
       let subst =
         Cls.fold cls_xs subst ~f:(fun trm_xs subst ->
-            let trm_xs = Subst.subst_ subst trm_xs in
-            let rep_us = Subst.subst_ subst rep_us in
+            let trm_xs = Subst.apply_rec subst trm_xs in
+            let rep_us = Subst.apply_rec subst rep_us in
             Subst.compose1 ~key:trm_xs ~data:rep_us subst )
       in
       (cls, subst)
@@ -1060,8 +1066,8 @@ let solve_uninterp_eqs us (cls, subst) =
         let cls = Cls.add rep_xs cls_us in
         let subst =
           Cls.fold cls_xs subst ~f:(fun trm_xs subst ->
-              let trm_xs = Subst.subst_ subst trm_xs in
-              let rep_xs = Subst.subst_ subst rep_xs in
+              let trm_xs = Subst.apply_rec subst trm_xs in
+              let rep_xs = Subst.apply_rec subst rep_xs in
               Subst.compose1 ~key:trm_xs ~data:rep_xs subst )
         in
         (cls, subst)
