@@ -211,6 +211,10 @@ struct
           redundant representations, singleton polynomials are flattened. *)
       let of_trm : ?power:int -> trm -> t =
        fun ?(power = 1) base ->
+        [%trace]
+          ~call:(fun {pf} -> pf "@ %a^%i" Trm.pp base power)
+          ~retn:(fun {pf} (c, m) -> pf "%a×%a" Q.pp c Mono.pp m)
+        @@ fun () ->
         match Embed.get_arith base with
         | Some poly -> (
           match Sum.classify poly with
@@ -230,6 +234,10 @@ struct
           polynomials are multiplied by their coefficients directly. *)
       let to_poly : t -> Poly.t =
        fun (coeff, mono) ->
+        [%trace]
+          ~call:(fun {pf} -> pf "@ %a×%a" Q.pp coeff Mono.pp mono)
+          ~retn:(fun {pf} -> pf "%a" pp)
+        @@ fun () ->
         ( match Mono.get_trm mono with
         | Some trm -> (
           match Embed.get_arith trm with
@@ -283,6 +291,13 @@ struct
       Sum.partition_map poly ~f:(fun _ coeff ->
           if Q.sign coeff >= 0 then Left coeff else Right (Q.neg coeff) )
 
+    (* traverse *)
+
+    let monos poly =
+      Iter.from_iter (fun f -> Sum.iter poly ~f:(fun mono _ -> f mono))
+
+    let trms poly = Iter.flat_map ~f:Mono.trms (monos poly)
+
     let map poly ~f =
       [%trace]
         ~call:(fun {pf} -> pf "@ %a" pp poly)
@@ -299,13 +314,6 @@ struct
         in
         Sum.union p p' )
       |> check invariant
-
-    (* traverse *)
-
-    let monos poly =
-      Iter.from_iter (fun f -> Sum.iter poly ~f:(fun mono _ -> f mono))
-
-    let trms poly = Iter.flat_map ~f:Mono.trms (monos poly)
 
     (* query *)
 
