@@ -180,15 +180,6 @@ struct
         | _ -> Uninterpreted )
       | `Many -> Interpreted
 
-    let is_noninterpreted poly =
-      match Sum.only_elt poly with
-      | Some (mono, _) -> (
-        match Prod.classify mono with
-        | `Zero -> false
-        | `One (_, n) -> n <> 1
-        | `Many -> true )
-      | None -> false
-
     let get_const poly =
       match Sum.classify poly with
       | `Zero -> Some Q.zero
@@ -303,21 +294,40 @@ struct
       | Some mono -> Mono.trms mono
       | None -> Iter.map ~f:trm_of_mono (monos poly)
 
+    (* map over [trms] *)
     let map poly ~f =
       [%trace]
         ~call:(fun {pf} -> pf "@ %a" pp poly)
         ~retn:(fun {pf} -> pf "%a" pp)
       @@ fun () ->
-      ( if is_noninterpreted poly then poly
-      else
-        let p, p' =
-          Sum.fold poly (poly, Sum.empty) ~f:(fun mono coeff (p, p') ->
-              let e = trm_of_mono mono in
-              let e' = f e in
-              if e == e' then (p, p')
-              else (Sum.remove mono p, Sum.union p' (mulc coeff (trm e'))) )
-        in
-        Sum.union p p' )
+      ( match get_mono poly with
+      | Some mono ->
+          let mono', (coeff, mono_delta) =
+            Prod.fold mono
+              (mono, (Q.one, Mono.one))
+              ~f:(fun base power (mono', delta) ->
+                let base' = f base in
+                if base' == base then (mono', delta)
+                else
+                  ( Prod.remove base mono'
+                  , CM.mul delta (CM.of_trm ~power base') ) )
+          in
+          if mono' == mono then poly
+          else CM.to_poly (coeff, Mono.mul mono' mono_delta)
+      | None ->
+          let poly', delta =
+            Sum.fold poly (poly, Sum.empty)
+              ~f:(fun mono coeff (poly', delta) ->
+                if Mono.equal_one mono then (poly', delta)
+                else
+                  let e = trm_of_mono mono in
+                  let e' = f e in
+                  if e == e' then (poly', delta)
+                  else
+                    ( Sum.remove mono poly'
+                    , Sum.union delta (mulc coeff (trm e')) ) )
+          in
+          Sum.union poly' delta )
       |> check invariant
 
     (* query *)

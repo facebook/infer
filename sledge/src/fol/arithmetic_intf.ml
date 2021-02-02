@@ -68,8 +68,7 @@ module type S = sig
       of factors [Xⱼ] for each [j]. *)
 
   val map : t -> f:(trm -> trm) -> t
-  (** [map ~f a] is [a] with each maximal non-interpreted subterm
-      transformed by [f]. *)
+  (** Map over the {!trms}. *)
 
   (** Solve *)
 
