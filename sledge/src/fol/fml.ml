@@ -174,7 +174,12 @@ let fold_pos_neg ~pos ~neg s ~f =
   let f_not p s = f (not_ p) s in
   Set.fold ~f:f_not neg (Set.fold ~f pos s)
 
-let fold_dnf ~meet1 ~join1 ~top ~bot fml =
+let iter_pos_neg ~pos ~neg ~f =
+  let f_not p = f (not_ p) in
+  Set.iter ~f pos ;
+  Set.iter ~f:f_not neg
+
+let iter_dnf ~meet1 ~top fml ~f =
   let rec add_conjunct fml (cjn, splits) =
     match fml with
     | Tt | Eq _ | Eq0 _ | Pos _ | Iff _ | Lit _ | Not _ ->
@@ -184,13 +189,13 @@ let fold_dnf ~meet1 ~join1 ~top ~bot fml =
     | Cond {cnd; pos; neg} ->
         add_conjunct (or_ (and_ cnd pos) (and_ (not_ cnd) neg)) (cjn, splits)
   in
-  let rec add_disjunct (cjn, splits) fml djn =
+  let rec add_disjunct (cjn, splits) fml =
     let cjn, splits = add_conjunct fml (cjn, splits) in
     match splits with
     | (pos, neg) :: splits ->
-        fold_pos_neg ~f:(add_disjunct (cjn, splits)) ~pos ~neg djn
-    | [] -> join1 cjn djn
+        iter_pos_neg ~f:(add_disjunct (cjn, splits)) ~pos ~neg
+    | [] -> f cjn
   in
-  add_disjunct (top, []) fml bot
+  add_disjunct (top, []) fml
 
 let vars p = Iter.flat_map ~f:Trm.vars (trms p)

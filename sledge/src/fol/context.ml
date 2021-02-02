@@ -862,10 +862,8 @@ let dnf f =
     let vs, x = add vs a x in
     (vs, Fml.and_ p a, x)
   in
-  let join1 = Iter.cons in
   let top = (Var.Set.empty, Fml.tt, empty) in
-  let bot = Iter.empty in
-  Fml.fold_dnf ~meet1 ~join1 ~top ~bot f
+  Iter.from_labelled_iter (Fml.iter_dnf ~meet1 ~top f)
 
 let rename x sub =
   [%trace]
