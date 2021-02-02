@@ -56,6 +56,7 @@ end) : S with type elt = Elt.t = struct
   let inter = S.inter
   let union = S.union
   let diff_inter s t = (diff s t, inter s t)
+  let diff_inter_diff s t = (diff s t, inter s t, diff t s)
   let union_list ss = List.fold ~f:union ss empty
   let is_empty = S.is_empty
   let cardinal = S.cardinal

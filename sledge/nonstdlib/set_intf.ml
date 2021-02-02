@@ -60,6 +60,7 @@ module type S = sig
   val inter : t -> t -> t
   val union : t -> t -> t
   val diff_inter : t -> t -> t * t
+  val diff_inter_diff : t -> t -> t * t * t
   val union_list : t list -> t
 
   (** {1 Query} *)
