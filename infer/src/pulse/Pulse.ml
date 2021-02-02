@@ -70,14 +70,14 @@ module PulseTransferFunctions = struct
     AnalysisCallbacks.proc_resolve_attributes pname |> Option.map ~f:ProcAttributes.get_pvar_formals
 
 
-  let interprocedural_call {InterproceduralAnalysis.analyze_dependency; proc_desc} ret callee_pname
-      call_exp actuals call_loc astate =
+  let interprocedural_call {InterproceduralAnalysis.analyze_dependency; proc_desc; tenv} ret
+      callee_pname call_exp actuals call_loc astate =
     match callee_pname with
     | Some callee_pname when not Config.pulse_intraprocedural_only ->
         let formals_opt = get_pvar_formals callee_pname in
         let callee_data = analyze_dependency callee_pname in
-        PulseOperations.call ~caller_proc_desc:proc_desc ~callee_data call_loc callee_pname ~ret
-          ~actuals ~formals_opt astate
+        PulseOperations.call tenv ~caller_proc_desc:proc_desc ~callee_data call_loc callee_pname
+          ~ret ~actuals ~formals_opt astate
     | _ ->
         L.d_printfln "Skipping indirect call %a@\n" Exp.pp call_exp ;
         let astate =
@@ -86,8 +86,8 @@ module PulseTransferFunctions = struct
         in
         [ Ok
             (ContinueProgram
-               (PulseOperations.unknown_call call_loc (SkippedUnknownCall call_exp) ~ret ~actuals
-                  ~formals_opt:None astate)) ]
+               (PulseOperations.unknown_call tenv call_loc (SkippedUnknownCall call_exp) ~ret
+                  ~actuals ~formals_opt:None astate)) ]
 
 
   (** has an object just gone out of scope? *)
@@ -289,8 +289,9 @@ module PulseTransferFunctions = struct
     (astates, ret_vars)
 
 
-  let exec_instr_aux (astate : Domain.t) ({InterproceduralAnalysis.proc_desc} as analysis_data)
-      _cfg_node (instr : Sil.instr) : Domain.t list =
+  let exec_instr_aux (astate : Domain.t)
+      ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data) _cfg_node (instr : Sil.instr) :
+      Domain.t list =
     match astate with
     | ISLLatentMemoryError _ | AbortProgram _ | LatentAbortProgram _ ->
         (* We can also continue the analysis with the error state here
@@ -423,7 +424,7 @@ module PulseTransferFunctions = struct
             in
             remove_vars vars_to_remove astates
       | Metadata (VariableLifetimeBegins (pvar, typ, location)) when not (Pvar.is_global pvar) ->
-          [PulseOperations.realloc_pvar pvar typ location astate |> Domain.continue]
+          [PulseOperations.realloc_pvar tenv pvar typ location astate |> Domain.continue]
       | Metadata (Abstract _ | VariableLifetimeBegins _ | Nullify _ | Skip) ->
           [ContinueProgram astate] )
 
@@ -454,9 +455,9 @@ let with_debug_exit_node proc_desc ~f =
     ~f
 
 
-let checker ({InterproceduralAnalysis.proc_desc; err_log} as analysis_data) =
+let checker ({InterproceduralAnalysis.proc_desc; err_log; tenv} as analysis_data) =
   AbstractValue.State.reset () ;
-  let initial = [ExecutionDomain.mk_initial proc_desc] in
+  let initial = [ExecutionDomain.mk_initial tenv proc_desc] in
   match DisjunctiveAnalyzer.compute_post analysis_data ~initial proc_desc with
   | Some posts ->
       with_debug_exit_node proc_desc ~f:(fun () ->

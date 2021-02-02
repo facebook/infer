@@ -315,12 +315,12 @@ let eval_deref_isl location exp astate =
           Ok (acc_astates @ [astate_addr]) )
 
 
-let realloc_pvar pvar typ location astate =
+let realloc_pvar tenv pvar typ location astate =
   let addr = AbstractValue.mk_fresh () in
   let astate =
     Stack.add (Var.of_pvar pvar) (addr, [ValueHistory.VariableDeclared (pvar, location)]) astate
   in
-  AbductiveDomain.set_uninitialized (`LocalDecl (pvar, Some addr)) typ location astate
+  AbductiveDomain.set_uninitialized tenv (`LocalDecl (pvar, Some addr)) typ location astate
 
 
 let write_id id new_addr_loc astate = Stack.add (Var.of_id id) new_addr_loc astate
@@ -565,22 +565,36 @@ let is_ptr_to_const formal_typ_opt =
       match formal_typ.desc with Typ.Tptr (t, _) -> Typ.is_const t.quals | _ -> false )
 
 
-let unknown_call call_loc reason ~ret ~actuals ~formals_opt astate =
+let unknown_call tenv call_loc reason ~ret ~actuals ~formals_opt astate =
   let event = ValueHistory.Call {f= reason; location= call_loc; in_call= []} in
   let havoc_ret (ret, _) astate = havoc_id ret [event] astate in
+  let rec havoc_fields ((_, history) as addr) typ astate =
+    match typ.Typ.desc with
+    | Tstruct struct_name -> (
+      match Tenv.lookup tenv struct_name with
+      | Some {fields} ->
+          List.fold fields ~init:astate ~f:(fun acc (field, field_typ, _) ->
+              let fresh_value = AbstractValue.mk_fresh () in
+              Memory.add_edge addr (FieldAccess field) (fresh_value, [event]) call_loc acc
+              |> havoc_fields (fresh_value, history) field_typ )
+      | None ->
+          astate )
+    | _ ->
+        astate
+  in
   let havoc_actual_if_ptr (actual, actual_typ) formal_typ_opt astate =
     (* We should not havoc when the corresponding formal is a
        pointer to const *)
-    if
-      (not (Language.curr_language_is Java))
-      && Typ.is_pointer actual_typ
-      && not (is_ptr_to_const formal_typ_opt)
-    then
-      (* HACK: write through the pointer even if it is invalid (except in Java). This is to avoid raising issues when
-         havoc'ing pointer parameters (which normally causes a [check_valid] call. *)
-      let fresh_value = AbstractValue.mk_fresh () in
-      Memory.add_edge actual Dereference (fresh_value, [event]) call_loc astate
-    else astate
+    match actual_typ.Typ.desc with
+    | Tptr (typ, _)
+      when (not (Language.curr_language_is Java)) && not (is_ptr_to_const formal_typ_opt) ->
+        (* HACK: write through the pointer even if it is invalid (except in Java). This is to avoid raising issues when
+           havoc'ing pointer parameters (which normally causes a [check_valid] call. *)
+        let fresh_value = AbstractValue.mk_fresh () in
+        Memory.add_edge actual Dereference (fresh_value, [event]) call_loc astate
+        |> havoc_fields actual typ
+    | _ ->
+        astate
   in
   let add_skipped_proc astate =
     match reason with
@@ -683,7 +697,7 @@ let conservatively_initialize_args arg_values ({AbductiveDomain.post} as astate)
   AbstractValue.Set.fold AbductiveDomain.initialize reachable_values astate
 
 
-let call ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.t) option) call_loc
+let call tenv ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.t) option) call_loc
     callee_pname ~ret ~actuals ~formals_opt (astate : AbductiveDomain.t) =
   let get_arg_values () = List.map actuals ~f:(fun ((value, _), _) -> value) in
   match callee_data with
@@ -743,6 +757,6 @@ let call ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.t) option)
       L.d_printfln "No spec found for %a@\n" Procname.pp callee_pname ;
       let astate =
         conservatively_initialize_args (get_arg_values ()) astate
-        |> unknown_call call_loc (SkippedKnownCall callee_pname) ~ret ~actuals ~formals_opt
+        |> unknown_call tenv call_loc (SkippedKnownCall callee_pname) ~ret ~actuals ~formals_opt
       in
       [Ok (ContinueProgram astate)]

@@ -102,7 +102,7 @@ val havoc_field :
   -> t
   -> t access_result
 
-val realloc_pvar : Pvar.t -> Typ.t -> Location.t -> t -> t
+val realloc_pvar : Tenv.t -> Pvar.t -> Typ.t -> Location.t -> t -> t
 
 val write_id : Ident.t -> AbstractValue.t * ValueHistory.t -> t -> t
 
@@ -185,7 +185,8 @@ val check_address_escape :
   Location.t -> Procdesc.t -> AbstractValue.t -> ValueHistory.t -> t -> t access_result
 
 val call :
-     caller_proc_desc:Procdesc.t
+     Tenv.t
+  -> caller_proc_desc:Procdesc.t
   -> callee_data:(Procdesc.t * PulseSummary.t) option
   -> Location.t
   -> Procname.t
@@ -198,7 +199,8 @@ val call :
     it exists *)
 
 val unknown_call :
-     Location.t
+     Tenv.t
+  -> Location.t
   -> CallEvent.t
   -> ret:Ident.t * Typ.t
   -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list

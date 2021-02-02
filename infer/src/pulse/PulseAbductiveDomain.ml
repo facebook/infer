@@ -13,6 +13,7 @@ module BaseDomain = PulseBaseDomain
 module BaseStack = PulseBaseStack
 module BaseMemory = PulseBaseMemory
 module BaseAddressAttributes = PulseBaseAddressAttributes
+module UninitBlocklist = PulseUninitBlocklist
 
 (** signature common to the "normal" [Domain], representing the post at the current program point,
     and the inverted [PreDomain], representing the inferred pre-condition*)
@@ -220,12 +221,26 @@ module AddressAttributes = struct
 
   (** if [address] is in [pre] then add the attribute [attr] *)
   let abduce_attribute address attribute astate =
-    L.d_printfln "Abducing %a:%a" AbstractValue.pp address Attribute.pp attribute ;
+    let is_must_be_initialized_on_written =
+      match (attribute : Attribute.t) with
+      | MustBeInitialized _ ->
+          BaseAddressAttributes.find_opt address (astate.post :> base_domain).attrs
+          |> Option.exists ~f:(fun attrs -> Attributes.get_written_to attrs |> Option.is_some)
+      | _ ->
+          false
+    in
     let new_pre =
-      if BaseMemory.mem address (astate.pre :> base_domain).heap then
-        PreDomain.update astate.pre
-          ~attrs:(BaseAddressAttributes.add_one address attribute (astate.pre :> base_domain).attrs)
-      else astate.pre
+      if is_must_be_initialized_on_written then (
+        L.d_printfln "No abducing %a:%a, the address has been written" AbstractValue.pp address
+          Attribute.pp attribute ;
+        astate.pre )
+      else (
+        L.d_printfln "Abducing %a:%a" AbstractValue.pp address Attribute.pp attribute ;
+        if BaseMemory.mem address (astate.pre :> base_domain).heap then
+          PreDomain.update astate.pre
+            ~attrs:
+              (BaseAddressAttributes.add_one address attribute (astate.pre :> base_domain).attrs)
+        else astate.pre )
     in
     if phys_equal new_pre astate.pre then astate else {astate with pre= new_pre}
 
@@ -312,7 +327,9 @@ module AddressAttributes = struct
         let astate =
           if Attribute.is_suitable_for_pre attr then abduce_attribute value attr astate else astate
         in
-        let astate = add_one value attr astate in
+        let astate =
+          if Attribute.is_suitable_for_post attr then add_one value attr astate else astate
+        in
         match attr with Attribute.WrittenTo _ -> initialize value astate | _ -> astate )
 
 
@@ -430,28 +447,51 @@ module Memory = struct
   let find_opt address astate = BaseMemory.find_opt address (astate.post :> base_domain).heap
 end
 
-let set_uninitialized_post src typ location (post : PostDomain.t) =
+let add_edge_on_src src location stack =
+  match src with
+  | `LocalDecl (pvar, addr_opt) -> (
+    match addr_opt with
+    | None ->
+        let addr = AbstractValue.mk_fresh () in
+        let history = [ValueHistory.VariableDeclared (pvar, location)] in
+        (BaseStack.add (Var.of_pvar pvar) (addr, history) stack, addr)
+    | Some addr ->
+        (stack, addr) )
+  | `Malloc addr ->
+      (stack, addr)
+
+
+let rec set_uninitialized_post tenv src typ location (post : PostDomain.t) =
   match typ.Typ.desc with
   | Tint _ | Tfloat _ | Tptr _ ->
       let {stack; attrs} = (post :> base_domain) in
-      let stack, addr =
-        match src with
-        | `LocalDecl (pvar, addr_opt) -> (
-          match addr_opt with
-          | None ->
-              let addr = AbstractValue.mk_fresh () in
-              let history = [ValueHistory.VariableDeclared (pvar, location)] in
-              (BaseStack.add (Var.of_pvar pvar) (addr, history) stack, addr)
-          | Some addr ->
-              (stack, addr) )
-        | `Malloc addr ->
-            (stack, addr)
-      in
+      let stack, addr = add_edge_on_src src location stack in
       let attrs = BaseAddressAttributes.add_one addr Uninitialized attrs in
       PostDomain.update ~stack ~attrs post
-  | Tstruct _ ->
-      (* TODO: set uninitialized attributes for fields *)
+  | Tstruct typ_name when UninitBlocklist.is_blocklisted_struct typ_name ->
       post
+  | Tstruct (CUnion _) | Tstruct (CppClass {is_union= true}) ->
+      (* Ignore union fields in the uninitialized checker *)
+      post
+  | Tstruct _ -> (
+    match Typ.name typ |> Option.bind ~f:(Tenv.lookup tenv) with
+    | None | Some {fields= [_]} ->
+        (* Ignore single field structs: see D26146578 *)
+        post
+    | Some {fields} ->
+        List.fold fields ~init:post ~f:(fun (acc : PostDomain.t) (field, field_typ, _) ->
+            if Fieldname.is_internal field then acc
+            else
+              let {stack; heap} = (acc :> base_domain) in
+              let stack, addr = add_edge_on_src src location stack in
+              let field_addr = AbstractValue.mk_fresh () in
+              let history = [ValueHistory.StructFieldAddressCreated (field, location)] in
+              let heap =
+                BaseMemory.add_edge addr (HilExp.Access.FieldAccess field) (field_addr, history)
+                  heap
+              in
+              PostDomain.update ~stack ~heap acc
+              |> set_uninitialized_post tenv (`Malloc field_addr) field_typ location ) )
   | Tarray _ ->
       (* TODO: set uninitialized attributes for elements *)
       post
@@ -460,11 +500,11 @@ let set_uninitialized_post src typ location (post : PostDomain.t) =
       post
 
 
-let set_uninitialized src typ location x =
-  {x with post= set_uninitialized_post src typ location x.post}
+let set_uninitialized tenv src typ location x =
+  {x with post= set_uninitialized_post tenv src typ location x.post}
 
 
-let mk_initial proc_desc =
+let mk_initial tenv proc_desc =
   (* HACK: save the formals in the stacks of the pre and the post to remember which local variables
      correspond to formals *)
   let proc_name = Procdesc.get_proc_name proc_desc in
@@ -524,7 +564,7 @@ let mk_initial proc_desc =
   let locals = Procdesc.get_locals proc_desc in
   let post =
     List.fold locals ~init:post ~f:(fun (acc : PostDomain.t) {ProcAttributes.name; typ} ->
-        set_uninitialized_post (`LocalDecl (Pvar.mk name proc_name, None)) typ location acc )
+        set_uninitialized_post tenv (`LocalDecl (Pvar.mk name proc_name, None)) typ location acc )
   in
   { pre
   ; post

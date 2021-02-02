@@ -31,6 +31,8 @@ val pp : F.formatter -> t -> unit
 
 val is_suitable_for_pre : t -> bool
 
+val is_suitable_for_post : t -> bool
+
 val map_trace : f:(Trace.t -> Trace.t) -> t -> t
 (** applies [f] to the traces found in attributes, leaving attributes without traces intact *)
 

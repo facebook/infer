@@ -270,6 +270,23 @@ let is_suitable_for_pre = function
       false
 
 
+let is_suitable_for_post = function
+  | MustBeInitialized _ | MustBeValid _ ->
+      false
+  | Invalid _
+  | Allocated _
+  | ISLAbduced _
+  | AddressOfCppTemporary _
+  | AddressOfStackVariable _
+  | Closure _
+  | DynamicType _
+  | EndOfCollection
+  | StdVectorReserve
+  | Uninitialized
+  | WrittenTo _ ->
+      true
+
+
 let map_trace ~f = function
   | Allocated (procname, trace) ->
       Allocated (procname, f trace)

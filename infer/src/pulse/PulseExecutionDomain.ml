@@ -28,7 +28,7 @@ type t = AbductiveDomain.t base_t
 
 let continue astate = ContinueProgram astate
 
-let mk_initial pdesc = ContinueProgram (AbductiveDomain.mk_initial pdesc)
+let mk_initial tenv pdesc = ContinueProgram (AbductiveDomain.mk_initial tenv pdesc)
 
 let leq ~lhs ~rhs =
   phys_equal lhs rhs

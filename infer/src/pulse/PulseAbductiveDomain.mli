@@ -81,7 +81,7 @@ val pp : Format.formatter -> t -> unit
 
 val set_isl_status : isl_status -> t -> t
 
-val mk_initial : Procdesc.t -> t
+val mk_initial : Tenv.t -> Procdesc.t -> t
 
 val get_pre : t -> BaseDomain.t
 
@@ -212,7 +212,8 @@ val initialize : AbstractValue.t -> t -> t
 (** Remove "Uninitialized" attribute of the given address *)
 
 val set_uninitialized :
-     [ `LocalDecl of Pvar.t * AbstractValue.t option
+     Tenv.t
+  -> [ `LocalDecl of Pvar.t * AbstractValue.t option
        (** the second optional parameter is for the address of the variable *)
      | `Malloc of AbstractValue.t  (** the address parameter is a newly allocated address *) ]
   -> Typ.t

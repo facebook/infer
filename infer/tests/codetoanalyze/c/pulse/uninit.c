@@ -86,7 +86,13 @@ void get_field_address_good() {
 
 void init_f1(struct uninit_s* p) { p->f1 = 5; }
 
-void interprocedural_struct_bad_FN() {
+void interprocedural_struct_good() {
+  struct uninit_s s;
+  init_f1(&s);
+  int y = s.f1;
+}
+
+void interprocedural_struct_bad() {
   struct uninit_s s;
   init_f1(&s);
   int y = s.f2;
@@ -98,4 +104,15 @@ void malloc_array_good(int len) {
     o[0] = 'a';
   }
   free(o);
+}
+
+struct uninit_s unknown_struct();
+
+struct uninit_s unknown_wrapper() {
+  return unknown_struct();
+}
+
+void havoc_calling_unknown_struct_good() {
+  struct uninit_s x = unknown_wrapper();
+  int y = x.f1;
 }

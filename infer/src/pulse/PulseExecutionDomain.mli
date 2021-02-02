@@ -27,7 +27,7 @@ include AbstractDomain.NoJoin with type t := t
 
 val continue : AbductiveDomain.t -> t
 
-val mk_initial : Procdesc.t -> t
+val mk_initial : Tenv.t -> Procdesc.t -> t
 
 val is_unsat_cheap : t -> bool
 (** see {!PulsePathCondition.is_unsat_cheap} *)

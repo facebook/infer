@@ -86,7 +86,7 @@ module Misc = struct
       don't have the implementation. This triggers a bunch of heuristics, e.g. to havoc arguments we
       suspect are passed by reference. *)
   let unknown_call skip_reason args : model =
-   fun _ ~callee_procname location ~ret astate ->
+   fun {tenv} ~callee_procname location ~ret astate ->
     let actuals =
       List.map args ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= actual; typ} ->
           (actual, typ) )
@@ -95,7 +95,7 @@ module Misc = struct
       AnalysisCallbacks.proc_resolve_attributes callee_procname
       |> Option.map ~f:ProcAttributes.get_pvar_formals
     in
-    PulseOperations.unknown_call location (Model skip_reason) ~ret ~actuals ~formals_opt astate
+    PulseOperations.unknown_call tenv location (Model skip_reason) ~ret ~actuals ~formals_opt astate
     |> ok_continue
 
 
@@ -139,15 +139,15 @@ end
 module C = struct
   let free deleted_access : model = Misc.free_or_delete `Free deleted_access
 
-  let set_uninitialized size_exp_opt location ret_value astate =
+  let set_uninitialized tenv size_exp_opt location ret_value astate =
     Option.value_map size_exp_opt ~default:astate ~f:(fun size_exp ->
         BufferOverrunModels.get_malloc_info_opt size_exp
         |> Option.value_map ~default:astate ~f:(fun (obj_typ, _, _, _) ->
-               AbductiveDomain.set_uninitialized (`Malloc ret_value) obj_typ location astate ) )
+               AbductiveDomain.set_uninitialized tenv (`Malloc ret_value) obj_typ location astate ) )
 
 
   let malloc_common ~size_exp_opt : model =
-   fun _ ~callee_procname location ~ret:(ret_id, _) astate ->
+   fun {tenv} ~callee_procname location ~ret:(ret_id, _) astate ->
     let ret_addr = AbstractValue.mk_fresh () in
     let ret_value =
       (ret_addr, [ValueHistory.Allocation {f= Model (Procname.to_string callee_procname); location}])
@@ -156,7 +156,7 @@ module C = struct
     let astate_alloc =
       PulseArithmetic.and_positive ret_addr astate
       |> PulseOperations.allocate callee_procname location ret_value
-      |> set_uninitialized size_exp_opt location ret_addr
+      |> set_uninitialized tenv size_exp_opt location ret_addr
     in
     let result_null =
       let+ astate_null =
@@ -169,7 +169,7 @@ module C = struct
 
 
   let malloc_not_null_common ~size_exp_opt : model =
-   fun _ ~callee_procname location ~ret:(ret_id, _) astate ->
+   fun {tenv} ~callee_procname location ~ret:(ret_id, _) astate ->
     let ret_addr = AbstractValue.mk_fresh () in
     let ret_value =
       (ret_addr, [ValueHistory.Allocation {f= Model (Procname.to_string callee_procname); location}])
@@ -178,7 +178,7 @@ module C = struct
     let astate =
       PulseOperations.allocate callee_procname location ret_value astate
       |> PulseArithmetic.and_positive ret_addr
-      |> set_uninitialized size_exp_opt location ret_addr
+      |> set_uninitialized tenv size_exp_opt location ret_addr
     in
     ok_continue astate
 
@@ -218,7 +218,7 @@ module ObjC = struct
 
 
   let dispatch_sync args : model =
-   fun {analyze_dependency; proc_desc} ~callee_procname:_ location ~ret astate ->
+   fun {analyze_dependency; proc_desc; tenv} ~callee_procname:_ location ~ret astate ->
     match List.last args with
     | None ->
         ok_continue astate
@@ -230,7 +230,7 @@ module ObjC = struct
         | None ->
             ok_continue astate
         | Some callee_proc_name ->
-            PulseOperations.call ~caller_proc_desc:proc_desc
+            PulseOperations.call tenv ~caller_proc_desc:proc_desc
               ~callee_data:(analyze_dependency callee_proc_name)
               location callee_proc_name ~ret ~actuals:[] ~formals_opt:None astate )
 end
@@ -479,6 +479,11 @@ module StdAtomicInteger = struct
 
   let store_backing_int location this_address new_value astate =
     let* astate, this = PulseOperations.eval_access Read location this_address Dereference astate in
+    let astate =
+      AddressAttributes.add_one (fst this_address)
+        (WrittenTo (Trace.Immediate {location; history= []}))
+        astate
+    in
     let* astate, int_field =
       PulseOperations.eval_access Write location this (FieldAccess internal_int) astate
     in
@@ -551,7 +556,7 @@ end
 module StdFunction = struct
   let operator_call ProcnameDispatcher.Call.FuncArg.{arg_payload= lambda_ptr_hist; typ} actuals :
       model =
-   fun {analyze_dependency; proc_desc} ~callee_procname:_ location ~ret astate ->
+   fun {analyze_dependency; proc_desc; tenv} ~callee_procname:_ location ~ret astate ->
     let havoc_ret (ret_id, _) astate =
       let event = ValueHistory.Call {f= Model "std::function::operator()"; location; in_call= []} in
       [PulseOperations.havoc_id ret_id [event] astate]
@@ -570,7 +575,7 @@ module StdFunction = struct
           :: List.map actuals ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
                  (arg_payload, typ) )
         in
-        PulseOperations.call ~caller_proc_desc:proc_desc
+        PulseOperations.call tenv ~caller_proc_desc:proc_desc
           ~callee_data:(analyze_dependency callee_proc_name)
           location callee_proc_name ~ret ~actuals ~formals_opt:None astate
 
