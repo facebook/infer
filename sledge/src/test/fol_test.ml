@@ -16,7 +16,10 @@ let%test_module _ =
 
     (* let () =
      *   Trace.init ~margin:160
-     *     ~config:(Result.get_ok (Trace.parse "+Fol+Context+Arithmetic"))
+     *     ~config:
+     *       (Result.get_ok
+     *          (Trace.parse
+     *             "+Fol+Context-Context.canon-Context.canon_f-Context.norm"))
      *     () *)
 
     [@@@warning "-32"]
@@ -66,7 +69,7 @@ let%test_module _ =
 
     let%expect_test _ =
       pp_raw f1 ;
-      [%expect {| {sat= false; rep= []} |}]
+      [%expect {| { sat= false; rep= []; cls= []; use= [] } |}]
 
     let%test _ = is_unsat (add_eq !1 !1 f1)
 
@@ -76,7 +79,7 @@ let%test_module _ =
 
     let%expect_test _ =
       pp_raw f2 ;
-      [%expect {| {sat= false; rep= []} |}]
+      [%expect {| { sat= false; rep= []; cls= []; use= [] } |}]
 
     let f3 = of_eqs [(x + !0, x + !1)]
 
@@ -84,7 +87,7 @@ let%test_module _ =
 
     let%expect_test _ =
       pp_raw f3 ;
-      [%expect {| {sat= false; rep= []} |}]
+      [%expect {| { sat= false; rep= []; cls= []; use= [] } |}]
 
     let f4 = of_eqs [(x, y); (x + !0, y + !1)]
 
@@ -92,7 +95,12 @@ let%test_module _ =
 
     let%expect_test _ =
       pp_raw f4 ;
-      [%expect {| {sat= false; rep= [[%x_5 ↦ ]; [%y_6 ↦ %x_5]]} |}]
+      [%expect
+        {|
+          { sat= false;
+            rep= [[%x_5 ↦ ]; [%y_6 ↦ %x_5]];
+            cls= [[%x_5 ↦ {%y_6}]];
+            use= [] } |}]
 
     let t1 = of_eqs [(!1, !1)]
 
@@ -108,11 +116,11 @@ let%test_module _ =
 
     let%expect_test _ =
       pp_raw r0 ;
-      [%expect {| {sat= true; rep= []} |}]
+      [%expect {| { sat= true; rep= []; cls= []; use= [] } |}]
 
     let%expect_test _ =
       pp r0 ;
-      [%expect {||}]
+      [%expect {| tt |}]
 
     let%test _ = difference r0 (f x) (f x) |> Poly.equal (Some (Z.of_int 0))
     let%test _ = difference r0 !4 !3 |> Poly.equal (Some (Z.of_int 1))
@@ -124,10 +132,13 @@ let%test_module _ =
       pp_raw r1 ;
       [%expect
         {|
-
+    
         %x_5 = %y_6
-
-      {sat= true; rep= [[%x_5 ↦ ]; [%y_6 ↦ %x_5]]} |}]
+    
+      { sat= true;
+        rep= [[%x_5 ↦ ]; [%y_6 ↦ %x_5]];
+        cls= [[%x_5 ↦ {%y_6}]];
+        use= [] } |}]
 
     let%test _ = implies_eq r1 x y
 
@@ -139,9 +150,11 @@ let%test_module _ =
       [%expect
         {|
         %x_5 = %y_6 = %z_7 = f(%x_5)
-
-      {sat= true;
-       rep= [[%x_5 ↦ ]; [%y_6 ↦ %x_5]; [%z_7 ↦ %x_5]; [f(%x_5) ↦ %x_5]]} |}]
+    
+      { sat= true;
+        rep= [[%x_5 ↦ ]; [%y_6 ↦ %x_5]; [%z_7 ↦ %x_5]; [f(%x_5) ↦ %x_5]];
+        cls= [[%x_5 ↦ {%y_6, %z_7, f(%x_5)}]];
+        use= [[%x_5 ↦ f(%x_5)]] } |}]
 
     let%test _ = implies_eq r2 x z
     let%test _ = implies_eq (inter r1 r2) x y
@@ -162,11 +175,20 @@ let%test_module _ =
       pp_raw rs ;
       [%expect
         {|
-        {sat= true; rep= [[%w_4 ↦ ]; [%y_6 ↦ %w_4]; [%z_7 ↦ %w_4]]}
-
-        {sat= true; rep= [[%x_5 ↦ ]; [%y_6 ↦ %x_5]; [%z_7 ↦ %x_5]]}
-
-        {sat= true; rep= [[%y_6 ↦ ]; [%z_7 ↦ %y_6]]} |}]
+        { sat= true;
+          rep= [[%w_4 ↦ ]; [%y_6 ↦ %w_4]; [%z_7 ↦ %w_4]];
+          cls= [[%w_4 ↦ {%y_6, %z_7}]];
+          use= [] }
+    
+        { sat= true;
+          rep= [[%x_5 ↦ ]; [%y_6 ↦ %x_5]; [%z_7 ↦ %x_5]];
+          cls= [[%x_5 ↦ {%y_6, %z_7}]];
+          use= [] }
+    
+        { sat= true;
+          rep= [[%y_6 ↦ ]; [%z_7 ↦ %y_6]];
+          cls= [[%y_6 ↦ {%z_7}]];
+          use= [] } |}]
 
     let%test _ =
       let r = of_eqs [(w, y); (y, z)] in
@@ -182,18 +204,29 @@ let%test_module _ =
       [%expect
         {|
         %t_1 = %u_2 = %v_3 = %w_4 = %x_5 = %z_7 = g(%y_6, %t_1)
-        = g(%y_6, %t_1)
-
-      {sat= true;
-       rep= [[%t_1 ↦ ];
-             [%u_2 ↦ %t_1];
-             [%v_3 ↦ %t_1];
-             [%w_4 ↦ %t_1];
-             [%x_5 ↦ %t_1];
-             [%y_6 ↦ ];
-             [%z_7 ↦ %t_1];
-             [g(%y_6, %v_3) ↦ %t_1];
-             [g(%y_6, %z_7) ↦ %t_1]]} |}]
+        = g(%y_6, %u_2) = g(%y_6, %v_3) = g(%y_6, %z_7)
+    
+      { sat= true;
+        rep= [[%t_1 ↦ ];
+              [%u_2 ↦ %t_1];
+              [%v_3 ↦ %t_1];
+              [%w_4 ↦ %t_1];
+              [%x_5 ↦ %t_1];
+              [%y_6 ↦ ];
+              [%z_7 ↦ %t_1];
+              [g(%y_6, %t_1) ↦ %t_1];
+              [g(%y_6, %u_2) ↦ %t_1];
+              [g(%y_6, %v_3) ↦ %t_1];
+              [g(%y_6, %z_7) ↦ %t_1]];
+        cls= [[%t_1
+               ↦ {%u_2, %v_3, %w_4, %x_5, %z_7, g(%y_6, %t_1),
+                  g(%y_6, %u_2), g(%y_6, %v_3), g(%y_6, %z_7)}]];
+        use= [[%t_1 ↦ g(%y_6, %t_1)];
+              [%u_2 ↦ g(%y_6, %u_2)];
+              [%v_3 ↦ g(%y_6, %v_3)];
+              [%y_6 ↦ g(%y_6, %t_1), g(%y_6, %u_2), g(%y_6, %v_3),
+               g(%y_6, %z_7)];
+              [%z_7 ↦ g(%y_6, %z_7)]] } |}]
 
     let%test _ = implies_eq r3 t z
     let%test _ = implies_eq r3 x z
@@ -207,12 +240,16 @@ let%test_module _ =
       [%expect
         {|
         (-4 + %z_7) = %y_6 ∧ (3 + %z_7) = %w_4 ∧ (8 + %z_7) = %x_5
-
-      {sat= true;
-       rep= [[%w_4 ↦ (3 + %z_7)];
-             [%x_5 ↦ (8 + %z_7)];
-             [%y_6 ↦ (-4 + %z_7)];
-             [%z_7 ↦ ]]} |}]
+    
+      { sat= true;
+        rep= [[%w_4 ↦ (3 + %z_7)];
+              [%x_5 ↦ (8 + %z_7)];
+              [%y_6 ↦ (-4 + %z_7)];
+              [%z_7 ↦ ]];
+        cls= [[(-4 + %z_7) ↦ {%y_6}];
+              [(3 + %z_7) ↦ {%w_4}];
+              [(8 + %z_7) ↦ {%x_5}]];
+        use= [[%z_7 ↦ (-4 + %z_7), (3 + %z_7), (8 + %z_7)]] } |}]
 
     let%test _ = implies_eq r4 x (w + !5)
     let%test _ = difference r4 x w |> Poly.equal (Some (Z.of_int 5))
@@ -229,8 +266,11 @@ let%test_module _ =
       [%expect
         {|
         1 = %x_5 = %y_6
-
-      {sat= true; rep= [[%x_5 ↦ 1]; [%y_6 ↦ 1]]} |}]
+    
+      { sat= true;
+        rep= [[%x_5 ↦ 1]; [%y_6 ↦ 1]];
+        cls= [[1 ↦ {%x_5, %y_6}]];
+        use= [] } |}]
 
     let%test _ = implies_eq r6 x y
 
@@ -243,12 +283,14 @@ let%test_module _ =
         {|
           %v_3 = %x_5 ∧ %w_4 = %y_6 = %z_7
     
-        {sat= true;
-         rep= [[%v_3 ↦ ];
-               [%w_4 ↦ ];
-               [%x_5 ↦ %v_3];
-               [%y_6 ↦ %w_4];
-               [%z_7 ↦ %w_4]]} |}]
+        { sat= true;
+          rep= [[%v_3 ↦ ];
+                [%w_4 ↦ ];
+                [%x_5 ↦ %v_3];
+                [%y_6 ↦ %w_4];
+                [%z_7 ↦ %w_4]];
+          cls= [[%v_3 ↦ {%x_5}]; [%w_4 ↦ {%y_6, %z_7}]];
+          use= [] } |}]
 
     let r7' = add_eq x z r7
 
@@ -258,13 +300,15 @@ let%test_module _ =
       [%expect
         {|
         %v_3 = %w_4 = %x_5 = %y_6 = %z_7
-
-      {sat= true;
-       rep= [[%v_3 ↦ ];
-             [%w_4 ↦ %v_3];
-             [%x_5 ↦ %v_3];
-             [%y_6 ↦ %v_3];
-             [%z_7 ↦ %v_3]]} |}]
+    
+      { sat= true;
+        rep= [[%v_3 ↦ ];
+              [%w_4 ↦ %v_3];
+              [%x_5 ↦ %v_3];
+              [%y_6 ↦ %v_3];
+              [%z_7 ↦ %v_3]];
+        cls= [[%v_3 ↦ {%w_4, %x_5, %y_6, %z_7}]];
+        use= [] } |}]
 
     let%test _ = normalize r7' w |> Term.equal v
 
@@ -283,7 +327,10 @@ let%test_module _ =
         {|
         14 = %y_6 ∧ 13×%z_7 = %x_5
     
-      {sat= true; rep= [[%x_5 ↦ 13×%z_7]; [%y_6 ↦ 14]; [%z_7 ↦ ]]} |}]
+      { sat= true;
+        rep= [[%x_5 ↦ 13×%z_7]; [%y_6 ↦ 14]; [%z_7 ↦ ]];
+        cls= [[14 ↦ {%y_6}]; [13×%z_7 ↦ {%x_5}]];
+        use= [[%z_7 ↦ 13×%z_7]] } |}]
 
     let%test _ = implies_eq r8 y !14
 
@@ -294,9 +341,15 @@ let%test_module _ =
       pp_raw r9 ;
       [%expect
         {|
-      {sat= true; rep= [[%x_5 ↦ (-16 + %z_7)]; [%z_7 ↦ ]]}
-
-      {sat= true; rep= [[%x_5 ↦ (-16 + %z_7)]; [%z_7 ↦ ]]} |}]
+      { sat= true;
+        rep= [[%x_5 ↦ (-16 + %z_7)]; [%z_7 ↦ ]];
+        cls= [[(-16 + %z_7) ↦ {%x_5}]];
+        use= [[%z_7 ↦ (-16 + %z_7)]] }
+    
+      { sat= true;
+        rep= [[%x_5 ↦ (-16 + %z_7)]; [%z_7 ↦ ]];
+        cls= [[(-16 + %z_7) ↦ {%x_5}]];
+        use= [[%z_7 ↦ (-16 + %z_7)]] } |}]
 
     let%test _ = difference r9 z (x + !8) |> Poly.equal (Some (Z.of_int 8))
 
@@ -311,16 +364,22 @@ let%test_module _ =
       Format.printf "@.%a@." Term.pp (normalize r10 (x + !8 - z)) ;
       [%expect
         {|
-        {sat= true; rep= [[%x_5 ↦ (-16 + %z_7)]; [%z_7 ↦ ]]}
-
-        {sat= true; rep= [[%x_5 ↦ (-16 + %z_7)]; [%z_7 ↦ ]]}
-
+        { sat= true;
+          rep= [[%x_5 ↦ (-16 + %z_7)]; [%z_7 ↦ ]];
+          cls= [[(-16 + %z_7) ↦ {%x_5}]];
+          use= [[%z_7 ↦ (-16 + %z_7)]] }
+    
+        { sat= true;
+          rep= [[%x_5 ↦ (-16 + %z_7)]; [%z_7 ↦ ]];
+          cls= [[(-16 + %z_7) ↦ {%x_5}]];
+          use= [[%z_7 ↦ (-16 + %z_7)]] }
+    
         (-8 + -1×%x_5 + %z_7)
-
+    
         8
-
+    
         (8 + %x_5 + -1×%z_7)
-
+    
         -8 |}]
 
     let%test _ = difference r10 z (x + !8) |> Poly.equal (Some (Z.of_int 8))
@@ -348,7 +407,12 @@ let%test_module _ =
 
     let%expect_test _ =
       pp_raw r13 ;
-      [%expect {| {sat= true; rep= [[%y_6 ↦ ]; [%z_7 ↦ %y_6]]} |}]
+      [%expect
+        {|
+          { sat= true;
+            rep= [[%y_6 ↦ ]; [%z_7 ↦ %y_6]];
+            cls= [[%y_6 ↦ {%z_7}]];
+            use= [] } |}]
 
     let%test _ = not (is_unsat r13) (* incomplete *)
 
@@ -357,8 +421,9 @@ let%test_module _ =
 
     let%expect_test _ =
       pp_raw r14 ;
-      [%expect {|
-          {sat= true; rep= [[%x_5 ↦ 1]]} |}]
+      [%expect
+        {|
+          { sat= true; rep= [[%x_5 ↦ 1]]; cls= [[1 ↦ {%x_5}]]; use= [] } |}]
 
     let%test _ = implies_eq r14 a (Formula.inject Formula.tt)
 
@@ -367,8 +432,9 @@ let%test_module _ =
 
     let%expect_test _ =
       pp_raw r14 ;
-      [%expect {|
-          {sat= true; rep= [[%x_5 ↦ 1]]} |}]
+      [%expect
+        {|
+          { sat= true; rep= [[%x_5 ↦ 1]]; cls= [[1 ↦ {%x_5}]]; use= [] } |}]
 
     let%test _ = implies_eq r14 a (Formula.inject Formula.tt)
     (* incomplete *)
@@ -379,8 +445,9 @@ let%test_module _ =
 
     let%expect_test _ =
       pp_raw r15 ;
-      [%expect {|
-          {sat= true; rep= [[%x_5 ↦ 1]]} |}]
+      [%expect
+        {|
+          { sat= true; rep= [[%x_5 ↦ 1]]; cls= [[1 ↦ {%x_5}]]; use= [] } |}]
 
     (* f(x−1)−1=x+1, f(y)+1=y−1, y+1=x ⊢ false *)
     let r16 =
@@ -390,11 +457,16 @@ let%test_module _ =
       pp_raw r16 ;
       [%expect
         {|
-      {sat= false;
-       rep= [[%x_5 ↦ (1 + %y_6)];
-             [%y_6 ↦ ];
-             [f(%y_6) ↦ (-2 + %y_6)];
-             [f((-1 + %x_5)) ↦ (3 + %y_6)]]} |}]
+      { sat= false;
+        rep= [[%x_5 ↦ (1 + %y_6)];
+              [%y_6 ↦ ];
+              [f(%y_6) ↦ (-2 + %y_6)];
+              [f((-1 + %x_5)) ↦ (3 + %y_6)]];
+        cls= [[(-2 + %y_6) ↦ {f(%y_6)}];
+              [(1 + %y_6) ↦ {%x_5}];
+              [(3 + %y_6) ↦ {f((-1 + %x_5))}]];
+        use= [[%x_5 ↦ f((-1 + %x_5))];
+              [%y_6 ↦ (-2 + %y_6), (1 + %y_6), (3 + %y_6), f(%y_6)]] } |}]
 
     let%test _ = is_unsat r16
 
@@ -405,11 +477,13 @@ let%test_module _ =
       pp_raw r17 ;
       [%expect
         {|
-      {sat= false;
-       rep= [[%x_5 ↦ ];
-             [%y_6 ↦ %x_5];
-             [f(%x_5) ↦ %x_5];
-             [f(%y_6) ↦ (-1 + %x_5)]]} |}]
+      { sat= false;
+        rep= [[%x_5 ↦ ];
+              [%y_6 ↦ %x_5];
+              [f(%x_5) ↦ %x_5];
+              [f(%y_6) ↦ (-1 + %x_5)]];
+        cls= [[%x_5 ↦ {%y_6, f(%x_5)}]; [(-1 + %x_5) ↦ {f(%y_6)}]];
+        use= [[%x_5 ↦ (-1 + %x_5), f(%x_5)]; [%y_6 ↦ f(%y_6)]] } |}]
 
     let%test _ = is_unsat r17
 
@@ -419,12 +493,14 @@ let%test_module _ =
       pp r18 ;
       [%expect
         {|
-        {sat= true;
-         rep= [[%x_5 ↦ ];
-               [%y_6 ↦ ];
-               [f(%x_5) ↦ %x_5];
-               [f(%y_6) ↦ (-1 + %y_6)]]}
-
+        { sat= true;
+          rep= [[%x_5 ↦ ];
+                [%y_6 ↦ ];
+                [f(%x_5) ↦ %x_5];
+                [f(%y_6) ↦ (-1 + %y_6)]];
+          cls= [[%x_5 ↦ {f(%x_5)}]; [(-1 + %y_6) ↦ {f(%y_6)}]];
+          use= [[%x_5 ↦ f(%x_5)]; [%y_6 ↦ (-1 + %y_6), f(%y_6)]] }
+    
           %x_5 = f(%x_5) ∧ (-1 + %y_6) = f(%y_6) |}]
 
     let r19 = of_eqs [(x, y + z); (x, !0); (y, !0)]
@@ -433,7 +509,10 @@ let%test_module _ =
       pp_raw r19 ;
       [%expect
         {|
-          {sat= true; rep= [[%x_5 ↦ 0]; [%y_6 ↦ 0]; [%z_7 ↦ 0]]} |}]
+          { sat= true;
+            rep= [[%x_5 ↦ 0]; [%y_6 ↦ 0]; [%z_7 ↦ 0]];
+            cls= [[0 ↦ {%x_5, %y_6, %z_7}]];
+            use= [] } |}]
 
     let%test _ = implies_eq r19 x !0
     let%test _ = implies_eq r19 y !0
@@ -454,7 +533,7 @@ let%test_module _ =
         {|
         ((%x_5 = %y_6) ∧ ((5 = %w_4) ∨ (4 = %w_4))
           ∧ ((0 = %x_5) ? (2 = %z_7) : (3 = %z_7)))
-
+    
         (((%x_5 = %y_6) ∧ (0 = %x_5) ∧ (5 = %w_4) ∧ (2 = %z_7))
           ∨ ((%x_5 = %y_6) ∧ (0 = %x_5) ∧ (4 = %w_4) ∧ (2 = %z_7))
           ∨ ((%x_5 = %y_6) ∧ (5 = %w_4) ∧ (3 = %z_7) ∧ (0 ≠ %x_5))

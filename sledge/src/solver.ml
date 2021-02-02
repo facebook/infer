@@ -639,10 +639,11 @@ let pure_entails x q = Sh.is_empty q && Context.implies x (Sh.pure_approx q)
 
 let rec excise ({min; xs; sub; zs; pgs} as goal) =
   [%Trace.info "@[<2>excise@ %a@]" pp goal] ;
-  if Sh.is_false min then Some (Sh.false_ (Var.Set.diff sub.us zs))
+  Report.step_solver () ;
+  if Sh.is_unsat min then Some (Sh.false_ (Var.Set.diff sub.us zs))
   else if pure_entails min.ctx sub then
     Some (Sh.exists zs (Sh.extend_us xs min))
-  else if Sh.is_false sub then None
+  else if Sh.is_unsat sub then None
   else if pgs then
     goal |> with_ ~pgs:false |> excise_exists |> excise_heap >>= excise
   else None $> fun _ -> [%Trace.info "@[<2>excise fail@ %a@]" pp goal]
@@ -656,7 +657,7 @@ let excise_dnf : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
     (Sh.false_ (Var.Set.union minuend.us xs))
     ~f:(fun minuend remainders ->
       [%trace]
-        ~call:(fun {pf} -> pf "@[<2>minuend@ %a@]" Sh.pp minuend)
+        ~call:(fun {pf} -> pf "@ @[<2>minuend@ %a@]" Sh.pp minuend)
         ~retn:(fun {pf} -> pf "%a" (Option.pp "%a" Sh.pp))
       @@ fun () ->
       let zs, min = Sh.bind_exists minuend ~wrt:xs in
@@ -665,7 +666,7 @@ let excise_dnf : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
       let+ remainder =
         List.find_map dnf_subtrahend ~f:(fun sub ->
             [%trace]
-              ~call:(fun {pf} -> pf "@[<2>subtrahend@ %a@]" Sh.pp sub)
+              ~call:(fun {pf} -> pf "@ @[<2>subtrahend@ %a@]" Sh.pp sub)
               ~retn:(fun {pf} -> pf "%a" (Option.pp "%a" Sh.pp))
             @@ fun () ->
             let sub = Sh.and_ctx min.ctx (Sh.extend_us us sub) in
@@ -673,12 +674,14 @@ let excise_dnf : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
       in
       Sh.or_ remainders remainder )
 
+let query_count = ref (-1)
+
 let infer_frame : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
  fun minuend xs subtrahend ->
   [%trace]
     ~call:(fun {pf} ->
-      pf "@[<hv>%a@ \\- %a%a@]" Sh.pp minuend Var.Set.pp_xs xs Sh.pp
-        subtrahend )
+      pf " %i@ @[<hv>%a@ \\- %a%a@]" !query_count Sh.pp minuend
+        Var.Set.pp_xs xs Sh.pp subtrahend )
     ~retn:(fun {pf} r ->
       pf "%a" (Option.pp "%a" Sh.pp) r ;
       Option.iter r ~f:(fun frame ->
@@ -694,3 +697,24 @@ let infer_frame : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
   assert (Var.Set.subset xs ~of_:subtrahend.us) ;
   assert (Var.Set.subset (Var.Set.diff subtrahend.us xs) ~of_:minuend.us) ;
   excise_dnf minuend xs subtrahend
+
+(*
+ * Replay debugging
+ *)
+
+type call = Infer_frame of Sh.t * Var.Set.t * Sh.t [@@deriving sexp]
+
+let replay c =
+  match call_of_sexp (Sexp.of_string c) with
+  | Infer_frame (minuend, xs, subtrahend) ->
+      infer_frame minuend xs subtrahend |> ignore
+
+let dump_query = ref (-1)
+
+let infer_frame minuend xs subtrahend =
+  Int.incr query_count ;
+  if !query_count = !dump_query then
+    fail "%a" Sexp.pp_hum
+      (sexp_of_call (Infer_frame (minuend, xs, subtrahend)))
+      ()
+  else infer_frame minuend xs subtrahend

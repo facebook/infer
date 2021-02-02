@@ -8,7 +8,12 @@
 open! IStd
 module F = Format
 
-type t = {class_name: Typ.Name.t; field_name: string} [@@deriving compare, equal, yojson_of]
+type 'typ_name t_ = {class_name: 'typ_name; field_name: string}
+[@@deriving compare, equal, yojson_of]
+
+type t = Typ.Name.t t_ [@@deriving compare, equal, yojson_of]
+
+let loose_compare = compare_t_ Typ.Name.loose_compare
 
 let make class_name field_name = {class_name; field_name}
 
@@ -18,7 +23,13 @@ let get_field_name {field_name} = field_name
 
 let is_java {class_name} = Typ.Name.Java.is_class class_name
 
-let is_java_synthetic t = is_java t && String.contains (get_field_name t) '$'
+let is_java_synthetic t = is_java t && JConfig.is_synthetic_name (get_field_name t)
+
+let is_internal {field_name} =
+  String.is_prefix field_name ~prefix:"__"
+  || (* NOTE: _M_ is internal field of std::thread::id *)
+  String.is_prefix field_name ~prefix:"_M_"
+
 
 module T = struct
   type nonrec t = t [@@deriving compare]

@@ -31,6 +31,8 @@ val pp : F.formatter -> t -> unit
 
 val is_suitable_for_pre : t -> bool
 
+val is_suitable_for_post : t -> bool
+
 val map_trace : f:(Trace.t -> Trace.t) -> t -> t
 (** applies [f] to the traces found in attributes, leaving attributes without traces intact *)
 
@@ -62,4 +64,12 @@ module Attributes : sig
   val is_uninitialized : t -> bool
 
   val get_must_be_initialized : t -> Trace.t option
+
+  val isl_subset : t -> t -> bool
+  (** check whether for each attr in the second list, there exists a corresponding attr in the first
+      according to {!Attributes.isl_equiv}. *)
+
+  val replace_isl_abduced : t -> t -> t
+  (** While applying a spec, replacing ISLAbduced by Allocated and Invalidation.Cfree by
+      Invalidation.delete, if applicable *)
 end

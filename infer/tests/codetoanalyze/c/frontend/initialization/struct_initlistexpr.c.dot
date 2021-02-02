@@ -30,7 +30,7 @@ digraph cfg {
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_3" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_2" ;
-"implicit_expr_set_correctly.dcfe49f71ad24e86323cbad97b1a70fe_1" [label="1: Start implicit_expr_set_correctly\nFormals: \nLocals:  imageDrawRect:rect \n  " color=yellow style=filled]
+"implicit_expr_set_correctly.dcfe49f71ad24e86323cbad97b1a70fe_1" [label="1: Start implicit_expr_set_correctly\nFormals: \nLocals:  0$?%__sil_tmpSIL_compound_literal__n$1:rect imageDrawRect:rect \n  " color=yellow style=filled]
 	
 
 	 "implicit_expr_set_correctly.dcfe49f71ad24e86323cbad97b1a70fe_1" -> "implicit_expr_set_correctly.dcfe49f71ad24e86323cbad97b1a70fe_5" ;
@@ -45,7 +45,7 @@ digraph cfg {
 	
 
 	 "implicit_expr_set_correctly.dcfe49f71ad24e86323cbad97b1a70fe_4" -> "implicit_expr_set_correctly.dcfe49f71ad24e86323cbad97b1a70fe_2" ;
-"implicit_expr_set_correctly.dcfe49f71ad24e86323cbad97b1a70fe_5" [label="5:  BinaryOperatorStmt: Assign \n   *&imageDrawRect.origin.x.a:int=0 [line 56, column 35]\n  *&imageDrawRect.origin.x.b:int=0 [line 56, column 35]\n  *&imageDrawRect.origin.y:int=0 [line 56, column 35]\n  *&imageDrawRect.z:int=0 [line 56, column 35]\n  *&imageDrawRect.size:int=5 [line 56, column 25]\n  n$1=*&imageDrawRect:rect [line 56, column 19]\n " shape="box"]
+"implicit_expr_set_correctly.dcfe49f71ad24e86323cbad97b1a70fe_5" [label="5:  BinaryOperatorStmt: Assign \n   *&0$?%__sil_tmpSIL_compound_literal__n$1.origin.x.a:int=0 [line 56, column 35]\n  *&0$?%__sil_tmpSIL_compound_literal__n$1.origin.x.b:int=0 [line 56, column 35]\n  *&0$?%__sil_tmpSIL_compound_literal__n$1.origin.y:int=0 [line 56, column 35]\n  *&0$?%__sil_tmpSIL_compound_literal__n$1.z:int=0 [line 56, column 35]\n  *&0$?%__sil_tmpSIL_compound_literal__n$1.size:int=5 [line 56, column 25]\n  n$2=*&0$?%__sil_tmpSIL_compound_literal__n$1.origin.x.a:int [line 56, column 3]\n  *&imageDrawRect.origin.x.a:int=n$2 [line 56, column 3]\n  n$3=*&0$?%__sil_tmpSIL_compound_literal__n$1.origin.x.b:int [line 56, column 3]\n  *&imageDrawRect.origin.x.b:int=n$3 [line 56, column 3]\n  n$4=*&0$?%__sil_tmpSIL_compound_literal__n$1.origin.y:int [line 56, column 3]\n  *&imageDrawRect.origin.y:int=n$4 [line 56, column 3]\n  n$5=*&0$?%__sil_tmpSIL_compound_literal__n$1.z:int [line 56, column 3]\n  *&imageDrawRect.z:int=n$5 [line 56, column 3]\n  n$6=*&0$?%__sil_tmpSIL_compound_literal__n$1.size:int [line 56, column 3]\n  *&imageDrawRect.size:int=n$6 [line 56, column 3]\n " shape="box"]
 	
 
 	 "implicit_expr_set_correctly.dcfe49f71ad24e86323cbad97b1a70fe_5" -> "implicit_expr_set_correctly.dcfe49f71ad24e86323cbad97b1a70fe_3" ;
@@ -60,7 +60,7 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
-"point_coords_set_correctly.3abf7d8dcf379339f0fa9b69df909b28_1" [label="1: Start point_coords_set_correctly\nFormals:  p:Point*\nLocals:  \n  " color=yellow style=filled]
+"point_coords_set_correctly.3abf7d8dcf379339f0fa9b69df909b28_1" [label="1: Start point_coords_set_correctly\nFormals:  p:Point*\nLocals:  0$?%__sil_tmpSIL_compound_literal__n$2:Point \n  " color=yellow style=filled]
 	
 
 	 "point_coords_set_correctly.3abf7d8dcf379339f0fa9b69df909b28_1" -> "point_coords_set_correctly.3abf7d8dcf379339f0fa9b69df909b28_5" ;
@@ -75,7 +75,7 @@ digraph cfg {
 	
 
 	 "point_coords_set_correctly.3abf7d8dcf379339f0fa9b69df909b28_4" -> "point_coords_set_correctly.3abf7d8dcf379339f0fa9b69df909b28_2" ;
-"point_coords_set_correctly.3abf7d8dcf379339f0fa9b69df909b28_5" [label="5:  BinaryOperatorStmt: Assign \n   n$2=*&p:Point* [line 18, column 4]\n  *n$2.x:int=4 [line 18, column 15]\n  *n$2.y:int=5 [line 18, column 15]\n  n$3=*n$2:Point [line 18, column 8]\n " shape="box"]
+"point_coords_set_correctly.3abf7d8dcf379339f0fa9b69df909b28_5" [label="5:  BinaryOperatorStmt: Assign \n   n$3=*&p:Point* [line 18, column 4]\n  *&0$?%__sil_tmpSIL_compound_literal__n$2.x:int=4 [line 18, column 15]\n  *&0$?%__sil_tmpSIL_compound_literal__n$2.y:int=5 [line 18, column 15]\n  n$4=*&0$?%__sil_tmpSIL_compound_literal__n$2.x:int [line 18, column 3]\n  *n$3.x:int=n$4 [line 18, column 3]\n  n$5=*&0$?%__sil_tmpSIL_compound_literal__n$2.y:int [line 18, column 3]\n  *n$3.y:int=n$5 [line 18, column 3]\n " shape="box"]
 	
 
 	 "point_coords_set_correctly.3abf7d8dcf379339f0fa9b69df909b28_5" -> "point_coords_set_correctly.3abf7d8dcf379339f0fa9b69df909b28_3" ;

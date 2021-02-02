@@ -31,7 +31,7 @@ and disjunction = starjunction list
 type t = starjunction [@@deriving compare, equal, sexp]
 
 val pp_seg_norm : Context.t -> seg pp
-val pp_us : ?pre:('a, 'a) fmt -> ?vs:Var.Set.t -> unit -> Var.Set.t pp
+val pp_us : Var.Set.t pp
 val pp : t pp
 val pp_raw : t pp
 val pp_diff_eq : ?us:Var.Set.t -> ?xs:Var.Set.t -> Context.t -> t pp
@@ -113,7 +113,7 @@ val extend_us : Var.Set.t -> t -> t
 
 (** Query *)
 
-val is_false : t -> bool
+val is_unsat : t -> bool
 (** Holds only of inconsistent formulas, does not hold of all inconsistent
     formulas. *)
 

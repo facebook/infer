@@ -20,6 +20,8 @@ val pp :
 
 val pp_diff :
      cmp:('a -> 'a -> int)
+  -> ?pre:(unit, unit) fmt
+  -> ?suf:(unit, unit) fmt
   -> (unit, unit) fmt
   -> 'a pp
   -> ('a list * 'a list) pp
@@ -30,6 +32,7 @@ val tl : 'a t -> 'a t option
 val tl_exn : 'a t -> 'a t
 val pop_exn : 'a list -> 'a * 'a list
 val mem : 'a -> 'a t -> eq:('a -> 'a -> bool) -> bool
+val iter : 'a t -> f:('a -> unit) -> unit
 val exists : 'a t -> f:('a -> bool) -> bool
 val for_all : 'a t -> f:('a -> bool) -> bool
 val find : 'a t -> f:('a -> bool) -> 'a option
@@ -43,6 +46,8 @@ val remove_one_exn : eq:('a -> 'a -> bool) -> 'a -> 'a list -> 'a list
 
 val remove_one : eq:('a -> 'a -> bool) -> 'a -> 'a list -> 'a list option
 val remove : eq:('a -> 'a -> bool) -> 'a -> 'a list -> 'a list
+val filter : 'a list -> f:('a -> bool) -> 'a list
+val partition : 'a list -> f:('a -> bool) -> 'a list * 'a list
 val map : 'a t -> f:('a -> 'b) -> 'b t
 
 val map_endo : 'a t -> f:('a -> 'a) -> 'a t

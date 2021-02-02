@@ -13,7 +13,7 @@ module type Config = sig
 end
 
 module type S = sig
-  type t
+  type t [@@deriving compare, equal]
 
   type key
 
@@ -48,9 +48,13 @@ module Make
     (Key : PrettyPrintable.PrintableEquatableOrderedType)
     (Value : PrettyPrintable.PrintableOrderedType)
     (Config : Config) : S with type key = Key.t and type value = Value.t = struct
-  type key = Key.t
+  type key = Key.t [@@deriving compare]
 
   type value = Value.t [@@deriving compare]
+
+  (* suppress warnings about using {!List.Assoc.compare} since our own compare function also ignores
+     that different representations of a [t] can have the same meaning *)
+  [@@@warning "-3"]
 
   (** [new_] and [old] together represent the map. Keys may be present in both [old] and [new_], in
       which case bindings in [new_] take precendence.
@@ -68,6 +72,11 @@ module Make
     ; old: (key, value) List.Assoc.t
           (** invariant: [List.length old ≤ Config.limit]. Actually, the length of [old] is always
               either [0] or [N], except possibly after a call to [merge]. *) }
+  [@@deriving compare]
+
+  [@@@warning "+3"]
+
+  let equal = [%compare.equal: t]
 
   let empty = {count_new= 0; old= []; new_= []}
 
@@ -125,8 +134,6 @@ module Make
     if next_count_new > Config.limit then {count_new= 1; new_= [(key, value)]; old= new_without_key}
     else {count_new= next_count_new; new_= (key, value) :: new_without_key; old= map.old}
 
-
-  let equal map1 map2 = phys_equal map1 map2
 
   let fold map ~init ~f =
     let acc = List.fold map.new_ ~init ~f in

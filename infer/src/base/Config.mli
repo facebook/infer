@@ -194,6 +194,8 @@ val buck_build_args_no_inline : string list
 
 val buck_cache_mode : bool
 
+val buck_java_heap_size_gb : int option
+
 val buck_merge_all_deps : bool
 
 val buck_mode : BuckMode.t option
@@ -504,6 +506,8 @@ val pulse_report_latent_issues : bool
 val pulse_recency_limit : int
 
 val pulse_widen_threshold : int
+
+val pulse_nullsafe_report_npe : bool
 
 val pure_by_default : bool
 

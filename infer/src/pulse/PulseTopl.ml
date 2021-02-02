@@ -202,9 +202,11 @@ and simple_state =
   ; last_step: step option [@compare.ignore]  (** for trace error reporting *) }
 [@@deriving compare]
 
+let equal_simple_state = [%compare.equal: simple_state]
+
 (* TODO: include a hash of the automaton in a summary to avoid caching problems. *)
 (* TODO: limit the number of simple_states to some configurable number (default ~5) *)
-type state = simple_state list
+type state = simple_state list [@@deriving compare, equal]
 
 let pp_mapping f (x, value) = Format.fprintf f "@[%s↦%a@]@," x AbstractValue.pp value
 

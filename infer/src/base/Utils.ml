@@ -135,6 +135,8 @@ let normalize_path_from ~root fname =
   (filename_of_rev_parts rev_result, filename_of_rev_parts rev_root)
 
 
+let normalize_path fname = fname |> normalize_path_from ~root:"." |> fst
+
 (** Convert a filename to an absolute one if it is relative, and normalize "." and ".." *)
 let filename_to_absolute ~root fname =
   let abs_fname = if Filename.is_absolute fname then fname else root ^/ fname in

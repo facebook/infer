@@ -284,7 +284,7 @@ let pp_inst fs inst =
         reg msg Loc.pp loc
   | Abort {loc} -> pf "@[<2>abort;@]\t%a" Loc.pp loc
   | Intrinsic {reg; name; args; loc} ->
-      pf "@[<2>%aintrinsic %a(%a);@]\t%a"
+      pf "@[<2>%aintrinsic@ %a(@,@[<hv>%a@]);@]\t%a"
         (Option.pp "%a := " Reg.pp)
         reg Intrinsic.pp name (IArray.pp ",@ " Exp.pp) args Loc.pp loc
 
@@ -630,18 +630,23 @@ module Func = struct
   let invariant func =
     assert (func == func.entry.parent) ;
     let@ () = Invariant.invariant [%here] func [%sexp_of: t] in
-    match Function.typ func.name with
-    | Pointer {elt= Function {return; _}; _} ->
-        assert (
-          not
-            (Iter.contains_dup
-               (Iter.of_list (entry_cfg func))
-               ~cmp:(fun b1 b2 -> String.compare b1.lbl b2.lbl)) ) ;
-        assert (
-          Bool.equal (Option.is_some return) (Option.is_some func.freturn)
-        ) ;
-        iter_term func ~f:(fun term -> Term.invariant ~parent:func term)
-    | _ -> assert false
+    try
+      match Function.typ func.name with
+      | Pointer {elt= Function {return; _}; _} ->
+          assert (
+            not
+              (Iter.contains_dup
+                 (Iter.of_list (entry_cfg func))
+                 ~cmp:(fun b1 b2 -> String.compare b1.lbl b2.lbl)) ) ;
+          assert (
+            Bool.equal (Option.is_some return) (Option.is_some func.freturn)
+          ) ;
+          iter_term func ~f:(fun term -> Term.invariant ~parent:func term)
+      | _ -> assert false
+    with exc ->
+      let bt = Printexc.get_raw_backtrace () in
+      [%Trace.info "%a" pp func] ;
+      Printexc.raise_with_backtrace exc bt
 
   let find name functions =
     Function.Map.find (Function.counterfeit name) functions

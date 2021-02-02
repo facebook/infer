@@ -193,14 +193,14 @@ module Term = struct
      one step. *)
   module T = struct
     type t = exp [@@deriving compare, equal, sexp]
+
+    let ppx = ppx
+    let pp = pp
   end
 
   include T
   module Set = Set.Make (T)
   module Map = Map.Make (T)
-
-  let ppx = ppx
-  let pp = pp
 
   (* variables *)
 

@@ -26,6 +26,9 @@ val normalize_path_from : root:string -> string -> string * string
     the result is [("../foo/bar", ".")] (in particular "r/a/../../../foo/./bar" and "./../foo/bar"
     represent the same file) *)
 
+val normalize_path : string -> string
+(** Normalize a path without a root *)
+
 val filename_to_absolute : root:string -> string -> string
 (** Convert a filename to an absolute one if it is relative, and normalize "." and ".." *)
 

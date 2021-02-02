@@ -24,8 +24,7 @@ type invariant_map
 
 type loop_control_maps =
   { exit_map: LoopHeads.t ExitNodeToLoopHeads.t
-  ; loop_head_to_guard_nodes: GuardNodes.t LoopHeadToGuardNodes.t
-  ; nodes: Procdesc.Node.t list Lazy.t }
+  ; loop_head_to_guard_nodes: GuardNodes.t LoopHeadToGuardNodes.t }
 
 val compute_invariant_map : Procdesc.t -> loop_control_maps -> invariant_map
 

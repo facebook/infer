@@ -8,6 +8,7 @@
 (** Issue reporting *)
 
 val init : ?append:bool -> string -> unit
+val step_solver : unit -> unit
 val step_inst : Llair.inst -> unit
 val step_term : Llair.term -> unit
 val hit_bound : int -> unit
@@ -42,7 +43,7 @@ type times =
   {etime: float; utime: float; stime: float; cutime: float; cstime: float}
 [@@deriving sexp]
 
-type coverage = {steps: int; hit: int; fraction: float}
+type coverage = {steps: int; hit: int; fraction: float; solver_steps: int}
 [@@deriving compare, equal, sexp]
 
 type entry =

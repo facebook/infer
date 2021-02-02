@@ -282,7 +282,7 @@ let config_unsafe checker =
   | Pulse ->
       { id= "pulse"
       ; kind= UserFacing {title= "Pulse"; markdown_body= ""}
-      ; support= supports_clang_and_java_experimental
+      ; support= (function Clang -> Support | Java -> ExperimentalSupport)
       ; short_documentation= "Memory and lifetime analysis."
       ; cli_flags= Some {deprecated= ["-ownership"]; show_in_help= true}
       ; enabled_by_default= false

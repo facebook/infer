@@ -19,7 +19,7 @@ module VarAddress = struct
 end
 
 module AddrHistPair = struct
-  type t = AbstractValue.t * ValueHistory.t [@@deriving compare, yojson_of]
+  type t = AbstractValue.t * ValueHistory.t [@@deriving compare, equal, yojson_of]
 
   let pp f addr_trace =
     if Config.debug_level_analysis >= 3 then
@@ -49,6 +49,8 @@ let canonicalize ~get_var_repr stack =
 include M
 
 let compare = M.compare AddrHistPair.compare
+
+let equal = M.equal AddrHistPair.equal
 
 let pp fmt m =
   let pp_item fmt (var_address, v) =

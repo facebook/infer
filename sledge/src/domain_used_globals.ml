@@ -20,7 +20,6 @@ let init globals =
 
 let join l r = Some (Llair.Global.Set.union l r)
 let recursion_beyond_bound = `skip
-let is_false _ = false
 let post _ _ state = state
 let retn _ _ from_call post = Llair.Global.Set.union from_call post
 let dnf t = [t]
@@ -38,7 +37,7 @@ let exec_move reg_exps st =
   IArray.fold ~f:(fun (_, rhs) -> used_globals rhs) reg_exps st
 
 let exec_inst inst st =
-  [%Trace.call fun {pf} -> pf "pre:{%a} %a" pp st Llair.Inst.pp inst]
+  [%Trace.call fun {pf} -> pf "@ pre:{%a} %a" pp st Llair.Inst.pp inst]
   ;
   Some (Llair.Inst.fold_exps ~f:used_globals inst st)
   |>
@@ -66,7 +65,7 @@ let apply_summary st summ = Some (Llair.Global.Set.union st summ)
 
 let by_function : Domain_intf.used_globals -> Llair.Function.t -> t =
  fun s fn ->
-  [%Trace.call fun {pf} -> pf "%a" Llair.Function.pp fn]
+  [%Trace.call fun {pf} -> pf "@ %a" Llair.Function.pp fn]
   ;
   ( match s with
   | Declared set -> set

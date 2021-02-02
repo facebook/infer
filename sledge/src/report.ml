@@ -40,6 +40,8 @@ let invalid_access_term fmt_thunk term =
 
 (** Functional statistics *)
 
+let solver_steps = ref 0
+let step_solver () = Int.incr solver_steps
 let steps = ref 0
 let hit_insts = Llair.Inst.Tbl.create ()
 let hit_terms = Llair.Term.Tbl.create ()
@@ -101,7 +103,7 @@ type times =
   {etime: float; utime: float; stime: float; cutime: float; cstime: float}
 [@@deriving sexp]
 
-type coverage = {steps: int; hit: int; fraction: float}
+type coverage = {steps: int; hit: int; fraction: float; solver_steps: int}
 [@@deriving compare, equal, sexp]
 
 type entry =
@@ -124,7 +126,7 @@ let process_times () =
     ; cstime= tms_cstime }
 
 let gc_stats () =
-  let words_to_MB n = n /. float (Sys.word_size / 8) /. (1024. *. 1024.) in
+  let words_to_MB n = n *. float (Sys.word_size / 8) /. (1024. *. 1024.) in
   let ctrl = Gc.get () in
   let stat = Gc.quick_stat () in
   let allocated =
@@ -143,8 +145,8 @@ let name = ref ""
 
 let output entry =
   Option.iter !chan ~f:(fun chan ->
-      Out_channel.output_lines chan
-        [Sexp.to_string (sexp_of_t {name= !name; entry})] )
+      Sexp.output chan (sexp_of_t {name= !name; entry}) ;
+      Out_channel.newline chan )
 
 let init ?append filename =
   (chan :=
@@ -171,6 +173,7 @@ let coverage (pgm : Llair.program) =
     Llair.Inst.Tbl.length hit_insts + Llair.Term.Tbl.length hit_terms
   in
   let fraction = Float.(of_int hit /. of_int size) in
-  output (Coverage {steps= !steps; hit; fraction})
+  output
+    (Coverage {steps= !steps; hit; fraction; solver_steps= !solver_steps})
 
 let status s = output (Status s)

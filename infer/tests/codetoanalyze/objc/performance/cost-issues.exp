@@ -90,7 +90,7 @@ codetoanalyze/objc/performance/NSSet.m, nsset_init_with_array_linear, 6 + 3 ⋅ 
 codetoanalyze/objc/performance/NSSet.m, nsset_init_with_set_constant, 5,  OnUIThread:false, []
 codetoanalyze/objc/performance/NSSet.m, nsset_iterate_linear, 5 + 8 ⋅ (set->elements.length.ub + 1),  OnUIThread:false, [{set->elements.length.ub + 1},Loop]
 codetoanalyze/objc/performance/NSSet.m, nsset_next_object_linear, 4 + 5 ⋅ (set->elements.length.ub + 1),  OnUIThread:false, [{set->elements.length.ub + 1},Loop]
-codetoanalyze/objc/performance/NSString.m, DummyClass.call_string_by_appending_string_constant_FP, ⊤,  OnUIThread:false, [Unbounded loop,Modeled call to NSString.stringByAppendingString:]
+codetoanalyze/objc/performance/NSString.m, DummyClass.call_string_by_appending_string_constant, 7,  OnUIThread:false, []
 codetoanalyze/objc/performance/NSString.m, DummyClass.dealloc, 0,  OnUIThread:false, []
 codetoanalyze/objc/performance/NSString.m, call_component_separated_by_char_constant, 44,  OnUIThread:false, []
 codetoanalyze/objc/performance/NSString.m, call_init_with_string_constant, 13,  OnUIThread:false, []

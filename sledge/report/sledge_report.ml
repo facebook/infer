@@ -90,7 +90,8 @@ let add_cov base_cov cov row =
             Report.
               { steps= cov.steps - base_cov.steps
               ; hit= cov.hit - base_cov.hit
-              ; fraction= cov.fraction -. base_cov.fraction }
+              ; fraction= cov.fraction -. base_cov.fraction
+              ; solver_steps= cov.solver_steps - base_cov.solver_steps }
           in
           Some (covd :: Option.value row.cov_deltas ~default:[])
       | _ -> None
@@ -333,6 +334,8 @@ let write_html ranges rows chan =
           <th>%%</th>
           <th>&Delta;<br></th>
           <th>&Delta;%%<br></th>
+          <th>Solver<br>Steps</th>
+          <th>&Delta;<br></th>
         </tr>|} ;
   pf "\n" ;
   Iter.iter rows ~f:(fun row ->
@@ -382,7 +385,7 @@ let write_html ranges rows chan =
           (Base.Float.round_decimal ~decimal_digits:2 r)
       in
       let delta_mem max pct w ppf d =
-        let r = if Float.(d < 0.000001) then 0. else 100. *. d /. w in
+        let r = if Float.(abs d < 0.000001) then 0. else 100. *. d /. w in
         Printf.fprintf ppf
           "<td align=\"right\" bgcolor=\"%s\">%s</td>\n\
            <td align=\"right\" bgcolor=\"%s\">%12.0f%%</td>\n"
@@ -407,6 +410,15 @@ let write_html ranges rows chan =
                 else
                   Printf.fprintf ppf "<td %s align=\"right\">%i</td>\n" attr
                     steps )
+      in
+      let solver_steps attr ppf = function
+        | [] -> Printf.fprintf ppf "<td %s></td>\n" attr
+        | cs ->
+            List.iter cs ~f:(fun {Report.solver_steps} ->
+                if solver_steps = 0 then Printf.fprintf ppf "<td></td>\n"
+                else
+                  Printf.fprintf ppf "<td %s align=\"right\">%i</td>\n" attr
+                    solver_steps )
       in
       let hit attr ppf = function
         | [] -> Printf.fprintf ppf "<td %s></td>\n" attr
@@ -434,22 +446,18 @@ let write_html ranges rows chan =
         let attr = if List.is_empty cs then "" else " class=\"neutral\"" in
         Printf.fprintf ppf "%a" (coverage attr) cs
       in
-      let stat ppf = function
-        | [] ->
-            Printf.fprintf ppf
-              "<td style=\"border-left: 2px solid #eee8d5\";></td>\n"
+      let stat ppf ss =
+        Printf.fprintf ppf "<td style=\"border-left: 2px solid #eee8d5\";" ;
+        ( match ss with
+        | [] -> Printf.fprintf ppf ">"
         | ss ->
             List.iter ss ~f:(fun s ->
                 match (s : Report.status) with
                 | Safe _ | Unsafe _ | Ok ->
-                    Printf.fprintf ppf
-                      "<td style=\"border-left: 2px solid #eee8d5\";>%a</td>\n"
-                      pf_status s
-                | _ ->
-                    Printf.fprintf ppf
-                      "<td style=\"border-left: 2px solid #eee8d5\"; \
-                       class=\"regress\">%a</td>\n"
-                      pf_status s )
+                    Printf.fprintf ppf ">%a" pf_status s
+                | _ -> Printf.fprintf ppf "class=\"regress\">%a" pf_status s )
+        ) ;
+        Printf.fprintf ppf "</td>\n"
       in
       let statd ppf = function
         | None | Some [] -> Printf.fprintf ppf "<td></td>\n"
@@ -524,6 +532,9 @@ let write_html ranges rows chan =
         (hit " style=\"border-left: 2px solid #eee8d5\";")
         cov (coverage "") cov ;
       pf "%a%a" (coveraged hit) cov_deltas (coveraged coverage) cov_deltas ;
+      pf "%a%a"
+        (solver_steps " style=\"border-left: 2px solid #eee8d5\";")
+        cov (coveraged solver_steps) cov_deltas ;
       pf "</tr>\n" ) ;
   pf "<table>\n" ;
   pf "</body></html>\n"
@@ -632,7 +643,7 @@ let add_total rows =
   in
   Iter.cons total rows
 
-let cmp x y =
+let cmp perf x y =
   match (x.status_deltas, y.status_deltas) with
   | Some xs, Some ys ->
       List.compare Report.compare_status xs ys
@@ -640,21 +651,49 @@ let cmp x y =
   | Some _, None -> -1
   | None, Some _ -> 1
   | None, None -> (
-    match (List.hd x.status, List.hd y.status) with
-    | Some (Safe _ | Unsafe _ | Ok), Some (Safe _ | Unsafe _ | Ok) -> (
-      match (x.times_deltas, y.times_deltas) with
-      | Some xtd, Some ytd ->
-          Float.(compare (abs ytd.utime) (abs xtd.utime))
-      | Some _, None -> 1
-      | None, Some _ -> -1
-      | None, None -> String.compare x.name y.name )
-    | _, Some (Safe _ | Unsafe _ | Ok) -> -1
-    | Some (Safe _ | Unsafe _ | Ok), _ -> 1
-    | s, t -> Option.compare (Ord.opp Report.compare_status) s t )
+      let max =
+        Option.map_or ~default:0 ~f:(fun cds ->
+            List.fold cds 0 ~f:(fun {Report.steps} m ->
+                Int.(max (abs steps) m) ) )
+      in
+      -Int.compare (max x.cov_deltas) (max y.cov_deltas)
+      |> fun o ->
+      if o <> 0 then o
+      else
+        match (List.hd x.status, List.hd y.status) with
+        | ( Some (Safe _ | Unsafe _ | Ok | Unsound | Incomplete)
+          , Some (Safe _ | Unsafe _ | Ok | Unsound | Incomplete) )
+          when perf -> (
+          match (x.times_deltas, y.times_deltas) with
+          | Some xtd, Some ytd ->
+              -Float.(compare (abs xtd.utime) (abs ytd.utime))
+              |> fun o -> if o <> 0 then o else String.compare x.name y.name
+          | Some _, None -> 1
+          | None, Some _ -> -1
+          | None, None -> String.compare x.name y.name )
+        | ( Some (Safe _ | Unsafe _ | Ok | Unsound | Incomplete)
+          , Some (Safe _ | Unsafe _ | Ok | Unsound | Incomplete) ) -> (
+          match (x.gcs_deltas, y.gcs_deltas) with
+          | Some xgc, Some ygc ->
+              -Float.(
+                 compare
+                   (abs xgc.Report.allocated)
+                   (abs ygc.Report.allocated))
+              |> fun o -> if o <> 0 then o else String.compare x.name y.name
+          | Some _, None -> 1
+          | None, Some _ -> -1
+          | None, None -> String.compare x.name y.name )
+        | _, Some (Safe _ | Unsafe _ | Ok | Unsound | Incomplete) -> -1
+        | Some (Safe _ | Unsafe _ | Ok | Unsound | Incomplete), _ -> 1
+        | s, t ->
+            Option.compare (Ord.opp Report.compare_status) s t
+            |> fun o -> if o <> 0 then o else String.compare x.name y.name )
 
 let filter rows =
   Iter.filter rows ~f:(fun {status} ->
-      List.exists status ~f:(function Unimplemented _ -> false | _ -> true) )
+      List.exists status ~f:(function
+        | InvalidInput _ | Unimplemented _ -> false
+        | _ -> true ) )
 
 let input_rows ?baseline current =
   let b_tbl = Option.map ~f:read baseline in
@@ -672,13 +711,13 @@ let input_rows ?baseline current =
       let c_result = Tbl.find_opt c_tbl name in
       combine name b_result c_result )
 
-let generate_html ?baseline current output =
+let generate_html perf ?baseline current output =
   let rows = input_rows ?baseline current in
   let rows = Iter.map ~f:average rows in
   let rows = filter rows in
   let rows = Iter.persistent rows in
   let ranges = ranges rows in
-  let rows = Iter.sort ~cmp rows in
+  let rows = Iter.sort ~cmp:(cmp perf) rows in
   let rows = add_total rows in
   Out_channel.with_file output ~f:(write_html ranges rows)
 
@@ -691,8 +730,10 @@ let html_cmd =
   and output =
     flag "output" (required string)
       ~doc:"<file> write html report to <file>"
+  and perf =
+    flag "perf" no_arg ~doc:"sort results for a performance comparison"
   in
-  fun () -> generate_html ?baseline current output
+  fun () -> generate_html perf ?baseline current output
 
 let write_status ?baseline rows chan =
   let rows =

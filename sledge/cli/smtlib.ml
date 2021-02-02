@@ -133,7 +133,7 @@ let x_context {asserts; var_env} =
 
 let check_unsat (_, asserts, ctx) =
   [%Trace.call fun {pf} ->
-    pf "%a@ %a@ %a" Formula.pp asserts Context.pp ctx Context.pp_raw ctx]
+    pf "@ %a@ %a@ %a" Formula.pp asserts Context.pp ctx Context.pp_raw ctx]
   ;
   ( Context.is_unsat ctx
   || Formula.equal Formula.ff

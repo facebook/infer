@@ -63,6 +63,21 @@ end) : S with type key = Key.t = struct
     if !change then t' else t
 
   let union x y ~f = M.union f x y
+
+  let union_absent t u =
+    let change = ref false in
+    let t' =
+      M.merge
+        (fun _ v1 v2 ->
+          match v1 with
+          | Some _ -> v1
+          | None ->
+              change := true ;
+              v2 )
+        t u
+    in
+    if !change then t' else t
+
   let partition m ~f = M.partition f m
 
   let partition_map m ~f =
@@ -154,6 +169,19 @@ end) : S with type key = Key.t = struct
     in
     Option.map ~f:(fun v -> (v, m)) !found
 
+  let find_or_add k v m =
+    let found = ref None in
+    let m =
+      M.update k
+        (function
+          | None -> Some v
+          | v ->
+              found := v ;
+              v )
+        m
+    in
+    match !found with Some v -> `Found v | None -> `Added m
+
   let pop m = choose m |> Option.map ~f:(fun (k, v) -> (k, v, remove k m))
 
   let pop_min_binding m =
@@ -173,7 +201,8 @@ end) : S with type key = Key.t = struct
   let keys = M.keys
   let values = M.values
   let to_iter = M.to_iter
-  let to_list = M.to_list
+  let to_list = M.bindings
+  let to_list_rev = M.to_list
   let of_iter = M.of_iter
   let of_list = M.of_list
 
@@ -199,7 +228,10 @@ end) : S with type key = Key.t = struct
            Format.fprintf fs "@[%a@ @<2>↦ %a@]" pp_k k pp_v v ))
       (Iter.to_list (to_iter m))
 
-  let pp_diff pp_key pp_val pp_diff_val ~eq fs (x, y) =
+  let pp_diff ?(pre = ("[@[<hv>" : (unit, unit) fmt))
+      ?(suf = ("@]];@ " : (unit, unit) fmt))
+      ?(sep = (";@ " : (unit, unit) fmt)) pp_key pp_val pp_diff_val ~eq fs
+      (x, y) =
     let pp_diff_elt fs = function
       | k, `Left v ->
           Format.fprintf fs "-- [@[%a@ @<2>↦ %a@]]" pp_key k pp_val v
@@ -209,6 +241,5 @@ end) : S with type key = Key.t = struct
           Format.fprintf fs "[@[%a@ @<2>↦ %a@]]" pp_key k pp_diff_val vv
     in
     let sd = Iter.to_list (symmetric_diff ~eq x y) in
-    if not (List.is_empty sd) then
-      Format.fprintf fs "[@[<hv>%a@]];@ " (List.pp ";@ " pp_diff_elt) sd
+    List.pp ~pre ~suf sep pp_diff_elt fs sd
 end

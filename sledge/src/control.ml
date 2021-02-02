@@ -99,7 +99,7 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
       |> check invariant
 
     let push_call (Llair.{return; throw} as call) from_call stk =
-      [%Trace.call fun {pf} -> pf "%a" pp stk]
+      [%Trace.call fun {pf} -> pf "@ %a" pp stk]
       ;
       let rec count_f_in_stack acc f = function
         | Return {stk= next_frame; dst= dest_block} ->
@@ -211,21 +211,23 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
       type elt = {depth: int; edge: Edge.t; state: Dom.t; depths: Depths.t}
       [@@deriving compare, sexp_of]
 
-      module Elts = Set.Make (struct
+      module Elt = struct
         type t = elt [@@deriving compare, sexp_of]
-      end)
+
+        let pp ppf {depth; edge} =
+          Format.fprintf ppf "%i: %a" depth Edge.pp edge
+      end
+
+      module Elts = Set.Make (Elt)
 
       type t = {queue: elt FHeap.t; removed: Elts.t}
-
-      let pp_elt ppf {depth; edge} =
-        Format.fprintf ppf "%i: %a" depth Edge.pp edge
 
       let pp ppf {queue; removed} =
         let rev_elts =
           FHeap.fold queue ~init:[] ~f:(fun rev_elts elt ->
               if Elts.mem elt removed then rev_elts else elt :: rev_elts )
         in
-        Format.fprintf ppf "@[%a@]" (List.pp " ::@ " pp_elt)
+        Format.fprintf ppf "@[%a@]" (List.pp " ::@ " Elt.pp)
           (List.rev rev_elts)
 
       let create () =
@@ -311,7 +313,7 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
     let Llair.{callee; actuals; areturn; return; recursive} = call in
     let Llair.{name; formals; freturn; locals; entry} = callee in
     [%Trace.call fun {pf} ->
-      pf "%a from %a with state@ %a" Llair.Function.pp name
+      pf "@ %a from %a with state@ %a" Llair.Function.pp name
         Llair.Function.pp return.dst.parent.name Dom.pp state]
     ;
     let dnf_states =
@@ -378,7 +380,7 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
 
   let exec_return stk pre_state (block : Llair.block) exp =
     let Llair.{name; formals; freturn; locals} = block.parent in
-    [%Trace.call fun {pf} -> pf "from: %a" Llair.Function.pp name]
+    [%Trace.call fun {pf} -> pf "@ from: %a" Llair.Function.pp name]
     ;
     let summarize post_state =
       if not Opts.function_summaries then post_state
@@ -417,7 +419,7 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
 
   let exec_throw stk pre_state (block : Llair.block) exc =
     let func = block.parent in
-    [%Trace.call fun {pf} -> pf "from %a" Llair.Function.pp func.name]
+    [%Trace.call fun {pf} -> pf "@ from %a" Llair.Function.pp func.name]
     ;
     let unwind formals scope from_call state =
       Dom.retn formals (Some func.fthrow) from_call
@@ -438,6 +440,15 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
     |>
     [%Trace.retn fun {pf} _ -> pf ""]
 
+  let exec_assume cond jump stk state block =
+    match Dom.exec_assume state cond with
+    | Some state -> exec_jump stk state block jump
+    | None ->
+        [%Trace.info
+          "@[<2>infeasible assume %a@\n@[%a@]@]" Llair.Exp.pp cond Dom.pp
+            state] ;
+        Work.skip
+
   let exec_term : Llair.program -> Stack.t -> Dom.t -> Llair.block -> Work.x
       =
    fun pgm stk state block ->
@@ -448,28 +459,22 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
     | Switch {key; tbl; els} ->
         IArray.fold
           ~f:(fun (case, jump) x ->
-            match Dom.exec_assume state (Llair.Exp.eq key case) with
-            | Some state -> exec_jump stk state block jump |> Work.seq x
-            | None -> x )
+            exec_assume (Llair.Exp.eq key case) jump stk state block
+            |> Work.seq x )
           tbl
-          ( match
-              Dom.exec_assume state
-                (IArray.fold tbl Llair.Exp.true_ ~f:(fun (case, _) b ->
-                     Llair.Exp.and_ (Llair.Exp.dq key case) b ))
-            with
-          | Some state -> exec_jump stk state block els
-          | None -> Work.skip )
+          (exec_assume
+             (IArray.fold tbl Llair.Exp.true_ ~f:(fun (case, _) b ->
+                  Llair.Exp.and_ (Llair.Exp.dq key case) b ))
+             els stk state block)
     | Iswitch {ptr; tbl} ->
         IArray.fold tbl Work.skip ~f:(fun (jump : Llair.jump) x ->
-            match
-              Dom.exec_assume state
-                (Llair.Exp.eq ptr
-                   (Llair.Exp.label
-                      ~parent:(Llair.Function.name jump.dst.parent.name)
-                      ~name:jump.dst.lbl))
-            with
-            | Some state -> exec_jump stk state block jump |> Work.seq x
-            | None -> x )
+            exec_assume
+              (Llair.Exp.eq ptr
+                 (Llair.Exp.label
+                    ~parent:(Llair.Function.name jump.dst.parent.name)
+                    ~name:jump.dst.lbl))
+              jump stk state block
+            |> Work.seq x )
     | Call ({callee} as call) ->
         exec_call stk state block call
           (Domain_used_globals.by_function Opts.globals callee.name)
@@ -501,7 +506,7 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
    fun pgm stk state block ->
     [%trace]
       ~call:(fun {pf} ->
-        pf "#%i %%%s in %a" block.sort_index block.lbl Llair.Function.pp
+        pf "@ #%i %%%s in %a" block.sort_index block.lbl Llair.Function.pp
           block.parent.name )
       ~retn:(fun {pf} _ ->
         pf "#%i %%%s in %a" block.sort_index block.lbl Llair.Function.pp

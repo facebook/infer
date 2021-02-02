@@ -24,3 +24,9 @@ void double_free_global_bad() {
   free_global_pointer_ok();
   free_global_pointer_ok();
 }
+
+void free_null_then_deref_bad() {
+  int* x = NULL;
+  free(x);
+  *x = 1;
+}

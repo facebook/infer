@@ -16,6 +16,7 @@ let tl_exn = tl
 let tl = function [] -> None | _ :: tl -> Some tl
 let pop_exn = function x :: xs -> (x, xs) | [] -> raise Not_found
 let mem elt seq ~eq = mem ~eq elt seq
+let iter xs ~f = iter ~f xs
 let exists xs ~f = exists ~f xs
 let for_all xs ~f = for_all ~f xs
 let find_exn xs ~f = find ~f xs
@@ -34,6 +35,8 @@ let remove_one ~eq x xs =
   try Some (remove_one_exn ~eq x xs) with Not_found -> None
 
 let remove ~eq x xs = remove ~eq ~key:x xs
+let filter xs ~f = filter ~f xs
+let partition xs ~f = partition ~f xs
 let map xs ~f = map ~f xs
 let map_endo t ~f = map_endo map t ~f
 
@@ -89,13 +92,13 @@ let rec pp ?pre ?suf sep pp_elt fs = function
       | xs -> Format.fprintf fs "%( %)%a" sep (pp sep pp_elt) xs ) ;
       Option.iter ~f:(Format.fprintf fs) suf
 
-let pp_diff ~cmp sep pp_elt fs (xs, ys) =
+let pp_diff ~cmp ?pre ?suf sep pp_elt fs (xs, ys) =
   let pp_diff_elt fs (elt : _ Either.t) =
     match elt with
     | Left x -> Format.fprintf fs "-- %a" pp_elt x
     | Right y -> Format.fprintf fs "++ %a" pp_elt y
   in
-  pp sep pp_diff_elt fs (symmetric_diff ~cmp xs ys)
+  pp ?pre ?suf sep pp_diff_elt fs (symmetric_diff ~cmp xs ys)
 
 module Assoc = struct
   include Assoc

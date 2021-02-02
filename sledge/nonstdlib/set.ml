@@ -56,6 +56,7 @@ end) : S with type elt = Elt.t = struct
   let inter = S.inter
   let union = S.union
   let diff_inter s t = (diff s t, inter s t)
+  let diff_inter_diff s t = (diff s t, inter s t, diff t s)
   let union_list ss = List.fold ~f:union ss empty
   let is_empty = S.is_empty
   let cardinal = S.cardinal
@@ -96,24 +97,43 @@ end) : S with type elt = Elt.t = struct
       | l, true, r when is_empty l && is_empty r -> `One elt
       | _ -> `Many )
 
+  let pop s =
+    match choose s with
+    | Some elt -> Some (elt, S.remove elt s)
+    | None -> None
+
   let pop_exn s =
     let elt = choose_exn s in
     (elt, S.remove elt s)
 
   let map s ~f = S.map f s
   let filter s ~f = S.filter f s
+  let partition s ~f = S.partition f s
   let iter s ~f = S.iter f s
   let exists s ~f = S.exists f s
   let for_all s ~f = S.for_all f s
   let fold s z ~f = S.fold f s z
+
+  let reduce xs ~f =
+    match pop xs with Some (x, xs) -> Some (fold ~f xs x) | None -> None
+
   let to_iter = S.to_iter
   let of_iter = S.of_iter
 
-  let pp ?pre ?suf ?(sep = (",@ " : (unit, unit) fmt)) pp_elt fs x =
+  let pp_full ?pre ?suf ?(sep = (",@ " : (unit, unit) fmt)) pp_elt fs x =
     List.pp ?pre ?suf sep pp_elt fs (S.elements x)
 
-  let pp_diff pp_elt fs (xs, ys) =
-    let lose = diff xs ys and gain = diff ys xs in
-    if not (is_empty lose) then Format.fprintf fs "-- %a" (pp pp_elt) lose ;
-    if not (is_empty gain) then Format.fprintf fs "++ %a" (pp pp_elt) gain
+  module Provide_pp (Elt : sig
+    type t = elt
+
+    val pp : t pp
+  end) =
+  struct
+    let pp = pp_full Elt.pp
+
+    let pp_diff fs (xs, ys) =
+      let lose = diff xs ys and gain = diff ys xs in
+      if not (is_empty lose) then Format.fprintf fs "-- %a" pp lose ;
+      if not (is_empty gain) then Format.fprintf fs "++ %a" pp gain
+  end
 end

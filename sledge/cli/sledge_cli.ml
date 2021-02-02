@@ -118,6 +118,9 @@ let analyze =
       ~doc:"do not simplify states during symbolic execution"
   and stats =
     flag "stats" no_arg ~doc:"output performance statistics to stderr"
+  and dump_query =
+    flag "dump-query" (optional int)
+      ~doc:"<int> dump solver query <int> and halt"
   in
   fun program () ->
     Timer.enabled := stats ;
@@ -139,6 +142,7 @@ let analyze =
     let module Dom = (val dom) in
     let module Analysis = Control.Make (Opts) (Dom) in
     Domain_sh.simplify_states := not no_simplify_states ;
+    Option.iter dump_query ~f:(fun n -> Solver.dump_query := n) ;
     Analysis.exec_pgm pgm ;
     Report.coverage pgm ;
     Report.safe_or_unsafe ()

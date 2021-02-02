@@ -22,15 +22,17 @@ type 'abductive_domain_t base_t =
   | AbortProgram of AbductiveDomain.summary
   | LatentAbortProgram of {astate: AbductiveDomain.summary; latent_issue: LatentIssue.t}
   | ISLLatentMemoryError of 'abductive_domain_t
-[@@deriving yojson_of]
+[@@deriving equal, compare, yojson_of]
 
 type t = AbductiveDomain.t base_t
 
 let continue astate = ContinueProgram astate
 
-let mk_initial pdesc = ContinueProgram (AbductiveDomain.mk_initial pdesc)
+let mk_initial tenv pdesc = ContinueProgram (AbductiveDomain.mk_initial tenv pdesc)
 
 let leq ~lhs ~rhs =
+  phys_equal lhs rhs
+  ||
   match (lhs, rhs) with
   | AbortProgram astate1, AbortProgram astate2 | ExitProgram astate1, ExitProgram astate2 ->
       AbductiveDomain.leq ~lhs:(astate1 :> AbductiveDomain.t) ~rhs:(astate2 :> AbductiveDomain.t)
@@ -74,35 +76,34 @@ let get_astate : t -> AbductiveDomain.t = function
 
 let is_unsat_cheap exec_state = PathCondition.is_unsat_cheap (get_astate exec_state).path_condition
 
-type summary = AbductiveDomain.summary base_t [@@deriving yojson_of]
+type summary = AbductiveDomain.summary base_t [@@deriving compare, equal, yojson_of]
 
-let summary_of_posts_common ~continue_program pdesc posts =
+let summary_of_post_common ~continue_program proc_desc = function
+  | ContinueProgram astate | ISLLatentMemoryError astate -> (
+    match AbductiveDomain.summary_of_post proc_desc astate with
+    | Unsat ->
+        None
+    | Sat astate ->
+        Some (continue_program astate) )
+  (* already a summary but need to reconstruct the variants to make the type system happy *)
+  | AbortProgram astate ->
+      Some (AbortProgram astate)
+  | ExitProgram astate ->
+      Some (ExitProgram astate)
+  | LatentAbortProgram {astate; latent_issue} ->
+      Some (LatentAbortProgram {astate; latent_issue})
+
+
+let summary_of_posts proc_desc posts =
   List.filter_mapi posts ~f:(fun i exec_state ->
       L.d_printfln "Creating spec out of state #%d:@\n%a" i pp exec_state ;
-      match exec_state with
-      | ContinueProgram astate | ISLLatentMemoryError astate -> (
-        match AbductiveDomain.summary_of_post pdesc astate with
-        | Unsat ->
-            None
-        | Sat astate ->
-            Some (continue_program astate) )
-      (* already a summary but need to reconstruct the variants to make the type system happy *)
-      | AbortProgram astate ->
-          Some (AbortProgram astate)
-      | ExitProgram astate ->
-          Some (ExitProgram astate)
-      | LatentAbortProgram {astate; latent_issue} ->
-          Some (LatentAbortProgram {astate; latent_issue}) )
+      summary_of_post_common proc_desc exec_state ~continue_program:(fun astate ->
+          match (astate :> AbductiveDomain.t).isl_status with
+          | ISLOk ->
+              ContinueProgram astate
+          | ISLError ->
+              ISLLatentMemoryError astate ) )
 
 
-let summary_of_posts =
-  summary_of_posts_common ~continue_program:(fun astate ->
-      match (astate :> AbductiveDomain.t).isl_status with
-      | ISLOk ->
-          ContinueProgram astate
-      | ISLError ->
-          ISLLatentMemoryError astate )
-
-
-let force_exit_program =
-  summary_of_posts_common ~continue_program:(fun astate -> ExitProgram astate)
+let force_exit_program proc_desc post =
+  summary_of_post_common proc_desc post ~continue_program:(fun astate -> ExitProgram astate)

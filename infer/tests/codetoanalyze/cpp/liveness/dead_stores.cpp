@@ -441,8 +441,21 @@ class Exceptions {
     return 0;
   }
 
-  // the transition to the catch block is set at pre-analysis
-  int read_in_catch_tricky_ok(bool b1, bool b2) {
+  int FN_throw_unrelated_catch_bad(int x) {
+    int i = 5;
+    throw std::invalid_argument("Positive argument  :(");
+    // the rest is unreachable
+    try {
+      throw(0);
+    } catch (...) {
+
+      return i;
+    }
+  }
+
+  // currently, the only transition to the catch block is at the end of the try
+  // block. See T28898377
+  int FP_read_in_catch_tricky_ok(bool b1, bool b2) {
     int i = 1;
     try {
       if (b1) {

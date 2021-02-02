@@ -19,7 +19,4 @@ let pp fmt summary =
   F.close_box ()
 
 
-let of_posts pdesc posts =
-  AnalysisCallbacks.html_debug_new_node_session (Procdesc.get_exit_node pdesc)
-    ~pp_name:(fun fmt -> F.pp_print_string fmt "pulse summary creation")
-    ~f:(fun () -> ExecutionDomain.summary_of_posts pdesc posts)
+let of_posts pdesc posts = ExecutionDomain.summary_of_posts pdesc posts

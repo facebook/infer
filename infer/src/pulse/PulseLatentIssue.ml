@@ -13,7 +13,7 @@ module Arithmetic = PulseArithmetic
 type t =
   | AccessToInvalidAddress of Diagnostic.access_to_invalid_address
   | ReadUninitializedValue of Diagnostic.read_uninitialized_value
-[@@deriving equal, yojson_of]
+[@@deriving compare, equal, yojson_of]
 
 let to_diagnostic = function
   | AccessToInvalidAddress access_to_invalid_address ->

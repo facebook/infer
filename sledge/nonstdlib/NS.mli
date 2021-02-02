@@ -92,6 +92,13 @@ val map3 :
 
 val mapN : ('a -> 'a) -> 'b -> ('a array -> 'b) -> 'a array -> 'b
 
+val fold_map_from_map :
+     ('a -> f:('b -> 'c) -> 'd)
+  -> 'a
+  -> 's
+  -> f:('b -> 's -> 'c * 's)
+  -> 'd * 's
+
 (** Pretty-printing *)
 
 (** Pretty-printer for argument type. *)

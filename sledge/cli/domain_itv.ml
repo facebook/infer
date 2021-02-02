@@ -134,7 +134,7 @@ let rec apron_texpr_of_llair_exp exp q =
 
 let assign reg exp q =
   [%Trace.call fun {pf} ->
-    pf "{%a}@\n%a := %a" pp q Llair.Reg.pp reg Llair.Exp.pp exp]
+    pf "@ {%a}@\n%a := %a" pp q Llair.Reg.pp reg Llair.Exp.pp exp]
   ;
   let lval = apron_var_of_reg reg in
   ( match apron_texpr_of_llair_exp exp q with

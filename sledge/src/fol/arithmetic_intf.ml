@@ -33,7 +33,10 @@ module type S = sig
   val classify : t -> kind
   (** [classify a] is [Trm x] iff [get_trm a] is [Some x], [Const q] iff
       [get_const a] is [Some q], [Interpreted] if the principal operation of
-      [a] is interpreted, and [Uninterpreted] otherwise *)
+      [a] is interpreted, and [Uninterpreted] otherwise. *)
+
+  val is_uninterpreted : t -> bool
+  (** [is_uninterpreted a] iff [classify a = Uninterpreted] *)
 
   (** Construct compound terms *)
 
@@ -56,14 +59,19 @@ module type S = sig
   (** [partition_sign a] is [(p, n)] such that [a] = [p - n] and all
       coefficients in [p] and [n] are non-negative. *)
 
-  val map : t -> f:(trm -> trm) -> t
-  (** [map ~f a] is [a] with each maximal non-interpreted subterm
-      transformed by [f]. *)
-
   (** Traverse *)
 
   val trms : t -> trm iter
-  (** [trms a] enumerates the indeterminate terms appearing in [a] *)
+  (** [trms a] is the maximal foreign or noninterpreted proper subterms of
+      [a]. Considering an arithmetic term as a polynomial,
+      [trms (c × (Σᵢ₌₁ⁿ cᵢ × Πⱼ₌₁ᵐᵢ
+      Xᵢⱼ^pᵢⱼ))] is the sequence of monomials
+      [Πⱼ₌₁ᵐᵢ Xᵢⱼ^pᵢⱼ] for each [i]. If the arithmetic
+      term is a monomial, [trms (Πⱼ₌₁ᵐ Xⱼ^pⱼ)] is the sequence
+      of factors [Xⱼ] for each [j]. *)
+
+  val map : t -> f:(trm -> trm) -> t
+  (** Map over the {!trms}. *)
 
   (** Solve *)
 

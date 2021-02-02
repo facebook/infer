@@ -194,10 +194,14 @@ digraph cfg {
 "Rectangle#Rectangle#{548993796743293985}.386f89cceb4c14e4fc014bcc1ec86f4b_2" [label="2: Exit Rectangle::Rectangle \n  " color=yellow style=filled]
 	
 
-"Rectangle#Rectangle#{548993796743293985}.386f89cceb4c14e4fc014bcc1ec86f4b_3" [label="3:  Constructor Init \n   n$1=*&this:Rectangle* [line 21, column 7]\n  n$2=_fun_Polygon::Polygon(n$1:Rectangle*) [line 21, column 7]\n " shape="box"]
+"Rectangle#Rectangle#{548993796743293985}.386f89cceb4c14e4fc014bcc1ec86f4b_3" [label="3:  Constructor Init \n   n$1=*&this:Rectangle* [line 21, column 7]\n " shape="box"]
 	
 
-	 "Rectangle#Rectangle#{548993796743293985}.386f89cceb4c14e4fc014bcc1ec86f4b_3" -> "Rectangle#Rectangle#{548993796743293985}.386f89cceb4c14e4fc014bcc1ec86f4b_2" ;
+	 "Rectangle#Rectangle#{548993796743293985}.386f89cceb4c14e4fc014bcc1ec86f4b_3" -> "Rectangle#Rectangle#{548993796743293985}.386f89cceb4c14e4fc014bcc1ec86f4b_4" ;
+"Rectangle#Rectangle#{548993796743293985}.386f89cceb4c14e4fc014bcc1ec86f4b_4" [label="4:  Constructor Init \n   n$2=_fun_Polygon::Polygon(n$1:Rectangle*) [line 21, column 7]\n " shape="box"]
+	
+
+	 "Rectangle#Rectangle#{548993796743293985}.386f89cceb4c14e4fc014bcc1ec86f4b_4" -> "Rectangle#Rectangle#{548993796743293985}.386f89cceb4c14e4fc014bcc1ec86f4b_2" ;
 "area#Triangle#(14534668876010564879).b2c96bbb8f170e9d12180637dc0d6da3_1" [label="1: Start Triangle::area\nFormals:  this:Triangle*\nLocals:  x:int \n  " color=yellow style=filled]
 	
 
@@ -224,10 +228,14 @@ digraph cfg {
 "Triangle#Triangle#{15421032765127472541}.26bfd28d102273793a62fe013a50a7d1_2" [label="2: Exit Triangle::Triangle \n  " color=yellow style=filled]
 	
 
-"Triangle#Triangle#{15421032765127472541}.26bfd28d102273793a62fe013a50a7d1_3" [label="3:  Constructor Init \n   n$1=*&this:Triangle* [line 27, column 7]\n  n$2=_fun_Polygon::Polygon(n$1:Triangle*) [line 27, column 7]\n " shape="box"]
+"Triangle#Triangle#{15421032765127472541}.26bfd28d102273793a62fe013a50a7d1_3" [label="3:  Constructor Init \n   n$1=*&this:Triangle* [line 27, column 7]\n " shape="box"]
 	
 
-	 "Triangle#Triangle#{15421032765127472541}.26bfd28d102273793a62fe013a50a7d1_3" -> "Triangle#Triangle#{15421032765127472541}.26bfd28d102273793a62fe013a50a7d1_2" ;
+	 "Triangle#Triangle#{15421032765127472541}.26bfd28d102273793a62fe013a50a7d1_3" -> "Triangle#Triangle#{15421032765127472541}.26bfd28d102273793a62fe013a50a7d1_4" ;
+"Triangle#Triangle#{15421032765127472541}.26bfd28d102273793a62fe013a50a7d1_4" [label="4:  Constructor Init \n   n$2=_fun_Polygon::Polygon(n$1:Triangle*) [line 27, column 7]\n " shape="box"]
+	
+
+	 "Triangle#Triangle#{15421032765127472541}.26bfd28d102273793a62fe013a50a7d1_4" -> "Triangle#Triangle#{15421032765127472541}.26bfd28d102273793a62fe013a50a7d1_2" ;
 "__infer_inner_destructor_~Triangle#Triangle#(14073216405110724792).c04c3fa3cd50a3125c149616f3af0105_1" [label="1: Start Triangle::__infer_inner_destructor_~Triangle\nFormals:  this:Triangle*\nLocals:  \n  " color=yellow style=filled]
 	
 

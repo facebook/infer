@@ -27,4 +27,8 @@ class MapTest {
     newmap.putAll(map);
     for (Integer name : newmap.values()) {}
   }
+
+  boolean containsNullValue_linear(HashMap<Integer, String> keyMap) {
+    return keyMap.containsValue(null);
+  }
 }

@@ -8,6 +8,5 @@
 open! IStd
 
 module ProcName : sig
-  val dispatch :
-    (Tenv.t, CostDomain.BasicCostWithReason.t, unit) ProcnameDispatcher.ProcName.dispatcher
+  val dispatch : (Tenv.t, CostDomain.BasicCost.t, unit) ProcnameDispatcher.ProcName.dispatcher
 end

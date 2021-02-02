@@ -5,12 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-/* Simple mutual recursion. Sledge should respect execution
- * bounds and terminate quickly for small bounds */
 void mutal_rec_d();
 void mutal_rec_a() { mutal_rec_d(); }
 void mutal_rec_d() { mutal_rec_a(); }
 void recurse() { recurse(); }
+
 int main() {
   recurse();
   mutal_rec_a();

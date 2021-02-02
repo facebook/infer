@@ -4,17 +4,35 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
+
 open! IStd
 module L = Logging
-open IResult.Let_syntax
 open PulseBasicInterface
 open PulseDomainInterface
 
 type t = AbductiveDomain.t
 
-type 'a access_result = 'a PulseReport.access_result
+module Import = struct
+  type access_mode = Read | Write | NoAccess
 
-type access_mode = Read | Write | NoAccess
+  type 'abductive_domain_t base_t = 'abductive_domain_t ExecutionDomain.base_t =
+    | ContinueProgram of 'abductive_domain_t
+    | ExitProgram of AbductiveDomain.summary
+    | AbortProgram of AbductiveDomain.summary
+    | LatentAbortProgram of {astate: AbductiveDomain.summary; latent_issue: LatentIssue.t}
+    | ISLLatentMemoryError of 'abductive_domain_t
+
+  type 'a access_result = 'a PulseReport.access_result
+
+  include IResult.Let_syntax
+
+  let ( let<*> ) x f = match x with Error _ as err -> [err] | Ok y -> f y
+
+  let ( let<+> ) x f =
+    match x with Error _ as err -> [err] | Ok y -> [Ok (ExecutionDomain.ContinueProgram (f y))]
+end
+
+include Import
 
 let check_addr_access access_mode location (address, history) astate =
   let access_trace = Trace.Immediate {location; history} in
@@ -53,7 +71,7 @@ let check_and_abduce_addr_access_isl access_mode location (address, history) ?(n
           | Error _ ->
               Error
                 ( Diagnostic.ReadUninitializedValue {calling_context= []; trace= access_trace}
-                , AbductiveDomain.set_isl_error_status astate )
+                , AbductiveDomain.set_isl_status ISLError astate )
           | Ok ok_astate ->
               Ok (ok_astate :: astates) )
   | Write ->
@@ -140,7 +158,7 @@ module Closures = struct
     (astate, closure_addr_hist)
 end
 
-let eval_var var astate = Stack.eval var astate
+let eval_var location hist var astate = Stack.eval location hist var astate
 
 let eval_access mode location addr_hist access astate =
   let+ astate = check_addr_access mode location addr_hist astate in
@@ -166,9 +184,12 @@ let eval mode location exp0 astate =
   let rec eval mode exp astate =
     match (exp : Exp.t) with
     | Var id ->
-        Ok (eval_var (* error in case of missing history? *) [] (Var.of_id id) astate)
+        Ok (eval_var location (* error in case of missing history? *) [] (Var.of_id id) astate)
     | Lvar pvar ->
-        Ok (eval_var [ValueHistory.VariableAccessed (pvar, location)] (Var.of_pvar pvar) astate)
+        Ok
+          (eval_var location
+             [ValueHistory.VariableAccessed (pvar, location)]
+             (Var.of_pvar pvar) astate)
     | Lfield (exp', field, _) ->
         let* astate, addr_hist = eval Read exp' astate in
         eval_access mode location addr_hist (FieldAccess field) astate
@@ -285,25 +306,21 @@ let eval_deref_isl location exp astate =
       let+ astate = eval_deref location exp astate in
       [astate]
   in
-  List.fold ls_astate_addr_hist ~init:(Ok []) ~f:(fun acc ((astate, _) as astate_addr) ->
-      match acc with
-      | Ok acc_astates -> (
-        match astate.AbductiveDomain.isl_status with
-        | ISLOk ->
-            let+ astates = eval_deref_function astate_addr in
-            acc_astates @ astates
-        | ISLError ->
-            Ok (acc_astates @ [astate_addr]) )
-      | Error _ as a ->
-          a )
+  List.fold_result ls_astate_addr_hist ~init:[] ~f:(fun acc_astates ((astate, _) as astate_addr) ->
+      match astate.AbductiveDomain.isl_status with
+      | ISLOk ->
+          let+ astates = eval_deref_function astate_addr in
+          acc_astates @ astates
+      | ISLError ->
+          Ok (acc_astates @ [astate_addr]) )
 
 
-let realloc_pvar pvar typ location astate =
+let realloc_pvar tenv pvar typ location astate =
   let addr = AbstractValue.mk_fresh () in
   let astate =
     Stack.add (Var.of_pvar pvar) (addr, [ValueHistory.VariableDeclared (pvar, location)]) astate
   in
-  AbductiveDomain.set_uninitialized (`LocalDecl (pvar, Some addr)) typ location astate
+  AbductiveDomain.set_uninitialized tenv (`LocalDecl (pvar, Some addr)) typ location astate
 
 
 let write_id id new_addr_loc astate = Stack.add (Var.of_id id) new_addr_loc astate
@@ -320,8 +337,26 @@ let write_access location addr_trace_ref access addr_trace_obj astate =
   >>| Memory.add_edge addr_trace_ref access addr_trace_obj location
 
 
+let write_access_biad_isl location addr_trace_ref access addr_trace_obj astate =
+  let* astates = check_and_abduce_addr_access_isl Write location addr_trace_ref astate in
+  List.fold_result astates ~init:[] ~f:(fun acc ast ->
+      let astate =
+        match ast.AbductiveDomain.isl_status with
+        | ISLOk ->
+            Memory.add_edge addr_trace_ref access addr_trace_obj location ast
+        | ISLError ->
+            ast
+      in
+      Ok (astate :: acc) )
+
+
 let write_deref location ~ref:addr_trace_ref ~obj:addr_trace_obj astate =
   write_access location addr_trace_ref Dereference addr_trace_obj astate
+
+
+let write_deref_biad_isl location ~ref:(addr_ref, addr_ref_history) access ~obj:addr_trace_obj
+    astate =
+  write_access_biad_isl location (addr_ref, addr_ref_history) access addr_trace_obj astate
 
 
 let write_field location ~ref:addr_trace_ref field ~obj:addr_trace_obj astate =
@@ -347,6 +382,20 @@ let remove_allocation_attr address astate = AddressAttributes.remove_allocation_
 let invalidate location cause addr_trace astate =
   check_addr_access NoAccess location addr_trace astate
   >>| AddressAttributes.invalidate addr_trace cause location
+
+
+let invalidate_biad_isl location cause (address, history) astate =
+  let+ astates =
+    check_and_abduce_addr_access_isl NoAccess location (address, history) ~null_noop:true astate
+  in
+  List.map
+    ~f:(fun astate ->
+      match astate.AbductiveDomain.isl_status with
+      | ISLOk ->
+          AddressAttributes.invalidate (address, history) cause location astate
+      | ISLError ->
+          astate )
+    astates
 
 
 let invalidate_access location cause ref_addr_hist access astate =
@@ -516,22 +565,36 @@ let is_ptr_to_const formal_typ_opt =
       match formal_typ.desc with Typ.Tptr (t, _) -> Typ.is_const t.quals | _ -> false )
 
 
-let unknown_call call_loc reason ~ret ~actuals ~formals_opt astate =
+let unknown_call tenv call_loc reason ~ret ~actuals ~formals_opt astate =
   let event = ValueHistory.Call {f= reason; location= call_loc; in_call= []} in
   let havoc_ret (ret, _) astate = havoc_id ret [event] astate in
+  let rec havoc_fields ((_, history) as addr) typ astate =
+    match typ.Typ.desc with
+    | Tstruct struct_name -> (
+      match Tenv.lookup tenv struct_name with
+      | Some {fields} ->
+          List.fold fields ~init:astate ~f:(fun acc (field, field_typ, _) ->
+              let fresh_value = AbstractValue.mk_fresh () in
+              Memory.add_edge addr (FieldAccess field) (fresh_value, [event]) call_loc acc
+              |> havoc_fields (fresh_value, history) field_typ )
+      | None ->
+          astate )
+    | _ ->
+        astate
+  in
   let havoc_actual_if_ptr (actual, actual_typ) formal_typ_opt astate =
     (* We should not havoc when the corresponding formal is a
        pointer to const *)
-    if
-      (not (Language.curr_language_is Java))
-      && Typ.is_pointer actual_typ
-      && not (is_ptr_to_const formal_typ_opt)
-    then
-      (* HACK: write through the pointer even if it is invalid (except in Java). This is to avoid raising issues when
-         havoc'ing pointer parameters (which normally causes a [check_valid] call. *)
-      let fresh_value = AbstractValue.mk_fresh () in
-      Memory.add_edge actual Dereference (fresh_value, [event]) call_loc astate
-    else astate
+    match actual_typ.Typ.desc with
+    | Tptr (typ, _)
+      when (not (Language.curr_language_is Java)) && not (is_ptr_to_const formal_typ_opt) ->
+        (* HACK: write through the pointer even if it is invalid (except in Java). This is to avoid raising issues when
+           havoc'ing pointer parameters (which normally causes a [check_valid] call. *)
+        let fresh_value = AbstractValue.mk_fresh () in
+        Memory.add_edge actual Dereference (fresh_value, [event]) call_loc astate
+        |> havoc_fields actual typ
+    | _ ->
+        astate
   in
   let add_skipped_proc astate =
     match reason with
@@ -634,7 +697,7 @@ let conservatively_initialize_args arg_values ({AbductiveDomain.post} as astate)
   AbstractValue.Set.fold AbductiveDomain.initialize reachable_values astate
 
 
-let call ~caller_proc_desc err_log ~(callee_data : (Procdesc.t * PulseSummary.t) option) call_loc
+let call tenv ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.t) option) call_loc
     callee_pname ~ret ~actuals ~formals_opt (astate : AbductiveDomain.t) =
   let get_arg_values () = List.map actuals ~f:(fun ((value, _), _) -> value) in
   match callee_data with
@@ -657,7 +720,7 @@ let call ~caller_proc_desc err_log ~(callee_data : (Procdesc.t * PulseSummary.t)
                let pvar = Pvar.mk name callee_pname in
                (Var.of_pvar pvar, capture_mode) )
       in
-      let+ astate, captured_vars_with_actuals =
+      let<*> astate, captured_vars_with_actuals =
         match actuals with
         | (actual_closure, _) :: _
           when not (Procname.is_objc_block callee_pname || List.is_empty captured_vars) ->
@@ -687,15 +750,13 @@ let call ~caller_proc_desc err_log ~(callee_data : (Procdesc.t * PulseSummary.t)
             | Unsat ->
                 (* couldn't apply pre/post pair *)
                 posts
-            | Sat post -> (
-              match PulseReport.report_error caller_proc_desc err_log post with
-              | Error Unsat ->
-                  posts
-              | Error (Sat post) | Ok post ->
-                  post :: posts ) )
+            | Sat post ->
+                post :: posts )
   | None ->
       (* no spec found for some reason (unknown function, ...) *)
       L.d_printfln "No spec found for %a@\n" Procname.pp callee_pname ;
-      let astate = conservatively_initialize_args (get_arg_values ()) astate in
-      unknown_call call_loc (SkippedKnownCall callee_pname) ~ret ~actuals ~formals_opt astate
-      |> fun astate -> Ok [ExecutionDomain.ContinueProgram astate]
+      let astate =
+        conservatively_initialize_args (get_arg_values ()) astate
+        |> unknown_call tenv call_loc (SkippedKnownCall callee_pname) ~ret ~actuals ~formals_opt
+      in
+      [Ok (ContinueProgram astate)]

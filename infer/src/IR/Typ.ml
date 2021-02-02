@@ -182,7 +182,10 @@ module T = struct
   and name =
     | CStruct of QualifiedCppName.t
     | CUnion of QualifiedCppName.t
-    | CppClass of QualifiedCppName.t * template_spec_info
+    | CppClass of
+        { name: QualifiedCppName.t
+        ; template_spec_info: template_spec_info
+        ; is_union: bool [@compare.ignore] }
     | CSharpClass of CSharpClassName.t
     | JavaClass of JavaClassName.t
     | ObjcClass of QualifiedCppName.t * name list
@@ -307,8 +310,8 @@ and pp_name_c_syntax pe f = function
       QualifiedCppName.pp f name
   | ObjcClass (name, protocol_names) ->
       F.fprintf f "%a%a" QualifiedCppName.pp name (pp_protocols pe) protocol_names
-  | CppClass (name, template_spec) ->
-      F.fprintf f "%a%a" QualifiedCppName.pp name (pp_template_spec_info pe) template_spec
+  | CppClass {name; template_spec_info} ->
+      F.fprintf f "%a%a" QualifiedCppName.pp name (pp_template_spec_info pe) template_spec_info
   | JavaClass name ->
       JavaClassName.pp f name
   | CSharpClass name ->
@@ -358,6 +361,20 @@ let desc_to_string desc =
 module Name = struct
   type t = name [@@deriving compare, equal, yojson_of]
 
+  (* NOTE: When a same struct type is used in C/C++/ObjC/ObjC++, their struct types may different,
+     eg [CStruct] in, C but [CppClass] in C++.  On the other hand, since [Fieldname.t] includes the
+     class names, even for the same field, its field name used in C and C++ can be different.
+     However, in analyses, we may want to *not* distinguish fieldnames of the same struct type.  For
+     that, we can use these loosened compare functions instead. *)
+  let loose_compare x y =
+    match (x, y) with
+    | ( (CStruct name1 | CppClass {name= name1; template_spec_info= NoTemplate})
+      , (CStruct name2 | CppClass {name= name2; template_spec_info= NoTemplate}) ) ->
+        QualifiedCppName.compare name1 name2
+    | _ ->
+        compare x y
+
+
   let hash = Hashtbl.hash
 
   let qual_name = function
@@ -366,8 +383,8 @@ module Name = struct
     | ObjcClass (name, protocol_names) ->
         let protocols = F.asprintf "%a" (pp_protocols Pp.text) protocol_names in
         QualifiedCppName.append_protocols name ~protocols
-    | CppClass (name, templ_args) ->
-        let template_suffix = F.asprintf "%a" (pp_template_spec_info Pp.text) templ_args in
+    | CppClass {name; template_spec_info} ->
+        let template_suffix = F.asprintf "%a" (pp_template_spec_info Pp.text) template_spec_info in
         QualifiedCppName.append_template_args_to_last name ~args:template_suffix
     | JavaClass _ 
     | CSharpClass _ ->
@@ -377,14 +394,19 @@ module Name = struct
   let unqualified_name = function
     | CStruct name | CUnion name | ObjcProtocol name | ObjcClass (name, _) ->
         name
-    | CppClass (name, _) ->
+    | CppClass {name} ->
         name
     | JavaClass _
     | CSharpClass _ ->
         QualifiedCppName.empty
 
 
-  let get_template_spec_info = function CppClass (_, templ_args) -> Some templ_args | _ -> None
+  let get_template_spec_info = function
+    | CppClass {template_spec_info} ->
+        Some template_spec_info
+    | _ ->
+        None
+
 
   let name n =
     match n with
@@ -498,7 +520,9 @@ module Name = struct
   end
 
   module Cpp = struct
-    let from_qual_name template_spec_info qual_name = CppClass (qual_name, template_spec_info)
+    let from_qual_name template_spec_info ~is_union qual_name =
+      CppClass {name= qual_name; template_spec_info; is_union}
+
 
     let is_class = function CppClass _ -> true | _ -> false
   end

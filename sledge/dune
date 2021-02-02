@@ -7,20 +7,21 @@
  (debug
   (flags
    (-w +a-4-9-18-30-40-42-44-48@50-66 -strict-formats -strict-sequence
-     -short-paths -bin-annot -keep-locs -keep-docs -opaque))
+     -short-paths -bin-annot -keep-locs -keep-docs -g))
+  (ocamlopt_flags (-O3))
   (env-vars
    (PPX_TRACE_ENABLED 1))
   (inline_tests enabled))
  (trace
   (flags
-   (-w -a -error-style short -noassert -unboxed-types))
+   (-w -a -noassert -unboxed-types -g))
   (ocamlopt_flags (-O3))
   (env-vars
    (PPX_TRACE_ENABLED 1))
   (inline_tests disabled))
  (_ ; release, dev, default,...
   (flags
-   (-w -a -error-style short -noassert -unboxed-types))
+   (-w -a -noassert -unboxed-types))
   (ocamlopt_flags (-O3))
   (env-vars
    (PPX_TRACE_ENABLED 0))

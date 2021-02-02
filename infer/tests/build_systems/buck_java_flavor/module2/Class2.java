@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-package genrulecapture.module2;
+package buck_java_flavor.module2;
 
-import genrulecapture.annotations.ThreadSafe;
-import genrulecapture.module1.Class1;
+import buck_java_flavor.annotations.ThreadSafe;
+import buck_java_flavor.module1.Class1;
 
 @ThreadSafe
 public class Class2 {

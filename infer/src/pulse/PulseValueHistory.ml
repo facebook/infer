@@ -16,6 +16,7 @@ type event =
   | Conditional of {is_then_branch: bool; if_kind: Sil.if_kind; location: Location.t}
   | CppTemporaryCreated of Location.t
   | FormalDeclared of Pvar.t * Location.t
+  | StructFieldAddressCreated of Fieldname.t * Location.t
   | VariableAccessed of Pvar.t * Location.t
   | VariableDeclared of Pvar.t * Location.t
 
@@ -52,6 +53,8 @@ let pp_event_no_location fmt event =
         |> Option.iter ~f:(fun proc_name -> F.fprintf fmt " of %a" Procname.pp proc_name)
       in
       F.fprintf fmt "parameter `%a`%a" Pvar.pp_value_non_verbose pvar pp_proc pvar
+  | StructFieldAddressCreated (field_name, _) ->
+      F.fprintf fmt "struct field address `%a` created" Fieldname.pp field_name
   | VariableAccessed (pvar, _) ->
       F.fprintf fmt "%a accessed here" pp_pvar pvar
   | VariableDeclared (pvar, _) ->
@@ -66,6 +69,7 @@ let location_of_event = function
   | Conditional {location}
   | CppTemporaryCreated location
   | FormalDeclared (_, location)
+  | StructFieldAddressCreated (_, location)
   | VariableAccessed (_, location)
   | VariableDeclared (_, location) ->
       location

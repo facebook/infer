@@ -9,6 +9,7 @@ float f(int x, float y) { // 8, 3.0
   int z = x * x;          // 64
   return y + z;           // 67.0
 }
+
 int g(int y) { // 8
   if (y) {
     return 1;

@@ -636,6 +636,8 @@ let strlen_spec reg ptr =
 
 open Option.Import
 
+let pp ppf q = Sh.pp ppf (Option.value q ~default:(Sh.false_ Var.Set.empty))
+
 let check_preserve_us (q0 : Sh.t) (q1 : Sh.t) =
   let gain_us = Var.Set.diff q1.us q0.us in
   let lose_us = Var.Set.diff q0.us q1.us in
@@ -646,9 +648,8 @@ let check_preserve_us (q0 : Sh.t) (q1 : Sh.t) =
    explicitly-quantified pre *)
 let exec_spec_ (xs, pre) (gs, {foot; sub; ms; post}) =
   ([%Trace.call fun {pf} ->
-     pf "@[%a@]@ @[<2>%a@,@[<hv>{%a  %a}@;<1 -1>%a--@ {%a  }@]@]" Sh.pp pre
-       (Sh.pp_us ~pre:"@<2>∀ " ())
-       gs Sh.pp foot
+     pf "@ @[%a@]@ @[<2>%a@,@[<hv>{%a  %a}@;<1 -1>%a--@ {%a  }@]@]" Sh.pp
+       pre Sh.pp_us gs Sh.pp foot
        (fun fs sub ->
          if not (Var.Subst.is_empty sub) then
            Format.fprintf fs "∧ %a" Var.Subst.pp sub )
@@ -679,7 +680,7 @@ let exec_spec_ (xs, pre) (gs, {foot; sub; ms; post}) =
     (Sh.star post (Sh.exists ms (Sh.rename sub frame))))
   |>
   [%Trace.retn fun {pf} r ->
-    pf "%a" (Option.pp "%a" Sh.pp) r ;
+    pf "%a" pp r ;
     assert (Option.for_all ~f:(check_preserve_us (Sh.exists xs pre)) r)]
 
 (* execute a command with given spec from pre *)
@@ -718,8 +719,10 @@ let exec_specs pre specs =
  *)
 
 let assume pre cnd =
-  let post = Sh.and_ cnd pre in
-  if Sh.is_false post then None else Some post
+  [%trace]
+    ~call:(fun {pf} -> pf "@ %a" Formula.pp cnd)
+    ~retn:(fun {pf} -> pf "%a" Sh.pp)
+  @@ fun () -> Sh.and_ cnd pre
 
 let kill pre reg =
   let ms = Var.Set.of_ reg in

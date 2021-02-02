@@ -6,16 +6,16 @@
  *)
 
 open! IStd
-module BasicCostWithReason = CostDomain.BasicCostWithReason
+module BasicCost = CostDomain.BasicCost
 
 module ProcName = struct
-  let dispatch : (Tenv.t, BasicCostWithReason.t, unit) ProcnameDispatcher.ProcName.dispatcher =
+  let dispatch : (Tenv.t, BasicCost.t, unit) ProcnameDispatcher.ProcName.dispatcher =
     let open ProcnameDispatcher.ProcName in
     let match_builtin builtin _ s = String.equal s (Procname.get_method builtin) in
     make_dispatcher
-      [ +match_builtin BuiltinDecl.__new <>--> BasicCostWithReason.one ()
-      ; +match_builtin BuiltinDecl.__new_array <>--> BasicCostWithReason.one ()
-      ; +match_builtin BuiltinDecl.__objc_alloc_no_fail <>--> BasicCostWithReason.one ()
-      ; +match_builtin BuiltinDecl.malloc <>--> BasicCostWithReason.one ()
-      ; +match_builtin BuiltinDecl.malloc_no_fail <>--> BasicCostWithReason.one () ]
+      [ +match_builtin BuiltinDecl.__new <>--> BasicCost.one ()
+      ; +match_builtin BuiltinDecl.__new_array <>--> BasicCost.one ()
+      ; +match_builtin BuiltinDecl.__objc_alloc_no_fail <>--> BasicCost.one ()
+      ; +match_builtin BuiltinDecl.malloc <>--> BasicCost.one ()
+      ; +match_builtin BuiltinDecl.malloc_no_fail <>--> BasicCost.one () ]
 end

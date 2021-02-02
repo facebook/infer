@@ -102,10 +102,7 @@ module Java : sig
       from a nested class. *)
 
   val is_autogen_method : t -> bool
-  (** Check if the procedure name is of an auto-generated method containing '$'. *)
-
-  val is_autogen_method_name : string -> bool
-  (** Check if the string of procedure name is of an auto-generated method containing '$'. *)
+  (** Check if the procedure name is of an auto-generated/synthetic method. *)
 
   val is_anonymous_inner_class_constructor_exn : t -> bool
   (** Check if the procedure name is an anonymous inner class constructor. Throws if it is not a

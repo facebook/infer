@@ -18,8 +18,12 @@ digraph cfg {
 "Person#Person#{5857402560744521252}.6ef0efc697f825c2030746b71de7fd56_2" [label="2: Exit Person::Person \n  " color=yellow style=filled]
 	
 
-"Person#Person#{5857402560744521252}.6ef0efc697f825c2030746b71de7fd56_3" [label="3:  Constructor Init \n   n$1=*&this:Person* [line 14, column 28]\n  n$2=*&l:Insets const & [line 14, column 32]\n  n$3=*n$2.top:int [line 14, column 32]\n  *n$1.age:int=n$3 [line 14, column 28]\n " shape="box"]
+"Person#Person#{5857402560744521252}.6ef0efc697f825c2030746b71de7fd56_3" [label="3:  Constructor Init \n   n$1=*&this:Person* [line 14, column 28]\n " shape="box"]
 	
 
-	 "Person#Person#{5857402560744521252}.6ef0efc697f825c2030746b71de7fd56_3" -> "Person#Person#{5857402560744521252}.6ef0efc697f825c2030746b71de7fd56_2" ;
+	 "Person#Person#{5857402560744521252}.6ef0efc697f825c2030746b71de7fd56_3" -> "Person#Person#{5857402560744521252}.6ef0efc697f825c2030746b71de7fd56_4" ;
+"Person#Person#{5857402560744521252}.6ef0efc697f825c2030746b71de7fd56_4" [label="4:  Constructor Init \n   n$2=*&l:Insets const & [line 14, column 32]\n  n$3=*n$2.top:int [line 14, column 32]\n  *n$1.age:int=n$3 [line 14, column 28]\n " shape="box"]
+	
+
+	 "Person#Person#{5857402560744521252}.6ef0efc697f825c2030746b71de7fd56_4" -> "Person#Person#{5857402560744521252}.6ef0efc697f825c2030746b71de7fd56_2" ;
 }

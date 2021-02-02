@@ -19,6 +19,10 @@ module Graph = PrettyPrintable.MakePPMonoMap (AbstractValue) (AttributesNoRank)
 
 type t = Graph.t
 
+let compare = Graph.compare AttributesNoRank.compare
+
+let equal = Graph.equal AttributesNoRank.equal
+
 let yojson_of_t = [%yojson_of: _]
 
 let add_one addr attribute attrs =
@@ -100,6 +104,22 @@ let remove_allocation_attr address memory =
   match get_attribute Attributes.get_allocation address memory with
   | Some (procname, trace) ->
       remove_one address (Attribute.Allocated (procname, trace)) memory
+  | None ->
+      memory
+
+
+let remove_isl_abduced_attr address memory =
+  match get_attribute Attributes.get_isl_abduced address memory with
+  | Some trace ->
+      remove_one address (Attribute.ISLAbduced trace) memory
+  | None ->
+      memory
+
+
+let remove_must_be_valid_attr address memory =
+  match get_attribute Attributes.get_must_be_valid address memory with
+  | Some trace ->
+      remove_one address (Attribute.MustBeValid trace) memory
   | None ->
       memory
 

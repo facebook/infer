@@ -104,7 +104,9 @@ let when_dominating_preds_satisfy idom my_node ~fun_name ~class_name_f ~f =
 
 let checker {IntraproceduralAnalysis.proc_desc; tenv; err_log} =
   let cfg = CFG.from_pdesc proc_desc in
-  let _, loop_head_to_loop_nodes = Loop_control.get_loop_control_maps cfg in
+  let loop_head_to_loop_nodes =
+    Loop_control.(get_loop_head_to_source_nodes cfg |> get_loop_head_to_loop_nodes)
+  in
   let idom = Dominators.get_idoms proc_desc in
   Procdesc.NodeMap.iter
     (fun loop_head loop_nodes ->

@@ -119,6 +119,16 @@ let map_endo map t ~f =
   in
   if !change then t' else t
 
+let fold_map_from_map map x s ~f =
+  let s = ref s in
+  let f y =
+    let y', s' = f y !s in
+    s := s' ;
+    y'
+  in
+  let x' = map x ~f in
+  (x', !s)
+
 (** Containers *)
 
 (* from upcoming Stdlib *)

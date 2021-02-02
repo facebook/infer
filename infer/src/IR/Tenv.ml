@@ -39,10 +39,11 @@ let lookup tenv name : Struct.t option =
   with Caml.Not_found -> (
     (* ToDo: remove the following additional lookups once C/C++ interop is resolved *)
     match (name : Typ.Name.t) with
-    | CStruct m -> (
-      try Some (TypenameHash.find tenv (CppClass (m, NoTemplate))) with Caml.Not_found -> None )
-    | CppClass (m, NoTemplate) -> (
-      try Some (TypenameHash.find tenv (CStruct m)) with Caml.Not_found -> None )
+    | CStruct m ->
+        TypenameHash.find_opt tenv
+          (CppClass {name= m; template_spec_info= NoTemplate; is_union= false})
+    | CppClass {name= m; template_spec_info= NoTemplate} ->
+        TypenameHash.find_opt tenv (CStruct m)
     | _ ->
         None )
 

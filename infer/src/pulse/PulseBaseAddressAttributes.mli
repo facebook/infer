@@ -8,7 +8,7 @@ open! IStd
 module F = Format
 open PulseBasicInterface
 
-type t [@@deriving yojson_of]
+type t [@@deriving compare, equal, yojson_of]
 
 val empty : t
 
@@ -56,6 +56,10 @@ val is_end_of_collection : AbstractValue.t -> t -> bool
 val pp : F.formatter -> t -> unit
 
 val remove_allocation_attr : AbstractValue.t -> t -> t
+
+val remove_must_be_valid_attr : AbstractValue.t -> t -> t
+
+val remove_isl_abduced_attr : AbstractValue.t -> t -> t
 
 val initialize : AbstractValue.t -> t -> t
 

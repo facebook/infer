@@ -13,7 +13,7 @@ type event =
   | ArrayWrite of {aw_array: value; aw_index: value}
   | Call of {return: value option; arguments: value list; procname: Procname.t}
 
-type state
+type state [@@deriving compare, equal]
 
 val start : unit -> state
 (** Return the initial state of [Topl.automaton ()]. *)

@@ -48,6 +48,12 @@ module type S = sig
       every value. *)
 
   val union : 'a t -> 'a t -> f:(key -> 'a -> 'a -> 'a option) -> 'a t
+
+  val union_absent : 'a t -> 'a t -> 'a t
+  (** [union_absent m1 m2] contains all the bindings of [m1] as well as
+      those of [m2] for keys not contained by [m1].
+      [union_absent m1 m2 == m1] if no bindings from [m2] are added. *)
+
   val partition : 'a t -> f:(key -> 'a -> bool) -> 'a t * 'a t
 
   val partition_map :
@@ -81,6 +87,10 @@ module type S = sig
 
   val find_and_remove : key -> 'a t -> ('a * 'a t) option
   (** Find and remove the binding for a key. *)
+
+  val find_or_add : key -> 'a -> 'a t -> [`Added of 'a t | `Found of 'a]
+  (** Find the value bound to the given key if there is one, or otherwise
+      add a binding for the given key and value. *)
 
   val pop : 'a t -> (key * 'a * 'a t) option
   (** Find and remove an unspecified binding. Different bindings may be
@@ -116,6 +126,7 @@ module type S = sig
   val values : 'a t -> 'a iter
   val to_iter : 'a t -> (key * 'a) iter
   val to_list : 'a t -> (key * 'a) list
+  val to_list_rev : 'a t -> (key * 'a) list
   val of_iter : (key * 'a) iter -> 'a t
   val of_list : (key * 'a) list -> 'a t
 
@@ -135,7 +146,10 @@ module type S = sig
   val pp : key pp -> 'a pp -> 'a t pp
 
   val pp_diff :
-       key pp
+       ?pre:(unit, unit) fmt
+    -> ?suf:(unit, unit) fmt
+    -> ?sep:(unit, unit) fmt
+    -> key pp
     -> 'a pp
     -> ('a * 'a) pp
     -> eq:('a -> 'a -> bool)

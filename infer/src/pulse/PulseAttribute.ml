@@ -75,6 +75,22 @@ module Attribute = struct
 
   let isl_abduced_rank = Variants.to_rank (ISLAbduced dummy_trace)
 
+  let isl_subset attr1 attr2 =
+    match (attr1, attr2) with
+    | Invalid (v1, _), Invalid (v2, _) ->
+        Invalidation.isl_equiv v1 v2
+    | Invalid _, WrittenTo _ ->
+        true
+    | Uninitialized, Uninitialized ->
+        true
+    | (MustBeValid _ | Allocated _ | ISLAbduced _), Invalid _ ->
+        false
+    | Invalid _, _ | _, Uninitialized ->
+        false
+    | _ ->
+        true
+
+
   let uninitialized_rank = Variants.to_rank Uninitialized
 
   let must_be_initialized_rank = Variants.to_rank (MustBeInitialized dummy_trace)
@@ -200,6 +216,39 @@ module Attributes = struct
            trace )
 
 
+  let isl_subset callee_attrs caller_attrs =
+    Set.for_all callee_attrs ~f:(fun attr1 ->
+        Set.for_all caller_attrs ~f:(fun attr2 -> Attribute.isl_subset attr1 attr2) )
+
+
+  let replace_isl_abduced attrs_callee attrs_caller =
+    Set.fold attrs_callee ~init:Set.empty ~f:(fun acc attr1 ->
+        let attr1 =
+          match attr1 with
+          | ISLAbduced _ -> (
+            match get_allocation attrs_caller with
+            | None ->
+                attr1
+            | Some (p, a) ->
+                Attribute.Allocated (p, a) )
+          | Invalid (v_callee, _) -> (
+            match get_invalid attrs_caller with
+            | None ->
+                attr1
+            | Some (v_caller, trace) -> (
+              match (v_callee, v_caller) with
+              | CFree, (CFree | CppDelete) ->
+                  Attribute.Invalid (v_caller, trace)
+              | ConstantDereference i, OptionalEmpty when IntLit.iszero i ->
+                  Attribute.Invalid (OptionalEmpty, trace)
+              | _ ->
+                  attr1 ) )
+          | _ ->
+              attr1
+        in
+        Set.add acc attr1 )
+
+
   include Set
 end
 
@@ -219,6 +268,23 @@ let is_suitable_for_pre = function
   | Uninitialized
   | WrittenTo _ ->
       false
+
+
+let is_suitable_for_post = function
+  | MustBeInitialized _ | MustBeValid _ ->
+      false
+  | Invalid _
+  | Allocated _
+  | ISLAbduced _
+  | AddressOfCppTemporary _
+  | AddressOfStackVariable _
+  | Closure _
+  | DynamicType _
+  | EndOfCollection
+  | StdVectorReserve
+  | Uninitialized
+  | WrittenTo _ ->
+      true
 
 
 let map_trace ~f = function

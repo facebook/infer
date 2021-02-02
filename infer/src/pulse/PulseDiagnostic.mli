@@ -22,7 +22,7 @@ type access_to_invalid_address =
   ; access_trace: Trace.t
         (** assuming we are in the calling context, the trace leads to an access to the value
             invalidated in [invalidation_trace] without further assumptions *) }
-[@@deriving equal, yojson_of]
+[@@deriving compare, equal, yojson_of]
 
 type read_uninitialized_value =
   { calling_context: (CallEvent.t * Location.t) list
@@ -31,7 +31,7 @@ type read_uninitialized_value =
   ; trace: Trace.t
         (** assuming we are in the calling context, the trace leads to read of the uninitialized
             value *) }
-[@@deriving equal, yojson_of]
+[@@deriving compare, equal, yojson_of]
 
 (** an error to report to the user *)
 type t =

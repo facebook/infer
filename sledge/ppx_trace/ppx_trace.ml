@@ -28,7 +28,7 @@
     {[
       let func arg =
         [%trace]
-          ~call:(fun {pf} -> pf "%a" pp_arg_type arg)
+          ~call:(fun {pf} -> pf "@ %a" pp_arg_type arg)
           ~retn:(fun {pf} -> pf "%a" pp_result_type)
         @@ fun () -> func arg
     ]}
@@ -37,7 +37,7 @@
 
     {[
       let func arg =
-        [%Trace.call fun {pf} -> pf "%a" pp_arg_type arg]
+        [%Trace.call fun {pf} -> pf "@ %a" pp_arg_type arg]
         ;
         func arg
         |>

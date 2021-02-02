@@ -25,6 +25,27 @@ module type S = sig
   end
   with type t := t
 
+  (** {1 Pretty-print} *)
+
+  val pp_full :
+       ?pre:(unit, unit) fmt
+    -> ?suf:(unit, unit) fmt
+    -> ?sep:(unit, unit) fmt
+    -> elt pp
+    -> t pp
+
+  module Provide_pp (_ : sig
+    type t = elt
+
+    val pp : t pp
+  end) : sig
+    type t
+
+    val pp : t pp
+    val pp_diff : (t * t) pp
+  end
+  with type t := t
+
   (** {1 Construct} *)
 
   val empty : t
@@ -39,6 +60,7 @@ module type S = sig
   val inter : t -> t -> t
   val union : t -> t -> t
   val diff_inter : t -> t -> t * t
+  val diff_inter_diff : t -> t -> t * t * t
   val union_list : t list -> t
 
   (** {1 Query} *)
@@ -52,6 +74,9 @@ module type S = sig
   val only_elt : t -> elt option
   val classify : t -> [`Zero | `One of elt | `Many]
 
+  val pop : t -> (elt * t) option
+  (** Find and remove an unspecified element. [O(1)]. *)
+
   val pop_exn : t -> elt * t
   (** Find and remove an unspecified element. [O(1)]. *)
 
@@ -59,6 +84,7 @@ module type S = sig
 
   val map : t -> f:(elt -> elt) -> t
   val filter : t -> f:(elt -> bool) -> t
+  val partition : t -> f:(elt -> bool) -> t * t
 
   (** {1 Traverse} *)
 
@@ -66,20 +92,10 @@ module type S = sig
   val exists : t -> f:(elt -> bool) -> bool
   val for_all : t -> f:(elt -> bool) -> bool
   val fold : t -> 's -> f:(elt -> 's -> 's) -> 's
+  val reduce : t -> f:(elt -> elt -> elt) -> elt option
 
   (** {1 Convert} *)
 
   val to_iter : t -> elt iter
   val of_iter : elt iter -> t
-
-  (** {1 Pretty-print} *)
-
-  val pp :
-       ?pre:(unit, unit) fmt
-    -> ?suf:(unit, unit) fmt
-    -> ?sep:(unit, unit) fmt
-    -> elt pp
-    -> t pp
-
-  val pp_diff : elt pp -> (t * t) pp
 end

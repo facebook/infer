@@ -136,6 +136,24 @@ end = struct
     | Var {id= i; name= _}, Var {id= j; name= _} -> Int.equal i j
     | _ -> equal x y
 
+  (* nul-terminated string value represented by a concatenation *)
+  let string_of_concat xs =
+    let exception Not_a_string in
+    try
+      let len_1 = Array.length xs - 1 in
+      ( match xs.(len_1) with
+      | Sized {siz= Z o; seq= Z c} when Z.equal Z.one o && Z.equal Z.zero c
+        ->
+          ()
+      | _ -> raise_notrace Not_a_string ) ;
+      Some
+        (String.init len_1 ~f:(fun i ->
+             match xs.(i) with
+             | Sized {siz= Z o; seq= Z c} when Z.equal Z.one o ->
+                 Char.of_int_exn (Z.to_int c)
+             | _ -> raise_notrace Not_a_string ))
+    with _ -> None
+
   let rec ppx strength fs trm =
     let rec pp fs trm =
       let pf fmt = pp_boxed fs fmt in
@@ -149,15 +167,9 @@ end = struct
       | Extract {seq; off; len} -> pf "%a[%a,%a)" pp seq pp off pp len
       | Concat [||] -> pf "@<2>⟨⟩"
       | Concat xs -> (
-          let exception Not_a_string in
-          try
-            pf "%S"
-              (String.init (Array.length xs) ~f:(fun i ->
-                   match xs.(i) with
-                   | Sized {siz= Z o; seq= Z c} when Z.equal Z.one o ->
-                       Char.of_int_exn (Z.to_int c)
-                   | _ -> raise_notrace Not_a_string ))
-          with _ -> pf "(%a)" (Array.pp "@,^" pp) xs )
+        match string_of_concat xs with
+        | Some s -> pf "%S" s
+        | None -> pf "(%a)" (Array.pp "@,^" pp) xs )
       | Apply (f, [||]) -> pf "%a" Funsym.pp f
       | Apply
           ( ( (Rem | BitAnd | BitOr | BitXor | BitShl | BitLshr | BitAshr)
@@ -249,7 +261,7 @@ end = struct
 
   let rec _Extract ~seq ~off ~len =
     [%trace]
-      ~call:(fun {pf} -> pf "%a" pp (Extract {seq; off; len}))
+      ~call:(fun {pf} -> pf "@ %a" pp (Extract {seq; off; len}))
       ~retn:(fun {pf} -> pf "%a" pp)
     @@ fun () ->
     (* _[_,0) ==> ⟨⟩ *)
@@ -314,7 +326,7 @@ end = struct
 
   and _Concat xs =
     [%trace]
-      ~call:(fun {pf} -> pf "%a" pp (Concat xs))
+      ~call:(fun {pf} -> pf "@ %a" pp (Concat xs))
       ~retn:(fun {pf} -> pf "%a" pp)
     @@ fun () ->
     (* (α^(β^γ)^δ) ==> (α^β^γ^δ) *)
@@ -373,6 +385,19 @@ end
 
 module T = struct
   type t = Trm.t [@@deriving compare, sexp]
+
+  let pp = Trm.pp
+end
+
+module Set = struct
+  include Set.Make (T)
+  include Provide_of_sexp (T)
+  include Provide_pp (T)
+
+  let of_vars : Var.Set.t -> t =
+   fun vs ->
+    of_iter
+      (Iter.map ~f:(fun v -> (v : Var.t :> Trm.t)) (Var.Set.to_iter vs))
 end
 
 module Map = struct
@@ -418,6 +443,28 @@ let concat elts = _Concat elts
 
 let apply sym args = _Apply sym args
 
+(** Traverse *)
+
+let trms = function
+  | Var _ | Z _ | Q _ -> Iter.empty
+  | Arith a -> Arith.trms a
+  | Splat x -> Iter.(cons x empty)
+  | Sized {seq; siz} -> Iter.(cons seq (cons siz empty))
+  | Extract {seq; off; len} -> Iter.(cons seq (cons off (cons len empty)))
+  | Concat xs | Apply (_, xs) -> Iter.of_array xs
+
+let is_atomic = function
+  | Var _ | Z _ | Q _ | Concat [||] | Apply (_, [||]) -> true
+  | Arith _ | Splat _ | Sized _ | Extract _ | Concat _ | Apply _ -> false
+
+let rec atoms e =
+  if is_atomic e then Iter.return e else Iter.flat_map ~f:atoms (trms e)
+
+(** Query *)
+
+let fv e = Var.Set.of_iter (vars e)
+let rec height e = 1 + Iter.fold ~f:(fun x -> max (height x)) (trms e) 0
+
 (** Transform *)
 
 let rec map_vars e ~f =
@@ -446,25 +493,4 @@ let map e ~f =
   | Concat xs -> mapN f e _Concat xs
   | Apply (g, xs) -> mapN f e (_Apply g) xs
 
-(** Traverse *)
-
-let trms = function
-  | Var _ | Z _ | Q _ -> Iter.empty
-  | Arith a -> Arith.trms a
-  | Splat x -> Iter.(cons x empty)
-  | Sized {seq= x; siz= y} -> Iter.(cons x (cons y empty))
-  | Extract {seq= x; off= y; len= z} ->
-      Iter.(cons x (cons y (cons z empty)))
-  | Concat xs | Apply (_, xs) -> Iter.of_array xs
-
-let is_atomic = function
-  | Var _ | Z _ | Q _ | Concat [||] | Apply (_, [||]) -> true
-  | Arith _ | Splat _ | Sized _ | Extract _ | Concat _ | Apply _ -> false
-
-let rec atoms e =
-  if is_atomic e then Iter.return e else Iter.flat_map ~f:atoms (trms e)
-
-(** Query *)
-
-let fv e = Var.Set.of_iter (vars e)
-let rec height e = 1 + Iter.fold ~f:(fun x -> max (height x)) (trms e) 0
+let fold_map e = fold_map_from_map map e

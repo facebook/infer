@@ -16,10 +16,8 @@ type mode =
   | AnalyzeJson
   | Ant of {prog: string; args: string list}
   | BuckClangFlavor of {build_cmd: string list}
-  | BuckCombinedGenrule of {build_cmd: string list}
   | BuckCompilationDB of {deps: BuckMode.clang_compilation_db_deps; prog: string; args: string list}
   | BuckGenrule of {prog: string}
-  | BuckGenruleMaster of {build_cmd: string list}
   | BuckJavaFlavor of {build_cmd: string list}
   | Clang of {compiler: Clang.compiler; prog: string; args: string list}
   | ClangCompilationDB of {db_files: [`Escaped of string | `Raw of string] list}

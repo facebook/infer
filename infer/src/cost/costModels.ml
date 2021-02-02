@@ -231,7 +231,7 @@ module Call = struct
         ; +PatternMatch.ObjectiveC.implements "NSString"
           &:: "substringFromIndex:" <>$ capt_exp $+ capt_exp $!--> NSString.substring_from_index
         ; +PatternMatch.ObjectiveC.implements "NSString"
-          &:: "rangeOfString:" <>$ capt_exp $+ capt_exp
+          &:: "rangeOfString:" <>$ capt_exp $+ capt_exp $+ any_arg
           $!--> NSString.op_on_two_str BasicCost.mult ~of_function:"NSString.rangeOfString:"
         ; +PatternMatch.ObjectiveC.implements "NSMutableString"
           &:: "appendString:" <>$ any_arg $+ capt_exp
@@ -279,6 +279,9 @@ module Call = struct
         ; +PatternMatch.Java.implements_list
           &:: "contains" <>$ capt_exp
           $+...$--> BoundsOfCollection.linear_length ~of_function:"List.contains"
+        ; +PatternMatch.Java.implements_collection
+          &:: "contains" <>$ capt_exp
+          $+...$--> BoundsOfCollection.linear_length ~of_function:"Collection.contains"
         ; +PatternMatch.Java.implements_collections
           &:: "binarySearch" <>$ capt_exp
           $+...$--> BoundsOfCollection.logarithmic_length ~of_function:"Collections.binarySearch"
@@ -303,6 +306,8 @@ module Call = struct
           $+...$--> BoundsOfCollection.linear_length ~of_function:"Iterable.forEach"
         ; +PatternMatch.Java.implements_map &:: "forEach" $ capt_exp
           $+...$--> BoundsOfCollection.linear_length ~of_function:"Map.forEach"
+        ; +PatternMatch.Java.implements_map &:: "containsValue" $ capt_exp
+          $+...$--> BoundsOfCollection.linear_length ~of_function:"Map.containsValue"
         ; +PatternMatch.Java.implements_collections
           &:: "fill" <>$ capt_exp
           $+...$--> BoundsOfCollection.linear_length ~of_function:"Collections.fill"

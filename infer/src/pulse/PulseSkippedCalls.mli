@@ -9,4 +9,8 @@ open! IStd
 
 include AbstractDomain.MapS with type key = Procname.t and type value = PulseTrace.t
 
+val compare : t -> t -> int
+
+val equal : t -> t -> bool
+
 val yojson_of_t : t -> Yojson.Safe.t

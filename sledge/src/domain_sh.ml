@@ -35,15 +35,19 @@ let init globals =
       | _ -> q )
 
 let join p q =
-  [%Trace.call fun {pf} -> pf "%a@ %a" pp p pp q]
+  [%Trace.call fun {pf} -> pf "@ %a@ %a" pp p pp q]
   ;
   Some (Sh.or_ p q) |> Option.map ~f:simplify
   |>
   [%Trace.retn fun {pf} -> pf "%a" (Option.pp "%a" pp)]
 
-let is_false = Sh.is_false
 let dnf = Sh.dnf
-let exec_assume q b = Exec.assume q (X.formula b) |> Option.map ~f:simplify
+
+let exec_assume q b =
+  Exec.assume q (X.formula b)
+  |> simplify
+  |> fun q -> if Sh.is_unsat q then None else Some q
+
 let exec_kill r q = Exec.kill q (X.reg r) |> simplify
 
 let exec_move res q =
@@ -76,7 +80,7 @@ let value_determined_by ctx us a =
       Term.Set.subset (Term.Set.of_iter (Term.atoms b)) ~of_:us )
 
 let garbage_collect (q : Sh.t) ~wrt =
-  [%Trace.call fun {pf} -> pf "%a" pp q]
+  [%Trace.call fun {pf} -> pf "@ %a" pp q]
   ;
   (* only support DNF for now *)
   assert (List.is_empty q.djns) ;
@@ -138,7 +142,7 @@ type from_call = {areturn: Var.t option; unshadow: Var.Subst.t; frame: Sh.t}
 let call ~summaries ~globals ~actuals ~areturn ~formals ~freturn ~locals q =
   [%Trace.call fun {pf} ->
     pf
-      "@[<hv>actuals: (@[%a@])@ formals: (@[%a@])@ locals: {@[%a@]}@ \
+      "@ @[<hv>actuals: (@[%a@])@ formals: (@[%a@])@ locals: {@[%a@]}@ \
        globals: {@[%a@]}@ q: %a@]"
       (IArray.pp ",@ " Llair.Exp.pp)
       actuals
@@ -180,7 +184,7 @@ let call ~summaries ~globals ~actuals ~areturn ~formals ~freturn ~locals q =
 (** Leave scope of locals: existentially quantify locals. *)
 let post locals _ q =
   [%Trace.call fun {pf} ->
-    pf "@[<hv>locals: {@[%a@]}@ q: %a@]" Llair.Reg.Set.pp locals Sh.pp q]
+    pf "@ @[<hv>locals: {@[%a@]}@ q: %a@]" Llair.Reg.Set.pp locals Sh.pp q]
   ;
   Sh.exists (X.regs locals) q |> simplify
   |>
@@ -191,7 +195,7 @@ let post locals _ q =
     restore the shadowed variables. *)
 let retn formals freturn {areturn; unshadow; frame} q =
   [%Trace.call fun {pf} ->
-    pf "@[<v>formals: {@[%a@]}%a%a@ unshadow: %a@ q: %a@ frame: %a@]"
+    pf "@ @[<v>formals: {@[%a@]}%a%a@ unshadow: %a@ q: %a@ frame: %a@]"
       (IArray.pp ", " Llair.Reg.pp)
       formals
       (Option.pp "@ freturn: %a" Llair.Reg.pp)
@@ -246,7 +250,7 @@ let pp_summary fs {xs; foot; post} =
 
 let create_summary ~locals ~formals ~entry ~current:(post : Sh.t) =
   [%Trace.call fun {pf} ->
-    pf "formals %a@ entry: %a@ current: %a"
+    pf "@ formals %a@ entry: %a@ current: %a"
       (IArray.pp ",@ " Llair.Reg.pp)
       formals pp entry pp post]
   ;
@@ -278,7 +282,7 @@ let create_summary ~locals ~formals ~entry ~current:(post : Sh.t) =
   [%Trace.retn fun {pf} (fs, _) -> pf "@,%a" pp_summary fs]
 
 let apply_summary q ({xs; foot; post} as fs) =
-  [%Trace.call fun {pf} -> pf "fs: %a@ q: %a" pp_summary fs pp q]
+  [%Trace.call fun {pf} -> pf "@ fs: %a@ q: %a" pp_summary fs pp q]
   ;
   let xs_in_q = Var.Set.inter xs q.Sh.us in
   let xs_in_fv_q = Var.Set.inter xs (Sh.fv q) in

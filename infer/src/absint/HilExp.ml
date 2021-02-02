@@ -15,13 +15,19 @@ let yojson_of_typ_ = [%yojson_of: _]
 
 let compare_typ_ _ _ = 0
 
+let equal_typ_ = [%compare.equal: typ_]
+
 module Access = struct
-  type 'array_index t =
-    | FieldAccess of Fieldname.t
+  type ('fieldname, 'array_index) t_ =
+    | FieldAccess of 'fieldname
     | ArrayAccess of typ_ * 'array_index
     | TakeAddress
     | Dereference
-  [@@deriving compare, yojson_of]
+  [@@deriving compare, equal, yojson_of]
+
+  type 'array_index t = (Fieldname.t, 'array_index) t_ [@@deriving compare, yojson_of]
+
+  let loose_compare compare_array_index = compare_t_ Fieldname.loose_compare compare_array_index
 
   let pp pp_array_index fmt = function
     | FieldAccess field_name ->
@@ -435,7 +441,7 @@ and access_exprs_of_exp ~include_array_indexes ~f_resolve_id ~add_deref exp0 typ
           in
           add_accesses access_expr' :: acc
       | None ->
-          let access_expr = AccessExpression.of_id id typ in
+          let access_expr = AccessExpression.address_of_base (AccessExpression.base_of_id id typ) in
           let access_expr' =
             if add_deref then AccessExpression.dereference access_expr else access_expr
           in

@@ -74,13 +74,8 @@ val map_pos_neg :
 
 val fold_pos_neg : pos:set -> neg:set -> 'a -> f:(t -> 'a -> 'a) -> 'a
 
-val fold_dnf :
-     meet1:(t -> 'conjunction -> 'conjunction)
-  -> join1:('conjunction -> 'disjunction -> 'disjunction)
-  -> top:'conjunction
-  -> bot:'disjunction
-  -> t
-  -> 'disjunction
+val iter_dnf :
+  meet1:(t -> 'a -> 'a) -> top:'a -> t -> f:('a -> unit) -> unit
 
 val vars : t -> Var.t iter
 val trms : t -> Trm.t iter

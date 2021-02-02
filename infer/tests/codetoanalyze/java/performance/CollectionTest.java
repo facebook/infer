@@ -8,6 +8,7 @@
 import android.util.SparseArray;
 import com.google.common.collect.ImmutableSet;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class CollectionTest {
@@ -101,5 +102,9 @@ public class CollectionTest {
 
     ImmutableSet<Integer> set = ImmutableSet.of(1, 2, 3, 4, 5);
     for (int i = 0; i < set.size(); i++) {}
+  }
+
+  void containsNull_linear(HashMap<Integer, String> keyMap) {
+    keyMap.values().contains(null);
   }
 }

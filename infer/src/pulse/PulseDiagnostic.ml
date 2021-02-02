@@ -17,10 +17,10 @@ type access_to_invalid_address =
   ; invalidation: Invalidation.t
   ; invalidation_trace: Trace.t
   ; access_trace: Trace.t }
-[@@deriving equal]
+[@@deriving compare, equal]
 
 type read_uninitialized_value = {calling_context: (CallEvent.t * Location.t) list; trace: Trace.t}
-[@@deriving equal]
+[@@deriving compare, equal]
 
 let yojson_of_access_to_invalid_address = [%yojson_of: _]
 

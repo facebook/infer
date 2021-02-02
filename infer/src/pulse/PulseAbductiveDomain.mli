@@ -23,7 +23,7 @@ module BaseStack = PulseBaseStack
 module type BaseDomainSig = sig
   (* private because the lattice is not the same for preconditions and postconditions so we don't
      want to confuse them *)
-  type t = private BaseDomain.t [@@deriving yojson_of]
+  type t = private BaseDomain.t [@@deriving compare, equal, yojson_of]
 
   val yojson_of_t : t -> Yojson.Safe.t
 
@@ -52,26 +52,36 @@ module PostDomain : BaseDomainSig
     collapse into one. * *)
 module PreDomain : BaseDomainSig
 
-module PostStatus : sig
-  type t = ISLOk | ISLError [@@deriving equal]
-end
+(** Execution status, similar to {!PulseExecutionDomain} but for ISL (Incorrectness Separation
+    Logic) mode, where {!PulseExecutionDomain.ContinueProgram} can also contain "error specs" that
+    describe what happens when some addresses are invalid explicitly instead of relying on
+    [MustBeValid] attributes. *)
+type isl_status =
+  | ISLOk  (** ok triple: the program executes without error *)
+  | ISLError
+      (** Error specification: an invalid address recorded in the precondition will cause an error *)
+[@@deriving equal]
 
-(** biabduction-style pre/post state + skipped calls *)
+(** pre/post on a single program path *)
 type t = private
   { post: PostDomain.t  (** state at the current program point*)
-  ; pre: PreDomain.t  (** inferred pre at the current program point *)
-  ; topl: PulseTopl.state  (** state at of the Topl monitor at the current program point *)
-  ; skipped_calls: SkippedCalls.t  (** set of skipped calls *)
-  ; path_condition: PathCondition.t  (** arithmetic facts *)
-  ; isl_status: PostStatus.t  (** isl summary status *) }
+  ; pre: PreDomain.t  (** inferred procedure pre-condition leading to the current program point *)
+  ; path_condition: PathCondition.t
+        (** arithmetic facts true along the path (holding for both [pre] and [post] since abstract
+            values are immutable) *)
+  ; topl: PulseTopl.state
+        (** state at of the Topl monitor at the current program point, when Topl is enabled *)
+  ; skipped_calls: SkippedCalls.t  (** metadata: procedure calls for which no summary was found *)
+  ; isl_status: isl_status }
+[@@deriving equal]
 
 val leq : lhs:t -> rhs:t -> bool
 
 val pp : Format.formatter -> t -> unit
 
-val set_isl_error_status : t -> t
+val set_isl_status : isl_status -> t -> t
 
-val mk_initial : Procdesc.t -> t
+val mk_initial : Tenv.t -> Procdesc.t -> t
 
 val get_pre : t -> BaseDomain.t
 
@@ -88,7 +98,7 @@ module Stack : sig
 
   val find_opt : Var.t -> t -> BaseStack.value option
 
-  val eval : ValueHistory.t -> Var.t -> t -> t * (AbstractValue.t * ValueHistory.t)
+  val eval : Location.t -> ValueHistory.t -> Var.t -> t -> t * (AbstractValue.t * ValueHistory.t)
   (** return the value of the variable in the stack or create a fresh one if needed *)
 
   val mem : Var.t -> t -> bool
@@ -130,6 +140,8 @@ module AddressAttributes : sig
 
   val add_one : AbstractValue.t -> Attribute.t -> t -> t
   (** add the attribute only to the post *)
+
+  val add_attrs : AbstractValue.t -> Attributes.t -> t -> t
 
   val check_valid : Trace.t -> AbstractValue.t -> t -> (t, Invalidation.t * Trace.t) result
 
@@ -178,7 +190,7 @@ val add_skipped_calls : SkippedCalls.t -> t -> t
 val set_path_condition : PathCondition.t -> t -> t
 
 (** private type to make sure {!summary_of_post} is always called when creating summaries *)
-type summary = private t [@@deriving yojson_of]
+type summary = private t [@@deriving compare, equal, yojson_of]
 
 val summary_of_post : Procdesc.t -> t -> summary SatUnsat.t
 (** trim the state down to just the procedure's interface (formals and globals), and simplify and
@@ -200,7 +212,8 @@ val initialize : AbstractValue.t -> t -> t
 (** Remove "Uninitialized" attribute of the given address *)
 
 val set_uninitialized :
-     [ `LocalDecl of Pvar.t * AbstractValue.t option
+     Tenv.t
+  -> [ `LocalDecl of Pvar.t * AbstractValue.t option
        (** the second optional parameter is for the address of the variable *)
      | `Malloc of AbstractValue.t  (** the address parameter is a newly allocated address *) ]
   -> Typ.t

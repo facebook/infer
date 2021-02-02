@@ -99,4 +99,146 @@ int conditional_expression_bad(bool b) {
   }
 }
 
+class Frontend {
+ public:
+  int a;
+
+  Frontend(int n) { a = (n == 0) ? 0 : 1; }
+
+  Frontend(Frontend x, int n) {
+    x.a = (n == 0) ? 0 : 1;
+    a = x.a;
+  }
+
+  void set_field_via_local(int n) {
+    int* b = (int*)malloc(sizeof(int));
+    if (b) {
+      *b = 0;
+      *b = (n == 0) ? 0 : 1;
+      a = *b;
+      free(b);
+    } else {
+      a = (n == 0) ? 0 : 1;
+    }
+  }
+};
+
+void call_Frontend_constructor_ok() {
+  Frontend x = Frontend(10); // x.a is 1
+  if (x.a != 1) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
+void call_Frontend_constructor_bad() {
+  Frontend x = Frontend(10); // x.a is 1
+  if (x.a == 1) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
+void call_Frontend_constructor2_ok() {
+  Frontend x = Frontend(0); // x.a is 0
+  Frontend y = Frontend(x, 10); // y.a is 1
+  if (y.a != 1) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
+void call_Frontend_constructor2_bad() {
+  Frontend x = Frontend(0); // x.a is 0
+  Frontend y = Frontend(x, 10); // y.a is 1
+  if (y.a == 1) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
+void call_set_field_via_local_ok() {
+  Frontend x = Frontend(0); // x.a is 0
+  x.set_field_via_local(10); // x.a is 1
+  if (x.a != 1) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
+void call_set_field_via_local_bad() {
+  Frontend x = Frontend(0); // x.a is 0
+  x.set_field_via_local(10); // x.a is 1
+  if (x.a == 1) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
+void not_boolean_ok() {
+  bool t = true;
+  bool* b = (bool*)malloc(sizeof(bool));
+  if (b) {
+    *b = true;
+    *b = !t; // *b is false
+    if (*b) {
+      int* p = nullptr;
+      *p = 42;
+    }
+    free(b);
+  }
+}
+
+void not_boolean_bad() {
+  bool f = false;
+  bool* b = (bool*)malloc(sizeof(bool));
+  if (b) {
+    *b = false;
+    *b = !f; // *b is true
+    if (*b) {
+      int* p = nullptr;
+      *p = 42;
+    }
+    free(b);
+  }
+}
+
+struct double_fields_struct {
+  int v;
+  int a;
+};
+
+double_fields_struct get_double_fields_struct() {
+  double_fields_struct b;
+  b.v = 42;
+  b.a = 42;
+  return b;
+}
+
+void init_double_fields_struct_ok() {
+  double_fields_struct y{get_double_fields_struct()};
+  if (y.v != 42) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
+struct single_field_struct {
+  int v;
+};
+
+single_field_struct get_single_field_struct() {
+  single_field_struct b;
+  b.v = 42;
+  return b;
+}
+
+void FP_init_single_field_struct_ok() {
+  single_field_struct y{get_single_field_struct()};
+  if (y.v != 42) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
 } // namespace frontend

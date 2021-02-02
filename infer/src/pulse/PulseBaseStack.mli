@@ -15,6 +15,8 @@ include
      different type *)
 val compare : t -> t -> int [@@warning "-32"]
 
+val equal : t -> t -> bool
+
 val pp : F.formatter -> t -> unit
 
 val yojson_of_t : t -> Yojson.Safe.t

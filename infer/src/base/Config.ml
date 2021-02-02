@@ -711,6 +711,12 @@ and buck_compilation_database_depth =
     ~meta:"int"
 
 
+and buck_java_heap_size_gb =
+  CLOpt.mk_int_opt ~long:"buck-java-heap-size-gb"
+    ~in_help:InferCommand.[(Capture, manual_buck)]
+    "Explicitly set the size of the Java heap of Buck processes, in gigabytes." ~meta:"int"
+
+
 and buck_java_flavor_suppress_config =
   CLOpt.mk_bool ~long:"buck-java-flavor-suppress-config" ~default:false
     ~in_help:InferCommand.[(Capture, manual_buck)]
@@ -736,20 +742,6 @@ and buck_mode =
     ~f:(set_mode `ClangFlavors)
     "Buck integration for clang-based targets (C/C++/Objective-C/Objective-C++)."
   |> ignore ;
-  CLOpt.mk_bool ~long:"buck-java"
-    ~deprecated:
-      [ "-genrule-master-mode"
-      ; "-no-genrule-master-mode"
-        (* --no-genrule-master-mode was used in the past to enable a now-defunct Java integration,
-           so both --genrule-master-mode and --no-genrule-master-mode enable the Java
-           integration... sorry about that. *)
-      ; "-no-flavors"
-        (* --no-flavors was used in the past to enable the Java integration in some cases, let's
-           keep it that way for compatibility for now *) ]
-    ~in_help:InferCommand.[(Capture, manual_buck)]
-    ~f:(set_mode `Java)
-    "Buck integration for Java targets."
-  |> ignore ;
   CLOpt.mk_symbol_opt ~long:"buck-compilation-database" ~deprecated:["-use-compilation-database"]
     ~in_help:InferCommand.[(Capture, manual_buck)]
     ~f:(fun s ->
@@ -758,11 +750,6 @@ and buck_mode =
     "Buck integration using the compilation database, with or without dependencies. Only includes \
      clang targets, as per Buck's $(i,#compilation-database) flavor."
     ~symbols:[("no-deps", `NoDeps); ("deps", `DepsTmp)]
-  |> ignore ;
-  CLOpt.mk_bool ~long:"buck-combined"
-    ~in_help:InferCommand.[(Capture, manual_buck)]
-    ~f:(set_mode `CombinedGenrule)
-    "Buck integration for clang-based and Java targets."
   |> ignore ;
   CLOpt.mk_bool ~long:"buck-java-flavor"
     ~in_help:InferCommand.[(Capture, manual_buck)]
@@ -1973,6 +1960,11 @@ and pulse_widen_threshold =
     "Under-approximate after $(i,int) loop iterations"
 
 
+and pulse_nullsafe_report_npe =
+  CLOpt.mk_bool ~long:"pulse-nullsafe-report-npe" ~default:true
+    "[Pulse] Suppress NPE reports on files marked @Nullsafe."
+
+
 and pure_by_default =
   CLOpt.mk_bool ~long:"pure-by-default" ~default:false
     "[Purity]Consider unknown functions to be pure by default"
@@ -2785,6 +2777,8 @@ and buck_build_args_no_inline = RevList.to_list !buck_build_args_no_inline_rev
 
 and buck_cache_mode = (!buck || !genrule_mode) && not !debug
 
+and buck_java_heap_size_gb = !buck_java_heap_size_gb
+
 and buck_java_flavor_suppress_config = !buck_java_flavor_suppress_config
 
 and buck_merge_all_deps = !buck_merge_all_deps
@@ -2795,16 +2789,12 @@ and buck_mode : BuckMode.t option =
       None
   | `ClangFlavors, _ ->
       Some ClangFlavors
-  | `Java, _ ->
-      Some JavaGenruleMaster
   | `ClangCompilationDB `NoDeps, _ ->
       Some (ClangCompilationDB NoDependencies)
   | `ClangCompilationDB `DepsTmp, None ->
       Some (ClangCompilationDB DepsAllDepths)
   | `ClangCompilationDB `DepsTmp, Some depth ->
       Some (ClangCompilationDB (DepsUpToDepth depth))
-  | `CombinedGenrule, _ ->
-      Some CombinedGenrule
   | `JavaFlavor, _ ->
       Some JavaFlavor
 
@@ -3199,6 +3189,8 @@ and pulse_recency_limit = !pulse_recency_limit
 and pulse_report_latent_issues = !pulse_report_latent_issues
 
 and pulse_widen_threshold = !pulse_widen_threshold
+
+and pulse_nullsafe_report_npe = !pulse_nullsafe_report_npe
 
 and pure_by_default = !pure_by_default
 

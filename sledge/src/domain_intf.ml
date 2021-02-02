@@ -13,7 +13,6 @@ module type Dom = sig
   val report_fmt_thunk : t -> Format.formatter -> unit
   val init : Llair.GlobalDefn.t iarray -> t
   val join : t -> t -> t option
-  val is_false : t -> bool
   val dnf : t -> t list
   val exec_assume : t -> Llair.Exp.t -> t option
   val exec_kill : Llair.Reg.t -> t -> t

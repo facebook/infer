@@ -11,7 +11,9 @@
     Functions that return contexts that might be stronger than their
     argument contexts accept and return a set of variables. The input set is
     the variables with which any generated variables must be chosen fresh,
-    and the output set is the variables that have been generated. *)
+    and the output set is the variables that have been generated. If the
+    empty set is given, then no fresh variables are generated and equations
+    that cannot be solved without generating fresh variables are dropped. *)
 
 open Exp
 
@@ -26,6 +28,9 @@ include Invariant.S with type t := t
 
 val empty : t
 (** The empty context of assumptions. *)
+
+val unsat : t
+(** An unsatisfiable context of assumptions. *)
 
 val add : Var.Set.t -> Formula.t -> t -> Var.Set.t * t
 (** Add (that is, conjoin) an assumption to a context. *)
@@ -82,6 +87,8 @@ module Subst : sig
   type t
 
   val pp : t pp
+  val empty : t
+  val compose : t -> t -> t
   val is_empty : t -> bool
   val fold_eqs : t -> 's -> f:(Formula.t -> 's -> 's) -> 's
 
@@ -94,10 +101,6 @@ module Subst : sig
       ks ∩ fv(τ) = ∅. *)
 end
 
-val apply_subst : Var.Set.t -> Subst.t -> t -> Var.Set.t * t
-(** Context induced by applying a solution substitution to a set of
-    equations generating the argument context. *)
-
 val solve_for_vars : Var.Set.t list -> t -> Subst.t
 (** [solve_for_vars vss x] is a solution substitution that is implied by [x]
     and consists of oriented equalities [v ↦ e] that map terms [v] with
@@ -105,9 +108,16 @@ val solve_for_vars : Var.Set.t list -> t -> Subst.t
     terms [e] with free variables contained in as short a prefix of [uss] as
     possible. *)
 
-val elim : Var.Set.t -> t -> t
-(** [elim ks x] is [x] weakened by removing oriented equations [k ↦ _] for
-    [k] in [ks]. *)
+val apply_subst : Var.Set.t -> Subst.t -> t -> Var.Set.t * t
+(** Context induced by applying a solution substitution to a set of
+    equations generating the argument context. *)
+
+val apply_and_elim :
+  wrt:Var.Set.t -> Var.Set.t -> Subst.t -> t -> Var.Set.t * t * Var.Set.t
+(** Apply a solution substitution to eliminate the solved variables. That
+    is, [apply_and_elim ~wrt vs s x] is [(zs, x', ks)] where
+    [∃zs. r' ∧ ∃ks. s] is equivalent to [∃xs. r] where [zs] are
+    fresh with respect to [wrt] and [ks ⊆ xs] and is maximal. *)
 
 (**/**)
 

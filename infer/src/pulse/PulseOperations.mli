@@ -9,17 +9,44 @@ open! IStd
 open PulseBasicInterface
 open PulseDomainInterface
 
+(** For [open]ing in other modules. *)
+module Import : sig
+  type access_mode =
+    | Read
+    | Write
+    | NoAccess
+        (** The initialized-ness of the address is not checked when it evaluates a heap address
+            without actual memory access, for example, when evaluating [&x.f] we need to check
+            initialized-ness of [x], not that of [x.f]. *)
+
+  (** {2 Imported types for ease of use and so we can write variants without the corresponding
+      module prefix} *)
+
+  type 'abductive_domain_t base_t = 'abductive_domain_t ExecutionDomain.base_t =
+    | ContinueProgram of 'abductive_domain_t
+    | ExitProgram of AbductiveDomain.summary
+    | AbortProgram of AbductiveDomain.summary
+    | LatentAbortProgram of {astate: AbductiveDomain.summary; latent_issue: LatentIssue.t}
+    | ISLLatentMemoryError of 'abductive_domain_t
+
+  type 'a access_result = 'a PulseReport.access_result
+
+  (** {2 Monadic syntax} *)
+
+  include module type of IResult.Let_syntax
+
+  val ( let<*> ) : 'a access_result -> ('a -> 'b access_result list) -> 'b access_result list
+  (** monadic "bind" but not really that turns an [access_result] into a list of [access_result]s
+      (not really because the first type is not an [access_result list] but just an [access_result]) *)
+
+  val ( let<+> ) :
+    'a access_result -> ('a -> 'abductive_domain_t) -> 'abductive_domain_t base_t access_result list
+  (** monadic "map" but even less really that turns an [access_result] into an analysis result *)
+end
+
+include module type of Import
+
 type t = AbductiveDomain.t
-
-type 'a access_result = 'a PulseReport.access_result
-
-type access_mode =
-  | Read
-  | Write
-  | NoAccess
-      (** The initialized-ness of the address is not checked when it evaluates a heap address
-          without actual memory access, for example, when evaluating [&x.f] we need to check
-          initialized-ness of [x], not that of [x.f]. *)
 
 val check_addr_access :
   access_mode -> Location.t -> AbstractValue.t * ValueHistory.t -> t -> t access_result
@@ -37,6 +64,15 @@ val eval :
 
     Return an error state if it traverses some known invalid address or if the end destination is
     known to be invalid. *)
+
+val eval_structure_isl :
+     access_mode
+  -> Location.t
+  -> Exp.t
+  -> t
+  -> (bool * (t * (AbstractValue.t * ValueHistory.t)) list) access_result
+(** Similar to eval but apply to data structures and ISL abduction. Return a list of abduced states
+    (ISLOk and ISLErs); The boolean indicates whether it is data structures or not. *)
 
 val prune : Location.t -> condition:Exp.t -> t -> t access_result
 
@@ -66,7 +102,7 @@ val havoc_field :
   -> t
   -> t access_result
 
-val realloc_pvar : Pvar.t -> Typ.t -> Location.t -> t -> t
+val realloc_pvar : Tenv.t -> Pvar.t -> Typ.t -> Location.t -> t -> t
 
 val write_id : Ident.t -> AbstractValue.t * ValueHistory.t -> t -> t
 
@@ -96,9 +132,22 @@ val write_deref :
   -> t access_result
 (** write the edge [ref --*--> obj] *)
 
+val write_deref_biad_isl :
+     Location.t
+  -> ref:AbstractValue.t * ValueHistory.t
+  -> AbstractValue.t HilExp.Access.t
+  -> obj:AbstractValue.t * ValueHistory.t
+  -> t
+  -> t list access_result
+
 val invalidate :
   Location.t -> Invalidation.t -> AbstractValue.t * ValueHistory.t -> t -> t access_result
 (** record that the address is invalid *)
+
+val invalidate_biad_isl :
+  Location.t -> Invalidation.t -> AbstractValue.t * ValueHistory.t -> t -> t list access_result
+(** record that the address is invalid. If the address has not been allocated, abduce ISL specs for
+    both invalid (null, free, unint) and allocated heap. *)
 
 val allocate : Procname.t -> Location.t -> AbstractValue.t * ValueHistory.t -> t -> t
 
@@ -136,8 +185,8 @@ val check_address_escape :
   Location.t -> Procdesc.t -> AbstractValue.t -> ValueHistory.t -> t -> t access_result
 
 val call :
-     caller_proc_desc:Procdesc.t
-  -> Errlog.t
+     Tenv.t
+  -> caller_proc_desc:Procdesc.t
   -> callee_data:(Procdesc.t * PulseSummary.t) option
   -> Location.t
   -> Procname.t
@@ -145,12 +194,13 @@ val call :
   -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
   -> formals_opt:(Pvar.t * Typ.t) list option
   -> t
-  -> ExecutionDomain.t list access_result
+  -> ExecutionDomain.t access_result list
 (** perform an interprocedural call: apply the summary for the call proc name passed as argument if
     it exists *)
 
 val unknown_call :
-     Location.t
+     Tenv.t
+  -> Location.t
   -> CallEvent.t
   -> ret:Ident.t * Typ.t
   -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list

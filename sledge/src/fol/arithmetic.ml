@@ -49,6 +49,8 @@ struct
         Format.fprintf ppf "@[<2>%a@]" pp_num num
       else Format.fprintf ppf "@[<2>(%a%a)@]" pp_num num pp_den den
 
+    let pp = ppx (fun _ -> None)
+
     (** [one] is the empty product Πᵢ₌₁⁰ xᵢ^pᵢ *)
     let one = Prod.empty
 
@@ -178,13 +180,13 @@ struct
         | _ -> Uninterpreted )
       | `Many -> Interpreted
 
-    let is_noninterpreted poly =
+    let is_uninterpreted poly =
       match Sum.only_elt poly with
       | Some (mono, _) -> (
         match Prod.classify mono with
         | `Zero -> false
-        | `One (_, n) -> n <> 1
-        | `Many -> true )
+        | `One (_, 1) -> false
+        | _ -> true )
       | None -> false
 
     let get_const poly =
@@ -209,6 +211,10 @@ struct
           redundant representations, singleton polynomials are flattened. *)
       let of_trm : ?power:int -> trm -> t =
        fun ?(power = 1) base ->
+        [%trace]
+          ~call:(fun {pf} -> pf "@ %a^%i" Trm.pp base power)
+          ~retn:(fun {pf} (c, m) -> pf "%a×%a" Q.pp c Mono.pp m)
+        @@ fun () ->
         match Embed.get_arith base with
         | Some poly -> (
           match Sum.classify poly with
@@ -228,6 +234,10 @@ struct
           polynomials are multiplied by their coefficients directly. *)
       let to_poly : t -> Poly.t =
        fun (coeff, mono) ->
+        [%trace]
+          ~call:(fun {pf} -> pf "@ %a×%a" Q.pp coeff Mono.pp mono)
+          ~retn:(fun {pf} -> pf "%a" pp)
+        @@ fun () ->
         ( match Mono.get_trm mono with
         | Some trm -> (
           match Embed.get_arith trm with
@@ -281,29 +291,53 @@ struct
       Sum.partition_map poly ~f:(fun _ coeff ->
           if Q.sign coeff >= 0 then Left coeff else Right (Q.neg coeff) )
 
-    let map poly ~f =
-      [%trace]
-        ~call:(fun {pf} -> pf "%a" pp poly)
-        ~retn:(fun {pf} -> pf "%a" pp)
-      @@ fun () ->
-      ( if is_noninterpreted poly then poly
-      else
-        let p, p' =
-          Sum.fold poly (poly, Sum.empty) ~f:(fun mono coeff (p, p') ->
-              let e = trm_of_mono mono in
-              let e' = f e in
-              if e == e' then (p, p')
-              else (Sum.remove mono p, Sum.union p' (mulc coeff (trm e'))) )
-        in
-        Sum.union p p' )
-      |> check invariant
-
     (* traverse *)
 
     let monos poly =
-      Iter.from_iter (fun f -> Sum.iter poly ~f:(fun mono _ -> f mono))
+      Iter.from_iter (fun f ->
+          Sum.iter poly ~f:(fun mono _ ->
+              if not (Mono.equal_one mono) then f mono ) )
 
-    let trms poly = Iter.flat_map ~f:Mono.trms (monos poly)
+    let trms poly =
+      match get_mono poly with
+      | Some mono -> Mono.trms mono
+      | None -> Iter.map ~f:trm_of_mono (monos poly)
+
+    (* map over [trms] *)
+    let map poly ~f =
+      [%trace]
+        ~call:(fun {pf} -> pf "@ %a" pp poly)
+        ~retn:(fun {pf} -> pf "%a" pp)
+      @@ fun () ->
+      ( match get_mono poly with
+      | Some mono ->
+          let mono', (coeff, mono_delta) =
+            Prod.fold mono
+              (mono, (Q.one, Mono.one))
+              ~f:(fun base power (mono', delta) ->
+                let base' = f base in
+                if base' == base then (mono', delta)
+                else
+                  ( Prod.remove base mono'
+                  , CM.mul delta (CM.of_trm ~power base') ) )
+          in
+          if mono' == mono then poly
+          else CM.to_poly (coeff, Mono.mul mono' mono_delta)
+      | None ->
+          let poly', delta =
+            Sum.fold poly (poly, Sum.empty)
+              ~f:(fun mono coeff (poly', delta) ->
+                if Mono.equal_one mono then (poly', delta)
+                else
+                  let e = trm_of_mono mono in
+                  let e' = f e in
+                  if e == e' then (poly', delta)
+                  else
+                    ( Sum.remove mono poly'
+                    , Sum.union delta (mulc coeff (trm e')) ) )
+          in
+          Sum.union poly' delta )
+      |> check invariant
 
     (* query *)
 
@@ -317,6 +351,16 @@ struct
     (** [solve_for_mono r c m p] solves [0 = r + (c×m) + p] as [m = q]
         ([Some (m, q)]) such that [r + (c×m) + p = m - q] *)
     let solve_for_mono rejected_poly coeff mono poly =
+      [%trace]
+        ~call:(fun {pf} ->
+          pf "@ 0 = %a + (%a×%a) + %a" pp rejected_poly Q.pp coeff Mono.pp
+            mono pp poly )
+        ~retn:(fun {pf} s ->
+          pf "%a"
+            (Option.pp "%a" (fun fs (v, q) ->
+                 Format.fprintf fs "%a ↦ %a" pp v pp q ))
+            s )
+      @@ fun () ->
       if Mono.equal_one mono || exists_fv_in (Mono.fv mono) poly then None
       else
         Some
@@ -327,7 +371,7 @@ struct
         that [r + p = m - q] *)
     let rec solve_poly rejected poly =
       [%trace]
-        ~call:(fun {pf} -> pf "0 = (%a) + (%a)" pp rejected pp poly)
+        ~call:(fun {pf} -> pf "@ 0 = (%a) + (%a)" pp rejected pp poly)
         ~retn:(fun {pf} s ->
           pf "%a"
             (Option.pp "%a" (fun fs (v, q) ->
@@ -343,7 +387,7 @@ struct
     let solve_zero_eq ?for_ e =
       [%trace]
         ~call:(fun {pf} ->
-          pf "0 = %a%a" Trm.pp e (Option.pp " for %a" Trm.pp) for_ )
+          pf "@ 0 = %a%a" Trm.pp e (Option.pp " for %a" Trm.pp) for_ )
         ~retn:(fun {pf} s ->
           pf "%a"
             (Option.pp "%a" (fun fs (c, r) ->

@@ -316,7 +316,7 @@ let rec xlate_type : x -> Llvm.lltype -> Typ.t =
       | Void | Label | Metadata -> assert false
   in
   LltypeTbl.find_or_add memo_type llt ~default:(fun () ->
-      [%Trace.call fun {pf} -> pf "%a" pp_lltype llt]
+      [%Trace.call fun {pf} -> pf "@ %a" pp_lltype llt]
       ;
       xlate_type_ llt
       |>
@@ -538,7 +538,7 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t
         fail "xlate_value: %a" pp_llvalue llv ()
   in
   ValTbl.find_or_add memo_value (inline, llv) ~default:(fun () ->
-      [%Trace.call fun {pf} -> pf "%a" pp_llvalue llv]
+      [%Trace.call fun {pf} -> pf "@ %a" pp_llvalue llv]
       ;
       xlate_value_ llv
       |>
@@ -547,7 +547,7 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t
 and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t
     =
  fun x llv opcode ->
-  [%Trace.call fun {pf} -> pf "%a" pp_llvalue llv]
+  [%Trace.call fun {pf} -> pf "@ %a" pp_llvalue llv]
   ;
   let xlate_rand i = xlate_value x (Llvm.operand llv i) in
   let typ = lazy (xlate_type x (Llvm.type_of llv)) in
@@ -699,7 +699,7 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t
       else
         let rec xlate_indices i =
           [%Trace.call fun {pf} ->
-            pf "%i %a" i pp_llvalue (Llvm.operand llv i)]
+            pf "@ %i %a" i pp_llvalue (Llvm.operand llv i)]
           ;
           let pre_i, arg_i = xlate_rand i in
           let idx =
@@ -762,7 +762,7 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t
 and xlate_global : x -> Llvm.llvalue -> GlobalDefn.t =
  fun x llg ->
   GlobTbl.find_or_add memo_global llg ~default:(fun () ->
-      [%Trace.call fun {pf} -> pf "%a" pp_llvalue llg]
+      [%Trace.call fun {pf} -> pf "@ %a" pp_llvalue llg]
       ;
       let g = Global.mk (xlate_type x (Llvm.type_of llg)) (find_name llg) in
       let loc = find_loc llg in
@@ -1039,7 +1039,7 @@ let xlate_instr :
     -> ((Llair.inst list * Llair.term -> code) -> code)
     -> code =
  fun pop x instr continue ->
-  [%Trace.call fun {pf} -> pf "%a" pp_llvalue instr]
+  [%Trace.call fun {pf} -> pf "@ %a" pp_llvalue instr]
   ;
   let continue insts_term_to_code =
     [%Trace.retn
@@ -1436,7 +1436,7 @@ let skip_phis : Llvm.llbasicblock -> _ Llvm.llpos =
 
 let xlate_block : pop_thunk -> x -> Llvm.llbasicblock -> Llair.block list =
  fun pop x blk ->
-  [%Trace.call fun {pf} -> pf "%a" pp_llblock blk]
+  [%Trace.call fun {pf} -> pf "@ %a" pp_llblock blk]
   ;
   let lbl = label_of_block blk in
   let pos = skip_phis blk in
@@ -1469,7 +1469,7 @@ let xlate_function_decl x llfunc typ k =
 
 let xlate_function : x -> Llvm.llvalue -> Llair.func =
  fun x llf ->
-  [%Trace.call fun {pf} -> pf "%a" pp_llvalue llf]
+  [%Trace.call fun {pf} -> pf "@ %a" pp_llvalue llf]
   ;
   undef_count := 0 ;
   let typ = xlate_type x (Llvm.type_of llf) in
@@ -1541,7 +1541,7 @@ let transform ~internalize : Llvm.llmodule -> unit =
   Llvm.PassManager.dispose pm
 
 let read_and_parse llcontext bc_file =
-  [%Trace.call fun {pf} -> pf "%s" bc_file]
+  [%Trace.call fun {pf} -> pf "@ %s" bc_file]
   ;
   let llmemorybuffer =
     try Llvm.MemoryBuffer.of_file bc_file
@@ -1606,7 +1606,7 @@ let cleanup llmodule llcontext =
 let translate ~models ~fuzzer ~internalize : string list -> Llair.program =
  fun inputs ->
   [%Trace.call fun {pf} ->
-    pf "%a" (List.pp "@ " Format.pp_print_string) inputs]
+    pf "@ %a" (List.pp "@ " Format.pp_print_string) inputs]
   ;
   Llvm.install_fatal_error_handler invalid_llvm ;
   let llcontext = Llvm.global_context () in

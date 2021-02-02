@@ -380,8 +380,8 @@ let runs_on_ui_thread tenv pname =
 
 
 let is_recursive_lock_type = function
-  | Typ.CppClass (qname, _) ->
-      Clang.is_recursive_lock_type qname
+  | Typ.CppClass {name} ->
+      Clang.is_recursive_lock_type name
   | _ ->
       (* non-C++ lock types are always considered recursive *)
       true

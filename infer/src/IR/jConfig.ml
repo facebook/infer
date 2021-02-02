@@ -65,3 +65,9 @@ let long_code = "J"
 let short_code = "S"
 
 let class_code cl = "L" ^ cl
+
+let is_synthetic_name name =
+  (* regular synthetic name *)
+  String.contains name '$'
+  (* Ultralight DI *)
+  || String.is_prefix name ~prefix:"_UL_"

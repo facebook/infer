@@ -32,7 +32,7 @@ struct LikeFBString {
   size_t size_;
   unsigned int* refcount_;
 
-  LikeFBString() {}
+  LikeFBString() { category_ = 0; }
 
   LikeFBString(const LikeFBString& src) {
     category_ = src.category();

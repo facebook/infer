@@ -37,6 +37,15 @@ end
 module Arith :
   Arithmetic.S with type var := Var.t with type trm := t with type t = arith
 
+module Set : sig
+  include Set.S with type elt := t
+
+  val t_of_sexp : Sexp.t -> t
+  val pp : t pp
+  val pp_diff : (t * t) pp
+  val of_vars : Var.Set.t -> t
+end
+
 module Map : sig
   include Map.S with type key := t
 
@@ -82,26 +91,33 @@ val apply : Funsym.t -> t array -> t
 val get_z : t -> Z.t option
 val get_q : t -> Q.t option
 
-(** Transform *)
-
-val map_vars : t -> f:(Var.t -> Var.t) -> t
-val map : t -> f:(t -> t) -> t
-
 (** Query *)
 
 val seq_size_exn : t -> t
 val seq_size : t -> t option
 val is_atomic : t -> bool
 val height : t -> int
-val fv : t -> Var.Set.t
 
 (** Traverse *)
-
-val trms : t -> t iter
-(** The immediate subterms of a term. *)
 
 val vars : t -> Var.t iter
 (** The variables that occur in a term. *)
 
+val fv : t -> Var.Set.t
+
+val trms : t -> t iter
+(** The immediate subterms. *)
+
 val atoms : t -> t iter
-(** The atomic reflexive-transitive subterms of a term. *)
+(** The atomic reflexive-transitive subterms. *)
+
+(** Transform *)
+
+val map_vars : t -> f:(Var.t -> Var.t) -> t
+(** Map over the {!vars}. *)
+
+val map : t -> f:(t -> t) -> t
+(** Map over the {!trms}. *)
+
+val fold_map : t -> 's -> f:(t -> 's -> t * 's) -> t * 's
+(** Fold while mapping over the {!trms}. *)

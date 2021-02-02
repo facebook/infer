@@ -22,18 +22,26 @@ digraph cfg {
 "List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_1" [label="1: Start List<item>::List\nFormals:  this:List<item>* next_ptr:void\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_1" -> "List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_4" ;
+	 "List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_1" -> "List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_5" ;
 "List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_2" [label="2: Exit List<item>::List \n  " color=yellow style=filled]
 	
 
-"List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_3" [label="3:  Constructor Init \n   n$1=*&this:List<item>* [line 14, column 42]\n  n$2=*&next_ptr:void [line 14, column 51]\n  *n$1.next_ptr:void=n$2 [line 14, column 42]\n " shape="box"]
+"List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_3" [label="3:  Constructor Init \n   n$1=*&this:List<item>* [line 14, column 42]\n " shape="box"]
 	
 
-	 "List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_3" -> "List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_2" ;
-"List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_4" [label="4:  Constructor Init \n   n$3=*&this:List<item>* [line 14, column 27]\n  *n$3.head:item*=null [line 14, column 27]\n " shape="box"]
+	 "List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_3" -> "List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_4" ;
+"List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_4" [label="4:  Constructor Init \n   n$2=*&next_ptr:void [line 14, column 51]\n  *n$1.next_ptr:void=n$2 [line 14, column 42]\n " shape="box"]
 	
 
-	 "List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_4" -> "List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_3" ;
+	 "List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_4" -> "List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_2" ;
+"List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_5" [label="5:  Constructor Init \n   n$3=*&this:List<item>* [line 14, column 27]\n " shape="box"]
+	
+
+	 "List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_5" -> "List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_6" ;
+"List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_6" [label="6:  Constructor Init \n   *n$3.head:item*=null [line 14, column 27]\n " shape="box"]
+	
+
+	 "List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_6" -> "List#List<item>#{15914538297308632075}.3434f5c53e6f70f530bf6d3beb27430e_3" ;
 "item#item#{8704603758565933158}.444c1f007931991a5b2dfd25b7b090f5_1" [label="1: Start item::item\nFormals:  this:item*\nLocals:  \n  " color=yellow style=filled]
 	
 

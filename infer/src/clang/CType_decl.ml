@@ -53,12 +53,11 @@ module BuildMethodSignature = struct
         raise CFrontend_errors.Invalid_declaration
 
 
-  let should_add_return_param return_type ~is_objc_method =
-    match return_type.Typ.desc with Tstruct _ -> not is_objc_method | _ -> false
+  let should_add_return_param return_type =
+    match return_type.Typ.desc with Tstruct _ -> true | _ -> false
 
 
   let get_return_param qual_type_to_sil_type tenv ~block_return_type method_decl =
-    let is_objc_method = CMethodProperties.is_objc_method method_decl in
     let return_qual_type =
       match block_return_type with
       | Some return_type ->
@@ -67,7 +66,7 @@ module BuildMethodSignature = struct
           CMethodProperties.get_return_type method_decl
     in
     let return_typ = qual_type_to_sil_type tenv return_qual_type in
-    if should_add_return_param return_typ ~is_objc_method then
+    if should_add_return_param return_typ then
       let name = Mangled.from_string CFrontend_config.return_param in
       let return_qual_type = Ast_expressions.create_pointer_qual_type return_qual_type in
       param_type_of_qual_type qual_type_to_sil_type tenv name return_qual_type
@@ -149,8 +148,7 @@ module BuildMethodSignature = struct
     in
     let return_typ = qual_type_to_sil_type tenv return_qual_type in
     let return_typ_annot = CAst_utils.sil_annot_of_type return_qual_type in
-    let is_objc_method = CMethodProperties.is_objc_method method_decl in
-    if should_add_return_param return_typ ~is_objc_method then
+    if should_add_return_param return_typ then
       (StdTyp.void, Some (CType.add_pointer_to_typ return_typ), Annot.Item.empty, true)
     else (return_typ, None, return_typ_annot, false)
 
@@ -301,7 +299,7 @@ let create_c_record_typename (tag_kind : Clang_ast_t.tag_kind) =
   | `TTK_Union ->
       Typ.Name.C.union_from_qual_name
   | `TTK_Class ->
-      Typ.Name.Cpp.from_qual_name Typ.NoTemplate
+      Typ.Name.Cpp.from_qual_name Typ.NoTemplate ~is_union:false
 
 
 let get_class_template_name = function
@@ -451,10 +449,12 @@ and get_record_friend_decl_type tenv definition_decl =
 and get_record_typename ?tenv decl =
   let open Clang_ast_t in
   let linters_mode = match tenv with Some _ -> false | None -> true in
+  let is_union_tag tag_kind = match tag_kind with `TTK_Union -> true | _ -> false in
   match (decl, tenv) with
   | RecordDecl (_, name_info, _, _, _, tag_kind, _), _ ->
       CAst_utils.get_qualified_name ~linters_mode name_info |> create_c_record_typename tag_kind
-  | ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, _, mangling, spec_info), Some tenv ->
+  | ClassTemplateSpecializationDecl (_, _, _, _, _, tag_kind, _, _, mangling, spec_info), Some tenv
+    ->
       let tname =
         match CAst_utils.get_decl spec_info.tsi_template_decl with
         | Some dec ->
@@ -464,15 +464,17 @@ and get_record_typename ?tenv decl =
       in
       let args = get_template_args tenv spec_info in
       let mangled = if String.equal "" mangling then None else Some mangling in
-      Typ.Name.Cpp.from_qual_name (Typ.Template {mangled; args}) tname
+      Typ.Name.Cpp.from_qual_name
+        (Typ.Template {mangled; args})
+        ~is_union:(is_union_tag tag_kind) tname
   | CXXRecordDecl (_, name_info, _, _, _, `TTK_Union, _, _), _ ->
       Typ.CUnion (CAst_utils.get_qualified_name ~linters_mode name_info)
-  | CXXRecordDecl (_, name_info, _, _, _, _, _, _), _
-  | ClassTemplatePartialSpecializationDecl (_, name_info, _, _, _, _, _, _, _, _), _
-  | ClassTemplateSpecializationDecl (_, name_info, _, _, _, _, _, _, _, _), _ ->
+  | CXXRecordDecl (_, name_info, _, _, _, tag_kind, _, _), _
+  | ClassTemplatePartialSpecializationDecl (_, name_info, _, _, _, tag_kind, _, _, _, _), _
+  | ClassTemplateSpecializationDecl (_, name_info, _, _, _, tag_kind, _, _, _, _), _ ->
       (* we use Typ.CppClass for C++ because we expect Typ.CppClass from *)
       (* types that have methods. And in C++ struct/class/union can have methods *)
-      Typ.Name.Cpp.from_qual_name Typ.NoTemplate
+      Typ.Name.Cpp.from_qual_name Typ.NoTemplate ~is_union:(is_union_tag tag_kind)
         (CAst_utils.get_qualified_name ~linters_mode name_info)
   | ObjCInterfaceDecl (_, name_info, _, _, _), _ | ObjCImplementationDecl (_, name_info, _, _, _), _
     ->
