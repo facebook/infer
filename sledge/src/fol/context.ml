@@ -406,16 +406,18 @@ let rec extend_ a s =
     ~call:(fun {pf} -> pf "@ %a@ %a" Trm.pp a Subst.pp s)
     ~retn:(fun {pf} s' -> pf "%a" Subst.pp_diff (s, s'))
   @@ fun () ->
-  match (a : Trm.t) with
-  | Z _ | Q _ -> s
-  | _ -> (
-      if Theory.is_interpreted a then Iter.fold ~f:extend_ (Trm.trms a) s
-      else
-        (* add uninterpreted terms *)
-        match Subst.extend a s with
-        (* and their subterms if newly added *)
-        | Some s -> Iter.fold ~f:extend_ (Trm.trms a) s
-        | None -> s )
+  match Theory.classify a with
+  | InterpAtom -> s
+  | InterpApp -> Iter.fold ~f:extend_ (Trm.trms a) s
+  | NonInterpAtom ->
+      (* add uninterpreted terms if missing *)
+      Trm.Map.change a s ~f:(function None -> Some a | a' -> a')
+  | UninterpApp -> (
+    (* add uninterpreted terms if missing *)
+    match Subst.extend a s with
+    | None -> s
+    (* and their subterms if newly added *)
+    | Some s -> Iter.fold ~f:extend_ (Trm.trms a) s )
 
 (** add a term to the carrier *)
 let extend a x =
