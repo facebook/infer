@@ -669,10 +669,9 @@ let rec propagate ~wrt x =
 (* Core operations ========================================================*)
 
 let empty =
-  let rep = Subst.empty in
   { xs= Var.Set.empty
   ; sat= true
-  ; rep
+  ; rep= Subst.empty
   ; cls= Trm.Map.empty
   ; use= Trm.Map.empty
   ; pnd= [] }
