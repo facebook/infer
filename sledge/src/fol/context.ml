@@ -68,12 +68,11 @@ end = struct
   let subst s e = Term.map_trms ~f:(subst_ s) e
 
   (** apply a substitution to maximal non-interpreted subterms *)
-  let rec norm s a =
+  let norm s a =
     [%trace]
       ~call:(fun {pf} -> pf "@ %a" Trm.pp a)
       ~retn:(fun {pf} -> pf "%a" Trm.pp)
-    @@ fun () ->
-    if Theory.is_interpreted a then Trm.map ~f:(norm s) a else apply s a
+    @@ fun () -> Theory.map_solvables ~f:(apply s) a
 
   (** compose two substitutions *)
   let compose r s =
