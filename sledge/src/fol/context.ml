@@ -1235,6 +1235,7 @@ type call =
   | Union of Var.Set.t * t * t
   | Inter of Var.Set.t * t * t
   | InterN of Var.Set.t * t list
+  | Dnf of Formula.t
   | Rename of t * Var.Subst.t
   | Is_unsat of t
   | Implies of t * Formula.t
@@ -1251,6 +1252,7 @@ let replay c =
   | Union (us, r, s) -> union us r s |> ignore
   | Inter (us, r, s) -> inter us r s |> ignore
   | InterN (us, rs) -> interN us rs |> ignore
+  | Dnf f -> dnf f |> ignore
   | Rename (r, s) -> rename r s |> ignore
   | Is_unsat r -> is_unsat r |> ignore
   | Implies (r, f) -> implies r f |> ignore
@@ -1291,6 +1293,7 @@ let add_tmr = Timer.create "add" ~at_exit:report
 let union_tmr = Timer.create "union" ~at_exit:report
 let inter_tmr = Timer.create "inter" ~at_exit:report
 let interN_tmr = Timer.create "interN" ~at_exit:report
+let dnf_tmr = Timer.create "dnf" ~at_exit:report
 let rename_tmr = Timer.create "rename" ~at_exit:report
 let is_unsat_tmr = Timer.create "is_unsat" ~at_exit:report
 let implies_tmr = Timer.create "implies" ~at_exit:report
@@ -1311,6 +1314,8 @@ let inter us r s =
 
 let interN us rs =
   wrap interN_tmr (fun () -> interN us rs) (fun () -> InterN (us, rs))
+
+let dnf f = wrap dnf_tmr (fun () -> dnf f) (fun () -> Dnf f)
 
 let rename r s =
   wrap rename_tmr (fun () -> rename r s) (fun () -> Rename (r, s))
