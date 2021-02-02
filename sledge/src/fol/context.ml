@@ -854,12 +854,6 @@ let apply_and_elim ~wrt xs s r =
 
 (* Existential Witnessing and Elimination =================================*)
 
-let rec max_solvables e =
-  if not (Theory.is_interpreted e) then Iter.return e
-  else Iter.flat_map ~f:max_solvables (Trm.trms e)
-
-let fold_max_solvables e s ~f = Iter.fold ~f (max_solvables e) s
-
 let subst_invariant us s0 s =
   assert (s0 == s || not (Subst.equal s0 s)) ;
   assert (
@@ -885,7 +879,8 @@ let solve_poly_eq us p' q' subst =
   ;
   let diff = Trm.sub p' q' in
   let max_solvables_not_ito_us =
-    fold_max_solvables diff Zero ~f:(fun solvable_subterm -> function
+    Iter.fold (Theory.solvables diff) Zero ~f:(fun solvable_subterm ->
+      function
       | Many -> Many
       | zom when Var.Set.subset (Trm.fv solvable_subterm) ~of_:us -> zom
       | One _ -> Many
