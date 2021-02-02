@@ -279,6 +279,9 @@ module Call = struct
         ; +PatternMatch.Java.implements_list
           &:: "contains" <>$ capt_exp
           $+...$--> BoundsOfCollection.linear_length ~of_function:"List.contains"
+        ; +PatternMatch.Java.implements_collection
+          &:: "contains" <>$ capt_exp
+          $+...$--> BoundsOfCollection.linear_length ~of_function:"Collection.contains"
         ; +PatternMatch.Java.implements_collections
           &:: "binarySearch" <>$ capt_exp
           $+...$--> BoundsOfCollection.logarithmic_length ~of_function:"Collections.binarySearch"

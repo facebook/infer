@@ -99,6 +99,7 @@ codetoanalyze/java/performance/CollectionTest.java, CollectionTest$MyEnumType.<i
 codetoanalyze/java/performance/CollectionTest.java, CollectionTest$MyEnumType.valueOf(java.lang.String):CollectionTest$MyEnumType, 6,  OnUIThread:false, []
 codetoanalyze/java/performance/CollectionTest.java, CollectionTest$MyEnumType.values():CollectionTest$MyEnumType[], 6,  OnUIThread:false, []
 codetoanalyze/java/performance/CollectionTest.java, CollectionTest.<init>(), 2,  OnUIThread:false, []
+codetoanalyze/java/performance/CollectionTest.java, CollectionTest.containsNull_linear(java.util.HashMap):void, 5 + keyMap.length,  OnUIThread:false, [{keyMap.length},Modeled call to Collection.contains]
 codetoanalyze/java/performance/CollectionTest.java, CollectionTest.ensure_call(CollectionTest$MyCollection):void, 9 + 5 ⋅ list.length,  OnUIThread:false, [{list.length},Call to void CollectionTest.iterate_over_mycollection(CollectionTest$MyCollection),Loop]
 codetoanalyze/java/performance/CollectionTest.java, CollectionTest.immutable_set_of_constant():void, 9,  OnUIThread:false, []
 codetoanalyze/java/performance/CollectionTest.java, CollectionTest.immutable_set_of_multiple_constant():void, 64,  OnUIThread:false, []
