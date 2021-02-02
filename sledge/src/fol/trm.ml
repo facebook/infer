@@ -393,6 +393,11 @@ module Set = struct
   include Set.Make (T)
   include Provide_of_sexp (T)
   include Provide_pp (T)
+
+  let of_vars : Var.Set.t -> t =
+   fun vs ->
+    of_iter
+      (Iter.map ~f:(fun v -> (v : Var.t :> Trm.t)) (Var.Set.to_iter vs))
 end
 
 module Map = struct

@@ -43,6 +43,7 @@ module Set : sig
   val t_of_sexp : Sexp.t -> t
   val pp : t pp
   val pp_diff : (t * t) pp
+  val of_vars : Var.Set.t -> t
 end
 
 module Map : sig

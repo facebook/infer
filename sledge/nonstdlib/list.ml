@@ -91,13 +91,13 @@ let rec pp ?pre ?suf sep pp_elt fs = function
       | xs -> Format.fprintf fs "%( %)%a" sep (pp sep pp_elt) xs ) ;
       Option.iter ~f:(Format.fprintf fs) suf
 
-let pp_diff ~cmp sep pp_elt fs (xs, ys) =
+let pp_diff ~cmp ?pre ?suf sep pp_elt fs (xs, ys) =
   let pp_diff_elt fs (elt : _ Either.t) =
     match elt with
     | Left x -> Format.fprintf fs "-- %a" pp_elt x
     | Right y -> Format.fprintf fs "++ %a" pp_elt y
   in
-  pp sep pp_diff_elt fs (symmetric_diff ~cmp xs ys)
+  pp ?pre ?suf sep pp_diff_elt fs (symmetric_diff ~cmp xs ys)
 
 module Assoc = struct
   include Assoc

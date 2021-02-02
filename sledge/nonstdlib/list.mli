@@ -20,6 +20,8 @@ val pp :
 
 val pp_diff :
      cmp:('a -> 'a -> int)
+  -> ?pre:(unit, unit) fmt
+  -> ?suf:(unit, unit) fmt
   -> (unit, unit) fmt
   -> 'a pp
   -> ('a list * 'a list) pp
