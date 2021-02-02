@@ -118,3 +118,6 @@ val map_vars : t -> f:(Var.t -> Var.t) -> t
 
 val map : t -> f:(t -> t) -> t
 (** Map over the {!trms}. *)
+
+val fold_map : t -> 's -> f:(t -> 's -> t * 's) -> t * 's
+(** Fold while mapping over the {!trms}. *)

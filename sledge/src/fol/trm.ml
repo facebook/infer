@@ -492,3 +492,5 @@ let map e ~f =
       map3 f e (fun seq off len -> _Extract ~seq ~off ~len) seq off len
   | Concat xs -> mapN f e _Concat xs
   | Apply (g, xs) -> mapN f e (_Apply g) xs
+
+let fold_map e = fold_map_from_map map e
