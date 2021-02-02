@@ -968,7 +968,7 @@ let rec solve_pending s soln =
       | {solved= None} -> None )
   | [] -> Some soln
 
-let solve_seq_eq ~wrt us e' f' subst =
+let solve_seq_eq us e' f' subst =
   [%Trace.call fun {pf} -> pf "@ %a = %a" Trm.pp e' Trm.pp f']
   ;
   let x_ito_us x u =
@@ -983,7 +983,7 @@ let solve_seq_eq ~wrt us e' f' subst =
     in
     solve_pending
       (solve_concat ms a n
-         { wrt
+         { wrt= Var.Set.empty
          ; no_fresh= true
          ; fresh= Var.Set.empty
          ; solved= Some []
@@ -1004,14 +1004,14 @@ let solve_seq_eq ~wrt us e' f' subst =
   [%Trace.retn fun {pf} subst' ->
     pf "@[%a@]" Subst.pp_diff (subst, Option.value subst' ~default:subst)]
 
-let solve_interp_eq ~wrt us e' (cls, subst) =
+let solve_interp_eq us e' (cls, subst) =
   [%Trace.call fun {pf} ->
     pf "@ trm: @[%a@]@ cls: @[%a@]@ subst: @[%a@]" Trm.pp e' Cls.pp cls
       Subst.pp subst]
   ;
   Iter.find_map (Cls.to_iter cls) ~f:(fun f ->
       let f' = Subst.norm subst f in
-      match solve_seq_eq ~wrt us e' f' subst with
+      match solve_seq_eq us e' f' subst with
       | Some subst -> Some subst
       | None -> solve_poly_eq us e' f' subst )
   |>
@@ -1023,7 +1023,7 @@ let solve_interp_eq ~wrt us e' (cls, subst) =
     and can be expressed, after normalizing with [subst], as [x ↦ u] where
     [us ∪ xs ⊇ fv x ⊈ us] and [fv u ⊆ us] or else
     [fv u ⊆ us ∪ xs] *)
-let rec solve_interp_eqs ~wrt us (cls, subst) =
+let rec solve_interp_eqs us (cls, subst) =
   [%Trace.call fun {pf} ->
     pf "@ cls: @[%a@]@ subst: @[%a@]" Cls.pp cls Subst.pp subst]
   ;
@@ -1033,13 +1033,13 @@ let rec solve_interp_eqs ~wrt us (cls, subst) =
     | Some (trm, cls) ->
         let trm' = Subst.norm subst trm in
         if is_interpreted trm' then
-          match solve_interp_eq ~wrt us trm' (cls, subst) with
+          match solve_interp_eq us trm' (cls, subst) with
           | Some subst -> solve_interp_eqs_ cls' (cls, subst)
           | None -> solve_interp_eqs_ (Cls.add trm' cls') (cls, subst)
         else solve_interp_eqs_ (Cls.add trm' cls') (cls, subst)
   in
   let cls', subst' = solve_interp_eqs_ Cls.empty (cls, subst) in
-  ( if subst' != subst then solve_interp_eqs ~wrt us (cls', subst')
+  ( if subst' != subst then solve_interp_eqs us (cls', subst')
   else (cls', subst') )
   |>
   [%Trace.retn fun {pf} (cls', subst') ->
@@ -1132,7 +1132,7 @@ let solve_uninterp_eqs us (cls, subst) =
     [subst] which can be expressed, after normalizing with [subst], as
     [x ↦ u] where [us ∪ xs ⊇ fv x ⊈ us] and [fv u ⊆ us] or else
     [fv u ⊆ us ∪ xs] *)
-let solve_class ~wrt us us_xs ~key:rep ~data:cls (classes, subst) =
+let solve_class us us_xs ~key:rep ~data:cls (classes, subst) =
   let classes0 = classes in
   [%Trace.call fun {pf} ->
     pf "@ rep: @[%a@]@ cls: @[%a@]@ subst: @[%a@]" Trm.pp rep Cls.pp cls
@@ -1143,7 +1143,7 @@ let solve_class ~wrt us us_xs ~key:rep ~data:cls (classes, subst) =
       ~f:(fun e -> Var.Set.subset (Trm.fv e) ~of_:us_xs)
       (Cls.add rep cls)
   in
-  let cls, subst = solve_interp_eqs ~wrt us (cls, subst) in
+  let cls, subst = solve_interp_eqs us (cls, subst) in
   let cls, subst = solve_uninterp_eqs us (cls, subst) in
   let cls = Cls.union cls_not_ito_us_xs cls in
   let cls = Cls.remove (Subst.norm subst rep) cls in
@@ -1219,13 +1219,13 @@ let solve_for_xs r us xs =
 (** move equations from [classes] to [subst] which can be expressed, after
     normalizing with [subst], as [x ↦ u] where [us ∪ xs ⊇ fv x ⊈ us]
     and [fv u ⊆ us] or else [fv u ⊆ us ∪ xs]. *)
-let solve_classes ~wrt r xs (classes, subst, us) =
+let solve_classes r xs (classes, subst, us) =
   [%Trace.call fun {pf} ->
     pf "@ us: {@[%a@]}@ xs: {@[%a@]}" Var.Set.pp us Var.Set.pp xs]
   ;
   let rec solve_classes_ (classes0, subst0, us_xs) =
     let classes, subst =
-      Trm.Map.fold ~f:(solve_class ~wrt us us_xs) classes0 (classes0, subst0)
+      Trm.Map.fold ~f:(solve_class us us_xs) classes0 (classes0, subst0)
     in
     if subst != subst0 then solve_classes_ (classes, subst, us_xs)
     else (classes, subst, us_xs)
@@ -1253,12 +1253,10 @@ let solve_for_vars vss r =
     pf "@ %a@ @[%a@]" pp_vss vss pp r ;
     invariant r]
   ;
-  let wrt = Var.Set.union_list vss in
   let us, vss =
     match vss with us :: vss -> (us, vss) | [] -> (Var.Set.empty, vss)
   in
-  List.fold ~f:(solve_classes ~wrt r) vss (classes r, Subst.empty, us)
-  |> snd3
+  List.fold ~f:(solve_classes r) vss (classes r, Subst.empty, us) |> snd3
   |>
   [%Trace.retn fun {pf} subst ->
     pf "%a" Subst.pp subst ;
