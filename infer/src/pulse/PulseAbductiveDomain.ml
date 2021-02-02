@@ -492,10 +492,7 @@ let rec set_uninitialized_post tenv src typ location (post : PostDomain.t) =
               in
               PostDomain.update ~stack ~heap acc
               |> set_uninitialized_post tenv (`Malloc field_addr) field_typ location ) )
-  | Tarray _ ->
-      (* TODO: set uninitialized attributes for elements *)
-      post
-  | Tvoid | Tfun | TVar _ ->
+  | Tarray _ | Tvoid | Tfun | TVar _ ->
       (* We ignore tricky types to mark uninitialized addresses. *)
       post
 

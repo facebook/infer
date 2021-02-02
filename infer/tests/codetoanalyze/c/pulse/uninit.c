@@ -102,6 +102,7 @@ void malloc_array_good(int len) {
   char* o = (char*)malloc(len);
   if (o) {
     o[0] = 'a';
+    char c = o[0];
   }
   free(o);
 }
@@ -115,4 +116,27 @@ struct uninit_s unknown_wrapper() {
 void havoc_calling_unknown_struct_good() {
   struct uninit_s x = unknown_wrapper();
   int y = x.f1;
+}
+
+void malloc_array_bad_FN(int len) {
+  char* o = (char*)malloc(len);
+  if (o) {
+    o[0] = 'a';
+    char c = o[1];
+  }
+  free(o);
+}
+
+void local_array_good() {
+  char o[10];
+  o[0] = 'a';
+  char c = o[0];
+  free(o);
+}
+
+void local_array_bad_FN() {
+  char o[10];
+  o[0] = 'a';
+  char c = o[1];
+  free(o);
 }
