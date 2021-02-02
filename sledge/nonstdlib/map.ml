@@ -228,7 +228,10 @@ end) : S with type key = Key.t = struct
            Format.fprintf fs "@[%a@ @<2>↦ %a@]" pp_k k pp_v v ))
       (Iter.to_list (to_iter m))
 
-  let pp_diff pp_key pp_val pp_diff_val ~eq fs (x, y) =
+  let pp_diff ?(pre = ("[@[<hv>" : (unit, unit) fmt))
+      ?(suf = ("@]];@ " : (unit, unit) fmt))
+      ?(sep = (";@ " : (unit, unit) fmt)) pp_key pp_val pp_diff_val ~eq fs
+      (x, y) =
     let pp_diff_elt fs = function
       | k, `Left v ->
           Format.fprintf fs "-- [@[%a@ @<2>↦ %a@]]" pp_key k pp_val v
@@ -238,6 +241,5 @@ end) : S with type key = Key.t = struct
           Format.fprintf fs "[@[%a@ @<2>↦ %a@]]" pp_key k pp_diff_val vv
     in
     let sd = Iter.to_list (symmetric_diff ~eq x y) in
-    if not (List.is_empty sd) then
-      Format.fprintf fs "[@[<hv>%a@]];@ " (List.pp ";@ " pp_diff_elt) sd
+    List.pp ~pre ~suf sep pp_diff_elt fs sd
 end

@@ -254,8 +254,7 @@ let pp_raw fs {sat; rep; cls; pnd} =
   let pp_trm_v fs (k, v) = if not (Trm.equal k v) then Trm.pp fs v in
   let pp_cls_v fs (_, cls) = Cls.pp_raw fs cls in
   let pp_pnd fs pnd =
-    if not (List.is_empty pnd) then
-      Format.fprintf fs ";@ pnd= @[%a@]" (List.pp ";@ " pp_eq) pnd
+    List.pp ~pre:";@ pnd= [@[" ";@ " ~suf:"@]]" pp_eq fs pnd
   in
   Format.fprintf fs "@[{@[<hv>sat= %b;@ rep= %a;@ cls= %a%a@]}@]" sat
     (pp_alist Trm.pp pp_trm_v)
@@ -269,20 +268,18 @@ let pp_diff fs (r, s) =
       Format.fprintf fs "sat= @[-- %b@ ++ %b@];@ " r.sat s.sat
   in
   let pp_rep fs =
-    if not (Subst.is_empty r.rep) then
-      Format.fprintf fs "rep= %a;@ " Subst.pp_diff (r.rep, s.rep)
+    Trm.Map.pp_diff ~eq:Trm.equal ~pre:"rep= @[" ~sep:";@ " ~suf:"@]" Trm.pp
+      Trm.pp Trm.pp_diff fs (r.rep, s.rep)
   in
   let pp_cls fs =
-    if not (Trm.Map.equal Cls.equal r.cls s.cls) then
-      Format.fprintf fs "cls= %a;@ "
-        (Trm.Map.pp_diff ~eq:Cls.equal Trm.pp Cls.pp_raw Cls.pp_diff)
-        (r.cls, s.cls)
+    Trm.Map.pp_diff ~eq:Cls.equal ~pre:";@ cls= @[" ~sep:";@ " ~suf:"@]"
+      Trm.pp Cls.pp_raw Cls.pp_diff fs (r.cls, s.cls)
   in
   let pp_pnd fs =
-    List.pp_diff ~cmp:[%compare: Trm.t * Trm.t] ~pre:"pnd= @[" ~suf:"@]"
-      ";@ " pp_eq fs (r.pnd, s.pnd)
+    List.pp_diff ~cmp:[%compare: Trm.t * Trm.t] ~pre:";@ pnd= [@[" ";@ "
+      ~suf:"@]]" pp_eq fs (r.pnd, s.pnd)
   in
-  Format.fprintf fs "@[{@[<hv>%t%t%t%t@]}@]" pp_sat pp_rep pp_cls pp_pnd
+  Format.fprintf fs "@[{ @[<hv>%t%t%t%t@] }@]" pp_sat pp_rep pp_cls pp_pnd
 
 let ppx_classes x fs clss =
   List.pp "@ @<2>∧ "

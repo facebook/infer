@@ -146,7 +146,10 @@ module type S = sig
   val pp : key pp -> 'a pp -> 'a t pp
 
   val pp_diff :
-       key pp
+       ?pre:(unit, unit) fmt
+    -> ?suf:(unit, unit) fmt
+    -> ?sep:(unit, unit) fmt
+    -> key pp
     -> 'a pp
     -> ('a * 'a) pp
     -> eq:('a -> 'a -> bool)
