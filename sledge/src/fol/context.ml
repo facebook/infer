@@ -352,14 +352,12 @@ let pre_invariant r =
   Subst.iteri r.rep ~f:(fun ~key:trm ~data:rep ->
       (* no interpreted terms in carrier *)
       assert (
-        (not (Theory.is_interpreted trm))
-        || fail "non-interp %a" Trm.pp trm () ) ;
-      (* carrier is closed under subterms *)
-      Iter.iter (Trm.trms trm) ~f:(fun subtrm ->
+        Theory.is_noninterpreted trm || fail "non-interp %a" Trm.pp trm ()
+      ) ;
+      (* carrier is closed under solvable subterms *)
+      Iter.iter (Theory.solvable_trms trm) ~f:(fun subtrm ->
           assert (
-            Theory.is_interpreted subtrm
-            || (match subtrm with Z _ | Q _ -> true | _ -> false)
-            || in_car r subtrm
+            in_car r subtrm
             || fail "@[subterm %a@ of %a@ not in carrier of@ %a@]" Trm.pp
                  subtrm Trm.pp trm pp r () ) ) ;
       (* rep is idempotent *)
