@@ -122,6 +122,8 @@ val report_immutable_modifications : bool
 
 val report_nullable_inconsistency : bool
 
+val run_as_child : int option
+
 val save_compact_summaries : bool
 
 val smt_output : bool
@@ -297,6 +299,8 @@ val filtering : bool
 val force_delete_results_dir : bool
 
 val force_integration : build_system option
+
+val fork_mode : bool
 
 val from_json_report : string
 
