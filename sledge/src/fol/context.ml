@@ -448,8 +448,8 @@ let propagate1 (a, a') x =
           |> Option.value ~default:(Cls.empty, x.cls)
         in
         let b0'_cls, pnd =
-          if Theory.is_interpreted b0' then (b0'_cls, (b0', b') :: x.pnd)
-          else (Cls.add b0' b0'_cls, x.pnd)
+          if Theory.is_noninterpreted b0' then (Cls.add b0' b0'_cls, x.pnd)
+          else (b0'_cls, (b0', b') :: x.pnd)
         in
         let rep =
           Cls.fold b0'_cls x.rep ~f:(fun c rep ->
