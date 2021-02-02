@@ -129,7 +129,7 @@ bool string_has_prefix_linear(NSString* str, NSString* prefix) {
 
 @implementation DummyClass
 
-+ (void)call_string_by_appending_string_constant_FP {
++ (void)call_string_by_appending_string_constant {
   NSString* s = [NSStringFromClass(self) stringByAppendingString:@"abc"];
 }
 
