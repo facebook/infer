@@ -995,7 +995,7 @@ type cls_solve_state =
 let dom_trm e =
   match (e : Trm.t) with
   | Sized {seq= Var _ as v} -> Some v
-  | _ when not (Theory.is_interpreted e) -> Some e
+  | _ when Theory.is_noninterpreted e -> Some e
   | _ -> None
 
 (** move equations from [cls] (which is assumed to be normalized by [subst])
