@@ -184,7 +184,6 @@ module Cls : sig
   type t [@@deriving compare, equal, sexp]
 
   val empty : t
-  val of_ : Trm.t -> t
   val add : Trm.t -> t -> t
   val remove : Trm.t -> t -> t
   val union : t -> t -> t
@@ -205,7 +204,6 @@ end = struct
   type t = Trm.t list [@@deriving compare, equal, sexp]
 
   let empty = []
-  let of_ e = [e]
   let add = List.cons
   let remove = List.remove ~eq:Trm.equal
   let union = List.rev_append
@@ -613,7 +611,7 @@ let normalize r e = Term.map_trms ~f:(canon r) e
 
 let cls_of r e =
   let e' = Subst.apply r.rep e in
-  Trm.Map.find e' r.cls |> Option.value ~default:(Cls.of_ e')
+  Cls.add e' (Trm.Map.find e' r.cls |> Option.value ~default:Cls.empty)
 
 let class_of r e =
   match Term.get_trm (normalize r e) with
