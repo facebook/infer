@@ -16,6 +16,7 @@ let tl_exn = tl
 let tl = function [] -> None | _ :: tl -> Some tl
 let pop_exn = function x :: xs -> (x, xs) | [] -> raise Not_found
 let mem elt seq ~eq = mem ~eq elt seq
+let iter xs ~f = iter ~f xs
 let exists xs ~f = exists ~f xs
 let for_all xs ~f = for_all ~f xs
 let find_exn xs ~f = find ~f xs

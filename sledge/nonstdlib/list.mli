@@ -32,6 +32,7 @@ val tl : 'a t -> 'a t option
 val tl_exn : 'a t -> 'a t
 val pop_exn : 'a list -> 'a * 'a list
 val mem : 'a -> 'a t -> eq:('a -> 'a -> bool) -> bool
+val iter : 'a t -> f:('a -> unit) -> unit
 val exists : 'a t -> f:('a -> bool) -> bool
 val for_all : 'a t -> f:('a -> bool) -> bool
 val find : 'a t -> f:('a -> bool) -> 'a option
