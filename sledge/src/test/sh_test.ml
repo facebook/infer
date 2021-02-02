@@ -78,11 +78,11 @@ let%test_module _ =
       pp (star p q) ;
       [%expect
         {|
-          ∃ %x_7 .   emp
+        ∃ %x_7 .   emp
 
-            0 = %x_7 ∧ emp
+          0 = %x_7 ∧ emp
 
-            0 = %x_7 ∧ emp |}]
+          0 = %x_7 ∧ emp |}]
 
     let%expect_test _ =
       let q =
@@ -99,7 +99,7 @@ let%test_module _ =
       [%expect
         {|
           ( (  0 = %x_7 ∧ emp) ∨ (  ( (  1 = %y_8 ∧ emp) ∨ (  emp) )) )
-    
+
         ( (∃ %x_7, %x_8 .   2 = %x_8 ∧ (2 = %x_8) ∧ emp)
         ∨ (∃ %x_7 .   1 = %y_8 = %x_7 ∧ ((1 = %x_7) ∧ (1 = %y_8)) ∧ emp)
         ∨ (  0 = %x_7 ∧ (0 = %x_7) ∧ emp)
@@ -122,7 +122,7 @@ let%test_module _ =
       [%expect
         {|
           ( (  emp) ∨ (  ( (  1 = %y_8 ∧ emp) ∨ (  emp) )) )
-    
+
         ( (∃ %x_7, %x_9, %x_10 .   2 = %x_10 ∧ (2 = %x_10) ∧ emp)
         ∨ (∃ %x_7, %x_9 .
              1 = %x_9 = %y_8 ∧ ((1 = %y_8) ∧ (1 = %x_9))
@@ -147,7 +147,7 @@ let%test_module _ =
       [%expect
         {|
         ( (  emp) ∨ (  ( (  1 = %y_8 ∧ emp) ∨ (  emp) )) )
-    
+
         ( (  emp) ∨ (  1 = %y_8 ∧ emp) ∨ (  emp) ) |}]
 
     let%expect_test _ =
@@ -159,9 +159,9 @@ let%test_module _ =
       [%expect
         {|
         ∃ %x_7 .   %x_7 = f(%x_7) ∧ (-1 + %y_8) = f(%y_8) ∧ emp
-    
+
           (-1 + %y_8) = f(%y_8) ∧ ((1 + f(%y_8)) = %y_8) ∧ emp
-    
+
           (-1 + %y_8) = f(%y_8) ∧ emp |}]
 
     let%expect_test _ =
@@ -222,7 +222,7 @@ let%test_module _ =
              ∧ ((%b_2 = %z_9) ∧ (%c_3 = %m_6))
              ∧ emp)
           )
-    
+
         ∃ %b_2 .
           tt ∧ tt
         ∧ %x_7 -[ %b_2, %c_3 )-> ⟨8,0⟩

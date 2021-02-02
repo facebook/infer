@@ -124,9 +124,9 @@ let%test_module _ =
       pp_raw r1 ;
       [%expect
         {|
-
+    
         %x_5 = %y_6
-
+    
       {sat= true; rep= [[%x_5 ↦ ]; [%y_6 ↦ %x_5]]} |}]
 
     let%test _ = implies_eq r1 x y
@@ -139,7 +139,7 @@ let%test_module _ =
       [%expect
         {|
         %x_5 = f(%x_5) = %z_7 = %y_6
-
+    
       {sat= true;
        rep= [[%x_5 ↦ ]; [%y_6 ↦ %x_5]; [%z_7 ↦ %x_5]; [f(%x_5) ↦ %x_5]]} |}]
 
@@ -163,9 +163,9 @@ let%test_module _ =
       [%expect
         {|
         {sat= true; rep= [[%w_4 ↦ ]; [%y_6 ↦ %w_4]; [%z_7 ↦ %w_4]]}
-
+    
         {sat= true; rep= [[%x_5 ↦ ]; [%y_6 ↦ %x_5]; [%z_7 ↦ %x_5]]}
-
+    
         {sat= true; rep= [[%y_6 ↦ ]; [%z_7 ↦ %y_6]]} |}]
 
     let%test _ =
@@ -183,7 +183,7 @@ let%test_module _ =
         {|
         %t_1 = g(%y_6, %z_7) = g(%y_6, %v_3) = %z_7 = %x_5 = %w_4 = %v_3
         = %u_2
-
+    
       {sat= true;
        rep= [[%t_1 ↦ ];
              [%u_2 ↦ %t_1];
@@ -207,7 +207,7 @@ let%test_module _ =
       [%expect
         {|
         (-4 + %z_7) = %y_6 ∧ (3 + %z_7) = %w_4 ∧ (8 + %z_7) = %x_5
-
+    
       {sat= true;
        rep= [[%w_4 ↦ (3 + %z_7)];
              [%x_5 ↦ (8 + %z_7)];
@@ -229,7 +229,7 @@ let%test_module _ =
       [%expect
         {|
         1 = %y_6 = %x_5
-
+    
       {sat= true; rep= [[%x_5 ↦ 1]; [%y_6 ↦ 1]]} |}]
 
     let%test _ = implies_eq r6 x y
@@ -258,7 +258,7 @@ let%test_module _ =
       [%expect
         {|
         %v_3 = %z_7 = %y_6 = %x_5 = %w_4
-
+    
       {sat= true;
        rep= [[%v_3 ↦ ];
              [%w_4 ↦ %v_3];
@@ -295,7 +295,7 @@ let%test_module _ =
       [%expect
         {|
       {sat= true; rep= [[%x_5 ↦ (-16 + %z_7)]; [%z_7 ↦ ]]}
-
+    
       {sat= true; rep= [[%x_5 ↦ (-16 + %z_7)]; [%z_7 ↦ ]]} |}]
 
     let%test _ = difference r9 z (x + !8) |> Poly.equal (Some (Z.of_int 8))
@@ -312,15 +312,15 @@ let%test_module _ =
       [%expect
         {|
         {sat= true; rep= [[%x_5 ↦ (-16 + %z_7)]; [%z_7 ↦ ]]}
-
+    
         {sat= true; rep= [[%x_5 ↦ (-16 + %z_7)]; [%z_7 ↦ ]]}
-
+    
         (-8 + -1×%x_5 + %z_7)
-
+    
         8
-
+    
         (8 + %x_5 + -1×%z_7)
-
+    
         -8 |}]
 
     let%test _ = difference r10 z (x + !8) |> Poly.equal (Some (Z.of_int 8))
@@ -424,7 +424,7 @@ let%test_module _ =
                [%y_6 ↦ ];
                [f(%x_5) ↦ %x_5];
                [f(%y_6) ↦ (-1 + %y_6)]]}
-
+    
           %x_5 = f(%x_5) ∧ (-1 + %y_6) = f(%y_6) |}]
 
     let r19 = of_eqs [(x, y + z); (x, !0); (y, !0)]
@@ -454,7 +454,7 @@ let%test_module _ =
         {|
         ((%x_5 = %y_6) ∧ ((5 = %w_4) ∨ (4 = %w_4))
           ∧ ((0 = %x_5) ? (2 = %z_7) : (3 = %z_7)))
-
+    
         (((%x_5 = %y_6) ∧ (0 = %x_5) ∧ (5 = %w_4) ∧ (2 = %z_7))
           ∨ ((%x_5 = %y_6) ∧ (0 = %x_5) ∧ (4 = %w_4) ∧ (2 = %z_7))
           ∨ ((%x_5 = %y_6) ∧ (5 = %w_4) ∧ (3 = %z_7) ∧ (0 ≠ %x_5))

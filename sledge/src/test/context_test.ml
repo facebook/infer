@@ -91,23 +91,24 @@ let%test_module _ =
     let%expect_test _ =
       replay
         {|(Solve_for_vars
-            (((Var (id 0) (name 2)) (Var (id 0) (name 6)) (Var (id 0) (name 8)))
-              ((Var (id 5) (name a0)) (Var (id 6) (name b)) (Var (id 7) (name m))
-                (Var (id 8) (name a)) (Var (id 9) (name a0))))
-            ((xs ()) (sat true)
-              (rep
-                (((Var (id 9) (name a0)) (Var (id 5) (name a0)))
-                  ((Var (id 8) (name a))
-                    (Concat
-                      ((Sized (seq (Var (id 5) (name a0))) (siz (Z 4)))
-                        (Sized (seq (Z 0)) (siz (Z 4))))))
-                  ((Var (id 7) (name m)) (Z 8))
-                  ((Var (id 6) (name b)) (Var (id 0) (name 2)))
-                  ((Var (id 5) (name a0)) (Var (id 5) (name a0)))
-                  ((Var (id 0) (name 6))
-                    (Concat
-                      ((Sized (seq (Var (id 5) (name a0))) (siz (Z 4)))
-                        (Sized (seq (Z 0)) (siz (Z 4))))))
-                  ((Var (id 0) (name 2)) (Var (id 0) (name 2)))))))|} ;
+           (((Var (id 0) (name 2)) (Var (id 0) (name 6)) (Var (id 0) (name 8)))
+            ((Var (id 5) (name a0)) (Var (id 6) (name b)) (Var (id 7) (name m))
+             (Var (id 8) (name a)) (Var (id 9) (name a0))))
+           ((xs ()) (sat true)
+            (rep
+             (((Var (id 9) (name a0)) (Var (id 5) (name a0)))
+              ((Var (id 8) (name a))
+               (Concat
+                ((Sized (seq (Var (id 5) (name a0))) (siz (Z 4)))
+                 (Sized (seq (Z 0)) (siz (Z 4))))))
+              ((Var (id 7) (name m)) (Z 8))
+              ((Var (id 6) (name b)) (Var (id 0) (name 2)))
+              ((Var (id 5) (name a0)) (Var (id 5) (name a0)))
+              ((Var (id 0) (name 6))
+               (Concat
+                ((Sized (seq (Var (id 5) (name a0))) (siz (Z 4)))
+                 (Sized (seq (Z 0)) (siz (Z 4))))))
+              ((Var (id 0) (name 2)) (Var (id 0) (name 2)))))
+            (pnd ())))|} ;
       [%expect {| |}]
   end )
