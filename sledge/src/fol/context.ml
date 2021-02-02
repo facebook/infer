@@ -329,7 +329,13 @@ let ppx var_strength fs clss noneqs =
 
 let pp_diff_cls = Trm.Map.pp_diff ~eq:Cls.equal Trm.pp Cls.pp Cls.pp_diff
 
-(* Basic queries ==========================================================*)
+(* Basic representation queries ===========================================*)
+
+let trms r =
+  Iter.flat_map ~f:(fun (k, v) -> Iter.doubleton k v) (Subst.to_iter r.rep)
+
+let vars r = Iter.flat_map ~f:Trm.vars (trms r)
+let fv r = Var.Set.of_iter (vars r)
 
 (** test membership in carrier *)
 let in_car r e = Subst.mem e r.rep
@@ -755,11 +761,97 @@ let rename x sub =
   in
   if rep == x.rep && cls == x.cls then x else {x with rep; cls}
 
-let trms r =
-  Iter.flat_map ~f:(fun (k, v) -> Iter.doubleton k v) (Subst.to_iter r.rep)
+let trivial vs r =
+  [%trace]
+    ~call:(fun {pf} -> pf "@ %a@ %a" Var.Set.pp_xs vs pp_raw r)
+    ~retn:(fun {pf} ks -> pf "%a" Var.Set.pp_xs ks)
+  @@ fun () ->
+  Var.Set.fold vs Var.Set.empty ~f:(fun v ks ->
+      let x = Trm.var v in
+      match Subst.find x r.rep with
+      | None -> Var.Set.add v ks
+      | Some x' when Trm.equal x x' && Iter.is_empty (uses_of x r) ->
+          Var.Set.add v ks
+      | _ -> ks )
 
-let vars r = Iter.flat_map ~f:Trm.vars (trms r)
-let fv r = Var.Set.of_iter (vars r)
+let trim ks x =
+  [%trace]
+    ~call:(fun {pf} -> pf "@ %a@ %a" Var.Set.pp_xs ks pp_raw x)
+    ~retn:(fun {pf} x' ->
+      pf "%a" pp_raw x' ;
+      invariant x' ;
+      assert (Var.Set.disjoint ks (fv x')) )
+  @@ fun () ->
+  (* expand classes to include reps *)
+  let reps =
+    Subst.fold x.rep Trm.Set.empty ~f:(fun ~key:_ ~data:rep reps ->
+        Trm.Set.add rep reps )
+  in
+  let clss =
+    Trm.Set.fold reps x.cls ~f:(fun rep clss ->
+        Trm.Map.update rep clss ~f:(fun cls0 ->
+            Cls.add rep (Option.value cls0 ~default:Cls.empty) ) )
+  in
+  (* enumerate expanded classes and update solution subst *)
+  let kills = Trm.Set.of_vars ks in
+  Trm.Map.fold clss x ~f:(fun ~key:a' ~data:ecls x ->
+      (* remove mappings for non-rep class elements to kill *)
+      let keep, drop = Trm.Set.diff_inter (Cls.to_set ecls) kills in
+      if Trm.Set.is_empty drop then x
+      else
+        let rep = Trm.Set.fold ~f:Subst.remove drop x.rep in
+        let x = {x with rep} in
+        (* new class is keepers without rep *)
+        let keep' = Trm.Set.remove a' keep in
+        let ecls = Cls.of_set keep' in
+        if keep' != keep then
+          (* a' is to be kept: continue to use it as rep *)
+          let cls =
+            if Cls.is_empty ecls then Trm.Map.remove a' x.cls
+            else Trm.Map.add ~key:a' ~data:ecls x.cls
+          in
+          {x with cls}
+        else
+          (* a' is to be removed: choose new rep from the keepers *)
+          let cls = Trm.Map.remove a' x.cls in
+          let x = {x with cls} in
+          match
+            Trm.Set.reduce keep ~f:(fun x y ->
+                if Theory.prefer x y < 0 then x else y )
+          with
+          | Some b' ->
+              (* add mappings from each keeper to the new representative *)
+              let rep =
+                Trm.Set.fold keep x.rep ~f:(fun elt rep ->
+                    Subst.add ~key:elt ~data:b' rep )
+              in
+              (* add trimmed class to new rep *)
+              let cls =
+                if Cls.is_empty ecls then x.cls
+                else Trm.Map.add ~key:b' ~data:ecls x.cls
+              in
+              {x with rep; cls}
+          | None ->
+              (* entire class removed *)
+              x )
+
+let apply_and_elim ~wrt xs s r =
+  [%trace]
+    ~call:(fun {pf} -> pf "@ %a%a@ %a" Var.Set.pp_xs xs Subst.pp s pp_raw r)
+    ~retn:(fun {pf} (zs, r', ks) ->
+      pf "%a@ %a@ %a" Var.Set.pp_xs zs pp_raw r' Var.Set.pp_xs ks ;
+      invariant r' ;
+      assert (Var.Set.subset ks ~of_:xs) ;
+      assert (Var.Set.disjoint ks (fv r')) )
+  @@ fun () ->
+  if Subst.is_empty s then (Var.Set.empty, r, Var.Set.empty)
+  else
+    let zs, r = apply_subst wrt s r in
+    if is_unsat r then (Var.Set.empty, unsat, Var.Set.empty)
+    else
+      let ks = trivial xs r in
+      let r = trim ks r in
+      (zs, r, ks)
 
 (* Existential Witnessing and Elimination =================================*)
 
@@ -1137,98 +1229,6 @@ let solve_for_vars vss r =
               then `Stop true
               else `Continue us_xs )
             ~finish:(fun _ -> false) ) )]
-
-let trivial vs r =
-  [%trace]
-    ~call:(fun {pf} -> pf "@ %a@ %a" Var.Set.pp_xs vs pp_raw r)
-    ~retn:(fun {pf} ks -> pf "%a" Var.Set.pp_xs ks)
-  @@ fun () ->
-  Var.Set.fold vs Var.Set.empty ~f:(fun v ks ->
-      let x = Trm.var v in
-      match Subst.find x r.rep with
-      | None -> Var.Set.add v ks
-      | Some x' when Trm.equal x x' && Iter.is_empty (uses_of x r) ->
-          Var.Set.add v ks
-      | _ -> ks )
-
-let trim ks x =
-  [%trace]
-    ~call:(fun {pf} -> pf "@ %a@ %a" Var.Set.pp_xs ks pp_raw x)
-    ~retn:(fun {pf} x' ->
-      pf "%a" pp_raw x' ;
-      invariant x' ;
-      assert (Var.Set.disjoint ks (fv x')) )
-  @@ fun () ->
-  (* expand classes to include reps *)
-  let reps =
-    Subst.fold x.rep Trm.Set.empty ~f:(fun ~key:_ ~data:rep reps ->
-        Trm.Set.add rep reps )
-  in
-  let clss =
-    Trm.Set.fold reps x.cls ~f:(fun rep clss ->
-        Trm.Map.update rep clss ~f:(fun cls0 ->
-            Cls.add rep (Option.value cls0 ~default:Cls.empty) ) )
-  in
-  (* enumerate expanded classes and update solution subst *)
-  let kills = Trm.Set.of_vars ks in
-  Trm.Map.fold clss x ~f:(fun ~key:a' ~data:ecls x ->
-      (* remove mappings for non-rep class elements to kill *)
-      let keep, drop = Trm.Set.diff_inter (Cls.to_set ecls) kills in
-      if Trm.Set.is_empty drop then x
-      else
-        let rep = Trm.Set.fold ~f:Subst.remove drop x.rep in
-        let x = {x with rep} in
-        (* new class is keepers without rep *)
-        let keep' = Trm.Set.remove a' keep in
-        let ecls = Cls.of_set keep' in
-        if keep' != keep then
-          (* a' is to be kept: continue to use it as rep *)
-          let cls =
-            if Cls.is_empty ecls then Trm.Map.remove a' x.cls
-            else Trm.Map.add ~key:a' ~data:ecls x.cls
-          in
-          {x with cls}
-        else
-          (* a' is to be removed: choose new rep from the keepers *)
-          let cls = Trm.Map.remove a' x.cls in
-          let x = {x with cls} in
-          match
-            Trm.Set.reduce keep ~f:(fun x y ->
-                if Theory.prefer x y < 0 then x else y )
-          with
-          | Some b' ->
-              (* add mappings from each keeper to the new representative *)
-              let rep =
-                Trm.Set.fold keep x.rep ~f:(fun elt rep ->
-                    Subst.add ~key:elt ~data:b' rep )
-              in
-              (* add trimmed class to new rep *)
-              let cls =
-                if Cls.is_empty ecls then x.cls
-                else Trm.Map.add ~key:b' ~data:ecls x.cls
-              in
-              {x with rep; cls}
-          | None ->
-              (* entire class removed *)
-              x )
-
-let apply_and_elim ~wrt xs s r =
-  [%trace]
-    ~call:(fun {pf} -> pf "@ %a%a@ %a" Var.Set.pp_xs xs Subst.pp s pp_raw r)
-    ~retn:(fun {pf} (zs, r', ks) ->
-      pf "%a@ %a@ %a" Var.Set.pp_xs zs pp_raw r' Var.Set.pp_xs ks ;
-      invariant r' ;
-      assert (Var.Set.subset ks ~of_:xs) ;
-      assert (Var.Set.disjoint ks (fv r')) )
-  @@ fun () ->
-  if Subst.is_empty s then (Var.Set.empty, r, Var.Set.empty)
-  else
-    let zs, r = apply_subst wrt s r in
-    if is_unsat r then (Var.Set.empty, unsat, Var.Set.empty)
-    else
-      let ks = trivial xs r in
-      let r = trim ks r in
-      (zs, r, ks)
 
 (* Replay debugging =======================================================*)
 
