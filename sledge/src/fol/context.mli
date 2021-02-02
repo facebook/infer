@@ -11,7 +11,9 @@
     Functions that return contexts that might be stronger than their
     argument contexts accept and return a set of variables. The input set is
     the variables with which any generated variables must be chosen fresh,
-    and the output set is the variables that have been generated. *)
+    and the output set is the variables that have been generated. If the
+    empty set is given, then no fresh variables are generated and equations
+    that cannot be solved without generating fresh variables are dropped. *)
 
 open Exp
 
