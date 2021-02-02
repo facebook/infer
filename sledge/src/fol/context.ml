@@ -511,14 +511,15 @@ let rec canon r a =
   [%Trace.call fun {pf} -> pf "@ %a" Trm.pp a]
   ;
   ( match Theory.classify a with
-  | Atomic -> Subst.apply r.rep a
-  | Interpreted -> Trm.map ~f:(canon r) a
-  | Uninterpreted -> (
+  | InterpAtom -> a
+  | NonInterpAtom -> Subst.apply r.rep a
+  | InterpApp -> Trm.map ~f:(canon r) a
+  | UninterpApp -> (
       let a' = Trm.map ~f:(canon r) a in
       match Theory.classify a' with
-      | Atomic -> Subst.apply r.rep a'
-      | Interpreted -> a'
-      | Uninterpreted -> lookup r a' ) )
+      | InterpAtom | InterpApp -> a'
+      | NonInterpAtom -> Subst.apply r.rep a'
+      | UninterpApp -> lookup r a' ) )
   |>
   [%Trace.retn fun {pf} -> pf "%a" Trm.pp]
 

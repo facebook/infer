@@ -16,7 +16,7 @@ type t =
 
 val pp : t pp
 
-type kind = Interpreted | Atomic | Uninterpreted
+type kind = InterpApp | NonInterpAtom | InterpAtom | UninterpApp
 [@@deriving compare, equal]
 
 val classify : Trm.t -> kind

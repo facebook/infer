@@ -29,22 +29,29 @@ let pp ppf = function
 
 (* Classification of terms ================================================*)
 
-type kind = Interpreted | Atomic | Uninterpreted
+type kind = InterpApp | NonInterpAtom | InterpAtom | UninterpApp
 [@@deriving compare, equal]
 
 let classify e =
   match (e : Trm.t) with
-  | Var _ | Z _ | Q _ | Concat [||] | Apply (_, [||]) -> Atomic
-  | Arith a -> (
-    match Trm.Arith.classify a with
-    | Trm _ | Const _ -> violates Trm.invariant e
-    | Interpreted -> Interpreted
-    | Uninterpreted -> Uninterpreted )
-  | Splat _ | Sized _ | Extract _ | Concat _ -> Interpreted
-  | Apply _ -> Uninterpreted
+  | Var _ -> NonInterpAtom
+  | Z _ | Q _ -> InterpAtom
+  | Arith a ->
+      if Trm.Arith.is_uninterpreted a then UninterpApp
+      else (
+        assert (
+          match Trm.Arith.classify a with
+          | Trm _ | Const _ -> violates Trm.invariant e
+          | Interpreted -> true
+          | Uninterpreted -> false ) ;
+        InterpApp )
+  | Concat [||] -> InterpAtom
+  | Splat _ | Sized _ | Extract _ | Concat _ -> InterpApp
+  | Apply (_, [||]) -> NonInterpAtom
+  | Apply _ -> UninterpApp
 
-let is_interpreted e = equal_kind (classify e) Interpreted
-let is_uninterpreted e = equal_kind (classify e) Uninterpreted
+let is_interpreted e = equal_kind (classify e) InterpApp
+let is_uninterpreted e = equal_kind (classify e) UninterpApp
 
 (* Solving equations ======================================================*)
 
