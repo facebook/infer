@@ -53,6 +53,25 @@ let classify e =
 let is_interpreted e = equal_kind (classify e) InterpApp
 let is_uninterpreted e = equal_kind (classify e) UninterpApp
 
+let is_noninterpreted e =
+  match classify e with
+  | InterpAtom | InterpApp -> false
+  | NonInterpAtom | UninterpApp -> true
+
+let rec solvables e =
+  match classify e with
+  | InterpAtom -> Iter.empty
+  | InterpApp -> solvable_trms e
+  | NonInterpAtom | UninterpApp -> Iter.return e
+
+and solvable_trms e = Iter.flat_map ~f:solvables (Trm.trms e)
+
+let rec map_solvables e ~f =
+  match classify e with
+  | InterpAtom -> e
+  | NonInterpAtom | UninterpApp -> f e
+  | InterpApp -> Trm.map ~f:(map_solvables ~f) e
+
 (* Solving equations ======================================================*)
 
 (** prefer representative terms that are minimal in the order s.t. Var <
@@ -231,6 +250,6 @@ let solve d e s =
    *)
   (* r = v ==> v ↦ r *)
   | Some (rep, var) ->
-      assert (not (is_interpreted var)) ;
-      assert (not (is_interpreted rep)) ;
+      assert (is_noninterpreted var) ;
+      assert (is_noninterpreted rep) ;
       add_solved ~var ~rep s
