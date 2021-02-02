@@ -1396,7 +1396,7 @@ let report ~name ~elapsed ~aggregate ~count =
 
 let dump_threshold = ref 1000.
 
-let wrap tmr f call =
+let[@warning "-32"] wrap tmr f call =
   let f () =
     Timer.start tmr ;
     let r = f () in
@@ -1415,6 +1415,7 @@ let wrap tmr f call =
       let exn = Replay (exn, sexp_of_call (call ())) in
       Printexc.raise_with_backtrace exn bt
 
+let wrap _ f _ = f ()
 let add_tmr = Timer.create "add" ~at_exit:report
 let union_tmr = Timer.create "union" ~at_exit:report
 let inter_tmr = Timer.create "inter" ~at_exit:report
