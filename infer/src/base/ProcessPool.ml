@@ -191,15 +191,8 @@ let killall pool ~slot status =
 
 
 let has_dead_child pool =
-  let open Option.Monad_infix in
-  Unix.wait_nohang `Any
-  >>= fun (dead_pid, status) ->
-  (* Some joker can [exec] an infer binary from a process that already has children. When some of
-     these pre-existing children die they'll get detected here but won't appear in our list of
-     workers. Just return [None] in that case. *)
   Array.find_mapi pool.slots ~f:(fun slot {pid} ->
-      if Pid.equal pid dead_pid then Some slot else None )
-  >>| fun slot -> (slot, status)
+      Unix.wait_nohang (`Pid pid) |> Option.map ~f:(fun (_dead_pid, status) -> (slot, status)) )
 
 
 let child_is_idle = function Idle -> true | _ -> false
