@@ -104,6 +104,11 @@ public class CollectionTest {
     for (int i = 0; i < set.size(); i++) {}
   }
 
+  // O(|keyMap| x |coll|)
+  void containsAll_quadratic(HashMap<Integer, String> keyMap, Collection<String> coll) {
+    keyMap.values().containsAll(coll);
+  }
+
   void containsNull_linear(HashMap<Integer, String> keyMap) {
     keyMap.values().contains(null);
   }

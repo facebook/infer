@@ -48,6 +48,12 @@ module BoundsOf (Container : CostUtils.S) = struct
     let log_n = logarithmic_length exp ~of_function cost_model_env mem ~ret in
     let n = linear_length exp ~of_function cost_model_env mem ~ret in
     BasicCost.mult n log_n
+
+
+  let op_on_two_lengths exp1 exp2 ~f cost_model_env ~ret mem ~of_function =
+    let n = linear_length exp1 ~of_function cost_model_env mem ~ret in
+    let m = linear_length exp2 ~of_function cost_model_env mem ~ret in
+    f n m
 end
 
 module IntHashMap = struct
@@ -282,6 +288,10 @@ module Call = struct
         ; +PatternMatch.Java.implements_collection
           &:: "contains" <>$ capt_exp
           $+...$--> BoundsOfCollection.linear_length ~of_function:"Collection.contains"
+        ; +PatternMatch.Java.implements_collection
+          &:: "containsAll" <>$ capt_exp $+ capt_exp
+          $+...$--> BoundsOfCollection.op_on_two_lengths ~f:BasicCost.mult
+                      ~of_function:"Collection.containsAll"
         ; +PatternMatch.Java.implements_collections
           &:: "binarySearch" <>$ capt_exp
           $+...$--> BoundsOfCollection.logarithmic_length ~of_function:"Collections.binarySearch"
