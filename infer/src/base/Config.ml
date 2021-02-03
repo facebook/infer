@@ -2635,7 +2635,7 @@ let post_parsing_initialization command_opt =
   let uncaught_exception_handler exn raw_backtrace =
     let is_infer_exit_zero = match exn with L.InferExit 0 -> true | _ -> false in
     let should_print_backtrace_default =
-      match exn with L.InferUserError _ | L.InferExit _ -> false | _ -> true
+      match exn with L.InferUserError _ | L.InferExit _ | Epilogues.Sigint -> false | _ -> true
     in
     let suggest_keep_going = should_print_backtrace_default && not !keep_going in
     let backtrace =
@@ -2656,6 +2656,8 @@ let post_parsing_initialization command_opt =
           error "Internal Error: " msg
       | L.InferUserError msg ->
           error "Usage Error: " msg
+      | Epilogues.Sigint ->
+          error "Process received signal SIGINT: " (Pid.to_string (ProcessPoolState.get_pid ()))
       | L.InferExit _ ->
           ()
       | _ ->

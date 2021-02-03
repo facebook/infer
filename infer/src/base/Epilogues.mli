@@ -19,3 +19,5 @@ val register_late : f:(unit -> unit) -> description:string -> unit
 val run : unit -> unit
 
 val reset : unit -> unit
+
+exception Sigint
