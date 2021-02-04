@@ -1,0 +1,13 @@
+codetoanalyze/dotnet/nullderef-arithmetic/NullDerefArithmetic.cs, Void TestCodeArithmetic.NullExceptionANDBad(), 8, NULL_DEREFERENCE, B5
+codetoanalyze/dotnet/nullderef-arithmetic/NullDerefArithmetic.cs, Void TestCodeArithmetic.NullExceptionBitwiseComp1Bad(), 6, NULL_DEREFERENCE, B5
+codetoanalyze/dotnet/nullderef-arithmetic/NullDerefArithmetic.cs, Void TestCodeArithmetic.NullExceptionDivBad(), 8, NULL_DEREFERENCE, B5
+codetoanalyze/dotnet/nullderef-arithmetic/NullDerefArithmetic.cs, Void TestCodeArithmetic.NullExceptionLeftShftBad(), 8, NULL_DEREFERENCE, B5
+codetoanalyze/dotnet/nullderef-arithmetic/NullDerefArithmetic.cs, Void TestCodeArithmetic.NullExceptionMinusBad(), 8, NULL_DEREFERENCE, B5
+codetoanalyze/dotnet/nullderef-arithmetic/NullDerefArithmetic.cs, Void TestCodeArithmetic.NullExceptionModBad(), 8, NULL_DEREFERENCE, B5
+codetoanalyze/dotnet/nullderef-arithmetic/NullDerefArithmetic.cs, Void TestCodeArithmetic.NullExceptionMultBad(), 8, NULL_DEREFERENCE, B5
+codetoanalyze/dotnet/nullderef-arithmetic/NullDerefArithmetic.cs, Void TestCodeArithmetic.NullExceptionORBad(), 8, NULL_DEREFERENCE, B5
+codetoanalyze/dotnet/nullderef-arithmetic/NullDerefArithmetic.cs, Void TestCodeArithmetic.NullExceptionPlusBad(), 8, NULL_DEREFERENCE, B5
+codetoanalyze/dotnet/nullderef-arithmetic/NullDerefArithmetic.cs, Void TestCodeArithmetic.NullExceptionRightShftBad(), 8, NULL_DEREFERENCE, B5
+codetoanalyze/dotnet/nullderef-arithmetic/NullDerefArithmetic.cs, Void TestCodeArithmetic.NullExceptionUnsignedDivBad(), 8, NULL_DEREFERENCE, B5
+codetoanalyze/dotnet/nullderef-arithmetic/NullDerefArithmetic.cs, Void TestCodeArithmetic.NullExceptionUnsignedModBad(), 8, NULL_DEREFERENCE, B5
+codetoanalyze/dotnet/nullderef-arithmetic/NullDerefArithmetic.cs, Void TestCodeArithmetic.NullExceptionXORBad(), 8, NULL_DEREFERENCE, B5

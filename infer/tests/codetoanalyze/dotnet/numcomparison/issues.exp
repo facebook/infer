@@ -1,0 +1,5 @@
+codetoanalyze/dotnet/numcomparison/NullExceptionNumComparison.cs, Void TestCodeNumComparison.NullExceptionEqualBad(), 8, NULL_DEREFERENCE, B5
+codetoanalyze/dotnet/numcomparison/NullExceptionNumComparison.cs, Void TestCodeNumComparison.NullExceptionLargerThanBad(), 8, NULL_DEREFERENCE, B5
+codetoanalyze/dotnet/numcomparison/NullExceptionNumComparison.cs, Void TestCodeNumComparison.NullExceptionLessThanBad(), 8, NULL_DEREFERENCE, B5
+codetoanalyze/dotnet/numcomparison/NullExceptionNumComparison.cs, Void TestCodeNumComparison.NullExceptionUnsignedLargerThanBad(), 8, NULL_DEREFERENCE, B5
+codetoanalyze/dotnet/numcomparison/NullExceptionNumComparison.cs, Void TestCodeNumComparison.NullExceptionUnsignedLessThanBad(), 8, NULL_DEREFERENCE, B5

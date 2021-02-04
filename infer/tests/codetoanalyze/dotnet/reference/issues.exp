@@ -1,0 +1,2 @@
+codetoanalyze/dotnet/reference/NullExceptionReference.cs, Void TestCodeReference.NullExceptionReferenceParameterBad(), 9, NULL_DEREFERENCE, B5
+codetoanalyze/dotnet/reference/NullExceptionReference.cs, Void TestCodeReference.NullExceptionReferenceStructBad(), 3, NULL_DEREFERENCE, B5

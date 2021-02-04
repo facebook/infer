@@ -1,0 +1,1 @@
+codetoanalyze/dotnet/nullderef-simple/NullExceptionSimple.cs, Void TestCodeSimple.NullExceptionSimpleBad(), 3, NULL_DEREFERENCE, B5

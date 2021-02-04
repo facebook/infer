@@ -34,7 +34,7 @@ let setup () =
         already_started := true )
   in
   ( match Config.command with
-  | Analyze ->
+  | Analyze | AnalyzeJson ->
       ResultsDir.assert_results_dir "have you run capture before?"
   | Report | ReportDiff ->
       ResultsDir.create_results_dir ()
@@ -67,7 +67,7 @@ let setup () =
       () ) ;
   let has_result_dir =
     match Config.command with
-    | Analyze | Capture | Compile | Debug | Explore | Report | ReportDiff | Run ->
+    | Analyze | AnalyzeJson | Capture | Compile | Debug | Explore | Report | ReportDiff | Run ->
         true
     | Help ->
         false
@@ -162,6 +162,8 @@ let () =
       else JSourceFileInfo.debug_on_file (Option.value_exn Config.java_debug_source_file_info)
   | Analyze ->
       run Driver.Analyze
+  | AnalyzeJson ->
+      run Driver.AnalyzeJson
   | Capture | Compile | Run ->
       run (Lazy.force Driver.mode_from_command_line)
   | Help ->

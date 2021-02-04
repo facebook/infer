@@ -58,6 +58,28 @@ $(b,infer) $(i,[options])|}
     ~see_also:InferCommand.[Report; Run]
 
 
+let analyze_json =
+  mk_command_doc ~title:"Infer JSON Analysis"
+    ~short_description:"analyze the cfg and tenv json files captured by infersharp"
+    ~synopsis:
+      {|$(b,infer) $(b,analyzejson) $(b,--debug) $(b,--cfg-json) $(i,[options])
+    $(b,--tenv-json) $(i,[options]))|}
+    ~description:
+      [ `P
+          "Analyze the cfg and tenv json files captured in the project results directory and \
+           report." ]
+    ~examples:
+      [ `P
+          "To analyze cfg json and tenv json, one should start with configuring infer environment \
+           and then run analyzejson command, for instance:"
+      ; `Pre
+          {|  infer capture
+  mkdir infer-out/captured
+  infer analyzejson --debug --cfg-json [path_to_cfg.json] --tenv-json [path_to_tenv.json]|}
+      ]
+    ~see_also:InferCommand.[Report; Run]
+
+
 let capture =
   mk_command_doc ~title:"Infer Compilation Capture"
     ~short_description:"capture source files for later analysis"
@@ -332,6 +354,7 @@ let command_to_data =
   in
   let open InferCommand in
   [ mk Analyze analyze
+  ; mk AnalyzeJson analyze_json
   ; mk Capture capture
   ; mk Compile compile
   ; mk Debug debug

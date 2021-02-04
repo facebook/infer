@@ -485,7 +485,7 @@ let () =
     match cmd with
     | Report ->
         `Add
-    | Analyze | Capture | Compile | Debug | Explore | Help | ReportDiff | Run ->
+    | Analyze | AnalyzeJson | Capture | Compile | Debug | Explore | Help | ReportDiff | Run ->
         `Reject
   in
   (* make sure we generate doc for all the commands we know about *)
@@ -778,6 +778,12 @@ and capture_blacklist =
      the javac integration for now)."
 
 
+and cfg_json =
+  CLOpt.mk_path_opt ~long:"cfg-json"
+    ~in_help:InferCommand.[(AnalyzeJson, manual_generic)]
+    ~meta:"file" "Path to CFG json file"
+
+
 and censor_report =
   CLOpt.mk_string_list ~long:"censor-report" ~deprecated:["-filter-report"]
     ~in_help:InferCommand.[(Report, manual_generic); (Run, manual_generic)]
@@ -1009,7 +1015,7 @@ and ( bo_debug
         match command with
         | Debug | Explore | Help ->
             None
-        | (Analyze | Capture | Compile | Report | ReportDiff | Run) as command ->
+        | (Analyze | AnalyzeJson | Capture | Compile | Report | ReportDiff | Run) as command ->
             Some (command, manual_generic) )
   in
   let bo_debug =
@@ -2361,6 +2367,12 @@ and starvation_strict_mode =
     "During starvation analysis, report strict mode violations (Android only)"
 
 
+and tenv_json =
+  CLOpt.mk_path_opt ~long:"tenv-json"
+    ~in_help:InferCommand.[(AnalyzeJson, manual_generic)]
+    ~meta:"file" "Path to TEnv json file"
+
+
 and testing_mode =
   CLOpt.mk_bool
     ~deprecated:["testing_mode"; "-testing_mode"; "tm"]
@@ -2774,6 +2786,8 @@ and call_graph_schedule = !call_graph_schedule
 and capture = !capture
 
 and capture_blacklist = !capture_blacklist
+
+and cfg_json = !cfg_json
 
 and censor_report =
   RevList.rev_map !censor_report ~f:(fun str ->
@@ -3296,6 +3310,8 @@ and custom_symbols =
 and symops_per_iteration = !symops_per_iteration
 
 and keep_going = !keep_going
+
+and tenv_json = !tenv_json
 
 and test_determinator = !test_determinator
 

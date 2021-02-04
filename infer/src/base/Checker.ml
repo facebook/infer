@@ -32,6 +32,7 @@ type t =
   | Quandary
   | RacerD
   | ResourceLeakLabExercise
+  | DOTNETResourceLeaks
   | SIOF
   | SelfInBlock
   | Starvation
@@ -67,10 +68,10 @@ let config_unsafe checker =
   let supports_clang_and_java _ = Support in
   let supports_clang_and_java_experimental _ = ExperimentalSupport in
   let supports_clang (language : Language.t) =
-    match language with Clang -> Support | Java -> NoSupport
+    match language with Clang -> Support | Java -> NoSupport | CIL -> NoSupport
   in
   let supports_java (language : Language.t) =
-    match language with Clang -> NoSupport | Java -> Support
+    match language with Clang -> NoSupport | Java -> Support | CIL -> Support
   in
   match checker with
   | AnnotationReachability ->
@@ -281,7 +282,7 @@ let config_unsafe checker =
   | Pulse ->
       { id= "pulse"
       ; kind= UserFacing {title= "Pulse"; markdown_body= ""}
-      ; support= (function Clang -> Support | Java -> ExperimentalSupport)
+      ; support= (function Clang -> Support | Java -> ExperimentalSupport | CIL -> NoSupport)
       ; short_documentation= "Memory and lifetime analysis."
       ; cli_flags= Some {deprecated= ["-ownership"]; show_in_help= true}
       ; enabled_by_default= false
@@ -338,11 +339,19 @@ let config_unsafe checker =
                  leaks! See the [lab \
                  instructions](https://github.com/facebook/infer/blob/master/infer/src/labs/README.md)."
             }
-      ; support= (function Clang -> NoSupport | Java -> Support)
+      ; support= (function Clang -> NoSupport | Java -> Support | CIL -> Support)
       ; short_documentation=
           "Toy checker for the \"resource leak\" write-your-own-checker exercise."
       ; cli_flags= Some {deprecated= []; show_in_help= false}
       ; enabled_by_default= false
+      ; activates= [] }
+  | DOTNETResourceLeaks ->
+      { id= "dotnet-resource-leak"
+      ; kind= UserFacing {title= "Resource Leak checker for .NET"; markdown_body= ""}
+      ; support= (function Clang -> NoSupport | Java -> NoSupport | CIL -> Support)
+      ; short_documentation= "\"resource leak\" checker for .NET."
+      ; cli_flags= Some {deprecated= []; show_in_help= false}
+      ; enabled_by_default= true
       ; activates= [] }
   | SIOF ->
       { id= "siof"

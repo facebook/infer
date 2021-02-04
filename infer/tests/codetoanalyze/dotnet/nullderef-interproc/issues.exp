@@ -1,0 +1,1 @@
+codetoanalyze/dotnet/nullderef-interproc/NullDerefInterproc.cs, Void TestCodeNullDerefInterproc.NullExceptionInterprocBad(), 3, NULL_DEREFERENCE, B5

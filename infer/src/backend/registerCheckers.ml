@@ -134,6 +134,10 @@ let all_checkers =
                interprocedural later on *)
             interprocedural Payloads.Fields.lab_resource_leaks ResourceLeaks.checker
           , Java ) ] }
+  ; (* .NET resource analysis, based on the toy resource analysis in the infer lab *)
+    { checker= DOTNETResourceLeaks
+    ; callbacks=
+        [(interprocedural Payloads.Fields.dotnet_resource_leaks ResourceLeaksCS.checker, CIL)] }
   ; { checker= RacerD
     ; callbacks=
         (let racerd_proc = interprocedural Payloads.Fields.racerd RacerD.analyze_procedure in
@@ -180,7 +184,7 @@ let all_checkers =
                Topl.analyze_with_biabduction Interproc.analyze_procedure
              else Interproc.analyze_procedure )
          in
-         [(biabduction, Clang); (biabduction, Java)] ) }
+         [(biabduction, Clang); (biabduction, Java); (biabduction, CIL)] ) }
   ; { checker= AnnotationReachability
     ; callbacks=
         (let annot_reach =

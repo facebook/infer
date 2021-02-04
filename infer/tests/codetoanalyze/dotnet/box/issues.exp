@@ -1,0 +1,1 @@
+codetoanalyze/dotnet/box/NullDerefBox.cs, Void TestCodeBox.NullExceptionBoxIntegersBad(), 5, NULL_DEREFERENCE, B5

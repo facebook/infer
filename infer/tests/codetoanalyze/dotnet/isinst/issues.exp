@@ -1,0 +1,2 @@
+codetoanalyze/dotnet/isinst/NullDerefIsInst.cs, Void TestCodeIsInst.NullExceptionIsInst1Bad(), 3, NULL_DEREFERENCE, B5
+codetoanalyze/dotnet/isinst/NullDerefIsInst.cs, Void TestCodeIsInst.NullExceptionIsInst2Bad(), 3, NULL_DEREFERENCE, B5

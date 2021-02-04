@@ -186,6 +186,7 @@ module T = struct
         { name: QualifiedCppName.t
         ; template_spec_info: template_spec_info
         ; is_union: bool [@compare.ignore] }
+    | CSharpClass of CSharpClassName.t
     | JavaClass of JavaClassName.t
     | ObjcClass of QualifiedCppName.t * name list
     | ObjcProtocol of QualifiedCppName.t
@@ -313,6 +314,8 @@ and pp_name_c_syntax pe f = function
       F.fprintf f "%a%a" QualifiedCppName.pp name (pp_template_spec_info pe) template_spec_info
   | JavaClass name ->
       JavaClassName.pp f name
+  | CSharpClass name ->
+      CSharpClassName.pp f name
 
 
 and pp_template_spec_info pe f = function
@@ -383,7 +386,7 @@ module Name = struct
     | CppClass {name; template_spec_info} ->
         let template_suffix = F.asprintf "%a" (pp_template_spec_info Pp.text) template_spec_info in
         QualifiedCppName.append_template_args_to_last name ~args:template_suffix
-    | JavaClass _ ->
+    | JavaClass _ | CSharpClass _ ->
         QualifiedCppName.empty
 
 
@@ -392,7 +395,7 @@ module Name = struct
         name
     | CppClass {name} ->
         name
-    | JavaClass _ ->
+    | JavaClass _ | CSharpClass _ ->
         QualifiedCppName.empty
 
 
@@ -409,6 +412,8 @@ module Name = struct
         qual_name n |> QualifiedCppName.to_qual_string
     | JavaClass name ->
         JavaClassName.to_string name
+    | CSharpClass name ->
+        CSharpClassName.to_string name
 
 
   let pp fmt tname =
@@ -417,7 +422,7 @@ module Name = struct
           "struct"
       | CUnion _ ->
           "union"
-      | CppClass _ | JavaClass _ | ObjcClass _ ->
+      | CppClass _ | CSharpClass _ | JavaClass _ | ObjcClass _ ->
           "class"
       | ObjcProtocol _ ->
           "protocol"
@@ -427,7 +432,12 @@ module Name = struct
 
   let to_string = F.asprintf "%a" pp
 
-  let is_class = function CppClass _ | JavaClass _ | ObjcClass _ -> true | _ -> false
+  let is_class = function
+    | CppClass _ | JavaClass _ | ObjcClass _ | CSharpClass _ ->
+        true
+    | _ ->
+        false
+
 
   let is_union = function CUnion _ -> true | _ -> false
 
@@ -440,7 +450,8 @@ module Name = struct
     | CppClass _, CppClass _
     | JavaClass _, JavaClass _
     | ObjcClass _, ObjcClass _
-    | ObjcProtocol _, ObjcProtocol _ ->
+    | ObjcProtocol _, ObjcProtocol _
+    | CSharpClass _, CSharpClass _ ->
         true
     | _ ->
         false
@@ -452,6 +463,10 @@ module Name = struct
     let from_string name_str = QualifiedCppName.of_qual_string name_str |> from_qual_name
 
     let union_from_qual_name qual_name = CUnion qual_name
+  end
+
+  module CSharp = struct
+    let from_string name_str = CSharpClass (CSharpClassName.from_string name_str)
   end
 
   module Java = struct
@@ -549,6 +564,9 @@ module Name = struct
       | JavaClass java_class_name ->
           let java_class_name' = JavaClassName.Normalizer.normalize java_class_name in
           if phys_equal java_class_name java_class_name' then t else JavaClass java_class_name'
+      | CSharpClass cs_class_name ->
+          let cs_class_name' = CSharpClassName.Normalizer.normalize cs_class_name in
+          if phys_equal cs_class_name cs_class_name' then t else CSharpClass cs_class_name'
   end)
 end
 
@@ -668,6 +686,73 @@ let rec pp_java ~verbose f {desc} =
       F.fprintf f "%a[]" (pp_java ~verbose) elt
   | _ ->
       L.die InternalError "pp_java rec"
+
+
+let rec pp_cs ~verbose f {desc} =
+  let string_of_int = function
+    | IInt ->
+        JConfig.int_st
+    | IBool ->
+        JConfig.boolean_st
+    | ISChar ->
+        JConfig.byte_st
+    | IUShort ->
+        JConfig.char_st
+    | ILong ->
+        JConfig.long_st
+    | IShort ->
+        JConfig.short_st
+    | _ ->
+        L.die InternalError "pp_cs int"
+  in
+  let string_of_float = function
+    | FFloat ->
+        JConfig.float_st
+    | FDouble ->
+        JConfig.double_st
+    | _ ->
+        L.die InternalError "pp_cs float"
+  in
+  match desc with
+  | Tint ik ->
+      F.pp_print_string f (string_of_int ik)
+  | Tfloat fk ->
+      F.pp_print_string f (string_of_float fk)
+  | Tvoid ->
+      F.pp_print_string f JConfig.void
+  | Tptr (typ, _) ->
+      pp_cs ~verbose f typ
+  | Tstruct (CSharpClass cs_class_name) ->
+      CSharpClassName.pp_with_verbosity ~verbose f cs_class_name
+  | Tarray {elt} ->
+      F.fprintf f "%a[]" (pp_cs ~verbose) elt
+  | _ ->
+      L.die InternalError "pp_cs rec"
+
+
+let is_csharp_primitive_type {desc} =
+  let is_csharp_int = function
+    | IInt | IBool | ISChar | IUShort | ILong | IShort ->
+        true
+    | _ ->
+        false
+  in
+  let is_csharp_float = function FFloat | FDouble -> true | _ -> false in
+  match desc with Tint ik -> is_csharp_int ik | Tfloat fk -> is_csharp_float fk | _ -> false
+
+
+let rec is_csharp_type t =
+  match t.desc with
+  | Tvoid ->
+      true
+  | Tint _ | Tfloat _ ->
+      is_csharp_primitive_type t
+  | Tptr ({desc= Tstruct (CSharpClass _)}, Pk_pointer) ->
+      true
+  | Tptr ({desc= Tarray {elt}}, Pk_pointer) ->
+      is_csharp_type elt
+  | _ ->
+      false
 
 
 let is_java_primitive_type {desc} =

@@ -210,6 +210,9 @@ OPTIONS
            `<reason_string>` is a non-empty string used to explain why the
            issue was filtered.           See also infer-report(1) and infer-run(1).
 
+       --cfg-json file
+           Path to CFG json file           See also infer-analyzejson(1).
+
        --changed-files-index file
            Specify the file containing the list of source files from which
            reactive analysis should start. Source files should be specified
@@ -313,8 +316,9 @@ OPTIONS
            --developer-mode, --print-buckets, --print-types,
            --reports-include-ml-loc, --no-only-cheap-debug, --trace-error,
            --write-dotty, --write-html) (Conversely: --no-debug | -G)       
-    See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-report(1), infer-reportdiff(1), and infer-run(1).
+    See also infer-analyze(1), infer-analyzejson(1),
+           infer-capture(1), infer-compile(1), infer-report(1),
+           infer-reportdiff(1), and infer-run(1).
 
        --debug-level level
            Debug level (sets --bo-debug level, --debug-level-analysis level,
@@ -322,23 +326,27 @@ OPTIONS
       - 0: only basic debugging enabled
              - 1: verbose debugging enabled
              - 2: very verbose debugging enabled
-           See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-report(1), infer-reportdiff(1), and infer-run(1).
+           See also infer-analyze(1), infer-analyzejson(1),
+           infer-capture(1), infer-compile(1), infer-report(1),
+           infer-reportdiff(1), and infer-run(1).
 
        --debug-level-analysis int
            Debug level for the analysis. See --debug-level for accepted
-           values.           See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-report(1), infer-reportdiff(1), and infer-run(1).
+           values.           See also infer-analyze(1), infer-analyzejson(1),
+           infer-capture(1), infer-compile(1), infer-report(1),
+           infer-reportdiff(1), and infer-run(1).
 
        --debug-level-capture int
            Debug level for the capture. See --debug-level for accepted
-           values.           See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-report(1), infer-reportdiff(1), and infer-run(1).
+           values.           See also infer-analyze(1), infer-analyzejson(1),
+           infer-capture(1), infer-compile(1), infer-report(1),
+           infer-reportdiff(1), and infer-run(1).
 
        --debug-level-linters int
            Debug level for the linters. See --debug-level for accepted
-           values.           See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-report(1), infer-reportdiff(1), and infer-run(1).
+           values.           See also infer-analyze(1), infer-analyzejson(1),
+           infer-capture(1), infer-compile(1), infer-report(1),
+           infer-reportdiff(1), and infer-run(1).
 
        --no-deduplicate
            Deactivates: Apply issue-specific deduplication during analysis
@@ -348,8 +356,9 @@ OPTIONS
        --no-default-checkers
            Deactivates: Default checkers: --biabduction,
            --fragment-retains-view, --inefficient-keyset-iterator, --linters,
-           --liveness, --racerd, --siof, --self-in-block, --starvation,
-           --uninit (Conversely: --default-checkers)           See also infer-analyze(1).
+           --liveness, --racerd, --dotnet-resource-leak, --siof,
+           --self-in-block, --starvation, --uninit (Conversely:
+           --default-checkers)           See also infer-analyze(1).
 
        --no-default-linters
            Deactivates: Use the default linters for the analysis.
@@ -420,6 +429,7 @@ OPTIONS
              DIRECT_ATOMIC_PROPERTY_ACCESS (enabled by default),
              DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER (enabled by default),
              DIVIDE_BY_ZERO (disabled by default),
+             DOTNET_RESOURCE_LEAK (enabled by default),
              DO_NOT_REPORT (enabled by default),
              EMPTY_VECTOR_ACCESS (enabled by default),
              ERADICATE_ANNOTATION_GRAPH (enabled by default),
@@ -624,8 +634,9 @@ OPTIONS
     See also infer-capture(1).
 
        --help
-           Show this manual           See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-debug(1), infer-explore(1), infer-help(1), infer-report(1),
+           Show this manual           See also infer-analyze(1), infer-analyzejson(1),
+           infer-capture(1), infer-compile(1), infer-debug(1),
+           infer-explore(1), infer-help(1), infer-report(1),
            infer-reportdiff(1), and infer-run(1).
 
        --help-checker +checker-id
@@ -635,14 +646,16 @@ OPTIONS
        --help-format { auto | groff | pager | plain }
            Show this help in the specified format. auto sets the format to
            plain if the environment variable TERM is "dumb" or undefined, and
-           to pager otherwise.           See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-debug(1), infer-explore(1), infer-help(1), infer-report(1),
+           to pager otherwise.           See also infer-analyze(1), infer-analyzejson(1),
+           infer-capture(1), infer-compile(1), infer-debug(1),
+           infer-explore(1), infer-help(1), infer-report(1),
            infer-reportdiff(1), and infer-run(1).
 
        --help-full
            Show this manual with all internal options in the INTERNAL OPTIONS
-           section           See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-debug(1), infer-explore(1), infer-help(1), infer-report(1),
+           section           See also infer-analyze(1), infer-analyzejson(1),
+           infer-capture(1), infer-compile(1), infer-debug(1),
+           infer-explore(1), infer-help(1), infer-report(1),
            infer-reportdiff(1), and infer-run(1).
 
        --help-issue-type +UNIQUE_ID
@@ -1179,6 +1192,9 @@ OPTIONS
            Activates: Enable starvation and disable all other checkers
            (Conversely: --no-starvation-only)           See also infer-analyze(1).
 
+       --tenv-json file
+           Path to TEnv json file           See also infer-analyzejson(1).
+
        --threadsafe-aliases json
            Specify custom annotations that should be considered aliases of
            @ThreadSafe           See also infer-analyze(1).
@@ -1338,6 +1354,9 @@ INTERNAL OPTIONS
        --censor-report-reset
            Set --censor-report to the empty list.
 
+       --cfg-json-reset
+           Cancel the effect of --cfg-json.
+
        --changed-files-index-reset
            Cancel the effect of --changed-files-index.
 
@@ -1460,6 +1479,10 @@ INTERNAL OPTIONS
 
        --disable-issue-type-reset
            Set --disable-issue-type to the empty list.
+
+       --no-dotnet-resource-leak
+           Deactivates: checker dotnet-resource-leak: "resource leak" checker
+           for .NET. (Conversely: --dotnet-resource-leak)
 
        --no-dotty-cfg-libs
            Deactivates: Print the cfg of the code coming from the libraries
@@ -1957,6 +1980,9 @@ INTERNAL OPTIONS
        --symops-per-iteration-reset
            Cancel the effect of --symops-per-iteration.
 
+       --tenv-json-reset
+           Cancel the effect of --tenv-json.
+
        --test-determinator
            Activates: Run infer in Test Determinator mode. It is used
            together with the --modified-lines and --profiler-samples flags,
@@ -2120,9 +2146,9 @@ FILES
 
 
 SEE ALSO
-       infer-analyze(1), infer-capture(1), infer-compile(1), infer-debug(1),
-       infer-explore(1), infer-help(1), infer-report(1), infer-reportdiff(1),
-       infer-run(1)
+       infer-analyze(1), infer-analyzejson(1), infer-capture(1),
+       infer-compile(1), infer-debug(1), infer-explore(1), infer-help(1),
+       infer-report(1), infer-reportdiff(1), infer-run(1)
 
 
 

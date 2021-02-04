@@ -1,0 +1,1 @@
+codetoanalyze/dotnet/ldstr/NullExceptionLdstr.cs, Void TestCodeLdstr.NullExceptionLdstrBad(), 3, NULL_DEREFERENCE, B5

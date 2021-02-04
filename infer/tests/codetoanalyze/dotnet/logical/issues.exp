@@ -1,0 +1,6 @@
+codetoanalyze/dotnet/logical/NullExceptionLogical.cs, Void TestCodeLogical.NullExceptionANDBad(), 8, NULL_DEREFERENCE, B5
+codetoanalyze/dotnet/logical/NullExceptionLogical.cs, Void TestCodeLogical.NullExceptionOR1Bad(), 8, NULL_DEREFERENCE, B5
+codetoanalyze/dotnet/logical/NullExceptionLogical.cs, Void TestCodeLogical.NullExceptionOR2Bad(), 8, NULL_DEREFERENCE, B5
+codetoanalyze/dotnet/logical/NullExceptionLogical.cs, Void TestCodeLogical.NullExceptionOR3Bad(), 8, NULL_DEREFERENCE, B5
+codetoanalyze/dotnet/logical/NullExceptionLogical.cs, Void TestCodeLogical.NullExceptionXOR1Bad(), 8, NULL_DEREFERENCE, B5
+codetoanalyze/dotnet/logical/NullExceptionLogical.cs, Void TestCodeLogical.NullExceptionXOR2Bad(), 8, NULL_DEREFERENCE, B5

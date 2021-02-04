@@ -1,0 +1,2 @@
+codetoanalyze/dotnet/bgeble/NullDerefBgeBle.cs, Void TestCodeBgeBle.NullExceptionBgeBad(), 8, NULL_DEREFERENCE, B5
+codetoanalyze/dotnet/bgeble/NullDerefBgeBle.cs, Void TestCodeBgeBle.NullExceptionBleBad(), 8, NULL_DEREFERENCE, B5

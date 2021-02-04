@@ -198,6 +198,8 @@ val capture : bool
 
 val capture_blacklist : string option
 
+val cfg_json : string option
+
 val censor_report : ((bool * Str.regexp) * (bool * Str.regexp) * string) list
 
 val changed_files_index : string option
@@ -596,6 +598,8 @@ val summaries_caches_max_size : int
 val suppress_lint_ignore_types : bool
 
 val symops_per_iteration : int option
+
+val tenv_json : string option
 
 val test_determinator : bool
 

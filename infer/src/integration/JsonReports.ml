@@ -72,7 +72,7 @@ let loc_trace_to_jsonbug_record trace_list ekind =
 
 
 let should_report issue_type error_desc =
-  if not Config.filtering then true
+  if (not Config.filtering) || Language.curr_language_is CIL then true
   else
     let issue_type_is_null_deref =
       let null_deref_issue_types =

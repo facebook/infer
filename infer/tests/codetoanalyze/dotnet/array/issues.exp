@@ -1,0 +1,3 @@
+codetoanalyze/dotnet/array/NullDerefArray.cs, Void TestCodeArray.NullExceptionArrayOneDim1Bad(), 5, NULL_DEREFERENCE, B5
+codetoanalyze/dotnet/array/NullDerefArray.cs, Void TestCodeArray.NullExceptionArrayOneDim2Bad(), 5, NULL_DEREFERENCE, B5
+codetoanalyze/dotnet/array/NullDerefArray.cs, Void TestCodeArray.NullExceptionArrayTwoDimBad(), 5, NULL_DEREFERENCE, B5

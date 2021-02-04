@@ -1,0 +1,6 @@
+codetoanalyze/dotnet/resourceleak/ResourceLeak.cs, Void TestCodeResourceLeak.ResourceLeakInitInterprocBad(), 0, DOTNET_RESOURCE_LEAK, no_bucket
+codetoanalyze/dotnet/resourceleak/ResourceLeak.cs, Void TestCodeResourceLeak.ResourceLeakInterprocBad(), 0, DOTNET_RESOURCE_LEAK, no_bucket
+codetoanalyze/dotnet/resourceleak/ResourceLeak.cs, Void TestCodeResourceLeak.ResourceLeakIntraprocCloseBad(), 0, DOTNET_RESOURCE_LEAK, no_bucket
+codetoanalyze/dotnet/resourceleak/ResourceLeak.cs, Void TestCodeResourceLeak.ResourceLeakIntraprocDisposeBad(), 0, DOTNET_RESOURCE_LEAK, no_bucket
+codetoanalyze/dotnet/resourceleak/ResourceLeak.cs, Void TestCodeResourceLeak.ResourceLeakReturnedResourceBad(), 0, DOTNET_RESOURCE_LEAK, no_bucket
+codetoanalyze/dotnet/resourceleak/ResourceLeak.cs, Void TestCodeResourceLeak.ResourceLeakStaticSingletonBad(), 0, DOTNET_RESOURCE_LEAK, no_bucket
