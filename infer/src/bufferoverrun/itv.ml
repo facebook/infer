@@ -583,7 +583,7 @@ module ItvPure = struct
 
   let of_length_path ~is_void = of_path (Bound.of_length_path ~is_void)
 
-  let of_modeled_path ~is_expensive = of_path (Bound.of_modeled_path ~is_expensive)
+  let of_modeled_path = of_path Bound.of_modeled_path
 
   let is_offset_path_of path x =
     Bound.is_offset_path_of path (lb x) && Bound.is_offset_path_of path (ub x)
@@ -830,7 +830,7 @@ let of_offset_path ~is_void path = NonBottom (ItvPure.of_offset_path ~is_void pa
 
 let of_length_path ~is_void path = NonBottom (ItvPure.of_length_path ~is_void path)
 
-let of_modeled_path ~is_expensive path = NonBottom (ItvPure.of_modeled_path ~is_expensive path)
+let of_modeled_path path = NonBottom (ItvPure.of_modeled_path path)
 
 let is_offset_path_of path = bind1_gen ~bot:false (ItvPure.is_offset_path_of path)
 

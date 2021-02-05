@@ -64,7 +64,7 @@ module SymbolPath = struct
     | Normal of partial
     | Offset of {p: partial; is_void: bool}
     | Length of {p: partial; is_void: bool}
-    | Modeled of {p: partial; is_expensive: bool}
+    | Modeled of partial
   [@@deriving compare]
 
   let equal = [%compare.equal: t]
@@ -77,7 +77,7 @@ module SymbolPath = struct
 
   let length p ~is_void = Length {p; is_void}
 
-  let modeled p ~is_expensive = Modeled {p; is_expensive}
+  let modeled p = Modeled p
 
   let is_this = function
     | BoField.Prim (Pvar pvar) ->
@@ -136,9 +136,8 @@ module SymbolPath = struct
   let pp_is_void fmt is_void = if is_void then F.fprintf fmt "(v)"
 
   let pp fmt = function
-    | Modeled {p; is_expensive} ->
-        if is_expensive then F.fprintf fmt "%a(expensive call)" pp_partial p
-        else F.fprintf fmt "%a.modeled" pp_partial p
+    | Modeled p ->
+        F.fprintf fmt "%a.modeled" pp_partial p
     | Normal p ->
         pp_partial fmt p
     | Offset {p; is_void} ->
@@ -210,7 +209,7 @@ module SymbolPath = struct
 
 
   let exists_str ~f = function
-    | Modeled {p} | Normal p | Offset {p} | Length {p} ->
+    | Modeled p | Normal p | Offset {p} | Length {p} ->
         exists_str_partial ~f p
 
 
@@ -239,7 +238,7 @@ module SymbolPath = struct
 
   let is_length = function Length _ -> true | _ -> false
 
-  let is_global = function Normal p | Offset {p} | Length {p} | Modeled {p} -> is_global_partial p
+  let is_global = function Normal p | Offset {p} | Length {p} | Modeled p -> is_global_partial p
 end
 
 module Symbol = struct

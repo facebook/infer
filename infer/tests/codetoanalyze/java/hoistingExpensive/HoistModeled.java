@@ -11,9 +11,12 @@ class HoistModeled {
 
   @Inject private Provider<Integer> mProvider;
 
-  void expensive_get_hoist(int size) {
+  void expensive_get_dont_hoist(int size) {
     for (int i = 0; i < size; i++) {
-      mProvider.get();
+      mProvider.get(); // this could be expensive depending on the
+      // type of the provider which we cannot
+      // detect. Hence, we consider this as cheap for
+      // now.
     }
   }
 
@@ -55,17 +58,9 @@ class HoistModeled {
     }
   }
 
-  void call_expensive_hoist(String s, ArrayList<Integer> list, Integer el) {
+  void call_expensive_dont_hoist(String s, ArrayList<Integer> list) {
     for (int i = 0; i < 10; i++) {
-      expensive_get_hoist(10);
-    }
-  }
-
-  void expensive_get_hoist_hoist_me(String s, ArrayList<Integer> list, Integer el) {
-    String sub;
-    int length = s.length();
-    for (int i = 0; i < 10; i++) {
-      call_expensive_hoist("ez", list, el);
+      expensive_get_dont_hoist(10);
     }
   }
 

@@ -26,14 +26,6 @@ let linear = cost_of_exp ~degree_kind:Polynomials.DegreeKind.Linear
 
 let log = cost_of_exp ~degree_kind:Polynomials.DegreeKind.Log
 
-let provider_get {model_env= {pname; location}} ~ret:(_, ret_typ) _ : BasicCost.t =
-  let callsite = CallSite.make pname location in
-  let path = Symb.SymbolPath.of_callsite ~ret_typ callsite in
-  let itv = Itv.of_modeled_path ~is_expensive:true path in
-  CostUtils.of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function:"Provider.get"
-    location
-
-
 module BoundsOf (Container : CostUtils.S) = struct
   let of_length exp {model_env= {location}} ~ret:_ mem ~of_function ~degree_kind =
     let itv = Container.length exp mem |> BufferOverrunDomain.Val.get_itv in
@@ -351,7 +343,6 @@ module Call = struct
           &:: "substring"
           $ any_arg_of_typ (+PatternMatch.Java.implements_lang "String")
           $+ capt_exp $+ capt_exp $--> JavaString.substring
-        ; +PatternMatch.Java.implements_inject "Provider" &:: "get" <>--> provider_get
         ; +PatternMatch.Java.implements_xmob_utils "IntHashMap" &:: "<init>" <>--> unit_cost_model
         ; +PatternMatch.Java.implements_xmob_utils "IntHashMap"
           &:: "getElement" <>--> unit_cost_model
