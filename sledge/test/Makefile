@@ -26,6 +26,10 @@ sledge_opt=./wrap.sh $(TIMEOUT) $(MEMOUT) $(SLEDGE_OPT)
 
 sledge_report=$(CURDIR)/../_build/debug/report/sledge_report.exe
 
+.PHONY: sledge_report_exe
+sledge_report_exe:
+	$(MAKE) -C .. report
+
 # which utilities to use
 diff?=patdiff
 
@@ -98,10 +102,10 @@ translate.sexp:
 baseline/translate.sexp: translate.sexp
 	cp translate.sexp $@
 
-translate.html: translate.sexp
+translate.html: translate.sexp sledge_report_exe
 	$(sledge_report) html $(SLEDGE_R_ARGS) -baseline baseline/translate.sexp translate.sexp -output $@
 
-translate-status: translate.sexp
+translate-status: translate.sexp sledge_report_exe
 	$(sledge_report) status -baseline baseline/translate.sexp translate.sexp | column -ts$$'\t'
 
 #
@@ -134,10 +138,10 @@ analyze.sexp:
 baseline/analyze.sexp: analyze.sexp
 	cp analyze.sexp $@
 
-analyze.html: analyze.sexp
+analyze.html: analyze.sexp sledge_report_exe
 	$(sledge_report) html $(SLEDGE_R_ARGS) -baseline baseline/analyze.sexp analyze.sexp -output $@
 
-analyze-status: analyze.sexp
+analyze-status: analyze.sexp sledge_report_exe
 	$(sledge_report) status -baseline baseline/analyze.sexp analyze.sexp | column -ts$$'\t'
 
 #
@@ -172,10 +176,10 @@ smt.sexp:
 baseline/smt.sexp: smt.sexp
 	cp smt.sexp $@
 
-smt.html: smt.sexp
+smt.html: smt.sexp sledge_report_exe
 	$(sledge_report) html $(SLEDGE_R_ARGS) -baseline baseline/smt.sexp smt.sexp -output $@
 
-smt-status: smt.sexp
+smt-status: smt.sexp sledge_report_exe
 	$(sledge_report) status -baseline baseline/smt.sexp smt.sexp | column -ts$$'\t'
 
 #
@@ -194,10 +198,10 @@ llvm.sexp:
 baseline/llvm.sexp: llvm.sexp
 	cp llvm.sexp $@
 
-llvm.html: llvm.sexp
+llvm.html: llvm.sexp sledge_report_exe
 	$(sledge_report) html $(SLEDGE_R_ARGS) -baseline baseline/llvm.sexp llvm.sexp -output $@
 
-llvm-status: llvm.sexp
+llvm-status: llvm.sexp sledge_report_exe
 	$(sledge_report) status -baseline baseline/llvm.sexp llvm.sexp | column -ts$$'\t'
 
 #
