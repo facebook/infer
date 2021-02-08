@@ -62,6 +62,7 @@ const poweredByItems = [
   { url: "https://www.sky.com", name: "Sky" },
   { url: "https://tile.com", name: "Tile" },
   { url: "https://vuo.org", name: "Vuo" },
+  { url: "https://wolfssl.com", name: "wolfSSL" },
 ];
 
 function Home() {
