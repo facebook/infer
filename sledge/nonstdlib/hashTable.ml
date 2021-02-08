@@ -21,12 +21,13 @@ module Make (Key : HashedType) = struct
     update tbl ~k:key ~f:(fun _ -> function
       | None -> Some [data] | Some datas -> Some (data :: datas) )
 
+  let update tbl key ~f = update tbl ~k:key ~f:(fun _ dat -> f dat)
   let find_exn = find
   let find = find_opt
 
   let find_or_add tbl key ~default =
     let found = ref None in
-    update tbl ~k:key ~f:(fun _ -> function
+    update tbl key ~f:(function
       | None ->
           let v = default () in
           found := Some v ;

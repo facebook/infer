@@ -15,6 +15,7 @@ module type S = sig
   val create : ?size:int -> unit -> 'a t
   val set : 'a t -> key:key -> data:'a -> unit
   val add_multi : 'a list t -> key:key -> data:'a -> unit
+  val update : 'a t -> key -> f:('a option -> 'a option) -> unit
   val find_exn : 'a t -> key -> 'a
   val find : 'a t -> key -> 'a option
   val find_or_add : 'a t -> key -> default:(unit -> 'a) -> 'a

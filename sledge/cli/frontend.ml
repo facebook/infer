@@ -123,51 +123,57 @@ open struct
       in
       match maybe_scope with
       | None -> ()
-      | Some scope ->
-          let next, void_tbl =
-            ScopeTbl.find_or_add scope_tbl scope ~default:(fun () ->
-                (ref 0, String.Tbl.create ()) )
-          in
-          let name =
-            if
-              Poly.(
-                Llvm.classify_value llv = Instruction Call
-                && Llvm.classify_type (Llvm.type_of llv) = Void)
-            then (
-              (* LLVM does not give unique names to the result of
-                 void-returning function calls. We need unique names for
-                 these as they determine the labels of newly-created return
-                 blocks. *)
-              let fname =
-                match
-                  Llvm.(value_name (operand llv (num_operands llv - 1)))
-                with
-                | "" -> Int.to_string (!next - 1)
-                | s -> s
-              in
-              match String.Tbl.find void_tbl fname with
-              | None ->
-                  String.Tbl.set void_tbl ~key:fname ~data:1 ;
-                  fname ^ ".void"
-              | Some count ->
-                  String.Tbl.set void_tbl ~key:fname ~data:(count + 1) ;
-                  String.concat ~sep:""
-                    [fname; ".void."; Int.to_string count] )
-            else
-              match Llvm.value_name llv with
-              | "" ->
-                  (* anonymous values take the next SSA name *)
-                  let name = !next in
-                  next := name + 1 ;
-                  Int.to_string name
-              | name -> (
-                match Int.of_string name with
-                | Some _ ->
-                    (* escape to avoid clash with names of anonymous values *)
-                    "\"" ^ name ^ "\""
-                | None -> name )
-          in
-          SymTbl.set sym_tbl ~key:llv ~data:(name, loc)
+      | Some scope -> (
+        match SymTbl.find sym_tbl llv with
+        | Some (name, loc0) ->
+            if Loc.equal loc0 Loc.none then
+              SymTbl.set sym_tbl ~key:llv ~data:(name, loc)
+        | None ->
+            let next, void_tbl =
+              ScopeTbl.find_or_add scope_tbl scope ~default:(fun () ->
+                  (ref 0, String.Tbl.create ()) )
+            in
+            let name =
+              if
+                Poly.(
+                  Llvm.classify_value llv = Instruction Call
+                  && Llvm.classify_type (Llvm.type_of llv) = Void)
+              then (
+                (* LLVM does not give unique names to the result of
+                   void-returning function calls. We need unique names for
+                   these as they determine the labels of newly-created
+                   return blocks. *)
+                let fname =
+                  match
+                    Llvm.(value_name (operand llv (num_operands llv - 1)))
+                  with
+                  | "" -> Int.to_string (!next - 1)
+                  | s -> s
+                in
+                match String.Tbl.find void_tbl fname with
+                | None ->
+                    String.Tbl.set void_tbl ~key:fname ~data:1 ;
+                    fname ^ ".void"
+                | Some count ->
+                    String.Tbl.set void_tbl ~key:fname ~data:(count + 1) ;
+                    String.concat ~sep:""
+                      [fname; ".void."; Int.to_string count] )
+              else
+                match Llvm.value_name llv with
+                | "" ->
+                    (* anonymous values take the next SSA name *)
+                    let name = !next in
+                    next := name + 1 ;
+                    Int.to_string name
+                | name -> (
+                  match Int.of_string name with
+                  | Some _ ->
+                      (* escape to avoid clash with names of anonymous
+                         values *)
+                      "\"" ^ name ^ "\""
+                  | None -> name )
+            in
+            SymTbl.set sym_tbl ~key:llv ~data:(name, loc) )
   end
 
   let scan_names_and_locs : Llvm.llmodule -> unit =
