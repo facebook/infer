@@ -39,7 +39,11 @@ module type VAR = sig
 
   val id : t -> int
   val name : t -> string
-  val program : name:string -> id:int -> t
+
+  val program : ?name:string -> id:int -> t
+  (** Create a program variable with [id] and optional [name]. The [id]
+      uniquely identifies the variable, and must be positive. *)
+
   val fresh : string -> wrt:Set.t -> t * Set.t
 
   val identified : name:string -> id:int -> t

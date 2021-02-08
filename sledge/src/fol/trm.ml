@@ -106,7 +106,7 @@ and Trm : sig
   val vars : t -> Var.t iter
 end = struct
   type t =
-    | Var of {id: int; name: string}
+    | Var of {id: int; name: string [@ignore]}
     | Z of Z.t
     | Q of Q.t
     | Arith of Arith.t
@@ -116,22 +116,6 @@ end = struct
     | Concat of t array
     | Apply of Funsym.t * t array
   [@@deriving compare, equal, sexp]
-
-  let compare x y =
-    if x == y then 0
-    else
-      match (x, y) with
-      | Var {id= i; name= s}, Var {id= j; name= t} ->
-          if i < 0 && j < 0 then String.compare s t else Int.compare i j
-      | _ -> compare x y
-
-  let equal x y =
-    x == y
-    ||
-    match (x, y) with
-    | Var {id= i; name= s}, Var {id= j; name= t} ->
-        if i < 0 && j < 0 then String.equal s t else Int.equal i j
-    | _ -> equal x y
 
   (* nul-terminated string value represented by a concatenation *)
   let string_of_concat xs =

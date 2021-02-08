@@ -55,7 +55,7 @@ module Make (T : REPR) = struct
     let x' = make ~id:(max + 1) ~name in
     (x', Set.add x' wrt)
 
-  let program ~name ~id =
+  let program ?(name = "") ~id =
     assert (id > 0) ;
     make ~id:(-id) ~name
 
