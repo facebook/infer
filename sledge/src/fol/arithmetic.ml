@@ -29,10 +29,10 @@ struct
 
     let num_den m = Prod.partition m ~f:(fun _ i -> i >= 0)
 
-    let ppx strength ppf power_product =
+    let ppx pp_trm ppf power_product =
       let pp_factor ppf (indet, exponent) =
-        if exponent = 1 then (Trm.ppx strength) ppf indet
-        else Format.fprintf ppf "%a^%i" (Trm.ppx strength) indet exponent
+        if exponent = 1 then pp_trm ppf indet
+        else Format.fprintf ppf "%a^%i" pp_trm indet exponent
       in
       let pp_num ppf num =
         if Prod.is_empty num then Trace.pp_styled `Magenta "1" ppf
@@ -49,7 +49,7 @@ struct
         Format.fprintf ppf "@[<2>%a@]" pp_num num
       else Format.fprintf ppf "@[<2>(%a%a)@]" pp_num num pp_den den
 
-    let pp = ppx (fun _ -> None)
+    let pp = ppx Trm.pp
 
     (** [one] is the empty product Πᵢ₌₁⁰ xᵢ^pᵢ *)
     let one = Prod.empty
@@ -99,14 +99,14 @@ struct
   struct
     include Poly
 
-    let ppx strength ppf poly =
+    let ppx pp_trm ppf poly =
       if Sum.is_empty poly then Trace.pp_styled `Magenta "0" ppf
       else
         let pp_coeff_mono ppf (m, c) =
           if Mono.equal_one m then Trace.pp_styled `Magenta "%a" ppf Q.pp c
           else if Q.equal Q.one c then
-            Format.fprintf ppf "%a" (Mono.ppx strength) m
-          else Format.fprintf ppf "%a@<1>×%a" Q.pp c (Mono.ppx strength) m
+            Format.fprintf ppf "%a" (Mono.ppx pp_trm) m
+          else Format.fprintf ppf "%a@<1>×%a" Q.pp c (Mono.ppx pp_trm) m
         in
         if Sum.is_singleton poly then
           Format.fprintf ppf "@[<2>%a@]" (Sum.pp "@ + " pp_coeff_mono) poly
@@ -115,7 +115,7 @@ struct
             (Sum.pp "@ + " pp_coeff_mono)
             poly
 
-    let pp = ppx (fun _ -> None)
+    let pp = ppx Trm.pp
 
     let mono_invariant mono =
       let@ () = Invariant.invariant [%here] mono [%sexp_of: Mono.t] in

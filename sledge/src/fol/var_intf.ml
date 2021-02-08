@@ -13,11 +13,9 @@ module type REPR = sig
   val name : t -> string
 end
 
-type 'a strength = 'a -> [`Universal | `Existential | `Anonymous] option
-
 module type VAR = sig
   type t [@@deriving compare, equal, sexp]
-  type nonrec strength = t strength
+  type strength = t -> [`Universal | `Existential | `Anonymous] option
 
   val ppx : strength -> t pp
   val pp : t pp

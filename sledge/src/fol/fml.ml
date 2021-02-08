@@ -20,7 +20,7 @@ let pp_boxed fs fmt =
 
 let ppx strength fs fml =
   let pp_t = Trm.ppx strength in
-  let pp_a = Trm.Arith.ppx strength in
+  let pp_a = Trm.Arith.ppx pp_t in
   let rec pp fs fml =
     let pf fmt = pp_boxed fs fmt in
     let pp_binop x = pf "(%a@ @<2>%s %a)" x in

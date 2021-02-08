@@ -8,11 +8,10 @@
 (** Arithmetic terms *)
 
 module type S = sig
-  type var
   type trm
   type t [@@deriving compare, equal, sexp]
 
-  val ppx : var Var_intf.strength -> t pp
+  val ppx : trm pp -> t pp
 
   (** Construct and Destruct atomic terms *)
 
@@ -87,7 +86,6 @@ module type INDETERMINATE = sig
   type trm [@@deriving compare, equal, sexp]
   type var
 
-  val ppx : var Var_intf.strength -> trm pp
   val pp : trm pp
   val vars : trm -> var iter
 end
@@ -118,5 +116,5 @@ module type REPRESENTATION = sig
   type trm
 
   module Make (_ : EMBEDDING with type trm := trm and type t := t) :
-    S with type var := var with type trm := trm with type t := t
+    S with type trm := trm with type t := t
 end

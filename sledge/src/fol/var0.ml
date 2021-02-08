@@ -12,7 +12,7 @@ module Make (T : REPR) = struct
   module T = struct
     include T
 
-    type nonrec strength = t strength
+    type strength = t -> [`Universal | `Existential | `Anonymous] option
 
     let ppx strength ppf v =
       let id = id v in

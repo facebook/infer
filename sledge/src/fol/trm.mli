@@ -34,8 +34,7 @@ module Var : sig
   val of_trm : trm -> t option
 end
 
-module Arith :
-  Arithmetic.S with type var := Var.t with type trm := t with type t = arith
+module Arith : Arithmetic.S with type trm := t with type t = arith
 
 module Set : sig
   include Set.S with type elt := t

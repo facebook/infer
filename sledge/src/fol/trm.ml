@@ -48,11 +48,8 @@ and Arith0 :
       type trm = t [@@deriving compare, equal, sexp]
     end)
 
-and Arith :
-  (Arithmetic.S
-    with type var := Var.t
-    with type trm := Trm.t
-    with type t = Arith0.t) = struct
+and Arith : (Arithmetic.S with type trm := Trm.t with type t = Arith0.t) =
+struct
   include Arith0
 
   include Make (struct
@@ -161,7 +158,7 @@ end = struct
       | Var _ as v -> Var.ppx strength fs (Var.of_ v)
       | Z z -> Trace.pp_styled `Magenta "%a" fs Z.pp z
       | Q q -> Trace.pp_styled `Magenta "%a" fs Q.pp q
-      | Arith a -> Arith.ppx strength fs a
+      | Arith a -> Arith.ppx (ppx strength) fs a
       | Splat x -> pf "%a^" pp x
       | Sized {seq; siz} -> pf "@<1>⟨%a,%a@<1>⟩" pp siz pp seq
       | Extract {seq; off; len} -> pf "%a[%a,%a)" pp seq pp off pp len
