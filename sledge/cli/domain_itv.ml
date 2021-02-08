@@ -249,7 +249,7 @@ let call ~summaries ~globals:_ ~actuals ~areturn ~formals ~freturn:_
     todo "Summaries not yet implemented for interval analysis" ()
   else
     let mangle r =
-      Llair.Reg.mk (Llair.Reg.typ r) ("__tmp__" ^ Llair.Reg.name r)
+      Llair.Reg.mk (Llair.Reg.typ r) 0 ("__tmp__" ^ Llair.Reg.name r)
     in
     let args = IArray.combine_exn formals actuals in
     let q' =

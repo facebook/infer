@@ -360,7 +360,7 @@ and dummy_func =
         "dummy"
   ; formals= IArray.empty
   ; freturn= None
-  ; fthrow= Reg.mk Typ.ptr "dummy"
+  ; fthrow= Reg.mk Typ.ptr 0 "dummy"
   ; locals= Reg.Set.empty
   ; entry= dummy_block
   ; loc= Loc.none }

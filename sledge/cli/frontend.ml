@@ -54,6 +54,19 @@ let invalid_llvm : string -> 'a =
 
 (* gather names and debug locations *)
 
+(* number of register ids used so far *)
+let sym_count = ref 0
+
+(* map frontend-synthesized register names to ids, registers that come from
+   LLVM are stored in sym_tbl *)
+let id_memo = String.Tbl.create ()
+
+(* lookup or generate the id for a frontend-synthesized register name *)
+let get_id name =
+  String.Tbl.find_or_add id_memo name ~default:(fun () ->
+      incr sym_count ;
+      !sym_count )
+
 module LlvalueTbl = HashTable.Make (struct
   type t = Llvm.llvalue
 
@@ -62,7 +75,8 @@ end)
 
 module SymTbl = LlvalueTbl
 
-let sym_tbl : (string * Loc.t) SymTbl.t = SymTbl.create ~size:4_194_304 ()
+let sym_tbl : (string * int * Loc.t) SymTbl.t =
+  SymTbl.create ~size:4_194_304 ()
 
 module ScopeTbl = HashTable.Make (struct
   type t = [`Fun of Llvm.llvalue | `Mod of Llvm.llmodule]
@@ -129,9 +143,9 @@ open struct
       | None -> ()
       | Some scope -> (
         match SymTbl.find sym_tbl llv with
-        | Some (name, loc0) ->
+        | Some (name, id, loc0) ->
             if Loc.equal loc0 Loc.none then
-              SymTbl.set sym_tbl ~key:llv ~data:(name, loc)
+              SymTbl.set sym_tbl ~key:llv ~data:(name, id, loc)
         | None ->
             let name =
               if Poly.(Llvm.classify_type (Llvm.type_of llv) = Void) then
@@ -173,11 +187,13 @@ open struct
                       "\"" ^ name ^ "\""
                   | None -> name )
             in
-            SymTbl.set sym_tbl ~key:llv ~data:(name, loc) )
+            let id = 1 + SymTbl.length sym_tbl in
+            SymTbl.set sym_tbl ~key:llv ~data:(name, id, loc) )
   end
 
   let scan_names_and_locs : Llvm.llmodule -> unit =
    fun m ->
+    assert (!sym_count = 0) ;
     let scan_global g = add_sym g (loc_of_global g) in
     let scan_instr i =
       let loc = loc_of_instr i in
@@ -206,19 +222,21 @@ open struct
       Llvm.iter_blocks scan_block f
     in
     Llvm.iter_globals scan_global m ;
-    Llvm.iter_functions scan_function m
+    Llvm.iter_functions scan_function m ;
+    sym_count := SymTbl.length sym_tbl
 
-  let find_name : Llvm.llvalue -> string =
+  let find_name : Llvm.llvalue -> string * int =
    fun v ->
-    fst (SymTbl.find_exn sym_tbl v)
-    $> fun s -> assert (not (String.is_empty s))
+    let name, id, _ = SymTbl.find_exn sym_tbl v in
+    assert (not (String.is_empty name)) ;
+    (name, id)
 
   let find_loc : Llvm.llvalue -> Loc.t =
-   fun v -> snd (SymTbl.find_exn sym_tbl v)
+   fun v -> trd3 (SymTbl.find_exn sym_tbl v)
 end
 
 let label_of_block : Llvm.llbasicblock -> string =
- fun blk -> find_name (Llvm.value_of_block blk)
+ fun blk -> fst (find_name (Llvm.value_of_block blk))
 
 module LltypeTbl = HashTable.Make (struct
   type t = Llvm.lltype
@@ -368,7 +386,8 @@ let xlate_float : x -> Llvm.llvalue -> Exp.t =
 let xlate_name x : Llvm.llvalue -> Reg.t =
  fun llv ->
   let typ = xlate_type x (Llvm.type_of llv) in
-  Reg.mk typ (find_name llv)
+  let name, id = find_name llv in
+  Reg.mk typ id name
 
 let xlate_name_opt : x -> Llvm.llvalue -> Reg.t option =
  fun x instr ->
@@ -476,8 +495,9 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t
     | Function ->
         ( []
         , Exp.function_
-            (Function.mk (xlate_type x (Llvm.type_of llv)) (find_name llv))
-        )
+            (Function.mk
+               (xlate_type x (Llvm.type_of llv))
+               (fst (find_name llv))) )
     | GlobalVariable -> ([], Exp.global (xlate_global x llv).name)
     | GlobalAlias -> xlate_value x (Llvm.operand llv 0)
     | ConstantInt -> ([], xlate_int x llv)
@@ -512,8 +532,8 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t
         let pre, args = xlate_values x len (Llvm.operand llv) in
         (pre, Exp.record typ args)
     | BlockAddress ->
-        let parent = find_name (Llvm.operand llv 0) in
-        let name = find_name (Llvm.operand llv 1) in
+        let parent, _ = find_name (Llvm.operand llv 0) in
+        let name, _ = find_name (Llvm.operand llv 1) in
         ([], Exp.label ~parent ~name)
     | UndefValue ->
         let llt = Llvm.type_of llv in
@@ -522,7 +542,8 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t
           todo "types with undetermined size: %a" pp_lltype llt () ;
         let name = Printf.sprintf "undef_%i" !undef_count in
         let loc = Loc.none in
-        let reg = Reg.mk typ name in
+        let id = get_id name in
+        let reg = Reg.mk typ id name in
         let msg = Llvm.string_of_llvalue llv in
         ([Inst.nondet ~reg:(Some reg) ~msg ~loc], Exp.reg reg)
     | Instruction
@@ -772,7 +793,9 @@ and xlate_global : x -> Llvm.llvalue -> GlobalDefn.t =
   GlobTbl.find_or_add memo_global llg ~default:(fun () ->
       [%Trace.call fun {pf} -> pf "@ %a" pp_llvalue llg]
       ;
-      let g = Global.mk (xlate_type x (Llvm.type_of llg)) (find_name llg) in
+      let g =
+        Global.mk (xlate_type x (Llvm.type_of llg)) (fst (find_name llg))
+      in
       let loc = find_loc llg in
       (* add to tbl without initializer in case of recursive occurrences in
          its own initializer *)
@@ -1142,7 +1165,7 @@ let xlate_instr :
           (* general function call that may not throw *)
           | _ ->
               let typ = xlate_type x lltyp in
-              let name = find_name instr in
+              let name, _ = find_name instr in
               let lbl = name ^ ".ret" in
               let pre_1, actuals =
                 xlate_values x num_actuals (Llvm.operand instr)
@@ -1285,11 +1308,15 @@ let xlate_instr :
          eventually jumping to the handler code following the landingpad,
          passing a value for the selector which the handler code tests to
          e.g. either cleanup or rethrow. *)
-      let name = find_name instr in
+      let name, _ = find_name instr in
       let i32, tip, cxa_exception = landingpad_typs x instr in
       let pi8, _, exc_typ = exception_typs in
-      let exc = Exp.reg (Reg.mk pi8 (find_name instr ^ ".exc")) in
-      let ti = Reg.mk tip (name ^ ".ti") in
+      let exc_name = name ^ ".exc" in
+      let exc_id = get_id exc_name in
+      let exc = Exp.reg (Reg.mk pi8 exc_id exc_name) in
+      let ti_name = name ^ ".ti" in
+      let ti_id = get_id ti_name in
+      let ti = Reg.mk tip ti_id ti_name in
       (* std::type_info* ti = ((__cxa_exception* )exc - 1)->exceptionType *)
       let load_ti =
         let typ = cxa_exception in
@@ -1461,7 +1488,7 @@ let report_undefined func name =
 
 let xlate_function_decl x llfunc typ k =
   let loc = find_loc llfunc in
-  let name = Function.mk typ (find_name llfunc) in
+  let name = Function.mk typ (fst (find_name llfunc)) in
   let formals =
     Iter.from_iter (fun f -> Llvm.iter_params f llfunc)
     |> Iter.map ~f:(xlate_name x)
@@ -1470,11 +1497,15 @@ let xlate_function_decl x llfunc typ k =
   let freturn =
     match typ with
     | Pointer {elt= Function {return= Some typ; _}} ->
-        Some (Reg.mk typ "freturn")
+        let name = "freturn" in
+        let id = get_id name in
+        Some (Reg.mk typ id name)
     | _ -> None
   in
   let _, _, exc_typ = exception_typs in
-  let fthrow = Reg.mk exc_typ "fthrow" in
+  let exc_name = "fthrow" in
+  let exc_id = get_id exc_name in
+  let fthrow = Reg.mk exc_typ exc_id exc_name in
   k ~name ~formals ~freturn ~fthrow ~loc
 
 let xlate_function : x -> Llvm.llvalue -> Llair.func =
