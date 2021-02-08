@@ -105,6 +105,10 @@ open struct
         ~line:(Llvm.get_debug_loc_line i)
         ~col:(Llvm.get_debug_loc_column i)
 
+    let find_scope scope =
+      ScopeTbl.find_or_add scope_tbl scope ~default:(fun () ->
+          (ref 0, String.Tbl.create ()) )
+
     let add_sym llv loc =
       let maybe_scope =
         match Llvm.classify_value llv with
@@ -129,39 +133,35 @@ open struct
             if Loc.equal loc0 Loc.none then
               SymTbl.set sym_tbl ~key:llv ~data:(name, loc)
         | None ->
-            let next, void_tbl =
-              ScopeTbl.find_or_add scope_tbl scope ~default:(fun () ->
-                  (ref 0, String.Tbl.create ()) )
-            in
             let name =
-              if
-                Poly.(
-                  Llvm.classify_value llv = Instruction Call
-                  && Llvm.classify_type (Llvm.type_of llv) = Void)
-              then (
-                (* LLVM does not give unique names to the result of
-                   void-returning function calls. We need unique names for
-                   these as they determine the labels of newly-created
-                   return blocks. *)
-                let fname =
-                  match
-                    Llvm.(value_name (operand llv (num_operands llv - 1)))
-                  with
-                  | "" -> Int.to_string (!next - 1)
-                  | s -> s
-                in
-                match String.Tbl.find void_tbl fname with
-                | None ->
-                    String.Tbl.set void_tbl ~key:fname ~data:1 ;
-                    fname ^ ".void"
-                | Some count ->
-                    String.Tbl.set void_tbl ~key:fname ~data:(count + 1) ;
-                    String.concat ~sep:""
-                      [fname; ".void."; Int.to_string count] )
+              if Poly.(Llvm.classify_type (Llvm.type_of llv) = Void) then
+                if Poly.(Llvm.classify_value llv = Instruction Call) then (
+                  (* LLVM does not give unique names to the result of
+                     void-returning function calls. We need unique names for
+                     these as they determine the labels of newly-created
+                     return blocks. *)
+                  let next, void_tbl = find_scope scope in
+                  let fname =
+                    match
+                      Llvm.(value_name (operand llv (num_operands llv - 1)))
+                    with
+                    | "" -> Int.to_string (!next - 1)
+                    | s -> s
+                  in
+                  match String.Tbl.find void_tbl fname with
+                  | None ->
+                      String.Tbl.set void_tbl ~key:fname ~data:1 ;
+                      fname ^ ".void"
+                  | Some count ->
+                      String.Tbl.set void_tbl ~key:fname ~data:(count + 1) ;
+                      String.concat ~sep:""
+                        [fname; ".void."; Int.to_string count] )
+                else ""
               else
                 match Llvm.value_name llv with
                 | "" ->
                     (* anonymous values take the next SSA name *)
+                    let next, _ = find_scope scope in
                     let name = !next in
                     next := name + 1 ;
                     Int.to_string name
@@ -209,7 +209,9 @@ open struct
     Llvm.iter_functions scan_function m
 
   let find_name : Llvm.llvalue -> string =
-   fun v -> fst (SymTbl.find_exn sym_tbl v)
+   fun v ->
+    fst (SymTbl.find_exn sym_tbl v)
+    $> fun s -> assert (not (String.is_empty s))
 
   let find_loc : Llvm.llvalue -> Loc.t =
    fun v -> snd (SymTbl.find_exn sym_tbl v)
@@ -1063,7 +1065,6 @@ let xlate_instr :
     [%Trace.retn fun {pf} () -> pf "%a" pp_code (prefix, term, blocks)] () ;
     (prefix, term, blocks)
   in
-  let name = find_name instr in
   let loc = find_loc instr in
   let inline_or_move xlate =
     if should_inline instr then nop ()
@@ -1141,6 +1142,7 @@ let xlate_instr :
           (* general function call that may not throw *)
           | _ ->
               let typ = xlate_type x lltyp in
+              let name = find_name instr in
               let lbl = name ^ ".ret" in
               let pre_1, actuals =
                 xlate_values x num_actuals (Llvm.operand instr)
@@ -1283,6 +1285,7 @@ let xlate_instr :
          eventually jumping to the handler code following the landingpad,
          passing a value for the selector which the handler code tests to
          e.g. either cleanup or rethrow. *)
+      let name = find_name instr in
       let i32, tip, cxa_exception = landingpad_typs x instr in
       let pi8, _, exc_typ = exception_typs in
       let exc = Exp.reg (Reg.mk pi8 (find_name instr ^ ".exc")) in
