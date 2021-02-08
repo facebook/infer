@@ -56,7 +56,7 @@ digraph cfg {
 "name#User#instance.64d2642dd9cada63b69256c9a7def3b2_2" [label="2: Exit User.name \n  " color=yellow style=filled]
 	
 
-"name#User#instance.64d2642dd9cada63b69256c9a7def3b2_3" [label="3:  BinaryOperatorStmt: Node \n   n$5=*&self:User* [line 23, column 40]\n  n$6=*n$5._name:NSString* [line 23, column 40]\n  *&return:NSString*=n$6 [line 23, column 40]\n " shape="box"]
+"name#User#instance.64d2642dd9cada63b69256c9a7def3b2_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:User* [line 23, column 40]\n  n$1=*n$0._name:NSString* [line 23, column 40]\n  *&return:NSString*=n$1 [line 23, column 40]\n " shape="box"]
 	
 
 	 "name#User#instance.64d2642dd9cada63b69256c9a7def3b2_3" -> "name#User#instance.64d2642dd9cada63b69256c9a7def3b2_2" ;
@@ -86,7 +86,7 @@ digraph cfg {
 "setName:#User(class NSString)#instance.feaa984173830aa4a9d325a5924f264f_2" [label="2: Exit User.setName: \n  " color=yellow style=filled]
 	
 
-"setName:#User(class NSString)#instance.feaa984173830aa4a9d325a5924f264f_3" [label="3:  BinaryOperatorStmt: Node \n   n$3=*&self:User* [line 23, column 40]\n  n$4=*&name:NSString* [line 23, column 40]\n  *n$3._name:NSString*=n$4 [line 23, column 40]\n " shape="box"]
+"setName:#User(class NSString)#instance.feaa984173830aa4a9d325a5924f264f_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:User* [line 23, column 40]\n  n$1=*&name:NSString* [line 23, column 40]\n  *n$0._name:NSString*=n$1 [line 23, column 40]\n " shape="box"]
 	
 
 	 "setName:#User(class NSString)#instance.feaa984173830aa4a9d325a5924f264f_3" -> "setName:#User(class NSString)#instance.feaa984173830aa4a9d325a5924f264f_2" ;

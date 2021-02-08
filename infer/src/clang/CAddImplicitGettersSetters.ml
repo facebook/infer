@@ -46,6 +46,7 @@ let process_getter_setter proc_name proc_desc =
   let location = Procdesc.get_loc proc_desc in
   let formals = Procdesc.get_formals proc_desc in
   let attributes = Procdesc.get_attributes proc_desc in
+  Ident.NameGenerator.reset () ;
   let getter_setter_instrs =
     match (attributes.ProcAttributes.objc_accessor, formals) with
     | Some (Objc_getter field), [(self, self_typ)] ->

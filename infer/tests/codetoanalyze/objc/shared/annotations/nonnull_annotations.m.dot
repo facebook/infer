@@ -7,7 +7,7 @@ digraph cfg {
 "child#NonnullAnnot#instance.90b13dcde8e3b2b21533f2a1e45f4dc4_2" [label="2: Exit NonnullAnnot.child \n  " color=yellow style=filled]
 	
 
-"child#NonnullAnnot#instance.90b13dcde8e3b2b21533f2a1e45f4dc4_3" [label="3:  BinaryOperatorStmt: Node \n   n$3=*&self:NonnullAnnot* [line 11, column 25]\n  n$4=*n$3._child:NonnullAnnot* [line 11, column 25]\n  *&return:NonnullAnnot*=n$4 [line 11, column 25]\n " shape="box"]
+"child#NonnullAnnot#instance.90b13dcde8e3b2b21533f2a1e45f4dc4_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:NonnullAnnot* [line 11, column 25]\n  n$1=*n$0._child:NonnullAnnot* [line 11, column 25]\n  *&return:NonnullAnnot*=n$1 [line 11, column 25]\n " shape="box"]
 	
 
 	 "child#NonnullAnnot#instance.90b13dcde8e3b2b21533f2a1e45f4dc4_3" -> "child#NonnullAnnot#instance.90b13dcde8e3b2b21533f2a1e45f4dc4_2" ;
@@ -44,7 +44,7 @@ digraph cfg {
 "setChild:#NonnullAnnot(class NonnullAnnot)#instance.a6a145a3c260c479880c89d93b389160_2" [label="2: Exit NonnullAnnot.setChild: \n  " color=yellow style=filled]
 	
 
-"setChild:#NonnullAnnot(class NonnullAnnot)#instance.a6a145a3c260c479880c89d93b389160_3" [label="3:  BinaryOperatorStmt: Node \n   n$5=*&self:NonnullAnnot* [line 11, column 25]\n  n$6=*&child:NonnullAnnot* [line 11, column 25]\n  *n$5._child:NonnullAnnot*=n$6 [line 11, column 25]\n " shape="box"]
+"setChild:#NonnullAnnot(class NonnullAnnot)#instance.a6a145a3c260c479880c89d93b389160_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:NonnullAnnot* [line 11, column 25]\n  n$1=*&child:NonnullAnnot* [line 11, column 25]\n  *n$0._child:NonnullAnnot*=n$1 [line 11, column 25]\n " shape="box"]
 	
 
 	 "setChild:#NonnullAnnot(class NonnullAnnot)#instance.a6a145a3c260c479880c89d93b389160_3" -> "setChild:#NonnullAnnot(class NonnullAnnot)#instance.a6a145a3c260c479880c89d93b389160_2" ;
