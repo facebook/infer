@@ -121,16 +121,16 @@ end = struct
     if x == y then 0
     else
       match (x, y) with
-      | Var {id= 0; name= s}, Var {id= 0; name= t} -> String.compare s t
-      | Var {id= i; name= _}, Var {id= j; name= _} -> Int.compare i j
+      | Var {id= i; name= s}, Var {id= j; name= t} ->
+          if i < 0 && j < 0 then String.compare s t else Int.compare i j
       | _ -> compare x y
 
   let equal x y =
     x == y
     ||
     match (x, y) with
-    | Var {id= 0; name= s}, Var {id= 0; name= t} -> String.equal s t
-    | Var {id= i; name= _}, Var {id= j; name= _} -> Int.equal i j
+    | Var {id= i; name= s}, Var {id= j; name= t} ->
+        if i < 0 && j < 0 then String.equal s t else Int.equal i j
     | _ -> equal x y
 
   (* nul-terminated string value represented by a concatenation *)

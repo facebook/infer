@@ -113,6 +113,7 @@ module Reg : sig
 
   val of_exp : exp -> t option
   val mk : Typ.t -> int -> string -> t
+  val id : t -> int
   val name : t -> string
   val typ : t -> Typ.t
 end

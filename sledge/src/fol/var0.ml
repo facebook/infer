@@ -17,15 +17,13 @@ module Make (T : REPR) = struct
     let ppx strength ppf v =
       let id = id v in
       let name = name v in
-      let pp_id ppf id = if id <> 0 then Format.fprintf ppf "_%d" id in
-      match strength v with
-      | None ->
-          if id = 0 then Trace.pp_styled `Bold "%%%s" ppf name
-          else Format.fprintf ppf "%%%s%a" name pp_id id
-      | Some `Universal -> Trace.pp_styled `Bold "%%%s%a" ppf name pp_id id
-      | Some `Existential ->
-          Trace.pp_styled `Cyan "%%%s%a" ppf name pp_id id
-      | Some `Anonymous -> Trace.pp_styled `Cyan "_" ppf
+      if id < 0 then Trace.pp_styled `Bold "%%%s!%i" ppf name (-id)
+      else
+        match strength v with
+        | None -> Format.fprintf ppf "%%%s_%i" name id
+        | Some `Universal -> Trace.pp_styled `Bold "%%%s_%i" ppf name id
+        | Some `Existential -> Trace.pp_styled `Cyan "%%%s_%i" ppf name id
+        | Some `Anonymous -> Trace.pp_styled `Cyan "_" ppf
 
     let pp = ppx (fun _ -> None)
   end
@@ -51,11 +49,16 @@ module Make (T : REPR) = struct
   end
 
   let fresh name ~wrt =
-    let max = match Set.max_elt wrt with None -> 0 | Some max -> id max in
+    let max =
+      match Set.max_elt wrt with None -> 0 | Some m -> max 0 (id m)
+    in
     let x' = make ~id:(max + 1) ~name in
     (x', Set.add x' wrt)
 
-  let program ~name = make ~id:0 ~name
+  let program ~name ~id =
+    assert (id > 0) ;
+    make ~id:(-id) ~name
+
   let identified ~name ~id = make ~id ~name
 
   (** Variable renaming substitutions *)

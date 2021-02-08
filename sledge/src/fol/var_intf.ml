@@ -39,7 +39,7 @@ module type VAR = sig
 
   val id : t -> int
   val name : t -> string
-  val program : name:string -> t
+  val program : name:string -> id:int -> t
   val fresh : string -> wrt:Set.t -> t * Set.t
 
   val identified : name:string -> id:int -> t

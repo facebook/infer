@@ -295,6 +295,7 @@ module Reg = struct
     let@ () = Invariant.invariant [%here] x [%sexp_of: t] in
     match x with Reg _ -> invariant x | _ -> assert false
 
+  let id = function Reg x -> x.id | r -> violates invariant r
   let name = function Reg x -> x.name | r -> violates invariant r
   let typ = function Reg x -> x.typ | r -> violates invariant r
 
