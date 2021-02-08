@@ -555,7 +555,13 @@ let pure (p : Formula.t) =
     invariant q]
 
 let and_ b q =
-  star (pure (Formula.map_terms ~f:(Context.normalize q.ctx) b)) q
+  [%trace]
+    ~call:(fun {pf} -> pf "@ (%a)@ (%a)" Formula.pp b pp q)
+    ~retn:(fun {pf} -> pf "%a" pp)
+  @@ fun () ->
+  let xs, q = bind_exists q ~wrt:(Formula.fv b) in
+  let b = Formula.map_terms ~f:(Context.normalize q.ctx) b in
+  exists xs (star (pure b) q)
 
 let and_subst subst q =
   [%Trace.call fun {pf} -> pf "@ %a@ %a" Context.Subst.pp subst pp q]
