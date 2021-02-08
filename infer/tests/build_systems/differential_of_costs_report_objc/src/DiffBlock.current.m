@@ -37,11 +37,20 @@
 - (void (^)(NSString*))func_linear {
   return ^(NSString* str) {
     NSLog(@"Report error : %@ \n", str);
+    for (int i = 0; i < str.length; i++) {
+    } // we get a complexity increase here for the block, but we should print it
+      // better
   };
+}
+
++ (void)loop_linear:(NSArray*)array {
+  for (int i = 0; i < array.count; i++) {
+  }
 }
 
 - (void)func_linear:(NSArray*)array {
   for (id value in array) {
+    [Handler loop_linear:array];
   }
 }
 
