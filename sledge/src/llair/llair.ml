@@ -368,12 +368,11 @@ and dummy_func =
 (** Instructions *)
 
 module Inst = struct
-  module T = struct
-    type t = inst [@@deriving compare, equal, hash, sexp]
-  end
+  type t = inst [@@deriving compare, equal, hash, sexp]
 
-  include T
-  module Tbl = HashTable.Make (T)
+  module Tbl = HashTable.Make (struct
+    type t = block * inst [@@deriving equal, hash]
+  end)
 
   let pp = pp_inst
   let move ~reg_exps ~loc = Move {reg_exps; loc}
@@ -440,12 +439,7 @@ end
 (** Basic-Block Terminators *)
 
 module Term = struct
-  module T = struct
-    type t = term [@@deriving compare, equal, hash, sexp_of]
-  end
-
-  include T
-  module Tbl = HashTable.Make (T)
+  type t = term [@@deriving compare, equal, hash, sexp_of]
 
   let pp = pp_term
 
@@ -532,6 +526,7 @@ module Block = struct
 
   include T
   module Map = Map.Make (T)
+  module Tbl = HashTable.Make (T)
 
   let pp = pp_block
 

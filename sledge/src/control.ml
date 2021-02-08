@@ -454,7 +454,7 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
    fun pgm stk state block ->
     [%Trace.info
       "@[<2>exec term@\n@[%a@]@\n%a@]" Dom.pp state Llair.Term.pp block.term] ;
-    Report.step_term block.term ;
+    Report.step_term block ;
     match block.term with
     | Switch {key; tbl; els} ->
         IArray.fold
@@ -491,12 +491,15 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
     | Throw {exc} -> exec_throw stk state block exc
     | Unreachable -> Work.skip
 
-  let exec_inst : Llair.inst -> Dom.t -> (Dom.t, Dom.t * Llair.inst) result
-      =
-   fun inst state ->
+  let exec_inst :
+         Llair.block
+      -> Llair.inst
+      -> Dom.t
+      -> (Dom.t, Dom.t * Llair.inst) result =
+   fun block inst state ->
     [%Trace.info
       "@[<2>exec inst@\n@[%a@]@\n%a@]" Dom.pp state Llair.Inst.pp inst] ;
-    Report.step_inst inst ;
+    Report.step_inst block inst ;
     Dom.exec_inst inst state
     |> function
     | Some state -> Result.Ok state | None -> Result.Error (state, inst)
@@ -513,7 +516,9 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
           block.parent.name )
     @@ fun () ->
     match
-      Iter.fold_result ~f:exec_inst (IArray.to_iter block.cmnd) state
+      Iter.fold_result ~f:(exec_inst block)
+        (IArray.to_iter block.cmnd)
+        state
     with
     | Ok state -> exec_term pgm stk state block
     | Error (state, inst) ->

@@ -135,7 +135,7 @@ module Inst : sig
   val locals : inst -> Reg.Set.t
   val fold_exps : inst -> 's -> f:(Exp.t -> 's -> 's) -> 's
 
-  module Tbl : HashTable.S with type key := t
+  module Tbl : HashTable.S with type key := block * t
 end
 
 module Jump : sig
@@ -185,8 +185,6 @@ module Term : sig
   val throw : exc:Exp.t -> loc:Loc.t -> term
   val unreachable : term
   val loc : term -> Loc.t
-
-  module Tbl : HashTable.S with type key := t
 end
 
 module Block : sig
@@ -196,6 +194,7 @@ module Block : sig
   val mk : lbl:label -> cmnd:cmnd -> term:term -> block
 
   module Map : Map.S with type key := t
+  module Tbl : HashTable.S with type key := t
 end
 
 module Func : sig

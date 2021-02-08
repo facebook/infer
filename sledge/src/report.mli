@@ -9,8 +9,8 @@
 
 val init : ?append:bool -> string -> unit
 val step_solver : unit -> unit
-val step_inst : Llair.inst -> unit
-val step_term : Llair.term -> unit
+val step_inst : Llair.block -> Llair.inst -> unit
+val step_term : Llair.block -> unit
 val hit_bound : int -> unit
 val unknown_call : Llair.term -> unit
 val invalid_access_inst : (Format.formatter -> unit) -> Llair.inst -> unit
