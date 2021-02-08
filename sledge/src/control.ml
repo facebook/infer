@@ -313,7 +313,7 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
     let Llair.{callee; actuals; areturn; return; recursive} = call in
     let Llair.{name; formals; freturn; locals; entry} = callee in
     [%Trace.call fun {pf} ->
-      pf "@ %a from %a with state@ %a" Llair.Function.pp name
+      pf "@[<2>@ %a from %a with state@]@;<1 2>%a" Llair.Func.pp_call call
         Llair.Function.pp return.dst.parent.name Dom.pp state]
     ;
     let dnf_states =

@@ -201,6 +201,7 @@ module Func : sig
   type t = func [@@deriving compare, equal, hash]
 
   val pp : t pp
+  val pp_call : t call pp
 
   include Invariant.S with type t := t
 

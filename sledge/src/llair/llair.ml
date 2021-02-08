@@ -599,6 +599,20 @@ module Func = struct
   let iter_term func ~f = fold_cfg ~f:(fun blk () -> f blk.term) func ()
   let entry_cfg func = fold_cfg ~f:(fun blk cfg -> blk :: cfg) func []
 
+  let pp_call fs call =
+    let {callee; actuals; areturn; _} = call in
+    let {name; formals; freturn; _} = callee in
+    let pp_arg fs (actual, formal) =
+      Format.fprintf fs "@[%a / %a@]" Exp.pp actual Reg.pp formal
+    in
+    let pp_args fs (actuals, formals) =
+      IArray.pp ",@ " pp_arg fs (IArray.combine_exn actuals formals)
+    in
+    Format.fprintf fs "%a%a(@[%a@])"
+      (Option.pp "%a := " pp_arg)
+      (Option.map2 (fun a f -> (Exp.reg a, f)) areturn freturn)
+      Function.pp name pp_args (actuals, formals)
+
   let pp fs func =
     let {name; formals; freturn; entry; loc; _} = func in
     let {cmnd; term; sort_index; _} = entry in

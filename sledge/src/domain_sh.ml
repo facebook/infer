@@ -141,41 +141,47 @@ type from_call = {areturn: Var.t option; unshadow: Var.Subst.t; frame: Sh.t}
     equations between each formal and actual, and quantify fresh vars. *)
 let call ~summaries ~globals ~actuals ~areturn ~formals ~freturn ~locals q =
   [%Trace.call fun {pf} ->
-    pf
-      "@ @[<hv>actuals: (@[%a@])@ formals: (@[%a@])@ locals: {@[%a@]}@ \
-       globals: {@[%a@]}@ q: %a@]"
-      (IArray.pp ",@ " Llair.Exp.pp)
-      actuals
-      (IArray.pp ",@ " Llair.Reg.pp)
-      formals Llair.Reg.Set.pp locals Llair.Global.Set.pp globals pp q]
+    pf "@ @[<hv>locals: {@[%a@]}@ globals: {@[%a@]}@ q: %a@]"
+      Llair.Reg.Set.pp locals Llair.Global.Set.pp globals pp q ;
+    assert (
+      (* modifs do not appear in actuals (otherwise incomplete) *)
+      let fv_actuals =
+        actuals
+        |> IArray.to_iter
+        |> Iter.map ~f:X.term
+        |> Iter.flat_map ~f:Term.vars
+      in
+      not
+        (Option.exists areturn ~f:(fun modif ->
+             Iter.exists ~f:(Var.equal (X.reg modif)) fv_actuals )) )]
   ;
   let actuals = IArray.map ~f:X.term actuals in
   let areturn = Option.map ~f:X.reg areturn in
   let formals = IArray.map ~f:X.reg formals in
   let freturn_locals = X.regs (Llair.Reg.Set.add_option freturn locals) in
   let modifs = Var.Set.of_option areturn in
-  (* quantify modifs, their current value will be overwritten and so does
-     not need to be saved in the freshening renaming *)
+  (* quantify modifs, their current values will be overwritten and so should
+     not be saved and restored on return *)
   let q = Sh.exists modifs q in
   (* save current values of shadowed formals and locals with a renaming *)
   let formals_freturn_locals =
     Iter.fold ~f:Var.Set.add (IArray.to_iter formals) freturn_locals
   in
-  let q', shadow = Sh.freshen q ~wrt:formals_freturn_locals in
+  let q, shadow = Sh.freshen q ~wrt:formals_freturn_locals in
   let unshadow = Var.Subst.invert shadow in
   assert (Var.Set.disjoint modifs (Var.Subst.domain shadow)) ;
   (* pass arguments by conjoining equations between formals and actuals *)
-  let entry = and_eqs shadow formals actuals q' in
+  let entry = and_eqs shadow formals actuals q in
   (* note: locals and formals are in scope *)
   assert (Var.Set.subset formals_freturn_locals ~of_:entry.us) ;
   (* simplify *)
   let entry = simplify entry in
   ( if not summaries then (entry, {areturn; unshadow; frame= Sh.emp})
   else
-    let q'', frame =
-      localize_entry globals actuals formals freturn locals shadow q' entry
+    let q, frame =
+      localize_entry globals actuals formals freturn locals shadow q entry
     in
-    (q'', {areturn; unshadow; frame}) )
+    (q, {areturn; unshadow; frame}) )
   |>
   [%Trace.retn fun {pf} (entry, {unshadow; frame}) ->
     pf "@[<v>unshadow: %a@ frame: %a@ entry: %a@]" Var.Subst.pp unshadow pp
