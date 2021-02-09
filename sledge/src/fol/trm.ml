@@ -11,37 +11,14 @@ let pp_boxed fs fmt =
   Format.pp_open_box fs 2 ;
   Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
 
-(** Variable terms, represented as a subtype of general terms *)
-module rec Var : sig
-  include Var_intf.VAR with type t = private Trm.t
+(** Representation of Arithmetic terms *)
+module rec Arith0 :
+  (Arithmetic.REPRESENTATION
+    with type var := Trm.Var1.t
+    with type trm := Trm.t) =
+  Arithmetic.Representation (Trm.Var1) (Trm)
 
-  val of_ : Trm.t -> t
-  val of_trm : Trm.t -> t option
-end = struct
-  module T = struct
-    type t = Trm.t [@@deriving compare, equal, sexp]
-
-    let invariant x =
-      let@ () = Invariant.invariant [%here] x [%sexp_of: t] in
-      match x with
-      | Var _ -> ()
-      | _ -> fail "non-var: %a" Sexp.pp_hum (sexp_of_t x) ()
-
-    let make ~id ~name = Trm._Var id name |> check invariant
-    let id = function Trm.Var v -> v.id | x -> violates invariant x
-    let name = function Trm.Var v -> v.name | x -> violates invariant x
-  end
-
-  include Var0.Make (T)
-
-  let of_ v = v |> check T.invariant
-  let of_trm = function Trm.Var _ as v -> Some v | _ -> None
-end
-
-and Arith0 :
-  (Arithmetic.REPRESENTATION with type var := Var.t with type trm := Trm.t) =
-  Arithmetic.Representation (Var) (Trm)
-
+(** Arithmetic terms *)
 and Arith : (Arithmetic.S with type trm := Trm.t with type t = Arith0.t) =
 struct
   include Arith0
@@ -77,7 +54,17 @@ and Trm : sig
     | Apply of Funsym.t * t array
   [@@deriving compare, equal, sexp]
 
-  val ppx : Var.strength -> t pp
+  (** Variable terms, represented as a subtype of general terms *)
+  module Var1 : sig
+    type trm := t
+
+    include Var_intf.VAR with type t = private trm
+
+    val of_ : trm -> t
+    val of_trm : trm -> t option
+  end
+
+  val ppx : Var1.strength -> t pp
   val pp : t pp
 
   include Invariant.S with type t := t
@@ -97,7 +84,7 @@ and Trm : sig
   val seq_size : t -> t option
   val get_z : t -> Z.t option
   val get_q : t -> Q.t option
-  val vars : t -> Var.t iter
+  val vars : t -> Var1.t iter
 end = struct
   type t =
     | Var of {id: int; name: string [@ignore]}
@@ -110,6 +97,27 @@ end = struct
     | Concat of t array
     | Apply of Funsym.t * t array
   [@@deriving compare, equal, sexp]
+
+  module Var1 = struct
+    module T = struct
+      type nonrec t = t [@@deriving compare, equal, sexp]
+
+      let invariant x =
+        let@ () = Invariant.invariant [%here] x [%sexp_of: t] in
+        match x with
+        | Var _ -> ()
+        | _ -> fail "non-var: %a" Sexp.pp_hum (sexp_of_t x) ()
+
+      let make ~id ~name = Var {id; name} |> check invariant
+      let id = function Var v -> v.id | x -> violates invariant x
+      let name = function Var v -> v.name | x -> violates invariant x
+    end
+
+    include Var0.Make (T)
+
+    let of_ v = v |> check T.invariant
+    let of_trm = function Var _ as v -> Some v | _ -> None
+  end
 
   (* nul-terminated string value represented by a concatenation *)
   let string_of_concat xs =
@@ -133,7 +141,7 @@ end = struct
     let rec pp fs trm =
       let pf fmt = pp_boxed fs fmt in
       match trm with
-      | Var _ as v -> Var.ppx strength fs (Var.of_ v)
+      | Var _ as v -> Var1.ppx strength fs (Var1.of_ v)
       | Z z -> Trace.pp_styled `Magenta "%a" fs Z.pp z
       | Q q -> Trace.pp_styled `Magenta "%a" fs Q.pp q
       | Arith a -> Arith.ppx (ppx strength) fs a
@@ -342,7 +350,7 @@ end = struct
 
   let rec iter_vars e ~f =
     match e with
-    | Var _ as v -> f (Var.of_ v)
+    | Var _ as v -> f (Var1.of_ v)
     | Z _ | Q _ -> ()
     | Splat x -> iter_vars ~f x
     | Sized {seq= x; siz= y} ->
@@ -359,6 +367,7 @@ end = struct
 end
 
 include Trm
+module Var = Var1
 
 module Set = struct
   include Set.Make (Trm)
@@ -377,8 +386,6 @@ module Map = struct
 end
 
 type arith = Arith.t
-
-include Trm
 
 let pp_diff fs (x, y) = Format.fprintf fs "-- %a ++ %a" pp x pp y
 
