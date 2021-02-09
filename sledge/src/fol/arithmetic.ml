@@ -15,13 +15,9 @@ module Representation
     (Trm : INDETERMINATE with type var := Var.t) =
 struct
   module Prod = struct
-    include Multiset.Make
-              (Int)
-              (struct
-                type t = Trm.trm [@@deriving compare, equal, sexp]
-              end)
+    include Multiset.Make (Int) (Trm)
 
-    let t_of_sexp = t_of_sexp Trm.trm_of_sexp
+    let t_of_sexp = t_of_sexp Trm.t_of_sexp
   end
 
   module Mono = struct
@@ -88,14 +84,10 @@ struct
     let t_of_sexp = t_of_sexp Mono.t_of_sexp
   end
 
-  module Poly = struct
-    type t = Sum.t [@@deriving compare, equal, sexp]
-    type trm = Trm.trm
-  end
-
+  module Poly = Sum
   include Poly
 
-  module Make (Embed : EMBEDDING with type trm := Trm.trm and type t := t) =
+  module Make (Embed : EMBEDDING with type trm := Trm.t and type t := t) =
   struct
     include Poly
 
@@ -167,7 +159,7 @@ struct
 
     (* projections and embeddings *)
 
-    type kind = Trm of trm | Const of Q.t | Interpreted | Uninterpreted
+    type kind = Trm of Trm.t | Const of Q.t | Interpreted | Uninterpreted
 
     let classify poly =
       match Sum.classify poly with
@@ -209,7 +201,7 @@ struct
       (** Monomials [Mono.t] have [trm] indeterminates, which include, via
           [get_arith], polynomials [t] over monomials themselves. To avoid
           redundant representations, singleton polynomials are flattened. *)
-      let of_trm : ?power:int -> trm -> t =
+      let of_trm : ?power:int -> Trm.t -> t =
        fun ?(power = 1) base ->
         [%trace]
           ~call:(fun {pf} -> pf "@ %a^%i" Trm.pp base power)

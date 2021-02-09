@@ -83,11 +83,11 @@ end
 (** Indeterminate terms, treated as atomic / variables except when they can
     be flattened using [EMBEDDING.get_arith]. *)
 module type INDETERMINATE = sig
-  type trm [@@deriving compare, equal, sexp]
+  type t [@@deriving compare, equal, sexp]
   type var
 
-  val pp : trm pp
-  val vars : trm -> var iter
+  val pp : t pp
+  val vars : t -> var iter
 end
 
 (** An embedding of arithmetic terms [t] into indeterminates [trm]. *)

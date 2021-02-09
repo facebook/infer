@@ -13,4 +13,4 @@ include module type of Arithmetic_intf
 module Representation
     (Var : VAR)
     (Indeterminate : INDETERMINATE with type var := Var.t) :
-  REPRESENTATION with type var := Var.t with type trm := Indeterminate.trm
+  REPRESENTATION with type var := Var.t with type trm := Indeterminate.t

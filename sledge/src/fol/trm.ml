@@ -40,13 +40,7 @@ end
 
 and Arith0 :
   (Arithmetic.REPRESENTATION with type var := Var.t with type trm := Trm.t) =
-  Arithmetic.Representation
-    (Var)
-    (struct
-      include Trm
-
-      type trm = t [@@deriving compare, equal, sexp]
-    end)
+  Arithmetic.Representation (Var) (Trm)
 
 and Arith : (Arithmetic.S with type trm := Trm.t with type t = Arith0.t) =
 struct
