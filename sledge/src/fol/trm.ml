@@ -364,16 +364,12 @@ end = struct
   let vars e = Iter.from_labelled_iter (iter_vars e)
 end
 
-module T = struct
-  type t = Trm.t [@@deriving compare, sexp]
-
-  let pp = Trm.pp
-end
+include Trm
 
 module Set = struct
-  include Set.Make (T)
-  include Provide_of_sexp (T)
-  include Provide_pp (T)
+  include Set.Make (Trm)
+  include Provide_of_sexp (Trm)
+  include Provide_pp (Trm)
 
   let of_vars : Var.Set.t -> t =
    fun vs ->
@@ -382,8 +378,8 @@ module Set = struct
 end
 
 module Map = struct
-  include Map.Make (T)
-  include Provide_of_sexp (T)
+  include Map.Make (Trm)
+  include Provide_of_sexp (Trm)
 end
 
 type arith = Arith.t
