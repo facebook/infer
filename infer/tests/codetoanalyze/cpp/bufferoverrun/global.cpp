@@ -11,6 +11,12 @@ void access_constant_global_Bad() {
   a[ConstantGlobal[0]] = 3;
 }
 
+void access_via_assignment_constant_global_Bad_FN() {
+  int a[5];
+  const int* arr = ConstantGlobal;
+  a[arr[0]] = 3;
+}
+
 static int StaticGlobal[][3] = {
     {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
 
