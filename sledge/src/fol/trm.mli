@@ -25,6 +25,8 @@ type t = private
   | Apply of Funsym.t * t array
 [@@deriving compare, equal, sexp]
 
+module Arith : Arithmetic.S with type trm := t with type t = arith
+
 module Var : sig
   type trm := t
 
@@ -33,8 +35,6 @@ module Var : sig
   val of_ : trm -> t
   val of_trm : trm -> t option
 end
-
-module Arith : Arithmetic.S with type trm := t with type t = arith
 
 module Set : sig
   include Set.S with type elt := t

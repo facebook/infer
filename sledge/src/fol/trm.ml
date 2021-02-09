@@ -94,27 +94,6 @@ end = struct
     | Apply of Funsym.t * t array
   [@@deriving compare, equal, sexp]
 
-  module Var1 = struct
-    module T = struct
-      type nonrec t = t [@@deriving compare, equal, sexp]
-
-      let invariant x =
-        let@ () = Invariant.invariant [%here] x [%sexp_of: t] in
-        match x with
-        | Var _ -> ()
-        | _ -> fail "non-var: %a" Sexp.pp_hum (sexp_of_t x) ()
-
-      let make ~id ~name = Var {id; name} |> check invariant
-      let id = function Var v -> v.id | x -> violates invariant x
-      let name = function Var v -> v.name | x -> violates invariant x
-    end
-
-    include Var0.Make (T)
-
-    let of_ v = v |> check T.invariant
-    let of_trm = function Var _ as v -> Some v | _ -> None
-  end
-
   (* nul-terminated string value represented by a concatenation *)
   let string_of_concat xs =
     let exception Not_a_string in
@@ -173,6 +152,27 @@ end = struct
     pp fs trm
 
   let pp = ppx (fun _ -> None)
+
+  module Var1 = struct
+    module T = struct
+      type nonrec t = t [@@deriving compare, equal, sexp]
+
+      let invariant x =
+        let@ () = Invariant.invariant [%here] x [%sexp_of: t] in
+        match x with
+        | Var _ -> ()
+        | _ -> fail "non-var: %a" Sexp.pp_hum (sexp_of_t x) ()
+
+      let make ~id ~name = Var {id; name} |> check invariant
+      let id = function Var v -> v.id | x -> violates invariant x
+      let name = function Var v -> v.name | x -> violates invariant x
+    end
+
+    include Var0.Make (T)
+
+    let of_ v = v |> check T.invariant
+    let of_trm = function Var _ as v -> Some v | _ -> None
+  end
 
   let invariant e =
     let@ () = Invariant.invariant [%here] e [%sexp_of: t] in
