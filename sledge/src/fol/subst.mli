@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Var_intf
+(** Renaming Substitutions: injective maps from variables to variables *)
 
-(** Variables, parameterized over their representation *)
-module Make (R : REPR) : VAR with type t = R.t
+include module type of Subst_intf
+
+module Make (Var : VAR) :
+  S with type var := Var.t with type set := Var.Set.t

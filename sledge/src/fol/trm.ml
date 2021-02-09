@@ -54,7 +54,7 @@ and Trm : sig
   module Var1 : sig
     type trm := t
 
-    include Var_intf.VAR with type t = private trm
+    include Var_intf.S with type t = private trm
 
     val of_ : trm -> t
     val of_trm : trm -> t option
@@ -153,9 +153,18 @@ end = struct
 
   let pp = ppx (fun _ -> None)
 
+  (* Define variables as a subtype of terms *)
   module Var1 = struct
-    module T = struct
-      type nonrec t = t [@@deriving compare, equal, sexp]
+    module V = struct
+      module T = struct
+        type nonrec t = t [@@deriving compare, equal, sexp]
+        type strength = t -> [`Universal | `Existential | `Anonymous] option
+
+        let pp = pp
+        let ppx = ppx
+      end
+
+      include T
 
       let invariant x =
         let@ () = Invariant.invariant [%here] x [%sexp_of: t] in
@@ -166,12 +175,45 @@ end = struct
       let make ~id ~name = Var {id; name} |> check invariant
       let id = function Var v -> v.id | x -> violates invariant x
       let name = function Var v -> v.name | x -> violates invariant x
+
+      module Set = struct
+        module S = NS.Set.Make (T)
+        include S
+        include Provide_of_sexp (T)
+        include Provide_pp (T)
+
+        let ppx strength vs = S.pp_full (ppx strength) vs
+
+        let pp_xs fs xs =
+          if not (is_empty xs) then
+            Format.fprintf fs "@<2>∃ @[%a@] .@;<1 2>" pp xs
+      end
+
+      module Map = struct
+        include NS.Map.Make (T)
+        include Provide_of_sexp (T)
+      end
+
+      let fresh name ~wrt =
+        let max =
+          match Set.max_elt wrt with None -> 0 | Some m -> max 0 (id m)
+        in
+        let x' = make ~id:(max + 1) ~name in
+        (x', Set.add x' wrt)
+
+      let freshen v ~wrt = fresh (name v) ~wrt
+
+      let program ?(name = "") ~id =
+        assert (id > 0) ;
+        make ~id:(-id) ~name
+
+      let identified ~name ~id = make ~id ~name
+      let of_ v = v |> check invariant
+      let of_trm = function Var _ as v -> Some v | _ -> None
     end
 
-    include Var0.Make (T)
-
-    let of_ v = v |> check T.invariant
-    let of_trm = function Var _ as v -> Some v | _ -> None
+    include V
+    module Subst = Subst.Make (V)
   end
 
   let invariant e =

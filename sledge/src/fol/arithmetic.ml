@@ -7,11 +7,10 @@
 
 (** Arithmetic terms *)
 
-open Var_intf
 include Arithmetic_intf
 
 module Representation
-    (Var : VAR)
+    (Var : Var_intf.S)
     (Trm : INDETERMINATE with type var := Var.t) =
 struct
   module Prod = struct

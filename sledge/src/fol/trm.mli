@@ -30,7 +30,7 @@ module Arith : Arithmetic.S with type trm := t with type t = arith
 module Var : sig
   type trm := t
 
-  include Var_intf.VAR with type t = private trm
+  include Var_intf.S with type t = private trm
 
   val of_ : trm -> t
   val of_trm : trm -> t option
