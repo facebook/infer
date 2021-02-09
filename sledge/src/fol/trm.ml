@@ -7,10 +7,6 @@
 
 (** Terms *)
 
-let pp_boxed fs fmt =
-  Format.pp_open_box fs 2 ;
-  Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
-
 (** Representation of Arithmetic terms *)
 module rec Arith0 :
   (Arithmetic.REPRESENTATION
@@ -139,9 +135,21 @@ end = struct
 
   let rec ppx strength fs trm =
     let rec pp fs trm =
+      let pp_boxed fs fmt =
+        Format.pp_open_box fs 2 ;
+        Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
+      in
       let pf fmt = pp_boxed fs fmt in
       match trm with
-      | Var _ as v -> Var1.ppx strength fs (Var1.of_ v)
+      | Var {id; name} -> (
+          if id < 0 then Trace.pp_styled `Bold "%%%s!%i" fs name (-id)
+          else
+            match strength trm with
+            | None -> Format.fprintf fs "%%%s_%i" name id
+            | Some `Universal -> Trace.pp_styled `Bold "%%%s_%i" fs name id
+            | Some `Existential ->
+                Trace.pp_styled `Cyan "%%%s_%i" fs name id
+            | Some `Anonymous -> Trace.pp_styled `Cyan "_" fs )
       | Z z -> Trace.pp_styled `Magenta "%a" fs Z.pp z
       | Q q -> Trace.pp_styled `Magenta "%a" fs Q.pp q
       | Arith a -> Arith.ppx (ppx strength) fs a
