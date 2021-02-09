@@ -10,10 +10,10 @@
 open! NS0
 include Multiset_intf
 
-module Make
-    (Mul : MULTIPLICITY) (Elt : sig
-      type t [@@deriving compare, sexp_of]
-    end) =
+module Make (Elt : sig
+  type t [@@deriving compare, sexp_of]
+end)
+(Mul : MULTIPLICITY) =
 struct
   module M = Map.Make (Elt)
 

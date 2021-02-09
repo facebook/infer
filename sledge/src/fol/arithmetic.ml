@@ -14,7 +14,7 @@ module Representation
     (Trm : INDETERMINATE with type var := Var.t) =
 struct
   module Prod = struct
-    include Multiset.Make (Int) (Trm)
+    include Multiset.Make (Trm) (Int)
 
     let t_of_sexp = t_of_sexp Trm.t_of_sexp
   end
@@ -78,7 +78,7 @@ struct
   end
 
   module Sum = struct
-    include Multiset.Make (Q) (Mono)
+    include Multiset.Make (Mono) (Q)
 
     let t_of_sexp = t_of_sexp Mono.t_of_sexp
   end
