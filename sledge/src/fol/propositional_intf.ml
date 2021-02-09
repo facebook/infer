@@ -7,10 +7,6 @@
 
 (** Propositional formulas *)
 
-module type TERM = sig
-  type t [@@deriving compare, equal, sexp]
-end
-
 (** Formulas, built from literals with predicate symbols from various
     theories, and propositional constants and connectives. Denote sets of
     structures. *)
@@ -57,9 +53,4 @@ module type FORMULA_SET = sig
   include Set.S
 
   val t_of_sexp : Sexp.t -> t
-end
-
-module type MAKE = functor (Trm : TERM) -> sig
-  module rec Fml : (FORMULA with type trm := Trm.t with type set := Fmls.t)
-  and Fmls : (FORMULA_SET with type elt := Fml.t)
 end

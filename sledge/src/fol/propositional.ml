@@ -9,7 +9,10 @@
 
 include Propositional_intf
 
-module Make (Trm : TERM) = struct
+module Make (Trm : sig
+  type t [@@deriving compare, equal, sexp]
+end) =
+struct
   (** Sets of formulas *)
   module rec Fmls : (FORMULA_SET with type elt := Fml.t) = struct
     module T = struct
