@@ -268,6 +268,12 @@ let abduction_case_not_implemented =
   register_hidden ~id:"Abduction_case_not_implemented" Error Biabduction
 
 
+let arbitrary_code_execution_under_lock =
+  register ~id:"ARBITRARY_CODE_EXECUTION_UNDER_LOCK" ~hum:"Arbitrary Code Execution Under lock"
+    Error Starvation
+    ~user_documentation:[%blob "../../documentation/issues/ARBITRARY_CODE_EXECUTION_UNDER_LOCK.md"]
+
+
 let array_of_pointsto = register_hidden ~id:"Array_of_pointsto" Error Biabduction
 
 let array_out_of_bounds_l1 =

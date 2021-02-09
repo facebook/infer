@@ -59,8 +59,9 @@ module Event : sig
   type t =
     | LockAcquire of {locks: Lock.t list; thread: ThreadDomain.t}
     | MayBlock of {callee: Procname.t; severity: StarvationModels.severity; thread: ThreadDomain.t}
-    | StrictModeCall of {callee: Procname.t; thread: ThreadDomain.t}
     | MonitorWait of {lock: Lock.t; thread: ThreadDomain.t}
+    | MustNotOccurUnderLock of {callee: Procname.t; thread: ThreadDomain.t}
+    | StrictModeCall of {callee: Procname.t; thread: ThreadDomain.t}
   [@@deriving compare]
 
   val describe : F.formatter -> t -> unit
@@ -197,6 +198,8 @@ val wait_on_monitor : loc:Location.t -> FormalMap.t -> HilExp.t list -> t -> t
 val future_get : callee:Procname.t -> loc:Location.t -> HilExp.t list -> t -> t
 
 val strict_mode_call : callee:Procname.t -> loc:Location.t -> t -> t
+
+val arbitrary_code_execution : callee:Procname.t -> loc:Location.t -> t -> t
 
 val add_guard :
      acquire_now:bool

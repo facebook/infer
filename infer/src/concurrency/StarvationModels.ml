@@ -416,3 +416,9 @@ let is_java_main_method (pname : Procname.t) =
       && String.equal "main" (Procname.get_method pname)
       && Typ.equal StdTyp.void (Procname.Java.get_return_typ java_pname)
       && check_main_args (Procname.Java.get_parameters java_pname)
+
+
+let may_execute_arbitrary_code =
+  let open MethodMatcher in
+  of_record
+    {default with classname= "com.google.common.util.concurrent.SettableFuture"; methods= ["set"]}

@@ -69,6 +69,8 @@ val set_enabled : t -> bool -> unit
 
 val abduction_case_not_implemented : t
 
+val arbitrary_code_execution_under_lock : t
+
 val array_of_pointsto : t
 
 val array_out_of_bounds_l1 : t

@@ -191,8 +191,9 @@ module Event = struct
   type t =
     | LockAcquire of {locks: Lock.t list; thread: ThreadDomain.t}
     | MayBlock of {callee: Procname.t; severity: StarvationModels.severity; thread: ThreadDomain.t}
-    | StrictModeCall of {callee: Procname.t; thread: ThreadDomain.t}
     | MonitorWait of {lock: Lock.t; thread: ThreadDomain.t}
+    | MustNotOccurUnderLock of {callee: Procname.t; thread: ThreadDomain.t}
+    | StrictModeCall of {callee: Procname.t; thread: ThreadDomain.t}
   [@@deriving compare]
 
   let pp fmt = function
@@ -207,20 +208,26 @@ module Event = struct
         F.fprintf fmt "StrictModeCall(%a, %a)" Procname.pp callee ThreadDomain.pp thread
     | MonitorWait {lock; thread} ->
         F.fprintf fmt "MonitorWait(%a, %a)" Lock.pp lock ThreadDomain.pp thread
+    | MustNotOccurUnderLock {callee; thread} ->
+        F.fprintf fmt "MustNotOccurUnderLock(%a, %a)" Procname.pp callee ThreadDomain.pp thread
 
 
   let describe fmt elem =
     match elem with
     | LockAcquire {locks} ->
         Pp.comma_seq Lock.pp_locks fmt locks
-    | MayBlock {callee} | StrictModeCall {callee} ->
+    | MayBlock {callee} | StrictModeCall {callee} | MustNotOccurUnderLock {callee} ->
         F.fprintf fmt "calls %a" describe_pname callee
     | MonitorWait {lock} ->
         F.fprintf fmt "calls `wait` on %a" Lock.describe lock
 
 
   let get_thread = function
-    | LockAcquire {thread} | MayBlock {thread} | StrictModeCall {thread} | MonitorWait {thread} ->
+    | LockAcquire {thread}
+    | MayBlock {thread}
+    | MonitorWait {thread}
+    | MustNotOccurUnderLock {thread}
+    | StrictModeCall {thread} ->
         thread
 
 
@@ -232,10 +239,12 @@ module Event = struct
           LockAcquire {lock_acquire with thread}
       | MayBlock may_block ->
           MayBlock {may_block with thread}
-      | StrictModeCall strict_mode_call ->
-          StrictModeCall {strict_mode_call with thread}
       | MonitorWait monitor_wait ->
           MonitorWait {monitor_wait with thread}
+      | MustNotOccurUnderLock not_under_lock ->
+          MustNotOccurUnderLock {not_under_lock with thread}
+      | StrictModeCall strict_mode_call ->
+          StrictModeCall {strict_mode_call with thread}
 
 
   let apply_caller_thread caller_thread event =
@@ -254,11 +263,13 @@ module Event = struct
 
   let make_object_wait lock thread = MonitorWait {lock; thread}
 
+  let make_arbitrary_code_exec callee thread = MustNotOccurUnderLock {callee; thread}
+
   let get_acquired_locks = function LockAcquire {locks} -> locks | _ -> []
 
   let apply_subst subst event =
     match event with
-    | MayBlock _ | StrictModeCall _ ->
+    | MayBlock _ | StrictModeCall _ | MustNotOccurUnderLock _ ->
         Some event
     | MonitorWait {lock; thread} -> (
       match Lock.apply_subst subst lock with
@@ -803,6 +814,11 @@ let future_get ~callee ~loc actuals astate =
 
 let strict_mode_call ~callee ~loc astate =
   let new_event = Event.make_strict_mode_call callee astate.thread in
+  make_call_with_event new_event ~loc astate
+
+
+let arbitrary_code_execution ~callee ~loc astate =
+  let new_event = Event.make_arbitrary_code_exec callee astate.thread in
   make_call_with_event new_event ~loc astate
 
 

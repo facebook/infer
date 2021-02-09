@@ -85,7 +85,8 @@ OPTIONS
            disabling issue types does not make the corresponding checker not
            run.           Available issue types are as follows:
              
-           ARRAY_OUT_OF_BOUNDS_L1 (disabled by default),
+           ARBITRARY_CODE_EXECUTION_UNDER_LOCK (enabled by default),
+             ARRAY_OUT_OF_BOUNDS_L1 (disabled by default),
              ARRAY_OUT_OF_BOUNDS_L2 (disabled by default),
              ARRAY_OUT_OF_BOUNDS_L3 (disabled by default),
              ASSIGN_POINTER_WARNING (enabled by default),
