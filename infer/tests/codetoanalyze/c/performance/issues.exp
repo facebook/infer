@@ -27,6 +27,7 @@ codetoanalyze/c/performance/exit.c, compute_exit_unreachable, 0, EXECUTION_TIME_
 codetoanalyze/c/performance/exit.c, exit_unreachable, 0, EXECUTION_TIME_UNREACHABLE_AT_EXIT, no_bucket, ERROR, [Unreachable node]
 codetoanalyze/c/performance/invariant.c, while_infinite_FN, 2, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, [Here]
 codetoanalyze/c/performance/loops.c, if_in_loop, 5, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [<LHS trace>,Assignment,Binary operation: ([0, +oo] + 1):signed32]
+codetoanalyze/c/performance/loops.c, loop_use_global_vars, 1, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, [Here]
 codetoanalyze/c/performance/switch_continue.c, test_switch_FN, 3, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, [Here]
 codetoanalyze/c/performance/switch_continue.c, unroll_loop, 6, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [<LHS trace>,Assignment,Binary operation: ([0, +oo] + 1):signed32]
 codetoanalyze/c/performance/switch_continue.c, unroll_loop, 9, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, [Here]

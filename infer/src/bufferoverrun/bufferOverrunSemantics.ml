@@ -152,7 +152,7 @@ let rec eval : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
         Mem.find_stack (Var.of_id id |> Loc.of_var) mem
     | Exp.Lvar pvar ->
         let loc = Loc.of_pvar pvar in
-        if Mem.is_stack_loc loc mem then Mem.find loc mem else Val.of_loc loc
+        if Mem.is_stack_loc loc mem || Loc.is_global loc then Mem.find loc mem else Val.of_loc loc
     | Exp.UnOp (uop, e, _) ->
         eval_unop integer_type_widths uop e mem
     | Exp.BinOp (bop, e1, e2) -> (

@@ -11,7 +11,7 @@ void access_constant_global_Bad() {
   a[ConstantGlobal[0]] = 3;
 }
 
-void access_via_assignment_constant_global_Bad_FN() {
+void access_via_assignment_constant_global_Bad() {
   int a[5];
   const int* arr = ConstantGlobal;
   a[arr[0]] = 3;

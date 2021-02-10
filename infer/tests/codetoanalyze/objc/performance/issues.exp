@@ -45,6 +45,7 @@ codetoanalyze/objc/performance/exit.m, exit_unreachable, 0, EXECUTION_TIME_UNREA
 codetoanalyze/objc/performance/field_access.m, create_common_person_constant, 2, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [Call,Parameter `self->_bank_account`,Call,<LHS trace>,Parameter `self->_bank_account`,Call,Parameter `self->_bank_account`,Assignment,<RHS trace>,Parameter `income`,Binary operation: ([0, +oo] + 100):unsigned64 by call to `Person.add_income_constant:` ]
 codetoanalyze/objc/performance/invariant.m, while_infinite_FN, 2, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, [Here]
 codetoanalyze/objc/performance/loops.m, if_in_loop, 5, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [<LHS trace>,Assignment,Binary operation: ([0, +oo] + 1):signed32]
+codetoanalyze/objc/performance/loops.m, loop_use_global_vars, 1, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, [Here]
 codetoanalyze/objc/performance/switch_continue.m, test_switch_FN, 3, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, [Here]
 codetoanalyze/objc/performance/switch_continue.m, unroll_loop, 6, INTEGER_OVERFLOW_L5, no_bucket, ERROR, [<LHS trace>,Assignment,Binary operation: ([0, +oo] + 1):signed32]
 codetoanalyze/objc/performance/switch_continue.m, unroll_loop, 9, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, [Here]

@@ -62,7 +62,7 @@ codetoanalyze/c/performance/loops.c, do_while_independent_of_p, 227,  OnUIThread
 codetoanalyze/c/performance/loops.c, if_in_loop, 323,  OnUIThread:false, []
 codetoanalyze/c/performance/loops.c, if_out_loop, 514,  OnUIThread:false, []
 codetoanalyze/c/performance/loops.c, larger_state_FN, 1004,  OnUIThread:false, []
-codetoanalyze/c/performance/loops.c, loop_use_global_vars, 3 + 4 ⋅ x + 2 ⋅ (1+max(0, x)),  OnUIThread:false, [{1+max(0, x)},Loop,{x},Loop]
+codetoanalyze/c/performance/loops.c, loop_use_global_vars, 2 + 4 ⋅ x + 2 ⋅ (1+max(0, x)),  OnUIThread:false, [{1+max(0, x)},Loop,{x},Loop]
 codetoanalyze/c/performance/loops.c, ptr_cmp, 4 + 5 ⋅ size + 2 ⋅ (2+max(-1, size)),  OnUIThread:false, [{2+max(-1, size)},Loop,{size},Loop]
 codetoanalyze/c/performance/purity.c, loop, 6006 + 1000 ⋅ |fun_ptr|,  OnUIThread:false, []
 codetoanalyze/c/performance/switch_continue.c, test_switch_FN, 600,  OnUIThread:false, []
