@@ -147,14 +147,14 @@ module TransferFunctions = struct
     let (node_id : InstrCFG.Node.id) =
       CFG.Node.underlying_node node |> InstrCFG.last_of_underlying_node |> InstrCFG.Node.id
     in
-    let inferbo_mem =
-      Option.value_exn (BufferOverrunAnalysis.extract_post node_id inferbo_invariant_map)
-    in
-    match instr with
-    | Assign (ae, _, _)
+    let inferbo_mem = BufferOverrunAnalysis.extract_post node_id inferbo_invariant_map in
+    if Option.is_none inferbo_mem then
+      debug "Inferbo memory at %a was not found\n" InstrCFG.Node.pp_id node_id ;
+    match (instr, inferbo_mem) with
+    | Assign (ae, _, _), Some inferbo_mem
       when is_heap_access ae || (Language.curr_language_is Clang && modified_global ae) ->
         track_modified_params inferbo_mem formals ae |> Domain.join astate
-    | Call (_, Direct called_pname, args, _, _) ->
+    | Call (_, Direct called_pname, args, _, _), Some inferbo_mem ->
         Domain.join astate
           ( match PurityModels.ProcName.dispatch tenv called_pname with
           | Some callee_summary ->
@@ -167,11 +167,11 @@ module TransferFunctions = struct
             | None ->
                 if Procname.is_constructor called_pname then Domain.pure else Domain.impure_global )
           )
-    | Call (_, Indirect _, _, _, _) ->
+    | Call (_, Indirect _, _, _, _), _ ->
         (* This should never happen in Java *)
         debug "Unexpected indirect call %a" HilInstr.pp instr ;
         Top
-    | _ ->
+    | _, _ ->
         astate
 
 
