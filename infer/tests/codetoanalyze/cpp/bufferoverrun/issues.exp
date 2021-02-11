@@ -53,6 +53,8 @@ codetoanalyze/cpp/bufferoverrun/global.cpp, access_constant_global_Bad, 2, BUFFE
 codetoanalyze/cpp/bufferoverrun/global.cpp, access_static_global1_Bad, 0, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 10 Size: 5]
 codetoanalyze/cpp/bufferoverrun/global.cpp, access_static_global2_Bad, 0, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 10 Size: 3]
 codetoanalyze/cpp/bufferoverrun/global.cpp, access_via_assignment_constant_global_Bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Assignment,<Length trace>,Array declaration,Array access: Offset: 5 Size: 5]
+codetoanalyze/cpp/bufferoverrun/global.cpp, access_via_class_field_assignment_constant_global_Bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Call,Parameter `x`,Assignment,Call,Parameter `__param_0->p`,Assignment,<Length trace>,Array declaration,Array access: Offset: 8 Size: 5]
+codetoanalyze/cpp/bufferoverrun/global.cpp, access_via_class_field_constant_global_Bad, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Call,Parameter `x`,Assignment,<Length trace>,Array declaration,Array access: Offset: 8 Size: 5]
 codetoanalyze/cpp/bufferoverrun/realloc.cpp, realloc_Bad, 4, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Assignment,<Length trace>,Set array size,Assignment,Array access: Offset: 5 Size: 5]
 codetoanalyze/cpp/bufferoverrun/realloc.cpp, realloc_flexible_array_Bad, 4, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Set array size,Array access: Offset: 7 Size: 5]
 codetoanalyze/cpp/bufferoverrun/realloc.cpp, realloc_struct1_Bad, 4, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Assignment,<Length trace>,Set array size,Assignment,Array access: Offset: 5 Size: 5]

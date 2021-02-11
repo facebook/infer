@@ -2020,8 +2020,18 @@ module MemReach = struct
   let init : get_summary -> OndemandEnv.t -> t =
    fun get_summary oenv ->
     let find_global_array loc =
-      Option.bind (Loc.get_global_array_initializer loc) ~f:(fun pname ->
-          Option.bind (get_summary pname) ~f:(find_opt loc) )
+      let open IOption.Let_syntax in
+      let* pname = Loc.get_global_array_initializer loc in
+      let* m = get_summary pname in
+      match loc with
+      | BoField.Field {prefix; fn} when Loc.is_global prefix ->
+          (* This case handles field access of global array:
+             n$0 = *x[n].field *)
+          let+ v = find_opt prefix m in
+          let locs = Val.get_all_locs v |> PowLoc.append_field ~fn in
+          find_set locs m
+      | _ ->
+          find_opt loc m
     in
     { stack_locs= StackLocs.bot
     ; mem_pure= MemPure.bot
