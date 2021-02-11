@@ -466,6 +466,11 @@ let rec set_uninitialized_post tenv src typ location (post : PostDomain.t) =
   | Tint _ | Tfloat _ | Tptr _ ->
       let {stack; attrs} = (post :> base_domain) in
       let stack, addr = add_edge_on_src src location stack in
+      let attrs =
+        if Config.pulse_isl then
+          BaseAddressAttributes.add_one addr (MustBeValid (Immediate {location; history= []})) attrs
+        else attrs
+      in
       let attrs = BaseAddressAttributes.add_one addr Uninitialized attrs in
       PostDomain.update ~stack ~attrs post
   | Tstruct typ_name when UninitBlocklist.is_blocklisted_struct typ_name ->
