@@ -1075,11 +1075,6 @@ module ProcNameDispatcher = struct
     let abort_matchers =
       get_cpp_matchers ~model:(fun _ -> Misc.early_exit) Config.pulse_model_abort
     in
-    let return_nonnull_matchers =
-      get_cpp_matchers
-        ~model:(fun m -> Misc.return_positive ~desc:m)
-        Config.pulse_model_return_nonnull
-    in
     let match_regexp_opt r_opt (_tenv, proc_name) _ =
       Option.exists r_opt ~f:(fun r ->
           let s = Procname.to_string proc_name in
@@ -1087,7 +1082,7 @@ module ProcNameDispatcher = struct
     in
     let map_context_tenv f (x, _) = f x in
     make_dispatcher
-      ( transfer_ownership_matchers @ abort_matchers @ return_nonnull_matchers
+      ( transfer_ownership_matchers @ abort_matchers
       @ [ +match_builtin BuiltinDecl.free <>$ capt_arg_payload $--> C.free
         ; +match_builtin BuiltinDecl.malloc <>$ capt_exp $--> C.malloc
         ; +match_builtin BuiltinDecl.__delete <>$ capt_arg_payload $--> Cplusplus.delete
@@ -1382,6 +1377,9 @@ module ProcNameDispatcher = struct
           <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; +match_builtin BuiltinDecl.__objc_alloc_no_fail <>$ capt_exp $--> ObjC.alloc_not_null
         ; -"NSObject" &:: "init" <>$ capt_arg_payload $--> Misc.id_first_arg
+        ; +match_regexp_opt Config.pulse_model_return_nonnull
+          &::.*--> Misc.return_positive
+                     ~desc:"modelled as returning not null due to configuration option"
         ; +match_regexp_opt Config.pulse_model_skip_pattern
           &::.*++> Misc.skip "modelled as skip due to configuration option" ] )
 end

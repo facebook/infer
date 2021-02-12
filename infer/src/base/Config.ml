@@ -1905,9 +1905,9 @@ and pulse_model_release_pattern =
 
 
 and pulse_model_return_nonnull =
-  CLOpt.mk_string_list ~long:"pulse-model-return-nonnull"
+  CLOpt.mk_string_opt ~long:"pulse-model-return-nonnull"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
-    "Methods that should be modelled as returning non-null in Pulse"
+    "Regex of methods that should be modelled as returning non-null in Pulse"
 
 
 and pulse_model_skip_pattern =
@@ -3137,7 +3137,7 @@ and pulse_model_alloc_pattern = Option.map ~f:Str.regexp !pulse_model_alloc_patt
 
 and pulse_model_release_pattern = Option.map ~f:Str.regexp !pulse_model_release_pattern
 
-and pulse_model_return_nonnull = RevList.to_list !pulse_model_return_nonnull
+and pulse_model_return_nonnull = Option.map ~f:Str.regexp !pulse_model_return_nonnull
 
 and pulse_model_skip_pattern = Option.map ~f:Str.regexp !pulse_model_skip_pattern
 
