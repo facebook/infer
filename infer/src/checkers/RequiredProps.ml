@@ -162,8 +162,7 @@ let satisfies_heuristic ~callee_pname ~callee_summary_opt tenv =
   (* If the method is build() or create() itself or doesn't contain a build() in
      its summary, we want to track it in the domain. *)
   let build_exists_in_callees =
-    Option.value_map ~default:false callee_summary_opt ~f:(fun sum ->
-        LithoDomain.Mem.contains_build sum )
+    Option.exists callee_summary_opt ~f:LithoDomain.Mem.contains_build
   in
   is_build_method callee_pname tenv
   || is_create_method callee_pname tenv

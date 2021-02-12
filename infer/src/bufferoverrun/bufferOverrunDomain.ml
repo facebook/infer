@@ -847,7 +847,7 @@ module MemPure = struct
         prev next
 
 
-  let is_rep_multi_loc l m = Option.value_map ~default:false (find_opt l m) ~f:MVal.get_rep_multi
+  let is_rep_multi_loc l m = Option.exists (find_opt l m) ~f:MVal.get_rep_multi
 
   (** Collect the location that was increased by one, i.e., [x -> x+1] *)
   let get_incr_locs m =
@@ -1204,7 +1204,7 @@ module AliasMap = struct
   let has_objc_collection_size_alias : Loc.t -> t -> bool =
    fun loc x ->
     AliasTargets.find_size_alias (find_loc loc x)
-    |> Option.value_map ~default:false ~f:Loc.is_objc_collection_internal_array
+    |> Option.exists ~f:Loc.is_objc_collection_internal_array
 
 
   let load : Ident.t -> Loc.t -> AliasTarget.t -> t -> t =

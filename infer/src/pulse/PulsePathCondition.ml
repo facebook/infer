@@ -403,8 +403,8 @@ let prune_binop ~negated bop lhs_op rhs_op ({is_unsat; bo_itvs= _; citvs; formul
 (** {2 Queries} *)
 
 let is_known_zero phi v =
-  CItvs.find_opt v phi.citvs |> Option.value_map ~default:false ~f:CItv.is_equal_to_zero
-  || BoItvs.find_opt v phi.bo_itvs |> Option.value_map ~default:false ~f:Itv.ItvPure.is_zero
+  CItvs.find_opt v phi.citvs |> Option.exists ~f:CItv.is_equal_to_zero
+  || BoItvs.find_opt v phi.bo_itvs |> Option.exists ~f:Itv.ItvPure.is_zero
   || Formula.is_known_zero phi.formula v
 
 

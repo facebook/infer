@@ -153,12 +153,11 @@ let get_must_be_initialized = get_attribute Attributes.get_must_be_initialized
 let std_vector_reserve address memory = add_one address Attribute.StdVectorReserve memory
 
 let is_end_of_collection address attrs =
-  Graph.find_opt address attrs |> Option.value_map ~default:false ~f:Attributes.is_end_of_collection
+  Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_end_of_collection
 
 
 let is_std_vector_reserved address attrs =
-  Graph.find_opt address attrs
-  |> Option.value_map ~default:false ~f:Attributes.is_std_vector_reserved
+  Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_std_vector_reserved
 
 
 let canonicalize ~get_var_repr attrs_map =

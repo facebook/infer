@@ -115,7 +115,7 @@ let is_freshly_captured source =
       |> SqliteUtils.check_result_code db ~log:"load bind source file" ;
       SqliteUtils.result_single_column_option ~finalize:false ~log:"SourceFiles.is_freshly_captured"
         db load_stmt
-      |> Option.value_map ~default:false ~f:deserialize_freshly_captured )
+      |> Option.exists ~f:deserialize_freshly_captured )
 
 
 let mark_all_stale () = DBWriter.mark_all_source_files_stale ()

@@ -1081,10 +1081,9 @@ module ProcNameDispatcher = struct
         Config.pulse_model_return_nonnull
     in
     let match_regexp_opt r_opt (_tenv, proc_name) _ =
-      Option.value_map ~default:false r_opt ~f:(fun r ->
+      Option.exists r_opt ~f:(fun r ->
           let s = Procname.to_string proc_name in
-          let r = Str.string_match r s 0 in
-          r )
+          Str.string_match r s 0 )
     in
     let map_context_tenv f (x, _) = f x in
     make_dispatcher
