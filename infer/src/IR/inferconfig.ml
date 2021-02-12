@@ -331,8 +331,7 @@ let load_filters () =
 let filters_from_inferconfig inferconfig : filters =
   let path_filter =
     let whitelist_filter : path_filter =
-      if List.is_empty inferconfig.whitelist then default_path_filter
-      else is_matching (List.map ~f:Str.regexp inferconfig.whitelist)
+      is_matching (List.map ~f:Str.regexp inferconfig.whitelist)
     in
     let blacklist_filter : path_filter =
       is_matching (List.map ~f:Str.regexp inferconfig.blacklist)
@@ -346,8 +345,8 @@ let filters_from_inferconfig inferconfig : filters =
     function
     | source_file ->
         whitelist_filter source_file
-        && (not (blacklist_filter source_file))
-        && not (blacklist_files_containing_filter source_file)
+        || (not (blacklist_filter source_file))
+           && not (blacklist_files_containing_filter source_file)
   in
   let error_filter = function
     | error_name ->
