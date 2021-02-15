@@ -326,7 +326,8 @@ module TransferFunctions = struct
         load_global_constant get_summary (id, typ) pvar location mem
           ~find_from_initializer:(fun callee_mem -> Dom.Mem.find (Loc.of_pvar pvar) callee_mem)
     | Load {id; e= Exp.Lindex (Exp.Lvar pvar, _); typ; loc= location}
-      when Pvar.is_compile_constant pvar || Pvar.is_ice pvar ->
+      when Pvar.is_compile_constant pvar || Pvar.is_ice pvar
+           || (Pvar.is_constant_array pvar && Pvar.is_const pvar) ->
         load_global_constant get_summary (id, typ) pvar location mem
           ~find_from_initializer:(fun callee_mem ->
             let locs = Dom.Mem.find (Loc.of_pvar pvar) callee_mem |> Dom.Val.get_all_locs in

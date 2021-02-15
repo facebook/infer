@@ -206,6 +206,8 @@ codetoanalyze/objc/performance/field_access.m, Test1.setX:, 3,  OnUIThread:false
 codetoanalyze/objc/performance/field_access.m, Test1.x, 3,  OnUIThread:false, []
 codetoanalyze/objc/performance/field_access.m, create_common_person_constant, 49,  OnUIThread:false, []
 codetoanalyze/objc/performance/field_access.m, iterate_upto_field_size_linear, 2 + 3 ⋅ test->_x.ub + 5 ⋅ (1+max(0, test->_x.ub)),  OnUIThread:false, [{1+max(0, test->_x.ub)},Loop,{test->_x.ub},Loop]
+codetoanalyze/objc/performance/global_test.m, __infer_globals_initializer_ConstantGlobal, 1,  OnUIThread:false, []
+codetoanalyze/objc/performance/global_test.m, access_constant_constant, 59,  OnUIThread:false, []
 codetoanalyze/objc/performance/instantiate.m, do_2_times_constant, 16,  OnUIThread:false, []
 codetoanalyze/objc/performance/instantiate.m, do_half_m2_times_quadratic, 2 + 4 ⋅ (m - 1) × m + 6 ⋅ m + 2 ⋅ m × (max(1, m)) + 2 ⋅ (1+max(0, m)),  OnUIThread:false, [{1+max(0, m)},Loop,{max(1, m)},Call to do_n_times,Loop,{m},Loop,{m},Loop,{m - 1},Call to do_n_times,Loop]
 codetoanalyze/objc/performance/instantiate.m, do_m2_times_quadratic, 2 + 6 ⋅ m + 4 ⋅ m × m + 2 ⋅ m × (1+max(0, m)) + 2 ⋅ (1+max(0, m)),  OnUIThread:false, [{1+max(0, m)},Loop,{1+max(0, m)},Call to do_n_times,Loop,{m},Call to do_n_times,Loop,{m},Loop]

@@ -139,12 +139,13 @@ let mk_sil_global_var {CFrontend_config.source_file} ?(mk_name = fun _ x -> x) d
     && (not var_decl_info.Clang_ast_t.vdi_is_static_data_member)
     && var_decl_info.Clang_ast_t.vdi_is_static
   in
+  let is_const = qt.Clang_ast_t.qt_is_const in
   let is_constant_array =
     Option.exists desugared_type ~f:(function Clang_ast_t.ConstantArrayType _ -> true | _ -> false)
   in
   Pvar.mk_global ~is_constexpr ~is_ice ~is_pod
     ~is_static_local:var_decl_info.Clang_ast_t.vdi_is_static_local ~is_static_global
-    ~is_constant_array ?translation_unit (mk_name name_string simple_name)
+    ~is_constant_array ?translation_unit (mk_name name_string simple_name) ~is_const
 
 
 let mk_sil_var trans_unit_ctx named_decl_info decl_info_qual_type_opt procname outer_procname =

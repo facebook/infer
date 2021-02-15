@@ -28,7 +28,8 @@ type pvar_kind =
       ; is_pod: bool
       ; is_static_local: bool
       ; is_static_global: bool
-      ; is_constant_array: bool }  (** global variable *)
+      ; is_constant_array: bool
+      ; is_const: bool }  (** global variable *)
   | Seed_var  (** variable used to store the initial value of formal parameters *)
 [@@deriving compare]
 
@@ -112,6 +113,8 @@ let is_static_local pv =
 let is_constant_array pv =
   match pv.pv_kind with Global_var {is_constant_array} -> is_constant_array | _ -> false
 
+
+let is_const pv = match pv.pv_kind with Global_var {is_const} -> is_const | _ -> false
 
 (** Check if a pvar is the special "this" var *)
 let is_this pvar = Mangled.is_this (get_name pvar)
@@ -243,8 +246,8 @@ let mk_callee (name : Mangled.t) (proc_name : Procname.t) : t =
 
 (** create a global variable with the given name *)
 let mk_global ?(is_constexpr = false) ?(is_ice = false) ?(is_pod = true) ?(is_static_local = false)
-    ?(is_static_global = false) ?(is_constant_array = false) ?translation_unit (name : Mangled.t) :
-    t =
+    ?(is_static_global = false) ?(is_constant_array = false) ?(is_const = false) ?translation_unit
+    (name : Mangled.t) : t =
   { pv_hash= name_hash name
   ; pv_name= name
   ; pv_kind=
@@ -255,7 +258,8 @@ let mk_global ?(is_constexpr = false) ?(is_ice = false) ?(is_pod = true) ?(is_st
         ; is_pod
         ; is_static_local
         ; is_static_global
-        ; is_constant_array } }
+        ; is_constant_array
+        ; is_const } }
 
 
 (** create a fresh temporary variable local to procedure [pname]. for use in the frontends only! *)
