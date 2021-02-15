@@ -862,7 +862,7 @@ let reporting {InterproceduralAnalysis.procedures; file_exe_env; analyze_file_de
       analyze_file_dependency procname
       |> Option.value_map ~default:report_map ~f:(fun (proc_desc, summary) ->
              let attributes = Procdesc.get_attributes proc_desc in
-             let tenv = Exe_env.get_tenv file_exe_env procname in
+             let tenv = Exe_env.get_proc_tenv file_exe_env procname in
              if should_report attributes then report_on_proc tenv attributes report_map summary
              else report_map )
     in

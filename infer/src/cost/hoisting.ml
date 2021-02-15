@@ -160,7 +160,7 @@ let report_errors proc_desc tenv err_log get_callee_purity reaching_defs_invaria
 let checker
     ({InterproceduralAnalysis.proc_desc; exe_env; err_log; analyze_dependency} as analysis_data) =
   let proc_name = Procdesc.get_proc_name proc_desc in
-  let tenv = Exe_env.get_tenv exe_env proc_name in
+  let tenv = Exe_env.get_proc_tenv exe_env proc_name in
   let integer_type_widths = Exe_env.get_integer_type_widths exe_env proc_name in
   let cfg = InstrCFG.from_pdesc proc_desc in
   (* computes reaching defs: node -> (var -> node set) *)

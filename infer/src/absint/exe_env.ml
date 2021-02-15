@@ -24,22 +24,22 @@ let new_file_data source =
       lazy (Option.first_some (Typ.IntegerWidths.load source) (Some Typ.IntegerWidths.java)) }
 
 
-let file_data_of_source table source =
-  match SourceFile.Hash.find_opt table source with
+type t = {proc_map: SourceFile.t Procname.Hash.t; file_map: file_data SourceFile.Hash.t}
+
+let file_data_of_source {file_map} source =
+  match SourceFile.Hash.find_opt file_map source with
   | Some file_data ->
       file_data
   | None ->
       let file_data = new_file_data source in
-      SourceFile.Hash.add table source file_data ;
+      SourceFile.Hash.add file_map source file_data ;
       file_data
 
-
-type t = {proc_map: SourceFile.t Procname.Hash.t; file_map: file_data SourceFile.Hash.t}
 
 let get_file_data exe_env pname =
   match Procname.Hash.find_opt exe_env.proc_map pname with
   | Some source ->
-      Some (file_data_of_source exe_env.file_map source)
+      Some (file_data_of_source exe_env source)
   | None -> (
     match Attributes.load pname with
     | None ->
@@ -47,7 +47,7 @@ let get_file_data exe_env pname =
         None
     | Some proc_attributes ->
         let source_file = proc_attributes.ProcAttributes.translation_unit in
-        let file_data = file_data_of_source exe_env.file_map source_file in
+        let file_data = file_data_of_source exe_env source_file in
         Procname.Hash.add exe_env.proc_map pname source_file ;
         Some file_data )
 
@@ -101,9 +101,17 @@ let get_column_value ~value_on_java ~file_data_to_value ~column_name exe_env pro
 
 
 (** return the type environment associated to the procedure *)
-let get_tenv =
+let get_proc_tenv =
   get_column_value ~value_on_java:java_global_tenv ~file_data_to_value:file_data_to_tenv
     ~column_name:"tenv"
+
+
+let get_sourcefile_tenv exe_env sourcefile =
+  match file_data_of_source exe_env sourcefile |> file_data_to_tenv with
+  | Some tenv ->
+      tenv
+  | None ->
+      L.die InternalError "get_sourcefile_tenv: tenv not found for %a" SourceFile.pp sourcefile
 
 
 (** return the integer type widths associated to the procedure *)

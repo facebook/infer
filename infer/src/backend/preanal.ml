@@ -461,7 +461,7 @@ end
 
 let do_preanalysis exe_env pdesc =
   let summary = Summary.OnDisk.reset pdesc in
-  let tenv = Exe_env.get_tenv exe_env (Procdesc.get_proc_name pdesc) in
+  let tenv = Exe_env.get_proc_tenv exe_env (Procdesc.get_proc_name pdesc) in
   let proc_name = Procdesc.get_proc_name pdesc in
   if Procname.is_java proc_name || Procname.is_csharp proc_name then
     InlineJavaSyntheticMethods.process pdesc ;

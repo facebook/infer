@@ -33,7 +33,7 @@ let iter_summary ~f exe_env (summary : Summary.t) =
   Payloads.starvation summary.payloads
   |> Option.iter ~f:(fun (payload : summary) ->
          let pname = Summary.get_proc_name summary in
-         let tenv = Exe_env.get_tenv exe_env pname in
+         let tenv = Exe_env.get_proc_tenv exe_env pname in
          if
            StarvationModels.is_java_main_method pname
            || ConcurrencyModels.is_android_lifecycle_method tenv pname
@@ -67,7 +67,7 @@ let report exe_env work_set =
     |> Option.fold ~init ~f:(fun acc summary ->
            let pdesc = Summary.get_proc_desc summary in
            let pattrs = Procdesc.get_attributes pdesc in
-           let tenv = Exe_env.get_tenv exe_env procname in
+           let tenv = Exe_env.get_proc_tenv exe_env procname in
            let acc =
              Starvation.report_on_pair
                ~analyze_ondemand:(fun pname ->

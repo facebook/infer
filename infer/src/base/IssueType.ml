@@ -617,8 +617,14 @@ let _global_variable_initialized_with_function_or_method_call =
         "../../documentation/issues/GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL.md"]
 
 
-let guardedby_violation_racerd =
+let guardedby_violation =
   register Warning ~id:"GUARDEDBY_VIOLATION" ~hum:"GuardedBy Violation" RacerD
+    ~user_documentation:[%blob "../../documentation/issues/GUARDEDBY_VIOLATION.md"]
+
+
+let guardedby_violation_nullsafe =
+  register Warning ~id:"GUARDEDBY_VIOLATION_NULLSAFE"
+    ~hum:"GuardedBy Violation in `@Nullsafe` Class" RacerD
     ~user_documentation:[%blob "../../documentation/issues/GUARDEDBY_VIOLATION.md"]
 
 
@@ -891,6 +897,12 @@ let symexec_memory_error =
 
 let thread_safety_violation =
   register Warning ~id:"THREAD_SAFETY_VIOLATION" RacerD
+    ~user_documentation:[%blob "../../documentation/issues/THREAD_SAFETY_VIOLATION.md"]
+
+
+let thread_safety_violation_nullsafe =
+  register Warning ~id:"THREAD_SAFETY_VIOLATION_NULLSAFE" RacerD
+    ~hum:"Thread Safety Violation in `@Nullsafe` Class"
     ~user_documentation:[%blob "../../documentation/issues/THREAD_SAFETY_VIOLATION.md"]
 
 

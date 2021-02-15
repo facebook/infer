@@ -17,7 +17,7 @@ let () =
 
 
 let mk_interprocedural_t ~f_analyze_dep ~get_payload exe_env summary
-    ?(tenv = Exe_env.get_tenv exe_env (Summary.get_proc_name summary)) () =
+    ?(tenv = Exe_env.get_proc_tenv exe_env (Summary.get_proc_name summary)) () =
   let analyze_dependency proc_name =
     let summary = Ondemand.analyze_proc_name exe_env ~caller_summary:summary proc_name in
     Option.bind summary ~f:(fun {Summary.payloads; proc_desc; _} ->
@@ -69,7 +69,7 @@ let interprocedural_file payload_field checker {Callbacks.procedures; exe_env; s
 
 let to_intraprocedural_t {Callbacks.summary; exe_env} =
   { IntraproceduralAnalysis.proc_desc= Summary.get_proc_desc summary
-  ; tenv= Exe_env.get_tenv exe_env (Summary.get_proc_name summary)
+  ; tenv= Exe_env.get_proc_tenv exe_env (Summary.get_proc_name summary)
   ; err_log= Summary.get_err_log summary }
 
 

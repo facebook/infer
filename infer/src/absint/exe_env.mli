@@ -16,8 +16,11 @@ type t
 val mk : unit -> t
 (** Create a new cache *)
 
-val get_tenv : t -> Procname.t -> Tenv.t
+val get_proc_tenv : t -> Procname.t -> Tenv.t
 (** return the type environment associated with the procedure *)
+
+val get_sourcefile_tenv : t -> SourceFile.t -> Tenv.t
+(** return the type environment associated with the source file *)
 
 val load_java_global_tenv : t -> Tenv.t
 (** Load Java type environment (if not done yet), and return it. Useful for accessing type info not

@@ -18,7 +18,7 @@ type report_kind =
   | UnannotatedInterface
 
 (** Explain why we are reporting this access, in Java *)
-let get_reporting_explanation_java report_kind tenv pname thread =
+let get_reporting_explanation_java ~nullsafe report_kind tenv pname thread =
   let open RacerDModels in
   (* best explanation is always that the current class or method is annotated thread-safe. try for
      that first. *)
@@ -46,46 +46,62 @@ let get_reporting_explanation_java report_kind tenv pname thread =
         | _ ->
             None )
   in
-  match (report_kind, annotation_explanation_opt) with
-  | GuardedByViolation, _ ->
-      ( IssueType.guardedby_violation_racerd
-      , F.asprintf "@\n Reporting because field is annotated %a" MF.pp_monospaced "@GuardedBy" )
-  | UnannotatedInterface, Some threadsafe_explanation ->
-      (IssueType.interface_not_thread_safe, F.asprintf "%s." threadsafe_explanation)
-  | UnannotatedInterface, None ->
-      Logging.die InternalError
-        "Reporting non-threadsafe interface call, but can't find a @ThreadSafe annotation"
-  | _, Some threadsafe_explanation when RacerDDomain.ThreadsDomain.is_any thread ->
-      ( IssueType.thread_safety_violation
-      , F.asprintf
-          "%s, so we assume that this method can run in parallel with other non-private methods in \
-           the class (including itself)."
-          threadsafe_explanation )
-  | _, Some threadsafe_explanation ->
-      ( IssueType.thread_safety_violation
-      , F.asprintf
-          "%s. Although this access is not known to run on a background thread, it may happen in \
-           parallel with another access that does."
-          threadsafe_explanation )
-  | _, None ->
-      (* failed to explain based on @ThreadSafe annotation; have to justify using background thread *)
-      if RacerDDomain.ThreadsDomain.is_any thread then
-        ( IssueType.thread_safety_violation
-        , F.asprintf "@\n Reporting because this access may occur on a background thread." )
-      else
-        ( IssueType.thread_safety_violation
+  let issue_type, explanation, should_add_nullsafe_trailer =
+    match (report_kind, annotation_explanation_opt) with
+    | GuardedByViolation, _ ->
+        ( IssueType.(if nullsafe then guardedby_violation_nullsafe else guardedby_violation)
+        , F.asprintf "@\n Reporting because field is annotated %a" MF.pp_monospaced "@GuardedBy"
+        , nullsafe )
+    | UnannotatedInterface, Some threadsafe_explanation ->
+        (IssueType.interface_not_thread_safe, F.asprintf "%s." threadsafe_explanation, false)
+    | UnannotatedInterface, None ->
+        Logging.die InternalError
+          "Reporting non-threadsafe interface call, but can't find a @ThreadSafe annotation"
+    | _, Some threadsafe_explanation when RacerDDomain.ThreadsDomain.is_any thread ->
+        ( IssueType.(if nullsafe then thread_safety_violation_nullsafe else thread_safety_violation)
         , F.asprintf
-            "@\n\
-            \ Reporting because another access to the same memory occurs on a background thread, \
-             although this access may not." )
+            "%s, so we assume that this method can run in parallel with other non-private methods \
+             in the class (including itself)."
+            threadsafe_explanation
+        , nullsafe )
+    | _, Some threadsafe_explanation ->
+        ( IssueType.(if nullsafe then thread_safety_violation_nullsafe else thread_safety_violation)
+        , F.asprintf
+            "%s. Although this access is not known to run on a background thread, it may happen in \
+             parallel with another access that does."
+            threadsafe_explanation
+        , nullsafe )
+    | _, None ->
+        (* failed to explain based on @ThreadSafe annotation; have to justify using background thread *)
+        if RacerDDomain.ThreadsDomain.is_any thread then
+          ( IssueType.(
+              if nullsafe then thread_safety_violation_nullsafe else thread_safety_violation)
+          , F.asprintf "@\n Reporting because this access may occur on a background thread."
+          , nullsafe )
+        else
+          ( IssueType.(
+              if nullsafe then thread_safety_violation_nullsafe else thread_safety_violation)
+          , F.asprintf
+              "@\n\
+              \ Reporting because another access to the same memory occurs on a background thread, \
+               although this access may not."
+          , nullsafe )
+  in
+  let explanation =
+    if should_add_nullsafe_trailer then
+      F.sprintf "%s@\n Data races in `@Nullsafe` classes may still cause NPEs." explanation
+    else explanation
+  in
+  (issue_type, explanation)
 
 
 (** Explain why we are reporting this access, in C++ *)
 let get_reporting_explanation_cpp = (IssueType.lock_consistency_violation, "")
 
 (** Explain why we are reporting this access *)
-let get_reporting_explanation report_kind tenv pname thread =
-  if Procname.is_java pname then get_reporting_explanation_java report_kind tenv pname thread
+let get_reporting_explanation ~nullsafe report_kind tenv pname thread =
+  if Procname.is_java pname then
+    get_reporting_explanation_java ~nullsafe report_kind tenv pname thread
   else get_reporting_explanation_cpp
 
 
@@ -137,7 +153,7 @@ type reported_access =
   ; tenv: Tenv.t
   ; procname: Procname.t }
 
-let report_thread_safety_violation ~make_description ~report_kind
+let report_thread_safety_violation ~make_description ~report_kind ~nullsafe
     ({threads; snapshot; tenv; procname= pname} : reported_access) issue_log =
   let open RacerDDomain in
   let final_pname = List.last snapshot.trace |> Option.value_map ~default:pname ~f:CallSite.pname in
@@ -148,7 +164,9 @@ let report_thread_safety_violation ~make_description ~report_kind
   (* what the potential bug is *)
   let description = make_description pname final_sink_site initial_sink_site snapshot in
   (* why we are reporting it *)
-  let issue_type, explanation = get_reporting_explanation report_kind tenv pname threads in
+  let issue_type, explanation =
+    get_reporting_explanation ~nullsafe report_kind tenv pname threads
+  in
   let error_message = F.sprintf "%s%s" description explanation in
   let end_locs = Option.to_list original_end @ Option.to_list conflict_end in
   let access = IssueAuxData.encode end_locs in
@@ -165,8 +183,8 @@ let report_unannotated_interface_violation reported_pname reported_access issue_
            interface with %a or adding a lock."
           describe_pname reported_pname MF.pp_monospaced class_name MF.pp_monospaced "@ThreadSafe"
       in
-      report_thread_safety_violation ~make_description ~report_kind:UnannotatedInterface
-        reported_access issue_log
+      report_thread_safety_violation ~nullsafe:false ~make_description
+        ~report_kind:UnannotatedInterface reported_access issue_log
   | _ ->
       (* skip reporting on C++ *)
       issue_log
@@ -403,6 +421,17 @@ let should_report_guardedby_violation classname ({snapshot; tenv; procname} : re
       false
 
 
+let should_report_race_in_nullsafe_class ({snapshot; tenv} : reported_access) =
+  match snapshot.elem.access with
+  | Read {exp= (FieldOffset (Dereference (Base _), _) | FieldOffset (Base _, _)) as exp}
+  | Write {exp= (FieldOffset (Dereference (Base _), _) | FieldOffset (Base _, _)) as exp} ->
+      AccessExpression.get_typ exp tenv
+      |> Option.exists ~f:(fun typ -> Typ.is_java_type typ && not (Typ.is_java_primitive_type typ))
+  | _ ->
+      (* allow normal reporting for all other cases *)
+      false
+
+
 (** Report accesses that may race with each other.
 
     Principles for race reporting.
@@ -430,21 +459,28 @@ let should_report_guardedby_violation classname ({snapshot; tenv; procname} : re
     The above is tempered at the moment by abstractions of "same lock" and "same thread": we are
     currently not distinguishing different locks, and are treating "known to be confined to a
     thread" as if "known to be confined to UI thread". *)
-let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportMap.t) =
+let report_unsafe_accesses ~issue_log file_tenv classname (aggregated_access_map : ReportMap.t) =
   let open RacerDDomain in
   let open RacerDModels in
-  let report_thread_safety_violation ~acc ~make_description ~report_kind reported_access =
+  let class_is_annotated_nullsafe =
+    Tenv.lookup file_tenv classname
+    |> Option.exists ~f:(fun tstruct ->
+           Annotations.(struct_typ_has_annot tstruct (fun annot -> ia_ends_with annot nullsafe)) )
+  in
+  let report_thread_safety_violation ~acc ~make_description ~report_kind ~nullsafe reported_access =
     ReportedSet.deduplicate
-      ~f:(report_thread_safety_violation ~make_description ~report_kind)
+      ~f:(report_thread_safety_violation ~make_description ~report_kind ~nullsafe)
       reported_access acc
   in
   let report_unannotated_interface_violation ~acc reported_pname reported_access =
-    ReportedSet.deduplicate
+    ReportedSet.deduplicate reported_access acc
       ~f:(report_unannotated_interface_violation reported_pname)
-      reported_access acc
   in
   let report_unsafe_access accesses acc
       ({snapshot; threads; tenv; procname= pname} as reported_access) =
+    let nullsafe =
+      class_is_annotated_nullsafe && should_report_race_in_nullsafe_class reported_access
+    in
     match snapshot.elem.access with
     | InterfaceCall {pname= reported_pname}
       when AccessSnapshot.is_unprotected snapshot
@@ -472,7 +508,7 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
           && (Option.is_some conflict || ThreadsDomain.is_any threads)
         then
           report_thread_safety_violation ~acc ~make_description:make_unprotected_write_description
-            ~report_kind:(WriteWriteRace conflict) reported_access
+            ~report_kind:(WriteWriteRace conflict) ~nullsafe reported_access
         else acc
     | Write _ | ContainerWrite _ ->
         (* Do not report unprotected writes for ObjC_Cpp *)
@@ -493,7 +529,8 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
                  make_read_write_race_description ~read_is_sync:false conflict
                in
                let report_kind = ReadWriteRace conflict.snapshot in
-               report_thread_safety_violation ~acc ~make_description ~report_kind reported_access )
+               report_thread_safety_violation ~acc ~make_description ~report_kind ~nullsafe
+                 reported_access )
     | (Read _ | ContainerRead _) when Procname.is_java pname ->
         (* protected read. report unprotected writes and opposite protected writes as conflicts *)
         let can_conflict (snapshot1 : AccessSnapshot.t) (snapshot2 : AccessSnapshot.t) =
@@ -512,7 +549,8 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
                  make_read_write_race_description ~read_is_sync:true conflict
                in
                let report_kind = ReadWriteRace conflict.snapshot in
-               report_thread_safety_violation ~acc ~make_description ~report_kind reported_access )
+               report_thread_safety_violation ~acc ~make_description ~report_kind ~nullsafe
+                 reported_access )
     | Read _ | ContainerRead _ ->
         (* Do not report protected reads for ObjC_Cpp *)
         acc
@@ -529,8 +567,9 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
     if Config.racerd_guardedby then
       List.fold grouped_accesses ~init ~f:(fun acc r ->
           if should_report_guardedby_violation classname r then
+            let nullsafe = class_is_annotated_nullsafe && should_report_race_in_nullsafe_class r in
             report_thread_safety_violation ~acc ~report_kind:GuardedByViolation
-              ~make_description:make_guardedby_violation_description r
+              ~make_description:make_guardedby_violation_description ~nullsafe r
           else acc )
     else init
   in
@@ -540,7 +579,8 @@ let report_unsafe_accesses ~issue_log classname (aggregated_access_map : ReportM
     |> report_guardedby_violations_on_location grouped_accesses
     |> report_accesses_on_location grouped_accesses
   in
-  ReportMap.fold report aggregated_access_map (ReportedSet.empty_of_issue_log issue_log)
+  ReportedSet.empty_of_issue_log issue_log
+  |> ReportMap.fold report aggregated_access_map
   |> ReportedSet.to_issue_log
 
 
@@ -557,7 +597,7 @@ let make_results_table exe_env summaries =
   in
   List.fold summaries ~init:ReportMap.empty ~f:(fun acc (proc_desc, summary) ->
       let procname = Procdesc.get_proc_name proc_desc in
-      let tenv = Exe_env.get_tenv exe_env procname in
+      let tenv = Exe_env.get_proc_tenv exe_env procname in
       aggregate_post tenv procname acc summary )
 
 
@@ -589,7 +629,7 @@ let aggregate_by_class {InterproceduralAnalysis.procedures; file_exe_env; analyz
       |> Option.bind ~f:(fun classname ->
              analyze_file_dependency procname
              |> Option.filter ~f:(fun (pdesc, _) ->
-                    let tenv = Exe_env.get_tenv file_exe_env procname in
+                    let tenv = Exe_env.get_proc_tenv file_exe_env procname in
                     should_report_on_proc tenv pdesc )
              |> Option.map ~f:(fun summary_proc_desc ->
                     Typ.Name.Map.update classname
@@ -605,9 +645,11 @@ let aggregate_by_class {InterproceduralAnalysis.procedures; file_exe_env; analyz
 
 (** Gathers results by analyzing all the methods in a file, then post-processes the results to check
     an (approximation of) thread safety *)
-let analyze ({InterproceduralAnalysis.file_exe_env} as file_t) =
+let analyze ({InterproceduralAnalysis.file_exe_env; source_file} as file_t) =
   let class_map = aggregate_by_class file_t in
   Typ.Name.Map.fold
     (fun classname methods issue_log ->
-      make_results_table file_exe_env methods |> report_unsafe_accesses ~issue_log classname )
+      let file_tenv = Exe_env.get_sourcefile_tenv file_exe_env source_file in
+      make_results_table file_exe_env methods
+      |> report_unsafe_accesses ~issue_log file_tenv classname )
     class_map IssueLog.empty

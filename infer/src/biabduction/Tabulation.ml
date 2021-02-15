@@ -1029,7 +1029,7 @@ let add_missing_field_to_tenv ~missing_sigma exe_env caller_tenv callee_pname hp
   (* if the callee is a model, then we don't have a tenv for it *)
   if (not callee_attributes.ProcAttributes.is_biabduction_model) && add_fields then
     let callee_tenv_opt =
-      try Some (Exe_env.get_tenv exe_env callee_pname)
+      try Some (Exe_env.get_proc_tenv exe_env callee_pname)
       with _ ->
         let source_file = callee_attributes.ProcAttributes.loc.Location.file in
         Tenv.load source_file
