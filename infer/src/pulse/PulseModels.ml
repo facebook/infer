@@ -1134,6 +1134,10 @@ module ProcNameDispatcher = struct
           $+...$--> Optional.assign_none ~desc:"folly::Optional::reset()"
         ; -"folly" &:: "Optional" &:: "value" <>$ capt_arg_payload
           $+...$--> Optional.value ~desc:"folly::Optional::value()"
+        ; -"folly" &:: "Optional" &:: "operator*" <>$ capt_arg_payload
+          $+...$--> Optional.value ~desc:"folly::Optional::operator*()"
+        ; -"folly" &:: "Optional" &:: "operator->" <>$ capt_arg_payload
+          $+...$--> Optional.value ~desc:"folly::Optional::operator->()"
         ; -"folly" &:: "Optional" &:: "get_pointer" $ capt_arg_payload
           $+...$--> Optional.get_pointer ~desc:"folly::Optional::get_pointer()"
         ; -"folly" &:: "Optional" &:: "value_or" $ capt_arg_payload $+ capt_arg_payload
