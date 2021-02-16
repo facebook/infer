@@ -561,6 +561,8 @@ val skip_analysis_in_path_skips_compilation : bool
 
 val skip_duplicated_types : bool
 
+val skip_non_capture_clang_commands : bool
+
 val skip_translation_headers : string list
 
 val source_files : bool

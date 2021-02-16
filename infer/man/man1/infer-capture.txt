@@ -263,6 +263,10 @@ CLANG OPTIONS
        --headers
            Activates: Analyze code in header files (Conversely: --no-headers)
 
+       --skip-non-capture-clang-commands
+           Activates: Skip clang commands that Infer doesn't use to capture
+           data (Conversely: --no-skip-non-capture-clang-commands)
+
        --skip-translation-headers +path_prefix
            Ignore headers whose path matches the given prefix
 

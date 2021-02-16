@@ -1137,6 +1137,11 @@ OPTIONS
            computing differential reports (Conversely:
            --skip-duplicated-types)           See also infer-reportdiff(1).
 
+       --skip-non-capture-clang-commands
+           Activates: Skip clang commands that Infer doesn't use to capture
+           data (Conversely: --no-skip-non-capture-clang-commands)       
+    See also infer-capture(1).
+
        --skip-translation-headers +path_prefix
            Ignore headers whose path matches the given prefix           See also infer-capture(1).
 

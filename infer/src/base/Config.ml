@@ -2169,6 +2169,12 @@ and skip_duplicated_types =
     "Skip fixed-then-introduced duplicated types while computing differential reports"
 
 
+and skip_non_capture_clang_commands =
+  CLOpt.mk_bool ~long:"skip-non-capture-clang-commands"
+    ~in_help:InferCommand.[(Capture, manual_clang)]
+    ~default:false "Skip clang commands that Infer doesn't use to capture data"
+
+
 and skip_translation_headers =
   CLOpt.mk_string_list ~deprecated:["skip_translation_headers"] ~long:"skip-translation-headers"
     ~in_help:InferCommand.[(Capture, manual_clang)]
@@ -3253,6 +3259,8 @@ and skip_analysis_in_path = RevList.to_list !skip_analysis_in_path
 and skip_analysis_in_path_skips_compilation = !skip_analysis_in_path_skips_compilation
 
 and skip_duplicated_types = !skip_duplicated_types
+
+and skip_non_capture_clang_commands = !skip_non_capture_clang_commands
 
 and skip_translation_headers = RevList.to_list !skip_translation_headers
 
