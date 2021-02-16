@@ -385,7 +385,10 @@ module Server = struct
         send Command.Handshake
 end
 
-let use_daemon = Config.((not (buck || genrule_mode)) && jobs > 1)
+let use_daemon =
+  Config.((not (buck || genrule_mode)) && jobs > 1)
+  && match Version.build_platform with Linux | Darwin -> true | Windows -> false
+
 
 let perform cmd = if use_daemon then Server.send cmd else Command.execute cmd
 
