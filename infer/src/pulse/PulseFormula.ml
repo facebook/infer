@@ -1466,7 +1466,7 @@ end = struct
 
 
   let eliminate_vars ~keep phi =
-    let subst = VarUF.reorient ~keep phi.both.var_eqs in
+    let subst = VarUF.reorient ~keep phi.known.var_eqs in
     try Sat (subst_var subst phi) with Contradiction -> Unsat
 end
 
@@ -1609,4 +1609,4 @@ let has_no_assumptions phi =
   Atom.Set.for_all (fun atom -> Formula.Normalizer.implies_atom phi.known atom) phi.pruned
 
 
-let get_var_repr phi v = (Formula.Normalizer.get_repr phi.both v :> Var.t)
+let get_var_repr phi v = (Formula.Normalizer.get_repr phi.known v :> Var.t)
