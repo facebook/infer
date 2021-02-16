@@ -30,6 +30,12 @@ val eval_unop :
 val prune_binop :
   negated:bool -> Binop.t -> operand -> operand -> AbductiveDomain.t -> AbductiveDomain.t
 
+val prune_eq_zero : AbstractValue.t -> AbductiveDomain.t -> AbductiveDomain.t
+(** helper function wrapping [prune_binop] *)
+
+val prune_positive : AbstractValue.t -> AbductiveDomain.t -> AbductiveDomain.t
+(** helper function wrapping [prune_binop] *)
+
 val is_known_zero : AbductiveDomain.t -> AbstractValue.t -> bool
 
 val is_unsat_cheap : AbductiveDomain.t -> bool

@@ -48,6 +48,14 @@ let prune_binop ~negated bop lhs_op rhs_op astate =
   AbductiveDomain.set_path_condition phi' astate
 
 
+let prune_eq_zero v astate =
+  prune_binop ~negated:false Eq (AbstractValueOperand v) (LiteralOperand IntLit.zero) astate
+
+
+let prune_positive v astate =
+  prune_binop ~negated:false Gt (AbstractValueOperand v) (LiteralOperand IntLit.zero) astate
+
+
 let is_known_zero astate v = PathCondition.is_known_zero astate.AbductiveDomain.path_condition v
 
 let is_unsat_cheap astate = PathCondition.is_unsat_cheap astate.AbductiveDomain.path_condition

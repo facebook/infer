@@ -132,7 +132,7 @@ module Misc = struct
         let<+> astate = PulseOperations.invalidate location invalidation deleted_access astate in
         astate
     in
-    let astate_zero = PulseArithmetic.and_eq_int (fst deleted_access) IntLit.zero astate in
+    let astate_zero = PulseArithmetic.prune_eq_zero (fst deleted_access) astate in
     Ok (ContinueProgram astate_zero) :: astates_alloc
 end
 
@@ -306,10 +306,10 @@ module Optional = struct
     let ret_value = (ret_addr, [ValueHistory.Call {f= Model desc; location; in_call= []}]) in
     let<*> astate, (value_addr, _) = to_internal_value_deref Read location optional astate in
     let astate = PulseOperations.write_id ret_id ret_value astate in
-    let astate_non_empty = PulseArithmetic.and_positive value_addr astate in
-    let astate_true = PulseArithmetic.and_positive ret_addr astate_non_empty in
-    let astate_empty = PulseArithmetic.and_eq_int value_addr IntLit.zero astate in
-    let astate_false = PulseArithmetic.and_eq_int ret_addr IntLit.zero astate_empty in
+    let astate_non_empty = PulseArithmetic.prune_positive value_addr astate in
+    let astate_true = PulseArithmetic.prune_positive ret_addr astate_non_empty in
+    let astate_empty = PulseArithmetic.prune_eq_zero value_addr astate in
+    let astate_false = PulseArithmetic.prune_eq_zero ret_addr astate_empty in
     [Ok (ContinueProgram astate_false); Ok (ContinueProgram astate_true)]
 
 
@@ -320,12 +320,12 @@ module Optional = struct
     let value_update_hist = (fst value_addr, event :: snd value_addr) in
     let astate_value_addr =
       PulseOperations.write_id ret_id value_update_hist astate
-      |> PulseArithmetic.and_positive (fst value_addr)
+      |> PulseArithmetic.prune_positive (fst value_addr)
     in
     let nullptr = (AbstractValue.mk_fresh (), [event]) in
     let<*> astate_null =
       PulseOperations.write_id ret_id nullptr astate
-      |> PulseArithmetic.and_eq_int (fst value_addr) IntLit.zero
+      |> PulseArithmetic.prune_eq_zero (fst value_addr)
       |> PulseArithmetic.and_eq_int (fst nullptr) IntLit.zero
       |> PulseOperations.invalidate location (ConstantDereference IntLit.zero) nullptr
     in
@@ -336,7 +336,7 @@ module Optional = struct
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let<*> astate, value_addr = to_internal_value_deref Read location optional astate in
-    let astate_non_empty = PulseArithmetic.and_positive (fst value_addr) astate in
+    let astate_non_empty = PulseArithmetic.prune_positive (fst value_addr) astate in
     let<*> astate_non_empty, value =
       PulseOperations.eval_access Read location value_addr Dereference astate_non_empty
     in
@@ -346,7 +346,7 @@ module Optional = struct
       PulseOperations.eval_access Read location default Dereference astate
     in
     let default_value_hist = (default_val, event :: default_hist) in
-    let astate_empty = PulseArithmetic.and_eq_int (fst value_addr) IntLit.zero astate in
+    let astate_empty = PulseArithmetic.prune_eq_zero (fst value_addr) astate in
     let astate_default = PulseOperations.write_id ret_id default_value_hist astate_empty in
     [Ok (ContinueProgram astate_value); Ok (ContinueProgram astate_default)]
 end
@@ -1028,13 +1028,13 @@ module JavaPreconditions = struct
   let check_not_null (address, hist) : model =
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model "Preconditions.checkNotNull"; location; in_call= []} in
-    let astate = PulseArithmetic.and_positive address astate in
+    let astate = PulseArithmetic.prune_positive address astate in
     PulseOperations.write_id ret_id (address, event :: hist) astate |> ok_continue
 
 
   let check_state_argument (address, _) : model =
    fun _ ~callee_procname:_ _ ~ret:_ astate ->
-    PulseArithmetic.and_positive address astate |> ok_continue
+    PulseArithmetic.prune_positive address astate |> ok_continue
 end
 
 module StringSet = Caml.Set.Make (String)
