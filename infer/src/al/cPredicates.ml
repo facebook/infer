@@ -713,6 +713,22 @@ let is_ivar_atomic an =
       false
 
 
+(* checks if ivar is defined among a set of fields and if it is readonly *)
+let is_ivar_readonly an =
+  match an with
+  | Ctl_parser_types.Stmt (Clang_ast_t.ObjCIvarRefExpr (_, _, _, irei)) -> (
+      let dr_ref = irei.Clang_ast_t.ovrei_decl_ref in
+      let ivar_pointer = dr_ref.Clang_ast_t.dr_decl_pointer in
+      match CAst_utils.get_decl ivar_pointer with
+      | Some d ->
+          let attributes = get_ivar_attributes d in
+          List.exists ~f:(PolyVariantEqual.( = ) `Readonly) attributes
+      | _ ->
+          false )
+  | _ ->
+      false
+
+
 let is_method_property_accessor_of_ivar an context =
   let open Clang_ast_t in
   match an with

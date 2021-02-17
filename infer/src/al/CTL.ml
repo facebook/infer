@@ -634,6 +634,8 @@ let eval_Atomic pred_name_ args an lcxt =
       CPredicates.is_in_objc_category_named lcxt name
   | "is_in_objc_protocol_named", [name], _ ->
       CPredicates.is_in_objc_protocol_named lcxt name
+  | "is_ivar_readonly", [], an ->
+      CPredicates.is_ivar_readonly an
   | "is_ivar_atomic", [], an ->
       CPredicates.is_ivar_atomic an
   | "is_method_property_accessor_of_ivar", [], an ->

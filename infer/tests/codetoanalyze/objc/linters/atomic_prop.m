@@ -25,7 +25,7 @@
 @property(nonatomic) int* p;
 @property int* q; // atomic by default
 @property(atomic, assign) float f;
-
+@property(atomic, readonly, assign) float fReadonly;
 @property(strong) B* b;
 
 - (void)write_p:(int)i;
@@ -113,6 +113,10 @@
     self->_f += 1;
   };
   b();
+}
+
+- (float)readonlyAccess {
+  return _fReadonly; // good access
 }
 
 @end

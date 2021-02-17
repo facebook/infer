@@ -98,7 +98,10 @@ val context_in_synchronized_block : CLintersContext.context -> bool
 (** true if the current node is in the context of a synchronized objc block *)
 
 val is_ivar_atomic : Ctl_parser_types.ast_node -> bool
-(** [is_ivar_atomic an] is true iff an denotes an atomi objc ivar *)
+(** [is_ivar_atomic an] is true iff an denotes an atomic objc ivar *)
+
+val is_ivar_readonly : Ctl_parser_types.ast_node -> bool
+(** [is_ivar_readonly an] is true iff an denotes a readonly objc ivar *)
 
 val is_method_property_accessor_of_ivar :
   Ctl_parser_types.ast_node -> CLintersContext.context -> bool

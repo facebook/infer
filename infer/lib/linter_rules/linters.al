@@ -9,7 +9,9 @@ DEFINE-CHECKER DIRECT_ATOMIC_PROPERTY_ACCESS = {
 
     SET report_when =
       WHEN
-            ((NOT context_in_synchronized_block()) AND is_ivar_atomic())
+            is_ivar_atomic()
+            AND NOT context_in_synchronized_block()
+            AND NOT is_ivar_readonly()
             AND NOT is_method_property_accessor_of_ivar()
             AND NOT is_objc_constructor()
             AND NOT is_objc_dealloc()
