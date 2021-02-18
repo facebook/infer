@@ -10,9 +10,8 @@ open PulseBasicInterface
 module AbductiveDomain = PulseAbductiveDomain
 
 let map_path_condition ~f astate =
-  AbductiveDomain.set_path_condition
-    (f astate.AbductiveDomain.path_condition |> AbductiveDomain.incorporate_new_eqs astate)
-    astate
+  let phi, new_eqs = f astate.AbductiveDomain.path_condition in
+  AbductiveDomain.set_path_condition phi astate |> AbductiveDomain.incorporate_new_eqs new_eqs
 
 
 let and_nonnegative v astate =
@@ -41,11 +40,8 @@ let eval_unop unop_addr unop addr astate =
 
 
 let prune_binop ~negated bop lhs_op rhs_op astate =
-  let phi' =
-    PathCondition.prune_binop ~negated bop lhs_op rhs_op astate.AbductiveDomain.path_condition
-    |> AbductiveDomain.incorporate_new_eqs astate
-  in
-  AbductiveDomain.set_path_condition phi' astate
+  map_path_condition astate ~f:(fun phi ->
+      PathCondition.prune_binop ~negated bop lhs_op rhs_op phi )
 
 
 let prune_eq_zero v astate =

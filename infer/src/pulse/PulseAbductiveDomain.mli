@@ -202,7 +202,7 @@ val set_post_edges : AbstractValue.t -> BaseMemory.Edges.t -> t -> t
 val set_post_cell : AbstractValue.t * ValueHistory.t -> BaseDomain.cell -> Location.t -> t -> t
 (** directly set the edges and attributes for the given address, bypassing abduction altogether *)
 
-val incorporate_new_eqs : t -> PathCondition.t * PathCondition.new_eqs -> PathCondition.t
+val incorporate_new_eqs : PathCondition.new_eqs -> t -> t
 (** Check that the new equalities discovered are compatible with the current pre and post heaps,
     e.g. [x = 0] is not compatible with [x] being allocated, and [x = y] is not compatible with [x]
     and [y] being allocated separately. In those cases, the resulting path condition is

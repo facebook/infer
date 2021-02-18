@@ -687,21 +687,23 @@ let is_allocated {post; pre} v =
 
 
 let incorporate_new_eqs astate new_eqs =
-  List.fold_until new_eqs ~init:()
-    ~finish:(fun () -> Sat ())
-    ~f:(fun () (new_eq : PulseFormula.new_eq) ->
+  List.fold_until new_eqs ~init:astate
+    ~finish:(fun astate -> Sat astate)
+    ~f:(fun astate (new_eq : PulseFormula.new_eq) ->
       match new_eq with
       | EqZero v when is_allocated astate v ->
           L.d_printfln "CONTRADICTION: %a = 0 but is allocated" AbstractValue.pp v ;
           Stop Unsat
-      | Equal (v1, v2)
-        when (not (AbstractValue.equal v1 v2)) && is_allocated astate v1 && is_allocated astate v2
-        ->
-          L.d_printfln "CONTRADICTION: %a = %a but both are separately allocated" AbstractValue.pp
-            v1 AbstractValue.pp v2 ;
-          Stop Unsat
+      | Equal (v1, v2) when AbstractValue.equal v1 v2 ->
+          Continue astate
+      | Equal (v1, v2) ->
+          if is_allocated astate v1 && is_allocated astate v2 then (
+            L.d_printfln "CONTRADICTION: %a = %a but both are separately allocated" AbstractValue.pp
+              v1 AbstractValue.pp v2 ;
+            Stop Unsat )
+          else Continue astate
       | _ ->
-          Continue () )
+          Continue astate )
 
 
 (** it's a good idea to normalize the path condition before calling this function *)
@@ -744,7 +746,7 @@ let summary_of_post pdesc astate =
   if is_unsat then Unsat
   else
     let astate = {astate with path_condition} in
-    let* () = incorporate_new_eqs astate new_eqs in
+    let* astate = incorporate_new_eqs astate new_eqs in
     L.d_printfln "Canonicalizing...@\n" ;
     let* astate = canonicalize astate in
     L.d_printfln "Canonicalized state: %a@\n" pp astate ;
@@ -756,7 +758,7 @@ let summary_of_post pdesc astate =
     let* path_condition, new_eqs =
       PathCondition.simplify ~keep:live_addresses astate.path_condition
     in
-    let+ () = incorporate_new_eqs astate new_eqs in
+    let+ astate = incorporate_new_eqs astate new_eqs in
     let astate =
       {astate with path_condition; topl= PulseTopl.simplify ~keep:live_addresses astate.topl}
     in
@@ -768,9 +770,14 @@ let get_pre {pre} = (pre :> BaseDomain.t)
 let get_post {post} = (post :> BaseDomain.t)
 
 (* re-exported for mli *)
-let incorporate_new_eqs astate (phi, new_eqs) =
-  if PathCondition.is_unsat_cheap phi then phi
-  else match incorporate_new_eqs astate new_eqs with Unsat -> PathCondition.false_ | Sat () -> phi
+let incorporate_new_eqs new_eqs astate =
+  if PathCondition.is_unsat_cheap astate.path_condition then astate
+  else
+    match incorporate_new_eqs astate new_eqs with
+    | Unsat ->
+        {astate with path_condition= PathCondition.false_}
+    | Sat astate ->
+        astate
 
 
 module Topl = struct
