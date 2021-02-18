@@ -194,3 +194,24 @@ void delete_nullptr_ok() {
   int* p = nullptr;
   delete p;
 }
+
+void FN_test_after_dereference_latent(int* x) {
+  // create a path split where x==0 in one of the paths
+  if (x == 0)
+    ;
+  *x = 42;
+}
+
+void call_test_after_dereference_bad() {
+  FN_test_after_dereference_latent(NULL);
+}
+
+void FN_test_after_dereference2_latent(int* x) {
+  *x = 42;
+  if (x == 0)
+    ;
+}
+
+void FN_call_test_after_dereference2_bad() {
+  FN_test_after_dereference2_latent(NULL);
+}

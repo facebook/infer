@@ -30,3 +30,49 @@ void free_null_then_deref_bad() {
   free(x);
   *x = 1;
 }
+
+void FN_assumed_aliasing_latent(int* x, int* y) {
+  if (x == y) {
+    free(x);
+    free(y);
+  }
+}
+
+void FN_trigger_assumed_aliasing_bad(int* x) {
+  FN_assumed_aliasing_latent(x, x);
+}
+
+void FN_assumed_aliasing2_latent(int* x, int* y) {
+  if (x == y)
+    ;
+  free(x);
+  free(y);
+}
+
+void FN_trigger_assumed_aliasing2_bad(int* x) {
+  FN_assumed_aliasing2_latent(x, x);
+}
+
+void FN_assumed_aliasing3_latent(int* x, int* y) {
+  free(x);
+  if (x == y)
+    ;
+  free(y);
+}
+
+void FN_trigger_assumed_aliasing3_bad(int* x) {
+  FN_assumed_aliasing3_latent(x, x);
+}
+
+void FN_assumed_aliasing4_latent(int* x, int* y) {
+  free(x);
+  free(y);
+  // we create the x==y case too late: x|->- * y|->- is already in the
+  // state so adding x==y creates a contradition
+  if (x == y)
+    ;
+}
+
+void FN_trigger_assumed_aliasing4_bad(int* x) {
+  FN_assumed_aliasing4_latent(x, x);
+}
