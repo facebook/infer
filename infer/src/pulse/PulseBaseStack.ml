@@ -32,6 +32,7 @@ module M = PrettyPrintable.MakePPMonoMap (VarAddress) (AddrHistPair)
 let yojson_of_t m = [%yojson_of: (VarAddress.t * AddrHistPair.t) list] (M.bindings m)
 
 let canonicalize ~get_var_repr stack =
+  (* TODO: detect contradictions when the addresses of two different program variables are equal *)
   let changed = ref false in
   let stack' =
     M.map

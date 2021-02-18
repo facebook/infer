@@ -710,29 +710,23 @@ let incorporate_new_eqs astate new_eqs =
 let canonicalize astate =
   let open SatUnsat.Import in
   let get_var_repr v = PathCondition.get_var_repr astate.path_condition v in
-  let canonicalize_base stack heap attrs =
-    let stack' = BaseStack.canonicalize ~get_var_repr stack in
-    (* note: this step also de-registers addresses pointing to empty edges *)
-    let+ heap' = BaseMemory.canonicalize ~get_var_repr heap in
-    let attrs' = BaseAddressAttributes.canonicalize ~get_var_repr attrs in
-    (stack', heap', attrs')
-  in
-  (* need different functions for pre and post to appease the type system *)
   let canonicalize_pre (pre : PreDomain.t) =
-    let+ stack', heap', attrs' =
-      canonicalize_base (pre :> BaseDomain.t).stack (pre :> BaseDomain.t).heap
-        (pre :> BaseDomain.t).attrs
+    (* TODO: detect contradictions when equal addresses are pointing to different locations *)
+    let heap' =
+      BaseMemory.filter
+        (fun _ edges -> not (BaseMemory.Edges.is_empty edges))
+        (pre :> BaseDomain.t).heap
     in
-    PreDomain.update ~stack:stack' ~heap:heap' ~attrs:attrs' pre
+    PreDomain.update ~heap:heap' pre
   in
   let canonicalize_post (post : PostDomain.t) =
-    let+ stack', heap', attrs' =
-      canonicalize_base (post :> BaseDomain.t).stack (post :> BaseDomain.t).heap
-        (post :> BaseDomain.t).attrs
-    in
+    let stack' = BaseStack.canonicalize ~get_var_repr (post :> BaseDomain.t).stack in
+    (* note: this step also de-registers addresses pointing to empty edges *)
+    let+ heap' = BaseMemory.canonicalize ~get_var_repr (post :> BaseDomain.t).heap in
+    let attrs' = BaseAddressAttributes.canonicalize ~get_var_repr (post :> BaseDomain.t).attrs in
     PostDomain.update ~stack:stack' ~heap:heap' ~attrs:attrs' post
   in
-  let* pre = canonicalize_pre astate.pre in
+  let pre = canonicalize_pre astate.pre in
   let+ post = canonicalize_post astate.post in
   {astate with pre; post}
 
