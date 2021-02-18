@@ -38,3 +38,5 @@ val is_isograph : lhs:t -> rhs:t -> mapping -> bool
 val find_cell_opt : AbstractValue.t -> t -> cell option
 
 val pp : F.formatter -> t -> unit
+
+val subst_var : AbstractValue.t * AbstractValue.t -> t -> t SatUnsat.t

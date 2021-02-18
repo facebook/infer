@@ -29,6 +29,8 @@ module type S = sig
 
   val bindings : t -> (key * value) list
 
+  val exists : t -> f:(key * value -> bool) -> bool
+
   val filter : t -> f:(key * value -> bool) -> t
 
   val find_opt : key -> t -> value option
@@ -38,6 +40,8 @@ module type S = sig
   val fold_map : t -> init:'acc -> f:('acc -> value -> 'acc * value) -> 'acc * t
 
   val is_empty : t -> bool
+
+  val map : t -> f:(value -> value) -> t
 
   val mem : t -> key -> bool
 
@@ -143,6 +147,12 @@ module Make
 
 
   let bindings map = fold ~init:[] ~f:(fun bindings binding -> binding :: bindings) map
+
+  let exists map ~f =
+    List.exists map.new_ ~f
+    || List.exists map.old ~f:(fun binding ->
+           if List.Assoc.mem ~equal:Key.equal map.new_ (fst binding) then false else f binding )
+
 
   let filter map ~f =
     let count_new = ref map.count_new in

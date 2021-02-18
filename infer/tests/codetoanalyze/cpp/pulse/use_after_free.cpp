@@ -31,38 +31,32 @@ void free_null_then_deref_bad() {
   *x = 1;
 }
 
-void FN_assumed_aliasing_latent(int* x, int* y) {
+void assumed_aliasing_latent(int* x, int* y) {
   if (x == y) {
     free(x);
     free(y);
   }
 }
 
-void FN_trigger_assumed_aliasing_bad(int* x) {
-  FN_assumed_aliasing_latent(x, x);
-}
+void trigger_assumed_aliasing_bad(int* x) { assumed_aliasing_latent(x, x); }
 
-void FN_assumed_aliasing2_latent(int* x, int* y) {
+void assumed_aliasing2_latent(int* x, int* y) {
   if (x == y)
     ;
   free(x);
   free(y);
 }
 
-void FN_trigger_assumed_aliasing2_bad(int* x) {
-  FN_assumed_aliasing2_latent(x, x);
-}
+void trigger_assumed_aliasing2_bad(int* x) { assumed_aliasing2_latent(x, x); }
 
-void FN_assumed_aliasing3_latent(int* x, int* y) {
+void assumed_aliasing3_latent(int* x, int* y) {
   free(x);
   if (x == y)
     ;
   free(y);
 }
 
-void FN_trigger_assumed_aliasing3_bad(int* x) {
-  FN_assumed_aliasing3_latent(x, x);
-}
+void trigger_assumed_aliasing3_bad(int* x) { assumed_aliasing3_latent(x, x); }
 
 void FN_assumed_aliasing4_latent(int* x, int* y) {
   free(x);

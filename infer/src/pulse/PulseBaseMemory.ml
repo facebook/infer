@@ -55,6 +55,11 @@ module Edges = struct
         M.add access' (addr', hist) edges' )
 
 
+  let subst_var (v, v') edges =
+    M.map edges ~f:(fun ((addr, hist) as addr_hist) ->
+        if AbstractValue.equal addr v then (v', hist) else addr_hist )
+
+
   include M
 end
 
@@ -101,6 +106,36 @@ let canonicalize ~get_var_repr memory =
     in
     Sat memory
   with AliasingContradiction -> Unsat
+
+
+let subst_var (v, v') memory =
+  (* subst in edges *)
+  let memory =
+    let v_appears_in_edges =
+      Graph.exists
+        (fun _ edges -> Edges.exists ~f:(fun (_, (dest, _)) -> AbstractValue.equal v dest) edges)
+        memory
+    in
+    if v_appears_in_edges then Graph.map (Edges.subst_var (v, v')) memory else memory
+  in
+  (* subst in the domain of the graph, already substituted in edges above *)
+  match Graph.find_opt v memory with
+  | None ->
+      Sat memory
+  | Some edges -> (
+      let memory = Graph.remove v memory in
+      match Graph.find_opt v' memory with
+      | None ->
+          Sat (Graph.add v' edges memory)
+      | Some edges' ->
+          if Edges.is_empty edges then Sat memory
+          else if Edges.is_empty edges' then Sat (Graph.add v' edges memory)
+          else (
+            (* both set of edges being non-empty means that [v] and [v'] have been treated as
+               disjoint memory locations until now, contradicting the fact they are equal *)
+            L.d_printfln "CONTRADICTION: %a = %a, which is already allocated in %a@\n"
+              AbstractValue.pp v AbstractValue.pp v' Graph.pp memory ;
+            Unsat ) )
 
 
 include Graph

@@ -34,6 +34,8 @@ module type BaseDomainSig = sig
   (** compute new state containing only reachable addresses in its heap and attributes, as well as
       the list of discarded unreachable addresses *)
 
+  val subst_var : AbstractValue.t * AbstractValue.t -> t -> t SatUnsat.t
+
   val pp : F.formatter -> t -> unit
 end
 
@@ -686,6 +688,12 @@ let is_allocated {post; pre} v =
   || is_stack_allocated (post :> BaseDomain.t) v
 
 
+let subst_var subst astate =
+  let open SatUnsat.Import in
+  let+ post = PostDomain.subst_var subst astate.post in
+  if phys_equal astate.post post then astate else {astate with post}
+
+
 let incorporate_new_eqs astate new_eqs =
   List.fold_until new_eqs ~init:astate
     ~finish:(fun astate -> Sat astate)
@@ -696,12 +704,17 @@ let incorporate_new_eqs astate new_eqs =
           Stop Unsat
       | Equal (v1, v2) when AbstractValue.equal v1 v2 ->
           Continue astate
-      | Equal (v1, v2) ->
+      | Equal (v1, v2) -> (
           if is_allocated astate v1 && is_allocated astate v2 then (
             L.d_printfln "CONTRADICTION: %a = %a but both are separately allocated" AbstractValue.pp
               v1 AbstractValue.pp v2 ;
             Stop Unsat )
-          else Continue astate
+          else
+            match subst_var (v1, v2) astate with
+            | Unsat ->
+                Stop Unsat
+            | Sat astate' ->
+                Continue astate' )
       | _ ->
           Continue astate )
 

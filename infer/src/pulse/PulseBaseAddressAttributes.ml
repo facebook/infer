@@ -172,3 +172,10 @@ let canonicalize ~get_var_repr attrs_map =
         let addr' = get_var_repr addr in
         add addr' attrs g )
     attrs_map Graph.empty
+
+
+let subst_var (v, v') attrs_map =
+  if Graph.mem v attrs_map then
+    canonicalize attrs_map ~get_var_repr:(fun addr ->
+        if AbstractValue.equal addr v then v' else addr )
+  else attrs_map

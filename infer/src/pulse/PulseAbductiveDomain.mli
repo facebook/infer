@@ -39,6 +39,8 @@ module type BaseDomainSig = sig
   (** compute new state containing only reachable addresses in its heap and attributes, as well as
       the list of discarded unreachable addresses *)
 
+  val subst_var : AbstractValue.t * AbstractValue.t -> t -> t SatUnsat.t
+
   val pp : F.formatter -> t -> unit
 end
 

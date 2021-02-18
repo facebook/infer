@@ -32,6 +32,8 @@ module type S = sig
 
   val bindings : t -> (key * value) list
 
+  val exists : t -> f:(key * value -> bool) -> bool
+
   val filter : t -> f:(key * value -> bool) -> t
 
   val find_opt : key -> t -> value option
@@ -41,6 +43,8 @@ module type S = sig
   val fold_map : t -> init:'acc -> f:('acc -> value -> 'acc * value) -> 'acc * t
 
   val is_empty : t -> bool
+
+  val map : t -> f:(value -> value) -> t
 
   val mem : t -> key -> bool
 

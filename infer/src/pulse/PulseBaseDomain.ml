@@ -301,3 +301,12 @@ let reachable_addresses_from addresses astate =
   GraphVisit.fold_from_addresses addresses astate ~init:() ~finish:Fn.id ~f:(fun () _ _ ->
       Continue () )
   |> fst
+
+
+let subst_var subst ({heap; stack; attrs} as astate) =
+  let open SatUnsat.Import in
+  let+ heap' = Memory.subst_var subst heap in
+  let stack' = Stack.subst_var subst stack in
+  let attrs' = AddressAttributes.subst_var subst attrs in
+  if phys_equal heap heap' && phys_equal stack stack' && phys_equal attrs attrs' then astate
+  else {heap= heap'; stack= stack'; attrs= attrs'}

@@ -47,6 +47,10 @@ let canonicalize ~get_var_repr stack =
   if !changed then stack' else stack
 
 
+let subst_var (v, v') stack =
+  canonicalize stack ~get_var_repr:(fun addr -> if AbstractValue.equal v addr then v' else addr)
+
+
 include M
 
 let compare = M.compare AddrHistPair.compare
