@@ -5,6 +5,35 @@ title: List of all issue types
 Here is an overview of the issue types currently reported by Infer.
 
 
+## ARBITRARY_CODE_EXECUTION_UNDER_LOCK
+
+Reported as "Arbitrary Code Execution Under lock" by [starvation](/docs/next/checker-starvation).
+
+A call which may execute arbitrary code (such as registered, or chained, callbacks) is made while a lock is held.
+This code may deadlock whenever the callbacks obtain locks themselves, so it is an unsafe pattern.
+This warning is issued only at the innermost lock acquisition around the final call.
+
+Example:
+```java
+public class NotUnderLock {
+  SettableFuture future = null;
+
+  public void callFutureSetOk() {
+    future.set(null);
+  }
+
+  public synchronized void firstAcquisitionBad() {
+    callFutureSetOk();
+  }
+
+  public void secondAcquisitionOk(Object o) {
+    synchronized (o) {
+      firstAcquisitionBad();
+    }
+  }
+}
+```
+
 ## ASSIGN_POINTER_WARNING
 
 Reported as "Assign Pointer Warning" by [linters](/docs/next/checker-linters).
@@ -469,6 +498,11 @@ Note that the custom setter was only invoked once.
 Reported as "Divide By Zero" by [biabduction](/docs/next/checker-biabduction).
 
 
+## DOTNET_RESOURCE_LEAK
+
+Reported as "Dotnet Resource Leak" by [dotnet-resource-leak](/docs/next/checker-dotnet-resource-leak).
+
+Resource leak checker for .NET.
 ## EMPTY_VECTOR_ACCESS
 
 Reported as "Empty Vector Access" by [biabduction](/docs/next/checker-biabduction).
@@ -825,6 +859,20 @@ void infeasible_path_unreachable() {
     Preconditions.checkState(false); // like assert false, state pruned to bottom
 }
 ```
+
+## EXPENSIVE_AUTORELEASEPOOL_SIZE
+
+Reported as "Expensive Autoreleasepool Size" by [cost](/docs/next/checker-cost).
+
+\[EXPERIMENTAL\] This warning indicates that non-constant and non-top ObjC autoreleasepool's size in
+the procedure.  By default, this issue type is disabled.
+
+## EXPENSIVE_EXECUTION_TIME
+
+Reported as "Expensive Execution Time" by [cost](/docs/next/checker-cost).
+
+\[EXPERIMENTAL\] This warning indicates that non-constant and non-top execution time complexity of
+the procedure.  By default, this issue type is disabled.
 
 ## EXPENSIVE_LOOP_INVARIANT_CALL
 
@@ -1189,6 +1237,24 @@ weak pointer to `self`. Possibly the developer meant to capture only `weakSelf`
 to avoid a retain cycle, but made a typo and used `self` as well in the block,
 instead of `strongSelf`. In this case, this could cause a retain cycle.
 
+## MODIFIES_IMMUTABLE
+
+Reported as "Modifies Immutable" by [impurity](/docs/next/checker-impurity).
+
+This issue type indicates modifications to fields marked as @Immutable. For instance, below function `mutateArray` would be marked as modifying immutable field `testArray`:
+```java
+  @Immutable int[] testArray = new int[]{0, 1, 2, 4};
+  
+  int[] getTestArray() {
+    return testArray;
+  }                
+          
+  void mutateArray() {
+    int[] array = getTestArray();
+    array[2] = 7;
+  }
+```
+
 ## MULTIPLE_WEAKSELF
 
 Reported as "Multiple WeakSelf Use" by [self-in-block](/docs/next/checker-self-in-block).
@@ -1426,6 +1492,11 @@ An example of such variadic methods is
 In this example, if `str` is `nil` then an array `@[@"aaa"]` of size 1 will be
 created, and not an array `@[@"aaa", str, @"bbb"]` of size 3 as expected.
 
+## PULSE_UNINITIALIZED_VALUE
+
+Reported as "Unitialized Value" by [pulse](/docs/next/checker-pulse).
+
+See [UNITIALIZED_VALUE](#uninitialized_value). Re-implemented using Pulse.
 ## PURE_FUNCTION
 
 Reported as "Pure Function" by [purity](/docs/next/checker-purity).

@@ -12,6 +12,7 @@ Activate with `--linters`.
 Supported languages:
 - C/C++/ObjC: Yes
 - Java: No
+- C#/.Net: No
 
 For C/C++ and Objective-C languages, we provide a linters framework. These are
 checks about the syntax of the program; it could be about a property, or about

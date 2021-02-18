@@ -10,6 +10,7 @@ Activate with `--racerd`.
 Supported languages:
 - C/C++/ObjC: Yes
 - Java: Yes
+- C#/.Net: Yes
 
 RacerD finds data races in your C++ and Java code. This page gives a more in-depth
 explanation of how the analysis works *for Java code*, but may be less complete than the

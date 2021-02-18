@@ -10,6 +10,7 @@ Activate with `--bufferoverrun`.
 Supported languages:
 - C/C++/ObjC: Yes
 - Java: Yes
+- C#/.Net: Yes
 
 You can read about its origins in this [blog post](https://research.fb.com/inferbo-infer-based-buffer-overrun-analyzer/).
 

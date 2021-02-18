@@ -10,6 +10,7 @@ Activate with `--liveness`.
 Supported languages:
 - C/C++/ObjC: Yes
 - Java: No
+- C#/.Net: No
 
 
 

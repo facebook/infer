@@ -10,6 +10,7 @@ Activate with `--eradicate`.
 Supported languages:
 - C/C++/ObjC: No
 - Java: Yes
+- C#/.Net: Yes
 
 > "I call it my billion-dollar mistake. It was the invention of the null
 > reference in 1965."

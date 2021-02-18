@@ -1,4 +1,4 @@
-<!-- Creator     : groff version 1.22.4 -->
+<!-- Creator     : groff version 1.19.2 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -7,17 +7,16 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <meta name="Content-Style" content="text/css">
 <style type="text/css">
-       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       h1      { text-align: center }
+       p     { margin-top: 0; margin-bottom: 0; }
+       pre   { margin-top: 0; margin-bottom: 0; }
+       table { margin-top: 0; margin-bottom: 0; }
 </style>
 <title>infer-capture</title>
 
 </head>
 <body>
 
-<h1 align="center">infer-capture</h1>
+<h1 align=center>infer-capture</h1>
 
 <a href="#NAME">NAME</a><br>
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
@@ -34,17 +33,15 @@
 <hr>
 
 
-<h2>NAME
 <a name="NAME"></a>
-</h2>
+<h2>NAME</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">infer-capture -
 capture source files for later analysis</p>
 
-<h2>SYNOPSIS
 <a name="SYNOPSIS"></a>
-</h2>
+<h2>SYNOPSIS</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>infer
@@ -71,9 +68,8 @@ infer capture</b> <i>[options]</i> <b>-- ndk-build</b>
 infer capture</b> <i>[--no-xcpretty] [options]</i> <b>--
 xcodebuild</b> <i>...</i></p>
 
-<h2>DESCRIPTION
 <a name="DESCRIPTION"></a>
-</h2>
+<h2>DESCRIPTION</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">Capture the
@@ -83,9 +79,8 @@ source files, translate them into infer's intermediate
 representation, and store the result of the translation in
 the results directory.</p>
 
-<h2>OPTIONS
 <a name="OPTIONS"></a>
-</h2>
+<h2>OPTIONS</h2>
 
 
 
@@ -242,25 +237,24 @@ phase is expected to require several <i>different</i>
 project roots, all relative to a common workspace. Usually a
 single project root is enough, though.</p>
 
-<table width="100%" border="0" rules="none" frame="void"
+<table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
 <td width="11%"></td>
 <td width="3%">
 
 
-<p><b>--</b></p></td>
+<p style="margin-top: 1em" valign="top"><b>--</b></p></td>
 <td width="3%"></td>
 <td width="83%">
 
 
-<p>Stop argument processing, use remaining arguments as a
-build command</p></td></tr>
+<p style="margin-top: 1em" valign="top">Stop argument
+processing, use remaining arguments as a build command</p></td>
 </table>
 
-<h2>BUCK OPTIONS
 <a name="BUCK OPTIONS"></a>
-</h2>
+<h2>BUCK OPTIONS</h2>
 
 
 
@@ -286,12 +280,6 @@ not Java. <b><br>
 clang-based targets (C/C++/Objective-C/Objective-C++).
 (Conversely: <b>--no-buck-clang</b>)</p>
 
-<p style="margin-left:11%;"><b>--buck-combined</b></p>
-
-<p style="margin-left:17%;">Activates: Buck integration for
-clang-based and Java targets. (Conversely:
-<b>--no-buck-combined</b>)</p>
-
 
 <p style="margin-left:11%;"><b>--buck-compilation-database</b>
 <i>{ no-deps | deps }</i></p>
@@ -309,11 +297,6 @@ includes clang targets, as per Buck's
 the <b>--buck-compilation-database deps</b> option. By
 default, all recursive dependencies are captured.</p>
 
-<p style="margin-left:11%;"><b>--buck-java</b></p>
-
-<p style="margin-left:17%;">Activates: Buck integration for
-Java targets. (Conversely: <b>--no-buck-java</b>)</p>
-
 <p style="margin-left:11%;"><b>--buck-java-flavor</b></p>
 
 <p style="margin-left:17%;">Activates: Buck integration for
@@ -328,6 +311,13 @@ of genrules like buck-java. (Conversely:
 buck config values for the infer binary and its version in
 the buck-java-flavor integration. (Conversely:
 <b>--no-buck-java-flavor-suppress-config</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--buck-java-heap-size-gb</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Explicitly set the size of the
+Java heap of Buck processes, in gigabytes.</p>
 
 
 <p style="margin-left:11%;"><b>--buck-merge-all-deps</b></p>
@@ -367,9 +357,8 @@ don't inline any args starting with '@'. Only valid for
 <p style="margin-left:17%;">Specify the path to Xcode
 developer directory, to use for Buck clang targets</p>
 
-<h2>CLANG LINTERS OPTIONS
 <a name="CLANG LINTERS OPTIONS"></a>
-</h2>
+<h2>CLANG LINTERS OPTIONS</h2>
 
 
 
@@ -439,9 +428,8 @@ files even if some compilation fails. (Conversely:
 AL files, then emit possible errors in JSON format to stdout
 (Conversely: <b>--no-linters-validate-syntax-only</b>)</p>
 
-<h2>CLANG OPTIONS
 <a name="CLANG OPTIONS"></a>
-</h2>
+<h2>CLANG OPTIONS</h2>
 
 
 
@@ -541,9 +529,8 @@ still just <i>&lsquo;infer -- &lt;xcodebuild
 command&gt;&lsquo;</i>. (Conversely:
 <b>--no-xcpretty</b>)</p>
 
-<h2>JAVA OPTIONS
 <a name="JAVA OPTIONS"></a>
-</h2>
+<h2>JAVA OPTIONS</h2>
 
 
 
@@ -585,9 +572,8 @@ used to generate the bytecode</p>
 <p style="margin-left:17%;">The version of Java being used.
 Set it to your Java version if mvn is failing.</p>
 
-<h2>ENVIRONMENT
 <a name="ENVIRONMENT"></a>
-</h2>
+<h2>ENVIRONMENT</h2>
 
 
 
@@ -597,9 +583,8 @@ Set it to your Java version if mvn is failing.</p>
 <p style="margin-left:17%;">See the ENVIRONMENT section in
 the manual of <b>infer</b>(1).</p>
 
-<h2>FILES
 <a name="FILES"></a>
-</h2>
+<h2>FILES</h2>
 
 
 
@@ -608,9 +593,8 @@ the manual of <b>infer</b>(1).</p>
 <p style="margin-left:17%;">See the FILES section in the
 manual of <b>infer</b>(1).</p>
 
-<h2>SEE ALSO
 <a name="SEE ALSO"></a>
-</h2>
+<h2>SEE ALSO</h2>
 
 
 

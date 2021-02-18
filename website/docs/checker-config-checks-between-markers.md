@@ -10,6 +10,7 @@ Activate with `--config-checks-between-markers`.
 Supported languages:
 - C/C++/ObjC: Experimental
 - Java: Experimental
+- C#/.Net: Experimental
 
 This checker is currently only useful for certain Facebook code.
 

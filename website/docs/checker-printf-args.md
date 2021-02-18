@@ -12,6 +12,7 @@ Activate with `--printf-args`.
 Supported languages:
 - C/C++/ObjC: No
 - Java: Yes
+- C#/.Net: Yes
 
 
 

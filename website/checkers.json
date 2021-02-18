@@ -11,8 +11,8 @@
     "checker-litho-required-props", "checker-liveness",
     "checker-loop-hoisting", "checker-printf-args", "checker-pulse",
     "checker-purity", "checker-quandary", "checker-racerd",
-    "checker-resource-leak-lab", "checker-siof", "checker-self-in-block",
-    "checker-starvation", "checker-topl-biabd", "checker-topl-pulse",
-    "checker-uninit"
+    "checker-resource-leak-lab", "checker-dotnet-resource-leak",
+    "checker-siof", "checker-self-in-block", "checker-starvation",
+    "checker-topl-biabd", "checker-topl-pulse", "checker-uninit"
   ]
 }
