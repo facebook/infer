@@ -10,7 +10,7 @@ module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
 
-let debug fmt = L.(debug Analysis Verbose fmt)
+let debug fmt = L.debug Analysis Verbose fmt
 
 let get_matching_dest_addr_opt ~edges_pre ~edges_post :
     (BaseMemory.Access.t * AbstractValue.t) list option =
@@ -20,8 +20,9 @@ let get_matching_dest_addr_opt ~edges_pre ~edges_post :
         if AbstractValue.equal addr_dest_pre addr_dest_post then
           Option.map acc ~f:(fun acc -> (access, addr_dest_pre) :: acc)
         else None )
-      (BaseMemory.Edges.bindings edges_pre)
-      (BaseMemory.Edges.bindings edges_post)
+      (BaseMemory.Edges.bindings edges_pre |> List.sort ~compare:[%compare: BaseMemory.Access.t * _])
+      ( BaseMemory.Edges.bindings edges_post
+      |> List.sort ~compare:[%compare: BaseMemory.Access.t * _] )
   with
   | Unequal_lengths ->
       debug "Mismatch in pre and post.\n" ;
