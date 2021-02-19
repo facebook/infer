@@ -414,6 +414,11 @@ let config_checks_between_markers =
     ~user_documentation:"A config checking is done between a marker's start and end"
 
 
+let config_impact_analysis =
+  register ~enabled:false ~id:"CONFIG_IMPACT" Advice ConfigImpactAnalysis
+    ~user_documentation:"A function is called without a config check"
+
+
 let constant_address_dereference =
   register ~enabled:false ~id:"CONSTANT_ADDRESS_DEREFERENCE" Warning Pulse
     ~user_documentation:[%blob "../../documentation/issues/CONSTANT_ADDRESS_DEREFERENCE.md"]

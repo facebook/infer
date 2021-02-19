@@ -14,6 +14,7 @@ type t =
   ; buffer_overrun_analysis: BufferOverrunAnalysisSummary.t option
   ; buffer_overrun_checker: BufferOverrunCheckerSummary.t option
   ; config_checks_between_markers: ConfigChecksBetweenMarkers.Summary.t option
+  ; config_impact_analysis: ConfigImpactAnalysis.Summary.t option
   ; cost: CostDomain.summary option
   ; lab_resource_leaks: ResourceLeakDomain.summary option
   ; dotnet_resource_leaks: ResourceLeakCSDomain.summary option
@@ -46,6 +47,7 @@ let fields =
     ~buffer_overrun_checker:(fun f -> mk f "BufferOverrunChecker" BufferOverrunCheckerSummary.pp)
     ~config_checks_between_markers:(fun f ->
       mk f "ConfigChecksBetweenMarkers" ConfigChecksBetweenMarkers.Summary.pp )
+    ~config_impact_analysis:(fun f -> mk f "ConfigImpactAnalysis" ConfigImpactAnalysis.Summary.pp)
     ~cost:(fun f -> mk f "Cost" CostDomain.pp_summary)
     ~litho_required_props:(fun f -> mk f "Litho Required Props" LithoDomain.pp_summary)
     ~pulse:(fun f -> mk f "Pulse" PulseSummary.pp)
@@ -71,6 +73,7 @@ let empty =
   ; buffer_overrun_analysis= None
   ; buffer_overrun_checker= None
   ; config_checks_between_markers= None
+  ; config_impact_analysis= None
   ; cost= None
   ; lab_resource_leaks= None
   ; dotnet_resource_leaks= None

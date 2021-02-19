@@ -18,6 +18,7 @@ include sig
     ; buffer_overrun_analysis: BufferOverrunAnalysisSummary.t option
     ; buffer_overrun_checker: BufferOverrunCheckerSummary.t option
     ; config_checks_between_markers: ConfigChecksBetweenMarkers.Summary.t option
+    ; config_impact_analysis: ConfigImpactAnalysis.Summary.t option
     ; cost: CostDomain.summary option
     ; lab_resource_leaks: ResourceLeakDomain.summary option
     ; dotnet_resource_leaks: ResourceLeakCSDomain.summary option

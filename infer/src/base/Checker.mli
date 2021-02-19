@@ -13,6 +13,7 @@ type t =
   | BufferOverrunAnalysis
   | BufferOverrunChecker
   | ConfigChecksBetweenMarkers
+  | ConfigImpactAnalysis
   | Cost
   | Eradicate
   | FragmentRetainsView

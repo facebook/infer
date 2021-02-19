@@ -172,6 +172,7 @@ DIRECT_TESTS += \
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
 DIRECT_TESTS += \
+  java_fb-config-impact \
   java_fb-gk-interaction \
   java_fb-performance
 endif

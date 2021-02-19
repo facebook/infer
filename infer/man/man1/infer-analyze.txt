@@ -57,6 +57,15 @@ OPTIONS
            other checkers (Conversely:
            --no-config-checks-between-markers-only)
 
+       --config-impact-analysis
+           Activates: checker config-impact-analysis: [EXPERIMENTAL] Collects
+           function that are called without config checks. (Conversely:
+           --no-config-impact-analysis)
+
+       --config-impact-analysis-only
+           Activates: Enable config-impact-analysis and disable all other
+           checkers (Conversely: --no-config-impact-analysis-only)
+
        --continue-analysis
            Activates: Continue the analysis after more targets are captured
            by --continue. The other analysis options should be given the same
