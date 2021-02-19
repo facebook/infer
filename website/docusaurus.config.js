@@ -52,7 +52,7 @@ module.exports = {
             { label: "Quick Start", to: "docs/getting-started" },
             { label: "User Guide", to: "docs/infer-workflow" },
             { label: "Foundations", to: "docs/about-Infer" },
-            { label: "Bug Types Reference", to: "docs/checkers-bug-types" },
+            { label: "Bug Types Reference", to: "docs/all-issue-types" },
             { label: "Contribute", to: "docs/absint-framework" },
           ],
         },
