@@ -96,11 +96,11 @@ end
 
 let check type_role ~base ~overridden =
   if Nullability.equal Nullability.ThirdPartyNonnull base then
-     (* In context of inheritance check, third party declarations in base are treated optimistically.
-        Meaning return values are assumed [@Nullable] and params are assumed [@NonNull].
-        This is done for compatibility reasons so existing [@Nullsafe] classes are preserved Nullsafe.
-         *)
-  Ok ()
+    (* In context of inheritance check, third party declarations in base are treated optimistically.
+       Meaning return values are assumed [@Nullable] and params are assumed [@NonNull].
+       This is done for compatibility reasons so existing [@Nullsafe] classes are preserved Nullsafe.
+    *)
+    Ok ()
   else
     let subtype, supertype =
       match type_role with
