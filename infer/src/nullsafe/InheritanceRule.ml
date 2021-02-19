@@ -95,13 +95,20 @@ module ReportableViolation = struct
 end
 
 let check type_role ~base ~overridden =
-  let subtype, supertype =
-    match type_role with
-    | Ret ->
-        (* covariance for ret *)
-        (overridden, base)
-    | Param ->
-        (* contravariance for param *)
-        (base, overridden)
-  in
-  Result.ok_if_true (Nullability.is_subtype ~subtype ~supertype) ~error:{base; overridden}
+  if Nullability.equal Nullability.ThirdPartyNonnull base then
+     (* In context of inheritance check, third party declarations in base are treated optimistically.
+        Meaning return values are assumed [@Nullable] and params are assumed [@NonNull].
+        This is done for compatibility reasons so existing [@Nullsafe] classes are preserved Nullsafe.
+         *)
+  Ok ()
+  else
+    let subtype, supertype =
+      match type_role with
+      | Ret ->
+          (* covariance for ret *)
+          (overridden, base)
+      | Param ->
+          (* contravariance for param *)
+          (base, overridden)
+    in
+    Result.ok_if_true (Nullability.is_subtype ~subtype ~supertype) ~error:{base; overridden}
