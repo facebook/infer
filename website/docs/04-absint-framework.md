@@ -97,7 +97,7 @@ and
 Useful analyses have output. Basic printing to stderr or stderr is
 good for debugging, but to report a programmer-readable error that is
 tied to a source code location, you'll want to use
-[`Reporting.log_issue`](/odoc/next/infer/Absint/Reporting/index.html#val-log_issue).
+[`Reporting.log_issue`](pathname:///odoc/next/infer/Absint/Reporting/index.html#val-log_issue).
 
 ## By example: interprocedural analysis
 
@@ -165,5 +165,5 @@ That's it! We now have an interprocedural analysis.
 To go deeper, jump to the [lab
 exercise](https://github.com/facebook/infer/blob/master/infer/src/labs/README.md)
 and to the [API documentation](internal-API/), e.g. for the
-[Absint](/odoc/next/infer/Absint.html) and
-[IR](/odoc/next/infer/IR.html) modules.
+[Absint](pathname:///odoc/next/infer/Absint.html) and
+[IR](pathname:///odoc/next/infer/IR.html) modules.
