@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0">
+    <channel>
+        <title>Infer Blog</title>
+        <link>https://fbinfer.com/blog</link>
+        <description>Infer Blog</description>
+        <lastBuildDate>Fri, 20 Oct 2017 00:00:00 GMT</lastBuildDate>
+        <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
+        <generator>https://github.com/jpmonette/feed</generator>
+        <item>
+            <title><![CDATA[OCamlFormat open-source released]]></title>
+            <link>https://fbinfer.com/blog/2017/10/20/ocamlformat-released</link>
+            <guid>OCamlFormat open-source released</guid>
+            <pubDate>Fri, 20 Oct 2017 00:00:00 GMT</pubDate>
+            <description><![CDATA[We are pleased to announce the first public release of OCamlFormat.]]></description>
+        </item>
+        <item>
+            <title><![CDATA[Video of @Scale2016 talk. Getting the most out of static analyzers]]></title>
+            <link>https://fbinfer.com/blog/2016/11/28/atscale16</link>
+            <guid>Video of @Scale2016 talk. Getting the most out of static analyzers</guid>
+            <pubDate>Mon, 28 Nov 2016 00:00:00 GMT</pubDate>
+            <description><![CDATA[Check out the]]></description>
+        </item>
+        <item>
+            <title><![CDATA[Video of CurryOn Rome talk. Move Fast to Fix More Things]]></title>
+            <link>https://fbinfer.com/blog/2016/08/30/curryon-rome-talk</link>
+            <guid>Video of CurryOn Rome talk. Move Fast to Fix More Things</guid>
+            <pubDate>Tue, 30 Aug 2016 00:00:00 GMT</pubDate>
+            <description><![CDATA[This is the video for Peter's talk at the]]></description>
+        </item>
+        <item>
+            <title><![CDATA[Open Sourcing Infer, 1 Year On]]></title>
+            <link>https://fbinfer.com/blog/2016/06/23/first-opensourceversary</link>
+            <guid>Open Sourcing Infer, 1 Year On</guid>
+            <pubDate>Thu, 23 Jun 2016 00:00:00 GMT</pubDate>
+            <description><![CDATA[It's been a little over a year ago since we]]></description>
+        </item>
+        <item>
+            <title><![CDATA[Talk at Mobile@Scale London]]></title>
+            <link>https://fbinfer.com/blog/2016/04/07/mobileatscale-london-talk</link>
+            <guid>Talk at Mobile@Scale London</guid>
+            <pubDate>Thu, 07 Apr 2016 00:00:00 GMT</pubDate>
+        </item>
+        <item>
+            <title><![CDATA[Collaboration with Spotify]]></title>
+            <link>https://fbinfer.com/blog/2016/03/17/collaboration-with-spotify</link>
+            <guid>Collaboration with Spotify</guid>
+            <pubDate>Thu, 17 Mar 2016 00:00:00 GMT</pubDate>
+            <description><![CDATA[Infer/Spotify collaboration]]></description>
+        </item>
+        <item>
+            <title><![CDATA[Infer on Open Source Android Apps]]></title>
+            <link>https://fbinfer.com/blog/2015/05/22/Infer-on-open-source-android-apps</link>
+            <guid>Infer on Open Source Android Apps</guid>
+            <pubDate>Fri, 22 May 2015 00:00:00 GMT</pubDate>
+            <description><![CDATA[We ran Infer on a few open source Android apps with the aim of finding some bugs]]></description>
+        </item>
+    </channel>
+</rss>
