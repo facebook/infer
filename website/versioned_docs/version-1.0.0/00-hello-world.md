@@ -13,13 +13,6 @@ All these examples can be found in the
 [`infer/examples`](https://github.com/facebook/infer/tree/master/examples)
 directory distributed with Infer.
 
-- [Hello world Java](hello-world#hello-world-java)
-- [Hello world Objective-C](hello-world#hello-world-objective-c)
-- [Hello world C](hello-world#hello-world-c)
-- [Hello world Android](hello-world#hello-world-android)
-- [Hello world iOS](hello-world#hello-world-ios)
-- [Hello world Make](hello-world#hello-world-make)
-
 ## Hello world Java
 
 Here is a simple Java example to illustrate Infer at work.
@@ -287,7 +280,7 @@ Hello.m:30: warning: PARAMETER_NOT_NULL_CHECKED
    Parameter hello is not checked for null, there could be a null pointer dereference: pointer ret_hello last assigned on line 29 could be null and is dereferenced at line 30, column 12
 ```
 
-Similarly to the case of [gradle](docs/hello-world.html#incremental-analysis),
+Similarly to the case of [gradle](#differential-analysis),
 running the command above a second time will yield no analysis results, as
 nothing gets recompiled. Either add the `--reactive` (or `-r`) flag to the
 `infer` command:
@@ -332,7 +325,7 @@ example.c:57: error: MEMORY_LEAK
    memory dynamically allocated to p by call to malloc() at line 56, column 14 is not reachable after line 57, column 3
 ```
 
-Similarly to the case of [gradle](docs/hello-world.html#incremental-analysis),
+Similarly to the case of [gradle](#differential-analysis),
 running `infer run -- make` a second time will yield no analysis results, as
 nothing gets recompiled. Either add the `--reactive` (or `-r`) flag to the
 `infer` command:
