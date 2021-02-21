@@ -168,28 +168,28 @@ struct
 
     let classify poly =
       match Sum.classify poly with
-      | `Zero -> Const Q.zero
-      | `One (mono, coeff) -> (
+      | Zero2 -> Const Q.zero
+      | One2 (mono, coeff) -> (
         match Prod.classify mono with
-        | `Zero -> Const coeff
-        | `One (trm, 1) ->
+        | Zero2 -> Const coeff
+        | One2 (trm, 1) ->
             if Q.equal Q.one coeff then Trm trm else Interpreted
         | _ -> Uninterpreted )
-      | `Many -> Interpreted
+      | Many2 -> Interpreted
 
     let is_uninterpreted poly =
       match Sum.only_elt poly with
       | Some (mono, _) -> (
         match Prod.classify mono with
-        | `Zero -> false
-        | `One (_, 1) -> false
+        | Zero2 -> false
+        | One2 (_, 1) -> false
         | _ -> true )
       | None -> false
 
     let get_const poly =
       match Sum.classify poly with
-      | `Zero -> Some Q.zero
-      | `One (mono, coeff) when Mono.equal_one mono -> Some coeff
+      | Zero2 -> Some Q.zero
+      | One2 (mono, coeff) when Mono.equal_one mono -> Some coeff
       | _ -> None
 
     let get_mono poly =
@@ -258,8 +258,8 @@ struct
           | None -> ()
           | Some poly -> (
             match Sum.classify poly with
-            | `Many -> ()
-            | `Zero | `One _ ->
+            | Many2 -> ()
+            | Zero2 | One2 _ ->
                 (* polynomial factors are not constant or singleton, which
                    should have been flattened into the parent monomial *)
                 assert false ) ) ;
@@ -297,11 +297,11 @@ struct
         | Some poly -> (
           match Sum.classify poly with
           (* 0 ^ p₁ ==> 0 × 1 *)
-          | `Zero -> (Q.zero, Mono.one)
+          | Zero2 -> (Q.zero, Mono.one)
           (* (Σᵢ₌₁¹ cᵢ × Xᵢ) ^ p₁ ==> cᵢ^p₁ × Πⱼ₌₁¹ Xⱼ^pⱼ *)
-          | `One (mono, coeff) -> (Q.pow coeff power, Mono.pow mono power)
+          | One2 (mono, coeff) -> (Q.pow coeff power, Mono.pow mono power)
           (* (Σᵢ₌₁ⁿ cᵢ × Xᵢ) ^ p₁ ==> 1 × Πⱼ₌₁¹ (Σᵢ₌₁ⁿ cᵢ × Xᵢ)^pⱼ *)
-          | `Many -> (Q.one, Mono.of_ base power) )
+          | Many2 -> (Q.one, Mono.of_ base power) )
         (* X₁ ^ p₁ ==> 1 × Πⱼ₌₁¹ Xⱼ^pⱼ *)
         | None -> (Q.one, Mono.of_ base power)
 

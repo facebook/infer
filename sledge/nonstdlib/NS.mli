@@ -150,6 +150,9 @@ module Comparer = Comparer
 module Option = Option
 include module type of Option.Import
 
+type 'a zero_one_many = Zero | One of 'a | Many
+type ('a, 'b) zero_one_many2 = Zero2 | One2 of 'a * 'b | Many2
+
 module Either : sig
   type ('a, 'b) t = Left of 'a | Right of 'b
 

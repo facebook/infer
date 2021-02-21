@@ -98,11 +98,11 @@ struct
 
   let classify s =
     match root_elt s with
-    | None -> `Zero
+    | None -> Zero
     | Some elt -> (
       match S.split elt s with
-      | l, true, r when is_empty l && is_empty r -> `One elt
-      | _ -> `Many )
+      | l, true, r when is_empty l && is_empty r -> One elt
+      | _ -> Many )
 
   let pop s =
     match choose s with

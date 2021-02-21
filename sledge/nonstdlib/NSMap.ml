@@ -154,11 +154,11 @@ struct
 
   let classify m =
     match root_key m with
-    | None -> `Zero
+    | None -> Zero2
     | Some k -> (
       match M.split k m with
-      | l, Some v, r when is_empty l && is_empty r -> `One (k, v)
-      | _ -> `Many )
+      | l, Some v, r when is_empty l && is_empty r -> One2 (k, v)
+      | _ -> Many2 )
 
   let choose_key = root_key
   let choose = root_binding

@@ -109,7 +109,7 @@ module type S = sig
   val pop_min_elt : t -> (elt * mul * t) option
   (** Find and remove minimum element. [O(log n)]. *)
 
-  val classify : t -> [`Zero | `One of elt * mul | `Many]
+  val classify : t -> (elt, mul) zero_one_many2
   (** Classify a set as either empty, singleton, or otherwise. *)
 
   val find_and_remove : elt -> t -> (mul * t) option

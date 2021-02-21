@@ -72,7 +72,7 @@ module type S = sig
   val disjoint : t -> t -> bool
   val max_elt : t -> elt option
   val only_elt : t -> elt option
-  val classify : t -> [`Zero | `One of elt | `Many]
+  val classify : t -> elt zero_one_many
 
   val pop : t -> (elt * t) option
   (** Find and remove an unspecified element. [O(1)]. *)

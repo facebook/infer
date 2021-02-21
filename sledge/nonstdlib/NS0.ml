@@ -131,6 +131,9 @@ let fold_map_from_map map x s ~f =
 
 (** Containers *)
 
+type 'a zero_one_many = Zero | One of 'a | Many
+type ('a, 'b) zero_one_many2 = Zero2 | One2 of 'a * 'b | Many2
+
 (* from upcoming Stdlib *)
 module Either = struct
   type ('a, 'b) t = Left of 'a | Right of 'b

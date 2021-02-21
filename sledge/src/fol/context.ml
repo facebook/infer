@@ -997,8 +997,6 @@ let subst_invariant us s0 s =
           || not (Var.Set.subset (Trm.fv key) ~of_:us) ) ) ;
     true )
 
-type 'a zom = Zero | One of 'a | Many
-
 (** try to solve [p = q] such that [fv (p - q) ⊆ us ∪ xs] and [p - q]
     has at most one maximal solvable subterm, [kill], where
     [fv kill ⊈ us]; solve [p = q] for [kill]; extend subst mapping [kill]

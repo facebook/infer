@@ -69,7 +69,7 @@ module type S = sig
   val is_singleton : 'a t -> bool
   val length : 'a t -> int
   val only_binding : 'a t -> (key * 'a) option
-  val classify : 'a t -> [`Zero | `One of key * 'a | `Many]
+  val classify : 'a t -> (key, 'a) zero_one_many2
 
   val choose_key : 'a t -> key option
   (** Find an unspecified key. Different keys may be chosen for equivalent

@@ -95,12 +95,12 @@ struct
       then zero
       else
         match Fmls.classify neg with
-        | `Zero -> (
+        | Zero -> (
           match Fmls.classify pos with
-          | `Zero -> unit
-          | `One p -> p
-          | `Many -> cons ~pos ~neg )
-        | `One n when Fmls.is_empty pos -> _Not n
+          | Zero -> unit
+          | One p -> p
+          | Many -> cons ~pos ~neg )
+        | One n when Fmls.is_empty pos -> _Not n
         | _ -> cons ~pos ~neg
 
     let _And ~pos ~neg =
