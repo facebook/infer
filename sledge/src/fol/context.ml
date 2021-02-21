@@ -472,10 +472,6 @@ let rec canon x a =
 
 (* Extending the carrier ==================================================*)
 
-let add_to_cls elt rep cls =
-  Trm.Map.update rep cls ~f:(fun elts0 ->
-      Cls.add elt (Option.value elts0 ~default:Cls.empty) )
-
 let add_use_of sup sub use =
   Trm.Map.update sub use ~f:(fun u ->
       Use.add sup (Option.value ~default:Use.empty u) )
@@ -483,33 +479,15 @@ let add_use_of sup sub use =
 let add_uses_of a use =
   Iter.fold ~f:(add_use_of a) (Theory.solvable_trms a) use
 
-let add_eq v ~rep:r x =
-  [%trace]
-    ~call:(fun {pf} -> pf "@ @[%a ↦ %a@]@ %a" Trm.pp v Trm.pp r pp_raw x)
-    ~retn:(fun {pf} (_, x') -> pf "%a" pp_raw x')
-  @@ fun () ->
-  match Trm.Map.find_or_add v r x.rep with
-  | `Found v' ->
-      (* v ↦ v' already, so v' and r are congruent but not (yet) equal,
-         therefore add pending v' = r *)
-      let pnd = (v', r) :: x.pnd in
-      (v', {x with pnd})
-  | `Added rep ->
-      (* v ↦ r newly added, so can directly add v = r *)
-      let cls = add_to_cls v r x.cls in
-      let use = add_uses_of v x.use in
-      (r, {x with rep; cls; use})
-
-(** [find_extend_ a x] is [a', x'] where [x'] is [x] extended so that
-    [a' = find_exn a x']. This adds [a] and all its subterms, normalizes [a]
-    to [a'], and uses the result to find equalities needed to reestablish
-    congruence closure. *)
-let rec find_extend_ a x =
+(** [canon_extend_ a x] is [a', x'] where [x'] is [x] extended so that
+    [a' = canon x' a]. This finds [a] in rep or recurses and then canonizes
+    if absent, adding the canonized term [a'] and its subterms. *)
+let rec canon_extend_ a x =
   [%trace]
     ~call:(fun {pf} -> pf "@ %a@ | %a" Trm.pp a pp_raw x)
     ~retn:(fun {pf} (a', x') ->
       pf "%a@ %a" Trm.pp a' pp_diff (x, x') ;
-      assert (Trm.equal a' (find_check a x')) )
+      assert (Trm.equal a' (canon x' a)) )
   @@ fun () ->
   match Theory.classify a with
   | InterpAtom -> (a, x)
@@ -518,37 +496,34 @@ let rec find_extend_ a x =
     | `Found a' -> (a', x)
     | `Added rep -> (a, {x with rep}) )
   | InterpApp ->
-      if Trm.Map.mem a x.rep then (a, x)
-      else Trm.fold_map ~f:find_extend_ a x
+      if Trm.Map.mem a x.rep then
+        (* optimize: a already a rep so don't need to consider subterms *)
+        (a, x)
+      else Trm.fold_map ~f:canon_extend_ a x
   | UninterpApp -> (
-    match Trm.Map.find_or_add a a x.rep with
-    | `Found a' ->
+    match Trm.Map.find a x.rep with
+    | Some a' ->
         (* a already has rep a' *)
         (a', x)
-    | `Added rep ->
-        (* a now its own rep *)
-        let use = add_uses_of a x.use in
-        let x = {x with rep; use} in
-        (* add subterms and norm a using (old) reps *)
-        let a_norm, x = Trm.fold_map ~f:find_extend_ a x in
-        if Trm.equal a_norm a then (* a already normalized *)
-          (a_norm, x)
-        else add_eq a_norm ~rep:a x )
+    | None -> (
+        (* norm wrt rep and add subterms *)
+        let a_norm, x = Trm.fold_map ~f:canon_extend_ a x in
+        match Trm.Map.find_or_add a_norm a_norm x.rep with
+        | `Found a' ->
+            (* a_norm already equal to a' *)
+            (a', x)
+        | `Added rep ->
+            (* a_norm newly added *)
+            let use = add_uses_of a_norm x.use in
+            let x = {x with rep; use} in
+            (a_norm, x) ) )
 
-let find_extend a x =
+(** normalize and add a term to the carrier *)
+let canon_extend a x =
   [%trace]
-    ~call:(fun {pf} -> pf "@ %a@ %a" Trm.pp a pp_raw x)
+    ~call:(fun {pf} -> pf "@ %a@ | %a" Trm.pp a pp_raw x)
     ~retn:(fun {pf} (a', x') -> pf "%a@ %a" Trm.pp a' pp_diff (x, x'))
-  @@ fun () -> find_extend_ a x
-
-(** add a term to the carrier *)
-let extend a x =
-  [%trace]
-    ~call:(fun {pf} -> pf "@ %a@ | %a" Trm.pp a pp x)
-    ~retn:(fun {pf} x' ->
-      pf "%a" pp_diff (x, x') ;
-      pre_invariant x' )
-  @@ fun () -> snd (find_extend a x)
+  @@ fun () -> canon_extend_ a x
 
 (* Propagation ============================================================*)
 
@@ -691,9 +666,8 @@ let and_eq ~wrt a b x =
   @@ fun () ->
   if not x.sat then x
   else
-    let a' = canon x a in
-    let b' = canon x b in
-    let x = extend a' (extend b' x) in
+    let a', x = canon_extend a x in
+    let b', x = canon_extend b x in
     if Trm.equal a' b' then x else merge ~wrt a' b' x
 
 let extract_xs r = (r.xs, {r with xs= Var.Set.empty})
