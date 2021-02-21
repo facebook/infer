@@ -581,7 +581,7 @@ module Make(Ord: OrderedType) =
       | [x0; x1; x2] -> add x2 (add x1 (singleton x0))
       | [x0; x1; x2; x3] -> add x3 (add x2 (add x1 (singleton x0)))
       | [x0; x1; x2; x3; x4] -> add x4 (add x3 (add x2 (add x1 (singleton x0))))
-      | _ -> of_sorted_list (List.sort_uniq Ord.compare l)
+      | _ -> of_sorted_list (List.sort_uniq ~cmp:Ord.compare l)
 
     let add_seq i m =
       Seq.fold_left (fun s x -> add x s) m i
