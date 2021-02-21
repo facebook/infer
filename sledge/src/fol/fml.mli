@@ -66,9 +66,8 @@ val lit : Predsym.t -> Trm.t array -> t
 
 val map_vars : t -> f:(Var.t -> Var.t) -> t
 val map_trms : t -> f:(Trm.t -> Trm.t) -> t
-
-val map_pos_neg :
-  (t -> t) -> 'a -> (pos:set -> neg:set -> 'a) -> pos:set -> neg:set -> 'a
+val map_and : t -> pos:set -> neg:set -> (t -> t) -> t
+val map_or : t -> pos:set -> neg:set -> (t -> t) -> t
 
 (** Traverse *)
 

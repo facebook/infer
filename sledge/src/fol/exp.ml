@@ -394,8 +394,8 @@ module Formula = struct
     | Eq0 x -> lift_map1 f b Fml.eq0 x
     | Pos x -> lift_map1 f b Fml.pos x
     | Not x -> map1 (map_terms ~f) b Fml.not_ x
-    | And {pos; neg} -> Fml.map_pos_neg (map_terms ~f) b Fml.andN ~pos ~neg
-    | Or {pos; neg} -> Fml.map_pos_neg (map_terms ~f) b Fml.orN ~pos ~neg
+    | And {pos; neg} -> Fml.map_and b ~pos ~neg (map_terms ~f)
+    | Or {pos; neg} -> Fml.map_or b ~pos ~neg (map_terms ~f)
     | Iff (x, y) -> map2 (map_terms ~f) b Fml.iff x y
     | Cond {cnd; pos; neg} ->
         map3 (map_terms ~f) b

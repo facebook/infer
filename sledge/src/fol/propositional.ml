@@ -152,7 +152,9 @@ struct
       |> check invariant
 
     let and_ p q =
-      join _And ff
+      join
+        (_Join (fun ~pos ~neg -> And {pos; neg}) tt ff)
+        ff
         (function
           | And {pos; neg} -> (pos, neg)
           | Tt -> (Fmls.empty, Fmls.empty)
@@ -161,7 +163,9 @@ struct
         p q
 
     let or_ p q =
-      join _Or tt
+      join
+        (_Join (fun ~pos ~neg -> Or {pos; neg}) ff tt)
+        tt
         (function
           | Or {pos; neg} -> (pos, neg)
           | Not Tt -> (Fmls.empty, Fmls.empty)
@@ -263,6 +267,57 @@ struct
       | Lit (_, xs) -> Array.iter ~f xs
 
     let trms p = Iter.from_labelled_iter (iter_trms p)
+
+    type polarity = Con | Dis
+
+    let map_join polarity b ~pos ~neg f =
+      let pos_to_flatten = ref [] in
+      let neg_to_flatten = ref [] in
+      let pos0, neg0 = (pos, neg) in
+      let pos =
+        Fmls.map pos ~f:(fun p ->
+            let p' = f p in
+            if p' == p then p
+            else
+              match (polarity, p') with
+              | Con, And {pos; neg} | Dis, Or {pos; neg} ->
+                  pos_to_flatten := (p, pos, neg) :: !pos_to_flatten ;
+                  p
+              | _ -> p' )
+      in
+      let neg =
+        Fmls.map neg ~f:(fun n ->
+            let n' = f n in
+            if n' == n then n
+            else
+              match (polarity, n') with
+              | Con, Or {pos; neg} | Dis, And {pos; neg} ->
+                  neg_to_flatten := (n, pos, neg) :: !neg_to_flatten ;
+                  n
+              | _ -> n' )
+      in
+      let pos, neg =
+        if List.is_empty !pos_to_flatten then (pos, neg)
+        else
+          List.fold !pos_to_flatten (pos, neg)
+            ~f:(fun (p, p', n') (pos, neg) ->
+              (Fmls.union p' (Fmls.remove p pos), Fmls.union n' neg) )
+      in
+      let pos, neg =
+        if List.is_empty !neg_to_flatten then (pos, neg)
+        else
+          List.fold !neg_to_flatten (pos, neg)
+            ~f:(fun (n, p', n') (pos, neg) ->
+              (Fmls.union n' pos, Fmls.union p' (Fmls.remove n neg)) )
+      in
+      if pos0 == pos && neg0 == neg then b
+      else
+        match polarity with
+        | Con -> _Join (fun ~pos ~neg -> And {pos; neg}) tt ff ~pos ~neg
+        | Dis -> _Join (fun ~pos ~neg -> Or {pos; neg}) ff tt ~pos ~neg
+
+    let map_and = map_join Con
+    let map_or = map_join Dis
   end
 end
 [@@inline]

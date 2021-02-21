@@ -46,6 +46,8 @@ module type FORMULA = sig
   val or_ : t -> t -> t
   val is_negative : t -> bool
   val trms : t -> trm iter
+  val map_and : t -> pos:set -> neg:set -> (t -> t) -> t
+  val map_or : t -> pos:set -> neg:set -> (t -> t) -> t
 end
 
 (** Sets of formulas *)

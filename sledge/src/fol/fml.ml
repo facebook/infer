@@ -147,9 +147,6 @@ let iff = _Iff
 let cond ~cnd ~pos ~neg = _Cond cnd pos neg
 let lit = _Lit
 
-let map_pos_neg f e cons ~pos ~neg =
-  map2 (Set.map ~f) e (fun pos neg -> cons ~pos ~neg) pos neg
-
 let rec map_trms b ~f =
   match b with
   | Tt -> b
@@ -157,8 +154,8 @@ let rec map_trms b ~f =
   | Eq0 x -> map1 f b _Eq0 x
   | Pos x -> map1 f b _Pos x
   | Not x -> map1 (map_trms ~f) b _Not x
-  | And {pos; neg} -> map_pos_neg (map_trms ~f) b _And ~pos ~neg
-  | Or {pos; neg} -> map_pos_neg (map_trms ~f) b _Or ~pos ~neg
+  | And {pos; neg} -> map_and b ~pos ~neg (map_trms ~f)
+  | Or {pos; neg} -> map_or b ~pos ~neg (map_trms ~f)
   | Iff (x, y) -> map2 (map_trms ~f) b _Iff x y
   | Cond {cnd; pos; neg} -> map3 (map_trms ~f) b _Cond cnd pos neg
   | Lit (p, xs) -> mapN f b (_Lit p) xs
