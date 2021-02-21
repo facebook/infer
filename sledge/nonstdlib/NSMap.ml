@@ -8,32 +8,33 @@
 open! NS0
 include NSMap_intf
 
-module Make (Key : sig
-  type t [@@deriving compare, sexp_of]
-end) : S with type key = Key.t = struct
-  module M = Stdlib.Map.Make [@inlined] (Key)
+type ('key, +'a, 'compare_key) t = ('key, 'a, 'compare_key) Map.t
+[@@deriving compare, equal, sexp]
+
+type ('compare_key, 'compare_a) compare =
+  ('compare_key, 'compare_a) Map.compare
+[@@deriving compare, equal, sexp]
+
+module Make_from_Comparer (Key : sig
+  type t [@@deriving equal, sexp_of]
+
+  include Comparer.S with type t := t
+end) =
+struct
+  module M = Map.Make [@inlined] (Key)
 
   type key = Key.t
-  type 'a t = 'a M.t [@@deriving compare, equal]
+  type compare_key = Key.compare
+  type 'a t = 'a M.t [@@deriving compare]
 
-  let to_list = M.bindings
-  let of_list l = List.fold_left l M.empty ~f:(fun m (k, v) -> M.add k v m)
+  type 'compare_a compare = 'compare_a M.compare
+  [@@deriving compare, equal, sexp]
 
-  let sexp_of_t sexp_of_data m =
-    to_list m
-    |> Sexplib.Conv.sexp_of_list
-         (Sexplib.Conv.sexp_of_pair Key.sexp_of_t sexp_of_data)
+  let comparer = M.comparer
 
-  module Provide_of_sexp (Key : sig
-    type t = key [@@deriving of_sexp]
-  end) =
-  struct
-    let t_of_sexp data_of_sexp s =
-      s
-      |> Sexplib.Conv.list_of_sexp
-           (Sexplib.Conv.pair_of_sexp Key.t_of_sexp data_of_sexp)
-      |> of_list
-  end
+  include M.Provide_equal (Key)
+  include M.Provide_sexp_of (Key)
+  module Provide_of_sexp = M.Provide_of_sexp
 
   let empty = M.empty
   let singleton = M.singleton
@@ -210,10 +211,12 @@ end) : S with type key = Key.t = struct
   let existsi m ~f = M.exists (fun key data -> f ~key ~data) m
   let for_alli m ~f = M.for_all (fun key data -> f ~key ~data) m
   let fold m s ~f = M.fold (fun key data acc -> f ~key ~data acc) m s
-  let to_iter m = Iter.from_iter (fun f -> M.iter (fun k v -> f (k, v)) m)
   let keys m = Iter.from_iter (fun f -> M.iter (fun k _ -> f k) m)
   let values m = Iter.from_iter (fun f -> M.iter (fun _ v -> f v) m)
+  let to_iter m = Iter.from_iter (fun f -> M.iter (fun k v -> f (k, v)) m)
   let of_iter s = Iter.fold s M.empty ~f:(fun (k, v) m -> M.add k v m)
+  let to_list = M.bindings
+  let of_list l = List.fold_left l M.empty ~f:(fun m (k, v) -> M.add k v m)
 
   let symmetric_diff l r ~eq =
     let seq = ref Iter.empty in
@@ -249,4 +252,13 @@ end) : S with type key = Key.t = struct
     let sd = Iter.to_list (symmetric_diff ~eq x y) in
     List.pp ~pre ~suf sep pp_diff_elt fs sd
 end
+[@@inline]
+
+module Make (Key : sig
+  type t [@@deriving compare, equal, sexp_of]
+end) =
+Make_from_Comparer (struct
+  include Key
+  include Comparer.Make (Key)
+end)
 [@@inline]

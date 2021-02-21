@@ -11,3 +11,5 @@
  (preprocess
   (pps ppx_sledge ppx_trace))
  (inline_tests))
+
+(include_subdirs unqualified)

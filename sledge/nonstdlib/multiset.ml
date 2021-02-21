@@ -11,7 +11,7 @@ open! NS0
 include Multiset_intf
 
 module Make (Elt : sig
-  type t [@@deriving compare, sexp_of]
+  type t [@@deriving compare, equal, sexp_of]
 end)
 (Mul : MULTIPLICITY) =
 struct

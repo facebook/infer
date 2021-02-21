@@ -15,7 +15,7 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
 
     val pp : t pp
 
-    type as_inlined_location = t [@@deriving compare, sexp_of]
+    type as_inlined_location = t [@@deriving compare, equal, sexp_of]
 
     val empty : t
     val push_call : Llair.func Llair.call -> Dom.from_call -> t -> t option
@@ -80,6 +80,8 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
         | Throw _, _ -> -1
         | _, Throw _ -> 1
         | Empty, Empty -> 0
+
+    let equal_as_inlined_location = [%compare.equal: as_inlined_location]
 
     let invariant s =
       let@ () = Invariant.invariant [%here] s [%sexp_of: t] in
@@ -160,7 +162,7 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
           { dst: Llair.Block.t
           ; src: Llair.Block.t option
           ; stk: Stack.as_inlined_location }
-        [@@deriving compare, sexp_of]
+        [@@deriving compare, equal, sexp_of]
       end
 
       include T
@@ -175,7 +177,7 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
     module Depths = struct
       module M = Map.Make (Edge)
 
-      type t = int M.t [@@deriving compare, sexp_of]
+      type t = int M.t [@@deriving compare, equal, sexp_of]
 
       let empty = M.empty
       let find = M.find

@@ -9,13 +9,17 @@ open! NS0
 
 module type S = sig
   type key
+  type compare_key
   type +'a t [@@deriving compare, equal, sexp_of]
+
+  include Comparer.S1 with type 'a t := 'a t
 
   module Provide_of_sexp (_ : sig
     type t = key [@@deriving of_sexp]
   end) : sig
-    val t_of_sexp : (Sexp.t -> 'a) -> Sexp.t -> 'a t
+    type 'a t [@@deriving of_sexp]
   end
+  with type 'a t := 'a t
 
   (** {1 Construct} *)
 
