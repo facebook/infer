@@ -583,7 +583,7 @@ let update_rep noninterp ~from:r ~to_:r' x =
   {x with rep; cls; use}
 
 (** add v ↦ t to x *)
-let propagate1 (v, t) x =
+let propagate1 {Theory.var= v; rep= t} x =
   [%trace]
     ~call:(fun {pf} ->
       pf "@ @[%a ↦ %a@]@ %a" Trm.pp v Trm.pp t pp_raw x ;
@@ -985,8 +985,8 @@ let rec solve_pending (s : Theory.t) soln =
       match Theory.solve a' b' {s with pending} with
       | {solved= Some solved} as s ->
           solve_pending {s with solved= Some []}
-            (List.fold solved soln ~f:(fun (trm, rep) soln ->
-                 Subst.compose1 ~key:trm ~data:rep soln ))
+            (List.fold solved soln ~f:(fun {var; rep} soln ->
+                 Subst.compose1 ~key:var ~data:rep soln ))
       | {solved= None} -> None )
   | [] -> Some soln
 

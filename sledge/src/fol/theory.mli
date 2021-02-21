@@ -7,11 +7,13 @@
 
 (** Theory Solver *)
 
+type oriented_equality = {var: Trm.t; rep: Trm.t}
+
 type t =
   { wrt: Var.Set.t
   ; no_fresh: bool
   ; fresh: Var.Set.t
-  ; solved: (Trm.t * Trm.t) list option
+  ; solved: oriented_equality list option
   ; pending: (Trm.t * Trm.t) list }
 
 val pp : t pp

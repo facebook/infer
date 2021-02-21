@@ -9,18 +9,20 @@
 
 (* Theory equation solver state ===========================================*)
 
+type oriented_equality = {var: Trm.t; rep: Trm.t}
+
 type t =
   { wrt: Var.Set.t
   ; no_fresh: bool
   ; fresh: Var.Set.t
-  ; solved: (Trm.t * Trm.t) list option
+  ; solved: oriented_equality list option
   ; pending: (Trm.t * Trm.t) list }
 
 let pp ppf = function
   | {solved= None} -> Format.fprintf ppf "unsat"
   | {solved= Some solved; fresh; pending} ->
       Format.fprintf ppf "%a%a : %a" Var.Set.pp_xs fresh
-        (List.pp ";@ " (fun ppf (var, rep) ->
+        (List.pp ";@ " (fun ppf {var; rep} ->
              Format.fprintf ppf "@[%a ↦ %a@]" Trm.pp var Trm.pp rep ))
         solved
         (List.pp ";@ " (fun ppf (a, b) ->
@@ -102,7 +104,7 @@ let orient e f =
 let add_solved ~var ~rep s =
   match s with
   | {solved= None} -> s
-  | {solved= Some solved} -> {s with solved= Some ((var, rep) :: solved)}
+  | {solved= Some solved} -> {s with solved= Some ({var; rep} :: solved)}
 
 let add_pending a b s = {s with pending= (a, b) :: s.pending}
 
