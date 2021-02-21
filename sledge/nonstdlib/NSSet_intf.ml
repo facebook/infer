@@ -91,6 +91,7 @@ module type S = sig
   (** {1 Transform} *)
 
   val map : t -> f:(elt -> elt) -> t
+  val flat_map : t -> f:(elt -> t) -> t
   val filter : t -> f:(elt -> bool) -> t
   val partition : t -> f:(elt -> bool) -> t * t
 

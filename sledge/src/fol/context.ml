@@ -217,6 +217,8 @@ module Use : sig
   val iter : t -> f:(Trm.t -> unit) -> unit
   val fold : t -> 's -> f:(Trm.t -> 's -> 's) -> 's
   val map : t -> f:(Trm.t -> Trm.t) -> t
+  val flat_map : t -> f:(Trm.t -> t) -> t
+  val filter : t -> f:(Trm.t -> bool) -> t
 end =
   Trm.Set
 
@@ -342,6 +344,8 @@ let in_car a x = Subst.mem a x.rep
 let is_rep a x =
   match Subst.find a x.rep with Some a' -> Trm.equal a a' | None -> false
 
+let use_of a x = Trm.Map.find a x.use |> Option.value ~default:Use.empty
+
 (** congruent specialized to assume subterms of [a'] are normalized wrt [r]
     (or canonized) *)
 let semi_congruent r a' b = Trm.equal a' (Trm.map ~f:(Subst.norm r.rep) b)
@@ -397,9 +401,7 @@ let pre_invariant x =
            subterms *)
         Iter.iter (Theory.solvable_trms a) ~f:(fun b ->
             assert (
-              let b_use =
-                Trm.Map.find b x.use |> Option.value ~default:Use.empty
-              in
+              let b_use = use_of b x in
               Use.mem a b_use
               || fail "@[subterm %a@ of %a@ not in use %a@]" Trm.pp b Trm.pp
                    a Use.pp b_use () ) ) ) ;
@@ -628,9 +630,8 @@ let propagate1 (v, t) x =
     ~retn:(fun {pf} -> pf "%a" pp_raw)
   @@ fun () ->
   let s = Trm.Map.singleton v t in
-  let v_use = Trm.Map.find v x.use |> Option.value ~default:Use.empty in
   let x = update_rep true ~from:v ~to_:t x in
-  Use.fold v_use x ~f:(fun u x ->
+  Use.fold (use_of v x) x ~f:(fun u x ->
       let w = norm1 s u in
       let x = {x with pnd= (u, w) :: x.pnd} in
       if Theory.is_noninterpreted u then
@@ -753,21 +754,6 @@ let ppx_diff var_strength fs parent_ctx fml ctx =
   ppx var_strength fs
     (diff_classes ctx parent_ctx)
     (if Fml.(equal tt fml') then [] else [fml'])
-
-let fold_uses_of r t s ~f =
-  let rec fold_ e s ~f =
-    let s =
-      Iter.fold (Trm.trms e) s ~f:(fun sub s ->
-          fold_ ~f sub (if Trm.equal t sub then f e s else s) )
-    in
-    if Theory.is_interpreted e then Iter.fold ~f:(fold_ ~f) (Trm.trms e) s
-    else s
-  in
-  Subst.fold r.rep s ~f:(fun ~key:trm ~data:rep s ->
-      fold_ ~f trm (fold_ ~f rep s) )
-
-let iter_uses_of t r ~f = fold_uses_of r t () ~f:(fun use () -> f use)
-let uses_of t r = Iter.from_labelled_iter (iter_uses_of t r)
 
 let apply_subst wrt s r =
   [%Trace.call fun {pf} -> pf "@ %a@ %a" Subst.pp s pp r]
@@ -897,7 +883,7 @@ let trivial vs r =
       let x = Trm.var v in
       match Subst.find x r.rep with
       | None -> Var.Set.add v ks
-      | Some x' when Trm.equal x x' && Iter.is_empty (uses_of x r) ->
+      | Some x' when Trm.equal x x' && Use.is_empty (use_of x r) ->
           Var.Set.add v ks
       | _ -> ks )
 
@@ -1231,21 +1217,22 @@ let solve_class us us_xs ~key:rep ~data:cls (classes, subst) =
 let solve_concat_extracts_eq r x =
   [%Trace.call fun {pf} -> pf "@ %a@ %a" Trm.pp x pp r]
   ;
-  let uses =
-    fold_uses_of r x [] ~f:(fun use uses ->
-        match use with
-        | Sized _ as m ->
-            fold_uses_of r m uses ~f:(fun use uses ->
-                match use with Extract _ as e -> e :: uses | _ -> uses )
-        | _ -> uses )
+  (* find terms of form [Extract {_=Sized {_=x}}] *)
+  let extract_uses =
+    Use.flat_map (use_of x r) ~f:(function
+      | Sized _ as m ->
+          Use.filter (use_of m r) ~f:(function
+            | Extract _ -> true
+            | _ -> false )
+      | _ -> Use.empty )
   in
   let find_extracts_at_off off =
-    List.filter uses ~f:(function
+    Use.filter extract_uses ~f:(function
       | Extract {off= o} -> implies r (Fml.eq o off)
       | _ -> false )
   in
   let rec find_extracts full_rev_extracts rev_prefix off =
-    List.fold (find_extracts_at_off off) full_rev_extracts
+    Use.fold (find_extracts_at_off off) full_rev_extracts
       ~f:(fun e full_rev_extracts ->
         match e with
         | Extract {seq= Sized {siz= n}; off= o; len= l} ->
