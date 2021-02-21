@@ -23,6 +23,9 @@ module type S =
   sig
     type key
     type +'a t
+
+    include Comparer.S1 with type 'a t := 'a t
+
     val empty: 'a t
     val is_empty: 'a t -> bool
     val mem:  key -> 'a t -> bool
@@ -34,7 +37,14 @@ module type S =
           (key -> 'a option -> 'b option -> 'c option) -> 'a t -> 'b t -> 'c t
     val union: (key -> 'a -> 'a -> 'a option) -> 'a t -> 'a t -> 'a t
     val compare: ('a -> 'a -> int) -> 'a t -> 'a t -> int
-    val equal: ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
+  
+    module Provide_equal (_ : sig
+      type t = key [@@deriving equal]
+    end) : sig
+      type 'a t [@@deriving equal]
+    end
+    with type 'a t := 'a t
+
     val iter: (key -> 'a -> unit) -> 'a t -> unit
     val fold: (key -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
     val for_all: (key -> 'a -> bool) -> 'a t -> bool
@@ -63,62 +73,145 @@ module type S =
     val to_seq_from : key -> 'a t -> (key * 'a) Seq.t
     val add_seq : (key * 'a) Seq.t -> 'a t -> 'a t
     val of_seq : (key * 'a) Seq.t -> 'a t
+
+    module Provide_sexp_of (_ : sig
+      type t = key [@@deriving sexp_of]
+    end) : sig
+      type 'a t [@@deriving sexp_of]
+    end
+    with type 'a t := 'a t
+
+    module Provide_of_sexp (_ : sig
+      type t = key [@@deriving of_sexp]
+    end) : sig
+      type 'a t [@@deriving of_sexp]
+    end
+    with type 'a t := 'a t
   end
 
-module Make(Ord: OrderedType) = struct
+module T = struct
+  type ('key, 'a, 'cmp) t =
+      Empty
+    | Node of {l:('key, 'a, 'cmp) t; v:'key; d:'a; r:('key, 'a, 'cmp) t; h:int}
+
+  type ('key, 'a, 'cmp) enumeration =
+      End
+    | More of 'key * 'a * ('key, 'a, 'cmp) t * ('key, 'a, 'cmp) enumeration
+
+  let rec cons_enum m e =
+    match m with
+      Empty -> e
+    | Node {l; v; d; r} -> cons_enum l (More(v, d, r, e))
+
+  let compare compare_key compare_a _ m1 m2 =
+    let rec compare_aux e1 e2 =
+        match (e1, e2) with
+        (End, End) -> 0
+      | (End, _)  -> -1
+      | (_, End) -> 1
+      | (More(v1, d1, r1, e1), More(v2, d2, r2, e2)) ->
+          let c = compare_key v1 v2 in
+          if c <> 0 then c else
+          let c = compare_a d1 d2 in
+          if c <> 0 then c else
+          compare_aux (cons_enum r1 e1) (cons_enum r2 e2)
+    in compare_aux (cons_enum m1 End) (cons_enum m2 End)
+
+  type ('compare_key, 'compare_a) compare [@@deriving compare, equal, sexp]
+end
+
+include T
+
+let equal equal_key equal_a _ m1 m2 =
+  let rec equal_aux e1 e2 =
+      match (e1, e2) with
+      (End, End) -> true
+    | (End, _)  -> false
+    | (_, End) -> false
+    | (More(v1, d1, r1, e1), More(v2, d2, r2, e2)) ->
+        equal_key v1 v2 && equal_a d1 d2 &&
+        equal_aux (cons_enum r1 e1) (cons_enum r2 e2)
+  in equal_aux (cons_enum m1 End) (cons_enum m2 End)
+
+let rec bindings_aux accu = function
+    Empty -> accu
+  | Node {l; v; d; r} -> bindings_aux ((v, d) :: bindings_aux accu r) l
+
+let bindings s =
+  bindings_aux [] s
+
+let sexp_of_t sexp_of_key sexp_of_data _ m =
+  m
+  |> bindings
+  |> Sexplib.Conv.sexp_of_list
+       (Sexplib.Conv.sexp_of_pair sexp_of_key sexp_of_data)
+
+let height = function
+    Empty -> 0
+  | Node {h} -> h
+
+let create l x d r =
+  let hl = height l and hr = height r in
+  Node{l; v=x; d; r; h=(if hl >= hr then hl + 1 else hr + 1)}
+
+let of_sorted_list l =
+  let rec sub n l =
+    match n, l with
+    | 0, l -> Empty, l
+    | 1, (v0,d0) :: l -> Node {l=Empty; v=v0; d=d0; r=Empty; h=1}, l
+    | 2, (v0,d0) :: (v1,d1) :: l ->
+        Node{l=Node{l=Empty; v=v0; d=d0; r=Empty; h=1}; v=v1; d=d1;
+             r=Empty; h=2}, l
+    | 3, (v0,d0) :: (v1,d1) :: (v2,d2) :: l ->
+        Node{l=Node{l=Empty; v=v0; d=d0; r=Empty; h=1}; v=v1; d=d1;
+             r=Node{l=Empty; v=v2; d=d2; r=Empty; h=1}; h=2}, l
+    | n, l ->
+      let nl = n / 2 in
+      let left, l = sub nl l in
+      match l with
+      | [] -> assert false
+      | (v,d) :: l ->
+        let right, l = sub (n - nl - 1) l in
+        create left v d right, l
+  in
+  fst (sub (List.length l) l)
+
+let t_of_sexp key_of_sexp data_of_sexp _ m =
+  m
+  |> Sexplib.Conv.list_of_sexp
+       (Sexplib.Conv.pair_of_sexp key_of_sexp data_of_sexp)
+  |> of_sorted_list
+
+module Make (Ord : Comparer.S) = struct
+    module Ord = struct
+      include Ord
+      let compare = (comparer :> t -> t -> int)
+    end
 
     type key = Ord.t
 
-    type 'a t =
-        Empty
-      | Node of {l:'a t; v:key; d:'a; r:'a t; h:int}
+    include (Comparer.Apply1 (T) (Ord))
 
-    type 'a enumeration = End | More of key * 'a * 'a t * 'a enumeration
+    module Provide_equal (Key : sig
+      type t = Ord.t [@@deriving equal]
+    end) = struct
+      let equal equal_data =
+        equal Key.equal equal_data Ord.equal_compare
+    end
 
-    let rec cons_enum m e =
-      match m with
-        Empty -> e
-      | Node {l; v; d; r} -> cons_enum l (More(v, d, r, e))
+    module Provide_sexp_of (Key : sig
+      type t = Ord.t [@@deriving sexp_of]
+    end) = struct
+      let sexp_of_t sexp_of_data m =
+        sexp_of_t Key.sexp_of_t sexp_of_data Ord.sexp_of_compare m
+    end
 
-    let compare cmp m1 m2 =
-      let rec compare_aux e1 e2 =
-          match (e1, e2) with
-          (End, End) -> 0
-        | (End, _)  -> -1
-        | (_, End) -> 1
-        | (More(v1, d1, r1, e1), More(v2, d2, r2, e2)) ->
-            let c = Ord.compare v1 v2 in
-            if c <> 0 then c else
-            let c = cmp d1 d2 in
-            if c <> 0 then c else
-            compare_aux (cons_enum r1 e1) (cons_enum r2 e2)
-      in compare_aux (cons_enum m1 End) (cons_enum m2 End)
-
-    let equal cmp m1 m2 =
-      let rec equal_aux e1 e2 =
-          match (e1, e2) with
-          (End, End) -> true
-        | (End, _)  -> false
-        | (_, End) -> false
-        | (More(v1, d1, r1, e1), More(v2, d2, r2, e2)) ->
-            Ord.compare v1 v2 = 0 && cmp d1 d2 &&
-            equal_aux (cons_enum r1 e1) (cons_enum r2 e2)
-      in equal_aux (cons_enum m1 End) (cons_enum m2 End)
-
-    let rec bindings_aux accu = function
-        Empty -> accu
-      | Node {l; v; d; r} -> bindings_aux ((v, d) :: bindings_aux accu r) l
-
-    let bindings s =
-      bindings_aux [] s
-
-    let height = function
-        Empty -> 0
-      | Node {h} -> h
-
-    let create l x d r =
-      let hl = height l and hr = height r in
-      Node{l; v=x; d; r; h=(if hl >= hr then hl + 1 else hr + 1)}
+    module Provide_of_sexp (Key : sig
+      type t = Ord.t [@@deriving of_sexp]
+    end) = struct
+      let t_of_sexp data_of_sexp s =
+        t_of_sexp Key.t_of_sexp data_of_sexp Ord.compare_of_sexp s
+    end
 
     let singleton x d = Node{l=Empty; v=x; d; r=Empty; h=1}
 
@@ -491,6 +584,8 @@ module Make(Ord: OrderedType) = struct
     let rec cardinal = function
         Empty -> 0
       | Node {l; r} -> cardinal l + 1 + cardinal r
+
+    let bindings = bindings
 
     let choose = min_binding
 

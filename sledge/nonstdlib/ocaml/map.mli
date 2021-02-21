@@ -67,6 +67,8 @@ module type S =
     type (+'a) t
     (** The type of maps from type [key] to type ['a]. *)
 
+    include Comparer.S1 with type 'a t := 'a t
+
     val empty: 'a t
     (** The empty map. *)
 
@@ -141,11 +143,15 @@ module type S =
     (** Total ordering between maps.  The first argument is a total ordering
         used to compare data associated with equal keys in the two maps. *)
 
+    module Provide_equal (_ : sig
+      type t = key [@@deriving equal]
+    end) : sig
     val equal: ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
     (** [equal cmp m1 m2] tests whether the maps [m1] and [m2] are
        equal, that is, contain equal keys and associate them with
        equal data.  [cmp] is the equality predicate used to compare
        the data associated with the keys. *)
+    end
 
     val iter: (key -> 'a -> unit) -> 'a t -> unit
     (** [iter f m] applies [f] to all bindings in map [m].
@@ -344,9 +350,30 @@ module type S =
     val of_seq : (key * 'a) Seq.t -> 'a t
     (** Build a map from the given bindings
         @since 4.07 *)
+
+    module Provide_sexp_of (_ : sig
+      type t = key [@@deriving sexp_of]
+    end) : sig
+      type 'a t [@@deriving sexp_of]
+    end
+    with type 'a t := 'a t
+
+    module Provide_of_sexp (_ : sig
+      type t = key [@@deriving of_sexp]
+    end) : sig
+      type 'a t [@@deriving of_sexp]
+    end
+    with type 'a t := 'a t
   end
 (** Output signature of the functor {!Map.Make}. *)
 
-module Make (Ord : OrderedType) : S with type key = Ord.t
+type ('key, +'a, 'compare_key) t [@@deriving compare, equal, sexp]
+
+type ('compare_key, 'compare_a) compare [@@deriving compare, equal, sexp]
+
+module Make (Ord : Comparer.S) :
+  S with type key = Ord.t
+    with type +'a t = (Ord.t, 'a, Ord.compare) t
+    with type 'compare_a compare = (Ord.compare, 'compare_a) compare
 (** Functor building an implementation of the map structure
    given a totally ordered type. *)

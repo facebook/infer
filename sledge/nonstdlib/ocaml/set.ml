@@ -25,6 +25,8 @@ module type S =
   sig
     type elt
     type t
+    include Comparer.S with type t := t
+
     val empty: t
     val is_empty: t -> bool
     val mem: elt -> t -> bool
@@ -36,7 +38,14 @@ module type S =
     val disjoint: t -> t -> bool
     val diff: t -> t -> t
     val compare: t -> t -> int
-    val equal: t -> t -> bool
+
+    module Provide_equal (_ : sig
+      type t = elt [@@deriving equal]
+    end) : sig
+      type t [@@deriving equal]
+    end
+    with type t := t
+
     val subset: t -> t -> bool
     val iter: (elt -> unit) -> t -> unit
     val map: (elt -> elt) -> t -> t
@@ -66,81 +75,150 @@ module type S =
     val to_seq : t -> elt Seq.t
     val add_seq : elt Seq.t -> t -> t
     val of_seq : elt Seq.t -> t
+
+    module Provide_sexp_of (_ : sig
+      type t = elt [@@deriving sexp_of]
+    end) : sig
+      type t [@@deriving sexp_of]
+    end
+    with type t := t
+
+    module Provide_of_sexp (_ : sig
+      type t = elt [@@deriving of_sexp]
+    end) : sig
+      type t [@@deriving of_sexp]
+    end
+    with type t := t
   end
 
-module Make(Ord: OrderedType) =
-  struct
-    type elt = Ord.t
-    type t = Empty | Node of {l:t; v:elt; r:t; h:int}
+module T = struct
+  type ('elt, 'cmp) t =
+    | Empty
+    | Node of {l: ('elt, 'cmp) t; v: 'elt; r: ('elt, 'cmp) t; h: int}
 
-    (* Sets are represented by balanced binary trees (the heights of the
-       children differ by at most 2 *)
+  (* Sets are represented by balanced binary trees (the heights of the
+     children differ by at most 2 *)
 
-    type enumeration = End | More of elt * t * enumeration
+  type ('elt, 'cmp) enumeration =
+    | End
+    | More of 'elt * ('elt, 'cmp) t * ('elt, 'cmp) enumeration
 
-    let rec cons_enum s e =
-      match s with
-        Empty -> e
-      | Node{l; v; r} -> cons_enum l (More(v, r, e))
+  let rec cons_enum s e =
+    match s with
+      Empty -> e
+    | Node{l; v; r} -> cons_enum l (More(v, r, e))
 
+  let compare compare_elt _ s1 s2 =
     let rec compare_aux e1 e2 =
         match (e1, e2) with
         (End, End) -> 0
       | (End, _)  -> -1
       | (_, End) -> 1
       | (More(v1, r1, e1), More(v2, r2, e2)) ->
-          let c = Ord.compare v1 v2 in
+          let c = compare_elt v1 v2 in
           if c <> 0
           then c
           else compare_aux (cons_enum r1 e1) (cons_enum r2 e2)
+    in
+    compare_aux (cons_enum s1 End) (cons_enum s2 End)
 
-    let compare s1 s2 =
-      compare_aux (cons_enum s1 End) (cons_enum s2 End)
+  type 'compare_elt compare [@@deriving compare, equal, sexp]
+end
 
-    let equal s1 s2 =
-      compare s1 s2 = 0
+include T
 
-    let rec elements_aux accu = function
-        Empty -> accu
-      | Node{l; v; r} -> elements_aux (v :: elements_aux accu r) l
+let equal equal_elt _ s1 s2 =
+  let rec equal_aux e1 e2 =
+      match (e1, e2) with
+      (End, End) -> true
+    | (End, _)  -> false
+    | (_, End) -> false
+    | (More(v1, r1, e1), More(v2, r2, e2)) ->
+        equal_elt v1 v2 &&
+        equal_aux (cons_enum r1 e1) (cons_enum r2 e2)
+  in
+  equal_aux (cons_enum s1 End) (cons_enum s2 End)
 
-    let elements s =
-      elements_aux [] s
+let rec elements_aux accu = function
+    Empty -> accu
+  | Node{l; v; r} -> elements_aux (v :: elements_aux accu r) l
 
-    let height = function
-        Empty -> 0
-      | Node {h} -> h
+let elements s =
+  elements_aux [] s
 
-    (* Creates a new node with left son l, value v and right son r.
-       We must have all elements of l < v < all elements of r.
-       l and r must be balanced and | height l - height r | <= 2.
-       Inline expansion of height for better speed. *)
+let sexp_of_t sexp_of_elt _ s =
+  elements s
+  |> Sexplib.Conv.sexp_of_list sexp_of_elt
 
-    let create l v r =
-      let hl = match l with Empty -> 0 | Node {h} -> h in
-      let hr = match r with Empty -> 0 | Node {h} -> h in
-      Node{l; v; r; h=(if hl >= hr then hl + 1 else hr + 1)}
+let height = function
+    Empty -> 0
+  | Node {h} -> h
 
-    let of_sorted_list l =
-      let rec sub n l =
-        match n, l with
-        | 0, l -> Empty, l
-        | 1, x0 :: l -> Node {l=Empty; v=x0; r=Empty; h=1}, l
-        | 2, x0 :: x1 :: l ->
-            Node{l=Node{l=Empty; v=x0; r=Empty; h=1}; v=x1; r=Empty; h=2}, l
-        | 3, x0 :: x1 :: x2 :: l ->
-            Node{l=Node{l=Empty; v=x0; r=Empty; h=1}; v=x1;
-                 r=Node{l=Empty; v=x2; r=Empty; h=1}; h=2}, l
-        | n, l ->
-          let nl = n / 2 in
-          let left, l = sub nl l in
-          match l with
-          | [] -> assert false
-          | mid :: l ->
-            let right, l = sub (n - nl - 1) l in
-            create left mid right, l
-      in
-      fst (sub (List.length l) l)
+(* Creates a new node with left son l, value v and right son r.
+   We must have all elements of l < v < all elements of r.
+   l and r must be balanced and | height l - height r | <= 2.
+   Inline expansion of height for better speed. *)
+
+let create l v r =
+  let hl = match l with Empty -> 0 | Node {h} -> h in
+  let hr = match r with Empty -> 0 | Node {h} -> h in
+  Node{l; v; r; h=(if hl >= hr then hl + 1 else hr + 1)}
+
+let of_sorted_list l =
+  let rec sub n l =
+    match n, l with
+    | 0, l -> Empty, l
+    | 1, x0 :: l -> Node {l=Empty; v=x0; r=Empty; h=1}, l
+    | 2, x0 :: x1 :: l ->
+        Node{l=Node{l=Empty; v=x0; r=Empty; h=1}; v=x1; r=Empty; h=2}, l
+    | 3, x0 :: x1 :: x2 :: l ->
+        Node{l=Node{l=Empty; v=x0; r=Empty; h=1}; v=x1;
+             r=Node{l=Empty; v=x2; r=Empty; h=1}; h=2}, l
+    | n, l ->
+      let nl = n / 2 in
+      let left, l = sub nl l in
+      match l with
+      | [] -> assert false
+      | mid :: l ->
+        let right, l = sub (n - nl - 1) l in
+        create left mid right, l
+  in
+  fst (sub (List.length l) l)
+
+let t_of_sexp elt_of_sexp _ s =
+  Sexplib.Conv.list_of_sexp elt_of_sexp s
+  |> of_sorted_list
+
+module Make(Ord: Comparer.S) =
+  struct
+    module Ord = struct
+      include Ord
+      let compare = (comparer :> t -> t -> int)
+    end
+
+    type elt = Ord.t
+
+    include (Comparer.Apply (T) (Ord))
+
+    module Provide_equal (Elt : sig
+      type t = Ord.t [@@deriving equal]
+    end) = struct
+      let equal l r = equal Elt.equal Ord.equal_compare l r
+    end
+
+    module Provide_sexp_of (Elt : sig
+      type t = Ord.t [@@deriving sexp_of]
+    end) = struct
+      let sexp_of_t s =
+        sexp_of_t Elt.sexp_of_t Ord.sexp_of_compare s
+    end
+
+    module Provide_of_sexp (Elt : sig
+      type t = Ord.t [@@deriving of_sexp]
+    end) = struct
+      let t_of_sexp s =
+        t_of_sexp Elt.t_of_sexp Ord.compare_of_sexp s
+    end
 
     (* Same as create, but performs one step of rebalancing if necessary.
        Assumes l and r balanced and | height l - height r | <= 3.
@@ -442,6 +520,8 @@ module Make(Ord: OrderedType) =
     let rec cardinal = function
         Empty -> 0
       | Node{l; r} -> cardinal l + 1 + cardinal r
+
+    let elements = elements
 
     let choose = min_elt
 

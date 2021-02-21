@@ -68,6 +68,8 @@ module type S =
     type t
     (** The type of sets. *)
 
+    include Comparer.S with type t := t
+
     val empty: t
     (** The empty set. *)
 
@@ -110,9 +112,13 @@ module type S =
     (** Total ordering between sets. Can be used as the ordering function
        for doing sets of sets. *)
 
+    module Provide_equal (_ : sig
+      type t = elt [@@deriving equal]
+    end) : sig
     val equal: t -> t -> bool
     (** [equal s1 s2] tests whether the sets [s1] and [s2] are
        equal, that is, contain equal elements. *)
+    end
 
     val subset: t -> t -> bool
     (** [subset s1 s2] tests whether the set [s1] is a subset of
@@ -298,9 +304,30 @@ module type S =
     val of_seq : elt Seq.t -> t
     (** Build a set from the given bindings
         @since 4.07 *)
+
+    module Provide_sexp_of (_ : sig
+      type t = elt [@@deriving sexp_of]
+    end) : sig
+      type t [@@deriving sexp_of]
+    end
+    with type t := t
+
+    module Provide_of_sexp (_ : sig
+      type t = elt [@@deriving of_sexp]
+    end) : sig
+      type t [@@deriving of_sexp]
+    end
+    with type t := t
   end
 (** Output signature of the functor {!Set.Make}. *)
 
-module Make (Ord : OrderedType) : S with type elt = Ord.t
+type ('elt, 'cmp) t [@@deriving compare, equal, sexp]
+
+type 'compare_elt compare [@@deriving compare, equal, sexp]
+
+module Make (Ord : Comparer.S) :
+  S with type elt = Ord.t
+    with type t = (Ord.t, Ord.compare) t
+    with type compare = Ord.compare compare
 (** Functor building an implementation of the set structure
    given a totally ordered type. *)
