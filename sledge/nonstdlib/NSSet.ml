@@ -8,13 +8,28 @@
 open! NS0
 include NSSet_intf
 
-module Make (Elt : sig
-  type t [@@deriving compare, sexp_of]
-end) : S with type elt = Elt.t = struct
-  module S = Stdlib.Set.Make [@inlined] (Elt)
+type ('elt, 'compare_elt) t = ('elt, 'compare_elt) Set.t
+[@@deriving compare, equal, sexp]
+
+type 'compare_elt compare = 'compare_elt Set.compare
+[@@deriving compare, equal, sexp]
+
+module Make_from_Comparer (Elt : sig
+  type t [@@deriving equal, sexp_of]
+
+  include Comparer.S with type t := t
+end) =
+struct
+  module S = Set.Make [@inlined] (Elt)
 
   type elt = Elt.t
-  type t = S.t [@@deriving compare, equal]
+  type compare_elt = Elt.compare
+  type t = S.t [@@deriving compare]
+  type compare = S.compare [@@deriving compare, equal, sexp]
+
+  let comparer = S.comparer
+
+  include S.Provide_equal (Elt)
 
   module Provide_hash (Elt : sig
     type t = elt [@@deriving hash]
@@ -34,21 +49,12 @@ end) : S with type elt = Elt.t = struct
     let hash = Hash.of_fold hash_fold_t
   end
 
-  let to_list = S.elements
-  let sexp_of_t s = to_list s |> Sexplib.Conv.sexp_of_list Elt.sexp_of_t
-
-  module Provide_of_sexp (Elt : sig
-    type t = elt [@@deriving of_sexp]
-  end) =
-  struct
-    let t_of_sexp s =
-      s |> Sexplib.Conv.list_of_sexp Elt.t_of_sexp |> S.of_list
-  end
+  include S.Provide_sexp_of (Elt)
+  module Provide_of_sexp = S.Provide_of_sexp
 
   let empty = S.empty
   let of_ = S.singleton
   let of_option xo = Option.map_or ~f:S.singleton xo ~default:empty
-  let of_list = S.of_list
   let add x s = S.add x s
   let add_option = Option.fold ~f:add
   let add_list xs s = S.union (S.of_list xs) s
@@ -118,6 +124,8 @@ end) : S with type elt = Elt.t = struct
   let reduce xs ~f =
     match pop xs with Some (x, xs) -> Some (fold ~f xs x) | None -> None
 
+  let to_list = S.elements
+  let of_list = S.of_list
   let to_iter s = Iter.from_iter (fun f -> S.iter f s)
   let of_iter s = Iter.fold ~f:add s S.empty
 
@@ -138,4 +146,13 @@ end) : S with type elt = Elt.t = struct
       if not (is_empty gain) then Format.fprintf fs "++ %a" pp gain
   end
 end
+[@@inline]
+
+module Make (Elt : sig
+  type t [@@deriving compare, equal, sexp_of]
+end) =
+Make_from_Comparer (struct
+  include Elt
+  include Comparer.Make (Elt)
+end)
 [@@inline]

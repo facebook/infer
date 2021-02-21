@@ -211,10 +211,10 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
           queue without the top element *)
     end = struct
       type elt = {depth: int; edge: Edge.t; state: Dom.t; depths: Depths.t}
-      [@@deriving compare, sexp_of]
+      [@@deriving compare, equal, sexp_of]
 
       module Elt = struct
-        type t = elt [@@deriving compare, sexp_of]
+        type t = elt [@@deriving compare, equal, sexp_of]
 
         let pp ppf {depth; edge} =
           Format.fprintf ppf "%i: %a" depth Edge.pp edge

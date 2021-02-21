@@ -9,7 +9,10 @@ open! NS0
 
 module type S = sig
   type elt
+  type compare_elt
   type t [@@deriving compare, equal, sexp_of]
+
+  include Comparer.S with type t := t
 
   module Provide_hash (_ : sig
     type t = elt [@@deriving hash]
@@ -39,12 +42,9 @@ module type S = sig
 
     val pp : t pp
   end) : sig
-    type t
-
     val pp : t pp
     val pp_diff : (t * t) pp
   end
-  with type t := t
 
   (** {1 Construct} *)
 
@@ -96,6 +96,7 @@ module type S = sig
 
   (** {1 Convert} *)
 
+  val to_list : t -> elt list
   val to_iter : t -> elt iter
   val of_iter : elt iter -> t
 end
