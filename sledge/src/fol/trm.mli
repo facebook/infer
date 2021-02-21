@@ -9,9 +9,11 @@
 
 type arith
 
+(** Terms, built from variables and applications of function symbols from
+    various theories. Denote functions from structures to values. *)
 type t = private
   (* variables *)
-  | Var of {id: int; name: string}
+  | Var of {id: int; name: string [@ignore]}
   (* arithmetic *)
   | Z of Z.t
   | Q of Q.t
@@ -25,16 +27,8 @@ type t = private
   | Apply of Funsym.t * t array
 [@@deriving compare, equal, sexp]
 
+(** Arithmetic terms *)
 module Arith : Arithmetic.S with type trm := t with type t = arith
-
-module Var : sig
-  type trm := t
-
-  include Var_intf.S with type t = private trm
-
-  val of_ : trm -> t
-  val of_trm : trm -> t option
-end
 
 module Set : sig
   include Set.S with type elt := t
@@ -42,13 +36,22 @@ module Set : sig
   val t_of_sexp : Sexp.t -> t
   val pp : t pp
   val pp_diff : (t * t) pp
-  val of_vars : Var.Set.t -> t
 end
 
 module Map : sig
   include Map.S with type key := t
 
   val t_of_sexp : (Sexp.t -> 'a) -> Sexp.t -> 'a t
+end
+
+(** Variable terms, represented as a subtype of general terms *)
+module Var : sig
+  type trm := t
+
+  include
+    Var_intf.S with type t = private trm with type Set.t = private Set.t
+
+  val of_trm : trm -> t option
 end
 
 val ppx : Var.strength -> t pp

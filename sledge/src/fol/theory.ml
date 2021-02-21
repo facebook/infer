@@ -196,7 +196,7 @@ let solve d e s =
   | Some ((Sized {siz= n; seq= Splat _} as b), Concat a0V) ->
       solve_concat a0V b n s
   | Some ((Var _ as v), (Concat a0V as c)) ->
-      if not (Var.Set.mem (Var.of_ v) (Trm.fv c)) then
+      if not (Trm.Set.mem v (Trm.fv c :> Trm.Set.t)) then
         (* v = α₀^…^αᵥ ==> v ↦ α₀^…^αᵥ when v ∉ fv(α₀^…^αᵥ) *)
         add_solved ~var:v ~rep:c s
       else
@@ -212,7 +212,7 @@ let solve d e s =
    * Extract
    *)
   | Some ((Var _ as v), (Extract {len= l} as e)) ->
-      if not (Var.Set.mem (Var.of_ v) (Trm.fv e)) then
+      if not (Trm.Set.mem v (Trm.fv e :> Trm.Set.t)) then
         (* v = α[o,l) ==> v ↦ α[o,l) when v ∉ fv(α[o,l)) *)
         add_solved ~var:v ~rep:e s
       else

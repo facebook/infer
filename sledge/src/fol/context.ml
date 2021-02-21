@@ -123,9 +123,7 @@ end = struct
       [not (is_valid_eq xs e f)] implies [not (is_valid_eq ys e f)] for
       [ys ⊆ xs]. *)
   let is_valid_eq xs e f =
-    let is_var_in xs e =
-      Option.exists ~f:(fun x -> Var.Set.mem x xs) (Var.of_trm e)
-    in
+    let is_var_in xs e = Trm.Set.mem e (xs : Var.Set.t :> Trm.Set.t) in
     let noninterp_with_solvable_var_in xs e =
       is_var_in xs e
       || Theory.is_noninterpreted e
@@ -922,10 +920,11 @@ let trim ks x =
             Cls.add rep (Option.value cls0 ~default:Cls.empty) ) )
   in
   (* enumerate expanded classes and update solution subst *)
-  let kills = Trm.Set.of_vars ks in
   Trm.Map.fold clss x ~f:(fun ~key:a' ~data:ecls x ->
       (* remove mappings for non-rep class elements to kill *)
-      let keep, drop = Trm.Set.diff_inter (Cls.to_set ecls) kills in
+      let keep, drop =
+        Trm.Set.diff_inter (Cls.to_set ecls) (ks : Var.Set.t :> Trm.Set.t)
+      in
       if Trm.Set.is_empty drop then x
       else
         let rep = Trm.Set.fold ~f:Subst.remove drop x.rep in

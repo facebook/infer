@@ -19,17 +19,27 @@ module Q = struct
   include Comparer.Make (Q)
 end
 
-module Representation
-    (Var : Var_intf.S)
-    (Trm : INDETERMINATE with type var := Var.t) =
+type ('trm, 'compare_trm) mono = ('trm, int, 'compare_trm) Multiset.t
+[@@deriving compare, equal, sexp]
+
+type 'compare_trm compare_mono =
+  ('compare_trm, Int.compare) Multiset.compare
+[@@deriving compare, equal, sexp]
+
+type ('trm, 'compare_trm) t =
+  (('trm, 'compare_trm) mono, Q.t, 'compare_trm compare_mono) Multiset.t
+[@@deriving compare, equal, sexp]
+
+module Make (Trm0 : sig
+  type t [@@deriving equal, sexp]
+
+  include Comparer.S with type t := t
+end) =
 struct
-  module Prod = struct
-    include Multiset.Make (Trm) (Int)
-    include Provide_of_sexp (Trm)
-  end
+  module Prod = Multiset.Make (Trm0) (Int)
 
   module Mono = struct
-    type t = Prod.t [@@deriving compare, equal, sexp]
+    type t = Prod.t [@@deriving compare, equal, sexp_of]
 
     let num_den m = Prod.partition m ~f:(fun _ i -> i >= 0)
 
@@ -79,11 +89,7 @@ struct
       Iter.from_iter (fun f -> Prod.iter mono ~f:(fun trm _ -> f trm))
   end
 
-  module Sum = struct
-    include Multiset.Make (Prod) (Q)
-    include Provide_of_sexp (Prod)
-  end
-
+  module Sum = Multiset.Make (Prod) (Q)
   module Poly = Sum
   include Poly
 
@@ -104,6 +110,11 @@ struct
             (Sum.pp "@ + " pp_coeff_mono)
             poly
 
+    let trms poly =
+      Iter.from_iter (fun f ->
+          Sum.iter poly ~f:(fun mono _ ->
+              Prod.iter mono ~f:(fun trm _ -> f trm) ) )
+
     (* core invariant *)
 
     let mono_invariant mono =
@@ -119,10 +130,14 @@ struct
           assert (not (Q.equal Q.zero coeff)) ;
           mono_invariant mono )
 
+    (* embed a term into a polynomial *)
+    let trm trm = Sum.of_ (Mono.of_ trm 1) Q.one
+
     (* constants *)
 
     let const q = Sum.of_ Mono.one q |> check invariant
     let zero = const Q.zero |> check (fun p -> assert (Sum.is_empty p))
+    let one = const Q.one
 
     (* core constructors *)
 
@@ -149,7 +164,7 @@ struct
 
     (* projections and embeddings *)
 
-    type kind = Trm of Trm.t | Const of Q.t | Interpreted | Uninterpreted
+    type kind = Trm of Trm0.t | Const of Q.t | Interpreted | Uninterpreted
 
     let classify poly =
       match Sum.classify poly with
@@ -189,7 +204,12 @@ struct
       | None -> None
   end
 
-  module Make (Embed : EMBEDDING with type trm := Trm.t and type t := t) =
+  include S0
+
+  module Embed
+      (Var : Var_intf.S)
+      (Trm : TRM with type t = Trm0.t with type var := Var.t)
+      (Embed : EMBEDDING with type trm := Trm0.t with type t := t) =
   struct
     module Mono = struct
       include Mono
@@ -202,15 +222,23 @@ struct
     include Poly
     include S0
 
+    (** hide S0.trm and S0.trms that ignore the embedding, shadowed below *)
+    let[@warning "-32"] trm, trms = ((), ())
+
     let pp = ppx Trm.pp
+
+    (** Embed a polynomial into a term *)
+    let trm_of_poly = Embed.to_trm
 
     (** Embed a monomial into a term, flattening if possible *)
     let trm_of_mono mono =
       match Mono.get_trm mono with
       | Some trm -> trm
-      | None -> Embed.to_trm (Sum.of_ mono Q.one)
+      | None -> trm_of_poly (Sum.of_ mono Q.one)
 
     (* traverse *)
+
+    let vars poly = Iter.flat_map ~f:Trm.vars (S0.trms poly)
 
     let monos poly =
       Iter.from_iter (fun f ->
@@ -221,10 +249,6 @@ struct
       match get_mono poly with
       | Some mono -> Mono.trms mono
       | None -> Iter.map ~f:trm_of_mono (monos poly)
-
-    let vars p = Iter.flat_map ~f:Trm.vars (trms p)
-
-    (* invariant *)
 
     let mono_invariant mono =
       mono_invariant mono ;
@@ -309,7 +333,7 @@ struct
     let trm trm =
       ( match Embed.get_arith trm with
       | Some poly -> poly
-      | None -> Sum.of_ (Mono.of_ trm 1) Q.one )
+      | None -> S0.trm trm )
       |> check (fun poly ->
              assert (equal poly (CM.to_poly (CM.of_trm trm))) )
 
@@ -322,7 +346,7 @@ struct
 
     let pow base power = CM.to_poly (CM.of_trm base ~power)
 
-    (* map over [trms] *)
+    (** map over [trms] *)
     let map poly ~f =
       [%trace]
         ~call:(fun {pf} -> pf "@ %a" pp poly)
@@ -398,7 +422,7 @@ struct
       | Some _ as soln -> soln
       | None -> solve_poly (Sum.add mono coeff rejected) poly
 
-    (* solve [0 = e] *)
+    (** solve [0 = e] *)
     let solve_zero_eq ?for_ e =
       [%trace]
         ~call:(fun {pf} ->
