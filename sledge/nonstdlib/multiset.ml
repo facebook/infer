@@ -57,7 +57,7 @@ struct
   let if_nz i = if Mul.equal Mul.zero i then None else Some i
 
   let add x i m =
-    M.change x m ~f:(function
+    M.update x m ~f:(function
       | Some j -> if_nz (Mul.add i j)
       | None -> if_nz i )
 

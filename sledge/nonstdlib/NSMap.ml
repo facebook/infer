@@ -116,35 +116,28 @@ struct
   let find_multi k m =
     match M.find_opt k m with None -> [] | Some vs -> vs
 
-  let find_and_remove k m =
+  let find_update x m ~f =
     let found = ref None in
     let m =
-      M.update k
-        (fun v ->
-          found := v ;
-          None )
+      M.update x
+        (function
+          | None -> f None
+          | some_v ->
+              found := some_v ;
+              f some_v )
         m
     in
-    Option.map ~f:(fun v -> (v, m)) !found
+    (!found, m)
+
+  let find_and_remove = find_update ~f:(fun _ -> None)
 
   let find_or_add k v m =
-    let found = ref None in
-    let m =
-      M.update k
-        (function
-          | None -> Some v
-          | v ->
-              found := v ;
-              v )
-        m
-    in
-    match !found with Some v -> `Found v | None -> `Added m
+    find_update k ~f:(function None -> Some v | some_v -> some_v) m
 
   let pop_min_binding m =
     min_binding m |> Option.map ~f:(fun (k, v) -> (k, v, remove k m))
 
-  let change k m ~f = M.update k f m
-  let update k m ~f = M.update k (fun v -> Some (f v)) m
+  let update k m ~f = M.update k f m
   let map m ~f = M.map f m
   let mapi m ~f = M.mapi (fun key data -> f ~key ~data) m
   let map_endo t ~f = map_endo map t ~f

@@ -81,10 +81,10 @@ let fold_vars ?ignore_ctx ?ignore_pure fold_vars q s ~f =
 
 let rec var_strength_ xs m q =
   let add v m =
-    match Var.Map.find v m with
-    | None -> Var.Map.add ~key:v ~data:`Anonymous m
-    | Some `Anonymous -> Var.Map.add ~key:v ~data:`Existential m
-    | Some _ -> m
+    Var.Map.update v m ~f:(function
+      | None -> Some `Anonymous
+      | Some `Anonymous -> Some `Existential
+      | o -> o )
   in
   let xs = Var.Set.union xs q.xs in
   let m_stem =

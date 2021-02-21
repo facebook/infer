@@ -155,8 +155,8 @@ struct
 
     let split_const poly =
       match Sum.find_and_remove Mono.one poly with
-      | Some (c, p_c) -> (p_c, c)
-      | None -> (poly, Q.zero)
+      | Some c, p_c -> (p_c, c)
+      | None, _ -> (poly, Q.zero)
 
     let partition_sign poly =
       Sum.partition_map poly ~f:(fun _ coeff ->
@@ -443,7 +443,8 @@ struct
           let for_poly = trm for_ in
           match get_mono for_poly with
           | Some m ->
-              let* c, p = Sum.find_and_remove m a in
+              let c, p = Sum.find_and_remove m a in
+              let* c = c in
               solve_for_mono Sum.empty c m p
           | _ -> None )
   end

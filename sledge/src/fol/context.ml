@@ -153,10 +153,11 @@ end = struct
         Trm.Map.fold s (t, ks, s) ~f:(fun ~key ~data (t, ks, s) ->
             if is_valid_eq ks key data then (t, ks, s)
             else
-              let t = Trm.Map.add ~key ~data t
-              and ks =
+              let t = Trm.Map.add ~key ~data t in
+              let ks =
                 Var.Set.diff ks (Var.Set.union (Trm.fv key) (Trm.fv data))
-              and s = Trm.Map.remove key s in
+              in
+              let s = Trm.Map.remove key s in
               (t, ks, s) )
       in
       if s' != s then partition_valid_ t' ks' s' else (t', ks', s')
@@ -474,7 +475,7 @@ let rec canon x a =
 
 let add_use_of sup sub use =
   Trm.Map.update sub use ~f:(fun u ->
-      Use.add sup (Option.value ~default:Use.empty u) )
+      Some (Use.add sup (Option.value ~default:Use.empty u)) )
 
 let add_uses_of a use =
   Iter.fold ~f:(add_use_of a) (Theory.solvable_trms a) use
@@ -493,8 +494,8 @@ let rec canon_extend_ a x =
   | InterpAtom -> (a, x)
   | NonInterpAtom -> (
     match Trm.Map.find_or_add a a x.rep with
-    | `Found a' -> (a', x)
-    | `Added rep -> (a, {x with rep}) )
+    | Some a', _ -> (a', x)
+    | None, rep -> (a, {x with rep}) )
   | InterpApp ->
       if Trm.Map.mem a x.rep then
         (* optimize: a already a rep so don't need to consider subterms *)
@@ -509,10 +510,10 @@ let rec canon_extend_ a x =
         (* norm wrt rep and add subterms *)
         let a_norm, x = Trm.fold_map ~f:canon_extend_ a x in
         match Trm.Map.find_or_add a_norm a_norm x.rep with
-        | `Found a' ->
+        | Some a', _ ->
             (* a_norm already equal to a' *)
             (a', x)
-        | `Added rep ->
+        | None, rep ->
             (* a_norm newly added *)
             let use = add_uses_of a_norm x.use in
             let x = {x with rep; use} in
@@ -531,13 +532,12 @@ let move_cls_to_rep a_cls a' rep =
   Cls.fold a_cls rep ~f:(fun e rep -> Trm.Map.add ~key:e ~data:a' rep)
 
 let find_and_move_cls noninterp ~of_:u ~to_:u' cls =
-  let u_cls, cls =
-    Trm.Map.find_and_remove u cls |> Option.value ~default:(Cls.empty, cls)
-  in
+  let u_cls, cls = Trm.Map.find_and_remove u cls in
+  let u_cls = Option.value u_cls ~default:Cls.empty in
   let u_cls = if noninterp then Cls.add u u_cls else u_cls in
   let cls =
     Trm.Map.update u' cls ~f:(fun u'_cls ->
-        Cls.union u_cls (Option.value u'_cls ~default:Cls.empty) )
+        Some (Cls.union u_cls (Option.value u'_cls ~default:Cls.empty)) )
   in
   (u_cls, cls)
 
@@ -548,7 +548,7 @@ let move_uses ~rem:f ~add:t use =
   (* remove f from use of each of its subterms not shared with t *)
   let use =
     Trm.Set.fold f_trms use ~f:(fun e use ->
-        Trm.Map.change e use ~f:(function
+        Trm.Map.update e use ~f:(function
           | Some e_use ->
               let e_use' = Use.remove f e_use in
               if Use.is_empty e_use' then None else Some e_use'
@@ -558,14 +558,14 @@ let move_uses ~rem:f ~add:t use =
   let use =
     Trm.Set.fold ft_trms use ~f:(fun e use ->
         Trm.Map.update e use ~f:(function
-          | Some e_use -> Use.add t (Use.remove f e_use)
+          | Some e_use -> Some (Use.add t (Use.remove f e_use))
           | None -> assert false ) )
   in
   (* add t to use of each of its subterms not shared with f *)
   let use =
     Trm.Set.fold t_trms use ~f:(fun e use ->
         Trm.Map.update e use ~f:(fun e_use ->
-            Use.add t (Option.value e_use ~default:Use.empty) ) )
+            Some (Use.add t (Option.value e_use ~default:Use.empty)) ) )
   in
   use
 
@@ -872,7 +872,7 @@ let trim ks x =
   let clss =
     Trm.Set.fold reps x.cls ~f:(fun rep clss ->
         Trm.Map.update rep clss ~f:(fun cls0 ->
-            Cls.add rep (Option.value cls0 ~default:Cls.empty) ) )
+            Some (Cls.add rep (Option.value cls0 ~default:Cls.empty)) ) )
   in
   (* enumerate expanded classes and update solution subst *)
   Trm.Map.fold clss x ~f:(fun ~key:a' ~data:ecls x ->

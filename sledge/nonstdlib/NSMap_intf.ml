@@ -85,10 +85,16 @@ module type S = sig
   val find_exn : key -> 'a t -> 'a
   val find_multi : key -> 'a list t -> 'a list
 
-  val find_and_remove : key -> 'a t -> ('a * 'a t) option
+  val find_update :
+    key -> 'a t -> f:('a option -> 'a option) -> 'a option * 'a t
+  (** [find_update k f m] is [(found, m')] where [found] is [find k m] and
+      [find k m'] is [f found] and [find h m'] is [find h m] for all other
+      [h]. *)
+
+  val find_and_remove : key -> 'a t -> 'a option * 'a t
   (** Find and remove the binding for a key. *)
 
-  val find_or_add : key -> 'a -> 'a t -> [`Added of 'a t | `Found of 'a]
+  val find_or_add : key -> 'a -> 'a t -> 'a option * 'a t
   (** Find the value bound to the given key if there is one, or otherwise
       add a binding for the given key and value. *)
 
@@ -97,8 +103,7 @@ module type S = sig
 
   (** {1 Transform} *)
 
-  val change : key -> 'a t -> f:('a option -> 'a option) -> 'a t
-  val update : key -> 'a t -> f:('a option -> 'a) -> 'a t
+  val update : key -> 'a t -> f:('a option -> 'a option) -> 'a t
   val map : 'a t -> f:('a -> 'b) -> 'b t
   val mapi : 'a t -> f:(key:key -> data:'a -> 'b) -> 'b t
 

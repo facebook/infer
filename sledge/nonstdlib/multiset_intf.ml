@@ -103,7 +103,7 @@ module type S = sig
   val classify : t -> (elt, mul) zero_one_many2
   (** Classify a set as either empty, singleton, or otherwise. *)
 
-  val find_and_remove : elt -> t -> (mul * t) option
+  val find_and_remove : elt -> t -> mul option * t
   (** Find and remove an element. *)
 
   val to_iter : t -> (elt * mul) iter
