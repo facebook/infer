@@ -78,7 +78,8 @@ module Trm3 = struct
       let pf fmt = pp_boxed fs fmt in
       match trm with
       | Var {id; name} -> (
-          if id < 0 then Trace.pp_styled `Bold "%%%s!%i" fs name (-id)
+          if id < 0 then
+            Trace.pp_styled `Bold "%%%s!%i" fs name (id + Int.max_int)
           else
             match strength trm with
             | None -> Format.fprintf fs "%%%s_%i" name id
@@ -168,7 +169,7 @@ module Var = struct
 
     let program ?(name = "") ~id =
       assert (id > 0) ;
-      make ~id:(-id) ~name
+      make ~id:(id - Int.max_int) ~name
 
     let identified ~name ~id = make ~id ~name
     let of_ v = v |> check invariant
