@@ -29,6 +29,13 @@ module Trm1 = struct
     (* uninterpreted *)
     | Apply of Funsym.t * t array
   [@@deriving compare, equal, sexp]
+
+  let compare a b =
+    if a == b then 0
+    else
+      match (a, b) with
+      | Var x, Var y -> Int.compare x.id y.id
+      | _ -> compare a b
 end
 
 (* Add comparer, needed to instantiate arithmetic and containers *)
