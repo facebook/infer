@@ -13,6 +13,8 @@
 (*                                                                        *)
 (**************************************************************************)
 
+open! NS0
+
 module type OrderedType =
   sig
     type t
@@ -32,6 +34,7 @@ module type S =
     val add: key -> 'a -> 'a t -> 'a t
     val update: key -> ('a option -> 'a option) -> 'a t -> 'a t
     val singleton: key -> 'a -> 'a t
+    val is_singleton: 'a t -> bool
     val remove: key -> 'a t -> 'a t
     val merge:
           (key -> 'a option -> 'b option -> 'c option) -> 'a t -> 'b t -> 'c t
@@ -54,12 +57,16 @@ module type S =
     val partition: (key -> 'a -> bool) -> 'a t -> 'a t * 'a t
     val cardinal: 'a t -> int
     val bindings: 'a t -> (key * 'a) list
+    val only_binding: 'a t -> (key * 'a) option
+    val classify : 'a t -> (key, 'a) zero_one_many2
     val min_binding: 'a t -> (key * 'a)
     val min_binding_opt: 'a t -> (key * 'a) option
     val max_binding: 'a t -> (key * 'a)
     val max_binding_opt: 'a t -> (key * 'a) option
     val choose: 'a t -> (key * 'a)
     val choose_opt: 'a t -> (key * 'a) option
+    val divide : 'a t -> ('a t * key * 'a * 'a t) option
+    val divide_exn : 'a t -> ('a t * key * 'a * 'a t)
     val split: key -> 'a t -> 'a t * 'a option * 'a t
     val find: key -> 'a t -> 'a
     val find_opt: key -> 'a t -> 'a option
@@ -213,7 +220,13 @@ module Make (Ord : Comparer.S) = struct
         t_of_sexp Key.t_of_sexp data_of_sexp Ord.compare_of_sexp s
     end
 
+    let empty = Empty
+
+    let is_empty = function Empty -> true | _ -> false
+
     let singleton x d = Node{l=Empty; v=x; d; r=Empty; h=1}
+
+    let is_singleton = function Node {l=Empty; r=Empty} -> true | _ -> false
 
     let bal l x d r =
       let hl = match l with Empty -> 0 | Node {h} -> h in
@@ -244,10 +257,6 @@ module Make (Ord : Comparer.S) = struct
             end
       end else
         Node{l; v=x; d; r; h=(if hl >= hr then hl + 1 else hr + 1)}
-
-    let empty = Empty
-
-    let is_empty = function Empty -> true | _ -> false
 
     let rec add x data = function
         Empty ->
@@ -357,6 +366,15 @@ module Make (Ord : Comparer.S) = struct
       | Node {l; v; r} ->
           let c = Ord.compare x v in
           c = 0 || mem x (if c < 0 then l else r)
+
+    let classify = function
+      | Empty -> Zero2
+      | Node {l=Empty; v; d; r=Empty} -> One2 (v, d)
+      | _ -> Many2
+
+    let only_binding = function
+        Node {l=Empty; v; d; r=Empty} -> Some (v, d)
+      | _ -> None
 
     let rec min_binding = function
         Empty -> raise Not_found
@@ -507,6 +525,14 @@ module Make (Ord : Comparer.S) = struct
       | Some d -> join t1 v d t2
       | None -> concat t1 t2
 
+    let divide_exn = function
+      | Node {l; v; d; r} -> (l, v, d, r)
+      | Empty -> raise Not_found
+
+    let divide = function
+      | Node {l; v; d; r} -> Some (l, v, d, r)
+      | Empty -> None
+
     let rec split x = function
         Empty ->
           (Empty, None, Empty)
@@ -587,9 +613,13 @@ module Make (Ord : Comparer.S) = struct
 
     let bindings = bindings
 
-    let choose = min_binding
+    let choose = function
+        Empty -> raise Not_found
+      | Node {v; d} -> (v, d)
 
-    let choose_opt = min_binding_opt
+    let choose_opt = function
+        Empty -> None
+      | Node {v; d} -> Some (v, d)
 
     let add_seq i m =
       Seq.fold_left (fun m (k,v) -> add k v m) m i

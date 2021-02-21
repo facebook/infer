@@ -109,9 +109,6 @@ struct
   let count x m = match M.find x m with Some q -> q | None -> Mul.zero
   let only_elt = M.only_binding
   let classify = M.classify
-  let choose = M.choose
-  let choose_exn = M.choose_exn
-  let pop = M.pop
   let min_elt = M.min_binding
   let pop_min_elt = M.pop_min_binding
   let to_iter = M.to_iter

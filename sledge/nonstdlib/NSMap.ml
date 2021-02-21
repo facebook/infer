@@ -102,67 +102,12 @@ struct
       m (empty, empty)
 
   let is_empty = M.is_empty
-
-  let root_key m =
-    if M.is_empty m then None
-    else
-      let exception Found in
-      let found = ref None in
-      try
-        M.find_first
-          (fun key ->
-            found := Some key ;
-            raise_notrace Found )
-          m
-        |> ignore ;
-        None
-      with
-      | Found -> !found
-      | Not_found -> None
-
-  let root_binding m =
-    let exception Found in
-    let found = ref None in
-    try
-      M.for_all
-        (fun key data ->
-          found := Some (key, data) ;
-          raise_notrace Found )
-        m
-      |> ignore ;
-      None
-    with
-    | Found -> !found
-    | Not_found -> None
-
-  let is_singleton m =
-    match root_key m with
-    | Some k ->
-        let l, _, r = M.split k m in
-        is_empty l && is_empty r
-    | None -> false
-
+  let is_singleton = M.is_singleton
   let length = M.cardinal
-
-  let only_binding m =
-    match root_key m with
-    | Some k -> (
-      match M.split k m with
-      | l, Some v, r when is_empty l && is_empty r -> Some (k, v)
-      | _ -> None )
-    | None -> None
-
-  let classify m =
-    match root_key m with
-    | None -> Zero2
-    | Some k -> (
-      match M.split k m with
-      | l, Some v, r when is_empty l && is_empty r -> One2 (k, v)
-      | _ -> Many2 )
-
-  let choose_key = root_key
-  let choose = root_binding
-  let choose_exn m = Option.get_exn (choose m)
+  let only_binding = M.only_binding
+  let classify = M.classify
+  let choose = M.choose_opt
+  let choose_exn = M.choose
   let min_binding = M.min_binding_opt
   let mem k m = M.mem k m
   let find_exn k m = M.find k m
@@ -194,8 +139,6 @@ struct
         m
     in
     match !found with Some v -> `Found v | None -> `Added m
-
-  let pop m = choose m |> Option.map ~f:(fun (k, v) -> (k, v, remove k m))
 
   let pop_min_binding m =
     min_binding m |> Option.map ~f:(fun (k, v) -> (k, v, remove k m))

@@ -43,6 +43,8 @@
    values so its type is [string PairsMap.t].
 *)
 
+open! NS0
+
 module type OrderedType =
   sig
     type t
@@ -106,6 +108,9 @@ module type S =
         for [x].
         @since 3.12.0
      *)
+
+    val is_singleton: 'a t -> bool
+    (** Test whether a map contains only a single binding or not. *)
 
     val remove: key -> 'a t -> 'a t
     (** [remove x m] returns a map containing the same bindings as
@@ -226,6 +231,11 @@ module type S =
         @since 3.12.0
      *)
 
+    val only_binding: 'a t -> (key * 'a) option
+    (** Return the binding of a singleton map, or None otherwise. *)
+
+    val classify : 'a t -> (key, 'a) zero_one_many2
+
     val min_binding: 'a t -> (key * 'a)
     (** Return the binding with the smallest key in a given map
        (with respect to the [Ord.compare] ordering), or raise
@@ -255,16 +265,32 @@ module type S =
     val choose: 'a t -> (key * 'a)
     (** Return one binding of the given map, or raise [Not_found] if
        the map is empty. Which binding is chosen is unspecified,
-       but equal bindings will be chosen for equal maps.
+       and different bindings may be chosen for equal maps.
         @since 3.12.0
      *)
 
     val choose_opt: 'a t -> (key * 'a) option
     (** Return one binding of the given map, or [None] if
        the map is empty. Which binding is chosen is unspecified,
-       but equal bindings will be chosen for equal maps.
+       and different bindings may be chosen for equal maps.
         @since 4.05
      *)
+
+    val divide : 'a t -> ('a t * key * 'a * 'a t) option
+    (** [divide m] returns [None] if [m] is empty and otherwise
+        [Some (l, key, data, r)], where
+          [key] is some key bound in [m];
+          [data] is the data associated to [key] in [m];
+          [l] is the map with all the bindings of [m] whose key
+        is strictly less than [key];
+          [r] is the map with all the bindings of [m] whose key
+        is strictly greater than [key].
+        Runs in constant time, and the [l] and [r] maps are close
+        to the same size.
+     *)
+
+    val divide_exn : 'a t -> ('a t * key * 'a * 'a t)
+    (** Same as {!Map.S.divide}, but raises [Not_found] if the map is empty. *)
 
     val split: key -> 'a t -> 'a t * 'a option * 'a t
     (** [split x m] returns a triple [(l, data, r)], where

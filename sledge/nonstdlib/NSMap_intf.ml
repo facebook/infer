@@ -71,10 +71,6 @@ module type S = sig
   val only_binding : 'a t -> (key * 'a) option
   val classify : 'a t -> (key, 'a) zero_one_many2
 
-  val choose_key : 'a t -> key option
-  (** Find an unspecified key. Different keys may be chosen for equivalent
-      maps. [O(1)]. *)
-
   val choose : 'a t -> (key * 'a) option
   (** Find an unspecified binding. Different bindings may be chosen for
       equivalent maps. [O(1)]. *)
@@ -95,10 +91,6 @@ module type S = sig
   val find_or_add : key -> 'a -> 'a t -> [`Added of 'a t | `Found of 'a]
   (** Find the value bound to the given key if there is one, or otherwise
       add a binding for the given key and value. *)
-
-  val pop : 'a t -> (key * 'a * 'a t) option
-  (** Find and remove an unspecified binding. Different bindings may be
-      chosen for equivalent maps. [O(1)]. *)
 
   val pop_min_binding : 'a t -> (key * 'a * 'a t) option
   (** Find and remove binding with minimum key. [O(log n)]. *)

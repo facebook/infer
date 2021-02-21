@@ -94,15 +94,6 @@ module type S = sig
   val only_elt : t -> (elt * mul) option
   (** The only element of a singleton multiset. [O(1)]. *)
 
-  val choose_exn : t -> elt * mul
-  (** Find an unspecified element. [O(1)]. *)
-
-  val choose : t -> (elt * mul) option
-  (** Find an unspecified element. [O(1)]. *)
-
-  val pop : t -> (elt * mul * t) option
-  (** Find and remove an unspecified element. [O(1)]. *)
-
   val min_elt : t -> (elt * mul) option
   (** Minimum element. [O(log n)]. *)
 
