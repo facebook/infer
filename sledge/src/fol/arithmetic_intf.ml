@@ -84,6 +84,9 @@ end
     be flattened using [EMBEDDING.get_arith]. *)
 module type INDETERMINATE = sig
   type t [@@deriving compare, equal, sexp]
+
+  include Comparer.S with type t := t
+
   type var
 
   val pp : t pp

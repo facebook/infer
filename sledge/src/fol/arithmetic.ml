@@ -9,14 +9,23 @@
 
 include Arithmetic_intf
 
+module Int = struct
+  include Int
+  include Comparer.Make (Int)
+end
+
+module Q = struct
+  include Q
+  include Comparer.Make (Q)
+end
+
 module Representation
     (Var : Var_intf.S)
     (Trm : INDETERMINATE with type var := Var.t) =
 struct
   module Prod = struct
     include Multiset.Make (Trm) (Int)
-
-    let t_of_sexp = t_of_sexp Trm.t_of_sexp
+    include Provide_of_sexp (Trm)
   end
 
   module Mono = struct
@@ -78,9 +87,8 @@ struct
   end
 
   module Sum = struct
-    include Multiset.Make (Mono) (Q)
-
-    let t_of_sexp = t_of_sexp Mono.t_of_sexp
+    include Multiset.Make (Prod) (Q)
+    include Provide_of_sexp (Prod)
   end
 
   module Poly = Sum

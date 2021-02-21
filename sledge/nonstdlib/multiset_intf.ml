@@ -12,6 +12,8 @@ open! NS0
 module type MULTIPLICITY = sig
   type t [@@deriving compare, equal, hash, sexp]
 
+  include Comparer.S with type t := t
+
   val zero : t
   val add : t -> t -> t
   val sub : t -> t -> t
@@ -21,13 +23,18 @@ end
 module type S = sig
   type mul
   type elt
-  type t
+  type t [@@deriving compare, equal, sexp_of]
 
-  val compare : t -> t -> int
-  val equal : t -> t -> bool
   val hash_fold_t : elt Hash.folder -> t Hash.folder
-  val sexp_of_t : t -> Sexp.t
-  val t_of_sexp : (Sexp.t -> elt) -> Sexp.t -> t
+
+  include Comparer.S with type t := t
+
+  module Provide_of_sexp (_ : sig
+    type t = elt [@@deriving of_sexp]
+  end) : sig
+    type t [@@deriving of_sexp]
+  end
+  with type t := t
 
   val pp :
        ?pre:(unit, unit) fmt

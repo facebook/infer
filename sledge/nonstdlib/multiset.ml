@@ -8,21 +8,31 @@
 (** Multiset - Set with multiplicity for each element *)
 
 open! NS0
+module Map = NSMap
 include Multiset_intf
 
+type ('elt, 'mul, 'compare_elt) t = ('elt, 'mul, 'compare_elt) Map.t
+[@@deriving compare, equal, sexp]
+
+type ('compare_elt, 'compare_mul) compare =
+  ('compare_elt, 'compare_mul) Map.compare
+[@@deriving compare, equal, sexp]
+
 module Make (Elt : sig
-  type t [@@deriving compare, equal, sexp_of]
+  type t [@@deriving equal, sexp_of]
+
+  include Comparer.S with type t := t
 end)
 (Mul : MULTIPLICITY) =
 struct
-  module M = NSMap.Make (Elt)
+  module M = Map.Make_from_Comparer (Elt)
 
   type mul = Mul.t
   type elt = Elt.t
-  type t = Mul.t M.t
+  type t = Mul.t M.t [@@deriving compare, equal, sexp_of]
+  type compare = Mul.compare M.compare [@@deriving compare, equal, sexp]
 
-  let compare = M.compare Mul.compare
-  let equal = M.equal Mul.equal
+  let comparer = M.comparer Mul.comparer
 
   let hash_fold_t hash_fold_elt s m =
     let hash_fold_mul s i = Hash.fold_int s (Mul.hash i) in
@@ -30,16 +40,14 @@ struct
     M.fold m init ~f:(fun ~key ~data state ->
         hash_fold_mul (hash_fold_elt state key) data )
 
-  let sexp_of_t s =
-    List.sexp_of_t
-      (Sexplib.Conv.sexp_of_pair Elt.sexp_of_t Mul.sexp_of_t)
-      (M.to_list s)
+  module Provide_of_sexp (Elt : sig
+    type t = elt [@@deriving of_sexp]
+  end) =
+  struct
+    include M.Provide_of_sexp (Elt)
 
-  let t_of_sexp elt_of_sexp sexp =
-    M.of_list
-      (List.t_of_sexp
-         (Sexplib.Conv.pair_of_sexp elt_of_sexp Mul.t_of_sexp)
-         sexp)
+    let t_of_sexp = t_of_sexp Mul.t_of_sexp
+  end
 
   let pp ?pre ?suf sep pp_elt fs s =
     List.pp ?pre ?suf sep pp_elt fs (Iter.to_list (M.to_iter s))

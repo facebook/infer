@@ -12,7 +12,12 @@ module rec Arith0 :
   (Arithmetic.REPRESENTATION
     with type var := Trm.Var1.t
     with type trm := Trm.t) =
-  Arithmetic.Representation (Trm.Var1) (Trm)
+  Arithmetic.Representation
+    (Trm.Var1)
+    (struct
+      include Trm
+      include Comparer.Make (Trm)
+    end)
 
 (** Arithmetic terms *)
 and Arith : (Arithmetic.S with type trm := Trm.t with type t = Arith0.t) =
