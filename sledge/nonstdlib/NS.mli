@@ -146,6 +146,7 @@ include module type of Iter.Import
 
 (** Containers *)
 
+module Comparer = Comparer
 module Option = Option
 include module type of Option.Import
 

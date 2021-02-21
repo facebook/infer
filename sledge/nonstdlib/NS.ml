@@ -30,6 +30,7 @@ let mapN f e cons xs =
   let xs' = Array.map_endo ~f xs in
   if xs' == xs then e else cons xs'
 
+module Comparer = Comparer
 module Array = Array
 module Float = Float
 module HashSet = HashSet
