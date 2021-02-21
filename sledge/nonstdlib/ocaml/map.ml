@@ -73,6 +73,45 @@ module Make(Ord: OrderedType) = struct
         Empty
       | Node of {l:'a t; v:key; d:'a; r:'a t; h:int}
 
+    type 'a enumeration = End | More of key * 'a * 'a t * 'a enumeration
+
+    let rec cons_enum m e =
+      match m with
+        Empty -> e
+      | Node {l; v; d; r} -> cons_enum l (More(v, d, r, e))
+
+    let compare cmp m1 m2 =
+      let rec compare_aux e1 e2 =
+          match (e1, e2) with
+          (End, End) -> 0
+        | (End, _)  -> -1
+        | (_, End) -> 1
+        | (More(v1, d1, r1, e1), More(v2, d2, r2, e2)) ->
+            let c = Ord.compare v1 v2 in
+            if c <> 0 then c else
+            let c = cmp d1 d2 in
+            if c <> 0 then c else
+            compare_aux (cons_enum r1 e1) (cons_enum r2 e2)
+      in compare_aux (cons_enum m1 End) (cons_enum m2 End)
+
+    let equal cmp m1 m2 =
+      let rec equal_aux e1 e2 =
+          match (e1, e2) with
+          (End, End) -> true
+        | (End, _)  -> false
+        | (_, End) -> false
+        | (More(v1, d1, r1, e1), More(v2, d2, r2, e2)) ->
+            Ord.compare v1 v2 = 0 && cmp d1 d2 &&
+            equal_aux (cons_enum r1 e1) (cons_enum r2 e2)
+      in equal_aux (cons_enum m1 End) (cons_enum m2 End)
+
+    let rec bindings_aux accu = function
+        Empty -> accu
+      | Node {l; v; d; r} -> bindings_aux ((v, d) :: bindings_aux accu r) l
+
+    let bindings s =
+      bindings_aux [] s
+
     let height = function
         Empty -> 0
       | Node {h} -> h
@@ -449,48 +488,9 @@ module Make(Ord: OrderedType) = struct
           then (join lt v d rt, concat lf rf)
           else (concat lt rt, join lf v d rf)
 
-    type 'a enumeration = End | More of key * 'a * 'a t * 'a enumeration
-
-    let rec cons_enum m e =
-      match m with
-        Empty -> e
-      | Node {l; v; d; r} -> cons_enum l (More(v, d, r, e))
-
-    let compare cmp m1 m2 =
-      let rec compare_aux e1 e2 =
-          match (e1, e2) with
-          (End, End) -> 0
-        | (End, _)  -> -1
-        | (_, End) -> 1
-        | (More(v1, d1, r1, e1), More(v2, d2, r2, e2)) ->
-            let c = Ord.compare v1 v2 in
-            if c <> 0 then c else
-            let c = cmp d1 d2 in
-            if c <> 0 then c else
-            compare_aux (cons_enum r1 e1) (cons_enum r2 e2)
-      in compare_aux (cons_enum m1 End) (cons_enum m2 End)
-
-    let equal cmp m1 m2 =
-      let rec equal_aux e1 e2 =
-          match (e1, e2) with
-          (End, End) -> true
-        | (End, _)  -> false
-        | (_, End) -> false
-        | (More(v1, d1, r1, e1), More(v2, d2, r2, e2)) ->
-            Ord.compare v1 v2 = 0 && cmp d1 d2 &&
-            equal_aux (cons_enum r1 e1) (cons_enum r2 e2)
-      in equal_aux (cons_enum m1 End) (cons_enum m2 End)
-
     let rec cardinal = function
         Empty -> 0
       | Node {l; r} -> cardinal l + 1 + cardinal r
-
-    let rec bindings_aux accu = function
-        Empty -> accu
-      | Node {l; v; d; r} -> bindings_aux ((v, d) :: bindings_aux accu r) l
-
-    let bindings s =
-      bindings_aux [] s
 
     let choose = min_binding
 
