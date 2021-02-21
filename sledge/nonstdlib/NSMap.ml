@@ -11,13 +11,16 @@ include NSMap_intf
 module Make (Key : sig
   type t [@@deriving compare, sexp_of]
 end) : S with type key = Key.t = struct
-  module M = CCMap.Make (Key)
+  module M = Stdlib.Map.Make (Key)
 
   type key = Key.t
   type 'a t = 'a M.t [@@deriving compare, equal]
 
+  let to_list = M.bindings
+  let of_list l = List.fold_left l M.empty ~f:(fun m (k, v) -> M.add k v m)
+
   let sexp_of_t sexp_of_data m =
-    M.to_list m
+    to_list m
     |> Sexplib.Conv.sexp_of_list
          (Sexplib.Conv.sexp_of_pair Key.sexp_of_t sexp_of_data)
 
@@ -29,7 +32,7 @@ end) : S with type key = Key.t = struct
       s
       |> Sexplib.Conv.list_of_sexp
            (Sexplib.Conv.pair_of_sexp Key.t_of_sexp data_of_sexp)
-      |> M.of_list
+      |> of_list
   end
 
   let empty = M.empty
@@ -47,12 +50,21 @@ end) : S with type key = Key.t = struct
       m
 
   let remove key m = M.remove key m
-  let merge l r ~f = M.merge_safe l r ~f
 
-  let merge_endo t u ~f =
+  let merge l r ~f =
+    let combine k lo ro =
+      match (lo, ro) with
+      | Some lv, Some rv -> f k (`Both (lv, rv))
+      | Some lv, None -> f k (`Left lv)
+      | None, Some rv -> f k (`Right rv)
+      | None, None -> None
+    in
+    M.merge combine l r
+
+  let merge_endo l r ~f =
     let change = ref false in
-    let t' =
-      merge t u ~f:(fun key side ->
+    let l' =
+      merge l r ~f:(fun key side ->
           let f_side = f key side in
           ( match (side, f_side) with
           | (`Both (data, _) | `Left data), Some data' when data' == data ->
@@ -60,7 +72,7 @@ end) : S with type key = Key.t = struct
           | _ -> change := true ) ;
           f_side )
     in
-    if !change then t' else t
+    if !change then l' else l
 
   let union x y ~f = M.union f x y
 
@@ -198,29 +210,23 @@ end) : S with type key = Key.t = struct
   let existsi m ~f = M.exists (fun key data -> f ~key ~data) m
   let for_alli m ~f = M.for_all (fun key data -> f ~key ~data) m
   let fold m s ~f = M.fold (fun key data acc -> f ~key ~data acc) m s
-  let keys = M.keys
-  let values = M.values
-  let to_iter = M.to_iter
-  let to_list = M.bindings
-  let to_list_rev = M.to_list
-  let of_iter = M.of_iter
-  let of_list = M.of_list
+  let to_iter m = Iter.from_iter (fun f -> M.iter (fun k v -> f (k, v)) m)
+  let keys m = Iter.from_iter (fun f -> M.iter (fun k _ -> f k) m)
+  let values m = Iter.from_iter (fun f -> M.iter (fun _ v -> f v) m)
+  let of_iter s = Iter.fold s M.empty ~f:(fun (k, v) m -> M.add k v m)
 
-  let to_iter2 l r =
+  let symmetric_diff l r ~eq =
     let seq = ref Iter.empty in
-    M.merge_safe l r ~f:(fun k vv ->
-        seq := Iter.cons (k, vv) !seq ;
+    let yield x = seq := Iter.cons x !seq in
+    merge l r ~f:(fun k vv ->
+        ( match vv with
+        | `Both (lv, rv) when eq lv rv -> ()
+        | `Both vv -> yield (k, `Unequal vv)
+        | `Left lv -> yield (k, `Left lv)
+        | `Right rv -> yield (k, `Right rv) ) ;
         None )
     |> ignore ;
     !seq
-
-  let symmetric_diff l r ~eq =
-    Iter.filter_map (to_iter2 l r) ~f:(fun (k, vv) ->
-        match vv with
-        | `Both (lv, rv) when eq lv rv -> None
-        | `Both vv -> Some (k, `Unequal vv)
-        | `Left lv -> Some (k, `Left lv)
-        | `Right rv -> Some (k, `Right rv) )
 
   let pp pp_k pp_v fs m =
     Format.fprintf fs "@[<1>[%a]@]"

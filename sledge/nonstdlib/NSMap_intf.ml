@@ -126,14 +126,8 @@ module type S = sig
   val values : 'a t -> 'a iter
   val to_iter : 'a t -> (key * 'a) iter
   val to_list : 'a t -> (key * 'a) list
-  val to_list_rev : 'a t -> (key * 'a) list
   val of_iter : (key * 'a) iter -> 'a t
   val of_list : (key * 'a) list -> 'a t
-
-  val to_iter2 :
-       'a t
-    -> 'b t
-    -> (key * [`Left of 'a | `Both of 'a * 'b | `Right of 'b]) iter
 
   val symmetric_diff :
        'a t

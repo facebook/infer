@@ -11,7 +11,7 @@ include NSSet_intf
 module Make (Elt : sig
   type t [@@deriving compare, sexp_of]
 end) : S with type elt = Elt.t = struct
-  module S = CCSet.Make (Elt)
+  module S = Stdlib.Set.Make (Elt)
 
   type elt = Elt.t
   type t = S.t [@@deriving compare, equal]
@@ -34,7 +34,8 @@ end) : S with type elt = Elt.t = struct
     let hash = Hash.of_fold hash_fold_t
   end
 
-  let sexp_of_t s = S.to_list s |> Sexplib.Conv.sexp_of_list Elt.sexp_of_t
+  let to_list = S.elements
+  let sexp_of_t s = to_list s |> Sexplib.Conv.sexp_of_list Elt.sexp_of_t
 
   module Provide_of_sexp (Elt : sig
     type t = elt [@@deriving of_sexp]
@@ -50,7 +51,7 @@ end) : S with type elt = Elt.t = struct
   let of_list = S.of_list
   let add x s = S.add x s
   let add_option = Option.fold ~f:add
-  let add_list xs s = S.add_list s xs
+  let add_list xs s = S.union (S.of_list xs) s
   let remove x s = S.remove x s
   let diff = S.diff
   let inter = S.inter
@@ -117,8 +118,8 @@ end) : S with type elt = Elt.t = struct
   let reduce xs ~f =
     match pop xs with Some (x, xs) -> Some (fold ~f xs x) | None -> None
 
-  let to_iter = S.to_iter
-  let of_iter = S.of_iter
+  let to_iter s = Iter.from_iter (fun f -> S.iter f s)
+  let of_iter s = Iter.fold ~f:add s S.empty
 
   let pp_full ?pre ?suf ?(sep = (",@ " : (unit, unit) fmt)) pp_elt fs x =
     List.pp ?pre ?suf sep pp_elt fs (S.elements x)
