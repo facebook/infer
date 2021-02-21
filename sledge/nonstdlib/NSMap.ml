@@ -6,7 +6,7 @@
  *)
 
 open! NS0
-include Map_intf
+include NSMap_intf
 
 module Make (Key : sig
   type t [@@deriving compare, sexp_of]

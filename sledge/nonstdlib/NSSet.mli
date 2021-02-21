@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-include module type of Map_intf
+include module type of NSSet_intf
 
-module Make (Key : sig
+module Make (Elt : sig
   type t [@@deriving compare, sexp_of]
-end) : S with type key = Key.t
+end) : S with type elt = Elt.t

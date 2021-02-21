@@ -47,5 +47,5 @@ let sign = Sign.of_int
 let incr = incr
 let decr = decr
 
-module Set = Set.Make (T)
-module Map = Map.Make (T)
+module Set = NSSet.Make (T)
+module Map = NSMap.Make (T)

@@ -40,5 +40,5 @@ module Infix : sig
 end
 
 include module type of Infix
-module Set : Set.S with type elt = int
-module Map : Map.S with type key = int
+module Set : NSSet.S with type elt = int
+module Map : NSMap.S with type key = int

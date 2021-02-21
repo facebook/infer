@@ -22,6 +22,6 @@ val rtake : int -> string -> string
 val rdrop : int -> string -> string
 val rtake_drop : int -> string -> string * string
 
-module Set : Set.S with type elt = string
-module Map : Map.S with type key = string
+module Set : NSSet.S with type elt = string
+module Map : NSMap.S with type key = string
 module Tbl : HashTable.S with type key = string

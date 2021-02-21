@@ -38,13 +38,13 @@ module IArray = IArray
 include IArray.Import
 module Int = Int
 module List = List
-module Map = Map
+module Map = NSMap
 module Monad = Monad
 module Multiset = Multiset
 module Option = Option
 include Option.Import
 module Q = Q_ext
-module Set = Set
+module Set = NSSet
 module Sign = Sign
 module String = String
 module Sys = Sys

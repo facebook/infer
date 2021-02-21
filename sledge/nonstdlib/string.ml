@@ -34,6 +34,6 @@ let rindex = rindex_opt
 let rindex_from_exn = rindex_from
 let rindex_from = rindex_from_opt
 
-module Set = Set.Make (T)
-module Map = Map.Make (T)
+module Set = NSSet.Make (T)
+module Map = NSMap.Make (T)
 module Tbl = HashTable.Make (T)

@@ -6,7 +6,7 @@
  *)
 
 open! NS0
-include Set_intf
+include NSSet_intf
 
 module Make (Elt : sig
   type t [@@deriving compare, sexp_of]

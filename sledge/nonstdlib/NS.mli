@@ -161,8 +161,8 @@ module List = List
 module Array = Array
 module IArray = IArray
 include module type of IArray.Import
-module Set = Set
-module Map = Map
+module Set = NSSet
+module Map = NSMap
 module Multiset = Multiset
 module Bijection = CCBijection [@@warning "-49"]
 

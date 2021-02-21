@@ -15,7 +15,7 @@ module Make (Elt : sig
 end)
 (Mul : MULTIPLICITY) =
 struct
-  module M = Map.Make (Elt)
+  module M = NSMap.Make (Elt)
 
   type mul = Mul.t
   type elt = Elt.t
