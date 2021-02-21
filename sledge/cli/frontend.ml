@@ -1633,12 +1633,10 @@ let check_datalayout llcontext lldatalayout =
 let cleanup llmodule llcontext =
   SymTbl.clear sym_tbl ;
   ScopeTbl.clear scope_tbl ;
-  String.Tbl.clear realpath_tbl ;
   LltypeTbl.clear anon_struct_name ;
   LltypeTbl.clear memo_type ;
   GlobTbl.clear memo_global ;
   ValTbl.clear memo_value ;
-  StringS.clear ignored_callees ;
   calls_to_backpatch := [] ;
   Gc.full_major () ;
   Llvm.dispose_module llmodule ;
