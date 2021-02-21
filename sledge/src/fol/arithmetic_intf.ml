@@ -5,34 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(** Arithmetic terms *)
-
-(** An embedding of arithmetic terms [t] into indeterminates [trm]. *)
-module type EMBEDDING = sig
-  type t
-  type trm
-
-  val to_trm : t -> trm
-  (** Embedding from [t] to [trm]: [to_trm a] is arithmetic term [a]
-      embedded into an indeterminate term. *)
-
-  val get_arith : trm -> t option
-  (** Partial projection from [trm] to [t]: [get_arith x] is [Some a] iff
-      [x = to_trm a]. *)
-end
-
-(** Indeterminate terms, treated as atomic / variables except when they can
-    be flattened using {!EMBEDDING.get_arith}. *)
-module type TRM = sig
-  include Comparer.S
-
-  val pp : t pp
-
-  type var
-
-  val vars : t -> var iter
-end
-
 (** Arithmetic terms, e.g. polynomials [t] over indeterminate terms [trm] *)
 module type S0 = sig
   type trm
@@ -92,6 +64,32 @@ module type S0 = sig
       [trms (c × (Σᵢ₌₁ⁿ cᵢ × Πⱼ₌₁ᵐᵢ
       Xᵢⱼ^pᵢⱼ))] is the sequence of terms [Xᵢⱼ] for each [i] and
       [j]. *)
+end
+
+(** An embedding of arithmetic terms [t] into indeterminates [trm]. *)
+module type EMBEDDING = sig
+  type t
+  type trm
+
+  val to_trm : t -> trm
+  (** Embedding from [t] to [trm]: [to_trm a] is arithmetic term [a]
+      embedded into an indeterminate term. *)
+
+  val get_arith : trm -> t option
+  (** Partial projection from [trm] to [t]: [get_arith x] is [Some a] iff
+      [x = to_trm a]. *)
+end
+
+(** Indeterminate terms, treated as atomic / variables except when they can
+    be flattened using {!EMBEDDING.get_arith}. *)
+module type TRM = sig
+  include Comparer.S
+
+  val pp : t pp
+
+  type var
+
+  val vars : t -> var iter
 end
 
 (** Arithmetic terms, where an embedding {!EMBEDDING.get_arith} into
