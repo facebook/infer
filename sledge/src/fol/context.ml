@@ -344,16 +344,16 @@ let in_car a x = Subst.mem a x.rep
 let is_rep a x =
   match Subst.find a x.rep with Some a' -> Trm.equal a a' | None -> false
 
+let cls_of a x = Trm.Map.find a x.cls |> Option.value ~default:Cls.empty
 let use_of a x = Trm.Map.find a x.use |> Option.value ~default:Use.empty
 
-(** congruent specialized to assume subterms of [a'] are normalized wrt [r]
-    (or canonized) *)
-let semi_congruent r a' b = Trm.equal a' (Trm.map ~f:(Subst.norm r.rep) b)
+(* Invariant ==============================================================*)
 
 (** terms are congruent if equal after normalizing subterms *)
-let congruent r a b = semi_congruent r (Trm.map ~f:(Subst.norm r.rep) a) b
-
-(* Invariant ==============================================================*)
+let congruent r a b =
+  Trm.equal
+    (Trm.map ~f:(Subst.norm r.rep) a)
+    (Trm.map ~f:(Subst.norm r.rep) b)
 
 let find_check a x =
   if not (Theory.is_noninterpreted a) then a
@@ -370,11 +370,7 @@ let pre_invariant x =
            nontrivial classes *)
         assert (
           Theory.is_noninterpreted a
-          || is_rep a x
-             && not
-                  (Cls.is_empty
-                     ( Trm.Map.find a' x.cls
-                     |> Option.value ~default:Cls.empty ))
+          || (is_rep a x && not (Cls.is_empty (cls_of a' x)))
           || fail "interp in rep dom %a" Trm.pp a () ) ;
         (* carrier is closed under solvable subterms *)
         Iter.iter (Theory.solvable_trms a) ~f:(fun b ->
@@ -390,9 +386,7 @@ let pre_invariant x =
                Subst.pp x.rep () ) ;
         (* every term is in class of its rep *)
         assert (
-          let a'_cls =
-            Trm.Map.find a' x.cls |> Option.value ~default:Cls.empty
-          in
+          let a'_cls = cls_of a' x in
           Trm.equal a a'
           || Trm.Set.mem a (Cls.to_set a'_cls)
           || fail "%a not in cls of %a = {%a}" Trm.pp a Trm.pp a' Cls.pp
@@ -678,12 +672,6 @@ let empty =
 
 let unsat = {empty with sat= false}
 
-let canon_f r b =
-  [%trace]
-    ~call:(fun {pf} -> pf "@ %a@ | %a" Fml.pp b pp_raw r)
-    ~retn:(fun {pf} -> pf "%a" Fml.pp)
-  @@ fun () -> Fml.map_trms ~f:(canon r) b
-
 let merge ~wrt a b x =
   [%trace]
     ~call:(fun {pf} -> pf " @[%a =@ %a@] |@ %a" Trm.pp a Trm.pp b pp x)
@@ -694,7 +682,7 @@ let merge ~wrt a b x =
   let x = {x with pnd= (a, b) :: x.pnd} in
   propagate ~wrt x
 
-let and_eq_ ~wrt a b x =
+let and_eq ~wrt a b x =
   [%trace]
     ~call:(fun {pf} -> pf "@ @[%a = %a@]@ | %a" Trm.pp a Trm.pp b pp x)
     ~retn:(fun {pf} x' ->
@@ -717,6 +705,18 @@ let is_empty {sat; rep} =
 
 let is_unsat {sat} = not sat
 
+let canon_f x b =
+  [%trace]
+    ~call:(fun {pf} -> pf "@ %a@ | %a" Fml.pp b pp_raw x)
+    ~retn:(fun {pf} -> pf "%a" Fml.pp)
+  @@ fun () -> Fml.map_trms ~f:(canon x) b
+
+let normalize x a =
+  [%trace]
+    ~call:(fun {pf} -> pf "@ %a@ | %a" Term.pp a pp x)
+    ~retn:(fun {pf} -> pf "%a" Term.pp)
+  @@ fun () -> Term.map_trms ~f:(canon x) a
+
 let implies r b =
   [%Trace.call fun {pf} -> pf "@ %a@ | %a" Fml.pp b pp r]
   ;
@@ -726,20 +726,15 @@ let implies r b =
 
 let refutes r b = Fml.equal Fml.ff (canon_f r b)
 
-let normalize x a =
-  [%trace]
-    ~call:(fun {pf} -> pf "@ %a@ | %a" Term.pp a pp x)
-    ~retn:(fun {pf} -> pf "%a" Term.pp)
-  @@ fun () -> Term.map_trms ~f:(canon x) a
-
-let cls_of r e =
+(* class including the representative of a term not assumed to be a rep *)
+let rep_cls_of r e =
   let e' = Subst.apply r.rep e in
-  Cls.add e' (Trm.Map.find e' r.cls |> Option.value ~default:Cls.empty)
+  Cls.add e' (cls_of e' r)
 
 let class_of r e =
   match Term.get_trm (normalize r e) with
   | Some e' ->
-      Iter.to_list (Iter.map ~f:Term.of_trm (Cls.to_iter (cls_of r e')))
+      Iter.to_list (Iter.map ~f:Term.of_trm (Cls.to_iter (rep_cls_of r e')))
   | None -> []
 
 let diff_classes r s =
@@ -766,7 +761,7 @@ let apply_subst wrt s r =
         let rep' = Subst.apply_rec s rep in
         Cls.fold cls r ~f:(fun trm r ->
             let trm' = Subst.apply_rec s trm in
-            and_eq_ ~wrt trm' rep' r ) ) )
+            and_eq ~wrt trm' rep' r ) ) )
   |> extract_xs
   |>
   [%Trace.retn fun {pf} (xs, r') ->
@@ -782,7 +777,7 @@ let union wrt r s =
     let s, r =
       if Subst.length s.rep <= Subst.length r.rep then (s, r) else (r, s)
     in
-    Subst.fold s.rep r ~f:(fun ~key:e ~data:e' r -> and_eq_ ~wrt e e' r) )
+    Subst.fold s.rep r ~f:(fun ~key:e ~data:e' r -> and_eq ~wrt e e' r) )
   |> extract_xs
   |>
   [%Trace.retn fun {pf} (_, r') ->
@@ -803,7 +798,7 @@ let inter wrt r s =
               match
                 List.find ~f:(fun rep -> implies r (Fml.eq exp rep)) reps
               with
-              | Some rep -> (reps, and_eq_ ~wrt exp rep rs)
+              | Some rep -> (reps, and_eq ~wrt exp rep rs)
               | None -> (exp :: reps, rs) )
           |> snd )
     in
@@ -827,8 +822,8 @@ let rec add_ wrt b r =
   | Tt -> r
   | Not Tt -> unsat
   | And {pos; neg} -> Fml.fold_pos_neg ~f:(add_ wrt) ~pos ~neg r
-  | Eq (d, e) -> and_eq_ ~wrt d e r
-  | Eq0 e -> and_eq_ ~wrt Trm.zero e r
+  | Eq (d, e) -> and_eq ~wrt d e r
+  | Eq0 e -> and_eq ~wrt Trm.zero e r
   | Pos _ | Not _ | Or _ | Iff _ | Cond _ | Lit _ -> r
 
 let add us b r =
@@ -1252,7 +1247,7 @@ let solve_concat_extracts r us x (classes, subst, us_xs) =
     List.filter_map (solve_concat_extracts_eq r x) ~f:(fun rev_extracts ->
         Iter.fold_opt (Iter.of_list rev_extracts) [] ~f:(fun e suffix ->
             let+ rep_ito_us =
-              Cls.fold (cls_of r e) None ~f:(fun trm rep_ito_us ->
+              Cls.fold (rep_cls_of r e) None ~f:(fun trm rep_ito_us ->
                   match rep_ito_us with
                   | Some rep when Trm.compare rep trm <= 0 -> rep_ito_us
                   | _ when Var.Set.subset (Trm.fv trm) ~of_:us -> Some trm
