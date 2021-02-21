@@ -53,8 +53,6 @@ struct
         Format.fprintf ppf "@[<2>%a@]" pp_num num
       else Format.fprintf ppf "@[<2>(%a%a)@]" pp_num num pp_den den
 
-    let pp = ppx Trm.pp
-
     (** [one] is the empty product Πᵢ₌₁⁰ xᵢ^pᵢ *)
     let one = Prod.empty
 
@@ -79,11 +77,6 @@ struct
 
     let trms mono =
       Iter.from_iter (fun f -> Prod.iter mono ~f:(fun trm _ -> f trm))
-
-    (* query *)
-
-    let vars p = Iter.flat_map ~f:Trm.vars (trms p)
-    let fv p = Var.Set.of_iter (vars p)
   end
 
   module Sum = struct
@@ -94,10 +87,7 @@ struct
   module Poly = Sum
   include Poly
 
-  module Make (Embed : EMBEDDING with type trm := Trm.t and type t := t) =
-  struct
-    include Poly
-
+  module S0 = struct
     let ppx pp_trm ppf poly =
       if Sum.is_empty poly then Trace.pp_styled `Magenta "0" ppf
       else
@@ -114,31 +104,13 @@ struct
             (Sum.pp "@ + " pp_coeff_mono)
             poly
 
-    let pp = ppx Trm.pp
+    (* core invariant *)
 
     let mono_invariant mono =
       let@ () = Invariant.invariant [%here] mono [%sexp_of: Mono.t] in
-      Prod.iter mono ~f:(fun base power ->
+      Prod.iter mono ~f:(fun _ power ->
           (* powers are non-zero *)
-          assert (not (Int.equal Int.zero power)) ;
-          match Embed.get_arith base with
-          | None -> ()
-          | Some poly -> (
-            match Sum.classify poly with
-            | `Many -> ()
-            | `Zero | `One _ ->
-                (* polynomial factors are not constant or singleton, which
-                   should have been flattened into the parent monomial *)
-                assert false ) ) ;
-      match Mono.get_trm mono with
-      | None -> ()
-      | Some trm -> (
-        match Embed.get_arith trm with
-        | None -> ()
-        | Some _ ->
-            (* singleton monomials are not polynomials, which should have
-               been flattened into the parent polynomial *)
-            assert false )
+          assert (not (Int.equal Int.zero power)) )
 
     let invariant poly =
       let@ () = Invariant.invariant [%here] poly [%sexp_of: t] in
@@ -163,6 +135,17 @@ struct
       else if Q.equal Q.zero coeff then zero
       else Sum.map_counts ~f:(Q.mul coeff) poly )
       |> check invariant
+
+    (* transform *)
+
+    let split_const poly =
+      match Sum.find_and_remove Mono.one poly with
+      | Some (c, p_c) -> (p_c, c)
+      | None -> (poly, Q.zero)
+
+    let partition_sign poly =
+      Sum.partition_map poly ~f:(fun _ coeff ->
+          if Q.sign coeff >= 0 then Left coeff else Right (Q.neg coeff) )
 
     (* projections and embeddings *)
 
@@ -198,6 +181,78 @@ struct
       match Sum.only_elt poly with
       | Some (mono, coeff) when Q.equal Q.one coeff -> Some mono
       | _ -> None
+
+    (** Project out the term embedded into a polynomial, if possible *)
+    let get_trm poly =
+      match get_mono poly with
+      | Some mono -> Mono.get_trm mono
+      | None -> None
+  end
+
+  module Make (Embed : EMBEDDING with type trm := Trm.t and type t := t) =
+  struct
+    module Mono = struct
+      include Mono
+
+      let pp = ppx Trm.pp
+      let vars p = Iter.flat_map ~f:Trm.vars (trms p)
+      let fv p = Var.Set.of_iter (vars p)
+    end
+
+    include Poly
+    include S0
+
+    let pp = ppx Trm.pp
+
+    (** Embed a monomial into a term, flattening if possible *)
+    let trm_of_mono mono =
+      match Mono.get_trm mono with
+      | Some trm -> trm
+      | None -> Embed.to_trm (Sum.of_ mono Q.one)
+
+    (* traverse *)
+
+    let monos poly =
+      Iter.from_iter (fun f ->
+          Sum.iter poly ~f:(fun mono _ ->
+              if not (Mono.equal_one mono) then f mono ) )
+
+    let trms poly =
+      match get_mono poly with
+      | Some mono -> Mono.trms mono
+      | None -> Iter.map ~f:trm_of_mono (monos poly)
+
+    let vars p = Iter.flat_map ~f:Trm.vars (trms p)
+
+    (* invariant *)
+
+    let mono_invariant mono =
+      mono_invariant mono ;
+      let@ () = Invariant.invariant [%here] mono [%sexp_of: Mono.t] in
+      Prod.iter mono ~f:(fun base _ ->
+          match Embed.get_arith base with
+          | None -> ()
+          | Some poly -> (
+            match Sum.classify poly with
+            | `Many -> ()
+            | `Zero | `One _ ->
+                (* polynomial factors are not constant or singleton, which
+                   should have been flattened into the parent monomial *)
+                assert false ) ) ;
+      match Mono.get_trm mono with
+      | None -> ()
+      | Some trm -> (
+        match Embed.get_arith trm with
+        | None -> ()
+        | Some _ ->
+            (* singleton monomials are not polynomials, which should have
+               been flattened into the parent polynomial *)
+            assert false )
+
+    let invariant poly =
+      invariant poly ;
+      let@ () = Invariant.invariant [%here] poly [%sexp_of: t] in
+      Sum.iter poly ~f:(fun mono _ -> mono_invariant mono)
 
     (** Terms of a polynomial: product of a coefficient and a monomial *)
     module CM = struct
@@ -249,12 +304,6 @@ struct
         |> check invariant
     end
 
-    (** Embed a monomial into a term, flattening if possible *)
-    let trm_of_mono mono =
-      match Mono.get_trm mono with
-      | Some trm -> trm
-      | None -> Embed.to_trm (Sum.of_ mono Q.one)
-
     (** Embed a term into a polynomial, by projecting a polynomial out of
         the term if possible *)
     let trm trm =
@@ -264,12 +313,6 @@ struct
       |> check (fun poly ->
              assert (equal poly (CM.to_poly (CM.of_trm trm))) )
 
-    (** Project out the term embedded into a polynomial, if possible *)
-    let get_trm poly =
-      match get_mono poly with
-      | Some mono -> Mono.get_trm mono
-      | None -> None
-
     (* constructors over indeterminates *)
 
     let mul e1 e2 = CM.to_poly (CM.mul (CM.of_trm e1) (CM.of_trm e2))
@@ -278,29 +321,6 @@ struct
       CM.to_poly (CM.mul (CM.of_trm n) (CM.of_trm d ~power:(-1)))
 
     let pow base power = CM.to_poly (CM.of_trm base ~power)
-
-    (* transform *)
-
-    let split_const poly =
-      match Sum.find_and_remove Mono.one poly with
-      | Some (c, p_c) -> (p_c, c)
-      | None -> (poly, Q.zero)
-
-    let partition_sign poly =
-      Sum.partition_map poly ~f:(fun _ coeff ->
-          if Q.sign coeff >= 0 then Left coeff else Right (Q.neg coeff) )
-
-    (* traverse *)
-
-    let monos poly =
-      Iter.from_iter (fun f ->
-          Sum.iter poly ~f:(fun mono _ ->
-              if not (Mono.equal_one mono) then f mono ) )
-
-    let trms poly =
-      match get_mono poly with
-      | Some mono -> Mono.trms mono
-      | None -> Iter.map ~f:trm_of_mono (monos poly)
 
     (* map over [trms] *)
     let map poly ~f =
@@ -337,10 +357,6 @@ struct
           in
           Sum.union poly' delta )
       |> check invariant
-
-    (* query *)
-
-    let vars p = Iter.flat_map ~f:Trm.vars (trms p)
 
     (* solve *)
 
