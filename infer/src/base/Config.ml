@@ -2997,7 +2997,12 @@ and javac_classes_out = !javac_classes_out
 
 and job_id = !job_id
 
-and jobs = Option.fold !max_jobs ~init:!jobs ~f:min
+and jobs =
+  let n = Option.fold !max_jobs ~init:!jobs ~f:min in
+  if n < 0 then L.(die UserError) "negative number of jobs specified (%d)" n
+  else if Int.equal n 0 then ncpu (* emulate standard convention *)
+  else n
+
 
 and join_cond = !join_cond
 
