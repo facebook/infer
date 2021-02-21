@@ -16,7 +16,7 @@ let lookup_func lookup term =
 
 let uconst name = T.apply (Funsym.uninterp name) [||]
 let global g = uconst (Llair.Global.name g)
-let reg r = Var.program ~name:(Llair.Reg.name r) ~id:(Llair.Reg.id r)
+let reg r = Var.identified ~name:(Llair.Reg.name r) ~id:(Llair.Reg.id r)
 let regs rs = Var.Set.of_iter (Iter.map ~f:reg (Llair.Reg.Set.to_iter rs))
 let uap0 f = T.apply f [||]
 let uap1 f a = T.apply f [|a|]
@@ -66,7 +66,7 @@ and term : Llair.Exp.t -> T.t =
       F.inject
         (F.cond ~cnd:(formula cnd) ~pos:(formula pos) ~neg:(formula neg))
   (* terms *)
-  | Reg {name; id; typ= _} -> T.var (Var.program ~name ~id)
+  | Reg {name; id; typ= _} -> T.var (Var.identified ~name ~id)
   | Global {name; typ= _} | Function {name; typ= _} -> uconst name
   | Label {parent; name} ->
       uap0 (Funsym.uninterp ("label_" ^ parent ^ "_" ^ name))

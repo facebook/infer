@@ -167,11 +167,10 @@ module Var = struct
 
     let freshen v ~wrt = fresh (name v) ~wrt
 
-    let program ?(name = "") ~id =
+    let identified ?(name = "") ~id =
       assert (id > 0) ;
       make ~id:(id - Int.max_int) ~name
 
-    let identified ~name ~id = make ~id ~name
     let of_ v = v |> check invariant
     let of_trm = function Var _ as v -> Some v | _ -> None
   end

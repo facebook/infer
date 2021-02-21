@@ -31,7 +31,7 @@ let pop () =
 let reset () = stack := init_stack
 
 let id =
-  let count = ref (-1) in
+  let count = ref 0 in
   fun () ->
     incr count ;
     !count

@@ -31,19 +31,11 @@ module type S = sig
 
   val id : t -> int
   val name : t -> string
-
-  val program : ?name:string -> id:int -> t
-  (** Create a program variable with [id] and optional [name]. The [id]
-      uniquely identifies the variable, and must be positive. *)
-
   val fresh : string -> wrt:Set.t -> t * Set.t
 
-  val identified : name:string -> id:int -> t
-  (** Variable with the given [id]. Variables are compared by [id] alone,
-      [name] is used only for printing. The only way to ensure [identified]
-      variables do not clash with [fresh] variables is to pass the
-      [identified] variables to [fresh] in [wrt]:
-      [Var.fresh name ~wrt:(Var.Set.of_ (Var.identified ~name ~id))]. *)
+  val identified : ?name:string -> id:int -> t
+  (** Create a variable identified by [id] with optional [name]. The [id]
+      uniquely identifies the variable, and must be positive. *)
 
   (** Variable renaming substitutions *)
   module Subst : Subst.S with type var := t with type set := Set.t
