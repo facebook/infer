@@ -518,6 +518,27 @@ let%test_module _ =
     let%test _ = implies_eq r19 y !0
     let%test _ = implies_eq r19 z !0
 
+    let r20 = of_eqs [(f x, t); (x, y); (f y, u)]
+
+    let%expect_test _ =
+      pp r20 ;
+      pp_raw r20 ;
+      [%expect
+        {|
+          %t_1 = %u_2 = f(%x_5) ∧ %x_5 = %y_6
+
+        { sat= true;
+          rep= [[%t_1 ↦ ];
+                [%u_2 ↦ %t_1];
+                [%x_5 ↦ ];
+                [%y_6 ↦ %x_5];
+                [f(%x_5) ↦ %t_1]];
+          cls= [[%t_1 ↦ {%u_2, f(%x_5)}]; [%x_5 ↦ {%y_6}]];
+          use= [[%x_5 ↦ f(%x_5)]] } |}]
+
+    (* f(x) = t; x = y; f(y) = u ⊢ t = u *)
+    let%test _ = implies_eq r20 t u
+
     let%expect_test _ =
       let f =
         Formula.(
