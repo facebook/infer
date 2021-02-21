@@ -76,3 +76,4 @@ module Make (Var : VAR) = struct
 
   let apply sub v = Map.find v sub |> Option.value ~default:v
 end
+[@@inline]

@@ -12,7 +12,7 @@ open! NS0
 include HashTable_intf
 
 module Make (Key : HashedType) = struct
-  include CCHashtbl.Make (Key)
+  include CCHashtbl.Make [@inlined] (Key)
 
   let create ?(size = 0) () = create size
   let set tbl ~key ~data = replace tbl key data

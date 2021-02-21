@@ -8,7 +8,7 @@
 include CCHashSet
 
 module Make (E : ELEMENT) = struct
-  include CCHashSet.Make (E)
+  include CCHashSet.Make [@inlined] (E)
 
   let update s e ~f =
     let eo = find s e in

@@ -11,7 +11,7 @@ include NSSet_intf
 module Make (Elt : sig
   type t [@@deriving compare, sexp_of]
 end) : S with type elt = Elt.t = struct
-  module S = Stdlib.Set.Make (Elt)
+  module S = Stdlib.Set.Make [@inlined] (Elt)
 
   type elt = Elt.t
   type t = S.t [@@deriving compare, equal]
@@ -138,3 +138,4 @@ end) : S with type elt = Elt.t = struct
       if not (is_empty gain) then Format.fprintf fs "++ %a" pp gain
   end
 end
+[@@inline]

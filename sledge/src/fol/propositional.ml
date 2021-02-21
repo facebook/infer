@@ -258,3 +258,4 @@ struct
     let trms p = Iter.from_labelled_iter (iter_trms p)
   end
 end
+[@@inline]

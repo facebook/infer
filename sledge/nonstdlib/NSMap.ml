@@ -11,7 +11,7 @@ include NSMap_intf
 module Make (Key : sig
   type t [@@deriving compare, sexp_of]
 end) : S with type key = Key.t = struct
-  module M = Stdlib.Map.Make (Key)
+  module M = Stdlib.Map.Make [@inlined] (Key)
 
   type key = Key.t
   type 'a t = 'a M.t [@@deriving compare, equal]
@@ -249,3 +249,4 @@ end) : S with type key = Key.t = struct
     let sd = Iter.to_list (symmetric_diff ~eq x y) in
     List.pp ~pre ~suf sep pp_diff_elt fs sd
 end
+[@@inline]

@@ -559,3 +559,4 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
         | [] -> map
         | _ -> Llair.Function.Map.add ~key ~data map )
 end
+[@@inlined]

@@ -36,6 +36,7 @@ struct
 
   let comparer = Ord.compare
 end
+[@@inlined]
 
 module Counterfeit (Ord : sig
   type t [@@deriving compare]
@@ -46,6 +47,7 @@ struct
 
   let comparer = Ord.compare
 end
+[@@inlined]
 
 module Apply (F : sig
   type ('a, 'compare_a) t [@@deriving compare]
@@ -64,6 +66,7 @@ struct
 
   let comparer = compare
 end
+[@@inlined]
 
 module Apply1 (F : sig
   type ('a, 'b, 'compare_a) t [@@deriving compare]
@@ -84,3 +87,4 @@ struct
 
   let comparer = compare
 end
+[@@inlined]

@@ -115,3 +115,4 @@ module Make (State_domain : State_domain_sig) = struct
     let+ next = State_domain.apply_summary current summ in
     (entry, next)
 end
+[@@inlined]

@@ -112,3 +112,4 @@ struct
   let for_all m ~f = M.for_alli ~f:(fun ~key ~data -> f key data) m
   let fold m s ~f = M.fold ~f:(fun ~key ~data -> f key data) m s
 end
+[@@inline]

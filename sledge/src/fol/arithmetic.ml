@@ -399,4 +399,6 @@ struct
               solve_for_mono Sum.empty c m p
           | _ -> None )
   end
+  [@@inline]
 end
+[@@inline]
