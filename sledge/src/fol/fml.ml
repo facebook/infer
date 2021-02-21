@@ -9,9 +9,6 @@
 
 module Prop = Propositional.Make (Trm)
 module Set = Prop.Fmls
-
-type set = Set.t
-
 include Prop.Fml
 
 let pp_boxed fs fmt =

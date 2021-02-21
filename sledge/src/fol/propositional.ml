@@ -13,33 +13,40 @@ module Make (Trm : sig
   type t [@@deriving compare, equal, sexp]
 end) =
 struct
-  (** Sets of formulas *)
-  module rec Fmls : (FORMULA_SET with type elt := Fml.t) = struct
-    module T = struct
-      type t = Fml.t [@@deriving compare, equal, sexp]
-    end
+  module Fml1 = struct
+    type compare [@@deriving compare, equal, sexp]
 
-    include Set.Make (T)
-    include Provide_of_sexp (T)
-  end
-
-  (** Formulas, built from literals with predicate symbols from various
-      theories, and propositional constants and connectives. Denote sets of
-      structures. *)
-  and Fml : (FORMULA with type trm := Trm.t with type set := Fmls.t) =
-  struct
     type t =
       | Tt
       | Eq of Trm.t * Trm.t
       | Eq0 of Trm.t
       | Pos of Trm.t
       | Not of t
-      | And of {pos: Fmls.t; neg: Fmls.t}
-      | Or of {pos: Fmls.t; neg: Fmls.t}
+      | And of {pos: set; neg: set}
+      | Or of {pos: set; neg: set}
       | Iff of t * t
       | Cond of {cnd: t; pos: t; neg: t}
       | Lit of Predsym.t * Trm.t array
-    [@@deriving compare, equal, sexp]
+
+    and set = (t, compare) Set.t [@@deriving compare, equal, sexp]
+  end
+
+  module Fml2 = struct
+    include Comparer.Counterfeit (Fml1)
+    include Fml1
+  end
+
+  (** Sets of formulas *)
+  module Fmls = struct
+    include Set.Make_from_Comparer (Fml2)
+    include Provide_of_sexp (Fml2)
+  end
+
+  (** Formulas, built from literals with predicate symbols from various
+      theories, and propositional constants and connectives. Denote sets of
+      structures. *)
+  module Fml = struct
+    include Fml2
 
     let invariant f =
       let@ () = Invariant.invariant [%here] f [%sexp_of: t] in
