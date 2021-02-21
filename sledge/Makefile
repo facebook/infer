@@ -17,8 +17,8 @@ dune_install_release = dune install --context=release --prefix=_build/_install/r
 dune_build_trace = $(subst release,trace,$(dune_build_release))
 dune_install_trace = $(subst release,trace,$(dune_install_release))
 
-dune_build_debug = $(subst debug,debug,$(dune_build_release))
-dune_install_debug = $(subst debug,debug,$(dune_install_release))
+dune_build_debug = $(subst release,debug,$(dune_build_release))
+dune_install_debug = $(subst release,debug,$(dune_install_release))
 
 .PHONY: check
 check:
