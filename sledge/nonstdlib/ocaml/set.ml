@@ -57,12 +57,16 @@ module type S =
     val partition: (elt -> bool) -> t -> t * t
     val cardinal: t -> int
     val elements: t -> elt list
+    val only_elt: t -> elt option
+    val classify : t -> elt NS0.zero_one_many
     val min_elt: t -> elt
     val min_elt_opt: t -> elt option
     val max_elt: t -> elt
     val max_elt_opt: t -> elt option
     val choose: t -> elt
     val choose_opt: t -> elt option
+    val pop : t -> elt * t
+    val pop_opt : t -> (elt * t) option
     val split: elt -> t -> t * bool * t
     val find: elt -> t -> elt
     val find_opt: elt -> t -> elt option
@@ -300,6 +304,16 @@ module Make(Ord: Comparer.S) =
           if rh > lh + 2 then bal (join l v rl) rv rr else
           create l v r
 
+    let classify x : _ NS0.zero_one_many =
+      match x with
+      | Empty -> Zero
+      | Node {l=Empty; v; r=Empty} -> One v
+      | _ -> Many
+
+    let only_elt = function
+        Node {l=Empty; v; r=Empty} -> Some v
+      | _ -> None
+
     (* Smallest and greatest element of a set *)
 
     let rec min_elt = function
@@ -523,9 +537,21 @@ module Make(Ord: Comparer.S) =
 
     let elements = elements
 
-    let choose = min_elt
+    let choose = function
+        Empty -> raise Not_found
+      | Node{v} -> v
 
-    let choose_opt = min_elt_opt
+    let choose_opt = function
+        Empty -> None
+      | Node{v} -> Some v
+
+    let pop = function
+        Empty -> raise Not_found
+      | Node{l; v; r} -> (v, merge l r)
+
+    let pop_opt = function
+        Empty -> None
+      | Node{l; v; r} -> Some (v, merge l r)
 
     let rec find x = function
         Empty -> raise Not_found

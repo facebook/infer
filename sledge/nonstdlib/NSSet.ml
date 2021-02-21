@@ -71,48 +71,12 @@ struct
   let subset s ~of_:t = S.subset s t
   let disjoint = S.disjoint
   let max_elt = S.max_elt_opt
-
-  let root_elt s =
-    let exception Found in
-    let found = ref None in
-    try
-      S.for_all
-        (fun elt ->
-          found := Some elt ;
-          raise_notrace Found )
-        s
-      |> ignore ;
-      None
-    with Found -> !found
-
-  let choose = root_elt
-  let choose_exn m = Option.get_exn (choose m)
-
-  let only_elt s =
-    match root_elt s with
-    | Some elt -> (
-      match S.split elt s with
-      | l, _, r when is_empty l && is_empty r -> Some elt
-      | _ -> None )
-    | None -> None
-
-  let classify s =
-    match root_elt s with
-    | None -> Zero
-    | Some elt -> (
-      match S.split elt s with
-      | l, true, r when is_empty l && is_empty r -> One elt
-      | _ -> Many )
-
-  let pop s =
-    match choose s with
-    | Some elt -> Some (elt, S.remove elt s)
-    | None -> None
-
-  let pop_exn s =
-    let elt = choose_exn s in
-    (elt, S.remove elt s)
-
+  let choose = S.choose_opt
+  let choose_exn = S.choose
+  let pop = S.pop_opt
+  let pop_exn = S.pop
+  let only_elt = S.only_elt
+  let classify = S.classify
   let map s ~f = S.map f s
   let filter s ~f = S.filter f s
   let partition s ~f = S.partition f s

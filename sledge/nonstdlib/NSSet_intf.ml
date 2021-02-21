@@ -74,6 +74,14 @@ module type S = sig
   val only_elt : t -> elt option
   val classify : t -> elt zero_one_many
 
+  val choose : t -> elt option
+  (** Find an unspecified element. Different elements may be chosen for
+      equivalent sets. [O(1)]. *)
+
+  val choose_exn : t -> elt
+  (** Find an unspecified element. Different elements may be chosen for
+      equivalent sets. [O(1)]. *)
+
   val pop : t -> (elt * t) option
   (** Find and remove an unspecified element. [O(1)]. *)
 

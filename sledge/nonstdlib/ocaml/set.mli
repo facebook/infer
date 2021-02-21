@@ -44,6 +44,8 @@
    of sets of [int * int].
 *)
 
+open! NS0
+
 module type OrderedType =
   sig
     type t
@@ -191,6 +193,11 @@ module type S =
        to the ordering [Ord.compare], where [Ord] is the argument
        given to {!Set.Make}. *)
 
+    val only_elt: t -> elt option
+    (** Return the element of a singleton set, or None otherwise. *)
+
+    val classify : t -> elt zero_one_many
+
     val min_elt: t -> elt
     (** Return the smallest element of the given set
        (with respect to the [Ord.compare] ordering), or raise
@@ -215,15 +222,23 @@ module type S =
 
     val choose: t -> elt
     (** Return one element of the given set, or raise [Not_found] if
-       the set is empty. Which element is chosen is unspecified,
-       but equal elements will be chosen for equal sets. *)
+       the set is empty. Which element is chosen is unspecified, and
+       different elements may be chosen for equal sets. *)
 
     val choose_opt: t -> elt option
     (** Return one element of the given set, or [None] if
-        the set is empty. Which element is chosen is unspecified,
-        but equal elements will be chosen for equal sets.
+        the set is empty. Which element is chosen is unspecified, and
+        different elements may be chosen for equal sets.
         @since 4.05
     *)
+
+    val pop : t -> elt * t
+    (** Find and remove an unspecified element, or raise [Not_found] if the
+        set is empty. [O(1)]. *)
+
+    val pop_opt : t -> (elt * t) option
+    (** Find and remove an unspecified element, or [None] if the set is
+        empty. [O(1)]. *)
 
     val split: elt -> t -> t * bool * t
     (** [split x s] returns a triple [(l, present, r)], where
