@@ -140,3 +140,22 @@ void local_array_bad_FN() {
   char c = o[1];
   free(o);
 }
+
+struct uninit_nested {
+  struct uninit_s g1;
+  int g2;
+};
+
+void read_g1_f1(struct uninit_nested* x) { int y = x->g1.f1; }
+
+void nested_struct_good() {
+  struct uninit_nested x;
+  x.g1.f1 = 42;
+  read_g1_f1(&x);
+}
+
+void nested_struct_bad() {
+  struct uninit_nested x;
+  x.g1.f2 = 42;
+  read_g1_f1(&x);
+}

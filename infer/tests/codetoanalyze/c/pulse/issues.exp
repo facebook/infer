@@ -15,4 +15,5 @@ codetoanalyze/c/pulse/uninit.c, interprocedural_read_in_callee_bad, 2, PULSE_UNI
 codetoanalyze/c/pulse/uninit.c, interprocedural_struct_bad, 3, PULSE_UNINITIALIZED_VALUE, no_bucket, ERROR, [struct field address `f2` created,read to uninitialized value occurs here]
 codetoanalyze/c/pulse/uninit.c, interprocedural_uninit_in_callee_bad, 3, PULSE_UNINITIALIZED_VALUE, no_bucket, ERROR, [passed as argument to `uninit`,return from call to `uninit`,assigned,read to uninitialized value occurs here]
 codetoanalyze/c/pulse/uninit.c, malloc_bad, 3, PULSE_UNINITIALIZED_VALUE, no_bucket, ERROR, [allocated by call to `malloc` (modelled),assigned,read to uninitialized value occurs here]
+codetoanalyze/c/pulse/uninit.c, nested_struct_bad, 3, PULSE_UNINITIALIZED_VALUE, no_bucket, ERROR, [struct field address `f1` created,when calling `read_g1_f1` here,parameter `x` of read_g1_f1,read to uninitialized value occurs here]
 codetoanalyze/c/pulse/uninit.c, self_assign_bad, 2, PULSE_UNINITIALIZED_VALUE, no_bucket, ERROR, [variable `x` declared here,read to uninitialized value occurs here]

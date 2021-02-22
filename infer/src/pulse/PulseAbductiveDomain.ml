@@ -486,18 +486,18 @@ let rec set_uninitialized_post tenv src typ location (post : PostDomain.t) =
         (* Ignore single field structs: see D26146578 *)
         post
     | Some {fields} ->
-        List.fold fields ~init:post ~f:(fun (acc : PostDomain.t) (field, field_typ, _) ->
+        let stack, addr = add_edge_on_src src location (post :> base_domain).stack in
+        let init = PostDomain.update ~stack post in
+        List.fold fields ~init ~f:(fun (acc : PostDomain.t) (field, field_typ, _) ->
             if Fieldname.is_internal field then acc
             else
-              let {stack; heap} = (acc :> base_domain) in
-              let stack, addr = add_edge_on_src src location stack in
               let field_addr = AbstractValue.mk_fresh () in
               let history = [ValueHistory.StructFieldAddressCreated (field, location)] in
               let heap =
                 BaseMemory.add_edge addr (HilExp.Access.FieldAccess field) (field_addr, history)
-                  heap
+                  (acc :> base_domain).heap
               in
-              PostDomain.update ~stack ~heap acc
+              PostDomain.update ~heap acc
               |> set_uninitialized_post tenv (`Malloc field_addr) field_typ location ) )
   | Tarray _ | Tvoid | Tfun | TVar _ ->
       (* We ignore tricky types to mark uninitialized addresses. *)
