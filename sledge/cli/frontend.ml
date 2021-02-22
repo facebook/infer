@@ -988,8 +988,7 @@ let num_actuals instr lltyp llfunc =
     let fname = Llvm.value_name llfunc in
     if StringS.add ignored_callees fname && not (Llvm.is_declaration llfunc)
     then
-      warn "ignoring variable arguments to variadic function: %a" pp_llvalue
-        llfunc () ;
+      warn "ignoring variable arguments to variadic function: %s" fname () ;
     let llelt = Llvm.element_type lltyp in
     ( match Llvm.classify_type llelt with
     | Function -> ()
