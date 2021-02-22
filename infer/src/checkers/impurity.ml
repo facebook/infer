@@ -84,12 +84,12 @@ let add_to_modified pname ~pvar ~access ~addr pre_heap post modified_vars =
           | None, None ->
               aux (access_list, modified_vars) ~addr_to_explore ~visited
           | Some _, None ->
-              L.die InternalError
-                "It is unexpected to have an address which has a binding in pre but not in post!@\n\
-                 %a is in the pre but not the post of the call to %a@\n\
+              L.debug Analysis Verbose
+                "%a is in the pre but not the post of the call to %a@\n\
                  callee heap pre: @[%a@]@\n\
                  callee post: @[%a@]@\n"
-                AbstractValue.pp addr Procname.pp pname BaseMemory.pp pre_heap BaseDomain.pp post
+                AbstractValue.pp addr Procname.pp pname BaseMemory.pp pre_heap BaseDomain.pp post ;
+              aux (access_list, modified_vars) ~addr_to_explore ~visited
           | None, Some (_, attrs_post) ->
               aux
                 (add_invalid_and_modified ~pvar ~access ~check_empty:false attrs_post access_list
