@@ -34,3 +34,6 @@ val add_to_errlog :
   -> t
   -> Errlog.loc_trace_elem list
   -> Errlog.loc_trace_elem list
+
+val find_map : f:(ValueHistory.event -> 'a option) -> t -> 'a option
+(** Like [List.find_map], but applies to value histories. *)

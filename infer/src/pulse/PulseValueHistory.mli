@@ -16,13 +16,15 @@ type event =
   | Conditional of {is_then_branch: bool; if_kind: Sil.if_kind; location: Location.t}
   | CppTemporaryCreated of Location.t
   | FormalDeclared of Pvar.t * Location.t
-  | StructFieldAddressCreated of Fieldname.t * Location.t
+  | StructFieldAddressCreated of Fieldname.t RevList.t * Location.t
   | VariableAccessed of Pvar.t * Location.t
   | VariableDeclared of Pvar.t * Location.t
 
 and t = event list [@@deriving compare, equal, yojson_of]
 
 val pp : F.formatter -> t -> unit
+
+val pp_fields : F.formatter -> Fieldname.t RevList.t -> unit
 
 val location_of_event : event -> Location.t
 

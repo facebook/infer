@@ -111,7 +111,37 @@ let get_message = function
         "memory dynamically allocated at line %d %a, is not freed after the last access at %a"
         allocation_line pp_allocation_trace allocation_trace Location.pp location
   | ReadUninitializedValue {calling_context; trace} ->
-      let pp_trace fmt (trace : Trace.t) =
+      let root_var =
+        PulseTrace.find_map trace ~f:(function VariableDeclared (pvar, _) -> Some pvar | _ -> None)
+        |> IOption.if_none_evalopt ~f:(fun () ->
+               PulseTrace.find_map trace ~f:(function
+                 | FormalDeclared (pvar, _) ->
+                     Some pvar
+                 | _ ->
+                     None ) )
+        |> Option.map ~f:(F.asprintf "%a" Pvar.pp_value_non_verbose)
+      in
+      let declared_fields =
+        PulseTrace.find_map trace ~f:(function
+          | StructFieldAddressCreated (fields, _) ->
+              Some fields
+          | _ ->
+              None )
+        |> Option.map ~f:(F.asprintf "%a" ValueHistory.pp_fields)
+      in
+      let access_path =
+        match (root_var, declared_fields) with
+        | None, None ->
+            None
+        | Some root_var, None ->
+            Some root_var
+        | None, Some declared_fields ->
+            Some (F.sprintf "_.%s" declared_fields)
+        | Some root_var, Some declared_fields ->
+            Some (F.sprintf "%s.%s" root_var declared_fields)
+      in
+      let pp_access_path fmt = Option.iter access_path ~f:(F.fprintf fmt " `%s`") in
+      let pp_location fmt =
         let {Location.line} = Trace.get_outer_location trace in
         match immediate_or_first_call calling_context trace with
         | `Immediate ->
@@ -119,7 +149,7 @@ let get_message = function
         | `Call f ->
             F.fprintf fmt "during the call to %a on line %d" CallEvent.describe f line
       in
-      F.asprintf "uninitialized value is read %a" pp_trace trace
+      F.asprintf "uninitialized value%t is read %t" pp_access_path pp_location
   | StackVariableAddressEscape {variable; _} ->
       let pp_var f var =
         if Var.is_cpp_temporary var then F.pp_print_string f "C++ temporary"

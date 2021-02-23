@@ -463,7 +463,8 @@ let add_edge_on_src src location stack =
       (stack, addr)
 
 
-let rec set_uninitialized_post tenv src typ location (post : PostDomain.t) =
+let rec set_uninitialized_post tenv src typ location ?(fields_prefix = RevList.empty)
+    (post : PostDomain.t) =
   match typ.Typ.desc with
   | Tint _ | Tfloat _ | Tptr _ ->
       let {stack; attrs} = (post :> base_domain) in
@@ -492,13 +493,15 @@ let rec set_uninitialized_post tenv src typ location (post : PostDomain.t) =
             if Fieldname.is_internal field then acc
             else
               let field_addr = AbstractValue.mk_fresh () in
-              let history = [ValueHistory.StructFieldAddressCreated (field, location)] in
+              let fields = RevList.cons field fields_prefix in
+              let history = [ValueHistory.StructFieldAddressCreated (fields, location)] in
               let heap =
                 BaseMemory.add_edge addr (HilExp.Access.FieldAccess field) (field_addr, history)
                   (acc :> base_domain).heap
               in
               PostDomain.update ~heap acc
-              |> set_uninitialized_post tenv (`Malloc field_addr) field_typ location ) )
+              |> set_uninitialized_post tenv (`Malloc field_addr) field_typ location
+                   ~fields_prefix:fields ) )
   | Tarray _ | Tvoid | Tfun | TVar _ ->
       (* We ignore tricky types to mark uninitialized addresses. *)
       post

@@ -7,7 +7,7 @@
 
 open! IStd
 
-type 'a t
+type 'a t [@@deriving compare, equal]
 
 val empty : 'a t
 (** Return empty list *)

@@ -16,7 +16,7 @@ type event =
   | Conditional of {is_then_branch: bool; if_kind: Sil.if_kind; location: Location.t}
   | CppTemporaryCreated of Location.t
   | FormalDeclared of Pvar.t * Location.t
-  | StructFieldAddressCreated of Fieldname.t * Location.t
+  | StructFieldAddressCreated of Fieldname.t RevList.t * Location.t
   | VariableAccessed of Pvar.t * Location.t
   | VariableDeclared of Pvar.t * Location.t
 
@@ -25,6 +25,11 @@ and t = event list [@@deriving compare, equal]
 let yojson_of_event = [%yojson_of: _]
 
 let yojson_of_t = [%yojson_of: _]
+
+let pp_fields =
+  let pp_sep fmt () = Format.pp_print_char fmt '.' in
+  fun fmt fields -> Format.pp_print_list ~pp_sep Fieldname.pp fmt (RevList.to_list fields)
+
 
 let pp_event_no_location fmt event =
   let pp_pvar fmt pvar =
@@ -53,8 +58,8 @@ let pp_event_no_location fmt event =
         |> Option.iter ~f:(fun proc_name -> F.fprintf fmt " of %a" Procname.pp proc_name)
       in
       F.fprintf fmt "parameter `%a`%a" Pvar.pp_value_non_verbose pvar pp_proc pvar
-  | StructFieldAddressCreated (field_name, _) ->
-      F.fprintf fmt "struct field address `%a` created" Fieldname.pp field_name
+  | StructFieldAddressCreated (field_names, _) ->
+      F.fprintf fmt "struct field address `%a` created" pp_fields field_names
   | VariableAccessed (pvar, _) ->
       F.fprintf fmt "%a accessed here" pp_pvar pvar
   | VariableDeclared (pvar, _) ->
