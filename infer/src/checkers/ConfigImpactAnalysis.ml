@@ -117,10 +117,11 @@ module Mem = struct
 end
 
 module Summary = struct
-  type t = {unchecked_callees: UncheckedCallees.t}
+  type t = {unchecked_callees: UncheckedCallees.t; has_call_stmt: bool}
 
-  let pp f {unchecked_callees} =
-    F.fprintf f "@[unchecked callees:@,%a@]" UncheckedCallees.pp unchecked_callees
+  let pp f {unchecked_callees; has_call_stmt} =
+    F.fprintf f "@[unchecked callees:@,%a,has_call_stmt:%b@]" UncheckedCallees.pp unchecked_callees
+      has_call_stmt
 end
 
 module Dom = struct
@@ -150,7 +151,7 @@ module Dom = struct
     ; mem= Mem.widen ~prev:prev.mem ~next:next.mem ~num_iters }
 
 
-  let to_summary {unchecked_callees} = {Summary.unchecked_callees}
+  let to_summary has_call_stmt {unchecked_callees} = {Summary.unchecked_callees; has_call_stmt}
 
   let init =
     {config_checks= ConfigChecks.top; unchecked_callees= UncheckedCallees.bottom; mem= Mem.bottom}
@@ -202,9 +203,8 @@ module Dom = struct
     if ConfigChecks.is_top config_checks then
       let unchecked_callees =
         match analyze_dependency callee with
-        | Some (_, {Summary.unchecked_callees= callee_summary})
-          when not (UncheckedCallees.is_bottom callee_summary) ->
-            (* If callee's summary is non-bottom, use it. *)
+        | Some (_, {Summary.unchecked_callees= callee_summary; has_call_stmt}) when has_call_stmt ->
+            (* If callee's summary is not leaf, use it. *)
             UncheckedCallees.replace_location location callee_summary
             |> UncheckedCallees.join unchecked_callees
         | _ ->
@@ -256,8 +256,17 @@ end
 
 module Analyzer = AbstractInterpreter.MakeWTO (TransferFunctions)
 
+let has_call_stmt proc_desc =
+  let exception FoundCall in
+  try
+    Procdesc.iter_instrs (fun _node -> function Call _ -> raise FoundCall | _ -> ()) proc_desc ;
+    false
+  with FoundCall -> true
+
+
 let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   Option.map (Analyzer.compute_post analysis_data ~initial:Dom.init proc_desc)
     ~f:(fun ({Dom.unchecked_callees} as astate) ->
+      let has_call_stmt = has_call_stmt proc_desc in
       UncheckedCallees.report analysis_data unchecked_callees ;
-      Dom.to_summary astate )
+      Dom.to_summary has_call_stmt astate )
