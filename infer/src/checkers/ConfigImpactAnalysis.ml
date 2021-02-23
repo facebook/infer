@@ -41,31 +41,38 @@ module ConfigChecks = AbstractDomain.SafeInvertedMap (ConfigName) (Branch)
 module UncheckedCallee = struct
   type t =
     | Direct of {callee: Procname.t; location: Location.t}
-    | Indirect of {callee: Procname.t; location: Location.t}
+    | Indirect of {callee: Procname.t; location: Location.t; trace: t [@compare.ignore]}
   [@@deriving compare]
-
-  let pp f = function
-    | Direct {callee; location} ->
-        F.fprintf f "%a is called at %a" Procname.pp callee Location.pp location
-    | Indirect {callee; location} ->
-        F.fprintf f "%a is indirectly called from %a" Procname.pp callee Location.pp location
-
 
   let get_location = function Direct {location} | Indirect {location} -> location
 
-  let replace_location location = function
-    | Direct {callee} | Indirect {callee} ->
-        Indirect {callee; location}
+  let pp_common ~with_location f x =
+    ( match x with
+    | Direct {callee} ->
+        F.fprintf f "%a is called" Procname.pp callee
+    | Indirect {callee} ->
+        F.fprintf f "%a is indirectly called" Procname.pp callee ) ;
+    if with_location then F.fprintf f " at %a" Location.pp (get_location x)
+
+
+  let pp f x = pp_common ~with_location:true f x
+
+  let pp_without_location f x = pp_common ~with_location:false f x
+
+  let replace_location location x =
+    match x with Direct {callee} | Indirect {callee} -> Indirect {callee; location; trace= x}
+
+
+  let rec make_err_trace x =
+    let desc = F.asprintf "%a" pp_without_location x in
+    let trace_elem = Errlog.make_trace_element 0 (get_location x) desc [] in
+    match x with Direct _ -> [trace_elem] | Indirect {trace} -> trace_elem :: make_err_trace trace
 
 
   let report {InterproceduralAnalysis.proc_desc; err_log} x =
     let desc = F.asprintf "%a without config check" pp x in
-    let trace =
-      (* TODO *)
-      []
-    in
-    Reporting.log_issue proc_desc err_log ~loc:(get_location x) ~ltr:trace ConfigImpactAnalysis
-      IssueType.config_impact_analysis desc
+    Reporting.log_issue proc_desc err_log ~loc:(get_location x) ~ltr:(make_err_trace x)
+      ConfigImpactAnalysis IssueType.config_impact_analysis desc
 end
 
 module UncheckedCallees = struct
