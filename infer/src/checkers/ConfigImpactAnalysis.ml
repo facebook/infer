@@ -39,13 +39,24 @@ end
 module ConfigChecks = AbstractDomain.SafeInvertedMap (ConfigName) (Branch)
 
 module UncheckedCallee = struct
-  type t = {callee: Procname.t; location: Location.t} [@@deriving compare]
+  type t =
+    | Direct of {callee: Procname.t; location: Location.t}
+    | Indirect of {callee: Procname.t; location: Location.t}
+  [@@deriving compare]
 
-  let pp f {callee; location} =
-    F.fprintf f "%a is called at %a" Procname.pp callee Location.pp location
+  let pp f = function
+    | Direct {callee; location} ->
+        F.fprintf f "%a is called at %a" Procname.pp callee Location.pp location
+    | Indirect {callee; location} ->
+        F.fprintf f "%a is indirectly called from %a" Procname.pp callee Location.pp location
 
 
-  let get_location {location} = location
+  let get_location = function Direct {location} | Indirect {location} -> location
+
+  let replace_location location = function
+    | Direct {callee} | Indirect {callee} ->
+        Indirect {callee; location}
+
 
   let report {InterproceduralAnalysis.proc_desc; err_log} x =
     let desc = F.asprintf "%a without config check" pp x in
@@ -62,6 +73,9 @@ module UncheckedCallees = struct
 
   let report analysis_data unchecked_callees =
     iter (UncheckedCallee.report analysis_data) unchecked_callees
+
+
+  let replace_location location x = map (UncheckedCallee.replace_location location) x
 end
 
 module Loc = struct
@@ -184,10 +198,20 @@ module Dom = struct
            {astate with config_checks= ConfigChecks.add config branch config_checks} )
 
 
-  let call callee location ({config_checks; unchecked_callees} as astate) =
+  let call analyze_dependency callee location ({config_checks; unchecked_callees} as astate) =
     if ConfigChecks.is_top config_checks then
-      let unchecked_callee = UncheckedCallee.{callee; location} in
-      {astate with unchecked_callees= UncheckedCallees.add unchecked_callee unchecked_callees}
+      let unchecked_callees =
+        match analyze_dependency callee with
+        | Some (_, {Summary.unchecked_callees= callee_summary})
+          when not (UncheckedCallees.is_bottom callee_summary) ->
+            (* If callee's summary is non-bottom, use it. *)
+            UncheckedCallees.replace_location location callee_summary
+            |> UncheckedCallees.join unchecked_callees
+        | _ ->
+            (* Otherwise, add callee's name. *)
+            UncheckedCallees.add (UncheckedCallee.Direct {callee; location}) unchecked_callees
+      in
+      {astate with unchecked_callees}
     else astate
 end
 
@@ -202,7 +226,7 @@ module TransferFunctions = struct
     && Procname.get_method pname |> String.equal "booleanValue"
 
 
-  let exec_instr astate {InterproceduralAnalysis.tenv} _node instr =
+  let exec_instr astate {InterproceduralAnalysis.tenv; analyze_dependency} _node instr =
     match (instr : Sil.instr) with
     | Load {id; e= Lvar pvar} ->
         Dom.load_config id pvar astate
@@ -219,7 +243,7 @@ module TransferFunctions = struct
           astate
       | None ->
           (* normal function calls *)
-          Dom.call callee location astate )
+          Dom.call analyze_dependency callee location astate )
     | Prune (e, _, _, _) ->
         Dom.prune e astate
     | _ ->
