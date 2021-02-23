@@ -10,8 +10,8 @@ INFER_OPTIONS_EXPERIMENTAL = --java-source-parser-experimental --java-debug-sour
 SOURCES = Main.java
 
 test: parser.output.test experimental_parser.output.test
-	$(call check_no_diff,parser.output,parser.output.test)
-	$(call check_no_diff,parser.output,experimental_parser.output.test)
+	$(call check_no_diff,parser.output.exp,parser.output.test)
+	$(call check_no_diff,parser.output.exp,experimental_parser.output.test)
 
 replace: parser.output.test
 	cp $< parser.output
