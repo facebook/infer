@@ -122,6 +122,7 @@ DIRECT_TESTS += \
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
 DIRECT_TESTS += \
+  objc_fb-config-impact \
   objc_fb-gk-interaction
 endif
 

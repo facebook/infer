@@ -1,0 +1,1 @@
+../../facebook/skel/infer/tests/codetoanalyze/objc/fb-config-impact/Basic.m, qe_unchecked_bad, 4, CONFIG_IMPACT, no_bucket, ADVICE, [callee2 is called]

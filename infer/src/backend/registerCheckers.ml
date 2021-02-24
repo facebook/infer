@@ -203,7 +203,7 @@ let all_checkers =
         (let checker =
            interprocedural Payloads.Fields.config_impact_analysis ConfigImpactAnalysis.checker
          in
-         [(checker, Java)] ) } ]
+         [(checker, Clang); (checker, Java)] ) } ]
 
 
 let get_active_checkers () =
