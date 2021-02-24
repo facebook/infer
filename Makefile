@@ -120,6 +120,12 @@ DIRECT_TESTS += \
   objcpp_racerd \
   objcpp_retain-cycles \
 
+ifeq ($(IS_FACEBOOK_TREE),yes)
+DIRECT_TESTS += \
+  objc_fb-gk-interaction
+endif
+
+
 ifneq ($(XCODE_SELECT),no)
 BUILD_SYSTEMS_TESTS += xcodebuild_no_xcpretty
 endif
