@@ -910,6 +910,17 @@ module StdVector = struct
     PulseOperations.write_id ret_id (value_addr, crumb :: value_hist) astate
 end
 
+module Java = struct
+  let instance_of (argv, hist) _ : model =
+   fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
+    let event = ValueHistory.Call {f= Model "Java.instanceof"; location; in_call= []} in
+    let res_addr = AbstractValue.mk_fresh () in
+    PulseArithmetic.prune_positive argv astate
+    |> PulseArithmetic.and_eq_int res_addr IntLit.one
+    |> PulseOperations.write_id ret_id (res_addr, event :: hist)
+    |> ok_continue
+end
+
 module JavaCollection = struct
   (* modifies arr[index]-> old_elem to arr[index]-> new_elem and returns old_elem *)
   let set coll (index, _) (new_elem, new_elem_hist) : model =
@@ -1357,7 +1368,8 @@ module ProcNameDispatcher = struct
         ; +map_context_tenv PatternMatch.Java.implements_iterator
           &:: "next" <>$ capt_arg_payload
           $!--> JavaIterator.next ~desc:"Iterator.next()"
-        ; +match_builtin BuiltinDecl.__instanceof &--> Misc.return_positive ~desc:"instanceof"
+        ; +match_builtin BuiltinDecl.__instanceof
+          <>$ capt_arg_payload $+ capt_exp $--> Java.instance_of
         ; ( +map_context_tenv PatternMatch.Java.implements_enumeration
           &:: "nextElement" <>$ capt_arg_payload
           $!--> fun x ->

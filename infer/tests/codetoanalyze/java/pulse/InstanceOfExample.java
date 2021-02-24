@@ -65,4 +65,11 @@ public class InstanceOfExample {
     int arr[] = new int[10];
     checkInstanceArray(arr);
   }
+
+  public void testInstanceOfNullOk() {
+    Student s = null;
+    if (s instanceof Student) {
+      s.toString();
+    }
+  }
 }
