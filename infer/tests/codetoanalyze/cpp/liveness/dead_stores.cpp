@@ -64,13 +64,13 @@ void FN_capture_no_read_bad() {
   [x]() { return; }();
 }
 
-void init_capture_reassign_bad() {
+int init_capture_reassign_bad() {
   int i = 1; // this is a dead store
   return [i = 1]() { return i; }();
 }
 
-void FN_init_capture_no_call_bad() {
-  [i = 1]() { return i; };
+auto FN_init_capture_no_call_bad() {
+  return [i = 1]() { return i; };
 }
 
 void FN_init_capture_call_bad2() {
@@ -150,7 +150,7 @@ int plus_plus_loop_ok(int n) {
   return i;
 }
 
-void lambda_bad() {
+auto lambda_bad() {
   int x = []() {
     int y = 1;
     y = 2;
@@ -486,7 +486,7 @@ class Exceptions {
     return 0;
   }
 
-  void read_in_goto_ok(bool b) {
+  int read_in_goto_ok(bool b) {
     int i = 1;
     try {
       if (b) {
@@ -506,6 +506,7 @@ class Exceptions {
     catch (...) {
       return i;
     }
+    return 0;
   }
   int return_in_try1_ok() {
     bool b;
@@ -626,6 +627,33 @@ void ignored_constants_ok() {
   int x = 0;
   float f = 0.0;
   int z = 44;
+}
+
+void store_total_in_global_state(int& total);
+void reads_global_state_with_total_in_it();
+
+void passed_by_ref_ok() {
+  int total;
+  store_total_in_global_state(total);
+  total = 42;
+  reads_global_state_with_total_in_it();
+}
+
+void FN_passed_by_ref_not_used_bad() {
+  int total;
+  store_total_in_global_state(total);
+  total = 42;
+  // any use of [total] would have to occur before function exit as accesses
+  // after function exit are invalid since total goes out of scope
+}
+
+void passed_by_ref_in_loop_ok(int n) {
+  int total;
+  for (int i = 0; i < n; i++) {
+    store_total_in_global_state(total);
+  }
+  total = 42;
+  reads_global_state_with_total_in_it();
 }
 
 } // namespace dead_stores
