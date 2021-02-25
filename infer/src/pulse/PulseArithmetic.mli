@@ -41,3 +41,6 @@ val is_known_zero : AbductiveDomain.t -> AbstractValue.t -> bool
 val is_unsat_cheap : AbductiveDomain.t -> bool
 
 val has_no_assumptions : AbductiveDomain.t -> bool
+
+val and_equal_instanceof :
+  AbstractValue.t -> AbstractValue.t -> Typ.t -> AbductiveDomain.t -> AbductiveDomain.t

@@ -239,6 +239,7 @@ module Term = struct
     | BitShiftLeft of t * t
     | BitShiftRight of t * t
     | BitXor of t * t
+    | IsInstanceOf of Var.t * Typ.t
   [@@deriving compare, equal, yojson_of]
 
   let equal_syntax = [%compare.equal: t]
@@ -270,7 +271,8 @@ module Term = struct
     | LessThan _
     | LessEqual _
     | Equal _
-    | NotEqual _ ->
+    | NotEqual _
+    | IsInstanceOf _ ->
         true
 
 
@@ -325,6 +327,8 @@ module Term = struct
         F.fprintf fmt "%a=%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
     | NotEqual (t1, t2) ->
         F.fprintf fmt "%a≠%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
+    | IsInstanceOf (v, t) ->
+        F.fprintf fmt "%a instanceof %a" pp_var v (Typ.pp Pp.text) t
 
 
   let of_q q = Const q
@@ -395,7 +399,7 @@ module Term = struct
   (** Fold [f] on the strict sub-terms of [t], if any. Preserve physical equality if [f] does. *)
   let fold_map_direct_subterms t ~init ~f =
     match t with
-    | Var _ | Const _ | Linear _ ->
+    | Var _ | Const _ | Linear _ | IsInstanceOf _ ->
         (init, t)
     | Minus t_not | BitNot t_not | Not t_not ->
         let acc, t_not' = f init t_not in
@@ -476,11 +480,39 @@ module Term = struct
         let acc, op = f init v in
         let t' = match op with VarSubst v' when Var.equal v v' -> t | _ -> of_subst_target op in
         (acc, t')
+    | IsInstanceOf (v, typ) ->
+        let acc, op = f init v in
+        let t' =
+          match op with
+          | VarSubst v' when not (Var.equal v v') ->
+              IsInstanceOf (v', typ)
+          | QSubst _ | VarSubst _ | LinSubst _ ->
+              t
+        in
+        (acc, t')
     | Linear l ->
         let acc, l' = LinArith.fold_subst_variables l ~init ~f in
         let t' = if phys_equal l l' then t else Linear l' in
         (acc, t')
-    | _ ->
+    | Const _
+    | Add _
+    | Minus _
+    | LessThan _
+    | LessEqual _
+    | Equal _
+    | NotEqual _
+    | Mult _
+    | Div _
+    | And _
+    | Or _
+    | Not _
+    | Mod _
+    | BitAnd _
+    | BitOr _
+    | BitNot _
+    | BitShiftLeft _
+    | BitShiftRight _
+    | BitXor _ ->
         fold_map_direct_subterms t ~init ~f:(fun acc t' -> fold_subst_variables t' ~init:acc ~f)
 
 
@@ -515,7 +547,7 @@ module Term = struct
     let map_z_z = conv2 Q.to_bigint Q.to_bigint Q.of_bigint in
     let or_undef q_opt = Option.value ~default:Q.undef q_opt in
     match t0 with
-    | Const _ | Var _ ->
+    | Const _ | Var _ | IsInstanceOf _ ->
         t0
     | Linear l ->
         LinArith.get_as_const l |> Option.value_map ~default:t0 ~f:(fun c -> Const c)
@@ -682,7 +714,8 @@ module Term = struct
       | LessThan _
       | LessEqual _
       | Equal _
-      | NotEqual _ ->
+      | NotEqual _
+      | IsInstanceOf _ ->
           None
     in
     match aux_linearize t with None -> t | Some l -> Linear l
@@ -1304,6 +1337,11 @@ let and_mk_atom mk_atom op1 op2 phi =
 
 
 let and_equal = and_mk_atom Atom.equal
+
+let and_equal_instanceof v1 v2 t phi =
+  let atom = Atom.equal (Var v1) (IsInstanceOf (v2, t)) in
+  and_known_atom atom phi
+
 
 let and_less_equal = and_mk_atom Atom.less_equal
 

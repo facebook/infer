@@ -39,6 +39,8 @@ val ttrue : t
 
 val and_equal : operand -> operand -> t -> (t * new_eqs) SatUnsat.t
 
+val and_equal_instanceof : Var.t -> Var.t -> Typ.t -> t -> (t * new_eqs) SatUnsat.t
+
 val and_less_equal : operand -> operand -> t -> (t * new_eqs) SatUnsat.t
 
 val and_less_than : operand -> operand -> t -> (t * new_eqs) SatUnsat.t

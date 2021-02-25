@@ -911,14 +911,21 @@ module StdVector = struct
 end
 
 module Java = struct
-  let instance_of (argv, hist) _ : model =
+  let instance_of (argv, hist) typeexpr : model =
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model "Java.instanceof"; location; in_call= []} in
     let res_addr = AbstractValue.mk_fresh () in
-    PulseArithmetic.prune_positive argv astate
-    |> PulseArithmetic.and_eq_int res_addr IntLit.one
-    |> PulseOperations.write_id ret_id (res_addr, event :: hist)
-    |> ok_continue
+    match typeexpr with
+    | Exp.Sizeof {typ} ->
+        PulseArithmetic.and_equal_instanceof res_addr argv typ astate
+        |> PulseArithmetic.prune_positive argv
+        |> PulseArithmetic.and_eq_int res_addr IntLit.one
+        |> PulseOperations.write_id ret_id (res_addr, event :: hist)
+        |> ok_continue
+    (* The type expr is sometimes a Var expr but this is not expected.
+       This seems to be introduced by inline mechanism of Java synthetic methods during preanalysis *)
+    | _ ->
+        astate |> ok_continue
 end
 
 module JavaCollection = struct
