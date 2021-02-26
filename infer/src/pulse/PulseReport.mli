@@ -11,9 +11,12 @@ open PulseDomainInterface
 
 type 'a access_result = ('a, Diagnostic.t * AbductiveDomain.t) result
 
-val report_error :
-     Procdesc.t
-  -> Tenv.t
-  -> Errlog.t
-  -> 'ok access_result
-  -> ('ok, _ ExecutionDomain.base_t SatUnsat.t) result
+val report_list_result :
+     PulseSummary.t InterproceduralAnalysis.t
+  -> AbductiveDomain.t list access_result
+  -> ExecutionDomain.t list
+
+val report_results :
+     PulseSummary.t InterproceduralAnalysis.t
+  -> ExecutionDomain.t access_result list
+  -> ExecutionDomain.t list

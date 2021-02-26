@@ -55,3 +55,33 @@ let report_error proc_desc tenv err_log access_result =
           if Config.pulse_report_latent_issues && not is_suppressed then
             report_latent_issue proc_desc err_log latent_issue ;
           ExecutionDomain.LatentAbortProgram {astate= astate_summary; latent_issue} )
+
+
+let exec_list_of_list_result = function
+  | Ok posts ->
+      posts
+  | Error Unsat ->
+      []
+  | Error (Sat post) ->
+      [post]
+
+
+let report_list_result {InterproceduralAnalysis.proc_desc; tenv; err_log} result =
+  let open Result.Monad_infix in
+  report_error proc_desc tenv err_log result
+  >>| List.map ~f:(fun post -> ExecutionDomain.ContinueProgram post)
+  |> exec_list_of_list_result
+
+
+let post_of_report_result = function
+  | Ok post ->
+      Some post
+  | Error Unsat ->
+      None
+  | Error (Sat post) ->
+      Some post
+
+
+let report_results {InterproceduralAnalysis.proc_desc; tenv; err_log} results =
+  List.filter_map results ~f:(fun exec_result ->
+      report_error proc_desc tenv err_log exec_result |> post_of_report_result )

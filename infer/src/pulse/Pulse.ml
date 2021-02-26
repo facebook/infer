@@ -13,35 +13,6 @@ open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperations.Import
 
-let exec_list_of_list_result = function
-  | Ok posts ->
-      posts
-  | Error Unsat ->
-      []
-  | Error (Sat post) ->
-      [post]
-
-
-let report_on_error {InterproceduralAnalysis.proc_desc; tenv; err_log} result =
-  PulseReport.report_error proc_desc tenv err_log result
-  >>| List.map ~f:(fun post -> ContinueProgram post)
-  |> exec_list_of_list_result
-
-
-let post_of_report_result = function
-  | Ok post ->
-      Some post
-  | Error Unsat ->
-      None
-  | Error (Sat post) ->
-      Some post
-
-
-let report_on_error_list {InterproceduralAnalysis.proc_desc; tenv; err_log} results =
-  List.filter_map results ~f:(fun exec_result ->
-      PulseReport.report_error proc_desc tenv err_log exec_result |> post_of_report_result )
-
-
 let report_topl_errors proc_desc err_log summary =
   let f = function
     | ContinueProgram astate ->
@@ -272,7 +243,7 @@ module PulseTransferFunctions = struct
           | ContinueProgram astate ->
               let astate =
                 dispatch_call analysis_data ret call_exp actuals location call_flags astate
-                |> report_on_error_list analysis_data
+                |> PulseReport.report_results analysis_data
               in
               List.rev_append astate astates )
         ~init:[] astate_list
@@ -322,7 +293,7 @@ module PulseTransferFunctions = struct
             List.map astate_rhs_addr_hists ~f:(fun (astate, rhs_addr_hist) ->
                 PulseOperations.write_id lhs_id rhs_addr_hist astate )
           in
-          report_on_error analysis_data result
+          PulseReport.report_list_result analysis_data result
       | Store {e1= lhs_exp; e2= rhs_exp; loc} ->
           (* [*lhs_exp := rhs_exp] *)
           let event = ValueHistory.Assignment loc in
@@ -375,7 +346,7 @@ module PulseTransferFunctions = struct
             | _ ->
                 Ok astates
           in
-          report_on_error analysis_data result
+          PulseReport.report_list_result analysis_data result
       | Prune (condition, loc, _is_then_branch, _if_kind) ->
           (let<*> astate = PulseOperations.prune loc ~condition astate in
            if PulseArithmetic.is_unsat_cheap astate then
@@ -384,10 +355,10 @@ module PulseTransferFunctions = struct
            else
              (* [condition] is true or unknown value: go into the branch *)
              [Ok (ContinueProgram astate)])
-          |> report_on_error_list analysis_data
+          |> PulseReport.report_results analysis_data
       | Call (ret, call_exp, actuals, loc, call_flags) ->
           dispatch_call analysis_data ret call_exp actuals loc call_flags astate
-          |> report_on_error_list analysis_data
+          |> PulseReport.report_results analysis_data
       | Metadata (ExitScope (vars, location)) ->
           let remove_vars vars astates =
             List.fold
@@ -402,7 +373,7 @@ module PulseTransferFunctions = struct
                           Ok [astate]
                       | Error _ as error ->
                           error )
-                      |> report_on_error analysis_data
+                      |> PulseReport.report_list_result analysis_data
                     in
                     List.rev_append astate astates )
               ~init:[] astates
