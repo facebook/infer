@@ -241,11 +241,22 @@ module IssuesJson = struct
       err_log
 end
 
-type json_costs_printer_typ =
-  {loc: Location.t; proc_name: Procname.t; cost_opt: CostDomain.summary option}
+module NoQualifierHashProcInfo = struct
+  type t = {hash: string; loc: Jsonbug_t.loc; procedure_name: string; procedure_id: string}
 
-module JsonCostsPrinter = MakeJsonListPrinter (struct
-  type elt = json_costs_printer_typ
+  let get loc proc_name =
+    let file =
+      SourceFile.to_string ~force_relative:Config.report_force_relative_path loc.Location.file
+    in
+    let hash = compute_hash ~severity:"" ~bug_type:"" ~proc_name ~file ~qualifier:"" in
+    let loc = {Jsonbug_t.file; lnum= loc.Location.line; cnum= loc.Location.col; enum= -1} in
+    let procedure_name = Procname.get_method proc_name in
+    let procedure_id = procedure_id_of_procname proc_name in
+    {hash; loc; procedure_name; procedure_id}
+end
+
+module JsonCostsPrinterElt = struct
+  type elt = {loc: Location.t; proc_name: Procname.t; cost_opt: CostDomain.summary option}
 
   let to_string {loc; proc_name; cost_opt} =
     match cost_opt with
@@ -273,13 +284,13 @@ module JsonCostsPrinter = MakeJsonListPrinter (struct
                 Advice }
         in
         let cost_item =
-          let file =
-            SourceFile.to_string ~force_relative:Config.report_force_relative_path loc.Location.file
+          let {NoQualifierHashProcInfo.hash; loc; procedure_name; procedure_id} =
+            NoQualifierHashProcInfo.get loc proc_name
           in
-          { Jsonbug_t.hash= compute_hash ~severity:"" ~bug_type:"" ~proc_name ~file ~qualifier:""
-          ; loc= {file; lnum= loc.Location.line; cnum= loc.Location.col; enum= -1}
-          ; procedure_name= Procname.get_method proc_name
-          ; procedure_id= procedure_id_of_procname proc_name
+          { Jsonbug_t.hash
+          ; loc
+          ; procedure_name
+          ; procedure_id
           ; is_on_ui_thread
           ; exec_cost= cost_info (CostDomain.get_cost_kind CostKind.OperationCost post).cost
           ; autoreleasepool_size=
@@ -289,7 +300,9 @@ module JsonCostsPrinter = MakeJsonListPrinter (struct
         Some (Jsonbug_j.string_of_cost_item cost_item)
     | _ ->
         None
-end)
+end
+
+module JsonCostsPrinter = MakeJsonListPrinter (JsonCostsPrinterElt)
 
 let mk_error_filter filters proc_name file error_name =
   (Config.write_html || not (IssueType.(equal skip_function) error_name))
@@ -316,7 +329,7 @@ let write_lint_issues filters (issues_outf : Utils.outfile) linereader procname 
 
 
 (** Process a summary *)
-let process_summary ~costs_outf proc_name loc cost_opt err_log issues_acc =
+let process_summary proc_name loc ~cost:(cost_opt, costs_outf) err_log issues_acc =
   write_costs proc_name loc cost_opt costs_outf ;
   collect_issues proc_name loc err_log issues_acc
 
@@ -326,7 +339,7 @@ let process_all_summaries_and_issues ~issues_outf ~costs_outf =
   let filters = Inferconfig.create_filters () in
   let all_issues = ref [] in
   Summary.OnDisk.iter_report_summaries_from_config ~f:(fun proc_name loc cost_opt err_log ->
-      all_issues := process_summary ~costs_outf proc_name loc cost_opt err_log !all_issues ) ;
+      all_issues := process_summary proc_name loc ~cost:(cost_opt, costs_outf) err_log !all_issues ) ;
   all_issues := Issue.sort_filter_issues !all_issues ;
   List.iter
     ~f:(fun {Issue.proc_name; proc_location; err_key; err_data} ->
@@ -348,13 +361,17 @@ let write_reports ~issues_json ~costs_json =
     | Some outf ->
         outf
   in
-  let issues_outf = mk_outfile issues_json in
-  IssuesJson.pp_open issues_outf.fmt () ;
-  let costs_outf = mk_outfile costs_json in
-  JsonCostsPrinter.pp_open costs_outf.fmt () ;
+  let open_outfile_and_fmt json =
+    let outf = mk_outfile json in
+    IssuesJson.pp_open outf.fmt () ;
+    outf
+  in
+  let close_fmt_and_outfile outf =
+    IssuesJson.pp_close outf.Utils.fmt () ;
+    Utils.close_outf outf
+  in
+  let issues_outf = open_outfile_and_fmt issues_json in
+  let costs_outf = open_outfile_and_fmt costs_json in
   process_all_summaries_and_issues ~issues_outf ~costs_outf ;
-  JsonCostsPrinter.pp_close costs_outf.fmt () ;
-  Utils.close_outf costs_outf ;
-  IssuesJson.pp_close issues_outf.fmt () ;
-  Utils.close_outf issues_outf ;
-  ()
+  close_fmt_and_outfile costs_outf ;
+  close_fmt_and_outfile issues_outf
