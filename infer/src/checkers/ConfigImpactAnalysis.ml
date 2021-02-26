@@ -70,9 +70,11 @@ module UncheckedCallee = struct
 
 
   let report {InterproceduralAnalysis.proc_desc; err_log} x =
-    let desc = F.asprintf "%a without config check" pp x in
-    Reporting.log_issue proc_desc err_log ~loc:(get_location x) ~ltr:(make_err_trace x)
-      ConfigImpactAnalysis IssueType.config_impact_analysis desc
+    let pname = Procdesc.get_proc_name proc_desc in
+    if ExternalConfigImpactData.is_in_config_data_file pname then
+      let desc = F.asprintf "%a without config check" pp x in
+      Reporting.log_issue proc_desc err_log ~loc:(get_location x) ~ltr:(make_err_trace x)
+        ConfigImpactAnalysis IssueType.config_impact_analysis desc
 end
 
 module UncheckedCallees = struct

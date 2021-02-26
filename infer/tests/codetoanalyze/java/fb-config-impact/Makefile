@@ -5,7 +5,7 @@
 
 TESTS_DIR = ../../..
 
-INFER_OPTIONS = --config-impact-analysis-only --debug-exceptions \
+INFER_OPTIONS = --config-impact-analysis-only --config-impact-data-file config_data.json --debug-exceptions \
   --report-force-relative-path
 INFERPRINT_OPTIONS = --issues-tests
 SOURCES = $(wildcard *.java)

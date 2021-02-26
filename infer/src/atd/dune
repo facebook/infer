@@ -61,6 +61,20 @@
  (action
   (run atdgen -t %{deps})))
 
+; ATD for config_impact_data
+
+(rule
+ (targets config_impact_data_j.ml config_impact_data_j.mli)
+ (deps config_impact_data.atd)
+ (action
+  (run atdgen -j -j-std %{deps})))
+
+(rule
+ (targets config_impact_data_t.ml config_impact_data_t.mli)
+ (deps config_impact_data.atd)
+ (action
+  (run atdgen -t %{deps})))
+
 ; ATD for java_profiler_samples
 
 (rule

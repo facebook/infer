@@ -913,6 +913,12 @@ and compilation_database_escaped =
      from Xcode (can be specified multiple times)"
 
 
+and config_impact_data_file =
+  CLOpt.mk_path_opt ~long:"config-impact-data-file"
+    ~in_help:InferCommand.[(Report, manual_generic)]
+    ~meta:"file" "[ConfigImpact] Specify the file containing the config data"
+
+
 (** Continue the capture for reactive mode: If a procedure was changed beforehand, keep the changed
     marking. *)
 and continue =
@@ -2847,6 +2853,8 @@ and clang_isystem_to_override_regex = Option.map ~f:Str.regexp !clang_isystem_to
 and clang_libcxx_include_to_override_regex = !clang_libcxx_include_to_override_regex
 
 and classpath = !classpath
+
+and config_impact_data_file = !config_impact_data_file
 
 and continue_analysis = !continue_analysis
 

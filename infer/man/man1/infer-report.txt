@@ -35,6 +35,9 @@ OPTIONS
            `<reason_string>` is a non-empty string used to explain why the
            issue was filtered.
 
+       --config-impact-data-file file
+           [ConfigImpact] Specify the file containing the config data
+
        --cost-issues-tests file
            Write a list of cost issues in a format suitable for cost tests to
            file

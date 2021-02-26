@@ -226,6 +226,8 @@ val clang_libcxx_include_to_override_regex : string option
 
 val command : InferCommand.t
 
+val config_impact_data_file : string option
+
 val continue_analysis : bool
 
 val continue_capture : bool
