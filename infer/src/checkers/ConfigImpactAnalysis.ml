@@ -223,7 +223,7 @@ module Dom = struct
 end
 
 module TransferFunctions = struct
-  module CFG = ProcCfg.NormalOneInstrPerNode
+  module CFG = ProcCfg.Normal
   module Domain = Dom
 
   type analysis_data = Summary.t InterproceduralAnalysis.t
