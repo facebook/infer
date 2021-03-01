@@ -40,33 +40,31 @@ module ConfigChecks = AbstractDomain.SafeInvertedMap (ConfigName) (Branch)
 
 module UncheckedCallee = struct
   type t =
-    | Direct of {callee: Procname.t; location: Location.t}
-    | Indirect of {callee: Procname.t; location: Location.t; trace: t [@compare.ignore]}
+    { callee: Procname.t
+    ; location: Location.t [@compare.ignore]
+    ; call_type: call_type [@compare.ignore] }
   [@@deriving compare]
 
-  let get_location = function Direct {location} | Indirect {location} -> location
+  and call_type = Direct | Indirect of t
 
-  let pp_common ~with_location f x =
-    ( match x with
-    | Direct {callee} ->
-        F.fprintf f "%a is called" Procname.pp callee
-    | Indirect {callee} ->
-        F.fprintf f "%a is indirectly called" Procname.pp callee ) ;
-    if with_location then F.fprintf f " at %a" Location.pp (get_location x)
+  let get_location {location} = location
+
+  let pp_common ~with_location f {callee; location; call_type} =
+    F.fprintf f "%a is %scalled" Procname.pp callee
+      (match call_type with Direct -> "" | Indirect _ -> "indirectly ") ;
+    if with_location then F.fprintf f " at %a" Location.pp location
 
 
   let pp f x = pp_common ~with_location:true f x
 
   let pp_without_location f x = pp_common ~with_location:false f x
 
-  let replace_location location x =
-    match x with Direct {callee} | Indirect {callee} -> Indirect {callee; location; trace= x}
-
+  let replace_location_by_call location x = {x with location; call_type= Indirect x}
 
   let rec make_err_trace x =
     let desc = F.asprintf "%a" pp_without_location x in
     let trace_elem = Errlog.make_trace_element 0 (get_location x) desc [] in
-    match x with Direct _ -> [trace_elem] | Indirect {trace} -> trace_elem :: make_err_trace trace
+    match x.call_type with Direct -> [trace_elem] | Indirect x -> trace_elem :: make_err_trace x
 
 
   let report {InterproceduralAnalysis.proc_desc; err_log} x =
@@ -84,7 +82,8 @@ module UncheckedCallees = struct
     iter (UncheckedCallee.report analysis_data) unchecked_callees
 
 
-  let replace_location location x = map (UncheckedCallee.replace_location location) x
+  let replace_location_by_call location x =
+    map (UncheckedCallee.replace_location_by_call location) x
 end
 
 module Loc = struct
@@ -214,11 +213,11 @@ module Dom = struct
         match analyze_dependency callee with
         | Some (_, {Summary.unchecked_callees= callee_summary; has_call_stmt}) when has_call_stmt ->
             (* If callee's summary is not leaf, use it. *)
-            UncheckedCallees.replace_location location callee_summary
+            UncheckedCallees.replace_location_by_call location callee_summary
             |> UncheckedCallees.join unchecked_callees
         | _ ->
             (* Otherwise, add callee's name. *)
-            UncheckedCallees.add (UncheckedCallee.Direct {callee; location}) unchecked_callees
+            UncheckedCallees.add {callee; location; call_type= Direct} unchecked_callees
       in
       {astate with unchecked_callees}
     else astate
