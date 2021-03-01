@@ -17,6 +17,8 @@
 
 - (std::shared_ptr<int>)returnsnonPOD;
 
+- (int)add:(int)param1 andParam2:(int)param2;
+
 @end
 
 @implementation SomeObject
@@ -29,6 +31,10 @@
   return std::shared_ptr<int>(new int(_x));
 }
 
+- (int)add:(int)param1 andParam2:(int)param2 {
+  return _x + param1 + param2;
+}
+
 @end
 
 int dereferenceNilBad() {
@@ -36,32 +42,58 @@ int dereferenceNilBad() {
   return *int_ptr;
 }
 
-int FP_testCallMethodReturnsPODOk() {
+int testCallMethodReturnsPODOk() {
   SomeObject* obj = nil;
   return [obj returnsPOD];
 }
 
-std::shared_ptr<int> testCallMethodReturnsnonPODBad() {
+std::shared_ptr<int> FN_testCallMethodReturnsnonPODBad() {
   SomeObject* obj = nil;
   std::shared_ptr<int> d = [obj returnsnonPOD]; // UB
   return d;
 }
 
-int FP_testAccessPropertyAccessorOk() {
+int testAccessPropertyAccessorOk() {
   SomeObject* obj = nil;
   return obj.x; // calls property accessor method
 }
 
-std::shared_ptr<int> testAccessPropertyAccessorBad() {
+std::shared_ptr<int> FN_testAccessPropertyAccessorBad() {
   SomeObject* obj = nil;
   return obj.ptr; // calls property accessor method, but return type is non-POD
 }
 
 int methodReturnsPOD(SomeObject* obj) { return [obj returnsPOD]; };
 
-int FP_methodReturnsPODNilOk() { return methodReturnsPOD(nil); };
+int methodReturnsPODNilOk() { return methodReturnsPOD(nil); };
 
 int methodReturnsPODNotNilOK() {
   SomeObject* o = [SomeObject new];
   return methodReturnsPOD(o);
+}
+
+int testFalsyReturnedValueOk() {
+  int x = testCallMethodReturnsPODOk();
+
+  if (x != 0) {
+    int* int_ptr = nil;
+    return *int_ptr;
+  }
+}
+
+int testParamsRemainTheSameOk() {
+  SomeObject* obj = nil;
+  int x1 = 0;
+  int x2 = 5;
+  int x = [obj add:x1 andParam2:x2];
+
+  if (x1 != 0) {
+    int* int_ptr = nil;
+    return *int_ptr;
+  }
+
+  if (x2 != 5) {
+    int* int_ptr = nil;
+    return *int_ptr;
+  }
 }

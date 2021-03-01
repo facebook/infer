@@ -428,11 +428,15 @@ let with_debug_exit_node proc_desc ~f =
 
 let checker ({InterproceduralAnalysis.proc_desc; err_log; tenv} as analysis_data) =
   AbstractValue.State.reset () ;
-  let initial = [ExecutionDomain.mk_initial tenv proc_desc] in
+  let initial_astate = ExecutionDomain.mk_initial tenv proc_desc in
+  let initial = [initial_astate] in
   match DisjunctiveAnalyzer.compute_post analysis_data ~initial proc_desc with
   | Some posts ->
       with_debug_exit_node proc_desc ~f:(fun () ->
-          let summary = PulseSummary.of_posts proc_desc posts in
+          let updated_posts =
+            PulseObjectiveCSummary.update_objc_method_posts analysis_data ~initial_astate ~posts
+          in
+          let summary = PulseSummary.of_posts proc_desc updated_posts in
           report_topl_errors proc_desc err_log summary ;
           Some summary )
   | None ->
