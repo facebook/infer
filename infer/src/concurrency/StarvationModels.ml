@@ -6,7 +6,6 @@
  *)
 
 open! IStd
-module F = Format
 
 let is_synchronized_library_call =
   let targets = ["java.lang.StringBuffer"; "java.util.Hashtable"; "java.util.Vector"] in
@@ -74,13 +73,6 @@ let float_of_const_int = function
 
 let is_excessive_secs duration = Float.(duration > android_anr_time_limit)
 
-type severity = Low | Medium | High [@@deriving compare]
-
-let pp_severity fmt sev =
-  let msg = match sev with Low -> "Low" | Medium -> "Medium" | High -> "High" in
-  F.pp_print_string fmt msg
-
-
 let no_args_or_excessive_timeout_and_timeunit = function
   | [_] ->
       (* no arguments, unconditionally blocks *)
@@ -111,38 +103,6 @@ let no_args_or_excessive_millis_and_nanos = function
       false
 
 
-let standard_matchers =
-  let open MethodMatcher in
-  let high_sev =
-    [ {default with classname= "java.lang.Thread"; methods= ["sleep"]}
-    ; { default with
-        classname= "java.lang.Thread"
-      ; methods= ["join"]
-      ; actuals_pred= no_args_or_excessive_millis_and_nanos }
-    ; { default with
-        classname= "java.util.concurrent.CountDownLatch"
-      ; methods= ["await"]
-      ; actuals_pred= no_args_or_excessive_timeout_and_timeunit }
-      (* an IBinder.transact call is an RPC.  If the 4th argument (5th counting `this` as the first)
-         is int-zero then a reply is expected and returned from the remote process, thus potentially
-         blocking.  If the 4th argument is anything else, we assume a one-way call which doesn't block. *)
-    ; { default with
-        classname= "android.os.IBinder"
-      ; methods= ["transact"]
-      ; actuals_pred= (fun actuals -> List.nth actuals 4 |> Option.exists ~f:HilExp.is_int_zero) }
-    ]
-  in
-  let low_sev =
-    [ { default with
-        classname= "android.os.AsyncTask"
-      ; methods= ["get"]
-      ; actuals_pred= no_args_or_excessive_timeout_and_timeunit } ]
-  in
-  let high_sev_matcher = List.map high_sev ~f:of_record |> of_list in
-  let low_sev_matcher = List.map low_sev ~f:of_record |> of_list in
-  [(high_sev_matcher, High); (low_sev_matcher, Low)]
-
-
 let is_future_get =
   let open MethodMatcher in
   of_record
@@ -157,10 +117,30 @@ let is_future_is_done =
     of_record {default with classname= "java.util.concurrent.Future"; methods= ["isDone"]})
 
 
-(* sort from High to Low *)
-let may_block tenv pn actuals =
-  List.find_map standard_matchers ~f:(fun (matcher, sev) ->
-      Option.some_if (matcher tenv pn actuals) sev )
+let may_block =
+  MethodMatcher.(
+    of_records
+      [ {default with classname= "java.lang.Thread"; methods= ["sleep"]}
+      ; { default with
+          classname= "java.lang.Thread"
+        ; methods= ["join"]
+        ; actuals_pred= no_args_or_excessive_millis_and_nanos }
+      ; { default with
+          classname= "java.util.concurrent.CountDownLatch"
+        ; methods= ["await"]
+        ; actuals_pred= no_args_or_excessive_timeout_and_timeunit }
+        (* an IBinder.transact call is an RPC.  If the 4th argument (5th counting `this` as the first)
+           is int-zero then a reply is expected and returned from the remote process, thus potentially
+           blocking.  If the 4th argument is anything else, we assume a one-way call which doesn't block. *)
+      ; { default with
+          classname= "android.os.IBinder"
+        ; methods= ["transact"]
+        ; actuals_pred= (fun actuals -> List.nth actuals 4 |> Option.exists ~f:HilExp.is_int_zero)
+        }
+      ; { default with
+          classname= "android.os.AsyncTask"
+        ; methods= ["get"]
+        ; actuals_pred= no_args_or_excessive_timeout_and_timeunit } ])
 
 
 let is_monitor_wait =

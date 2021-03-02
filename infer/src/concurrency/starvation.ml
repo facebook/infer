@@ -327,14 +327,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             Domain.wait_on_monitor ~loc formals actuals astate
         | NoEffect when is_java && is_future_get tenv callee actuals ->
             Domain.future_get ~callee ~loc actuals astate
-        | NoEffect when is_java -> (
+        | NoEffect when is_java ->
             let ret_exp = HilExp.AccessExpression.base ret_base in
             let astate = do_work_scheduling tenv callee actuals loc astate in
-            match may_block tenv callee actuals with
-            | Some sev ->
-                Domain.blocking_call ~callee sev ~loc astate
-            | None ->
-                do_call analysis_data ret_exp callee actuals loc astate )
+            if may_block tenv callee actuals then Domain.blocking_call ~callee ~loc astate
+            else do_call analysis_data ret_exp callee actuals loc astate
         | NoEffect ->
             (* in C++/Obj C we only care about deadlocks, not starvation errors *)
             let ret_exp = HilExp.AccessExpression.base ret_base in
@@ -461,7 +458,7 @@ module ReportMap : sig
 
   val add_deadlock : report_add_t
 
-  val add_starvation : StarvationModels.severity -> report_add_t
+  val add_starvation : report_add_t
 
   val add_strict_mode_violation : report_add_t
 
@@ -476,7 +473,7 @@ module ReportMap : sig
       whole-program mode only *)
 end = struct
   type problem =
-    | Starvation of StarvationModels.severity
+    | Starvation of int
     | Deadlock of int
     | StrictModeViolation of int
     | LocklessViolation of int
@@ -504,44 +501,39 @@ end = struct
 
   let empty : t = Location.Map.empty
 
-  let add tenv pattrs loc report loc_map =
-    if Reporting.is_suppressed tenv pattrs (issue_type_of_problem report.problem) then loc_map
+  let add tenv pattrs loc ltr message problem loc_map =
+    if Reporting.is_suppressed tenv pattrs (issue_type_of_problem problem) then loc_map
     else
+      let pname = ProcAttributes.get_proc_name pattrs in
+      let report = {problem; pname; ltr; message} in
       Location.Map.update loc
-        (function reports_opt -> Some (report :: Option.value reports_opt ~default:[]))
+        (fun reports_opt -> Some (report :: Option.value reports_opt ~default:[]))
         loc_map
 
 
-  let add_deadlock tenv pattrs loc ltr message (map : t) =
-    let pname = ProcAttributes.get_proc_name pattrs in
-    let report = {problem= Deadlock (-List.length ltr); pname; ltr; message} in
-    add tenv pattrs loc report map
+  let add_deadlock tenv pattrs loc ltr message map =
+    let problem = Deadlock (-List.length ltr) in
+    add tenv pattrs loc ltr message problem map
 
 
-  let add_starvation sev tenv pattrs loc ltr message map =
-    let pname = ProcAttributes.get_proc_name pattrs in
-    let report = {pname; problem= Starvation sev; ltr; message} in
-    add tenv pattrs loc report map
+  let add_starvation tenv pattrs loc ltr message map =
+    let problem = Starvation (-List.length ltr) in
+    add tenv pattrs loc ltr message problem map
 
 
-  let add_strict_mode_violation tenv pattrs loc ltr message (map : t) =
-    let pname = ProcAttributes.get_proc_name pattrs in
-    let report = {problem= StrictModeViolation (-List.length ltr); pname; ltr; message} in
-    add tenv pattrs loc report map
+  let add_strict_mode_violation tenv pattrs loc ltr message map =
+    let problem = StrictModeViolation (-List.length ltr) in
+    add tenv pattrs loc ltr message problem map
 
 
-  let add_lockless_violation tenv pattrs loc ltr message (map : t) =
-    let pname = ProcAttributes.get_proc_name pattrs in
-    let report = {problem= LocklessViolation (-List.length ltr); pname; ltr; message} in
-    add tenv pattrs loc report map
+  let add_lockless_violation tenv pattrs loc ltr message map =
+    let problem = LocklessViolation (-List.length ltr) in
+    add tenv pattrs loc ltr message problem map
 
 
-  let add_arbitrary_code_execution_under_lock tenv pattrs loc ltr message (map : t) =
-    let pname = ProcAttributes.get_proc_name pattrs in
-    let report =
-      {problem= ArbitraryCodeExecutionUnderLock (-List.length ltr); pname; ltr; message}
-    in
-    add tenv pattrs loc report map
+  let add_arbitrary_code_execution_under_lock tenv pattrs loc ltr message map =
+    let problem = ArbitraryCodeExecutionUnderLock (-List.length ltr) in
+    add tenv pattrs loc ltr message problem map
 
 
   let issue_log_of loc_map =
@@ -606,7 +598,7 @@ end = struct
       in
       log_reports (compare_reports Int.compare) loc deadlocks issue_log
       |> log_reports (compare_reports Int.compare) loc lockless_violations
-      |> log_reports (compare_reports StarvationModels.compare_severity) loc starvations
+      |> log_reports (compare_reports Int.compare) loc starvations
       |> log_reports (compare_reports Int.compare) loc strict_mode_violations
       |> log_reports (compare_reports Int.compare) loc arbitrary_code_executions_under_lock
     in
@@ -709,7 +701,7 @@ let report_on_parallel_composition ~should_report_starvation tenv pattrs pair lo
     if CriticalPair.can_run_in_parallel pair other_pair then
       let acquisitions = other_pair.CriticalPair.elem.acquisitions in
       match other_pair.CriticalPair.elem.event with
-      | MayBlock {severity} as event
+      | MayBlock _ as event
         when should_report_starvation
              && Acquisitions.lock_is_held_in_other_thread tenv lock acquisitions ->
           let error_message =
@@ -718,7 +710,7 @@ let report_on_parallel_composition ~should_report_starvation tenv pattrs pair lo
               pname_pp pname Lock.pp_locks lock Event.describe event
           in
           let ltr, loc = make_trace_and_loc () in
-          ReportMap.add_starvation severity tenv pattrs loc ltr error_message report_map
+          ReportMap.add_starvation tenv pattrs loc ltr error_message report_map
       | MonitorWait {lock= monitor_lock}
         when should_report_starvation
              && Acquisitions.lock_is_held_in_other_thread tenv lock acquisitions
@@ -729,7 +721,7 @@ let report_on_parallel_composition ~should_report_starvation tenv pattrs pair lo
               pname_pp pname Lock.pp_locks lock Event.describe other_pair.CriticalPair.elem.event
           in
           let ltr, loc = make_trace_and_loc () in
-          ReportMap.add_starvation High tenv pattrs loc ltr error_message report_map
+          ReportMap.add_starvation tenv pattrs loc ltr error_message report_map
       | LockAcquire _ -> (
         match CriticalPair.may_deadlock tenv ~lhs:pair ~lhs_lock:lock ~rhs:other_pair with
         | Some other_lock when should_report_deadlock_on_current_proc pair other_pair ->
@@ -762,20 +754,20 @@ let report_on_pair ~analyze_ondemand tenv pattrs (pair : Domain.CriticalPair.t) 
     (ltr, loc)
   in
   match event with
-  | MayBlock {severity} when is_not_private && should_report_starvation ->
+  | MayBlock _ when is_not_private && should_report_starvation ->
       let error_message =
         Format.asprintf "Method %a runs on UI thread and may block; %a." pname_pp pname
           Event.describe event
       in
       let ltr, loc = make_trace_and_loc () in
-      ReportMap.add_starvation severity tenv pattrs loc ltr error_message report_map
+      ReportMap.add_starvation tenv pattrs loc ltr error_message report_map
   | MonitorWait _ when is_not_private && should_report_starvation ->
       let error_message =
         Format.asprintf "Method %a runs on UI thread and may block; %a." pname_pp pname
           Event.describe event
       in
       let ltr, loc = make_trace_and_loc () in
-      ReportMap.add_starvation High tenv pattrs loc ltr error_message report_map
+      ReportMap.add_starvation tenv pattrs loc ltr error_message report_map
   | StrictModeCall _ when is_not_private && should_report_starvation ->
       let error_message =
         Format.asprintf "Method %a runs on UI thread and may violate Strict Mode; %a." pname_pp

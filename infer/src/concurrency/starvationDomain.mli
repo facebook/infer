@@ -58,7 +58,7 @@ end
 module Event : sig
   type t =
     | LockAcquire of {locks: Lock.t list; thread: ThreadDomain.t}
-    | MayBlock of {callee: Procname.t; severity: StarvationModels.severity; thread: ThreadDomain.t}
+    | MayBlock of {callee: Procname.t; thread: ThreadDomain.t}
     | MonitorWait of {lock: Lock.t; thread: ThreadDomain.t}
     | MustNotOccurUnderLock of {callee: Procname.t; thread: ThreadDomain.t}
     | StrictModeCall of {callee: Procname.t; thread: ThreadDomain.t}
@@ -191,7 +191,7 @@ val acquire : tenv:Tenv.t -> t -> procname:Procname.t -> loc:Location.t -> Lock.
 val release : t -> Lock.t list -> t
 (** simultaneously release a number of locks, no-op if list is empty *)
 
-val blocking_call : callee:Procname.t -> StarvationModels.severity -> loc:Location.t -> t -> t
+val blocking_call : callee:Procname.t -> loc:Location.t -> t -> t
 
 val wait_on_monitor : loc:Location.t -> FormalMap.t -> HilExp.t list -> t -> t
 

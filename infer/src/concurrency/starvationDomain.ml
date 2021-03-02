@@ -190,7 +190,7 @@ end
 module Event = struct
   type t =
     | LockAcquire of {locks: Lock.t list; thread: ThreadDomain.t}
-    | MayBlock of {callee: Procname.t; severity: StarvationModels.severity; thread: ThreadDomain.t}
+    | MayBlock of {callee: Procname.t; thread: ThreadDomain.t}
     | MonitorWait of {lock: Lock.t; thread: ThreadDomain.t}
     | MustNotOccurUnderLock of {callee: Procname.t; thread: ThreadDomain.t}
     | StrictModeCall of {callee: Procname.t; thread: ThreadDomain.t}
@@ -201,9 +201,8 @@ module Event = struct
         F.fprintf fmt "LockAcquire(%a, %a)"
           (PrettyPrintable.pp_collection ~pp_item:Lock.pp)
           locks ThreadDomain.pp thread
-    | MayBlock {callee; severity; thread} ->
-        F.fprintf fmt "MayBlock(%a, %a, %a)" Procname.pp callee StarvationModels.pp_severity
-          severity ThreadDomain.pp thread
+    | MayBlock {callee; thread} ->
+        F.fprintf fmt "MayBlock(%a, %a)" Procname.pp callee ThreadDomain.pp thread
     | StrictModeCall {callee; thread} ->
         F.fprintf fmt "StrictModeCall(%a, %a)" Procname.pp callee ThreadDomain.pp thread
     | MonitorWait {lock; thread} ->
@@ -257,7 +256,7 @@ module Event = struct
 
   let make_acquire locks thread = LockAcquire {locks; thread}
 
-  let make_blocking_call callee severity thread = MayBlock {callee; severity; thread}
+  let make_blocking_call callee thread = MayBlock {callee; thread}
 
   let make_strict_mode_call callee thread = StrictModeCall {callee; thread}
 
@@ -783,8 +782,8 @@ let make_call_with_event new_event ~loc astate =
         add_critical_pair ~tenv_opt:None astate.lock_state new_event ~loc astate.critical_pairs }
 
 
-let blocking_call ~callee sev ~loc astate =
-  let new_event = Event.make_blocking_call callee sev astate.thread in
+let blocking_call ~callee ~loc astate =
+  let new_event = Event.make_blocking_call callee astate.thread in
   make_call_with_event new_event ~loc astate
 
 
@@ -806,7 +805,7 @@ let future_get ~callee ~loc actuals astate =
          |> Option.exists ~f:(function Attribute.FutureDoneState x -> x | _ -> false) ->
       astate
   | HilExp.AccessExpression _ :: _ ->
-      let new_event = Event.make_blocking_call callee Low astate.thread in
+      let new_event = Event.make_blocking_call callee astate.thread in
       make_call_with_event new_event ~loc astate
   | _ ->
       astate
