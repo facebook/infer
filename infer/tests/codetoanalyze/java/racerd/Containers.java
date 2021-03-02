@@ -14,6 +14,8 @@ import android.support.v4.util.SimpleArrayMap;
 import android.support.v4.util.SparseArrayCompat;
 import android.util.SparseArray;
 import com.google.common.collect.Sets;
+import java.security.InvalidKeyException;
+import java.security.Key;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -27,6 +29,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import javax.annotation.concurrent.ThreadSafe;
+import javax.crypto.Mac;
 
 class ContainerWrapper {
   private final List<Object> children = new ArrayList<Object>();
@@ -368,5 +371,19 @@ class Containers {
 
   void googleSynchronizedSetAddOk(String value) {
     mGoogleSynchronizedSet.add(value);
+  }
+
+  Mac mac = null;
+
+  void raceOnMacInitBad(Key key) throws InvalidKeyException {
+    mac.init(key);
+  }
+
+  void raceOnMacUpdateBad(byte[] bytes) {
+    mac.update(bytes);
+  }
+
+  byte[] raceOnMacDoFinalBad() {
+    return mac.doFinal();
   }
 }

@@ -49,7 +49,9 @@ let is_java_container_write =
   ; (* https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html *)
     { default with
       classname= "java.util.Collection"
-    ; methods= ["add"; "addAll"; "clear"; "remove"; "removeAll"; "removeIf"] } ]
+    ; methods= ["add"; "addAll"; "clear"; "remove"; "removeAll"; "removeIf"] }
+  ; (* https://docs.oracle.com/javase/8/docs/api/javax/crypto/Mac.html *)
+    {default with classname= "javax.crypto.Mac"; methods= ["update"; "init"; "doFinal"]} ]
   |> of_records
 
 
@@ -110,7 +112,9 @@ let is_java_container_read =
         ; "size"
         ; "spliterator"
         ; "stream"
-        ; "toArray" ] } ]
+        ; "toArray" ] }
+  ; (* https://docs.oracle.com/javase/8/docs/api/javax/crypto/Mac.html *)
+    {default with classname= "javax.crypto.Mac"; methods= ["doFinal"]} ]
   |> of_records
 
 
