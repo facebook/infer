@@ -472,27 +472,8 @@ module ReportMap : sig
   (** generate and store issue logs for all source files involved in this report map; for use in the
       whole-program mode only *)
 end = struct
-  type problem =
-    | Starvation of int
-    | Deadlock of int
-    | StrictModeViolation of int
-    | LocklessViolation of int
-    | ArbitraryCodeExecutionUnderLock of int
-
-  let issue_type_of_problem = function
-    | Deadlock _ ->
-        IssueType.deadlock
-    | Starvation _ ->
-        IssueType.starvation
-    | StrictModeViolation _ ->
-        IssueType.strict_mode_violation
-    | LocklessViolation _ ->
-        IssueType.lockless_violation
-    | ArbitraryCodeExecutionUnderLock _ ->
-        IssueType.arbitrary_code_execution_under_lock
-
-
-  type report_t = {problem: problem; pname: Procname.t; ltr: Errlog.loc_trace; message: string}
+  type report_t =
+    {issue_type: IssueType.t; pname: Procname.t; depth: int; ltr: Errlog.loc_trace; message: string}
 
   type t = report_t list Location.Map.t
 
@@ -501,44 +482,38 @@ end = struct
 
   let empty : t = Location.Map.empty
 
-  let add tenv pattrs loc ltr message problem loc_map =
-    if Reporting.is_suppressed tenv pattrs (issue_type_of_problem problem) then loc_map
+  let add tenv pattrs loc ltr message issue_type loc_map =
+    if Reporting.is_suppressed tenv pattrs issue_type then loc_map
     else
       let pname = ProcAttributes.get_proc_name pattrs in
-      let report = {problem; pname; ltr; message} in
+      let report = {issue_type; pname; ltr; message; depth= -List.length ltr} in
       Location.Map.update loc
         (fun reports_opt -> Some (report :: Option.value reports_opt ~default:[]))
         loc_map
 
 
   let add_deadlock tenv pattrs loc ltr message map =
-    let problem = Deadlock (-List.length ltr) in
-    add tenv pattrs loc ltr message problem map
+    add tenv pattrs loc ltr message IssueType.deadlock map
 
 
   let add_starvation tenv pattrs loc ltr message map =
-    let problem = Starvation (-List.length ltr) in
-    add tenv pattrs loc ltr message problem map
+    add tenv pattrs loc ltr message IssueType.starvation map
 
 
   let add_strict_mode_violation tenv pattrs loc ltr message map =
-    let problem = StrictModeViolation (-List.length ltr) in
-    add tenv pattrs loc ltr message problem map
+    add tenv pattrs loc ltr message IssueType.strict_mode_violation map
 
 
   let add_lockless_violation tenv pattrs loc ltr message map =
-    let problem = LocklessViolation (-List.length ltr) in
-    add tenv pattrs loc ltr message problem map
+    add tenv pattrs loc ltr message IssueType.lockless_violation map
 
 
   let add_arbitrary_code_execution_under_lock tenv pattrs loc ltr message map =
-    let problem = ArbitraryCodeExecutionUnderLock (-List.length ltr) in
-    add tenv pattrs loc ltr message problem map
+    add tenv pattrs loc ltr message IssueType.arbitrary_code_execution_under_lock map
 
 
   let issue_log_of loc_map =
-    let log_report ~issue_log loc {problem; pname; ltr; message} =
-      let issue_type = issue_type_of_problem problem in
+    let log_report loc issue_log {issue_type; pname; ltr; message} =
       Reporting.log_issue_external ~issue_log pname ~loc ~ltr Starvation issue_type message
     in
     let mk_deduped_report ({message} as report) =
@@ -546,61 +521,45 @@ end = struct
         message= Printf.sprintf "%s Additional report(s) on the same line were suppressed." message
       }
     in
-    let log_reports compare loc reports issue_log =
+    let compare_reports r r' =
+      match Int.compare r.depth r'.depth with
+      | 0 ->
+          String.compare r.message r'.message
+      | result ->
+          result
+    in
+    let log_reports loc reports issue_log =
       if Config.deduplicate then
-        match reports with
-        | [] ->
-            issue_log
-        | [(_, report)] ->
-            log_report ~issue_log loc report
-        | reports ->
-            List.max_elt ~compare reports
-            |> Option.fold ~init:issue_log ~f:(fun acc (_, rep) ->
-                   mk_deduped_report rep |> log_report ~issue_log:acc loc )
-      else
-        List.fold reports ~init:issue_log ~f:(fun acc (_, rep) -> log_report ~issue_log:acc loc rep)
+        let rep_opt =
+          match reports with
+          | [] ->
+              None
+          | [report] ->
+              Some report
+          | reports ->
+              List.max_elt ~compare:compare_reports reports |> Option.map ~f:mk_deduped_report
+        in
+        Option.fold rep_opt ~init:issue_log ~f:(log_report loc)
+      else List.fold reports ~init:issue_log ~f:(log_report loc)
     in
-    let filter_map_deadlock = function {problem= Deadlock l} as r -> Some (l, r) | _ -> None in
-    let filter_map_starvation = function
-      | {problem= Starvation s} as r ->
-          Some (s, r)
-      | _ ->
-          None
-    in
-    let filter_map_strict_mode_violation = function
-      | {problem= StrictModeViolation l} as r ->
-          Some (l, r)
-      | _ ->
-          None
-    in
-    let filter_map_lockless_violation = function
-      | {problem= LocklessViolation l} as r ->
-          Some (l, r)
-      | _ ->
-          None
-    in
-    let filter_arbitrary_code_execution_under_lock = function
-      | {problem= ArbitraryCodeExecutionUnderLock l} as r ->
-          Some (l, r)
-      | _ ->
-          None
-    in
-    let compare_reports weight_compare (w, r) (w', r') =
-      match weight_compare w w' with 0 -> String.compare r.message r'.message | result -> result
-    in
+    let filter_issue issue_to_filter {issue_type} = IssueType.equal issue_type issue_to_filter in
     let log_location loc problems issue_log =
-      let deadlocks = List.filter_map problems ~f:filter_map_deadlock in
-      let starvations = List.filter_map problems ~f:filter_map_starvation in
-      let strict_mode_violations = List.filter_map problems ~f:filter_map_strict_mode_violation in
-      let lockless_violations = List.filter_map problems ~f:filter_map_lockless_violation in
-      let arbitrary_code_executions_under_lock =
-        List.filter_map problems ~f:filter_arbitrary_code_execution_under_lock
+      let deadlocks = List.filter problems ~f:(filter_issue IssueType.deadlock) in
+      let starvations = List.filter problems ~f:(filter_issue IssueType.starvation) in
+      let strict_mode_violations =
+        List.filter problems ~f:(filter_issue IssueType.strict_mode_violation)
       in
-      log_reports (compare_reports Int.compare) loc deadlocks issue_log
-      |> log_reports (compare_reports Int.compare) loc lockless_violations
-      |> log_reports (compare_reports Int.compare) loc starvations
-      |> log_reports (compare_reports Int.compare) loc strict_mode_violations
-      |> log_reports (compare_reports Int.compare) loc arbitrary_code_executions_under_lock
+      let lockless_violations =
+        List.filter problems ~f:(filter_issue IssueType.lockless_violation)
+      in
+      let arbitrary_code_executions_under_lock =
+        List.filter problems ~f:(filter_issue IssueType.arbitrary_code_execution_under_lock)
+      in
+      log_reports loc deadlocks issue_log
+      |> log_reports loc lockless_violations
+      |> log_reports loc starvations
+      |> log_reports loc strict_mode_violations
+      |> log_reports loc arbitrary_code_executions_under_lock
     in
     Location.Map.fold log_location loc_map IssueLog.empty
 
