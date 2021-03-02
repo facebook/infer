@@ -153,6 +153,7 @@ end = struct
               if Var.equal v' x then vs' else Var.Map.add v' (Q.div coeff' d) vs' )
             vs Var.Map.empty
         in
+        (* note: [d≠0] by the invariant of the coefficient map [vs] *)
         let c' = Q.div c d in
         Sat (Some (x, (c', vs')))
 
@@ -562,9 +563,10 @@ module Term = struct
     | Mult (t1, t2) ->
         q_map2 t1 t2 Q.mul
     | Div (t1, t2) ->
-        q_map2 t1 t2 Q.div
+        q_map2 t1 t2 (fun c1 c2 -> if Q.is_zero c2 then Q.undef else Q.div c1 c2)
     | Mod (t1, t2) ->
-        q_map2 t1 t2 (fun c1 c2 -> map_z_z c1 c2 Z.( mod ) |> or_undef)
+        q_map2 t1 t2 (fun c1 c2 ->
+            if Q.is_zero c2 then Q.undef else map_z_z c1 c2 Z.( mod ) |> or_undef )
     | Not t' ->
         q_predicate_map t' Q.is_zero
     | And (t1, t2) ->
@@ -633,7 +635,7 @@ module Term = struct
         (* [t / 0 = undefined] *)
         Const Q.undef
     | Div (t, Const c) ->
-        (* [t / c = (1/c)·t] *)
+        (* [t / c = (1/c)·t], [c≠0] *)
         simplify_shallow (Mult (Const (Q.inv c), t))
     | Div (Minus t1, Minus t2) ->
         (* [(-t1) / (-t2) = t1 / t2] *)
