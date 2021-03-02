@@ -475,7 +475,7 @@ end = struct
   type report_t =
     {issue_type: IssueType.t; pname: Procname.t; depth: int; ltr: Errlog.loc_trace; message: string}
 
-  type t = report_t list Location.Map.t
+  type t = report_t list IssueType.Map.t Location.Map.t
 
   type report_add_t =
     Tenv.t -> ProcAttributes.t -> Location.t -> Errlog.loc_trace -> string -> t -> t
@@ -488,7 +488,14 @@ end = struct
       let pname = ProcAttributes.get_proc_name pattrs in
       let report = {issue_type; pname; ltr; message; depth= -List.length ltr} in
       Location.Map.update loc
-        (fun reports_opt -> Some (report :: Option.value reports_opt ~default:[]))
+        (fun issue_map_opt ->
+          let issue_map = Option.value issue_map_opt ~default:IssueType.Map.empty in
+          IssueType.Map.update issue_type
+            (fun reports_opt ->
+              let reports = Option.value reports_opt ~default:[] in
+              Some (report :: reports) )
+            issue_map
+          |> Option.some )
         loc_map
 
 
@@ -512,6 +519,15 @@ end = struct
     add tenv pattrs loc ltr message IssueType.arbitrary_code_execution_under_lock map
 
 
+  let deduplicated_issue_order =
+    IssueType.
+      [ deadlock
+      ; lockless_violation
+      ; starvation
+      ; strict_mode_violation
+      ; arbitrary_code_execution_under_lock ]
+
+
   let issue_log_of loc_map =
     let log_report loc issue_log {issue_type; pname; ltr; message} =
       Reporting.log_issue_external ~issue_log pname ~loc ~ltr Starvation issue_type message
@@ -528,7 +544,8 @@ end = struct
       | result ->
           result
     in
-    let log_reports loc reports issue_log =
+    let log_reports loc issue_map issue_log issue =
+      let reports = IssueType.Map.find_opt issue issue_map |> Option.value ~default:[] in
       if Config.deduplicate then
         let rep_opt =
           match reports with
@@ -542,24 +559,8 @@ end = struct
         Option.fold rep_opt ~init:issue_log ~f:(log_report loc)
       else List.fold reports ~init:issue_log ~f:(log_report loc)
     in
-    let filter_issue issue_to_filter {issue_type} = IssueType.equal issue_type issue_to_filter in
-    let log_location loc problems issue_log =
-      let deadlocks = List.filter problems ~f:(filter_issue IssueType.deadlock) in
-      let starvations = List.filter problems ~f:(filter_issue IssueType.starvation) in
-      let strict_mode_violations =
-        List.filter problems ~f:(filter_issue IssueType.strict_mode_violation)
-      in
-      let lockless_violations =
-        List.filter problems ~f:(filter_issue IssueType.lockless_violation)
-      in
-      let arbitrary_code_executions_under_lock =
-        List.filter problems ~f:(filter_issue IssueType.arbitrary_code_execution_under_lock)
-      in
-      log_reports loc deadlocks issue_log
-      |> log_reports loc lockless_violations
-      |> log_reports loc starvations
-      |> log_reports loc strict_mode_violations
-      |> log_reports loc arbitrary_code_executions_under_lock
+    let log_location loc issue_map issue_log =
+      List.fold deduplicated_issue_order ~init:issue_log ~f:(log_reports loc issue_map)
     in
     Location.Map.fold log_location loc_map IssueLog.empty
 

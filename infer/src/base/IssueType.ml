@@ -1047,3 +1047,10 @@ let is_autoreleasepool_size_issue =
           add_autoreleasepool_size_issue ~kind (expensive_cost_call ~kind) ;
           add_autoreleasepool_size_issue ~kind (complexity_increase ~kind ~is_on_ui_thread) ) ) ;
   fun issue_type -> IssueSet.mem issue_type !autoreleasepool_size_issues
+
+
+module Map = PrettyPrintable.MakePPMap (struct
+  type nonrec t = t [@@deriving compare]
+
+  let pp = pp
+end)
