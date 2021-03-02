@@ -929,8 +929,9 @@ let uninitialized_value =
 
 
 let uninitialized_value_pulse =
-  register ~enabled:false ~id:"PULSE_UNINITIALIZED_VALUE" Error Pulse ~hum:"Unitialized Value"
-    ~user_documentation:"See [UNITIALIZED_VALUE](#uninitialized_value). Re-implemented using Pulse."
+  register ~enabled:false ~id:"PULSE_UNINITIALIZED_VALUE" Error Pulse ~hum:"Uninitialized Value"
+    ~user_documentation:
+      "See [UNINITIALIZED_VALUE](#uninitialized_value). Re-implemented using Pulse."
 
 
 let unreachable_code_after =
