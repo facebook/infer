@@ -455,6 +455,30 @@ config-checks-between-markers and disable all other checkers
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--config-impact-analysis</b></p>
+
+<p style="margin-left:17%;">Activates: checker
+config-impact-analysis: [EXPERIMENTAL] Collects function
+that are called without config checks. (Conversely:
+<b>--no-config-impact-analysis</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--config-impact-analysis-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable
+config-impact-analysis and disable all other checkers
+(Conversely: <b>--no-config-impact-analysis-only</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--config-impact-data-file</b> <i>file</i></p>
+
+<p style="margin-left:17%;">[ConfigImpact] Specify the file
+containing the config data</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-report</b>(1). <b><br>
 --continue</b></p>
 
 <p style="margin-left:17%;">Activates: Continue the capture
@@ -723,6 +747,7 @@ default), <br>
 CONDITION_ALWAYS_FALSE (disabled by default), <br>
 CONDITION_ALWAYS_TRUE (disabled by default), <br>
 CONFIG_CHECKS_BETWEEN_MARKERS (disabled by default), <br>
+CONFIG_IMPACT (disabled by default), <br>
 CONSTANT_ADDRESS_DEREFERENCE (disabled by default), <br>
 CREATE_INTENT_FROM_URI (enabled by default), <br>
 CROSS_SITE_SCRIPTING (enabled by default), <br>
@@ -785,6 +810,7 @@ GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL
 <br>
 (disabled by default), <br>
 GUARDEDBY_VIOLATION (enabled by default), <br>
+GUARDEDBY_VIOLATION_NULLSAFE (enabled by default), <br>
 IMPURE_FUNCTION (enabled by default), <br>
 INEFFICIENT_KEYSET_ITERATOR (enabled by default), <br>
 INFERBO_ALLOC_IS_BIG (enabled by default), <br>
@@ -848,6 +874,7 @@ STRONG_DELEGATE_WARNING (enabled by default), <br>
 STRONG_SELF_NOT_CHECKED (enabled by default), <br>
 Symexec_memory_error (enabled by default), <br>
 THREAD_SAFETY_VIOLATION (enabled by default), <br>
+THREAD_SAFETY_VIOLATION_NULLSAFE (enabled by default), <br>
 TOPL_BIABD_ERROR (enabled by default), <br>
 TOPL_PULSE_ERROR (enabled by default), <br>
 UNINITIALIZED_VALUE (enabled by default), <br>
@@ -1952,6 +1979,14 @@ differential reports (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-reportdiff</b>(1). <b><br>
+--skip-non-capture-clang-commands</b></p>
+
+<p style="margin-left:17%;">Activates: Skip clang commands
+that Infer doesn't use to capture data (Conversely:
+<b>--no-skip-non-capture-clang-commands</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-capture</b>(1). <b><br>
 --skip-translation-headers</b> <i>+path_prefix</i></p>
 
 <p style="margin-left:17%;">Ignore headers whose path
