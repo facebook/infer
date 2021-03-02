@@ -124,10 +124,18 @@ let pp_html source fmt summary =
 
 
 module ReportSummary = struct
-  type t = {loc: Location.t; cost_opt: CostDomain.summary option; err_log: Errlog.t}
+  type t =
+    { loc: Location.t
+    ; cost_opt: CostDomain.summary option
+    ; config_impact_opt: ConfigImpactAnalysis.Summary.t option
+    ; err_log: Errlog.t }
 
   let of_full_summary (f : full_summary) =
-    ({loc= get_loc f; cost_opt= f.payloads.Payloads.cost; err_log= f.err_log} : t)
+    ( { loc= get_loc f
+      ; cost_opt= f.payloads.Payloads.cost
+      ; config_impact_opt= f.payloads.Payloads.config_impact_analysis
+      ; err_log= f.err_log }
+      : t )
 
 
   module SQLite = SqliteUtils.MarshalledDataNOTForComparison (struct
@@ -333,10 +341,10 @@ module OnDisk = struct
          ~f:(fun stmt ->
            let proc_name = Sqlite3.column stmt 0 |> Procname.SQLite.deserialize in
            if filter dummy_source_file proc_name then
-             let ({loc; cost_opt; err_log} : ReportSummary.t) =
+             let ({loc; cost_opt; config_impact_opt; err_log} : ReportSummary.t) =
                Sqlite3.column stmt 1 |> ReportSummary.SQLite.deserialize
              in
-             f proc_name loc cost_opt err_log )
+             f proc_name loc cost_opt config_impact_opt err_log )
 
 
   let make_filtered_iterator_from_config ~iter ~f =

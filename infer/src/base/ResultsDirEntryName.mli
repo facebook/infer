@@ -27,6 +27,7 @@ type id =
   | ProcnamesLocks
       (** directory of per-{!Procname.t} file locks, used by the analysis scheduler in certain modes *)
   | RacerDIssues  (** directory of issues reported by the RacerD analysis *)
+  | ReportConfigImpactJson  (** reports of the config impact analysis *)
   | ReportCostsJson  (** reports of the costs analysis *)
   | ReportHtml  (** directory of the HTML report *)
   | ReportJson  (** the main product of the analysis: [report.json] *)

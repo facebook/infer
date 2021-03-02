@@ -304,6 +304,27 @@ end
 
 module JsonCostsPrinter = MakeJsonListPrinter (JsonCostsPrinterElt)
 
+module JsonConfigImpactPrinterElt = struct
+  type elt =
+    { loc: Location.t
+    ; proc_name: Procname.t
+    ; config_impact_opt: ConfigImpactAnalysis.Summary.t option }
+
+  let to_string {loc; proc_name; config_impact_opt} =
+    Option.map config_impact_opt ~f:(fun config_impact ->
+        let {NoQualifierHashProcInfo.hash; loc; procedure_name; procedure_id} =
+          NoQualifierHashProcInfo.get loc proc_name
+        in
+        let unchecked_callees =
+          ConfigImpactAnalysis.Summary.get_unchecked_callees config_impact
+          |> ConfigImpactAnalysis.UncheckedCallees.encode
+        in
+        Jsonbug_j.string_of_config_impact_item
+          {Jsonbug_t.hash; loc; procedure_name; procedure_id; unchecked_callees} )
+end
+
+module JsonConfigImpactPrinter = MakeJsonListPrinter (JsonConfigImpactPrinterElt)
+
 let mk_error_filter filters proc_name file error_name =
   (Config.write_html || not (IssueType.(equal skip_function) error_name))
   && filters.Inferconfig.path_filter file
@@ -322,24 +343,34 @@ let write_costs proc_name loc cost_opt (outfile : Utils.outfile) =
     JsonCostsPrinter.pp outfile.fmt {loc; proc_name; cost_opt}
 
 
+let write_config_impact proc_name loc config_impact_opt (outfile : Utils.outfile) =
+  if ExternalConfigImpactData.is_in_config_data_file proc_name then
+    JsonConfigImpactPrinter.pp outfile.fmt {loc; proc_name; config_impact_opt}
+
+
 (** Process lint issues of a procedure *)
 let write_lint_issues filters (issues_outf : Utils.outfile) linereader procname error_log =
   let error_filter = mk_error_filter filters procname in
   IssuesJson.pp_issues_of_error_log issues_outf.fmt error_filter linereader None procname error_log
 
 
-(** Process a summary *)
-let process_summary proc_name loc ~cost:(cost_opt, costs_outf) err_log issues_acc =
+let process_summary proc_name loc ~cost:(cost_opt, costs_outf)
+    ~config_impact:(config_impact_opt, config_impact_outf) err_log issues_acc =
   write_costs proc_name loc cost_opt costs_outf ;
+  write_config_impact proc_name loc config_impact_opt config_impact_outf ;
   collect_issues proc_name loc err_log issues_acc
 
 
-let process_all_summaries_and_issues ~issues_outf ~costs_outf =
+let process_all_summaries_and_issues ~issues_outf ~costs_outf ~config_impact_outf =
   let linereader = LineReader.create () in
   let filters = Inferconfig.create_filters () in
   let all_issues = ref [] in
-  Summary.OnDisk.iter_report_summaries_from_config ~f:(fun proc_name loc cost_opt err_log ->
-      all_issues := process_summary proc_name loc ~cost:(cost_opt, costs_outf) err_log !all_issues ) ;
+  Summary.OnDisk.iter_report_summaries_from_config
+    ~f:(fun proc_name loc cost_opt config_impact_opt err_log ->
+      all_issues :=
+        process_summary proc_name loc ~cost:(cost_opt, costs_outf)
+          ~config_impact:(config_impact_opt, config_impact_outf)
+          err_log !all_issues ) ;
   all_issues := Issue.sort_filter_issues !all_issues ;
   List.iter
     ~f:(fun {Issue.proc_name; proc_location; err_key; err_data} ->
@@ -353,7 +384,7 @@ let process_all_summaries_and_issues ~issues_outf ~costs_outf =
   ()
 
 
-let write_reports ~issues_json ~costs_json =
+let write_reports ~issues_json ~costs_json ~config_impact_json =
   let mk_outfile fname =
     match Utils.create_outfile fname with
     | None ->
@@ -372,6 +403,8 @@ let write_reports ~issues_json ~costs_json =
   in
   let issues_outf = open_outfile_and_fmt issues_json in
   let costs_outf = open_outfile_and_fmt costs_json in
-  process_all_summaries_and_issues ~issues_outf ~costs_outf ;
+  let config_impact_outf = open_outfile_and_fmt config_impact_json in
+  process_all_summaries_and_issues ~issues_outf ~costs_outf ~config_impact_outf ;
+  close_fmt_and_outfile config_impact_outf ;
   close_fmt_and_outfile costs_outf ;
   close_fmt_and_outfile issues_outf

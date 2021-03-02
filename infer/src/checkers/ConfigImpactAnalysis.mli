@@ -7,10 +7,18 @@
 
 open! IStd
 
+module UncheckedCallees : sig
+  type t
+
+  val encode : t -> string
+end
+
 module Summary : sig
   type t
 
   val pp : Format.formatter -> t -> unit
+
+  val get_unchecked_callees : t -> UncheckedCallees.t
 end
 
 val checker : Summary.t InterproceduralAnalysis.t -> Summary.t option

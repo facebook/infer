@@ -84,6 +84,9 @@ module UncheckedCallees = struct
 
   let replace_location_by_call location x =
     map (UncheckedCallee.replace_location_by_call location) x
+
+
+  let encode astate = Marshal.to_string astate [] |> Base64.encode_exn
 end
 
 module Loc = struct
@@ -130,6 +133,9 @@ module Summary = struct
   let pp f {unchecked_callees; has_call_stmt} =
     F.fprintf f "@[unchecked callees:@,%a,has_call_stmt:%b@]" UncheckedCallees.pp unchecked_callees
       has_call_stmt
+
+
+  let get_unchecked_callees {unchecked_callees} = unchecked_callees
 end
 
 module Dom = struct

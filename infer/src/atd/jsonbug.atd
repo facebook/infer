@@ -147,3 +147,13 @@ type cost_item = {
 }
 
 type costs_report = cost_item list
+
+type config_impact_item = {
+  hash : string;
+  loc : loc;
+  procedure_name : string;
+  procedure_id : string;
+  unchecked_callees : string;
+}
+
+type config_impact_report = config_impact_item list
