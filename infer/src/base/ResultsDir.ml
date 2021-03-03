@@ -80,9 +80,9 @@ module RunState = struct
     store ()
 end
 
-let is_results_dir ~check_correct_version () =
+let is_results_dir () =
   let capture_db_path = get_path CaptureDB in
-  let has_all_markers = (not check_correct_version) || Sys.is_file capture_db_path = `Yes in
+  let has_all_markers = Sys.is_file capture_db_path = `Yes in
   Result.ok_if_true has_all_markers ~error:(Printf.sprintf "'%s' not found" capture_db_path)
 
 
@@ -96,7 +96,7 @@ let non_empty_directory_exists results_dir =
 let remove_results_dir () =
   if non_empty_directory_exists Config.results_dir then (
     if (not Config.buck) && not Config.force_delete_results_dir then
-      Result.iter_error (is_results_dir ~check_correct_version:false ()) ~f:(fun err ->
+      Result.iter_error (is_results_dir ()) ~f:(fun err ->
           L.(die UserError)
             "ERROR: '%s' exists but does not seem to be an infer results directory: %s@\n\
              ERROR: Please delete '%s' and try again@." Config.results_dir err Config.results_dir ) ;
@@ -128,7 +128,7 @@ let create_results_dir () =
 
 
 let assert_results_dir advice =
-  Result.iter_error (is_results_dir ~check_correct_version:true ()) ~f:(fun err ->
+  Result.iter_error (is_results_dir ()) ~f:(fun err ->
       L.(die UserError)
         "ERROR: No results directory at '%s': %s@\nERROR: %s@." Config.results_dir err advice ) ;
   RunState.load_and_validate ()
@@ -154,6 +154,4 @@ let scrub_for_caching () =
   (* make sure we are done with the database *)
   ResultsDatabase.db_close () ;
   List.iter ~f:Utils.rmtree
-    ( (* some versions of sqlite do not clean up after themselves *) (get_path CaptureDB ^ "-shm")
-    :: (get_path CaptureDB ^ "-wal")
-    :: ResultsDirEntryName.to_delete_before_caching_capture ~results_dir:Config.results_dir )
+    (ResultsDirEntryName.to_delete_before_caching_capture ~results_dir:Config.results_dir)
