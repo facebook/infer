@@ -104,12 +104,12 @@ let no_args_or_excessive_millis_and_nanos = function
 
 
 let is_future_get =
-  let open MethodMatcher in
-  of_record
-    { default with
-      classname= "java.util.concurrent.Future"
-    ; methods= ["get"]
-    ; actuals_pred= no_args_or_excessive_timeout_and_timeunit }
+  MethodMatcher.(
+    of_record
+      { default with
+        classname= "java.util.concurrent.Future"
+      ; methods= ["get"]
+      ; actuals_pred= no_args_or_excessive_timeout_and_timeunit })
 
 
 let is_future_is_done =
@@ -129,18 +129,22 @@ let may_block =
           classname= "java.util.concurrent.CountDownLatch"
         ; methods= ["await"]
         ; actuals_pred= no_args_or_excessive_timeout_and_timeunit }
-        (* an IBinder.transact call is an RPC.  If the 4th argument (5th counting `this` as the first)
-           is int-zero then a reply is expected and returned from the remote process, thus potentially
-           blocking.  If the 4th argument is anything else, we assume a one-way call which doesn't block. *)
-      ; { default with
-          classname= "android.os.IBinder"
-        ; methods= ["transact"]
-        ; actuals_pred= (fun actuals -> List.nth actuals 4 |> Option.exists ~f:HilExp.is_int_zero)
-        }
       ; { default with
           classname= "android.os.AsyncTask"
         ; methods= ["get"]
         ; actuals_pred= no_args_or_excessive_timeout_and_timeunit } ])
+
+
+let may_do_ipc =
+  MethodMatcher.(
+    of_record
+      (* an IBinder.transact call is an RPC.  If the 4th argument (5th counting `this` as the first)
+         is int-zero then a reply is expected and returned from the remote process, thus potentially
+         blocking.  If the 4th argument is anything else, we assume a one-way call which doesn't block. *)
+      { default with
+        classname= "android.os.IBinder"
+      ; methods= ["transact"]
+      ; actuals_pred= (fun actuals -> List.nth actuals 4 |> Option.exists ~f:HilExp.is_int_zero) })
 
 
 let is_monitor_wait =

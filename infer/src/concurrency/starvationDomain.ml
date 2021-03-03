@@ -189,6 +189,7 @@ end
 
 module Event = struct
   type t =
+    | Ipc of {callee: Procname.t; thread: ThreadDomain.t}
     | LockAcquire of {locks: Lock.t list; thread: ThreadDomain.t}
     | MayBlock of {callee: Procname.t; thread: ThreadDomain.t}
     | MonitorWait of {lock: Lock.t; thread: ThreadDomain.t}
@@ -197,31 +198,34 @@ module Event = struct
   [@@deriving compare]
 
   let pp fmt = function
+    | Ipc {callee; thread} ->
+        F.fprintf fmt "Ipc(%a, %a)" Procname.pp callee ThreadDomain.pp thread
     | LockAcquire {locks; thread} ->
         F.fprintf fmt "LockAcquire(%a, %a)"
           (PrettyPrintable.pp_collection ~pp_item:Lock.pp)
           locks ThreadDomain.pp thread
     | MayBlock {callee; thread} ->
         F.fprintf fmt "MayBlock(%a, %a)" Procname.pp callee ThreadDomain.pp thread
-    | StrictModeCall {callee; thread} ->
-        F.fprintf fmt "StrictModeCall(%a, %a)" Procname.pp callee ThreadDomain.pp thread
     | MonitorWait {lock; thread} ->
         F.fprintf fmt "MonitorWait(%a, %a)" Lock.pp lock ThreadDomain.pp thread
     | MustNotOccurUnderLock {callee; thread} ->
         F.fprintf fmt "MustNotOccurUnderLock(%a, %a)" Procname.pp callee ThreadDomain.pp thread
+    | StrictModeCall {callee; thread} ->
+        F.fprintf fmt "StrictModeCall(%a, %a)" Procname.pp callee ThreadDomain.pp thread
 
 
   let describe fmt elem =
     match elem with
     | LockAcquire {locks} ->
         Pp.comma_seq Lock.pp_locks fmt locks
-    | MayBlock {callee} | StrictModeCall {callee} | MustNotOccurUnderLock {callee} ->
+    | Ipc {callee} | MayBlock {callee} | MustNotOccurUnderLock {callee} | StrictModeCall {callee} ->
         F.fprintf fmt "calls %a" describe_pname callee
     | MonitorWait {lock} ->
         F.fprintf fmt "calls `wait` on %a" Lock.describe lock
 
 
   let get_thread = function
+    | Ipc {thread}
     | LockAcquire {thread}
     | MayBlock {thread}
     | MonitorWait {thread}
@@ -234,6 +238,8 @@ module Event = struct
     if ThreadDomain.equal thread (get_thread event) then event
     else
       match event with
+      | Ipc ipc ->
+          Ipc {ipc with thread}
       | LockAcquire lock_acquire ->
           LockAcquire {lock_acquire with thread}
       | MayBlock may_block ->
@@ -264,11 +270,13 @@ module Event = struct
 
   let make_arbitrary_code_exec callee thread = MustNotOccurUnderLock {callee; thread}
 
+  let make_ipc callee thread = Ipc {callee; thread}
+
   let get_acquired_locks = function LockAcquire {locks} -> locks | _ -> []
 
   let apply_subst subst event =
     match event with
-    | MayBlock _ | StrictModeCall _ | MustNotOccurUnderLock _ ->
+    | Ipc _ | MayBlock _ | StrictModeCall _ | MustNotOccurUnderLock _ ->
         Some event
     | MonitorWait {lock; thread} -> (
       match Lock.apply_subst subst lock with
@@ -784,6 +792,11 @@ let make_call_with_event new_event ~loc astate =
 
 let blocking_call ~callee ~loc astate =
   let new_event = Event.make_blocking_call callee astate.thread in
+  make_call_with_event new_event ~loc astate
+
+
+let ipc ~callee ~loc astate =
+  let new_event = Event.make_ipc callee astate.thread in
   make_call_with_event new_event ~loc astate
 
 

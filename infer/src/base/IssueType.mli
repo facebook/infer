@@ -240,6 +240,8 @@ val internal_error : t
 
 val invariant_call : t
 
+val ipc_on_ui_thread : t
+
 val javascript_injection : t
 
 val lab_resource_leak : t

@@ -10,6 +10,8 @@ open! IStd
 val may_block : Tenv.t -> Procname.t -> HilExp.t list -> bool
 (** is the method call potentially blocking, given the actuals passed? *)
 
+val may_do_ipc : Tenv.t -> Procname.t -> HilExp.t list -> bool
+
 val is_strict_mode_violation : Tenv.t -> Procname.t -> HilExp.t list -> bool
 
 val is_monitor_wait : Tenv.t -> Procname.t -> HilExp.t list -> bool

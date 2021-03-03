@@ -57,6 +57,7 @@ end
 
 module Event : sig
   type t =
+    | Ipc of {callee: Procname.t; thread: ThreadDomain.t}
     | LockAcquire of {locks: Lock.t list; thread: ThreadDomain.t}
     | MayBlock of {callee: Procname.t; thread: ThreadDomain.t}
     | MonitorWait of {lock: Lock.t; thread: ThreadDomain.t}
@@ -192,6 +193,8 @@ val release : t -> Lock.t list -> t
 (** simultaneously release a number of locks, no-op if list is empty *)
 
 val blocking_call : callee:Procname.t -> loc:Location.t -> t -> t
+
+val ipc : callee:Procname.t -> loc:Location.t -> t -> t
 
 val wait_on_monitor : loc:Location.t -> FormalMap.t -> HilExp.t list -> t -> t
 

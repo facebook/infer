@@ -710,6 +710,11 @@ let invariant_call =
     ~user_documentation:[%blob "../../documentation/issues/INVARIANT_CALL.md"]
 
 
+let ipc_on_ui_thread =
+  register Warning ~id:"IPC_ON_UI_THREAD" Starvation
+    ~user_documentation:"A blocking `Binder` IPC call occurs on the UI thread."
+
+
 let javascript_injection =
   register ~id:"JAVASCRIPT_INJECTION" Error Quandary
     ~user_documentation:"Untrusted data flows into JavaScript."
