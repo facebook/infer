@@ -205,16 +205,18 @@ module PulseTransferFunctions = struct
      type needed to execute a call to dealloc for the given variables for which the dynamic type
      is an Objective-C class. *)
   let get_dealloc_from_dynamic_types dynamic_types_unreachable =
-    let get_dealloc (var, name) =
-      let cls_typ = Typ.mk (Typ.Tstruct name) in
-      match Var.get_ident var with
-      | Some id when Typ.is_objc_class cls_typ ->
-          let ret_id = Ident.create_fresh Ident.knormal in
-          let dealloc = Procname.make_objc_dealloc name in
-          let typ = Typ.mk_ptr cls_typ in
-          Some (ret_id, id, typ, dealloc)
-      | _ ->
-          None
+    let get_dealloc (var, typ) =
+      Typ.name typ
+      |> Option.bind ~f:(fun name ->
+             let cls_typ = Typ.mk (Typ.Tstruct name) in
+             match Var.get_ident var with
+             | Some id when Typ.is_objc_class cls_typ ->
+                 let ret_id = Ident.create_fresh Ident.knormal in
+                 let dealloc = Procname.make_objc_dealloc name in
+                 let typ = Typ.mk_ptr cls_typ in
+                 Some (ret_id, id, typ, dealloc)
+             | _ ->
+                 None )
     in
     List.filter_map ~f:get_dealloc dynamic_types_unreachable
 

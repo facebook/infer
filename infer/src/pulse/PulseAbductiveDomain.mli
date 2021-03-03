@@ -153,7 +153,7 @@ module AddressAttributes : sig
 
   val allocate : Procname.t -> AbstractValue.t * ValueHistory.t -> Location.t -> t -> t
 
-  val add_dynamic_type : Typ.Name.t -> AbstractValue.t -> t -> t
+  val add_dynamic_type : Typ.t -> AbstractValue.t -> t -> t
 
   val remove_allocation_attr : AbstractValue.t -> t -> t
 

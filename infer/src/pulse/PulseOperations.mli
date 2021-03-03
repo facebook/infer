@@ -151,7 +151,7 @@ val invalidate_biad_isl :
 
 val allocate : Procname.t -> Location.t -> AbstractValue.t * ValueHistory.t -> t -> t
 
-val add_dynamic_type : Typ.Name.t -> AbstractValue.t -> t -> t
+val add_dynamic_type : Typ.t -> AbstractValue.t -> t -> t
 
 val remove_allocation_attr : AbstractValue.t -> t -> t
 
@@ -175,7 +175,7 @@ val shallow_copy :
   -> (t * (AbstractValue.t * ValueHistory.t)) access_result
 (** returns the address of a new cell with the same edges as the original *)
 
-val get_dynamic_type_unreachable_values : Var.t list -> t -> (Var.t * Typ.Name.t) list
+val get_dynamic_type_unreachable_values : Var.t list -> t -> (Var.t * Typ.t) list
 (** Given a list of variables, computes the unreachable values if the variables were removed from
     the stack, then return the dynamic types of those values if they are available *)
 

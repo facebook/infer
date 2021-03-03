@@ -29,7 +29,7 @@ module Attribute = struct
     | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
     | Allocated of Procname.t * Trace.t
     | Closure of Procname.t
-    | DynamicType of Typ.Name.t
+    | DynamicType of Typ.t
     | EndOfCollection
     | Invalid of Invalidation.t * Trace.t
     | ISLAbduced of Trace.t
@@ -69,7 +69,7 @@ module Attribute = struct
 
   let allocated_rank = Variants.to_rank (Allocated (Procname.Linters_dummy_method, dummy_trace))
 
-  let dynamic_type_rank = Variants.to_rank (DynamicType (Typ.Name.Objc.from_string ""))
+  let dynamic_type_rank = Variants.to_rank (DynamicType StdTyp.void)
 
   let end_of_collection_rank = Variants.to_rank EndOfCollection
 
@@ -112,7 +112,7 @@ module Attribute = struct
     | Closure pname ->
         Procname.pp f pname
     | DynamicType typ ->
-        F.fprintf f "DynamicType %a" Typ.Name.pp typ
+        F.fprintf f "DynamicType %a" (Typ.pp Pp.text) typ
     | EndOfCollection ->
         F.pp_print_string f "EndOfCollection"
     | Invalid (invalidation, trace) ->

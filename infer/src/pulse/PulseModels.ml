@@ -134,6 +134,31 @@ module Misc = struct
     in
     let astate_zero = PulseArithmetic.prune_eq_zero (fst deleted_access) astate in
     Ok (ContinueProgram astate_zero) :: astates_alloc
+
+
+  let alloc_not_null ~event arg : model =
+   fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
+    let ret_addr = AbstractValue.mk_fresh () in
+    let event = event location in
+    let ret_value = (ret_addr, [event]) in
+    let astate =
+      match arg with
+      | Exp.Sizeof {typ} ->
+          PulseOperations.add_dynamic_type typ ret_addr astate
+      | _ ->
+          (* The type expr is sometimes a Var expr in Java but this is not expected.
+             This seems to be introduced by inline mechanism of Java synthetic methods during preanalysis *)
+          astate
+    in
+    PulseOperations.write_id ret_id ret_value astate
+    |> PulseArithmetic.and_positive ret_addr
+    |> ok_continue
+
+
+  let alloc_not_null_call_ev ~desc arg =
+    alloc_not_null
+      ~event:(fun location -> ValueHistory.Call {f= Model desc; location; in_call= []})
+      arg
 end
 
 module C = struct
@@ -200,21 +225,10 @@ module ObjCCoreFoundation = struct
 end
 
 module ObjC = struct
-  let alloc_not_null arg : model =
-   fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
-    let dynamic_type =
-      match arg with
-      | Exp.Sizeof {typ= {desc= Tstruct name}} ->
-          name
-      | _ ->
-          Logging.die InternalError "Expected arg should be a sizeof expression"
-    in
-    let ret_addr = AbstractValue.mk_fresh () in
-    let ret_value = (ret_addr, [ValueHistory.Allocation {f= Model "alloc"; location}]) in
-    let astate = PulseOperations.write_id ret_id ret_value astate in
-    PulseOperations.add_dynamic_type dynamic_type ret_addr astate
-    |> PulseArithmetic.and_positive ret_addr
-    |> ok_continue
+  let alloc_not_null_alloc_ev ~desc arg =
+    Misc.alloc_not_null
+      ~event:(fun location -> ValueHistory.Allocation {f= Model desc; location})
+      arg
 
 
   let dispatch_sync args : model =
@@ -1104,7 +1118,10 @@ module ProcNameDispatcher = struct
       @ [ +match_builtin BuiltinDecl.free <>$ capt_arg_payload $--> C.free
         ; +match_builtin BuiltinDecl.malloc <>$ capt_exp $--> C.malloc
         ; +match_builtin BuiltinDecl.__delete <>$ capt_arg_payload $--> Cplusplus.delete
-        ; +match_builtin BuiltinDecl.__new &--> Misc.return_positive ~desc:"new"
+        ; +match_builtin BuiltinDecl.__new <>$ capt_exp $--> Misc.alloc_not_null_call_ev ~desc:"new"
+        ; +match_builtin BuiltinDecl.__new_array
+          <>$ capt_exp
+          $--> Misc.alloc_not_null_call_ev ~desc:"new"
         ; +match_builtin BuiltinDecl.__placement_new &++> Cplusplus.placement_new
         ; +match_builtin BuiltinDecl.objc_cpp_throw <>--> Misc.early_exit
         ; +match_builtin BuiltinDecl.__cast <>$ capt_arg_payload $+...$--> Misc.id_first_arg
@@ -1398,7 +1415,9 @@ module ProcNameDispatcher = struct
         ; -"CFBridgingRelease" <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; +match_builtin BuiltinDecl.__objc_bridge_transfer
           <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
-        ; +match_builtin BuiltinDecl.__objc_alloc_no_fail <>$ capt_exp $--> ObjC.alloc_not_null
+        ; +match_builtin BuiltinDecl.__objc_alloc_no_fail
+          <>$ capt_exp
+          $--> ObjC.alloc_not_null_alloc_ev ~desc:"alloc"
         ; -"NSObject" &:: "init" <>$ capt_arg_payload $--> Misc.id_first_arg
         ; +match_regexp_opt Config.pulse_model_return_nonnull
           &::.*--> Misc.return_positive

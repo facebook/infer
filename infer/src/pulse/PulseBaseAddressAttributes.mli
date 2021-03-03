@@ -25,8 +25,6 @@ val add : AbstractValue.t -> Attributes.t -> t -> t
 
 val allocate : Procname.t -> AbstractValue.t * ValueHistory.t -> Location.t -> t -> t
 
-val add_dynamic_type : Typ.Name.t -> AbstractValue.t -> t -> t
-
 val fold : (AbstractValue.t -> Attributes.t -> 'a -> 'a) -> t -> 'a -> 'a
 
 val check_valid : AbstractValue.t -> t -> (unit, Invalidation.t * Trace.t) result
@@ -44,6 +42,8 @@ val get_must_be_valid : AbstractValue.t -> t -> Trace.t option
 val get_must_be_valid_or_allocated_isl : AbstractValue.t -> t -> Trace.t option
 
 val get_must_be_initialized : AbstractValue.t -> t -> Trace.t option
+
+val add_dynamic_type : Typ.t -> AbstractValue.t -> t -> t
 
 val std_vector_reserve : AbstractValue.t -> t -> t
 

@@ -16,7 +16,7 @@ type t =
   | Allocated of Procname.t * Trace.t
       (** the {!Procname.t} is the function causing the allocation, eg [malloc] *)
   | Closure of Procname.t
-  | DynamicType of Typ.Name.t
+  | DynamicType of Typ.t
   | EndOfCollection
   | Invalid of Invalidation.t * Trace.t
   | ISLAbduced of Trace.t  (** The allocation is abduced so as the analysis could run normally *)
@@ -45,7 +45,7 @@ module Attributes : sig
 
   val get_allocation : t -> (Procname.t * Trace.t) option
 
-  val get_dynamic_type : t -> Typ.Name.t option
+  val get_dynamic_type : t -> Typ.t option
 
   val is_end_of_collection : t -> bool
 
