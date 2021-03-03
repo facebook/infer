@@ -137,14 +137,19 @@ let may_block =
 
 let may_do_ipc =
   MethodMatcher.(
-    of_record
-      (* an IBinder.transact call is an RPC.  If the 4th argument (5th counting `this` as the first)
-         is int-zero then a reply is expected and returned from the remote process, thus potentially
-         blocking.  If the 4th argument is anything else, we assume a one-way call which doesn't block. *)
-      { default with
-        classname= "android.os.IBinder"
-      ; methods= ["transact"]
-      ; actuals_pred= (fun actuals -> List.nth actuals 4 |> Option.exists ~f:HilExp.is_int_zero) })
+    of_records
+      [ (* an IBinder.transact call is an RPC.  If the 4th argument (5th counting `this` as the first)
+           is int-zero then a reply is expected and returned from the remote process, thus potentially
+           blocking.  If the 4th argument is anything else, we assume a one-way call which doesn't block. *)
+        { default with
+          classname= "android.os.IBinder"
+        ; methods= ["transact"]
+        ; actuals_pred= (fun actuals -> List.nth actuals 4 |> Option.exists ~f:HilExp.is_int_zero)
+        }
+      ; (* indirectly makes a transact call*)
+        { default with
+          classname= "android.net.ConnectivityManager"
+        ; methods= ["getActiveNetworkInfo"] } ])
 
 
 let is_monitor_wait =

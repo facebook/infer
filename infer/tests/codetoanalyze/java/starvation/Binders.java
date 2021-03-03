@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import android.net.ConnectivityManager;
 import android.os.Binder;
 import android.os.RemoteException;
 import android.support.annotation.UiThread;
@@ -56,5 +57,10 @@ class Binders {
 
   void forceMainThread() {
     OurThreadUtils.assertMainThread();
+  }
+
+  @UiThread
+  void getActiveNetworkInfoBad(ConnectivityManager c) {
+    c.getActiveNetworkInfo();
   }
 }
