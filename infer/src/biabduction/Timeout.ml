@@ -76,19 +76,23 @@ let timeout_action _ =
   raise (SymOp.Analysis_failure_exe FKtimeout)
 
 
-let () =
-  (* Can't use Core since it wraps signal handlers and alarms with catch-all exception handlers that
-     exit, while we need to propagate the timeout exceptions. *)
-  let module Gc = Caml.Gc in
-  let module Sys = Caml.Sys in
-  match Config.os_type with
-  | Config.Unix | Config.Cygwin ->
-      Sys.set_signal Sys.sigvtalrm (Sys.Signal_handle timeout_action) ;
-      Sys.set_signal Sys.sigalrm (Sys.Signal_handle timeout_action)
-  | Config.Win32 ->
-      SymOp.set_wallclock_timeout_handler timeout_action ;
-      (* use the Gc alarm for periodic timeout checks *)
-      ignore (Gc.create_alarm SymOp.check_wallclock_alarm)
+let register_timeout_handlers =
+  let already_registered = ref false in
+  fun () ->
+    if not !already_registered then (
+      already_registered := true ;
+      (* Can't use Core since it wraps signal handlers and alarms with catch-all exception handlers
+         that exit, while we need to propagate the timeout exceptions. *)
+      let module Gc = Caml.Gc in
+      let module Sys = Caml.Sys in
+      match Config.os_type with
+      | Config.Unix | Config.Cygwin ->
+          Sys.set_signal Sys.sigvtalrm (Sys.Signal_handle timeout_action) ;
+          Sys.set_signal Sys.sigalrm (Sys.Signal_handle timeout_action)
+      | Config.Win32 ->
+          SymOp.set_wallclock_timeout_handler timeout_action ;
+          (* use the Gc alarm for periodic timeout checks *)
+          ignore (Gc.create_alarm SymOp.check_wallclock_alarm) )
 
 
 let unwind () =
@@ -109,6 +113,7 @@ let resume_previous_timeout () =
 
 
 let exe_timeout f x =
+  register_timeout_handlers () ;
   let suspend_existing_timeout_and_start_new_one () =
     suspend_existing_timeout ~keep_symop_total:true ;
     Option.iter (SymOp.get_timeout_seconds ()) ~f:set_alarm ;
