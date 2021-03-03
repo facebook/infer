@@ -135,7 +135,7 @@ val condition_always_true : t
 
 val config_checks_between_markers : t
 
-val config_impact_analysis : t
+val config_impact_analysis : t [@@warning "-32"]
 
 val constant_address_dereference : t
 

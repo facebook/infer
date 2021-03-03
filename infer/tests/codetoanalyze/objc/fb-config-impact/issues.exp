@@ -1,3 +1,0 @@
-../../facebook/skel/infer/tests/codetoanalyze/objc/fb-config-impact/Basic.m, qe_unchecked_bad, 4, CONFIG_IMPACT, no_bucket, ADVICE, [callee2 is called]
-../../facebook/skel/infer/tests/codetoanalyze/objc/fb-config-impact/ClassTest.m, MyClass.call_log_bad:data:, 4, CONFIG_IMPACT, no_bucket, ADVICE, [__objc_alloc_no_fail is called]
-../../facebook/skel/infer/tests/codetoanalyze/objc/fb-config-impact/ClassTest.m, MyClass.call_log_bad:data:, 4, CONFIG_IMPACT, no_bucket, ADVICE, [NSKeyedUnarchiver.initForReadingFromData:error: is called]

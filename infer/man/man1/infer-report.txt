@@ -38,6 +38,14 @@ OPTIONS
        --config-impact-data-file file
            [ConfigImpact] Specify the file containing the config data
 
+       --config-impact-issues-tests file
+           Write a list of config impact issues in a format suitable for
+           config impact tests to file
+
+       --config-impact-max-callees-to-print int
+           Specify the maximum number of unchecked callees to print in the
+           config impact checker
+
        --cost-issues-tests file
            Write a list of cost issues in a format suitable for cost tests to
            file
@@ -269,6 +277,9 @@ OPTIONS
        --no-filtering,-F
            Deactivates: Do not show the experimental and blacklisted issue
            types (Conversely: --filtering | -f)
+
+       --from-json-config-impact-report config-impact-report.json
+           Load costs analysis results from a config-impact-report file.
 
        --from-json-costs-report costs-report.json
            Load costs analysis results from a costs-report file.

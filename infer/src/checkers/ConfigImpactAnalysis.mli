@@ -11,6 +11,10 @@ module UncheckedCallees : sig
   type t
 
   val encode : t -> string
+
+  val decode : string -> t
+
+  val pp_without_location : Format.formatter -> t -> unit
 end
 
 module Summary : sig

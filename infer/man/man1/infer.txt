@@ -272,6 +272,14 @@ OPTIONS
            [ConfigImpact] Specify the file containing the config data       
     See also infer-report(1).
 
+       --config-impact-issues-tests file
+           Write a list of config impact issues in a format suitable for
+           config impact tests to file           See also infer-report(1).
+
+       --config-impact-max-callees-to-print int
+           Specify the maximum number of unchecked callees to print in the
+           config impact checker           See also infer-report(1) and infer-reportdiff(1).
+
        --continue
            Activates: Continue the capture for the reactive analysis,
            increasing the changed files/procedures. (If a procedure was
@@ -625,6 +633,10 @@ OPTIONS
            Activates: Enable fragment-retains-view and disable all other
            checkers (Conversely: --no-fragment-retains-view-only)       
     See also infer-analyze(1).
+
+       --from-json-config-impact-report config-impact-report.json
+           Load costs analysis results from a config-impact-report file.       
+    See also infer-report(1).
 
        --from-json-costs-report costs-report.json
            Load costs analysis results from a costs-report file.       

@@ -228,6 +228,10 @@ val command : InferCommand.t
 
 val config_impact_data_file : string option
 
+val config_impact_issues_tests : string option
+
+val config_impact_max_callees_to_print : int
+
 val continue_analysis : bool
 
 val continue_capture : bool
@@ -301,6 +305,8 @@ val force_delete_results_dir : bool
 val force_integration : build_system option
 
 val from_json_report : string
+
+val from_json_config_impact_report : string
 
 val from_json_costs_report : string
 

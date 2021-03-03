@@ -47,6 +47,8 @@ module UncheckedCallee = struct
 
   and call_type = Direct | Indirect of t
 
+  let get_callee {callee} = callee
+
   let get_location {location} = location
 
   let pp_common ~with_location f {callee; location; call_type} =
@@ -59,34 +61,33 @@ module UncheckedCallee = struct
 
   let pp_without_location f x = pp_common ~with_location:false f x
 
+  let pp_without_location_list f unchecked_callees =
+    IList.pp_print_list ~max:Config.config_impact_max_callees_to_print
+      ~pp_sep:(fun f () -> Format.pp_print_string f ", ")
+      (fun f unchecked_callee -> Procname.pp f (get_callee unchecked_callee))
+      f unchecked_callees
+
+
   let replace_location_by_call location x = {x with location; call_type= Indirect x}
 
-  let rec make_err_trace x =
+  let[@warning "-32"] rec make_err_trace x =
     let desc = F.asprintf "%a" pp_without_location x in
     let trace_elem = Errlog.make_trace_element 0 (get_location x) desc [] in
     match x.call_type with Direct -> [trace_elem] | Indirect x -> trace_elem :: make_err_trace x
-
-
-  let report {InterproceduralAnalysis.proc_desc; err_log} x =
-    let pname = Procdesc.get_proc_name proc_desc in
-    if ExternalConfigImpactData.is_in_config_data_file pname then
-      let desc = F.asprintf "%a without config check" pp x in
-      Reporting.log_issue proc_desc err_log ~loc:(get_location x) ~ltr:(make_err_trace x)
-        ConfigImpactAnalysis IssueType.config_impact_analysis desc
 end
 
 module UncheckedCallees = struct
   include AbstractDomain.FiniteSet (UncheckedCallee)
-
-  let report analysis_data unchecked_callees =
-    iter (UncheckedCallee.report analysis_data) unchecked_callees
-
 
   let replace_location_by_call location x =
     map (UncheckedCallee.replace_location_by_call location) x
 
 
   let encode astate = Marshal.to_string astate [] |> Base64.encode_exn
+
+  let decode enc_str = Marshal.from_string (Base64.decode_exn enc_str) 0
+
+  let pp_without_location f x = UncheckedCallee.pp_without_location_list f (elements x)
 end
 
 module Loc = struct
@@ -279,8 +280,6 @@ let has_call_stmt proc_desc =
 
 
 let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
-  Option.map (Analyzer.compute_post analysis_data ~initial:Dom.init proc_desc)
-    ~f:(fun ({Dom.unchecked_callees} as astate) ->
+  Option.map (Analyzer.compute_post analysis_data ~initial:Dom.init proc_desc) ~f:(fun astate ->
       let has_call_stmt = has_call_stmt proc_desc in
-      UncheckedCallees.report analysis_data unchecked_callees ;
       Dom.to_summary has_call_stmt astate )

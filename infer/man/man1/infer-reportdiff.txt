@@ -20,6 +20,10 @@ DESCRIPTION
 
 
 OPTIONS
+       --config-impact-max-callees-to-print int
+           Specify the maximum number of unchecked callees to print in the
+           config impact checker
+
        --cost-tests-only-autoreleasepool
            Activates: [EXPERIMENTAL] Report only autoreleasepool size results
            in cost tests (Conversely: --no-cost-tests-only-autoreleasepool)

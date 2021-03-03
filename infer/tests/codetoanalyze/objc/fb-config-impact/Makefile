@@ -14,5 +14,6 @@ SOURCES = $(wildcard *.m)
 
 include $(TESTS_DIR)/clang.make
 include $(TESTS_DIR)/objc.make
+include $(TESTS_DIR)/config-impact.make
 
 infer-out/report.json: $(MAKEFILE_LIST)
