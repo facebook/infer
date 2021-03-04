@@ -18,6 +18,8 @@ val of_reports :
   -> previous_report:Jsonbug_t.report
   -> current_costs:Jsonbug_t.costs_report
   -> previous_costs:Jsonbug_t.costs_report
+  -> current_config_impact:Jsonbug_t.config_impact_report
+  -> previous_config_impact:Jsonbug_t.config_impact_report
   -> t
 
 val to_files : t -> string -> unit

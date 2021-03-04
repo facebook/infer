@@ -168,8 +168,11 @@ let test_skip_duplicated_types_on_filenames =
   in
   let current_costs = [] in
   let previous_costs = [] in
+  let current_config_impact = [] in
+  let previous_config_impact = [] in
   let diff =
     Differential.of_reports ~current_report ~previous_report ~current_costs ~previous_costs
+      ~current_config_impact ~previous_config_impact
   in
   let diff' =
     DifferentialFilters.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.skip_duplicated_types_on_filenames

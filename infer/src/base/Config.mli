@@ -226,11 +226,15 @@ val clang_libcxx_include_to_override_regex : string option
 
 val command : InferCommand.t
 
+val config_impact_current : string option
+
 val config_impact_data_file : string option
 
 val config_impact_issues_tests : string option
 
 val config_impact_max_callees_to_print : int
+
+val config_impact_previous : string option
 
 val continue_analysis : bool
 

@@ -27,7 +27,14 @@ let current_costs = []
 
 let previous_costs = []
 
-let diff = Differential.of_reports ~current_report ~previous_report ~current_costs ~previous_costs
+let current_config_impact = []
+
+let previous_config_impact = []
+
+let diff =
+  Differential.of_reports ~current_report ~previous_report ~current_costs ~previous_costs
+    ~current_config_impact ~previous_config_impact
+
 
 (* Sets operations should keep duplicated issues with identical hashes *)
 let test_diff_keeps_duplicated_hashes =

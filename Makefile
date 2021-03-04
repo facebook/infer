@@ -178,6 +178,8 @@ DIRECT_TESTS += \
   java_topl \
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
+BUILD_SYSTEMS_TESTS += \
+  fb_differential_of_config_impact_report_java
 DIRECT_TESTS += \
   java_fb-config-impact \
   java_fb-gk-interaction \

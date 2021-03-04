@@ -7,8 +7,16 @@
 
 open! IStd
 
-module UncheckedCallees : sig
+module UncheckedCallee : sig
   type t
+
+  val make_err_trace : t -> Errlog.loc_trace
+
+  val pp_without_location_list : Format.formatter -> t list -> unit
+end
+
+module UncheckedCallees : sig
+  include AbstractDomain.FiniteSetS with type elt = UncheckedCallee.t
 
   val encode : t -> string
 

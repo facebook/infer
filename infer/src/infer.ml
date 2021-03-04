@@ -206,16 +206,26 @@ let () =
           Option.iter config_impact_out_path ~f:write_from_config_impact_json )
   | ReportDiff ->
       (* at least one report must be passed in input to compute differential *)
-      ( match Config.(report_current, report_previous, costs_current, costs_previous) with
-      | None, None, None, None ->
+      ( match
+          Config.
+            ( report_current
+            , report_previous
+            , costs_current
+            , costs_previous
+            , config_impact_current
+            , config_impact_previous )
+        with
+      | None, None, None, None, None, None ->
           L.die UserError
             "Expected at least one argument among '--report-current', '--report-previous', \
-             '--costs-current', and '--costs-previous'"
+             '--costs-current', '--costs-previous', '--config-impact-current', and \
+             '--config-impact-previous'\n"
       | _ ->
           () ) ;
       ReportDiff.reportdiff ~current_report:Config.report_current
         ~previous_report:Config.report_previous ~current_costs:Config.costs_current
-        ~previous_costs:Config.costs_previous
+        ~previous_costs:Config.costs_previous ~current_config_impact:Config.config_impact_current
+        ~previous_config_impact:Config.config_impact_previous
   | Debug when not Config.(global_tenv || procedures || source_files) ->
       L.die UserError
         "Expected at least one of '--procedures', '--source_files', or '--global-tenv'"

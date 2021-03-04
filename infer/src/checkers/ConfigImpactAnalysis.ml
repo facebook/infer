@@ -47,10 +47,6 @@ module UncheckedCallee = struct
 
   and call_type = Direct | Indirect of t
 
-  let get_callee {callee} = callee
-
-  let get_location {location} = location
-
   let pp_common ~with_location f {callee; location; call_type} =
     F.fprintf f "%a is %scalled" Procname.pp callee
       (match call_type with Direct -> "" | Indirect _ -> "indirectly ") ;
@@ -64,15 +60,15 @@ module UncheckedCallee = struct
   let pp_without_location_list f unchecked_callees =
     IList.pp_print_list ~max:Config.config_impact_max_callees_to_print
       ~pp_sep:(fun f () -> Format.pp_print_string f ", ")
-      (fun f unchecked_callee -> Procname.pp f (get_callee unchecked_callee))
+      (fun f {callee} -> Procname.pp f callee)
       f unchecked_callees
 
 
   let replace_location_by_call location x = {x with location; call_type= Indirect x}
 
-  let[@warning "-32"] rec make_err_trace x =
+  let rec make_err_trace ({location} as x) =
     let desc = F.asprintf "%a" pp_without_location x in
-    let trace_elem = Errlog.make_trace_element 0 (get_location x) desc [] in
+    let trace_elem = Errlog.make_trace_element 0 location desc [] in
     match x.call_type with Direct -> [trace_elem] | Indirect x -> trace_elem :: make_err_trace x
 end
 

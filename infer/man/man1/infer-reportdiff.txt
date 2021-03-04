@@ -20,9 +20,15 @@ DESCRIPTION
 
 
 OPTIONS
+       --config-impact-current path
+           Config impact report of the latest revision
+
        --config-impact-max-callees-to-print int
            Specify the maximum number of unchecked callees to print in the
            config impact checker
+
+       --config-impact-previous path
+           Config impact report of the base revision to use for comparison
 
        --cost-tests-only-autoreleasepool
            Activates: [EXPERIMENTAL] Report only autoreleasepool size results

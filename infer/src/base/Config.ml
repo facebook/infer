@@ -913,6 +913,12 @@ and compilation_database_escaped =
      from Xcode (can be specified multiple times)"
 
 
+and config_impact_current =
+  CLOpt.mk_path_opt ~long:"config-impact-current"
+    ~in_help:InferCommand.[(ReportDiff, manual_generic)]
+    "Config impact report of the latest revision"
+
+
 and config_impact_data_file =
   CLOpt.mk_path_opt ~long:"config-impact-data-file"
     ~in_help:InferCommand.[(Report, manual_generic)]
@@ -931,6 +937,12 @@ and config_impact_max_callees_to_print =
     ~in_help:InferCommand.[(Report, manual_generic); (ReportDiff, manual_generic)]
     ~meta:"int"
     "Specify the maximum number of unchecked callees to print in the config impact checker"
+
+
+and config_impact_previous =
+  CLOpt.mk_path_opt ~long:"config-impact-previous"
+    ~in_help:InferCommand.[(ReportDiff, manual_generic)]
+    "Config impact report of the base revision to use for comparison"
 
 
 (** Continue the capture for reactive mode: If a procedure was changed beforehand, keep the changed
@@ -2875,11 +2887,15 @@ and clang_libcxx_include_to_override_regex = !clang_libcxx_include_to_override_r
 
 and classpath = !classpath
 
+and config_impact_current = !config_impact_current
+
 and config_impact_data_file = !config_impact_data_file
 
 and config_impact_issues_tests = !config_impact_issues_tests
 
 and config_impact_max_callees_to_print = !config_impact_max_callees_to_print
+
+and config_impact_previous = !config_impact_previous
 
 and continue_analysis = !continue_analysis
 

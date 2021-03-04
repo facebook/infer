@@ -385,9 +385,106 @@ let of_costs ~(current_costs : Jsonbug_t.costs_report) ~(previous_costs : Jsonbu
     CostIssues.enabled_cost_map ([], [], [])
 
 
+module ConfigImpactItem = struct
+  module UncheckedCallee = ConfigImpactAnalysis.UncheckedCallee
+  module UncheckedCallees = ConfigImpactAnalysis.UncheckedCallees
+
+  type t = {config_impact_item: Jsonbug_t.config_impact_item; unchecked_callees: UncheckedCallees.t}
+
+  type change_type = Added | Removed
+
+  let pp_change_type f x =
+    Format.pp_print_string f (match x with Added -> "added" | Removed -> "removed")
+
+
+  let get_qualifier_trace ~change_type unchecked_callees =
+    let nb_callees = UncheckedCallees.cardinal unchecked_callees in
+    if nb_callees <= 0 then assert false ;
+    let is_singleton = nb_callees <= 1 in
+    let unchecked_callees = UncheckedCallees.elements unchecked_callees in
+    let qualifier =
+      Format.asprintf "Function call%s to %a %s %a without GK/QE."
+        (if is_singleton then "" else "s")
+        UncheckedCallee.pp_without_location_list unchecked_callees
+        (if is_singleton then "is" else "are")
+        pp_change_type change_type
+    in
+    (* Note: It takes only one trace among the callees. *)
+    let trace = List.hd_exn unchecked_callees |> UncheckedCallee.make_err_trace in
+    (qualifier, trace)
+
+
+  let issue_of ~change_type (config_impact_item : Jsonbug_t.config_impact_item) callees =
+    let should_report =
+      ((not Config.filtering) || IssueType.config_impact_analysis.enabled)
+      && not (UncheckedCallees.is_empty callees)
+    in
+    if should_report then
+      let qualifier, trace = get_qualifier_trace ~change_type callees in
+      let file = config_impact_item.loc.file in
+      let line = config_impact_item.loc.lnum in
+      Some
+        { Jsonbug_j.bug_type= IssueType.config_impact_analysis.unique_id
+        ; qualifier
+        ; severity= IssueType.string_of_severity Advice
+        ; line
+        ; column= config_impact_item.loc.cnum
+        ; procedure= config_impact_item.procedure_id
+        ; procedure_start_line= line
+        ; file
+        ; bug_trace= JsonReports.loc_trace_to_jsonbug_record trace Advice
+        ; key= ""
+        ; node_key= None
+        ; hash= config_impact_item.hash
+        ; dotty= None
+        ; infer_source_loc= None
+        ; bug_type_hum= IssueType.config_impact_analysis.hum
+        ; linters_def_file= None
+        ; doc_url= None
+        ; traceview_id= None
+        ; censored_reason=
+            SourceFile.create ~warn_on_error:false file
+            |> JsonReports.censored_reason IssueType.config_impact_analysis
+        ; access= None
+        ; extras= None }
+    else None
+
+
+  let issues_of ~(current_config_impact : Jsonbug_t.config_impact_report)
+      ~(previous_config_impact : Jsonbug_t.config_impact_report) =
+    let fold_aux ~key:_ ~data ((acc_introduced, acc_fixed) as acc) =
+      match data with
+      | `Both (current, previous) ->
+          let introduced =
+            UncheckedCallees.diff current.unchecked_callees previous.unchecked_callees
+            |> issue_of ~change_type:Added current.config_impact_item
+          in
+          let removed =
+            UncheckedCallees.diff previous.unchecked_callees current.unchecked_callees
+            |> issue_of ~change_type:Removed previous.config_impact_item
+          in
+          (Option.to_list introduced @ acc_introduced, Option.to_list removed @ acc_fixed)
+      | `Left _ | `Right _ ->
+          (* Note: The reports available on one side are ignored since we don't want to report on
+             newly added (or freshly removed) functions. *)
+          acc
+    in
+    let map_of_config_impact config_impact =
+      List.fold ~init:String.Map.empty config_impact
+        ~f:(fun acc ({Jsonbug_t.hash= key; unchecked_callees} as config_impact_item) ->
+          let unchecked_callees = UncheckedCallees.decode unchecked_callees in
+          String.Map.add_exn acc ~key ~data:{config_impact_item; unchecked_callees} )
+    in
+    let current_map = map_of_config_impact current_config_impact in
+    let previous_map = map_of_config_impact previous_config_impact in
+    Map.fold2 ~init:([], []) current_map previous_map ~f:fold_aux
+end
+
 (** Set operations should keep duplicated issues with identical hashes *)
 let of_reports ~(current_report : Jsonbug_t.report) ~(previous_report : Jsonbug_t.report)
-    ~(current_costs : Jsonbug_t.costs_report) ~(previous_costs : Jsonbug_t.costs_report) : t =
+    ~(current_costs : Jsonbug_t.costs_report) ~(previous_costs : Jsonbug_t.costs_report)
+    ~(current_config_impact : Jsonbug_t.config_impact_report)
+    ~(previous_config_impact : Jsonbug_t.config_impact_report) : t =
   let fold_aux ~key:_ ~data (left, both, right) =
     match data with
     | `Left left' ->
@@ -404,8 +501,13 @@ let of_reports ~(current_report : Jsonbug_t.report) ~(previous_report : Jsonbug_
   in
   let costs_summary = CostsSummary.to_json ~current_costs ~previous_costs in
   let introduced_costs, preexisting_costs, fixed_costs = of_costs ~current_costs ~previous_costs in
-  { introduced= List.rev_append introduced_costs (dedup introduced)
-  ; fixed= List.rev_append fixed_costs (dedup fixed)
+  let introduced_config_impact, fixed_config_impact =
+    ConfigImpactItem.issues_of ~current_config_impact ~previous_config_impact
+  in
+  { introduced=
+      List.rev_append introduced_costs (dedup introduced)
+      |> List.rev_append introduced_config_impact
+  ; fixed= List.rev_append fixed_costs (dedup fixed) |> List.rev_append fixed_config_impact
   ; preexisting= List.rev_append preexisting_costs (dedup preexisting)
   ; costs_summary }
 
