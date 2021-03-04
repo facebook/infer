@@ -996,6 +996,16 @@ module JavaCollection = struct
   let remove coll : model =
     let index = AbstractValue.mk_fresh () in
     remove_at coll (index, [])
+
+
+  let is_empty (address, hist) : model =
+   fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
+    let event = ValueHistory.Call {f= Model "Collections.isEmpty"; location; in_call= []} in
+    let fresh_elem = AbstractValue.mk_fresh () in
+    PulseArithmetic.prune_positive address astate
+    |> PulseArithmetic.and_eq_int fresh_elem IntLit.zero
+    |> PulseOperations.write_id ret_id (fresh_elem, event :: hist)
+    |> ok_continue
 end
 
 module JavaInteger = struct
@@ -1334,6 +1344,10 @@ module ProcNameDispatcher = struct
         ; +map_context_tenv PatternMatch.Java.implements_list
           &:: "remove" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg
           $--> JavaCollection.remove_at
+        ; +map_context_tenv PatternMatch.Java.implements_collection
+          &:: "isEmpty" <>$ capt_arg_payload $--> JavaCollection.is_empty
+        ; +map_context_tenv PatternMatch.Java.implements_map
+          &:: "isEmpty" <>$ capt_arg_payload $--> JavaCollection.is_empty
         ; +map_context_tenv PatternMatch.Java.implements_collection
           &::+ (fun _ str -> StringSet.mem str pushback_modeled)
           <>$ capt_arg_payload $+...$--> StdVector.push_back
