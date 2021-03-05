@@ -1078,6 +1078,22 @@ module JavaPreconditions = struct
     PulseArithmetic.prune_positive address astate |> ok_continue
 end
 
+module Android = struct
+  let text_utils_is_empty ~desc (address, hist) : model =
+   fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+    let ret_val = AbstractValue.mk_fresh () in
+    let astate = PulseOperations.write_id ret_id (ret_val, event :: hist) astate in
+    let astate_equal_zero =
+      PulseArithmetic.and_eq_int ret_val IntLit.zero astate
+      |> PulseArithmetic.prune_positive address
+    in
+    let astate_not_zero =
+      PulseArithmetic.and_eq_int ret_val IntLit.one astate |> PulseArithmetic.prune_eq_zero address
+    in
+    [Ok (ContinueProgram astate_equal_zero); Ok (ContinueProgram astate_not_zero)]
+end
+
 module StringSet = Caml.Set.Make (String)
 
 module ProcNameDispatcher = struct
@@ -1411,6 +1427,9 @@ module ProcNameDispatcher = struct
           &:: "nextElement" <>$ capt_arg_payload
           $!--> fun x ->
           StdVector.at ~desc:"Enumeration.nextElement" x (AbstractValue.mk_fresh (), []) )
+        ; +map_context_tenv (PatternMatch.Java.implements_android "text.TextUtils")
+          &:: "isEmpty" <>$ capt_arg_payload
+          $--> Android.text_utils_is_empty ~desc:"TextUtils.isEmpty"
         ; -"dispatch_sync" &++> ObjC.dispatch_sync
         ; +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_create_or_copy
           &--> C.malloc_no_param
