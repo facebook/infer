@@ -78,9 +78,9 @@ let is_unsat_cheap exec_state = PathCondition.is_unsat_cheap (get_astate exec_st
 
 type summary = AbductiveDomain.summary base_t [@@deriving compare, equal, yojson_of]
 
-let summary_of_post_common ~continue_program proc_desc = function
+let summary_of_post_common tenv ~continue_program proc_desc = function
   | ContinueProgram astate | ISLLatentMemoryError astate -> (
-    match AbductiveDomain.summary_of_post proc_desc astate with
+    match AbductiveDomain.summary_of_post tenv proc_desc astate with
     | Unsat ->
         None
     | Sat astate ->
@@ -94,10 +94,10 @@ let summary_of_post_common ~continue_program proc_desc = function
       Some (LatentAbortProgram {astate; latent_issue})
 
 
-let summary_of_posts proc_desc posts =
+let summary_of_posts tenv proc_desc posts =
   List.filter_mapi posts ~f:(fun i exec_state ->
       L.d_printfln "Creating spec out of state #%d:@\n%a" i pp exec_state ;
-      summary_of_post_common proc_desc exec_state ~continue_program:(fun astate ->
+      summary_of_post_common tenv proc_desc exec_state ~continue_program:(fun astate ->
           match (astate :> AbductiveDomain.t).isl_status with
           | ISLOk ->
               ContinueProgram astate
@@ -105,5 +105,5 @@ let summary_of_posts proc_desc posts =
               ISLLatentMemoryError astate ) )
 
 
-let force_exit_program proc_desc post =
-  summary_of_post_common proc_desc post ~continue_program:(fun astate -> ExitProgram astate)
+let force_exit_program tenv proc_desc post =
+  summary_of_post_common tenv proc_desc post ~continue_program:(fun astate -> ExitProgram astate)

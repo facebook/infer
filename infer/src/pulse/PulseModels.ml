@@ -49,8 +49,8 @@ module Misc = struct
 
 
   let early_exit : model =
-   fun {proc_desc} ~callee_procname:_ _ ~ret:_ astate ->
-    match AbductiveDomain.summary_of_post proc_desc astate with
+   fun {tenv; proc_desc} ~callee_procname:_ _ ~ret:_ astate ->
+    match AbductiveDomain.summary_of_post tenv proc_desc astate with
     | Unsat ->
         []
     | Sat astate ->
@@ -232,7 +232,7 @@ module ObjC = struct
 
 
   let dispatch_sync args : model =
-   fun {analyze_dependency; proc_desc; tenv} ~callee_procname:_ location ~ret astate ->
+   fun {analyze_dependency; tenv; proc_desc} ~callee_procname:_ location ~ret astate ->
     match List.last args with
     | None ->
         ok_continue astate
@@ -570,7 +570,7 @@ end
 module StdFunction = struct
   let operator_call ProcnameDispatcher.Call.FuncArg.{arg_payload= lambda_ptr_hist; typ} actuals :
       model =
-   fun {analyze_dependency; proc_desc; tenv} ~callee_procname:_ location ~ret astate ->
+   fun {analyze_dependency; tenv; proc_desc} ~callee_procname:_ location ~ret astate ->
     let havoc_ret (ret_id, _) astate =
       let event = ValueHistory.Call {f= Model "std::function::operator()"; location; in_call= []} in
       [PulseOperations.havoc_id ret_id [event] astate]
@@ -933,7 +933,6 @@ module Java = struct
     | Exp.Sizeof {typ} ->
         PulseArithmetic.and_equal_instanceof res_addr argv typ astate
         |> PulseArithmetic.prune_positive argv
-        |> PulseArithmetic.and_eq_int res_addr IntLit.one
         |> PulseOperations.write_id ret_id (res_addr, event :: hist)
         |> ok_continue
     (* The type expr is sometimes a Var expr but this is not expected.

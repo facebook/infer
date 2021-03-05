@@ -31,7 +31,7 @@ let report_latent_issue proc_desc err_log latent_issue =
   report ~extra_trace proc_desc err_log diagnostic
 
 
-let suppress_error proc_desc tenv diagnostic =
+let suppress_error tenv proc_desc diagnostic =
   match Procdesc.get_proc_name proc_desc with
   | Procname.Java jn
     when (not Config.pulse_nullsafe_report_npe)
@@ -42,11 +42,11 @@ let suppress_error proc_desc tenv diagnostic =
       false
 
 
-let report_error proc_desc tenv err_log access_result =
+let report_error tenv proc_desc err_log access_result =
   let open SatUnsat.Import in
   Result.map_error access_result ~f:(fun (diagnostic, astate) ->
-      let+ astate_summary = AbductiveDomain.summary_of_post proc_desc astate in
-      let is_suppressed = suppress_error proc_desc tenv diagnostic in
+      let+ astate_summary = AbductiveDomain.summary_of_post tenv proc_desc astate in
+      let is_suppressed = suppress_error tenv proc_desc diagnostic in
       match LatentIssue.should_report_diagnostic astate_summary diagnostic with
       | `ReportNow ->
           if not is_suppressed then report proc_desc err_log diagnostic ;
@@ -66,9 +66,9 @@ let exec_list_of_list_result = function
       [post]
 
 
-let report_list_result {InterproceduralAnalysis.proc_desc; tenv; err_log} result =
+let report_list_result {tenv; InterproceduralAnalysis.proc_desc; err_log} result =
   let open Result.Monad_infix in
-  report_error proc_desc tenv err_log result
+  report_error tenv proc_desc err_log result
   >>| List.map ~f:(fun post -> ExecutionDomain.ContinueProgram post)
   |> exec_list_of_list_result
 
@@ -82,6 +82,6 @@ let post_of_report_result = function
       Some post
 
 
-let report_results {InterproceduralAnalysis.proc_desc; tenv; err_log} results =
+let report_results {tenv; InterproceduralAnalysis.proc_desc; err_log} results =
   List.filter_map results ~f:(fun exec_result ->
-      report_error proc_desc tenv err_log exec_result |> post_of_report_result )
+      report_error tenv proc_desc err_log exec_result |> post_of_report_result )

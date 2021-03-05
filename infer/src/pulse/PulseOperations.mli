@@ -179,7 +179,7 @@ val get_dynamic_type_unreachable_values : Var.t list -> t -> (Var.t * Typ.t) lis
 (** Given a list of variables, computes the unreachable values if the variables were removed from
     the stack, then return the dynamic types of those values if they are available *)
 
-val remove_vars : Var.t list -> Location.t -> t -> t access_result
+val remove_vars : Tenv.t -> Var.t list -> Location.t -> t -> t access_result
 
 val check_address_escape :
   Location.t -> Procdesc.t -> AbstractValue.t -> ValueHistory.t -> t -> t access_result

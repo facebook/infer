@@ -34,9 +34,16 @@ val and_eq_int : AbstractValue.t -> IntLit.t -> t -> t * new_eqs
 
 val and_eq_vars : AbstractValue.t -> AbstractValue.t -> t -> t * new_eqs
 
-val simplify : keep:AbstractValue.Set.t -> t -> (t * new_eqs) SatUnsat.t
+val simplify :
+     Tenv.t
+  -> keep:AbstractValue.Set.t
+  -> get_dynamic_type:(AbstractValue.t -> Typ.t option)
+  -> t
+  -> (t * new_eqs) SatUnsat.t
 (** [simplify ~keep phi] attempts to get rid of as many variables in [fv phi] but not in [keep] as
     possible *)
+
+val simplify_instanceof : Tenv.t -> get_dynamic_type:(AbstractValue.t -> Typ.t option) -> t -> t
 
 val and_callee :
      (AbstractValue.t * ValueHistory.t) AbstractValue.Map.t
@@ -73,7 +80,8 @@ val is_known_not_equal_zero : t -> AbstractValue.t -> bool
 val is_unsat_cheap : t -> bool
 (** whether the state contains a contradiction, call this as often as you want *)
 
-val is_unsat_expensive : t -> t * bool * new_eqs
+val is_unsat_expensive :
+  Tenv.t -> get_dynamic_type:(AbstractValue.t -> Typ.t option) -> t -> t * bool * new_eqs
   [@@warning "-32"]
 (** whether the state contains a contradiction, only call this when you absolutely have to *)
 

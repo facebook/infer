@@ -53,10 +53,15 @@ val prune_binop : negated:bool -> Binop.t -> operand -> operand -> t -> (t * new
 
 (** {3 Operations} *)
 
-val normalize : t -> (t * new_eqs) SatUnsat.t
+val normalize : Tenv.t -> get_dynamic_type:(Var.t -> Typ.t option) -> t -> (t * new_eqs) SatUnsat.t
 (** think a bit harder about the formula *)
 
-val simplify : keep:Var.Set.t -> t -> (t * new_eqs) SatUnsat.t
+val simplify :
+     Tenv.t
+  -> get_dynamic_type:(Var.t -> Typ.t option)
+  -> keep:Var.Set.t
+  -> t
+  -> (t * new_eqs) SatUnsat.t
 
 val and_fold_subst_variables :
      t
@@ -73,3 +78,10 @@ val has_no_assumptions : t -> bool
 
 val get_var_repr : t -> Var.t -> Var.t
 (** get the canonical representative for the variable according to the equality relation *)
+
+(** Module for reasoning about dynamic types. **)
+module DynamicTypes : sig
+  val simplify : Tenv.t -> get_dynamic_type:(Var.t -> Typ.t option) -> t -> t
+  (** Simplifies [IsInstanceOf(var, typ)] predicate when dynamic type information is available in
+      state. **)
+end

@@ -142,6 +142,16 @@ let leq ~lhs ~rhs =
 
 let initialize address astate = {astate with post= PostDomain.initialize address astate.post}
 
+let simplify_instanceof tenv astate =
+  let attrs = (astate.post :> BaseDomain.t).attrs in
+  let path_condition =
+    PathCondition.simplify_instanceof tenv
+      ~get_dynamic_type:(BaseAddressAttributes.get_dynamic_type attrs)
+      astate.path_condition
+  in
+  {astate with path_condition}
+
+
 module Stack = struct
   let is_abducible astate var =
     (* HACK: formals are pre-registered in the initial state *)
@@ -747,12 +757,17 @@ let canonicalize astate =
   {astate with pre; post}
 
 
-let summary_of_post pdesc astate =
+let summary_of_post tenv pdesc astate =
   let open SatUnsat.Import in
   (* NOTE: we normalize (to strengthen the equality relation used by canonicalization) then
      canonicalize *before* garbage collecting unused addresses in case we detect any last-minute
      contradictions about addresses we are about to garbage collect *)
-  let path_condition, is_unsat, new_eqs = PathCondition.is_unsat_expensive astate.path_condition in
+  let attrs = (astate.post :> BaseDomain.t).attrs in
+  let path_condition, is_unsat, new_eqs =
+    PathCondition.is_unsat_expensive tenv
+      ~get_dynamic_type:(BaseAddressAttributes.get_dynamic_type attrs)
+      astate.path_condition
+  in
   if is_unsat then Unsat
   else
     let astate = {astate with path_condition} in
@@ -766,7 +781,9 @@ let summary_of_post pdesc astate =
     in
     let astate, live_addresses, _ = discard_unreachable astate in
     let* path_condition, new_eqs =
-      PathCondition.simplify ~keep:live_addresses astate.path_condition
+      PathCondition.simplify tenv ~keep:live_addresses
+        ~get_dynamic_type:(BaseAddressAttributes.get_dynamic_type attrs)
+        astate.path_condition
     in
     let+ astate = incorporate_new_eqs astate new_eqs in
     let astate =

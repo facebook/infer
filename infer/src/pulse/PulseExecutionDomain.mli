@@ -34,6 +34,6 @@ val is_unsat_cheap : t -> bool
 
 type summary = AbductiveDomain.summary base_t [@@deriving compare, equal, yojson_of]
 
-val summary_of_posts : Procdesc.t -> t list -> summary list
+val summary_of_posts : Tenv.t -> Procdesc.t -> t list -> summary list
 
-val force_exit_program : Procdesc.t -> t -> t option
+val force_exit_program : Tenv.t -> Procdesc.t -> t -> t option

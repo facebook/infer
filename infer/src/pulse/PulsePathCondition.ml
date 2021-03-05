@@ -107,10 +107,10 @@ let and_eq_vars v1 v2 phi =
   ({is_unsat; bo_itvs; citvs; formula}, new_eqs)
 
 
-let simplify ~keep phi =
+let simplify tenv ~keep ~get_dynamic_type phi =
   let result =
     let+ {is_unsat; bo_itvs; citvs; formula} = phi in
-    let+| formula, new_eqs = Formula.simplify ~keep formula in
+    let+| formula, new_eqs = Formula.simplify tenv ~keep ~get_dynamic_type formula in
     let is_in_keep v _ = AbstractValue.Set.mem v keep in
     ( { is_unsat
       ; bo_itvs= BoItvs.filter is_in_keep bo_itvs
@@ -119,6 +119,11 @@ let simplify ~keep phi =
     , new_eqs )
   in
   if (fst result).is_unsat then Unsat else Sat result
+
+
+let simplify_instanceof tenv ~get_dynamic_type phi =
+  let formula = Formula.DynamicTypes.simplify tenv ~get_dynamic_type phi.formula in
+  {phi with formula}
 
 
 let subst_find_or_new subst addr_callee =
@@ -420,12 +425,12 @@ let is_known_not_equal_zero phi v =
 
 let is_unsat_cheap phi = phi.is_unsat
 
-let is_unsat_expensive phi =
+let is_unsat_expensive tenv ~get_dynamic_type phi =
   (* note: contradictions are detected eagerly for all sub-domains except formula, so just
      evaluate that one *)
   if is_unsat_cheap phi then (phi, true, [])
   else
-    match Formula.normalize phi.formula with
+    match Formula.normalize tenv ~get_dynamic_type phi.formula with
     | Unsat ->
         (false_, true, [])
     | Sat (formula, new_eqs) ->

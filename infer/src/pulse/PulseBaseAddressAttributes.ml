@@ -76,8 +76,6 @@ let allocate procname (address, history) location memory =
   add_one address (Attribute.Allocated (procname, Immediate {location; history})) memory
 
 
-let add_dynamic_type typ address memory = add_one address (Attribute.DynamicType typ) memory
-
 let mark_as_end_of_collection address memory = add_one address Attribute.EndOfCollection memory
 
 let check_valid address attrs =
@@ -149,6 +147,10 @@ let get_must_be_valid_or_allocated_isl address attrs =
 
 
 let get_must_be_initialized = get_attribute Attributes.get_must_be_initialized
+
+let add_dynamic_type typ address memory = add_one address (Attribute.DynamicType typ) memory
+
+let get_dynamic_type attrs v = get_attribute Attributes.get_dynamic_type v attrs
 
 let std_vector_reserve address memory = add_one address Attribute.StdVectorReserve memory
 

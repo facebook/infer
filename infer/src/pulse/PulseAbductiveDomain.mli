@@ -89,6 +89,8 @@ val get_pre : t -> BaseDomain.t
 
 val get_post : t -> BaseDomain.t
 
+val simplify_instanceof : Tenv.t -> t -> t
+
 (** stack operations like {!BaseStack} but that also take care of propagating facts to the
     precondition *)
 module Stack : sig
@@ -194,7 +196,7 @@ val set_path_condition : PathCondition.t -> t -> t
 (** private type to make sure {!summary_of_post} is always called when creating summaries *)
 type summary = private t [@@deriving compare, equal, yojson_of]
 
-val summary_of_post : Procdesc.t -> t -> summary SatUnsat.t
+val summary_of_post : Tenv.t -> Procdesc.t -> t -> summary SatUnsat.t
 (** trim the state down to just the procedure's interface (formals and globals), and simplify and
     normalize the state *)
 

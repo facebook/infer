@@ -122,9 +122,19 @@ let test ~f phi =
   phi ttrue >>= f >>| fst |> F.printf "%a" normalized_pp
 
 
-let normalize phi = test ~f:normalize phi
+let dummy_tenv = Tenv.create ()
 
-let simplify ~keep phi = test ~f:(simplify ~keep:(AbstractValue.Set.of_list keep)) phi
+let dummy_get_dynamic_type _ = None
+
+let normalize phi = test ~f:(normalize dummy_tenv ~get_dynamic_type:dummy_get_dynamic_type) phi
+
+let simplify ~keep phi =
+  test
+    ~f:
+      (simplify dummy_tenv ~get_dynamic_type:dummy_get_dynamic_type
+         ~keep:(AbstractValue.Set.of_list keep))
+    phi
+
 
 let%test_module "normalization" =
   ( module struct

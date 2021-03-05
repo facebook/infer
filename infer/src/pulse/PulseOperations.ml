@@ -536,9 +536,13 @@ let get_dynamic_type_unreachable_values vars astate =
   List.map ~f:(fun (var, _, typ) -> (var, typ)) res
 
 
-let remove_vars vars location orig_astate =
+let remove_vars tenv vars location orig_astate =
   let astate =
-    List.fold vars ~init:orig_astate ~f:(fun astate var ->
+    (* Simplification of [IsInstanceOf(var, typ)] term is necessary here, as a variable can die before
+       the normalization function is called. This could cause [IsInstanceOf(var, typ)] terms that
+       reference dead vars to be collected before they are evaluated to detect a contradiction *)
+    List.fold vars ~init:(AbductiveDomain.simplify_instanceof tenv orig_astate)
+      ~f:(fun astate var ->
         match Stack.find_opt var astate with
         | Some (address, history) ->
             let astate =
@@ -627,7 +631,7 @@ let unknown_call tenv call_loc reason ~ret ~actuals ~formals_opt astate =
   |> havoc_ret ret |> add_skipped_proc
 
 
-let apply_callee ~caller_proc_desc callee_pname call_loc callee_exec_state ~ret
+let apply_callee tenv ~caller_proc_desc callee_pname call_loc callee_exec_state ~ret
     ~captured_vars_with_actuals ~formals ~actuals astate =
   let map_call_result callee_prepost ~f =
     match
@@ -658,7 +662,7 @@ let apply_callee ~caller_proc_desc callee_pname call_loc callee_exec_state ~ret
       map_call_result
         (astate :> AbductiveDomain.t)
         ~f:(fun astate ->
-          let+ astate_summary = AbductiveDomain.summary_of_post caller_proc_desc astate in
+          let+ astate_summary = AbductiveDomain.summary_of_post tenv caller_proc_desc astate in
           match callee_exec_state with
           | ContinueProgram _ | ISLLatentMemoryError _ ->
               assert false
@@ -744,7 +748,7 @@ let call tenv ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.t) op
           else
             (* apply all pre/post specs *)
             match
-              apply_callee ~caller_proc_desc callee_pname call_loc callee_exec_state
+              apply_callee tenv ~caller_proc_desc callee_pname call_loc callee_exec_state
                 ~captured_vars_with_actuals ~formals ~actuals ~ret astate
             with
             | Unsat ->

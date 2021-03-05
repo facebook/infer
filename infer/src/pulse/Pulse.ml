@@ -41,7 +41,7 @@ module PulseTransferFunctions = struct
     AnalysisCallbacks.proc_resolve_attributes pname |> Option.map ~f:ProcAttributes.get_pvar_formals
 
 
-  let interprocedural_call {InterproceduralAnalysis.analyze_dependency; proc_desc; tenv} ret
+  let interprocedural_call {InterproceduralAnalysis.analyze_dependency; tenv; proc_desc} ret
       callee_pname call_exp actuals call_loc astate =
     match callee_pname with
     | Some callee_pname when not Config.pulse_intraprocedural_only ->
@@ -123,7 +123,7 @@ module PulseTransferFunctions = struct
         astate
 
 
-  let dispatch_call ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data) ret call_exp
+  let dispatch_call ({tenv; InterproceduralAnalysis.proc_desc} as analysis_data) ret call_exp
       actuals call_loc flags astate =
     (* evaluate all actuals *)
     let<*> astate, rev_func_args =
@@ -196,7 +196,7 @@ module PulseTransferFunctions = struct
           | Error _ as err ->
               Some err
           | Ok exec_state ->
-              ExecutionDomain.force_exit_program proc_desc exec_state
+              ExecutionDomain.force_exit_program tenv proc_desc exec_state
               |> Option.map ~f:(fun exec_state -> Ok exec_state) )
     else exec_states_res
 
@@ -263,7 +263,7 @@ module PulseTransferFunctions = struct
 
 
   let exec_instr_aux (astate : Domain.t)
-      ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data) _cfg_node (instr : Sil.instr) :
+      ({tenv; InterproceduralAnalysis.proc_desc} as analysis_data) _cfg_node (instr : Sil.instr) :
       Domain.t list =
     match astate with
     | ISLLatentMemoryError _ | AbortProgram _ | LatentAbortProgram _ ->
@@ -370,7 +370,7 @@ module PulseTransferFunctions = struct
                     astate :: astates
                 | ContinueProgram astate ->
                     let astate =
-                      ( match PulseOperations.remove_vars vars location astate with
+                      ( match PulseOperations.remove_vars tenv vars location astate with
                       | Ok astate ->
                           Ok [astate]
                       | Error _ as error ->
@@ -428,7 +428,7 @@ let with_debug_exit_node proc_desc ~f =
     ~f
 
 
-let checker ({InterproceduralAnalysis.proc_desc; err_log; tenv} as analysis_data) =
+let checker ({tenv; InterproceduralAnalysis.proc_desc; err_log} as analysis_data) =
   AbstractValue.State.reset () ;
   let initial_astate = ExecutionDomain.mk_initial tenv proc_desc in
   let initial = [initial_astate] in
@@ -438,7 +438,7 @@ let checker ({InterproceduralAnalysis.proc_desc; err_log; tenv} as analysis_data
           let updated_posts =
             PulseObjectiveCSummary.update_objc_method_posts analysis_data ~initial_astate ~posts
           in
-          let summary = PulseSummary.of_posts proc_desc updated_posts in
+          let summary = PulseSummary.of_posts tenv proc_desc updated_posts in
           report_topl_errors proc_desc err_log summary ;
           Some summary )
   | None ->

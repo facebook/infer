@@ -359,9 +359,14 @@ let is_unsat_cheap path_condition pruned =
   PathCondition.is_unsat_cheap (Constraint.prune_path pruned path_condition)
 
 
+let dummy_tenv = Tenv.create ()
+
 let is_unsat_expensive path_condition pruned =
   let _path_condition, unsat, _new_eqs =
-    PathCondition.is_unsat_expensive (Constraint.prune_path pruned path_condition)
+    (* Not enabling dynamic type reasoning in TOPL for now *)
+    PathCondition.is_unsat_expensive dummy_tenv
+      ~get_dynamic_type:(fun _ -> None)
+      (Constraint.prune_path pruned path_condition)
   in
   unsat
 

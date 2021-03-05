@@ -19,4 +19,4 @@ let pp fmt summary =
   F.close_box ()
 
 
-let of_posts pdesc posts = ExecutionDomain.summary_of_posts pdesc posts
+let of_posts tenv pdesc posts = ExecutionDomain.summary_of_posts tenv pdesc posts

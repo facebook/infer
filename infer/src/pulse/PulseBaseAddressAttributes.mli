@@ -45,6 +45,8 @@ val get_must_be_initialized : AbstractValue.t -> t -> Trace.t option
 
 val add_dynamic_type : Typ.t -> AbstractValue.t -> t -> t
 
+val get_dynamic_type : t -> AbstractValue.t -> Typ.t option
+
 val std_vector_reserve : AbstractValue.t -> t -> t
 
 val is_std_vector_reserved : AbstractValue.t -> t -> bool

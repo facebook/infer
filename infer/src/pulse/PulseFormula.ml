@@ -329,7 +329,7 @@ module Term = struct
     | NotEqual (t1, t2) ->
         F.fprintf fmt "%a≠%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
     | IsInstanceOf (v, t) ->
-        F.fprintf fmt "%a instanceof %a" pp_var v (Typ.pp Pp.text) t
+        F.fprintf fmt "(%a instanceof %a)" pp_var v (Typ.pp Pp.text) t
 
 
   let of_q q = Const q
@@ -1374,8 +1374,43 @@ let prune_binop ~negated (bop : Binop.t) x y phi =
   ({phi with pruned; both}, new_eqs)
 
 
-let normalize phi =
+module DynamicTypes = struct
+  let evaluate_instanceof tenv ~get_dynamic_type v typ =
+    get_dynamic_type v
+    |> Option.map ~f:(fun dynamic_type ->
+           let is_instanceof =
+             match (Typ.name dynamic_type, Typ.name typ) with
+             | Some name1, Some name2 ->
+                 PatternMatch.is_subtype tenv name1 name2
+             | _, _ ->
+                 Typ.equal dynamic_type typ
+           in
+           Term.of_bool is_instanceof )
+
+
+  let simplify tenv ~get_dynamic_type phi =
+    let changed = ref false in
+    let atoms =
+      Atom.Set.map
+        (fun atom ->
+          Atom.map_terms atom ~f:(function
+            | Term.IsInstanceOf (v, typ) as t -> (
+              match evaluate_instanceof tenv ~get_dynamic_type v typ with
+              | None ->
+                  t
+              | Some t' ->
+                  changed := true ;
+                  t' )
+            | t ->
+                t ) )
+        phi.both.atoms
+    in
+    if !changed then {phi with both= {phi.both with atoms}} else phi
+end
+
+let normalize tenv ~get_dynamic_type phi =
   let open SatUnsat.Import in
+  let phi = DynamicTypes.simplify tenv ~get_dynamic_type phi in
   let* both, new_eqs = Formula.Normalizer.normalize phi.both in
   let* known, _ = Formula.Normalizer.normalize phi.known in
   let+ pruned =
@@ -1621,9 +1656,9 @@ module DeadVariables = struct
     {known; pruned; both}
 end
 
-let simplify ~keep phi =
+let simplify tenv ~get_dynamic_type ~keep phi =
   let open SatUnsat.Import in
-  let* phi, new_eqs = normalize phi in
+  let* phi, new_eqs = normalize tenv ~get_dynamic_type phi in
   L.d_printfln_escaped "Simplifying %a wrt {%a}" pp phi Var.Set.pp keep ;
   (* get rid of as many variables as possible *)
   let+ phi = QuantifierElimination.eliminate_vars ~keep phi in
