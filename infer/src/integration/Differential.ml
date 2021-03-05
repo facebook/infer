@@ -55,6 +55,31 @@ let dedup (issues : Jsonbug_t.jsonbug list) =
   |> snd |> sort_by_location
 
 
+let create_json_bug ~qualifier ~line ~file ~source_file ~trace ~(item : Jsonbug_t.item)
+    ~(issue_type : IssueType.t) =
+  { Jsonbug_j.bug_type= issue_type.unique_id
+  ; qualifier
+  ; severity= IssueType.string_of_severity Advice
+  ; line
+  ; column= item.loc.cnum
+  ; procedure= item.procedure_id
+  ; procedure_start_line= line
+  ; file
+  ; bug_trace= JsonReports.loc_trace_to_jsonbug_record trace Advice
+  ; key= ""
+  ; node_key= None
+  ; hash= item.hash
+  ; dotty= None
+  ; infer_source_loc= None
+  ; bug_type_hum= issue_type.hum
+  ; linters_def_file= None
+  ; doc_url= None
+  ; traceview_id= None
+  ; censored_reason= JsonReports.censored_reason issue_type source_file
+  ; access= None
+  ; extras= None }
+
+
 module CostsSummary = struct
   module DegreeMap = Caml.Map.Make (Int)
 
@@ -289,29 +314,13 @@ let issue_of_cost kind CostIssues.{complexity_increase_issue; unreachable_issue;
         :: polynomial_traces issue_type curr_degree_with_term
       |> Errlog.concat_traces
     in
-    let severity = IssueType.Advice in
+    let convert (Jsonbug_t.{hash; loc; procedure_name; procedure_id} : Jsonbug_t.cost_item) :
+        Jsonbug_t.item =
+      {hash; loc; procedure_name; procedure_id}
+    in
     Some
-      { Jsonbug_j.bug_type= issue_type.IssueType.unique_id
-      ; qualifier
-      ; severity= IssueType.string_of_severity severity
-      ; line
-      ; column
-      ; procedure= cost_info.Jsonbug_t.procedure_id
-      ; procedure_start_line= line
-      ; file
-      ; bug_trace= JsonReports.loc_trace_to_jsonbug_record trace severity
-      ; key= ""
-      ; node_key= None
-      ; hash= cost_info.Jsonbug_t.hash
-      ; dotty= None
-      ; infer_source_loc= None
-      ; bug_type_hum= issue_type.IssueType.hum
-      ; linters_def_file= None
-      ; doc_url= None
-      ; traceview_id= None
-      ; censored_reason= JsonReports.censored_reason issue_type source_file
-      ; access= None
-      ; extras= None }
+      (create_json_bug ~qualifier ~line ~file ~source_file ~trace ~item:(convert cost_info)
+         ~issue_type)
   else None
 
 
@@ -422,31 +431,16 @@ module ConfigImpactItem = struct
     if should_report then
       let qualifier, trace = get_qualifier_trace ~change_type callees in
       let file = config_impact_item.loc.file in
+      let source_file = SourceFile.create ~warn_on_error:false file in
       let line = config_impact_item.loc.lnum in
+      let convert
+          (Jsonbug_t.{hash; loc; procedure_name; procedure_id} : Jsonbug_t.config_impact_item) :
+          Jsonbug_t.item =
+        {hash; loc; procedure_name; procedure_id}
+      in
       Some
-        { Jsonbug_j.bug_type= IssueType.config_impact_analysis.unique_id
-        ; qualifier
-        ; severity= IssueType.string_of_severity Advice
-        ; line
-        ; column= config_impact_item.loc.cnum
-        ; procedure= config_impact_item.procedure_id
-        ; procedure_start_line= line
-        ; file
-        ; bug_trace= JsonReports.loc_trace_to_jsonbug_record trace Advice
-        ; key= ""
-        ; node_key= None
-        ; hash= config_impact_item.hash
-        ; dotty= None
-        ; infer_source_loc= None
-        ; bug_type_hum= IssueType.config_impact_analysis.hum
-        ; linters_def_file= None
-        ; doc_url= None
-        ; traceview_id= None
-        ; censored_reason=
-            SourceFile.create ~warn_on_error:false file
-            |> JsonReports.censored_reason IssueType.config_impact_analysis
-        ; access= None
-        ; extras= None }
+        (create_json_bug ~qualifier ~line ~file ~source_file ~trace
+           ~item:(convert config_impact_item) ~issue_type:IssueType.config_impact_analysis)
     else None
 
 
