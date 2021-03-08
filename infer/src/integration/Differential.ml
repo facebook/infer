@@ -57,7 +57,7 @@ let dedup (issues : Jsonbug_t.jsonbug list) =
 
 let create_json_bug ~qualifier ~line ~file ~source_file ~trace ~(item : Jsonbug_t.item)
     ~(issue_type : IssueType.t) =
-  { Jsonbug_j.bug_type= issue_type.unique_id
+  { Jsonbug_t.bug_type= issue_type.unique_id
   ; qualifier
   ; severity= IssueType.string_of_severity Advice
   ; line
@@ -177,222 +177,226 @@ let to_map key_func report =
     ~init:String.Map.empty report
 
 
-module CostItem = struct
-  type t =
-    { cost_item: Jsonbug_t.cost_item
-    ; polynomial: Polynomials.NonNegativePolynomial.t option
-    ; degree_with_term: Polynomials.NonNegativePolynomial.degree_with_term option
-    ; degree: int option }
+module Cost = struct
+  module CostItem = struct
+    type t =
+      { cost_item: Jsonbug_t.cost_item
+      ; polynomial: Polynomials.NonNegativePolynomial.t option
+      ; degree_with_term: Polynomials.NonNegativePolynomial.degree_with_term option
+      ; degree: int option }
 
-  let lift ~f_poly ~f_deg {polynomial; degree} =
-    match polynomial with None -> f_deg degree | Some p -> f_poly p
+    let lift ~f_poly ~f_deg {polynomial; degree} =
+      match polynomial with None -> f_deg degree | Some p -> f_poly p
 
 
-  let is_top = lift ~f_poly:CostDomain.BasicCost.is_top ~f_deg:Option.is_none
+    let is_top = lift ~f_poly:CostDomain.BasicCost.is_top ~f_deg:Option.is_none
 
-  (* NOTE: incorrect when using [f_deg] *)
-  let is_unreachable = lift ~f_poly:CostDomain.BasicCost.is_unreachable ~f_deg:(fun _ -> false)
+    (* NOTE: incorrect when using [f_deg] *)
+    let is_unreachable = lift ~f_poly:CostDomain.BasicCost.is_unreachable ~f_deg:(fun _ -> false)
 
-  (* NOTE: incorrect when using [f_deg] *)
-  let is_zero = lift ~f_poly:CostDomain.BasicCost.is_zero ~f_deg:(fun _ -> false)
+    (* NOTE: incorrect when using [f_deg] *)
+    let is_zero = lift ~f_poly:CostDomain.BasicCost.is_zero ~f_deg:(fun _ -> false)
 
-  let compare_by_degree {polynomial= p1; degree= d1} {polynomial= p2; degree= d2} =
-    match (p1, p2) with
-    | Some p1, Some p2 ->
-        CostDomain.BasicCost.compare_by_degree p1 p2
-    | _, _ -> (
-      match (d1, d2) with
+    let compare_by_degree {polynomial= p1; degree= d1} {polynomial= p2; degree= d2} =
+      match (p1, p2) with
+      | Some p1, Some p2 ->
+          CostDomain.BasicCost.compare_by_degree p1 p2
+      | _, _ -> (
+        match (d1, d2) with
+        | None, None ->
+            0
+        | None, Some _ ->
+            1
+        | Some _, None ->
+            -1
+        | Some d1, Some d2 ->
+            d1 - d2 )
+
+
+    let pp_degree ~only_bigO fmt {degree_with_term; degree} =
+      match (degree_with_term, degree) with
       | None, None ->
-          0
-      | None, Some _ ->
-          1
-      | Some _, None ->
-          -1
-      | Some d1, Some d2 ->
-          d1 - d2 )
+          Format.pp_print_string fmt "Top"
+      | None, Some d ->
+          Format.pp_print_int fmt d
+      | Some degree_with_term, _ ->
+          CostDomain.BasicCost.pp_degree ~only_bigO fmt degree_with_term
 
 
-  let pp_degree ~only_bigO fmt {degree_with_term; degree} =
-    match (degree_with_term, degree) with
-    | None, None ->
-        Format.pp_print_string fmt "Top"
-    | None, Some d ->
-        Format.pp_print_int fmt d
-    | Some degree_with_term, _ ->
-        CostDomain.BasicCost.pp_degree ~only_bigO fmt degree_with_term
+    let pp_cost_msg fmt ({cost_item= {procedure_name}; polynomial} as curr_item) =
+      let pp_cost fmt =
+        match polynomial with
+        | None ->
+            Format.fprintf fmt "NA"
+        | Some p ->
+            CostDomain.BasicCost.pp_hum fmt p
+      in
+      Format.fprintf fmt "Cost of %s is %t (degree is %a)" procedure_name pp_cost
+        (pp_degree ~only_bigO:false) curr_item
+  end
+
+  let polynomial_traces issue_type = function
+    | None ->
+        []
+    | Some (Val (_, degree_term)) ->
+        Polynomials.NonNegativeNonTopPolynomial.polynomial_traces
+          ~is_autoreleasepool_trace:(IssueType.is_autoreleasepool_size_issue issue_type)
+          degree_term
+    | Some (Below traces) ->
+        [("", Polynomials.UnreachableTraces.make_err_trace traces)]
+    | Some (Above traces) ->
+        [("", Polynomials.TopTraces.make_err_trace traces)]
 
 
-  let pp_cost_msg fmt ({cost_item= {procedure_name}; polynomial} as curr_item) =
-    let pp_cost fmt =
-      match polynomial with
-      | None ->
-          Format.fprintf fmt "NA"
-      | Some p ->
-          CostDomain.BasicCost.pp_hum fmt p
+  let issue_of_cost kind CostIssues.{complexity_increase_issue; unreachable_issue; infinite_issue}
+      ~delta ~prev_item:({CostItem.degree_with_term= prev_degree_with_term} as prev_item)
+      ~curr_item:
+        ({CostItem.cost_item= cost_info; degree_with_term= curr_degree_with_term} as curr_item) =
+    let file = cost_info.Jsonbug_t.loc.file in
+    let method_name = cost_info.Jsonbug_t.procedure_name in
+    let is_on_ui_thread = cost_info.Jsonbug_t.is_on_ui_thread in
+    let source_file = SourceFile.create ~warn_on_error:false file in
+    let issue_type =
+      if CostItem.is_top curr_item then infinite_issue
+      else if CostItem.is_unreachable curr_item then unreachable_issue
+      else complexity_increase_issue ~is_on_ui_thread
     in
-    Format.fprintf fmt "Cost of %s is %t (degree is %a)" procedure_name pp_cost
-      (pp_degree ~only_bigO:false) curr_item
-end
-
-let polynomial_traces issue_type = function
-  | None ->
-      []
-  | Some (Val (_, degree_term)) ->
-      Polynomials.NonNegativeNonTopPolynomial.polynomial_traces
-        ~is_autoreleasepool_trace:(IssueType.is_autoreleasepool_size_issue issue_type)
-        degree_term
-  | Some (Below traces) ->
-      [("", Polynomials.UnreachableTraces.make_err_trace traces)]
-  | Some (Above traces) ->
-      [("", Polynomials.TopTraces.make_err_trace traces)]
-
-
-let issue_of_cost kind CostIssues.{complexity_increase_issue; unreachable_issue; infinite_issue}
-    ~delta ~prev_item:({CostItem.degree_with_term= prev_degree_with_term} as prev_item)
-    ~curr_item:
-      ({CostItem.cost_item= cost_info; degree_with_term= curr_degree_with_term} as curr_item) =
-  let file = cost_info.Jsonbug_t.loc.file in
-  let method_name = cost_info.Jsonbug_t.procedure_name in
-  let is_on_ui_thread = cost_info.Jsonbug_t.is_on_ui_thread in
-  let source_file = SourceFile.create ~warn_on_error:false file in
-  let issue_type =
-    if CostItem.is_top curr_item then infinite_issue
-    else if CostItem.is_unreachable curr_item then unreachable_issue
-    else complexity_increase_issue ~is_on_ui_thread
-  in
-  if (not Config.filtering) || issue_type.IssueType.enabled then
-    let qualifier =
-      let pp_delta fmt delta =
-        match delta with
-        | `Decreased ->
-            Format.fprintf fmt "decreased"
-        | `Increased ->
-            Format.fprintf fmt "increased"
-      in
-      let pp_extra_msg fmt () =
-        if Config.developer_mode then CostItem.pp_cost_msg fmt curr_item
-        else Format.fprintf fmt "Please make sure this is an expected change."
-      in
-      let ui_msg =
-        if is_on_ui_thread then
-          Format.asprintf "%a %s" MarkupFormatter.pp_bold
-            "This function is called on the UI Thread!"
-            " It is important to avoid potential regressions in this phase. "
-        else ""
-      in
-      let msg f =
-        (* Java Only *)
-        if String.equal method_name Procname.Java.constructor_method_name then
-          Format.pp_print_string f "constructor"
-        else if String.equal method_name Procname.Java.class_initializer_method_name then
-          Format.pp_print_string f "class initializer"
-        else
-          Format.fprintf f "%a" (MarkupFormatter.wrap_monospaced Format.pp_print_string) method_name
-      in
-      Format.asprintf "%s of %t has %a from %a to %a. %s%a"
-        (CostKind.to_complexity_string kind)
-        msg
-        (MarkupFormatter.wrap_bold pp_delta)
-        delta
-        (MarkupFormatter.wrap_monospaced (CostItem.pp_degree ~only_bigO:true))
-        prev_item
-        (MarkupFormatter.wrap_monospaced (CostItem.pp_degree ~only_bigO:true))
-        curr_item ui_msg pp_extra_msg ()
-    in
-    let line = cost_info.Jsonbug_t.loc.lnum in
-    let column = cost_info.Jsonbug_t.loc.cnum in
-    let trace =
-      let marker_cost_trace msg cost_item =
-        [ Errlog.make_trace_element 0
-            {Location.line; col= column; file= source_file}
-            (Format.asprintf "%s %a" msg CostItem.pp_cost_msg cost_item)
-            [] ]
-      in
-      ("", marker_cost_trace "Previous" prev_item)
-      :: polynomial_traces issue_type prev_degree_with_term
-      @ ("", marker_cost_trace "Updated" curr_item)
-        :: polynomial_traces issue_type curr_degree_with_term
-      |> Errlog.concat_traces
-    in
-    let convert (Jsonbug_t.{hash; loc; procedure_name; procedure_id} : Jsonbug_t.cost_item) :
-        Jsonbug_t.item =
-      {hash; loc; procedure_name; procedure_id}
-    in
-    Some
-      (create_json_bug ~qualifier ~line ~file ~source_file ~trace ~item:(convert cost_info)
-         ~issue_type)
-  else None
-
-
-(** Differential of cost reports, based on degree variations. Compare degree_before (DB), and
-    degree_after (DA):
-
-    - DB > DA => fixed
-    - DB < DA => introduced *)
-let of_costs ~(current_costs : Jsonbug_t.costs_report) ~(previous_costs : Jsonbug_t.costs_report) =
-  let fold_aux kind issue_spec ~key:_ ~data (left, both, right) =
-    match data with
-    | `Both (current, previous) ->
-        let max_degree_polynomial l =
-          let max = List.max_elt l ~compare:CostItem.compare_by_degree in
-          Option.value_exn max
+    if (not Config.filtering) || issue_type.IssueType.enabled then
+      let qualifier =
+        let pp_delta fmt delta =
+          match delta with
+          | `Decreased ->
+              Format.fprintf fmt "decreased"
+          | `Increased ->
+              Format.fprintf fmt "increased"
         in
-        let curr_item = max_degree_polynomial current in
-        let prev_item = max_degree_polynomial previous in
-        if Config.filtering && (CostItem.is_zero curr_item || CostItem.is_zero prev_item) then
-          (* transitions to/from zero costs are obvious (they
-             correspond to adding/removing code to a function with
-             empty body), no need to flag them *)
-          (left, both, right)
-        else
-          let cmp = CostItem.compare_by_degree curr_item prev_item in
-          let concat_opt l v = match v with Some v' -> v' :: l | None -> l in
-          if cmp > 0 then
-            (* introduced *)
-            let left' =
-              issue_of_cost kind issue_spec ~delta:`Increased ~prev_item ~curr_item
-              |> concat_opt left
-            in
-            (left', both, right)
-          else if cmp < 0 then
-            (* fixed *)
-            let right' =
-              issue_of_cost kind issue_spec ~delta:`Decreased ~prev_item ~curr_item
-              |> concat_opt right
-            in
-            (left, both, right')
+        let pp_extra_msg fmt () =
+          if Config.developer_mode then CostItem.pp_cost_msg fmt curr_item
+          else Format.fprintf fmt "Please make sure this is an expected change."
+        in
+        let ui_msg =
+          if is_on_ui_thread then
+            Format.asprintf "%a %s" MarkupFormatter.pp_bold
+              "This function is called on the UI Thread!"
+              " It is important to avoid potential regressions in this phase. "
+          else ""
+        in
+        let msg f =
+          (* Java Only *)
+          if String.equal method_name Procname.Java.constructor_method_name then
+            Format.pp_print_string f "constructor"
+          else if String.equal method_name Procname.Java.class_initializer_method_name then
+            Format.pp_print_string f "class initializer"
           else
-            (* preexisting costs are not issues, since their values have not changed *)
-            (left, both, right)
-    | `Left _ | `Right _ ->
-        (* costs available only on one of the two reports are discarded, since no comparison can be made *)
-        (left, both, right)
-  in
-  let key_func {CostItem.cost_item} = cost_item.Jsonbug_t.hash in
-  let to_map = to_map key_func in
-  let decoded_costs costs ~extract_cost_f =
-    List.map costs ~f:(fun c ->
-        let cost_info = extract_cost_f c in
-        let polynomial, degree_with_term =
-          if Int.equal cost_info.Jsonbug_t.polynomial_version CostDomain.BasicCost.version then
-            let polynomial = CostDomain.BasicCost.decode cost_info.Jsonbug_t.polynomial in
-            let degree_with_term = CostDomain.BasicCost.get_degree_with_term polynomial in
-            (Some polynomial, Some degree_with_term)
-          else (None, None)
+            Format.fprintf f "%a"
+              (MarkupFormatter.wrap_monospaced Format.pp_print_string)
+              method_name
         in
-        let degree = cost_info.Jsonbug_t.degree in
-        {CostItem.cost_item= c; polynomial; degree_with_term; degree} )
-  in
-  let get_current_costs = decoded_costs current_costs in
-  let get_previous_costs = decoded_costs previous_costs in
-  CostIssues.CostKindMap.fold
-    (fun kind CostIssues.({extract_cost_f} as issue_spec) acc ->
-      Map.fold2
-        (to_map (get_current_costs ~extract_cost_f))
-        (to_map (get_previous_costs ~extract_cost_f))
-        ~f:(fold_aux kind issue_spec) ~init:acc )
-    CostIssues.enabled_cost_map ([], [], [])
+        Format.asprintf "%s of %t has %a from %a to %a. %s%a"
+          (CostKind.to_complexity_string kind)
+          msg
+          (MarkupFormatter.wrap_bold pp_delta)
+          delta
+          (MarkupFormatter.wrap_monospaced (CostItem.pp_degree ~only_bigO:true))
+          prev_item
+          (MarkupFormatter.wrap_monospaced (CostItem.pp_degree ~only_bigO:true))
+          curr_item ui_msg pp_extra_msg ()
+      in
+      let line = cost_info.Jsonbug_t.loc.lnum in
+      let column = cost_info.Jsonbug_t.loc.cnum in
+      let trace =
+        let marker_cost_trace msg cost_item =
+          [ Errlog.make_trace_element 0
+              {Location.line; col= column; file= source_file}
+              (Format.asprintf "%s %a" msg CostItem.pp_cost_msg cost_item)
+              [] ]
+        in
+        ("", marker_cost_trace "Previous" prev_item)
+        :: polynomial_traces issue_type prev_degree_with_term
+        @ ("", marker_cost_trace "Updated" curr_item)
+          :: polynomial_traces issue_type curr_degree_with_term
+        |> Errlog.concat_traces
+      in
+      let convert (Jsonbug_t.{hash; loc; procedure_name; procedure_id} : Jsonbug_t.cost_item) :
+          Jsonbug_t.item =
+        {hash; loc; procedure_name; procedure_id}
+      in
+      Some
+        (create_json_bug ~qualifier ~line ~file ~source_file ~trace ~item:(convert cost_info)
+           ~issue_type)
+    else None
 
+
+  (** Differential of cost reports, based on degree variations. Compare degree_before (DB), and
+      degree_after (DA):
+
+      - DB > DA => fixed
+      - DB < DA => introduced *)
+  let issues_of_reports ~(current_costs : Jsonbug_t.costs_report)
+      ~(previous_costs : Jsonbug_t.costs_report) =
+    let fold_aux kind issue_spec ~key:_ ~data (left, both, right) =
+      match data with
+      | `Both (current, previous) ->
+          let max_degree_polynomial l =
+            let max = List.max_elt l ~compare:CostItem.compare_by_degree in
+            Option.value_exn max
+          in
+          let curr_item = max_degree_polynomial current in
+          let prev_item = max_degree_polynomial previous in
+          if Config.filtering && (CostItem.is_zero curr_item || CostItem.is_zero prev_item) then
+            (* transitions to/from zero costs are obvious (they
+               correspond to adding/removing code to a function with
+               empty body), no need to flag them *)
+            (left, both, right)
+          else
+            let cmp = CostItem.compare_by_degree curr_item prev_item in
+            let concat_opt l v = match v with Some v' -> v' :: l | None -> l in
+            if cmp > 0 then
+              (* introduced *)
+              let left' =
+                issue_of_cost kind issue_spec ~delta:`Increased ~prev_item ~curr_item
+                |> concat_opt left
+              in
+              (left', both, right)
+            else if cmp < 0 then
+              (* fixed *)
+              let right' =
+                issue_of_cost kind issue_spec ~delta:`Decreased ~prev_item ~curr_item
+                |> concat_opt right
+              in
+              (left, both, right')
+            else
+              (* preexisting costs are not issues, since their values have not changed *)
+              (left, both, right)
+      | `Left _ | `Right _ ->
+          (* costs available only on one of the two reports are discarded, since no comparison can be made *)
+          (left, both, right)
+    in
+    let key_func {CostItem.cost_item} = cost_item.Jsonbug_t.hash in
+    let to_map = to_map key_func in
+    let decoded_costs costs ~extract_cost_f =
+      List.map costs ~f:(fun c ->
+          let cost_info = extract_cost_f c in
+          let polynomial, degree_with_term =
+            if Int.equal cost_info.Jsonbug_t.polynomial_version CostDomain.BasicCost.version then
+              let polynomial = CostDomain.BasicCost.decode cost_info.Jsonbug_t.polynomial in
+              let degree_with_term = CostDomain.BasicCost.get_degree_with_term polynomial in
+              (Some polynomial, Some degree_with_term)
+            else (None, None)
+          in
+          let degree = cost_info.Jsonbug_t.degree in
+          {CostItem.cost_item= c; polynomial; degree_with_term; degree} )
+    in
+    let get_current_costs = decoded_costs current_costs in
+    let get_previous_costs = decoded_costs previous_costs in
+    CostIssues.CostKindMap.fold
+      (fun kind CostIssues.({extract_cost_f} as issue_spec) acc ->
+        Map.fold2
+          (to_map (get_current_costs ~extract_cost_f))
+          (to_map (get_previous_costs ~extract_cost_f))
+          ~f:(fold_aux kind issue_spec) ~init:acc )
+      CostIssues.enabled_cost_map ([], [], [])
+end
 
 module ConfigImpactItem = struct
   module UncheckedCallee = ConfigImpactAnalysis.UncheckedCallee
@@ -444,7 +448,7 @@ module ConfigImpactItem = struct
     else None
 
 
-  let issues_of ~(current_config_impact : Jsonbug_t.config_impact_report)
+  let issues_of_reports ~(current_config_impact : Jsonbug_t.config_impact_report)
       ~(previous_config_impact : Jsonbug_t.config_impact_report) =
     let fold_aux ~key:_ ~data ((acc_introduced, acc_fixed) as acc) =
       match data with
@@ -474,36 +478,43 @@ module ConfigImpactItem = struct
     Map.fold2 ~init:([], []) current_map previous_map ~f:fold_aux
 end
 
-(** Set operations should keep duplicated issues with identical hashes *)
-let of_reports ~(current_report : Jsonbug_t.report) ~(previous_report : Jsonbug_t.report)
-    ~(current_costs : Jsonbug_t.costs_report) ~(previous_costs : Jsonbug_t.costs_report)
-    ~(current_config_impact : Jsonbug_t.config_impact_report)
-    ~(previous_config_impact : Jsonbug_t.config_impact_report) : t =
-  let fold_aux ~key:_ ~data (left, both, right) =
-    match data with
-    | `Left left' ->
-        (List.rev_append left' left, both, right)
-    | `Both (both', _) ->
-        (left, List.rev_append both' both, right)
-    | `Right right' ->
-        (left, both, List.rev_append right' right)
-  in
-  let introduced, preexisting, fixed =
+module Report = struct
+  let issues_of_reports ~current_report ~previous_report =
+    let fold_aux ~key:_ ~data (left, both, right) =
+      match data with
+      | `Left left' ->
+          (List.rev_append left' left, both, right)
+      | `Both (both', _) ->
+          (left, List.rev_append both' both, right)
+      | `Right right' ->
+          (left, both, List.rev_append right' right)
+    in
     let key_func (issue : Jsonbug_t.jsonbug) = issue.hash in
     let to_map = to_map key_func in
     Map.fold2 (to_map current_report) (to_map previous_report) ~f:fold_aux ~init:([], [], [])
+end
+
+let combine_all ~report ~cost ~config_impact =
+  dedup report |> List.rev_append cost |> List.rev_append config_impact
+
+
+(** Set operations should keep duplicated issues with identical hashes *)
+let issues_of_reports ~(current_report : Jsonbug_t.report) ~(previous_report : Jsonbug_t.report)
+    ~(current_costs : Jsonbug_t.costs_report) ~(previous_costs : Jsonbug_t.costs_report)
+    ~(current_config_impact : Jsonbug_t.config_impact_report)
+    ~(previous_config_impact : Jsonbug_t.config_impact_report) : t =
+  let introduced, preexisting, fixed = Report.issues_of_reports ~current_report ~previous_report in
+  let introduced_costs, preexisting_costs, fixed_costs =
+    Cost.issues_of_reports ~current_costs ~previous_costs
   in
-  let costs_summary = CostsSummary.to_json ~current_costs ~previous_costs in
-  let introduced_costs, preexisting_costs, fixed_costs = of_costs ~current_costs ~previous_costs in
   let introduced_config_impact, fixed_config_impact =
-    ConfigImpactItem.issues_of ~current_config_impact ~previous_config_impact
+    ConfigImpactItem.issues_of_reports ~current_config_impact ~previous_config_impact
   in
   { introduced=
-      List.rev_append introduced_costs (dedup introduced)
-      |> List.rev_append introduced_config_impact
-  ; fixed= List.rev_append fixed_costs (dedup fixed) |> List.rev_append fixed_config_impact
-  ; preexisting= List.rev_append preexisting_costs (dedup preexisting)
-  ; costs_summary }
+      combine_all ~report:introduced ~cost:introduced_costs ~config_impact:introduced_config_impact
+  ; fixed= combine_all ~report:fixed ~cost:fixed_costs ~config_impact:fixed_config_impact
+  ; preexisting= combine_all ~report:preexisting ~cost:preexisting_costs ~config_impact:[]
+  ; costs_summary= CostsSummary.to_json ~current_costs ~previous_costs }
 
 
 let to_files {introduced; fixed; preexisting; costs_summary} destdir =

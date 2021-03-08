@@ -26,7 +26,7 @@ let reportdiff ~current_report:current_report_fname ~previous_report:previous_re
   let previous_config_impact = load_config_impact previous_config_impact_fname in
   let diff =
     let unfiltered_diff =
-      Differential.of_reports ~current_report ~previous_report ~current_costs ~previous_costs
+      Differential.issues_of_reports ~current_report ~previous_report ~current_costs ~previous_costs
         ~current_config_impact ~previous_config_impact
     in
     (* FIXME(T54950303) replace use of filtering with deduplicate *)

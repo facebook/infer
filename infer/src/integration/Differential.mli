@@ -13,7 +13,7 @@ type t =
   ; preexisting: Jsonbug_t.report
   ; costs_summary: Yojson.Basic.t }
 
-val of_reports :
+val issues_of_reports :
      current_report:Jsonbug_t.report
   -> previous_report:Jsonbug_t.report
   -> current_costs:Jsonbug_t.costs_report

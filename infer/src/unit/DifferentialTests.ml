@@ -32,7 +32,7 @@ let current_config_impact = []
 let previous_config_impact = []
 
 let diff =
-  Differential.of_reports ~current_report ~previous_report ~current_costs ~previous_costs
+  Differential.issues_of_reports ~current_report ~previous_report ~current_costs ~previous_costs
     ~current_config_impact ~previous_config_impact
 
 
