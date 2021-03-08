@@ -237,18 +237,13 @@ module PulseTransferFunctions = struct
       L.d_printfln ~color:Pp.Orange "@\nExecuting injected instr:%a@\n@."
         (Sil.pp_instr Pp.text ~print_types:true)
         call_instr ;
-      List.fold
-        ~f:(fun astates (astate : Domain.t) ->
+      List.concat_map astate_list ~f:(fun (astate : Domain.t) ->
           match astate with
           | ISLLatentMemoryError _ | AbortProgram _ | ExitProgram _ | LatentAbortProgram _ ->
-              astate :: astates
+              [astate]
           | ContinueProgram astate ->
-              let astate =
-                dispatch_call analysis_data ret call_exp actuals location call_flags astate
-                |> PulseReport.report_results analysis_data
-              in
-              List.rev_append astate astates )
-        ~init:[] astate_list
+              dispatch_call analysis_data ret call_exp actuals location call_flags astate
+              |> PulseReport.report_results analysis_data )
     in
     let dynamic_types_unreachable =
       PulseOperations.get_dynamic_type_unreachable_values vars astate
@@ -363,22 +358,17 @@ module PulseTransferFunctions = struct
           |> PulseReport.report_results analysis_data
       | Metadata (ExitScope (vars, location)) ->
           let remove_vars vars astates =
-            List.fold
-              ~f:(fun astates (astate : Domain.t) ->
+            List.concat_map astates ~f:(fun (astate : Domain.t) ->
                 match astate with
                 | ISLLatentMemoryError _ | AbortProgram _ | ExitProgram _ | LatentAbortProgram _ ->
-                    astate :: astates
+                    [astate]
                 | ContinueProgram astate ->
-                    let astate =
-                      ( match PulseOperations.remove_vars tenv vars location astate with
-                      | Ok astate ->
-                          Ok [astate]
-                      | Error _ as error ->
-                          error )
-                      |> PulseReport.report_list_result analysis_data
-                    in
-                    List.rev_append astate astates )
-              ~init:[] astates
+                    ( match PulseOperations.remove_vars tenv vars location astate with
+                    | Ok astate ->
+                        Ok [astate]
+                    | Error _ as error ->
+                        error )
+                    |> PulseReport.report_list_result analysis_data )
           in
           if Procname.is_java (Procdesc.get_proc_name proc_desc) then
             remove_vars vars [ContinueProgram astate]
