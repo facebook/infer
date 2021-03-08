@@ -57,33 +57,29 @@ let check_addr_access access_mode location (address, history) astate =
 let check_and_abduce_addr_access_isl access_mode location (address, history) ?(null_noop = false)
     astate =
   let access_trace = Trace.Immediate {location; history} in
-  let* astates =
-    AddressAttributes.check_valid_isl access_trace address ~null_noop astate
-    |> Result.map_error ~f:(fun (invalidation, invalidation_trace, astate) ->
-           ( Diagnostic.AccessToInvalidAddress
-               {calling_context= []; invalidation; invalidation_trace; access_trace}
-           , astate ) )
-  in
-  match access_mode with
-  | Read ->
-      List.fold_result astates ~init:[] ~f:(fun astates astate ->
-          match AddressAttributes.check_initialized access_trace address astate with
-          | Error _ ->
-              Error
-                ( Diagnostic.ReadUninitializedValue {calling_context= []; trace= access_trace}
-                , AbductiveDomain.set_isl_status ISLError astate )
-          | Ok ok_astate ->
-              Ok (ok_astate :: astates) )
-  | Write ->
-      Ok
-        (List.map astates ~f:(fun astate ->
-             match astate.AbductiveDomain.isl_status with
-             | ISLOk ->
-                 AbductiveDomain.initialize address astate
-             | ISLError ->
-                 astate ))
-  | NoAccess ->
-      Ok astates
+  match AddressAttributes.check_valid_isl access_trace address ~null_noop astate with
+  | Error (invalidation, invalidation_trace, astate) ->
+      [ Error
+          ( Diagnostic.AccessToInvalidAddress
+              {calling_context= []; invalidation; invalidation_trace; access_trace}
+          , astate ) ]
+  | Ok astates -> (
+    match access_mode with
+    | Read ->
+        List.map astates ~f:(fun astate ->
+            AddressAttributes.check_initialized access_trace address astate
+            |> Result.map_error ~f:(fun () ->
+                   ( Diagnostic.ReadUninitializedValue {calling_context= []; trace= access_trace}
+                   , AbductiveDomain.set_isl_status ISLError astate ) ) )
+    | Write ->
+        List.map astates ~f:(fun astate ->
+            match astate.AbductiveDomain.isl_status with
+            | ISLOk ->
+                Ok (AbductiveDomain.initialize address astate)
+            | ISLError ->
+                Ok astate )
+    | NoAccess ->
+        List.map ~f:(fun astate -> Ok astate) astates )
 
 
 module Closures = struct
@@ -166,18 +162,17 @@ let eval_access mode location addr_hist access astate =
 
 
 let eval_access_biad_isl mode location addr_hist access astate =
-  let map_ok addr_hist access astates =
-    List.map
-      ~f:(fun astate ->
+  let map_ok addr_hist access results =
+    List.map results ~f:(fun result ->
+        let+ astate = result in
         match astate.AbductiveDomain.isl_status with
         | ISLOk ->
             Memory.eval_edge addr_hist access astate
         | ISLError ->
             (astate, addr_hist) )
-      astates
   in
-  let+ astates = check_and_abduce_addr_access_isl mode location addr_hist astate in
-  map_ok addr_hist access astates
+  let results = check_and_abduce_addr_access_isl mode location addr_hist astate in
+  map_ok addr_hist access results
 
 
 let eval mode location exp0 astate =
@@ -267,52 +262,47 @@ let eval_deref location exp astate =
 let eval_structure_isl mode loc exp astate =
   match (exp : Exp.t) with
   | Lfield (exp', field, _) ->
-      let* astate, addr_hist = eval mode loc exp' astate in
-      let+ astates =
-        eval_access_biad_isl mode loc addr_hist (HilExp.Access.FieldAccess field) astate
-      in
+      let+ astate, addr_hist = eval mode loc exp' astate in
+      let astates = eval_access_biad_isl mode loc addr_hist (FieldAccess field) astate in
       (false, astates)
   | Lindex (exp', exp_index) ->
       let* astate, addr_hist_index = eval mode loc exp_index astate in
-      let* astate, addr_hist = eval mode loc exp' astate in
-      let+ astates =
+      let+ astate, addr_hist = eval mode loc exp' astate in
+      let astates =
         eval_access_biad_isl mode loc addr_hist
-          (HilExp.Access.ArrayAccess (StdTyp.void, fst addr_hist_index))
+          (ArrayAccess (StdTyp.void, fst addr_hist_index))
           astate
       in
       (false, astates)
   | _ ->
       let+ astate, (addr, history) = eval mode loc exp astate in
-      (true, [(astate, (addr, history))])
+      (true, [Ok (astate, (addr, history))])
 
 
 let eval_deref_biad_isl location access addr_hist astate =
-  let+ astates = check_and_abduce_addr_access_isl Read location addr_hist astate in
-  List.map
-    ~f:(fun astate ->
+  let astates = check_and_abduce_addr_access_isl Read location addr_hist astate in
+  List.map astates ~f:(fun astate ->
+      let+ astate = astate in
       match astate.AbductiveDomain.isl_status with
       | ISLOk ->
           Memory.eval_edge addr_hist access astate
       | ISLError ->
           (astate, addr_hist) )
-    astates
 
 
 let eval_deref_isl location exp astate =
-  let* is_structured, ls_astate_addr_hist = eval_structure_isl Read location exp astate in
+  let<*> is_structured, ls_astate_addr_hist = eval_structure_isl Read location exp astate in
   let eval_deref_function (astate, addr_hist) =
     if is_structured then eval_deref_biad_isl location Dereference addr_hist astate
-    else
-      let+ astate = eval_deref location exp astate in
-      [astate]
+    else [eval_deref location exp astate]
   in
-  List.fold_result ls_astate_addr_hist ~init:[] ~f:(fun acc_astates ((astate, _) as astate_addr) ->
+  List.concat_map ls_astate_addr_hist ~f:(fun result ->
+      let<*> ((astate, _) as astate_addr) = result in
       match astate.AbductiveDomain.isl_status with
       | ISLOk ->
-          let+ astates = eval_deref_function astate_addr in
-          acc_astates @ astates
+          eval_deref_function astate_addr
       | ISLError ->
-          Ok (acc_astates @ [astate_addr]) )
+          [Ok astate_addr] )
 
 
 let realloc_pvar tenv pvar typ location astate =
@@ -338,16 +328,14 @@ let write_access location addr_trace_ref access addr_trace_obj astate =
 
 
 let write_access_biad_isl location addr_trace_ref access addr_trace_obj astate =
-  let* astates = check_and_abduce_addr_access_isl Write location addr_trace_ref astate in
-  List.fold_result astates ~init:[] ~f:(fun acc ast ->
-      let astate =
-        match ast.AbductiveDomain.isl_status with
-        | ISLOk ->
-            Memory.add_edge addr_trace_ref access addr_trace_obj location ast
-        | ISLError ->
-            ast
-      in
-      Ok (astate :: acc) )
+  check_and_abduce_addr_access_isl Write location addr_trace_ref astate
+  |> List.map ~f:(fun result ->
+         let+ astate = result in
+         match astate.AbductiveDomain.isl_status with
+         | ISLOk ->
+             Memory.add_edge addr_trace_ref access addr_trace_obj location astate
+         | ISLError ->
+             astate )
 
 
 let write_deref location ~ref:addr_trace_ref ~obj:addr_trace_obj astate =
@@ -385,17 +373,14 @@ let invalidate location cause addr_trace astate =
 
 
 let invalidate_biad_isl location cause (address, history) astate =
-  let+ astates =
-    check_and_abduce_addr_access_isl NoAccess location (address, history) ~null_noop:true astate
-  in
-  List.map
-    ~f:(fun astate ->
-      match astate.AbductiveDomain.isl_status with
-      | ISLOk ->
-          AddressAttributes.invalidate (address, history) cause location astate
-      | ISLError ->
-          astate )
-    astates
+  check_and_abduce_addr_access_isl NoAccess location (address, history) ~null_noop:true astate
+  |> List.map ~f:(fun result ->
+         let+ astate = result in
+         match astate.AbductiveDomain.isl_status with
+         | ISLOk ->
+             AddressAttributes.invalidate (address, history) cause location astate
+         | ISLError ->
+             astate )
 
 
 let invalidate_access location cause ref_addr_hist access astate =

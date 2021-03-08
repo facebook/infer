@@ -11,12 +11,17 @@ open PulseDomainInterface
 
 type 'a access_result = ('a, Diagnostic.t * AbductiveDomain.t) result
 
-val report_list_result :
+val report_result :
      PulseSummary.t InterproceduralAnalysis.t
-  -> AbductiveDomain.t list access_result
+  -> AbductiveDomain.t access_result
   -> ExecutionDomain.t list
 
 val report_results :
+     PulseSummary.t InterproceduralAnalysis.t
+  -> AbductiveDomain.t access_result list
+  -> ExecutionDomain.t list
+
+val report_exec_results :
      PulseSummary.t InterproceduralAnalysis.t
   -> ExecutionDomain.t access_result list
   -> ExecutionDomain.t list

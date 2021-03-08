@@ -22,10 +22,7 @@ let mk_objc_method_nil_summary_aux proc_desc astate =
   let astate = PulseArithmetic.prune_eq_zero (fst self_value) astate in
   let ret_var = Procdesc.get_ret_var proc_desc in
   let* astate, ret_var_addr_hist = PulseOperations.eval Write location (Lvar ret_var) astate in
-  let+ astate =
-    PulseOperations.write_deref location ~ref:ret_var_addr_hist ~obj:self_value astate
-  in
-  [astate]
+  PulseOperations.write_deref location ~ref:ret_var_addr_hist ~obj:self_value astate
 
 
 let mk_objc_method_nil_summary ({InterproceduralAnalysis.proc_desc} as analysis_data) initial =
@@ -39,7 +36,7 @@ let mk_objc_method_nil_summary ({InterproceduralAnalysis.proc_desc} as analysis_
          However, there is an exception in the case where the return type is non-POD.
          In that case it's UB and we want to report an error. *)
       let result = mk_objc_method_nil_summary_aux proc_desc astate in
-      Some (PulseReport.report_list_result analysis_data result)
+      Some (PulseReport.report_result analysis_data result)
   | ContinueProgram _, _
   | ExitProgram _, _
   | AbortProgram _, _
@@ -55,10 +52,9 @@ let append_objc_self_positive ({InterproceduralAnalysis.proc_desc} as analysis_d
   | ContinueProgram astate ->
       let result =
         let+ astate, value = PulseOperations.eval_deref location (Lvar self) astate in
-        let astate = PulseArithmetic.prune_positive (fst value) astate in
-        [astate]
+        PulseArithmetic.prune_positive (fst value) astate
       in
-      PulseReport.report_list_result analysis_data result
+      PulseReport.report_result analysis_data result
   | ExitProgram _ | AbortProgram _ | LatentAbortProgram _ | ISLLatentMemoryError _ ->
       [astate]
 

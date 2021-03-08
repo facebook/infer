@@ -57,22 +57,6 @@ let report_error tenv proc_desc err_log access_result =
           ExecutionDomain.LatentAbortProgram {astate= astate_summary; latent_issue} )
 
 
-let exec_list_of_list_result = function
-  | Ok posts ->
-      posts
-  | Error Unsat ->
-      []
-  | Error (Sat post) ->
-      [post]
-
-
-let report_list_result {tenv; InterproceduralAnalysis.proc_desc; err_log} result =
-  let open Result.Monad_infix in
-  report_error tenv proc_desc err_log result
-  >>| List.map ~f:(fun post -> ExecutionDomain.ContinueProgram post)
-  |> exec_list_of_list_result
-
-
 let post_of_report_result = function
   | Ok post ->
       Some post
@@ -82,6 +66,17 @@ let post_of_report_result = function
       Some post
 
 
-let report_results {tenv; InterproceduralAnalysis.proc_desc; err_log} results =
+let report_exec_results {InterproceduralAnalysis.proc_desc; tenv; err_log} results =
   List.filter_map results ~f:(fun exec_result ->
       report_error tenv proc_desc err_log exec_result |> post_of_report_result )
+
+
+let report_results analysis_data results =
+  List.map results ~f:(fun result ->
+      let open IResult.Let_syntax in
+      let+ astate = result in
+      ExecutionDomain.ContinueProgram astate )
+  |> report_exec_results analysis_data
+
+
+let report_result analysis_data result = report_results analysis_data [result]

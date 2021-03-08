@@ -123,11 +123,10 @@ module Misc = struct
     let astates_alloc =
       let astate = PulseArithmetic.and_positive (fst deleted_access) astate in
       if Config.pulse_isl then
-        match PulseOperations.invalidate_biad_isl location invalidation deleted_access astate with
-        | Error _ as err ->
-            [err]
-        | Ok astates ->
-            List.map astates ~f:(fun astate -> Ok (ContinueProgram astate))
+        PulseOperations.invalidate_biad_isl location invalidation deleted_access astate
+        |> List.map ~f:(fun result ->
+               let+ astate = result in
+               ContinueProgram astate )
       else
         let<+> astate = PulseOperations.invalidate location invalidation deleted_access astate in
         astate

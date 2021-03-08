@@ -70,7 +70,7 @@ val eval_structure_isl :
   -> Location.t
   -> Exp.t
   -> t
-  -> (bool * (t * (AbstractValue.t * ValueHistory.t)) list) access_result
+  -> (bool * (t * (AbstractValue.t * ValueHistory.t)) access_result list) access_result
 (** Similar to eval but apply to data structures and ISL abduction. Return a list of abduced states
     (ISLOk and ISLErs); The boolean indicates whether it is data structures or not. *)
 
@@ -80,7 +80,7 @@ val eval_deref : Location.t -> Exp.t -> t -> (t * (AbstractValue.t * ValueHistor
 (** Like [eval] but evaluates [*exp]. *)
 
 val eval_deref_isl :
-  Location.t -> Exp.t -> t -> (t * (AbstractValue.t * ValueHistory.t)) list access_result
+  Location.t -> Exp.t -> t -> (t * (AbstractValue.t * ValueHistory.t)) access_result list
 
 val eval_access :
      access_mode
@@ -138,14 +138,14 @@ val write_deref_biad_isl :
   -> AbstractValue.t HilExp.Access.t
   -> obj:AbstractValue.t * ValueHistory.t
   -> t
-  -> t list access_result
+  -> t access_result list
 
 val invalidate :
   Location.t -> Invalidation.t -> AbstractValue.t * ValueHistory.t -> t -> t access_result
 (** record that the address is invalid *)
 
 val invalidate_biad_isl :
-  Location.t -> Invalidation.t -> AbstractValue.t * ValueHistory.t -> t -> t list access_result
+  Location.t -> Invalidation.t -> AbstractValue.t * ValueHistory.t -> t -> t access_result list
 (** record that the address is invalid. If the address has not been allocated, abduce ISL specs for
     both invalid (null, free, unint) and allocated heap. *)
 
