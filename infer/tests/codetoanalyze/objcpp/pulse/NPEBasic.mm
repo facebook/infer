@@ -21,6 +21,12 @@
 
 - (int*)getXPtr;
 
++ (SomeObject*)unknown;
+
++ (SomeObject*)returnsNil;
+
+- (SomeObject*)get;
+
 @end
 
 @implementation SomeObject
@@ -41,6 +47,15 @@
   return &_x;
 }
 
++ (SomeObject*)returnsNil {
+  return nil;
+}
+
+- (SomeObject*)get {
+  SomeObject* o = [SomeObject new];
+  return o;
+}
+
 @end
 
 int dereferenceNilBad() {
@@ -53,10 +68,22 @@ int testCallMethodReturnsPODOk() {
   return [obj returnsPOD];
 }
 
-std::shared_ptr<int> FN_testCallMethodReturnsnonPODBad() {
+std::shared_ptr<int> testCallMethodReturnsnonPODBad() {
   SomeObject* obj = nil;
   std::shared_ptr<int> d = [obj returnsnonPOD]; // UB
   return d;
+}
+
+std::shared_ptr<int> testSkippedOK() {
+  SomeObject* obj = [[SomeObject unknown] get];
+  std::shared_ptr<int> result = [obj returnsnonPOD];
+  return result;
+}
+
+std::shared_ptr<int> testNonPODTraceBad() {
+  SomeObject* obj = [[SomeObject returnsNil] get];
+  std::shared_ptr<int> result = [obj returnsnonPOD];
+  return result;
 }
 
 int testAccessPropertyAccessorOk() {
@@ -64,7 +91,7 @@ int testAccessPropertyAccessorOk() {
   return obj.x; // calls property accessor method
 }
 
-std::shared_ptr<int> FN_testAccessPropertyAccessorBad() {
+std::shared_ptr<int> testAccessPropertyAccessorBad() {
   SomeObject* obj = nil;
   return obj.ptr; // calls property accessor method, but return type is non-POD
 }

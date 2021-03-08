@@ -148,16 +148,21 @@ module BuildMethodSignature = struct
     in
     let return_typ = qual_type_to_sil_type tenv return_qual_type in
     let return_typ_annot = CAst_utils.sil_annot_of_type return_qual_type in
+    let is_ret_typ_pod = CGeneral_utils.is_type_pod return_qual_type in
     if should_add_return_param return_typ then
-      (StdTyp.void, Some (CType.add_pointer_to_typ return_typ), Annot.Item.empty, true)
-    else (return_typ, None, return_typ_annot, false)
+      ( StdTyp.void
+      , Some (CType.add_pointer_to_typ return_typ)
+      , Annot.Item.empty
+      , true
+      , is_ret_typ_pod )
+    else (return_typ, None, return_typ_annot, false, is_ret_typ_pod)
 
 
   let method_signature_of_decl qual_type_to_sil_type tenv method_decl ?block_return_type
       ?(passed_as_noescape_block_to = None) procname =
     let decl_info = Clang_ast_proj.get_decl_tuple method_decl in
     let loc = decl_info.Clang_ast_t.di_source_range in
-    let ret_type, return_param_typ, ret_typ_annot, has_added_return_param =
+    let ret_type, return_param_typ, ret_typ_annot, has_added_return_param, is_ret_type_pod =
       get_return_val_and_param_types qual_type_to_sil_type tenv ~block_return_type method_decl
     in
     let method_kind = CMethodProperties.get_method_kind method_decl in
@@ -175,6 +180,7 @@ module BuildMethodSignature = struct
     ; class_param
     ; params
     ; ret_type= (ret_type, ret_typ_annot)
+    ; is_ret_type_pod
     ; has_added_return_param
     ; attributes
     ; loc

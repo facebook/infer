@@ -75,7 +75,8 @@ type t =
   ; objc_accessor: objc_accessor_type option  (** type of ObjC accessor, if any *)
   ; proc_name: Procname.t  (** name of the procedure *)
   ; ret_type: Typ.t  (** return type *)
-  ; has_added_return_param: bool  (** whether or not a return param was added *) }
+  ; has_added_return_param: bool  (** whether or not a return param was added *)
+  ; is_ret_type_pod: bool  (** whether or not the return type is POD *) }
 
 let get_annotated_formals {method_annotation= {params}; formals} =
   let rec zip_params ial parl =
@@ -137,7 +138,8 @@ let default translation_unit proc_name =
   ; method_annotation= Annot.Method.empty
   ; objc_accessor= None
   ; proc_name
-  ; ret_type= StdTyp.void }
+  ; ret_type= StdTyp.void
+  ; is_ret_type_pod= true }
 
 
 let pp_parameters =
@@ -183,7 +185,8 @@ let pp f
      ; method_annotation
      ; objc_accessor
      ; proc_name
-     ; ret_type }[@warning "+9"]) =
+     ; ret_type
+     ; is_ret_type_pod }[@warning "+9"]) =
   let default = default translation_unit proc_name in
   let pp_bool_default ~default title b f () =
     if not (Bool.equal default b) then F.fprintf f "; %s= %b@," title b
@@ -249,6 +252,7 @@ let pp f
     F.fprintf f "; objc_accessor= %a@," (Pp.option pp_objc_accessor_type) objc_accessor ;
   (* always print ret type *)
   F.fprintf f "; ret_type= %a @," (Typ.pp_full Pp.text) ret_type ;
+  pp_bool_default ~default:default.is_ret_type_pod "is_ret_type_pod" is_ret_type_pod f () ;
   F.fprintf f "; proc_id= %a }@]" Procname.pp_unique_id proc_name
 
 

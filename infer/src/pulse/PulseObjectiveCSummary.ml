@@ -31,7 +31,13 @@ let mk_objc_method_nil_summary_aux proc_desc astate =
 let mk_objc_method_nil_summary ({InterproceduralAnalysis.proc_desc} as analysis_data) initial =
   let proc_name = Procdesc.get_proc_name proc_desc in
   match (initial, proc_name) with
-  | ContinueProgram astate, Procname.ObjC_Cpp {kind= ObjCInstanceMethod} ->
+  | ContinueProgram astate, Procname.ObjC_Cpp {kind= ObjCInstanceMethod}
+    when Procdesc.is_ret_type_pod proc_desc ->
+      (* In ObjC, when a method is called on nil, there is no NPE,
+         the method is actually not called and the return value is 0/false/nil.
+         We create a nil summary to avoid reporting NPE in this case.
+         However, there is an exception in the case where the return type is non-POD.
+         In that case it's UB and we want to report an error. *)
       let result = mk_objc_method_nil_summary_aux proc_desc astate in
       Some (PulseReport.report_list_result analysis_data result)
   | ContinueProgram _, _

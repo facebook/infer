@@ -58,7 +58,8 @@ type t =
   ; objc_accessor: objc_accessor_type option  (** type of ObjC accessor, if any *)
   ; proc_name: Procname.t  (** name of the procedure *)
   ; ret_type: Typ.t  (** return type *)
-  ; has_added_return_param: bool  (** whether or not a return param was added *) }
+  ; has_added_return_param: bool  (** whether or not a return param was added *)
+  ; is_ret_type_pod: bool  (** whether or not the return type is POD *) }
 
 val default : SourceFile.t -> Procname.t -> t
 (** Create a proc_attributes with default values. *)

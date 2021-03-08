@@ -531,6 +531,8 @@ let get_locals pdesc = pdesc.attributes.locals
 
 let has_added_return_param pdesc = pdesc.attributes.has_added_return_param
 
+let is_ret_type_pod pdesc = pdesc.attributes.is_ret_type_pod
+
 (** Return name and type of captured variables *)
 let get_captured pdesc = pdesc.attributes.captured
 

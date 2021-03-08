@@ -51,3 +51,5 @@ val is_cpp_translation : CFrontend_config.translation_unit_context -> bool
 
 val is_objc_extension : CFrontend_config.translation_unit_context -> bool
 (** true if the current language is ObjC or ObjC++ *)
+
+val is_type_pod : Clang_ast_t.qual_type -> bool
