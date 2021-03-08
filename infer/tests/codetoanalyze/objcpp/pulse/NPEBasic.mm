@@ -19,6 +19,8 @@
 
 - (int)add:(int)param1 andParam2:(int)param2;
 
+- (int*)getXPtr;
+
 @end
 
 @implementation SomeObject
@@ -33,6 +35,10 @@
 
 - (int)add:(int)param1 andParam2:(int)param2 {
   return _x + param1 + param2;
+}
+
+- (int*)getXPtr {
+  return &_x;
 }
 
 @end
@@ -96,4 +102,10 @@ int testParamsRemainTheSameOk() {
     int* int_ptr = nil;
     return *int_ptr;
   }
+}
+
+int testTraceBad() {
+  SomeObject* obj = nil;
+  int* ptr = [obj getXPtr];
+  return *ptr;
 }

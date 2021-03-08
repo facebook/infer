@@ -6,7 +6,6 @@
  *)
 
 open! IStd
-open PulseBasicInterface
 open PulseOperations.Import
 
 let mk_objc_self_pvar proc_desc =
@@ -15,18 +14,16 @@ let mk_objc_self_pvar proc_desc =
 
 
 let mk_objc_method_nil_summary_aux proc_desc astate =
+  (* Constructs summary {self = 0} {return = self}.
+     This allows us to connect invalidation with invalid access in the trace *)
   let location = Procdesc.get_loc proc_desc in
   let self = mk_objc_self_pvar proc_desc in
   let* astate, self_value = PulseOperations.eval_deref location (Lvar self) astate in
   let astate = PulseArithmetic.prune_eq_zero (fst self_value) astate in
   let ret_var = Procdesc.get_ret_var proc_desc in
-  let ret_addr = AbstractValue.mk_fresh () in
-  let ret_value = (ret_addr, []) in
   let* astate, ret_var_addr_hist = PulseOperations.eval Write location (Lvar ret_var) astate in
-  let* astate = PulseOperations.write_deref location ~ref:ret_var_addr_hist ~obj:ret_value astate in
-  let astate = PulseArithmetic.and_eq_int ret_addr IntLit.zero astate in
   let+ astate =
-    PulseOperations.invalidate location (ConstantDereference IntLit.zero) ret_value astate
+    PulseOperations.write_deref location ~ref:ret_var_addr_hist ~obj:self_value astate
   in
   [astate]
 
