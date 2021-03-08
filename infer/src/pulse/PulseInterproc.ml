@@ -614,9 +614,11 @@ let check_all_valid callee_proc_name call_location {AbductiveDomain.pre; _} call
             AddressAttributes.check_valid access_trace addr_caller astate
             |> Result.map_error ~f:(fun (invalidation, invalidation_trace) ->
                    L.d_printfln "ERROR: caller's %a invalid!" AbstractValue.pp addr_caller ;
-                   ( Diagnostic.AccessToInvalidAddress
-                       {calling_context= []; invalidation; invalidation_trace; access_trace}
-                   , astate ) )
+                   AccessResult.ReportableError
+                     { diagnostic=
+                         Diagnostic.AccessToInvalidAddress
+                           {calling_context= []; invalidation; invalidation_trace; access_trace}
+                     ; astate } )
       in
       match BaseAddressAttributes.get_must_be_initialized addr_pre (pre :> BaseDomain.t).attrs with
       | None ->
@@ -626,8 +628,10 @@ let check_all_valid callee_proc_name call_location {AbductiveDomain.pre; _} call
           AddressAttributes.check_initialized access_trace addr_caller astate
           |> Result.map_error ~f:(fun () ->
                  L.d_printfln "ERROR: caller's %a is uninitialized!" AbstractValue.pp addr_caller ;
-                 ( Diagnostic.ReadUninitializedValue {calling_context= []; trace= access_trace}
-                 , astate ) ) )
+                 AccessResult.ReportableError
+                   { diagnostic=
+                       Diagnostic.ReadUninitializedValue {calling_context= []; trace= access_trace}
+                   ; astate } ) )
     call_state.subst (Ok call_state.astate)
 
 
@@ -664,9 +668,11 @@ let isl_check_all_invalid invalid_addr_callers callee_proc_name call_location
                   let access_trace = mk_access_trace callee_access_trace in
                   L.d_printfln "ERROR: caller's %a invalid!" AbstractValue.pp addr_caller ;
                   Error
-                    ( Diagnostic.AccessToInvalidAddress
-                        {calling_context= []; invalidation; invalidation_trace; access_trace}
-                    , AbductiveDomain.set_isl_status ISLError astate ) ) ) )
+                    (AccessResult.ReportableError
+                       { diagnostic=
+                           Diagnostic.AccessToInvalidAddress
+                             {calling_context= []; invalidation; invalidation_trace; access_trace}
+                       ; astate= AbductiveDomain.set_isl_status ISLError astate }) ) ) )
         invalid_addr_callers (Ok astate)
 
 

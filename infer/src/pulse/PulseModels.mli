@@ -14,7 +14,7 @@ type model =
   -> Location.t
   -> ret:Ident.t * Typ.t
   -> AbductiveDomain.t
-  -> ExecutionDomain.t PulseOperations.access_result list
+  -> ExecutionDomain.t AccessResult.t list
 
 val dispatch :
      Tenv.t

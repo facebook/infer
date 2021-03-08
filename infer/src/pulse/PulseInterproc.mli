@@ -17,5 +17,4 @@ val apply_prepost :
   -> formals:Var.t list
   -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
   -> AbductiveDomain.t
-  -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t) option) PulseReport.access_result
-     SatUnsat.t
+  -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t) option) AccessResult.t SatUnsat.t

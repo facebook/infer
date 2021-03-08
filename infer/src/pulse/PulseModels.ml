@@ -18,7 +18,7 @@ type model =
   -> Location.t
   -> ret:Ident.t * Typ.t
   -> AbductiveDomain.t
-  -> ExecutionDomain.t PulseOperations.access_result list
+  -> ExecutionDomain.t AccessResult.t list
 
 let ok_continue post = [Ok (ContinueProgram post)]
 
@@ -671,9 +671,11 @@ module GenericArrayBackedCollectionIterator = struct
         let invalidation_trace = Trace.Immediate {location; history= []} in
         let access_trace = Trace.Immediate {location; history= snd pointer} in
         Error
-          ( Diagnostic.AccessToInvalidAddress
-              {calling_context= []; invalidation= EndIterator; invalidation_trace; access_trace}
-          , astate )
+          (ReportableError
+             { diagnostic=
+                 Diagnostic.AccessToInvalidAddress
+                   {calling_context= []; invalidation= EndIterator; invalidation_trace; access_trace}
+             ; astate })
       else Ok astate
     in
     (* We do not want to create internal array if iterator pointer has an invalid value *)

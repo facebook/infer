@@ -15,14 +15,15 @@ type t = AbductiveDomain.t
 module Import = struct
   type access_mode = Read | Write | NoAccess
 
-  type 'abductive_domain_t base_t = 'abductive_domain_t ExecutionDomain.base_t =
+  type 'abductive_domain_t execution_domain_base_t = 'abductive_domain_t ExecutionDomain.base_t =
     | ContinueProgram of 'abductive_domain_t
     | ExitProgram of AbductiveDomain.summary
     | AbortProgram of AbductiveDomain.summary
     | LatentAbortProgram of {astate: AbductiveDomain.summary; latent_issue: LatentIssue.t}
     | ISLLatentMemoryError of 'abductive_domain_t
 
-  type 'a access_result = 'a PulseReport.access_result
+  type 'astate base_error = 'astate AccessResult.error =
+    | ReportableError of {astate: 'astate; diagnostic: Diagnostic.t}
 
   include IResult.Let_syntax
 
@@ -39,15 +40,20 @@ let check_addr_access access_mode location (address, history) astate =
   let* astate =
     AddressAttributes.check_valid access_trace address astate
     |> Result.map_error ~f:(fun (invalidation, invalidation_trace) ->
-           ( Diagnostic.AccessToInvalidAddress
-               {calling_context= []; invalidation; invalidation_trace; access_trace}
-           , astate ) )
+           ReportableError
+             { diagnostic=
+                 Diagnostic.AccessToInvalidAddress
+                   {calling_context= []; invalidation; invalidation_trace; access_trace}
+             ; astate } )
   in
   match access_mode with
   | Read ->
       AddressAttributes.check_initialized access_trace address astate
       |> Result.map_error ~f:(fun () ->
-             (Diagnostic.ReadUninitializedValue {calling_context= []; trace= access_trace}, astate) )
+             ReportableError
+               { diagnostic=
+                   Diagnostic.ReadUninitializedValue {calling_context= []; trace= access_trace}
+               ; astate } )
   | Write ->
       Ok (AbductiveDomain.initialize address astate)
   | NoAccess ->
@@ -60,17 +66,21 @@ let check_and_abduce_addr_access_isl access_mode location (address, history) ?(n
   match AddressAttributes.check_valid_isl access_trace address ~null_noop astate with
   | Error (invalidation, invalidation_trace, astate) ->
       [ Error
-          ( Diagnostic.AccessToInvalidAddress
-              {calling_context= []; invalidation; invalidation_trace; access_trace}
-          , astate ) ]
+          (ReportableError
+             { diagnostic=
+                 Diagnostic.AccessToInvalidAddress
+                   {calling_context= []; invalidation; invalidation_trace; access_trace}
+             ; astate }) ]
   | Ok astates -> (
     match access_mode with
     | Read ->
         List.map astates ~f:(fun astate ->
             AddressAttributes.check_initialized access_trace address astate
             |> Result.map_error ~f:(fun () ->
-                   ( Diagnostic.ReadUninitializedValue {calling_context= []; trace= access_trace}
-                   , AbductiveDomain.set_isl_status ISLError astate ) ) )
+                   ReportableError
+                     { diagnostic=
+                         Diagnostic.ReadUninitializedValue {calling_context= []; trace= access_trace}
+                     ; astate= AbductiveDomain.set_isl_status ISLError astate } ) )
     | Write ->
         List.map astates ~f:(fun astate ->
             match astate.AbductiveDomain.isl_status with
@@ -435,9 +445,11 @@ let check_address_escape escape_location proc_desc address history astate =
                    (* The returned address corresponds to a C++ temporary. It will have gone out of
                       scope by now except if it was bound to a global. *)
                    Error
-                     ( Diagnostic.StackVariableAddressEscape
-                         {variable; location= escape_location; history}
-                     , astate )
+                     (ReportableError
+                        { diagnostic=
+                            Diagnostic.StackVariableAddressEscape
+                              {variable; location= escape_location; history}
+                        ; astate })
                | _ ->
                    Ok () ) )
   in
@@ -454,8 +466,11 @@ let check_address_escape escape_location proc_desc address history astate =
           L.d_printfln_escaped "Stack variable address &%a detected at address %a" Var.pp variable
             AbstractValue.pp address ;
           Error
-            ( Diagnostic.StackVariableAddressEscape {variable; location= escape_location; history}
-            , astate ) )
+            (ReportableError
+               { diagnostic=
+                   Diagnostic.StackVariableAddressEscape
+                     {variable; location= escape_location; history}
+               ; astate }) )
         else Ok () )
   in
   let+ () = check_address_of_cpp_temporary () >>= check_address_of_stack_variable in
@@ -486,7 +501,10 @@ let check_memory_leak_unreachable unreachable_addrs location astate =
     match allocated_not_freed_opt with
     | Some (procname, trace), false ->
         (* allocated but not freed *)
-        Error (Diagnostic.MemoryLeak {procname; location; allocation_trace= trace}, astate)
+        Error
+          (ReportableError
+             { diagnostic= Diagnostic.MemoryLeak {procname; location; allocation_trace= trace}
+             ; astate })
     | _ ->
         result
   in
@@ -655,15 +673,19 @@ let apply_callee tenv ~caller_proc_desc callee_pname call_loc callee_exec_state 
               Ok (AbortProgram astate_summary)
           | ExitProgram _ ->
               Ok (ExitProgram astate_summary)
-          | LatentAbortProgram {latent_issue} ->
+          | LatentAbortProgram {latent_issue} -> (
               let latent_issue =
                 LatentIssue.add_call (CallEvent.Call callee_pname, call_loc) latent_issue
               in
-              if LatentIssue.should_report astate_summary then
-                Error
-                  ( LatentIssue.to_diagnostic latent_issue
-                  , (astate_summary : AbductiveDomain.summary :> AbductiveDomain.t) )
-              else Ok (LatentAbortProgram {astate= astate_summary; latent_issue}) )
+              let error =
+                ReportableError
+                  {diagnostic= LatentIssue.to_diagnostic latent_issue; astate= astate_summary}
+              in
+              match LatentIssue.should_report error with
+              | `DelayReport (astate, latent_issue) ->
+                  Ok (LatentAbortProgram {astate; latent_issue})
+              | `ReportNow (astate, diagnostic) ->
+                  Error (ReportableError {diagnostic; astate= (astate :> AbductiveDomain.t)}) ) )
 
 
 let get_captured_actuals location ~captured_vars ~actual_closure astate =
