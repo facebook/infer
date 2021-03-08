@@ -102,6 +102,21 @@ let get_var_name_mangled decl_info name_info var_decl_info =
   (name_string, mangled)
 
 
+let is_type_pod qt =
+  let desugared_type = CAst_utils.get_desugared_type qt.Clang_ast_t.qt_type_ptr in
+  Option.bind desugared_type ~f:(function
+    | Clang_ast_t.RecordType (_, decl_ptr) ->
+        CAst_utils.get_decl decl_ptr
+    | _ ->
+        None )
+  |> Option.value_map ~default:true ~f:(function
+       | Clang_ast_t.CXXRecordDecl (_, _, _, _, _, _, _, {xrdi_is_pod})
+       | Clang_ast_t.ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, {xrdi_is_pod}, _, _) ->
+           xrdi_is_pod
+       | _ ->
+           true )
+
+
 let mk_sil_global_var {CFrontend_config.source_file} ?(mk_name = fun _ x -> x) decl_info
     named_decl_info var_decl_info qt =
   let name_string, simple_name = get_var_name_mangled decl_info named_decl_info var_decl_info in
@@ -119,20 +134,7 @@ let mk_sil_global_var {CFrontend_config.source_file} ?(mk_name = fun _ x -> x) d
   in
   let is_constexpr = var_decl_info.Clang_ast_t.vdi_is_const_expr in
   let is_ice = var_decl_info.Clang_ast_t.vdi_is_init_ice in
-  let desugared_type = CAst_utils.get_desugared_type qt.Clang_ast_t.qt_type_ptr in
-  let is_pod =
-    Option.bind desugared_type ~f:(function
-      | Clang_ast_t.RecordType (_, decl_ptr) ->
-          CAst_utils.get_decl decl_ptr
-      | _ ->
-          None )
-    |> Option.value_map ~default:true ~f:(function
-         | Clang_ast_t.CXXRecordDecl (_, _, _, _, _, _, _, {xrdi_is_pod})
-         | Clang_ast_t.ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, {xrdi_is_pod}, _, _) ->
-             xrdi_is_pod
-         | _ ->
-             true )
-  in
+  let is_pod = is_type_pod qt in
   let is_static_global =
     var_decl_info.Clang_ast_t.vdi_is_global
     (* only top level declarations are really have file scope, static field members have a global scope *)
@@ -140,6 +142,7 @@ let mk_sil_global_var {CFrontend_config.source_file} ?(mk_name = fun _ x -> x) d
     && var_decl_info.Clang_ast_t.vdi_is_static
   in
   let is_const = qt.Clang_ast_t.qt_is_const in
+  let desugared_type = CAst_utils.get_desugared_type qt.Clang_ast_t.qt_type_ptr in
   let is_constant_array =
     Option.exists desugared_type ~f:(function Clang_ast_t.ConstantArrayType _ -> true | _ -> false)
   in
