@@ -20,10 +20,11 @@ module Import = struct
     | ExitProgram of AbductiveDomain.summary
     | AbortProgram of AbductiveDomain.summary
     | LatentAbortProgram of {astate: AbductiveDomain.summary; latent_issue: LatentIssue.t}
-    | ISLLatentMemoryError of 'abductive_domain_t
+    | ISLLatentMemoryError of AbductiveDomain.summary
 
   type 'astate base_error = 'astate AccessResult.error =
     | ReportableError of {astate: 'astate; diagnostic: Diagnostic.t}
+    | ISLError of 'astate
 
   include IResult.Let_syntax
 
@@ -63,33 +64,31 @@ let check_addr_access access_mode location (address, history) astate =
 let check_and_abduce_addr_access_isl access_mode location (address, history) ?(null_noop = false)
     astate =
   let access_trace = Trace.Immediate {location; history} in
-  match AddressAttributes.check_valid_isl access_trace address ~null_noop astate with
-  | Error (invalidation, invalidation_trace, astate) ->
-      [ Error
-          (ReportableError
-             { diagnostic=
-                 Diagnostic.AccessToInvalidAddress
-                   {calling_context= []; invalidation; invalidation_trace; access_trace}
-             ; astate }) ]
-  | Ok astates -> (
-    match access_mode with
-    | Read ->
-        List.map astates ~f:(fun astate ->
-            AddressAttributes.check_initialized access_trace address astate
-            |> Result.map_error ~f:(fun () ->
-                   ReportableError
-                     { diagnostic=
-                         Diagnostic.ReadUninitializedValue {calling_context= []; trace= access_trace}
-                     ; astate= AbductiveDomain.set_isl_status ISLError astate } ) )
-    | Write ->
-        List.map astates ~f:(fun astate ->
-            match astate.AbductiveDomain.isl_status with
-            | ISLOk ->
-                Ok (AbductiveDomain.initialize address astate)
-            | ISLError ->
-                Ok astate )
-    | NoAccess ->
-        List.map ~f:(fun astate -> Ok astate) astates )
+  AddressAttributes.check_valid_isl access_trace address ~null_noop astate
+  |> List.map ~f:(function
+       | Error (`InvalidAccess (invalidation, invalidation_trace, astate)) ->
+           Error
+             (ReportableError
+                { diagnostic=
+                    Diagnostic.AccessToInvalidAddress
+                      {calling_context= []; invalidation; invalidation_trace; access_trace}
+                ; astate })
+       | Error (`ISLError astate) ->
+           Error (ISLError astate)
+       | Ok astate -> (
+         match access_mode with
+         | Read ->
+             AddressAttributes.check_initialized access_trace address astate
+             |> Result.map_error ~f:(fun () ->
+                    ReportableError
+                      { diagnostic=
+                          Diagnostic.ReadUninitializedValue
+                            {calling_context= []; trace= access_trace}
+                      ; astate } )
+         | Write ->
+             Ok (AbductiveDomain.initialize address astate)
+         | NoAccess ->
+             Ok astate ) )
 
 
 module Closures = struct
@@ -175,11 +174,7 @@ let eval_access_biad_isl mode location addr_hist access astate =
   let map_ok addr_hist access results =
     List.map results ~f:(fun result ->
         let+ astate = result in
-        match astate.AbductiveDomain.isl_status with
-        | ISLOk ->
-            Memory.eval_edge addr_hist access astate
-        | ISLError ->
-            (astate, addr_hist) )
+        Memory.eval_edge addr_hist access astate )
   in
   let results = check_and_abduce_addr_access_isl mode location addr_hist astate in
   map_ok addr_hist access results
@@ -290,14 +285,10 @@ let eval_structure_isl mode loc exp astate =
 
 
 let eval_deref_biad_isl location access addr_hist astate =
-  let astates = check_and_abduce_addr_access_isl Read location addr_hist astate in
-  List.map astates ~f:(fun astate ->
-      let+ astate = astate in
-      match astate.AbductiveDomain.isl_status with
-      | ISLOk ->
-          Memory.eval_edge addr_hist access astate
-      | ISLError ->
-          (astate, addr_hist) )
+  check_and_abduce_addr_access_isl Read location addr_hist astate
+  |> List.map ~f:(fun result ->
+         let+ astate = result in
+         Memory.eval_edge addr_hist access astate )
 
 
 let eval_deref_isl location exp astate =
@@ -307,12 +298,8 @@ let eval_deref_isl location exp astate =
     else [eval_deref location exp astate]
   in
   List.concat_map ls_astate_addr_hist ~f:(fun result ->
-      let<*> ((astate, _) as astate_addr) = result in
-      match astate.AbductiveDomain.isl_status with
-      | ISLOk ->
-          eval_deref_function astate_addr
-      | ISLError ->
-          [Ok astate_addr] )
+      let<*> astate_addr = result in
+      eval_deref_function astate_addr )
 
 
 let realloc_pvar tenv pvar typ location astate =
@@ -338,14 +325,10 @@ let write_access location addr_trace_ref access addr_trace_obj astate =
 
 
 let write_access_biad_isl location addr_trace_ref access addr_trace_obj astate =
-  check_and_abduce_addr_access_isl Write location addr_trace_ref astate
-  |> List.map ~f:(fun result ->
-         let+ astate = result in
-         match astate.AbductiveDomain.isl_status with
-         | ISLOk ->
-             Memory.add_edge addr_trace_ref access addr_trace_obj location astate
-         | ISLError ->
-             astate )
+  let astates = check_and_abduce_addr_access_isl Write location addr_trace_ref astate in
+  List.map astates ~f:(fun result ->
+      let+ astate = result in
+      Memory.add_edge addr_trace_ref access addr_trace_obj location astate )
 
 
 let write_deref location ~ref:addr_trace_ref ~obj:addr_trace_obj astate =
@@ -386,11 +369,7 @@ let invalidate_biad_isl location cause (address, history) astate =
   check_and_abduce_addr_access_isl NoAccess location (address, history) ~null_noop:true astate
   |> List.map ~f:(fun result ->
          let+ astate = result in
-         match astate.AbductiveDomain.isl_status with
-         | ISLOk ->
-             AddressAttributes.invalidate (address, history) cause location astate
-         | ISLError ->
-             astate )
+         AddressAttributes.invalidate (address, history) cause location astate )
 
 
 let invalidate_access location cause ref_addr_hist access astate =
@@ -636,10 +615,10 @@ let unknown_call tenv call_loc reason ~ret ~actuals ~formals_opt astate =
 
 let apply_callee tenv ~caller_proc_desc callee_pname call_loc callee_exec_state ~ret
     ~captured_vars_with_actuals ~formals ~actuals astate =
-  let map_call_result callee_prepost ~f =
+  let map_call_result ~is_isl_error_prepost callee_prepost ~f =
     match
-      PulseInterproc.apply_prepost callee_pname call_loc ~callee_prepost ~captured_vars_with_actuals
-        ~formals ~actuals astate
+      PulseInterproc.apply_prepost ~is_isl_error_prepost callee_pname call_loc ~callee_prepost
+        ~captured_vars_with_actuals ~formals ~actuals astate
     with
     | (Sat (Error _) | Unsat) as path_result ->
         path_result
@@ -658,11 +637,10 @@ let apply_callee tenv ~caller_proc_desc callee_pname call_loc callee_exec_state 
   let open SatUnsat.Import in
   match callee_exec_state with
   | ContinueProgram astate ->
-      map_call_result astate ~f:(fun astate -> Sat (Ok (ContinueProgram astate)))
-  | ISLLatentMemoryError astate ->
-      map_call_result astate ~f:(fun astate -> Sat (Ok (ISLLatentMemoryError astate)))
+      map_call_result ~is_isl_error_prepost:false astate ~f:(fun astate ->
+          Sat (Ok (ContinueProgram astate)) )
   | AbortProgram astate | ExitProgram astate | LatentAbortProgram {astate} ->
-      map_call_result
+      map_call_result ~is_isl_error_prepost:false
         (astate :> AbductiveDomain.t)
         ~f:(fun astate ->
           let+ astate_summary = AbductiveDomain.summary_of_post tenv caller_proc_desc astate in
@@ -685,7 +663,15 @@ let apply_callee tenv ~caller_proc_desc callee_pname call_loc callee_exec_state 
               | `DelayReport (astate, latent_issue) ->
                   Ok (LatentAbortProgram {astate; latent_issue})
               | `ReportNow (astate, diagnostic) ->
-                  Error (ReportableError {diagnostic; astate= (astate :> AbductiveDomain.t)}) ) )
+                  Error (ReportableError {diagnostic; astate= (astate :> AbductiveDomain.t)})
+              | `ISLDelay astate ->
+                  Error (ISLError (astate :> AbductiveDomain.t)) ) )
+  | ISLLatentMemoryError astate ->
+      map_call_result ~is_isl_error_prepost:true
+        (astate :> AbductiveDomain.t)
+        ~f:(fun astate ->
+          let+ astate_summary = AbductiveDomain.summary_of_post tenv caller_proc_desc astate in
+          Ok (ISLLatentMemoryError astate_summary) )
 
 
 let get_captured_actuals location ~captured_vars ~actual_closure astate =

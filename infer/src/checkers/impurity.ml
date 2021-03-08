@@ -164,9 +164,9 @@ let extract_impurity tenv pname formals (exec_state : ExecutionDomain.t) : Impur
     match exec_state with
     | ExitProgram astate ->
         ((astate :> AbductiveDomain.t), true)
-    | ContinueProgram astate | ISLLatentMemoryError astate ->
+    | ContinueProgram astate ->
         (astate, false)
-    | AbortProgram astate | LatentAbortProgram {astate} ->
+    | AbortProgram astate | LatentAbortProgram {astate} | ISLLatentMemoryError astate ->
         ((astate :> AbductiveDomain.t), false)
   in
   let pre_heap = (AbductiveDomain.get_pre astate).BaseDomain.heap in

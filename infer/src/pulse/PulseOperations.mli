@@ -27,10 +27,11 @@ module Import : sig
     | ExitProgram of AbductiveDomain.summary
     | AbortProgram of AbductiveDomain.summary
     | LatentAbortProgram of {astate: AbductiveDomain.summary; latent_issue: LatentIssue.t}
-    | ISLLatentMemoryError of 'abductive_domain_t
+    | ISLLatentMemoryError of AbductiveDomain.summary
 
   type 'astate base_error = 'astate AccessResult.error =
     | ReportableError of {astate: 'astate; diagnostic: Diagnostic.t}
+    | ISLError of 'astate
 
   (** {2 Monadic syntax} *)
 

@@ -49,6 +49,8 @@ let report_error tenv proc_desc err_log access_error =
   | `DelayReport (astate, latent_issue) ->
       if Config.pulse_report_latent_issues then report_latent_issue proc_desc err_log latent_issue ;
       LatentAbortProgram {astate; latent_issue}
+  | `ISLDelay astate ->
+      ISLLatentMemoryError astate
 
 
 let report_exec_results {InterproceduralAnalysis.proc_desc; tenv; err_log} results =

@@ -268,13 +268,7 @@ module PulseTransferFunctions = struct
     | ExitProgram _ ->
         (* program already exited, simply propagate the exited state upwards  *)
         [astate]
-    | ContinueProgram ({isl_status= ISLError} as astate) -> (
-      match instr with
-      | Prune (_, _, is_then_branch, _) when is_then_branch ->
-          []
-      | _ ->
-          [ContinueProgram astate] )
-    | ContinueProgram ({isl_status= ISLOk} as astate) -> (
+    | ContinueProgram astate -> (
       match instr with
       | Load {id= lhs_id; e= rhs_exp; loc} ->
           (* [lhs_id := *rhs_exp] *)
@@ -315,11 +309,7 @@ module PulseTransferFunctions = struct
             let astates =
               List.concat_map ls_astate_lhs_addr_hist ~f:(fun result ->
                   let<*> astate, lhs_addr_hist = result in
-                  match (Config.pulse_isl, astate.AbductiveDomain.isl_status) with
-                  | false, _ | true, ISLOk ->
-                      write_function lhs_addr_hist astate
-                  | true, ISLError ->
-                      [Ok astate] )
+                  write_function lhs_addr_hist astate )
             in
             let astates =
               if Topl.is_deep_active () then

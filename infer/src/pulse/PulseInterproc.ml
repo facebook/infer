@@ -637,43 +637,39 @@ let check_all_valid callee_proc_name call_location {AbductiveDomain.pre; _} call
 
 let isl_check_all_invalid invalid_addr_callers callee_proc_name call_location
     {AbductiveDomain.pre; _} pre_astate astate =
-  match astate.AbductiveDomain.isl_status with
-  | ISLOk ->
-      Ok astate
-  | ISLError ->
-      AbstractValue.Map.fold
-        (fun addr_pre (addr_caller, hist_caller) astate_result ->
-          let mk_access_trace callee_access_trace =
-            Trace.ViaCall
-              { in_call= callee_access_trace
-              ; f= Call callee_proc_name
-              ; location= call_location
-              ; history= hist_caller }
-          in
-          match astate_result with
-          | Error _ ->
+  AbstractValue.Map.fold
+    (fun addr_pre (addr_caller, hist_caller) astate_result ->
+      let mk_access_trace callee_access_trace =
+        Trace.ViaCall
+          { in_call= callee_access_trace
+          ; f= Call callee_proc_name
+          ; location= call_location
+          ; history= hist_caller }
+      in
+      match astate_result with
+      | Error _ ->
+          astate_result
+      | Ok astate -> (
+        match
+          BaseAddressAttributes.get_invalid addr_caller
+            (pre_astate.AbductiveDomain.post :> BaseDomain.t).attrs
+        with
+        | None ->
+            astate_result
+        | Some (invalidation, invalidation_trace) -> (
+          match BaseAddressAttributes.get_invalid addr_pre (pre :> BaseDomain.t).attrs with
+          | None ->
               astate_result
-          | Ok astate -> (
-            match
-              BaseAddressAttributes.get_invalid addr_caller
-                (pre_astate.AbductiveDomain.post :> BaseDomain.t).attrs
-            with
-            | None ->
-                astate_result
-            | Some (invalidation, invalidation_trace) -> (
-              match BaseAddressAttributes.get_invalid addr_pre (pre :> BaseDomain.t).attrs with
-              | None ->
-                  astate_result
-              | Some (_, callee_access_trace) ->
-                  let access_trace = mk_access_trace callee_access_trace in
-                  L.d_printfln "ERROR: caller's %a invalid!" AbstractValue.pp addr_caller ;
-                  Error
-                    (AccessResult.ReportableError
-                       { diagnostic=
-                           Diagnostic.AccessToInvalidAddress
-                             {calling_context= []; invalidation; invalidation_trace; access_trace}
-                       ; astate= AbductiveDomain.set_isl_status ISLError astate }) ) ) )
-        invalid_addr_callers (Ok astate)
+          | Some (_, callee_access_trace) ->
+              let access_trace = mk_access_trace callee_access_trace in
+              L.d_printfln "ERROR: caller's %a invalid!" AbstractValue.pp addr_caller ;
+              Error
+                (AccessResult.ReportableError
+                   { diagnostic=
+                       Diagnostic.AccessToInvalidAddress
+                         {calling_context= []; invalidation; invalidation_trace; access_trace}
+                   ; astate }) ) ) )
+    invalid_addr_callers (Ok astate)
 
 
 (* - read all the pre, assert validity of addresses and materializes *everything* (to throw stuff
@@ -690,7 +686,7 @@ let isl_check_all_invalid invalid_addr_callers callee_proc_name call_location
    the noise that this will introduce since we don't care about values. For instance, if the pre
    is for a path where [formal != 0] and we pass [0] then it will be an FP. Maybe the solution is
    to bake in some value analysis. *)
-let apply_prepost callee_proc_name call_location ~callee_prepost:pre_post
+let apply_prepost ~is_isl_error_prepost callee_proc_name call_location ~callee_prepost:pre_post
     ~captured_vars_with_actuals ~formals ~actuals astate =
   L.d_printfln "Applying pre/post for %a(%a):@\n%a" Procname.pp callee_proc_name
     (Pp.seq ~sep:"," Var.pp) formals AbductiveDomain.pp pre_post ;
@@ -718,10 +714,13 @@ let apply_prepost callee_proc_name call_location ~callee_prepost:pre_post
       L.d_printfln "Pre applied successfully. call_state=%a" pp_call_state call_state ;
       match
         let open IResult.Let_syntax in
+        (* only call [check_all_valid] when ISL is not active: the ISL mode generates explicit error
+           specs (which we recognize here using [is_isl_error_prepost]) instead of relying on
+           [check_all_valid], whereas the "normal" mode encodes some error specs implicitly in the
+           ContinueProgram ok specs *)
         let* astate =
           if Config.pulse_isl then
-            Ok
-              (AbductiveDomain.set_isl_status pre_post.AbductiveDomain.isl_status call_state.astate)
+            if is_isl_error_prepost then Error (AccessResult.ISLError astate) else Ok astate
           else check_all_valid callee_proc_name call_location pre_post call_state
         in
         (* reset [visited] *)
@@ -741,7 +740,7 @@ let apply_prepost callee_proc_name call_location ~callee_prepost:pre_post
           else call_state.astate
         in
         let+ astate =
-          if Config.pulse_isl then
+          if is_isl_error_prepost then
             isl_check_all_invalid invalid_subst callee_proc_name call_location pre_post pre_astate
               astate
           else Ok astate

@@ -54,16 +54,6 @@ module PostDomain : BaseDomainSig
     collapse into one. * *)
 module PreDomain : BaseDomainSig
 
-(** Execution status, similar to {!PulseExecutionDomain} but for ISL (Incorrectness Separation
-    Logic) mode, where {!PulseExecutionDomain.ContinueProgram} can also contain "error specs" that
-    describe what happens when some addresses are invalid explicitly instead of relying on
-    [MustBeValid] attributes. *)
-type isl_status =
-  | ISLOk  (** ok triple: the program executes without error *)
-  | ISLError
-      (** Error specification: an invalid address recorded in the precondition will cause an error *)
-[@@deriving equal]
-
 (** pre/post on a single program path *)
 type t = private
   { post: PostDomain.t  (** state at the current program point*)
@@ -74,14 +64,12 @@ type t = private
   ; topl: PulseTopl.state
         (** state at of the Topl monitor at the current program point, when Topl is enabled *)
   ; skipped_calls: SkippedCalls.t  (** metadata: procedure calls for which no summary was found *)
-  ; isl_status: isl_status }
+  }
 [@@deriving equal]
 
 val leq : lhs:t -> rhs:t -> bool
 
 val pp : Format.formatter -> t -> unit
-
-val set_isl_status : isl_status -> t -> t
 
 val mk_initial : Tenv.t -> Procdesc.t -> t
 
@@ -176,7 +164,7 @@ module AddressAttributes : sig
     -> AbstractValue.t
     -> ?null_noop:bool
     -> t
-    -> (t list, Invalidation.t * Trace.t * t) result
+    -> (t, [> `ISLError of t | `InvalidAccess of Invalidation.t * Trace.t * t]) result list
 end
 
 val is_local : Var.t -> t -> bool

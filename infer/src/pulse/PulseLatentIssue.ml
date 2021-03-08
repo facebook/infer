@@ -49,3 +49,5 @@ let should_report (access_error : AbductiveDomain.summary PulseAccessResult.erro
     | ReadUninitializedValue latent ->
         if is_manifest astate then `ReportNow (astate, diagnostic)
         else `DelayReport (astate, ReadUninitializedValue latent) )
+  | ISLError astate ->
+      `ISLDelay astate

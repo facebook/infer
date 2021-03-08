@@ -9,7 +9,9 @@ open! IStd
 open PulseBasicInterface
 module AbductiveDomain = PulseAbductiveDomain
 
-type 'astate error = ReportableError of {astate: 'astate; diagnostic: Diagnostic.t}
+type 'astate error =
+  | ReportableError of {astate: 'astate; diagnostic: Diagnostic.t}
+  | ISLError of 'astate
 
 type ('a, 'astate) base_t = ('a, 'astate error) result
 

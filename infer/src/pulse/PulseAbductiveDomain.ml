@@ -89,42 +89,25 @@ end
 (** represents the inferred pre-condition at each program point, biabduction style *)
 module PreDomain : BaseDomainSig = PostDomain
 
-type isl_status = ISLOk | ISLError [@@deriving compare, equal, yojson_of]
-
-let pp_isl_status f s =
-  if Config.pulse_isl then
-    match s with
-    | ISLOk ->
-        F.pp_print_string f "ISLOk:"
-    | ISLError ->
-        F.pp_print_string f "ISLError:"
-  else ()
-
-
 (* see documentation in this file's .mli *)
 type t =
   { post: PostDomain.t
   ; pre: PreDomain.t
   ; path_condition: PathCondition.t
   ; topl: (PulseTopl.state[@yojson.opaque])
-  ; skipped_calls: SkippedCalls.t
-  ; isl_status: isl_status }
+  ; skipped_calls: SkippedCalls.t }
 [@@deriving compare, equal, yojson_of]
 
-let pp f {post; pre; topl; path_condition; skipped_calls; isl_status} =
-  F.fprintf f "@[<v>%a@;%a@;%a@;PRE=[%a]@;skipped_calls=%a@;TOPL=%a@]" PathCondition.pp
-    path_condition pp_isl_status isl_status PostDomain.pp post PreDomain.pp pre SkippedCalls.pp
-    skipped_calls PulseTopl.pp_state topl
+let pp f {post; pre; topl; path_condition; skipped_calls} =
+  F.fprintf f "@[<v>%a@;%a@;PRE=[%a]@;skipped_calls=%a@;TOPL=%a@]" PathCondition.pp path_condition
+    PostDomain.pp post PreDomain.pp pre SkippedCalls.pp skipped_calls PulseTopl.pp_state topl
 
-
-let set_isl_status status astate = {astate with isl_status= status}
 
 let set_path_condition path_condition astate = {astate with path_condition}
 
 let leq ~lhs ~rhs =
   phys_equal lhs rhs
   || SkippedCalls.leq ~lhs:lhs.skipped_calls ~rhs:rhs.skipped_calls
-     && ((not Config.pulse_isl) || equal_isl_status lhs.isl_status rhs.isl_status)
      && PathCondition.equal lhs.path_condition rhs.path_condition
      &&
      match
@@ -198,8 +181,7 @@ module Stack = struct
           ; pre
           ; topl= astate.topl
           ; skipped_calls= astate.skipped_calls
-          ; path_condition= astate.path_condition
-          ; isl_status= astate.isl_status }
+          ; path_condition= astate.path_condition }
         , addr_hist )
 
 
@@ -379,16 +361,13 @@ module AddressAttributes = struct
               let null_attr =
                 Attribute.Invalid (Invalidation.ConstantDereference IntLit.zero, access_trace)
               in
-              let null_astate =
-                {astate with isl_status= (if null_noop then astate.isl_status else ISLError)}
-                |> add_one addr null_attr
-              in
+              let null_astate = add_one addr null_attr astate in
               let null_astate =
                 if is_eq_null then null_astate else abduce_attribute addr null_attr null_astate
               in
-              [null_astate]
+              if null_noop then [Ok null_astate] else [Error (`ISLError null_astate)]
           in
-          if is_eq_null then Ok null_astates
+          if is_eq_null then null_astates
           else
             let valid_astate =
               let abdalloc = Attribute.ISLAbduced access_trace in
@@ -399,15 +378,13 @@ module AddressAttributes = struct
             let invalid_free =
               (*C or Cpp?*)
               let invalid_attr = Attribute.Invalid (CFree, access_trace) in
-              {astate with isl_status= ISLError}
-              |> abduce_attribute addr invalid_attr
-              |> add_one addr invalid_attr
+              abduce_attribute addr invalid_attr astate |> add_one addr invalid_attr
             in
-            Ok ([valid_astate; invalid_free] @ null_astates)
+            Ok valid_astate :: Error (`ISLError invalid_free) :: null_astates
       | Some _ ->
-          Ok [astate] )
+          [Ok astate] )
     | Some (invalidation, invalidation_trace) ->
-        Error (invalidation, invalidation_trace, {astate with isl_status= ISLError})
+        [Error (`InvalidAccess (invalidation, invalidation_trace, astate))]
 end
 
 module Memory = struct
@@ -451,8 +428,7 @@ module Memory = struct
           ; pre= PreDomain.update astate.pre ~heap:foot_heap
           ; topl= astate.topl
           ; skipped_calls= astate.skipped_calls
-          ; path_condition= astate.path_condition
-          ; isl_status= astate.isl_status }
+          ; path_condition= astate.path_condition }
         , addr_hist_dst )
 
 
@@ -587,8 +563,7 @@ let mk_initial tenv proc_desc =
   ; post
   ; topl= PulseTopl.start ()
   ; skipped_calls= SkippedCalls.empty
-  ; path_condition= PathCondition.true_
-  ; isl_status= ISLOk }
+  ; path_condition= PathCondition.true_ }
 
 
 let add_skipped_call pname trace astate =
