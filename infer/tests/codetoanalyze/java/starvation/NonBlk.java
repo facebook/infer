@@ -42,4 +42,14 @@ class NonBlk {
       }
     }
   }
+
+  private void privateDoGetOk() throws InterruptedException, ExecutionException {
+    future.get();
+  }
+
+  @NonBlocking
+  @UiThread
+  void onUiThreadCalleeOk() throws InterruptedException, ExecutionException {
+    privateDoGetOk();
+  }
 }

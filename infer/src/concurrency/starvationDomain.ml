@@ -298,6 +298,14 @@ module Event = struct
 
   let has_recursive_lock tenv event =
     get_acquired_locks event |> List.exists ~f:(Lock.is_recursive tenv)
+
+
+  let is_blocking_call = function
+    | LockAcquire _ | MustNotOccurUnderLock _ ->
+        (* lock taking is not a method call (though it may block) and [MustNotOccurUnderLock] calls not necessarily blocking *)
+        false
+    | Ipc _ | MayBlock _ | MonitorWait _ | StrictModeCall _ ->
+        true
 end
 
 (** A lock acquisition with source location and procname in which it occurs. The location & procname
@@ -467,6 +475,9 @@ module CriticalPairElement = struct
     | Some event ->
         let acquisitions = Acquisitions.apply_subst subst elem.acquisitions in
         Some {acquisitions; event}
+
+
+  let is_blocking_call elt = Event.is_blocking_call elt.event
 end
 
 module CriticalPair = struct
@@ -529,17 +540,21 @@ module CriticalPair = struct
         Some (map ~f:(fun (elem : CriticalPairElement.t) -> {elem with event}) callee_pair)
 
 
-  let integrate_summary_opt ~subst ~tenv existing_acquisitions call_site
+  let is_blocking_call pair = CriticalPairElement.is_blocking_call pair.elem
+
+  let integrate_summary_opt ~subst ~tenv ~ignore_blocking_calls existing_acquisitions call_site
       (caller_thread : ThreadDomain.t) (callee_pair : t) =
-    apply_subst subst callee_pair
-    |> Option.bind ~f:(filter_out_reentrant_relocks (Some tenv) existing_acquisitions)
-    |> Option.bind ~f:(apply_caller_thread caller_thread)
-    |> Option.map ~f:(fun callee_pair ->
-           let f (elem : CriticalPairElement.t) =
-             {elem with acquisitions= Acquisitions.union existing_acquisitions elem.acquisitions}
-           in
-           map ~f callee_pair )
-    |> Option.map ~f:(fun callee_pair -> with_callsite callee_pair call_site)
+    if ignore_blocking_calls && is_blocking_call callee_pair then None
+    else
+      apply_subst subst callee_pair
+      |> Option.bind ~f:(filter_out_reentrant_relocks (Some tenv) existing_acquisitions)
+      |> Option.bind ~f:(apply_caller_thread caller_thread)
+      |> Option.map ~f:(fun callee_pair ->
+             let f (elem : CriticalPairElement.t) =
+               {elem with acquisitions= Acquisitions.union existing_acquisitions elem.acquisitions}
+             in
+             map ~f callee_pair )
+      |> Option.map ~f:(fun callee_pair -> with_callsite callee_pair call_site)
 
 
   let get_earliest_lock_or_call_loc ~procname ({elem= {acquisitions}} as t) =
@@ -607,12 +622,12 @@ end
 module CriticalPairs = struct
   include CriticalPair.FiniteSet
 
-  let with_callsite astate ~tenv ~subst lock_state call_site thread =
+  let with_callsite astate ~tenv ~subst ~ignore_blocking_calls lock_state call_site thread =
     let existing_acquisitions = LockState.get_acquisitions lock_state in
     fold
       (fun critical_pair acc ->
-        CriticalPair.integrate_summary_opt ~subst ~tenv existing_acquisitions call_site thread
-          critical_pair
+        CriticalPair.integrate_summary_opt ~subst ~tenv ~ignore_blocking_calls existing_acquisitions
+          call_site thread critical_pair
         |> Option.bind
              ~f:(CriticalPair.filter_out_reentrant_relocks (Some tenv) existing_acquisitions)
         |> Option.value_map ~default:acc ~f:(fun new_pair -> add new_pair acc) )
@@ -906,7 +921,7 @@ let pp_summary fmt (summary : summary) =
 let integrate_summary ~tenv ~lhs ~subst callsite (astate : t) (summary : summary) =
   let critical_pairs' =
     CriticalPairs.with_callsite summary.critical_pairs ~tenv ~subst astate.lock_state callsite
-      astate.thread
+      astate.thread ~ignore_blocking_calls:astate.ignore_blocking_calls
   in
   { astate with
     critical_pairs= CriticalPairs.join astate.critical_pairs critical_pairs'
