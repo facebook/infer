@@ -164,6 +164,7 @@ DIRECT_TESTS += \
   java_hoisting \
   java_hoistingExpensive \
   java_impurity \
+  java_immutability \
   java_inefficientKeysetIterator \
   java_litho-required-props \
   java_performance \
