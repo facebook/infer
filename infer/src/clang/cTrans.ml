@@ -4535,22 +4535,23 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           instr
           (Pp.of_string ~f:Clang_ast_j.string_of_stmt)
           instr
-    | MSAsmStmt _
-    | CapturedStmt _
-    | CoreturnStmt _
-    | CoroutineBodyStmt _
     | AddrLabelExpr _
     | ArrayTypeTraitExpr _
     | AsTypeExpr _
     | AtomicExpr _
+    | CapturedStmt _
+    | ChooseExpr _
+    | CoawaitExpr _
+    | ConceptSpecializationExpr _
+    | ConvertVectorExpr _
+    | CoreturnStmt _
+    | CoroutineBodyStmt _
+    | CoyieldExpr _
+    | CUDAKernelCallExpr _
     | CXXFoldExpr _
+    | CXXRewrittenBinaryOperator _
     | CXXUnresolvedConstructExpr _
     | CXXUuidofExpr _
-    | CUDAKernelCallExpr _
-    | ChooseExpr _
-    | ConvertVectorExpr _
-    | CoawaitExpr _
-    | CoyieldExpr _
     | DependentCoawaitExpr _
     | DependentScopeDeclRefExpr _
     | DesignatedInitExpr _
@@ -4559,52 +4560,41 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | ExtVectorElementExpr _
     | FunctionParmPackExpr _
     | ImaginaryLiteral _
+    | IndirectGotoStmt _
+    | MSAsmStmt _
+    | MSDependentExistsStmt _
     | MSPropertyRefExpr _
     | MSPropertySubscriptExpr _
     | NoInitExpr _
-    | OMPArraySectionExpr _
     | ObjCIsaExpr _
     | ObjCSubscriptRefExpr _
-    | UnresolvedLookupExpr _
-    | UnresolvedMemberExpr _
-    | PackExpansionExpr _
-    | ParenListExpr _
-    | TypoExpr _
-    | IndirectGotoStmt _
-    | MSDependentExistsStmt _
+    | OMPArraySectionExpr _
     | OMPAtomicDirective _
     | OMPBarrierDirective _
     | OMPCancelDirective _
     | OMPCancellationPointDirective _
     | OMPCriticalDirective _
-    | OMPFlushDirective _
     | OMPDistributeDirective _
     | OMPDistributeParallelForDirective _
     | OMPDistributeParallelForSimdDirective _
     | OMPDistributeSimdDirective _
+    | OMPFlushDirective _
     | OMPForDirective _
     | OMPForSimdDirective _
-    | OMPParallelForDirective _
-    | OMPParallelForSimdDirective _
-    | OMPSimdDirective _
-    | OMPTargetParallelForSimdDirective _
-    | OMPTargetSimdDirective _
-    | OMPTargetTeamsDistributeDirective _
-    | OMPTargetTeamsDistributeParallelForDirective _
-    | OMPTargetTeamsDistributeParallelForSimdDirective _
-    | OMPTargetTeamsDistributeSimdDirective _
-    | OMPTaskLoopDirective _
-    | OMPTaskLoopSimdDirective _
-    | OMPTeamsDistributeDirective _
-    | OMPTeamsDistributeParallelForDirective _
-    | OMPTeamsDistributeParallelForSimdDirective _
-    | OMPTeamsDistributeSimdDirective _
     | OMPMasterDirective _
+    | OMPMasterTaskLoopDirective _
+    | OMPMasterTaskLoopSimdDirective _
     | OMPOrderedDirective _
     | OMPParallelDirective _
+    | OMPParallelForDirective _
+    | OMPParallelForSimdDirective _
+    | OMPParallelMasterDirective _
+    | OMPParallelMasterTaskLoopDirective _
+    | OMPParallelMasterTaskLoopSimdDirective _
     | OMPParallelSectionsDirective _
     | OMPSectionDirective _
     | OMPSectionsDirective _
+    | OMPSimdDirective _
     | OMPSingleDirective _
     | OMPTargetDataDirective _
     | OMPTargetDirective _
@@ -4612,27 +4602,37 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | OMPTargetExitDataDirective _
     | OMPTargetParallelDirective _
     | OMPTargetParallelForDirective _
+    | OMPTargetParallelForSimdDirective _
+    | OMPTargetSimdDirective _
     | OMPTargetTeamsDirective _
+    | OMPTargetTeamsDistributeDirective _
+    | OMPTargetTeamsDistributeParallelForDirective _
+    | OMPTargetTeamsDistributeParallelForSimdDirective _
+    | OMPTargetTeamsDistributeSimdDirective _
     | OMPTargetUpdateDirective _
     | OMPTaskDirective _
     | OMPTaskgroupDirective _
+    | OMPTaskLoopDirective _
+    | OMPTaskLoopSimdDirective _
     | OMPTaskwaitDirective _
     | OMPTaskyieldDirective _
     | OMPTeamsDirective _
-    | OMPMasterTaskLoopDirective _
-    | OMPMasterTaskLoopSimdDirective _
-    | OMPParallelMasterTaskLoopDirective _
-    | OMPParallelMasterTaskLoopSimdDirective _
-    | OMPParallelMasterDirective _
-    | CXXRewrittenBinaryOperator _
-    | ConceptSpecializationExpr _
+    | OMPTeamsDistributeDirective _
+    | OMPTeamsDistributeParallelForDirective _
+    | OMPTeamsDistributeParallelForSimdDirective _
+    | OMPTeamsDistributeSimdDirective _
+    | PackExpansionExpr _
+    | ParenListExpr _
     | RequiresExpr _
-    | SourceLocExpr _
     | SEHExceptStmt _
     | SEHFinallyStmt _
     | SEHLeaveStmt _
     | SEHTryStmt _
-    | ShuffleVectorExpr _ ->
+    | ShuffleVectorExpr _
+    | SourceLocExpr _
+    | TypoExpr _
+    | UnresolvedLookupExpr _
+    | UnresolvedMemberExpr _ ->
         let (stmt_info, stmts), ret_typ =
           match Clang_ast_proj.get_expr_tuple instr with
           | Some (stmt_info, stmts, expr_info) ->

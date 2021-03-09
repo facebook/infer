@@ -167,74 +167,74 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     | EmptyDecl _ | ObjCIvarDecl _ | ObjCPropertyDecl _ | ObjCInterfaceDecl _ ->
         ()
     | AccessSpecDecl _
-    | ConceptDecl _
-    | OMPDeclareMapperDecl _
-    | OMPAllocateDecl _
+    | BindingDecl _
     | BlockDecl _
+    | BuiltinTemplateDecl _
     | CapturedDecl _
     | ClassScopeFunctionSpecializationDecl _
+    | ClassTemplateDecl _
+    | ClassTemplatePartialSpecializationDecl _
+    | ClassTemplateSpecializationDecl _
+    | ConceptDecl _
+    | ConstructorUsingShadowDecl _
+    | CXXDeductionGuideDecl _
+    | CXXRecordDecl _
+    | DecompositionDecl _
+    | EnumConstantDecl _
+    | EnumDecl _
     | ExportDecl _
     | ExternCContextDecl _
+    | FieldDecl _
     | FileScopeAsmDecl _
     | FriendDecl _
     | FriendTemplateDecl _
+    | FunctionDecl _
+    | FunctionTemplateDecl _
+    | ImplicitParamDecl _
     | ImportDecl _
-    | LinkageSpecDecl _
+    | IndirectFieldDecl _
     | LabelDecl _
-    | NamespaceDecl _
+    | LifetimeExtendedTemporaryDecl _
+    | LinkageSpecDecl _
+    | MSPropertyDecl _
     | NamespaceAliasDecl _
-    | ObjCCompatibleAliasDecl _
+    | NamespaceDecl _
+    | NonTypeTemplateParmDecl _
+    | ObjCAtDefsFieldDecl _
     | ObjCCategoryDecl _
     | ObjCCategoryImplDecl _
+    | ObjCCompatibleAliasDecl _
     | ObjCImplementationDecl _
     | ObjCProtocolDecl _
-    | BuiltinTemplateDecl _
-    | ClassTemplateDecl _
-    | FunctionTemplateDecl _
-    | TypeAliasTemplateDecl _
-    | VarTemplateDecl _
-    | TemplateTemplateParmDecl _
-    | EnumDecl _
-    | RecordDecl _
-    | CXXRecordDecl _
-    | ClassTemplateSpecializationDecl _
-    | ClassTemplatePartialSpecializationDecl _
-    | TemplateTypeParmDecl _
     | ObjCTypeParamDecl _
+    | OMPAllocateDecl _
+    | OMPCapturedExprDecl _
+    | OMPDeclareMapperDecl _
+    | OMPDeclareReductionDecl _
+    | OMPRequiresDecl _
+    | OMPThreadPrivateDecl _
+    | ParmVarDecl _
+    | PragmaCommentDecl _
+    | PragmaDetectMismatchDecl _
+    | RecordDecl _
+    | RequiresExprBodyDecl _
+    | StaticAssertDecl _
+    | TemplateTemplateParmDecl _
+    | TemplateTypeParmDecl _
+    | TranslationUnitDecl _
     | TypeAliasDecl _
+    | TypeAliasTemplateDecl _
     | TypedefDecl _
     | UnresolvedUsingTypenameDecl _
+    | UnresolvedUsingValueDecl _
     | UsingDecl _
     | UsingDirectiveDecl _
     | UsingPackDecl _
     | UsingShadowDecl _
-    | ConstructorUsingShadowDecl _
-    | BindingDecl _
-    | FieldDecl _
-    | ObjCAtDefsFieldDecl _
-    | FunctionDecl _
-    | CXXDeductionGuideDecl _
-    | MSPropertyDecl _
-    | NonTypeTemplateParmDecl _
     | VarDecl _
-    | DecompositionDecl _
-    | ImplicitParamDecl _
-    | OMPCapturedExprDecl _
-    | ParmVarDecl _
-    | VarTemplateSpecializationDecl _
+    | VarTemplateDecl _
     | VarTemplatePartialSpecializationDecl _
-    | EnumConstantDecl _
-    | IndirectFieldDecl _
-    | OMPDeclareReductionDecl _
-    | UnresolvedUsingValueDecl _
-    | OMPRequiresDecl _
-    | OMPThreadPrivateDecl _
-    | PragmaCommentDecl _
-    | PragmaDetectMismatchDecl _
-    | StaticAssertDecl _
-    | TranslationUnitDecl _
-    | LifetimeExtendedTemporaryDecl _
-    | RequiresExprBodyDecl _ ->
+    | VarTemplateSpecializationDecl _ ->
         (* TODO: some form of logging *)
         ()
 
