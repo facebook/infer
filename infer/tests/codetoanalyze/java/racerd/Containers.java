@@ -386,4 +386,10 @@ class Containers {
   byte[] raceOnMacDoFinalBad() {
     return mac.doFinal();
   }
+
+  static Set<Integer> staticSyncSet = new ConcurrentSkipListSet<Integer>();
+
+  static void staticAddToSyncIntegerSetOk(int s) {
+    staticSyncSet.add(s);
+  }
 }

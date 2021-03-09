@@ -343,8 +343,7 @@ let should_analyze_proc tenv pn =
   (not
      ( match pn with
      | Procname.Java java_pname ->
-         Procname.Java.is_class_initializer java_pname
-         || Typ.Name.Java.is_external (Procname.Java.get_class_type_name java_pname)
+         Typ.Name.Java.is_external (Procname.Java.get_class_type_name java_pname)
      (* third party code may be hard to change, not useful to report races there *)
      | _ ->
          false ))
