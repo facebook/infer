@@ -184,6 +184,8 @@ val set_path_condition : PathCondition.t -> t -> t
 (** private type to make sure {!summary_of_post} is always called when creating summaries *)
 type summary = private t [@@deriving compare, equal, yojson_of]
 
+val skipped_calls_match_pattern : summary -> bool
+
 val summary_of_post : Tenv.t -> Procdesc.t -> t -> summary SatUnsat.t
 (** trim the state down to just the procedure's interface (formals and globals), and simplify and
     normalize the state *)

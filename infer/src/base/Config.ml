@@ -1955,6 +1955,17 @@ and pulse_model_skip_pattern =
     "Regex of methods that should be modelled as \"skip\" in Pulse"
 
 
+and pulse_report_ignore_unknown_java_methods_patterns =
+  CLOpt.mk_string_list ~default:[".*<init>.*"]
+    ~long:"pulse-report-ignore-unknown-java-methods-patterns"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "On Java, issues that are found on program paths that contain calls to unknown methods (those \
+     without implementation) are not reported unless all the unknown method names match this \
+     pattern. If the empty list is provided or \
+     --pulse_report_ignore_unknown_java_methods_patterns-reset, all issues will be reported \
+     regardless the presence of unknown code"
+
+
 and pulse_model_transfer_ownership =
   CLOpt.mk_string_list ~long:"pulse-model-transfer-ownership"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -3200,6 +3211,14 @@ and pulse_model_release_pattern = Option.map ~f:Str.regexp !pulse_model_release_
 and pulse_model_return_nonnull = Option.map ~f:Str.regexp !pulse_model_return_nonnull
 
 and pulse_model_skip_pattern = Option.map ~f:Str.regexp !pulse_model_skip_pattern
+
+and pulse_report_ignore_unknown_java_methods_patterns =
+  match RevList.to_list !pulse_report_ignore_unknown_java_methods_patterns with
+  | [] ->
+      None
+  | patts ->
+      Some (Str.regexp (String.concat ~sep:"\\|" patts))
+
 
 and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
   let models =

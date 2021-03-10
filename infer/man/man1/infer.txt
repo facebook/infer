@@ -1009,6 +1009,15 @@ OPTIONS
            Activates: Enable pulse and disable all other checkers
            (Conversely: --no-pulse-only)           See also infer-analyze(1).
 
+       --pulse-report-ignore-unknown-java-methods-patterns +string
+           On Java, issues that are found on program paths that contain calls
+           to unknown methods (those without implementation) are not reported
+           unless all the unknown method names match this pattern. If the
+           empty list is provided or
+           --pulse_report_ignore_unknown_java_methods_patterns-reset, all
+           issues will be reported regardless the presence of unknown code       
+    See also infer-analyze(1).
+
        --purity
            Activates: checker purity: Detects pure (side-effect-free)
            functions. A different implementation of "impurity". (Conversely:

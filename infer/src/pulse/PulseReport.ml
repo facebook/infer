@@ -30,13 +30,17 @@ let report_latent_issue proc_desc err_log latent_issue =
   report ~extra_trace proc_desc err_log diagnostic
 
 
-let is_suppressed tenv proc_desc diagnostic =
+let is_nullsafe_error tenv diagnostic jn =
+  (not Config.pulse_nullsafe_report_npe)
+  && IssueType.equal (Diagnostic.get_issue_type diagnostic) IssueType.nullptr_dereference
+  && match NullsafeMode.of_java_procname tenv jn with Default -> false | Local _ | Strict -> true
+
+
+let is_suppressed tenv proc_desc diagnostic astate =
   match Procdesc.get_proc_name proc_desc with
-  | Procname.Java jn
-    when (not Config.pulse_nullsafe_report_npe)
-         && IssueType.equal (Diagnostic.get_issue_type diagnostic) IssueType.nullptr_dereference
-    -> (
-    match NullsafeMode.of_java_procname tenv jn with Default -> false | Local _ | Strict -> true )
+  | Procname.Java jn ->
+      is_nullsafe_error tenv diagnostic jn
+      || not (AbductiveDomain.skipped_calls_match_pattern astate)
   | _ ->
       false
 
@@ -44,7 +48,8 @@ let is_suppressed tenv proc_desc diagnostic =
 let report_error tenv proc_desc err_log access_error =
   match LatentIssue.should_report access_error with
   | `ReportNow (astate_summary, diagnostic) ->
-      if not (is_suppressed tenv proc_desc diagnostic) then report proc_desc err_log diagnostic ;
+      if not (is_suppressed tenv proc_desc diagnostic astate_summary) then
+        report proc_desc err_log diagnostic ;
       AbortProgram astate_summary
   | `DelayReport (astate, latent_issue) ->
       if Config.pulse_report_latent_issues then report_latent_issue proc_desc err_log latent_issue ;

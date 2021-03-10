@@ -582,6 +582,16 @@ let add_skipped_calls new_skipped_calls astate =
   if phys_equal skipped_calls astate.skipped_calls then astate else {astate with skipped_calls}
 
 
+let skipped_calls_match_pattern astate =
+  (* For every skipped function, there needs to be at least one regexp given in --pulse_report_ignore_java_methods_patterns
+     that matches it *)
+  Option.value_map Config.pulse_report_ignore_unknown_java_methods_patterns ~default:true
+    ~f:(fun patt ->
+      SkippedCalls.for_all
+        (fun skipped_proc _ -> Str.string_match patt (Procname.to_string skipped_proc) 0)
+        astate.skipped_calls )
+
+
 let discard_unreachable ({pre; post} as astate) =
   let pre_addresses = BaseDomain.reachable_addresses (pre :> BaseDomain.t) in
   let pre_new =
