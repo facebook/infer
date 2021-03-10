@@ -53,8 +53,10 @@ let immediate_or_first_call calling_context (trace : Trace.t) =
       `Call f
 
 
-let get_message = function
-  | AccessToInvalidAddress {calling_context; invalidation; invalidation_trace; access_trace} ->
+let get_message diagnostic =
+  let pulse_start_msg = "Pulse found a potential" in
+  match diagnostic with
+  | AccessToInvalidAddress {calling_context; invalidation_trace; access_trace} ->
       (* The goal is to get one of the following messages depending on the scenario:
 
          42: delete x; return x->f
@@ -75,26 +77,26 @@ let get_message = function
       let pp_access_trace fmt (trace : Trace.t) =
         match immediate_or_first_call calling_context trace with
         | `Immediate ->
-            F.fprintf fmt "accessing memory that "
+            ()
         | `Call f ->
-            F.fprintf fmt "call to %a eventually accesses memory that " CallEvent.describe f
+            F.fprintf fmt "in call to %a " CallEvent.describe f
       in
-      let pp_invalidation_trace line invalidation fmt (trace : Trace.t) =
+      let pp_invalidation_trace line fmt (trace : Trace.t) =
         let pp_line fmt line = F.fprintf fmt " on line %d" line in
         match immediate_or_first_call calling_context trace with
         | `Immediate ->
-            F.fprintf fmt "%a%a" Invalidation.describe invalidation pp_line line
+            F.fprintf fmt "null pointer dereference %a" pp_line line
         | `Call f ->
-            F.fprintf fmt "%a%a indirectly during the call to %a" Invalidation.describe invalidation
-              pp_line line CallEvent.describe f
+            F.fprintf fmt "null pointer dereference %a indirectly during the call to %a" pp_line
+              line CallEvent.describe f
       in
       let invalidation_line =
         let {Location.line; _} = Trace.get_outer_location invalidation_trace in
         line
       in
-      F.asprintf "%a%a" pp_access_trace access_trace
-        (pp_invalidation_trace invalidation_line invalidation)
-        invalidation_trace
+      F.asprintf "%s %a%a." pulse_start_msg
+        (pp_invalidation_trace invalidation_line)
+        invalidation_trace pp_access_trace access_trace
   | MemoryLeak {procname; location; allocation_trace} ->
       let allocation_line =
         let {Location.line; _} = Trace.get_outer_location allocation_trace in
@@ -108,8 +110,9 @@ let get_message = function
             F.fprintf fmt "by call to %a" CallEvent.describe f
       in
       F.asprintf
-        "memory dynamically allocated at line %d %a, is not freed after the last access at %a"
-        allocation_line pp_allocation_trace allocation_trace Location.pp location
+        "%s memory leak. Memory dynamically allocated at line %d %a, is not freed after the last \
+         access at %a"
+        pulse_start_msg allocation_line pp_allocation_trace allocation_trace Location.pp location
   | ReadUninitializedValue {calling_context; trace} ->
       let root_var =
         PulseTrace.find_map trace ~f:(function VariableDeclared (pvar, _) -> Some pvar | _ -> None)
@@ -149,13 +152,15 @@ let get_message = function
         | `Call f ->
             F.fprintf fmt "during the call to %a on line %d" CallEvent.describe f line
       in
-      F.asprintf "uninitialized value%t is read %t" pp_access_path pp_location
+      F.asprintf "%s uninitialized value%t being read on %t" pulse_start_msg pp_access_path
+        pp_location
   | StackVariableAddressEscape {variable; _} ->
       let pp_var f var =
         if Var.is_cpp_temporary var then F.pp_print_string f "C++ temporary"
         else F.fprintf f "stack variable `%a`" Var.pp var
       in
-      F.asprintf "address of %a is returned by the function" pp_var variable
+      F.asprintf "%s stack variable address escape. Address of %a is returned by the function"
+        pulse_start_msg pp_var variable
 
 
 let add_errlog_header ~title location errlog =
@@ -183,15 +188,23 @@ let get_trace = function
   | AccessToInvalidAddress {calling_context; invalidation; invalidation_trace; access_trace} ->
       get_trace_calling_context calling_context
       @@
+      let start_title, access_title =
+        match invalidation with
+        | ConstantDereference i when IntLit.equal i IntLit.zero ->
+            ( "source of the null value part of the trace starts here"
+            , "null pointer dereference part of the trace starts here" )
+        | _ ->
+            ( "invalidation part of the trace starts here"
+            , "use-after-lifetime part of the trace starts here" )
+      in
       let start_location = Trace.get_start_location invalidation_trace in
-      add_errlog_header ~title:"invalidation part of the trace starts here" start_location
+      add_errlog_header ~title:start_title start_location
       @@ Trace.add_to_errlog ~nesting:1
            ~pp_immediate:(fun fmt -> F.fprintf fmt "%a" Invalidation.describe invalidation)
            invalidation_trace
       @@
       let access_start_location = Trace.get_start_location access_trace in
-      add_errlog_header ~title:"use-after-lifetime part of the trace starts here"
-        access_start_location
+      add_errlog_header ~title:access_title access_start_location
       @@ Trace.add_to_errlog ~nesting:1
            ~pp_immediate:(fun fmt -> F.pp_print_string fmt "invalid access occurs here")
            access_trace
