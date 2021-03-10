@@ -87,6 +87,28 @@ are tested by the regex are relative to the
 &lsquo;&lt;reason_string&gt;&lsquo; is a non-empty string
 used to explain why the issue was filtered.</p>
 
+
+<p style="margin-left:11%;"><b>--config-impact-data-file</b>
+<i>file</i></p>
+
+<p style="margin-left:17%;">[ConfigImpact] Specify the file
+containing the config data</p>
+
+
+<p style="margin-left:11%;"><b>--config-impact-issues-tests</b>
+<i>file</i></p>
+
+<p style="margin-left:17%;">Write a list of config impact
+issues in a format suitable for config impact tests to
+<i>file</i></p>
+
+
+<p style="margin-left:11%;"><b>--config-impact-max-callees-to-print</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Specify the maximum number of
+unchecked callees to print in the config impact checker</p>
+
 <p style="margin-left:11%;"><b>--cost-issues-tests</b>
 <i>file</i></p>
 
@@ -213,6 +235,7 @@ default), <br>
 CONDITION_ALWAYS_FALSE (disabled by default), <br>
 CONDITION_ALWAYS_TRUE (disabled by default), <br>
 CONFIG_CHECKS_BETWEEN_MARKERS (disabled by default), <br>
+CONFIG_IMPACT (disabled by default), <br>
 CONSTANT_ADDRESS_DEREFERENCE (disabled by default), <br>
 CREATE_INTENT_FROM_URI (enabled by default), <br>
 CROSS_SITE_SCRIPTING (enabled by default), <br>
@@ -275,6 +298,7 @@ GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL
 <br>
 (disabled by default), <br>
 GUARDEDBY_VIOLATION (enabled by default), <br>
+GUARDEDBY_VIOLATION_NULLSAFE (enabled by default), <br>
 IMPURE_FUNCTION (enabled by default), <br>
 INEFFICIENT_KEYSET_ITERATOR (enabled by default), <br>
 INFERBO_ALLOC_IS_BIG (enabled by default), <br>
@@ -292,6 +316,7 @@ INTEGER_OVERFLOW_L5 (disabled by default), <br>
 INTEGER_OVERFLOW_U5 (disabled by default), <br>
 INTERFACE_NOT_THREAD_SAFE (enabled by default), <br>
 INVARIANT_CALL (disabled by default), <br>
+IPC_ON_UI_THREAD (enabled by default), <br>
 IVAR_NOT_NULL_CHECKED (enabled by default), <br>
 Internal_error (enabled by default), <br>
 JAVASCRIPT_INJECTION (enabled by default), <br>
@@ -338,6 +363,7 @@ STRONG_DELEGATE_WARNING (enabled by default), <br>
 STRONG_SELF_NOT_CHECKED (enabled by default), <br>
 Symexec_memory_error (enabled by default), <br>
 THREAD_SAFETY_VIOLATION (enabled by default), <br>
+THREAD_SAFETY_VIOLATION_NULLSAFE (enabled by default), <br>
 TOPL_BIABD_ERROR (enabled by default), <br>
 TOPL_PULSE_ERROR (enabled by default), <br>
 UNINITIALIZED_VALUE (enabled by default), <br>
@@ -374,6 +400,13 @@ or off.</p>
 <p style="margin-left:17%;">Deactivates: Do not show the
 experimental and blacklisted issue types (Conversely:
 <b>--filtering</b> | <b>-f</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--from-json-config-impact-report</b>
+<i>config-impact-report.json</i></p>
+
+<p style="margin-left:17%;">Load costs analysis results
+from a config-impact-report file.</p>
 
 
 <p style="margin-left:11%;"><b>--from-json-costs-report</b>
