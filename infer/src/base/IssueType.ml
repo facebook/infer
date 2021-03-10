@@ -791,12 +791,12 @@ let mutable_local_variable_in_component_file =
 
 let null_dereference =
   register ~id:"NULL_DEREFERENCE" Error Biabduction
-    ~user_documentation:[%blob "../../documentation/issues/NULL_DEREFERENCE.md"]
+    ~user_documentation:[%blob "../../documentation/issues/NULLPTR_DEREFERENCE.md"]
 
 
 let nullptr_dereference =
   register ~id:"NULLPTR_DEREFERENCE" Error Pulse
-    ~user_documentation:"See [NULL_DEREFERENCE](#null_dereference)."
+    ~user_documentation:[%blob "../../documentation/issues/NULLPTR_DEREFERENCE.md"]
 
 
 let optional_empty_access =

@@ -305,8 +305,9 @@ let config_unsafe checker =
       ; activates= [] }
   | Pulse ->
       { id= "pulse"
-      ; kind= UserFacing {title= "Pulse"; markdown_body= ""}
-      ; support= (function Clang -> Support | Java -> ExperimentalSupport | CIL -> NoSupport)
+      ; kind=
+          UserFacing {title= "Pulse"; markdown_body= [%blob "../../documentation/checkers/Pulse.md"]}
+      ; support= (function Clang | Java -> Support | CIL -> NoSupport)
       ; short_documentation= "Memory and lifetime analysis."
       ; cli_flags= Some {deprecated= ["-ownership"]; show_in_help= true}
       ; enabled_by_default= false

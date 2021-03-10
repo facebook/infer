@@ -472,6 +472,13 @@ config-impact-analysis and disable all other checkers
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--config-impact-current</b> <i>path</i></p>
+
+<p style="margin-left:17%;">Config impact report of the
+latest revision</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-reportdiff</b>(1). <b><br>
 --config-impact-data-file</b> <i>file</i></p>
 
 <p style="margin-left:17%;">[ConfigImpact] Specify the file
@@ -479,6 +486,28 @@ containing the config data</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-report</b>(1). <b><br>
+--config-impact-issues-tests</b> <i>file</i></p>
+
+<p style="margin-left:17%;">Write a list of config impact
+issues in a format suitable for config impact tests to
+<i>file</i></p>
+
+<p style="margin-left:11%;">See also
+<b>infer-report</b>(1). <b><br>
+--config-impact-max-callees-to-print</b> <i>int</i></p>
+
+<p style="margin-left:17%;">Specify the maximum number of
+unchecked callees to print in the config impact checker</p>
+
+<p style="margin-left:11%;">See also <b>infer-report</b>(1)
+and <b>infer-reportdiff</b>(1). <b><br>
+--config-impact-previous</b> <i>path</i></p>
+
+<p style="margin-left:17%;">Config impact report of the
+base revision to use for comparison</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-reportdiff</b>(1). <b><br>
 --continue</b></p>
 
 <p style="margin-left:17%;">Activates: Continue the capture
@@ -828,6 +857,7 @@ INTEGER_OVERFLOW_L5 (disabled by default), <br>
 INTEGER_OVERFLOW_U5 (disabled by default), <br>
 INTERFACE_NOT_THREAD_SAFE (enabled by default), <br>
 INVARIANT_CALL (disabled by default), <br>
+IPC_ON_UI_THREAD (enabled by default), <br>
 IVAR_NOT_NULL_CHECKED (enabled by default), <br>
 Internal_error (enabled by default), <br>
 JAVASCRIPT_INJECTION (enabled by default), <br>
@@ -1006,6 +1036,14 @@ fragment-retains-view and disable all other checkers
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--from-json-config-impact-report</b>
+<i>config-impact-report.json</i></p>
+
+<p style="margin-left:17%;">Load costs analysis results
+from a config-impact-report file.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-report</b>(1). <b><br>
 --from-json-costs-report</b> <i>costs-report.json</i></p>
 
 <p style="margin-left:17%;">Load costs analysis results
