@@ -228,6 +228,24 @@ public class RequiredProps {
     builder.child(childBuilder);
   }
 
+  Component.Builder getBuilder(MyComponent.Builder builder) {
+    if (builder == null) {
+      return null;
+    } else {
+      return builder.prop1(new Object());
+    }
+  }
+
+  public void buildWithColumnChildBadNullOk() {
+    Column.Builder builder = Column.create();
+    builder.child(getBuilder(null));
+  }
+
+  public void buildWithColumnChildBadCalleeBad() {
+    Column.Builder builder = Column.create();
+    builder.child(getBuilder(mMyComponent.create()));
+  }
+
   public Component buildWithColumnChildOk() {
     return Column.create()
         .child(mMyComponent.create().prop1(new Object()).prop3(new Object()))
