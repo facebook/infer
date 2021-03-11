@@ -624,6 +624,14 @@ let rec get_method = function
 (** Return whether the procname is a block procname. *)
 let is_objc_block = function Block _ -> true | _ -> false
 
+(** Return whether the procname is a cpp lambda procname. *)
+let is_cpp_lambda = function
+  | ObjC_Cpp cpp_pname when ObjC_Cpp.is_cpp_lambda cpp_pname ->
+      true
+  | _ ->
+      false
+
+
 (** Return the language of the procedure. *)
 let get_language = function
   | ObjC_Cpp _ ->

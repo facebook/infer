@@ -831,17 +831,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     (* Captured variables without initialization do not have the correct types
        inside of lambda bodies. The same issue happens for variables captured by reference
        inside objc blocks. Use the types stored in the procdesc. *)
-    let is_objc_block_or_cpp_lambda =
-      match procname with
-      | Procname.ObjC_Cpp cpp_pname when Procname.ObjC_Cpp.is_cpp_lambda cpp_pname ->
-          true
-      | Block _ ->
-          true
-      | _ ->
-          false
-    in
     let typ =
-      if is_objc_block_or_cpp_lambda then
+      if Procname.is_cpp_lambda procname || Procname.is_objc_block procname then
         let pvar_name = Pvar.get_name pvar in
         List.find (Procdesc.get_captured context.procdesc)
           ~f:(fun {CapturedVar.name= captured_var} -> Mangled.equal captured_var pvar_name)

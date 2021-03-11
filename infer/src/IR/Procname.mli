@@ -181,9 +181,6 @@ module ObjC_Cpp : sig
 
   val is_constexpr : t -> bool
   (** Check if this is a constexpr function. *)
-
-  val is_cpp_lambda : t -> bool
-  (** Return whether the procname is a cpp lambda. *)
 end
 
 module C : sig
@@ -315,6 +312,9 @@ val get_method : t -> string
 
 val is_objc_block : t -> bool
 (** Return whether the procname is a block procname. *)
+
+val is_cpp_lambda : t -> bool
+(** Return whether the procname is a cpp lambda procname. *)
 
 val is_objc_dealloc : t -> bool
 (** Return whether the dealloc method of an Objective-C class. *)

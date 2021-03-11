@@ -841,15 +841,11 @@ let is_captured_pvar procdesc pvar =
   in
   let pvar_matches (name, _) = Mangled.equal name pvar_name in
   let is_captured_var_cpp_lambda =
-    match procname with
-    | Procname.ObjC_Cpp cpp_pname ->
-        (* var is captured if the procedure is a lambda and the var is not in the locals or formals *)
-        Procname.ObjC_Cpp.is_cpp_lambda cpp_pname
-        && not
-             ( List.exists ~f:pvar_local_matches (get_locals procdesc)
-             || List.exists ~f:pvar_matches (get_formals procdesc) )
-    | _ ->
-        false
+    (* var is captured if the procedure is a lambda and the var is not in the locals or formals *)
+    Procname.is_cpp_lambda procname
+    && not
+         ( List.exists ~f:pvar_local_matches (get_locals procdesc)
+         || List.exists ~f:pvar_matches (get_formals procdesc) )
   in
   let pvar_matches_in_captured {CapturedVar.name} = Mangled.equal name pvar_name in
   let is_captured_var_objc_block =
