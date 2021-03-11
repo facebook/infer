@@ -299,7 +299,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
   let assign_captured_var loc (cvar, typ, mode) =
     match mode with
     | Pvar.ByReference ->
-        ((Exp.Lvar cvar, cvar, Typ.mk_ptr ~ptr_kind:Pk_reference typ, mode), None)
+        ((Exp.Lvar cvar, cvar, typ, mode), None)
     | Pvar.ByValue ->
         let id = Ident.create_fresh Ident.knormal in
         let instr = Sil.Load {id; e= Exp.Lvar cvar; root_typ= typ; typ; loc} in
@@ -829,16 +829,24 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     CContext.add_block_static_var context procname (pvar, typ) ;
     let var_exp = Exp.Lvar pvar in
     (* Captured variables without initialization do not have the correct types
-       inside of lambda bodies. Use the types stored in the procdesc. *)
-    let typ =
+       inside of lambda bodies. The same issue happens for variables captured by reference
+       inside objc blocks. Use the types stored in the procdesc. *)
+    let is_objc_block_or_cpp_lambda =
       match procname with
       | Procname.ObjC_Cpp cpp_pname when Procname.ObjC_Cpp.is_cpp_lambda cpp_pname ->
-          let pvar_name = Pvar.get_name pvar in
-          List.find (Procdesc.get_captured context.procdesc)
-            ~f:(fun {CapturedVar.name= captured_var} -> Mangled.equal captured_var pvar_name)
-          |> Option.value_map ~f:(fun {CapturedVar.typ} -> typ) ~default:typ
+          true
+      | Block _ ->
+          true
       | _ ->
-          typ
+          false
+    in
+    let typ =
+      if is_objc_block_or_cpp_lambda then
+        let pvar_name = Pvar.get_name pvar in
+        List.find (Procdesc.get_captured context.procdesc)
+          ~f:(fun {CapturedVar.name= captured_var} -> Mangled.equal captured_var pvar_name)
+        |> Option.value_map ~f:(fun {CapturedVar.typ} -> typ) ~default:typ
+      else typ
     in
     let return =
       if Self.is_var_self pvar (CContext.is_objc_method context) && CType.is_class typ then
@@ -3357,8 +3365,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let passed_as_noescape_block_to = trans_state.passed_as_noescape_block_to in
         let captured_vars =
           List.map captured_vars_no_mode ~f:(fun (var, typ, modify_in_block) ->
-              let mode =
-                if modify_in_block || Pvar.is_global var then Pvar.ByReference else Pvar.ByValue
+              let mode, typ =
+                if modify_in_block || Pvar.is_global var then
+                  (Pvar.ByReference, Typ.mk (Tptr (typ, Pk_reference)))
+                else (Pvar.ByValue, typ)
               in
               (var, typ, mode) )
         in
