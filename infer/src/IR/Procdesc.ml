@@ -771,7 +771,7 @@ let get_loop_heads pdesc =
 let is_loop_head pdesc (node : Node.t) = NodeSet.mem node (get_loop_heads pdesc)
 
 let pp_modify_in_block fmt modify_in_block =
-  if modify_in_block then Format.pp_print_string fmt "(__block)" else ()
+  if modify_in_block then Format.pp_print_string fmt "(__block)"
 
 
 let pp_local fmt (var_data : ProcAttributes.var_data) =

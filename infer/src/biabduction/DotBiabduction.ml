@@ -139,7 +139,7 @@ let rec strexp_to_string pe coo f se =
   | Eexp (Exp.Lvar pvar, _) ->
       (Pvar.pp pe) f pvar
   | Eexp (Exp.Var id, _) ->
-      if !print_full_prop then Ident.pp f id else ()
+      if !print_full_prop then Ident.pp f id
   | Eexp (e, _) ->
       if !print_full_prop then (Exp.pp_diff pe) f e else F.pp_print_char f '_'
   | Estruct (ls, _) ->
@@ -414,7 +414,7 @@ let compute_fields_struct sigma =
   let rec do_strexp se in_struct =
     match (se : Predicates.strexp) with
     | Eexp (e, _) ->
-        if in_struct then fields_structs := e :: !fields_structs else ()
+        if in_struct then fields_structs := e :: !fields_structs
     | Estruct (l, _) ->
         List.iter ~f:(fun e -> do_strexp e true) (snd (List.unzip l))
     | Earray (_, l, _) ->
@@ -759,7 +759,6 @@ let dotty_pp_link f link =
   | _, _ ->
       if !print_full_prop then
         F.fprintf f "state%iL%i -> state%iL%i[label=\"%s\"];@\n" n1 lambda1 n2 lambda2 src_fld
-      else ()
 
 
 (* given the list of nodes and links get rid of spec nodes that are not pointed to by anybody*)

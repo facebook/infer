@@ -252,7 +252,7 @@ let add_type_from_decl_ref_opt qual_type_to_sil_type tenv decl_ref_opt fail_if_n
   | Some dr ->
       add_type_from_decl_ref qual_type_to_sil_type tenv dr
   | _ ->
-      if fail_if_not_found then assert false else ()
+      if fail_if_not_found then assert false
 
 
 let add_type_from_decl_ref_list qual_type_to_sil_type tenv decl_ref_list =

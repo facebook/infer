@@ -172,7 +172,6 @@ end = struct
         if not (Exp.equal e e') then (
           L.d_strln "failure reason 8" ;
           raise Predicates.JoinFail )
-        else ()
 
 
   let check side es =

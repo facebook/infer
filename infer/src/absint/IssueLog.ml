@@ -38,7 +38,6 @@ let store ~entry ~file m =
       DB.filename_from_string (Filename.concat issues_dir (abbrev_source_file ^ ".issue"))
     in
     Serialization.write_to_file issues_serializer filename ~data:m )
-  else ()
 
 
 (** Load issues from the given file *)

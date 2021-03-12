@@ -346,7 +346,7 @@ and pp_protocols pe f protocols =
 
 
 (** Pretty print a type. Do nothing by default. *)
-let pp pe f te = if Config.print_types then pp_full pe f te else ()
+let pp pe f te = if Config.print_types then pp_full pe f te
 
 let to_string typ =
   let pp fmt = pp_full Pp.text fmt typ in

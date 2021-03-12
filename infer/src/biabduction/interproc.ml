@@ -946,7 +946,6 @@ let update_specs analysis_data prev_summary_opt phase
     then (
       changed := true ;
       current_specs := SpecMap.remove old_spec.BiabductionSummary.pre !current_specs )
-    else ()
   in
   let add_spec spec =
     (* add a new spec by doing union of the posts *)
