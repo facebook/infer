@@ -3,7 +3,7 @@ digraph cfg {
 "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_1" [label="1: Start FN_deref_null_after_catch_bad\nFormals:  i:int*\nLocals:  0$?%__sil_tmp__temp_construct_n$3:std::runtime_error 0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const  \n  " color=yellow style=filled]
 	
 
-	 "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_1" -> "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_7" ;
+	 "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_1" -> "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_8" ;
 "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_2" [label="2: Exit FN_deref_null_after_catch_bad \n  " color=yellow style=filled]
 	
 
@@ -22,20 +22,28 @@ digraph cfg {
 "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_6" [label="6:  Destruction(temporaries cleanup) \n   n$5=_fun_std::runtime_error::runtime_error(&0$?%__sil_tmp__temp_construct_n$3:std::runtime_error*,&0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const &) [line 48, column 11]\n  n$6=_fun___infer_objc_cpp_throw(&0$?%__sil_tmp__temp_construct_n$3:std::runtime_error) [line 48, column 5]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const  [line 48, column 37]\n  n$8=_fun_std::runtime_error::~runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const *) injected virtual [line 48, column 37]\n " shape="box"]
 	
 
-	 "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_6" -> "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_3" ;
-	 "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_6" -> "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_8" [color="red" ];
+	 "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_6" -> "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_10" ;
 "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_7" [label="7:  BinaryOperatorStmt: Assign \n   n$9=*&i:int* [line 47, column 6]\n  *n$9:int=2 [line 47, column 5]\n " shape="box"]
 	
 
 	 "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_7" -> "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_5" ;
-"FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_8" [label="8:  BinaryOperatorStmt: Assign \n   *&i:int*=null [line 50, column 5]\n " shape="box"]
+"FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_8" [label="8:  CXXTry \n   TRY_ENTRY; [line 46, column 3]\n " shape="box"]
 	
 
-	 "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_8" -> "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_3" ;
+	 "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_8" -> "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_7" ;
+"FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_9" [label="9:  BinaryOperatorStmt: Assign \n   *&i:int*=null [line 50, column 5]\n " shape="box"]
+	
+
+	 "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_9" -> "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_3" ;
+"FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_10" [label="10:  CXXTry \n   TRY_EXIT; [line 46, column 3]\n " shape="box"]
+	
+
+	 "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_10" -> "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_3" ;
+	 "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_10" -> "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_9" [color="red" ];
 "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_1" [label="1: Start FN_deref_null_in_catch_bad\nFormals: \nLocals:  0$?%__sil_tmp__temp_construct_n$1:std::runtime_error 0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const  i:int* \n  " color=yellow style=filled]
 	
 
-	 "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_1" -> "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_8" ;
+	 "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_1" -> "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_10" ;
 "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_2" [label="2: Exit FN_deref_null_in_catch_bad \n  " color=yellow style=filled]
 	
 
@@ -50,24 +58,32 @@ digraph cfg {
 "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_5" [label="5:  Destruction(temporaries cleanup) \n   n$3=_fun_std::runtime_error::runtime_error(&0$?%__sil_tmp__temp_construct_n$1:std::runtime_error*,&0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const &) [line 38, column 11]\n  n$4=_fun___infer_objc_cpp_throw(&0$?%__sil_tmp__temp_construct_n$1:std::runtime_error) [line 38, column 5]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const  [line 38, column 37]\n  n$6=_fun_std::runtime_error::~runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const *) injected virtual [line 38, column 37]\n " shape="box"]
 	
 
-	 "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_5" -> "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_3" ;
-	 "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_5" -> "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_6" [color="red" ];
-"FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_6" [label="6:  Return Stmt \n   n$7=*&i:int* [line 40, column 13]\n  n$8=*n$7:int [line 40, column 12]\n " shape="box"]
+	 "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_5" -> "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_9" ;
+"FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_6" [label="6:  CXXTry \n   TRY_ENTRY; [line 37, column 3]\n " shape="box"]
 	
 
-	 "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_6" -> "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_7" ;
-"FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_7" [label="7:  Return Stmt \n   *&return:int=n$8 [line 40, column 5]\n " shape="box"]
+	 "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_6" -> "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_4" ;
+"FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_7" [label="7:  Return Stmt \n   n$8=*&i:int* [line 40, column 13]\n  n$9=*n$8:int [line 40, column 12]\n " shape="box"]
 	
 
-	 "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_7" -> "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_2" ;
-"FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(i:int*); [line 36, column 3]\n  *&i:int*=null [line 36, column 3]\n " shape="box"]
+	 "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_7" -> "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_8" ;
+"FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_8" [label="8:  Return Stmt \n   *&return:int=n$9 [line 40, column 5]\n " shape="box"]
 	
 
-	 "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_8" -> "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_4" ;
+	 "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_8" -> "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_2" ;
+"FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_9" [label="9:  CXXTry \n   TRY_EXIT; [line 37, column 3]\n " shape="box"]
+	
+
+	 "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_9" -> "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_3" ;
+	 "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_9" -> "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_7" [color="red" ];
+"FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(i:int*); [line 36, column 3]\n  *&i:int*=null [line 36, column 3]\n " shape="box"]
+	
+
+	 "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_10" -> "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_6" ;
 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_1" [label="1: Start FN_multiple_catches_bad\nFormals:  b:_Bool\nLocals:  0$?%__sil_tmp__temp_construct_n$2:std::length_error 0$?%__sil_tmpSIL_materialize_temp__n$1:std::length_error const  0$?%__sil_tmp__temp_construct_n$9:std::range_error 0$?%__sil_tmpSIL_materialize_temp__n$8:std::range_error const  j:int* i:int* \n  " color=yellow style=filled]
 	
 
-	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_1" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_16" ;
+	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_1" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_18" ;
 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_2" [label="2: Exit FN_multiple_catches_bad \n  " color=yellow style=filled]
 	
 
@@ -78,9 +94,7 @@ digraph cfg {
 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_4" [label="4: + \n  " ]
 	
 
-	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_4" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_3" ;
-	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_4" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_13" [color="red" ];
-	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_4" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_11" [color="red" ];
+	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_4" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_16" ;
 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_5" [label="5: Prune (true branch, if) \n   n$0=*&b:_Bool [line 59, column 9]\n  PRUNE(n$0, true); [line 59, column 9]\n " shape="invhouse"]
 	
 
@@ -105,31 +119,41 @@ digraph cfg {
 	
 
 	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_10" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_4" ;
-"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_11" [label="11:  Return Stmt \n   n$16=*&i:int* [line 65, column 13]\n  n$17=*n$16:int [line 65, column 12]\n " shape="box"]
+"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_11" [label="11:  CXXTry \n   TRY_ENTRY; [line 58, column 3]\n " shape="box"]
 	
 
-	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_11" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_12" ;
-"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_12" [label="12:  Return Stmt \n   *&return:int=n$17 [line 65, column 5]\n " shape="box"]
+	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_11" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_5" ;
+	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_11" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_6" ;
+"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_12" [label="12:  Return Stmt \n   n$17=*&i:int* [line 65, column 13]\n  n$18=*n$17:int [line 65, column 12]\n " shape="box"]
 	
 
-	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_12" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_2" ;
-"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_13" [label="13:  Return Stmt \n   n$18=*&j:int* [line 67, column 13]\n  n$19=*n$18:int [line 67, column 12]\n " shape="box"]
+	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_12" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_13" ;
+"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_13" [label="13:  Return Stmt \n   *&return:int=n$18 [line 65, column 5]\n " shape="box"]
 	
 
-	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_13" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_14" ;
-"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_14" [label="14:  Return Stmt \n   *&return:int=n$19 [line 67, column 5]\n " shape="box"]
+	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_13" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_2" ;
+"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_14" [label="14:  Return Stmt \n   n$19=*&j:int* [line 67, column 13]\n  n$20=*n$19:int [line 67, column 12]\n " shape="box"]
 	
 
-	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_14" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_2" ;
-"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_15" [label="15:  DeclStmt \n   VARIABLE_DECLARED(j:int*); [line 57, column 3]\n  *&j:int*=null [line 57, column 3]\n " shape="box"]
+	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_14" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_15" ;
+"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_15" [label="15:  Return Stmt \n   *&return:int=n$20 [line 67, column 5]\n " shape="box"]
 	
 
-	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_15" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_5" ;
-	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_15" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_6" ;
-"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_16" [label="16:  DeclStmt \n   VARIABLE_DECLARED(i:int*); [line 56, column 3]\n  *&i:int*=null [line 56, column 3]\n " shape="box"]
+	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_15" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_2" ;
+"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_16" [label="16:  CXXTry \n   TRY_EXIT; [line 58, column 3]\n " shape="box"]
 	
 
-	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_16" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_15" ;
+	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_16" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_3" ;
+	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_16" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_14" [color="red" ];
+	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_16" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_12" [color="red" ];
+"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_17" [label="17:  DeclStmt \n   VARIABLE_DECLARED(j:int*); [line 57, column 3]\n  *&j:int*=null [line 57, column 3]\n " shape="box"]
+	
+
+	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_17" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_11" ;
+"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_18" [label="18:  DeclStmt \n   VARIABLE_DECLARED(i:int*); [line 56, column 3]\n  *&i:int*=null [line 56, column 3]\n " shape="box"]
+	
+
+	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_18" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_17" ;
 "basic_throw_ok#10529188890980782893.c9e1b8dd080b2621cfca65612331859d_1" [label="1: Start basic_throw_ok\nFormals: \nLocals:  0$?%__sil_tmp__temp_construct_n$1:std::runtime_error 0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const  \n  " color=yellow style=filled]
 	
 
@@ -222,7 +246,7 @@ digraph cfg {
 "deref_null#11536394632240553702.ea4eed042da22ab7ceb619ec1b7f73bb_1" [label="1: Start deref_null\nFormals:  p:int*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "deref_null#11536394632240553702.ea4eed042da22ab7ceb619ec1b7f73bb_1" -> "deref_null#11536394632240553702.ea4eed042da22ab7ceb619ec1b7f73bb_3" ;
+	 "deref_null#11536394632240553702.ea4eed042da22ab7ceb619ec1b7f73bb_1" -> "deref_null#11536394632240553702.ea4eed042da22ab7ceb619ec1b7f73bb_5" ;
 "deref_null#11536394632240553702.ea4eed042da22ab7ceb619ec1b7f73bb_2" [label="2: Exit deref_null \n  " color=yellow style=filled]
 	
 
@@ -234,10 +258,18 @@ digraph cfg {
 	
 
 	 "deref_null#11536394632240553702.ea4eed042da22ab7ceb619ec1b7f73bb_4" -> "deref_null#11536394632240553702.ea4eed042da22ab7ceb619ec1b7f73bb_2" ;
+"deref_null#11536394632240553702.ea4eed042da22ab7ceb619ec1b7f73bb_5" [label="5:  CXXTry \n   TRY_ENTRY; [line 19, column 3]\n " shape="box"]
+	
+
+	 "deref_null#11536394632240553702.ea4eed042da22ab7ceb619ec1b7f73bb_5" -> "deref_null#11536394632240553702.ea4eed042da22ab7ceb619ec1b7f73bb_3" ;
+"deref_null#11536394632240553702.ea4eed042da22ab7ceb619ec1b7f73bb_6" [label="6:  CXXTry \n   TRY_EXIT; [line 19, column 3]\n " shape="box"]
+	
+
+	 "deref_null#11536394632240553702.ea4eed042da22ab7ceb619ec1b7f73bb_6" -> "deref_null#11536394632240553702.ea4eed042da22ab7ceb619ec1b7f73bb_2" ;
 "main.fad58de7366495db4650cfefac2fcd61_1" [label="1: Start main\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "main.fad58de7366495db4650cfefac2fcd61_1" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;
+	 "main.fad58de7366495db4650cfefac2fcd61_1" -> "main.fad58de7366495db4650cfefac2fcd61_5" ;
 "main.fad58de7366495db4650cfefac2fcd61_2" [label="2: Exit main \n  " color=yellow style=filled]
 	
 
@@ -249,8 +281,17 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_4" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
-"main.fad58de7366495db4650cfefac2fcd61_5" [label="5:  Return Stmt \n   *&return:int=-1 [line 76, column 5]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_5" [label="5:  CXXTry \n   TRY_ENTRY; [line 73, column 3]\n " shape="box"]
 	
 
-	 "main.fad58de7366495db4650cfefac2fcd61_5" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
+	 "main.fad58de7366495db4650cfefac2fcd61_5" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;
+"main.fad58de7366495db4650cfefac2fcd61_6" [label="6:  Return Stmt \n   *&return:int=-1 [line 76, column 5]\n " shape="box"]
+	
+
+	 "main.fad58de7366495db4650cfefac2fcd61_6" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
+"main.fad58de7366495db4650cfefac2fcd61_7" [label="7:  CXXTry \n   TRY_EXIT; [line 73, column 3]\n " shape="box"]
+	
+
+	 "main.fad58de7366495db4650cfefac2fcd61_7" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
+	 "main.fad58de7366495db4650cfefac2fcd61_7" -> "main.fad58de7366495db4650cfefac2fcd61_6" [color="red" ];
 }

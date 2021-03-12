@@ -31,6 +31,8 @@ type instr_metadata =
   | ExitScope of Var.t list * Location.t  (** remove temporaries and dead program variables *)
   | Nullify of Pvar.t * Location.t  (** nullify stack variable *)
   | Skip  (** no-op *)
+  | TryEntry of {try_id: int; loc: Location.t}  (** entry of C++ try block *)
+  | TryExit of {try_id: int; loc: Location.t}  (** exit of C++ try block *)
   | VariableLifetimeBegins of Pvar.t * Typ.t * Location.t  (** stack variable declared *)
 [@@deriving compare]
 
@@ -91,7 +93,12 @@ let color_wrapper ~f = if Config.print_using_diff then Pp.color_wrapper ~f else 
 let pp_exp_typ pe f (e, t) = F.fprintf f "%a:%a" (Exp.pp_diff pe) e (Typ.pp pe) t
 
 let location_of_instr_metadata = function
-  | Abstract loc | ExitScope (_, loc) | Nullify (_, loc) | VariableLifetimeBegins (_, _, loc) ->
+  | Abstract loc
+  | ExitScope (_, loc)
+  | Nullify (_, loc)
+  | TryEntry {loc}
+  | TryExit {loc}
+  | VariableLifetimeBegins (_, _, loc) ->
       loc
   | Skip ->
       Location.dummy
@@ -112,7 +119,7 @@ let exps_of_instr_metadata = function
       List.map ~f:Var.to_exp vars
   | Nullify (pvar, _) ->
       [Exp.Lvar pvar]
-  | Skip ->
+  | Skip | TryEntry _ | TryExit _ ->
       []
   | VariableLifetimeBegins (pvar, _, _) ->
       [Exp.Lvar pvar]
@@ -160,6 +167,10 @@ let pp_instr_metadata pe f = function
       F.fprintf f "NULLIFY(%a); [%a]" (Pvar.pp pe) pvar Location.pp loc
   | Skip ->
       F.pp_print_string f "SKIP"
+  | TryEntry {loc} ->
+      F.fprintf f "TRY_ENTRY; [%a]" Location.pp loc
+  | TryExit {loc} ->
+      F.fprintf f "TRY_EXIT; [%a]" Location.pp loc
   | VariableLifetimeBegins (pvar, typ, loc) ->
       F.fprintf f "VARIABLE_DECLARED(%a:%a); [%a]" Pvar.pp_value pvar (Typ.pp_full pe) typ
         Location.pp loc

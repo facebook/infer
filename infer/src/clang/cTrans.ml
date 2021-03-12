@@ -2149,7 +2149,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     instruction trans_state' stmt
 
 
-  and tryStmt_trans trans_state stmts =
+  and tryStmt_trans ({context= {procdesc; translation_unit_context= {source_file}}} as trans_state)
+      ({Clang_ast_t.si_pointer= try_id; si_source_range} as stmt_info) stmts =
     let open Clang_ast_t in
     let translate_catch catch_root_nodes_acc = function
       | CXXCatchStmt (_, catch_body_stmts, _) ->
@@ -2162,8 +2163,25 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     match stmts with
     | try_body_stmt :: catch_stmts ->
-        let try_trans_result = instruction trans_state try_body_stmt in
+        let try_loc =
+          CLocation.location_of_source_range ~pick_location:`Start source_file si_source_range
+        in
+        let try_trans_result =
+          PriorityNode.force_sequential try_loc CXXTry trans_state stmt_info
+            ~mk_first_opt:(fun _ _ ->
+              Some
+                (mk_trans_result (mk_fresh_void_exp_typ ())
+                   {empty_control with instrs= [Metadata (TryEntry {try_id; loc= try_loc})]}) )
+            ~mk_second:(fun _ _ -> instruction trans_state try_body_stmt)
+            ~mk_return:(fun ~fst:_ ~snd -> snd.return)
+        in
         let catch_start_nodes = List.fold catch_stmts ~f:translate_catch ~init:[] in
+        let try_exit_node =
+          Procdesc.create_node procdesc try_loc (Stmt_node CXXTry)
+            [Metadata (TryExit {try_id; loc= try_loc})]
+        in
+        Procdesc.set_succs try_exit_node ~normal:(Some trans_state.succ_nodes)
+          ~exn:(Some catch_start_nodes) ;
         (* add catch block as exceptional successor to end of try block. not ideal, but we will at
            least reach the code in the catch block this way *)
         (* TODO (T28898377): instead, we should extend trans_state with a list of maybe-throwing
@@ -2182,9 +2200,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             | Stmt_node ReturnStmt ->
                 ()
             | _ ->
-                Procdesc.set_succs try_end ~normal:None ~exn:(Some catch_start_nodes) )
+                Procdesc.set_succs try_end ~normal:(Some [try_exit_node]) ~exn:None )
           try_ends ;
-        try_trans_result
+        {try_trans_result with control= {try_control with leaf_nodes= [try_exit_node]}}
     | _ ->
         (* try should always have a catch statement *)
         assert false
@@ -4446,8 +4464,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         objCAutoreleasePoolStmt_trans trans_state stmt_info stmts
     | ObjCAtTryStmt (_, stmts) ->
         compoundStmt_trans trans_state stmts
-    | CXXTryStmt (_, try_stmts) ->
-        tryStmt_trans trans_state try_stmts
+    | CXXTryStmt (stmt_info, try_stmts) ->
+        tryStmt_trans trans_state stmt_info try_stmts
     | CXXCatchStmt _ ->
         (* should by handled by try statement *)
         assert false

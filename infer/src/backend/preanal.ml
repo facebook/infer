@@ -347,7 +347,8 @@ module Liveness = struct
             (VarDomain.add (Var.of_pvar lhs_pvar) active_defs, to_nullify)
         | Sil.Metadata (VariableLifetimeBegins (pvar, _, _)) ->
             (VarDomain.add (Var.of_pvar pvar) active_defs, to_nullify)
-        | Sil.Store _ | Prune _ | Metadata (Abstract _ | ExitScope _ | Skip) ->
+        | Sil.Store _ | Prune _ | Metadata (Abstract _ | ExitScope _ | Skip | TryEntry _ | TryExit _)
+          ->
             astate
         | Sil.Metadata (Nullify _) ->
             L.(die InternalError)

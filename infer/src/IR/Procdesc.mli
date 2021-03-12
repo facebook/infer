@@ -52,6 +52,7 @@ module Node : sig
     | CXXNewExpr
     | CXXStdInitializerListExpr
     | CXXTemporaryMarkerSet
+    | CXXTry
     | CXXTypeidExpr
     | DeclStmt
     | DefineBody

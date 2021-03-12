@@ -214,7 +214,14 @@ module InstrBasicCostWithReason = struct
         CostDomain.zero_record
     | Sil.Load _ | Sil.Store _ | Sil.Prune _ ->
         CostDomain.unit_cost_atomic_operation
-    | Sil.Metadata (Abstract _ | ExitScope _ | Nullify _ | Skip | VariableLifetimeBegins _) ->
+    | Sil.Metadata
+        ( Abstract _
+        | ExitScope _
+        | Nullify _
+        | Skip
+        | TryEntry _
+        | TryExit _
+        | VariableLifetimeBegins _ ) ->
         CostDomain.zero_record
 
 

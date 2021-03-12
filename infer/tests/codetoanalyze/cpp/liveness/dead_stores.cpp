@@ -403,7 +403,7 @@ class Exceptions {
     return 0;
   }
 
-  int unreachable_catch_bad() {
+  int FN_unreachable_catch_bad() {
     int i = 1;
     try {
     } catch (...) {
