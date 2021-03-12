@@ -4549,6 +4549,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | CoroutineBodyStmt _
     | CoyieldExpr _
     | CUDAKernelCallExpr _
+    | CXXAddrspaceCastExpr _
     | CXXFoldExpr _
     | CXXRewrittenBinaryOperator _
     | CXXUnresolvedConstructExpr _
@@ -4562,6 +4563,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | FunctionParmPackExpr _
     | ImaginaryLiteral _
     | IndirectGotoStmt _
+    | MatrixSubscriptExpr _
     | MSAsmStmt _
     | MSDependentExistsStmt _
     | MSPropertyRefExpr _
@@ -4570,11 +4572,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | ObjCIsaExpr _
     | ObjCSubscriptRefExpr _
     | OMPArraySectionExpr _
+    | OMPArrayShapingExpr _
     | OMPAtomicDirective _
     | OMPBarrierDirective _
     | OMPCancelDirective _
     | OMPCancellationPointDirective _
     | OMPCriticalDirective _
+    | OMPDepobjDirective _
     | OMPDistributeDirective _
     | OMPDistributeParallelForDirective _
     | OMPDistributeParallelForSimdDirective _
@@ -4582,6 +4586,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | OMPFlushDirective _
     | OMPForDirective _
     | OMPForSimdDirective _
+    | OMPIteratorExpr _
     | OMPMasterDirective _
     | OMPMasterTaskLoopDirective _
     | OMPMasterTaskLoopSimdDirective _
@@ -4593,6 +4598,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | OMPParallelMasterTaskLoopDirective _
     | OMPParallelMasterTaskLoopSimdDirective _
     | OMPParallelSectionsDirective _
+    | OMPScanDirective _
     | OMPSectionDirective _
     | OMPSectionsDirective _
     | OMPSimdDirective _
@@ -4624,6 +4630,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | OMPTeamsDistributeSimdDirective _
     | PackExpansionExpr _
     | ParenListExpr _
+    | RecoveryExpr _
     | RequiresExpr _
     | SEHExceptStmt _
     | SEHFinallyStmt _

@@ -83,7 +83,7 @@ struct StringRange {
   char const *b_, *e_;
   StringRange() : b_(), e_(){};
   char const* data() const { return b_; }
-  std::size_t size() const { return std::size_t(e_ - b_); }
+  size_t size() const { return size_t(e_ - b_); }
 };
 
 void function_empty_range_ok() {

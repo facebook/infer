@@ -53,7 +53,7 @@ uint64_t fnv64Hash(const char *s, int n) {
 }
 
 uint64_t fnv64Hash(llvm::raw_svector_ostream &OS) {
-  std::string s = OS.str();
+  std::string s = OS.str().str();
   return fnv64Hash(s.data(), s.size());
 }
 
@@ -155,7 +155,7 @@ void NamePrinter<ATDWriter>::VisitTagDecl(const TagDecl *D) {
     Args = TemplateArgs.asArray();
     printTemplateArgList(StrOS, Args);
   }
-  OF.emitString(StrOS.str());
+  OF.emitString(StrOS.str().str());
 }
 
 template <class ATDWriter>
@@ -167,7 +167,7 @@ void NamePrinter<ATDWriter>::VisitFunctionDecl(const FunctionDecl *FD) {
     SmallString<64> Buf;
     llvm::raw_svector_ostream StrOS(Buf);
     printTemplateArgList(StrOS, TemplateArgs->asArray());
-    template_str = StrOS.str();
+    template_str = StrOS.str().str();
   }
   OF.emitString(FD->getNameAsString() + template_str);
 }

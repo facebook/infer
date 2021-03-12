@@ -252,6 +252,7 @@ let get_struct_decls decl =
   | IndirectFieldDecl _
   | LabelDecl _
   | LifetimeExtendedTemporaryDecl _
+  | MSGuidDecl _
   | MSPropertyDecl _
   | NamespaceAliasDecl _
   | NonTypeTemplateParmDecl _

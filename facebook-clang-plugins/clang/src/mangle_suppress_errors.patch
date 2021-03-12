@@ -1,5 +1,5 @@
---- a/llvm/tools/clang/lib/AST/ItaniumMangle.cpp
-+++ b/llvm/tools/clang/lib/AST/ItaniumMangle.cpp
+--- a/llvm-project/clang/lib/AST/ItaniumMangle.cpp
++++ b/llvm-project/clang/lib/AST/ItaniumMangle.cpp
 @@ -3048,11 +3048,7 @@ void CXXNameMangler::mangleNeonVectorType(const VectorType *T) {
  }
 

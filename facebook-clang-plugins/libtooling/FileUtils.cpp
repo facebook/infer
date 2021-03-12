@@ -37,10 +37,10 @@ std::string makeAbsolutePath(const std::string &currentWorkingDirectory,
     result.append(1, path.front());
   }
 
-  elements.push_back(llvm::sys::path::filename(path));
+  elements.push_back(llvm::sys::path::filename(path).str());
 
   while (llvm::sys::path::has_parent_path(path)) {
-    path = llvm::sys::path::parent_path(path);
+    path = llvm::sys::path::parent_path(path).str();
     const std::string &element(llvm::sys::path::filename(path));
     if (element == ".") {
       continue;
@@ -76,7 +76,7 @@ std::string makeRelativePath(const std::string &repoRoot,
       return path.substr(repoRoot.size() + 1);
     }
     if (allowSiblingsToRepoRoot) {
-      std::string parentOfRoot = llvm::sys::path::parent_path(repoRoot);
+      std::string parentOfRoot = llvm::sys::path::parent_path(repoRoot).str();
       if (llvm::StringRef(path).startswith(parentOfRoot + "/")) {
         return "../" + path.substr(parentOfRoot.size() + 1);
       }

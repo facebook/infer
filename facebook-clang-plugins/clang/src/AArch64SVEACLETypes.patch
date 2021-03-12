@@ -1,0 +1,15 @@
+--- a/llvm-project/clang/include/clang/Basic/AArch64SVEACLETypes.def
++++ b/llvm-project/clang/include/clang/Basic/AArch64SVEACLETypes.def
+@@ -12,10 +12,10 @@
+ //    covered by any other #define.  Defining this macro covers all
+ //    the builtins.
+ //
+-//    SVE_VECTOR_TYPE(Name, Id, SingletonId, ElKind, ElBits, IsSigned, IsFP) -
++//    SVE_VECTOR_TYPE(Name, MangledName, Id, SingletonId, NumEls, ElBits, IsSigned, IsFP, IsBF) -
+ //    An SVE scalable vector.
+ //
+-//    SVE_PREDICATE_TYPE(Name, Id, SingletonId, ElKind) - An SVE scalable
++//    SVE_PREDICATE_TYPE(Name, MangledName, Id, SingletonId, NumEls) - An SVE scalable
+ //    predicate.
+ //
+ // where:

@@ -820,15 +820,21 @@
         },
         <"Half">
       )>,
-      <"RecordType" : (
+      <"BuiltinType" : (
         {
           "pointer" : 82
         },
-        83
+        <"BFloat16">
+      )>,
+      <"RecordType" : (
+        {
+          "pointer" : 83
+        },
+        84
       )>,
       <"PointerType" : (
         {
-          "pointer" : 84
+          "pointer" : 85
         },
         {
           "type_ptr" : 10,
@@ -837,7 +843,7 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 85
+          "pointer" : 86
         },
         {
           "type_ptr" : 20,
@@ -846,7 +852,7 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 86
+          "pointer" : 87
         },
         {
           "type_ptr" : 20
@@ -854,17 +860,17 @@
       )>,
       <"RecordType" : (
         {
-          "pointer" : 87
+          "pointer" : 88
         },
-        88
+        89
       )>,
       <"ConstantArrayType" : (
         {
-          "pointer" : 89
+          "pointer" : 90
         },
         {
           "element_type" : {
-            "type_ptr" : 87
+            "type_ptr" : 88
           },
           "stride" : 24
         },
@@ -872,7 +878,7 @@
       )>,
       <"ObjCObjectType" : (
         {
-          "pointer" : 90
+          "pointer" : 91
         },
         {
           "base_type" : 76
@@ -880,32 +886,32 @@
       )>,
       <"ObjCObjectPointerType" : (
         {
-          "pointer" : 91
+          "pointer" : 92
         },
         {
-          "type_ptr" : 90
+          "type_ptr" : 91
         }
       )>,
       <"TypedefType" : (
         {
-          "pointer" : 92,
-          "desugared_type" : 91
+          "pointer" : 93,
+          "desugared_type" : 92
         },
         {
           "child_type" : {
-            "type_ptr" : 91
+            "type_ptr" : 92
           },
-          "decl_ptr" : 93
+          "decl_ptr" : 94
         }
       )>,
       <"TypedefType" : (
         {
           "pointer" : 17,
-          "desugared_type" : 91
+          "desugared_type" : 92
         },
         {
           "child_type" : {
-            "type_ptr" : 92
+            "type_ptr" : 93
           },
           "decl_ptr" : 16
         }

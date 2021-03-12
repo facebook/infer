@@ -195,6 +195,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     | LabelDecl _
     | LifetimeExtendedTemporaryDecl _
     | LinkageSpecDecl _
+    | MSGuidDecl _
     | MSPropertyDecl _
     | NamespaceAliasDecl _
     | NamespaceDecl _

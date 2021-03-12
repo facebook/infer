@@ -10,12 +10,12 @@ set -e
 set -o pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CLANG_RELATIVE_SRC="src/download/llvm"
+CLANG_RELATIVE_SRC="src/download/llvm-project/llvm"
 CLANG_SRC="$SCRIPT_DIR/$CLANG_RELATIVE_SRC"
 CLANG_PREBUILD_PATCHES=(
     "$SCRIPT_DIR/src/err_ret_local_block.patch"
     "$SCRIPT_DIR/src/mangle_suppress_errors.patch"
-    "$SCRIPT_DIR/src/template_ambiguous.patch"
+    "$SCRIPT_DIR/src/AArch64SVEACLETypes.patch"
 )
 CLANG_PREFIX="$SCRIPT_DIR/install"
 CLANG_INSTALLED_VERSION_FILE="$SCRIPT_DIR/installed.version"
@@ -164,6 +164,7 @@ CMAKE_ARGS=(
   -DLLVM_ENABLE_EH=On
   -DLLVM_ENABLE_RTTI=On
   -DLLVM_INCLUDE_DOCS=Off
+  -DLLVM_ENABLE_PROJECTS="clang;compiler-rt;libcxx;libcxxabi;openmp"
   -DLLVM_TARGETS_TO_BUILD="X86;AArch64;ARM;Mips"
   -DLLVM_BUILD_EXTERNAL_COMPILER_RT=On
 )

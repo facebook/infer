@@ -121,7 +121,7 @@ void PluginASTOptionsBase::loadValuesFromEnvAndMap(const argmap_t map) {
     if (llvm::sys::fs::current_path(CurrentDir)) {
       llvm::errs() << "Failed to retrieve current working directory\n";
     } else {
-      basePath = CurrentDir.str();
+      basePath = CurrentDir.str().str();
     }
   }
 }

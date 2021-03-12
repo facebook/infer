@@ -120,21 +120,6 @@ digraph cfg {
 	
 
 	 "div#Choose2#(15124421267141903041).48bc5dd070e87512d292b60033d4f4ba_4" -> "div#Choose2#(15124421267141903041).48bc5dd070e87512d292b60033d4f4ba_2" ;
-"call_div#ExecStore<Choose2>#(11829874625214834057).d639b1b8281e7bb31d011a0c7a797e72_1" [label="1: Start ExecStore<Choose2>::call_div\nFormals:  this:ExecStore<Choose2>* a:int\nLocals:  \n  " color=yellow style=filled]
-	
-
-	 "call_div#ExecStore<Choose2>#(11829874625214834057).d639b1b8281e7bb31d011a0c7a797e72_1" -> "call_div#ExecStore<Choose2>#(11829874625214834057).d639b1b8281e7bb31d011a0c7a797e72_3" ;
-"call_div#ExecStore<Choose2>#(11829874625214834057).d639b1b8281e7bb31d011a0c7a797e72_2" [label="2: Exit ExecStore<Choose2>::call_div \n  " color=yellow style=filled]
-	
-
-"call_div#ExecStore<Choose2>#(11829874625214834057).d639b1b8281e7bb31d011a0c7a797e72_3" [label="3:  Return Stmt \n   n$0=*&this:ExecStore<Choose2>* [line 24, column 12]\n  _=*n$0.f:Choose2 [line 24, column 12]\n  n$2=*&a:int [line 24, column 18]\n  n$3=_fun_Choose2::div(n$0.f:Choose2&,n$2:int,0:int) [line 24, column 12]\n " shape="box"]
-	
-
-	 "call_div#ExecStore<Choose2>#(11829874625214834057).d639b1b8281e7bb31d011a0c7a797e72_3" -> "call_div#ExecStore<Choose2>#(11829874625214834057).d639b1b8281e7bb31d011a0c7a797e72_4" ;
-"call_div#ExecStore<Choose2>#(11829874625214834057).d639b1b8281e7bb31d011a0c7a797e72_4" [label="4:  Return Stmt \n   *&return:int=n$3 [line 24, column 5]\n " shape="box"]
-	
-
-	 "call_div#ExecStore<Choose2>#(11829874625214834057).d639b1b8281e7bb31d011a0c7a797e72_4" -> "call_div#ExecStore<Choose2>#(11829874625214834057).d639b1b8281e7bb31d011a0c7a797e72_2" ;
 "call_div#ExecStore<Choose1>#(13821779640448790720).c684f7c620c64dbf19170e6c2add6779_1" [label="1: Start ExecStore<Choose1>::call_div\nFormals:  this:ExecStore<Choose1>* a:int\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -150,4 +135,19 @@ digraph cfg {
 	
 
 	 "call_div#ExecStore<Choose1>#(13821779640448790720).c684f7c620c64dbf19170e6c2add6779_4" -> "call_div#ExecStore<Choose1>#(13821779640448790720).c684f7c620c64dbf19170e6c2add6779_2" ;
+"call_div#ExecStore<Choose2>#(11829874625214834057).d639b1b8281e7bb31d011a0c7a797e72_1" [label="1: Start ExecStore<Choose2>::call_div\nFormals:  this:ExecStore<Choose2>* a:int\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "call_div#ExecStore<Choose2>#(11829874625214834057).d639b1b8281e7bb31d011a0c7a797e72_1" -> "call_div#ExecStore<Choose2>#(11829874625214834057).d639b1b8281e7bb31d011a0c7a797e72_3" ;
+"call_div#ExecStore<Choose2>#(11829874625214834057).d639b1b8281e7bb31d011a0c7a797e72_2" [label="2: Exit ExecStore<Choose2>::call_div \n  " color=yellow style=filled]
+	
+
+"call_div#ExecStore<Choose2>#(11829874625214834057).d639b1b8281e7bb31d011a0c7a797e72_3" [label="3:  Return Stmt \n   n$0=*&this:ExecStore<Choose2>* [line 24, column 12]\n  _=*n$0.f:Choose2 [line 24, column 12]\n  n$2=*&a:int [line 24, column 18]\n  n$3=_fun_Choose2::div(n$0.f:Choose2&,n$2:int,0:int) [line 24, column 12]\n " shape="box"]
+	
+
+	 "call_div#ExecStore<Choose2>#(11829874625214834057).d639b1b8281e7bb31d011a0c7a797e72_3" -> "call_div#ExecStore<Choose2>#(11829874625214834057).d639b1b8281e7bb31d011a0c7a797e72_4" ;
+"call_div#ExecStore<Choose2>#(11829874625214834057).d639b1b8281e7bb31d011a0c7a797e72_4" [label="4:  Return Stmt \n   *&return:int=n$3 [line 24, column 5]\n " shape="box"]
+	
+
+	 "call_div#ExecStore<Choose2>#(11829874625214834057).d639b1b8281e7bb31d011a0c7a797e72_4" -> "call_div#ExecStore<Choose2>#(11829874625214834057).d639b1b8281e7bb31d011a0c7a797e72_2" ;
 }

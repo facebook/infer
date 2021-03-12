@@ -374,7 +374,7 @@
             "type_ptr" : 22
           },
           {
-            "mangled_name" : "5328378654181921475",
+            "mangled_name" : "6691652126532499765",
             "is_cpp" : true,
             "is_inline" : true
           },
@@ -409,7 +409,7 @@
             "type_ptr" : 24
           },
           {
-            "mangled_name" : "14779025497907219583",
+            "mangled_name" : "16649858826465904026",
             "is_cpp" : true,
             "is_inline" : true,
             "decl_ptr_with_body" : 23,
@@ -459,7 +459,7 @@
             "type_ptr" : 27
           },
           {
-            "mangled_name" : "3430056695640597274",
+            "mangled_name" : "6367731417382615745",
             "is_cpp" : true,
             "is_inline" : true,
             "parameters" : [
@@ -520,7 +520,7 @@
             "type_ptr" : 30
           },
           {
-            "mangled_name" : "1361265890968139694",
+            "mangled_name" : "17956886967408801671",
             "is_cpp" : true,
             "is_inline" : true,
             "parameters" : [
@@ -785,7 +785,7 @@
             "type_ptr" : 44
           },
           {
-            "mangled_name" : "7876366742276079110",
+            "mangled_name" : "6627935060446176348",
             "is_cpp" : true,
             "is_inline" : true
           },
@@ -820,7 +820,7 @@
             "type_ptr" : 24
           },
           {
-            "mangled_name" : "10798876524598897542",
+            "mangled_name" : "8928078380412315851",
             "is_cpp" : true,
             "is_inline" : true,
             "decl_ptr_with_body" : 45,
@@ -920,7 +920,7 @@
             "type_ptr" : 49
           },
           {
-            "mangled_name" : "7710293714478488613",
+            "mangled_name" : "6925252787601137710",
             "is_cpp" : true,
             "is_inline" : true,
             "parameters" : [
@@ -981,7 +981,7 @@
             "type_ptr" : 52
           },
           {
-            "mangled_name" : "16903082029399050859",
+            "mangled_name" : "17350102287109130674",
             "is_cpp" : true,
             "is_inline" : true,
             "parameters" : [
@@ -3510,15 +3510,21 @@
         },
         <"Half">
       )>,
-      <"RecordType" : (
+      <"BuiltinType" : (
         {
           "pointer" : 176
         },
-        177
+        <"BFloat16">
+      )>,
+      <"RecordType" : (
+        {
+          "pointer" : 177
+        },
+        178
       )>,
       <"PointerType" : (
         {
-          "pointer" : 178
+          "pointer" : 179
         },
         {
           "type_ptr" : 116,
@@ -3527,7 +3533,7 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 179
+          "pointer" : 180
         },
         {
           "type_ptr" : 113,
@@ -3536,7 +3542,7 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 180
+          "pointer" : 181
         },
         {
           "type_ptr" : 113
@@ -3544,17 +3550,17 @@
       )>,
       <"RecordType" : (
         {
-          "pointer" : 181
+          "pointer" : 182
         },
-        182
+        183
       )>,
       <"ConstantArrayType" : (
         {
-          "pointer" : 183
+          "pointer" : 184
         },
         {
           "element_type" : {
-            "type_ptr" : 181
+            "type_ptr" : 182
           },
           "stride" : 24
         },
@@ -3605,7 +3611,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 184
+          "pointer" : 185
         },
         {
           "return_type" : {
@@ -3647,7 +3653,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 185
+          "pointer" : 186
         },
         {
           "return_type" : {
@@ -3716,7 +3722,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 186
+          "pointer" : 187
         },
         {
           "return_type" : {
@@ -3758,7 +3764,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 187
+          "pointer" : 188
         },
         {
           "return_type" : {
@@ -3810,7 +3816,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 188
+          "pointer" : 189
         },
         {
           "return_type" : {
@@ -3822,7 +3828,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 189
+          "pointer" : 190
         },
         {
           "return_type" : {
@@ -3856,7 +3862,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 190
+          "pointer" : 191
         },
         {
           "return_type" : {
@@ -3902,7 +3908,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 191
+          "pointer" : 192
         },
         {
           "return_type" : {
@@ -3914,7 +3920,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 192
+          "pointer" : 193
         },
         {
           "return_type" : {
@@ -3948,7 +3954,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 193
+          "pointer" : 194
         },
         {
           "return_type" : {
@@ -4006,7 +4012,7 @@
       )>,
       <"ObjCObjectType" : (
         {
-          "pointer" : 194
+          "pointer" : 195
         },
         {
           "base_type" : 170
@@ -4014,32 +4020,32 @@
       )>,
       <"ObjCObjectPointerType" : (
         {
-          "pointer" : 195
+          "pointer" : 196
         },
         {
-          "type_ptr" : 194
+          "type_ptr" : 195
         }
       )>,
       <"TypedefType" : (
         {
-          "pointer" : 196,
-          "desugared_type" : 195
+          "pointer" : 197,
+          "desugared_type" : 196
         },
         {
           "child_type" : {
-            "type_ptr" : 195
+            "type_ptr" : 196
           },
-          "decl_ptr" : 197
+          "decl_ptr" : 198
         }
       )>,
       <"TypedefType" : (
         {
           "pointer" : 110,
-          "desugared_type" : 195
+          "desugared_type" : 196
         },
         {
           "child_type" : {
-            "type_ptr" : 196
+            "type_ptr" : 197
           },
           "decl_ptr" : 109
         }
