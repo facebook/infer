@@ -466,21 +466,44 @@ end
 
 module Block = struct
   (** Type of Objective C block names. *)
-  type block_name = string [@@deriving compare, yojson_of]
-
-  type t = {name: block_name; parameters: Parameter.clang_parameter list}
+  type block_type =
+    | InOuterScope of {outer_scope: block_type; block_index: int}
+    | SurroundingProc of {name: string}
   [@@deriving compare, yojson_of]
 
-  let make name parameters = {name; parameters}
+  type t = {block_type: block_type; parameters: Parameter.clang_parameter list}
+  [@@deriving compare, yojson_of]
+
+  let make_surrounding name parameters = {block_type= SurroundingProc {name}; parameters}
+
+  let make_in_outer_scope outer_scope block_index parameters =
+    {block_type= InOuterScope {outer_scope; block_index}; parameters}
+
+
+  let pp_block_type fmt ~with_prefix_and_index =
+    let prefix = if with_prefix_and_index then Config.anonymous_block_prefix else "^" in
+    let pp_index fmt index =
+      if with_prefix_and_index then F.fprintf fmt "%s%d" Config.anonymous_block_num_sep index
+    in
+    let rec aux fmt proc =
+      match proc with
+      | SurroundingProc {name} ->
+          F.pp_print_string fmt name
+      | InOuterScope {outer_scope; block_index} ->
+          F.fprintf fmt "%s%a%a" prefix aux outer_scope pp_index block_index
+    in
+    aux fmt
+
 
   let pp verbosity fmt bsig =
+    let pp_block = pp_block_type ~with_prefix_and_index:true in
     match verbosity with
     | Simple ->
         F.pp_print_string fmt "block"
     | Non_verbose ->
-        F.pp_print_string fmt bsig.name
+        pp_block fmt bsig.block_type
     | Verbose ->
-        F.fprintf fmt "%s%a" bsig.name Parameter.pp_parameters bsig.parameters
+        F.fprintf fmt "%a%a" pp_block bsig.block_type Parameter.pp_parameters bsig.parameters
 
 
   let get_parameters block = block.parameters
@@ -549,7 +572,7 @@ let block_of_procname procname =
       Logging.die InternalError "Only to be called with Objective-C block names"
 
 
-let empty_block = Block {name= ""; parameters= []}
+let empty_block = Block (Block.make_surrounding "" [])
 
 (** Replace the class name component of a procedure name. In case of Java, replace package and class
     name. *)
@@ -603,7 +626,8 @@ let rec objc_cpp_replace_method_name t (new_method_name : string) =
       t
 
 
-(** Return the method/function of a procname. *)
+(** Return the method/function of a procname. For Blocks, we don't display objc_block prefix or
+    block index suffix. *)
 let rec get_method = function
   | ObjC_Cpp name ->
       name.method_name
@@ -611,8 +635,8 @@ let rec get_method = function
       get_method base
   | C {name} ->
       QualifiedCppName.to_qual_string name
-  | Block {name} ->
-      name
+  | Block {block_type} ->
+      F.asprintf "%a" (Block.pp_block_type ~with_prefix_and_index:false) block_type
   | Java j ->
       j.method_name
   | CSharp cs ->
@@ -736,6 +760,14 @@ let rec pp fmt = function
 
 
 let to_string proc_name = F.asprintf "%a" pp proc_name
+
+let get_block_type proc =
+  match proc with
+  | Block {block_type} ->
+      block_type
+  | _ ->
+      Block.SurroundingProc {name= to_string proc}
+
 
 (** Convenient representation of a procname for external tools (e.g. eclipse plugin) *)
 let rec pp_simplified_string ?(withclass = false) fmt = function

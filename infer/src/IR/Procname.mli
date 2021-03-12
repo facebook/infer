@@ -200,11 +200,16 @@ end
 
 module Block : sig
   (** Type of Objective C block names. *)
-  type block_name = string
+  type block_type =
+    | InOuterScope of {outer_scope: block_type; block_index: int}
+        (** a block nested in the scope of an outer one *)
+    | SurroundingProc of {name: string}  (** tracks the name of the surrounding proc *)
 
-  type t = {name: block_name; parameters: Parameter.clang_parameter list} [@@deriving compare]
+  type t = {block_type: block_type; parameters: Parameter.clang_parameter list} [@@deriving compare]
 
-  val make : block_name -> Parameter.clang_parameter list -> t
+  val make_surrounding : string -> Parameter.clang_parameter list -> t
+
+  val make_in_outer_scope : block_type -> int -> Parameter.clang_parameter list -> t
 end
 
 (** Type of procedure names. WithBlockParameters is used for creating an instantiation of a method
@@ -303,6 +308,8 @@ val make_objc_copyWithZone : is_mutable:bool -> Typ.Name.t -> t
 
 val empty_block : t
 (** Empty block name. *)
+
+val get_block_type : t -> Block.block_type
 
 val get_language : t -> Language.t
 (** Return the language of the procedure. *)
