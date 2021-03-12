@@ -338,8 +338,7 @@ and pp_template_spec_info pe f = function
 
 
 and pp_protocols pe f protocols =
-  if List.is_empty protocols then ()
-  else
+  if not (List.is_empty protocols) then
     F.fprintf f "%s%a%s" (escape pe "<")
       (Pp.comma_seq (pp_name_c_syntax pe))
       protocols (escape pe ">")

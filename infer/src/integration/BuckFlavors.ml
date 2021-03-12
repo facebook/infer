@@ -110,8 +110,7 @@ let capture build_cmd =
   let {command; rev_not_targets; targets} =
     add_flavors_to_buck_arguments ClangFlavors ~extra_flavors:[] buck_args
   in
-  if List.is_empty targets then ()
-  else
+  if not (List.is_empty targets) then (
     let all_args = List.rev_append rev_not_targets targets in
     let updated_buck_cmd =
       command
@@ -122,4 +121,4 @@ let capture build_cmd =
       updated_buck_cmd ;
     let prog, buck_build_cmd = (prog, updated_buck_cmd) in
     ResultsDir.RunState.set_merge_capture true ;
-    clang_flavor_capture ~prog ~buck_build_cmd
+    clang_flavor_capture ~prog ~buck_build_cmd )

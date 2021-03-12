@@ -99,15 +99,13 @@ end = struct
     if Var.Map.is_empty vs then Q.pp_print fmt c
     else
       let pp_c fmt c =
-        if Q.is_zero c then ()
-        else
+        if not (Q.is_zero c) then
           let plusminus, c_pos = if Q.geq c Q.zero then ('+', c) else ('-', Q.neg c) in
           F.fprintf fmt " %c%a" plusminus Q.pp_print c_pos
       in
       let pp_coeff fmt q =
-        if Q.is_one q then ()
-        else if Q.is_minus_one q then F.pp_print_string fmt "-"
-        else F.fprintf fmt "%a·" Q.pp_print q
+        if not (Q.is_one q) then
+          if Q.is_minus_one q then F.pp_print_string fmt "-" else F.fprintf fmt "%a·" Q.pp_print q
       in
       let pp_vs fmt vs =
         Pp.collection ~sep:" + "

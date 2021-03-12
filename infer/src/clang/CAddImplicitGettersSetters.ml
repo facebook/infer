@@ -59,8 +59,7 @@ let process_getter_setter proc_name proc_desc =
     | _ ->
         []
   in
-  if List.is_empty getter_setter_instrs then ()
-  else
+  if not (List.is_empty getter_setter_instrs) then (
     let new_attributes = {attributes with is_defined= true} in
     Procdesc.set_attributes proc_desc new_attributes ;
     let start_node = Procdesc.create_node proc_desc location Procdesc.Node.Start_node [] in
@@ -73,7 +72,7 @@ let process_getter_setter proc_name proc_desc =
       Procdesc.create_node proc_desc location node_kind getter_setter_instrs
     in
     Procdesc.node_set_succs proc_desc start_node ~normal:[getter_setter_node] ~exn:[] ;
-    Procdesc.node_set_succs proc_desc getter_setter_node ~normal:[exit_node] ~exn:[]
+    Procdesc.node_set_succs proc_desc getter_setter_node ~normal:[exit_node] ~exn:[] )
 
 
 let process cfg = Procname.Hash.iter process_getter_setter cfg

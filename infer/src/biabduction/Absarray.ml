@@ -617,8 +617,8 @@ let check_after_array_abstraction tenv prop =
     | Predicates.Earray (_, esel, _) ->
         (* check that no more than 2 elements are in the array *)
         let typ_elem = Typ.array_elem (Some StdTyp.void) typ in
-        if List.length esel > 2 && array_typ_can_abstract typ then
-          if List.for_all ~f:(check_index root offs) esel then () else report_error prop
+        if List.length esel > 2 && array_typ_can_abstract typ then (
+          if not (List.for_all ~f:(check_index root offs) esel) then report_error prop )
         else
           List.iter
             ~f:(fun (ind, se) -> check_se root (offs @ [Predicates.Off_index ind]) typ_elem se)

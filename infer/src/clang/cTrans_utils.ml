@@ -195,8 +195,7 @@ type control =
 
 let pp_control fmt {root_nodes; leaf_nodes; instrs; initd_exps; cxx_temporary_markers_set} =
   let pp_cxx_temporary_markers_set fmt =
-    if List.is_empty cxx_temporary_markers_set then ()
-    else
+    if not (List.is_empty cxx_temporary_markers_set) then
       F.fprintf fmt ";@;cxx_temporary_markers_set=[%a]"
         (Pp.seq ~sep:";" (Pvar.pp Pp.text))
         cxx_temporary_markers_set

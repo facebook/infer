@@ -109,8 +109,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
               CMethod_trans.create_local_procdesc ~set_objc_accessor_attr
                 ~is_cpp_lambda_call_operator trans_unit_ctx cfg tenv ms body_new []
             then
-              if is_cpp_lambda_call_operator && not inside_cpp_lambda_expr then ()
-              else
+              if (not is_cpp_lambda_call_operator) || inside_cpp_lambda_expr then
                 add_method trans_unit_ctx tenv cfg curr_class procname body ms return_param_typ_opt
                   None extra_instrs ~is_destructor_wrapper
           in

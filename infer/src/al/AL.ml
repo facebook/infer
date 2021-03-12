@@ -280,8 +280,7 @@ and do_frontend_checks_via_transition linters context an trans =
 
 and do_frontend_checks_decl linters (context : CLintersContext.context) decl =
   let open Clang_ast_t in
-  if CAst_utils.is_implicit_decl decl then () (* do not analyze implicit declarations *)
-  else
+  if not (CAst_utils.is_implicit_decl decl) (* do not analyze implicit declarations *) then
     let an = Ctl_parser_types.Decl decl in
     (* The map should be visited when we enter the node before visiting children *)
     match decl with

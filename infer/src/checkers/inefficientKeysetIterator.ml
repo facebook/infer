@@ -87,8 +87,7 @@ let when_dominating_preds_satisfy idom my_node ~fun_name ~class_name_f ~f =
     |> List.filter ~f:(fun node -> Dominators.dominates idom node my_node)
   in
   let rec aux node (counter : int) =
-    if Int.equal counter 0 then ()
-    else
+    if not (Int.equal counter 0) then
       match preds node with
       | [pred_node] -> (
         match find_first_arg_pvar pred_node ~fun_name ~class_name_f with
