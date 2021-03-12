@@ -403,7 +403,7 @@ class Exceptions {
     return 0;
   }
 
-  int FN_unreachable_catch_bad() {
+  int unreachable_catch_bad() {
     int i = 1;
     try {
     } catch (...) {
@@ -455,7 +455,7 @@ class Exceptions {
 
   // currently, the only transition to the catch block is at the end of the try
   // block. See T28898377
-  int FP_read_in_catch_tricky_ok(bool b1, bool b2) {
+  int read_in_catch_tricky_ok(bool b1, bool b2) {
     int i = 1;
     try {
       if (b1) {
@@ -537,6 +537,55 @@ class Exceptions {
       return 2;
     }
     return 3;
+  }
+
+  int read_in_catch_ok() {
+    int x;
+    try {
+      x = 10;
+      maybe_throw();
+      x = 20;
+    } catch (...) {
+      return x;
+    }
+    return x;
+  }
+
+  int not_read_in_catch_bad() {
+    int x;
+    try {
+      x = 10;
+      maybe_throw();
+      x = 20;
+    } catch (...) {
+      return 0;
+    }
+    return x;
+  }
+
+  int read_only_in_catch_bad() {
+    int x;
+    try {
+      x = 10;
+      maybe_throw();
+      x = 20;
+    } catch (...) {
+      return x;
+    }
+    return 0;
+  }
+
+  void never_throw() {}
+
+  int FN_read_only_in_unreachable_catch_bad() {
+    int x;
+    try {
+      x = 10;
+      never_throw();
+    } catch (...) {
+      return x;
+    }
+    return 0;
   }
 };
 

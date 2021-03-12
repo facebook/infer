@@ -434,8 +434,14 @@ module TransferFunctions = struct
         mem
     | Metadata (ExitScope (dead_vars, _)) ->
         Dom.Mem.remove_temps (List.filter_map dead_vars ~f:Var.get_ident) mem
-    | Metadata (Abstract _ | Nullify _ | Skip | TryEntry _ | TryExit _ | VariableLifetimeBegins _)
-      ->
+    | Metadata
+        ( Abstract _
+        | CatchEntry _
+        | Nullify _
+        | Skip
+        | TryEntry _
+        | TryExit _
+        | VariableLifetimeBegins _ ) ->
         mem
 
 

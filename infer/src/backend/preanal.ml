@@ -347,8 +347,9 @@ module Liveness = struct
             (VarDomain.add (Var.of_pvar lhs_pvar) active_defs, to_nullify)
         | Sil.Metadata (VariableLifetimeBegins (pvar, _, _)) ->
             (VarDomain.add (Var.of_pvar pvar) active_defs, to_nullify)
-        | Sil.Store _ | Prune _ | Metadata (Abstract _ | ExitScope _ | Skip | TryEntry _ | TryExit _)
-          ->
+        | Sil.Store _
+        | Prune _
+        | Metadata (Abstract _ | CatchEntry _ | ExitScope _ | Skip | TryEntry _ | TryExit _) ->
             astate
         | Sil.Metadata (Nullify _) ->
             L.(die InternalError)
@@ -377,7 +378,7 @@ module Liveness = struct
     in
     let nullify_proc_cfg = ProcCfg.Exceptional.from_pdesc proc_desc in
     let nullify_proc_data = {ProcData.summary; tenv; extras= liveness_inv_map} in
-    let initial = (VarDomain.empty, VarDomain.empty) in
+    let initial = (VarDomain.bottom, VarDomain.bottom) in
     let nullify_inv_map = NullifyAnalysis.exec_cfg nullify_proc_cfg nullify_proc_data ~initial in
     (* only nullify pvars that are local; don't nullify those that can escape *)
     let is_local pvar = not (Liveness.is_always_in_scope proc_desc pvar) in
@@ -432,7 +433,7 @@ module Liveness = struct
   let process summary tenv =
     let proc_desc = Summary.get_proc_desc summary in
     let liveness_proc_cfg = BackwardCfg.from_pdesc proc_desc in
-    let initial = Liveness.Domain.empty in
+    let initial = Liveness.Domain.bottom in
     let liveness_inv_map = LivenessAnalysis.exec_cfg liveness_proc_cfg proc_desc ~initial in
     add_nullify_instrs summary tenv liveness_inv_map
 end

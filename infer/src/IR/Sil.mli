@@ -27,6 +27,7 @@ type if_kind =
 type instr_metadata =
   | Abstract of Location.t
       (** a good place to apply abstraction, mostly used in the biabduction analysis *)
+  | CatchEntry of {try_id: int; loc: Location.t}  (** entry of C++ catch blocks *)
   | ExitScope of Var.t list * Location.t  (** remove temporaries and dead program variables *)
   | Nullify of Pvar.t * Location.t  (** nullify stack variable *)
   | Skip  (** no-op *)

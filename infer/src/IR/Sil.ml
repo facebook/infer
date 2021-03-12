@@ -28,6 +28,7 @@ type if_kind =
 type instr_metadata =
   | Abstract of Location.t
       (** a good place to apply abstraction, mostly used in the biabduction analysis *)
+  | CatchEntry of {try_id: int; loc: Location.t}  (** entry of C++ catch blocks *)
   | ExitScope of Var.t list * Location.t  (** remove temporaries and dead program variables *)
   | Nullify of Pvar.t * Location.t  (** nullify stack variable *)
   | Skip  (** no-op *)
@@ -94,6 +95,7 @@ let pp_exp_typ pe f (e, t) = F.fprintf f "%a:%a" (Exp.pp_diff pe) e (Typ.pp pe) 
 
 let location_of_instr_metadata = function
   | Abstract loc
+  | CatchEntry {loc}
   | ExitScope (_, loc)
   | Nullify (_, loc)
   | TryEntry {loc}
@@ -113,7 +115,7 @@ let location_of_instr = function
 
 
 let exps_of_instr_metadata = function
-  | Abstract _ ->
+  | Abstract _ | CatchEntry _ ->
       []
   | ExitScope (vars, _) ->
       List.map ~f:Var.to_exp vars
@@ -161,6 +163,8 @@ let if_kind_to_string = function
 let pp_instr_metadata pe f = function
   | Abstract loc ->
       F.fprintf f "APPLY_ABSTRACTION; [%a]" Location.pp loc
+  | CatchEntry {loc} ->
+      F.fprintf f "CATCH_ENTRY; [%a]" Location.pp loc
   | ExitScope (vars, loc) ->
       F.fprintf f "EXIT_SCOPE(%a); [%a]" (Pp.seq ~sep:"," Var.pp) vars Location.pp loc
   | Nullify (pvar, loc) ->

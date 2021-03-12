@@ -216,6 +216,7 @@ module InstrBasicCostWithReason = struct
         CostDomain.unit_cost_atomic_operation
     | Sil.Metadata
         ( Abstract _
+        | CatchEntry _
         | ExitScope _
         | Nullify _
         | Skip

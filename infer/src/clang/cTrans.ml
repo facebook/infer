@@ -2180,8 +2180,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           Procdesc.create_node procdesc try_loc (Stmt_node CXXTry)
             [Metadata (TryExit {try_id; loc= try_loc})]
         in
+        let catch_entry_node =
+          Procdesc.create_node procdesc try_loc (Stmt_node CXXTry)
+            [Metadata (CatchEntry {try_id; loc= try_loc})]
+        in
         Procdesc.set_succs try_exit_node ~normal:(Some trans_state.succ_nodes)
-          ~exn:(Some catch_start_nodes) ;
+          ~exn:(Some [catch_entry_node]) ;
+        Procdesc.set_succs catch_entry_node ~normal:(Some catch_start_nodes) ~exn:None ;
         (* add catch block as exceptional successor to end of try block. not ideal, but we will at
            least reach the code in the catch block this way *)
         (* TODO (T28898377): instead, we should extend trans_state with a list of maybe-throwing

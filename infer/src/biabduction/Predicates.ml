@@ -1015,7 +1015,14 @@ let instr_sub_ids ~sub_id_binders f (instr : Sil.instr) : Sil.instr =
       in
       let vars' = IList.map_changed ~equal:phys_equal ~f:sub_var vars in
       if phys_equal vars vars' then instr else Metadata (ExitScope (vars', loc))
-  | Metadata (Abstract _ | Nullify _ | Skip | TryEntry _ | TryExit _ | VariableLifetimeBegins _) ->
+  | Metadata
+      ( Abstract _
+      | CatchEntry _
+      | Nullify _
+      | Skip
+      | TryEntry _
+      | TryExit _
+      | VariableLifetimeBegins _ ) ->
       instr
 
 

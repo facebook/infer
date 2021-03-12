@@ -12,7 +12,66 @@ module L = Logging
 (** backward analysis for computing set of maybe-live variables at each program point *)
 
 module VarSet = AbstractDomain.FiniteSet (Var)
-module Domain = VarSet
+
+module Exn = struct
+  include AbstractDomain.Map (Int) (VarSet)
+
+  let union = union (fun _ v1 v2 -> Some (VarSet.union v1 v2))
+
+  let diff =
+    merge (fun _ v1 v2 ->
+        match (v1, v2) with
+        | None, _ | Some _, None ->
+            v1
+        | Some v1, Some v2 ->
+            let r = VarSet.diff v1 v2 in
+            Option.some_if (not (VarSet.is_bottom r)) r )
+end
+
+module Domain = struct
+  type t = {normal: VarSet.t; exn: Exn.t}
+
+  let pp f {normal; exn} = F.fprintf f "@[@[normal:%a@],@ @[exn:%a@]@]" VarSet.pp normal Exn.pp exn
+
+  let leq ~lhs ~rhs =
+    VarSet.leq ~lhs:lhs.normal ~rhs:rhs.normal && Exn.leq ~lhs:lhs.exn ~rhs:rhs.exn
+
+
+  let join x y = {normal= VarSet.join x.normal y.normal; exn= Exn.join x.exn y.exn}
+
+  let widen ~prev ~next ~num_iters =
+    { normal= VarSet.widen ~prev:prev.normal ~next:next.normal ~num_iters
+    ; exn= Exn.widen ~prev:prev.exn ~next:next.exn ~num_iters }
+
+
+  let bottom = {normal= VarSet.bottom; exn= Exn.bottom}
+
+  let is_bottom {normal; exn} = VarSet.is_bottom normal && Exn.is_bottom exn
+
+  let update_normal ~f x = {x with normal= f x.normal}
+
+  let add var = update_normal ~f:(VarSet.add var)
+
+  let remove var = update_normal ~f:(VarSet.remove var)
+
+  let map_normal ~f x = f x.normal
+
+  let mem var = map_normal ~f:(VarSet.mem var)
+
+  let fold f x init = map_normal ~f:(fun normal -> VarSet.fold f normal init) x
+
+  let union x y = {normal= VarSet.union x.normal y.normal; exn= Exn.union x.exn y.exn}
+
+  let diff x y = {normal= VarSet.diff x.normal y.normal; exn= Exn.diff x.exn y.exn}
+
+  let catch_entry try_id x = {normal= VarSet.empty; exn= Exn.add try_id x.normal x.exn}
+
+  let try_entry try_id x = {x with exn= Exn.remove try_id x.exn}
+
+  let add_live_in_catch x =
+    { x with
+      normal= Exn.fold (fun _ live_in_catch acc -> VarSet.join acc live_in_catch) x.exn x.normal }
+end
 
 (** only kill pvars that are local; don't kill those that can escape *)
 let is_always_in_scope proc_desc pvar =
@@ -157,6 +216,12 @@ module TransferFunctions (LConfig : LivenessConfig) (CFG : ProcCfg.S) = struct
         in
         Domain.remove (Var.of_id ret_id) astate
         |> exp_add_live call_exp |> add_live_actuals actuals_to_read
+        |> (* assume that all function calls can throw for now *)
+        Domain.add_live_in_catch
+    | Sil.Metadata (CatchEntry {try_id}) ->
+        Domain.catch_entry try_id astate
+    | Sil.Metadata (TryEntry {try_id}) ->
+        Domain.try_entry try_id astate
     | Sil.Metadata _ ->
         astate
 
@@ -254,7 +319,7 @@ let ignored_constants =
 let checker {IntraproceduralAnalysis.proc_desc; err_log} =
   let passed_by_ref_invariant_map = get_passed_by_ref_invariant_map proc_desc in
   let cfg = CFG.from_pdesc proc_desc in
-  let invariant_map = CheckerAnalyzer.exec_cfg cfg proc_desc ~initial:Domain.empty in
+  let invariant_map = CheckerAnalyzer.exec_cfg cfg proc_desc ~initial:Domain.bottom in
   (* we don't want to report in harmless cases like int i = 0; if (...) { i = ... } else { i = ... }
      that create an intentional dead store as an attempt to imitate default value semantics.
      use dead stores to a "sentinel" value as a heuristic for ignoring this case *)

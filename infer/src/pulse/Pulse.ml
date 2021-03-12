@@ -367,8 +367,14 @@ module PulseTransferFunctions = struct
             remove_vars vars_to_remove astates
       | Metadata (VariableLifetimeBegins (pvar, typ, location)) when not (Pvar.is_global pvar) ->
           [PulseOperations.realloc_pvar tenv pvar typ location astate |> Domain.continue]
-      | Metadata (Abstract _ | VariableLifetimeBegins _ | Nullify _ | Skip | TryEntry _ | TryExit _)
-        ->
+      | Metadata
+          ( Abstract _
+          | CatchEntry _
+          | Nullify _
+          | Skip
+          | TryEntry _
+          | TryExit _
+          | VariableLifetimeBegins _ ) ->
           [ContinueProgram astate] )
 
 

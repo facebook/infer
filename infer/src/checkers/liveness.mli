@@ -6,9 +6,17 @@
  *)
 open! IStd
 
-module VarSet : module type of AbstractDomain.FiniteSet (Var)
+module Domain : sig
+  include AbstractDomain.WithBottom
 
-module Domain = VarSet
+  val add : Var.t -> t -> t
+
+  val fold : (Var.t -> 'a -> 'a) -> t -> 'a -> 'a
+
+  val union : t -> t -> t
+
+  val diff : t -> t -> t
+end
 
 module PreAnalysisTransferFunctions (CFG : ProcCfg.S) :
   TransferFunctions.SIL

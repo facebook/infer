@@ -1220,8 +1220,14 @@ let typecheck_instr ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as
               TypeState.remove_id id astate ~descr:"ExitScope"
           | Var.ProgramVar _ ->
               astate )
-  | Sil.Metadata (Abstract _ | Nullify _ | Skip | TryEntry _ | TryExit _ | VariableLifetimeBegins _)
-    ->
+  | Sil.Metadata
+      ( Abstract _
+      | CatchEntry _
+      | Nullify _
+      | Skip
+      | TryEntry _
+      | TryExit _
+      | VariableLifetimeBegins _ ) ->
       typestate
   | Sil.Load {id; e; typ; loc} ->
       typecheck_expr_for_errors analysis_data ~nullsafe_mode find_canonical_duplicate calls_this
