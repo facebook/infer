@@ -800,7 +800,7 @@ let nullptr_dereference =
 
 
 let optional_empty_access =
-  register ~enabled:false ~id:"OPTIONAL_EMPTY_ACCESS" Error Pulse
+  register ~id:"OPTIONAL_EMPTY_ACCESS" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/OPTIONAL_EMPTY_ACCESS.md"]
 
 
