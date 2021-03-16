@@ -16,6 +16,7 @@ CLANG_PREBUILD_PATCHES=(
     "$SCRIPT_DIR/src/err_ret_local_block.patch"
     "$SCRIPT_DIR/src/mangle_suppress_errors.patch"
     "$SCRIPT_DIR/src/AArch64SVEACLETypes.patch"
+    "$SCRIPT_DIR/src/benchmark_register.patch"
 )
 CLANG_PREFIX="$SCRIPT_DIR/install"
 CLANG_INSTALLED_VERSION_FILE="$SCRIPT_DIR/installed.version"
