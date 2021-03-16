@@ -50,7 +50,7 @@
   return x;
 }
 
-- (BOOL)use_in_closure_bad_FN {
+- (BOOL)use_in_closure_bad {
   __block BOOL x;
 
   void (^block)() = ^() {

@@ -699,14 +699,6 @@ let call tenv ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.t) op
   let get_arg_values () = List.map actuals ~f:(fun ((value, _), _) -> value) in
   match callee_data with
   | Some (callee_proc_desc, exec_states) ->
-      let astate =
-        (* NOTE: This conservatively initializes all reachable addresses from captured variables
-           when calling ObjC blocks, because the captured variables with call-by-reference in ObjC
-           are incorrectly translated in the frontend.  See T80743637. *)
-        if Procname.is_objc_block callee_pname then
-          conservatively_initialize_args (get_arg_values ()) astate
-        else astate
-      in
       let formals =
         Procdesc.get_formals callee_proc_desc
         |> List.map ~f:(fun (mangled, _) -> Pvar.mk mangled callee_pname |> Var.of_pvar)
