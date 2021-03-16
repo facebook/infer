@@ -274,6 +274,13 @@ module Call = struct
         ; +PatternMatch.Java.implements_arrays
           &:: "sort" $ capt_exp
           $+...$--> BoundsOfArray.n_log_n_length ~of_function:"Arrays.sort"
+        ; +PatternMatch.Java.implements_set &:: "contains" <>$ any_arg $+ any_arg
+          $--> unit_cost_model
+        ; +PatternMatch.Java.implements_set &:: "containsAll" <>$ any_arg $+ capt_exp
+          $--> BoundsOfCollection.linear_length ~of_function:"Set.containsAll"
+        ; +PatternMatch.Java.implements_collection
+          &:: "removeAll" <>$ any_arg $+ capt_exp
+          $--> BoundsOfCollection.linear_length ~of_function:"Collection.removeAll"
         ; +PatternMatch.Java.implements_list
           &:: "contains" <>$ capt_exp
           $+...$--> BoundsOfCollection.linear_length ~of_function:"List.contains"

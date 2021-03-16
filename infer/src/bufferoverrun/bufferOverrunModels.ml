@@ -1903,6 +1903,7 @@ module Call = struct
         &:: "singletonMap" <>--> Collection.singleton_collection
       ; +PatternMatch.Java.implements_collections
         &::+ unmodifiable <>$ capt_exp $--> Collection.iterator
+      ; +PatternMatch.Java.implements_set &:: "of" &++> Collection.of_list
       ; +PatternMatch.Java.implements_google "common.collect.ImmutableSet"
         &:: "of" &++> Collection.of_list
       ; +PatternMatch.Java.implements_google "common.base.Preconditions"
