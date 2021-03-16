@@ -45,6 +45,9 @@ BUILD_SYSTEMS_TESTS += \
   incremental_analysis_change_procedure \
   incremental_analysis_add_procedure \
 
+COST_TESTS += \
+  c_performance \
+
 DIRECT_TESTS += \
   c_biabduction \
   c_bufferoverrun \
@@ -96,6 +99,10 @@ BUILD_SYSTEMS_TESTS += \
   objc_retain_cycles \
   objc_retain_cycles_weak \
   differential_of_costs_report_objc \
+
+COST_TESTS += \
+  objc_autoreleasepool \
+  objc_performance \
 
 DIRECT_TESTS += \
   objc_autoreleasepool \
@@ -151,22 +158,24 @@ BUILD_SYSTEMS_TESTS += \
   resource_leak_exception_lines \
   racerd_dedup
 
-#TODO T41549034: Jdk11 translates string append differently, causing
-#test failures in NullPointerExceptions:stringVarEqualsFalseNPE
+COST_TESTS += \
+  java_hoistingExpensive \
+  java_performance \
+  java_performance-exclusive \
 
 DIRECT_TESTS += \
   java_annotreach \
   java_biabduction \
   java_bufferoverrun \
   java_checkers \
-  java_nullsafe \
-	java_nullsafe-annotation-graph \
   java_hoisting \
   java_hoistingExpensive \
   java_impurity \
   java_immutability \
   java_inefficientKeysetIterator \
   java_litho-required-props \
+  java_nullsafe \
+  java_nullsafe-annotation-graph \
   java_performance \
   java_performance-exclusive \
   java_pulse \
@@ -181,6 +190,9 @@ DIRECT_TESTS += \
 ifeq ($(IS_FACEBOOK_TREE),yes)
 BUILD_SYSTEMS_TESTS += \
   fb_differential_of_config_impact_report_java
+
+COST_TESTS += java_fb-performance
+
 DIRECT_TESTS += \
   java_fb-config-impact \
   java_fb-gk-interaction \
@@ -507,18 +519,6 @@ $(DIRECT_TESTS:%=direct_%_replace): infer
 
 .PHONY: direct_tests
 direct_tests: $(DIRECT_TESTS:%=direct_%_test)
-
-COST_TESTS += \
-  c_performance \
-  java_hoistingExpensive \
-  java_performance \
-  java_performance-exclusive \
-  objc_autoreleasepool \
-  objc_performance \
-
-ifeq ($(IS_FACEBOOK_TREE),yes)
-   COST_TESTS += java_fb-performance
-endif
 
 .PHONY: cost_tests
 cost_tests: $(COST_TESTS:%=direct_%_test)
