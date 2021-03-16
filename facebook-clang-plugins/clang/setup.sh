@@ -222,7 +222,7 @@ popd
 if [ -n "$CLANG_TMP_DIR" ]; then
     TMP=$CLANG_TMP_DIR
 else
-    TMP=`mktemp -d /tmp/clang-setup.XXXXXX`
+    TMP=`mktemp -d ${TMPDIR-/tmp}/clang-setup.XXXXXX`
 fi
 pushd "$TMP"
 
