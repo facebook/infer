@@ -290,7 +290,7 @@ let make_nullsafe_issue_if_reportable_lazy ~nullsafe_mode err_instance =
                ~description:
                  (Format.asprintf
                     "Field %a is declared non-nullable, so it should be initialized in the \
-                     constructor or in an `@Initializer` method"
+                     constructor"
                     MF.pp_monospaced
                     (Fieldname.get_field_name field_name))
                ~issue_type:IssueType.eradicate_field_not_initialized ~loc
