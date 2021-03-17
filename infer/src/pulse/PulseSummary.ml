@@ -37,6 +37,8 @@ let exec_summary_of_post_common tenv ~continue_program proc_desc (exec_astate : 
       Some (ExitProgram astate)
   | LatentAbortProgram {astate; latent_issue} ->
       Some (LatentAbortProgram {astate; latent_issue})
+  | LatentInvalidAccess {astate; address; must_be_valid; calling_context} ->
+      Some (LatentInvalidAccess {astate; address; must_be_valid; calling_context})
   | ISLLatentMemoryError astate ->
       Some (ISLLatentMemoryError astate)
 

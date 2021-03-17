@@ -27,6 +27,11 @@ module Import : sig
     | ExitProgram of AbductiveDomain.summary
     | AbortProgram of AbductiveDomain.summary
     | LatentAbortProgram of {astate: AbductiveDomain.summary; latent_issue: LatentIssue.t}
+    | LatentInvalidAccess of
+        { astate: AbductiveDomain.summary
+        ; address: AbstractValue.t
+        ; must_be_valid: Trace.t
+        ; calling_context: (CallEvent.t * Location.t) list }
     | ISLLatentMemoryError of AbductiveDomain.summary
 
   type 'astate base_error = 'astate AccessResult.error =

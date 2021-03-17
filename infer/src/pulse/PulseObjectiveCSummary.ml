@@ -41,6 +41,7 @@ let mk_objc_method_nil_summary {InterproceduralAnalysis.tenv; proc_desc; err_log
   | ExitProgram _, _
   | AbortProgram _, _
   | LatentAbortProgram _, _
+  | LatentInvalidAccess _, _
   | ISLLatentMemoryError _, _ ->
       None
 
@@ -55,7 +56,11 @@ let append_objc_self_positive {InterproceduralAnalysis.tenv; proc_desc; err_log}
         PulseArithmetic.prune_positive (fst value) astate
       in
       PulseReport.report_result tenv proc_desc err_log result
-  | ExitProgram _ | AbortProgram _ | LatentAbortProgram _ | ISLLatentMemoryError _ ->
+  | ExitProgram _
+  | AbortProgram _
+  | LatentAbortProgram _
+  | LatentInvalidAccess _
+  | ISLLatentMemoryError _ ->
       [astate]
 
 

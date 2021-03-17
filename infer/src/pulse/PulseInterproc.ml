@@ -745,10 +745,10 @@ let apply_prepost ~is_isl_error_prepost callee_proc_name call_location ~callee_p
               astate
           else Ok astate
         in
-        (astate, return_caller)
+        (astate, return_caller, call_state.subst)
       with
-      | post ->
-          Sat post
+      | result ->
+          Sat result
       | exception Contradiction reason ->
           L.d_printfln "Cannot apply post-condition: %a" pp_contradiction reason ;
           Unsat )

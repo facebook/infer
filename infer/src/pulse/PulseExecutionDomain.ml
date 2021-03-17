@@ -20,6 +20,11 @@ type 'abductive_domain_t base_t =
   | ExitProgram of AbductiveDomain.summary
   | AbortProgram of AbductiveDomain.summary
   | LatentAbortProgram of {astate: AbductiveDomain.summary; latent_issue: LatentIssue.t}
+  | LatentInvalidAccess of
+      { astate: AbductiveDomain.summary
+      ; address: AbstractValue.t
+      ; must_be_valid: (Trace.t[@yojson.opaque])
+      ; calling_context: ((CallEvent.t * Location.t) list[@yojson.opaque]) }
   | ISLLatentMemoryError of AbductiveDomain.summary
 [@@deriving equal, compare, yojson_of]
 
@@ -43,25 +48,32 @@ let leq ~lhs ~rhs =
     , LatentAbortProgram {astate= astate2; latent_issue= issue2} ) ->
       LatentIssue.equal issue1 issue2
       && AbductiveDomain.leq ~lhs:(astate1 :> AbductiveDomain.t) ~rhs:(astate2 :> AbductiveDomain.t)
+  | ( LatentInvalidAccess {astate= astate1; address= v1; must_be_valid= _}
+    , LatentInvalidAccess {astate= astate2; address= v2; must_be_valid= _} ) ->
+      AbstractValue.equal v1 v2
+      && AbductiveDomain.leq ~lhs:(astate1 :> AbductiveDomain.t) ~rhs:(astate2 :> AbductiveDomain.t)
   | _ ->
       false
 
 
 let pp fmt = function
-  | ContinueProgram astate ->
-      AbductiveDomain.pp fmt astate
-  | ISLLatentMemoryError astate ->
-      F.fprintf fmt "{ISLLatentMemoryError %a}" AbductiveDomain.pp (astate :> AbductiveDomain.t)
-  | ExitProgram astate ->
-      F.fprintf fmt "{ExitProgram %a}" AbductiveDomain.pp (astate :> AbductiveDomain.t)
   | AbortProgram astate ->
       F.fprintf fmt "{AbortProgram %a}" AbductiveDomain.pp (astate :> AbductiveDomain.t)
+  | ContinueProgram astate ->
+      AbductiveDomain.pp fmt astate
+  | ExitProgram astate ->
+      F.fprintf fmt "{ExitProgram %a}" AbductiveDomain.pp (astate :> AbductiveDomain.t)
+  | ISLLatentMemoryError astate ->
+      F.fprintf fmt "{ISLLatentMemoryError %a}" AbductiveDomain.pp (astate :> AbductiveDomain.t)
   | LatentAbortProgram {astate; latent_issue} ->
       let diagnostic = LatentIssue.to_diagnostic latent_issue in
       let message = Diagnostic.get_message diagnostic in
       let location = Diagnostic.get_location diagnostic in
       F.fprintf fmt "{LatentAbortProgram(%a: %s) %a}" Location.pp location message
         AbductiveDomain.pp
+        (astate :> AbductiveDomain.t)
+  | LatentInvalidAccess {astate; address; must_be_valid= _} ->
+      F.fprintf fmt "{LatentInvalidAccess(%a) %a}" AbstractValue.pp address AbductiveDomain.pp
         (astate :> AbductiveDomain.t)
 
 
@@ -73,6 +85,7 @@ let get_astate : t -> AbductiveDomain.t = function
   | ExitProgram astate
   | AbortProgram astate
   | LatentAbortProgram {astate}
+  | LatentInvalidAccess {astate}
   | ISLLatentMemoryError astate ->
       (astate :> AbductiveDomain.t)
 

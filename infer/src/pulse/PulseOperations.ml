@@ -20,6 +20,11 @@ module Import = struct
     | ExitProgram of AbductiveDomain.summary
     | AbortProgram of AbductiveDomain.summary
     | LatentAbortProgram of {astate: AbductiveDomain.summary; latent_issue: LatentIssue.t}
+    | LatentInvalidAccess of
+        { astate: AbductiveDomain.summary
+        ; address: AbstractValue.t
+        ; must_be_valid: Trace.t
+        ; calling_context: (CallEvent.t * Location.t) list }
     | ISLLatentMemoryError of AbductiveDomain.summary
 
   type 'astate base_error = 'astate AccessResult.error =
@@ -622,7 +627,7 @@ let apply_callee tenv ~caller_proc_desc callee_pname call_loc callee_exec_state 
     with
     | (Sat (Error _) | Unsat) as path_result ->
         path_result
-    | Sat (Ok (post, return_val_opt)) ->
+    | Sat (Ok (post, return_val_opt, subst)) ->
         let event = ValueHistory.Call {f= Call callee_pname; location= call_loc; in_call= []} in
         let post =
           match return_val_opt with
@@ -631,28 +636,31 @@ let apply_callee tenv ~caller_proc_desc callee_pname call_loc callee_exec_state 
           | None ->
               havoc_id (fst ret) [event] post
         in
-        f post
+        f subst post
   in
   let open ExecutionDomain in
   let open SatUnsat.Import in
   match callee_exec_state with
   | ContinueProgram astate ->
-      map_call_result ~is_isl_error_prepost:false astate ~f:(fun astate ->
+      map_call_result ~is_isl_error_prepost:false astate ~f:(fun _subst astate ->
           Sat (Ok (ContinueProgram astate)) )
-  | AbortProgram astate | ExitProgram astate | LatentAbortProgram {astate} ->
+  | AbortProgram astate
+  | ExitProgram astate
+  | LatentAbortProgram {astate}
+  | LatentInvalidAccess {astate} ->
       map_call_result ~is_isl_error_prepost:false
         (astate :> AbductiveDomain.t)
-        ~f:(fun astate ->
-          let+ (astate_summary : AbductiveDomain.summary) =
+        ~f:(fun subst astate ->
+          let* (astate_summary : AbductiveDomain.summary) =
             AbductiveDomain.summary_of_post tenv caller_proc_desc astate
           in
           match callee_exec_state with
           | ContinueProgram _ | ISLLatentMemoryError _ ->
               assert false
           | AbortProgram _ ->
-              Ok (AbortProgram astate_summary)
+              Sat (Ok (AbortProgram astate_summary))
           | ExitProgram _ ->
-              Ok (ExitProgram astate_summary)
+              Sat (Ok (ExitProgram astate_summary))
           | LatentAbortProgram {latent_issue} -> (
               let latent_issue =
                 LatentIssue.add_call (CallEvent.Call callee_pname, call_loc) latent_issue
@@ -660,15 +668,43 @@ let apply_callee tenv ~caller_proc_desc callee_pname call_loc callee_exec_state 
               let diagnostic = LatentIssue.to_diagnostic latent_issue in
               match LatentIssue.should_report astate_summary diagnostic with
               | `DelayReport latent_issue ->
-                  Ok (LatentAbortProgram {astate= astate_summary; latent_issue})
+                  Sat (Ok (LatentAbortProgram {astate= astate_summary; latent_issue}))
               | `ReportNow ->
-                  Error
-                    (ReportableError {diagnostic; astate= (astate_summary :> AbductiveDomain.t)}) )
-          )
+                  Sat
+                    (Error
+                       (ReportableError {diagnostic; astate= (astate_summary :> AbductiveDomain.t)}))
+              )
+          | LatentInvalidAccess {address= address_callee; must_be_valid; calling_context} -> (
+            match AbstractValue.Map.find_opt address_callee subst with
+            | None ->
+                (* the address became unreachable so the bug can never be reached; drop it *) Unsat
+            | Some (address, _history) -> (
+                let calling_context = (CallEvent.Call callee_pname, call_loc) :: calling_context in
+                match
+                  AbductiveDomain.find_post_cell_opt address (astate_summary :> AbductiveDomain.t)
+                  |> Option.bind ~f:(fun (_, attrs) -> Attributes.get_invalid attrs)
+                with
+                | None ->
+                    (* still no proof that the address is invalid *)
+                    Sat
+                      (Ok
+                         (LatentInvalidAccess
+                            {astate= astate_summary; address; must_be_valid; calling_context}))
+                | Some (invalidation, invalidation_trace) ->
+                    Sat
+                      (Error
+                         (ReportableError
+                            { diagnostic=
+                                AccessToInvalidAddress
+                                  { calling_context
+                                  ; invalidation
+                                  ; invalidation_trace
+                                  ; access_trace= must_be_valid }
+                            ; astate= (astate_summary :> AbductiveDomain.t) })) ) ) )
   | ISLLatentMemoryError astate ->
       map_call_result ~is_isl_error_prepost:true
         (astate :> AbductiveDomain.t)
-        ~f:(fun astate ->
+        ~f:(fun _subst astate ->
           let+ astate_summary = AbductiveDomain.summary_of_post tenv caller_proc_desc astate in
           Ok (ISLLatentMemoryError astate_summary) )
 

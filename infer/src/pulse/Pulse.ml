@@ -86,7 +86,11 @@ module PulseTransferFunctions = struct
         (* invalidate [&x] *)
         PulseOperations.invalidate call_loc gone_out_of_scope out_of_scope_base astate
         >>| ExecutionDomain.continue
-    | ISLLatentMemoryError _ | AbortProgram _ | ExitProgram _ | LatentAbortProgram _ ->
+    | ISLLatentMemoryError _
+    | AbortProgram _
+    | ExitProgram _
+    | LatentAbortProgram _
+    | LatentInvalidAccess _ ->
         Ok exec_state
 
 
@@ -104,7 +108,11 @@ module PulseTransferFunctions = struct
       match exec_state with
       | ContinueProgram astate ->
           ContinueProgram (do_astate astate)
-      | ISLLatentMemoryError _ | AbortProgram _ | LatentAbortProgram _ | ExitProgram _ ->
+      | ISLLatentMemoryError _
+      | AbortProgram _
+      | LatentAbortProgram _
+      | ExitProgram _
+      | LatentInvalidAccess _ ->
           exec_state
     in
     List.map ~f:(Result.map ~f:do_one_exec_state) exec_state_res
@@ -240,7 +248,11 @@ module PulseTransferFunctions = struct
         call_instr ;
       List.concat_map astate_list ~f:(fun (astate : Domain.t) ->
           match astate with
-          | ISLLatentMemoryError _ | AbortProgram _ | ExitProgram _ | LatentAbortProgram _ ->
+          | ISLLatentMemoryError _
+          | AbortProgram _
+          | ExitProgram _
+          | LatentAbortProgram _
+          | LatentInvalidAccess _ ->
               [astate]
           | ContinueProgram astate ->
               dispatch_call analysis_data ret call_exp actuals location call_flags astate
@@ -262,9 +274,7 @@ module PulseTransferFunctions = struct
       ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) _cfg_node
       (instr : Sil.instr) : Domain.t list =
     match astate with
-    | ISLLatentMemoryError _ | AbortProgram _ | LatentAbortProgram _ ->
-        (* We can also continue the analysis with the error state here
-                 but there might be a risk we would get nonsense. *)
+    | AbortProgram _ | ISLLatentMemoryError _ | LatentAbortProgram _ | LatentInvalidAccess _ ->
         [astate]
     | ExitProgram _ ->
         (* program already exited, simply propagate the exited state upwards  *)
@@ -344,7 +354,11 @@ module PulseTransferFunctions = struct
           let remove_vars vars astates =
             List.concat_map astates ~f:(fun (astate : Domain.t) ->
                 match astate with
-                | ISLLatentMemoryError _ | AbortProgram _ | ExitProgram _ | LatentAbortProgram _ ->
+                | ISLLatentMemoryError _
+                | AbortProgram _
+                | ExitProgram _
+                | LatentAbortProgram _
+                | LatentInvalidAccess _ ->
                     [astate]
                 | ContinueProgram astate ->
                     PulseOperations.remove_vars tenv vars location astate
