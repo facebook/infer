@@ -21,6 +21,9 @@ INFER_OPAM_DEFAULT_SWITCH="ocaml-variants.4.11.1+flambda"
 INFER_OPAM_DEFAULT_COMPILER="$INFER_OPAM_DEFAULT_SWITCH"
 INFER_OPAM_SWITCH=${INFER_OPAM_SWITCH:-$INFER_OPAM_DEFAULT_SWITCH}
 INFER_OPAM_COMPILER=${INFER_OPAM_COMPILER:-$INFER_OPAM_DEFAULT_COMPILER}
+PLUGIN_DIR="$INFER_ROOT/facebook-clang-plugins"
+PLUGIN_SETUP_SCRIPT=${PLUGIN_SETUP_SCRIPT:-setup.sh}
+PLUGIN_SETUP="${PLUGIN_DIR}/clang/${PLUGIN_SETUP_SCRIPT}"
 
 function usage() {
   echo "Usage: $0 [-y] [targets]"
@@ -165,7 +168,7 @@ fi
 ./configure $INFER_CONFIGURE_OPTS
 
 if [ "$BUILD_CLANG" == "yes" ]; then
-  if ! facebook-clang-plugins/clang/setup.sh --only-check-install; then
+  if ! "$PLUGIN_SETUP" --only-check-install; then
     echo ""
     echo "  Warning: you are not using a release of Infer. The C and"
     echo "  Objective-C analyses require a custom clang to be compiled"
