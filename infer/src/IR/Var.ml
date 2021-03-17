@@ -36,6 +36,8 @@ let get_ident = function ProgramVar _ -> None | LogicalVar id -> Some id
 
 let get_pvar = function ProgramVar pvar -> Some pvar | LogicalVar _ -> None
 
+let is_pvar = function ProgramVar _ -> true | LogicalVar _ -> false
+
 let is_global = function ProgramVar pvar -> Pvar.is_global pvar | LogicalVar _ -> false
 
 let is_return = function ProgramVar pvar -> Pvar.is_return pvar | LogicalVar _ -> false

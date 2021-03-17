@@ -23,7 +23,8 @@ module Access = struct
   let canonicalize ~get_var_repr (access : t) =
     match access with
     | ArrayAccess (typ, addr) ->
-        HilExp.Access.ArrayAccess (typ, get_var_repr addr)
+        let addr' = get_var_repr addr in
+        if AbstractValue.equal addr addr' then access else HilExp.Access.ArrayAccess (typ, addr')
     | FieldAccess _ | TakeAddress | Dereference ->
         access
 end
@@ -49,10 +50,16 @@ module Edges = struct
   let yojson_of_t edges = [%yojson_of: (Access.t * AddrTrace.t) list] (M.bindings edges)
 
   let canonicalize ~get_var_repr edges =
-    M.fold ~init:M.empty edges ~f:(fun edges' (access, (addr, hist)) ->
-        let addr' = get_var_repr addr in
-        let access' = Access.canonicalize ~get_var_repr access in
-        M.add access' (addr', hist) edges' )
+    let edges', changed =
+      M.fold edges ~init:(M.empty, false) ~f:(fun (edges', changed) (access, (addr, hist)) ->
+          let addr' = get_var_repr addr in
+          let access' = Access.canonicalize ~get_var_repr access in
+          let changed =
+            changed || not (AbstractValue.equal addr addr' && phys_equal access access')
+          in
+          (M.add access' (addr', hist) edges', changed) )
+    in
+    if changed then edges' else edges
 
 
   let subst_var (v, v') edges =
@@ -89,10 +96,10 @@ let is_allocated memory v =
 let canonicalize ~get_var_repr memory =
   let exception AliasingContradiction in
   try
-    let memory =
+    let memory', changed =
       Graph.fold
-        (fun addr edges g ->
-          if Edges.is_empty edges then g
+        (fun addr edges (g, changed) ->
+          if Edges.is_empty edges then (g, true)
           else
             let addr' = get_var_repr addr in
             if is_allocated g addr' then (
@@ -101,10 +108,13 @@ let canonicalize ~get_var_repr memory =
               raise_notrace AliasingContradiction )
             else
               let edges' = Edges.canonicalize ~get_var_repr edges in
-              Graph.add addr' edges' g )
-        memory Graph.empty
+              let changed =
+                changed || not (AbstractValue.equal addr addr' && phys_equal edges edges')
+              in
+              (Graph.add addr' edges' g, changed) )
+        memory (Graph.empty, false)
     in
-    Sat memory
+    if changed then Sat memory' else Sat memory
   with AliasingContradiction -> Unsat
 
 

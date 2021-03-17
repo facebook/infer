@@ -673,47 +673,44 @@ let invalidate_locals pdesc astate : t =
 
 type summary = t [@@deriving compare, equal, yojson_of]
 
-let is_allocated {post; pre} v =
-  let is_pvar = function Var.ProgramVar _ -> true | Var.LogicalVar _ -> false in
-  let is_stack_allocated base_mem v =
-    BaseStack.exists
-      (fun var (address, _) -> is_pvar var && AbstractValue.equal address v)
-      base_mem.stack
-  in
-  (* OPTIM: the post stack contains at least the pre stack so no need to check both *)
+let is_allocated stack_allocations {post; pre} v =
   BaseMemory.is_allocated (post :> BaseDomain.t).heap v
   || BaseMemory.is_allocated (pre :> BaseDomain.t).heap v
-  || is_stack_allocated (post :> BaseDomain.t) v
+  || AbstractValue.Set.mem v (Lazy.force stack_allocations)
 
 
-let subst_var subst astate =
+let subst_var_in_post subst astate =
   let open SatUnsat.Import in
   let+ post = PostDomain.subst_var subst astate.post in
   if phys_equal astate.post post then astate else {astate with post}
 
 
+let get_stack_allocated {post} =
+  (* OPTIM: the post stack contains at least the pre stack so no need to check both *)
+  BaseStack.fold
+    (fun var (address, _) allocated ->
+      if Var.is_pvar var then AbstractValue.Set.add address allocated else allocated )
+    (post :> BaseDomain.t).stack AbstractValue.Set.empty
+
+
 let incorporate_new_eqs astate new_eqs =
+  let stack_allocations = lazy (get_stack_allocated astate) in
   List.fold_until new_eqs ~init:astate
     ~finish:(fun astate -> Sat astate)
     ~f:(fun astate (new_eq : PulseFormula.new_eq) ->
       match new_eq with
-      | EqZero v when is_allocated astate v ->
-          L.d_printfln "CONTRADICTION: %a = 0 but is allocated" AbstractValue.pp v ;
-          Stop Unsat
       | Equal (v1, v2) when AbstractValue.equal v1 v2 ->
           Continue astate
       | Equal (v1, v2) -> (
-          if is_allocated astate v1 && is_allocated astate v2 then (
-            L.d_printfln "CONTRADICTION: %a = %a but both are separately allocated" AbstractValue.pp
-              v1 AbstractValue.pp v2 ;
-            Stop Unsat )
-          else
-            match subst_var (v1, v2) astate with
-            | Unsat ->
-                Stop Unsat
-            | Sat astate' ->
-                Continue astate' )
-      | _ ->
+        match subst_var_in_post (v1, v2) astate with
+        | Unsat ->
+            Stop Unsat
+        | Sat astate' ->
+            Continue astate' )
+      | EqZero v when is_allocated stack_allocations astate v ->
+          L.d_printfln "CONTRADICTION: %a = 0 but is allocated" AbstractValue.pp v ;
+          Stop Unsat
+      | EqZero _ (* [v] not allocated *) ->
           Continue astate )
 
 
@@ -722,24 +719,39 @@ let canonicalize astate =
   let open SatUnsat.Import in
   let get_var_repr v = PathCondition.get_var_repr astate.path_condition v in
   let canonicalize_pre (pre : PreDomain.t) =
-    (* TODO: detect contradictions when equal addresses are pointing to different locations *)
-    let heap' =
-      BaseMemory.filter
-        (fun _ edges -> not (BaseMemory.Edges.is_empty edges))
-        (pre :> BaseDomain.t).heap
-    in
-    PreDomain.update ~heap:heap' pre
+    (* (ab)use canonicalization to filter out empty edges in the heap and detect aliasing
+       contradictions *)
+    let* stack' = BaseStack.canonicalize ~get_var_repr:Fn.id (pre :> BaseDomain.t).stack in
+    let+ heap' = BaseMemory.canonicalize ~get_var_repr:Fn.id (pre :> BaseDomain.t).heap in
+    PreDomain.update ~stack:stack' ~heap:heap' pre
   in
   let canonicalize_post (post : PostDomain.t) =
-    let stack' = BaseStack.canonicalize ~get_var_repr (post :> BaseDomain.t).stack in
+    let* stack' = BaseStack.canonicalize ~get_var_repr (post :> BaseDomain.t).stack in
     (* note: this step also de-registers addresses pointing to empty edges *)
     let+ heap' = BaseMemory.canonicalize ~get_var_repr (post :> BaseDomain.t).heap in
     let attrs' = BaseAddressAttributes.canonicalize ~get_var_repr (post :> BaseDomain.t).attrs in
     PostDomain.update ~stack:stack' ~heap:heap' ~attrs:attrs' post
   in
-  let pre = canonicalize_pre astate.pre in
+  let* pre = canonicalize_pre astate.pre in
   let+ post = canonicalize_post astate.post in
   {astate with pre; post}
+
+
+let filter_for_summary tenv astate0 =
+  let open SatUnsat.Import in
+  L.d_printfln "Canonicalizing...@\n" ;
+  let* astate_before_filter = canonicalize astate0 in
+  L.d_printfln "Canonicalized state: %a@\n" pp astate_before_filter ;
+  let astate = filter_stack_for_summary astate_before_filter in
+  let astate = {astate with topl= PulseTopl.filter_for_summary astate.path_condition astate.topl} in
+  let astate, live_addresses, _ = discard_unreachable astate in
+  let+ path_condition, new_eqs =
+    PathCondition.simplify tenv
+      ~get_dynamic_type:
+        (BaseAddressAttributes.get_dynamic_type (astate_before_filter.post :> BaseDomain.t).attrs)
+      ~keep:live_addresses astate.path_condition
+  in
+  ({astate with path_condition; topl= PulseTopl.simplify ~keep:live_addresses astate.topl}, new_eqs)
 
 
 let summary_of_post tenv pdesc astate =
@@ -747,34 +759,17 @@ let summary_of_post tenv pdesc astate =
   (* NOTE: we normalize (to strengthen the equality relation used by canonicalization) then
      canonicalize *before* garbage collecting unused addresses in case we detect any last-minute
      contradictions about addresses we are about to garbage collect *)
-  let attrs = (astate.post :> BaseDomain.t).attrs in
   let path_condition, is_unsat, new_eqs =
     PathCondition.is_unsat_expensive tenv
-      ~get_dynamic_type:(BaseAddressAttributes.get_dynamic_type attrs)
+      ~get_dynamic_type:(BaseAddressAttributes.get_dynamic_type (astate.post :> BaseDomain.t).attrs)
       astate.path_condition
   in
-  if is_unsat then Unsat
-  else
-    let astate = {astate with path_condition} in
-    let* astate = incorporate_new_eqs astate new_eqs in
-    L.d_printfln "Canonicalizing...@\n" ;
-    let* astate = canonicalize astate in
-    L.d_printfln "Canonicalized state: %a@\n" pp astate ;
-    let astate = filter_stack_for_summary astate in
-    let astate =
-      {astate with topl= PulseTopl.filter_for_summary astate.path_condition astate.topl}
-    in
-    let astate, live_addresses, _ = discard_unreachable astate in
-    let* path_condition, new_eqs =
-      PathCondition.simplify tenv ~keep:live_addresses
-        ~get_dynamic_type:(BaseAddressAttributes.get_dynamic_type attrs)
-        astate.path_condition
-    in
-    let+ astate = incorporate_new_eqs astate new_eqs in
-    let astate =
-      {astate with path_condition; topl= PulseTopl.simplify ~keep:live_addresses astate.topl}
-    in
-    invalidate_locals pdesc astate
+  let* () = if is_unsat then Unsat else Sat () in
+  let astate = {astate with path_condition} in
+  let* astate = incorporate_new_eqs astate new_eqs in
+  let* astate, new_eqs = filter_for_summary tenv astate in
+  let+ astate = incorporate_new_eqs astate new_eqs in
+  invalidate_locals pdesc astate
 
 
 let get_pre {pre} = (pre :> BaseDomain.t)

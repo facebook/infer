@@ -31,6 +31,8 @@ val get_ident : t -> Ident.t option
 
 val get_pvar : t -> Pvar.t option
 
+val is_pvar : t -> bool
+
 val is_global : t -> bool
 
 val is_local_to_procedure : Procname.t -> t -> bool

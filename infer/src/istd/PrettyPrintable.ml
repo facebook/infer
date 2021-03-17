@@ -123,6 +123,8 @@ module type MonoMap = sig
 
   val fold_map : t -> init:'a -> f:('a -> value -> 'a * value) -> 'a * t
 
+  val fold_mapi : t -> init:'a -> f:(key -> 'a -> value -> 'a * value) -> 'a * t
+
   val of_seq : (key * value) Seq.t -> t
 end
 
@@ -130,6 +132,8 @@ module type PPMap = sig
   include Caml.Map.S
 
   val fold_map : 'a t -> init:'b -> f:('b -> 'a -> 'b * 'c) -> 'b * 'c t
+
+  val fold_mapi : 'a t -> init:'b -> f:(key -> 'b -> 'a -> 'b * 'c) -> 'b * 'c t
 
   val is_singleton_or_more : 'a t -> (key * 'a) IContainer.singleton_or_more
 
@@ -158,6 +162,19 @@ end
 
 module MakePPMap (Ord : PrintableOrderedType) = struct
   include Caml.Map.Make (Ord)
+
+  let fold_mapi m ~init ~f =
+    let acc = ref init in
+    let new_map =
+      mapi
+        (fun key value ->
+          let acc', res = f key !acc value in
+          acc := acc' ;
+          res )
+        m
+    in
+    (!acc, new_map)
+
 
   let fold_map m ~init ~f =
     let acc = ref init in

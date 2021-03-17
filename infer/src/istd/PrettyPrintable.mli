@@ -125,6 +125,8 @@ module type MonoMap = sig
 
   val fold_map : t -> init:'a -> f:('a -> value -> 'a * value) -> 'a * t
 
+  val fold_mapi : t -> init:'a -> f:(key -> 'a -> value -> 'a * value) -> 'a * t
+
   val of_seq : (key * value) Seq.t -> t
 end
 
@@ -132,6 +134,8 @@ module type PPMap = sig
   include Caml.Map.S
 
   val fold_map : 'a t -> init:'b -> f:('b -> 'a -> 'b * 'c) -> 'b * 'c t
+
+  val fold_mapi : 'a t -> init:'b -> f:(key -> 'b -> 'a -> 'b * 'c) -> 'b * 'c t
 
   val is_singleton_or_more : 'a t -> (key * 'a) IContainer.singleton_or_more
 
