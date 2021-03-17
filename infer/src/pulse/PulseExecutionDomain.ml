@@ -7,7 +7,6 @@
 
 open! IStd
 module F = Format
-module L = Logging
 open PulseBasicInterface
 module AbductiveDomain = PulseAbductiveDomain
 module LatentIssue = PulseLatentIssue
@@ -81,31 +80,3 @@ let get_astate : t -> AbductiveDomain.t = function
 let is_unsat_cheap exec_state = PathCondition.is_unsat_cheap (get_astate exec_state).path_condition
 
 type summary = AbductiveDomain.summary base_t [@@deriving compare, equal, yojson_of]
-
-let summary_of_post_common tenv ~continue_program proc_desc = function
-  | ContinueProgram astate -> (
-    match AbductiveDomain.summary_of_post tenv proc_desc astate with
-    | Unsat ->
-        None
-    | Sat astate ->
-        Some (continue_program astate) )
-  (* already a summary but need to reconstruct the variants to make the type system happy *)
-  | AbortProgram astate ->
-      Some (AbortProgram astate)
-  | ExitProgram astate ->
-      Some (ExitProgram astate)
-  | LatentAbortProgram {astate; latent_issue} ->
-      Some (LatentAbortProgram {astate; latent_issue})
-  | ISLLatentMemoryError astate ->
-      Some (ISLLatentMemoryError astate)
-
-
-let summary_of_posts tenv proc_desc posts =
-  List.filter_mapi posts ~f:(fun i exec_state ->
-      L.d_printfln "Creating spec out of state #%d:@\n%a" i pp exec_state ;
-      summary_of_post_common tenv proc_desc exec_state ~continue_program:(fun astate ->
-          ContinueProgram astate ) )
-
-
-let force_exit_program tenv proc_desc post =
-  summary_of_post_common tenv proc_desc post ~continue_program:(fun astate -> ExitProgram astate)

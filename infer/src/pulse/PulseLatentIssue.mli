@@ -20,10 +20,6 @@ type t =
 
 val to_diagnostic : t -> Diagnostic.t
 
-val should_report :
-     AbductiveDomain.summary PulseAccessResult.error
-  -> [> `DelayReport of AbductiveDomain.summary * t
-     | `ReportNow of AbductiveDomain.summary * Diagnostic.t
-     | `ISLDelay of AbductiveDomain.summary ]
+val should_report : AbductiveDomain.summary -> Diagnostic.t -> [> `DelayReport of t | `ReportNow]
 
 val add_call : CallEvent.t * Location.t -> t -> t

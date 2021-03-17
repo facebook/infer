@@ -35,19 +35,13 @@ let is_manifest (astate : AbductiveDomain.summary) =
 
 (* require a summary because we don't want to stop reporting because some non-abducible condition is
    not true as calling context cannot possibly influence such conditions *)
-let should_report (access_error : AbductiveDomain.summary PulseAccessResult.error) =
-  match access_error with
-  | ReportableError {astate; diagnostic} -> (
-    match diagnostic with
-    | MemoryLeak _ | StackVariableAddressEscape _ ->
-        (* these issues are reported regardless of the calling context, not sure if that's the right
-           decision yet *)
-        `ReportNow (astate, diagnostic)
-    | AccessToInvalidAddress latent ->
-        if is_manifest astate then `ReportNow (astate, diagnostic)
-        else `DelayReport (astate, AccessToInvalidAddress latent)
-    | ReadUninitializedValue latent ->
-        if is_manifest astate then `ReportNow (astate, diagnostic)
-        else `DelayReport (astate, ReadUninitializedValue latent) )
-  | ISLError astate ->
-      `ISLDelay astate
+let should_report (astate : AbductiveDomain.summary) (diagnostic : Diagnostic.t) =
+  match diagnostic with
+  | MemoryLeak _ | StackVariableAddressEscape _ ->
+      (* these issues are reported regardless of the calling context, not sure if that's the right
+         decision yet *)
+      `ReportNow
+  | AccessToInvalidAddress latent ->
+      if is_manifest astate then `ReportNow else `DelayReport (AccessToInvalidAddress latent)
+  | ReadUninitializedValue latent ->
+      if is_manifest astate then `ReportNow else `DelayReport (ReadUninitializedValue latent)

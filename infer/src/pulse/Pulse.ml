@@ -123,7 +123,7 @@ module PulseTransferFunctions = struct
         astate
 
 
-  let dispatch_call ({tenv; InterproceduralAnalysis.proc_desc} as analysis_data) ret call_exp
+  let dispatch_call ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data) ret call_exp
       actuals call_loc flags astate =
     (* evaluate all actuals *)
     let<*> astate, rev_func_args =
@@ -196,7 +196,7 @@ module PulseTransferFunctions = struct
           | Error _ as err ->
               Some err
           | Ok exec_state ->
-              ExecutionDomain.force_exit_program tenv proc_desc exec_state
+              PulseSummary.force_exit_program tenv proc_desc exec_state
               |> Option.map ~f:(fun exec_state -> Ok exec_state) )
     else exec_states_res
 
@@ -225,7 +225,8 @@ module PulseTransferFunctions = struct
      add and execute calls to dealloc. The main advantage of adding this calls
      is that some memory could be freed in dealloc, and we would be reporting a leak on it if we
      didn't call it. *)
-  let execute_injected_dealloc_calls analysis_data vars astate location =
+  let execute_injected_dealloc_calls
+      ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) vars astate location =
     let used_ids = Stack.keys astate |> List.filter_map ~f:(fun var -> Var.get_ident var) in
     Ident.update_name_generator used_ids ;
     let call_dealloc (astate_list : Domain.t list) (ret_id, id, typ, dealloc) =
@@ -243,7 +244,7 @@ module PulseTransferFunctions = struct
               [astate]
           | ContinueProgram astate ->
               dispatch_call analysis_data ret call_exp actuals location call_flags astate
-              |> PulseReport.report_exec_results analysis_data )
+              |> PulseReport.report_exec_results tenv proc_desc err_log )
     in
     let dynamic_types_unreachable =
       PulseOperations.get_dynamic_type_unreachable_values vars astate
@@ -258,8 +259,8 @@ module PulseTransferFunctions = struct
 
 
   let exec_instr_aux (astate : Domain.t)
-      ({tenv; InterproceduralAnalysis.proc_desc} as analysis_data) _cfg_node (instr : Sil.instr) :
-      Domain.t list =
+      ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) _cfg_node
+      (instr : Sil.instr) : Domain.t list =
     match astate with
     | ISLLatentMemoryError _ | AbortProgram _ | LatentAbortProgram _ ->
         (* We can also continue the analysis with the error state here
@@ -282,7 +283,7 @@ module PulseTransferFunctions = struct
               [ (let+ astate, rhs_addr_hist = PulseOperations.eval_deref loc rhs_exp astate in
                  PulseOperations.write_id lhs_id rhs_addr_hist astate) ]
           in
-          PulseReport.report_results analysis_data result
+          PulseReport.report_results tenv proc_desc err_log result
       | Store {e1= lhs_exp; e2= rhs_exp; loc} ->
           (* [*lhs_exp := rhs_exp] *)
           let event = ValueHistory.Assignment loc in
@@ -326,7 +327,7 @@ module PulseTransferFunctions = struct
             | _ ->
                 astates
           in
-          PulseReport.report_results analysis_data result
+          PulseReport.report_results tenv proc_desc err_log result
       | Prune (condition, loc, _is_then_branch, _if_kind) ->
           (let<*> astate = PulseOperations.prune loc ~condition astate in
            if PulseArithmetic.is_unsat_cheap astate then
@@ -335,10 +336,10 @@ module PulseTransferFunctions = struct
            else
              (* [condition] is true or unknown value: go into the branch *)
              [Ok (ContinueProgram astate)])
-          |> PulseReport.report_exec_results analysis_data
+          |> PulseReport.report_exec_results tenv proc_desc err_log
       | Call (ret, call_exp, actuals, loc, call_flags) ->
           dispatch_call analysis_data ret call_exp actuals loc call_flags astate
-          |> PulseReport.report_exec_results analysis_data
+          |> PulseReport.report_exec_results tenv proc_desc err_log
       | Metadata (ExitScope (vars, location)) ->
           let remove_vars vars astates =
             List.concat_map astates ~f:(fun (astate : Domain.t) ->
@@ -347,7 +348,7 @@ module PulseTransferFunctions = struct
                     [astate]
                 | ContinueProgram astate ->
                     PulseOperations.remove_vars tenv vars location astate
-                    |> PulseReport.report_result analysis_data )
+                    |> PulseReport.report_result tenv proc_desc err_log )
           in
           if Procname.is_java (Procdesc.get_proc_name proc_desc) then
             remove_vars vars [ContinueProgram astate]
@@ -404,7 +405,7 @@ let with_debug_exit_node proc_desc ~f =
     ~f
 
 
-let checker ({tenv; InterproceduralAnalysis.proc_desc; err_log} as analysis_data) =
+let checker ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) =
   AbstractValue.State.reset () ;
   let initial_astate = ExecutionDomain.mk_initial tenv proc_desc in
   let initial = [initial_astate] in

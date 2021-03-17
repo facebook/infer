@@ -643,7 +643,9 @@ let apply_callee tenv ~caller_proc_desc callee_pname call_loc callee_exec_state 
       map_call_result ~is_isl_error_prepost:false
         (astate :> AbductiveDomain.t)
         ~f:(fun astate ->
-          let+ astate_summary = AbductiveDomain.summary_of_post tenv caller_proc_desc astate in
+          let+ (astate_summary : AbductiveDomain.summary) =
+            AbductiveDomain.summary_of_post tenv caller_proc_desc astate
+          in
           match callee_exec_state with
           | ContinueProgram _ | ISLLatentMemoryError _ ->
               assert false
@@ -655,17 +657,14 @@ let apply_callee tenv ~caller_proc_desc callee_pname call_loc callee_exec_state 
               let latent_issue =
                 LatentIssue.add_call (CallEvent.Call callee_pname, call_loc) latent_issue
               in
-              let error =
-                ReportableError
-                  {diagnostic= LatentIssue.to_diagnostic latent_issue; astate= astate_summary}
-              in
-              match LatentIssue.should_report error with
-              | `DelayReport (astate, latent_issue) ->
-                  Ok (LatentAbortProgram {astate; latent_issue})
-              | `ReportNow (astate, diagnostic) ->
-                  Error (ReportableError {diagnostic; astate= (astate :> AbductiveDomain.t)})
-              | `ISLDelay astate ->
-                  Error (ISLError (astate :> AbductiveDomain.t)) ) )
+              let diagnostic = LatentIssue.to_diagnostic latent_issue in
+              match LatentIssue.should_report astate_summary diagnostic with
+              | `DelayReport latent_issue ->
+                  Ok (LatentAbortProgram {astate= astate_summary; latent_issue})
+              | `ReportNow ->
+                  Error
+                    (ReportableError {diagnostic; astate= (astate_summary :> AbductiveDomain.t)}) )
+          )
   | ISLLatentMemoryError astate ->
       map_call_result ~is_isl_error_prepost:true
         (astate :> AbductiveDomain.t)

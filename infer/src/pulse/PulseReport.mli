@@ -9,16 +9,18 @@ open! IStd
 open PulseDomainInterface
 
 val report_result :
-     PulseSummary.t InterproceduralAnalysis.t
-  -> AbductiveDomain.t AccessResult.t
-  -> ExecutionDomain.t list
+  Tenv.t -> Procdesc.t -> Errlog.t -> AbductiveDomain.t AccessResult.t -> ExecutionDomain.t list
 
 val report_results :
-     PulseSummary.t InterproceduralAnalysis.t
+     Tenv.t
+  -> Procdesc.t
+  -> Errlog.t
   -> AbductiveDomain.t AccessResult.t list
   -> ExecutionDomain.t list
 
 val report_exec_results :
-     PulseSummary.t InterproceduralAnalysis.t
+     Tenv.t
+  -> Procdesc.t
+  -> Errlog.t
   -> ExecutionDomain.t AccessResult.t list
   -> ExecutionDomain.t list

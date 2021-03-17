@@ -8,7 +8,6 @@
 open! IStd
 open PulseBasicInterface
 open PulseDomainInterface
-open PulseOperations.Import
 
 let report ?(extra_trace = []) proc_desc err_log diagnostic =
   let open Diagnostic in
@@ -45,37 +44,65 @@ let is_suppressed tenv proc_desc diagnostic astate =
       false
 
 
-let report_error tenv proc_desc err_log access_error =
-  match LatentIssue.should_report access_error with
-  | `ReportNow (astate_summary, diagnostic) ->
-      if not (is_suppressed tenv proc_desc diagnostic astate_summary) then
-        report proc_desc err_log diagnostic ;
-      AbortProgram astate_summary
-  | `DelayReport (astate, latent_issue) ->
-      if Config.pulse_report_latent_issues then report_latent_issue proc_desc err_log latent_issue ;
-      LatentAbortProgram {astate; latent_issue}
-  | `ISLDelay astate ->
+let summary_of_error_post tenv proc_desc mk_error astate =
+  match AbductiveDomain.summary_of_post tenv proc_desc astate with
+  | Sat astate ->
+      Sat (mk_error astate)
+  | Unsat ->
+      Unsat
+
+
+let summary_error_of_error tenv proc_desc (error : AbductiveDomain.t AccessResult.error) :
+    AbductiveDomain.summary AccessResult.error SatUnsat.t =
+  match error with
+  | ReportableError {astate; diagnostic} ->
+      summary_of_error_post tenv proc_desc
+        (fun astate -> AccessResult.ReportableError {astate; diagnostic})
+        astate
+  | ISLError astate ->
+      summary_of_error_post tenv proc_desc (fun astate -> AccessResult.ISLError astate) astate
+
+
+let report_summary_error tenv proc_desc err_log
+    (access_error : AbductiveDomain.summary AccessResult.error) : _ ExecutionDomain.base_t =
+  match access_error with
+  | ISLError astate ->
       ISLLatentMemoryError astate
+  | ReportableError {astate; diagnostic} -> (
+    match LatentIssue.should_report astate diagnostic with
+    | `ReportNow ->
+        if not (is_suppressed tenv proc_desc diagnostic astate) then
+          report proc_desc err_log diagnostic ;
+        AbortProgram astate
+    | `DelayReport latent_issue ->
+        if Config.pulse_report_latent_issues then report_latent_issue proc_desc err_log latent_issue ;
+        LatentAbortProgram {astate; latent_issue} )
 
 
-let report_exec_results {InterproceduralAnalysis.proc_desc; tenv; err_log} results =
+let report_error tenv proc_desc err_log (access_error : AbductiveDomain.t AccessResult.error) =
+  let open SatUnsat.Import in
+  summary_error_of_error tenv proc_desc access_error >>| report_summary_error tenv proc_desc err_log
+
+
+let report_exec_results tenv proc_desc err_log results =
   List.filter_map results ~f:(fun exec_result ->
       match exec_result with
       | Ok post ->
           Some post
       | Error error -> (
-        match AccessResult.to_summary tenv proc_desc error with
+        match report_error tenv proc_desc err_log error with
         | Unsat ->
             None
-        | Sat error ->
-            Some (report_error tenv proc_desc err_log error) ) )
+        | Sat exec_state ->
+            Some exec_state ) )
 
 
-let report_results analysis_data results =
+let report_results tenv proc_desc err_log results =
+  let open IResult.Let_syntax in
   List.map results ~f:(fun result ->
       let+ astate = result in
-      ContinueProgram astate )
-  |> report_exec_results analysis_data
+      ExecutionDomain.ContinueProgram astate )
+  |> report_exec_results tenv proc_desc err_log
 
 
-let report_result analysis_data result = report_results analysis_data [result]
+let report_result tenv proc_desc err_log result = report_results tenv proc_desc err_log [result]
