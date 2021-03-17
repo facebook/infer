@@ -21,15 +21,33 @@ let pp fmt summary =
   F.close_box ()
 
 
-let exec_summary_of_post_common tenv ~continue_program proc_desc (exec_astate : ExecutionDomain.t) :
-    _ ExecutionDomain.base_t option =
+let exec_summary_of_post_common tenv ~continue_program proc_desc err_log
+    (exec_astate : ExecutionDomain.t) : _ ExecutionDomain.base_t option =
   match exec_astate with
   | ContinueProgram astate -> (
     match AbductiveDomain.summary_of_post tenv proc_desc astate with
     | Unsat ->
         None
-    | Sat astate ->
-        Some (continue_program astate) )
+    | Sat (Ok astate) ->
+        Some (continue_program astate)
+    | Sat (Error (`PotentialInvalidAccessSummary (astate, address, must_be_valid))) -> (
+      match
+        AbductiveDomain.find_post_cell_opt address (astate :> AbductiveDomain.t)
+        |> Option.bind ~f:(fun (_, attrs) -> Attributes.get_invalid attrs)
+      with
+      | None ->
+          Some (LatentInvalidAccess {astate; address; must_be_valid; calling_context= []})
+      | Some (invalidation, invalidation_trace) ->
+          PulseReport.report_summary_error tenv proc_desc err_log
+            (ReportableError
+               { diagnostic=
+                   AccessToInvalidAddress
+                     { calling_context= []
+                     ; invalidation
+                     ; invalidation_trace
+                     ; access_trace= must_be_valid }
+               ; astate })
+          |> Option.some ) )
   (* already a summary but need to reconstruct the variants to make the type system happy :( *)
   | AbortProgram astate ->
       Some (AbortProgram astate)
@@ -43,13 +61,13 @@ let exec_summary_of_post_common tenv ~continue_program proc_desc (exec_astate : 
       Some (ISLLatentMemoryError astate)
 
 
-let force_exit_program tenv proc_desc post =
-  exec_summary_of_post_common tenv proc_desc post ~continue_program:(fun astate ->
+let force_exit_program tenv proc_desc err_log post =
+  exec_summary_of_post_common tenv proc_desc err_log post ~continue_program:(fun astate ->
       ExitProgram astate )
 
 
-let of_posts tenv proc_desc posts =
+let of_posts tenv proc_desc err_log posts =
   List.filter_mapi posts ~f:(fun i exec_state ->
       L.d_printfln "Creating spec out of state #%d:@\n%a" i ExecutionDomain.pp exec_state ;
-      exec_summary_of_post_common tenv proc_desc exec_state ~continue_program:(fun astate ->
+      exec_summary_of_post_common tenv proc_desc err_log exec_state ~continue_program:(fun astate ->
           ContinueProgram astate ) )

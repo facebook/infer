@@ -19,7 +19,7 @@ let mk_objc_method_nil_summary_aux proc_desc astate =
   let location = Procdesc.get_loc proc_desc in
   let self = mk_objc_self_pvar proc_desc in
   let* astate, self_value = PulseOperations.eval_deref location (Lvar self) astate in
-  let astate = PulseArithmetic.prune_eq_zero (fst self_value) astate in
+  let* astate = PulseArithmetic.prune_eq_zero (fst self_value) astate in
   let ret_var = Procdesc.get_ret_var proc_desc in
   let* astate, ret_var_addr_hist = PulseOperations.eval Write location (Lvar ret_var) astate in
   PulseOperations.write_deref location ~ref:ret_var_addr_hist ~obj:self_value astate
@@ -52,7 +52,7 @@ let append_objc_self_positive {InterproceduralAnalysis.tenv; proc_desc; err_log}
   match astate with
   | ContinueProgram astate ->
       let result =
-        let+ astate, value = PulseOperations.eval_deref location (Lvar self) astate in
+        let* astate, value = PulseOperations.eval_deref location (Lvar self) astate in
         PulseArithmetic.prune_positive (fst value) astate
       in
       PulseReport.report_result tenv proc_desc err_log result

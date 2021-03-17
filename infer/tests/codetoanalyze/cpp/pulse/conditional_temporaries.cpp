@@ -43,6 +43,9 @@ struct X {
     f = x.f + 10;
     copy_from(x);
   }
+
+  // should realise [this] cannot be null to avoid FP latent (that can never be
+  // manifested)
   ~X() {
     std::cerr << "~X(" << f << ") " << name();
     if (original_counter) {

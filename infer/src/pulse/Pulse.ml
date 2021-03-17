@@ -131,8 +131,8 @@ module PulseTransferFunctions = struct
         astate
 
 
-  let dispatch_call ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data) ret call_exp
-      actuals call_loc flags astate =
+  let dispatch_call ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) ret
+      call_exp actuals call_loc flags astate =
     (* evaluate all actuals *)
     let<*> astate, rev_func_args =
       List.fold_result actuals ~init:(astate, [])
@@ -204,7 +204,7 @@ module PulseTransferFunctions = struct
           | Error _ as err ->
               Some err
           | Ok exec_state ->
-              PulseSummary.force_exit_program tenv proc_desc exec_state
+              PulseSummary.force_exit_program tenv proc_desc err_log exec_state
               |> Option.map ~f:(fun exec_state -> Ok exec_state) )
     else exec_states_res
 
@@ -429,7 +429,7 @@ let checker ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
           let updated_posts =
             PulseObjectiveCSummary.update_objc_method_posts analysis_data ~initial_astate ~posts
           in
-          let summary = PulseSummary.of_posts tenv proc_desc updated_posts in
+          let summary = PulseSummary.of_posts tenv proc_desc err_log updated_posts in
           report_topl_errors proc_desc err_log summary ;
           Some summary )
   | None ->

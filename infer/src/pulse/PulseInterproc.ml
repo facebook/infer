@@ -262,6 +262,7 @@ let add_call_to_attributes proc_name call_location caller_history attrs =
 
 
 let conjoin_callee_arith pre_post call_state =
+  let open IResult.Let_syntax in
   L.d_printfln "applying callee path condition: (%a)[%a]" PathCondition.pp
     pre_post.AbductiveDomain.path_condition
     (AddressMap.pp ~pp_value:(fun fmt (addr, _) -> AbstractValue.pp fmt addr))
@@ -270,13 +271,19 @@ let conjoin_callee_arith pre_post call_state =
     PathCondition.and_callee call_state.subst call_state.astate.path_condition
       ~callee:pre_post.AbductiveDomain.path_condition
   in
-  let astate = AbductiveDomain.set_path_condition path_condition call_state.astate in
-  let astate = AbductiveDomain.incorporate_new_eqs new_eqs astate in
-  if PathCondition.is_unsat_cheap astate.path_condition then raise (Contradiction PathCondition)
-  else {call_state with astate; subst}
+  if PathCondition.is_unsat_cheap path_condition then raise (Contradiction PathCondition)
+  else
+    let astate = AbductiveDomain.set_path_condition path_condition call_state.astate in
+    let+ astate =
+      AbductiveDomain.incorporate_new_eqs new_eqs astate |> AccessResult.of_abductive_result
+    in
+    if PathCondition.is_unsat_cheap astate.AbductiveDomain.path_condition then
+      raise (Contradiction PathCondition)
+    else {call_state with astate; subst}
 
 
 let apply_arithmetic_constraints callee_proc_name call_location pre_post call_state =
+  let open IResult.Let_syntax in
   let one_address_sat callee_attrs (addr_caller, caller_history) call_state =
     let attrs_caller =
       add_call_to_attributes callee_proc_name call_location caller_history callee_attrs
@@ -284,7 +291,7 @@ let apply_arithmetic_constraints callee_proc_name call_location pre_post call_st
     let astate = AddressAttributes.abduce_and_add addr_caller attrs_caller call_state.astate in
     if phys_equal astate call_state.astate then call_state else {call_state with astate}
   in
-  let call_state = conjoin_callee_arith pre_post call_state in
+  let+ call_state = conjoin_callee_arith pre_post call_state in
   (* check all callee addresses that make sense for the caller, i.e. the domain of [call_state.subst] *)
   if Config.pulse_isl then
     AddressMap.fold
@@ -337,7 +344,7 @@ let materialize_pre callee_proc_name call_location pre_post ~captured_vars_with_
     >>= materialize_pre_for_captured_vars callee_proc_name call_location pre_post
           ~captured_vars_with_actuals
     >>= materialize_pre_for_globals callee_proc_name call_location pre_post
-    >>| (* ...then relational arithmetic constraints in the callee's attributes will make sense in
+    >>= (* ...then relational arithmetic constraints in the callee's attributes will make sense in
            terms of the caller's values *)
     apply_arithmetic_constraints callee_proc_name call_location pre_post
   in
@@ -576,18 +583,22 @@ let record_skipped_calls callee_proc_name call_loc pre_post call_state =
 
 let apply_post callee_proc_name call_location pre_post ~captured_vars_with_actuals ~formals ~actuals
     call_state =
+  let open IResult.Let_syntax in
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse call post" ())) ;
   let r =
-    apply_post_for_parameters callee_proc_name call_location pre_post ~formals ~actuals call_state
-    |> apply_post_for_captured_vars callee_proc_name call_location pre_post
-         ~captured_vars_with_actuals
-    |> apply_post_for_globals callee_proc_name call_location pre_post
-    |> record_post_for_return callee_proc_name call_location pre_post
-    |> fun (call_state, return_caller) ->
-    record_post_remaining_attributes callee_proc_name call_location pre_post call_state
-    |> record_skipped_calls callee_proc_name call_location pre_post
-    |> conjoin_callee_arith pre_post
-    |> fun call_state -> (call_state, return_caller)
+    let call_state, return_caller =
+      apply_post_for_parameters callee_proc_name call_location pre_post ~formals ~actuals call_state
+      |> apply_post_for_captured_vars callee_proc_name call_location pre_post
+           ~captured_vars_with_actuals
+      |> apply_post_for_globals callee_proc_name call_location pre_post
+      |> record_post_for_return callee_proc_name call_location pre_post
+    in
+    let+ call_state =
+      record_post_remaining_attributes callee_proc_name call_location pre_post call_state
+      |> record_skipped_calls callee_proc_name call_location pre_post
+      |> conjoin_callee_arith pre_post
+    in
+    (call_state, return_caller)
   in
   PerfEvent.(log (fun logger -> log_end_event logger ())) ;
   r
@@ -728,7 +739,7 @@ let apply_prepost ~is_isl_error_prepost callee_proc_name call_location ~callee_p
         let pre_astate = astate in
         let call_state = {call_state with astate; visited= AddressSet.empty} in
         (* apply the postcondition *)
-        let call_state, return_caller =
+        let* call_state, return_caller =
           apply_post callee_proc_name call_location pre_post ~captured_vars_with_actuals ~formals
             ~actuals call_state
         in

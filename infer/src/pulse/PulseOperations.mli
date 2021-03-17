@@ -35,6 +35,9 @@ module Import : sig
     | ISLLatentMemoryError of AbductiveDomain.summary
 
   type 'astate base_error = 'astate AccessResult.error =
+    | PotentialInvalidAccess of {astate: 'astate; address: AbstractValue.t; must_be_valid: Trace.t}
+    | PotentialInvalidAccessSummary of
+        {astate: AbductiveDomain.summary; address: AbstractValue.t; must_be_valid: Trace.t}
     | ReportableError of {astate: 'astate; diagnostic: Diagnostic.t}
     | ISLError of 'astate
 

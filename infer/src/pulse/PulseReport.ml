@@ -16,10 +16,9 @@ let report ?(extra_trace = []) proc_desc err_log diagnostic =
     Pulse (get_issue_type diagnostic) (get_message diagnostic)
 
 
-let report_latent_issue proc_desc err_log latent_issue =
+let report_latent_diagnostic proc_desc err_log diagnostic =
   (* HACK: report latent issues with a prominent message to distinguish them from
      non-latent. Useful for infer's own tests. *)
-  let diagnostic = LatentIssue.to_diagnostic latent_issue in
   let extra_trace =
     let depth = 0 in
     let tags = [] in
@@ -27,6 +26,10 @@ let report_latent_issue proc_desc err_log latent_issue =
     [Errlog.make_trace_element depth location "*** LATENT ***" tags]
   in
   report ~extra_trace proc_desc err_log diagnostic
+
+
+let report_latent_issue proc_desc err_log latent_issue =
+  LatentIssue.to_diagnostic latent_issue |> report_latent_diagnostic proc_desc err_log
 
 
 let is_nullsafe_error tenv diagnostic jn =
@@ -46,8 +49,12 @@ let is_suppressed tenv proc_desc diagnostic astate =
 
 let summary_of_error_post tenv proc_desc mk_error astate =
   match AbductiveDomain.summary_of_post tenv proc_desc astate with
-  | Sat astate ->
+  | Sat (Ok astate) ->
       Sat (mk_error astate)
+  | Sat (Error error) ->
+      (* ignore the error we wanted to report (with [mk_error]): the abstract state contained a
+         potential error already so report [error] instead *)
+      Sat (AccessResult.of_abductive_error error)
   | Unsat ->
       Unsat
 
@@ -55,17 +62,33 @@ let summary_of_error_post tenv proc_desc mk_error astate =
 let summary_error_of_error tenv proc_desc (error : AbductiveDomain.t AccessResult.error) :
     AbductiveDomain.summary AccessResult.error SatUnsat.t =
   match error with
+  | PotentialInvalidAccessSummary {astate; address; must_be_valid} ->
+      Sat (PotentialInvalidAccessSummary {astate; address; must_be_valid})
+  | PotentialInvalidAccess {astate; address; must_be_valid} ->
+      summary_of_error_post tenv proc_desc
+        (fun astate -> PotentialInvalidAccess {astate; address; must_be_valid})
+        astate
   | ReportableError {astate; diagnostic} ->
       summary_of_error_post tenv proc_desc
-        (fun astate -> AccessResult.ReportableError {astate; diagnostic})
+        (fun astate -> ReportableError {astate; diagnostic})
         astate
   | ISLError astate ->
-      summary_of_error_post tenv proc_desc (fun astate -> AccessResult.ISLError astate) astate
+      summary_of_error_post tenv proc_desc (fun astate -> ISLError astate) astate
 
 
 let report_summary_error tenv proc_desc err_log
     (access_error : AbductiveDomain.summary AccessResult.error) : _ ExecutionDomain.base_t =
   match access_error with
+  | PotentialInvalidAccess {astate; address; must_be_valid}
+  | PotentialInvalidAccessSummary {astate; address; must_be_valid} ->
+      if Config.pulse_report_latent_issues then
+        report_latent_diagnostic proc_desc err_log
+          (AccessToInvalidAddress
+             { calling_context= []
+             ; invalidation= ConstantDereference IntLit.zero
+             ; invalidation_trace= Immediate {location= Procdesc.get_loc proc_desc; history= []}
+             ; access_trace= must_be_valid }) ;
+      LatentInvalidAccess {astate; address; must_be_valid; calling_context= []}
   | ISLError astate ->
       ISLLatentMemoryError astate
   | ReportableError {astate; diagnostic} -> (

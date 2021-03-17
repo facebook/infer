@@ -10,9 +10,9 @@ open PulseDomainInterface
 
 type t = ExecutionDomain.summary list [@@deriving yojson_of]
 
-val of_posts : Tenv.t -> Procdesc.t -> ExecutionDomain.t list -> t
+val of_posts : Tenv.t -> Procdesc.t -> Errlog.t -> ExecutionDomain.t list -> t
 
 val force_exit_program :
-  Tenv.t -> Procdesc.t -> ExecutionDomain.t -> _ ExecutionDomain.base_t option
+  Tenv.t -> Procdesc.t -> Errlog.t -> ExecutionDomain.t -> _ ExecutionDomain.base_t option
 
 val pp : Format.formatter -> t -> unit

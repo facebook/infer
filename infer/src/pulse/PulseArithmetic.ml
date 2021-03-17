@@ -8,10 +8,13 @@
 open! IStd
 open PulseBasicInterface
 module AbductiveDomain = PulseAbductiveDomain
+module AccessResult = PulseAccessResult
 
 let map_path_condition ~f astate =
   let phi, new_eqs = f astate.AbductiveDomain.path_condition in
-  AbductiveDomain.set_path_condition phi astate |> AbductiveDomain.incorporate_new_eqs new_eqs
+  AbductiveDomain.set_path_condition phi astate
+  |> AbductiveDomain.incorporate_new_eqs new_eqs
+  |> AccessResult.of_abductive_result
 
 
 let and_nonnegative v astate =

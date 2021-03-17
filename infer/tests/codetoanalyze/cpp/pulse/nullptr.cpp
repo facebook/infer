@@ -206,12 +206,12 @@ void call_test_after_dereference_bad() {
   FN_test_after_dereference_latent(NULL);
 }
 
-void FN_test_after_dereference2_latent(int* x) {
+void test_after_dereference2_latent(int* x) {
   *x = 42;
   if (x == 0)
     ;
 }
 
-void FN_call_test_after_dereference2_bad() {
-  FN_test_after_dereference2_latent(NULL);
+void call_test_after_dereference2_bad() {
+  test_after_dereference2_latent(NULL);
 }

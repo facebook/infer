@@ -673,11 +673,12 @@ let invalidate_locals pdesc astate : t =
 
 type summary = t [@@deriving compare, equal, yojson_of]
 
-let is_allocated stack_allocations {post; pre} v =
+let is_heap_allocated {post; pre} v =
   BaseMemory.is_allocated (post :> BaseDomain.t).heap v
   || BaseMemory.is_allocated (pre :> BaseDomain.t).heap v
-  || AbstractValue.Set.mem v (Lazy.force stack_allocations)
 
+
+let is_stack_allocated stack_allocations v = AbstractValue.Set.mem v (Lazy.force stack_allocations)
 
 let subst_var_in_post subst astate =
   let open SatUnsat.Import in
@@ -695,23 +696,55 @@ let get_stack_allocated {post} =
 
 let incorporate_new_eqs astate new_eqs =
   let stack_allocations = lazy (get_stack_allocated astate) in
-  List.fold_until new_eqs ~init:astate
-    ~finish:(fun astate -> Sat astate)
-    ~f:(fun astate (new_eq : PulseFormula.new_eq) ->
+  List.fold_until new_eqs ~init:(astate, None)
+    ~finish:(fun astate_error -> Sat astate_error)
+    ~f:(fun (astate, error) (new_eq : PulseFormula.new_eq) ->
       match new_eq with
       | Equal (v1, v2) when AbstractValue.equal v1 v2 ->
-          Continue astate
+          Continue (astate, error)
       | Equal (v1, v2) -> (
         match subst_var_in_post (v1, v2) astate with
         | Unsat ->
             Stop Unsat
         | Sat astate' ->
-            Continue astate' )
-      | EqZero v when is_allocated stack_allocations astate v ->
+            Continue (astate', error) )
+      | EqZero v when is_stack_allocated stack_allocations v ->
           L.d_printfln "CONTRADICTION: %a = 0 but is allocated" AbstractValue.pp v ;
           Stop Unsat
+      | EqZero v when is_heap_allocated astate v -> (
+          (* We want to detect when we know [v|->-] and [v=0] together. This is a contradiction, but
+             can also be the sign that there is a real issue. Consider:
+
+               foo(p) {
+                 if(p) {}
+                 *p = 42;
+               }
+
+             This creates two paths:
+               p=0 /\ p|->-
+               p≠0 /\ p|->-
+
+             We could discard the first one straight away because it's equivalent to false, but
+             the second one will also get discarded when calling this foo(0) because it will fail
+             the p≠0 condition, creating FNs. Thus, we create a latent issue instead to report
+             on foo(0) calls.
+
+             An alternative design that would be less hacky would be to detect this situation when
+             adding pointers from null values, but we'd need to know what values are null at all
+             times. This would require normalizing the arithmetic part at each step, which is too
+             expensive. *)
+          L.d_printfln "Potential ERROR: %a = 0 but is allocated" AbstractValue.pp v ;
+          match BaseAddressAttributes.get_must_be_valid v (astate.pre :> base_domain).attrs with
+          | None ->
+              (* we don't know why [v|->-] is in the state, weird and probably cannot happen; drop
+                 the path because we won't be able to give a sensible error *)
+              L.d_printfln "Not clear why %a should be allocated in the first place, giving up"
+                AbstractValue.pp v ;
+              Stop Unsat
+          | Some must_be_valid ->
+              Stop (Sat (astate, Some (v, must_be_valid))) )
       | EqZero _ (* [v] not allocated *) ->
-          Continue astate )
+          Continue (astate, error) )
 
 
 (** it's a good idea to normalize the path condition before calling this function *)
@@ -766,10 +799,16 @@ let summary_of_post tenv pdesc astate =
   in
   let* () = if is_unsat then Unsat else Sat () in
   let astate = {astate with path_condition} in
-  let* astate = incorporate_new_eqs astate new_eqs in
+  let* astate, error = incorporate_new_eqs astate new_eqs in
   let* astate, new_eqs = filter_for_summary tenv astate in
-  let+ astate = incorporate_new_eqs astate new_eqs in
-  invalidate_locals pdesc astate
+  let+ astate, error =
+    match error with None -> incorporate_new_eqs astate new_eqs | Some _ -> Sat (astate, error)
+  in
+  match error with
+  | None ->
+      Ok (invalidate_locals pdesc astate)
+  | Some (address, must_be_valid) ->
+      Error (`PotentialInvalidAccessSummary (astate, address, must_be_valid))
 
 
 let get_pre {pre} = (pre :> BaseDomain.t)
@@ -778,13 +817,15 @@ let get_post {post} = (post :> BaseDomain.t)
 
 (* re-exported for mli *)
 let incorporate_new_eqs new_eqs astate =
-  if PathCondition.is_unsat_cheap astate.path_condition then astate
+  if PathCondition.is_unsat_cheap astate.path_condition then Ok astate
   else
     match incorporate_new_eqs astate new_eqs with
     | Unsat ->
-        {astate with path_condition= PathCondition.false_}
-    | Sat astate ->
-        astate
+        Ok {astate with path_condition= PathCondition.false_}
+    | Sat (astate, None) ->
+        Ok astate
+    | Sat (astate, Some (address, must_be_valid)) ->
+        Error (`PotentialInvalidAccess (astate, address, must_be_valid))
 
 
 module Topl = struct

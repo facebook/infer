@@ -28,6 +28,9 @@ module Import = struct
     | ISLLatentMemoryError of AbductiveDomain.summary
 
   type 'astate base_error = 'astate AccessResult.error =
+    | PotentialInvalidAccess of {astate: 'astate; address: AbstractValue.t; must_be_valid: Trace.t}
+    | PotentialInvalidAccessSummary of
+        {astate: AbductiveDomain.summary; address: AbstractValue.t; must_be_valid: Trace.t}
     | ReportableError of {astate: 'astate; diagnostic: Diagnostic.t}
     | ISLError of 'astate
 
@@ -70,17 +73,8 @@ let check_and_abduce_addr_access_isl access_mode location (address, history) ?(n
     astate =
   let access_trace = Trace.Immediate {location; history} in
   AddressAttributes.check_valid_isl access_trace address ~null_noop astate
-  |> List.map ~f:(function
-       | Error (`InvalidAccess (invalidation, invalidation_trace, astate)) ->
-           Error
-             (ReportableError
-                { diagnostic=
-                    Diagnostic.AccessToInvalidAddress
-                      {calling_context= []; invalidation; invalidation_trace; access_trace}
-                ; astate })
-       | Error (`ISLError astate) ->
-           Error (ISLError astate)
-       | Ok astate -> (
+  |> List.map ~f:(fun access_result ->
+         let* astate = AccessResult.of_abductive_access_result access_trace access_result in
          match access_mode with
          | Read ->
              AddressAttributes.check_initialized access_trace address astate
@@ -93,7 +87,7 @@ let check_and_abduce_addr_access_isl access_mode location (address, history) ?(n
          | Write ->
              Ok (AbductiveDomain.initialize address astate)
          | NoAccess ->
-             Ok astate ) )
+             Ok astate )
 
 
 module Closures = struct
@@ -214,25 +208,28 @@ let eval mode location exp0 astate =
         eval mode exp' astate
     | Const (Cint i) ->
         let v = AbstractValue.Constants.get_int i in
-        let astate =
+        let+ astate =
           PulseArithmetic.and_eq_int v i astate
-          |> AddressAttributes.invalidate
-               (v, [ValueHistory.Assignment location])
-               (ConstantDereference i) location
+          >>| AddressAttributes.invalidate
+                (v, [ValueHistory.Assignment location])
+                (ConstantDereference i) location
         in
-        Ok (astate, (v, []))
+        (astate, (v, []))
     | UnOp (unop, exp, _typ) ->
-        let+ astate, (addr, hist) = eval Read exp astate in
+        let* astate, (addr, hist) = eval Read exp astate in
         let unop_addr = AbstractValue.mk_fresh () in
-        (PulseArithmetic.eval_unop unop_addr unop addr astate, (unop_addr, hist))
+        let+ astate = PulseArithmetic.eval_unop unop_addr unop addr astate in
+        (astate, (unop_addr, hist))
     | BinOp (bop, e_lhs, e_rhs) ->
         let* astate, (addr_lhs, hist_lhs) = eval Read e_lhs astate in
         (* NOTE: keeping track of only [hist_lhs] into the binop is not the best *)
-        let+ astate, (addr_rhs, _hist_rhs) = eval Read e_rhs astate in
+        let* astate, (addr_rhs, _hist_rhs) = eval Read e_rhs astate in
         let binop_addr = AbstractValue.mk_fresh () in
-        ( PulseArithmetic.eval_binop binop_addr bop (AbstractValueOperand addr_lhs)
+        let+ astate =
+          PulseArithmetic.eval_binop binop_addr bop (AbstractValueOperand addr_lhs)
             (AbstractValueOperand addr_rhs) astate
-        , (binop_addr, hist_lhs) )
+        in
+        (astate, (binop_addr, hist_lhs))
     | Const _ | Sizeof _ | Exn _ ->
         Ok (astate, (AbstractValue.mk_fresh (), (* TODO history *) []))
   in
@@ -253,7 +250,7 @@ let prune location ~condition astate =
     match (exp : Exp.t) with
     | BinOp (bop, exp_lhs, exp_rhs) ->
         let* astate, lhs_op = eval_to_operand Read location exp_lhs astate in
-        let+ astate, rhs_op = eval_to_operand Read location exp_rhs astate in
+        let* astate, rhs_op = eval_to_operand Read location exp_rhs astate in
         PulseArithmetic.prune_binop ~negated bop lhs_op rhs_op astate
     | UnOp (LNot, exp', _) ->
         prune_aux ~negated:(not negated) exp' astate
@@ -651,62 +648,72 @@ let apply_callee tenv ~caller_proc_desc callee_pname call_loc callee_exec_state 
       map_call_result ~is_isl_error_prepost:false
         (astate :> AbductiveDomain.t)
         ~f:(fun subst astate ->
-          let* (astate_summary : AbductiveDomain.summary) =
+          let* astate_summary_result =
             AbductiveDomain.summary_of_post tenv caller_proc_desc astate
+            >>| AccessResult.of_abductive_result
           in
-          match callee_exec_state with
-          | ContinueProgram _ | ISLLatentMemoryError _ ->
-              assert false
-          | AbortProgram _ ->
-              Sat (Ok (AbortProgram astate_summary))
-          | ExitProgram _ ->
-              Sat (Ok (ExitProgram astate_summary))
-          | LatentAbortProgram {latent_issue} -> (
-              let latent_issue =
-                LatentIssue.add_call (CallEvent.Call callee_pname, call_loc) latent_issue
-              in
-              let diagnostic = LatentIssue.to_diagnostic latent_issue in
-              match LatentIssue.should_report astate_summary diagnostic with
-              | `DelayReport latent_issue ->
-                  Sat (Ok (LatentAbortProgram {astate= astate_summary; latent_issue}))
-              | `ReportNow ->
-                  Sat
-                    (Error
-                       (ReportableError {diagnostic; astate= (astate_summary :> AbductiveDomain.t)}))
-              )
-          | LatentInvalidAccess {address= address_callee; must_be_valid; calling_context} -> (
-            match AbstractValue.Map.find_opt address_callee subst with
-            | None ->
-                (* the address became unreachable so the bug can never be reached; drop it *) Unsat
-            | Some (address, _history) -> (
-                let calling_context = (CallEvent.Call callee_pname, call_loc) :: calling_context in
-                match
-                  AbductiveDomain.find_post_cell_opt address (astate_summary :> AbductiveDomain.t)
-                  |> Option.bind ~f:(fun (_, attrs) -> Attributes.get_invalid attrs)
-                with
-                | None ->
-                    (* still no proof that the address is invalid *)
-                    Sat
-                      (Ok
-                         (LatentInvalidAccess
-                            {astate= astate_summary; address; must_be_valid; calling_context}))
-                | Some (invalidation, invalidation_trace) ->
+          match astate_summary_result with
+          | Error _ as error ->
+              Sat error
+          | Ok (astate_summary : AbductiveDomain.summary) -> (
+            match callee_exec_state with
+            | ContinueProgram _ | ISLLatentMemoryError _ ->
+                assert false
+            | AbortProgram _ ->
+                Sat (Ok (AbortProgram astate_summary))
+            | ExitProgram _ ->
+                Sat (Ok (ExitProgram astate_summary))
+            | LatentAbortProgram {latent_issue} -> (
+                let latent_issue =
+                  LatentIssue.add_call (CallEvent.Call callee_pname, call_loc) latent_issue
+                in
+                let diagnostic = LatentIssue.to_diagnostic latent_issue in
+                match LatentIssue.should_report astate_summary diagnostic with
+                | `DelayReport latent_issue ->
+                    Sat (Ok (LatentAbortProgram {astate= astate_summary; latent_issue}))
+                | `ReportNow ->
                     Sat
                       (Error
-                         (ReportableError
-                            { diagnostic=
-                                AccessToInvalidAddress
-                                  { calling_context
-                                  ; invalidation
-                                  ; invalidation_trace
-                                  ; access_trace= must_be_valid }
-                            ; astate= (astate_summary :> AbductiveDomain.t) })) ) ) )
+                         (ReportableError {diagnostic; astate= (astate_summary :> AbductiveDomain.t)}))
+                | `ISLDelay astate ->
+                    Sat (Error (ISLError (astate :> AbductiveDomain.t))) )
+            | LatentInvalidAccess {address= address_callee; must_be_valid; calling_context} -> (
+              match AbstractValue.Map.find_opt address_callee subst with
+              | None ->
+                  (* the address became unreachable so the bug can never be reached; drop it *)
+                  Unsat
+              | Some (address, _history) -> (
+                  let calling_context =
+                    (CallEvent.Call callee_pname, call_loc) :: calling_context
+                  in
+                  match
+                    AbductiveDomain.find_post_cell_opt address (astate_summary :> AbductiveDomain.t)
+                    |> Option.bind ~f:(fun (_, attrs) -> Attributes.get_invalid attrs)
+                  with
+                  | None ->
+                      (* still no proof that the address is invalid *)
+                      Sat
+                        (Ok
+                           (LatentInvalidAccess
+                              {astate= astate_summary; address; must_be_valid; calling_context}))
+                  | Some (invalidation, invalidation_trace) ->
+                      Sat
+                        (Error
+                           (ReportableError
+                              { diagnostic=
+                                  AccessToInvalidAddress
+                                    { calling_context
+                                    ; invalidation
+                                    ; invalidation_trace
+                                    ; access_trace= must_be_valid }
+                              ; astate= (astate_summary :> AbductiveDomain.t) })) ) ) ) )
   | ISLLatentMemoryError astate ->
       map_call_result ~is_isl_error_prepost:true
         (astate :> AbductiveDomain.t)
         ~f:(fun _subst astate ->
-          let+ astate_summary = AbductiveDomain.summary_of_post tenv caller_proc_desc astate in
-          Ok (ISLLatentMemoryError astate_summary) )
+          AbductiveDomain.summary_of_post tenv caller_proc_desc astate
+          >>| AccessResult.of_abductive_result
+          >>| Result.map ~f:(fun astate_summary -> ISLLatentMemoryError astate_summary) )
 
 
 let get_captured_actuals location ~captured_vars ~actual_closure astate =
