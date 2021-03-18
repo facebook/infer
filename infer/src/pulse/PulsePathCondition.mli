@@ -82,7 +82,6 @@ val is_unsat_cheap : t -> bool
 
 val is_unsat_expensive :
   Tenv.t -> get_dynamic_type:(AbstractValue.t -> Typ.t option) -> t -> t * bool * new_eqs
-  [@@warning "-32"]
 (** whether the state contains a contradiction, only call this when you absolutely have to *)
 
 val as_int : t -> AbstractValue.t -> int option
