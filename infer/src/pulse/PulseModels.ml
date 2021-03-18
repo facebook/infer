@@ -99,7 +99,8 @@ module Misc = struct
       AnalysisCallbacks.proc_resolve_attributes callee_procname
       |> Option.map ~f:ProcAttributes.get_pvar_formals
     in
-    PulseOperations.unknown_call tenv location (Model skip_reason) ~ret ~actuals ~formals_opt astate
+    PulseCallOperations.unknown_call tenv location (Model skip_reason) ~ret ~actuals ~formals_opt
+      astate
     |> ok_continue
 
 
@@ -246,7 +247,7 @@ module ObjC = struct
         | None ->
             ok_continue astate
         | Some callee_proc_name ->
-            PulseOperations.call tenv ~caller_proc_desc:proc_desc
+            PulseCallOperations.call tenv ~caller_proc_desc:proc_desc
               ~callee_data:(analyze_dependency callee_proc_name)
               location callee_proc_name ~ret ~actuals:[] ~formals_opt:None astate )
 end
@@ -592,7 +593,7 @@ module StdFunction = struct
           :: List.map actuals ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
                  (arg_payload, typ) )
         in
-        PulseOperations.call tenv ~caller_proc_desc:proc_desc
+        PulseCallOperations.call tenv ~caller_proc_desc:proc_desc
           ~callee_data:(analyze_dependency callee_proc_name)
           location callee_proc_name ~ret ~actuals ~formals_opt:None astate
 

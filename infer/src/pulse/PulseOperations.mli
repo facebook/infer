@@ -197,30 +197,9 @@ val remove_vars : Tenv.t -> Var.t list -> Location.t -> t -> t AccessResult.t
 val check_address_escape :
   Location.t -> Procdesc.t -> AbstractValue.t -> ValueHistory.t -> t -> t AccessResult.t
 
-val call :
-     Tenv.t
-  -> caller_proc_desc:Procdesc.t
-  -> callee_data:(Procdesc.t * PulseSummary.t) option
-  -> Location.t
-  -> Procname.t
-  -> ret:Ident.t * Typ.t
-  -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
-  -> formals_opt:(Pvar.t * Typ.t) list option
+val get_captured_actuals :
+     Location.t
+  -> captured_vars:(Var.t * Pvar.capture_mode) list
+  -> actual_closure:AbstractValue.t * ValueHistory.t
   -> t
-  -> ExecutionDomain.t AccessResult.t list
-(** perform an interprocedural call: apply the summary for the call proc name passed as argument if
-    it exists *)
-
-val unknown_call :
-     Tenv.t
-  -> Location.t
-  -> CallEvent.t
-  -> ret:Ident.t * Typ.t
-  -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
-  -> formals_opt:(Pvar.t * Typ.t) list option
-  -> t
-  -> t
-(** performs a call to a function with no summary by optimistically havoc'ing the by-ref actuals and
-    the return value as appropriate *)
-
-val conservatively_initialize_args : AbstractValue.t list -> t -> t
+  -> (t * (Var.t * (AbstractValue.t * ValueHistory.t)) list) AccessResult.t

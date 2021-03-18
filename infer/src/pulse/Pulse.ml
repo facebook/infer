@@ -47,17 +47,17 @@ module PulseTransferFunctions = struct
     | Some callee_pname when not Config.pulse_intraprocedural_only ->
         let formals_opt = get_pvar_formals callee_pname in
         let callee_data = analyze_dependency callee_pname in
-        PulseOperations.call tenv ~caller_proc_desc:proc_desc ~callee_data call_loc callee_pname
+        PulseCallOperations.call tenv ~caller_proc_desc:proc_desc ~callee_data call_loc callee_pname
           ~ret ~actuals ~formals_opt astate
     | _ ->
         L.d_printfln "Skipping indirect call %a@\n" Exp.pp call_exp ;
         let astate =
           let arg_values = List.map actuals ~f:(fun ((value, _), _) -> value) in
-          PulseOperations.conservatively_initialize_args arg_values astate
+          PulseCallOperations.conservatively_initialize_args arg_values astate
         in
         [ Ok
             (ContinueProgram
-               (PulseOperations.unknown_call tenv call_loc (SkippedUnknownCall call_exp) ~ret
+               (PulseCallOperations.unknown_call tenv call_loc (SkippedUnknownCall call_exp) ~ret
                   ~actuals ~formals_opt:None astate)) ]
 
 
@@ -164,7 +164,7 @@ module PulseTransferFunctions = struct
               List.map func_args ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= value, _} ->
                   value )
             in
-            PulseOperations.conservatively_initialize_args arg_values astate
+            PulseCallOperations.conservatively_initialize_args arg_values astate
           in
           model analysis_data ~callee_procname call_loc ~ret astate
       | None ->
