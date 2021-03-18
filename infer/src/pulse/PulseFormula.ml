@@ -1002,6 +1002,16 @@ module VarUF =
 
 type new_eq = EqZero of Var.t | Equal of Var.t * Var.t
 
+let pp_new_eq fmt = function
+  | EqZero v ->
+      F.fprintf fmt "%a=0" Var.pp v
+  | Equal (v1, v2) ->
+      F.fprintf fmt "%a=%a" Var.pp v1 Var.pp v2
+
+
+(* keep [pp_new_eq] alive for debugging; remove once it becomes used *)
+let _ = pp_new_eq
+
 type new_eqs = new_eq list
 
 module Formula = struct
@@ -1113,7 +1123,7 @@ module Formula = struct
       LinArith.solve_eq l1 l2
       >>= function
       | None ->
-          Sat (phi, [])
+          Sat (phi, new_eqs)
       | Some (v, l) -> (
         match LinArith.get_as_var l with
         | Some v' ->
@@ -1207,10 +1217,13 @@ module Formula = struct
         (* reconstruct the relation from scratch *)
         Var.Map.fold
           (fun v l acc ->
-            let* changed, phi_new_eqs = acc in
+            let* changed, ((_, new_eqs) as phi_new_eqs) = acc in
             let l' = apply phi0 l in
-            let+ phi_new_eqs' = and_var_linarith v l' phi_new_eqs in
-            (changed || not (phys_equal l l'), phi_new_eqs') )
+            let+ phi', new_eqs' = and_var_linarith v l' phi_new_eqs in
+            let changed', new_eqs' =
+              if phys_equal l l' then (changed, new_eqs) else (true, new_eqs')
+            in
+            (changed', (phi', new_eqs')) )
           phi0.linear_eqs
           (Sat (false, ({phi0 with linear_eqs= Var.Map.empty}, new_eqs)))
       in
