@@ -1212,30 +1212,18 @@ module Formula = struct
 
     let and_var_linarith v l (phi, new_eqs) = solve_lin_eq new_eqs l (LinArith.of_var v) phi
 
-    let rec normalize_linear_eqs ~fuel (phi0, new_eqs) =
-      let* changed, phi_new_eqs' =
-        (* reconstruct the relation from scratch *)
-        Var.Map.fold
-          (fun v l acc ->
-            let* changed, ((_, new_eqs) as phi_new_eqs) = acc in
-            let l' = apply phi0 l in
-            let+ phi', new_eqs' = and_var_linarith v l' phi_new_eqs in
-            let changed', new_eqs' =
-              if phys_equal l l' then (changed, new_eqs) else (true, new_eqs')
-            in
-            (changed', (phi', new_eqs')) )
-          phi0.linear_eqs
-          (Sat (false, ({phi0 with linear_eqs= Var.Map.empty}, new_eqs)))
-      in
-      if changed then
-        if fuel > 0 then (
-          (* do another pass if we can afford it *)
-          L.d_printfln "consuming fuel normalizing linear equalities (from %d)" fuel ;
-          normalize_linear_eqs ~fuel:(fuel - 1) phi_new_eqs' )
-        else (
-          L.d_printfln "ran out of fuel normalizing linear equalities" ;
-          Sat phi_new_eqs' )
-      else Sat (phi0, new_eqs)
+    let normalize_linear_eqs (phi0, new_eqs) =
+      Var.Map.fold
+        (fun v l acc ->
+          let* changed, ((_, new_eqs) as phi_new_eqs) = acc in
+          let l' = apply phi0 l in
+          let+ phi', new_eqs' = and_var_linarith v l' phi_new_eqs in
+          let changed', new_eqs' =
+            if phys_equal l l' then (changed, new_eqs) else (true, new_eqs')
+          in
+          (changed', (phi', new_eqs')) )
+        phi0.linear_eqs
+        (Sat (false, ({phi0 with linear_eqs= Var.Map.empty}, new_eqs)))
 
 
     let normalize_atom phi (atom : Atom.t) =
@@ -1278,28 +1266,32 @@ module Formula = struct
           (changed || changed', phi_new_eqs) )
 
 
+    let rec normalize_with_fuel ~fuel ((phi0, new_eqs0) as phi_new_eqs0) =
+      if fuel < 0 then (
+        L.d_printfln "ran out of fuel when normalizing" ;
+        Sat phi_new_eqs0 )
+      else
+        (* reconstruct the linear relation from scratch *)
+        let* new_linear_eqs, phi_new_eqs' =
+          let* new_linear_eqs_from_linear, phi_new_eqs = normalize_linear_eqs (phi0, new_eqs0) in
+          if new_linear_eqs_from_linear && fuel > 0 then
+            (* do another round of linear normalization early if we will renormalize again anyway;
+               no need to first normalize atoms w.r.t. a linear relation that's going to change and
+               trigger a recompute of these anyway *)
+            Sat (true, phi_new_eqs)
+          else
+            let+ new_linear_eqs_from_atoms, phi_new_eqs = normalize_atoms phi_new_eqs in
+            (new_linear_eqs_from_linear || new_linear_eqs_from_atoms, phi_new_eqs)
+        in
+        if new_linear_eqs then (
+          L.d_printfln "new linear equalities, consuming fuel (from %d)" fuel ;
+          normalize_with_fuel ~fuel:(fuel - 1) phi_new_eqs' )
+        else Sat phi_new_eqs'
+
+
     (* interface *)
 
-    let normalize phi0 =
-      (* NOTE: we may consume a quadratic amount of [fuel] here since the fuel here is not consumed by
-         [normalize_linear_eqs] (i.e. [normalize_linear_eqs] does not return the remaining
-         fuel). That's ok because there's not much fuel to begin with, and as long as we're making
-         progress it's probably worth it anyway. *)
-      let rec normalize_with_fuel ~fuel phi_new_eqs =
-        if fuel <= 0 then (
-          L.d_printfln "ran out of fuel when normalizing" ;
-          Sat phi_new_eqs )
-        else
-          let* new_linear_eqs, phi_new_eqs' =
-            normalize_linear_eqs ~fuel phi_new_eqs >>= normalize_atoms
-          in
-          if new_linear_eqs then (
-            L.d_printfln "new linear equalities, consuming fuel (from %d)" fuel ;
-            normalize_with_fuel ~fuel:(fuel - 1) phi_new_eqs' )
-          else Sat phi_new_eqs'
-      in
-      normalize_with_fuel ~fuel:base_fuel (phi0, [])
-
+    let normalize phi = normalize_with_fuel ~fuel:base_fuel (phi, [])
 
     let and_atom atom phi_new_eqs = and_atom atom phi_new_eqs >>| snd
 
