@@ -405,6 +405,10 @@ module ConfigImpactItem = struct
 
   type change_type = Added | Removed
 
+  let compare_by_unchecked_callees_length {unchecked_callees= u1} {unchecked_callees= u2} =
+    Int.compare (UncheckedCallees.cardinal u1) (UncheckedCallees.cardinal u2)
+
+
   let pp_change_type f x =
     Format.pp_print_string f (match x with Added -> "added" | Removed -> "removed")
 
@@ -449,9 +453,17 @@ module ConfigImpactItem = struct
 
   let issues_of_reports ~(current_config_impact : Jsonbug_t.config_impact_report)
       ~(previous_config_impact : Jsonbug_t.config_impact_report) =
+    let get_biggest report =
+      (* two methods with identical method names but different
+          number/type of args will have the same hash. We pick the one with the biggest unchecked callees. *)
+      Option.value_exn (List.max_elt report ~compare:compare_by_unchecked_callees_length)
+    in
     let fold_aux ~key:_ ~data ((acc_introduced, acc_fixed) as acc) =
       match data with
-      | `Both (current, previous) ->
+      | `Both (current_reports, previous_reports) ->
+          (* current/previous reports cannot be empty. *)
+          let current = get_biggest current_reports in
+          let previous = get_biggest previous_reports in
           let introduced =
             UncheckedCallees.diff current.unchecked_callees previous.unchecked_callees
             |> issue_of ~change_type:Added current.config_impact_item
@@ -470,7 +482,7 @@ module ConfigImpactItem = struct
       List.fold ~init:String.Map.empty config_impact
         ~f:(fun acc ({Jsonbug_t.hash= key; unchecked_callees} as config_impact_item) ->
           let unchecked_callees = UncheckedCallees.decode unchecked_callees in
-          String.Map.add_exn acc ~key ~data:{config_impact_item; unchecked_callees} )
+          String.Map.add_multi acc ~key ~data:{config_impact_item; unchecked_callees} )
     in
     let current_map = map_of_config_impact current_config_impact in
     let previous_map = map_of_config_impact previous_config_impact in
