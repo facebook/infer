@@ -1204,7 +1204,7 @@ module Formula = struct
 
 
     (** an arbitrary value *)
-    let base_fuel = 5
+    let base_fuel = 10
 
     let solve_lin_eq new_eqs t1 t2 phi =
       solve_normalized_lin_eq ~fuel:base_fuel new_eqs (apply phi t1) (apply phi t2) phi
