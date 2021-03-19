@@ -385,7 +385,9 @@ module Server = struct
         send Command.Handshake
 end
 
-let use_daemon = Config.((not (buck || genrule_mode)) && jobs > 1)
+let use_daemon =
+  Config.((not (buck || genrule_mode)) && jobs > 1 && not (String.equal Sys.os_type "Win32"))
+
 
 let perform cmd = if use_daemon then Server.send cmd else Command.execute cmd
 

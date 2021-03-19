@@ -2167,6 +2167,11 @@ and results_dir =
     ~meta:"dir" "Write results and internal files in the specified directory"
 
 
+and run_as_child =
+  CLOpt.mk_int ~in_help:[] ~default:(-1) ~long:"run-as-child"
+    "Enable child mode when greater than 0. This is an internal option."
+
+
 and seconds_per_iteration =
   CLOpt.mk_float_opt ~deprecated:["seconds_per_iteration"] ~long:"seconds-per-iteration"
     ~meta:"float" "Set the number of seconds per iteration (see $(b,--iterations))"
@@ -2678,7 +2683,7 @@ let post_parsing_initialization command_opt =
   let uncaught_exception_handler exn raw_backtrace =
     let is_infer_exit_zero = match exn with L.InferExit 0 -> true | _ -> false in
     let should_print_backtrace_default =
-      match exn with L.InferUserError _ | L.InferExit _ -> false | _ -> true
+      match exn with L.InferUserError _ | L.InferExit _ | Epilogues.Sigint -> false | _ -> true
     in
     let suggest_keep_going = should_print_backtrace_default && not !keep_going in
     let backtrace =
@@ -2699,6 +2704,8 @@ let post_parsing_initialization command_opt =
           error "Internal Error: " msg
       | L.InferUserError msg ->
           error "Usage Error: " msg
+      | Epilogues.Sigint ->
+          error "Process received signal SIGINT: " (Pid.to_string (ProcessPoolState.get_pid ()))
       | L.InferExit _ ->
           ()
       | _ ->
@@ -2780,6 +2787,8 @@ let process_linters_doc_url args =
   let linter_doc_url_assocs = RevList.rev_map ~f:linters_doc_url args in
   fun ~linter_id -> List.Assoc.find ~equal:String.equal linter_doc_url_assocs linter_id
 
+
+let is_child = !run_as_child >= 0
 
 (** Freeze initialized configuration values *)
 
@@ -3187,7 +3196,7 @@ and process_clang_ast = !process_clang_ast
 and progress_bar =
   if !progress_bar && not !quiet then
     match !progress_bar_style with
-    | `Auto when Unix.(isatty stdin && isatty stderr) ->
+    | `Auto when Unix.(isatty stdin && isatty stderr) || is_child ->
         `MultiLine
     | `Auto ->
         `Plain
@@ -3304,6 +3313,8 @@ and report_suppress_errors = RevList.to_list !report_suppress_errors
 and reports_include_ml_loc = !reports_include_ml_loc
 
 and results_dir = !results_dir
+
+and run_as_child = !run_as_child
 
 and scheduler = !scheduler
 

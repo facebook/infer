@@ -77,6 +77,8 @@ val idempotent_getters : bool
 
 val initial_analysis_time : float
 
+val is_child : bool
+
 val ivar_attributes : string
 
 val java_lambda_marker_infix : string
@@ -121,6 +123,8 @@ val report_force_relative_path : bool
 val report_immutable_modifications : bool
 
 val report_nullable_inconsistency : bool
+
+val run_as_child : int
 
 val save_compact_summaries : bool
 

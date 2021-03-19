@@ -227,7 +227,22 @@ let try_finally_swallow_timeout ~f ~finally =
 
 
 let with_file_in file ~f =
-  let ic = In_channel.create file in
+  let ic =
+    let open Unix in
+    let fd =
+      try openfile ~mode:[O_RDONLY; O_SHARE_DELETE] file
+      with Unix_error (e, _, _) ->
+        let msg =
+          match e with
+          | ENOENT ->
+              ": no such file or directory"
+          | _ ->
+              ": error " ^ Unix.Error.message e
+        in
+        raise (Sys_error (file ^ msg))
+    in
+    in_channel_of_descr fd
+  in
   let f () = f ic in
   let finally () = In_channel.close ic in
   try_finally_swallow_timeout ~f ~finally
@@ -240,12 +255,21 @@ let with_file_out file ~f =
   try_finally_swallow_timeout ~f ~finally
 
 
-let with_intermediate_temp_file_out file ~f =
+let with_intermediate_temp_file_out ?(retry = false) file ~f =
   let temp_filename, temp_oc = Filename.open_temp_file ~in_dir:(Filename.dirname file) "infer" "" in
   let f () = f temp_oc in
   let finally () =
     Out_channel.close temp_oc ;
-    Unix.rename ~src:temp_filename ~dst:file
+    let rec rename n =
+      try Unix.rename ~src:temp_filename ~dst:file
+      with e ->
+        if Int.equal n 0 then raise e
+        else
+          let delay = Random.float_range 0.1 0.3 in
+          ignore (Unix.nanosleep delay) ;
+          rename (n - 1)
+    in
+    if retry then rename 10 else rename 0
   in
   try_finally_swallow_timeout ~f ~finally
 
@@ -323,7 +347,10 @@ let realpath ?(warn_on_error = true) path =
 
 
 (* never closed *)
-let devnull = lazy (Unix.openfile "/dev/null" ~mode:[Unix.O_WRONLY])
+let devnull =
+  let file = if String.equal Sys.os_type "Win32" then "NUL" else "/dev/null" in
+  lazy (Unix.openfile file ~mode:[Unix.O_WRONLY])
+
 
 let suppress_stderr2 f2 x1 x2 =
   let restore_stderr src =
@@ -497,7 +524,23 @@ let physical_cores () =
       sockets * cores_per_socket )
 
 
-let cpus = Setcore.numcores ()
+module Setcore = struct
+  external number_of_cpus : unit -> int = "number_of_cpus"
+
+  let ncpu =
+    (* Use this environment variable to restrict the number of cores visible to Infer.
+       If we do not manage to find an interesting information in that variable, default to 0. *)
+    match Int.of_string (Option.value (Sys.getenv "INFER_CPUS") ~default:"") with
+    | exception _ ->
+        number_of_cpus ()
+    | i ->
+        if i > 0 then i else number_of_cpus ()
+
+
+  let setcore _ = () (* TODO: to improve *)
+end
+
+let cpus = Setcore.ncpu
 
 let numcores =
   match Version.build_platform with Darwin | Windows -> cpus / 2 | Linux -> physical_cores ()

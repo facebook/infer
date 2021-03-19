@@ -87,7 +87,7 @@ ifneq (,$(findstring s,$(MAKEFLAGS)))
 # quiet mode
 LN_S = @LN_S@
 else
-LN_S = @LN_S@ -v
+LN_S = @LN_S@
 endif
 
 # Export parts of the config relevant to running other programs
