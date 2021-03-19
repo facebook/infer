@@ -473,6 +473,11 @@ module Term = struct
     fold_map_direct_subterms t ~init:() ~f:(fun () t' -> ((), f t')) |> snd
 
 
+  let rec map_subterms t ~f =
+    let t' = map_direct_subterms t ~f:(fun t' -> map_subterms t' ~f) in
+    f t'
+
+
   let rec fold_subst_variables t ~init ~f =
     match t with
     | Var v ->
@@ -799,6 +804,8 @@ module Atom = struct
 
 
   let map_terms atom ~f = fold_map_terms atom ~init:() ~f:(fun () t -> ((), f t)) |> snd
+
+  let map_subterms atom ~f = map_terms atom ~f:(fun t -> Term.map_subterms t ~f)
 
   let to_term : t -> Term.t = function
     | LessEqual (t1, t2) ->
@@ -1392,20 +1399,21 @@ module DynamicTypes = struct
 
 
   let simplify tenv ~get_dynamic_type phi =
+    let simplify_is_instance_of (t : Term.t) =
+      match t with
+      | IsInstanceOf (v, typ) -> (
+        match evaluate_instanceof tenv ~get_dynamic_type v typ with None -> t | Some t' -> t' )
+      | t ->
+          t
+    in
     let changed = ref false in
     let atoms =
       Atom.Set.map
         (fun atom ->
-          Atom.map_terms atom ~f:(function
-            | Term.IsInstanceOf (v, typ) as t -> (
-              match evaluate_instanceof tenv ~get_dynamic_type v typ with
-              | None ->
-                  t
-              | Some t' ->
-                  changed := true ;
-                  t' )
-            | t ->
-                t ) )
+          Atom.map_subterms atom ~f:(fun t ->
+              let t' = simplify_is_instance_of t in
+              changed := !changed || not (phys_equal t t') ;
+              t' ) )
         phi.both.atoms
     in
     if !changed then {phi with both= {phi.both with atoms}} else phi
