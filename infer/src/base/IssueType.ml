@@ -791,7 +791,7 @@ let mutable_local_variable_in_component_file =
 
 let null_dereference =
   register ~id:"NULL_DEREFERENCE" Error Biabduction
-    ~user_documentation:[%blob "../../documentation/issues/NULLPTR_DEREFERENCE.md"]
+    ~user_documentation:"See [NULLPTR_DEREFERENCE](#nullptr_dereference)."
 
 
 let nullptr_dereference =
