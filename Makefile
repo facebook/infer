@@ -196,6 +196,7 @@ COST_TESTS += java_fb-performance
 DIRECT_TESTS += \
   java_fb-config-impact \
   java_fb-gk-interaction \
+  java_fb-immutability \
   java_fb-performance
 endif
 

@@ -50,21 +50,30 @@ let pure =
   ; exited= Exited.bottom }
 
 
+let implements_immutable_map tenv = function
+  | Typ.JavaClass java_class_name ->
+      JavaClassName.to_string java_class_name
+      |> PatternMatch.Java.implements_xmob_utils "ImmutableIntHashMap" tenv
+  | _ ->
+      false
+
+
 let filter_modifies_immutable tenv ~f =
   ModifiedVarMap.filter (fun _pvar ModifiedAccess.{ordered_access_list} ->
       List.exists ordered_access_list ~f:(fun access ->
           match access with
           | HilExp.Access.FieldAccess fname ->
               let class_name = Fieldname.get_class_name fname in
-              Tenv.lookup tenv class_name
-              |> Option.exists ~f:(fun mstruct ->
-                     f mstruct
-                     |> List.exists ~f:(fun (fieldname, _typ, annot) ->
-                            String.equal
-                              (Fieldname.get_field_name fieldname)
-                              (Fieldname.get_field_name fname)
-                            && Annotations.ia_has_annotation_with annot (fun annot ->
-                                   Annotations.annot_ends_with annot Annotations.immutable ) ) )
+              implements_immutable_map tenv class_name
+              || Tenv.lookup tenv class_name
+                 |> Option.exists ~f:(fun mstruct ->
+                        f mstruct
+                        |> List.exists ~f:(fun (fieldname, _typ, annot) ->
+                               String.equal
+                                 (Fieldname.get_field_name fieldname)
+                                 (Fieldname.get_field_name fname)
+                               && Annotations.ia_has_annotation_with annot (fun annot ->
+                                      Annotations.annot_ends_with annot Annotations.immutable ) ) )
           | _ ->
               false ) )
 

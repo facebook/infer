@@ -1,0 +1,1 @@
+{"pulse-model-return-first-arg": ".*ImmutableIntHashMap.duplicate\\(\\)\\|.*IntHashMap.moveToImmutable\\(\\)"}

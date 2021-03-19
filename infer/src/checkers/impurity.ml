@@ -129,7 +129,7 @@ let get_modified_params pname post_stack pre_heap post formals =
             BaseMemory.Edges.fold edges_pre ~init:acc ~f:(fun acc (access, (addr, _)) ->
                 add_to_modified pname ~pvar ~access ~addr pre_heap post acc )
         | None ->
-            debug "The address is not materialized in in pre-heap." ;
+            debug "The address %a is not materialized in pre-heap.\n" AbstractValue.pp addr ;
             acc )
       | _ ->
           acc )
