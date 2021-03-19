@@ -58,12 +58,15 @@ let unknown_call tenv call_loc reason ~ret ~actuals ~formals_opt astate =
     | _ ->
         astate
   in
+  let havoc_actuals_without_typ_info astate =
+    List.fold actuals
+      ~f:(fun astate actual_typ -> havoc_actual_if_ptr actual_typ None astate)
+      ~init:astate
+  in
   L.d_printfln "skipping unknown procedure@." ;
   ( match formals_opt with
   | None ->
-      List.fold actuals
-        ~f:(fun astate actual_typ -> havoc_actual_if_ptr actual_typ None astate)
-        ~init:astate
+      havoc_actuals_without_typ_info astate
   | Some formals -> (
     match
       List.fold2 actuals formals
@@ -74,7 +77,7 @@ let unknown_call tenv call_loc reason ~ret ~actuals ~formals_opt astate =
     | Unequal_lengths ->
         L.d_printfln "ERROR: formals have length %d but actuals have length %d"
           (List.length formals) (List.length actuals) ;
-        astate
+        havoc_actuals_without_typ_info astate
     | Ok result ->
         result ) )
   |> havoc_ret ret |> add_skipped_proc
