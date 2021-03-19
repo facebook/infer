@@ -280,6 +280,10 @@ OPTIONS
        --pulse-model-release-pattern string
            Regex of methods that should be modelled as release in Pulse
 
+       --pulse-model-return-first-arg string
+           Regex of methods that should be modelled as returning the first
+           argument in Pulse
+
        --pulse-model-return-nonnull string
            Regex of methods that should be modelled as returning non-null in
            Pulse

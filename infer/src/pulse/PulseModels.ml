@@ -114,9 +114,11 @@ module Misc = struct
     PulseOperations.havoc_id ret_id [event] astate |> ok_continue
 
 
-  let id_first_arg arg_access_hist : model =
-   fun _ ~callee_procname:_ _ ~ret astate ->
-    PulseOperations.write_id (fst ret) arg_access_hist astate |> ok_continue
+  let id_first_arg ~desc (arg_value, arg_history) : model =
+   fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+    let ret_value = (arg_value, event :: arg_history) in
+    PulseOperations.write_id ret_id ret_value astate |> ok_continue
 
 
   let free_or_delete operation deleted_access : model =
@@ -1159,11 +1161,13 @@ module ProcNameDispatcher = struct
           $--> Misc.alloc_not_null_call_ev ~desc:"new"
         ; +match_builtin BuiltinDecl.__placement_new &++> Cplusplus.placement_new
         ; +match_builtin BuiltinDecl.objc_cpp_throw <>--> Misc.early_exit
-        ; +match_builtin BuiltinDecl.__cast <>$ capt_arg_payload $+...$--> Misc.id_first_arg
+        ; +match_builtin BuiltinDecl.__cast
+          <>$ capt_arg_payload $+...$--> Misc.id_first_arg ~desc:"cast"
         ; +match_builtin BuiltinDecl.abort <>--> Misc.early_exit
         ; +match_builtin BuiltinDecl.exit <>--> Misc.early_exit
         ; +match_builtin BuiltinDecl.__infer_initializer_list
-          <>$ capt_arg_payload $+...$--> Misc.id_first_arg
+          <>$ capt_arg_payload
+          $+...$--> Misc.id_first_arg ~desc:"infer_init_list"
         ; +map_context_tenv (PatternMatch.Java.implements_lang "System")
           &:: "exit" <>--> Misc.early_exit
         ; +match_builtin BuiltinDecl.__get_array_length <>--> Misc.return_unknown_size
@@ -1460,10 +1464,15 @@ module ProcNameDispatcher = struct
         ; +match_builtin BuiltinDecl.__objc_alloc_no_fail
           <>$ capt_exp
           $--> ObjC.alloc_not_null_alloc_ev ~desc:"alloc"
-        ; -"NSObject" &:: "init" <>$ capt_arg_payload $--> Misc.id_first_arg
+        ; -"NSObject" &:: "init" <>$ capt_arg_payload $--> Misc.id_first_arg ~desc:"NSObject.init"
         ; +match_regexp_opt Config.pulse_model_return_nonnull
           &::.*--> Misc.return_positive
                      ~desc:"modelled as returning not null due to configuration option"
+        ; +match_regexp_opt Config.pulse_model_return_first_arg
+          &::+ (fun _ _ -> true)
+          <>$ capt_arg_payload
+          $+...$--> Misc.id_first_arg
+                      ~desc:"modelled as returning the first argument due to configuration option"
         ; +match_regexp_opt Config.pulse_model_skip_pattern
           &::.*++> Misc.skip "modelled as skip due to configuration option" ] )
 end

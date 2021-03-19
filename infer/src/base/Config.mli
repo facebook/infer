@@ -493,6 +493,8 @@ val pulse_model_alloc_pattern : Str.regexp option
 
 val pulse_model_release_pattern : Str.regexp option
 
+val pulse_model_return_first_arg : Str.regexp option
+
 val pulse_model_return_nonnull : Str.regexp option
 
 val pulse_model_skip_pattern : Str.regexp option

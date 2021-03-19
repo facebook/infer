@@ -1949,6 +1949,12 @@ and pulse_model_return_nonnull =
     "Regex of methods that should be modelled as returning non-null in Pulse"
 
 
+and pulse_model_return_first_arg =
+  CLOpt.mk_string_opt ~long:"pulse-model-return-first-arg"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Regex of methods that should be modelled as returning the first argument in Pulse"
+
+
 and pulse_model_skip_pattern =
   CLOpt.mk_string_opt ~long:"pulse-model-skip-pattern"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -3207,6 +3213,8 @@ and pulse_model_abort = RevList.to_list !pulse_model_abort
 and pulse_model_alloc_pattern = Option.map ~f:Str.regexp !pulse_model_alloc_pattern
 
 and pulse_model_release_pattern = Option.map ~f:Str.regexp !pulse_model_release_pattern
+
+and pulse_model_return_first_arg = Option.map ~f:Str.regexp !pulse_model_return_first_arg
 
 and pulse_model_return_nonnull = Option.map ~f:Str.regexp !pulse_model_return_nonnull
 
