@@ -177,7 +177,7 @@ if [ "$BUILD_CLANG" == "yes" ]; then
     echo "  To speed this along, you are encouraged to use a release of"
     echo "  Infer instead:"
     echo ""
-    echo "  http://fbinfer.com/docs/getting-started.html"
+    echo "  http://fbinfer.com/docs/getting-started"
     echo ""
     echo "  If you are only interested in analyzing Java programs, simply"
     echo "  run this script with only the \"java\" argument:"
