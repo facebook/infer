@@ -14,11 +14,72 @@ open SatUnsat
 
 type operand = LiteralOperand of IntLit.t | AbstractValueOperand of Var.t
 
+(** {!Z} from zarith with a few convenience functions added *)
+module Z = struct
+  include Z
+
+  let protect f x = try Some (f x) with Division_by_zero | Invalid_argument _ | Z.Overflow -> None
+
+  let protect2 f x y =
+    try Some (f x y) with Division_by_zero | Invalid_argument _ | Z.Overflow -> None
+
+
+  let yojson_of_t z = `String (Z.to_string z)
+
+  [@@@warning "-32"]
+
+  let div = protect2 Z.div
+
+  let rem = protect2 Z.rem
+
+  let div_rem = protect2 Z.div_rem
+
+  let cdiv = protect2 Z.cdiv
+
+  let fdiv = protect2 Z.fdiv
+
+  let ediv_rem = protect2 Z.ediv_rem
+
+  let ediv = protect2 Z.ediv
+
+  let erem = protect2 Z.erem
+
+  let divexact = protect2 Z.divexact
+
+  let gcd = protect2 Z.gcd
+
+  let gcdext = protect2 Z.gcdext
+
+  let lcm = protect2 Z.lcm
+
+  let powm = protect2 Z.powm
+
+  let powm_sec = protect2 Z.powm_sec
+
+  let invert = protect2 Z.invert
+
+  let ( / ) = protect2 Z.( / )
+
+  let ( /> ) = protect2 Z.( /> )
+
+  let ( /< ) = protect2 Z.( /< )
+
+  let ( /| ) = protect2 Z.( /| )
+
+  let ( mod ) = protect2 Z.( mod )
+end
+
 (** {!Q} from zarith with a few convenience functions added *)
 module Q = struct
   include Q
 
+  type _q = t = {num: Z.t; den: Z.t} [@@deriving yojson_of]
+
+  let yojson_of_t = [%yojson_of: _q]
+
   let not_equal q1 q2 = not (Q.equal q1 q2)
+
+  [@@@warning "-32"]
 
   let is_one q = Q.equal q Q.one
 
@@ -28,21 +89,15 @@ module Q = struct
 
   let is_not_zero q = not (is_zero q)
 
-  let conv_protect f q = try Some (f q) with Division_by_zero | Z.Overflow -> None
+  let to_int q = Z.protect Q.to_int q
 
-  let to_int q = conv_protect Q.to_int q
+  let to_int32 q = Z.protect Q.to_int32 q
 
-  let to_int64 q = conv_protect Q.to_int64 q
+  let to_int64 q = Z.protect Q.to_int64 q
 
-  let to_bigint q = conv_protect Q.to_bigint q
+  let to_bigint q = Z.protect Q.to_bigint q
 
-  type z = Z.t
-
-  let yojson_of_z z = `String (Z.to_string z)
-
-  type _q = t = {num: z; den: z} [@@deriving yojson_of]
-
-  let yojson_of_t = [%yojson_of: _q]
+  let to_nativeint q = Z.protect Q.to_nativeint q
 end
 
 (** Linear Arithmetic *)
@@ -533,7 +588,7 @@ module Term = struct
 
 
   (** reduce to a constant when the direct sub-terms are constants *)
-  let eval_const_shallow t0 =
+  let eval_const_shallow_ t0 =
     let map_const t f = match t with Const c -> f c | _ -> t0 in
     let map_const2 t1 t2 f = match (t1, t2) with Const c1, Const c2 -> f c1 c2 | _ -> t0 in
     let q_map t q_f = map_const t (fun c -> Const (q_f c)) in
@@ -548,7 +603,9 @@ module Term = struct
     in
     let map_i64_i64 = conv2 Q.to_int64 Q.to_int64 Q.of_int64 in
     let map_i64_i = conv2 Q.to_int64 Q.to_int Q.of_int64 in
-    let map_z_z = conv2 Q.to_bigint Q.to_bigint Q.of_bigint in
+    let map_z_z_opt q1 q2 f =
+      conv2 Q.to_bigint Q.to_bigint (Option.map ~f:Q.of_bigint) q1 q2 f |> Option.join
+    in
     let or_undef q_opt = Option.value ~default:Q.undef q_opt in
     match t0 with
     | Const _ | Var _ | IsInstanceOf _ ->
@@ -569,7 +626,7 @@ module Term = struct
         q_map2 t1 t2 (fun c1 c2 -> if Q.is_zero c2 then Q.undef else Q.div c1 c2)
     | Mod (t1, t2) ->
         q_map2 t1 t2 (fun c1 c2 ->
-            if Q.is_zero c2 then Q.undef else map_z_z c1 c2 Z.( mod ) |> or_undef )
+            if Q.is_zero c2 then Q.undef else map_z_z_opt c1 c2 Z.( mod ) |> or_undef )
     | Not t' ->
         q_predicate_map t' Q.is_zero
     | And (t1, t2) ->
@@ -603,7 +660,12 @@ module Term = struct
                 map_i64_i64 c1 c2 Int64.bit_xor |> or_undef )
 
 
-  let rec simplify_shallow t =
+  (* defend in depth against exceptions *)
+  let eval_const_shallow t =
+    Z.protect eval_const_shallow_ t |> Option.value ~default:(Const Q.undef)
+
+
+  let rec simplify_shallow_ t =
     match t with
     | Var _ | Const _ ->
         t
@@ -639,10 +701,10 @@ module Term = struct
         Const Q.undef
     | Div (t, Const c) ->
         (* [t / c = (1/c)·t], [c≠0] *)
-        simplify_shallow (Mult (Const (Q.inv c), t))
+        simplify_shallow_ (Mult (Const (Q.inv c), t))
     | Div (Minus t1, Minus t2) ->
         (* [(-t1) / (-t2) = t1 / t2] *)
-        simplify_shallow (Div (t1, t2))
+        simplify_shallow_ (Div (t1, t2))
     | Div (t1, t2) when equal_syntax t1 t2 ->
         (* [t / t = 1] *)
         one
@@ -678,6 +740,9 @@ module Term = struct
     | _ ->
         t
 
+
+  (* defend in depth against exceptions *)
+  let simplify_shallow t = Z.protect simplify_shallow_ t |> Option.value ~default:(Const Q.undef)
 
   (** more or less syntactic attempt at detecting when an arbitrary term is a linear formula; call
       {!Atom.eval_term} first for best results *)
