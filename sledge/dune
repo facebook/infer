@@ -109,6 +109,8 @@
 
 (dirs :standard \ llvm test)
 
+(vendored_dirs vendor)
+
 (rule
  (targets sledge-help.txt)
  (deps tools/gen_help.sh cli/sledge_cli.exe)

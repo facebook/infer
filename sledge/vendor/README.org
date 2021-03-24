@@ -1,0 +1,2 @@
+This directory contains code from other open source projects, which is
+subject to their own copyright and licensing terms.
