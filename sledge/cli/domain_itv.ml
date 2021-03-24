@@ -32,11 +32,11 @@ let bindings (itv : t) =
 
 let sexp_of_t (itv : t) =
   let sexps =
-    Array.fold_right (bindings itv) [] ~f:(fun (v, {inf; sup}) acc ->
+    Array.fold_right (bindings itv) [] ~f:(fun (v, i) acc ->
         Sexp.List
           [ Sexp.Atom (Var.to_string v)
-          ; Sexp.Atom (Scalar.to_string inf)
-          ; Sexp.Atom (Scalar.to_string sup) ]
+          ; Sexp.Atom (Scalar.to_string i.inf)
+          ; Sexp.Atom (Scalar.to_string i.sup) ]
         :: acc )
   in
   Sexp.List sexps

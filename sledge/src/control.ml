@@ -91,8 +91,8 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
 
     let empty = Empty |> check invariant
 
-    let push_return Llair.{callee= {formals; locals}; return; recursive}
-        from_call stk =
+    let push_return call from_call stk =
+      let Llair.{callee= {formals; locals}; return; recursive; _} = call in
       Return {recursive; dst= return; formals; locals; from_call; stk}
       |> check invariant
 
@@ -366,8 +366,8 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
     let state = Option.fold ~f:Dom.exec_kill areturn state in
     exec_jump stk state block return
 
-  let exec_call stk state block ({Llair.callee; areturn; return; _} as call)
-      globals =
+  let exec_call stk state block call globals =
+    let Llair.{callee; areturn; return; _} = call in
     if Llair.Func.is_undefined callee then
       exec_skip_func stk state block areturn return
     else exec_call stk state block call globals
