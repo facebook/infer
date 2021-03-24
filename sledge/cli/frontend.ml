@@ -321,7 +321,7 @@ let rec xlate_type : x -> Llvm.lltype -> Typ.t =
             in
             Typ.struct_ ~name elts ~bits ~byts
       | Function -> fail "expected to be unsized: %a" pp_lltype llt ()
-      | Vector -> todo "vector types: %a" pp_lltype llt ()
+      | Vector | ScalableVector -> todo "vector types: %a" pp_lltype llt ()
       | Void | Label | Metadata | Token -> assert false
     else
       match Llvm.classify_type llt with
@@ -335,7 +335,7 @@ let rec xlate_type : x -> Llvm.lltype -> Typ.t =
           Typ.function_ ~return ~args
       | Struct when Llvm.is_opaque llt -> Typ.opaque ~name:(struct_name llt)
       | Token -> Typ.opaque ~name:"token"
-      | Vector | Array | Struct ->
+      | Vector | ScalableVector | Array | Struct ->
           todo "unsized non-opaque aggregate types: %a" pp_lltype llt ()
       | Half | BFloat | Float | Double | X86fp80 | Fp128 | Ppc_fp128
        |Integer | X86_mmx | Pointer ->
