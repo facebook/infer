@@ -549,9 +549,9 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t
     | Instruction
         ( ( Trunc | ZExt | SExt | FPToUI | FPToSI | UIToFP | SIToFP
           | FPTrunc | FPExt | PtrToInt | IntToPtr | BitCast | AddrSpaceCast
-          | Add | FAdd | Sub | FSub | Mul | FMul | UDiv | SDiv | FDiv | URem
-          | SRem | FRem | Shl | LShr | AShr | And | Or | Xor | ICmp | FCmp
-          | Select | GetElementPtr | ExtractElement | InsertElement
+          | Add | FAdd | Sub | FSub | FNeg | Mul | FMul | UDiv | SDiv | FDiv
+          | URem | SRem | FRem | Shl | LShr | AShr | And | Or | Xor | ICmp
+          | FCmp | Select | GetElementPtr | ExtractElement | InsertElement
           | ShuffleVector | ExtractValue | InsertValue ) as opcode ) ->
         if inline || should_inline llv then xlate_opcode x llv opcode
         else ([], Exp.reg (xlate_name x llv))
@@ -595,6 +595,13 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t
        |IntToPtr | BitCast | AddrSpaceCast ->
           Exp.convert src ~to_:dst arg
       | _ -> fail "convert: %a" pp_llvalue llv () )
+  in
+  let unary (mk : ?typ:_ -> _) =
+    if Poly.equal (Llvm.classify_type (Llvm.type_of llv)) Vector then
+      todo "vector operations: %a" pp_llvalue llv () ;
+    let typ = xlate_type x (Llvm.type_of (Llvm.operand llv 0)) in
+    let pre, arg = xlate_rand 0 in
+    (pre, mk ~typ arg)
   in
   let binary (mk : ?typ:_ -> _) =
     if Poly.equal (Llvm.classify_type (Llvm.type_of llv)) Vector then
@@ -644,6 +651,9 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t
     | Some True -> binary (fun ?typ:_ _ _ -> Exp.true_) )
   | Add | FAdd -> binary Exp.add
   | Sub | FSub -> binary Exp.sub
+  | FNeg ->
+      unary (fun ?(typ = Lazy.force typ) x ->
+          Exp.sub ~typ (Exp.float typ "0.0") x )
   | Mul | FMul -> binary Exp.mul
   | SDiv | FDiv -> binary Exp.div
   | UDiv -> binary Exp.udiv
@@ -1435,8 +1445,8 @@ let xlate_instr :
   | Unreachable -> emit_term Term.unreachable
   | Trunc | ZExt | SExt | FPToUI | FPToSI | UIToFP | SIToFP | FPTrunc
    |FPExt | PtrToInt | IntToPtr | BitCast | AddrSpaceCast | Add | FAdd
-   |Sub | FSub | Mul | FMul | UDiv | SDiv | FDiv | URem | SRem | FRem
-   |Shl | LShr | AShr | And | Or | Xor | ICmp | FCmp | Select
+   |Sub | FSub | FNeg | Mul | FMul | UDiv | SDiv | FDiv | URem | SRem
+   |FRem | Shl | LShr | AShr | And | Or | Xor | ICmp | FCmp | Select
    |GetElementPtr | ExtractElement | InsertElement | ShuffleVector
    |ExtractValue | InsertValue ->
       inline_or_move (xlate_value ~inline:true x)
