@@ -45,6 +45,17 @@ external add_ipsccp
 external add_internalize
   : [ `Module ] Llvm.PassManager.t -> all_but_main:bool -> unit
   = "llvm_add_internalize"
+
+external add_internalize_predicate_raw
+  : [ `Module ] Llvm.PassManager.t -> unit
+  = "llvm_add_internalize_predicate"
+
+let add_internalize_predicate 
+  : [ `Module ] Llvm.PassManager.t -> (string -> bool) -> unit =
+  fun pm predicate ->
+    Callback.register "LLVMInternalizePredicateCallback" predicate;
+    add_internalize_predicate_raw pm
+
 external add_strip_dead_prototypes
   : [ `Module ] Llvm.PassManager.t -> unit
   = "llvm_add_strip_dead_prototypes"

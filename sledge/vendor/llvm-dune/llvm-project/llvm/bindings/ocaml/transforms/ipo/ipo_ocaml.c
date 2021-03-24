@@ -15,9 +15,14 @@
 |*                                                                            *|
 \*===----------------------------------------------------------------------===*/
 
+#include <assert.h>
+#include "llvm-c/Core.h"
 #include "llvm-c/Transforms/IPO.h"
-#include "caml/mlvalues.h"
+#include "caml/alloc.h"
+#include "caml/callback.h"
+#include "caml/memory.h"
 #include "caml/misc.h"
+#include "caml/mlvalues.h"
 
 /* [`Module] Llvm.PassManager.t -> unit */
 CAMLprim value llvm_add_argument_promotion(LLVMPassManagerRef PM) {
@@ -94,6 +99,33 @@ CAMLprim value llvm_add_ipsccp(LLVMPassManagerRef PM) {
 /* [`Module] Llvm.PassManager.t -> all_but_main:bool -> unit */
 CAMLprim value llvm_add_internalize(LLVMPassManagerRef PM, value AllButMain) {
   LLVMAddInternalizePass(PM, Bool_val(AllButMain));
+  return Val_unit;
+}
+
+/* string -> bool */
+static value *predicate_f = NULL;
+
+LLVMBool MustPreserveCallBack(LLVMValueRef Val, void* Ctx) {
+  CAMLparam0();
+  CAMLlocal1(LLVMValName);
+  const char *llvmValName;
+  LLVMBool ret;
+  assert(predicate_f != NULL
+         && "llvm_add_internalize_predicate must be called with \
+             LLVMInternalizePredicateCallback symbol set");
+
+  llvmValName = LLVMGetValueName(Val);
+  LLVMValName = caml_copy_string(llvmValName);
+  ret = Bool_val(caml_callback(*predicate_f, LLVMValName));
+
+  CAMLreturnT(LLVMBool, ret);
+}
+
+/* [`Module] Llvm.PassManager.t -> unit */
+CAMLprim value llvm_add_internalize_predicate(LLVMPassManagerRef PM) {
+  predicate_f = caml_named_value("LLVMInternalizePredicateCallback");
+  LLVMAddInternalizePassWithMustPreservePredicate(PM, NULL,
+                                                  &MustPreserveCallBack);
   return Val_unit;
 }
 

@@ -76,6 +76,12 @@ external add_internalize
   : [ `Module ] Llvm.PassManager.t -> all_but_main:bool -> unit
   = "llvm_add_internalize"
 
+(** See the [llvm::createInternalizePass] function.
+    If predicate returns [true], that symbol is preserved.
+    NOT THREAD SAFE! *)
+val add_internalize_predicate
+  : [ `Module ] Llvm.PassManager.t -> (string -> bool) -> unit
+
 (** See the [llvm::createStripDeadPrototypesPass] function. *)
 external add_strip_dead_prototypes
   : [ `Module ] Llvm.PassManager.t -> unit
