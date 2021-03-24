@@ -267,6 +267,8 @@ val is_ret_type_pod : t -> bool
 
 val get_ret_var : t -> Pvar.t
 
+val get_ret_param_var : t -> Pvar.t
+
 val get_start_node : t -> Node.t
 
 val get_static_callees : t -> Procname.t list

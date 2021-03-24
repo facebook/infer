@@ -9,6 +9,11 @@
 @interface Uninit : NSObject
 @end
 
+struct my_struct {
+  int x;
+  int y;
+};
+
 @implementation Uninit
 
 - (void)capture_in_closure_ok {
@@ -77,6 +82,18 @@
   };
   dispatch_sync(queue, block);
   return x;
+}
+
+- (struct my_struct)return_my_struct {
+  struct my_struct s;
+  s.x = 1;
+  s.y = 2;
+  return s;
+}
+
++ (int)call_return_my_struct_ok {
+  Uninit* o = nil;
+  return [o return_my_struct].x;
 }
 
 @end

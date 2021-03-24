@@ -540,6 +540,8 @@ let get_ret_type pdesc = pdesc.attributes.ret_type
 
 let get_ret_var pdesc = Pvar.get_ret_pvar (get_proc_name pdesc)
 
+let get_ret_param_var pdesc = Pvar.get_ret_param_pvar (get_proc_name pdesc)
+
 let get_start_node pdesc = pdesc.start_node
 
 (** Return [true] iff the procedure is defined, and not just declared *)
