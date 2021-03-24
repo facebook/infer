@@ -1487,7 +1487,7 @@ val set_global_constant : bool -> llvalue -> unit
 
 (** [global_initializer gv] returns the initializer for the global variable
     [gv]. See the method [llvm::GlobalVariable::getInitializer]. *)
-val global_initializer : llvalue -> llvalue
+val global_initializer : llvalue -> llvalue option
 
 (** [set_initializer c gv] sets the initializer for the global variable
     [gv] to the constant [c].
