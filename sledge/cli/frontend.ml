@@ -1145,7 +1145,7 @@ let xlate_instr :
               emit_term ~prefix:(pop loc @ pre) (Term.throw ~exc ~loc)
           | ["__llair_unreachable"] -> emit_term Term.unreachable
           (* dropped / handled elsewhere *)
-          | ["llvm"; "dbg"; ("declare" | "value")]
+          | ["llvm"; "dbg"; ("declare" | "label" | "value")]
            |"llvm" :: ("lifetime" | "invariant") :: ("start" | "end") :: _
             ->
               nop ()
