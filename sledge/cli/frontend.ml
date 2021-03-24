@@ -660,7 +660,7 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t
       let pre_0, cnd = xlate_rand 0 in
       let pre_1, thn = xlate_rand 1 in
       let pre_2, els = xlate_rand 2 in
-      (pre_0 @ pre_1 @ pre_2, Exp.conditional ~typ ~cnd ~thn ~els)
+      (pre_0 @ pre_1 @ pre_2, Exp.conditional typ ~cnd ~thn ~els)
   | ExtractElement | InsertElement -> (
       let typ =
         let lltyp = Llvm.type_of (Llvm.operand llv 0) in

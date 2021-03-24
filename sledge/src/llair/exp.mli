@@ -223,7 +223,7 @@ val lshr : ?typ:Typ.t -> t -> t -> t
 val ashr : ?typ:Typ.t -> t -> t -> t
 
 (* if-then-else *)
-val conditional : ?typ:Typ.t -> cnd:t -> thn:t -> els:t -> t
+val conditional : Typ.t -> cnd:t -> thn:t -> els:t -> t
 
 (* sequences *)
 val splat : Typ.t -> t -> t
