@@ -1,2 +1,6 @@
 This directory contains code from other open source projects, which is
 subject to their own copyright and licensing terms.
+  
+- llvm-dune/llvm-project/libcxxabi:
+  Source: https://github.com/llvm/llvm-project/tree/release/11.x/libcxxabi
+  License: Apache-2.0 WITH LLVM-exception, see https://llvm.org/LICENSE.txt
