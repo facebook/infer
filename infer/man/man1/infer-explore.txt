@@ -29,7 +29,8 @@ OPTIONS
            Write results and internal files in the specified directory
 EXPLORE BUGS
        --html
-           Activates: Generate html report. (Conversely: --no-html)
+           Activates: Generate an html report of issues found. (Conversely:
+           --no-html)
 
        --max-nesting int
            Level of nested procedure calls to show. Trace elements beyond the

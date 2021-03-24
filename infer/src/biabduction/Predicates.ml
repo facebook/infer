@@ -1195,7 +1195,7 @@ let exp_add_offsets exp offsets =
 
 (** Convert all the lseg's in sigma to nonempty lsegs. *)
 let sigma_to_sigma_ne sigma : (atom list * hpred list) list =
-  if Config.nelseg then
+  if Config.biabduction_nelseg then
     let f eqs_sigma_list hpred =
       match hpred with
       | Hpointsto _ | Hlseg (Lseg_NE, _, _, _, _) | Hdllseg (Lseg_NE, _, _, _, _, _, _) ->

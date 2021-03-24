@@ -1884,7 +1884,8 @@ let texp_imply tenv subs texp1 texp2 e1 calc_missing =
     of length given by its type only active in type_size mode *)
 let sexp_imply_preprocess se1 texp1 se2 =
   match (se1, texp1, se2) with
-  | Predicates.Eexp (_, inst), Exp.Sizeof _, Predicates.Earray _ when Config.type_size ->
+  | Predicates.Eexp (_, inst), Exp.Sizeof _, Predicates.Earray _ when Config.biabduction_type_size
+    ->
       let se1' = Predicates.Earray (texp1, [(Exp.zero, se1)], inst) in
       L.d_strln ~color:Orange "sexp_imply_preprocess" ;
       L.d_str " se1: " ;

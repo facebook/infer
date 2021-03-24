@@ -18,7 +18,7 @@ OPTIONS
            Activates: Debug mode (also sets --debug-level 2,
            --developer-mode, --print-buckets, --print-types,
            --reports-include-ml-loc, --no-only-cheap-debug, --trace-error,
-           --write-dotty, --write-html) (Conversely: --no-debug | -G)
+           --write-html) (Conversely: --no-debug | -G)
 
        --debug-level level
            Debug level (sets --bo-debug level, --debug-level-analysis level,

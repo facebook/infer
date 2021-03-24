@@ -263,7 +263,7 @@ module CheckJoinPre : InfoLossCheckerSig = struct
     | Exp.Var id when Ident.is_normal id ->
         List.length es >= 1
     | Exp.Var _ ->
-        if Int.equal Config.join_cond 0 then List.exists ~f:(Exp.equal Exp.zero) es
+        if Int.equal Config.biabduction_join_cond 0 then List.exists ~f:(Exp.equal Exp.zero) es
         else if Dangling.check side e then (
           let r = List.exists ~f:(fun e' -> not (Dangling.check side_op e')) es in
           if r then (
@@ -779,7 +779,7 @@ end = struct
 
   let get_other_atoms tenv side atom_in =
     let build_other_atoms construct side e =
-      if Config.trace_join then (
+      if Config.biabduction_trace_join then (
         L.d_str "build_other_atoms: " ;
         Exp.d_exp e ;
         L.d_ln () ) ;
@@ -791,7 +791,7 @@ end = struct
       | Some (e_res, e_op) ->
           let a_res = construct e_res in
           let a_op = construct e_op in
-          if Config.trace_join then (
+          if Config.biabduction_trace_join then (
             L.d_str "build_other_atoms (successful) " ;
             Predicates.d_atom a_res ;
             L.d_str ", " ;
@@ -1618,7 +1618,7 @@ let rec sigma_partial_join' tenv mode (sigma_acc : Prop.sigma) (sigma1_in : Prop
   try
     let todo_curr = Todo.pop () in
     let e1, e2, e = todo_curr in
-    if Config.trace_join then (
+    if Config.biabduction_trace_join then (
       L.d_strln ".... sigma_partial_join' ...." ;
       L.d_str "TODO: " ;
       Exp.d_exp e1 ;
@@ -1641,7 +1641,7 @@ let rec sigma_partial_join' tenv mode (sigma_acc : Prop.sigma) (sigma1_in : Prop
         sigma_partial_join' tenv mode sigma_acc sigma1 sigma2
     | Some (Predicates.Hlseg (k, _, _, _, _) as lseg), None
     | Some (Predicates.Hdllseg (k, _, _, _, _, _, _) as lseg), None ->
-        if (not Config.nelseg) || Predicates.equal_lseg_kind k Lseg_PE then
+        if (not Config.biabduction_nelseg) || Predicates.equal_lseg_kind k Lseg_PE then
           let sigma_acc' = join_list_and_non Lhs e lseg e1 e2 :: sigma_acc in
           sigma_partial_join' tenv mode sigma_acc' sigma1 sigma2
         else (
@@ -1649,7 +1649,7 @@ let rec sigma_partial_join' tenv mode (sigma_acc : Prop.sigma) (sigma1_in : Prop
           raise Predicates.JoinFail )
     | None, Some (Predicates.Hlseg (k, _, _, _, _) as lseg)
     | None, Some (Predicates.Hdllseg (k, _, _, _, _, _, _) as lseg) ->
-        if (not Config.nelseg) || Predicates.equal_lseg_kind k Lseg_PE then
+        if (not Config.biabduction_nelseg) || Predicates.equal_lseg_kind k Lseg_PE then
           let sigma_acc' = join_list_and_non Rhs e lseg e2 e1 :: sigma_acc in
           sigma_partial_join' tenv mode sigma_acc' sigma1 sigma2
         else (
@@ -1899,7 +1899,7 @@ let pi_partial_join tenv mode (ep1 : Prop.exposed Prop.t) (ep2 : Prop.exposed Pr
     | Some a' ->
         a' :: atom_list
   in
-  if Config.trace_join then (
+  if Config.biabduction_trace_join then (
     L.d_str "pi1: " ;
     Prop.d_pi pi1 ;
     L.d_ln () ;
@@ -1910,7 +1910,7 @@ let pi_partial_join tenv mode (ep1 : Prop.exposed Prop.t) (ep2 : Prop.exposed Pr
     let p2 = Prop.normalize tenv ep2 in
     List.fold ~f:(handle_atom_with_widening Lhs p2 pi2) ~init:[] pi1
   in
-  if Config.trace_join then (
+  if Config.biabduction_trace_join then (
     L.d_str "atom_list1: " ;
     Prop.d_pi atom_list1 ;
     L.d_ln () ) ;
@@ -1918,12 +1918,12 @@ let pi_partial_join tenv mode (ep1 : Prop.exposed Prop.t) (ep2 : Prop.exposed Pr
     let p1 = Prop.normalize tenv ep1 in
     List.fold ~f:(handle_atom_with_widening Rhs p1 pi1) ~init:[] pi2
   in
-  if Config.trace_join then (
+  if Config.biabduction_trace_join then (
     L.d_str "atom_list2: " ;
     Prop.d_pi atom_list2 ;
     L.d_ln () ) ;
   let atom_list_combined = IList.inter ~cmp:Predicates.compare_atom atom_list1 atom_list2 in
-  if Config.trace_join then (
+  if Config.biabduction_trace_join then (
     L.d_str "atom_list_combined: " ;
     Prop.d_pi atom_list_combined ;
     L.d_ln () ) ;

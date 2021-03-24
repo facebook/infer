@@ -68,7 +68,7 @@ let check_bad_index {InterproceduralAnalysis.proc_desc; err_log; tenv} pname p l
 
 (** Perform bounds checking *)
 let bounds_check analysis_data pname prop len e =
-  if Config.trace_rearrange then (
+  if Config.biabduction_trace_rearrange then (
     L.d_str "Bounds check index:" ;
     Exp.d_exp e ;
     L.d_str " len: " ;
@@ -80,7 +80,7 @@ let bounds_check analysis_data pname prop len e =
 let rec create_struct_values analysis_data pname tenv orig_prop footprint_part kind max_stamp
     (t : Typ.t) (off : Predicates.offset list) inst :
     Predicates.atom list * Predicates.strexp * Typ.t =
-  if Config.trace_rearrange then (
+  if Config.biabduction_trace_rearrange then (
     L.d_increase_indent () ;
     L.d_strln "entering create_struct_values" ;
     L.d_str "typ: " ;
@@ -181,7 +181,7 @@ let rec create_struct_values analysis_data pname tenv orig_prop footprint_part k
     | Tint _, _ | Tfloat _, _ | Tvoid, _ | Tfun, _ | Tptr _, _ | TVar _, _ ->
         fail t off __POS__
   in
-  if Config.trace_rearrange then (
+  if Config.biabduction_trace_rearrange then (
     let _, se, _ = res in
     L.d_strln "exiting create_struct_values, returning" ;
     Predicates.d_sexp se ;
@@ -271,7 +271,7 @@ let rec strexp_extend_values_ analysis_data pname tenv orig_prop footprint_part 
         | Predicates.Eexp (_, Predicates.Ialloc) ->
             Exp.one (* if allocated explicitly, we know len is 1 *)
         | _ ->
-            if Config.type_size then Exp.one (* Exp.Sizeof (typ, Subtype.exact) *)
+            if Config.biabduction_type_size then Exp.one (* Exp.Sizeof (typ, Subtype.exact) *)
             else Exp.Var (new_id ())
       in
       let se_new = Predicates.Earray (len, [(Exp.zero, se)], inst) in
@@ -415,7 +415,7 @@ let strexp_extend_values analysis_data pname tenv orig_prop footprint_part kind 
     if footprint_part then (off', List.map ~f:(fun (id, e) -> Prop.mk_eq tenv (Exp.Var id) e) eqs)
     else (off, [])
   in
-  if Config.trace_rearrange then (
+  if Config.biabduction_trace_rearrange then (
     L.d_str "entering strexp_extend_values se: " ;
     Predicates.d_sexp se ;
     L.d_str " typ: " ;
@@ -432,7 +432,7 @@ let strexp_extend_values analysis_data pname tenv orig_prop footprint_part kind 
     let check_not_inconsistent (atoms, _, _) = not (List.exists ~f:check_neg_atom atoms) in
     List.filter ~f:check_not_inconsistent atoms_se_typ_list
   in
-  if Config.trace_rearrange then L.d_strln "exiting strexp_extend_values" ;
+  if Config.biabduction_trace_rearrange then L.d_strln "exiting strexp_extend_values" ;
   let sizeof_data =
     match te with
     | Exp.Sizeof sizeof_data ->
@@ -545,7 +545,7 @@ let prop_iter_check_fields_ptsto_shallow tenv iter lexp =
     fields to follow the path in [lexp] -- field splitting model. It also materializes all indices
     accessed in lexp. *)
 let prop_iter_extend_ptsto analysis_data pname tenv orig_prop iter lexp inst =
-  if Config.trace_rearrange then (
+  if Config.biabduction_trace_rearrange then (
     L.d_str "entering prop_iter_extend_ptsto lexp: " ;
     Exp.d_exp lexp ;
     L.d_ln () ) ;
@@ -593,7 +593,7 @@ let prop_iter_extend_ptsto analysis_data pname tenv orig_prop iter lexp inst =
     Prop.prop_iter_update_current iter' (Predicates.Hpointsto (e, se, te))
   in
   let do_extend e se te =
-    if Config.trace_rearrange then (
+    if Config.biabduction_trace_rearrange then (
       L.d_strln "entering do_extend" ;
       L.d_str "e: " ;
       Exp.d_exp e ;
@@ -725,7 +725,7 @@ let prop_iter_add_hpred_footprint_to_prop analysis_data pname tenv prop (lexp, t
     with the allowed footprint variables. This function ensures that [root(lexp): typ] is the
     current hpred of the iterator. typ is the type of the root of lexp. *)
 let prop_iter_add_hpred_footprint analysis_data pname tenv orig_prop iter (lexp, typ) inst =
-  if Config.trace_rearrange then (
+  if Config.biabduction_trace_rearrange then (
     L.d_strln "entering prop_iter_add_hpred_footprint" ;
     L.d_str "lexp: " ;
     Exp.d_exp lexp ;
@@ -754,7 +754,7 @@ let prop_iter_add_hpred_footprint analysis_data pname tenv orig_prop iter (lexp,
 exception ARRAY_ACCESS
 
 let rearrange_arith tenv lexp prop =
-  if Config.trace_rearrange then (
+  if Config.biabduction_trace_rearrange then (
     L.d_strln "entering rearrange_arith" ;
     L.d_str "lexp: " ;
     Exp.d_exp lexp ;
@@ -764,7 +764,7 @@ let rearrange_arith tenv lexp prop =
     Prop.d_prop prop ;
     L.d_ln () ;
     L.d_ln () ) ;
-  if Config.array_level >= 2 then raise ARRAY_ACCESS
+  if Config.biabduction_array_level >= 2 then raise ARRAY_ACCESS
   else
     let root = Exp.root_of_lexp lexp in
     if Prover.check_allocatedness tenv prop root then raise ARRAY_ACCESS
@@ -785,7 +785,7 @@ let pp_rearrangement_error message prop lexp =
 
 (** do re-arrangement for an iter whose current element is a pointsto *)
 let iter_rearrange_ptsto analysis_data pname tenv orig_prop iter lexp inst =
-  if Config.trace_rearrange then (
+  if Config.biabduction_trace_rearrange then (
     L.d_increase_indent () ;
     L.d_strln "entering iter_rearrange_ptsto" ;
     L.d_str "lexp: " ;
@@ -832,7 +832,7 @@ let iter_rearrange_ptsto analysis_data pname tenv orig_prop iter lexp inst =
       | _ ->
           [iter] )
   in
-  if Config.trace_rearrange then (
+  if Config.biabduction_trace_rearrange then (
     L.d_strln "exiting iter_rearrange_ptsto, returning results" ;
     Prop.d_proplist_with_typ (List.map ~f:(Prop.prop_iter_to_prop tenv) res) ;
     L.d_decrease_indent () ;
@@ -843,7 +843,7 @@ let iter_rearrange_ptsto analysis_data pname tenv orig_prop iter lexp inst =
 
 (** do re-arrangment for an iter whose current element is a nonempty listseg *)
 let iter_rearrange_ne_lseg tenv recurse_on_iters iter para e1 e2 elist =
-  if Config.nelseg then
+  if Config.biabduction_nelseg then
     let iter_inductive_case =
       let n' = Exp.Var (Ident.create_fresh Ident.kprimed) in
       let _, para_inst1 = Predicates.hpara_instantiate para e1 n' elist in
@@ -984,7 +984,7 @@ let rec iter_rearrange analysis_data pname tenv lexp typ_from_instr prop iter in
       match fld_typ.desc with
       | Tstruct _ ->
           (* access through field: get the struct type from the field *)
-          if Config.trace_rearrange then (
+          if Config.biabduction_trace_rearrange then (
             L.d_increase_indent () ;
             L.d_printfln "iter_rearrange: root of lexp accesses field %a" Fieldname.pp f ;
             L.d_str "  struct type from field: " ;
@@ -1001,7 +1001,7 @@ let rec iter_rearrange analysis_data pname tenv lexp typ_from_instr prop iter in
         typ_from_instr
   in
   let typ = root_typ_of_offsets (Predicates.exp_get_offsets lexp) in
-  if Config.trace_rearrange then (
+  if Config.biabduction_trace_rearrange then (
     L.d_increase_indent () ;
     L.d_strln "entering iter_rearrange" ;
     L.d_str "lexp: " ;
@@ -1021,10 +1021,13 @@ let rec iter_rearrange analysis_data pname tenv lexp typ_from_instr prop iter in
     L.d_ln () ;
     L.d_ln () ) ;
   let default_case_iter (iter' : unit Prop.prop_iter) =
-    if Config.trace_rearrange then L.d_strln "entering default_case_iter" ;
+    if Config.biabduction_trace_rearrange then L.d_strln "entering default_case_iter" ;
     if !BiabductionConfig.footprint then
       prop_iter_add_hpred_footprint analysis_data pname tenv prop iter' (lexp, typ) inst
-    else if Config.array_level >= 1 && (not !BiabductionConfig.footprint) && Exp.pointer_arith lexp
+    else if
+      Config.biabduction_array_level >= 1
+      && (not !BiabductionConfig.footprint)
+      && Exp.pointer_arith lexp
     then rearrange_arith tenv lexp prop
     else (
       pp_rearrangement_error "cannot find predicate with root" prop lexp ;
@@ -1090,7 +1093,7 @@ let rec iter_rearrange analysis_data pname tenv lexp typ_from_instr prop iter in
             iter_rearrange_pe_dllseg_last tenv recurse_on_iters default_case_iter iter para_dll e1
               e2 e3 e4 elist ) )
   in
-  if Config.trace_rearrange then (
+  if Config.biabduction_trace_rearrange then (
     L.d_strln "exiting iter_rearrange, returning results" ;
     Prop.d_proplist_with_typ (List.map ~f:(Prop.prop_iter_to_prop tenv) res) ;
     L.d_decrease_indent () ;

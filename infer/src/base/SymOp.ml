@@ -57,12 +57,15 @@ let pp_failure_kind fmt = function
 (** Timeout in seconds for each function *)
 let timeout_seconds =
   ref
-    (Option.map Config.seconds_per_iteration ~f:(fun sec -> sec *. float_of_int Config.iterations))
+    (Option.map Config.biabduction_seconds_per_iteration ~f:(fun sec ->
+         sec *. float_of_int Config.biabduction_iterations ))
 
 
 (** Timeout in SymOps *)
 let timeout_symops =
-  ref (Option.map Config.symops_per_iteration ~f:(fun symops -> symops * Config.iterations))
+  ref
+    (Option.map Config.biabduction_symops_per_iteration ~f:(fun symops ->
+         symops * Config.biabduction_iterations ))
 
 
 let get_timeout_seconds () = !timeout_seconds

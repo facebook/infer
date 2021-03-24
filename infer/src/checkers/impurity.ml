@@ -256,6 +256,6 @@ let checker {IntraproceduralAnalysis.proc_desc; tenv; err_log}
             ImpurityDomain.join acc impurity_astate )
       in
       if PurityChecker.should_report proc_name && not (ImpurityDomain.is_pure impurity_astate) then (
-        if Config.report_immutable_modifications then
+        if Config.impurity_report_immutable_modifications then
           report_immutable_field_modifications tenv impurity_astate proc_desc err_log ;
         report_impure_all proc_desc err_log impurity_astate )

@@ -120,6 +120,15 @@ OPTIONS
            Activates: Enable biabduction and disable all other checkers
            (Conversely: --no-biabduction-only)           See also infer-analyze(1).
 
+       --biabduction-unsafe-malloc
+           Activates: Assume that malloc(3) never returns null. (Conversely:
+           --no-biabduction-unsafe-malloc)           See also infer-analyze(1).
+
+       --biabduction-write-dotty
+           Activates: Produce dotty files for specs and retain cycles reports
+           in infer-out/captured. (Conversely: --no-biabduction-write-dotty)       
+    See also infer-analyze(1).
+
        --bo-debug int
            Debug level for buffer-overrun checker (0-4)           See also infer-analyze(1).
 
@@ -344,8 +353,7 @@ OPTIONS
            Activates: Debug mode (also sets --debug-level 2,
            --developer-mode, --print-buckets, --print-types,
            --reports-include-ml-loc, --no-only-cheap-debug, --trace-error,
-           --write-dotty, --write-html) (Conversely: --no-debug | -G)       
-    See also infer-analyze(1), infer-analyzejson(1),
+           --write-html) (Conversely: --no-debug | -G)           See also infer-analyze(1), infer-analyzejson(1),
            infer-capture(1), infer-compile(1), infer-report(1),
            infer-reportdiff(1), and infer-run(1).
 
@@ -706,8 +714,8 @@ OPTIONS
            --hoisting-report-only-expensive)           See also infer-report(1).
 
        --html
-           Activates: Generate html report. (Conversely: --no-html)       
-    See also infer-explore(1).
+           Activates: Generate an html report of issues found. (Conversely:
+           --no-html)           See also infer-explore(1).
 
        --immutable-cast
            Activates: checker immutable-cast: Detection of object cast from
@@ -728,6 +736,11 @@ OPTIONS
        --impurity-only
            Activates: Enable impurity and disable all other checkers
            (Conversely: --no-impurity-only)           See also infer-analyze(1).
+
+       --impurity-report-immutable-modifications
+           Activates: Report modifications to immutable fields in the
+           Impurity checker (Conversely:
+           --no-impurity-report-immutable-modifications)           See also infer-analyze(1).
 
        --no-inefficient-keyset-iterator
            Deactivates: checker inefficient-keyset-iterator: Check for
@@ -880,13 +893,6 @@ OPTIONS
        --merge
            Activates: Merge the captured results directories specified in the
            dependency file. (Conversely: --no-merge)           See also infer-analyze(1).
-
-       --ml-buckets ,-separated sequence of { all | cf | arc | narc | cpp |
-       unknown_origin }
-           Specify the memory leak buckets to be checked in C++:       
-    - cpp from C++ code
-           
-           See also infer-analyze(1).
 
        --pmd-xml
            Activates: Output issues in (PMD) XML format in
@@ -1106,10 +1112,6 @@ OPTIONS
        --report-formatter { none | phabricator }
            Which formatter to use when emitting the report           See also infer-report(1).
 
-       --report-immutable-modifications
-           Activates: Report modifications to immutable fields (Conversely:
-           --no-report-immutable-modifications)           See also infer-report(1) and infer-run(1).
-
        --report-previous path
            Report of the base revision to use for comparison           See also infer-reportdiff(1).
 
@@ -1271,10 +1273,6 @@ OPTIONS
            Activates: Enable uninit and disable all other checkers
            (Conversely: --no-uninit-only)           See also infer-analyze(1).
 
-       --unsafe-malloc
-           Activates: Assume that malloc(3) never returns null. (Conversely:
-           --no-unsafe-malloc)           See also infer-analyze(1).
-
        --version
            Print version information and exit           See also infer-run(1).
 
@@ -1287,6 +1285,18 @@ OPTIONS
            is expected to require several different project roots, all
            relative to a common workspace. Usually a single project root is
            enough, though.           See also infer-capture(1).
+
+       --write-html
+           Activates: Produce html debug output for the analyses in
+           infer-out/captured. This shows the abstract state of all analyses
+           at each program point in the source code. Each captured source
+           file has its own html page. This HTML file contains the source
+           file, and at each line of           the file there are links to the nodes of the control flow graph
+           of Infer's translation of that line of code into its intermediate
+           representation (SIL). This way it's possible to see what the
+           translation is, and the details of the symbolic execution on each
+           node. (Conversely: --no-write-html)
+           See also infer-analyze(1).
 
        --write-website path_to_website_dir
            Use to write website files documenting issue types and checkers
@@ -1327,32 +1337,8 @@ OPTIONS
 INTERNAL OPTIONS
        Use at your own risk.
 
-       --abs-struct int
-           Specify abstraction level for fields of structs:           - 0 = no
-           - 1 = forget some fields during matching (and so lseg
-           abstraction)
-           
-
-       --abs-val int
-           Specify abstraction level for expressions:           - 0 = no abstraction
-           - 1 = evaluate all expressions abstractly
-           - 2 = 1 + abstract constant integer values during join
-           
-
-       --allow-leak
-           Activates: Forget leaked memory during abstraction (Conversely:
-           --no-allow-leak)
-
        --append-buck-flavors-reset
            Set --append-buck-flavors to the empty list.
-
-       --array-level int
-           Level of treating the array indexing and pointer arithmetic:       
-    - 0 = treats both features soundly
-           - 1 = assumes that the size of every array is infinite
-           - 2 = assumes that all heap dereferences via array indexing and
-           pointer arithmetic are correct
-           
 
        --backtrack-level int
            Maximum level of backtracking to convert an absolute path to path
@@ -1361,9 +1347,96 @@ INTERNAL OPTIONS
            /my/source/File.java with project root /my/root into
            ../source/File.java
 
+       --biabduction-abs-struct int
+           Specify abstraction level for fields of structs:           - 0 = no
+           - 1 = forget some fields during matching (and so lseg
+           abstraction)
+           
+
+       --biabduction-abs-val int
+           Specify abstraction level for expressions:           - 0 = no abstraction
+           - 1 = evaluate all expressions abstractly
+           - 2 = 1 + abstract constant integer values during join
+           
+
+       --biabduction-allow-leak
+           Activates: Forget leaked memory during abstraction (Conversely:
+           --no-biabduction-allow-leak)
+
+       --biabduction-array-level int
+           Level of treating the array indexing and pointer arithmetic:       
+    - 0 = treats both features soundly
+           - 1 = assumes that the size of every array is infinite
+           - 2 = assumes that all heap dereferences via array indexing and
+           pointer arithmetic are correct
+           
+
+       --biabduction-coverage
+           analysis mode to maximize coverage (can take longer)
+
+       --biabduction-exit-node-bias
+           nodes nearest the exit node are analyzed first
+
+       --biabduction-iterations int
+           Specify the maximum number of operations for each function,
+           expressed as a multiple of symbolic operations and a multiple of
+           seconds of elapsed time
+
+       --biabduction-join-cond int
+           Set the strength of the final information-loss check used by the
+           join:           - 0 = use the most aggressive join for preconditions
+           - 1 = use the least aggressive join for preconditions
+           
+
+       --biabduction-memleak-buckets ,-separated sequence of { all | cf | arc
+       | narc | cpp | unknown_origin }
+           Specify the memory leak buckets to be checked in C++.
+
        --biabduction-models-mode
            Activates: Analysis of the biabduction models (Conversely:
            --no-biabduction-models-mode)
+
+       --biabduction-monitor-prop-size
+           Activates: Monitor size of props, and print every time the current
+           max is exceeded (Conversely: --no-biabduction-monitor-prop-size)
+
+       --biabduction-nelseg
+           Activates: Use only nonempty lsegs (Conversely:
+           --no-biabduction-nelseg)
+
+       --biabduction-only-footprint
+           Activates: Skip the re-execution phase (Conversely:
+           --no-biabduction-only-footprint)
+
+       --biabduction-seconds-per-iteration float
+           Set the number of seconds per iteration (see
+           --biabduction-iterations)
+
+       --biabduction-seconds-per-iteration-reset
+           Cancel the effect of --biabduction-seconds-per-iteration.
+
+       --biabduction-symops-per-iteration int
+           Set the number of symbolic operations per iteration (see
+           --biabduction-iterations)
+
+       --biabduction-symops-per-iteration-reset
+           Cancel the effect of --biabduction-symops-per-iteration.
+
+       --biabduction-trace-join
+           Activates: Detailed tracing information during prop join
+           operations (Conversely: --no-biabduction-trace-join)
+
+       --biabduction-trace-rearrange
+           Activates: Detailed tracing information during prop re-arrangement
+           operations (Conversely: --no-biabduction-trace-rearrange)
+
+       --biabduction-type-size
+           Activates: Consider the size of types during analysis, e.g. cannot
+           use an int pointer to write to a char (Conversely:
+           --no-biabduction-type-size)
+
+       --biabduction-visits-bias
+           nodes visited fewer times are analyzed first
 
        --bo-field-depth-limit-reset
            Cancel the effect of --bo-field-depth-limit.
@@ -1504,9 +1577,6 @@ INTERNAL OPTIONS
        --costs-previous-reset
            Cancel the effect of --costs-previous.
 
-       --coverage
-           analysis mode to maximize coverage (can take longer)
-
        --debug-exceptions
            Activates: Generate lightweight debugging information: just print
            the internal exceptions during analysis (also sets
@@ -1565,9 +1635,6 @@ INTERNAL OPTIONS
            Activates: Print initial and final typestates (Conversely:
            --no-eradicate-verbose)
 
-       --exit-node-bias
-           nodes nearest the exit node are analyzed first
-
        --export-changed-functions
            Activates: Make infer output changed functions, similar to
            test-determinator. It is used together with the --modified-lines.
@@ -1590,8 +1657,8 @@ INTERNAL OPTIONS
            Cancel the effect of --file-renamings.
 
        --no-filter-paths
-           Deactivates: Filters specified in .inferconfig (Conversely:
-           --filter-paths)
+           Deactivates: Apply filters specified in --report_* options.
+           Disable for debugging. (Conversely: --filter-paths)
 
        --force-integration-reset
            Cancel the effect of --force-integration.
@@ -1653,11 +1720,6 @@ INTERNAL OPTIONS
        --issues-tests-reset
            Cancel the effect of --issues-tests.
 
-       --iterations int
-           Specify the maximum number of operations for each function,
-           expressed as a multiple of symbolic operations and a multiple of
-           seconds of elapsed time
-
        --java-debug-source-file-info path
            For debugging only: Call the Java declarations source file parser
            on the given file and do not run anything else.
@@ -1680,12 +1742,6 @@ INTERNAL OPTIONS
 
        --job-id-reset
            Cancel the effect of --job-id.
-
-       --join-cond int
-           Set the strength of the final information-loss check used by the
-           join:           - 0 = use the most aggressive join for preconditions
-           - 1 = use the least aggressive join for preconditions
-           
 
        --linter-reset
            Cancel the effect of --linter.
@@ -1736,18 +1792,11 @@ INTERNAL OPTIONS
        --modified-lines-reset
            Cancel the effect of --modified-lines.
 
-       --monitor-prop-size
-           Activates: Monitor size of props, and print every time the current
-           max is exceeded (Conversely: --no-monitor-prop-size)
-
-       --nelseg
-           Activates: Use only nonempty lsegs (Conversely: --no-nelseg)
-
        --never-returning-null json
            Matcher or list of matchers for functions that never return null.
 
        --nullable-annotation-name string
-           Specify custom nullable annotation name
+           Specify a custom nullable annotation name.
 
        --nullable-annotation-name-reset
            Cancel the effect of --nullable-annotation-name.
@@ -1803,21 +1852,12 @@ INTERNAL OPTIONS
            Deactivates: Disable expensive debugging output (Conversely:
            --only-cheap-debug)
 
-       --only-footprint
-           Activates: Skip the re-execution phase (Conversely:
-           --no-only-footprint)
-
        --oom-threshold int
            Available memory threshold (in MB) below which multi-worker
            scheduling throttles back work. Only for use on Linux.
 
        --oom-threshold-reset
            Cancel the effect of --oom-threshold.
-
-       --passthroughs
-           Activates: In error traces, show intermediate steps that propagate
-           data. When false, error traces are shorter and show only direct
-           flow via souces/sinks (Conversely: --no-passthroughs)
 
        --print-buckets
            Activates: Show the internal bucket of Infer reports in their
@@ -1844,8 +1884,9 @@ INTERNAL OPTIONS
            Cancel the effect of --procedures-filter.
 
        --process-clang-ast
-           Activates: process the ast to emit some info about the file (Not
-           available for Java) (Conversely: --no-process-clang-ast)
+           Activates: process the ast to emit some info about the file with
+           --test-determinator or --export-changed-functions (Not available
+           for Java) (Conversely: --no-process-clang-ast)
 
        --profiler-samples path
            File containing the profiler samples when Infer is run Test
@@ -1916,6 +1957,12 @@ INTERNAL OPTIONS
            Activates: [Purity]Consider unknown functions to be pure by
            default (Conversely: --no-pure-by-default)
 
+       --quandary-show-passthroughs
+           Activates: In error traces, show intermediate steps that propagate
+           data. When false, error traces are shorter and show only direct
+           flow via souces/sinks (Conversely:
+           --no-quandary-show-passthroughs)
+
        --reanalyze
            Activates: Rerun the analysis. Not compatible with
            --incremental-analysis and --continue-analysis. (Conversely:
@@ -1967,12 +2014,6 @@ INTERNAL OPTIONS
        --scuba-tags +key=value
            add an extra set of strings (tagset) field to be set for each
            sample of scuba, format <name>=(<value>,<value>,<value>|NONE)
-
-       --seconds-per-iteration float
-           Set the number of seconds per iteration (see --iterations)
-
-       --seconds-per-iteration-reset
-           Cancel the effect of --seconds-per-iteration.
 
        --select-reset
            Cancel the effect of --select.
@@ -2029,8 +2070,8 @@ INTERNAL OPTIONS
            --no-starvation-whole-program)
 
        --no-subtype-multirange
-           Deactivates: Use the multirange subtyping domain (Conversely:
-           --subtype-multirange)
+           Deactivates: Use the multirange subtyping domain. Used in the Java
+           frontend and in biabduction. (Conversely: --subtype-multirange)
 
        --summaries-caches-max-size int
            The maximum amount of elements the summaries LRU caches can hold
@@ -2040,13 +2081,6 @@ INTERNAL OPTIONS
            but not the issues types specified as parameters to the
            annotations when deciding to suppress issues. Use for backwards
            compatibility only! (Conversely: --no-suppress-lint-ignore-types)
-
-       --symops-per-iteration int
-           Set the number of symbolic operations per iteration (see
-           --iterations)
-
-       --symops-per-iteration-reset
-           Cancel the effect of --symops-per-iteration.
 
        --tenv-json-reset
            Cancel the effect of --tenv-json.
@@ -2087,13 +2121,9 @@ INTERNAL OPTIONS
            Activates: Emit Chrome performance trace events in
            infer-out/perf_events.json (Conversely: --no-trace-events)
 
-       --trace-join
-           Activates: Detailed tracing information during prop join
-           operations (Conversely: --no-trace-join)
-
-       --trace-rearrange
-           Activates: Detailed tracing information during prop re-arrangement
-           operations (Conversely: --no-trace-rearrange)
+       --trace-ondemand
+           Activates: Emit debug information for the ondemand analysis
+           scheduler. (Conversely: --no-trace-ondemand)
 
        --trace-topl
            Activates: Detailed tracing information during TOPL analysis
@@ -2112,10 +2142,6 @@ INTERNAL OPTIONS
            The maximum number of traces for issues filtered out by
            --report-filter to submit to Traceview
 
-       --type-size
-           Activates: Consider the size of types during analysis, e.g. cannot
-           use an int pointer to write to a char (Conversely: --no-type-size)
-
        --uninit-interproc
            Activates: Run uninit check in the experimental interprocedural
            mode (Conversely: --no-uninit-interproc)
@@ -2123,19 +2149,8 @@ INTERNAL OPTIONS
        --version-vcs
            Print version control system commit and exit
 
-       --visits-bias
-           nodes visited fewer times are analyzed first
-
        --workspace-reset
            Cancel the effect of --workspace.
-
-       --write-dotty
-           Activates: Produce dotty files for specs in the results directory
-           (Conversely: --no-write-dotty)
-
-       --write-html
-           Activates: Produce html debug output in the results directory
-           (Conversely: --no-write-html)
 
        --write-html-whitelist-regex +string
            Whitelist files that will have their html debug output printed

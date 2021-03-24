@@ -931,7 +931,7 @@ let execute_load ?(report_deref_errors = true) ({InterproceduralAnalysis.tenv; _
         let undef = Exp.get_undefined !BiabductionConfig.footprint in
         [Prop.conjoin_eq tenv (Exp.Var id) undef prop] )
   with Rearrange.ARRAY_ACCESS ->
-    if Int.equal Config.array_level 0 then assert false
+    if Int.equal Config.biabduction_array_level 0 then assert false
     else
       let undef = Exp.get_undefined false in
       [Prop.conjoin_eq tenv (Exp.Var id) undef prop_]
@@ -983,7 +983,8 @@ let execute_store ?(report_deref_errors = true) ({InterproceduralAnalysis.tenv; 
       List.rev (List.fold ~f:(execute_store_ analysis_data tenv n_rhs_exp) ~init:[] iter_list)
     in
     prop_list
-  with Rearrange.ARRAY_ACCESS -> if Int.equal Config.array_level 0 then assert false else [prop_]
+  with Rearrange.ARRAY_ACCESS ->
+    if Int.equal Config.biabduction_array_level 0 then assert false else [prop_]
 
 
 let is_variadic_procname callee_pname =

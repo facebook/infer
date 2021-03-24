@@ -123,17 +123,17 @@ $(OBJECTS_BASE) $(OBJECTS_BUCKETS_ALL): $(SOURCES_BASE) $(SOURCES_BUCKET_ALL)
 
 infer-out-all/report.json: $(CLANG_DEPS) $(SOURCES_BUCKET_ALL)
 	$(QUIET)$(call silent_on_success,Testing infer/Objective-C with all memleak buckets,\
-	  $(INFER_BIN) $(INFER_OPTIONS) --ml-buckets all -o infer-out-all -- \
+	  $(INFER_BIN) $(INFER_OPTIONS) --biabduction-memleak-buckets all -o infer-out-all -- \
 	  clang $(CLANG_OPTIONS) $(SOURCES_BUCKET_ALL))
 
 infer-out-arc/report.json: $(CLANG_DEPS) $(SOURCES_ARC)
 	$(QUIET)$(call silent_on_success,Testing infer/Objective-C with arc memleak buckets,\
-	  $(INFER_BIN) $(INFER_OPTIONS) --ml-buckets cf -o infer-out-arc -- \
+	  $(INFER_BIN) $(INFER_OPTIONS) --biabduction-memleak-buckets cf -o infer-out-arc -- \
 	  clang $(CLANG_OPTIONS) -fobjc-arc $(SOURCES_ARC))
 
 infer-out/report.json: $(CLANG_DEPS) $(SOURCES_DEFAULT)
 	$(QUIET)$(call silent_on_success,Testing infer/Objective-C with CF memleak buckets,\
-	  $(INFER_BIN) $(INFER_OPTIONS) --ml-buckets cf -o infer-out -- \
+	  $(INFER_BIN) $(INFER_OPTIONS) --biabduction-memleak-buckets cf -o infer-out -- \
 	  clang $(CLANG_OPTIONS) $(SOURCES_DEFAULT))
 
 issues.exp.test: infer-out-all/report.json infer-out-arc/report.json infer-out/report.json

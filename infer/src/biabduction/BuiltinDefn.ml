@@ -475,7 +475,7 @@ let execute_free_nonzero_ mk ?(mark_as_freed = true)
         in
         List.rev prop_list
   with Rearrange.ARRAY_ACCESS ->
-    if Int.equal Config.array_level 0 then assert false
+    if Int.equal Config.biabduction_array_level 0 then assert false
     else (
       L.d_strln ".... Array containing allocated heap cells ...." ;
       L.d_str "  Instr: " ;
@@ -949,7 +949,8 @@ let fscanf = Builtin.register BuiltinDecl.fscanf (execute_scan_function 2)
 let fwscanf = Builtin.register BuiltinDecl.fwscanf (execute_scan_function 2)
 
 let malloc =
-  Builtin.register BuiltinDecl.malloc (execute_alloc PredSymb.Mmalloc (not Config.unsafe_malloc))
+  Builtin.register BuiltinDecl.malloc
+    (execute_alloc PredSymb.Mmalloc (not Config.biabduction_unsafe_malloc))
 
 
 let malloc_no_fail =

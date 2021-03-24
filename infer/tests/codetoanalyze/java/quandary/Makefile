@@ -5,7 +5,7 @@
 
 TESTS_DIR = ../../..
 
-INFER_OPTIONS = --quandary-only --passthroughs --debug-exceptions
+INFER_OPTIONS = --quandary-only --quandary-show-passthroughs --debug-exceptions
 INFERPRINT_OPTIONS = --issues-tests
 SOURCES = $(wildcard *.java)
 

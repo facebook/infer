@@ -120,6 +120,15 @@ OPTIONS
            Activates: Enable biabduction and disable all other checkers
            (Conversely: --no-biabduction-only)           See also infer-analyze(1).
 
+       --biabduction-unsafe-malloc
+           Activates: Assume that malloc(3) never returns null. (Conversely:
+           --no-biabduction-unsafe-malloc)           See also infer-analyze(1).
+
+       --biabduction-write-dotty
+           Activates: Produce dotty files for specs and retain cycles reports
+           in infer-out/captured. (Conversely: --no-biabduction-write-dotty)       
+    See also infer-analyze(1).
+
        --bo-debug int
            Debug level for buffer-overrun checker (0-4)           See also infer-analyze(1).
 
@@ -344,8 +353,7 @@ OPTIONS
            Activates: Debug mode (also sets --debug-level 2,
            --developer-mode, --print-buckets, --print-types,
            --reports-include-ml-loc, --no-only-cheap-debug, --trace-error,
-           --write-dotty, --write-html) (Conversely: --no-debug | -G)       
-    See also infer-analyze(1), infer-analyzejson(1),
+           --write-html) (Conversely: --no-debug | -G)           See also infer-analyze(1), infer-analyzejson(1),
            infer-capture(1), infer-compile(1), infer-report(1),
            infer-reportdiff(1), and infer-run(1).
 
@@ -706,8 +714,8 @@ OPTIONS
            --hoisting-report-only-expensive)           See also infer-report(1).
 
        --html
-           Activates: Generate html report. (Conversely: --no-html)       
-    See also infer-explore(1).
+           Activates: Generate an html report of issues found. (Conversely:
+           --no-html)           See also infer-explore(1).
 
        --immutable-cast
            Activates: checker immutable-cast: Detection of object cast from
@@ -728,6 +736,11 @@ OPTIONS
        --impurity-only
            Activates: Enable impurity and disable all other checkers
            (Conversely: --no-impurity-only)           See also infer-analyze(1).
+
+       --impurity-report-immutable-modifications
+           Activates: Report modifications to immutable fields in the
+           Impurity checker (Conversely:
+           --no-impurity-report-immutable-modifications)           See also infer-analyze(1).
 
        --no-inefficient-keyset-iterator
            Deactivates: checker inefficient-keyset-iterator: Check for
@@ -880,13 +893,6 @@ OPTIONS
        --merge
            Activates: Merge the captured results directories specified in the
            dependency file. (Conversely: --no-merge)           See also infer-analyze(1).
-
-       --ml-buckets ,-separated sequence of { all | cf | arc | narc | cpp |
-       unknown_origin }
-           Specify the memory leak buckets to be checked in C++:       
-    - cpp from C++ code
-           
-           See also infer-analyze(1).
 
        --pmd-xml
            Activates: Output issues in (PMD) XML format in
@@ -1106,10 +1112,6 @@ OPTIONS
        --report-formatter { none | phabricator }
            Which formatter to use when emitting the report           See also infer-report(1).
 
-       --report-immutable-modifications
-           Activates: Report modifications to immutable fields (Conversely:
-           --no-report-immutable-modifications)           See also infer-report(1) and infer-run(1).
-
        --report-previous path
            Report of the base revision to use for comparison           See also infer-reportdiff(1).
 
@@ -1271,10 +1273,6 @@ OPTIONS
            Activates: Enable uninit and disable all other checkers
            (Conversely: --no-uninit-only)           See also infer-analyze(1).
 
-       --unsafe-malloc
-           Activates: Assume that malloc(3) never returns null. (Conversely:
-           --no-unsafe-malloc)           See also infer-analyze(1).
-
        --version
            Print version information and exit           See also infer-run(1).
 
@@ -1287,6 +1285,18 @@ OPTIONS
            is expected to require several different project roots, all
            relative to a common workspace. Usually a single project root is
            enough, though.           See also infer-capture(1).
+
+       --write-html
+           Activates: Produce html debug output for the analyses in
+           infer-out/captured. This shows the abstract state of all analyses
+           at each program point in the source code. Each captured source
+           file has its own html page. This HTML file contains the source
+           file, and at each line of           the file there are links to the nodes of the control flow graph
+           of Infer's translation of that line of code into its intermediate
+           representation (SIL). This way it's possible to see what the
+           translation is, and the details of the symbolic execution on each
+           node. (Conversely: --no-write-html)
+           See also infer-analyze(1).
 
        --write-website path_to_website_dir
            Use to write website files documenting issue types and checkers

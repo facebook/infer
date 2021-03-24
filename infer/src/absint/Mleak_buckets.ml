@@ -15,9 +15,11 @@ let bucket_to_message bucket =
   match bucket with `MLeak_cpp -> "[CPP]" | `MLeak_unknown -> "[UNKNOWN ORIGIN]"
 
 
-let contains_cpp = List.mem ~equal:( = ) Config.ml_buckets `MLeak_cpp
+let contains_cpp = List.mem ~equal:( = ) Config.biabduction_memleak_buckets `MLeak_cpp
 
-let contains_unknown_origin = List.mem ~equal:( = ) Config.ml_buckets `MLeak_unknown
+let contains_unknown_origin =
+  List.mem ~equal:( = ) Config.biabduction_memleak_buckets `MLeak_unknown
+
 
 let should_raise_leak_unknown_origin = contains_unknown_origin
 

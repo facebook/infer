@@ -6,8 +6,10 @@
 TESTS_DIR = ../../..
 
 ANALYZER = checkers
-INFER_OPTIONS = --impurity-only --report-immutable-modifications --disable-issue-type IMPURE_FUNCTION \
-  --disable-issue-type NULLPTR_DEREFERENCE --report-force-relative-path
+INFER_OPTIONS = \
+  --impurity-only --impurity-report-immutable-modifications --report-force-relative-path \
+  --disable-issue-type IMPURE_FUNCTION \
+  --disable-issue-type NULLPTR_DEREFERENCE
 
 INFERPRINT_OPTIONS = --issues-tests
 SOURCES = $(wildcard *.java)
