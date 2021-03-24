@@ -22,6 +22,7 @@ depends: [
   "dune-build-info" {build}
   "fpath"
   "iter"
+  "memtrace"
   "mtime"
   "ppx_compare"
   "ppx_hash"

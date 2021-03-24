@@ -268,6 +268,8 @@ let readme () =
    tracing."
 
 ;;
+Memtrace.trace_if_requested ()
+;;
 Printexc.record_backtrace Version.debug
 ;;
 Stdlib.Sys.catch_break true
