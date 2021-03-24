@@ -7,16 +7,16 @@
 <link rel="alternate" type="application/rss+xml" href="/blog/rss.xml" title="Infer Blog RSS Feed">
 <link rel="alternate" type="application/atom+xml" href="/blog/atom.xml" title="Infer Blog Atom Feed">
 <link rel="search" type="application/opensearchdescription+xml" title="Infer" href="/opensearch.xml"><title data-react-helmet="true">Hello, World! | Infer</title><meta data-react-helmet="true" name="twitter:card" content="summary_large_image"><meta data-react-helmet="true" name="docsearch:language" content="en"><meta data-react-helmet="true" name="docsearch:version" content="1.0.0"><meta data-react-helmet="true" name="docsearch:docusaurus_tag" content="docs-default-1.0.0"><meta data-react-helmet="true" property="og:title" content="Hello, World! | Infer"><meta data-react-helmet="true" name="description" content="Follow the instructions in this page to try Infer on a few small examples. You"><meta data-react-helmet="true" property="og:description" content="Follow the instructions in this page to try Infer on a few small examples. You"><meta data-react-helmet="true" property="og:url" content="https://fbinfer.com/docs/hello-world"><link data-react-helmet="true" rel="shortcut icon" href="/img/favicon.png"><link data-react-helmet="true" rel="preconnect" href="https://BH4D9OD16A-dsn.algolia.net" crossorigin="anonymous"><link data-react-helmet="true" rel="canonical" href="https://fbinfer.com/docs/hello-world"><link rel="stylesheet" href="/styles.c4963c12.css">
-<link rel="preload" href="/styles.a1fac693.js" as="script">
-<link rel="preload" href="/runtime~main.28fe5f43.js" as="script">
-<link rel="preload" href="/main.590fa7ab.js" as="script">
-<link rel="preload" href="/1.518f930d.js" as="script">
-<link rel="preload" href="/2.b1c7205d.js" as="script">
-<link rel="preload" href="/130.168b820b.js" as="script">
-<link rel="preload" href="/133.9afae6d8.js" as="script">
-<link rel="preload" href="/62e81aa6.095ee830.js" as="script">
-<link rel="preload" href="/17896441.fbad7de0.js" as="script">
-<link rel="preload" href="/a9946d6a.dd0adf13.js" as="script">
+<link rel="preload" href="/styles.585c62b6.js" as="script">
+<link rel="preload" href="/runtime~main.e8afdb3c.js" as="script">
+<link rel="preload" href="/main.ef54b54e.js" as="script">
+<link rel="preload" href="/1.ef55815e.js" as="script">
+<link rel="preload" href="/2.8acd12b2.js" as="script">
+<link rel="preload" href="/129.e6301722.js" as="script">
+<link rel="preload" href="/132.47985962.js" as="script">
+<link rel="preload" href="/62e81aa6.f77bb661.js" as="script">
+<link rel="preload" href="/17896441.96d5934d.js" as="script">
+<link rel="preload" href="/a9946d6a.9a0e28c0.js" as="script">
 </head>
 <body>
 <script>!function(){function t(t){document.documentElement.setAttribute("data-theme",t)}var e=function(){var t=null;try{t=localStorage.getItem("theme")}catch(t){}return t}();t(null!==e?e:"light")}()</script><div id="__docusaurus">
@@ -82,15 +82,15 @@ and run Infer on it:</p><div class="mdxCodeBlock_1zKU"><div class="codeBlockCont
 running <code>infer run -- make</code> a second time will yield no analysis results, as
 nothing gets recompiled. Either add the <code>--reactive</code> (or <code>-r</code>) flag to the
 <code>infer</code> command:</p><div class="mdxCodeBlock_1zKU"><div class="codeBlockContent_actS"><div tabindex="0" class="prism-code language-bash codeBlock_tuNs thin-scrollbar"><div class="codeBlockLines_3uvA" style="color:#bfc7d5;background-color:#292d3e"><div class="token-line" style="color:#bfc7d5"><span class="token plain">infer run --reactive -- </span><span class="token function" style="color:rgb(130, 170, 255)">make</span></div></div></div><button type="button" aria-label="Copy code to clipboard" class="copyButton_2GIj">Copy</button></div></div><p>or run</p><div class="mdxCodeBlock_1zKU"><div class="codeBlockContent_actS"><div tabindex="0" class="prism-code language-bash codeBlock_tuNs thin-scrollbar"><div class="codeBlockLines_3uvA" style="color:#bfc7d5;background-color:#292d3e"><div class="token-line" style="color:#bfc7d5"><span class="token function" style="color:rgb(130, 170, 255)">make</span><span class="token plain"> clean</span></div></div></div><button type="button" aria-label="Copy code to clipboard" class="copyButton_2GIj">Copy</button></div></div><p>before analyzing the project again.</p></div></article><div class="margin-vert--lg"><nav class="pagination-nav" aria-label="Blog list page navigation"><div class="pagination-nav__item"><a class="pagination-nav__link" href="/docs/getting-started"><div class="pagination-nav__sublabel">Previous</div><div class="pagination-nav__label">« Getting started with Infer</div></a></div><div class="pagination-nav__item pagination-nav__item--next"><a class="pagination-nav__link" href="/docs/infer-workflow"><div class="pagination-nav__sublabel">Next</div><div class="pagination-nav__label">Infer workflow »</div></a></div></nav></div></div></div><div class="col col--3"><div class="tableOfContents_2xL- thin-scrollbar"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#hello-world-java" class="table-of-contents__link">Hello world Java</a></li><li><a href="#hello-world-objective-c" class="table-of-contents__link">Hello world Objective-C</a></li><li><a href="#hello-world-c" class="table-of-contents__link">Hello world C</a></li><li><a href="#hello-world-android" class="table-of-contents__link">Hello world Android</a><ul><li><a href="#differential-analysis" class="table-of-contents__link">Differential analysis</a></li></ul></li><li><a href="#hello-world-ios" class="table-of-contents__link">Hello world iOS</a></li><li><a href="#hello-world-make" class="table-of-contents__link">Hello world Make</a></li></ul></div></div></div></div></main></div></div><footer class="footer"><div class="container"><div class="row footer__links"><div class="col footer__col"><h4 class="footer__title">Docs</h4><ul class="footer__items"><li class="footer__item"><a class="footer__link-item" href="/docs/getting-started">Quick Start</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/infer-workflow">User Guide</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/about-Infer">Foundations</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/all-issue-types">Bug Types Reference</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/absint-framework">Contribute</a></li></ul></div><div class="col footer__col"><h4 class="footer__title">Community</h4><ul class="footer__items"><li class="footer__item"><a class="footer__link-item" href="/docs/support">Support</a></li></ul></div><div class="col footer__col"><h4 class="footer__title">Social</h4><ul class="footer__items"><li class="footer__item"><a class="footer__link-item" href="/blog">Blog</a></li><li class="footer__item"><a href="https://github.com/facebook/infer" target="_blank" rel="noopener noreferrer" class="footer__link-item">GitHub</a></li><li class="footer__item"><a href="https://twitter.com/fbinfer" target="_blank" rel="noopener noreferrer" class="footer__link-item">Twitter</a></li><li class="footer__item"><a href="https://www.facebook.com/inferstaticanalyzer" target="_blank" rel="noopener noreferrer" class="footer__link-item">Facebook</a></li></ul></div><div class="col footer__col"><h4 class="footer__title">Legal</h4><ul class="footer__items"><li class="footer__item"><a href="https://opensource.facebook.com/legal/privacy/" target="_blank" rel="noreferrer noopener" class="footer__link-item">Privacy</a></li><li class="footer__item"><a href="https://opensource.facebook.com/legal/terms/" target="_blank" rel="noreferrer noopener" class="footer__link-item">Terms</a></li></ul></div></div><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2021 Facebook, Inc. Built with Docusaurus.</div></div></div></footer></div>
-<script src="/styles.a1fac693.js"></script>
-<script src="/runtime~main.28fe5f43.js"></script>
-<script src="/main.590fa7ab.js"></script>
-<script src="/1.518f930d.js"></script>
-<script src="/2.b1c7205d.js"></script>
-<script src="/130.168b820b.js"></script>
-<script src="/133.9afae6d8.js"></script>
-<script src="/62e81aa6.095ee830.js"></script>
-<script src="/17896441.fbad7de0.js"></script>
-<script src="/a9946d6a.dd0adf13.js"></script>
+<script src="/styles.585c62b6.js"></script>
+<script src="/runtime~main.e8afdb3c.js"></script>
+<script src="/main.ef54b54e.js"></script>
+<script src="/1.ef55815e.js"></script>
+<script src="/2.8acd12b2.js"></script>
+<script src="/129.e6301722.js"></script>
+<script src="/132.47985962.js"></script>
+<script src="/62e81aa6.f77bb661.js"></script>
+<script src="/17896441.96d5934d.js"></script>
+<script src="/a9946d6a.9a0e28c0.js"></script>
 </body>
 </html>

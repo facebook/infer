@@ -101,6 +101,13 @@ many linked to memory safety. (Conversely:
 and disable all other checkers (Conversely:
 <b>--no-biabduction-only</b>)</p>
 
+
+<p style="margin-left:11%;"><b>--biabduction-write-dotty</b></p>
+
+<p style="margin-left:17%;">Activates: Produce dotty files
+for specs and retain cycles reports in infer-out/captured.
+(Conversely: <b>--no-biabduction-write-dotty</b>)</p>
+
 <p style="margin-left:11%;"><b>--bufferoverrun</b></p>
 
 <p style="margin-left:17%;">Activates: checker
@@ -196,8 +203,8 @@ sets <b>--debug-level 2</b>, <b>--developer-mode</b>,
 <b>--print-buckets</b>, <b>--print-types</b>,
 <b>--reports-include-ml-loc</b>,
 <b>--no-only-cheap-debug</b>, <b>--trace-error</b>,
-<b>--write-dotty</b>, <b>--write-html</b>) (Conversely:
-<b>--no-debug</b> | <b>-G</b>)</p>
+<b>--write-html</b>) (Conversely: <b>--no-debug</b> |
+<b>-G</b>)</p>
 
 <p style="margin-left:11%;"><b>--debug-level</b>
 <i>level</i></p>
@@ -319,6 +326,13 @@ Detects functions with potential side-effects. Same as
 <p style="margin-left:17%;">Activates: Enable impurity and
 disable all other checkers (Conversely:
 <b>--no-impurity-only</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--impurity-report-immutable-modifications</b></p>
+
+<p style="margin-left:17%;">Activates: Report modifications
+to immutable fields in the Impurity checker (Conversely:
+<b>--no-impurity-report-immutable-modifications</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--no-inefficient-keyset-iterator</b></p>
@@ -509,6 +523,13 @@ modelled as allocs in Pulse</p>
 modelled as release in Pulse</p>
 
 
+<p style="margin-left:11%;"><b>--pulse-model-return-first-arg</b>
+<i>string</i></p>
+
+<p style="margin-left:17%;">Regex of methods that should be
+modelled as returning the first argument in Pulse</p>
+
+
 <p style="margin-left:11%;"><b>--pulse-model-return-nonnull</b>
 <i>string</i></p>
 
@@ -697,31 +718,18 @@ progress is being made because of concurrency errors.
 and disable all other checkers (Conversely:
 <b>--no-starvation-only</b>)</p>
 
-<p style="margin-left:11%;"><b>--topl-biabd</b></p>
+<p style="margin-left:11%;"><b>--topl</b></p>
 
-<p style="margin-left:17%;">Activates: checker topl-biabd:
+<p style="margin-left:17%;">Activates: checker topl:
 Detects errors based on user-provided state machines
 describing multi-object monitors. (Conversely:
-<b>--no-topl-biabd</b>)</p>
+<b>--no-topl</b>)</p>
 
-<p style="margin-left:11%;"><b>--topl-biabd-only</b></p>
+<p style="margin-left:11%;"><b>--topl-only</b></p>
 
-<p style="margin-left:17%;">Activates: Enable topl-biabd
-and disable all other checkers (Conversely:
-<b>--no-topl-biabd-only</b>)</p>
-
-<p style="margin-left:11%;"><b>--topl-pulse</b></p>
-
-<p style="margin-left:17%;">Activates: checker topl-pulse:
-Detects errors based on user-provided state machines
-describing multi-object monitors. (Conversely:
-<b>--no-topl-pulse</b>)</p>
-
-<p style="margin-left:11%;"><b>--topl-pulse-only</b></p>
-
-<p style="margin-left:17%;">Activates: Enable topl-pulse
-and disable all other checkers (Conversely:
-<b>--no-topl-pulse-only</b>)</p>
+<p style="margin-left:17%;">Activates: Enable topl and
+disable all other checkers (Conversely:
+<b>--no-topl-only</b>)</p>
 
 <p style="margin-left:11%;"><b>--no-uninit</b></p>
 
@@ -735,8 +743,25 @@ Warns when values are used before having been initialized.
 disable all other checkers (Conversely:
 <b>--no-uninit-only</b>)</p>
 
-<p style="margin-left:11%;"><b>--xcode-isysroot-suffix</b>
-<i>string</i></p>
+<p style="margin-left:11%;"><b>--write-html</b></p>
+
+<p style="margin-left:17%;">Activates: Produce html debug
+output for the analyses in infer-out/captured. This shows
+the abstract state of all analyses at each program point in
+the source code. Each captured source file has its own html
+page. This HTML file contains the source file, and at each
+line of</p>
+
+<p style="margin-left:11%;">the file there are links to the
+nodes of the control flow graph <br>
+of Infer's translation of that line of code into its
+intermediate <br>
+representation (SIL). This way it's possible to see what the
+<br>
+translation is, and the details of the symbolic execution on
+each <br>
+node. (Conversely: <b>--no-write-html</b>) <b><br>
+--xcode-isysroot-suffix</b> <i>string</i></p>
 
 <p style="margin-left:17%;">Specify the suffix of Xcode
 isysroot directory, to avoid absolute paths in tests</p>
@@ -822,6 +847,13 @@ annotation reachability specs with the given sources
 spec</p>
 
 
+<p style="margin-left:11%;"><b>--biabduction-unsafe-malloc</b></p>
+
+<p style="margin-left:17%;">Activates: Assume that
+malloc(3) never returns null. (Conversely:
+<b>--no-biabduction-unsafe-malloc</b>)</p>
+
+
 <p style="margin-left:11%;"><b>--clang-compound-literal-init-limit</b>
 <i>int</i></p>
 
@@ -848,22 +880,6 @@ common wrappers around these types such as
 <i>unique_ptr&lt;type&gt;</i>) will count as dead stores
 when the variables are not read explicitly by the
 program.</p>
-
-<p style="margin-left:11%;"><b>--ml-buckets</b>
-<i>,-separated sequence of { all | cf | arc | narc | cpp |
-<br>
-unknown_origin }</i></p>
-
-<p style="margin-left:17%;">Specify the memory leak buckets
-to be checked in C++:</p>
-
-<p style="margin-left:11%;">- <b>cpp</b> from C++ code
-<b><br>
---unsafe-malloc</b></p>
-
-<p style="margin-left:17%;">Activates: Assume that
-malloc(3) never returns null. (Conversely:
-<b>--no-unsafe-malloc</b>)</p>
 
 <h2>JAVA OPTIONS
 <a name="JAVA OPTIONS"></a>
