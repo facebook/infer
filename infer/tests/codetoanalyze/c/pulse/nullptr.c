@@ -94,3 +94,11 @@ void call_no_return_good() {
   *x = 5;
   free(x);
 }
+
+void FN_bug_after_malloc_result_test_bad(int* x) {
+  x = (int*)malloc(sizeof(int));
+  if (x) {
+    int* y = NULL;
+    *y = 42;
+  }
+}
