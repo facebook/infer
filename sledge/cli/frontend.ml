@@ -562,7 +562,7 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t
     | Instruction
         ( Invalid | Ret | Br | Switch | IndirectBr | Invalid2 | Unreachable
         | Store | UserOp1 | UserOp2 | Fence | AtomicCmpXchg | AtomicRMW
-        | Resume | CleanupRet | CatchRet )
+        | Resume | CleanupRet | CatchRet | CallBr )
      |NullValue | BasicBlock | InlineAsm | MDNode | MDString ->
         fail "xlate_value: %a" pp_llvalue llv ()
   in
@@ -791,9 +791,9 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t
           exp
       | _ -> todo "vector operations: %a" pp_llvalue llv () )
   | Invalid | Ret | Br | Switch | IndirectBr | Invoke | Invalid2
-   |Unreachable | Alloca | Load | Store | PHI | Call | UserOp1 | UserOp2
-   |Fence | AtomicCmpXchg | AtomicRMW | Resume | LandingPad | CleanupRet
-   |CatchRet | CatchPad | CleanupPad | CatchSwitch | VAArg ->
+   |Unreachable | Alloca | Load | Store | PHI | Call | CallBr | UserOp1
+   |UserOp2 | Fence | AtomicCmpXchg | AtomicRMW | Resume | LandingPad
+   |CleanupRet | CatchRet | CatchPad | CleanupPad | CatchSwitch | VAArg ->
       fail "xlate_opcode: %a" pp_llvalue llv () )
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp_prefix_exp]
@@ -1456,6 +1456,7 @@ let xlate_instr :
       emit_inst (Inst.nondet ~reg ~msg:"vaarg" ~loc)
   | CleanupRet | CatchRet | CatchPad | CleanupPad | CatchSwitch ->
       todo "windows exception handling: %a" pp_llvalue instr ()
+  | CallBr -> todo "inline asm: %a" pp_llvalue instr ()
   | Fence | AtomicCmpXchg | AtomicRMW ->
       fail "xlate_instr: %a" pp_llvalue instr ()
   | PHI | Invalid | Invalid2 | UserOp1 | UserOp2 -> assert false
