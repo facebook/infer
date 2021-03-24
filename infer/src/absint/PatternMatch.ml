@@ -121,6 +121,8 @@ module Java = struct
 
   let implements_list = implements "java.util.List"
 
+  let implements_math = implements "java.lang.Math"
+
   let implements_xmob_utils class_name = implements ("com.moblica.common.xmob.utils." ^ class_name)
 
   let implements_pseudo_collection =

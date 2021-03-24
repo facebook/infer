@@ -29,71 +29,11 @@ module Java : sig
   val implements : string -> Tenv.t -> string -> bool
   (** Check whether class implements a given Java class *)
 
-  val implements_arrays : Tenv.t -> string -> bool
-  (** Check whether class implements Java's Arrays *)
-
-  val implements_iterable : Tenv.t -> string -> bool
-  (** Check whether class implements Java's Iterable *)
-
-  val implements_iterator : Tenv.t -> string -> bool
-  (** Check whether class implements Java's Iterator *)
-
-  val implements_collection : Tenv.t -> string -> bool
-  (** Check whether class implements a Java's Collection *)
-
-  val implements_collections : Tenv.t -> string -> bool
-  (** Check whether class implements a Java's Collections *)
-
-  val implements_pseudo_collection : Tenv.t -> string -> bool
-  (** Check whether class implements a pseudo Collection with support for get() and size() methods *)
-
-  val implements_enumeration : Tenv.t -> string -> bool
-  (** Check whether class implements a Java's Enumeration *)
-
-  val implements_jackson : string -> Tenv.t -> string -> bool
-  (** Check whether class implements a class from Jackson *)
-
-  val implements_org_json : string -> Tenv.t -> string -> bool
-  (** Check whether class implements a class from Json *)
-
-  val implements_inject : string -> Tenv.t -> string -> bool
-  (** Check whether class implements a Javax Inject *)
-
-  val implements_io : string -> Tenv.t -> string -> bool
-  (** Check whether class implements a Java IO *)
-
-  val implements_nio : string -> Tenv.t -> string -> bool
-  (** Check whether class implements a Java nio *)
-
-  val implements_map : Tenv.t -> string -> bool
-  (** Check whether class implements a Java's Map *)
-
-  val implements_androidx_map : Tenv.t -> string -> bool
-  (** Check whether class implements a AndroidX's Map *)
-
-  val implements_set : Tenv.t -> string -> bool
-  (** Check whether class implements a Java's Set *)
-
-  val implements_map_entry : Tenv.t -> string -> bool
-  (** Check whether class implements a Java's Map$Entry *)
-
-  val implements_queue : Tenv.t -> string -> bool
-  (** Check whether class implements a Java's Queue *)
-
-  val implements_lang : string -> Tenv.t -> string -> bool
-  (** Check whether class implements a Java's lang *)
-
-  val implements_list : Tenv.t -> string -> bool
-  (** Check whether class implements a Java's list *)
-
-  val implements_google : string -> Tenv.t -> string -> bool
-  (** Check whether class implements a class of Google *)
-
   val implements_android : string -> Tenv.t -> string -> bool
   (** Check whether class implements a class of Android *)
 
-  val implements_infer_annotation : string -> Tenv.t -> string -> bool
-  (** Check whether class implements a class of Infer annotation *)
+  val implements_androidx_map : Tenv.t -> string -> bool
+  (** Check whether class implements a AndroidX's Map *)
 
   val implements_app_activity : Tenv.t -> string -> bool
   (** Check whether class implements a class of [android.app.Activity] *)
@@ -101,11 +41,74 @@ module Java : sig
   val implements_app_fragment : Tenv.t -> string -> bool
   (** Check whether class implements a class of [androidx.fragment.app.Fragment] *)
 
+  val implements_arrays : Tenv.t -> string -> bool
+  (** Check whether class implements Java's Arrays *)
+
+  val implements_collection : Tenv.t -> string -> bool
+  (** Check whether class implements a Java's Collection *)
+
+  val implements_collections : Tenv.t -> string -> bool
+  (** Check whether class implements a Java's Collections *)
+
+  val implements_enumeration : Tenv.t -> string -> bool
+  (** Check whether class implements a Java's Enumeration *)
+
+  val implements_google : string -> Tenv.t -> string -> bool
+  (** Check whether class implements a class of Google *)
+
   val implements_graphql_story : Tenv.t -> string -> bool
   (** Check whether class implements a class of [com.facebook.graphql.model.GraphQLStory] *)
 
+  val implements_infer_annotation : string -> Tenv.t -> string -> bool
+  (** Check whether class implements a class of Infer annotation *)
+
+  val implements_inject : string -> Tenv.t -> string -> bool
+  (** Check whether class implements a Javax Inject *)
+
+  val implements_io : string -> Tenv.t -> string -> bool
+  (** Check whether class implements a Java IO *)
+
+  val implements_iterable : Tenv.t -> string -> bool
+  (** Check whether class implements Java's Iterable *)
+
+  val implements_iterator : Tenv.t -> string -> bool
+  (** Check whether class implements Java's Iterator *)
+
+  val implements_jackson : string -> Tenv.t -> string -> bool
+  (** Check whether class implements a class from Jackson *)
+
+  val implements_lang : string -> Tenv.t -> string -> bool
+  (** Check whether class implements a Java's lang *)
+
+  val implements_list : Tenv.t -> string -> bool
+  (** Check whether class implements a Java's list *)
+
+  val implements_map : Tenv.t -> string -> bool
+  (** Check whether class implements a Java's Map *)
+
+  val implements_map_entry : Tenv.t -> string -> bool
+  (** Check whether class implements a Java's Map$Entry *)
+
+  val implements_math : Tenv.t -> string -> bool
+  (** Check whether class implements a Java's Math *)
+
+  val implements_nio : string -> Tenv.t -> string -> bool
+  (** Check whether class implements a Java nio *)
+
+  val implements_org_json : string -> Tenv.t -> string -> bool
+  (** Check whether class implements a class from Json *)
+
+  val implements_pseudo_collection : Tenv.t -> string -> bool
+  (** Check whether class implements a pseudo Collection with support for get() and size() methods *)
+
   val implements_psi_element : Tenv.t -> string -> bool
   (** Check whether class implements a class of [com.intellij.psi.PsiElement] *)
+
+  val implements_queue : Tenv.t -> string -> bool
+  (** Check whether class implements a Java's Queue *)
+
+  val implements_set : Tenv.t -> string -> bool
+  (** Check whether class implements a Java's Set *)
 
   val implements_sparse_float_array : Tenv.t -> string -> bool
   (** Check whether class implements a class of [com.facebook.litho.internal.SparseFloatArray] *)

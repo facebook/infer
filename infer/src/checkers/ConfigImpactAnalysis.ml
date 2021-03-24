@@ -237,6 +237,14 @@ module TransferFunctions = struct
     && Procname.get_method pname |> String.equal "booleanValue"
 
 
+  let is_known_cheap_method =
+    let dispatch : (Tenv.t, unit, unit) ProcnameDispatcher.ProcName.dispatcher =
+      let open ProcnameDispatcher.ProcName in
+      make_dispatcher [+PatternMatch.Java.implements_math &::.*--> ()]
+    in
+    fun tenv pname -> dispatch tenv pname |> Option.is_some
+
+
   let exec_instr astate {InterproceduralAnalysis.tenv; analyze_dependency} _node instr =
     match (instr : Sil.instr) with
     | Load {id; e= Lvar pvar} ->
@@ -246,6 +254,8 @@ module TransferFunctions = struct
     | Call ((ret, _), Const (Cfun callee), [(Var id, _)], _, _)
       when is_java_boolean_value_method callee ->
         Dom.boolean_value ret id astate
+    | Call (_, Const (Cfun callee), _, _, _) when is_known_cheap_method tenv callee ->
+        astate
     | Call ((ret, _), Const (Cfun callee), args, location, _) -> (
       match FbGKInteraction.get_config_check tenv callee args with
       | Some (`Config config) ->
