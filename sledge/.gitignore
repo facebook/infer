@@ -1,6 +1,8 @@
 .llvm_build
 .llvm_install
 /llvm/
+/model/cxxabi.bc
+/model/lib_fuzzer_main.bc
 /test/**/*.bc
 /test/**/*.err
 /test/**/*.out
