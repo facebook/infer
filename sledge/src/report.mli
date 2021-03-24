@@ -27,7 +27,8 @@ type status =
   | InternalError of string
   | Timeout
   | Memout
-  | Crash of string
+  | Abort
+  | Assert of string
   | UnknownError of string
 [@@deriving compare, equal, sexp]
 

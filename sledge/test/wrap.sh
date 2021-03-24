@@ -21,6 +21,22 @@ unknown_error () {
   echo "((name $test)(entry(Status(UnknownError \"$1\"))))" >> $test.sexp
 }
 
+assert () {
+  echo "((name $test)(entry(Status(Assert \"$1\"))))" >> $test.sexp
+}
+
+abort () {
+  if grep -q "Assertion failed" $test.err;
+  then
+    assert "$(\
+      grep "Assertion failed" $test.err \
+      | sed 's/</\</g;s/>/\>/g;s/Assertion failed: (\(.*\)), function.*/\1/' \
+      | sed 's/"/\\\"/g' )"
+  else
+    echo "((name $test)(entry(Status Abort)))" >> $test.sexp
+  fi
+}
+
 timeout () {
   echo "((name $test)(entry(Status Timeout)))" >> $test.sexp
 }
@@ -40,11 +56,13 @@ case $status in
   ( 132 ) unknown_error "illegal instruction" ;;
   ( 136 ) unknown_error "floating-point exception" ;;
   ( 139 ) unknown_error "segmentation violation" ;;
-  ( 127 | 134 ) memout ;;
+  ( 127 ) memout ;;
+  ( 134 ) abort ;;
   ( 137 | 152 ) timeout ;;
   ( * ) unknown_error "exit $status" ;;
 esac
 
-(test -f $test.sexp && grep -q "Status" $test.sexp) || unknown_error "exit $status"
+(test -f $test.sexp && grep -q "Status" $test.sexp) \
+|| unknown_error "exit $status"
 
 exit $status

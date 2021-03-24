@@ -70,7 +70,8 @@ type status =
   | InternalError of string
   | Timeout
   | Memout
-  | Crash of string
+  | Abort
+  | Assert of string
   | UnknownError of string
 [@@deriving compare, equal, sexp]
 
@@ -89,7 +90,8 @@ let pp_status ppf stat =
   | InternalError msg -> pf "Internal error: %s" msg
   | Timeout -> pf "Timeout"
   | Memout -> pf "Memout"
-  | Crash msg -> pf "Crash: %s" msg
+  | Abort -> pf "Abort"
+  | Assert msg -> pf "Assert: %s" msg
   | UnknownError msg -> pf "Unknown error: %s" msg
 
 let safe_or_unsafe () =
