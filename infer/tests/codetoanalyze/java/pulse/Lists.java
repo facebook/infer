@@ -19,7 +19,7 @@ class Lists {
     }
   }
 
-  void FN_removeInvalidatesNonEmptinessNPEBad(List l) {
+  void FN_latent_removeInvalidatesNonEmptinessNPEBad(List l) {
     l.removeAll(l);
     Object o = null;
     if (l.isEmpty()) {
@@ -27,7 +27,7 @@ class Lists {
     }
   }
 
-  void FN_clearCausesEmptinessNPEBad(List l) {
+  void clearCausesEmptinessNPEBad(List l) {
     l.clear();
     Object o = null;
     if (l.isEmpty()) {
@@ -51,7 +51,7 @@ class Lists {
     getElement(l).toString();
   }
 
-  void FN_getElementNPE() {
+  void getElementNPEBad() {
     List l = new ArrayList();
     if (!l.isEmpty()) {
       return;
@@ -59,7 +59,7 @@ class Lists {
     getElement(l).toString();
   }
 
-  void FP_getElementOk() {
+  void getElementOk() {
     List l = new ArrayList();
     if (!l.isEmpty()) {
       Object o = null;
@@ -71,6 +71,35 @@ class Lists {
     l.add(0, new Object());
     Object o = null;
     if (!l.isEmpty()) {
+      o.toString();
+    }
+  }
+
+  void addAndRemoveEmptinessNPEBad() {
+    List l = new ArrayList();
+    Integer i = new Integer(1);
+    l.add(i);
+    l.remove(i);
+    if (l.isEmpty()) {
+      getElement(l).toString();
+    }
+  }
+
+  void FP_removeOnEmptyListOk() {
+    List l = new LinkedList();
+    Object removed = l.remove(0);
+    if (removed != null) {
+      getElement(l).toString();
+    }
+  }
+
+  void removeElementBad() {
+    List l = new LinkedList();
+    Integer i = new Integer(4);
+    l.add(i);
+    boolean removed = l.remove(i);
+    if (removed) {
+      Object o = null;
       o.toString();
     }
   }

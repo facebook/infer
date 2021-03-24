@@ -79,6 +79,18 @@ module Misc = struct
     PulseOperations.write_id ret_id ret_value astate
 
 
+  let return_zero_prune_positive ~desc (address, hist) : model =
+   fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+    let fresh_elem = AbstractValue.mk_fresh () in
+    let<+> astate =
+      PulseArithmetic.prune_positive address astate
+      >>= PulseArithmetic.and_eq_int fresh_elem IntLit.zero
+      >>| PulseOperations.write_id ret_id (fresh_elem, event :: hist)
+    in
+    astate
+
+
   let return_unknown_size : model =
    fun _ ~callee_procname:_ _location ~ret:(ret_id, _) astate ->
     let ret_addr = AbstractValue.mk_fresh () in
@@ -933,6 +945,27 @@ module StdVector = struct
 end
 
 module Java = struct
+  let mk_java_field pkg clazz field =
+    Fieldname.make (Typ.JavaClass (JavaClassName.make ~package:(Some pkg) ~classname:clazz)) field
+
+
+  let load_field field location obj astate =
+    let* astate, field_addr =
+      PulseOperations.eval_access Read location obj (FieldAccess field) astate
+    in
+    let+ astate, field_val =
+      PulseOperations.eval_access Read location field_addr Dereference astate
+    in
+    (astate, field_addr, field_val)
+
+
+  let write_field field new_val location addr astate =
+    let* astate, field_addr =
+      PulseOperations.eval_access Write location addr (FieldAccess field) astate
+    in
+    PulseOperations.write_deref location ~ref:field_addr ~obj:new_val astate
+
+
   let instance_of (argv, hist) typeexpr : model =
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     let event = ValueHistory.Call {f= Model "Java.instanceof"; location; in_call= []} in
@@ -951,69 +984,195 @@ module Java = struct
 end
 
 module JavaCollection = struct
-  (* modifies arr[index]-> old_elem to arr[index]-> new_elem and returns old_elem *)
-  let set coll (index, _) (new_elem, new_elem_hist) : model =
-   fun _ ~callee_procname:_ location ~ret astate ->
-    let event = ValueHistory.Call {f= Model "Collection.set"; location; in_call= []} in
-    let<*> astate, arr = GenericArrayBackedCollection.eval Read location coll astate in
-    let<*> astate, (old_addr, old_hist) =
-      GenericArrayBackedCollection.element location coll index astate
+  let pkg_name = "java.util"
+
+  let class_name = "Collection"
+
+  let fst_field = Java.mk_java_field pkg_name class_name "__infer_model_backing_collection_fst"
+
+  let snd_field = Java.mk_java_field pkg_name class_name "__infer_model_backing_collection_snd"
+
+  let is_empty_field =
+    Java.mk_java_field pkg_name class_name "__infer_model_backing_collection_empty"
+
+
+  let init this : model =
+   fun _ ~callee_procname:_ location ~ret:(_, _) astate ->
+    let event = ValueHistory.Call {f= Model "Collection.<init>"; location; in_call= []} in
+    let fresh_val = (AbstractValue.mk_fresh (), [event]) in
+    let is_empty_value = AbstractValue.mk_fresh () in
+    let init_value = AbstractValue.mk_fresh () in
+    (* The two internal fields are initially set to null *)
+    let<*> astate = Java.write_field fst_field (init_value, [event]) location fresh_val astate in
+    let<*> astate = Java.write_field snd_field (init_value, [event]) location fresh_val astate in
+    (* The empty field is initially set to true *)
+    let<*> astate =
+      Java.write_field is_empty_field (is_empty_value, [event]) location fresh_val astate
     in
-    let<+> astate =
-      PulseOperations.write_arr_index location ~ref:arr ~index
-        ~obj:(new_elem, event :: new_elem_hist)
-        astate
+    let<*> astate =
+      PulseOperations.write_deref location ~ref:this ~obj:fresh_val astate
+      >>= PulseArithmetic.and_eq_int init_value IntLit.zero
+      >>= PulseArithmetic.and_eq_int is_empty_value IntLit.one
     in
-    PulseOperations.write_id (fst ret) (old_addr, event :: old_hist) astate
+    astate |> ok_continue
 
 
-  (* writes to arr[index]-> new_elem   *)
-  let add_at coll (index, _) (new_elem, new_elem_hist) : model =
-   fun _ ~callee_procname:_ location ~ret:_ astate ->
-    let event = ValueHistory.Call {f= Model "Collection.add"; location; in_call= []} in
-    let<*> astate, arr = GenericArrayBackedCollection.eval Read location coll astate in
-    let<+> astate =
-      PulseOperations.write_arr_index location ~ref:arr ~index
-        ~obj:(new_elem, event :: new_elem_hist)
-        astate
-    in
-    astate
-
-
-  (* writes to arr[index]-> new_elem where index is a fresh address *)
   let add coll new_elem : model =
-    let index = AbstractValue.mk_fresh () in
-    add_at coll (index, []) new_elem
-
-
-  (* writes to arr[index]-> fresh_elem   *)
-  let remove_at coll (index, _) : model =
-   fun _ ~callee_procname:_ location ~ret:_ astate ->
-    let event = ValueHistory.Call {f= Model "Collection.add"; location; in_call= []} in
-    let<*> astate, arr = GenericArrayBackedCollection.eval Read location coll astate in
-    let fresh_elem = AbstractValue.mk_fresh () in
-    let<+> astate =
-      PulseOperations.write_arr_index location ~ref:arr ~index
-        ~obj:(fresh_elem, event :: snd arr)
-        astate
-    in
-    astate
-
-
-  (* writes to arr[index]-> fresh_elem where index is fresh *)
-  let remove coll : model =
-    let index = AbstractValue.mk_fresh () in
-    remove_at coll (index, [])
-
-
-  let is_empty (address, hist) : model =
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
-    let event = ValueHistory.Call {f= Model "Collections.isEmpty"; location; in_call= []} in
-    let fresh_elem = AbstractValue.mk_fresh () in
+    let event = ValueHistory.Call {f= Model "Collection.add"; location; in_call= []} in
+    let ret_value = AbstractValue.mk_fresh () in
+    let<*> astate, coll_val = PulseOperations.eval_access Read location coll Dereference astate in
+    (* reads snd_field from collection *)
+    let<*> astate, snd_addr, snd_val = Java.load_field snd_field location coll_val astate in
+    (* fst_field takes value stored in snd_field *)
+    let<*> astate = Java.write_field fst_field snd_val location coll_val astate in
+    (* snd_field takes new value given *)
+    let<*> astate = PulseOperations.write_deref location ~ref:snd_addr ~obj:new_elem astate in
+    (* Collection.add returns a boolean, in this case the return always has value one *)
+    let<*> astate =
+      PulseArithmetic.and_eq_int ret_value IntLit.one astate
+      >>| PulseOperations.write_id ret_id (ret_value, [event])
+    in
+    (* empty field set to false if the collection was empty *)
+    let<*> astate, _, (is_empty_val, hist) =
+      Java.load_field is_empty_field location coll_val astate
+    in
+    if PulseArithmetic.is_known_zero astate is_empty_val then astate |> ok_continue
+    else
+      let is_empty_new_val = AbstractValue.mk_fresh () in
+      let<*> astate =
+        Java.write_field is_empty_field (is_empty_new_val, event :: hist) location coll_val astate
+        >>= PulseArithmetic.and_eq_int is_empty_new_val IntLit.zero
+      in
+      astate |> ok_continue
+
+
+  let add_at coll (_, _) new_elem : model = add coll new_elem
+
+  let update coll new_val new_val_hist event location ret_id astate =
+    (* case0: element not present in collection *)
+    let* astate, coll_val = PulseOperations.eval_access Read location coll Dereference astate in
+    let* astate, _, fst_val = Java.load_field fst_field location coll_val astate in
+    let* astate, _, snd_val = Java.load_field snd_field location coll_val astate in
+    let is_empty_val = AbstractValue.mk_fresh () in
+    let* astate' =
+      Java.write_field is_empty_field (is_empty_val, [event]) location coll_val astate
+    in
+    (* case1: fst_field is updated *)
+    let* astate1 =
+      Java.write_field fst_field (new_val, event :: new_val_hist) location coll astate'
+    in
+    let astate1 = PulseOperations.write_id ret_id fst_val astate1 in
+    (* case2: snd_field is updated *)
+    let+ astate2 =
+      Java.write_field snd_field (new_val, event :: new_val_hist) location coll astate'
+    in
+    let astate2 = PulseOperations.write_id ret_id snd_val astate2 in
+    [astate; astate1; astate2]
+
+
+  let set coll (_, _) (new_val, new_val_hist) : model =
+   fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
+    let event = ValueHistory.Call {f= Model "Collection.set"; location; in_call= []} in
+    let<*> astates = update coll new_val new_val_hist event location ret_id astate in
+    List.map ~f:(fun astate -> Ok (ContinueProgram astate)) astates
+
+
+  let remove_at coll location ret_id astate =
+    let event = ValueHistory.Call {f= Model "Collection.remove"; location; in_call= []} in
+    let new_val = AbstractValue.mk_fresh () in
+    PulseArithmetic.and_eq_int new_val IntLit.zero astate
+    >>= update coll new_val [] event location ret_id
+
+
+  (* Auxiliary function that updates the state by:
+     (1) assuming that value to be removed is equal to field value
+     (2) assigning field to null value
+     Collection.remove should return a boolean. In this case, the return val is one *)
+  let remove_elem_found coll_val elem field_addr field_val ret_id location event astate =
+    let null_val = AbstractValue.mk_fresh () in
+    let ret_val = AbstractValue.mk_fresh () in
+    let is_empty_val = AbstractValue.mk_fresh () in
+    let* astate =
+      Java.write_field is_empty_field (is_empty_val, [event]) location coll_val astate
+    in
+    let* astate =
+      PulseArithmetic.and_eq_int null_val IntLit.zero astate
+      >>= PulseArithmetic.and_eq_int ret_val IntLit.one
+    in
+    let* astate =
+      PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand elem)
+        (AbstractValueOperand field_val) astate
+    in
+    let* astate =
+      PulseOperations.write_deref location ~ref:field_addr ~obj:(null_val, [event]) astate
+    in
+    let astate = PulseOperations.write_id ret_id (ret_val, [event]) astate in
+    Ok astate
+
+
+  let remove_obj coll (elem, _) location ret_id astate =
+    let event = ValueHistory.Call {f= Model "Collection.remove"; location; in_call= []} in
+    let* astate, coll_val = PulseOperations.eval_access Read location coll Dereference astate in
+    (* case1: given element is equal to fst_field *)
+    let* astate, fst_addr, (fst_val, _) = Java.load_field fst_field location coll_val astate in
+    let* astate1 = remove_elem_found coll_val elem fst_addr fst_val ret_id location event astate in
+    (* case2: given element is equal to snd_field *)
+    let* astate, snd_addr, (snd_val, _) = Java.load_field snd_field location coll_val astate in
+    let* astate2 = remove_elem_found coll_val elem snd_addr snd_val ret_id location event astate in
+    (* case 3: given element is not equal to the fst AND not equal to the snd *)
+    let+ astate =
+      PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand elem)
+        (AbstractValueOperand fst_val) astate
+      >>= PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand elem)
+            (AbstractValueOperand snd_val)
+    in
+    [astate1; astate2; astate]
+
+
+  let remove args : model =
+   fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
+    match args with
+    | [ {ProcnameDispatcher.Call.FuncArg.arg_payload= coll_arg}
+      ; {ProcnameDispatcher.Call.FuncArg.arg_payload= elem_arg; typ} ] ->
+        let<*> astates =
+          match typ.desc with
+          | Tint _ ->
+              (* Case of remove(int index) *)
+              remove_at coll_arg location ret_id astate
+          | _ ->
+              (* Case of remove(Object o) *)
+              remove_obj coll_arg elem_arg location ret_id astate
+        in
+        List.map ~f:(fun astate -> Ok (ContinueProgram astate)) astates
+    | _ ->
+        astate |> ok_continue
+
+
+  let is_empty coll : model =
+   fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
+    let event = ValueHistory.Call {f= Model "Collection.isEmpty"; location; in_call= []} in
+    let<*> astate, coll_val = PulseOperations.eval_access Read location coll Dereference astate in
+    let<*> astate, (_, _), (is_empty_val, hist) =
+      Java.load_field is_empty_field location coll_val astate
+    in
+    PulseOperations.write_id ret_id (is_empty_val, event :: hist) astate |> ok_continue
+
+
+  let clear coll : model =
+   fun _ ~callee_procname:_ location ~ret:(_, _) astate ->
+    let event = ValueHistory.Call {f= Model "Collection.clear"; location; in_call= []} in
+    let null_val = AbstractValue.mk_fresh () in
+    let is_empty_val = AbstractValue.mk_fresh () in
+    let<*> astate, coll_val = PulseOperations.eval_access Read location coll Dereference astate in
+    let<*> astate = Java.write_field fst_field (null_val, [event]) location coll_val astate in
+    let<*> astate = Java.write_field snd_field (null_val, [event]) location coll_val astate in
+    let<*> astate =
+      Java.write_field is_empty_field (is_empty_val, [event]) location coll_val astate
+    in
     let<+> astate =
-      PulseArithmetic.prune_positive address astate
-      >>= PulseArithmetic.and_eq_int fresh_elem IntLit.zero
-      >>| PulseOperations.write_id ret_id (fresh_elem, event :: hist)
+      PulseArithmetic.and_eq_int null_val IntLit.zero astate
+      >>= PulseArithmetic.and_eq_int is_empty_val IntLit.one
     in
     astate
 end
@@ -1364,22 +1523,24 @@ module ProcNameDispatcher = struct
         ; -"std" &:: "vector" &:: "push_back" <>$ capt_arg_payload $+...$--> StdVector.push_back
         ; -"std" &:: "vector" &:: "empty" <>$ capt_arg_payload $+...$--> StdVector.empty
         ; +map_context_tenv PatternMatch.Java.implements_collection
+          &:: "<init>" <>$ capt_arg_payload $--> JavaCollection.init
+        ; +map_context_tenv PatternMatch.Java.implements_collection
           &:: "add" <>$ capt_arg_payload $+ capt_arg_payload $--> JavaCollection.add
         ; +map_context_tenv PatternMatch.Java.implements_list
           &:: "add" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
           $--> JavaCollection.add_at
         ; +map_context_tenv PatternMatch.Java.implements_collection
-          &:: "remove" <>$ capt_arg_payload $+ any_arg $--> JavaCollection.remove
-        ; +map_context_tenv PatternMatch.Java.implements_list
-          &:: "remove" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg
-          $--> JavaCollection.remove_at
+          &:: "remove" &++> JavaCollection.remove
         ; +map_context_tenv PatternMatch.Java.implements_collection
           &:: "isEmpty" <>$ capt_arg_payload $--> JavaCollection.is_empty
-        ; +map_context_tenv PatternMatch.Java.implements_map
-          &:: "isEmpty" <>$ capt_arg_payload $--> JavaCollection.is_empty
+        ; +map_context_tenv PatternMatch.Java.implements_collection
+          &:: "clear" <>$ capt_arg_payload $--> JavaCollection.clear
         ; +map_context_tenv PatternMatch.Java.implements_collection
           &::+ (fun _ str -> StringSet.mem str pushback_modeled)
           <>$ capt_arg_payload $+...$--> StdVector.push_back
+        ; +map_context_tenv PatternMatch.Java.implements_map
+          &:: "isEmpty" <>$ capt_arg_payload
+          $--> Misc.return_zero_prune_positive ~desc:"Map.isEmpty()"
         ; +map_context_tenv PatternMatch.Java.implements_queue
           &::+ (fun _ str -> StringSet.mem str pushback_modeled)
           <>$ capt_arg_payload $+...$--> StdVector.push_back
