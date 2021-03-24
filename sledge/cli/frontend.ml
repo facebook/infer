@@ -1169,6 +1169,8 @@ let xlate_instr :
               todo "coroutines:@ %a" pp_llvalue instr ()
           | "llvm" :: "experimental" :: "gc" :: "statepoint" :: _ ->
               todo "statepoints:@ %a" pp_llvalue instr ()
+          | "llvm" :: "call" :: "preallocated" :: _ ->
+              todo "preallocated operand bundles:@ %a" pp_llvalue instr ()
           | ["llvm"; ("va_start" | "va_copy" | "va_end")] ->
               skip "variadic function intrinsic"
           | "llvm" :: _ -> skip "intrinsic"
