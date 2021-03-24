@@ -553,7 +553,8 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t
           | Add | FAdd | Sub | FSub | FNeg | Mul | FMul | UDiv | SDiv | FDiv
           | URem | SRem | FRem | Shl | LShr | AShr | And | Or | Xor | ICmp
           | FCmp | Select | GetElementPtr | ExtractElement | InsertElement
-          | ShuffleVector | ExtractValue | InsertValue ) as opcode ) ->
+          | ShuffleVector | ExtractValue | InsertValue | Freeze ) as opcode
+        ) ->
         if inline || should_inline llv then xlate_opcode x llv opcode
         else ([], Exp.reg (xlate_name x llv))
     | ConstantExpr -> xlate_opcode x llv (Llvm.constexpr_opcode llv)
@@ -791,6 +792,7 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t
       | Array {len= m}, Array {len= n} when m = n && Llvm.is_null llmask ->
           exp
       | _ -> todo "vector operations: %a" pp_llvalue llv () )
+  | Freeze -> xlate_value x (Llvm.operand llv 0)
   | Invalid | Ret | Br | Switch | IndirectBr | Invoke | Invalid2
    |Unreachable | Alloca | Load | Store | PHI | Call | CallBr | UserOp1
    |UserOp2 | Fence | AtomicCmpXchg | AtomicRMW | Resume | LandingPad
@@ -1449,7 +1451,7 @@ let xlate_instr :
    |Sub | FSub | FNeg | Mul | FMul | UDiv | SDiv | FDiv | URem | SRem
    |FRem | Shl | LShr | AShr | And | Or | Xor | ICmp | FCmp | Select
    |GetElementPtr | ExtractElement | InsertElement | ShuffleVector
-   |ExtractValue | InsertValue ->
+   |ExtractValue | InsertValue | Freeze ->
       inline_or_move (xlate_value ~inline:true x)
   | VAArg ->
       let reg = xlate_name_opt x instr in
