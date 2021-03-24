@@ -982,19 +982,17 @@ let norm_callee llfunc =
 
 let num_actuals instr lltyp llfunc =
   assert (Poly.(Llvm.classify_type lltyp = Pointer)) ;
-  if not (Llvm.is_var_arg (Llvm.element_type lltyp)) then
-    Llvm.num_arg_operands instr
+  let llelt = Llvm.element_type lltyp in
+  if not (Llvm.is_var_arg llelt) then Llvm.num_arg_operands instr
   else
     let fname = Llvm.value_name llfunc in
-    if StringS.add ignored_callees fname && not (Llvm.is_declaration llfunc)
-    then
+    let is_decl llfunc =
+      Poly.(Llvm.classify_value llfunc = Function)
+      (* llfunc might be a formal, which Llvm.is_declaration doesn't like *)
+      && Llvm.is_declaration llfunc
+    in
+    if StringS.add ignored_callees fname && not (is_decl llfunc) then
       warn "ignoring variable arguments to variadic function: %s" fname () ;
-    let llelt = Llvm.element_type lltyp in
-    ( match Llvm.classify_type llelt with
-    | Function -> ()
-    | _ ->
-        fail "called function not of function type: %a" pp_llvalue instr ()
-    ) ;
     Array.length (Llvm.param_types llelt)
 
 let xlate_intrinsic_inst emit_inst x name_segs instr num_actuals loc =
