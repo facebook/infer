@@ -568,6 +568,10 @@ external get_named_metadata : llmodule -> string -> llvalue array
                             = "llvm_get_namedmd"
 external add_named_metadata_operand : llmodule -> string -> llvalue -> unit
                                     = "llvm_append_namedmd"
+external get_debug_loc_directory : llvalue -> string option = "llvm_get_debug_loc_directory"
+external get_debug_loc_filename : llvalue -> string option = "llvm_get_debug_loc_filename"
+external get_debug_loc_line : llvalue -> int = "llvm_get_debug_loc_line"
+external get_debug_loc_column : llvalue -> int = "llvm_get_debug_loc_column"
 
 (*--... Operations on scalar constants .....................................--*)
 external const_int : lltype -> int -> llvalue = "llvm_const_int"

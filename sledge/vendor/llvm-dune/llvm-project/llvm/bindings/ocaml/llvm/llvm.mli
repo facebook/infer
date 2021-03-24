@@ -910,6 +910,32 @@ val get_named_metadata : llmodule -> string -> llvalue array
     [llvm::MDNode::addOperand()]. *)
 val add_named_metadata_operand : llmodule -> string -> llvalue -> unit
 
+(** [get_debug_loc_directory v] returns the directory of the debug location
+    for [v], which must be an [Instruction], [GlobalVariable], or [Function].
+    See the [llvm::Instruction::getDebugLoc()],
+    [llvm::GlobalVariable::getDebugInfo()], and
+    [llvm::Function::getSubprogram()] methods. *)
+val get_debug_loc_directory : llvalue -> string option
+
+(** [get_debug_loc_filename v] returns the filename of the debug location
+    for [v], which must be an [Instruction], [GlobalVariable], or [Function].
+    See the [llvm::Instruction::getDebugLoc()],
+    [llvm::GlobalVariable::getDebugInfo()], and
+    [llvm::Function::getSubprogram()] methods. *)
+val get_debug_loc_filename : llvalue -> string option
+
+(** [get_debug_loc_line v] returns the line number of the debug location
+    for [v], which must be an [Instruction], [GlobalVariable], or [Function].
+    See the [llvm::Instruction::getDebugLoc()],
+    [llvm::GlobalVariable::getDebugInfo()], and
+    [llvm::Function::getSubprogram()] methods. *)
+val get_debug_loc_line : llvalue -> int
+
+(** [get_debug_loc_column v] returns the column number of the debug location
+    for [v], which must be an [Instruction].
+    See the [llvm::Instruction::getDebugLoc()] method. *)
+val get_debug_loc_column : llvalue -> int
+
 
 (** {7 Operations on scalar constants} *)
 
