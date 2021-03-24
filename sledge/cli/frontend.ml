@@ -100,24 +100,24 @@ open struct
   open struct
     let loc_of_global g =
       Loc.mk
-        ?dir:(get_debug_loc_directory g)
-        ?file:(Llvm.get_debug_loc_filename g)
-        ~line:(Llvm.get_debug_loc_line g)
-        ?col:None
+        ~dir:(get_debug_loc_directory g)
+        ~file:(Llvm.get_debug_loc_filename g)
+        ~line:(Some (Llvm.get_debug_loc_line g))
+        ~col:None
 
     let loc_of_function f =
       Loc.mk
-        ?dir:(get_debug_loc_directory f)
-        ?file:(Llvm.get_debug_loc_filename f)
-        ~line:(Llvm.get_debug_loc_line f)
-        ?col:None
+        ~dir:(get_debug_loc_directory f)
+        ~file:(Llvm.get_debug_loc_filename f)
+        ~line:(Some (Llvm.get_debug_loc_line f))
+        ~col:None
 
     let loc_of_instr i =
       Loc.mk
-        ?dir:(get_debug_loc_directory i)
-        ?file:(Llvm.get_debug_loc_filename i)
-        ~line:(Llvm.get_debug_loc_line i)
-        ~col:(Llvm.get_debug_loc_column i)
+        ~dir:(get_debug_loc_directory i)
+        ~file:(Llvm.get_debug_loc_filename i)
+        ~line:(Some (Llvm.get_debug_loc_line i))
+        ~col:(Some (Llvm.get_debug_loc_column i))
 
     let find_scope scope =
       ScopeTbl.find_or_add scope_tbl scope ~default:(fun () ->

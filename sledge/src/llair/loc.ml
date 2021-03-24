@@ -12,7 +12,11 @@ type t = {dir: string; file: string; line: int; col: int}
 
 let none = {dir= ""; file= ""; line= 0; col= 0}
 
-let mk ?(dir = none.dir) ?(file = none.file) ?(col = none.col) ~line =
+let mk ~dir ~file ~line ~col =
+  let dir = Option.get_or dir ~default:none.dir in
+  let file = Option.get_or file ~default:none.file in
+  let line = Option.get_or line ~default:none.line in
+  let col = Option.get_or col ~default:none.col in
   {dir; file; line; col}
 
 let root = ref None
