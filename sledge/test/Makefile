@@ -33,8 +33,8 @@ sledge_report_exe:
 # which utilities to use
 diff?=patdiff
 
-# configure the non-host llvm and clang
-export PATH := $(CURDIR)/../.llvm_install/sledge/bin:$(PATH)
+# select llvm and clang used by opam
+export PATH := $(shell $$(opam config var conf-llvm:config) --bindir):$(PATH)
 
 # configure sort
 export LANG := C

@@ -61,7 +61,8 @@ let debug = ref false
 ;;
 Driver.Cookies.add_simple_handler "ppx_trace_enabled" Ast_pattern.__
   ~f:(function
-  | Some {pexp_desc= Pexp_constant (Pconst_string (("1" | "true"), _))} ->
+  | Some {pexp_desc= Pexp_constant (Pconst_string (("1" | "true"), _, _))}
+    ->
       debug := true
   | _ -> () )
 

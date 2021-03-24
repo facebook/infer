@@ -14,6 +14,7 @@ depends: [
   "base"
   "containers"
   "containers-data"
+  "conf-llvm" {= "11.0.0"}
   "core" {>= "v0.14"}
   "ctypes"
   "ctypes-foreign"
@@ -21,11 +22,10 @@ depends: [
   "dune-build-info" {build}
   "fpath"
   "iter"
-  "llvm" {= "8.0.0"}
   "mtime"
   "ppx_compare"
   "ppx_hash"
-  "ppxlib" {< "0.16.0"}
+  "ppxlib" {>= "0.21.0"}
   "shexp"
   "smtlib-utils"
   "yojson"

@@ -1,4 +1,4 @@
-#!/bin/sh -ex
+#!/bin/sh -e
 
 if test "$(dirname $0)" != '.'; then
     echo "The script must be executed from its current directory."
@@ -19,12 +19,12 @@ llvm_config() {
     "$llvm_config" $@
 }
 
-if llvm_config --link-static --libs; then
+if llvm_config --link-static; then
     default_mode=static
     support_static_mode=true
 fi
 
-if llvm_config --link-shared --libs; then
+if llvm_config --link-shared; then
     default_mode=shared
     support_shared_mode=true
 fi

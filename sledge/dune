@@ -107,7 +107,7 @@
   (preprocess
    (pps ppx_sledge ppx_trace))))
 
-(dirs :standard \ llvm test)
+(dirs :standard \ test)
 
 (vendored_dirs vendor)
 
