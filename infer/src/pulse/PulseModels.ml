@@ -1178,19 +1178,11 @@ module JavaCollection = struct
 end
 
 module JavaInteger = struct
-  let internal_int =
-    Fieldname.make
-      (Typ.JavaClass (JavaClassName.make ~package:(Some "java.lang") ~classname:"Integer"))
-      "__infer_model_backing_int"
-
+  let internal_int = Java.mk_java_field "java.lang" "Integer" "__infer_model_backing_int"
 
   let load_backing_int location this astate =
     let* astate, obj = PulseOperations.eval_access Read location this Dereference astate in
-    let* astate, int_addr =
-      PulseOperations.eval_access Read location obj (FieldAccess internal_int) astate
-    in
-    let+ astate, int_val = PulseOperations.eval_access Read location int_addr Dereference astate in
-    (astate, int_addr, int_val)
+    Java.load_field internal_int location obj astate
 
 
   let construct this_address init_value event location astate =
@@ -1202,7 +1194,7 @@ module JavaInteger = struct
     PulseOperations.write_deref location ~ref:this_address ~obj:this astate
 
 
-  let constructor this_address init_value : model =
+  let init this_address init_value : model =
    fun _ ~callee_procname:_ location ~ret:_ astate ->
     let event = ValueHistory.Call {f= Model "Integer.init"; location; in_call= []} in
     let<+> astate = construct this_address init_value event location astate in
@@ -1554,7 +1546,7 @@ module ProcNameDispatcher = struct
           &::+ (fun _ str -> StringSet.mem str pushback_modeled)
           <>$ capt_arg_payload $+...$--> StdVector.push_back
         ; +map_context_tenv (PatternMatch.Java.implements_lang "Integer")
-          &:: "<init>" $ capt_arg_payload $+ capt_arg_payload $--> JavaInteger.constructor
+          &:: "<init>" $ capt_arg_payload $+ capt_arg_payload $--> JavaInteger.init
         ; +map_context_tenv (PatternMatch.Java.implements_lang "Integer")
           &:: "equals" $ capt_arg_payload $+ capt_arg_payload $--> JavaInteger.equals
         ; +map_context_tenv (PatternMatch.Java.implements_lang "Integer")
