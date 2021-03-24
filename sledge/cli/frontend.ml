@@ -666,9 +666,9 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t
         let lltyp = Llvm.type_of (Llvm.operand llv 0) in
         let llelt = Llvm.element_type lltyp in
         let elt = xlate_type x llelt in
-        let len = Llvm.vector_size llelt in
-        let byts = size_of x lltyp in
+        let len = Llvm.vector_size lltyp in
         let bits = bit_size_of x lltyp in
+        let byts = size_of x lltyp in
         Typ.array ~elt ~len ~bits ~byts
       in
       let idx i =
