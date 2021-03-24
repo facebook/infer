@@ -5,7 +5,7 @@ description: "Detects errors based on user-provided state machines describing mu
 
 Detects errors based on user-provided state machines describing multi-object monitors.
 
-Activate with `--topl-biabd`.
+Activate with `--topl`.
 
 Supported languages:
 - C/C++/ObjC: Experimental
@@ -17,4 +17,4 @@ Supported languages:
 ## List of Issue Types
 
 The following issue types are reported by this checker:
-- [TOPL_BIABD_ERROR](/docs/next/all-issue-types#topl_biabd_error)
+- [TOPL_ERROR](/docs/next/all-issue-types#topl_error)

@@ -2226,14 +2226,9 @@ These annotations can be found at `com.facebook.infer.annotation.*`.
   other threads. The main utility of this annotation is in interfaces, where
   Infer cannot look up the implementation and decide for itself.
 
-## TOPL_BIABD_ERROR
+## TOPL_ERROR
 
-Reported as "Topl Biabd Error" by [topl-biabd](/docs/next/checker-topl-biabd).
-
-Experimental.
-## TOPL_PULSE_ERROR
-
-Reported as "Topl Pulse Error" by [topl-pulse](/docs/next/checker-topl-pulse).
+Reported as "Topl Error" by [topl](/docs/next/checker-topl).
 
 Experimental.
 ## UNINITIALIZED_VALUE

@@ -135,8 +135,8 @@ sets <b>--debug-level 2</b>, <b>--developer-mode</b>,
 <b>--print-buckets</b>, <b>--print-types</b>,
 <b>--reports-include-ml-loc</b>,
 <b>--no-only-cheap-debug</b>, <b>--trace-error</b>,
-<b>--write-dotty</b>, <b>--write-html</b>) (Conversely:
-<b>--no-debug</b> | <b>-G</b>)</p>
+<b>--write-html</b>) (Conversely: <b>--no-debug</b> |
+<b>-G</b>)</p>
 
 <p style="margin-left:11%;"><b>--debug-level</b>
 <i>level</i></p>
@@ -367,8 +367,7 @@ STRONG_SELF_NOT_CHECKED (enabled by default), <br>
 Symexec_memory_error (enabled by default), <br>
 THREAD_SAFETY_VIOLATION (enabled by default), <br>
 THREAD_SAFETY_VIOLATION_NULLSAFE (enabled by default), <br>
-TOPL_BIABD_ERROR (enabled by default), <br>
-TOPL_PULSE_ERROR (enabled by default), <br>
+TOPL_ERROR (enabled by default), <br>
 UNINITIALIZED_VALUE (enabled by default), <br>
 UNREACHABLE_CODE (enabled by default), <br>
 UNTRUSTED_BUFFER_ACCESS (disabled by default), <br>
@@ -505,13 +504,6 @@ none | phabricator }</i></p>
 
 <p style="margin-left:17%;">Which formatter to use when
 emitting the report</p>
-
-
-<p style="margin-left:11%;"><b>--report-immutable-modifications</b></p>
-
-<p style="margin-left:17%;">Activates: Report modifications
-to immutable fields (Conversely:
-<b>--no-report-immutable-modifications</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--report-suppress-errors</b>
