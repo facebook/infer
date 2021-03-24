@@ -20,7 +20,10 @@ let root = ref None
 let pp fs ({dir; file; line; col} as loc) =
   if not (equal loc none) then Format.pp_print_string fs "; " ;
   ( if not (String.is_empty dir) then
-    let dir_file = Fpath.append (Fpath.v dir) (Fpath.v file) in
+    let dir_file =
+      if String.is_empty file then Fpath.v dir
+      else Fpath.append (Fpath.v dir) (Fpath.v file)
+    in
     let relative =
       let* root = !root in
       let+ relative = Fpath.relativize ~root:(Fpath.v root) dir_file in
