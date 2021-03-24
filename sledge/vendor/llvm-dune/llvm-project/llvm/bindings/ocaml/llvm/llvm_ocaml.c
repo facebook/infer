@@ -1655,7 +1655,7 @@ CAMLprim value llvm_instr_get_opcode(LLVMValueRef Inst) {
   if (!LLVMIsAInstruction(Inst))
       failwith("Not an instruction");
   o = LLVMGetInstructionOpcode(Inst);
-  assert (o <= LLVMCallBr);
+  assert (o <= LLVMFreeze);
   return Val_int(o);
 }
 

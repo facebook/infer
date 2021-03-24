@@ -42,6 +42,8 @@ module TypeKind = struct
   | Metadata
   | X86_mmx
   | Token
+  | ScalableVector
+  | BFloat
 end
 
 module Linkage = struct
@@ -246,6 +248,7 @@ module Opcode  = struct
   | CatchSwitch
   | FNeg
   | CallBr
+  | Freeze
 end
 
 module LandingPadClauseTy = struct
@@ -288,6 +291,8 @@ module AtomicRMWBinOp = struct
   | Min
   | UMax
   | UMin
+  | FAdd
+  | FSub
 end
 
 module ValueKind = struct
