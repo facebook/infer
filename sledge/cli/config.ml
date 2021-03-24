@@ -28,10 +28,15 @@ let contents =
       config_file config_file_env_var () ;
     `Assoc []
 
-let find key = Yojson.Basic.Util.(to_string_option (member key contents))
+module YBU = Yojson.Basic.Util
+
+let find key =
+  try YBU.to_string_option (YBU.member key contents)
+  with YBU.Type_error _ -> None
 
 let find_list key =
-  Yojson.Basic.Util.(filter_string (to_list (member key contents)))
+  try YBU.filter_string (YBU.to_list (YBU.member key contents))
+  with YBU.Type_error _ -> []
 
 let find_exn key =
   match find key with
