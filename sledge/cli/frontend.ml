@@ -850,12 +850,7 @@ let pop_stack_frame_of_function :
   in
   pop
 
-(** construct the types involved in landingpads: i32, std::type_info*, and
-    __cxa_exception *)
-let landingpad_typs : x -> Llvm.llvalue -> Typ.t * Typ.t * Llvm.lltype =
- fun x instr ->
-  let llt = Llvm.type_of instr in
-  let i32 = i32 x in
+let check_exception_typ x instr llt =
   if
     not
       ( Poly.(Llvm.classify_type llt = Struct)
@@ -865,7 +860,14 @@ let landingpad_typs : x -> Llvm.llvalue -> Typ.t * Typ.t * Llvm.lltype =
       && Poly.(llelts.(0) = Llvm.pointer_type (Llvm.i8_type x.llcontext))
       && Poly.(llelts.(1) = Llvm.i32_type x.llcontext) )
   then
-    todo "landingpad of type other than {i8*, i32}: %a" pp_llvalue instr () ;
+    todo "exception of type other than {i8*, i32}: %a" pp_llvalue instr ()
+
+(** construct the types involved in landingpads: i32, std::type_info*, and
+    __cxa_exception *)
+let landingpad_typs : x -> Llvm.llvalue -> Typ.t * Typ.t * Llvm.lltype =
+ fun x instr ->
+  check_exception_typ x instr (Llvm.type_of instr) ;
+  let i32 = i32 x in
   let llcontext =
     Llvm.(
       module_context (global_parent (block_parent (instr_parent instr))))
@@ -1424,7 +1426,9 @@ let xlate_instr :
               [Block.mk ~lbl ~cmnd:(IArray.of_list insts) ~term] ) )
   | Resume ->
       let llrcd = Llvm.operand instr 0 in
-      let typ = xlate_type x (Llvm.type_of llrcd) in
+      let lltyp = Llvm.type_of llrcd in
+      check_exception_typ x instr lltyp ;
+      let typ = xlate_type x lltyp in
       let pre, rcd = xlate_value x llrcd in
       let exc = Exp.select typ rcd 0 in
       emit_term ~prefix:(pop loc @ pre) (Term.throw ~exc ~loc)
