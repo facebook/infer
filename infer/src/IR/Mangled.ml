@@ -42,12 +42,6 @@ let self = from_string "self"
 
 let is_self = function {plain= "self"} -> true | _ -> false
 
-let rename ~f {plain; mangled} =
-  let plain = f plain in
-  let mangled = Option.map ~f mangled in
-  {plain; mangled}
-
-
 module Set = PrettyPrintable.MakePPSet (struct
   type nonrec t = t [@@deriving compare]
 

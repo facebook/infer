@@ -45,13 +45,10 @@ let proc_name_of_uid =
 
 let analyze_target : (TaskSchedulerTypes.target, string) Tasks.doer =
   let analyze_source_file exe_env source_file =
-    if Topl.is_shallow_active () then DB.Results_dir.init (Topl.sourcefile ()) ;
     DB.Results_dir.init source_file ;
     L.task_progress SourceFile.pp source_file ~f:(fun () ->
         try
           Ondemand.analyze_file exe_env source_file ;
-          if Topl.is_shallow_active () && Config.debug_mode then
-            DotCfg.emit_frontend_cfg (Topl.sourcefile ()) (Topl.cfg ()) ;
           if Config.write_html then Printer.write_all_html_files source_file ;
           None
         with TaskSchedulerTypes.ProcnameAlreadyLocked {dependency_filename} ->

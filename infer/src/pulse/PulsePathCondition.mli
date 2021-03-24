@@ -84,10 +84,6 @@ val is_unsat_expensive :
   Tenv.t -> get_dynamic_type:(AbstractValue.t -> Typ.t option) -> t -> t * bool * new_eqs
 (** whether the state contains a contradiction, only call this when you absolutely have to *)
 
-val as_int : t -> AbstractValue.t -> int option
-(** [as_int phi t] returns an integer x such that [phi |- t = x], if known for sure; see also
-    [is_known_zero] *)
-
 val has_no_assumptions : t -> bool
 (** whether the current path is independent of any calling context *)
 

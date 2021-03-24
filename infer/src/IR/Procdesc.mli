@@ -306,10 +306,6 @@ val replace_instrs_by_using_context :
 (** Like [replace_instrs_using_context], but slower, and each instruction may be replaced by 0, 1,
     or more instructions. *)
 
-val replace_instrs_by : t -> f:(Node.t -> Sil.instr -> Sil.instr array) -> bool
-(** Like [replace_instrs], but slower, and each instruction may be replaced by 0, 1, or more
-    instructions. *)
-
 val iter_nodes : (Node.t -> unit) -> t -> unit
 (** iterate over all the nodes of a procedure *)
 

@@ -68,10 +68,7 @@ let should_be_analyzed proc_attributes =
   (not (is_active proc_name)) (* avoid infinite loops *) && not (already_analyzed proc_name)
 
 
-let get_proc_attr proc_name =
-  IList.force_until_first_some
-    [lazy (Summary.OnDisk.proc_resolve_attributes proc_name); lazy (Topl.get_proc_attr proc_name)]
-
+let get_proc_attr proc_name = Summary.OnDisk.proc_resolve_attributes proc_name
 
 let procedure_should_be_analyzed proc_name =
   match get_proc_attr proc_name with
@@ -300,8 +297,7 @@ let register_callee ?caller_summary callee_pname =
 let get_proc_desc callee_pname =
   IList.force_until_first_some
     [ lazy (Procdesc.load callee_pname)
-    ; lazy (Option.map ~f:Summary.get_proc_desc (Summary.OnDisk.get callee_pname))
-    ; lazy (Topl.get_proc_desc callee_pname) ]
+    ; lazy (Option.map ~f:Summary.get_proc_desc (Summary.OnDisk.get callee_pname)) ]
 
 
 let analyze_callee exe_env ?caller_summary callee_pname =

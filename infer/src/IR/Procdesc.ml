@@ -281,15 +281,6 @@ module Node = struct
       true )
 
 
-  (** Like [replace_instrs], but 1 instr gets replaced by 0, 1, or more instructions. *)
-  let replace_instrs_by node ~f =
-    let instrs' = Instrs.concat_map node.instrs ~f:(f node) in
-    if phys_equal instrs' node.instrs then false
-    else (
-      node.instrs <- instrs' ;
-      true )
-
-
   let pp_stmt fmt = function
     | AssertionFailure ->
         F.pp_print_string fmt "Assertion failure"
@@ -617,11 +608,6 @@ let replace_instrs_by_using_context pdesc ~f ~update_context ~context_at_node =
     Node.replace_instrs_by_using_context ~f ~update_context ~context_at_node:(context_at_node node)
       node
   in
-  update_nodes pdesc ~update
-
-
-let replace_instrs_by pdesc ~f =
-  let update node = Node.replace_instrs_by ~f node in
   update_nodes pdesc ~update
 
 

@@ -744,7 +744,7 @@ let apply_prepost ~is_isl_error_prepost callee_proc_name call_location ~callee_p
             ~actuals call_state
         in
         let astate =
-          if Topl.is_deep_active () then
+          if Topl.is_active () then
             AbductiveDomain.Topl.large_step ~call_location ~callee_proc_name
               ~substitution:call_state.subst ~condition:call_state.astate.path_condition
               ~callee_prepost:pre_post.AbductiveDomain.topl call_state.astate

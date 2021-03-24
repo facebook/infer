@@ -155,8 +155,6 @@ let minus_one = int IntLit.minus_one
 (** Create integer constant corresponding to the boolean value *)
 let bool b = if b then one else zero
 
-let and_2ary e1 e2 = BinOp (LAnd, e1, e2)
-
 (** Create expression [e1 == e2] *)
 let eq e1 e2 = BinOp (Eq, e1, e2)
 
@@ -168,12 +166,6 @@ let le e1 e2 = BinOp (Le, e1, e2)
 
 (** Create expression [e1 < e2] *)
 let lt e1 e2 = BinOp (Lt, e1, e2)
-
-let nary_of_2ary op_2ary zero es =
-  match es with [] -> zero | e :: es -> List.fold ~init:e ~f:op_2ary es
-
-
-let and_nary = nary_of_2ary and_2ary one
 
 let fold_captured ~f exp acc =
   let rec fold_captured_ exp captured_acc =
@@ -360,34 +352,6 @@ let rec gen_program_vars =
 
 
 let program_vars e = Sequence.Generator.run (gen_program_vars e)
-
-let rec rename_pvars ~(f : string -> string) : t -> t =
-  let re e = rename_pvars ~f e in
-  let rv v = Pvar.rename ~f v in
-  function
-  | UnOp (op, e, t) ->
-      UnOp (op, re e, t)
-  | BinOp (op, e1, e2) ->
-      BinOp (op, re e1, re e2)
-  | Exn e ->
-      Exn (re e)
-  | Closure {name; captured_vars} ->
-      let captured_vars = List.map ~f:(function e, v, t, m -> (re e, rv v, t, m)) captured_vars in
-      Closure {name; captured_vars}
-  | Cast (t, e) ->
-      Cast (t, re e)
-  | Lvar v ->
-      Lvar (rv v)
-  | Lfield (e, fld, t) ->
-      Lfield (re e, fld, t)
-  | Lindex (e1, e2) ->
-      Lindex (re e1, re e2)
-  | Sizeof {typ; nbytes; dynamic_length; subtype} ->
-      let dynamic_length = Option.map ~f:re dynamic_length in
-      Sizeof {typ; nbytes; dynamic_length; subtype}
-  | e (* Should have only cases without subexpressions. *) ->
-      e
-
 
 let zero_of_type typ =
   match typ.Typ.desc with

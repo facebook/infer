@@ -173,8 +173,6 @@ val materialized_cpp_temporary : string
 
 val swap_proc_in_local_pvar : t -> Procname.t -> t
 
-val rename : f:(string -> string) -> t -> t
-
 (** Sets of pvars. *)
 module Set : PrettyPrintable.PPSet with type elt = t
 

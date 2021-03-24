@@ -181,7 +181,7 @@ module PulseTransferFunctions = struct
           r
     in
     let exec_states_res =
-      if Topl.is_deep_active () then
+      if Topl.is_active () then
         match callee_pname with
         | Some callee_pname ->
             topl_small_step call_loc callee_pname func_args ret exec_states_res
@@ -323,7 +323,7 @@ module PulseTransferFunctions = struct
                   write_function lhs_addr_hist astate )
             in
             let astates =
-              if Topl.is_deep_active () then
+              if Topl.is_active () then
                 List.map astates ~f:(fun result ->
                     let+ astate = result in
                     topl_store_step loc ~lhs:lhs_exp ~rhs:rhs_exp astate )

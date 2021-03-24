@@ -39,9 +39,6 @@ val self : t [@@warning "-32"]
 
 val is_self : t -> bool
 
-val rename : f:(string -> string) -> t -> t
-(** Maps over both the plain and the mangled components. *)
-
 (** Set of Mangled. *)
 module Set : PrettyPrintable.PPSet with type elt = t
 

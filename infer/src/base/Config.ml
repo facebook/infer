@@ -2407,15 +2407,7 @@ and topl_max_disjuncts =
 
 and topl_properties =
   CLOpt.mk_path_list ~default:[] ~long:"topl-properties"
-    "[EXPERIMENTAL] Specify a file containing a temporal property definition (e.g., jdk.topl).\n\
-     One needs to also select one of the three implementations, by enabling one of the following \
-     checkers\n\
-     $(b,--pulse)       will run pulse with updated transfer functions\n\
-     $(b,--topl-pulse)  [SLOW] uses SIL-instrumentation, runs pulse, and analyzes pulse summaries\n\
-     $(b,--topl-biabd)  [SLOW] uses SIL-instrumentation, runs biabduction, and analyzes \
-     biabduction summaries\n\
-     Note that enabling topl-pulse or topl-biabd will disable the first implementation using \
-     updated pulse transfer functions."
+    "[EXPERIMENTAL] Specify a file containing a temporal property definition (e.g., jdk.topl)."
 
 
 and profiler_samples =

@@ -72,8 +72,6 @@ val and_fold_subst_variables :
 
 val is_known_zero : t -> Var.t -> bool
 
-val as_int : t -> Var.t -> int option
-
 val has_no_assumptions : t -> bool
 
 val get_var_repr : t -> Var.t -> Var.t

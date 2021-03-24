@@ -8,7 +8,11 @@
 open! IStd
 module L = Logging
 
-let tt = ToplUtils.debug
+let tt fmt =
+  let mode = if Config.trace_topl then Logging.Quiet else Logging.Verbose in
+  Logging.debug Analysis mode "ToplTrace: " ;
+  Logging.debug Analysis mode fmt
+
 
 module Vname = struct
   module T = struct
@@ -140,34 +144,9 @@ let make properties =
   {states; nondets; transitions; skips; outgoing; vindex; max_args}
 
 
-let outgoing a i = a.outgoing.(i)
-
 let vname a i = a.states.(i)
 
-let is_nondet a i = a.nondets.(i)
-
 let vcount a = Array.length a.states
-
-let transition a i = a.transitions.(i)
-
-let is_skip a i = a.skips.(i)
-
-let tcount a = Array.length a.transitions
-
-let max_args a = a.max_args
-
-let get_start_error_pairs a =
-  let starts = String.Table.create () ~size:(2 * vcount a) in
-  let errors = String.Table.create () ~size:(2 * vcount a) in
-  let record dict keep index (property, name) =
-    if String.equal keep name then Hashtbl.add_exn dict ~key:property ~data:index
-  in
-  Array.iteri ~f:(record starts "start") a.states ;
-  Array.iteri ~f:(record errors "error") a.states ;
-  let f ~key:_ = function `Both (x, y) -> Some (x, y) | _ -> None in
-  let pairs = Hashtbl.merge starts errors ~f in
-  Hashtbl.data pairs
-
 
 let registers a =
   (* TODO(rgrigore): cache *)

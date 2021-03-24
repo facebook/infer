@@ -1748,13 +1748,6 @@ let is_known_zero phi v =
   |> Option.exists ~f:LinArith.is_zero
 
 
-let as_int phi v =
-  let maybe_int q = if Z.equal (Q.den q) Z.one then Q.to_int q else None in
-  let open Option.Monad_infix in
-  Var.Map.find_opt (VarUF.find phi.both.var_eqs v :> Var.t) phi.both.linear_eqs
-  >>= LinArith.get_as_const >>= maybe_int
-
-
 (** test if [phi.known ⊢ phi.pruned] *)
 let has_no_assumptions phi =
   Atom.Set.for_all (fun atom -> Formula.Normalizer.implies_atom phi.known atom) phi.pruned
