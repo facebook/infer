@@ -11,7 +11,8 @@ type t = private
   | Function of {return: t option; args: t iarray}
       (** (Global) function names have type Pointer to Function. *)
   | Integer of {bits: int; byts: int}  (** Integer of given bitwidth. *)
-  | Float of {bits: int; byts: int; enc: [`IEEE | `Extended | `Pair]}
+  | Float of
+      {bits: int; byts: int; enc: [`Brain | `IEEE | `Extended | `Pair]}
       (** Floating-point numbers of given bitwidth and encoding. *)
   | Pointer of {elt: t}  (** Pointer to element type. *)
   | Array of {elt: t; len: int; bits: int; byts: int}
@@ -41,7 +42,10 @@ val siz : t
 val ptr : t
 val function_ : return:t option -> args:t iarray -> t
 val integer : bits:int -> byts:int -> t
-val float : bits:int -> byts:int -> enc:[`Extended | `IEEE | `Pair] -> t
+
+val float :
+  bits:int -> byts:int -> enc:[`Brain | `Extended | `IEEE | `Pair] -> t
+
 val pointer : elt:t -> t
 val array : elt:t -> len:int -> bits:int -> byts:int -> t
 val tuple : (int * t) iarray -> bits:int -> byts:int -> t

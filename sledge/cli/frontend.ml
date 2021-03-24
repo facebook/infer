@@ -280,6 +280,7 @@ let rec xlate_type : x -> Llvm.lltype -> Typ.t =
       let bits = bit_size_of x llt in
       match Llvm.classify_type llt with
       | Half | Float | Double | Fp128 -> Typ.float ~bits ~byts ~enc:`IEEE
+      | BFloat -> Typ.float ~bits ~byts ~enc:`Brain
       | X86fp80 -> Typ.float ~bits ~byts ~enc:`Extended
       | Ppc_fp128 -> Typ.float ~bits ~byts ~enc:`Pair
       | Integer -> Typ.integer ~bits ~byts
@@ -336,8 +337,8 @@ let rec xlate_type : x -> Llvm.lltype -> Typ.t =
       | Token -> Typ.opaque ~name:"token"
       | Vector | Array | Struct ->
           todo "unsized non-opaque aggregate types: %a" pp_lltype llt ()
-      | Half | Float | Double | X86fp80 | Fp128 | Ppc_fp128 | Integer
-       |X86_mmx | Pointer ->
+      | Half | BFloat | Float | Double | X86fp80 | Fp128 | Ppc_fp128
+       |Integer | X86_mmx | Pointer ->
           fail "expected to be sized: %a" pp_lltype llt ()
       | Void | Label | Metadata -> assert false
   in
