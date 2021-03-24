@@ -1179,7 +1179,7 @@ let xlate_instr :
                   let cmnd = IArray.of_list insts in
                   (pre_0 @ pre_1, call, [Block.mk ~lbl ~cmnd ~term]) ) ) ) )
   | Invoke -> (
-      let llcallee = Llvm.operand instr (Llvm.num_operands instr - 3) in
+      let llcallee = Llvm.operand instr (Llvm.num_operands instr - 1) in
       let lltyp = Llvm.type_of llcallee in
       let llcallee = norm_callee llcallee in
       let num_actuals = num_actuals instr lltyp llcallee in
