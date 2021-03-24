@@ -15,7 +15,6 @@ depends: [
   "containers"
   "containers-data"
   "core" {>= "v0.14"}
-  "crunch" {build}
   "ctypes"
   "ctypes-foreign"
   "dune" {build & >= "2.7"}

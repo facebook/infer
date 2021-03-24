@@ -1594,10 +1594,6 @@ let read_and_parse llcontext bc_file =
   |>
   [%Trace.retn fun {pf} _ -> pf ""]
 
-let link_in : Llvm.llcontext -> Llvm.lllinker -> string -> unit =
- fun llcontext link_ctx bc_file ->
-  Llvm_linker.link_in link_ctx (read_and_parse llcontext bc_file)
-
 let check_datalayout llcontext lldatalayout =
   let check_size llt typ =
     let llsiz =
@@ -1643,25 +1639,13 @@ let cleanup llmodule llcontext =
   Llvm.dispose_module llmodule ;
   Llvm.dispose_context llcontext
 
-let translate ~models ~fuzzer ~internalize : string list -> Llair.program =
- fun inputs ->
-  [%Trace.call fun {pf} ->
-    pf "@ %a" (List.pp "@ " Format.pp_print_string) inputs]
+let translate ~internalize : string -> Llair.program =
+ fun input ->
+  [%Trace.call fun {pf} -> pf "@ %s" input]
   ;
   Llvm.install_fatal_error_handler invalid_llvm ;
   let llcontext = Llvm.global_context () in
-  let input, inputs = List.pop_exn inputs in
   let llmodule = read_and_parse llcontext input in
-  let link_ctx = Llvm_linker.get_linker llmodule in
-  List.iter ~f:(link_in llcontext link_ctx) inputs ;
-  let link_model_file name =
-    Llvm_linker.link_in link_ctx
-      (Llvm_irreader.parse_ir llcontext
-         (Llvm.MemoryBuffer.of_string (Option.get_exn (Model.read name))))
-  in
-  if models then link_model_file "/cxxabi.bc" ;
-  if fuzzer then link_model_file "/lib_fuzzer_main.bc" ;
-  Llvm_linker.linker_dispose link_ctx ;
   assert (
     Llvm_analysis.verify_module llmodule |> Option.for_all ~f:invalid_llvm
   ) ;

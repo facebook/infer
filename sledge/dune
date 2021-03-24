@@ -94,27 +94,6 @@
   (inline_tests)))
 
 (subdir
- model
- (rule
-  (targets cxxabi.bc)
-  (deps cxxabi.cpp Makefile llair_intrinsics.h)
-  (action
-   (run make ROOT=../../.. cxxabi.bc)))
- (rule
-  (targets lib_fuzzer_main.bc)
-  (deps lib_fuzzer_main.c Makefile)
-  (action
-   (run make ROOT=../../.. lib_fuzzer_main.bc)))
- (rule
-  (targets model.ml)
-  (deps cxxabi.bc lib_fuzzer_main.bc)
-  (action
-   (run ocaml-crunch -m plain -e bc -o model.ml .)))
- (library
-  (name model)
-  (public_name sledge.model)))
-
-(subdir
  cli
  (executable
   (name sledge_cli)
@@ -122,10 +101,9 @@
   (package sledge)
   (libraries apron apron.boxMPQ core ctypes ctypes.foreign dune-build-info
     llvm llvm.irreader llvm.analysis llvm.scalar_opts llvm.target llvm.ipo
-    llvm.linker shexp.process yojson trace nonstdlib sledge model
-    smtlib-utils)
+    llvm.linker shexp.process yojson trace nonstdlib sledge smtlib-utils)
   (flags
-   (:standard -w -58 -open NS -open Sledge -open Model))
+   (:standard -w -58 -open NS -open Sledge))
   (preprocess
    (pps ppx_sledge ppx_trace))))
 

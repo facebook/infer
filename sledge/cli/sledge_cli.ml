@@ -190,38 +190,22 @@ let translate =
   let%map_open output =
     flag "output" (optional string)
       ~doc:"<file> write generated binary LLAIR to <file>"
-  and no_models =
-    flag "no-models" no_arg
-      ~doc:"do not add models for C/C++ runtime and standard libraries"
-  and fuzzer =
-    flag "fuzzer" no_arg ~doc:"add a harness for libFuzzer targets"
   and no_internalize =
     flag "no-internalize" no_arg
       ~doc:
         "do not internalize all functions except the entry points \
          specified in the config file"
   in
-  fun bitcode_inputs () ->
+  fun bitcode_input () ->
     let program =
-      Frontend.translate ~models:(not no_models) ~fuzzer
-        ~internalize:(not no_internalize) bitcode_inputs
+      Frontend.translate ~internalize:(not no_internalize) bitcode_input
     in
     Option.iter ~f:(marshal program) output ;
     program
 
 let llvm_grp =
-  let translate_inputs =
-    let expand_argsfile input =
-      if Char.equal input.[0] '@' then
-        In_channel.with_file ~f:In_channel.input_lines (String.drop 1 input)
-      else [input]
-    in
-    let open Command.Param in
-    let input_arg = Arg_type.map string ~f:expand_argsfile in
-    anon
-      (map_anons ~f:List.concat
-         (non_empty_sequence_as_list ("<input>" %: input_arg)))
-    |*> translate
+  let translate_input =
+    Command.Param.(anon ("<input>" %: string) |*> translate)
   in
   let translate_cmd =
     let summary = "translate LLVM bitcode to LLAIR" in
@@ -232,7 +216,7 @@ let llvm_grp =
        names a file containing one <input> per line."
     in
     let param =
-      translate_inputs >*> Command.Param.return (fun _ -> Report.Ok)
+      translate_input >*> Command.Param.return (fun _ -> Report.Ok)
     in
     command ~summary ~readme param
   in
@@ -241,7 +225,7 @@ let llvm_grp =
       "translate LLVM bitcode to LLAIR and print in textual form"
     in
     let readme () = "The <input> file must be LLVM bitcode." in
-    let param = translate_inputs |*> disassemble in
+    let param = translate_input |*> disassemble in
     command ~summary ~readme param
   in
   let analyze_cmd =
@@ -251,7 +235,7 @@ let llvm_grp =
        convenience wrapper for the sequence `sledge llvm translate`; \
        `sledge analyze`."
     in
-    let param = translate_inputs |*> analyze in
+    let param = translate_input |*> analyze in
     command ~summary ~readme param
   in
   let summary = "integration with LLVM" in
@@ -291,7 +275,7 @@ Stdlib.Sys.catch_break true
 ;;
 Command.run ~version:Version.version ~build_info:Version.build_info
   (Command.group ~summary ~readme ~preserve_subcommand_order:()
-     [ ("buck", Sledge_buck.main ~command ~analyze:(translate >*> analyze))
+     [ ("buck", Sledge_buck.main ~command)
      ; ("llvm", llvm_grp)
      ; ("analyze", analyze_cmd)
      ; ("disassemble", disassemble_cmd)

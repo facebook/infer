@@ -149,10 +149,7 @@ let llvm_link_opt ~fuzzer ~bitcode_output modules =
   let modules = if fuzzer then "-" :: modules else modules in
   let open Process in
   eval ~context
-    ( ( if fuzzer then
-        echo ~n:() (Option.get_exn (Model.read "/lib_fuzzer_main.bc"))
-      else return () )
-    |- run (Lazy.force llvm_bin ^ "llvm-link") ("-o=-" :: modules)
+    ( run (Lazy.force llvm_bin ^ "llvm-link") ("-o=-" :: modules)
     |- run
          (Lazy.force llvm_bin ^ "opt")
          [ "-o=" ^ bitcode_output
@@ -184,13 +181,12 @@ let llvm_link_opt ~fuzzer ~bitcode_output modules =
 module Command = Core.Command
 open Command.Let_syntax
 
-let ( |*> ) a' f' = a' |> Command.Param.apply f'
 let ( |**> ) = Command.Param.map2 ~f:(fun a f b -> f b a)
 
 let abs_path_arg =
   Command.Param.(Arg_type.map string ~f:(make_absolute cwd))
 
-let main ~(command : Report.status Command.basic_command) ~analyze =
+let main ~(command : Report.status Command.basic_command) =
   let bitcode_inputs =
     let%map_open target = anon ("<target>" %: string)
     and modules =
@@ -215,16 +211,6 @@ let main ~(command : Report.status Command.basic_command) ~analyze =
       "Build a buck target and report the included bitcode files."
     in
     let param = bitcode_inputs >>| fun _ () -> Report.Ok in
-    command ~summary ~readme param
-  in
-  let analyze_cmd =
-    let summary = "analyze buck target" in
-    let readme () =
-      "Analyze code in a buck target. This is a convenience wrapper for \
-       the sequence `sledge buck bitcode`; `sledge llvm translate`; \
-       `sledge analyze`."
-    in
-    let param = bitcode_inputs |*> analyze in
     command ~summary ~readme param
   in
   let link_cmd =
@@ -255,4 +241,4 @@ let main ~(command : Report.status Command.basic_command) ~analyze =
      which can be used to configure buck targets for sledge."
   in
   Command.group ~summary ~readme ~preserve_subcommand_order:()
-    [("analyze", analyze_cmd); ("bitcode", bitcode_cmd); ("link", link_cmd)]
+    [("bitcode", bitcode_cmd); ("link", link_cmd)]
