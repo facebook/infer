@@ -10,8 +10,8 @@
  (modules ToplParser))
 
 (library
- (name TOPLlib)
- (public_name infer.TOPLlib)
+ (name Topllib)
+ (public_name infer.Topllib)
  (flags
   (:standard -open Core -open IR -open IStdlib -open IStd -open ATDGenerated
     -open IBase -open Absint -open Biabduction))

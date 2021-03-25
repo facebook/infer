@@ -2230,7 +2230,7 @@ These annotations can be found at `com.facebook.infer.annotation.*`.
 
 Reported as "Topl Error" by [topl](/docs/next/checker-topl).
 
-Experimental.
+A violation of a Topl property (user-specified).
 ## UNINITIALIZED_VALUE
 
 Reported as "Uninitialized Value" by [uninit](/docs/next/checker-uninit).

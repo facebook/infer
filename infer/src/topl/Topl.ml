@@ -25,4 +25,4 @@ let properties = lazy (List.concat_map ~f:parse Config.topl_properties)
 
 let automaton () = ToplAutomaton.make (Lazy.force properties)
 
-let is_active () = Config.is_checker_enabled TOPL && not (List.is_empty (Lazy.force properties))
+let is_active () = Config.is_checker_enabled Topl && not (List.is_empty (Lazy.force properties))

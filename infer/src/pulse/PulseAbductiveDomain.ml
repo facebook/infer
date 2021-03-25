@@ -99,7 +99,7 @@ type t =
 [@@deriving compare, equal, yojson_of]
 
 let pp f {post; pre; topl; path_condition; skipped_calls} =
-  F.fprintf f "@[<v>%a@;%a@;PRE=[%a]@;skipped_calls=%a@;TOPL=%a@]" PathCondition.pp path_condition
+  F.fprintf f "@[<v>%a@;%a@;PRE=[%a]@;skipped_calls=%a@;Topl=%a@]" PathCondition.pp path_condition
     PostDomain.pp post PreDomain.pp pre SkippedCalls.pp skipped_calls PulseTopl.pp_state topl
 
 

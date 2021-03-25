@@ -29,7 +29,7 @@ open Pulselib;;
 open Checkers;;
 open Costlib;;
 open Quandary;;
-open TOPLlib;;
+open Topllib;;
 open Concurrency;;
 open Labs;;
 open OpenSource;;

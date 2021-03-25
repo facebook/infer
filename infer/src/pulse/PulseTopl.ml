@@ -246,7 +246,7 @@ let get env x =
   | Some v ->
       v
   | None ->
-      L.die InternalError "TOPL: Cannot find %s. Should be caught by static checks" x
+      L.die InternalError "Topl: Cannot find %s. Should be caught by static checks" x
 
 
 let set = List.Assoc.add ~equal:String.equal
@@ -378,7 +378,7 @@ let dummy_tenv = Tenv.create ()
 
 let is_unsat_expensive path_condition pruned =
   let _path_condition, unsat, _new_eqs =
-    (* Not enabling dynamic type reasoning in TOPL for now *)
+    (* Not enabling dynamic type reasoning in Topl for now *)
     PathCondition.is_unsat_expensive dummy_tenv
       ~get_dynamic_type:(fun _ -> None)
       (Constraint.prune_path pruned path_condition)
@@ -614,6 +614,6 @@ let report_errors proc_desc err_log state =
         let loc = Procdesc.get_loc proc_desc in
         let ltr = make_trace 0 [] q in
         let message = Format.asprintf "%a" ToplAutomaton.pp_message_of_state (a, q.post.vertex) in
-        Reporting.log_issue proc_desc err_log ~loc ~ltr TOPL IssueType.topl_error message
+        Reporting.log_issue proc_desc err_log ~loc ~ltr Topl IssueType.topl_error message
   in
   List.iter ~f:report_simple_state state

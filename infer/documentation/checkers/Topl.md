@@ -1,17 +1,3 @@
----
-title: "Topl"
-description: "Detect errors based on user-provided state machines describing temporal properties over multiple objects."
----
-
-Detect errors based on user-provided state machines describing temporal properties over multiple objects.
-
-Activate with `--topl`.
-
-Supported languages:
-- C/C++/ObjC: Experimental
-- Java: Experimental
-- C#/.Net: Experimental
-
 # Topl
 
 ## What is it?
@@ -109,9 +95,3 @@ For several examples, see https://github.com/facebook/infer/tree/master/infer/te
 * Analysis time increases exponentially with the number of registers used in properties.
     * In theory, there should be no significant slowdown if registers belong to different properties, but the implementation is not yet optimized.
     * If there are many registers within the same property, then the slowdown is unavoidable (without some significant breakthrough). However, the maximum number of registers we ever used for one practical property was 3.
-
-
-## List of Issue Types
-
-The following issue types are reported by this checker:
-- [TOPL_ERROR](/docs/next/all-issue-types#topl_error)

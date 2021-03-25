@@ -2500,7 +2500,7 @@ and trace_ondemand =
 
 
 and trace_topl =
-  CLOpt.mk_bool ~long:"trace-topl" "Detailed tracing information during TOPL analysis"
+  CLOpt.mk_bool ~long:"trace-topl" "Detailed tracing information during Topl analysis"
 
 
 and tv_commit =

@@ -7,7 +7,7 @@
 
 open! IStd
 
-(* An automaton is a different representation for a set of TOPL properties: states and transitions
+(* An automaton is a different representation for a set of Topl properties: states and transitions
    are identified by nonnegative integers; and transitions are grouped by their source. Also, the
    meaning of transition labels does not depend on context (e.g., prefixes are now included).
 

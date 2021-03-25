@@ -37,7 +37,7 @@ type t =
   | SIOF
   | SelfInBlock
   | Starvation
-  | TOPL
+  | Topl
   | Uninit
 [@@deriving equal, enumerate]
 
@@ -409,12 +409,14 @@ let config_unsafe checker =
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= true
       ; activates= [] }
-  | TOPL ->
+  | Topl ->
       { id= "topl"
-      ; kind= UserFacing {title= "TOPL"; markdown_body= ""}
+      ; kind=
+          UserFacing {title= "Topl"; markdown_body= [%blob "../../documentation/checkers/Topl.md"]}
       ; support= supports_clang_and_java_experimental
       ; short_documentation=
-          "Detects errors based on user-provided state machines describing multi-object monitors."
+          "Detect errors based on user-provided state machines describing temporal properties over \
+           multiple objects."
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [Pulse] }
