@@ -1,7 +1,6 @@
 property TaintTrack
   prefix "StringBuilder"
   prefix "Taint"
-  nondet (start building track)
 
   // We start tracking when we see calls to Taint.badString
   start -> start: *

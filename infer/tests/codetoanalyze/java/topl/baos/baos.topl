@@ -1,5 +1,4 @@
 property BaosRetrieveWithoutFlush
-  nondet (start)
   start -> start: *
   start -> valid: ".*OutputStream"(X, Y, Ret) => x := X; y := Y
   valid -> invalid: ".*OutputStream.write.*"(X, Ia, Ret) when X == x

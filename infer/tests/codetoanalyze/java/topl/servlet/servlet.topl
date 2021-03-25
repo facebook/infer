@@ -8,7 +8,6 @@
 property InterleavedResponse
   message "A ServletResponse was asked for both a writer and a stream."
   prefix "ServletResponse"
-  nondet (start)
   start -> start: *
   start -> gotWriter: getWriter(R, IgnoreRet) => r := R
   start -> gotStream: getOutputStream(R, IgnoreRet) => r := R
@@ -17,7 +16,6 @@ property InterleavedResponse
 
 property ForwardUncommitted
   message "A ServletResponse was forwarded before being committed."
-  nondet (start)
   start -> start: *
   start -> gotChannel: "ServletResponse.\\(getWriter\\|getOutputStream\\)"(R, C) => r := R; c := C
   gotChannel -> ok: "\\(PrintWriter\\|ServletOutputStream\\).flush.*"(C, IgnoreRet) when C == c

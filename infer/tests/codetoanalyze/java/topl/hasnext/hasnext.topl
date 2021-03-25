@@ -2,7 +2,6 @@ property HasNext
   prefix "Iterator"
   prefix "List"
   prefix "Scanner"
-  nondet (start)
   start -> start: *
   start -> invalid: iterator(Ignore, RetIter) => i := RetIter
   start -> invalid: Scanner(Iter, IgnoreA, IgnoreB) => i := Iter // For constructors, "this" is first argument, and there's a dummy return

@@ -1,5 +1,4 @@
 property ShouldUseEntries
-  nondet (start iteratingKeys)
   start -> start: *
   start -> gotKeys: "Map.keySet"(M, S) => m := M; s := S
   gotKeys -> iteratingKeys: "Set.iterator"(S, I) when S == s => i := I

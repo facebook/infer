@@ -47,8 +47,4 @@ type transition = {source: vertex; target: vertex; label: label option}
 
 (* TODO(rgrigore): Check that registers are read only after being initialized *)
 type t =
-  { name: property_name
-  ; message: string option
-  ; prefixes: string list
-  ; nondet: string list
-  ; transitions: transition list }
+  {name: property_name; message: string option; prefixes: string list; transitions: transition list}
