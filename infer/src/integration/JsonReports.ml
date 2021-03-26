@@ -345,6 +345,14 @@ let write_costs proc_name loc cost_opt (outfile : Utils.outfile) =
 
 let write_config_impact proc_name loc config_impact_opt (outfile : Utils.outfile) =
   if ExternalConfigImpactData.is_in_config_data_file proc_name then
+    let config_fields =
+      (* TODO: This value should be non-empty by an additional analysis. *)
+      ConfigImpactAnalysis.Fields.empty
+    in
+    let config_impact_opt =
+      Option.map config_impact_opt
+        ~f:(ConfigImpactAnalysis.Summary.instantiate_unchecked_callees_cond ~config_fields)
+    in
     JsonConfigImpactPrinter.pp outfile.fmt {loc; proc_name; config_impact_opt}
 
 

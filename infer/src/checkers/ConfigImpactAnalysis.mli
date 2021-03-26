@@ -7,6 +7,8 @@
 
 open! IStd
 
+module Fields : AbstractDomain.FiniteSetS
+
 module UncheckedCallee : sig
   type t
 
@@ -31,6 +33,8 @@ module Summary : sig
   val pp : Format.formatter -> t -> unit
 
   val get_unchecked_callees : t -> UncheckedCallees.t
+
+  val instantiate_unchecked_callees_cond : config_fields:Fields.t -> t -> t
 end
 
 val checker : Summary.t InterproceduralAnalysis.t -> Summary.t option

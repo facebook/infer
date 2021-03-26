@@ -38,6 +38,25 @@ end
 
 module ConfigChecks = AbstractDomain.SafeInvertedMap (ConfigName) (Branch)
 
+module Field = struct
+  include Fieldname
+
+  let compare = Fieldname.loose_compare
+end
+
+module Fields = AbstractDomain.FiniteSet (Field)
+
+module FieldChecks = struct
+  include AbstractDomain.SafeInvertedMap (Field) (Branch)
+
+  let get_fields field_map =
+    fold
+      (fun field branch acc ->
+        assert (not (Branch.is_top branch)) ;
+        Fields.add field acc )
+      field_map Fields.empty
+end
+
 module UncheckedCallee = struct
   type t =
     { callee: Procname.t
@@ -86,6 +105,19 @@ module UncheckedCallees = struct
   let pp_without_location f x = UncheckedCallee.pp_without_location_list f (elements x)
 end
 
+module UncheckedCalleesCond = struct
+  include AbstractDomain.Map (Fields) (UncheckedCallees)
+
+  let weak_update fields callees fields_map =
+    update fields
+      (function None -> Some callees | Some prev -> Some (UncheckedCallees.union prev callees))
+      fields_map
+
+
+  let replace_location_by_call location fields_map =
+    map (UncheckedCallees.replace_location_by_call location) fields_map
+end
+
 module Loc = struct
   type t = Ident of Ident.t | Pvar of Pvar.t [@@deriving compare]
 
@@ -99,23 +131,28 @@ end
 module ConfigLifted = AbstractDomain.Flat (ConfigName)
 
 module Val = struct
-  type t = {config: ConfigLifted.t}
+  type t = {config: ConfigLifted.t; fields: Fields.t}
 
-  let pp f {config} = F.fprintf f "@[config:@,%a@]" ConfigLifted.pp config
+  let pp f {config; fields} =
+    F.fprintf f "@[@[config:@,%a@]@ @[fields:@,%a@]@]" ConfigLifted.pp config Fields.pp fields
 
-  let leq ~lhs ~rhs = ConfigLifted.leq ~lhs:lhs.config ~rhs:rhs.config
 
-  let join x y = {config= ConfigLifted.join x.config y.config}
+  let leq ~lhs ~rhs =
+    ConfigLifted.leq ~lhs:lhs.config ~rhs:rhs.config && Fields.leq ~lhs:lhs.fields ~rhs:rhs.fields
+
+
+  let join x y = {config= ConfigLifted.join x.config y.config; fields= Fields.join x.fields y.fields}
 
   let widen ~prev ~next ~num_iters =
-    {config= ConfigLifted.widen ~prev:prev.config ~next:next.config ~num_iters}
+    { config= ConfigLifted.widen ~prev:prev.config ~next:next.config ~num_iters
+    ; fields= Fields.widen ~prev:prev.fields ~next:next.fields ~num_iters }
 
 
-  let bottom = {config= ConfigLifted.bottom}
+  let bottom = {config= ConfigLifted.bottom; fields= Fields.bottom}
 
-  let of_config config = {config= ConfigLifted.v config}
+  let of_config config = {bottom with config= ConfigLifted.v config}
 
-  let get_config_opt {config} = ConfigLifted.get config
+  let of_field fn = {bottom with fields= Fields.singleton fn}
 end
 
 module Mem = struct
@@ -125,47 +162,91 @@ module Mem = struct
 end
 
 module Summary = struct
-  type t = {unchecked_callees: UncheckedCallees.t; has_call_stmt: bool}
+  type t =
+    { unchecked_callees: UncheckedCallees.t  (** Set of unchecked callees *)
+    ; unchecked_callees_cond: UncheckedCalleesCond.t
+          (** Sets of unchecked callees that are called conditionally by object fields *)
+    ; has_call_stmt: bool  (** True if a function includes a call statement *) }
 
-  let pp f {unchecked_callees; has_call_stmt} =
-    F.fprintf f "@[unchecked callees:@,%a,has_call_stmt:%b@]" UncheckedCallees.pp unchecked_callees
+  let pp f {unchecked_callees; unchecked_callees_cond; has_call_stmt} =
+    F.fprintf f
+      "@[@[unchecked callees:@,%a@],@ @[unchecked callees cond:@,%a@],@ @[has_call_stmt:%b@]@]"
+      UncheckedCallees.pp unchecked_callees UncheckedCalleesCond.pp unchecked_callees_cond
       has_call_stmt
 
 
   let get_unchecked_callees {unchecked_callees} = unchecked_callees
+
+  let instantiate_unchecked_callees_cond ~config_fields
+      ({unchecked_callees; unchecked_callees_cond} as x) =
+    let unchecked_callees =
+      UncheckedCalleesCond.fold
+        (fun fields callees acc ->
+          if Fields.is_empty (Fields.inter config_fields fields) then
+            UncheckedCallees.union acc callees
+          else acc )
+        unchecked_callees_cond unchecked_callees
+    in
+    {x with unchecked_callees; unchecked_callees_cond= UncheckedCalleesCond.bottom}
 end
 
 module Dom = struct
-  type t = {config_checks: ConfigChecks.t; unchecked_callees: UncheckedCallees.t; mem: Mem.t}
+  type t =
+    { config_checks: ConfigChecks.t
+    ; field_checks: FieldChecks.t
+    ; unchecked_callees: UncheckedCallees.t
+    ; unchecked_callees_cond: UncheckedCalleesCond.t
+    ; mem: Mem.t }
 
-  let pp f {config_checks; unchecked_callees; mem} =
-    F.fprintf f "@[@[config checks:@,%a@]@ @[unchecked callees:@,%a@]@ @[mem:%,%a@]@]"
-      ConfigChecks.pp config_checks UncheckedCallees.pp unchecked_callees Mem.pp mem
+  let pp f {config_checks; field_checks; unchecked_callees; unchecked_callees_cond; mem} =
+    F.fprintf f
+      "@[@[config checks:@,\
+       %a@]@ @[field checks:@,\
+       %a@]@ @[unchecked callees:@,\
+       %a@]@ @[unchecked callees cond:@,\
+       %a@]@ @[mem:%,%a@]@]" ConfigChecks.pp config_checks FieldChecks.pp field_checks
+      UncheckedCallees.pp unchecked_callees UncheckedCalleesCond.pp unchecked_callees_cond Mem.pp
+      mem
 
 
   let leq ~lhs ~rhs =
     ConfigChecks.leq ~lhs:lhs.config_checks ~rhs:rhs.config_checks
+    && FieldChecks.leq ~lhs:lhs.field_checks ~rhs:rhs.field_checks
     && UncheckedCallees.leq ~lhs:lhs.unchecked_callees ~rhs:rhs.unchecked_callees
+    && UncheckedCalleesCond.leq ~lhs:lhs.unchecked_callees_cond ~rhs:rhs.unchecked_callees_cond
     && Mem.leq ~lhs:lhs.mem ~rhs:rhs.mem
 
 
   let join x y =
     { config_checks= ConfigChecks.join x.config_checks y.config_checks
+    ; field_checks= FieldChecks.join x.field_checks y.field_checks
     ; unchecked_callees= UncheckedCallees.join x.unchecked_callees y.unchecked_callees
+    ; unchecked_callees_cond=
+        UncheckedCalleesCond.join x.unchecked_callees_cond y.unchecked_callees_cond
     ; mem= Mem.join x.mem y.mem }
 
 
   let widen ~prev ~next ~num_iters =
     { config_checks= ConfigChecks.widen ~prev:prev.config_checks ~next:next.config_checks ~num_iters
+    ; field_checks= FieldChecks.widen ~prev:prev.field_checks ~next:next.field_checks ~num_iters
     ; unchecked_callees=
         UncheckedCallees.widen ~prev:prev.unchecked_callees ~next:next.unchecked_callees ~num_iters
+    ; unchecked_callees_cond=
+        UncheckedCalleesCond.widen ~prev:prev.unchecked_callees_cond
+          ~next:next.unchecked_callees_cond ~num_iters
     ; mem= Mem.widen ~prev:prev.mem ~next:next.mem ~num_iters }
 
 
-  let to_summary has_call_stmt {unchecked_callees} = {Summary.unchecked_callees; has_call_stmt}
+  let to_summary has_call_stmt {unchecked_callees; unchecked_callees_cond} =
+    {Summary.unchecked_callees; unchecked_callees_cond; has_call_stmt}
+
 
   let init =
-    {config_checks= ConfigChecks.top; unchecked_callees= UncheckedCallees.bottom; mem= Mem.bottom}
+    { config_checks= ConfigChecks.top
+    ; field_checks= FieldChecks.top
+    ; unchecked_callees= UncheckedCallees.bottom
+    ; unchecked_callees_cond= UncheckedCalleesCond.bottom
+    ; mem= Mem.bottom }
 
 
   let add_mem loc v ({mem} as astate) = {astate with mem= Mem.add loc v mem}
@@ -175,6 +256,8 @@ module Dom = struct
   let call_config_check ret config astate = add_mem (Loc.of_id ret) (Val.of_config config) astate
 
   let load_config id pvar astate = copy_mem ~tgt:(Loc.of_id id) ~src:(Loc.of_pvar pvar) astate
+
+  let load_field id fn astate = add_mem (Loc.of_id id) (Val.of_field fn) astate
 
   let store_config pvar id astate = copy_mem ~tgt:(Loc.of_pvar pvar) ~src:(Loc.of_id id) astate
 
@@ -186,10 +269,13 @@ module Dom = struct
 
   let rec get_config_check_prune e mem =
     match (e : Exp.t) with
-    | Var id ->
-        Mem.lookup (Loc.of_id id) mem
-        |> Val.get_config_opt
-        |> Option.map ~f:(fun config -> (config, Branch.True))
+    | Var id -> (
+        let {Val.config; fields} = Mem.lookup (Loc.of_id id) mem in
+        match ConfigLifted.get config with
+        | Some config ->
+            Some (`Unconditional config, Branch.True)
+        | None ->
+            Option.some_if (not (Fields.is_empty fields)) (`Conditional fields, Branch.True) )
     | UnOp (LNot, e, _) ->
         get_config_check_prune e mem |> neg_branch
     | BinOp ((Eq | Ne), Const _, Const _) ->
@@ -204,25 +290,57 @@ module Dom = struct
         None
 
 
-  let prune e ({config_checks; mem} as astate) =
+  let prune e ({config_checks; field_checks; mem} as astate) =
     get_config_check_prune e mem
     |> Option.value_map ~default:astate ~f:(fun (config, branch) ->
-           {astate with config_checks= ConfigChecks.add config branch config_checks} )
+           match config with
+           | `Unconditional config ->
+               {astate with config_checks= ConfigChecks.add config branch config_checks}
+           | `Conditional fields ->
+               { astate with
+                 field_checks=
+                   Fields.fold
+                     (fun field acc -> FieldChecks.add field branch acc)
+                     fields field_checks } )
 
 
-  let call analyze_dependency callee location ({config_checks; unchecked_callees} as astate) =
+  let call analyze_dependency callee location
+      ({config_checks; field_checks; unchecked_callees; unchecked_callees_cond} as astate) =
     if ConfigChecks.is_top config_checks then
-      let unchecked_callees =
+      let new_unchecked_callees, new_unchecked_callees_cond =
         match analyze_dependency callee with
-        | Some (_, {Summary.unchecked_callees= callee_summary; has_call_stmt}) when has_call_stmt ->
+        | Some
+            ( _
+            , { Summary.unchecked_callees= callee_summary
+              ; unchecked_callees_cond= callee_summary_cond
+              ; has_call_stmt } )
+          when has_call_stmt ->
             (* If callee's summary is not leaf, use it. *)
-            UncheckedCallees.replace_location_by_call location callee_summary
-            |> UncheckedCallees.join unchecked_callees
+            ( UncheckedCallees.replace_location_by_call location callee_summary
+            , UncheckedCalleesCond.replace_location_by_call location callee_summary_cond )
         | _ ->
             (* Otherwise, add callee's name. *)
-            UncheckedCallees.add {callee; location; call_type= Direct} unchecked_callees
+            ( UncheckedCallees.singleton {callee; location; call_type= Direct}
+            , UncheckedCalleesCond.empty )
       in
-      {astate with unchecked_callees}
+      if FieldChecks.is_top field_checks then
+        { astate with
+          unchecked_callees= UncheckedCallees.join unchecked_callees new_unchecked_callees
+        ; unchecked_callees_cond=
+            UncheckedCalleesCond.join unchecked_callees_cond new_unchecked_callees_cond }
+      else
+        let fields_to_add = FieldChecks.get_fields field_checks in
+        let unchecked_callees_cond =
+          UncheckedCalleesCond.weak_update fields_to_add new_unchecked_callees
+            unchecked_callees_cond
+        in
+        let unchecked_callees_cond =
+          UncheckedCalleesCond.fold
+            (fun fields callees acc ->
+              UncheckedCalleesCond.weak_update (Fields.union fields fields_to_add) callees acc )
+            new_unchecked_callees_cond unchecked_callees_cond
+        in
+        {astate with unchecked_callees_cond}
     else astate
 end
 
@@ -249,6 +367,8 @@ module TransferFunctions = struct
     match (instr : Sil.instr) with
     | Load {id; e= Lvar pvar} ->
         Dom.load_config id pvar astate
+    | Load {id; e= Lfield (_, fn, _)} ->
+        Dom.load_field id fn astate
     | Store {e1= Lvar pvar; e2= Var id} ->
         Dom.store_config pvar id astate
     | Call ((ret, _), Const (Cfun callee), [(Var id, _)], _, _)
