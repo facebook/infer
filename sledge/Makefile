@@ -20,6 +20,8 @@ dune_install_trace = $(subst release,trace,$(dune_install_release))
 dune_build_debug = $(subst release,debug,$(dune_build_release))
 dune_install_debug = $(subst release,debug,$(dune_install_release))
 
+export PATH := ../facebook/dependencies/bin:$(PATH)
+
 LLVM_OCAML_SRC = $(shell git ls-files -- vendor/llvm-dune)
 
 # file to use as a sentinel indicating llvm ocaml bindings are up-to-date
@@ -82,7 +84,7 @@ test:
 
 .PHONY: ci-test
 ci-test:
-	dune build @_build/debug/runtest
+	dune build @_build/debug/fmt @_build/debug/runtest
 
 .PHONY: clean
 clean:
