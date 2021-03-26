@@ -1,0 +1,1026 @@
+<!-- Creator     : groff version 1.22.4 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>infer-analyze</title>
+
+</head>
+<body>
+
+<h1 align="center">infer-analyze</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
+<a href="#BUCK OPTIONS">BUCK OPTIONS</a><br>
+<a href="#BUFFER OVERRUN OPTIONS">BUFFER OVERRUN OPTIONS</a><br>
+<a href="#CLANG OPTIONS">CLANG OPTIONS</a><br>
+<a href="#JAVA OPTIONS">JAVA OPTIONS</a><br>
+<a href="#QUANDARY CHECKER OPTIONS">QUANDARY CHECKER OPTIONS</a><br>
+<a href="#RACERD CHECKER OPTIONS">RACERD CHECKER OPTIONS</a><br>
+<a href="#SIOF CHECKER OPTIONS">SIOF CHECKER OPTIONS</a><br>
+<a href="#ENVIRONMENT">ENVIRONMENT</a><br>
+<a href="#FILES">FILES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">infer-analyze -
+analyze the files captured by infer</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>infer
+analyze</b> <i>[options]</i> <b><br>
+infer</b> <i>[options]</i></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Analyze the
+files captured in the project results directory and
+report.</p>
+
+<h2>OPTIONS
+<a name="OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>--annotation-reachability</b></p>
+
+<p style="margin-left:17%;">Activates: checker
+annotation-reachability: Given a pair of source and sink
+annotation, e.g. &rsquo;@PerformanceCritical&rsquo; and
+&rsquo;@Expensive&rsquo;, this checker will warn whenever
+some method annotated with
+&rsquo;@PerformanceCritical&rsquo; calls, directly or
+indirectly, another method annotated with
+&rsquo;@Expensive&rsquo; (Conversely:
+<b>--no-annotation-reachability</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--annotation-reachability-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable
+annotation-reachability and disable all other checkers
+(Conversely: <b>--no-annotation-reachability-only</b>)</p>
+
+<p style="margin-left:11%;"><b>--no-biabduction</b></p>
+
+<p style="margin-left:17%;">Deactivates: checker
+biabduction: This analysis deals with a range of issues,
+many linked to memory safety. (Conversely:
+<b>--biabduction</b>)</p>
+
+<p style="margin-left:11%;"><b>--biabduction-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable biabduction
+and disable all other checkers (Conversely:
+<b>--no-biabduction-only</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--biabduction-write-dotty</b></p>
+
+<p style="margin-left:17%;">Activates: Produce dotty files
+for specs and retain cycles reports in infer-out/captured.
+(Conversely: <b>--no-biabduction-write-dotty</b>)</p>
+
+<p style="margin-left:11%;"><b>--bufferoverrun</b></p>
+
+<p style="margin-left:17%;">Activates: checker
+bufferoverrun: InferBO is a detector for out-of-bounds array
+accesses. (Conversely: <b>--no-bufferoverrun</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--bufferoverrun-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable bufferoverrun
+and disable all other checkers (Conversely:
+<b>--no-bufferoverrun-only</b>)</p>
+
+<p style="margin-left:11%;"><b>--changed-files-index</b>
+<i>file</i></p>
+
+<p style="margin-left:17%;">Specify the file containing the
+list of source files from which reactive analysis should
+start. Source files should be specified relative to project
+root or be absolute</p>
+
+
+<p style="margin-left:11%;"><b>--config-checks-between-markers</b></p>
+
+<p style="margin-left:17%;">Activates: checker
+config-checks-between-markers: [EXPERIMENTAL] Collects
+config checks between marker start and end. (Conversely:
+<b>--no-config-checks-between-markers</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--config-checks-between-markers-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable
+config-checks-between-markers and disable all other checkers
+(Conversely:
+<b>--no-config-checks-between-markers-only</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--config-impact-analysis</b></p>
+
+<p style="margin-left:17%;">Activates: checker
+config-impact-analysis: [EXPERIMENTAL] Collects function
+that are called without config checks. (Conversely:
+<b>--no-config-impact-analysis</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--config-impact-analysis-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable
+config-impact-analysis and disable all other checkers
+(Conversely: <b>--no-config-impact-analysis-only</b>)</p>
+
+<p style="margin-left:11%;"><b>--continue-analysis</b></p>
+
+<p style="margin-left:17%;">Activates: Continue the
+analysis after more targets are captured by
+<b>--continue</b>. The other analysis options should be
+given the same before. Not compatible with
+<b>--reanalyze</b> and <b>--incremental-analysis</b>.
+(Conversely: <b>--no-continue-analysis</b>)</p>
+
+<p style="margin-left:11%;"><b>--cost</b></p>
+
+<p style="margin-left:17%;">Activates: checker cost:
+Computes the time complexity of functions and methods. Can
+be used to detect changes in runtime complexity with
+&rsquo;infer reportdiff&rsquo;. (Conversely:
+<b>--no-cost</b>)</p>
+
+<p style="margin-left:11%;"><b>--cost-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable cost and
+disable all other checkers (Conversely:
+<b>--no-cost-only</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--no-cost-suppress-func-ptr</b></p>
+
+<p style="margin-left:17%;">Deactivates: Suppress printing
+function pointers in cost reports (Conversely:
+<b>--cost-suppress-func-ptr</b>)</p>
+
+<p style="margin-left:11%;"><b>--custom-symbols</b>
+<i>json</i></p>
+
+<p style="margin-left:17%;">Specify named lists of symbols
+available to rules</p>
+
+<p style="margin-left:11%;"><b>--debug</b>,<b>-g</b></p>
+
+<p style="margin-left:17%;">Activates: Debug mode (also
+sets <b>--debug-level 2</b>, <b>--developer-mode</b>,
+<b>--print-buckets</b>, <b>--print-types</b>,
+<b>--reports-include-ml-loc</b>,
+<b>--no-only-cheap-debug</b>, <b>--trace-error</b>,
+<b>--write-html</b>) (Conversely: <b>--no-debug</b> |
+<b>-G</b>)</p>
+
+<p style="margin-left:11%;"><b>--debug-level</b>
+<i>level</i></p>
+
+<p style="margin-left:17%;">Debug level (sets
+<b>--bo-debug</b> <i>level</i>,
+<b>--debug-level-analysis</b> <i>level</i>,
+<b>--debug-level-capture</b> <i>level</i>,
+<b>--debug-level-linters</b> <i>level</i>):</p>
+
+<p style="margin-left:11%;">- 0: only basic debugging
+enabled <br>
+- 1: verbose debugging enabled <br>
+- 2: very verbose debugging enabled <b><br>
+--debug-level-analysis</b> <i>int</i></p>
+
+<p style="margin-left:17%;">Debug level for the analysis.
+See <b>--debug-level</b> for accepted values.</p>
+
+<p style="margin-left:11%;"><b>--debug-level-capture</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Debug level for the capture.
+See <b>--debug-level</b> for accepted values.</p>
+
+<p style="margin-left:11%;"><b>--debug-level-linters</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Debug level for the linters.
+See <b>--debug-level</b> for accepted values.</p>
+
+<p style="margin-left:11%;"><b>--no-deduplicate</b></p>
+
+<p style="margin-left:17%;">Deactivates: Apply
+issue-specific deduplication during analysis and/or
+reporting. (Conversely: <b>--deduplicate</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--no-default-checkers</b></p>
+
+<p style="margin-left:17%;">Deactivates: Default checkers:
+<b>--biabduction</b>, <b>--fragment-retains-view</b>,
+<b>--inefficient-keyset-iterator</b>, <b>--linters</b>,
+<b>--liveness</b>, <b>--racerd</b>,
+<b>--dotnet-resource-leak</b>, <b>--siof</b>,
+<b>--self-in-block</b>, <b>--starvation</b>, <b>--uninit</b>
+(Conversely: <b>--default-checkers</b>)</p>
+
+<p style="margin-left:11%;"><b>--eradicate</b></p>
+
+<p style="margin-left:17%;">Activates: checker eradicate:
+The eradicate &rsquo;@Nullable&rsquo; checker for Java
+annotations. (Conversely: <b>--no-eradicate</b>)</p>
+
+<p style="margin-left:11%;"><b>--eradicate-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable eradicate and
+disable all other checkers (Conversely:
+<b>--no-eradicate-only</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--no-fragment-retains-view</b></p>
+
+<p style="margin-left:17%;">Deactivates: checker
+fragment-retains-view: Detects when Android fragments are
+not explicitly nullified before becoming unreachable.
+(Conversely: <b>--fragment-retains-view</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--fragment-retains-view-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable
+fragment-retains-view and disable all other checkers
+(Conversely: <b>--no-fragment-retains-view-only</b>)</p>
+
+<p style="margin-left:11%;"><b>--help</b></p>
+
+<p style="margin-left:17%;">Show this manual</p>
+
+<p style="margin-left:11%;"><b>--help-format</b> <i>{ auto
+| groff | pager | plain }</i></p>
+
+<p style="margin-left:17%;">Show this help in the specified
+format. <b>auto</b> sets the format to <b>plain</b> if the
+environment variable <b>TERM</b> is &quot;dumb&quot; or
+undefined, and to <b>pager</b> otherwise.</p>
+
+<p style="margin-left:11%;"><b>--help-full</b></p>
+
+<p style="margin-left:17%;">Show this manual with all
+internal options in the INTERNAL OPTIONS section</p>
+
+<p style="margin-left:11%;"><b>--immutable-cast</b></p>
+
+<p style="margin-left:17%;">Activates: checker
+immutable-cast: Detection of object cast from immutable
+types to mutable types. For instance, it will detect casts
+from &rsquo;ImmutableList&rsquo; to &rsquo;List&rsquo;,
+&rsquo;ImmutableMap&rsquo; to &rsquo;Map&rsquo;, and
+&rsquo;ImmutableSet&rsquo; to &rsquo;Set&rsquo;.
+(Conversely: <b>--no-immutable-cast</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--immutable-cast-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable
+immutable-cast and disable all other checkers (Conversely:
+<b>--no-immutable-cast-only</b>)</p>
+
+<p style="margin-left:11%;"><b>--impurity</b></p>
+
+<p style="margin-left:17%;">Activates: checker impurity:
+Detects functions with potential side-effects. Same as
+&quot;purity&quot;, but implemented on top of Pulse.
+(Conversely: <b>--no-impurity</b>)</p>
+
+<p style="margin-left:11%;"><b>--impurity-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable impurity and
+disable all other checkers (Conversely:
+<b>--no-impurity-only</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--impurity-report-immutable-modifications</b></p>
+
+<p style="margin-left:17%;">Activates: Report modifications
+to immutable fields in the Impurity checker (Conversely:
+<b>--no-impurity-report-immutable-modifications</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--no-inefficient-keyset-iterator</b></p>
+
+<p style="margin-left:17%;">Deactivates: checker
+inefficient-keyset-iterator: Check for inefficient uses of
+iterators that iterate on keys then lookup their values,
+instead of iterating on key-value pairs directly.
+(Conversely: <b>--inefficient-keyset-iterator</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--inefficient-keyset-iterator-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable
+inefficient-keyset-iterator and disable all other checkers
+(Conversely:
+<b>--no-inefficient-keyset-iterator-only</b>)</p>
+
+<p style="margin-left:11%;"><b>--jobs</b>,<b>-j</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Run the specified number of
+analysis jobs simultaneously</p>
+
+<p style="margin-left:11%;"><b>--keep-going</b></p>
+
+<p style="margin-left:17%;">Activates: Keep going when the
+analysis encounters a failure (Conversely:
+<b>--no-keep-going</b>)</p>
+
+<p style="margin-left:11%;"><b>--no-linters</b></p>
+
+<p style="margin-left:17%;">Deactivates: checker linters:
+Declarative linting framework over the Clang AST.
+(Conversely: <b>--linters</b>)</p>
+
+<p style="margin-left:11%;"><b>--linters-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable linters and
+disable all other checkers (Conversely:
+<b>--no-linters-only</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--litho-required-props</b></p>
+
+<p style="margin-left:17%;">Activates: checker
+litho-required-props: Checks that all non-optional
+&rsquo;@Prop&rsquo;s have been specified when constructing
+Litho components. (Conversely:
+<b>--no-litho-required-props</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--litho-required-props-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable
+litho-required-props and disable all other checkers
+(Conversely: <b>--no-litho-required-props-only</b>)</p>
+
+<p style="margin-left:11%;"><b>--no-liveness</b></p>
+
+<p style="margin-left:17%;">Deactivates: checker liveness:
+Detection of dead stores and unused variables. (Conversely:
+<b>--liveness</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--liveness-ignored-constant</b>
+<i>+string</i></p>
+
+<p style="margin-left:17%;">List of integer constants to be
+ignored by liveness analysis</p>
+
+<p style="margin-left:11%;"><b>--liveness-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable liveness and
+disable all other checkers (Conversely:
+<b>--no-liveness-only</b>)</p>
+
+<p style="margin-left:11%;"><b>--loop-hoisting</b></p>
+
+<p style="margin-left:17%;">Activates: checker
+loop-hoisting: Detect opportunities to hoist function calls
+that are invariant outside of loop bodies for efficiency.
+(Conversely: <b>--no-loop-hoisting</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--loop-hoisting-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable loop-hoisting
+and disable all other checkers (Conversely:
+<b>--no-loop-hoisting-only</b>)</p>
+
+<p style="margin-left:11%;"><b>--max-jobs</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Maximum number of analysis jobs
+running simultaneously</p>
+
+
+<p style="margin-left:11%;"><b>--memtrace-analysis-profiling</b></p>
+
+<p style="margin-left:17%;">Activates: Generate OCaml
+analysis allocation traces in
+&rsquo;infer-out/memtrace&rsquo;. (Conversely:
+<b>--no-memtrace-analysis-profiling</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--memtrace-sampling-rate</b>
+<i>float</i></p>
+
+<p style="margin-left:17%;">Sampling rate for Memtrace
+allocation profiling. Default is 1e-6.</p>
+
+
+<p style="margin-left:11%;"><b>--print-active-checkers</b></p>
+
+<p style="margin-left:17%;">Activates: Print the active
+checkers before starting the analysis (Conversely:
+<b>--no-print-active-checkers</b>)</p>
+
+<p style="margin-left:11%;"><b>--print-logs</b></p>
+
+<p style="margin-left:17%;">Activates: Also log messages to
+stdout and stderr (Conversely: <b>--no-print-logs</b>)</p>
+
+<p style="margin-left:11%;"><b>--printf-args</b></p>
+
+<p style="margin-left:17%;">Activates: checker printf-args:
+Detect mismatches between the Java &rsquo;printf&rsquo;
+format strings and the argument types For example, this
+checker will warn about the type error in
+&rsquo;printf(&quot;Hello %d&quot;,
+&quot;world&quot;)&rsquo; (Conversely:
+<b>--no-printf-args</b>)</p>
+
+<p style="margin-left:11%;"><b>--printf-args-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable printf-args
+and disable all other checkers (Conversely:
+<b>--no-printf-args-only</b>)</p>
+
+<p style="margin-left:11%;"><b>--progress-bar-style</b>
+<i>{ auto | plain | multiline }</i></p>
+
+<p style="margin-left:17%;">Style of the progress bar.
+<b>auto</b> selects <b>multiline</b> if connected to a tty,
+otherwise <b>plain</b>.</p>
+
+
+<p style="margin-left:11%;"><b>--project-root</b>,<b>-C</b>
+<i>dir</i></p>
+
+<p style="margin-left:17%;">Specify the root directory of
+the project</p>
+
+<p style="margin-left:11%;"><b>--pulse</b></p>
+
+<p style="margin-left:17%;">Activates: checker pulse:
+Memory and lifetime analysis. (Conversely:
+<b>--no-pulse</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-cut-to-one-path-procedures-pattern</b>
+<i>string</i></p>
+
+<p style="margin-left:17%;">Regex of methods for which
+pulse will only explore one path. Can be used on
+pathologically large procedures to prevent too-big states
+from being produced.</p>
+
+<p style="margin-left:11%;"><b>--pulse-model-abort</b>
+<i>+string</i></p>
+
+<p style="margin-left:17%;">Methods that should be modelled
+as abort in Pulse</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-model-alloc-pattern</b>
+<i>string</i></p>
+
+<p style="margin-left:17%;">Regex of methods that should be
+modelled as allocs in Pulse</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-model-release-pattern</b>
+<i>string</i></p>
+
+<p style="margin-left:17%;">Regex of methods that should be
+modelled as release in Pulse</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-model-return-first-arg</b>
+<i>string</i></p>
+
+<p style="margin-left:17%;">Regex of methods that should be
+modelled as returning the first argument in Pulse</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-model-return-nonnull</b>
+<i>string</i></p>
+
+<p style="margin-left:17%;">Regex of methods that should be
+modelled as returning non-null in Pulse</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-model-skip-pattern</b>
+<i>string</i></p>
+
+<p style="margin-left:17%;">Regex of methods that should be
+modelled as &quot;skip&quot; in Pulse</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-model-transfer-ownership</b>
+<i>+string</i></p>
+
+<p style="margin-left:17%;">Methods that should be modelled
+as transfering memory ownership in Pulse. Accepted formats
+are method or namespace::method</p>
+
+<p style="margin-left:11%;"><b>--pulse-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable pulse and
+disable all other checkers (Conversely:
+<b>--no-pulse-only</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-report-ignore-unknown-java-methods-patterns</b>
+<i>+string</i></p>
+
+<p style="margin-left:17%;">On Java, issues that are found
+on program paths that contain calls to unknown methods
+(those without implementation) are not reported unless all
+the unknown method names match this pattern. If the empty
+list is provided or
+--pulse_report_ignore_unknown_java_methods_patterns-reset,
+all issues will be reported regardless the presence of
+unknown code</p>
+
+<p style="margin-left:11%;"><b>--purity</b></p>
+
+<p style="margin-left:17%;">Activates: checker purity:
+Detects pure (side-effect-free) functions. A different
+implementation of &quot;impurity&quot;. (Conversely:
+<b>--no-purity</b>)</p>
+
+<p style="margin-left:11%;"><b>--purity-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable purity and
+disable all other checkers (Conversely:
+<b>--no-purity-only</b>)</p>
+
+<p style="margin-left:11%;"><b>--quandary</b></p>
+
+<p style="margin-left:17%;">Activates: checker quandary:
+The Quandary taint analysis detects flows of values between
+sources and sinks, except if the value went through a
+&quot;sanitizer&quot;. In addition to some defaults, users
+can specify their own sources, sinks, and sanitizers
+functions. (Conversely: <b>--no-quandary</b>)</p>
+
+<p style="margin-left:11%;"><b>--quandary-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable quandary and
+disable all other checkers (Conversely:
+<b>--no-quandary-only</b>)</p>
+
+<p style="margin-left:11%;"><b>--quiet</b>,<b>-q</b></p>
+
+<p style="margin-left:17%;">Activates: Do not print
+anything on standard output. (Conversely: <b>--no-quiet</b>
+| <b>-Q</b>)</p>
+
+<p style="margin-left:11%;"><b>--no-racerd</b></p>
+
+<p style="margin-left:17%;">Deactivates: checker racerd:
+Thread safety analysis. (Conversely: <b>--racerd</b>)</p>
+
+<p style="margin-left:11%;"><b>--racerd-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable racerd and
+disable all other checkers (Conversely:
+<b>--no-racerd-only</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--reactive</b>,<b>-r</b></p>
+
+<p style="margin-left:17%;">Activates: Reactive mode: the
+analysis starts from the files captured since the
+<i>infer</i> command started (Conversely:
+<b>--no-reactive</b> | <b>-R</b>)</p>
+
+<p style="margin-left:11%;"><b>--no-report</b></p>
+
+<p style="margin-left:17%;">Deactivates: Run the reporting
+phase once the analysis has completed (Conversely:
+<b>--report</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--report-force-relative-path</b></p>
+
+<p style="margin-left:17%;">Activates: Force converting an
+absolute path to a relative path to the root directory
+(Conversely: <b>--no-report-force-relative-path</b>)</p>
+
+<p style="margin-left:11%;"><b>--results-dir</b>,<b>-o</b>
+<i>dir</i></p>
+
+<p style="margin-left:17%;">Write results and internal
+files in the specified directory</p>
+
+<p style="margin-left:11%;"><b>--scheduler</b> <i>{ file |
+restart | callgraph }</i></p>
+
+<p style="margin-left:17%;">Specify the scheduler used for
+the analysis phase:</p>
+
+<p style="margin-left:11%;">- file: schedule one job per
+file <br>
+- callgraph: schedule one job per procedure, following the
+<br>
+syntactic call graph. Usually faster than &quot;file&quot;.
+<br>
+- restart: same as callgraph but uses locking to try and
+avoid <br>
+duplicate work between different analysis processes and thus
+<br>
+performs better in some circumstances <b><br>
+--no-self-in-block</b></p>
+
+<p style="margin-left:17%;">Deactivates: checker
+self-in-block: An Objective-C-specific analysis to detect
+when a block captures &rsquo;self&rsquo;. (Conversely:
+<b>--self-in-block</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--self-in-block-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable self-in-block
+and disable all other checkers (Conversely:
+<b>--no-self-in-block-only</b>)</p>
+
+<p style="margin-left:11%;"><b>--no-siof</b></p>
+
+<p style="margin-left:17%;">Deactivates: checker siof:
+Catches Static Initialization Order Fiascos in C++, that can
+lead to subtle, compiler-version-dependent errors.
+(Conversely: <b>--siof</b>)</p>
+
+<p style="margin-left:11%;"><b>--siof-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable siof and
+disable all other checkers (Conversely:
+<b>--no-siof-only</b>)</p>
+
+<p style="margin-left:11%;"><b>--sqlite-cache-size</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">SQLite cache size in pages (if
+positive) or kB (if negative), follows formal of
+corresponding SQLite PRAGMA.</p>
+
+<p style="margin-left:11%;"><b>--sqlite-lock-timeout</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Timeout for SQLite results
+database operations, in milliseconds.</p>
+
+<p style="margin-left:11%;"><b>--sqlite-page-size</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">SQLite page size in bytes, must
+be a power of two between 512 and 65536.</p>
+
+<p style="margin-left:11%;"><b>--no-starvation</b></p>
+
+<p style="margin-left:17%;">Deactivates: checker
+starvation: Detect various kinds of situations when no
+progress is being made because of concurrency errors.
+(Conversely: <b>--starvation</b>)</p>
+
+<p style="margin-left:11%;"><b>--starvation-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable starvation
+and disable all other checkers (Conversely:
+<b>--no-starvation-only</b>)</p>
+
+<p style="margin-left:11%;"><b>--topl</b></p>
+
+<p style="margin-left:17%;">Activates: checker topl: Detect
+errors based on user-provided state machines describing
+temporal properties over multiple objects. (Conversely:
+<b>--no-topl</b>)</p>
+
+<p style="margin-left:11%;"><b>--topl-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable topl and
+disable all other checkers (Conversely:
+<b>--no-topl-only</b>)</p>
+
+<p style="margin-left:11%;"><b>--no-uninit</b></p>
+
+<p style="margin-left:17%;">Deactivates: checker uninit:
+Warns when values are used before having been initialized.
+(Conversely: <b>--uninit</b>)</p>
+
+<p style="margin-left:11%;"><b>--uninit-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable uninit and
+disable all other checkers (Conversely:
+<b>--no-uninit-only</b>)</p>
+
+<p style="margin-left:11%;"><b>--write-html</b></p>
+
+<p style="margin-left:17%;">Activates: Produce html debug
+output for the analyses in infer-out/captured. This shows
+the abstract state of all analyses at each program point in
+the source code. Each captured source file has its own html
+page. This HTML file contains the source file, and at each
+line of</p>
+
+<p style="margin-left:11%;">the file there are links to the
+nodes of the control flow graph <br>
+of Infer's translation of that line of code into its
+intermediate <br>
+representation (SIL). This way it's possible to see what the
+<br>
+translation is, and the details of the symbolic execution on
+each <br>
+node. (Conversely: <b>--no-write-html</b>) <b><br>
+--xcode-isysroot-suffix</b> <i>string</i></p>
+
+<p style="margin-left:17%;">Specify the suffix of Xcode
+isysroot directory, to avoid absolute paths in tests</p>
+
+<h2>BUCK OPTIONS
+<a name="BUCK OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>--merge</b></p>
+
+<p style="margin-left:17%;">Activates: Merge the captured
+results directories specified in the dependency file.
+(Conversely: <b>--no-merge</b>)</p>
+
+<h2>BUFFER OVERRUN OPTIONS
+<a name="BUFFER OVERRUN OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>--bo-debug</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Debug level for buffer-overrun
+checker (0-4)</p>
+
+<p style="margin-left:11%;"><b>--bo-field-depth-limit</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Limit of field depth of
+abstract location in buffer-overrun checker</p>
+
+<h2>CLANG OPTIONS
+<a name="CLANG OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>--annotation-reachability-cxx</b>
+<i>json</i></p>
+
+<p style="margin-left:17%;">Specify annotation reachability
+analyses to be performed on C/C++/ObjC code. Each entry is a
+JSON object whose key is the issue name. &quot;sources&quot;
+and &quot;sinks&quot; can be specified either by symbol
+(including regexps) or path prefix. &quot;sinks&quot;
+optionally can specify &quot;overrides&quot; (by symbol or
+path prefix) that block the reachability analysis when hit.
+Example:</p>
+
+<p style="margin-left:11%;">{ <br>
+&quot;ISOLATED_REACHING_CONNECT&quot;: { <br>
+&quot;doc_url&quot;: <br>
+
+&quot;http:://example.com/issue/doc/optional_link.html&quot;,
+<br>
+&quot;sources&quot;: { <br>
+&quot;desc&quot;: &quot;Code that should not call connect
+[optional]&quot;, <br>
+&quot;paths&quot;: [ &quot;isolated/&quot; ] <br>
+}, <br>
+&quot;sinks&quot;: { <br>
+&quot;symbols&quot;: [ &quot;connect&quot; ], <br>
+&quot;overrides&quot;: { &quot;symbol_regexps&quot;: [
+&quot;.*::Trusted::.*&quot; ] } <br>
+} <br>
+} <br>
+} <br>
+This will cause us to create a new ISOLATED_REACHING_CONNECT
+<br>
+issue for every function whose source path starts with
+&quot;isolated/&quot; <br>
+that may reach the function named &quot;connect&quot;,
+ignoring paths that <br>
+go through a symbol matching the OCaml regexp
+&quot;.*::Trusted::.*&quot;. <b><br>
+--annotation-reachability-cxx-sources</b> <i>json</i></p>
+
+<p style="margin-left:17%;">Override sources in all cxx
+annotation reachability specs with the given sources
+spec</p>
+
+
+<p style="margin-left:11%;"><b>--biabduction-unsafe-malloc</b></p>
+
+<p style="margin-left:17%;">Activates: Assume that
+malloc(3) never returns null. (Conversely:
+<b>--no-biabduction-unsafe-malloc</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--clang-compound-literal-init-limit</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Limit after which
+initialization of compound types (structs and arrays) is not
+done element by element but using a builtin function that
+each analysis has to model.</p>
+
+<p style="margin-left:11%;"><b>--cxx-scope-guards</b>
+<i>json</i></p>
+
+<p style="margin-left:17%;">Specify scope guard classes
+that can be read only by destructors without being reported
+as dead stores.</p>
+
+
+<p style="margin-left:11%;"><b>--liveness-dangerous-classes</b>
+<i>json</i></p>
+
+<p style="margin-left:17%;">Specify classes where the
+destructor should be ignored when computing liveness. In
+other words, assignement to variables of these types (or
+common wrappers around these types such as
+<i>unique_ptr&lt;type&gt;</i>) will count as dead stores
+when the variables are not read explicitly by the
+program.</p>
+
+<h2>JAVA OPTIONS
+<a name="JAVA OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>--annotation-reachability-custom-pairs</b>
+<i>json</i></p>
+
+<p style="margin-left:17%;">Specify custom sources/sink for
+the annotation reachability checker</p>
+
+<p style="margin-left:11%;">Example format: for custom
+annotations <br>
+com.my.annotation.{Source1,Source2,Sink1} <br>
+{ &quot;sources&quot; : [&quot;Source1&quot;,
+&quot;Source2&quot;], &quot;sink&quot; : &quot;Sink1&quot; }
+<b><br>
+--external-java-packages</b> <i>+prefix</i></p>
+
+<p style="margin-left:17%;">Specify a list of Java package
+prefixes for external Java packages. If set, the analysis
+will not report non-actionable warnings on those
+packages.</p>
+
+<p style="margin-left:11%;"><b>--java-version</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">The version of Java being used.
+Set it to your Java version if mvn is failing.</p>
+
+<h2>QUANDARY CHECKER OPTIONS
+<a name="QUANDARY CHECKER OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>--quandary-endpoints</b>
+<i>json</i></p>
+
+<p style="margin-left:17%;">Specify endpoint classes for
+Quandary</p>
+
+<p style="margin-left:11%;"><b>--quandary-sanitizers</b>
+<i>json</i></p>
+
+<p style="margin-left:17%;">Specify custom sanitizers for
+Quandary</p>
+
+<p style="margin-left:11%;"><b>--quandary-sinks</b>
+<i>json</i></p>
+
+<p style="margin-left:17%;">Specify custom sinks for
+Quandary</p>
+
+<p style="margin-left:11%;"><b>--quandary-sources</b>
+<i>json</i></p>
+
+<p style="margin-left:17%;">Specify custom sources for
+Quandary</p>
+
+<h2>RACERD CHECKER OPTIONS
+<a name="RACERD CHECKER OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>--racerd-guardedby</b></p>
+
+<p style="margin-left:17%;">Activates: Check @GuardedBy
+annotations with RacerD (Conversely:
+<b>--no-racerd-guardedby</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--no-racerd-unknown-returns-owned</b></p>
+
+<p style="margin-left:17%;">Deactivates: DEPRECATED, does
+nothing. (Conversely:
+<b>--racerd-unknown-returns-owned</b>)</p>
+
+<p style="margin-left:11%;"><b>--threadsafe-aliases</b>
+<i>json</i></p>
+
+<p style="margin-left:17%;">Specify custom annotations that
+should be considered aliases of @ThreadSafe</p>
+
+<h2>SIOF CHECKER OPTIONS
+<a name="SIOF CHECKER OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>--siof-check-iostreams</b></p>
+
+<p style="margin-left:17%;">Activates: Do not assume that
+iostreams (cout, cerr, ...) are always initialized. The
+default is to assume they are always initialized to avoid
+false positives. However, if your program compiles against a
+recent libstdc++ then it is safe to turn this option on.
+(Conversely: <b>--no-siof-check-iostreams</b>)</p>
+
+<p style="margin-left:11%;"><b>--siof-safe-methods</b>
+<i>+string</i></p>
+
+<p style="margin-left:17%;">Methods that are SIOF-safe;
+&quot;foo::bar&quot; will match &quot;foo::bar()&quot;,
+&quot;foo&lt;int&gt;::bar()&quot;, etc. (can be specified
+multiple times)</p>
+
+<h2>ENVIRONMENT
+<a name="ENVIRONMENT"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>INFER_ARGS</b>,
+<b>INFERCONFIG</b>, <b>INFER_STRICT_MODE</b></p>
+
+<p style="margin-left:17%;">See the ENVIRONMENT section in
+the manual of <b>infer</b>(1).</p>
+
+<h2>FILES
+<a name="FILES"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>.inferconfig</b></p>
+
+<p style="margin-left:17%;">See the FILES section in the
+manual of <b>infer</b>(1).</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>infer-report</b>(1),
+<b>infer-run</b>(1)</p>
+<hr>
+</body>
+</html>
