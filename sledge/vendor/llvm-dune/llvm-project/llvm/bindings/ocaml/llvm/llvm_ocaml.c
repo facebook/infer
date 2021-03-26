@@ -35,6 +35,16 @@ value llvm_string_of_message(char* Message) {
   return String;
 }
 
+CAMLprim value ptr_to_option(void *Ptr) {
+  CAMLparam0();
+  CAMLlocal1(Option);
+  if (!Ptr)
+    CAMLreturn(Val_int(0));
+  Option = caml_alloc_small(1, 0);
+  Store_field(Option, 0, (value)Ptr);
+  CAMLreturn(Option);
+}
+
 void llvm_raise(value Prototype, char *Message) {
   CAMLparam1(Prototype);
   caml_raise_with_arg(Prototype, llvm_string_of_message(Message));
@@ -1384,14 +1394,7 @@ CAMLprim value llvm_delete_global(LLVMValueRef GlobalVar) {
 
 /* llvalue -> llvalue option */
 CAMLprim value llvm_global_initializer(LLVMValueRef GlobalVar) {
-  CAMLparam0();
-  LLVMValueRef Init;
-  if ((Init = LLVMGetInitializer(GlobalVar))) {
-    value Option = alloc(1, 0);
-    Field(Option, 0) = (value) Init;
-    CAMLreturn(Option);
-  }
-  CAMLreturn(Val_int(0));
+  return ptr_to_option(LLVMGetInitializer(GlobalVar));
 }
 
 /* llvalue -> llvalue -> unit */
