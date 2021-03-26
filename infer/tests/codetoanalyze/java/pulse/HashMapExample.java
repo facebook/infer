@@ -11,7 +11,7 @@ import java.util.HashMap;
 
 public class HashMapExample {
 
-  public static void putIntegerTwiceThenGetTwice(HashMap<Integer, Integer> hashMap) {
+  public static void putIntegerTwiceThenGetTwiceOk(HashMap<Integer, Integer> hashMap) {
     Integer i32 = new Integer(32);
     Integer i52 = new Integer(52);
 
@@ -25,7 +25,7 @@ public class HashMapExample {
     b.intValue();
   }
 
-  public static void containsIntegerTwiceThenGetTwice(HashMap<Integer, Integer> hashMap) {
+  public static void containsIntegerTwiceThenGetTwiceOk(HashMap<Integer, Integer> hashMap) {
     Integer i32 = new Integer(32);
     Integer i52 = new Integer(52);
 
@@ -37,7 +37,7 @@ public class HashMapExample {
     }
   }
 
-  public static int FN_getOneIntegerWithoutCheck() {
+  public static int getOneIntegerWithoutCheckBad() {
     HashMap<Integer, Integer> hashMap = new HashMap<>();
     Integer i32 = new Integer(32);
 
@@ -46,7 +46,7 @@ public class HashMapExample {
     return a.intValue();
   }
 
-  public static void FN_getTwoIntegersWithOneCheck(Integer i, Integer j) {
+  public static void getTwoIntegersWithOneCheckOk(Integer i, Integer j) {
     HashMap<Integer, Integer> hashMap = new HashMap<>();
 
     if (hashMap.containsKey(i) && !i.equals(j)) {
@@ -69,13 +69,13 @@ public class HashMapExample {
     return x;
   }
 
-  public static void getOrCreateIntegerThenDeref(final HashMap<Integer, Integer> map) {
+  public static void getOrCreateIntegerThenDerefOk(final HashMap<Integer, Integer> map) {
     Integer x = getOrCreateInteger(map, 42);
     // dereference x
     x.toString();
   }
 
-  void FN_getAfterRemovingTheKeyBad() {
+  void getAfterRemovingTheKeyBad() {
     HashMap<Integer, Object> map = new HashMap();
     Integer key = 42;
     map.put(key, new Object());
@@ -91,7 +91,7 @@ public class HashMapExample {
     map.get(key).toString();
   }
 
-  void FN_getAfterClearBad() {
+  void getAfterClearBad() {
     HashMap<Integer, Object> map = new HashMap();
     Integer key = 42;
     map.put(key, new Object());
@@ -99,7 +99,10 @@ public class HashMapExample {
     map.get(key).toString(); // NPE here
   }
 
-  void getFromKeySetGood(HashMap<String, String> map) {
+  // A null pointer dereference is currently reported as latent (during the access of
+  // s.equals("foo")).
+  // Once keySet() is modelled, this null deference should not be reported anymore
+  void FP_latent_getFromKeySetOk(HashMap<String, String> map) {
     for (String key : map.keySet()) {
       String s = map.get(key);
       if (s.equals("foo")) {

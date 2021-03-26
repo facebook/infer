@@ -79,18 +79,6 @@ module Misc = struct
     PulseOperations.write_id ret_id ret_value astate
 
 
-  let return_zero_prune_positive ~desc (address, hist) : model =
-   fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
-    let fresh_elem = AbstractValue.mk_fresh () in
-    let<+> astate =
-      PulseArithmetic.prune_positive address astate
-      >>= PulseArithmetic.and_eq_int fresh_elem IntLit.zero
-      >>| PulseOperations.write_id ret_id (fresh_elem, event :: hist)
-    in
-    astate
-
-
   let return_unknown_size : model =
    fun _ ~callee_procname:_ _location ~ret:(ret_id, _) astate ->
     let ret_addr = AbstractValue.mk_fresh () in
@@ -996,9 +984,9 @@ module JavaCollection = struct
     Java.mk_java_field pkg_name class_name "__infer_model_backing_collection_empty"
 
 
-  let init this : model =
-   fun _ ~callee_procname:_ location ~ret:(_, _) astate ->
-    let event = ValueHistory.Call {f= Model "Collection.<init>"; location; in_call= []} in
+  let init ~desc this : model =
+   fun _ ~callee_procname:_ location ~ret:_ astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let fresh_val = (AbstractValue.mk_fresh (), [event]) in
     let is_empty_value = AbstractValue.mk_fresh () in
     let init_value = AbstractValue.mk_fresh () in
@@ -1017,9 +1005,9 @@ module JavaCollection = struct
     astate |> ok_continue
 
 
-  let add coll new_elem : model =
+  let add ~desc coll new_elem : model =
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
-    let event = ValueHistory.Call {f= Model "Collection.add"; location; in_call= []} in
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let ret_value = AbstractValue.mk_fresh () in
     let<*> astate, coll_val = PulseOperations.eval_access Read location coll Dereference astate in
     (* reads snd_field from collection *)
@@ -1047,7 +1035,7 @@ module JavaCollection = struct
       astate |> ok_continue
 
 
-  let add_at coll (_, _) new_elem : model = add coll new_elem
+  let add_at ~desc coll _ new_elem : model = add ~desc coll new_elem
 
   let update coll new_val new_val_hist event location ret_id astate =
     (* case0: element not present in collection *)
@@ -1071,15 +1059,15 @@ module JavaCollection = struct
     [astate; astate1; astate2]
 
 
-  let set coll (_, _) (new_val, new_val_hist) : model =
+  let set coll _ (new_val, new_val_hist) : model =
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
-    let event = ValueHistory.Call {f= Model "Collection.set"; location; in_call= []} in
+    let event = ValueHistory.Call {f= Model "Collection.set()"; location; in_call= []} in
     let<*> astates = update coll new_val new_val_hist event location ret_id astate in
     List.map ~f:(fun astate -> Ok (ContinueProgram astate)) astates
 
 
-  let remove_at coll location ret_id astate =
-    let event = ValueHistory.Call {f= Model "Collection.remove"; location; in_call= []} in
+  let remove_at ~desc coll location ret_id astate =
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let new_val = AbstractValue.mk_fresh () in
     PulseArithmetic.and_eq_int new_val IntLit.zero astate
     >>= update coll new_val [] event location ret_id
@@ -1111,8 +1099,8 @@ module JavaCollection = struct
     Ok astate
 
 
-  let remove_obj coll (elem, _) location ret_id astate =
-    let event = ValueHistory.Call {f= Model "Collection.remove"; location; in_call= []} in
+  let remove_obj ~desc coll (elem, _) location ret_id astate =
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let* astate, coll_val = PulseOperations.eval_access Read location coll Dereference astate in
     (* case1: given element is equal to fst_field *)
     let* astate, fst_addr, (fst_val, _) = Java.load_field fst_field location coll_val astate in
@@ -1130,7 +1118,7 @@ module JavaCollection = struct
     [astate1; astate2; astate]
 
 
-  let remove args : model =
+  let remove ~desc args : model =
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
     match args with
     | [ {ProcnameDispatcher.Call.FuncArg.arg_payload= coll_arg}
@@ -1139,29 +1127,29 @@ module JavaCollection = struct
           match typ.desc with
           | Tint _ ->
               (* Case of remove(int index) *)
-              remove_at coll_arg location ret_id astate
+              remove_at ~desc coll_arg location ret_id astate
           | _ ->
               (* Case of remove(Object o) *)
-              remove_obj coll_arg elem_arg location ret_id astate
+              remove_obj ~desc coll_arg elem_arg location ret_id astate
         in
         List.map ~f:(fun astate -> Ok (ContinueProgram astate)) astates
     | _ ->
         astate |> ok_continue
 
 
-  let is_empty coll : model =
+  let is_empty ~desc coll : model =
    fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
-    let event = ValueHistory.Call {f= Model "Collection.isEmpty"; location; in_call= []} in
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let<*> astate, coll_val = PulseOperations.eval_access Read location coll Dereference astate in
-    let<*> astate, (_, _), (is_empty_val, hist) =
+    let<*> astate, _, (is_empty_val, hist) =
       Java.load_field is_empty_field location coll_val astate
     in
     PulseOperations.write_id ret_id (is_empty_val, event :: hist) astate |> ok_continue
 
 
-  let clear coll : model =
-   fun _ ~callee_procname:_ location ~ret:(_, _) astate ->
-    let event = ValueHistory.Call {f= Model "Collection.clear"; location; in_call= []} in
+  let clear ~desc coll : model =
+   fun _ ~callee_procname:_ location ~ret:_ astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let null_val = AbstractValue.mk_fresh () in
     let is_empty_val = AbstractValue.mk_fresh () in
     let<*> astate, coll_val = PulseOperations.eval_access Read location coll Dereference astate in
@@ -1175,6 +1163,69 @@ module JavaCollection = struct
       >>= PulseArithmetic.and_eq_int is_empty_val IntLit.one
     in
     astate
+
+
+  (* Auxiliary function that changes the state by
+     (1) assuming that internal is_empty field has value one
+     (2) in such case we can return 0 *)
+  let get_elem_coll_is_empty is_empty_val is_empty_expected_val event location ret_id astate =
+    let not_found_val = AbstractValue.mk_fresh () in
+    let* astate =
+      PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand is_empty_val)
+        (AbstractValueOperand is_empty_expected_val) astate
+      >>= PulseArithmetic.and_eq_int not_found_val IntLit.zero
+      >>= PulseArithmetic.and_eq_int is_empty_expected_val IntLit.one
+    in
+    let astate = PulseOperations.write_id ret_id (not_found_val, [event]) astate in
+    PulseOperations.invalidate location (ConstantDereference IntLit.zero)
+      (not_found_val, [event])
+      astate
+
+
+  (* Auxiliary function that splits the state into three, considering the case that
+     the internal is_empty field is not known to have value 1 *)
+  let get_elem_coll_not_known_empty elem found_val fst_val snd_val astate =
+    (* case 1: given element is not equal to the fst AND not equal to the snd *)
+    let* astate1 =
+      PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand elem)
+        (AbstractValueOperand fst_val) astate
+      >>= PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand elem)
+            (AbstractValueOperand snd_val)
+    in
+    let* astate = PulseArithmetic.and_positive found_val astate in
+    (* case 2: given element is equal to fst_field *)
+    let* astate2 =
+      PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand elem)
+        (AbstractValueOperand fst_val) astate
+    in
+    (* case 3: given element is equal to snd_field *)
+    let+ astate3 =
+      PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand elem)
+        (AbstractValueOperand snd_val) astate
+    in
+    [astate1; astate2; astate3]
+
+
+  let get ~desc coll (elem, _) : model =
+   fun _ ~callee_procname:_ location ~ret:(ret_id, _) astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+    let<*> astate, coll_val = PulseOperations.eval_access Read location coll Dereference astate in
+    let<*> astate, _, (is_empty_val, _) = Java.load_field is_empty_field location coll_val astate in
+    (* case 1: collection is empty *)
+    let true_val = AbstractValue.mk_fresh () in
+    let<*> astate1 = get_elem_coll_is_empty is_empty_val true_val event location ret_id astate in
+    (* case 2: collection is not known to be empty *)
+    let found_val = AbstractValue.mk_fresh () in
+    let<*> astate2, _, (fst_val, _) = Java.load_field fst_field location coll_val astate in
+    let<*> astate2, _, (snd_val, _) = Java.load_field snd_field location coll_val astate2 in
+    let<*> astate2 =
+      PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand is_empty_val)
+        (AbstractValueOperand true_val) astate2
+      >>= PulseArithmetic.and_eq_int true_val IntLit.one
+    in
+    let astate2 = PulseOperations.write_id ret_id (found_val, [event]) astate2 in
+    let<*> astates = get_elem_coll_not_known_empty elem found_val fst_val snd_val astate2 in
+    List.map (astate1 :: astates) ~f:(fun astate -> Ok (ContinueProgram astate))
 end
 
 module JavaInteger = struct
@@ -1515,24 +1566,47 @@ module ProcNameDispatcher = struct
         ; -"std" &:: "vector" &:: "push_back" <>$ capt_arg_payload $+...$--> StdVector.push_back
         ; -"std" &:: "vector" &:: "empty" <>$ capt_arg_payload $+...$--> StdVector.empty
         ; +map_context_tenv PatternMatch.Java.implements_collection
-          &:: "<init>" <>$ capt_arg_payload $--> JavaCollection.init
+          &:: "<init>" <>$ capt_arg_payload
+          $--> JavaCollection.init ~desc:"Collection.init()"
         ; +map_context_tenv PatternMatch.Java.implements_collection
-          &:: "add" <>$ capt_arg_payload $+ capt_arg_payload $--> JavaCollection.add
+          &:: "add" <>$ capt_arg_payload $+ capt_arg_payload
+          $--> JavaCollection.add ~desc:"Collection.add"
         ; +map_context_tenv PatternMatch.Java.implements_list
           &:: "add" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
-          $--> JavaCollection.add_at
+          $--> JavaCollection.add_at ~desc:"Collection.add()"
         ; +map_context_tenv PatternMatch.Java.implements_collection
-          &:: "remove" &++> JavaCollection.remove
+          &:: "remove"
+          &++> JavaCollection.remove ~desc:"Collection.remove"
         ; +map_context_tenv PatternMatch.Java.implements_collection
-          &:: "isEmpty" <>$ capt_arg_payload $--> JavaCollection.is_empty
+          &:: "isEmpty" <>$ capt_arg_payload
+          $--> JavaCollection.is_empty ~desc:"Collection.isEmpty()"
         ; +map_context_tenv PatternMatch.Java.implements_collection
-          &:: "clear" <>$ capt_arg_payload $--> JavaCollection.clear
+          &:: "clear" <>$ capt_arg_payload
+          $--> JavaCollection.clear ~desc:"Collection.clear()"
         ; +map_context_tenv PatternMatch.Java.implements_collection
           &::+ (fun _ str -> StringSet.mem str pushback_modeled)
           <>$ capt_arg_payload $+...$--> StdVector.push_back
         ; +map_context_tenv PatternMatch.Java.implements_map
+          &:: "<init>" <>$ capt_arg_payload
+          $--> JavaCollection.init ~desc:"Map.init()"
+        ; +map_context_tenv PatternMatch.Java.implements_map
+          &:: "put" <>$ capt_arg_payload $+ capt_arg_payload
+          $+...$--> JavaCollection.add ~desc:"Map.put()"
+        ; +map_context_tenv PatternMatch.Java.implements_map
+          &:: "remove"
+          &++> JavaCollection.remove ~desc:"Map.remove()"
+        ; +map_context_tenv PatternMatch.Java.implements_map
+          &:: "get" <>$ capt_arg_payload $+ capt_arg_payload
+          $--> JavaCollection.get ~desc:"Map.get()"
+        ; +map_context_tenv PatternMatch.Java.implements_map
+          &:: "containsKey" <>$ capt_arg_payload $+ capt_arg_payload
+          $--> JavaCollection.get ~desc:"Map.containsKey()"
+        ; +map_context_tenv PatternMatch.Java.implements_map
           &:: "isEmpty" <>$ capt_arg_payload
-          $--> Misc.return_zero_prune_positive ~desc:"Map.isEmpty()"
+          $--> JavaCollection.is_empty ~desc:"Map.isEmpty()"
+        ; +map_context_tenv PatternMatch.Java.implements_map
+          &:: "clear" <>$ capt_arg_payload
+          $--> JavaCollection.clear ~desc:"Map.clear()"
         ; +map_context_tenv PatternMatch.Java.implements_queue
           &::+ (fun _ str -> StringSet.mem str pushback_modeled)
           <>$ capt_arg_payload $+...$--> StdVector.push_back
