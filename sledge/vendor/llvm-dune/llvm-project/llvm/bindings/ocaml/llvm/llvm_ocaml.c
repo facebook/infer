@@ -76,7 +76,7 @@ CAMLprim value llvm_enable_pretty_stacktrace(value Unit) {
 }
 
 CAMLprim value llvm_parse_command_line_options(value Overview, value Args) {
-  char *COverview;
+  const char *COverview;
   if (Overview == Val_int(0)) {
     COverview = NULL;
   } else {
@@ -247,7 +247,7 @@ CAMLprim value llvm_get_string_attr_kind(LLVMAttributeRef A) {
   unsigned Length;
   const char *String = LLVMGetStringAttributeKind(A, &Length);
   value Result = caml_alloc_string(Length);
-  memcpy(String_val(Result), String, Length);
+  memcpy((char *)String_val(Result), String, Length);
   return Result;
 }
 
@@ -256,7 +256,7 @@ CAMLprim value llvm_get_string_attr_value(LLVMAttributeRef A) {
   unsigned Length;
   const char *String = LLVMGetStringAttributeValue(A, &Length);
   value Result = caml_alloc_string(Length);
-  memcpy(String_val(Result), String, Length);
+  memcpy((char *)String_val(Result), String, Length);
   return Result;
 }
 
@@ -839,7 +839,7 @@ CAMLprim value llvm_get_mdstring(LLVMValueRef V) {
 
   if ((S = LLVMGetMDString(V, &Len))) {
     Str = caml_alloc_string(Len);
-    memcpy(String_val(Str), S, Len);
+    memcpy((char *)String_val(Str), S, Len);
     Option = alloc(1,0);
     Store_field(Option, 0, Str);
     CAMLreturn(Option);
@@ -1117,7 +1117,7 @@ CAMLprim value llvm_string_of_const(LLVMValueRef Const) {
   if(LLVMIsAConstantDataSequential(Const) && LLVMIsConstantString(Const)) {
     S = LLVMGetAsString(Const, &Len);
     Str = caml_alloc_string(Len);
-    memcpy(String_val(Str), S, Len);
+    memcpy((char *)String_val(Str), S, Len);
 
     Option = alloc(1, 0);
     Field(Option, 0) = Str;
@@ -2640,7 +2640,7 @@ CAMLprim LLVMMemoryBufferRef llvm_memorybuffer_of_string(value Name, value Strin
 /* llmemorybuffer -> string */
 CAMLprim value llvm_memorybuffer_as_string(LLVMMemoryBufferRef MemBuf) {
   value String = caml_alloc_string(LLVMGetBufferSize(MemBuf));
-  memcpy(String_val(String), LLVMGetBufferStart(MemBuf),
+  memcpy((char *)String_val(String), LLVMGetBufferStart(MemBuf),
          LLVMGetBufferSize(MemBuf));
 
   return String;

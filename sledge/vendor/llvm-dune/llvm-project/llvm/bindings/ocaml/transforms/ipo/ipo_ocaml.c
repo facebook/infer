@@ -123,7 +123,7 @@ LLVMBool MustPreserveCallBack(LLVMValueRef Val, void* Ctx) {
 
 /* [`Module] Llvm.PassManager.t -> unit */
 CAMLprim value llvm_add_internalize_predicate(LLVMPassManagerRef PM) {
-  predicate_f = caml_named_value("LLVMInternalizePredicateCallback");
+  predicate_f = (value *)caml_named_value("LLVMInternalizePredicateCallback");
   LLVMAddInternalizePassWithMustPreservePredicate(PM, NULL,
                                                   &MustPreserveCallBack);
   return Val_unit;

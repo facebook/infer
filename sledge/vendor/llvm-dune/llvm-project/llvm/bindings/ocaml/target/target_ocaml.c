@@ -314,7 +314,7 @@ CAMLprim value llvm_targetmachine_emit_to_file(LLVMModuleRef Module,
   char *ErrorMessage;
 
   if(LLVMTargetMachineEmitToFile(TargetMachine_val(Machine), Module,
-                                 String_val(FileName), Int_val(FileType),
+                                 (char *)String_val(FileName), Int_val(FileType),
                                  &ErrorMessage)) {
     llvm_raise(*caml_named_value("Llvm_target.Error"), ErrorMessage);
   }
