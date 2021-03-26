@@ -56,13 +56,29 @@ public class InstanceOfExample {
     }
   }
 
-  public void testInstanceOfNullOk() {
+  public void testInstanceOfNullInterOk() {
     Person p = new Professor();
     // p is null after this call
     p = updatePerson(p);
     // null is not an instance of any class
     if (p instanceof Professor) {
       p.toString();
+    }
+  }
+
+  public void testInstanceOfNullIntraOk() {
+    Person p = null;
+    if (p instanceof Professor) {
+      Object o = null;
+      o.toString();
+    }
+  }
+
+  public void testInstanceOfNullIntraBad() {
+    Person p = null;
+    if (!(p instanceof Professor)) {
+      Object o = null;
+      o.toString();
     }
   }
 

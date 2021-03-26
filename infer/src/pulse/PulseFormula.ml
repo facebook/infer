@@ -545,6 +545,8 @@ module Term = struct
           match op with
           | VarSubst v' when not (Var.equal v v') ->
               IsInstanceOf (v', typ)
+          | QSubst q when Q.is_zero q ->
+              zero
           | QSubst _ | VarSubst _ | LinSubst _ ->
               t
         in
