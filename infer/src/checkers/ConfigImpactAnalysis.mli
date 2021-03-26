@@ -32,9 +32,11 @@ module Summary : sig
 
   val pp : Format.formatter -> t -> unit
 
+  val get_config_fields : t -> Fields.t
+
   val get_unchecked_callees : t -> UncheckedCallees.t
 
-  val instantiate_unchecked_callees_cond : config_fields:Fields.t -> t -> t
+  val instantiate_unchecked_callees_cond : all_config_fields:Fields.t -> t -> t
 end
 
 val checker : Summary.t InterproceduralAnalysis.t -> Summary.t option
