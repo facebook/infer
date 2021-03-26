@@ -45,6 +45,18 @@ CAMLprim value ptr_to_option(void *Ptr) {
   CAMLreturn(Option);
 }
 
+CAMLprim value cstr_to_string_option(const char *CStr, mlsize_t Len) {
+  CAMLparam0();
+  CAMLlocal2(Option, String);
+  if (!CStr)
+    CAMLreturn(Val_int(0));
+  String = caml_alloc_string(Len);
+  memcpy((char *)String_val(String), CStr, Len);
+  Option = caml_alloc_small(1, 0);
+  Store_field(Option, 0, (value)String);
+  CAMLreturn(Option);
+}
+
 void llvm_raise(value Prototype, char *Message) {
   CAMLparam1(Prototype);
   caml_raise_with_arg(Prototype, llvm_string_of_message(Message));
@@ -491,17 +503,13 @@ CAMLprim value llvm_struct_set_body(LLVMTypeRef Ty,
 }
 
 /* lltype -> string option */
-CAMLprim value llvm_struct_name(LLVMTypeRef Ty)
-{
-  CAMLparam0();
-  CAMLlocal1(result);
-  const char *C = LLVMGetStructName(Ty);
-  if (C) {
-    result = caml_alloc_small(1, 0);
-    Store_field(result, 0, caml_copy_string(C));
-    CAMLreturn(result);
-  }
-  CAMLreturn(Val_int(0));
+CAMLprim value llvm_struct_name(LLVMTypeRef Ty) {
+  const char *CStr = LLVMGetStructName(Ty);
+  size_t Len;
+  if (!CStr)
+    return Val_int(0);
+  Len = strlen(CStr);
+  return cstr_to_string_option(CStr, Len);
 }
 
 /* lltype -> lltype array */
@@ -832,19 +840,9 @@ CAMLprim LLVMValueRef llvm_mdnull(LLVMContextRef C) {
 
 /* llvalue -> string option */
 CAMLprim value llvm_get_mdstring(LLVMValueRef V) {
-  CAMLparam0();
-  CAMLlocal2(Option, Str);
-  const char *S;
   unsigned Len;
-
-  if ((S = LLVMGetMDString(V, &Len))) {
-    Str = caml_alloc_string(Len);
-    memcpy((char *)String_val(Str), S, Len);
-    Option = alloc(1,0);
-    Store_field(Option, 0, Str);
-    CAMLreturn(Option);
-  }
-  CAMLreturn(Val_int(0));
+  const char *CStr = LLVMGetMDString(V, &Len);
+  return cstr_to_string_option(CStr, Len);
 }
 
 CAMLprim value llvm_get_mdnode_operands(LLVMValueRef V) {
@@ -872,20 +870,6 @@ CAMLprim value llvm_get_namedmd(LLVMModuleRef M, value Name)
 CAMLprim value llvm_append_namedmd(LLVMModuleRef M, value Name, LLVMValueRef Val) {
   LLVMAddNamedMetadataOperand(M, String_val(Name), Val);
   return Val_unit;
-}
-
-/* Convert a C string with length to an OCaml string option */
-CAMLprim value cstr_to_string_option(const char *Chars, unsigned Length) {
-  CAMLparam0();
-  CAMLlocal2(Option, String);
-  if (Length > 0) {
-    String = caml_alloc_string(Length);
-    memcpy(String_val(String), Chars, Length);
-    Option = caml_alloc_small(1, 0);
-    Store_field(Option, 0, String);
-    CAMLreturn(Option);
-  }
-  CAMLreturn(Val_int(0));
 }
 
 /* Get the DIVariable associated with a GlobalVariable */
@@ -1109,22 +1093,12 @@ CAMLprim LLVMValueRef llvm_const_vector(value ElementVals) {
 
 /* llvalue -> string option */
 CAMLprim value llvm_string_of_const(LLVMValueRef Const) {
-  const char *S;
   size_t Len;
-  CAMLparam0();
-  CAMLlocal2(Option, Str);
-
-  if(LLVMIsAConstantDataSequential(Const) && LLVMIsConstantString(Const)) {
-    S = LLVMGetAsString(Const, &Len);
-    Str = caml_alloc_string(Len);
-    memcpy((char *)String_val(Str), S, Len);
-
-    Option = alloc(1, 0);
-    Field(Option, 0) = Str;
-    CAMLreturn(Option);
-  } else {
-    CAMLreturn(Val_int(0));
-  }
+  const char *CStr;
+  if (!LLVMIsAConstantDataSequential(Const) || !LLVMIsConstantString(Const))
+    return Val_int(0);
+  CStr = LLVMGetAsString(Const, &Len);
+  return cstr_to_string_option(CStr, Len);
 }
 
 /* llvalue -> int -> llvalue */
