@@ -2,7 +2,7 @@
 
 ### Frontends
 
-- New [JSON input format for SIL](https://github.com/facebook/infer/pull/1361), which is part of [Infer#](https://github.com/microsoft/infersharp)
+- New [JSON input format for SIL](https://github.com/facebook/infer/pull/1361). This new format was contributed from [Infer#](https://github.com/microsoft/infersharp), whose C# frontend for Infer [emits SIL as JSON using this format](https://github.com/microsoft/infersharp/wiki/InferSharp:-A-Scalable-Code-Analytics-Tool-for-.NET).
 
 ### Build System Integrations
 
@@ -10,14 +10,13 @@
 
 ### Checkers
 
-- Liveness (dead stores): properly handle exceptional control flow
-- Pulse:
+- [Liveness](https://fbinfer.com/docs/checker-liveness/): properly handle exceptional control flow
+- [Pulse](https://fbinfer.com/docs/checker-pulse/):
   - Added preliminary Java support
-  - New [Uninitialized value bug type](https://fbinfer.com/docs/next/all-issue-types/#pulse_uninitialized_value), aiming to replace the previous [Uninit](https://fbinfer.com/docs/checker-uninit/) checker as this one is inter-procedural and more precise.
-  - [OPTIONAL_EMPTY_ACCESS](https://fbinfer.com/docs/next/all-issue-types/#optional_empty_access) is now enabled by default
-- TOPL(early alpha): An experimental checker framework: write your own analysis as a state machine that can track the state of multiple memory objects at once. See XXX
-- Misc. improvements to cost, inferbo, nullsafe, racerd, starvation
-
+  - New [Uninitialized value bug type](https://fbinfer.com/docs/all-issue-types/#pulse_uninitialized_value), aiming to replace the previous [Uninit](https://fbinfer.com/docs/checker-uninit/) checker as this one is inter-procedural and more precise.
+  - [OPTIONAL_EMPTY_ACCESS](https://fbinfer.com/docs/all-issue-types/#optional_empty_access) is now enabled by default
+- **NEW checker** [Topl](https://fbinfer.com/docs/checker-topl/)(early alpha): An experimental checker framework: write your own analysis as a state machine representing a temporal property over multiple memory objects at once, eg to write a taint analysis. Topl is based on Pulse.
+- Miscellaneous improvements to cost, inferbo, nullsafe, racerd, starvation
 
 
 ## Version 1.0.0
