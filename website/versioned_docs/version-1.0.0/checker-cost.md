@@ -34,7 +34,7 @@ The total cost of the node is the scalar product of these two vectors. Then, the
 
 At a high level, the analysis has three steps:
 - Choose control variables that allude to "how many times a loop may iterate".
-- Get abstract ranges of the control variables from [InferBO](/docs/checker-bufferoverrun) (a numerical analysis that infers symbolic intervals)
+- Get abstract ranges of the control variables from [InferBO](/docs/1.0.0/checker-bufferoverrun) (a numerical analysis that infers symbolic intervals)
 - Construct complexity polynomials for loops and functions by via a constraint solving algorithm.
 
 
@@ -62,7 +62,7 @@ void loop(ArrayList<Integer> list){
 }
 ```
 
-where `foo` has a linear cost in its parameter, then Infer automatically detects that the complexity of loop has increased from `O(|list|)` to `O(|list|^2)` and then reports an [`EXECUTION_TIME_COMPLEXITY_INCREASE`](/docs/all-issue-types#execution_time_complexity_increase) issue.
+where `foo` has a linear cost in its parameter, then Infer automatically detects that the complexity of loop has increased from `O(|list|)` to `O(|list|^2)` and then reports an [`EXECUTION_TIME_COMPLEXITY_INCREASE`](/docs/1.0.0/all-issue-types#execution_time_complexity_increase) issue.
 
 
 
@@ -90,11 +90,11 @@ There are a number of known limitations to the design of the static cost analysi
 ## List of Issue Types
 
 The following issue types are reported by this checker:
-- [AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE](/docs/all-issue-types#autoreleasepool_size_complexity_increase)
-- [AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE_UI_THREAD](/docs/all-issue-types#autoreleasepool_size_complexity_increase_ui_thread)
-- [AUTORELEASEPOOL_SIZE_UNREACHABLE_AT_EXIT](/docs/all-issue-types#autoreleasepool_size_unreachable_at_exit)
-- [EXECUTION_TIME_COMPLEXITY_INCREASE](/docs/all-issue-types#execution_time_complexity_increase)
-- [EXECUTION_TIME_COMPLEXITY_INCREASE_UI_THREAD](/docs/all-issue-types#execution_time_complexity_increase_ui_thread)
-- [EXECUTION_TIME_UNREACHABLE_AT_EXIT](/docs/all-issue-types#execution_time_unreachable_at_exit)
-- [INFINITE_AUTORELEASEPOOL_SIZE](/docs/all-issue-types#infinite_autoreleasepool_size)
-- [INFINITE_EXECUTION_TIME](/docs/all-issue-types#infinite_execution_time)
+- [AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE](/docs/1.0.0/all-issue-types#autoreleasepool_size_complexity_increase)
+- [AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE_UI_THREAD](/docs/1.0.0/all-issue-types#autoreleasepool_size_complexity_increase_ui_thread)
+- [AUTORELEASEPOOL_SIZE_UNREACHABLE_AT_EXIT](/docs/1.0.0/all-issue-types#autoreleasepool_size_unreachable_at_exit)
+- [EXECUTION_TIME_COMPLEXITY_INCREASE](/docs/1.0.0/all-issue-types#execution_time_complexity_increase)
+- [EXECUTION_TIME_COMPLEXITY_INCREASE_UI_THREAD](/docs/1.0.0/all-issue-types#execution_time_complexity_increase_ui_thread)
+- [EXECUTION_TIME_UNREACHABLE_AT_EXIT](/docs/1.0.0/all-issue-types#execution_time_unreachable_at_exit)
+- [INFINITE_AUTORELEASEPOOL_SIZE](/docs/1.0.0/all-issue-types#infinite_autoreleasepool_size)
+- [INFINITE_EXECUTION_TIME](/docs/1.0.0/all-issue-types#infinite_execution_time)

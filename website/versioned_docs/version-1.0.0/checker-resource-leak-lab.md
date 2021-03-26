@@ -16,4 +16,4 @@ This toy checker does nothing by default. Hack on it to make it report resource 
 ## List of Issue Types
 
 The following issue types are reported by this checker:
-- [LAB_RESOURCE_LEAK](/docs/all-issue-types#lab_resource_leak)
+- [LAB_RESOURCE_LEAK](/docs/1.0.0/all-issue-types#lab_resource_leak)
