@@ -984,6 +984,13 @@ new-website-version: doc-publish
 	cd $(WEBSITE_DIR)/versioned_docs/version-$(INFER_MAJOR).$(INFER_MINOR).$(INFER_PATCH)/ && \
 	find . -type f -not -name versions.md \
 	  -exec sed -i -e 's#/next/#/$(INFER_MAJOR).$(INFER_MINOR).$(INFER_PATCH)/#g' \{\} \+
+#	adjust intra-doc links in the previous "latest" version: /docs/foo -> /docs/<oldlatest>/foo
+#	  select the first version that is not the one we are creating (in case this target is run
+#	  multiple times)
+	old_latest=$$(jq 'map(select(. != "$(INFER_MAJOR).$(INFER_MINOR).$(INFER_PATCH)"))[0]' < $(WEBSITE_DIR)/versions.json | tr -d '"'); \
+	cd $(WEBSITE_DIR)/versioned_docs/version-$${old_latest}/ && \
+	find . -type f -not -name versions.md \
+	  -exec sed -i -e "s#(/docs/\([^$$(echo $$old_latest | cut -b 1)]\)#(/docs/$${old_latest}/\1#g" \{\} \+
 #	adjust versions.md, the page where users can navigate to other versions of the docs, unless
 #	it was already changed by an earlier run of this rule
 	cd $(WEBSITE_DIR)/ && \
