@@ -80,29 +80,6 @@ let debug_rule = Context_free.Rule.extension debug_extension
 ;;
 Driver.register_transformation ~rules:[debug_rule] "debug"
 
-let rec get_fun_name pat =
-  match pat.ppat_desc with
-  | Ppat_var {txt; _} -> txt
-  | Ppat_alias (pat, _) | Ppat_constraint (pat, _) -> get_fun_name pat
-  | _ ->
-      Location.raise_errorf ~loc:pat.ppat_loc
-        "Unexpected pattern in binding containing [%%Trace]: %a"
-        (fun f p ->
-          Ocaml_common.Pprintast.pattern f
-            (Selected_ast.To_ocaml.copy_pattern p) )
-        pat
-
-let vb_stack_with, vb_stack_top =
-  let stack = ref [] in
-  let with_ x ~f =
-    stack := x :: !stack ;
-    let r = f () in
-    stack := List.tl !stack ;
-    r
-  in
-  let top () = List.hd !stack in
-  (with_, top)
-
 (* (fun x -> x) *)
 let fun_id loc = pexp_fun ~loc Nolabel None (pvar ~loc "x") (evar ~loc "x")
 
@@ -115,16 +92,10 @@ let mapper =
   object
     inherit Ast_traverse.map as super
 
-    method! value_binding vb =
-      vb_stack_with vb.pvb_pat ~f:(fun () -> super#value_binding vb)
-
     method! expression exp =
       let append_here_args args =
-        let mod_name = evar ~loc:Location.none "Stdlib.__MODULE__" in
-        let fun_name =
-          estring ~loc:Location.none (get_fun_name (vb_stack_top ()))
-        in
-        (Nolabel, mod_name) :: (Nolabel, fun_name) :: args
+        let fun_name = evar ~loc:Location.none "Stdlib.__FUNCTION__" in
+        (Nolabel, fun_name) :: args
       in
       match exp.pexp_desc with
       | Pexp_apply

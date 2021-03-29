@@ -132,20 +132,46 @@ let init ?(colors = false) ?(margin = 240) ?config:(c = none) () =
   at_exit flush ;
   config := {c with colors}
 
-let unwrap s =
-  let rec index s i =
+(** split a string such as
+    [Dune__exe__Module.Submodule.Subsubmodule.function.subfunction] into
+    [(Module, function.subfunction)] *)
+let split_mod_fun_name s =
+  let fun_name_end = String.length s in
+  let rec fun_name_start_ s i =
+    match String.rindex_from_opt s i '.' with
+    | Some j ->
+        if Char.is_uppercase s.[j + 1] then fun_name_start_ s j else j + 1
+    | None -> 0
+  in
+  let fun_name_start = fun_name_start_ s (fun_name_end - 1) in
+  let fun_name =
+    String.sub s ~pos:fun_name_start ~len:(fun_name_end - fun_name_start)
+  in
+  let mod_name_end =
+    match String.index_from_opt s 0 '.' with
+    | Some i -> i
+    | None -> fun_name_end
+  in
+  let rec mod_name_start_ s i =
     if i <= 1 then None
-    else if not (Char.equal '_' s.[i]) then index s (i - 1)
-    else if not (Char.equal '_' s.[i - 1]) then index s (i - 2)
+    else if not (Char.equal '_' s.[i]) then mod_name_start_ s (i - 1)
+    else if not (Char.equal '_' s.[i - 1]) then mod_name_start_ s (i - 2)
     else Some (i + 1)
   in
-  match index s (String.length s - 2) with
-  | Some pos -> String.subo s ~pos
-  | None -> s
+  let mod_name_start =
+    match mod_name_start_ s (mod_name_end - 2) with
+    | Some pos -> pos
+    | None -> 0
+  in
+  let mod_name =
+    String.sub s ~pos:mod_name_start ~len:(mod_name_end - mod_name_start)
+  in
+  (mod_name, fun_name)
 
-let enabled mod_name fun_name =
+let enabled mod_fun_name =
+  let mod_name, fun_name = split_mod_fun_name mod_fun_name in
   let {trace_all; trace_mods_funs; _} = !config in
-  match Map.find (unwrap mod_name) trace_mods_funs with
+  match Map.find mod_name trace_mods_funs with
   | {trace_mod; trace_funs} -> (
     try Map.find fun_name trace_funs
     with Not_found -> (
@@ -154,42 +180,42 @@ let enabled mod_name fun_name =
       | None -> trace_all ) )
   | exception Not_found -> trace_all
 
-let kprintf mod_name fun_name k fmt =
-  if enabled mod_name fun_name then Format.kfprintf k fs fmt
+let kprintf mod_fun_name k fmt =
+  if enabled mod_fun_name then Format.kfprintf k fs fmt
   else Format.ifprintf fs fmt
 
-let fprintf mod_name fun_name fs fmt =
-  if enabled mod_name fun_name then Format.fprintf fs fmt
+let fprintf mod_fun_name fs fmt =
+  if enabled mod_fun_name then Format.fprintf fs fmt
   else Format.ifprintf fs fmt
 
-let printf mod_name fun_name fmt = fprintf mod_name fun_name fs fmt
+let printf mod_fun_name fmt = fprintf mod_fun_name fs fmt
 
-let info mod_name fun_name fmt =
-  if enabled mod_name fun_name then (
+let info mod_fun_name fmt =
+  if enabled mod_fun_name then (
     Format.fprintf fs "@\n@[<2>| " ;
     Format.kfprintf (fun fs -> Format.fprintf fs "@]") fs fmt )
   else Format.ifprintf fs fmt
 
-let infok mod_name fun_name k =
-  k {pf= (fun fmt -> info mod_name fun_name fmt)}
+let infok mod_fun_name k = k {pf= (fun fmt -> info mod_fun_name fmt)}
 
-let incf mod_name fun_name fmt =
-  if not (enabled mod_name fun_name) then Format.ifprintf fs fmt
-  else (
+let incf mod_fun_name fmt =
+  if not (enabled mod_fun_name) then Format.ifprintf fs fmt
+  else
+    let _, fun_name = split_mod_fun_name mod_fun_name in
     Format.fprintf fs "@\n@[<2>@[<hv 2>( %s:" fun_name ;
-    Format.kfprintf (fun fs -> Format.fprintf fs "@]") fs fmt )
+    Format.kfprintf (fun fs -> Format.fprintf fs "@]") fs fmt
 
-let decf mod_name fun_name fmt =
-  if not (enabled mod_name fun_name) then Format.ifprintf fs fmt
-  else (
+let decf mod_fun_name fmt =
+  if not (enabled mod_fun_name) then Format.ifprintf fs fmt
+  else
+    let _, fun_name = split_mod_fun_name mod_fun_name in
     Format.fprintf fs "@]@\n@[<2>) %s:@ " fun_name ;
-    Format.kfprintf (fun fs -> Format.fprintf fs "@]") fs fmt )
+    Format.kfprintf (fun fs -> Format.fprintf fs "@]") fs fmt
 
-let call mod_name fun_name k =
-  k {pf= (fun fmt -> incf mod_name fun_name fmt)}
+let call mod_fun_name k = k {pf= (fun fmt -> incf mod_fun_name fmt)}
 
-let retn mod_name fun_name k result =
-  k {pf= (fun fmt -> decf mod_name fun_name fmt)} result ;
+let retn mod_fun_name k result =
+  k {pf= (fun fmt -> decf mod_fun_name fmt)} result ;
   result
 
 let trace :
@@ -197,24 +223,23 @@ let trace :
     -> ?retn:(pf -> 'a -> unit)
     -> ?rais:(pf -> exn -> Printexc.raw_backtrace -> unit)
     -> string
-    -> string
     -> (unit -> 'a)
     -> 'a =
- fun ?call ?retn ?rais mod_name fun_name k ->
+ fun ?call ?retn ?rais mod_fun_name k ->
   let call = Option.value call ~default:(fun {pf} -> pf "") in
   let retn = Option.value retn ~default:(fun {pf} _ -> pf "") in
   let rais =
     Option.value rais ~default:(fun {pf} exc _ ->
         pf "%s" (Printexc.to_string exc) )
   in
-  call {pf= (fun fmt -> incf mod_name fun_name fmt)} ;
+  call {pf= (fun fmt -> incf mod_fun_name fmt)} ;
   match k () with
   | result ->
-      retn {pf= (fun fmt -> decf mod_name fun_name fmt)} result ;
+      retn {pf= (fun fmt -> decf mod_fun_name fmt)} result ;
       result
   | exception exc ->
       let bt = Printexc.get_raw_backtrace () in
-      rais {pf= (fun fmt -> decf mod_name fun_name fmt)} exc bt ;
+      rais {pf= (fun fmt -> decf mod_fun_name fmt)} exc bt ;
       Printexc.raise_with_backtrace exc bt
 
 let raisef ?margin exn fmt =

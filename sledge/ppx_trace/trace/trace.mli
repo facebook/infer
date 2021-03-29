@@ -24,25 +24,25 @@ val pp_styled :
   [`Bold | `Cyan | `Magenta] -> ('a, unit) fmt -> Format.formatter -> 'a
 (** If config.colors is set to true, print in the specified color *)
 
-val printf : string -> string -> 'a printf
+val printf : string -> 'a printf
 (** Like [Format.printf], if enabled, otherwise like [Format.iprintf]. *)
 
-val fprintf : string -> string -> Format.formatter -> 'a printf
+val fprintf : string -> Format.formatter -> 'a printf
 (** Like [Format.fprintf], if enabled, otherwise like [Format.ifprintf]. *)
 
-val kprintf : string -> string -> (Format.formatter -> unit) -> 'a printf
+val kprintf : string -> (Format.formatter -> unit) -> 'a printf
 (** Like [Format.kprintf], if enabled, otherwise like [Format.ifprintf]. *)
 
-val info : string -> string -> 'a printf
+val info : string -> 'a printf
 (** Emit a message at the current indentation level, if enabled. *)
 
-val infok : string -> string -> (pf -> 'a) -> 'a
+val infok : string -> (pf -> 'a) -> 'a
 (** Emit a message at the current indentation level, if enabled. *)
 
-val call : string -> string -> (pf -> 'a) -> 'a
+val call : string -> (pf -> 'a) -> 'a
 (** Increase indentation level and emit a message, if enabled. *)
 
-val retn : string -> string -> (pf -> 'a -> unit) -> 'a -> 'a
+val retn : string -> (pf -> 'a -> unit) -> 'a -> 'a
 (** Decrease indentation level and emit a message, if enabled. *)
 
 val trace :
@@ -50,14 +50,13 @@ val trace :
   -> ?retn:(pf -> 'a -> unit)
   -> ?rais:(pf -> exn -> Printexc.raw_backtrace -> unit)
   -> string
-  -> string
   -> (unit -> 'a)
   -> 'a
-(** [trace ~call ~retn ~rais mod_name fun_name k] either simply invokes
-    [k ()], when not enabled, or else increases the indentation level and
-    emits the [call] message, then invokes [k ()], then decreases the
-    indentation level and either emits the [retn] or [rais] message,
-    depending on whether [k ()] returned normally or exceptionally. *)
+(** [trace ~call ~retn ~rais function_name k] either simply invokes [k ()],
+    when not enabled, or else increases the indentation level and emits the
+    [call] message, then invokes [k ()], then decreases the indentation
+    level and either emits the [retn] or [rais] message, depending on
+    whether [k ()] returned normally or exceptionally. *)
 
 val flush : unit -> unit
 (** Flush the internal buffers. *)
