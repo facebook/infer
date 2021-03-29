@@ -134,14 +134,6 @@ let fold_map_from_map map x s ~f =
 type 'a zero_one_many = Zero | One of 'a | Many
 type ('a, 'b) zero_one_many2 = Zero2 | One2 of 'a * 'b | Many2
 
-(* from upcoming Stdlib *)
-module Either = struct
-  type ('a, 'b) t = Left of 'a | Right of 'b
-
-  let left v = Left v
-  let right v = Right v
-end
-
 module Pair = Containers.Pair
 module Bijection = CCBijection [@@warning "-49"]
 
