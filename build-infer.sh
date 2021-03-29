@@ -35,7 +35,7 @@ function usage() {
   echo
   echo " options:"
   echo "   -h,--help             show this message"
-  echo "   --no-opam-lock        do not use the opam.locked file and let opam resolve dependencies"
+  echo "   --no-opam-lock        do not use the opam/infer.opam.locked file and let opam resolve dependencies"
   echo "   --only-setup-opam     initialize opam, install the opam dependencies of infer, and exit"
   echo "   --user-opam-switch    use the current opam switch to install infer (default: $INFER_OPAM_DEFAULT_SWITCH)"
   echo "   -y,--yes              automatically agree to everything"
@@ -135,7 +135,7 @@ install_opam_deps () {
     if [ "$USE_OPAM_LOCK" == yes ]; then
         locked=--locked
     fi
-    opam install --deps-only infer "$INFER_ROOT" $locked &&
+    opam install --deps-only "$INFER_ROOT"/opam/infer.opam $locked &&
     if [ -n "$SANDCASTLE" ]; then
         opam pin list | grep yojson || opam pin add yojson "${DEPENDENCIES_DIR}/yojson-1.7.0fix"
     fi

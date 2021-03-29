@@ -6,7 +6,7 @@ bug-reports: "https://github.com/facebook/infer/issues/new?template=sledge_issue
 dev-repo: "git://github.com/facebook/infer.git"
 license: "MIT"
 build: [
-  [make "release"]
+  [make "-C" "sledge" "release"]
 ]
 depends: [
   "ocaml"
