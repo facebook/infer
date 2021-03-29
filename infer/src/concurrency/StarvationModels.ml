@@ -149,7 +149,10 @@ let may_do_ipc =
       ; (* indirectly makes a transact call*)
         { default with
           classname= "android.net.ConnectivityManager"
-        ; methods= ["getActiveNetworkInfo"] } ])
+        ; methods= ["getActiveNetworkInfo"] }
+      ; { default with
+          classname= "android.media.AudioManager"
+        ; methods= ["getStreamVolume"; "getRingerMode"] } ])
 
 
 let is_monitor_wait =

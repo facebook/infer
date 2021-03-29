@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import android.media.AudioManager;
 import android.net.ConnectivityManager;
 import android.os.Binder;
 import android.os.RemoteException;
@@ -62,5 +63,15 @@ class Binders {
   @UiThread
   void getActiveNetworkInfoBad(ConnectivityManager c) {
     c.getActiveNetworkInfo();
+  }
+
+  @UiThread
+  int doGetStreamVolumeBad(AudioManager a) {
+    return a.getStreamVolume(0);
+  }
+
+  @UiThread
+  int doGetRingerModeBad(AudioManager a) {
+    return a.getRingerMode();
   }
 }
