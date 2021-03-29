@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+open PulseBasicInterface
 open PulseDomainInterface
 
 val update_objc_method_posts :
@@ -15,3 +16,12 @@ val update_objc_method_posts :
   -> ExecutionDomain.t list
 (** For ObjC instance methods: adds path condition `self > 0` to given posts and appends additional
     nil summary. Does nothing to posts for other kinds of methods *)
+
+val append_objc_actual_self_positive :
+     Procdesc.t
+  -> ((AbstractValue.t * ValueHistory.t) * Typ.t) option
+  -> AbductiveDomain.t
+  -> AbductiveDomain.t AccessResult.t
+
+val mk_objc_method_nil_summary :
+  Tenv.t -> Procdesc.t -> ExecutionDomain.t -> AbductiveDomain.t AccessResult.t option

@@ -56,7 +56,7 @@ let mk_objc_method_nil_summary_aux tenv proc_desc astate =
       PulseOperations.write_deref location ~ref:ret_var_addr_hist ~obj:self_value astate
 
 
-let mk_objc_method_nil_summary {InterproceduralAnalysis.tenv; proc_desc; err_log} initial =
+let mk_objc_method_nil_summary tenv proc_desc initial =
   let proc_name = Procdesc.get_proc_name proc_desc in
   match (initial, proc_name) with
   | ContinueProgram astate, Procname.ObjC_Cpp {kind= ObjCInstanceMethod}
@@ -66,8 +66,7 @@ let mk_objc_method_nil_summary {InterproceduralAnalysis.tenv; proc_desc; err_log
          We create a nil summary to avoid reporting NPE in this case.
          However, there is an exception in the case where the return type is non-POD.
          In that case it's UB and we want to report an error. *)
-      let result = mk_objc_method_nil_summary_aux tenv proc_desc astate in
-      Some (PulseReport.report_result tenv proc_desc err_log result)
+      Some (mk_objc_method_nil_summary_aux tenv proc_desc astate)
   | ContinueProgram _, _
   | ExitProgram _, _
   | AbortProgram _, _
@@ -95,11 +94,20 @@ let append_objc_self_positive {InterproceduralAnalysis.tenv; proc_desc; err_log}
       [astate]
 
 
-let update_objc_method_posts analysis_data ~initial_astate ~posts =
-  let nil_summary = mk_objc_method_nil_summary analysis_data initial_astate in
-  match nil_summary with
-  | None ->
-      posts
-  | Some nil_summary ->
-      let posts = List.concat_map ~f:(append_objc_self_positive analysis_data) posts in
-      nil_summary @ posts
+let append_objc_actual_self_positive procdesc self_actual astate =
+  let procname = Procdesc.get_proc_name procdesc in
+  match procname with
+  | Procname.ObjC_Cpp {kind= ObjCInstanceMethod} when Procdesc.is_ret_type_pod procdesc ->
+      Option.value_map self_actual ~default:(Ok astate) ~f:(fun ((self, _), _) ->
+          PulseArithmetic.prune_positive self astate )
+  | _ ->
+      Ok astate
+
+
+let update_objc_method_posts ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data)
+    ~initial_astate ~posts =
+  mk_objc_method_nil_summary tenv proc_desc initial_astate
+  |> Option.value_map ~default:posts ~f:(function result ->
+         let nil_summary = PulseReport.report_result tenv proc_desc err_log result in
+         let posts = List.concat_map ~f:(append_objc_self_positive analysis_data) posts in
+         nil_summary @ posts )

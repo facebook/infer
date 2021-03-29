@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <Foundation/NSObject.h>
+#import <Foundation/Foundation.h>
 #include <memory>
 
 @interface SomeObject : NSObject
@@ -26,6 +26,8 @@
 + (SomeObject*)returnsNil;
 
 - (SomeObject*)get;
+
++ (NSString*)returnsStringNil;
 
 @end
 
@@ -54,6 +56,10 @@
 - (SomeObject*)get {
   SomeObject* o = [SomeObject new];
   return o;
+}
+
++ (NSString*)returnsStringNil {
+  return nil;
 }
 
 @end
@@ -135,4 +141,12 @@ int testTraceBad() {
   SomeObject* obj = nil;
   int* ptr = [obj getXPtr];
   return *ptr;
+}
+
+void testUnknownNilSpecOk() {
+  NSString* const str = [SomeObject returnsStringNil];
+  if (str.length == 0) {
+    return;
+  };
+  NSDictionary* dict = @{@"helloString" : str};
 }

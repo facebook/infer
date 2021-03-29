@@ -189,58 +189,86 @@ let conservatively_initialize_args arg_values ({AbductiveDomain.post} as astate)
   AbstractValue.Set.fold AbductiveDomain.initialize reachable_values astate
 
 
+let call_aux tenv caller_proc_desc call_loc callee_pname ret actuals callee_proc_desc exec_states
+    (astate : AbductiveDomain.t) =
+  let formals =
+    Procdesc.get_formals callee_proc_desc
+    |> List.map ~f:(fun (mangled, _) -> Pvar.mk mangled callee_pname |> Var.of_pvar)
+  in
+  let captured_vars =
+    Procdesc.get_captured callee_proc_desc
+    |> List.map ~f:(fun {CapturedVar.name; capture_mode} ->
+           let pvar = Pvar.mk name callee_pname in
+           (Var.of_pvar pvar, capture_mode) )
+  in
+  let<*> astate, captured_vars_with_actuals =
+    match actuals with
+    | (actual_closure, _) :: _
+      when not (Procname.is_objc_block callee_pname || List.is_empty captured_vars) ->
+        (* Assumption: the first parameter will be a closure *)
+        PulseOperations.get_captured_actuals call_loc ~captured_vars ~actual_closure astate
+    | _ ->
+        Ok (astate, [])
+  in
+  let should_keep_at_most_one_disjunct =
+    Option.exists Config.pulse_cut_to_one_path_procedures_pattern ~f:(fun regex ->
+        Str.string_match regex (Procname.to_string callee_pname) 0 )
+  in
+  if should_keep_at_most_one_disjunct then
+    L.d_printfln "Will keep at most one disjunct because %a is in blacklist" Procname.pp
+      callee_pname ;
+  (* call {!AbductiveDomain.PrePost.apply} on each pre/post pair in the summary. *)
+  List.fold ~init:[] exec_states ~f:(fun posts callee_exec_state ->
+      if should_keep_at_most_one_disjunct && not (List.is_empty posts) then posts
+      else
+        (* apply all pre/post specs *)
+        match
+          apply_callee tenv ~caller_proc_desc callee_pname call_loc callee_exec_state
+            ~captured_vars_with_actuals ~formals ~actuals ~ret astate
+        with
+        | Unsat ->
+            (* couldn't apply pre/post pair *)
+            posts
+        | Sat post ->
+            post :: posts )
+
+
 let call tenv ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.t) option) call_loc
     callee_pname ~ret ~actuals ~formals_opt (astate : AbductiveDomain.t) =
   let get_arg_values () = List.map actuals ~f:(fun ((value, _), _) -> value) in
+  (* a special case for objc nil messaging *)
+  let unknown_objc_nil_messaging astate_unknown procdesc =
+    let result_unknown =
+      let<+> astate_unknown =
+        PulseObjectiveCSummary.append_objc_actual_self_positive procdesc (List.hd actuals)
+          astate_unknown
+      in
+      astate_unknown
+    in
+    let result_unknown_nil =
+      PulseObjectiveCSummary.mk_objc_method_nil_summary tenv procdesc
+        (ExecutionDomain.mk_initial tenv procdesc)
+      |> Option.value_map ~default:[] ~f:(fun nil_summary ->
+             let<*> nil_astate = nil_summary in
+             call_aux tenv caller_proc_desc call_loc callee_pname ret actuals procdesc
+               ([ContinueProgram nil_astate] :> ExecutionDomain.t list)
+               astate )
+    in
+    result_unknown @ result_unknown_nil
+  in
   match callee_data with
   | Some (callee_proc_desc, exec_states) ->
-      let formals =
-        Procdesc.get_formals callee_proc_desc
-        |> List.map ~f:(fun (mangled, _) -> Pvar.mk mangled callee_pname |> Var.of_pvar)
-      in
-      let captured_vars =
-        Procdesc.get_captured callee_proc_desc
-        |> List.map ~f:(fun {CapturedVar.name; capture_mode} ->
-               let pvar = Pvar.mk name callee_pname in
-               (Var.of_pvar pvar, capture_mode) )
-      in
-      let<*> astate, captured_vars_with_actuals =
-        match actuals with
-        | (actual_closure, _) :: _
-          when not (Procname.is_objc_block callee_pname || List.is_empty captured_vars) ->
-            (* Assumption: the first parameter will be a closure *)
-            PulseOperations.get_captured_actuals call_loc ~captured_vars ~actual_closure astate
-        | _ ->
-            Ok (astate, [])
-      in
-      let should_keep_at_most_one_disjunct =
-        Option.exists Config.pulse_cut_to_one_path_procedures_pattern ~f:(fun regex ->
-            Str.string_match regex (Procname.to_string callee_pname) 0 )
-      in
-      if should_keep_at_most_one_disjunct then
-        L.d_printfln "Will keep at most one disjunct because %a is in blacklist" Procname.pp
-          callee_pname ;
-      (* call {!AbductiveDomain.PrePost.apply} on each pre/post pair in the summary. *)
-      List.fold ~init:[]
+      call_aux tenv caller_proc_desc call_loc callee_pname ret actuals callee_proc_desc
         (exec_states :> ExecutionDomain.t list)
-        ~f:(fun posts callee_exec_state ->
-          if should_keep_at_most_one_disjunct && not (List.is_empty posts) then posts
-          else
-            (* apply all pre/post specs *)
-            match
-              apply_callee tenv ~caller_proc_desc callee_pname call_loc callee_exec_state
-                ~captured_vars_with_actuals ~formals ~actuals ~ret astate
-            with
-            | Unsat ->
-                (* couldn't apply pre/post pair *)
-                posts
-            | Sat post ->
-                post :: posts )
+        astate
   | None ->
       (* no spec found for some reason (unknown function, ...) *)
       L.d_printfln "No spec found for %a@\n" Procname.pp callee_pname ;
-      let astate =
+      let astate_unknown =
         conservatively_initialize_args (get_arg_values ()) astate
         |> unknown_call tenv call_loc (SkippedKnownCall callee_pname) ~ret ~actuals ~formals_opt
       in
-      [Ok (ContinueProgram astate)]
+      let callee_procdesc_opt = AnalysisCallbacks.get_proc_desc callee_pname in
+      Option.value_map callee_procdesc_opt
+        ~default:[Ok (ContinueProgram astate_unknown)]
+        ~f:(unknown_objc_nil_messaging astate_unknown)
