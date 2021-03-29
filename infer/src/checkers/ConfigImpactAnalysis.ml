@@ -375,10 +375,40 @@ module TransferFunctions = struct
     && Procname.get_method pname |> String.equal "booleanValue"
 
 
+  let is_cheap_system_method =
+    let cheap_system_methods =
+      String.Set.of_list
+        [ "clearProperty"
+        ; "console"
+        ; "currentTimeMillis"
+        ; "exit"
+        ; "getEnv"
+        ; "getLogger"
+        ; "getProperties"
+        ; "getProperty"
+        ; "getSecurityManager"
+        ; "identityHashCode​"
+        ; "inheritedChannel"
+        ; "lineSeparator"
+        ; "mapLibraryName​"
+        ; "nanoTime"
+        ; "setErr"
+        ; "setIn"
+        ; "setOut"
+        ; "setProperties"
+        ; "setProperty"
+        ; "setSecurityManager" ]
+    in
+    fun _ method_name -> String.Set.mem cheap_system_methods method_name
+
+
   let is_known_cheap_method =
     let dispatch : (Tenv.t, unit, unit) ProcnameDispatcher.ProcName.dispatcher =
       let open ProcnameDispatcher.ProcName in
-      make_dispatcher [+PatternMatch.Java.implements_math &::.*--> ()]
+      make_dispatcher
+        [ +PatternMatch.Java.implements_math &::.*--> ()
+        ; +PatternMatch.Java.implements_number &::.*--> ()
+        ; +PatternMatch.Java.implements_system &::+ is_cheap_system_method &--> () ]
     in
     fun tenv pname -> dispatch tenv pname |> Option.is_some
 

@@ -95,6 +95,9 @@ module Java : sig
   val implements_nio : string -> Tenv.t -> string -> bool
   (** Check whether class implements a Java nio *)
 
+  val implements_number : Tenv.t -> string -> bool
+  (** Check whether class implements a Java's Number *)
+
   val implements_org_json : string -> Tenv.t -> string -> bool
   (** Check whether class implements a class from Json *)
 
@@ -112,6 +115,9 @@ module Java : sig
 
   val implements_sparse_float_array : Tenv.t -> string -> bool
   (** Check whether class implements a class of [com.facebook.litho.internal.SparseFloatArray] *)
+
+  val implements_system : Tenv.t -> string -> bool
+  (** Check whether class implements a Java's System *)
 
   val implements_view_group : Tenv.t -> string -> bool
   (** Check whether class implements a class of [android.view.ViewGroup] *)
