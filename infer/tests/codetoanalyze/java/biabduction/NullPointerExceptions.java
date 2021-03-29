@@ -599,12 +599,12 @@ public class NullPointerExceptions {
   }
 
   String getString2() {
-    return "string 2";
+    return "Test string 2";
   }
 
   void stringVarEqualsFalseNPE() {
     final String c1 = "Test string 1";
-    String c2 = "Test " + getString2();
+    String c2 = getString2();
     String s = null;
     if (!c1.equals(c2)) {
       s.toString(); // NPE
