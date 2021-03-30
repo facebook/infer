@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import android.content.Context;
 import android.media.AudioManager;
 import android.net.ConnectivityManager;
 import android.os.Binder;
@@ -73,5 +74,15 @@ class Binders {
   @UiThread
   int doGetRingerModeBad(AudioManager a) {
     return a.getRingerMode();
+  }
+
+  @UiThread
+  int doCheckPermissionBad(Context c) {
+    return c.checkPermission("", 0, 0);
+  }
+
+  @UiThread
+  int doCheckSelfPermissionBad(Context c) {
+    return c.checkSelfPermission("");
   }
 }

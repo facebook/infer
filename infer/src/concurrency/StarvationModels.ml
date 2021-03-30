@@ -152,7 +152,10 @@ let may_do_ipc =
         ; methods= ["getActiveNetworkInfo"] }
       ; { default with
           classname= "android.media.AudioManager"
-        ; methods= ["getStreamVolume"; "getRingerMode"] } ])
+        ; methods= ["getStreamVolume"; "getRingerMode"] }
+      ; { default with
+          classname= "android.content.Context"
+        ; methods= ["checkPermission"; "checkSelfPermission"] } ])
 
 
 let is_monitor_wait =
