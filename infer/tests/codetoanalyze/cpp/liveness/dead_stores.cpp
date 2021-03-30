@@ -539,7 +539,7 @@ class Exceptions {
     return 3;
   }
 
-  int return_in_try_in_for_ok() {
+  int FP_return_in_try_in_for_ok() {
     constexpr int i1 = 3;
     for (int i = 1;; ++i) {
       try {
