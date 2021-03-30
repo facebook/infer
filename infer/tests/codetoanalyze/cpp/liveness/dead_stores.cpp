@@ -539,6 +539,20 @@ class Exceptions {
     return 3;
   }
 
+  int return_in_try_in_for_ok() {
+    constexpr int i1 = 3;
+    for (int i = 1;; ++i) {
+      try {
+        return maybe_throw();
+      } catch (const char* msg) {
+        if (i1 == i) {
+          return 2;
+        }
+      }
+    }
+    return 3;
+  }
+
   int read_in_catch_ok() {
     int x;
     try {

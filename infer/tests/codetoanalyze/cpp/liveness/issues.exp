@@ -1,6 +1,8 @@
 codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::Exceptions::dead_in_catch_bad, 4, DEAD_STORE, no_bucket, ERROR, [Write of unused value]
 codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::Exceptions::not_read_in_catch_bad, 3, DEAD_STORE, no_bucket, ERROR, [Write of unused value]
 codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::Exceptions::read_only_in_catch_bad, 5, DEAD_STORE, no_bucket, ERROR, [Write of unused value]
+codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::Exceptions::return_in_try_in_for_ok, 2, DEAD_STORE, no_bucket, ERROR, [Write of unused value]
+codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::Exceptions::return_in_try_in_for_ok, 2, DEAD_STORE, no_bucket, ERROR, [Write of unused value]
 codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::Exceptions::unreachable_catch_bad, 1, DEAD_STORE, no_bucket, ERROR, [Write of unused value]
 codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::FP_assign_array_tricky2_ok, 3, DEAD_STORE, no_bucket, ERROR, [Write of unused value]
 codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::binaryConditional_bad, 1, DEAD_STORE, no_bucket, ERROR, [Write of unused value]
