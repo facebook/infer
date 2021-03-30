@@ -406,7 +406,8 @@ module ConfigImpactItem = struct
   type change_type = Added | Removed
 
   let compare_by_unchecked_callees_length {unchecked_callees= u1} {unchecked_callees= u2} =
-    Int.compare (UncheckedCallees.cardinal u1) (UncheckedCallees.cardinal u2)
+    let c = Int.compare (UncheckedCallees.cardinal u1) (UncheckedCallees.cardinal u2) in
+    if c <> 0 then c else UncheckedCallees.compare u1 u2
 
 
   let pp_change_type f x =
