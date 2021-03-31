@@ -20,10 +20,10 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE, ElementType.FIELD, ElementType.METHOD})
 @Retention(RetentionPolicy.CLASS)
 public @interface ThreadConfined {
-  String value();
   /** the thread that the mutations should be confined to */
-  public static String UI = "UI";
+  String value();
   /** confined to the UI thread */
-  public static String ANY = "ANY";
+  public static String UI = "UI";
   /** confined to any thread (but only that thread!) */
+  public static String ANY = "ANY";
 }
