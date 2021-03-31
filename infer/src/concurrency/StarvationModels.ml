@@ -146,7 +146,7 @@ let may_do_ipc =
         ; methods= ["transact"]
         ; actuals_pred= (fun actuals -> List.nth actuals 4 |> Option.exists ~f:HilExp.is_int_zero)
         }
-      ; (* indirectly makes a transact call*)
+      ; (* indirectly make a transact call *)
         { default with
           classname= "android.net.ConnectivityManager"
         ; methods= ["getActiveNetworkInfo"] }
@@ -155,7 +155,8 @@ let may_do_ipc =
         ; methods= ["getStreamVolume"; "getRingerMode"] }
       ; { default with
           classname= "android.content.Context"
-        ; methods= ["checkPermission"; "checkSelfPermission"] } ])
+        ; methods= ["checkPermission"; "checkSelfPermission"] }
+      ; {default with classname= "android.net.wifi.WifiManager"; methods= ["getConnectionInfo"]} ])
 
 
 let is_monitor_wait =

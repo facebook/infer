@@ -8,6 +8,7 @@
 import android.content.Context;
 import android.media.AudioManager;
 import android.net.ConnectivityManager;
+import android.net.wifi.WifiManager;
 import android.os.Binder;
 import android.os.RemoteException;
 import android.support.annotation.UiThread;
@@ -84,5 +85,10 @@ class Binders {
   @UiThread
   int doCheckSelfPermissionBad(Context c) {
     return c.checkSelfPermission("");
+  }
+
+  @UiThread
+  void doGetConnectionInfoBad(WifiManager w) {
+    w.getConnectionInfo();
   }
 }
