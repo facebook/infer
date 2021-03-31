@@ -1501,7 +1501,7 @@ let xlate_block : pop_thunk -> x -> Llvm.llbasicblock -> Llair.block list =
 
 let report_undefined func name =
   if Option.is_some (Llvm.use_begin func) then
-    [%Trace.info "undefined function: %a" Function.pp name]
+    [%Trace.printf "@\n@[undefined function: %a@]" Function.pp name]
 
 let xlate_function_decl x llfunc typ k =
   let loc = find_loc llfunc in

@@ -654,7 +654,7 @@ module Func = struct
       | _ -> assert false
     with exc ->
       let bt = Printexc.get_raw_backtrace () in
-      [%Trace.info "%a" pp func] ;
+      [%Trace.info " %a" pp func] ;
       Printexc.raise_with_backtrace exc bt
 
   let find name functions =

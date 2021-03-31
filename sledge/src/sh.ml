@@ -296,7 +296,7 @@ let rec invariant q =
             invariant sjn ) )
   with exc ->
     let bt = Printexc.get_raw_backtrace () in
-    [%Trace.info "%a" pp_raw q] ;
+    [%Trace.info " %a" pp_raw q] ;
     Printexc.raise_with_backtrace exc bt
 
 (** Query *)
