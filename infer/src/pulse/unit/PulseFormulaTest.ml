@@ -176,9 +176,8 @@ let%test_module "normalization" =
       normalize (of_binop Eq x y = i 0 && x = i 0 && y = i 1) ;
       [%expect
         {|
-        known=true (no var=var) && x = 0 ∧ y = 1 ∧ v6 = 0 && true (no term_eqs) && true (no atoms),
-        pruned=true (no atoms),
-        both=true (no var=var) && x = 0 ∧ y = 1 ∧ v6 = 0 && true (no term_eqs) && true (no atoms)|}]
+        known=x=v6 && x = 0 ∧ y = 1 && 0=x∧1=y && true (no atoms), pruned=true (no atoms),
+        both=x=v6 && x = 0 ∧ y = 1 && 0=x∧1=y && true (no atoms)|}]
 
     let%expect_test _ =
       normalize (x = i 0 && x < i 0) ;
@@ -196,36 +195,36 @@ let%test_module "normalization" =
               &&
               x = -v6 + v8 -1 ∧ v7 = v8 -1 ∧ v10 = 0
               &&
-              true (no term_eqs)
+              0=v10∧[-v6 + v8 -1]=x∧[v8 -1]=v7∧[z]×[v8]=v9∧[v]×[y]=v6∧[v9]÷[w]=v10
               &&
-              {0 = [v9]÷[w]}∧{[v6] = [v]×[y]}∧{[v9] = [z]×[v8]},
+              true (no atoms),
         pruned=true (no atoms),
         both=true (no var=var)
              &&
              x = -v6 + v8 -1 ∧ v7 = v8 -1 ∧ v10 = 0
              &&
-             true (no term_eqs)
+             0=v10∧[-v6 + v8 -1]=x∧[v8 -1]=v7∧[z]×[v8]=v9∧[v]×[y]=v6∧[v9]÷[w]=v10
              &&
-             {0 = [v9]÷[w]}∧{[v6] = [v]×[y]}∧{[v9] = [z]×[v8]} |}]
+             true (no atoms) |}]
 
     (* check that this becomes all linear equalities *)
     let%expect_test _ =
       normalize (i 12 * (x + (i 3 * y) + i 1) / i 7 = i 0) ;
       [%expect
         {|
-        known=true (no var=var)
+        known=v8=v9=v10
               &&
-              x = -v6 -1 ∧ y = 1/3·v6 ∧ v7 = -1 ∧ v8 = 0 ∧ v9 = 0 ∧ v10 = 0
+              x = -v6 -1 ∧ y = 1/3·v6 ∧ v7 = -1 ∧ v8 = 0
               &&
-              true (no term_eqs)
+              -1=v7∧0=v8∧[-v6 -1]=x∧[1/3·v6]=y
               &&
               true (no atoms),
         pruned=true (no atoms),
-        both=true (no var=var)
+        both=v8=v9=v10
              &&
-             x = -v6 -1 ∧ y = 1/3·v6 ∧ v7 = -1 ∧ v8 = 0 ∧ v9 = 0 ∧ v10 = 0
+             x = -v6 -1 ∧ y = 1/3·v6 ∧ v7 = -1 ∧ v8 = 0
              &&
-             true (no term_eqs)
+             -1=v7∧0=v8∧[-v6 -1]=x∧[1/3·v6]=y
              &&
              true (no atoms)|}]
 
@@ -234,21 +233,19 @@ let%test_module "normalization" =
       normalize (z * (x + (v * y) + i 1) / w = i 0 && z = i 12 && v = i 3 && w = i 7) ;
       [%expect
         {|
-        known=true (no var=var)
+        known=v8=v9=v10
               &&
-              x = -v6 -1 ∧ y = 1/3·v6 ∧ z = 12 ∧ w = 7 ∧ v = 3 ∧ v7 = -1
-               ∧ v8 = 0 ∧ v9 = 0 ∧ v10 = 0
+              x = -v6 -1 ∧ y = 1/3·v6 ∧ z = 12 ∧ w = 7 ∧ v = 3 ∧ v7 = -1 ∧ v8 = 0
               &&
-              true (no term_eqs)
+              -1=v7∧0=v8∧3=v∧7=w∧12=z∧[-v6 -1]=x∧[1/3·v6]=y
               &&
               true (no atoms),
         pruned=true (no atoms),
-        both=true (no var=var)
+        both=v8=v9=v10
              &&
-             x = -v6 -1 ∧ y = 1/3·v6 ∧ z = 12 ∧ w = 7 ∧ v = 3 ∧ v7 = -1
-              ∧ v8 = 0 ∧ v9 = 0 ∧ v10 = 0
+             x = -v6 -1 ∧ y = 1/3·v6 ∧ z = 12 ∧ w = 7 ∧ v = 3 ∧ v7 = -1 ∧ v8 = 0
              &&
-             true (no term_eqs)
+             -1=v7∧0=v8∧3=v∧7=w∧12=z∧[-v6 -1]=x∧[1/3·v6]=y
              &&
              true (no atoms)|}]
   end )
@@ -266,31 +263,31 @@ let%test_module "variable elimination" =
       simplify ~keep:[x_var] (x = i 0 && y = i 1 && z = i 2 && w = i 3) ;
       [%expect
         {|
-        known=true (no var=var) && x = 0 && true (no term_eqs) && true (no atoms), pruned=true (no atoms),
-        both=true (no var=var) && x = 0 && true (no term_eqs) && true (no atoms)|}]
+        known=true (no var=var) && x = 0 && 0=x && true (no atoms), pruned=true (no atoms),
+        both=true (no var=var) && x = 0 && 0=x && true (no atoms)|}]
 
     let%expect_test _ =
       simplify ~keep:[x_var] (x = y + i 1 && x = i 0) ;
       [%expect
         {|
-          known=true (no var=var) && x = 0 && true (no term_eqs) && true (no atoms), pruned=true (no atoms),
-          both=true (no var=var) && x = 0 && true (no term_eqs) && true (no atoms)|}]
+          known=true (no var=var) && x = 0 && 0=x && true (no atoms), pruned=true (no atoms),
+          both=true (no var=var) && x = 0 && 0=x && true (no atoms)|}]
 
     let%expect_test _ =
       simplify ~keep:[y_var] (x = y + i 1 && x = i 0) ;
       [%expect
         {|
-        known=true (no var=var) && y = -1 && true (no term_eqs) && true (no atoms), pruned=true (no atoms),
-        both=true (no var=var) && y = -1 && true (no term_eqs) && true (no atoms)|}]
+        known=true (no var=var) && y = -1 && -1=y && true (no atoms), pruned=true (no atoms),
+        both=true (no var=var) && y = -1 && -1=y && true (no atoms)|}]
 
     (* should keep most of this or realize that [w = z] hence this boils down to [z+1 = 0] *)
     let%expect_test _ =
       simplify ~keep:[y_var; z_var] (x = y + z && w = x - y && v = w + i 1 && v = i 0) ;
       [%expect
         {|
-        known=true (no var=var) && x = y -1 ∧ z = -1 && true (no term_eqs) && true (no atoms),
+        known=true (no var=var) && x = y -1 ∧ z = -1 && -1=z∧[y -1]=x && true (no atoms),
         pruned=true (no atoms),
-        both=true (no var=var) && x = y -1 ∧ z = -1 && true (no term_eqs) && true (no atoms)|}]
+        both=true (no var=var) && x = y -1 ∧ z = -1 && -1=z∧[y -1]=x && true (no atoms)|}]
 
     let%expect_test _ =
       simplify ~keep:[x_var; y_var] (x = y + z && w + x + y = i 0 && v = w + i 1) ;
@@ -300,7 +297,7 @@ let%test_module "variable elimination" =
                 &&
                 x = -v + v7 +1 ∧ y = -v7 ∧ z = -v + 2·v7 +1 ∧ w = v -1
                 &&
-                true (no term_eqs)
+                [v -1]=w∧[-v7]=y∧[-v + v7 +1]=x∧[-v + 2·v7 +1]=z
                 &&
                 true (no atoms),
           pruned=true (no atoms),
@@ -308,7 +305,7 @@ let%test_module "variable elimination" =
                &&
                x = -v + v7 +1 ∧ y = -v7 ∧ z = -v + 2·v7 +1 ∧ w = v -1
                &&
-               true (no term_eqs)
+               [v -1]=w∧[-v7]=y∧[-v + v7 +1]=x∧[-v + 2·v7 +1]=z
                &&
                true (no atoms)|}]
 
@@ -316,8 +313,8 @@ let%test_module "variable elimination" =
       simplify ~keep:[x_var; y_var] (x = y + i 4 && x = w && y = z) ;
       [%expect
         {|
-        known=true (no var=var) && x = y +4 && true (no term_eqs) && true (no atoms),
-        pruned=true (no atoms), both=true (no var=var) && x = y +4 && true (no term_eqs) && true (no atoms)|}]
+        known=true (no var=var) && x = y +4 && [y +4]=x && true (no atoms), pruned=true (no atoms),
+        both=true (no var=var) && x = y +4 && [y +4]=x && true (no atoms)|}]
   end )
 
 let%test_module "non-linear simplifications" =
@@ -326,15 +323,15 @@ let%test_module "non-linear simplifications" =
       simplify ~keep:[w_var] (((i 0 / (x * z)) & v) * v mod y = w) ;
       [%expect
         {|
-        known=true (no var=var) && w = 0 && true (no term_eqs) && true (no atoms), pruned=true (no atoms),
-        both=true (no var=var) && w = 0 && true (no term_eqs) && true (no atoms)|}]
+        known=true (no var=var) && w = 0 && 0=w && true (no atoms), pruned=true (no atoms),
+        both=true (no var=var) && w = 0 && 0=w && true (no atoms)|}]
 
     let%expect_test "constant propagation: bitshift" =
       simplify ~keep:[x_var] (of_binop Shiftlt (of_binop Shiftrt (i 0b111) (i 2)) (i 2) = x) ;
       [%expect
         {|
-        known=true (no var=var) && x = 4 && true (no term_eqs) && true (no atoms), pruned=true (no atoms),
-        both=true (no var=var) && x = 4 && true (no term_eqs) && true (no atoms)|}]
+        known=true (no var=var) && x = 4 && 4=x && true (no atoms), pruned=true (no atoms),
+        both=true (no var=var) && x = 4 && 4=x && true (no atoms)|}]
 
     let%expect_test "non-linear becomes linear" =
       normalize (w = (i 2 * z) - i 3 && z = x * y && y = i 2) ;
@@ -344,7 +341,7 @@ let%test_module "non-linear simplifications" =
                 &&
                 x = 1/4·v6 ∧ y = 2 ∧ z = 1/2·v6 ∧ w = v6 -3
                 &&
-                true (no term_eqs)
+                2=y∧[v6 -3]=w∧[1/4·v6]=x∧[1/2·v6]=z
                 &&
                 true (no atoms),
           pruned=true (no atoms),
@@ -352,7 +349,7 @@ let%test_module "non-linear simplifications" =
                &&
                x = 1/4·v6 ∧ y = 2 ∧ z = 1/2·v6 ∧ w = v6 -3
                &&
-               true (no term_eqs)
+               2=y∧[v6 -3]=w∧[1/4·v6]=x∧[1/2·v6]=z
                &&
                true (no atoms)|}]
   end )

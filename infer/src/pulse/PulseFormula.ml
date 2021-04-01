@@ -448,10 +448,20 @@ module Term = struct
     fold_map_direct_subterms t ~init:() ~f:(fun () t' -> ((), f t')) |> snd
 
 
-  let rec map_subterms t ~f =
-    let t' = map_direct_subterms t ~f:(fun t' -> map_subterms t' ~f) in
-    f t'
+  let rec fold_map_subterms t ~init ~f =
+    let acc, t' =
+      fold_map_direct_subterms t ~init ~f:(fun acc t' -> fold_map_subterms t' ~init:acc ~f)
+    in
+    f acc t'
 
+
+  let fold_subterms t ~init ~f = fold_map_subterms t ~init ~f:(fun acc t' -> (f acc t', t')) |> fst
+
+  let map_subterms t ~f = fold_map_subterms t ~init:() ~f:(fun () t' -> ((), f t')) |> snd
+
+  let iter_subterms t ~f = Container.iter ~fold:fold_subterms t ~f
+
+  let exists_subterm t ~f = Container.exists ~iter:iter_subterms t ~f
 
   let rec fold_subst_variables t ~init ~f =
     match t with
@@ -1075,7 +1085,9 @@ module Formula = struct
     { var_eqs: var_eqs  (** equality relation between variables *)
     ; linear_eqs: linear_eqs
           (** equalities of the form [x = l] where [l] is from linear arithmetic *)
-    ; term_eqs: Term.VarMap.t_  (** equalities of the form [t = x] *)
+    ; term_eqs: Term.VarMap.t_
+          (** equalities of the form [t = x], used to detect when two abstract values are equal to
+              the same term (hence equal) *)
     ; atoms: Atom.Set.t  (** "everything else"; not always normalized w.r.t. the components above *)
     }
   [@@deriving compare, equal, yojson_of]
@@ -1106,6 +1118,8 @@ module Formula = struct
   (** module that breaks invariants more often that the rest, with an interface that is safer to use *)
   module Normalizer : sig
     val and_var_linarith : Var.t -> LinArith.t -> t * new_eqs -> (t * new_eqs) SatUnsat.t
+
+    val and_var_term : Var.t -> Term.t -> t * new_eqs -> (t * new_eqs) SatUnsat.t
 
     val and_var_var : Var.t -> Var.t -> t * new_eqs -> (t * new_eqs) SatUnsat.t
 
@@ -1151,7 +1165,7 @@ module Formula = struct
 
     (** substitute vars in [l] *once* with their linear form to discover more simplification
         opportunities *)
-    let apply phi l =
+    let normalize_linear phi l =
       LinArith.subst_variables l ~f:(fun v ->
           let repr = (get_repr phi v :> Var.t) in
           match Var.Map.find_opt repr phi.linear_eqs with
@@ -1159,6 +1173,22 @@ module Formula = struct
               VarSubst repr
           | Some l' ->
               LinSubst l' )
+
+
+    let normalize_var_const phi t =
+      Term.subst_variables t ~f:(fun v ->
+          let v_canon = (get_repr phi v :> Var.t) in
+          match Var.Map.find_opt v_canon phi.linear_eqs with
+          | None ->
+              VarSubst v_canon
+          | Some l -> (
+            match LinArith.get_as_const l with
+            | None ->
+                (* OPTIM: don't make the term bigger *) VarSubst v_canon
+            | Some q ->
+                (* replace vars by constants when available to possibly trigger further
+                   simplifications in atoms. This is not actually needed for [term_eqs]. *)
+                QSubst q ) )
 
 
     let add_lin_eq_to_new_eqs v l new_eqs =
@@ -1169,6 +1199,9 @@ module Formula = struct
           new_eqs
 
 
+    (** add [l1 = l2] to [phi.linear_eqs] and resolves consequences of that new fact
+
+        [l1] and [l2] should have already been through {!normalize_linear} (w.r.t. [phi]) *)
     let rec solve_normalized_lin_eq ~fuel new_eqs l1 l2 phi =
       LinArith.solve_eq l1 l2
       >>= function
@@ -1181,10 +1214,14 @@ module Formula = struct
         | None -> (
           match Var.Map.find_opt (v :> Var.t) phi.linear_eqs with
           | None ->
+              (* add to the [term_eqs] relation only when we also add to [linear_eqs] *)
+              let+ phi, new_eqs =
+                solve_normalized_term_eq_no_lin ~fuel new_eqs (Term.Linear l) (v :> Var.t) phi
+              in
               let new_eqs = add_lin_eq_to_new_eqs v l new_eqs in
               (* this can break the (as a result non-)invariant that variables in the domain of
                  [linear_eqs] do not appear in the range of [linear_eqs] *)
-              Sat ({phi with linear_eqs= Var.Map.add (v :> Var.t) l phi.linear_eqs}, new_eqs)
+              ({phi with linear_eqs= Var.Map.add (v :> Var.t) l phi.linear_eqs}, new_eqs)
           | Some l' ->
               (* This is the only step that consumes fuel: discovering an equality [l = l']: because we
                  do not record these anywhere (except when their consequence can be recorded as [y =
@@ -1192,7 +1229,7 @@ module Formula = struct
                  diverge otherwise. Or could we? *)
               (* [l'] is possibly not normalized w.r.t. the current [phi] so take this opportunity to
                  normalize it, and replace [v]'s current binding *)
-              let l'' = apply phi l' in
+              let l'' = normalize_linear phi l' in
               let phi =
                 if phys_equal l' l'' then phi
                 else {phi with linear_eqs= Var.Map.add (v :> Var.t) l'' phi.linear_eqs}
@@ -1204,6 +1241,72 @@ module Formula = struct
                 (* [fuel = 0]: give up simplifying further for fear of diverging *)
                 L.d_printfln "Ran out of fuel solving linear equality" ;
                 Sat (phi, new_eqs) ) ) )
+
+
+    (** add [t = v] to [phi.term_eqs] and resolves consequences of that new fact; don't use directly
+        as it doesn't do any checks on what else should be done about [t = v] *)
+    and solve_normalized_term_eq_no_lin_ ~fuel new_eqs t v phi =
+      match Term.VarMap.find_opt t phi.term_eqs with
+      | None ->
+          (* [t] isn't known already: add it *)
+          Sat ({phi with term_eqs= Term.VarMap.add t v phi.term_eqs}, new_eqs)
+      | Some v' ->
+          (* [t = v'] already in the map, need to explore consequences of [v = v']*)
+          merge_vars ~fuel new_eqs v v' phi
+
+
+    (** add [t = v] to [phi.term_eqs] and resolves consequences of that new fact; assumes that
+        linear facts have been or will be added to [phi.linear_eqs] separately
+
+        [t] should have already been through {!normalize_var_const} and [v] should be a
+        representative from {!get_repr} (w.r.t. [phi]) *)
+    and solve_normalized_term_eq_no_lin ~fuel new_eqs (t : Term.t) v phi =
+      match t with
+      | Linear l when LinArith.get_as_var l |> Option.is_some ->
+          (* [v1=v2] is already taken care of by [var_eqs] *)
+          Sat (phi, new_eqs)
+      | _ ->
+          let t =
+            match t with
+            | Linear l -> (
+              match LinArith.get_as_const l with Some c -> Term.Const c | None -> t )
+            | _ ->
+                t
+          in
+          solve_normalized_term_eq_no_lin_ ~fuel new_eqs t v phi
+
+
+    (** same as {!solve_normalized_eq_no_lin} but also adds linear to [phi.linear_eqs] *)
+    and solve_normalized_term_eq ~fuel new_eqs (t : Term.t) v phi =
+      match t with
+      | Linear l when LinArith.get_as_var l |> Option.is_some ->
+          (* [v1=v2] is already taken care of by [var_eqs] *)
+          Sat (phi, new_eqs)
+      | Linear l -> (
+          (* [l = v]: need to first solve it to get [l' = v'] such that [v' < vars(l')], and [l'] is
+             normalized wrt [phi.linear_eqs] (to get a canonical form), add this to [term_eqs], then
+             in order to know which equality should be added to [linear_eqs] we still need to
+             substitute [v'] with [linear_eqs] and solve again *)
+          LinArith.solve_eq (normalize_linear phi l) (LinArith.of_var v)
+          >>= function
+          | None ->
+              (* [v = v], we can drop this tautology *)
+              Sat (phi, new_eqs)
+          | Some (v', l') ->
+              (* [l'] could contain [v], which hasn't been through [linear_eqs], so normalize again *)
+              let l' = normalize_linear phi l' in
+              let* phi, new_eqs =
+                solve_normalized_term_eq_no_lin_ ~fuel new_eqs (Term.Linear l') v' phi
+              in
+              solve_normalized_lin_eq ~fuel new_eqs l'
+                (normalize_linear phi (LinArith.of_var v'))
+                phi )
+      | Const c ->
+          (* same as above but constants ([c]) are always normalized so it's simpler *)
+          let* phi, new_eqs = solve_normalized_term_eq_no_lin_ ~fuel new_eqs t v phi in
+          solve_normalized_lin_eq ~fuel new_eqs (LinArith.of_q c) (LinArith.of_var v) phi
+      | _ ->
+          solve_normalized_term_eq_no_lin ~fuel new_eqs t v phi
 
 
     and merge_vars ~fuel new_eqs v1 v2 phi =
@@ -1262,7 +1365,8 @@ module Formula = struct
     let base_fuel = 10
 
     let solve_lin_eq new_eqs t1 t2 phi =
-      solve_normalized_lin_eq ~fuel:base_fuel new_eqs (apply phi t1) (apply phi t2) phi
+      solve_normalized_lin_eq ~fuel:base_fuel new_eqs (normalize_linear phi t1)
+        (normalize_linear phi t2) phi
 
 
     let and_var_linarith v l (phi, new_eqs) = solve_lin_eq new_eqs l (LinArith.of_var v) phi
@@ -1271,7 +1375,7 @@ module Formula = struct
       Var.Map.fold
         (fun v l acc ->
           let* changed, ((_, new_eqs) as phi_new_eqs) = acc in
-          let l' = apply phi0 l in
+          let l' = normalize_linear phi0 l in
           let+ phi', new_eqs' = and_var_linarith v l' phi_new_eqs in
           let changed', new_eqs' =
             if phys_equal l l' then (changed, new_eqs) else (true, new_eqs')
@@ -1282,17 +1386,31 @@ module Formula = struct
 
 
     let normalize_atom phi (atom : Atom.t) =
-      let normalize_term phi t =
-        Term.subst_variables t ~f:(fun v ->
-            let v_canon = (get_repr phi v :> Var.t) in
-            match Var.Map.find_opt v_canon phi.linear_eqs with
-            | None ->
-                VarSubst v_canon
-            | Some l -> (
-              match LinArith.get_as_const l with None -> LinSubst l | Some q -> QSubst q ) )
-      in
-      let atom' = Atom.map_terms atom ~f:(fun t -> normalize_term phi t) in
+      let atom' = Atom.map_terms atom ~f:(fun t -> normalize_var_const phi t) in
       Atom.eval atom' |> sat_of_eval_result
+
+
+    let and_var_term ~fuel v t (phi, new_eqs) =
+      let t' : Term.t = normalize_var_const phi t |> Atom.eval_term in
+      let v' = (get_repr phi v :> Var.t) in
+      (* check if unsat given what we know of [v'] and [t'], in other words be at least as
+         complete as general atoms *)
+      let* _ = Atom.eval (Equal (t', normalize_var_const phi (Var v'))) |> sat_of_eval_result in
+      solve_normalized_term_eq ~fuel new_eqs t' v' phi
+
+
+    let normalize_term_eqs (phi0, new_eqs0) =
+      Term.VarMap.fold
+        (fun t v acc_sat_unsat ->
+          let* new_lin, ((_phi, new_eqs) as phi_new_eqs) = acc_sat_unsat in
+          let+ phi', new_eqs' = and_var_term ~fuel:base_fuel v t phi_new_eqs in
+          let new_lin, new_eqs' =
+            if phys_equal phi'.linear_eqs phi0.linear_eqs then (new_lin, new_eqs)
+            else (true, new_eqs')
+          in
+          (new_lin, (phi', new_eqs')) )
+        phi0.term_eqs
+        (Sat (false, ({phi0 with term_eqs= Term.VarMap.empty}, new_eqs0)))
 
 
     (** return [(new_linear_equalities, phi ∧ atom)], where [new_linear_equalities] is [true] if
@@ -1302,12 +1420,19 @@ module Formula = struct
       >>= function
       | None ->
           Sat (false, (phi, new_eqs))
+      | Some (Atom.Equal (Linear _, Linear _)) ->
+          assert false
       | Some (Atom.Equal (Linear l, Const c)) | Some (Atom.Equal (Const c, Linear l)) ->
           (* NOTE: {!normalize_atom} calls {!Atom.eval}, which normalizes linear equalities so
              they end up only on one side, hence only this match case is needed to detect linear
              equalities *)
           let+ phi', new_eqs = solve_lin_eq new_eqs l (LinArith.of_q c) phi in
           (true, (phi', new_eqs))
+      | Some (Atom.Equal (Linear l, t) | Atom.Equal (t, Linear l))
+        when Option.is_some (LinArith.get_as_var l) ->
+          let v = Option.value_exn (LinArith.get_as_var l) in
+          let+ phi_new_eqs' = solve_normalized_term_eq ~fuel:base_fuel new_eqs t v phi in
+          (false, phi_new_eqs')
       | Some atom' ->
           Sat (false, ({phi with atoms= Atom.Set.add atom' phi.atoms}, new_eqs))
 
@@ -1321,22 +1446,23 @@ module Formula = struct
           (changed || changed', phi_new_eqs) )
 
 
-    let rec normalize_with_fuel ~fuel ((phi0, new_eqs0) as phi_new_eqs0) =
+    let rec normalize_with_fuel ~fuel phi_new_eqs0 =
       if fuel < 0 then (
         L.d_printfln "ran out of fuel when normalizing" ;
         Sat phi_new_eqs0 )
       else
-        (* reconstruct the linear relation from scratch *)
         let* new_linear_eqs, phi_new_eqs' =
-          let* new_linear_eqs_from_linear, phi_new_eqs = normalize_linear_eqs (phi0, new_eqs0) in
+          let* new_linear_eqs_from_linear, phi_new_eqs = normalize_linear_eqs phi_new_eqs0 in
           if new_linear_eqs_from_linear && fuel > 0 then
             (* do another round of linear normalization early if we will renormalize again anyway;
-               no need to first normalize atoms w.r.t. a linear relation that's going to change and
-               trigger a recompute of these anyway *)
+               no need to first normalize term_eqs and atoms w.r.t. a linear relation that's going
+               to change and trigger a recompute of these anyway *)
             Sat (true, phi_new_eqs)
           else
+            let* new_linear_eqs_from_terms, phi_new_eqs = normalize_term_eqs phi_new_eqs in
             let+ new_linear_eqs_from_atoms, phi_new_eqs = normalize_atoms phi_new_eqs in
-            (new_linear_eqs_from_linear || new_linear_eqs_from_atoms, phi_new_eqs)
+            ( new_linear_eqs_from_linear || new_linear_eqs_from_terms || new_linear_eqs_from_atoms
+            , phi_new_eqs )
         in
         if new_linear_eqs then (
           L.d_printfln "new linear equalities, consuming fuel (from %d)" fuel ;
@@ -1349,6 +1475,8 @@ module Formula = struct
     let normalize phi = normalize_with_fuel ~fuel:base_fuel (phi, [])
 
     let and_atom atom phi_new_eqs = and_atom atom phi_new_eqs >>| snd
+
+    let and_var_term v t phi_new_eqs = and_var_term ~fuel:base_fuel v t phi_new_eqs
 
     let and_var_var v1 v2 (phi, new_eqs) = merge_vars ~fuel:base_fuel new_eqs v1 v2 phi
 
@@ -1455,6 +1583,21 @@ module DynamicTypes = struct
           t
     in
     let changed = ref false in
+    let term_eqs =
+      if
+        Term.VarMap.exists
+          (fun t _ -> Term.exists_subterm t ~f:(function IsInstanceOf _ -> true | _ -> false))
+          phi.both.term_eqs
+      then
+        (* slow path: reconstruct everything *)
+        Term.VarMap.fold
+          (fun t v term_eqs' ->
+            let t' = Term.map_subterms t ~f:simplify_is_instance_of in
+            changed := !changed || not (phys_equal t t') ;
+            Term.VarMap.add t' v term_eqs' )
+          phi.both.term_eqs Term.VarMap.empty
+      else (* fast path: nothing to do *) phi.both.term_eqs
+    in
     let atoms =
       Atom.Set.map
         (fun atom ->
@@ -1464,7 +1607,7 @@ module DynamicTypes = struct
               t' ) )
         phi.both.atoms
     in
-    if !changed then {phi with both= {phi.both with atoms}} else phi
+    if !changed then {phi with both= {phi.both with atoms; term_eqs}} else phi
 end
 
 let normalize tenv ~get_dynamic_type phi =
@@ -1517,6 +1660,14 @@ let and_fold_subst_variables phi0 ~up_to_f:phi_foreign ~init ~f:f_var =
         let phi_new_eqs = Formula.Normalizer.and_var_linarith v l phi_new_eqs |> sat_value_exn in
         (acc_f, phi_new_eqs) )
   in
+  let and_term_eqs term_eqs_foreign acc_phi_new_eqs =
+    IContainer.fold_of_pervasives_map_fold Term.VarMap.fold term_eqs_foreign ~init:acc_phi_new_eqs
+      ~f:(fun (acc_f, phi_new_eqs) (t_foreign, v_foreign) ->
+        let acc_f, t = Term.fold_subst_variables t_foreign ~init:acc_f ~f:f_subst in
+        let acc_f, v = f_var acc_f v_foreign in
+        let phi_new_eqs = Formula.Normalizer.and_var_term v t phi_new_eqs |> sat_value_exn in
+        (acc_f, phi_new_eqs) )
+  in
   let and_atoms atoms_foreign acc_phi_new_eqs =
     IContainer.fold_of_pervasives_set_fold Atom.Set.fold atoms_foreign ~init:acc_phi_new_eqs
       ~f:(fun (acc_f, phi_new_eqs) atom_foreign ->
@@ -1529,6 +1680,7 @@ let and_fold_subst_variables phi0 ~up_to_f:phi_foreign ~init ~f:f_var =
       Sat
         ( and_var_eqs phi_foreign.Formula.var_eqs (acc, (phi, []))
         |> and_linear_eqs phi_foreign.Formula.linear_eqs
+        |> and_term_eqs phi_foreign.Formula.term_eqs
         |> and_atoms phi_foreign.Formula.atoms )
     with Contradiction -> Unsat
   in
@@ -1637,15 +1789,18 @@ module DeadVariables = struct
         |> Seq.fold_left (fun vs v -> Var.Set.add v vs) (Var.Set.singleton v)
         |> add_all )
       phi.Formula.linear_eqs ;
+    (* helper function: compute [vs U vars(t)] *)
+    let union_vars_of_term t vs =
+      Term.fold_variables t ~init:vs ~f:(fun vs v -> Var.Set.add v vs)
+    in
     (* add edges between all pairs of variables appearing in [t1] or [t2] (yes this is quadratic in
        the number of variables of these terms) *)
     let add_from_terms t1 t2 =
-      (* compute [vs U vars(t)] *)
-      let union_vars_of_term t vs =
-        Term.fold_variables t ~init:vs ~f:(fun vs v -> Var.Set.add v vs)
-      in
       union_vars_of_term t1 Var.Set.empty |> union_vars_of_term t2 |> add_all
     in
+    Term.VarMap.iter
+      (fun t v -> union_vars_of_term t (Var.Set.singleton v) |> add_all)
+      phi.Formula.term_eqs ;
     Atom.Set.iter
       (fun atom ->
         let t1, t2 = Atom.get_terms atom in
@@ -1693,7 +1848,7 @@ module DeadVariables = struct
        result. *)
     let var_graph = build_var_graph phi.both in
     let vars_to_keep = get_reachable_from var_graph keep in
-    L.d_printfln "Reachable vars: {%a}" Var.Set.pp vars_to_keep ;
+    L.d_printfln "Reachable vars: %a" Var.Set.pp vars_to_keep ;
     (* discard atoms which have variables *not* in [vars_to_keep], which in particular is enough
        to guarantee that *none* of their variables are in [vars_to_keep] thanks to transitive
        closure on the graph above *)
@@ -1720,12 +1875,13 @@ end
 let simplify tenv ~get_dynamic_type ~keep phi =
   let open SatUnsat.Import in
   let* phi, new_eqs = normalize tenv ~get_dynamic_type phi in
-  L.d_printfln_escaped "Simplifying %a wrt {%a}" pp phi Var.Set.pp keep ;
+  L.d_printfln_escaped "@[Simplifying %a@,wrt %a@]" pp phi Var.Set.pp keep ;
   (* get rid of as many variables as possible *)
   let+ phi = QuantifierElimination.eliminate_vars ~keep phi in
   (* TODO: doing [QuantifierElimination.eliminate_vars; DeadVariables.eliminate] a few times may
      eliminate even more variables *)
-  (DeadVariables.eliminate ~keep phi, new_eqs)
+  let phi = DeadVariables.eliminate ~keep phi in
+  (phi, new_eqs)
 
 
 let is_known_zero phi v =

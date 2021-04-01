@@ -37,7 +37,8 @@ void create_null_path2_ok(int* p) {
 }
 
 // combine several of the difficulties above
-void malloc_then_call_create_null_path_then_deref_unconditionally_ok(int* p) {
+void malloc_then_call_create_null_path_then_deref_unconditionally_latent(
+    int* p) {
   int* x = (int*)malloc(sizeof(int));
   if (p) {
     *p = 32;
@@ -59,7 +60,7 @@ void nullptr_deref_young_bad(int* x) {
 // due to the recency model of memory accesses, vec[0] can get forgotten
 // by the time we have processed the last element of the
 // initialization so we don't report here
-void nullptr_deref_old_bad_FP(int* x) {
+void FN_nullptr_deref_old_bad(int* x) {
   int* vec[65] = {NULL, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x,
                   x,    x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x,
                   x,    x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x,

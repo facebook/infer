@@ -116,8 +116,9 @@ void function_empty_range_interproc_ok() {
   find_first_non_space(x);
 }
 
-// arithmetic on integers does not wrap around but ignores too-large values
-void FP_int_over_cap_ok() {
+// arithmetic on integers does not wrap around but ignores too-large
+// values. However, somehow the FP is gone for other reasons.
+void int_over_cap_ok() {
   unsigned long one = 1;
   // 2^(63+63+3) + 2*2^(63+3) + 1*8 = 2^129 + 2^67 + 8 = 8 mod 2^64
   // this is convoluted to escape various simplifications from Z that would
@@ -165,6 +166,13 @@ void shift_equal_mult_by_power_of_two_ok(int x) {
 
 void shift_by_too_much_ok(int x) {
   if (x << 64 != 0 || x >> 4000 != 0) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
+void interproc_mult_ok(int v, int w) {
+  if (mult(32, 52) != 1664 || mult(10, v) != 10 * v || mult(v, w) != v * w) {
     int* p = nullptr;
     *p = 42;
   }
