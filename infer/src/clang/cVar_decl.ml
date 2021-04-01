@@ -84,7 +84,8 @@ let sil_var_of_decl context var_decl procname =
   let trans_unit_ctx = context.CContext.translation_unit_context in
   let open Clang_ast_t in
   match var_decl with
-  | VarDecl (decl_info, name_info, qual_type, var_decl_info) ->
+  | VarDecl (decl_info, name_info, qual_type, var_decl_info)
+  | VarTemplateSpecializationDecl (decl_info, name_info, qual_type, var_decl_info) ->
       let shoud_be_mangled = not (is_custom_var_pointer decl_info.Clang_ast_t.di_pointer) in
       let var_decl_details = Some (decl_info, qual_type, var_decl_info, shoud_be_mangled) in
       mk_sil_var trans_unit_ctx name_info var_decl_details procname outer_procname

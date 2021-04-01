@@ -37,6 +37,11 @@ struct SomeTemplatedNonPODObject {
   }
 };
 
+// C++14 template variables are initialized where they are used so do not
+// participate in SIOF
+template <typename T>
+SomeTemplatedNonPODObject<T> someTemplatedStatic = {};
+
 template <typename T>
 class SomeTemplatedConstexprObject {
  public:

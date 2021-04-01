@@ -876,7 +876,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         enum_constant_trans trans_state decl_ref
     | `Function, _ ->
         function_deref_trans trans_state decl_ref
-    | (`Var | `ImplicitParam | `ParmVar), _ ->
+    | (`Var | `VarTemplateSpecialization | `ImplicitParam | `ParmVar), _ ->
         var_deref_trans trans_state stmt_info decl_ref
     | (`Field | `ObjCIvar), MemberOrIvar pre_trans_result ->
         (* a field outside of constructor initialization is probably a pointer to member, which we

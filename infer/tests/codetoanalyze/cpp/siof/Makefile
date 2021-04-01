@@ -6,7 +6,7 @@
 TESTS_DIR = ../../..
 
 # see explanations in cpp/biabduction/Makefile for the custom isystem
-CLANG_OPTIONS = -x c++ -std=c++11 -nostdinc++ -isystem$(CLANG_INCLUDES)/c++/v1/ -c
+CLANG_OPTIONS = -x c++ -std=c++14 -nostdinc++ -isystem$(CLANG_INCLUDES)/c++/v1/ -c
 INFER_OPTIONS = --siof-only --siof-check-iostreams --debug-exceptions --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
