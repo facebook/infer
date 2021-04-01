@@ -647,6 +647,24 @@ module Term = struct
         zero
     | (BitShiftLeft (t1, t2) | BitShiftRight (t1, t2)) when is_zero t2 ->
         t1
+    | BitShiftLeft (t', Const q) | BitShiftRight (t', Const q) -> (
+      match Q.to_int q with
+      | None ->
+          (* overflows or otherwise undefined, propagate puzzlement *)
+          Const Q.undef
+      | Some i -> (
+          if i >= 64 then (* assume 64-bit or fewer architecture *) zero
+          else if i < 0 then (* this is undefined, maybe we should report a bug here *)
+            Const Q.undef
+          else
+            let factor = Const Q.(of_int 1 lsl i) in
+            match[@warning "-8"] t with
+            | BitShiftLeft _ ->
+                simplify_shallow_ (Mult (t', factor))
+            | BitShiftRight _ ->
+                simplify_shallow_ (Div (t', factor)) ) )
+    | (BitShiftLeft (t1, t2) | BitShiftRight (t1, t2)) when is_zero t2 ->
+        t1
     | And (t1, t2) when is_zero t1 || is_zero t2 ->
         (* [false ∧ t = t ∧ false = false] *) zero
     | And (t1, t2) when is_non_zero_const t1 ->

@@ -155,3 +155,17 @@ void FP_ints_are_not_rationals_ok() {
     *p = 42;
   }
 }
+
+void shift_equal_mult_by_power_of_two_ok(int x) {
+  if (x << 1 != mult(2, x)) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
+void shift_by_too_much_ok(int x) {
+  if (x << 64 != 0 || x >> 4000 != 0) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
