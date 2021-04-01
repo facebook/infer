@@ -83,7 +83,7 @@ end = struct
       assert (Var.Set.disjoint us xs) ;
       assert (Var.Set.subset zs ~of_:(Var.Set.union us xs))
     with exc ->
-      [%Trace.info "%a" pp g] ;
+      [%Trace.info " %a" pp g] ;
       raise exc
 
   let with_ ?us ?com ?min ?xs ?sub ?zs ?pgs g =
@@ -147,7 +147,7 @@ let excise (k : Trace.pf -> _) = [%Trace.infok k]
 let trace (k : Trace.pf -> _) = [%Trace.infok k]
 
 let excise_exists goal =
-  trace (fun {pf} -> pf "@[<2>excise_exists@ %a@]" pp goal) ;
+  trace (fun {pf} -> pf "excise_exists:@ %a" pp goal) ;
   if Var.Set.is_empty goal.xs then goal
   else
     let solutions_for_xs =
@@ -170,7 +170,7 @@ let excise_exists goal =
         if Context.Subst.is_empty witnesses then goal
         else (
           excise (fun {pf} ->
-              pf "@[<2>excise_exists @[%a%a@]@]" Var.Set.pp_xs removed
+              pf "excise_exists: @[%a%a@]" Var.Set.pp_xs removed
                 Context.Subst.pp witnesses ) ;
           let us = Var.Set.union goal.us removed in
           let xs = Var.Set.diff goal.xs removed in
@@ -192,8 +192,8 @@ let excise_exists goal =
  *)
 let excise_seg_same ({com; min; sub} as goal) msg ssg =
   excise (fun {pf} ->
-      pf "@[<hv 2>excise_seg_same@ %a@ \\- %a@]" (Sh.pp_seg_norm sub.ctx)
-        msg (Sh.pp_seg_norm sub.ctx) ssg ) ;
+      pf "excise_seg_same:@ %a@ \\- %a" (Sh.pp_seg_norm sub.ctx) msg
+        (Sh.pp_seg_norm sub.ctx) ssg ) ;
   let {Sh.bas= b; len= m; cnt= a} = msg in
   let {Sh.bas= b'; len= m'; cnt= a'} = ssg in
   let com = Sh.star (Sh.seg msg) com in
@@ -221,8 +221,8 @@ let excise_seg_same ({com; min; sub} as goal) msg ssg =
 let excise_seg_sub_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg o_n
     =
   excise (fun {pf} ->
-      pf "@[<hv 2>excise_seg_sub_prefix@ %a@ \\- %a@]"
-        (Sh.pp_seg_norm sub.ctx) msg (Sh.pp_seg_norm sub.ctx) ssg ) ;
+      pf "excise_seg_sub_prefix:@ %a@ \\- %a" (Sh.pp_seg_norm sub.ctx) msg
+        (Sh.pp_seg_norm sub.ctx) ssg ) ;
   let {Sh.loc= k; bas= b; len= m; siz= o; cnt= a} = msg in
   let {Sh.bas= b'; len= m'; siz= n; cnt= a'} = ssg in
   let o_n = Term.integer o_n in
@@ -261,8 +261,8 @@ let excise_seg_sub_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg o_n
 let excise_seg_min_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg n_o
     =
   excise (fun {pf} ->
-      pf "@[<hv 2>excise_seg_min_prefix@ %a@ \\- %a@]"
-        (Sh.pp_seg_norm sub.ctx) msg (Sh.pp_seg_norm sub.ctx) ssg ) ;
+      pf "excise_seg_min_prefix:@ %a@ \\- %a" (Sh.pp_seg_norm sub.ctx) msg
+        (Sh.pp_seg_norm sub.ctx) ssg ) ;
   let {Sh.bas= b; len= m; siz= o; cnt= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; cnt= a'} = ssg in
   let n_o = Term.integer n_o in
@@ -297,8 +297,8 @@ let excise_seg_min_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg n_o
 let excise_seg_sub_suffix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
     =
   excise (fun {pf} ->
-      pf "@[<hv 2>excise_seg_sub_suffix@ %a@ \\- %a@]"
-        (Sh.pp_seg_norm sub.ctx) msg (Sh.pp_seg_norm sub.ctx) ssg ) ;
+      pf "excise_seg_sub_suffix:@ %a@ \\- %a" (Sh.pp_seg_norm sub.ctx) msg
+        (Sh.pp_seg_norm sub.ctx) ssg ) ;
   let {Sh.loc= k; bas= b; len= m; siz= o; cnt= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; cnt= a'} = ssg in
   let l_k = Term.integer l_k in
@@ -339,8 +339,8 @@ let excise_seg_sub_suffix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
 let excise_seg_sub_infix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
     ko_ln =
   excise (fun {pf} ->
-      pf "@[<hv 2>excise_seg_sub_infix@ %a@ \\- %a@]"
-        (Sh.pp_seg_norm sub.ctx) msg (Sh.pp_seg_norm sub.ctx) ssg ) ;
+      pf "excise_seg_sub_infix:@ %a@ \\- %a" (Sh.pp_seg_norm sub.ctx) msg
+        (Sh.pp_seg_norm sub.ctx) ssg ) ;
   let {Sh.loc= k; bas= b; len= m; siz= o; cnt= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; cnt= a'} = ssg in
   let l_k = Term.integer l_k in
@@ -386,8 +386,8 @@ let excise_seg_sub_infix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
 let excise_seg_min_skew ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
     ko_l ln_ko =
   excise (fun {pf} ->
-      pf "@[<hv 2>excise_seg_min_skew@ %a@ \\- %a@]"
-        (Sh.pp_seg_norm sub.ctx) msg (Sh.pp_seg_norm sub.ctx) ssg ) ;
+      pf "excise_seg_min_skew:@ %a@ \\- %a" (Sh.pp_seg_norm sub.ctx) msg
+        (Sh.pp_seg_norm sub.ctx) ssg ) ;
   let {Sh.loc= k; bas= b; len= m; siz= o; cnt= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; cnt= a'} = ssg in
   let l_k = Term.integer l_k in
@@ -436,8 +436,8 @@ let excise_seg_min_skew ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
 let excise_seg_min_suffix ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
     =
   excise (fun {pf} ->
-      pf "@[<hv 2>excise_seg_min_suffix@ %a@ \\- %a@]"
-        (Sh.pp_seg_norm sub.ctx) msg (Sh.pp_seg_norm sub.ctx) ssg ) ;
+      pf "excise_seg_min_suffix:@ %a@ \\- %a" (Sh.pp_seg_norm sub.ctx) msg
+        (Sh.pp_seg_norm sub.ctx) ssg ) ;
   let {Sh.bas= b; len= m; siz= o; cnt= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; cnt= a'} = ssg in
   let k_l = Term.integer k_l in
@@ -473,8 +473,8 @@ let excise_seg_min_suffix ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
 let excise_seg_min_infix ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
     ln_ko =
   excise (fun {pf} ->
-      pf "@[<hv 2>excise_seg_min_infix@ %a@ \\- %a@]"
-        (Sh.pp_seg_norm sub.ctx) msg (Sh.pp_seg_norm sub.ctx) ssg ) ;
+      pf "excise_seg_min_infix:@ %a@ \\- %a" (Sh.pp_seg_norm sub.ctx) msg
+        (Sh.pp_seg_norm sub.ctx) ssg ) ;
   let {Sh.loc= k; bas= b; len= m; siz= o; cnt= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; cnt= a'} = ssg in
   let k_l = Term.integer k_l in
@@ -514,8 +514,8 @@ let excise_seg_min_infix ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
 let excise_seg_sub_skew ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
     ln_k ko_ln =
   excise (fun {pf} ->
-      pf "@[<hv 2>excise_seg_sub_skew@ %a@ \\- %a@]"
-        (Sh.pp_seg_norm sub.ctx) msg (Sh.pp_seg_norm sub.ctx) ssg ) ;
+      pf "excise_seg_sub_skew:@ %a@ \\- %a" (Sh.pp_seg_norm sub.ctx) msg
+        (Sh.pp_seg_norm sub.ctx) ssg ) ;
   let {Sh.loc= k; bas= b; len= m; siz= o; cnt= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; cnt= a'} = ssg in
   let k_l = Term.integer k_l in
@@ -549,7 +549,7 @@ let excise_seg_sub_skew ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
 (* C ❮ k-[b;m)->⟨o,α⟩ * M ⊢ ∃xs. l-[b';m')->⟨n,α'⟩ * S ❯ R *)
 let excise_seg ({sub} as goal) msg ssg =
   trace (fun {pf} ->
-      pf "@[<2>excise_seg@ %a@  |-  %a@]" (Sh.pp_seg_norm sub.ctx) msg
+      pf "excise_seg:@ %a@  |-  %a" (Sh.pp_seg_norm sub.ctx) msg
         (Sh.pp_seg_norm sub.ctx) ssg ) ;
   let {Sh.loc= k; bas= b; len= m; siz= o} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n} = ssg in
@@ -627,7 +627,7 @@ let excise_seg ({sub} as goal) msg ssg =
             | Zero | Pos -> None ) )
 
 let excise_heap ({min; sub} as goal) =
-  trace (fun {pf} -> pf "@[<2>excise_heap@ %a@]" pp goal) ;
+  trace (fun {pf} -> pf "excise_heap:@ %a" pp goal) ;
   match
     List.find_map sub.heap ~f:(fun ssg ->
         List.find_map min.heap ~f:(fun msg -> excise_seg goal msg ssg) )
@@ -638,7 +638,7 @@ let excise_heap ({min; sub} as goal) =
 let pure_entails x q = Sh.is_empty q && Context.implies x (Sh.pure_approx q)
 
 let rec excise ({min; xs; sub; zs; pgs} as goal) =
-  [%Trace.info "@[<2>excise@ %a@]" pp goal] ;
+  [%Trace.info "@ %a" pp goal] ;
   Report.step_solver () ;
   if Sh.is_unsat min then Some (Sh.false_ (Var.Set.diff sub.us zs))
   else if pure_entails min.ctx sub then
@@ -646,33 +646,36 @@ let rec excise ({min; xs; sub; zs; pgs} as goal) =
   else if Sh.is_unsat sub then None
   else if pgs then
     goal |> with_ ~pgs:false |> excise_exists |> excise_heap >>= excise
-  else None $> fun _ -> [%Trace.info "@[<2>excise fail@ %a@]" pp goal]
+  else None $> fun _ -> [%Trace.info " fail@ %a" pp goal]
 
 let excise_dnf : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
  fun minuend xs subtrahend ->
   let dnf_minuend = Sh.dnf minuend in
   let dnf_subtrahend = Sh.dnf subtrahend in
-  Iter.fold_opt
+  let excise_subtrahend us min zs sub =
+    [%trace]
+      ~call:(fun {pf} -> pf "@ %a" Sh.pp sub)
+      ~retn:(fun {pf} -> pf "%a" (Option.pp "%a" Sh.pp))
+    @@ fun () ->
+    let com = Sh.emp in
+    let sub = Sh.and_ctx min.Sh.ctx (Sh.extend_us us sub) in
+    excise (goal ~us ~com ~min ~xs ~sub ~zs ~pgs:true)
+  in
+  let from_minuend minuend remainders =
+    [%trace]
+      ~call:(fun {pf} -> pf "@ %a" Sh.pp minuend)
+      ~retn:(fun {pf} -> pf "%a" (Option.pp "%a" Sh.pp))
+    @@ fun () ->
+    let zs, min = Sh.bind_exists minuend ~wrt:xs in
+    let us = min.us in
+    let+ remainder =
+      List.find_map ~f:(excise_subtrahend us min zs) dnf_subtrahend
+    in
+    Sh.or_ remainders remainder
+  in
+  Iter.fold_opt ~f:from_minuend
     (Iter.of_list dnf_minuend)
     (Sh.false_ (Var.Set.union minuend.us xs))
-    ~f:(fun minuend remainders ->
-      [%trace]
-        ~call:(fun {pf} -> pf "@ @[<2>minuend@ %a@]" Sh.pp minuend)
-        ~retn:(fun {pf} -> pf "%a" (Option.pp "%a" Sh.pp))
-      @@ fun () ->
-      let zs, min = Sh.bind_exists minuend ~wrt:xs in
-      let us = min.us in
-      let com = Sh.emp in
-      let+ remainder =
-        List.find_map dnf_subtrahend ~f:(fun sub ->
-            [%trace]
-              ~call:(fun {pf} -> pf "@ @[<2>subtrahend@ %a@]" Sh.pp sub)
-              ~retn:(fun {pf} -> pf "%a" (Option.pp "%a" Sh.pp))
-            @@ fun () ->
-            let sub = Sh.and_ctx min.ctx (Sh.extend_us us sub) in
-            excise (goal ~us ~com ~min ~xs ~sub ~zs ~pgs:true) )
-      in
-      Sh.or_ remainders remainder )
 
 let query_count = ref (-1)
 

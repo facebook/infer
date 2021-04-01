@@ -191,25 +191,33 @@ let fprintf mod_fun_name fs fmt =
 let printf mod_fun_name fmt = fprintf mod_fun_name fs fmt
 
 let info mod_fun_name fmt =
-  if enabled mod_fun_name then (
-    Format.fprintf fs "@\n@[<2>| " ;
-    Format.kfprintf (fun fs -> Format.fprintf fs "@]") fs fmt )
-  else Format.ifprintf fs fmt
+  if not (enabled mod_fun_name) then Format.ifprintf fs fmt
+  else
+    let mod_name, fun_name = split_mod_fun_name mod_fun_name in
+    Format.fprintf fs "@\n@[<4>| %s.%s:" mod_name fun_name ;
+    Format.kfprintf (fun fs -> Format.fprintf fs "@]") fs fmt
 
-let infok mod_fun_name k = k {pf= (fun fmt -> info mod_fun_name fmt)}
+let infok_ mod_fun_name fmt =
+  if not (enabled mod_fun_name) then Format.ifprintf fs fmt
+  else
+    let mod_name, _ = split_mod_fun_name mod_fun_name in
+    Format.fprintf fs "@\n@[<4>| %s." mod_name ;
+    Format.kfprintf (fun fs -> Format.fprintf fs "@]") fs fmt
+
+let infok mod_fun_name k = k {pf= (fun fmt -> infok_ mod_fun_name fmt)}
 
 let incf mod_fun_name fmt =
   if not (enabled mod_fun_name) then Format.ifprintf fs fmt
   else
-    let _, fun_name = split_mod_fun_name mod_fun_name in
-    Format.fprintf fs "@\n@[<2>@[<hv 2>( %s:" fun_name ;
+    let mod_name, fun_name = split_mod_fun_name mod_fun_name in
+    Format.fprintf fs "@\n@[<2>@[<hv 2>( %s.%s:" mod_name fun_name ;
     Format.kfprintf (fun fs -> Format.fprintf fs "@]") fs fmt
 
 let decf mod_fun_name fmt =
   if not (enabled mod_fun_name) then Format.ifprintf fs fmt
   else
-    let _, fun_name = split_mod_fun_name mod_fun_name in
-    Format.fprintf fs "@]@\n@[<2>) %s:@ " fun_name ;
+    let mod_name, fun_name = split_mod_fun_name mod_fun_name in
+    Format.fprintf fs "@]@\n@[<2>) %s.%s:@ " mod_name fun_name ;
     Format.kfprintf (fun fs -> Format.fprintf fs "@]") fs fmt
 
 let call mod_fun_name k = k {pf= (fun fmt -> incf mod_fun_name fmt)}

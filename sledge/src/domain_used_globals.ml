@@ -15,7 +15,7 @@ let empty = Llair.Global.Set.empty
 
 let init globals =
   [%Trace.info
-    "pgm globals: {%a}" (IArray.pp ", " Llair.GlobalDefn.pp) globals] ;
+    " globals: {%a}" (IArray.pp ", " Llair.GlobalDefn.pp) globals] ;
   empty
 
 let join l r = Some (Llair.Global.Set.union l r)

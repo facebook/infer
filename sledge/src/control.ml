@@ -259,6 +259,37 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
           Some (top, elts, {queue; removed})
     end
 
+    let enqueue depth edge state depths queue =
+      [%Trace.info
+        " %i: %a [%a]@ | %a" depth Edge.pp edge Stack.pp edge.stk
+          PrioQueue.pp queue] ;
+      let depths = Depths.add ~key:edge ~data:depth depths in
+      PrioQueue.add {depth; edge; state; depths} queue
+
+    let prune depth edge queue =
+      [%Trace.info " %i: %a" depth Edge.pp edge] ;
+      Report.hit_bound Opts.bound ;
+      queue
+
+    let dequeue queue =
+      let+ {depth; edge; state; depths}, elts, queue =
+        PrioQueue.pop queue
+      in
+      [%Trace.info
+        " %i: %a [%a]@ | %a" depth Edge.pp edge Stack.pp edge.stk
+          PrioQueue.pp queue] ;
+      let state, depths, queue =
+        List.fold elts (state, depths, queue)
+          ~f:(fun elt (state, depths, queue) ->
+            match Dom.join elt.state state with
+            | Some state ->
+                let depths = Depths.join elt.depths depths in
+                let queue = PrioQueue.remove elt queue in
+                (state, depths, queue)
+            | None -> (state, depths, queue) )
+      in
+      (edge, state, depths, queue)
+
     type t = PrioQueue.t
     type x = Depths.t -> t -> t
 
@@ -269,41 +300,18 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
       let edge = {Edge.dst= curr; src= prev; stk} in
       let depth = Option.value (Depths.find edge depths) ~default:0 in
       let depth = if retreating then depth + 1 else depth in
-      if depth <= Opts.bound then (
-        [%Trace.info
-          "@[<6>enqueue %i: %a [%a]@ | %a@]" depth Edge.pp edge Stack.pp
-            edge.stk PrioQueue.pp queue] ;
-        let depths = Depths.add ~key:edge ~data:depth depths in
-        PrioQueue.add {depth; edge; state; depths} queue )
-      else (
-        [%Trace.info "prune: %i: %a" depth Edge.pp edge] ;
-        Report.hit_bound Opts.bound ;
-        queue )
+      if depth <= Opts.bound then enqueue depth edge state depths queue
+      else prune depth edge queue
 
     let init state curr =
       add ~retreating:false Stack.empty state curr Depths.empty
         (PrioQueue.create ())
 
     let rec run ~f queue =
-      match PrioQueue.pop queue with
-      | Some ({depth; edge; state; depths}, elts, queue) ->
-          [%Trace.info
-            "@[<6>dequeue %i: %a [%a]@ | %a@]" depth Edge.pp edge Stack.pp
-              edge.stk PrioQueue.pp queue] ;
-          let state, depths, queue =
-            List.fold elts (state, depths, queue)
-              ~f:(fun elt (state, depths, queue) ->
-                match Dom.join elt.state state with
-                | Some state ->
-                    let depths = Depths.join elt.depths depths in
-                    let queue = PrioQueue.remove elt queue in
-                    (state, depths, queue)
-                | None -> (state, depths, queue) )
-          in
+      match dequeue queue with
+      | Some (edge, state, depths, queue) ->
           run ~f (f edge.stk state edge.dst depths queue)
-      | None ->
-          [%Trace.info "queue empty"] ;
-          ()
+      | None -> ()
   end
 
   let exec_jump stk state block Llair.{dst; retreating} =
@@ -447,15 +455,13 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
     | Some state -> exec_jump stk state block jump
     | None ->
         [%Trace.info
-          "@[<2>infeasible assume %a@\n@[%a@]@]" Llair.Exp.pp cond Dom.pp
-            state] ;
+          " infeasible %a@\n@[%a@]" Llair.Exp.pp cond Dom.pp state] ;
         Work.skip
 
   let exec_term : Llair.program -> Stack.t -> Dom.t -> Llair.block -> Work.x
       =
    fun pgm stk state block ->
-    [%Trace.info
-      "@[<2>exec term@\n@[%a@]@\n%a@]" Dom.pp state Llair.Term.pp block.term] ;
+    [%Trace.info "@\n@[%a@]@\n%a" Dom.pp state Llair.Term.pp block.term] ;
     Report.step_term block ;
     match block.term with
     | Switch {key; tbl; els} ->
@@ -499,8 +505,7 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
       -> Dom.t
       -> (Dom.t, Dom.t * Llair.inst) result =
    fun block inst state ->
-    [%Trace.info
-      "@[<2>exec inst@\n@[%a@]@\n%a@]" Dom.pp state Llair.Inst.pp inst] ;
+    [%Trace.info "@\n@[%a@]@\n%a" Dom.pp state Llair.Inst.pp inst] ;
     Report.step_inst block inst ;
     Dom.exec_inst inst state
     |> function
