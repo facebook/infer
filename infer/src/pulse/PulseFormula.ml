@@ -968,7 +968,7 @@ module Atom = struct
   let rec eval_term t =
     let t =
       Term.map_direct_subterms ~f:eval_term t
-      |> Term.simplify_shallow |> Term.eval_const_shallow |> Term.linearize |> Term.simplify_linear
+      |> Term.eval_const_shallow |> Term.simplify_shallow |> Term.linearize |> Term.simplify_linear
     in
     match atom_of_term t with
     | Some atom ->
