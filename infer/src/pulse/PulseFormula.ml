@@ -10,95 +10,11 @@ module F = Format
 module L = Logging
 module SatUnsat = PulseSatUnsat
 module Var = PulseAbstractValue
+module Q = QSafeCapped
+module Z = ZSafe
 open SatUnsat
 
 type operand = LiteralOperand of IntLit.t | AbstractValueOperand of Var.t
-
-(** {!Z} from zarith with a few convenience functions added *)
-module Z = struct
-  include Z
-
-  let protect f x = try Some (f x) with Division_by_zero | Invalid_argument _ | Z.Overflow -> None
-
-  let protect2 f x y =
-    try Some (f x y) with Division_by_zero | Invalid_argument _ | Z.Overflow -> None
-
-
-  let yojson_of_t z = `String (Z.to_string z)
-
-  [@@@warning "-32"]
-
-  let div = protect2 Z.div
-
-  let rem = protect2 Z.rem
-
-  let div_rem = protect2 Z.div_rem
-
-  let cdiv = protect2 Z.cdiv
-
-  let fdiv = protect2 Z.fdiv
-
-  let ediv_rem = protect2 Z.ediv_rem
-
-  let ediv = protect2 Z.ediv
-
-  let erem = protect2 Z.erem
-
-  let divexact = protect2 Z.divexact
-
-  let gcd = protect2 Z.gcd
-
-  let gcdext = protect2 Z.gcdext
-
-  let lcm = protect2 Z.lcm
-
-  let powm = protect2 Z.powm
-
-  let powm_sec = protect2 Z.powm_sec
-
-  let invert = protect2 Z.invert
-
-  let ( / ) = protect2 Z.( / )
-
-  let ( /> ) = protect2 Z.( /> )
-
-  let ( /< ) = protect2 Z.( /< )
-
-  let ( /| ) = protect2 Z.( /| )
-
-  let ( mod ) = protect2 Z.( mod )
-end
-
-(** {!Q} from zarith with a few convenience functions added *)
-module Q = struct
-  include Q
-
-  type _q = t = {num: Z.t; den: Z.t} [@@deriving yojson_of]
-
-  let yojson_of_t = [%yojson_of: _q]
-
-  let not_equal q1 q2 = not (Q.equal q1 q2)
-
-  [@@@warning "-32"]
-
-  let is_one q = Q.equal q Q.one
-
-  let is_minus_one q = Q.equal q Q.minus_one
-
-  let is_zero q = Q.equal q Q.zero
-
-  let is_not_zero q = not (is_zero q)
-
-  let to_int q = Z.protect Q.to_int q
-
-  let to_int32 q = Z.protect Q.to_int32 q
-
-  let to_int64 q = Z.protect Q.to_int64 q
-
-  let to_bigint q = Z.protect Q.to_bigint q
-
-  let to_nativeint q = Z.protect Q.to_nativeint q
-end
 
 (** Linear Arithmetic *)
 module LinArith : sig
