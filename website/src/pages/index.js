@@ -42,6 +42,7 @@ const poweredByImages = [
   { url: "https://facebook.com", image: "/img/who/facebook.png" },
   { url: "https://freefem.org", image: "/img/who/freefem.png" },
   { url: "https://www.instagram.com", image: "/img/who/instagram.png" },
+  { url: "https://www.microsoft.com", image: "/img/who/microsoft.png" },
   { url: "http://www.mozilla.com", image: "/img/who/mozilla.png" },
   { url: "https://www.oculus.com", image: "/img/who/oculus.png" },
   {
