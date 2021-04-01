@@ -1191,10 +1191,15 @@ module Formula = struct
                  l''] or [y = y'], we could potentially discover the same equality over and over and
                  diverge otherwise. Or could we? *)
               (* [l'] is possibly not normalized w.r.t. the current [phi] so take this opportunity to
-                 normalize it *)
+                 normalize it, and replace [v]'s current binding *)
+              let l'' = apply phi l' in
+              let phi =
+                if phys_equal l' l'' then phi
+                else {phi with linear_eqs= Var.Map.add (v :> Var.t) l'' phi.linear_eqs}
+              in
               if fuel > 0 then (
                 L.d_printfln "Consuming fuel solving linear equality (from %d)" fuel ;
-                solve_normalized_lin_eq ~fuel:(fuel - 1) new_eqs l (apply phi l') phi )
+                solve_normalized_lin_eq ~fuel:(fuel - 1) new_eqs l l'' phi )
               else (
                 (* [fuel = 0]: give up simplifying further for fear of diverging *)
                 L.d_printfln "Ran out of fuel solving linear equality" ;
