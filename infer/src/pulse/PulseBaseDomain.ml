@@ -125,7 +125,7 @@ module GraphComparison = struct
             IsomorphicUpTo mapping
         | Some _, None | None, Some _ ->
             NotIsomorphic
-        | Some (edges_rhs, attrs_rhs), Some (edges_lhs, attrs_lhs) ->
+        | Some (edges_lhs, attrs_lhs), Some (edges_rhs, attrs_rhs) ->
             (* continue the comparison recursively on all edges and attributes *)
             if Attributes.equal attrs_rhs attrs_lhs then
               let bindings_lhs = Memory.Edges.bindings edges_lhs in
