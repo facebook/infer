@@ -427,7 +427,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
             (* create the corresponding global variable to get the right pname for its
                initializer *)
             let global =
-              CGeneral_utils.mk_sil_global_var trans_unit_ctx decl_info named_decl_info vdi qt
+              CVar_decl.mk_sil_global_var trans_unit_ctx decl_info named_decl_info vdi qt
             in
             (* safe to Option.get because it's a global *)
             Option.value_exn (Pvar.get_initializer_pname global)
