@@ -8,6 +8,7 @@
 open! IStd
 open! AbstractDomain.Types
 module F = Format
+module L = Logging
 module GlobalVar = SiofTrace.GlobalVar
 module GlobalVarSet = SiofTrace.GlobalVarSet
 
@@ -184,6 +185,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           | Some (_, ((Bottom, _) as callee_astate)) ->
               callee_astate
           | None ->
+              L.d_printfln "Unknown call" ;
               (Bottom, Domain.VarNames.empty)
         in
         add_actuals_globals analysis_data astate loc actuals
