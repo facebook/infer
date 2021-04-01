@@ -267,6 +267,10 @@ type subst_target = LinArith.subst_target =
   | VarSubst of Var.t
   | LinSubst of LinArith.t
 
+let subst_f subst x = match Var.Map.find_opt x subst with Some y -> y | None -> x
+
+let targetted_subst_var subst_var x = VarSubst (subst_f subst_var x)
+
 (** Expressive term structure to be able to express all of SIL, but the main smarts of the formulas
     are for the equality between variables and linear arithmetic subsets. Terms (and atoms, below)
     are kept as a last-resort for when outside that fragment. *)
@@ -798,6 +802,35 @@ module Term = struct
       match LinArith.get_as_const l with Some c -> Const c | None -> Linear l )
     | t ->
         t
+
+
+  module VarMap = struct
+    include Caml.Map.Make (struct
+      type nonrec t = t [@@deriving compare]
+    end)
+
+    type t_ = Var.t t [@@deriving compare, equal]
+
+    let pp_with_pp_var pp_var fmt m =
+      if is_empty m then F.pp_print_string fmt "true (no term_eqs)"
+      else
+        Pp.collection ~sep:"∧"
+          ~fold:(IContainer.fold_of_pervasives_map_fold fold)
+          ~pp_item:(fun fmt (term, var) ->
+            F.fprintf fmt "%a=%a" (pp_no_paren pp_var) term pp_var var )
+          fmt m
+
+
+    let yojson_of_t_ m = `List (List.map (bindings m) ~f:[%yojson_of: t * Var.t])
+
+    let apply_var_subst subst m =
+      fold
+        (fun t v acc ->
+          let t' = subst_variables t ~f:(targetted_subst_var subst) in
+          let v' = subst_f subst v in
+          add t' v' acc )
+        m empty
+  end
 end
 
 (** Basically boolean terms, used to build the part of a formula that is not equalities between
@@ -1108,10 +1141,17 @@ module Formula = struct
     { var_eqs: var_eqs  (** equality relation between variables *)
     ; linear_eqs: linear_eqs
           (** equalities of the form [x = l] where [l] is from linear arithmetic *)
-    ; atoms: Atom.Set.t  (** not always normalized w.r.t. [var_eqs] and [linear_eqs] *) }
+    ; term_eqs: Term.VarMap.t_  (** equalities of the form [t = x] *)
+    ; atoms: Atom.Set.t  (** "everything else"; not always normalized w.r.t. the components above *)
+    }
   [@@deriving compare, equal, yojson_of]
 
-  let ttrue = {var_eqs= VarUF.empty; linear_eqs= Var.Map.empty; atoms= Atom.Set.empty}
+  let ttrue =
+    { var_eqs= VarUF.empty
+    ; linear_eqs= Var.Map.empty
+    ; term_eqs= Term.VarMap.empty
+    ; atoms= Atom.Set.empty }
+
 
   let pp_with_pp_var pp_var fmt phi =
     let pp_linear_eqs fmt m =
@@ -1122,9 +1162,11 @@ module Formula = struct
           ~pp_item:(fun fmt (v, l) -> F.fprintf fmt "%a = %a" pp_var v (LinArith.pp pp_var) l)
           fmt m
     in
-    F.fprintf fmt "@[<hv>%a@ &&@ %a@ &&@ %a@]"
+    F.fprintf fmt "@[<hv>%a@ &&@ %a@ &&@ %a@ &&@ %a@]"
       (VarUF.pp ~pp_empty:(fun fmt -> F.pp_print_string fmt "true (no var=var)") pp_var)
-      phi.var_eqs pp_linear_eqs phi.linear_eqs (Atom.Set.pp_with_pp_var pp_var) phi.atoms
+      phi.var_eqs pp_linear_eqs phi.linear_eqs
+      (Term.VarMap.pp_with_pp_var pp_var)
+      phi.term_eqs (Atom.Set.pp_with_pp_var pp_var) phi.atoms
 
 
   (** module that breaks invariants more often that the rest, with an interface that is safer to use *)
@@ -1577,10 +1619,6 @@ module QuantifierElimination : sig
 end = struct
   exception Contradiction
 
-  let subst_f subst x = match Var.Map.find_opt x subst with Some y -> y | None -> x
-
-  let targetted_subst_var subst_var x = VarSubst (subst_f subst_var x)
-
   let subst_var_linear_eqs subst linear_eqs =
     Var.Map.fold
       (fun x l new_map ->
@@ -1606,9 +1644,10 @@ end = struct
       atoms Atom.Set.empty
 
 
-  let subst_var_formula subst {Formula.var_eqs; linear_eqs; atoms} =
+  let subst_var_formula subst {Formula.var_eqs; linear_eqs; term_eqs; atoms} =
     { Formula.var_eqs= VarUF.apply_subst subst var_eqs
     ; linear_eqs= subst_var_linear_eqs subst linear_eqs
+    ; term_eqs= Term.VarMap.apply_var_subst subst term_eqs
     ; atoms= subst_var_atoms subst atoms }
 
 
@@ -1725,8 +1764,13 @@ module DeadVariables = struct
       let linear_eqs =
         Var.Map.filter (fun v _ -> Var.Set.mem v vars_to_keep) phi.Formula.linear_eqs
       in
+      let term_eqs =
+        Term.VarMap.filter
+          (fun t v -> Var.Set.mem v vars_to_keep && not (Term.has_var_notin vars_to_keep t))
+          phi.Formula.term_eqs
+      in
       let atoms = Atom.Set.filter filter_atom phi.Formula.atoms in
-      {Formula.var_eqs; linear_eqs; atoms}
+      {Formula.var_eqs; linear_eqs; term_eqs; atoms}
     in
     let known = simplify_phi phi.known in
     let both = simplify_phi phi.both in
