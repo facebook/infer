@@ -50,6 +50,7 @@ const poweredByImages = [
   },
   { url: "https://www.uber.com", image: "/img/who/uber.svg" },
   { url: "https://www.whatsapp.com", image: "/img/who/whatsapp.svg" },
+  { url: "https://www.microsoft.com", image: "/img/who/microsoft.png" },
 ];
 
 const poweredByItems = [
