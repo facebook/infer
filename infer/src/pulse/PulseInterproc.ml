@@ -730,8 +730,7 @@ let apply_prepost ~is_isl_error_prepost callee_proc_name call_location ~callee_p
            [check_all_valid], whereas the "normal" mode encodes some error specs implicitly in the
            ContinueProgram ok specs *)
         let* astate =
-          if Config.pulse_isl then
-            if is_isl_error_prepost then Error (AccessResult.ISLError astate) else Ok astate
+          if Config.pulse_isl then Ok astate
           else check_all_valid callee_proc_name call_location pre_post call_state
         in
         (* reset [visited] *)
