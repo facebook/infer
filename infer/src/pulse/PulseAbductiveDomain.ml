@@ -362,9 +362,7 @@ module AddressAttributes = struct
                 Attribute.Invalid (Invalidation.ConstantDereference IntLit.zero, access_trace)
               in
               let null_astate = add_one addr null_attr astate in
-              let null_astate =
-                if is_eq_null then null_astate else abduce_attribute addr null_attr null_astate
-              in
+              let null_astate = abduce_attribute addr null_attr null_astate in
               if null_noop then [Ok null_astate] else [Error (`ISLError null_astate)]
           in
           if is_eq_null then null_astates
