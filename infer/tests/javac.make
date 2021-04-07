@@ -16,7 +16,7 @@ include $(TESTS_DIR)/infer.make
 
 PROJECT_ROOT ?= $(TESTS_DIR)
 
-JAVAC_FLAGS = -g
+JAVAC_FLAGS = -g -source 8 -target 8
 
 $(OBJECTS): $(SOURCES)
 	$(QUIET)$(JAVAC) $(JAVAC_FLAGS) -cp $(CLASSPATH) $(SOURCES)

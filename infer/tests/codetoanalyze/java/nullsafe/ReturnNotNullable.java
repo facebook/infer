@@ -134,18 +134,6 @@ public class ReturnNotNullable {
     return br;
   }
 
-  void tryWithResources(String path) {
-    try (BufferedReader br = nn(new BufferedReader(new FileReader(path)))) {
-    } // no condition redundant should be reported on this line
-    catch (IOException e) {
-    }
-  }
-
-  Object tryWithResourcesReturnNullable(String path) throws IOException {
-    try (BufferedReader br = nn(new BufferedReader(new FileReader(path)))) {
-      return nullToNullableIsOK();
-    }
-  }
 
   /*
   Check that orNull is modelled and RETURN_OVER_ANNOTATED is not returned.
