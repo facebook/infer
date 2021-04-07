@@ -39,4 +39,5 @@ module Summary : sig
   val instantiate_unchecked_callees_cond : all_config_fields:Fields.t -> t -> t
 end
 
-val checker : Summary.t InterproceduralAnalysis.t -> Summary.t option
+val checker :
+  (Summary.t option * CostDomain.summary option) InterproceduralAnalysis.t -> Summary.t option

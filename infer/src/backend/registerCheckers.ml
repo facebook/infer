@@ -194,7 +194,8 @@ let all_checkers =
   ; { checker= ConfigImpactAnalysis
     ; callbacks=
         (let checker =
-           interprocedural Payloads.Fields.config_impact_analysis ConfigImpactAnalysis.checker
+           interprocedural2 Payloads.Fields.config_impact_analysis Payloads.Fields.cost
+             ConfigImpactAnalysis.checker
          in
          [(checker, Clang); (checker, Java)] ) } ]
 

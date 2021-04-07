@@ -250,7 +250,7 @@ module Dom = struct
     ; config_fields= Fields.widen ~prev:prev.config_fields ~next:next.config_fields ~num_iters }
 
 
-  let to_summary has_call_stmt {unchecked_callees; unchecked_callees_cond; config_fields} =
+  let to_summary ~has_call_stmt {unchecked_callees; unchecked_callees_cond; config_fields} =
     {Summary.unchecked_callees; unchecked_callees_cond; has_call_stmt; config_fields}
 
 
@@ -327,40 +327,51 @@ module Dom = struct
   let call analyze_dependency callee location
       ({config_checks; field_checks; unchecked_callees; unchecked_callees_cond} as astate) =
     if ConfigChecks.is_top config_checks then
-      let new_unchecked_callees, new_unchecked_callees_cond =
-        match analyze_dependency callee with
-        | Some
-            ( _
-            , { Summary.unchecked_callees= callee_summary
-              ; unchecked_callees_cond= callee_summary_cond
-              ; has_call_stmt } )
-          when has_call_stmt ->
-            (* If callee's summary is not leaf, use it. *)
-            ( UncheckedCallees.replace_location_by_call location callee_summary
-            , UncheckedCalleesCond.replace_location_by_call location callee_summary_cond )
-        | _ ->
-            (* Otherwise, add callee's name. *)
-            ( UncheckedCallees.singleton {callee; location; call_type= Direct}
-            , UncheckedCalleesCond.empty )
-      in
-      if FieldChecks.is_top field_checks then
-        { astate with
-          unchecked_callees= UncheckedCallees.join unchecked_callees new_unchecked_callees
-        ; unchecked_callees_cond=
-            UncheckedCalleesCond.join unchecked_callees_cond new_unchecked_callees_cond }
+      let callee_summary = analyze_dependency callee in
+      if
+        Option.exists callee_summary ~f:(fun (_, (_, (cost_summary : CostDomain.summary option))) ->
+            Option.exists cost_summary ~f:(fun (cost_summary : CostDomain.summary) ->
+                let callee_cost = CostDomain.get_operation_cost cost_summary.post in
+                not (CostDomain.BasicCost.is_symbolic callee_cost.cost) ) )
+      then (* If callee is cheap by heuristics, ignore it. *)
+        astate
       else
-        let fields_to_add = FieldChecks.get_fields field_checks in
-        let unchecked_callees_cond =
-          UncheckedCalleesCond.weak_update fields_to_add new_unchecked_callees
-            unchecked_callees_cond
+        let new_unchecked_callees, new_unchecked_callees_cond =
+          match callee_summary with
+          | Some
+              ( _
+              , ( Some
+                    { Summary.unchecked_callees= callee_summary
+                    ; unchecked_callees_cond= callee_summary_cond
+                    ; has_call_stmt }
+                , _callee_cost_summary ) )
+            when has_call_stmt ->
+              (* If callee's summary is not leaf, use it. *)
+              ( UncheckedCallees.replace_location_by_call location callee_summary
+              , UncheckedCalleesCond.replace_location_by_call location callee_summary_cond )
+          | _ ->
+              (* Otherwise, add callee's name. *)
+              ( UncheckedCallees.singleton {callee; location; call_type= Direct}
+              , UncheckedCalleesCond.empty )
         in
-        let unchecked_callees_cond =
-          UncheckedCalleesCond.fold
-            (fun fields callees acc ->
-              UncheckedCalleesCond.weak_update (Fields.union fields fields_to_add) callees acc )
-            new_unchecked_callees_cond unchecked_callees_cond
-        in
-        {astate with unchecked_callees_cond}
+        if FieldChecks.is_top field_checks then
+          { astate with
+            unchecked_callees= UncheckedCallees.join unchecked_callees new_unchecked_callees
+          ; unchecked_callees_cond=
+              UncheckedCalleesCond.join unchecked_callees_cond new_unchecked_callees_cond }
+        else
+          let fields_to_add = FieldChecks.get_fields field_checks in
+          let unchecked_callees_cond =
+            UncheckedCalleesCond.weak_update fields_to_add new_unchecked_callees
+              unchecked_callees_cond
+          in
+          let unchecked_callees_cond =
+            UncheckedCalleesCond.fold
+              (fun fields callees acc ->
+                UncheckedCalleesCond.weak_update (Fields.union fields fields_to_add) callees acc )
+              new_unchecked_callees_cond unchecked_callees_cond
+          in
+          {astate with unchecked_callees_cond}
     else astate
 end
 
@@ -368,7 +379,7 @@ module TransferFunctions = struct
   module CFG = ProcCfg.Normal
   module Domain = Dom
 
-  type analysis_data = Summary.t InterproceduralAnalysis.t
+  type analysis_data = (Summary.t option * CostDomain.summary option) InterproceduralAnalysis.t
 
   let is_java_boolean_value_method pname =
     Procname.get_class_name pname |> Option.exists ~f:(String.equal "java.lang.Boolean")
@@ -460,4 +471,4 @@ let has_call_stmt proc_desc =
 let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   Option.map (Analyzer.compute_post analysis_data ~initial:Dom.init proc_desc) ~f:(fun astate ->
       let has_call_stmt = has_call_stmt proc_desc in
-      Dom.to_summary has_call_stmt astate )
+      Dom.to_summary ~has_call_stmt astate )
