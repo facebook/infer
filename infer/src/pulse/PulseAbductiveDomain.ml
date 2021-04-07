@@ -354,7 +354,6 @@ module AddressAttributes = struct
           (astate.post :> BaseDomain.t).attrs
       with
       | None ->
-          let is_eq_null = PathCondition.is_known_zero astate.path_condition addr in
           let null_astates =
             if PathCondition.is_known_not_equal_zero astate.path_condition addr then []
             else
@@ -365,20 +364,23 @@ module AddressAttributes = struct
               let null_astate = abduce_attribute addr null_attr null_astate in
               if null_noop then [Ok null_astate] else [Error (`ISLError null_astate)]
           in
-          if is_eq_null then null_astates
-          else
-            let valid_astate =
-              let abdalloc = Attribute.ISLAbduced access_trace in
-              let valid_attr = Attribute.MustBeValid access_trace in
-              add_one addr abdalloc astate |> abduce_attribute addr valid_attr
-              |> abduce_attribute addr abdalloc
-            in
-            let invalid_free =
-              (*C or Cpp?*)
-              let invalid_attr = Attribute.Invalid (CFree, access_trace) in
-              abduce_attribute addr invalid_attr astate |> add_one addr invalid_attr
-            in
-            Ok valid_astate :: Error (`ISLError invalid_free) :: null_astates
+          let not_null_astates =
+            if PathCondition.is_known_zero astate.path_condition addr then []
+            else
+              let valid_astate =
+                let abdalloc = Attribute.ISLAbduced access_trace in
+                let valid_attr = Attribute.MustBeValid access_trace in
+                add_one addr abdalloc astate |> abduce_attribute addr valid_attr
+                |> abduce_attribute addr abdalloc
+              in
+              let invalid_free =
+                (*C or Cpp?*)
+                let invalid_attr = Attribute.Invalid (CFree, access_trace) in
+                abduce_attribute addr invalid_attr astate |> add_one addr invalid_attr
+              in
+              [Ok valid_astate; Error (`ISLError invalid_free)]
+          in
+          not_null_astates @ null_astates
       | Some _ ->
           [Ok astate] )
     | Some (invalidation, invalidation_trace) ->
