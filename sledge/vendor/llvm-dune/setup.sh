@@ -48,6 +48,7 @@ create_dune_file() {
     cfile=$4
     depends=$5
     components=$6
+    extra_deps=$7
 
     if test "$dirname" = "backends"; then
         basedir=src/$dirname/$components
@@ -87,7 +88,8 @@ create_dune_file() {
  (foreign_stubs
   (language c)
   (names ${cfile})
-  (flags ($cflags)))
+  (extra_deps ${extra_deps})
+  (flags ($cflags -I../../llvm)))
  (c_library_flags ($ldflags $(llvm_config --system-libs --link-shared --libs $components))))
 " >> "$basedir/shared/dune"
     fi
@@ -105,7 +107,8 @@ create_dune_file() {
  (foreign_stubs
   (language c)
   (names ${cfile})
-  (flags ($cflags)))
+  (extra_deps ${extra_deps})
+  (flags ($cflags -I../../llvm)))
  (c_library_flags ($ldflags $(llvm_config --system-libs --link-static --libs $components))))
 " >> "$basedir/static/dune"
     fi
@@ -114,8 +117,8 @@ create_dune_file() {
     rm "$basedir/$cfile.c"
 }
 
-# ------------------ public name -------- directory ---------------- module name -------- C file name --------- OCaml dependencies -------------- LLVM components (for the linker)
-create_dune_file     llvm                 llvm                       llvm                 llvm_ocaml            ""                                "core support"
+# ------------------ public name -------- directory ---------------- module name -------- C file name --------- OCaml dependencies -------------- LLVM components (for the linker) - extra-deps
+create_dune_file     llvm                 llvm                       llvm                 llvm_ocaml            ""                                "core support"                     ../llvm_ocaml.h
 create_dune_file     llvm.analysis        analysis                   llvm_analysis        analysis_ocaml        "llvm"                            "analysis"
 create_dune_file     llvm.bitreader       bitreader                  llvm_bitreader       bitreader_ocaml       "llvm"                            "bitreader"
 create_dune_file     llvm.bitwriter       bitwriter                  llvm_bitwriter       bitwriter_ocaml       "llvm unix"                       "bitwriter"
@@ -126,7 +129,7 @@ create_dune_file     llvm.scalar_opts     transforms/scalar_opts     llvm_scalar
 create_dune_file     llvm.transform_utils transforms/utils           llvm_transform_utils transform_utils_ocaml "llvm"                            "transformutils"
 create_dune_file     llvm.vectorize       transforms/vectorize       llvm_vectorize       vectorize_ocaml       "llvm"                            "vectorize"
 create_dune_file     llvm.passmgr_builder transforms/passmgr_builder llvm_passmgr_builder passmgr_builder_ocaml "llvm"                            "ipo"
-create_dune_file     llvm.target          target                     llvm_target          target_ocaml          "llvm"                            "target"
+create_dune_file     llvm.target          target                     llvm_target          target_ocaml          "llvm"                            "target"                           ../../llvm/llvm_ocaml.h
 create_dune_file     llvm.linker          linker                     llvm_linker          linker_ocaml          "llvm"                            "linker"
 create_dune_file     llvm.all_backends    all_backends               llvm_all_backends    all_backends_ocaml    "llvm"                            "$llvm_targets"
 

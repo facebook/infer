@@ -9,6 +9,7 @@
 
 type llcontext
 type llmodule
+type llmetadata
 type lltype
 type llvalue
 type lluse
@@ -330,6 +331,16 @@ module DiagnosticSeverity = struct
   | Note
 end
 
+module ModuleFlagBehavior = struct
+  type t =
+  | Error
+  | Warning
+  | Require
+  | Override
+  | Append
+  | AppendUnique
+end
+
 exception IoError of string
 
 let () = Callback.register_exception "Llvm.IoError" (IoError "")
@@ -429,6 +440,17 @@ external string_of_llmodule : llmodule -> string = "llvm_string_of_llmodule"
 external set_module_inline_asm : llmodule -> string -> unit
                                = "llvm_set_module_inline_asm"
 external module_context : llmodule -> llcontext = "LLVMGetModuleContext"
+
+external get_module_identifier : llmodule -> string
+                               = "llvm_get_module_identifier"
+
+external set_module_identifer : llmodule -> string -> unit
+                              = "llvm_set_module_identifier"
+
+external get_module_flag : llmodule -> string -> llmetadata option
+                         = "llvm_get_module_flag"
+external add_module_flag : llmodule -> ModuleFlagBehavior.t ->
+            string -> llmetadata -> unit = "llvm_add_module_flag"
 
 (*===-- Types -------------------------------------------------------------===*)
 external classify_type : lltype -> TypeKind.t = "llvm_classify_type"
@@ -577,6 +599,9 @@ external get_debug_loc_directory : llvalue -> string option = "llvm_get_debug_lo
 external get_debug_loc_filename : llvalue -> string option = "llvm_get_debug_loc_filename"
 external get_debug_loc_line : llvalue -> int = "llvm_get_debug_loc_line"
 external get_debug_loc_column : llvalue -> int = "llvm_get_debug_loc_column"
+external value_as_metadata : llvalue -> llmetadata = "llvm_value_as_metadata"
+external metadata_as_value : llcontext -> llmetadata -> llvalue
+                        = "llvm_metadata_as_value"
 
 (*--... Operations on scalar constants .....................................--*)
 external const_int : lltype -> int -> llvalue = "llvm_const_int"
@@ -701,6 +726,8 @@ external dll_storage_class : llvalue -> DLLStorageClass.t = "llvm_dll_storage_cl
 external set_dll_storage_class : DLLStorageClass.t -> llvalue -> unit = "llvm_set_dll_storage_class"
 external alignment : llvalue -> int = "llvm_alignment"
 external set_alignment : int -> llvalue -> unit = "llvm_set_alignment"
+external global_copy_all_metadata : llvalue -> (llmdkind * llmetadata) array
+                                  = "llvm_global_copy_all_metadata"
 external is_global_constant : llvalue -> bool = "llvm_is_global_constant"
 external set_global_constant : bool -> llvalue -> unit
                              = "llvm_set_global_constant"

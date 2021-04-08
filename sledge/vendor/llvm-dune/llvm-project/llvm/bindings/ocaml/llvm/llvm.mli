@@ -24,6 +24,9 @@ type llcontext
     objects. See the [llvm::Module] class. *)
 type llmodule
 
+(** Opaque representation of Metadata nodes. See the [llvm::Metadata] class. *)
+type llmetadata
+
 (** Each value in the LLVM IR has a type, an instance of [lltype]. See the
     [llvm::Type] class. *)
 type lltype
@@ -365,6 +368,15 @@ module DiagnosticSeverity : sig
   | Note
 end
 
+module ModuleFlagBehavior :sig
+  type t =
+  | Error
+  | Warning
+  | Require
+  | Override
+  | Append
+  | AppendUnique
+end
 
 (** {6 Iteration} *)
 
@@ -529,7 +541,24 @@ val set_module_inline_asm : llmodule -> string -> unit
     See the method [llvm::Module::getContext] *)
 val module_context : llmodule -> llcontext
 
+(** [get_module_identifier m] returns the module identifier of the
+    specified module. See the method [llvm::Module::getModuleIdentifier] *)
+val get_module_identifier : llmodule -> string
 
+(** [set_module_identifier m id] sets the module identifier of [m]
+    to [id]. See the method [llvm::Module::setModuleIdentifier] *)
+val set_module_identifer : llmodule -> string -> unit
+
+(** [get_module_flag m k] Return the corresponding value if key [k] appears in
+    the module flags of [m], otherwise return None
+    See the method [llvm::Module::getModuleFlag] *)
+val get_module_flag : llmodule -> string -> llmetadata option
+
+(** [add_module_flag m b k v] Add a module-level flag b, with key [k] and
+    value [v] to the flags metadata of module [m]. It will create the 
+    module-level flags named metadata if it doesn't already exist. *)
+val add_module_flag : llmodule -> ModuleFlagBehavior.t ->
+                        string -> llmetadata -> unit
 (** {6 Types} *)
 
 (** [classify_type ty] returns the {!TypeKind.t} corresponding to the type [ty].
@@ -940,7 +969,13 @@ val get_debug_loc_line : llvalue -> int
     for [v], which must be an [Instruction].
     See the [llvm::Instruction::getDebugLoc()] method. *)
 val get_debug_loc_column : llvalue -> int
+(** Obtain a Metadata as a Value.
+    See the method [llvm::ValueAsMetadata::get()]. *)
+val value_as_metadata : llvalue -> llmetadata
 
+(** Obtain a Value as a Metadata.
+    See the method [llvm::MetadataAsValue::get()]. *)
+val metadata_as_value : llcontext -> llmetadata -> llvalue
 
 (** {7 Operations on scalar constants} *)
 
@@ -948,8 +983,9 @@ val get_debug_loc_column : llvalue -> int
     See the method [llvm::ConstantInt::get]. *)
 val const_int : lltype -> int -> llvalue
 
-(** [const_of_int64 ty i] returns the integer constant of type [ty] and value
-    [i]. See the method [llvm::ConstantInt::get]. *)
+(** [const_of_int64 ty i s] returns the integer constant of type [ty] and value
+    [i]. [s] indicates whether the integer is signed or not.
+    See the method [llvm::ConstantInt::get]. *)
 val const_of_int64 : lltype -> Int64.t -> bool -> llvalue
 
 (** [int64_of_const c] returns the int64 value of the [c] constant integer.
@@ -1399,6 +1435,12 @@ val alignment : llvalue -> int
 (** [set_alignment n g] sets the required alignment of the global value [g] to
     [n] bytes. See the method [llvm::GlobalValue::setAlignment]. *)
 val set_alignment : int -> llvalue -> unit
+
+(** [global_copy_all_metadata g] returns all the metadata associated with [g],
+    which must be an [Instruction] or [GlobalObject].
+    See the [llvm::Instruction::getAllMetadata()] and
+    [llvm::GlobalObject::getAllMetadata()] methods. *)
+val global_copy_all_metadata : llvalue -> (llmdkind * llmetadata) array
 
 
 (** {7 Operations on global variables} *)

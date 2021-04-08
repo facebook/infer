@@ -22,11 +22,11 @@
 #include "llvm-c/DebugInfo.h"
 #include "llvm-c/Support.h"
 #include "llvm/Config/llvm-config.h"
-#include "caml/alloc.h"
-#include "caml/custom.h"
 #include "caml/memory.h"
 #include "caml/fail.h"
 #include "caml/callback.h"
+
+#include "llvm_ocaml.h"
 
 value llvm_string_of_message(char* Message) {
   value String = caml_copy_string(Message);
@@ -43,6 +43,18 @@ CAMLprim value ptr_to_option(void *Ptr) {
   Option = caml_alloc_small(1, 0);
   Store_field(Option, 0, (value)Ptr);
   CAMLreturn(Option);
+}
+
+CAMLprim value cstr_to_string(const char *Str, mlsize_t Len) {
+  CAMLparam0();
+  CAMLlocal1(String);
+  if (Str) {
+    String = caml_alloc_string(Len);
+    memcpy((char *)String_val(String), Str, Len);
+  } else {
+    String = caml_alloc_string(0);
+  }
+  CAMLreturn(String);
 }
 
 CAMLprim value cstr_to_string_option(const char *CStr, mlsize_t Len) {
@@ -336,9 +348,36 @@ CAMLprim value llvm_string_of_llmodule(LLVMModuleRef M) {
   CAMLreturn(ModuleStr);
 }
 
+/* llmodule -> string */
+CAMLprim value llvm_get_module_identifier(LLVMModuleRef M) {
+  size_t Len;
+  const char *Name = LLVMGetModuleIdentifier(M, &Len);
+  return cstr_to_string(Name, (mlsize_t)Len);
+}
+
+/* llmodule -> string -> unit */
+CAMLprim value llvm_set_module_identifier(LLVMModuleRef M, value Id) {
+  LLVMSetModuleIdentifier(M, String_val(Id), caml_string_length(Id));
+  return Val_unit;
+}
+
 /* llmodule -> string -> unit */
 CAMLprim value llvm_set_module_inline_asm(LLVMModuleRef M, value Asm) {
   LLVMSetModuleInlineAsm(M, String_val(Asm));
+  return Val_unit;
+}
+
+/* llmodule -> string -> llmetadata option */
+CAMLprim value llvm_get_module_flag(LLVMModuleRef M, value Key) {
+  return ptr_to_option(
+      LLVMGetModuleFlag(M, String_val(Key), caml_string_length(Key)));
+}
+
+CAMLprim value llvm_add_module_flag(LLVMModuleRef M,
+                                    LLVMModuleFlagBehavior Behaviour, value Key,
+                                    LLVMMetadataRef Val) {
+  LLVMAddModuleFlag(M, Int_val(Behaviour), String_val(Key),
+                    caml_string_length(Key), Val);
   return Val_unit;
 }
 
@@ -978,6 +1017,17 @@ CAMLprim value llvm_get_debug_loc_column(LLVMValueRef Val) {
   return Val_int(C);
 }
 
+/* llvalue -> llmetadata */
+CAMLprim LLVMMetadataRef llvm_value_as_metadata(LLVMValueRef Val) {
+  return LLVMValueAsMetadata(Val);
+}
+
+/* llcontext -> llmetadata -> llvalue */
+CAMLprim LLVMValueRef llvm_metadata_as_value(LLVMContextRef C,
+                                             LLVMMetadataRef MD) {
+  return LLVMMetadataAsValue(C, MD);
+}
+
 /*--... Operations on scalar constants .....................................--*/
 
 /* lltype -> int -> llvalue */
@@ -1256,6 +1306,25 @@ CAMLprim value llvm_alignment(LLVMValueRef Global) {
 CAMLprim value llvm_set_alignment(value Bytes, LLVMValueRef Global) {
   LLVMSetAlignment(Global, Int_val(Bytes));
   return Val_unit;
+}
+
+/* llvalue -> (llmdkind * llmetadata) array */
+CAMLprim value llvm_global_copy_all_metadata(LLVMValueRef Global) {
+  CAMLparam0();
+  CAMLlocal2(Array, Pair);
+  size_t NumEntries;
+  LLVMValueMetadataEntry *Entries =
+      LLVMGlobalCopyAllMetadata(Global, &NumEntries);
+  Array = caml_alloc_tuple(NumEntries);
+  for (int i = 0; i < NumEntries; i++) {
+    Pair = caml_alloc_tuple(2);
+    Store_field(Pair, 0, Val_int(LLVMValueMetadataEntriesGetKind(Entries, i)));
+    Store_field(Pair, 1,
+                (value)LLVMValueMetadataEntriesGetMetadata(Entries, i));
+    Store_field(Array, i, Pair);
+  }
+  LLVMDisposeValueMetadataEntries(Entries);
+  CAMLreturn(Array);
 }
 
 /*--... Operations on uses .................................................--*/
