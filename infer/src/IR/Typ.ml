@@ -374,6 +374,39 @@ module Name = struct
         compare x y
 
 
+  let rec compare_name x y =
+    let open ICompare in
+    match (x, y) with
+    | ( (CStruct name1 | CUnion name1 | CppClass {name= name1})
+      , (CStruct name2 | CUnion name2 | CppClass {name= name2}) ) ->
+        QualifiedCppName.compare_name name1 name2
+    | (CStruct _ | CUnion _ | CppClass _), _ ->
+        -1
+    | _, (CStruct _ | CUnion _ | CppClass _) ->
+        1
+    | CSharpClass name1, CSharpClass name2 ->
+        String.compare (CSharpClassName.classname name1) (CSharpClassName.classname name2)
+    | CSharpClass _, _ ->
+        -1
+    | _, CSharpClass _ ->
+        1
+    | JavaClass name1, JavaClass name2 ->
+        String.compare (JavaClassName.classname name1) (JavaClassName.classname name2)
+    | JavaClass _, _ ->
+        -1
+    | _, JavaClass _ ->
+        1
+    | ObjcClass (name1, names1), ObjcClass (name2, names2) ->
+        QualifiedCppName.compare_name name1 name2
+        <*> fun () -> List.compare compare_name names1 names2
+    | ObjcClass _, _ ->
+        -1
+    | _, ObjcClass _ ->
+        1
+    | ObjcProtocol name1, ObjcProtocol name2 ->
+        QualifiedCppName.compare_name name1 name2
+
+
   let hash = Hashtbl.hash
 
   let qual_name = function

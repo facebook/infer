@@ -41,7 +41,7 @@ module ConfigChecks = AbstractDomain.SafeInvertedMap (ConfigName) (Branch)
 module Field = struct
   include Fieldname
 
-  let compare = Fieldname.loose_compare
+  let compare = Fieldname.compare_name
 end
 
 module Fields = AbstractDomain.FiniteSet (Field)
@@ -58,8 +58,12 @@ module FieldChecks = struct
 end
 
 module UncheckedCallee = struct
+  type callee_name = Procname.t
+
+  let compare_callee_name = Procname.compare_name
+
   type t =
-    { callee: Procname.t
+    { callee: callee_name
     ; location: Location.t [@compare.ignore]
     ; call_type: call_type [@compare.ignore] }
   [@@deriving compare]

@@ -14,6 +14,9 @@ type t [@@deriving compare, equal, yojson_of]
 val loose_compare : t -> t -> int
 (** Similar to compare, but addresses [CStruct x] and [CppClass x] as equal. *)
 
+val compare_name : t -> t -> int
+(** Similar to compare, but compares only names, except template arguments. *)
+
 val make : Typ.Name.t -> string -> t
 (** create a field of the given class and fieldname *)
 

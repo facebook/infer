@@ -231,6 +231,9 @@ val block_of_procname : t -> Block.t
 
 val equal : t -> t -> bool
 
+val compare_name : t -> t -> int
+(** Similar to compare, but compares only names, except parameter types and template arguments. *)
+
 val get_class_type_name : t -> Typ.Name.t option
 
 val get_class_name : t -> string option

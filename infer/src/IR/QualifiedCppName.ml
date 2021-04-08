@@ -24,6 +24,8 @@ let strip_template_args quals =
   List.map ~f:no_template_name quals
 
 
+let compare_name quals1 quals2 = compare (strip_template_args quals1) (strip_template_args quals2)
+
 let append_template_args_to_last quals ~args =
   match quals with
   | [last; _] when String.contains last '<' ->

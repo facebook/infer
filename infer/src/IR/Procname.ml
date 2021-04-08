@@ -524,6 +524,51 @@ type t =
 
 let equal = [%compare.equal: t]
 
+let rec compare_name x y =
+  let open ICompare in
+  match (x, y) with
+  | ( CSharp {class_name= class_name1; method_name= method_name1}
+    , CSharp {class_name= class_name2; method_name= method_name2} )
+  | ( Java {class_name= class_name1; method_name= method_name1}
+    , Java {class_name= class_name2; method_name= method_name2} )
+  | ( ObjC_Cpp {class_name= class_name1; method_name= method_name1}
+    , ObjC_Cpp {class_name= class_name2; method_name= method_name2} ) ->
+      Typ.Name.compare_name class_name1 class_name2
+      <*> fun () -> String.compare method_name1 method_name2
+  | CSharp _, _ ->
+      -1
+  | _, CSharp _ ->
+      1
+  | Java _, _ ->
+      -1
+  | _, Java _ ->
+      1
+  | C {name= name1}, C {name= name2} ->
+      QualifiedCppName.compare_name name1 name2
+  | C _, _ ->
+      -1
+  | _, C _ ->
+      1
+  | Linters_dummy_method, Linters_dummy_method ->
+      0
+  | Linters_dummy_method, _ ->
+      -1
+  | _, Linters_dummy_method ->
+      1
+  | Block _, Block _ ->
+      0
+  | Block _, _ ->
+      -1
+  | _, Block _ ->
+      1
+  | ObjC_Cpp _, _ ->
+      -1
+  | _, ObjC_Cpp _ ->
+      1
+  | WithBlockParameters (x, _), WithBlockParameters (y, _) ->
+      compare_name x y
+
+
 (** hash function for procname *)
 let hash = Hashtbl.hash
 
