@@ -27,9 +27,9 @@ type extras_WorstCaseCost =
   ; proc_resolve_attributes: Procname.t -> ProcAttributes.t option }
 
 let instantiate_cost ?get_closure_callee_cost ~default_closure_cost integer_type_widths
-    ~inferbo_caller_mem ~callee_pname ~callee_formals ~params ~callee_cost ~loc =
+    ~inferbo_caller_mem ~callee_pname ~callee_formals ~args ~callee_cost ~loc =
   let {BufferOverrunDomain.eval_sym; eval_func_ptrs} =
-    BufferOverrunSemantics.mk_eval_sym_cost integer_type_widths callee_formals params
+    BufferOverrunSemantics.mk_eval_sym_cost integer_type_widths callee_formals args
       inferbo_caller_mem
   in
   let get_closure_callee_cost pname =
@@ -143,7 +143,7 @@ module InstrBasicCostWithReason = struct
 
   let get_instr_cost_record tenv extras cfg instr_node instr =
     match instr with
-    | Sil.Call (ret, Exp.Const (Const.Cfun callee_pname), params, location, _)
+    | Sil.Call (ret, Exp.Const (Const.Cfun callee_pname), args, location, _)
       when Config.inclusive_cost -> (
         let { inferbo_invariant_map
             ; integer_type_widths
@@ -153,7 +153,7 @@ module InstrBasicCostWithReason = struct
           extras
         in
         let fun_arg_list =
-          List.map params ~f:(fun (exp, typ) ->
+          List.map args ~f:(fun (exp, typ) ->
               ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= ()} )
         in
         let inferbo_mem_opt =
@@ -184,7 +184,7 @@ module InstrBasicCostWithReason = struct
                      in
                      instantiate_cost ~get_closure_callee_cost ~default_closure_cost
                        integer_type_widths ~inferbo_caller_mem:inferbo_mem ~callee_pname
-                       ~callee_formals ~params ~callee_cost ~loc:location )
+                       ~callee_formals ~args ~callee_cost ~loc:location )
           | _ ->
               None
         in

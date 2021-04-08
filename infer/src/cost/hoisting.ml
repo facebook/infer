@@ -14,7 +14,7 @@ module Call = struct
     { loc: Location.t
     ; pname: Procname.t
     ; node: Procdesc.Node.t
-    ; params: (Exp.t * Typ.t) list
+    ; args: (Exp.t * Typ.t) list
     ; ret: Ident.t * Typ.t }
   [@@deriving compare]
 
@@ -35,12 +35,12 @@ module LoopHeadToHoistInstrs = Procdesc.NodeMap
 
 let add_if_hoistable inv_vars instr node source_nodes idom hoistable_calls =
   match instr with
-  | Sil.Call (((ret_id, _) as ret), Exp.Const (Const.Cfun pname), params, loc, _)
+  | Sil.Call (((ret_id, _) as ret), Exp.Const (Const.Cfun pname), args, loc, _)
     when (* Check condition (1); N dominates all loop sources *)
          List.for_all ~f:(fun source -> Dominators.dominates idom node source) source_nodes
          && (* Check condition (2); id should be invariant already *)
          LoopInvariant.InvariantVars.mem (Var.of_id ret_id) inv_vars ->
-      HoistCalls.add {pname; loc; node; params; ret} hoistable_calls
+      HoistCalls.add {pname; loc; node; args; ret} hoistable_calls
   | _ ->
       hoistable_calls
 
@@ -100,7 +100,7 @@ let do_report extract_cost_if_expensive proc_desc err_log (Call.{pname; loc} as 
 
 
 let get_cost_if_expensive tenv integer_type_widths get_callee_cost_summary_and_formals
-    inferbo_invariant_map inferbo_get_summary Call.{pname; node; ret; params} =
+    inferbo_invariant_map inferbo_get_summary Call.{pname; node; ret; args} =
   let last_node = InstrCFG.last_of_underlying_node node in
   let inferbo_mem =
     let instr_node_id = InstrCFG.Node.id last_node in
@@ -115,13 +115,13 @@ let get_cost_if_expensive tenv integer_type_widths get_callee_cost_summary_and_f
         if CostDomain.BasicCost.is_symbolic callee_cost.cost then
           Some
             (Cost.instantiate_cost ~default_closure_cost:Ints.NonNegativeInt.one integer_type_widths
-               ~inferbo_caller_mem:inferbo_mem ~callee_pname:pname ~callee_formals ~params
+               ~inferbo_caller_mem:inferbo_mem ~callee_pname:pname ~callee_formals ~args
                ~callee_cost ~loc)
               .cost
         else None
     | None ->
         let fun_arg_list =
-          List.map params ~f:(fun (exp, typ) ->
+          List.map args ~f:(fun (exp, typ) ->
               ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= ()} )
         in
         CostModels.Call.dispatch tenv pname fun_arg_list

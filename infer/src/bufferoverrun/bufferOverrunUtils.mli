@@ -106,16 +106,16 @@ type get_formals = Procname.t -> (Pvar.t * Typ.t) list option
 module ReplaceCallee : sig
   (** Replaced proc name with its modified parameters.
 
-      [is_params_ref] represents that the parameters are given as references to variables, e.g.,
-      when [int i = 5;], the function of [std::make_shared<C>(i);] in C++ is translated to
+      [is_args_ref] represents that the arguments are given as references to variables, e.g., when
+      [int i = 5;], the function of [std::make_shared<C>(i);] in C++ is translated to
       [std::make_shared<C>(&i, tgt)] in Sil where [tgt] is the variable for the target object,
       rather than [std::make_shared<C>(i, tgt)] (note that the type of [&i] is [int&]).
 
-      The [is_params_ref] value is used to evaluate parameters correctly after replacing the callee.
-      For example, when we replace [std::make_shared<C>(&i, tgt)] to the constructor call of [C],
-      i.e. [C(tgt, i)], the parameters' order and types are slightly different, so which should be
-      handled correctly later in the instantiation phase. *)
-  type replaced = {pname: Procname.t; params: (Exp.t * Typ.t) list; is_params_ref: bool}
+      The [is_args_ref] value is used to evaluate argments correctly after replacing the callee. For
+      example, when we replace [std::make_shared<C>(&i, tgt)] to the constructor call of [C], i.e.
+      [C(tgt, i)], the arguments' order and types are slightly different, so which should be handled
+      correctly later in the instantiation phase. *)
+  type replaced = {pname: Procname.t; args: (Exp.t * Typ.t) list; is_args_ref: bool}
 
   val replace_make_shared : Tenv.t -> get_formals -> Procname.t -> (Exp.t * Typ.t) list -> replaced
 end

@@ -120,7 +120,7 @@ module TransferFunctions = struct
 
 
   let instantiate_mem :
-         is_params_ref:bool
+         is_args_ref:bool
       -> Typ.IntegerWidths.t
       -> Ident.t
       -> (Pvar.t * Typ.t) list
@@ -130,10 +130,10 @@ module TransferFunctions = struct
       -> BufferOverrunAnalysisSummary.t
       -> Location.t
       -> Dom.Mem.t =
-   fun ~is_params_ref integer_type_widths ret_id callee_formals callee_pname params caller_mem
+   fun ~is_args_ref integer_type_widths ret_id callee_formals callee_pname args caller_mem
        callee_exit_mem location ->
     let eval_sym_trace =
-      Sem.mk_eval_sym_trace ~is_params_ref integer_type_widths callee_formals params caller_mem
+      Sem.mk_eval_sym_trace ~is_args_ref integer_type_widths callee_formals args caller_mem
         ~mode:Sem.EvalNormal
     in
     let mem =
@@ -279,10 +279,10 @@ module TransferFunctions = struct
 
 
   let call {interproc= {tenv}; get_summary; get_formals; oenv= {integer_type_widths}} node location
-      ((id, _) as ret) callee_pname params mem =
+      ((id, _) as ret) callee_pname args mem =
     let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
     let fun_arg_list =
-      List.map params ~f:(fun (exp, typ) ->
+      List.map args ~f:(fun (exp, typ) ->
           ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= ()} )
     in
     match Models.Call.dispatch tenv callee_pname fun_arg_list with
@@ -294,13 +294,13 @@ module TransferFunctions = struct
         in
         exec model_env ~ret mem
     | None -> (
-        let {BoUtils.ReplaceCallee.pname= callee_pname; params; is_params_ref} =
-          BoUtils.ReplaceCallee.replace_make_shared tenv get_formals callee_pname params
+        let {BoUtils.ReplaceCallee.pname= callee_pname; args; is_args_ref} =
+          BoUtils.ReplaceCallee.replace_make_shared tenv get_formals callee_pname args
         in
         match (get_summary callee_pname, get_formals callee_pname) with
         | Some callee_exit_mem, Some callee_formals ->
-            instantiate_mem ~is_params_ref integer_type_widths id callee_formals callee_pname params
-              mem callee_exit_mem location
+            instantiate_mem ~is_args_ref integer_type_widths id callee_formals callee_pname args mem
+              callee_exit_mem location
         | _, _ ->
             (* This may happen for procedures with a biabduction model too. *)
             L.d_printfln_escaped "/!\\ Unknown call to %a" Procname.pp callee_pname ;
@@ -410,13 +410,13 @@ module TransferFunctions = struct
         assign_java_enum_values get_summary id
           ~caller_pname:(Procdesc.get_proc_name proc_desc)
           ~callee_pname mem
-    | Call (ret, Const (Cfun callee_pname), params, location, _) ->
-        call analysis_data node location ret callee_pname params mem
-    | Call (ret, fun_exp, params, location, _) -> (
+    | Call (ret, Const (Cfun callee_pname), args, location, _) ->
+        call analysis_data node location ret callee_pname args mem
+    | Call (ret, fun_exp, args, location, _) -> (
         let func_ptrs = Sem.eval integer_type_widths fun_exp mem |> Dom.Val.get_func_ptrs in
         match FuncPtr.Set.is_singleton_or_more func_ptrs with
         | Singleton (Closure {name= callee_pname}) ->
-            call analysis_data node location ret callee_pname params mem
+            call analysis_data node location ret callee_pname args mem
         | More ->
             L.d_printfln_escaped "/!\\ Call to multiple functions %a" Exp.pp fun_exp ;
             unknown_call location ret mem

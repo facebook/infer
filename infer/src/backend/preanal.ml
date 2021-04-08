@@ -87,9 +87,9 @@ module ReplaceObjCCopy = struct
         && Option.exists class_name_opt ~f:(String.equal class_name) )
 
 
-  let get_replaced_instr {protocol; method_name; method_with_zone; is_mutable} pdesc tenv params
+  let get_replaced_instr {protocol; method_name; method_with_zone; is_mutable} pdesc tenv args
       ret_id_typ loc flags =
-    match objc_get_first_arg_typ params with
+    match objc_get_first_arg_typ args with
     | Some cl ->
         let class_name = Typ.Name.name cl in
         if
@@ -107,7 +107,7 @@ module ReplaceObjCCopy = struct
             (Sil.Call
                ( ret_id_typ
                , function_exp
-               , params @ [(Exp.null, StdTyp.Objc.pointer_to_nszone)]
+               , args @ [(Exp.null, StdTyp.Objc.pointer_to_nszone)]
                , loc
                , flags )) )
         else None
@@ -115,10 +115,10 @@ module ReplaceObjCCopy = struct
         None
 
 
-  let process tenv pdesc ret_id_typ callee params loc flags =
+  let process tenv pdesc ret_id_typ callee args loc flags =
     get_copy_kind_opt callee
     |> Option.bind ~f:(fun copy_kind ->
-           get_replaced_instr copy_kind pdesc tenv params ret_id_typ loc flags )
+           get_replaced_instr copy_kind pdesc tenv args ret_id_typ loc flags )
 end
 
 module ReplaceObjCOverridden = struct
@@ -126,10 +126,10 @@ module ReplaceObjCOverridden = struct
     Option.exists class_name_opt ~f:(Typ.Name.equal object_name)
 
 
-  let get_overridden_method_opt tenv ~caller_class_name ~callee params =
+  let get_overridden_method_opt tenv ~caller_class_name ~callee args =
     let open IOption.Let_syntax in
     let* sup_class_name = Procname.get_class_type_name callee in
-    let* sub_class_name = objc_get_first_arg_typ params in
+    let* sub_class_name = objc_get_first_arg_typ args in
     if
       PatternMatch.is_subtype tenv sub_class_name sup_class_name
       && not (may_be_super_call caller_class_name sub_class_name)
@@ -139,24 +139,24 @@ module ReplaceObjCOverridden = struct
     else None
 
 
-  let process tenv caller ret_id_typ callee params loc flags =
+  let process tenv caller ret_id_typ callee args loc flags =
     get_overridden_method_opt tenv
       ~caller_class_name:(Procname.get_class_type_name caller)
-      ~callee params
+      ~callee args
     |> Option.map ~f:(fun overridden_method ->
            Logging.d_printfln_escaped "Replace overridden method %a to %a" Procname.pp callee
              Procname.pp overridden_method ;
-           Sil.Call (ret_id_typ, Const (Cfun overridden_method), params, loc, flags) )
+           Sil.Call (ret_id_typ, Const (Cfun overridden_method), args, loc, flags) )
 end
 
 module ReplaceObjCMethodCall = struct
   let process tenv pdesc caller =
     let replace_method instr =
       match (instr : Sil.instr) with
-      | Call (ret_id_typ, Const (Cfun callee), params, loc, flags) ->
+      | Call (ret_id_typ, Const (Cfun callee), args, loc, flags) ->
           IOption.if_none_evalopt
-            (ReplaceObjCCopy.process tenv pdesc ret_id_typ callee params loc flags) ~f:(fun () ->
-              ReplaceObjCOverridden.process tenv caller ret_id_typ callee params loc flags )
+            (ReplaceObjCCopy.process tenv pdesc ret_id_typ callee args loc flags) ~f:(fun () ->
+              ReplaceObjCOverridden.process tenv caller ret_id_typ callee args loc flags )
           |> Option.value ~default:instr
       | _ ->
           instr

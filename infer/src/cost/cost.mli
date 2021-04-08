@@ -21,7 +21,7 @@ val instantiate_cost :
   -> inferbo_caller_mem:BufferOverrunDomain.Mem.t
   -> callee_pname:Procname.t
   -> callee_formals:(Pvar.t * Typ.t) list
-  -> params:(Exp.t * Typ.t) list
+  -> args:(Exp.t * Typ.t) list
   -> callee_cost:CostDomain.BasicCostWithReason.t
   -> loc:Location.t
   -> CostDomain.BasicCostWithReason.t

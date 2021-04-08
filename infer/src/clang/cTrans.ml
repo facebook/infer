@@ -3756,10 +3756,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let res_trans_subexpr_list =
       List.map ~f:(exec_with_glvalue_as_reference instruction trans_state_param) stmts
     in
-    let params = collect_returns res_trans_subexpr_list in
+    let args = collect_returns res_trans_subexpr_list in
     let sil_fun = Exp.Const (Const.Cfun pname) in
     let ret_id = Ident.create_fresh Ident.knormal in
-    let call_instr = Sil.Call ((ret_id, ret_typ), sil_fun, params, sil_loc, CallFlags.default) in
+    let call_instr = Sil.Call ((ret_id, ret_typ), sil_fun, args, sil_loc, CallFlags.default) in
     let res_trans_call =
       mk_trans_result (Exp.Var ret_id, ret_typ) {empty_control with instrs= [call_instr]}
     in
@@ -3862,12 +3862,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
     let trans_state_param = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
     let res_trans_subexpr_list = List.map ~f:(instruction trans_state_param) stmts in
-    let params = collect_returns res_trans_subexpr_list in
+    let args = collect_returns res_trans_subexpr_list in
     let ret_id = Ident.create_fresh Ident.knormal in
     let ret_exp = Exp.Var ret_id in
     let res_instr =
       let sil_fun = Exp.Const (Const.Cfun BuiltinDecl.__infer_initializer_list) in
-      Sil.Call ((ret_id, typ), sil_fun, params, sil_loc, CallFlags.default)
+      Sil.Call ((ret_id, typ), sil_fun, args, sil_loc, CallFlags.default)
     in
     let res_trans_call = mk_trans_result (ret_exp, typ) {empty_control with instrs= [res_instr]} in
     let all_res_trans = res_trans_subexpr_list @ [res_trans_call] in
