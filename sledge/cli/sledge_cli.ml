@@ -270,7 +270,7 @@ let readme () =
 ;;
 Memtrace.trace_if_requested ()
 ;;
-Printexc.record_backtrace Version.debug
+if Version.debug then Printexc.record_backtrace true
 ;;
 Stdlib.Sys.catch_break true
 
