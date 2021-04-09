@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 # additional arguments to pass to clang
-CLANG_ARGS?=-O0
+CLANG_ARGS?=-O0 -Xclang -disable-O0-optnone
 
 # executable to test
 SLEDGE_DBG=$(CURDIR)/../_build/debug/cli/sledge_cli.exe
