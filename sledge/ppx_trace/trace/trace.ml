@@ -169,16 +169,18 @@ let split_mod_fun_name s =
   (mod_name, fun_name)
 
 let enabled mod_fun_name =
-  let mod_name, fun_name = split_mod_fun_name mod_fun_name in
   let {trace_all; trace_mods_funs; _} = !config in
-  match Map.find mod_name trace_mods_funs with
-  | {trace_mod; trace_funs} -> (
-    try Map.find fun_name trace_funs
-    with Not_found -> (
-      match trace_mod with
-      | Some mod_enabled -> mod_enabled
-      | None -> trace_all ) )
-  | exception Not_found -> trace_all
+  if Map.is_empty trace_mods_funs then trace_all
+  else
+    let mod_name, fun_name = split_mod_fun_name mod_fun_name in
+    match Map.find mod_name trace_mods_funs with
+    | {trace_mod; trace_funs} -> (
+      try Map.find fun_name trace_funs
+      with Not_found -> (
+        match trace_mod with
+        | Some mod_enabled -> mod_enabled
+        | None -> trace_all ) )
+    | exception Not_found -> trace_all
 
 let kprintf mod_fun_name k fmt =
   if enabled mod_fun_name then Format.kfprintf k fs fmt
