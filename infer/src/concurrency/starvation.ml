@@ -674,7 +674,8 @@ let report_on_parallel_composition ~should_report_starvation tenv pattrs pair lo
              && Acquisitions.lock_is_held_in_other_thread tenv lock acquisitions ->
           let error_message =
             Format.asprintf
-              "Method %a runs on UI thread and%a, which may be held by another thread which %a."
+              "Method %a runs on UI thread and%a, which may be held by another thread which %a. \
+               This may regress scroll performance or cause ANRs."
               pname_pp pname Lock.pp_locks lock Event.describe event
           in
           let ltr, loc = make_trace_and_loc () in
@@ -685,7 +686,8 @@ let report_on_parallel_composition ~should_report_starvation tenv pattrs pair lo
              && not (Lock.equal lock monitor_lock) ->
           let error_message =
             Format.asprintf
-              "Method %a runs on UI thread and%a, which may be held by another thread which %a."
+              "Method %a runs on UI thread and%a, which may be held by another thread which %a. \
+               This may regress scroll performance or cause ANRs."
               pname_pp pname Lock.pp_locks lock Event.describe other_pair.CriticalPair.elem.event
           in
           let ltr, loc = make_trace_and_loc () in
@@ -724,22 +726,28 @@ let report_on_pair ~analyze_ondemand tenv pattrs (pair : Domain.CriticalPair.t) 
   match event with
   | Ipc _ when is_not_private && should_report_starvation ->
       let error_message =
-        Format.asprintf "Method %a runs on UI thread and may perform blocking IPC; %a." pname_pp
-          pname Event.describe event
+        Format.asprintf
+          "Method %a runs on UI thread and may perform blocking IPC, potentially regressing scroll \
+           performance or causing ANRs; %a."
+          pname_pp pname Event.describe event
       in
       let ltr, loc = make_trace_and_loc () in
       ReportMap.add_ipc tenv pattrs loc ltr error_message report_map
   | MayBlock _ when is_not_private && should_report_starvation ->
       let error_message =
-        Format.asprintf "Method %a runs on UI thread and may block; %a." pname_pp pname
-          Event.describe event
+        Format.asprintf
+          "Method %a runs on UI thread and may block, potentially regressing scroll performance or \
+           causing ANRs; %a."
+          pname_pp pname Event.describe event
       in
       let ltr, loc = make_trace_and_loc () in
       ReportMap.add_starvation tenv pattrs loc ltr error_message report_map
   | MonitorWait _ when is_not_private && should_report_starvation ->
       let error_message =
-        Format.asprintf "Method %a runs on UI thread and may block; %a." pname_pp pname
-          Event.describe event
+        Format.asprintf
+          "Method %a runs on UI thread and may block, potentially regressing scroll performance or \
+           causing ANRs; %a."
+          pname_pp pname Event.describe event
       in
       let ltr, loc = make_trace_and_loc () in
       ReportMap.add_starvation tenv pattrs loc ltr error_message report_map
