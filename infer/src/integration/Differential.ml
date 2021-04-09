@@ -418,7 +418,14 @@ module ConfigImpactItem = struct
     let nb_callees = UncheckedCallees.cardinal unchecked_callees in
     if nb_callees <= 0 then assert false ;
     let is_singleton = nb_callees <= 1 in
-    let unchecked_callees = UncheckedCallees.elements unchecked_callees in
+    let unchecked_callees =
+      UncheckedCallees.elements unchecked_callees
+      |> List.stable_sort ~compare:(fun x y ->
+             (* Known expensive callees come first. *)
+             compare_bool
+               (UncheckedCallee.is_known_expensive y)
+               (UncheckedCallee.is_known_expensive x) )
+    in
     let qualifier =
       Format.asprintf "Function call%s to %a %s %a without GK/QE."
         (if is_singleton then "" else "s")

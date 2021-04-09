@@ -12,6 +12,8 @@ module Fields : AbstractDomain.FiniteSetS
 module UncheckedCallee : sig
   type t
 
+  val is_known_expensive : t -> bool
+
   val make_err_trace : t -> Errlog.loc_trace
 
   val pp_without_location_list : Format.formatter -> t list -> unit

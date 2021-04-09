@@ -64,6 +64,7 @@ module UncheckedCallee = struct
 
   type t =
     { callee: callee_name
+    ; is_known_expensive: bool
     ; location: Location.t [@compare.ignore]
     ; call_type: call_type [@compare.ignore] }
   [@@deriving compare]
@@ -87,6 +88,12 @@ module UncheckedCallee = struct
       f unchecked_callees
 
 
+  let make ~is_known_expensive callee location =
+    {callee; is_known_expensive; location; call_type= Direct}
+
+
+  let is_known_expensive {is_known_expensive} = is_known_expensive
+
   let replace_location_by_call location x = {x with location; call_type= Indirect x}
 
   let rec make_err_trace ({location} as x) =
@@ -107,6 +114,8 @@ module UncheckedCallees = struct
   let decode enc_str = Marshal.from_string (Base64.decode_exn enc_str) 0
 
   let pp_without_location f x = UncheckedCallee.pp_without_location_list f (elements x)
+
+  let has_known_expensive_callee x = exists (fun {is_known_expensive} -> is_known_expensive) x
 end
 
 module UncheckedCalleesCond = struct
@@ -197,6 +206,10 @@ module Summary = struct
         unchecked_callees_cond unchecked_callees
     in
     {x with unchecked_callees; unchecked_callees_cond= UncheckedCalleesCond.bottom}
+
+
+  let has_known_expensive_callee {unchecked_callees} =
+    UncheckedCallees.has_known_expensive_callee unchecked_callees
 end
 
 module Dom = struct
@@ -328,35 +341,73 @@ module Dom = struct
                      fields field_checks } )
 
 
-  let call analyze_dependency callee location
+  let is_known_expensive_method =
+    let dispatch : (Tenv.t, unit, unit) ProcnameDispatcher.Call.dispatcher =
+      let open ProcnameDispatcher.Call in
+      make_dispatcher
+        [ +PatternMatch.Java.implements_google "common.base.Preconditions"
+          &:: "checkArgument" $ any_arg $+ any_arg $+...$--> ()
+        ; +PatternMatch.Java.implements_google "common.base.Preconditions"
+          &:: "checkElementIndex" $ any_arg $+ any_arg $+ any_arg $+...$--> ()
+        ; +PatternMatch.Java.implements_google "common.base.Preconditions"
+          &:: "checkNotNull" $ any_arg $+ any_arg $+...$--> ()
+        ; +PatternMatch.Java.implements_google "common.base.Preconditions"
+          &:: "checkPositionIndex" $ any_arg $+ any_arg $+ any_arg $+...$--> ()
+        ; +PatternMatch.Java.implements_google "common.base.Preconditions"
+          &:: "checkState" $ any_arg $+ any_arg $+...$--> ()
+        ; +PatternMatch.Java.implements_lang "String" &:: "concat" &--> ()
+        ; +PatternMatch.Java.implements_lang "StringBuilder" &:: "append" &--> () ]
+    in
+    fun tenv pname args ->
+      let args =
+        List.map args ~f:(fun (exp, typ) ->
+            ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= ()} )
+      in
+      dispatch tenv pname args |> Option.is_some
+
+
+  let call tenv analyze_dependency callee args location
       ({config_checks; field_checks; unchecked_callees; unchecked_callees_cond} as astate) =
     if ConfigChecks.is_top config_checks then
-      let callee_summary = analyze_dependency callee in
+      let (callee_summary : Summary.t option), (cost_summary : CostDomain.summary option) =
+        match analyze_dependency callee with
+        | None ->
+            (None, None)
+        | Some (_, analysis_data) ->
+            analysis_data
+      in
+      let is_expensive = is_known_expensive_method tenv callee args in
+      let has_expensive_callee =
+        Option.exists callee_summary ~f:Summary.has_known_expensive_callee
+      in
       if
-        Option.exists callee_summary ~f:(fun (_, (_, (cost_summary : CostDomain.summary option))) ->
-            Option.exists cost_summary ~f:(fun (cost_summary : CostDomain.summary) ->
-                let callee_cost = CostDomain.get_operation_cost cost_summary.post in
-                not (CostDomain.BasicCost.is_symbolic callee_cost.cost) ) )
+        (not is_expensive) && (not has_expensive_callee)
+        && Option.exists cost_summary ~f:(fun (cost_summary : CostDomain.summary) ->
+               let callee_cost = CostDomain.get_operation_cost cost_summary.post in
+               not (CostDomain.BasicCost.is_symbolic callee_cost.cost) )
       then (* If callee is cheap by heuristics, ignore it. *)
         astate
       else
         let new_unchecked_callees, new_unchecked_callees_cond =
-          match callee_summary with
-          | Some
-              ( _
-              , ( Some
-                    { Summary.unchecked_callees= callee_summary
-                    ; unchecked_callees_cond= callee_summary_cond
-                    ; has_call_stmt }
-                , _callee_cost_summary ) )
-            when has_call_stmt ->
-              (* If callee's summary is not leaf, use it. *)
-              ( UncheckedCallees.replace_location_by_call location callee_summary
-              , UncheckedCalleesCond.replace_location_by_call location callee_summary_cond )
-          | _ ->
-              (* Otherwise, add callee's name. *)
-              ( UncheckedCallees.singleton {callee; location; call_type= Direct}
-              , UncheckedCalleesCond.empty )
+          if is_expensive then
+            ( UncheckedCallees.singleton
+                (UncheckedCallee.make ~is_known_expensive:true callee location)
+            , UncheckedCalleesCond.empty )
+          else
+            match callee_summary with
+            | Some
+                { Summary.unchecked_callees= callee_summary
+                ; unchecked_callees_cond= callee_summary_cond
+                ; has_call_stmt }
+              when has_call_stmt ->
+                (* If callee's summary is not leaf, use it. *)
+                ( UncheckedCallees.replace_location_by_call location callee_summary
+                , UncheckedCalleesCond.replace_location_by_call location callee_summary_cond )
+            | _ ->
+                (* Otherwise, add callee's name. *)
+                ( UncheckedCallees.singleton
+                    (UncheckedCallee.make ~is_known_expensive:false callee location)
+                , UncheckedCalleesCond.empty )
         in
         if FieldChecks.is_top field_checks then
           { astate with
@@ -451,7 +502,7 @@ module TransferFunctions = struct
           astate
       | None ->
           (* normal function calls *)
-          Dom.call analyze_dependency callee location astate )
+          Dom.call tenv analyze_dependency callee args location astate )
     | Prune (e, _, _, _) ->
         Dom.prune e astate
     | _ ->
