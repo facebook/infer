@@ -139,11 +139,11 @@ static LLVMDIFlags map_DIFlag(LLVMDIFlag_i DIF) {
   }
 }
 
-CAMLprim value llvm_debug_metadata_version(value Unit) {
+value llvm_debug_metadata_version(value Unit) {
   return Val_int(LLVMDebugMetadataVersion());
 }
 
-CAMLprim value llvm_get_module_debug_metadata_version(LLVMModuleRef Module) {
+value llvm_get_module_debug_metadata_version(LLVMModuleRef Module) {
   return Val_int(LLVMGetModuleDebugMetadataVersion(Module));
 }
 
@@ -161,17 +161,17 @@ static value alloc_diflags(LLVMDIFlags Flags) {
   return V;
 }
 
-CAMLprim LLVMDIFlags llvm_diflags_get(value i_Flag) {
+LLVMDIFlags llvm_diflags_get(value i_Flag) {
   LLVMDIFlags Flags = map_DIFlag(Int_val(i_Flag));
   return alloc_diflags(Flags);
 }
 
-CAMLprim LLVMDIFlags llvm_diflags_set(value Flags, value i_Flag) {
+LLVMDIFlags llvm_diflags_set(value Flags, value i_Flag) {
   LLVMDIFlags FlagsNew = DIFlags_val(Flags) | map_DIFlag(Int_val(i_Flag));
   return alloc_diflags(FlagsNew);
 }
 
-CAMLprim value llvm_diflags_test(value Flags, value i_Flag) {
+value llvm_diflags_test(value Flags, value i_Flag) {
   LLVMDIFlags Flag = map_DIFlag(Int_val(i_Flag));
   return Val_bool((DIFlags_val(Flags) & Flag) == Flag);
 }
@@ -196,16 +196,16 @@ static value alloc_dibuilder(LLVMDIBuilderRef B) {
 }
 
 /* llmodule -> lldibuilder */
-CAMLprim value llvm_dibuilder(LLVMModuleRef M) {
+value llvm_dibuilder(LLVMModuleRef M) {
   return alloc_dibuilder(LLVMCreateDIBuilder(M));
 }
 
-CAMLprim value llvm_dibuild_finalize(value Builder) {
+value llvm_dibuild_finalize(value Builder) {
   LLVMDIBuilderFinalize(DIBuilder_val(Builder));
   return Val_unit;
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_compile_unit_native(
+LLVMMetadataRef llvm_dibuild_create_compile_unit_native(
     value Builder, value Lang, LLVMMetadataRef FileRef, value Producer,
     value IsOptimized, value Flags, value RuntimeVer, value SplitName,
     value Kind, value DWOId, value SplitDebugInline,
@@ -218,7 +218,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_compile_unit_native(
       Bool_val(SplitDebugInline), Bool_val(DebugInfoForProfiling));
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_compile_unit_bytecode(value *argv,
+LLVMMetadataRef llvm_dibuild_create_compile_unit_bytecode(value *argv,
                                                                    int argn) {
   return llvm_dibuild_create_compile_unit_native(
       argv[0],                  // Builder
@@ -238,7 +238,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_compile_unit_bytecode(value *argv,
   );
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_file(value Builder, value Filename,
+LLVMMetadataRef llvm_dibuild_create_file(value Builder, value Filename,
                                                   value Directory) {
   return LLVMDIBuilderCreateFile(DIBuilder_val(Builder), String_val(Filename),
                                  caml_string_length(Filename),
@@ -246,7 +246,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_file(value Builder, value Filename,
                                  caml_string_length(Directory));
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_module_native(
+LLVMMetadataRef llvm_dibuild_create_module_native(
     value Builder, LLVMMetadataRef ParentScope, value Name, value ConfigMacros,
     value IncludePath, value SysRoot) {
   return LLVMDIBuilderCreateModule(
@@ -257,7 +257,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_module_native(
       caml_string_length(SysRoot));
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_module_bytecode(value *argv,
+LLVMMetadataRef llvm_dibuild_create_module_bytecode(value *argv,
                                                              int argn) {
   return llvm_dibuild_create_module_native(
       argv[0],                  // Builder
@@ -269,7 +269,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_module_bytecode(value *argv,
   );
 }
 
-CAMLprim LLVMMetadataRef
+LLVMMetadataRef
 llvm_dibuild_create_namespace(value Builder, LLVMMetadataRef ParentScope,
                               value Name, value ExportSymbols) {
   return LLVMDIBuilderCreateNameSpace(
@@ -277,7 +277,7 @@ llvm_dibuild_create_namespace(value Builder, LLVMMetadataRef ParentScope,
       caml_string_length(Name), Bool_val(ExportSymbols));
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_function_native(
+LLVMMetadataRef llvm_dibuild_create_function_native(
     value Builder, LLVMMetadataRef Scope, value Name, value LinkageName,
     LLVMMetadataRef File, value LineNo, LLVMMetadataRef Ty, value IsLocalToUnit,
     value IsDefinition, value ScopeLine, value Flags, value IsOptimized) {
@@ -288,7 +288,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_function_native(
       Int_val(ScopeLine), DIFlags_val(Flags), Bool_val(IsOptimized));
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_function_bytecode(value *argv,
+LLVMMetadataRef llvm_dibuild_create_function_bytecode(value *argv,
                                                                int argn) {
   return llvm_dibuild_create_function_native(argv[0], // Builder,
                                              (LLVMMetadataRef)argv[1], // Scope
@@ -305,61 +305,61 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_function_bytecode(value *argv,
   );
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_lexical_block(
+LLVMMetadataRef llvm_dibuild_create_lexical_block(
     value Builder, LLVMMetadataRef Scope, LLVMMetadataRef File, value Line,
     value Column) {
   return LLVMDIBuilderCreateLexicalBlock(DIBuilder_val(Builder), Scope, File,
                                          Int_val(Line), Int_val(Column));
 }
 
-CAMLprim LLVMMetadataRef llvm_metadata_null() { return (LLVMMetadataRef)NULL; }
+LLVMMetadataRef llvm_metadata_null() { return (LLVMMetadataRef)NULL; }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_debug_location(
+LLVMMetadataRef llvm_dibuild_create_debug_location(
     LLVMContextRef Ctx, value Line, value Column, LLVMMetadataRef Scope,
     LLVMMetadataRef InlinedAt) {
   return LLVMDIBuilderCreateDebugLocation(Ctx, Int_val(Line), Int_val(Column),
                                           Scope, InlinedAt);
 }
 
-CAMLprim value llvm_di_location_get_line(LLVMMetadataRef Location) {
+value llvm_di_location_get_line(LLVMMetadataRef Location) {
   return Val_int(LLVMDILocationGetLine(Location));
 }
 
-CAMLprim value llvm_di_location_get_column(LLVMMetadataRef Location) {
+value llvm_di_location_get_column(LLVMMetadataRef Location) {
   return Val_int(LLVMDILocationGetColumn(Location));
 }
 
-CAMLprim LLVMMetadataRef llvm_di_location_get_scope(LLVMMetadataRef Location) {
+LLVMMetadataRef llvm_di_location_get_scope(LLVMMetadataRef Location) {
   return LLVMDILocationGetScope(Location);
 }
 
-CAMLprim value llvm_di_location_get_inlined_at(LLVMMetadataRef Location) {
+value llvm_di_location_get_inlined_at(LLVMMetadataRef Location) {
   return (ptr_to_option(LLVMDILocationGetInlinedAt(Location)));
 }
 
-CAMLprim value llvm_di_scope_get_file(LLVMMetadataRef Scope) {
+value llvm_di_scope_get_file(LLVMMetadataRef Scope) {
   return (ptr_to_option(LLVMDIScopeGetFile(Scope)));
 }
 
-CAMLprim value llvm_di_file_get_directory(LLVMMetadataRef File) {
+value llvm_di_file_get_directory(LLVMMetadataRef File) {
   unsigned Len;
   const char *Directory = LLVMDIFileGetDirectory(File, &Len);
   return cstr_to_string(Directory, Len);
 }
 
-CAMLprim value llvm_di_file_get_filename(LLVMMetadataRef File) {
+value llvm_di_file_get_filename(LLVMMetadataRef File) {
   unsigned Len;
   const char *Filename = LLVMDIFileGetFilename(File, &Len);
   return cstr_to_string(Filename, Len);
 }
 
-CAMLprim value llvm_di_file_get_source(LLVMMetadataRef File) {
+value llvm_di_file_get_source(LLVMMetadataRef File) {
   unsigned Len;
   const char *Source = LLVMDIFileGetSource(File, &Len);
   return cstr_to_string(Source, Len);
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_get_or_create_type_array(value Builder,
+LLVMMetadataRef llvm_dibuild_get_or_create_type_array(value Builder,
                                                                value Data) {
 
   return LLVMDIBuilderGetOrCreateTypeArray(DIBuilder_val(Builder),
@@ -367,7 +367,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_get_or_create_type_array(value Builder,
                                            Wosize_val(Data));
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_get_or_create_array(value Builder,
+LLVMMetadataRef llvm_dibuild_get_or_create_array(value Builder,
                                                           value Data) {
 
   return LLVMDIBuilderGetOrCreateArray(DIBuilder_val(Builder),
@@ -375,7 +375,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_get_or_create_array(value Builder,
                                        Wosize_val(Data));
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_subroutine_type(
+LLVMMetadataRef llvm_dibuild_create_subroutine_type(
     value Builder, LLVMMetadataRef File, value ParameterTypes, value Flags) {
 
   return LLVMDIBuilderCreateSubroutineType(
@@ -383,7 +383,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_subroutine_type(
       Wosize_val(ParameterTypes), DIFlags_val(Flags));
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_enumerator(value Builder,
+LLVMMetadataRef llvm_dibuild_create_enumerator(value Builder,
                                                         value Name, value Value,
                                                         value IsUnsigned) {
   return LLVMDIBuilderCreateEnumerator(
@@ -391,7 +391,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_enumerator(value Builder,
       (int64_t)Int_val(Value), Bool_val(IsUnsigned));
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_enumeration_type_native(
+LLVMMetadataRef llvm_dibuild_create_enumeration_type_native(
     value Builder, LLVMMetadataRef Scope, value Name, LLVMMetadataRef File,
     value LineNumber, value SizeInBits, value AlignInBits, value Elements,
     LLVMMetadataRef ClassTy) {
@@ -402,7 +402,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_enumeration_type_native(
       Wosize_val(Elements), ClassTy);
 }
 
-CAMLprim LLVMMetadataRef
+LLVMMetadataRef
 llvm_dibuild_create_enumeration_type_bytecode(value *argv, int argn) {
   return llvm_dibuild_create_enumeration_type_native(
       argv[0],                  // Builder
@@ -417,7 +417,7 @@ llvm_dibuild_create_enumeration_type_bytecode(value *argv, int argn) {
   );
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_union_type_native(
+LLVMMetadataRef llvm_dibuild_create_union_type_native(
     value Builder, LLVMMetadataRef Scope, value Name, LLVMMetadataRef File,
     value LineNumber, value SizeInBits, value AlignInBits, value Flags,
     value Elements, value RunTimeLanguage, value UniqueId) {
@@ -431,7 +431,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_union_type_native(
       caml_string_length(UniqueId));
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_union_type_bytecode(value *argv,
+LLVMMetadataRef llvm_dibuild_create_union_type_bytecode(value *argv,
                                                                  int argn) {
   return llvm_dibuild_create_union_type_native(
       argv[0],                  // Builder
@@ -448,7 +448,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_union_type_bytecode(value *argv,
   );
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_array_type(value Builder,
+LLVMMetadataRef llvm_dibuild_create_array_type(value Builder,
                                                         value Size,
                                                         value AlignInBits,
                                                         LLVMMetadataRef Ty,
@@ -458,7 +458,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_array_type(value Builder,
       (LLVMMetadataRef *)Op_val(Subscripts), Wosize_val(Subscripts));
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_vector_type(value Builder,
+LLVMMetadataRef llvm_dibuild_create_vector_type(value Builder,
                                                          value Size,
                                                          value AlignInBits,
                                                          LLVMMetadataRef Ty,
@@ -468,13 +468,13 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_vector_type(value Builder,
       (LLVMMetadataRef *)Op_val(Subscripts), Wosize_val(Subscripts));
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_unspecified_type(value Builder,
+LLVMMetadataRef llvm_dibuild_create_unspecified_type(value Builder,
                                                               value Name) {
   return LLVMDIBuilderCreateUnspecifiedType(
       DIBuilder_val(Builder), String_val(Name), caml_string_length(Name));
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_basic_type(
+LLVMMetadataRef llvm_dibuild_create_basic_type(
     value Builder, value Name, value SizeInBits, value Encoding, value Flags) {
 
   return LLVMDIBuilderCreateBasicType(
@@ -482,7 +482,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_basic_type(
       (uint64_t)Int_val(SizeInBits), Int_val(Encoding), DIFlags_val(Flags));
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_pointer_type_native(
+LLVMMetadataRef llvm_dibuild_create_pointer_type_native(
     value Builder, LLVMMetadataRef PointeeTy, value SizeInBits,
     value AlignInBits, value AddressSpace, value Name) {
   return LLVMDIBuilderCreatePointerType(
@@ -491,7 +491,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_pointer_type_native(
       caml_string_length(Name));
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_pointer_type_bytecode(value *argv,
+LLVMMetadataRef llvm_dibuild_create_pointer_type_bytecode(value *argv,
                                                                    int argn) {
   return llvm_dibuild_create_pointer_type_native(
       argv[0],                  // Builder
@@ -503,7 +503,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_pointer_type_bytecode(value *argv,
   );
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_struct_type_native(
+LLVMMetadataRef llvm_dibuild_create_struct_type_native(
     value Builder, LLVMMetadataRef Scope, value Name, LLVMMetadataRef File,
     value LineNumber, value SizeInBits, value AlignInBits, value Flags,
     LLVMMetadataRef DerivedFrom, value Elements, value RunTimeLanguage,
@@ -518,7 +518,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_struct_type_native(
       caml_string_length(UniqueId));
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_struct_type_bytecode(value *argv,
+LLVMMetadataRef llvm_dibuild_create_struct_type_bytecode(value *argv,
                                                                   int argn) {
   return llvm_dibuild_create_struct_type_native(
       argv[0],                   // Builder
@@ -537,7 +537,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_struct_type_bytecode(value *argv,
   );
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_member_type_native(
+LLVMMetadataRef llvm_dibuild_create_member_type_native(
     value Builder, LLVMMetadataRef Scope, value Name, LLVMMetadataRef File,
     value LineNumber, value SizeInBits, value AlignInBits, value OffsetInBits,
     value Flags, LLVMMetadataRef Ty) {
@@ -549,7 +549,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_member_type_native(
       Ty);
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_member_type_bytecode(value *argv,
+LLVMMetadataRef llvm_dibuild_create_member_type_bytecode(value *argv,
                                                                   int argn) {
   return llvm_dibuild_create_member_type_native(
       argv[0],                  // Builder
@@ -565,7 +565,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_member_type_bytecode(value *argv,
   );
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_static_member_type_native(
+LLVMMetadataRef llvm_dibuild_create_static_member_type_native(
     value Builder, LLVMMetadataRef Scope, value Name, LLVMMetadataRef File,
     value LineNumber, LLVMMetadataRef Type, value Flags,
     LLVMValueRef ConstantVal, value AlignInBits) {
@@ -576,7 +576,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_static_member_type_native(
       Int_val(AlignInBits));
 }
 
-CAMLprim LLVMMetadataRef
+LLVMMetadataRef
 llvm_dibuild_create_static_member_type_bytecode(value *argv, int argn) {
   return llvm_dibuild_create_static_member_type_native(
       argv[0],                  // Builder
@@ -591,7 +591,7 @@ llvm_dibuild_create_static_member_type_bytecode(value *argv, int argn) {
   );
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_member_pointer_type_native(
+LLVMMetadataRef llvm_dibuild_create_member_pointer_type_native(
     value Builder, LLVMMetadataRef PointeeType, LLVMMetadataRef ClassType,
     uint64_t SizeInBits, uint32_t AlignInBits, LLVMDIFlags Flags) {
 
@@ -600,7 +600,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_member_pointer_type_native(
       (uint64_t)Int_val(SizeInBits), Int_val(AlignInBits), Flags);
 }
 
-CAMLprim LLVMMetadataRef
+LLVMMetadataRef
 llvm_dibuild_create_member_pointer_type_bytecode(value *argv, int argn) {
   return llvm_dibuild_create_member_pointer_type_native(
       argv[0],                  // Builder
@@ -612,31 +612,31 @@ llvm_dibuild_create_member_pointer_type_bytecode(value *argv, int argn) {
   );
 }
 
-CAMLprim LLVMMetadataRef
+LLVMMetadataRef
 llvm_dibuild_create_object_pointer_type(value Builder, LLVMMetadataRef Type) {
   return LLVMDIBuilderCreateObjectPointerType(DIBuilder_val(Builder), Type);
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_qualified_type(
+LLVMMetadataRef llvm_dibuild_create_qualified_type(
     value Builder, value Tag, LLVMMetadataRef Type) {
 
   return LLVMDIBuilderCreateQualifiedType(DIBuilder_val(Builder), Int_val(Tag),
                                           Type);
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_reference_type(
+LLVMMetadataRef llvm_dibuild_create_reference_type(
     value Builder, value Tag, LLVMMetadataRef Type) {
 
   return LLVMDIBuilderCreateReferenceType(DIBuilder_val(Builder), Int_val(Tag),
                                           Type);
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_null_ptr_type(value Builder) {
+LLVMMetadataRef llvm_dibuild_create_null_ptr_type(value Builder) {
 
   return LLVMDIBuilderCreateNullPtrType(DIBuilder_val(Builder));
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_typedef_native(
+LLVMMetadataRef llvm_dibuild_create_typedef_native(
     value Builder, LLVMMetadataRef Type, value Name, LLVMMetadataRef File,
     value LineNo, LLVMMetadataRef Scope, value AlignInBits) {
 
@@ -645,7 +645,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_typedef_native(
       File, Int_val(LineNo), Scope, Int_val(AlignInBits));
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_typedef_bytecode(value *argv,
+LLVMMetadataRef llvm_dibuild_create_typedef_bytecode(value *argv,
                                                               int argn) {
 
   return llvm_dibuild_create_typedef_native(argv[0],                  // Builder
@@ -658,7 +658,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_typedef_bytecode(value *argv,
   );
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_inheritance_native(
+LLVMMetadataRef llvm_dibuild_create_inheritance_native(
     value Builder, LLVMMetadataRef Ty, LLVMMetadataRef BaseTy, value BaseOffset,
     value VBPtrOffset, value Flags) {
 
@@ -667,7 +667,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_inheritance_native(
                                         Int_val(VBPtrOffset), Flags);
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_inheritance_bytecode(value *argv,
+LLVMMetadataRef llvm_dibuild_create_inheritance_bytecode(value *argv,
                                                                   int arg) {
 
   return llvm_dibuild_create_inheritance_native(
@@ -680,7 +680,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_inheritance_bytecode(value *argv,
   );
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_forward_decl_native(
+LLVMMetadataRef llvm_dibuild_create_forward_decl_native(
     value Builder, value Tag, value Name, LLVMMetadataRef Scope,
     LLVMMetadataRef File, value Line, value RuntimeLang, value SizeInBits,
     value AlignInBits, value UniqueIdentifier) {
@@ -691,7 +691,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_forward_decl_native(
       String_val(UniqueIdentifier), caml_string_length(UniqueIdentifier));
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_forward_decl_bytecode(value *argv,
+LLVMMetadataRef llvm_dibuild_create_forward_decl_bytecode(value *argv,
                                                                    int arg) {
 
   return llvm_dibuild_create_forward_decl_native(
@@ -708,7 +708,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_forward_decl_bytecode(value *argv,
   );
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_replaceable_composite_type_native(
+LLVMMetadataRef llvm_dibuild_create_replaceable_composite_type_native(
     value Builder, value Tag, value Name, LLVMMetadataRef Scope,
     LLVMMetadataRef File, value Line, value RuntimeLang, value SizeInBits,
     value AlignInBits, value Flags, value UniqueIdentifier) {
@@ -721,7 +721,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_replaceable_composite_type_native(
       caml_string_length(UniqueIdentifier));
 }
 
-CAMLprim LLVMMetadataRef
+LLVMMetadataRef
 llvm_dibuild_create_replaceable_composite_type_bytecode(value *argv, int arg) {
 
   return llvm_dibuild_create_replaceable_composite_type_native(
@@ -739,7 +739,7 @@ llvm_dibuild_create_replaceable_composite_type_bytecode(value *argv, int arg) {
   );
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_bit_field_member_type_native(
+LLVMMetadataRef llvm_dibuild_create_bit_field_member_type_native(
     value Builder, LLVMMetadataRef Scope, value Name, LLVMMetadataRef File,
     value LineNum, value SizeInBits, value OffsetInBits,
     value StorageOffsetInBits, value Flags, LLVMMetadataRef Ty) {
@@ -751,7 +751,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_bit_field_member_type_native(
       DIFlags_val(Flags), Ty);
 }
 
-CAMLprim LLVMMetadataRef
+LLVMMetadataRef
 llvm_dibuild_create_bit_field_member_type_bytecode(value *argv, int arg) {
 
   return llvm_dibuild_create_bit_field_member_type_native(
@@ -768,7 +768,7 @@ llvm_dibuild_create_bit_field_member_type_bytecode(value *argv, int arg) {
   );
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_class_type_native(
+LLVMMetadataRef llvm_dibuild_create_class_type_native(
     value Builder, LLVMMetadataRef Scope, value Name, LLVMMetadataRef File,
     value LineNumber, value SizeInBits, value AlignInBits, value OffsetInBits,
     value Flags, LLVMMetadataRef DerivedFrom, value Elements,
@@ -784,7 +784,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_class_type_native(
       caml_string_length(UniqueIdentifier));
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_class_type_bytecode(value *argv,
+LLVMMetadataRef llvm_dibuild_create_class_type_bytecode(value *argv,
                                                                  int arg) {
 
   return llvm_dibuild_create_class_type_native(
@@ -805,72 +805,72 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_class_type_bytecode(value *argv,
   );
 }
 
-CAMLprim LLVMMetadataRef
+LLVMMetadataRef
 llvm_dibuild_create_artificial_type(value Builder, LLVMMetadataRef Type) {
   return LLVMDIBuilderCreateArtificialType(DIBuilder_val(Builder), Type);
 }
 
-CAMLprim value llvm_di_type_get_name(LLVMMetadataRef DType) {
+value llvm_di_type_get_name(LLVMMetadataRef DType) {
   size_t Len;
   const char *Name = LLVMDITypeGetName(DType, &Len);
   return cstr_to_string(Name, Len);
 }
 
-CAMLprim value llvm_di_type_get_size_in_bits(LLVMMetadataRef DType) {
+value llvm_di_type_get_size_in_bits(LLVMMetadataRef DType) {
   uint64_t Size = LLVMDITypeGetSizeInBits(DType);
   return Val_int((int)Size);
 }
 
-CAMLprim value llvm_di_type_get_offset_in_bits(LLVMMetadataRef DType) {
+value llvm_di_type_get_offset_in_bits(LLVMMetadataRef DType) {
   uint64_t Size = LLVMDITypeGetOffsetInBits(DType);
   return Val_int((int)Size);
 }
 
-CAMLprim value llvm_di_type_get_align_in_bits(LLVMMetadataRef DType) {
+value llvm_di_type_get_align_in_bits(LLVMMetadataRef DType) {
   uint32_t Size = LLVMDITypeGetAlignInBits(DType);
   return Val_int(Size);
 }
 
-CAMLprim value llvm_di_type_get_line(LLVMMetadataRef DType) {
+value llvm_di_type_get_line(LLVMMetadataRef DType) {
   unsigned Line = LLVMDITypeGetLine(DType);
   return Val_int(Line);
 }
 
-CAMLprim value llvm_di_type_get_flags(LLVMMetadataRef DType) {
+value llvm_di_type_get_flags(LLVMMetadataRef DType) {
   LLVMDIFlags Flags = LLVMDITypeGetLine(DType);
   return alloc_diflags(Flags);
 }
 
-CAMLprim value llvm_get_subprogram(LLVMValueRef Func) {
+value llvm_get_subprogram(LLVMValueRef Func) {
   return (ptr_to_option(LLVMGetSubprogram(Func)));
 }
 
-CAMLprim value llvm_set_subprogram(LLVMValueRef Func, LLVMMetadataRef SP) {
+value llvm_set_subprogram(LLVMValueRef Func, LLVMMetadataRef SP) {
   LLVMSetSubprogram(Func, SP);
   return Val_unit;
 }
 
-CAMLprim value llvm_di_subprogram_get_line(LLVMMetadataRef Subprogram) {
+value llvm_di_subprogram_get_line(LLVMMetadataRef Subprogram) {
   return Val_int(LLVMDISubprogramGetLine(Subprogram));
 }
 
-CAMLprim value llvm_instr_get_debug_loc(LLVMValueRef Inst) {
+value llvm_instr_get_debug_loc(LLVMValueRef Inst) {
   return (ptr_to_option(LLVMInstructionGetDebugLoc(Inst)));
 }
 
-CAMLprim value llvm_instr_set_debug_loc(LLVMValueRef Inst,
+value llvm_instr_set_debug_loc(LLVMValueRef Inst,
                                         LLVMMetadataRef Loc) {
   LLVMInstructionSetDebugLoc(Inst, Loc);
   return Val_unit;
 }
 
-CAMLprim LLVMMetadataRef
+LLVMMetadataRef
 llvm_dibuild_create_constant_value_expression(value Builder, value Value) {
   return LLVMDIBuilderCreateConstantValueExpression(DIBuilder_val(Builder),
                                                     (int64_t)Int_val(Value));
 }
 
-CAMLprim LLVMMetadataRef llvm_dibuild_create_global_variable_expression_native(
+LLVMMetadataRef llvm_dibuild_create_global_variable_expression_native(
     value Builder, LLVMMetadataRef Scope, value Name, value Linkage,
     LLVMMetadataRef File, value Line, LLVMMetadataRef Ty, value LocalToUnit,
     LLVMMetadataRef Expr, LLVMMetadataRef Decl, value AlignInBits) {
@@ -880,7 +880,7 @@ CAMLprim LLVMMetadataRef llvm_dibuild_create_global_variable_expression_native(
       Bool_val(LocalToUnit), Expr, Decl, Int_val(AlignInBits));
 }
 
-CAMLprim LLVMMetadataRef
+LLVMMetadataRef
 llvm_dibuild_create_global_variable_expression_bytecode(value *argv, int arg) {
 
   return llvm_dibuild_create_global_variable_expression_native(
@@ -898,19 +898,19 @@ llvm_dibuild_create_global_variable_expression_bytecode(value *argv, int arg) {
   );
 }
 
-CAMLprim value
+value
 llvm_di_global_variable_expression_get_variable(LLVMMetadataRef GVE) {
   return (ptr_to_option(LLVMDIGlobalVariableExpressionGetVariable(GVE)));
 }
 
-CAMLprim value llvm_di_variable_get_line(LLVMMetadataRef Variable) {
+value llvm_di_variable_get_line(LLVMMetadataRef Variable) {
   return Val_int(LLVMDIVariableGetLine(Variable));
 }
 
-CAMLprim value llvm_di_variable_get_file(LLVMMetadataRef Variable) {
+value llvm_di_variable_get_file(LLVMMetadataRef Variable) {
   return (ptr_to_option(LLVMDIVariableGetFile(Variable)));
 }
 
-CAMLprim value llvm_get_metadata_kind(LLVMMetadataRef Metadata) {
+value llvm_get_metadata_kind(LLVMMetadataRef Metadata) {
   return Val_int(LLVMGetMetadataKind(Metadata));
 }
