@@ -46,7 +46,7 @@ let dnf = Sh.dnf
 let exec_assume q b =
   Exec.assume q (X.formula b)
   |> simplify
-  |> fun q -> if Sh.is_unsat q then None else Some q
+  |> fun q -> if Sh.is_unsat_dnf q then None else Some q
 
 let exec_kill r q = Exec.kill q (X.reg r) |> simplify
 
