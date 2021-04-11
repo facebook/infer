@@ -348,7 +348,7 @@ let config_unsafe checker =
       ; kind=
           UserFacing
             {title= "RacerD"; markdown_body= [%blob "../../documentation/checkers/RacerD.md"]}
-      ; support= supports_clang_and_java
+      ; support= (function Clang -> Support | Java -> Support | CIL -> Support)
       ; short_documentation= "Thread safety analysis."
       ; cli_flags= Some {deprecated= ["-threadsafety"]; show_in_help= true}
       ; enabled_by_default= true

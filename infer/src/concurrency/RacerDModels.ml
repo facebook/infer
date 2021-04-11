@@ -23,6 +23,63 @@ let make_android_support_template suffix methods =
   [ {default with classname= "android.support.v4.util." ^ suffix; methods}
   ; {default with classname= "androidx.core.util." ^ suffix; methods} ]
 
+let is_csharp_container_write =
+  let open MethodMatcher in 
+  [ {default with classname= "System.Collections.Generic.List`1"
+    ; methods= 
+      [ "Add"
+      ; "AddRange"
+      ; "Clear"
+      ; "Insert"
+      ; "InsertRange"
+      ; "Remove"
+      ; "RemoveAll"
+      ; "RemoveAt"
+      ; "RemoveRange"
+      ; "set_Item" ] } 
+  ; {default with classname= "System.Collections.Generic.Dictionary`2"
+    ; methods=
+      [ "Add" 
+      ; "Clear"
+      ; "Remove"
+      ; "TryAdd"
+      ; "set_Item"] } ]
+  |> of_records
+
+let is_csharp_container_read =
+  let open MethodMatcher in
+  [ {default with classname= "System.Collections.Generic.List`1"
+    ; methods= 
+      [ "BinarySearch"
+      ; "Contains"
+      ; "CopyTo"
+      ; "Equals"
+      ; "Exists"
+      ; "Find"
+      ; "FindAll"
+      ; "FindIndex"
+      ; "FindLast"
+      ; "FindLastIndex"
+      ; "GetEnumerator"
+      ; "GetHashCode"
+      ; "GetRange"
+      ; "IndexOf"
+      ; "LastIndexOf"
+      ; "MemberwiseClone"
+      ; "ToArray"
+      ; "TrueForAll"
+      ; "get_Item"
+      ; "get_Count" ] }
+  ; {default with classname= "System.Collections.Generic.Dictionary`2" 
+    ; methods=
+      [ "ContainsKey"
+      ; "ContainsValue"
+      ; "Equals"
+      ; "GetHashCode" 
+      ; "TryGetValue"
+      ; "get_Item"
+      ; "get_Count" ] } ]
+  |> of_records
 
 let is_java_container_write =
   let open MethodMatcher in
@@ -135,6 +192,8 @@ let is_cpp_container_write =
 
 let is_container_write tenv pn =
   match pn with
+  | Procname.CSharp _ when is_csharp_container_write tenv pn [] ->
+      true
   | Procname.Java _ when is_java_container_write tenv pn [] ->
       true
   | (Procname.ObjC_Cpp _ | C _) when is_cpp_container_write pn ->
@@ -145,6 +204,8 @@ let is_container_write tenv pn =
 
 let is_container_read tenv pn =
   match pn with
+  | Procname.CSharp _ -> 
+      is_csharp_container_read tenv pn [] 
   | Procname.Java _ ->
       is_java_container_read tenv pn []
   (* The following order matters: we want to check if pname is a container write

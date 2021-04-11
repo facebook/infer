@@ -419,7 +419,7 @@ let analyze_procedure ({InterproceduralAnalysis.proc_desc; tenv} as interproc) =
     let proc_data = {interproc; formals} in
     let loc = Procdesc.get_loc proc_desc in
     let set_lock_state_for_synchronized_proc astate =
-      if Procdesc.is_java_synchronized proc_desc then
+      if (Procdesc.is_java_synchronized proc_desc || Procdesc.is_csharp_synchronized proc_desc) then
         Domain.Lock.make_java_synchronized formals procname
         |> Option.to_list
         |> Domain.acquire ~tenv astate ~procname ~loc

@@ -56,6 +56,18 @@ let parse_cil_procname (json : Safe.t) : Procname.t =
   match method_name with
   | "__new" ->
       BuiltinDecl.__new
+  | "__new_array" ->
+    BuiltinDecl.__new_array
+  | "__set_locked_attribute" ->
+    BuiltinDecl.__set_locked_attribute
+  | "__delete_locked_attribute" ->
+    BuiltinDecl.__delete_locked_attribute
+  | "__instanceof" ->
+    BuiltinDecl.__instanceof
+  (* We exclude this for now as it would require significant effort unrelated to our support of
+  null deref/resource leak/thread safety violation detection. *)
+  (*| "__unwrap_exception" ->
+    BuiltinDecl.__unwrap_exception*) 
   | _ ->
       let return_type =
         if String.equal Procname.CSharp.constructor_method_name method_name then None

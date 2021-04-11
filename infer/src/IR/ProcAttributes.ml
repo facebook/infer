@@ -54,6 +54,7 @@ type t =
   ; is_bridge_method: bool  (** the procedure is a bridge method *)
   ; is_defined: bool  (** true if the procedure is defined, and not just declared *)
   ; is_java_synchronized_method: bool  (** the procedure is a Java synchronized method *)
+  ; is_csharp_synchronized_method: bool (** the procedure is a C# synchronized method *)
   ; passed_as_noescape_block_to: Procname.t option
         (** Present if the procedure is an Objective-C block that has been passed to the given
             method in a position annotated with the NS_NOESCAPE attribute. *)
@@ -121,6 +122,7 @@ let default translation_unit proc_name =
   ; is_bridge_method= false
   ; is_defined= false
   ; is_java_synchronized_method= false
+  ; is_csharp_synchronized_method= false
   ; passed_as_noescape_block_to= None
   ; is_no_return= false
   ; is_objc_arc_on= false
@@ -167,6 +169,7 @@ let pp f
      ; is_bridge_method
      ; is_defined
      ; is_java_synchronized_method
+     ; is_csharp_synchronized_method
      ; passed_as_noescape_block_to
      ; is_no_return
      ; is_objc_arc_on
@@ -210,6 +213,8 @@ let pp f
   pp_bool_default ~default:default.is_defined "is_defined" is_defined f () ;
   pp_bool_default ~default:default.is_java_synchronized_method "is_java_synchronized_method"
     is_java_synchronized_method f () ;
+  pp_bool_default ~default:default.is_csharp_synchronized_method "is_csharp_synchronized_method"
+    is_csharp_synchronized_method f () ;
   if
     not
       ([%compare.equal: Procname.t option] default.passed_as_noescape_block_to

@@ -37,6 +37,7 @@ type t =
   ; is_bridge_method: bool  (** the procedure is a bridge method *)
   ; is_defined: bool  (** true if the procedure is defined, and not just declared *)
   ; is_java_synchronized_method: bool  (** the procedure is a Java synchronized method *)
+  ; is_csharp_synchronized_method: bool (** the procedure is a C# synchronized method *)
   ; passed_as_noescape_block_to: Procname.t option
         (** Present if the procedure is an Objective-C block that has been passed to the given
             method in a position annotated with the NS_NOESCAPE attribute. *)
