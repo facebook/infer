@@ -325,6 +325,8 @@ module OneInstrPerNode (Base : S with module Node = DefaultNode) : sig
     S with type t = Base.t and module Node = InstrNode and type instrs_dir = Instrs.not_reversed
 
   val last_of_underlying_node : Procdesc.Node.t -> Node.t
+
+  val of_instr_opt : Procdesc.Node.t -> Sil.instr -> Node.t option
 end = struct
   type t = Base.t
 
@@ -340,6 +342,11 @@ end = struct
   let first_of_node node = (node, 0)
 
   let last_of_node node = (node, max 0 (Instrs.count (Base.instrs node) - 1))
+
+  let of_instr_opt node instr =
+    let instrs = Procdesc.Node.get_instrs node in
+    Instrs.find_instr_index instrs instr |> Option.map ~f:(fun index -> (node, index))
+
 
   let last_of_underlying_node = last_of_node
 

@@ -11,7 +11,8 @@ module BasicCost = CostDomain.BasicCost
 
 module Call = struct
   type t =
-    { loc: Location.t
+    { instr: Sil.instr
+    ; loc: Location.t
     ; pname: Procname.t
     ; node: Procdesc.Node.t
     ; args: (Exp.t * Typ.t) list
@@ -40,7 +41,7 @@ let add_if_hoistable inv_vars instr node source_nodes idom hoistable_calls =
          List.for_all ~f:(fun source -> Dominators.dominates idom node source) source_nodes
          && (* Check condition (2); id should be invariant already *)
          LoopInvariant.InvariantVars.mem (Var.of_id ret_id) inv_vars ->
-      HoistCalls.add {pname; loc; node; args; ret} hoistable_calls
+      HoistCalls.add {instr; pname; loc; node; args; ret} hoistable_calls
   | _ ->
       hoistable_calls
 
@@ -100,8 +101,8 @@ let do_report extract_cost_if_expensive proc_desc err_log (Call.{pname; loc} as 
 
 
 let get_cost_if_expensive tenv integer_type_widths get_callee_cost_summary_and_formals
-    inferbo_invariant_map inferbo_get_summary Call.{pname; node; ret; args} =
-  let last_node = InstrCFG.last_of_underlying_node node in
+    inferbo_invariant_map inferbo_get_summary Call.{instr; pname; node; ret; args} =
+  let last_node = Option.value_exn (InstrCFG.of_instr_opt node instr) in
   let inferbo_mem =
     let instr_node_id = InstrCFG.Node.id last_node in
     Option.value_exn (BufferOverrunAnalysis.extract_pre instr_node_id inferbo_invariant_map)

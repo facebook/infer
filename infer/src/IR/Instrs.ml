@@ -228,3 +228,8 @@ let instrs_get_normal_vars instrs =
            |> Ident.hashqueue_of_sequence ~init:res )
   in
   fold ~init:(Ident.HashQueue.create ()) ~f:do_instr instrs |> Ident.HashQueue.keys
+
+
+let find_instr_index instrs instr =
+  let instrs = get_underlying_not_reversed instrs in
+  Array.findi instrs ~f:(fun _index i -> Sil.equal_instr i instr) |> Option.map ~f:fst

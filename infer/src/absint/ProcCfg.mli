@@ -109,6 +109,8 @@ module OneInstrPerNode (Base : S with module Node = DefaultNode) : sig
     S with type t = Base.t and module Node = InstrNode and type instrs_dir = Instrs.not_reversed
 
   val last_of_underlying_node : Procdesc.Node.t -> Node.t
+
+  val of_instr_opt : Procdesc.Node.t -> Sil.instr -> Node.t option
 end
 
 module NormalOneInstrPerNode : module type of OneInstrPerNode (Normal)
