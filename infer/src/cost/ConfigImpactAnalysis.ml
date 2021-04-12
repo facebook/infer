@@ -472,7 +472,8 @@ module TransferFunctions = struct
     let dispatch : (Tenv.t, unit, unit) ProcnameDispatcher.ProcName.dispatcher =
       let open ProcnameDispatcher.ProcName in
       make_dispatcher
-        [ +PatternMatch.Java.implements_math &::.*--> ()
+        [ +PatternMatch.Java.implements_collection &:: "size" <>--> ()
+        ; +PatternMatch.Java.implements_math &::.*--> ()
         ; +PatternMatch.Java.implements_number &::.*--> ()
         ; +PatternMatch.Java.implements_system &::+ is_cheap_system_method &--> () ]
     in
