@@ -81,8 +81,6 @@ module InstrBasicCostWithReason = struct
     | None -> (
       match callee_cost_opt with
       | Some callee_cost ->
-          L.debug Analysis Verbose "@\nInstantiated cost : %a@\n" BasicCostWithReason.pp_hum
-            callee_cost ;
           callee_cost
       | _ ->
           ScubaLogging.cost_log_message ~label:"unmodeled_function_operation_cost"

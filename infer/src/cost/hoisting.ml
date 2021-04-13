@@ -8,23 +8,8 @@ open! IStd
 module F = Format
 module InstrCFG = ProcCfg.NormalOneInstrPerNode
 module BasicCost = CostDomain.BasicCost
-
-module Call = struct
-  type t =
-    { instr: Sil.instr
-    ; loc: Location.t
-    ; pname: Procname.t
-    ; node: Procdesc.Node.t
-    ; args: (Exp.t * Typ.t) list
-    ; ret: Ident.t * Typ.t }
-  [@@deriving compare]
-
-  let pp fmt {pname; loc} =
-    F.fprintf fmt "loop-invariant call to %a, at %a " Procname.pp pname Location.pp loc
-end
-
 module LoopNodes = AbstractDomain.FiniteSet (Procdesc.Node)
-module HoistCalls = AbstractDomain.FiniteSet (Call)
+module HoistCalls = AbstractDomain.FiniteSet (CostInstantiate.Call)
 
 (** Map loop_header -> instrs that can be hoisted out of the loop *)
 module LoopHeadToHoistInstrs = Procdesc.NodeMap
@@ -71,8 +56,8 @@ let get_hoist_inv_map tenv ~get_callee_purity reaching_defs_invariant_map loop_h
     loop_head_to_source_nodes LoopHeadToHoistInstrs.empty
 
 
-let do_report extract_cost_if_expensive proc_desc err_log (Call.{pname; loc} as call) loop_head_loc
-    =
+let do_report extract_cost_if_expensive proc_desc err_log
+    (CostInstantiate.Call.{pname; loc} as call) loop_head_loc =
   let exp_desc =
     F.asprintf "The call to %a at %a is loop-invariant" Procname.pp pname Location.pp loc
   in
@@ -100,43 +85,6 @@ let do_report extract_cost_if_expensive proc_desc err_log (Call.{pname; loc} as 
   Reporting.log_issue proc_desc err_log ~loc ~ltr LoopHoisting issue message
 
 
-let get_cost_if_expensive tenv integer_type_widths get_callee_cost_summary_and_formals
-    inferbo_invariant_map inferbo_get_summary Call.{instr; pname; node; ret; args} =
-  let last_node = Option.value_exn (InstrCFG.of_instr_opt node instr) in
-  let inferbo_mem =
-    let instr_node_id = InstrCFG.Node.id last_node in
-    Option.value_exn (BufferOverrunAnalysis.extract_pre instr_node_id inferbo_invariant_map)
-  in
-  let loc = InstrCFG.Node.loc last_node in
-  let get_summary pname = Option.map ~f:fst (get_callee_cost_summary_and_formals pname) in
-  let cost_opt =
-    match get_callee_cost_summary_and_formals pname with
-    | Some (CostDomain.{post= cost_record}, callee_formals) ->
-        let callee_cost = CostDomain.get_operation_cost cost_record in
-        if CostDomain.BasicCost.is_symbolic callee_cost.cost then
-          Some
-            (Cost.instantiate_cost ~default_closure_cost:Ints.NonNegativeInt.one integer_type_widths
-               ~inferbo_caller_mem:inferbo_mem ~callee_pname:pname ~callee_formals ~args
-               ~callee_cost ~loc)
-              .cost
-        else None
-    | None ->
-        let fun_arg_list =
-          List.map args ~f:(fun (exp, typ) ->
-              ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= ()} )
-        in
-        CostModels.Call.dispatch tenv pname fun_arg_list
-        |> Option.map ~f:(fun model ->
-               let model_env =
-                 let node_hash = InstrCFG.Node.hash last_node in
-                 BufferOverrunUtils.ModelEnv.mk_model_env pname ~node_hash loc tenv
-                   integer_type_widths inferbo_get_summary
-               in
-               model CostUtils.CostModelEnv.{get_summary; model_env} ~ret inferbo_mem )
-  in
-  Option.filter cost_opt ~f:CostDomain.BasicCost.is_symbolic
-
-
 let report_errors proc_desc tenv err_log get_callee_purity reaching_defs_invariant_map
     loop_head_to_source_nodes extract_cost_if_expensive =
   (* get dominators *)
@@ -162,33 +110,13 @@ let checker
     ({InterproceduralAnalysis.proc_desc; exe_env; err_log; analyze_dependency} as analysis_data) =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let tenv = Exe_env.get_proc_tenv exe_env proc_name in
-  let integer_type_widths = Exe_env.get_integer_type_widths exe_env proc_name in
   let cfg = InstrCFG.from_pdesc proc_desc in
   (* computes reaching defs: node -> (var -> node set) *)
   let reaching_defs_invariant_map = ReachingDefs.compute_invariant_map proc_desc in
   let loop_head_to_source_nodes = Loop_control.get_loop_head_to_source_nodes cfg in
   let extract_cost_if_expensive =
     if Config.hoisting_report_only_expensive then
-      let inferbo_invariant_map =
-        BufferOverrunAnalysis.cached_compute_invariant_map
-          (InterproceduralAnalysis.bind_payload ~f:fst3 analysis_data)
-      in
-      let open IOption.Let_syntax in
-      let get_callee_cost_summary_and_formals callee_pname =
-        let* callee_pdesc, (_inferbo, _purity, callee_costs_summary) =
-          analyze_dependency callee_pname
-        in
-        let+ callee_costs_summary = callee_costs_summary in
-        (callee_costs_summary, Procdesc.get_pvar_formals callee_pdesc)
-      in
-      let inferbo_get_summary callee_pname =
-        let* _callee_pdesc, (inferbo, _purity, _callee_costs_summary) =
-          analyze_dependency callee_pname
-        in
-        inferbo
-      in
-      get_cost_if_expensive tenv integer_type_widths get_callee_cost_summary_and_formals
-        inferbo_invariant_map inferbo_get_summary
+      CostInstantiate.get_cost_if_expensive analysis_data
     else fun _ -> None
   in
   let get_callee_purity callee_pname =

@@ -42,4 +42,6 @@ module Summary : sig
 end
 
 val checker :
-  (Summary.t option * CostDomain.summary option) InterproceduralAnalysis.t -> Summary.t option
+     (BufferOverrunAnalysisSummary.t option * Summary.t option * CostDomain.summary option)
+     InterproceduralAnalysis.t
+  -> Summary.t option

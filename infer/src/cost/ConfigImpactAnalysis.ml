@@ -366,26 +366,22 @@ module Dom = struct
       dispatch tenv pname args |> Option.is_some
 
 
-  let call tenv analyze_dependency callee args location
+  let call tenv analyze_dependency ~is_cheap_call callee args location
       ({config_checks; field_checks; unchecked_callees; unchecked_callees_cond} as astate) =
     if ConfigChecks.is_top config_checks then
-      let (callee_summary : Summary.t option), (cost_summary : CostDomain.summary option) =
+      let (callee_summary : Summary.t option) =
         match analyze_dependency callee with
         | None ->
-            (None, None)
-        | Some (_, analysis_data) ->
+            None
+        | Some (_, (_, analysis_data, _)) ->
             analysis_data
       in
       let is_expensive = is_known_expensive_method tenv callee args in
       let has_expensive_callee =
         Option.exists callee_summary ~f:Summary.has_known_expensive_callee
       in
-      if
-        (not is_expensive) && (not has_expensive_callee)
-        && Option.exists cost_summary ~f:(fun (cost_summary : CostDomain.summary) ->
-               let callee_cost = CostDomain.get_operation_cost cost_summary.post in
-               not (CostDomain.BasicCost.is_symbolic callee_cost.cost) )
-      then (* If callee is cheap by heuristics, ignore it. *)
+      if is_cheap_call && (not is_expensive) && not has_expensive_callee then
+        (* If callee is cheap by heuristics, ignore it. *)
         astate
       else
         let new_unchecked_callees, new_unchecked_callees_cond =
@@ -430,11 +426,17 @@ module Dom = struct
     else astate
 end
 
+type analysis_data =
+  { interproc:
+      (BufferOverrunAnalysisSummary.t option * Summary.t option * CostDomain.summary option)
+      InterproceduralAnalysis.t
+  ; get_is_cheap_call: CostInstantiate.Call.t -> bool }
+
 module TransferFunctions = struct
   module CFG = ProcCfg.Normal
   module Domain = Dom
 
-  type analysis_data = (Summary.t option * CostDomain.summary option) InterproceduralAnalysis.t
+  type nonrec analysis_data = analysis_data
 
   let is_java_boolean_value_method pname =
     Procname.get_class_name pname |> Option.exists ~f:(String.equal "java.lang.Boolean")
@@ -480,7 +482,7 @@ module TransferFunctions = struct
     fun tenv pname -> dispatch tenv pname |> Option.is_some
 
 
-  let exec_instr astate {InterproceduralAnalysis.tenv; analyze_dependency} _node instr =
+  let exec_instr astate {interproc= {tenv; analyze_dependency}; get_is_cheap_call} node instr =
     match (instr : Sil.instr) with
     | Load {id; e= Lvar pvar} ->
         Dom.load_config id pvar astate
@@ -495,15 +497,17 @@ module TransferFunctions = struct
         Dom.boolean_value ret id astate
     | Call (_, Const (Cfun callee), _, _, _) when is_known_cheap_method tenv callee ->
         astate
-    | Call ((ret, _), Const (Cfun callee), args, location, _) -> (
+    | Call (((ret_id, _) as ret), Const (Cfun callee), args, location, _) -> (
       match FbGKInteraction.get_config_check tenv callee args with
       | Some (`Config config) ->
-          Dom.call_config_check ret config astate
+          Dom.call_config_check ret_id config astate
       | Some (`Exp _) ->
           astate
       | None ->
           (* normal function calls *)
-          Dom.call tenv analyze_dependency callee args location astate )
+          let call = CostInstantiate.Call.{instr; loc= location; pname= callee; node; args; ret} in
+          let is_cheap_call = get_is_cheap_call call in
+          Dom.call tenv analyze_dependency ~is_cheap_call callee args location astate )
     | Prune (e, _, _, _) ->
         Dom.prune e astate
     | _ ->
@@ -525,6 +529,8 @@ let has_call_stmt proc_desc =
 
 
 let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
+  let get_is_cheap_call = CostInstantiate.get_is_cheap_call analysis_data in
+  let analysis_data = {interproc= analysis_data; get_is_cheap_call} in
   Option.map (Analyzer.compute_post analysis_data ~initial:Dom.init proc_desc) ~f:(fun astate ->
       let has_call_stmt = has_call_stmt proc_desc in
       Dom.to_summary ~has_call_stmt astate )
