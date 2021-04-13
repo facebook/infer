@@ -326,7 +326,7 @@ module Liveness = struct
 
     let is_last_instr_in_node instr node = phys_equal (last_instr_in_node node) instr
 
-    let exec_instr ((active_defs, to_nullify) as astate) extras node instr =
+    let exec_instr ((active_defs, to_nullify) as astate) extras node _ instr =
       let astate' =
         match instr with
         | Sil.Load {id= lhs_id} ->

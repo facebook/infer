@@ -65,11 +65,11 @@ val last : _ t -> Sil.instr option
 
 val find_map : _ t -> f:(Sil.instr -> 'a option) -> 'a option
 
-val find_instr_index : not_reversed t -> Sil.instr -> int option
-
 val pp : Pp.env -> Format.formatter -> _ t -> unit
 
 val fold : (_ t, Sil.instr, 'a) Container.fold
+
+val foldi : _ t -> init:'a -> f:(int -> 'a -> Sil.instr -> 'a) -> 'a
 
 val iter : (_ t, Sil.instr) Container.iter
 

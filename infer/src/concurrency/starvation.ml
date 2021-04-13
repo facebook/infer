@@ -259,7 +259,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         astate
 
 
-  let exec_instr (astate : Domain.t) ({interproc= {proc_desc; tenv}; formals} as analysis_data) _
+  let exec_instr (astate : Domain.t) ({interproc= {proc_desc; tenv}; formals} as analysis_data) _ _
       instr =
     let open ConcurrencyModels in
     let open StarvationModels in

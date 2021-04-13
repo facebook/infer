@@ -314,10 +314,16 @@ module TransferFunctions = struct
     Dom.Mem.add_unknown ret ~location mem
 
 
-  let exec_instr : Dom.Mem.t -> analysis_data -> CFG.Node.t -> Sil.instr -> Dom.Mem.t =
+  let exec_instr :
+         Dom.Mem.t
+      -> analysis_data
+      -> CFG.Node.t
+      -> ProcCfg.InstrNode.instr_index
+      -> Sil.instr
+      -> Dom.Mem.t =
    fun mem
        ({interproc= {proc_desc; tenv}; get_summary; oenv= {integer_type_widths}} as analysis_data)
-       node instr ->
+       node _ instr ->
     match instr with
     | Load {id} when Ident.is_none id ->
         mem

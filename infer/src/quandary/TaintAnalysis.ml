@@ -671,7 +671,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
 
     let exec_instr (astate : Domain.t) ({analysis_data= {proc_desc}; formal_map} as analysis_data) _
-        (instr : HilInstr.t) =
+        _ (instr : HilInstr.t) =
       match instr with
       | Assign (Base (Var.ProgramVar pvar, _), HilExp.Exception _, _) when Pvar.is_return pvar ->
           (* the Java frontend translates `throw Exception` as `return Exception`, which is a bit

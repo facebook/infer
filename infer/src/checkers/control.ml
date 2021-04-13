@@ -133,7 +133,7 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
      along with the loop header that CV is originating from
      - a loop exit node, remove control variables of its guard nodes
      This is correct because the CVs are only going to be temporaries. *)
-  let exec_instr astate (nodes, {exit_map; loop_head_to_guard_nodes}) (node : CFG.Node.t) _ =
+  let exec_instr astate (nodes, {exit_map; loop_head_to_guard_nodes}) (node : CFG.Node.t) _ _ =
     let node = CFG.Node.underlying_node node in
     let astate' =
       match LoopHeadToGuardNodes.find_opt node loop_head_to_guard_nodes with

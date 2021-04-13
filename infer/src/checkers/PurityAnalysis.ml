@@ -143,7 +143,7 @@ module TransferFunctions = struct
   let modified_global ae = HilExp.AccessExpression.get_base ae |> fst |> Var.is_global
 
   let exec_instr (astate : Domain.t) {tenv; inferbo_invariant_map; formals; get_callee_summary}
-      (node : CFG.Node.t) (instr : HilInstr.t) =
+      (node : CFG.Node.t) _ (instr : HilInstr.t) =
     let (node_id : InstrCFG.Node.id) =
       CFG.Node.underlying_node node |> InstrCFG.last_of_underlying_node |> InstrCFG.Node.id
     in

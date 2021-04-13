@@ -61,7 +61,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   (** Take an abstract state and instruction, produce a new abstract state *)
   let exec_instr (astate : ResourceLeakCSDomain.t)
-      {InterproceduralAnalysis.proc_desc; tenv; analyze_dependency; _} _ (instr : HilInstr.t) =
+      {InterproceduralAnalysis.proc_desc; tenv; analyze_dependency; _} _ _ (instr : HilInstr.t) =
     let assign_type_map = type_map := ResourceLeakCSDomain.get_type_map in
     assign_type_map ;
     let is_not_enumerable =

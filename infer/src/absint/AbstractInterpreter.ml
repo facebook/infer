@@ -90,7 +90,7 @@ module type NodeTransferFunctions = sig
 
   val exec_node_instrs :
        Domain.t State.t option
-    -> exec_instr:(Domain.t -> Sil.instr -> Domain.t)
+    -> exec_instr:(ProcCfg.InstrNode.instr_index -> Domain.t -> Sil.instr -> Domain.t)
     -> Domain.t
     -> _ Instrs.t
     -> Domain.t
@@ -103,7 +103,7 @@ module SimpleNodeTransferFunctions (T : TransferFunctions.SIL) = struct
   include T
 
   let exec_node_instrs _old_state_opt ~exec_instr pre instrs =
-    Instrs.fold ~init:pre instrs ~f:exec_instr
+    Instrs.foldi ~init:pre instrs ~f:exec_instr
 end
 
 (** build a disjunctive domain and transfer functions *)
@@ -181,7 +181,7 @@ struct
       F.fprintf f "@[<v>%d disjuncts:@;%a@]" (List.length disjuncts) pp_disjuncts disjuncts
   end
 
-  let exec_instr pre_disjuncts analysis_data node instr =
+  let exec_instr pre_disjuncts analysis_data node _ instr =
     List.foldi pre_disjuncts ~init:[] ~f:(fun i post_disjuncts pre_disjunct ->
         let should_skip =
           let (`UnderApproximateAfter n) = DConfig.join_policy in
@@ -211,7 +211,7 @@ struct
     List.foldi pre ~init:current_post ~f:(fun i post_disjuncts pre_disjunct ->
         if is_new_pre pre_disjunct then (
           L.d_printfln "@[<v2>Executing node from disjunct #%d@;" i ;
-          let disjuncts' = Instrs.fold ~init:[pre_disjunct] instrs ~f:exec_instr in
+          let disjuncts' = Instrs.foldi ~init:[pre_disjunct] instrs ~f:exec_instr in
           L.d_printfln "@]@\n" ;
           Domain.join post_disjuncts disjuncts' )
         else (
@@ -294,11 +294,11 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
   let exec_node_instrs old_state_opt ~pp_instr proc_data node pre =
     let instrs = CFG.instrs node in
     if Config.write_html then L.d_printfln_escaped "PRE STATE:@\n@[%a@]@\n" Domain.pp pre ;
-    let exec_instr pre instr =
+    let exec_instr idx pre instr =
       AnalysisState.set_instr instr ;
       let result =
         try
-          let post = TransferFunctions.exec_instr pre proc_data node instr in
+          let post = TransferFunctions.exec_instr pre proc_data node idx instr in
           (* don't forget to reset this so we output messages for future errors too *)
           logged_error := false ;
           Ok post

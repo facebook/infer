@@ -6,14 +6,12 @@
  *)
 open! IStd
 module F = Format
-module InstrCFG = ProcCfg.NormalOneInstrPerNode
 
 module Call = struct
   type t =
-    { instr: Sil.instr
-    ; loc: Location.t
+    { loc: Location.t
     ; pname: Procname.t
-    ; node: Procdesc.Node.t
+    ; node: ProcCfg.InstrNode.t
     ; args: (Exp.t * Typ.t) list
     ; ret: Ident.t * Typ.t }
   [@@deriving compare]
@@ -40,13 +38,12 @@ let get_symbolic_cost
     ; get_callee_cost_summary_and_formals
     ; inferbo_invariant_map
     ; inferbo_get_summary
-    ; call= Call.{instr; pname; node; ret; args} } =
-  let last_node = Option.value_exn (InstrCFG.of_instr_opt node instr) in
+    ; call= Call.{pname; node; ret; args} } =
   let inferbo_mem =
-    let instr_node_id = InstrCFG.Node.id last_node in
-    Option.value_exn (BufferOverrunAnalysis.extract_pre instr_node_id inferbo_invariant_map)
+    Option.value_exn
+      (BufferOverrunAnalysis.extract_pre (ProcCfg.InstrNode.id node) inferbo_invariant_map)
   in
-  let loc = InstrCFG.Node.loc last_node in
+  let loc = ProcCfg.InstrNode.loc node in
   let get_symbolic cost =
     if CostDomain.BasicCost.is_symbolic cost then `SymbolicCost cost else `Cheap
   in
@@ -68,7 +65,7 @@ let get_symbolic_cost
       CostModels.Call.dispatch tenv pname fun_arg_list
       |> Option.value_map ~default:`NoModel ~f:(fun model ->
              let model_env =
-               let node_hash = InstrCFG.Node.hash last_node in
+               let node_hash = ProcCfg.InstrNode.hash node in
                BufferOverrunUtils.ModelEnv.mk_model_env pname ~node_hash loc tenv
                  integer_type_widths inferbo_get_summary
              in

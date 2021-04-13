@@ -22,12 +22,13 @@ module type S = sig
   (** type of the instructions the transfer functions operate on *)
   type instr
 
-  val exec_instr : Domain.t -> analysis_data -> CFG.Node.t -> instr -> Domain.t
-  (** [exec_instr astate proc_data node instr] should usually return [astate'] such that
+  val exec_instr :
+    Domain.t -> analysis_data -> CFG.Node.t -> ProcCfg.InstrNode.instr_index -> instr -> Domain.t
+  (** [exec_instr astate proc_data node idx instr] should usually return [astate'] such that
       [{astate} instr {astate'}] is a valid Hoare triple. In other words, [exec_instr] defines how
       executing an instruction from a given abstract state changes that state into a new one. This
       is usually called the {i transfer function} in Abstract Interpretation terms. [node] is the
-      node containing the current instruction. *)
+      node containing the current instruction and [idx] is the index of the instruction in the node. *)
 
   val pp_session_name : CFG.Node.t -> Format.formatter -> unit
   (** print session name for HTML debug *)

@@ -38,6 +38,8 @@ module MockNode = struct
 
   module IdMap = PrettyPrintable.MakePPMap (OrderedId)
   module IdSet = PrettyPrintable.MakePPSet (OrderedId)
+
+  let to_instr _ _ = assert false
 end
 
 module MockProcCfg = struct

@@ -9,10 +9,9 @@ open! IStd
 
 module Call : sig
   type t =
-    { instr: Sil.instr
-    ; loc: Location.t
+    { loc: Location.t
     ; pname: Procname.t
-    ; node: Procdesc.Node.t
+    ; node: ProcCfg.InstrNode.t
     ; args: (Exp.t * Typ.t) list
     ; ret: Ident.t * Typ.t }
   [@@deriving compare]

@@ -343,7 +343,7 @@ module TransferFunctions = struct
     report_on_non_nullable_arg ?annotations domain args
 
 
-  let exec_instr (astate : Domain.t) {IntraproceduralAnalysis.proc_desc; err_log} _cfg_node
+  let exec_instr (astate : Domain.t) {IntraproceduralAnalysis.proc_desc; err_log} _cfg_node _
       (instr : Sil.instr) =
     let attributes = Procdesc.get_attributes proc_desc in
     let astate = report_unchecked_strongself_issues_on_exps proc_desc err_log astate instr in

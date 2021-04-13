@@ -129,7 +129,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let at_least_nonbottom = Domain.join (NonBottom SiofTrace.bottom, Domain.VarNames.empty)
 
   let exec_instr astate
-      ({InterproceduralAnalysis.proc_desc; analyze_dependency; _} as analysis_data) _
+      ({InterproceduralAnalysis.proc_desc; analyze_dependency; _} as analysis_data) _ _
       (instr : Sil.instr) =
     match instr with
     | Store {e1= Lvar global; typ= Typ.{desc= Tptr _}; e2= Lvar _; loc}

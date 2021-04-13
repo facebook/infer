@@ -183,7 +183,7 @@ module TransferFunctions (LConfig : LivenessConfig) (CFG : ProcCfg.S) = struct
     List.fold actuals ~f:(fun acc_ exp -> exp_add_live exp acc_) ~init:live_acc
 
 
-  let exec_instr astate proc_desc _ = function
+  let exec_instr astate proc_desc _ _ = function
     | Sil.Load {id= lhs_id} when Ident.is_none lhs_id ->
         (* dummy deref inserted by frontend--don't count as a read *)
         astate
@@ -268,7 +268,7 @@ module PassedByRefTransferFunctions (CFG : ProcCfg.S) = struct
     proc_name_of_expr expr |> Option.exists ~f:CheckerMode.is_dangerous_proc_name
 
 
-  let exec_instr astate () _ (instr : Sil.instr) =
+  let exec_instr astate () _ _ (instr : Sil.instr) =
     let astate =
       match instr with
       | Call (_ret, f, actuals, _loc, _flags) when not (is_dangerous f) ->

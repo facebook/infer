@@ -482,7 +482,7 @@ module TransferFunctions = struct
     fun tenv pname -> dispatch tenv pname |> Option.is_some
 
 
-  let exec_instr astate {interproc= {tenv; analyze_dependency}; get_is_cheap_call} node instr =
+  let exec_instr astate {interproc= {tenv; analyze_dependency}; get_is_cheap_call} node idx instr =
     match (instr : Sil.instr) with
     | Load {id; e= Lvar pvar} ->
         Dom.load_config id pvar astate
@@ -505,7 +505,10 @@ module TransferFunctions = struct
           astate
       | None ->
           (* normal function calls *)
-          let call = CostInstantiate.Call.{instr; loc= location; pname= callee; node; args; ret} in
+          let call =
+            CostInstantiate.Call.
+              {loc= location; pname= callee; node= CFG.Node.to_instr idx node; args; ret}
+          in
           let is_cheap_call = get_is_cheap_call call in
           Dom.call tenv analyze_dependency ~is_cheap_call callee args location astate )
     | Prune (e, _, _, _) ->

@@ -22,6 +22,8 @@ module RevArray : sig
   val last_opt : 'a t -> 'a option
 
   val fold : ('a t, 'a, 'accum) Container.fold
+
+  val foldi : 'a t -> init:'accum -> f:(int -> 'accum -> 'a -> 'accum) -> 'accum
 end = struct
   type 'a t = 'a Array.t
 
@@ -38,6 +40,13 @@ end = struct
   let fold a ~init ~f =
     let f = Fn.flip f in
     Array.fold_right a ~init ~f
+
+
+  let foldi a ~init ~f =
+    let idx = ref (Array.length a) in
+    Array.fold_right a ~init ~f:(fun elt acc ->
+        decr idx ;
+        f !idx acc elt )
 end
 
 type reversed
@@ -168,6 +177,18 @@ let fold (type r) (t : r t) ~init ~f =
       RevArray.fold rev_instrs ~init ~f
 
 
+let foldi (type r) (t : r t) ~init ~f =
+  match t with
+  | Empty ->
+      init
+  | Singleton instr ->
+      f 0 init instr
+  | NotReversed instrs ->
+      Array.foldi instrs ~init ~f
+  | Reversed rev_instrs ->
+      RevArray.foldi rev_instrs ~init ~f
+
+
 let iter t ~f = Container.iter ~fold t ~f
 
 let exists t ~f = Container.exists ~iter t ~f
@@ -228,8 +249,3 @@ let instrs_get_normal_vars instrs =
            |> Ident.hashqueue_of_sequence ~init:res )
   in
   fold ~init:(Ident.HashQueue.create ()) ~f:do_instr instrs |> Ident.HashQueue.keys
-
-
-let find_instr_index instrs instr =
-  let instrs = get_underlying_not_reversed instrs in
-  Array.findi instrs ~f:(fun _index i -> Sil.equal_instr i instr) |> Option.map ~f:fst

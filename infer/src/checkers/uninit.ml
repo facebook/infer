@@ -209,7 +209,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let exec_instr (astate : Domain.t) {analysis_data= {proc_desc; tenv} as analysis_data; formals} _
-      (instr : HilInstr.t) =
+      _ (instr : HilInstr.t) =
     let check_access_expr ~loc rhs_access_expr =
       if should_report_var proc_desc tenv astate.maybe_uninit_vars rhs_access_expr then
         report_intra rhs_access_expr loc analysis_data
