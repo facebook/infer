@@ -48,5 +48,5 @@ val find_nonnullable_alternative : Procname.Java.t -> ModelTables.nonnull_altern
 (** Check if a (nullable) method has a non-nullable alternative: A method that does the same as
     [proc_name] but asserts the result is not null before returning to the caller. *)
 
-val is_field_nonnullable : Fieldname.t -> bool
-(** Check if a given field is known to be a non-nullable *)
+val is_field_nonnullable : Fieldname.t -> bool option
+(** Check if a given field has known nullability: true = nonnull, false = null *)

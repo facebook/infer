@@ -747,6 +747,7 @@ let field_nullability =
   ; ( "android.content.pm.ResolveInfo.providerInfo"
     , n (* Exactly one of activityInfo, serviceInfo, or providerInfo will be non-null. *) )
   ; ("android.content.res.Configuration.locale", o)
+  ; ("android.graphics.BitmapFactory$Options.inBitmap", n)
   ; ("android.graphics.Paint.Align.CENTER", o)
   ; ("android.graphics.Paint.Align.LEFT", o)
   ; ("android.graphics.Paint.Align.RIGHT", o)

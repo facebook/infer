@@ -260,20 +260,26 @@ let funcall_exp_to_original_pvar_exp tenv curr_pname typestate exp ~is_assignmen
 
 let add_field_to_typestate_if_absent tenv access_loc typestate pvar object_origin field_name
     ~field_class_typ ~class_under_analysis =
-  match TypeState.lookup_pvar pvar typestate with
-  | Some _ ->
-      typestate
-  | None -> (
-    match AnnotatedField.get tenv field_name ~class_typ:field_class_typ ~class_under_analysis with
-    | Some AnnotatedField.{annotated_type= field_type} ->
-        let range =
-          ( field_type.typ
-          , InferredNullability.create
-              (TypeOrigin.Field {object_origin; field_name; field_type; access_loc}) )
-        in
-        TypeState.add ~descr:"add_field_to_typestate_if_absent" pvar range typestate
-    | None ->
-        typestate )
+  L.d_with_indent ~name:"add_field_to_typestate_if_absent" (fun () ->
+      match TypeState.lookup_pvar pvar typestate with
+      | Some _ ->
+          typestate
+      | None -> (
+        match
+          AnnotatedField.get tenv field_name ~class_typ:field_class_typ ~class_under_analysis
+        with
+        | Some AnnotatedField.{annotated_type= field_type} ->
+            let range =
+              ( field_type.typ
+              , InferredNullability.create
+                  (TypeOrigin.Field {object_origin; field_name; field_type; access_loc}) )
+            in
+            let _, inferred_nullability = range in
+            L.d_printfln "Fieldname %a: typ=%a, inferred_nullability=%a" Fieldname.pp field_name
+              AnnotatedType.pp field_type InferredNullability.pp inferred_nullability ;
+            TypeState.add ~descr:"add_field_to_typestate_if_absent" pvar range typestate
+        | None ->
+            typestate ) )
 
 
 (* This does two things:
