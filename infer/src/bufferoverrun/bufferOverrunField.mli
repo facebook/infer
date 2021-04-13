@@ -23,7 +23,7 @@ val get_type : Fieldname.t -> Typ.t option
 val c_strlen : unit -> Fieldname.t
 (** Field for C string's length *)
 
-val cpp_vector_elem : vec_typ:Typ.t -> elt_typ:Typ.t -> Fieldname.t
+val cpp_vector_elem : vec_typ:Typ.t -> Fieldname.t
 (** Field for C++ vector's elements *)
 
 val java_collection_internal_array : Fieldname.t

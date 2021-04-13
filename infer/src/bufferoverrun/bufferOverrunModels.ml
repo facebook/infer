@@ -479,29 +479,30 @@ module StdArray = struct
 end
 
 module ArrObjCommon = struct
-  let deref_of {integer_type_widths} exp ~fn mem =
-    Dom.Val.get_all_locs (Sem.eval_arr integer_type_widths exp mem) |> PowLoc.append_field ~fn
+  let deref_of {integer_type_widths} exp ~fn ?fn_typ mem =
+    let typ = Option.map fn_typ ~f:Typ.mk_ptr in
+    Dom.Val.get_all_locs (Sem.eval_arr integer_type_widths exp mem) |> PowLoc.append_field ?typ ~fn
 
 
   let eval_size model_env exp ~fn mem =
     Sem.eval_array_locs_length (deref_of model_env exp ~fn mem) mem
 
 
-  let size_exec exp ~fn ({integer_type_widths} as model_env) ~ret:(id, _) mem =
+  let size_exec exp ~fn ?fn_typ ({integer_type_widths} as model_env) ~ret:(id, _) mem =
     let locs = Sem.eval integer_type_widths exp mem |> Dom.Val.get_all_locs in
     match PowLoc.is_singleton_or_more locs with
     | Singleton (BoField.Prim (Loc.Allocsite (Allocsite.LiteralString s))) ->
         model_by_value (Dom.Val.of_int (String.length s)) id mem
     | _ ->
-        let arr_locs = deref_of model_env exp ~fn mem in
+        let arr_locs = deref_of model_env exp ~fn ?fn_typ mem in
         let mem = Dom.Mem.add_stack (Loc.of_id id) (Sem.eval_array_locs_length arr_locs mem) mem in
         load_size_alias id arr_locs mem
 
 
-  let at arr_exp ~fn index_exp =
+  let at arr_exp ~fn ?fn_typ index_exp =
     let exec ({pname; location} as model_env) ~ret:(id, typ) mem =
       let array_v =
-        let locs = deref_of model_env arr_exp ~fn mem in
+        let locs = deref_of model_env arr_exp ~fn ?fn_typ mem in
         if PowLoc.is_bot locs then Dom.Val.unknown_from typ ~callee_pname:(Some pname) ~location
         else Dom.Mem.find_set locs mem
       in
@@ -516,13 +517,14 @@ module ArrObjCommon = struct
     {exec; check}
 
 
-  let copy_constructor model_env deref_of_tgt ~fn src_exp mem =
-    let deref_of_src = deref_of model_env src_exp ~fn mem in
+  let copy_constructor model_env deref_of_tgt ~fn ?fn_typ src_exp mem =
+    let deref_of_src = deref_of model_env src_exp ~fn ?fn_typ mem in
     Dom.Mem.update_mem deref_of_tgt (Dom.Mem.find_set deref_of_src mem) mem
 
 
-  let constructor_from_char_ptr ({integer_type_widths} as model_env) tgt_deref ~fn src mem =
-    let elem_locs = PowLoc.append_field tgt_deref ~fn in
+  let constructor_from_char_ptr ({integer_type_widths} as model_env) tgt_deref ~fn ?char_typ src mem
+      =
+    let elem_locs = PowLoc.append_field ?typ:(Option.map char_typ ~f:Typ.mk_ptr) tgt_deref ~fn in
     match src with
     | Exp.Const (Const.Cstr s) ->
         BoUtils.Exec.decl_string model_env ~do_alloc:true elem_locs s mem
@@ -545,16 +547,17 @@ end
 
 module StdVector = struct
   let append_field loc ~vec_typ ~elt_typ =
-    Loc.append_field loc (BufferOverrunField.cpp_vector_elem ~vec_typ ~elt_typ)
+    Loc.append_field ~typ:(Typ.mk_ptr elt_typ) loc (BufferOverrunField.cpp_vector_elem ~vec_typ)
 
 
   let append_fields locs ~vec_typ ~elt_typ =
-    PowLoc.append_field locs ~fn:(BufferOverrunField.cpp_vector_elem ~vec_typ ~elt_typ)
+    PowLoc.append_field ~typ:(Typ.mk_ptr elt_typ) locs
+      ~fn:(BufferOverrunField.cpp_vector_elem ~vec_typ)
 
 
   let deref_of model_env elt_typ {exp= vec_exp; typ= vec_typ} mem =
-    let fn = BufferOverrunField.cpp_vector_elem ~vec_typ ~elt_typ in
-    ArrObjCommon.deref_of model_env vec_exp ~fn mem
+    let fn = BufferOverrunField.cpp_vector_elem ~vec_typ in
+    ArrObjCommon.deref_of model_env vec_exp ~fn ~fn_typ:(Typ.mk_ptr elt_typ) mem
 
 
   (* The (3) constructor in https://en.cppreference.com/w/cpp/container/vector/vector *)
@@ -591,16 +594,19 @@ module StdVector = struct
         (Dom.Val.get_all_locs v, Dom.Val.get_traces v)
       in
       let deref_of_vec = append_fields vec_locs ~vec_typ ~elt_typ in
-      let fn = BufferOverrunField.cpp_vector_elem ~vec_typ ~elt_typ in
+      let fn = BufferOverrunField.cpp_vector_elem ~vec_typ in
       mem
       |> Dom.Mem.update_mem vec_locs (Dom.Val.of_pow_loc ~traces deref_of_vec)
-      |> ArrObjCommon.copy_constructor model_env deref_of_vec ~fn src_exp
+      |> ArrObjCommon.copy_constructor model_env deref_of_vec ~fn ~fn_typ:(Typ.mk_ptr elt_typ)
+           src_exp
     in
     {exec; check= no_check}
 
 
   let at elt_typ {exp= vec_exp; typ= vec_typ} index_exp =
-    ArrObjCommon.at vec_exp ~fn:(BufferOverrunField.cpp_vector_elem ~vec_typ ~elt_typ) index_exp
+    ArrObjCommon.at vec_exp
+      ~fn:(BufferOverrunField.cpp_vector_elem ~vec_typ)
+      ~fn_typ:(Typ.mk_ptr elt_typ) index_exp
 
 
   let set_size {location} locs new_size mem =
@@ -651,7 +657,9 @@ module StdVector = struct
 
   let size elt_typ {exp= vec_exp; typ= vec_typ} =
     let exec =
-      ArrObjCommon.size_exec vec_exp ~fn:(BufferOverrunField.cpp_vector_elem ~vec_typ ~elt_typ)
+      ArrObjCommon.size_exec vec_exp
+        ~fn:(BufferOverrunField.cpp_vector_elem ~vec_typ)
+        ~fn_typ:(Typ.mk_ptr elt_typ)
     in
     {exec; check= no_check}
 
@@ -728,8 +736,8 @@ module StdBasicString = struct
       let mem =
         Dom.Mem.update_mem tgt_locs (Dom.Val.of_pow_loc ~traces:Trace.Set.bottom tgt_deref) mem
       in
-      let fn = BufferOverrunField.cpp_vector_elem ~vec_typ:tgt_typ ~elt_typ:char_typ in
-      ArrObjCommon.constructor_from_char_ptr model_env tgt_deref src ~fn mem
+      let fn = BufferOverrunField.cpp_vector_elem ~vec_typ:tgt_typ in
+      ArrObjCommon.constructor_from_char_ptr model_env tgt_deref src ~fn ~char_typ mem
     in
     let check ({location; integer_type_widths} as model_env) mem cond_set =
       Option.value_map len_opt ~default:cond_set ~f:(fun len ->
@@ -1324,7 +1332,7 @@ module JavaString = struct
     {exec; check= no_check}
 
 
-  let length exp = {exec= ArrObjCommon.size_exec exp ~fn; check= no_check}
+  let length exp = {exec= ArrObjCommon.size_exec exp ~fn ?fn_typ:None; check= no_check}
 
   (** Given a string of length n, return itv [-1, n_u-1]. *)
   let range_itv_mone model_env exp mem =

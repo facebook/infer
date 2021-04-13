@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <string>
+
 namespace google {
 int StrLen(char*);
 }
@@ -15,4 +17,11 @@ void call_google_strlen_with_loop_linear(char* str) {
   int len = google::StrLen(str);
   for (int i = 0; i < len; i++) {
   }
+}
+
+void string_compare_linear(const std::string& a, const std::string& b) {
+  if (a != b) {
+    return 0;
+  }
+  return 1;
 }

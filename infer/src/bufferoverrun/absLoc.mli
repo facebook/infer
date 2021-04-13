@@ -111,7 +111,7 @@ module PowLoc : sig
 
   val get_parent_field : t -> t
 
-  val append_field : t -> fn:Fieldname.t -> t
+  val append_field : ?typ:Typ.t -> t -> fn:Fieldname.t -> t
 
   val append_star_field : t -> fn:Fieldname.t -> t
 
