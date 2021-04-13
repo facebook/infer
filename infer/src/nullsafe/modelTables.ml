@@ -767,6 +767,7 @@ let field_nullability =
   ; ("android.graphics.Typeface.SERIF", o)
   ; ("android.hardware.SensorEvent.values", o)
   ; ("android.net.Uri.EMPTY", o)
+  ; ("android.provider.ContactsContract$Contacts.CONTENT_URI", o)
   ; ("android.provider.MediaStore$Images$Media.EXTERNAL_CONTENT_URI", o)
   ; ("android.provider.MediaStore$Images$Media.INTERNAL_CONTENT_URI", o)
   ; ("android.provider.Settings$Global.CONTENT_URI", o)
