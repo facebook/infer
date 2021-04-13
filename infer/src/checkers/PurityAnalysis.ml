@@ -143,10 +143,8 @@ module TransferFunctions = struct
   let modified_global ae = HilExp.AccessExpression.get_base ae |> fst |> Var.is_global
 
   let exec_instr (astate : Domain.t) {tenv; inferbo_invariant_map; formals; get_callee_summary}
-      (node : CFG.Node.t) _ (instr : HilInstr.t) =
-    let (node_id : InstrCFG.Node.id) =
-      CFG.Node.underlying_node node |> InstrCFG.last_of_underlying_node |> InstrCFG.Node.id
-    in
+      (node : CFG.Node.t) idx (instr : HilInstr.t) =
+    let (node_id : InstrCFG.Node.id) = CFG.Node.to_instr idx node |> ProcCfg.InstrNode.id in
     let inferbo_mem = BufferOverrunAnalysis.extract_post node_id inferbo_invariant_map in
     if Option.is_none inferbo_mem then
       debug "Inferbo memory at %a was not found\n" InstrCFG.Node.pp_id node_id ;
