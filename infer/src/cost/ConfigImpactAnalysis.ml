@@ -294,7 +294,7 @@ module Dom = struct
 
   let store_field fn id ({mem; config_fields} as astate) =
     let {Val.config} = Mem.lookup (Loc.of_id id) mem in
-    if ConfigLifted.is_top config then astate
+    if ConfigLifted.is_bottom config then astate
     else {astate with config_fields= Fields.add fn config_fields}
 
 
