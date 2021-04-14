@@ -1017,7 +1017,7 @@ and config_impact_issues_tests =
 
 
 and config_impact_max_callees_to_print =
-  CLOpt.mk_int ~long:"config-impact-max-callees-to-print" ~default:3
+  CLOpt.mk_int ~long:"config-impact-max-callees-to-print" ~default:5
     ~in_help:InferCommand.[(Report, manual_generic); (ReportDiff, manual_generic)]
     ~meta:"int"
     "Specify the maximum number of unchecked callees to print in the config impact checker"
