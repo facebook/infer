@@ -16,7 +16,8 @@ type access_to_invalid_address =
   { calling_context: (CallEvent.t * Location.t) list
   ; invalidation: Invalidation.t
   ; invalidation_trace: Trace.t
-  ; access_trace: Trace.t }
+  ; access_trace: Trace.t
+  ; must_be_valid_reason: Invalidation.must_be_valid_reason option }
 [@@deriving compare, equal]
 
 type read_uninitialized_value = {calling_context: (CallEvent.t * Location.t) list; trace: Trace.t}
@@ -257,8 +258,8 @@ let get_trace = function
 
 
 let get_issue_type = function
-  | AccessToInvalidAddress {invalidation; _} ->
-      Invalidation.issue_type_of_cause invalidation
+  | AccessToInvalidAddress {invalidation; must_be_valid_reason} ->
+      Invalidation.issue_type_of_cause invalidation must_be_valid_reason
   | MemoryLeak _ ->
       IssueType.pulse_memory_leak
   | ReadUninitializedValue _ ->

@@ -620,7 +620,7 @@ let check_all_valid callee_proc_name call_location {AbductiveDomain.pre; _} call
         match BaseAddressAttributes.get_must_be_valid addr_pre (pre :> BaseDomain.t).attrs with
         | None ->
             astate_result
-        | Some callee_access_trace ->
+        | Some (callee_access_trace, must_be_valid_reason) ->
             let access_trace = mk_access_trace callee_access_trace in
             AddressAttributes.check_valid access_trace addr_caller astate
             |> Result.map_error ~f:(fun (invalidation, invalidation_trace) ->
@@ -628,7 +628,11 @@ let check_all_valid callee_proc_name call_location {AbductiveDomain.pre; _} call
                    AccessResult.ReportableError
                      { diagnostic=
                          Diagnostic.AccessToInvalidAddress
-                           {calling_context= []; invalidation; invalidation_trace; access_trace}
+                           { calling_context= []
+                           ; invalidation
+                           ; invalidation_trace
+                           ; access_trace
+                           ; must_be_valid_reason }
                      ; astate } )
       in
       match BaseAddressAttributes.get_must_be_initialized addr_pre (pre :> BaseDomain.t).attrs with
@@ -678,7 +682,11 @@ let isl_check_all_invalid invalid_addr_callers callee_proc_name call_location
                 (AccessResult.ReportableError
                    { diagnostic=
                        Diagnostic.AccessToInvalidAddress
-                         {calling_context= []; invalidation; invalidation_trace; access_trace}
+                         { calling_context= []
+                         ; invalidation
+                         ; invalidation_trace
+                         ; access_trace
+                         ; must_be_valid_reason= None }
                    ; astate }) ) ) )
     invalid_addr_callers (Ok astate)
 

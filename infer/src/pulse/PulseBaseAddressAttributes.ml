@@ -116,8 +116,8 @@ let remove_isl_abduced_attr address memory =
 
 let remove_must_be_valid_attr address memory =
   match get_attribute Attributes.get_must_be_valid address memory with
-  | Some trace ->
-      remove_one address (Attribute.MustBeValid trace) memory
+  | Some (trace, reason) ->
+      remove_one address (Attribute.MustBeValid (trace, reason)) memory
   | None ->
       memory
 
@@ -136,14 +136,14 @@ let get_must_be_valid = get_attribute Attributes.get_must_be_valid
 
 let get_must_be_valid_or_allocated_isl address attrs =
   match get_must_be_valid address attrs with
-  | Some trace ->
-      Some trace
+  | Some (trace, reason) ->
+      (Some trace, reason)
   | None -> (
     match get_attribute Attributes.get_allocation address attrs with
     | Some (_, trace) ->
-        Some trace
+        (Some trace, None)
     | None ->
-        get_attribute Attributes.get_isl_abduced address attrs )
+        (get_attribute Attributes.get_isl_abduced address attrs, None) )
 
 
 let get_must_be_initialized = get_attribute Attributes.get_must_be_initialized

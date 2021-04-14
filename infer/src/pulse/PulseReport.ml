@@ -87,7 +87,8 @@ let report_summary_error tenv proc_desc err_log
              { calling_context= []
              ; invalidation= ConstantDereference IntLit.zero
              ; invalidation_trace= Immediate {location= Procdesc.get_loc proc_desc; history= []}
-             ; access_trace= must_be_valid }) ;
+             ; access_trace= fst must_be_valid
+             ; must_be_valid_reason= snd must_be_valid }) ;
       LatentInvalidAccess {astate; address; must_be_valid; calling_context= []}
   | ISLError astate ->
       ISLLatentMemoryError astate

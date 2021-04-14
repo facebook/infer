@@ -23,7 +23,7 @@ type 'abductive_domain_t base_t =
   | LatentInvalidAccess of
       { astate: AbductiveDomain.summary
       ; address: AbstractValue.t
-      ; must_be_valid: (Trace.t[@yojson.opaque])
+      ; must_be_valid: (Trace.t * Invalidation.must_be_valid_reason option[@yojson.opaque])
       ; calling_context: ((CallEvent.t * Location.t) list[@yojson.opaque]) }
   | ISLLatentMemoryError of AbductiveDomain.summary
 [@@deriving equal, compare, yojson_of]

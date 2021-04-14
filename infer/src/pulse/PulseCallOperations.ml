@@ -173,7 +173,8 @@ let apply_callee tenv ~caller_proc_desc callee_pname call_loc callee_exec_state 
                                     { calling_context
                                     ; invalidation
                                     ; invalidation_trace
-                                    ; access_trace= must_be_valid }
+                                    ; access_trace= fst must_be_valid
+                                    ; must_be_valid_reason= snd must_be_valid }
                               ; astate= (astate_summary :> AbductiveDomain.t) })) ) ) ) )
   | ISLLatentMemoryError astate ->
       map_call_result ~is_isl_error_prepost:true

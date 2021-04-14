@@ -21,7 +21,8 @@ type access_to_invalid_address =
             further assumptions *)
   ; access_trace: Trace.t
         (** assuming we are in the calling context, the trace leads to an access to the value
-            invalidated in [invalidation_trace] without further assumptions *) }
+            invalidated in [invalidation_trace] without further assumptions *)
+  ; must_be_valid_reason: Invalidation.must_be_valid_reason option }
 [@@deriving compare, equal, yojson_of]
 
 type read_uninitialized_value =

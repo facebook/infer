@@ -681,7 +681,11 @@ module GenericArrayBackedCollectionIterator = struct
           (ReportableError
              { diagnostic=
                  Diagnostic.AccessToInvalidAddress
-                   {calling_context= []; invalidation= EndIterator; invalidation_trace; access_trace}
+                   { calling_context= []
+                   ; invalidation= EndIterator
+                   ; invalidation_trace
+                   ; access_trace
+                   ; must_be_valid_reason= None }
              ; astate })
       else Ok astate
     in

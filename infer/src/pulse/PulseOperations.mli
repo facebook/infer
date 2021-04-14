@@ -30,14 +30,19 @@ module Import : sig
     | LatentInvalidAccess of
         { astate: AbductiveDomain.summary
         ; address: AbstractValue.t
-        ; must_be_valid: Trace.t
+        ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option
         ; calling_context: (CallEvent.t * Location.t) list }
     | ISLLatentMemoryError of AbductiveDomain.summary
 
   type 'astate base_error = 'astate AccessResult.error =
-    | PotentialInvalidAccess of {astate: 'astate; address: AbstractValue.t; must_be_valid: Trace.t}
+    | PotentialInvalidAccess of
+        { astate: 'astate
+        ; address: AbstractValue.t
+        ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
     | PotentialInvalidAccessSummary of
-        {astate: AbductiveDomain.summary; address: AbstractValue.t; must_be_valid: Trace.t}
+        { astate: AbductiveDomain.summary
+        ; address: AbstractValue.t
+        ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
     | ReportableError of {astate: 'astate; diagnostic: Diagnostic.t}
     | ISLError of 'astate
 

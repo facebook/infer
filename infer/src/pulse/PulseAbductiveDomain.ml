@@ -163,7 +163,8 @@ module Stack = struct
         let post_attrs =
           if Config.pulse_isl then
             let access_trace = Trace.Immediate {location; history= []} in
-            BaseAddressAttributes.add_one addr (MustBeValid access_trace)
+            BaseAddressAttributes.add_one addr
+              (MustBeValid (access_trace, None))
               (astate.post :> base_domain).attrs
           else (astate.post :> base_domain).attrs
         in
@@ -242,7 +243,7 @@ module AddressAttributes = struct
   let check_valid access_trace addr astate =
     let+ () = BaseAddressAttributes.check_valid addr (astate.post :> base_domain).attrs in
     (* if [address] is in [pre] and it should be valid then that fact goes in the precondition *)
-    abduce_attribute addr (MustBeValid access_trace) astate
+    abduce_attribute addr (MustBeValid (access_trace, None)) astate
 
 
   let check_initialized access_trace addr astate =
@@ -312,6 +313,14 @@ module AddressAttributes = struct
     map_post_attrs astate ~f:(BaseAddressAttributes.mark_as_end_of_collection addr)
 
 
+  let replace_must_be_valid_reason reason addr astate =
+    match BaseAddressAttributes.get_must_be_valid addr (astate.pre :> base_domain).attrs with
+    | Some (trace, _reason) ->
+        abduce_attribute addr (MustBeValid (trace, Some reason)) astate
+    | None ->
+        astate
+
+
   let is_end_of_collection addr astate =
     BaseAddressAttributes.is_end_of_collection addr (astate.post :> base_domain).attrs
 
@@ -353,7 +362,7 @@ module AddressAttributes = struct
         BaseAddressAttributes.get_must_be_valid_or_allocated_isl addr
           (astate.post :> BaseDomain.t).attrs
       with
-      | None ->
+      | None, reason ->
           let null_astates =
             if PathCondition.is_known_not_equal_zero astate.path_condition addr then []
             else
@@ -369,7 +378,7 @@ module AddressAttributes = struct
             else
               let valid_astate =
                 let abdalloc = Attribute.ISLAbduced access_trace in
-                let valid_attr = Attribute.MustBeValid access_trace in
+                let valid_attr = Attribute.MustBeValid (access_trace, reason) in
                 add_one addr abdalloc astate |> abduce_attribute addr valid_attr
                 |> abduce_attribute addr abdalloc
               in
@@ -381,7 +390,7 @@ module AddressAttributes = struct
               [Ok valid_astate; Error (`ISLError invalid_free)]
           in
           not_null_astates @ null_astates
-      | Some _ ->
+      | Some _, _ ->
           [Ok astate] )
     | Some (invalidation, invalidation_trace) ->
         [Error (`InvalidAccess (invalidation, invalidation_trace, astate))]
@@ -457,7 +466,9 @@ let rec set_uninitialized_post tenv src typ location ?(fields_prefix = RevList.e
       let stack, addr = add_edge_on_src src location stack in
       let attrs =
         if Config.pulse_isl then
-          BaseAddressAttributes.add_one addr (MustBeValid (Immediate {location; history= []})) attrs
+          BaseAddressAttributes.add_one addr
+            (MustBeValid (Immediate {location; history= []}, None))
+            attrs
         else attrs
       in
       let attrs = BaseAddressAttributes.add_one addr Uninitialized attrs in
@@ -541,7 +552,9 @@ let mk_initial tenv proc_desc =
     if Config.pulse_isl then
       List.fold formals_and_captured ~init:(PreDomain.empty :> base_domain).attrs
         ~f:(fun attrs (_, _, (addr, _)) ->
-          BaseAddressAttributes.add_one addr (MustBeValid (Immediate {location; history= []})) attrs )
+          BaseAddressAttributes.add_one addr
+            (MustBeValid (Immediate {location; history= []}, None))
+            attrs )
     else (PreDomain.empty :> base_domain).attrs
   in
   let pre =

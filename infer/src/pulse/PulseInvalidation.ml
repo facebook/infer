@@ -52,11 +52,25 @@ type t =
   | JavaIterator of java_iterator_function
 [@@deriving compare, equal]
 
-let issue_type_of_cause = function
+type must_be_valid_reason = SelfOfNonPODReturnMethod [@@deriving compare, equal]
+
+let pp_must_be_valid_reason f = function
+  | None ->
+      F.fprintf f "None"
+  | Some SelfOfNonPODReturnMethod ->
+      F.fprintf f "SelfOfNonPODReturnMethod"
+
+
+let issue_type_of_cause invalidation must_be_valid_reason =
+  match invalidation with
   | CFree ->
       IssueType.use_after_free
-  | ConstantDereference i when IntLit.iszero i ->
-      IssueType.nullptr_dereference
+  | ConstantDereference i when IntLit.iszero i -> (
+    match must_be_valid_reason with
+    | None ->
+        IssueType.nullptr_dereference
+    | Some SelfOfNonPODReturnMethod ->
+        IssueType.nil_messaging_to_non_pod )
   | ConstantDereference _ ->
       IssueType.constant_address_dereference
   | CppDelete ->

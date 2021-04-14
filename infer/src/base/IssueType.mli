@@ -276,6 +276,8 @@ val multiple_weakself : t
 
 val mutable_local_variable_in_component_file : t
 
+val nil_messaging_to_non_pod : t
+
 val null_dereference : t
 
 val nullptr_dereference : t

@@ -799,6 +799,11 @@ let nullptr_dereference =
     ~user_documentation:[%blob "../../documentation/issues/NULLPTR_DEREFERENCE.md"]
 
 
+let nil_messaging_to_non_pod =
+  register ~enabled:false ~id:"NIL_MESSAGING_TO_NON_POD" Error Pulse
+    ~user_documentation:"See [NULLPTR_DEREFERENCE](#nullptr_dereference)."
+
+
 let optional_empty_access =
   register ~id:"OPTIONAL_EMPTY_ACCESS" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/OPTIONAL_EMPTY_ACCESS.md"]

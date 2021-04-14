@@ -45,7 +45,8 @@ let exec_summary_of_post_common tenv ~continue_program proc_desc err_log
                      { calling_context= []
                      ; invalidation
                      ; invalidation_trace
-                     ; access_trace= must_be_valid }
+                     ; access_trace= fst must_be_valid
+                     ; must_be_valid_reason= snd must_be_valid }
                ; astate })
           |> Option.some ) )
   (* already a summary but need to reconstruct the variants to make the type system happy :( *)

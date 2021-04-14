@@ -10,9 +10,14 @@ open PulseBasicInterface
 module AbductiveDomain = PulseAbductiveDomain
 
 type 'astate error =
-  | PotentialInvalidAccess of {astate: 'astate; address: AbstractValue.t; must_be_valid: Trace.t}
+  | PotentialInvalidAccess of
+      { astate: 'astate
+      ; address: AbstractValue.t
+      ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
   | PotentialInvalidAccessSummary of
-      {astate: AbductiveDomain.summary; address: AbstractValue.t; must_be_valid: Trace.t}
+      { astate: AbductiveDomain.summary
+      ; address: AbstractValue.t
+      ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
   | ReportableError of {astate: 'astate; diagnostic: Diagnostic.t}
   | ISLError of 'astate
 
@@ -22,8 +27,11 @@ type 'a t = ('a, AbductiveDomain.t) base_t
 
 type 'astate abductive_error =
   [ `ISLError of 'astate
-  | `PotentialInvalidAccess of 'astate * AbstractValue.t * Trace.t
-  | `PotentialInvalidAccessSummary of AbductiveDomain.summary * AbstractValue.t * Trace.t ]
+  | `PotentialInvalidAccess of
+    'astate * AbstractValue.t * (Trace.t * Invalidation.must_be_valid_reason option)
+  | `PotentialInvalidAccessSummary of
+    AbductiveDomain.summary * AbstractValue.t * (Trace.t * Invalidation.must_be_valid_reason option)
+  ]
 
 let of_abductive_error = function
   | `ISLError astate ->
@@ -43,6 +51,10 @@ let of_abductive_access_result access_trace abductive_result =
           { astate
           ; diagnostic=
               AccessToInvalidAddress
-                {calling_context= []; invalidation; invalidation_trace; access_trace} }
+                { calling_context= []
+                ; invalidation
+                ; invalidation_trace
+                ; access_trace
+                ; must_be_valid_reason= None } }
     | (`ISLError _ | `PotentialInvalidAccess _ | `PotentialInvalidAccessSummary _) as error ->
         of_abductive_error error )

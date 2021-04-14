@@ -141,6 +141,8 @@ module AddressAttributes : sig
 
   val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
+  val replace_must_be_valid_reason : Invalidation.must_be_valid_reason -> AbstractValue.t -> t -> t
+
   val allocate : Procname.t -> AbstractValue.t * ValueHistory.t -> Location.t -> t -> t
 
   val add_dynamic_type : Typ.t -> AbstractValue.t -> t -> t
@@ -190,7 +192,10 @@ val summary_of_post :
      Tenv.t
   -> Procdesc.t
   -> t
-  -> (summary, [> `PotentialInvalidAccessSummary of summary * AbstractValue.t * Trace.t]) result
+  -> ( summary
+     , [> `PotentialInvalidAccessSummary of
+          summary * AbstractValue.t * (Trace.t * Invalidation.must_be_valid_reason option) ] )
+     result
      SatUnsat.t
 (** trim the state down to just the procedure's interface (formals and globals), and simplify and
     normalize the state *)
@@ -204,7 +209,10 @@ val set_post_cell : AbstractValue.t * ValueHistory.t -> BaseDomain.cell -> Locat
 val incorporate_new_eqs :
      PathCondition.new_eqs
   -> t
-  -> (t, [> `PotentialInvalidAccess of t * AbstractValue.t * Trace.t]) result
+  -> ( t
+     , [> `PotentialInvalidAccess of
+          t * AbstractValue.t * (Trace.t * Invalidation.must_be_valid_reason option) ] )
+     result
 (** Check that the new equalities discovered are compatible with the current pre and post heaps,
     e.g. [x = 0] is not compatible with [x] being allocated, and [x = y] is not compatible with [x]
     and [y] being allocated separately. In those cases, the resulting path condition is
