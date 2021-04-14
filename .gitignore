@@ -74,7 +74,8 @@ duplicates.txt
 /configure
 /Makefile.autoconf
 /.buckversion
-/.buck-java8
+/.buck-java11
+/.buckjavaversion
 /*/.gitignore
 /*/*/.gitignore
 

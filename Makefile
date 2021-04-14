@@ -830,7 +830,8 @@ endif
 
 .PHONY: conf-clean
 conf-clean: clean
-	$(REMOVE) .buck-java8
+	$(REMOVE) .buckjavaversion
+	$(REMOVE) .buck-java11
 	$(REMOVE) Makefile.autoconf
 	$(REMOVE) acinclude.m4
 	$(REMOVE) aclocal.m4
