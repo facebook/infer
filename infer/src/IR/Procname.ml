@@ -320,7 +320,7 @@ end
 module ObjC_Cpp = struct
   type kind =
     | CPPMethod of {mangled: string option}
-    | CPPConstructor of {mangled: string option; is_constexpr: bool}
+    | CPPConstructor of {mangled: string option}
     | CPPDestructor of {mangled: string option}
     | ObjCClassMethod
     | ObjCInstanceMethod
@@ -383,17 +383,13 @@ module ObjC_Cpp = struct
     is_destructor pname && String.is_prefix ~prefix:Config.clang_inner_destructor_prefix method_name
 
 
-  let is_constexpr = function {kind= CPPConstructor {is_constexpr= true}} -> true | _ -> false
-
   let is_cpp_lambda {method_name} = String.is_substring ~substring:"operator()" method_name
 
   let pp_verbose_kind fmt = function
     | CPPMethod {mangled} | CPPDestructor {mangled} ->
         F.fprintf fmt "(%s)" (Option.value ~default:"" mangled)
-    | CPPConstructor {mangled; is_constexpr} ->
-        F.fprintf fmt "{%s%s}"
-          (Option.value ~default:"" mangled)
-          (if is_constexpr then "|constexpr" else "")
+    | CPPConstructor {mangled} ->
+        F.fprintf fmt "{%s}" (Option.value ~default:"" mangled)
     | ObjCClassMethod ->
         F.pp_print_string fmt "class"
     | ObjCInstanceMethod ->

@@ -76,7 +76,9 @@ type t =
   ; proc_name: Procname.t  (** name of the procedure *)
   ; ret_type: Typ.t  (** return type *)
   ; has_added_return_param: bool  (** whether or not a return param was added *)
-  ; is_ret_type_pod: bool  (** whether or not the return type is POD *) }
+  ; is_ret_type_pod: bool  (** whether or not the return type is POD *)
+  ; is_ret_constexpr: bool  (** whether the (C++) function or method is declared as [constexpr] *)
+  }
 
 let get_annotated_formals {method_annotation= {params}; formals} =
   let rec zip_params ial parl =
@@ -139,7 +141,8 @@ let default translation_unit proc_name =
   ; objc_accessor= None
   ; proc_name
   ; ret_type= StdTyp.void
-  ; is_ret_type_pod= true }
+  ; is_ret_type_pod= true
+  ; is_ret_constexpr= false }
 
 
 let pp_parameters =
@@ -186,7 +189,8 @@ let pp f
      ; objc_accessor
      ; proc_name
      ; ret_type
-     ; is_ret_type_pod }[@warning "+9"]) =
+     ; is_ret_type_pod
+     ; is_ret_constexpr }[@warning "+9"]) =
   let default = default translation_unit proc_name in
   let pp_bool_default ~default title b f () =
     if not (Bool.equal default b) then F.fprintf f "; %s= %b@," title b
@@ -253,6 +257,7 @@ let pp f
   (* always print ret type *)
   F.fprintf f "; ret_type= %a @," (Typ.pp_full Pp.text) ret_type ;
   pp_bool_default ~default:default.is_ret_type_pod "is_ret_type_pod" is_ret_type_pod f () ;
+  pp_bool_default ~default:default.is_ret_constexpr "is_ret_constexpr" is_ret_constexpr f () ;
   F.fprintf f "; proc_id= %a }@]" Procname.pp_unique_id proc_name
 
 

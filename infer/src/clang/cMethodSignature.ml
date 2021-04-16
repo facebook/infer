@@ -32,6 +32,7 @@ type t =
   ; ret_type: Typ.t * Annot.Item.t
   ; has_added_return_param: bool
   ; is_ret_type_pod: bool
+  ; is_ret_constexpr: bool
   ; attributes: Clang_ast_t.attribute list
   ; loc: Clang_ast_t.source_range
   ; method_kind: ClangMethodKind.t
@@ -57,9 +58,9 @@ let is_setter {pointer_to_property_opt; params} =
 
 
 let mk name class_param params ret_type ?(has_added_return_param = false) ?(is_ret_type_pod = true)
-    attributes loc method_kind ?(is_cpp_virtual = false) ?(passed_as_noescape_block_to = None)
-    ?(is_no_return = false) ?(is_variadic = false) pointer_to_parent pointer_to_property_opt
-    return_param_typ access =
+    ~is_ret_constexpr attributes loc method_kind ?(is_cpp_virtual = false)
+    ?(passed_as_noescape_block_to = None) ?(is_no_return = false) ?(is_variadic = false)
+    pointer_to_parent pointer_to_property_opt return_param_typ access =
   { name
   ; access
   ; class_param
@@ -67,6 +68,7 @@ let mk name class_param params ret_type ?(has_added_return_param = false) ?(is_r
   ; ret_type
   ; has_added_return_param
   ; is_ret_type_pod
+  ; is_ret_constexpr
   ; attributes
   ; loc
   ; method_kind

@@ -396,6 +396,7 @@
                       "mangled_name" : "8283222246682784723",
                       "is_cpp" : true,
                       "is_inline" : true,
+                      "is_constexpr" : true,
                       "parameters" : [
                         ["ParmVarDecl" , [
                           {
@@ -425,7 +426,6 @@
                       ]
                     },
                     {
-                      "is_constexpr" : true
                     }
                   ]],
                   ["CXXConstructorDecl" , [
@@ -458,6 +458,7 @@
                       "mangled_name" : "6839343167991811455",
                       "is_cpp" : true,
                       "is_inline" : true,
+                      "is_constexpr" : true,
                       "parameters" : [
                         ["ParmVarDecl" , [
                           {
@@ -487,7 +488,6 @@
                       ]
                     },
                     {
-                      "is_constexpr" : true
                     }
                   ]]
                 ],
@@ -832,6 +832,7 @@
                 "mangled_name" : "8232226518557505494",
                 "is_cpp" : true,
                 "is_inline" : true,
+                "is_constexpr" : true,
                 "parameters" : [
                   ["ParmVarDecl" , [
                     {
@@ -861,7 +862,6 @@
                 ]
               },
               {
-                "is_constexpr" : true
               }
             ]],
             ["CXXConstructorDecl" , [
@@ -894,6 +894,7 @@
                 "mangled_name" : "10012197224398183680",
                 "is_cpp" : true,
                 "is_inline" : true,
+                "is_constexpr" : true,
                 "parameters" : [
                   ["ParmVarDecl" , [
                     {
@@ -923,7 +924,6 @@
                 ]
               },
               {
-                "is_constexpr" : true
               }
             ]],
             ["CXXMethodDecl" , [
@@ -958,6 +958,7 @@
                 "mangled_name" : "16979568942442152295",
                 "is_cpp" : true,
                 "is_inline" : true,
+                "is_constexpr" : true,
                 "parameters" : [
                   ["ParmVarDecl" , [
                     {
@@ -1266,7 +1267,6 @@
                 ]]
               },
               {
-                "is_constexpr" : true
               }
             ]],
             ["CXXMethodDecl" , [
@@ -1299,6 +1299,7 @@
                 "mangled_name" : "12620087123913755403",
                 "is_cpp" : true,
                 "is_inline" : true,
+                "is_constexpr" : true,
                 "parameters" : [
                   ["ParmVarDecl" , [
                     {
@@ -1328,7 +1329,6 @@
                 ]
               },
               {
-                "is_constexpr" : true
               }
             ]]
           ],

@@ -265,6 +265,7 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) ?(record_lambda_capt
         ; const_formals
         ; has_added_return_param
         ; is_ret_type_pod= ms.CMethodSignature.is_ret_type_pod
+        ; is_ret_constexpr= ms.CMethodSignature.is_ret_constexpr
         ; access
         ; is_defined= defined
         ; is_biabduction_model= Config.biabduction_models_mode

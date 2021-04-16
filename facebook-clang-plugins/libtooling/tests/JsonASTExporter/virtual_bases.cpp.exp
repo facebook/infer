@@ -305,6 +305,7 @@
             "mangled_name" : "6367731417382615745",
             "is_cpp" : true,
             "is_inline" : true,
+            "is_constexpr" : true,
             "parameters" : [
               ["ParmVarDecl" , [
                 {
@@ -334,7 +335,6 @@
             ]
           },
           {
-            "is_constexpr" : true
           }
         ]],
         ["CXXMethodDecl" , [
@@ -974,6 +974,7 @@
             "mangled_name" : "7407813062435547771",
             "is_cpp" : true,
             "is_inline" : true,
+            "is_constexpr" : true,
             "parameters" : [
               ["ParmVarDecl" , [
                 {
@@ -1003,7 +1004,6 @@
             ]
           },
           {
-            "is_constexpr" : true
           }
         ]],
         ["CXXMethodDecl" , [

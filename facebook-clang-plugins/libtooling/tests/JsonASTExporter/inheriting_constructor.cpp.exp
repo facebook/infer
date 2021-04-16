@@ -330,6 +330,7 @@
             "mangled_name" : "6367731417382615745",
             "is_cpp" : true,
             "is_inline" : true,
+            "is_constexpr" : true,
             "parameters" : [
               ["ParmVarDecl" , [
                 {
@@ -359,7 +360,6 @@
             ]
           },
           {
-            "is_constexpr" : true
           }
         ]],
         ["CXXConstructorDecl" , [
@@ -391,6 +391,7 @@
             "mangled_name" : "17956886967408801671",
             "is_cpp" : true,
             "is_inline" : true,
+            "is_constexpr" : true,
             "parameters" : [
               ["ParmVarDecl" , [
                 {
@@ -420,7 +421,6 @@
             ]
           },
           {
-            "is_constexpr" : true
           }
         ]],
         ["CXXDestructorDecl" , [
@@ -691,6 +691,7 @@
             "mangled_name" : "6925252787601137710",
             "is_cpp" : true,
             "is_inline" : true,
+            "is_constexpr" : true,
             "parameters" : [
               ["ParmVarDecl" , [
                 {
@@ -720,7 +721,6 @@
             ]
           },
           {
-            "is_constexpr" : true
           }
         ]],
         ["CXXConstructorDecl" , [
@@ -752,6 +752,7 @@
             "mangled_name" : "17350102287109130674",
             "is_cpp" : true,
             "is_inline" : true,
+            "is_constexpr" : true,
             "parameters" : [
               ["ParmVarDecl" , [
                 {
@@ -781,7 +782,6 @@
             ]
           },
           {
-            "is_constexpr" : true
           }
         ]],
         ["CXXConstructorDecl" , [

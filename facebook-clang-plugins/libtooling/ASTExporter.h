@@ -1524,6 +1524,7 @@ int ASTExporter<ATDWriter>::FunctionDeclTupleSize() {
 //@atd   ~is_pure : bool;
 //@atd   ~is_delete_as_written : bool;
 //@atd   ~is_no_return : bool;
+//@atd   ~is_constexpr : bool;
 //@atd   ~is_variadic : bool;
 //@atd   ~is_static : bool;
 //@atd   ~parameters : decl list;
@@ -1551,6 +1552,7 @@ void ASTExporter<ATDWriter>::VisitFunctionDecl(const FunctionDecl *D) {
     IsStatic = true;
   }
   auto IsNoReturn = D->isNoReturn();
+  bool IsConstexpr = D->isConstexpr();
   bool HasParameters = !D->param_empty();
   const FunctionDecl *DeclWithBody = D;
   // FunctionDecl::hasBody() will set DeclWithBody pointer to decl that
@@ -1562,8 +1564,8 @@ void ASTExporter<ATDWriter>::VisitFunctionDecl(const FunctionDecl *D) {
   bool HasDeclarationBody = D->doesThisDeclarationHaveABody();
   FunctionTemplateDecl *TemplateDecl = D->getPrimaryTemplate();
   int size = ShouldMangleName + IsCpp + IsInlineSpecified + IsModulePrivate +
-             IsPure + IsDeletedAsWritten + IsNoReturn + IsVariadic +
-             IsStatic + HasParameters + (bool)DeclWithBody +
+             IsPure + IsDeletedAsWritten + IsNoReturn + IsConstexpr +
+             IsVariadic + IsStatic + HasParameters + (bool)DeclWithBody +
              HasDeclarationBody + (bool)TemplateDecl;
   ObjectScope Scope(OF, size);
 
@@ -1590,6 +1592,7 @@ void ASTExporter<ATDWriter>::VisitFunctionDecl(const FunctionDecl *D) {
   OF.emitFlag("is_pure", IsPure);
   OF.emitFlag("is_delete_as_written", IsDeletedAsWritten);
   OF.emitFlag("is_no_return", IsNoReturn);
+  OF.emitFlag("is_constexpr", IsConstexpr);
   OF.emitFlag("is_variadic", IsVariadic);
   OF.emitFlag("is_static", IsStatic);
 
@@ -1694,7 +1697,7 @@ int ASTExporter<ATDWriter>::VarDeclTupleSize() {
 //@atd   ~is_static : bool;
 //@atd   ~is_static_local : bool;
 //@atd   ~is_static_data_member : bool;
-//@atd   ~is_const_expr : bool;
+//@atd   ~is_constexpr : bool;
 //@atd   ~is_init_ice : bool;
 //@atd   ?init_expr : stmt option;
 //@atd   ~is_init_expr_cxx11_constant: bool;
@@ -1712,7 +1715,7 @@ void ASTExporter<ATDWriter>::VisitVarDecl(const VarDecl *D) {
   }
   bool IsStaticLocal = D->isStaticLocal(); // static function variables
   bool IsStaticDataMember = D->isStaticDataMember();
-  bool IsConstExpr = D->isConstexpr();
+  bool IsConstexpr = D->isConstexpr();
   bool IsInitICE = D->isInitKnownICE() && D->isInitICE();
   bool HasInit = D->hasInit();
   const ParmVarDecl *ParmDecl = dyn_cast<ParmVarDecl>(D);
@@ -1720,7 +1723,7 @@ void ASTExporter<ATDWriter>::VisitVarDecl(const VarDecl *D) {
   bool isInitExprCXX11ConstantExpr = false;
   ObjectScope Scope(OF,
                     IsGlobal + IsExtern + IsStatic + IsStaticLocal +
-                        IsStaticDataMember + IsConstExpr + IsInitICE + HasInit +
+                        IsStaticDataMember + IsConstexpr + IsInitICE + HasInit +
                         HasParmIndex + isInitExprCXX11ConstantExpr);
 
   OF.emitFlag("is_global", IsGlobal);
@@ -1728,7 +1731,7 @@ void ASTExporter<ATDWriter>::VisitVarDecl(const VarDecl *D) {
   OF.emitFlag("is_static", IsStatic);
   OF.emitFlag("is_static_local", IsStaticLocal);
   OF.emitFlag("is_static_data_member", IsStaticDataMember);
-  OF.emitFlag("is_const_expr", IsConstExpr);
+  OF.emitFlag("is_constexpr", IsConstexpr);
   OF.emitFlag("is_init_ice", IsInitICE);
   if (HasInit) {
     OF.emitTag("init_expr");
@@ -2088,7 +2091,6 @@ int ASTExporter<ATDWriter>::CXXMethodDeclTupleSize() {
 //@atd type cxx_method_decl_info = {
 //@atd   ~is_virtual : bool;
 //@atd   ~is_static : bool;
-//@atd   ~is_constexpr : bool;
 //@atd   ~cxx_ctor_initializers : cxx_ctor_initializer list;
 //@atd   ~overriden_methods : decl_ref list;
 //@atd } <ocaml field_prefix="xmdi_">
@@ -2099,15 +2101,13 @@ void ASTExporter<ATDWriter>::VisitCXXMethodDecl(const CXXMethodDecl *D) {
   bool IsStatic = D->isStatic();
   const CXXConstructorDecl *C = dyn_cast<CXXConstructorDecl>(D);
   bool HasCtorInitializers = C && C->init_begin() != C->init_end();
-  bool IsConstexpr = D->isConstexpr();
   auto OB = D->begin_overridden_methods();
   auto OE = D->end_overridden_methods();
   ObjectScope Scope(
       OF,
-      IsVirtual + IsStatic + IsConstexpr + HasCtorInitializers + (OB != OE));
+                    IsVirtual + IsStatic + HasCtorInitializers + (OB != OE));
   OF.emitFlag("is_virtual", IsVirtual);
   OF.emitFlag("is_static", IsStatic);
-  OF.emitFlag("is_constexpr", IsConstexpr);
   if (HasCtorInitializers) {
     OF.emitTag("cxx_ctor_initializers");
     ArrayScope Scope(OF, std::distance(C->init_begin(), C->init_end()));

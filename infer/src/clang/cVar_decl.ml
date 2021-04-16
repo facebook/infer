@@ -29,7 +29,7 @@ let mk_sil_global_var {CFrontend_config.source_file} ?(mk_name = fun _ x -> x) d
     | false, _ ->
         Some source_file
   in
-  let is_constexpr = var_decl_info.Clang_ast_t.vdi_is_const_expr in
+  let is_constexpr = var_decl_info.Clang_ast_t.vdi_is_constexpr in
   let is_ice = var_decl_info.Clang_ast_t.vdi_is_init_ice in
   let is_pod = CGeneral_utils.is_type_pod qt in
   let is_static_global =
@@ -134,7 +134,7 @@ let add_var_to_locals procdesc var_decl typ pvar =
       if not vdi.Clang_ast_t.vdi_is_global then
         let modify_in_block = has_block_attribute decl_info in
         let is_constexpr =
-          vdi.Clang_ast_t.vdi_is_const_expr
+          vdi.Clang_ast_t.vdi_is_constexpr
           || (Typ.is_const typ.Typ.quals && vdi.Clang_ast_t.vdi_is_init_expr_cxx11_constant)
         in
         let is_declared_unused =

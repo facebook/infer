@@ -74,7 +74,7 @@ let get_predefined_ms_method condition class_name method_name method_kind mk_pro
           mk_procname class_name method_name method_kind
     in
     let ms =
-      CMethodSignature.mk procname None arguments return_type attributes
+      CMethodSignature.mk procname None arguments return_type ~is_ret_constexpr:false attributes
         (CAst_utils.dummy_source_range ())
         ClangMethodKind.C_FUNCTION None None None `None
     in

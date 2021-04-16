@@ -165,6 +165,7 @@ module BuildMethodSignature = struct
     let ret_type, return_param_typ, ret_typ_annot, has_added_return_param, is_ret_type_pod =
       get_return_val_and_param_types qual_type_to_sil_type tenv ~block_return_type method_decl
     in
+    let is_ret_constexpr = CMethodProperties.is_constexpr method_decl in
     let method_kind = CMethodProperties.get_method_kind method_decl in
     let pointer_to_parent = decl_info.di_parent_pointer in
     let class_param = get_class_param qual_type_to_sil_type tenv method_decl in
@@ -181,6 +182,7 @@ module BuildMethodSignature = struct
     ; params
     ; ret_type= (ret_type, ret_typ_annot)
     ; is_ret_type_pod
+    ; is_ret_constexpr
     ; has_added_return_param
     ; attributes
     ; loc
@@ -601,8 +603,8 @@ and mk_cpp_method ?tenv class_name method_name ?meth_decl mangled parameters =
   let open Clang_ast_t in
   let method_kind =
     match meth_decl with
-    | Some (Clang_ast_t.CXXConstructorDecl (_, _, _, _, {xmdi_is_constexpr})) ->
-        Procname.ObjC_Cpp.CPPConstructor {mangled; is_constexpr= xmdi_is_constexpr}
+    | Some (Clang_ast_t.CXXConstructorDecl (_, _, _, _, _)) ->
+        Procname.ObjC_Cpp.CPPConstructor {mangled}
     | Some (Clang_ast_t.CXXDestructorDecl _) ->
         Procname.ObjC_Cpp.CPPDestructor {mangled}
     | _ ->

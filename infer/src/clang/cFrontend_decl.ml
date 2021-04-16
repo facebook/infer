@@ -418,7 +418,8 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
                 (Clang_ast_proj.get_decl_kind_string dec)
           | None ->
               () )
-      | VarDecl (decl_info, named_decl_info, qt, ({vdi_is_global; vdi_init_expr} as vdi))
+      | VarDecl
+          (decl_info, named_decl_info, qt, ({vdi_is_global; vdi_init_expr; vdi_is_constexpr} as vdi))
         when String.is_prefix ~prefix:"__infer_" named_decl_info.ni_name
              || (vdi_is_global && Option.is_some vdi_init_expr) ->
           (* create a fake procedure that initializes the global variable so that the variable
@@ -437,9 +438,9 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
               ~set_objc_accessor_attr:false
           then (
             let ms =
-              CMethodSignature.mk procname None [] (StdTyp.void, Annot.Item.empty) []
-                decl_info.Clang_ast_t.di_source_range ClangMethodKind.C_FUNCTION None None None
-                `None
+              CMethodSignature.mk procname None [] (StdTyp.void, Annot.Item.empty)
+                ~is_ret_constexpr:vdi_is_constexpr [] decl_info.Clang_ast_t.di_source_range
+                ClangMethodKind.C_FUNCTION None None None `None
             in
             let stmt_info =
               { si_pointer= CAst_utils.get_fresh_pointer ()

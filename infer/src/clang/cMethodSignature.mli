@@ -25,6 +25,7 @@ type t =
   ; ret_type: Typ.t * Annot.Item.t
   ; has_added_return_param: bool
   ; is_ret_type_pod: bool
+  ; is_ret_constexpr: bool
   ; attributes: Clang_ast_t.attribute list
   ; loc: Clang_ast_t.source_range
   ; method_kind: ClangMethodKind.t
@@ -48,6 +49,7 @@ val mk :
   -> Typ.t * Annot.Item.t
   -> ?has_added_return_param:bool
   -> ?is_ret_type_pod:bool
+  -> is_ret_constexpr:bool
   -> Clang_ast_t.attribute list
   -> Clang_ast_t.source_range
   -> ClangMethodKind.t

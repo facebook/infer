@@ -601,6 +601,7 @@
                                         "mangled_name" : "10693628329110131385",
                                         "is_cpp" : true,
                                         "is_inline" : true,
+                                        "is_constexpr" : true,
                                         "parameters" : [
                                           <"ParmVarDecl" : (
                                             {
@@ -630,7 +631,6 @@
                                         ]
                                       },
                                       {
-                                        "is_constexpr" : true
                                       }
                                     )>,
                                     <"CXXConstructorDecl" : (
@@ -665,6 +665,7 @@
                                         "mangled_name" : "18362977156530360911",
                                         "is_cpp" : true,
                                         "is_inline" : true,
+                                        "is_constexpr" : true,
                                         "parameters" : [
                                           <"ParmVarDecl" : (
                                             {
@@ -710,7 +711,6 @@
                                         )>
                                       },
                                       {
-                                        "is_constexpr" : true
                                       }
                                     )>
                                   ],
@@ -1185,6 +1185,7 @@
                                             "mangled_name" : "10693628329110131385",
                                             "is_cpp" : true,
                                             "is_inline" : true,
+                                            "is_constexpr" : true,
                                             "parameters" : [
                                               <"ParmVarDecl" : (
                                                 {
@@ -1214,7 +1215,6 @@
                                             ]
                                           },
                                           {
-                                            "is_constexpr" : true
                                           }
                                         )>,
                                         <"CXXConstructorDecl" : (
@@ -1249,6 +1249,7 @@
                                             "mangled_name" : "18362977156530360911",
                                             "is_cpp" : true,
                                             "is_inline" : true,
+                                            "is_constexpr" : true,
                                             "parameters" : [
                                               <"ParmVarDecl" : (
                                                 {
@@ -1294,7 +1295,6 @@
                                             )>
                                           },
                                           {
-                                            "is_constexpr" : true
                                           }
                                         )>
                                       ],
@@ -1949,6 +1949,7 @@
                                         "mangled_name" : "34143097794571044",
                                         "is_cpp" : true,
                                         "is_inline" : true,
+                                        "is_constexpr" : true,
                                         "parameters" : [
                                           <"ParmVarDecl" : (
                                             {
@@ -1978,7 +1979,6 @@
                                         ]
                                       },
                                       {
-                                        "is_constexpr" : true
                                       }
                                     )>,
                                     <"CXXConstructorDecl" : (
@@ -2013,6 +2013,7 @@
                                         "mangled_name" : "4775778177696808400",
                                         "is_cpp" : true,
                                         "is_inline" : true,
+                                        "is_constexpr" : true,
                                         "parameters" : [
                                           <"ParmVarDecl" : (
                                             {
@@ -2060,7 +2061,6 @@
                                         )>
                                       },
                                       {
-                                        "is_constexpr" : true,
                                         "cxx_ctor_initializers" : [
                                           {
                                             "subject" : <"Member" : {
@@ -3076,6 +3076,7 @@
                                             "mangled_name" : "34143097794571044",
                                             "is_cpp" : true,
                                             "is_inline" : true,
+                                            "is_constexpr" : true,
                                             "parameters" : [
                                               <"ParmVarDecl" : (
                                                 {
@@ -3105,7 +3106,6 @@
                                             ]
                                           },
                                           {
-                                            "is_constexpr" : true
                                           }
                                         )>,
                                         <"CXXConstructorDecl" : (
@@ -3140,6 +3140,7 @@
                                             "mangled_name" : "4775778177696808400",
                                             "is_cpp" : true,
                                             "is_inline" : true,
+                                            "is_constexpr" : true,
                                             "parameters" : [
                                               <"ParmVarDecl" : (
                                                 {
@@ -3187,7 +3188,6 @@
                                             )>
                                           },
                                           {
-                                            "is_constexpr" : true,
                                             "cxx_ctor_initializers" : [
                                               {
                                                 "subject" : <"Member" : {
@@ -4070,6 +4070,7 @@
                                         "mangled_name" : "7938324828555278899",
                                         "is_cpp" : true,
                                         "is_inline" : true,
+                                        "is_constexpr" : true,
                                         "parameters" : [
                                           <"ParmVarDecl" : (
                                             {
@@ -4099,7 +4100,6 @@
                                         ]
                                       },
                                       {
-                                        "is_constexpr" : true
                                       }
                                     )>,
                                     <"CXXConstructorDecl" : (
@@ -4134,6 +4134,7 @@
                                         "mangled_name" : "4960955440766632321",
                                         "is_cpp" : true,
                                         "is_inline" : true,
+                                        "is_constexpr" : true,
                                         "parameters" : [
                                           <"ParmVarDecl" : (
                                             {
@@ -4181,7 +4182,6 @@
                                         )>
                                       },
                                       {
-                                        "is_constexpr" : true,
                                         "cxx_ctor_initializers" : [
                                           {
                                             "subject" : <"Member" : {
@@ -4958,6 +4958,7 @@
                                             "mangled_name" : "7938324828555278899",
                                             "is_cpp" : true,
                                             "is_inline" : true,
+                                            "is_constexpr" : true,
                                             "parameters" : [
                                               <"ParmVarDecl" : (
                                                 {
@@ -4987,7 +4988,6 @@
                                             ]
                                           },
                                           {
-                                            "is_constexpr" : true
                                           }
                                         )>,
                                         <"CXXConstructorDecl" : (
@@ -5022,6 +5022,7 @@
                                             "mangled_name" : "4960955440766632321",
                                             "is_cpp" : true,
                                             "is_inline" : true,
+                                            "is_constexpr" : true,
                                             "parameters" : [
                                               <"ParmVarDecl" : (
                                                 {
@@ -5069,7 +5070,6 @@
                                             )>
                                           },
                                           {
-                                            "is_constexpr" : true,
                                             "cxx_ctor_initializers" : [
                                               {
                                                 "subject" : <"Member" : {

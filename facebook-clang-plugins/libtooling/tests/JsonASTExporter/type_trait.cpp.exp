@@ -253,6 +253,7 @@
             "mangled_name" : "3547081667308014059",
             "is_cpp" : true,
             "is_inline" : true,
+            "is_constexpr" : true,
             "parameters" : [
               ["ParmVarDecl" , [
                 {
@@ -282,7 +283,6 @@
             ]
           },
           {
-            "is_constexpr" : true
           }
         ]],
         ["CXXMethodDecl" , [
@@ -314,6 +314,7 @@
             "mangled_name" : "13578800157532850793",
             "is_cpp" : true,
             "is_inline" : true,
+            "is_constexpr" : true,
             "parameters" : [
               ["ParmVarDecl" , [
                 {
@@ -343,7 +344,6 @@
             ]
           },
           {
-            "is_constexpr" : true
           }
         ]],
         ["CXXDestructorDecl" , [

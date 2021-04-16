@@ -138,7 +138,7 @@ end
 module ObjC_Cpp : sig
   type kind =
     | CPPMethod of {mangled: string option}
-    | CPPConstructor of {mangled: string option; is_constexpr: bool}
+    | CPPConstructor of {mangled: string option}
     | CPPDestructor of {mangled: string option}
     | ObjCClassMethod
     | ObjCInstanceMethod
@@ -178,9 +178,6 @@ module ObjC_Cpp : sig
 
   val is_inner_destructor : t -> bool
   (** Check if this is a frontend-generated "inner" destructor (see D5834555/D7189239) *)
-
-  val is_constexpr : t -> bool
-  (** Check if this is a constexpr function. *)
 end
 
 module C : sig

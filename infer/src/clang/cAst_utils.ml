@@ -306,8 +306,8 @@ let is_static_local_var decl =
   match decl with Clang_ast_t.VarDecl (_, _, _, vdi) -> vdi.vdi_is_static_local | _ -> false
 
 
-let is_const_expr_var decl =
-  match decl with Clang_ast_t.VarDecl (_, _, _, vdi) -> vdi.vdi_is_const_expr | _ -> false
+let is_constexpr_var decl =
+  match decl with Clang_ast_t.VarDecl (_, _, _, vdi) -> vdi.vdi_is_constexpr | _ -> false
 
 
 let full_name_of_decl_opt decl_opt =

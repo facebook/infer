@@ -255,6 +255,7 @@
             "mangled_name" : "4916027756641681778",
             "is_cpp" : true,
             "is_inline" : true,
+            "is_constexpr" : true,
             "parameters" : [
               ["ParmVarDecl" , [
                 {
@@ -284,7 +285,6 @@
             ]
           },
           {
-            "is_constexpr" : true
           }
         ]],
         ["CXXMethodDecl" , [
@@ -316,6 +316,7 @@
             "mangled_name" : "1130122404358677750",
             "is_cpp" : true,
             "is_inline" : true,
+            "is_constexpr" : true,
             "parameters" : [
               ["ParmVarDecl" , [
                 {
@@ -345,7 +346,6 @@
             ]
           },
           {
-            "is_constexpr" : true
           }
         ]],
         ["CXXDestructorDecl" , [
@@ -412,6 +412,7 @@
             "mangled_name" : "16649858826465904026",
             "is_cpp" : true,
             "is_inline" : true,
+            "is_constexpr" : true,
             "decl_ptr_with_body" : 23,
             "body" : ["CompoundStmt" , [
               {
@@ -430,7 +431,6 @@
             ]]
           },
           {
-            "is_constexpr" : true
           }
         ]],
         ["CXXConstructorDecl" , [
@@ -462,6 +462,7 @@
             "mangled_name" : "6367731417382615745",
             "is_cpp" : true,
             "is_inline" : true,
+            "is_constexpr" : true,
             "parameters" : [
               ["ParmVarDecl" , [
                 {
@@ -491,7 +492,6 @@
             ]
           },
           {
-            "is_constexpr" : true
           }
         ]],
         ["CXXConstructorDecl" , [
@@ -523,6 +523,7 @@
             "mangled_name" : "17956886967408801671",
             "is_cpp" : true,
             "is_inline" : true,
+            "is_constexpr" : true,
             "parameters" : [
               ["ParmVarDecl" , [
                 {
@@ -552,7 +553,6 @@
             ]
           },
           {
-            "is_constexpr" : true
           }
         ]]
       ],
@@ -666,6 +666,7 @@
             "mangled_name" : "12683202677887858481",
             "is_cpp" : true,
             "is_inline" : true,
+            "is_constexpr" : true,
             "parameters" : [
               ["ParmVarDecl" , [
                 {
@@ -695,7 +696,6 @@
             ]
           },
           {
-            "is_constexpr" : true
           }
         ]],
         ["CXXMethodDecl" , [
@@ -727,6 +727,7 @@
             "mangled_name" : "4655428711165100535",
             "is_cpp" : true,
             "is_inline" : true,
+            "is_constexpr" : true,
             "parameters" : [
               ["ParmVarDecl" , [
                 {
@@ -756,7 +757,6 @@
             ]
           },
           {
-            "is_constexpr" : true
           }
         ]],
         ["CXXDestructorDecl" , [
@@ -823,6 +823,7 @@
             "mangled_name" : "8928078380412315851",
             "is_cpp" : true,
             "is_inline" : true,
+            "is_constexpr" : true,
             "decl_ptr_with_body" : 45,
             "body" : ["CompoundStmt" , [
               {
@@ -841,7 +842,6 @@
             ]]
           },
           {
-            "is_constexpr" : true,
             "cxx_ctor_initializers" : [
               {
                 "subject" : ["BaseClass" , [
@@ -923,6 +923,7 @@
             "mangled_name" : "6925252787601137710",
             "is_cpp" : true,
             "is_inline" : true,
+            "is_constexpr" : true,
             "parameters" : [
               ["ParmVarDecl" , [
                 {
@@ -952,7 +953,6 @@
             ]
           },
           {
-            "is_constexpr" : true
           }
         ]],
         ["CXXConstructorDecl" , [
@@ -984,6 +984,7 @@
             "mangled_name" : "17350102287109130674",
             "is_cpp" : true,
             "is_inline" : true,
+            "is_constexpr" : true,
             "parameters" : [
               ["ParmVarDecl" , [
                 {
@@ -1013,7 +1014,6 @@
             ]
           },
           {
-            "is_constexpr" : true
           }
         ]]
       ],

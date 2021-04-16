@@ -161,9 +161,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               else None )
         in
         Domain.join astate (NonBottom SiofTrace.bottom, Domain.VarNames.of_list init)
-    | Call (_, Const (Cfun (ObjC_Cpp cpp_pname as callee_pname)), _ :: actuals_without_self, loc, _)
-      when Procname.is_constructor callee_pname && Procname.ObjC_Cpp.is_constexpr cpp_pname ->
-        add_actuals_globals analysis_data astate loc actuals_without_self
+    | Call (_, Const (Cfun callee_pname), actuals, loc, _)
+      when Attributes.load callee_pname
+           |> Option.exists ~f:(fun attrs -> attrs.ProcAttributes.is_ret_constexpr) ->
+        let actuals_without_this =
+          if Procname.is_constructor callee_pname then List.tl actuals |> Option.value ~default:[]
+          else actuals
+        in
+        add_actuals_globals analysis_data astate loc actuals_without_this
     | Call (_, Const (Cfun callee_pname), actuals, loc, _) ->
         let callee_astate =
           match analyze_dependency callee_pname with
@@ -287,9 +292,7 @@ let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
        to figure this out when analyzing the function, but we might as well use the user's
        specification if it's given to us. This also serves as an optimization as this skips the
        analysis of the function. *)
-    if
-      match pname with ObjC_Cpp cpp_pname -> Procname.ObjC_Cpp.is_constexpr cpp_pname | _ -> false
-    then Some initial
+    if (Procdesc.get_attributes proc_desc).is_ret_constexpr then Some initial
     else Analyzer.compute_post analysis_data ~initial proc_desc
   in
   ( match Procname.get_global_name_of_initializer pname with

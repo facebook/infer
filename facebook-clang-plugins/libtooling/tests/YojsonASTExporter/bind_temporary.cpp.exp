@@ -320,6 +320,7 @@
             "mangled_name" : "1652559256541304523",
             "is_cpp" : true,
             "is_inline" : true,
+            "is_constexpr" : true,
             "parameters" : [
               <"ParmVarDecl" : (
                 {
@@ -349,7 +350,6 @@
             ]
           },
           {
-            "is_constexpr" : true
           }
         )>
       ],

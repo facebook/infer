@@ -108,7 +108,8 @@ let is_type_pod qt =
         None )
   |> Option.value_map ~default:true ~f:(function
        | Clang_ast_t.CXXRecordDecl (_, _, _, _, _, _, _, {xrdi_is_pod})
-       | Clang_ast_t.ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, {xrdi_is_pod}, _, _) ->
+       | ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, {xrdi_is_pod}, _, _)
+       | ClassTemplatePartialSpecializationDecl (_, _, _, _, _, _, _, {xrdi_is_pod}, _, _) ->
            xrdi_is_pod
        | _ ->
            true )

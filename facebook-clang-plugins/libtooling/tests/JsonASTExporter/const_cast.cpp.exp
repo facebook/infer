@@ -630,7 +630,7 @@
       },
       {
         "is_global" : true,
-        "is_const_expr" : true,
+        "is_constexpr" : true,
         "is_init_ice" : true,
         "init_expr" : ["IntegerLiteral" , [
           {
