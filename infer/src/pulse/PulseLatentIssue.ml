@@ -31,6 +31,10 @@ let add_call call_and_loc = function
 
 let is_manifest (astate : AbductiveDomain.summary) =
   Arithmetic.has_no_assumptions (astate :> AbductiveDomain.t)
+  && ( (not Config.pulse_isl)
+     || AbductiveDomain.is_isl_without_allocation (astate :> AbductiveDomain.t)
+        && ( (not Config.pulse_manifest_emp)
+           || AbductiveDomain.is_pre_without_isl_abduced (astate :> AbductiveDomain.t) ) )
 
 
 (* require a summary because we don't want to stop reporting because some non-abducible condition is

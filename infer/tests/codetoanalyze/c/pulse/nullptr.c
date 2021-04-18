@@ -103,3 +103,15 @@ void FN_bug_after_malloc_result_test_bad(int* x) {
     *y = 42;
   }
 }
+
+void bug_after_abduction_bad(int* x) {
+  *x = 42;
+  int* y = NULL;
+  *y = 42;
+}
+
+void bug_with_allocation_bad(int* x) {
+  x = (int*)malloc(sizeof(int*));
+  int* y = NULL;
+  *y = 42;
+}

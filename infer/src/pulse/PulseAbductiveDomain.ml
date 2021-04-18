@@ -684,6 +684,27 @@ let invalidate_locals pdesc astate : t =
   else {astate with post= PostDomain.update astate.post ~attrs:attrs'}
 
 
+let is_isl_without_allocation astate =
+  BaseStack.for_all
+    (fun _ (addr, _) ->
+      match Memory.find_edge_opt addr HilExp.Access.Dereference astate with
+      | Some (addr, _) -> (
+        match AddressAttributes.find_opt addr astate with
+        | None ->
+            true
+        | Some attrs ->
+            not (Option.is_some (Attribute.Attributes.get_allocation attrs)) )
+      | None ->
+          true )
+    (astate.post :> base_domain).stack
+
+
+let is_pre_without_isl_abduced astate =
+  BaseAddressAttributes.for_all
+    (fun _ attrs -> match Attributes.get_isl_abduced attrs with None -> true | Some _ -> false)
+    (astate.pre :> base_domain).attrs
+
+
 type summary = t [@@deriving compare, equal, yojson_of]
 
 let is_heap_allocated {post; pre} v =

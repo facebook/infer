@@ -23,6 +23,8 @@ let compare = Graph.compare AttributesNoRank.compare
 
 let equal = Graph.equal AttributesNoRank.equal
 
+let for_all = Graph.for_all
+
 let yojson_of_t = [%yojson_of: _]
 
 let add_one addr attribute attrs =

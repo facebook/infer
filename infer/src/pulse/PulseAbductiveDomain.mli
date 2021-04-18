@@ -183,6 +183,10 @@ val add_skipped_calls : SkippedCalls.t -> t -> t
 
 val set_path_condition : PathCondition.t -> t -> t
 
+val is_isl_without_allocation : t -> bool
+
+val is_pre_without_isl_abduced : t -> bool
+
 (** private type to make sure {!summary_of_post} is always called when creating summaries *)
 type summary = private t [@@deriving compare, equal, yojson_of]
 

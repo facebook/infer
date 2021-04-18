@@ -1909,6 +1909,10 @@ INTERNAL OPTIONS
            explicit Ok/Error summaries are recorded. For experiments only.
            (Conversely: --no-pulse-isl)
 
+       --pulse-manifest-emp
+           Activates: [Pulse] manifest errors with postive heaps in pre. For
+           experiments only. (Conversely: --no-pulse-manifest-emp)
+
        --pulse-max-disjuncts int
            Under-approximate after int disjunctions in the domain
 
