@@ -1314,7 +1314,6 @@ module StringSet = Caml.Set.Make (String)
 module ProcNameDispatcher = struct
   let dispatch : (Tenv.t * Procname.t, model, arg_payload) ProcnameDispatcher.Call.dispatcher =
     let open ProcnameDispatcher.Call in
-    let match_builtin builtin _ s = String.equal s (Procname.get_method builtin) in
     let pushback_modeled =
       StringSet.of_list
         ["add"; "addAll"; "append"; "delete"; "remove"; "replace"; "poll"; "put"; "putAll"]
@@ -1355,25 +1354,27 @@ module ProcNameDispatcher = struct
     let map_context_tenv f (x, _) = f x in
     make_dispatcher
       ( transfer_ownership_matchers @ abort_matchers
-      @ [ +match_builtin BuiltinDecl.free <>$ capt_arg_payload $--> C.free
-        ; +match_builtin BuiltinDecl.malloc <>$ capt_exp $--> C.malloc
-        ; +match_builtin BuiltinDecl.__delete <>$ capt_arg_payload $--> Cplusplus.delete
-        ; +match_builtin BuiltinDecl.__new <>$ capt_exp $--> Misc.alloc_not_null_call_ev ~desc:"new"
-        ; +match_builtin BuiltinDecl.__new_array
+      @ [ +BuiltinDecl.(match_builtin free) <>$ capt_arg_payload $--> C.free
+        ; +BuiltinDecl.(match_builtin malloc) <>$ capt_exp $--> C.malloc
+        ; +BuiltinDecl.(match_builtin __delete) <>$ capt_arg_payload $--> Cplusplus.delete
+        ; +BuiltinDecl.(match_builtin __new)
           <>$ capt_exp
           $--> Misc.alloc_not_null_call_ev ~desc:"new"
-        ; +match_builtin BuiltinDecl.__placement_new &++> Cplusplus.placement_new
-        ; +match_builtin BuiltinDecl.objc_cpp_throw <>--> Misc.early_exit
-        ; +match_builtin BuiltinDecl.__cast
+        ; +BuiltinDecl.(match_builtin __new_array)
+          <>$ capt_exp
+          $--> Misc.alloc_not_null_call_ev ~desc:"new"
+        ; +BuiltinDecl.(match_builtin __placement_new) &++> Cplusplus.placement_new
+        ; +BuiltinDecl.(match_builtin objc_cpp_throw) <>--> Misc.early_exit
+        ; +BuiltinDecl.(match_builtin __cast)
           <>$ capt_arg_payload $+...$--> Misc.id_first_arg ~desc:"cast"
-        ; +match_builtin BuiltinDecl.abort <>--> Misc.early_exit
-        ; +match_builtin BuiltinDecl.exit <>--> Misc.early_exit
-        ; +match_builtin BuiltinDecl.__infer_initializer_list
+        ; +BuiltinDecl.(match_builtin abort) <>--> Misc.early_exit
+        ; +BuiltinDecl.(match_builtin exit) <>--> Misc.early_exit
+        ; +BuiltinDecl.(match_builtin __infer_initializer_list)
           <>$ capt_arg_payload
           $+...$--> Misc.id_first_arg ~desc:"infer_init_list"
         ; +map_context_tenv (PatternMatch.Java.implements_lang "System")
           &:: "exit" <>--> Misc.early_exit
-        ; +match_builtin BuiltinDecl.__get_array_length <>--> Misc.return_unknown_size
+        ; +BuiltinDecl.(match_builtin __get_array_length) <>--> Misc.return_unknown_size
         ; (* consider that all fbstrings are small strings to avoid false positives due to manual
              ref-counting *)
           -"folly" &:: "fbstring_core" &:: "category" &--> Misc.return_int Int64.zero
@@ -1663,7 +1664,7 @@ module ProcNameDispatcher = struct
         ; +map_context_tenv PatternMatch.Java.implements_iterator
           &:: "next" <>$ capt_arg_payload
           $!--> JavaIterator.next ~desc:"Iterator.next()"
-        ; +match_builtin BuiltinDecl.__instanceof
+        ; +BuiltinDecl.(match_builtin __instanceof)
           <>$ capt_arg_payload $+ capt_exp $--> Java.instance_of
         ; ( +map_context_tenv PatternMatch.Java.implements_enumeration
           &:: "nextElement" <>$ capt_arg_payload
@@ -1677,7 +1678,7 @@ module ProcNameDispatcher = struct
           &--> C.malloc_no_param
         ; +map_context_tenv PatternMatch.ObjectiveC.is_core_foundation_create_or_copy
           &--> C.malloc_no_param
-        ; +match_builtin BuiltinDecl.malloc_no_fail <>$ capt_exp $--> C.malloc_not_null
+        ; +BuiltinDecl.(match_builtin malloc_no_fail) <>$ capt_exp $--> C.malloc_not_null
         ; +map_context_tenv PatternMatch.ObjectiveC.is_modelled_as_alloc
           &--> C.malloc_not_null_no_param
         ; +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_release
@@ -1687,9 +1688,9 @@ module ProcNameDispatcher = struct
           <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; -"CFAutorelease" <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; -"CFBridgingRelease" <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
-        ; +match_builtin BuiltinDecl.__objc_bridge_transfer
+        ; +BuiltinDecl.(match_builtin __objc_bridge_transfer)
           <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
-        ; +match_builtin BuiltinDecl.__objc_alloc_no_fail
+        ; +BuiltinDecl.(match_builtin __objc_alloc_no_fail)
           <>$ capt_exp
           $--> ObjC.alloc_not_null_alloc_ev ~desc:"alloc"
         ; -"NSObject" &:: "init" <>$ capt_arg_payload $--> Misc.id_first_arg ~desc:"NSObject.init"

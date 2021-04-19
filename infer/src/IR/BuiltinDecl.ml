@@ -184,3 +184,5 @@ let vwscanf = create_procname "vwscanf"
 let wscanf = create_procname "wscanf"
 
 let zero_initialization = create_procname "__infer_zero_initialization"
+
+let match_builtin builtin _ s = String.equal s (Procname.get_method builtin)

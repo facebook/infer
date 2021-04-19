@@ -20,3 +20,5 @@ val __infer_skip_function : Procname.t
 val __infer_skip_gcc_asm_stmt : Procname.t
 
 val __infer_generic_selection_expr : Procname.t
+
+val match_builtin : t -> 'a -> string -> bool

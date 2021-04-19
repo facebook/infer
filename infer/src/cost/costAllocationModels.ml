@@ -11,11 +11,10 @@ module BasicCost = CostDomain.BasicCost
 module ProcName = struct
   let dispatch : (Tenv.t, BasicCost.t, unit) ProcnameDispatcher.ProcName.dispatcher =
     let open ProcnameDispatcher.ProcName in
-    let match_builtin builtin _ s = String.equal s (Procname.get_method builtin) in
     make_dispatcher
-      [ +match_builtin BuiltinDecl.__new <>--> BasicCost.one ()
-      ; +match_builtin BuiltinDecl.__new_array <>--> BasicCost.one ()
-      ; +match_builtin BuiltinDecl.__objc_alloc_no_fail <>--> BasicCost.one ()
-      ; +match_builtin BuiltinDecl.malloc <>--> BasicCost.one ()
-      ; +match_builtin BuiltinDecl.malloc_no_fail <>--> BasicCost.one () ]
+      [ +BuiltinDecl.(match_builtin __new) <>--> BasicCost.one ()
+      ; +BuiltinDecl.(match_builtin __new_array) <>--> BasicCost.one ()
+      ; +BuiltinDecl.(match_builtin __objc_alloc_no_fail) <>--> BasicCost.one ()
+      ; +BuiltinDecl.(match_builtin malloc) <>--> BasicCost.one ()
+      ; +BuiltinDecl.(match_builtin malloc_no_fail) <>--> BasicCost.one () ]
 end

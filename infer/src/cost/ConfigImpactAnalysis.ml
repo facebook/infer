@@ -341,33 +341,56 @@ module Dom = struct
                      fields field_checks } )
 
 
-  let is_known_expensive_method =
-    let dispatch : (Tenv.t, unit, unit) ProcnameDispatcher.Call.dispatcher =
+  type known_expensiveness = KnownCheap | KnownExpensive
+
+  let get_expensiveness_model =
+    let dispatch : (Tenv.t, known_expensiveness, unit) ProcnameDispatcher.Call.dispatcher =
       let open ProcnameDispatcher.Call in
       make_dispatcher
-        [ +PatternMatch.Java.implements_google "common.base.Preconditions"
-          &:: "checkArgument" $ any_arg $+ any_arg $+...$--> ()
+        [ +BuiltinDecl.(match_builtin __cast) <>--> KnownCheap
         ; +PatternMatch.Java.implements_google "common.base.Preconditions"
-          &:: "checkElementIndex" $ any_arg $+ any_arg $+ any_arg $+...$--> ()
+          &:: "checkArgument" $ any_arg $+ any_arg $+...$--> KnownExpensive
         ; +PatternMatch.Java.implements_google "common.base.Preconditions"
-          &:: "checkNotNull" $ any_arg $+ any_arg $+...$--> ()
+          &:: "checkElementIndex" $ any_arg $+ any_arg $+ any_arg $+...$--> KnownExpensive
         ; +PatternMatch.Java.implements_google "common.base.Preconditions"
-          &:: "checkPositionIndex" $ any_arg $+ any_arg $+ any_arg $+...$--> ()
+          &:: "checkNotNull" $ any_arg $+ any_arg $+...$--> KnownExpensive
         ; +PatternMatch.Java.implements_google "common.base.Preconditions"
-          &:: "checkState" $ any_arg $+ any_arg $+...$--> ()
-        ; +PatternMatch.Java.implements_lang "String" &:: "concat" &--> ()
-        ; +PatternMatch.Java.implements_lang "StringBuilder" &:: "append" &--> () ]
+          &:: "checkPositionIndex" $ any_arg $+ any_arg $+ any_arg $+...$--> KnownExpensive
+        ; +PatternMatch.Java.implements_google "common.base.Preconditions"
+          &:: "checkState" $ any_arg $+ any_arg $+...$--> KnownExpensive
+        ; +PatternMatch.Java.implements_lang "String" &:: "concat" &--> KnownExpensive
+        ; +PatternMatch.Java.implements_lang "StringBuilder" &:: "append" &--> KnownExpensive ]
     in
     fun tenv pname args ->
       let args =
         List.map args ~f:(fun (exp, typ) ->
             ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= ()} )
       in
-      dispatch tenv pname args |> Option.is_some
+      dispatch tenv pname args
 
 
   let call tenv analyze_dependency ~is_cheap_call callee args location
       ({config_checks; field_checks; unchecked_callees; unchecked_callees_cond} as astate) =
+    let join_unchecked_callees new_unchecked_callees new_unchecked_callees_cond =
+      if FieldChecks.is_top field_checks then
+        { astate with
+          unchecked_callees= UncheckedCallees.join unchecked_callees new_unchecked_callees
+        ; unchecked_callees_cond=
+            UncheckedCalleesCond.join unchecked_callees_cond new_unchecked_callees_cond }
+      else
+        let fields_to_add = FieldChecks.get_fields field_checks in
+        let unchecked_callees_cond =
+          UncheckedCalleesCond.weak_update fields_to_add new_unchecked_callees
+            unchecked_callees_cond
+        in
+        let unchecked_callees_cond =
+          UncheckedCalleesCond.fold
+            (fun fields callees acc ->
+              UncheckedCalleesCond.weak_update (Fields.union fields fields_to_add) callees acc )
+            new_unchecked_callees_cond unchecked_callees_cond
+        in
+        {astate with unchecked_callees_cond}
+    in
     if ConfigChecks.is_top config_checks then
       let (callee_summary : Summary.t option) =
         match analyze_dependency callee with
@@ -376,53 +399,40 @@ module Dom = struct
         | Some (_, (_, analysis_data, _)) ->
             analysis_data
       in
-      let is_expensive = is_known_expensive_method tenv callee args in
+      let expensiveness_model = get_expensiveness_model tenv callee args in
       let has_expensive_callee =
         Option.exists callee_summary ~f:Summary.has_known_expensive_callee
       in
-      if is_cheap_call && (not is_expensive) && not has_expensive_callee then
-        (* If callee is cheap by heuristics, ignore it. *)
-        astate
-      else
-        let new_unchecked_callees, new_unchecked_callees_cond =
-          if is_expensive then
-            ( UncheckedCallees.singleton
-                (UncheckedCallee.make ~is_known_expensive:true callee location)
-            , UncheckedCalleesCond.empty )
-          else
-            match callee_summary with
-            | Some
-                { Summary.unchecked_callees= callee_summary
-                ; unchecked_callees_cond= callee_summary_cond
-                ; has_call_stmt }
-              when has_call_stmt ->
-                (* If callee's summary is not leaf, use it. *)
-                ( UncheckedCallees.replace_location_by_call location callee_summary
-                , UncheckedCalleesCond.replace_location_by_call location callee_summary_cond )
-            | _ ->
-                (* Otherwise, add callee's name. *)
-                ( UncheckedCallees.singleton
-                    (UncheckedCallee.make ~is_known_expensive:false callee location)
-                , UncheckedCalleesCond.empty )
-        in
-        if FieldChecks.is_top field_checks then
-          { astate with
-            unchecked_callees= UncheckedCallees.join unchecked_callees new_unchecked_callees
-          ; unchecked_callees_cond=
-              UncheckedCalleesCond.join unchecked_callees_cond new_unchecked_callees_cond }
-        else
-          let fields_to_add = FieldChecks.get_fields field_checks in
-          let unchecked_callees_cond =
-            UncheckedCalleesCond.weak_update fields_to_add new_unchecked_callees
-              unchecked_callees_cond
-          in
-          let unchecked_callees_cond =
-            UncheckedCalleesCond.fold
-              (fun fields callees acc ->
-                UncheckedCalleesCond.weak_update (Fields.union fields fields_to_add) callees acc )
-              new_unchecked_callees_cond unchecked_callees_cond
-          in
-          {astate with unchecked_callees_cond}
+      match expensiveness_model with
+      | None when is_cheap_call && not has_expensive_callee ->
+          (* If callee is cheap by heuristics, ignore it. *)
+          astate
+      | Some KnownCheap ->
+          (* If callee is known cheap by model, ignore it. *)
+          astate
+      | Some KnownExpensive ->
+          (* If callee is known expensive by model, add callee's name. *)
+          join_unchecked_callees
+            (UncheckedCallees.singleton
+               (UncheckedCallee.make ~is_known_expensive:true callee location))
+            UncheckedCalleesCond.empty
+      | None -> (
+        match callee_summary with
+        | Some
+            { Summary.unchecked_callees= callee_summary
+            ; unchecked_callees_cond= callee_summary_cond
+            ; has_call_stmt }
+          when has_call_stmt ->
+            (* If callee's summary is not leaf, use it. *)
+            join_unchecked_callees
+              (UncheckedCallees.replace_location_by_call location callee_summary)
+              (UncheckedCalleesCond.replace_location_by_call location callee_summary_cond)
+        | _ ->
+            (* Otherwise, add callee's name. *)
+            join_unchecked_callees
+              (UncheckedCallees.singleton
+                 (UncheckedCallee.make ~is_known_expensive:false callee location))
+              UncheckedCalleesCond.empty )
     else astate
 end
 
