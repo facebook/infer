@@ -89,7 +89,8 @@ type global_state =
         (** the time elapsed doing [status] so far *)
   ; pulse_address_generator: PulseAbstractValue.State.t
   ; absint_state: AnalysisState.t
-  ; biabduction_state: State.t }
+  ; biabduction_state: State.t
+  ; taskbar_nesting: int }
 
 let save_global_state () =
   Timeout.suspend_existing_timeout ~keep_symop_total:false ;
@@ -105,7 +106,8 @@ let save_global_state () =
           (Mtime.span t0 (Mtime_clock.now ()), status) )
   ; pulse_address_generator= PulseAbstractValue.State.get ()
   ; absint_state= AnalysisState.save ()
-  ; biabduction_state= State.save_state () }
+  ; biabduction_state= State.save_state ()
+  ; taskbar_nesting= !nesting }
 
 
 let restore_global_state st =
@@ -126,7 +128,8 @@ let restore_global_state st =
         let new_t0 = Option.value_exn new_t0 in
         !ProcessPoolState.update_status new_t0 status ;
         (new_t0, status) ) ;
-  Timeout.resume_previous_timeout ()
+  Timeout.resume_previous_timeout () ;
+  nesting := st.taskbar_nesting
 
 
 (** reference to log errors only at the innermost recursive call *)
