@@ -134,12 +134,11 @@ module UncheckedCalleesCond = struct
 
 
   let filter_known_expensive fields_map =
-    fold
-      (fun fields callees acc ->
+    filter_map
+      (fun _ callees ->
         let expensive_callees = UncheckedCallees.filter_known_expensive callees in
-        if UncheckedCallees.is_empty expensive_callees then acc
-        else add fields expensive_callees acc )
-      fields_map empty
+        Option.some_if (not (UncheckedCallees.is_empty expensive_callees)) expensive_callees )
+      fields_map
 end
 
 module Loc = struct

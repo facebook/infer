@@ -85,6 +85,8 @@ module type MonoMap = sig
 
   val filter : (key -> value -> bool) -> t -> t
 
+  val filter_map : (key -> value -> value option) -> t -> t
+
   val partition : (key -> value -> bool) -> t -> t * t
 
   val cardinal : t -> int
