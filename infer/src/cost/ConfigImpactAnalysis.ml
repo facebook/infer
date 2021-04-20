@@ -116,6 +116,8 @@ module UncheckedCallees = struct
   let pp_without_location f x = UncheckedCallee.pp_without_location_list f (elements x)
 
   let has_known_expensive_callee x = exists (fun {is_known_expensive} -> is_known_expensive) x
+
+  let filter_known_expensive x = filter (fun {is_known_expensive} -> is_known_expensive) x
 end
 
 module UncheckedCalleesCond = struct
@@ -129,6 +131,15 @@ module UncheckedCalleesCond = struct
 
   let replace_location_by_call location fields_map =
     map (UncheckedCallees.replace_location_by_call location) fields_map
+
+
+  let filter_known_expensive fields_map =
+    fold
+      (fun fields callees acc ->
+        let expensive_callees = UncheckedCallees.filter_known_expensive callees in
+        if UncheckedCallees.is_empty expensive_callees then acc
+        else add fields expensive_callees acc )
+      fields_map empty
 end
 
 module Loc = struct
@@ -423,6 +434,15 @@ module Dom = struct
             ; unchecked_callees_cond= callee_summary_cond
             ; has_call_stmt }
           when has_call_stmt ->
+            let callee_summary, callee_summary_cond =
+              if is_cheap_call then
+                (* In this case, the callee is cheap by the heuristics, but its summary includes
+                   some known expensive callees. Thus, it filters the known expensive callees
+                   only. *)
+                ( UncheckedCallees.filter_known_expensive callee_summary
+                , UncheckedCalleesCond.filter_known_expensive callee_summary_cond )
+              else (callee_summary, callee_summary_cond)
+            in
             (* If callee's summary is not leaf, use it. *)
             join_unchecked_callees
               (UncheckedCallees.replace_location_by_call location callee_summary)
