@@ -607,11 +607,7 @@ module SafeInvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain
 
   let filter = M.filter
 
-  let filter_map f x =
-    M.filter_map
-      (fun k v -> match f k v with Some v when ValueDomain.is_top v -> None | v_opt -> v_opt)
-      x
-
+  let filter_map f x = M.filter_map (fun k v -> f k v |> none_if_top_opt) x
 
   let partition = M.partition
 
