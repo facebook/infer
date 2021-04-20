@@ -447,6 +447,9 @@ module Dom = struct
             join_unchecked_callees
               (UncheckedCallees.replace_location_by_call location callee_summary)
               (UncheckedCalleesCond.replace_location_by_call location callee_summary_cond)
+        | None when Procname.is_objc_init callee ->
+            (* If callee is unknown ObjC initializer, ignore it. *)
+            astate
         | _ ->
             (* Otherwise, add callee's name. *)
             join_unchecked_callees

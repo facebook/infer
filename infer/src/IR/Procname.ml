@@ -357,9 +357,9 @@ module ObjC_Cpp = struct
     if is_instance then ObjCInstanceMethod else ObjCClassMethod
 
 
-  let is_objc_constructor method_name =
-    String.equal method_name "new" || String.is_prefix ~prefix:"init" method_name
+  let is_prefix_init s = String.is_prefix ~prefix:"init" s
 
+  let is_objc_constructor method_name = String.equal method_name "new" || is_prefix_init method_name
 
   let is_objc_kind = function
     | ObjCClassMethod | ObjCInstanceMethod | ObjCInternalMethod ->
@@ -603,6 +603,12 @@ let is_objc_dealloc procname =
   is_objc_method procname
   &&
   match procname with ObjC_Cpp {method_name} -> ObjC_Cpp.is_objc_dealloc method_name | _ -> false
+
+
+let is_objc_init procname =
+  is_objc_method procname
+  &&
+  match procname with ObjC_Cpp {method_name} -> ObjC_Cpp.is_prefix_init method_name | _ -> false
 
 
 let block_of_procname procname =

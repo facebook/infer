@@ -326,6 +326,9 @@ val is_cpp_lambda : t -> bool
 val is_objc_dealloc : t -> bool
 (** Return whether the dealloc method of an Objective-C class. *)
 
+val is_objc_init : t -> bool
+(** Return whether the init method of an Objective-C class. *)
+
 val is_c_method : t -> bool
 (** Return true this is an Objective-C/C++ method name. *)
 
