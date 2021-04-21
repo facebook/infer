@@ -9,6 +9,65 @@
 
     The analysis' semantics of control flow. *)
 
+module PriorityQueue (Elt : sig
+  type t [@@deriving compare, equal, sexp_of]
+
+  val pp : t pp
+  val joinable : t -> t -> bool
+end) : sig
+  type elt = Elt.t
+
+  (** a "queue" of elements, which need not be FIFO *)
+  type t
+
+  val pp : t pp
+
+  val create : unit -> t
+  (** create an empty queue *)
+
+  val add : elt -> t -> t
+  (** add an element *)
+
+  val pop : t -> (elt * elt list * t) option
+  (** [pop q] is [None] if [q] is empty and otherwise is [Some (e, es, q')]
+      where [e] is the selected element in [q], [es] are other elements in
+      [q] with the same destination as [e], and [q'] is [q] without [e] and
+      [es]. *)
+end = struct
+  type elt = Elt.t
+
+  module Elts = Set.Make (Elt)
+
+  type t = {queue: Elt.t FHeap.t; removed: Elts.t}
+
+  let pp ppf {queue; removed} =
+    let rev_elts =
+      FHeap.fold queue ~init:[] ~f:(fun rev_elts elt ->
+          if Elts.mem elt removed then rev_elts else elt :: rev_elts )
+    in
+    Format.fprintf ppf "@[%a@]" (List.pp " ::@ " Elt.pp) (List.rev rev_elts)
+
+  let create () = {queue= FHeap.create ~cmp:Elt.compare; removed= Elts.empty}
+
+  let add elt {queue; removed} =
+    let removed' = Elts.remove elt removed in
+    if removed' == removed then {queue= FHeap.add queue elt; removed}
+    else {queue; removed= removed'}
+
+  let rec pop {queue; removed} =
+    let* top, queue = FHeap.pop queue in
+    let removed' = Elts.remove top removed in
+    if removed' != removed then pop {queue; removed= removed'}
+    else
+      let elts, removed =
+        FHeap.fold queue ~init:([], removed') ~f:(fun (elts, removed) elt ->
+            if Elt.joinable top elt && not (Elts.mem elt removed) then
+              (elt :: elts, Elts.add elt removed)
+            else (elts, removed) )
+      in
+      Some (top, elts, {queue; removed})
+end
+
 module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
   module Stack : sig
     type t
@@ -173,68 +232,6 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
         M.merge x y ~f:(fun _ -> function
           | `Left d | `Right d -> Some d
           | `Both (d1, d2) -> Some (Int.max d1 d2) )
-    end
-
-    module PriorityQueue (Elt : sig
-      type t [@@deriving compare, equal, sexp_of]
-
-      val pp : t pp
-      val joinable : t -> t -> bool
-    end) : sig
-      type elt = Elt.t
-
-      (** a "queue" of elements, which need not be FIFO *)
-      type t
-
-      val pp : t pp
-
-      val create : unit -> t
-      (** create an empty queue *)
-
-      val add : elt -> t -> t
-      (** add an element *)
-
-      val pop : t -> (elt * elt list * t) option
-      (** [pop q] is [None] if [q] is empty and otherwise is
-          [Some (e, es, q')] where [e] is the selected element in [q], [es]
-          are other elements in [q] with the same destination as [e], and
-          [q'] is [q] without [e] and [es]. *)
-    end = struct
-      type elt = Elt.t
-
-      module Elts = Set.Make (Elt)
-
-      type t = {queue: Elt.t FHeap.t; removed: Elts.t}
-
-      let pp ppf {queue; removed} =
-        let rev_elts =
-          FHeap.fold queue ~init:[] ~f:(fun rev_elts elt ->
-              if Elts.mem elt removed then rev_elts else elt :: rev_elts )
-        in
-        Format.fprintf ppf "@[%a@]" (List.pp " ::@ " Elt.pp)
-          (List.rev rev_elts)
-
-      let create () =
-        {queue= FHeap.create ~cmp:Elt.compare; removed= Elts.empty}
-
-      let add elt {queue; removed} =
-        let removed' = Elts.remove elt removed in
-        if removed' == removed then {queue= FHeap.add queue elt; removed}
-        else {queue; removed= removed'}
-
-      let rec pop {queue; removed} =
-        let* top, queue = FHeap.pop queue in
-        let removed' = Elts.remove top removed in
-        if removed' != removed then pop {queue; removed= removed'}
-        else
-          let elts, removed =
-            FHeap.fold queue ~init:([], removed')
-              ~f:(fun (elts, removed) elt ->
-                if Elt.joinable top elt && not (Elts.mem elt removed) then
-                  (elt :: elts, Elts.add elt removed)
-                else (elts, removed) )
-          in
-          Some (top, elts, {queue; removed})
     end
 
     module Elt = struct
