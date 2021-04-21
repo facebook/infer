@@ -569,8 +569,11 @@ let mk_initial tenv proc_desc =
   in
   let locals = Procdesc.get_locals proc_desc in
   let post =
-    List.fold locals ~init:post ~f:(fun (acc : PostDomain.t) {ProcAttributes.name; typ} ->
-        set_uninitialized_post tenv (`LocalDecl (Pvar.mk name proc_name, None)) typ location acc )
+    List.fold locals ~init:post
+      ~f:(fun (acc : PostDomain.t) {ProcAttributes.name; typ; modify_in_block; is_constexpr} ->
+        if modify_in_block || is_constexpr then acc
+        else
+          set_uninitialized_post tenv (`LocalDecl (Pvar.mk name proc_name, None)) typ location acc )
   in
   { pre
   ; post
