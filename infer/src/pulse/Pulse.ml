@@ -274,15 +274,8 @@ module PulseTransferFunctions = struct
       ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) _cfg_node
       (instr : Sil.instr) : Domain.t list =
     match astate with
-    | AbortProgram _ | LatentAbortProgram _ | LatentInvalidAccess _ ->
+    | AbortProgram _ | ISLLatentMemoryError _ | LatentAbortProgram _ | LatentInvalidAccess _ ->
         [astate]
-    | ISLLatentMemoryError _ -> (
-      (* Note: This is to avoid duplicated error states at join point of branch *)
-      match instr with
-      | Prune (_, _, is_then_branch, _) when is_then_branch ->
-          []
-      | _ ->
-          [astate] )
     | ExitProgram _ ->
         (* program already exited, simply propagate the exited state upwards  *)
         [astate]
