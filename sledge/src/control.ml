@@ -300,10 +300,30 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
       | None -> ()
   end
 
+  let summary_table = Llair.Function.Tbl.create ()
+
+  let pp_st () =
+    [%Trace.printf
+      "@[<v>%t@]" (fun fs ->
+          Llair.Function.Tbl.iteri summary_table ~f:(fun ~key ~data ->
+              Format.fprintf fs "@[<v>%a:@ @[%a@]@]@ " Llair.Function.pp key
+                (List.pp "@," Dom.pp_summary)
+                data ) )]
+
   let exec_jump stk state block Llair.{dst; retreating} =
     Work.add ~prev:block ~retreating stk state dst
 
-  let summary_table = Llair.Function.Tbl.create ()
+  let exec_skip_func :
+         Stack.t
+      -> Dom.t
+      -> Llair.block
+      -> Llair.Reg.t option
+      -> Llair.jump
+      -> Work.x =
+   fun stk state block areturn return ->
+    Report.unknown_call block.term ;
+    let state = Option.fold ~f:Dom.exec_kill areturn state in
+    exec_jump stk state block return
 
   let exec_call stk state block call globals =
     let Llair.{callee; actuals; areturn; return; recursive} = call in
@@ -337,31 +357,11 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
     |>
     [%Trace.retn fun {pf} _ -> pf ""]
 
-  let exec_skip_func :
-         Stack.t
-      -> Dom.t
-      -> Llair.block
-      -> Llair.Reg.t option
-      -> Llair.jump
-      -> Work.x =
-   fun stk state block areturn return ->
-    Report.unknown_call block.term ;
-    let state = Option.fold ~f:Dom.exec_kill areturn state in
-    exec_jump stk state block return
-
   let exec_call stk state block call globals =
     let Llair.{callee; areturn; return; _} = call in
     if Llair.Func.is_undefined callee then
       exec_skip_func stk state block areturn return
     else exec_call stk state block call globals
-
-  let pp_st () =
-    [%Trace.printf
-      "@[<v>%t@]" (fun fs ->
-          Llair.Function.Tbl.iteri summary_table ~f:(fun ~key ~data ->
-              Format.fprintf fs "@[<v>%a:@ @[%a@]@]@ " Llair.Function.pp key
-                (List.pp "@," Dom.pp_summary)
-                data ) )]
 
   let exec_return stk pre_state (block : Llair.block) exp =
     let Llair.{name; formals; freturn; locals} = block.parent in
@@ -391,13 +391,8 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
         let retn_state = Dom.retn formals freturn from_call post_state in
         exec_jump stk retn_state block retn_site
     | None ->
-        (* Create and store a function summary for main *)
-        if
-          Opts.function_summaries
-          && List.mem ~eq:String.equal
-               (Llair.Function.name name)
-               Opts.entry_points
-        then summarize exit_state |> (ignore : Dom.t -> unit) ;
+        if Opts.function_summaries then
+          summarize exit_state |> (ignore : Dom.t -> unit) ;
         Work.skip )
     |>
     [%Trace.retn fun {pf} _ -> pf ""]
@@ -440,17 +435,16 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
     Report.step_term block ;
     match block.term with
     | Switch {key; tbl; els} ->
-        IArray.fold
+        IArray.fold tbl
           ~f:(fun (case, jump) x ->
             exec_assume (Llair.Exp.eq key case) jump stk state block
             |> Work.seq x )
-          tbl
           (exec_assume
              (IArray.fold tbl Llair.Exp.true_ ~f:(fun (case, _) b ->
                   Llair.Exp.and_ (Llair.Exp.dq key case) b ))
              els stk state block)
     | Iswitch {ptr; tbl} ->
-        IArray.fold tbl Work.skip ~f:(fun (jump : Llair.jump) x ->
+        IArray.fold tbl Work.skip ~f:(fun jump x ->
             exec_assume
               (Llair.Exp.eq ptr
                  (Llair.Exp.label
