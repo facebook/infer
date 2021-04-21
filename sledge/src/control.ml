@@ -501,30 +501,28 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
         Report.alarm alarm ;
         Work.skip
 
-  let harness : Llair.program -> Work.t option =
+  let call_entry_point : Llair.program -> Work.t option =
    fun pgm ->
-    List.find_map
-      ~f:(fun entry_point -> Llair.Func.find entry_point pgm.functions)
-      Opts.entry_points
-    |> function
-    | Some {name; formals; freturn; locals; entry}
-      when IArray.is_empty formals ->
-        Some
-          (Work.init
-             (fst
-                (Dom.call ~summaries:Opts.function_summaries
-                   ~globals:
-                     (Domain_used_globals.by_function Opts.globals name)
-                   ~actuals:IArray.empty ~areturn:None ~formals:IArray.empty
-                   ~freturn ~locals (Dom.init pgm.globals)))
-             entry)
-    | _ -> None
+    let+ {name; formals; freturn; locals; entry} =
+      List.find_map Opts.entry_points ~f:(fun entry_point ->
+          let* func = Llair.Func.find entry_point pgm.functions in
+          if IArray.is_empty func.formals then Some func else None )
+    in
+    let summaries = Opts.function_summaries in
+    let globals = Domain_used_globals.by_function Opts.globals name in
+    let actuals = IArray.empty in
+    let areturn = None in
+    let state, _ =
+      Dom.call ~summaries ~globals ~actuals ~areturn ~formals ~freturn
+        ~locals (Dom.init pgm.globals)
+    in
+    Work.init state entry
 
   let exec_pgm : Llair.program -> unit =
    fun pgm ->
-    match harness pgm with
+    match call_entry_point pgm with
     | Some work -> Work.run ~f:(exec_block pgm) work
-    | None -> fail "no applicable harness" ()
+    | None -> fail "no entry point found" ()
 
   let compute_summaries pgm : Dom.summary list Llair.Function.Map.t =
     assert Opts.function_summaries ;
