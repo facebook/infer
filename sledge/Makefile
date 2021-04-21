@@ -30,9 +30,10 @@ LLVM_OCAML_SENTINEL=vendor/llvm-dune/src/llvm/common/dune
 # Note that this does not correctly detect llvm shared libraries on
 # macos since llvm-config is broken. A filthy workaround seems to be
 # to create the libLLVM-11.dylib file llvm-config looks for as a
-# symbolic link to libLLVM.dylib:
-# LLVMROOT=$(dirname $(dirname $(opam config var conf-llvm:config))) \
-# ln -s $LLVMROOT/lib/libLLVM.dylib $LLVMROOT/lib/libLLVM-11.dylib
+# symbolic link to libLLVM.dylib. That is, to manually in the shell
+# execute:
+# (LLVMLIB=$($(opam config var conf-llvm:config) --libdir);
+#  ln -s $LLVMLIB/libLLVM.dylib $LLVMLIB/libLLVM-11.dylib)
 
 $(LLVM_OCAML_SENTINEL): $(LLVM_OCAML_SRC)
 	cd vendor/llvm-dune; ./setup.sh $$(opam config var conf-llvm:config) &>/dev/null
