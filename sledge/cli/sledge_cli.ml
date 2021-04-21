@@ -56,6 +56,7 @@ let command ~summary ?readme param =
         | Assert_failure _ as exn ->
             Report.InternalError (Sexp.to_string_hum (sexp_of_exn exn))
         | Failure msg -> Report.InternalError msg
+        | Stop.Stop -> Report.safe_or_unsafe ()
         | exn -> Report.UnknownError (Printexc.to_string exn)
       in
       Report.status (status_of_exn exn) ;
@@ -143,8 +144,8 @@ let analyze =
     let module Analysis = Control.Make (Opts) (Dom) in
     Domain_sh.simplify_states := not no_simplify_states ;
     Option.iter dump_query ~f:(fun n -> Solver.dump_query := n) ;
+    at_exit (fun () -> Report.coverage pgm) ;
     Analysis.exec_pgm pgm ;
-    Report.coverage pgm ;
     Report.safe_or_unsafe ()
 
 let analyze_cmd =

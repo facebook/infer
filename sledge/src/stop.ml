@@ -7,5 +7,7 @@
 
 (** Stop analysis when encountering issues *)
 
-let on_unknown_call _ = [%Trace.kprintf (fun _ -> assert false) ""]
-let on_alarm _ = [%Trace.kprintf (fun _ -> assert false) ""]
+exception Stop
+
+let on_unknown_call _ = Trace.kprintf __FUNCTION__ (fun _ -> raise Stop) ""
+let on_alarm _ = Trace.kprintf __FUNCTION__ (fun _ -> raise Stop) ""
