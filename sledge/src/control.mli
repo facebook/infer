@@ -7,11 +7,13 @@
 
 (** The analysis' semantics of control flow. *)
 
+open Control_intf
+
 module type Queue
 
 module PriorityQueue : Queue
 
-module Make (_ : Domain_intf.Opts) (Dom : Domain_intf.Dom) (_ : Queue) : sig
+module Make (_ : Config) (Dom : Domain_intf.Dom) (_ : Queue) : sig
   val exec_pgm : Llair.program -> unit
 
   val compute_summaries :

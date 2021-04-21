@@ -74,22 +74,22 @@ let unmarshal file () =
 
 let entry_points = Config.find_list "entry-points"
 
-let used_globals pgm entry_points preanalyze : Domain_intf.used_globals =
+let used_globals pgm entry_points preanalyze =
+  let module UG = Domain_used_globals in
   if preanalyze then
-    let module Opts = struct
+    let module Config = struct
       let bound = 1
       let function_summaries = true
       let entry_points = entry_points
-      let globals = Domain_intf.Declared Llair.Global.Set.empty
+      let globals = UG.Declared Llair.Global.Set.empty
     end in
-    let module Analysis =
-      Control.Make (Opts) (Domain_used_globals) (Control.PriorityQueue)
+    let module Analysis = Control.Make (Config) (UG) (Control.PriorityQueue)
     in
     let summary_table = Analysis.compute_summaries pgm in
-    Per_function
+    UG.Per_function
       (Llair.Function.Map.map summary_table ~f:Llair.Global.Set.union_list)
   else
-    Declared
+    UG.Declared
       (Llair.Global.Set.of_iter
          (Iter.map ~f:(fun g -> g.name) (IArray.to_iter pgm.globals)))
 
@@ -129,7 +129,7 @@ let analyze =
     Timer.enabled := stats ;
     let pgm = program () in
     let globals = used_globals pgm entry_points preanalyze_globals in
-    let module Opts = struct
+    let module Config = struct
       let bound = bound
       let function_summaries = function_summaries
       let entry_points = entry_points
@@ -143,7 +143,8 @@ let analyze =
       | `unit -> (module Domain_unit)
     in
     let module Dom = (val dom) in
-    let module Analysis = Control.Make (Opts) (Dom) (Control.PriorityQueue)
+    let module Analysis =
+      Control.Make (Config) (Dom) (Control.PriorityQueue)
     in
     Domain_sh.simplify_states := not no_simplify_states ;
     Option.iter dump_query ~f:(fun n -> Solver.dump_query := n) ;

@@ -48,21 +48,3 @@ module type Dom = sig
 
   val apply_summary : t -> summary -> t option
 end
-
-type used_globals =
-  | Per_function of Llair.Global.Set.t Llair.Function.Map.t
-      (** per-function used-globals map *)
-  | Declared of Llair.Global.Set.t  (** program-wide set *)
-
-module type Opts = sig
-  val bound : int
-  (** Loop/recursion unrolling bound *)
-
-  val function_summaries : bool
-  (** Use function summarization *)
-
-  val entry_points : string list
-  (** C linkage names of entry points *)
-
-  val globals : used_globals
-end

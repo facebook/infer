@@ -62,7 +62,11 @@ let apply_summary st summ = Some (Llair.Global.Set.union st summ)
 
 (** Query *)
 
-let by_function : Domain_intf.used_globals -> Llair.Function.t -> t =
+type used_globals =
+  | Per_function of summary Llair.Function.Map.t
+  | Declared of summary
+
+let by_function : used_globals -> Llair.Function.t -> t =
  fun s fn ->
   [%Trace.call fun {pf} -> pf "@ %a" Llair.Function.pp fn]
   ;

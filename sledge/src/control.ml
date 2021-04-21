@@ -9,6 +9,8 @@
 
     The analysis' semantics of control flow. *)
 
+open Control_intf
+
 module type Elt = sig
   type t [@@deriving compare, equal, sexp_of]
 
@@ -74,10 +76,7 @@ module PriorityQueue (Elt : Elt) : QueueS with type elt = Elt.t = struct
       Some (top, elts, {queue; removed})
 end
 
-module Make
-    (Opts : Domain_intf.Opts)
-    (Dom : Domain_intf.Dom)
-    (Queue : Queue) =
+module Make (Config : Config) (Dom : Domain_intf.Dom) (Queue : Queue) =
 struct
   module Stack : sig
     type t
@@ -265,7 +264,7 @@ struct
 
     let prune depth edge queue =
       [%Trace.info " %i: %a" depth Edge.pp edge] ;
-      Report.hit_bound Opts.bound ;
+      Report.hit_bound Config.bound ;
       queue
 
     let dequeue queue =
@@ -289,7 +288,7 @@ struct
       let edge = {Edge.dst= curr; src= prev; stk} in
       let depth = Option.value (Depths.find edge depths) ~default:0 in
       let depth = if retreating then depth + 1 else depth in
-      if depth <= Opts.bound then enqueue depth edge state depths queue
+      if depth <= Config.bound then enqueue depth edge state depths queue
       else prune depth edge queue
 
     let init state curr =
@@ -336,14 +335,14 @@ struct
         Llair.Function.pp return.dst.parent.name Dom.pp state]
     ;
     let dnf_states =
-      if Opts.function_summaries then Dom.dnf state else [state]
+      if Config.function_summaries then Dom.dnf state else [state]
     in
     let domain_call =
       Dom.call ~globals ~actuals ~areturn ~formals ~freturn ~locals
     in
     List.fold dnf_states Work.skip ~f:(fun state acc ->
         match
-          if not Opts.function_summaries then None
+          if not Config.function_summaries then None
           else
             let state = fst (domain_call ~summaries:false state) in
             let* summary = Llair.Function.Tbl.find summary_table name in
@@ -351,7 +350,7 @@ struct
         with
         | None ->
             let state, from_call =
-              domain_call ~summaries:Opts.function_summaries state
+              domain_call ~summaries:Config.function_summaries state
             in
             let stk = Stack.push_call call from_call stk in
             Work.seq acc
@@ -371,7 +370,7 @@ struct
     [%Trace.call fun {pf} -> pf "@ from: %a" Llair.Function.pp name]
     ;
     let summarize post_state =
-      if not Opts.function_summaries then post_state
+      if not Config.function_summaries then post_state
       else
         let function_summary, post_state =
           Dom.create_summary ~locals ~formals post_state
@@ -394,7 +393,7 @@ struct
         let retn_state = Dom.retn formals freturn from_call post_state in
         exec_jump stk retn_state block retn_site
     | None ->
-        if Opts.function_summaries then
+        if Config.function_summaries then
           summarize exit_state |> (ignore : Dom.t -> unit) ;
         Work.skip )
     |>
@@ -457,7 +456,7 @@ struct
             |> Work.seq x )
     | Call ({callee} as call) ->
         exec_call stk state block call
-          (Domain_used_globals.by_function Opts.globals callee.name)
+          (Domain_used_globals.by_function Config.globals callee.name)
     | ICall ({callee; areturn; return} as call) -> (
         let lookup name = Llair.Func.find name pgm.functions in
         match Dom.resolve_callee lookup callee state with
@@ -465,7 +464,8 @@ struct
         | callees ->
             List.fold callees Work.skip ~f:(fun callee x ->
                 exec_call stk state block {call with callee}
-                  (Domain_used_globals.by_function Opts.globals callee.name)
+                  (Domain_used_globals.by_function Config.globals
+                     callee.name)
                 |> Work.seq x ) )
     | Return {exp} -> exec_return stk state block exp
     | Throw {exc} -> exec_throw stk state block exc
@@ -501,12 +501,12 @@ struct
   let call_entry_point : Llair.program -> Work.t option =
    fun pgm ->
     let+ {name; formals; freturn; locals; entry} =
-      List.find_map Opts.entry_points ~f:(fun entry_point ->
+      List.find_map Config.entry_points ~f:(fun entry_point ->
           let* func = Llair.Func.find entry_point pgm.functions in
           if IArray.is_empty func.formals then Some func else None )
     in
-    let summaries = Opts.function_summaries in
-    let globals = Domain_used_globals.by_function Opts.globals name in
+    let summaries = Config.function_summaries in
+    let globals = Domain_used_globals.by_function Config.globals name in
     let actuals = IArray.empty in
     let areturn = None in
     let state, _ =
@@ -522,7 +522,7 @@ struct
     | None -> fail "no entry point found" ()
 
   let compute_summaries pgm : Dom.summary list Llair.Function.Map.t =
-    assert Opts.function_summaries ;
+    assert Config.function_summaries ;
     exec_pgm pgm ;
     Llair.Function.Tbl.fold summary_table Llair.Function.Map.empty
       ~f:(fun ~key ~data map ->
