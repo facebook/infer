@@ -9,13 +9,15 @@
 
     The analysis' semantics of control flow. *)
 
-module PriorityQueue (Elt : sig
+module type Elt = sig
   type t [@@deriving compare, equal, sexp_of]
 
   val pp : t pp
   val joinable : t -> t -> bool
-end) : sig
-  type elt = Elt.t
+end
+
+module type QueueS = sig
+  type elt
 
   (** a "queue" of elements, which need not be FIFO *)
   type t
@@ -33,7 +35,11 @@ end) : sig
       where [e] is the selected element in [q], [es] are other elements in
       [q] with the same destination as [e], and [q'] is [q] without [e] and
       [es]. *)
-end = struct
+end
+
+module type Queue = functor (Elt : Elt) -> QueueS with type elt = Elt.t
+
+module PriorityQueue (Elt : Elt) : QueueS with type elt = Elt.t = struct
   type elt = Elt.t
 
   module Elts = Set.Make (Elt)
@@ -68,7 +74,11 @@ end = struct
       Some (top, elts, {queue; removed})
 end
 
-module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
+module Make
+    (Opts : Domain_intf.Opts)
+    (Dom : Domain_intf.Dom)
+    (Queue : Queue) =
+struct
   module Stack : sig
     type t
 
@@ -245,7 +255,7 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
       let joinable x y = Llair.Block.equal x.edge.dst y.edge.dst
     end
 
-    module Queue = PriorityQueue (Elt)
+    module Queue = Queue (Elt)
 
     let enqueue depth edge state depths queue =
       [%Trace.info

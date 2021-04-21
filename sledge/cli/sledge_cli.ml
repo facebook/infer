@@ -82,7 +82,9 @@ let used_globals pgm entry_points preanalyze : Domain_intf.used_globals =
       let entry_points = entry_points
       let globals = Domain_intf.Declared Llair.Global.Set.empty
     end in
-    let module Analysis = Control.Make (Opts) (Domain_used_globals) in
+    let module Analysis =
+      Control.Make (Opts) (Domain_used_globals) (Control.PriorityQueue)
+    in
     let summary_table = Analysis.compute_summaries pgm in
     Per_function
       (Llair.Function.Map.map summary_table ~f:Llair.Global.Set.union_list)
@@ -141,7 +143,8 @@ let analyze =
       | `unit -> (module Domain_unit)
     in
     let module Dom = (val dom) in
-    let module Analysis = Control.Make (Opts) (Dom) in
+    let module Analysis = Control.Make (Opts) (Dom) (Control.PriorityQueue)
+    in
     Domain_sh.simplify_states := not no_simplify_states ;
     Option.iter dump_query ~f:(fun n -> Solver.dump_query := n) ;
     at_exit (fun () -> Report.coverage pgm) ;
