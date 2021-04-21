@@ -83,9 +83,6 @@ struct
     type t
 
     val pp : t pp
-
-    type as_inlined_location = t [@@deriving compare, equal, sexp_of]
-
     val empty : t
     val push_call : Llair.func Llair.call -> Dom.from_call -> t -> t
     val pop_return : t -> (Dom.from_call * Llair.jump * t) option
@@ -100,6 +97,8 @@ struct
             -> 'a
             -> 'a)
       -> (Dom.from_call * Llair.jump * t * 'a) option
+
+    type as_inlined_location = t [@@deriving compare, equal, sexp_of]
   end = struct
     type t =
       | Return of
@@ -121,36 +120,6 @@ struct
       | Throw (dst, s) ->
           Format.fprintf ppf "T#%i%a" dst.dst.sort_index pp s
       | Empty -> ()
-
-    type as_inlined_location = t [@@deriving sexp_of]
-
-    (* Treat a stack as a code location in a hypothetical expansion of the
-       program where all non-recursive functions have been completely
-       inlined. In particular, this means to compare stacks as if all Return
-       frames for recursive calls had been removed. Additionally, the
-       from_call info in Return frames is ignored. *)
-    let rec compare_as_inlined_location x y =
-      if x == y then 0
-      else
-        match (x, y) with
-        | Return {recursive= true; stk= x}, y
-         |x, Return {recursive= true; stk= y} ->
-            compare_as_inlined_location x y
-        | Return {dst= j; stk= x}, Return {dst= k; stk= y} -> (
-          match Llair.Jump.compare j k with
-          | 0 -> compare_as_inlined_location x y
-          | n -> n )
-        | Return _, _ -> -1
-        | _, Return _ -> 1
-        | Throw (j, x), Throw (k, y) -> (
-          match Llair.Jump.compare j k with
-          | 0 -> compare_as_inlined_location x y
-          | n -> n )
-        | Throw _, _ -> -1
-        | _, Throw _ -> 1
-        | Empty, Empty -> 0
-
-    let equal_as_inlined_location = [%compare.equal: as_inlined_location]
 
     let invariant s =
       let@ () = Invariant.invariant [%here] s [%sexp_of: t] in
@@ -189,6 +158,36 @@ struct
         | Throw _ as stk -> violates invariant stk
       in
       pop_throw_ state stk
+
+    type as_inlined_location = t [@@deriving sexp_of]
+
+    (* Treat a stack as a code location in a hypothetical expansion of the
+       program where all non-recursive functions have been completely
+       inlined. In particular, this means to compare stacks as if all Return
+       frames for recursive calls had been removed. Additionally, the
+       from_call info in Return frames is ignored. *)
+    let rec compare_as_inlined_location x y =
+      if x == y then 0
+      else
+        match (x, y) with
+        | Return {recursive= true; stk= x}, y
+         |x, Return {recursive= true; stk= y} ->
+            compare_as_inlined_location x y
+        | Return {dst= j; stk= x}, Return {dst= k; stk= y} -> (
+          match Llair.Jump.compare j k with
+          | 0 -> compare_as_inlined_location x y
+          | n -> n )
+        | Return _, _ -> -1
+        | _, Return _ -> 1
+        | Throw (j, x), Throw (k, y) -> (
+          match Llair.Jump.compare j k with
+          | 0 -> compare_as_inlined_location x y
+          | n -> n )
+        | Throw _, _ -> -1
+        | _, Throw _ -> 1
+        | Empty, Empty -> 0
+
+    let equal_as_inlined_location = [%compare.equal: as_inlined_location]
   end
 
   module Work : sig
