@@ -18,7 +18,7 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
     type as_inlined_location = t [@@deriving compare, equal, sexp_of]
 
     val empty : t
-    val push_call : Llair.func Llair.call -> Dom.from_call -> t -> t option
+    val push_call : Llair.func Llair.call -> Dom.from_call -> t -> t
     val pop_return : t -> (Dom.from_call * Llair.jump * t) option
 
     val pop_throw :
@@ -96,28 +96,14 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
       Return {recursive; dst= return; formals; locals; from_call; stk}
       |> check invariant
 
-    let push_throw jmp stk =
-      (match jmp with None -> stk | Some jmp -> Throw (jmp, stk))
+    let push_throw call stk =
+      ( match call.Llair.throw with
+      | None -> stk
+      | Some jmp -> Throw (jmp, stk) )
       |> check invariant
 
-    let push_call (Llair.{return; throw} as call) from_call stk =
-      [%Trace.call fun {pf} -> pf "@ %a" pp stk]
-      ;
-      let rec count_f_in_stack acc f = function
-        | Return {stk= next_frame; dst= dest_block} ->
-            count_f_in_stack
-              (if Llair.Jump.equal dest_block f then acc + 1 else acc)
-              f next_frame
-        | _ -> acc
-      in
-      let n = count_f_in_stack 0 return stk in
-      ( if n > Opts.bound then (
-        Report.hit_bound n ;
-        None )
-      else Some (push_throw throw (push_return call from_call stk)) )
-      |>
-      [%Trace.retn fun {pf} _ ->
-        pf "%d of %a on stack" n Llair.Jump.pp return]
+    let push_call call from_call stk =
+      push_throw call (push_return call from_call stk)
 
     let rec pop_return = function
       | Throw (_, stk) -> pop_return stk
@@ -336,28 +322,17 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
         match
           if not Opts.function_summaries then None
           else
-            let maybe_summary_post =
-              let state = fst (domain_call ~summaries:false state) in
-              let* summary = Llair.Function.Tbl.find summary_table name in
-              List.find_map ~f:(Dom.apply_summary state) summary
-            in
-            [%Trace.info
-              "Maybe summary post: %a" (Option.pp "%a" Dom.pp)
-                maybe_summary_post] ;
-            maybe_summary_post
+            let state = fst (domain_call ~summaries:false state) in
+            let* summary = Llair.Function.Tbl.find summary_table name in
+            List.find_map ~f:(Dom.apply_summary state) summary
         with
         | None ->
             let state, from_call =
               domain_call ~summaries:Opts.function_summaries state
             in
+            let stk = Stack.push_call call from_call stk in
             Work.seq acc
-              ( match Stack.push_call call from_call stk with
-              | Some stk ->
-                  Work.add stk ~prev:block ~retreating:recursive state entry
-              | None -> (
-                match Dom.recursion_beyond_bound with
-                | `skip -> Work.seq acc (exec_jump stk state block return)
-                | `prune -> Work.skip ) )
+              (Work.add stk ~prev:block ~retreating:recursive state entry)
         | Some post -> Work.seq acc (exec_jump stk post block return) )
     |>
     [%Trace.retn fun {pf} _ -> pf ""]
