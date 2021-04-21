@@ -10,7 +10,6 @@
 type t = Llair.Global.Set.t [@@deriving compare, equal, sexp]
 
 let pp = Llair.Global.Set.pp
-let report_fmt_thunk = Fun.flip pp
 let empty = Llair.Global.Set.empty
 
 let init globals =
@@ -39,10 +38,10 @@ let exec_move reg_exps st =
 let exec_inst inst st =
   [%Trace.call fun {pf} -> pf "@ pre:{%a} %a" pp st Llair.Inst.pp inst]
   ;
-  Some (Llair.Inst.fold_exps ~f:used_globals inst st)
+  Ok (Llair.Inst.fold_exps ~f:used_globals inst st)
   |>
   [%Trace.retn fun {pf} ->
-    Option.iter ~f:(fun uses -> pf "post:{%a}" pp uses)]
+    Or_alarm.iter ~f:(fun uses -> pf "post:{%a}" pp uses)]
 
 type from_call = t [@@deriving sexp]
 

@@ -13,7 +13,6 @@ open Fol
 type t = Sh.t [@@deriving compare, equal, sexp]
 
 let pp fs q = Format.fprintf fs "@[{ %a@ }@]" Sh.pp q
-let report_fmt_thunk = Fun.flip pp
 
 (* set by cli *)
 let simplify_states = ref true
@@ -55,25 +54,37 @@ let exec_move res q =
   |> simplify
 
 let exec_inst inst pre =
+  let alarm kind =
+    { Alarm.kind
+    ; loc= Llair.Inst.loc inst
+    ; pp_action= Fun.flip Llair.Inst.pp inst
+    ; pp_state= Fun.flip pp pre }
+  in
+  let or_alarm = function
+    | Some post -> Ok post
+    | None -> Error (alarm Invalid_memory_access)
+  in
   ( match (inst : Llair.inst) with
   | Move {reg_exps; _} ->
-      Some
+      Ok
         (Exec.move pre
            (IArray.map reg_exps ~f:(fun (r, e) -> (X.reg r, X.term e))))
   | Load {reg; ptr; len; _} ->
       Exec.load pre ~reg:(X.reg reg) ~ptr:(X.term ptr) ~len:(X.term len)
+      |> or_alarm
   | Store {ptr; exp; len; _} ->
       Exec.store pre ~ptr:(X.term ptr) ~exp:(X.term exp) ~len:(X.term len)
+      |> or_alarm
   | Alloc {reg; num; len; _} ->
-      Exec.alloc pre ~reg:(X.reg reg) ~num:(X.term num) ~len
-  | Free {ptr; _} -> Exec.free pre ~ptr:(X.term ptr)
-  | Nondet {reg; _} -> Some (Exec.nondet pre (Option.map ~f:X.reg reg))
-  | Abort _ -> Exec.abort pre
+      Exec.alloc pre ~reg:(X.reg reg) ~num:(X.term num) ~len |> or_alarm
+  | Free {ptr; _} -> Exec.free pre ~ptr:(X.term ptr) |> or_alarm
+  | Nondet {reg; _} -> Ok (Exec.nondet pre (Option.map ~f:X.reg reg))
+  | Abort _ -> Error (alarm Abort)
   | Intrinsic {reg; name; args; _} ->
       let areturn = Option.map ~f:X.reg reg in
       let actuals = IArray.map ~f:X.term args in
-      Exec.intrinsic pre areturn name actuals )
-  |> Option.map ~f:simplify
+      Exec.intrinsic pre areturn name actuals |> or_alarm )
+  |> Or_alarm.map ~f:simplify
 
 let value_determined_by ctx us a =
   List.exists (Context.class_of ctx a) ~f:(fun b ->

@@ -10,14 +10,13 @@ module type Dom = sig
   type t [@@deriving compare, equal, sexp_of]
 
   val pp : t pp
-  val report_fmt_thunk : t -> Format.formatter -> unit
   val init : Llair.GlobalDefn.t iarray -> t
   val join : t -> t -> t option
   val dnf : t -> t list
   val exec_assume : t -> Llair.Exp.t -> t option
   val exec_kill : Llair.Reg.t -> t -> t
   val exec_move : (Llair.Reg.t * Llair.Exp.t) iarray -> t -> t
-  val exec_inst : Llair.inst -> t -> t option
+  val exec_inst : Llair.inst -> t -> t Or_alarm.t
 
   type from_call [@@deriving sexp_of]
 

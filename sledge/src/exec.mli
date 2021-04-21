@@ -17,7 +17,6 @@ val store : Sh.t -> ptr:Term.t -> exp:Term.t -> len:Term.t -> Sh.t option
 val alloc : Sh.t -> reg:Var.t -> num:Term.t -> len:int -> Sh.t option
 val free : Sh.t -> ptr:Term.t -> Sh.t option
 val nondet : Sh.t -> Var.t option -> Sh.t
-val abort : Sh.t -> Sh.t option
 
 val intrinsic :
   Sh.t -> Var.t option -> Llair.Intrinsic.t -> Term.t iarray -> Sh.t option

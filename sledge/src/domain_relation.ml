@@ -31,7 +31,6 @@ module Make (State_domain : State_domain_sig) = struct
   let pp fs (entry, curr) =
     Format.fprintf fs "@[%a%a@]" pp_entry entry State_domain.pp curr
 
-  let report_fmt_thunk (_, curr) fs = State_domain.pp fs curr
   let init globals = embed (State_domain.init globals)
 
   let join (entry_a, current_a) (entry_b, current_b) =
@@ -51,6 +50,7 @@ module Make (State_domain : State_domain_sig) = struct
     (entry, State_domain.exec_move reg_exps current)
 
   let exec_inst inst (entry, current) =
+    let open Or_alarm.Import in
     let+ next = State_domain.exec_inst inst current in
     (entry, next)
 

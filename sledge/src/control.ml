@@ -499,17 +499,11 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
     | Throw {exc} -> exec_throw stk state block exc
     | Unreachable -> Work.skip
 
-  let exec_inst :
-         Llair.block
-      -> Llair.inst
-      -> Dom.t
-      -> (Dom.t, Dom.t * Llair.inst) result =
+  let exec_inst : Llair.block -> Llair.inst -> Dom.t -> Dom.t Or_alarm.t =
    fun block inst state ->
     [%Trace.info "@\n@[%a@]@\n%a" Dom.pp state Llair.Inst.pp inst] ;
     Report.step_inst block inst ;
     Dom.exec_inst inst state
-    |> function
-    | Some state -> Result.Ok state | None -> Result.Error (state, inst)
 
   let exec_block :
       Llair.program -> Stack.t -> Dom.t -> Llair.block -> Work.x =
@@ -528,8 +522,8 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
         state
     with
     | Ok state -> exec_term pgm stk state block
-    | Error (state, inst) ->
-        Report.invalid_access_inst (Dom.report_fmt_thunk state) inst ;
+    | Error alarm ->
+        Report.alarm alarm ;
         Work.skip
 
   let harness : Llair.program -> Work.t option =

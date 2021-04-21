@@ -737,7 +737,6 @@ let store pre ~ptr ~exp ~len = exec_spec pre (store_spec ptr exp len)
 let alloc pre ~reg ~num ~len = exec_spec pre (alloc_spec reg num len)
 let free pre ~ptr = exec_spec pre (free_spec ptr)
 let nondet pre = function Some reg -> kill pre reg | None -> pre
-let abort _ = None
 
 let intrinsic :
        Sh.t

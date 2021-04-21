@@ -7,6 +7,14 @@
 
 (** Issue reporting *)
 
+let alarm_count = ref 0
+
+let alarm alrm =
+  Int.incr alarm_count ;
+  Format.printf "@\n@[<v 2>%a@]@." Alarm.pp alrm ;
+  [%Trace.printf "@\n@[<v 2>%a@]@." Alarm.pp_trace alrm] ;
+  Stop.on_alarm ()
+
 let unknown_call call =
   [%Trace.kprintf
     Stop.on_unknown_call
@@ -19,24 +27,6 @@ let unknown_call call =
         | ICall {callee} -> Llair.Exp.pp fs callee
         | _ -> () )
       call Llair.Term.pp call]
-
-let invalid_access_count = ref 0
-
-let invalid_access fmt_thunk pp access loc =
-  Int.incr invalid_access_count ;
-  let rep fs =
-    Format.fprintf fs "%a Invalid memory access@;<1 2>@[%a@]" Llair.Loc.pp
-      (loc access) pp access
-  in
-  Format.printf "@\n@[<v 2>%t@]@." rep ;
-  [%Trace.printf "@\n@[<v 2>%t@;<1 2>@[{ %t@ }@]@]@." rep fmt_thunk] ;
-  Stop.on_invalid_access ()
-
-let invalid_access_inst fmt_thunk inst =
-  invalid_access fmt_thunk Llair.Inst.pp inst Llair.Inst.loc
-
-let invalid_access_term fmt_thunk term =
-  invalid_access fmt_thunk Llair.Term.pp term Llair.Term.loc
 
 (** Functional statistics *)
 
@@ -95,8 +85,8 @@ let pp_status ppf stat =
   | UnknownError msg -> pf "Unknown error: %s" msg
 
 let safe_or_unsafe () =
-  if !invalid_access_count = 0 then Safe {bound= !bound}
-  else Unsafe {alarms= !invalid_access_count; bound= !bound}
+  if !alarm_count = 0 then Safe {bound= !bound}
+  else Unsafe {alarms= !alarm_count; bound= !bound}
 
 type gc_stats = {allocated: float; promoted: float; peak_size: float}
 [@@deriving sexp]

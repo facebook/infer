@@ -8,4 +8,4 @@
 (** Stop analysis when encountering issues *)
 
 val on_unknown_call : 'a -> unit
-val on_invalid_access : 'a -> unit
+val on_alarm : 'a -> unit
