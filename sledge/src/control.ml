@@ -267,12 +267,10 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
       let state, depths, queue =
         List.fold elts (state, depths, queue)
           ~f:(fun elt (state, depths, queue) ->
-            match Dom.join elt.state state with
-            | Some state ->
-                let depths = Depths.join elt.depths depths in
-                let queue = PrioQueue.remove elt queue in
-                (state, depths, queue)
-            | None -> (state, depths, queue) )
+            let state = Dom.join elt.state state in
+            let depths = Depths.join elt.depths depths in
+            let queue = PrioQueue.remove elt queue in
+            (state, depths, queue) )
       in
       (edge, state, depths, queue)
 

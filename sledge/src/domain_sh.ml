@@ -36,9 +36,9 @@ let init globals =
 let join p q =
   [%Trace.call fun {pf} -> pf "@ %a@ %a" pp p pp q]
   ;
-  Some (Sh.or_ p q) |> Option.map ~f:simplify
+  Sh.or_ p q |> simplify
   |>
-  [%Trace.retn fun {pf} -> pf "%a" (Option.pp "%a" pp)]
+  [%Trace.retn fun {pf} -> pf "%a" pp]
 
 let dnf = Sh.dnf
 

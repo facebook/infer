@@ -34,10 +34,8 @@ module Make (State_domain : State_domain_sig) = struct
   let init globals = embed (State_domain.init globals)
 
   let join (entry_a, current_a) (entry_b, current_b) =
-    if State_domain.equal entry_a entry_b then
-      let+ next = State_domain.join current_a current_b in
-      (entry_a, next)
-    else None
+    assert (State_domain.equal entry_a entry_b) ;
+    (entry_a, State_domain.join current_a current_b)
 
   let exec_assume (entry, current) cnd =
     let+ next = State_domain.exec_assume current cnd in

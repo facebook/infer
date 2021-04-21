@@ -19,7 +19,7 @@ type t = Box.t Abstract1.t
 let equal : t -> t -> bool = Poly.equal
 let compare : t -> t -> int = Poly.compare
 let man = lazy (Box.manager_alloc ())
-let join l r = Some (Abstract1.join (Lazy.force man) l r)
+let join l r = Abstract1.join (Lazy.force man) l r
 let is_false x = Abstract1.is_bottom (Lazy.force man) x
 
 let bindings (itv : t) =

@@ -11,7 +11,7 @@ type t = unit [@@deriving compare, equal, sexp]
 
 let pp fs () = Format.pp_print_string fs "()"
 let init _ = ()
-let join () () = Some ()
+let join () () = ()
 let exec_assume () _ = Some ()
 let exec_kill _ () = ()
 let exec_move _ () = ()
