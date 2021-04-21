@@ -179,6 +179,7 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
       (** an edge at a depth with the domain and depths state it yielded *)
       type elt = {depth: int; edge: Edge.t; state: Dom.t; depths: Depths.t}
 
+      (** a "queue" of elements, which need not be FIFO *)
       type t
 
       val pp : t pp
@@ -189,12 +190,11 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
       val add : elt -> t -> t
       (** add an element *)
 
-      val remove : elt -> t -> t
-      (** remove an element *)
-
       val pop : t -> (elt * elt list * t) option
-      (** the top element, the other elements with the same destination, the
-          queue without the top element *)
+      (** [pop q] is [None] if [q] is empty and otherwise is
+          [Some (e, es, q')] where [e] is the selected element in [q], [es]
+          are other elements in [q] with the same destination as [e], and
+          [q'] is [q] without [e] and [es]. *)
     end = struct
       type elt = {depth: int; edge: Edge.t; state: Dom.t; depths: Depths.t}
       [@@deriving compare, equal, sexp_of]
@@ -226,21 +226,19 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
         if removed' == removed then {queue= FHeap.add queue elt; removed}
         else {queue; removed= removed'}
 
-      let remove elt {queue; removed} =
-        {queue; removed= Elts.add elt removed}
-
       let rec pop {queue; removed} =
         let* top, queue = FHeap.pop queue in
         let removed' = Elts.remove top removed in
         if removed' != removed then pop {queue; removed= removed'}
         else
-          let elts =
-            FHeap.fold queue ~init:[] ~f:(fun elts elt ->
+          let elts, removed =
+            FHeap.fold queue ~init:([], removed')
+              ~f:(fun (elts, removed) elt ->
                 if
                   Llair.Block.equal top.edge.dst elt.edge.dst
                   && not (Elts.mem elt removed)
-                then elt :: elts
-                else elts )
+                then (elt :: elts, Elts.add elt removed)
+                else (elts, removed) )
           in
           Some (top, elts, {queue; removed})
     end
@@ -264,13 +262,9 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
       [%Trace.info
         " %i: %a [%a]@ | %a" depth Edge.pp edge Stack.pp edge.stk
           PrioQueue.pp queue] ;
-      let state, depths, queue =
-        List.fold elts (state, depths, queue)
-          ~f:(fun elt (state, depths, queue) ->
-            let state = Dom.join elt.state state in
-            let depths = Depths.join elt.depths depths in
-            let queue = PrioQueue.remove elt queue in
-            (state, depths, queue) )
+      let state, depths =
+        List.fold elts (state, depths) ~f:(fun elt (state, depths) ->
+            (Dom.join elt.state state, Depths.join elt.depths depths) )
       in
       (edge, state, depths, queue)
 
