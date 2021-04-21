@@ -175,9 +175,13 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
           | `Both (d1, d2) -> Some (Int.max d1 d2) )
     end
 
-    module PrioQueue : sig
-      (** an edge at a depth with the domain and depths state it yielded *)
-      type elt = {depth: int; edge: Edge.t; state: Dom.t; depths: Depths.t}
+    module PriorityQueue (Elt : sig
+      type t [@@deriving compare, equal, sexp_of]
+
+      val pp : t pp
+      val joinable : t -> t -> bool
+    end) : sig
+      type elt = Elt.t
 
       (** a "queue" of elements, which need not be FIFO *)
       type t
@@ -196,19 +200,11 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
           are other elements in [q] with the same destination as [e], and
           [q'] is [q] without [e] and [es]. *)
     end = struct
-      type elt = {depth: int; edge: Edge.t; state: Dom.t; depths: Depths.t}
-      [@@deriving compare, equal, sexp_of]
-
-      module Elt = struct
-        type t = elt [@@deriving compare, equal, sexp_of]
-
-        let pp ppf {depth; edge} =
-          Format.fprintf ppf "%i: %a" depth Edge.pp edge
-      end
+      type elt = Elt.t
 
       module Elts = Set.Make (Elt)
 
-      type t = {queue: elt FHeap.t; removed: Elts.t}
+      type t = {queue: Elt.t FHeap.t; removed: Elts.t}
 
       let pp ppf {queue; removed} =
         let rev_elts =
@@ -219,7 +215,7 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
           (List.rev rev_elts)
 
       let create () =
-        {queue= FHeap.create ~cmp:compare_elt; removed= Elts.empty}
+        {queue= FHeap.create ~cmp:Elt.compare; removed= Elts.empty}
 
       let add elt {queue; removed} =
         let removed' = Elts.remove elt removed in
@@ -234,21 +230,32 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
           let elts, removed =
             FHeap.fold queue ~init:([], removed')
               ~f:(fun (elts, removed) elt ->
-                if
-                  Llair.Block.equal top.edge.dst elt.edge.dst
-                  && not (Elts.mem elt removed)
-                then (elt :: elts, Elts.add elt removed)
+                if Elt.joinable top elt && not (Elts.mem elt removed) then
+                  (elt :: elts, Elts.add elt removed)
                 else (elts, removed) )
           in
           Some (top, elts, {queue; removed})
     end
 
+    module Elt = struct
+      (** an edge at a depth with the domain and depths state it yielded *)
+      type t = {depth: int; edge: Edge.t; state: Dom.t; depths: Depths.t}
+      [@@deriving compare, equal, sexp_of]
+
+      let pp ppf {depth; edge} =
+        Format.fprintf ppf "%i: %a" depth Edge.pp edge
+
+      let joinable x y = Llair.Block.equal x.edge.dst y.edge.dst
+    end
+
+    module Queue = PriorityQueue (Elt)
+
     let enqueue depth edge state depths queue =
       [%Trace.info
-        " %i: %a [%a]@ | %a" depth Edge.pp edge Stack.pp edge.stk
-          PrioQueue.pp queue] ;
+        " %i: %a [%a]@ | %a" depth Edge.pp edge Stack.pp edge.stk Queue.pp
+          queue] ;
       let depths = Depths.add ~key:edge ~data:depth depths in
-      PrioQueue.add {depth; edge; state; depths} queue
+      Queue.add {depth; edge; state; depths} queue
 
     let prune depth edge queue =
       [%Trace.info " %i: %a" depth Edge.pp edge] ;
@@ -256,19 +263,17 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
       queue
 
     let dequeue queue =
-      let+ {depth; edge; state; depths}, elts, queue =
-        PrioQueue.pop queue
-      in
+      let+ {depth; edge; state; depths}, elts, queue = Queue.pop queue in
       [%Trace.info
-        " %i: %a [%a]@ | %a" depth Edge.pp edge Stack.pp edge.stk
-          PrioQueue.pp queue] ;
+        " %i: %a [%a]@ | %a" depth Edge.pp edge Stack.pp edge.stk Queue.pp
+          queue] ;
       let state, depths =
         List.fold elts (state, depths) ~f:(fun elt (state, depths) ->
             (Dom.join elt.state state, Depths.join elt.depths depths) )
       in
       (edge, state, depths, queue)
 
-    type t = PrioQueue.t
+    type t = Queue.t
     type x = Depths.t -> t -> t
 
     let skip _ w = w
@@ -283,7 +288,7 @@ module Make (Opts : Domain_intf.Opts) (Dom : Domain_intf.Dom) = struct
 
     let init state curr =
       add ~retreating:false Stack.empty state curr Depths.empty
-        (PrioQueue.create ())
+        (Queue.create ())
 
     let rec run ~f queue =
       match dequeue queue with
