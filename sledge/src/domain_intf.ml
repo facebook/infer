@@ -6,7 +6,7 @@
  *)
 
 (** Abstract Domain *)
-module type Dom = sig
+module type Domain = sig
   type t [@@deriving compare, equal, sexp_of]
 
   val pp : t pp

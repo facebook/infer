@@ -7,7 +7,8 @@
 
 (** Used-globals abstract domain *)
 
-include Domain_intf.Dom with type summary = Llair.Global.Set.t
+open Domain_intf
+include Domain with type summary = Llair.Global.Set.t
 
 type used_globals =
   | Per_function of Llair.Global.Set.t Llair.Function.Map.t

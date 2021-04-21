@@ -135,7 +135,7 @@ let analyze =
       let entry_points = entry_points
       let globals = globals
     end in
-    let dom : (module Domain_intf.Dom) =
+    let dom : (module Domain_intf.Domain) =
       match domain with
       | `sh -> (module Domain_relation.Make (Domain_sh))
       | `globals -> (module Domain_used_globals)

@@ -9,6 +9,7 @@
 
     The analysis' semantics of control flow. *)
 
+open Domain_intf
 open Control_intf
 
 module type Elt = sig
@@ -76,15 +77,14 @@ module PriorityQueue (Elt : Elt) : QueueS with type elt = Elt.t = struct
       Some (top, elts, {queue; removed})
 end
 
-module Make (Config : Config) (Dom : Domain_intf.Dom) (Queue : Queue) =
-struct
+module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
   module Stack : sig
     type t
 
     val pp : t pp
     val empty : t
-    val push_call : Llair.func Llair.call -> Dom.from_call -> t -> t
-    val pop_return : t -> (Dom.from_call * Llair.jump * t) option
+    val push_call : Llair.func Llair.call -> D.from_call -> t -> t
+    val pop_return : t -> (D.from_call * Llair.jump * t) option
 
     val pop_throw :
          t
@@ -92,10 +92,10 @@ struct
       -> unwind:
            (   Llair.Reg.t iarray
             -> Llair.Reg.Set.t
-            -> Dom.from_call
+            -> D.from_call
             -> 'a
             -> 'a)
-      -> (Dom.from_call * Llair.jump * t * 'a) option
+      -> (D.from_call * Llair.jump * t * 'a) option
 
     type as_inlined_location = t [@@deriving compare, equal, sexp_of]
   end = struct
@@ -105,7 +105,7 @@ struct
           ; dst: Llair.Jump.t
           ; formals: Llair.Reg.t iarray
           ; locals: Llair.Reg.Set.t
-          ; from_call: Dom.from_call
+          ; from_call: D.from_call
           ; stk: t }
       | Throw of Llair.Jump.t * t
       | Empty
@@ -192,7 +192,7 @@ struct
   module Work : sig
     type t
 
-    val init : Dom.t -> Llair.block -> t
+    val init : D.t -> Llair.block -> t
 
     type x
 
@@ -203,11 +203,11 @@ struct
          ?prev:Llair.block
       -> retreating:bool
       -> Stack.t
-      -> Dom.t
+      -> D.t
       -> Llair.block
       -> x
 
-    val run : f:(Stack.t -> Dom.t -> Llair.block -> x) -> t -> unit
+    val run : f:(Stack.t -> D.t -> Llair.block -> x) -> t -> unit
   end = struct
     module Edge = struct
       module T = struct
@@ -244,7 +244,7 @@ struct
 
     module Elt = struct
       (** an edge at a depth with the domain and depths state it yielded *)
-      type t = {depth: int; edge: Edge.t; state: Dom.t; depths: Depths.t}
+      type t = {depth: int; edge: Edge.t; state: D.t; depths: Depths.t}
       [@@deriving compare, equal, sexp_of]
 
       let pp ppf {depth; edge} =
@@ -274,7 +274,7 @@ struct
           queue] ;
       let state, depths =
         List.fold elts (state, depths) ~f:(fun elt (state, depths) ->
-            (Dom.join elt.state state, Depths.join elt.depths depths) )
+            (D.join elt.state state, Depths.join elt.depths depths) )
       in
       (edge, state, depths, queue)
 
@@ -309,7 +309,7 @@ struct
       "@[<v>%t@]" (fun fs ->
           Llair.Function.Tbl.iteri summary_table ~f:(fun ~key ~data ->
               Format.fprintf fs "@[<v>%a:@ @[%a@]@]@ " Llair.Function.pp key
-                (List.pp "@," Dom.pp_summary)
+                (List.pp "@," D.pp_summary)
                 data ) )]
 
   let exec_jump stk state block Llair.{dst; retreating} =
@@ -317,14 +317,14 @@ struct
 
   let exec_skip_func :
          Stack.t
-      -> Dom.t
+      -> D.t
       -> Llair.block
       -> Llair.Reg.t option
       -> Llair.jump
       -> Work.x =
    fun stk state block areturn return ->
     Report.unknown_call block.term ;
-    let state = Option.fold ~f:Dom.exec_kill areturn state in
+    let state = Option.fold ~f:D.exec_kill areturn state in
     exec_jump stk state block return
 
   let exec_call stk state block call globals =
@@ -332,13 +332,13 @@ struct
     let Llair.{name; formals; freturn; locals; entry} = callee in
     [%Trace.call fun {pf} ->
       pf "@[<2>@ %a from %a with state@]@;<1 2>%a" Llair.Func.pp_call call
-        Llair.Function.pp return.dst.parent.name Dom.pp state]
+        Llair.Function.pp return.dst.parent.name D.pp state]
     ;
     let dnf_states =
-      if Config.function_summaries then Dom.dnf state else [state]
+      if Config.function_summaries then D.dnf state else [state]
     in
     let domain_call =
-      Dom.call ~globals ~actuals ~areturn ~formals ~freturn ~locals
+      D.call ~globals ~actuals ~areturn ~formals ~freturn ~locals
     in
     List.fold dnf_states Work.skip ~f:(fun state acc ->
         match
@@ -346,7 +346,7 @@ struct
           else
             let state = fst (domain_call ~summaries:false state) in
             let* summary = Llair.Function.Tbl.find summary_table name in
-            List.find_map ~f:(Dom.apply_summary state) summary
+            List.find_map ~f:(D.apply_summary state) summary
         with
         | None ->
             let state, from_call =
@@ -373,7 +373,7 @@ struct
       if not Config.function_summaries then post_state
       else
         let function_summary, post_state =
-          Dom.create_summary ~locals ~formals post_state
+          D.create_summary ~locals ~formals post_state
         in
         Llair.Function.Tbl.add_multi ~key:name ~data:function_summary
           summary_table ;
@@ -383,18 +383,18 @@ struct
     let exit_state =
       match (freturn, exp) with
       | Some freturn, Some return_val ->
-          Dom.exec_move (IArray.of_ (freturn, return_val)) pre_state
+          D.exec_move (IArray.of_ (freturn, return_val)) pre_state
       | None, None -> pre_state
       | _ -> violates Llair.Func.invariant block.parent
     in
     ( match Stack.pop_return stk with
     | Some (from_call, retn_site, stk) ->
-        let post_state = summarize (Dom.post locals from_call exit_state) in
-        let retn_state = Dom.retn formals freturn from_call post_state in
+        let post_state = summarize (D.post locals from_call exit_state) in
+        let retn_state = D.retn formals freturn from_call post_state in
         exec_jump stk retn_state block retn_site
     | None ->
         if Config.function_summaries then
-          summarize exit_state |> (ignore : Dom.t -> unit) ;
+          summarize exit_state |> (ignore : D.t -> unit) ;
         Work.skip )
     |>
     [%Trace.retn fun {pf} _ -> pf ""]
@@ -404,18 +404,18 @@ struct
     [%Trace.call fun {pf} -> pf "@ from %a" Llair.Function.pp func.name]
     ;
     let unwind formals scope from_call state =
-      Dom.retn formals (Some func.fthrow) from_call
-        (Dom.post scope from_call state)
+      D.retn formals (Some func.fthrow) from_call
+        (D.post scope from_call state)
     in
     ( match Stack.pop_throw stk ~unwind pre_state with
     | Some (from_call, retn_site, stk, unwind_state) ->
         let fthrow = func.fthrow in
         let exit_state =
-          Dom.exec_move (IArray.of_ (fthrow, exc)) unwind_state
+          D.exec_move (IArray.of_ (fthrow, exc)) unwind_state
         in
-        let post_state = Dom.post func.locals from_call exit_state in
+        let post_state = D.post func.locals from_call exit_state in
         let retn_state =
-          Dom.retn func.formals func.freturn from_call post_state
+          D.retn func.formals func.freturn from_call post_state
         in
         exec_jump stk retn_state block retn_site
     | None -> Work.skip )
@@ -423,17 +423,15 @@ struct
     [%Trace.retn fun {pf} _ -> pf ""]
 
   let exec_assume cond jump stk state block =
-    match Dom.exec_assume state cond with
+    match D.exec_assume state cond with
     | Some state -> exec_jump stk state block jump
     | None ->
-        [%Trace.info
-          " infeasible %a@\n@[%a@]" Llair.Exp.pp cond Dom.pp state] ;
+        [%Trace.info " infeasible %a@\n@[%a@]" Llair.Exp.pp cond D.pp state] ;
         Work.skip
 
-  let exec_term : Llair.program -> Stack.t -> Dom.t -> Llair.block -> Work.x
-      =
+  let exec_term : Llair.program -> Stack.t -> D.t -> Llair.block -> Work.x =
    fun pgm stk state block ->
-    [%Trace.info "@\n@[%a@]@\n%a" Dom.pp state Llair.Term.pp block.term] ;
+    [%Trace.info "@\n@[%a@]@\n%a" D.pp state Llair.Term.pp block.term] ;
     Report.step_term block ;
     match block.term with
     | Switch {key; tbl; els} ->
@@ -459,7 +457,7 @@ struct
           (Domain_used_globals.by_function Config.globals callee.name)
     | ICall ({callee; areturn; return} as call) -> (
         let lookup name = Llair.Func.find name pgm.functions in
-        match Dom.resolve_callee lookup callee state with
+        match D.resolve_callee lookup callee state with
         | [] -> exec_skip_func stk state block areturn return
         | callees ->
             List.fold callees Work.skip ~f:(fun callee x ->
@@ -471,14 +469,14 @@ struct
     | Throw {exc} -> exec_throw stk state block exc
     | Unreachable -> Work.skip
 
-  let exec_inst : Llair.block -> Llair.inst -> Dom.t -> Dom.t Or_alarm.t =
+  let exec_inst : Llair.block -> Llair.inst -> D.t -> D.t Or_alarm.t =
    fun block inst state ->
-    [%Trace.info "@\n@[%a@]@\n%a" Dom.pp state Llair.Inst.pp inst] ;
+    [%Trace.info "@\n@[%a@]@\n%a" D.pp state Llair.Inst.pp inst] ;
     Report.step_inst block inst ;
-    Dom.exec_inst inst state
+    D.exec_inst inst state
 
-  let exec_block :
-      Llair.program -> Stack.t -> Dom.t -> Llair.block -> Work.x =
+  let exec_block : Llair.program -> Stack.t -> D.t -> Llair.block -> Work.x
+      =
    fun pgm stk state block ->
     [%trace]
       ~call:(fun {pf} ->
@@ -510,8 +508,8 @@ struct
     let actuals = IArray.empty in
     let areturn = None in
     let state, _ =
-      Dom.call ~summaries ~globals ~actuals ~areturn ~formals ~freturn
-        ~locals (Dom.init pgm.globals)
+      D.call ~summaries ~globals ~actuals ~areturn ~formals ~freturn ~locals
+        (D.init pgm.globals)
     in
     Work.init state entry
 
@@ -521,7 +519,7 @@ struct
     | Some work -> Work.run ~f:(exec_block pgm) work
     | None -> fail "no entry point found" ()
 
-  let compute_summaries pgm : Dom.summary list Llair.Function.Map.t =
+  let compute_summaries pgm : D.summary list Llair.Function.Map.t =
     assert Config.function_summaries ;
     exec_pgm pgm ;
     Llair.Function.Tbl.fold summary_table Llair.Function.Map.empty

@@ -7,4 +7,5 @@
 
 (** Interval abstract domain *)
 
-include Domain_intf.Dom
+open Domain_intf
+include Domain

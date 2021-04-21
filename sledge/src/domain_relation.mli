@@ -8,8 +8,10 @@
 (** Relational abstract domain, elements of which are interpreted as Hoare
     triples over a base domain *)
 
+open Domain_intf
+
 module type State_domain_sig = sig
-  include Domain_intf.Dom
+  include Domain
 
   val create_summary :
        locals:Llair.Reg.Set.t
@@ -19,4 +21,4 @@ module type State_domain_sig = sig
     -> summary * t
 end
 
-module Make (_ : State_domain_sig) : Domain_intf.Dom
+module Make (_ : State_domain_sig) : Domain
