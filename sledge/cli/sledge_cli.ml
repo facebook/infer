@@ -97,7 +97,9 @@ let analyze =
   let%map_open bound =
     flag "bound"
       (optional_with_default 1 int)
-      ~doc:"<int> stop execution exploration at depth <int>"
+      ~doc:
+        "<int> stop execution exploration at depth <int>, a negative bound \
+         is never hit and leads to unbounded exploration"
   and function_summaries =
     flag "function-summaries" no_arg
       ~doc:"use function summaries (in development)"

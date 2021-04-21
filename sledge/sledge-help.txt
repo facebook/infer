@@ -107,7 +107,8 @@ Analyze code in one or more LLVM bitcode files. This is a convenience wrapper fo
 === flags ===
 
   [-append-report]       append to report file
-  [-bound <int>]         stop execution exploration at depth <int>
+  [-bound <int>]         stop execution exploration at depth <int>, a negative
+                         bound is never hit and leads to unbounded exploration
   [-colors]              enable printing in colors
   [-domain <string>]     select abstract domain; must be one of "sh" (default,
                          symbolic heap domain), "globals" (used-globals domain),
@@ -186,7 +187,8 @@ The <input> file must be binary LLAIR, such as produced by `sledge translate`.
 === flags ===
 
   [-append-report]       append to report file
-  [-bound <int>]         stop execution exploration at depth <int>
+  [-bound <int>]         stop execution exploration at depth <int>, a negative
+                         bound is never hit and leads to unbounded exploration
   [-colors]              enable printing in colors
   [-domain <string>]     select abstract domain; must be one of "sh" (default,
                          symbolic heap domain), "globals" (used-globals domain),

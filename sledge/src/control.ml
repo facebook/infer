@@ -288,8 +288,9 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
       let edge = {Edge.dst= curr; src= prev; stk} in
       let depth = Option.value (Depths.find edge depths) ~default:0 in
       let depth = if retreating then depth + 1 else depth in
-      if depth <= Config.bound then enqueue depth edge state depths queue
-      else prune depth edge queue
+      if 0 <= Config.bound && Config.bound < depth then
+        prune depth edge queue
+      else enqueue depth edge state depths queue
 
     let init state curr =
       add ~retreating:false Stack.empty state curr Depths.empty
