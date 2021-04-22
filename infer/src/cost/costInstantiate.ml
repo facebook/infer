@@ -32,7 +32,9 @@ type cost_args =
 type 'a interproc_analysis =
   (BufferOverrunAnalysisSummary.t option * 'a * CostDomain.summary option) InterproceduralAnalysis.t
 
-let get_symbolic_cost
+type instantiated_cost = Cheap | NoModel | Symbolic of CostDomain.BasicCost.t
+
+let get_instantiated_cost
     { tenv
     ; integer_type_widths
     ; get_callee_cost_summary_and_formals
@@ -44,9 +46,7 @@ let get_symbolic_cost
       (BufferOverrunAnalysis.extract_pre (ProcCfg.InstrNode.id node) inferbo_invariant_map)
   in
   let loc = ProcCfg.InstrNode.loc node in
-  let get_symbolic cost =
-    if CostDomain.BasicCost.is_symbolic cost then `SymbolicCost cost else `Cheap
-  in
+  let get_symbolic cost = if CostDomain.BasicCost.is_symbolic cost then Symbolic cost else Cheap in
   let get_summary pname = Option.map ~f:fst (get_callee_cost_summary_and_formals pname) in
   match get_callee_cost_summary_and_formals pname with
   | Some (CostDomain.{post= cost_record}, callee_formals) ->
@@ -56,14 +56,14 @@ let get_symbolic_cost
            ~inferbo_caller_mem:inferbo_mem ~callee_pname:pname ~callee_formals ~args ~callee_cost
            ~loc)
           .cost |> get_symbolic
-      else `Cheap
+      else Cheap
   | None ->
       let fun_arg_list =
         List.map args ~f:(fun (exp, typ) ->
             ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= ()} )
       in
       CostModels.Call.dispatch tenv pname fun_arg_list
-      |> Option.value_map ~default:`NoModel ~f:(fun model ->
+      |> Option.value_map ~default:NoModel ~f:(fun model ->
              let model_env =
                let node_hash = ProcCfg.InstrNode.hash node in
                BufferOverrunUtils.ModelEnv.mk_model_env pname ~node_hash loc tenv
@@ -102,20 +102,12 @@ let prepare_call_args
 
 
 let get_cost_if_expensive analysis_data call =
-  match prepare_call_args analysis_data call |> get_symbolic_cost with
-  | `SymbolicCost cost ->
+  match prepare_call_args analysis_data call |> get_instantiated_cost with
+  | Symbolic cost ->
       Some cost
-  | `Cheap | `NoModel ->
+  | Cheap | NoModel ->
       None
 
 
-let get_is_cheap_call analysis_data call =
-  match prepare_call_args analysis_data call |> get_symbolic_cost with
-  | `SymbolicCost _ ->
-      (* symbolic costs (e.g. 4n+5 or log(n) are considered expensive) *)
-      false
-  | `Cheap ->
-      true
-  | `NoModel ->
-      (* unmodeled calls are considered expensive *)
-      false
+let get_instantiated_cost analysis_data call =
+  prepare_call_args analysis_data call |> get_instantiated_cost

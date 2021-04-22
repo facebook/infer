@@ -379,7 +379,8 @@ module Dom = struct
       dispatch tenv pname args
 
 
-  let call tenv analyze_dependency ~is_cheap_call callee args location
+  let call tenv analyze_dependency ~(instantiated_cost : CostInstantiate.instantiated_cost) callee
+      args location
       ({config_checks; field_checks; unchecked_callees; unchecked_callees_cond} as astate) =
     let join_unchecked_callees new_unchecked_callees new_unchecked_callees_cond =
       if FieldChecks.is_top field_checks then
@@ -413,6 +414,8 @@ module Dom = struct
       let has_expensive_callee =
         Option.exists callee_summary ~f:Summary.has_known_expensive_callee
       in
+      let is_cheap_call = match instantiated_cost with Cheap -> true | _ -> false in
+      let is_unmodeled_call = match instantiated_cost with NoModel -> true | _ -> false in
       match expensiveness_model with
       | None when is_cheap_call && not has_expensive_callee ->
           (* If callee is cheap by heuristics, ignore it. *)
@@ -446,8 +449,8 @@ module Dom = struct
             join_unchecked_callees
               (UncheckedCallees.replace_location_by_call location callee_summary)
               (UncheckedCalleesCond.replace_location_by_call location callee_summary_cond)
-        | None when Procname.is_objc_init callee ->
-            (* If callee is unknown ObjC initializer, ignore it. *)
+        | None when Procname.is_objc_init callee || is_unmodeled_call ->
+            (* If callee is unknown ObjC initializer or has no cost model, ignore it. *)
             astate
         | _ ->
             (* Otherwise, add callee's name. *)
@@ -462,7 +465,7 @@ type analysis_data =
   { interproc:
       (BufferOverrunAnalysisSummary.t option * Summary.t option * CostDomain.summary option)
       InterproceduralAnalysis.t
-  ; get_is_cheap_call: CostInstantiate.Call.t -> bool }
+  ; get_instantiated_cost: CostInstantiate.Call.t -> CostInstantiate.instantiated_cost }
 
 module TransferFunctions = struct
   module CFG = ProcCfg.Normal
@@ -514,7 +517,8 @@ module TransferFunctions = struct
     fun tenv pname -> dispatch tenv pname |> Option.is_some
 
 
-  let exec_instr astate {interproc= {tenv; analyze_dependency}; get_is_cheap_call} node idx instr =
+  let exec_instr astate {interproc= {tenv; analyze_dependency}; get_instantiated_cost} node idx
+      instr =
     match (instr : Sil.instr) with
     | Load {id; e= Lvar pvar} ->
         Dom.load_config id pvar astate
@@ -541,8 +545,8 @@ module TransferFunctions = struct
             CostInstantiate.Call.
               {loc= location; pname= callee; node= CFG.Node.to_instr idx node; args; ret}
           in
-          let is_cheap_call = get_is_cheap_call call in
-          Dom.call tenv analyze_dependency ~is_cheap_call callee args location astate )
+          let instantiated_cost = get_instantiated_cost call in
+          Dom.call tenv analyze_dependency ~instantiated_cost callee args location astate )
     | Prune (e, _, _, _) ->
         Dom.prune e astate
     | _ ->
@@ -564,8 +568,8 @@ let has_call_stmt proc_desc =
 
 
 let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
-  let get_is_cheap_call = CostInstantiate.get_is_cheap_call analysis_data in
-  let analysis_data = {interproc= analysis_data; get_is_cheap_call} in
+  let get_instantiated_cost = CostInstantiate.get_instantiated_cost analysis_data in
+  let analysis_data = {interproc= analysis_data; get_instantiated_cost} in
   Option.map (Analyzer.compute_post analysis_data ~initial:Dom.init proc_desc) ~f:(fun astate ->
       let has_call_stmt = has_call_stmt proc_desc in
       Dom.to_summary ~has_call_stmt astate )
