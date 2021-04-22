@@ -43,15 +43,18 @@ let run_buck_build prog buck_build_args =
   let process_buck_line acc line =
     L.debug Capture Verbose "BUCK OUT: %s@." line ;
     match String.lsplit2 ~on:' ' line with
-    | Some (_, target_path) ->
-        let filename =
-          ResultsDirEntryName.get_path
-            ~results_dir:(Config.project_root ^/ target_path)
-            CaptureDependencies
-        in
-        if PolyVariantEqual.(Sys.file_exists filename = `Yes) then filename :: acc else acc
+    | Some (_, infer_deps_path) ->
+        let full_path = Config.project_root ^/ infer_deps_path in
+        let dirname = Filename.dirname full_path in
+        let get_path results_dir = ResultsDirEntryName.get_path ~results_dir CaptureDependencies in
+        (* Buck can either give the full path to infer-deps.txt ... *)
+        if PolyVariantEqual.(Sys.file_exists (get_path dirname) = `Yes) then get_path dirname :: acc
+          (* ... or a folder which contains infer-deps.txt *)
+        else if PolyVariantEqual.(Sys.file_exists (get_path full_path) = `Yes) then
+          get_path full_path :: acc
+        else acc
     | _ ->
-        L.internal_error "Couldn't parse buck target output: %s" line ;
+        L.internal_error "Couldn't parse buck target output: %s@\n" line ;
         acc
   in
   List.fold lines ~init:[] ~f:process_buck_line
