@@ -39,6 +39,10 @@ val self : t [@@warning "-32"]
 
 val is_self : t -> bool
 
+val return_param : t
+
+val is_return_param : t -> bool
+
 (** Set of Mangled. *)
 module Set : PrettyPrintable.PPSet with type elt = t
 

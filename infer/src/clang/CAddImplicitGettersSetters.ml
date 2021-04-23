@@ -7,39 +7,47 @@
 
 open! IStd
 
-let objc_getter proc_desc location (self_var, self_typ) (fieldname, field_typ, _) =
-  let id_pvar = Ident.create_fresh Ident.knormal in
-  let load_pvar_instr =
-    Sil.Load {id= id_pvar; e= Lvar self_var; root_typ= self_typ; typ= self_typ; loc= location}
-  in
-  let id_field = Ident.create_fresh Ident.knormal in
-  let class_typ = match self_typ.Typ.desc with Typ.Tptr (t, _) -> t | _ -> self_typ in
-  let e = Exp.Lfield (Var id_pvar, fieldname, class_typ) in
-  let load_field_instr =
-    Sil.Load {id= id_field; e; root_typ= field_typ; typ= field_typ; loc= location}
-  in
-  let exp_var = Exp.Lvar (Procdesc.get_ret_var proc_desc) in
-  let return_exp =
-    Sil.Store {e1= exp_var; root_typ= field_typ; typ= field_typ; e2= Exp.Var id_field; loc= location}
-  in
-  [load_pvar_instr; load_field_instr; return_exp]
-
-
-let objc_setter location (self, self_typ) (var, var_typ) (fieldname, field_typ, _) =
+let get_load_self_instr location (self, self_typ) fieldname =
   let id_self = Ident.create_fresh Ident.knormal in
   let load_self_instr =
     Sil.Load {id= id_self; e= Lvar self; root_typ= self_typ; typ= self_typ; loc= location}
   in
-  let id_var = Ident.create_fresh Ident.knormal in
-  let load_var_instr =
-    Sil.Load {id= id_var; e= Lvar var; root_typ= var_typ; typ= var_typ; loc= location}
-  in
   let class_typ = match self_typ.Typ.desc with Typ.Tptr (t, _) -> t | _ -> self_typ in
   let field_exp = Exp.Lfield (Var id_self, fieldname, class_typ) in
-  let store_exp =
-    Sil.Store {e1= field_exp; root_typ= field_typ; typ= field_typ; e2= Exp.Var id_var; loc= location}
+  (field_exp, load_self_instr)
+
+
+let objc_getter proc_desc location self_with_typ (fieldname, field_typ, _) =
+  let field_exp, load_self_instr = get_load_self_instr location self_with_typ fieldname in
+  let store_instrs =
+    let id_field = Ident.create_fresh Ident.knormal in
+    let load_field_instr =
+      Sil.Load {id= id_field; e= field_exp; root_typ= field_typ; typ= field_typ; loc= location}
+    in
+    let exp_var = Exp.Lvar (Procdesc.get_ret_var proc_desc) in
+    let return_exp =
+      Sil.Store
+        {e1= exp_var; root_typ= field_typ; typ= field_typ; e2= Exp.Var id_field; loc= location}
+    in
+    [load_field_instr; return_exp]
   in
-  [load_self_instr; load_var_instr; store_exp]
+  load_self_instr :: store_instrs
+
+
+let objc_setter location self_with_typ (var, var_typ) (fieldname, field_typ, _) =
+  let field_exp, load_self_instr = get_load_self_instr location self_with_typ fieldname in
+  let store_instrs =
+    let id_field = Ident.create_fresh Ident.knormal in
+    let load_var_instr =
+      Sil.Load {id= id_field; e= Lvar var; root_typ= var_typ; typ= var_typ; loc= location}
+    in
+    let store_exp =
+      Sil.Store
+        {e1= field_exp; root_typ= field_typ; typ= field_typ; e2= Exp.Var id_field; loc= location}
+    in
+    [load_var_instr; store_exp]
+  in
+  load_self_instr :: store_instrs
 
 
 let process_getter_setter proc_name proc_desc =

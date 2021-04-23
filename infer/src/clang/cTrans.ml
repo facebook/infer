@@ -986,25 +986,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     mk_trans_result (array_exp, typ) control
 
 
-  and struct_copy tenv loc e1 e2 typ struct_name =
-    let rec struct_copy_helper e1 e2 typ struct_name rev_acc =
-      let {Struct.fields} = Option.value_exn (Tenv.lookup tenv struct_name) in
-      List.fold fields ~init:rev_acc ~f:(fun rev_acc (field_name, field_typ, _) ->
-          let mk_field e = Exp.Lfield (e, field_name, typ) in
-          let e1 = mk_field e1 in
-          let e2 = mk_field e2 in
-          match field_typ.Typ.desc with
-          | Tstruct (CStruct _ as struct_name) ->
-              struct_copy_helper e1 e2 field_typ struct_name rev_acc
-          | _ ->
-              let id = Ident.create_fresh Ident.knormal in
-              Sil.Store {e1; root_typ= field_typ; typ= field_typ; e2= Exp.Var id; loc}
-              :: Sil.Load {id; e= e2; root_typ= field_typ; typ= field_typ; loc}
-              :: rev_acc )
-    in
-    if Exp.equal e1 e2 then [] else struct_copy_helper e1 e2 typ struct_name [] |> List.rev
-
-
   and binaryOperator_trans trans_state binary_operator_info stmt_info expr_info stmt_list =
     L.debug Capture Verbose "  BinaryOperator '%a' "
       (Pp.of_string ~f:Clang_ast_j.string_of_binary_operator_kind)
@@ -1029,8 +1010,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           (instruction trans_state' s1, instruction trans_state' s2)
         in
         let instrs =
-          struct_copy context.CContext.tenv sil_loc (fst res_trans_e1.return)
-            (fst res_trans_e2.return) res_typ struct_name
+          CStructUtils.struct_copy context.CContext.tenv sil_loc (fst res_trans_e1.return)
+            (fst res_trans_e2.return) ~typ:res_typ ~struct_name
         in
         [res_trans_e1.control; res_trans_e2.control; {empty_control with instrs}]
         |> PriorityNode.compute_controls_to_parent trans_state_pri sil_loc node_name stmt_info
@@ -2643,7 +2624,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let instrs =
           match cstruct_name_opt with
           | Some struct_name ->
-              struct_copy context.CContext.tenv sil_loc var_exp sil_e1' var_typ struct_name
+              CStructUtils.struct_copy context.CContext.tenv sil_loc var_exp sil_e1' ~typ:var_typ
+                ~struct_name
           | None ->
               [Sil.Store {e1= var_exp; root_typ= ie_typ; typ= ie_typ; e2= sil_e1'; loc= sil_loc}]
         in
@@ -3033,8 +3015,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       , Some {desc= Tptr ({desc= Tstruct (CStruct _ as struct_name)}, _)} ) ->
         (* return (exp:struct); *)
         return_stmt stmt ~mk_ret_instrs:(fun ret_exp _root_typ ret_typ res_trans_stmt ->
-            struct_copy context.CContext.tenv sil_loc ret_exp (fst res_trans_stmt.return) ret_typ
-              struct_name )
+            CStructUtils.struct_copy context.CContext.tenv sil_loc ret_exp
+              (fst res_trans_stmt.return) ~typ:ret_typ ~struct_name )
     | [stmt], _ ->
         (* return exp; *)
         return_stmt stmt ~mk_ret_instrs:(fun ret_exp root_typ ret_typ res_trans_stmt ->

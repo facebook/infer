@@ -44,8 +44,7 @@ let mk_objc_method_nil_summary_aux tenv proc_desc astate =
   let* astate, self_value = PulseOperations.eval_deref location (Lvar self) astate in
   let* astate = PulseArithmetic.prune_eq_zero (fst self_value) astate in
   match List.last (Procdesc.get_formals proc_desc) with
-  | Some (last_formal, {desc= Tptr (typ, _)}) when Mangled.equal last_formal Ident.name_return_param
-    ->
+  | Some (last_formal, {desc= Tptr (typ, _)}) when Mangled.is_return_param last_formal ->
       let ret_param_var = Procdesc.get_ret_param_var proc_desc in
       let* astate, ret_param_var_addr_hist =
         PulseOperations.eval_deref location (Lvar ret_param_var) astate

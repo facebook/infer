@@ -42,6 +42,10 @@ let self = from_string "self"
 
 let is_self = function {plain= "self"} -> true | _ -> false
 
+let return_param = from_string "__return_param"
+
+let is_return_param = function {plain= "__return_param"} -> true | _ -> false
+
 module Set = PrettyPrintable.MakePPSet (struct
   type nonrec t = t [@@deriving compare]
 
