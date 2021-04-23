@@ -48,7 +48,8 @@ type t =
 (* A method is a getter if it has a link to a property and *)
 (* it has 0 arguments *)
 let is_getter {pointer_to_property_opt; params} =
-  Option.is_some pointer_to_property_opt && Int.equal (List.length params) 0
+  Option.is_some pointer_to_property_opt
+  && match params with [] -> true | [{name}] -> Mangled.is_return_param name | _ -> false
 
 
 (* A method is a setter if it has a link to a property and *)
