@@ -503,6 +503,10 @@ end = struct
                     "Switch condition is true. Entering switch case"
                 | false, Sil.Ik_switch ->
                     "Switch condition is false. Skipping switch case"
+                | true, Sil.Ik_compexch ->
+                    "Pointer contains expected value. Writing desired to pointer"
+                | false, Sil.Ik_compexch ->
+                    "Pointer does not contain expected value. Writing to expected"
                 | true, (Sil.Ik_bexp | Sil.Ik_land_lor) ->
                     "Condition is true"
                 | false, (Sil.Ik_bexp | Sil.Ik_land_lor) ->

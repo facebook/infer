@@ -16,6 +16,7 @@ module F = Format
 (** Kind of prune instruction *)
 type if_kind =
   | Ik_bexp  (** boolean expressions, and exp ? exp : exp *)
+  | Ik_compexch  (** used in atomic compare exchange expressions *)
   | Ik_dowhile
   | Ik_for
   | Ik_if

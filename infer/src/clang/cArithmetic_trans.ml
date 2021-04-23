@@ -183,6 +183,157 @@ let unary_operation_instruction translation_unit_context uoi e typ loc =
       (e, [])
 
 
+let atomic_operation_instruction aei e1 e2 typ loc =
+  let atomic_binop bop ~fetch_first =
+    let id = Ident.create_fresh Ident.knormal in
+    let instr1 = Sil.Load {id; e= e1; root_typ= typ; typ; loc} in
+    let e1_op_e2 = Exp.BinOp (bop, Exp.Var id, e2) in
+    if fetch_first then (Exp.Var id, [instr1; Sil.Store {e1; root_typ= typ; typ; e2= e1_op_e2; loc}])
+    else
+      let fetch_id = Ident.create_fresh Ident.knormal in
+      let fetch_instr = Sil.Load {id= fetch_id; e= e1; root_typ= typ; typ; loc} in
+      ( Exp.Var fetch_id
+      , [instr1; Sil.Store {e1; root_typ= typ; typ; e2= e1_op_e2; loc}; fetch_instr] )
+  in
+  match aei.Clang_ast_t.aei_kind with
+  (* GNU builtins do arithmetic operations even with pointers *)
+  | `AO__atomic_fetch_add ->
+      atomic_binop (Binop.PlusA (Typ.get_ikind_opt typ)) ~fetch_first:true
+  | `AO__c11_atomic_fetch_add | `AO__opencl_atomic_fetch_add ->
+      atomic_binop
+        (if Typ.is_pointer typ then Binop.PlusPI else Binop.PlusA (Typ.get_ikind_opt typ))
+        ~fetch_first:true
+  | `AO__atomic_add_fetch ->
+      atomic_binop (Binop.PlusA (Typ.get_ikind_opt typ)) ~fetch_first:false
+  | `AO__atomic_fetch_sub ->
+      atomic_binop (Binop.MinusA (Typ.get_ikind_opt typ)) ~fetch_first:true
+  | `AO__c11_atomic_fetch_sub | `AO__opencl_atomic_fetch_sub ->
+      atomic_binop
+        (if Typ.is_pointer typ then Binop.MinusPI else Binop.MinusA (Typ.get_ikind_opt typ))
+        ~fetch_first:true
+  | `AO__atomic_sub_fetch ->
+      atomic_binop (Binop.MinusA (Typ.get_ikind_opt typ)) ~fetch_first:false
+  | `AO__atomic_fetch_or | `AO__c11_atomic_fetch_or | `AO__opencl_atomic_fetch_or ->
+      atomic_binop Binop.BOr ~fetch_first:true
+  | `AO__atomic_or_fetch ->
+      atomic_binop Binop.BOr ~fetch_first:false
+  | `AO__atomic_fetch_xor | `AO__c11_atomic_fetch_xor | `AO__opencl_atomic_fetch_xor ->
+      atomic_binop Binop.BXor ~fetch_first:true
+  | `AO__atomic_xor_fetch ->
+      atomic_binop Binop.BXor ~fetch_first:false
+  | `AO__atomic_fetch_and | `AO__c11_atomic_fetch_and | `AO__opencl_atomic_fetch_and ->
+      atomic_binop Binop.BAnd ~fetch_first:true
+  | `AO__atomic_and_fetch ->
+      atomic_binop Binop.BAnd ~fetch_first:false
+  | _ ->
+      (* We only call this function if it's been implemented. *)
+      assert false
+
+
+let atomic_expr_to_string aei =
+  match aei.Clang_ast_t.aei_kind with
+  | `AO__c11_atomic_init ->
+      "__c11_atomic_init"
+  | `AO__c11_atomic_load ->
+      "__c11_atomic_load"
+  | `AO__c11_atomic_store ->
+      "__c11_atomic_store"
+  | `AO__c11_atomic_exchange ->
+      "__c11_atomic_exchange"
+  | `AO__c11_atomic_compare_exchange_strong ->
+      "__c11_atomic_compare_exchange_strong"
+  | `AO__c11_atomic_compare_exchange_weak ->
+      "__c11_atomic_compare_exchange_weak"
+  | `AO__c11_atomic_fetch_add ->
+      "__c11_atomic_fetch_add"
+  | `AO__c11_atomic_fetch_sub ->
+      "__c11_atomic_fetch_sub"
+  | `AO__c11_atomic_fetch_and ->
+      "__c11_atomic_fetch_and"
+  | `AO__c11_atomic_fetch_or ->
+      "__c11_atomic_fetch_or"
+  | `AO__c11_atomic_fetch_xor ->
+      "__c11_atomic_fetch_xor"
+  | `AO__c11_atomic_fetch_max ->
+      "__c11_atomic_fetch_max"
+  | `AO__c11_atomic_fetch_min ->
+      "__c11_atomic_fetch_min"
+  | `AO__atomic_load ->
+      "__atomic_load"
+  | `AO__atomic_load_n ->
+      "__atomic_load_n"
+  | `AO__atomic_store ->
+      "__atomic_store"
+  | `AO__atomic_store_n ->
+      "__atomic_store_n"
+  | `AO__atomic_exchange ->
+      "__atomic_exchange"
+  | `AO__atomic_exchange_n ->
+      "__atomic_exchange_n"
+  | `AO__atomic_compare_exchange ->
+      "__atomic_compare_exchange"
+  | `AO__atomic_compare_exchange_n ->
+      "__atomic_compare_exchange_n"
+  | `AO__atomic_fetch_add ->
+      "__atomic_fetch_add"
+  | `AO__atomic_fetch_sub ->
+      "__atomic_fetch_sub"
+  | `AO__atomic_fetch_and ->
+      "__atomic_fetch_and"
+  | `AO__atomic_fetch_or ->
+      "__atomic_fetch_or"
+  | `AO__atomic_fetch_xor ->
+      "__atomic_fetch_xor"
+  | `AO__atomic_fetch_nand ->
+      "__atomic_fetch_nand"
+  | `AO__atomic_add_fetch ->
+      "__atomic_add_fetch"
+  | `AO__atomic_sub_fetch ->
+      "__atomic_sub_fetch"
+  | `AO__atomic_and_fetch ->
+      "__atomic_and_fetch"
+  | `AO__atomic_or_fetch ->
+      "__atomic_or_fetch"
+  | `AO__atomic_xor_fetch ->
+      "__atomic_xor_fetch"
+  | `AO__atomic_max_fetch ->
+      "__atomic_max_fetch"
+  | `AO__atomic_min_fetch ->
+      "__atomic_min_fetch"
+  | `AO__atomic_nand_fetch ->
+      "__atomic_nand_fetch"
+  | `AO__opencl_atomic_init ->
+      "__opencl_atomic_init"
+  | `AO__opencl_atomic_load ->
+      "__opencl_atomic_load"
+  | `AO__opencl_atomic_store ->
+      "__opencl_atomic_store"
+  | `AO__opencl_atomic_exchange ->
+      "__opencl_atomic_exchange"
+  | `AO__opencl_atomic_compare_exchange_strong ->
+      "__opencl_atomic_compare_exchange_strong"
+  | `AO__opencl_atomic_compare_exchange_weak ->
+      "__opencl_atomic_compare_exchange_weak"
+  | `AO__opencl_atomic_fetch_add ->
+      "__opencl_atomic_fetch_add"
+  | `AO__opencl_atomic_fetch_sub ->
+      "__opencl_atomic_fetch_sub"
+  | `AO__opencl_atomic_fetch_and ->
+      "__opencl_atomic_fetch_and"
+  | `AO__opencl_atomic_fetch_or ->
+      "__opencl_atomic_fetch_or"
+  | `AO__opencl_atomic_fetch_xor ->
+      "__opencl_atomic_fetch_xor"
+  | `AO__opencl_atomic_fetch_min ->
+      "__opencl_atomic_fetch_min"
+  | `AO__opencl_atomic_fetch_max ->
+      "__opencl_atomic_fetch_max"
+  | `AO__atomic_fetch_min ->
+      "__atomic_fetch_min"
+  | `AO__atomic_fetch_max ->
+      "__atomic_fetch_max"
+
+
 let bin_op_to_string boi =
   match boi.Clang_ast_t.boi_kind with
   | `PtrMemD ->

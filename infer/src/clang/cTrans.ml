@@ -1124,6 +1124,419 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         assert false
 
 
+  and atomicExpr_trans trans_state atomic_expr_info stmt_info expr_info stmt_list =
+    let context = trans_state.context in
+    let sil_loc =
+      CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
+    in
+    let ret_typ =
+      CType_decl.qual_type_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_qual_type
+    in
+    let node_name =
+      Procdesc.Node.AtomicExpr (CArithmetic_trans.atomic_expr_to_string atomic_expr_info)
+    in
+    let handle_unimplemented builtin =
+      call_function_with_args node_name builtin trans_state stmt_info ret_typ stmt_list
+    in
+    match atomic_expr_info.Clang_ast_t.aei_kind with
+    | `AO__atomic_add_fetch
+    | `AO__atomic_sub_fetch
+    | `AO__atomic_or_fetch
+    | `AO__atomic_xor_fetch
+    | `AO__atomic_and_fetch
+    | `AO__atomic_fetch_add
+    | `AO__atomic_fetch_sub
+    | `AO__atomic_fetch_or
+    | `AO__atomic_fetch_xor
+    | `AO__atomic_fetch_and
+    | `AO__c11_atomic_fetch_add
+    | `AO__c11_atomic_fetch_sub
+    | `AO__c11_atomic_fetch_or
+    | `AO__c11_atomic_fetch_xor
+    | `AO__c11_atomic_fetch_and
+    | `AO__opencl_atomic_fetch_add
+    | `AO__opencl_atomic_fetch_sub
+    | `AO__opencl_atomic_fetch_or
+    | `AO__opencl_atomic_fetch_xor
+    | `AO__opencl_atomic_fetch_and ->
+        let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
+        let trans_state' = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
+        let s1, s2, mem_controls =
+          match stmt_list with
+          | [s1; memorder; s2] ->
+              let res_trans_memorder = instruction trans_state' memorder in
+              (s1, s2, [res_trans_memorder.control])
+          | [s1; memorder; s2; memscope] ->
+              let res_trans_memorder = instruction trans_state' memorder in
+              let res_trans_memscope = instruction trans_state' memscope in
+              (s1, s2, [res_trans_memorder.control; res_trans_memscope.control])
+          | _ ->
+              assert false
+        in
+        let res_trans_s1 = instruction trans_state' s1 in
+        let sil_e1, _ = res_trans_s1.return in
+        let res_trans_s2 = instruction trans_state' s2 in
+        let sil_e2, _ = res_trans_s2.return in
+        let exp_op, instr_op =
+          CArithmetic_trans.atomic_operation_instruction atomic_expr_info sil_e1 sil_e2 ret_typ
+            sil_loc
+        in
+        let atomic_op_control = {empty_control with instrs= instr_op} in
+        let all_control =
+          mem_controls @ [res_trans_s1.control; res_trans_s2.control; atomic_op_control]
+        in
+        PriorityNode.compute_controls_to_parent trans_state_pri sil_loc node_name stmt_info
+          all_control
+        |> mk_trans_result (exp_op, ret_typ)
+    | `AO__atomic_load_n | `AO__c11_atomic_load | `AO__opencl_atomic_load ->
+        let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
+        let trans_state' = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
+        let ptr, mem_controls =
+          match stmt_list with
+          | [ptr; memorder] ->
+              let res_trans_memorder = instruction trans_state' memorder in
+              (ptr, [res_trans_memorder.control])
+          | [ptr; memorder; memscope] ->
+              let res_trans_memorder = instruction trans_state' memorder in
+              let res_trans_memscope = instruction trans_state' memscope in
+              (ptr, [res_trans_memorder.control; res_trans_memscope.control])
+          | _ ->
+              assert false
+        in
+        let res_trans_ptr = instruction trans_state' ptr in
+        let e, _ = res_trans_ptr.return in
+        let id = Ident.create_fresh Ident.knormal in
+        let instrs = [Sil.Load {id; e; root_typ= ret_typ; typ= ret_typ; loc= sil_loc}] in
+        let load_control = {empty_control with instrs} in
+        let all_control = mem_controls @ [res_trans_ptr.control; load_control] in
+        PriorityNode.compute_controls_to_parent trans_state_pri sil_loc node_name stmt_info
+          all_control
+        |> mk_trans_result (Exp.Var id, ret_typ)
+    | `AO__atomic_load ->
+        let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
+        let trans_state' = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
+        let ptr, ret, mem_controls =
+          match stmt_list with
+          | [ptr; memorder; ret] ->
+              let res_trans_memorder = instruction trans_state' memorder in
+              (ptr, ret, [res_trans_memorder.control])
+          | _ ->
+              assert false
+        in
+        let res_trans_ret = instruction trans_state' ret in
+        let ret_exp, ret_typ = res_trans_ret.return in
+        let res_trans_ptr = instruction trans_state' ptr in
+        let ptr_exp, ptr_typ = res_trans_ptr.return in
+        let ptr_id = Ident.create_fresh Ident.knormal in
+        let instrs =
+          [ Sil.Load
+              { id= ptr_id
+              ; e= ptr_exp
+              ; root_typ= Typ.strip_ptr ptr_typ
+              ; typ= Typ.strip_ptr ptr_typ
+              ; loc= sil_loc }
+          ; Sil.Store
+              { e1= ret_exp
+              ; e2= Exp.Var ptr_id
+              ; root_typ= Typ.strip_ptr ret_typ
+              ; typ= Typ.strip_ptr ret_typ
+              ; loc= sil_loc } ]
+        in
+        let load_control = {empty_control with instrs} in
+        let all_control =
+          mem_controls @ [res_trans_ret.control; res_trans_ptr.control; load_control]
+        in
+        PriorityNode.compute_controls_to_parent trans_state_pri sil_loc node_name stmt_info
+          all_control
+        |> mk_trans_result (mk_fresh_void_exp_typ ())
+    | `AO__atomic_store_n
+    | `AO__c11_atomic_store
+    | `AO__opencl_atomic_store
+    | `AO__c11_atomic_init
+    | `AO__opencl_atomic_init ->
+        let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
+        let trans_state' = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
+        let ptr, value, mem_controls =
+          match stmt_list with
+          | [ptr; value] ->
+              (ptr, value, [])
+          | [ptr; memorder; value] ->
+              let res_trans_memorder = instruction trans_state' memorder in
+              (ptr, value, [res_trans_memorder.control])
+          | [ptr; memorder; value; memscope] ->
+              let res_trans_memorder = instruction trans_state' memorder in
+              let res_trans_memscope = instruction trans_state' memscope in
+              (ptr, value, [res_trans_memorder.control; res_trans_memscope.control])
+          | _ ->
+              assert false
+        in
+        let res_trans_ptr = instruction trans_state' ptr in
+        let ptr_exp, _ = res_trans_ptr.return in
+        let res_trans_value = instruction trans_state' value in
+        let value_exp, value_typ = res_trans_value.return in
+        let instrs =
+          [Sil.Store {e1= ptr_exp; e2= value_exp; root_typ= value_typ; typ= value_typ; loc= sil_loc}]
+        in
+        let load_control = {empty_control with instrs} in
+        let all_control =
+          mem_controls @ [res_trans_ptr.control; res_trans_value.control; load_control]
+        in
+        PriorityNode.compute_controls_to_parent trans_state_pri sil_loc node_name stmt_info
+          all_control
+        |> mk_trans_result (mk_fresh_void_exp_typ ())
+    | `AO__atomic_store ->
+        let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
+        let trans_state' = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
+        let ptr, value, mem_controls =
+          match stmt_list with
+          | [ptr; memorder; value] ->
+              let res_trans_memorder = instruction trans_state' memorder in
+              (ptr, value, [res_trans_memorder.control])
+          | _ ->
+              assert false
+        in
+        let res_trans_ptr = instruction trans_state' ptr in
+        let ptr_exp, _ = res_trans_ptr.return in
+        let res_trans_value = instruction trans_state' value in
+        let value_exp, value_typ = res_trans_value.return in
+        let typ = Typ.strip_ptr value_typ in
+        let id = Ident.create_fresh Ident.knormal in
+        let instrs =
+          [ Sil.Load {id; e= value_exp; root_typ= typ; typ; loc= sil_loc}
+          ; Sil.Store {e1= ptr_exp; e2= Exp.Var id; root_typ= typ; typ; loc= sil_loc} ]
+        in
+        let load_control = {empty_control with instrs} in
+        let all_control =
+          mem_controls @ [res_trans_ptr.control; res_trans_value.control; load_control]
+        in
+        PriorityNode.compute_controls_to_parent trans_state_pri sil_loc node_name stmt_info
+          all_control
+        |> mk_trans_result (mk_fresh_void_exp_typ ())
+    | `AO__atomic_exchange_n | `AO__c11_atomic_exchange | `AO__opencl_atomic_exchange ->
+        let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
+        let trans_state' = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
+        let ptr, value, mem_controls =
+          match stmt_list with
+          | [ptr; memorder; value] ->
+              let res_trans_memorder = instruction trans_state' memorder in
+              (ptr, value, [res_trans_memorder.control])
+          | [ptr; memorder; value; memscope] ->
+              let res_trans_memorder = instruction trans_state' memorder in
+              let res_trans_memscope = instruction trans_state' memscope in
+              (ptr, value, [res_trans_memorder.control; res_trans_memscope.control])
+          | _ ->
+              assert false
+        in
+        let res_trans_ptr = instruction trans_state' ptr in
+        let ptr_exp, _ = res_trans_ptr.return in
+        let res_trans_value = instruction trans_state' value in
+        let value_exp, value_typ = res_trans_value.return in
+        let id = Ident.create_fresh Ident.knormal in
+        let instrs =
+          [ Sil.Load {id; e= ptr_exp; root_typ= ret_typ; typ= ret_typ; loc= sil_loc}
+          ; Sil.Store {e1= ptr_exp; e2= value_exp; root_typ= value_typ; typ= value_typ; loc= sil_loc}
+          ]
+        in
+        let load_control = {empty_control with instrs} in
+        let all_control =
+          mem_controls @ [res_trans_ptr.control; res_trans_value.control; load_control]
+        in
+        PriorityNode.compute_controls_to_parent trans_state_pri sil_loc node_name stmt_info
+          all_control
+        |> mk_trans_result (Exp.Var id, ret_typ)
+    | `AO__atomic_exchange ->
+        let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
+        let trans_state' = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
+        let ptr, value, ret, mem_controls =
+          match stmt_list with
+          | [ptr; memorder; value; ret] ->
+              let res_trans_memorder = instruction trans_state' memorder in
+              (ptr, value, ret, [res_trans_memorder.control])
+          | _ ->
+              assert false
+        in
+        let res_trans_ptr = instruction trans_state' ptr in
+        let ptr_exp, _ = res_trans_ptr.return in
+        let res_trans_value = instruction trans_state' value in
+        let value_exp, value_typ = res_trans_value.return in
+        let res_trans_ret = instruction trans_state' ret in
+        let ret_exp, _ = res_trans_ret.return in
+        let ptr_id = Ident.create_fresh Ident.knormal in
+        let value_id = Ident.create_fresh Ident.knormal in
+        let typ = Typ.strip_ptr value_typ in
+        let instrs =
+          [ Sil.Load {id= ptr_id; e= ptr_exp; root_typ= typ; typ; loc= sil_loc}
+          ; Sil.Load {id= value_id; e= value_exp; root_typ= typ; typ; loc= sil_loc}
+          ; Sil.Store {e1= ptr_exp; e2= Exp.Var value_id; root_typ= typ; typ; loc= sil_loc}
+          ; Sil.Store {e1= ret_exp; e2= Exp.Var ptr_id; root_typ= typ; typ; loc= sil_loc} ]
+        in
+        let load_control = {empty_control with instrs} in
+        let all_control =
+          mem_controls
+          @ [res_trans_ptr.control; res_trans_value.control; res_trans_ret.control; load_control]
+        in
+        PriorityNode.compute_controls_to_parent trans_state_pri sil_loc node_name stmt_info
+          all_control
+        |> mk_trans_result (mk_fresh_void_exp_typ ())
+    | `AO__atomic_compare_exchange
+    | `AO__atomic_compare_exchange_n
+    | `AO__c11_atomic_compare_exchange_strong
+    | `AO__c11_atomic_compare_exchange_weak
+    | `AO__opencl_atomic_compare_exchange_strong
+    | `AO__opencl_atomic_compare_exchange_weak ->
+        let trans_state = PriorityNode.try_claim_priority_node trans_state stmt_info in
+        let trans_state' = {trans_state with succ_nodes= []; var_exp_typ= None} in
+        let ptr, expected, desired, mem_controls =
+          match stmt_list with
+          | [ptr; success_memorder; expected; failure_memorder; desired; weak_or_memscope] ->
+              let res_trans_success_memorder = instruction trans_state' success_memorder in
+              let res_trans_failure_memorder = instruction trans_state' failure_memorder in
+              let res_trans_weak_or_memscope = instruction trans_state' weak_or_memscope in
+              ( ptr
+              , expected
+              , desired
+              , [ res_trans_success_memorder.control
+                ; res_trans_failure_memorder.control
+                ; res_trans_weak_or_memscope.control ] )
+          | [ptr; success_memorder; expected; failure_memorder; desired] ->
+              let res_trans_success_memorder = instruction trans_state' success_memorder in
+              let res_trans_failure_memorder = instruction trans_state' failure_memorder in
+              ( ptr
+              , expected
+              , desired
+              , [res_trans_success_memorder.control; res_trans_failure_memorder.control] )
+          | _ ->
+              assert false
+        in
+        let res_trans_ptr = instruction trans_state' ptr in
+        let ptr_exp, _ = res_trans_ptr.return in
+        let ptr_id = Ident.create_fresh Ident.knormal in
+        let res_trans_expected = instruction trans_state' expected in
+        let expected_exp, _ = res_trans_expected.return in
+        let expected_id = Ident.create_fresh Ident.knormal in
+        let res_trans_desired = instruction trans_state' desired in
+        let (desired_exp, typ), desired_instrs =
+          match atomic_expr_info.Clang_ast_t.aei_kind with
+          | `AO__atomic_compare_exchange -> (
+            match res_trans_desired.return with
+            | exp, typ ->
+                let desired_id = Ident.create_fresh Ident.knormal in
+                let typ = Typ.strip_ptr typ in
+                ( (Exp.Var desired_id, typ)
+                , [Sil.Load {id= desired_id; e= exp; root_typ= typ; typ; loc= sil_loc}] ) )
+          | _ ->
+              (res_trans_desired.return, [])
+        in
+        let is_expected_cond = Exp.BinOp (Binop.Eq, Exp.Var ptr_id, Exp.Var expected_id) in
+        let load_instrs =
+          [ Sil.Load {id= ptr_id; e= ptr_exp; root_typ= typ; typ; loc= sil_loc}
+          ; Sil.Load {id= expected_id; e= expected_exp; root_typ= typ; typ; loc= sil_loc} ]
+          @ desired_instrs
+        in
+        let join_node = Procdesc.create_node context.procdesc sil_loc Join_node [] in
+        Procdesc.node_set_succs context.procdesc join_node ~normal:trans_state.succ_nodes ~exn:[] ;
+        let var_exp_typ =
+          match trans_state.var_exp_typ with
+          | Some var_exp_typ ->
+              `ParentExp var_exp_typ
+          | None ->
+              let pvar =
+                CVar_decl.mk_temp_sil_var context.procdesc ~name:"SIL_temp_compare_exchange___"
+              in
+              let var_data =
+                ProcAttributes.
+                  { name= Pvar.get_name pvar
+                  ; typ= ret_typ
+                  ; modify_in_block= false
+                  ; is_constexpr= false
+                  ; is_declared_unused= false }
+              in
+              Procdesc.append_locals context.procdesc [var_data] ;
+              `Temp pvar
+        in
+        let do_branch trans_state branch exp_to_init =
+          let trans_state_pri = PriorityNode.force_claim_priority_node trans_state stmt_info in
+          let prune_node =
+            create_prune_node context.procdesc ~branch ~negate_cond:(not branch) is_expected_cond []
+              sil_loc Sil.Ik_compexch
+          in
+          let instrs =
+            if branch then
+              [ Sil.Store {e1= ptr_exp; e2= desired_exp; root_typ= typ; typ; loc= sil_loc}
+              ; Sil.Store
+                  {e1= exp_to_init; e2= Exp.one; root_typ= ret_typ; typ= ret_typ; loc= sil_loc} ]
+            else
+              [ Sil.Store {e1= expected_exp; e2= Exp.Var ptr_id; root_typ= typ; typ; loc= sil_loc}
+              ; Sil.Store
+                  {e1= exp_to_init; e2= Exp.zero; root_typ= ret_typ; typ= ret_typ; loc= sil_loc} ]
+          in
+          let return = (exp_to_init, ret_typ) in
+          let res_trans =
+            PriorityNode.compute_results_to_parent trans_state_pri sil_loc
+              AtomicCompareExchangeBranch stmt_info ~return
+              [mk_trans_result return {empty_control with instrs; initd_exps= [exp_to_init]}]
+          in
+          Procdesc.node_set_succs context.procdesc prune_node ~normal:res_trans.control.root_nodes
+            ~exn:[] ;
+          prune_node
+        in
+        let exp_to_init =
+          match var_exp_typ with `ParentExp (exp, _) -> exp | `Temp pvar -> Exp.Lvar pvar
+        in
+        let prune_success = do_branch {trans_state with succ_nodes= [join_node]} true exp_to_init in
+        let prune_failure =
+          do_branch {trans_state with succ_nodes= [join_node]} false exp_to_init
+        in
+        let instrs, return =
+          match var_exp_typ with
+          | `ParentExp var_exp_typ ->
+              ([], var_exp_typ)
+          | `Temp pvar ->
+              let id = Ident.create_fresh Ident.knormal in
+              ( [Sil.Load {id; e= Lvar pvar; root_typ= ret_typ; typ= ret_typ; loc= sil_loc}]
+              , (Exp.Var id, ret_typ) )
+        in
+        let load_controls =
+          mem_controls
+          @ [ res_trans_ptr.control
+            ; res_trans_expected.control
+            ; res_trans_desired.control
+            ; {empty_control with instrs= load_instrs} ]
+        in
+        let trans_state_pri = PriorityNode.force_claim_priority_node trans_state stmt_info in
+        let control =
+          PriorityNode.compute_controls_to_parent trans_state_pri sil_loc node_name stmt_info
+            load_controls
+        in
+        List.iter
+          ~f:(fun n ->
+            Procdesc.node_set_succs context.procdesc n ~normal:[prune_success; prune_failure]
+              ~exn:[] )
+          control.leaf_nodes ;
+        mk_trans_result return
+          {control with instrs; initd_exps= [exp_to_init]; leaf_nodes= [join_node]}
+    | `AO__atomic_fetch_max ->
+        handle_unimplemented BuiltinDecl.__atomic_fetch_max
+    | `AO__atomic_fetch_min ->
+        handle_unimplemented BuiltinDecl.__atomic_fetch_min
+    | `AO__atomic_fetch_nand ->
+        handle_unimplemented BuiltinDecl.__atomic_fetch_nand
+    | `AO__atomic_max_fetch ->
+        handle_unimplemented BuiltinDecl.__atomic_max_fetch
+    | `AO__atomic_min_fetch ->
+        handle_unimplemented BuiltinDecl.__atomic_min_fetch
+    | `AO__atomic_nand_fetch ->
+        handle_unimplemented BuiltinDecl.__atomic_nand_fetch
+    | `AO__c11_atomic_fetch_max ->
+        handle_unimplemented BuiltinDecl.__c11_atomic_fetch_max
+    | `AO__c11_atomic_fetch_min ->
+        handle_unimplemented BuiltinDecl.__c11_atomic_fetch_min
+    | `AO__opencl_atomic_fetch_max ->
+        handle_unimplemented BuiltinDecl.__opencl_atomic_fetch_max
+    | `AO__opencl_atomic_fetch_min ->
+        handle_unimplemented BuiltinDecl.__opencl_atomic_fetch_min
+
+
   and callExpr_trans trans_state si stmt_list expr_info =
     let context = trans_state.context in
     let fn_type_no_ref = CType_decl.get_type_from_expr_info expr_info context.CContext.tenv in
@@ -4313,6 +4726,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         arraySubscriptExpr_trans trans_state expr_info stmt_list
     | BinaryOperator (stmt_info, stmt_list, expr_info, binop_info) ->
         binaryOperator_trans_with_cond trans_state stmt_info stmt_list expr_info binop_info
+    | AtomicExpr (stmt_info, stmt_list, expr_info, atomic_info) ->
+        atomicExpr_trans trans_state atomic_info stmt_info expr_info stmt_list
     | CallExpr (stmt_info, stmt_list, ei) | UserDefinedLiteral (stmt_info, stmt_list, ei) ->
         callExpr_trans trans_state stmt_info stmt_list ei
     | ConstantExpr (_, stmt_list, _) -> (
@@ -4562,7 +4977,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | AddrLabelExpr _
     | ArrayTypeTraitExpr _
     | AsTypeExpr _
-    | AtomicExpr _
     | CapturedStmt _
     | ChooseExpr _
     | CoawaitExpr _
