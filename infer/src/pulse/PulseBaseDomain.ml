@@ -46,6 +46,7 @@ let find_cell_opt addr {heap; attrs} =
     reachable from stack variables). *)
 module GraphComparison = struct
   module AddressMap = PrettyPrintable.MakePPMap (AbstractValue)
+  module AddressSet = AbstractValue.Set
 
   (** translation between the abstract values on the LHS and the ones on the RHS *)
   type mapping =
@@ -75,7 +76,7 @@ module GraphComparison = struct
           mapping ;
         `AliasingLHS
     | Some _addr_rhs (* [_addr_rhs = addr_rhs] *) ->
-        `AlreadyVisited
+        `AlreadyVisited mapping
     | None -> (
       (* ...and have we seen [addr_rhs] before?.. *)
       match AddressMap.find_opt addr_rhs mapping.rhs_to_lhs with
@@ -103,14 +104,16 @@ module GraphComparison = struct
 
   (** can we extend [mapping] so that the subgraph of [lhs] rooted at [addr_lhs] is isomorphic to
       the subgraph of [rhs] rooted at [addr_rhs]? *)
-  let rec isograph_map_from_address ~lhs ~addr_lhs ~rhs ~addr_rhs mapping =
+  let rec isograph_map_from_address ~lhs ~addr_lhs ~rhs ~addr_rhs mapping visited =
     L.d_printfln "%a<->%a@\n" AbstractValue.pp addr_lhs AbstractValue.pp addr_rhs ;
     match record_equal mapping ~addr_lhs ~addr_rhs with
-    | `AlreadyVisited ->
-        IsomorphicUpTo mapping
+    | `AlreadyVisited mapping when AddressSet.mem addr_lhs visited ->
+        (IsomorphicUpTo mapping, visited)
     | `AliasingRHS | `AliasingLHS ->
-        NotIsomorphic
+        (NotIsomorphic, visited)
+    | `AlreadyVisited mapping 
     | `NotAlreadyVisited mapping -> (
+        let visited = AddressSet.add addr_lhs visited in
         let get_non_empty_cell addr astate =
           find_cell_opt addr astate
           |> Option.filter ~f:(fun (edges, attrs) ->
@@ -122,59 +125,62 @@ module GraphComparison = struct
         let rhs_cell_opt = get_non_empty_cell addr_rhs rhs in
         match (lhs_cell_opt, rhs_cell_opt) with
         | None, None ->
-            IsomorphicUpTo mapping
+            (IsomorphicUpTo mapping, visited)
         | Some _, None | None, Some _ ->
-            NotIsomorphic
+            (NotIsomorphic, visited)
         | Some (edges_lhs, attrs_lhs), Some (edges_rhs, attrs_rhs) ->
             (* continue the comparison recursively on all edges and attributes *)
             if Attributes.equal attrs_rhs attrs_lhs then
               let bindings_lhs = Memory.Edges.bindings edges_lhs in
               let bindings_rhs = Memory.Edges.bindings edges_rhs in
-              isograph_map_edges ~lhs ~edges_lhs:bindings_lhs ~rhs ~edges_rhs:bindings_rhs mapping
-            else NotIsomorphic )
+              isograph_map_edges ~lhs ~edges_lhs:bindings_lhs ~rhs ~edges_rhs:bindings_rhs mapping visited
+            else (NotIsomorphic, visited) )
 
 
   (** check that the isograph relation can be extended for all edges *)
-  and isograph_map_edges ~lhs ~edges_lhs ~rhs ~edges_rhs mapping =
+  and isograph_map_edges ~lhs ~edges_lhs ~rhs ~edges_rhs mapping visited =
     match (edges_lhs, edges_rhs) with
     | [], [] ->
-        IsomorphicUpTo mapping
+        (IsomorphicUpTo mapping, visited)
     | (a_lhs, (addr_lhs, _trace_lhs)) :: edges_lhs, (a_rhs, (addr_rhs, _trace_rhs)) :: edges_rhs
       when Memory.Access.equal a_lhs a_rhs -> (
       (* check isograph relation from the destination addresses *)
-      match isograph_map_from_address ~lhs ~addr_lhs ~rhs ~addr_rhs mapping with
-      | IsomorphicUpTo mapping ->
+      match isograph_map_from_address ~lhs ~addr_lhs ~rhs ~addr_rhs mapping visited with
+      | (IsomorphicUpTo mapping, visited) ->
           (* ok: continue with the other edges *)
-          isograph_map_edges ~lhs ~edges_lhs ~rhs ~edges_rhs mapping
-      | NotIsomorphic ->
-          NotIsomorphic )
+          isograph_map_edges ~lhs ~edges_lhs ~rhs ~edges_rhs mapping visited
+      | (NotIsomorphic, visited) ->
+          (NotIsomorphic, visited) )
     | _ :: _, _ :: _ | [], _ :: _ | _ :: _, [] ->
-        NotIsomorphic
+        (NotIsomorphic, visited)
 
 
   (** check that the memory graph induced by the addresses in [lhs] reachable from the variables in
       [stack_lhs] is a isograph of the same graph in [rhs] starting from [stack_rhs], up to some
       [mapping] *)
-  let rec isograph_map_from_stack ~lhs ~stack_lhs ~rhs ~stack_rhs mapping =
+  let rec isograph_map_from_stack ~lhs ~stack_lhs ~rhs ~stack_rhs mapping visited =
     match (stack_lhs, stack_rhs) with
     | [], [] ->
-        IsomorphicUpTo mapping
+        (IsomorphicUpTo mapping, visited)
     | (var_lhs, (addr_lhs, _trace_lhs)) :: stack_lhs, (var_rhs, (addr_rhs, _trace_rhs)) :: stack_rhs
       when Var.equal var_lhs var_rhs -> (
-      match isograph_map_from_address ~lhs ~addr_lhs ~rhs ~addr_rhs mapping with
-      | IsomorphicUpTo mapping ->
-          isograph_map_from_stack ~lhs ~stack_lhs ~rhs ~stack_rhs mapping
-      | NotIsomorphic ->
-          NotIsomorphic )
+      match isograph_map_from_address ~lhs ~addr_lhs ~rhs ~addr_rhs mapping visited with
+      | (IsomorphicUpTo mapping, visited) ->
+          isograph_map_from_stack ~lhs ~stack_lhs ~rhs ~stack_rhs mapping visited
+      | (NotIsomorphic, visited) ->
+          (NotIsomorphic, visited) )
     | _ :: _, _ :: _ | [], _ :: _ | _ :: _, [] ->
-        NotIsomorphic
+        (NotIsomorphic, visited)
 
 
-  let isograph_map ~lhs ~rhs mapping =
+  let isograph_map_internal ~lhs ~rhs mapping visited =
     let stack_lhs = Stack.bindings lhs.stack in
     let stack_rhs = Stack.bindings rhs.stack in
-    isograph_map_from_stack ~lhs ~rhs ~stack_lhs ~stack_rhs mapping
+    let (result, _) = isograph_map_from_stack ~lhs ~rhs ~stack_lhs ~stack_rhs mapping visited in
+    result
 
+  let isograph_map ~lhs ~rhs mapping =
+    isograph_map_internal ~lhs ~rhs mapping AddressSet.empty
 
   let is_isograph ~lhs ~rhs mapping =
     match isograph_map ~lhs ~rhs mapping with IsomorphicUpTo _ -> true | NotIsomorphic -> false
