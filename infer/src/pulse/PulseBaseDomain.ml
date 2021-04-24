@@ -178,11 +178,6 @@ module GraphComparison = struct
 
   let is_isograph ~lhs ~rhs mapping =
     match isograph_map ~lhs ~rhs mapping with IsomorphicUpTo _ -> true | NotIsomorphic -> false
-
-  let invert_map mapping =
-    { rhs_to_lhs= mapping.lhs_to_rhs
-    ; lhs_to_rhs= mapping.rhs_to_lhs }
-
 end
 
 let pp fmt {heap; stack; attrs} =

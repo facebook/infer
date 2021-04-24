@@ -35,8 +35,6 @@ val isograph_map : lhs:t -> rhs:t -> mapping -> isograph_relation
 
 val is_isograph : lhs:t -> rhs:t -> mapping -> bool
 
-val invert_map : mapping -> mapping
-
 val find_cell_opt : AbstractValue.t -> t -> cell option
 
 val pp : F.formatter -> t -> unit
