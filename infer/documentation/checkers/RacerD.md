@@ -1,6 +1,8 @@
-RacerD finds data races in your C++ and Java code. This page gives a more in-depth
+RacerD finds data races in your C++/Objective C and Java code. This page gives a more in-depth
 explanation of how the analysis works *for Java code*, but may be less complete than the
 [Thread Safety Violation bug description page](/docs/next/all-issue-types#thread_safety_violation).
+For information on C++ and Objective C, see the
+[Lock Consistency violation page](/docs/next/all-issue-types#lock_consistency_violation).
 
 To run the analysis, you can use plain `infer` (to run RacerD along with other
 analyses that are run by default) or `infer --racerd-only` (to run only RacerD).

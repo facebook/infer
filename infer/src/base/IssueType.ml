@@ -918,7 +918,8 @@ let thread_safety_violation =
 let thread_safety_violation_nullsafe =
   register Warning ~id:"THREAD_SAFETY_VIOLATION_NULLSAFE" RacerD
     ~hum:"Thread Safety Violation in `@Nullsafe` Class"
-    ~user_documentation:[%blob "../../documentation/issues/THREAD_SAFETY_VIOLATION.md"]
+    ~user_documentation:
+      "A [Thread Safety Violation](#thread_safety_violation) in a `@Nullsafe` class."
 
 
 let complexity_increase ~kind ~is_on_ui_thread =
