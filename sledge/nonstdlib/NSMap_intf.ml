@@ -80,6 +80,7 @@ module type S = sig
       equivalent maps. [O(1)]. *)
 
   val min_binding : 'a t -> (key * 'a) option
+  val max_binding : 'a t -> (key * 'a) option
   val mem : key -> 'a t -> bool
   val find : key -> 'a t -> 'a option
   val find_exn : key -> 'a t -> 'a

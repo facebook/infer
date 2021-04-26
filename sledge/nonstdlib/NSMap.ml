@@ -109,6 +109,7 @@ struct
   let choose = M.choose_opt
   let choose_exn = M.choose
   let min_binding = M.min_binding_opt
+  let max_binding = M.max_binding_opt
   let mem k m = M.mem k m
   let find_exn k m = M.find k m
   let find k m = M.find_opt k m
