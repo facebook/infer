@@ -148,6 +148,18 @@ struct
   let existsi m ~f = M.exists (fun key data -> f ~key ~data) m
   let for_alli m ~f = M.for_all (fun key data -> f ~key ~data) m
   let fold m s ~f = M.fold (fun key data acc -> f ~key ~data acc) m s
+
+  let fold_until (type res) m s ~f ~finish =
+    let state = ref s in
+    let exception Stop of res in
+    try
+      iteri m ~f:(fun ~key ~data ->
+          match f ~key ~data !state with
+          | `Continue s -> state := s
+          | `Stop r -> raise_notrace (Stop r) ) ;
+      finish !state
+    with Stop r -> r
+
   let keys m = Iter.from_iter (fun f -> M.iter (fun k _ -> f k) m)
   let values m = Iter.from_iter (fun f -> M.iter (fun _ v -> f v) m)
   let to_iter m = Iter.from_iter (fun f -> M.iter (fun k v -> f (k, v)) m)

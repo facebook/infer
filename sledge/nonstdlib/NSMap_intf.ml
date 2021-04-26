@@ -122,6 +122,13 @@ module type S = sig
   val for_alli : 'a t -> f:(key:key -> data:'a -> bool) -> bool
   val fold : 'a t -> 's -> f:(key:key -> data:'a -> 's -> 's) -> 's
 
+  val fold_until :
+       'a t
+    -> 's
+    -> f:(key:key -> data:'a -> 's -> [`Continue of 's | `Stop of 'b])
+    -> finish:('s -> 'b)
+    -> 'b
+
   (** {1 Convert} *)
 
   val keys : 'a t -> key iter
