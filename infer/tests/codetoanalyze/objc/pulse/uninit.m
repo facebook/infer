@@ -130,10 +130,9 @@ dispatch_queue_t queue;
   return [Uninit getter_c_struct:obj];
 }
 
-/* FN due to the frontend is incorrect when passing C struct value as a function
-   paraemeter when calling C struct setter. */
-+ (void)call_setter_c_struct_bad_FN:(Uninit*)obj {
++ (void)call_setter_c_struct_bad {
   struct my_struct s;
+  Uninit* obj = [Uninit new];
   obj.s = s; // setter is called
 }
 

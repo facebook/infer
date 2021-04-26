@@ -205,13 +205,22 @@ let rec materialize_pre_from_address callee_proc_name call_location ~pre ~addr_p
               ~addr_hist_caller:addr_hist_dest_caller call_state ) )
 
 
+let deref_non_c_struct addr typ astate =
+  match typ.Typ.desc with
+  | Tstruct _ ->
+      Some addr
+  | _ ->
+      BaseMemory.find_edge_opt addr Dereference astate |> Option.map ~f:fst
+
+
 (** materialize subgraph of [pre] rooted at the address represented by a [formal] parameter that has
     been instantiated with the corresponding [actual] into the current state [call_state.astate] *)
-let materialize_pre_from_actual callee_proc_name call_location ~pre ~formal ~actual call_state =
+let materialize_pre_from_actual callee_proc_name call_location ~pre ~formal ~actual:(actual, typ)
+    call_state =
   L.d_printfln "Materializing PRE from [%a <- %a]" Var.pp formal AbstractValue.pp (fst actual) ;
   (let open IOption.Let_syntax in
   let* addr_formal_pre, _ = BaseStack.find_opt formal pre.BaseDomain.stack in
-  let+ formal_pre, _ = BaseMemory.find_edge_opt addr_formal_pre Dereference pre.BaseDomain.heap in
+  let+ formal_pre = deref_non_c_struct addr_formal_pre typ pre.BaseDomain.heap in
   materialize_pre_from_address callee_proc_name call_location ~pre ~addr_pre:formal_pre
     ~addr_hist_caller:actual call_state)
   |> function Some result -> result | None -> Ok call_state
@@ -236,7 +245,7 @@ let materialize_pre_for_parameters callee_proc_name call_location pre_post ~form
      call [materialize_pre_from] on them.  Give up if calling the function introduces aliasing.
   *)
   match
-    IList.fold2_result formals actuals ~init:call_state ~f:(fun call_state formal (actual, _) ->
+    IList.fold2_result formals actuals ~init:call_state ~f:(fun call_state formal actual ->
         materialize_pre_from_actual callee_proc_name call_location
           ~pre:(pre_post.AbductiveDomain.pre :> BaseDomain.t)
           ~formal ~actual call_state )
@@ -468,15 +477,16 @@ let rec record_post_for_address callee_proc_name call_loc ({AbductiveDomain.pre;
               ~addr_hist_caller:addr_hist_curr_dest call_state ) )
 
 
-let record_post_for_actual callee_proc_name call_loc pre_post ~formal ~actual call_state =
+let record_post_for_actual callee_proc_name call_loc pre_post ~formal ~actual:(actual, typ)
+    call_state =
   L.d_printfln_escaped "Recording POST from [%a] <-> %a" Var.pp formal AbstractValue.pp (fst actual) ;
   match
     let open IOption.Let_syntax in
     let* addr_formal_pre, _ =
       BaseStack.find_opt formal (pre_post.AbductiveDomain.pre :> BaseDomain.t).BaseDomain.stack
     in
-    let+ formal_pre, _ =
-      BaseMemory.find_edge_opt addr_formal_pre Dereference
+    let+ formal_pre =
+      deref_non_c_struct addr_formal_pre typ
         (pre_post.AbductiveDomain.pre :> BaseDomain.t).BaseDomain.heap
     in
     record_post_for_address callee_proc_name call_loc pre_post ~addr_callee:formal_pre
@@ -525,7 +535,7 @@ let apply_post_for_parameters callee_proc_name call_location pre_post ~formals ~
      between pre and post since it's unreliable, eg replace value read in pre with same value in
      post but nuke other fields in the meantime? is that possible?). *)
   match
-    List.fold2 formals actuals ~init:call_state ~f:(fun call_state formal (actual, _) ->
+    List.fold2 formals actuals ~init:call_state ~f:(fun call_state formal actual ->
         record_post_for_actual callee_proc_name call_location pre_post ~formal ~actual call_state )
   with
   | Unequal_lengths ->

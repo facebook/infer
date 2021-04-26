@@ -198,9 +198,9 @@ let call_aux tenv caller_proc_desc call_loc callee_pname ret actuals callee_proc
   in
   let captured_vars =
     Procdesc.get_captured callee_proc_desc
-    |> List.map ~f:(fun {CapturedVar.name; capture_mode} ->
+    |> List.map ~f:(fun {CapturedVar.name; capture_mode; typ} ->
            let pvar = Pvar.mk name callee_pname in
-           (Var.of_pvar pvar, capture_mode) )
+           (Var.of_pvar pvar, capture_mode, typ) )
   in
   let<*> astate, captured_vars_with_actuals =
     match actuals with

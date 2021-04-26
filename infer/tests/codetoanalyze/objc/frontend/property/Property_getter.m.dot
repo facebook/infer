@@ -15,7 +15,7 @@ digraph cfg {
 	
 
 	 "getMyStructField:my_struct:#A(class A)#class.35da25720e80922866aa41dc70b313cb_4" -> "getMyStructField:my_struct:#A(class A)#class.35da25720e80922866aa41dc70b313cb_2" ;
-"getMyStructField:my_struct:#A(class A)#class.35da25720e80922866aa41dc70b313cb_5" [label="5:  Message Call: setS: \n   n$8=*&target:A* [line 27, column 3]\n  n$7=*&my_struct:my_struct [line 27, column 14]\n  n$9=_fun_A.setS:(n$8:A*,n$7:my_struct) [line 27, column 10]\n " shape="box"]
+"getMyStructField:my_struct:#A(class A)#class.35da25720e80922866aa41dc70b313cb_5" [label="5:  Message Call: setS: \n   n$7=*&target:A* [line 27, column 3]\n  n$8=_fun_A.setS:(n$7:A*,&my_struct:my_struct) [line 27, column 10]\n " shape="box"]
 	
 
 	 "getMyStructField:my_struct:#A(class A)#class.35da25720e80922866aa41dc70b313cb_5" -> "getMyStructField:my_struct:#A(class A)#class.35da25720e80922866aa41dc70b313cb_3" ;

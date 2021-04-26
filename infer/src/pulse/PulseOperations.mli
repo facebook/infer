@@ -204,7 +204,7 @@ val check_address_escape :
 
 val get_captured_actuals :
      Location.t
-  -> captured_vars:(Var.t * Pvar.capture_mode) list
+  -> captured_vars:(Var.t * Pvar.capture_mode * Typ.t) list
   -> actual_closure:AbstractValue.t * ValueHistory.t
   -> t
-  -> (t * (Var.t * (AbstractValue.t * ValueHistory.t)) list) AccessResult.t
+  -> (t * (Var.t * ((AbstractValue.t * ValueHistory.t) * Typ.t)) list) AccessResult.t

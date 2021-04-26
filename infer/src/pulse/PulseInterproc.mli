@@ -14,7 +14,7 @@ val apply_prepost :
   -> Procname.t
   -> Location.t
   -> callee_prepost:AbductiveDomain.t
-  -> captured_vars_with_actuals:(Var.t * (AbstractValue.t * ValueHistory.t)) list
+  -> captured_vars_with_actuals:(Var.t * ((AbstractValue.t * ValueHistory.t) * Typ.t)) list
   -> formals:Var.t list
   -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
   -> AbductiveDomain.t

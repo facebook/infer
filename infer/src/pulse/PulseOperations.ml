@@ -561,12 +561,12 @@ let get_captured_actuals location ~captured_vars ~actual_closure astate =
   let* astate, this_value_addr = eval_access Read location actual_closure Dereference astate in
   let+ _, astate, captured_vars_with_actuals =
     List.fold_result captured_vars ~init:(0, astate, [])
-      ~f:(fun (id, astate, captured) (var, mode) ->
+      ~f:(fun (id, astate, captured) (var, mode, typ) ->
         let+ astate, captured_actual =
           eval_access Read location this_value_addr
             (FieldAccess (Closures.mk_fake_field ~id mode))
             astate
         in
-        (id + 1, astate, (var, captured_actual) :: captured) )
+        (id + 1, astate, (var, (captured_actual, typ)) :: captured) )
   in
   (astate, captured_vars_with_actuals)

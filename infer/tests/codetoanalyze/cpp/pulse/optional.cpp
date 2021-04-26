@@ -148,7 +148,8 @@ void emplace(folly::Optional<State> state) {
   auto pos = state->vec.begin();
 }
 
-void operator_arrow_bad() { emplace(folly::none); }
+/* There is a bug in the frontend T89443328 */
+void operator_arrow_bad_FN() { emplace(folly::none); }
 
 void get_pointer_check_none_check_ok() {
   folly::Optional<int> foo{folly::none};
