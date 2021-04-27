@@ -12,6 +12,7 @@ import android.net.wifi.WifiManager;
 import android.os.Binder;
 import android.os.RemoteException;
 import android.support.annotation.UiThread;
+import android.view.Display;
 
 class Binders {
   Binder b;
@@ -90,5 +91,10 @@ class Binders {
   @UiThread
   void doGetConnectionInfoBad(WifiManager w) {
     w.getConnectionInfo();
+  }
+
+  @UiThread
+  void doGetRealSizeBad(Display d) {
+    d.getRealSize(null);
   }
 }
