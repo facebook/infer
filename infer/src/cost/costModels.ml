@@ -259,6 +259,21 @@ module Call = struct
         ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
           &:: "removeAllObjects" <>$ capt_exp
           $--> BoundsOfNSCollection.linear_length ~of_function:"NSArray.removeAllObjects"
+        ; +PatternMatch.ObjectiveC.implements "NSDictionary"
+          &:: "dictionaryWithDictionary:" <>$ capt_exp
+          $--> BoundsOfNSCollection.linear_length
+                 ~of_function:"NSDictionary.dictionaryWithDictionary:"
+        ; +PatternMatch.ObjectiveC.implements "NSDictionary"
+          &:: "initWithDictionary:" <>$ any_arg $+ capt_exp
+          $--> BoundsOfNSCollection.linear_length ~of_function:"NSArray.initWithArray:"
+        ; +PatternMatch.ObjectiveC.implements "NSMutableDictionary"
+          &:: "removeAllObjects" <>$ capt_exp
+          $--> BoundsOfNSCollection.linear_length
+                 ~of_function:"NSMutableDictionary.removeAllObjects"
+        ; +PatternMatch.ObjectiveC.implements "NSMutableDictionary"
+          &:: "addEntriesFromDictionary:" <>$ any_arg $+ capt_exp
+          $--> BoundsOfNSCollection.linear_length
+                 ~of_function:"addEntriesFromDictionary.NSMutableDictionary:"
         ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
           &:: "addObjectsFromArray:" <>$ any_arg $+ capt_exp
           $--> BoundsOfNSCollection.linear_length ~of_function:"NSArray.addObjectsFromArray:"
