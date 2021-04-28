@@ -191,14 +191,16 @@ module Summary = struct
           (** Sets of unchecked callees that are called conditionally by object fields *)
     ; has_call_stmt: bool  (** True if a function includes a call statement *)
     ; config_fields: Fields.t
-          (** Intra-procedurally collected fields that may have config values *) }
+          (** Intra-procedurally collected fields that may have config values *)
+    ; ret: Val.t  (** Return value of the procedure *) }
 
-  let pp f {unchecked_callees; unchecked_callees_cond; has_call_stmt; config_fields} =
+  let pp f {unchecked_callees; unchecked_callees_cond; has_call_stmt; config_fields; ret} =
     F.fprintf f
       "@[@[unchecked callees:@,\
        %a@],@ @[unchecked callees cond:@,\
-       %a@],@ @[has_call_stmt:%b@],@ @[config fields:%a@]@]" UncheckedCallees.pp unchecked_callees
-      UncheckedCalleesCond.pp unchecked_callees_cond has_call_stmt Fields.pp config_fields
+       %a@],@ @[has_call_stmt:%b@],@ @[config fields:%a@],@ @[ret:%a@]@]" UncheckedCallees.pp
+      unchecked_callees UncheckedCalleesCond.pp unchecked_callees_cond has_call_stmt Fields.pp
+      config_fields Val.pp ret
 
 
   let get_config_fields {config_fields} = config_fields
@@ -277,8 +279,10 @@ module Dom = struct
     ; config_fields= Fields.widen ~prev:prev.config_fields ~next:next.config_fields ~num_iters }
 
 
-  let to_summary ~has_call_stmt {unchecked_callees; unchecked_callees_cond; config_fields} =
-    {Summary.unchecked_callees; unchecked_callees_cond; has_call_stmt; config_fields}
+  let to_summary pname ~has_call_stmt {unchecked_callees; unchecked_callees_cond; config_fields; mem}
+      =
+    let ret = Mem.lookup (Loc.of_pvar (Pvar.get_ret_pvar pname)) mem in
+    {Summary.unchecked_callees; unchecked_callees_cond; has_call_stmt; config_fields; ret}
 
 
   let init =
@@ -308,7 +312,7 @@ module Dom = struct
     else {astate with config_fields= Fields.add fn config_fields}
 
 
-  let boolean_value id_tgt id_src astate =
+  let copy_value id_tgt id_src astate =
     copy_mem ~tgt:(Loc.of_id id_tgt) ~src:(Loc.of_id id_src) astate
 
 
@@ -517,6 +521,14 @@ module TransferFunctions = struct
     fun tenv pname -> dispatch tenv pname |> Option.is_some
 
 
+  let add_ret analyze_dependency id callee astate =
+    match analyze_dependency callee with
+    | Some (_, (_, Some {Summary.ret= ret_val}, _)) ->
+        Dom.add_mem (Loc.of_id id) ret_val astate
+    | _ ->
+        astate
+
+
   let exec_instr astate {interproc= {tenv; analyze_dependency}; get_instantiated_cost} node idx
       instr =
     match (instr : Sil.instr) with
@@ -528,17 +540,17 @@ module TransferFunctions = struct
         Dom.store_config pvar id astate
     | Store {e1= Lfield (_, fn, _); e2= Var id} ->
         Dom.store_field fn id astate
-    | Call ((ret, _), Const (Cfun callee), [(Var id, _)], _, _)
+    | Call ((ret_id, _), Const (Cfun callee), [(Var id, _)], _, _)
       when is_java_boolean_value_method callee ->
-        Dom.boolean_value ret id astate
-    | Call (_, Const (Cfun callee), _, _, _) when is_known_cheap_method tenv callee ->
-        astate
+        Dom.copy_value ret_id id astate
+    | Call ((ret_id, _), Const (Cfun callee), _, _, _) when is_known_cheap_method tenv callee ->
+        add_ret analyze_dependency ret_id callee astate
     | Call (((ret_id, _) as ret), Const (Cfun callee), args, location, _) -> (
       match FbGKInteraction.get_config_check tenv callee args with
       | Some (`Config config) ->
           Dom.call_config_check ret_id config astate
       | Some (`Exp _) ->
-          astate
+          add_ret analyze_dependency ret_id callee astate
       | None ->
           (* normal function calls *)
           let call =
@@ -546,7 +558,8 @@ module TransferFunctions = struct
               {loc= location; pname= callee; node= CFG.Node.to_instr idx node; args; ret}
           in
           let instantiated_cost = get_instantiated_cost call in
-          Dom.call tenv analyze_dependency ~instantiated_cost callee args location astate )
+          Dom.call tenv analyze_dependency ~instantiated_cost callee args location astate
+          |> add_ret analyze_dependency ret_id callee )
     | Prune (e, _, _, _) ->
         Dom.prune e astate
     | _ ->
@@ -572,4 +585,4 @@ let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   let analysis_data = {interproc= analysis_data; get_instantiated_cost} in
   Option.map (Analyzer.compute_post analysis_data ~initial:Dom.init proc_desc) ~f:(fun astate ->
       let has_call_stmt = has_call_stmt proc_desc in
-      Dom.to_summary ~has_call_stmt astate )
+      Dom.to_summary (Procdesc.get_proc_name proc_desc) ~has_call_stmt astate )
