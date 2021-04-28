@@ -166,7 +166,7 @@ module PulseTransferFunctions = struct
             in
             PulseCallOperations.conservatively_initialize_args arg_values astate
           in
-          model analysis_data ~callee_procname call_loc ~ret astate
+          model {analysis_data; callee_procname; location= call_loc; ret} astate
       | None ->
           PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;
           let only_actuals_evaled =
