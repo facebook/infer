@@ -36,7 +36,8 @@ val and_eq_vars : AbstractValue.t -> AbstractValue.t -> t -> t * new_eqs
 
 val simplify :
      Tenv.t
-  -> keep:AbstractValue.Set.t
+  -> keep_pre:AbstractValue.Set.t
+  -> keep_post:AbstractValue.Set.t
   -> get_dynamic_type:(AbstractValue.t -> Typ.t option)
   -> t
   -> (t * new_eqs) SatUnsat.t

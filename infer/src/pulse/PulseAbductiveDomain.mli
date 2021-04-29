@@ -173,9 +173,10 @@ val is_local : Var.t -> t -> bool
 
 val find_post_cell_opt : AbstractValue.t -> t -> BaseDomain.cell option
 
-val discard_unreachable : t -> t * AbstractValue.Set.t * AbstractValue.t list
+val discard_unreachable : t -> t * AbstractValue.Set.t * AbstractValue.Set.t * AbstractValue.t list
 (** garbage collect unreachable addresses in the state to make it smaller and return the new state,
-    the live addresses, and the discarded addresses that used to have attributes attached *)
+    the live pre addresses, the live post addresses, and the discarded addresses that used to have
+    attributes attached *)
 
 val add_skipped_call : Procname.t -> Trace.t -> t -> t
 

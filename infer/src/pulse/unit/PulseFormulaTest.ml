@@ -129,11 +129,11 @@ let dummy_get_dynamic_type _ = None
 let normalize phi = test ~f:(normalize dummy_tenv ~get_dynamic_type:dummy_get_dynamic_type) phi
 
 let simplify ~keep phi =
-  test
-    ~f:
-      (simplify dummy_tenv ~get_dynamic_type:dummy_get_dynamic_type
-         ~keep:(AbstractValue.Set.of_list keep))
-    phi
+  test phi ~f:(fun phi ->
+      (* keep variables as if they were in the pre-condition, which makes [simplify] keeps the most
+         facts (eg atoms in [pruned] may be discarded if their variables are not in the pre) *)
+      simplify dummy_tenv ~get_dynamic_type:dummy_get_dynamic_type
+        ~keep_pre:(AbstractValue.Set.of_list keep) ~keep_post:AbstractValue.Set.empty phi )
 
 
 let%test_module "normalization" =

@@ -614,10 +614,11 @@ let discard_unreachable ({pre; post} as astate) =
     PreDomain.filter_addr ~f:(fun address -> AbstractValue.Set.mem address pre_addresses) pre
   in
   let post_addresses = BaseDomain.reachable_addresses (post :> BaseDomain.t) in
-  let live_addresses = AbstractValue.Set.union pre_addresses post_addresses in
   let post_new, discard_addresses =
     PostDomain.filter_addr_with_discarded_addrs
-      ~f:(fun address -> AbstractValue.Set.mem address live_addresses)
+      ~f:(fun address ->
+        AbstractValue.Set.mem address pre_addresses || AbstractValue.Set.mem address post_addresses
+        )
       post
   in
   (* note: we don't call {!PulsePathCondition.simplify} *)
@@ -625,7 +626,7 @@ let discard_unreachable ({pre; post} as astate) =
     if phys_equal pre_new pre && phys_equal post_new post then astate
     else {astate with pre= pre_new; post= post_new}
   in
-  (astate, live_addresses, discard_addresses)
+  (astate, pre_addresses, post_addresses, discard_addresses)
 
 
 let is_local var astate = not (Var.is_return var || Stack.is_abducible astate var)
@@ -869,13 +870,14 @@ let filter_for_summary tenv astate0 =
      this. *)
   let astate = restore_formals_for_summary astate_before_filter in
   let astate = {astate with topl= PulseTopl.filter_for_summary astate.path_condition astate.topl} in
-  let astate, live_addresses, _ = discard_unreachable astate in
+  let astate, pre_live_addresses, post_live_addresses, _ = discard_unreachable astate in
   let+ path_condition, new_eqs =
     PathCondition.simplify tenv
       ~get_dynamic_type:
         (BaseAddressAttributes.get_dynamic_type (astate_before_filter.post :> BaseDomain.t).attrs)
-      ~keep:live_addresses astate.path_condition
+      ~keep_pre:pre_live_addresses ~keep_post:post_live_addresses astate.path_condition
   in
+  let live_addresses = AbstractValue.Set.union pre_live_addresses post_live_addresses in
   ({astate with path_condition; topl= PulseTopl.simplify ~keep:live_addresses astate.topl}, new_eqs)
 
 
