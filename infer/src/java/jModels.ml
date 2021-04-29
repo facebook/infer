@@ -34,7 +34,7 @@ let collect_specs_filenames jar_filename =
 
 let load_models ~jar_filename =
   match !models_jar with
-  | None when match Sys.file_exists jar_filename with `Yes -> false | _ -> true ->
+  | None when not (ISys.file_exists jar_filename) ->
       L.die InternalError "Java model file not found@."
   | None ->
       models_jar := Some jar_filename ;

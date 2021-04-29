@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 open! IStd
-open PolyVariantEqual
 
 (** entry points for top-level functionalities such as capture, analysis, and reporting *)
 
@@ -85,7 +84,7 @@ let reset_duplicates_file () =
   let create () =
     Unix.close (Unix.openfile ~perm:0o0666 ~mode:[Unix.O_CREAT; Unix.O_WRONLY] start)
   in
-  if Sys.file_exists start = `Yes then delete () ;
+  if ISys.file_exists start then delete () ;
   create ()
 
 

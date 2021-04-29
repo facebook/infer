@@ -48,10 +48,9 @@ let run_buck_build prog buck_build_args =
         let dirname = Filename.dirname full_path in
         let get_path results_dir = ResultsDirEntryName.get_path ~results_dir CaptureDependencies in
         (* Buck can either give the full path to infer-deps.txt ... *)
-        if PolyVariantEqual.(Sys.file_exists (get_path dirname) = `Yes) then get_path dirname :: acc
+        if ISys.file_exists (get_path dirname) then get_path dirname :: acc
           (* ... or a folder which contains infer-deps.txt *)
-        else if PolyVariantEqual.(Sys.file_exists (get_path full_path) = `Yes) then
-          get_path full_path :: acc
+        else if ISys.file_exists (get_path full_path) then get_path full_path :: acc
         else acc
     | _ ->
         L.internal_error "Couldn't parse buck target output: %s@\n" line ;
@@ -69,9 +68,7 @@ let merge_deps_files depsfiles =
           Utils.fold_folders ~init:[] ~path:buck_out ~f:(fun acc dir ->
               if
                 String.is_substring dir ~substring:"infer-out"
-                && PolyVariantEqual.(
-                     Sys.file_exists (ResultsDirEntryName.get_path ~results_dir:dir CaptureDB)
-                     = `Yes)
+                && ISys.file_exists (ResultsDirEntryName.get_path ~results_dir:dir CaptureDB)
               then Printf.sprintf "\t\t%s" dir :: acc
               else acc )
         in

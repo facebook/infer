@@ -7,7 +7,6 @@
  *)
 
 open! IStd
-open PolyVariantEqual
 open Javalib_pack
 open Sawja_pack
 module L = Logging
@@ -124,7 +123,7 @@ let cache_classname cn =
     split [] (Filename.dirname path)
   in
   let rec mkdir l p =
-    let () = if Sys.file_exists p <> `Yes then Unix.mkdir p ~perm:493 in
+    let () = if not (ISys.file_exists p) then Unix.mkdir p ~perm:493 in
     match l with [] -> () | d :: tl -> mkdir tl (Filename.concat p d)
   in
   mkdir splitted_root_dir Filename.dir_sep ;
@@ -133,7 +132,7 @@ let cache_classname cn =
   Out_channel.close file_out
 
 
-let is_classname_cached cn = Sys.file_exists (path_of_cached_classname cn) = `Yes
+let is_classname_cached cn = ISys.file_exists (path_of_cached_classname cn)
 
 let test_source_file_location source_file program cn node =
   let is_synthetic = function

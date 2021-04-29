@@ -361,7 +361,7 @@ let setup_log_file () =
         let logfile_path =
           ResultsDirEntryName.get_path ~results_dir:Config.toplevel_results_dir Logs
         in
-        let preexisting_logfile = PolyVariantEqual.( = ) (Sys.file_exists logfile_path) `Yes in
+        let preexisting_logfile = ISys.file_exists logfile_path in
         let chan = Stdlib.open_out_gen [Open_append; Open_creat] 0o666 logfile_path in
         let file_fmt =
           let f = F.formatter_of_out_channel chan in

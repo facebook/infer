@@ -6,7 +6,6 @@
  *)
 
 open! IStd
-open PolyVariantEqual
 module L = Logging
 
 type t =
@@ -169,7 +168,7 @@ let exists_cache = String.Table.create ~size:256 ()
 let path_exists abs_path =
   try String.Table.find_exn exists_cache abs_path
   with Not_found_s _ | Caml.Not_found ->
-    let result = Sys.file_exists abs_path = `Yes in
+    let result = ISys.file_exists abs_path in
     String.Table.set exists_cache ~key:abs_path ~data:result ;
     result
 

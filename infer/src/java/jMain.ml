@@ -7,7 +7,6 @@
  *)
 
 open! IStd
-open PolyVariantEqual
 open Javalib_pack
 module L = Logging
 
@@ -111,7 +110,7 @@ let do_all_files sources program =
 
 (* loads the source files and translates them *)
 let main load_sources_and_classes =
-  ( match (Config.biabduction_models_mode, Sys.file_exists Config.biabduction_models_jar = `Yes) with
+  ( match (Config.biabduction_models_mode, ISys.file_exists Config.biabduction_models_jar) with
   | true, false ->
       ()
   | false, false ->

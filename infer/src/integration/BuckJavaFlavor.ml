@@ -93,23 +93,19 @@ let expand_target acc (target, target_path) =
   let expand_dir acc (target, target_path) =
     (* invariant: [target_path] is absolute *)
     let db_file = ResultsDirEntryName.get_path ~results_dir:target_path CaptureDB in
-    match Sys.file_exists db_file with
-    | `Yes ->
-        (* there is a capture DB at this path, so terminate expansion and generate deps line *)
-        let line = Printf.sprintf "%s\t-\t%s" target target_path in
-        line :: acc
-    | `No | `Unknown -> (
-        (* no capture DB was found, so look for, and inline, an [infer-deps.txt] file *)
-        let infer_deps =
-          ResultsDirEntryName.get_path ~results_dir:target_path CaptureDependencies
-        in
-        match Sys.file_exists infer_deps with
-        | `Yes ->
-            Utils.with_file_in infer_deps
-              ~f:(In_channel.fold_lines ~init:acc ~f:(fun acc line -> line :: acc))
-        | `No | `Unknown ->
-            L.internal_error "No capture DB or infer-deps file in %s@." target_path ;
-            acc )
+    if ISys.file_exists db_file then
+      (* there is a capture DB at this path, so terminate expansion and generate deps line *)
+      let line = Printf.sprintf "%s\t-\t%s" target target_path in
+      line :: acc
+    else
+      (* no capture DB was found, so look for, and inline, an [infer-deps.txt] file *)
+      let infer_deps = ResultsDirEntryName.get_path ~results_dir:target_path CaptureDependencies in
+      if ISys.file_exists infer_deps then
+        Utils.with_file_in infer_deps
+          ~f:(In_channel.fold_lines ~init:acc ~f:(fun acc line -> line :: acc))
+      else (
+        L.internal_error "No capture DB or infer-deps file in %s@." target_path ;
+        acc )
   in
   let target_path =
     if Filename.is_absolute target_path then target_path else Config.project_root ^/ target_path
