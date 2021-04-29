@@ -10,30 +10,35 @@ module F = Format
 module ConfigName = FbGKInteraction.ConfigName
 
 module Branch = struct
-  type t = True | False | Top
+  type t = True | False | Lt of Const.t | Gt of Const.t | Le of Const.t | Ge of Const.t | Top
+  [@@deriving equal]
 
   let pp f = function
     | True ->
         F.pp_print_string f "true branch"
     | False ->
         F.pp_print_string f "false branch"
+    | Lt c ->
+        F.fprintf f "(<%a) branch" (Const.pp Pp.text) c
+    | Gt c ->
+        F.fprintf f "(>%a) branch" (Const.pp Pp.text) c
+    | Le c ->
+        F.fprintf f "(<=%a) branch" (Const.pp Pp.text) c
+    | Ge c ->
+        F.fprintf f "(>=%a) branch" (Const.pp Pp.text) c
     | Top ->
         AbstractDomain.TopLiftedUtils.pp_top f
 
 
-  let leq ~lhs ~rhs =
-    match (lhs, rhs) with True, True | False, False | _, Top -> true | _, _ -> false
+  let leq ~lhs ~rhs = match rhs with Top -> true | _ -> equal lhs rhs
 
-
-  let join x y = match (x, y) with True, True -> True | False, False -> False | _, _ -> Top
+  let join x y = if equal x y then x else Top
 
   let widen ~prev ~next ~num_iters:_ = join prev next
 
   let top = Top
 
-  let is_top = function Top -> true | True | False -> false
-
-  let neg = function True -> False | False -> True | Top -> Top
+  let is_top = function Top -> true | True | False | Lt _ | Gt _ | Le _ | Ge _ -> false
 end
 
 module ConfigChecks = AbstractDomain.SafeInvertedMap (ConfigName) (Branch)
@@ -316,43 +321,62 @@ module Dom = struct
     copy_mem ~tgt:(Loc.of_id id_tgt) ~src:(Loc.of_id id_src) astate
 
 
-  let neg_branch res = Option.map ~f:(fun (config, branch) -> (config, Branch.neg branch)) res
+  let apply_cmp_branch cmp_branch res =
+    Option.bind res ~f:(function
+      | `Unconditional config, Branch.True ->
+          Some (`Unconditional config, cmp_branch)
+      | `Conditional fields, Branch.True ->
+          Some (`Conditional fields, cmp_branch)
+      | _ ->
+          None )
 
-  let rec get_config_check_prune e mem =
+
+  let rec get_config_check_prune ~is_true_branch e mem =
     match (e : Exp.t) with
     | Var id -> (
         let {Val.config; fields} = Mem.lookup (Loc.of_id id) mem in
+        let branch = if is_true_branch then Branch.True else Branch.False in
         match ConfigLifted.get config with
         | Some config ->
-            Some (`Unconditional config, Branch.True)
+            Some (`Unconditional config, branch)
         | None ->
-            Option.some_if (not (Fields.is_empty fields)) (`Conditional fields, Branch.True) )
+            Option.some_if (not (Fields.is_empty fields)) (`Conditional fields, branch) )
     | UnOp (LNot, e, _) ->
-        get_config_check_prune e mem |> neg_branch
-    | BinOp ((Eq | Ne), Const _, Const _) ->
+        get_config_check_prune ~is_true_branch:(not is_true_branch) e mem
+    | BinOp ((Eq | Ne | Lt | Gt | Le | Ge), Const _, Const _) ->
         None
     | (BinOp (Eq, e, (Const _ as const)) | BinOp (Eq, (Const _ as const), e)) when Exp.is_zero const
       ->
-        get_config_check_prune e mem |> neg_branch
+        get_config_check_prune ~is_true_branch:(not is_true_branch) e mem
     | (BinOp (Ne, e, (Const _ as const)) | BinOp (Ne, (Const _ as const), e)) when Exp.is_zero const
       ->
-        get_config_check_prune e mem
+        get_config_check_prune ~is_true_branch e mem
+    | BinOp (Lt, e, Const c) | BinOp (Gt, Const c, e) ->
+        get_config_check_prune ~is_true_branch:true e mem
+        |> apply_cmp_branch (if is_true_branch then Branch.Lt c else Branch.Ge c)
+    | BinOp (Gt, e, Const c) | BinOp (Lt, Const c, e) ->
+        get_config_check_prune ~is_true_branch:true e mem
+        |> apply_cmp_branch (if is_true_branch then Branch.Gt c else Branch.Le c)
+    | BinOp (Le, e, Const c) | BinOp (Ge, Const c, e) ->
+        get_config_check_prune ~is_true_branch:true e mem
+        |> apply_cmp_branch (if is_true_branch then Branch.Le c else Branch.Gt c)
+    | BinOp (Ge, e, Const c) | BinOp (Le, Const c, e) ->
+        get_config_check_prune ~is_true_branch:true e mem
+        |> apply_cmp_branch (if is_true_branch then Branch.Ge c else Branch.Lt c)
     | _ ->
         None
 
 
   let prune e ({config_checks; field_checks; mem} as astate) =
-    get_config_check_prune e mem
-    |> Option.value_map ~default:astate ~f:(fun (config, branch) ->
-           match config with
-           | `Unconditional config ->
-               {astate with config_checks= ConfigChecks.add config branch config_checks}
-           | `Conditional fields ->
-               { astate with
-                 field_checks=
-                   Fields.fold
-                     (fun field acc -> FieldChecks.add field branch acc)
-                     fields field_checks } )
+    get_config_check_prune ~is_true_branch:true e mem
+    |> Option.value_map ~default:astate ~f:(function
+         | `Unconditional config, branch ->
+             {astate with config_checks= ConfigChecks.add config branch config_checks}
+         | `Conditional fields, branch ->
+             { astate with
+               field_checks=
+                 Fields.fold (fun field acc -> FieldChecks.add field branch acc) fields field_checks
+             } )
 
 
   type known_expensiveness = KnownCheap | KnownExpensive
@@ -477,9 +501,14 @@ module TransferFunctions = struct
 
   type nonrec analysis_data = analysis_data
 
-  let is_java_boolean_value_method pname =
-    Procname.get_class_name pname |> Option.exists ~f:(String.equal "java.lang.Boolean")
-    && Procname.get_method pname |> String.equal "booleanValue"
+  let is_modeled_as_id =
+    let open ProcnameDispatcher.ProcName in
+    let dispatch : (Tenv.t, unit, unit) dispatcher =
+      make_dispatcher
+        [ +PatternMatch.Java.implements_lang "Boolean" &:: "booleanValue" &--> ()
+        ; +PatternMatch.Java.implements_lang "Long" &:: "longValue" &--> () ]
+    in
+    fun tenv pname -> dispatch tenv pname |> Option.is_some
 
 
   let is_cheap_system_method =
@@ -540,8 +569,8 @@ module TransferFunctions = struct
         Dom.store_config pvar id astate
     | Store {e1= Lfield (_, fn, _); e2= Var id} ->
         Dom.store_field fn id astate
-    | Call ((ret_id, _), Const (Cfun callee), [(Var id, _)], _, _)
-      when is_java_boolean_value_method callee ->
+    | Call ((ret_id, _), Const (Cfun callee), [(Var id, _)], _, _) when is_modeled_as_id tenv callee
+      ->
         Dom.copy_value ret_id id astate
     | Call ((ret_id, _), Const (Cfun callee), _, _, _) when is_known_cheap_method tenv callee ->
         add_ret analyze_dependency ret_id callee astate
