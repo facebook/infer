@@ -614,10 +614,11 @@ let discard_unreachable ({pre; post} as astate) =
     PreDomain.filter_addr ~f:(fun address -> AbstractValue.Set.mem address pre_addresses) pre
   in
   let post_addresses = BaseDomain.reachable_addresses (post :> BaseDomain.t) in
-  let live_addresses = AbstractValue.Set.union pre_addresses post_addresses in
   let post_new, discard_addresses =
     PostDomain.filter_addr_with_discarded_addrs
-      ~f:(fun address -> AbstractValue.Set.mem address live_addresses)
+      ~f:(fun address ->
+        AbstractValue.Set.mem address pre_addresses || AbstractValue.Set.mem address post_addresses
+        )
       post
   in
   (* note: we don't call {!PulsePathCondition.simplify} *)
@@ -625,7 +626,7 @@ let discard_unreachable ({pre; post} as astate) =
     if phys_equal pre_new pre && phys_equal post_new post then astate
     else {astate with pre= pre_new; post= post_new}
   in
-  (astate, live_addresses, discard_addresses)
+  (astate, pre_addresses, post_addresses, discard_addresses)
 
 
 let is_local var astate = not (Var.is_return var || Stack.is_abducible astate var)
@@ -646,13 +647,64 @@ let set_post_cell (addr, history) (edges, attr_set) location astate =
          |> BaseAddressAttributes.add addr attr_set )
 
 
-let filter_stack_for_summary astate =
+(** Inside a function, formals can be used as local variables. But when exiting the function, the
+    initial values of formals must be restored. This recreates the graph structure from addresses of
+    formals in the precondition into the post-condition, up to the first dereference. The reason for
+    this complexity is purely to handle formals that are struct values. For example, if
+    [pre=&x=vx, vx --.f-> v1 --.g-> v2 --*-> v3] and
+    [post = &x=vx, vx --.f-> v1 --.g-> v2 --*-> v4, vx --.h->v5] then we change [post] to
+    [vx --.f-> v1 --.g-> v2 --*-> v3] (i.e. [post]=[pre]). *)
+let restore_formals_for_summary astate =
+  (* The [visited] accumulator is to avoid cycles; they are impossible in theory at the moment but
+     this could change. *)
+  let rec restore_pre_var_value visited ~is_value_visible_outside addr astate =
+    if AbstractValue.Set.mem addr visited then (
+      L.internal_error
+        "Found a cycle when restoring the values of formals, how did this happen?@\n%a@\n" pp astate ;
+      astate )
+    else
+      let visited = AbstractValue.Set.add addr visited in
+      let pre_heap = (astate.pre :> BaseDomain.t).heap in
+      let post_heap = (astate.post :> BaseDomain.t).heap in
+      match BaseMemory.find_opt addr pre_heap with
+      | None ->
+          if is_value_visible_outside then astate
+          else Memory.map_post_heap astate ~f:(fun post_heap -> BaseMemory.remove addr post_heap)
+      | Some pre_edges ->
+          BaseMemory.Edges.fold pre_edges ~init:astate
+            ~f:(fun astate (access, ((addr_dest, _) as addr_hist_dest)) ->
+              match access with
+              | Dereference ->
+                  (* dereference: we reached the actual value and are done *)
+                  if is_value_visible_outside && BaseMemory.has_edge addr access post_heap then
+                    (* the changes are visible even outside of the procedure: do not restore the pre value
+                       if the post has a value for this access too *)
+                    astate
+                  else
+                    Memory.map_post_heap astate ~f:(fun post_heap ->
+                        BaseMemory.add_edge addr access addr_hist_dest post_heap )
+              | FieldAccess _ | ArrayAccess _ ->
+                  (* inlined aggregate value: just an offset, not the actual value yet; recurse *)
+                  Memory.map_post_heap astate ~f:(fun post_heap ->
+                      BaseMemory.add_edge addr access addr_hist_dest post_heap )
+                  |> restore_pre_var_value visited ~is_value_visible_outside addr_dest
+              | TakeAddress ->
+                  assert false )
+  in
+  let restore_pre_var x ((addr, _) as addr_hist) astate =
+    (* the address of a variable never changes *)
+    let astate = Stack.add x addr_hist astate in
+    restore_pre_var_value AbstractValue.Set.empty
+      ~is_value_visible_outside:(Var.is_global x || Var.is_return x)
+      addr astate
+  in
   let post_stack =
     BaseStack.filter
       (fun var _ -> Var.appears_in_source_code var && not (is_local var astate))
       (astate.post :> BaseDomain.t).stack
   in
-  {astate with post= PostDomain.update ~stack:post_stack astate.post}
+  BaseStack.fold restore_pre_var (astate.pre :> BaseDomain.t).stack
+    {astate with post= PostDomain.update ~stack:post_stack astate.post}
 
 
 let add_out_of_scope_attribute addr pvar location history heap typ =
@@ -812,15 +864,20 @@ let filter_for_summary tenv astate0 =
   L.d_printfln "Canonicalizing...@\n" ;
   let* astate_before_filter = canonicalize astate0 in
   L.d_printfln "Canonicalized state: %a@\n" pp astate_before_filter ;
-  let astate = filter_stack_for_summary astate_before_filter in
+  (* Remove the stack from the post as it's not used: the values of formals are the same as in the
+     pre. Moreover, formals can be treated as local variables inside the function's body so we need
+     to restore their initial values at the end of the function. Removing them altogether achieves
+     this. *)
+  let astate = restore_formals_for_summary astate_before_filter in
   let astate = {astate with topl= PulseTopl.filter_for_summary astate.path_condition astate.topl} in
-  let astate, live_addresses, _ = discard_unreachable astate in
+  let astate, pre_live_addresses, post_live_addresses, _ = discard_unreachable astate in
   let+ path_condition, new_eqs =
     PathCondition.simplify tenv
       ~get_dynamic_type:
         (BaseAddressAttributes.get_dynamic_type (astate_before_filter.post :> BaseDomain.t).attrs)
-      ~keep:live_addresses astate.path_condition
+      ~keep_pre:pre_live_addresses ~keep_post:post_live_addresses astate.path_condition
   in
+  let live_addresses = AbstractValue.Set.union pre_live_addresses post_live_addresses in
   ({astate with path_condition; topl= PulseTopl.simplify ~keep:live_addresses astate.topl}, new_eqs)
 
 

@@ -18,7 +18,7 @@ type fold_state = {files: string list; opts: string list; opt_st: string list; f
 (* see GradleTest.ml *)
 let parse_gradle_line ~line =
   let concat_st lst st = if List.is_empty st then lst else String.concat ~sep:" " st :: lst in
-  let file_exist file = PolyVariantEqual.(Sys.file_exists file = `Yes) in
+  let file_exist file = ISys.file_exists file in
   let rev_args = line |> String.strip |> String.split ~on:' ' |> List.rev in
   let res =
     List.fold rev_args ~init:{files= []; opts= []; opt_st= []; file_st= []}

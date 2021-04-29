@@ -59,7 +59,8 @@ val normalize : Tenv.t -> get_dynamic_type:(Var.t -> Typ.t option) -> t -> (t * 
 val simplify :
      Tenv.t
   -> get_dynamic_type:(Var.t -> Typ.t option)
-  -> keep:Var.Set.t
+  -> keep_pre:Var.Set.t
+  -> keep_post:Var.Set.t
   -> t
   -> (t * new_eqs) SatUnsat.t
 

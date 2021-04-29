@@ -156,7 +156,8 @@ let may_do_ipc =
       ; { default with
           classname= "android.content.Context"
         ; methods= ["checkPermission"; "checkSelfPermission"] }
-      ; {default with classname= "android.net.wifi.WifiManager"; methods= ["getConnectionInfo"]} ])
+      ; {default with classname= "android.net.wifi.WifiManager"; methods= ["getConnectionInfo"]}
+      ; {default with classname= "android.view.Display"; methods= ["getRealSize"]} ])
 
 
 let is_monitor_wait =

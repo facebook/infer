@@ -229,7 +229,7 @@ val find_map_instrs : t -> f:(Sil.instr -> 'a option) -> 'a option
 val from_proc_attributes : ProcAttributes.t -> t
 (** Use [Cfg.create_proc_desc] if you are adding a proc desc to a cfg *)
 
-val get_access : t -> PredSymb.access
+val get_access : t -> ProcAttributes.access
 (** Return the visibility attribute *)
 
 val get_attributes : t -> ProcAttributes.t

@@ -10,33 +10,42 @@ module F = Format
 module ConfigName = FbGKInteraction.ConfigName
 
 module Branch = struct
-  type t = True | False | Top
+  type t = True | False | Lt of Const.t | Gt of Const.t | Le of Const.t | Ge of Const.t | Top
+  [@@deriving equal]
 
   let pp f = function
     | True ->
         F.pp_print_string f "true branch"
     | False ->
         F.pp_print_string f "false branch"
+    | Lt c ->
+        F.fprintf f "(<%a) branch" (Const.pp Pp.text) c
+    | Gt c ->
+        F.fprintf f "(>%a) branch" (Const.pp Pp.text) c
+    | Le c ->
+        F.fprintf f "(<=%a) branch" (Const.pp Pp.text) c
+    | Ge c ->
+        F.fprintf f "(>=%a) branch" (Const.pp Pp.text) c
     | Top ->
         AbstractDomain.TopLiftedUtils.pp_top f
 
 
-  let leq ~lhs ~rhs =
-    match (lhs, rhs) with True, True | False, False | _, Top -> true | _, _ -> false
+  let leq ~lhs ~rhs = match rhs with Top -> true | _ -> equal lhs rhs
 
-
-  let join x y = match (x, y) with True, True -> True | False, False -> False | _, _ -> Top
+  let join x y = if equal x y then x else Top
 
   let widen ~prev ~next ~num_iters:_ = join prev next
 
   let top = Top
 
-  let is_top = function Top -> true | True | False -> false
-
-  let neg = function True -> False | False -> True | Top -> Top
+  let is_top = function Top -> true | True | False | Lt _ | Gt _ | Le _ | Ge _ -> false
 end
 
-module ConfigChecks = AbstractDomain.SafeInvertedMap (ConfigName) (Branch)
+module ConfigChecks = struct
+  include AbstractDomain.SafeInvertedMap (ConfigName) (Branch)
+
+  let add_all x ~into = fold (fun k v acc -> add k v acc) x into
+end
 
 module Field = struct
   include Fieldname
@@ -133,6 +142,10 @@ module UncheckedCalleesCond = struct
     map (UncheckedCallees.replace_location_by_call location) fields_map
 
 
+  let has_known_expensive_callee fields_map =
+    exists (fun _ callees -> UncheckedCallees.has_known_expensive_callee callees) fields_map
+
+
   let filter_known_expensive fields_map =
     filter_map
       (fun _ callees ->
@@ -153,29 +166,140 @@ end
 
 module ConfigLifted = AbstractDomain.Flat (ConfigName)
 
-module Val = struct
-  type t = {config: ConfigLifted.t; fields: Fields.t}
+module TempBool = struct
+  type t =
+    | Bot  (** bottom *)
+    | True of ConfigChecks.t  (** config checks when the temporary boolean is true *)
+    | False of ConfigChecks.t  (** config checks when the temporary boolean is false *)
+    | Joined of {true_: ConfigChecks.t; false_: ConfigChecks.t}
+        (** config checks when the temporary boolean is true or false *)
 
-  let pp f {config; fields} =
-    F.fprintf f "@[@[config:@,%a@]@ @[fields:@,%a@]@]" ConfigLifted.pp config Fields.pp fields
+  let pp =
+    let pp_helper f (b, config_checks) =
+      F.fprintf f "@[%b when %a checked@]" b ConfigChecks.pp config_checks
+    in
+    fun f -> function
+      | Bot ->
+          AbstractDomain.BottomLiftedUtils.pp_bottom f
+      | True config_checks ->
+          pp_helper f (true, config_checks)
+      | False config_checks ->
+          pp_helper f (false, config_checks)
+      | Joined {true_; false_} ->
+          F.fprintf f "@[%a@ %a@]" pp_helper (true, true_) pp_helper (false, false_)
 
 
   let leq ~lhs ~rhs =
-    ConfigLifted.leq ~lhs:lhs.config ~rhs:rhs.config && Fields.leq ~lhs:lhs.fields ~rhs:rhs.fields
+    match (lhs, rhs) with
+    | Bot, _ ->
+        true
+    | _, Bot ->
+        false
+    | True c1, True c2
+    | False c1, False c2
+    | True c1, Joined {true_= c2}
+    | False c1, Joined {false_= c2} ->
+        ConfigChecks.leq ~lhs:c1 ~rhs:c2
+    | Joined {true_= t1; false_= f1}, Joined {true_= t2; false_= f2} ->
+        ConfigChecks.leq ~lhs:t1 ~rhs:t2 && ConfigChecks.leq ~lhs:f1 ~rhs:f2
+    | _, _ ->
+        false
 
 
-  let join x y = {config= ConfigLifted.join x.config y.config; fields= Fields.join x.fields y.fields}
+  let join x y =
+    match (x, y) with
+    | Bot, v | v, Bot ->
+        v
+    | True c1, True c2 ->
+        True (ConfigChecks.join c1 c2)
+    | False c1, False c2 ->
+        False (ConfigChecks.join c1 c2)
+    | True c1, False c2 | False c2, True c1 ->
+        Joined {true_= c1; false_= c2}
+    | True c1, Joined {true_= c2; false_} | Joined {true_= c1; false_}, True c2 ->
+        Joined {true_= ConfigChecks.join c1 c2; false_}
+    | False c1, Joined {true_; false_= c2} | Joined {true_; false_= c1}, False c2 ->
+        Joined {true_; false_= ConfigChecks.join c1 c2}
+    | Joined {true_= t1; false_= f1}, Joined {true_= t2; false_= f2} ->
+        Joined {true_= ConfigChecks.join t1 t2; false_= ConfigChecks.join f1 f2}
+
+
+  let widen ~prev ~next ~num_iters =
+    match (prev, next) with
+    | Bot, v | v, Bot ->
+        v
+    | True c1, True c2 ->
+        True (ConfigChecks.widen ~prev:c1 ~next:c2 ~num_iters)
+    | False c1, False c2 ->
+        False (ConfigChecks.widen ~prev:c1 ~next:c2 ~num_iters)
+    | True c1, False c2 | False c2, True c1 ->
+        Joined {true_= c1; false_= c2}
+    | True c1, Joined {true_= c2; false_} | Joined {true_= c1; false_}, True c2 ->
+        Joined {true_= ConfigChecks.widen ~prev:c1 ~next:c2 ~num_iters; false_}
+    | False c1, Joined {true_; false_= c2} | Joined {true_; false_= c1}, False c2 ->
+        Joined {true_; false_= ConfigChecks.widen ~prev:c1 ~next:c2 ~num_iters}
+    | Joined {true_= t1; false_= f1}, Joined {true_= t2; false_= f2} ->
+        Joined
+          { true_= ConfigChecks.widen ~prev:t1 ~next:t2 ~num_iters
+          ; false_= ConfigChecks.widen ~prev:f1 ~next:f2 ~num_iters }
+
+
+  let bottom = Bot
+
+  let make ~is_true config_checks = if is_true then True config_checks else False config_checks
+
+  let get_config_checks_true = function
+    | True config_checks | Joined {true_= config_checks} ->
+        Some config_checks
+    | _ ->
+        None
+
+
+  let get_config_checks_false = function
+    | False config_checks | Joined {false_= config_checks} ->
+        Some config_checks
+    | _ ->
+        None
+
+
+  let get_config_checks ~is_true x =
+    if is_true then get_config_checks_true x else get_config_checks_false x
+end
+
+module Val = struct
+  type t = {config: ConfigLifted.t; fields: Fields.t; temp_bool: TempBool.t}
+
+  let pp f {config; fields; temp_bool} =
+    F.fprintf f "@[@[config:@,%a@]@ @[fields:@,%a@]@ @[temp_bool:@,%a@]@]" ConfigLifted.pp config
+      Fields.pp fields TempBool.pp temp_bool
+
+
+  let leq ~lhs ~rhs =
+    ConfigLifted.leq ~lhs:lhs.config ~rhs:rhs.config
+    && Fields.leq ~lhs:lhs.fields ~rhs:rhs.fields
+    && TempBool.leq ~lhs:lhs.temp_bool ~rhs:rhs.temp_bool
+
+
+  let join x y =
+    { config= ConfigLifted.join x.config y.config
+    ; fields= Fields.join x.fields y.fields
+    ; temp_bool= TempBool.join x.temp_bool y.temp_bool }
+
 
   let widen ~prev ~next ~num_iters =
     { config= ConfigLifted.widen ~prev:prev.config ~next:next.config ~num_iters
-    ; fields= Fields.widen ~prev:prev.fields ~next:next.fields ~num_iters }
+    ; fields= Fields.widen ~prev:prev.fields ~next:next.fields ~num_iters
+    ; temp_bool= TempBool.widen ~prev:prev.temp_bool ~next:next.temp_bool ~num_iters }
 
 
-  let bottom = {config= ConfigLifted.bottom; fields= Fields.bottom}
+  let bottom = {config= ConfigLifted.bottom; fields= Fields.bottom; temp_bool= TempBool.bottom}
 
   let of_config config = {bottom with config= ConfigLifted.v config}
 
   let of_field fn = {bottom with fields= Fields.singleton fn}
+
+  let of_temp_bool ~is_true config_checks =
+    {bottom with temp_bool= TempBool.make ~is_true config_checks}
 end
 
 module Mem = struct
@@ -191,14 +315,16 @@ module Summary = struct
           (** Sets of unchecked callees that are called conditionally by object fields *)
     ; has_call_stmt: bool  (** True if a function includes a call statement *)
     ; config_fields: Fields.t
-          (** Intra-procedurally collected fields that may have config values *) }
+          (** Intra-procedurally collected fields that may have config values *)
+    ; ret: Val.t  (** Return value of the procedure *) }
 
-  let pp f {unchecked_callees; unchecked_callees_cond; has_call_stmt; config_fields} =
+  let pp f {unchecked_callees; unchecked_callees_cond; has_call_stmt; config_fields; ret} =
     F.fprintf f
       "@[@[unchecked callees:@,\
        %a@],@ @[unchecked callees cond:@,\
-       %a@],@ @[has_call_stmt:%b@],@ @[config fields:%a@]@]" UncheckedCallees.pp unchecked_callees
-      UncheckedCalleesCond.pp unchecked_callees_cond has_call_stmt Fields.pp config_fields
+       %a@],@ @[has_call_stmt:%b@],@ @[config fields:%a@],@ @[ret:%a@]@]" UncheckedCallees.pp
+      unchecked_callees UncheckedCalleesCond.pp unchecked_callees_cond has_call_stmt Fields.pp
+      config_fields Val.pp ret
 
 
   let get_config_fields {config_fields} = config_fields
@@ -218,8 +344,9 @@ module Summary = struct
     {x with unchecked_callees; unchecked_callees_cond= UncheckedCalleesCond.bottom}
 
 
-  let has_known_expensive_callee {unchecked_callees} =
+  let has_known_expensive_callee {unchecked_callees; unchecked_callees_cond} =
     UncheckedCallees.has_known_expensive_callee unchecked_callees
+    || UncheckedCalleesCond.has_known_expensive_callee unchecked_callees_cond
 end
 
 module Dom = struct
@@ -277,8 +404,10 @@ module Dom = struct
     ; config_fields= Fields.widen ~prev:prev.config_fields ~next:next.config_fields ~num_iters }
 
 
-  let to_summary ~has_call_stmt {unchecked_callees; unchecked_callees_cond; config_fields} =
-    {Summary.unchecked_callees; unchecked_callees_cond; has_call_stmt; config_fields}
+  let to_summary pname ~has_call_stmt {unchecked_callees; unchecked_callees_cond; config_fields; mem}
+      =
+    let ret = Mem.lookup (Loc.of_pvar (Pvar.get_ret_pvar pname)) mem in
+    {Summary.unchecked_callees; unchecked_callees_cond; has_call_stmt; config_fields; ret}
 
 
   let init =
@@ -308,47 +437,73 @@ module Dom = struct
     else {astate with config_fields= Fields.add fn config_fields}
 
 
-  let boolean_value id_tgt id_src astate =
+  let copy_value id_tgt id_src astate =
     copy_mem ~tgt:(Loc.of_id id_tgt) ~src:(Loc.of_id id_src) astate
 
 
-  let neg_branch res = Option.map ~f:(fun (config, branch) -> (config, Branch.neg branch)) res
+  let apply_cmp_branch cmp_branch res =
+    Option.bind res ~f:(function
+      | `Unconditional (config, Branch.True) ->
+          Some (`Unconditional (config, cmp_branch))
+      | `Conditional (fields, Branch.True) ->
+          Some (`Conditional (fields, cmp_branch))
+      | _ ->
+          None )
 
-  let rec get_config_check_prune e mem =
+
+  let rec get_config_check_prune ~is_true_branch e mem =
     match (e : Exp.t) with
     | Var id -> (
-        let {Val.config; fields} = Mem.lookup (Loc.of_id id) mem in
+        let {Val.config; fields; temp_bool} = Mem.lookup (Loc.of_id id) mem in
+        let branch = if is_true_branch then Branch.True else Branch.False in
         match ConfigLifted.get config with
         | Some config ->
-            Some (`Unconditional config, Branch.True)
+            Some (`Unconditional (config, branch))
+        | None when not (Fields.is_empty fields) ->
+            Some (`Conditional (fields, branch))
         | None ->
-            Option.some_if (not (Fields.is_empty fields)) (`Conditional fields, Branch.True) )
+            (* Note: If the [id] is not a config value and not a field value, address it as a
+               temporary variable. *)
+            TempBool.get_config_checks ~is_true:is_true_branch temp_bool
+            |> Option.map ~f:(fun config_checks -> `TempBool config_checks) )
     | UnOp (LNot, e, _) ->
-        get_config_check_prune e mem |> neg_branch
-    | BinOp ((Eq | Ne), Const _, Const _) ->
+        get_config_check_prune ~is_true_branch:(not is_true_branch) e mem
+    | BinOp ((Eq | Ne | Lt | Gt | Le | Ge), Const _, Const _) ->
         None
     | (BinOp (Eq, e, (Const _ as const)) | BinOp (Eq, (Const _ as const), e)) when Exp.is_zero const
       ->
-        get_config_check_prune e mem |> neg_branch
+        get_config_check_prune ~is_true_branch:(not is_true_branch) e mem
     | (BinOp (Ne, e, (Const _ as const)) | BinOp (Ne, (Const _ as const), e)) when Exp.is_zero const
       ->
-        get_config_check_prune e mem
+        get_config_check_prune ~is_true_branch e mem
+    | BinOp (Lt, e, Const c) | BinOp (Gt, Const c, e) ->
+        get_config_check_prune ~is_true_branch:true e mem
+        |> apply_cmp_branch (if is_true_branch then Branch.Lt c else Branch.Ge c)
+    | BinOp (Gt, e, Const c) | BinOp (Lt, Const c, e) ->
+        get_config_check_prune ~is_true_branch:true e mem
+        |> apply_cmp_branch (if is_true_branch then Branch.Gt c else Branch.Le c)
+    | BinOp (Le, e, Const c) | BinOp (Ge, Const c, e) ->
+        get_config_check_prune ~is_true_branch:true e mem
+        |> apply_cmp_branch (if is_true_branch then Branch.Le c else Branch.Gt c)
+    | BinOp (Ge, e, Const c) | BinOp (Le, Const c, e) ->
+        get_config_check_prune ~is_true_branch:true e mem
+        |> apply_cmp_branch (if is_true_branch then Branch.Ge c else Branch.Lt c)
     | _ ->
         None
 
 
   let prune e ({config_checks; field_checks; mem} as astate) =
-    get_config_check_prune e mem
-    |> Option.value_map ~default:astate ~f:(fun (config, branch) ->
-           match config with
-           | `Unconditional config ->
-               {astate with config_checks= ConfigChecks.add config branch config_checks}
-           | `Conditional fields ->
-               { astate with
-                 field_checks=
-                   Fields.fold
-                     (fun field acc -> FieldChecks.add field branch acc)
-                     fields field_checks } )
+    get_config_check_prune ~is_true_branch:true e mem
+    |> Option.value_map ~default:astate ~f:(function
+         | `Unconditional (config, branch) ->
+             {astate with config_checks= ConfigChecks.add config branch config_checks}
+         | `TempBool config_checks' ->
+             {astate with config_checks= ConfigChecks.add_all config_checks' ~into:config_checks}
+         | `Conditional (fields, branch) ->
+             { astate with
+               field_checks=
+                 Fields.fold (fun field acc -> FieldChecks.add field branch acc) fields field_checks
+             } )
 
 
   type known_expensiveness = KnownCheap | KnownExpensive
@@ -473,9 +628,15 @@ module TransferFunctions = struct
 
   type nonrec analysis_data = analysis_data
 
-  let is_java_boolean_value_method pname =
-    Procname.get_class_name pname |> Option.exists ~f:(String.equal "java.lang.Boolean")
-    && Procname.get_method pname |> String.equal "booleanValue"
+  let is_modeled_as_id =
+    let open ProcnameDispatcher.ProcName in
+    let dispatch : (Tenv.t, unit, unit) dispatcher =
+      make_dispatcher
+        [ +PatternMatch.Java.implements_lang "Boolean" &:: "booleanValue" &--> ()
+        ; +PatternMatch.Java.implements_lang "Boolean" &:: "valueOf" &--> ()
+        ; +PatternMatch.Java.implements_lang "Long" &:: "longValue" &--> () ]
+    in
+    fun tenv pname -> dispatch tenv pname |> Option.is_some
 
 
   let is_cheap_system_method =
@@ -517,28 +678,40 @@ module TransferFunctions = struct
     fun tenv pname -> dispatch tenv pname |> Option.is_some
 
 
-  let exec_instr astate {interproc= {tenv; analyze_dependency}; get_instantiated_cost} node idx
-      instr =
+  let add_ret analyze_dependency id callee astate =
+    match analyze_dependency callee with
+    | Some (_, (_, Some {Summary.ret= ret_val}, _)) ->
+        Dom.add_mem (Loc.of_id id) ret_val astate
+    | _ ->
+        astate
+
+
+  let exec_instr ({Dom.config_checks} as astate)
+      {interproc= {tenv; analyze_dependency}; get_instantiated_cost} node idx instr =
     match (instr : Sil.instr) with
     | Load {id; e= Lvar pvar} ->
         Dom.load_config id pvar astate
     | Load {id; e= Lfield (_, fn, _)} ->
         Dom.load_field id fn astate
+    | Store {e1= Lvar pvar; e2= Const zero} when Const.iszero_int_float zero ->
+        Dom.add_mem (Loc.of_pvar pvar) (Val.of_temp_bool ~is_true:false config_checks) astate
+    | Store {e1= Lvar pvar; e2= Const one} when Const.isone_int_float one ->
+        Dom.add_mem (Loc.of_pvar pvar) (Val.of_temp_bool ~is_true:true config_checks) astate
     | Store {e1= Lvar pvar; e2= Var id} ->
         Dom.store_config pvar id astate
     | Store {e1= Lfield (_, fn, _); e2= Var id} ->
         Dom.store_field fn id astate
-    | Call ((ret, _), Const (Cfun callee), [(Var id, _)], _, _)
-      when is_java_boolean_value_method callee ->
-        Dom.boolean_value ret id astate
-    | Call (_, Const (Cfun callee), _, _, _) when is_known_cheap_method tenv callee ->
-        astate
+    | Call ((ret_id, _), Const (Cfun callee), [(Var id, _)], _, _) when is_modeled_as_id tenv callee
+      ->
+        Dom.copy_value ret_id id astate
+    | Call ((ret_id, _), Const (Cfun callee), _, _, _) when is_known_cheap_method tenv callee ->
+        add_ret analyze_dependency ret_id callee astate
     | Call (((ret_id, _) as ret), Const (Cfun callee), args, location, _) -> (
       match FbGKInteraction.get_config_check tenv callee args with
       | Some (`Config config) ->
           Dom.call_config_check ret_id config astate
       | Some (`Exp _) ->
-          astate
+          add_ret analyze_dependency ret_id callee astate
       | None ->
           (* normal function calls *)
           let call =
@@ -546,7 +719,8 @@ module TransferFunctions = struct
               {loc= location; pname= callee; node= CFG.Node.to_instr idx node; args; ret}
           in
           let instantiated_cost = get_instantiated_cost call in
-          Dom.call tenv analyze_dependency ~instantiated_cost callee args location astate )
+          Dom.call tenv analyze_dependency ~instantiated_cost callee args location astate
+          |> add_ret analyze_dependency ret_id callee )
     | Prune (e, _, _, _) ->
         Dom.prune e astate
     | _ ->
@@ -572,4 +746,4 @@ let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   let analysis_data = {interproc= analysis_data; get_instantiated_cost} in
   Option.map (Analyzer.compute_post analysis_data ~initial:Dom.init proc_desc) ~f:(fun astate ->
       let has_call_stmt = has_call_stmt proc_desc in
-      Dom.to_summary ~has_call_stmt astate )
+      Dom.to_summary (Procdesc.get_proc_name proc_desc) ~has_call_stmt astate )

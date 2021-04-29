@@ -332,6 +332,10 @@ module Set = PrettyPrintable.MakePPSet (struct
   let pp = pp Pp.text
 end)
 
-type capture_mode = ByReference | ByValue [@@deriving compare, equal]
+let get_pvar_formals (attributes : ProcAttributes.t) =
+  let pname = attributes.proc_name in
+  List.map attributes.formals ~f:(fun (name, typ) -> (mk name pname, typ))
 
-let string_of_capture_mode = function ByReference -> "by ref" | ByValue -> "by value"
+
+let is_local_to_procedure proc_name pvar =
+  get_declaring_function pvar |> Option.exists ~f:(Procname.equal proc_name)

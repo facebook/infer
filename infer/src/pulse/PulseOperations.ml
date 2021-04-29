@@ -105,14 +105,14 @@ module Closures = struct
   let fake_capture_field_prefix = "__capture_"
 
   let string_of_capture_mode = function
-    | Pvar.ByReference ->
+    | CapturedVar.ByReference ->
         "by_ref_"
-    | Pvar.ByValue ->
+    | CapturedVar.ByValue ->
         "by_value_"
 
 
   let fake_captured_by_ref_field_prefix =
-    Printf.sprintf "%s%s" fake_capture_field_prefix (string_of_capture_mode Pvar.ByReference)
+    Printf.sprintf "%s%s" fake_capture_field_prefix (string_of_capture_mode ByReference)
 
 
   let mk_fake_field ~id mode =
@@ -516,7 +516,7 @@ let get_dynamic_type_unreachable_values vars astate =
       astate None
   in
   let astate' = Stack.remove_vars vars astate in
-  let _, _, unreachable_addrs = AbductiveDomain.discard_unreachable astate' in
+  let _, _, _, unreachable_addrs = AbductiveDomain.discard_unreachable astate' in
   let res =
     List.fold unreachable_addrs ~init:[] ~f:(fun res addr ->
         (let open IOption.Let_syntax in
@@ -552,7 +552,7 @@ let remove_vars tenv vars location orig_astate =
   let astate' = Stack.remove_vars vars astate in
   if phys_equal astate' astate then Ok astate
   else
-    let astate, _, unreachable_addrs = AbductiveDomain.discard_unreachable astate' in
+    let astate, _, _, unreachable_addrs = AbductiveDomain.discard_unreachable astate' in
     let+ () = check_memory_leak_unreachable unreachable_addrs location orig_astate in
     astate
 

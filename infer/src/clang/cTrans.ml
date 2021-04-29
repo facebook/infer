@@ -297,10 +297,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   (** Given a captured var, return the instruction to assign it to a temp *)
   let assign_captured_var loc (cvar, typ, mode) =
-    match mode with
-    | Pvar.ByReference ->
+    match (mode : CapturedVar.capture_mode) with
+    | ByReference ->
         ((Exp.Lvar cvar, cvar, typ, mode), None)
-    | Pvar.ByValue ->
+    | ByValue ->
         let id = Ident.create_fresh Ident.knormal in
         let instr = Sil.Load {id; e= Exp.Lvar cvar; root_typ= typ; typ; loc} in
         ((Exp.Var id, cvar, typ, mode), Some instr)
@@ -3363,8 +3363,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           List.map captured_vars_no_mode ~f:(fun (var, typ, modify_in_block) ->
               let mode, typ =
                 if modify_in_block || Pvar.is_global var then
-                  (Pvar.ByReference, Typ.mk (Tptr (typ, Pk_reference)))
-                else (Pvar.ByValue, typ)
+                  (CapturedVar.ByReference, Typ.mk (Tptr (typ, Pk_reference)))
+                else (CapturedVar.ByValue, typ)
               in
               (var, typ, mode) )
         in
@@ -3419,8 +3419,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             "Capture-init statement without var decl"
     in
     let translate_normal_capture mode (pvar, typ) (trans_results_acc, captured_vars_acc) =
-      match mode with
-      | Pvar.ByReference -> (
+      match (mode : CapturedVar.capture_mode) with
+      | ByReference -> (
         match typ.Typ.desc with
         | Tptr (_, Typ.Pk_reference) ->
             let trans_result, captured_var =
@@ -3435,7 +3435,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             ( trans_results_acc
             , (Exp.Lvar pvar, pvar, Typ.mk (Tptr (typ, Pk_reference)), mode) :: captured_vars_acc )
         )
-      | Pvar.ByValue -> (
+      | ByValue -> (
           let init, exp, typ_new =
             match typ.Typ.desc with
             (* TODO: Structs are missing copy constructor instructions when passed by value *)
@@ -3479,7 +3479,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         | `LCK_StarThis (* [*this] is special syntax for capturing current object by value *) ->
             false
       in
-      let mode = if is_by_ref then Pvar.ByReference else Pvar.ByValue in
+      let mode = if is_by_ref then CapturedVar.ByReference else CapturedVar.ByValue in
       match (lci_captured_var, lci_init_captured_vardecl) with
       | Some captured_var_decl_ref, Some init_decl -> (
         (* capture and init *)

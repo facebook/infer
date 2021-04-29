@@ -7,7 +7,6 @@
  *)
 
 open! IStd
-open PolyVariantEqual
 
 (** Database of analysis results *)
 
@@ -76,7 +75,7 @@ let filename_from_string s = s
 
 let filename_add_suffix fn s = fn ^ s
 
-let file_exists path = Sys.file_exists path = `Yes
+let file_exists path = ISys.file_exists path
 
 (** Return the time when a file was last modified. The file must exist. *)
 let file_modified_time ?(symlink = false) fname =

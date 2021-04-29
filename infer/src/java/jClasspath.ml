@@ -15,12 +15,10 @@ let split_classpath = String.split ~on:JFile.sep
 let classpath_of_paths paths =
   let of_path path =
     let full_path = Utils.filename_to_absolute ~root:Config.project_root path in
-    match Sys.file_exists full_path with
-    | `Yes ->
-        Some full_path
-    | _ ->
-        L.debug Capture Medium "Path %s not found" full_path ;
-        None
+    if ISys.file_exists full_path then Some full_path
+    else (
+      L.debug Capture Medium "Path %s not found" full_path ;
+      None )
   in
   let string_sep = Char.to_string JFile.sep in
   List.filter_map paths ~f:of_path |> String.concat ~sep:string_sep

@@ -2617,13 +2617,11 @@ and (_ : bool ref) =
 
 let inferconfig_dir =
   let rec find dir =
-    match Sys.file_exists ~follow_symlinks:false (dir ^/ CommandDoc.inferconfig_file) with
-    | `Yes ->
-        Some dir
-    | `No | `Unknown ->
-        let parent = Filename.dirname dir in
-        let is_root = String.equal dir parent in
-        if is_root then None else find parent
+    if ISys.file_exists ~follow_symlinks:false (dir ^/ CommandDoc.inferconfig_file) then Some dir
+    else
+      let parent = Filename.dirname dir in
+      let is_root = String.equal dir parent in
+      if is_root then None else find parent
   in
   find (Sys.getcwd ())
 

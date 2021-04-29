@@ -1154,6 +1154,14 @@ module NSCollection = struct
     {exec; check= no_check}
 
 
+  let new_collection_by_init coll_exp =
+    let exec model_env ~ret:((ret_id, _) as ret) mem =
+      create_collection model_env ~ret mem ~size_exp:Exp.zero
+      |> (addAll ret_id coll_exp).exec model_env ~ret
+    in
+    {exec; check= no_check}
+
+
   let iterator coll_exp =
     let exec {integer_type_widths= _; location} ~ret:(id, _) mem =
       let elements_locs = eval_collection_internal_array_locs coll_exp mem in
@@ -1700,6 +1708,8 @@ module Call = struct
         &:: "firstObject" <>$ capt_var_exn $!--> NSCollection.get_first
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
         &:: "initWithDictionary:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.copy
+      ; +PatternMatch.ObjectiveC.implements "NSDictionary"
+        &:: "dictionaryWithDictionary:" <>$ capt_exp $--> NSCollection.new_collection_by_init
       ; +PatternMatch.ObjectiveC.implements "NSSet"
         &:: "initWithArray:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.copy
       ; +PatternMatch.ObjectiveC.implements "NSArray"

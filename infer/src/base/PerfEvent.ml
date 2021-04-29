@@ -229,7 +229,7 @@ let logger =
      in
      let is_toplevel_process = CommandLineOption.is_originator && not !ProcessPoolState.in_child in
      ( if is_toplevel_process then
-       let preexisting_logfile = PolyVariantEqual.( = ) (Sys.file_exists log_file) `Yes in
+       let preexisting_logfile = ISys.file_exists log_file in
        if preexisting_logfile then Unix.unlink log_file ) ;
      let out_channel = Stdlib.open_out_gen [Open_append; Open_creat] 0o666 log_file in
      let logger = F.formatter_of_out_channel out_channel in

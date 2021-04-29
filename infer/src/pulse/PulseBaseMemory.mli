@@ -34,6 +34,8 @@ val add_edge : AbstractValue.t -> Access.t -> AddrTrace.t -> t -> t
 
 val find_edge_opt : AbstractValue.t -> Access.t -> t -> AddrTrace.t option
 
+val has_edge : AbstractValue.t -> Access.t -> t -> bool
+
 val yojson_of_t : t -> Yojson.Safe.t
 
 val is_allocated : t -> AbstractValue.t -> bool

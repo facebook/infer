@@ -18,7 +18,8 @@ type ident_ = Ident.t
 
 let compare_ident_ x y = Ident.compare y x
 
-type closure = {name: Procname.t; captured_vars: (t * Pvar.t * Typ.t * Pvar.capture_mode) list}
+type closure =
+  {name: Procname.t; captured_vars: (t * Pvar.t * Typ.t * CapturedVar.capture_mode) list}
 
 (** This records information about a [sizeof(typ)] expression.
 
@@ -243,7 +244,7 @@ and pp_captured_var pe pp_t f (exp, var, typ, mode) =
       (Pvar.pp pe) f var
   | _ ->
       F.fprintf f "([%s]%a %a:%a)"
-        (Pvar.string_of_capture_mode mode)
+        (CapturedVar.string_of_capture_mode mode)
         (pp_ pe pp_t) exp (Pvar.pp pe) var (Typ.pp pe) typ
 
 

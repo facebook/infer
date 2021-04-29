@@ -1704,9 +1704,10 @@ let and_fold_subst_variables phi0 ~up_to_f:phi_foreign ~init ~f:f_var =
 
 
 module QuantifierElimination : sig
-  val eliminate_vars : keep:Var.Set.t -> t -> t SatUnsat.t
-  (** [eliminate_vars ~keep φ] substitutes every variable [x] in [φ] with [x'] whenever [x'] is a
-      distinguished representative of the equivalence class of [x] in [φ] such that [x' ∈ keep] *)
+  val eliminate_vars : keep_pre:Var.Set.t -> keep_post:Var.Set.t -> t -> t SatUnsat.t
+  (** [eliminate_vars ~keep_pre ~keep_post φ] substitutes every variable [x] in [φ] with [x']
+      whenever [x'] is a distinguished representative of the equivalence class of [x] in [φ] such
+      that [x' ∈ keep_pre ∪ keep_post] *)
 end = struct
   exception Contradiction
 
@@ -1748,8 +1749,12 @@ end = struct
     ; both= subst_var_formula subst phi.both }
 
 
-  let eliminate_vars ~keep phi =
-    let subst = VarUF.reorient ~keep phi.known.var_eqs in
+  let eliminate_vars ~keep_pre ~keep_post phi =
+    let subst =
+      VarUF.reorient
+        ~should_keep:(fun x -> Var.Set.mem x keep_pre || Var.Set.mem x keep_post)
+        phi.known.var_eqs
+    in
     try Sat (subst_var subst phi) with Contradiction -> Unsat
 end
 
@@ -1836,25 +1841,23 @@ module DeadVariables = struct
 
 
   (** Get rid of atoms when they contain only variables that do not appear in atoms mentioning
-      variables in [keep], or variables appearing in atoms together with variables in [keep], and so
-      on. In other words, the variables to keep are all the ones transitively reachable from
-      variables in [keep] in the graph connecting two variables whenever they appear together in a
-      same atom of the formula. *)
-  let eliminate ~keep phi =
+      variables in [keep_pre] or [keep_post], or variables appearing in atoms together with
+      variables in these sets, and so on. In other words, the variables to keep are all the ones
+      transitively reachable from variables in [keep_pre ∪ keep_post] in the graph connecting two
+      variables whenever they appear together in a same atom of the formula. *)
+  let eliminate ~keep_pre ~keep_post phi =
     (* We only consider [phi.both] when building the relation. Considering [phi.known] and
        [phi.pruned] as well could lead to us keeping more variables around, but that's not necessarily
        a good idea. Ignoring them means we err on the side of reporting potentially slightly more
        issues than we would otherwise, as some atoms in [phi.pruned] may vanish unfairly as a
        result. *)
     let var_graph = build_var_graph phi.both in
-    let vars_to_keep = get_reachable_from var_graph keep in
+    let vars_to_keep = get_reachable_from var_graph (Var.Set.union keep_pre keep_post) in
     L.d_printfln "Reachable vars: %a" Var.Set.pp vars_to_keep ;
-    (* discard atoms which have variables *not* in [vars_to_keep], which in particular is enough
-       to guarantee that *none* of their variables are in [vars_to_keep] thanks to transitive
-       closure on the graph above *)
-    let filter_atom atom = not (Atom.has_var_notin vars_to_keep atom) in
     let simplify_phi phi =
-      let var_eqs = VarUF.filter_not_in_closed_set ~keep:vars_to_keep phi.Formula.var_eqs in
+      let var_eqs =
+        VarUF.filter_morphism ~f:(fun x -> Var.Set.mem x vars_to_keep) phi.Formula.var_eqs
+      in
       let linear_eqs =
         Var.Map.filter (fun v _ -> Var.Set.mem v vars_to_keep) phi.Formula.linear_eqs
       in
@@ -1863,24 +1866,35 @@ module DeadVariables = struct
           (fun t v -> Var.Set.mem v vars_to_keep && not (Term.has_var_notin vars_to_keep t))
           phi.Formula.term_eqs
       in
-      let atoms = Atom.Set.filter filter_atom phi.Formula.atoms in
+      (* discard atoms which have variables *not* in [vars_to_keep], which in particular is enough
+         to guarantee that *none* of their variables are in [vars_to_keep] thanks to transitive
+         closure on the graph above *)
+      let atoms =
+        Atom.Set.filter (fun atom -> not (Atom.has_var_notin vars_to_keep atom)) phi.Formula.atoms
+      in
       {Formula.var_eqs; linear_eqs; term_eqs; atoms}
     in
     let known = simplify_phi phi.known in
     let both = simplify_phi phi.both in
-    let pruned = Atom.Set.filter filter_atom phi.pruned in
+    let pruned =
+      (* discard atoms that callers have no way of influencing, i.e. those that do not contain
+         variables related to variables in the pre *)
+      let vars_to_keep_pre = get_reachable_from var_graph keep_pre in
+      Atom.Set.filter (fun atom -> not (Atom.has_var_notin vars_to_keep_pre atom)) phi.pruned
+    in
     {known; pruned; both}
 end
 
-let simplify tenv ~get_dynamic_type ~keep phi =
+let simplify tenv ~get_dynamic_type ~keep_pre ~keep_post phi =
   let open SatUnsat.Import in
   let* phi, new_eqs = normalize tenv ~get_dynamic_type phi in
-  L.d_printfln_escaped "@[Simplifying %a@,wrt %a@]" pp phi Var.Set.pp keep ;
+  L.d_printfln_escaped "@[Simplifying %a@,wrt %a (pre) and %a (post)@]" pp phi Var.Set.pp keep_pre
+    Var.Set.pp keep_post ;
   (* get rid of as many variables as possible *)
-  let+ phi = QuantifierElimination.eliminate_vars ~keep phi in
+  let+ phi = QuantifierElimination.eliminate_vars ~keep_pre ~keep_post phi in
   (* TODO: doing [QuantifierElimination.eliminate_vars; DeadVariables.eliminate] a few times may
      eliminate even more variables *)
-  let phi = DeadVariables.eliminate ~keep phi in
+  let phi = DeadVariables.eliminate ~keep_pre ~keep_post phi in
   (phi, new_eqs)
 
 

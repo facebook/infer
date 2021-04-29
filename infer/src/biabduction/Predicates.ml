@@ -928,7 +928,7 @@ let rec exp_sub_ids (f : subst_fun) exp =
       if phys_equal e' e then exp else Exp.Exn e'
   | Closure c ->
       let captured_vars =
-        IList.map_changed ~equal:[%compare.equal: Exp.t * Pvar.t * Typ.t * Pvar.capture_mode]
+        IList.map_changed ~equal:[%compare.equal: Exp.t * Pvar.t * Typ.t * CapturedVar.capture_mode]
           ~f:(fun ((e, pvar, typ, mode) as captured) ->
             let e' = exp_sub_ids f e in
             if phys_equal e' e then captured else (e', pvar, typ, mode) )

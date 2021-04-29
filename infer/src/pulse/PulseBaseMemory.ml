@@ -87,6 +87,8 @@ let find_edge_opt addr access memory =
   Graph.find_opt addr memory >>= Edges.find_opt access
 
 
+let has_edge addr access memory = find_edge_opt addr access memory |> Option.is_some
+
 let yojson_of_t g = [%yojson_of: (AbstractValue.t * Edges.t) list] (Graph.bindings g)
 
 let is_allocated memory v =
