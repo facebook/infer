@@ -138,6 +138,10 @@ module UncheckedCalleesCond = struct
     map (UncheckedCallees.replace_location_by_call location) fields_map
 
 
+  let has_known_expensive_callee fields_map =
+    exists (fun _ callees -> UncheckedCallees.has_known_expensive_callee callees) fields_map
+
+
   let filter_known_expensive fields_map =
     filter_map
       (fun _ callees ->
@@ -225,8 +229,9 @@ module Summary = struct
     {x with unchecked_callees; unchecked_callees_cond= UncheckedCalleesCond.bottom}
 
 
-  let has_known_expensive_callee {unchecked_callees} =
+  let has_known_expensive_callee {unchecked_callees; unchecked_callees_cond} =
     UncheckedCallees.has_known_expensive_callee unchecked_callees
+    || UncheckedCalleesCond.has_known_expensive_callee unchecked_callees_cond
 end
 
 module Dom = struct
