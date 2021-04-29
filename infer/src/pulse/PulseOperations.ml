@@ -105,14 +105,14 @@ module Closures = struct
   let fake_capture_field_prefix = "__capture_"
 
   let string_of_capture_mode = function
-    | Pvar.ByReference ->
+    | CapturedVar.ByReference ->
         "by_ref_"
-    | Pvar.ByValue ->
+    | CapturedVar.ByValue ->
         "by_value_"
 
 
   let fake_captured_by_ref_field_prefix =
-    Printf.sprintf "%s%s" fake_capture_field_prefix (string_of_capture_mode Pvar.ByReference)
+    Printf.sprintf "%s%s" fake_capture_field_prefix (string_of_capture_mode ByReference)
 
 
   let mk_fake_field ~id mode =

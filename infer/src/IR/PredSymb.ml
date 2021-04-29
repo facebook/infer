@@ -12,22 +12,6 @@ open! IStd
 module L = Logging
 module F = Format
 
-(** Visibility modifiers. *)
-type access = Default | Public | Private | Protected [@@deriving compare]
-
-let equal_access = [%compare.equal: access]
-
-let string_of_access = function
-  | Default ->
-      "Default"
-  | Public ->
-      "Public"
-  | Private ->
-      "Private"
-  | Protected ->
-      "Protected"
-
-
 type mem_kind =
   | Mmalloc  (** memory allocated with malloc *)
   | Mnew  (** memory allocated with new *)

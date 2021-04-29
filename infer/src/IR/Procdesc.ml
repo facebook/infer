@@ -513,10 +513,7 @@ let get_proc_name pdesc = pdesc.attributes.proc_name
 (** Return name and type of formal parameters *)
 let get_formals pdesc = pdesc.attributes.formals
 
-let get_pvar_formals pdesc =
-  let proc_name = get_proc_name pdesc in
-  get_formals pdesc |> List.map ~f:(fun (name, typ) -> (Pvar.mk name proc_name, typ))
-
+let get_pvar_formals pdesc = Pvar.get_pvar_formals pdesc.attributes
 
 let get_loc pdesc = pdesc.attributes.loc
 
@@ -786,7 +783,7 @@ let pp_captured_list fmt etl =
   List.iter
     ~f:(fun {CapturedVar.name; typ; capture_mode} ->
       Format.fprintf fmt " [%s] %a:%a"
-        (Pvar.string_of_capture_mode capture_mode)
+        (CapturedVar.string_of_capture_mode capture_mode)
         Mangled.pp name (Typ.pp_full Pp.text) typ )
     etl
 

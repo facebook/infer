@@ -287,15 +287,15 @@ let pp_jbir fmt jbir =
     fmt (JBir.print jbir)
 
 
-let trans_access = function
+let trans_access : _ -> ProcAttributes.access = function
   | `Default ->
-      PredSymb.Default
+      Default
   | `Public ->
-      PredSymb.Public
+      Public
   | `Private ->
-      PredSymb.Private
+      Private
   | `Protected ->
-      PredSymb.Protected
+      Protected
 
 
 let create_callee_attributes tenv program cn ms procname =

@@ -176,6 +176,5 @@ val swap_proc_in_local_pvar : t -> Procname.t -> t
 (** Sets of pvars. *)
 module Set : PrettyPrintable.PPSet with type elt = t
 
-type capture_mode = ByReference | ByValue [@@deriving compare, equal]
-
-val string_of_capture_mode : capture_mode -> string
+val get_pvar_formals : ProcAttributes.t -> (t * Typ.t) list
+(** Return pvar and type of formal parameters *)

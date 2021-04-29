@@ -97,7 +97,7 @@ module Misc = struct
     in
     let formals_opt =
       AnalysisCallbacks.proc_resolve_attributes callee_procname
-      |> Option.map ~f:ProcAttributes.get_pvar_formals
+      |> Option.map ~f:Pvar.get_pvar_formals
     in
     PulseCallOperations.unknown_call tenv location (Model skip_reason) ~ret ~actuals ~formals_opt
       astate

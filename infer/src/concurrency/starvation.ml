@@ -638,7 +638,7 @@ let fold_reportable_summaries analyze_ondemand tenv clazz ~init ~f =
   List.fold methods ~init ~f
 
 
-let is_private attrs = PredSymb.equal_access (ProcAttributes.get_access attrs) Private
+let is_private attrs = ProcAttributes.equal_access (ProcAttributes.get_access attrs) Private
 
 (*  Note about how many times we report a deadlock: normally twice, at each trace starting point.
     Due to the fact we look for deadlocks in the summaries of the class at the root of a path,

@@ -38,7 +38,7 @@ module PulseTransferFunctions = struct
   type analysis_data = PulseSummary.t InterproceduralAnalysis.t
 
   let get_pvar_formals pname =
-    AnalysisCallbacks.proc_resolve_attributes pname |> Option.map ~f:ProcAttributes.get_pvar_formals
+    AnalysisCallbacks.proc_resolve_attributes pname |> Option.map ~f:Pvar.get_pvar_formals
 
 
   let interprocedural_call {InterproceduralAnalysis.analyze_dependency; tenv; proc_desc} ret
