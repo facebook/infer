@@ -41,7 +41,11 @@ module Branch = struct
   let is_top = function Top -> true | True | False | Lt _ | Gt _ | Le _ | Ge _ -> false
 end
 
-module ConfigChecks = AbstractDomain.SafeInvertedMap (ConfigName) (Branch)
+module ConfigChecks = struct
+  include AbstractDomain.SafeInvertedMap (ConfigName) (Branch)
+
+  let add_all x ~into = fold (fun k v acc -> add k v acc) x into
+end
 
 module Field = struct
   include Fieldname
@@ -162,29 +166,140 @@ end
 
 module ConfigLifted = AbstractDomain.Flat (ConfigName)
 
-module Val = struct
-  type t = {config: ConfigLifted.t; fields: Fields.t}
+module TempBool = struct
+  type t =
+    | Bot  (** bottom *)
+    | True of ConfigChecks.t  (** config checks when the temporary boolean is true *)
+    | False of ConfigChecks.t  (** config checks when the temporary boolean is false *)
+    | Joined of {true_: ConfigChecks.t; false_: ConfigChecks.t}
+        (** config checks when the temporary boolean is true or false *)
 
-  let pp f {config; fields} =
-    F.fprintf f "@[@[config:@,%a@]@ @[fields:@,%a@]@]" ConfigLifted.pp config Fields.pp fields
+  let pp =
+    let pp_helper f (b, config_checks) =
+      F.fprintf f "@[%b when %a checked@]" b ConfigChecks.pp config_checks
+    in
+    fun f -> function
+      | Bot ->
+          AbstractDomain.BottomLiftedUtils.pp_bottom f
+      | True config_checks ->
+          pp_helper f (true, config_checks)
+      | False config_checks ->
+          pp_helper f (false, config_checks)
+      | Joined {true_; false_} ->
+          F.fprintf f "@[%a@ %a@]" pp_helper (true, true_) pp_helper (false, false_)
 
 
   let leq ~lhs ~rhs =
-    ConfigLifted.leq ~lhs:lhs.config ~rhs:rhs.config && Fields.leq ~lhs:lhs.fields ~rhs:rhs.fields
+    match (lhs, rhs) with
+    | Bot, _ ->
+        true
+    | _, Bot ->
+        false
+    | True c1, True c2
+    | False c1, False c2
+    | True c1, Joined {true_= c2}
+    | False c1, Joined {false_= c2} ->
+        ConfigChecks.leq ~lhs:c1 ~rhs:c2
+    | Joined {true_= t1; false_= f1}, Joined {true_= t2; false_= f2} ->
+        ConfigChecks.leq ~lhs:t1 ~rhs:t2 && ConfigChecks.leq ~lhs:f1 ~rhs:f2
+    | _, _ ->
+        false
 
 
-  let join x y = {config= ConfigLifted.join x.config y.config; fields= Fields.join x.fields y.fields}
+  let join x y =
+    match (x, y) with
+    | Bot, v | v, Bot ->
+        v
+    | True c1, True c2 ->
+        True (ConfigChecks.join c1 c2)
+    | False c1, False c2 ->
+        False (ConfigChecks.join c1 c2)
+    | True c1, False c2 | False c2, True c1 ->
+        Joined {true_= c1; false_= c2}
+    | True c1, Joined {true_= c2; false_} | Joined {true_= c1; false_}, True c2 ->
+        Joined {true_= ConfigChecks.join c1 c2; false_}
+    | False c1, Joined {true_; false_= c2} | Joined {true_; false_= c1}, False c2 ->
+        Joined {true_; false_= ConfigChecks.join c1 c2}
+    | Joined {true_= t1; false_= f1}, Joined {true_= t2; false_= f2} ->
+        Joined {true_= ConfigChecks.join t1 t2; false_= ConfigChecks.join f1 f2}
+
+
+  let widen ~prev ~next ~num_iters =
+    match (prev, next) with
+    | Bot, v | v, Bot ->
+        v
+    | True c1, True c2 ->
+        True (ConfigChecks.widen ~prev:c1 ~next:c2 ~num_iters)
+    | False c1, False c2 ->
+        False (ConfigChecks.widen ~prev:c1 ~next:c2 ~num_iters)
+    | True c1, False c2 | False c2, True c1 ->
+        Joined {true_= c1; false_= c2}
+    | True c1, Joined {true_= c2; false_} | Joined {true_= c1; false_}, True c2 ->
+        Joined {true_= ConfigChecks.widen ~prev:c1 ~next:c2 ~num_iters; false_}
+    | False c1, Joined {true_; false_= c2} | Joined {true_; false_= c1}, False c2 ->
+        Joined {true_; false_= ConfigChecks.widen ~prev:c1 ~next:c2 ~num_iters}
+    | Joined {true_= t1; false_= f1}, Joined {true_= t2; false_= f2} ->
+        Joined
+          { true_= ConfigChecks.widen ~prev:t1 ~next:t2 ~num_iters
+          ; false_= ConfigChecks.widen ~prev:f1 ~next:f2 ~num_iters }
+
+
+  let bottom = Bot
+
+  let make ~is_true config_checks = if is_true then True config_checks else False config_checks
+
+  let get_config_checks_true = function
+    | True config_checks | Joined {true_= config_checks} ->
+        Some config_checks
+    | _ ->
+        None
+
+
+  let get_config_checks_false = function
+    | False config_checks | Joined {false_= config_checks} ->
+        Some config_checks
+    | _ ->
+        None
+
+
+  let get_config_checks ~is_true x =
+    if is_true then get_config_checks_true x else get_config_checks_false x
+end
+
+module Val = struct
+  type t = {config: ConfigLifted.t; fields: Fields.t; temp_bool: TempBool.t}
+
+  let pp f {config; fields; temp_bool} =
+    F.fprintf f "@[@[config:@,%a@]@ @[fields:@,%a@]@ @[temp_bool:@,%a@]@]" ConfigLifted.pp config
+      Fields.pp fields TempBool.pp temp_bool
+
+
+  let leq ~lhs ~rhs =
+    ConfigLifted.leq ~lhs:lhs.config ~rhs:rhs.config
+    && Fields.leq ~lhs:lhs.fields ~rhs:rhs.fields
+    && TempBool.leq ~lhs:lhs.temp_bool ~rhs:rhs.temp_bool
+
+
+  let join x y =
+    { config= ConfigLifted.join x.config y.config
+    ; fields= Fields.join x.fields y.fields
+    ; temp_bool= TempBool.join x.temp_bool y.temp_bool }
+
 
   let widen ~prev ~next ~num_iters =
     { config= ConfigLifted.widen ~prev:prev.config ~next:next.config ~num_iters
-    ; fields= Fields.widen ~prev:prev.fields ~next:next.fields ~num_iters }
+    ; fields= Fields.widen ~prev:prev.fields ~next:next.fields ~num_iters
+    ; temp_bool= TempBool.widen ~prev:prev.temp_bool ~next:next.temp_bool ~num_iters }
 
 
-  let bottom = {config= ConfigLifted.bottom; fields= Fields.bottom}
+  let bottom = {config= ConfigLifted.bottom; fields= Fields.bottom; temp_bool= TempBool.bottom}
 
   let of_config config = {bottom with config= ConfigLifted.v config}
 
   let of_field fn = {bottom with fields= Fields.singleton fn}
+
+  let of_temp_bool ~is_true config_checks =
+    {bottom with temp_bool= TempBool.make ~is_true config_checks}
 end
 
 module Mem = struct
@@ -328,10 +443,10 @@ module Dom = struct
 
   let apply_cmp_branch cmp_branch res =
     Option.bind res ~f:(function
-      | `Unconditional config, Branch.True ->
-          Some (`Unconditional config, cmp_branch)
-      | `Conditional fields, Branch.True ->
-          Some (`Conditional fields, cmp_branch)
+      | `Unconditional (config, Branch.True) ->
+          Some (`Unconditional (config, cmp_branch))
+      | `Conditional (fields, Branch.True) ->
+          Some (`Conditional (fields, cmp_branch))
       | _ ->
           None )
 
@@ -339,13 +454,18 @@ module Dom = struct
   let rec get_config_check_prune ~is_true_branch e mem =
     match (e : Exp.t) with
     | Var id -> (
-        let {Val.config; fields} = Mem.lookup (Loc.of_id id) mem in
+        let {Val.config; fields; temp_bool} = Mem.lookup (Loc.of_id id) mem in
         let branch = if is_true_branch then Branch.True else Branch.False in
         match ConfigLifted.get config with
         | Some config ->
-            Some (`Unconditional config, branch)
+            Some (`Unconditional (config, branch))
+        | None when not (Fields.is_empty fields) ->
+            Some (`Conditional (fields, branch))
         | None ->
-            Option.some_if (not (Fields.is_empty fields)) (`Conditional fields, branch) )
+            (* Note: If the [id] is not a config value and not a field value, address it as a
+               temporary variable. *)
+            TempBool.get_config_checks ~is_true:is_true_branch temp_bool
+            |> Option.map ~f:(fun config_checks -> `TempBool config_checks) )
     | UnOp (LNot, e, _) ->
         get_config_check_prune ~is_true_branch:(not is_true_branch) e mem
     | BinOp ((Eq | Ne | Lt | Gt | Le | Ge), Const _, Const _) ->
@@ -375,9 +495,11 @@ module Dom = struct
   let prune e ({config_checks; field_checks; mem} as astate) =
     get_config_check_prune ~is_true_branch:true e mem
     |> Option.value_map ~default:astate ~f:(function
-         | `Unconditional config, branch ->
+         | `Unconditional (config, branch) ->
              {astate with config_checks= ConfigChecks.add config branch config_checks}
-         | `Conditional fields, branch ->
+         | `TempBool config_checks' ->
+             {astate with config_checks= ConfigChecks.add_all config_checks' ~into:config_checks}
+         | `Conditional (fields, branch) ->
              { astate with
                field_checks=
                  Fields.fold (fun field acc -> FieldChecks.add field branch acc) fields field_checks
@@ -511,6 +633,7 @@ module TransferFunctions = struct
     let dispatch : (Tenv.t, unit, unit) dispatcher =
       make_dispatcher
         [ +PatternMatch.Java.implements_lang "Boolean" &:: "booleanValue" &--> ()
+        ; +PatternMatch.Java.implements_lang "Boolean" &:: "valueOf" &--> ()
         ; +PatternMatch.Java.implements_lang "Long" &:: "longValue" &--> () ]
     in
     fun tenv pname -> dispatch tenv pname |> Option.is_some
@@ -563,13 +686,17 @@ module TransferFunctions = struct
         astate
 
 
-  let exec_instr astate {interproc= {tenv; analyze_dependency}; get_instantiated_cost} node idx
-      instr =
+  let exec_instr ({Dom.config_checks} as astate)
+      {interproc= {tenv; analyze_dependency}; get_instantiated_cost} node idx instr =
     match (instr : Sil.instr) with
     | Load {id; e= Lvar pvar} ->
         Dom.load_config id pvar astate
     | Load {id; e= Lfield (_, fn, _)} ->
         Dom.load_field id fn astate
+    | Store {e1= Lvar pvar; e2= Const zero} when Const.iszero_int_float zero ->
+        Dom.add_mem (Loc.of_pvar pvar) (Val.of_temp_bool ~is_true:false config_checks) astate
+    | Store {e1= Lvar pvar; e2= Const one} when Const.isone_int_float one ->
+        Dom.add_mem (Loc.of_pvar pvar) (Val.of_temp_bool ~is_true:true config_checks) astate
     | Store {e1= Lvar pvar; e2= Var id} ->
         Dom.store_config pvar id astate
     | Store {e1= Lfield (_, fn, _); e2= Var id} ->
