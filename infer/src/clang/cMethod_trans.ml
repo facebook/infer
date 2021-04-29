@@ -203,7 +203,7 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) ?(record_lambda_capt
     | `Protected ->
         Protected
     | `Public ->
-        Protected
+        Public
   in
   let captured_mangled =
     List.map
