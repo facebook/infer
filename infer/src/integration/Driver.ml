@@ -27,6 +27,7 @@ type mode =
   | Javac of {compiler: Javac.compiler; prog: string; args: string list}
   | Maven of {prog: string; args: string list}
   | NdkBuild of {build_cmd: string list}
+  | Rebar3 of {args: string list}
   | XcodeBuild of {prog: string; args: string list}
   | XcodeXcpretty of {prog: string; args: string list}
 
@@ -60,6 +61,8 @@ let pp_mode fmt = function
       F.fprintf fmt "Maven driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | NdkBuild {build_cmd} ->
       F.fprintf fmt "NdkBuild driver mode: build_cmd = %a" Pp.cli_args build_cmd
+  | Rebar3 {args} ->
+      F.fprintf fmt "Rebar3 driver mode:@\nargs = %a" Pp.cli_args args
   | XcodeBuild {prog; args} ->
       F.fprintf fmt "XcodeBuild driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | XcodeXcpretty {prog; args} ->
@@ -139,6 +142,9 @@ let capture ~changed_files = function
   | NdkBuild {build_cmd} ->
       L.progress "Capturing in ndk-build mode...@." ;
       NdkBuild.capture ~build_cmd
+  | Rebar3 {args} ->
+      L.progress "Capturing in rebar3 mode...@." ;
+      Rebar3.capture ~args
   | XcodeBuild {prog; args} ->
       L.progress "Capturing in xcodebuild mode...@." ;
       XcodeBuild.capture ~prog ~args
@@ -302,6 +308,8 @@ let assert_supported_mode required_analyzer requested_mode_string =
         Version.clang_enabled && Version.java_enabled
     | `Java ->
         Version.java_enabled
+    | `Erlang ->
+        Version.erlang_enabled
     | `Xcode ->
         Version.clang_enabled && Version.xcode_enabled
   in
@@ -314,6 +322,8 @@ let assert_supported_mode required_analyzer requested_mode_string =
           "clang & java"
       | `Java ->
           "java"
+      | `Erlang ->
+          "erlang"
       | `Xcode ->
           "clang and xcode"
     in
@@ -336,6 +346,8 @@ let assert_supported_build_system build_system =
       Config.string_of_build_system build_system |> assert_supported_mode `Java
   | BClang | BMake | BNdk ->
       Config.string_of_build_system build_system |> assert_supported_mode `Clang
+  | BRebar3 ->
+      Config.string_of_build_system build_system |> assert_supported_mode `Erlang
   | BXcode ->
       Config.string_of_build_system build_system |> assert_supported_mode `Xcode
   | BBuck ->
@@ -399,6 +411,8 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
           Maven {prog; args}
       | BNdk, _ ->
           NdkBuild {build_cmd}
+      | BRebar3, _ ->
+          Rebar3 {args}
       | BXcode, _ when Config.xcpretty ->
           XcodeXcpretty {prog; args}
       | BXcode, _ ->

@@ -91,12 +91,19 @@ AC_ARG_ENABLE(c-analyzers,
 BUILD_C_ANALYZERS=$enable_c_analyzers
 AC_SUBST([BUILD_C_ANALYZERS])
 
+AC_ARG_ENABLE(erlang-analyzers,
+  AS_HELP_STRING([--disable-erlang-analyzers],
+    [do not build the Erlang analyzers (default is to build them)]),
+  ,
+  enable_erlang_analyzers=yes)
+BUILD_ERLANG_ANALYZERS=$enable_erlang_analyzers
+AC_SUBST([BUILD_ERLANG_ANALYZERS])
+
 AC_ARG_ENABLE(java-analyzers,
   AS_HELP_STRING([--disable-java-analyzers],
     [do not build the Java analyzers (default is to build them)]),
   ,
   enable_java_analyzers=yes)
-
 BUILD_JAVA_ANALYZERS=$enable_java_analyzers
 AC_SUBST([BUILD_JAVA_ANALYZERS])
 

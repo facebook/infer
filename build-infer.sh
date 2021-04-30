@@ -31,6 +31,7 @@ function usage() {
   echo " targets:"
   echo "   all      build everything (default)"
   echo "   clang    build C and Objective-C analyzer"
+  echo "   erlang   build Erlang analyzer"
   echo "   java     build Java analyzer"
   echo
   echo " options:"
@@ -41,13 +42,14 @@ function usage() {
   echo "   -y,--yes              automatically agree to everything"
   echo
   echo " examples:"
-  echo "    $0               # build Java and C/Objective-C analyzers"
-  echo "    $0 java clang    # equivalent way of doing the above"
-  echo "    $0 java          # build only the Java analyzer"
+  echo "    $0                    # build Java, Erlang and C/Objective-C analyzers"
+  echo "    $0 java erlang clang  # equivalent way of doing the above"
+  echo "    $0 java               # build only the Java analyzer"
 }
 
 # arguments
 BUILD_CLANG=${BUILD_CLANG:-no}
+BUILD_ERLANG=${BUILD_ERLANG:-no}
 BUILD_JAVA=${BUILD_JAVA:-no}
 INFER_CONFIGURE_OPTS=${INFER_CONFIGURE_OPTS:-""}
 INTERACTIVE=${INTERACTIVE:-yes}
@@ -58,17 +60,27 @@ USER_OPAM_SWITCH=no
 
 ORIG_ARGS="$*"
 
+function build_all() {
+  BUILD_CLANG=yes
+  BUILD_ERLANG=yes
+  BUILD_JAVA=yes
+}
+
 while [[ $# -gt 0 ]]; do
   opt_key="$1"
   case $opt_key in
     all)
-      BUILD_CLANG=yes
-      BUILD_JAVA=yes
+      build_all
       shift
       continue
       ;;
     clang)
       BUILD_CLANG=yes
+      shift
+      continue
+      ;;
+    erlang)
+      BUILD_ERLANG=yes
       shift
       continue
       ;;
@@ -108,10 +120,8 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
-# if no arguments then build both clang and Java
-if [ "$BUILD_CLANG" == "no" ] && [ "$BUILD_JAVA" == "no" ]; then
-  BUILD_CLANG=yes
-  BUILD_JAVA=yes
+if [ "$BUILD_CLANG" == "no" ] && [ "$BUILD_ERLANG" == "no" ] && [ "$BUILD_JAVA" == "no" ]; then
+  build_all
 fi
 
 # enable --yes option for some commands in non-interactive mode
@@ -160,6 +170,9 @@ echo "preparing build... " >&2
 
 if [ "$BUILD_CLANG" == "no" ]; then
   INFER_CONFIGURE_OPTS+=" --disable-c-analyzers"
+fi
+if [ "$BUILD_ERLANG" == "no" ]; then
+  INFER_CONFIGURE_OPTS+=" --disable-erlang-analyzers"
 fi
 if [ "$BUILD_JAVA" == "no" ]; then
   INFER_CONFIGURE_OPTS+=" --disable-java-analyzers"
