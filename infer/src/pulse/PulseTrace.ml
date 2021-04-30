@@ -56,9 +56,15 @@ let rec add_to_errlog ?(include_value_history = true) ~nesting ~pp_immediate tra
       if include_value_history then ValueHistory.add_to_errlog ~nesting history @@ acc else acc
 
 
-let rec find_map ~f trace =
+let rec iter trace ~f =
   match trace with
   | Immediate {history} ->
-      List.find_map history ~f
+      List.iter history ~f
   | ViaCall {history; in_call} ->
-      List.find_map history ~f |> IOption.if_none_evalopt ~f:(fun () -> find_map ~f in_call)
+      List.iter history ~f ;
+      iter in_call ~f
+
+
+let find_map trace ~f = Container.find_map ~iter trace ~f
+
+let exists trace ~f = Container.exists ~iter trace ~f

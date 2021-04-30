@@ -212,27 +212,44 @@ let get_trace_calling_context calling_context errlog =
          |> fst )
 
 
+let trace_contains_invalidation trace =
+  PulseTrace.exists trace ~f:(function ValueHistory.Invalidated _ -> true | _ -> false)
+
+
+let add_invalidation_trace (invalidation : Invalidation.t) invalidation_trace access_trace errlog =
+  let start_title, access_title =
+    match invalidation with
+    | ConstantDereference i when IntLit.equal i IntLit.zero ->
+        ( "source of the null value part of the trace starts here"
+        , "null pointer dereference part of the trace starts here" )
+    | ConstantDereference _ ->
+        ( "source of the constant value part of the trace starts here"
+        , "constant value dereference part of the trace starts here" )
+    | CFree
+    | CppDelete
+    | EndIterator
+    | GoneOutOfScope _
+    | OptionalEmpty
+    | StdVector _
+    | JavaIterator _ ->
+        ( "invalidation part of the trace starts here"
+        , "use-after-lifetime part of the trace starts here" )
+  in
+  let start_location = Trace.get_start_location invalidation_trace in
+  add_errlog_header ~title:start_title start_location
+  @@ Trace.add_to_errlog ~nesting:1
+       ~pp_immediate:(fun fmt -> F.fprintf fmt "%a" Invalidation.describe invalidation)
+       invalidation_trace
+  @@
+  let access_start_location = Trace.get_start_location access_trace in
+  add_errlog_header ~title:access_title access_start_location @@ errlog
+
+
 let get_trace = function
   | AccessToInvalidAddress {calling_context; invalidation; invalidation_trace; access_trace} ->
       get_trace_calling_context calling_context
-      @@
-      let start_title, access_title =
-        match invalidation with
-        | ConstantDereference i when IntLit.equal i IntLit.zero ->
-            ( "source of the null value part of the trace starts here"
-            , "null pointer dereference part of the trace starts here" )
-        | _ ->
-            ( "invalidation part of the trace starts here"
-            , "use-after-lifetime part of the trace starts here" )
-      in
-      let start_location = Trace.get_start_location invalidation_trace in
-      add_errlog_header ~title:start_title start_location
-      @@ Trace.add_to_errlog ~nesting:1
-           ~pp_immediate:(fun fmt -> F.fprintf fmt "%a" Invalidation.describe invalidation)
-           invalidation_trace
-      @@
-      let access_start_location = Trace.get_start_location access_trace in
-      add_errlog_header ~title:access_title access_start_location
+      @@ ( if trace_contains_invalidation access_trace then Fn.id
+         else add_invalidation_trace invalidation invalidation_trace access_trace )
       @@ Trace.add_to_errlog ~nesting:1
            ~pp_immediate:(fun fmt -> F.pp_print_string fmt "invalid access occurs here")
            access_trace
