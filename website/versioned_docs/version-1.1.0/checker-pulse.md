@@ -75,6 +75,7 @@ class Registry {
 The following issue types are reported by this checker:
 - [CONSTANT_ADDRESS_DEREFERENCE](/docs/all-issue-types#constant_address_dereference)
 - [MEMORY_LEAK](/docs/all-issue-types#memory_leak)
+- [NIL_MESSAGING_TO_NON_POD](/docs/all-issue-types#nil_messaging_to_non_pod)
 - [NULLPTR_DEREFERENCE](/docs/all-issue-types#nullptr_dereference)
 - [OPTIONAL_EMPTY_ACCESS](/docs/all-issue-types#optional_empty_access)
 - [PULSE_UNINITIALIZED_VALUE](/docs/all-issue-types#pulse_uninitialized_value)
