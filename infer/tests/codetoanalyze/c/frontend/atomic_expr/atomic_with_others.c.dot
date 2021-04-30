@@ -7,15 +7,15 @@ digraph cfg {
 "arithmetic.26e816805c2eb54063da29d3d21a3641_2" [label="2: Exit arithmetic \n  " color=yellow style=filled]
 	
 
-"arithmetic.26e816805c2eb54063da29d3d21a3641_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&a:int [line 17, column 21]\n  *&a:int=(n$0 ^ 1) [line 17, column 21]\n  n$1=_fun_other_func((n$0 + 5):int,null:int*) [line 17, column 10]\n  *&_a:int=n$1 [line 17, column 5]\n " shape="box"]
+"arithmetic.26e816805c2eb54063da29d3d21a3641_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&a:int [line 24, column 21]\n  *&a:int=(n$0 ^ 1) [line 24, column 21]\n  n$1=_fun_other_func((n$0 + 5):int,null:int*) [line 24, column 10]\n  *&_a:int=n$1 [line 24, column 5]\n " shape="box"]
 	
 
 	 "arithmetic.26e816805c2eb54063da29d3d21a3641_3" -> "arithmetic.26e816805c2eb54063da29d3d21a3641_2" ;
-"arithmetic.26e816805c2eb54063da29d3d21a3641_4" [label="4:  BinaryOperatorStmt: Assign \n   n$2=_fun_other_func(0:int,null:int*) [line 16, column 39]\n  n$3=*&a:int [line 16, column 10]\n  *&a:int=(n$3 | n$2) [line 16, column 10]\n  *&_a:int=n$3 [line 16, column 5]\n " shape="box"]
+"arithmetic.26e816805c2eb54063da29d3d21a3641_4" [label="4:  BinaryOperatorStmt: Assign \n   n$2=_fun_other_func(0:int,null:int*) [line 23, column 39]\n  n$3=*&a:int [line 23, column 10]\n  *&a:int=(n$3 | n$2) [line 23, column 10]\n  *&_a:int=n$3 [line 23, column 5]\n " shape="box"]
 	
 
 	 "arithmetic.26e816805c2eb54063da29d3d21a3641_4" -> "arithmetic.26e816805c2eb54063da29d3d21a3641_3" ;
-"arithmetic.26e816805c2eb54063da29d3d21a3641_5" [label="5:  BinaryOperatorStmt: Assign \n   *&_a:int=0 [line 15, column 57]\n  n$4=*&_a:int [line 15, column 57]\n  n$5=*&_a:int [line 15, column 34]\n  *&_a:int=(n$5 | n$4) [line 15, column 34]\n  n$6=*&_a:int [line 15, column 34]\n  n$7=*&p:int* [line 15, column 11]\n  *&p:int*=(n$7 + n$6) [line 15, column 11]\n  n$8=*n$7:int [line 15, column 10]\n  *&_a:int=n$8 [line 15, column 5]\n " shape="box"]
+"arithmetic.26e816805c2eb54063da29d3d21a3641_5" [label="5:  BinaryOperatorStmt: Assign \n   *&_a:int=0 [line 22, column 57]\n  n$4=*&_a:int [line 22, column 57]\n  n$5=*&_a:int [line 22, column 34]\n  *&_a:int=(n$5 | n$4) [line 22, column 34]\n  n$6=*&_a:int [line 22, column 34]\n  n$7=*&p:int* [line 22, column 11]\n  *&p:int*=(n$7 + n$6) [line 22, column 11]\n  n$8=*n$7:int [line 22, column 10]\n  *&_a:int=n$8 [line 22, column 5]\n " shape="box"]
 	
 
 	 "arithmetic.26e816805c2eb54063da29d3d21a3641_5" -> "arithmetic.26e816805c2eb54063da29d3d21a3641_4" ;
@@ -23,23 +23,23 @@ digraph cfg {
 	
 
 	 "arithmetic.26e816805c2eb54063da29d3d21a3641_6" -> "arithmetic.26e816805c2eb54063da29d3d21a3641_11" ;
-"arithmetic.26e816805c2eb54063da29d3d21a3641_7" [label="7: Prune (true branch, boolean exp) \n   n$10=*&a:void [line 14, column 43]\n  PRUNE(n$10, true); [line 14, column 43]\n " shape="invhouse"]
+"arithmetic.26e816805c2eb54063da29d3d21a3641_7" [label="7: Prune (true branch, boolean exp) \n   n$10=*&a:void [line 21, column 43]\n  PRUNE(n$10, true); [line 21, column 43]\n " shape="invhouse"]
 	
 
 	 "arithmetic.26e816805c2eb54063da29d3d21a3641_7" -> "arithmetic.26e816805c2eb54063da29d3d21a3641_9" ;
-"arithmetic.26e816805c2eb54063da29d3d21a3641_8" [label="8: Prune (false branch, boolean exp) \n   n$10=*&a:void [line 14, column 43]\n  PRUNE(!n$10, false); [line 14, column 43]\n " shape="invhouse"]
+"arithmetic.26e816805c2eb54063da29d3d21a3641_8" [label="8: Prune (false branch, boolean exp) \n   n$10=*&a:void [line 21, column 43]\n  PRUNE(!n$10, false); [line 21, column 43]\n " shape="invhouse"]
 	
 
 	 "arithmetic.26e816805c2eb54063da29d3d21a3641_8" -> "arithmetic.26e816805c2eb54063da29d3d21a3641_10" ;
-"arithmetic.26e816805c2eb54063da29d3d21a3641_9" [label="9:  ConditionalStmt Branch \n   n$11=*&p:int* [line 14, column 66]\n  n$12=*n$11:int [line 14, column 47]\n  *n$11:int=(n$12 - 5) [line 14, column 47]\n  n$13=*n$11:int [line 14, column 47]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$9:int=n$13 [line 14, column 43]\n " shape="box"]
+"arithmetic.26e816805c2eb54063da29d3d21a3641_9" [label="9:  ConditionalStmt Branch \n   n$11=*&p:int* [line 21, column 66]\n  n$12=*n$11:int [line 21, column 47]\n  *n$11:int=(n$12 - 5) [line 21, column 47]\n  n$13=*n$11:int [line 21, column 47]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$9:int=n$13 [line 21, column 43]\n " shape="box"]
 	
 
 	 "arithmetic.26e816805c2eb54063da29d3d21a3641_9" -> "arithmetic.26e816805c2eb54063da29d3d21a3641_6" ;
-"arithmetic.26e816805c2eb54063da29d3d21a3641_10" [label="10:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$9:int=10 [line 14, column 43]\n " shape="box"]
+"arithmetic.26e816805c2eb54063da29d3d21a3641_10" [label="10:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$9:int=10 [line 21, column 43]\n " shape="box"]
 	
 
 	 "arithmetic.26e816805c2eb54063da29d3d21a3641_10" -> "arithmetic.26e816805c2eb54063da29d3d21a3641_6" ;
-"arithmetic.26e816805c2eb54063da29d3d21a3641_11" [label="11:  BinaryOperatorStmt: Assign \n   n$14=*&0$?%__sil_tmpSIL_temp_conditional___n$9:int [line 14, column 43]\n  n$15=*&a:int [line 14, column 10]\n  *&a:int=(n$15 + 1) [line 14, column 10]\n  *&_a:int=n$15 [line 14, column 5]\n " shape="box"]
+"arithmetic.26e816805c2eb54063da29d3d21a3641_11" [label="11:  BinaryOperatorStmt: Assign \n   n$14=*&0$?%__sil_tmpSIL_temp_conditional___n$9:int [line 21, column 43]\n  n$15=*&a:int [line 21, column 10]\n  *&a:int=(n$15 + 1) [line 21, column 10]\n  *&_a:int=n$15 [line 21, column 5]\n " shape="box"]
 	
 
 	 "arithmetic.26e816805c2eb54063da29d3d21a3641_11" -> "arithmetic.26e816805c2eb54063da29d3d21a3641_5" ;
@@ -47,37 +47,37 @@ digraph cfg {
 	
 
 	 "arithmetic.26e816805c2eb54063da29d3d21a3641_12" -> "arithmetic.26e816805c2eb54063da29d3d21a3641_17" ;
-"arithmetic.26e816805c2eb54063da29d3d21a3641_13" [label="13: Prune (true branch, boolean exp) \n   n$17=*&a:void [line 13, column 10]\n  PRUNE(n$17, true); [line 13, column 10]\n " shape="invhouse"]
+"arithmetic.26e816805c2eb54063da29d3d21a3641_13" [label="13: Prune (true branch, boolean exp) \n   n$17=*&a:void [line 20, column 10]\n  PRUNE(n$17, true); [line 20, column 10]\n " shape="invhouse"]
 	
 
 	 "arithmetic.26e816805c2eb54063da29d3d21a3641_13" -> "arithmetic.26e816805c2eb54063da29d3d21a3641_15" ;
-"arithmetic.26e816805c2eb54063da29d3d21a3641_14" [label="14: Prune (false branch, boolean exp) \n   n$17=*&a:void [line 13, column 10]\n  PRUNE(!n$17, false); [line 13, column 10]\n " shape="invhouse"]
+"arithmetic.26e816805c2eb54063da29d3d21a3641_14" [label="14: Prune (false branch, boolean exp) \n   n$17=*&a:void [line 20, column 10]\n  PRUNE(!n$17, false); [line 20, column 10]\n " shape="invhouse"]
 	
 
 	 "arithmetic.26e816805c2eb54063da29d3d21a3641_14" -> "arithmetic.26e816805c2eb54063da29d3d21a3641_16" ;
-"arithmetic.26e816805c2eb54063da29d3d21a3641_15" [label="15:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$16:int=5 [line 13, column 10]\n " shape="box"]
+"arithmetic.26e816805c2eb54063da29d3d21a3641_15" [label="15:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$16:int=5 [line 20, column 10]\n " shape="box"]
 	
 
 	 "arithmetic.26e816805c2eb54063da29d3d21a3641_15" -> "arithmetic.26e816805c2eb54063da29d3d21a3641_12" ;
-"arithmetic.26e816805c2eb54063da29d3d21a3641_16" [label="16:  ConditionalStmt Branch \n   n$18=*&_a:int [line 13, column 10]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$16:int=n$18 [line 13, column 10]\n " shape="box"]
+"arithmetic.26e816805c2eb54063da29d3d21a3641_16" [label="16:  ConditionalStmt Branch \n   n$18=*&_a:int [line 20, column 10]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$16:int=n$18 [line 20, column 10]\n " shape="box"]
 	
 
 	 "arithmetic.26e816805c2eb54063da29d3d21a3641_16" -> "arithmetic.26e816805c2eb54063da29d3d21a3641_12" ;
-"arithmetic.26e816805c2eb54063da29d3d21a3641_17" [label="17:  BinaryOperatorStmt: Assign \n   n$19=*&0$?%__sil_tmpSIL_temp_conditional___n$16:int [line 13, column 10]\n  n$20=*&a2:int [line 13, column 10]\n  *&a2:int=(n$20 + n$19) [line 13, column 10]\n  n$21=*&a:int [line 13, column 10]\n  *&a:int=(n$21 - n$20) [line 13, column 10]\n  *&_a:int=n$21 [line 13, column 5]\n " shape="box"]
+"arithmetic.26e816805c2eb54063da29d3d21a3641_17" [label="17:  BinaryOperatorStmt: Assign \n   n$19=*&0$?%__sil_tmpSIL_temp_conditional___n$16:int [line 20, column 10]\n  n$20=*&a2:int [line 20, column 10]\n  *&a2:int=(n$20 + n$19) [line 20, column 10]\n  n$21=*&a:int [line 20, column 10]\n  *&a:int=(n$21 - n$20) [line 20, column 10]\n  *&_a:int=n$21 [line 20, column 5]\n " shape="box"]
 	
 
 	 "arithmetic.26e816805c2eb54063da29d3d21a3641_17" -> "arithmetic.26e816805c2eb54063da29d3d21a3641_7" ;
 	 "arithmetic.26e816805c2eb54063da29d3d21a3641_17" -> "arithmetic.26e816805c2eb54063da29d3d21a3641_8" ;
-"arithmetic.26e816805c2eb54063da29d3d21a3641_18" [label="18:  BinaryOperatorStmt: Assign \n   n$22=*&_a:int [line 12, column 10]\n  n$23=*&a:int [line 12, column 10]\n  *&a:int=(n$23 + (n$22 << 2)) [line 12, column 10]\n  *&_a:int=n$23 [line 12, column 5]\n " shape="box"]
+"arithmetic.26e816805c2eb54063da29d3d21a3641_18" [label="18:  BinaryOperatorStmt: Assign \n   n$22=*&_a:int [line 19, column 10]\n  n$23=*&a:int [line 19, column 10]\n  *&a:int=(n$23 + (n$22 << 2)) [line 19, column 10]\n  *&_a:int=n$23 [line 19, column 5]\n " shape="box"]
 	
 
 	 "arithmetic.26e816805c2eb54063da29d3d21a3641_18" -> "arithmetic.26e816805c2eb54063da29d3d21a3641_13" ;
 	 "arithmetic.26e816805c2eb54063da29d3d21a3641_18" -> "arithmetic.26e816805c2eb54063da29d3d21a3641_14" ;
-"arithmetic.26e816805c2eb54063da29d3d21a3641_19" [label="19:  AtomicExpr \n   *&a:int=0 [line 11, column 5]\n " shape="box"]
+"arithmetic.26e816805c2eb54063da29d3d21a3641_19" [label="19:  AtomicExpr \n   *&a:int=0 [line 18, column 5]\n " shape="box"]
 	
 
 	 "arithmetic.26e816805c2eb54063da29d3d21a3641_19" -> "arithmetic.26e816805c2eb54063da29d3d21a3641_18" ;
-"arithmetic.26e816805c2eb54063da29d3d21a3641_20" [label="20:  DeclStmt \n   VARIABLE_DECLARED(p:int*); [line 8, column 5]\n  *&p:int*=&_a [line 8, column 5]\n " shape="box"]
+"arithmetic.26e816805c2eb54063da29d3d21a3641_20" [label="20:  DeclStmt \n   VARIABLE_DECLARED(p:int*); [line 15, column 5]\n  *&p:int*=&_a [line 15, column 5]\n " shape="box"]
 	
 
 	 "arithmetic.26e816805c2eb54063da29d3d21a3641_20" -> "arithmetic.26e816805c2eb54063da29d3d21a3641_19" ;
@@ -96,28 +96,28 @@ digraph cfg {
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_4" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_2" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_5" [label="5: Prune (true branch, atomic compare exchange) \n   PRUNE((n$4 == n$7), true); [line 33, column 5]\n " shape="invhouse"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_5" [label="5: Prune (true branch, atomic compare exchange) \n   PRUNE((n$4 == n$7), true); [line 40, column 5]\n " shape="invhouse"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_5" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_6" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_6" [label="6:  Atomic compare exchange branch \n   *&_a:int=n$8 [line 33, column 5]\n  *&0$?%__sil_tmpSIL_temp_compare_exchange___n$9:_Bool=1 [line 33, column 5]\n " shape="box"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_6" [label="6:  Atomic compare exchange branch \n   *&_a:int=n$8 [line 40, column 5]\n  *&0$?%__sil_tmpSIL_temp_compare_exchange___n$9:_Bool=1 [line 40, column 5]\n " shape="box"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_6" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_3" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_7" [label="7: Prune (false branch, atomic compare exchange) \n   PRUNE(!(n$4 == n$7), false); [line 33, column 5]\n " shape="invhouse"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_7" [label="7: Prune (false branch, atomic compare exchange) \n   PRUNE(!(n$4 == n$7), false); [line 40, column 5]\n " shape="invhouse"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_7" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_8" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_8" [label="8:  Atomic compare exchange branch \n   *n$6:int=n$4 [line 33, column 5]\n  *&0$?%__sil_tmpSIL_temp_compare_exchange___n$9:_Bool=0 [line 33, column 5]\n " shape="box"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_8" [label="8:  Atomic compare exchange branch \n   *n$6:int=n$4 [line 40, column 5]\n  *&0$?%__sil_tmpSIL_temp_compare_exchange___n$9:_Bool=0 [line 40, column 5]\n " shape="box"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_8" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_3" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_9" [label="9:  AtomicExpr \n   n$0=_fun_other_func(0:int,null:int*) [line 33, column 73]\n  n$1=*&a:int [line 33, column 105]\n  n$2=_fun_other_func(n$1:int,null:int*) [line 33, column 94]\n  n$3=*&_a:int [line 33, column 63]\n  *&_a:int=(n$3 + 1) [line 33, column 63]\n  n$5=*&p:int** [line 33, column 39]\n  n$6=*n$5:int* [line 33, column 38]\n  n$8=_fun_other_func(0:int,null:int*) [line 33, column 42]\n  n$4=*&_a:int [line 33, column 5]\n  n$7=*n$6:int [line 33, column 5]\n " shape="box"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_9" [label="9:  AtomicExpr \n   n$0=_fun_other_func(0:int,null:int*) [line 40, column 73]\n  n$1=*&a:int [line 40, column 105]\n  n$2=_fun_other_func(n$1:int,null:int*) [line 40, column 94]\n  n$3=*&_a:int [line 40, column 63]\n  *&_a:int=(n$3 + 1) [line 40, column 63]\n  n$5=*&p:int** [line 40, column 39]\n  n$6=*n$5:int* [line 40, column 38]\n  n$8=_fun_other_func(0:int,null:int*) [line 40, column 42]\n  n$4=*&_a:int [line 40, column 5]\n  n$7=*n$6:int [line 40, column 5]\n " shape="box"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_9" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_5" ;
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_9" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_7" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_10" [label="10:  Compound statement \n   n$10=*&0$?%__sil_tmpSIL_temp_compare_exchange___n$9:_Bool [line 33, column 5]\n " shape="box"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_10" [label="10:  Compound statement \n   n$10=*&0$?%__sil_tmpSIL_temp_compare_exchange___n$9:_Bool [line 40, column 5]\n " shape="box"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_10" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_2" ;
@@ -125,36 +125,36 @@ digraph cfg {
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_11" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_17" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_12" [label="12: Prune (true branch, atomic compare exchange) \n   PRUNE((n$17 == n$18), true); [line 32, column 16]\n " shape="invhouse"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_12" [label="12: Prune (true branch, atomic compare exchange) \n   PRUNE((n$17 == n$18), true); [line 39, column 16]\n " shape="invhouse"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_12" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_13" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_13" [label="13:  Atomic compare exchange branch \n   *n$16:int*=n$20 [line 32, column 16]\n  *&0$?%__sil_tmpSIL_temp_compare_exchange___n$21:_Bool=1 [line 32, column 16]\n " shape="box"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_13" [label="13:  Atomic compare exchange branch \n   *n$16:int*=n$20 [line 39, column 16]\n  *&0$?%__sil_tmpSIL_temp_compare_exchange___n$21:_Bool=1 [line 39, column 16]\n " shape="box"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_13" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_11" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_14" [label="14: Prune (false branch, atomic compare exchange) \n   PRUNE(!(n$17 == n$18), false); [line 32, column 16]\n " shape="invhouse"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_14" [label="14: Prune (false branch, atomic compare exchange) \n   PRUNE(!(n$17 == n$18), false); [line 39, column 16]\n " shape="invhouse"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_14" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_15" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_15" [label="15:  Atomic compare exchange branch \n   *&_a:int*=n$17 [line 32, column 16]\n  *&0$?%__sil_tmpSIL_temp_compare_exchange___n$21:_Bool=0 [line 32, column 16]\n " shape="box"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_15" [label="15:  Atomic compare exchange branch \n   *&_a:int*=n$17 [line 39, column 16]\n  *&0$?%__sil_tmpSIL_temp_compare_exchange___n$21:_Bool=0 [line 39, column 16]\n " shape="box"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_15" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_11" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_16" [label="16:  AtomicExpr \n   n$11=*&_a:int [line 32, column 62]\n  n$12=*&p:int** [line 32, column 69]\n  n$13=*n$12:int* [line 32, column 68]\n  n$14=*n$13:int [line 32, column 67]\n  n$15=_fun_other_func(0:int,null:int*) [line 32, column 72]\n  n$16=*&p:int** [line 32, column 44]\n  n$19=*&p:int** [line 32, column 53]\n  n$20=*n$19:int* [line 32, column 52]\n  n$17=*n$16:int* [line 32, column 16]\n  n$18=*&_a:int* [line 32, column 16]\n " shape="box"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_16" [label="16:  AtomicExpr \n   n$11=*&_a:int [line 39, column 62]\n  n$12=*&p:int** [line 39, column 69]\n  n$13=*n$12:int* [line 39, column 68]\n  n$14=*n$13:int [line 39, column 67]\n  n$15=_fun_other_func(0:int,null:int*) [line 39, column 72]\n  n$16=*&p:int** [line 39, column 44]\n  n$19=*&p:int** [line 39, column 53]\n  n$20=*n$19:int* [line 39, column 52]\n  n$17=*n$16:int* [line 39, column 16]\n  n$18=*&_a:int* [line 39, column 16]\n " shape="box"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_16" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_12" ;
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_16" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_14" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_17" [label="17:  Call _fun_other_func \n   n$22=*&0$?%__sil_tmpSIL_temp_compare_exchange___n$21:_Bool [line 32, column 16]\n  n$23=_fun_other_func(n$22:int,null:int*) [line 32, column 5]\n " shape="box"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_17" [label="17:  Call _fun_other_func \n   n$22=*&0$?%__sil_tmpSIL_temp_compare_exchange___n$21:_Bool [line 39, column 16]\n  n$23=_fun_other_func(n$22:int,null:int*) [line 39, column 5]\n " shape="box"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_17" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_9" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_18" [label="18:  Call _fun_other_func \n   n$24=*&a2:int [line 31, column 16]\n  *&a2:int=2 [line 31, column 16]\n  n$25=_fun_other_func(n$24:int,null:int*) [line 31, column 5]\n " shape="box"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_18" [label="18:  Call _fun_other_func \n   n$24=*&a2:int [line 38, column 16]\n  *&a2:int=2 [line 38, column 16]\n  n$25=_fun_other_func(n$24:int,null:int*) [line 38, column 5]\n " shape="box"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_18" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_16" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_19" [label="19:  BinaryOperatorStmt: Assign \n   n$26=*&a:int [line 30, column 10]\n  *&a:int=2 [line 30, column 10]\n  *&_a:int=n$26 [line 30, column 5]\n " shape="box"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_19" [label="19:  BinaryOperatorStmt: Assign \n   n$26=*&a:int [line 37, column 10]\n  *&a:int=2 [line 37, column 10]\n  *&_a:int=n$26 [line 37, column 5]\n " shape="box"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_19" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_18" ;
@@ -162,23 +162,23 @@ digraph cfg {
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_20" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_25" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_21" [label="21: Prune (true branch, boolean exp) \n   n$29=*&b:_Bool [line 29, column 27]\n  PRUNE(n$29, true); [line 29, column 27]\n " shape="invhouse"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_21" [label="21: Prune (true branch, boolean exp) \n   n$29=*&b:_Bool [line 36, column 27]\n  PRUNE(n$29, true); [line 36, column 27]\n " shape="invhouse"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_21" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_23" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_22" [label="22: Prune (false branch, boolean exp) \n   n$29=*&b:_Bool [line 29, column 27]\n  PRUNE(!n$29, false); [line 29, column 27]\n " shape="invhouse"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_22" [label="22: Prune (false branch, boolean exp) \n   n$29=*&b:_Bool [line 36, column 27]\n  PRUNE(!n$29, false); [line 36, column 27]\n " shape="invhouse"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_22" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_24" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_23" [label="23:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$28:void*=&a [line 29, column 27]\n " shape="box"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_23" [label="23:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$28:void*=&a [line 36, column 27]\n " shape="box"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_23" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_20" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_24" [label="24:  ConditionalStmt Branch \n   n$30=*&a2:void [line 29, column 36]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$28:void*=n$30 [line 29, column 27]\n " shape="box"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_24" [label="24:  ConditionalStmt Branch \n   n$30=*&a2:void [line 36, column 36]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$28:void*=n$30 [line 36, column 27]\n " shape="box"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_24" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_20" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_25" [label="25:  AtomicExpr \n   n$27=*&_a:int [line 29, column 43]\n  *&_a:int=(n$27 + 1) [line 29, column 43]\n  n$31=*&0$?%__sil_tmpSIL_temp_conditional___n$28:void* [line 29, column 27]\n  *n$31:int=1 [line 29, column 5]\n " shape="box"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_25" [label="25:  AtomicExpr \n   n$27=*&_a:int [line 36, column 43]\n  *&_a:int=(n$27 + 1) [line 36, column 43]\n  n$31=*&0$?%__sil_tmpSIL_temp_conditional___n$28:void* [line 36, column 27]\n  *n$31:int=1 [line 36, column 5]\n " shape="box"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_25" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_19" ;
@@ -186,23 +186,23 @@ digraph cfg {
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_26" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_31" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_27" [label="27: Prune (true branch, boolean exp) \n   n$34=*&b:_Bool [line 28, column 10]\n  PRUNE(n$34, true); [line 28, column 10]\n " shape="invhouse"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_27" [label="27: Prune (true branch, boolean exp) \n   n$34=*&b:_Bool [line 35, column 10]\n  PRUNE(n$34, true); [line 35, column 10]\n " shape="invhouse"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_27" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_29" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_28" [label="28: Prune (false branch, boolean exp) \n   n$34=*&b:_Bool [line 28, column 10]\n  PRUNE(!n$34, false); [line 28, column 10]\n " shape="invhouse"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_28" [label="28: Prune (false branch, boolean exp) \n   n$34=*&b:_Bool [line 35, column 10]\n  PRUNE(!n$34, false); [line 35, column 10]\n " shape="invhouse"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_28" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_30" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_29" [label="29:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$33:void*=&a [line 28, column 10]\n " shape="box"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_29" [label="29:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$33:void*=&a [line 35, column 10]\n " shape="box"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_29" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_26" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_30" [label="30:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$33:void*=&a2 [line 28, column 10]\n " shape="box"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_30" [label="30:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$33:void*=&a2 [line 35, column 10]\n " shape="box"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_30" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_26" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_31" [label="31:  BinaryOperatorStmt: Assign \n   n$35=*&0$?%__sil_tmpSIL_temp_conditional___n$33:void* [line 28, column 10]\n  n$36=*n$35:int [line 28, column 10]\n  *&_a:int=n$36 [line 28, column 5]\n " shape="box"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_31" [label="31:  BinaryOperatorStmt: Assign \n   n$35=*&0$?%__sil_tmpSIL_temp_conditional___n$33:void* [line 35, column 10]\n  n$36=*n$35:int [line 35, column 10]\n  *&_a:int=n$36 [line 35, column 5]\n " shape="box"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_31" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_21" ;
@@ -212,28 +212,28 @@ digraph cfg {
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_32" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_27" ;
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_32" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_28" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_33" [label="33:  AtomicExpr \n   n$37=*&a:int [line 27, column 11]\n " shape="box"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_33" [label="33:  AtomicExpr \n   n$37=*&a:int [line 34, column 11]\n " shape="box"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_33" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_34" ;
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_33" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_35" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_34" [label="34: Prune (true branch, boolean exp) \n   PRUNE(n$37, true); [line 27, column 11]\n " shape="invhouse"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_34" [label="34: Prune (true branch, boolean exp) \n   PRUNE(n$37, true); [line 34, column 11]\n " shape="invhouse"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_34" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_36" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_35" [label="35: Prune (false branch, boolean exp) \n   PRUNE(!n$37, false); [line 27, column 11]\n " shape="invhouse"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_35" [label="35: Prune (false branch, boolean exp) \n   PRUNE(!n$37, false); [line 34, column 11]\n " shape="invhouse"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_35" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_37" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_36" [label="36:  ConditionalStmt Branch \n   *&_a:int=5 [line 27, column 11]\n " shape="box"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_36" [label="36:  ConditionalStmt Branch \n   *&_a:int=5 [line 34, column 11]\n " shape="box"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_36" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_32" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_37" [label="37:  ConditionalStmt Branch \n   *&_a:int=2 [line 27, column 11]\n " shape="box"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_37" [label="37:  ConditionalStmt Branch \n   *&_a:int=2 [line 34, column 11]\n " shape="box"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_37" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_32" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_38" [label="38:  AtomicExpr \n   n$38=*&_a:int [line 26, column 25]\n  *&a:int=(1 + n$38) [line 26, column 5]\n " shape="box"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_38" [label="38:  AtomicExpr \n   n$38=*&_a:int [line 33, column 25]\n  *&a:int=(1 + n$38) [line 33, column 5]\n " shape="box"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_38" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_33" ;
