@@ -1132,9 +1132,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let ret_typ =
       CType_decl.qual_type_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_qual_type
     in
-    let node_name =
-      Procdesc.Node.AtomicExpr (CArithmetic_trans.atomic_expr_to_string atomic_expr_info)
-    in
+    let node_name = Procdesc.Node.AtomicExpr in
     let handle_unimplemented builtin =
       call_function_with_args node_name builtin trans_state stmt_info ret_typ stmt_list
     in

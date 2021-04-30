@@ -39,7 +39,7 @@ module Node : sig
   type stmt_nodekind =
     | AssertionFailure
     | AtomicCompareExchangeBranch
-    | AtomicExpr of string
+    | AtomicExpr
     | BetweenJoinAndExit
     | BinaryConditionalStmtInit
     | BinaryOperatorStmt of string

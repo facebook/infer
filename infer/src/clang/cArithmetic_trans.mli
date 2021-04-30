@@ -31,8 +31,6 @@ val unary_operation_instruction :
   -> Location.t
   -> Exp.t * Sil.instr list
 
-val atomic_expr_to_string : Clang_ast_t.atomic_expr_info -> string
-
 val atomic_operation_instruction :
   Clang_ast_t.atomic_expr_info -> Exp.t -> Exp.t -> Typ.t -> Location.t -> Exp.t * Sil.instr list
 

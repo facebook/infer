@@ -27,7 +27,7 @@ digraph cfg {
 	
 
 	 "c11_builtins.cde4bc28f3f67eacb05e50ced6138039_7" -> "c11_builtins.cde4bc28f3f67eacb05e50ced6138039_6" ;
-"c11_builtins.cde4bc28f3f67eacb05e50ced6138039_8" [label="8:  AtomicExpr: __c11_atomic_init \n   *&a:int=0 [line 6, column 5]\n " shape="box"]
+"c11_builtins.cde4bc28f3f67eacb05e50ced6138039_8" [label="8:  AtomicExpr \n   *&a:int=0 [line 6, column 5]\n " shape="box"]
 	
 
 	 "c11_builtins.cde4bc28f3f67eacb05e50ced6138039_8" -> "c11_builtins.cde4bc28f3f67eacb05e50ced6138039_7" ;
@@ -109,7 +109,7 @@ digraph cfg {
 	
 
 	 "opencl_builtins.9b1efc71247f6a0d7d54fa1b2b0da1ed_7" -> "opencl_builtins.9b1efc71247f6a0d7d54fa1b2b0da1ed_6" ;
-"opencl_builtins.9b1efc71247f6a0d7d54fa1b2b0da1ed_8" [label="8:  AtomicExpr: __opencl_atomic_init \n   *&o:int=0 [line 17, column 5]\n " shape="box"]
+"opencl_builtins.9b1efc71247f6a0d7d54fa1b2b0da1ed_8" [label="8:  AtomicExpr \n   *&o:int=0 [line 17, column 5]\n " shape="box"]
 	
 
 	 "opencl_builtins.9b1efc71247f6a0d7d54fa1b2b0da1ed_8" -> "opencl_builtins.9b1efc71247f6a0d7d54fa1b2b0da1ed_7" ;
@@ -120,43 +120,43 @@ digraph cfg {
 "unimplemented.4316423dfe3ade85c292aa38185f9817_2" [label="2: Exit unimplemented \n  " color=yellow style=filled]
 	
 
-"unimplemented.4316423dfe3ade85c292aa38185f9817_3" [label="3:  AtomicExpr: __opencl_atomic_fetch_min \n   n$0=_fun___opencl_atomic_fetch_min(&a:void*,5:int,0:int,1:int) [line 52, column 5]\n " shape="box"]
+"unimplemented.4316423dfe3ade85c292aa38185f9817_3" [label="3:  AtomicExpr \n   n$0=_fun___opencl_atomic_fetch_min(&a:void*,5:int,0:int,1:int) [line 52, column 5]\n " shape="box"]
 	
 
 	 "unimplemented.4316423dfe3ade85c292aa38185f9817_3" -> "unimplemented.4316423dfe3ade85c292aa38185f9817_2" ;
-"unimplemented.4316423dfe3ade85c292aa38185f9817_4" [label="4:  AtomicExpr: __opencl_atomic_fetch_max \n   n$1=_fun___opencl_atomic_fetch_max(&a:void*,5:int,0:int,1:int) [line 51, column 5]\n " shape="box"]
+"unimplemented.4316423dfe3ade85c292aa38185f9817_4" [label="4:  AtomicExpr \n   n$1=_fun___opencl_atomic_fetch_max(&a:void*,5:int,0:int,1:int) [line 51, column 5]\n " shape="box"]
 	
 
 	 "unimplemented.4316423dfe3ade85c292aa38185f9817_4" -> "unimplemented.4316423dfe3ade85c292aa38185f9817_3" ;
-"unimplemented.4316423dfe3ade85c292aa38185f9817_5" [label="5:  AtomicExpr: __c11_atomic_fetch_min \n   n$2=_fun___c11_atomic_fetch_min(&a:void*,5:int,0:int) [line 50, column 5]\n " shape="box"]
+"unimplemented.4316423dfe3ade85c292aa38185f9817_5" [label="5:  AtomicExpr \n   n$2=_fun___c11_atomic_fetch_min(&a:void*,5:int,0:int) [line 50, column 5]\n " shape="box"]
 	
 
 	 "unimplemented.4316423dfe3ade85c292aa38185f9817_5" -> "unimplemented.4316423dfe3ade85c292aa38185f9817_4" ;
-"unimplemented.4316423dfe3ade85c292aa38185f9817_6" [label="6:  AtomicExpr: __c11_atomic_fetch_max \n   n$3=_fun___c11_atomic_fetch_max(&a:void*,5:int,0:int) [line 49, column 5]\n " shape="box"]
+"unimplemented.4316423dfe3ade85c292aa38185f9817_6" [label="6:  AtomicExpr \n   n$3=_fun___c11_atomic_fetch_max(&a:void*,5:int,0:int) [line 49, column 5]\n " shape="box"]
 	
 
 	 "unimplemented.4316423dfe3ade85c292aa38185f9817_6" -> "unimplemented.4316423dfe3ade85c292aa38185f9817_5" ;
-"unimplemented.4316423dfe3ade85c292aa38185f9817_7" [label="7:  AtomicExpr: __atomic_nand_fetch \n   n$4=_fun___atomic_nand_fetch(&i:int*,5:int,0:int) [line 48, column 5]\n " shape="box"]
+"unimplemented.4316423dfe3ade85c292aa38185f9817_7" [label="7:  AtomicExpr \n   n$4=_fun___atomic_nand_fetch(&i:int*,5:int,0:int) [line 48, column 5]\n " shape="box"]
 	
 
 	 "unimplemented.4316423dfe3ade85c292aa38185f9817_7" -> "unimplemented.4316423dfe3ade85c292aa38185f9817_6" ;
-"unimplemented.4316423dfe3ade85c292aa38185f9817_8" [label="8:  AtomicExpr: __atomic_min_fetch \n   n$5=_fun___atomic_min_fetch(&i:int*,5:int,0:int) [line 47, column 5]\n " shape="box"]
+"unimplemented.4316423dfe3ade85c292aa38185f9817_8" [label="8:  AtomicExpr \n   n$5=_fun___atomic_min_fetch(&i:int*,5:int,0:int) [line 47, column 5]\n " shape="box"]
 	
 
 	 "unimplemented.4316423dfe3ade85c292aa38185f9817_8" -> "unimplemented.4316423dfe3ade85c292aa38185f9817_7" ;
-"unimplemented.4316423dfe3ade85c292aa38185f9817_9" [label="9:  AtomicExpr: __atomic_max_fetch \n   n$6=_fun___atomic_max_fetch(&i:int*,5:int,0:int) [line 46, column 5]\n " shape="box"]
+"unimplemented.4316423dfe3ade85c292aa38185f9817_9" [label="9:  AtomicExpr \n   n$6=_fun___atomic_max_fetch(&i:int*,5:int,0:int) [line 46, column 5]\n " shape="box"]
 	
 
 	 "unimplemented.4316423dfe3ade85c292aa38185f9817_9" -> "unimplemented.4316423dfe3ade85c292aa38185f9817_8" ;
-"unimplemented.4316423dfe3ade85c292aa38185f9817_10" [label="10:  AtomicExpr: __atomic_fetch_nand \n   n$7=_fun___atomic_fetch_nand(&i:int*,5:int,0:int) [line 45, column 5]\n " shape="box"]
+"unimplemented.4316423dfe3ade85c292aa38185f9817_10" [label="10:  AtomicExpr \n   n$7=_fun___atomic_fetch_nand(&i:int*,5:int,0:int) [line 45, column 5]\n " shape="box"]
 	
 
 	 "unimplemented.4316423dfe3ade85c292aa38185f9817_10" -> "unimplemented.4316423dfe3ade85c292aa38185f9817_9" ;
-"unimplemented.4316423dfe3ade85c292aa38185f9817_11" [label="11:  AtomicExpr: __atomic_fetch_min \n   n$8=_fun___atomic_fetch_min(&i:int*,5:int,0:int) [line 44, column 5]\n " shape="box"]
+"unimplemented.4316423dfe3ade85c292aa38185f9817_11" [label="11:  AtomicExpr \n   n$8=_fun___atomic_fetch_min(&i:int*,5:int,0:int) [line 44, column 5]\n " shape="box"]
 	
 
 	 "unimplemented.4316423dfe3ade85c292aa38185f9817_11" -> "unimplemented.4316423dfe3ade85c292aa38185f9817_10" ;
-"unimplemented.4316423dfe3ade85c292aa38185f9817_12" [label="12:  AtomicExpr: __atomic_fetch_max \n   n$9=_fun___atomic_fetch_max(&i:int*,5:int,0:int) [line 43, column 5]\n " shape="box"]
+"unimplemented.4316423dfe3ade85c292aa38185f9817_12" [label="12:  AtomicExpr \n   n$9=_fun___atomic_fetch_max(&i:int*,5:int,0:int) [line 43, column 5]\n " shape="box"]
 	
 
 	 "unimplemented.4316423dfe3ade85c292aa38185f9817_12" -> "unimplemented.4316423dfe3ade85c292aa38185f9817_11" ;

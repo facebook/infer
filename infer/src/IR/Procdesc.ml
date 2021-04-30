@@ -58,7 +58,7 @@ module Node = struct
   type stmt_nodekind =
     | AssertionFailure
     | AtomicCompareExchangeBranch
-    | AtomicExpr of string
+    | AtomicExpr
     | BetweenJoinAndExit
     | BinaryConditionalStmtInit
     | BinaryOperatorStmt of string
@@ -288,8 +288,8 @@ module Node = struct
         F.pp_print_string fmt "Assertion failure"
     | AtomicCompareExchangeBranch ->
         F.pp_print_string fmt "Atomic compare exchange branch"
-    | AtomicExpr atomic_op ->
-        F.fprintf fmt "AtomicExpr: %s" atomic_op
+    | AtomicExpr ->
+        F.pp_print_string fmt "AtomicExpr"
     | BetweenJoinAndExit ->
         F.pp_print_string fmt "between_join_and_exit"
     | BinaryConditionalStmtInit ->
