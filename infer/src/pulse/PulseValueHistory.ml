@@ -4,9 +4,11 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
+
 open! IStd
 module F = Format
 module CallEvent = PulseCallEvent
+module Invalidation = PulseInvalidation
 
 type event =
   | Allocation of {f: CallEvent.t; location: Location.t}
@@ -16,6 +18,7 @@ type event =
   | Conditional of {is_then_branch: bool; if_kind: Sil.if_kind; location: Location.t}
   | CppTemporaryCreated of Location.t
   | FormalDeclared of Pvar.t * Location.t
+  | Invalidated of PulseInvalidation.t * Location.t
   | StructFieldAddressCreated of Fieldname.t RevList.t * Location.t
   | VariableAccessed of Pvar.t * Location.t
   | VariableDeclared of Pvar.t * Location.t
@@ -58,6 +61,8 @@ let pp_event_no_location fmt event =
         |> Option.iter ~f:(fun proc_name -> F.fprintf fmt " of %a" Procname.pp proc_name)
       in
       F.fprintf fmt "parameter `%a`%a" Pvar.pp_value_non_verbose pvar pp_proc pvar
+  | Invalidated (invalidation, _) ->
+      Invalidation.describe fmt invalidation
   | StructFieldAddressCreated (field_names, _) ->
       F.fprintf fmt "struct field address `%a` created" pp_fields field_names
   | VariableAccessed (pvar, _) ->
@@ -74,6 +79,7 @@ let location_of_event = function
   | Conditional {location}
   | CppTemporaryCreated location
   | FormalDeclared (_, location)
+  | Invalidated (_, location)
   | StructFieldAddressCreated (_, location)
   | VariableAccessed (_, location)
   | VariableDeclared (_, location) ->

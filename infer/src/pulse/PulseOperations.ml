@@ -217,13 +217,14 @@ let eval mode location exp0 astate =
         eval mode exp' astate
     | Const (Cint i) ->
         let v = AbstractValue.Constants.get_int i in
+        let invalidation = Invalidation.ConstantDereference i in
         let+ astate =
           PulseArithmetic.and_eq_int v i astate
           >>| AddressAttributes.invalidate
                 (v, [ValueHistory.Assignment location])
-                (ConstantDereference i) location
+                invalidation location
         in
-        (astate, (v, []))
+        (astate, (v, [ValueHistory.Invalidated (invalidation, location)]))
     | UnOp (unop, exp, _typ) ->
         let* astate, (addr, hist) = eval Read exp astate in
         let unop_addr = AbstractValue.mk_fresh () in
