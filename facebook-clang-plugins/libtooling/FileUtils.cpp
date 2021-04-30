@@ -41,7 +41,7 @@ std::string makeAbsolutePath(const std::string &currentWorkingDirectory,
 
   while (llvm::sys::path::has_parent_path(path)) {
     path = llvm::sys::path::parent_path(path).str();
-    const std::string &element(llvm::sys::path::filename(path));
+    const std::string &element(llvm::sys::path::filename(path).str());
     if (element == ".") {
       continue;
     }
