@@ -21,6 +21,11 @@ module type BaseDomainSig = sig
   (* private because the lattice is not the same for preconditions and postconditions so we don't
      want to confuse them *)
   type t = private BaseDomain.t [@@deriving compare, equal, yojson_of]
+end
+
+(* defined in two parts to avoid exporting internal APIs to the .mli *)
+module type BaseDomainSig_ = sig
+  include BaseDomainSig
 
   val empty : t
 
@@ -46,7 +51,7 @@ type base_domain = BaseDomain.t =
 
 (** represents the post abstract state at each program point *)
 module PostDomain : sig
-  include BaseDomainSig
+  include BaseDomainSig_
 
   val initialize : AbstractValue.t -> t -> t
 end = struct
@@ -87,7 +92,7 @@ end
 (* NOTE: [PreDomain] and [Domain] theoretically differ in that [PreDomain] should be the inverted lattice of [Domain], but since we never actually join states or check implication the two collapse into one. *)
 
 (** represents the inferred pre-condition at each program point, biabduction style *)
-module PreDomain : BaseDomainSig = PostDomain
+module PreDomain : BaseDomainSig_ = PostDomain
 
 (* see documentation in this file's .mli *)
 type t =

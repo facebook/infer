@@ -6,9 +6,7 @@
  *)
 
 open! IStd
-module F = Format
 open PulseBasicInterface
-module BaseAddressAttributes = PulseBaseAddressAttributes
 module BaseDomain = PulseBaseDomain
 module BaseMemory = PulseBaseMemory
 module BaseStack = PulseBaseStack
@@ -24,24 +22,6 @@ module type BaseDomainSig = sig
   (* private because the lattice is not the same for preconditions and postconditions so we don't
      want to confuse them *)
   type t = private BaseDomain.t [@@deriving compare, equal, yojson_of]
-
-  val yojson_of_t : t -> Yojson.Safe.t
-
-  val empty : t
-
-  val update : ?stack:BaseStack.t -> ?heap:BaseMemory.t -> ?attrs:BaseAddressAttributes.t -> t -> t
-
-  val filter_addr : f:(AbstractValue.t -> bool) -> t -> t
-  (** filter both heap and attrs *)
-
-  val filter_addr_with_discarded_addrs :
-    f:(AbstractValue.t -> bool) -> t -> t * AbstractValue.t list
-  (** compute new state containing only reachable addresses in its heap and attributes, as well as
-      the list of discarded unreachable addresses *)
-
-  val subst_var : AbstractValue.t * AbstractValue.t -> t -> t SatUnsat.t
-
-  val pp : F.formatter -> t -> unit
 end
 
 (** The post abstract state at each program point, or current state. *)
