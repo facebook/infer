@@ -107,11 +107,11 @@ let and_eq_vars v1 v2 phi =
   ({is_unsat; bo_itvs; citvs; formula}, new_eqs)
 
 
-let simplify tenv ~keep_pre ~keep_post ~get_dynamic_type phi =
+let simplify tenv ~can_be_pruned ~keep ~get_dynamic_type phi =
   let result =
     let+ {is_unsat; bo_itvs; citvs; formula} = phi in
-    let+| formula, new_eqs = Formula.simplify tenv ~keep_pre ~keep_post ~get_dynamic_type formula in
-    let is_in_keep v _ = AbstractValue.Set.mem v keep_pre || AbstractValue.Set.mem v keep_post in
+    let+| formula, new_eqs = Formula.simplify tenv ~can_be_pruned ~keep ~get_dynamic_type formula in
+    let is_in_keep v _ = AbstractValue.Set.mem v keep in
     ( { is_unsat
       ; bo_itvs= BoItvs.filter is_in_keep bo_itvs
       ; citvs= CItvs.filter is_in_keep citvs

@@ -36,13 +36,14 @@ val and_eq_vars : AbstractValue.t -> AbstractValue.t -> t -> t * new_eqs
 
 val simplify :
      Tenv.t
-  -> keep_pre:AbstractValue.Set.t
-  -> keep_post:AbstractValue.Set.t
+  -> can_be_pruned:AbstractValue.Set.t
+  -> keep:AbstractValue.Set.t
   -> get_dynamic_type:(AbstractValue.t -> Typ.t option)
   -> t
   -> (t * new_eqs) SatUnsat.t
-(** [simplify ~keep phi] attempts to get rid of as many variables in [fv phi] but not in [keep] as
-    possible *)
+(** [simplify ~can_be_pruned ~keep phi] attempts to get rid of as many variables in [fv phi] but not
+    in [keep] as possible, and tries to eliminate variables not in [can_be_pruned] from the "pruned"
+    part of the formula *)
 
 val simplify_instanceof : Tenv.t -> get_dynamic_type:(AbstractValue.t -> Typ.t option) -> t -> t
 

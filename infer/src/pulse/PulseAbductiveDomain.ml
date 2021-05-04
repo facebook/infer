@@ -871,13 +871,13 @@ let filter_for_summary tenv astate0 =
   let astate = restore_formals_for_summary astate_before_filter in
   let astate = {astate with topl= PulseTopl.filter_for_summary astate.path_condition astate.topl} in
   let astate, pre_live_addresses, post_live_addresses, _ = discard_unreachable astate in
+  let live_addresses = AbstractValue.Set.union pre_live_addresses post_live_addresses in
   let+ path_condition, new_eqs =
     PathCondition.simplify tenv
       ~get_dynamic_type:
         (BaseAddressAttributes.get_dynamic_type (astate_before_filter.post :> BaseDomain.t).attrs)
-      ~keep_pre:pre_live_addresses ~keep_post:post_live_addresses astate.path_condition
+      ~can_be_pruned:pre_live_addresses ~keep:live_addresses astate.path_condition
   in
-  let live_addresses = AbstractValue.Set.union pre_live_addresses post_live_addresses in
   ({astate with path_condition; topl= PulseTopl.simplify ~keep:live_addresses astate.topl}, new_eqs)
 
 
