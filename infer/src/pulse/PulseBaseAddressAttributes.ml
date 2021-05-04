@@ -174,7 +174,15 @@ let canonicalize ~get_var_repr attrs_map =
       if Attributes.is_empty attrs then g
       else
         let addr' = get_var_repr addr in
-        add addr' attrs g )
+        let attrs' =
+          Graph.find_opt addr' g
+          |> Option.fold ~init:attrs ~f:(fun attrs attrs' ->
+                 (* "merge" attributes if two different values ([addr] and [addr']) are found to be
+                    equal after attributes of the same kind were recorded for them. This arbitrarily
+                    keeps one of them, with unclear but likely benign consequences. *)
+                 Attributes.union_prefer_left attrs' attrs )
+        in
+        add addr' attrs' g )
     attrs_map Graph.empty
 
 
