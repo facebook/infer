@@ -9,6 +9,9 @@ open! IStd
 module L = Logging
 
 type t =
+  | HashedBuckOut of string
+      (** source file only exists during build under some non-deterministic prefix; however, the
+          value here has been post processed to remove non-determinism *)
   | Invalid of {ml_source_file: string}
   | Absolute of string
   | RelativeProjectRoot of string  (** path of the source file relative to the project root *)
@@ -43,25 +46,41 @@ let workspace_rel_root_opt =
       Utils.filename_to_relative ~root:workspace_real project_root_real )
 
 
+let sanitise_buck_out_gen_hashed_path =
+  let hash_pattern = List.init 8 ~f:(fun _ -> "[a-f0-9]") |> String.concat in
+  let prefix_pattern = "^" ^ Config.buck_out_gen ^/ hash_pattern ^/ "" in
+  let regex = Re.Str.regexp prefix_pattern in
+  fun path ->
+    if not Config.buck_cache_mode then None
+    else
+      let path_without_hashed_prefix = Re.Str.replace_first regex "" path in
+      if String.equal path path_without_hashed_prefix then None else Some path_without_hashed_prefix
+
+
 let from_abs_path ?(warn_on_error = true) fname =
   if Filename.is_relative fname then
     L.(die InternalError) "Path '%s' is relative, when absolute path was expected." fname ;
   (* try to get realpath of source file. Use original if it fails *)
   let fname_real = try Utils.realpath ~warn_on_error fname with Unix.Unix_error _ -> fname in
-  let rel_path_opt =
+  match
     Utils.filename_to_relative ~backtrack:Config.relative_path_backtrack ~root:project_root_real
       fname_real
-  in
-  match (rel_path_opt, workspace_rel_root_opt) with
-  | Some rel_path, Some workspace_rel_root ->
-      RelativeProjectRootAndWorkspace {workspace_rel_root; rel_path}
-  | Some rel_path, None ->
-      RelativeProjectRoot rel_path
-  | None, _ when Config.buck_cache_mode && Filename.check_suffix fname_real "java" ->
-      L.(die InternalError) "%s is not relative to %s" fname_real project_root_real
-  | None, _ ->
+  with
+  | None when Config.buck_cache_mode && Filename.check_suffix fname_real "java" ->
+      L.die InternalError "%s is not relative to %s" fname_real project_root_real
+  | None ->
       (* fname_real is absolute already *)
       Absolute fname_real
+  | Some rel_path -> (
+    match sanitise_buck_out_gen_hashed_path rel_path with
+    | Some sanitised_path ->
+        HashedBuckOut sanitised_path
+    | None -> (
+      match workspace_rel_root_opt with
+      | Some workspace_rel_root ->
+          RelativeProjectRootAndWorkspace {workspace_rel_root; rel_path}
+      | None ->
+          RelativeProjectRoot rel_path ) )
 
 
 let die_missing_workspace ~rel_path ~foreign_rel_project_root =
@@ -95,12 +114,47 @@ let reroot_rel_path ~foreign_rel_project_root rel_path =
       rel_path
 
 
+(** given a relative [path], find a [<hash>] such that [Config.buck_out_gen ^/ <hash> ^/ path]
+    exists. return that absolute path *)
+let recreate_hashed_buck_out_path_abs =
+  let last_matched_hash_path = (* cached last existing absolute path to hash *) ref None in
+  let buck_out_gen_abs = project_root_real ^/ Config.buck_out_gen in
+  let find_file path =
+    Sys.readdir buck_out_gen_abs
+    |> Array.find_map ~f:(fun entry ->
+           let root = buck_out_gen_abs ^/ entry in
+           let full_path = root ^/ path in
+           if ISys.file_exists full_path then (
+             last_matched_hash_path := Some root ;
+             Some full_path )
+           else None )
+  in
+  fun path ->
+    match !last_matched_hash_path with
+    | Some root when ISys.file_exists (root ^/ path) ->
+        (* there may exist several hashes, just pick one that works *)
+        Some (root ^/ path)
+    | _ ->
+        find_file path
+
+
+let recreate_hashed_buck_out_path_rel rel_path =
+  recreate_hashed_buck_out_path_abs rel_path
+  |> Option.bind ~f:(Utils.filename_to_relative ~root:project_root_real)
+
+
 let to_string ?(force_relative = false) fname =
   match fname with
   | Invalid {ml_source_file} ->
       "DUMMY from " ^ ml_source_file
   | RelativeProjectRootAndWorkspace {workspace_rel_root= foreign_rel_project_root; rel_path} ->
       reroot_rel_path ~foreign_rel_project_root:(Some foreign_rel_project_root) rel_path
+  | HashedBuckOut rel_path -> (
+    match recreate_hashed_buck_out_path_rel rel_path with
+    | Some path ->
+        path
+    | None ->
+        Config.buck_out_gen ^/ "<hash>" ^/ rel_path )
   | RelativeProjectRoot rel_path ->
       reroot_rel_path ~foreign_rel_project_root:None rel_path
   | Absolute path ->
@@ -125,6 +179,12 @@ let to_abs_path fname =
   | Invalid {ml_source_file} ->
       L.die InternalError "cannot be called with Invalid source file originating in %s"
         ml_source_file
+  | HashedBuckOut rel_path -> (
+    match recreate_hashed_buck_out_path_abs rel_path with
+    | None ->
+        L.die InternalError "Could not recreate path under `buck-out/gen/<hash>` from %s" rel_path
+    | Some abs_path ->
+        abs_path )
   | RelativeProjectRoot rel_path ->
       Config.project_root ^/ rel_path
   | RelativeProjectRootAndWorkspace {workspace_rel_root; rel_path} ->
@@ -146,6 +206,8 @@ let to_rel_path fname =
       reroot_rel_path ~foreign_rel_project_root:(Some foreign_rel_project_root) rel_path
   | RelativeProjectRoot rel_path ->
       reroot_rel_path ~foreign_rel_project_root:None rel_path
+  | HashedBuckOut rel_path ->
+      recreate_hashed_buck_out_path_rel rel_path |> Option.value ~default:rel_path
   | Absolute _ | Invalid _ ->
       to_abs_path fname
 
@@ -157,7 +219,7 @@ let is_invalid = function Invalid _ -> true | _ -> false
 let is_under_project_root = function
   | Invalid {ml_source_file} ->
       L.die InternalError "cannot be called with Invalid source file from %s" ml_source_file
-  | RelativeProjectRoot _ | RelativeProjectRootAndWorkspace _ ->
+  | RelativeProjectRoot _ | RelativeProjectRootAndWorkspace _ | HashedBuckOut _ ->
       true
   | Absolute _ ->
       false
@@ -189,10 +251,12 @@ let of_header ?(warn_on_error = true) header_file =
 
 let create ?(warn_on_error = true) path =
   if Filename.is_relative path then
-    match workspace_rel_root_opt with
-    | None ->
+    match (sanitise_buck_out_gen_hashed_path path, workspace_rel_root_opt) with
+    | Some sanitised_path, _ ->
+        HashedBuckOut sanitised_path
+    | None, None ->
         RelativeProjectRoot path
-    | Some workspace_rel_root ->
+    | None, Some workspace_rel_root ->
         let rel_path, new_root = Utils.normalize_path_from ~root:workspace_rel_root path in
         RelativeProjectRootAndWorkspace {workspace_rel_root= new_root; rel_path}
   else from_abs_path ~warn_on_error path
@@ -221,6 +285,8 @@ module SQLite = struct
 
   let relative_project_root_tag = 'R'
 
+  let hashed_buck_out_tag = 'H'
+
   (* to encode the pair (workspace_rel_root, rel_path), we store the length of the first element
      in-between two 'W' characters, eg 'W3Wfoo/rest/of/the/path.java' *)
   let relative_project_root_and_workspace_tag = 'W'
@@ -230,6 +296,8 @@ module SQLite = struct
     match sourcefile with
     | Invalid {ml_source_file} ->
         tag_text invalid_tag ml_source_file
+    | HashedBuckOut rel_path ->
+        tag_text hashed_buck_out_tag rel_path
     | Absolute abs_path ->
         tag_text absolute_tag abs_path
     | RelativeProjectRoot rel_path ->
@@ -248,6 +316,7 @@ module SQLite = struct
     let str = String.sub ~pos:1 ~len:(String.length text - 1) text in
     if Char.equal tag invalid_tag then Invalid {ml_source_file= str}
     else if Char.equal tag absolute_tag then Absolute str
+    else if Char.equal tag hashed_buck_out_tag then HashedBuckOut str
     else if Char.equal tag relative_project_root_tag then RelativeProjectRoot str
     else if Char.equal tag relative_project_root_and_workspace_tag then
       let prefix_length_str, path_with_prefix =
@@ -286,4 +355,7 @@ module Normalizer = HashNormalizer.Make (struct
     | Absolute path ->
         let path' = string_normalize path in
         if phys_equal path path' then fname else Absolute path'
+    | HashedBuckOut path ->
+        let path' = string_normalize path in
+        if phys_equal path path' then fname else HashedBuckOut path'
 end)
