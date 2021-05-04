@@ -555,7 +555,7 @@ let mk_initial tenv proc_desc =
           BaseAddressAttributes.add_one addr
             (MustBeValid (Immediate {location; history= []}, None))
             attrs )
-    else (PreDomain.empty :> base_domain).attrs
+    else BaseDomain.empty.attrs
   in
   let pre =
     PreDomain.update ~stack:initial_stack ~heap:initial_heap ~attrs:initial_attrs PreDomain.empty
@@ -859,7 +859,7 @@ let canonicalize astate =
   {astate with pre; post}
 
 
-let filter_for_summary tenv astate0 =
+let filter_for_summary tenv proc_name astate0 =
   let open SatUnsat.Import in
   L.d_printfln "Canonicalizing...@\n" ;
   let* astate_before_filter = canonicalize astate0 in
@@ -871,12 +871,18 @@ let filter_for_summary tenv astate0 =
   let astate = restore_formals_for_summary astate_before_filter in
   let astate = {astate with topl= PulseTopl.filter_for_summary astate.path_condition astate.topl} in
   let astate, pre_live_addresses, post_live_addresses, _ = discard_unreachable astate in
+  let can_be_pruned =
+    if PatternMatch.is_entry_point proc_name then
+      (* report all latent issues at entry points *)
+      AbstractValue.Set.empty
+    else pre_live_addresses
+  in
   let live_addresses = AbstractValue.Set.union pre_live_addresses post_live_addresses in
   let+ path_condition, new_eqs =
     PathCondition.simplify tenv
       ~get_dynamic_type:
         (BaseAddressAttributes.get_dynamic_type (astate_before_filter.post :> BaseDomain.t).attrs)
-      ~can_be_pruned:pre_live_addresses ~keep:live_addresses astate.path_condition
+      ~can_be_pruned ~keep:live_addresses astate.path_condition
   in
   ({astate with path_condition; topl= PulseTopl.simplify ~keep:live_addresses astate.topl}, new_eqs)
 
@@ -894,7 +900,7 @@ let summary_of_post tenv pdesc astate =
   let* () = if is_unsat then Unsat else Sat () in
   let astate = {astate with path_condition} in
   let* astate, error = incorporate_new_eqs astate new_eqs in
-  let* astate, new_eqs = filter_for_summary tenv astate in
+  let* astate, new_eqs = filter_for_summary tenv (Procdesc.get_proc_name pdesc) astate in
   let+ astate, error =
     match error with None -> incorporate_new_eqs astate new_eqs | Some _ -> Sat (astate, error)
   in

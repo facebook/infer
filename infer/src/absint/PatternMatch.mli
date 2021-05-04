@@ -217,3 +217,6 @@ module ObjectiveC : sig
 
   val is_modelled_as_release : Tenv.t -> string -> bool
 end
+
+val is_entry_point : Procname.t -> bool
+(** Does the function name correspond to a known entry point? Currently only matches ["main"] *)

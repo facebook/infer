@@ -560,3 +560,6 @@ let get_fields_nullified procdesc =
       ~init:(Fieldname.Set.empty, Ident.Set.empty)
   in
   nullified_flds
+
+
+let is_entry_point proc_name = String.equal (Procname.get_method proc_name) "main"
