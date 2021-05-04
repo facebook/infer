@@ -10,6 +10,7 @@ module BasicCost = CostDomain.BasicCost
 module BasicCostWithReason = CostDomain.BasicCostWithReason
 open BufferOverrunUtils.ModelEnv
 open CostUtils.CostModelEnv
+open ProcnameDispatcher.Call.FuncArg
 
 let unit_cost_model _model_env ~ret:_ _inferbo_mem = BasicCost.one ()
 
@@ -173,25 +174,29 @@ module NSCollection = struct
     cost_op (get_length coll1) (get_length coll2)
 
 
-  let enumerate_using_block array ({get_summary; model_env} as cost_model_env) ~ret inferbo_mem =
+  let enumerate_using_block args ({get_summary; model_env} as cost_model_env) ~ret inferbo_mem =
     let pname = model_env.pname in
-    match pname with
-    | WithBlockParameters (_, [block_name]) -> (
-      match get_summary (Procname.Block block_name) with
-      | Some {CostDomain.post= callee_summary} ->
-          let {BasicCostWithReason.cost= callee_cost} =
-            CostDomain.get_cost_kind OperationCost callee_summary
-          in
-          let length =
-            BoundsOfNSCollection.linear_length
-              ~of_function:(Procname.to_simplified_string pname)
-              array cost_model_env ~ret inferbo_mem
-          in
-          BasicCost.mult_loop ~iter:length ~body:callee_cost
-      | None ->
-          BasicCost.zero )
+    match List.rev args with
+    | _block :: {exp= array} :: _captured_args -> (
+        let length =
+          BoundsOfNSCollection.linear_length
+            ~of_function:(Procname.to_simplified_string pname)
+            array cost_model_env ~ret inferbo_mem
+        in
+        match pname with
+        | WithBlockParameters (_, [block_name]) -> (
+          match get_summary (Procname.Block block_name) with
+          | Some {CostDomain.post= callee_summary} ->
+              let {BasicCostWithReason.cost= callee_cost} =
+                CostDomain.get_cost_kind OperationCost callee_summary
+              in
+              BasicCost.mult_loop ~iter:length ~body:callee_cost
+          | None ->
+              length )
+        | _ ->
+            length )
     | _ ->
-        BasicCost.zero
+        BasicCost.one ()
 end
 
 module ImmutableSet = struct
@@ -278,8 +283,7 @@ module Call = struct
           &:: "addObjectsFromArray:" <>$ any_arg $+ capt_exp
           $--> BoundsOfNSCollection.linear_length ~of_function:"NSArray.addObjectsFromArray:"
         ; +PatternMatch.ObjectiveC.implements_collection
-          &:: "enumerateObjectsUsingBlock:" <>$ capt_exp $+ any_arg
-          $--> NSCollection.enumerate_using_block
+          &:: "enumerateObjectsUsingBlock:" &::.*++> NSCollection.enumerate_using_block
         ; +PatternMatch.Java.implements_collections
           &:: "sort" $ capt_exp
           $+...$--> BoundsOfCollection.n_log_n_length ~of_function:"Collections.sort"

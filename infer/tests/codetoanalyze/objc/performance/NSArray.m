@@ -230,7 +230,7 @@ void loop_with_my_enumerator_next_object_linear_FP(MyEnumerator* enumerator) {
 
 void enumerate_via_block_linear(NSArray* array) {
   [array enumerateObjectsUsingBlock:^(id obj, NSUInteger index, BOOL* stop){
-      // do something with obj
+    NSLog(@"index: %@", index);
   }];
 }
 
@@ -239,15 +239,14 @@ void enumerate_via_block_linear(NSArray* array) {
 
 @implementation MyBlock
 
-+ (void)call_enumerate_via_block_param_linear_FN:(NSArray*)x:(int)size {
++ (void)call_enumerate_via_block_param_quadratic:(NSArray*)x:(int)size {
   void (^b)(id, NSUInteger, BOOL*) =
       ^(id object, NSUInteger indexPath, BOOL* stop) {
         for (int i = 0; i < size; i++) {
         }
       };
   // Here, captured arg size is passed as the first argument to the block,
-  // not the array x. Hence, currently we don't recognize the mode which expects
-  // only two args.
+  // not the array x.
   [x enumerateObjectsUsingBlock:b];
 }
 
