@@ -112,8 +112,8 @@ let leq ~lhs ~rhs =
      &&
      match
        BaseDomain.isograph_map BaseDomain.empty_mapping
-         ~lhs:(rhs.pre :> BaseDomain.t)
-         ~rhs:(lhs.pre :> BaseDomain.t)
+         ~lhs:(lhs.pre :> BaseDomain.t)
+         ~rhs:(rhs.pre :> BaseDomain.t)
      with
      | NotIsomorphic ->
          false
