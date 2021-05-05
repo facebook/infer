@@ -263,10 +263,16 @@ module ObjC = struct
    fun {location} astate ->
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let<*> astate, _ =
-      PulseOperations.eval_access Read location (value, event :: value_hist) Dereference astate
+      PulseOperations.eval_access ~must_be_valid_reason:Invalidation.InsertionIntoCollection Read
+        location
+        (value, event :: value_hist)
+        Dereference astate
     in
     let<+> astate, _ =
-      PulseOperations.eval_access Read location (key, event :: key_hist) Dereference astate
+      PulseOperations.eval_access ~must_be_valid_reason:Invalidation.InsertionIntoCollection Read
+        location
+        (key, event :: key_hist)
+        Dereference astate
     in
     astate
 end

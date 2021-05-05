@@ -541,6 +541,7 @@ OPTIONS
              MULTIPLE_WEAKSELF (enabled by default),
              MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE (enabled by default),
              Missing_fld (enabled by default),
+             NIL_INSERTION_INTO_COLLECTION (disabled by default),
              NIL_MESSAGING_TO_NON_POD (disabled by default),
              NULLPTR_DEREFERENCE (enabled by default),
              NULL_DEREFERENCE (enabled by default),

@@ -245,10 +245,10 @@ module AddressAttributes = struct
     if phys_equal new_pre astate.pre then astate else {astate with pre= new_pre}
 
 
-  let check_valid access_trace addr astate =
+  let check_valid ?must_be_valid_reason access_trace addr astate =
     let+ () = BaseAddressAttributes.check_valid addr (astate.post :> base_domain).attrs in
     (* if [address] is in [pre] and it should be valid then that fact goes in the precondition *)
-    abduce_attribute addr (MustBeValid (access_trace, None)) astate
+    abduce_attribute addr (MustBeValid (access_trace, must_be_valid_reason)) astate
 
 
   let check_initialized access_trace addr astate =

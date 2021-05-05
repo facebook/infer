@@ -789,6 +789,18 @@ let mutable_local_variable_in_component_file =
       [%blob "../../documentation/issues/MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE.md"]
 
 
+let nil_insertion_into_collection =
+  register ~enabled:false ~id:"NIL_INSERTION_INTO_COLLECTION" Error Pulse
+    ~user_documentation:"Inserting nil into a collection is an error in Objective-C."
+
+
+let nil_messaging_to_non_pod =
+  register ~enabled:false ~id:"NIL_MESSAGING_TO_NON_POD" Error Pulse
+    ~user_documentation:
+      "Calling a method that returns a C++ non-POD object on the nil object is undefined behavior \
+       in Objective-C++."
+
+
 let null_dereference =
   register ~id:"NULL_DEREFERENCE" Error Biabduction
     ~user_documentation:"See [NULLPTR_DEREFERENCE](#nullptr_dereference)."
@@ -797,11 +809,6 @@ let null_dereference =
 let nullptr_dereference =
   register ~id:"NULLPTR_DEREFERENCE" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/NULLPTR_DEREFERENCE.md"]
-
-
-let nil_messaging_to_non_pod =
-  register ~enabled:false ~id:"NIL_MESSAGING_TO_NON_POD" Error Pulse
-    ~user_documentation:"See [NULLPTR_DEREFERENCE](#nullptr_dereference)."
 
 
 let optional_empty_access =

@@ -115,7 +115,12 @@ module AddressAttributes : sig
 
   val add_attrs : AbstractValue.t -> Attributes.t -> t -> t
 
-  val check_valid : Trace.t -> AbstractValue.t -> t -> (t, Invalidation.t * Trace.t) result
+  val check_valid :
+       ?must_be_valid_reason:Invalidation.must_be_valid_reason
+    -> Trace.t
+    -> AbstractValue.t
+    -> t
+    -> (t, Invalidation.t * Trace.t) result
 
   val check_initialized : Trace.t -> AbstractValue.t -> t -> (t, unit) result
 

@@ -67,7 +67,12 @@ include module type of Import
 type t = AbductiveDomain.t
 
 val check_addr_access :
-  access_mode -> Location.t -> AbstractValue.t * ValueHistory.t -> t -> t AccessResult.t
+     ?must_be_valid_reason:Invalidation.must_be_valid_reason
+  -> access_mode
+  -> Location.t
+  -> AbstractValue.t * ValueHistory.t
+  -> t
+  -> t AccessResult.t
 (** Check that the [address] is not known to be invalid *)
 
 module Closures : sig
@@ -101,7 +106,8 @@ val eval_deref_isl :
   Location.t -> Exp.t -> t -> (t * (AbstractValue.t * ValueHistory.t)) AccessResult.t list
 
 val eval_access :
-     access_mode
+     ?must_be_valid_reason:Invalidation.must_be_valid_reason
+  -> access_mode
   -> Location.t
   -> AbstractValue.t * ValueHistory.t
   -> BaseMemory.Access.t

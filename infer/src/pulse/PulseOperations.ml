@@ -49,10 +49,10 @@ end
 
 include Import
 
-let check_addr_access access_mode location (address, history) astate =
+let check_addr_access ?must_be_valid_reason access_mode location (address, history) astate =
   let access_trace = Trace.Immediate {location; history} in
   let* astate =
-    AddressAttributes.check_valid access_trace address astate
+    AddressAttributes.check_valid ?must_be_valid_reason access_trace address astate
     |> Result.map_error ~f:(fun (invalidation, invalidation_trace) ->
            ReportableError
              { diagnostic=
@@ -61,7 +61,7 @@ let check_addr_access access_mode location (address, history) astate =
                    ; invalidation
                    ; invalidation_trace
                    ; access_trace
-                   ; must_be_valid_reason= None }
+                   ; must_be_valid_reason }
              ; astate } )
   in
   match access_mode with
@@ -173,8 +173,8 @@ end
 
 let eval_var location hist var astate = Stack.eval location hist var astate
 
-let eval_access mode location addr_hist access astate =
-  let+ astate = check_addr_access mode location addr_hist astate in
+let eval_access ?must_be_valid_reason mode location addr_hist access astate =
+  let+ astate = check_addr_access ?must_be_valid_reason mode location addr_hist astate in
   Memory.eval_edge addr_hist access astate
 
 
