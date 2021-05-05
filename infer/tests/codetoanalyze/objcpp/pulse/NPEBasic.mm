@@ -169,3 +169,36 @@ void testUnknownNilSpecOk() {
   };
   NSDictionary* dict = @{@"helloString" : str};
 }
+
+void addNilInDictBad(NSMutableDictionary* mDict) {
+  id value = nil;
+  [mDict setObject:value forKey:@"somestring"];
+}
+
+void addNSNullInDictOk(NSMutableDictionary* mDict) {
+  [mDict setObject:[NSNull null] forKey:@"somestring"];
+}
+
+void addObjectInDictOk(NSMutableDictionary* mDict) {
+  SomeObject* o = [SomeObject new];
+  [mDict setObject:o forKey:@"somestring"];
+}
+
+void addObjectKeyNilInDictBad(NSMutableDictionary* mDict) {
+  SomeObject* o = [SomeObject new];
+  [mDict setObject:o forKey:nil];
+}
+
+void addObjectInDict(NSMutableDictionary* mDict, id value) {
+  [mDict setObject:value forKey:@"somestring"];
+}
+
+void testNilMessagingForModelNilNilOK_FP() { addObjectInDict(nil, nil); }
+
+void testNilMessagingForModelNilStringOK() {
+  addObjectInDict(nil, @"somestring");
+}
+
+void testNilMessagingForModelNotNilDictBad(NSMutableDictionary* mDict) {
+  addObjectInDict(mDict, nil);
+}

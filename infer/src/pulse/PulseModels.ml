@@ -252,6 +252,18 @@ module ObjC = struct
             PulseCallOperations.call tenv ~caller_proc_desc:proc_desc
               ~callee_data:(analyze_dependency callee_proc_name)
               location callee_proc_name ~ret ~actuals:[] ~formals_opt:None astate )
+
+
+  let insertion_into_dictionary (value, value_hist) (key, key_hist) ~desc : model =
+   fun {location} astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+    let<*> astate, _ =
+      PulseOperations.eval_access Read location (value, event :: value_hist) Dereference astate
+    in
+    let<+> astate, _ =
+      PulseOperations.eval_access Read location (key, event :: key_hist) Dereference astate
+    in
+    astate
 end
 
 module Optional = struct
@@ -1694,6 +1706,9 @@ module ProcNameDispatcher = struct
           <>$ capt_exp
           $--> ObjC.alloc_not_null_alloc_ev ~desc:"alloc"
         ; -"NSObject" &:: "init" <>$ capt_arg_payload $--> Misc.id_first_arg ~desc:"NSObject.init"
+        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableDictionary")
+          &:: "setObject:forKey:" <>$ any_arg $+ capt_arg_payload $+ capt_arg_payload
+          $--> ObjC.insertion_into_dictionary ~desc:"NSMutableDictionary.setObject:forKey:"
         ; +match_regexp_opt Config.pulse_model_return_nonnull
           &::.*--> Misc.return_positive
                      ~desc:"modelled as returning not null due to configuration option"
