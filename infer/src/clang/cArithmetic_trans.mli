@@ -7,7 +7,7 @@
 
 open! IStd
 
-(** Utility module for translating unary and binary operations and compound assignments *)
+(** Utility module for translating unary, binary, and atomic operations and compound assignments *)
 
 val bin_op_to_string : Clang_ast_t.binary_operator_info -> string
 
@@ -30,5 +30,8 @@ val unary_operation_instruction :
   -> Typ.t
   -> Location.t
   -> Exp.t * Sil.instr list
+
+val atomic_operation_instruction :
+  Clang_ast_t.atomic_expr_info -> Exp.t -> Exp.t -> Typ.t -> Location.t -> Exp.t * Sil.instr list
 
 val sil_const_plus_one : Exp.t -> Exp.t

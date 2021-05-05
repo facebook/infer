@@ -38,6 +38,8 @@ module Node : sig
   (** kind of statement node *)
   type stmt_nodekind =
     | AssertionFailure
+    | AtomicCompareExchangeBranch
+    | AtomicExpr
     | BetweenJoinAndExit
     | BinaryConditionalStmtInit
     | BinaryOperatorStmt of string

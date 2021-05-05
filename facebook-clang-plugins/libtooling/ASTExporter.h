@@ -404,6 +404,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   DECLARE_VISITOR(ExtVectorElementExpr)
   DECLARE_VISITOR(BinaryOperator)
   DECLARE_VISITOR(CompoundAssignOperator)
+  DECLARE_VISITOR(AtomicExpr)
   DECLARE_VISITOR(AddrLabelExpr)
   DECLARE_VISITOR(BlockExpr)
   DECLARE_VISITOR(OpaqueValueExpr)
@@ -3876,6 +3877,34 @@ void ASTExporter<ATDWriter>::VisitCompoundAssignOperator(
   dumpQualType(Node->getComputationLHSType());
   OF.emitTag("result_type");
   dumpQualType(Node->getComputationResultType());
+}
+
+template <class ATDWriter>
+int ASTExporter<ATDWriter>::AtomicExprTupleSize() {
+  return ExprTupleSize() + 1;
+}
+#define BUILTIN(ID, TYPE, ATTRS)
+//@atd #define atomic_expr_tuple expr_tuple * atomic_expr_info
+//@atd type atomic_expr_info = {
+//@atd   kind : atomic_expr_kind
+//@atd } <ocaml field_prefix="aei_">
+//@atd type atomic_expr_kind = [
+#define ATOMIC_BUILTIN(ID, TYPE, ATTRS) //@atd | AO@@ID
+#include <clang/Basic/Builtins.def>
+//@atd ]
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitAtomicExpr(const AtomicExpr *Node) {
+  VisitExpr(Node);
+  ObjectScope Scope(OF, 1);
+  OF.emitTag("kind");
+  switch (Node->getOp()) {
+#define BUILTIN(ID, TYPE, ATTRS)
+#define ATOMIC_BUILTIN(ID, TYPE, ATTRS) \
+  case AtomicExpr::AO##ID:              \
+    OF.emitSimpleVariant("AO" #ID);     \
+    break;
+#include <clang/Basic/Builtins.def>
+  }
 }
 
 template <class ATDWriter>
