@@ -283,17 +283,47 @@ module PulseTransferFunctions = struct
       match instr with
       | Load {id= lhs_id; e= rhs_exp; loc} ->
           (* [lhs_id := *rhs_exp] *)
-          let result =
-            if Config.pulse_isl then
-              PulseOperations.eval_deref_isl loc rhs_exp astate
-              |> List.map ~f:(fun result ->
-                     let+ astate, rhs_addr_hist = result in
-                     PulseOperations.write_id lhs_id rhs_addr_hist astate )
-            else
-              [ (let+ astate, rhs_addr_hist = PulseOperations.eval_deref loc rhs_exp astate in
-                 PulseOperations.write_id lhs_id rhs_addr_hist astate) ]
+          let deref_rhs astate =
+            let result =
+              if Config.pulse_isl then
+                PulseOperations.eval_deref_isl loc rhs_exp astate
+                |> List.map ~f:(fun result ->
+                       let+ astate, rhs_addr_hist = result in
+                       PulseOperations.write_id lhs_id rhs_addr_hist astate )
+              else
+                [ (let+ astate, rhs_addr_hist = PulseOperations.eval_deref loc rhs_exp astate in
+                   PulseOperations.write_id lhs_id rhs_addr_hist astate) ]
+            in
+            PulseReport.report_results tenv proc_desc err_log result
           in
-          PulseReport.report_results tenv proc_desc err_log result
+          let set_global_astates =
+            match rhs_exp with
+            | Lvar pvar when Pvar.is_global pvar && Pvar.is_compile_constant pvar -> (
+              (* Inline initializers of global constants when they are being used.
+                 This addresses nullptr false positives by pruning infeasable paths global_var != global_constant_value,
+                 where global_constant_value is the value of global_var *)
+              (* TODO: Initial global constants only once *)
+              match Pvar.get_initializer_pname pvar with
+              | Some proc_name ->
+                  let call_flags = CallFlags.default in
+                  let ret_id_void = (Ident.create_fresh Ident.knormal, StdTyp.void) in
+                  let no_error_states =
+                    dispatch_call analysis_data ret_id_void (Const (Cfun proc_name)) [] loc
+                      call_flags astate
+                    |> List.filter_map ~f:(function
+                         | Ok (ContinueProgram astate) ->
+                             Some astate
+                         | _ ->
+                             (* ignore errors in global initializers *)
+                             None )
+                  in
+                  if List.is_empty no_error_states then [astate] else no_error_states
+              | None ->
+                  [astate] )
+            | _ ->
+                [astate]
+          in
+          List.concat_map set_global_astates ~f:deref_rhs
       | Store {e1= lhs_exp; e2= rhs_exp; loc} ->
           (* [*lhs_exp := rhs_exp] *)
           let event = ValueHistory.Assignment loc in

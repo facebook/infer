@@ -8,6 +8,7 @@
 #include <type_traits>
 #include <atomic>
 #include <cstdlib>
+#include <string>
 
 void assign_zero_ok() {
   int x[2];
@@ -214,4 +215,38 @@ void test_after_dereference2_latent(int* x) {
 
 void call_test_after_dereference2_bad() {
   test_after_dereference2_latent(NULL);
+}
+
+enum Type { STRING };
+
+static constexpr Type typeGlobal = STRING;
+
+struct D {
+  Type type;
+  std::string string;
+
+  D(std::string s) : type(STRING) { new (&string) std::string(std::move(s)); }
+
+  std::string const* get() const& {
+    if (type != typeGlobal) {
+      return nullptr;
+    }
+    return &string;
+  }
+
+  std::string to(const std::string& value) const { return value.c_str(); };
+
+  std::string asString() const {
+    if (type == STRING) {
+      const std::string& value = *get();
+      return to(value);
+    }
+    return "";
+  }
+};
+
+std::string global_const_skipped_function_ok() {
+  D* s = new D("");
+  std::shared_ptr<D> ptr(s);
+  return ptr->asString();
 }
