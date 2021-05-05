@@ -202,6 +202,9 @@ module ObjectiveC : sig
   val implements : string -> Tenv.t -> string -> bool
   (** Check whether class implements a given ObjC class *)
 
+  val implements_ns_string_variants : Tenv.t -> string -> bool
+  (** Check whether class implements NSString or NSAttributedString *)
+
   val conforms_to : protocol:string -> Tenv.t -> string -> bool
   (** Check whether class conforms to a given ObjC protocol *)
 

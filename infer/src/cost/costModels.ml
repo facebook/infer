@@ -160,6 +160,32 @@ module NSString = struct
   let substring_from_index = JavaString.substring_no_end
 end
 
+module NSAttributedString = struct
+  let enumerate_using_block args ({get_summary; model_env} as cost_model_env) ~ret inferbo_mem =
+    let pname = model_env.pname in
+    match List.rev args with
+    | _attr :: _inRange :: _options :: _usingBlock :: {exp= str} :: _captured_args -> (
+        let length =
+          BoundsOfCString.linear_length
+            ~of_function:(Procname.to_simplified_string pname)
+            str cost_model_env ~ret inferbo_mem
+        in
+        match pname with
+        | WithBlockParameters (_, [block_name]) -> (
+          match get_summary (Procname.Block block_name) with
+          | Some {CostDomain.post= callee_summary} ->
+              let {BasicCostWithReason.cost= callee_cost} =
+                CostDomain.get_cost_kind OperationCost callee_summary
+              in
+              BasicCost.mult_loop ~iter:length ~body:callee_cost
+          | None ->
+              length )
+        | _ ->
+            length )
+    | _ ->
+        BasicCost.one ()
+end
+
 module NSCollection = struct
   let get_length str ~of_function {model_env= {location}} ~ret:_ mem =
     let itv =
@@ -284,6 +310,9 @@ module Call = struct
           $--> BoundsOfNSCollection.linear_length ~of_function:"NSArray.addObjectsFromArray:"
         ; +PatternMatch.ObjectiveC.implements_collection
           &:: "enumerateObjectsUsingBlock:" &::.*++> NSCollection.enumerate_using_block
+        ; +PatternMatch.ObjectiveC.implements "NSAttributedString"
+          &:: "enumerateAttribute:inRange:options:usingBlock:"
+          &::.*++> NSAttributedString.enumerate_using_block
         ; +PatternMatch.Java.implements_collections
           &:: "sort" $ capt_exp
           $+...$--> BoundsOfCollection.n_log_n_length ~of_function:"Collections.sort"

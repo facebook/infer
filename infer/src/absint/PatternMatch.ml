@@ -355,6 +355,10 @@ module ObjectiveC = struct
         Str.string_match regex procname 0
     | None ->
         false
+
+
+  let implements_ns_string_variants tenv procname =
+    implements "NSString" tenv procname || implements "NSAttributedString" tenv procname
 end
 
 let get_vararg_type_names tenv (call_node : Procdesc.Node.t) (ivar : Pvar.t) : string list =
