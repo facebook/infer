@@ -639,7 +639,7 @@ let impure_function =
 
 
 let inefficient_keyset_iterator =
-  register ~id:"INEFFICIENT_KEYSET_ITERATOR" Error InefficientKeysetIterator
+  register ~id:"INEFFICIENT_KEYSET_ITERATOR" Warning InefficientKeysetIterator
     ~user_documentation:[%blob "../../documentation/issues/INEFFICIENT_KEYSET_ITERATOR.md"]
 
 
