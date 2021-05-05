@@ -135,7 +135,9 @@ module Misc = struct
                let+ astate = result in
                ContinueProgram astate )
       else
-        let<+> astate = PulseOperations.invalidate location invalidation deleted_access astate in
+        let<+> astate =
+          PulseOperations.invalidate UntraceableAccess location invalidation deleted_access astate
+        in
         astate
     in
     let<*> astate_zero = PulseArithmetic.prune_eq_zero (fst deleted_access) astate in
@@ -179,9 +181,10 @@ module C = struct
   let malloc_common ~size_exp_opt : model =
    fun {analysis_data= {tenv}; callee_procname; location; ret= ret_id, _} astate ->
     let ret_addr = AbstractValue.mk_fresh () in
-    let ret_value =
-      (ret_addr, [ValueHistory.Allocation {f= Model (Procname.to_string callee_procname); location}])
+    let ret_hist =
+      [ValueHistory.Allocation {f= Model (Procname.to_string callee_procname); location}]
     in
+    let ret_value = (ret_addr, ret_hist) in
     let astate = PulseOperations.write_id ret_id ret_value astate in
     let<*> astate_alloc =
       PulseOperations.allocate callee_procname location ret_value astate
@@ -191,7 +194,9 @@ module C = struct
     let result_null =
       let+ astate_null =
         PulseArithmetic.and_eq_int ret_addr IntLit.zero astate
-        >>= PulseOperations.invalidate location (ConstantDereference IntLit.zero) ret_value
+        >>= PulseOperations.invalidate
+              (StackAddress (Var.of_id ret_id, ret_hist))
+              location (ConstantDereference IntLit.zero) ret_value
       in
       ContinueProgram astate_null
     in
@@ -285,7 +290,7 @@ module Optional = struct
     let* astate, value_field = to_internal_value Read location this astate in
     let value_hist = (fst value, event :: snd value) in
     let+ astate = PulseOperations.write_deref location ~ref:value_field ~obj:value_hist astate in
-    (astate, value_hist)
+    (astate, value_field, value_hist)
 
 
   let assign_value_fresh location this ~desc astate =
@@ -294,16 +299,20 @@ module Optional = struct
 
   let assign_none this ~desc : model =
    fun {location} astate ->
-    let<*> astate, value = assign_value_fresh location this ~desc astate in
+    let<*> astate, pointer, value = assign_value_fresh location this ~desc astate in
     let<*> astate = PulseArithmetic.and_eq_int (fst value) IntLit.zero astate in
-    let<+> astate = PulseOperations.invalidate location Invalidation.OptionalEmpty value astate in
+    let<+> astate =
+      PulseOperations.invalidate
+        (MemoryAccess {pointer; access= Dereference; hist_obj_default= snd value})
+        location Invalidation.OptionalEmpty value astate
+    in
     astate
 
 
   let assign_value this _value ~desc : model =
    fun {location} astate ->
     (* TODO: call the copy constructor of a value *)
-    let<*> astate, value = assign_value_fresh location this ~desc astate in
+    let<*> astate, _, value = assign_value_fresh location this ~desc astate in
     let<+> astate = PulseArithmetic.and_positive (fst value) astate in
     astate
 
@@ -311,13 +320,13 @@ module Optional = struct
   let assign_optional_value this init ~desc : model =
    fun {location} astate ->
     let<*> astate, value = to_internal_value_deref Read location init astate in
-    let<+> astate, _ = write_value location this ~value ~desc astate in
+    let<+> astate, _, _ = write_value location this ~value ~desc astate in
     astate
 
 
   let emplace optional ~desc : model =
    fun {location} astate ->
-    let<+> astate, _ = assign_value_fresh location optional ~desc astate in
+    let<+> astate, _, _ = assign_value_fresh location optional ~desc astate in
     astate
 
 
@@ -359,7 +368,9 @@ module Optional = struct
       PulseOperations.write_id ret_id nullptr astate
       |> PulseArithmetic.prune_eq_zero (fst value_addr)
       >>= PulseArithmetic.and_eq_int (fst nullptr) IntLit.zero
-      >>= PulseOperations.invalidate location (ConstantDereference IntLit.zero) nullptr
+      >>= PulseOperations.invalidate
+            (StackAddress (Var.of_id ret_id, snd nullptr))
+            location (ConstantDereference IntLit.zero) nullptr
     in
     [Ok (ContinueProgram astate_value_addr); Ok (ContinueProgram astate_null)]
 
@@ -581,7 +592,14 @@ module StdBasicString = struct
     let<*> astate =
       PulseOperations.invalidate_access location CppDelete string_addr_hist Dereference astate
     in
-    let<+> astate = PulseOperations.invalidate location CppDelete string_addr_hist astate in
+    let<+> astate =
+      PulseOperations.invalidate
+        (MemoryAccess
+           { pointer= this_hist
+           ; access= internal_string_access
+           ; hist_obj_default= snd string_addr_hist })
+        location CppDelete string_addr_hist astate
+    in
     astate
 end
 
@@ -1189,8 +1207,11 @@ module JavaCollection = struct
       >>= PulseArithmetic.and_eq_int not_found_val IntLit.zero
       >>= PulseArithmetic.and_eq_int is_empty_expected_val IntLit.one
     in
-    let astate = PulseOperations.write_id ret_id (not_found_val, [event]) astate in
-    PulseOperations.invalidate location (ConstantDereference IntLit.zero)
+    let hist = [event] in
+    let astate = PulseOperations.write_id ret_id (not_found_val, hist) astate in
+    PulseOperations.invalidate
+      (StackAddress (Var.of_id ret_id, hist))
+      location (ConstantDereference IntLit.zero)
       (not_found_val, [event])
       astate
 

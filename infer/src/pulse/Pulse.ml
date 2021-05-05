@@ -84,7 +84,9 @@ module PulseTransferFunctions = struct
           PulseOperations.eval NoAccess call_loc (Exp.Lvar pvar) astate
         in
         (* invalidate [&x] *)
-        PulseOperations.invalidate call_loc gone_out_of_scope out_of_scope_base astate
+        PulseOperations.invalidate
+          (StackAddress (Var.of_pvar pvar, []))
+          call_loc gone_out_of_scope out_of_scope_base astate
         >>| ExecutionDomain.continue
     | ISLLatentMemoryError _
     | AbortProgram _

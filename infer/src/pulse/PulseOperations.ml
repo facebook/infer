@@ -372,9 +372,38 @@ let add_dynamic_type typ address astate = AddressAttributes.add_dynamic_type typ
 
 let remove_allocation_attr address astate = AddressAttributes.remove_allocation_attr address astate
 
-let invalidate location cause addr_trace astate =
+type invalidation_access =
+  | MemoryAccess of
+      { pointer: AbstractValue.t * ValueHistory.t
+      ; access: BaseMemory.Access.t
+      ; hist_obj_default: ValueHistory.t }
+  | StackAddress of Var.t * ValueHistory.t
+  | UntraceableAccess
+
+let record_invalidation access_path location cause astate =
+  match access_path with
+  | StackAddress (x, hist0) ->
+      let astate, (addr, hist) = Stack.eval location hist0 x astate in
+      Stack.add x (addr, Invalidated (cause, location) :: hist) astate
+  | MemoryAccess {pointer; access; hist_obj_default} ->
+      let addr_obj, hist_obj =
+        match Memory.find_edge_opt (fst pointer) access astate with
+        | Some addr_hist ->
+            addr_hist
+        | None ->
+            (AbstractValue.mk_fresh (), hist_obj_default)
+      in
+      Memory.add_edge pointer access
+        (addr_obj, Invalidated (cause, location) :: hist_obj)
+        location astate
+  | UntraceableAccess ->
+      astate
+
+
+let invalidate access_path location cause addr_trace astate =
   check_addr_access NoAccess location addr_trace astate
   >>| AddressAttributes.invalidate addr_trace cause location
+  >>| record_invalidation access_path location cause
 
 
 let invalidate_biad_isl location cause (address, history) astate =
@@ -385,8 +414,12 @@ let invalidate_biad_isl location cause (address, history) astate =
 
 
 let invalidate_access location cause ref_addr_hist access astate =
-  let astate, (addr_obj, _) = Memory.eval_edge ref_addr_hist access astate in
-  invalidate location cause (addr_obj, snd ref_addr_hist) astate
+  let astate, (addr_obj, hist_obj) = Memory.eval_edge ref_addr_hist access astate in
+  invalidate
+    (MemoryAccess {pointer= ref_addr_hist; access; hist_obj_default= hist_obj})
+    location cause
+    (addr_obj, snd ref_addr_hist)
+    astate
 
 
 let invalidate_array_elements location cause addr_trace astate =
@@ -397,8 +430,11 @@ let invalidate_array_elements location cause addr_trace astate =
   | Some edges ->
       Memory.Edges.fold edges ~init:astate ~f:(fun astate (access, dest_addr_trace) ->
           match (access : Memory.Access.t) with
-          | ArrayAccess _ ->
+          | ArrayAccess _ as access ->
               AddressAttributes.invalidate dest_addr_trace cause location astate
+              |> record_invalidation
+                   (MemoryAccess {pointer= addr_trace; access; hist_obj_default= snd dest_addr_trace})
+                   location cause
           | _ ->
               astate )
 

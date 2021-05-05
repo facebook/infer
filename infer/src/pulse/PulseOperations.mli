@@ -158,8 +158,24 @@ val write_deref_biad_isl :
   -> t
   -> t AccessResult.t list
 
+(** the way that was used to get to the invalidated address in the state; this is used to record the
+    invalidation point in its history in addition to inside the [Invalid] attribute *)
+type invalidation_access =
+  | MemoryAccess of
+      { pointer: AbstractValue.t * ValueHistory.t
+      ; access: BaseMemory.Access.t
+      ; hist_obj_default: ValueHistory.t }
+      (** the value was read from the heap following the [access] edge at address [pointer] *)
+  | StackAddress of Var.t * ValueHistory.t  (** the value was read from the stack *)
+  | UntraceableAccess  (** we don't know where the value came from; avoid using if possible *)
+
 val invalidate :
-  Location.t -> Invalidation.t -> AbstractValue.t * ValueHistory.t -> t -> t AccessResult.t
+     invalidation_access
+  -> Location.t
+  -> Invalidation.t
+  -> AbstractValue.t * ValueHistory.t
+  -> t
+  -> t AccessResult.t
 (** record that the address is invalid *)
 
 val invalidate_biad_isl :
