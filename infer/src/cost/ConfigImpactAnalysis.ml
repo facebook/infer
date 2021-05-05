@@ -513,6 +513,11 @@ module Dom = struct
       let open ProcnameDispatcher.Call in
       make_dispatcher
         [ +BuiltinDecl.(match_builtin __cast) <>--> KnownCheap
+        ; +PatternMatch.Java.implements_android "content.SharedPreferences"
+          &:: "edit" &--> KnownExpensive
+        ; +PatternMatch.Java.implements_android "content.SharedPreferences"
+          &::+ (fun _ method_name -> String.is_prefix method_name ~prefix:"get")
+          &--> KnownExpensive
         ; +PatternMatch.Java.implements_google "common.base.Preconditions"
           &:: "checkArgument" $ any_arg $+ any_arg $+...$--> KnownExpensive
         ; +PatternMatch.Java.implements_google "common.base.Preconditions"
