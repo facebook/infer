@@ -23,6 +23,12 @@ __attribute__((noreturn)) void __llair_throw(void* thrown_exception);
 /* executions that call __llair_unreachable are assumed to be impossible */
 __attribute__((noreturn)) void __llair_unreachable();
 
+/* glibc version */
+#define __assert_fail(assertion, file, line, function) abort()
+
+/* macos version */
+#define __assert_rtn(function, file, line, assertion) abort()
+
 #ifdef __cplusplus
 }
 #endif

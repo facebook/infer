@@ -58,7 +58,7 @@ module TransferFunctions = struct
 
   type analysis_data = unit
 
-  let exec_instr astate _ _node instr = eval_instr astate instr
+  let exec_instr astate _ _node _ instr = eval_instr astate instr
 
   let pp_session_name node fmt =
     Format.fprintf fmt "Closure Subst Specialized Method %a" CFG.Node.pp_id (CFG.Node.id node)
@@ -124,7 +124,7 @@ let rec exec_exp pname e =
 let exec_metadata pname metadata =
   let open Sil in
   match metadata with
-  | Abstract _ | Skip ->
+  | Abstract _ | CatchEntry _ | Skip | TryEntry _ | TryExit _ ->
       metadata
   | ExitScope (vars, loc) ->
       let updated = ref false in

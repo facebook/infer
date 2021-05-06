@@ -6,11 +6,8 @@
  *)
 
 open! IStd
-module F = Format
 
 (** General utility functions such as functions on lists *)
-
-type var_info = Clang_ast_t.decl_info * Clang_ast_t.qual_type * Clang_ast_t.var_decl_info * bool
 
 let rec swap_elements_list l =
   match l with
@@ -102,75 +99,17 @@ let get_var_name_mangled decl_info name_info var_decl_info =
   (name_string, mangled)
 
 
-let mk_sil_global_var {CFrontend_config.source_file} ?(mk_name = fun _ x -> x) decl_info
-    named_decl_info var_decl_info qt =
-  let name_string, simple_name = get_var_name_mangled decl_info named_decl_info var_decl_info in
-  let translation_unit =
-    match Clang_ast_t.(var_decl_info.vdi_is_extern, var_decl_info.vdi_init_expr) with
-    | true, None ->
-        None
-    | _, None when var_decl_info.Clang_ast_t.vdi_is_static_data_member ->
-        (* non-const static data member get extern scope unless they are defined out of line here (in which case vdi_init_expr will not be None) *)
-        None
-    | true, Some _
-    (* "extern" variables with initialisation code are not extern at all, but compilers accept this *)
-    | false, _ ->
-        Some source_file
-  in
-  let is_constexpr = var_decl_info.Clang_ast_t.vdi_is_const_expr in
-  let is_ice = var_decl_info.Clang_ast_t.vdi_is_init_ice in
+let is_type_pod qt =
   let desugared_type = CAst_utils.get_desugared_type qt.Clang_ast_t.qt_type_ptr in
-  let is_pod =
-    Option.bind desugared_type ~f:(function
-      | Clang_ast_t.RecordType (_, decl_ptr) ->
-          CAst_utils.get_decl decl_ptr
-      | _ ->
-          None )
-    |> Option.value_map ~default:true ~f:(function
-         | Clang_ast_t.CXXRecordDecl (_, _, _, _, _, _, _, {xrdi_is_pod})
-         | Clang_ast_t.ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, {xrdi_is_pod}, _, _) ->
-             xrdi_is_pod
-         | _ ->
-             true )
-  in
-  let is_static_global =
-    var_decl_info.Clang_ast_t.vdi_is_global
-    (* only top level declarations are really have file scope, static field members have a global scope *)
-    && (not var_decl_info.Clang_ast_t.vdi_is_static_data_member)
-    && var_decl_info.Clang_ast_t.vdi_is_static
-  in
-  let is_const = qt.Clang_ast_t.qt_is_const in
-  let is_constant_array =
-    Option.exists desugared_type ~f:(function Clang_ast_t.ConstantArrayType _ -> true | _ -> false)
-  in
-  Pvar.mk_global ~is_constexpr ~is_ice ~is_pod
-    ~is_static_local:var_decl_info.Clang_ast_t.vdi_is_static_local ~is_static_global
-    ~is_constant_array ?translation_unit (mk_name name_string simple_name) ~is_const
-
-
-let mk_sil_var trans_unit_ctx named_decl_info decl_info_qual_type_opt procname outer_procname =
-  match decl_info_qual_type_opt with
-  | Some (decl_info, qt, var_decl_info, should_be_mangled) ->
-      let name_string, simple_name = get_var_name_mangled decl_info named_decl_info var_decl_info in
-      if var_decl_info.Clang_ast_t.vdi_is_global then
-        let mk_name =
-          if var_decl_info.Clang_ast_t.vdi_is_static_local then
-            Some
-              (fun name_string _ ->
-                Mangled.from_string (F.asprintf "%a.%s" Procname.pp outer_procname name_string) )
-          else None
-        in
-        mk_sil_global_var trans_unit_ctx ?mk_name decl_info named_decl_info var_decl_info qt
-      else if not should_be_mangled then Pvar.mk simple_name procname
-      else
-        let start_location = fst decl_info.Clang_ast_t.di_source_range in
-        let line_opt = start_location.Clang_ast_t.sl_line in
-        let line_str = match line_opt with Some line -> string_of_int line | None -> "" in
-        let mangled = Utils.string_crc_hex32 line_str in
-        let mangled_name = Mangled.mangled name_string mangled in
-        Pvar.mk mangled_name procname
-  | None ->
-      let name_string =
-        CAst_utils.get_qualified_name named_decl_info |> QualifiedCppName.to_qual_string
-      in
-      Pvar.mk (Mangled.from_string name_string) procname
+  Option.bind desugared_type ~f:(function
+    | Clang_ast_t.RecordType (_, decl_ptr) ->
+        CAst_utils.get_decl decl_ptr
+    | _ ->
+        None )
+  |> Option.value_map ~default:true ~f:(function
+       | Clang_ast_t.CXXRecordDecl (_, _, _, _, _, _, _, {xrdi_is_pod})
+       | ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, {xrdi_is_pod}, _, _)
+       | ClassTemplatePartialSpecializationDecl (_, _, _, _, _, _, _, {xrdi_is_pod}, _, _) ->
+           xrdi_is_pod
+       | _ ->
+           true )

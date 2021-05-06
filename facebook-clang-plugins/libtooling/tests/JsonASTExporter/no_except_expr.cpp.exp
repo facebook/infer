@@ -781,15 +781,21 @@
         },
         "Half"
       ]],
-      ["RecordType" , [
+      ["BuiltinType" , [
         {
           "pointer" : 88
         },
-        89
+        "BFloat16"
+      ]],
+      ["RecordType" , [
+        {
+          "pointer" : 89
+        },
+        90
       ]],
       ["PointerType" , [
         {
-          "pointer" : 90
+          "pointer" : 91
         },
         {
           "type_ptr" : 23,
@@ -798,7 +804,7 @@
       ]],
       ["PointerType" , [
         {
-          "pointer" : 91
+          "pointer" : 92
         },
         {
           "type_ptr" : 26,
@@ -807,7 +813,7 @@
       ]],
       ["PointerType" , [
         {
-          "pointer" : 92
+          "pointer" : 93
         },
         {
           "type_ptr" : 26
@@ -815,17 +821,17 @@
       ]],
       ["RecordType" , [
         {
-          "pointer" : 93
+          "pointer" : 94
         },
-        94
+        95
       ]],
       ["ConstantArrayType" , [
         {
-          "pointer" : 95
+          "pointer" : 96
         },
         {
           "element_type" : {
-            "type_ptr" : 93
+            "type_ptr" : 94
           },
           "stride" : 24
         },
@@ -833,7 +839,7 @@
       ]],
       ["FunctionProtoType" , [
         {
-          "pointer" : 96
+          "pointer" : 97
         },
         {
           "return_type" : {
@@ -869,18 +875,18 @@
       ]],
       ["PointerType" , [
         {
-          "pointer" : 97
+          "pointer" : 98
         },
         {
-          "type_ptr" : 92
+          "type_ptr" : 93
         }
       ]],
       ["PointerType" , [
         {
-          "pointer" : 98
+          "pointer" : 99
         },
         {
-          "type_ptr" : 96
+          "type_ptr" : 97
         }
       ]],
       ["PointerType" , [
@@ -893,7 +899,7 @@
       ]],
       ["ObjCObjectType" , [
         {
-          "pointer" : 99
+          "pointer" : 100
         },
         {
           "base_type" : 82
@@ -901,32 +907,32 @@
       ]],
       ["ObjCObjectPointerType" , [
         {
-          "pointer" : 100
+          "pointer" : 101
         },
         {
-          "type_ptr" : 99
+          "type_ptr" : 100
         }
       ]],
       ["TypedefType" , [
         {
-          "pointer" : 101,
-          "desugared_type" : 100
+          "pointer" : 102,
+          "desugared_type" : 101
         },
         {
           "child_type" : {
-            "type_ptr" : 100
+            "type_ptr" : 101
           },
-          "decl_ptr" : 102
+          "decl_ptr" : 103
         }
       ]],
       ["TypedefType" , [
         {
           "pointer" : 25,
-          "desugared_type" : 100
+          "desugared_type" : 101
         },
         {
           "child_type" : {
-            "type_ptr" : 101
+            "type_ptr" : 102
           },
           "decl_ptr" : 24
         }

@@ -11,7 +11,7 @@ open! IStd
     file). Defines useful wrappers that allows us to do tricks like turn a forward cfg to into a
     backward one, or view a cfg as having a single instruction per block *)
 
-module type Node = sig
+module type NodeCommonS = sig
   type t
 
   type id
@@ -35,6 +35,26 @@ module type Node = sig
   module IdMap : PrettyPrintable.PPMap with type key = id
 
   module IdSet : PrettyPrintable.PPSet with type elt = id
+end
+
+module InstrNode : sig
+  (* NOTE: The type is not abstracted since it is used in the [Instrs] module. *)
+  type instr_index = int
+
+  include
+    NodeCommonS
+      with type t = Procdesc.Node.t * instr_index
+       and type id = Procdesc.Node.id * instr_index
+
+  val compare : t -> t -> int
+
+  val to_instr : instr_index -> t -> t
+end
+
+module type Node = sig
+  include NodeCommonS
+
+  val to_instr : InstrNode.instr_index -> t -> InstrNode.t
 end
 
 module type S = sig
@@ -81,13 +101,6 @@ module type S = sig
 end
 
 module DefaultNode : Node with type t = Procdesc.Node.t and type id = Procdesc.Node.id
-
-module InstrNode : sig
-  type instr_index
-
-  include
-    Node with type t = Procdesc.Node.t * instr_index and type id = Procdesc.Node.id * instr_index
-end
 
 (** Forward CFG with no exceptional control-flow *)
 module Normal :

@@ -10,15 +10,14 @@
 type t = Llair.Global.Set.t [@@deriving compare, equal, sexp]
 
 let pp = Llair.Global.Set.pp
-let report_fmt_thunk = Fun.flip pp
 let empty = Llair.Global.Set.empty
 
 let init globals =
   [%Trace.info
-    "pgm globals: {%a}" (IArray.pp ", " Llair.GlobalDefn.pp) globals] ;
+    " globals: {%a}" (IArray.pp ", " Llair.GlobalDefn.pp) globals] ;
   empty
 
-let join l r = Some (Llair.Global.Set.union l r)
+let join l r = Llair.Global.Set.union l r
 let recursion_beyond_bound = `skip
 let post _ _ state = state
 let retn _ _ from_call post = Llair.Global.Set.union from_call post
@@ -39,10 +38,10 @@ let exec_move reg_exps st =
 let exec_inst inst st =
   [%Trace.call fun {pf} -> pf "@ pre:{%a} %a" pp st Llair.Inst.pp inst]
   ;
-  Some (Llair.Inst.fold_exps ~f:used_globals inst st)
+  Ok (Llair.Inst.fold_exps ~f:used_globals inst st)
   |>
   [%Trace.retn fun {pf} ->
-    Option.iter ~f:(fun uses -> pf "post:{%a}" pp uses)]
+    Or_alarm.iter ~f:(fun uses -> pf "post:{%a}" pp uses)]
 
 type from_call = t [@@deriving sexp]
 
@@ -63,7 +62,11 @@ let apply_summary st summ = Some (Llair.Global.Set.union st summ)
 
 (** Query *)
 
-let by_function : Domain_intf.used_globals -> Llair.Function.t -> t =
+type used_globals =
+  | Per_function of summary Llair.Function.Map.t
+  | Declared of summary
+
+let by_function : used_globals -> Llair.Function.t -> t =
  fun s fn ->
   [%Trace.call fun {pf} -> pf "@ %a" Llair.Function.pp fn]
   ;

@@ -124,6 +124,51 @@ bool string_has_prefix_linear(NSString* str, NSString* prefix) {
   return [str hasPrefix:prefix];
 }
 
+void attributedstring_length_linear(NSAttributedString* s) {
+  for (int i = 0; i < s.length; i++) {
+  }
+}
+
+void call_string_length_linear(NSAttributedString* s) {
+  string_length_linear(s.string);
+}
+
+void enumerateAttribute_quadratic(NSAttributedString* attributedString,
+                                  NSString* kCTFontAttributeName,
+                                  int x) {
+  [attributedString
+      enumerateAttribute:kCTFontAttributeName
+                 inRange:NSMakeRange(0, [attributedString length])
+                 options:
+                     NSAttributedStringEnumerationLongestEffectiveRangeNotRequired
+              usingBlock:^(id value, NSRange range, BOOL* stop) {
+                for (int i = 0; i <= x; i++) {
+                }
+              }];
+}
+
+void enumerateAttribute_linear(NSAttributedString* attributedString,
+                               NSString* kCTFontAttributeName,
+                               int x) {
+  [attributedString
+      enumerateAttribute:kCTFontAttributeName
+                 inRange:NSMakeRange(0, [attributedString length])
+                 options:
+                     NSAttributedStringEnumerationLongestEffectiveRangeNotRequired
+              usingBlock:^(id value, NSRange range, BOOL* stop) {
+                int p = 0;
+              }];
+}
+
+// FN because captured block variable is added as last argument which our model
+// cannot recognize
+void enumerateAttribute_via_block_captured_linear_FN(NSArray* array, int x) {
+  __block BOOL answer = NO;
+  [array enumerateObjectsUsingBlock:^(id obj, NSUInteger index, BOOL* stop) {
+    answer = YES;
+  }];
+}
+
 @interface DummyClass : NSObject
 @end
 

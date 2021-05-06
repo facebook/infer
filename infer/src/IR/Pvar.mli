@@ -162,6 +162,8 @@ val is_pod : t -> bool
 (** Is the variable's type a "Plain Old Data" type (C++)? Always (potentially incorrectly) returns
     [true] for non-globals. *)
 
+val is_local_to_procedure : Procname.t -> t -> bool
+
 val get_initializer_pname : t -> Procname.t option
 (** Get the procname of the initializer function for the given global variable *)
 
@@ -173,11 +175,8 @@ val materialized_cpp_temporary : string
 
 val swap_proc_in_local_pvar : t -> Procname.t -> t
 
-val rename : f:(string -> string) -> t -> t
-
 (** Sets of pvars. *)
 module Set : PrettyPrintable.PPSet with type elt = t
 
-type capture_mode = ByReference | ByValue [@@deriving compare, equal]
-
-val string_of_capture_mode : capture_mode -> string
+val get_pvar_formals : ProcAttributes.t -> (t * Typ.t) list
+(** Return pvar and type of formal parameters *)

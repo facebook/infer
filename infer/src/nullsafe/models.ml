@@ -134,5 +134,12 @@ let find_nonnullable_alternative proc_name =
 
 
 let is_field_nonnullable field_name =
-  Hashtbl.find_opt field_nullability_table (Fieldname.to_full_string field_name)
-  |> Option.value_map ~f:(fun is_nullable -> not is_nullable) ~default:false
+  Logging.d_with_indent ~name:"is_field_nonnullable" (fun () ->
+      let full_name = Fieldname.to_full_string field_name in
+      let from_model =
+        Hashtbl.find_opt field_nullability_table full_name
+        (* Models return `is_nullable`, we need `is_notnull` *)
+        |> Option.map ~f:not
+      in
+      Logging.d_printfln "Model for %s: %a" full_name (Pp.option Format.pp_print_bool) from_model ;
+      from_model )

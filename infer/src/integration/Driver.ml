@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 open! IStd
-open PolyVariantEqual
 
 (** entry points for top-level functionalities such as capture, analysis, and reporting *)
 
@@ -28,6 +27,7 @@ type mode =
   | Javac of {compiler: Javac.compiler; prog: string; args: string list}
   | Maven of {prog: string; args: string list}
   | NdkBuild of {build_cmd: string list}
+  | Rebar3 of {args: string list}
   | XcodeBuild of {prog: string; args: string list}
   | XcodeXcpretty of {prog: string; args: string list}
 
@@ -61,6 +61,8 @@ let pp_mode fmt = function
       F.fprintf fmt "Maven driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | NdkBuild {build_cmd} ->
       F.fprintf fmt "NdkBuild driver mode: build_cmd = %a" Pp.cli_args build_cmd
+  | Rebar3 {args} ->
+      F.fprintf fmt "Rebar3 driver mode:@\nargs = %a" Pp.cli_args args
   | XcodeBuild {prog; args} ->
       F.fprintf fmt "XcodeBuild driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | XcodeXcpretty {prog; args} ->
@@ -85,7 +87,7 @@ let reset_duplicates_file () =
   let create () =
     Unix.close (Unix.openfile ~perm:0o0666 ~mode:[Unix.O_CREAT; Unix.O_WRONLY] start)
   in
-  if Sys.file_exists start = `Yes then delete () ;
+  if ISys.file_exists start then delete () ;
   create ()
 
 
@@ -140,6 +142,9 @@ let capture ~changed_files = function
   | NdkBuild {build_cmd} ->
       L.progress "Capturing in ndk-build mode...@." ;
       NdkBuild.capture ~build_cmd
+  | Rebar3 {args} ->
+      L.progress "Capturing in rebar3 mode...@." ;
+      Rebar3.capture ~args
   | XcodeBuild {prog; args} ->
       L.progress "Capturing in xcodebuild mode...@." ;
       XcodeBuild.capture ~prog ~args
@@ -184,7 +189,9 @@ let execute_analyze_json () =
 
 let report ?(suppress_console = false) () =
   let issues_json = ResultsDir.get_path ReportJson in
-  JsonReports.write_reports ~issues_json ~costs_json:(ResultsDir.get_path ReportCostsJson) ;
+  let costs_json = ResultsDir.get_path ReportCostsJson in
+  let config_impact_json = ResultsDir.get_path ReportConfigImpactJson in
+  JsonReports.write_reports ~issues_json ~costs_json ~config_impact_json ;
   (* Post-process the report according to the user config. By default, calls report.py to create a
      human-readable report.
 
@@ -301,6 +308,8 @@ let assert_supported_mode required_analyzer requested_mode_string =
         Version.clang_enabled && Version.java_enabled
     | `Java ->
         Version.java_enabled
+    | `Erlang ->
+        Version.erlang_enabled
     | `Xcode ->
         Version.clang_enabled && Version.xcode_enabled
   in
@@ -313,6 +322,8 @@ let assert_supported_mode required_analyzer requested_mode_string =
           "clang & java"
       | `Java ->
           "java"
+      | `Erlang ->
+          "erlang"
       | `Xcode ->
           "clang and xcode"
     in
@@ -335,6 +346,8 @@ let assert_supported_build_system build_system =
       Config.string_of_build_system build_system |> assert_supported_mode `Java
   | BClang | BMake | BNdk ->
       Config.string_of_build_system build_system |> assert_supported_mode `Clang
+  | BRebar3 ->
+      Config.string_of_build_system build_system |> assert_supported_mode `Erlang
   | BXcode ->
       Config.string_of_build_system build_system |> assert_supported_mode `Xcode
   | BBuck ->
@@ -398,6 +411,8 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
           Maven {prog; args}
       | BNdk, _ ->
           NdkBuild {build_cmd}
+      | BRebar3, _ ->
+          Rebar3 {args}
       | BXcode, _ when Config.xcpretty ->
           XcodeXcpretty {prog; args}
       | BXcode, _ ->

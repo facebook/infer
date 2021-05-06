@@ -14,7 +14,6 @@ module.exports = {
       "infer-workflow",
       "analyzing-apps-or-projects",
       "steps-for-ci",
-      "advanced-features",
       {"Infer Manuals": [
           "man-infer",
           "man-infer-analyze",

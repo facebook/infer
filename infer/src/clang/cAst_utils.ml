@@ -252,7 +252,7 @@ let add_type_from_decl_ref_opt qual_type_to_sil_type tenv decl_ref_opt fail_if_n
   | Some dr ->
       add_type_from_decl_ref qual_type_to_sil_type tenv dr
   | _ ->
-      if fail_if_not_found then assert false else ()
+      if fail_if_not_found then assert false
 
 
 let add_type_from_decl_ref_list qual_type_to_sil_type tenv decl_ref_list =
@@ -306,8 +306,8 @@ let is_static_local_var decl =
   match decl with Clang_ast_t.VarDecl (_, _, _, vdi) -> vdi.vdi_is_static_local | _ -> false
 
 
-let is_const_expr_var decl =
-  match decl with Clang_ast_t.VarDecl (_, _, _, vdi) -> vdi.vdi_is_const_expr | _ -> false
+let is_constexpr_var decl =
+  match decl with Clang_ast_t.VarDecl (_, _, _, vdi) -> vdi.vdi_is_constexpr | _ -> false
 
 
 let full_name_of_decl_opt decl_opt =

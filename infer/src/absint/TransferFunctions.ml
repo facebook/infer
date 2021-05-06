@@ -16,7 +16,8 @@ module type S = sig
 
   type instr
 
-  val exec_instr : Domain.t -> analysis_data -> CFG.Node.t -> instr -> Domain.t
+  val exec_instr :
+    Domain.t -> analysis_data -> CFG.Node.t -> ProcCfg.InstrNode.instr_index -> instr -> Domain.t
 
   val pp_session_name : CFG.Node.t -> Format.formatter -> unit
 end

@@ -34,3 +34,38 @@ void malloc_interproc_no_free_bad2() {
   int y = 4;
   int* q = p;
 }
+
+void malloc_formal_leak_bad(int* x) { x = (int*)malloc(sizeof(int*)); }
+
+static void* (*const malloc_func)(size_t) = malloc;
+static void (*const free_func)(void*) = free;
+
+void* malloc_via_ptr(size_t size) {
+  void* ret = NULL;
+
+  if (size <= 0) {
+    return NULL;
+  }
+
+  ret = malloc_func(size);
+  return ret;
+}
+
+void free_via_ptr(void* x) { free_func(x); }
+
+void malloc_ptr_leak_bad() { int* p = (int*)malloc_via_ptr(sizeof(int)); }
+
+void malloc_ptr_no_check_leak_bad() {
+  int* p = (int*)malloc_via_ptr(sizeof(int));
+  *p = 42;
+}
+
+void malloc_ptr_free_ok() {
+  int* p = (int*)malloc_via_ptr(sizeof(int));
+  free(p);
+}
+
+void malloc_ptr_free_ptr_ok() {
+  int* p = (int*)malloc_via_ptr(sizeof(int));
+  free_via_ptr(p);
+}

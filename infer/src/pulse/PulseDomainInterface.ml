@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module AccessResult = PulseAccessResult
 module ExecutionDomain = PulseExecutionDomain
 
 (** if you do any mutations of the state in pulse you probably want this module *)
@@ -30,6 +31,8 @@ include struct
 
   module PulseAbductiveDomain = PulseAbductiveDomain
   [@@deprecated "use the short form AbductiveDomain instead"]
+  module PulseAccessResult = PulseAccessResult
+  [@@deprecated "use the short form AccessResult instead"]
   module PulseBaseDomain = PulseBaseDomain [@@deprecated "use the short form BaseDomain instead"]
   module PulseBaseStack = PulseBaseStack [@@deprecated "use the short form BaseStack instead"]
   module PulseBaseMemory = PulseBaseMemory [@@deprecated "use the short form BaseMemory instead"]

@@ -55,7 +55,9 @@ void delete_inner_then_write_bad(struct X& x) {
   wraps_read(x);
 }
 
-void read_write_then_delete_good(struct X& x) {
+// latent because delete(&x) creates a path where &x==0 but it was dereferences
+// before, but that does not make sense as &x cannot be null
+void FP_latent_read_write_then_delete_ok(struct X& x) {
   wraps_write(x, 10);
   wraps_read(x);
   wraps_delete(&x);

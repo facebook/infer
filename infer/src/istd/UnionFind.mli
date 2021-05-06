@@ -42,17 +42,17 @@ module Make
   (** fold over the equivalence classes of the relation, singling out the representative for each
       class *)
 
-  val reorient : keep:XSet.t -> t -> X.t XMap.t
+  val reorient : should_keep:(X.t -> bool) -> t -> X.t XMap.t
   (** the relation [x -> x'] derived from the equality relation that relates all [x], [x'] such that
-      [x∉keep], [x'∈keep], and [x=x'], as well as [y -> y'] when no element in the equivalence
-      class of [y] belongs to [keep] and [y'] is the representative of the class *)
+      [¬(should_keep x)], [should_keep x'], and [x=x'], as well as [y -> y'] when no element in the
+      equivalence class of [y] satisfies [should_keep] and [y'] is the representative of the class *)
 
   val apply_subst : _ XMap.t -> t -> t
   (** [apply_subst subst uf] eliminate all variables in the domain of [subst] from [uf], keeping the
       smallest representative not in the domain of [subst] for each class. Classes without any such
       elements are kept intact. *)
 
-  val filter_not_in_closed_set : keep:XSet.t -> t -> t
-  (** only keep items in [keep], assuming that [keep] is closed under the relation, i.e. that if an
-      item [x] is in [keep] then so are all the [y] such that [x=y] according to the relation *)
+  val filter_morphism : f:(X.t -> bool) -> t -> t
+  (** only keep items satisfying [f], assuming that [f] is invariant under the relation, i.e. that
+      if [f x] and [x=y] according to the relation then [f y] *)
 end

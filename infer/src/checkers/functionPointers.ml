@@ -16,7 +16,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type analysis_data = unit
 
-  let exec_instr astate () _ = function
+  let exec_instr astate () _ _ = function
     | Sil.Load {id= lhs_id} when Ident.is_none lhs_id ->
         astate
     | Sil.Load {id= lhs_id; e= Exp.Lvar rhs_pvar; typ= Typ.{desc= Tptr ({desc= Tfun}, _)}} ->

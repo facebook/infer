@@ -564,7 +564,7 @@
                                         "type_ptr" : 31
                                       },
                                       {
-                                        "mangled_name" : "11922868141377072075",
+                                        "mangled_name" : "13286141613727650365",
                                         "is_cpp" : true,
                                         "is_inline" : true
                                       },
@@ -598,9 +598,10 @@
                                         "type_ptr" : 33
                                       },
                                       {
-                                        "mangled_name" : "11530695906998885266",
+                                        "mangled_name" : "10693628329110131385",
                                         "is_cpp" : true,
                                         "is_inline" : true,
+                                        "is_constexpr" : true,
                                         "parameters" : [
                                           <"ParmVarDecl" : (
                                             {
@@ -630,7 +631,6 @@
                                         ]
                                       },
                                       {
-                                        "is_constexpr" : true
                                       }
                                     )>,
                                     <"CXXConstructorDecl" : (
@@ -662,9 +662,10 @@
                                         "type_ptr" : 37
                                       },
                                       {
-                                        "mangled_name" : "12828931072019093462",
+                                        "mangled_name" : "18362977156530360911",
                                         "is_cpp" : true,
                                         "is_inline" : true,
+                                        "is_constexpr" : true,
                                         "parameters" : [
                                           <"ParmVarDecl" : (
                                             {
@@ -710,7 +711,6 @@
                                         )>
                                       },
                                       {
-                                        "is_constexpr" : true
                                       }
                                     )>
                                   ],
@@ -1148,7 +1148,7 @@
                                             "type_ptr" : 31
                                           },
                                           {
-                                            "mangled_name" : "11922868141377072075",
+                                            "mangled_name" : "13286141613727650365",
                                             "is_cpp" : true,
                                             "is_inline" : true
                                           },
@@ -1182,9 +1182,10 @@
                                             "type_ptr" : 33
                                           },
                                           {
-                                            "mangled_name" : "11530695906998885266",
+                                            "mangled_name" : "10693628329110131385",
                                             "is_cpp" : true,
                                             "is_inline" : true,
+                                            "is_constexpr" : true,
                                             "parameters" : [
                                               <"ParmVarDecl" : (
                                                 {
@@ -1214,7 +1215,6 @@
                                             ]
                                           },
                                           {
-                                            "is_constexpr" : true
                                           }
                                         )>,
                                         <"CXXConstructorDecl" : (
@@ -1246,9 +1246,10 @@
                                             "type_ptr" : 37
                                           },
                                           {
-                                            "mangled_name" : "12828931072019093462",
+                                            "mangled_name" : "18362977156530360911",
                                             "is_cpp" : true,
                                             "is_inline" : true,
+                                            "is_constexpr" : true,
                                             "parameters" : [
                                               <"ParmVarDecl" : (
                                                 {
@@ -1294,7 +1295,6 @@
                                             )>
                                           },
                                           {
-                                            "is_constexpr" : true
                                           }
                                         )>
                                       ],
@@ -1912,7 +1912,7 @@
                                         "type_ptr" : 31
                                       },
                                       {
-                                        "mangled_name" : "16202408192376244884",
+                                        "mangled_name" : "17450839874206147646",
                                         "is_cpp" : true,
                                         "is_inline" : true
                                       },
@@ -1946,9 +1946,10 @@
                                         "type_ptr" : 65
                                       },
                                       {
-                                        "mangled_name" : "9965911517403679447",
+                                        "mangled_name" : "34143097794571044",
                                         "is_cpp" : true,
                                         "is_inline" : true,
+                                        "is_constexpr" : true,
                                         "parameters" : [
                                           <"ParmVarDecl" : (
                                             {
@@ -1978,7 +1979,6 @@
                                         ]
                                       },
                                       {
-                                        "is_constexpr" : true
                                       }
                                     )>,
                                     <"CXXConstructorDecl" : (
@@ -2010,9 +2010,10 @@
                                         "type_ptr" : 69
                                       },
                                       {
-                                        "mangled_name" : "8193408137476215445",
+                                        "mangled_name" : "4775778177696808400",
                                         "is_cpp" : true,
                                         "is_inline" : true,
+                                        "is_constexpr" : true,
                                         "parameters" : [
                                           <"ParmVarDecl" : (
                                             {
@@ -2060,7 +2061,6 @@
                                         )>
                                       },
                                       {
-                                        "is_constexpr" : true,
                                         "cxx_ctor_initializers" : [
                                           {
                                             "subject" : <"Member" : {
@@ -3039,7 +3039,7 @@
                                             "type_ptr" : 31
                                           },
                                           {
-                                            "mangled_name" : "16202408192376244884",
+                                            "mangled_name" : "17450839874206147646",
                                             "is_cpp" : true,
                                             "is_inline" : true
                                           },
@@ -3073,9 +3073,10 @@
                                             "type_ptr" : 65
                                           },
                                           {
-                                            "mangled_name" : "9965911517403679447",
+                                            "mangled_name" : "34143097794571044",
                                             "is_cpp" : true,
                                             "is_inline" : true,
+                                            "is_constexpr" : true,
                                             "parameters" : [
                                               <"ParmVarDecl" : (
                                                 {
@@ -3105,7 +3106,6 @@
                                             ]
                                           },
                                           {
-                                            "is_constexpr" : true
                                           }
                                         )>,
                                         <"CXXConstructorDecl" : (
@@ -3137,9 +3137,10 @@
                                             "type_ptr" : 69
                                           },
                                           {
-                                            "mangled_name" : "8193408137476215445",
+                                            "mangled_name" : "4775778177696808400",
                                             "is_cpp" : true,
                                             "is_inline" : true,
+                                            "is_constexpr" : true,
                                             "parameters" : [
                                               <"ParmVarDecl" : (
                                                 {
@@ -3187,7 +3188,6 @@
                                             )>
                                           },
                                           {
-                                            "is_constexpr" : true,
                                             "cxx_ctor_initializers" : [
                                               {
                                                 "subject" : <"Member" : {
@@ -4033,7 +4033,7 @@
                                         "type_ptr" : 31
                                       },
                                       {
-                                        "mangled_name" : "17098733838812833493",
+                                        "mangled_name" : "15857901981355611363",
                                         "is_cpp" : true,
                                         "is_inline" : true
                                       },
@@ -4067,9 +4067,10 @@
                                         "type_ptr" : 100
                                       },
                                       {
-                                        "mangled_name" : "14201972727608021968",
+                                        "mangled_name" : "7938324828555278899",
                                         "is_cpp" : true,
                                         "is_inline" : true,
+                                        "is_constexpr" : true,
                                         "parameters" : [
                                           <"ParmVarDecl" : (
                                             {
@@ -4099,7 +4100,6 @@
                                         ]
                                       },
                                       {
-                                        "is_constexpr" : true
                                       }
                                     )>,
                                     <"CXXConstructorDecl" : (
@@ -4131,9 +4131,10 @@
                                         "type_ptr" : 104
                                       },
                                       {
-                                        "mangled_name" : "3001717133787422796",
+                                        "mangled_name" : "4960955440766632321",
                                         "is_cpp" : true,
                                         "is_inline" : true,
+                                        "is_constexpr" : true,
                                         "parameters" : [
                                           <"ParmVarDecl" : (
                                             {
@@ -4181,7 +4182,6 @@
                                         )>
                                       },
                                       {
-                                        "is_constexpr" : true,
                                         "cxx_ctor_initializers" : [
                                           {
                                             "subject" : <"Member" : {
@@ -4921,7 +4921,7 @@
                                             "type_ptr" : 31
                                           },
                                           {
-                                            "mangled_name" : "17098733838812833493",
+                                            "mangled_name" : "15857901981355611363",
                                             "is_cpp" : true,
                                             "is_inline" : true
                                           },
@@ -4955,9 +4955,10 @@
                                             "type_ptr" : 100
                                           },
                                           {
-                                            "mangled_name" : "14201972727608021968",
+                                            "mangled_name" : "7938324828555278899",
                                             "is_cpp" : true,
                                             "is_inline" : true,
+                                            "is_constexpr" : true,
                                             "parameters" : [
                                               <"ParmVarDecl" : (
                                                 {
@@ -4987,7 +4988,6 @@
                                             ]
                                           },
                                           {
-                                            "is_constexpr" : true
                                           }
                                         )>,
                                         <"CXXConstructorDecl" : (
@@ -5019,9 +5019,10 @@
                                             "type_ptr" : 104
                                           },
                                           {
-                                            "mangled_name" : "3001717133787422796",
+                                            "mangled_name" : "4960955440766632321",
                                             "is_cpp" : true,
                                             "is_inline" : true,
+                                            "is_constexpr" : true,
                                             "parameters" : [
                                               <"ParmVarDecl" : (
                                                 {
@@ -5069,7 +5070,6 @@
                                             )>
                                           },
                                           {
-                                            "is_constexpr" : true,
                                             "cxx_ctor_initializers" : [
                                               {
                                                 "subject" : <"Member" : {
@@ -5874,15 +5874,21 @@
         },
         <"Half">
       )>,
-      <"RecordType" : (
+      <"BuiltinType" : (
         {
           "pointer" : 182
         },
-        183
+        <"BFloat16">
+      )>,
+      <"RecordType" : (
+        {
+          "pointer" : 183
+        },
+        184
       )>,
       <"PointerType" : (
         {
-          "pointer" : 184
+          "pointer" : 185
         },
         {
           "type_ptr" : 12,
@@ -5891,7 +5897,7 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 185
+          "pointer" : 186
         },
         {
           "type_ptr" : 120,
@@ -5900,7 +5906,7 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 186
+          "pointer" : 187
         },
         {
           "type_ptr" : 120
@@ -5908,17 +5914,17 @@
       )>,
       <"RecordType" : (
         {
-          "pointer" : 187
+          "pointer" : 188
         },
-        188
+        189
       )>,
       <"ConstantArrayType" : (
         {
-          "pointer" : 189
+          "pointer" : 190
         },
         {
           "element_type" : {
-            "type_ptr" : 187
+            "type_ptr" : 188
           },
           "stride" : 24
         },
@@ -5938,19 +5944,19 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 190
+          "pointer" : 191
         },
         {
-          "type_ptr" : 186
+          "type_ptr" : 187
         }
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 191
+          "pointer" : 192
         },
         {
           "return_type" : {
-            "type_ptr" : 192
+            "type_ptr" : 193
           }
         },
         {
@@ -5964,12 +5970,12 @@
       )>,
       <"TemplateTypeParmType" : (
         {
-          "pointer" : 193
+          "pointer" : 194
         }
       )>,
       <"TemplateTypeParmType" : (
         {
-          "pointer" : 194
+          "pointer" : 195
         }
       )>,
       <"AutoType" : (
@@ -5980,7 +5986,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 195
+          "pointer" : 196
         },
         {
           "return_type" : {
@@ -6016,7 +6022,7 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 196
+          "pointer" : 197
         },
         {
           "type_ptr" : 8
@@ -6024,7 +6030,7 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 197
+          "pointer" : 198
         },
         {
           "type_ptr" : 29
@@ -6032,19 +6038,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 198
-        },
-        {
-          "return_type" : {
-            "type_ptr" : 196
-          }
-        },
-        {
-        }
-      )>,
-      <"FunctionProtoType" : (
-        {
-          "pointer" : 27
+          "pointer" : 199
         },
         {
           "return_type" : {
@@ -6056,7 +6050,19 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 199
+          "pointer" : 27
+        },
+        {
+          "return_type" : {
+            "type_ptr" : 198
+          }
+        },
+        {
+        }
+      )>,
+      <"FunctionProtoType" : (
+        {
+          "pointer" : 200
         },
         {
           "return_type" : {
@@ -6068,7 +6074,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 200
+          "pointer" : 201
         },
         {
           "return_type" : {
@@ -6092,7 +6098,7 @@
       )>,
       <"TemplateTypeParmType" : (
         {
-          "pointer" : 201
+          "pointer" : 202
         }
       )>,
       <"AutoType" : (
@@ -6112,7 +6118,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 202
+          "pointer" : 203
         },
         {
           "return_type" : {
@@ -6154,7 +6160,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 203
+          "pointer" : 204
         },
         {
           "return_type" : {
@@ -6171,7 +6177,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 204
+          "pointer" : 205
         },
         {
           "return_type" : {
@@ -6205,11 +6211,11 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 205
+          "pointer" : 206
         },
         {
           "return_type" : {
-            "type_ptr" : 192
+            "type_ptr" : 193
           }
         },
         {
@@ -6236,12 +6242,12 @@
       )>,
       <"TemplateTypeParmType" : (
         {
-          "pointer" : 206
+          "pointer" : 207
         }
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 207
+          "pointer" : 208
         },
         {
           "return_type" : {
@@ -6275,7 +6281,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 208
+          "pointer" : 209
         },
         {
           "return_type" : {
@@ -6287,7 +6293,7 @@
       )>,
       <"TemplateTypeParmType" : (
         {
-          "pointer" : 209
+          "pointer" : 210
         }
       )>,
       <"AutoType" : (
@@ -6307,7 +6313,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 210
+          "pointer" : 211
         },
         {
           "return_type" : {
@@ -6349,7 +6355,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 211
+          "pointer" : 212
         },
         {
           "return_type" : {
@@ -6366,7 +6372,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 212
+          "pointer" : 213
         },
         {
           "return_type" : {
@@ -6400,7 +6406,7 @@
       )>,
       <"TemplateTypeParmType" : (
         {
-          "pointer" : 213
+          "pointer" : 214
         }
       )>,
       <"RecordType" : (
@@ -6411,12 +6417,12 @@
       )>,
       <"TemplateTypeParmType" : (
         {
-          "pointer" : 214
+          "pointer" : 215
         }
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 215
+          "pointer" : 216
         },
         {
           "return_type" : {
@@ -6428,7 +6434,7 @@
       )>,
       <"TemplateTypeParmType" : (
         {
-          "pointer" : 216
+          "pointer" : 217
         }
       )>,
       <"AutoType" : (
@@ -6448,7 +6454,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 217
+          "pointer" : 218
         },
         {
           "return_type" : {
@@ -6490,7 +6496,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 218
+          "pointer" : 219
         },
         {
           "return_type" : {
@@ -6507,7 +6513,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 219
+          "pointer" : 220
         },
         {
           "return_type" : {
@@ -6541,7 +6547,7 @@
       )>,
       <"ObjCObjectType" : (
         {
-          "pointer" : 220
+          "pointer" : 221
         },
         {
           "base_type" : 176
@@ -6549,32 +6555,32 @@
       )>,
       <"ObjCObjectPointerType" : (
         {
-          "pointer" : 221
+          "pointer" : 222
         },
         {
-          "type_ptr" : 220
+          "type_ptr" : 221
         }
       )>,
       <"TypedefType" : (
         {
-          "pointer" : 222,
-          "desugared_type" : 221
+          "pointer" : 223,
+          "desugared_type" : 222
         },
         {
           "child_type" : {
-            "type_ptr" : 221
+            "type_ptr" : 222
           },
-          "decl_ptr" : 223
+          "decl_ptr" : 224
         }
       )>,
       <"TypedefType" : (
         {
           "pointer" : 117,
-          "desugared_type" : 221
+          "desugared_type" : 222
         },
         {
           "child_type" : {
-            "type_ptr" : 222
+            "type_ptr" : 223
           },
           "decl_ptr" : 116
         }

@@ -607,6 +607,8 @@ module SafeInvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain
 
   let filter = M.filter
 
+  let filter_map f x = M.filter_map (fun k v -> f k v |> none_if_top_opt) x
+
   let partition = M.partition
 
   let cardinal = M.cardinal
@@ -640,6 +642,8 @@ module SafeInvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain
   let find_last_opt = M.find_last_opt
 
   let fold_map = M.fold_map
+
+  let fold_mapi = M.fold_mapi
 
   let of_seq = M.of_seq
 

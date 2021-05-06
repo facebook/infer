@@ -211,7 +211,7 @@ module TransferFunctions = struct
     Domain.assume_null access_path astate
 
 
-  let exec_instr astate {interproc= {proc_desc; tenv}; get_proc_summary_and_formals} _
+  let exec_instr astate {interproc= {proc_desc; tenv}; get_proc_summary_and_formals} _ _
       (instr : HilInstr.t) : Domain.t =
     let caller_pname = Procdesc.get_proc_name proc_desc in
     match instr with

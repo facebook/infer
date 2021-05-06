@@ -33,9 +33,9 @@ module type S = sig
   val name : t -> string
   val fresh : string -> wrt:Set.t -> t * Set.t
 
-  val identified : ?name:string -> id:int -> t
-  (** Create a variable identified by [id] with optional [name]. The [id]
-      uniquely identifies the variable, and must be positive. *)
+  val identified : name:string -> id:int -> t
+  (** Create a variable identified by [id]. The [id] uniquely identifies the
+      variable, and must be positive. *)
 
   (** Variable renaming substitutions *)
   module Subst : Subst.S with type var := t with type set := Set.t

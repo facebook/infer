@@ -132,8 +132,7 @@ end = struct
     ( noninterp_with_solvable_var_in xs e
     || noninterp_with_solvable_var_in xs f )
     $> fun b ->
-    [%Trace.info
-      "is_valid_eq %a%a=%a = %b" Var.Set.pp_xs xs Trm.pp e Trm.pp f b]
+    [%Trace.info " %a%a=%a = %b" Var.Set.pp_xs xs Trm.pp e Trm.pp f b]
 
   (** Partition ∃xs. σ into equivalent ∃xs. τ ∧ ∃ks. ν where ks
       and ν are maximal where ∃ks. ν is universally valid, xs ⊇ ks and
@@ -423,7 +422,7 @@ let pre_invariant x =
             ) ) )
   with exc ->
     let bt = Printexc.get_raw_backtrace () in
-    [%Trace.info "%a" pp_raw x] ;
+    [%Trace.info " %a" pp_raw x] ;
     Printexc.raise_with_backtrace exc bt
 
 let invariant x =

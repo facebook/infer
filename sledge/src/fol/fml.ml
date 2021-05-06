@@ -102,30 +102,39 @@ let _Eq x y =
         _Eq0 (Trm.sub x y)
     (* α^β^δ = α^γ^δ ==> β = γ *)
     | Concat a, Concat b ->
-        let m = Array.length a in
-        let n = Array.length b in
-        let l = min m n in
+        let length_a = Array.length a in
+        let length_b = Array.length b in
+        let min_length = min length_a length_b in
         let length_common_prefix =
           let rec find_lcp i =
-            if i < l && Trm.equal a.(i) b.(i) then find_lcp (i + 1) else i
+            if i < min_length && Trm.equal a.(i) b.(i) then find_lcp (i + 1)
+            else i
           in
           find_lcp 0
         in
-        if length_common_prefix = l then tt
-        else
-          let length_common_suffix =
-            let rec find_lcs i =
-              if Trm.equal a.(m - 1 - i) b.(n - 1 - i) then find_lcs (i + 1)
-              else i
-            in
-            find_lcs 0
+        let min_length_without_common_prefix =
+          min_length - length_common_prefix
+        in
+        let length_common_suffix =
+          let rec find_lcs i =
+            if
+              i < min_length_without_common_prefix
+              && Trm.equal a.(length_a - 1 - i) b.(length_b - 1 - i)
+            then find_lcs (i + 1)
+            else i
           in
-          let length_common = length_common_prefix + length_common_suffix in
-          if length_common = 0 then sort_eq x y
+          find_lcs 0
+        in
+        let length_common = length_common_prefix + length_common_suffix in
+        if length_common = 0 then sort_eq x y
+        else
+          let len_a = length_a - length_common in
+          let len_b = length_b - length_common in
+          if len_a = 0 && len_b = 0 then tt
           else
             let pos = length_common_prefix in
-            let a = Array.sub ~pos ~len:(m - length_common) a in
-            let b = Array.sub ~pos ~len:(n - length_common) b in
+            let a = Array.sub ~pos ~len:len_a a in
+            let b = Array.sub ~pos ~len:len_b b in
             _Eq (Trm.concat a) (Trm.concat b)
     | (Sized _ | Extract _ | Concat _), (Sized _ | Extract _ | Concat _) ->
         sort_eq x y

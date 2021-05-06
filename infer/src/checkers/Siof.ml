@@ -8,6 +8,7 @@
 open! IStd
 open! AbstractDomain.Types
 module F = Format
+module L = Logging
 module GlobalVar = SiofTrace.GlobalVar
 module GlobalVarSet = SiofTrace.GlobalVarSet
 
@@ -128,7 +129,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let at_least_nonbottom = Domain.join (NonBottom SiofTrace.bottom, Domain.VarNames.empty)
 
   let exec_instr astate
-      ({InterproceduralAnalysis.proc_desc; analyze_dependency; _} as analysis_data) _
+      ({InterproceduralAnalysis.proc_desc; analyze_dependency; _} as analysis_data) _ _
       (instr : Sil.instr) =
     match instr with
     | Store {e1= Lvar global; typ= Typ.{desc= Tptr _}; e2= Lvar _; loc}
@@ -160,9 +161,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               else None )
         in
         Domain.join astate (NonBottom SiofTrace.bottom, Domain.VarNames.of_list init)
-    | Call (_, Const (Cfun (ObjC_Cpp cpp_pname as callee_pname)), _ :: actuals_without_self, loc, _)
-      when Procname.is_constructor callee_pname && Procname.ObjC_Cpp.is_constexpr cpp_pname ->
-        add_actuals_globals analysis_data astate loc actuals_without_self
+    | Call (_, Const (Cfun callee_pname), actuals, loc, _)
+      when Attributes.load callee_pname
+           |> Option.exists ~f:(fun attrs -> attrs.ProcAttributes.is_ret_constexpr) ->
+        let actuals_without_this =
+          if Procname.is_constructor callee_pname then List.tl actuals |> Option.value ~default:[]
+          else actuals
+        in
+        add_actuals_globals analysis_data astate loc actuals_without_this
     | Call (_, Const (Cfun callee_pname), actuals, loc, _) ->
         let callee_astate =
           match analyze_dependency callee_pname with
@@ -184,6 +190,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           | Some (_, ((Bottom, _) as callee_astate)) ->
               callee_astate
           | None ->
+              L.d_printfln "Unknown call" ;
               (Bottom, Domain.VarNames.empty)
         in
         add_actuals_globals analysis_data astate loc actuals
@@ -285,9 +292,7 @@ let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
        to figure this out when analyzing the function, but we might as well use the user's
        specification if it's given to us. This also serves as an optimization as this skips the
        analysis of the function. *)
-    if
-      match pname with ObjC_Cpp cpp_pname -> Procname.ObjC_Cpp.is_constexpr cpp_pname | _ -> false
-    then Some initial
+    if (Procdesc.get_attributes proc_desc).is_ret_constexpr then Some initial
     else Analyzer.compute_post analysis_data ~initial proc_desc
   in
   ( match Procname.get_global_name_of_initializer pname with

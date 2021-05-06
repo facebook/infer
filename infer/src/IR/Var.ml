@@ -36,6 +36,8 @@ let get_ident = function ProgramVar _ -> None | LogicalVar id -> Some id
 
 let get_pvar = function ProgramVar pvar -> Some pvar | LogicalVar _ -> None
 
+let is_pvar = function ProgramVar _ -> true | LogicalVar _ -> false
+
 let is_global = function ProgramVar pvar -> Pvar.is_global pvar | LogicalVar _ -> false
 
 let is_return = function ProgramVar pvar -> Pvar.is_return pvar | LogicalVar _ -> false
@@ -46,15 +48,8 @@ let is_none = function LogicalVar id -> Ident.is_none id | _ -> false
 
 let is_this = function ProgramVar pv -> Pvar.is_this pv | LogicalVar _ -> false
 
-let get_declaring_function = function
-  | LogicalVar _ ->
-      None
-  | ProgramVar pvar ->
-      Pvar.get_declaring_function pvar
-
-
 let is_local_to_procedure proc_name var =
-  get_declaring_function var |> Option.exists ~f:(Procname.equal proc_name)
+  get_pvar var |> Option.exists ~f:(fun pvar -> Pvar.is_local_to_procedure proc_name pvar)
 
 
 let get_all_vars_in_exp e =

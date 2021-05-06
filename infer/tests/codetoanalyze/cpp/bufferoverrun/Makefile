@@ -7,8 +7,9 @@ TESTS_DIR = ../../..
 
 # see explanations in cpp/biabduction/Makefile for the custom isystem
 CLANG_OPTIONS = -x c++ -std=c++11 -nostdinc++ -isystem$(CLANG_INCLUDES)/c++/v1/ -c
-INFER_OPTIONS = --bufferoverrun-only --ml-buckets cpp --no-filtering --debug-exceptions \
-                --project-root $(TESTS_DIR) --report-force-relative-path
+INFER_OPTIONS = \
+  --bufferoverrun-only --no-filtering --debug-exceptions --project-root $(TESTS_DIR) \
+  --report-force-relative-path
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard *.cpp)

@@ -10,40 +10,11 @@ module F = Format
 module L = Logging
 module SatUnsat = PulseSatUnsat
 module Var = PulseAbstractValue
+module Q = QSafeCapped
+module Z = ZSafe
 open SatUnsat
 
 type operand = LiteralOperand of IntLit.t | AbstractValueOperand of Var.t
-
-(** {!Q} from zarith with a few convenience functions added *)
-module Q = struct
-  include Q
-
-  let not_equal q1 q2 = not (Q.equal q1 q2)
-
-  let is_one q = Q.equal q Q.one
-
-  let is_minus_one q = Q.equal q Q.minus_one
-
-  let is_zero q = Q.equal q Q.zero
-
-  let is_not_zero q = not (is_zero q)
-
-  let conv_protect f q = try Some (f q) with Division_by_zero | Z.Overflow -> None
-
-  let to_int q = conv_protect Q.to_int q
-
-  let to_int64 q = conv_protect Q.to_int64 q
-
-  let to_bigint q = conv_protect Q.to_bigint q
-
-  type z = Z.t
-
-  let yojson_of_z z = `String (Z.to_string z)
-
-  type _q = t = {num: z; den: z} [@@deriving yojson_of]
-
-  let yojson_of_t = [%yojson_of: _q]
-end
 
 (** Linear Arithmetic *)
 module LinArith : sig
@@ -99,15 +70,13 @@ end = struct
     if Var.Map.is_empty vs then Q.pp_print fmt c
     else
       let pp_c fmt c =
-        if Q.is_zero c then ()
-        else
+        if not (Q.is_zero c) then
           let plusminus, c_pos = if Q.geq c Q.zero then ('+', c) else ('-', Q.neg c) in
           F.fprintf fmt " %c%a" plusminus Q.pp_print c_pos
       in
       let pp_coeff fmt q =
-        if Q.is_one q then ()
-        else if Q.is_minus_one q then F.pp_print_string fmt "-"
-        else F.fprintf fmt "%a·" Q.pp_print q
+        if not (Q.is_one q) then
+          if Q.is_minus_one q then F.pp_print_string fmt "-" else F.fprintf fmt "%a·" Q.pp_print q
       in
       let pp_vs fmt vs =
         Pp.collection ~sep:" + "
@@ -153,6 +122,7 @@ end = struct
               if Var.equal v' x then vs' else Var.Map.add v' (Q.div coeff' d) vs' )
             vs Var.Map.empty
         in
+        (* note: [d≠0] by the invariant of the coefficient map [vs] *)
         let c' = Q.div c d in
         Sat (Some (x, (c', vs')))
 
@@ -213,6 +183,10 @@ type subst_target = LinArith.subst_target =
   | VarSubst of Var.t
   | LinSubst of LinArith.t
 
+let subst_f subst x = match Var.Map.find_opt x subst with Some y -> y | None -> x
+
+let targetted_subst_var subst_var x = VarSubst (subst_f subst_var x)
+
 (** Expressive term structure to be able to express all of SIL, but the main smarts of the formulas
     are for the equality between variables and linear arithmetic subsets. Terms (and atoms, below)
     are kept as a last-resort for when outside that fragment. *)
@@ -239,6 +213,7 @@ module Term = struct
     | BitShiftLeft of t * t
     | BitShiftRight of t * t
     | BitXor of t * t
+    | IsInstanceOf of Var.t * Typ.t
   [@@deriving compare, equal, yojson_of]
 
   let equal_syntax = [%compare.equal: t]
@@ -270,7 +245,8 @@ module Term = struct
     | LessThan _
     | LessEqual _
     | Equal _
-    | NotEqual _ ->
+    | NotEqual _
+    | IsInstanceOf _ ->
         true
 
 
@@ -325,6 +301,8 @@ module Term = struct
         F.fprintf fmt "%a=%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
     | NotEqual (t1, t2) ->
         F.fprintf fmt "%a≠%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
+    | IsInstanceOf (v, t) ->
+        F.fprintf fmt "(%a instanceof %a)" pp_var v (Typ.pp Pp.text) t
 
 
   let of_q q = Const q
@@ -395,7 +373,7 @@ module Term = struct
   (** Fold [f] on the strict sub-terms of [t], if any. Preserve physical equality if [f] does. *)
   let fold_map_direct_subterms t ~init ~f =
     match t with
-    | Var _ | Const _ | Linear _ ->
+    | Var _ | Const _ | Linear _ | IsInstanceOf _ ->
         (init, t)
     | Minus t_not | BitNot t_not | Not t_not ->
         let acc, t_not' = f init t_not in
@@ -470,17 +448,62 @@ module Term = struct
     fold_map_direct_subterms t ~init:() ~f:(fun () t' -> ((), f t')) |> snd
 
 
+  let rec fold_map_subterms t ~init ~f =
+    let acc, t' =
+      fold_map_direct_subterms t ~init ~f:(fun acc t' -> fold_map_subterms t' ~init:acc ~f)
+    in
+    f acc t'
+
+
+  let fold_subterms t ~init ~f = fold_map_subterms t ~init ~f:(fun acc t' -> (f acc t', t')) |> fst
+
+  let map_subterms t ~f = fold_map_subterms t ~init:() ~f:(fun () t' -> ((), f t')) |> snd
+
+  let iter_subterms t ~f = Container.iter ~fold:fold_subterms t ~f
+
+  let exists_subterm t ~f = Container.exists ~iter:iter_subterms t ~f
+
   let rec fold_subst_variables t ~init ~f =
     match t with
     | Var v ->
         let acc, op = f init v in
         let t' = match op with VarSubst v' when Var.equal v v' -> t | _ -> of_subst_target op in
         (acc, t')
+    | IsInstanceOf (v, typ) ->
+        let acc, op = f init v in
+        let t' =
+          match op with
+          | VarSubst v' when not (Var.equal v v') ->
+              IsInstanceOf (v', typ)
+          | QSubst q when Q.is_zero q ->
+              zero
+          | QSubst _ | VarSubst _ | LinSubst _ ->
+              t
+        in
+        (acc, t')
     | Linear l ->
         let acc, l' = LinArith.fold_subst_variables l ~init ~f in
         let t' = if phys_equal l l' then t else Linear l' in
         (acc, t')
-    | _ ->
+    | Const _
+    | Add _
+    | Minus _
+    | LessThan _
+    | LessEqual _
+    | Equal _
+    | NotEqual _
+    | Mult _
+    | Div _
+    | And _
+    | Or _
+    | Not _
+    | Mod _
+    | BitAnd _
+    | BitOr _
+    | BitNot _
+    | BitShiftLeft _
+    | BitShiftRight _
+    | BitXor _ ->
         fold_map_direct_subterms t ~init ~f:(fun acc t' -> fold_subst_variables t' ~init:acc ~f)
 
 
@@ -497,7 +520,7 @@ module Term = struct
 
 
   (** reduce to a constant when the direct sub-terms are constants *)
-  let eval_const_shallow t0 =
+  let eval_const_shallow_ t0 =
     let map_const t f = match t with Const c -> f c | _ -> t0 in
     let map_const2 t1 t2 f = match (t1, t2) with Const c1, Const c2 -> f c1 c2 | _ -> t0 in
     let q_map t q_f = map_const t (fun c -> Const (q_f c)) in
@@ -512,10 +535,12 @@ module Term = struct
     in
     let map_i64_i64 = conv2 Q.to_int64 Q.to_int64 Q.of_int64 in
     let map_i64_i = conv2 Q.to_int64 Q.to_int Q.of_int64 in
-    let map_z_z = conv2 Q.to_bigint Q.to_bigint Q.of_bigint in
+    let map_z_z_opt q1 q2 f =
+      conv2 Q.to_bigint Q.to_bigint (Option.map ~f:Q.of_bigint) q1 q2 f |> Option.join
+    in
     let or_undef q_opt = Option.value ~default:Q.undef q_opt in
     match t0 with
-    | Const _ | Var _ ->
+    | Const _ | Var _ | IsInstanceOf _ ->
         t0
     | Linear l ->
         LinArith.get_as_const l |> Option.value_map ~default:t0 ~f:(fun c -> Const c)
@@ -530,9 +555,10 @@ module Term = struct
     | Mult (t1, t2) ->
         q_map2 t1 t2 Q.mul
     | Div (t1, t2) ->
-        q_map2 t1 t2 Q.div
+        q_map2 t1 t2 (fun c1 c2 -> if Q.is_zero c2 then Q.undef else Q.div c1 c2)
     | Mod (t1, t2) ->
-        q_map2 t1 t2 (fun c1 c2 -> map_z_z c1 c2 Z.( mod ) |> or_undef)
+        q_map2 t1 t2 (fun c1 c2 ->
+            if Q.is_zero c2 then Q.undef else map_z_z_opt c1 c2 Z.( mod ) |> or_undef )
     | Not t' ->
         q_predicate_map t' Q.is_zero
     | And (t1, t2) ->
@@ -566,7 +592,12 @@ module Term = struct
                 map_i64_i64 c1 c2 Int64.bit_xor |> or_undef )
 
 
-  let rec simplify_shallow t =
+  (* defend in depth against exceptions *)
+  let eval_const_shallow t =
+    Z.protect eval_const_shallow_ t |> Option.value ~default:(Const Q.undef)
+
+
+  let rec simplify_shallow_ t =
     match t with
     | Var _ | Const _ ->
         t
@@ -601,11 +632,11 @@ module Term = struct
         (* [t / 0 = undefined] *)
         Const Q.undef
     | Div (t, Const c) ->
-        (* [t / c = (1/c)·t] *)
-        simplify_shallow (Mult (Const (Q.inv c), t))
+        (* [t / c = (1/c)·t], [c≠0] *)
+        simplify_shallow_ (Mult (Const (Q.inv c), t))
     | Div (Minus t1, Minus t2) ->
         (* [(-t1) / (-t2) = t1 / t2] *)
-        simplify_shallow (Div (t1, t2))
+        simplify_shallow_ (Div (t1, t2))
     | Div (t1, t2) when equal_syntax t1 t2 ->
         (* [t / t = 1] *)
         one
@@ -626,6 +657,24 @@ module Term = struct
         zero
     | (BitShiftLeft (t1, t2) | BitShiftRight (t1, t2)) when is_zero t2 ->
         t1
+    | BitShiftLeft (t', Const q) | BitShiftRight (t', Const q) -> (
+      match Q.to_int q with
+      | None ->
+          (* overflows or otherwise undefined, propagate puzzlement *)
+          Const Q.undef
+      | Some i -> (
+          if i >= 64 then (* assume 64-bit or fewer architecture *) zero
+          else if i < 0 then (* this is undefined, maybe we should report a bug here *)
+            Const Q.undef
+          else
+            let factor = Const Q.(of_int 1 lsl i) in
+            match[@warning "-8"] t with
+            | BitShiftLeft _ ->
+                simplify_shallow_ (Mult (t', factor))
+            | BitShiftRight _ ->
+                simplify_shallow_ (Div (t', factor)) ) )
+    | (BitShiftLeft (t1, t2) | BitShiftRight (t1, t2)) when is_zero t2 ->
+        t1
     | And (t1, t2) when is_zero t1 || is_zero t2 ->
         (* [false ∧ t = t ∧ false = false] *) zero
     | And (t1, t2) when is_non_zero_const t1 ->
@@ -641,6 +690,9 @@ module Term = struct
     | _ ->
         t
 
+
+  (* defend in depth against exceptions *)
+  let simplify_shallow t = Z.protect simplify_shallow_ t |> Option.value ~default:(Const Q.undef)
 
   (** more or less syntactic attempt at detecting when an arbitrary term is a linear formula; call
       {!Atom.eval_term} first for best results *)
@@ -682,7 +734,8 @@ module Term = struct
       | LessThan _
       | LessEqual _
       | Equal _
-      | NotEqual _ ->
+      | NotEqual _
+      | IsInstanceOf _ ->
           None
     in
     match aux_linearize t with None -> t | Some l -> Linear l
@@ -693,6 +746,35 @@ module Term = struct
       match LinArith.get_as_const l with Some c -> Const c | None -> Linear l )
     | t ->
         t
+
+
+  module VarMap = struct
+    include Caml.Map.Make (struct
+      type nonrec t = t [@@deriving compare]
+    end)
+
+    type t_ = Var.t t [@@deriving compare, equal]
+
+    let pp_with_pp_var pp_var fmt m =
+      if is_empty m then F.pp_print_string fmt "true (no term_eqs)"
+      else
+        Pp.collection ~sep:"∧"
+          ~fold:(IContainer.fold_of_pervasives_map_fold fold)
+          ~pp_item:(fun fmt (term, var) ->
+            F.fprintf fmt "%a=%a" (pp_no_paren pp_var) term pp_var var )
+          fmt m
+
+
+    let yojson_of_t_ m = `List (List.map (bindings m) ~f:[%yojson_of: t * Var.t])
+
+    let apply_var_subst subst m =
+      fold
+        (fun t v acc ->
+          let t' = subst_variables t ~f:(targetted_subst_var subst) in
+          let v' = subst_f subst v in
+          add t' v' acc )
+        m empty
+  end
 end
 
 (** Basically boolean terms, used to build the part of a formula that is not equalities between
@@ -766,6 +848,8 @@ module Atom = struct
 
 
   let map_terms atom ~f = fold_map_terms atom ~init:() ~f:(fun () t -> ((), f t)) |> snd
+
+  let map_subterms atom ~f = map_terms atom ~f:(fun t -> Term.map_subterms t ~f)
 
   let to_term : t -> Term.t = function
     | LessEqual (t1, t2) ->
@@ -912,7 +996,7 @@ module Atom = struct
   let rec eval_term t =
     let t =
       Term.map_direct_subterms ~f:eval_term t
-      |> Term.simplify_shallow |> Term.eval_const_shallow |> Term.linearize |> Term.simplify_linear
+      |> Term.eval_const_shallow |> Term.simplify_shallow |> Term.linearize |> Term.simplify_linear
     in
     match atom_of_term t with
     | Some atom ->
@@ -969,6 +1053,16 @@ module VarUF =
 
 type new_eq = EqZero of Var.t | Equal of Var.t * Var.t
 
+let pp_new_eq fmt = function
+  | EqZero v ->
+      F.fprintf fmt "%a=0" Var.pp v
+  | Equal (v1, v2) ->
+      F.fprintf fmt "%a=%a" Var.pp v1 Var.pp v2
+
+
+(* keep [pp_new_eq] alive for debugging; remove once it becomes used *)
+let _ = pp_new_eq
+
 type new_eqs = new_eq list
 
 module Formula = struct
@@ -991,10 +1085,19 @@ module Formula = struct
     { var_eqs: var_eqs  (** equality relation between variables *)
     ; linear_eqs: linear_eqs
           (** equalities of the form [x = l] where [l] is from linear arithmetic *)
-    ; atoms: Atom.Set.t  (** not always normalized w.r.t. [var_eqs] and [linear_eqs] *) }
+    ; term_eqs: Term.VarMap.t_
+          (** equalities of the form [t = x], used to detect when two abstract values are equal to
+              the same term (hence equal) *)
+    ; atoms: Atom.Set.t  (** "everything else"; not always normalized w.r.t. the components above *)
+    }
   [@@deriving compare, equal, yojson_of]
 
-  let ttrue = {var_eqs= VarUF.empty; linear_eqs= Var.Map.empty; atoms= Atom.Set.empty}
+  let ttrue =
+    { var_eqs= VarUF.empty
+    ; linear_eqs= Var.Map.empty
+    ; term_eqs= Term.VarMap.empty
+    ; atoms= Atom.Set.empty }
+
 
   let pp_with_pp_var pp_var fmt phi =
     let pp_linear_eqs fmt m =
@@ -1005,14 +1108,18 @@ module Formula = struct
           ~pp_item:(fun fmt (v, l) -> F.fprintf fmt "%a = %a" pp_var v (LinArith.pp pp_var) l)
           fmt m
     in
-    F.fprintf fmt "@[<hv>%a@ &&@ %a@ &&@ %a@]"
+    F.fprintf fmt "@[<hv>%a@ &&@ %a@ &&@ %a@ &&@ %a@]"
       (VarUF.pp ~pp_empty:(fun fmt -> F.pp_print_string fmt "true (no var=var)") pp_var)
-      phi.var_eqs pp_linear_eqs phi.linear_eqs (Atom.Set.pp_with_pp_var pp_var) phi.atoms
+      phi.var_eqs pp_linear_eqs phi.linear_eqs
+      (Term.VarMap.pp_with_pp_var pp_var)
+      phi.term_eqs (Atom.Set.pp_with_pp_var pp_var) phi.atoms
 
 
   (** module that breaks invariants more often that the rest, with an interface that is safer to use *)
   module Normalizer : sig
     val and_var_linarith : Var.t -> LinArith.t -> t * new_eqs -> (t * new_eqs) SatUnsat.t
+
+    val and_var_term : Var.t -> Term.t -> t * new_eqs -> (t * new_eqs) SatUnsat.t
 
     val and_var_var : Var.t -> Var.t -> t * new_eqs -> (t * new_eqs) SatUnsat.t
 
@@ -1058,7 +1165,7 @@ module Formula = struct
 
     (** substitute vars in [l] *once* with their linear form to discover more simplification
         opportunities *)
-    let apply phi l =
+    let normalize_linear phi l =
       LinArith.subst_variables l ~f:(fun v ->
           let repr = (get_repr phi v :> Var.t) in
           match Var.Map.find_opt repr phi.linear_eqs with
@@ -1066,6 +1173,22 @@ module Formula = struct
               VarSubst repr
           | Some l' ->
               LinSubst l' )
+
+
+    let normalize_var_const phi t =
+      Term.subst_variables t ~f:(fun v ->
+          let v_canon = (get_repr phi v :> Var.t) in
+          match Var.Map.find_opt v_canon phi.linear_eqs with
+          | None ->
+              VarSubst v_canon
+          | Some l -> (
+            match LinArith.get_as_const l with
+            | None ->
+                (* OPTIM: don't make the term bigger *) VarSubst v_canon
+            | Some q ->
+                (* replace vars by constants when available to possibly trigger further
+                   simplifications in atoms. This is not actually needed for [term_eqs]. *)
+                QSubst q ) )
 
 
     let add_lin_eq_to_new_eqs v l new_eqs =
@@ -1076,11 +1199,14 @@ module Formula = struct
           new_eqs
 
 
+    (** add [l1 = l2] to [phi.linear_eqs] and resolves consequences of that new fact
+
+        [l1] and [l2] should have already been through {!normalize_linear} (w.r.t. [phi]) *)
     let rec solve_normalized_lin_eq ~fuel new_eqs l1 l2 phi =
       LinArith.solve_eq l1 l2
       >>= function
       | None ->
-          Sat (phi, [])
+          Sat (phi, new_eqs)
       | Some (v, l) -> (
         match LinArith.get_as_var l with
         | Some v' ->
@@ -1088,24 +1214,99 @@ module Formula = struct
         | None -> (
           match Var.Map.find_opt (v :> Var.t) phi.linear_eqs with
           | None ->
+              (* add to the [term_eqs] relation only when we also add to [linear_eqs] *)
+              let+ phi, new_eqs =
+                solve_normalized_term_eq_no_lin ~fuel new_eqs (Term.Linear l) (v :> Var.t) phi
+              in
               let new_eqs = add_lin_eq_to_new_eqs v l new_eqs in
               (* this can break the (as a result non-)invariant that variables in the domain of
                  [linear_eqs] do not appear in the range of [linear_eqs] *)
-              Sat ({phi with linear_eqs= Var.Map.add (v :> Var.t) l phi.linear_eqs}, new_eqs)
+              ({phi with linear_eqs= Var.Map.add (v :> Var.t) l phi.linear_eqs}, new_eqs)
           | Some l' ->
               (* This is the only step that consumes fuel: discovering an equality [l = l']: because we
                  do not record these anywhere (except when their consequence can be recorded as [y =
                  l''] or [y = y'], we could potentially discover the same equality over and over and
                  diverge otherwise. Or could we? *)
               (* [l'] is possibly not normalized w.r.t. the current [phi] so take this opportunity to
-                 normalize it *)
+                 normalize it, and replace [v]'s current binding *)
+              let l'' = normalize_linear phi l' in
+              let phi =
+                if phys_equal l' l'' then phi
+                else {phi with linear_eqs= Var.Map.add (v :> Var.t) l'' phi.linear_eqs}
+              in
               if fuel > 0 then (
                 L.d_printfln "Consuming fuel solving linear equality (from %d)" fuel ;
-                solve_normalized_lin_eq ~fuel:(fuel - 1) new_eqs l (apply phi l') phi )
+                solve_normalized_lin_eq ~fuel:(fuel - 1) new_eqs l l'' phi )
               else (
                 (* [fuel = 0]: give up simplifying further for fear of diverging *)
                 L.d_printfln "Ran out of fuel solving linear equality" ;
                 Sat (phi, new_eqs) ) ) )
+
+
+    (** add [t = v] to [phi.term_eqs] and resolves consequences of that new fact; don't use directly
+        as it doesn't do any checks on what else should be done about [t = v] *)
+    and solve_normalized_term_eq_no_lin_ ~fuel new_eqs t v phi =
+      match Term.VarMap.find_opt t phi.term_eqs with
+      | None ->
+          (* [t] isn't known already: add it *)
+          Sat ({phi with term_eqs= Term.VarMap.add t v phi.term_eqs}, new_eqs)
+      | Some v' ->
+          (* [t = v'] already in the map, need to explore consequences of [v = v']*)
+          merge_vars ~fuel new_eqs v v' phi
+
+
+    (** add [t = v] to [phi.term_eqs] and resolves consequences of that new fact; assumes that
+        linear facts have been or will be added to [phi.linear_eqs] separately
+
+        [t] should have already been through {!normalize_var_const} and [v] should be a
+        representative from {!get_repr} (w.r.t. [phi]) *)
+    and solve_normalized_term_eq_no_lin ~fuel new_eqs (t : Term.t) v phi =
+      match t with
+      | Linear l when LinArith.get_as_var l |> Option.is_some ->
+          (* [v1=v2] is already taken care of by [var_eqs] *)
+          Sat (phi, new_eqs)
+      | _ ->
+          let t =
+            match t with
+            | Linear l -> (
+              match LinArith.get_as_const l with Some c -> Term.Const c | None -> t )
+            | _ ->
+                t
+          in
+          solve_normalized_term_eq_no_lin_ ~fuel new_eqs t v phi
+
+
+    (** same as {!solve_normalized_eq_no_lin} but also adds linear to [phi.linear_eqs] *)
+    and solve_normalized_term_eq ~fuel new_eqs (t : Term.t) v phi =
+      match t with
+      | Linear l when LinArith.get_as_var l |> Option.is_some ->
+          (* [v1=v2] is already taken care of by [var_eqs] *)
+          Sat (phi, new_eqs)
+      | Linear l -> (
+          (* [l = v]: need to first solve it to get [l' = v'] such that [v' < vars(l')], and [l'] is
+             normalized wrt [phi.linear_eqs] (to get a canonical form), add this to [term_eqs], then
+             in order to know which equality should be added to [linear_eqs] we still need to
+             substitute [v'] with [linear_eqs] and solve again *)
+          LinArith.solve_eq (normalize_linear phi l) (LinArith.of_var v)
+          >>= function
+          | None ->
+              (* [v = v], we can drop this tautology *)
+              Sat (phi, new_eqs)
+          | Some (v', l') ->
+              (* [l'] could contain [v], which hasn't been through [linear_eqs], so normalize again *)
+              let l' = normalize_linear phi l' in
+              let* phi, new_eqs =
+                solve_normalized_term_eq_no_lin_ ~fuel new_eqs (Term.Linear l') v' phi
+              in
+              solve_normalized_lin_eq ~fuel new_eqs l'
+                (normalize_linear phi (LinArith.of_var v'))
+                phi )
+      | Const c ->
+          (* same as above but constants ([c]) are always normalized so it's simpler *)
+          let* phi, new_eqs = solve_normalized_term_eq_no_lin_ ~fuel new_eqs t v phi in
+          solve_normalized_lin_eq ~fuel new_eqs (LinArith.of_q c) (LinArith.of_var v) phi
+      | _ ->
+          solve_normalized_term_eq_no_lin ~fuel new_eqs t v phi
 
 
     and merge_vars ~fuel new_eqs v1 v2 phi =
@@ -1161,49 +1362,55 @@ module Formula = struct
 
 
     (** an arbitrary value *)
-    let base_fuel = 5
+    let base_fuel = 10
 
     let solve_lin_eq new_eqs t1 t2 phi =
-      solve_normalized_lin_eq ~fuel:base_fuel new_eqs (apply phi t1) (apply phi t2) phi
+      solve_normalized_lin_eq ~fuel:base_fuel new_eqs (normalize_linear phi t1)
+        (normalize_linear phi t2) phi
 
 
     let and_var_linarith v l (phi, new_eqs) = solve_lin_eq new_eqs l (LinArith.of_var v) phi
 
-    let rec normalize_linear_eqs ~fuel (phi0, new_eqs) =
-      let* changed, phi_new_eqs' =
-        (* reconstruct the relation from scratch *)
-        Var.Map.fold
-          (fun v l acc ->
-            let* changed, phi_new_eqs = acc in
-            let l' = apply phi0 l in
-            let+ phi_new_eqs' = and_var_linarith v l' phi_new_eqs in
-            (changed || not (phys_equal l l'), phi_new_eqs') )
-          phi0.linear_eqs
-          (Sat (false, ({phi0 with linear_eqs= Var.Map.empty}, new_eqs)))
-      in
-      if changed then
-        if fuel > 0 then (
-          (* do another pass if we can afford it *)
-          L.d_printfln "consuming fuel normalizing linear equalities (from %d)" fuel ;
-          normalize_linear_eqs ~fuel:(fuel - 1) phi_new_eqs' )
-        else (
-          L.d_printfln "ran out of fuel normalizing linear equalities" ;
-          Sat phi_new_eqs' )
-      else Sat (phi0, new_eqs)
+    let normalize_linear_eqs (phi0, new_eqs) =
+      Var.Map.fold
+        (fun v l acc ->
+          let* changed, ((_, new_eqs) as phi_new_eqs) = acc in
+          let l' = normalize_linear phi0 l in
+          let+ phi', new_eqs' = and_var_linarith v l' phi_new_eqs in
+          let changed', new_eqs' =
+            if phys_equal l l' then (changed, new_eqs) else (true, new_eqs')
+          in
+          (changed', (phi', new_eqs')) )
+        phi0.linear_eqs
+        (Sat (false, ({phi0 with linear_eqs= Var.Map.empty}, new_eqs)))
 
 
     let normalize_atom phi (atom : Atom.t) =
-      let normalize_term phi t =
-        Term.subst_variables t ~f:(fun v ->
-            let v_canon = (get_repr phi v :> Var.t) in
-            match Var.Map.find_opt v_canon phi.linear_eqs with
-            | None ->
-                VarSubst v_canon
-            | Some l -> (
-              match LinArith.get_as_const l with None -> LinSubst l | Some q -> QSubst q ) )
-      in
-      let atom' = Atom.map_terms atom ~f:(fun t -> normalize_term phi t) in
+      let atom' = Atom.map_terms atom ~f:(fun t -> normalize_var_const phi t) in
       Atom.eval atom' |> sat_of_eval_result
+
+
+    let and_var_term ~fuel v t (phi, new_eqs) =
+      let t' : Term.t = normalize_var_const phi t |> Atom.eval_term in
+      let v' = (get_repr phi v :> Var.t) in
+      (* check if unsat given what we know of [v'] and [t'], in other words be at least as
+         complete as general atoms *)
+      let* _ = Atom.eval (Equal (t', normalize_var_const phi (Var v'))) |> sat_of_eval_result in
+      solve_normalized_term_eq ~fuel new_eqs t' v' phi
+
+
+    let normalize_term_eqs (phi0, new_eqs0) =
+      Term.VarMap.fold
+        (fun t v acc_sat_unsat ->
+          let* new_lin, ((_phi, new_eqs) as phi_new_eqs) = acc_sat_unsat in
+          let+ phi', new_eqs' = and_var_term ~fuel:base_fuel v t phi_new_eqs in
+          let new_lin, new_eqs' =
+            if phys_equal phi'.linear_eqs phi0.linear_eqs then (new_lin, new_eqs)
+            else (true, new_eqs')
+          in
+          (new_lin, (phi', new_eqs')) )
+        phi0.term_eqs
+        (Sat (false, ({phi0 with term_eqs= Term.VarMap.empty}, new_eqs0)))
 
 
     (** return [(new_linear_equalities, phi ∧ atom)], where [new_linear_equalities] is [true] if
@@ -1213,12 +1420,19 @@ module Formula = struct
       >>= function
       | None ->
           Sat (false, (phi, new_eqs))
+      | Some (Atom.Equal (Linear _, Linear _)) ->
+          assert false
       | Some (Atom.Equal (Linear l, Const c)) | Some (Atom.Equal (Const c, Linear l)) ->
           (* NOTE: {!normalize_atom} calls {!Atom.eval}, which normalizes linear equalities so
              they end up only on one side, hence only this match case is needed to detect linear
              equalities *)
           let+ phi', new_eqs = solve_lin_eq new_eqs l (LinArith.of_q c) phi in
           (true, (phi', new_eqs))
+      | Some (Atom.Equal (Linear l, t) | Atom.Equal (t, Linear l))
+        when Option.is_some (LinArith.get_as_var l) ->
+          let v = Option.value_exn (LinArith.get_as_var l) in
+          let+ phi_new_eqs' = solve_normalized_term_eq ~fuel:base_fuel new_eqs t v phi in
+          (false, phi_new_eqs')
       | Some atom' ->
           Sat (false, ({phi with atoms= Atom.Set.add atom' phi.atoms}, new_eqs))
 
@@ -1232,30 +1446,37 @@ module Formula = struct
           (changed || changed', phi_new_eqs) )
 
 
+    let rec normalize_with_fuel ~fuel phi_new_eqs0 =
+      if fuel < 0 then (
+        L.d_printfln "ran out of fuel when normalizing" ;
+        Sat phi_new_eqs0 )
+      else
+        let* new_linear_eqs, phi_new_eqs' =
+          let* new_linear_eqs_from_linear, phi_new_eqs = normalize_linear_eqs phi_new_eqs0 in
+          if new_linear_eqs_from_linear && fuel > 0 then
+            (* do another round of linear normalization early if we will renormalize again anyway;
+               no need to first normalize term_eqs and atoms w.r.t. a linear relation that's going
+               to change and trigger a recompute of these anyway *)
+            Sat (true, phi_new_eqs)
+          else
+            let* new_linear_eqs_from_terms, phi_new_eqs = normalize_term_eqs phi_new_eqs in
+            let+ new_linear_eqs_from_atoms, phi_new_eqs = normalize_atoms phi_new_eqs in
+            ( new_linear_eqs_from_linear || new_linear_eqs_from_terms || new_linear_eqs_from_atoms
+            , phi_new_eqs )
+        in
+        if new_linear_eqs then (
+          L.d_printfln "new linear equalities, consuming fuel (from %d)" fuel ;
+          normalize_with_fuel ~fuel:(fuel - 1) phi_new_eqs' )
+        else Sat phi_new_eqs'
+
+
     (* interface *)
 
-    let normalize phi0 =
-      (* NOTE: we may consume a quadratic amount of [fuel] here since the fuel here is not consumed by
-         [normalize_linear_eqs] (i.e. [normalize_linear_eqs] does not return the remaining
-         fuel). That's ok because there's not much fuel to begin with, and as long as we're making
-         progress it's probably worth it anyway. *)
-      let rec normalize_with_fuel ~fuel phi_new_eqs =
-        if fuel <= 0 then (
-          L.d_printfln "ran out of fuel when normalizing" ;
-          Sat phi_new_eqs )
-        else
-          let* new_linear_eqs, phi_new_eqs' =
-            normalize_linear_eqs ~fuel phi_new_eqs >>= normalize_atoms
-          in
-          if new_linear_eqs then (
-            L.d_printfln "new linear equalities, consuming fuel (from %d)" fuel ;
-            normalize_with_fuel ~fuel:(fuel - 1) phi_new_eqs' )
-          else Sat phi_new_eqs'
-      in
-      normalize_with_fuel ~fuel:base_fuel (phi0, [])
-
+    let normalize phi = normalize_with_fuel ~fuel:base_fuel (phi, [])
 
     let and_atom atom phi_new_eqs = and_atom atom phi_new_eqs >>| snd
+
+    let and_var_term v t phi_new_eqs = and_var_term ~fuel:base_fuel v t phi_new_eqs
 
     let and_var_var v1 v2 (phi, new_eqs) = merge_vars ~fuel:base_fuel new_eqs v1 v2 phi
 
@@ -1305,6 +1526,11 @@ let and_mk_atom mk_atom op1 op2 phi =
 
 let and_equal = and_mk_atom Atom.equal
 
+let and_equal_instanceof v1 v2 t phi =
+  let atom = Atom.equal (Var v1) (IsInstanceOf (v2, t)) in
+  and_known_atom atom phi
+
+
 let and_less_equal = and_mk_atom Atom.less_equal
 
 let and_less_than = and_mk_atom Atom.less_than
@@ -1334,8 +1560,59 @@ let prune_binop ~negated (bop : Binop.t) x y phi =
   ({phi with pruned; both}, new_eqs)
 
 
-let normalize phi =
+module DynamicTypes = struct
+  let evaluate_instanceof tenv ~get_dynamic_type v typ =
+    get_dynamic_type v
+    |> Option.map ~f:(fun dynamic_type ->
+           let is_instanceof =
+             match (Typ.name dynamic_type, Typ.name typ) with
+             | Some name1, Some name2 ->
+                 PatternMatch.is_subtype tenv name1 name2
+             | _, _ ->
+                 Typ.equal dynamic_type typ
+           in
+           Term.of_bool is_instanceof )
+
+
+  let simplify tenv ~get_dynamic_type phi =
+    let simplify_is_instance_of (t : Term.t) =
+      match t with
+      | IsInstanceOf (v, typ) -> (
+        match evaluate_instanceof tenv ~get_dynamic_type v typ with None -> t | Some t' -> t' )
+      | t ->
+          t
+    in
+    let changed = ref false in
+    let term_eqs =
+      if
+        Term.VarMap.exists
+          (fun t _ -> Term.exists_subterm t ~f:(function IsInstanceOf _ -> true | _ -> false))
+          phi.both.term_eqs
+      then
+        (* slow path: reconstruct everything *)
+        Term.VarMap.fold
+          (fun t v term_eqs' ->
+            let t' = Term.map_subterms t ~f:simplify_is_instance_of in
+            changed := !changed || not (phys_equal t t') ;
+            Term.VarMap.add t' v term_eqs' )
+          phi.both.term_eqs Term.VarMap.empty
+      else (* fast path: nothing to do *) phi.both.term_eqs
+    in
+    let atoms =
+      Atom.Set.map
+        (fun atom ->
+          Atom.map_subterms atom ~f:(fun t ->
+              let t' = simplify_is_instance_of t in
+              changed := !changed || not (phys_equal t t') ;
+              t' ) )
+        phi.both.atoms
+    in
+    if !changed then {phi with both= {phi.both with atoms; term_eqs}} else phi
+end
+
+let normalize tenv ~get_dynamic_type phi =
   let open SatUnsat.Import in
+  let phi = DynamicTypes.simplify tenv ~get_dynamic_type phi in
   let* both, new_eqs = Formula.Normalizer.normalize phi.both in
   let* known, _ = Formula.Normalizer.normalize phi.known in
   let+ pruned =
@@ -1383,6 +1660,14 @@ let and_fold_subst_variables phi0 ~up_to_f:phi_foreign ~init ~f:f_var =
         let phi_new_eqs = Formula.Normalizer.and_var_linarith v l phi_new_eqs |> sat_value_exn in
         (acc_f, phi_new_eqs) )
   in
+  let and_term_eqs term_eqs_foreign acc_phi_new_eqs =
+    IContainer.fold_of_pervasives_map_fold Term.VarMap.fold term_eqs_foreign ~init:acc_phi_new_eqs
+      ~f:(fun (acc_f, phi_new_eqs) (t_foreign, v_foreign) ->
+        let acc_f, t = Term.fold_subst_variables t_foreign ~init:acc_f ~f:f_subst in
+        let acc_f, v = f_var acc_f v_foreign in
+        let phi_new_eqs = Formula.Normalizer.and_var_term v t phi_new_eqs |> sat_value_exn in
+        (acc_f, phi_new_eqs) )
+  in
   let and_atoms atoms_foreign acc_phi_new_eqs =
     IContainer.fold_of_pervasives_set_fold Atom.Set.fold atoms_foreign ~init:acc_phi_new_eqs
       ~f:(fun (acc_f, phi_new_eqs) atom_foreign ->
@@ -1395,6 +1680,7 @@ let and_fold_subst_variables phi0 ~up_to_f:phi_foreign ~init ~f:f_var =
       Sat
         ( and_var_eqs phi_foreign.Formula.var_eqs (acc, (phi, []))
         |> and_linear_eqs phi_foreign.Formula.linear_eqs
+        |> and_term_eqs phi_foreign.Formula.term_eqs
         |> and_atoms phi_foreign.Formula.atoms )
     with Contradiction -> Unsat
   in
@@ -1420,13 +1706,10 @@ let and_fold_subst_variables phi0 ~up_to_f:phi_foreign ~init ~f:f_var =
 module QuantifierElimination : sig
   val eliminate_vars : keep:Var.Set.t -> t -> t SatUnsat.t
   (** [eliminate_vars ~keep φ] substitutes every variable [x] in [φ] with [x'] whenever [x'] is a
-      distinguished representative of the equivalence class of [x] in [φ] such that [x' ∈ keep] *)
+      distinguished representative of the equivalence class of [x] in [φ] such that
+      [x' ∈ keep_pre ∪ keep_post] *)
 end = struct
   exception Contradiction
-
-  let subst_f subst x = match Var.Map.find_opt x subst with Some y -> y | None -> x
-
-  let targetted_subst_var subst_var x = VarSubst (subst_f subst_var x)
 
   let subst_var_linear_eqs subst linear_eqs =
     Var.Map.fold
@@ -1453,9 +1736,10 @@ end = struct
       atoms Atom.Set.empty
 
 
-  let subst_var_formula subst {Formula.var_eqs; linear_eqs; atoms} =
+  let subst_var_formula subst {Formula.var_eqs; linear_eqs; term_eqs; atoms} =
     { Formula.var_eqs= VarUF.apply_subst subst var_eqs
     ; linear_eqs= subst_var_linear_eqs subst linear_eqs
+    ; term_eqs= Term.VarMap.apply_var_subst subst term_eqs
     ; atoms= subst_var_atoms subst atoms }
 
 
@@ -1466,7 +1750,7 @@ end = struct
 
 
   let eliminate_vars ~keep phi =
-    let subst = VarUF.reorient ~keep phi.known.var_eqs in
+    let subst = VarUF.reorient ~should_keep:(fun x -> Var.Set.mem x keep) phi.known.var_eqs in
     try Sat (subst_var subst phi) with Contradiction -> Unsat
 end
 
@@ -1506,15 +1790,18 @@ module DeadVariables = struct
         |> Seq.fold_left (fun vs v -> Var.Set.add v vs) (Var.Set.singleton v)
         |> add_all )
       phi.Formula.linear_eqs ;
+    (* helper function: compute [vs U vars(t)] *)
+    let union_vars_of_term t vs =
+      Term.fold_variables t ~init:vs ~f:(fun vs v -> Var.Set.add v vs)
+    in
     (* add edges between all pairs of variables appearing in [t1] or [t2] (yes this is quadratic in
        the number of variables of these terms) *)
     let add_from_terms t1 t2 =
-      (* compute [vs U vars(t)] *)
-      let union_vars_of_term t vs =
-        Term.fold_variables t ~init:vs ~f:(fun vs v -> Var.Set.add v vs)
-      in
       union_vars_of_term t1 Var.Set.empty |> union_vars_of_term t2 |> add_all
     in
+    Term.VarMap.iter
+      (fun t v -> union_vars_of_term t (Var.Set.singleton v) |> add_all)
+      phi.Formula.term_eqs ;
     Atom.Set.iter
       (fun atom ->
         let t1, t2 = Atom.get_terms atom in
@@ -1550,11 +1837,11 @@ module DeadVariables = struct
 
 
   (** Get rid of atoms when they contain only variables that do not appear in atoms mentioning
-      variables in [keep], or variables appearing in atoms together with variables in [keep], and so
-      on. In other words, the variables to keep are all the ones transitively reachable from
+      variables in [keep], or variables appearing in atoms together with variables in these sets,
+      and so on. In other words, the variables to keep are all the ones transitively reachable from
       variables in [keep] in the graph connecting two variables whenever they appear together in a
       same atom of the formula. *)
-  let eliminate ~keep phi =
+  let eliminate ~can_be_pruned ~keep phi =
     (* We only consider [phi.both] when building the relation. Considering [phi.known] and
        [phi.pruned] as well could lead to us keeping more variables around, but that's not necessarily
        a good idea. Ignoring them means we err on the side of reporting potentially slightly more
@@ -1562,46 +1849,54 @@ module DeadVariables = struct
        result. *)
     let var_graph = build_var_graph phi.both in
     let vars_to_keep = get_reachable_from var_graph keep in
-    L.d_printfln "Reachable vars: {%a}" Var.Set.pp vars_to_keep ;
-    (* discard atoms which have variables *not* in [vars_to_keep], which in particular is enough
-       to guarantee that *none* of their variables are in [vars_to_keep] thanks to transitive
-       closure on the graph above *)
-    let filter_atom atom = not (Atom.has_var_notin vars_to_keep atom) in
+    L.d_printfln "Reachable vars: %a" Var.Set.pp vars_to_keep ;
     let simplify_phi phi =
-      let var_eqs = VarUF.filter_not_in_closed_set ~keep:vars_to_keep phi.Formula.var_eqs in
+      let var_eqs =
+        VarUF.filter_morphism ~f:(fun x -> Var.Set.mem x vars_to_keep) phi.Formula.var_eqs
+      in
       let linear_eqs =
         Var.Map.filter (fun v _ -> Var.Set.mem v vars_to_keep) phi.Formula.linear_eqs
       in
-      let atoms = Atom.Set.filter filter_atom phi.Formula.atoms in
-      {Formula.var_eqs; linear_eqs; atoms}
+      let term_eqs =
+        Term.VarMap.filter
+          (fun t v -> Var.Set.mem v vars_to_keep && not (Term.has_var_notin vars_to_keep t))
+          phi.Formula.term_eqs
+      in
+      (* discard atoms which have variables *not* in [vars_to_keep], which in particular is enough
+         to guarantee that *none* of their variables are in [vars_to_keep] thanks to transitive
+         closure on the graph above *)
+      let atoms =
+        Atom.Set.filter (fun atom -> not (Atom.has_var_notin vars_to_keep atom)) phi.Formula.atoms
+      in
+      {Formula.var_eqs; linear_eqs; term_eqs; atoms}
     in
     let known = simplify_phi phi.known in
     let both = simplify_phi phi.both in
-    let pruned = Atom.Set.filter filter_atom phi.pruned in
+    let pruned =
+      (* discard atoms that callers have no way of influencing, i.e. more or less those that do not
+         contain variables related to variables in the pre *)
+      let closed_prunable_vars = get_reachable_from var_graph can_be_pruned in
+      Atom.Set.filter (fun atom -> not (Atom.has_var_notin closed_prunable_vars atom)) phi.pruned
+    in
     {known; pruned; both}
 end
 
-let simplify ~keep phi =
+let simplify tenv ~get_dynamic_type ~can_be_pruned ~keep phi =
   let open SatUnsat.Import in
-  let* phi, new_eqs = normalize phi in
-  L.d_printfln_escaped "Simplifying %a wrt {%a}" pp phi Var.Set.pp keep ;
+  let* phi, new_eqs = normalize tenv ~get_dynamic_type phi in
+  L.d_printfln_escaped "@[Simplifying %a@,wrt %a (keep), with prunables=%a@]" pp phi Var.Set.pp keep
+    Var.Set.pp can_be_pruned ;
   (* get rid of as many variables as possible *)
   let+ phi = QuantifierElimination.eliminate_vars ~keep phi in
   (* TODO: doing [QuantifierElimination.eliminate_vars; DeadVariables.eliminate] a few times may
      eliminate even more variables *)
-  (DeadVariables.eliminate ~keep phi, new_eqs)
+  let phi = DeadVariables.eliminate ~can_be_pruned ~keep phi in
+  (phi, new_eqs)
 
 
 let is_known_zero phi v =
   Var.Map.find_opt (VarUF.find phi.both.var_eqs v :> Var.t) phi.both.linear_eqs
   |> Option.exists ~f:LinArith.is_zero
-
-
-let as_int phi v =
-  let maybe_int q = if Z.equal (Q.den q) Z.one then Q.to_int q else None in
-  let open Option.Monad_infix in
-  Var.Map.find_opt (VarUF.find phi.both.var_eqs v :> Var.t) phi.both.linear_eqs
-  >>= LinArith.get_as_const >>= maybe_int
 
 
 (** test if [phi.known ⊢ phi.pruned] *)

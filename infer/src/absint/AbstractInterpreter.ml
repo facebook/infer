@@ -90,7 +90,7 @@ module type NodeTransferFunctions = sig
 
   val exec_node_instrs :
        Domain.t State.t option
-    -> exec_instr:(Domain.t -> Sil.instr -> Domain.t)
+    -> exec_instr:(ProcCfg.InstrNode.instr_index -> Domain.t -> Sil.instr -> Domain.t)
     -> Domain.t
     -> _ Instrs.t
     -> Domain.t
@@ -103,7 +103,7 @@ module SimpleNodeTransferFunctions (T : TransferFunctions.SIL) = struct
   include T
 
   let exec_node_instrs _old_state_opt ~exec_instr pre instrs =
-    Instrs.fold ~init:pre instrs ~f:exec_instr
+    Instrs.foldi ~init:pre instrs ~f:exec_instr
 end
 
 (** build a disjunctive domain and transfer functions *)
@@ -119,23 +119,47 @@ struct
     (** a list [\[x1; x2; ...; xN\]] represents a disjunction [x1 ∨ x2 ∨ ... ∨ xN] *)
     type t = T.Domain.t list
 
-    let rev_filter_not_over_approximated disjuncts ~not_in =
-      List.rev_filter disjuncts ~f:(fun disjunct ->
-          List.exists not_in ~f:(fun disj_not_in -> T.Domain.leq ~lhs:disjunct ~rhs:disj_not_in)
-          |> not )
-
-
-    let join : t -> t -> t =
-      let rec list_rev_append l1 l2 n =
-        match l1 with hd :: tl when n > 0 -> list_rev_append tl (hd :: l2) (n - 1) | _ -> l2
+    (* a bit too specialised to go into {!IList} *)
+    let length_if_leq n l =
+      let rec aux length n l =
+        if n < 0 then None
+        else match l with [] -> Some length | _ :: tl -> aux (length + 1) (n - 1) tl
       in
-      fun lhs rhs ->
-        if phys_equal lhs rhs then lhs
-        else
-          let (`UnderApproximateAfter n) = DConfig.join_policy in
-          let lhs_length = List.length lhs in
-          if lhs_length >= n then lhs else list_rev_append rhs lhs (n - lhs_length)
+      aux 0 n l
 
+
+    let append_no_duplicates_up_to leq n from ~into =
+      let rec aux n acc from =
+        match from with
+        | hd :: tl when n > 0 ->
+            (* check with respect to the original [into] and not [acc] as we assume lists of
+               disjuncts are already deduplicated *)
+            if List.exists into ~f:(fun into_disj -> leq ~lhs:hd ~rhs:into_disj) then
+              (* [hd] is already implied by one of the states in [into]; skip it
+                 ([(a=>b) => (a\/b <=> b)]) *)
+              aux n acc tl
+            else aux (n - 1) (hd :: acc) tl
+        | _ ->
+            (* [from] is empty or [n = 0], either way we are done *) acc
+      in
+      aux n into from
+
+
+    (** Ignore states in [lhs] that are over-approximated in [rhs] and vice-versa. Favors keeping
+        states in [lhs]. *)
+    let join_up_to leq lhs rhs =
+      if phys_equal lhs rhs then lhs
+      else
+        let (`UnderApproximateAfter n) = DConfig.join_policy in
+        match length_if_leq n lhs with
+        | None ->
+            (* already at max disjuncts *) lhs
+        | Some lhs_length ->
+            (* this filters only in one direction for now, could be worth doing both ways *)
+            append_no_duplicates_up_to leq (n - lhs_length) rhs ~into:lhs
+
+
+    let join lhs rhs = join_up_to (fun ~lhs ~rhs -> phys_equal lhs rhs) lhs rhs
 
     (** check if elements of [disj] appear in [of_] in the same order, using pointer equality on
         abstract states to compare elements quickly *)
@@ -153,15 +177,6 @@ struct
 
     let leq ~lhs ~rhs = phys_equal lhs rhs || is_trivial_subset lhs ~of_:rhs
 
-    (** Ignore states in [lhs] that are over-approximated in [rhs] and vice-versa. Favors keeping
-        states in [lhs]. *)
-    let join_up_to_imply lhs rhs =
-      let rev_rhs_not_in_lhs = rev_filter_not_over_approximated rhs ~not_in:lhs in
-      (* cheeky: this is only used in pulse, whose (<=) is actually a symmetric relation so there's
-         no need to filter out elements of [lhs] *)
-      join lhs rev_rhs_not_in_lhs
-
-
     let widen ~prev ~next ~num_iters =
       let (`UnderApproximateAfterNumIterations max_iter) = DConfig.widen_policy in
       if phys_equal prev next then prev
@@ -169,7 +184,7 @@ struct
         L.d_printfln "Iteration %d is greater than max iter %d, stopping." num_iters max_iter ;
         prev )
       else
-        let post = join_up_to_imply prev next in
+        let post = join_up_to T.Domain.leq prev next in
         if leq ~lhs:post ~rhs:prev then prev else post
 
 
@@ -181,7 +196,7 @@ struct
       F.fprintf f "@[<v>%d disjuncts:@;%a@]" (List.length disjuncts) pp_disjuncts disjuncts
   end
 
-  let exec_instr pre_disjuncts analysis_data node instr =
+  let exec_instr pre_disjuncts analysis_data node _ instr =
     List.foldi pre_disjuncts ~init:[] ~f:(fun i post_disjuncts pre_disjunct ->
         let should_skip =
           let (`UnderApproximateAfter n) = DConfig.join_policy in
@@ -211,7 +226,7 @@ struct
     List.foldi pre ~init:current_post ~f:(fun i post_disjuncts pre_disjunct ->
         if is_new_pre pre_disjunct then (
           L.d_printfln "@[<v2>Executing node from disjunct #%d@;" i ;
-          let disjuncts' = Instrs.fold ~init:[pre_disjunct] instrs ~f:exec_instr in
+          let disjuncts' = Instrs.foldi ~init:[pre_disjunct] instrs ~f:exec_instr in
           L.d_printfln "@]@\n" ;
           Domain.join post_disjuncts disjuncts' )
         else (
@@ -294,11 +309,11 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
   let exec_node_instrs old_state_opt ~pp_instr proc_data node pre =
     let instrs = CFG.instrs node in
     if Config.write_html then L.d_printfln_escaped "PRE STATE:@\n@[%a@]@\n" Domain.pp pre ;
-    let exec_instr pre instr =
+    let exec_instr idx pre instr =
       AnalysisState.set_instr instr ;
       let result =
         try
-          let post = TransferFunctions.exec_instr pre proc_data node instr in
+          let post = TransferFunctions.exec_instr pre proc_data node idx instr in
           (* don't forget to reset this so we output messages for future errors too *)
           logged_error := false ;
           Ok post

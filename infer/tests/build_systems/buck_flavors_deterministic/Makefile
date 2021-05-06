@@ -24,12 +24,12 @@ differences.exp.test: $(CLANG_DEPS) $(SOURCES) $(MAKEFILE_LIST)
 	$(call silent_on_success,Running Buck flavors capture a first time,\
 	$(INFER_BIN) $(INFER_OPTIONS) capture --buck-clang --results-dir $(CURDIR)/infer-out -- \
 	  $(BUCK) build --no-cache $(BUCK_TARGET) && \
-	find buck-out/gen/src/infer-out-* -type f | xargs cat | $(SHASUM) > capture_hash-1.sha)
+	  find buck-out/gen/src -path "*infer-out*" -type f | sort | xargs cat | $(SHASUM) > capture_hash-1.sha)
 	$(QUIET)$(BUCK) clean && \
 	$(call silent_on_success,Running Buck flavors capture a second time,\
 	$(INFER_BIN) $(INFER_OPTIONS) capture --buck-clang --results-dir $(CURDIR)/infer-out -- \
 	  $(BUCK) build --no-cache $(BUCK_TARGET) && \
-	find buck-out/gen/src/infer-out-* -type f | xargs cat | $(SHASUM) > capture_hash-2.sha)
+	  find buck-out/gen/src -path "*infer-out*" -type f | sort | xargs cat | $(SHASUM) > capture_hash-2.sha)
 	$(QUIET)$(call silent_on_success,Computing difference,\
 	diff capture_hash-1.sha capture_hash-2.sha && \
 	  echo "capture is deterministic" > $@ || \
@@ -50,4 +50,4 @@ replace: differences.exp.test
 
 .PHONY: clean
 clean:
-	$(QUIET)$(REMOVE_DIR) infer-out $(OBJECTS) $(CLEAN_EXTRA)
+	$(QUIET)$(REMOVE_DIR) infer-out differences.exp.test $(OBJECTS) $(CLEAN_EXTRA)

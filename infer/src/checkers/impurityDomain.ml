@@ -50,23 +50,30 @@ let pure =
   ; exited= Exited.bottom }
 
 
+let implements_immutable_map tenv = function
+  | Typ.JavaClass java_class_name ->
+      JavaClassName.to_string java_class_name
+      |> PatternMatch.Java.implements_xmob_utils "ImmutableIntHashMap" tenv
+  | _ ->
+      false
+
+
 let filter_modifies_immutable tenv ~f =
   ModifiedVarMap.filter (fun _pvar ModifiedAccess.{ordered_access_list} ->
       List.exists ordered_access_list ~f:(fun access ->
           match access with
-          | HilExp.Access.FieldAccess fname -> (
+          | HilExp.Access.FieldAccess fname ->
               let class_name = Fieldname.get_class_name fname in
-              match Tenv.lookup tenv class_name with
-              | Some mstruct ->
-                  f mstruct
-                  |> List.exists ~f:(fun (fieldname, _typ, annot) ->
-                         String.equal
-                           (Fieldname.get_field_name fieldname)
-                           (Fieldname.get_field_name fname)
-                         && Annotations.ia_has_annotation_with annot (fun annot ->
-                                Annotations.annot_ends_with annot Annotations.immutable ) )
-              | None ->
-                  false )
+              implements_immutable_map tenv class_name
+              || Tenv.lookup tenv class_name
+                 |> Option.exists ~f:(fun mstruct ->
+                        f mstruct
+                        |> List.exists ~f:(fun (fieldname, _typ, annot) ->
+                               String.equal
+                                 (Fieldname.get_field_name fieldname)
+                                 (Fieldname.get_field_name fname)
+                               && Annotations.ia_has_annotation_with annot (fun annot ->
+                                      Annotations.annot_ends_with annot Annotations.immutable ) ) )
           | _ ->
               false ) )
 
@@ -78,11 +85,12 @@ let get_modified_immutables_opt tenv {modified_params; modified_globals} =
   let modified_immutable_globals =
     filter_modifies_immutable tenv modified_globals ~f:(fun s -> s.statics)
   in
-  if
-    ModifiedVarMap.is_bottom modified_immutable_params
-    && ModifiedVarMap.is_bottom modified_immutable_globals
-  then None
-  else Some (modified_immutable_params, modified_immutable_globals)
+  let modifies_global_or_param =
+    not
+      ( ModifiedVarMap.is_bottom modified_immutable_params
+      && ModifiedVarMap.is_bottom modified_immutable_globals )
+  in
+  Option.some_if modifies_global_or_param (modified_immutable_params, modified_immutable_globals)
 
 
 let join astate1 astate2 =
@@ -109,16 +117,15 @@ let pp_param_source fmt = function
 
 
 let add_to_errlog ~nesting param_source pvar (ModifiedAccess.{trace} as access) errlog =
-  match trace with
-  | WrittenTo access_trace ->
-      PulseTrace.add_to_errlog ~include_value_history:false ~nesting
-        ~pp_immediate:(fun fmt ->
-          F.fprintf fmt "%a `%a.%a` modified here" pp_param_source param_source PVar.pp pvar
-            ModifiedAccess.pp access )
-        access_trace errlog
-  | Invalid (invalidation, invalidation_trace) ->
-      PulseTrace.add_to_errlog ~include_value_history:false ~nesting
-        ~pp_immediate:(fun fmt ->
-          F.fprintf fmt "%a `%a.%a` %a here" pp_param_source param_source PVar.pp pvar
-            ModifiedAccess.pp access PulseInvalidation.describe invalidation )
-        invalidation_trace errlog
+  let desc, trace =
+    match trace with
+    | WrittenTo access_trace ->
+        ("modified", access_trace)
+    | Invalid (invalidation, invalidation_trace) ->
+        (F.asprintf "%a" PulseInvalidation.describe invalidation, invalidation_trace)
+  in
+  PulseTrace.add_to_errlog ~include_value_history:false ~nesting
+    ~pp_immediate:(fun fmt ->
+      F.fprintf fmt "%a `%a.%a` %s here" pp_param_source param_source PVar.pp pvar ModifiedAccess.pp
+        access desc )
+    trace errlog

@@ -18,4 +18,4 @@ Supported languages:
 ## List of Issue Types
 
 The following issue types are reported by this checker:
-- [CHECKERS_PRINTF_ARGS](/docs/all-issue-types#checkers_printf_args)
+- [CHECKERS_PRINTF_ARGS](/docs/1.0.0/all-issue-types#checkers_printf_args)

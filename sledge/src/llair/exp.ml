@@ -431,8 +431,7 @@ let ashr = binary Ashr
 
 (* if-then-else *)
 
-let conditional ?typ ~cnd ~thn ~els =
-  let typ = match typ with Some typ -> typ | None -> typ_of thn in
+let conditional typ ~cnd ~thn ~els =
   Ap3 (Conditional, typ, cnd, thn, els) |> check invariant
 
 (* sequences *)

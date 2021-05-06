@@ -120,6 +120,15 @@ OPTIONS
            Activates: Enable biabduction and disable all other checkers
            (Conversely: --no-biabduction-only)           See also infer-analyze(1).
 
+       --biabduction-unsafe-malloc
+           Activates: Assume that malloc(3) never returns null. (Conversely:
+           --no-biabduction-unsafe-malloc)           See also infer-analyze(1).
+
+       --biabduction-write-dotty
+           Activates: Produce dotty files for specs and retain cycles reports
+           in infer-out/captured. (Conversely: --no-biabduction-write-dotty)       
+    See also infer-analyze(1).
+
        --bo-debug int
            Debug level for buffer-overrun checker (0-4)           See also infer-analyze(1).
 
@@ -268,6 +277,25 @@ OPTIONS
            checkers (Conversely: --no-config-impact-analysis-only)       
     See also infer-analyze(1).
 
+       --config-impact-current path
+           Config impact report of the latest revision           See also infer-reportdiff(1).
+
+       --config-impact-data-file file
+           [ConfigImpact] Specify the file containing the config data       
+    See also infer-report(1).
+
+       --config-impact-issues-tests file
+           Write a list of config impact issues in a format suitable for
+           config impact tests to file           See also infer-report(1).
+
+       --config-impact-max-callees-to-print int
+           Specify the maximum number of unchecked callees to print in the
+           config impact checker           See also infer-report(1) and infer-reportdiff(1).
+
+       --config-impact-previous path
+           Config impact report of the base revision to use for comparison       
+    See also infer-reportdiff(1).
+
        --continue
            Activates: Continue the capture for the reactive analysis,
            increasing the changed files/procedures. (If a procedure was
@@ -325,8 +353,7 @@ OPTIONS
            Activates: Debug mode (also sets --debug-level 2,
            --developer-mode, --print-buckets, --print-types,
            --reports-include-ml-loc, --no-only-cheap-debug, --trace-error,
-           --write-dotty, --write-html) (Conversely: --no-debug | -G)       
-    See also infer-analyze(1), infer-analyzejson(1),
+           --write-html) (Conversely: --no-debug | -G)           See also infer-analyze(1), infer-analyzejson(1),
            infer-capture(1), infer-compile(1), infer-report(1),
            infer-reportdiff(1), and infer-run(1).
 
@@ -496,6 +523,7 @@ OPTIONS
              INTEGER_OVERFLOW_U5 (disabled by default),
              INTERFACE_NOT_THREAD_SAFE (enabled by default),
              INVARIANT_CALL (disabled by default),
+             IPC_ON_UI_THREAD (enabled by default),
              IVAR_NOT_NULL_CHECKED (enabled by default),
              Internal_error (enabled by default),
              JAVASCRIPT_INJECTION (enabled by default),
@@ -513,9 +541,11 @@ OPTIONS
              MULTIPLE_WEAKSELF (enabled by default),
              MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE (enabled by default),
              Missing_fld (enabled by default),
+             NIL_INSERTION_INTO_COLLECTION (disabled by default),
+             NIL_MESSAGING_TO_NON_POD (disabled by default),
              NULLPTR_DEREFERENCE (enabled by default),
              NULL_DEREFERENCE (enabled by default),
-             OPTIONAL_EMPTY_ACCESS (disabled by default),
+             OPTIONAL_EMPTY_ACCESS (enabled by default),
              PARAMETER_NOT_NULL_CHECKED (enabled by default),
              POINTER_TO_CONST_OBJC_CLASS (enabled by default),
              PRECONDITION_NOT_FOUND (enabled by default),
@@ -540,8 +570,7 @@ OPTIONS
              Symexec_memory_error (enabled by default),
              THREAD_SAFETY_VIOLATION (enabled by default),
              THREAD_SAFETY_VIOLATION_NULLSAFE (enabled by default),
-             TOPL_BIABD_ERROR (enabled by default),
-             TOPL_PULSE_ERROR (enabled by default),
+             TOPL_ERROR (enabled by default),
              UNINITIALIZED_VALUE (enabled by default),
              UNREACHABLE_CODE (enabled by default),
              UNTRUSTED_BUFFER_ACCESS (disabled by default),
@@ -610,7 +639,7 @@ OPTIONS
            Proceed as if the first argument after -- was command. Possible
            values: ant, buck, gradle, gradlew, java, javac, cc, clang, gcc,
            clang++, c++, g++, make, configure, cmake, waf, mvn, mvnw,
-           ndk-build, xcodebuild.           See also infer-capture(1) and infer-run(1).
+           ndk-build, rebar3, xcodebuild.           See also infer-capture(1) and infer-run(1).
 
        --no-fragment-retains-view
            Deactivates: checker fragment-retains-view: Detects when Android
@@ -621,6 +650,10 @@ OPTIONS
            Activates: Enable fragment-retains-view and disable all other
            checkers (Conversely: --no-fragment-retains-view-only)       
     See also infer-analyze(1).
+
+       --from-json-config-impact-report config-impact-report.json
+           Load costs analysis results from a config-impact-report file.       
+    See also infer-report(1).
 
        --from-json-costs-report costs-report.json
            Load costs analysis results from a costs-report file.       
@@ -683,8 +716,8 @@ OPTIONS
            --hoisting-report-only-expensive)           See also infer-report(1).
 
        --html
-           Activates: Generate html report. (Conversely: --no-html)       
-    See also infer-explore(1).
+           Activates: Generate an html report of issues found. (Conversely:
+           --no-html)           See also infer-explore(1).
 
        --immutable-cast
            Activates: checker immutable-cast: Detection of object cast from
@@ -705,6 +738,11 @@ OPTIONS
        --impurity-only
            Activates: Enable impurity and disable all other checkers
            (Conversely: --no-impurity-only)           See also infer-analyze(1).
+
+       --impurity-report-immutable-modifications
+           Activates: Report modifications to immutable fields in the
+           Impurity checker (Conversely:
+           --no-impurity-report-immutable-modifications)           See also infer-analyze(1).
 
        --no-inefficient-keyset-iterator
            Deactivates: checker inefficient-keyset-iterator: Check for
@@ -858,13 +896,6 @@ OPTIONS
            Activates: Merge the captured results directories specified in the
            dependency file. (Conversely: --no-merge)           See also infer-analyze(1).
 
-       --ml-buckets ,-separated sequence of { all | cf | arc | narc | cpp |
-       unknown_origin }
-           Specify the memory leak buckets to be checked in C++:       
-    - cpp from C++ code
-           
-           See also infer-analyze(1).
-
        --pmd-xml
            Activates: Output issues in (PMD) XML format in
            infer-out/report.xml (Conversely: --no-pmd-xml)           See also infer-run(1).
@@ -968,6 +999,10 @@ OPTIONS
            Regex of methods that should be modelled as release in Pulse       
     See also infer-analyze(1).
 
+       --pulse-model-return-first-arg string
+           Regex of methods that should be modelled as returning the first
+           argument in Pulse           See also infer-analyze(1).
+
        --pulse-model-return-nonnull string
            Regex of methods that should be modelled as returning non-null in
            Pulse           See also infer-analyze(1).
@@ -984,6 +1019,15 @@ OPTIONS
        --pulse-only
            Activates: Enable pulse and disable all other checkers
            (Conversely: --no-pulse-only)           See also infer-analyze(1).
+
+       --pulse-report-ignore-unknown-java-methods-patterns +string
+           On Java, issues that are found on program paths that contain calls
+           to unknown methods (those without implementation) are not reported
+           unless all the unknown method names match this pattern. If the
+           empty list is provided or
+           --pulse_report_ignore_unknown_java_methods_patterns-reset, all
+           issues will be reported regardless the presence of unknown code       
+    See also infer-analyze(1).
 
        --purity
            Activates: checker purity: Detects pure (side-effect-free)
@@ -1069,10 +1113,6 @@ OPTIONS
 
        --report-formatter { none | phabricator }
            Which formatter to use when emitting the report           See also infer-report(1).
-
-       --report-immutable-modifications
-           Activates: Report modifications to immutable fields (Conversely:
-           --no-report-immutable-modifications)           See also infer-report(1) and infer-run(1).
 
        --report-previous path
            Report of the base revision to use for comparison           See also infer-reportdiff(1).
@@ -1218,23 +1258,14 @@ OPTIONS
            Specify custom annotations that should be considered aliases of
            @ThreadSafe           See also infer-analyze(1).
 
-       --topl-biabd
-           Activates: checker topl-biabd: Detects errors based on
-           user-provided state machines describing multi-object monitors.
-           (Conversely: --no-topl-biabd)           See also infer-analyze(1).
+       --topl
+           Activates: checker topl: Detect errors based on user-provided
+           state machines describing temporal properties over multiple
+           objects. (Conversely: --no-topl)           See also infer-analyze(1).
 
-       --topl-biabd-only
-           Activates: Enable topl-biabd and disable all other checkers
-           (Conversely: --no-topl-biabd-only)           See also infer-analyze(1).
-
-       --topl-pulse
-           Activates: checker topl-pulse: Detects errors based on
-           user-provided state machines describing multi-object monitors.
-           (Conversely: --no-topl-pulse)           See also infer-analyze(1).
-
-       --topl-pulse-only
-           Activates: Enable topl-pulse and disable all other checkers
-           (Conversely: --no-topl-pulse-only)           See also infer-analyze(1).
+       --topl-only
+           Activates: Enable topl and disable all other checkers (Conversely:
+           --no-topl-only)           See also infer-analyze(1).
 
        --no-uninit
            Deactivates: checker uninit: Warns when values are used before
@@ -1243,10 +1274,6 @@ OPTIONS
        --uninit-only
            Activates: Enable uninit and disable all other checkers
            (Conversely: --no-uninit-only)           See also infer-analyze(1).
-
-       --unsafe-malloc
-           Activates: Assume that malloc(3) never returns null. (Conversely:
-           --no-unsafe-malloc)           See also infer-analyze(1).
 
        --version
            Print version information and exit           See also infer-run(1).
@@ -1260,6 +1287,18 @@ OPTIONS
            is expected to require several different project roots, all
            relative to a common workspace. Usually a single project root is
            enough, though.           See also infer-capture(1).
+
+       --write-html
+           Activates: Produce html debug output for the analyses in
+           infer-out/captured. This shows the abstract state of all analyses
+           at each program point in the source code. Each captured source
+           file has its own html page. This HTML file contains the source
+           file, and at each line of           the file there are links to the nodes of the control flow graph
+           of Infer's translation of that line of code into its intermediate
+           representation (SIL). This way it's possible to see what the
+           translation is, and the details of the symbolic execution on each
+           node. (Conversely: --no-write-html)
+           See also infer-analyze(1).
 
        --write-website path_to_website_dir
            Use to write website files documenting issue types and checkers
@@ -1300,32 +1339,8 @@ OPTIONS
 INTERNAL OPTIONS
        Use at your own risk.
 
-       --abs-struct int
-           Specify abstraction level for fields of structs:           - 0 = no
-           - 1 = forget some fields during matching (and so lseg
-           abstraction)
-           
-
-       --abs-val int
-           Specify abstraction level for expressions:           - 0 = no abstraction
-           - 1 = evaluate all expressions abstractly
-           - 2 = 1 + abstract constant integer values during join
-           
-
-       --allow-leak
-           Activates: Forget leaked memory during abstraction (Conversely:
-           --no-allow-leak)
-
        --append-buck-flavors-reset
            Set --append-buck-flavors to the empty list.
-
-       --array-level int
-           Level of treating the array indexing and pointer arithmetic:       
-    - 0 = treats both features soundly
-           - 1 = assumes that the size of every array is infinite
-           - 2 = assumes that all heap dereferences via array indexing and
-           pointer arithmetic are correct
-           
 
        --backtrack-level int
            Maximum level of backtracking to convert an absolute path to path
@@ -1334,9 +1349,96 @@ INTERNAL OPTIONS
            /my/source/File.java with project root /my/root into
            ../source/File.java
 
+       --biabduction-abs-struct int
+           Specify abstraction level for fields of structs:           - 0 = no
+           - 1 = forget some fields during matching (and so lseg
+           abstraction)
+           
+
+       --biabduction-abs-val int
+           Specify abstraction level for expressions:           - 0 = no abstraction
+           - 1 = evaluate all expressions abstractly
+           - 2 = 1 + abstract constant integer values during join
+           
+
+       --biabduction-allow-leak
+           Activates: Forget leaked memory during abstraction (Conversely:
+           --no-biabduction-allow-leak)
+
+       --biabduction-array-level int
+           Level of treating the array indexing and pointer arithmetic:       
+    - 0 = treats both features soundly
+           - 1 = assumes that the size of every array is infinite
+           - 2 = assumes that all heap dereferences via array indexing and
+           pointer arithmetic are correct
+           
+
+       --biabduction-coverage
+           analysis mode to maximize coverage (can take longer)
+
+       --biabduction-exit-node-bias
+           nodes nearest the exit node are analyzed first
+
+       --biabduction-iterations int
+           Specify the maximum number of operations for each function,
+           expressed as a multiple of symbolic operations and a multiple of
+           seconds of elapsed time
+
+       --biabduction-join-cond int
+           Set the strength of the final information-loss check used by the
+           join:           - 0 = use the most aggressive join for preconditions
+           - 1 = use the least aggressive join for preconditions
+           
+
+       --biabduction-memleak-buckets ,-separated sequence of { all | cf | arc
+       | narc | cpp | unknown_origin }
+           Specify the memory leak buckets to be checked in C++.
+
        --biabduction-models-mode
            Activates: Analysis of the biabduction models (Conversely:
            --no-biabduction-models-mode)
+
+       --biabduction-monitor-prop-size
+           Activates: Monitor size of props, and print every time the current
+           max is exceeded (Conversely: --no-biabduction-monitor-prop-size)
+
+       --biabduction-nelseg
+           Activates: Use only nonempty lsegs (Conversely:
+           --no-biabduction-nelseg)
+
+       --biabduction-only-footprint
+           Activates: Skip the re-execution phase (Conversely:
+           --no-biabduction-only-footprint)
+
+       --biabduction-seconds-per-iteration float
+           Set the number of seconds per iteration (see
+           --biabduction-iterations)
+
+       --biabduction-seconds-per-iteration-reset
+           Cancel the effect of --biabduction-seconds-per-iteration.
+
+       --biabduction-symops-per-iteration int
+           Set the number of symbolic operations per iteration (see
+           --biabduction-iterations)
+
+       --biabduction-symops-per-iteration-reset
+           Cancel the effect of --biabduction-symops-per-iteration.
+
+       --biabduction-trace-join
+           Activates: Detailed tracing information during prop join
+           operations (Conversely: --no-biabduction-trace-join)
+
+       --biabduction-trace-rearrange
+           Activates: Detailed tracing information during prop re-arrangement
+           operations (Conversely: --no-biabduction-trace-rearrange)
+
+       --biabduction-type-size
+           Activates: Consider the size of types during analysis, e.g. cannot
+           use an int pointer to write to a char (Conversely:
+           --no-biabduction-type-size)
+
+       --biabduction-visits-bias
+           nodes visited fewer times are analyzed first
 
        --bo-field-depth-limit-reset
            Cancel the effect of --bo-field-depth-limit.
@@ -1451,6 +1553,18 @@ INTERNAL OPTIONS
        --compilation-database-reset
            Set --compilation-database to the empty list.
 
+       --config-impact-current-reset
+           Cancel the effect of --config-impact-current.
+
+       --config-impact-data-file-reset
+           Cancel the effect of --config-impact-data-file.
+
+       --config-impact-issues-tests-reset
+           Cancel the effect of --config-impact-issues-tests.
+
+       --config-impact-previous-reset
+           Cancel the effect of --config-impact-previous.
+
        --cost-issues-tests-reset
            Cancel the effect of --cost-issues-tests.
 
@@ -1464,9 +1578,6 @@ INTERNAL OPTIONS
 
        --costs-previous-reset
            Cancel the effect of --costs-previous.
-
-       --coverage
-           analysis mode to maximize coverage (can take longer)
 
        --debug-exceptions
            Activates: Generate lightweight debugging information: just print
@@ -1526,9 +1637,6 @@ INTERNAL OPTIONS
            Activates: Print initial and final typestates (Conversely:
            --no-eradicate-verbose)
 
-       --exit-node-bias
-           nodes nearest the exit node are analyzed first
-
        --export-changed-functions
            Activates: Make infer output changed functions, similar to
            test-determinator. It is used together with the --modified-lines.
@@ -1551,11 +1659,14 @@ INTERNAL OPTIONS
            Cancel the effect of --file-renamings.
 
        --no-filter-paths
-           Deactivates: Filters specified in .inferconfig (Conversely:
-           --filter-paths)
+           Deactivates: Apply filters specified in --report_* options.
+           Disable for debugging. (Conversely: --filter-paths)
 
        --force-integration-reset
            Cancel the effect of --force-integration.
+
+       --from-json-config-impact-report-reset
+           Cancel the effect of --from-json-config-impact-report.
 
        --from-json-costs-report-reset
            Cancel the effect of --from-json-costs-report.
@@ -1611,11 +1722,6 @@ INTERNAL OPTIONS
        --issues-tests-reset
            Cancel the effect of --issues-tests.
 
-       --iterations int
-           Specify the maximum number of operations for each function,
-           expressed as a multiple of symbolic operations and a multiple of
-           seconds of elapsed time
-
        --java-debug-source-file-info path
            For debugging only: Call the Java declarations source file parser
            on the given file and do not run anything else.
@@ -1638,12 +1744,6 @@ INTERNAL OPTIONS
 
        --job-id-reset
            Cancel the effect of --job-id.
-
-       --join-cond int
-           Set the strength of the final information-loss check used by the
-           join:           - 0 = use the most aggressive join for preconditions
-           - 1 = use the least aggressive join for preconditions
-           
 
        --linter-reset
            Cancel the effect of --linter.
@@ -1694,18 +1794,11 @@ INTERNAL OPTIONS
        --modified-lines-reset
            Cancel the effect of --modified-lines.
 
-       --monitor-prop-size
-           Activates: Monitor size of props, and print every time the current
-           max is exceeded (Conversely: --no-monitor-prop-size)
-
-       --nelseg
-           Activates: Use only nonempty lsegs (Conversely: --no-nelseg)
-
        --never-returning-null json
            Matcher or list of matchers for functions that never return null.
 
        --nullable-annotation-name string
-           Specify custom nullable annotation name
+           Specify a custom nullable annotation name.
 
        --nullable-annotation-name-reset
            Cancel the effect of --nullable-annotation-name.
@@ -1761,21 +1854,12 @@ INTERNAL OPTIONS
            Deactivates: Disable expensive debugging output (Conversely:
            --only-cheap-debug)
 
-       --only-footprint
-           Activates: Skip the re-execution phase (Conversely:
-           --no-only-footprint)
-
        --oom-threshold int
            Available memory threshold (in MB) below which multi-worker
            scheduling throttles back work. Only for use on Linux.
 
        --oom-threshold-reset
            Cancel the effect of --oom-threshold.
-
-       --passthroughs
-           Activates: In error traces, show intermediate steps that propagate
-           data. When false, error traces are shorter and show only direct
-           flow via souces/sinks (Conversely: --no-passthroughs)
 
        --print-buckets
            Activates: Show the internal bucket of Infer reports in their
@@ -1802,8 +1886,9 @@ INTERNAL OPTIONS
            Cancel the effect of --procedures-filter.
 
        --process-clang-ast
-           Activates: process the ast to emit some info about the file (Not
-           available for Java) (Conversely: --no-process-clang-ast)
+           Activates: process the ast to emit some info about the file with
+           --test-determinator or --export-changed-functions (Not available
+           for Java) (Conversely: --no-process-clang-ast)
 
        --profiler-samples path
            File containing the profiler samples when Infer is run Test
@@ -1825,6 +1910,10 @@ INTERNAL OPTIONS
            explicit Ok/Error summaries are recorded. For experiments only.
            (Conversely: --no-pulse-isl)
 
+       --pulse-manifest-emp
+           Activates: [Pulse] manifest errors with postive heaps in pre. For
+           experiments only. (Conversely: --no-pulse-manifest-emp)
+
        --pulse-max-disjuncts int
            Under-approximate after int disjunctions in the domain
 
@@ -1836,6 +1925,9 @@ INTERNAL OPTIONS
 
        --pulse-model-release-pattern-reset
            Cancel the effect of --pulse-model-release-pattern.
+
+       --pulse-model-return-first-arg-reset
+           Cancel the effect of --pulse-model-return-first-arg.
 
        --pulse-model-return-nonnull-reset
            Cancel the effect of --pulse-model-return-nonnull.
@@ -1854,6 +1946,10 @@ INTERNAL OPTIONS
            Maximum number of array elements and structure fields to keep
            track of for a given array address.
 
+       --pulse-report-ignore-unknown-java-methods-patterns-reset
+           Set --pulse-report-ignore-unknown-java-methods-patterns to the
+           empty list.
+
        --pulse-report-latent-issues
            Activates: Only use for testing, there should be no need to turn
            this on for regular code analysis. Report latent issues instead of
@@ -1866,6 +1962,12 @@ INTERNAL OPTIONS
        --pure-by-default
            Activates: [Purity]Consider unknown functions to be pure by
            default (Conversely: --no-pure-by-default)
+
+       --quandary-show-passthroughs
+           Activates: In error traces, show intermediate steps that propagate
+           data. When false, error traces are shorter and show only direct
+           flow via souces/sinks (Conversely:
+           --no-quandary-show-passthroughs)
 
        --reanalyze
            Activates: Rerun the analysis. Not compatible with
@@ -1918,12 +2020,6 @@ INTERNAL OPTIONS
        --scuba-tags +key=value
            add an extra set of strings (tagset) field to be set for each
            sample of scuba, format <name>=(<value>,<value>,<value>|NONE)
-
-       --seconds-per-iteration float
-           Set the number of seconds per iteration (see --iterations)
-
-       --seconds-per-iteration-reset
-           Cancel the effect of --seconds-per-iteration.
 
        --select-reset
            Cancel the effect of --select.
@@ -1980,8 +2076,8 @@ INTERNAL OPTIONS
            --no-starvation-whole-program)
 
        --no-subtype-multirange
-           Deactivates: Use the multirange subtyping domain (Conversely:
-           --subtype-multirange)
+           Deactivates: Use the multirange subtyping domain. Used in the Java
+           frontend and in biabduction. (Conversely: --subtype-multirange)
 
        --summaries-caches-max-size int
            The maximum amount of elements the summaries LRU caches can hold
@@ -1991,13 +2087,6 @@ INTERNAL OPTIONS
            but not the issues types specified as parameters to the
            annotations when deciding to suppress issues. Use for backwards
            compatibility only! (Conversely: --no-suppress-lint-ignore-types)
-
-       --symops-per-iteration int
-           Set the number of symbolic operations per iteration (see
-           --iterations)
-
-       --symops-per-iteration-reset
-           Cancel the effect of --symops-per-iteration.
 
        --tenv-json-reset
            Cancel the effect of --tenv-json.
@@ -2025,15 +2114,7 @@ INTERNAL OPTIONS
 
        --topl-properties +path
            [EXPERIMENTAL] Specify a file containing a temporal property
-           definition (e.g., jdk.topl).           One needs to also select one of the three implementations, by
-           enabling one of the following checkers
-           --pulse       will run pulse with updated transfer functions
-           --topl-pulse  [SLOW] uses SIL-instrumentation, runs pulse, and
-           analyzes pulse summaries
-           --topl-biabd  [SLOW] uses SIL-instrumentation, runs biabduction,
-           and analyzes biabduction summaries
-           Note that enabling topl-pulse or topl-biabd will disable the
-           first implementation using updated pulse transfer functions.
+           definition (e.g., jdk.topl).
 
        --topl-properties-reset
            Set --topl-properties to the empty list.
@@ -2046,16 +2127,12 @@ INTERNAL OPTIONS
            Activates: Emit Chrome performance trace events in
            infer-out/perf_events.json (Conversely: --no-trace-events)
 
-       --trace-join
-           Activates: Detailed tracing information during prop join
-           operations (Conversely: --no-trace-join)
-
-       --trace-rearrange
-           Activates: Detailed tracing information during prop re-arrangement
-           operations (Conversely: --no-trace-rearrange)
+       --trace-ondemand
+           Activates: Emit debug information for the ondemand analysis
+           scheduler. (Conversely: --no-trace-ondemand)
 
        --trace-topl
-           Activates: Detailed tracing information during TOPL analysis
+           Activates: Detailed tracing information during Topl analysis
            (Conversely: --no-trace-topl)
 
        --tv-commit commit
@@ -2071,10 +2148,6 @@ INTERNAL OPTIONS
            The maximum number of traces for issues filtered out by
            --report-filter to submit to Traceview
 
-       --type-size
-           Activates: Consider the size of types during analysis, e.g. cannot
-           use an int pointer to write to a char (Conversely: --no-type-size)
-
        --uninit-interproc
            Activates: Run uninit check in the experimental interprocedural
            mode (Conversely: --no-uninit-interproc)
@@ -2082,19 +2155,8 @@ INTERNAL OPTIONS
        --version-vcs
            Print version control system commit and exit
 
-       --visits-bias
-           nodes visited fewer times are analyzed first
-
        --workspace-reset
            Cancel the effect of --workspace.
-
-       --write-dotty
-           Activates: Produce dotty files for specs in the results directory
-           (Conversely: --no-write-dotty)
-
-       --write-html
-           Activates: Produce html debug output in the results directory
-           (Conversely: --no-write-html)
 
        --write-html-whitelist-regex +string
            Whitelist files that will have their html debug output printed

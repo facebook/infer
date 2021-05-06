@@ -51,7 +51,7 @@ module NodeVisitSet = Caml.Set.Make (struct
 
   let compare x1 x2 =
     if !BiabductionConfig.footprint then
-      match Config.worklist_mode with
+      match Config.biabduction_worklist_mode with
       | 0 ->
           compare_ids x1.node x2.node
       | 1 ->
@@ -342,7 +342,7 @@ let check_prop_size_ p _ =
 
 (* Check prop size and filter out possible unabstracted lists *)
 let check_prop_size edgeset_todo =
-  if Config.monitor_prop_size then Paths.PathSet.iter check_prop_size_ edgeset_todo
+  if Config.biabduction_monitor_prop_size then Paths.PathSet.iter check_prop_size_ edgeset_todo
 
 
 let reset_prop_metrics () =
@@ -819,7 +819,7 @@ let perform_analysis_phase ({InterproceduralAnalysis.proc_desc; err_log; tenv} a
         DB.Results_dir.path_to_filename (DB.Results_dir.Abs_source_dir source)
           [Procname.to_filename pname]
       in
-      if Config.write_dotty then DotBiabduction.emit_specs_to_file filename specs ;
+      if Config.biabduction_write_dotty then DotBiabduction.emit_specs_to_file filename specs ;
       (specs, BiabductionSummary.RE_EXECUTION)
     in
     (go, get_results)
@@ -946,7 +946,6 @@ let update_specs analysis_data prev_summary_opt phase
     then (
       changed := true ;
       current_specs := SpecMap.remove old_spec.BiabductionSummary.pre !current_specs )
-    else ()
   in
   let add_spec spec =
     (* add a new spec by doing union of the posts *)
@@ -1016,7 +1015,7 @@ let analyze_proc analysis_data summary_opt proc_cfg : BiabductionSummary.t =
 
 (** Perform the transition from [FOOTPRINT] to [RE_EXECUTION] in spec table *)
 let transition_footprint_re_exe summary tenv joined_pres : BiabductionSummary.t =
-  if Config.only_footprint then
+  if Config.biabduction_only_footprint then
     if BiabductionSummary.equal_phase summary.BiabductionSummary.phase FOOTPRINT then
       {summary with BiabductionSummary.phase= RE_EXECUTION}
     else summary

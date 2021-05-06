@@ -135,23 +135,23 @@ let solve_extract a o l b s =
   [%trace]
     ~call:(fun {pf} ->
       pf "@ %a = %a" Trm.pp (Trm.extract ~seq:a ~off:o ~len:l) Trm.pp b )
-    ~retn:(fun {pf} -> pf "%a" pp)
+    ~retn:(fun {pf} -> pf "%a" (Option.pp "%a" pp))
   @@ fun () ->
-  match fresh "c" s with
-  | None -> s
-  | Some (c, s) ->
-      let n = Trm.seq_size_exn a in
-      let n_c = Trm.sized ~siz:n ~seq:c in
-      let o_l = Trm.add o l in
-      let n_o_l = Trm.sub n o_l in
-      let c0 = Trm.extract ~seq:n_c ~off:Trm.zero ~len:o in
-      let c1 = Trm.extract ~seq:n_c ~off:o_l ~len:n_o_l in
-      let b, s =
-        match Trm.seq_size b with
-        | None -> (Trm.sized ~siz:l ~seq:b, s)
-        | Some m -> (b, add_pending l m s)
-      in
-      add_pending a (Trm.concat [|c0; b; c1|]) s
+  let* c, s = fresh "c" s in
+  let+ n, s =
+    match Trm.seq_size a with Some n -> Some (n, s) | None -> fresh "n" s
+  in
+  let n_c = Trm.sized ~siz:n ~seq:c in
+  let o_l = Trm.add o l in
+  let n_o_l = Trm.sub n o_l in
+  let c0 = Trm.extract ~seq:n_c ~off:Trm.zero ~len:o in
+  let c1 = Trm.extract ~seq:n_c ~off:o_l ~len:n_o_l in
+  let b, s =
+    match Trm.seq_size b with
+    | None -> (Trm.sized ~siz:l ~seq:b, s)
+    | Some m -> (b, add_pending l m s)
+  in
+  add_pending a (Trm.concat [|c0; b; c1|]) s
 
 (* α₀^…^αᵢ^αⱼ^…^αᵥ = β ==> |α₀^…^αᵥ| = |β| ∧ … ∧ αⱼ = β[n₀+…+nᵢ,nⱼ) ∧ …
    where nₓ ≡ |αₓ| and m = |β| *)
@@ -221,7 +221,8 @@ let solve d e s =
         (* v = α[o,l) ==> α[o,l) ↦ ⟨l,v⟩ when v ∈ fv(α[o,l)) *)
         add_solved ~var:e ~rep:(Trm.sized ~siz:l ~seq:v) s
   (* α[o,l) = β ==> … ∧ α = _^β^_ *)
-  | Some (Extract {seq= a; off= o; len= l}, e) -> solve_extract a o l e s
+  | Some (Extract {seq= a; off= o; len= l}, e) ->
+      Option.value (solve_extract a o l e s) ~default:s
   (*
    * Sized
    *)

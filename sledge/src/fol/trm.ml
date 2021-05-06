@@ -167,7 +167,7 @@ module Var = struct
 
     let freshen v ~wrt = fresh (name v) ~wrt
 
-    let identified ?(name = "") ~id =
+    let identified ~name ~id =
       assert (id > 0) ;
       make ~id:(id - Int.max_int) ~name
 

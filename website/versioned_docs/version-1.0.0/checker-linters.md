@@ -701,19 +701,19 @@ infer run --linters -- clang -c Test.m
 ```
 
 There are a few other command-line options that are useful for using or
-developing new linters in Infer. Read about them in the [`infer capture` manual](/docs/man-infer-capture).
+developing new linters in Infer. Read about them in the [`infer capture` manual](/docs/1.0.0/man-infer-capture).
 
 
 ## List of Issue Types
 
 The following issue types are reported by this checker:
-- [ASSIGN_POINTER_WARNING](/docs/all-issue-types#assign_pointer_warning)
-- [BAD_POINTER_COMPARISON](/docs/all-issue-types#bad_pointer_comparison)
-- [COMPONENT_WITH_MULTIPLE_FACTORY_METHODS](/docs/all-issue-types#component_with_multiple_factory_methods)
-- [CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK](/docs/all-issue-types#cxx_reference_captured_in_objc_block)
-- [DIRECT_ATOMIC_PROPERTY_ACCESS](/docs/all-issue-types#direct_atomic_property_access)
-- [DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER](/docs/all-issue-types#discouraged_weak_property_custom_setter)
-- [GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL](/docs/all-issue-types#global_variable_initialized_with_function_or_method_call)
-- [MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE](/docs/all-issue-types#mutable_local_variable_in_component_file)
-- [POINTER_TO_CONST_OBJC_CLASS](/docs/all-issue-types#pointer_to_const_objc_class)
-- [STRONG_DELEGATE_WARNING](/docs/all-issue-types#strong_delegate_warning)
+- [ASSIGN_POINTER_WARNING](/docs/1.0.0/all-issue-types#assign_pointer_warning)
+- [BAD_POINTER_COMPARISON](/docs/1.0.0/all-issue-types#bad_pointer_comparison)
+- [COMPONENT_WITH_MULTIPLE_FACTORY_METHODS](/docs/1.0.0/all-issue-types#component_with_multiple_factory_methods)
+- [CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK](/docs/1.0.0/all-issue-types#cxx_reference_captured_in_objc_block)
+- [DIRECT_ATOMIC_PROPERTY_ACCESS](/docs/1.0.0/all-issue-types#direct_atomic_property_access)
+- [DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER](/docs/1.0.0/all-issue-types#discouraged_weak_property_custom_setter)
+- [GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL](/docs/1.0.0/all-issue-types#global_variable_initialized_with_function_or_method_call)
+- [MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE](/docs/1.0.0/all-issue-types#mutable_local_variable_in_component_file)
+- [POINTER_TO_CONST_OBJC_CLASS](/docs/1.0.0/all-issue-types#pointer_to_const_objc_class)
+- [STRONG_DELEGATE_WARNING](/docs/1.0.0/all-issue-types#strong_delegate_warning)

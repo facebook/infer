@@ -479,29 +479,30 @@ module StdArray = struct
 end
 
 module ArrObjCommon = struct
-  let deref_of {integer_type_widths} exp ~fn mem =
-    Dom.Val.get_all_locs (Sem.eval_arr integer_type_widths exp mem) |> PowLoc.append_field ~fn
+  let deref_of {integer_type_widths} exp ~fn ?fn_typ mem =
+    let typ = Option.map fn_typ ~f:Typ.mk_ptr in
+    Dom.Val.get_all_locs (Sem.eval_arr integer_type_widths exp mem) |> PowLoc.append_field ?typ ~fn
 
 
   let eval_size model_env exp ~fn mem =
     Sem.eval_array_locs_length (deref_of model_env exp ~fn mem) mem
 
 
-  let size_exec exp ~fn ({integer_type_widths} as model_env) ~ret:(id, _) mem =
+  let size_exec exp ~fn ?fn_typ ({integer_type_widths} as model_env) ~ret:(id, _) mem =
     let locs = Sem.eval integer_type_widths exp mem |> Dom.Val.get_all_locs in
     match PowLoc.is_singleton_or_more locs with
     | Singleton (BoField.Prim (Loc.Allocsite (Allocsite.LiteralString s))) ->
         model_by_value (Dom.Val.of_int (String.length s)) id mem
     | _ ->
-        let arr_locs = deref_of model_env exp ~fn mem in
+        let arr_locs = deref_of model_env exp ~fn ?fn_typ mem in
         let mem = Dom.Mem.add_stack (Loc.of_id id) (Sem.eval_array_locs_length arr_locs mem) mem in
         load_size_alias id arr_locs mem
 
 
-  let at arr_exp ~fn index_exp =
+  let at arr_exp ~fn ?fn_typ index_exp =
     let exec ({pname; location} as model_env) ~ret:(id, typ) mem =
       let array_v =
-        let locs = deref_of model_env arr_exp ~fn mem in
+        let locs = deref_of model_env arr_exp ~fn ?fn_typ mem in
         if PowLoc.is_bot locs then Dom.Val.unknown_from typ ~callee_pname:(Some pname) ~location
         else Dom.Mem.find_set locs mem
       in
@@ -516,13 +517,14 @@ module ArrObjCommon = struct
     {exec; check}
 
 
-  let copy_constructor model_env deref_of_tgt ~fn src_exp mem =
-    let deref_of_src = deref_of model_env src_exp ~fn mem in
+  let copy_constructor model_env deref_of_tgt ~fn ?fn_typ src_exp mem =
+    let deref_of_src = deref_of model_env src_exp ~fn ?fn_typ mem in
     Dom.Mem.update_mem deref_of_tgt (Dom.Mem.find_set deref_of_src mem) mem
 
 
-  let constructor_from_char_ptr ({integer_type_widths} as model_env) tgt_deref ~fn src mem =
-    let elem_locs = PowLoc.append_field tgt_deref ~fn in
+  let constructor_from_char_ptr ({integer_type_widths} as model_env) tgt_deref ~fn ?char_typ src mem
+      =
+    let elem_locs = PowLoc.append_field ?typ:(Option.map char_typ ~f:Typ.mk_ptr) tgt_deref ~fn in
     match src with
     | Exp.Const (Const.Cstr s) ->
         BoUtils.Exec.decl_string model_env ~do_alloc:true elem_locs s mem
@@ -545,16 +547,17 @@ end
 
 module StdVector = struct
   let append_field loc ~vec_typ ~elt_typ =
-    Loc.append_field loc (BufferOverrunField.cpp_vector_elem ~vec_typ ~elt_typ)
+    Loc.append_field ~typ:(Typ.mk_ptr elt_typ) loc (BufferOverrunField.cpp_vector_elem ~vec_typ)
 
 
   let append_fields locs ~vec_typ ~elt_typ =
-    PowLoc.append_field locs ~fn:(BufferOverrunField.cpp_vector_elem ~vec_typ ~elt_typ)
+    PowLoc.append_field ~typ:(Typ.mk_ptr elt_typ) locs
+      ~fn:(BufferOverrunField.cpp_vector_elem ~vec_typ)
 
 
   let deref_of model_env elt_typ {exp= vec_exp; typ= vec_typ} mem =
-    let fn = BufferOverrunField.cpp_vector_elem ~vec_typ ~elt_typ in
-    ArrObjCommon.deref_of model_env vec_exp ~fn mem
+    let fn = BufferOverrunField.cpp_vector_elem ~vec_typ in
+    ArrObjCommon.deref_of model_env vec_exp ~fn ~fn_typ:(Typ.mk_ptr elt_typ) mem
 
 
   (* The (3) constructor in https://en.cppreference.com/w/cpp/container/vector/vector *)
@@ -591,16 +594,19 @@ module StdVector = struct
         (Dom.Val.get_all_locs v, Dom.Val.get_traces v)
       in
       let deref_of_vec = append_fields vec_locs ~vec_typ ~elt_typ in
-      let fn = BufferOverrunField.cpp_vector_elem ~vec_typ ~elt_typ in
+      let fn = BufferOverrunField.cpp_vector_elem ~vec_typ in
       mem
       |> Dom.Mem.update_mem vec_locs (Dom.Val.of_pow_loc ~traces deref_of_vec)
-      |> ArrObjCommon.copy_constructor model_env deref_of_vec ~fn src_exp
+      |> ArrObjCommon.copy_constructor model_env deref_of_vec ~fn ~fn_typ:(Typ.mk_ptr elt_typ)
+           src_exp
     in
     {exec; check= no_check}
 
 
   let at elt_typ {exp= vec_exp; typ= vec_typ} index_exp =
-    ArrObjCommon.at vec_exp ~fn:(BufferOverrunField.cpp_vector_elem ~vec_typ ~elt_typ) index_exp
+    ArrObjCommon.at vec_exp
+      ~fn:(BufferOverrunField.cpp_vector_elem ~vec_typ)
+      ~fn_typ:(Typ.mk_ptr elt_typ) index_exp
 
 
   let set_size {location} locs new_size mem =
@@ -651,7 +657,9 @@ module StdVector = struct
 
   let size elt_typ {exp= vec_exp; typ= vec_typ} =
     let exec =
-      ArrObjCommon.size_exec vec_exp ~fn:(BufferOverrunField.cpp_vector_elem ~vec_typ ~elt_typ)
+      ArrObjCommon.size_exec vec_exp
+        ~fn:(BufferOverrunField.cpp_vector_elem ~vec_typ)
+        ~fn_typ:(Typ.mk_ptr elt_typ)
     in
     {exec; check= no_check}
 
@@ -728,8 +736,8 @@ module StdBasicString = struct
       let mem =
         Dom.Mem.update_mem tgt_locs (Dom.Val.of_pow_loc ~traces:Trace.Set.bottom tgt_deref) mem
       in
-      let fn = BufferOverrunField.cpp_vector_elem ~vec_typ:tgt_typ ~elt_typ:char_typ in
-      ArrObjCommon.constructor_from_char_ptr model_env tgt_deref src ~fn mem
+      let fn = BufferOverrunField.cpp_vector_elem ~vec_typ:tgt_typ in
+      ArrObjCommon.constructor_from_char_ptr model_env tgt_deref src ~fn ~char_typ mem
     in
     let check ({location; integer_type_widths} as model_env) mem cond_set =
       Option.value_map len_opt ~default:cond_set ~f:(fun len ->
@@ -1146,6 +1154,14 @@ module NSCollection = struct
     {exec; check= no_check}
 
 
+  let new_collection_by_init coll_exp =
+    let exec model_env ~ret:((ret_id, _) as ret) mem =
+      create_collection model_env ~ret mem ~size_exp:Exp.zero
+      |> (addAll ret_id coll_exp).exec model_env ~ret
+    in
+    {exec; check= no_check}
+
+
   let iterator coll_exp =
     let exec {integer_type_widths= _; location} ~ret:(id, _) mem =
       let elements_locs = eval_collection_internal_array_locs coll_exp mem in
@@ -1324,7 +1340,7 @@ module JavaString = struct
     {exec; check= no_check}
 
 
-  let length exp = {exec= ArrObjCommon.size_exec exp ~fn; check= no_check}
+  let length exp = {exec= ArrObjCommon.size_exec exp ~fn ?fn_typ:None; check= no_check}
 
   (** Given a string of length n, return itv [-1, n_u-1]. *)
   let range_itv_mone model_env exp mem =
@@ -1536,8 +1552,8 @@ let objc_malloc exp =
     | Exp.Sizeof {typ} when PatternMatch.ObjectiveC.implements_collection tenv (Typ.to_string typ)
       ->
         NSCollection.new_collection.exec model ~ret mem
-    | Exp.Sizeof {typ} when PatternMatch.ObjectiveC.implements "NSString" tenv (Typ.to_string typ)
-      ->
+    | Exp.Sizeof {typ}
+      when PatternMatch.ObjectiveC.implements_ns_string_variants tenv (Typ.to_string typ) ->
         (NSString.create_with_c_string (Exp.Const (Const.Cstr ""))).exec model ~ret mem
     | _ ->
         (malloc ~can_be_zero exp).exec model ~ret mem
@@ -1634,30 +1650,29 @@ module Call = struct
     let short_typ = Typ.mk (Typ.Tint Typ.IUShort) in
     let char_ptr = Typ.mk (Typ.Tptr (char_typ, Pk_pointer)) in
     let short_array = Typ.mk (Typ.Tptr (Typ.mk_array short_typ, Pk_pointer)) in
-    let match_builtin builtin _ s = String.equal s (Procname.get_method builtin) in
     make_dispatcher
       [ (* Clang common models *)
-        +match_builtin BuiltinDecl.__cast <>$ capt_exp $+ capt_exp $+...$--> cast
-      ; +match_builtin BuiltinDecl.__exit <>--> bottom
-      ; +match_builtin BuiltinDecl.__get_array_length <>$ capt_exp $!--> get_array_length
-      ; +match_builtin BuiltinDecl.objc_cpp_throw <>--> bottom
-      ; +match_builtin BuiltinDecl.__new
+        +BuiltinDecl.(match_builtin __cast) <>$ capt_exp $+ capt_exp $+...$--> cast
+      ; +BuiltinDecl.(match_builtin __exit) <>--> bottom
+      ; +BuiltinDecl.(match_builtin __get_array_length) <>$ capt_exp $!--> get_array_length
+      ; +BuiltinDecl.(match_builtin objc_cpp_throw) <>--> bottom
+      ; +BuiltinDecl.(match_builtin __new)
         <>$ any_arg_of_typ (+PatternMatch.Java.implements_collection)
         $+...$--> Collection.new_collection
-      ; +match_builtin BuiltinDecl.__new
+      ; +BuiltinDecl.(match_builtin __new)
         <>$ any_arg_of_typ (+PatternMatch.Java.implements_map)
         $+...$--> Collection.new_collection
-      ; +match_builtin BuiltinDecl.__new
+      ; +BuiltinDecl.(match_builtin __new)
         <>$ any_arg_of_typ (+PatternMatch.Java.implements_org_json "JSONArray")
         $+...$--> Collection.new_collection
-      ; +match_builtin BuiltinDecl.__new
+      ; +BuiltinDecl.(match_builtin __new)
         <>$ any_arg_of_typ (+PatternMatch.Java.implements_pseudo_collection)
         $+...$--> Collection.new_collection
-      ; +match_builtin BuiltinDecl.__new <>$ capt_exp $+...$--> malloc ~can_be_zero:true
-      ; +match_builtin BuiltinDecl.__new_array <>$ capt_exp $+...$--> malloc ~can_be_zero:true
-      ; +match_builtin BuiltinDecl.__placement_new
+      ; +BuiltinDecl.(match_builtin __new) <>$ capt_exp $+...$--> malloc ~can_be_zero:true
+      ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $+...$--> malloc ~can_be_zero:true
+      ; +BuiltinDecl.(match_builtin __placement_new)
         <>$ capt_exp $+ capt_arg $+? capt_arg $!--> placement_new
-      ; +match_builtin BuiltinDecl.__set_array_length
+      ; +BuiltinDecl.(match_builtin __set_array_length)
         <>$ capt_arg $+ capt_exp $!--> set_array_length
       ; -"calloc" <>$ capt_exp $+ capt_exp $!--> calloc ~can_be_zero:false
       ; -"exit" <>--> bottom
@@ -1677,7 +1692,7 @@ module Call = struct
       ; -"strndup" <>$ capt_exp $+ capt_exp $+...$--> strndup
       ; -"vsnprintf" <>--> by_value Dom.Val.Itv.nat
       ; (* ObjC models *)
-        +match_builtin BuiltinDecl.__objc_alloc_no_fail <>$ capt_exp $+...$--> objc_malloc
+        +BuiltinDecl.(match_builtin __objc_alloc_no_fail) <>$ capt_exp $+...$--> objc_malloc
       ; -"CFArrayCreate" <>$ any_arg $+ capt_exp $+ capt_exp
         $+...$--> NSCollection.create_from_array
       ; -"CFArrayCreateCopy" <>$ any_arg $+ capt_exp $!--> create_copy_array
@@ -1693,6 +1708,8 @@ module Call = struct
         &:: "firstObject" <>$ capt_var_exn $!--> NSCollection.get_first
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
         &:: "initWithDictionary:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.copy
+      ; +PatternMatch.ObjectiveC.implements "NSDictionary"
+        &:: "dictionaryWithDictionary:" <>$ capt_exp $--> NSCollection.new_collection_by_init
       ; +PatternMatch.ObjectiveC.implements "NSSet"
         &:: "initWithArray:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.copy
       ; +PatternMatch.ObjectiveC.implements "NSArray"
@@ -1761,9 +1778,10 @@ module Call = struct
         &:: "reverseObjectEnumerator" <>$ capt_exp $--> NSCollection.iterator
       ; +PatternMatch.ObjectiveC.implements "NSNumber" &:: "numberWithInt:" <>$ capt_exp $--> id
       ; +PatternMatch.ObjectiveC.implements "NSNumber" &:: "integerValue" <>$ capt_exp $--> id
+      ; +PatternMatch.ObjectiveC.implements "NSAttributedString" &:: "string" <>$ capt_exp $!--> id
       ; +PatternMatch.ObjectiveC.implements "NSString"
         &:: "stringWithUTF8String:" <>$ capt_exp $!--> NSString.create_with_c_string
-      ; +PatternMatch.ObjectiveC.implements "NSString"
+      ; +PatternMatch.ObjectiveC.implements_ns_string_variants
         &:: "length" <>$ capt_exp $--> NSString.length
       ; +PatternMatch.ObjectiveC.implements "NSString"
         &:: "stringByAppendingString:" <>$ capt_exp $+ capt_exp $!--> NSString.concat
@@ -1773,7 +1791,10 @@ module Call = struct
         &:: "appendString:" <>$ capt_exp $+ capt_exp $--> NSString.append_string
       ; +PatternMatch.ObjectiveC.implements "NSString"
         &:: "componentsSeparatedByString:" <>$ capt_exp $+ any_arg $--> NSString.split
-      ; +PatternMatch.ObjectiveC.implements "NSString"
+      ; +PatternMatch.ObjectiveC.implements "NSAttributedString"
+        &:: "initWithString:attributes:" <>$ capt_exp $+ capt_exp $+ any_arg
+        $--> NSString.init_with_string
+      ; +PatternMatch.ObjectiveC.implements_ns_string_variants
         &:: "initWithString:" <>$ capt_exp $+ capt_exp $--> NSString.init_with_string
       ; +PatternMatch.ObjectiveC.implements "NSString"
         &:: "initWithBytes:length:encoding:" <>$ capt_exp $+ capt_exp $+ capt_exp $+ any_arg
@@ -1903,6 +1924,7 @@ module Call = struct
         &:: "singletonMap" <>--> Collection.singleton_collection
       ; +PatternMatch.Java.implements_collections
         &::+ unmodifiable <>$ capt_exp $--> Collection.iterator
+      ; +PatternMatch.Java.implements_set &:: "of" &++> Collection.of_list
       ; +PatternMatch.Java.implements_google "common.collect.ImmutableSet"
         &:: "of" &++> Collection.of_list
       ; +PatternMatch.Java.implements_google "common.base.Preconditions"

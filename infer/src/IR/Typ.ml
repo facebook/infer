@@ -338,15 +338,14 @@ and pp_template_spec_info pe f = function
 
 
 and pp_protocols pe f protocols =
-  if List.is_empty protocols then ()
-  else
+  if not (List.is_empty protocols) then
     F.fprintf f "%s%a%s" (escape pe "<")
       (Pp.comma_seq (pp_name_c_syntax pe))
       protocols (escape pe ">")
 
 
 (** Pretty print a type. Do nothing by default. *)
-let pp pe f te = if Config.print_types then pp_full pe f te else ()
+let pp pe f te = if Config.print_types then pp_full pe f te
 
 let to_string typ =
   let pp fmt = pp_full Pp.text fmt typ in
@@ -362,7 +361,7 @@ module Name = struct
   type t = name [@@deriving compare, equal, yojson_of]
 
   (* NOTE: When a same struct type is used in C/C++/ObjC/ObjC++, their struct types may different,
-     eg [CStruct] in, C but [CppClass] in C++.  On the other hand, since [Fieldname.t] includes the
+     eg [CStruct] in C, but [CppClass] in C++.  On the other hand, since [Fieldname.t] includes the
      class names, even for the same field, its field name used in C and C++ can be different.
      However, in analyses, we may want to *not* distinguish fieldnames of the same struct type.  For
      that, we can use these loosened compare functions instead. *)
@@ -373,6 +372,39 @@ module Name = struct
         QualifiedCppName.compare name1 name2
     | _ ->
         compare x y
+
+
+  let rec compare_name x y =
+    let open ICompare in
+    match (x, y) with
+    | ( (CStruct name1 | CUnion name1 | CppClass {name= name1})
+      , (CStruct name2 | CUnion name2 | CppClass {name= name2}) ) ->
+        QualifiedCppName.compare_name name1 name2
+    | (CStruct _ | CUnion _ | CppClass _), _ ->
+        -1
+    | _, (CStruct _ | CUnion _ | CppClass _) ->
+        1
+    | CSharpClass name1, CSharpClass name2 ->
+        String.compare (CSharpClassName.classname name1) (CSharpClassName.classname name2)
+    | CSharpClass _, _ ->
+        -1
+    | _, CSharpClass _ ->
+        1
+    | JavaClass name1, JavaClass name2 ->
+        String.compare (JavaClassName.classname name1) (JavaClassName.classname name2)
+    | JavaClass _, _ ->
+        -1
+    | _, JavaClass _ ->
+        1
+    | ObjcClass (name1, names1), ObjcClass (name2, names2) ->
+        QualifiedCppName.compare_name name1 name2
+        <*> fun () -> List.compare compare_name names1 names2
+    | ObjcClass _, _ ->
+        -1
+    | _, ObjcClass _ ->
+        1
+    | ObjcProtocol name1, ObjcProtocol name2 ->
+        QualifiedCppName.compare_name name1 name2
 
 
   let hash = Hashtbl.hash

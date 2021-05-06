@@ -29,19 +29,23 @@ let add_call call_and_loc = function
       ReadUninitializedValue {read with calling_context= call_and_loc :: read.calling_context}
 
 
-let should_report (astate : AbductiveDomain.summary) =
+let is_manifest (astate : AbductiveDomain.summary) =
   Arithmetic.has_no_assumptions (astate :> AbductiveDomain.t)
+  && ( (not Config.pulse_isl)
+     || AbductiveDomain.is_isl_without_allocation (astate :> AbductiveDomain.t)
+        && ( (not Config.pulse_manifest_emp)
+           || AbductiveDomain.is_pre_without_isl_abduced (astate :> AbductiveDomain.t) ) )
 
 
 (* require a summary because we don't want to stop reporting because some non-abducible condition is
    not true as calling context cannot possibly influence such conditions *)
-let should_report_diagnostic (astate : AbductiveDomain.summary) (diagnostic : Diagnostic.t) =
+let should_report (astate : AbductiveDomain.summary) (diagnostic : Diagnostic.t) =
   match diagnostic with
   | MemoryLeak _ | StackVariableAddressEscape _ ->
       (* these issues are reported regardless of the calling context, not sure if that's the right
          decision yet *)
       `ReportNow
-  | AccessToInvalidAddress diag ->
-      if should_report astate then `ReportNow else `DelayReport (AccessToInvalidAddress diag)
-  | ReadUninitializedValue diag ->
-      if should_report astate then `ReportNow else `DelayReport (ReadUninitializedValue diag)
+  | AccessToInvalidAddress latent ->
+      if is_manifest astate then `ReportNow else `DelayReport (AccessToInvalidAddress latent)
+  | ReadUninitializedValue latent ->
+      if is_manifest astate then `ReportNow else `DelayReport (ReadUninitializedValue latent)

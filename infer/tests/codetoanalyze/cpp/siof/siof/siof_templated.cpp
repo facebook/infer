@@ -16,11 +16,16 @@ struct SomeOtherTemplatedNonPODObject {
   SomeOtherTemplatedNonPODObject() {
     global_template_object.some_method(); // OK, same translation unit
     extern_global_object.some_method(); // bad, different translation unit
-  };
+  }
 
   SomeOtherTemplatedNonPODObject(int i) {
     global_template_object.some_method(); // OK, same translation unit
-  };
+  }
+
+  SomeOtherTemplatedNonPODObject(int i, int j) {
+    // OK: declared in another file but instantiated in this translation unit
+    someTemplatedStatic<int>.some_method();
+  }
 };
 
 SomeOtherTemplatedNonPODObject<bool> another_templated_global_object_bad;
@@ -29,3 +34,4 @@ SomeOtherTemplatedNonPODObject<bool> another_templated_global_object2_bad(
 SomeOtherTemplatedNonPODObject<bool> another_templated_global_object3_bad(
     access_to_templated_non_pod());
 SomeOtherTemplatedNonPODObject<bool> another_templated_global_object4_good(42);
+SomeOtherTemplatedNonPODObject<bool> access_variable_template_ok(32, 52);

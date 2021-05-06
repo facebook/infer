@@ -6,7 +6,8 @@
 TESTS_DIR = ../../..
 
 # NOTE: If you wish to deactivate a Topl test, simply remove it from this list
-SUBDIRS = baos compareArgs hasnext immutableArray servlet slowIter taint
+SUBDIRS = compareArgs hasnext immutableArray servlet slowIter taint
+# inactive: baos (reactivate when tests migrate to Java 11)
 
 test-%:
 	$(MAKE) -C $* test

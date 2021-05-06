@@ -7,7 +7,7 @@
 
 open! IStd
 
-(* An automaton is a different representation for a set of TOPL properties: states and transitions
+(* An automaton is a different representation for a set of Topl properties: states and transitions
    are identified by nonnegative integers; and transitions are grouped by their source. Also, the
    meaning of transition labels does not depend on context (e.g., prefixes are now included).
 
@@ -33,28 +33,9 @@ type transition = {source: vindex; target: vindex; label: ToplAst.label option}
 
 val make : ToplAst.t list -> t
 
-val outgoing : t -> vindex -> tindex list
-
-val is_nondet : t -> vindex -> bool
-
 val vcount : t -> int
 
-val transition : t -> tindex -> transition
-
 val tfilter_map : t -> f:(transition -> 'a option) -> 'a list
-
-val is_skip : t -> tindex -> bool
-(** A transition is *skip* when it has no action, its guard is implied by all other guards, and its
-    target equals its source. [is_skip automaton t] returns true when it can prove that [t] is skip.*)
-
-val tcount : t -> int
-
-val max_args : t -> int
-
-val get_start_error_pairs : t -> (vindex * vindex) list
-(** Return pairs [(i,j)] of vertex indices corresponding to pairs [((p, "start"), (p, "error"))] of
-    vertex names, where [p] ranges over property names. POST: no vertex index occurs more than once
-    in the result. *)
 
 val registers : t -> ToplAst.register_name list
 

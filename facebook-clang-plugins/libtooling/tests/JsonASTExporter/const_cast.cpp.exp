@@ -630,7 +630,7 @@
       },
       {
         "is_global" : true,
-        "is_const_expr" : true,
+        "is_constexpr" : true,
         "is_init_ice" : true,
         "init_expr" : ["IntegerLiteral" , [
           {
@@ -1082,15 +1082,21 @@
         },
         "Half"
       ]],
-      ["RecordType" , [
+      ["BuiltinType" , [
         {
           "pointer" : 96
         },
-        97
+        "BFloat16"
+      ]],
+      ["RecordType" , [
+        {
+          "pointer" : 97
+        },
+        98
       ]],
       ["PointerType" , [
         {
-          "pointer" : 98
+          "pointer" : 99
         },
         {
           "type_ptr" : 30,
@@ -1099,7 +1105,7 @@
       ]],
       ["PointerType" , [
         {
-          "pointer" : 99
+          "pointer" : 100
         },
         {
           "type_ptr" : 35,
@@ -1108,7 +1114,7 @@
       ]],
       ["PointerType" , [
         {
-          "pointer" : 100
+          "pointer" : 101
         },
         {
           "type_ptr" : 35
@@ -1116,17 +1122,17 @@
       ]],
       ["RecordType" , [
         {
-          "pointer" : 101
+          "pointer" : 102
         },
-        102
+        103
       ]],
       ["ConstantArrayType" , [
         {
-          "pointer" : 103
+          "pointer" : 104
         },
         {
           "element_type" : {
-            "type_ptr" : 101
+            "type_ptr" : 102
           },
           "stride" : 24
         },
@@ -1140,7 +1146,7 @@
       ]],
       ["PointerType" , [
         {
-          "pointer" : 104
+          "pointer" : 105
         },
         {
           "type_ptr" : 8
@@ -1194,7 +1200,7 @@
       ]],
       ["PointerType" , [
         {
-          "pointer" : 105
+          "pointer" : 106
         },
         {
           "type_ptr" : 8,
@@ -1203,7 +1209,7 @@
       ]],
       ["ObjCObjectType" , [
         {
-          "pointer" : 106
+          "pointer" : 107
         },
         {
           "base_type" : 90
@@ -1211,32 +1217,32 @@
       ]],
       ["ObjCObjectPointerType" , [
         {
-          "pointer" : 107
+          "pointer" : 108
         },
         {
-          "type_ptr" : 106
+          "type_ptr" : 107
         }
       ]],
       ["TypedefType" , [
         {
-          "pointer" : 108,
-          "desugared_type" : 107
+          "pointer" : 109,
+          "desugared_type" : 108
         },
         {
           "child_type" : {
-            "type_ptr" : 107
+            "type_ptr" : 108
           },
-          "decl_ptr" : 109
+          "decl_ptr" : 110
         }
       ]],
       ["TypedefType" , [
         {
           "pointer" : 33,
-          "desugared_type" : 107
+          "desugared_type" : 108
         },
         {
           "child_type" : {
-            "type_ptr" : 108
+            "type_ptr" : 109
           },
           "decl_ptr" : 32
         }

@@ -39,6 +39,8 @@ val ttrue : t
 
 val and_equal : operand -> operand -> t -> (t * new_eqs) SatUnsat.t
 
+val and_equal_instanceof : Var.t -> Var.t -> Typ.t -> t -> (t * new_eqs) SatUnsat.t
+
 val and_less_equal : operand -> operand -> t -> (t * new_eqs) SatUnsat.t
 
 val and_less_than : operand -> operand -> t -> (t * new_eqs) SatUnsat.t
@@ -51,10 +53,16 @@ val prune_binop : negated:bool -> Binop.t -> operand -> operand -> t -> (t * new
 
 (** {3 Operations} *)
 
-val normalize : t -> (t * new_eqs) SatUnsat.t
+val normalize : Tenv.t -> get_dynamic_type:(Var.t -> Typ.t option) -> t -> (t * new_eqs) SatUnsat.t
 (** think a bit harder about the formula *)
 
-val simplify : keep:Var.Set.t -> t -> (t * new_eqs) SatUnsat.t
+val simplify :
+     Tenv.t
+  -> get_dynamic_type:(Var.t -> Typ.t option)
+  -> can_be_pruned:Var.Set.t
+  -> keep:Var.Set.t
+  -> t
+  -> (t * new_eqs) SatUnsat.t
 
 val and_fold_subst_variables :
      t
@@ -64,8 +72,6 @@ val and_fold_subst_variables :
   -> ('acc * t * new_eqs) SatUnsat.t
 
 val is_known_zero : t -> Var.t -> bool
-
-val as_int : t -> Var.t -> int option
 
 val has_no_assumptions : t -> bool
 

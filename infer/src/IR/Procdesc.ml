@@ -57,6 +57,8 @@ module Node = struct
 
   type stmt_nodekind =
     | AssertionFailure
+    | AtomicCompareExchangeBranch
+    | AtomicExpr
     | BetweenJoinAndExit
     | BinaryConditionalStmtInit
     | BinaryOperatorStmt of string
@@ -71,6 +73,7 @@ module Node = struct
     | CXXNewExpr
     | CXXStdInitializerListExpr
     | CXXTemporaryMarkerSet
+    | CXXTry
     | CXXTypeidExpr
     | DeclStmt
     | DefineBody
@@ -280,18 +283,13 @@ module Node = struct
       true )
 
 
-  (** Like [replace_instrs], but 1 instr gets replaced by 0, 1, or more instructions. *)
-  let replace_instrs_by node ~f =
-    let instrs' = Instrs.concat_map node.instrs ~f:(f node) in
-    if phys_equal instrs' node.instrs then false
-    else (
-      node.instrs <- instrs' ;
-      true )
-
-
   let pp_stmt fmt = function
     | AssertionFailure ->
         F.pp_print_string fmt "Assertion failure"
+    | AtomicCompareExchangeBranch ->
+        F.pp_print_string fmt "Atomic compare exchange branch"
+    | AtomicExpr ->
+        F.pp_print_string fmt "AtomicExpr"
     | BetweenJoinAndExit ->
         F.pp_print_string fmt "between_join_and_exit"
     | BinaryConditionalStmtInit ->
@@ -320,6 +318,8 @@ module Node = struct
         F.pp_print_string fmt "CXXStdInitializerListExpr"
     | CXXTemporaryMarkerSet ->
         F.pp_print_string fmt "CXXTemporaryMarkerSet"
+    | CXXTry ->
+        F.pp_print_string fmt "CXXTry"
     | CXXTypeidExpr ->
         F.pp_print_string fmt "CXXTypeidExpr"
     | DeclStmt ->
@@ -519,10 +519,7 @@ let get_proc_name pdesc = pdesc.attributes.proc_name
 (** Return name and type of formal parameters *)
 let get_formals pdesc = pdesc.attributes.formals
 
-let get_pvar_formals pdesc =
-  let proc_name = get_proc_name pdesc in
-  get_formals pdesc |> List.map ~f:(fun (name, typ) -> (Pvar.mk name proc_name, typ))
-
+let get_pvar_formals pdesc = Pvar.get_pvar_formals pdesc.attributes
 
 let get_loc pdesc = pdesc.attributes.loc
 
@@ -530,6 +527,8 @@ let get_loc pdesc = pdesc.attributes.loc
 let get_locals pdesc = pdesc.attributes.locals
 
 let has_added_return_param pdesc = pdesc.attributes.has_added_return_param
+
+let is_ret_type_pod pdesc = pdesc.attributes.is_ret_type_pod
 
 (** Return name and type of captured variables *)
 let get_captured pdesc = pdesc.attributes.captured
@@ -543,6 +542,8 @@ let get_nodes pdesc = pdesc.nodes
 let get_ret_type pdesc = pdesc.attributes.ret_type
 
 let get_ret_var pdesc = Pvar.get_ret_pvar (get_proc_name pdesc)
+
+let get_ret_param_var pdesc = Pvar.get_ret_param_pvar (get_proc_name pdesc)
 
 let get_start_node pdesc = pdesc.start_node
 
@@ -614,11 +615,6 @@ let replace_instrs_by_using_context pdesc ~f ~update_context ~context_at_node =
     Node.replace_instrs_by_using_context ~f ~update_context ~context_at_node:(context_at_node node)
       node
   in
-  update_nodes pdesc ~update
-
-
-let replace_instrs_by pdesc ~f =
-  let update node = Node.replace_instrs_by ~f node in
   update_nodes pdesc ~update
 
 
@@ -771,7 +767,7 @@ let get_loop_heads pdesc =
 let is_loop_head pdesc (node : Node.t) = NodeSet.mem node (get_loop_heads pdesc)
 
 let pp_modify_in_block fmt modify_in_block =
-  if modify_in_block then Format.pp_print_string fmt "(__block)" else ()
+  if modify_in_block then Format.pp_print_string fmt "(__block)"
 
 
 let pp_local fmt (var_data : ProcAttributes.var_data) =
@@ -795,7 +791,7 @@ let pp_captured_list fmt etl =
   List.iter
     ~f:(fun {CapturedVar.name; typ; capture_mode} ->
       Format.fprintf fmt " [%s] %a:%a"
-        (Pvar.string_of_capture_mode capture_mode)
+        (CapturedVar.string_of_capture_mode capture_mode)
         Mangled.pp name (Typ.pp_full Pp.text) typ )
     etl
 
@@ -841,15 +837,11 @@ let is_captured_pvar procdesc pvar =
   in
   let pvar_matches (name, _) = Mangled.equal name pvar_name in
   let is_captured_var_cpp_lambda =
-    match procname with
-    | Procname.ObjC_Cpp cpp_pname ->
-        (* var is captured if the procedure is a lambda and the var is not in the locals or formals *)
-        Procname.ObjC_Cpp.is_cpp_lambda cpp_pname
-        && not
-             ( List.exists ~f:pvar_local_matches (get_locals procdesc)
-             || List.exists ~f:pvar_matches (get_formals procdesc) )
-    | _ ->
-        false
+    (* var is captured if the procedure is a lambda and the var is not in the locals or formals *)
+    Procname.is_cpp_lambda procname
+    && not
+         ( List.exists ~f:pvar_local_matches (get_locals procdesc)
+         || List.exists ~f:pvar_matches (get_formals procdesc) )
   in
   let pvar_matches_in_captured {CapturedVar.name} = Mangled.equal name pvar_name in
   let is_captured_var_objc_block =

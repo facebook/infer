@@ -44,8 +44,8 @@ import kotlin.annotations.jvm.UnderMigration;
  *     An internal class is checked if it's annotated as @Nullsafe or @NullsafeStrict.
  *   </ol>
  *   <ol>
- *     An external method is checked when it has nullability signature defined in third-party
- *     signatures repo.
+ *     An external method is checked when it's annotated or has nullability signature
+ *     defined in third-party signatures repo.
  *   </ol>
  *   <ol>
  *     The code that has built-in models in nullsafe is considered checked (both internal and
@@ -107,10 +107,22 @@ import kotlin.annotations.jvm.UnderMigration;
 public @interface Nullsafe {
   enum Mode {
     LOCAL,
+    /**
+    * @deprecated STRICT mode is deprecated and soon will have no effect on the
+    * behaviour of NullsafeX.
+    */
+    @Deprecated
     STRICT
   }
 
+  /**
+   * @deprecated Explicit TrustList is deprecated and soon will have no effect on the
+   * behaviour of Nullsafe. The code will be checked as if the mode is {@code
+   * trustAll = true}.
+   */
+  @Deprecated
   @interface TrustList {
+
     Class[] value();
 
     /**
@@ -130,7 +142,10 @@ public @interface Nullsafe {
   /**
    * Provides fine-grained control over which unchecked internal classes to trust. Only affects
    * LOCAL null-checking mode, as strict requires all dependencies to be STRICT themselves.
+   *
+   * @deprecated See {@link TrustList}.
    */
+  @Deprecated
   TrustList trustOnly() default
       @TrustList(
           value = {},

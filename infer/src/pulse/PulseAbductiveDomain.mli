@@ -6,9 +6,7 @@
  *)
 
 open! IStd
-module F = Format
 open PulseBasicInterface
-module BaseAddressAttributes = PulseBaseAddressAttributes
 module BaseDomain = PulseBaseDomain
 module BaseMemory = PulseBaseMemory
 module BaseStack = PulseBaseStack
@@ -24,24 +22,6 @@ module type BaseDomainSig = sig
   (* private because the lattice is not the same for preconditions and postconditions so we don't
      want to confuse them *)
   type t = private BaseDomain.t [@@deriving compare, equal, yojson_of]
-
-  val yojson_of_t : t -> Yojson.Safe.t
-
-  val empty : t
-
-  val update : ?stack:BaseStack.t -> ?heap:BaseMemory.t -> ?attrs:BaseAddressAttributes.t -> t -> t
-
-  val filter_addr : f:(AbstractValue.t -> bool) -> t -> t
-  (** filter both heap and attrs *)
-
-  val filter_addr_with_discarded_addrs :
-    f:(AbstractValue.t -> bool) -> t -> t * AbstractValue.t list
-  (** compute new state containing only reachable addresses in its heap and attributes, as well as
-      the list of discarded unreachable addresses *)
-
-  val subst_var : AbstractValue.t * AbstractValue.t -> t -> t SatUnsat.t
-
-  val pp : F.formatter -> t -> unit
 end
 
 (** The post abstract state at each program point, or current state. *)
@@ -54,16 +34,6 @@ module PostDomain : BaseDomainSig
     collapse into one. * *)
 module PreDomain : BaseDomainSig
 
-(** Execution status, similar to {!PulseExecutionDomain} but for ISL (Incorrectness Separation
-    Logic) mode, where {!PulseExecutionDomain.ContinueProgram} can also contain "error specs" that
-    describe what happens when some addresses are invalid explicitly instead of relying on
-    [MustBeValid] attributes. *)
-type isl_status =
-  | ISLOk  (** ok triple: the program executes without error *)
-  | ISLError
-      (** Error specification: an invalid address recorded in the precondition will cause an error *)
-[@@deriving equal]
-
 (** pre/post on a single program path *)
 type t = private
   { post: PostDomain.t  (** state at the current program point*)
@@ -74,14 +44,12 @@ type t = private
   ; topl: PulseTopl.state
         (** state at of the Topl monitor at the current program point, when Topl is enabled *)
   ; skipped_calls: SkippedCalls.t  (** metadata: procedure calls for which no summary was found *)
-  ; isl_status: isl_status }
+  }
 [@@deriving equal]
 
 val leq : lhs:t -> rhs:t -> bool
 
 val pp : Format.formatter -> t -> unit
-
-val set_isl_status : isl_status -> t -> t
 
 val mk_initial : Tenv.t -> Procdesc.t -> t
 
@@ -145,15 +113,22 @@ module AddressAttributes : sig
 
   val add_attrs : AbstractValue.t -> Attributes.t -> t -> t
 
-  val check_valid : Trace.t -> AbstractValue.t -> t -> (t, Invalidation.t * Trace.t) result
+  val check_valid :
+       ?must_be_valid_reason:Invalidation.must_be_valid_reason
+    -> Trace.t
+    -> AbstractValue.t
+    -> t
+    -> (t, Invalidation.t * Trace.t) result
 
   val check_initialized : Trace.t -> AbstractValue.t -> t -> (t, unit) result
 
   val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
+  val replace_must_be_valid_reason : Invalidation.must_be_valid_reason -> AbstractValue.t -> t -> t
+
   val allocate : Procname.t -> AbstractValue.t * ValueHistory.t -> Location.t -> t -> t
 
-  val add_dynamic_type : Typ.Name.t -> AbstractValue.t -> t -> t
+  val add_dynamic_type : Typ.t -> AbstractValue.t -> t -> t
 
   val remove_allocation_attr : AbstractValue.t -> t -> t
 
@@ -174,16 +149,18 @@ module AddressAttributes : sig
     -> AbstractValue.t
     -> ?null_noop:bool
     -> t
-    -> (t list, Invalidation.t * Trace.t * t) result
+    -> (t, [> `ISLError of t | `InvalidAccess of Invalidation.t * Trace.t * t]) result list
 end
 
 val is_local : Var.t -> t -> bool
 
 val find_post_cell_opt : AbstractValue.t -> t -> BaseDomain.cell option
 
-val discard_unreachable : t -> t * AbstractValue.Set.t * AbstractValue.t list
-(** garbage collect unreachable addresses in the state to make it smaller and return the new state,
-    the live addresses, and the discarded addresses that used to have attributes attached *)
+val discard_unreachable : t -> t
+(** garbage collect unreachable addresses in the state to make it smaller and return the new state *)
+
+val get_unreachable_attributes : t -> AbstractValue.t list
+(** collect the addresses that have attributes but are unreachable in the current post-condition *)
 
 val add_skipped_call : Procname.t -> Trace.t -> t -> t
 
@@ -191,12 +168,28 @@ val add_skipped_calls : SkippedCalls.t -> t -> t
 
 val set_path_condition : PathCondition.t -> t -> t
 
+val is_isl_without_allocation : t -> bool
+
+val is_pre_without_isl_abduced : t -> bool
+
 (** private type to make sure {!summary_of_post} is always called when creating summaries *)
 type summary = private t [@@deriving compare, equal, yojson_of]
 
-val summary_of_post : Procdesc.t -> t -> summary SatUnsat.t
-(** trim the state down to just the procedure's interface (formals and globals), and simplify and
-    normalize the state *)
+val skipped_calls_match_pattern : summary -> bool
+
+val summary_of_post :
+     Tenv.t
+  -> Procdesc.t
+  -> Location.t
+  -> t
+  -> ( summary
+     , [> `MemoryLeak of summary * Procname.t * Trace.t * Location.t
+       | `PotentialInvalidAccessSummary of
+         summary * AbstractValue.t * (Trace.t * Invalidation.must_be_valid_reason option) ] )
+     result
+     SatUnsat.t
+(** Trim the state down to just the procedure's interface (formals and globals), and simplify and
+    normalize the state. *)
 
 val set_post_edges : AbstractValue.t -> BaseMemory.Edges.t -> t -> t
 (** directly set the edges for the given address, bypassing abduction altogether *)
@@ -204,7 +197,13 @@ val set_post_edges : AbstractValue.t -> BaseMemory.Edges.t -> t -> t
 val set_post_cell : AbstractValue.t * ValueHistory.t -> BaseDomain.cell -> Location.t -> t -> t
 (** directly set the edges and attributes for the given address, bypassing abduction altogether *)
 
-val incorporate_new_eqs : PathCondition.new_eqs -> t -> t
+val incorporate_new_eqs :
+     PathCondition.new_eqs
+  -> t
+  -> ( t
+     , [> `PotentialInvalidAccess of
+          t * AbstractValue.t * (Trace.t * Invalidation.must_be_valid_reason option) ] )
+     result
 (** Check that the new equalities discovered are compatible with the current pre and post heaps,
     e.g. [x = 0] is not compatible with [x] being allocated, and [x = y] is not compatible with [x]
     and [y] being allocated separately. In those cases, the resulting path condition is

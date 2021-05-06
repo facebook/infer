@@ -59,22 +59,22 @@ let%test_module _ =
       check_frame Sh.emp [] Sh.emp ;
       [%expect
         {|
-        ( infer_frame: 0   emp \-   emp
-        ) infer_frame:   emp |}]
+        ( Solver.infer_frame: 0   emp \-   emp
+        ) Solver.infer_frame:   emp |}]
 
     let%expect_test _ =
       check_frame (Sh.false_ Var.Set.empty) [] Sh.emp ;
       [%expect
         {|
-        ( infer_frame: 1 false \-   emp
-        ) infer_frame: false |}]
+        ( Solver.infer_frame: 1 false \-   emp
+        ) Solver.infer_frame: false |}]
 
     let%expect_test _ =
       check_frame Sh.emp [n_; m_] (Sh.and_ (Formula.eq m n) Sh.emp) ;
       [%expect
         {|
-        ( infer_frame: 2   emp \- ∃ %m_8, %n_9 .   %m_8 = %n_9 ∧ emp
-        ) infer_frame:   %m_8 = %n_9 ∧ emp |}]
+        ( Solver.infer_frame: 2   emp \- ∃ %m_8, %n_9 .   %m_8 = %n_9 ∧ emp
+        ) Solver.infer_frame:   %m_8 = %n_9 ∧ emp |}]
 
     let%expect_test _ =
       check_frame
@@ -82,8 +82,9 @@ let%test_module _ =
         [] Sh.emp ;
       [%expect
         {|
-        ( infer_frame: 3   %l_6 -[ %b_4, %m_8 )-> ⟨%n_9,%a_1⟩ \-   emp
-        ) infer_frame:   %l_6 -[ %b_4, %m_8 )-> ⟨%n_9,%a_1⟩ |}]
+        ( Solver.infer_frame: 3
+            %l_6 -[ %b_4, %m_8 )-> ⟨%n_9,%a_1⟩ \-   emp
+        ) Solver.infer_frame:   %l_6 -[ %b_4, %m_8 )-> ⟨%n_9,%a_1⟩ |}]
 
     let%expect_test _ =
       check_frame
@@ -92,10 +93,10 @@ let%test_module _ =
         (Sh.seg {loc= l; bas= b; len= m; siz= n; cnt= a}) ;
       [%expect
         {|
-        ( infer_frame: 4
+        ( Solver.infer_frame: 4
             %l_6 -[ %b_4, %m_8 )-> ⟨%n_9,%a_1⟩
           \-   %l_6 -[ %b_4, %m_8 )-> ⟨%n_9,%a_1⟩
-        ) infer_frame:   emp |}]
+        ) Solver.infer_frame:   emp |}]
 
     let%expect_test _ =
       let common = Sh.seg {loc= l2; bas= b; len= !10; siz= !10; cnt= a2} in
@@ -110,11 +111,11 @@ let%test_module _ =
       infer_frame minued [n_; m_] subtrahend ;
       [%expect
         {|
-        ( infer_frame: 5
+        ( Solver.infer_frame: 5
             %l_6 -[ %b_4, 10 )-> ⟨10,%a_1⟩ * %l_7 -[ %b_4, 10 )-> ⟨10,%a_2⟩
           \- ∃ %m_8, %n_9 .
             ∃ %m_10 .   %m_8 = %n_9 ∧ %l_7 -[ %b_4, 10 )-> ⟨10,%a_2⟩
-        ) infer_frame:
+        ) Solver.infer_frame:
           ∃ %m_10 .   %m_8 = %n_9 ∧ %l_6 -[ %b_4, 10 )-> ⟨10,%a_1⟩ |}]
 
     let%expect_test _ =
@@ -126,11 +127,11 @@ let%test_module _ =
         (Sh.seg {loc= l; bas= b; len= m; siz= n; cnt= a}) ;
       [%expect
         {|
-        ( infer_frame: 6
+        ( Solver.infer_frame: 6
             %l_6 -[ %b_4, %m_8 )-> ⟨%n_9,%a_1⟩
           * %l_7 -[ %b_4, %m_8 )-> ⟨%n_9,%a_2⟩
           \-   %l_6 -[ %b_4, %m_8 )-> ⟨%n_9,%a_1⟩
-        ) infer_frame:   %l_7 -[ %b_4, %m_8 )-> ⟨%n_9,%a_2⟩ |}]
+        ) Solver.infer_frame:   %l_7 -[ %b_4, %m_8 )-> ⟨%n_9,%a_2⟩ |}]
 
     let%expect_test _ =
       check_frame
@@ -141,9 +142,9 @@ let%test_module _ =
         (Sh.seg {loc= l; bas= l; len= !16; siz= !16; cnt= a3}) ;
       [%expect
         {|
-        ( infer_frame: 7
+        ( Solver.infer_frame: 7
             %l_6 -[)-> ⟨8,%a_1⟩^⟨8,%a_2⟩ \- ∃ %a_3 .   %l_6 -[)-> ⟨16,%a_3⟩
-        ) infer_frame:   (⟨8,%a_1⟩^⟨8,%a_2⟩) = %a_3 ∧ emp |}]
+        ) Solver.infer_frame:   (⟨8,%a_1⟩^⟨8,%a_2⟩) = %a_3 ∧ emp |}]
 
     let%expect_test _ =
       check_frame
@@ -154,11 +155,12 @@ let%test_module _ =
         (Sh.seg {loc= l; bas= l; len= m; siz= !16; cnt= a3}) ;
       [%expect
         {|
-        ( infer_frame: 8
+        ( Solver.infer_frame: 8
             %l_6 -[)-> ⟨8,%a_1⟩^⟨8,%a_2⟩
           \- ∃ %a_3, %m_8 .
               %l_6 -[ %l_6, %m_8 )-> ⟨16,%a_3⟩
-        ) infer_frame:   16 = %m_8 ∧ (⟨8,%a_1⟩^⟨8,%a_2⟩) = %a_3 ∧ emp |}]
+        ) Solver.infer_frame:
+            16 = %m_8 ∧ (⟨8,%a_1⟩^⟨8,%a_2⟩) = %a_3 ∧ emp |}]
 
     let%expect_test _ =
       check_frame
@@ -169,11 +171,12 @@ let%test_module _ =
         (Sh.seg {loc= l; bas= l; len= m; siz= m; cnt= a3}) ;
       [%expect
         {|
-        ( infer_frame: 9
+        ( Solver.infer_frame: 9
             %l_6 -[)-> ⟨8,%a_1⟩^⟨8,%a_2⟩
           \- ∃ %a_3, %m_8 .
               %l_6 -[ %l_6, %m_8 )-> ⟨%m_8,%a_3⟩
-        ) infer_frame:   16 = %m_8 ∧ (⟨8,%a_1⟩^⟨8,%a_2⟩) = %a_3 ∧ emp |}]
+        ) Solver.infer_frame:
+            16 = %m_8 ∧ (⟨8,%a_1⟩^⟨8,%a_2⟩) = %a_3 ∧ emp |}]
 
     let%expect_test _ =
       check_frame
@@ -186,11 +189,11 @@ let%test_module _ =
            (Sh.seg {loc= k; bas= k; len= m; siz= n; cnt= a2})) ;
       [%expect
         {|
-        ( infer_frame: 10
+        ( Solver.infer_frame: 10
             %k_5 -[ %k_5, 16 )-> ⟨32,%a_1⟩ * %l_6 -[)-> ⟨8,16⟩
           \- ∃ %a_2, %m_8, %n_9 .
               %k_5 -[ %k_5, %m_8 )-> ⟨%n_9,%a_2⟩ * %l_6 -[)-> ⟨8,%n_9⟩
-        ) infer_frame:
+        ) Solver.infer_frame:
           ∃ %a0_10, %a1_11 .
             %a_2 = %a0_10
           ∧ 16 = %m_8 = %n_9
@@ -208,11 +211,11 @@ let%test_module _ =
            (Sh.seg {loc= l; bas= l; len= !8; siz= !8; cnt= n})) ;
       [%expect
         {|
-        ( infer_frame: 11
+        ( Solver.infer_frame: 11
             %k_5 -[ %k_5, 16 )-> ⟨32,%a_1⟩ * %l_6 -[)-> ⟨8,16⟩
           \- ∃ %a_2, %m_8, %n_9 .
               %k_5 -[ %k_5, %m_8 )-> ⟨%n_9,%a_2⟩ * %l_6 -[)-> ⟨8,%n_9⟩
-        ) infer_frame:
+        ) Solver.infer_frame:
           ∃ %a0_10, %a1_11 .
             %a_2 = %a0_10
           ∧ 16 = %m_8 = %n_9
@@ -234,7 +237,7 @@ let%test_module _ =
         (Sh.seg {loc= l; bas= l; len= m; siz= m; cnt= a}) ;
       [%expect
         {|
-        ( infer_frame: 12
+        ( Solver.infer_frame: 12
             %l_6 -[ %l_6, 16 )-> ⟨8×%n_9,%a_2⟩^⟨(16 + -8×%n_9),%a_3⟩
           * ( (  1 = %n_9 ∧ emp)
             ∨ (  0 = %n_9 ∧ emp)
@@ -242,7 +245,7 @@ let%test_module _ =
             )
           \- ∃ %a_1, %m_8 .
               %l_6 -[ %l_6, %m_8 )-> ⟨%m_8,%a_1⟩
-        ) infer_frame:
+        ) Solver.infer_frame:
             ( (  1 = %n_9 ∧ 16 = %m_8 ∧ (⟨8,%a_2⟩^⟨8,%a_3⟩) = %a_1 ∧ emp)
             ∨ (  %a_1 = %a_2
                ∧ 2 = %n_9
@@ -259,12 +262,12 @@ let%test_module _ =
         (Sh.seg {loc= l; bas= l; len= m; siz= m; cnt= a}) ;
       [%expect
         {|
-        ( infer_frame: 13
+        ( Solver.infer_frame: 13
             (2 ≥ %n_9)
           ∧ %l_6 -[ %l_6, 16 )-> ⟨8×%n_9,%a_2⟩^⟨(16 + -8×%n_9),%a_3⟩
           \- ∃ %a_1, %m_8 .
               %l_6 -[ %l_6, %m_8 )-> ⟨%m_8,%a_1⟩
-        ) infer_frame: |}]
+        ) Solver.infer_frame: |}]
 
     (* Incompleteness: cannot witness existentials to satisfy non-equality
        pure constraints *)
@@ -276,7 +279,7 @@ let%test_module _ =
       infer_frame minuend [m_] subtrahend ;
       [%expect
         {|
-        ( infer_frame: 14
+        ( Solver.infer_frame: 14
             emp \- ∃ %m_8 .   %a_1 = %m_8 ∧ (0 ≠ %a_1) ∧ emp
-        ) infer_frame: |}]
+        ) Solver.infer_frame: |}]
   end )

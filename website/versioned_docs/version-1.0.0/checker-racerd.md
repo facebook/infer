@@ -13,7 +13,7 @@ Supported languages:
 
 RacerD finds data races in your C++ and Java code. This page gives a more in-depth
 explanation of how the analysis works *for Java code*, but may be less complete than the
-[Thread Safety Violation bug description page](/docs/all-issue-types#thread_safety_violation).
+[Thread Safety Violation bug description page](/docs/1.0.0/all-issue-types#thread_safety_violation).
 
 To run the analysis, you can use plain `infer` (to run RacerD along with other
 analyses that are run by default) or `infer --racerd-only` (to run only RacerD).
@@ -498,7 +498,7 @@ resource.
 ## List of Issue Types
 
 The following issue types are reported by this checker:
-- [GUARDEDBY_VIOLATION](/docs/all-issue-types#guardedby_violation)
-- [INTERFACE_NOT_THREAD_SAFE](/docs/all-issue-types#interface_not_thread_safe)
-- [LOCK_CONSISTENCY_VIOLATION](/docs/all-issue-types#lock_consistency_violation)
-- [THREAD_SAFETY_VIOLATION](/docs/all-issue-types#thread_safety_violation)
+- [GUARDEDBY_VIOLATION](/docs/1.0.0/all-issue-types#guardedby_violation)
+- [INTERFACE_NOT_THREAD_SAFE](/docs/1.0.0/all-issue-types#interface_not_thread_safe)
+- [LOCK_CONSISTENCY_VIOLATION](/docs/1.0.0/all-issue-types#lock_consistency_violation)
+- [THREAD_SAFETY_VIOLATION](/docs/1.0.0/all-issue-types#thread_safety_violation)

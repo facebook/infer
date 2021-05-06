@@ -123,11 +123,10 @@ let marshal_to_pipe fd x =
 
 (** like [Unix.read] but reads until [len] bytes have been read *)
 let rec really_read ?(pos = 0) ~len fd ~buf =
-  if len <= 0 then ()
-  else
+  if len > 0 then (
     let read = Unix.read ~pos ~len fd ~buf in
     if Int.equal read 0 then raise End_of_file ;
-    really_read ~pos:(pos + read) ~len:(len - read) fd ~buf
+    really_read ~pos:(pos + read) ~len:(len - read) fd ~buf )
 
 
 (** return a list of all updates coming from workers. The first update is expected for up to the

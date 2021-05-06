@@ -7,7 +7,7 @@
 
 open! IStd
 
-val process : Cfg.t -> unit
+val process : Cfg.t -> Tenv.t -> unit
 (** In Objective-C when properties are created in the interface of a class, the compiler creates
     automatically the instance variable for it and also the getter and setter in the implementation
     of the class. In the frontend we collect the information about which method is the implicit

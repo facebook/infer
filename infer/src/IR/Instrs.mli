@@ -44,6 +44,7 @@ val concat_map_and_fold :
     by threading an accumulator. Preserve physical equality. **)
 
 val concat_map : not_reversed t -> f:(Sil.instr -> Sil.instr array) -> not_reversed t
+  [@@warning "-32"]
 (** replace every instruction [instr] with the list [f instr]. Preserve physical equality. **)
 
 val reverse_order : not_reversed t -> reversed t
@@ -67,6 +68,8 @@ val find_map : _ t -> f:(Sil.instr -> 'a option) -> 'a option
 val pp : Pp.env -> Format.formatter -> _ t -> unit
 
 val fold : (_ t, Sil.instr, 'a) Container.fold
+
+val foldi : _ t -> init:'a -> f:(int -> 'a -> Sil.instr -> 'a) -> 'a
 
 val iter : (_ t, Sil.instr) Container.iter
 

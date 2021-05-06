@@ -322,8 +322,7 @@ let pp_prop pe0 f prop =
       F.fprintf f "@,@[<h>%a@]" (pp_hpara_dll_simple pe env n) hpara_dll
     in
     let pp_predicates _ () =
-      if Predicates.Env.is_empty env then ()
-      else (
+      if not (Predicates.Env.is_empty env) then (
         F.fprintf f "@,where" ;
         Predicates.Env.iter env iter_f iter_f_dll )
     in

@@ -40,13 +40,12 @@ let getStarValue tenv s =
 module ProcName = struct
   let dispatch : (Tenv.t, PurityDomain.t, unit) ProcnameDispatcher.ProcName.dispatcher =
     let open ProcnameDispatcher.ProcName in
-    let match_builtin builtin _ s = String.equal s (Procname.get_method builtin) in
     make_dispatcher
       [ +pure_builtins <>--> PurityDomain.pure
       ; -"__variable_initialization" <>--> PurityDomain.pure
-      ; +match_builtin BuiltinDecl.__new <>--> PurityDomain.pure
-      ; +match_builtin BuiltinDecl.__new_array <>--> PurityDomain.pure
-      ; +match_builtin BuiltinDecl.__cast <>--> PurityDomain.pure
+      ; +BuiltinDecl.(match_builtin __new) <>--> PurityDomain.pure
+      ; +BuiltinDecl.(match_builtin __new_array) <>--> PurityDomain.pure
+      ; +BuiltinDecl.(match_builtin __cast) <>--> PurityDomain.pure
       ; -"__variable_initialization" <>--> PurityDomain.pure
       ; +(fun _ name -> BuiltinDecl.is_declared (Procname.from_string_c_fun name))
         <>--> PurityDomain.impure_global

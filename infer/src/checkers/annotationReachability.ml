@@ -533,7 +533,7 @@ module MakeTransferFunctions (CFG : ProcCfg.S) = struct
           callee_call_map astate
 
 
-  let exec_instr astate ({analysis_data= {proc_desc; tenv}; specs} as analysis_data) _ = function
+  let exec_instr astate ({analysis_data= {proc_desc; tenv}; specs} as analysis_data) _ _ = function
     | Sil.Call (_, Const (Cfun callee_pname), _, call_loc, _) ->
         let caller_pname = Procdesc.get_proc_name proc_desc in
         let call_site = CallSite.make callee_pname call_loc in

@@ -67,7 +67,7 @@ module TransferFunctions = struct
 
   type analysis_data = unit
 
-  let exec_instr astate _ _node instr = eval_instr astate instr
+  let exec_instr astate _ _node _ instr = eval_instr astate instr
 
   let pp_session_name node fmt =
     Format.fprintf fmt "Closures Substitution %a" CFG.Node.pp_id (CFG.Node.id node)

@@ -369,13 +369,13 @@ let parse_method_annotation (json : Safe.t) : Annot.Method.t =
 let parse_captured_var (json : Safe.t) =
   let n = to_string (member "name" json) in
   let t = parse_sil_type_name (member "type" json) in
-  CapturedVar.make ~name:(Mangled.from_string n) ~typ:t ~capture_mode:Pvar.ByValue
+  CapturedVar.make ~name:(Mangled.from_string n) ~typ:t ~capture_mode:ByValue
 
 
 let parse_proc_attributes_var (json : Safe.t) =
   let n = to_string (member "name" json) in
   let t = parse_sil_type_name (member "type" json) in
-  (Mangled.from_string n, t, Pvar.ByValue)
+  (Mangled.from_string n, t, CapturedVar.ByValue)
 
 
 let parse_proc_attributes_formals (json : Safe.t) =
@@ -391,18 +391,18 @@ let parse_proc_attributes_locals (json : Safe.t) : ProcAttributes.var_data =
 
 
 let parse_proc_attributes (json : Safe.t) =
-  let access =
+  let access : ProcAttributes.access =
     match to_string (member "access" json) with
     | "Default" ->
-        PredSymb.Default
+        Default
     | "Public" ->
-        PredSymb.Public
+        Public
     | "Private" ->
-        PredSymb.Private
+        Private
     | "Protected" ->
-        PredSymb.Protected
+        Protected
     | atype ->
-        Logging.die InternalError "Unsupported access type %s" atype
+        L.die InternalError "Unsupported access type %s" atype
   in
   let captured = parse_list parse_captured_var (member "captured" json) in
   let formals = parse_list parse_proc_attributes_formals (member "formals" json) in

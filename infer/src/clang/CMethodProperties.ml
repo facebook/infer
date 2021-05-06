@@ -117,6 +117,14 @@ let is_cpp_virtual method_decl =
       false
 
 
+let is_constexpr decl =
+  match Clang_ast_proj.get_function_decl_tuple decl with
+  | Some (_, _, _, {Clang_ast_t.fdi_is_constexpr}) ->
+      fdi_is_constexpr
+  | None ->
+      false
+
+
 let get_init_list_instrs method_decl =
   let open Clang_ast_t in
   match method_decl with

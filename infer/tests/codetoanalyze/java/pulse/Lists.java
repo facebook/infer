@@ -7,11 +7,11 @@
 
 package codetoanalyze.java.infer;
 
-import java.util.List;
+import java.util.*;
 
 class Lists {
 
-  void FP_emptyRemembersOk(List l) {
+  void emptyRemembersOk(List l) {
     boolean empty = l.isEmpty();
     Object o = null;
     if (empty != l.isEmpty()) {
@@ -19,23 +19,19 @@ class Lists {
     }
   }
 
-  void removeInvalidatesNonEmptinessNPE(List l, int i) {
-    if (!l.isEmpty()) {
-      l.remove(i);
-      Object o = null;
-      if (l.isEmpty()) {
-        o.toString();
-      }
+  void FN_latent_removeInvalidatesNonEmptinessNPEBad(List l) {
+    l.removeAll(l);
+    Object o = null;
+    if (l.isEmpty()) {
+      o.toString();
     }
   }
 
-  void clearCausesEmptinessNPE(List l, int i) {
-    if (!l.isEmpty()) {
-      l.clear();
-      Object o = null;
-      if (l.isEmpty()) {
-        o.toString();
-      }
+  void clearCausesEmptinessNPEBad(List l) {
+    l.clear();
+    Object o = null;
+    if (l.isEmpty()) {
+      o.toString();
     }
   }
 
@@ -48,28 +44,63 @@ class Lists {
     return l.isEmpty() ? null : l.get(0);
   }
 
-  void FP_getElementOk(List l) {
+  void getElementOk(List l) {
     if (l.isEmpty()) {
       return;
     }
     getElement(l).toString();
   }
 
-  void getElementNPE(List l) {
+  void getElementNPEBad() {
+    List l = new ArrayList();
     if (!l.isEmpty()) {
       return;
     }
     getElement(l).toString();
   }
 
-  // don't fully understand why we don't get this one; model should allow it
-  void addInvalidatesEmptinessNPE(List l) {
-    if (l.isEmpty()) {
-      l.add(0, new Object());
+  void getElementOk() {
+    List l = new ArrayList();
+    if (!l.isEmpty()) {
       Object o = null;
-      if (!l.isEmpty()) {
-        o.toString();
-      }
+      o.toString();
+    }
+  }
+
+  void addInvalidatesEmptinessNPEBad(List l) {
+    l.add(0, new Object());
+    Object o = null;
+    if (!l.isEmpty()) {
+      o.toString();
+    }
+  }
+
+  void addAndRemoveEmptinessNPEBad() {
+    List l = new ArrayList();
+    Integer i = new Integer(1);
+    l.add(i);
+    l.remove(i);
+    if (l.isEmpty()) {
+      getElement(l).toString();
+    }
+  }
+
+  void FP_removeOnEmptyListOk() {
+    List l = new LinkedList();
+    Object removed = l.remove(0);
+    if (removed != null) {
+      getElement(l).toString();
+    }
+  }
+
+  void removeElementBad() {
+    List l = new LinkedList();
+    Integer i = new Integer(4);
+    l.add(i);
+    boolean removed = l.remove(i);
+    if (removed) {
+      Object o = null;
+      o.toString();
     }
   }
 }

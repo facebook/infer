@@ -27,10 +27,10 @@ let run_in_footprint_mode f x = set_reference_and_call_function footprint true f
 
 let run_in_re_execution_mode f x = set_reference_and_call_function footprint false f x
 
-let abs_val = ref Config.abs_val
+let abs_val = ref Config.biabduction_abs_val
 
-let reset_abs_val () = abs_val := Config.abs_val
+let reset_abs_val () = abs_val := Config.biabduction_abs_val
 
 let run_with_abs_val_equal_zero f x = set_reference_and_call_function abs_val 0 f x
 
-let allow_leak = ref Config.allow_leak
+let allow_leak = ref Config.biabduction_allow_leak

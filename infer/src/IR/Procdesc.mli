@@ -38,6 +38,8 @@ module Node : sig
   (** kind of statement node *)
   type stmt_nodekind =
     | AssertionFailure
+    | AtomicCompareExchangeBranch
+    | AtomicExpr
     | BetweenJoinAndExit
     | BinaryConditionalStmtInit
     | BinaryOperatorStmt of string
@@ -52,6 +54,7 @@ module Node : sig
     | CXXNewExpr
     | CXXStdInitializerListExpr
     | CXXTemporaryMarkerSet
+    | CXXTry
     | CXXTypeidExpr
     | DeclStmt
     | DefineBody
@@ -228,7 +231,7 @@ val find_map_instrs : t -> f:(Sil.instr -> 'a option) -> 'a option
 val from_proc_attributes : ProcAttributes.t -> t
 (** Use [Cfg.create_proc_desc] if you are adding a proc desc to a cfg *)
 
-val get_access : t -> PredSymb.access
+val get_access : t -> ProcAttributes.access
 (** Return the visibility attribute *)
 
 val get_attributes : t -> ProcAttributes.t
@@ -262,7 +265,11 @@ val get_ret_type : t -> Typ.t
 
 val has_added_return_param : t -> bool
 
+val is_ret_type_pod : t -> bool
+
 val get_ret_var : t -> Pvar.t
+
+val get_ret_param_var : t -> Pvar.t
 
 val get_start_node : t -> Node.t
 
@@ -305,10 +312,6 @@ val replace_instrs_by_using_context :
   -> bool
 (** Like [replace_instrs_using_context], but slower, and each instruction may be replaced by 0, 1,
     or more instructions. *)
-
-val replace_instrs_by : t -> f:(Node.t -> Sil.instr -> Sil.instr array) -> bool
-(** Like [replace_instrs], but slower, and each instruction may be replaced by 0, 1, or more
-    instructions. *)
 
 val iter_nodes : (Node.t -> unit) -> t -> unit
 (** iterate over all the nodes of a procedure *)

@@ -34,3 +34,9 @@ val add_to_errlog :
   -> t
   -> Errlog.loc_trace_elem list
   -> Errlog.loc_trace_elem list
+
+val find_map : t -> f:(ValueHistory.event -> 'a option) -> 'a option
+(** [find_map] applied to history events *)
+
+val exists : t -> f:(ValueHistory.event -> bool) -> bool
+(** [exists] applied to history events *)

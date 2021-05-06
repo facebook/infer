@@ -70,10 +70,10 @@ where `foo` has a linear cost in its parameter, then Infer automatically detects
 Unlike other Infer analyses (which report found issues/bugs when running infer once), cost analysis only reports an issue for differential analysis (i.e. when comparing the analysis results on the original and the modified files). Instead, infer writes the execution cost of the program into `infer-out/costs-report.json` file. For each procedure, `costs-report.json` includes the actual polynomial (for the exection cost) along with the degree of the polynomial, the procedure name, line number etc.
 
 Differential cost analysis in action:
-- first run infer's cost analysis on `File.java` and rename `costs-report.json` (which is in `/infer-out`) to `previous-costs-report.json`
-- modify the function as shown above
-- re-run infer on `File.java` and rename  `costs-report.json` to `current-costs-report.json`
-- run `infer reportdiff --costs-current current-costs-report.json  --costs-previous current-costs-report`.
+- first run infer's cost analysis on `File.java` and copy `inter-out/costs-report.json` to `previous-costs-report.json` (Note that the file should be copied outside the result directory because the directory will be removed in the second infer run.)
+- modify `File.java` as shown above
+- re-run infer on `File.java` and copy `infer-out/costs-report.json` to `current-costs-report.json`
+- run `infer reportdiff --costs-current current-costs-report.json --costs-previous previous-costs-report.json`.
 - Inspect `infer-out/differential/introduced.json` to see the newly found complexity increase issue(s).
 
 

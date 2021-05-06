@@ -52,7 +52,7 @@ module PathCountTransferFunctions (CFG : ProcCfg.S) = struct
   type analysis_data = unit
 
   (* just propagate the current path count *)
-  let exec_instr astate _ _ _ = astate
+  let exec_instr astate _ _ _ _ = astate
 
   let pp_session_name _node _fmt = ()
 end

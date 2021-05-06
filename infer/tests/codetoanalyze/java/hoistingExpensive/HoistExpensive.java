@@ -29,7 +29,7 @@ class HoistExpensive {
   }
 
   // call to cheap_dont_hoist will NOT be hoisted since it is cheap.
-  void instantiated_cheap_hoist(int size) {
+  void instantiated_cheap_dont_hoist(int size) {
     for (int i = 0; i < size; i++) {
       cheap_dont_hoist(1);
     }

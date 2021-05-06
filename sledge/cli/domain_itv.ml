@@ -19,7 +19,7 @@ type t = Box.t Abstract1.t
 let equal : t -> t -> bool = Poly.equal
 let compare : t -> t -> int = Poly.compare
 let man = lazy (Box.manager_alloc ())
-let join l r = Some (Abstract1.join (Lazy.force man) l r)
+let join l r = Abstract1.join (Lazy.force man) l r
 let is_false x = Abstract1.is_bottom (Lazy.force man) x
 
 let bindings (itv : t) =
@@ -32,11 +32,11 @@ let bindings (itv : t) =
 
 let sexp_of_t (itv : t) =
   let sexps =
-    Array.fold_right (bindings itv) [] ~f:(fun (v, {inf; sup}) acc ->
+    Array.fold_right (bindings itv) [] ~f:(fun (v, i) acc ->
         Sexp.List
           [ Sexp.Atom (Var.to_string v)
-          ; Sexp.Atom (Scalar.to_string inf)
-          ; Sexp.Atom (Scalar.to_string sup) ]
+          ; Sexp.Atom (Scalar.to_string i.inf)
+          ; Sexp.Atom (Scalar.to_string i.sup) ]
         :: acc )
   in
   Sexp.List sexps
@@ -47,7 +47,6 @@ let pp fs =
   in
   bindings >> Array.pp "@," (pp_pair Var.print Interval.print) fs
 
-let report_fmt_thunk = Fun.flip pp
 let init _gs = Abstract1.top (Lazy.force man) (Environment.make [||] [||])
 let apron_var_of_name = (fun nm -> "%" ^ nm) >> Apron.Var.of_string
 let apron_var_of_reg = Llair.Reg.name >> apron_var_of_name
@@ -187,17 +186,22 @@ let exec_move move_vec q =
 
 let exec_inst i q =
   match (i : Llair.inst) with
-  | Move {reg_exps; loc= _} -> Some (exec_move reg_exps q)
+  | Move {reg_exps; loc= _} -> Ok (exec_move reg_exps q)
   | Store {ptr; exp; len= _; loc= _} -> (
     match Llair.Reg.of_exp ptr with
-    | Some reg -> Some (assign reg exp q)
-    | None -> Some q )
-  | Load {reg; ptr; len= _; loc= _} -> Some (assign reg ptr q)
-  | Nondet {reg= Some reg; msg= _; loc= _} -> Some (exec_kill reg q)
-  | Nondet {reg= None; msg= _; loc= _} | Alloc _ | Free _ -> Some q
-  | Abort _ -> None
-  | Intrinsic {reg= Some reg; _} -> Some (exec_kill reg q)
-  | Intrinsic {reg= None; _} -> Some q
+    | Some reg -> Ok (assign reg exp q)
+    | None -> Ok q )
+  | Load {reg; ptr; len= _; loc= _} -> Ok (assign reg ptr q)
+  | Nondet {reg= Some reg; msg= _; loc= _} -> Ok (exec_kill reg q)
+  | Nondet {reg= None; msg= _; loc= _} | Alloc _ | Free _ -> Ok q
+  | Intrinsic {reg= Some reg; _} -> Ok (exec_kill reg q)
+  | Intrinsic {reg= None; _} -> Ok q
+  | Abort {loc} ->
+      Error
+        { Alarm.kind= Abort
+        ; loc
+        ; pp_action= Fun.flip Llair.Inst.pp i
+        ; pp_state= Fun.flip pp q }
 
 type from_call = {areturn: Llair.Reg.t option; caller_q: t}
 [@@deriving sexp_of]

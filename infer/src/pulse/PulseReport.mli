@@ -6,14 +6,35 @@
  *)
 
 open! IStd
-open PulseBasicInterface
 open PulseDomainInterface
 
-type 'a access_result = ('a, Diagnostic.t * AbductiveDomain.t) result
-
-val report_error :
-     Procdesc.t
-  -> Tenv.t
+val report_result :
+     Tenv.t
+  -> Procdesc.t
   -> Errlog.t
-  -> 'ok access_result
-  -> ('ok, _ ExecutionDomain.base_t SatUnsat.t) result
+  -> Location.t
+  -> AbductiveDomain.t AccessResult.t
+  -> ExecutionDomain.t list
+
+val report_summary_error :
+     Tenv.t
+  -> Procdesc.t
+  -> Errlog.t
+  -> AbductiveDomain.summary AccessResult.error
+  -> _ ExecutionDomain.base_t
+
+val report_results :
+     Tenv.t
+  -> Procdesc.t
+  -> Errlog.t
+  -> Location.t
+  -> AbductiveDomain.t AccessResult.t list
+  -> ExecutionDomain.t list
+
+val report_exec_results :
+     Tenv.t
+  -> Procdesc.t
+  -> Errlog.t
+  -> Location.t
+  -> ExecutionDomain.t AccessResult.t list
+  -> ExecutionDomain.t list

@@ -18,7 +18,7 @@ let final_typestates initializers_current_class tenv typecheck_proc =
     let do_proc (init_pn, init_pd) =
       let filter callee_pn callee_attributes =
         let is_private =
-          PredSymb.equal_access callee_attributes.ProcAttributes.access PredSymb.Private
+          ProcAttributes.equal_access callee_attributes.ProcAttributes.access Private
         in
         let same_class =
           let get_class_opt pn =

@@ -155,6 +155,9 @@ module Name : sig
   val loose_compare : t -> t -> int
   (** Similar to compare, but addresses [CStruct x] and [CppClass x] as equal. *)
 
+  val compare_name : t -> t -> int
+  (** Similar to compare, but compares only names, except template arguments. *)
+
   val equal : t -> t -> bool
   (** Equality for typenames *)
 

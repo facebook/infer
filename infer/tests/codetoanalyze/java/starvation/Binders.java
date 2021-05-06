@@ -5,9 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import android.content.Context;
+import android.media.AudioManager;
+import android.net.ConnectivityManager;
+import android.net.wifi.WifiManager;
 import android.os.Binder;
 import android.os.RemoteException;
 import android.support.annotation.UiThread;
+import android.view.Display;
 
 class Binders {
   Binder b;
@@ -56,5 +61,40 @@ class Binders {
 
   void forceMainThread() {
     OurThreadUtils.assertMainThread();
+  }
+
+  @UiThread
+  void getActiveNetworkInfoBad(ConnectivityManager c) {
+    c.getActiveNetworkInfo();
+  }
+
+  @UiThread
+  int doGetStreamVolumeBad(AudioManager a) {
+    return a.getStreamVolume(0);
+  }
+
+  @UiThread
+  int doGetRingerModeBad(AudioManager a) {
+    return a.getRingerMode();
+  }
+
+  @UiThread
+  int doCheckPermissionBad(Context c) {
+    return c.checkPermission("", 0, 0);
+  }
+
+  @UiThread
+  int doCheckSelfPermissionBad(Context c) {
+    return c.checkSelfPermission("");
+  }
+
+  @UiThread
+  void doGetConnectionInfoBad(WifiManager w) {
+    w.getConnectionInfo();
+  }
+
+  @UiThread
+  void doGetRealSizeBad(Display d) {
+    d.getRealSize(null);
   }
 }

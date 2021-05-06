@@ -194,16 +194,16 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) ?(record_lambda_capt
   let defined = not (List.is_empty fbody) in
   let proc_name = ms.CMethodSignature.name in
   let clang_method_kind = ms.CMethodSignature.method_kind in
-  let access =
+  let access : ProcAttributes.access =
     match ms.CMethodSignature.access with
     | `None ->
-        PredSymb.Default
+        Default
     | `Private ->
-        PredSymb.Private
+        Private
     | `Protected ->
-        PredSymb.Protected
+        Protected
     | `Public ->
-        PredSymb.Protected
+        Public
   in
   let captured_mangled =
     List.map
@@ -264,6 +264,8 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) ?(record_lambda_capt
         ; formals
         ; const_formals
         ; has_added_return_param
+        ; is_ret_type_pod= ms.CMethodSignature.is_ret_type_pod
+        ; is_ret_constexpr= ms.CMethodSignature.is_ret_constexpr
         ; access
         ; is_defined= defined
         ; is_biabduction_model= Config.biabduction_models_mode

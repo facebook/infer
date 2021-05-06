@@ -38,7 +38,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     with Caml.Not_found -> false
 
 
-  let exec_instr astate id_table _ instr =
+  let exec_instr astate id_table _ _ instr =
     match instr with
     | Sil.Load {id; e= exp} ->
         Ident.Hash.add id_table id exp ;

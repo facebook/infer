@@ -100,24 +100,24 @@ open struct
   open struct
     let loc_of_global g =
       Loc.mk
-        ?dir:(get_debug_loc_directory g)
-        ?file:(Llvm.get_debug_loc_filename g)
-        ~line:(Llvm.get_debug_loc_line g)
-        ?col:None
+        ~dir:(get_debug_loc_directory g)
+        ~file:(Llvm.get_debug_loc_filename g)
+        ~line:(Some (Llvm.get_debug_loc_line g))
+        ~col:None
 
     let loc_of_function f =
       Loc.mk
-        ?dir:(get_debug_loc_directory f)
-        ?file:(Llvm.get_debug_loc_filename f)
-        ~line:(Llvm.get_debug_loc_line f)
-        ?col:None
+        ~dir:(get_debug_loc_directory f)
+        ~file:(Llvm.get_debug_loc_filename f)
+        ~line:(Some (Llvm.get_debug_loc_line f))
+        ~col:None
 
     let loc_of_instr i =
       Loc.mk
-        ?dir:(get_debug_loc_directory i)
-        ?file:(Llvm.get_debug_loc_filename i)
-        ~line:(Llvm.get_debug_loc_line i)
-        ~col:(Llvm.get_debug_loc_column i)
+        ~dir:(get_debug_loc_directory i)
+        ~file:(Llvm.get_debug_loc_filename i)
+        ~line:(Some (Llvm.get_debug_loc_line i))
+        ~col:(Some (Llvm.get_debug_loc_column i))
 
     let find_scope scope =
       ScopeTbl.find_or_add scope_tbl scope ~default:(fun () ->
@@ -280,6 +280,7 @@ let rec xlate_type : x -> Llvm.lltype -> Typ.t =
       let bits = bit_size_of x llt in
       match Llvm.classify_type llt with
       | Half | Float | Double | Fp128 -> Typ.float ~bits ~byts ~enc:`IEEE
+      | BFloat -> Typ.float ~bits ~byts ~enc:`Brain
       | X86fp80 -> Typ.float ~bits ~byts ~enc:`Extended
       | Ppc_fp128 -> Typ.float ~bits ~byts ~enc:`Pair
       | Integer -> Typ.integer ~bits ~byts
@@ -320,7 +321,7 @@ let rec xlate_type : x -> Llvm.lltype -> Typ.t =
             in
             Typ.struct_ ~name elts ~bits ~byts
       | Function -> fail "expected to be unsized: %a" pp_lltype llt ()
-      | Vector -> todo "vector types: %a" pp_lltype llt ()
+      | Vector | ScalableVector -> todo "vector types: %a" pp_lltype llt ()
       | Void | Label | Metadata | Token -> assert false
     else
       match Llvm.classify_type llt with
@@ -334,10 +335,10 @@ let rec xlate_type : x -> Llvm.lltype -> Typ.t =
           Typ.function_ ~return ~args
       | Struct when Llvm.is_opaque llt -> Typ.opaque ~name:(struct_name llt)
       | Token -> Typ.opaque ~name:"token"
-      | Vector | Array | Struct ->
+      | Vector | ScalableVector | Array | Struct ->
           todo "unsized non-opaque aggregate types: %a" pp_lltype llt ()
-      | Half | Float | Double | X86fp80 | Fp128 | Ppc_fp128 | Integer
-       |X86_mmx | Pointer ->
+      | Half | BFloat | Float | Double | X86fp80 | Fp128 | Ppc_fp128
+       |Integer | X86_mmx | Pointer ->
           fail "expected to be sized: %a" pp_lltype llt ()
       | Void | Label | Metadata -> assert false
   in
@@ -549,10 +550,11 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t
     | Instruction
         ( ( Trunc | ZExt | SExt | FPToUI | FPToSI | UIToFP | SIToFP
           | FPTrunc | FPExt | PtrToInt | IntToPtr | BitCast | AddrSpaceCast
-          | Add | FAdd | Sub | FSub | Mul | FMul | UDiv | SDiv | FDiv | URem
-          | SRem | FRem | Shl | LShr | AShr | And | Or | Xor | ICmp | FCmp
-          | Select | GetElementPtr | ExtractElement | InsertElement
-          | ShuffleVector | ExtractValue | InsertValue ) as opcode ) ->
+          | Add | FAdd | Sub | FSub | FNeg | Mul | FMul | UDiv | SDiv | FDiv
+          | URem | SRem | FRem | Shl | LShr | AShr | And | Or | Xor | ICmp
+          | FCmp | Select | GetElementPtr | ExtractElement | InsertElement
+          | ShuffleVector | ExtractValue | InsertValue | Freeze ) as opcode
+        ) ->
         if inline || should_inline llv then xlate_opcode x llv opcode
         else ([], Exp.reg (xlate_name x llv))
     | ConstantExpr -> xlate_opcode x llv (Llvm.constexpr_opcode llv)
@@ -562,7 +564,7 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t
     | Instruction
         ( Invalid | Ret | Br | Switch | IndirectBr | Invalid2 | Unreachable
         | Store | UserOp1 | UserOp2 | Fence | AtomicCmpXchg | AtomicRMW
-        | Resume | CleanupRet | CatchRet )
+        | Resume | CleanupRet | CatchRet | CallBr )
      |NullValue | BasicBlock | InlineAsm | MDNode | MDString ->
         fail "xlate_value: %a" pp_llvalue llv ()
   in
@@ -595,6 +597,13 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t
        |IntToPtr | BitCast | AddrSpaceCast ->
           Exp.convert src ~to_:dst arg
       | _ -> fail "convert: %a" pp_llvalue llv () )
+  in
+  let unary (mk : ?typ:_ -> _) =
+    if Poly.equal (Llvm.classify_type (Llvm.type_of llv)) Vector then
+      todo "vector operations: %a" pp_llvalue llv () ;
+    let typ = xlate_type x (Llvm.type_of (Llvm.operand llv 0)) in
+    let pre, arg = xlate_rand 0 in
+    (pre, mk ~typ arg)
   in
   let binary (mk : ?typ:_ -> _) =
     if Poly.equal (Llvm.classify_type (Llvm.type_of llv)) Vector then
@@ -644,6 +653,9 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t
     | Some True -> binary (fun ?typ:_ _ _ -> Exp.true_) )
   | Add | FAdd -> binary Exp.add
   | Sub | FSub -> binary Exp.sub
+  | FNeg ->
+      unary (fun ?(typ = Lazy.force typ) x ->
+          Exp.sub ~typ (Exp.float typ "0.0") x )
   | Mul | FMul -> binary Exp.mul
   | SDiv | FDiv -> binary Exp.div
   | UDiv -> binary Exp.udiv
@@ -660,15 +672,15 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t
       let pre_0, cnd = xlate_rand 0 in
       let pre_1, thn = xlate_rand 1 in
       let pre_2, els = xlate_rand 2 in
-      (pre_0 @ pre_1 @ pre_2, Exp.conditional ~typ ~cnd ~thn ~els)
+      (pre_0 @ pre_1 @ pre_2, Exp.conditional typ ~cnd ~thn ~els)
   | ExtractElement | InsertElement -> (
       let typ =
         let lltyp = Llvm.type_of (Llvm.operand llv 0) in
         let llelt = Llvm.element_type lltyp in
         let elt = xlate_type x llelt in
-        let len = Llvm.vector_size llelt in
-        let byts = size_of x lltyp in
+        let len = Llvm.vector_size lltyp in
         let bits = bit_size_of x lltyp in
+        let byts = size_of x lltyp in
         Typ.array ~elt ~len ~bits ~byts
       in
       let idx i =
@@ -780,10 +792,11 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t
       | Array {len= m}, Array {len= n} when m = n && Llvm.is_null llmask ->
           exp
       | _ -> todo "vector operations: %a" pp_llvalue llv () )
+  | Freeze -> xlate_value x (Llvm.operand llv 0)
   | Invalid | Ret | Br | Switch | IndirectBr | Invoke | Invalid2
-   |Unreachable | Alloca | Load | Store | PHI | Call | UserOp1 | UserOp2
-   |Fence | AtomicCmpXchg | AtomicRMW | Resume | LandingPad | CleanupRet
-   |CatchRet | CatchPad | CleanupPad | CatchSwitch | VAArg ->
+   |Unreachable | Alloca | Load | Store | PHI | Call | CallBr | UserOp1
+   |UserOp2 | Fence | AtomicCmpXchg | AtomicRMW | Resume | LandingPad
+   |CleanupRet | CatchRet | CatchPad | CleanupPad | CatchSwitch | VAArg ->
       fail "xlate_opcode: %a" pp_llvalue llv () )
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp_prefix_exp]
@@ -850,12 +863,7 @@ let pop_stack_frame_of_function :
   in
   pop
 
-(** construct the types involved in landingpads: i32, std::type_info*, and
-    __cxa_exception *)
-let landingpad_typs : x -> Llvm.llvalue -> Typ.t * Typ.t * Llvm.lltype =
- fun x instr ->
-  let llt = Llvm.type_of instr in
-  let i32 = i32 x in
+let check_exception_typ x instr llt =
   if
     not
       ( Poly.(Llvm.classify_type llt = Struct)
@@ -865,7 +873,14 @@ let landingpad_typs : x -> Llvm.llvalue -> Typ.t * Typ.t * Llvm.lltype =
       && Poly.(llelts.(0) = Llvm.pointer_type (Llvm.i8_type x.llcontext))
       && Poly.(llelts.(1) = Llvm.i32_type x.llcontext) )
   then
-    todo "landingpad of type other than {i8*, i32}: %a" pp_llvalue instr () ;
+    todo "exception of type other than {i8*, i32}: %a" pp_llvalue instr ()
+
+(** construct the types involved in landingpads: i32, std::type_info*, and
+    __cxa_exception *)
+let landingpad_typs : x -> Llvm.llvalue -> Typ.t * Typ.t * Llvm.lltype =
+ fun x instr ->
+  check_exception_typ x instr (Llvm.type_of instr) ;
+  let i32 = i32 x in
   let llcontext =
     Llvm.(
       module_context (global_parent (block_parent (instr_parent instr))))
@@ -982,20 +997,17 @@ let norm_callee llfunc =
 
 let num_actuals instr lltyp llfunc =
   assert (Poly.(Llvm.classify_type lltyp = Pointer)) ;
-  if not (Llvm.is_var_arg (Llvm.element_type lltyp)) then
-    Llvm.num_arg_operands instr
+  let llelt = Llvm.element_type lltyp in
+  if not (Llvm.is_var_arg llelt) then Llvm.num_arg_operands instr
   else
     let fname = Llvm.value_name llfunc in
-    if StringS.add ignored_callees fname && not (Llvm.is_declaration llfunc)
-    then
-      warn "ignoring variable arguments to variadic function: %a" pp_llvalue
-        llfunc () ;
-    let llelt = Llvm.element_type lltyp in
-    ( match Llvm.classify_type llelt with
-    | Function -> ()
-    | _ ->
-        fail "called function not of function type: %a" pp_llvalue instr ()
-    ) ;
+    let is_decl llfunc =
+      Poly.(Llvm.classify_value llfunc = Function)
+      (* llfunc might be a formal, which Llvm.is_declaration doesn't like *)
+      && Llvm.is_declaration llfunc
+    in
+    if StringS.add ignored_callees fname && not (is_decl llfunc) then
+      warn "ignoring variable arguments to variadic function: %s" fname () ;
     Array.length (Llvm.param_types llelt)
 
 let xlate_intrinsic_inst emit_inst x name_segs instr num_actuals loc =
@@ -1146,7 +1158,7 @@ let xlate_instr :
               emit_term ~prefix:(pop loc @ pre) (Term.throw ~exc ~loc)
           | ["__llair_unreachable"] -> emit_term Term.unreachable
           (* dropped / handled elsewhere *)
-          | ["llvm"; "dbg"; ("declare" | "value")]
+          | ["llvm"; "dbg"; ("declare" | "label" | "value")]
            |"llvm" :: ("lifetime" | "invariant") :: ("start" | "end") :: _
             ->
               nop ()
@@ -1157,6 +1169,8 @@ let xlate_instr :
               todo "coroutines:@ %a" pp_llvalue instr ()
           | "llvm" :: "experimental" :: "gc" :: "statepoint" :: _ ->
               todo "statepoints:@ %a" pp_llvalue instr ()
+          | "llvm" :: "call" :: "preallocated" :: _ ->
+              todo "preallocated operand bundles:@ %a" pp_llvalue instr ()
           | ["llvm"; ("va_start" | "va_copy" | "va_end")] ->
               skip "variadic function intrinsic"
           | "llvm" :: _ -> skip "intrinsic"
@@ -1180,7 +1194,7 @@ let xlate_instr :
                   let cmnd = IArray.of_list insts in
                   (pre_0 @ pre_1, call, [Block.mk ~lbl ~cmnd ~term]) ) ) ) )
   | Invoke -> (
-      let llcallee = Llvm.operand instr (Llvm.num_operands instr - 3) in
+      let llcallee = Llvm.operand instr (Llvm.num_operands instr - 1) in
       let lltyp = Llvm.type_of llcallee in
       let llcallee = norm_callee llcallee in
       let num_actuals = num_actuals instr lltyp llcallee in
@@ -1427,17 +1441,19 @@ let xlate_instr :
               [Block.mk ~lbl ~cmnd:(IArray.of_list insts) ~term] ) )
   | Resume ->
       let llrcd = Llvm.operand instr 0 in
-      let typ = xlate_type x (Llvm.type_of llrcd) in
+      let lltyp = Llvm.type_of llrcd in
+      check_exception_typ x instr lltyp ;
+      let typ = xlate_type x lltyp in
       let pre, rcd = xlate_value x llrcd in
       let exc = Exp.select typ rcd 0 in
       emit_term ~prefix:(pop loc @ pre) (Term.throw ~exc ~loc)
   | Unreachable -> emit_term Term.unreachable
   | Trunc | ZExt | SExt | FPToUI | FPToSI | UIToFP | SIToFP | FPTrunc
    |FPExt | PtrToInt | IntToPtr | BitCast | AddrSpaceCast | Add | FAdd
-   |Sub | FSub | Mul | FMul | UDiv | SDiv | FDiv | URem | SRem | FRem
-   |Shl | LShr | AShr | And | Or | Xor | ICmp | FCmp | Select
+   |Sub | FSub | FNeg | Mul | FMul | UDiv | SDiv | FDiv | URem | SRem
+   |FRem | Shl | LShr | AShr | And | Or | Xor | ICmp | FCmp | Select
    |GetElementPtr | ExtractElement | InsertElement | ShuffleVector
-   |ExtractValue | InsertValue ->
+   |ExtractValue | InsertValue | Freeze ->
       inline_or_move (xlate_value ~inline:true x)
   | VAArg ->
       let reg = xlate_name_opt x instr in
@@ -1445,6 +1461,7 @@ let xlate_instr :
       emit_inst (Inst.nondet ~reg ~msg:"vaarg" ~loc)
   | CleanupRet | CatchRet | CatchPad | CleanupPad | CatchSwitch ->
       todo "windows exception handling: %a" pp_llvalue instr ()
+  | CallBr -> todo "inline asm: %a" pp_llvalue instr ()
   | Fence | AtomicCmpXchg | AtomicRMW ->
       fail "xlate_instr: %a" pp_llvalue instr ()
   | PHI | Invalid | Invalid2 | UserOp1 | UserOp2 -> assert false
@@ -1484,7 +1501,7 @@ let xlate_block : pop_thunk -> x -> Llvm.llbasicblock -> Llair.block list =
 
 let report_undefined func name =
   if Option.is_some (Llvm.use_begin func) then
-    [%Trace.info "undefined function: %a" Function.pp name]
+    [%Trace.printf "@\n@[undefined function: %a@]" Function.pp name]
 
 let xlate_function_decl x llfunc typ k =
   let loc = find_loc llfunc in
@@ -1593,10 +1610,6 @@ let read_and_parse llcontext bc_file =
   |>
   [%Trace.retn fun {pf} _ -> pf ""]
 
-let link_in : Llvm.llcontext -> Llvm.lllinker -> string -> unit =
- fun llcontext link_ctx bc_file ->
-  Llvm_linker.link_in link_ctx (read_and_parse llcontext bc_file)
-
 let check_datalayout llcontext lldatalayout =
   let check_size llt typ =
     let llsiz =
@@ -1642,25 +1655,13 @@ let cleanup llmodule llcontext =
   Llvm.dispose_module llmodule ;
   Llvm.dispose_context llcontext
 
-let translate ~models ~fuzzer ~internalize : string list -> Llair.program =
- fun inputs ->
-  [%Trace.call fun {pf} ->
-    pf "@ %a" (List.pp "@ " Format.pp_print_string) inputs]
+let translate ~internalize : string -> Llair.program =
+ fun input ->
+  [%Trace.call fun {pf} -> pf "@ %s" input]
   ;
   Llvm.install_fatal_error_handler invalid_llvm ;
   let llcontext = Llvm.global_context () in
-  let input, inputs = List.pop_exn inputs in
   let llmodule = read_and_parse llcontext input in
-  let link_ctx = Llvm_linker.get_linker llmodule in
-  List.iter ~f:(link_in llcontext link_ctx) inputs ;
-  let link_model_file name =
-    Llvm_linker.link_in link_ctx
-      (Llvm_irreader.parse_ir llcontext
-         (Llvm.MemoryBuffer.of_string (Option.get_exn (Model.read name))))
-  in
-  if models then link_model_file "/cxxabi.bc" ;
-  if fuzzer then link_model_file "/lib_fuzzer_main.bc" ;
-  Llvm_linker.linker_dispose link_ctx ;
   assert (
     Llvm_analysis.verify_module llmodule |> Option.for_all ~f:invalid_llvm
   ) ;

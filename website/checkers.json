@@ -4,15 +4,15 @@
   "doc_entries": [
     "all-issue-types", "checker-annotation-reachability",
     "checker-biabduction", "checker-bufferoverrun",
-    "checker-config-checks-between-markers", "checker-cost",
-    "checker-eradicate", "checker-fragment-retains-view",
-    "checker-immutable-cast", "checker-impurity",
-    "checker-inefficient-keyset-iterator", "checker-linters",
-    "checker-litho-required-props", "checker-liveness",
+    "checker-config-checks-between-markers",
+    "checker-config-impact-analysis", "checker-cost", "checker-eradicate",
+    "checker-fragment-retains-view", "checker-immutable-cast",
+    "checker-impurity", "checker-inefficient-keyset-iterator",
+    "checker-linters", "checker-litho-required-props", "checker-liveness",
     "checker-loop-hoisting", "checker-printf-args", "checker-pulse",
     "checker-purity", "checker-quandary", "checker-racerd",
     "checker-resource-leak-lab", "checker-dotnet-resource-leak",
     "checker-siof", "checker-self-in-block", "checker-starvation",
-    "checker-topl-biabd", "checker-topl-pulse", "checker-uninit"
+    "checker-topl", "checker-uninit"
   ]
 }

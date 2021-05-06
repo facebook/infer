@@ -109,8 +109,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
               CMethod_trans.create_local_procdesc ~set_objc_accessor_attr
                 ~is_cpp_lambda_call_operator trans_unit_ctx cfg tenv ms body_new []
             then
-              if is_cpp_lambda_call_operator && not inside_cpp_lambda_expr then ()
-              else
+              if (not is_cpp_lambda_call_operator) || inside_cpp_lambda_expr then
                 add_method trans_unit_ctx tenv cfg curr_class procname body ms return_param_typ_opt
                   None extra_instrs ~is_destructor_wrapper
           in
@@ -167,74 +166,75 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     | EmptyDecl _ | ObjCIvarDecl _ | ObjCPropertyDecl _ | ObjCInterfaceDecl _ ->
         ()
     | AccessSpecDecl _
-    | ConceptDecl _
-    | OMPDeclareMapperDecl _
-    | OMPAllocateDecl _
+    | BindingDecl _
     | BlockDecl _
+    | BuiltinTemplateDecl _
     | CapturedDecl _
     | ClassScopeFunctionSpecializationDecl _
+    | ClassTemplateDecl _
+    | ClassTemplatePartialSpecializationDecl _
+    | ClassTemplateSpecializationDecl _
+    | ConceptDecl _
+    | ConstructorUsingShadowDecl _
+    | CXXDeductionGuideDecl _
+    | CXXRecordDecl _
+    | DecompositionDecl _
+    | EnumConstantDecl _
+    | EnumDecl _
     | ExportDecl _
     | ExternCContextDecl _
+    | FieldDecl _
     | FileScopeAsmDecl _
     | FriendDecl _
     | FriendTemplateDecl _
+    | FunctionDecl _
+    | FunctionTemplateDecl _
+    | ImplicitParamDecl _
     | ImportDecl _
-    | LinkageSpecDecl _
+    | IndirectFieldDecl _
     | LabelDecl _
-    | NamespaceDecl _
+    | LifetimeExtendedTemporaryDecl _
+    | LinkageSpecDecl _
+    | MSGuidDecl _
+    | MSPropertyDecl _
     | NamespaceAliasDecl _
-    | ObjCCompatibleAliasDecl _
+    | NamespaceDecl _
+    | NonTypeTemplateParmDecl _
+    | ObjCAtDefsFieldDecl _
     | ObjCCategoryDecl _
     | ObjCCategoryImplDecl _
+    | ObjCCompatibleAliasDecl _
     | ObjCImplementationDecl _
     | ObjCProtocolDecl _
-    | BuiltinTemplateDecl _
-    | ClassTemplateDecl _
-    | FunctionTemplateDecl _
-    | TypeAliasTemplateDecl _
-    | VarTemplateDecl _
-    | TemplateTemplateParmDecl _
-    | EnumDecl _
-    | RecordDecl _
-    | CXXRecordDecl _
-    | ClassTemplateSpecializationDecl _
-    | ClassTemplatePartialSpecializationDecl _
-    | TemplateTypeParmDecl _
     | ObjCTypeParamDecl _
+    | OMPAllocateDecl _
+    | OMPCapturedExprDecl _
+    | OMPDeclareMapperDecl _
+    | OMPDeclareReductionDecl _
+    | OMPRequiresDecl _
+    | OMPThreadPrivateDecl _
+    | ParmVarDecl _
+    | PragmaCommentDecl _
+    | PragmaDetectMismatchDecl _
+    | RecordDecl _
+    | RequiresExprBodyDecl _
+    | StaticAssertDecl _
+    | TemplateTemplateParmDecl _
+    | TemplateTypeParmDecl _
+    | TranslationUnitDecl _
     | TypeAliasDecl _
+    | TypeAliasTemplateDecl _
     | TypedefDecl _
     | UnresolvedUsingTypenameDecl _
+    | UnresolvedUsingValueDecl _
     | UsingDecl _
     | UsingDirectiveDecl _
     | UsingPackDecl _
     | UsingShadowDecl _
-    | ConstructorUsingShadowDecl _
-    | BindingDecl _
-    | FieldDecl _
-    | ObjCAtDefsFieldDecl _
-    | FunctionDecl _
-    | CXXDeductionGuideDecl _
-    | MSPropertyDecl _
-    | NonTypeTemplateParmDecl _
     | VarDecl _
-    | DecompositionDecl _
-    | ImplicitParamDecl _
-    | OMPCapturedExprDecl _
-    | ParmVarDecl _
-    | VarTemplateSpecializationDecl _
+    | VarTemplateDecl _
     | VarTemplatePartialSpecializationDecl _
-    | EnumConstantDecl _
-    | IndirectFieldDecl _
-    | OMPDeclareReductionDecl _
-    | UnresolvedUsingValueDecl _
-    | OMPRequiresDecl _
-    | OMPThreadPrivateDecl _
-    | PragmaCommentDecl _
-    | PragmaDetectMismatchDecl _
-    | StaticAssertDecl _
-    | TranslationUnitDecl _
-    | LifetimeExtendedTemporaryDecl _
-    | RequiresExprBodyDecl _ ->
+    | VarTemplateSpecializationDecl _ ->
         (* TODO: some form of logging *)
         ()
 
@@ -418,7 +418,8 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
                 (Clang_ast_proj.get_decl_kind_string dec)
           | None ->
               () )
-      | VarDecl (decl_info, named_decl_info, qt, ({vdi_is_global; vdi_init_expr} as vdi))
+      | VarDecl
+          (decl_info, named_decl_info, qt, ({vdi_is_global; vdi_init_expr; vdi_is_constexpr} as vdi))
         when String.is_prefix ~prefix:"__infer_" named_decl_info.ni_name
              || (vdi_is_global && Option.is_some vdi_init_expr) ->
           (* create a fake procedure that initializes the global variable so that the variable
@@ -427,7 +428,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
             (* create the corresponding global variable to get the right pname for its
                initializer *)
             let global =
-              CGeneral_utils.mk_sil_global_var trans_unit_ctx decl_info named_decl_info vdi qt
+              CVar_decl.mk_sil_global_var trans_unit_ctx decl_info named_decl_info vdi qt
             in
             (* safe to Option.get because it's a global *)
             Option.value_exn (Pvar.get_initializer_pname global)
@@ -437,9 +438,9 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
               ~set_objc_accessor_attr:false
           then (
             let ms =
-              CMethodSignature.mk procname None [] (StdTyp.void, Annot.Item.empty) []
-                decl_info.Clang_ast_t.di_source_range ClangMethodKind.C_FUNCTION None None None
-                `None
+              CMethodSignature.mk procname None [] (StdTyp.void, Annot.Item.empty)
+                ~is_ret_constexpr:vdi_is_constexpr [] decl_info.Clang_ast_t.di_source_range
+                ClangMethodKind.C_FUNCTION None None None `None
             in
             let stmt_info =
               { si_pointer= CAst_utils.get_fresh_pointer ()

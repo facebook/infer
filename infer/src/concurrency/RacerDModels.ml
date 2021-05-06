@@ -106,7 +106,9 @@ let is_java_container_write =
   ; (* https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html *)
     { default with
       classname= "java.util.Collection"
-    ; methods= ["add"; "addAll"; "clear"; "remove"; "removeAll"; "removeIf"] } ]
+    ; methods= ["add"; "addAll"; "clear"; "remove"; "removeAll"; "removeIf"] }
+  ; (* https://docs.oracle.com/javase/8/docs/api/javax/crypto/Mac.html *)
+    {default with classname= "javax.crypto.Mac"; methods= ["update"; "init"; "doFinal"]} ]
   |> of_records
 
 
@@ -167,7 +169,9 @@ let is_java_container_read =
         ; "size"
         ; "spliterator"
         ; "stream"
-        ; "toArray" ] } ]
+        ; "toArray" ] }
+  ; (* https://docs.oracle.com/javase/8/docs/api/javax/crypto/Mac.html *)
+    {default with classname= "javax.crypto.Mac"; methods= ["doFinal"]} ]
   |> of_records
 
 
@@ -213,33 +217,6 @@ let is_container_read tenv pn =
      treatment between std::map::operator[] and all other operator[]. *)
   | Procname.ObjC_Cpp _ | C _ ->
       (not (is_cpp_container_write pn)) && is_cpp_container_read pn
-  | _ ->
-      false
-
-
-(** holds of procedure names which should not be analyzed in order to avoid known sources of
-    inaccuracy *)
-let should_skip =
-  let matcher =
-    lazy
-      (QualifiedCppName.Match.of_fuzzy_qual_names ~prefix:true
-         [ "folly::AtomicStruct"
-         ; "folly::fbstring_core"
-         ; "folly::Future"
-         ; "folly::futures"
-         ; "folly::LockedPtr"
-         ; "folly::Optional"
-         ; "folly::Promise"
-         ; "folly::ThreadLocal"
-         ; "folly::detail::SingletonHolder"
-         ; "std::atomic"
-         ; "std::vector" ])
-  in
-  function
-  | Procname.ObjC_Cpp cpp_pname as pname ->
-      Procname.ObjC_Cpp.is_destructor cpp_pname
-      || QualifiedCppName.Match.match_qualifiers (Lazy.force matcher)
-           (Procname.get_qualifiers pname)
   | _ ->
       false
 
@@ -394,20 +371,40 @@ let is_assumed_thread_safe tenv pname =
 
 (* return true if we should compute a summary for the procedure. if this returns false, we won't
          analyze the procedure or report any warnings on it *)
-(* note: in the future, we will want to analyze the procedures in all of these cases in order to
-         find more bugs. this is just a temporary measure to avoid obvious false positives *)
-let should_analyze_proc tenv pn =
-  (not
-     ( match pn with
-     | Procname.Java java_pname ->
-         Procname.Java.is_class_initializer java_pname
-         || Typ.Name.Java.is_external (Procname.Java.get_class_type_name java_pname)
-     (* third party code may be hard to change, not useful to report races there *)
-     | _ ->
-         false ))
-  && (not (FbThreadSafety.is_logging_method pn))
-  && (not (is_assumed_thread_safe tenv pn))
-  && not (should_skip pn)
+let should_analyze_proc =
+  (* holds of procedure names which should not be analyzed in order to avoid known sources of
+     inaccuracy *)
+  let should_skip =
+    let matcher =
+      lazy
+        (QualifiedCppName.Match.of_fuzzy_qual_names ~prefix:true
+           [ "folly::AtomicStruct"
+           ; "folly::fbstring_core"
+           ; "folly::Future"
+           ; "folly::futures"
+           ; "folly::LockedPtr"
+           ; "folly::Optional"
+           ; "folly::Promise"
+           ; "folly::ThreadLocal"
+           ; "folly::detail::SingletonHolder"
+           ; "std::atomic"
+           ; "std::vector" ])
+    in
+    function
+    | Procname.ObjC_Cpp cpp_pname as pname ->
+        Procname.ObjC_Cpp.is_destructor cpp_pname
+        || QualifiedCppName.Match.match_qualifiers (Lazy.force matcher)
+             (Procname.get_qualifiers pname)
+    | Procname.Java java_pname ->
+        Procname.Java.is_autogen_method java_pname
+        || Typ.Name.Java.is_external (Procname.Java.get_class_type_name java_pname)
+    | _ ->
+        false
+  in
+  fun tenv pn ->
+    (not (should_skip pn))
+    && (not (FbThreadSafety.is_logging_method pn))
+    && not (is_assumed_thread_safe tenv pn)
 
 
 let get_current_class_and_threadsafe_superclasses tenv pname =

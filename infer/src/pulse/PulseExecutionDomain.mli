@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+open PulseBasicInterface
 module AbductiveDomain = PulseAbductiveDomain
 module LatentIssue = PulseLatentIssue
 
@@ -17,7 +18,14 @@ type 'abductive_domain_t base_t =
       (** represents the state at the program point that caused an error *)
   | LatentAbortProgram of {astate: AbductiveDomain.summary; latent_issue: LatentIssue.t}
       (** this path leads to an error but we don't have conclusive enough data to report it yet *)
-  | ISLLatentMemoryError of 'abductive_domain_t
+  | LatentInvalidAccess of
+      { astate: AbductiveDomain.summary
+      ; address: AbstractValue.t
+      ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option
+      ; calling_context: (CallEvent.t * Location.t) list }
+      (** if [address] is ever observed to be invalid then there is an invalid access because it
+          [must_be_valid] *)
+  | ISLLatentMemoryError of AbductiveDomain.summary
       (** represents the state at the program point that might cause an error; used for
           {!Config.pulse_isl} *)
 
@@ -33,7 +41,3 @@ val is_unsat_cheap : t -> bool
 (** see {!PulsePathCondition.is_unsat_cheap} *)
 
 type summary = AbductiveDomain.summary base_t [@@deriving compare, equal, yojson_of]
-
-val summary_of_posts : Procdesc.t -> t list -> summary list
-
-val force_exit_program : Procdesc.t -> t -> t option

@@ -12,7 +12,13 @@ type t = {dir: string; file: string; line: int; col: int}
 
 val pp : t pp
 val none : t
-val mk : ?dir:string -> ?file:string -> ?col:int -> line:int -> t
+
+val mk :
+     dir:string option
+  -> file:string option
+  -> line:int option
+  -> col:int option
+  -> t
 
 val root : string option ref
 (** Pathnames are printed relative to [root] if set. *)

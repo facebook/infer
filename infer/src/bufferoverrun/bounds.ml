@@ -88,7 +88,7 @@ module SymLinear = struct
 
   let pp : markup:bool -> is_beginning:bool -> F.formatter -> t -> unit =
    fun ~markup ~is_beginning f x ->
-    if M.is_empty x then if is_beginning then F.pp_print_string f "0" else ()
+    if M.is_empty x then (if is_beginning then F.pp_print_string f "0")
     else
       ( M.fold
           (fun s c is_beginning ->

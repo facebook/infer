@@ -498,7 +498,7 @@ let is_extern_var an =
 
 
 let is_const_expr_var an =
-  match an with Ctl_parser_types.Decl d -> CAst_utils.is_const_expr_var d | _ -> false
+  match an with Ctl_parser_types.Decl d -> CAst_utils.is_constexpr_var d | _ -> false
 
 
 let is_init_integral_constant_expr an =
@@ -566,8 +566,7 @@ let has_init_list_const_expr an =
         | _ ->
             false )
     in
-    L.(debug Analysis Verbose)
-      "@\n\n[has_init_list_const_expr]  EVALUATE EXP '%a'  result = '%b'@\n"
+    L.debug Analysis Verbose "@\n\n[has_init_list_const_expr]  EVALUATE EXP '%a'  result = '%b'@\n"
       (Pp.of_string ~f:Clang_ast_proj.get_stmt_kind_string)
       exp res ;
     res

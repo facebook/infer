@@ -32,6 +32,9 @@ val strip_template_args : t -> t
     - input: std::shared_ptr<int>::shared_ptr<long>
     - output: std::shared_ptr::shared_ptr *)
 
+val compare_name : t -> t -> int
+(** similar to compare, but compares only names, except template arguments *)
+
 val append_template_args_to_last : t -> args:string -> t
 (** append template arguments to the last qualifier. Fails if qualified name is empty or it already
     has template args *)

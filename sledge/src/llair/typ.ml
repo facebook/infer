@@ -10,7 +10,8 @@
 type t =
   | Function of {return: t option; args: t iarray}
   | Integer of {bits: int; byts: int}
-  | Float of {bits: int; byts: int; enc: [`IEEE | `Extended | `Pair]}
+  | Float of
+      {bits: int; byts: int; enc: [`Brain | `IEEE | `Extended | `Pair]}
   | Pointer of {elt: t}
   | Array of {elt: t; len: int; bits: int; byts: int}
   | Tuple of {elts: (int * t) iarray; bits: int; byts: int}
@@ -35,6 +36,7 @@ let rec pp fs typ =
   | Float {bits; enc} ->
       let enc_str =
         match enc with
+        | `Brain -> "brain"
         | `IEEE -> ""
         | `Extended -> "extend"
         | `Pair -> "pair"

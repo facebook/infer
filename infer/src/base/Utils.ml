@@ -447,7 +447,7 @@ let get_available_memory_MB () =
       try Scanf.sscanf line "MemAvailable: %u kB" (fun mem_kB -> Some (mem_kB / 1024))
       with Scanf.Scan_failure _ -> scan_for_expected_output in_channel )
   in
-  if Sys.file_exists proc_meminfo <> `Yes then None
+  if not (ISys.file_exists proc_meminfo) then None
   else with_file_in proc_meminfo ~f:scan_for_expected_output
 
 

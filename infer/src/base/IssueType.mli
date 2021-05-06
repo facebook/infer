@@ -240,6 +240,8 @@ val internal_error : t
 
 val invariant_call : t
 
+val ipc_on_ui_thread : t
+
 val javascript_injection : t
 
 val lab_resource_leak : t
@@ -273,6 +275,10 @@ val modifies_immutable : t
 val multiple_weakself : t
 
 val mutable_local_variable_in_component_file : t
+
+val nil_messaging_to_non_pod : t
+
+val nil_insertion_into_collection : t
 
 val null_dereference : t
 
@@ -324,9 +330,7 @@ val thread_safety_violation : t
 
 val thread_safety_violation_nullsafe : t
 
-val topl_biabd_error : t
-
-val topl_pulse_error : t
+val topl_error : t
 
 val uninitialized_value : t
 
@@ -371,3 +375,5 @@ val wrong_argument_number : t
 val unreachable_cost_call : kind:CostKind.t -> t
 
 val is_autoreleasepool_size_issue : t -> bool
+
+module Map : PrettyPrintable.PPMap with type key = t

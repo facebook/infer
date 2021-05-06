@@ -654,11 +654,14 @@ module Func = struct
       | _ -> assert false
     with exc ->
       let bt = Printexc.get_raw_backtrace () in
-      [%Trace.info "%a" pp func] ;
+      [%Trace.info " %a" pp func] ;
       Printexc.raise_with_backtrace exc bt
 
   let find name functions =
     Function.Map.find (Function.counterfeit name) functions
+
+  let lookup cfg lbl =
+    Iter.find_exn (IArray.to_iter cfg) ~f:(fun k -> String.equal lbl k.lbl)
 
   let mk ~name ~formals ~freturn ~fthrow ~entry ~cfg ~loc =
     let locals =
@@ -671,51 +674,45 @@ module Func = struct
       IArray.fold ~f:locals_block cfg (locals_block entry Reg.Set.empty)
     in
     let func = {name; formals; freturn; fthrow; locals; entry; loc} in
-    let resolve_parent_and_jumps block =
-      block.parent <- func ;
-      let lookup cfg lbl : block =
-        Iter.find_exn (IArray.to_iter cfg) ~f:(fun k ->
-            String.equal lbl k.lbl )
+    let rec resolve_parent_and_jumps ancestors src =
+      src.parent <- func ;
+      let ancestors = Block_label.Set.add src ancestors in
+      let jump jmp =
+        let dst = lookup cfg jmp.dst.lbl in
+        if Block_label.Set.mem dst ancestors then (
+          jmp.dst <- dst ;
+          jmp.retreating <- true ;
+          jmp )
+        else
+          match resolve_parent_and_jumps ancestors dst with
+          | None ->
+              jmp.dst <- dst ;
+              jmp
+          | Some tgt ->
+              jmp.dst <- tgt.dst ;
+              jmp.retreating <- tgt.retreating ;
+              tgt
       in
-      let set_dst jmp = jmp.dst <- lookup cfg jmp.dst.lbl in
-      match block.term with
+      let jump' jmp = ignore (jump jmp) in
+      match src.term with
       | Switch {tbl; els; _} ->
-          IArray.iter tbl ~f:(fun (_, jmp) -> set_dst jmp) ;
-          set_dst els
-      | Iswitch {tbl; _} -> IArray.iter tbl ~f:set_dst
+          IArray.iter ~f:(fun (_, jmp) -> jump' jmp) tbl ;
+          let tgt = jump els in
+          if IArray.is_empty tbl && IArray.is_empty src.cmnd then Some tgt
+          else None
+      | Iswitch {tbl; _} ->
+          IArray.iter ~f:jump' tbl ;
+          None
       | Call {return; throw; _} | ICall {return; throw; _} ->
-          set_dst return ;
-          Option.iter throw ~f:set_dst
-      | Return _ | Throw _ | Unreachable -> ()
+          jump' return ;
+          Option.iter ~f:jump' throw ;
+          None
+      | Return _ | Throw _ | Unreachable -> None
     in
-    let elim_jumps_to_jumps block =
-      let rec find_dst retreating jmp =
-        match jmp.dst.term with
-        | Switch {tbl; els; _}
-          when IArray.is_empty tbl && IArray.is_empty jmp.dst.cmnd ->
-            find_dst (retreating || els.retreating) els
-        | _ -> jmp
-      in
-      let set_dst jmp =
-        let tgt = find_dst jmp.retreating jmp in
-        if tgt != jmp then (
-          jmp.dst <- tgt.dst ;
-          jmp.retreating <- tgt.retreating )
-      in
-      match block.term with
-      | Switch {tbl; els; _} ->
-          IArray.iter tbl ~f:(fun (_, jmp) -> set_dst jmp) ;
-          set_dst els
-      | Iswitch {tbl; _} -> IArray.iter tbl ~f:set_dst
-      | Call {return; throw; _} | ICall {return; throw; _} ->
-          set_dst return ;
-          Option.iter throw ~f:set_dst
-      | Return _ | Throw _ | Unreachable -> ()
+    let resolve_parent_and_jumps block =
+      ignore (resolve_parent_and_jumps Block_label.Set.empty block)
     in
     resolve_parent_and_jumps entry ;
-    IArray.iter cfg ~f:resolve_parent_and_jumps ;
-    elim_jumps_to_jumps entry ;
-    IArray.iter cfg ~f:elim_jumps_to_jumps ;
     func |> check invariant
 end
 
@@ -738,14 +735,12 @@ let set_derived_metadata functions =
   in
   let topsort roots =
     let tips_to_roots = BlockQ.create () in
-    let rec visit ancestors func src =
+    let rec visit ancestors src =
       if BlockQ.mem tips_to_roots src then ()
       else
         let ancestors = Block_label.Set.add src ancestors in
         let jump jmp =
-          if Block_label.Set.mem jmp.dst ancestors then
-            jmp.retreating <- true
-          else visit ancestors func jmp.dst
+          if jmp.retreating then () else visit ancestors jmp.dst
         in
         ( match src.term with
         | Switch {tbl; els; _} ->
@@ -755,7 +750,7 @@ let set_derived_metadata functions =
         | Call ({callee; return; throw; _} as cal) ->
             if Block_label.Set.mem callee.entry ancestors then
               cal.recursive <- true
-            else visit ancestors func callee.entry ;
+            else visit ancestors callee.entry ;
             jump return ;
             Option.iter ~f:jump throw
         | ICall ({return; throw; _} as call) ->
@@ -767,7 +762,7 @@ let set_derived_metadata functions =
         BlockQ.enqueue_back_exn tips_to_roots src ()
     in
     FuncQ.iter roots ~f:(fun root ->
-        visit Block_label.Set.empty root root.entry ) ;
+        visit Block_label.Set.empty root.entry ) ;
     tips_to_roots
   in
   let set_sort_indices tips_to_roots =

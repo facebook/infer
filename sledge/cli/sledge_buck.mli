@@ -7,7 +7,4 @@
 
 open Core
 
-val main :
-     command:Report.status Command.basic_command
-  -> analyze:(string list -> unit -> Report.status) Command.Param.t
-  -> Command.t
+val main : command:Report.status Command.basic_command -> Command.t

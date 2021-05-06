@@ -8,13 +8,13 @@ open! IStd
 open PulseBasicInterface
 open PulseDomainInterface
 
-type model =
-     PulseSummary.t InterproceduralAnalysis.t
-  -> callee_procname:Procname.t
-  -> Location.t
-  -> ret:Ident.t * Typ.t
-  -> AbductiveDomain.t
-  -> ExecutionDomain.t PulseOperations.access_result list
+type model_data =
+  { analysis_data: PulseSummary.t InterproceduralAnalysis.t
+  ; callee_procname: Procname.t
+  ; location: Location.t
+  ; ret: Ident.t * Typ.t }
+
+type model = model_data -> AbductiveDomain.t -> ExecutionDomain.t AccessResult.t list
 
 val dispatch :
      Tenv.t

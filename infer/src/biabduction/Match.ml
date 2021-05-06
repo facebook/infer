@@ -125,7 +125,7 @@ and fsel_match fsel1 sub vars fsel2 =
   | [], _ ->
       None
   | _, [] ->
-      if Config.abs_struct <= 0 then None
+      if Config.biabduction_abs_struct <= 0 then None
       else Some (sub, vars) (* This can lead to great information loss *)
   | (fld1, se1') :: fsel1', (fld2, se2') :: fsel2' ->
       let n = Fieldname.compare fld1 fld2 in
@@ -135,7 +135,7 @@ and fsel_match fsel1 sub vars fsel2 =
             None
         | Some (sub', vars') ->
             fsel_match fsel1' sub' vars' fsel2'
-      else if n < 0 && Config.abs_struct > 0 then fsel_match fsel1' sub vars fsel2
+      else if n < 0 && Config.biabduction_abs_struct > 0 then fsel_match fsel1' sub vars fsel2
         (* This can lead to great information loss *)
       else None
 

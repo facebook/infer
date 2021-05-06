@@ -45,6 +45,7 @@
 #include <clang/AST/TypeVisitor.h>
 #include <clang/Basic/Module.h>
 #include <clang/Basic/SourceManager.h>
+#include <clang/Basic/TargetInfo.h>
 #include <clang/Frontend/CompilerInstance.h>
 #include <clang/Frontend/FrontendDiagnostic.h>
 #include <clang/Frontend/FrontendPluginRegistry.h>
@@ -403,6 +404,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   DECLARE_VISITOR(ExtVectorElementExpr)
   DECLARE_VISITOR(BinaryOperator)
   DECLARE_VISITOR(CompoundAssignOperator)
+  DECLARE_VISITOR(AtomicExpr)
   DECLARE_VISITOR(AddrLabelExpr)
   DECLARE_VISITOR(BlockExpr)
   DECLARE_VISITOR(OpaqueValueExpr)
@@ -659,7 +661,7 @@ template <class ATDWriter>
 void ASTExporter<ATDWriter>::dumpDeclRef(const Decl &D) {
   const NamedDecl *ND = dyn_cast<NamedDecl>(&D);
   const ValueDecl *VD = dyn_cast<ValueDecl>(&D);
-  bool IsHidden = ND && ND->isHidden();
+  bool IsHidden = ND && !ND->isUnconditionallyVisible();
   ObjectScope Scope(OF, 2 + (bool)ND + (bool)VD + IsHidden);
 
   OF.emitTag("kind");
@@ -1103,7 +1105,7 @@ void ASTExporter<ATDWriter>::VisitDecl(const Decl *D) {
       M = D->getLocalOwningModule();
     }
     const NamedDecl *ND = dyn_cast<NamedDecl>(D);
-    bool IsNDHidden = ND && ND->isHidden();
+    bool IsNDHidden = ND && !ND->isUnconditionallyVisible();
     bool IsDImplicit = D->isImplicit();
     bool IsDUsed = D->isUsed();
     bool IsDReferenced = D->isThisDeclarationReferenced();
@@ -1523,6 +1525,7 @@ int ASTExporter<ATDWriter>::FunctionDeclTupleSize() {
 //@atd   ~is_pure : bool;
 //@atd   ~is_delete_as_written : bool;
 //@atd   ~is_no_return : bool;
+//@atd   ~is_constexpr : bool;
 //@atd   ~is_variadic : bool;
 //@atd   ~is_static : bool;
 //@atd   ~parameters : decl list;
@@ -1535,7 +1538,10 @@ void ASTExporter<ATDWriter>::VisitFunctionDecl(const FunctionDecl *D) {
   ASTExporter<ATDWriter>::VisitDeclaratorDecl(D);
   // We purposedly do not call VisitDeclContext(D).
 
-  bool ShouldMangleName = Mangler->shouldMangleDeclName(D);
+  auto DNkind = D->getDeclName().getNameKind();
+  bool ShouldMangleName = Mangler->shouldMangleDeclName(D) &&
+                          DNkind != DeclarationName::CXXDeductionGuideName &&
+                          DNkind != DeclarationName::CXXUsingDirective;
   bool IsInlineSpecified = D->isInlineSpecified();
   bool IsModulePrivate = D->isModulePrivate();
   bool IsPure = D->isPure();
@@ -1547,6 +1553,7 @@ void ASTExporter<ATDWriter>::VisitFunctionDecl(const FunctionDecl *D) {
     IsStatic = true;
   }
   auto IsNoReturn = D->isNoReturn();
+  bool IsConstexpr = D->isConstexpr();
   bool HasParameters = !D->param_empty();
   const FunctionDecl *DeclWithBody = D;
   // FunctionDecl::hasBody() will set DeclWithBody pointer to decl that
@@ -1558,8 +1565,8 @@ void ASTExporter<ATDWriter>::VisitFunctionDecl(const FunctionDecl *D) {
   bool HasDeclarationBody = D->doesThisDeclarationHaveABody();
   FunctionTemplateDecl *TemplateDecl = D->getPrimaryTemplate();
   int size = ShouldMangleName + IsCpp + IsInlineSpecified + IsModulePrivate +
-             IsPure + IsDeletedAsWritten + IsNoReturn + IsVariadic +
-             IsStatic + HasParameters + (bool)DeclWithBody +
+             IsPure + IsDeletedAsWritten + IsNoReturn + IsConstexpr +
+             IsVariadic + IsStatic + HasParameters + (bool)DeclWithBody +
              HasDeclarationBody + (bool)TemplateDecl;
   ObjectScope Scope(OF, size);
 
@@ -1567,13 +1574,15 @@ void ASTExporter<ATDWriter>::VisitFunctionDecl(const FunctionDecl *D) {
     OF.emitTag("mangled_name");
     SmallString<64> Buf;
     llvm::raw_svector_ostream StrOS(Buf);
+    GlobalDecl GD;
     if (const auto *CD = dyn_cast<CXXConstructorDecl>(D)) {
-      Mangler->mangleCXXCtor(CD, Ctor_Complete, StrOS);
+      GD = GlobalDecl(CD, Ctor_Base);
     } else if (const auto *DD = dyn_cast<CXXDestructorDecl>(D)) {
-      Mangler->mangleCXXDtor(DD, Dtor_Deleting, StrOS);
+      GD = GlobalDecl(DD, Dtor_Base);
     } else {
-      Mangler->mangleName(D, StrOS);
+      GD = GlobalDecl(D);
     }
+    Mangler->mangleName(GD, StrOS);
     // mangled names can get ridiculously long, so hash them to a fixed size
     OF.emitString(std::to_string(fnv64Hash(StrOS)));
   }
@@ -1584,6 +1593,7 @@ void ASTExporter<ATDWriter>::VisitFunctionDecl(const FunctionDecl *D) {
   OF.emitFlag("is_pure", IsPure);
   OF.emitFlag("is_delete_as_written", IsDeletedAsWritten);
   OF.emitFlag("is_no_return", IsNoReturn);
+  OF.emitFlag("is_constexpr", IsConstexpr);
   OF.emitFlag("is_variadic", IsVariadic);
   OF.emitFlag("is_static", IsStatic);
 
@@ -1688,7 +1698,7 @@ int ASTExporter<ATDWriter>::VarDeclTupleSize() {
 //@atd   ~is_static : bool;
 //@atd   ~is_static_local : bool;
 //@atd   ~is_static_data_member : bool;
-//@atd   ~is_const_expr : bool;
+//@atd   ~is_constexpr : bool;
 //@atd   ~is_init_ice : bool;
 //@atd   ?init_expr : stmt option;
 //@atd   ~is_init_expr_cxx11_constant: bool;
@@ -1706,7 +1716,7 @@ void ASTExporter<ATDWriter>::VisitVarDecl(const VarDecl *D) {
   }
   bool IsStaticLocal = D->isStaticLocal(); // static function variables
   bool IsStaticDataMember = D->isStaticDataMember();
-  bool IsConstExpr = D->isConstexpr();
+  bool IsConstexpr = D->isConstexpr();
   bool IsInitICE = D->isInitKnownICE() && D->isInitICE();
   bool HasInit = D->hasInit();
   const ParmVarDecl *ParmDecl = dyn_cast<ParmVarDecl>(D);
@@ -1714,7 +1724,7 @@ void ASTExporter<ATDWriter>::VisitVarDecl(const VarDecl *D) {
   bool isInitExprCXX11ConstantExpr = false;
   ObjectScope Scope(OF,
                     IsGlobal + IsExtern + IsStatic + IsStaticLocal +
-                        IsStaticDataMember + IsConstExpr + IsInitICE + HasInit +
+                        IsStaticDataMember + IsConstexpr + IsInitICE + HasInit +
                         HasParmIndex + isInitExprCXX11ConstantExpr);
 
   OF.emitFlag("is_global", IsGlobal);
@@ -1722,7 +1732,7 @@ void ASTExporter<ATDWriter>::VisitVarDecl(const VarDecl *D) {
   OF.emitFlag("is_static", IsStatic);
   OF.emitFlag("is_static_local", IsStaticLocal);
   OF.emitFlag("is_static_data_member", IsStaticDataMember);
-  OF.emitFlag("is_const_expr", IsConstExpr);
+  OF.emitFlag("is_constexpr", IsConstexpr);
   OF.emitFlag("is_init_ice", IsInitICE);
   if (HasInit) {
     OF.emitTag("init_expr");
@@ -2060,7 +2070,8 @@ template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitClassTemplateSpecializationDecl(
     const ClassTemplateSpecializationDecl *D) {
   VisitCXXRecordDecl(D);
-  bool ShouldMangleName = Mangler->shouldMangleDeclName(D);
+  bool ShouldMangleName = Mangler->shouldMangleDeclName(D) &&
+                          (isa<FunctionDecl>(D) || isa<VarDecl>(D));
   if (ShouldMangleName) {
     SmallString<64> Buf;
     llvm::raw_svector_ostream StrOS(Buf);
@@ -2081,7 +2092,6 @@ int ASTExporter<ATDWriter>::CXXMethodDeclTupleSize() {
 //@atd type cxx_method_decl_info = {
 //@atd   ~is_virtual : bool;
 //@atd   ~is_static : bool;
-//@atd   ~is_constexpr : bool;
 //@atd   ~cxx_ctor_initializers : cxx_ctor_initializer list;
 //@atd   ~overriden_methods : decl_ref list;
 //@atd } <ocaml field_prefix="xmdi_">
@@ -2092,15 +2102,13 @@ void ASTExporter<ATDWriter>::VisitCXXMethodDecl(const CXXMethodDecl *D) {
   bool IsStatic = D->isStatic();
   const CXXConstructorDecl *C = dyn_cast<CXXConstructorDecl>(D);
   bool HasCtorInitializers = C && C->init_begin() != C->init_end();
-  bool IsConstexpr = D->isConstexpr();
   auto OB = D->begin_overridden_methods();
   auto OE = D->end_overridden_methods();
   ObjectScope Scope(
       OF,
-      IsVirtual + IsStatic + IsConstexpr + HasCtorInitializers + (OB != OE));
+                    IsVirtual + IsStatic + HasCtorInitializers + (OB != OE));
   OF.emitFlag("is_virtual", IsVirtual);
   OF.emitFlag("is_static", IsStatic);
-  OF.emitFlag("is_constexpr", IsConstexpr);
   if (HasCtorInitializers) {
     OF.emitTag("cxx_ctor_initializers");
     ArrayScope Scope(OF, std::distance(C->init_begin(), C->init_end()));
@@ -2531,7 +2539,7 @@ void ASTExporter<ATDWriter>::VisitObjCMethodDecl(const ObjCMethodDecl *D) {
   SmallString<64> Buf;
   llvm::raw_svector_ostream StrOS(Buf);
   Mangler->mangleObjCMethodNameWithoutSize(D, StrOS);
-  std::string MangledName = StrOS.str();
+  std::string MangledName = StrOS.str().str();
 
   ObjectScope Scope(OF,
                     1 + IsInstanceMethod + IsPropertyAccessor +
@@ -2823,8 +2831,8 @@ void ASTExporter<ATDWriter>::VisitObjCPropertyDecl(const ObjCPropertyDecl *D) {
 
   ObjCPropertyDecl::PropertyControl PC = D->getPropertyImplementation();
   bool HasPropertyControl = PC != ObjCPropertyDecl::None;
-  ObjCPropertyDecl::PropertyAttributeKind Attrs = D->getPropertyAttributes();
-  bool HasPropertyAttributes = Attrs != ObjCPropertyDecl::OBJC_PR_noattr;
+  ObjCPropertyAttribute::Kind Attrs = D->getPropertyAttributes();
+  bool HasPropertyAttributes = Attrs != ObjCPropertyAttribute::kind_noattr;
 
   ObjCMethodDecl *Getter = D->getGetterMethodDecl();
   ObjCMethodDecl *Setter = D->getSetterMethodDecl();
@@ -2867,18 +2875,19 @@ void ASTExporter<ATDWriter>::VisitObjCPropertyDecl(const ObjCPropertyDecl *D) {
 
   if (HasPropertyAttributes) {
     OF.emitTag("property_attributes");
-    bool readonly = Attrs & ObjCPropertyDecl::OBJC_PR_readonly;
-    bool assign = Attrs & ObjCPropertyDecl::OBJC_PR_assign;
-    bool readwrite = Attrs & ObjCPropertyDecl::OBJC_PR_readwrite;
-    bool retain = Attrs & ObjCPropertyDecl::OBJC_PR_retain;
-    bool copy = Attrs & ObjCPropertyDecl::OBJC_PR_copy;
-    bool nonatomic = Attrs & ObjCPropertyDecl::OBJC_PR_nonatomic;
-    bool atomic = Attrs & ObjCPropertyDecl::OBJC_PR_atomic;
-    bool weak = Attrs & ObjCPropertyDecl::OBJC_PR_weak;
-    bool strong = Attrs & ObjCPropertyDecl::OBJC_PR_strong;
-    bool unsafeUnretained = Attrs & ObjCPropertyDecl::OBJC_PR_unsafe_unretained;
-    bool getter = Attrs & ObjCPropertyDecl::OBJC_PR_getter;
-    bool setter = Attrs & ObjCPropertyDecl::OBJC_PR_setter;
+    bool readonly = Attrs & ObjCPropertyAttribute::kind_readonly;
+    bool assign = Attrs & ObjCPropertyAttribute::kind_assign;
+    bool readwrite = Attrs & ObjCPropertyAttribute::kind_readwrite;
+    bool retain = Attrs & ObjCPropertyAttribute::kind_retain;
+    bool copy = Attrs & ObjCPropertyAttribute::kind_copy;
+    bool nonatomic = Attrs & ObjCPropertyAttribute::kind_nonatomic;
+    bool atomic = Attrs & ObjCPropertyAttribute::kind_atomic;
+    bool weak = Attrs & ObjCPropertyAttribute::kind_weak;
+    bool strong = Attrs & ObjCPropertyAttribute::kind_strong;
+    bool unsafeUnretained =
+        Attrs & ObjCPropertyAttribute::kind_unsafe_unretained;
+    bool getter = Attrs & ObjCPropertyAttribute::kind_getter;
+    bool setter = Attrs & ObjCPropertyAttribute::kind_setter;
     int toEmit = readonly + assign + readwrite + retain + copy + nonatomic +
                  atomic + weak + strong + unsafeUnretained + getter + setter;
     ArrayScope Scope(OF, toEmit);
@@ -2984,13 +2993,24 @@ void ASTExporter<ATDWriter>::VisitBlockDecl(const BlockDecl *D) {
   bool HasCapturedVariables = CII != CIE;
   const Stmt *Body = D->getBody();
 
-  SmallString<64> Buf;
-  llvm::raw_svector_ostream StrOS(Buf);
-  Mangler->mangleBlock(D->getDeclContext(), D, StrOS);
-  std::string MangledName = StrOS.str();
+  std::string MangledName;
+  const DeclContext *DC = D->getDeclContext();
+  if (auto ND = dyn_cast<NamedDecl>(DC)) {
+    if (!isa<FunctionDecl>(ND) && !isa<VarDecl>(ND) && ND->getIdentifier()) {
+      MangledName = ND->getIdentifier()->getName().str();
+    } else if (!isa<CXXConstructorDecl>(DC) && !isa<CXXDestructorDecl>(DC)) {
+      SmallString<64> Buf;
+      llvm::raw_svector_ostream StrOS(Buf);
+      Mangler->mangleBlock(DC, D, StrOS);
+      MangledName = StrOS.str().str();
+    }
+  }
 
   int size = 0 + HasParameters + IsVariadic + CapturesCXXThis +
-             HasCapturedVariables + (bool)Body + 1 /* MangledName*/;
+             HasCapturedVariables + (bool)Body;
+  if (!MangledName.empty())
+    ++size;
+
   ObjectScope Scope(OF, size); // not covered by tests
 
   if (HasParameters) {
@@ -3035,8 +3055,10 @@ void ASTExporter<ATDWriter>::VisitBlockDecl(const BlockDecl *D) {
     dumpStmt(Body);
   }
 
-  OF.emitTag("mangled_name");
-  OF.emitString(MangledName);
+  if (!MangledName.empty()) {
+    OF.emitTag("mangled_name");
+    OF.emitString(MangledName);
+  }
 }
 
 // main variant for declarations
@@ -3219,7 +3241,7 @@ void ASTExporter<ATDWriter>::VisitGotoStmt(const GotoStmt *Node) {
   VisitStmt(Node);
   ObjectScope Scope(OF, 2); // not covered by tests
   OF.emitTag("label");
-  OF.emitString(Node->getLabel()->getName());
+  OF.emitString(Node->getLabel()->getName().str());
   OF.emitTag("pointer");
   dumpPointer(Node->getLabel());
 }
@@ -3305,6 +3327,9 @@ void ASTExporter<ATDWriter>::VisitExpr(const Expr *Node) {
     case OK_VectorComponent:
       OF.emitSimpleVariant("VectorComponent");
       break;
+    case OK_MatrixComponent:
+      OF.emitSimpleVariant("MatrixComponent");
+      break;
     case OK_Ordinary:
       llvm_unreachable("unreachable");
       break;
@@ -3325,7 +3350,7 @@ void ASTExporter<ATDWriter>::dumpCXXBaseSpecifier(
   OF.emitTag("name");
   const CXXRecordDecl *RD =
       cast<CXXRecordDecl>(Base.getType()->getAs<RecordType>()->getDecl());
-  OF.emitString(RD->getName());
+  OF.emitString(RD->getName().str());
   OF.emitFlag("virtual", IsVirtual);
 }
 
@@ -3558,6 +3583,12 @@ void ASTExporter<ATDWriter>::VisitPredefinedExpr(const PredefinedExpr *Node) {
   case PredefinedExpr::PrettyFunctionNoVirtual:
     OF.emitSimpleVariant("PrettyFunctionNoVirtual");
     break;
+  case PredefinedExpr::UniqueStableNameType:
+    OF.emitSimpleVariant("UniqueStableNameType");
+    break;
+  case PredefinedExpr::UniqueStableNameExpr:
+    OF.emitSimpleVariant("UniqueStableNameExpr");
+    break;
   }
 }
 
@@ -3626,7 +3657,7 @@ void ASTExporter<ATDWriter>::VisitFloatingLiteral(const FloatingLiteral *Node) {
   VisitExpr(Node);
   llvm::SmallString<20> buf;
   Node->getValue().toString(buf);
-  OF.emitString(buf.str());
+  OF.emitString(buf.str().str());
 }
 
 template <class ATDWriter>
@@ -3645,8 +3676,9 @@ void ASTExporter<ATDWriter>::VisitStringLiteral(const StringLiteral *Str) {
   }
   ArrayScope Scope(OF, n_chunks);
   for (size_t i = 0; i < n_chunks; ++i) {
-    OF.emitString(Str->getBytes().substr(i * Options.maxStringSize,
-                                         Options.maxStringSize));
+    OF.emitString(Str->getBytes()
+                      .substr(i * Options.maxStringSize, Options.maxStringSize)
+                      .str());
   }
 }
 
@@ -3848,6 +3880,34 @@ void ASTExporter<ATDWriter>::VisitCompoundAssignOperator(
 }
 
 template <class ATDWriter>
+int ASTExporter<ATDWriter>::AtomicExprTupleSize() {
+  return ExprTupleSize() + 1;
+}
+#define BUILTIN(ID, TYPE, ATTRS)
+//@atd #define atomic_expr_tuple expr_tuple * atomic_expr_info
+//@atd type atomic_expr_info = {
+//@atd   kind : atomic_expr_kind
+//@atd } <ocaml field_prefix="aei_">
+//@atd type atomic_expr_kind = [
+#define ATOMIC_BUILTIN(ID, TYPE, ATTRS) //@atd | AO@@ID
+#include <clang/Basic/Builtins.def>
+//@atd ]
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitAtomicExpr(const AtomicExpr *Node) {
+  VisitExpr(Node);
+  ObjectScope Scope(OF, 1);
+  OF.emitTag("kind");
+  switch (Node->getOp()) {
+#define BUILTIN(ID, TYPE, ATTRS)
+#define ATOMIC_BUILTIN(ID, TYPE, ATTRS) \
+  case AtomicExpr::AO##ID:              \
+    OF.emitSimpleVariant("AO" #ID);     \
+    break;
+#include <clang/Basic/Builtins.def>
+  }
+}
+
+template <class ATDWriter>
 int ASTExporter<ATDWriter>::BlockExprTupleSize() {
   return ExprTupleSize() + DeclTupleSize();
 }
@@ -3895,7 +3955,7 @@ void ASTExporter<ATDWriter>::VisitAddrLabelExpr(const AddrLabelExpr *Node) {
   VisitExpr(Node);
   ObjectScope Scope(OF, 2); // not covered by tests
   OF.emitTag("label");
-  OF.emitString(Node->getLabel()->getName());
+  OF.emitString(Node->getLabel()->getName().str());
   OF.emitTag("pointer");
   dumpPointer(Node->getLabel());
 }
@@ -4030,9 +4090,17 @@ void ASTExporter<ATDWriter>::VisitExprWithCleanups(
 
   if (HasDeclRefs) {
     OF.emitTag("decl_refs");
-    ArrayScope Scope(OF, Node->getNumObjects());
+    unsigned int ctr = 0;
     for (unsigned i = 0, e = Node->getNumObjects(); i != e; ++i)
-      dumpDeclRef(*Node->getObject(i));
+      if (Node->getObject(i).is<clang::BlockDecl *>())
+        ++ctr;
+    ArrayScope Scope(OF, ctr);
+    for (unsigned i = 0, e = Node->getNumObjects(); i != e; ++i) {
+      auto p = Node->getObject(i);
+      if (p.is<clang::BlockDecl *>()) {
+        dumpDeclRef(**p.getAddrOfPtr1());
+      }
+    }
   }
 }
 
@@ -4975,9 +5043,17 @@ int ASTExporter<ATDWriter>::BuiltinTypeTupleSize() {
 //@atd type builtin_type_kind = [
 #define BUILTIN_TYPE(TYPE, ID) //@atd   | TYPE
 #include <clang/AST/BuiltinTypes.def>
-#define SVE_PREDICATE_TYPE(Name, Id, SingletonId, ElKind) //@atd   | Id
-#define SVE_VECTOR_TYPE( \
-    Name, Id, SingletonId, ElKind, ElBits, IsSigned, IsFP) //@atd   | Id
+#define SVE_PREDICATE_TYPE( \
+    Name, MangledName, Id, SingletonId, NumEls) //@atd   | Id
+#define SVE_VECTOR_TYPE(Name,        \
+                        MangledName, \
+                        Id,          \
+                        SingletonId, \
+                        NumEls,      \
+                        ElBits,      \
+                        IsSigned,    \
+                        IsFP,        \
+                        IsBF) //@atd   | Id
 #include <clang/Basic/AArch64SVEACLETypes.def>
 //@atd ]
 template <class ATDWriter>
@@ -4991,12 +5067,13 @@ void ASTExporter<ATDWriter>::VisitBuiltinType(const BuiltinType *T) {
     break;                     \
   }
 #include <clang/AST/BuiltinTypes.def>
-#define SVE_PREDICATE_TYPE(Name, Id, SingletonId, ElKind) \
+#define SVE_PREDICATE_TYPE(Name, MangeldName, Id, SingletonId, NumEls) \
   case BuiltinType::Id: {                                 \
     type_name = #Id;                                      \
     break;                                                \
   }
-#define SVE_VECTOR_TYPE(Name, Id, SingletonId, ElKind, ElBits, IsSigned, IsFP) \
+#define SVE_VECTOR_TYPE(                                                      \
+    Name, MangledName, Id, SingletonId, NumEls, ElBits, IsSigned, IsFP, IsBF) \
   case BuiltinType::Id: {                                                      \
     type_name = #Id;                                                           \
     break;                                                                     \

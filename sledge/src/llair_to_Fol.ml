@@ -90,7 +90,7 @@ and term : Llair.Exp.t -> T.t =
         | Some fml -> F.inject fml
         | _ -> uap1 (Unsigned bits) a
       else uap1 (Unsigned bits) a
-  | Ap1 (Convert {src= Pointer _}, Pointer _, e) -> term e
+  | Ap1 (Convert {src}, dst, e) when Llair.Typ.equivalent src dst -> term e
   | Ap1 (Convert {src= Float _}, Float _, e) -> term e
   | Ap1 (Convert {src}, dst, e) ->
       let s =

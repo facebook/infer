@@ -8,7 +8,11 @@
 open! IStd
 module L = Logging
 
-let tt = ToplUtils.debug
+let tt fmt =
+  let mode = if Config.trace_topl then Logging.Quiet else Logging.Verbose in
+  Logging.debug Analysis mode "ToplTrace: " ;
+  Logging.debug Analysis mode fmt
+
 
 module Vname = struct
   module T = struct
@@ -27,16 +31,14 @@ type tindex = int
 
 type transition = {source: vindex; target: vindex; label: ToplAst.label option}
 
-(** - INV1: Array.length states = Array.length outgoing = Array.length nondets
-    - INV2: Array.length transitions = Array.length skips
-    - INV3: each index of [transitions] occurs exactly once in one of [outgoing]'s lists
-    - INV4: max_args is the maximum length of the arguments list in a label on a transition
+(** - INV1: Array.length transitions = Array.length skips
+    - INV2: each index of [transitions] occurs exactly once in one of [outgoing]'s lists
+    - INV3: max_args is the maximum length of the arguments list in a label on a transition
 
     The fields marked as redundant are computed from the others (when the automaton is built), and
     are cached for speed. *)
 type t =
   { states: vname array
-  ; nondets: bool array (* redundant *)
   ; transitions: transition array
   ; skips: bool array (* redundant *)
   ; outgoing: tindex list array
@@ -72,7 +74,7 @@ let make properties =
     Array.of_list (List.dedup_and_sort ~compare:Vname.compare (List.concat_map ~f properties))
   in
   Array.iteri ~f:(fun i (p, v) -> tt "state[%d]=(%s,%s)@\n" i p v) states ;
-  let vindex_opt, vindex = index_in (module Vname.Table) states in
+  let _vindex_opt, vindex = index_in (module Vname.Table) states in
   let vindex = vindex "vertex" in
   let transitions : transition array =
     let f p =
@@ -114,60 +116,17 @@ let make properties =
     |> Array.max_elt ~compare:Int.compare
     |> Option.value ~default:0 |> succ
   in
-  let nondets : bool array =
-    let vcount = Array.length states in
-    let a = Array.create ~len:vcount false in
-    let f ToplAst.{nondet; name; _} =
-      let set_nondet state =
-        match vindex_opt (name, state) with
-        | Some i ->
-            a.(i) <- true
-        | None ->
-            L.user_warning
-              "TOPL: %s declared as nondet, but it appears in no transition of property %s" state
-              name
-      in
-      List.iter ~f:set_nondet nondet
-    in
-    List.iter ~f properties ;
-    a
-  in
   let skips : bool array =
     (* TODO(rgrigore): Rename "anys"? *)
     let is_skip {label} = Option.is_none label in
     Array.map ~f:is_skip transitions
   in
-  {states; nondets; transitions; skips; outgoing; vindex; max_args}
+  {states; transitions; skips; outgoing; vindex; max_args}
 
-
-let outgoing a i = a.outgoing.(i)
 
 let vname a i = a.states.(i)
 
-let is_nondet a i = a.nondets.(i)
-
 let vcount a = Array.length a.states
-
-let transition a i = a.transitions.(i)
-
-let is_skip a i = a.skips.(i)
-
-let tcount a = Array.length a.transitions
-
-let max_args a = a.max_args
-
-let get_start_error_pairs a =
-  let starts = String.Table.create () ~size:(2 * vcount a) in
-  let errors = String.Table.create () ~size:(2 * vcount a) in
-  let record dict keep index (property, name) =
-    if String.equal keep name then Hashtbl.add_exn dict ~key:property ~data:index
-  in
-  Array.iteri ~f:(record starts "start") a.states ;
-  Array.iteri ~f:(record errors "error") a.states ;
-  let f ~key:_ = function `Both (x, y) -> Some (x, y) | _ -> None in
-  let pairs = Hashtbl.merge starts errors ~f in
-  Hashtbl.data pairs
-
 
 let registers a =
   (* TODO(rgrigore): cache *)

@@ -7,8 +7,12 @@
 
 open! IStd
 
-type t = {name: Mangled.t; typ: Typ.t; capture_mode: Pvar.capture_mode} [@@deriving compare]
+type capture_mode = ByReference | ByValue [@@deriving compare, equal]
+
+val string_of_capture_mode : capture_mode -> string
+
+type t = {name: Mangled.t; typ: Typ.t; capture_mode: capture_mode} [@@deriving compare]
 
 val pp : Format.formatter -> t -> unit
 
-val make : name:Mangled.t -> typ:Typ.t -> capture_mode:Pvar.capture_mode -> t
+val make : name:Mangled.t -> typ:Typ.t -> capture_mode:capture_mode -> t

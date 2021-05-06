@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 # additional arguments to pass to clang
-CLANG_ARGS?=-O0
+CLANG_ARGS?=-O0 -Xclang -disable-O0-optnone
 
 # executable to test
 SLEDGE_DBG=$(CURDIR)/../_build/debug/cli/sledge_cli.exe
@@ -33,8 +33,8 @@ sledge_report_exe:
 # which utilities to use
 diff?=patdiff
 
-# configure the non-host llvm and clang
-export PATH := $(CURDIR)/../.llvm_install/sledge/bin:$(PATH)
+# select llvm and clang used by opam
+export PATH := $(shell $$(opam config var conf-llvm:config) --bindir):$(PATH)
 
 # configure sort
 export LANG := C
@@ -189,7 +189,7 @@ smt-status: smt.sexp sledge_report_exe
 # run sledge llvm translate tests
 .PHONY: llvm
 llvm:
-	-find -L llvm -name '*.ll' -or -name '*.bc' 2>/dev/null | parallel --bar $(sledge_dbg) llvm translate -no-models -no-internalize $(SLEDGE_T_ARGS)
+	-find -L llvm -name '*.ll' -or -name '*.bc' 2>/dev/null | parallel --bar $(sledge_dbg) llvm translate -no-internalize $(SLEDGE_T_ARGS)
 
 .PHONY: llvm.sexp
 llvm.sexp:

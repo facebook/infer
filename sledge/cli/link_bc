@@ -1,0 +1,129 @@
+#!/usr/bin/env ocaml
+
+;;
+#use "topfind"
+
+;;
+#thread
+
+;;
+#require "core_kernel,shexp.process"
+
+open Core_kernel
+module Queue = Hash_queue.Make (String)
+module Process = Shexp_process
+open Process.Infix
+
+let ( let* ) = ( >>= )
+let ( and* ) = Process.fork
+let ( let+ ) = ( >>| )
+let ( and+ ) = Process.fork
+
+(* C name of entry point function *)
+let entry_point = Sys.argv.(1)
+
+(* filename of executable to be linked to bitcode *)
+let input = Sys.argv.(2)
+
+(* name of input *)
+let basename = Filename.basename input
+
+(* dir containing input exe and objects *)
+let input_dir = Filename.dirname input
+
+(* dir where output should be placed *)
+let output_dir = Sys.getcwd ()
+
+(* env var used by gllvm to identify dir containing llvm exes e.g. clang *)
+let llvm_compiler_path = Sys.getenv_opt "LLVM_COMPILER_PATH"
+
+(* prefix name with LLVM_COMPILER_PATH *)
+let llvm_compiler name =
+  match llvm_compiler_path with
+  | Some path -> Filename.concat path name
+  | None -> name
+
+(* llvm-link exe to use *)
+let llvm_link =
+  llvm_compiler
+    (Option.value (Sys.getenv_opt "LLVM_LINK_NAME") ~default:"llvm-link")
+
+(* opt exe to use *)
+let llvm_opt = llvm_compiler "opt"
+
+(* env var used to identify dir containing gllvm exes e.g. get-bc *)
+let gllvm_path = Sys.getenv_opt "GLLVM_PATH"
+
+(* prefix name with GLLVM_PATH *)
+let gllvm name =
+  match gllvm_path with
+  | Some path -> Filename.concat path name
+  | None -> name
+
+(* get-bc exe to use *)
+let get_bc = gllvm "get-bc"
+
+let calculate_deps () =
+  (* queue of object names that need to be linked together *)
+  let needed = Queue.create () in
+  (* queue of object names whose dependencies need to be calculated *)
+  let frontier = Queue.create () in
+  (* enqueue single object, also to frontier if not yet seen *)
+  let enqueue obj =
+    match Queue.enqueue_front needed obj obj with
+    | `Key_already_present -> ()
+    | `Ok -> Queue.enqueue_back frontier obj obj |> ignore
+  in
+  (* query and enqueue dependencies of an object *)
+  let enqueue_dependencies obj =
+    Process.run "objdump" ["-p"; obj]
+    |- Process.iter_lines (fun line ->
+           ( match String.chop_prefix ~prefix:"  NEEDED" line with
+           | None -> ()
+           | Some obj -> enqueue (String.strip obj) )
+           |> Process.return )
+  in
+  (* dequeue and process until done *)
+  let rec loop () =
+    match Queue.dequeue_front frontier with
+    | Some obj ->
+        let* () = enqueue_dependencies obj in
+        loop ()
+    | None -> Process.return ()
+  in
+  enqueue basename ;
+  let* () = loop () in
+  Process.return (Queue.keys needed)
+
+let extract_bc_deps needed =
+  Process.fork_all_unit
+    (List.map needed ~f:(fun obj ->
+         Process.stdout_to "/dev/null"
+           (Process.run get_bc ["-o=" ^ obj ^ ".bc"; obj]) ))
+
+let link_bc_deps needed =
+  (* an entry in the list depends only on entries before it, so here we
+     preserve the order and use the `--override` flag to keep the last
+     definition of multiply-defined symbols *)
+  Process.run llvm_link
+    ( "-o=-"
+    ::
+    ( match needed with
+    | obj :: objs ->
+        (obj ^ ".bc")
+        :: List.map objs ~f:(fun obj -> "--override=" ^ obj ^ ".bc")
+    | [] -> [] ) )
+
+let remove_dead_code =
+  Process.run llvm_opt
+    [ "-o=" ^ Filename.concat output_dir (basename ^ ".bc")
+    ; "--internalize-public-api-list=" ^ entry_point
+    ; "--internalize"
+    ; "--globaldce" ]
+
+;;
+let context = Process.Context.create ~cwd:(Path input_dir) () in
+Process.eval ~context
+  (let* needed = calculate_deps () in
+   let* () = extract_bc_deps needed in
+   link_bc_deps needed |- remove_dead_code)

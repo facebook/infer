@@ -1,0 +1,158 @@
+<!-- Creator     : groff version 1.19.2 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p     { margin-top: 0; margin-bottom: 0; }
+       pre   { margin-top: 0; margin-bottom: 0; }
+       table { margin-top: 0; margin-bottom: 0; }
+</style>
+<title>infer-help</title>
+
+</head>
+<body>
+
+<h1 align=center>infer-help</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
+<a href="#ENVIRONMENT">ENVIRONMENT</a><br>
+<a href="#FILES">FILES</a><br>
+
+<hr>
+
+
+<a name="NAME"></a>
+<h2>NAME</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">infer-help -
+Show and generate documentation.</p>
+
+<a name="SYNOPSIS"></a>
+<h2>SYNOPSIS</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>infer help
+<br>
+infer help --help-checker</b> <i>checker1 ...</i>
+<b>--help-checker</b> <i>checkerN</i> <b><br>
+infer help --help-issue-type</b> <i>ISSUE_TYPE1 ...</i>
+<b>--help-issue-type</b> <i>ISSUE_TYPEN</i> <b><br>
+infer help --list-checkers <br>
+infer help --list-issue-types <br>
+infer help --write-website</b> <i>website_root</i></p>
+
+<a name="DESCRIPTION"></a>
+<h2>DESCRIPTION</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Without
+arguments, show the Infer manual as with <b>infer
+--help</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">For each
+<b>-help-checker</b> or <b>--help-issue-type</b> option
+passed, display information about the given checker or issue
+type.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<b>--list-checkers</b> is passed, list all available
+checkers.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<b>--list-issue-types</b> is passed, list all issue
+types.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Use
+<b>--write-website</b> to build some of the documentation
+for the <i>fbinfer.com</i> website. (Used in scripts, not
+meant to be used except when publishing content to
+<i>fbinfer.com</i>)</p>
+
+<a name="OPTIONS"></a>
+<h2>OPTIONS</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>--help</b></p>
+
+<p style="margin-left:17%;">Show this manual</p>
+
+<p style="margin-left:11%;"><b>--help-checker</b>
+<i>+checker-id</i></p>
+
+<p style="margin-left:17%;">Show information about a
+checker, for example <i>biabduction</i>. To see the list of
+all checkers, see <b>--list-checkers</b>.</p>
+
+<p style="margin-left:11%;"><b>--help-format</b> <i>{ auto
+| groff | pager | plain }</i></p>
+
+<p style="margin-left:17%;">Show this help in the specified
+format. <b>auto</b> sets the format to <b>plain</b> if the
+environment variable <b>TERM</b> is &quot;dumb&quot; or
+undefined, and to <b>pager</b> otherwise.</p>
+
+<p style="margin-left:11%;"><b>--help-full</b></p>
+
+<p style="margin-left:17%;">Show this manual with all
+internal options in the INTERNAL OPTIONS section</p>
+
+<p style="margin-left:11%;"><b>--help-issue-type</b>
+<i>+UNIQUE_ID</i></p>
+
+<p style="margin-left:17%;">Show information about an issue
+type, for example <i>NULL_DEREFERENCE</i>. To see the list
+of all issue types, see <b>--list-issue-types</b>.</p>
+
+<p style="margin-left:11%;"><b>--list-checkers</b></p>
+
+<p style="margin-left:17%;">Activates: Show the list of all
+available checkers. (Conversely:
+<b>--no-list-checkers</b>)</p>
+
+<p style="margin-left:11%;"><b>--list-issue-types</b></p>
+
+<p style="margin-left:17%;">Activates: Show the list of all
+issue types that infer might report. (Conversely:
+<b>--no-list-issue-types</b>)</p>
+
+<p style="margin-left:11%;"><b>--write-website</b>
+<i>path_to_website_dir</i></p>
+
+<p style="margin-left:17%;">Use to write website files
+documenting issue types and checkers under
+<i>path_to_website_dir/</i>. Meant to be used within the
+Infer directory to generate its website at
+<i>fbinfer.com</i> at <i>website/</i>.</p>
+
+<a name="ENVIRONMENT"></a>
+<h2>ENVIRONMENT</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>INFER_ARGS</b>,
+<b>INFERCONFIG</b>, <b>INFER_STRICT_MODE</b></p>
+
+<p style="margin-left:17%;">See the ENVIRONMENT section in
+the manual of <b>infer</b>(1).</p>
+
+<a name="FILES"></a>
+<h2>FILES</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>.inferconfig</b></p>
+
+<p style="margin-left:17%;">See the FILES section in the
+manual of <b>infer</b>(1).</p>
+<hr>
+</body>
+</html>

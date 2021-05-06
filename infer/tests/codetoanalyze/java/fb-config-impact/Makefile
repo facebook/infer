@@ -5,9 +5,10 @@
 
 TESTS_DIR = ../../..
 
-INFER_OPTIONS = --config-impact-analysis-only --debug-exceptions \
-  --report-force-relative-path
+INFER_OPTIONS = --config-impact-analysis-only --config-impact-data-file config_data.json \
+  --debug-exceptions --report-force-relative-path
 INFERPRINT_OPTIONS = --issues-tests
 SOURCES = $(wildcard *.java)
 
 include $(TESTS_DIR)/javac.make
+include $(TESTS_DIR)/config-impact.make

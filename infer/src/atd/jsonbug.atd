@@ -135,15 +135,20 @@ type cost_info = {
   trace : json_trace_item list;
 }
 
+type item = {hash: string ; loc: loc ; procedure_name: string ; procedure_id: string }
+
 
 type cost_item = {
-  hash : string;
-  loc : loc;
-  procedure_name : string;
-  procedure_id : string;
+inherit item;
   is_on_ui_thread : bool;
   exec_cost : cost_info;
   autoreleasepool_size : cost_info;
 }
 
 type costs_report = cost_item list
+
+type config_impact_item = {
+ inherit item;  unchecked_callees : string;
+}
+
+type config_impact_report = config_impact_item list

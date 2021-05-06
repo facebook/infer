@@ -54,3 +54,17 @@ let rec add_to_errlog ?(include_value_history = true) ~nesting ~pp_immediate tra
         @@ errlog
       in
       if include_value_history then ValueHistory.add_to_errlog ~nesting history @@ acc else acc
+
+
+let rec iter trace ~f =
+  match trace with
+  | Immediate {history} ->
+      ValueHistory.iter history ~f
+  | ViaCall {history; in_call} ->
+      ValueHistory.iter history ~f ;
+      iter in_call ~f
+
+
+let find_map trace ~f = Container.find_map ~iter trace ~f
+
+let exists trace ~f = Container.exists ~iter trace ~f

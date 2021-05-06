@@ -16,4 +16,4 @@ Supported languages:
 ## List of Issue Types
 
 The following issue types are reported by this checker:
-- [TOPL_BIABD_ERROR](/docs/all-issue-types#topl_biabd_error)
+- [TOPL_BIABD_ERROR](/docs/1.0.0/all-issue-types#topl_biabd_error)

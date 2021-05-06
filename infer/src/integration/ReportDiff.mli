@@ -12,4 +12,6 @@ val reportdiff :
   -> previous_report:string option
   -> current_costs:string option
   -> previous_costs:string option
+  -> current_config_impact:string option
+  -> previous_config_impact:string option
   -> unit

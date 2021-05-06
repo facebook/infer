@@ -1,5 +1,5 @@
---- a/llvm/tools/clang/lib/Sema/SemaInit.cpp
-+++ b/llvm/tools/clang/lib/Sema/SemaInit.cpp
+--- a/llvm-project/clang/lib/Sema/SemaInit.cpp
++++ b/llvm-project/clang/lib/Sema/SemaInit.cpp
 @@ -7147,7 +7147,9 @@ void Sema::checkInitializerLifetime(const InitializedEntity &Entity,
              << Entity.getType()->isReferenceType() << DRE->getDecl()
              << isa<ParmVarDecl>(DRE->getDecl()) << DiagRange;

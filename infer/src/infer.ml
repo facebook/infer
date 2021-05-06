@@ -193,28 +193,39 @@ let () =
         CostIssuesTest.write_from_json ~json_path:Config.from_json_costs_report ~out_path
           CostIssuesTestField.all_fields
       in
-      match (Config.issues_tests, Config.cost_issues_tests) with
-      | None, None ->
+      let write_from_config_impact_json out_path =
+        ConfigImpactIssuesTest.write_from_json ~json_path:Config.from_json_config_impact_report
+          ~out_path
+      in
+      match (Config.issues_tests, Config.cost_issues_tests, Config.config_impact_issues_tests) with
+      | None, None, None ->
           if not Config.quiet then L.result "%t" Summary.OnDisk.pp_specs_from_config
-      | Some out_path, Some cost_out_path ->
-          write_from_json out_path ;
-          write_from_cost_json cost_out_path
-      | None, Some cost_out_path ->
-          write_from_cost_json cost_out_path
-      | Some out_path, None ->
-          write_from_json out_path )
+      | out_path, cost_out_path, config_impact_out_path ->
+          Option.iter out_path ~f:write_from_json ;
+          Option.iter cost_out_path ~f:write_from_cost_json ;
+          Option.iter config_impact_out_path ~f:write_from_config_impact_json )
   | ReportDiff ->
       (* at least one report must be passed in input to compute differential *)
-      ( match Config.(report_current, report_previous, costs_current, costs_previous) with
-      | None, None, None, None ->
+      ( match
+          Config.
+            ( report_current
+            , report_previous
+            , costs_current
+            , costs_previous
+            , config_impact_current
+            , config_impact_previous )
+        with
+      | None, None, None, None, None, None ->
           L.die UserError
             "Expected at least one argument among '--report-current', '--report-previous', \
-             '--costs-current', and '--costs-previous'"
+             '--costs-current', '--costs-previous', '--config-impact-current', and \
+             '--config-impact-previous'\n"
       | _ ->
           () ) ;
       ReportDiff.reportdiff ~current_report:Config.report_current
         ~previous_report:Config.report_previous ~current_costs:Config.costs_current
-        ~previous_costs:Config.costs_previous
+        ~previous_costs:Config.costs_previous ~current_config_impact:Config.config_impact_current
+        ~previous_config_impact:Config.config_impact_previous
   | Debug when not Config.(global_tenv || procedures || source_files) ->
       L.die UserError
         "Expected at least one of '--procedures', '--source_files', or '--global-tenv'"

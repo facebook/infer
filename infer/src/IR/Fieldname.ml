@@ -15,6 +15,8 @@ type t = Typ.Name.t t_ [@@deriving compare, equal, yojson_of]
 
 let loose_compare = compare_t_ Typ.Name.loose_compare
 
+let compare_name = compare_t_ Typ.Name.compare_name
+
 let make class_name field_name = {class_name; field_name}
 
 let get_class_name {class_name} = class_name

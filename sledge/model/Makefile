@@ -7,23 +7,22 @@
 OPT_ARGS?=-Os
 CLANG_ARGS?=-g $(OPT_ARGS)
 
-# select llvm and clang
-SWITCH?=$(shell opam switch show)
 ROOT?=..
-LLVM=$(ROOT)/.llvm_install/$(SWITCH)
+LIBCXXABI=$(ROOT)/vendor/llvm-dune/llvm-project/libcxxabi
 
-LIBCXXABI=$(ROOT)/llvm/projects/libcxxabi
+llvm-config=$(shell opam config var conf-llvm:config)
+LLVM_BIN=$(shell ${llvm-config} --bindir)
+LLVM_INCLUDE=$(shell ${llvm-config} --includedir)
+LLVM_CFLAGS=$(shell ${llvm-config} --cflags)
+LLVM_CXXFLAGS=$(shell ${llvm-config} --cxxflags)
 
-PLATFORM=$(shell uname)
-ifeq ($(PLATFORM),Linux)
-CLANG_ARGS += --sysroot=/usr
-endif
+default: cxxabi.bc lib_fuzzer_main.bc
 
 cxxabi.bc : cxxabi.cpp
-	$(LLVM)/bin/clang $(CLANG_ARGS) -D_LIBCXXABI_HAS_NO_THREADS -I$(LLVM)/include/c++/v1 -I$(LIBCXXABI)/include -I$(LIBCXXABI)/src -c -emit-llvm cxxabi.cpp
+	$(LLVM_BIN)/clang $(LLVM_CXXFLAGS) $(CLANG_ARGS) -D_LIBCXXABI_HAS_NO_THREADS -I$(LIBCXXABI)/include -I$(LIBCXXABI)/src -c -emit-llvm cxxabi.cpp
 
 lib_fuzzer_main.bc : lib_fuzzer_main.c
-	$(LLVM)/bin/clang $(CLANG_ARGS) -c -emit-llvm -o $@ $<
+	$(LLVM_BIN)/clang $(LLVM_CFLAGS) $(CLANG_ARGS) -c -emit-llvm -o $@ $<
 
 clean:
 	rm -f cxxabi.bc lib_fuzzer_main.bc

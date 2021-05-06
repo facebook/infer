@@ -59,8 +59,8 @@ let make sources =
 
 
 let if_restart_scheduler f =
-  if Int.equal Config.jobs 1 then ()
-  else match Config.scheduler with File | SyntacticCallGraph -> () | Restart -> f ()
+  if not (Int.equal Config.jobs 1) then
+    match Config.scheduler with File | SyntacticCallGraph -> () | Restart -> f ()
 
 
 type locked_proc =

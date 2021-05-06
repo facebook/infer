@@ -40,7 +40,7 @@ OPTIONS
            Activates: Debug mode (also sets --debug-level 2,
            --developer-mode, --print-buckets, --print-types,
            --reports-include-ml-loc, --no-only-cheap-debug, --trace-error,
-           --write-dotty, --write-html) (Conversely: --no-debug | -G)
+           --write-html) (Conversely: --no-debug | -G)
 
        --debug-level level
            Debug level (sets --bo-debug level, --debug-level-analysis level,
@@ -74,7 +74,7 @@ OPTIONS
            Proceed as if the first argument after -- was command. Possible
            values: ant, buck, gradle, gradlew, java, javac, cc, clang, gcc,
            clang++, c++, g++, make, configure, cmake, waf, mvn, mvnw,
-           ndk-build, xcodebuild.
+           ndk-build, rebar3, xcodebuild.
 
        --help
            Show this manual
@@ -117,10 +117,6 @@ OPTIONS
        --report-force-relative-path
            Activates: Force converting an absolute path to a relative path to
            the root directory (Conversely: --no-report-force-relative-path)
-
-       --report-immutable-modifications
-           Activates: Report modifications to immutable fields (Conversely:
-           --no-report-immutable-modifications)
 
        --report-suppress-errors +error_name
            do not report a type of errors

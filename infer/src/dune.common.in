@@ -15,6 +15,8 @@ let clang = is_yes "@BUILD_C_ANALYZERS@"
 
 let java = is_yes "@BUILD_JAVA_ANALYZERS@"
 
+let erlang = is_yes "@BUILD_ERLANG_ANALYZERS@"
+
 let facebook = is_yes "@IS_FACEBOOK_TREE@"
 
 let extra_cflags = if is_empty "@EXTRA_CFLAGS@" then [] else ["@EXTRA_CFLAGS@"]

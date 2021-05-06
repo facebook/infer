@@ -34,9 +34,16 @@ val and_eq_int : AbstractValue.t -> IntLit.t -> t -> t * new_eqs
 
 val and_eq_vars : AbstractValue.t -> AbstractValue.t -> t -> t * new_eqs
 
-val simplify : keep:AbstractValue.Set.t -> t -> (t * new_eqs) SatUnsat.t
-(** [simplify ~keep phi] attempts to get rid of as many variables in [fv phi] but not in [keep] as
-    possible *)
+val simplify :
+     Tenv.t
+  -> can_be_pruned:AbstractValue.Set.t
+  -> keep:AbstractValue.Set.t
+  -> get_dynamic_type:(AbstractValue.t -> Typ.t option)
+  -> t
+  -> (t * new_eqs) SatUnsat.t
+(** [simplify ~can_be_pruned ~keep phi] attempts to get rid of as many variables in [fv phi] but not
+    in [keep] as possible, and tries to eliminate variables not in [can_be_pruned] from the "pruned"
+    part of the formula *)
 
 val and_callee :
      (AbstractValue.t * ValueHistory.t) AbstractValue.Map.t
@@ -57,6 +64,8 @@ val eval_unop : AbstractValue.t -> Unop.t -> AbstractValue.t -> t -> t * new_eqs
 
 val prune_binop : negated:bool -> Binop.t -> operand -> operand -> t -> t * new_eqs
 
+val and_eq_instanceof : AbstractValue.t -> AbstractValue.t -> Typ.t -> t -> t * new_eqs
+
 (** {2 Queries} *)
 
 val is_known_zero : t -> AbstractValue.t -> bool
@@ -71,13 +80,9 @@ val is_known_not_equal_zero : t -> AbstractValue.t -> bool
 val is_unsat_cheap : t -> bool
 (** whether the state contains a contradiction, call this as often as you want *)
 
-val is_unsat_expensive : t -> t * bool * new_eqs
-  [@@warning "-32"]
+val is_unsat_expensive :
+  Tenv.t -> get_dynamic_type:(AbstractValue.t -> Typ.t option) -> t -> t * bool * new_eqs
 (** whether the state contains a contradiction, only call this when you absolutely have to *)
-
-val as_int : t -> AbstractValue.t -> int option
-(** [as_int phi t] returns an integer x such that [phi |- t = x], if known for sure; see also
-    [is_known_zero] *)
 
 val has_no_assumptions : t -> bool
 (** whether the current path is independent of any calling context *)

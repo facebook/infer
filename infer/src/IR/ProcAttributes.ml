@@ -10,6 +10,22 @@
 open! IStd
 module F = Format
 
+(** Visibility modifiers. *)
+type access = Default | Public | Private | Protected [@@deriving compare]
+
+let equal_access = [%compare.equal: access]
+
+let string_of_access = function
+  | Default ->
+      "Default"
+  | Public ->
+      "Public"
+  | Private ->
+      "Private"
+  | Protected ->
+      "Protected"
+
+
 (** Type for ObjC accessors *)
 type objc_accessor_type = Objc_getter of Struct.field | Objc_setter of Struct.field
 [@@deriving compare]
@@ -44,7 +60,7 @@ type specialized_with_blocks_info =
 [@@deriving compare]
 
 type t =
-  { access: PredSymb.access  (** visibility access *)
+  { access: access  (** visibility access *)
   ; captured: CapturedVar.t list  (** name and type of variables captured in blocks *)
   ; exceptions: string list  (** exceptions thrown by the procedure *)
   ; formals: (Mangled.t * Typ.t) list  (** name and type of formal parameters *)
@@ -76,7 +92,10 @@ type t =
   ; objc_accessor: objc_accessor_type option  (** type of ObjC accessor, if any *)
   ; proc_name: Procname.t  (** name of the procedure *)
   ; ret_type: Typ.t  (** return type *)
-  ; has_added_return_param: bool  (** whether or not a return param was added *) }
+  ; has_added_return_param: bool  (** whether or not a return param was added *)
+  ; is_ret_type_pod: bool  (** whether or not the return type is POD *)
+  ; is_ret_constexpr: bool  (** whether the (C++) function or method is declared as [constexpr] *)
+  }
 
 let get_annotated_formals {method_annotation= {params}; formals} =
   let rec zip_params ial parl =
@@ -102,17 +121,12 @@ let get_access attributes = attributes.access
 
 let get_formals attributes = attributes.formals
 
-let get_pvar_formals attributes =
-  let pname = attributes.proc_name in
-  List.map attributes.formals ~f:(fun (name, typ) -> (Pvar.mk name pname, typ))
-
-
 let get_proc_name attributes = attributes.proc_name
 
 let get_loc attributes = attributes.loc
 
 let default translation_unit proc_name =
-  { access= PredSymb.Default
+  { access= Default
   ; captured= []
   ; exceptions= []
   ; formals= []
@@ -139,7 +153,9 @@ let default translation_unit proc_name =
   ; method_annotation= Annot.Method.empty
   ; objc_accessor= None
   ; proc_name
-  ; ret_type= StdTyp.void }
+  ; ret_type= StdTyp.void
+  ; is_ret_type_pod= true
+  ; is_ret_constexpr= false }
 
 
 let pp_parameters =
@@ -186,15 +202,17 @@ let pp f
      ; method_annotation
      ; objc_accessor
      ; proc_name
-     ; ret_type }[@warning "+9"]) =
+     ; ret_type
+     ; is_ret_type_pod
+     ; is_ret_constexpr }[@warning "+9"]) =
   let default = default translation_unit proc_name in
   let pp_bool_default ~default title b f () =
     if not (Bool.equal default b) then F.fprintf f "; %s= %b@," title b
   in
   F.fprintf f "@[<v>{ proc_name= %a@,; translation_unit= %a@," Procname.pp proc_name SourceFile.pp
     translation_unit ;
-  if not (PredSymb.equal_access default.access access) then
-    F.fprintf f "; access= %a@," (Pp.of_string ~f:PredSymb.string_of_access) access ;
+  if not (equal_access default.access access) then
+    F.fprintf f "; access= %a@," (Pp.of_string ~f:string_of_access) access ;
   if not ([%compare.equal: CapturedVar.t list] default.captured captured) then
     F.fprintf f "; captured= [@[%a@]]@," pp_captured captured ;
   if not ([%compare.equal: string list] default.exceptions exceptions) then
@@ -254,6 +272,8 @@ let pp f
     F.fprintf f "; objc_accessor= %a@," (Pp.option pp_objc_accessor_type) objc_accessor ;
   (* always print ret type *)
   F.fprintf f "; ret_type= %a @," (Typ.pp_full Pp.text) ret_type ;
+  pp_bool_default ~default:default.is_ret_type_pod "is_ret_type_pod" is_ret_type_pod f () ;
+  pp_bool_default ~default:default.is_ret_constexpr "is_ret_constexpr" is_ret_constexpr f () ;
   F.fprintf f "; proc_id= %a }@]" Procname.pp_unique_id proc_name
 
 

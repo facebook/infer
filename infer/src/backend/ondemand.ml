@@ -68,10 +68,7 @@ let should_be_analyzed proc_attributes =
   (not (is_active proc_name)) (* avoid infinite loops *) && not (already_analyzed proc_name)
 
 
-let get_proc_attr proc_name =
-  IList.force_until_first_some
-    [lazy (Summary.OnDisk.proc_resolve_attributes proc_name); lazy (Topl.get_proc_attr proc_name)]
-
+let get_proc_attr proc_name = Summary.OnDisk.proc_resolve_attributes proc_name
 
 let procedure_should_be_analyzed proc_name =
   match get_proc_attr proc_name with
@@ -92,7 +89,8 @@ type global_state =
         (** the time elapsed doing [status] so far *)
   ; pulse_address_generator: PulseAbstractValue.State.t
   ; absint_state: AnalysisState.t
-  ; biabduction_state: State.t }
+  ; biabduction_state: State.t
+  ; taskbar_nesting: int }
 
 let save_global_state () =
   Timeout.suspend_existing_timeout ~keep_symop_total:false ;
@@ -108,7 +106,8 @@ let save_global_state () =
           (Mtime.span t0 (Mtime_clock.now ()), status) )
   ; pulse_address_generator= PulseAbstractValue.State.get ()
   ; absint_state= AnalysisState.save ()
-  ; biabduction_state= State.save_state () }
+  ; biabduction_state= State.save_state ()
+  ; taskbar_nesting= !nesting }
 
 
 let restore_global_state st =
@@ -129,7 +128,8 @@ let restore_global_state st =
         let new_t0 = Option.value_exn new_t0 in
         !ProcessPoolState.update_status new_t0 status ;
         (new_t0, status) ) ;
-  Timeout.resume_previous_timeout ()
+  Timeout.resume_previous_timeout () ;
+  nesting := st.taskbar_nesting
 
 
 (** reference to log errors only at the innermost recursive call *)
@@ -300,8 +300,7 @@ let register_callee ?caller_summary callee_pname =
 let get_proc_desc callee_pname =
   IList.force_until_first_some
     [ lazy (Procdesc.load callee_pname)
-    ; lazy (Option.map ~f:Summary.get_proc_desc (Summary.OnDisk.get callee_pname))
-    ; lazy (Topl.get_proc_desc callee_pname) ]
+    ; lazy (Option.map ~f:Summary.get_proc_desc (Summary.OnDisk.get callee_pname)) ]
 
 
 let analyze_callee exe_env ?caller_summary callee_pname =

@@ -148,7 +148,8 @@ void emplace(folly::Optional<State> state) {
   auto pos = state->vec.begin();
 }
 
-void operator_arrow_bad() { emplace(folly::none); }
+/* There is a bug in the frontend T89443328 */
+void operator_arrow_bad_FN() { emplace(folly::none); }
 
 void get_pointer_check_none_check_ok() {
   folly::Optional<int> foo{folly::none};
@@ -184,9 +185,7 @@ int value_or_check_empty_ok() {
   return -1;
 }
 
-// missing a more precise model for
-// constructing an optional from a value
-int value_or_check_value_ok_FP() {
+int FP_value_or_check_value_ok() {
   folly::Optional<int> foo{5};
   int x = foo.value_or(0);
   if (x != 5) {
@@ -295,7 +294,7 @@ void std_emplace(std::optional<State> state) {
   auto pos = state->vec.begin();
 }
 
-void std_operator_arrow_bad() { std_emplace(std::nullopt); }
+void FN_std_operator_arrow_bad() { std_emplace(std::nullopt); }
 
 int std_value_or_check_empty_ok() {
   std::optional<int> foo{std::nullopt};
@@ -305,7 +304,7 @@ int std_value_or_check_empty_ok() {
   return -1;
 }
 
-int std_value_or_check_value_ok_FP() {
+int FP_std_value_or_check_value_ok() {
   std::optional<int> foo{5};
   int x = foo.value_or(0);
   if (x != 5) {
@@ -372,7 +371,7 @@ E getEnum() {
   return E::OP2;
 }
 
-std::optional<std::string> cannot_be_empty_FP() {
+std::optional<std::string> cannot_be_empty() {
   if (getEnum() == E::OP1) {
     return getOptionalValue().value();
   }
@@ -399,7 +398,7 @@ struct Node {
   }
 };
 
-int smart_pointer_FP(const Node& node) {
+int FP_smart_pointer(const Node& node) {
   if (node.getShared().has_value()) {
     return *(node.getShared().value());
   }

@@ -16,4 +16,4 @@ Supported languages:
 ## List of Issue Types
 
 The following issue types are reported by this checker:
-- [DEAD_STORE](/docs/all-issue-types#dead_store)
+- [DEAD_STORE](/docs/1.0.0/all-issue-types#dead_store)

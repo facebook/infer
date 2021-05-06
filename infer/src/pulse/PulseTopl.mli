@@ -23,7 +23,7 @@ val small_step : Location.t -> PulsePathCondition.t -> event -> state -> state
 val large_step :
      call_location:Location.t
   -> callee_proc_name:Procname.t
-  -> substitution:(PulseAbstractValue.t * PulseValueHistory.t) PulseAbstractValue.Map.t
+  -> substitution:(value * PulseValueHistory.t) PulseAbstractValue.Map.t
   -> condition:PulsePathCondition.t
   -> callee_prepost:state
   -> state

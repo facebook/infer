@@ -20,38 +20,62 @@ dune_install_trace = $(subst release,trace,$(dune_install_release))
 dune_build_debug = $(subst release,debug,$(dune_build_release))
 dune_install_debug = $(subst release,debug,$(dune_install_release))
 
+export PATH := ../facebook/dependencies/bin:$(PATH)
+
+LLVM_OCAML_SRC = $(shell git ls-files -- vendor/llvm-dune)
+
+# file to use as a sentinel indicating llvm ocaml bindings are up-to-date
+LLVM_OCAML_SENTINEL=vendor/llvm-dune/src/llvm/common/dune
+
+# Note that this does not correctly detect llvm shared libraries on
+# macos since llvm-config is broken. A filthy workaround seems to be
+# to create the libLLVM-11.dylib file llvm-config looks for as a
+# symbolic link to libLLVM.dylib. That is, to manually in the shell
+# execute:
+# (LLVMLIB=$($(opam config var conf-llvm:config) --libdir);
+#  ln -s $LLVMLIB/libLLVM.dylib $LLVMLIB/libLLVM-11.dylib)
+
+$(LLVM_OCAML_SENTINEL): $(LLVM_OCAML_SRC)
+	cd vendor/llvm-dune; ./setup.sh $$(opam config var conf-llvm:config) &>/dev/null
+
+clean_llvm:
+	rm -rf vendor/llvm-dune/{src,llvm_*.opam}
+
+.PHONY: setup
+setup: $(LLVM_OCAML_SENTINEL)
+
 .PHONY: check
-check:
+check: setup
 	dune build @check
 
 .PHONY: exes
-exes:
+exes: setup
 	dune build $(TARGETS)
 	$(dune_install_debug)
 	$(dune_install_trace)
 	$(dune_install_release)
 
 .PHONY: debug
-debug:
+debug: setup
 	$(dune_build_debug)
 	$(dune_install_debug)
 
 .PHONY: trace
-trace:
+trace: setup
 	$(dune_build_trace)
 	$(dune_install_trace)
 
 .PHONY: release
-release:
+release: setup
 	$(dune_build_release)
 	$(dune_install_release)
 
 .PHONY: report
-report:
+report: setup
 	dune build $(REPORT_TARGETS)
 
 .PHONY: watch
-watch:
+watch: setup
 	dune build --watch --terminal-persistence=clear-on-rebuild $(TARGETS)
 
 .PHONY: test
@@ -61,7 +85,7 @@ test:
 
 .PHONY: ci-test
 ci-test:
-	dune build @_build/debug/runtest
+	dune build @_build/debug/fmt @_build/debug/runtest
 
 .PHONY: clean
 clean:

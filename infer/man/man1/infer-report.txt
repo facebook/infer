@@ -35,6 +35,17 @@ OPTIONS
            `<reason_string>` is a non-empty string used to explain why the
            issue was filtered.
 
+       --config-impact-data-file file
+           [ConfigImpact] Specify the file containing the config data
+
+       --config-impact-issues-tests file
+           Write a list of config impact issues in a format suitable for
+           config impact tests to file
+
+       --config-impact-max-callees-to-print int
+           Specify the maximum number of unchecked callees to print in the
+           config impact checker
+
        --cost-issues-tests file
            Write a list of cost issues in a format suitable for cost tests to
            file
@@ -47,7 +58,7 @@ OPTIONS
            Activates: Debug mode (also sets --debug-level 2,
            --developer-mode, --print-buckets, --print-types,
            --reports-include-ml-loc, --no-only-cheap-debug, --trace-error,
-           --write-dotty, --write-html) (Conversely: --no-debug | -G)
+           --write-html) (Conversely: --no-debug | -G)
 
        --debug-level level
            Debug level (sets --bo-debug level, --debug-level-analysis level,
@@ -189,6 +200,7 @@ OPTIONS
              INTEGER_OVERFLOW_U5 (disabled by default),
              INTERFACE_NOT_THREAD_SAFE (enabled by default),
              INVARIANT_CALL (disabled by default),
+             IPC_ON_UI_THREAD (enabled by default),
              IVAR_NOT_NULL_CHECKED (enabled by default),
              Internal_error (enabled by default),
              JAVASCRIPT_INJECTION (enabled by default),
@@ -206,9 +218,11 @@ OPTIONS
              MULTIPLE_WEAKSELF (enabled by default),
              MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE (enabled by default),
              Missing_fld (enabled by default),
+             NIL_INSERTION_INTO_COLLECTION (disabled by default),
+             NIL_MESSAGING_TO_NON_POD (disabled by default),
              NULLPTR_DEREFERENCE (enabled by default),
              NULL_DEREFERENCE (enabled by default),
-             OPTIONAL_EMPTY_ACCESS (disabled by default),
+             OPTIONAL_EMPTY_ACCESS (enabled by default),
              PARAMETER_NOT_NULL_CHECKED (enabled by default),
              POINTER_TO_CONST_OBJC_CLASS (enabled by default),
              PRECONDITION_NOT_FOUND (enabled by default),
@@ -233,8 +247,7 @@ OPTIONS
              Symexec_memory_error (enabled by default),
              THREAD_SAFETY_VIOLATION (enabled by default),
              THREAD_SAFETY_VIOLATION_NULLSAFE (enabled by default),
-             TOPL_BIABD_ERROR (enabled by default),
-             TOPL_PULSE_ERROR (enabled by default),
+             TOPL_ERROR (enabled by default),
              UNINITIALIZED_VALUE (enabled by default),
              UNREACHABLE_CODE (enabled by default),
              UNTRUSTED_BUFFER_ACCESS (disabled by default),
@@ -266,6 +279,9 @@ OPTIONS
        --no-filtering,-F
            Deactivates: Do not show the experimental and blacklisted issue
            types (Conversely: --filtering | -f)
+
+       --from-json-config-impact-report config-impact-report.json
+           Load costs analysis results from a config-impact-report file.
 
        --from-json-costs-report costs-report.json
            Load costs analysis results from a costs-report file.
@@ -320,10 +336,6 @@ OPTIONS
 
        --report-formatter { none | phabricator }
            Which formatter to use when emitting the report
-
-       --report-immutable-modifications
-           Activates: Report modifications to immutable fields (Conversely:
-           --no-report-immutable-modifications)
 
        --report-suppress-errors +error_name
            do not report a type of errors

@@ -22,6 +22,8 @@ module RevArray : sig
   val last_opt : 'a t -> 'a option
 
   val fold : ('a t, 'a, 'accum) Container.fold
+
+  val foldi : 'a t -> init:'accum -> f:(int -> 'accum -> 'a -> 'accum) -> 'accum
 end = struct
   type 'a t = 'a Array.t
 
@@ -38,6 +40,13 @@ end = struct
   let fold a ~init ~f =
     let f = Fn.flip f in
     Array.fold_right a ~init ~f
+
+
+  let foldi a ~init ~f =
+    let idx = ref (Array.length a) in
+    Array.fold_right a ~init ~f:(fun elt acc ->
+        decr idx ;
+        f !idx acc elt )
 end
 
 type reversed
@@ -166,6 +175,18 @@ let fold (type r) (t : r t) ~init ~f =
       Array.fold instrs ~init ~f
   | Reversed rev_instrs ->
       RevArray.fold rev_instrs ~init ~f
+
+
+let foldi (type r) (t : r t) ~init ~f =
+  match t with
+  | Empty ->
+      init
+  | Singleton instr ->
+      f 0 init instr
+  | NotReversed instrs ->
+      Array.foldi instrs ~init ~f
+  | Reversed rev_instrs ->
+      RevArray.foldi rev_instrs ~init ~f
 
 
 let iter t ~f = Container.iter ~fold t ~f

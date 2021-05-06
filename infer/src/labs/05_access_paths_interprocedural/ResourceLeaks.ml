@@ -46,7 +46,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   (** Take an abstract state and instruction, produce a new abstract state *)
   let exec_instr (astate : ResourceLeakDomain.t)
-      {InterproceduralAnalysis.proc_desc= _; tenv; analyze_dependency; _} _ (instr : HilInstr.t) =
+      {InterproceduralAnalysis.proc_desc= _; tenv; analyze_dependency; _} _ _ (instr : HilInstr.t) =
     match instr with
     | Call (_return, Direct callee_procname, HilExp.AccessExpression allocated :: _, _, _loc)
       when acquires_resource tenv callee_procname ->

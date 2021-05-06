@@ -84,7 +84,7 @@ in
 (search for "Liveness").
 
 you can then run `infer run --liveness-only -- <your_build_command>` to run your
-checker on real code. See [here](/docs/analyzing-apps-or-projects) for more
+checker on real code. See [here](/docs/1.0.0/analyzing-apps-or-projects) for more
 details on the build systems supported by Infer.
 
 Other examples of simple intraprocedural checkers are

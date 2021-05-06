@@ -1,6 +1,5 @@
-.llvm_build
-.llvm_install
-/llvm/
+/model/cxxabi.bc
+/model/lib_fuzzer_main.bc
 /test/**/*.bc
 /test/**/*.err
 /test/**/*.out
@@ -9,4 +8,7 @@
 /test/*.sexp
 /test/extra
 /test/local
+/vendor/llvm-dune/llvm-project/llvm/test
+/vendor/llvm-dune/llvm_*.opam
+/vendor/llvm-dune/src
 _build

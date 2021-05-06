@@ -535,7 +535,7 @@ module Dom = struct
 end
 
 module TransferFunctions = struct
-  module CFG = ProcCfg.NormalOneInstrPerNode
+  module CFG = ProcCfg.Normal
   module Domain = Dom
 
   type analysis_data = Summary.t InterproceduralAnalysis.t
@@ -577,7 +577,7 @@ module TransferFunctions = struct
 
 
   let exec_instr ({Dom.mem} as astate)
-      ({InterproceduralAnalysis.tenv; analyze_dependency} as analysis_data) _node instr =
+      ({InterproceduralAnalysis.tenv; analyze_dependency} as analysis_data) _node _ instr =
     match (instr : Sil.instr) with
     | Load {id; e= Lvar pvar} ->
         Dom.load_config id pvar astate

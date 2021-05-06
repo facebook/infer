@@ -195,7 +195,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         astate
 
 
-  let exec_instr astate ({interproc= {proc_desc; tenv}; formals} as analysis_data) _ instr =
+  let exec_instr astate ({interproc= {proc_desc; tenv}; formals} as analysis_data) _ _ instr =
     match (instr : HilInstr.t) with
     | Call (ret_base, Direct callee_pname, actuals, call_flags, loc) ->
         let astate = Domain.add_reads_of_hilexps tenv formals actuals loc astate in

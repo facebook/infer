@@ -5,7 +5,7 @@
 
 TESTS_DIR = ../../..
 
-INFER_OPTIONS = --resource-leak-only --debug-exceptions
+INFER_OPTIONS = --resource-leak-lab-only --debug-exceptions
 INFERPRINT_OPTIONS = --issues-tests
 SOURCES = $(wildcard *.java)
 

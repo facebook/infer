@@ -93,7 +93,7 @@ val is_syntactically_global_var : Clang_ast_t.decl -> bool
 val is_static_local_var : Clang_ast_t.decl -> bool
 (** true if a declaration is a static local variable *)
 
-val is_const_expr_var : Clang_ast_t.decl -> bool
+val is_constexpr_var : Clang_ast_t.decl -> bool
 (** true if a declaration is a constexpr variable *)
 
 val generate_key_stmt : Clang_ast_t.stmt -> string

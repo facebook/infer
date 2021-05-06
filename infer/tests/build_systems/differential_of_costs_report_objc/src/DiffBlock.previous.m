@@ -46,6 +46,15 @@
   }
 }
 
+- (void)existing_block_here:(NSInteger*)n
+                      array:(NSArray*)array
+                       call:(CallBlocks*)call {
+  [call take_two_blocks:n
+                 block1:^(NSInteger* n) {
+                 }
+                 block2:^(NSInteger* n){
+                 }];
+}
 @end
 
 int main() { return 0; }

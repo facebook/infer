@@ -639,7 +639,7 @@ let impure_function =
 
 
 let inefficient_keyset_iterator =
-  register ~id:"INEFFICIENT_KEYSET_ITERATOR" Error InefficientKeysetIterator
+  register ~id:"INEFFICIENT_KEYSET_ITERATOR" Warning InefficientKeysetIterator
     ~user_documentation:[%blob "../../documentation/issues/INEFFICIENT_KEYSET_ITERATOR.md"]
 
 
@@ -708,6 +708,11 @@ let internal_error = register_hidden ~id:"Internal_error" Error Biabduction
 let invariant_call =
   register ~enabled:false ~id:"INVARIANT_CALL" Error LoopHoisting
     ~user_documentation:[%blob "../../documentation/issues/INVARIANT_CALL.md"]
+
+
+let ipc_on_ui_thread =
+  register Warning ~id:"IPC_ON_UI_THREAD" Starvation
+    ~user_documentation:"A blocking `Binder` IPC call occurs on the UI thread."
 
 
 let javascript_injection =
@@ -784,18 +789,30 @@ let mutable_local_variable_in_component_file =
       [%blob "../../documentation/issues/MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE.md"]
 
 
+let nil_insertion_into_collection =
+  register ~enabled:false ~id:"NIL_INSERTION_INTO_COLLECTION" Error Pulse
+    ~user_documentation:"Inserting nil into a collection is an error in Objective-C."
+
+
+let nil_messaging_to_non_pod =
+  register ~enabled:false ~id:"NIL_MESSAGING_TO_NON_POD" Error Pulse
+    ~user_documentation:
+      "Calling a method that returns a C++ non-POD object on the nil object is undefined behavior \
+       in Objective-C++."
+
+
 let null_dereference =
   register ~id:"NULL_DEREFERENCE" Error Biabduction
-    ~user_documentation:[%blob "../../documentation/issues/NULL_DEREFERENCE.md"]
+    ~user_documentation:"See [NULLPTR_DEREFERENCE](#nullptr_dereference)."
 
 
 let nullptr_dereference =
   register ~id:"NULLPTR_DEREFERENCE" Error Pulse
-    ~user_documentation:"See [NULL_DEREFERENCE](#null_dereference)."
+    ~user_documentation:[%blob "../../documentation/issues/NULLPTR_DEREFERENCE.md"]
 
 
 let optional_empty_access =
-  register ~enabled:false ~id:"OPTIONAL_EMPTY_ACCESS" Error Pulse
+  register ~id:"OPTIONAL_EMPTY_ACCESS" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/OPTIONAL_EMPTY_ACCESS.md"]
 
 
@@ -908,19 +925,17 @@ let thread_safety_violation =
 let thread_safety_violation_nullsafe =
   register Warning ~id:"THREAD_SAFETY_VIOLATION_NULLSAFE" RacerD
     ~hum:"Thread Safety Violation in `@Nullsafe` Class"
-    ~user_documentation:[%blob "../../documentation/issues/THREAD_SAFETY_VIOLATION.md"]
+    ~user_documentation:
+      "A [Thread Safety Violation](#thread_safety_violation) in a `@Nullsafe` class."
 
 
 let complexity_increase ~kind ~is_on_ui_thread =
   register_cost ~kind ~is_on_ui_thread "%s_COMPLEXITY_INCREASE"
 
 
-let topl_biabd_error =
-  register ~id:"TOPL_BIABD_ERROR" Error ToplOnBiabduction ~user_documentation:"Experimental."
-
-
-let topl_pulse_error =
-  register ~id:"TOPL_PULSE_ERROR" Error ToplOnPulse ~user_documentation:"Experimental."
+let topl_error =
+  register ~id:"TOPL_ERROR" Error Topl
+    ~user_documentation:"A violation of a Topl property (user-specified)."
 
 
 let uninitialized_value =
@@ -929,8 +944,9 @@ let uninitialized_value =
 
 
 let uninitialized_value_pulse =
-  register ~enabled:false ~id:"PULSE_UNINITIALIZED_VALUE" Error Pulse ~hum:"Unitialized Value"
-    ~user_documentation:"See [UNITIALIZED_VALUE](#uninitialized_value). Re-implemented using Pulse."
+  register ~enabled:false ~id:"PULSE_UNINITIALIZED_VALUE" Error Pulse ~hum:"Uninitialized Value"
+    ~user_documentation:
+      "See [UNINITIALIZED_VALUE](#uninitialized_value). Re-implemented using Pulse."
 
 
 let unreachable_code_after =
@@ -1046,3 +1062,10 @@ let is_autoreleasepool_size_issue =
           add_autoreleasepool_size_issue ~kind (expensive_cost_call ~kind) ;
           add_autoreleasepool_size_issue ~kind (complexity_increase ~kind ~is_on_ui_thread) ) ) ;
   fun issue_type -> IssueSet.mem issue_type !autoreleasepool_size_issues
+
+
+module Map = PrettyPrintable.MakePPMap (struct
+  type nonrec t = t [@@deriving compare]
+
+  let pp = pp
+end)

@@ -23,6 +23,8 @@ let compare = Graph.compare AttributesNoRank.compare
 
 let equal = Graph.equal AttributesNoRank.equal
 
+let for_all = Graph.for_all
+
 let yojson_of_t = [%yojson_of: _]
 
 let add_one addr attribute attrs =
@@ -76,8 +78,6 @@ let allocate procname (address, history) location memory =
   add_one address (Attribute.Allocated (procname, Immediate {location; history})) memory
 
 
-let add_dynamic_type typ address memory = add_one address (Attribute.DynamicType typ) memory
-
 let mark_as_end_of_collection address memory = add_one address Attribute.EndOfCollection memory
 
 let check_valid address attrs =
@@ -118,8 +118,8 @@ let remove_isl_abduced_attr address memory =
 
 let remove_must_be_valid_attr address memory =
   match get_attribute Attributes.get_must_be_valid address memory with
-  | Some trace ->
-      remove_one address (Attribute.MustBeValid trace) memory
+  | Some (trace, reason) ->
+      remove_one address (Attribute.MustBeValid (trace, reason)) memory
   | None ->
       memory
 
@@ -138,17 +138,21 @@ let get_must_be_valid = get_attribute Attributes.get_must_be_valid
 
 let get_must_be_valid_or_allocated_isl address attrs =
   match get_must_be_valid address attrs with
-  | Some trace ->
-      Some trace
+  | Some (trace, reason) ->
+      (Some trace, reason)
   | None -> (
     match get_attribute Attributes.get_allocation address attrs with
     | Some (_, trace) ->
-        Some trace
+        (Some trace, None)
     | None ->
-        get_attribute Attributes.get_isl_abduced address attrs )
+        (get_attribute Attributes.get_isl_abduced address attrs, None) )
 
 
 let get_must_be_initialized = get_attribute Attributes.get_must_be_initialized
+
+let add_dynamic_type typ address memory = add_one address (Attribute.DynamicType typ) memory
+
+let get_dynamic_type attrs v = get_attribute Attributes.get_dynamic_type v attrs
 
 let std_vector_reserve address memory = add_one address Attribute.StdVectorReserve memory
 
@@ -170,7 +174,15 @@ let canonicalize ~get_var_repr attrs_map =
       if Attributes.is_empty attrs then g
       else
         let addr' = get_var_repr addr in
-        add addr' attrs g )
+        let attrs' =
+          Graph.find_opt addr' g
+          |> Option.fold ~init:attrs ~f:(fun attrs attrs' ->
+                 (* "merge" attributes if two different values ([addr] and [addr']) are found to be
+                    equal after attributes of the same kind were recorded for them. This arbitrarily
+                    keeps one of them, with unclear but likely benign consequences. *)
+                 Attributes.union_prefer_left attrs' attrs )
+        in
+        add addr' attrs' g )
     attrs_map Graph.empty
 
 

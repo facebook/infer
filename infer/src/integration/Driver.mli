@@ -25,6 +25,7 @@ type mode =
   | Javac of {compiler: Javac.compiler; prog: string; args: string list}
   | Maven of {prog: string; args: string list}
   | NdkBuild of {build_cmd: string list}
+  | Rebar3 of {args: string list}
   | XcodeBuild of {prog: string; args: string list}
   | XcodeXcpretty of {prog: string; args: string list}
 

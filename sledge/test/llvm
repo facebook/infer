@@ -1,1 +1,1 @@
-../llvm/test
+../vendor/llvm-dune/llvm-project/llvm/test

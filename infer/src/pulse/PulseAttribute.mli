@@ -16,12 +16,12 @@ type t =
   | Allocated of Procname.t * Trace.t
       (** the {!Procname.t} is the function causing the allocation, eg [malloc] *)
   | Closure of Procname.t
-  | DynamicType of Typ.Name.t
+  | DynamicType of Typ.t
   | EndOfCollection
   | Invalid of Invalidation.t * Trace.t
   | ISLAbduced of Trace.t  (** The allocation is abduced so as the analysis could run normally *)
   | MustBeInitialized of Trace.t
-  | MustBeValid of Trace.t
+  | MustBeValid of Trace.t * Invalidation.must_be_valid_reason option
   | StdVectorReserve
   | Uninitialized
   | WrittenTo of Trace.t
@@ -45,7 +45,7 @@ module Attributes : sig
 
   val get_allocation : t -> (Procname.t * Trace.t) option
 
-  val get_dynamic_type : t -> Typ.Name.t option
+  val get_dynamic_type : t -> Typ.t option
 
   val is_end_of_collection : t -> bool
 
@@ -53,7 +53,7 @@ module Attributes : sig
 
   val get_isl_abduced : t -> Trace.t option
 
-  val get_must_be_valid : t -> Trace.t option
+  val get_must_be_valid : t -> (Trace.t * Invalidation.must_be_valid_reason option) option
 
   val get_written_to : t -> Trace.t option
 

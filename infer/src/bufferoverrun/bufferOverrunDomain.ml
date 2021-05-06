@@ -549,104 +549,110 @@ module Val = struct
       let traces = traces_of_loc (Loc.of_path deref_path) in
       of_c_array_alloc allocsite ~stride:None ~offset ~size ~traces
     in
+    let ptr_to_normal_c_array elt =
+      let deref_kind = SPath.Deref_CPointer in
+      let deref_path = SPath.deref ~deref_kind path in
+      let l = Loc.of_path deref_path in
+      let traces = traces_of_loc l in
+      let arrayblk =
+        let allocsite = Allocsite.make_symbol deref_path in
+        let stride =
+          match elt with
+          | Some {Typ.desc= Tint ikind} ->
+              Itv.of_int (Typ.width_of_ikind integer_type_widths ikind)
+          | _ ->
+              Itv.nat
+        in
+        let is_void = Typ.is_pointer_to_void typ in
+        let offset =
+          if SPath.is_cpp_vector_elem path then Itv.zero else Itv.of_offset_path ~is_void path
+        in
+        let size = Itv.of_length_path ~is_void path in
+        ArrayBlk.make_c allocsite ~stride ~offset ~size
+      in
+      {bot with arrayblk; traces}
+    in
     let is_java = Language.curr_language_is Java in
     L.d_printfln_escaped "Val.of_path %a : %a%s%s" SPath.pp_partial path (Typ.pp Pp.text) typ
       (if may_last_field then ", may_last_field" else "")
       (if is_java then ", is_java" else "") ;
-    match typ.Typ.desc with
-    | Tint (IBool | IChar | ISChar | IUChar | IUShort) ->
-        let v = itv_val ~non_int:is_java in
-        if is_java then set_itv_updated_by_unknown v else set_itv_updated_by_addition v
-    | Tfloat _ | Tfun | TVar _ ->
-        itv_val ~non_int:true |> set_itv_updated_by_unknown
-    | Tint _ | Tvoid ->
-        itv_val ~non_int:false |> set_itv_updated_by_addition
-    | Tptr ({desc= Tfun}, _) ->
-        of_func_ptrs (FuncPtr.Set.of_path path)
-    | Tptr ({desc= Tstruct name}, _)
-      when PatternMatch.is_subtype tenv name StdTyp.Name.Objc.ns_enumerator ->
-        (* NOTE: It generates a value of NSEnumerator specifically.  Especially, it assigns zero to
-           the offset, rather than a symbol, to avoid precision loss by limited handling of symbolic
-           values in the domain.  Although this is an unsound design choice, we expect it should not
-           that harmful for calculating WCET. *)
-        let allocsite = SPath.deref ~deref_kind:Deref_CPointer path |> Allocsite.make_symbol in
-        let size = Itv.of_length_path ~is_void:false path in
-        {bot with arrayblk= ArrayBlk.make_c allocsite ~offset:Itv.zero ~size ~stride:Itv.one}
-    | Tptr (elt, _) ->
-        if is_java || SPath.is_this path then
-          let deref_kind =
-            if is_java then SPath.Deref_JavaPointer else SPath.Deref_COneValuePointer
-          in
-          let deref_path = SPath.deref ~deref_kind path in
-          let l = Loc.of_path deref_path in
-          let traces = traces_of_loc l in
-          {bot with powloc= PowLoc.singleton l; traces}
-        else
-          let deref_kind = SPath.Deref_CPointer in
-          let deref_path = SPath.deref ~deref_kind path in
-          let l = Loc.of_path deref_path in
-          let traces = traces_of_loc l in
-          let arrayblk =
+    match path with
+    | BoField.Field {fn; typ} when BufferOverrunField.is_cpp_vector_elem fn ->
+        ptr_to_normal_c_array typ
+    | _ -> (
+      match typ.Typ.desc with
+      | Tint (IBool | IChar | ISChar | IUChar | IUShort) ->
+          let v = itv_val ~non_int:is_java in
+          if is_java then set_itv_updated_by_unknown v else set_itv_updated_by_addition v
+      | Tfloat _ | Tfun | TVar _ ->
+          itv_val ~non_int:true |> set_itv_updated_by_unknown
+      | Tint _ | Tvoid ->
+          itv_val ~non_int:false |> set_itv_updated_by_addition
+      | Tptr ({desc= Tfun}, _) ->
+          of_func_ptrs (FuncPtr.Set.of_path path)
+      | Tptr ({desc= Tstruct name}, _)
+        when PatternMatch.is_subtype tenv name StdTyp.Name.Objc.ns_enumerator ->
+          (* NOTE: It generates a value of NSEnumerator specifically.  Especially, it assigns zero to
+             the offset, rather than a symbol, to avoid precision loss by limited handling of symbolic
+             values in the domain.  Although this is an unsound design choice, we expect it should not
+             that harmful for calculating WCET. *)
+          let allocsite = SPath.deref ~deref_kind:Deref_CPointer path |> Allocsite.make_symbol in
+          let size = Itv.of_length_path ~is_void:false path in
+          {bot with arrayblk= ArrayBlk.make_c allocsite ~offset:Itv.zero ~size ~stride:Itv.one}
+      | Tptr (elt, _) ->
+          if is_java || SPath.is_this path then
+            let deref_kind =
+              if is_java then SPath.Deref_JavaPointer else SPath.Deref_COneValuePointer
+            in
+            let deref_path = SPath.deref ~deref_kind path in
+            let l = Loc.of_path deref_path in
+            let traces = traces_of_loc l in
+            {bot with powloc= PowLoc.singleton l; traces}
+          else ptr_to_normal_c_array (Some elt)
+      | Tstruct typename -> (
+        match BufferOverrunTypModels.dispatch tenv typename with
+        | Some (CArray {deref_kind; length}) ->
+            let deref_path = SPath.deref ~deref_kind path in
+            let size = Itv.of_int_lit length in
+            ptr_to_c_array_alloc deref_path size
+        | Some CppStdVector ->
+            let l = Loc.of_path (SPath.deref ~deref_kind:Deref_CPointer path) in
+            let traces = traces_of_loc l in
+            of_loc ~traces l
+        | Some JavaCollection ->
+            let deref_path = SPath.deref ~deref_kind:Deref_ArrayIndex path in
+            let l = Loc.of_path deref_path in
+            let traces = traces_of_loc l in
             let allocsite = Allocsite.make_symbol deref_path in
-            let stride =
-              match elt.Typ.desc with
-              | Typ.Tint ikind ->
-                  Itv.of_int (Typ.width_of_ikind integer_type_widths ikind)
-              | _ ->
-                  Itv.nat
-            in
-            let offset =
-              if SPath.is_cpp_vector_elem path then Itv.zero
-              else Itv.of_offset_path ~is_void:(Typ.is_pointer_to_void typ) path
-            in
-            let size = Itv.of_length_path ~is_void:(Typ.is_pointer_to_void typ) path in
-            ArrayBlk.make_c allocsite ~stride ~offset ~size
-          in
-          {bot with arrayblk; traces}
-    | Tstruct typename -> (
-      match BufferOverrunTypModels.dispatch tenv typename with
-      | Some (CArray {deref_kind; length}) ->
-          let deref_path = SPath.deref ~deref_kind path in
-          let size = Itv.of_int_lit length in
-          ptr_to_c_array_alloc deref_path size
-      | Some CppStdVector ->
-          let l = Loc.of_path (SPath.deref ~deref_kind:Deref_CPointer path) in
-          let traces = traces_of_loc l in
-          of_loc ~traces l
-      | Some JavaCollection ->
+            let length = Itv.of_length_path ~is_void:false path in
+            of_java_array_alloc allocsite ~length ~traces
+        | Some JavaInteger ->
+            itv_val ~non_int:false
+        | None ->
+            let l = Loc.of_path path in
+            let traces = traces_of_loc l in
+            of_loc ~traces l )
+      | Tarray {length; stride} ->
           let deref_path = SPath.deref ~deref_kind:Deref_ArrayIndex path in
           let l = Loc.of_path deref_path in
           let traces = traces_of_loc l in
           let allocsite = Allocsite.make_symbol deref_path in
-          let length = Itv.of_length_path ~is_void:false path in
-          of_java_array_alloc allocsite ~length ~traces
-      | Some JavaInteger ->
-          itv_val ~non_int:false
-      | None ->
-          let l = Loc.of_path path in
-          let traces = traces_of_loc l in
-          of_loc ~traces l )
-    | Tarray {length; stride} ->
-        let deref_path = SPath.deref ~deref_kind:Deref_ArrayIndex path in
-        let l = Loc.of_path deref_path in
-        let traces = traces_of_loc l in
-        let allocsite = Allocsite.make_symbol deref_path in
-        let size =
-          match length with
-          | None (* IncompleteArrayType, no-size flexible array *) ->
-              Itv.of_length_path ~is_void:false path
-          | Some length
-            when may_last_field && (IntLit.iszero length || IntLit.isone length)
-                 (* 0/1-sized flexible array *) ->
-              Itv.of_length_path ~is_void:false path
-          | Some length ->
-              Itv.of_big_int (IntLit.to_big_int length)
-        in
-        if is_java then of_java_array_alloc allocsite ~length:size ~traces
-        else
-          let stride = Option.map stride ~f:(fun n -> IntLit.to_int_exn n) in
-          let offset = Itv.zero in
-          of_c_array_alloc allocsite ~stride ~offset ~size ~traces
+          let size =
+            match length with
+            | None (* IncompleteArrayType, no-size flexible array *) ->
+                Itv.of_length_path ~is_void:false path
+            | Some length
+              when may_last_field && (IntLit.iszero length || IntLit.isone length)
+                   (* 0/1-sized flexible array *) ->
+                Itv.of_length_path ~is_void:false path
+            | Some length ->
+                Itv.of_big_int (IntLit.to_big_int length)
+          in
+          if is_java then of_java_array_alloc allocsite ~length:size ~traces
+          else
+            let stride = Option.map stride ~f:(fun n -> IntLit.to_int_exn n) in
+            let offset = Itv.zero in
+            of_c_array_alloc allocsite ~stride ~offset ~size ~traces )
 
 
   let on_demand : default:t -> ?typ:Typ.t -> OndemandEnv.t -> Loc.t -> t =

@@ -7,7 +7,8 @@
 
 (** Abstract domain *)
 
-include Domain_intf.Dom
+open Domain_intf
+include Domain
 
 val create_summary :
      locals:Llair.Reg.Set.t

@@ -134,7 +134,7 @@ end = struct
         (Ge, r, l)
     | _ ->
         L.die InternalError
-          "PulseTopl.negate_predicate should handle all outputs of ToplUtils.binop_to"
+          "PulseTopl.negate_predicate should handle all outputs of PulseTopl.binop_to"
 
 
   let negate disjunction = IList.product (List.map ~f:(List.map ~f:negate_predicate) disjunction)
@@ -238,7 +238,7 @@ let start () =
       ~f:(fun c -> {pre= c; post= c; pruned= Constraint.true_; last_step= None})
       configurations
   in
-  if Topl.is_deep_active () then mk_simple_states () else (* Avoids work later *) []
+  if Topl.is_active () then mk_simple_states () else (* Avoids work later *) []
 
 
 let get env x =
@@ -246,10 +246,25 @@ let get env x =
   | Some v ->
       v
   | None ->
-      L.die InternalError "TOPL: Cannot find %s. Should be caught by static checks" x
+      L.die InternalError "Topl: Cannot find %s. Should be caught by static checks" x
 
 
 let set = List.Assoc.add ~equal:String.equal
+
+let binop_to : ToplAst.binop -> Binop.t = function
+  | OpEq ->
+      Eq
+  | OpNe ->
+      Ne
+  | OpGe ->
+      Ge
+  | OpGt ->
+      Gt
+  | OpLe ->
+      Le
+  | OpLt ->
+      Lt
+
 
 let eval_guard memory tcontext guard : Constraint.t =
   let operand_of_value (value : ToplAst.value) : PathCondition.operand =
@@ -266,7 +281,7 @@ let eval_guard memory tcontext guard : Constraint.t =
     | Binop (binop, l, r) ->
         let l = operand_of_value l in
         let r = operand_of_value r in
-        let binop = ToplUtils.binop_to binop in
+        let binop = binop_to binop in
         Constraint.and_predicate (Constraint.make binop l r) pruned
     | Value v ->
         let v = operand_of_value v in
@@ -359,9 +374,14 @@ let is_unsat_cheap path_condition pruned =
   PathCondition.is_unsat_cheap (Constraint.prune_path pruned path_condition)
 
 
+let dummy_tenv = Tenv.create ()
+
 let is_unsat_expensive path_condition pruned =
   let _path_condition, unsat, _new_eqs =
-    PathCondition.is_unsat_expensive (Constraint.prune_path pruned path_condition)
+    (* Not enabling dynamic type reasoning in Topl for now *)
+    PathCondition.is_unsat_expensive dummy_tenv
+      ~get_dynamic_type:(fun _ -> None)
+      (Constraint.prune_path pruned path_condition)
   in
   unsat
 
@@ -594,7 +614,6 @@ let report_errors proc_desc err_log state =
         let loc = Procdesc.get_loc proc_desc in
         let ltr = make_trace 0 [] q in
         let message = Format.asprintf "%a" ToplAutomaton.pp_message_of_state (a, q.post.vertex) in
-        Reporting.log_issue proc_desc err_log ~loc ~ltr ToplOnPulse IssueType.topl_pulse_error
-          message
+        Reporting.log_issue proc_desc err_log ~loc ~ltr Topl IssueType.topl_error message
   in
   List.iter ~f:report_simple_state state

@@ -12,7 +12,7 @@ module F = Format
     file). Defines useful wrappers that allows us to do tricks like turn a forward cfg into a
     backward one, or view a cfg as having a single instruction per node. *)
 
-module type Node = sig
+module type NodeCommonS = sig
   type t
 
   type id
@@ -36,6 +36,56 @@ module type Node = sig
   module IdMap : PrettyPrintable.PPMap with type key = id
 
   module IdSet : PrettyPrintable.PPSet with type elt = id
+end
+
+module InstrNode : sig
+  type instr_index = int
+
+  include
+    NodeCommonS
+      with type t = Procdesc.Node.t * instr_index
+       and type id = Procdesc.Node.id * instr_index
+
+  val compare : t -> t -> int
+
+  val to_instr : instr_index -> t -> t
+end = struct
+  type instr_index = int [@@deriving compare]
+
+  type t = Procdesc.Node.t * instr_index [@@deriving compare]
+
+  type id = Procdesc.Node.id * instr_index [@@deriving compare]
+
+  let kind (t, _) = Procdesc.Node.get_kind t
+
+  let underlying_node (t, _) = t
+
+  let of_underlying_node t = (t, 0)
+
+  let id (t, index) = (Procdesc.Node.get_id t, index)
+
+  let hash node = Hashtbl.hash (id node)
+
+  let loc (t, _) = Procdesc.Node.get_loc t
+
+  let pp_id fmt (id, index) = F.fprintf fmt "(%a: %d)" Procdesc.Node.pp_id id index
+
+  module OrderedId = struct
+    type t = id [@@deriving compare]
+
+    let pp = pp_id
+  end
+
+  module IdMap = PrettyPrintable.MakePPMap (OrderedId)
+  module IdSet = PrettyPrintable.MakePPSet (OrderedId)
+
+  let to_instr _ t = t
+end
+
+module type Node = sig
+  include NodeCommonS
+
+  val to_instr : InstrNode.instr_index -> t -> InstrNode.t
 end
 
 module DefaultNode : Node with type t = Procdesc.Node.t and type id = Procdesc.Node.id = struct
@@ -67,42 +117,8 @@ module DefaultNode : Node with type t = Procdesc.Node.t and type id = Procdesc.N
 
   module IdMap = Procdesc.IdMap
   module IdSet = PrettyPrintable.MakePPSet (OrderedId)
-end
 
-module InstrNode : sig
-  type instr_index = int
-
-  include
-    Node with type t = Procdesc.Node.t * instr_index and type id = Procdesc.Node.id * instr_index
-end = struct
-  type instr_index = int [@@deriving compare]
-
-  type t = Procdesc.Node.t * instr_index
-
-  type id = Procdesc.Node.id * instr_index [@@deriving compare]
-
-  let kind (t, _) = Procdesc.Node.get_kind t
-
-  let underlying_node (t, _) = t
-
-  let of_underlying_node t = (t, 0)
-
-  let id (t, index) = (Procdesc.Node.get_id t, index)
-
-  let hash node = Hashtbl.hash (id node)
-
-  let loc (t, _) = Procdesc.Node.get_loc t
-
-  let pp_id fmt (id, index) = F.fprintf fmt "(%a: %d)" Procdesc.Node.pp_id id index
-
-  module OrderedId = struct
-    type t = id [@@deriving compare]
-
-    let pp = pp_id
-  end
-
-  module IdMap = PrettyPrintable.MakePPMap (OrderedId)
-  module IdSet = PrettyPrintable.MakePPSet (OrderedId)
+  let to_instr index node = (node, index)
 end
 
 module type S = sig

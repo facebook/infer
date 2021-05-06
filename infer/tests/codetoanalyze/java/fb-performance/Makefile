@@ -5,8 +5,7 @@
 
 TESTS_DIR = ../../..
 
-INFER_OPTIONS = --cost-only --bufferoverrun --debug-exceptions \
-  --report-force-relative-path
+INFER_OPTIONS = --cost-only --debug-exceptions --report-force-relative-path
 INFERPRINT_OPTIONS = --issues-tests
 INFERPRINT_COST_OPTIONS = --cost-issues-tests
 SOURCES = $(wildcard *.java)

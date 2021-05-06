@@ -48,8 +48,11 @@ SomeNonPODObject initWithGlobalWhitelistedNamespaced_good =
 SomeNonPODObject initWithGlobalWhitelistedTemplated_good =
     whitelisted::TemplatedObject<int>::getGlobalNonPOD();
 
+// not declared constexpr but actually constexpr
 extern SomeConstexprObject& getGlobalConstexpr();
 SomeConstexprObject initWithConstexpr_good = getGlobalConstexpr();
+SomeConstexprObject initArrayWithConstexprs_good[] = {
+    getGlobalConstexpr(), getGlobalConstexpr(), getGlobalConstexpr()};
 
 extern SomeTemplatedConstexprObject<int>& getGlobalTemplatedConstexpr();
 SomeTemplatedConstexprObject<int> initWithTemplatedConstexpr_good =

@@ -1,9 +1,8 @@
-This is a C++ and Objective C error reported whenever:
+This is an error reported on C++ and Objective C classes whenever:
 
-- A class contains a member `lock` used for synchronization (most often a
-  `std::mutex`).
-- It has a public method which writes to some member `x` while holding `lock`.
-- It has a public method which reads `x` without holding `lock`.
+- Some class method directly uses locking primitives (not transitively).
+- It has a public method which writes to some member `x` while holding a lock.
+- It has a public method which reads `x` without holding a lock.
 
 The above may happen through a chain of calls. Above, `x` may also be a
 container (an array, a vector, etc).

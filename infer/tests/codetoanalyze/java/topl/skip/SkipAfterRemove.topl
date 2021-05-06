@@ -1,6 +1,5 @@
 property SkipAfterRemove
   prefix "ArrayList"
-  nondet (start)
   start -> start: *
   start -> removed: remove(Collection, Index, IgnoreRet) => c := Collection; i := Index
   removed -> ok:    get(Collection, Index, IgnoreRet) when i == Index && c == Collection

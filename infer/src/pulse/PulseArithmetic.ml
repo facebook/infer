@@ -8,10 +8,13 @@
 open! IStd
 open PulseBasicInterface
 module AbductiveDomain = PulseAbductiveDomain
+module AccessResult = PulseAccessResult
 
 let map_path_condition ~f astate =
   let phi, new_eqs = f astate.AbductiveDomain.path_condition in
-  AbductiveDomain.set_path_condition phi astate |> AbductiveDomain.incorporate_new_eqs new_eqs
+  AbductiveDomain.set_path_condition phi astate
+  |> AbductiveDomain.incorporate_new_eqs new_eqs
+  |> AccessResult.of_abductive_result
 
 
 let and_nonnegative v astate =
@@ -58,3 +61,7 @@ let is_unsat_cheap astate = PathCondition.is_unsat_cheap astate.AbductiveDomain.
 
 let has_no_assumptions astate =
   PathCondition.has_no_assumptions astate.AbductiveDomain.path_condition
+
+
+let and_equal_instanceof v1 v2 t astate =
+  map_path_condition astate ~f:(fun phi -> PathCondition.and_eq_instanceof v1 v2 t phi)

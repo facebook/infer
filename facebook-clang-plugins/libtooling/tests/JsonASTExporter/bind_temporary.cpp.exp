@@ -218,7 +218,7 @@
             "type_ptr" : 12
           },
           {
-            "mangled_name" : "320519083853435709",
+            "mangled_name" : "18026356147569087964",
             "is_cpp" : true,
             "decl_ptr_with_body" : 11,
             "body" : ["CompoundStmt" , [
@@ -268,7 +268,7 @@
             "type_ptr" : 15
           },
           {
-            "mangled_name" : "3243028866176254141",
+            "mangled_name" : "1879755393825675851",
             "is_cpp" : true,
             "decl_ptr_with_body" : 14,
             "body" : ["CompoundStmt" , [
@@ -317,9 +317,10 @@
             "type_ptr" : 18
           },
           {
-            "mangled_name" : "1635307583371793064",
+            "mangled_name" : "1652559256541304523",
             "is_cpp" : true,
             "is_inline" : true,
+            "is_constexpr" : true,
             "parameters" : [
               ["ParmVarDecl" , [
                 {
@@ -349,7 +350,6 @@
             ]
           },
           {
-            "is_constexpr" : true
           }
         ]]
       ],
@@ -1180,15 +1180,21 @@
         },
         "Half"
       ]],
-      ["RecordType" , [
+      ["BuiltinType" , [
         {
           "pointer" : 98
         },
-        99
+        "BFloat16"
+      ]],
+      ["RecordType" , [
+        {
+          "pointer" : 99
+        },
+        100
       ]],
       ["PointerType" , [
         {
-          "pointer" : 100
+          "pointer" : 101
         },
         {
           "type_ptr" : 38,
@@ -1197,7 +1203,7 @@
       ]],
       ["PointerType" , [
         {
-          "pointer" : 101
+          "pointer" : 102
         },
         {
           "type_ptr" : 35,
@@ -1206,7 +1212,7 @@
       ]],
       ["PointerType" , [
         {
-          "pointer" : 102
+          "pointer" : 103
         },
         {
           "type_ptr" : 35
@@ -1214,17 +1220,17 @@
       ]],
       ["RecordType" , [
         {
-          "pointer" : 103
+          "pointer" : 104
         },
-        104
+        105
       ]],
       ["ConstantArrayType" , [
         {
-          "pointer" : 105
+          "pointer" : 106
         },
         {
           "element_type" : {
-            "type_ptr" : 103
+            "type_ptr" : 104
           },
           "stride" : 24
         },
@@ -1238,7 +1244,7 @@
       ]],
       ["PointerType" , [
         {
-          "pointer" : 106
+          "pointer" : 107
         },
         {
           "type_ptr" : 8
@@ -1258,7 +1264,7 @@
       ]],
       ["FunctionProtoType" , [
         {
-          "pointer" : 107
+          "pointer" : 108
         },
         {
           "return_type" : {
@@ -1291,7 +1297,7 @@
       ]],
       ["FunctionProtoType" , [
         {
-          "pointer" : 108
+          "pointer" : 109
         },
         {
           "return_type" : {
@@ -1325,7 +1331,7 @@
       ]],
       ["ObjCObjectType" , [
         {
-          "pointer" : 109
+          "pointer" : 110
         },
         {
           "base_type" : 92
@@ -1333,32 +1339,32 @@
       ]],
       ["ObjCObjectPointerType" , [
         {
-          "pointer" : 110
+          "pointer" : 111
         },
         {
-          "type_ptr" : 109
+          "type_ptr" : 110
         }
       ]],
       ["TypedefType" , [
         {
-          "pointer" : 111,
-          "desugared_type" : 110
+          "pointer" : 112,
+          "desugared_type" : 111
         },
         {
           "child_type" : {
-            "type_ptr" : 110
+            "type_ptr" : 111
           },
-          "decl_ptr" : 112
+          "decl_ptr" : 113
         }
       ]],
       ["TypedefType" , [
         {
           "pointer" : 32,
-          "desugared_type" : 110
+          "desugared_type" : 111
         },
         {
           "child_type" : {
-            "type_ptr" : 111
+            "type_ptr" : 112
           },
           "decl_ptr" : 31
         }

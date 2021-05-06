@@ -297,6 +297,11 @@ A condition expression is **always** evaluated to true.
 Reported as "Config Checks Between Markers" by [config-checks-between-markers](/docs/next/checker-config-checks-between-markers).
 
 A config checking is done between a marker's start and end
+## CONFIG_IMPACT
+
+Reported as "Config Impact" by [config-impact-analysis](/docs/next/checker-config-impact-analysis).
+
+A function is called without a config check
 ## CONSTANT_ADDRESS_DEREFERENCE
 
 Reported as "Constant Address Dereference" by [pulse](/docs/next/checker-pulse).
@@ -936,6 +941,27 @@ class C {
 
 Action: Protect the offending access by acquiring the lock indicated by the `@GuardedBy(...)`.
 
+## GUARDEDBY_VIOLATION_NULLSAFE
+
+Reported as "GuardedBy Violation in `@Nullsafe` Class" by [racerd](/docs/next/checker-racerd).
+
+A field annotated with `@GuardedBy` is being accessed by a call-chain that starts at a non-private method without synchronization.
+
+Example:
+
+```java
+class C {
+  @GuardedBy("this")
+  String f;
+
+  void foo(String s) {
+    f = s; // unprotected access here
+  }
+}
+```
+
+Action: Protect the offending access by acquiring the lock indicated by the `@GuardedBy(...)`.
+
 ## IMPURE_FUNCTION
 
 Reported as "Impure Function" by [impurity](/docs/next/checker-impurity).
@@ -1112,6 +1138,11 @@ void invariant_hoist(int size) {
   }
 ```
 
+## IPC_ON_UI_THREAD
+
+Reported as "Ipc On Ui Thread" by [starvation](/docs/next/checker-starvation).
+
+A blocking `Binder` IPC call occurs on the UI thread.
 ## IVAR_NOT_NULL_CHECKED
 
 Reported as "Ivar Not Null Checked" by [biabduction](/docs/next/checker-biabduction).
@@ -1168,12 +1199,11 @@ class C implements I {
 
 Reported as "Lock Consistency Violation" by [racerd](/docs/next/checker-racerd).
 
-This is a C++ and Objective C error reported whenever:
+This is an error reported on C++ and Objective C classes whenever:
 
-- A class contains a member `lock` used for synchronization (most often a
-  `std::mutex`).
-- It has a public method which writes to some member `x` while holding `lock`.
-- It has a public method which reads `x` without holding `lock`.
+- Some class method directly uses locking primitives (not transitively).
+- It has a public method which writes to some member `x` while holding a lock.
+- It has a public method which reads `x` without holding a lock.
 
 The above may happen through a chain of calls. Above, `x` may also be a
 container (an array, a vector, etc).
@@ -1271,18 +1301,61 @@ Reported as "Mutable Local Variable In Component File" by [linters](/docs/next/c
 
 [Doc in ComponentKit page](http://componentkit.org/docs/avoid-local-variables)
 
+## NIL_MESSAGING_TO_NON_POD
+
+Reported as "Nil Messaging To Non Pod" by [pulse](/docs/next/checker-pulse).
+
+See [NULLPTR_DEREFERENCE](#nullptr_dereference).
 ## NULLPTR_DEREFERENCE
 
 Reported as "Nullptr Dereference" by [pulse](/docs/next/checker-pulse).
 
-See [NULL_DEREFERENCE](#null_dereference).
-## NULL_DEREFERENCE
+Infer reports null dereference bugs in Java, C, C++, and Objective-C
+when it is possible that the null pointer is dereferenced, leading to
+a crash.
 
-Reported as "Null Dereference" by [biabduction](/docs/next/checker-biabduction).
+### Null dereference in Java
 
-Infer reports null dereference bugs in C, Objective-C and Java. The issue is
-about a pointer that can be `null` and it is dereferenced. This leads to a crash
-in all the above languages.
+Many of Infer's reports of potential Null Pointer Exceptions (NPE) come from code of the form
+
+```java
+  p = foo(); // foo() might return null
+  stuff();
+  p.goo();   // dereferencing p, potential NPE
+```
+
+If you see code of this form, then you have several options.
+
+**If you are unsure whether or not `foo()` will return null**, you should
+ideally either
+
+1. Change the code to ensure that `foo()` can not return null, or
+
+2. Add a check that `p` is not `null` before dereferencing `p`.
+
+Sometimes, in case (2) it is not obvious what you should do when `p`
+is `null`. One possibility is to throw an exception, failing early but
+explicitly. This can be done using `checkNotNull` as in the following
+code:
+
+```java
+// code idiom for failing early
+import static com.google.common.base.Preconditions.checkNotNull;
+
+  //... intervening code
+
+  p = checkNotNull(foo()); // foo() might return null
+  stuff();
+  p.goo(); // p cannot be null here
+```
+
+The call `checkNotNull(foo())` will never return `null`: if `foo()`
+returns `null` then it fails early by throwing a Null Pointer
+Exception.
+
+Facebook NOTE: **If you are absolutely sure that foo() will not be
+null**, then if you land your diff this case will no longer be
+reported after your diff makes it to master.
 
 ### Null dereference in C
 
@@ -1336,48 +1409,11 @@ passed as argument. Here are some examples:
 }
 ```
 
-### Null dereference in Java
+## NULL_DEREFERENCE
 
-Many of Infer's reports of potential NPE's come from code of the form
+Reported as "Null Dereference" by [biabduction](/docs/next/checker-biabduction).
 
-```java
-  p = foo(); // foo() might return null
-  stuff();
-  p.goo();   // dereferencing p, potential NPE
-```
-
-If you see code of this form, then you have several options.
-
-<b> If you are unsure whether or not foo() will return null </b>, you should
-ideally i. Change the code to ensure that foo() can not return null ii. Add a
-check for whether p is null, and do something other than dereferencing p when it
-is null.
-
-Sometimes, in case ii it is not obvious what you should do when p is null. One
-possibility (a last option) is to throw an exception, failing early. This can be
-done using checkNotNull as in the following code:
-
-```java
-  // code idiom for failing early
-
-  import static com.google.common.base.Preconditions.checkNotNull;
-
-  //... intervening code
-
-  p = checkNotNull(foo()); // foo() might return null
-  stuff();
-  p.goo();   // dereferencing p, potential NPE
-```
-
-The call checkNotNull(foo()) will never return null; in case foo() returns null
-it fails early by throwing an NPE.
-
-<b> If you are absolutely sure that foo() will not be null </b>, then if you
-land your diff this case will no longer be reported after your diff makes it to
-master. In the future we might include analysis directives (hey, analyzer, p is
-not null!) like in Hack that tell the analyzer the information that you know,
-but that is for later.
-
+See [NULLPTR_DEREFERENCE](#nullptr_dereference).
 ## OPTIONAL_EMPTY_ACCESS
 
 Reported as "Optional Empty Access" by [pulse](/docs/next/checker-pulse).
@@ -1494,9 +1530,9 @@ created, and not an array `@[@"aaa", str, @"bbb"]` of size 3 as expected.
 
 ## PULSE_UNINITIALIZED_VALUE
 
-Reported as "Unitialized Value" by [pulse](/docs/next/checker-pulse).
+Reported as "Uninitialized Value" by [pulse](/docs/next/checker-pulse).
 
-See [UNITIALIZED_VALUE](#uninitialized_value). Re-implemented using Pulse.
+See [UNINITIALIZED_VALUE](#uninitialized_value). Re-implemented using Pulse.
 ## PURE_FUNCTION
 
 Reported as "Pure Function" by [purity](/docs/next/checker-purity).
@@ -2098,16 +2134,16 @@ These annotations can be found at `com.facebook.infer.annotation.*`.
   other threads. The main utility of this annotation is in interfaces, where
   Infer cannot look up the implementation and decide for itself.
 
-## TOPL_BIABD_ERROR
+## THREAD_SAFETY_VIOLATION_NULLSAFE
 
-Reported as "Topl Biabd Error" by [topl-biabd](/docs/next/checker-topl-biabd).
+Reported as "Thread Safety Violation in `@Nullsafe` Class" by [racerd](/docs/next/checker-racerd).
 
-Experimental.
-## TOPL_PULSE_ERROR
+A [Thread Safety Violation](#thread_safety_violation) in a `@Nullsafe` class.
+## TOPL_ERROR
 
-Reported as "Topl Pulse Error" by [topl-pulse](/docs/next/checker-topl-pulse).
+Reported as "Topl Error" by [topl](/docs/next/checker-topl).
 
-Experimental.
+A violation of a Topl property (user-specified).
 ## UNINITIALIZED_VALUE
 
 Reported as "Uninitialized Value" by [uninit](/docs/next/checker-uninit).

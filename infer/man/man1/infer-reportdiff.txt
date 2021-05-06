@@ -20,6 +20,16 @@ DESCRIPTION
 
 
 OPTIONS
+       --config-impact-current path
+           Config impact report of the latest revision
+
+       --config-impact-max-callees-to-print int
+           Specify the maximum number of unchecked callees to print in the
+           config impact checker
+
+       --config-impact-previous path
+           Config impact report of the base revision to use for comparison
+
        --cost-tests-only-autoreleasepool
            Activates: [EXPERIMENTAL] Report only autoreleasepool size results
            in cost tests (Conversely: --no-cost-tests-only-autoreleasepool)
@@ -34,7 +44,7 @@ OPTIONS
            Activates: Debug mode (also sets --debug-level 2,
            --developer-mode, --print-buckets, --print-types,
            --reports-include-ml-loc, --no-only-cheap-debug, --trace-error,
-           --write-dotty, --write-html) (Conversely: --no-debug | -G)
+           --write-html) (Conversely: --no-debug | -G)
 
        --debug-level level
            Debug level (sets --bo-debug level, --debug-level-analysis level,

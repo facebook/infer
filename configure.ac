@@ -12,14 +12,14 @@ AC_PREREQ([2.63])
 # - the values below
 # - opam
 AC_INIT([Infer],
-        [1.0.0],
+        [1.1.0],
         [https://github.com/facebook/infer/issues/])
 
 AC_CONFIG_SRCDIR([infer/src/istd/IStd.ml])
 
 # WARNING: keep in sync with above
 INFER_MAJOR=1
-INFER_MINOR=0
+INFER_MINOR=1
 INFER_PATCH=0
 
 AC_SUBST([INFER_MAJOR])
@@ -91,12 +91,19 @@ AC_ARG_ENABLE(c-analyzers,
 BUILD_C_ANALYZERS=$enable_c_analyzers
 AC_SUBST([BUILD_C_ANALYZERS])
 
+AC_ARG_ENABLE(erlang-analyzers,
+  AS_HELP_STRING([--disable-erlang-analyzers],
+    [do not build the Erlang analyzers (default is to build them)]),
+  ,
+  enable_erlang_analyzers=yes)
+BUILD_ERLANG_ANALYZERS=$enable_erlang_analyzers
+AC_SUBST([BUILD_ERLANG_ANALYZERS])
+
 AC_ARG_ENABLE(java-analyzers,
   AS_HELP_STRING([--disable-java-analyzers],
     [do not build the Java analyzers (default is to build them)]),
   ,
   enable_java_analyzers=yes)
-
 BUILD_JAVA_ANALYZERS=$enable_java_analyzers
 AC_SUBST([BUILD_JAVA_ANALYZERS])
 
@@ -337,9 +344,13 @@ AC_SUBST([ENABLE_OCAML_BINANNOT])
 
 # We use Buck to run the Infer tests
 AS_IF([test x"$is_facebook_tree" = x"yes"],
-  AC_MSG_CHECKING([which .buck-java8 to use])
-  cp "facebook/dependencies/dotbuck-java8" ".buck-java8"
-  AC_MSG_RESULT([facebook/dependencies/dotbuck-java8]))
+  AC_MSG_CHECKING([which .buckjavaversion to use])
+  cp "facebook/dependencies/dotbuckjavaversion" ".buckjavaversion"
+  AC_MSG_RESULT([facebook/dependencies/dotbuckjavaversion])
+
+  AC_MSG_CHECKING([which .buck-java11 to use])
+  cp "facebook/dependencies/dotbuck-java11" ".buck-java11"
+  AC_MSG_RESULT([facebook/dependencies/dotbuck-java11]))
 
 
 AC_CHECK_TOOL([GETCONF], [getconf], [no])

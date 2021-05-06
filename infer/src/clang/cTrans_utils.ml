@@ -195,8 +195,7 @@ type control =
 
 let pp_control fmt {root_nodes; leaf_nodes; instrs; initd_exps; cxx_temporary_markers_set} =
   let pp_cxx_temporary_markers_set fmt =
-    if List.is_empty cxx_temporary_markers_set then ()
-    else
+    if not (List.is_empty cxx_temporary_markers_set) then
       F.fprintf fmt ";@;cxx_temporary_markers_set=[%a]"
         (Pp.seq ~sep:";" (Pvar.pp Pp.text))
         cxx_temporary_markers_set
@@ -561,11 +560,16 @@ let cast_operation ?objc_bridge_cast_kind cast_kind ((exp, typ) as exp_typ) cast
   | `BitCast | `IntegralCast | `IntegralToBoolean ->
       (* This is treated as a nop by returning the same expressions exps*)
       ([], (exp, cast_typ))
-  | `LValueToRValue ->
-      (* Takes an LValue and allow it to use it as RValue. *)
-      (* So we assign the LValue to a temp and we pass it to the parent.*)
-      let instr, deref_exp = dereference_var_sil (exp, cast_typ) sil_loc in
-      ([instr], (deref_exp, cast_typ))
+  | `LValueToRValue -> (
+    match typ with
+    | {Typ.desc= Tstruct _} ->
+        (* Avoid dereference of C struct on cast *)
+        ([], exp_typ)
+    | _ ->
+        (* Takes an LValue and allow it to use it as RValue. *)
+        (* So we assign the LValue to a temp and we pass it to the parent.*)
+        let instr, deref_exp = dereference_var_sil (exp, cast_typ) sil_loc in
+        ([instr], (deref_exp, cast_typ)) )
   | `NullToPointer ->
       if Exp.is_zero exp then ([], (Exp.null, cast_typ)) else ([], (exp, cast_typ))
   | `ToVoid ->

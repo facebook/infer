@@ -169,7 +169,7 @@
             },
             {
             },
-            "8348715085918813141",
+            "",
             {
               "template_decl" : 7,
               "specialization_args" : [
@@ -347,9 +347,10 @@
                   "type_ptr" : 20
                 },
                 {
-                  "mangled_name" : "17039860285578718334",
+                  "mangled_name" : "15291750046890212067",
                   "is_cpp" : true,
                   "is_inline" : true,
+                  "is_constexpr" : true,
                   "decl_ptr_with_body" : 19,
                   "body" : <"CompoundStmt" : (
                     {
@@ -368,7 +369,6 @@
                   )>
                 },
                 {
-                  "is_constexpr" : true
                 }
               )>,
               <"CXXConstructorDecl" : (
@@ -397,9 +397,10 @@
                   "type_ptr" : 23
                 },
                 {
-                  "mangled_name" : "10269173081916450237",
+                  "mangled_name" : "225939024662492936",
                   "is_cpp" : true,
                   "is_inline" : true,
+                  "is_constexpr" : true,
                   "parameters" : [
                     <"ParmVarDecl" : (
                       {
@@ -429,7 +430,6 @@
                   ]
                 },
                 {
-                  "is_constexpr" : true
                 }
               )>,
               <"CXXConstructorDecl" : (
@@ -458,9 +458,10 @@
                   "type_ptr" : 27
                 },
                 {
-                  "mangled_name" : "15856009432989426751",
+                  "mangled_name" : "11375010590039767716",
                   "is_cpp" : true,
                   "is_inline" : true,
+                  "is_constexpr" : true,
                   "parameters" : [
                     <"ParmVarDecl" : (
                       {
@@ -490,7 +491,6 @@
                   ]
                 },
                 {
-                  "is_constexpr" : true
                 }
               )>
             ],
@@ -504,7 +504,7 @@
             {
               "is_pod" : true
             },
-            "12207844931495093295",
+            "",
             {
               "template_decl" : 11,
               "specialization_args" : [
@@ -1002,15 +1002,21 @@
         },
         <"Half">
       )>,
-      <"RecordType" : (
+      <"BuiltinType" : (
         {
           "pointer" : 100
         },
-        101
+        <"BFloat16">
+      )>,
+      <"RecordType" : (
+        {
+          "pointer" : 101
+        },
+        102
       )>,
       <"PointerType" : (
         {
-          "pointer" : 102
+          "pointer" : 103
         },
         {
           "type_ptr" : 30,
@@ -1019,7 +1025,7 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 103
+          "pointer" : 104
         },
         {
           "type_ptr" : 38,
@@ -1028,7 +1034,7 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 104
+          "pointer" : 105
         },
         {
           "type_ptr" : 38
@@ -1036,17 +1042,17 @@
       )>,
       <"RecordType" : (
         {
-          "pointer" : 105
+          "pointer" : 106
         },
-        106
+        107
       )>,
       <"ConstantArrayType" : (
         {
-          "pointer" : 107
+          "pointer" : 108
         },
         {
           "element_type" : {
-            "type_ptr" : 105
+            "type_ptr" : 106
           },
           "stride" : 24
         },
@@ -1054,15 +1060,10 @@
       )>,
       <"TemplateTypeParmType" : (
         {
-          "pointer" : 108
-        }
-      )>,
-      <"TemplateTypeParmType" : (
-        {
           "pointer" : 109
         }
       )>,
-      <"TemplateSpecializationType" : (
+      <"TemplateTypeParmType" : (
         {
           "pointer" : 110
         }
@@ -1072,17 +1073,17 @@
           "pointer" : 111
         }
       )>,
-      <"InjectedClassNameType" : (
+      <"TemplateSpecializationType" : (
         {
           "pointer" : 112
         }
       )>,
-      <"TemplateTypeParmType" : (
+      <"InjectedClassNameType" : (
         {
           "pointer" : 113
         }
       )>,
-      <"TemplateSpecializationType" : (
+      <"TemplateTypeParmType" : (
         {
           "pointer" : 114
         }
@@ -1092,17 +1093,14 @@
           "pointer" : 115
         }
       )>,
-      <"InjectedClassNameType" : (
+      <"TemplateSpecializationType" : (
         {
           "pointer" : 116
         }
       )>,
-      <"PointerType" : (
+      <"InjectedClassNameType" : (
         {
           "pointer" : 117
-        },
-        {
-          "type_ptr" : 108
         }
       )>,
       <"PointerType" : (
@@ -1110,12 +1108,15 @@
           "pointer" : 118
         },
         {
-          "type_ptr" : 113
+          "type_ptr" : 109
         }
       )>,
-      <"TemplateSpecializationType" : (
+      <"PointerType" : (
         {
           "pointer" : 119
+        },
+        {
+          "type_ptr" : 114
         }
       )>,
       <"TemplateSpecializationType" : (
@@ -1123,15 +1124,15 @@
           "pointer" : 120
         }
       )>,
-      <"ElaboratedType" : (
+      <"TemplateSpecializationType" : (
         {
-          "pointer" : 121,
-          "desugared_type" : 120
+          "pointer" : 121
         }
       )>,
-      <"TemplateTypeParmType" : (
+      <"ElaboratedType" : (
         {
-          "pointer" : 122
+          "pointer" : 122,
+          "desugared_type" : 121
         }
       )>,
       <"TemplateTypeParmType" : (
@@ -1139,7 +1140,7 @@
           "pointer" : 123
         }
       )>,
-      <"TemplateSpecializationType" : (
+      <"TemplateTypeParmType" : (
         {
           "pointer" : 124
         }
@@ -1149,9 +1150,14 @@
           "pointer" : 125
         }
       )>,
-      <"InjectedClassNameType" : (
+      <"TemplateSpecializationType" : (
         {
           "pointer" : 126
+        }
+      )>,
+      <"InjectedClassNameType" : (
+        {
+          "pointer" : 127
         }
       )>,
       <"RecordType" : (
@@ -1168,7 +1174,7 @@
       )>,
       <"SubstTemplateTypeParmType" : (
         {
-          "pointer" : 127,
+          "pointer" : 128,
           "desugared_type" : 30
         }
       )>,
@@ -1182,10 +1188,10 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 128
+          "pointer" : 129
         },
         {
-          "type_ptr" : 127
+          "type_ptr" : 128
         }
       )>,
       <"RecordType" : (
@@ -1196,7 +1202,7 @@
       )>,
       <"TemplateSpecializationType" : (
         {
-          "pointer" : 129,
+          "pointer" : 130,
           "desugared_type" : 9
         }
       )>,
@@ -1208,12 +1214,12 @@
       )>,
       <"TemplateTypeParmType" : (
         {
-          "pointer" : 130
+          "pointer" : 131
         }
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 131
+          "pointer" : 132
         },
         {
           "return_type" : {
@@ -1225,7 +1231,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 132
+          "pointer" : 133
         },
         {
           "return_type" : {
@@ -1246,7 +1252,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 133
+          "pointer" : 134
         },
         {
           "return_type" : {
@@ -1288,7 +1294,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 134
+          "pointer" : 135
         },
         {
           "return_type" : {
@@ -1334,7 +1340,7 @@
       )>,
       <"ObjCObjectType" : (
         {
-          "pointer" : 135
+          "pointer" : 136
         },
         {
           "base_type" : 94
@@ -1342,32 +1348,32 @@
       )>,
       <"ObjCObjectPointerType" : (
         {
-          "pointer" : 136
+          "pointer" : 137
         },
         {
-          "type_ptr" : 135
+          "type_ptr" : 136
         }
       )>,
       <"TypedefType" : (
         {
-          "pointer" : 137,
-          "desugared_type" : 136
+          "pointer" : 138,
+          "desugared_type" : 137
         },
         {
           "child_type" : {
-            "type_ptr" : 136
+            "type_ptr" : 137
           },
-          "decl_ptr" : 138
+          "decl_ptr" : 139
         }
       )>,
       <"TypedefType" : (
         {
           "pointer" : 35,
-          "desugared_type" : 136
+          "desugared_type" : 137
         },
         {
           "child_type" : {
-            "type_ptr" : 137
+            "type_ptr" : 138
           },
           "decl_ptr" : 34
         }

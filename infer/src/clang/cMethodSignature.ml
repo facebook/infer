@@ -31,6 +31,8 @@ type t =
   ; params: param_type list
   ; ret_type: Typ.t * Annot.Item.t
   ; has_added_return_param: bool
+  ; is_ret_type_pod: bool
+  ; is_ret_constexpr: bool
   ; attributes: Clang_ast_t.attribute list
   ; loc: Clang_ast_t.source_range
   ; method_kind: ClangMethodKind.t
@@ -46,7 +48,8 @@ type t =
 (* A method is a getter if it has a link to a property and *)
 (* it has 0 arguments *)
 let is_getter {pointer_to_property_opt; params} =
-  Option.is_some pointer_to_property_opt && Int.equal (List.length params) 0
+  Option.is_some pointer_to_property_opt
+  && match params with [] -> true | [{name}] -> Mangled.is_return_param name | _ -> false
 
 
 (* A method is a setter if it has a link to a property and *)
@@ -55,15 +58,18 @@ let is_setter {pointer_to_property_opt; params} =
   Option.is_some pointer_to_property_opt && Int.equal (List.length params) 1
 
 
-let mk name class_param params ret_type ?(has_added_return_param = false) attributes loc method_kind
-    ?(is_cpp_virtual = false) ?(passed_as_noescape_block_to = None) ?(is_no_return = false)
-    ?(is_variadic = false) pointer_to_parent pointer_to_property_opt return_param_typ access =
+let mk name class_param params ret_type ?(has_added_return_param = false) ?(is_ret_type_pod = true)
+    ~is_ret_constexpr attributes loc method_kind ?(is_cpp_virtual = false)
+    ?(passed_as_noescape_block_to = None) ?(is_no_return = false) ?(is_variadic = false)
+    pointer_to_parent pointer_to_property_opt return_param_typ access =
   { name
   ; access
   ; class_param
   ; params
   ; ret_type
   ; has_added_return_param
+  ; is_ret_type_pod
+  ; is_ret_constexpr
   ; attributes
   ; loc
   ; method_kind

@@ -10,13 +10,12 @@
 type t = unit [@@deriving compare, equal, sexp]
 
 let pp fs () = Format.pp_print_string fs "()"
-let report_fmt_thunk () fs = pp fs ()
 let init _ = ()
-let join () () = Some ()
+let join () () = ()
 let exec_assume () _ = Some ()
 let exec_kill _ () = ()
 let exec_move _ () = ()
-let exec_inst _ () = Some ()
+let exec_inst _ () = Ok ()
 
 type from_call = unit [@@deriving compare, equal, sexp]
 

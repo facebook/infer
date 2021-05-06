@@ -107,10 +107,10 @@ let and_eq_vars v1 v2 phi =
   ({is_unsat; bo_itvs; citvs; formula}, new_eqs)
 
 
-let simplify ~keep phi =
+let simplify tenv ~can_be_pruned ~keep ~get_dynamic_type phi =
   let result =
     let+ {is_unsat; bo_itvs; citvs; formula} = phi in
-    let+| formula, new_eqs = Formula.simplify ~keep formula in
+    let+| formula, new_eqs = Formula.simplify tenv ~can_be_pruned ~keep ~get_dynamic_type formula in
     let is_in_keep v _ = AbstractValue.Set.mem v keep in
     ( { is_unsat
       ; bo_itvs= BoItvs.filter is_in_keep bo_itvs
@@ -400,6 +400,12 @@ let prune_binop ~negated bop lhs_op rhs_op ({is_unsat; bo_itvs= _; citvs; formul
             ({phi with is_unsat; formula}, new_eqs) )
 
 
+let and_eq_instanceof v1 v2 t phi =
+  let+ {is_unsat; bo_itvs; citvs; formula} = phi in
+  let+| formula, new_eqs = Formula.and_equal_instanceof v1 v2 t formula in
+  ({is_unsat; bo_itvs; citvs; formula}, new_eqs)
+
+
 (** {2 Queries} *)
 
 let is_known_zero phi v =
@@ -414,23 +420,16 @@ let is_known_not_equal_zero phi v =
 
 let is_unsat_cheap phi = phi.is_unsat
 
-let is_unsat_expensive phi =
+let is_unsat_expensive tenv ~get_dynamic_type phi =
   (* note: contradictions are detected eagerly for all sub-domains except formula, so just
      evaluate that one *)
   if is_unsat_cheap phi then (phi, true, [])
   else
-    match Formula.normalize phi.formula with
+    match Formula.normalize tenv ~get_dynamic_type phi.formula with
     | Unsat ->
         (false_, true, [])
     | Sat (formula, new_eqs) ->
         ({phi with formula}, false, new_eqs)
-
-
-let as_int phi v =
-  (* TODO(rgrigore): Ask BoItvs too. *)
-  IList.force_until_first_some
-    [ lazy (CItvs.find_opt v phi.citvs |> Option.value_map ~default:None ~f:CItv.as_int)
-    ; lazy (Formula.as_int phi.formula v) ]
 
 
 let has_no_assumptions phi = Formula.has_no_assumptions phi.formula

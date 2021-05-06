@@ -1,3 +1,92 @@
+## Version 1.1.0
+
+### Frontends
+
+- New [JSON input format for SIL](https://github.com/facebook/infer/pull/1361). This new format was contributed from [Infer#](https://github.com/microsoft/infersharp), whose C# frontend for Infer [emits SIL as JSON using this format](https://github.com/microsoft/infersharp/wiki/InferSharp:-A-Scalable-Code-Analytics-Tool-for-.NET).
+
+### Build System Integrations
+
+- Clang upgraded to version 11.0
+
+### Checkers
+
+- [Liveness](https://fbinfer.com/docs/checker-liveness/): properly handle exceptional control flow
+- [Pulse](https://fbinfer.com/docs/checker-pulse/):
+  - Added preliminary Java support
+  - New [Uninitialized value bug type](https://fbinfer.com/docs/all-issue-types/#pulse_uninitialized_value), aiming to replace the previous [Uninit](https://fbinfer.com/docs/checker-uninit/) checker as this one is inter-procedural and more precise.
+  - [OPTIONAL_EMPTY_ACCESS](https://fbinfer.com/docs/all-issue-types/#optional_empty_access) is now enabled by default
+- **NEW checker** [Topl](https://fbinfer.com/docs/checker-topl/)(early alpha): An experimental checker framework: write your own analysis as a state machine representing a temporal property over multiple memory objects at once, eg to write a taint analysis. Topl is based on Pulse.
+- Miscellaneous improvements to cost, inferbo, nullsafe, racerd, starvation
+
+
+## Version 1.0.0
+
+### Checkers
+
+[AL](https://fbinfer.com/docs/checker-linters) is now deprecated and may be removed in future versions.
+
+[Annotation Reachability](https://fbinfer.com/docs/checker-annotation-reachability)
+- reporting format improvements (the trace is no longer included in the report text, only as metadata)
+
+[Biabduction](https://fbinfer.com/docs/checker-biabduction)
+- disable some less-used bug types
+
+[Eradicate](https://fbinfer.com/docs/checker-eradicate)
+- remove "Field not mutable" check
+
+[RacerD](https://fbinfer.com/docs/checker-racerd)
+- Now defaults to "angelic" ownership: an unknown function is assumed to return owned objects.
+- No more reports on races on paths rooted on temporary or local variables, as these are unreliably modelled.
+
+[Litho Required Properties](https://fbinfer.com/docs/checker-litho-required-props): *new Java checker* to check that all non-optional @Props have been specified when constructing Litho components.
+[Self in Block](https://fbinfer.com/docs/checker-self-in-block): *new Objective-C checker* to detect when an Objective-C block incorrectly captures self
+[Starvation](https://fbinfer.com/docs/checker-starvation)
+- New experimental "global" analysis mode. Enable with `--starvation-whole-program`
+
+Miscellaneous improvements to most checkers, in particular [Annotation Reachability](https://fbinfer.com/docs/checker-annotation-reachability), [Cost Analysis](https://fbinfer.com/docs/checker-cost), [Eradicate](https://fbinfer.com/docs/checker-eradicate), [Inefficient Keyset Iterator](https://fbinfer.com/docs/checker-inefficient-keyset-iterator), [InferBO](https://fbinfer.com/docs/checker-bufferoverrun), [Pulse](https://fbinfer.com/docs/checker-pulse), [RacerD](https://fbinfer.com/docs/checker-racerd), [Starvation](https://fbinfer.com/docs/checker-starvation), and [Uninitialized Value](https://fbinfer.com/docs/checker-uninit).
+
+### Build System Integrations
+
+- The Gradle integration now captures Java files in parallel
+- New Buck integration for Java, enable with `--buck-java-flavor`
+- Clang upgraded to version 9.0
+
+### Command Line Interface
+
+- **New subcommand** [`infer help`](https://fbinfer.com/docs/man-infer-help) to display information about checkers and issue types.
+- **New subcommand** [`infer debug`](https://fbinfer.com/docs/man-infer-debug) that replaces the uses of `infer explore` not related to reported issues.
+- `--debug` no longer disables filtering, you have to pass `-g -F` to get the previous behaviour back.
+- All disk artefacts (except the Java type environment) are now stored in the SQLite database in infer-out/results.db. The contents of the database can be explored with `infer debug`.
+- Changed how to select the Buck integration. The old command line interface is still supported but is now deprecated.
+  - clang via "flavors", activated with `--flavors`, now with `--buck-clang`
+  - clang via "compilation DB", activated with `--buck-compilation-database`, unchanged
+  - Java via "genrule", activated with `--genrule-master-mode`, now with `--buck-java`
+  - Java "without genrules", used to be activated by not specifying any other Buck mode, **deleted**
+  - In addition, there is a new Java integration, activated with `--buck-java-flavor`
+- The textual version of the report infer-out/bugs.txt has moved to infer-out/report.txt. The bugs.txt file is still created with dummy contents to allow for a smooth transition.
+- Removed the `--report-hook` option.
+- Properly terminate on `Control-C` instead of sometimes leaving around zombie processes.
+- Spec files (summaries) are now stored in the database. Explore with `infer debug --procedures --procedures-summary`.
+
+### Documentation
+
+- Revamped online documentation for bug types and checkers. See the [list of all issue types](https://fbinfer.com/docs/all-issue-types) and the pages for each checker. The `infer help` command can be used locally to also get this information and more.
+- Access the documentation for previous and future versions [online](https://fbinfer.com/docs/versions).
+- The https://fbinfer.com/ website now [uses Docusaurus 2](https://github.com/facebook/infer/pull/1190).
+
+### Internal Changes
+
+- Folded the facebook-clang-plugins sub-repo inside the infer repository; there is no more git submodule for it.
+- Improve internal documentation of [OCaml source code](https://fbinfer.com/odoc/1.0.0/infer/infer.html).
+- Build with OCaml 4.11.1 and dune 2.7.1
+- Migrated our Python 2 code to OCaml
+- Split the infer OCaml source code into individual dune libraries.
+- Better defaults for SQLite, and a write daemon to reduce contention.
+- New analysis schedulers that speed up the analysis phase. Enable with `--scheduler callgraph` or `--scheduler restart`.
+- Infer no longer builds by default in "opt" mode (optimised, using OCaml’s flambda pass). The default is now "dev", which does not include as many optimisations (hence builds faster) and turns warnings into errors.
+- The starvation checker is now based on SIL instead of HIL.
+
+
 ## Version 0.17.0
 
 - There's a new  `--inefficient-keyset-iterator`  checker for finding inefficient uses of Java's keyset iterators that retrieve both key and value (on by default).

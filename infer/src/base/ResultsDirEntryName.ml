@@ -12,6 +12,8 @@ let buck_infer_deps_file_name = "infer-deps.txt"
 type id =
   | AllocationTraces
   | CaptureDB
+  | CaptureDBShm
+  | CaptureDBWal
   | CaptureDependencies
   | ChangedFunctions
   | Debug
@@ -26,6 +28,7 @@ type id =
   | PerfEvents
   | ProcnamesLocks
   | RacerDIssues
+  | ReportConfigImpactJson
   | ReportCostsJson
   | ReportHtml
   | ReportJson
@@ -68,6 +71,16 @@ let of_id = function
       ; kind= File
       ; before_incremental_analysis= Keep
       ; before_caching_capture= Keep }
+  | CaptureDBShm ->
+      { rel_path= "results.db-shm"
+      ; kind= File
+      ; before_incremental_analysis= Keep
+      ; before_caching_capture= Delete }
+  | CaptureDBWal ->
+      { rel_path= "results.db-wal"
+      ; kind= File
+      ; before_incremental_analysis= Keep
+      ; before_caching_capture= Delete }
   | ChangedFunctions ->
       { rel_path= "changed_functions.json"
       ; kind= File
@@ -131,6 +144,11 @@ let of_id = function
   | RacerDIssues ->
       { rel_path= "racerd"
       ; kind= IssuesDirectory
+      ; before_incremental_analysis= Delete
+      ; before_caching_capture= Delete }
+  | ReportConfigImpactJson ->
+      { rel_path= "config-impact-report.json"
+      ; kind= File
       ; before_incremental_analysis= Delete
       ; before_caching_capture= Delete }
   | ReportCostsJson ->

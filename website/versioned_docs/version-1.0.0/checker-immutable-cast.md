@@ -18,4 +18,4 @@ Casts flagged by this checker are unsafe because calling mutation operations on 
 ## List of Issue Types
 
 The following issue types are reported by this checker:
-- [CHECKERS_IMMUTABLE_CAST](/docs/all-issue-types#checkers_immutable_cast)
+- [CHECKERS_IMMUTABLE_CAST](/docs/1.0.0/all-issue-types#checkers_immutable_cast)

@@ -47,25 +47,27 @@ module Partition = struct
         (fold_heads [@tailcall]) next ~init ~f
 
 
-  let rec expand ~fold_right partition =
-    match partition with
-    | Empty ->
-        Empty
-    | Node {node; next} ->
-        let init = expand ~fold_right next in
-        fold_right node ~init ~f:prepend_node
-    | Component {head; rest; next} -> (
-        let next = expand ~fold_right next in
-        let init = expand ~fold_right rest in
-        match fold_right head ~init ~f:prepend_node with
-        | Empty | Component _ ->
-            (* [fold_right] is expected to always provide a non-empty sequence.
-               Hence the result of [fold_right ~f:prepend_node] will always start with a Node. *)
-            Logging.(die InternalError)
-              "WeakTopologicalOrder.Partition.expand: the expansion function fold_right should not \
-               return ~init directly"
-        | Node {node= head; next= rest} ->
-            Component {head; rest; next} )
+  let expand ~fold_right partition =
+    let rec expand_aux ~cb = function
+      | Empty ->
+          cb Empty
+      | Node {node; next} ->
+          (expand_aux [@tailcall]) next ~cb:(fun init ->
+              fold_right node ~init ~f:prepend_node |> cb )
+      | Component {head; rest; next} ->
+          (expand_aux [@tailcall]) next ~cb:(fun next ->
+              (expand_aux [@tailcall]) rest ~cb:(fun init ->
+                  match fold_right head ~init ~f:prepend_node with
+                  | Empty | Component _ ->
+                      (* [fold_right] is expected to always provide a non-empty sequence.  Hence the
+                         result of [fold_right ~f:prepend_node] will always start with a Node. *)
+                      Logging.(die InternalError)
+                        "WeakTopologicalOrder.Partition.expand: the expansion function fold_right \
+                         should not return ~init directly"
+                  | Node {node= head; next= rest} ->
+                      cb (Component {head; rest; next}) ) )
+    in
+    expand_aux ~cb:IStd.ident partition
 
 
   let rec pp ~prefix ~pp_node fmt = function

@@ -362,14 +362,15 @@ let should_report_on_proc tenv procdesc =
       (* return true if procedure is at an abstraction boundary or reporting has been explicitly
          requested via @ThreadSafe in java *)
       RacerDModels.is_thread_safe_method proc_name tenv
-      || (not (PredSymb.equal_access (Procdesc.get_access procdesc) Private))
+      || (not (ProcAttributes.equal_access (Procdesc.get_access procdesc) Private))
+         && (not (Procname.Java.is_class_initializer java_pname))
          && (not (Procname.Java.is_autogen_method java_pname))
          && not (Annotations.pdesc_return_annot_ends_with procdesc Annotations.visibleForTesting)
-  | ObjC_Cpp objc_cpp when Procname.ObjC_Cpp.is_cpp_lambda objc_cpp ->
+  | ObjC_Cpp _ when Procname.is_cpp_lambda proc_name ->
       (* do not report on lambdas; they are essentially private though do not appear as such *)
       false
   | ObjC_Cpp {kind= CPPMethod _ | CPPConstructor _ | CPPDestructor _} ->
-      not (PredSymb.equal_access (Procdesc.get_access procdesc) Private)
+      not (ProcAttributes.equal_access (Procdesc.get_access procdesc) Private)
   | ObjC_Cpp {kind= ObjCClassMethod | ObjCInstanceMethod | ObjCInternalMethod; class_name} ->
       Tenv.lookup tenv class_name
       |> Option.exists ~f:(fun {Struct.exported_objc_methods} ->

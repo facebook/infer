@@ -13,14 +13,10 @@ let pp ~pp_lhs ~sep f lhs fn = F.fprintf f "%a%s%s" pp_lhs lhs sep (Fieldname.ge
 let mk, get_type =
   let class_name = "__infer__" in
   let types = ref Fieldname.Map.empty in
-  let mk ?cpp_classname name typ =
+  let mk name typ =
     let fieldname =
-      match cpp_classname with
-      | None ->
-          let class_name, field_name = String.rsplit2_exn ~on:'.' (class_name ^ "." ^ name) in
-          Fieldname.make (Typ.Name.Java.from_string class_name) field_name
-      | Some classname ->
-          Fieldname.make classname name
+      let class_name, field_name = String.rsplit2_exn ~on:'.' (class_name ^ "." ^ name) in
+      Fieldname.make (Typ.Name.Java.from_string class_name) field_name
     in
     types := Fieldname.Map.add fieldname typ !types ;
     fieldname
@@ -51,7 +47,7 @@ let c_strlen () =
 
 let cpp_vector_elem_str = "cpp.vector_elem"
 
-let cpp_vector_elem ~vec_typ ~elt_typ =
+let cpp_vector_elem ~vec_typ =
   let classname =
     match vec_typ.Typ.desc with
     | Typ.Tptr (vec_typ, _) -> (
@@ -63,8 +59,8 @@ let cpp_vector_elem ~vec_typ ~elt_typ =
     | _ ->
         L.(die InternalError) "First parameter of constructor should be a pointer."
   in
-  let desc = Typ.Tptr (elt_typ, Typ.Pk_pointer) in
-  mk ~cpp_classname:classname cpp_vector_elem_str {Typ.desc; quals= Typ.mk_type_quals ()}
+  (* Note: Avoid calling [mk] that has side-effects introducing non-deterministic results *)
+  Fieldname.make classname cpp_vector_elem_str
 
 
 let is_cpp_vector_elem fn = String.equal (Fieldname.to_simplified_string fn) cpp_vector_elem_str

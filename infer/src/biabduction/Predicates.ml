@@ -928,7 +928,7 @@ let rec exp_sub_ids (f : subst_fun) exp =
       if phys_equal e' e then exp else Exp.Exn e'
   | Closure c ->
       let captured_vars =
-        IList.map_changed ~equal:[%compare.equal: Exp.t * Pvar.t * Typ.t * Pvar.capture_mode]
+        IList.map_changed ~equal:[%compare.equal: Exp.t * Pvar.t * Typ.t * CapturedVar.capture_mode]
           ~f:(fun ((e, pvar, typ, mode) as captured) ->
             let e' = exp_sub_ids f e in
             if phys_equal e' e then captured else (e', pvar, typ, mode) )
@@ -1015,7 +1015,14 @@ let instr_sub_ids ~sub_id_binders f (instr : Sil.instr) : Sil.instr =
       in
       let vars' = IList.map_changed ~equal:phys_equal ~f:sub_var vars in
       if phys_equal vars vars' then instr else Metadata (ExitScope (vars', loc))
-  | Metadata (Abstract _ | Nullify _ | Skip | VariableLifetimeBegins _) ->
+  | Metadata
+      ( Abstract _
+      | CatchEntry _
+      | Nullify _
+      | Skip
+      | TryEntry _
+      | TryExit _
+      | VariableLifetimeBegins _ ) ->
       instr
 
 
@@ -1188,7 +1195,7 @@ let exp_add_offsets exp offsets =
 
 (** Convert all the lseg's in sigma to nonempty lsegs. *)
 let sigma_to_sigma_ne sigma : (atom list * hpred list) list =
-  if Config.nelseg then
+  if Config.biabduction_nelseg then
     let f eqs_sigma_list hpred =
       match hpred with
       | Hpointsto _ | Hlseg (Lseg_NE, _, _, _, _) | Hdllseg (Lseg_NE, _, _, _, _, _, _) ->

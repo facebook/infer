@@ -29,12 +29,12 @@ module Attribute = struct
     | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
     | Allocated of Procname.t * Trace.t
     | Closure of Procname.t
-    | DynamicType of Typ.Name.t
+    | DynamicType of Typ.t
     | EndOfCollection
     | Invalid of Invalidation.t * Trace.t
     | ISLAbduced of Trace.t
     | MustBeInitialized of Trace.t
-    | MustBeValid of Trace.t
+    | MustBeValid of Trace.t * Invalidation.must_be_valid_reason option
     | StdVectorReserve
     | Uninitialized
     | WrittenTo of Trace.t
@@ -63,13 +63,13 @@ module Attribute = struct
     Variants.to_rank (Invalid (Invalidation.ConstantDereference IntLit.zero, dummy_trace))
 
 
-  let must_be_valid_rank = Variants.to_rank (MustBeValid dummy_trace)
+  let must_be_valid_rank = Variants.to_rank (MustBeValid (dummy_trace, None))
 
   let std_vector_reserve_rank = Variants.to_rank StdVectorReserve
 
   let allocated_rank = Variants.to_rank (Allocated (Procname.Linters_dummy_method, dummy_trace))
 
-  let dynamic_type_rank = Variants.to_rank (DynamicType (Typ.Name.Objc.from_string ""))
+  let dynamic_type_rank = Variants.to_rank (DynamicType StdTyp.void)
 
   let end_of_collection_rank = Variants.to_rank EndOfCollection
 
@@ -112,7 +112,7 @@ module Attribute = struct
     | Closure pname ->
         Procname.pp f pname
     | DynamicType typ ->
-        F.fprintf f "DynamicType %a" Typ.Name.pp typ
+        F.fprintf f "DynamicType %a" (Typ.pp Pp.text) typ
     | EndOfCollection ->
         F.pp_print_string f "EndOfCollection"
     | Invalid (invalidation, trace) ->
@@ -125,8 +125,10 @@ module Attribute = struct
         F.fprintf f "MustBeInitialized %a"
           (Trace.pp ~pp_immediate:(pp_string_if_debug "read"))
           trace
-    | MustBeValid trace ->
-        F.fprintf f "MustBeValid %a" (Trace.pp ~pp_immediate:(pp_string_if_debug "access")) trace
+    | MustBeValid (trace, reason) ->
+        F.fprintf f "MustBeValid %a (%a)"
+          (Trace.pp ~pp_immediate:(pp_string_if_debug "access"))
+          trace Invalidation.pp_must_be_valid_reason reason
     | StdVectorReserve ->
         F.pp_print_string f "std::vector::reserve()"
     | Uninitialized ->
@@ -148,8 +150,8 @@ module Attributes = struct
   let get_must_be_valid attrs =
     Set.find_rank attrs Attribute.must_be_valid_rank
     |> Option.map ~f:(fun attr ->
-           let[@warning "-8"] (Attribute.MustBeValid action) = attr in
-           action )
+           let[@warning "-8"] (Attribute.MustBeValid (trace, reason)) = attr in
+           (trace, reason) )
 
 
   let get_written_to attrs =
@@ -294,8 +296,8 @@ let map_trace ~f = function
       ISLAbduced (f trace)
   | Invalid (invalidation, trace) ->
       Invalid (invalidation, f trace)
-  | MustBeValid trace ->
-      MustBeValid (f trace)
+  | MustBeValid (trace, reason) ->
+      MustBeValid (f trace, reason)
   | WrittenTo trace ->
       WrittenTo (f trace)
   | MustBeInitialized trace ->

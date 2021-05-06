@@ -4,8 +4,11 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+
 // test that templated types are sufficiently unique'd by the frontend, so that
 // it doesn't conflate different types
+
+namespace mangling {
 
 template <typename... Types>
 struct Tuple {};
@@ -63,3 +66,5 @@ int bad_reference_and_pointer_templates() {
   ReferenceTypeTemplate<some_struct> b;
   return 1 / 0;
 }
+
+} // namespace mangling

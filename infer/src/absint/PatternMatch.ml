@@ -109,9 +109,11 @@ module Java = struct
     supertype_exists tenv is_interface (Typ.Name.Java.from_string typename)
 
 
+  let implements_lang class_name = implements ("java.lang." ^ class_name)
+
   let implements_arrays = implements "java.util.Arrays"
 
-  let implements_iterable = implements "java.lang.Iterable"
+  let implements_iterable = implements_lang "Iterable"
 
   let implements_iterator = implements "java.util.Iterator"
 
@@ -120,6 +122,12 @@ module Java = struct
   let implements_collections = implements "java.util.Collections"
 
   let implements_list = implements "java.util.List"
+
+  let implements_math = implements_lang "Math"
+
+  let implements_number = implements_lang "Number"
+
+  let implements_system = implements_lang "System"
 
   let implements_xmob_utils class_name = implements ("com.moblica.common.xmob.utils." ^ class_name)
 
@@ -159,8 +167,6 @@ module Java = struct
   let implements_map_entry = implements "java.util.Map$Entry"
 
   let implements_queue = implements "java.util.Queue"
-
-  let implements_lang class_name = implements ("java.lang." ^ class_name)
 
   let implements_google class_name = implements ("com.google." ^ class_name)
 
@@ -349,6 +355,10 @@ module ObjectiveC = struct
         Str.string_match regex procname 0
     | None ->
         false
+
+
+  let implements_ns_string_variants tenv procname =
+    implements "NSString" tenv procname || implements "NSAttributedString" tenv procname
 end
 
 let get_vararg_type_names tenv (call_node : Procdesc.Node.t) (ivar : Pvar.t) : string list =
@@ -554,3 +564,6 @@ let get_fields_nullified procdesc =
       ~init:(Fieldname.Set.empty, Ident.Set.empty)
   in
   nullified_flds
+
+
+let is_entry_point proc_name = String.equal (Procname.get_method proc_name) "main"

@@ -125,7 +125,7 @@ module GraphComparison = struct
             IsomorphicUpTo mapping
         | Some _, None | None, Some _ ->
             NotIsomorphic
-        | Some (edges_rhs, attrs_rhs), Some (edges_lhs, attrs_lhs) ->
+        | Some (edges_lhs, attrs_lhs), Some (edges_rhs, attrs_rhs) ->
             (* continue the comparison recursively on all edges and attributes *)
             if Attributes.equal attrs_rhs attrs_lhs then
               let bindings_lhs = Memory.Edges.bindings edges_lhs in
@@ -305,8 +305,8 @@ let reachable_addresses_from addresses astate =
 
 let subst_var subst ({heap; stack; attrs} as astate) =
   let open SatUnsat.Import in
+  let* stack' = Stack.subst_var subst stack in
   let+ heap' = Memory.subst_var subst heap in
-  let stack' = Stack.subst_var subst stack in
   let attrs' = AddressAttributes.subst_var subst attrs in
   if phys_equal heap heap' && phys_equal stack stack' && phys_equal attrs attrs' then astate
   else {heap= heap'; stack= stack'; attrs= attrs'}

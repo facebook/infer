@@ -18,7 +18,10 @@ import java.lang.annotation.Target;
  * return value is NOT annotated as @Nullable, then the function does not indeed return nulls,
  * subject to unsoundness issues (which should either be fixed, or should rarely happen in
  * practice).
+ *
+ * @deprecated Use {@link com.facebook.infer.annotation.Nullsafe} instead.
  */
 @Retention(RetentionPolicy.CLASS)
 @Target({ElementType.TYPE})
+@Deprecated
 public @interface NullsafeStrict {}

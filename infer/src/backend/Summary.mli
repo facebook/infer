@@ -87,7 +87,14 @@ module OnDisk : sig
   (** Iterates over all stored summaries *)
 
   val iter_report_summaries_from_config :
-    f:(Procname.t -> Location.t -> CostDomain.summary option -> Errlog.t -> unit) -> unit
+       f:
+         (   Procname.t
+          -> Location.t
+          -> CostDomain.summary option
+          -> ConfigImpactAnalysis.Summary.t option
+          -> Errlog.t
+          -> unit)
+    -> unit
   (** Iterates over all analysis artefacts listed above, for each procedure *)
 
   val pp_specs_from_config : Format.formatter -> unit

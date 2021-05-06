@@ -36,8 +36,7 @@ type t =
   | SIOF
   | SelfInBlock
   | Starvation
-  | ToplOnBiabduction
-  | ToplOnPulse
+  | Topl
   | Uninit
 [@@deriving equal, enumerate]
 

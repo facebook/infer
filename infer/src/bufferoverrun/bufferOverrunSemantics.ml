@@ -455,11 +455,11 @@ let eval_sympath ~mode params sympath mem =
       (ArrayBlk.get_size ~cost_mode:(is_cost_mode mode) (Val.get_array_blk v), Val.get_traces v)
 
 
-let mk_eval_sym_trace ?(is_params_ref = false) integer_type_widths
+let mk_eval_sym_trace ?(is_args_ref = false) integer_type_widths
     (callee_formals : (Pvar.t * Typ.t) list) (actual_exps : (Exp.t * Typ.t) list) caller_mem =
-  let params =
+  let args =
     let actuals =
-      if is_params_ref then
+      if is_args_ref then
         match actual_exps with
         | [] ->
             []
@@ -482,17 +482,17 @@ let mk_eval_sym_trace ?(is_params_ref = false) integer_type_widths
   in
   let eval_sym ~mode s bound_end =
     let sympath = Symb.Symbol.path s in
-    let itv, _ = eval_sympath ~mode params sympath caller_mem in
+    let itv, _ = eval_sympath ~mode args sympath caller_mem in
     Symb.Symbol.check_bound_end s bound_end ;
     Itv.get_bound itv bound_end
   in
-  let eval_locpath ~mode partial = eval_locpath ~mode params partial caller_mem in
+  let eval_locpath ~mode partial = eval_locpath ~mode args partial caller_mem in
   let eval_func_ptrs ~mode partial =
-    eval_sympath_partial ~mode params partial caller_mem |> Val.get_func_ptrs
+    eval_sympath_partial ~mode args partial caller_mem |> Val.get_func_ptrs
   in
   let trace_of_sym s =
     let sympath = Symb.Symbol.path s in
-    let itv, traces = eval_sympath ~mode:EvalNormal params sympath caller_mem in
+    let itv, traces = eval_sympath ~mode:EvalNormal args sympath caller_mem in
     if Itv.eq itv Itv.bot then TraceSet.bottom else traces
   in
   fun ~mode ->

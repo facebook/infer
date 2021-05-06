@@ -7,7 +7,6 @@ The [-trace <spec>] argument of each subcommand enables debug tracing according 
 === subcommands ===
 
   buck           integration with Buck
-  . analyze      analyze buck target
   . bitcode      report bitcode files in buck target
   . link         link buck target to LLVM bitcode
   llvm           integration with LLVM
@@ -31,47 +30,9 @@ Code can be provided by a buck build target, such as //fully/qualified/build:tar
 
 === subcommands ===
 
-  analyze  analyze buck target
   bitcode  report bitcode files in buck target
   link     link buck target to LLVM bitcode
   help     explain a given subcommand (perhaps recursively)
-
-
-====== sledge buck analyze ======
-
-analyze buck target
-
-  sledge buck analyze <target>
-
-Analyze code in a buck target. This is a convenience wrapper for the sequence `sledge buck bitcode`; `sledge llvm translate`; `sledge analyze`.
-
-=== flags ===
-
-  [-append-report]       append to report file
-  [-bound <int>]         stop execution exploration at depth <int>
-  [-colors]              enable printing in colors
-  [-domain <string>]     select abstract domain; must be one of "sh" (default,
-                         symbolic heap domain), "globals" (used-globals domain),
-                         or "unit" (unit domain)
-  [-dump-query <int>]    dump solver query <int> and halt
-  [-function-summaries]  use function summaries (in development)
-  [-fuzzer]              add a harness for libFuzzer targets
-  [-margin <cols>]       wrap debug tracing at <cols> columns
-  [-modules <file>]      write list of bitcode files to <file>, or to standard
-                         output if <file> is `-`
-  [-no-internalize]      do not internalize all functions except the entry
-                         points specified in the config file
-  [-no-models]           do not add models for C/C++ runtime and standard
-                         libraries
-  [-no-simplify-states]  do not simplify states during symbolic execution
-  [-output <file>]       write generated binary LLAIR to <file>
-  [-preanalyze-globals]  pre-analyze global variables used by each function
-  [-report <file>]       write report sexp to <file>, or to standard error if
-                         "-"
-  [-stats]               output performance statistics to stderr
-  [-trace <spec>]        enable debug tracing
-  [-help]                print this help text and exit
-                         (alias: -?)
 
 
 ====== sledge buck bitcode ======
@@ -139,26 +100,24 @@ Code can be provided by one or more LLVM bitcode files.
 
 analyze LLVM bitcode
 
-  sledge llvm analyze <input> [<input> ...]
+  sledge llvm analyze <input>
 
 Analyze code in one or more LLVM bitcode files. This is a convenience wrapper for the sequence `sledge llvm translate`; `sledge analyze`.
 
 === flags ===
 
   [-append-report]       append to report file
-  [-bound <int>]         stop execution exploration at depth <int>
+  [-bound <int>]         stop execution exploration at depth <int>, a negative
+                         bound is never hit and leads to unbounded exploration
   [-colors]              enable printing in colors
   [-domain <string>]     select abstract domain; must be one of "sh" (default,
                          symbolic heap domain), "globals" (used-globals domain),
                          or "unit" (unit domain)
   [-dump-query <int>]    dump solver query <int> and halt
   [-function-summaries]  use function summaries (in development)
-  [-fuzzer]              add a harness for libFuzzer targets
   [-margin <cols>]       wrap debug tracing at <cols> columns
   [-no-internalize]      do not internalize all functions except the entry
                          points specified in the config file
-  [-no-models]           do not add models for C/C++ runtime and standard
-                         libraries
   [-no-simplify-states]  do not simplify states during symbolic execution
   [-output <file>]       write generated binary LLAIR to <file>
   [-preanalyze-globals]  pre-analyze global variables used by each function
@@ -174,7 +133,7 @@ Analyze code in one or more LLVM bitcode files. This is a convenience wrapper fo
 
 translate LLVM bitcode to LLAIR
 
-  sledge llvm translate <input> [<input> ...]
+  sledge llvm translate <input>
 
 Translate one or more LLVM bitcode files to LLAIR. Each <input> filename may be either: an LLVM bitcode file, in binary (.bc) or textual (.ll) form; or of the form @<argsfile>, where <argsfile> names a file containing one <input> per line.
 
@@ -182,11 +141,9 @@ Translate one or more LLVM bitcode files to LLAIR. Each <input> filename may be 
 
   [-append-report]   append to report file
   [-colors]          enable printing in colors
-  [-fuzzer]          add a harness for libFuzzer targets
   [-margin <cols>]   wrap debug tracing at <cols> columns
   [-no-internalize]  do not internalize all functions except the entry points
                      specified in the config file
-  [-no-models]       do not add models for C/C++ runtime and standard libraries
   [-output <file>]   write generated binary LLAIR to <file>
   [-report <file>]   write report sexp to <file>, or to standard error if "-"
   [-trace <spec>]    enable debug tracing
@@ -198,7 +155,7 @@ Translate one or more LLVM bitcode files to LLAIR. Each <input> filename may be 
 
 translate LLVM bitcode to LLAIR and print in textual form
 
-  sledge llvm disassemble <input> [<input> ...]
+  sledge llvm disassemble <input>
 
 The <input> file must be LLVM bitcode.
 
@@ -206,14 +163,11 @@ The <input> file must be LLVM bitcode.
 
   [-append-report]        append to report file
   [-colors]               enable printing in colors
-  [-fuzzer]               add a harness for libFuzzer targets
   [-llair-output <file>]  write generated textual LLAIR to <file>, or to
                           standard output if omitted
   [-margin <cols>]        wrap debug tracing at <cols> columns
   [-no-internalize]       do not internalize all functions except the entry
                           points specified in the config file
-  [-no-models]            do not add models for C/C++ runtime and standard
-                          libraries
   [-output <file>]        write generated binary LLAIR to <file>
   [-report <file>]        write report sexp to <file>, or to standard error if
                           "-"
@@ -233,7 +187,8 @@ The <input> file must be binary LLAIR, such as produced by `sledge translate`.
 === flags ===
 
   [-append-report]       append to report file
-  [-bound <int>]         stop execution exploration at depth <int>
+  [-bound <int>]         stop execution exploration at depth <int>, a negative
+                         bound is never hit and leads to unbounded exploration
   [-colors]              enable printing in colors
   [-domain <string>]     select abstract domain; must be one of "sh" (default,
                          symbolic heap domain), "globals" (used-globals domain),

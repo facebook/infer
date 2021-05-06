@@ -38,6 +38,6 @@ AC_DEFUN([AC_ASSERT_OCAML_PKG],
 If you are using opam, please run
 
   opam update
-  opam install --deps-only infer .])
+  opam install --deps-only opam/infer.opam])
   ])
 ])

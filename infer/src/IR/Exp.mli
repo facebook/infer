@@ -13,7 +13,8 @@
 open! IStd
 module F = Format
 
-type closure = {name: Procname.t; captured_vars: (t * Pvar.t * Typ.t * Pvar.capture_mode) list}
+type closure =
+  {name: Procname.t; captured_vars: (t * Pvar.t * Typ.t * CapturedVar.capture_mode) list}
 
 (** This records information about a [sizeof(typ)] expression.
 
@@ -117,9 +118,6 @@ val le : t -> t -> t
 val lt : t -> t -> t
 (** Create expression [e1 < e2] *)
 
-val and_nary : t list -> t
-(** Create expression [e1 && e2 && e3 && ...] *)
-
 val free_vars : t -> Ident.t Sequence.t
 (** all the idents appearing in the expression *)
 
@@ -130,10 +128,6 @@ val ident_mem : t -> Ident.t -> bool
 
 val program_vars : t -> Pvar.t Sequence.t
 (** all the program variables appearing in the expression *)
-
-val rename_pvars : f:(string -> string) -> t -> t
-(** Rename all Pvars according to the function [f]. WARNING: You want to rename pvars before you
-    combine expressions from different symbolic states, which you RARELY want to.*)
 
 val fold_captured : f:('a -> t -> 'a) -> t -> 'a -> 'a
 (** Fold over the expressions captured by this expression. *)

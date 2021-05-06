@@ -7,8 +7,9 @@ TESTS_DIR = ../../..
 
 # use our own clang's standard library so that the tests are uniform across distributions
 CLANG_OPTIONS = -x c++ -std=c++1y -isystem$(ROOT_DIR) -c --stdlib=libc++
-INFER_OPTIONS = --biabduction-only --ml-buckets cpp --debug-exceptions --project-root $(TESTS_DIR) \
-                --report-custom-error
+INFER_OPTIONS = \
+  --biabduction-only --biabduction-memleak-buckets cpp --debug-exceptions --report-custom-error \
+  --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = \

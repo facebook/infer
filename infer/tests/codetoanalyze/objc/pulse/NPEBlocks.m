@@ -49,7 +49,7 @@ int captured_npe_bad() {
   return my_block();
 }
 
-int captured_npe_ok_FP(int* y) {
+int captured_npe_ok(int* y) {
   __block int* x = NULL;
   void (^my_block)(void) = ^() {
     x = y;

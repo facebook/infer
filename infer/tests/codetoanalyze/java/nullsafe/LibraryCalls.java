@@ -9,7 +9,6 @@ package codetoanalyze.java.nullsafe;
 
 import java.lang.ref.PhantomReference;
 import java.lang.ref.Reference;
-import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -27,9 +26,6 @@ public class LibraryCalls {
     return ref.get().toString();
   }
 
-  String badSoftReferenceDereference(SoftReference ref) {
-    return ref.get().toString();
-  }
 
   String badAtomicReferenceDereference(AtomicReference ref) {
     return ref.get().toString();

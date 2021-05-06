@@ -23,7 +23,7 @@ uint64_t fnv64_hash_impl(const char* s) {
 }
 
 CAMLprim value fnv64_hash(value c) {
-  char* c_string = String_val(c);
+  const char* c_string = String_val(c);
   uint64_t hashed = fnv64_hash_impl(c_string);
   char str[21];
   snprintf(str, 21, "%" PRIu64, hashed);

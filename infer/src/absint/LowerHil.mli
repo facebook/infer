@@ -29,7 +29,13 @@ module Make (TransferFunctions : TransferFunctions.HIL) (HilConfig : HilConfig) 
 
   type analysis_data = TransferFunctions.analysis_data
 
-  val exec_instr : Domain.t -> analysis_data -> CFG.Node.t -> Sil.instr -> Domain.t
+  val exec_instr :
+       Domain.t
+    -> analysis_data
+    -> CFG.Node.t
+    -> ProcCfg.InstrNode.instr_index
+    -> Sil.instr
+    -> Domain.t
 
   val pp_session_name : CFG.Node.t -> Format.formatter -> unit
 end

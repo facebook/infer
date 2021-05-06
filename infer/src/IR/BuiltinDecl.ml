@@ -36,6 +36,26 @@ let __array_access = create_procname "__array_access"
 
 let __assert_fail = create_procname "__assert_fail"
 
+let __atomic_fetch_max = create_procname "__atomic_fetch_max"
+
+let __atomic_fetch_min = create_procname "__atomic_fetch_min"
+
+let __atomic_fetch_nand = create_procname "__atomic_fetch_nand"
+
+let __atomic_max_fetch = create_procname "__atomic_max_fetch"
+
+let __atomic_min_fetch = create_procname "__atomic_min_fetch"
+
+let __atomic_nand_fetch = create_procname "__atomic_nand_fetch"
+
+let __c11_atomic_fetch_max = create_procname "__c11_atomic_fetch_max"
+
+let __c11_atomic_fetch_min = create_procname "__c11_atomic_fetch_min"
+
+let __opencl_atomic_fetch_max = create_procname "__opencl_atomic_fetch_max"
+
+let __opencl_atomic_fetch_min = create_procname "__opencl_atomic_fetch_min"
+
 let __builtin_va_arg = create_procname "__builtin_va_arg"
 
 let __builtin_va_copy = create_procname "__builtin_va_copy"
@@ -184,3 +204,5 @@ let vwscanf = create_procname "vwscanf"
 let wscanf = create_procname "wscanf"
 
 let zero_initialization = create_procname "__infer_zero_initialization"
+
+let match_builtin builtin _ s = String.equal s (Procname.get_method builtin)

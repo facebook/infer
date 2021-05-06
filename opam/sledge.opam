@@ -1,0 +1,36 @@
+opam-version: "2.0"
+maintainer: "Josh Berdine <jjb@fb.com>"
+authors: "Josh Berdine <jjb@fb.com>"
+homepage: "https://github.com/facebook/infer/tree/master/sledge"
+bug-reports: "https://github.com/facebook/infer/issues/new?template=sledge_issue_template.md"
+dev-repo: "git://github.com/facebook/infer.git"
+license: "MIT"
+build: [
+  [make "-C" "sledge" "release"]
+]
+depends: [
+  "ocaml" {>= "4.12.0"}
+  "apron" {>= "v0.9.13"}
+  "base"
+  "containers"
+  "containers-data"
+  "conf-llvm" {= "11.0.0"}
+  "core" {>= "v0.14"}
+  "ctypes"
+  "ctypes-foreign"
+  "dune" {build & >= "2.7"}
+  "dune-build-info" {build}
+  "fpath"
+  "iter"
+  "memtrace"
+  "mtime"
+  "ppx_compare"
+  "ppx_hash"
+  "ppxlib" {>= "0.21.0"}
+  "shexp"
+  "smtlib-utils"
+  "yojson"
+  "zarith"
+]
+synopsis: "SLEdge analyzer"
+description: "SLEdge analyzer"

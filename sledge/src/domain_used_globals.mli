@@ -7,6 +7,13 @@
 
 (** Used-globals abstract domain *)
 
-include Domain_intf.Dom with type summary = Llair.Global.Set.t
+open Domain_intf
+include Domain with type summary = Llair.Global.Set.t
 
-val by_function : Domain_intf.used_globals -> Llair.Function.t -> summary
+type used_globals =
+  | Per_function of Llair.Global.Set.t Llair.Function.Map.t
+      (** map of functions to globals they or their callees use *)
+  | Declared of Llair.Global.Set.t
+      (** set of declared globals used in the program *)
+
+val by_function : used_globals -> Llair.Function.t -> summary

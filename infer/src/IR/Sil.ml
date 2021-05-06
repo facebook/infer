@@ -17,6 +17,7 @@ module L = Logging
 (** Kind of prune instruction *)
 type if_kind =
   | Ik_bexp  (** boolean expressions, and exp ? exp : exp *)
+  | Ik_compexch  (** used in atomic compare exchange expressions *)
   | Ik_dowhile
   | Ik_for
   | Ik_if
@@ -28,9 +29,12 @@ type if_kind =
 type instr_metadata =
   | Abstract of Location.t
       (** a good place to apply abstraction, mostly used in the biabduction analysis *)
+  | CatchEntry of {try_id: int; loc: Location.t}  (** entry of C++ catch blocks *)
   | ExitScope of Var.t list * Location.t  (** remove temporaries and dead program variables *)
   | Nullify of Pvar.t * Location.t  (** nullify stack variable *)
   | Skip  (** no-op *)
+  | TryEntry of {try_id: int; loc: Location.t}  (** entry of C++ try block *)
+  | TryExit of {try_id: int; loc: Location.t}  (** exit of C++ try block *)
   | VariableLifetimeBegins of Pvar.t * Typ.t * Location.t  (** stack variable declared *)
 [@@deriving compare]
 
@@ -91,7 +95,13 @@ let color_wrapper ~f = if Config.print_using_diff then Pp.color_wrapper ~f else 
 let pp_exp_typ pe f (e, t) = F.fprintf f "%a:%a" (Exp.pp_diff pe) e (Typ.pp pe) t
 
 let location_of_instr_metadata = function
-  | Abstract loc | ExitScope (_, loc) | Nullify (_, loc) | VariableLifetimeBegins (_, _, loc) ->
+  | Abstract loc
+  | CatchEntry {loc}
+  | ExitScope (_, loc)
+  | Nullify (_, loc)
+  | TryEntry {loc}
+  | TryExit {loc}
+  | VariableLifetimeBegins (_, _, loc) ->
       loc
   | Skip ->
       Location.dummy
@@ -106,13 +116,13 @@ let location_of_instr = function
 
 
 let exps_of_instr_metadata = function
-  | Abstract _ ->
+  | Abstract _ | CatchEntry _ ->
       []
   | ExitScope (vars, _) ->
       List.map ~f:Var.to_exp vars
   | Nullify (pvar, _) ->
       [Exp.Lvar pvar]
-  | Skip ->
+  | Skip | TryEntry _ | TryExit _ ->
       []
   | VariableLifetimeBegins (pvar, _, _) ->
       [Exp.Lvar pvar]
@@ -137,6 +147,8 @@ let exps_of_instr = function
 let if_kind_to_string = function
   | Ik_bexp ->
       "boolean exp"
+  | Ik_compexch ->
+      "atomic compare exchange"
   | Ik_dowhile ->
       "do while"
   | Ik_for ->
@@ -154,12 +166,18 @@ let if_kind_to_string = function
 let pp_instr_metadata pe f = function
   | Abstract loc ->
       F.fprintf f "APPLY_ABSTRACTION; [%a]" Location.pp loc
+  | CatchEntry {loc} ->
+      F.fprintf f "CATCH_ENTRY; [%a]" Location.pp loc
   | ExitScope (vars, loc) ->
       F.fprintf f "EXIT_SCOPE(%a); [%a]" (Pp.seq ~sep:"," Var.pp) vars Location.pp loc
   | Nullify (pvar, loc) ->
       F.fprintf f "NULLIFY(%a); [%a]" (Pvar.pp pe) pvar Location.pp loc
   | Skip ->
       F.pp_print_string f "SKIP"
+  | TryEntry {loc} ->
+      F.fprintf f "TRY_ENTRY; [%a]" Location.pp loc
+  | TryExit {loc} ->
+      F.fprintf f "TRY_EXIT; [%a]" Location.pp loc
   | VariableLifetimeBegins (pvar, typ, loc) ->
       F.fprintf f "VARIABLE_DECLARED(%a:%a); [%a]" Pvar.pp_value pvar (Typ.pp_full pe) typ
         Location.pp loc

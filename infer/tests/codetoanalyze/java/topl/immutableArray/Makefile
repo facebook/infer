@@ -5,7 +5,7 @@
 
 TESTS_DIR = ../../../..
 
-INFER_OPTIONS = --topl-properties immutableArray.topl --pulse-only
+INFER_OPTIONS = --topl-properties immutableArray.topl --topl-only
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard *.java)

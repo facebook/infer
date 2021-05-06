@@ -37,8 +37,7 @@ type t =
   | SIOF
   | SelfInBlock
   | Starvation
-  | ToplOnBiabduction
-  | ToplOnPulse
+  | Topl
   | Uninit
 [@@deriving equal, enumerate]
 
@@ -157,7 +156,7 @@ let config_unsafe checker =
           "[EXPERIMENTAL] Collects function that are called without config checks."
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
-      ; activates= [] }
+      ; activates= [Cost] }
   | Cost ->
       { id= "cost"
       ; kind=
@@ -305,8 +304,9 @@ let config_unsafe checker =
       ; activates= [] }
   | Pulse ->
       { id= "pulse"
-      ; kind= UserFacing {title= "Pulse"; markdown_body= ""}
-      ; support= (function Clang -> Support | Java -> ExperimentalSupport | CIL -> NoSupport)
+      ; kind=
+          UserFacing {title= "Pulse"; markdown_body= [%blob "../../documentation/checkers/Pulse.md"]}
+      ; support= (function Clang | Java -> Support | CIL -> NoSupport)
       ; short_documentation= "Memory and lifetime analysis."
       ; cli_flags= Some {deprecated= ["-ownership"]; show_in_help= true}
       ; enabled_by_default= false
@@ -409,21 +409,14 @@ let config_unsafe checker =
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= true
       ; activates= [] }
-  | ToplOnBiabduction ->
-      { id= "topl-biabd"
-      ; kind= UserFacing {title= "TOPL"; markdown_body= ""}
+  | Topl ->
+      { id= "topl"
+      ; kind=
+          UserFacing {title= "Topl"; markdown_body= [%blob "../../documentation/checkers/Topl.md"]}
       ; support= supports_clang_and_java_experimental
       ; short_documentation=
-          "Detects errors based on user-provided state machines describing multi-object monitors."
-      ; cli_flags= Some {deprecated= []; show_in_help= true}
-      ; enabled_by_default= false
-      ; activates= [Biabduction] }
-  | ToplOnPulse ->
-      { id= "topl-pulse"
-      ; kind= UserFacing {title= "TOPL"; markdown_body= ""}
-      ; support= supports_clang_and_java_experimental
-      ; short_documentation=
-          "Detects errors based on user-provided state machines describing multi-object monitors."
+          "Detect errors based on user-provided state machines describing temporal properties over \
+           multiple objects."
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [Pulse] }

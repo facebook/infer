@@ -43,15 +43,17 @@ let run_buck_build prog buck_build_args =
   let process_buck_line acc line =
     L.debug Capture Verbose "BUCK OUT: %s@." line ;
     match String.lsplit2 ~on:' ' line with
-    | Some (_, target_path) ->
-        let filename =
-          ResultsDirEntryName.get_path
-            ~results_dir:(Config.project_root ^/ target_path)
-            CaptureDependencies
-        in
-        if PolyVariantEqual.(Sys.file_exists filename = `Yes) then filename :: acc else acc
+    | Some (_, infer_deps_path) ->
+        let full_path = Config.project_root ^/ infer_deps_path in
+        let dirname = Filename.dirname full_path in
+        let get_path results_dir = ResultsDirEntryName.get_path ~results_dir CaptureDependencies in
+        (* Buck can either give the full path to infer-deps.txt ... *)
+        if ISys.file_exists (get_path dirname) then get_path dirname :: acc
+          (* ... or a folder which contains infer-deps.txt *)
+        else if ISys.file_exists (get_path full_path) then get_path full_path :: acc
+        else acc
     | _ ->
-        L.internal_error "Couldn't parse buck target output: %s" line ;
+        L.internal_error "Couldn't parse buck target output: %s@\n" line ;
         acc
   in
   List.fold lines ~init:[] ~f:process_buck_line
@@ -66,9 +68,7 @@ let merge_deps_files depsfiles =
           Utils.fold_folders ~init:[] ~path:buck_out ~f:(fun acc dir ->
               if
                 String.is_substring dir ~substring:"infer-out"
-                && PolyVariantEqual.(
-                     Sys.file_exists (ResultsDirEntryName.get_path ~results_dir:dir CaptureDB)
-                     = `Yes)
+                && ISys.file_exists (ResultsDirEntryName.get_path ~results_dir:dir CaptureDB)
               then Printf.sprintf "\t\t%s" dir :: acc
               else acc )
         in
@@ -110,8 +110,7 @@ let capture build_cmd =
   let {command; rev_not_targets; targets} =
     add_flavors_to_buck_arguments ClangFlavors ~extra_flavors:[] buck_args
   in
-  if List.is_empty targets then ()
-  else
+  if not (List.is_empty targets) then (
     let all_args = List.rev_append rev_not_targets targets in
     let updated_buck_cmd =
       command
@@ -122,4 +121,4 @@ let capture build_cmd =
       updated_buck_cmd ;
     let prog, buck_build_cmd = (prog, updated_buck_cmd) in
     ResultsDir.RunState.set_merge_capture true ;
-    clang_flavor_capture ~prog ~buck_build_cmd
+    clang_flavor_capture ~prog ~buck_build_cmd )

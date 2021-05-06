@@ -242,7 +242,7 @@ let mk_rule_lsls_ls tenv k1 k2 impl_ok1 impl_ok2 para =
 
 
 let mk_rules_for_sll tenv (para : Predicates.hpara) : rule list =
-  if not Config.nelseg then
+  if not Config.biabduction_nelseg then
     let pts_pts = mk_rule_ptspts_ls tenv true true para in
     let pts_pels = mk_rule_ptsls_ls tenv Lseg_PE true false para in
     let pels_pts = mk_rule_lspts_ls tenv Lseg_PE false true para in
@@ -450,7 +450,7 @@ let mk_rule_dlldll_dll tenv k1 k2 impl_ok1 impl_ok2 para =
 
 
 let mk_rules_for_dll tenv (para : Predicates.hpara_dll) : rule list =
-  if not Config.nelseg then
+  if not Config.biabduction_nelseg then
     let pts_pts = mk_rule_ptspts_dll tenv true true para in
     let pts_pedll = mk_rule_ptsdll_dll tenv Lseg_PE true false para in
     let pedll_pts = mk_rule_dllpts_dll tenv Lseg_PE false true para in

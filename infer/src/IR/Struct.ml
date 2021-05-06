@@ -87,7 +87,8 @@ let pp pe name f
      exported_obj_methods: {@[<v>%a@]}@,\
      annots: {@[<v>%a@]}@,\
      java_class_info: {@[<v>%a@]}@,\
-     dummy: %b@]@,"
+     dummy: %b@,\
+     @]"
     Typ.Name.pp name
     (seq (pp_field pe))
     fields

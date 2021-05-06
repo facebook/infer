@@ -45,6 +45,9 @@ BUILD_SYSTEMS_TESTS += \
   incremental_analysis_change_procedure \
   incremental_analysis_add_procedure \
 
+COST_TESTS += \
+  c_performance \
+
 DIRECT_TESTS += \
   c_biabduction \
   c_bufferoverrun \
@@ -97,6 +100,10 @@ BUILD_SYSTEMS_TESTS += \
   objc_retain_cycles_weak \
   differential_of_costs_report_objc \
 
+COST_TESTS += \
+  objc_autoreleasepool \
+  objc_performance \
+
 DIRECT_TESTS += \
   objc_autoreleasepool \
   objc_bufferoverrun \
@@ -119,6 +126,13 @@ DIRECT_TESTS += \
   objcpp_pulse \
   objcpp_racerd \
   objcpp_retain-cycles \
+
+ifeq ($(IS_FACEBOOK_TREE),yes)
+DIRECT_TESTS += \
+  objc_fb-config-impact \
+  objc_fb-gk-interaction
+endif
+
 
 ifneq ($(XCODE_SELECT),no)
 BUILD_SYSTEMS_TESTS += xcodebuild_no_xcpretty
@@ -144,21 +158,24 @@ BUILD_SYSTEMS_TESTS += \
   resource_leak_exception_lines \
   racerd_dedup
 
-#TODO T41549034: Jdk11 translates string append differently, causing
-#test failures in NullPointerExceptions:stringVarEqualsFalseNPE
+COST_TESTS += \
+  java_hoistingExpensive \
+  java_performance \
+  java_performance-exclusive \
 
 DIRECT_TESTS += \
   java_annotreach \
   java_biabduction \
   java_bufferoverrun \
   java_checkers \
-  java_nullsafe \
-	java_nullsafe-annotation-graph \
   java_hoisting \
   java_hoistingExpensive \
   java_impurity \
+  java_immutability \
   java_inefficientKeysetIterator \
   java_litho-required-props \
+  java_nullsafe \
+  java_nullsafe-annotation-graph \
   java_performance \
   java_performance-exclusive \
   java_pulse \
@@ -171,9 +188,15 @@ DIRECT_TESTS += \
   java_topl \
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
+BUILD_SYSTEMS_TESTS += \
+  fb_differential_of_config_impact_report_java
+
+COST_TESTS += java_fb-performance
+
 DIRECT_TESTS += \
   java_fb-config-impact \
   java_fb-gk-interaction \
+  java_fb-immutability \
   java_fb-performance
 endif
 
@@ -365,24 +388,26 @@ byte_infer: byte
 opt:
 	$(QUIET)$(MAKE) BUILD_MODE=opt infer
 
+PLUGIN_SETUP_SCRIPT ?= setup.sh
+
 .PHONY: clang_setup
 clang_setup:
 #	if clang is already built then let the user know they might not need to rebuild clang
 	$(QUIET)export CC="$(CC)" CFLAGS="$(CFLAGS)"; \
 	export CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)"; \
 	export CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)"; \
-	$(FCP_DIR)/clang/setup.sh --only-check-install || { \
+	$(FCP_DIR)/clang/$(PLUGIN_SETUP_SCRIPT) --only-check-install || { \
 	  if [ -x '$(FCP_DIR)'/clang/install/bin/clang ]; then \
 	    echo '$(TERM_INFO)*** Now building clang, this will take a while...$(TERM_RESET)' >&2; \
 	    echo '$(TERM_INFO)*** If you believe that facebook-clang-plugins/clang/install is up-to-date you can$(TERM_RESET)' >&2; \
 	    echo '$(TERM_INFO)*** interrupt the compilation (Control-C) and run this to prevent clang from being rebuilt:$(TERM_RESET)' >&2; \
 	    echo >&2 ; \
-	    echo '$(TERM_INFO)      $(FCP_DIR)/clang/setup.sh --only-record-install$(TERM_RESET)' >&2; \
+	    echo '$(TERM_INFO)      $(FCP_DIR)/clang/$(PLUGIN_SETUP_SCRIPT) --only-record-install$(TERM_RESET)' >&2; \
 	    echo >&2 ; \
 	    echo '$(TERM_INFO)(TIP: you can also force a clang rebuild by removing $(FCP_DIR)/clang/installed.version)$(TERM_RESET)' >&2; \
 	    echo >&2 ; \
 	  fi; \
-	  $(FCP_DIR)/clang/setup.sh $(FCP_COMPILE_ARGS); \
+	  $(FCP_DIR)/clang/$(PLUGIN_SETUP_SCRIPT) $(FCP_COMPILE_ARGS); \
 	}
 
 .PHONY: clang_plugin
@@ -497,18 +522,6 @@ $(DIRECT_TESTS:%=direct_%_replace): infer
 
 .PHONY: direct_tests
 direct_tests: $(DIRECT_TESTS:%=direct_%_test)
-
-COST_TESTS += \
-  c_performance \
-  java_hoistingExpensive \
-  java_performance \
-  java_performance-exclusive \
-  objc_autoreleasepool \
-  objc_performance \
-
-ifeq ($(IS_FACEBOOK_TREE),yes)
-   COST_TESTS += java_fb-performance
-endif
 
 .PHONY: cost_tests
 cost_tests: $(COST_TESTS:%=direct_%_test)
@@ -817,7 +830,8 @@ endif
 
 .PHONY: conf-clean
 conf-clean: clean
-	$(REMOVE) .buck-java8
+	$(REMOVE) .buckjavaversion
+	$(REMOVE) .buck-java11
 	$(REMOVE) Makefile.autoconf
 	$(REMOVE) acinclude.m4
 	$(REMOVE) aclocal.m4
@@ -832,14 +846,14 @@ conf-clean: clean
 
 
 # phony because it depends on opam's internal state
-.PHONY: opam.locked
-opam.locked: opam
+.PHONY: opam/infer.opam.locked
+opam/infer.opam.locked: opam/infer.opam
 # allow users to not force a run of opam update since it's very slow
 ifeq ($(NO_OPAM_UPDATE),)
 	$(QUIET)$(call silent_on_success,opam update,$(OPAM) update)
 endif
-	$(QUIET)$(call silent_on_success,generating opam.locked,\
-	  $(OPAM) lock .)
+	$(QUIET)$(call silent_on_success,generating opam/infer.opam.locked,\
+	  $(OPAM) lock opam/infer.opam)
 
 OPAM_DEV_DEPS = ocp-indent merlin utop webbrowser
 
@@ -971,6 +985,13 @@ new-website-version: doc-publish
 	cd $(WEBSITE_DIR)/versioned_docs/version-$(INFER_MAJOR).$(INFER_MINOR).$(INFER_PATCH)/ && \
 	find . -type f -not -name versions.md \
 	  -exec sed -i -e 's#/next/#/$(INFER_MAJOR).$(INFER_MINOR).$(INFER_PATCH)/#g' \{\} \+
+#	adjust intra-doc links in the previous "latest" version: /docs/foo -> /docs/<oldlatest>/foo
+#	  select the first version that is not the one we are creating (in case this target is run
+#	  multiple times)
+	old_latest=$$(jq 'map(select(. != "$(INFER_MAJOR).$(INFER_MINOR).$(INFER_PATCH)"))[0]' < $(WEBSITE_DIR)/versions.json | tr -d '"'); \
+	cd $(WEBSITE_DIR)/versioned_docs/version-$${old_latest}/ && \
+	find . -type f -not -name versions.md \
+	  -exec sed -i -e "s#(/docs/\([^$$(echo $$old_latest | cut -b 1)]\)#(/docs/$${old_latest}/\1#g" \{\} \+
 #	adjust versions.md, the page where users can navigate to other versions of the docs, unless
 #	it was already changed by an earlier run of this rule
 	cd $(WEBSITE_DIR)/ && \

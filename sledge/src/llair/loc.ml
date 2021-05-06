@@ -12,7 +12,11 @@ type t = {dir: string; file: string; line: int; col: int}
 
 let none = {dir= ""; file= ""; line= 0; col= 0}
 
-let mk ?(dir = none.dir) ?(file = none.file) ?(col = none.col) ~line =
+let mk ~dir ~file ~line ~col =
+  let dir = Option.get_or dir ~default:none.dir in
+  let file = Option.get_or file ~default:none.file in
+  let line = Option.get_or line ~default:none.line in
+  let col = Option.get_or col ~default:none.col in
   {dir; file; line; col}
 
 let root = ref None
@@ -20,7 +24,10 @@ let root = ref None
 let pp fs ({dir; file; line; col} as loc) =
   if not (equal loc none) then Format.pp_print_string fs "; " ;
   ( if not (String.is_empty dir) then
-    let dir_file = Fpath.append (Fpath.v dir) (Fpath.v file) in
+    let dir_file =
+      if String.is_empty file then Fpath.v dir
+      else Fpath.append (Fpath.v dir) (Fpath.v file)
+    in
     let relative =
       let* root = !root in
       let+ relative = Fpath.relativize ~root:(Fpath.v root) dir_file in

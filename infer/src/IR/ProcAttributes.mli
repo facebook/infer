@@ -9,6 +9,11 @@ open! IStd
 
 (** Attributes of a procedure. *)
 
+(** Visibility modifiers. *)
+type access = Default | Public | Private | Protected [@@deriving compare]
+
+val equal_access : access -> access -> bool
+
 type objc_accessor_type = Objc_getter of Struct.field | Objc_setter of Struct.field
 
 type var_data =
@@ -26,7 +31,7 @@ type specialized_with_blocks_info =
 [@@deriving compare]
 
 type t =
-  { access: PredSymb.access  (** visibility access *)
+  { access: access  (** visibility access *)
   ; captured: CapturedVar.t list
         (** name, type, and mode of variables captured in blocks and lambdas *)
   ; exceptions: string list  (** exceptions thrown by the procedure *)
@@ -59,14 +64,17 @@ type t =
   ; objc_accessor: objc_accessor_type option  (** type of ObjC accessor, if any *)
   ; proc_name: Procname.t  (** name of the procedure *)
   ; ret_type: Typ.t  (** return type *)
-  ; has_added_return_param: bool  (** whether or not a return param was added *) }
+  ; has_added_return_param: bool  (** whether or not a return param was added *)
+  ; is_ret_type_pod: bool  (** whether or not the return type is POD *)
+  ; is_ret_constexpr: bool  (** whether the (C++) function or method is declared as [constexpr] *)
+  }
 
 val default : SourceFile.t -> Procname.t -> t
 (** Create a proc_attributes with default values. *)
 
 val pp : Format.formatter -> t -> unit
 
-val get_access : t -> PredSymb.access
+val get_access : t -> access
 (** Return the visibility attribute *)
 
 val get_formals : t -> (Mangled.t * Typ.t) list
@@ -78,8 +86,5 @@ val get_loc : t -> Location.t
 (** Return loc information for the procedure *)
 
 val get_proc_name : t -> Procname.t
-
-val get_pvar_formals : t -> (Pvar.t * Typ.t) list
-(** Return pvar and type of formal parameters *)
 
 module SQLite : SqliteUtils.Data with type t = t

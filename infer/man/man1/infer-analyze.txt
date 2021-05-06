@@ -34,6 +34,10 @@ OPTIONS
            Activates: Enable biabduction and disable all other checkers
            (Conversely: --no-biabduction-only)
 
+       --biabduction-write-dotty
+           Activates: Produce dotty files for specs and retain cycles reports
+           in infer-out/captured. (Conversely: --no-biabduction-write-dotty)
+
        --bufferoverrun
            Activates: checker bufferoverrun: InferBO is a detector for
            out-of-bounds array accesses. (Conversely: --no-bufferoverrun)
@@ -92,7 +96,7 @@ OPTIONS
            Activates: Debug mode (also sets --debug-level 2,
            --developer-mode, --print-buckets, --print-types,
            --reports-include-ml-loc, --no-only-cheap-debug, --trace-error,
-           --write-dotty, --write-html) (Conversely: --no-debug | -G)
+           --write-html) (Conversely: --no-debug | -G)
 
        --debug-level level
            Debug level (sets --bo-debug level, --debug-level-analysis level,
@@ -171,6 +175,11 @@ OPTIONS
        --impurity-only
            Activates: Enable impurity and disable all other checkers
            (Conversely: --no-impurity-only)
+
+       --impurity-report-immutable-modifications
+           Activates: Report modifications to immutable fields in the
+           Impurity checker (Conversely:
+           --no-impurity-report-immutable-modifications)
 
        --no-inefficient-keyset-iterator
            Deactivates: checker inefficient-keyset-iterator: Check for
@@ -280,6 +289,10 @@ OPTIONS
        --pulse-model-release-pattern string
            Regex of methods that should be modelled as release in Pulse
 
+       --pulse-model-return-first-arg string
+           Regex of methods that should be modelled as returning the first
+           argument in Pulse
+
        --pulse-model-return-nonnull string
            Regex of methods that should be modelled as returning non-null in
            Pulse
@@ -294,6 +307,14 @@ OPTIONS
        --pulse-only
            Activates: Enable pulse and disable all other checkers
            (Conversely: --no-pulse-only)
+
+       --pulse-report-ignore-unknown-java-methods-patterns +string
+           On Java, issues that are found on program paths that contain calls
+           to unknown methods (those without implementation) are not reported
+           unless all the unknown method names match this pattern. If the
+           empty list is provided or
+           --pulse_report_ignore_unknown_java_methods_patterns-reset, all
+           issues will be reported regardless the presence of unknown code
 
        --purity
            Activates: checker purity: Detects pure (side-effect-free)
@@ -389,23 +410,14 @@ OPTIONS
            Activates: Enable starvation and disable all other checkers
            (Conversely: --no-starvation-only)
 
-       --topl-biabd
-           Activates: checker topl-biabd: Detects errors based on
-           user-provided state machines describing multi-object monitors.
-           (Conversely: --no-topl-biabd)
+       --topl
+           Activates: checker topl: Detect errors based on user-provided
+           state machines describing temporal properties over multiple
+           objects. (Conversely: --no-topl)
 
-       --topl-biabd-only
-           Activates: Enable topl-biabd and disable all other checkers
-           (Conversely: --no-topl-biabd-only)
-
-       --topl-pulse
-           Activates: checker topl-pulse: Detects errors based on
-           user-provided state machines describing multi-object monitors.
-           (Conversely: --no-topl-pulse)
-
-       --topl-pulse-only
-           Activates: Enable topl-pulse and disable all other checkers
-           (Conversely: --no-topl-pulse-only)
+       --topl-only
+           Activates: Enable topl and disable all other checkers (Conversely:
+           --no-topl-only)
 
        --no-uninit
            Deactivates: checker uninit: Warns when values are used before
@@ -414,6 +426,17 @@ OPTIONS
        --uninit-only
            Activates: Enable uninit and disable all other checkers
            (Conversely: --no-uninit-only)
+
+       --write-html
+           Activates: Produce html debug output for the analyses in
+           infer-out/captured. This shows the abstract state of all analyses
+           at each program point in the source code. Each captured source
+           file has its own html page. This HTML file contains the source
+           file, and at each line of           the file there are links to the nodes of the control flow graph
+           of Infer's translation of that line of code into its intermediate
+           representation (SIL). This way it's possible to see what the
+           translation is, and the details of the symbolic execution on each
+           node. (Conversely: --no-write-html)
 
        --xcode-isysroot-suffix string
            Specify the suffix of Xcode isysroot directory, to avoid absolute
@@ -460,6 +483,10 @@ CLANG OPTIONS
            Override sources in all cxx annotation reachability specs with the
            given sources spec
 
+       --biabduction-unsafe-malloc
+           Activates: Assume that malloc(3) never returns null. (Conversely:
+           --no-biabduction-unsafe-malloc)
+
        --clang-compound-literal-init-limit int
            Limit after which initialization of compound types (structs and
            arrays) is not done element by element but using a builtin
@@ -475,16 +502,6 @@ CLANG OPTIONS
            these types (or common wrappers around these types such as
            unique_ptr<type>) will count as dead stores when the variables are
            not read explicitly by the program.
-
-       --ml-buckets ,-separated sequence of { all | cf | arc | narc | cpp |
-       unknown_origin }
-           Specify the memory leak buckets to be checked in C++:       
-    - cpp from C++ code
-           
-
-       --unsafe-malloc
-           Activates: Assume that malloc(3) never returns null. (Conversely:
-           --no-unsafe-malloc)
 JAVA OPTIONS
        --annotation-reachability-custom-pairs json
            Specify custom sources/sink for the annotation reachability
