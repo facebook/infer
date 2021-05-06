@@ -312,7 +312,7 @@ module Optional = struct
     let<+> astate =
       PulseOperations.invalidate
         (MemoryAccess {pointer; access= Dereference; hist_obj_default= snd value})
-        location Invalidation.OptionalEmpty value astate
+        location OptionalEmpty value astate
     in
     astate
 

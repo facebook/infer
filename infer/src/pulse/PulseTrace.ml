@@ -59,9 +59,9 @@ let rec add_to_errlog ?(include_value_history = true) ~nesting ~pp_immediate tra
 let rec iter trace ~f =
   match trace with
   | Immediate {history} ->
-      List.iter history ~f
+      ValueHistory.iter history ~f
   | ViaCall {history; in_call} ->
-      List.iter history ~f ;
+      ValueHistory.iter history ~f ;
       iter in_call ~f
 
 

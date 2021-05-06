@@ -25,6 +25,26 @@ type event =
 
 and t = event list [@@deriving compare, equal]
 
+let rec iter_event event ~f =
+  f event ;
+  match event with
+  | Call {in_call} ->
+      iter in_call ~f
+  | Allocation _
+  | Assignment _
+  | Capture _
+  | Conditional _
+  | CppTemporaryCreated _
+  | FormalDeclared _
+  | Invalidated _
+  | StructFieldAddressCreated _
+  | VariableAccessed _
+  | VariableDeclared _ ->
+      ()
+
+
+and iter history ~f = List.iter history ~f:(fun event -> iter_event ~f event)
+
 let yojson_of_event = [%yojson_of: _]
 
 let yojson_of_t = [%yojson_of: _]

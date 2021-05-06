@@ -27,6 +27,9 @@ val pp : F.formatter -> t -> unit
 
 val pp_fields : F.formatter -> Fieldname.t RevList.t -> unit
 
+val iter : t -> f:(event -> unit) -> unit
+(** iterate on all events, recursing into the histories inside call events *)
+
 val location_of_event : event -> Location.t
 
 val add_to_errlog : nesting:int -> t -> Errlog.loc_trace_elem list -> Errlog.loc_trace_elem list

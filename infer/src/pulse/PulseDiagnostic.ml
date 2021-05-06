@@ -45,6 +45,18 @@ let get_location = function
       location
 
 
+let get_invalidation_in_trace trace =
+  PulseTrace.find_map trace ~f:(function
+    | ValueHistory.Invalidated (invalidation, _) ->
+        Some invalidation
+    | _ ->
+        None )
+
+
+let trace_contains_invalidation trace =
+  PulseTrace.exists trace ~f:(function ValueHistory.Invalidated _ -> true | _ -> false)
+
+
 (* whether the [calling_context + trace] starts with a call or contains only an immediate event *)
 let immediate_or_first_call calling_context (trace : Trace.t) =
   match (calling_context, trace) with
@@ -58,73 +70,79 @@ let get_message diagnostic =
   let pulse_start_msg = "Pulse found a potential" in
   match diagnostic with
   | AccessToInvalidAddress {calling_context; invalidation; invalidation_trace; access_trace} -> (
-    match invalidation with
-    | ConstantDereference i when IntLit.equal i IntLit.zero ->
-        (* Special error message for nullptr dereference *)
-        let pp_access_trace fmt (trace : Trace.t) =
-          match immediate_or_first_call calling_context trace with
-          | `Immediate ->
-              ()
-          | `Call f ->
-              F.fprintf fmt " in call to %a" CallEvent.describe f
-        in
-        let pp_invalidation_trace line fmt (trace : Trace.t) =
-          let pp_line fmt line = F.fprintf fmt "on line %d" line in
-          match immediate_or_first_call calling_context trace with
-          | `Immediate ->
-              F.fprintf fmt "null pointer dereference %a" pp_line line
-          | `Call f ->
-              F.fprintf fmt "null pointer dereference %a indirectly during the call to %a" pp_line
-                line CallEvent.describe f
-        in
-        let invalidation_line =
-          let {Location.line; _} = Trace.get_outer_location invalidation_trace in
-          line
-        in
-        F.asprintf "%s %a%a." pulse_start_msg
-          (pp_invalidation_trace invalidation_line)
-          invalidation_trace pp_access_trace access_trace
-    | _ ->
-        (* The goal is to get one of the following messages depending on the scenario:
+      let invalidation, invalidation_trace =
+        get_invalidation_in_trace access_trace
+        |> Option.value_map
+             ~f:(fun invalidation -> (invalidation, access_trace))
+             ~default:(invalidation, invalidation_trace)
+      in
+      match invalidation with
+      | ConstantDereference i when IntLit.equal i IntLit.zero ->
+          (* Special error message for nullptr dereference *)
+          let pp_access_trace fmt (trace : Trace.t) =
+            match immediate_or_first_call calling_context trace with
+            | `Immediate ->
+                ()
+            | `Call f ->
+                F.fprintf fmt " in call to %a" CallEvent.describe f
+          in
+          let pp_invalidation_trace line fmt (trace : Trace.t) =
+            let pp_line fmt line = F.fprintf fmt "on line %d" line in
+            match immediate_or_first_call calling_context trace with
+            | `Immediate ->
+                F.fprintf fmt "null pointer dereference %a" pp_line line
+            | `Call f ->
+                F.fprintf fmt "null pointer dereference %a indirectly during the call to %a" pp_line
+                  line CallEvent.describe f
+          in
+          let invalidation_line =
+            let {Location.line; _} = Trace.get_outer_location invalidation_trace in
+            line
+          in
+          F.asprintf "%s %a%a." pulse_start_msg
+            (pp_invalidation_trace invalidation_line)
+            invalidation_trace pp_access_trace access_trace
+      | _ ->
+          (* The goal is to get one of the following messages depending on the scenario:
 
-           42: delete x; return x->f
-           "`x->f` accesses `x`, which was invalidated at line 42 by `delete` on `x`"
+             42: delete x; return x->f
+             "`x->f` accesses `x`, which was invalidated at line 42 by `delete` on `x`"
 
-           42: bar(x); return x->f
-           "`x->f` accesses `x`, which was invalidated at line 42 by `delete` on `x` in call to `bar`"
+             42: bar(x); return x->f
+             "`x->f` accesses `x`, which was invalidated at line 42 by `delete` on `x` in call to `bar`"
 
-           42: bar(x); foo(x);
-           "call to `foo` eventually accesses `x->f` but `x` was invalidated at line 42 by `delete` on `x` in call to `bar`"
+             42: bar(x); foo(x);
+             "call to `foo` eventually accesses `x->f` but `x` was invalidated at line 42 by `delete` on `x` in call to `bar`"
 
-           If we don't have "x->f" but instead some non-user-visible expression, then
-           "access to `x`, which was invalidated at line 42 by `delete` on `x`"
+             If we don't have "x->f" but instead some non-user-visible expression, then
+             "access to `x`, which was invalidated at line 42 by `delete` on `x`"
 
-           Likewise if we don't have "x" in the second part but instead some non-user-visible expression, then
-           "`x->f` accesses `x`, which was invalidated at line 42 by `delete`"
-        *)
-        let pp_access_trace fmt (trace : Trace.t) =
-          match immediate_or_first_call calling_context trace with
-          | `Immediate ->
-              F.fprintf fmt "accessing memory that "
-          | `Call f ->
-              F.fprintf fmt "call to %a eventually accesses memory that " CallEvent.describe f
-        in
-        let pp_invalidation_trace line invalidation fmt (trace : Trace.t) =
-          let pp_line fmt line = F.fprintf fmt " on line %d" line in
-          match immediate_or_first_call calling_context trace with
-          | `Immediate ->
-              F.fprintf fmt "%a%a" Invalidation.describe invalidation pp_line line
-          | `Call f ->
-              F.fprintf fmt "%a%a indirectly during the call to %a" Invalidation.describe
-                invalidation pp_line line CallEvent.describe f
-        in
-        let invalidation_line =
-          let {Location.line; _} = Trace.get_outer_location invalidation_trace in
-          line
-        in
-        F.asprintf "%a%a" pp_access_trace access_trace
-          (pp_invalidation_trace invalidation_line invalidation)
-          invalidation_trace )
+             Likewise if we don't have "x" in the second part but instead some non-user-visible expression, then
+             "`x->f` accesses `x`, which was invalidated at line 42 by `delete`"
+          *)
+          let pp_access_trace fmt (trace : Trace.t) =
+            match immediate_or_first_call calling_context trace with
+            | `Immediate ->
+                F.fprintf fmt "accessing memory that "
+            | `Call f ->
+                F.fprintf fmt "call to %a eventually accesses memory that " CallEvent.describe f
+          in
+          let pp_invalidation_trace line invalidation fmt (trace : Trace.t) =
+            let pp_line fmt line = F.fprintf fmt " on line %d" line in
+            match immediate_or_first_call calling_context trace with
+            | `Immediate ->
+                F.fprintf fmt "%a%a" Invalidation.describe invalidation pp_line line
+            | `Call f ->
+                F.fprintf fmt "%a%a indirectly during the call to %a" Invalidation.describe
+                  invalidation pp_line line CallEvent.describe f
+          in
+          let invalidation_line =
+            let {Location.line; _} = Trace.get_outer_location invalidation_trace in
+            line
+          in
+          F.asprintf "%a%a" pp_access_trace access_trace
+            (pp_invalidation_trace invalidation_line invalidation)
+            invalidation_trace )
   | MemoryLeak {procname; location; allocation_trace} ->
       let allocation_line =
         let {Location.line; _} = Trace.get_outer_location allocation_trace in
@@ -212,10 +230,6 @@ let get_trace_calling_context calling_context errlog =
          |> fst )
 
 
-let trace_contains_invalidation trace =
-  PulseTrace.exists trace ~f:(function ValueHistory.Invalidated _ -> true | _ -> false)
-
-
 let add_invalidation_trace (invalidation : Invalidation.t) invalidation_trace access_trace errlog =
   let start_title, access_title =
     match invalidation with
@@ -275,7 +289,10 @@ let get_trace = function
 
 
 let get_issue_type = function
-  | AccessToInvalidAddress {invalidation; must_be_valid_reason} ->
+  | AccessToInvalidAddress {invalidation; must_be_valid_reason; access_trace} ->
+      let invalidation =
+        get_invalidation_in_trace access_trace |> Option.value ~default:invalidation
+      in
       Invalidation.issue_type_of_cause invalidation must_be_valid_reason
   | MemoryLeak _ ->
       IssueType.pulse_memory_leak
