@@ -265,15 +265,24 @@ module ObjC = struct
    fun {location} astate ->
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let<*> astate, _ =
-      PulseOperations.eval_access ~must_be_valid_reason:Invalidation.InsertionIntoCollection Read
-        location
+      PulseOperations.eval_access ~must_be_valid_reason:InsertionIntoCollection Read location
         (value, event :: value_hist)
         Dereference astate
     in
     let<+> astate, _ =
-      PulseOperations.eval_access ~must_be_valid_reason:Invalidation.InsertionIntoCollection Read
-        location
+      PulseOperations.eval_access ~must_be_valid_reason:InsertionIntoCollection Read location
         (key, event :: key_hist)
+        Dereference astate
+    in
+    astate
+
+
+  let insertion_into_array (value, value_hist) ~desc : model =
+   fun {location} astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+    let<+> astate, _ =
+      PulseOperations.eval_access ~must_be_valid_reason:InsertionIntoCollection Read location
+        (value, event :: value_hist)
         Dereference astate
     in
     astate
@@ -1738,6 +1747,15 @@ module ProcNameDispatcher = struct
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableDictionary")
           &:: "setObject:forKey:" <>$ any_arg $+ capt_arg_payload $+ capt_arg_payload
           $--> ObjC.insertion_into_dictionary ~desc:"NSMutableDictionary.setObject:forKey:"
+        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
+          &:: "addObject:" <>$ any_arg $+ capt_arg_payload
+          $--> ObjC.insertion_into_array ~desc:"NSMutableArray.addObject:"
+        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
+          &:: "insertObject:atIndex:" <>$ any_arg $+ capt_arg_payload $+ any_arg
+          $--> ObjC.insertion_into_array ~desc:"NSMutableArray.insertObject:atIndex:"
+        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
+          &:: "replaceObjectAtIndex:withObject:" <>$ any_arg $+ any_arg $+ capt_arg_payload
+          $--> ObjC.insertion_into_array ~desc:"NSMutableArray.replaceObjectAtIndex:withObject:"
         ; +match_regexp_opt Config.pulse_model_return_nonnull
           &::.*--> Misc.return_positive
                      ~desc:"modelled as returning not null due to configuration option"

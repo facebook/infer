@@ -202,3 +202,25 @@ void testNilMessagingForModelNilStringOK() {
 void testNilMessagingForModelNotNilDictBad(NSMutableDictionary* mDict) {
   addObjectInDict(mDict, nil);
 }
+
+void addNilInArrayBad(NSMutableArray* mArray) { [mArray addObject:nil]; }
+
+void addObjectInArrayOk(NSMutableArray* mArray) {
+  [mArray addObject:[SomeObject new]];
+}
+
+void insertNilInArrayBad(NSMutableArray* mArray) {
+  [mArray insertObject:nil atIndex:0];
+}
+
+void insertObjectInArrayOk(NSMutableArray* mArray) {
+  [mArray insertObject:[SomeObject new] atIndex:0];
+}
+
+void replaceNilInArrayBad(NSMutableArray* mArray) {
+  [mArray replaceObjectAtIndex:0 withObject:nil];
+}
+
+void replaceObjectInArrayOk(NSMutableArray* mArray) {
+  [mArray replaceObjectAtIndex:0 withObject:[SomeObject new]];
+}
