@@ -23,14 +23,6 @@ let report_topl_errors proc_desc err_log summary =
   List.iter ~f summary
 
 
-let proc_name_of_call call_exp =
-  match (call_exp : Exp.t) with
-  | Const (Cfun proc_name) | Closure {name= proc_name} ->
-      Some proc_name
-  | _ ->
-      None
-
-
 module PulseTransferFunctions = struct
   module CFG = ProcCfg.Normal
   module Domain = ExecutionDomain
@@ -146,14 +138,14 @@ module PulseTransferFunctions = struct
             :: rev_func_args ) )
     in
     let func_args = List.rev rev_func_args in
-    let callee_pname = proc_name_of_call call_exp in
+    let<*> astate, callee_pname = PulseOperations.eval_proc_name call_loc call_exp astate in
     let model =
       match callee_pname with
       | Some callee_pname ->
           PulseModels.dispatch tenv callee_pname func_args
           |> Option.map ~f:(fun model -> (model, callee_pname))
       | None ->
-          (* function pointer, etc.: skip for now *)
+          (* unresolved function pointer, etc.: skip *)
           None
     in
     (* do interprocedural call then destroy objects going out of scope *)
@@ -300,13 +292,15 @@ module PulseTransferFunctions = struct
           in
           let set_global_astates =
             match rhs_exp with
-            | Lvar pvar when Pvar.is_global pvar && Pvar.is_compile_constant pvar -> (
+            | Lvar pvar when Pvar.(is_global pvar && (is_const pvar || is_compile_constant pvar))
+              -> (
               (* Inline initializers of global constants when they are being used.
                  This addresses nullptr false positives by pruning infeasable paths global_var != global_constant_value,
                  where global_constant_value is the value of global_var *)
               (* TODO: Initial global constants only once *)
               match Pvar.get_initializer_pname pvar with
               | Some proc_name ->
+                  L.d_printfln_escaped "Found initializer for %a" (Pvar.pp Pp.text) pvar ;
                   let call_flags = CallFlags.default in
                   let ret_id_void = (Ident.create_fresh Ident.knormal, StdTyp.void) in
                   let no_error_states =

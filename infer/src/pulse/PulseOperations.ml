@@ -214,6 +214,9 @@ let eval mode location exp0 astate =
               (astate, (captured_as, addr_trace, mode) :: rev_captured) )
         in
         Closures.record location name (List.rev rev_captured) astate
+    | Const (Cfun proc_name) ->
+        (* function pointers are represented as closures with no captured variables *)
+        Ok (Closures.record location proc_name [] astate)
     | Cast (_, exp') ->
         eval mode exp' astate
     | Const (Cint i) ->
@@ -275,6 +278,15 @@ let eval_deref location exp astate =
   let* astate, addr_hist = eval Read location exp astate in
   let+ astate = check_addr_access Read location addr_hist astate in
   Memory.eval_edge addr_hist Dereference astate
+
+
+let eval_proc_name location call_exp astate =
+  match (call_exp : Exp.t) with
+  | Const (Cfun proc_name) | Closure {name= proc_name} ->
+      Ok (astate, Some proc_name)
+  | _ ->
+      let+ astate, (f, _) = eval Read location call_exp astate in
+      (astate, AddressAttributes.get_closure_proc_name f astate)
 
 
 let eval_structure_isl mode loc exp astate =

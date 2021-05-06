@@ -117,6 +117,8 @@ val eval_access :
 (** Like [eval] but starts from an address instead of an expression, checks that it is valid, and if
     so dereferences it according to the access. *)
 
+val eval_proc_name : Location.t -> Exp.t -> t -> (t * Procname.t option) AccessResult.t
+
 val havoc_id : Ident.t -> ValueHistory.t -> t -> t
 
 val havoc_field :
