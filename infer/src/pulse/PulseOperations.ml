@@ -37,6 +37,7 @@ module Import = struct
         ; address: AbstractValue.t
         ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
     | ReportableError of {astate: 'astate; diagnostic: Diagnostic.t}
+    | ReportableErrorSummary of {astate: AbductiveDomain.summary; diagnostic: Diagnostic.t}
     | ISLError of 'astate
 
   include IResult.Let_syntax
@@ -512,37 +513,6 @@ let mark_address_of_stack_variable history variable location address astate =
   AddressAttributes.add_one address (AddressOfStackVariable (variable, location, history)) astate
 
 
-let check_memory_leak_unreachable unreachable_addrs location astate =
-  let check_memory_leak result attributes =
-    let allocated_not_freed_opt =
-      Attributes.fold attributes ~init:(None (* allocation trace *), false (* freed *))
-        ~f:(fun acc attr ->
-          match (attr : Attribute.t) with
-          | Allocated (procname, trace) ->
-              (Some (procname, trace), snd acc)
-          | Invalid (CFree, _) ->
-              (fst acc, true)
-          | _ ->
-              acc )
-    in
-    match allocated_not_freed_opt with
-    | Some (procname, trace), false ->
-        (* allocated but not freed *)
-        Error
-          (ReportableError
-             { diagnostic= Diagnostic.MemoryLeak {procname; location; allocation_trace= trace}
-             ; astate })
-    | _ ->
-        result
-  in
-  List.fold unreachable_addrs ~init:(Ok ()) ~f:(fun res addr ->
-      match AbductiveDomain.AddressAttributes.find_opt addr astate with
-      | Some unreachable_attrs ->
-          check_memory_leak res unreachable_attrs
-      | None ->
-          res )
-
-
 let get_dynamic_type_unreachable_values vars astate =
   (* For each unreachable address we find a root variable for it; if there is
      more than one, it doesn't matter which *)
@@ -553,7 +523,7 @@ let get_dynamic_type_unreachable_values vars astate =
       astate None
   in
   let astate' = Stack.remove_vars vars astate in
-  let _, _, _, unreachable_addrs = AbductiveDomain.discard_unreachable astate' in
+  let unreachable_addrs = AbductiveDomain.get_unreachable_attributes astate' in
   let res =
     List.fold unreachable_addrs ~init:[] ~f:(fun res addr ->
         (let open IOption.Let_syntax in
@@ -566,13 +536,9 @@ let get_dynamic_type_unreachable_values vars astate =
   List.map ~f:(fun (var, _, typ) -> (var, typ)) res
 
 
-let remove_vars tenv vars location orig_astate =
+let remove_vars vars location orig_astate =
   let astate =
-    (* Simplification of [IsInstanceOf(var, typ)] term is necessary here, as a variable can die before
-       the normalization function is called. This could cause [IsInstanceOf(var, typ)] terms that
-       reference dead vars to be collected before they are evaluated to detect a contradiction *)
-    List.fold vars ~init:(AbductiveDomain.simplify_instanceof tenv orig_astate)
-      ~f:(fun astate var ->
+    List.fold vars ~init:orig_astate ~f:(fun astate var ->
         match Stack.find_opt var astate with
         | Some (address, history) ->
             let astate =
@@ -587,11 +553,7 @@ let remove_vars tenv vars location orig_astate =
             astate )
   in
   let astate' = Stack.remove_vars vars astate in
-  if phys_equal astate' astate then Ok astate
-  else
-    let astate, _, _, unreachable_addrs = AbductiveDomain.discard_unreachable astate' in
-    let+ () = check_memory_leak_unreachable unreachable_addrs location orig_astate in
-    astate
+  if phys_equal astate' astate then astate else AbductiveDomain.discard_unreachable astate'
 
 
 let get_captured_actuals location ~captured_vars ~actual_closure astate =

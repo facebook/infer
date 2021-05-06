@@ -49,10 +49,12 @@ module Misc = struct
 
 
   let early_exit : model =
-   fun {analysis_data= {tenv; proc_desc}} astate ->
+   fun {analysis_data= {tenv; proc_desc}; location} astate ->
     let open SatUnsat.Import in
     match
-      AbductiveDomain.summary_of_post tenv proc_desc astate >>| AccessResult.of_abductive_result
+      ( AbductiveDomain.summary_of_post tenv proc_desc location astate
+        >>| AccessResult.ignore_memory_leaks >>| AccessResult.of_abductive_result
+        :> (AbductiveDomain.summary, AbductiveDomain.t AccessResult.error) result SatUnsat.t )
     with
     | Unsat ->
         []

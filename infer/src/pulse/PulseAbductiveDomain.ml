@@ -35,7 +35,7 @@ module type BaseDomainSig_ = sig
   (** filter both heap and attrs *)
 
   val filter_addr_with_discarded_addrs :
-    f:(AbstractValue.t -> bool) -> t -> t * AbstractValue.t list
+    heap_only:bool -> f:(AbstractValue.t -> bool) -> t -> t * AbstractValue.t list
   (** compute new state containing only reachable addresses in its heap and attributes, as well as
       the list of discarded unreachable addresses *)
 
@@ -76,10 +76,11 @@ end = struct
     update ~heap:heap' ~attrs:attrs' foot
 
 
-  let filter_addr_with_discarded_addrs ~f foot =
+  let filter_addr_with_discarded_addrs ~heap_only ~f foot =
     let heap' = BaseMemory.filter (fun address _ -> f address) foot.heap in
     let attrs', discarded_addresses =
-      BaseAddressAttributes.filter_with_discarded_addrs (fun address _ -> f address) foot.attrs
+      if heap_only then (foot.attrs, [])
+      else BaseAddressAttributes.filter_with_discarded_addrs (fun address _ -> f address) foot.attrs
     in
     (update ~heap:heap' ~attrs:attrs' foot, discarded_addresses)
 
@@ -129,16 +130,6 @@ let leq ~lhs ~rhs =
 
 
 let initialize address astate = {astate with post= PostDomain.initialize address astate.post}
-
-let simplify_instanceof tenv astate =
-  let attrs = (astate.post :> BaseDomain.t).attrs in
-  let path_condition =
-    PathCondition.simplify_instanceof tenv
-      ~get_dynamic_type:(BaseAddressAttributes.get_dynamic_type attrs)
-      astate.path_condition
-  in
-  {astate with path_condition}
-
 
 module Stack = struct
   let is_abducible astate var =
@@ -613,14 +604,42 @@ let skipped_calls_match_pattern astate =
         astate.skipped_calls )
 
 
-let discard_unreachable ({pre; post} as astate) =
+let check_memory_leaks unreachable_addrs astate =
+  let check_memory_leak attributes =
+    let allocated_not_freed_opt =
+      Attributes.fold attributes ~init:(None (* allocation trace *), false (* freed *))
+        ~f:(fun acc attr ->
+          match (attr : Attribute.t) with
+          | Allocated (procname, trace) ->
+              (Some (procname, trace), snd acc)
+          | Invalid (CFree, _) ->
+              (fst acc, true)
+          | _ ->
+              acc )
+    in
+    match allocated_not_freed_opt with
+    | Some (procname, trace), false ->
+        (* allocated but not freed *)
+        Error (procname, trace)
+    | _ ->
+        Ok ()
+  in
+  List.fold_result unreachable_addrs ~init:() ~f:(fun () addr ->
+      match AddressAttributes.find_opt addr astate with
+      | Some unreachable_attrs ->
+          check_memory_leak unreachable_attrs
+      | None ->
+          Ok () )
+
+
+let discard_unreachable_ ~for_summary ({pre; post} as astate) =
   let pre_addresses = BaseDomain.reachable_addresses (pre :> BaseDomain.t) in
   let pre_new =
     PreDomain.filter_addr ~f:(fun address -> AbstractValue.Set.mem address pre_addresses) pre
   in
   let post_addresses = BaseDomain.reachable_addresses (post :> BaseDomain.t) in
-  let post_new, discard_addresses =
-    PostDomain.filter_addr_with_discarded_addrs
+  let post_new, dead_addresses =
+    PostDomain.filter_addr_with_discarded_addrs ~heap_only:(not for_summary)
       ~f:(fun address ->
         AbstractValue.Set.mem address pre_addresses || AbstractValue.Set.mem address post_addresses
         )
@@ -631,7 +650,25 @@ let discard_unreachable ({pre; post} as astate) =
     if phys_equal pre_new pre && phys_equal post_new post then astate
     else {astate with pre= pre_new; post= post_new}
   in
-  (astate, pre_addresses, post_addresses, discard_addresses)
+  (astate, pre_addresses, post_addresses, dead_addresses)
+
+
+(* exported in .mli *)
+let discard_unreachable astate =
+  let astate, _pre_addresses, _post_addresses, _dead_addresses =
+    discard_unreachable_ ~for_summary:false astate
+  in
+  (* NOTE: [_dead_addresses] is always the empty list when [for_summary] is [false] *)
+  astate
+
+
+let get_unreachable_attributes {post} =
+  let post_addresses = BaseDomain.reachable_addresses (post :> BaseDomain.t) in
+  BaseAddressAttributes.fold
+    (fun address _ dead_addresses ->
+      if AbstractValue.Set.mem address post_addresses then dead_addresses
+      else address :: dead_addresses )
+    (post :> BaseDomain.t).attrs []
 
 
 let is_local var astate = not (Var.is_return var || Stack.is_abducible astate var)
@@ -875,7 +912,9 @@ let filter_for_summary tenv proc_name astate0 =
      this. *)
   let astate = restore_formals_for_summary astate_before_filter in
   let astate = {astate with topl= PulseTopl.filter_for_summary astate.path_condition astate.topl} in
-  let astate, pre_live_addresses, post_live_addresses, _ = discard_unreachable astate in
+  let astate, pre_live_addresses, post_live_addresses, dead_addresses =
+    discard_unreachable_ ~for_summary:true astate
+  in
   let can_be_pruned =
     if PatternMatch.is_entry_point proc_name then
       (* report all latent issues at entry points *)
@@ -889,10 +928,12 @@ let filter_for_summary tenv proc_name astate0 =
         (BaseAddressAttributes.get_dynamic_type (astate_before_filter.post :> BaseDomain.t).attrs)
       ~can_be_pruned ~keep:live_addresses astate.path_condition
   in
-  ({astate with path_condition; topl= PulseTopl.simplify ~keep:live_addresses astate.topl}, new_eqs)
+  ( {astate with path_condition; topl= PulseTopl.simplify ~keep:live_addresses astate.topl}
+  , dead_addresses
+  , new_eqs )
 
 
-let summary_of_post tenv pdesc astate =
+let summary_of_post tenv pdesc location astate =
   let open SatUnsat.Import in
   (* NOTE: we normalize (to strengthen the equality relation used by canonicalization) then
      canonicalize *before* garbage collecting unused addresses in case we detect any last-minute
@@ -905,13 +946,20 @@ let summary_of_post tenv pdesc astate =
   let* () = if is_unsat then Unsat else Sat () in
   let astate = {astate with path_condition} in
   let* astate, error = incorporate_new_eqs astate new_eqs in
-  let* astate, new_eqs = filter_for_summary tenv (Procdesc.get_proc_name pdesc) astate in
+  let astate_before_filter = astate in
+  let* astate, dead_addresses, new_eqs =
+    filter_for_summary tenv (Procdesc.get_proc_name pdesc) astate
+  in
   let+ astate, error =
     match error with None -> incorporate_new_eqs astate new_eqs | Some _ -> Sat (astate, error)
   in
   match error with
-  | None ->
-      Ok (invalidate_locals pdesc astate)
+  | None -> (
+    match check_memory_leaks dead_addresses astate_before_filter with
+    | Ok () ->
+        Ok (invalidate_locals pdesc astate)
+    | Error (proc_name, trace) ->
+        Error (`MemoryLeak (astate, proc_name, trace, location)) )
   | Some (address, must_be_valid) ->
       Error (`PotentialInvalidAccessSummary (astate, address, must_be_valid))
 

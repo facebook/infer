@@ -44,6 +44,7 @@ module Import : sig
         ; address: AbstractValue.t
         ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
     | ReportableError of {astate: 'astate; diagnostic: Diagnostic.t}
+    | ReportableErrorSummary of {astate: AbductiveDomain.summary; diagnostic: Diagnostic.t}
     | ISLError of 'astate
 
   (** {2 Monadic syntax} *)
@@ -219,7 +220,7 @@ val get_dynamic_type_unreachable_values : Var.t list -> t -> (Var.t * Typ.t) lis
 (** Given a list of variables, computes the unreachable values if the variables were removed from
     the stack, then return the dynamic types of those values if they are available *)
 
-val remove_vars : Tenv.t -> Var.t list -> Location.t -> t -> t AccessResult.t
+val remove_vars : Var.t list -> Location.t -> t -> t
 
 val check_address_escape :
   Location.t -> Procdesc.t -> AbstractValue.t -> ValueHistory.t -> t -> t AccessResult.t

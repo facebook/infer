@@ -185,9 +185,7 @@ int value_or_check_empty_ok() {
   return -1;
 }
 
-// missing a more precise model for constructing an optional from a
-// value, which could cause an FP but doesn't at the moment
-int value_or_check_value_ok() {
+int FP_value_or_check_value_ok() {
   folly::Optional<int> foo{5};
   int x = foo.value_or(0);
   if (x != 5) {
@@ -306,7 +304,7 @@ int std_value_or_check_empty_ok() {
   return -1;
 }
 
-int std_value_or_check_value_ok() {
+int FP_std_value_or_check_value_ok() {
   std::optional<int> foo{5};
   int x = foo.value_or(0);
   if (x != 5) {
@@ -400,7 +398,7 @@ struct Node {
   }
 };
 
-int smart_pointer(const Node& node) {
+int FP_smart_pointer(const Node& node) {
   if (node.getShared().has_value()) {
     return *(node.getShared().value());
   }

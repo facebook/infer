@@ -25,7 +25,7 @@ void call_create_null_path_then_deref_unconditionally_ok(int* p) {
   *p = 52;
 }
 
-void create_null_path2_ok(int* p) {
+void create_null_path2_latent(int* p) {
   int* q = NULL;
   if (p) {
     *p = 32;
@@ -114,4 +114,10 @@ void bug_with_allocation_bad(int* x) {
   x = (int*)malloc(sizeof(int*));
   int* y = NULL;
   *y = 42;
+}
+
+void null_alias_bad(int* x) {
+  int* y = NULL;
+  x = (int*)malloc(sizeof(int*));
+  *x = 42;
 }

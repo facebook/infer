@@ -117,8 +117,10 @@ let apply_callee tenv ~caller_proc_desc callee_pname call_loc callee_exec_state 
         (astate :> AbductiveDomain.t)
         ~f:(fun subst astate ->
           let* astate_summary_result =
-            AbductiveDomain.summary_of_post tenv caller_proc_desc astate
-            >>| AccessResult.of_abductive_result
+            ( AbductiveDomain.summary_of_post tenv caller_proc_desc call_loc astate
+              >>| AccessResult.ignore_memory_leaks >>| AccessResult.of_abductive_result
+              :> (AbductiveDomain.summary, AbductiveDomain.t AccessResult.error) result SatUnsat.t
+              )
           in
           match astate_summary_result with
           | Error _ as error ->
@@ -140,11 +142,9 @@ let apply_callee tenv ~caller_proc_desc callee_pname call_loc callee_exec_state 
                 | `DelayReport latent_issue ->
                     Sat (Ok (LatentAbortProgram {astate= astate_summary; latent_issue}))
                 | `ReportNow ->
-                    Sat
-                      (Error
-                         (ReportableError {diagnostic; astate= (astate_summary :> AbductiveDomain.t)}))
+                    Sat (Error (ReportableErrorSummary {diagnostic; astate= astate_summary}))
                 | `ISLDelay astate ->
-                    Sat (Error (ISLError (astate :> AbductiveDomain.t))) )
+                    Sat (Error (ISLError astate)) )
             | LatentInvalidAccess {address= address_callee; must_be_valid; calling_context} -> (
               match AbstractValue.Map.find_opt address_callee subst with
               | None ->
@@ -167,7 +167,7 @@ let apply_callee tenv ~caller_proc_desc callee_pname call_loc callee_exec_state 
                   | Some (invalidation, invalidation_trace) ->
                       Sat
                         (Error
-                           (ReportableError
+                           (ReportableErrorSummary
                               { diagnostic=
                                   AccessToInvalidAddress
                                     { calling_context
@@ -175,13 +175,14 @@ let apply_callee tenv ~caller_proc_desc callee_pname call_loc callee_exec_state 
                                     ; invalidation_trace
                                     ; access_trace= fst must_be_valid
                                     ; must_be_valid_reason= snd must_be_valid }
-                              ; astate= (astate_summary :> AbductiveDomain.t) })) ) ) ) )
+                              ; astate= astate_summary })) ) ) ) )
   | ISLLatentMemoryError astate ->
       map_call_result ~is_isl_error_prepost:true
         (astate :> AbductiveDomain.t)
         ~f:(fun _subst astate ->
-          AbductiveDomain.summary_of_post tenv caller_proc_desc astate
-          >>| AccessResult.of_abductive_result
+          ( AbductiveDomain.summary_of_post tenv caller_proc_desc call_loc astate
+            >>| AccessResult.ignore_memory_leaks >>| AccessResult.of_abductive_result
+            :> (AbductiveDomain.summary, AbductiveDomain.t AccessResult.error) result SatUnsat.t )
           >>| Result.map ~f:(fun astate_summary -> ISLLatentMemoryError astate_summary) )
 
 

@@ -19,6 +19,7 @@ type 'astate error =
       ; address: AbstractValue.t
       ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
   | ReportableError of {astate: 'astate; diagnostic: Diagnostic.t}
+  | ReportableErrorSummary of {astate: AbductiveDomain.summary; diagnostic: Diagnostic.t}
   | ISLError of 'astate
 
 type ('a, 'astate) base_t = ('a, 'astate error) result
@@ -32,6 +33,13 @@ type 'astate abductive_error =
   | `PotentialInvalidAccessSummary of
     AbductiveDomain.summary * AbstractValue.t * (Trace.t * Invalidation.must_be_valid_reason option)
   ]
+
+let ignore_memory_leaks = function
+  | Ok astate | Error (`MemoryLeak (astate, _, _, _)) ->
+      Ok astate
+  | Error #abductive_error as result ->
+      result
+
 
 let of_abductive_error = function
   | `ISLError astate ->

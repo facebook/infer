@@ -85,7 +85,7 @@ let append_objc_self_positive {InterproceduralAnalysis.tenv; proc_desc; err_log}
         let* astate, value = PulseOperations.eval_deref location (Lvar self) astate in
         PulseArithmetic.prune_positive (fst value) astate
       in
-      PulseReport.report_result tenv proc_desc err_log result
+      PulseReport.report_result tenv proc_desc err_log location result
   | ExitProgram _
   | AbortProgram _
   | LatentAbortProgram _
@@ -120,7 +120,7 @@ let update_must_be_valid_reason {InterproceduralAnalysis.tenv; proc_desc; err_lo
         in
         astate
       in
-      PulseReport.report_result tenv proc_desc err_log result
+      PulseReport.report_result tenv proc_desc err_log location result
   | ContinueProgram _, _
   | ExitProgram _, _
   | AbortProgram _, _
@@ -136,6 +136,7 @@ let update_objc_method_posts ({InterproceduralAnalysis.tenv; proc_desc; err_log}
   | None ->
       List.concat_map ~f:(update_must_be_valid_reason analysis_data) posts
   | Some result ->
-      let nil_summary = PulseReport.report_result tenv proc_desc err_log result in
+      let location = Procdesc.get_loc proc_desc in
+      let nil_summary = PulseReport.report_result tenv proc_desc err_log location result in
       let posts = List.concat_map ~f:(append_objc_self_positive analysis_data) posts in
       nil_summary @ posts

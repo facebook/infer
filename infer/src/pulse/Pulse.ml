@@ -206,7 +206,7 @@ module PulseTransferFunctions = struct
           | Error _ as err ->
               Some err
           | Ok exec_state ->
-              PulseSummary.force_exit_program tenv proc_desc err_log exec_state
+              PulseSummary.force_exit_program tenv proc_desc err_log call_loc exec_state
               |> Option.map ~f:(fun exec_state -> Ok exec_state) )
     else exec_states_res
 
@@ -258,7 +258,7 @@ module PulseTransferFunctions = struct
               [astate]
           | ContinueProgram astate ->
               dispatch_call analysis_data ret call_exp actuals location call_flags astate
-              |> PulseReport.report_exec_results tenv proc_desc err_log )
+              |> PulseReport.report_exec_results tenv proc_desc err_log location )
     in
     let dynamic_types_unreachable =
       PulseOperations.get_dynamic_type_unreachable_values vars astate
@@ -296,7 +296,7 @@ module PulseTransferFunctions = struct
                 [ (let+ astate, rhs_addr_hist = PulseOperations.eval_deref loc rhs_exp astate in
                    PulseOperations.write_id lhs_id rhs_addr_hist astate) ]
             in
-            PulseReport.report_results tenv proc_desc err_log result
+            PulseReport.report_results tenv proc_desc err_log loc result
           in
           let set_global_astates =
             match rhs_exp with
@@ -369,7 +369,7 @@ module PulseTransferFunctions = struct
             | _ ->
                 astates
           in
-          PulseReport.report_results tenv proc_desc err_log result
+          PulseReport.report_results tenv proc_desc err_log loc result
       | Prune (condition, loc, _is_then_branch, _if_kind) ->
           (let<*> astate = PulseOperations.prune loc ~condition astate in
            if PulseArithmetic.is_unsat_cheap astate then
@@ -378,10 +378,10 @@ module PulseTransferFunctions = struct
            else
              (* [condition] is true or unknown value: go into the branch *)
              [Ok (ContinueProgram astate)])
-          |> PulseReport.report_exec_results tenv proc_desc err_log
+          |> PulseReport.report_exec_results tenv proc_desc err_log loc
       | Call (ret, call_exp, actuals, loc, call_flags) ->
           dispatch_call analysis_data ret call_exp actuals loc call_flags astate
-          |> PulseReport.report_exec_results tenv proc_desc err_log
+          |> PulseReport.report_exec_results tenv proc_desc err_log loc
       | Metadata (ExitScope (vars, location)) ->
           let remove_vars vars astates =
             List.concat_map astates ~f:(fun (astate : Domain.t) ->
@@ -393,8 +393,7 @@ module PulseTransferFunctions = struct
                 | LatentInvalidAccess _ ->
                     [astate]
                 | ContinueProgram astate ->
-                    PulseOperations.remove_vars tenv vars location astate
-                    |> PulseReport.report_result tenv proc_desc err_log )
+                    [ContinueProgram (PulseOperations.remove_vars vars location astate)] )
           in
           if Procname.is_java (Procdesc.get_proc_name proc_desc) then
             remove_vars vars [ContinueProgram astate]
@@ -461,7 +460,11 @@ let checker ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
           let updated_posts =
             PulseObjectiveCSummary.update_objc_method_posts analysis_data ~initial_astate ~posts
           in
-          let summary = PulseSummary.of_posts tenv proc_desc err_log updated_posts in
+          let summary =
+            PulseSummary.of_posts tenv proc_desc err_log
+              (Procdesc.get_exit_node proc_desc |> Procdesc.Node.get_loc)
+              updated_posts
+          in
           report_topl_errors proc_desc err_log summary ;
           Some summary )
   | None ->

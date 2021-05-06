@@ -77,10 +77,3 @@ val has_no_assumptions : t -> bool
 
 val get_var_repr : t -> Var.t -> Var.t
 (** get the canonical representative for the variable according to the equality relation *)
-
-(** Module for reasoning about dynamic types. **)
-module DynamicTypes : sig
-  val simplify : Tenv.t -> get_dynamic_type:(Var.t -> Typ.t option) -> t -> t
-  (** Simplifies [IsInstanceOf(var, typ)] predicate when dynamic type information is available in
-      state. **)
-end

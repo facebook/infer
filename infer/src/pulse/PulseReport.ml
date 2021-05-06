@@ -47,33 +47,37 @@ let is_suppressed tenv proc_desc diagnostic astate =
       false
 
 
-let summary_of_error_post tenv proc_desc mk_error astate =
-  match AbductiveDomain.summary_of_post tenv proc_desc astate with
-  | Sat (Ok astate) ->
+let summary_of_error_post tenv proc_desc location mk_error astate =
+  match AbductiveDomain.summary_of_post tenv proc_desc location astate with
+  | Sat (Ok astate) | Sat (Error (`MemoryLeak (astate, _, _, _))) ->
+      (* ignore potential memory leaks: error'ing in the middle of a function will typically produce
+         spurious leaks *)
       Sat (mk_error astate)
-  | Sat (Error error) ->
+  | Sat (Error (`PotentialInvalidAccessSummary (summary, addr, trace))) ->
       (* ignore the error we wanted to report (with [mk_error]): the abstract state contained a
          potential error already so report [error] instead *)
-      Sat (AccessResult.of_abductive_error error)
+      Sat (AccessResult.of_abductive_error (`PotentialInvalidAccessSummary (summary, addr, trace)))
   | Unsat ->
       Unsat
 
 
-let summary_error_of_error tenv proc_desc (error : AbductiveDomain.t AccessResult.error) :
+let summary_error_of_error tenv proc_desc location (error : AbductiveDomain.t AccessResult.error) :
     AbductiveDomain.summary AccessResult.error SatUnsat.t =
   match error with
   | PotentialInvalidAccessSummary {astate; address; must_be_valid} ->
       Sat (PotentialInvalidAccessSummary {astate; address; must_be_valid})
   | PotentialInvalidAccess {astate; address; must_be_valid} ->
-      summary_of_error_post tenv proc_desc
+      summary_of_error_post tenv proc_desc location
         (fun astate -> PotentialInvalidAccess {astate; address; must_be_valid})
         astate
   | ReportableError {astate; diagnostic} ->
-      summary_of_error_post tenv proc_desc
+      summary_of_error_post tenv proc_desc location
         (fun astate -> ReportableError {astate; diagnostic})
         astate
+  | ReportableErrorSummary {astate; diagnostic} ->
+      Sat (ReportableErrorSummary {astate; diagnostic})
   | ISLError astate ->
-      summary_of_error_post tenv proc_desc (fun astate -> ISLError astate) astate
+      summary_of_error_post tenv proc_desc location (fun astate -> ISLError astate) astate
 
 
 let report_summary_error tenv proc_desc err_log
@@ -92,7 +96,7 @@ let report_summary_error tenv proc_desc err_log
       LatentInvalidAccess {astate; address; must_be_valid; calling_context= []}
   | ISLError astate ->
       ISLLatentMemoryError astate
-  | ReportableError {astate; diagnostic} -> (
+  | ReportableError {astate; diagnostic} | ReportableErrorSummary {astate; diagnostic} -> (
     match LatentIssue.should_report astate diagnostic with
     | `ReportNow ->
         if not (is_suppressed tenv proc_desc diagnostic astate) then
@@ -103,30 +107,33 @@ let report_summary_error tenv proc_desc err_log
         LatentAbortProgram {astate; latent_issue} )
 
 
-let report_error tenv proc_desc err_log (access_error : AbductiveDomain.t AccessResult.error) =
+let report_error tenv proc_desc err_log location
+    (access_error : AbductiveDomain.t AccessResult.error) =
   let open SatUnsat.Import in
-  summary_error_of_error tenv proc_desc access_error >>| report_summary_error tenv proc_desc err_log
+  summary_error_of_error tenv proc_desc location access_error
+  >>| report_summary_error tenv proc_desc err_log
 
 
-let report_exec_results tenv proc_desc err_log results =
+let report_exec_results tenv proc_desc err_log location results =
   List.filter_map results ~f:(fun exec_result ->
       match exec_result with
       | Ok post ->
           Some post
       | Error error -> (
-        match report_error tenv proc_desc err_log error with
+        match report_error tenv proc_desc err_log location error with
         | Unsat ->
             None
         | Sat exec_state ->
             Some exec_state ) )
 
 
-let report_results tenv proc_desc err_log results =
+let report_results tenv proc_desc err_log location results =
   let open IResult.Let_syntax in
   List.map results ~f:(fun result ->
       let+ astate = result in
       ExecutionDomain.ContinueProgram astate )
-  |> report_exec_results tenv proc_desc err_log
+  |> report_exec_results tenv proc_desc err_log location
 
 
-let report_result tenv proc_desc err_log result = report_results tenv proc_desc err_log [result]
+let report_result tenv proc_desc err_log location result =
+  report_results tenv proc_desc err_log location [result]

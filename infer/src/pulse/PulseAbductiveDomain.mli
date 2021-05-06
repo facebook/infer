@@ -57,8 +57,6 @@ val get_pre : t -> BaseDomain.t
 
 val get_post : t -> BaseDomain.t
 
-val simplify_instanceof : Tenv.t -> t -> t
-
 (** stack operations like {!BaseStack} but that also take care of propagating facts to the
     precondition *)
 module Stack : sig
@@ -158,10 +156,11 @@ val is_local : Var.t -> t -> bool
 
 val find_post_cell_opt : AbstractValue.t -> t -> BaseDomain.cell option
 
-val discard_unreachable : t -> t * AbstractValue.Set.t * AbstractValue.Set.t * AbstractValue.t list
-(** garbage collect unreachable addresses in the state to make it smaller and return the new state,
-    the live pre addresses, the live post addresses, and the discarded addresses that used to have
-    attributes attached *)
+val discard_unreachable : t -> t
+(** garbage collect unreachable addresses in the state to make it smaller and return the new state *)
+
+val get_unreachable_attributes : t -> AbstractValue.t list
+(** collect the addresses that have attributes but are unreachable in the current post-condition *)
 
 val add_skipped_call : Procname.t -> Trace.t -> t -> t
 
@@ -181,14 +180,16 @@ val skipped_calls_match_pattern : summary -> bool
 val summary_of_post :
      Tenv.t
   -> Procdesc.t
+  -> Location.t
   -> t
   -> ( summary
-     , [> `PotentialInvalidAccessSummary of
-          summary * AbstractValue.t * (Trace.t * Invalidation.must_be_valid_reason option) ] )
+     , [> `MemoryLeak of summary * Procname.t * Trace.t * Location.t
+       | `PotentialInvalidAccessSummary of
+         summary * AbstractValue.t * (Trace.t * Invalidation.must_be_valid_reason option) ] )
      result
      SatUnsat.t
-(** trim the state down to just the procedure's interface (formals and globals), and simplify and
-    normalize the state *)
+(** Trim the state down to just the procedure's interface (formals and globals), and simplify and
+    normalize the state. *)
 
 val set_post_edges : AbstractValue.t -> BaseMemory.Edges.t -> t -> t
 (** directly set the edges for the given address, bypassing abduction altogether *)

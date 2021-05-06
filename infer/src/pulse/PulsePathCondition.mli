@@ -45,8 +45,6 @@ val simplify :
     in [keep] as possible, and tries to eliminate variables not in [can_be_pruned] from the "pruned"
     part of the formula *)
 
-val simplify_instanceof : Tenv.t -> get_dynamic_type:(AbstractValue.t -> Typ.t option) -> t -> t
-
 val and_callee :
      (AbstractValue.t * ValueHistory.t) AbstractValue.Map.t
   -> t

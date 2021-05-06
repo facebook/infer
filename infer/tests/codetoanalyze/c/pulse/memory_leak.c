@@ -34,3 +34,5 @@ void malloc_interproc_no_free_bad2() {
   int y = 4;
   int* q = p;
 }
+
+void malloc_formal_leak_bad(int* x) { x = (int*)malloc(sizeof(int*)); }

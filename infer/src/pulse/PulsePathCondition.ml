@@ -121,11 +121,6 @@ let simplify tenv ~can_be_pruned ~keep ~get_dynamic_type phi =
   if (fst result).is_unsat then Unsat else Sat result
 
 
-let simplify_instanceof tenv ~get_dynamic_type phi =
-  let formula = Formula.DynamicTypes.simplify tenv ~get_dynamic_type phi.formula in
-  {phi with formula}
-
-
 let subst_find_or_new subst addr_callee =
   match AbstractValue.Map.find_opt addr_callee subst with
   | None ->
