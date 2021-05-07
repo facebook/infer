@@ -212,6 +212,9 @@ endif
 ifneq ($(MVN),no)
 BUILD_SYSTEMS_TESTS += mvn
 endif
+ifneq ($(REBAR3),no)
+BUILD_SYSTEMS_TESTS += rebar3
+endif
 endif
 
 DIRECT_TESTS += \

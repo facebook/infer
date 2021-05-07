@@ -386,7 +386,7 @@ if test x"$NDKBUILD" = x"no"; then
 fi
 
 AC_CHECK_TOOL([NINJA], [ninja], [no])
-
+AC_CHECK_TOOL([REBAR3], [rebar3], [no])
 AC_CHECK_TOOL([XCPRETTY], [xcpretty], [no])
 
 AC_CHECK_TOOL([SED], [sed], [no])
