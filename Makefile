@@ -54,6 +54,7 @@ DIRECT_TESTS += \
   c_frontend \
   c_performance \
   c_pulse \
+  c_pulse-isl \
   c_purity \
   c_uninit \
   cpp_annotation-reachability \
@@ -67,6 +68,7 @@ DIRECT_TESTS += \
   cpp_liveness \
   cpp_performance \
   cpp_pulse \
+  cpp_pulse-isl \
   cpp_quandary \
   cpp_racerd \
   cpp_siof \
@@ -179,6 +181,7 @@ DIRECT_TESTS += \
   java_performance \
   java_performance-exclusive \
   java_pulse \
+  java_pulse-isl \
   java_purity \
   java_quandary \
   java_racerd \
@@ -186,6 +189,9 @@ DIRECT_TESTS += \
   java_starvation-dedup \
   java_starvation-whole-program \
   java_topl \
+
+# javac has trouble running in parallel on the same files
+direct_java_pulse-isl_test: direct_java_pulse_test
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
 BUILD_SYSTEMS_TESTS += \
