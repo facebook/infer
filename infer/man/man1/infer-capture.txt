@@ -278,6 +278,14 @@ CLANG OPTIONS
            analyze an iOS app. xcpretty just needs to be in the path, infer
            command is still just `infer -- <xcodebuild command>`.
            (Conversely: --no-xcpretty)
+ERLANG OPTIONS
+       --erlang-ast-dir dir
+           Also load AST from all .json files in the given path. These .json
+           files usually come from a previous run with --debug.
+
+       --erlang-skip-rebar3
+           Activates: Skip running rebar, to save time. It is useful together
+           with --erlang-ast-dir. (Conversely: --no-erlang-skip-rebar3)
 JAVA OPTIONS
        --bootclasspath string
            Specify the Java bootclasspath

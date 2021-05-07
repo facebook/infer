@@ -139,6 +139,8 @@ let manual_clang = "CLANG OPTIONS"
 
 let manual_clang_linters = "CLANG LINTERS OPTIONS"
 
+let manual_erlang = "ERLANG OPTIONS"
+
 let manual_explore_bugs = "EXPLORE BUGS"
 
 let manual_debug_procedures = "DEBUG PROCEDURES"
@@ -1383,6 +1385,20 @@ and eradicate_return_over_annotated =
 
 
 and eradicate_verbose = CLOpt.mk_bool ~long:"eradicate-verbose" "Print initial and final typestates"
+
+and erlang_ast_dir =
+  CLOpt.mk_path_opt ~long:"erlang-ast-dir"
+    ~in_help:InferCommand.[(Capture, manual_erlang)]
+    ~meta:"dir"
+    "Also load AST from all .json files in the given path. These .json files usually come from a \
+     previous run with $(b,--debug)."
+
+
+and erlang_skip_rebar3 =
+  CLOpt.mk_bool ~long:"erlang-skip-rebar3"
+    ~in_help:InferCommand.[(Capture, manual_erlang)]
+    "Skip running rebar, to save time. It is useful together with $(b,--erlang-ast-dir)."
+
 
 and export_changed_functions =
   CLOpt.mk_bool ~deprecated:["test-determinator-clang"] ~long:"export-changed-functions"
@@ -3011,6 +3027,10 @@ and eradicate_field_over_annotated = !eradicate_field_over_annotated
 and eradicate_return_over_annotated = !eradicate_return_over_annotated
 
 and eradicate_verbose = !eradicate_verbose
+
+and erlang_ast_dir = !erlang_ast_dir
+
+and erlang_skip_rebar3 = !erlang_skip_rebar3
 
 and external_java_packages = !external_java_packages
 

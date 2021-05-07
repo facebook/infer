@@ -613,6 +613,16 @@ OPTIONS
            Activates: Enable eradicate and disable all other checkers
            (Conversely: --no-eradicate-only)           See also infer-analyze(1).
 
+       --erlang-ast-dir dir
+           Also load AST from all .json files in the given path. These .json
+           files usually come from a previous run with --debug.       
+    See also infer-capture(1).
+
+       --erlang-skip-rebar3
+           Activates: Skip running rebar, to save time. It is useful together
+           with --erlang-ast-dir. (Conversely: --no-erlang-skip-rebar3)       
+    See also infer-capture(1).
+
        --external-java-packages +prefix
            Specify a list of Java package prefixes for external Java
            packages. If set, the analysis will not report non-actionable

@@ -4,7 +4,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
-
 open! IStd
 module L = Logging
 
@@ -15,9 +14,30 @@ let run_rebar result_dir args =
   Process.create_process_and_wait ~prog ~args
 
 
+let parse_and_store result_dir =
+  let process json =
+    let _ast = ErlangJsonParser.to_module json in
+    (* TODO: Translate to Sil, load source, call [SourceFiles.add]. *)
+    ()
+  in
+  let log error = L.progress "E: %s@." error in
+  let read_one_ast json_file =
+    if Filename.check_suffix json_file ".json" then (
+      L.progress "P: parsing %s@." json_file ;
+      match Utils.read_safe_json_file json_file with
+      | Ok json ->
+          process json
+      | Error error ->
+          log error )
+  in
+  Utils.directory_iter read_one_ast result_dir
+
+
 let capture ~args =
-  let in_dir = ResultsDir.get_path Temporary in
-  let rebar_result_dir = Filename.temp_dir ~in_dir "rebar3infer" "" in
-  run_rebar rebar_result_dir args ;
-  (* TODO: parse the JSON files *)
-  if not Config.debug_mode then Utils.rmtree rebar_result_dir
+  Option.iter ~f:parse_and_store Config.erlang_ast_dir ;
+  if not Config.erlang_skip_rebar3 then (
+    let in_dir = ResultsDir.get_path Temporary in
+    let rebar_result_dir = Filename.temp_dir ~in_dir "rebar3infer" "" in
+    run_rebar rebar_result_dir args ;
+    parse_and_store rebar_result_dir ;
+    if not Config.debug_mode then Utils.rmtree rebar_result_dir )
