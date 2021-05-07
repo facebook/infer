@@ -130,6 +130,9 @@ DIRECT_TESTS += \
   objcpp_retain-cycles \
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
+BUILD_SYSTEMS_TESTS += \
+  fb_differential_of_config_impact_report_objc
+
 DIRECT_TESTS += \
   objc_fb-config-impact \
   objc_fb-gk-interaction
