@@ -16,9 +16,14 @@ let run_rebar result_dir args =
 
 let parse_and_store result_dir =
   let process json =
-    let _ast = ErlangJsonParser.to_module json in
-    (* TODO: Translate to Sil, load source, call [SourceFiles.add]. *)
-    ()
+    match ErlangJsonParser.to_module json with
+    | None ->
+        false
+    | Some ast ->
+        let source_file, cfg = ErlangTranslator.to_source_and_cfg ast in
+        let tenv = (* TODO: types *) Tenv.Global in
+        SourceFiles.add source_file cfg tenv None ;
+        true
   in
   let log error = L.progress "E: %s@." error in
   let read_one_ast json_file =
@@ -26,7 +31,7 @@ let parse_and_store result_dir =
       L.progress "P: parsing %s@." json_file ;
       match Utils.read_safe_json_file json_file with
       | Ok json ->
-          process json
+          if not (process json) then L.debug Capture Verbose "Failed to parse %s@." json_file
       | Error error ->
           log error )
   in
