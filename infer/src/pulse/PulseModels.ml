@@ -261,7 +261,7 @@ module ObjC = struct
               location callee_proc_name ~ret ~actuals:[] ~formals_opt:None astate )
 
 
-  let insertion_into_dictionary (value, value_hist) (key, key_hist) ~desc : model =
+  let insertion_into_collection_key_and_value (value, value_hist) (key, key_hist) ~desc : model =
    fun {location} astate ->
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let<*> astate, _ =
@@ -277,7 +277,7 @@ module ObjC = struct
     astate
 
 
-  let insertion_into_array (value, value_hist) ~desc : model =
+  let insertion_into_collection_key_or_value (value, value_hist) ~desc : model =
    fun {location} astate ->
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let<+> astate, _ =
@@ -1746,16 +1746,23 @@ module ProcNameDispatcher = struct
         ; -"NSObject" &:: "init" <>$ capt_arg_payload $--> Misc.id_first_arg ~desc:"NSObject.init"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableDictionary")
           &:: "setObject:forKey:" <>$ any_arg $+ capt_arg_payload $+ capt_arg_payload
-          $--> ObjC.insertion_into_dictionary ~desc:"NSMutableDictionary.setObject:forKey:"
+          $--> ObjC.insertion_into_collection_key_and_value
+                 ~desc:"NSMutableDictionary.setObject:forKey:"
+        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableDictionary")
+          &:: "setObject:forKeyedSubscript:" <>$ any_arg $+ any_arg $+ capt_arg_payload
+          $--> ObjC.insertion_into_collection_key_or_value
+                 ~desc:"mutableDictionary[someKey] = value"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
           &:: "addObject:" <>$ any_arg $+ capt_arg_payload
-          $--> ObjC.insertion_into_array ~desc:"NSMutableArray.addObject:"
+          $--> ObjC.insertion_into_collection_key_or_value ~desc:"NSMutableArray.addObject:"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
           &:: "insertObject:atIndex:" <>$ any_arg $+ capt_arg_payload $+ any_arg
-          $--> ObjC.insertion_into_array ~desc:"NSMutableArray.insertObject:atIndex:"
+          $--> ObjC.insertion_into_collection_key_or_value
+                 ~desc:"NSMutableArray.insertObject:atIndex:"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
           &:: "replaceObjectAtIndex:withObject:" <>$ any_arg $+ any_arg $+ capt_arg_payload
-          $--> ObjC.insertion_into_array ~desc:"NSMutableArray.replaceObjectAtIndex:withObject:"
+          $--> ObjC.insertion_into_collection_key_or_value
+                 ~desc:"NSMutableArray.replaceObjectAtIndex:withObject:"
         ; +match_regexp_opt Config.pulse_model_return_nonnull
           &::.*--> Misc.return_positive
                      ~desc:"modelled as returning not null due to configuration option"
