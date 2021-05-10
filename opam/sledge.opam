@@ -12,7 +12,7 @@ depends: [
   "ocaml" {>= "4.12.0"}
   "apron" {>= "v0.9.13"}
   "base"
-  "containers"
+  "containers" {>= "3.4"}
   "containers-data"
   "conf-llvm" {= "11.0.0"}
   "core" {>= "v0.14"}

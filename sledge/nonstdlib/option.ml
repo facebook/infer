@@ -15,6 +15,7 @@ let pp fmt pp_elt fs = function
   | Some x -> Format.fprintf fs fmt pp_elt x
   | None -> ()
 
+let get_exn = function Some x -> x | None -> invalid_arg "Option.get_exn"
 let map_or xo ~default ~f = map_or ~default f xo
 let flat_map xo ~f = flat_map f xo
 let iter xo ~f = iter f xo

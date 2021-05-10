@@ -15,6 +15,7 @@ type 'a t = 'a option [@@deriving compare, equal, hash, sexp]
 
 include Monad_intf.S with type 'a t := 'a t
 
+val get_exn : 'a t -> 'a
 val pp : ('a_pp -> 'a -> unit, unit) fmt -> 'a_pp -> 'a option pp
 val map_or : 'a t -> default:'b -> f:('a -> 'b) -> 'b
 val flat_map : 'a t -> f:('a -> 'b t) -> 'b t

@@ -39,7 +39,7 @@ let pop seq =
 
 let find_map seq ~f = find_map ~f seq
 let find seq ~f = find (CCOpt.if_ f) seq
-let find_exn seq ~f = CCOpt.get_exn (find ~f seq)
+let find_exn seq ~f = CCOpt.get_exn_or "Iter.find_exn" (find ~f seq)
 let fold seq init ~f = fold ~f:(fun s x -> f x s) ~init seq
 
 let contains_dup (type elt) seq ~cmp =
