@@ -117,17 +117,28 @@ val eval_access :
 (** Like [eval] but starts from an address instead of an expression, checks that it is valid, and if
     so dereferences it according to the access. *)
 
+val eval_deref_access :
+     ?must_be_valid_reason:Invalidation.must_be_valid_reason
+  -> access_mode
+  -> Location.t
+  -> AbstractValue.t * ValueHistory.t
+  -> BaseMemory.Access.t
+  -> t
+  -> (t * (AbstractValue.t * ValueHistory.t)) AccessResult.t
+(** Like [eval_access] but does additional dereference. *)
+
 val eval_proc_name : Location.t -> Exp.t -> t -> (t * Procname.t option) AccessResult.t
 
 val havoc_id : Ident.t -> ValueHistory.t -> t -> t
 
-val havoc_field :
+val havoc_deref_field :
      Location.t
   -> AbstractValue.t * ValueHistory.t
   -> Fieldname.t
   -> ValueHistory.t
   -> t
   -> t AccessResult.t
+(** Havoc dereferenced field address. *)
 
 val realloc_pvar : Tenv.t -> Pvar.t -> Typ.t -> Location.t -> t -> t
 
@@ -141,6 +152,15 @@ val write_field :
   -> t
   -> t AccessResult.t
 (** write the edge [ref --.field--> obj] *)
+
+val write_deref_field :
+     Location.t
+  -> ref:AbstractValue.t * ValueHistory.t
+  -> Fieldname.t
+  -> obj:AbstractValue.t * ValueHistory.t
+  -> t
+  -> t AccessResult.t
+(** write the edge [ref --.field--> _ --*--> obj] *)
 
 val write_arr_index :
      Location.t
@@ -206,6 +226,15 @@ val invalidate_access :
   -> t
   -> t AccessResult.t
 (** record that what the address points via the access to is invalid *)
+
+val invalidate_deref_access :
+     Location.t
+  -> Invalidation.t
+  -> AbstractValue.t * ValueHistory.t
+  -> BaseMemory.Access.t
+  -> t
+  -> t AccessResult.t
+(** Like [invalidate_access] but invalidates dereferenced address. *)
 
 val invalidate_array_elements :
   Location.t -> Invalidation.t -> AbstractValue.t * ValueHistory.t -> t -> t AccessResult.t

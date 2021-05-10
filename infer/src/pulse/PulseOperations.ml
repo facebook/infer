@@ -179,6 +179,11 @@ let eval_access ?must_be_valid_reason mode location addr_hist access astate =
   Memory.eval_edge addr_hist access astate
 
 
+let eval_deref_access ?must_be_valid_reason mode location addr_hist access astate =
+  let* astate, addr_hist = eval_access Read location addr_hist access astate in
+  eval_access ?must_be_valid_reason mode location addr_hist Dereference astate
+
+
 let eval_access_biad_isl mode location addr_hist access astate =
   let map_ok addr_hist access results =
     List.map results ~f:(fun result ->
@@ -369,12 +374,19 @@ let write_field location ~ref:addr_trace_ref field ~obj:addr_trace_obj astate =
   write_access location addr_trace_ref (FieldAccess field) addr_trace_obj astate
 
 
+let write_deref_field location ~ref:addr_trace_ref field ~obj:addr_trace_obj astate =
+  let* astate, addr_hist = eval_access Read location addr_trace_ref (FieldAccess field) astate in
+  write_deref location ~ref:addr_hist ~obj:addr_trace_obj astate
+
+
 let write_arr_index location ~ref:addr_trace_ref ~index ~obj:addr_trace_obj astate =
   write_access location addr_trace_ref (ArrayAccess (StdTyp.void, index)) addr_trace_obj astate
 
 
-let havoc_field location addr_trace field trace_obj astate =
-  write_field location ~ref:addr_trace field ~obj:(AbstractValue.mk_fresh (), trace_obj) astate
+let havoc_deref_field location addr_trace field trace_obj astate =
+  write_deref_field location ~ref:addr_trace field
+    ~obj:(AbstractValue.mk_fresh (), trace_obj)
+    astate
 
 
 let allocate procname location addr_trace astate =
@@ -428,6 +440,16 @@ let invalidate_biad_isl location cause (address, history) astate =
 
 let invalidate_access location cause ref_addr_hist access astate =
   let astate, (addr_obj, hist_obj) = Memory.eval_edge ref_addr_hist access astate in
+  invalidate
+    (MemoryAccess {pointer= ref_addr_hist; access; hist_obj_default= hist_obj})
+    location cause
+    (addr_obj, snd ref_addr_hist)
+    astate
+
+
+let invalidate_deref_access location cause ref_addr_hist access astate =
+  let astate, addr_hist = Memory.eval_edge ref_addr_hist access astate in
+  let astate, (addr_obj, hist_obj) = Memory.eval_edge addr_hist Dereference astate in
   invalidate
     (MemoryAccess {pointer= ref_addr_hist; access; hist_obj_default= hist_obj})
     location cause
