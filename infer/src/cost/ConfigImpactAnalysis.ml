@@ -93,7 +93,7 @@ module UncheckedCallee = struct
   let pp_without_location_list f unchecked_callees =
     IList.pp_print_list ~max:Config.config_impact_max_callees_to_print
       ~pp_sep:(fun f () -> Format.pp_print_string f ", ")
-      (fun f {callee} -> Procname.pp f callee)
+      (fun f {callee} -> Format.fprintf f "`%a`" Procname.pp callee)
       f unchecked_callees
 
 
