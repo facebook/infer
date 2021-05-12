@@ -13,8 +13,9 @@ module ValueHistory = PulseValueHistory
 
 type access_to_invalid_address =
   { calling_context: (CallEvent.t * Location.t) list
-        (** the list of function calls leading to the issue being realised, which is an additional
-            common prefix to the traces in the record *)
+        (** the list of function calls leading to the issue being realised, in
+            outermost-to-innermost order, which is an additional common prefix to the traces in the
+            record *)
   ; invalidation: Invalidation.t
   ; invalidation_trace: Trace.t
         (** assuming we are in the calling context, the trace leads to [invalidation] without

@@ -209,10 +209,9 @@ let get_message diagnostic =
         pulse_start_msg pp_var variable
 
 
-let add_errlog_header ~title location errlog =
-  let depth = 0 in
+let add_errlog_header ~nesting ~title location errlog =
   let tags = [] in
-  Errlog.make_trace_element depth location title tags :: errlog
+  Errlog.make_trace_element nesting location title tags :: errlog
 
 
 let get_trace_calling_context calling_context errlog =
@@ -220,57 +219,75 @@ let get_trace_calling_context calling_context errlog =
   | [] ->
       errlog
   | (_, first_call_loc) :: _ ->
-      add_errlog_header ~title:"calling context starts here" first_call_loc
-      @@ ( List.fold calling_context ~init:(errlog, 0) ~f:(fun (errlog, depth) (call, loc) ->
+      add_errlog_header ~nesting:0 ~title:"calling context starts here" first_call_loc
+      @@ ( (* errlog is built in the reverse order so reverse everything first *)
+           List.fold (List.rev calling_context)
+             ~init:(errlog, List.length calling_context - 1)
+             ~f:(fun (errlog, depth) (call, loc) ->
                ( Errlog.make_trace_element depth loc
                    (F.asprintf "in call to %a" CallEvent.pp call)
                    []
                  :: errlog
-               , depth + 1 ) )
+               , depth - 1 ) )
          |> fst )
 
 
-let add_invalidation_trace (invalidation : Invalidation.t) invalidation_trace access_trace errlog =
-  let start_title, access_title =
-    match invalidation with
-    | ConstantDereference i when IntLit.equal i IntLit.zero ->
-        ( "source of the null value part of the trace starts here"
-        , "null pointer dereference part of the trace starts here" )
-    | ConstantDereference _ ->
-        ( "source of the constant value part of the trace starts here"
-        , "constant value dereference part of the trace starts here" )
-    | CFree
-    | CppDelete
-    | EndIterator
-    | GoneOutOfScope _
-    | OptionalEmpty
-    | StdVector _
-    | JavaIterator _ ->
-        ( "invalidation part of the trace starts here"
-        , "use-after-lifetime part of the trace starts here" )
-  in
+let invalidation_titles (invalidation : Invalidation.t) =
+  match invalidation with
+  | ConstantDereference i when IntLit.equal i IntLit.zero ->
+      ( "source of the null value part of the trace starts here"
+      , "null pointer dereference part of the trace starts here" )
+  | ConstantDereference _ ->
+      ( "source of the constant value part of the trace starts here"
+      , "constant value dereference part of the trace starts here" )
+  | CFree
+  | CppDelete
+  | EndIterator
+  | GoneOutOfScope _
+  | OptionalEmpty
+  | StdVector _
+  | JavaIterator _ ->
+      ( "invalidation part of the trace starts here"
+      , "use-after-lifetime part of the trace starts here" )
+
+
+let add_invalidation_trace ~nesting invalidation invalidation_trace errlog =
+  let start_title = invalidation_titles invalidation |> fst in
   let start_location = Trace.get_start_location invalidation_trace in
-  add_errlog_header ~title:start_title start_location
-  @@ Trace.add_to_errlog ~nesting:1
+  add_errlog_header ~nesting ~title:start_title start_location
+  @@ Trace.add_to_errlog ~nesting:(nesting + 1)
        ~pp_immediate:(fun fmt -> F.fprintf fmt "%a" Invalidation.describe invalidation)
        invalidation_trace
-  @@
+  @@ errlog
+
+
+let add_access_trace ~include_title ~nesting invalidation access_trace errlog =
   let access_start_location = Trace.get_start_location access_trace in
-  add_errlog_header ~title:access_title access_start_location @@ errlog
+  let access_title = invalidation_titles invalidation |> snd in
+  ( if include_title then add_errlog_header ~nesting ~title:access_title access_start_location
+  else Fn.id )
+  @@ Trace.add_to_errlog ~nesting:(nesting + 1)
+       ~pp_immediate:(fun fmt -> F.pp_print_string fmt "invalid access occurs here")
+       access_trace
+  @@ errlog
 
 
 let get_trace = function
   | AccessToInvalidAddress {calling_context; invalidation; invalidation_trace; access_trace} ->
+      let in_context_nesting = List.length calling_context in
+      let should_print_invalidation_trace = not (trace_contains_invalidation access_trace) in
       get_trace_calling_context calling_context
-      @@ ( if trace_contains_invalidation access_trace then Fn.id
-         else add_invalidation_trace invalidation invalidation_trace access_trace )
-      @@ Trace.add_to_errlog ~nesting:1
-           ~pp_immediate:(fun fmt -> F.pp_print_string fmt "invalid access occurs here")
-           access_trace
+      @@ ( if should_print_invalidation_trace then
+           add_invalidation_trace ~nesting:in_context_nesting invalidation invalidation_trace
+         else Fn.id )
+      @@ add_access_trace
+           ~include_title:(should_print_invalidation_trace || not (List.is_empty calling_context))
+           ~nesting:in_context_nesting invalidation access_trace
       @@ []
   | MemoryLeak {location; allocation_trace} ->
       let access_start_location = Trace.get_start_location allocation_trace in
-      add_errlog_header ~title:"allocation part of the trace starts here" access_start_location
+      add_errlog_header ~nesting:0 ~title:"allocation part of the trace starts here"
+        access_start_location
       @@ Trace.add_to_errlog ~nesting:1
            ~pp_immediate:(fun fmt -> F.pp_print_string fmt "allocation part of the trace ends here")
            allocation_trace
