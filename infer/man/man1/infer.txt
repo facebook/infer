@@ -1203,8 +1203,9 @@ OPTIONS
            data (Conversely: --no-skip-non-capture-clang-commands)       
     See also infer-capture(1).
 
-       --skip-translation-headers +path_prefix
-           Ignore headers whose path matches the given prefix           See also infer-capture(1).
+       --skip-translation-headers +path_regex
+           Ignore declarations in headers whose path matches the given OCaml
+           regex from the start of the string during capture.           See also infer-capture(1).
 
        --source-files
            Activates: Print source files discovered by infer (Conversely:

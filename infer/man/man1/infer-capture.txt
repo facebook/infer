@@ -267,8 +267,9 @@ CLANG OPTIONS
            Activates: Skip clang commands that Infer doesn't use to capture
            data (Conversely: --no-skip-non-capture-clang-commands)
 
-       --skip-translation-headers +path_prefix
-           Ignore headers whose path matches the given prefix
+       --skip-translation-headers +path_regex
+           Ignore declarations in headers whose path matches the given OCaml
+           regex from the start of the string during capture.
 
        --Xclang +string
            Pass values as command-line arguments to invocations of clang

@@ -2330,7 +2330,9 @@ and skip_non_capture_clang_commands =
 and skip_translation_headers =
   CLOpt.mk_string_list ~deprecated:["skip_translation_headers"] ~long:"skip-translation-headers"
     ~in_help:InferCommand.[(Capture, manual_clang)]
-    ~meta:"path_prefix" "Ignore headers whose path matches the given prefix"
+    ~meta:"path_regex"
+    "Ignore declarations in headers whose path matches the given OCaml regex from the start of the \
+     string during capture."
 
 
 and source_preview =
