@@ -1752,6 +1752,14 @@ module ProcNameDispatcher = struct
           &:: "setObject:forKeyedSubscript:" <>$ any_arg $+ any_arg $+ capt_arg_payload
           $--> ObjC.insertion_into_collection_key_or_value
                  ~desc:"mutableDictionary[someKey] = value"
+        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableDictionary")
+          &:: "removeObjectForKey:" <>$ any_arg $+ capt_arg_payload
+          $--> ObjC.insertion_into_collection_key_or_value
+                 ~desc:"NSMutableDictionary.removeObjectForKey"
+        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableDictionary")
+          &:: "dictionaryWithSharedKeySet:" <>$ capt_arg_payload
+          $--> ObjC.insertion_into_collection_key_or_value
+                 ~desc:"NSMutableDictionary.dictionaryWithSharedKeySet"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
           &:: "addObject:" <>$ any_arg $+ capt_arg_payload
           $--> ObjC.insertion_into_collection_key_or_value ~desc:"NSMutableArray.addObject:"

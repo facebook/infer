@@ -207,6 +207,29 @@ void addInDictBracketsOk(NSMutableDictionary* mDict) {
   mDict[@"key"] = @"somestring";
 }
 
+void removeObjectFromDict(NSMutableDictionary* mDict, id key) {
+  [mDict removeObjectForKey:key];
+}
+
+void removeObjectFromDictKeyNilBad(NSMutableDictionary* mDict) {
+  removeObjectFromDict(mDict, nil);
+}
+
+void removeObjectFromDictKeyNotNilOK(NSMutableDictionary* mDict) {
+  removeObjectFromDict(mDict, @"somestring");
+}
+
+void dictionaryWithSharedKeySetOk() {
+  id sharedKeySet = [NSDictionary sharedKeySetForKeys:@[ @"key1", @"key2" ]];
+  NSMutableDictionary* mDict =
+      [NSMutableDictionary dictionaryWithSharedKeySet:sharedKeySet];
+}
+
+void dictionaryWithSharedKeySetBad() {
+  NSMutableDictionary* mDict =
+      [NSMutableDictionary dictionaryWithSharedKeySet:nil];
+}
+
 void testNilMessagingForModelNilNilOK_FP() { addObjectInDict(nil, nil); }
 
 void testNilMessagingForModelNilStringOK() {
