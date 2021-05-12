@@ -541,8 +541,8 @@ OPTIONS
              MULTIPLE_WEAKSELF (enabled by default),
              MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE (enabled by default),
              Missing_fld (enabled by default),
-             NIL_INSERTION_INTO_COLLECTION (disabled by default),
-             NIL_MESSAGING_TO_NON_POD (disabled by default),
+             NIL_INSERTION_INTO_COLLECTION (enabled by default),
+             NIL_MESSAGING_TO_NON_POD (enabled by default),
              NULLPTR_DEREFERENCE (enabled by default),
              NULL_DEREFERENCE (enabled by default),
              OPTIONAL_EMPTY_ACCESS (enabled by default),
@@ -612,6 +612,16 @@ OPTIONS
        --eradicate-only
            Activates: Enable eradicate and disable all other checkers
            (Conversely: --no-eradicate-only)           See also infer-analyze(1).
+
+       --erlang-ast-dir dir
+           Also load AST from all .json files in the given path. These .json
+           files usually come from a previous run with --debug.       
+    See also infer-capture(1).
+
+       --erlang-skip-rebar3
+           Activates: Skip running rebar, to save time. It is useful together
+           with --erlang-ast-dir. (Conversely: --no-erlang-skip-rebar3)       
+    See also infer-capture(1).
 
        --external-java-packages +prefix
            Specify a list of Java package prefixes for external Java
@@ -1636,6 +1646,9 @@ INTERNAL OPTIONS
        --eradicate-verbose
            Activates: Print initial and final typestates (Conversely:
            --no-eradicate-verbose)
+
+       --erlang-ast-dir-reset
+           Cancel the effect of --erlang-ast-dir.
 
        --export-changed-functions
            Activates: Make infer output changed functions, similar to

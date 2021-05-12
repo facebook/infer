@@ -155,6 +155,7 @@ type ('a, 'b) zero_one_many2 = Zero2 | One2 of 'a * 'b | Many2
 
 module Pair = Containers.Pair
 module List = List
+module RAL = Ral
 module Array = Array
 module IArray = IArray
 include module type of IArray.Import

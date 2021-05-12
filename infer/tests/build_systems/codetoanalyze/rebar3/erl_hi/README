@@ -1,0 +1,5 @@
+1. Start an Erlang shell:
+    rebar3 shell
+
+2. Run main function:
+    erl_hi_app:main().

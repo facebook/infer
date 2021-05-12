@@ -69,3 +69,14 @@ void malloc_ptr_free_ptr_ok() {
   int* p = (int*)malloc_via_ptr(sizeof(int));
   free_via_ptr(p);
 }
+
+void alias_ptr_free_FP(int* out, int flag) {
+  int* y;
+  if (flag) {
+    y = (int*)malloc(sizeof(int));
+  } else {
+    y = out;
+  }
+  if (y && y != out)
+    free(y);
+}

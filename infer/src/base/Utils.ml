@@ -210,6 +210,10 @@ let read_json_file path =
   try Ok (Yojson.Basic.from_file path) with Sys_error msg | Yojson.Json_error msg -> Error msg
 
 
+let read_safe_json_file path =
+  try Ok (Yojson.Safe.from_file path) with Sys_error msg | Yojson.Json_error msg -> Error msg
+
+
 let do_finally_swallow_timeout ~f ~finally =
   let res =
     try f ()

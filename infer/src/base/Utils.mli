@@ -52,15 +52,17 @@ val close_outf : outfile -> unit
 (** close an outfile *)
 
 val directory_fold : ('a -> string -> 'a) -> 'a -> string -> 'a
-(** Functional fold function over all the file of a directory *)
+(** Functional fold function over all the files of a directory *)
 
 val directory_iter : (string -> unit) -> string -> unit
-(** Functional iter function over all the file of a directory *)
+(** Functional iter function over all the files of a directory *)
 
 val directory_is_empty : string -> bool
 (** Returns true if a given directory is empty. The directory is assumed to exist. *)
 
 val read_json_file : string -> (Yojson.Basic.t, string) Result.t
+
+val read_safe_json_file : string -> (Yojson.Safe.t, string) Result.t
 
 val with_file_in : string -> f:(In_channel.t -> 'a) -> 'a
 

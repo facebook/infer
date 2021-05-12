@@ -26,6 +26,11 @@ let read_file_config_data fname =
       ConfigProcnameSet.add itm acc )
 
 
+let is_similar_method_name =
+  let cut_objc_parameters name = List.hd_exn (String.split name ~on:':') in
+  fun name1 name2 -> String.equal (cut_objc_parameters name1) (cut_objc_parameters name2)
+
+
 let is_in_config_data_file =
   let config_data =
     Option.value_map Config.config_impact_data_file ~default:ConfigProcnameSet.empty
@@ -34,7 +39,7 @@ let is_in_config_data_file =
   fun proc_name ->
     ConfigProcnameSet.exists
       (fun {method_name; class_name} ->
-        String.equal method_name (Procname.get_method proc_name)
+        is_similar_method_name method_name (Procname.get_method proc_name)
         && String.equal class_name (Procname.get_class_name proc_name |> Option.value ~default:"")
         )
       config_data

@@ -27,6 +27,10 @@ let comment_style_al = Line ("//", false)
 
 let comment_style_c = Block ("/*", "*", "*/", false)
 
+let comment_style_erlang = Line ("%", false)
+
+let comment_style_lisp = Line (";", false)
+
 let comment_style_llvm = Line (";", true)
 
 let comment_style_m4 = Line ("dnl", false)
@@ -41,11 +45,10 @@ let comment_style_python = Line ("#", false)
 
 let comment_style_shell = Line ("#", true)
 
-let comment_style_lisp = Line (";", false)
-
 let comment_styles_lang =
   [ (comment_style_al, "AL")
   ; (comment_style_c, "C")
+  ; (comment_style_erlang, "Erlang")
   ; (comment_style_lisp, "Lisp")
   ; (comment_style_llvm, "LLVM")
   ; (comment_style_m4, "M4")
@@ -227,9 +230,11 @@ type inferred_comment_style =
 let com_style_of_lang =
   [ (".ac", Resolved comment_style_m4)
   ; (".al", Resolved comment_style_al)
+  ; (".app.src", Resolved comment_style_erlang)
   ; (".atd", Resolved comment_style_ocaml)
   ; (".c", Resolved comment_style_c)
   ; (".cpp", Resolved comment_style_c)
+  ; (".erl", Resolved comment_style_erlang)
   ; (".h", Resolved comment_style_c)
   ; (".inc", Resolved comment_style_c)
   ; (".java", Resolved comment_style_c)
@@ -255,7 +260,8 @@ let com_style_of_lang =
   ; ("dune-project", Resolved comment_style_lisp)
   ; ("dune-workspace", Resolved comment_style_lisp)
   ; ("dune-workspace.in", Resolved comment_style_lisp)
-  ; ("Makefile", Resolved comment_style_make) ]
+  ; ("Makefile", Resolved comment_style_make)
+  ; ("rebar.config", Resolved comment_style_erlang) ]
 
 
 let tuareg_magic_style_line = "(* -*- tuareg -*- *)"

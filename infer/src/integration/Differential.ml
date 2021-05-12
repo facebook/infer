@@ -427,7 +427,7 @@ module ConfigImpactItem = struct
                (UncheckedCallee.is_known_expensive x) )
     in
     let qualifier =
-      Format.asprintf "Function call%s to %a %s %a without GK/QE."
+      Format.asprintf "Function call%s to %a %s %a **without GK/QE**."
         (if is_singleton then "" else "s")
         UncheckedCallee.pp_without_location_list unchecked_callees
         (if is_singleton then "is" else "are")

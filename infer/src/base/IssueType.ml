@@ -790,12 +790,12 @@ let mutable_local_variable_in_component_file =
 
 
 let nil_insertion_into_collection =
-  register ~enabled:false ~id:"NIL_INSERTION_INTO_COLLECTION" Error Pulse
+  register ~id:"NIL_INSERTION_INTO_COLLECTION" Error Pulse
     ~user_documentation:"Inserting nil into a collection is an error in Objective-C."
 
 
 let nil_messaging_to_non_pod =
-  register ~enabled:false ~id:"NIL_MESSAGING_TO_NON_POD" Error Pulse
+  register ~id:"NIL_MESSAGING_TO_NON_POD" Error Pulse
     ~user_documentation:
       "Calling a method that returns a C++ non-POD object on the nil object is undefined behavior \
        in Objective-C++."

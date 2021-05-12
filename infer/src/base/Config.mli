@@ -294,6 +294,10 @@ val eradicate_return_over_annotated : bool
 
 val eradicate_verbose : bool
 
+val erlang_ast_dir : string option
+
+val erlang_skip_rebar3 : bool
+
 val fail_on_bug : bool
 
 val fcp_apple_clang : string option

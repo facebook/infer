@@ -149,3 +149,13 @@ struct VectorA {
     f(x);
   }
 };
+
+void push_back_wrapper() {
+  static std::vector<int> v{};
+  v.push_back(7);
+}
+
+void call_push_back_wrapper_ok() {
+  push_back_wrapper();
+  push_back_wrapper();
+}

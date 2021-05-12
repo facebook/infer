@@ -45,6 +45,7 @@ module Multiset = Multiset
 module Option = Option
 include Option.Import
 module Q = Q_ext
+module RAL = Ral
 module Set = NSSet
 module Sign = Sign
 module String = String

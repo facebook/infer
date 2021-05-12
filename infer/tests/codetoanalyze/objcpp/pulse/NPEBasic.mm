@@ -193,6 +193,20 @@ void addObjectInDict(NSMutableDictionary* mDict, id value) {
   [mDict setObject:value forKey:@"somestring"];
 }
 
+void addNilInDictBracketsOk(NSMutableDictionary* mDict) {
+  mDict[@"key2"] = nil; // Passing nil will cause any object corresponding
+                        // to a key to be removed from the dictionary.
+}
+
+void addNilKeyInDictBracketsBad(NSMutableDictionary* mDict) {
+  id key = nil;
+  mDict[key] = @"somestring";
+}
+
+void addInDictBracketsOk(NSMutableDictionary* mDict) {
+  mDict[@"key"] = @"somestring";
+}
+
 void testNilMessagingForModelNilNilOK_FP() { addObjectInDict(nil, nil); }
 
 void testNilMessagingForModelNilStringOK() {
@@ -223,4 +237,16 @@ void replaceNilInArrayBad(NSMutableArray* mArray) {
 
 void replaceObjectInArrayOk(NSMutableArray* mArray) {
   [mArray replaceObjectAtIndex:0 withObject:[SomeObject new]];
+}
+
+void addInDictBracketsDefault(NSMutableDictionary<NSString*, NSString*>* mDict,
+                              NSString* key) {
+  mDict[key] = @"default";
+}
+
+void accessZeroElementOk_FP(NSMutableDictionary<NSString*, NSString*>* mDict) {
+  NSArray<NSString*>* array =
+      [[NSUserDefaults standardUserDefaults] arrayForKey:@"key"];
+  NSString* key = array[0];
+  addInDictBracketsDefault(mDict, key);
 }

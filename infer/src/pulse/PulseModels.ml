@@ -261,7 +261,7 @@ module ObjC = struct
               location callee_proc_name ~ret ~actuals:[] ~formals_opt:None astate )
 
 
-  let insertion_into_dictionary (value, value_hist) (key, key_hist) ~desc : model =
+  let insertion_into_collection_key_and_value (value, value_hist) (key, key_hist) ~desc : model =
    fun {location} astate ->
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let<*> astate, _ =
@@ -277,7 +277,7 @@ module ObjC = struct
     astate
 
 
-  let insertion_into_array (value, value_hist) ~desc : model =
+  let insertion_into_collection_key_or_value (value, value_hist) ~desc : model =
    fun {location} astate ->
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let<+> astate, _ =
@@ -674,7 +674,7 @@ module GenericArrayBackedCollection = struct
   let access = HilExp.Access.FieldAccess field
 
   let eval mode location collection astate =
-    PulseOperations.eval_access mode location collection access astate
+    PulseOperations.eval_deref_access mode location collection access astate
 
 
   let eval_element location internal_array index astate =
@@ -690,14 +690,14 @@ module GenericArrayBackedCollection = struct
 
   let eval_pointer_to_last_element location collection astate =
     let+ astate, pointer =
-      PulseOperations.eval_access Write location collection (FieldAccess last_field) astate
+      PulseOperations.eval_deref_access Write location collection (FieldAccess last_field) astate
     in
     let astate = AddressAttributes.mark_as_end_of_collection (fst pointer) astate in
     (astate, pointer)
 
 
   let eval_is_empty location collection astate =
-    PulseOperations.eval_access Write location collection (FieldAccess is_empty) astate
+    PulseOperations.eval_deref_access Write location collection (FieldAccess is_empty) astate
 end
 
 module GenericArrayBackedCollectionIterator = struct
@@ -747,7 +747,7 @@ module GenericArrayBackedCollectionIterator = struct
       GenericArrayBackedCollection.eval Read location init astate
     in
     let* astate =
-      PulseOperations.write_field location ~ref GenericArrayBackedCollection.field
+      PulseOperations.write_deref_field location ~ref GenericArrayBackedCollection.field
         ~obj:(arr_addr, event :: arr_hist)
         astate
     in
@@ -872,9 +872,9 @@ module StdVector = struct
       GenericArrayBackedCollection.eval NoAccess location vector astate
     in
     PulseOperations.invalidate_array_elements location (StdVector vector_f) array_address astate
-    >>= PulseOperations.invalidate_access location (StdVector vector_f) vector
+    >>= PulseOperations.invalidate_deref_access location (StdVector vector_f) vector
           GenericArrayBackedCollection.access
-    >>= PulseOperations.havoc_field location vector GenericArrayBackedCollection.field trace
+    >>= PulseOperations.havoc_deref_field location vector GenericArrayBackedCollection.field trace
 
 
   let init_list_constructor this init_list : model =
@@ -882,7 +882,7 @@ module StdVector = struct
     let event = ValueHistory.Call {f= Model "std::vector::vector()"; location; in_call= []} in
     let<*> astate, init_copy = PulseOperations.shallow_copy location init_list astate in
     let<+> astate =
-      PulseOperations.write_field location ~ref:this GenericArrayBackedCollection.field
+      PulseOperations.write_deref_field location ~ref:this GenericArrayBackedCollection.field
         ~obj:(fst init_copy, event :: snd init_copy)
         astate
     in
@@ -922,7 +922,7 @@ module StdVector = struct
     in
     let<*> astate, _ = GenericArrayBackedCollection.eval_element location arr index_zero astate in
     let<+> astate =
-      PulseOperations.write_field location ~ref:iter GenericArrayBackedCollection.field
+      PulseOperations.write_deref_field location ~ref:iter GenericArrayBackedCollection.field
         ~obj:(arr_addr, pointer_hist) astate
       >>= PulseOperations.write_field location ~ref:iter
             GenericArrayBackedCollectionIterator.internal_pointer ~obj:pointer_val
@@ -941,7 +941,7 @@ module StdVector = struct
     let pointer_hist = event :: snd iter in
     let pointer_val = (pointer_addr, pointer_hist) in
     let<*> astate =
-      PulseOperations.write_field location ~ref:iter GenericArrayBackedCollection.field
+      PulseOperations.write_deref_field location ~ref:iter GenericArrayBackedCollection.field
         ~obj:(arr_addr, pointer_hist) astate
     in
     let<+> astate =
@@ -1746,16 +1746,23 @@ module ProcNameDispatcher = struct
         ; -"NSObject" &:: "init" <>$ capt_arg_payload $--> Misc.id_first_arg ~desc:"NSObject.init"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableDictionary")
           &:: "setObject:forKey:" <>$ any_arg $+ capt_arg_payload $+ capt_arg_payload
-          $--> ObjC.insertion_into_dictionary ~desc:"NSMutableDictionary.setObject:forKey:"
+          $--> ObjC.insertion_into_collection_key_and_value
+                 ~desc:"NSMutableDictionary.setObject:forKey:"
+        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableDictionary")
+          &:: "setObject:forKeyedSubscript:" <>$ any_arg $+ any_arg $+ capt_arg_payload
+          $--> ObjC.insertion_into_collection_key_or_value
+                 ~desc:"mutableDictionary[someKey] = value"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
           &:: "addObject:" <>$ any_arg $+ capt_arg_payload
-          $--> ObjC.insertion_into_array ~desc:"NSMutableArray.addObject:"
+          $--> ObjC.insertion_into_collection_key_or_value ~desc:"NSMutableArray.addObject:"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
           &:: "insertObject:atIndex:" <>$ any_arg $+ capt_arg_payload $+ any_arg
-          $--> ObjC.insertion_into_array ~desc:"NSMutableArray.insertObject:atIndex:"
+          $--> ObjC.insertion_into_collection_key_or_value
+                 ~desc:"NSMutableArray.insertObject:atIndex:"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
           &:: "replaceObjectAtIndex:withObject:" <>$ any_arg $+ any_arg $+ capt_arg_payload
-          $--> ObjC.insertion_into_array ~desc:"NSMutableArray.replaceObjectAtIndex:withObject:"
+          $--> ObjC.insertion_into_collection_key_or_value
+                 ~desc:"NSMutableArray.replaceObjectAtIndex:withObject:"
         ; +match_regexp_opt Config.pulse_model_return_nonnull
           &::.*--> Misc.return_positive
                      ~desc:"modelled as returning not null due to configuration option"
