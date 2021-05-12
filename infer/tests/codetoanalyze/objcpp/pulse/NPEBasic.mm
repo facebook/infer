@@ -273,3 +273,23 @@ void accessZeroElementOk_FP(NSMutableDictionary<NSString*, NSString*>* mDict) {
   NSString* key = array[0];
   addInDictBracketsDefault(mDict, key);
 }
+
+void addObjectInMSet(NSMutableSet* mSet, id object) { [mSet addObject:object]; }
+
+void addObjectInMSetOk(NSMutableSet* mSet) {
+  addObjectInMSet(mSet, @"somestring");
+}
+
+void addObjectInMSetBad(NSMutableSet* mSet) { addObjectInMSet(mSet, nil); }
+
+void removeObjectFromMSet(NSMutableSet* mSet, id object) {
+  [mSet removeObject:object];
+}
+
+void removeObjectFromMSetOk(NSMutableSet* mSet) {
+  removeObjectFromMSet(mSet, @"somestring");
+}
+
+void removeObjectFromMSetBad(NSMutableSet* mSet) {
+  removeObjectFromMSet(mSet, nil);
+}
