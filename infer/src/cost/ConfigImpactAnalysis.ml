@@ -78,11 +78,17 @@ module UncheckedCallee = struct
     ; call_type: call_type [@compare.ignore] }
   [@@deriving compare]
 
-  and call_type = Direct | Indirect of t
+  and call_type = Direct | Indirect of {unchecked: t; via: Procname.t}
 
   let pp_common ~with_location f {callee; location; call_type} =
-    F.fprintf f "%a is %scalled" Procname.pp callee
-      (match call_type with Direct -> "" | Indirect _ -> "indirectly ") ;
+    let pp_call_type f () =
+      match call_type with
+      | Direct ->
+          ()
+      | Indirect {via} ->
+          F.fprintf f " indirectly via %a" Procname.pp via
+    in
+    F.fprintf f "%a is called%a" Procname.pp callee pp_call_type () ;
     if with_location then F.fprintf f " at %a" Location.pp location
 
 
@@ -97,25 +103,31 @@ module UncheckedCallee = struct
       f unchecked_callees
 
 
-  let make ~is_known_expensive callee location =
+  let make ~is_known_expensive ~callee location =
     {callee; is_known_expensive; location; call_type= Direct}
 
 
   let is_known_expensive {is_known_expensive} = is_known_expensive
 
-  let replace_location_by_call location x = {x with location; call_type= Indirect x}
+  let replace_location_by_call ~via location x =
+    {x with location; call_type= Indirect {unchecked= x; via}}
+
 
   let rec make_err_trace ({location} as x) =
     let desc = F.asprintf "%a" pp_without_location x in
     let trace_elem = Errlog.make_trace_element 0 location desc [] in
-    match x.call_type with Direct -> [trace_elem] | Indirect x -> trace_elem :: make_err_trace x
+    match x.call_type with
+    | Direct ->
+        [trace_elem]
+    | Indirect {unchecked} ->
+        trace_elem :: make_err_trace unchecked
 end
 
 module UncheckedCallees = struct
   include AbstractDomain.FiniteSet (UncheckedCallee)
 
-  let replace_location_by_call location x =
-    map (UncheckedCallee.replace_location_by_call location) x
+  let replace_location_by_call ~via location x =
+    map (UncheckedCallee.replace_location_by_call ~via location) x
 
 
   let encode astate = Marshal.to_string astate [] |> Base64.encode_exn
@@ -138,8 +150,8 @@ module UncheckedCalleesCond = struct
       fields_map
 
 
-  let replace_location_by_call location fields_map =
-    map (UncheckedCallees.replace_location_by_call location) fields_map
+  let replace_location_by_call ~via location fields_map =
+    map (UncheckedCallees.replace_location_by_call ~via location) fields_map
 
 
   let has_known_expensive_callee fields_map =
@@ -539,7 +551,7 @@ module Dom = struct
       dispatch tenv pname args
 
 
-  let call tenv analyze_dependency ~(instantiated_cost : CostInstantiate.instantiated_cost) callee
+  let call tenv analyze_dependency ~(instantiated_cost : CostInstantiate.instantiated_cost) ~callee
       args location
       ({config_checks; field_checks; unchecked_callees; unchecked_callees_cond} as astate) =
     let join_unchecked_callees new_unchecked_callees new_unchecked_callees_cond =
@@ -587,7 +599,7 @@ module Dom = struct
           (* If callee is known expensive by model, add callee's name. *)
           join_unchecked_callees
             (UncheckedCallees.singleton
-               (UncheckedCallee.make ~is_known_expensive:true callee location))
+               (UncheckedCallee.make ~is_known_expensive:true ~callee location))
             UncheckedCalleesCond.empty
       | None -> (
         match callee_summary with
@@ -607,8 +619,9 @@ module Dom = struct
             in
             (* If callee's summary is not leaf, use it. *)
             join_unchecked_callees
-              (UncheckedCallees.replace_location_by_call location callee_summary)
-              (UncheckedCalleesCond.replace_location_by_call location callee_summary_cond)
+              (UncheckedCallees.replace_location_by_call ~via:callee location callee_summary)
+              (UncheckedCalleesCond.replace_location_by_call location ~via:callee
+                 callee_summary_cond)
         | None when Procname.is_objc_init callee || is_unmodeled_call ->
             (* If callee is unknown ObjC initializer or has no cost model, ignore it. *)
             astate
@@ -616,7 +629,7 @@ module Dom = struct
             (* Otherwise, add callee's name. *)
             join_unchecked_callees
               (UncheckedCallees.singleton
-                 (UncheckedCallee.make ~is_known_expensive:false callee location))
+                 (UncheckedCallee.make ~is_known_expensive:false ~callee location))
               UncheckedCalleesCond.empty )
     else astate
 end
@@ -724,7 +737,7 @@ module TransferFunctions = struct
               {loc= location; pname= callee; node= CFG.Node.to_instr idx node; args; ret}
           in
           let instantiated_cost = get_instantiated_cost call in
-          Dom.call tenv analyze_dependency ~instantiated_cost callee args location astate
+          Dom.call tenv analyze_dependency ~instantiated_cost ~callee args location astate
           |> add_ret analyze_dependency ret_id callee )
     | Prune (e, _, _, _) ->
         Dom.prune e astate
