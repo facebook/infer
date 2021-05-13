@@ -293,3 +293,13 @@ void removeObjectFromMSetOk(NSMutableSet* mSet) {
 void removeObjectFromMSetBad(NSMutableSet* mSet) {
   removeObjectFromMSet(mSet, nil);
 }
+
+void dictionaryLiteral(id key, id object) {
+  NSDictionary* dict = @{key : object};
+}
+
+void dictionaryLiteralOk() { dictionaryLiteral(@"key", @"obj"); }
+
+void dictionaryLiteralKeyNilBad() { dictionaryLiteral(nil, @"obj"); }
+
+void dictionaryLiteralObjectNilBad() { dictionaryLiteral(@"key", nil); }
