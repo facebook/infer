@@ -34,7 +34,7 @@ struct X {
 bool choice();
 
 X* may_return_nullptr() {
-  if (choice) {
+  if (choice()) {
     return nullptr;
   }
   return new X();
