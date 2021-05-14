@@ -286,7 +286,11 @@ module Parameter = struct
   type clang_parameter = Typ.Name.t option [@@deriving compare, equal, yojson_of]
 
   (** Type for parameters in procnames, for java and clang. *)
-  type t = JavaParameter of Typ.t | ClangParameter of clang_parameter | CSharpParameter of Typ.t
+  type t =
+    | JavaParameter of Typ.t
+    | ClangParameter of clang_parameter
+    | CSharpParameter of Typ.t
+    | ErlangParameter
   [@@deriving compare, equal]
 
   let of_typ typ =
@@ -460,6 +464,20 @@ module C = struct
         false
 end
 
+module Erlang = struct
+  type t = {module_name: string; function_name: string; arity: int} [@@deriving compare, yojson_of]
+
+  let pp verbosity fmt {module_name; function_name; arity} =
+    match verbosity with
+    | Simple | Non_verbose ->
+        F.fprintf fmt "%s/%d" function_name arity
+    | Verbose ->
+        F.fprintf fmt "%s:%s/%d" module_name function_name arity
+
+
+  let set_arity arity name = {name with arity}
+end
+
 module Block = struct
   (** Type of Objective C block names. *)
   type block_type =
@@ -512,6 +530,7 @@ type t =
   | CSharp of CSharp.t
   | Java of Java.t
   | C of C.t
+  | Erlang of Erlang.t
   | Linters_dummy_method
   | Block of Block.t
   | ObjC_Cpp of ObjC_Cpp.t
@@ -544,6 +563,12 @@ let rec compare_name x y =
   | C _, _ ->
       -1
   | _, C _ ->
+      1
+  | Erlang name1, Erlang name2 ->
+      Erlang.compare name1 name2
+  | Erlang _, _ ->
+      -1
+  | _, Erlang _ ->
       1
   | Linters_dummy_method, Linters_dummy_method ->
       0
@@ -633,7 +658,7 @@ let rec replace_class t (new_class : Typ.Name.t) =
       ObjC_Cpp {osig with class_name= new_class}
   | WithBlockParameters (base, blocks) ->
       WithBlockParameters (replace_class base new_class, blocks)
-  | C _ | Block _ | Linters_dummy_method ->
+  | C _ | Block _ | Erlang _ | Linters_dummy_method ->
       t
 
 
@@ -669,7 +694,7 @@ let rec objc_cpp_replace_method_name t (new_method_name : string) =
       ObjC_Cpp {osig with method_name= new_method_name}
   | WithBlockParameters (base, blocks) ->
       WithBlockParameters (objc_cpp_replace_method_name base new_method_name, blocks)
-  | C _ | Block _ | Linters_dummy_method | Java _ | CSharp _ ->
+  | C _ | CSharp _ | Block _ | Erlang _ | Linters_dummy_method | Java _ ->
       t
 
 
@@ -682,6 +707,8 @@ let rec get_method = function
       get_method base
   | C {name} ->
       QualifiedCppName.to_qual_string name
+  | Erlang name ->
+      name.function_name
   | Block {block_type} ->
       F.asprintf "%a" (Block.pp_block_type ~with_prefix_and_index:false) block_type
   | Java j ->
@@ -709,6 +736,8 @@ let get_language = function
       Language.Clang
   | C _ ->
       Language.Clang
+  | Erlang _ ->
+      Language.Erlang
   | Block _ ->
       Language.Clang
   | Linters_dummy_method ->
@@ -772,6 +801,8 @@ let rec pp_unique_id fmt = function
       CSharp.pp Verbose fmt cs
   | C osig ->
       C.pp Verbose fmt osig
+  | Erlang e ->
+      Erlang.pp Verbose fmt e
   | ObjC_Cpp osig ->
       ObjC_Cpp.pp Verbose fmt osig
   | Block bsig ->
@@ -794,6 +825,8 @@ let rec pp fmt = function
       CSharp.pp Non_verbose fmt cs
   | C osig ->
       C.pp Non_verbose fmt osig
+  | Erlang e ->
+      Erlang.pp Non_verbose fmt e
   | ObjC_Cpp osig ->
       ObjC_Cpp.pp Non_verbose fmt osig
   | Block bsig ->
@@ -824,6 +857,8 @@ let rec pp_simplified_string ?(withclass = false) fmt = function
       CSharp.pp ~withclass Simple fmt cs
   | C osig ->
       C.pp Simple fmt osig
+  | Erlang e ->
+      Erlang.pp Simple fmt e
   | ObjC_Cpp osig ->
       ObjC_Cpp.pp (if withclass then Non_verbose else Simple) fmt osig
   | Block bsig ->
@@ -887,6 +922,8 @@ let rec get_parameters procname =
       List.map ~f:(fun par -> Parameter.CSharpParameter par) (CSharp.get_parameters cs)
   | C osig ->
       clang_param_to_param (C.get_parameters osig)
+  | Erlang e ->
+      List.init e.arity ~f:(fun _ -> Parameter.ErlangParameter)
   | ObjC_Cpp osig ->
       clang_param_to_param (ObjC_Cpp.get_parameters osig)
   | Block bsig ->
@@ -933,6 +970,17 @@ let rec replace_parameters new_parameters procname =
               params )
       params
   in
+  let params_to_erlang_arity params =
+    let check = function
+      | Parameter.ErlangParameter ->
+          ()
+      | _ ->
+          L.die InternalError
+            "Expected Erlang parameters in Erlang procname, but got parameters of another language"
+    in
+    List.iter ~f:check params ;
+    List.length params
+  in
   match procname with
   | Java j ->
       Java (Java.replace_parameters (params_to_java_params new_parameters) j)
@@ -940,6 +988,8 @@ let rec replace_parameters new_parameters procname =
       CSharp (CSharp.replace_parameters (params_to_csharp_params new_parameters) cs)
   | C osig ->
       C (C.replace_parameters (params_to_clang_params new_parameters) osig)
+  | Erlang e ->
+      Erlang (Erlang.set_arity (params_to_erlang_arity new_parameters) e)
   | ObjC_Cpp osig ->
       ObjC_Cpp (ObjC_Cpp.replace_parameters (params_to_clang_params new_parameters) osig)
   | Block bsig ->

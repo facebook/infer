@@ -129,7 +129,11 @@ module Parameter : sig
   type clang_parameter = Typ.Name.t option [@@deriving compare, equal]
 
   (** Type for parameters in procnames, for java and clang. *)
-  type t = JavaParameter of Typ.t | ClangParameter of clang_parameter | CSharpParameter of Typ.t
+  type t =
+    | JavaParameter of Typ.t
+    | ClangParameter of clang_parameter
+    | CSharpParameter of Typ.t
+    | ErlangParameter
   [@@deriving compare, equal]
 
   val of_typ : Typ.t -> clang_parameter
@@ -209,6 +213,10 @@ module Block : sig
   val make_in_outer_scope : block_type -> int -> Parameter.clang_parameter list -> t
 end
 
+module Erlang : sig
+  type t
+end
+
 (** Type of procedure names. WithBlockParameters is used for creating an instantiation of a method
     that contains block parameters and it's called with concrete blocks. For example:
     [foo(Block block) {block();}] [bar() {foo(my_block)}] is executed as
@@ -218,6 +226,7 @@ type t =
   | CSharp of CSharp.t
   | Java of Java.t
   | C of C.t
+  | Erlang of Erlang.t
   | Linters_dummy_method
   | Block of Block.t
   | ObjC_Cpp of ObjC_Cpp.t

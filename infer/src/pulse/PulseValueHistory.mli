@@ -17,6 +17,7 @@ type event =
   | CppTemporaryCreated of Location.t
   | FormalDeclared of Pvar.t * Location.t
   | Invalidated of PulseInvalidation.t * Location.t
+  | Returned of Location.t
   | StructFieldAddressCreated of Fieldname.t RevList.t * Location.t
   | VariableAccessed of Pvar.t * Location.t
   | VariableDeclared of Pvar.t * Location.t

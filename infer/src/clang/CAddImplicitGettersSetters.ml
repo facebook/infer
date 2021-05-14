@@ -22,7 +22,7 @@ let objc_getter tenv proc_desc location self_with_typ (fieldname, field_typ, _) 
   let id_field = Ident.create_fresh Ident.knormal in
   let store_instrs =
     match field_typ with
-    | {Typ.desc= Tstruct (CStruct _ as struct_name)} ->
+    | {Typ.desc= Tstruct ((CStruct _ | CppClass _) as struct_name)} ->
         let ret_param = Exp.Lvar (Pvar.get_ret_param_pvar (Procdesc.get_proc_name proc_desc)) in
         Sil.Load {id= id_field; e= ret_param; root_typ= field_typ; typ= field_typ; loc= location}
         :: CStructUtils.struct_copy tenv location (Exp.Var id_field) field_exp ~typ:field_typ
@@ -45,7 +45,7 @@ let objc_setter tenv location self_with_typ (var, var_typ) (fieldname, field_typ
   let field_exp, load_self_instr = get_load_self_instr location self_with_typ fieldname in
   let store_instrs =
     match field_typ with
-    | {Typ.desc= Tstruct (CStruct _ as struct_name)} ->
+    | {Typ.desc= Tstruct ((CStruct _ | CppClass _) as struct_name)} ->
         CStructUtils.struct_copy tenv location field_exp (Exp.Lvar var) ~typ:field_typ ~struct_name
     | _ ->
         let id_field = Ident.create_fresh Ident.knormal in

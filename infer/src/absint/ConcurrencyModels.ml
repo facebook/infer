@@ -331,7 +331,8 @@ let is_android_lifecycle_method tenv pname =
         false
   in
   match (pname : Procname.t) with
-  | C _ | Linters_dummy_method | Block _ | ObjC_Cpp _ | CSharp _ | WithBlockParameters _ ->
+  | C _ | Erlang _ | Linters_dummy_method | Block _ | ObjC_Cpp _ | CSharp _ | WithBlockParameters _
+    ->
       false
   | Java _ ->
       method_starts_with_on pname

@@ -19,6 +19,7 @@ type event =
   | CppTemporaryCreated of Location.t
   | FormalDeclared of Pvar.t * Location.t
   | Invalidated of PulseInvalidation.t * Location.t
+  | Returned of Location.t
   | StructFieldAddressCreated of Fieldname.t RevList.t * Location.t
   | VariableAccessed of Pvar.t * Location.t
   | VariableDeclared of Pvar.t * Location.t
@@ -37,6 +38,7 @@ let rec iter_event event ~f =
   | CppTemporaryCreated _
   | FormalDeclared _
   | Invalidated _
+  | Returned _
   | StructFieldAddressCreated _
   | VariableAccessed _
   | VariableDeclared _ ->
@@ -60,12 +62,12 @@ let pp_event_no_location fmt event =
     else F.fprintf fmt "variable `%a`" Pvar.pp_value_non_verbose pvar
   in
   match event with
+  | Allocation {f} ->
+      F.fprintf fmt "allocated by call to %a" CallEvent.pp f
   | Assignment _ ->
       F.pp_print_string fmt "assigned"
   | Call {f; location= _} ->
-      F.fprintf fmt "passed as argument to %a" CallEvent.pp f
-  | Allocation {f} ->
-      F.fprintf fmt "allocated by call to %a" CallEvent.pp f
+      F.fprintf fmt "in call to %a" CallEvent.pp f
   | Capture {captured_as; mode; location= _} ->
       F.fprintf fmt "value captured %s as `%a`"
         (CapturedVar.string_of_capture_mode mode)
@@ -83,6 +85,8 @@ let pp_event_no_location fmt event =
       F.fprintf fmt "parameter `%a`%a" Pvar.pp_value_non_verbose pvar pp_proc pvar
   | Invalidated (invalidation, _) ->
       Invalidation.describe fmt invalidation
+  | Returned _ ->
+      F.pp_print_string fmt "returned"
   | StructFieldAddressCreated (field_names, _) ->
       F.fprintf fmt "struct field address `%a` created" pp_fields field_names
   | VariableAccessed (pvar, _) ->
@@ -100,6 +104,7 @@ let location_of_event = function
   | CppTemporaryCreated location
   | FormalDeclared (_, location)
   | Invalidated (_, location)
+  | Returned location
   | StructFieldAddressCreated (_, location)
   | VariableAccessed (_, location)
   | VariableDeclared (_, location) ->
@@ -117,7 +122,7 @@ let pp fmt history =
     | (Call {f; in_call} as event) :: tail ->
         F.fprintf fmt "%a@;" pp_event event ;
         F.fprintf fmt "[%a]@;" pp_aux (List.rev in_call) ;
-        if not (List.is_empty tail) then F.fprintf fmt "return from call to %a@;" CallEvent.pp f ;
+        if not (List.is_empty in_call) then F.fprintf fmt "return from call to %a@;" CallEvent.pp f ;
         pp_aux fmt tail
     | event :: tail ->
         F.fprintf fmt "%a@;" pp_event event ;
@@ -148,7 +153,8 @@ let add_to_errlog ~nesting history errlog =
         add_to_errlog_aux ~nesting tail
         @@ add_event_to_errlog ~nesting event
         @@ add_to_errlog_aux ~nesting:(nesting + 1) in_call
-        @@ add_returned_from_call_to_errlog ~nesting f location
+        @@ ( if List.is_empty in_call then Fn.id
+           else add_returned_from_call_to_errlog ~nesting f location )
         @@ errlog
     | event :: tail ->
         add_to_errlog_aux ~nesting tail @@ add_event_to_errlog ~nesting event @@ errlog

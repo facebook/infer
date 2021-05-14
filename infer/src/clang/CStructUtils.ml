@@ -15,7 +15,7 @@ let struct_copy tenv loc e1 e2 ~typ ~struct_name =
         let e1 = mk_field e1 in
         let e2 = mk_field e2 in
         match field_typ.Typ.desc with
-        | Tstruct (CStruct _ as struct_name) ->
+        | Tstruct ((CStruct _ | CppClass _) as struct_name) ->
             struct_copy_helper e1 e2 field_typ struct_name rev_acc
         | _ ->
             let id = Ident.create_fresh Ident.knormal in

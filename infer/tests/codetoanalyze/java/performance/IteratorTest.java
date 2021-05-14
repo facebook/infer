@@ -31,9 +31,16 @@ public class IteratorTest {
     BLUE;
 
     // The cost of class initializer should be constant.
+    /* NOTE: Comment out the test because of non-deterministic analysis results.  There are mutual
+    dependencies between `<clinit>` and `Color.values`.
+
+    - `<clinit>` calls `Color.values` below.
+    - `Color.values` reads the global constant `$VALUE` and it is defined inside `<clinit>`. */
+    /*
     static {
       for (Color c : Color.values()) {}
     }
+    */
   }
 
   public void enum_iter() {

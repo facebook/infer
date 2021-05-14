@@ -207,6 +207,29 @@ void addInDictBracketsOk(NSMutableDictionary* mDict) {
   mDict[@"key"] = @"somestring";
 }
 
+void removeObjectFromDict(NSMutableDictionary* mDict, id key) {
+  [mDict removeObjectForKey:key];
+}
+
+void removeObjectFromDictKeyNilBad(NSMutableDictionary* mDict) {
+  removeObjectFromDict(mDict, nil);
+}
+
+void removeObjectFromDictKeyNotNilOK(NSMutableDictionary* mDict) {
+  removeObjectFromDict(mDict, @"somestring");
+}
+
+void dictionaryWithSharedKeySetOk() {
+  id sharedKeySet = [NSDictionary sharedKeySetForKeys:@[ @"key1", @"key2" ]];
+  NSMutableDictionary* mDict =
+      [NSMutableDictionary dictionaryWithSharedKeySet:sharedKeySet];
+}
+
+void dictionaryWithSharedKeySetBad() {
+  NSMutableDictionary* mDict =
+      [NSMutableDictionary dictionaryWithSharedKeySet:nil];
+}
+
 void testNilMessagingForModelNilNilOK_FP() { addObjectInDict(nil, nil); }
 
 void testNilMessagingForModelNilStringOK() {
@@ -239,6 +262,40 @@ void replaceObjectInArrayOk(NSMutableArray* mArray) {
   [mArray replaceObjectAtIndex:0 withObject:[SomeObject new]];
 }
 
+void removeObjectsAtIndexesFromArray(NSMutableArray* mArray, id indexset) {
+  [mArray removeObjectsAtIndexes:indexset];
+}
+
+void removeObjectsAtIndexesFromArrayOK(NSMutableArray* mArray) {
+  NSIndexSet* indexset = [NSIndexSet indexSetWithIndex:1];
+  removeObjectsAtIndexesFromArray(mArray, indexset);
+}
+
+void removeObjectsAtIndexesFromArrayBad(NSMutableArray* mArray) {
+  removeObjectsAtIndexesFromArray(mArray, nil);
+}
+
+void replaceObjectsAtIndexesWithObjectsInArray(NSMutableArray* mArray,
+                                               id indexset,
+                                               id objects) {
+  [mArray replaceObjectsAtIndexes:indexset withObjects:objects];
+}
+
+void replaceObjectsAtIndexesWithObjectsInArrayOk(NSMutableArray* mArray) {
+  NSIndexSet* indexset = [NSIndexSet indexSetWithIndex:0];
+  replaceObjectsAtIndexesWithObjectsInArray(
+      mArray, indexset, @[ [SomeObject new] ]);
+}
+
+void replaceObjectsAtNilIndexesWithObjectsInArrayBad(NSMutableArray* mArray) {
+  replaceObjectsAtIndexesWithObjectsInArray(mArray, nil, @[ [SomeObject new] ]);
+}
+
+void replaceObjectsAtIndexesWithNilObjectsInArrayBad(NSMutableArray* mArray) {
+  NSIndexSet* indexset = [NSIndexSet indexSetWithIndex:0];
+  replaceObjectsAtIndexesWithObjectsInArray(mArray, indexset, nil);
+}
+
 void addInDictBracketsDefault(NSMutableDictionary<NSString*, NSString*>* mDict,
                               NSString* key) {
   mDict[key] = @"default";
@@ -249,4 +306,86 @@ void accessZeroElementOk_FP(NSMutableDictionary<NSString*, NSString*>* mDict) {
       [[NSUserDefaults standardUserDefaults] arrayForKey:@"key"];
   NSString* key = array[0];
   addInDictBracketsDefault(mDict, key);
+}
+
+void addObjectInMSet(NSMutableSet* mSet, id object) { [mSet addObject:object]; }
+
+void addObjectInMSetOk(NSMutableSet* mSet) {
+  addObjectInMSet(mSet, @"somestring");
+}
+
+void addObjectInMSetBad(NSMutableSet* mSet) { addObjectInMSet(mSet, nil); }
+
+void removeObjectFromMSet(NSMutableSet* mSet, id object) {
+  [mSet removeObject:object];
+}
+
+void removeObjectFromMSetOk(NSMutableSet* mSet) {
+  removeObjectFromMSet(mSet, @"somestring");
+}
+
+void removeObjectFromMSetBad(NSMutableSet* mSet) {
+  removeObjectFromMSet(mSet, nil);
+}
+
+void dictionaryLiteral(id key, id object) {
+  NSDictionary* dict = @{key : object};
+}
+
+void dictionaryLiteralOk() { dictionaryLiteral(@"key", @"obj"); }
+
+void dictionaryLiteralKeyNilBad() { dictionaryLiteral(nil, @"obj"); }
+
+void dictionaryLiteralObjectNilBad() { dictionaryLiteral(@"key", nil); }
+
+void dictionaryWithObjectsForKeysCount(id key, id object) {
+  NSString* values[1];
+  values[0] = object;
+
+  NSString* keys[1];
+  keys[0] = key;
+
+  NSDictionary* dict = [NSDictionary dictionaryWithObjects:values
+                                                   forKeys:keys
+                                                     count:1];
+}
+
+void dictionaryWithObjectsForKeysCountOk() {
+  dictionaryWithObjectsForKeysCount(@"key", @"somestring");
+}
+
+void FN_dictionaryWithObjectsForKeysCountKeyNilBad() {
+  dictionaryWithObjectsForKeysCount(nil, @"somestring");
+}
+
+void FN_dictionaryWithObjectsForKeysCountObjectNilBad() {
+  dictionaryWithObjectsForKeysCount(@"key", nil);
+}
+
+void dictionaryWithObjectForKey(id key, id object) {
+  NSDictionary* dict = [NSDictionary dictionaryWithObject:object forKey:key];
+}
+
+void dictionaryWithObjectForKeyOk() {
+  dictionaryWithObjectForKey(@"key", @"somestring");
+}
+
+void dictionaryWithObjectForKeyNilBad() {
+  dictionaryWithObjectForKey(nil, @"somestring");
+}
+
+void dictionaryWithNilObjectForKeyBad() {
+  dictionaryWithObjectForKey(@"key", nil);
+}
+
+void dictionaryWithSharedKeySetForKeys(id keys) {
+  id sharedKeySet = [NSDictionary sharedKeySetForKeys:keys];
+}
+
+void dictionaryWithSharedKeySetForKeysOk() {
+  dictionaryWithSharedKeySetForKeys(@[ @"key1", @"key2" ]);
+}
+
+void dictionaryWithSharedKeySetForKeysBad() {
+  dictionaryWithSharedKeySetForKeys(nil);
 }

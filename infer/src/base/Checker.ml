@@ -68,10 +68,26 @@ let config_unsafe checker =
   let supports_clang_and_java _ = Support in
   let supports_clang_and_java_experimental _ = ExperimentalSupport in
   let supports_clang (language : Language.t) =
-    match language with Clang -> Support | Java -> NoSupport | CIL -> NoSupport
+    match language with
+    | Clang ->
+        Support
+    | Java ->
+        NoSupport
+    | CIL ->
+        NoSupport
+    | Erlang ->
+        NoSupport
   in
   let supports_java (language : Language.t) =
-    match language with Clang -> NoSupport | Java -> Support | CIL -> Support
+    match language with
+    | Clang ->
+        NoSupport
+    | Java ->
+        Support
+    | CIL ->
+        Support
+    | Erlang ->
+        NoSupport
   in
   match checker with
   | AnnotationReachability ->
@@ -306,7 +322,7 @@ let config_unsafe checker =
       { id= "pulse"
       ; kind=
           UserFacing {title= "Pulse"; markdown_body= [%blob "../../documentation/checkers/Pulse.md"]}
-      ; support= (function Clang | Java -> Support | CIL -> NoSupport)
+      ; support= (function Clang | Java -> Support | CIL -> NoSupport | Erlang -> Support)
       ; short_documentation= "Memory and lifetime analysis."
       ; cli_flags= Some {deprecated= ["-ownership"]; show_in_help= true}
       ; enabled_by_default= false
@@ -363,7 +379,8 @@ let config_unsafe checker =
                  leaks! See the [lab \
                  instructions](https://github.com/facebook/infer/blob/master/infer/src/labs/README.md)."
             }
-      ; support= (function Clang -> NoSupport | Java -> Support | CIL -> Support)
+      ; support=
+          (function Clang -> NoSupport | Java -> Support | CIL -> Support | Erlang -> NoSupport)
       ; short_documentation=
           "Toy checker for the \"resource leak\" write-your-own-checker exercise."
       ; cli_flags= Some {deprecated= []; show_in_help= false}
@@ -372,7 +389,8 @@ let config_unsafe checker =
   | DOTNETResourceLeaks ->
       { id= "dotnet-resource-leak"
       ; kind= UserFacing {title= "Resource Leak checker for .NET"; markdown_body= ""}
-      ; support= (function Clang -> NoSupport | Java -> NoSupport | CIL -> Support)
+      ; support=
+          (function Clang -> NoSupport | Java -> NoSupport | CIL -> Support | Erlang -> NoSupport)
       ; short_documentation= "\"resource leak\" checker for .NET."
       ; cli_flags= Some {deprecated= []; show_in_help= false}
       ; enabled_by_default= true
