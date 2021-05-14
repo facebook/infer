@@ -7,7 +7,7 @@
 
 open! IStd
 
-type t = Clang | Java | CIL [@@deriving compare, enumerate]
+type t = Clang | CIL | Erlang | Java [@@deriving compare, enumerate]
 
 val equal : t -> t -> bool
 

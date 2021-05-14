@@ -2235,6 +2235,8 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
             ["System.String.Empty" (* ; "System.String.Chars" *); "System.String.Length"]
           in
           Predicates.Estruct (List.map ~f:mk_fld_sexp fields, Predicates.inst_none)
+      | Erlang ->
+          L.die InternalError "Erlang not supported"
     in
     let const_string_texp =
       match !Language.curr_language with
@@ -2260,6 +2262,8 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
             ; nbytes= None
             ; dynamic_length= None
             ; subtype= Subtype.exact }
+      | Erlang ->
+          L.die InternalError "Erlang not supported"
     in
     Predicates.Hpointsto (root, sexp, const_string_texp)
   in
