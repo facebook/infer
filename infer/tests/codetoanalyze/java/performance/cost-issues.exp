@@ -224,7 +224,7 @@ codetoanalyze/java/performance/Invariant.java, Invariant.formal_not_invariant_FP
 codetoanalyze/java/performance/Invariant.java, Invariant.list_size_invariant(java.util.List):void, 4 + 5 ⋅ items.length + 3 ⋅ (items.length + 1),  OnUIThread:false, [{items.length + 1},Loop,{items.length},Loop]
 codetoanalyze/java/performance/Invariant.java, Invariant.local_not_invariant_FP(int):void, 6 + 12 ⋅ (size + 5) + 7 ⋅ (size + 5) × (5+min(1, size)) + 4 ⋅ (5+min(0, size)),  OnUIThread:false, [{5+min(0, size)},Loop,{5+min(1, size)},Loop,{size + 5},Loop]
 codetoanalyze/java/performance/Invariant.java, Invariant.x_is_invariant_ok(int):void, 11 + 6 ⋅ (size + 20),  OnUIThread:false, [{size + 20},Loop]
-codetoanalyze/java/performance/IteratorTest.java, IteratorTest$Color.<clinit>():void, 73,  OnUIThread:false, []
+codetoanalyze/java/performance/IteratorTest.java, IteratorTest$Color.<clinit>():void, 37,  OnUIThread:false, []
 codetoanalyze/java/performance/IteratorTest.java, IteratorTest$Color.<init>(java.lang.String,int), 4,  OnUIThread:false, []
 codetoanalyze/java/performance/IteratorTest.java, IteratorTest$Color.valueOf(java.lang.String):IteratorTest$Color, 6,  OnUIThread:false, []
 codetoanalyze/java/performance/IteratorTest.java, IteratorTest$Color.values():IteratorTest$Color[], 6,  OnUIThread:false, []
