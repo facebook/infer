@@ -183,22 +183,27 @@ module C = struct
   let malloc_common ~size_exp_opt : model =
    fun {analysis_data= {tenv}; callee_procname; location; ret= ret_id, _} astate ->
     let ret_addr = AbstractValue.mk_fresh () in
-    let ret_hist =
-      [ValueHistory.Allocation {f= Model (Procname.to_string callee_procname); location}]
-    in
-    let ret_value = (ret_addr, ret_hist) in
-    let astate = PulseOperations.write_id ret_id ret_value astate in
     let<*> astate_alloc =
-      PulseOperations.allocate callee_procname location ret_value astate
+      let ret_alloc_hist =
+        [ValueHistory.Allocation {f= Model (Procname.to_string callee_procname); location}]
+      in
+      let ret_alloc_value = (ret_addr, ret_alloc_hist) in
+      PulseOperations.write_id ret_id ret_alloc_value astate
+      |> PulseOperations.allocate callee_procname location ret_alloc_value
       |> set_uninitialized tenv size_exp_opt location ret_addr
       |> PulseArithmetic.and_positive ret_addr
     in
     let result_null =
+      let ret_null_hist =
+        [ValueHistory.Call {f= Model (Procname.to_string callee_procname); location; in_call= []}]
+      in
+      let ret_null_value = (ret_addr, ret_null_hist) in
       let+ astate_null =
-        PulseArithmetic.and_eq_int ret_addr IntLit.zero astate
+        PulseOperations.write_id ret_id ret_null_value astate
+        |> PulseArithmetic.and_eq_int ret_addr IntLit.zero
         >>= PulseOperations.invalidate
-              (StackAddress (Var.of_id ret_id, ret_hist))
-              location (ConstantDereference IntLit.zero) ret_value
+              (StackAddress (Var.of_id ret_id, ret_null_hist))
+              location (ConstantDereference IntLit.zero) ret_null_value
       in
       ContinueProgram astate_null
     in

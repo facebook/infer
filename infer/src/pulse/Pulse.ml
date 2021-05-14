@@ -322,7 +322,13 @@ module PulseTransferFunctions = struct
           List.concat_map set_global_astates ~f:deref_rhs
       | Store {e1= lhs_exp; e2= rhs_exp; loc} ->
           (* [*lhs_exp := rhs_exp] *)
-          let event = ValueHistory.Assignment loc in
+          let event =
+            match lhs_exp with
+            | Lvar v when Pvar.is_return v ->
+                ValueHistory.Returned loc
+            | _ ->
+                ValueHistory.Assignment loc
+          in
           let result =
             let<*> astate, (rhs_addr, rhs_history) =
               PulseOperations.eval NoAccess loc rhs_exp astate
