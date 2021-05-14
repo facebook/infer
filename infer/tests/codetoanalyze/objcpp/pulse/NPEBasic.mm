@@ -337,3 +337,55 @@ void dictionaryLiteralOk() { dictionaryLiteral(@"key", @"obj"); }
 void dictionaryLiteralKeyNilBad() { dictionaryLiteral(nil, @"obj"); }
 
 void dictionaryLiteralObjectNilBad() { dictionaryLiteral(@"key", nil); }
+
+void dictionaryWithObjectsForKeysCount(id key, id object) {
+  NSString* values[1];
+  values[0] = object;
+
+  NSString* keys[1];
+  keys[0] = key;
+
+  NSDictionary* dict = [NSDictionary dictionaryWithObjects:values
+                                                   forKeys:keys
+                                                     count:1];
+}
+
+void dictionaryWithObjectsForKeysCountOk() {
+  dictionaryWithObjectsForKeysCount(@"key", @"somestring");
+}
+
+void FN_dictionaryWithObjectsForKeysCountKeyNilBad() {
+  dictionaryWithObjectsForKeysCount(nil, @"somestring");
+}
+
+void FN_dictionaryWithObjectsForKeysCountObjectNilBad() {
+  dictionaryWithObjectsForKeysCount(@"key", nil);
+}
+
+void dictionaryWithObjectForKey(id key, id object) {
+  NSDictionary* dict = [NSDictionary dictionaryWithObject:object forKey:key];
+}
+
+void dictionaryWithObjectForKeyOk() {
+  dictionaryWithObjectForKey(@"key", @"somestring");
+}
+
+void dictionaryWithObjectForKeyNilBad() {
+  dictionaryWithObjectForKey(nil, @"somestring");
+}
+
+void dictionaryWithNilObjectForKeyBad() {
+  dictionaryWithObjectForKey(@"key", nil);
+}
+
+void dictionaryWithSharedKeySetForKeys(id keys) {
+  id sharedKeySet = [NSDictionary sharedKeySetForKeys:keys];
+}
+
+void dictionaryWithSharedKeySetForKeysOk() {
+  dictionaryWithSharedKeySetForKeys(@[ @"key1", @"key2" ]);
+}
+
+void dictionaryWithSharedKeySetForKeysBad() {
+  dictionaryWithSharedKeySetForKeys(nil);
+}
