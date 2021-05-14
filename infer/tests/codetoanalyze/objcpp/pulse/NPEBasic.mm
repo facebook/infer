@@ -262,6 +262,40 @@ void replaceObjectInArrayOk(NSMutableArray* mArray) {
   [mArray replaceObjectAtIndex:0 withObject:[SomeObject new]];
 }
 
+void removeObjectsAtIndexesFromArray(NSMutableArray* mArray, id indexset) {
+  [mArray removeObjectsAtIndexes:indexset];
+}
+
+void removeObjectsAtIndexesFromArrayOK(NSMutableArray* mArray) {
+  NSIndexSet* indexset = [NSIndexSet indexSetWithIndex:1];
+  removeObjectsAtIndexesFromArray(mArray, indexset);
+}
+
+void removeObjectsAtIndexesFromArrayBad(NSMutableArray* mArray) {
+  removeObjectsAtIndexesFromArray(mArray, nil);
+}
+
+void replaceObjectsAtIndexesWithObjectsInArray(NSMutableArray* mArray,
+                                               id indexset,
+                                               id objects) {
+  [mArray replaceObjectsAtIndexes:indexset withObjects:objects];
+}
+
+void replaceObjectsAtIndexesWithObjectsInArrayOk(NSMutableArray* mArray) {
+  NSIndexSet* indexset = [NSIndexSet indexSetWithIndex:0];
+  replaceObjectsAtIndexesWithObjectsInArray(
+      mArray, indexset, @[ [SomeObject new] ]);
+}
+
+void replaceObjectsAtNilIndexesWithObjectsInArrayBad(NSMutableArray* mArray) {
+  replaceObjectsAtIndexesWithObjectsInArray(mArray, nil, @[ [SomeObject new] ]);
+}
+
+void replaceObjectsAtIndexesWithNilObjectsInArrayBad(NSMutableArray* mArray) {
+  NSIndexSet* indexset = [NSIndexSet indexSetWithIndex:0];
+  replaceObjectsAtIndexesWithObjectsInArray(mArray, indexset, nil);
+}
+
 void addInDictBracketsDefault(NSMutableDictionary<NSString*, NSString*>* mDict,
                               NSString* key) {
   mDict[key] = @"default";

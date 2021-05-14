@@ -1777,6 +1777,15 @@ module ProcNameDispatcher = struct
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableSet")
           &:: "removeObject:" <>$ any_arg $+ capt_arg_payload
           $--> ObjC.insertion_into_collection_key_or_value ~desc:"NSMutableSet.removeObject:"
+        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
+          &:: "removeObjectsAtIndexes:" <>$ any_arg $+ capt_arg_payload
+          $--> ObjC.insertion_into_collection_key_or_value
+                 ~desc:"NSMutableArray.removeObjectsAtIndexes:"
+        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
+          &:: "replaceObjectsAtIndexes:withObjects:" <>$ any_arg $+ capt_arg_payload
+          $+ capt_arg_payload
+          $--> ObjC.insertion_into_collection_key_and_value
+                 ~desc:"NSMutableArray.replaceObjectsAtIndexes:withObjects:"
         ; +match_regexp_opt Config.pulse_model_return_nonnull
           &::.*--> Misc.return_positive
                      ~desc:"modelled as returning not null due to configuration option"
