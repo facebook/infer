@@ -357,7 +357,7 @@ end
 let should_report_on_proc tenv procdesc =
   let proc_name = Procdesc.get_proc_name procdesc in
   match proc_name with
-  | CSharp _ -> (not (PredSymb.equal_access (Procdesc.get_access procdesc) Private))
+  | CSharp _ -> (not (ProcAttributes.equal_access (Procdesc.get_access procdesc) Private))
   | Java java_pname ->
       (* return true if procedure is at an abstraction boundary or reporting has been explicitly
          requested via @ThreadSafe in java *)
