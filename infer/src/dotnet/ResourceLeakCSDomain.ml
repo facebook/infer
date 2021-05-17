@@ -97,9 +97,7 @@ let release_resource access_path held =
   let old_count = find_count access_path held in
   let remove_resource_from_hash =
     match old_count with
-    | Top ->
-        Hashtbl.remove !type_map access_path
-    | NonTop count when count <= 0 ->
+    | NonTop count when count < 2 ->
         Hashtbl.remove !type_map access_path
     | _ ->
         ()
