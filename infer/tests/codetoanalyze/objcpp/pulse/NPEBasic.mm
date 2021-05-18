@@ -426,3 +426,28 @@ void setInitWithObjectsForCount(id object) {
 void setInitWithObjectsForCountOk() { setInitWithObjectsForCount(@"obj"); }
 
 void FN_setInitWithObjectsForCountBad() { setInitWithObjectsForCount(nil); }
+
+void arrayLiteral(id object) { NSArray* array = @[ object ]; }
+
+void arrayLiteralOk() { arrayLiteral(@"obj"); }
+
+void arrayLiteralNilBad() { arrayLiteral(nil); }
+
+void arrayWithObject(id object) {
+  NSArray* array = [NSArray arrayWithObject:object];
+}
+
+void arrayWithObjectOK() { arrayWithObject(@"obj"); }
+
+void arrayWithObjectNilBad() { arrayWithObject(nil); }
+
+void arrayWithObjects(id object) {
+  NSString* values[1];
+  values[0] = object;
+
+  NSArray* array = [NSArray arrayWithObjects:values count:1];
+}
+
+void arrayWithObjectsOk() { arrayWithObjects(@"obj"); }
+
+void FN_arrayWithObjectsNilBad() { arrayWithObjects(nil); }

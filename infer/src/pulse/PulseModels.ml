@@ -1804,6 +1804,9 @@ module ProcNameDispatcher = struct
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSSet")
           &:: "setByAddingObject:" <>$ any_arg $+ capt_arg_payload
           $--> ObjC.insertion_into_collection_key_or_value ~desc:"NSSet.setByAddingObject"
+        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSArray")
+          &:: "arrayWithObject:" <>$ capt_arg_payload
+          $--> ObjC.insertion_into_collection_key_or_value ~desc:"NSArray.arrayWithObject"
         ; +match_regexp_opt Config.pulse_model_return_nonnull
           &::.*--> Misc.return_positive
                      ~desc:"modelled as returning not null due to configuration option"
