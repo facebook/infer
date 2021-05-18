@@ -389,3 +389,40 @@ void dictionaryWithSharedKeySetForKeysOk() {
 void dictionaryWithSharedKeySetForKeysBad() {
   dictionaryWithSharedKeySetForKeys(nil);
 }
+
+void setWithObject(id object) { NSSet* set = [NSSet setWithObject:object]; }
+
+void setWithObjectOk() { setWithObject(@"obj"); }
+
+void setWithObjectBad() { setWithObject(nil); }
+
+void setByAddingObject(id object) {
+  NSSet* set = [NSSet set];
+  set = [set setByAddingObject:object];
+}
+
+void setByAddingObjectOk() { setByAddingObject(@"obj"); }
+
+void setByAddingObjectBad() { setByAddingObject(nil); }
+
+void setWithObjectsForCount(id object) {
+  NSString* values[1];
+  values[0] = object;
+
+  NSSet* set = [NSSet setWithObjects:values count:1];
+}
+
+void setWithObjectsForCountOk() { setWithObjectsForCount(@"obj"); }
+
+void FN_setWithObjectsForCountBad() { setWithObjectsForCount(nil); }
+
+void setInitWithObjectsForCount(id object) {
+  NSString* values[1];
+  values[0] = object;
+
+  NSSet* set = [[NSSet alloc] initWithObjects:values count:1];
+}
+
+void setInitWithObjectsForCountOk() { setInitWithObjectsForCount(@"obj"); }
+
+void FN_setInitWithObjectsForCountBad() { setInitWithObjectsForCount(nil); }
