@@ -20,7 +20,7 @@
   my_block();
 }
 
-- (void)FN_assignNilBad {
+- (void)assignNilBad {
 
   void (^my_block)(void) = ^() {
   };
@@ -35,13 +35,13 @@
   }
 }
 
-- (void)FN_paramAssignNilBad:(void (^)(void))my_block {
+- (void)paramAssignNilBad:(void (^)(void))my_block {
 
   my_block = NULL;
   my_block(); // Null deref
 }
 
-- (void)FN_paramReassignNilBad:(void (^)(void))my_block_param {
+- (void)paramReassignNilBad:(void (^)(void))my_block_param {
 
   void (^my_block)(void) = ^() {
   };
@@ -95,7 +95,7 @@ void calldoSomethingThenCallbackOk() {
   [blockA doSomethingThenCallback:my_block];
 }
 
-void FN_calldoSomethingThenCallbackWithNilBad() {
+void calldoSomethingThenCallbackWithNilBad() {
   BlockA* blockA = [BlockA alloc];
   [blockA doSomethingThenCallback:nil];
 }

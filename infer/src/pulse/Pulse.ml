@@ -42,6 +42,8 @@ module PulseTransferFunctions = struct
         PulseCallOperations.call tenv ~caller_proc_desc:proc_desc ~callee_data call_loc callee_pname
           ~ret ~actuals ~formals_opt astate
     | _ ->
+        (* dereference call expression to catch nil issues *)
+        let<*> astate, _ = PulseOperations.eval_deref call_loc call_exp astate in
         L.d_printfln "Skipping indirect call %a@\n" Exp.pp call_exp ;
         let astate =
           let arg_values = List.map actuals ~f:(fun ((value, _), _) -> value) in
