@@ -146,11 +146,13 @@ module Misc = struct
     Ok (ContinueProgram astate_zero) :: astates_alloc
 
 
-  let alloc_not_null ~event arg : model =
+  (** record in its history and dynamic type that the value was allocated but consider that it
+      cannot generate leaks (eg it is handled by the language's garbage collector, or we don't want
+      to report leaks for some reason) *)
+  let alloc_no_leak_not_null ~desc arg : model =
    fun {location; ret= ret_id, _} astate ->
     let ret_addr = AbstractValue.mk_fresh () in
-    let event = event location in
-    let ret_value = (ret_addr, [event]) in
+    let ret_value = (ret_addr, [ValueHistory.Allocation {f= Model desc; location}]) in
     let astate =
       match arg with
       | Exp.Sizeof {typ} ->
@@ -162,12 +164,6 @@ module Misc = struct
     in
     let<+> astate = PulseArithmetic.and_positive ret_addr astate in
     PulseOperations.write_id ret_id ret_value astate
-
-
-  let alloc_not_null_call_ev ~desc arg =
-    alloc_not_null
-      ~event:(fun location -> ValueHistory.Call {f= Model desc; location; in_call= []})
-      arg
 end
 
 module C = struct
@@ -242,12 +238,6 @@ module ObjCCoreFoundation = struct
 end
 
 module ObjC = struct
-  let alloc_not_null_alloc_ev ~desc arg =
-    Misc.alloc_not_null
-      ~event:(fun location -> ValueHistory.Allocation {f= Model desc; location})
-      arg
-
-
   let dispatch_sync args : model =
    fun {analysis_data= {analyze_dependency; tenv; proc_desc}; location; ret} astate ->
     match List.last args with
@@ -1414,10 +1404,10 @@ module ProcNameDispatcher = struct
         ; +BuiltinDecl.(match_builtin __delete) <>$ capt_arg_payload $--> Cplusplus.delete
         ; +BuiltinDecl.(match_builtin __new)
           <>$ capt_exp
-          $--> Misc.alloc_not_null_call_ev ~desc:"new"
+          $--> Misc.alloc_no_leak_not_null ~desc:"new"
         ; +BuiltinDecl.(match_builtin __new_array)
           <>$ capt_exp
-          $--> Misc.alloc_not_null_call_ev ~desc:"new"
+          $--> Misc.alloc_no_leak_not_null ~desc:"new"
         ; +BuiltinDecl.(match_builtin __placement_new) &++> Cplusplus.placement_new
         ; +BuiltinDecl.(match_builtin objc_cpp_throw) <>--> Misc.early_exit
         ; +BuiltinDecl.(match_builtin __cast)
@@ -1747,7 +1737,7 @@ module ProcNameDispatcher = struct
           <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; +BuiltinDecl.(match_builtin __objc_alloc_no_fail)
           <>$ capt_exp
-          $--> ObjC.alloc_not_null_alloc_ev ~desc:"alloc"
+          $--> Misc.alloc_no_leak_not_null ~desc:"alloc"
         ; -"NSObject" &:: "init" <>$ capt_arg_payload $--> Misc.id_first_arg ~desc:"NSObject.init"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableDictionary")
           &:: "setObject:forKey:" <>$ any_arg $+ capt_arg_payload $+ capt_arg_payload
