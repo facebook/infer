@@ -139,12 +139,13 @@ let get_message diagnostic =
       let pp_allocation_trace fmt (trace : Trace.t) =
         match trace with
         | Immediate _ ->
-            F.fprintf fmt "by call to `%a`" Procname.pp procname
+            F.fprintf fmt "by `%a`" Procname.pp procname
         | ViaCall {f; _} ->
-            F.fprintf fmt "by call to %a" CallEvent.describe f
+            F.fprintf fmt "by `%a`, indirectly via call to %a" Procname.pp procname
+              CallEvent.describe f
       in
       F.asprintf
-        "%s memory leak. Memory dynamically allocated at line %d %a, is not freed after the last \
+        "%s memory leak. Memory dynamically allocated at line %d %a is not freed after the last \
          access at %a"
         pulse_start_msg allocation_line pp_allocation_trace allocation_trace Location.pp location
   | ReadUninitializedValue {calling_context; trace} ->
@@ -272,12 +273,12 @@ let get_trace = function
            ~include_title:(should_print_invalidation_trace || not (List.is_empty calling_context))
            ~nesting:in_context_nesting invalidation access_trace
       @@ []
-  | MemoryLeak {location; allocation_trace} ->
+  | MemoryLeak {procname; location; allocation_trace} ->
       let access_start_location = Trace.get_start_location allocation_trace in
       add_errlog_header ~nesting:0 ~title:"allocation part of the trace starts here"
         access_start_location
       @@ Trace.add_to_errlog ~nesting:1
-           ~pp_immediate:(fun fmt -> F.pp_print_string fmt "allocation part of the trace ends here")
+           ~pp_immediate:(fun fmt -> F.fprintf fmt "allocated by `%a` here" Procname.pp procname)
            allocation_trace
       @@ [Errlog.make_trace_element 0 location "memory becomes unreachable here" []]
   | ReadUninitializedValue {calling_context; trace} ->

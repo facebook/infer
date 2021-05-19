@@ -183,9 +183,8 @@ module C = struct
       let ret_alloc_hist =
         [ValueHistory.Allocation {f= Model (Procname.to_string callee_procname); location}]
       in
-      let ret_alloc_value = (ret_addr, ret_alloc_hist) in
-      PulseOperations.write_id ret_id ret_alloc_value astate
-      |> PulseOperations.allocate callee_procname location ret_alloc_value
+      PulseOperations.write_id ret_id (ret_addr, ret_alloc_hist) astate
+      |> PulseOperations.allocate callee_procname location (ret_addr, [])
       |> set_uninitialized tenv size_exp_opt location ret_addr
       |> PulseArithmetic.and_positive ret_addr
     in
@@ -209,12 +208,12 @@ module C = struct
   let malloc_not_null_common ~size_exp_opt : model =
    fun {analysis_data= {tenv}; callee_procname; location; ret= ret_id, _} astate ->
     let ret_addr = AbstractValue.mk_fresh () in
-    let ret_value =
-      (ret_addr, [ValueHistory.Allocation {f= Model (Procname.to_string callee_procname); location}])
+    let ret_alloc_hist =
+      [ValueHistory.Allocation {f= Model (Procname.to_string callee_procname); location}]
     in
-    let astate = PulseOperations.write_id ret_id ret_value astate in
+    let astate = PulseOperations.write_id ret_id (ret_addr, ret_alloc_hist) astate in
     let<+> astate =
-      PulseOperations.allocate callee_procname location ret_value astate
+      PulseOperations.allocate callee_procname location (ret_addr, []) astate
       |> set_uninitialized tenv size_exp_opt location ret_addr
       |> PulseArithmetic.and_positive ret_addr
     in
