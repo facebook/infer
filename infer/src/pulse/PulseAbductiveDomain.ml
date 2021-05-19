@@ -603,29 +603,26 @@ let skipped_calls_match_pattern astate =
 
 
 let check_memory_leaks unreachable_addrs astate =
-  let check_memory_leak attributes =
+  let check_memory_leak addr attributes =
     let allocated_not_freed_opt =
-      Attributes.fold attributes ~init:(None (* allocation trace *), false (* freed *))
-        ~f:(fun acc attr ->
-          match (attr : Attribute.t) with
-          | Allocated (procname, trace) ->
-              (Some (procname, trace), snd acc)
-          | Invalid (CFree, _) ->
-              (fst acc, true)
-          | _ ->
-              acc )
+      let allocated = Attributes.get_allocation attributes in
+      if Option.is_some allocated then
+        match Attributes.get_invalid attributes with Some (CFree, _) -> None | _ -> allocated
+      else None
     in
     match allocated_not_freed_opt with
-    | Some (procname, trace), false ->
-        (* allocated but not freed *)
-        Error (procname, trace)
-    | _ ->
+    | None ->
         Ok ()
+    | Some (procname, trace) ->
+        (* allocated but not freed => leak *)
+        L.d_printfln ~color:Red "LEAK: unreachable address %a was allocated by %a" AbstractValue.pp
+          addr Procname.pp procname ;
+        Error (procname, trace)
   in
   List.fold_result unreachable_addrs ~init:() ~f:(fun () addr ->
       match AddressAttributes.find_opt addr astate with
       | Some unreachable_attrs ->
-          check_memory_leak unreachable_attrs
+          check_memory_leak addr unreachable_attrs
       | None ->
           Ok () )
 
