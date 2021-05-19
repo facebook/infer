@@ -93,13 +93,14 @@ let apply_callee tenv ~caller_proc_desc callee_pname call_loc callee_exec_state 
     | (Sat (Error _) | Unsat) as path_result ->
         path_result
     | Sat (Ok (post, return_val_opt, subst)) ->
-        let event = ValueHistory.Call {f= Call callee_pname; location= call_loc; in_call= []} in
         let post =
           match return_val_opt with
-          | Some (return_val, return_hist) ->
-              PulseOperations.write_id (fst ret) (return_val, event :: return_hist) post
+          | Some return_val_hist ->
+              PulseOperations.write_id (fst ret) return_val_hist post
           | None ->
-              PulseOperations.havoc_id (fst ret) [event] post
+              PulseOperations.havoc_id (fst ret)
+                [ValueHistory.Call {f= Call callee_pname; location= call_loc; in_call= []}]
+                post
         in
         f subst post
   in

@@ -510,14 +510,19 @@ let record_post_for_return callee_proc_name call_loc pre_post call_state =
     with
     | None ->
         (call_state, None)
-    | Some (return_callee, _) ->
+    | Some (return_callee, return_callee_hist) ->
         let return_caller_addr_hist =
-          match AddressMap.find_opt return_callee call_state.subst with
-          | Some return_caller_hist ->
-              return_caller_hist
-          | None ->
-              ( AbstractValue.mk_fresh ()
-              , [ (* this could maybe include an event like "returned here" *) ] )
+          let return_caller, return_caller_hist =
+            match AddressMap.find_opt return_callee call_state.subst with
+            | Some return_caller_hist ->
+                return_caller_hist
+            | None ->
+                (AbstractValue.mk_fresh (), [])
+          in
+          ( return_caller
+          , ValueHistory.Call
+              {f= Call callee_proc_name; location= call_loc; in_call= return_callee_hist}
+            :: return_caller_hist )
         in
         L.d_printfln_escaped "Recording POST from [return] <-> %a" AbstractValue.pp
           (fst return_caller_addr_hist) ;
