@@ -77,3 +77,28 @@ int* follow_value_by_ret_bad() {
   int* z = return_first(y, 12, &dummy2);
   *z = 42;
 }
+
+int* malloc_wrapper_1() {
+  int* x;
+  x = (int*)malloc(sizeof(int));
+  return x;
+}
+
+int* malloc_wrapper_2(int b) {
+  if (b) {
+    return malloc_wrapper_1();
+  }
+}
+
+void free_wrapper(int* p, int b) {
+  if (b) {
+    free(p);
+  }
+}
+
+void trace_correctly_through_wrappers_bad() {
+  int* x = malloc_wrapper_2(1);
+  // TODO: ideally we would trace that we didn't go into the free() branch of
+  // the wrapper explicitly here to help understand the bug report
+  free_wrapper_(x, 0);
+}
