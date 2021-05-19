@@ -623,7 +623,9 @@ let astate_to_summary proc_desc formals {threads; locks; accesses; ownership; at
   let return_attribute = AttributeMapDomain.get return_var_exp attribute_map in
   let locks =
     (* if method is [synchronized] released the lock once. *)
-    if Procdesc.is_java_synchronized proc_desc then LockDomain.release_lock locks else locks
+    if Procdesc.is_java_synchronized proc_desc || Procdesc.is_csharp_synchronized proc_desc then
+      LockDomain.release_lock locks
+    else locks
   in
   let attributes =
     (* store only the [Synchronized] attribute for class initializers/constructors *)

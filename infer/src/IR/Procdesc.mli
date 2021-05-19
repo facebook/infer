@@ -282,6 +282,9 @@ val is_defined : t -> bool
 val is_java_synchronized : t -> bool
 (** Return [true] if the procedure signature has the Java synchronized keyword *)
 
+val is_csharp_synchronized : t -> bool
+(** Return [true] if the procedure is synchronized via a C# lock *)
+
 val is_objc_arc_on : t -> bool
 (** Return [true] iff the ObjC procedure is compiled with ARC *)
 
