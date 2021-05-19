@@ -7,7 +7,7 @@ digraph cfg {
 "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_2" [label="2: Exit AClass.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_3" [label="3:  Call dealloc \n  " shape="box"]
+"dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_3" [label="3:  Call dealloc \n   n$0=*&self:AClass* [line 18, column 1]\n  n$1=*n$0.aDynValue:NSObject* [line 18, column 1]\n  n$2=_fun_NSObject.dealloc(n$1:NSObject*) [line 18, column 1]\n " shape="box"]
 	
 
 	 "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_3" -> "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_2" ;
