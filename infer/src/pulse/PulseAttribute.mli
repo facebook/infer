@@ -33,9 +33,6 @@ val is_suitable_for_pre : t -> bool
 
 val is_suitable_for_post : t -> bool
 
-val map_trace : f:(Trace.t -> Trace.t) -> t -> t
-(** applies [f] to the traces found in attributes, leaving attributes without traces intact *)
-
 module Attributes : sig
   include PrettyPrintable.PPUniqRankSet with type elt = t
 
@@ -72,4 +69,6 @@ module Attributes : sig
   val replace_isl_abduced : t -> t -> t
   (** While applying a spec, replacing ISLAbduced by Allocated and Invalidation.Cfree by
       Invalidation.delete, if applicable *)
+
+  val add_call : Procname.t -> Location.t -> ValueHistory.t -> t -> t
 end

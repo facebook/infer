@@ -135,6 +135,66 @@ module Attribute = struct
         F.pp_print_string f "Uninitialized"
     | WrittenTo trace ->
         F.fprintf f "WrittenTo %a" (Trace.pp ~pp_immediate:(pp_string_if_debug "mutation")) trace
+
+
+  let is_suitable_for_pre = function
+    | MustBeValid _ | MustBeInitialized _ ->
+        true
+    | Invalid _ | Allocated _ | ISLAbduced _ ->
+        Config.pulse_isl
+    | AddressOfCppTemporary _
+    | AddressOfStackVariable _
+    | Closure _
+    | DynamicType _
+    | EndOfCollection
+    | StdVectorReserve
+    | Uninitialized
+    | WrittenTo _ ->
+        false
+
+
+  let is_suitable_for_post = function
+    | MustBeInitialized _ | MustBeValid _ ->
+        false
+    | Invalid _
+    | Allocated _
+    | ISLAbduced _
+    | AddressOfCppTemporary _
+    | AddressOfStackVariable _
+    | Closure _
+    | DynamicType _
+    | EndOfCollection
+    | StdVectorReserve
+    | Uninitialized
+    | WrittenTo _ ->
+        true
+
+
+  let add_call proc_name call_location caller_history attr =
+    let add_call_to_trace in_call =
+      Trace.ViaCall {f= Call proc_name; location= call_location; history= caller_history; in_call}
+    in
+    match attr with
+    | Allocated (proc_name, trace) ->
+        Allocated (proc_name, add_call_to_trace trace)
+    | Invalid (invalidation, trace) ->
+        Invalid (invalidation, add_call_to_trace trace)
+    | ISLAbduced trace ->
+        ISLAbduced (add_call_to_trace trace)
+    | MustBeValid (trace, reason) ->
+        MustBeValid (add_call_to_trace trace, reason)
+    | MustBeInitialized trace ->
+        MustBeInitialized (add_call_to_trace trace)
+    | WrittenTo trace ->
+        WrittenTo (add_call_to_trace trace)
+    | ( AddressOfCppTemporary _
+      | AddressOfStackVariable _
+      | Closure _
+      | DynamicType _
+      | EndOfCollection
+      | StdVectorReserve
+      | Uninitialized ) as attr ->
+        attr
 end
 
 module Attributes = struct
@@ -251,62 +311,11 @@ module Attributes = struct
         Set.add acc attr1 )
 
 
+  let add_call proc_name call_location caller_history attrs =
+    Set.map attrs ~f:(fun attr -> Attribute.add_call proc_name call_location caller_history attr)
+
+
   include Set
 end
 
 include Attribute
-
-let is_suitable_for_pre = function
-  | MustBeValid _ | MustBeInitialized _ ->
-      true
-  | Invalid _ | Allocated _ | ISLAbduced _ ->
-      Config.pulse_isl
-  | AddressOfCppTemporary _
-  | AddressOfStackVariable _
-  | Closure _
-  | DynamicType _
-  | EndOfCollection
-  | StdVectorReserve
-  | Uninitialized
-  | WrittenTo _ ->
-      false
-
-
-let is_suitable_for_post = function
-  | MustBeInitialized _ | MustBeValid _ ->
-      false
-  | Invalid _
-  | Allocated _
-  | ISLAbduced _
-  | AddressOfCppTemporary _
-  | AddressOfStackVariable _
-  | Closure _
-  | DynamicType _
-  | EndOfCollection
-  | StdVectorReserve
-  | Uninitialized
-  | WrittenTo _ ->
-      true
-
-
-let map_trace ~f = function
-  | Allocated (procname, trace) ->
-      Allocated (procname, f trace)
-  | ISLAbduced trace ->
-      ISLAbduced (f trace)
-  | Invalid (invalidation, trace) ->
-      Invalid (invalidation, f trace)
-  | MustBeValid (trace, reason) ->
-      MustBeValid (f trace, reason)
-  | WrittenTo trace ->
-      WrittenTo (f trace)
-  | MustBeInitialized trace ->
-      MustBeInitialized (f trace)
-  | ( AddressOfCppTemporary _
-    | AddressOfStackVariable _
-    | Closure _
-    | DynamicType _
-    | EndOfCollection
-    | StdVectorReserve
-    | Uninitialized ) as attr ->
-      attr
