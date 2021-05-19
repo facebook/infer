@@ -301,7 +301,7 @@ void addInDictBracketsDefault(NSMutableDictionary<NSString*, NSString*>* mDict,
   mDict[key] = @"default";
 }
 
-void accessZeroElementOk_FP(NSMutableDictionary<NSString*, NSString*>* mDict) {
+void accessZeroElementOk(NSMutableDictionary<NSString*, NSString*>* mDict) {
   NSArray<NSString*>* array =
       [[NSUserDefaults standardUserDefaults] arrayForKey:@"key"];
   NSString* key = array[0];

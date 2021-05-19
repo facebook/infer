@@ -32,13 +32,39 @@ let report_latent_issue proc_desc err_log latent_issue =
   LatentIssue.to_diagnostic latent_issue |> report_latent_diagnostic proc_desc err_log
 
 
+(* skip reporting on Java classes annotated with [@Nullsafe] if requested *)
 let is_nullsafe_error tenv diagnostic jn =
   (not Config.pulse_nullsafe_report_npe)
   && IssueType.equal (Diagnostic.get_issue_type diagnostic) IssueType.nullptr_dereference
   && match NullsafeMode.of_java_procname tenv jn with Default -> false | Local _ | Strict -> true
 
 
+(* skip reporting for constant dereference (eg null dereference) if the source of the null value is
+   not on the path of the access, otherwise the report will probably be too confusing: the actual
+   source of the null value can be obscured as any value equal to 0 (or the constant) can be
+   selected as the candidate for the trace, even if it has nothing to do with the error besides
+   being equal to the value being dereferenced *)
+let is_constant_deref_without_invalidation (diagnostic : Diagnostic.t) =
+  match diagnostic with
+  | MemoryLeak _ | ReadUninitializedValue _ | StackVariableAddressEscape _ ->
+      false
+  | AccessToInvalidAddress {invalidation; access_trace} -> (
+    match invalidation with
+    | ConstantDereference _ ->
+        not (Trace.has_invalidation access_trace)
+    | CFree
+    | CppDelete
+    | EndIterator
+    | GoneOutOfScope _
+    | OptionalEmpty
+    | StdVector _
+    | JavaIterator _ ->
+        false )
+
+
 let is_suppressed tenv proc_desc diagnostic astate =
+  is_constant_deref_without_invalidation diagnostic
+  ||
   match Procdesc.get_proc_name proc_desc with
   | Procname.Java jn ->
       is_nullsafe_error tenv diagnostic jn

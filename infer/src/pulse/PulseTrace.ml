@@ -7,6 +7,7 @@
 open! IStd
 module F = Format
 module CallEvent = PulseCallEvent
+module Invalidation = PulseInvalidation
 module ValueHistory = PulseValueHistory
 
 type t =
@@ -68,3 +69,14 @@ let rec iter trace ~f =
 let find_map trace ~f = Container.find_map ~iter trace ~f
 
 let exists trace ~f = Container.exists ~iter trace ~f
+
+let get_invalidation trace =
+  find_map trace ~f:(function
+    | ValueHistory.Invalidated (invalidation, _) ->
+        Some invalidation
+    | _ ->
+        None )
+
+
+let has_invalidation trace =
+  exists trace ~f:(function ValueHistory.Invalidated _ -> true | _ -> false)

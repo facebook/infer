@@ -45,18 +45,6 @@ let get_location = function
       location
 
 
-let get_invalidation_in_trace trace =
-  PulseTrace.find_map trace ~f:(function
-    | ValueHistory.Invalidated (invalidation, _) ->
-        Some invalidation
-    | _ ->
-        None )
-
-
-let trace_contains_invalidation trace =
-  PulseTrace.exists trace ~f:(function ValueHistory.Invalidated _ -> true | _ -> false)
-
-
 (* whether the [calling_context + trace] starts with a call or contains only an immediate event *)
 let immediate_or_first_call calling_context (trace : Trace.t) =
   match (calling_context, trace) with
@@ -71,7 +59,7 @@ let get_message diagnostic =
   match diagnostic with
   | AccessToInvalidAddress {calling_context; invalidation; invalidation_trace; access_trace} -> (
       let invalidation, invalidation_trace =
-        get_invalidation_in_trace access_trace
+        Trace.get_invalidation access_trace
         |> Option.value_map
              ~f:(fun invalidation -> (invalidation, access_trace))
              ~default:(invalidation, invalidation_trace)
@@ -275,7 +263,7 @@ let add_access_trace ~include_title ~nesting invalidation access_trace errlog =
 let get_trace = function
   | AccessToInvalidAddress {calling_context; invalidation; invalidation_trace; access_trace} ->
       let in_context_nesting = List.length calling_context in
-      let should_print_invalidation_trace = not (trace_contains_invalidation access_trace) in
+      let should_print_invalidation_trace = not (Trace.has_invalidation access_trace) in
       get_trace_calling_context calling_context
       @@ ( if should_print_invalidation_trace then
            add_invalidation_trace ~nesting:in_context_nesting invalidation invalidation_trace
@@ -308,7 +296,7 @@ let get_trace = function
 let get_issue_type = function
   | AccessToInvalidAddress {invalidation; must_be_valid_reason; access_trace} ->
       let invalidation =
-        get_invalidation_in_trace access_trace |> Option.value ~default:invalidation
+        Trace.get_invalidation access_trace |> Option.value ~default:invalidation
       in
       Invalidation.issue_type_of_cause invalidation must_be_valid_reason
   | MemoryLeak _ ->
