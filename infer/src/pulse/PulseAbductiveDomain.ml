@@ -353,12 +353,12 @@ module AddressAttributes = struct
   let check_valid_isl access_trace addr ?(null_noop = false) astate =
     L.d_printfln "*****check_valid_isl: addr*** %a@\n" AbstractValue.pp addr ;
     match BaseAddressAttributes.get_invalid addr (astate.post :> BaseDomain.t).attrs with
-    | None -> (
-      match
-        BaseAddressAttributes.get_must_be_valid_or_allocated_isl addr
-          (astate.post :> BaseDomain.t).attrs
-      with
-      | None, reason ->
+    | None ->
+        if
+          BaseAddressAttributes.is_must_be_valid_or_allocated_isl addr
+            (astate.post :> BaseDomain.t).attrs
+        then [Ok astate]
+        else
           let null_astates =
             if PathCondition.is_known_not_equal_zero astate.path_condition addr then []
             else
@@ -374,7 +374,7 @@ module AddressAttributes = struct
             else
               let valid_astate =
                 let abdalloc = Attribute.ISLAbduced access_trace in
-                let valid_attr = Attribute.MustBeValid (access_trace, reason) in
+                let valid_attr = Attribute.MustBeValid (access_trace, None) in
                 add_one addr abdalloc astate |> abduce_attribute addr valid_attr
                 |> abduce_attribute addr abdalloc
               in
@@ -386,8 +386,6 @@ module AddressAttributes = struct
               [Ok valid_astate; Error (`ISLError invalid_free)]
           in
           not_null_astates @ null_astates
-      | Some _, _ ->
-          [Ok astate] )
     | Some (invalidation, invalidation_trace) ->
         [Error (`InvalidAccess (invalidation, invalidation_trace, astate))]
 end
