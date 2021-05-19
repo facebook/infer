@@ -38,28 +38,28 @@ bool myrand(void);
     return;
 }
 
-- (void)nilInArrayLiteral0_FN {
+- (void)nilInArrayLiteral0 {
   NSString* str = nil;
 
   // nil argument in array literal crashes
   NSArray* foo = @[ str ];
 }
 
-- (void)nilInArrayLiteral1_FN {
+- (void)nilInArrayLiteral1 {
   NSString* str = nil;
 
   // nil argument in array literal crashes
   NSArray* foo = @[ str, @"bbb" ];
 }
 
-- (void)nilInArrayLiteral2_FN {
+- (void)nilInArrayLiteral2 {
   NSString* str = nil;
 
   // nil argument in array literal crashes
   NSArray* foo = @[ @"aaa", str, @"bbb" ];
 }
 
-- (void)nilInArrayLiteral3_FN {
+- (void)nilInArrayLiteral3 {
   NSString* str = nil;
 
   // nil argument in array literal crashes
@@ -75,7 +75,7 @@ bool myrand(void);
   return foo;
 }
 
-- (NSMutableArray*)insertNilBad_FN {
+- (NSMutableArray*)insertNilBad {
   NSMutableArray* ar = [NSMutableArray new];
   A* a = [A initA];
   [ar addObject:@[ a ]];
@@ -87,7 +87,7 @@ bool myrand(void);
 int ArrMain() {
   Arr* a = [Arr alloc];
   [a noProblem];
-  [a nilInArrayLiteral0_FN];
+  [a nilInArrayLiteral0];
   [a nilInArrayWithObject];
   return 0;
 }

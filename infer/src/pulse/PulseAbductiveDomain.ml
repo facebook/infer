@@ -353,12 +353,12 @@ module AddressAttributes = struct
   let check_valid_isl access_trace addr ?(null_noop = false) astate =
     L.d_printfln "*****check_valid_isl: addr*** %a@\n" AbstractValue.pp addr ;
     match BaseAddressAttributes.get_invalid addr (astate.post :> BaseDomain.t).attrs with
-    | None -> (
-      match
-        BaseAddressAttributes.get_must_be_valid_or_allocated_isl addr
-          (astate.post :> BaseDomain.t).attrs
-      with
-      | None, reason ->
+    | None ->
+        if
+          BaseAddressAttributes.is_must_be_valid_or_allocated_isl addr
+            (astate.post :> BaseDomain.t).attrs
+        then [Ok astate]
+        else
           let null_astates =
             if PathCondition.is_known_not_equal_zero astate.path_condition addr then []
             else
@@ -374,7 +374,7 @@ module AddressAttributes = struct
             else
               let valid_astate =
                 let abdalloc = Attribute.ISLAbduced access_trace in
-                let valid_attr = Attribute.MustBeValid (access_trace, reason) in
+                let valid_attr = Attribute.MustBeValid (access_trace, None) in
                 add_one addr abdalloc astate |> abduce_attribute addr valid_attr
                 |> abduce_attribute addr abdalloc
               in
@@ -386,8 +386,6 @@ module AddressAttributes = struct
               [Ok valid_astate; Error (`ISLError invalid_free)]
           in
           not_null_astates @ null_astates
-      | Some _, _ ->
-          [Ok astate] )
     | Some (invalidation, invalidation_trace) ->
         [Error (`InvalidAccess (invalidation, invalidation_trace, astate))]
 end
@@ -605,29 +603,26 @@ let skipped_calls_match_pattern astate =
 
 
 let check_memory_leaks unreachable_addrs astate =
-  let check_memory_leak attributes =
+  let check_memory_leak addr attributes =
     let allocated_not_freed_opt =
-      Attributes.fold attributes ~init:(None (* allocation trace *), false (* freed *))
-        ~f:(fun acc attr ->
-          match (attr : Attribute.t) with
-          | Allocated (procname, trace) ->
-              (Some (procname, trace), snd acc)
-          | Invalid (CFree, _) ->
-              (fst acc, true)
-          | _ ->
-              acc )
+      let allocated = Attributes.get_allocation attributes in
+      if Option.is_some allocated then
+        match Attributes.get_invalid attributes with Some (CFree, _) -> None | _ -> allocated
+      else None
     in
     match allocated_not_freed_opt with
-    | Some (procname, trace), false ->
-        (* allocated but not freed *)
-        Error (procname, trace)
-    | _ ->
+    | None ->
         Ok ()
+    | Some (procname, trace) ->
+        (* allocated but not freed => leak *)
+        L.d_printfln ~color:Red "LEAK: unreachable address %a was allocated by %a" AbstractValue.pp
+          addr Procname.pp procname ;
+        Error (procname, trace)
   in
   List.fold_result unreachable_addrs ~init:() ~f:(fun () addr ->
       match AddressAttributes.find_opt addr astate with
       | Some unreachable_attrs ->
-          check_memory_leak unreachable_attrs
+          check_memory_leak addr unreachable_attrs
       | None ->
           Ok () )
 

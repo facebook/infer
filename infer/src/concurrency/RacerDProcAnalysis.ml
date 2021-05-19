@@ -306,14 +306,17 @@ let analyze ({InterproceduralAnalysis.proc_desc; tenv} as interproc) =
   in
   if RacerDModels.should_analyze_proc tenv proc_name then
     let locks =
-      if (Procdesc.is_java_synchronized proc_desc || Procdesc.is_csharp_synchronized proc_desc) then LockDomain.(acquire_lock bottom)
+      if Procdesc.is_java_synchronized proc_desc || Procdesc.is_csharp_synchronized proc_desc then
+        LockDomain.(acquire_lock bottom)
       else LockDomain.bottom
     in
     let threads =
       if runs_on_ui_thread tenv proc_name || RacerDModels.is_thread_confined_method tenv proc_name
       then ThreadsDomain.AnyThreadButSelf
       else if
-        Procdesc.is_java_synchronized proc_desc || Procdesc.is_csharp_synchronized proc_desc || RacerDModels.is_marked_thread_safe proc_name tenv
+        Procdesc.is_java_synchronized proc_desc
+        || Procdesc.is_csharp_synchronized proc_desc
+        || RacerDModels.is_marked_thread_safe proc_name tenv
       then ThreadsDomain.AnyThread
       else ThreadsDomain.NoThread
     in

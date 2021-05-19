@@ -45,18 +45,6 @@ let get_location = function
       location
 
 
-let get_invalidation_in_trace trace =
-  PulseTrace.find_map trace ~f:(function
-    | ValueHistory.Invalidated (invalidation, _) ->
-        Some invalidation
-    | _ ->
-        None )
-
-
-let trace_contains_invalidation trace =
-  PulseTrace.exists trace ~f:(function ValueHistory.Invalidated _ -> true | _ -> false)
-
-
 (* whether the [calling_context + trace] starts with a call or contains only an immediate event *)
 let immediate_or_first_call calling_context (trace : Trace.t) =
   match (calling_context, trace) with
@@ -71,7 +59,7 @@ let get_message diagnostic =
   match diagnostic with
   | AccessToInvalidAddress {calling_context; invalidation; invalidation_trace; access_trace} -> (
       let invalidation, invalidation_trace =
-        get_invalidation_in_trace access_trace
+        Trace.get_invalidation access_trace
         |> Option.value_map
              ~f:(fun invalidation -> (invalidation, access_trace))
              ~default:(invalidation, invalidation_trace)
@@ -151,12 +139,13 @@ let get_message diagnostic =
       let pp_allocation_trace fmt (trace : Trace.t) =
         match trace with
         | Immediate _ ->
-            F.fprintf fmt "by call to `%a`" Procname.pp procname
+            F.fprintf fmt "by `%a`" Procname.pp procname
         | ViaCall {f; _} ->
-            F.fprintf fmt "by call to %a" CallEvent.describe f
+            F.fprintf fmt "by `%a`, indirectly via call to %a" Procname.pp procname
+              CallEvent.describe f
       in
       F.asprintf
-        "%s memory leak. Memory dynamically allocated at line %d %a, is not freed after the last \
+        "%s memory leak. Memory dynamically allocated at line %d %a is not freed after the last \
          access at %a"
         pulse_start_msg allocation_line pp_allocation_trace allocation_trace Location.pp location
   | ReadUninitializedValue {calling_context; trace} ->
@@ -275,7 +264,7 @@ let add_access_trace ~include_title ~nesting invalidation access_trace errlog =
 let get_trace = function
   | AccessToInvalidAddress {calling_context; invalidation; invalidation_trace; access_trace} ->
       let in_context_nesting = List.length calling_context in
-      let should_print_invalidation_trace = not (trace_contains_invalidation access_trace) in
+      let should_print_invalidation_trace = not (Trace.has_invalidation access_trace) in
       get_trace_calling_context calling_context
       @@ ( if should_print_invalidation_trace then
            add_invalidation_trace ~nesting:in_context_nesting invalidation invalidation_trace
@@ -284,12 +273,12 @@ let get_trace = function
            ~include_title:(should_print_invalidation_trace || not (List.is_empty calling_context))
            ~nesting:in_context_nesting invalidation access_trace
       @@ []
-  | MemoryLeak {location; allocation_trace} ->
+  | MemoryLeak {procname; location; allocation_trace} ->
       let access_start_location = Trace.get_start_location allocation_trace in
       add_errlog_header ~nesting:0 ~title:"allocation part of the trace starts here"
         access_start_location
       @@ Trace.add_to_errlog ~nesting:1
-           ~pp_immediate:(fun fmt -> F.pp_print_string fmt "allocation part of the trace ends here")
+           ~pp_immediate:(fun fmt -> F.fprintf fmt "allocated by `%a` here" Procname.pp procname)
            allocation_trace
       @@ [Errlog.make_trace_element 0 location "memory becomes unreachable here" []]
   | ReadUninitializedValue {calling_context; trace} ->
@@ -308,7 +297,7 @@ let get_trace = function
 let get_issue_type = function
   | AccessToInvalidAddress {invalidation; must_be_valid_reason; access_trace} ->
       let invalidation =
-        get_invalidation_in_trace access_trace |> Option.value ~default:invalidation
+        Trace.get_invalidation access_trace |> Option.value ~default:invalidation
       in
       Invalidation.issue_type_of_cause invalidation must_be_valid_reason
   | MemoryLeak _ ->

@@ -75,15 +75,16 @@ let get_fields qual_type_to_sil_type tenv class_tname decl_list =
   in
   let rec get_field fields decl =
     match decl with
-    | ObjCPropertyDecl (_, _, obj_c_property_decl_info) -> (
-        let ivar_decl_ref = obj_c_property_decl_info.Clang_ast_t.opdi_ivar_decl in
-        let property_attributes = obj_c_property_decl_info.Clang_ast_t.opdi_property_attributes in
-        match CAst_utils.get_decl_opt_with_decl_ref_opt ivar_decl_ref with
-        | Some (ObjCIvarDecl (_, name_info, qual_type, _, _)) ->
-            let field = get_sil_field name_info qual_type property_attributes in
-            CGeneral_utils.add_no_duplicates_fields field fields
-        | _ ->
-            fields )
+    | ObjCPropertyDecl (_, name_info, {opdi_qual_type; opdi_ivar_decl; opdi_property_attributes}) ->
+        let name_info, qual_type =
+          match CAst_utils.get_decl_opt_with_decl_ref_opt opdi_ivar_decl with
+          | Some (ObjCIvarDecl (_, name_info, qual_type, _, _)) ->
+              (name_info, qual_type)
+          | _ ->
+              (name_info, opdi_qual_type)
+        in
+        let field = get_sil_field name_info qual_type opdi_property_attributes in
+        CGeneral_utils.add_no_duplicates_fields field fields
     | ObjCPropertyImplDecl (_, obj_c_property_impl_decl_info) -> (
         let property_decl_opt = obj_c_property_impl_decl_info.Clang_ast_t.opidi_property_decl in
         match CAst_utils.get_decl_opt_with_decl_ref_opt property_decl_opt with
@@ -114,10 +115,7 @@ let add_missing_fields tenv class_name missing_fields =
       ()
 
 
-let modelled_fields_in_classes =
-  [ ("NSData", "_bytes", Typ.mk (Tptr (StdTyp.void, Typ.Pk_pointer)))
-  ; ("NSArray", "elementData", Typ.mk (Tint Typ.IInt)) ]
-
+let modelled_fields_in_classes = [("NSArray", "elementData", Typ.mk (Tint Typ.IInt))]
 
 let modelled_field class_name_info =
   let modelled_field_in_class res (class_name, field_name, typ) =

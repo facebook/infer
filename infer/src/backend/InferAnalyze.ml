@@ -117,8 +117,8 @@ let get_source_files_to_analyze ~changed_files =
     if result then incr n_source_files_to_analyze ;
     result
   in
-  ScubaLogging.log_count ~label:"source_files_to_analyze" ~value:!n_source_files_to_analyze ;
   let source_files_to_analyze = SourceFiles.get_all ~filter () in
+  ScubaLogging.log_count ~label:"source_files_to_analyze" ~value:!n_source_files_to_analyze ;
   let pp_n_source_files ~n_total fmt n_to_analyze =
     let pp_total_if_not_all fmt n_total =
       if Config.reactive_mode || Option.is_some changed_files then

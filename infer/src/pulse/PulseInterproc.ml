@@ -174,10 +174,6 @@ let translate_access_to_caller subst (access_callee : BaseMemory.Access.t) : _ *
 
 (* {3 reading the pre from the current state} *)
 
-let add_call_to_trace proc_name call_location caller_history in_call =
-  Trace.ViaCall {f= Call proc_name; location= call_location; history= caller_history; in_call}
-
-
 (** Materialize the (abstract memory) subgraph of [pre] reachable from [addr_pre] in
     [call_state.astate] starting from address [addr_caller]. Report an error if some invalid
     addresses are traversed in the process. *)
@@ -264,12 +260,6 @@ let materialize_pre_for_globals callee_proc_name call_location pre_post call_sta
         ~addr_pre ~addr_hist_caller call_state )
 
 
-let add_call_to_attributes proc_name call_location caller_history attrs =
-  Attributes.map attrs ~f:(fun attr ->
-      Attribute.map_trace attr ~f:(fun trace ->
-          add_call_to_trace proc_name call_location caller_history trace ) )
-
-
 let conjoin_callee_arith pre_post call_state =
   let open IResult.Let_syntax in
   L.d_printfln "applying callee path condition: (%a)[%a]" PathCondition.pp
@@ -295,7 +285,7 @@ let apply_arithmetic_constraints callee_proc_name call_location pre_post call_st
   let open IResult.Let_syntax in
   let one_address_sat callee_attrs (addr_caller, caller_history) call_state =
     let attrs_caller =
-      add_call_to_attributes callee_proc_name call_location caller_history callee_attrs
+      Attributes.add_call callee_proc_name call_location caller_history callee_attrs
     in
     let astate = AddressAttributes.abduce_and_add addr_caller attrs_caller call_state.astate in
     if phys_equal astate call_state.astate then call_state else {call_state with astate}
@@ -400,7 +390,7 @@ let record_post_cell callee_proc_name call_loc ~edges_pre_opt
     ~cell_callee_post:(edges_callee_post, attrs_callee_post) (addr_caller, hist_caller) call_state =
   let call_state =
     let attrs_post_caller =
-      add_call_to_attributes callee_proc_name call_loc hist_caller attrs_callee_post
+      Attributes.add_call callee_proc_name call_loc hist_caller attrs_callee_post
     in
     let astate =
       if Config.pulse_isl then
@@ -510,14 +500,19 @@ let record_post_for_return callee_proc_name call_loc pre_post call_state =
     with
     | None ->
         (call_state, None)
-    | Some (return_callee, _) ->
+    | Some (return_callee, return_callee_hist) ->
         let return_caller_addr_hist =
-          match AddressMap.find_opt return_callee call_state.subst with
-          | Some return_caller_hist ->
-              return_caller_hist
-          | None ->
-              ( AbstractValue.mk_fresh ()
-              , [ (* this could maybe include an event like "returned here" *) ] )
+          let return_caller, return_caller_hist =
+            match AddressMap.find_opt return_callee call_state.subst with
+            | Some return_caller_hist ->
+                return_caller_hist
+            | None ->
+                (AbstractValue.mk_fresh (), [])
+          in
+          ( return_caller
+          , ValueHistory.Call
+              {f= Call callee_proc_name; location= call_loc; in_call= return_callee_hist}
+            :: return_caller_hist )
         in
         L.d_printfln_escaped "Recording POST from [return] <-> %a" AbstractValue.pp
           (fst return_caller_addr_hist) ;
@@ -576,7 +571,7 @@ let record_post_remaining_attributes callee_proc_name call_loc pre_post call_sta
         | None ->
             (* callee address has no meaning for the caller *) call_state
         | Some (addr_caller, history) ->
-            let attrs' = add_call_to_attributes callee_proc_name call_loc history attrs in
+            let attrs' = Attributes.add_call callee_proc_name call_loc history attrs in
             let astate = AddressAttributes.abduce_and_add addr_caller attrs' call_state.astate in
             {call_state with astate} )
     (pre_post.AbductiveDomain.post :> BaseDomain.t).attrs call_state
@@ -585,7 +580,8 @@ let record_post_remaining_attributes callee_proc_name call_loc pre_post call_sta
 let record_skipped_calls callee_proc_name call_loc pre_post call_state =
   let callee_skipped_map =
     pre_post.AbductiveDomain.skipped_calls
-    |> SkippedCalls.map (fun trace -> add_call_to_trace callee_proc_name call_loc [] trace)
+    |> SkippedCalls.map (fun trace ->
+           Trace.ViaCall {f= Call callee_proc_name; location= call_loc; history= []; in_call= trace} )
   in
   let astate = AbductiveDomain.add_skipped_calls callee_skipped_map call_state.astate in
   {call_state with astate}

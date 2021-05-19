@@ -301,7 +301,7 @@ void addInDictBracketsDefault(NSMutableDictionary<NSString*, NSString*>* mDict,
   mDict[key] = @"default";
 }
 
-void accessZeroElementOk_FP(NSMutableDictionary<NSString*, NSString*>* mDict) {
+void accessZeroElementOk(NSMutableDictionary<NSString*, NSString*>* mDict) {
   NSArray<NSString*>* array =
       [[NSUserDefaults standardUserDefaults] arrayForKey:@"key"];
   NSString* key = array[0];
@@ -389,3 +389,65 @@ void dictionaryWithSharedKeySetForKeysOk() {
 void dictionaryWithSharedKeySetForKeysBad() {
   dictionaryWithSharedKeySetForKeys(nil);
 }
+
+void setWithObject(id object) { NSSet* set = [NSSet setWithObject:object]; }
+
+void setWithObjectOk() { setWithObject(@"obj"); }
+
+void setWithObjectBad() { setWithObject(nil); }
+
+void setByAddingObject(id object) {
+  NSSet* set = [NSSet set];
+  set = [set setByAddingObject:object];
+}
+
+void setByAddingObjectOk() { setByAddingObject(@"obj"); }
+
+void setByAddingObjectBad() { setByAddingObject(nil); }
+
+void setWithObjectsForCount(id object) {
+  NSString* values[1];
+  values[0] = object;
+
+  NSSet* set = [NSSet setWithObjects:values count:1];
+}
+
+void setWithObjectsForCountOk() { setWithObjectsForCount(@"obj"); }
+
+void FN_setWithObjectsForCountBad() { setWithObjectsForCount(nil); }
+
+void setInitWithObjectsForCount(id object) {
+  NSString* values[1];
+  values[0] = object;
+
+  NSSet* set = [[NSSet alloc] initWithObjects:values count:1];
+}
+
+void setInitWithObjectsForCountOk() { setInitWithObjectsForCount(@"obj"); }
+
+void FN_setInitWithObjectsForCountBad() { setInitWithObjectsForCount(nil); }
+
+void arrayLiteral(id object) { NSArray* array = @[ object ]; }
+
+void arrayLiteralOk() { arrayLiteral(@"obj"); }
+
+void arrayLiteralNilBad() { arrayLiteral(nil); }
+
+void arrayWithObject(id object) {
+  NSArray* array = [NSArray arrayWithObject:object];
+}
+
+void arrayWithObjectOK() { arrayWithObject(@"obj"); }
+
+void arrayWithObjectNilBad() { arrayWithObject(nil); }
+
+void arrayWithObjects(id object) {
+  NSString* values[1];
+  values[0] = object;
+
+  NSArray* array = [NSArray arrayWithObjects:values count:1];
+}
+
+void arrayWithObjectsOk() { arrayWithObjects(@"obj"); }
+
+void FN_arrayWithObjectsNilBad() { arrayWithObjects(nil); }
