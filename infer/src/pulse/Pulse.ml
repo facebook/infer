@@ -129,6 +129,19 @@ module PulseTransferFunctions = struct
 
   let dispatch_call ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) ret
       call_exp actuals call_loc flags astate =
+    let<*> astate, callee_pname = PulseOperations.eval_proc_name call_loc call_exp astate in
+    (* special case for objc dispatch models *)
+    let callee_pname, actuals =
+      match callee_pname with
+      | Some callee_pname when ObjCDispatchModels.is_model callee_pname -> (
+        match ObjCDispatchModels.get_dispatch_closure_opt actuals with
+        | Some (block_name, args) ->
+            (Some block_name, args)
+        | None ->
+            (Some callee_pname, actuals) )
+      | _ ->
+          (callee_pname, actuals)
+    in
     (* evaluate all actuals *)
     let<*> astate, rev_func_args =
       List.fold_result actuals ~init:(astate, [])
@@ -140,7 +153,6 @@ module PulseTransferFunctions = struct
             :: rev_func_args ) )
     in
     let func_args = List.rev rev_func_args in
-    let<*> astate, callee_pname = PulseOperations.eval_proc_name call_loc call_exp astate in
     let model =
       match callee_pname with
       | Some callee_pname ->
