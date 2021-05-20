@@ -1005,6 +1005,14 @@ OPTIONS
            Regex of methods that should be modelled as allocs in Pulse       
     See also infer-analyze(1).
 
+       --pulse-model-free-pattern string
+           Regex of methods that should be modelled as free in Pulse       
+    See also infer-analyze(1).
+
+       --pulse-model-malloc-pattern string
+           Regex of methods that should be modelled as mallocs in Pulse       
+    See also infer-analyze(1).
+
        --pulse-model-release-pattern string
            Regex of methods that should be modelled as release in Pulse       
     See also infer-analyze(1).
@@ -1936,6 +1944,12 @@ INTERNAL OPTIONS
 
        --pulse-model-alloc-pattern-reset
            Cancel the effect of --pulse-model-alloc-pattern.
+
+       --pulse-model-free-pattern-reset
+           Cancel the effect of --pulse-model-free-pattern.
+
+       --pulse-model-malloc-pattern-reset
+           Cancel the effect of --pulse-model-malloc-pattern.
 
        --pulse-model-release-pattern-reset
            Cancel the effect of --pulse-model-release-pattern.

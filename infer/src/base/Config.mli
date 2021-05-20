@@ -498,6 +498,10 @@ val pulse_model_abort : string list
 
 val pulse_model_alloc_pattern : Str.regexp option
 
+val pulse_model_free_pattern : Str.regexp option
+
+val pulse_model_malloc_pattern : Str.regexp option
+
 val pulse_model_release_pattern : Str.regexp option
 
 val pulse_model_return_first_arg : Str.regexp option

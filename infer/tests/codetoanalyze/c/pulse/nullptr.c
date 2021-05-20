@@ -89,6 +89,8 @@ void wrap_malloc(int** x) {
   }
 }
 
+void user_malloc_leak_bad() { int* x = (int*)a_malloc(sizeof(int)); }
+
 void call_no_return_good() {
   int* x = NULL;
   wrap_malloc(&x);

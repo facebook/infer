@@ -1799,6 +1799,8 @@ module ProcNameDispatcher = struct
           <>$ capt_arg_payload
           $+...$--> Misc.id_first_arg
                       ~desc:"modelled as returning the first argument due to configuration option"
+        ; +match_regexp_opt Config.pulse_model_malloc_pattern <>$ capt_exp $+...$--> C.malloc
+        ; +match_regexp_opt Config.pulse_model_free_pattern <>$ capt_arg_payload $--> C.free
         ; +match_regexp_opt Config.pulse_model_skip_pattern
           &::.*++> Misc.skip "modelled as skip due to configuration option" ] )
 end

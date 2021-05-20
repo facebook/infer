@@ -2012,6 +2012,18 @@ and pulse_model_abort =
     "Methods that should be modelled as abort in Pulse"
 
 
+and pulse_model_malloc_pattern =
+  CLOpt.mk_string_opt ~long:"pulse-model-malloc-pattern"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Regex of methods that should be modelled as mallocs in Pulse"
+
+
+and pulse_model_free_pattern =
+  CLOpt.mk_string_opt ~long:"pulse-model-free-pattern"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Regex of methods that should be modelled as free in Pulse"
+
+
 and pulse_model_alloc_pattern =
   CLOpt.mk_string_opt ~long:"pulse-model-alloc-pattern"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -3267,6 +3279,10 @@ and pulse_manifest_emp = !pulse_manifest_emp
 and pulse_max_disjuncts = !pulse_max_disjuncts
 
 and pulse_model_abort = RevList.to_list !pulse_model_abort
+
+and pulse_model_free_pattern = Option.map ~f:Str.regexp !pulse_model_free_pattern
+
+and pulse_model_malloc_pattern = Option.map ~f:Str.regexp !pulse_model_malloc_pattern
 
 and pulse_model_alloc_pattern = Option.map ~f:Str.regexp !pulse_model_alloc_pattern
 

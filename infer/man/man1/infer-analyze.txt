@@ -286,6 +286,12 @@ OPTIONS
        --pulse-model-alloc-pattern string
            Regex of methods that should be modelled as allocs in Pulse
 
+       --pulse-model-free-pattern string
+           Regex of methods that should be modelled as free in Pulse
+
+       --pulse-model-malloc-pattern string
+           Regex of methods that should be modelled as mallocs in Pulse
+
        --pulse-model-release-pattern string
            Regex of methods that should be modelled as release in Pulse
 

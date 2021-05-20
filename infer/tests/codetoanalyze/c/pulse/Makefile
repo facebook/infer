@@ -7,7 +7,7 @@ TESTS_DIR = ../../..
 
 CLANG_OPTIONS = -c
 INFER_OPTIONS = --pulse-only --debug-exceptions --project-root $(TESTS_DIR) \
-  --pulse-report-latent-issues
+  --pulse-report-latent-issues --pulse-model-malloc-pattern a_malloc
 
 INFERPRINT_OPTIONS = --issues-tests
 
