@@ -8,3 +8,5 @@
 open! IStd
 
 val is_model : Procname.t -> bool
+
+val get_dispatch_closure_opt : (Exp.t * Typ.t) list -> (Procname.t * (Exp.t * Typ.t) list) option
