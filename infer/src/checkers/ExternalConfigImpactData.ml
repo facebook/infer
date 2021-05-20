@@ -26,7 +26,10 @@ let read_file_config_data fname =
   in
   List.fold config_list ~init:ConfigProcnameSet.empty
     ~f:(fun acc {Config_impact_data_t.method_name; class_name} ->
-      ConfigProcnameSet.add {method_name= cut_objc_parameters method_name; class_name} acc )
+      ConfigProcnameSet.add
+        { method_name= cut_objc_parameters method_name
+        ; class_name= Procname.replace_java_inner_class_prefix_regex class_name }
+        acc )
 
 
 let is_in_config_data_file =
@@ -37,6 +40,8 @@ let is_in_config_data_file =
   fun proc_name ->
     let config_item =
       { Config_impact_data_t.method_name= Procname.get_method proc_name |> cut_objc_parameters
-      ; class_name= Procname.get_class_name proc_name |> Option.value ~default:"" }
+      ; class_name=
+          Procname.get_class_name proc_name
+          |> Option.value_map ~default:"" ~f:Procname.replace_java_inner_class_prefix_regex }
     in
     ConfigProcnameSet.mem config_item config_data

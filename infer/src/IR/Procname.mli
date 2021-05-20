@@ -390,6 +390,9 @@ val to_simplified_string : ?withclass:bool -> t -> string
 val from_string_c_fun : string -> t
 (** Convert a string to a c function name. *)
 
+val replace_java_inner_class_prefix_regex : string -> string
+(** Replace "$\[0-9\]+" index into "$_" in Java proc name. *)
+
 val hashable_name : t -> string
 (** Convert the procedure name in a format suitable for computing the bug hash. *)
 
