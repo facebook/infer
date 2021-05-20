@@ -1077,8 +1077,6 @@ module JavaCollection = struct
       astate |> ok_continue
 
 
-  let add_at ~desc coll _ new_elem : model = add ~desc coll new_elem
-
   let update coll new_val new_val_hist event location ret_id astate =
     (* case0: element not present in collection *)
     let* astate, coll_val = PulseOperations.eval_access Read location coll Dereference astate in
@@ -1101,7 +1099,7 @@ module JavaCollection = struct
     [astate; astate1; astate2]
 
 
-  let set coll _ (new_val, new_val_hist) : model =
+  let set coll (new_val, new_val_hist) : model =
    fun {location; ret= ret_id, _} astate ->
     let event = ValueHistory.Call {f= Model "Collection.set()"; location; in_call= []} in
     let<*> astates = update coll new_val new_val_hist event location ret_id astate in
@@ -1618,8 +1616,8 @@ module ProcNameDispatcher = struct
           &:: "add" <>$ capt_arg_payload $+ capt_arg_payload
           $--> JavaCollection.add ~desc:"Collection.add"
         ; +map_context_tenv PatternMatch.Java.implements_list
-          &:: "add" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
-          $--> JavaCollection.add_at ~desc:"Collection.add()"
+          &:: "add" <>$ capt_arg_payload $+ any_arg $+ capt_arg_payload
+          $--> JavaCollection.add ~desc:"Collection.add()"
         ; +map_context_tenv PatternMatch.Java.implements_collection
           &:: "remove"
           &++> JavaCollection.remove ~desc:"Collection.remove"
@@ -1683,16 +1681,13 @@ module ProcNameDispatcher = struct
           &:: "remove" <>$ capt_arg_payload
           $+...$--> JavaIterator.remove ~desc:"remove"
         ; +map_context_tenv PatternMatch.Java.implements_map
-          &:: "put" <>$ capt_arg_payload $+...$--> StdVector.push_back
-        ; +map_context_tenv PatternMatch.Java.implements_map
           &:: "putAll" <>$ capt_arg_payload $+...$--> StdVector.push_back
         ; -"std" &:: "vector" &:: "reserve" <>$ capt_arg_payload $+...$--> StdVector.reserve
         ; +map_context_tenv PatternMatch.Java.implements_collection
           &:: "get" <>$ capt_arg_payload $+ capt_arg_payload
           $--> StdVector.at ~desc:"Collection.get()"
         ; +map_context_tenv PatternMatch.Java.implements_list
-          &:: "set" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
-          $--> JavaCollection.set
+          &:: "set" <>$ capt_arg_payload $+ any_arg $+ capt_arg_payload $--> JavaCollection.set
         ; +map_context_tenv PatternMatch.Java.implements_iterator
           &:: "hasNext"
           &--> Misc.nondet ~fn_name:"Iterator.hasNext()"
