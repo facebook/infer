@@ -72,13 +72,6 @@ Breakpoint 1 at 9409684: file backend/InferAnalyze.ml, line 99, characters 18-78
   initialized with `ResultsDir.assert_results_dir ""`.
 
 
-## Hacking on the Code in facebook-clang-plugins
-
-Infer uses `ASTExporter` from the [facebook-clang-plugins](https://github.com/facebook/facebook-clang-plugins)
-repository. To change that part of the code:
-1. Create a [pull request](https://github.com/facebook/facebook-clang-plugins/pulls) in `facebook-clang-plugins` with the changes.
-2. Create a pull request in this repository updating the version of the git submodule.
-
 ## Contributor License Agreement
 
 We require contributors to sign our Contributor License Agreement. In
