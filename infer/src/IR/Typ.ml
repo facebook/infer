@@ -570,6 +570,9 @@ module Name = struct
       in
       function
       | ObjcClass (name, _) -> not (QualifiedCppName.Set.mem name tagged_classes) | _ -> false
+
+
+    let remodel_class = Option.map Config.remodel_class ~f:from_string
   end
 
   module Set = PrettyPrintable.MakePPSet (struct

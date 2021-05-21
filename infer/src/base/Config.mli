@@ -546,6 +546,8 @@ val reanalyze : bool
 
 val relative_path_backtrack : int
 
+val remodel_class : string option
+
 val report : bool
 
 val report_blacklist_files_containing : string list

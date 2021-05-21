@@ -236,6 +236,8 @@ module Name : sig
     val from_qual_name : QualifiedCppName.t -> t
 
     val protocol_from_qual_name : QualifiedCppName.t -> t
+
+    val remodel_class : t option
   end
 
   module Set : PrettyPrintable.PPSet with type elt = t

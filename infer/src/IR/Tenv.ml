@@ -63,6 +63,17 @@ let add_field tenv class_tn_name field =
       ()
 
 
+let implements_remodel_class tenv name =
+  Option.exists Typ.Name.Objc.remodel_class ~f:(fun remodel_class ->
+      let rec implements_remodel_class_helper name =
+        Typ.Name.equal name remodel_class
+        || lookup tenv name
+           |> Option.exists ~f:(fun {Struct.supers} ->
+                  List.exists supers ~f:implements_remodel_class_helper )
+      in
+      implements_remodel_class_helper name )
+
+
 type per_file = Global | FileLocal of t
 
 let pp_per_file fmt = function
