@@ -297,7 +297,7 @@ and parse_exp (json : Safe.t) =
     | "exact" ->
         Exp.Sizeof {typ= t; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
     | "instof" ->
-        Exp.Sizeof {typ = t; nbytes= None; dynamic_length= None; subtype= Subtype.subtypes_instof}
+        Exp.Sizeof {typ= t; nbytes= None; dynamic_length= None; subtype= Subtype.subtypes_instof}
     | _ ->
         Logging.die InternalError "Subtype in Sizeof instruction is not supported."
   else Logging.die InternalError "Unknown expression kind %s" ekind
