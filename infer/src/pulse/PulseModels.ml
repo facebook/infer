@@ -1718,12 +1718,11 @@ module ProcNameDispatcher = struct
         ; +map_context_tenv PatternMatch.ObjectiveC.is_core_foundation_create_or_copy
           &--> C.malloc_no_param
         ; +BuiltinDecl.(match_builtin malloc_no_fail) <>$ capt_exp $--> C.malloc_not_null
-        ; +map_context_tenv PatternMatch.ObjectiveC.is_modelled_as_alloc
-          &--> C.malloc_not_null_no_param
+        ; +match_regexp_opt Config.pulse_model_alloc_pattern &--> C.malloc_not_null_no_param
         ; +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_release
           <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; -"CFRelease" <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
-        ; +map_context_tenv PatternMatch.ObjectiveC.is_modelled_as_release
+        ; +match_regexp_opt Config.pulse_model_release_pattern
           <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; -"CFAutorelease" <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; -"CFBridgingRelease" <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release

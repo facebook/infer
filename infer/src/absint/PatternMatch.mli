@@ -215,10 +215,6 @@ module ObjectiveC : sig
   val is_core_foundation_create_or_copy : Tenv.t -> string -> bool
 
   val is_core_graphics_release : Tenv.t -> string -> bool
-
-  val is_modelled_as_alloc : Tenv.t -> string -> bool
-
-  val is_modelled_as_release : Tenv.t -> string -> bool
 end
 
 val is_entry_point : Procname.t -> bool
