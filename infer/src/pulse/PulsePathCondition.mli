@@ -87,5 +87,10 @@ val is_unsat_expensive :
 val has_no_assumptions : t -> bool
 (** whether the current path is independent of any calling context *)
 
-val get_var_repr : t -> AbstractValue.t -> AbstractValue.t
-(** get the canonical representative for the variable according to the equality relation *)
+val get_known_var_repr : t -> AbstractValue.t -> AbstractValue.t
+(** get the canonical representative for the variable according to the equality relation in the
+    "known" part of the formula *)
+
+val get_both_var_repr : t -> AbstractValue.t -> AbstractValue.t
+(** get the canonical representative for the variable according to the equality relation in the
+    "both" (known + pruned) part of the formula *)

@@ -82,7 +82,7 @@ void malloc_ptr_free_ptr_ok() {
   free_via_ptr(p);
 }
 
-void alias_ptr_free_FP(int* out, int flag) {
+void alias_ptr_free_ok(int* out, int flag) {
   int* y;
   if (flag) {
     y = (int*)malloc(sizeof(int));

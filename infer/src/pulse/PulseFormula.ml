@@ -1904,4 +1904,6 @@ let has_no_assumptions phi =
   Atom.Set.for_all (fun atom -> Formula.Normalizer.implies_atom phi.known atom) phi.pruned
 
 
-let get_var_repr phi v = (Formula.Normalizer.get_repr phi.known v :> Var.t)
+let get_known_var_repr phi v = (Formula.Normalizer.get_repr phi.known v :> Var.t)
+
+let get_both_var_repr phi v = (Formula.Normalizer.get_repr phi.both v :> Var.t)

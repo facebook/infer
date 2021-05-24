@@ -637,11 +637,21 @@ let discard_unreachable_ ~for_summary ({pre; post} as astate) =
     PreDomain.filter_addr ~f:(fun address -> AbstractValue.Set.mem address pre_addresses) pre
   in
   let post_addresses = BaseDomain.reachable_addresses (post :> BaseDomain.t) in
+  let canon_addresses =
+    AbstractValue.Set.map (PathCondition.get_both_var_repr astate.path_condition) pre_addresses
+    |> AbstractValue.Set.fold
+         (fun addr acc ->
+           AbstractValue.Set.add (PathCondition.get_both_var_repr astate.path_condition addr) acc )
+         post_addresses
+  in
   let post_new, dead_addresses =
     PostDomain.filter_addr_with_discarded_addrs ~heap_only:(not for_summary)
       ~f:(fun address ->
-        AbstractValue.Set.mem address pre_addresses || AbstractValue.Set.mem address post_addresses
-        )
+        AbstractValue.Set.mem address pre_addresses
+        || AbstractValue.Set.mem address post_addresses
+        ||
+        let canon_addr = PathCondition.get_both_var_repr astate.path_condition address in
+        AbstractValue.Set.mem canon_addr canon_addresses )
       post
   in
   (* note: we don't call {!PulsePathCondition.simplify} *)
@@ -880,7 +890,7 @@ let incorporate_new_eqs astate new_eqs =
 (** it's a good idea to normalize the path condition before calling this function *)
 let canonicalize astate =
   let open SatUnsat.Import in
-  let get_var_repr v = PathCondition.get_var_repr astate.path_condition v in
+  let get_var_repr v = PathCondition.get_known_var_repr astate.path_condition v in
   let canonicalize_pre (pre : PreDomain.t) =
     (* (ab)use canonicalization to filter out empty edges in the heap and detect aliasing
        contradictions *)

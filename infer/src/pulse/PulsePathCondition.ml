@@ -434,4 +434,6 @@ let is_unsat_expensive tenv ~get_dynamic_type phi =
 
 let has_no_assumptions phi = Formula.has_no_assumptions phi.formula
 
-let get_var_repr phi v = Formula.get_var_repr phi.formula v
+let get_known_var_repr phi v = Formula.get_known_var_repr phi.formula v
+
+let get_both_var_repr phi v = Formula.get_both_var_repr phi.formula v
