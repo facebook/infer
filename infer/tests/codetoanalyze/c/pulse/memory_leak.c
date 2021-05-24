@@ -101,3 +101,23 @@ void report_leak_in_correct_line_bad(int* x) {
   }
   free(x);
 }
+
+void* realloc_wrapper(void* p, size_t size) { return realloc(p, size); }
+
+void realloc_free_ok() {
+  int* p = (int*)malloc(sizeof(int));
+  int* q = realloc_wrapper(p, sizeof(int));
+  free(q);
+}
+
+void realloc_no_free_bad() {
+  int* p = (int*)malloc(sizeof(int));
+  int* q = realloc_wrapper(p, sizeof(int));
+}
+
+void realloc_no_check_bad() {
+  int* p = (int*)malloc(sizeof(int));
+  int* q = realloc_wrapper(p, sizeof(int));
+  *q = 42;
+  free(q);
+}

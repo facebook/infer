@@ -227,6 +227,21 @@ module C = struct
   let malloc_not_null size_exp = malloc_not_null_common ~size_exp_opt:(Some size_exp)
 
   let malloc_not_null_no_param = malloc_not_null_common ~size_exp_opt:None
+
+  let realloc pointer size : model =
+   fun data astate ->
+    free pointer data astate
+    |> List.concat_map ~f:(fun result ->
+           let<*> exec_state = result in
+           match (exec_state : ExecutionDomain.t) with
+           | ContinueProgram astate ->
+               malloc size data astate
+           | ExitProgram _
+           | AbortProgram _
+           | LatentAbortProgram _
+           | LatentInvalidAccess _
+           | ISLLatentMemoryError _ ->
+               [Ok exec_state] )
 end
 
 module ObjCCoreFoundation = struct
@@ -1398,6 +1413,7 @@ module ProcNameDispatcher = struct
       ( transfer_ownership_matchers @ abort_matchers
       @ [ +BuiltinDecl.(match_builtin free) <>$ capt_arg_payload $--> C.free
         ; +BuiltinDecl.(match_builtin malloc) <>$ capt_exp $--> C.malloc
+        ; -"realloc" <>$ capt_arg_payload $+ capt_exp $--> C.realloc
         ; +BuiltinDecl.(match_builtin __delete) <>$ capt_arg_payload $--> Cplusplus.delete
         ; +BuiltinDecl.(match_builtin __new)
           <>$ capt_exp
