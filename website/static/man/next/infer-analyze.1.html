@@ -520,14 +520,32 @@ modelled as allocs in Pulse</p>
 <i>string</i></p>
 
 <p style="margin-left:17%;">Regex of methods that should be
-modelled as free in Pulse</p>
+modelled as wrappers to <i>free</i>(3) in Pulse. The pointer
+to be freed should be the first argument of the function.
+This should only be needed if the code of the wrapper is not
+visible to infer or if Pulse somehow doesn't understand it
+(e.g. the call is dispatched to global function
+pointers).</p>
 
 
 <p style="margin-left:11%;"><b>--pulse-model-malloc-pattern</b>
 <i>string</i></p>
 
 <p style="margin-left:17%;">Regex of methods that should be
-modelled as mallocs in Pulse</p>
+modelled as wrappers to <i>malloc</i>(3) in Pulse. The size
+to allocate should be the first argument of the function.
+See <b>--pulse-model-free-pattern</b> for more
+information.</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-model-realloc-pattern</b>
+<i>string</i></p>
+
+<p style="margin-left:17%;">Regex of methods that should be
+modelled as wrappers to <i>realloc</i>(3) in Pulse. The
+pointer to be reallocated should be the first argument of
+the function and the new size the second argument. See
+<b>--pulse-model-free-pattern</b> for more information.</p>
 
 
 <p style="margin-left:11%;"><b>--pulse-model-release-pattern</b>
