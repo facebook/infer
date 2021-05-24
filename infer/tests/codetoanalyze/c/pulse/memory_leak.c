@@ -121,3 +121,27 @@ void realloc_no_check_bad() {
   *q = 42;
   free(q);
 }
+
+void* my_malloc(size_t size);
+void* a_malloc(size_t size);
+void my_free(void* p);
+void* my_realloc(void* p, size_t size);
+
+void user_malloc_leak_bad() { int* x = (int*)a_malloc(sizeof(int)); }
+
+void test_config_options_1_ok() {
+  int* p = (int*)malloc(sizeof(int));
+  int* q = my_realloc(p, sizeof(int));
+  my_free(q);
+}
+
+void test_config_options_2_ok() {
+  int* p = (int*)my_malloc(sizeof(int));
+  int* q = realloc(p, sizeof(int));
+  my_free(q);
+}
+
+void test_config_options_no_free_bad() {
+  int* p = (int*)my_malloc(sizeof(int));
+  int* q = my_realloc(p, sizeof(int));
+}

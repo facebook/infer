@@ -2012,22 +2012,35 @@ and pulse_model_abort =
     "Methods that should be modelled as abort in Pulse"
 
 
-and pulse_model_malloc_pattern =
-  CLOpt.mk_string_opt ~long:"pulse-model-malloc-pattern"
+and pulse_model_alloc_pattern =
+  CLOpt.mk_string_opt ~long:"pulse-model-alloc-pattern"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
-    "Regex of methods that should be modelled as mallocs in Pulse"
+    "Regex of methods that should be modelled as allocs in Pulse"
 
 
 and pulse_model_free_pattern =
   CLOpt.mk_string_opt ~long:"pulse-model-free-pattern"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
-    "Regex of methods that should be modelled as free in Pulse"
+    "Regex of methods that should be modelled as wrappers to $(i,free)(3) in Pulse. The pointer to \
+     be freed should be the first argument of the function. This should only be needed if the code \
+     of the wrapper is not visible to infer or if Pulse somehow doesn't understand it (e.g. the \
+     call is dispatched to global function pointers)."
 
 
-and pulse_model_alloc_pattern =
-  CLOpt.mk_string_opt ~long:"pulse-model-alloc-pattern"
+and pulse_model_malloc_pattern =
+  CLOpt.mk_string_opt ~long:"pulse-model-malloc-pattern"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
-    "Regex of methods that should be modelled as allocs in Pulse"
+    "Regex of methods that should be modelled as wrappers to $(i,malloc)(3) in Pulse. The size to \
+     allocate should be the first argument of the function. See $(b,--pulse-model-free-pattern) \
+     for more information."
+
+
+and pulse_model_realloc_pattern =
+  CLOpt.mk_string_opt ~long:"pulse-model-realloc-pattern"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Regex of methods that should be modelled as wrappers to $(i,realloc)(3) in Pulse. The pointer \
+     to be reallocated should be the first argument of the function and the new size the second \
+     argument. See $(b,--pulse-model-free-pattern) for more information."
 
 
 and pulse_model_release_pattern =
@@ -3287,11 +3300,13 @@ and pulse_max_disjuncts = !pulse_max_disjuncts
 
 and pulse_model_abort = RevList.to_list !pulse_model_abort
 
+and pulse_model_alloc_pattern = Option.map ~f:Str.regexp !pulse_model_alloc_pattern
+
 and pulse_model_free_pattern = Option.map ~f:Str.regexp !pulse_model_free_pattern
 
 and pulse_model_malloc_pattern = Option.map ~f:Str.regexp !pulse_model_malloc_pattern
 
-and pulse_model_alloc_pattern = Option.map ~f:Str.regexp !pulse_model_alloc_pattern
+and pulse_model_realloc_pattern = Option.map ~f:Str.regexp !pulse_model_realloc_pattern
 
 and pulse_model_release_pattern = Option.map ~f:Str.regexp !pulse_model_release_pattern
 

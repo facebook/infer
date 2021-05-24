@@ -1412,8 +1412,12 @@ module ProcNameDispatcher = struct
     make_dispatcher
       ( transfer_ownership_matchers @ abort_matchers
       @ [ +BuiltinDecl.(match_builtin free) <>$ capt_arg_payload $--> C.free
+        ; +match_regexp_opt Config.pulse_model_free_pattern <>$ capt_arg_payload $+...$--> C.free
         ; +BuiltinDecl.(match_builtin malloc) <>$ capt_exp $--> C.malloc
+        ; +match_regexp_opt Config.pulse_model_malloc_pattern <>$ capt_exp $+...$--> C.malloc
         ; -"realloc" <>$ capt_arg_payload $+ capt_exp $--> C.realloc
+        ; +match_regexp_opt Config.pulse_model_realloc_pattern
+          <>$ capt_arg_payload $+ capt_exp $+...$--> C.realloc
         ; +BuiltinDecl.(match_builtin __delete) <>$ capt_arg_payload $--> Cplusplus.delete
         ; +BuiltinDecl.(match_builtin __new)
           <>$ capt_exp
@@ -1814,8 +1818,6 @@ module ProcNameDispatcher = struct
           <>$ capt_arg_payload
           $+...$--> Misc.id_first_arg
                       ~desc:"modelled as returning the first argument due to configuration option"
-        ; +match_regexp_opt Config.pulse_model_malloc_pattern <>$ capt_exp $+...$--> C.malloc
-        ; +match_regexp_opt Config.pulse_model_free_pattern <>$ capt_arg_payload $--> C.free
         ; +match_regexp_opt Config.pulse_model_skip_pattern
           &::.*++> Misc.skip "modelled as skip due to configuration option" ] )
 end

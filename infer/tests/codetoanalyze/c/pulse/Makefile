@@ -7,10 +7,12 @@ TESTS_DIR = ../../..
 
 CLANG_OPTIONS = -c
 INFER_OPTIONS = --pulse-only --debug-exceptions --project-root $(TESTS_DIR) \
-  --pulse-report-latent-issues --pulse-model-malloc-pattern a_malloc
+  --pulse-report-latent-issues
 
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard *.c)
 
 include $(TESTS_DIR)/clang.make
+
+infer-out$(TEST_SUFFIX)/report.json: .inferconfig
