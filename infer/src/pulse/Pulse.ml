@@ -43,7 +43,9 @@ module PulseTransferFunctions = struct
           ~ret ~actuals ~formals_opt astate
     | _ ->
         (* dereference call expression to catch nil issues *)
-        let<*> astate, _ = PulseOperations.eval_deref call_loc call_exp astate in
+        let<*> astate, _ =
+          PulseOperations.eval_deref ~must_be_valid_reason:BlockCall call_loc call_exp astate
+        in
         L.d_printfln "Skipping indirect call %a@\n" Exp.pp call_exp ;
         let astate =
           let arg_values = List.map actuals ~f:(fun ((value, _), _) -> value) in

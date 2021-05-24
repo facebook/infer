@@ -100,7 +100,12 @@ val eval_structure_isl :
 
 val prune : Location.t -> condition:Exp.t -> t -> t AccessResult.t
 
-val eval_deref : Location.t -> Exp.t -> t -> (t * (AbstractValue.t * ValueHistory.t)) AccessResult.t
+val eval_deref :
+     ?must_be_valid_reason:Invalidation.must_be_valid_reason
+  -> Location.t
+  -> Exp.t
+  -> t
+  -> (t * (AbstractValue.t * ValueHistory.t)) AccessResult.t
 (** Like [eval] but evaluates [*exp]. *)
 
 val eval_deref_isl :

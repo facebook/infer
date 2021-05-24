@@ -279,9 +279,9 @@ let prune location ~condition astate =
   prune_aux ~negated:false condition astate
 
 
-let eval_deref location exp astate =
+let eval_deref ?must_be_valid_reason location exp astate =
   let* astate, addr_hist = eval Read location exp astate in
-  let+ astate = check_addr_access Read location addr_hist astate in
+  let+ astate = check_addr_access ?must_be_valid_reason Read location addr_hist astate in
   Memory.eval_edge addr_hist Dereference astate
 
 
