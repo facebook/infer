@@ -400,17 +400,16 @@ module PulseTransferFunctions = struct
           |> PulseReport.report_exec_results tenv proc_desc err_log loc
       | Metadata (ExitScope (vars, location)) ->
           let remove_vars vars astates =
-            List.concat_map astates ~f:(fun (astate : Domain.t) ->
-                match astate with
+            List.map astates ~f:(fun (exec_state : Domain.t) ->
+                match exec_state with
                 | ISLLatentMemoryError _
                 | AbortProgram _
                 | ExitProgram _
                 | LatentAbortProgram _
                 | LatentInvalidAccess _ ->
-                    [astate]
+                    exec_state
                 | ContinueProgram astate ->
-                    PulseOperations.remove_vars vars location astate
-                    |> PulseReport.report_result tenv proc_desc err_log location )
+                    ContinueProgram (PulseOperations.remove_vars vars location astate) )
           in
           if Procname.is_java (Procdesc.get_proc_name proc_desc) then
             remove_vars vars [ContinueProgram astate]

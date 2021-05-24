@@ -144,6 +144,8 @@ module AddressAttributes : sig
 
   val std_vector_reserve : AbstractValue.t -> t -> t
 
+  val add_unreachable_at : AbstractValue.t -> Location.t -> t -> t
+
   val find_opt : AbstractValue.t -> t -> Attributes.t option
 
   val check_valid_isl :
@@ -157,10 +159,6 @@ end
 val is_local : Var.t -> t -> bool
 
 val find_post_cell_opt : AbstractValue.t -> t -> BaseDomain.cell option
-
-val check_memory_leaks : AbstractValue.t Seq.t -> t -> (unit, Procname.t * Trace.t) result
-(** [check_memory_leaks unreachable_addrs astate] is an [Error (proc_name, trace)] if one of the
-    addresses in [unreachable_addrs] was allocated by [proc_name] *)
 
 val discard_unreachable : t -> t
 (** garbage collect unreachable addresses in the state to make it smaller and return the new state *)

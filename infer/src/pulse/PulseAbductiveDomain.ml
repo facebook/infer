@@ -313,6 +313,10 @@ module AddressAttributes = struct
     map_post_attrs astate ~f:(BaseAddressAttributes.mark_as_end_of_collection addr)
 
 
+  let add_unreachable_at addr location astate =
+    map_post_attrs astate ~f:(BaseAddressAttributes.add_unreachable_at addr location)
+
+
   let replace_must_be_valid_reason reason addr astate =
     match BaseAddressAttributes.get_must_be_valid addr (astate.pre :> base_domain).attrs with
     | Some (trace, _reason) ->
@@ -627,7 +631,10 @@ let check_memory_leaks unreachable_addrs astate =
           Container.exists
             ~iter:(fun seq ~f -> Seq.iter f seq)
             unreachable_addrs ~f:(AbstractValue.equal addr_canon)
-        then Error (procname, trace)
+        then
+          (* if the address became unreachable at a known point use that location *)
+          let location = Attributes.get_unreachable_at attributes in
+          Error (location, procname, trace)
         else (
           L.debug Analysis Quiet
             "HUH? Address %a was going to leak but is equal to %a which is live; not raising an \
@@ -657,6 +664,7 @@ let discard_unreachable_ ~for_summary ({pre; post} as astate) =
          post_addresses
   in
   let post_new, dead_addresses =
+    (* keep attributes of dead addresses unless we are creating a summary *)
     PostDomain.filter_addr_with_discarded_addrs ~heap_only:(not for_summary)
       ~f:(fun address ->
         AbstractValue.Set.mem address pre_addresses
@@ -979,8 +987,10 @@ let summary_of_post tenv pdesc location astate =
     match check_memory_leaks (Caml.List.to_seq dead_addresses) astate_before_filter with
     | Ok () ->
         Ok (invalidate_locals pdesc astate)
-    | Error (proc_name, trace) ->
-        Error (`MemoryLeak (astate, proc_name, trace, location)) )
+    | Error (unreachable_location, proc_name, trace) ->
+        Error
+          (`MemoryLeak
+            (astate, proc_name, trace, Option.value unreachable_location ~default:location)) )
   | Some (address, must_be_valid) ->
       Error (`PotentialInvalidAccessSummary (astate, address, must_be_valid))
 

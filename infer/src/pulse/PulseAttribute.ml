@@ -37,6 +37,7 @@ module Attribute = struct
     | MustBeValid of Trace.t * Invalidation.must_be_valid_reason option
     | StdVectorReserve
     | Uninitialized
+    | UnreachableAt of Location.t
     | WrittenTo of Trace.t
   [@@deriving compare, variants]
 
@@ -93,6 +94,8 @@ module Attribute = struct
 
   let uninitialized_rank = Variants.to_rank Uninitialized
 
+  let unreachable_at_rank = Variants.to_rank (UnreachableAt Location.dummy)
+
   let must_be_initialized_rank = Variants.to_rank (MustBeInitialized dummy_trace)
 
   let pp f attribute =
@@ -133,6 +136,8 @@ module Attribute = struct
         F.pp_print_string f "std::vector::reserve()"
     | Uninitialized ->
         F.pp_print_string f "Uninitialized"
+    | UnreachableAt location ->
+        F.fprintf f "UnreachableAt(%a)" Location.pp location
     | WrittenTo trace ->
         F.fprintf f "WrittenTo %a" (Trace.pp ~pp_immediate:(pp_string_if_debug "mutation")) trace
 
@@ -149,12 +154,13 @@ module Attribute = struct
     | EndOfCollection
     | StdVectorReserve
     | Uninitialized
+    | UnreachableAt _
     | WrittenTo _ ->
         false
 
 
   let is_suitable_for_post = function
-    | MustBeInitialized _ | MustBeValid _ ->
+    | MustBeInitialized _ | MustBeValid _ | UnreachableAt _ ->
         false
     | Invalid _
     | Allocated _
@@ -203,6 +209,7 @@ module Attribute = struct
       | DynamicType _
       | EndOfCollection
       | StdVectorReserve
+      | UnreachableAt _
       | Uninitialized ) as attr ->
         attr
 end
@@ -286,6 +293,13 @@ module Attributes = struct
     |> Option.map ~f:(fun attr ->
            let[@warning "-8"] (Attribute.MustBeInitialized trace) = attr in
            trace )
+
+
+  let get_unreachable_at attrs =
+    Set.find_rank attrs Attribute.unreachable_at_rank
+    |> Option.map ~f:(fun attr ->
+           let[@warning "-8"] (Attribute.UnreachableAt location) = attr in
+           location )
 
 
   let isl_subset callee_attrs caller_attrs =

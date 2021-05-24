@@ -60,6 +60,8 @@ val mark_as_end_of_collection : AbstractValue.t -> t -> t
 
 val is_end_of_collection : AbstractValue.t -> t -> bool
 
+val add_unreachable_at : AbstractValue.t -> Location.t -> t -> t
+
 val pp : F.formatter -> t -> unit
 
 val remove_allocation_attr : AbstractValue.t -> t -> t

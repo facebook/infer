@@ -24,6 +24,9 @@ type t =
   | MustBeValid of Trace.t * Invalidation.must_be_valid_reason option
   | StdVectorReserve
   | Uninitialized
+  | UnreachableAt of Location.t
+      (** temporary marker to remember where a variable became unreachable; helps with accurately
+          reporting leaks *)
   | WrittenTo of Trace.t
 [@@deriving compare]
 
@@ -61,6 +64,8 @@ module Attributes : sig
   val is_uninitialized : t -> bool
 
   val get_must_be_initialized : t -> Trace.t option
+
+  val get_unreachable_at : t -> Location.t option
 
   val isl_subset : t -> t -> bool
   (** check whether for each attr in the second list, there exists a corresponding attr in the first

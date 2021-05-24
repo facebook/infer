@@ -152,6 +152,8 @@ let get_dynamic_type attrs v = get_attribute Attributes.get_dynamic_type v attrs
 
 let std_vector_reserve address memory = add_one address Attribute.StdVectorReserve memory
 
+let add_unreachable_at address location memory = add_one address (UnreachableAt location) memory
+
 let is_end_of_collection address attrs =
   Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_end_of_collection
 

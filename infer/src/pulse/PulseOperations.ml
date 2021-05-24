@@ -627,7 +627,7 @@ let filter_live_addresses ~is_dead_root potential_leak_addrs astate =
   !potential_leaks
 
 
-let detect_leaks location ~dead_roots astate =
+let mark_potential_leaks location ~dead_roots astate =
   let is_dead_root var = List.mem ~equal:Var.equal dead_roots var in
   (* only consider locations that could actually cause a leak if unreachable *)
   let allocated_reachable_from_dead_root =
@@ -638,16 +638,17 @@ let detect_leaks location ~dead_roots astate =
   in
   match filter_live_addresses ~is_dead_root allocated_reachable_from_dead_root astate with
   | exception NoLeak ->
-      Ok ()
+      astate
   | potential_leaks ->
-      AbductiveDomain.check_memory_leaks (AbstractValue.Set.to_seq potential_leaks) astate
-      |> Result.map_error ~f:(fun (procname, allocation_trace) ->
-             AccessResult.ReportableError
-               {astate; diagnostic= MemoryLeak {procname; allocation_trace; location}} )
+      (* delay reporting leak as to avoid false positives we need to massage the state some more;
+         TODO: this can make use miss reporting memory leaks if another error is found *)
+      AbstractValue.Set.fold
+        (fun addr astate -> AddressAttributes.add_unreachable_at addr location astate)
+        potential_leaks astate
 
 
-let remove_vars vars location astate : t AccessResult.t =
-  let+ () = detect_leaks location ~dead_roots:vars astate in
+let remove_vars vars location astate =
+  let astate = mark_potential_leaks location ~dead_roots:vars astate in
   (* remember addresses that will marked invalid later *)
   let astate =
     List.fold vars ~init:astate ~f:(fun astate var ->
