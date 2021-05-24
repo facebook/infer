@@ -132,6 +132,8 @@ module AddressAttributes : sig
 
   val remove_allocation_attr : AbstractValue.t -> t -> t
 
+  val get_allocation : AbstractValue.t -> t -> (Procname.t * Trace.t) option
+
   val get_closure_proc_name : AbstractValue.t -> t -> Procname.t option
 
   val is_end_of_collection : AbstractValue.t -> t -> bool
@@ -155,6 +157,10 @@ end
 val is_local : Var.t -> t -> bool
 
 val find_post_cell_opt : AbstractValue.t -> t -> BaseDomain.cell option
+
+val check_memory_leaks : AbstractValue.t Seq.t -> t -> (unit, Procname.t * Trace.t) result
+(** [check_memory_leaks unreachable_addrs astate] is an [Error (proc_name, trace)] if one of the
+    addresses in [unreachable_addrs] was allocated by [proc_name] *)
 
 val discard_unreachable : t -> t
 (** garbage collect unreachable addresses in the state to make it smaller and return the new state *)

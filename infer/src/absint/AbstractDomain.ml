@@ -647,6 +647,8 @@ module SafeInvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain
 
   let of_seq = M.of_seq
 
+  let to_seq = M.to_seq
+
   let mapi f m =
     let tops = ref [] in
     let f k v =

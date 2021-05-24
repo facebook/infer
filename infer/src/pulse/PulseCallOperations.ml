@@ -188,7 +188,9 @@ let apply_callee tenv ~caller_proc_desc callee_pname call_loc callee_exec_state 
 
 
 let conservatively_initialize_args arg_values ({AbductiveDomain.post} as astate) =
-  let reachable_values = BaseDomain.reachable_addresses_from arg_values (post :> BaseDomain.t) in
+  let reachable_values =
+    BaseDomain.reachable_addresses_from (Caml.List.to_seq arg_values) (post :> BaseDomain.t)
+  in
   AbstractValue.Set.fold AbductiveDomain.initialize reachable_values astate
 
 
@@ -238,7 +240,6 @@ let call_aux tenv caller_proc_desc call_loc callee_pname ret actuals callee_proc
 
 let call tenv ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.t) option) call_loc
     callee_pname ~ret ~actuals ~formals_opt (astate : AbductiveDomain.t) =
-  let get_arg_values () = List.map actuals ~f:(fun ((value, _), _) -> value) in
   (* a special case for objc nil messaging *)
   let unknown_objc_nil_messaging astate_unknown procdesc =
     let result_unknown =
@@ -267,8 +268,9 @@ let call tenv ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.t) op
   | None ->
       (* no spec found for some reason (unknown function, ...) *)
       L.d_printfln "No spec found for %a@\n" Procname.pp callee_pname ;
+      let arg_values = List.map actuals ~f:(fun ((value, _), _) -> value) in
       let astate_unknown =
-        conservatively_initialize_args (get_arg_values ()) astate
+        conservatively_initialize_args arg_values astate
         |> unknown_call tenv call_loc (SkippedKnownCall callee_pname) ~ret ~actuals ~formals_opt
       in
       let callee_procdesc_opt = AnalysisCallbacks.get_proc_desc callee_pname in

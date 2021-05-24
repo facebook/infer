@@ -35,6 +35,8 @@ val check_initialized : AbstractValue.t -> t -> (unit, unit) result
 
 val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
+val get_allocation : AbstractValue.t -> t -> (Procname.t * Trace.t) option
+
 val get_closure_proc_name : AbstractValue.t -> t -> Procname.t option
 
 val get_invalid : AbstractValue.t -> t -> (Invalidation.t * Trace.t) option

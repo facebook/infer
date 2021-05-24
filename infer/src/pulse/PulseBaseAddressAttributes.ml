@@ -130,6 +130,8 @@ let initialize address attrs =
   else attrs
 
 
+let get_allocation = get_attribute Attributes.get_allocation
+
 let get_closure_proc_name = get_attribute Attributes.get_closure_proc_name
 
 let get_invalid = get_attribute Attributes.get_invalid

@@ -13,6 +13,18 @@ int* malloc_returned_ok() {
   return p;
 }
 
+void malloc_out_parameter_ok(int** x) { *x = (int*)malloc(sizeof(int)); }
+
+void malloc_out_parameter_local_mutation_ok(int** x) {
+  *x = (int*)malloc(sizeof(int));
+  x = NULL; // not visible from the outside
+}
+
+void malloc_out_parameter_local_mutation_bad(int** x) {
+  *x = (int*)malloc(sizeof(int));
+  *x = NULL;
+}
+
 void malloc_then_free_ok() {
   int* p = malloc(sizeof(p));
   if (p) {
@@ -77,6 +89,15 @@ void alias_ptr_free_FP(int* out, int flag) {
   } else {
     y = out;
   }
-  if (y && y != out)
+  if (y && y != out) {
     free(y);
+  }
+}
+
+void report_leak_in_correct_line_bad(int* x) {
+  x = (int*)malloc(sizeof(int));
+  if (x != NULL) {
+    return; // should report leak at this line
+  }
+  free(x);
 }

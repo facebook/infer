@@ -128,6 +128,8 @@ module type MonoMap = sig
   val fold_mapi : t -> init:'a -> f:(key -> 'a -> value -> 'a * value) -> 'a * t
 
   val of_seq : (key * value) Seq.t -> t
+
+  val to_seq : t -> (key * value) Seq.t
 end
 
 module type PPMap = sig

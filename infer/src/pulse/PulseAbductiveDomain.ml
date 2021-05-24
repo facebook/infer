@@ -273,6 +273,10 @@ module AddressAttributes = struct
     map_post_attrs astate ~f:(BaseAddressAttributes.allocate procname address location)
 
 
+  let get_allocation addr astate =
+    BaseAddressAttributes.get_allocation addr (astate.post :> base_domain).attrs
+
+
   let add_dynamic_type typ address astate =
     map_post_attrs astate ~f:(BaseAddressAttributes.add_dynamic_type typ address)
 
@@ -619,7 +623,7 @@ let check_memory_leaks unreachable_addrs astate =
           addr Procname.pp procname ;
         Error (procname, trace)
   in
-  List.fold_result unreachable_addrs ~init:() ~f:(fun () addr ->
+  ISeq.fold_result unreachable_addrs ~init:() ~f:(fun () addr ->
       match AddressAttributes.find_opt addr astate with
       | Some unreachable_attrs ->
           check_memory_leak addr unreachable_attrs
@@ -950,7 +954,7 @@ let summary_of_post tenv pdesc location astate =
   in
   match error with
   | None -> (
-    match check_memory_leaks dead_addresses astate_before_filter with
+    match check_memory_leaks (Caml.List.to_seq dead_addresses) astate_before_filter with
     | Ok () ->
         Ok (invalidate_locals pdesc astate)
     | Error (proc_name, trace) ->

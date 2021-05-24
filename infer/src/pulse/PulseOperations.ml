@@ -570,9 +570,87 @@ let get_dynamic_type_unreachable_values vars astate =
   List.map ~f:(fun (var, _, typ) -> (var, typ)) res
 
 
-let remove_vars vars location orig_astate =
+(** raised by [filter_live_addresses] to stop early when looking for leaks *)
+exception NoLeak
+
+let filter_live_addresses ~is_dead_root potential_leak_addrs astate =
+  (* stop as soon as we find out that all locations that could potentially cause a leak are still
+     live *)
+  if AbstractValue.Set.is_empty potential_leak_addrs then raise NoLeak ;
+  let potential_leaks = ref potential_leak_addrs in
+  let mark_reachable addr =
+    potential_leaks := AbstractValue.Set.remove addr !potential_leaks ;
+    if AbstractValue.Set.is_empty !potential_leaks then raise NoLeak
+  in
+  let pre = (astate.AbductiveDomain.pre :> BaseDomain.t) in
+  let post = (astate.AbductiveDomain.post :> BaseDomain.t) in
+  (* filter out addresses live in the post *)
+  ignore
+    (BaseDomain.GraphVisit.fold
+       ~var_filter:(fun var -> not (is_dead_root var))
+       post ~init:()
+       ~f:(fun _ () addr _ ->
+         mark_reachable addr ;
+         Continue () )
+       ~finish:(fun () -> ())) ;
+  let collect_reachable_from addrs base_state =
+    BaseDomain.GraphVisit.fold_from_addresses addrs base_state ~init:()
+      ~f:(fun () addr _ ->
+        mark_reachable addr ;
+        Continue () )
+      ~finish:(fun () -> ())
+    |> fst
+  in
+  (* any address reachable in the pre-condition is not dead as callers can still be holding on to
+     them; so any address reachable from anything reachable from the precondition is live *)
+  let reachable_in_pre =
+    (* start from the *values* of variables, not their addresses; addresses of formals are
+       meaningless for callers so are not reachable outside the current function *)
+    let formal_values =
+      BaseStack.to_seq pre.stack
+      |> Seq.flat_map (fun (_, (formal_addr, _)) ->
+             match BaseMemory.find_opt formal_addr pre.heap with
+             | None ->
+                 Seq.empty
+             | Some edges ->
+                 BaseMemory.Edges.to_seq edges
+                 |> Seq.map (fun (_access, (value, _)) ->
+                        mark_reachable value ;
+                        value ) )
+    in
+    collect_reachable_from formal_values pre
+  in
+  let reachable_from_reachable_in_pre =
+    collect_reachable_from (AbstractValue.Set.to_seq reachable_in_pre) post
+  in
+  ignore reachable_from_reachable_in_pre ;
+  !potential_leaks
+
+
+let detect_leaks location ~dead_roots astate =
+  let is_dead_root var = List.mem ~equal:Var.equal dead_roots var in
+  (* only consider locations that could actually cause a leak if unreachable *)
+  let allocated_reachable_from_dead_root =
+    BaseDomain.reachable_addresses ~var_filter:is_dead_root
+      (astate.AbductiveDomain.post :> BaseDomain.t)
+    |> AbstractValue.Set.filter (fun addr ->
+           AddressAttributes.get_allocation addr astate |> Option.is_some )
+  in
+  match filter_live_addresses ~is_dead_root allocated_reachable_from_dead_root astate with
+  | exception NoLeak ->
+      Ok ()
+  | potential_leaks ->
+      AbductiveDomain.check_memory_leaks (AbstractValue.Set.to_seq potential_leaks) astate
+      |> Result.map_error ~f:(fun (procname, allocation_trace) ->
+             AccessResult.ReportableError
+               {astate; diagnostic= MemoryLeak {procname; allocation_trace; location}} )
+
+
+let remove_vars vars location astate : t AccessResult.t =
+  let+ () = detect_leaks location ~dead_roots:vars astate in
+  (* remember addresses that will marked invalid later *)
   let astate =
-    List.fold vars ~init:orig_astate ~f:(fun astate var ->
+    List.fold vars ~init:astate ~f:(fun astate var ->
         match Stack.find_opt var astate with
         | Some (address, history) ->
             let astate =

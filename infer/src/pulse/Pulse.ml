@@ -409,7 +409,8 @@ module PulseTransferFunctions = struct
                 | LatentInvalidAccess _ ->
                     [astate]
                 | ContinueProgram astate ->
-                    [ContinueProgram (PulseOperations.remove_vars vars location astate)] )
+                    PulseOperations.remove_vars vars location astate
+                    |> PulseReport.report_result tenv proc_desc err_log location )
           in
           if Procname.is_java (Procdesc.get_proc_name proc_desc) then
             remove_vars vars [ContinueProgram astate]
