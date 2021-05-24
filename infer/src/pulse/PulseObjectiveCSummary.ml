@@ -41,19 +41,25 @@ let mk_objc_method_nil_summary_aux tenv proc_desc astate =
      This allows us to connect invalidation with invalid access in the trace *)
   let location = Procdesc.get_loc proc_desc in
   let self = mk_objc_self_pvar proc_desc in
-  let* astate, self_value = PulseOperations.eval_deref location (Lvar self) astate in
-  let* astate = PulseArithmetic.prune_eq_zero (fst self_value) astate in
+  let* astate, (self_value, self_history) =
+    PulseOperations.eval_deref location (Lvar self) astate
+  in
+  let* astate = PulseArithmetic.prune_eq_zero self_value astate in
+  let event = ValueHistory.NilMessaging location in
+  let updated_self_value_hist = (self_value, event :: self_history) in
   match List.last (Procdesc.get_formals proc_desc) with
   | Some (last_formal, {desc= Tptr (typ, _)}) when Mangled.is_return_param last_formal ->
       let ret_param_var = Procdesc.get_ret_param_var proc_desc in
       let* astate, ret_param_var_addr_hist =
         PulseOperations.eval_deref location (Lvar ret_param_var) astate
       in
-      init_fields_zero tenv location ~zero:self_value ret_param_var_addr_hist typ astate
+      init_fields_zero tenv location ~zero:updated_self_value_hist ret_param_var_addr_hist typ
+        astate
   | _ ->
       let ret_var = Procdesc.get_ret_var proc_desc in
       let* astate, ret_var_addr_hist = PulseOperations.eval Write location (Lvar ret_var) astate in
-      PulseOperations.write_deref location ~ref:ret_var_addr_hist ~obj:self_value astate
+      PulseOperations.write_deref location ~ref:ret_var_addr_hist ~obj:updated_self_value_hist
+        astate
 
 
 let mk_objc_method_nil_summary tenv proc_desc initial =
