@@ -1878,7 +1878,7 @@ module DeadVariables = struct
       let closed_prunable_vars = get_reachable_from var_graph can_be_pruned in
       Atom.Set.filter (fun atom -> not (Atom.has_var_notin closed_prunable_vars atom)) phi.pruned
     in
-    {known; pruned; both}
+    ({known; pruned; both}, vars_to_keep)
 end
 
 let simplify tenv ~get_dynamic_type ~can_be_pruned ~keep phi =
@@ -1890,8 +1890,8 @@ let simplify tenv ~get_dynamic_type ~can_be_pruned ~keep phi =
   let+ phi = QuantifierElimination.eliminate_vars ~keep phi in
   (* TODO: doing [QuantifierElimination.eliminate_vars; DeadVariables.eliminate] a few times may
      eliminate even more variables *)
-  let phi = DeadVariables.eliminate ~can_be_pruned ~keep phi in
-  (phi, new_eqs)
+  let phi, live_vars = DeadVariables.eliminate ~can_be_pruned ~keep phi in
+  (phi, live_vars, new_eqs)
 
 
 let is_known_zero phi v =

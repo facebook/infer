@@ -153,7 +153,7 @@ struct ref_counted {
 
 // the address of the malloc()'d pointer can be retrieved from the
 // return value using pointer arithmetic
-int* FP_alloc_ref_counted_ok() {
+int* alloc_ref_counted_ok() {
   struct ref_counted* p =
       (struct ref_counted*)malloc(sizeof(struct ref_counted));
   if (p) {
@@ -179,11 +179,20 @@ int alloc_ref_counted_bad() {
 
 // the address of the malloc()'d pointer can be retrieved from the
 // return value using pointer arithmetic
-void* FP_alloc_ref_counted_arith_ok(size_t size) {
+void* alloc_ref_counted_arith_ok(size_t size) {
   int* p = (int*)malloc(size + sizeof(int));
   if (p) {
     // register count = 1 and point past the ref count
     *p++ = 1;
   }
   return p;
+}
+
+int return_malloc_deref_bad() {
+  int* p = (int*)malloc(sizeof(int));
+  if (p) {
+    *p = 42;
+    return *p;
+  }
+  return 10;
 }

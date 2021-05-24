@@ -62,7 +62,7 @@ val simplify :
   -> can_be_pruned:Var.Set.t
   -> keep:Var.Set.t
   -> t
-  -> (t * new_eqs) SatUnsat.t
+  -> (t * Var.Set.t * new_eqs) SatUnsat.t
 
 val and_fold_subst_variables :
      t

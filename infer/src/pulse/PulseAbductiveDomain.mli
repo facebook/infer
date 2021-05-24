@@ -160,9 +160,6 @@ val is_local : Var.t -> t -> bool
 
 val find_post_cell_opt : AbstractValue.t -> t -> BaseDomain.cell option
 
-val discard_unreachable : t -> t
-(** garbage collect unreachable addresses in the state to make it smaller and return the new state *)
-
 val get_unreachable_attributes : t -> AbstractValue.t list
 (** collect the addresses that have attributes but are unreachable in the current post-condition *)
 

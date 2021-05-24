@@ -665,8 +665,7 @@ let remove_vars vars location astate =
         | _ ->
             astate )
   in
-  let astate' = Stack.remove_vars vars astate in
-  if phys_equal astate' astate then astate else AbductiveDomain.discard_unreachable astate'
+  Stack.remove_vars vars astate
 
 
 let get_captured_actuals location ~captured_vars ~actual_closure astate =

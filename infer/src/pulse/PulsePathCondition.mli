@@ -40,7 +40,7 @@ val simplify :
   -> keep:AbstractValue.Set.t
   -> get_dynamic_type:(AbstractValue.t -> Typ.t option)
   -> t
-  -> (t * new_eqs) SatUnsat.t
+  -> (t * AbstractValue.Set.t * new_eqs) SatUnsat.t
 (** [simplify ~can_be_pruned ~keep phi] attempts to get rid of as many variables in [fv phi] but not
     in [keep] as possible, and tries to eliminate variables not in [can_be_pruned] from the "pruned"
     part of the formula *)

@@ -108,17 +108,20 @@ let and_eq_vars v1 v2 phi =
 
 
 let simplify tenv ~can_be_pruned ~keep ~get_dynamic_type phi =
-  let result =
-    let+ {is_unsat; bo_itvs; citvs; formula} = phi in
-    let+| formula, new_eqs = Formula.simplify tenv ~can_be_pruned ~keep ~get_dynamic_type formula in
+  if phi.is_unsat then Unsat
+  else
+    let {is_unsat; bo_itvs; citvs; formula} = phi in
+    let open SatUnsat.Import in
+    let+ formula, live_vars, new_eqs =
+      Formula.simplify tenv ~can_be_pruned ~keep ~get_dynamic_type formula
+    in
     let is_in_keep v _ = AbstractValue.Set.mem v keep in
     ( { is_unsat
       ; bo_itvs= BoItvs.filter is_in_keep bo_itvs
       ; citvs= CItvs.filter is_in_keep citvs
       ; formula }
+    , live_vars
     , new_eqs )
-  in
-  if (fst result).is_unsat then Unsat else Sat result
 
 
 let subst_find_or_new subst addr_callee =

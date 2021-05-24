@@ -610,7 +610,32 @@ let skipped_calls_match_pattern astate =
         astate.skipped_calls )
 
 
-let check_memory_leaks unreachable_addrs astate =
+let check_memory_leaks ~live_addresses ~unreachable_addresses astate =
+  let reaches_into addr addrs astate =
+    AbstractValue.Set.mem addr addrs
+    || BaseDomain.GraphVisit.fold_from_addresses (Seq.return addr) astate ~init:()
+         ~finish:(fun () -> (* didn't find any reachable address in [addrs] *) false)
+         ~f:(fun () addr' rev_accesses ->
+           (* We want to know if [addr] is still reachable from the value [addr'] by pointer
+              arithmetic, hence detect if [addr'] is an offset away from [addr]. In particular, if
+              we go through a [Dereference] then we have lost the connexion to the original
+              address value.
+
+              TODO: this should be part of [live_addresses] since all these addresses are actually
+              live. *)
+           let can_recover_root_from_accesses =
+             List.for_all rev_accesses ~f:(fun (access : BaseMemory.Access.t) ->
+                 match access with FieldAccess _ | ArrayAccess _ -> true | _ -> false )
+           in
+           if can_recover_root_from_accesses then
+             if AbstractValue.Set.mem addr' addrs then (
+               L.d_printfln ~color:Orange "Live address %a is reachable from %a" AbstractValue.pp
+                 addr' AbstractValue.pp addr ;
+               Stop true )
+             else Continue ()
+           else Stop false )
+       |> snd
+  in
   let check_memory_leak addr attributes =
     let allocated_not_freed_opt =
       let allocated = Attributes.get_allocation attributes in
@@ -625,24 +650,41 @@ let check_memory_leaks unreachable_addrs astate =
         (* allocated but not freed => leak *)
         L.d_printfln ~color:Red "LEAK: unreachable address %a was allocated by %a" AbstractValue.pp
           addr Procname.pp procname ;
-        (* HACK: last-chance check: it could be that the value is actually equal to a reachable address so it's not a leak *)
+        (* last-chance checks: it could be that the value (or its canonical equal) is reachable via
+           pointer arithmetic from live values. This is common in libraries that do their own memory
+           management, e.g. they return a field of the malloc()'d pointer, and the latter is a fat
+           pointer with, say, a reference count. For example in C:
+
+           {[
+            struct fat_int {
+              size_t count;
+              int data;
+            };
+
+            int *alloc_int() {
+              fat_int *p = malloc(...);
+              p->count = 1;
+              return &(p->data);
+            }
+           ]}
+
+           We don't have a precise enough memory model to understand everything that
+           goes on here but we should at least not report a leak. *)
         let addr_canon = PathCondition.get_both_var_repr astate.path_condition addr in
         if
-          Container.exists
-            ~iter:(fun seq ~f -> Seq.iter f seq)
-            unreachable_addrs ~f:(AbstractValue.equal addr_canon)
-        then
+          reaches_into addr live_addresses (astate.post :> BaseDomain.t)
+          || reaches_into addr_canon live_addresses (astate.post :> BaseDomain.t)
+        then (
+          L.d_printfln ~color:Orange
+            "False alarm: address is still reachable via other means; forgetting about its \
+             allocation site to prevent leak false positives." ;
+          Ok () )
+        else
           (* if the address became unreachable at a known point use that location *)
           let location = Attributes.get_unreachable_at attributes in
           Error (location, procname, trace)
-        else (
-          L.debug Analysis Quiet
-            "HUH? Address %a was going to leak but is equal to %a which is live; not raising an \
-             error."
-            AbstractValue.pp addr AbstractValue.pp addr_canon ;
-          Ok () )
   in
-  ISeq.fold_result unreachable_addrs ~init:() ~f:(fun () addr ->
+  List.fold_result unreachable_addresses ~init:() ~f:(fun () addr ->
       match AddressAttributes.find_opt addr astate with
       | Some unreachable_attrs ->
           check_memory_leak addr unreachable_attrs
@@ -680,15 +722,6 @@ let discard_unreachable_ ~for_summary ({pre; post} as astate) =
     else {astate with pre= pre_new; post= post_new}
   in
   (astate, pre_addresses, post_addresses, dead_addresses)
-
-
-(* exported in .mli *)
-let discard_unreachable astate =
-  let astate, _pre_addresses, _post_addresses, _dead_addresses =
-    discard_unreachable_ ~for_summary:false astate
-  in
-  (* NOTE: [_dead_addresses] is always the empty list when [for_summary] is [false] *)
-  astate
 
 
 let get_unreachable_attributes {post} =
@@ -951,14 +984,17 @@ let filter_for_summary tenv proc_name astate0 =
     else pre_live_addresses
   in
   let live_addresses = AbstractValue.Set.union pre_live_addresses post_live_addresses in
-  let+ path_condition, new_eqs =
+  let+ path_condition, live_via_arithmetic, new_eqs =
     PathCondition.simplify tenv
       ~get_dynamic_type:
         (BaseAddressAttributes.get_dynamic_type (astate_before_filter.post :> BaseDomain.t).attrs)
       ~can_be_pruned ~keep:live_addresses astate.path_condition
   in
+  let live_addresses = AbstractValue.Set.union live_addresses live_via_arithmetic in
   ( {astate with path_condition; topl= PulseTopl.simplify ~keep:live_addresses astate.topl}
-  , dead_addresses
+  , live_addresses
+  , (* we could filter out the [live_addresses] if needed; right now they might overlap *)
+    dead_addresses
   , new_eqs )
 
 
@@ -976,7 +1012,7 @@ let summary_of_post tenv pdesc location astate =
   let astate = {astate with path_condition} in
   let* astate, error = incorporate_new_eqs astate new_eqs in
   let astate_before_filter = astate in
-  let* astate, dead_addresses, new_eqs =
+  let* astate, live_addresses, dead_addresses, new_eqs =
     filter_for_summary tenv (Procdesc.get_proc_name pdesc) astate
   in
   let+ astate, error =
@@ -984,7 +1020,9 @@ let summary_of_post tenv pdesc location astate =
   in
   match error with
   | None -> (
-    match check_memory_leaks (Caml.List.to_seq dead_addresses) astate_before_filter with
+    match
+      check_memory_leaks ~live_addresses ~unreachable_addresses:dead_addresses astate_before_filter
+    with
     | Ok () ->
         Ok (invalidate_locals pdesc astate)
     | Error (unreachable_location, proc_name, trace) ->
