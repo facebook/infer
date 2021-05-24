@@ -621,7 +621,19 @@ let check_memory_leaks unreachable_addrs astate =
         (* allocated but not freed => leak *)
         L.d_printfln ~color:Red "LEAK: unreachable address %a was allocated by %a" AbstractValue.pp
           addr Procname.pp procname ;
-        Error (procname, trace)
+        (* HACK: last-chance check: it could be that the value is actually equal to a reachable address so it's not a leak *)
+        let addr_canon = PathCondition.get_both_var_repr astate.path_condition addr in
+        if
+          Container.exists
+            ~iter:(fun seq ~f -> Seq.iter f seq)
+            unreachable_addrs ~f:(AbstractValue.equal addr_canon)
+        then Error (procname, trace)
+        else (
+          L.debug Analysis Quiet
+            "HUH? Address %a was going to leak but is equal to %a which is live; not raising an \
+             error."
+            AbstractValue.pp addr AbstractValue.pp addr_canon ;
+          Ok () )
   in
   ISeq.fold_result unreachable_addrs ~init:() ~f:(fun () addr ->
       match AddressAttributes.find_opt addr astate with
