@@ -145,3 +145,45 @@ void test_config_options_no_free_bad() {
   int* p = (int*)my_malloc(sizeof(int));
   int* q = my_realloc(p, sizeof(int));
 }
+
+struct ref_counted {
+  size_t count;
+  int data;
+};
+
+// the address of the malloc()'d pointer can be retrieved from the
+// return value using pointer arithmetic
+int* FP_alloc_ref_counted_ok() {
+  struct ref_counted* p =
+      (struct ref_counted*)malloc(sizeof(struct ref_counted));
+  if (p) {
+    p->count = 1;
+    return &(p->data);
+  } else {
+    return NULL;
+  }
+}
+
+// returning the value of the field loses the address of p
+int alloc_ref_counted_bad() {
+  struct ref_counted* p =
+      (struct ref_counted*)malloc(sizeof(struct ref_counted));
+  if (p) {
+    p->count = 1;
+    p->data = 42;
+    return p->data;
+  } else {
+    return NULL;
+  }
+}
+
+// the address of the malloc()'d pointer can be retrieved from the
+// return value using pointer arithmetic
+void* FP_alloc_ref_counted_arith_ok(size_t size) {
+  int* p = (int*)malloc(size + sizeof(int));
+  if (p) {
+    // register count = 1 and point past the ref count
+    *p++ = 1;
+  }
+  return p;
+}
