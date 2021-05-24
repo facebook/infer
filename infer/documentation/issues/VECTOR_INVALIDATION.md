@@ -7,7 +7,7 @@ pointers into the previous location of the contents).
 
 For example:
 
-```C++
+```cpp
 void deref_vector_element_after_push_back_bad(std::vector<int>& vec) {
   int* elt = &vec[1];
   vec.push_back(42); // if the array backing the vector was full already, this

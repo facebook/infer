@@ -2,7 +2,7 @@ The lifetime of an object has ended but that object is being
 accessed. For example, the address of a variable holding a C++ object
 is accessed after the variable has gone out of scope:
 
-```C++
+```cpp
 void foo() {
      X* p;
      { // new scope

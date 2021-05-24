@@ -9,8 +9,9 @@ Activate with `--pulse`.
 
 Supported languages:
 - C/C++/ObjC: Yes
-- Java: Yes
 - C#/.Net: No
+- Erlang: Yes
+- Java: Yes
 
 ### What is Infer:Pulse?
 Pulse is an interprocedural memory safety analysis. Pulse can detect, for instance, [Null dereferences](/docs/next/all-issue-types#nullptr_dereference) in Java. Errors are only reported when all conditions on the erroneous path are true regardless of input. Pulse should gradually replace the original [biabduction](/docs/next/checker-biabduction) analysis of Infer. An example of a Null dereference found by Pulse is given below.
@@ -75,6 +76,8 @@ class Registry {
 The following issue types are reported by this checker:
 - [CONSTANT_ADDRESS_DEREFERENCE](/docs/next/all-issue-types#constant_address_dereference)
 - [MEMORY_LEAK](/docs/next/all-issue-types#memory_leak)
+- [NIL_BLOCK_CALL](/docs/next/all-issue-types#nil_block_call)
+- [NIL_INSERTION_INTO_COLLECTION](/docs/next/all-issue-types#nil_insertion_into_collection)
 - [NIL_MESSAGING_TO_NON_POD](/docs/next/all-issue-types#nil_messaging_to_non_pod)
 - [NULLPTR_DEREFERENCE](/docs/next/all-issue-types#nullptr_dereference)
 - [OPTIONAL_EMPTY_ACCESS](/docs/next/all-issue-types#optional_empty_access)

@@ -9,8 +9,9 @@ Activate with `--quandary`.
 
 Supported languages:
 - C/C++/ObjC: Yes
-- Java: Yes
 - C#/.Net: Yes
+- Erlang: Yes
+- Java: Yes
 
 Quandary is a static taint analyzer that identifies a variety of unsafe
 information flows. It has a small list of built-in
