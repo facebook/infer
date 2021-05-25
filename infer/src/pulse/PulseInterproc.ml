@@ -703,14 +703,7 @@ let isl_check_all_invalid invalid_addr_callers callee_proc_name call_location
 
    - for each actual, write the post for that actual
 
-   - if aliasing is introduced at any time then give up
-
-   questions:
-
-   - what if some preconditions raise lifetime issues but others don't? Have to be careful with
-   the noise that this will introduce since we don't care about values. For instance, if the pre
-   is for a path where [formal != 0] and we pass [0] then it will be an FP. Maybe the solution is
-   to bake in some value analysis. *)
+   - if aliasing is introduced at any time then give up *)
 let apply_prepost ~is_isl_error_prepost callee_proc_name call_location ~callee_prepost:pre_post
     ~captured_vars_with_actuals ~formals ~actuals astate =
   L.d_printfln "Applying pre/post for %a(%a):@\n%a" Procname.pp callee_proc_name
