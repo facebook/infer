@@ -34,7 +34,7 @@ module Attribute = struct
     | EndOfCollection
     | Invalid of Invalidation.t * Trace.t
     | ISLAbduced of Trace.t
-    | MustBeInitialized of Trace.t
+    | MustBeInitialized of PathContext.timestamp * Trace.t
     | MustBeValid of PathContext.timestamp * Trace.t * Invalidation.must_be_valid_reason option
     | StdVectorReserve
     | Uninitialized
@@ -97,7 +97,7 @@ module Attribute = struct
 
   let unreachable_at_rank = Variants.to_rank (UnreachableAt Location.dummy)
 
-  let must_be_initialized_rank = Variants.to_rank (MustBeInitialized dummy_trace)
+  let must_be_initialized_rank = Variants.to_rank (MustBeInitialized (PathContext.t0, dummy_trace))
 
   let pp f attribute =
     let pp_string_if_debug string fmt =
@@ -125,10 +125,11 @@ module Attribute = struct
           trace
     | ISLAbduced trace ->
         F.fprintf f "ISLAbduced %a" (Trace.pp ~pp_immediate:(pp_string_if_debug "ISLAbduced")) trace
-    | MustBeInitialized trace ->
-        F.fprintf f "MustBeInitialized %a"
+    | MustBeInitialized (timestamp, trace) ->
+        F.fprintf f "MustBeInitialized(%a, t=%d)"
           (Trace.pp ~pp_immediate:(pp_string_if_debug "read"))
           trace
+          (timestamp :> int)
     | MustBeValid (timestamp, trace, reason) ->
         F.fprintf f "MustBeValid(%a, %a, t=%d)"
           (Trace.pp ~pp_immediate:(pp_string_if_debug "access"))
@@ -201,8 +202,8 @@ module Attribute = struct
         ISLAbduced (add_call_to_trace trace)
     | MustBeValid (_timestamp, trace, reason) ->
         MustBeValid (path.PathContext.timestamp, add_call_to_trace trace, reason)
-    | MustBeInitialized trace ->
-        MustBeInitialized (add_call_to_trace trace)
+    | MustBeInitialized (_timestamp, trace) ->
+        MustBeInitialized (path.PathContext.timestamp, add_call_to_trace trace)
     | WrittenTo trace ->
         WrittenTo (add_call_to_trace trace)
     | ( AddressOfCppTemporary _
@@ -293,8 +294,8 @@ module Attributes = struct
   let get_must_be_initialized attrs =
     Set.find_rank attrs Attribute.must_be_initialized_rank
     |> Option.map ~f:(fun attr ->
-           let[@warning "-8"] (Attribute.MustBeInitialized trace) = attr in
-           trace )
+           let[@warning "-8"] (Attribute.MustBeInitialized (timestamp, trace)) = attr in
+           (timestamp, trace) )
 
 
   let get_unreachable_at attrs =

@@ -67,7 +67,7 @@ let check_addr_access path ?must_be_valid_reason access_mode location (address, 
   in
   match access_mode with
   | Read ->
-      AddressAttributes.check_initialized access_trace address astate
+      AddressAttributes.check_initialized path access_trace address astate
       |> Result.map_error ~f:(fun () ->
              ReportableError
                { diagnostic=
@@ -87,7 +87,7 @@ let check_and_abduce_addr_access_isl path access_mode location (address, history
          let* astate = AccessResult.of_abductive_access_result access_trace access_result in
          match access_mode with
          | Read ->
-             AddressAttributes.check_initialized access_trace address astate
+             AddressAttributes.check_initialized path access_trace address astate
              |> Result.map_error ~f:(fun () ->
                     ReportableError
                       { diagnostic=

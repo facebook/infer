@@ -636,22 +636,12 @@ let check_all_valid path callee_proc_name call_location {AbductiveDomain.pre; _}
       call_state.subst []
   in
   let timestamp_of_check = function
-    | `MustBeValid (timestamp, _, _) ->
-        Some timestamp
-    | `MustBeInitialized _ ->
-        None
+    | `MustBeValid (timestamp, _, _) | `MustBeInitialized (timestamp, _) ->
+        timestamp
   in
   List.sort addresses_to_check ~compare:(fun (_, check1) (_, check2) ->
-      match (timestamp_of_check check1, timestamp_of_check check2) with
-      | Some t1, Some t2 ->
-          (* smaller timestamp first *) PathContext.compare_timestamp t1 t2
-      (* with a timestamp first (gone soon when MustBeInitialized will get a timestamp too), otherwise dummy comparison *)
-      | None, None ->
-          0
-      | Some _, None ->
-          -1
-      | None, Some _ ->
-          1 )
+      (* smaller timestamp first *)
+      PathContext.compare_timestamp (timestamp_of_check check1) (timestamp_of_check check2) )
   |> List.fold_result ~init:call_state.astate ~f:(fun astate ((addr_caller, hist_caller), check) ->
          let mk_access_trace callee_access_trace =
            Trace.ViaCall
@@ -675,9 +665,9 @@ let check_all_valid path callee_proc_name call_location {AbductiveDomain.pre; _}
                             ; access_trace
                             ; must_be_valid_reason }
                       ; astate } )
-         | `MustBeInitialized callee_access_trace ->
+         | `MustBeInitialized (_timestamp, callee_access_trace) ->
              let access_trace = mk_access_trace callee_access_trace in
-             AddressAttributes.check_initialized access_trace addr_caller astate
+             AddressAttributes.check_initialized path access_trace addr_caller astate
              |> Result.map_error ~f:(fun () ->
                     L.d_printfln "ERROR: caller's %a is uninitialized!" AbstractValue.pp addr_caller ;
                     AccessResult.ReportableError

@@ -244,14 +244,15 @@ module AddressAttributes = struct
       astate
 
 
-  let check_initialized access_trace addr astate =
+  let check_initialized path access_trace addr astate =
     let attrs = (astate.post :> base_domain).attrs in
     let+ () = BaseAddressAttributes.check_initialized addr attrs in
     let is_written_to =
       Option.exists (BaseAddressAttributes.find_opt addr attrs) ~f:(fun attrs ->
           Attribute.Attributes.get_written_to attrs |> Option.is_some )
     in
-    if is_written_to then astate else abduce_attribute addr (MustBeInitialized access_trace) astate
+    if is_written_to then astate
+    else abduce_attribute addr (MustBeInitialized (path.PathContext.timestamp, access_trace)) astate
 
 
   (** [astate] with [astate.post.attrs = f astate.post.attrs] *)

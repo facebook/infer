@@ -48,7 +48,7 @@ val get_must_be_valid :
 
 val is_must_be_valid_or_allocated_isl : AbstractValue.t -> t -> bool
 
-val get_must_be_initialized : AbstractValue.t -> t -> Trace.t option
+val get_must_be_initialized : AbstractValue.t -> t -> (PathContext.timestamp * Trace.t) option
 
 val add_dynamic_type : Typ.t -> AbstractValue.t -> t -> t
 

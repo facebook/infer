@@ -21,7 +21,7 @@ type t =
   | EndOfCollection
   | Invalid of Invalidation.t * Trace.t
   | ISLAbduced of Trace.t  (** The allocation is abduced so as the analysis could run normally *)
-  | MustBeInitialized of Trace.t
+  | MustBeInitialized of PathContext.timestamp * Trace.t
   | MustBeValid of PathContext.timestamp * Trace.t * Invalidation.must_be_valid_reason option
   | StdVectorReserve
   | Uninitialized
@@ -65,7 +65,7 @@ module Attributes : sig
 
   val is_uninitialized : t -> bool
 
-  val get_must_be_initialized : t -> Trace.t option
+  val get_must_be_initialized : t -> (PathContext.timestamp * Trace.t) option
 
   val get_unreachable_at : t -> Location.t option
 
