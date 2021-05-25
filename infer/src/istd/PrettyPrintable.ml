@@ -293,7 +293,10 @@ module MakePPUniqRankSet
 
   type elt = Val.t
 
-  let add map value = Map.add (Val.to_rank value) value map
+  let add map value =
+    let rank = Val.to_rank value in
+    if Map.mem rank map then map else Map.add rank value map
+
 
   let empty = Map.empty
 

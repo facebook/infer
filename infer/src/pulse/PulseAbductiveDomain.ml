@@ -326,7 +326,8 @@ module AddressAttributes = struct
   let replace_must_be_valid_reason reason addr astate =
     match BaseAddressAttributes.get_must_be_valid addr (astate.pre :> base_domain).attrs with
     | Some (trace, _reason) ->
-        abduce_attribute addr (MustBeValid (trace, Some reason)) astate
+        remove_must_be_valid_attr addr astate
+        |> abduce_attribute addr (MustBeValid (trace, Some reason))
     | None ->
         astate
 
