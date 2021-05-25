@@ -89,8 +89,6 @@ void wrap_malloc(int** x) {
   }
 }
 
-void user_malloc_leak_bad() { int* x = (int*)a_malloc(sizeof(int)); }
-
 void call_no_return_good() {
   int* x = NULL;
   wrap_malloc(&x);
@@ -122,4 +120,23 @@ void null_alias_bad(int* x) {
   int* y = NULL;
   x = (int*)malloc(sizeof(int*));
   *x = 42;
+}
+
+void dereference(int* p) { *p; }
+
+void several_dereferences_ok(int* x, int* y, int* z) {
+  int* p = x;
+  *z = 52;
+  dereference(y);
+  *y = 42;
+  *x = 32;
+  *x = 777;
+  *y = 888;
+  *z = 999;
+}
+
+void report_correct_error_among_multiple_bad() {
+  int* p = NULL;
+  // the trace should complain about the first access inside the callee
+  several_dereferences_ok(p, p, p);
 }

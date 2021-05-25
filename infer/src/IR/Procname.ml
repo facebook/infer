@@ -1023,13 +1023,15 @@ let describe f pn =
       F.pp_print_string f name
 
 
-let make_java ~class_name ~return_type ~method_name ~parameters ~kind () =
+let make_java ~class_name ~return_type ~method_name ~parameters ~kind =
   Java (Java.make ~class_name ~return_type ~method_name ~parameters ~kind ())
 
 
-let make_csharp ~class_name ~return_type ~method_name ~parameters ~kind () =
+let make_csharp ~class_name ~return_type ~method_name ~parameters ~kind =
   CSharp (CSharp.make ~class_name ~return_type ~method_name ~parameters ~kind ())
 
+
+let make_erlang ~module_name ~function_name ~arity = Erlang {module_name; function_name; arity}
 
 let make_objc_dealloc name = ObjC_Cpp (ObjC_Cpp.make_dealloc name)
 

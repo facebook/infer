@@ -1247,7 +1247,7 @@ module JavaClass = struct
             Procname.make_java
               ~class_name:(Typ.Name.Java.from_string class_name_str)
               ~return_type:(Some Typ.(mk_ptr (mk_array (mk_ptr (mk_struct class_name)))))
-              ~method_name:"values" ~parameters:[] ~kind:Procname.Java.Static ()
+              ~method_name:"values" ~parameters:[] ~kind:Procname.Java.Static
           in
           match get_summary enum_values_pname with
           | Some enum_values_mem ->

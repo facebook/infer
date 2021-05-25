@@ -265,4 +265,4 @@ let create_procname ~classname ~methodname:method_name ~signature ~use_signature
     else Some (JNI.to_typ return_type)
   in
   Procname.make_java ~class_name ~return_type ~method_name ~parameters
-    ~kind:Procname.Java.Non_Static ()
+    ~kind:Procname.Java.Non_Static

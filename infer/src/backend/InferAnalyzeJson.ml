@@ -78,11 +78,8 @@ let parse_cil_procname (json : Safe.t) : Procname.t =
       let params = List.map ~f:parse_cil_type_name param_types in
       let is_static = to_bool (member "is_static" json) in
       let method_kind = if is_static then Procname.CSharp.Static else Procname.CSharp.Non_Static in
-      let proc_name_cs =
-        Procname.(
-          make_csharp ~class_name ~return_type ~method_name ~parameters:params ~kind:method_kind)
-      in
-      proc_name_cs ()
+      Procname.make_csharp ~class_name ~return_type ~method_name ~parameters:params
+        ~kind:method_kind
 
 
 let parse_ikind (json : Safe.t) =

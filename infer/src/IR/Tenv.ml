@@ -236,6 +236,8 @@ let resolve_method ~method_exists tenv class_name proc_name =
       else
         let supers_to_search =
           match (class_name : Typ.Name.t) with
+          | ErlangType _ ->
+              L.die InternalError "attempting to call a method on an Erlang value"
           | CStruct _ | CUnion _ | CppClass _ ->
               (* multiple inheritance possible, search all supers *)
               class_struct.supers

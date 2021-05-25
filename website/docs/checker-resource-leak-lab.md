@@ -9,8 +9,9 @@ Activate with `--resource-leak-lab`.
 
 Supported languages:
 - C/C++/ObjC: No
-- Java: Yes
 - C#/.Net: Yes
+- Erlang: No
+- Java: Yes
 
 This toy checker does nothing by default. Hack on it to make it report resource leaks! See the [lab instructions](https://github.com/facebook/infer/blob/master/infer/src/labs/README.md).
 

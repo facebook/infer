@@ -19,6 +19,7 @@ type event =
   | CppTemporaryCreated of Location.t
   | FormalDeclared of Pvar.t * Location.t
   | Invalidated of PulseInvalidation.t * Location.t
+  | NilMessaging of Location.t
   | Returned of Location.t
   | StructFieldAddressCreated of Fieldname.t RevList.t * Location.t
   | VariableAccessed of Pvar.t * Location.t
@@ -38,6 +39,7 @@ let rec iter_event event ~f =
   | CppTemporaryCreated _
   | FormalDeclared _
   | Invalidated _
+  | NilMessaging _
   | Returned _
   | StructFieldAddressCreated _
   | VariableAccessed _
@@ -85,6 +87,8 @@ let pp_event_no_location fmt event =
       F.fprintf fmt "parameter `%a`%a" Pvar.pp_value_non_verbose pvar pp_proc pvar
   | Invalidated (invalidation, _) ->
       Invalidation.describe fmt invalidation
+  | NilMessaging _ ->
+      F.pp_print_string fmt "a message sent to nil returns nil"
   | Returned _ ->
       F.pp_print_string fmt "returned"
   | StructFieldAddressCreated (field_names, _) ->
@@ -104,6 +108,7 @@ let location_of_event = function
   | CppTemporaryCreated location
   | FormalDeclared (_, location)
   | Invalidated (_, location)
+  | NilMessaging location
   | Returned location
   | StructFieldAddressCreated (_, location)
   | VariableAccessed (_, location)

@@ -1,6 +1,6 @@
 When a block captures `weakSelf` in the following pattern:
 
-```
+```objectivec
 __weak __typeof(self) weakSelf = self;
   int (^my_block)() = ^() {
     __strong __typeof(weakSelf) strongSelf = weakSelf;

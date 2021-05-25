@@ -83,6 +83,8 @@ end
 (** Cartesian product of two domains. *)
 module Pair (Domain1 : S) (Domain2 : S) : S with type t = Domain1.t * Domain2.t
 
+module PairNoJoin (Domain1 : NoJoin) (Domain2 : NoJoin) : NoJoin with type t = Domain1.t * Domain2.t
+
 (** Flat abstract domain: Bottom, Top, and non-comparable elements in between *)
 module Flat (V : PrettyPrintable.PrintableEquatableType) : sig
   include WithBottom

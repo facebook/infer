@@ -614,7 +614,7 @@ let class_has_concurrent_method class_summaries =
 
 let should_report_on_class (classname : Typ.Name.t) class_summaries =
   match classname with
-  | JavaClass _ | CSharpClass _ ->
+  | JavaClass _ | CSharpClass _ | ErlangType _ ->
       true
   | CppClass _ | ObjcClass _ | ObjcProtocol _ | CStruct _ ->
       class_has_concurrent_method class_summaries

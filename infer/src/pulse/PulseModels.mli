@@ -10,6 +10,7 @@ open PulseDomainInterface
 
 type model_data =
   { analysis_data: PulseSummary.t InterproceduralAnalysis.t
+  ; path: PathContext.t
   ; callee_procname: Procname.t
   ; location: Location.t
   ; ret: Ident.t * Typ.t }

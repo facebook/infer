@@ -9,8 +9,9 @@ Activate with `--dotnet-resource-leak`.
 
 Supported languages:
 - C/C++/ObjC: No
-- Java: No
 - C#/.Net: Yes
+- Erlang: No
+- Java: No
 
 
 

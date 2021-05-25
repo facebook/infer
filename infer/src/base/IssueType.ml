@@ -789,6 +789,11 @@ let mutable_local_variable_in_component_file =
       [%blob "../../documentation/issues/MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE.md"]
 
 
+let nil_block_call =
+  register ~id:"NIL_BLOCK_CALL" Error Pulse
+    ~user_documentation:"Calling a nil block is an error in Objective-C."
+
+
 let nil_insertion_into_collection =
   register ~id:"NIL_INSERTION_INTO_COLLECTION" Error Pulse
     ~user_documentation:"Inserting nil into a collection is an error in Objective-C."

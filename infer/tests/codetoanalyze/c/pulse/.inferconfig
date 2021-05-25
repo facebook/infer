@@ -1,0 +1,5 @@
+{
+  "pulse-model-free-pattern": "^my_free$",
+  "pulse-model-malloc-pattern": "\\(my\\|a\\)_malloc",
+  "pulse-model-realloc-pattern": "my_realloc"
+}

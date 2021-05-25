@@ -83,11 +83,11 @@ let unknown_call tenv call_loc reason ~ret ~actuals ~formals_opt astate =
   |> havoc_ret ret |> add_skipped_proc
 
 
-let apply_callee tenv ~caller_proc_desc callee_pname call_loc callee_exec_state ~ret
+let apply_callee tenv path ~caller_proc_desc callee_pname call_loc callee_exec_state ~ret
     ~captured_vars_with_actuals ~formals ~actuals astate =
   let map_call_result ~is_isl_error_prepost callee_prepost ~f =
     match
-      PulseInterproc.apply_prepost ~is_isl_error_prepost callee_pname call_loc ~callee_prepost
+      PulseInterproc.apply_prepost path ~is_isl_error_prepost callee_pname call_loc ~callee_prepost
         ~captured_vars_with_actuals ~formals ~actuals astate
     with
     | (Sat (Error _) | Unsat) as path_result ->
@@ -188,12 +188,14 @@ let apply_callee tenv ~caller_proc_desc callee_pname call_loc callee_exec_state 
 
 
 let conservatively_initialize_args arg_values ({AbductiveDomain.post} as astate) =
-  let reachable_values = BaseDomain.reachable_addresses_from arg_values (post :> BaseDomain.t) in
+  let reachable_values =
+    BaseDomain.reachable_addresses_from (Caml.List.to_seq arg_values) (post :> BaseDomain.t)
+  in
   AbstractValue.Set.fold AbductiveDomain.initialize reachable_values astate
 
 
-let call_aux tenv caller_proc_desc call_loc callee_pname ret actuals callee_proc_desc exec_states
-    (astate : AbductiveDomain.t) =
+let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals callee_proc_desc
+    exec_states (astate : AbductiveDomain.t) =
   let formals =
     Procdesc.get_formals callee_proc_desc
     |> List.map ~f:(fun (mangled, _) -> Pvar.mk mangled callee_pname |> Var.of_pvar)
@@ -209,7 +211,7 @@ let call_aux tenv caller_proc_desc call_loc callee_pname ret actuals callee_proc
     | (actual_closure, _) :: _
       when not (Procname.is_objc_block callee_pname || List.is_empty captured_vars) ->
         (* Assumption: the first parameter will be a closure *)
-        PulseOperations.get_captured_actuals call_loc ~captured_vars ~actual_closure astate
+        PulseOperations.get_captured_actuals path call_loc ~captured_vars ~actual_closure astate
     | _ ->
         Ok (astate, [])
   in
@@ -226,7 +228,7 @@ let call_aux tenv caller_proc_desc call_loc callee_pname ret actuals callee_proc
       else
         (* apply all pre/post specs *)
         match
-          apply_callee tenv ~caller_proc_desc callee_pname call_loc callee_exec_state
+          apply_callee tenv path ~caller_proc_desc callee_pname call_loc callee_exec_state
             ~captured_vars_with_actuals ~formals ~actuals ~ret astate
         with
         | Unsat ->
@@ -236,9 +238,8 @@ let call_aux tenv caller_proc_desc call_loc callee_pname ret actuals callee_proc
             post :: posts )
 
 
-let call tenv ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.t) option) call_loc
+let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.t) option) call_loc
     callee_pname ~ret ~actuals ~formals_opt (astate : AbductiveDomain.t) =
-  let get_arg_values () = List.map actuals ~f:(fun ((value, _), _) -> value) in
   (* a special case for objc nil messaging *)
   let unknown_objc_nil_messaging astate_unknown procdesc =
     let result_unknown =
@@ -253,7 +254,7 @@ let call tenv ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.t) op
         (ExecutionDomain.mk_initial tenv procdesc)
       |> Option.value_map ~default:[] ~f:(fun nil_summary ->
              let<*> nil_astate = nil_summary in
-             call_aux tenv caller_proc_desc call_loc callee_pname ret actuals procdesc
+             call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals procdesc
                ([ContinueProgram nil_astate] :> ExecutionDomain.t list)
                astate )
     in
@@ -261,14 +262,15 @@ let call tenv ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.t) op
   in
   match callee_data with
   | Some (callee_proc_desc, exec_states) ->
-      call_aux tenv caller_proc_desc call_loc callee_pname ret actuals callee_proc_desc
+      call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals callee_proc_desc
         (exec_states :> ExecutionDomain.t list)
         astate
   | None ->
       (* no spec found for some reason (unknown function, ...) *)
       L.d_printfln "No spec found for %a@\n" Procname.pp callee_pname ;
+      let arg_values = List.map actuals ~f:(fun ((value, _), _) -> value) in
       let astate_unknown =
-        conservatively_initialize_args (get_arg_values ()) astate
+        conservatively_initialize_args arg_values astate
         |> unknown_call tenv call_loc (SkippedKnownCall callee_pname) ~ret ~actuals ~formals_opt
       in
       let callee_procdesc_opt = AnalysisCallbacks.get_proc_desc callee_pname in

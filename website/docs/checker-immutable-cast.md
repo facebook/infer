@@ -11,8 +11,9 @@ Activate with `--immutable-cast`.
 
 Supported languages:
 - C/C++/ObjC: No
-- Java: Yes
 - C#/.Net: Yes
+- Erlang: No
+- Java: Yes
 
 Casts flagged by this checker are unsafe because calling mutation operations on the cast objects will fail at runtime.
 

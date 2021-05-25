@@ -341,22 +341,6 @@ module ObjectiveC = struct
     String.is_prefix ~prefix:"CG" procname && String.is_suffix ~suffix:"Release" procname
 
 
-  let is_modelled_as_alloc _ procname =
-    match Config.pulse_model_alloc_pattern with
-    | Some regex ->
-        Str.string_match regex procname 0
-    | None ->
-        false
-
-
-  let is_modelled_as_release _ procname =
-    match Config.pulse_model_release_pattern with
-    | Some regex ->
-        Str.string_match regex procname 0
-    | None ->
-        false
-
-
   let implements_ns_string_variants tenv procname =
     implements "NSString" tenv procname || implements "NSAttributedString" tenv procname
 end

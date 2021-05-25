@@ -49,6 +49,8 @@ module type S = sig
   val mem : t -> key -> bool
 
   val union_left_biased : t -> t -> t
+
+  val to_seq : t -> (key * value) Seq.t
 end
 
 module Make

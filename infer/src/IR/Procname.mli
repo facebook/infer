@@ -294,7 +294,6 @@ val make_java :
   -> method_name:string
   -> parameters:Typ.t list
   -> kind:Java.kind
-  -> unit
   -> t
 (** Create a Java procedure name. *)
 
@@ -304,9 +303,11 @@ val make_csharp :
   -> method_name:string
   -> parameters:Typ.t list
   -> kind:CSharp.kind
-  -> unit
   -> t
 (** Create a CSharp procedure name. *)
+
+val make_erlang : module_name:string -> function_name:string -> arity:int -> t
+(** Create an Erlang procedure name. *)
 
 val make_objc_dealloc : Typ.Name.t -> t
 (** Create a Objective-C dealloc name. This is a destructor for an Objective-C class. This procname

@@ -143,7 +143,7 @@ module Stack = struct
     if phys_equal new_post astate.post then astate else {astate with post= new_post}
 
 
-  let eval location origin var astate =
+  let eval path location origin var astate =
     match BaseStack.find_opt var (astate.post :> base_domain).stack with
     | Some addr_hist ->
         (astate, addr_hist)
@@ -160,7 +160,7 @@ module Stack = struct
           if Config.pulse_isl then
             let access_trace = Trace.Immediate {location; history= []} in
             BaseAddressAttributes.add_one addr
-              (MustBeValid (access_trace, None))
+              (MustBeValid (path.PathContext.timestamp, access_trace, None))
               (astate.post :> base_domain).attrs
           else (astate.post :> base_domain).attrs
         in
@@ -236,26 +236,35 @@ module AddressAttributes = struct
     if phys_equal new_pre astate.pre then astate else {astate with pre= new_pre}
 
 
-  let check_valid ?must_be_valid_reason access_trace addr astate =
+  let check_valid path ?must_be_valid_reason access_trace addr astate =
     let+ () = BaseAddressAttributes.check_valid addr (astate.post :> base_domain).attrs in
     (* if [address] is in [pre] and it should be valid then that fact goes in the precondition *)
-    abduce_attribute addr (MustBeValid (access_trace, must_be_valid_reason)) astate
+    abduce_attribute addr
+      (MustBeValid (path.PathContext.timestamp, access_trace, must_be_valid_reason))
+      astate
 
 
-  let check_initialized access_trace addr astate =
+  let check_initialized path access_trace addr astate =
     let attrs = (astate.post :> base_domain).attrs in
     let+ () = BaseAddressAttributes.check_initialized addr attrs in
     let is_written_to =
       Option.exists (BaseAddressAttributes.find_opt addr attrs) ~f:(fun attrs ->
           Attribute.Attributes.get_written_to attrs |> Option.is_some )
     in
-    if is_written_to then astate else abduce_attribute addr (MustBeInitialized access_trace) astate
+    if is_written_to then astate
+    else abduce_attribute addr (MustBeInitialized (path.PathContext.timestamp, access_trace)) astate
 
 
   (** [astate] with [astate.post.attrs = f astate.post.attrs] *)
   let map_post_attrs ~f astate =
     let new_post = PostDomain.update astate.post ~attrs:(f (astate.post :> base_domain).attrs) in
     if phys_equal new_post astate.post then astate else {astate with post= new_post}
+
+
+  (** [astate] with [astate.pre.attrs = f astate.pre.attrs] *)
+  let map_pre_attrs ~f astate =
+    let new_pre = PreDomain.update astate.pre ~attrs:(f (astate.pre :> base_domain).attrs) in
+    if phys_equal new_pre astate.pre then astate else {astate with pre= new_pre}
 
 
   let invalidate address invalidation location astate =
@@ -271,6 +280,10 @@ module AddressAttributes = struct
 
   let allocate procname address location astate =
     map_post_attrs astate ~f:(BaseAddressAttributes.allocate procname address location)
+
+
+  let get_allocation addr astate =
+    BaseAddressAttributes.get_allocation addr (astate.post :> base_domain).attrs
 
 
   let add_dynamic_type typ address astate =
@@ -290,7 +303,7 @@ module AddressAttributes = struct
 
 
   let remove_must_be_valid_attr address astate =
-    map_post_attrs astate ~f:(BaseAddressAttributes.remove_must_be_valid_attr address)
+    map_pre_attrs astate ~f:(BaseAddressAttributes.remove_must_be_valid_attr address)
 
 
   let get_closure_proc_name addr astate =
@@ -309,10 +322,15 @@ module AddressAttributes = struct
     map_post_attrs astate ~f:(BaseAddressAttributes.mark_as_end_of_collection addr)
 
 
-  let replace_must_be_valid_reason reason addr astate =
+  let add_unreachable_at addr location astate =
+    map_post_attrs astate ~f:(BaseAddressAttributes.add_unreachable_at addr location)
+
+
+  let replace_must_be_valid_reason path reason addr astate =
     match BaseAddressAttributes.get_must_be_valid addr (astate.pre :> base_domain).attrs with
-    | Some (trace, _reason) ->
-        abduce_attribute addr (MustBeValid (trace, Some reason)) astate
+    | Some (_timestamp, trace, _reason) ->
+        remove_must_be_valid_attr addr astate
+        |> abduce_attribute addr (MustBeValid (path.PathContext.timestamp, trace, Some reason))
     | None ->
         astate
 
@@ -350,7 +368,7 @@ module AddressAttributes = struct
     BaseAddressAttributes.find_opt address (astate.post :> base_domain).attrs
 
 
-  let check_valid_isl access_trace addr ?(null_noop = false) astate =
+  let check_valid_isl path access_trace addr ?(null_noop = false) astate =
     L.d_printfln "*****check_valid_isl: addr*** %a@\n" AbstractValue.pp addr ;
     match BaseAddressAttributes.get_invalid addr (astate.post :> BaseDomain.t).attrs with
     | None ->
@@ -374,7 +392,9 @@ module AddressAttributes = struct
             else
               let valid_astate =
                 let abdalloc = Attribute.ISLAbduced access_trace in
-                let valid_attr = Attribute.MustBeValid (access_trace, None) in
+                let valid_attr =
+                  Attribute.MustBeValid (path.PathContext.timestamp, access_trace, None)
+                in
                 add_one addr abdalloc astate |> abduce_attribute addr valid_attr
                 |> abduce_attribute addr abdalloc
               in
@@ -461,7 +481,7 @@ let rec set_uninitialized_post tenv src typ location ?(fields_prefix = RevList.e
       let attrs =
         if Config.pulse_isl then
           BaseAddressAttributes.add_one addr
-            (MustBeValid (Immediate {location; history= []}, None))
+            (MustBeValid (PathContext.t0, Immediate {location; history= []}, None))
             attrs
         else attrs
       in
@@ -547,7 +567,7 @@ let mk_initial tenv proc_desc =
       List.fold formals_and_captured ~init:(PreDomain.empty :> base_domain).attrs
         ~f:(fun attrs (_, _, (addr, _)) ->
           BaseAddressAttributes.add_one addr
-            (MustBeValid (Immediate {location; history= []}, None))
+            (MustBeValid (PathContext.t0, Immediate {location; history= []}, None))
             attrs )
     else BaseDomain.empty.attrs
   in
@@ -602,7 +622,32 @@ let skipped_calls_match_pattern astate =
         astate.skipped_calls )
 
 
-let check_memory_leaks unreachable_addrs astate =
+let check_memory_leaks ~live_addresses ~unreachable_addresses astate =
+  let reaches_into addr addrs astate =
+    AbstractValue.Set.mem addr addrs
+    || BaseDomain.GraphVisit.fold_from_addresses (Seq.return addr) astate ~init:()
+         ~finish:(fun () -> (* didn't find any reachable address in [addrs] *) false)
+         ~f:(fun () addr' rev_accesses ->
+           (* We want to know if [addr] is still reachable from the value [addr'] by pointer
+              arithmetic, hence detect if [addr'] is an offset away from [addr]. In particular, if
+              we go through a [Dereference] then we have lost the connexion to the original
+              address value.
+
+              TODO: this should be part of [live_addresses] since all these addresses are actually
+              live. *)
+           let can_recover_root_from_accesses =
+             List.for_all rev_accesses ~f:(fun (access : BaseMemory.Access.t) ->
+                 match access with FieldAccess _ | ArrayAccess _ -> true | _ -> false )
+           in
+           if can_recover_root_from_accesses then
+             if AbstractValue.Set.mem addr' addrs then (
+               L.d_printfln ~color:Orange "Live address %a is reachable from %a" AbstractValue.pp
+                 addr' AbstractValue.pp addr ;
+               Stop true )
+             else Continue ()
+           else Stop false )
+       |> snd
+  in
   let check_memory_leak addr attributes =
     let allocated_not_freed_opt =
       let allocated = Attributes.get_allocation attributes in
@@ -617,9 +662,41 @@ let check_memory_leaks unreachable_addrs astate =
         (* allocated but not freed => leak *)
         L.d_printfln ~color:Red "LEAK: unreachable address %a was allocated by %a" AbstractValue.pp
           addr Procname.pp procname ;
-        Error (procname, trace)
+        (* last-chance checks: it could be that the value (or its canonical equal) is reachable via
+           pointer arithmetic from live values. This is common in libraries that do their own memory
+           management, e.g. they return a field of the malloc()'d pointer, and the latter is a fat
+           pointer with, say, a reference count. For example in C:
+
+           {[
+            struct fat_int {
+              size_t count;
+              int data;
+            };
+
+            int *alloc_int() {
+              fat_int *p = malloc(...);
+              p->count = 1;
+              return &(p->data);
+            }
+           ]}
+
+           We don't have a precise enough memory model to understand everything that
+           goes on here but we should at least not report a leak. *)
+        let addr_canon = PathCondition.get_both_var_repr astate.path_condition addr in
+        if
+          reaches_into addr live_addresses (astate.post :> BaseDomain.t)
+          || reaches_into addr_canon live_addresses (astate.post :> BaseDomain.t)
+        then (
+          L.d_printfln ~color:Orange
+            "False alarm: address is still reachable via other means; forgetting about its \
+             allocation site to prevent leak false positives." ;
+          Ok () )
+        else
+          (* if the address became unreachable at a known point use that location *)
+          let location = Attributes.get_unreachable_at attributes in
+          Error (location, procname, trace)
   in
-  List.fold_result unreachable_addrs ~init:() ~f:(fun () addr ->
+  List.fold_result unreachable_addresses ~init:() ~f:(fun () addr ->
       match AddressAttributes.find_opt addr astate with
       | Some unreachable_attrs ->
           check_memory_leak addr unreachable_attrs
@@ -633,11 +710,22 @@ let discard_unreachable_ ~for_summary ({pre; post} as astate) =
     PreDomain.filter_addr ~f:(fun address -> AbstractValue.Set.mem address pre_addresses) pre
   in
   let post_addresses = BaseDomain.reachable_addresses (post :> BaseDomain.t) in
+  let canon_addresses =
+    AbstractValue.Set.map (PathCondition.get_both_var_repr astate.path_condition) pre_addresses
+    |> AbstractValue.Set.fold
+         (fun addr acc ->
+           AbstractValue.Set.add (PathCondition.get_both_var_repr astate.path_condition addr) acc )
+         post_addresses
+  in
   let post_new, dead_addresses =
+    (* keep attributes of dead addresses unless we are creating a summary *)
     PostDomain.filter_addr_with_discarded_addrs ~heap_only:(not for_summary)
       ~f:(fun address ->
-        AbstractValue.Set.mem address pre_addresses || AbstractValue.Set.mem address post_addresses
-        )
+        AbstractValue.Set.mem address pre_addresses
+        || AbstractValue.Set.mem address post_addresses
+        ||
+        let canon_addr = PathCondition.get_both_var_repr astate.path_condition address in
+        AbstractValue.Set.mem canon_addr canon_addresses )
       post
   in
   (* note: we don't call {!PulsePathCondition.simplify} *)
@@ -646,15 +734,6 @@ let discard_unreachable_ ~for_summary ({pre; post} as astate) =
     else {astate with pre= pre_new; post= post_new}
   in
   (astate, pre_addresses, post_addresses, dead_addresses)
-
-
-(* exported in .mli *)
-let discard_unreachable astate =
-  let astate, _pre_addresses, _post_addresses, _dead_addresses =
-    discard_unreachable_ ~for_summary:false astate
-  in
-  (* NOTE: [_dead_addresses] is always the empty list when [for_summary] is [false] *)
-  astate
 
 
 let get_unreachable_attributes {post} =
@@ -867,8 +946,8 @@ let incorporate_new_eqs astate new_eqs =
               L.d_printfln "Not clear why %a should be allocated in the first place, giving up"
                 AbstractValue.pp v ;
               Stop Unsat
-          | Some must_be_valid ->
-              Stop (Sat (astate, Some (v, must_be_valid))) )
+          | Some (_, trace, reason_opt) ->
+              Stop (Sat (astate, Some (v, (trace, reason_opt)))) )
       | EqZero _ (* [v] not allocated *) ->
           Continue (astate, error) )
 
@@ -876,7 +955,7 @@ let incorporate_new_eqs astate new_eqs =
 (** it's a good idea to normalize the path condition before calling this function *)
 let canonicalize astate =
   let open SatUnsat.Import in
-  let get_var_repr v = PathCondition.get_var_repr astate.path_condition v in
+  let get_var_repr v = PathCondition.get_known_var_repr astate.path_condition v in
   let canonicalize_pre (pre : PreDomain.t) =
     (* (ab)use canonicalization to filter out empty edges in the heap and detect aliasing
        contradictions *)
@@ -917,14 +996,17 @@ let filter_for_summary tenv proc_name astate0 =
     else pre_live_addresses
   in
   let live_addresses = AbstractValue.Set.union pre_live_addresses post_live_addresses in
-  let+ path_condition, new_eqs =
+  let+ path_condition, live_via_arithmetic, new_eqs =
     PathCondition.simplify tenv
       ~get_dynamic_type:
         (BaseAddressAttributes.get_dynamic_type (astate_before_filter.post :> BaseDomain.t).attrs)
       ~can_be_pruned ~keep:live_addresses astate.path_condition
   in
+  let live_addresses = AbstractValue.Set.union live_addresses live_via_arithmetic in
   ( {astate with path_condition; topl= PulseTopl.simplify ~keep:live_addresses astate.topl}
-  , dead_addresses
+  , live_addresses
+  , (* we could filter out the [live_addresses] if needed; right now they might overlap *)
+    dead_addresses
   , new_eqs )
 
 
@@ -942,7 +1024,7 @@ let summary_of_post tenv pdesc location astate =
   let astate = {astate with path_condition} in
   let* astate, error = incorporate_new_eqs astate new_eqs in
   let astate_before_filter = astate in
-  let* astate, dead_addresses, new_eqs =
+  let* astate, live_addresses, dead_addresses, new_eqs =
     filter_for_summary tenv (Procdesc.get_proc_name pdesc) astate
   in
   let+ astate, error =
@@ -950,11 +1032,15 @@ let summary_of_post tenv pdesc location astate =
   in
   match error with
   | None -> (
-    match check_memory_leaks dead_addresses astate_before_filter with
+    match
+      check_memory_leaks ~live_addresses ~unreachable_addresses:dead_addresses astate_before_filter
+    with
     | Ok () ->
         Ok (invalidate_locals pdesc astate)
-    | Error (proc_name, trace) ->
-        Error (`MemoryLeak (astate, proc_name, trace, location)) )
+    | Error (unreachable_location, proc_name, trace) ->
+        Error
+          (`MemoryLeak
+            (astate, proc_name, trace, Option.value unreachable_location ~default:location)) )
   | Some (address, must_be_valid) ->
       Error (`PotentialInvalidAccessSummary (astate, address, must_be_valid))
 

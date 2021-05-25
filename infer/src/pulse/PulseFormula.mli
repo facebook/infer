@@ -62,7 +62,7 @@ val simplify :
   -> can_be_pruned:Var.Set.t
   -> keep:Var.Set.t
   -> t
-  -> (t * new_eqs) SatUnsat.t
+  -> (t * Var.Set.t * new_eqs) SatUnsat.t
 
 val and_fold_subst_variables :
      t
@@ -75,5 +75,9 @@ val is_known_zero : t -> Var.t -> bool
 
 val has_no_assumptions : t -> bool
 
-val get_var_repr : t -> Var.t -> Var.t
-(** get the canonical representative for the variable according to the equality relation *)
+val get_known_var_repr : t -> Var.t -> Var.t
+(** get the canonical representative for the variable according to the known/post equality relation *)
+
+val get_both_var_repr : t -> Var.t -> Var.t
+(** get the canonical representative for the variable according to the both/pre+post equality
+    relation *)
