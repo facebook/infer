@@ -7,6 +7,7 @@
 open! IStd
 module F = Format
 module Invalidation = PulseInvalidation
+module PathContext = PulsePathContext
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
 
@@ -34,7 +35,7 @@ module Attribute = struct
     | Invalid of Invalidation.t * Trace.t
     | ISLAbduced of Trace.t
     | MustBeInitialized of Trace.t
-    | MustBeValid of Trace.t * Invalidation.must_be_valid_reason option
+    | MustBeValid of PathContext.timestamp * Trace.t * Invalidation.must_be_valid_reason option
     | StdVectorReserve
     | Uninitialized
     | UnreachableAt of Location.t
@@ -64,7 +65,7 @@ module Attribute = struct
     Variants.to_rank (Invalid (Invalidation.ConstantDereference IntLit.zero, dummy_trace))
 
 
-  let must_be_valid_rank = Variants.to_rank (MustBeValid (dummy_trace, None))
+  let must_be_valid_rank = Variants.to_rank (MustBeValid (PathContext.t0, dummy_trace, None))
 
   let std_vector_reserve_rank = Variants.to_rank StdVectorReserve
 
@@ -128,10 +129,11 @@ module Attribute = struct
         F.fprintf f "MustBeInitialized %a"
           (Trace.pp ~pp_immediate:(pp_string_if_debug "read"))
           trace
-    | MustBeValid (trace, reason) ->
-        F.fprintf f "MustBeValid %a (%a)"
+    | MustBeValid (timestamp, trace, reason) ->
+        F.fprintf f "MustBeValid(%a, %a, t=%d)"
           (Trace.pp ~pp_immediate:(pp_string_if_debug "access"))
           trace Invalidation.pp_must_be_valid_reason reason
+          (timestamp :> int)
     | StdVectorReserve ->
         F.pp_print_string f "std::vector::reserve()"
     | Uninitialized ->
@@ -176,7 +178,7 @@ module Attribute = struct
         true
 
 
-  let add_call proc_name call_location caller_history attr =
+  let add_call path proc_name call_location caller_history attr =
     let add_call_to_trace in_call =
       Trace.ViaCall {f= Call proc_name; location= call_location; history= caller_history; in_call}
     in
@@ -197,8 +199,8 @@ module Attribute = struct
         Invalid (invalidation, add_call_to_trace trace)
     | ISLAbduced trace ->
         ISLAbduced (add_call_to_trace trace)
-    | MustBeValid (trace, reason) ->
-        MustBeValid (add_call_to_trace trace, reason)
+    | MustBeValid (_timestamp, trace, reason) ->
+        MustBeValid (path.PathContext.timestamp, add_call_to_trace trace, reason)
     | MustBeInitialized trace ->
         MustBeInitialized (add_call_to_trace trace)
     | WrittenTo trace ->
@@ -227,8 +229,8 @@ module Attributes = struct
   let get_must_be_valid attrs =
     Set.find_rank attrs Attribute.must_be_valid_rank
     |> Option.map ~f:(fun attr ->
-           let[@warning "-8"] (Attribute.MustBeValid (trace, reason)) = attr in
-           (trace, reason) )
+           let[@warning "-8"] (Attribute.MustBeValid (timestamp, trace, reason)) = attr in
+           (timestamp, trace, reason) )
 
 
   let get_written_to attrs =
@@ -335,8 +337,9 @@ module Attributes = struct
         Set.add acc attr1 )
 
 
-  let add_call proc_name call_location caller_history attrs =
-    Set.map attrs ~f:(fun attr -> Attribute.add_call proc_name call_location caller_history attr)
+  let add_call path proc_name call_location caller_history attrs =
+    Set.map attrs ~f:(fun attr ->
+        Attribute.add_call path proc_name call_location caller_history attr )
 
 
   include Set

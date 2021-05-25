@@ -84,14 +84,14 @@ let pp_contradiction fmt = function
 
 exception Contradiction of contradiction
 
-let fold_globals_of_stack call_loc stack call_state ~f =
+let fold_globals_of_stack path call_loc stack call_state ~f =
   Container.fold_result ~fold:(IContainer.fold_of_pervasives_map_fold BaseStack.fold)
     stack ~init:call_state ~f:(fun call_state (var, stack_value) ->
       match var with
       | Var.ProgramVar pvar when Pvar.is_global pvar ->
           let call_state, addr_hist_caller =
             let astate, var_value =
-              Stack.eval call_loc
+              Stack.eval path call_loc
                 [ValueHistory.VariableAccessed (pvar, call_loc)]
                 var call_state.astate
             in
@@ -252,8 +252,8 @@ let materialize_pre_for_parameters callee_proc_name call_location pre_post ~form
       result
 
 
-let materialize_pre_for_globals callee_proc_name call_location pre_post call_state =
-  fold_globals_of_stack call_location (pre_post.AbductiveDomain.pre :> BaseDomain.t).stack
+let materialize_pre_for_globals path callee_proc_name call_location pre_post call_state =
+  fold_globals_of_stack path call_location (pre_post.AbductiveDomain.pre :> BaseDomain.t).stack
     call_state ~f:(fun _var ~stack_value:(addr_pre, _) ~addr_hist_caller call_state ->
       materialize_pre_from_address callee_proc_name call_location
         ~pre:(pre_post.AbductiveDomain.pre :> BaseDomain.t)
@@ -281,11 +281,11 @@ let conjoin_callee_arith pre_post call_state =
     else {call_state with astate; subst}
 
 
-let apply_arithmetic_constraints callee_proc_name call_location pre_post call_state =
+let apply_arithmetic_constraints path callee_proc_name call_location pre_post call_state =
   let open IResult.Let_syntax in
   let one_address_sat callee_attrs (addr_caller, caller_history) call_state =
     let attrs_caller =
-      Attributes.add_call callee_proc_name call_location caller_history callee_attrs
+      Attributes.add_call path callee_proc_name call_location caller_history callee_attrs
     in
     let astate = AddressAttributes.abduce_and_add addr_caller attrs_caller call_state.astate in
     if phys_equal astate call_state.astate then call_state else {call_state with astate}
@@ -332,8 +332,8 @@ let apply_arithmetic_constraints callee_proc_name call_location pre_post call_st
       call_state.subst call_state
 
 
-let materialize_pre callee_proc_name call_location pre_post ~captured_vars_with_actuals ~formals
-    ~actuals call_state =
+let materialize_pre path callee_proc_name call_location pre_post ~captured_vars_with_actuals
+    ~formals ~actuals call_state =
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse call pre" ())) ;
   let r =
     let open IResult.Let_syntax in
@@ -342,10 +342,10 @@ let materialize_pre callee_proc_name call_location pre_post ~captured_vars_with_
       call_state
     >>= materialize_pre_for_captured_vars callee_proc_name call_location pre_post
           ~captured_vars_with_actuals
-    >>= materialize_pre_for_globals callee_proc_name call_location pre_post
+    >>= materialize_pre_for_globals path callee_proc_name call_location pre_post
     >>= (* ...then relational arithmetic constraints in the callee's attributes will make sense in
            terms of the caller's values *)
-    apply_arithmetic_constraints callee_proc_name call_location pre_post
+    apply_arithmetic_constraints path callee_proc_name call_location pre_post
   in
   PerfEvent.(log (fun logger -> log_end_event logger ())) ;
   r
@@ -386,11 +386,11 @@ let delete_edges_in_callee_pre_from_caller ~edges_pre_opt addr_caller call_state
         (subst, post_edges) )
 
 
-let record_post_cell callee_proc_name call_loc ~edges_pre_opt
+let record_post_cell path callee_proc_name call_loc ~edges_pre_opt
     ~cell_callee_post:(edges_callee_post, attrs_callee_post) (addr_caller, hist_caller) call_state =
   let call_state =
     let attrs_post_caller =
-      Attributes.add_call callee_proc_name call_loc hist_caller attrs_callee_post
+      Attributes.add_call path callee_proc_name call_loc hist_caller attrs_callee_post
     in
     let astate =
       if Config.pulse_isl then
@@ -427,8 +427,8 @@ let record_post_cell callee_proc_name call_loc ~edges_pre_opt
   ; astate= AbductiveDomain.set_post_edges addr_caller edges_post_caller call_state.astate }
 
 
-let rec record_post_for_address callee_proc_name call_loc ({AbductiveDomain.pre; _} as pre_post)
-    ~addr_callee ~addr_hist_caller call_state =
+let rec record_post_for_address path callee_proc_name call_loc
+    ({AbductiveDomain.pre; _} as pre_post) ~addr_callee ~addr_hist_caller call_state =
   L.d_printfln "%a<->%a" AbstractValue.pp addr_callee AbstractValue.pp (fst addr_hist_caller) ;
   match visit call_state ~pre:(pre :> BaseDomain.t) ~addr_callee ~addr_hist_caller with
   | `AlreadyVisited, call_state ->
@@ -454,7 +454,7 @@ let rec record_post_for_address callee_proc_name call_loc ({AbductiveDomain.pre;
                     Attributes.replace_isl_abduced attrs_post attrs_caller
               else attrs_post
             in
-            record_post_cell callee_proc_name call_loc ~edges_pre_opt addr_hist_caller
+            record_post_cell path callee_proc_name call_loc ~edges_pre_opt addr_hist_caller
               ~cell_callee_post:(edges_post, attrs_post) call_state
         in
         Memory.Edges.fold ~init:call_state_after_post edges_post
@@ -463,11 +463,11 @@ let rec record_post_for_address callee_proc_name call_loc ({AbductiveDomain.pre;
               call_state_subst_find_or_new call_state addr_callee_dest
                 ~default_hist_caller:(snd addr_hist_caller)
             in
-            record_post_for_address callee_proc_name call_loc pre_post ~addr_callee:addr_callee_dest
-              ~addr_hist_caller:addr_hist_curr_dest call_state ) )
+            record_post_for_address path callee_proc_name call_loc pre_post
+              ~addr_callee:addr_callee_dest ~addr_hist_caller:addr_hist_curr_dest call_state ) )
 
 
-let record_post_for_actual callee_proc_name call_loc pre_post ~formal ~actual:(actual, typ)
+let record_post_for_actual path callee_proc_name call_loc pre_post ~formal ~actual:(actual, typ)
     call_state =
   L.d_printfln_escaped "Recording POST from [%a] <-> %a" Var.pp formal AbstractValue.pp (fst actual) ;
   match
@@ -479,7 +479,7 @@ let record_post_for_actual callee_proc_name call_loc pre_post ~formal ~actual:(a
       deref_non_c_struct addr_formal_pre typ
         (pre_post.AbductiveDomain.pre :> BaseDomain.t).BaseDomain.heap
     in
-    record_post_for_address callee_proc_name call_loc pre_post ~addr_callee:formal_pre
+    record_post_for_address path callee_proc_name call_loc pre_post ~addr_callee:formal_pre
       ~addr_hist_caller:actual call_state
   with
   | Some call_state ->
@@ -488,7 +488,7 @@ let record_post_for_actual callee_proc_name call_loc pre_post ~formal ~actual:(a
       call_state
 
 
-let record_post_for_return callee_proc_name call_loc pre_post call_state =
+let record_post_for_return path callee_proc_name call_loc pre_post call_state =
   let return_var = Var.of_pvar (Pvar.get_ret_pvar callee_proc_name) in
   match BaseStack.find_opt return_var (pre_post.AbductiveDomain.post :> BaseDomain.t).stack with
   | None ->
@@ -517,13 +517,14 @@ let record_post_for_return callee_proc_name call_loc pre_post call_state =
         L.d_printfln_escaped "Recording POST from [return] <-> %a" AbstractValue.pp
           (fst return_caller_addr_hist) ;
         let call_state =
-          record_post_for_address callee_proc_name call_loc pre_post ~addr_callee:return_callee
+          record_post_for_address path callee_proc_name call_loc pre_post ~addr_callee:return_callee
             ~addr_hist_caller:return_caller_addr_hist call_state
         in
         (call_state, Some return_caller_addr_hist) )
 
 
-let apply_post_for_parameters callee_proc_name call_location pre_post ~formals ~actuals call_state =
+let apply_post_for_parameters path callee_proc_name call_location pre_post ~formals ~actuals
+    call_state =
   (* for each [(formal_i, actual_i)] pair, do [post_i = post union subst(graph reachable from
      formal_i in post)], deleting previous info when comparing pre and post shows a difference
      (TODO: record in the pre when a location is written to instead of just comparing values
@@ -531,7 +532,8 @@ let apply_post_for_parameters callee_proc_name call_location pre_post ~formals ~
      post but nuke other fields in the meantime? is that possible?). *)
   match
     List.fold2 formals actuals ~init:call_state ~f:(fun call_state formal actual ->
-        record_post_for_actual callee_proc_name call_location pre_post ~formal ~actual call_state )
+        record_post_for_actual path callee_proc_name call_location pre_post ~formal ~actual
+          call_state )
   with
   | Unequal_lengths ->
       (* should have been checked before by [materialize_pre] *)
@@ -540,18 +542,18 @@ let apply_post_for_parameters callee_proc_name call_location pre_post ~formals ~
       call_state
 
 
-let apply_post_for_captured_vars callee_proc_name call_location pre_post ~captured_vars_with_actuals
-    call_state =
+let apply_post_for_captured_vars path callee_proc_name call_location pre_post
+    ~captured_vars_with_actuals call_state =
   List.fold captured_vars_with_actuals ~init:call_state ~f:(fun call_state (formal, actual) ->
-      record_post_for_actual callee_proc_name call_location pre_post ~formal ~actual call_state )
+      record_post_for_actual path callee_proc_name call_location pre_post ~formal ~actual call_state )
 
 
-let apply_post_for_globals callee_proc_name call_location pre_post call_state =
+let apply_post_for_globals path callee_proc_name call_location pre_post call_state =
   match
-    fold_globals_of_stack call_location (pre_post.AbductiveDomain.pre :> BaseDomain.t).stack
+    fold_globals_of_stack path call_location (pre_post.AbductiveDomain.pre :> BaseDomain.t).stack
       call_state ~f:(fun _var ~stack_value:(addr_callee, _) ~addr_hist_caller call_state ->
         Ok
-          (record_post_for_address callee_proc_name call_location pre_post ~addr_callee
+          (record_post_for_address path callee_proc_name call_location pre_post ~addr_callee
              ~addr_hist_caller call_state) )
   with
   | Error _ ->
@@ -560,7 +562,7 @@ let apply_post_for_globals callee_proc_name call_location pre_post call_state =
       call_state
 
 
-let record_post_remaining_attributes callee_proc_name call_loc pre_post call_state =
+let record_post_remaining_attributes path callee_proc_name call_loc pre_post call_state =
   BaseAddressAttributes.fold
     (fun addr_callee attrs call_state ->
       if AddressSet.mem addr_callee call_state.visited then
@@ -571,7 +573,7 @@ let record_post_remaining_attributes callee_proc_name call_loc pre_post call_sta
         | None ->
             (* callee address has no meaning for the caller *) call_state
         | Some (addr_caller, history) ->
-            let attrs' = Attributes.add_call callee_proc_name call_loc history attrs in
+            let attrs' = Attributes.add_call path callee_proc_name call_loc history attrs in
             let astate = AddressAttributes.abduce_and_add addr_caller attrs' call_state.astate in
             {call_state with astate} )
     (pre_post.AbductiveDomain.post :> BaseDomain.t).attrs call_state
@@ -587,20 +589,21 @@ let record_skipped_calls callee_proc_name call_loc pre_post call_state =
   {call_state with astate}
 
 
-let apply_post callee_proc_name call_location pre_post ~captured_vars_with_actuals ~formals ~actuals
-    call_state =
+let apply_post path callee_proc_name call_location pre_post ~captured_vars_with_actuals ~formals
+    ~actuals call_state =
   let open IResult.Let_syntax in
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse call post" ())) ;
   let r =
     let call_state, return_caller =
-      apply_post_for_parameters callee_proc_name call_location pre_post ~formals ~actuals call_state
-      |> apply_post_for_captured_vars callee_proc_name call_location pre_post
+      apply_post_for_parameters path callee_proc_name call_location pre_post ~formals ~actuals
+        call_state
+      |> apply_post_for_captured_vars path callee_proc_name call_location pre_post
            ~captured_vars_with_actuals
-      |> apply_post_for_globals callee_proc_name call_location pre_post
-      |> record_post_for_return callee_proc_name call_location pre_post
+      |> apply_post_for_globals path callee_proc_name call_location pre_post
+      |> record_post_for_return path callee_proc_name call_location pre_post
     in
     let+ call_state =
-      record_post_remaining_attributes callee_proc_name call_location pre_post call_state
+      record_post_remaining_attributes path callee_proc_name call_location pre_post call_state
       |> record_skipped_calls callee_proc_name call_location pre_post
       |> conjoin_callee_arith pre_post
     in
@@ -610,50 +613,78 @@ let apply_post callee_proc_name call_location pre_post ~captured_vars_with_actua
   r
 
 
-let check_all_valid callee_proc_name call_location {AbductiveDomain.pre; _} call_state =
-  AddressMap.fold
-    (fun addr_pre (addr_caller, hist_caller) astate_result ->
-      let mk_access_trace callee_access_trace =
-        Trace.ViaCall
-          { in_call= callee_access_trace
-          ; f= Call callee_proc_name
-          ; location= call_location
-          ; history= hist_caller }
-      in
-      let open IResult.Let_syntax in
-      let* astate = astate_result in
-      let* astate =
-        match BaseAddressAttributes.get_must_be_valid addr_pre (pre :> BaseDomain.t).attrs with
+let check_all_valid path callee_proc_name call_location {AbductiveDomain.pre; _} call_state =
+  (* collect all the checks to perform then do each check in timestamp order to make sure we report
+     the first issue if any *)
+  let addresses_to_check =
+    AddressMap.fold
+      (fun addr_pre addr_hist_caller to_check ->
+        let to_check =
+          match BaseAddressAttributes.get_must_be_valid addr_pre (pre :> BaseDomain.t).attrs with
+          | None ->
+              to_check
+          | Some must_be_valid_data ->
+              (addr_hist_caller, `MustBeValid must_be_valid_data) :: to_check
+        in
+        match
+          BaseAddressAttributes.get_must_be_initialized addr_pre (pre :> BaseDomain.t).attrs
+        with
         | None ->
-            astate_result
-        | Some (callee_access_trace, must_be_valid_reason) ->
-            let access_trace = mk_access_trace callee_access_trace in
-            AddressAttributes.check_valid access_trace addr_caller astate
-            |> Result.map_error ~f:(fun (invalidation, invalidation_trace) ->
-                   L.d_printfln "ERROR: caller's %a invalid!" AbstractValue.pp addr_caller ;
-                   AccessResult.ReportableError
-                     { diagnostic=
-                         Diagnostic.AccessToInvalidAddress
-                           { calling_context= []
-                           ; invalidation
-                           ; invalidation_trace
-                           ; access_trace
-                           ; must_be_valid_reason }
-                     ; astate } )
-      in
-      match BaseAddressAttributes.get_must_be_initialized addr_pre (pre :> BaseDomain.t).attrs with
-      | None ->
-          astate_result
-      | Some callee_access_trace ->
-          let access_trace = mk_access_trace callee_access_trace in
-          AddressAttributes.check_initialized access_trace addr_caller astate
-          |> Result.map_error ~f:(fun () ->
-                 L.d_printfln "ERROR: caller's %a is uninitialized!" AbstractValue.pp addr_caller ;
-                 AccessResult.ReportableError
-                   { diagnostic=
-                       Diagnostic.ReadUninitializedValue {calling_context= []; trace= access_trace}
-                   ; astate } ) )
-    call_state.subst (Ok call_state.astate)
+            to_check
+        | Some must_be_init_data ->
+            (addr_hist_caller, `MustBeInitialized must_be_init_data) :: to_check )
+      call_state.subst []
+  in
+  let timestamp_of_check = function
+    | `MustBeValid (timestamp, _, _) ->
+        Some timestamp
+    | `MustBeInitialized _ ->
+        None
+  in
+  List.sort addresses_to_check ~compare:(fun (_, check1) (_, check2) ->
+      match (timestamp_of_check check1, timestamp_of_check check2) with
+      | Some t1, Some t2 ->
+          (* smaller timestamp first *) PathContext.compare_timestamp t1 t2
+      (* with a timestamp first (gone soon when MustBeInitialized will get a timestamp too), otherwise dummy comparison *)
+      | None, None ->
+          0
+      | Some _, None ->
+          -1
+      | None, Some _ ->
+          1 )
+  |> List.fold_result ~init:call_state.astate ~f:(fun astate ((addr_caller, hist_caller), check) ->
+         let mk_access_trace callee_access_trace =
+           Trace.ViaCall
+             { in_call= callee_access_trace
+             ; f= Call callee_proc_name
+             ; location= call_location
+             ; history= hist_caller }
+         in
+         match check with
+         | `MustBeValid (_timestamp, callee_access_trace, must_be_valid_reason) ->
+             let access_trace = mk_access_trace callee_access_trace in
+             AddressAttributes.check_valid path access_trace addr_caller astate
+             |> Result.map_error ~f:(fun (invalidation, invalidation_trace) ->
+                    L.d_printfln "ERROR: caller's %a invalid!" AbstractValue.pp addr_caller ;
+                    AccessResult.ReportableError
+                      { diagnostic=
+                          Diagnostic.AccessToInvalidAddress
+                            { calling_context= []
+                            ; invalidation
+                            ; invalidation_trace
+                            ; access_trace
+                            ; must_be_valid_reason }
+                      ; astate } )
+         | `MustBeInitialized callee_access_trace ->
+             let access_trace = mk_access_trace callee_access_trace in
+             AddressAttributes.check_initialized access_trace addr_caller astate
+             |> Result.map_error ~f:(fun () ->
+                    L.d_printfln "ERROR: caller's %a is uninitialized!" AbstractValue.pp addr_caller ;
+                    AccessResult.ReportableError
+                      { diagnostic=
+                          Diagnostic.ReadUninitializedValue
+                            {calling_context= []; trace= access_trace}
+                      ; astate } ) )
 
 
 let isl_check_all_invalid invalid_addr_callers callee_proc_name call_location
@@ -704,7 +735,7 @@ let isl_check_all_invalid invalid_addr_callers callee_proc_name call_location
    - for each actual, write the post for that actual
 
    - if aliasing is introduced at any time then give up *)
-let apply_prepost ~is_isl_error_prepost callee_proc_name call_location ~callee_prepost:pre_post
+let apply_prepost path ~is_isl_error_prepost callee_proc_name call_location ~callee_prepost:pre_post
     ~captured_vars_with_actuals ~formals ~actuals astate =
   L.d_printfln "Applying pre/post for %a(%a):@\n%a" Procname.pp callee_proc_name
     (Pp.seq ~sep:"," Var.pp) formals AbductiveDomain.pp pre_post ;
@@ -717,8 +748,8 @@ let apply_prepost ~is_isl_error_prepost callee_proc_name call_location ~callee_p
   in
   (* read the precondition *)
   match
-    materialize_pre callee_proc_name call_location pre_post ~captured_vars_with_actuals ~formals
-      ~actuals empty_call_state
+    materialize_pre path callee_proc_name call_location pre_post ~captured_vars_with_actuals
+      ~formals ~actuals empty_call_state
   with
   | exception Contradiction reason ->
       (* can't make sense of the pre-condition in the current context: give up on that particular
@@ -738,7 +769,7 @@ let apply_prepost ~is_isl_error_prepost callee_proc_name call_location ~callee_p
            ContinueProgram ok specs *)
         let* astate =
           if Config.pulse_isl then Ok astate
-          else check_all_valid callee_proc_name call_location pre_post call_state
+          else check_all_valid path callee_proc_name call_location pre_post call_state
         in
         (* reset [visited] *)
         let invalid_subst = call_state.invalid_subst in
@@ -746,8 +777,8 @@ let apply_prepost ~is_isl_error_prepost callee_proc_name call_location ~callee_p
         let call_state = {call_state with astate; visited= AddressSet.empty} in
         (* apply the postcondition *)
         let* call_state, return_caller =
-          apply_post callee_proc_name call_location pre_post ~captured_vars_with_actuals ~formals
-            ~actuals call_state
+          apply_post path callee_proc_name call_location pre_post ~captured_vars_with_actuals
+            ~formals ~actuals call_state
         in
         let astate =
           if Topl.is_active () then

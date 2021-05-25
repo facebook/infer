@@ -175,13 +175,19 @@ module TopLifted (Domain : S) = struct
   let pp = TopLiftedUtils.pp ~pp:Domain.pp
 end
 
-module Pair (Domain1 : S) (Domain2 : S) = struct
+module PairNoJoin (Domain1 : NoJoin) (Domain2 : NoJoin) = struct
   type t = Domain1.t * Domain2.t
 
   let leq ~lhs ~rhs =
     if phys_equal lhs rhs then true
     else Domain1.leq ~lhs:(fst lhs) ~rhs:(fst rhs) && Domain2.leq ~lhs:(snd lhs) ~rhs:(snd rhs)
 
+
+  let pp fmt astate = Pp.pair ~fst:Domain1.pp ~snd:Domain2.pp fmt astate
+end
+
+module Pair (Domain1 : S) (Domain2 : S) = struct
+  include PairNoJoin (Domain1) (Domain2)
 
   let join astate1 astate2 =
     if phys_equal astate1 astate2 then astate1
@@ -199,9 +205,6 @@ module Pair (Domain1 : S) (Domain2 : S) = struct
           ( Domain1.widen ~prev:(fst prev) ~next:(fst next) ~num_iters
           , Domain2.widen ~prev:(snd prev) ~next:(snd next) ~num_iters )
         prev next
-
-
-  let pp fmt astate = Pp.pair ~fst:Domain1.pp ~snd:Domain2.pp fmt astate
 end
 
 module Flat (V : PrettyPrintable.PrintableEquatableType) = struct

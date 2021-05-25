@@ -143,7 +143,7 @@ module Stack = struct
     if phys_equal new_post astate.post then astate else {astate with post= new_post}
 
 
-  let eval location origin var astate =
+  let eval path location origin var astate =
     match BaseStack.find_opt var (astate.post :> base_domain).stack with
     | Some addr_hist ->
         (astate, addr_hist)
@@ -160,7 +160,7 @@ module Stack = struct
           if Config.pulse_isl then
             let access_trace = Trace.Immediate {location; history= []} in
             BaseAddressAttributes.add_one addr
-              (MustBeValid (access_trace, None))
+              (MustBeValid (path.PathContext.timestamp, access_trace, None))
               (astate.post :> base_domain).attrs
           else (astate.post :> base_domain).attrs
         in
@@ -236,10 +236,12 @@ module AddressAttributes = struct
     if phys_equal new_pre astate.pre then astate else {astate with pre= new_pre}
 
 
-  let check_valid ?must_be_valid_reason access_trace addr astate =
+  let check_valid path ?must_be_valid_reason access_trace addr astate =
     let+ () = BaseAddressAttributes.check_valid addr (astate.post :> base_domain).attrs in
     (* if [address] is in [pre] and it should be valid then that fact goes in the precondition *)
-    abduce_attribute addr (MustBeValid (access_trace, must_be_valid_reason)) astate
+    abduce_attribute addr
+      (MustBeValid (path.PathContext.timestamp, access_trace, must_be_valid_reason))
+      astate
 
 
   let check_initialized access_trace addr astate =
@@ -323,11 +325,11 @@ module AddressAttributes = struct
     map_post_attrs astate ~f:(BaseAddressAttributes.add_unreachable_at addr location)
 
 
-  let replace_must_be_valid_reason reason addr astate =
+  let replace_must_be_valid_reason path reason addr astate =
     match BaseAddressAttributes.get_must_be_valid addr (astate.pre :> base_domain).attrs with
-    | Some (trace, _reason) ->
+    | Some (_timestamp, trace, _reason) ->
         remove_must_be_valid_attr addr astate
-        |> abduce_attribute addr (MustBeValid (trace, Some reason))
+        |> abduce_attribute addr (MustBeValid (path.PathContext.timestamp, trace, Some reason))
     | None ->
         astate
 
@@ -365,7 +367,7 @@ module AddressAttributes = struct
     BaseAddressAttributes.find_opt address (astate.post :> base_domain).attrs
 
 
-  let check_valid_isl access_trace addr ?(null_noop = false) astate =
+  let check_valid_isl path access_trace addr ?(null_noop = false) astate =
     L.d_printfln "*****check_valid_isl: addr*** %a@\n" AbstractValue.pp addr ;
     match BaseAddressAttributes.get_invalid addr (astate.post :> BaseDomain.t).attrs with
     | None ->
@@ -389,7 +391,9 @@ module AddressAttributes = struct
             else
               let valid_astate =
                 let abdalloc = Attribute.ISLAbduced access_trace in
-                let valid_attr = Attribute.MustBeValid (access_trace, None) in
+                let valid_attr =
+                  Attribute.MustBeValid (path.PathContext.timestamp, access_trace, None)
+                in
                 add_one addr abdalloc astate |> abduce_attribute addr valid_attr
                 |> abduce_attribute addr abdalloc
               in
@@ -476,7 +480,7 @@ let rec set_uninitialized_post tenv src typ location ?(fields_prefix = RevList.e
       let attrs =
         if Config.pulse_isl then
           BaseAddressAttributes.add_one addr
-            (MustBeValid (Immediate {location; history= []}, None))
+            (MustBeValid (PathContext.t0, Immediate {location; history= []}, None))
             attrs
         else attrs
       in
@@ -562,7 +566,7 @@ let mk_initial tenv proc_desc =
       List.fold formals_and_captured ~init:(PreDomain.empty :> base_domain).attrs
         ~f:(fun attrs (_, _, (addr, _)) ->
           BaseAddressAttributes.add_one addr
-            (MustBeValid (Immediate {location; history= []}, None))
+            (MustBeValid (PathContext.t0, Immediate {location; history= []}, None))
             attrs )
     else BaseDomain.empty.attrs
   in
@@ -941,8 +945,8 @@ let incorporate_new_eqs astate new_eqs =
               L.d_printfln "Not clear why %a should be allocated in the first place, giving up"
                 AbstractValue.pp v ;
               Stop Unsat
-          | Some must_be_valid ->
-              Stop (Sat (astate, Some (v, must_be_valid))) )
+          | Some (_, trace, reason_opt) ->
+              Stop (Sat (astate, Some (v, (trace, reason_opt)))) )
       | EqZero _ (* [v] not allocated *) ->
           Continue (astate, error) )
 

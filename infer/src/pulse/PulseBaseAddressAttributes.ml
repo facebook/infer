@@ -118,8 +118,8 @@ let remove_isl_abduced_attr address memory =
 
 let remove_must_be_valid_attr address memory =
   match get_attribute Attributes.get_must_be_valid address memory with
-  | Some (trace, reason) ->
-      remove_one address (Attribute.MustBeValid (trace, reason)) memory
+  | Some (timestamp, trace, reason) ->
+      remove_one address (Attribute.MustBeValid (timestamp, trace, reason)) memory
   | None ->
       memory
 

@@ -68,7 +68,13 @@ module Stack : sig
 
   val find_opt : Var.t -> t -> BaseStack.value option
 
-  val eval : Location.t -> ValueHistory.t -> Var.t -> t -> t * (AbstractValue.t * ValueHistory.t)
+  val eval :
+       PathContext.t
+    -> Location.t
+    -> ValueHistory.t
+    -> Var.t
+    -> t
+    -> t * (AbstractValue.t * ValueHistory.t)
   (** return the value of the variable in the stack or create a fresh one if needed *)
 
   val mem : Var.t -> t -> bool
@@ -114,7 +120,8 @@ module AddressAttributes : sig
   val add_attrs : AbstractValue.t -> Attributes.t -> t -> t
 
   val check_valid :
-       ?must_be_valid_reason:Invalidation.must_be_valid_reason
+       PathContext.t
+    -> ?must_be_valid_reason:Invalidation.must_be_valid_reason
     -> Trace.t
     -> AbstractValue.t
     -> t
@@ -124,7 +131,8 @@ module AddressAttributes : sig
 
   val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
-  val replace_must_be_valid_reason : Invalidation.must_be_valid_reason -> AbstractValue.t -> t -> t
+  val replace_must_be_valid_reason :
+    PathContext.t -> Invalidation.must_be_valid_reason -> AbstractValue.t -> t -> t
 
   val allocate : Procname.t -> AbstractValue.t * ValueHistory.t -> Location.t -> t -> t
 
@@ -149,7 +157,8 @@ module AddressAttributes : sig
   val find_opt : AbstractValue.t -> t -> Attributes.t option
 
   val check_valid_isl :
-       Trace.t
+       PathContext.t
+    -> Trace.t
     -> AbstractValue.t
     -> ?null_noop:bool
     -> t

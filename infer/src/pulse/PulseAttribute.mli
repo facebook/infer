@@ -7,6 +7,7 @@
 open! IStd
 module F = Format
 module Invalidation = PulseInvalidation
+module PathContext = PulsePathContext
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
 
@@ -21,7 +22,7 @@ type t =
   | Invalid of Invalidation.t * Trace.t
   | ISLAbduced of Trace.t  (** The allocation is abduced so as the analysis could run normally *)
   | MustBeInitialized of Trace.t
-  | MustBeValid of Trace.t * Invalidation.must_be_valid_reason option
+  | MustBeValid of PathContext.timestamp * Trace.t * Invalidation.must_be_valid_reason option
   | StdVectorReserve
   | Uninitialized
   | UnreachableAt of Location.t
@@ -53,7 +54,8 @@ module Attributes : sig
 
   val get_isl_abduced : t -> Trace.t option
 
-  val get_must_be_valid : t -> (Trace.t * Invalidation.must_be_valid_reason option) option
+  val get_must_be_valid :
+    t -> (PathContext.timestamp * Trace.t * Invalidation.must_be_valid_reason option) option
 
   val get_written_to : t -> Trace.t option
 
@@ -75,5 +77,5 @@ module Attributes : sig
   (** While applying a spec, replacing ISLAbduced by Allocated and Invalidation.Cfree by
       Invalidation.delete, if applicable *)
 
-  val add_call : Procname.t -> Location.t -> ValueHistory.t -> t -> t
+  val add_call : PathContext.t -> Procname.t -> Location.t -> ValueHistory.t -> t -> t
 end

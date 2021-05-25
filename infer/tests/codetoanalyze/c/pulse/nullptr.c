@@ -122,9 +122,12 @@ void null_alias_bad(int* x) {
   *x = 42;
 }
 
+void dereference(int* p) { *p; }
+
 void several_dereferences_ok(int* x, int* y, int* z) {
   int* p = x;
   *z = 52;
+  dereference(y);
   *y = 42;
   *x = 32;
   *x = 777;
