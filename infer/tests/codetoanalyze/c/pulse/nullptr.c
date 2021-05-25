@@ -121,3 +121,19 @@ void null_alias_bad(int* x) {
   x = (int*)malloc(sizeof(int*));
   *x = 42;
 }
+
+void several_dereferences_ok(int* x, int* y, int* z) {
+  int* p = x;
+  *z = 52;
+  *y = 42;
+  *x = 32;
+  *x = 777;
+  *y = 888;
+  *z = 999;
+}
+
+void report_correct_error_among_multiple_bad() {
+  int* p = NULL;
+  // the trace should complain about the first access inside the callee
+  several_dereferences_ok(p, p, p);
+}
