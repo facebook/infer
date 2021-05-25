@@ -258,6 +258,12 @@ module AddressAttributes = struct
     if phys_equal new_post astate.post then astate else {astate with post= new_post}
 
 
+  (** [astate] with [astate.pre.attrs = f astate.pre.attrs] *)
+  let map_pre_attrs ~f astate =
+    let new_pre = PreDomain.update astate.pre ~attrs:(f (astate.pre :> base_domain).attrs) in
+    if phys_equal new_pre astate.pre then astate else {astate with pre= new_pre}
+
+
   let invalidate address invalidation location astate =
     let astate =
       map_post_attrs ~f:(BaseAddressAttributes.invalidate address invalidation location) astate
@@ -294,7 +300,7 @@ module AddressAttributes = struct
 
 
   let remove_must_be_valid_attr address astate =
-    map_post_attrs astate ~f:(BaseAddressAttributes.remove_must_be_valid_attr address)
+    map_pre_attrs astate ~f:(BaseAddressAttributes.remove_must_be_valid_attr address)
 
 
   let get_closure_proc_name addr astate =
