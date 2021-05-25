@@ -9,6 +9,12 @@ open! IStd
 module Ast = ErlangAst
 module L = Logging
 
+let mangled_arg (n : int) : Mangled.t = Mangled.from_string (Printf.sprintf "$arg%d" n)
+
+let typ_of_name (name : ErlangTypeName.t) : Typ.t =
+  Typ.mk (Tptr (Typ.mk (Tstruct (ErlangType name)), Pk_pointer))
+
+
 module UnqualifiedFunction = struct
   module T = struct
     type t = {name: string; arity: int} [@@deriving sexp, compare]
@@ -16,6 +22,13 @@ module UnqualifiedFunction = struct
 
   include T
   include Comparable.Make (T)
+
+  let of_ast (f : Ast.function_) : t =
+    match f with
+    | {module_= ModuleMissing; function_= FunctionName name; arity} ->
+        {name; arity}
+    | _ ->
+        L.die InternalError "expected unqualified function"
 end
 
 type module_name = string [@@deriving sexp_of]
@@ -29,13 +42,6 @@ type names_env =
 [@@deriving sexp_of]
 
 let get_environment module_ : names_env =
-  let unqualified (f : Ast.function_) : UnqualifiedFunction.t =
-    match f with
-    | {module_= ModuleMissing; function_= FunctionName name; arity} ->
-        {name; arity}
-    | _ ->
-        L.die InternalError "expected unqualified function"
-  in
   let init =
     { exports= UnqualifiedFunction.Set.empty
     ; imports= UnqualifiedFunction.Map.empty (* TODO: auto-import from module "erlang" *)
@@ -44,12 +50,12 @@ let get_environment module_ : names_env =
   let f env (form : Ast.form) =
     match form.simple_form with
     | Export functions ->
-        let f exports function_ = Set.add exports (unqualified function_) in
+        let f exports function_ = Set.add exports (UnqualifiedFunction.of_ast function_) in
         let exports = List.fold ~init:env.exports ~f functions in
         {env with exports}
     | Import {module_name; functions} ->
         let f imports function_ =
-          let key = unqualified function_ in
+          let key = UnqualifiedFunction.of_ast function_ in
           match Map.add ~key ~data:module_name imports with
           | `Ok imports ->
               imports
@@ -66,7 +72,42 @@ let get_environment module_ : names_env =
   List.fold ~init ~f module_
 
 
-let translate_functions _names_env _cfg _module = (* TODO *) ()
+let translate_one_function source names_env cfg line function_ clauses =
+  let uf_name = UnqualifiedFunction.of_ast function_ in
+  let {UnqualifiedFunction.name= function_name; arity} = uf_name in
+  let name =
+    let module_name = names_env.current_module in
+    Procname.make_erlang ~module_name ~function_name ~arity
+  in
+  let attributes =
+    let default = ProcAttributes.default source name in
+    let access : ProcAttributes.access =
+      if Set.mem names_env.exports uf_name then Public else Private
+    in
+    let formals = List.init ~f:(fun i -> (mangled_arg i, typ_of_name Any)) arity in
+    let loc = {Location.line; col= -1; file= source} in
+    let ret_type = typ_of_name Any in
+    {default with access; formals; loc; ret_type}
+  in
+  let _proc = Cfg.create_proc_desc cfg attributes in
+  (* TODO: add nodes to proc *)
+  if List.is_empty clauses then
+    L.die InternalError "%s:%a has no clauses" names_env.current_module Procname.pp name
+
+
+let translate_functions source names_env cfg module_ =
+  let f (form : Ast.form) =
+    match form.simple_form with
+    | Function {function_; clauses} ->
+        translate_one_function source names_env cfg form.line function_ clauses
+    | _ ->
+        ()
+  in
+  List.iter module_ ~f ;
+  DB.Results_dir.init source ;
+  Cfg.store source cfg ;
+  SourceFiles.add source cfg Tenv.Global None
+
 
 let to_source_and_cfg module_ =
   let source =
@@ -85,7 +126,7 @@ let to_source_and_cfg module_ =
   let cfg =
     let cfg = Cfg.create () in
     let names_env = get_environment module_ in
-    translate_functions names_env cfg module_ ;
+    translate_functions source names_env cfg module_ ;
     cfg
   in
   (source, cfg)
