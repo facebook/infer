@@ -29,9 +29,9 @@ let get_reporting_explanation_java ~nullsafe report_kind tenv pname thread =
            "@\n Reporting because current method is annotated %a or overrides an annotated method."
            MF.pp_monospaced "@ThreadSafe")
     else
-      match FbThreadSafety.get_fbthreadsafe_class_annot pname tenv with
-      | Some (qual, annot) ->
-          Some (FbThreadSafety.message_fbthreadsafe_class qual annot)
+      match RacerDModels.get_litho_explanation tenv pname with
+      | Some _ as expl_opt ->
+          expl_opt
       | None -> (
         match get_current_class_and_threadsafe_superclasses tenv pname with
         | Some (current_class, (thread_safe_class :: _ as thread_safe_annotated_classes)) ->

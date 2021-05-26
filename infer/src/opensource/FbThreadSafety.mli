@@ -8,7 +8,3 @@
 val is_custom_init : 'tenv_t -> 'procname_t -> bool
 
 val is_logging_method : 'procname_t -> bool
-
-val get_fbthreadsafe_class_annot : 'procname_t -> 'tenv_t -> (string * string) option
-
-val message_fbthreadsafe_class : string -> string -> string
