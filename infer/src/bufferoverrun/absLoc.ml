@@ -216,8 +216,6 @@ module Loc = struct
 
   let pp = pp_paren ~paren:false
 
-  let is_var = function BoField.Prim (Var _) -> true | _ -> false
-
   let is_c_strlen = function
     | BoField.Field {fn} ->
         Fieldname.equal fn (BoField.c_strlen ())
@@ -626,6 +624,6 @@ let can_strong_update : PowLoc.t -> bool =
   else
     match PowLoc.is_singleton_or_more ploc with
     | IContainer.Singleton loc ->
-        Loc.is_var loc || Loc.is_c_strlen loc
+        (not (Loc.represents_multiple_values loc)) || Loc.is_c_strlen loc
     | _ ->
         false
