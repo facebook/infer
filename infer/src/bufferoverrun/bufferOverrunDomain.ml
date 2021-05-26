@@ -2316,11 +2316,7 @@ module MemReach = struct
    fun ~f -> transformi_mem ~f:(fun _ v -> f v)
 
 
-  let weak_update locs v m =
-    transformi_mem
-      ~f:(fun l v' -> if Loc.represents_multiple_values l then Val.join v' v else v)
-      locs m
-
+  let weak_update locs v m = transform_mem ~f:(fun v' -> Val.join v' v) locs m
 
   let update_mem : PowLoc.t -> Val.t -> t -> t =
    fun ploc v s ->
