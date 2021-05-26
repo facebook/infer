@@ -26,7 +26,7 @@ Keep up to date with the latest Infer news on our
 
 ### IRC
 
-Our IRC channel is [#infer](irc://chat.freenode.net/infer) on Freenode.net.
+Our IRC channel is [`#infer`](irc://irc.libera.chat/infer) on [Libera Chat](https://libera.chat/).
 
 ## Troubleshooting
 
