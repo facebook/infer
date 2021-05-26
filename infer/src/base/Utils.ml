@@ -398,7 +398,7 @@ let assoc_of_yojson yojson_obj ~src =
       (* missing entries in config reported as empty list *)
       []
   | _ ->
-      die_expected_yojson_type "object" yojson_obj ~example:"{ \"foo\': \"bar\" }" ~src
+      die_expected_yojson_type "object" yojson_obj ~example:"{ \"foo\": \"bar\" }" ~src
 
 
 let string_of_yojson yojson_obj ~src =
@@ -414,7 +414,7 @@ let list_of_yojson yojson_obj ~src =
   | `List list ->
       list
   | _ ->
-      die_expected_yojson_type "list" yojson_obj ~example:"[ \"foo\', \"bar\" ]" ~src
+      die_expected_yojson_type "list" yojson_obj ~example:"[ \"foo\", \"bar\" ]" ~src
 
 
 let string_list_of_yojson yojson_obj ~src =
