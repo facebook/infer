@@ -71,7 +71,7 @@ case "${OS}" in
                 BUILD_PLATFORM=Windows
                 ;;
             *)
-                AC_MSG_ERROR(["OS $unamestr is not supported"])
+                AC_MSG_ERROR(["OS $uname_str is not supported"])
                 ;;
         esac
 esac

@@ -127,6 +127,15 @@ let fail_on_issue_exit_code = 2
 (** If true, treat calls to no-arg getters as idempotent w.r.t non-nullness *)
 let idempotent_getters = true
 
+let is_WSL =
+  match Utils.read_file "/proc/version" with
+  | Ok [line] ->
+      let re = Str.regexp "Linux.+-Microsoft" in
+      Str.string_match re line 0
+  | _ ->
+      false
+
+
 let ivar_attributes = "ivar_attributes"
 
 let java_lambda_marker_infix = "$Lambda$"
@@ -1284,6 +1293,12 @@ and ( biabduction_write_dotty
   , reports_include_ml_loc
   , trace_error
   , write_html )
+
+
+and dbwriter =
+  CLOpt.mk_bool ~default:true ~long:"dbwriter"
+    "Use a separate process to serialize writes to sqlite. Disabling this will degrade \
+     performance. Note that this is always disabled on Windows and WSL."
 
 
 and dependencies =
@@ -2464,13 +2479,8 @@ and sqlite_lock_timeout =
 
 and sqlite_vfs =
   let default =
-    match Utils.read_file "/proc/version" with
-    | Result.Ok [line] ->
-        let re = Str.regexp "Linux.+-Microsoft" in
-        (* on WSL (bash on Windows) standard SQLite VFS can't be used, see WSL/issues/1927 WSL/issues/2395 *)
-        if Str.string_match re line 0 then Some "unix-excl" else None
-    | _ ->
-        None
+    (* on WSL (bash on Windows) standard SQLite VFS can't be used, see WSL/issues/1927 WSL/issues/2395 *)
+    if is_WSL then Some "unix-excl" else None
   in
   CLOpt.mk_string_opt ?default ~long:"sqlite-vfs" "VFS for SQLite"
 
@@ -3025,6 +3035,8 @@ and cost_tests_only_autoreleasepool = !cost_tests_only_autoreleasepool
 and cxx = !cxx
 
 and cxx_scope_guards = !cxx_scope_guards
+
+and dbwriter = !dbwriter
 
 and debug_level_analysis = !debug_level_analysis
 

@@ -1611,6 +1611,11 @@ INTERNAL OPTIONS
        --costs-previous-reset
            Cancel the effect of --costs-previous.
 
+       --no-dbwriter
+           Deactivates: Use a separate process to serialize writes to sqlite.
+           Disabling this will degrade performance. Note that this is always
+           disabled on Windows and WSL. (Conversely: --dbwriter)
+
        --debug-exceptions
            Activates: Generate lightweight debugging information: just print
            the internal exceptions during analysis (also sets
