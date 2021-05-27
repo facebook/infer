@@ -276,17 +276,21 @@ let changed_sources_from_changed_files changed_files =
       with _exn -> changed_files_set )
 
 
-let read_config_changed_files () =
-  match Config.changed_files_index with
-  | None ->
-      None
-  | Some index -> (
-    match Utils.read_file index with
-    | Ok lines ->
-        Some (changed_sources_from_changed_files lines)
-    | Error error ->
-        L.external_error "Error reading the changed files index '%s': %s@." index error ;
-        None )
+let read_config_changed_files =
+  let result =
+    lazy
+      ( match Config.changed_files_index with
+      | None ->
+          None
+      | Some index -> (
+        match Utils.read_file index with
+        | Ok lines ->
+            Some (changed_sources_from_changed_files lines)
+        | Error error ->
+            L.external_error "Error reading the changed files index '%s': %s@." index error ;
+            None ) )
+  in
+  fun () -> Lazy.force result
 
 
 module SQLite = struct
