@@ -20,9 +20,9 @@ module Hash : Caml.Hashtbl.S with type key = t
 val is_invalid : t -> bool
 (** Is the source file the invalid source file? *)
 
-val changed_sources_from_changed_files : string list -> Set.t
-(** Set of files read from --changed-files-index file, None if option not specified NOTE: it may
-    include extra source_files if --changed-files-index contains paths to header files *)
+val read_config_changed_files : unit -> Set.t option
+(** return the list of changed files as read from Config.changed_files_index. NOTE: it may include
+    extra source_files if --changed-files-index contains paths to header files. *)
 
 val invalid : string -> t
 (** Invalid source file *)
