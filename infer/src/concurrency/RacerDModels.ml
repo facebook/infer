@@ -23,6 +23,7 @@ let make_android_support_template suffix methods =
   [ {default with classname= "android.support.v4.util." ^ suffix; methods}
   ; {default with classname= "androidx.core.util." ^ suffix; methods} ]
 
+
 let is_csharp_container_write =
   let open MethodMatcher in
   [ { default with
