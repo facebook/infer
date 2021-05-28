@@ -272,6 +272,9 @@ and parse_exp (json : Safe.t) =
     let e1 = parse_exp (member "left" json) in
     let e2 = parse_exp (member "right" json) in
     Exp.BinOp (op, e1, e2)
+  else if String.equal ekind "ExnExpression" then
+    let e = parse_exp (member "expression" json) in
+    Exp.Exn (e)
   else if String.equal ekind "ConstExpression" then Exp.Const (parse_constant json)
   else if String.equal ekind "CastExpression" then
     let t = parse_sil_type_name (member "type" json) in
