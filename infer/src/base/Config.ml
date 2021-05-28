@@ -767,6 +767,12 @@ and bo_sound_unknown_sets_join =
      as bot."
 
 
+and bo_bottom_as_default =
+  CLOpt.mk_bool ~default:true ~long:"bo-bottom-as-default"
+    ~in_help:InferCommand.[(Analyze, manual_buffer_overrun)]
+    "Use bottom as a default value instead of unknown."
+
+
 and bootclasspath =
   CLOpt.mk_string_opt ~long:"bootclasspath"
     ~in_help:InferCommand.[(Capture, manual_java)]
@@ -3295,6 +3301,8 @@ and bo_field_depth_limit = !bo_field_depth_limit
 and bo_max_cfg_size = !bo_max_cfg_size
 
 and bo_sound_unknown_sets_join = !bo_sound_unknown_sets_join
+
+and bo_bottom_as_default = !bo_bottom_as_default
 
 and buck = !buck
 

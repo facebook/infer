@@ -110,6 +110,19 @@ module Val = struct
     ; traces= TraceSet.bottom }
 
 
+  let unknown : t =
+    { itv= Itv.top
+    ; itv_thresholds= ItvThresholds.empty
+    ; itv_updated_by= ItvUpdatedBy.Top
+    ; modeled_range= ModeledRange.bottom
+    ; powloc= PowLoc.unknown
+    ; arrayblk= ArrayBlk.unknown
+    ; func_ptrs= FuncPtr.Set.empty
+    ; traces= TraceSet.bottom }
+
+
+  let default = if Config.bo_bottom_as_default then bot else unknown
+
   let pp fmt x =
     let itv_thresholds_pp fmt itv_thresholds =
       if Config.bo_debug >= 3 && not (ItvThresholds.is_empty itv_thresholds) then
@@ -138,13 +151,9 @@ module Val = struct
    fun typ ~callee_pname ~location ->
     let is_int = Typ.is_int typ in
     let traces = Trace.(Set.singleton_final location (UnknownFrom callee_pname)) in
-    { itv= Itv.top
-    ; itv_thresholds= ItvThresholds.empty
-    ; itv_updated_by= ItvUpdatedBy.Top
-    ; modeled_range= ModeledRange.bottom
-    ; powloc= (if is_int then PowLoc.bot else PowLoc.unknown)
+    { unknown with
+      powloc= (if is_int then PowLoc.bot else PowLoc.unknown)
     ; arrayblk= (if is_int then ArrayBlk.bottom else ArrayBlk.unknown)
-    ; func_ptrs= FuncPtr.Set.bottom
     ; traces }
 
 
@@ -825,7 +834,9 @@ module MemPure = struct
           | Some v1, Some v2 ->
               Some (MVal.join v1 v2)
           | Some v1, None | None, Some v1 ->
-              let v2 = MVal.on_demand ~default:Val.bot oenv l in
+              (* Since abstract state doesn't contain complete information, use Val.top
+                      if a location is missing in one state being joined to be sound. *)
+              let v2 = MVal.on_demand ~default:Val.default oenv l in
               Some (MVal.join v1 v2)
           | None, None ->
               None )
@@ -841,10 +852,14 @@ module MemPure = struct
           | Some v1, Some v2 ->
               Some (MVal.widen ~prev:v1 ~next:v2 ~num_iters)
           | Some v1, None ->
-              let v2 = MVal.on_demand ~default:Val.bot oenv l in
+              (* Since abstract state doesn't contain complete information, use Val.top
+                      if a location is missing in one state being widened to be sound. *)
+              let v2 = MVal.on_demand ~default:Val.default oenv l in
               Some (MVal.widen ~prev:v1 ~next:v2 ~num_iters)
           | None, Some v2 ->
-              let v1 = MVal.on_demand ~default:Val.bot oenv l in
+              (* Since abstract state doesn't contain complete information, use Val.top
+                 if a location is missing in one state being widened to be sound. *)
+              let v1 = MVal.on_demand ~default:Val.default oenv l in
               Some (MVal.widen ~prev:v1 ~next:v2 ~num_iters)
           | None, None ->
               None )
@@ -2125,7 +2140,10 @@ module MemReach = struct
 
 
   let find_heap : ?typ:Typ.t -> Loc.t -> _ t0 -> Val.t =
-   fun ?typ l m -> find_heap_default ~default:Val.Itv.top ?typ l m
+   fun ?typ l m ->
+    find_heap_default
+      ~default:(if Config.bo_bottom_as_default then Val.Itv.top else Val.unknown)
+      ?typ l m
 
 
   let find : ?typ:Typ.t -> Loc.t -> _ t0 -> Val.t =
@@ -2305,7 +2323,8 @@ module MemReach = struct
       let add, find =
         if is_stack_loc l m then (replace_stack, find_stack)
         else
-          (add_heap ~represents_multiple_values:false, find_heap_default ~default:Val.bot ?typ:None)
+          ( add_heap ~represents_multiple_values:false
+          , find_heap_default ~default:Val.default ?typ:None )
       in
       add l (f l (find l m)) m
     in
@@ -2579,7 +2598,7 @@ module Mem = struct
    fun k -> f_lift_default ~default:false (MemReach.is_rep_multi_loc k)
 
 
-  let find : Loc.t -> _ t0 -> Val.t = fun k -> f_lift_default ~default:Val.bot (MemReach.find k)
+  let find : Loc.t -> _ t0 -> Val.t = fun k -> f_lift_default ~default:Val.default (MemReach.find k)
 
   let find_stack : Loc.t -> _ t0 -> Val.t =
    fun k -> f_lift_default ~default:Val.bot (MemReach.find_stack k)
