@@ -544,10 +544,14 @@ module Prune = struct
     eval_array_locs_length arr_locs mem
 
 
-  let update_mem_in_prune lv v ?(pruning_exp = PruningExp.Unknown) {prune_pairs; mem} =
-    let prune_pairs = PrunePairs.add lv (PrunedVal.make v pruning_exp) prune_pairs in
-    let mem = Mem.update_mem (PowLoc.singleton lv) v mem in
-    {prune_pairs; mem}
+  let update_mem_in_prune lv v ?(pruning_exp = PruningExp.Unknown)
+      ({prune_pairs; mem} as prune_state) =
+    (* Explicitly disable prune of locations which can be only weakly updated.*)
+    if AbsLoc.can_strong_update (PowLoc.singleton lv) then
+      let prune_pairs = PrunePairs.add lv (PrunedVal.make v pruning_exp) prune_pairs in
+      let mem = Mem.update_mem (PowLoc.singleton lv) v mem in
+      {prune_pairs; mem}
+    else prune_state
 
 
   let prune_has_next ~true_branch iterator ({mem} as astate) =
