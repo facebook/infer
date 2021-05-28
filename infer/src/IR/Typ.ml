@@ -187,6 +187,7 @@ module T = struct
         ; template_spec_info: template_spec_info
         ; is_union: bool [@compare.ignore] }
     | CSharpClass of CSharpClassName.t
+    | ErlangType of ErlangTypeName.t
     | JavaClass of JavaClassName.t
     | ObjcClass of QualifiedCppName.t * name list
     | ObjcProtocol of QualifiedCppName.t
@@ -312,6 +313,8 @@ and pp_name_c_syntax pe f = function
       F.fprintf f "%a%a" QualifiedCppName.pp name (pp_protocols pe) protocol_names
   | CppClass {name; template_spec_info} ->
       F.fprintf f "%a%a" QualifiedCppName.pp name (pp_template_spec_info pe) template_spec_info
+  | ErlangType name ->
+      ErlangTypeName.pp f name
   | JavaClass name ->
       JavaClassName.pp f name
   | CSharpClass name ->
@@ -390,6 +393,12 @@ module Name = struct
         -1
     | _, CSharpClass _ ->
         1
+    | ErlangType name1, ErlangType name2 ->
+        ErlangTypeName.compare name1 name2
+    | ErlangType _, _ ->
+        -1
+    | _, ErlangType _ ->
+        1
     | JavaClass name1, JavaClass name2 ->
         String.compare (JavaClassName.classname name1) (JavaClassName.classname name2)
     | JavaClass _, _ ->
@@ -418,7 +427,7 @@ module Name = struct
     | CppClass {name; template_spec_info} ->
         let template_suffix = F.asprintf "%a" (pp_template_spec_info Pp.text) template_spec_info in
         QualifiedCppName.append_template_args_to_last name ~args:template_suffix
-    | JavaClass _ | CSharpClass _ ->
+    | JavaClass _ | CSharpClass _ | ErlangType _ ->
         QualifiedCppName.empty
 
 
@@ -427,7 +436,7 @@ module Name = struct
         name
     | CppClass {name} ->
         name
-    | JavaClass _ | CSharpClass _ ->
+    | JavaClass _ | CSharpClass _ | ErlangType _ ->
         QualifiedCppName.empty
 
 
@@ -446,6 +455,8 @@ module Name = struct
         JavaClassName.to_string name
     | CSharpClass name ->
         CSharpClassName.to_string name
+    | ErlangType name ->
+        ErlangTypeName.to_string name
 
 
   let pp fmt tname =
@@ -456,6 +467,8 @@ module Name = struct
           "union"
       | CppClass _ | CSharpClass _ | JavaClass _ | ObjcClass _ ->
           "class"
+      | ErlangType _ ->
+          "erlang"
       | ObjcProtocol _ ->
           "protocol"
     in
@@ -570,6 +583,9 @@ module Name = struct
       in
       function
       | ObjcClass (name, _) -> not (QualifiedCppName.Set.mem name tagged_classes) | _ -> false
+
+
+    let remodel_class = Option.map Config.remodel_class ~f:from_string
   end
 
   module Set = PrettyPrintable.MakePPSet (struct
@@ -591,7 +607,7 @@ module Name = struct
 
     let normalize t =
       match t with
-      | CStruct _ | CUnion _ | CppClass _ | ObjcClass _ | ObjcProtocol _ ->
+      | CStruct _ | CUnion _ | CppClass _ | ErlangType _ | ObjcClass _ | ObjcProtocol _ ->
           t
       | JavaClass java_class_name ->
           let java_class_name' = JavaClassName.Normalizer.normalize java_class_name in

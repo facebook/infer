@@ -57,17 +57,17 @@ let parse_cil_procname (json : Safe.t) : Procname.t =
   | "__new" ->
       BuiltinDecl.__new
   | "__new_array" ->
-    BuiltinDecl.__new_array
+      BuiltinDecl.__new_array
   | "__set_locked_attribute" ->
-    BuiltinDecl.__set_locked_attribute
+      BuiltinDecl.__set_locked_attribute
   | "__delete_locked_attribute" ->
-    BuiltinDecl.__delete_locked_attribute
+      BuiltinDecl.__delete_locked_attribute
   | "__instanceof" ->
-    BuiltinDecl.__instanceof
+      BuiltinDecl.__instanceof
   (* We exclude this for now as it would require significant effort unrelated to our support of
-  null deref/resource leak/thread safety violation detection. *)
+     null deref/resource leak/thread safety violation detection. *)
   (*| "__unwrap_exception" ->
-    BuiltinDecl.__unwrap_exception*) 
+    BuiltinDecl.__unwrap_exception*)
   | _ ->
       let return_type =
         if String.equal Procname.CSharp.constructor_method_name method_name then None
@@ -78,11 +78,8 @@ let parse_cil_procname (json : Safe.t) : Procname.t =
       let params = List.map ~f:parse_cil_type_name param_types in
       let is_static = to_bool (member "is_static" json) in
       let method_kind = if is_static then Procname.CSharp.Static else Procname.CSharp.Non_Static in
-      let proc_name_cs =
-        Procname.(
-          make_csharp ~class_name ~return_type ~method_name ~parameters:params ~kind:method_kind)
-      in
-      proc_name_cs ()
+      Procname.make_csharp ~class_name ~return_type ~method_name ~parameters:params
+        ~kind:method_kind
 
 
 let parse_ikind (json : Safe.t) =

@@ -1,6 +1,6 @@
 A value is read before it has been initialized. For example, in C:
 
-```C
+```c
 struct coordinates {
   int x;
   int y;

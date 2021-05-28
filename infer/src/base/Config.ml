@@ -127,6 +127,15 @@ let fail_on_issue_exit_code = 2
 (** If true, treat calls to no-arg getters as idempotent w.r.t non-nullness *)
 let idempotent_getters = true
 
+let is_WSL =
+  match Utils.read_file "/proc/version" with
+  | Ok [line] ->
+      let re = Str.regexp "Linux.+-Microsoft" in
+      Str.string_match re line 0
+  | _ ->
+      false
+
+
 let ivar_attributes = "ivar_attributes"
 
 let java_lambda_marker_infix = "$Lambda$"
@@ -1286,6 +1295,12 @@ and ( biabduction_write_dotty
   , write_html )
 
 
+and dbwriter =
+  CLOpt.mk_bool ~default:true ~long:"dbwriter"
+    "Use a separate process to serialize writes to sqlite. Disabling this will degrade \
+     performance. Note that this is always disabled on Windows and WSL."
+
+
 and dependencies =
   CLOpt.mk_bool ~deprecated:["dependencies"] ~long:"dependencies"
     ~in_help:InferCommand.[(Capture, manual_java)]
@@ -2018,6 +2033,31 @@ and pulse_model_alloc_pattern =
     "Regex of methods that should be modelled as allocs in Pulse"
 
 
+and pulse_model_free_pattern =
+  CLOpt.mk_string_opt ~long:"pulse-model-free-pattern"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Regex of methods that should be modelled as wrappers to $(i,free)(3) in Pulse. The pointer to \
+     be freed should be the first argument of the function. This should only be needed if the code \
+     of the wrapper is not visible to infer or if Pulse somehow doesn't understand it (e.g. the \
+     call is dispatched to global function pointers)."
+
+
+and pulse_model_malloc_pattern =
+  CLOpt.mk_string_opt ~long:"pulse-model-malloc-pattern"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Regex of methods that should be modelled as wrappers to $(i,malloc)(3) in Pulse. The size to \
+     allocate should be the first argument of the function. See $(b,--pulse-model-free-pattern) \
+     for more information."
+
+
+and pulse_model_realloc_pattern =
+  CLOpt.mk_string_opt ~long:"pulse-model-realloc-pattern"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Regex of methods that should be modelled as wrappers to $(i,realloc)(3) in Pulse. The pointer \
+     to be reallocated should be the first argument of the function and the new size the second \
+     argument. See $(b,--pulse-model-free-pattern) for more information."
+
+
 and pulse_model_release_pattern =
   CLOpt.mk_string_opt ~long:"pulse-model-release-pattern"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -2154,6 +2194,13 @@ and relative_path_backtrack =
     "Maximum level of backtracking to convert an absolute path to path relative to the common \
      prefix between the project root and the path. For instance, with bactraking level 1, it will \
      convert /my/source/File.java with project root /my/root into ../source/File.java"
+
+
+and remodel_class =
+  CLOpt.mk_string_opt ~long:"remodel-class"
+    "Specify a Remodel class name. For sub-classes of the Remodel class in ObjC, setters and \
+     getters for properties are auto-generated and they store/load values into/from field names of \
+     \"_<property name>\"."
 
 
 and report =
@@ -2432,13 +2479,8 @@ and sqlite_lock_timeout =
 
 and sqlite_vfs =
   let default =
-    match Utils.read_file "/proc/version" with
-    | Result.Ok [line] ->
-        let re = Str.regexp "Linux.+-Microsoft" in
-        (* on WSL (bash on Windows) standard SQLite VFS can't be used, see WSL/issues/1927 WSL/issues/2395 *)
-        if Str.string_match re line 0 then Some "unix-excl" else None
-    | _ ->
-        None
+    (* on WSL (bash on Windows) standard SQLite VFS can't be used, see WSL/issues/1927 WSL/issues/2395 *)
+    if is_WSL then Some "unix-excl" else None
   in
   CLOpt.mk_string_opt ?default ~long:"sqlite-vfs" "VFS for SQLite"
 
@@ -2994,6 +3036,8 @@ and cxx = !cxx
 
 and cxx_scope_guards = !cxx_scope_guards
 
+and dbwriter = !dbwriter
+
 and debug_level_analysis = !debug_level_analysis
 
 and debug_level_capture = !debug_level_capture
@@ -3270,6 +3314,12 @@ and pulse_model_abort = RevList.to_list !pulse_model_abort
 
 and pulse_model_alloc_pattern = Option.map ~f:Str.regexp !pulse_model_alloc_pattern
 
+and pulse_model_free_pattern = Option.map ~f:Str.regexp !pulse_model_free_pattern
+
+and pulse_model_malloc_pattern = Option.map ~f:Str.regexp !pulse_model_malloc_pattern
+
+and pulse_model_realloc_pattern = Option.map ~f:Str.regexp !pulse_model_realloc_pattern
+
 and pulse_model_release_pattern = Option.map ~f:Str.regexp !pulse_model_release_pattern
 
 and pulse_model_return_first_arg = Option.map ~f:Str.regexp !pulse_model_return_first_arg
@@ -3336,6 +3386,8 @@ and reactive_mode = !reactive
 and reanalyze = !reanalyze
 
 and relative_path_backtrack = !relative_path_backtrack
+
+and remodel_class = !remodel_class
 
 and report = !report
 

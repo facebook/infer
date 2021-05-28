@@ -541,6 +541,7 @@ OPTIONS
              MULTIPLE_WEAKSELF (enabled by default),
              MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE (enabled by default),
              Missing_fld (enabled by default),
+             NIL_BLOCK_CALL (enabled by default),
              NIL_INSERTION_INTO_COLLECTION (enabled by default),
              NIL_MESSAGING_TO_NON_POD (enabled by default),
              NULLPTR_DEREFERENCE (enabled by default),
@@ -1004,6 +1005,26 @@ OPTIONS
        --pulse-model-alloc-pattern string
            Regex of methods that should be modelled as allocs in Pulse       
     See also infer-analyze(1).
+
+       --pulse-model-free-pattern string
+           Regex of methods that should be modelled as wrappers to free(3) in
+           Pulse. The pointer to be freed should be the first argument of the
+           function. This should only be needed if the code of the wrapper is
+           not visible to infer or if Pulse somehow doesn't understand it
+           (e.g. the call is dispatched to global function pointers).       
+    See also infer-analyze(1).
+
+       --pulse-model-malloc-pattern string
+           Regex of methods that should be modelled as wrappers to malloc(3)
+           in Pulse. The size to allocate should be the first argument of the
+           function. See --pulse-model-free-pattern for more information.       
+    See also infer-analyze(1).
+
+       --pulse-model-realloc-pattern string
+           Regex of methods that should be modelled as wrappers to realloc(3)
+           in Pulse. The pointer to be reallocated should be the first
+           argument of the function and the new size the second argument. See
+           --pulse-model-free-pattern for more information.           See also infer-analyze(1).
 
        --pulse-model-release-pattern string
            Regex of methods that should be modelled as release in Pulse       
@@ -1590,6 +1611,11 @@ INTERNAL OPTIONS
        --costs-previous-reset
            Cancel the effect of --costs-previous.
 
+       --no-dbwriter
+           Deactivates: Use a separate process to serialize writes to sqlite.
+           Disabling this will degrade performance. Note that this is always
+           disabled on Windows and WSL. (Conversely: --dbwriter)
+
        --debug-exceptions
            Activates: Generate lightweight debugging information: just print
            the internal exceptions during analysis (also sets
@@ -1937,6 +1963,15 @@ INTERNAL OPTIONS
        --pulse-model-alloc-pattern-reset
            Cancel the effect of --pulse-model-alloc-pattern.
 
+       --pulse-model-free-pattern-reset
+           Cancel the effect of --pulse-model-free-pattern.
+
+       --pulse-model-malloc-pattern-reset
+           Cancel the effect of --pulse-model-malloc-pattern.
+
+       --pulse-model-realloc-pattern-reset
+           Cancel the effect of --pulse-model-realloc-pattern.
+
        --pulse-model-release-pattern-reset
            Cancel the effect of --pulse-model-release-pattern.
 
@@ -1987,6 +2022,15 @@ INTERNAL OPTIONS
            Activates: Rerun the analysis. Not compatible with
            --incremental-analysis and --continue-analysis. (Conversely:
            --no-reanalyze)
+
+       --remodel-class string
+           Specify a Remodel class name. For sub-classes of the Remodel class
+           in ObjC, setters and getters for properties are auto-generated and
+           they store/load values into/from field names of "_<property
+           name>".
+
+       --remodel-class-reset
+           Cancel the effect of --remodel-class.
 
        --report-blacklist-files-containing-reset
            Set --report-blacklist-files-containing to the empty list.

@@ -325,6 +325,15 @@ end
 
 module JsonConfigImpactPrinter = MakeJsonListPrinter (JsonConfigImpactPrinterElt)
 
+let is_in_changed_files {Location.file} =
+  match SourceFile.read_config_changed_files () with
+  | None ->
+      (* when Config.changed_files_index is not given *)
+      true
+  | Some changed_files ->
+      SourceFile.Set.mem file changed_files
+
+
 let mk_error_filter filters proc_name file error_name =
   (Config.write_html || not (IssueType.(equal skip_function) error_name))
   && filters.Inferconfig.path_filter file
@@ -339,7 +348,7 @@ let collect_issues proc_name proc_location err_log issues_acc =
 
 
 let write_costs proc_name loc cost_opt (outfile : Utils.outfile) =
-  if not (Cost.is_report_suppressed proc_name) then
+  if (not (Cost.is_report_suppressed proc_name)) && is_in_changed_files loc then
     JsonCostsPrinter.pp outfile.fmt {loc; proc_name; cost_opt}
 
 
@@ -357,7 +366,7 @@ let get_all_config_fields () =
 
 let write_config_impact all_config_fields proc_name loc config_impact_opt (outfile : Utils.outfile)
     =
-  if ExternalConfigImpactData.is_in_config_data_file proc_name then
+  if ExternalConfigImpactData.is_in_config_data_file proc_name && is_in_changed_files loc then
     let config_impact_opt =
       Option.map config_impact_opt
         ~f:

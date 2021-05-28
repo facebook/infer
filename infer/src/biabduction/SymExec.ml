@@ -636,7 +636,7 @@ let call_constructor_url_update_args =
       ~class_name:(Typ.Name.Java.from_string "java.net.URL")
       ~return_type:None ~method_name:Procname.Java.constructor_method_name
       ~parameters:[StdTyp.Java.pointer_to_java_lang_string]
-      ~kind:Procname.Java.Non_Static ()
+      ~kind:Procname.Java.Non_Static
   in
   fun pname actual_params ->
     if Procname.equal url_pname pname then
@@ -1077,11 +1077,6 @@ let declare_locals_and_ret tenv pdesc (prop_ : Prop.normal Prop.t) =
   prop'
 
 
-let get_closure_opt actual_params =
-  List.find_map actual_params ~f:(fun (exp, _) ->
-      match exp with Exp.Closure c when Procname.is_objc_block c.name -> Some c | _ -> None )
-
-
 (** Execute [instr] with a symbolic heap [prop].*)
 let rec sym_exec
     ( {InterproceduralAnalysis.proc_desc= current_pdesc; analyze_dependency; err_log; tenv} as
@@ -1109,12 +1104,9 @@ let rec sym_exec
               let par' = List.map ~f:(fun (id_exp, _, typ, _) -> (id_exp, typ)) c.captured_vars in
               Sil.Call (ret, proc_exp', par' @ par, loc, call_flags)
           | Exp.Const (Const.Cfun callee_pname) when ObjCDispatchModels.is_model callee_pname -> (
-            match get_closure_opt par with
-            | Some c ->
-                (* We assume that for these modelled functions, the block passed as parameter doesn't
-                   have arguments, so we only pass the captured variables. *)
-                let args = List.map ~f:(fun (id_exp, _, typ, _) -> (id_exp, typ)) c.captured_vars in
-                Sil.Call (ret, Exp.Const (Const.Cfun c.name), args, loc, call_flags)
+            match ObjCDispatchModels.get_dispatch_closure_opt par with
+            | Some (cname, args) ->
+                Sil.Call (ret, Exp.Const (Const.Cfun cname), args, loc, call_flags)
             | None ->
                 Sil.Call (ret, exp', par, loc, call_flags) )
           | _ ->

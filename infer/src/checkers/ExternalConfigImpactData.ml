@@ -15,6 +15,8 @@ module ConfigProcnameSet = Caml.Set.Make (struct
   [@@deriving compare]
 end)
 
+let cut_objc_parameters name = List.hd_exn (String.split name ~on:':')
+
 let read_file_config_data fname =
   let config_list =
     try Atdgen_runtime.Util.Json.from_file Config_impact_data_j.read_config_data fname
@@ -22,13 +24,12 @@ let read_file_config_data fname =
       L.user_warning "Failed to read file '%s': %s@." fname (Exn.to_string e) ;
       []
   in
-  List.fold config_list ~init:ConfigProcnameSet.empty ~f:(fun acc itm ->
-      ConfigProcnameSet.add itm acc )
-
-
-let is_similar_method_name =
-  let cut_objc_parameters name = List.hd_exn (String.split name ~on:':') in
-  fun name1 name2 -> String.equal (cut_objc_parameters name1) (cut_objc_parameters name2)
+  List.fold config_list ~init:ConfigProcnameSet.empty
+    ~f:(fun acc {Config_impact_data_t.method_name; class_name} ->
+      ConfigProcnameSet.add
+        { method_name= cut_objc_parameters method_name
+        ; class_name= Procname.replace_java_inner_class_prefix_regex class_name }
+        acc )
 
 
 let is_in_config_data_file =
@@ -37,9 +38,10 @@ let is_in_config_data_file =
       ~f:read_file_config_data
   in
   fun proc_name ->
-    ConfigProcnameSet.exists
-      (fun {method_name; class_name} ->
-        is_similar_method_name method_name (Procname.get_method proc_name)
-        && String.equal class_name (Procname.get_class_name proc_name |> Option.value ~default:"")
-        )
-      config_data
+    let config_item =
+      { Config_impact_data_t.method_name= Procname.get_method proc_name |> cut_objc_parameters
+      ; class_name=
+          Procname.get_class_name proc_name
+          |> Option.value_map ~default:"" ~f:Procname.replace_java_inner_class_prefix_regex }
+    in
+    ConfigProcnameSet.mem config_item config_data

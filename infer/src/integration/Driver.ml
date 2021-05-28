@@ -466,16 +466,3 @@ let run_epilogue () =
 let run_epilogue () =
   GCStats.log ~name:"main_process_full" Analysis (GCStats.get ~since:ProgramStart) ;
   ScubaLogging.execute_with_time_logging "run_epilogue" run_epilogue
-
-
-let read_config_changed_files () =
-  match Config.changed_files_index with
-  | None ->
-      None
-  | Some index -> (
-    match Utils.read_file index with
-    | Ok lines ->
-        Some (SourceFile.changed_sources_from_changed_files lines)
-    | Error error ->
-        L.external_error "Error reading the changed files index '%s': %s@." index error ;
-        None )

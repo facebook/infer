@@ -14,3 +14,5 @@ INFERPRINT_OPTIONS = --issues-tests
 SOURCES = $(wildcard *.c)
 
 include $(TESTS_DIR)/clang.make
+
+infer-out$(TEST_SUFFIX)/report.json: .inferconfig

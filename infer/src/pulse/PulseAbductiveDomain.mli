@@ -68,7 +68,13 @@ module Stack : sig
 
   val find_opt : Var.t -> t -> BaseStack.value option
 
-  val eval : Location.t -> ValueHistory.t -> Var.t -> t -> t * (AbstractValue.t * ValueHistory.t)
+  val eval :
+       PathContext.t
+    -> Location.t
+    -> ValueHistory.t
+    -> Var.t
+    -> t
+    -> t * (AbstractValue.t * ValueHistory.t)
   (** return the value of the variable in the stack or create a fresh one if needed *)
 
   val mem : Var.t -> t -> bool
@@ -114,23 +120,27 @@ module AddressAttributes : sig
   val add_attrs : AbstractValue.t -> Attributes.t -> t -> t
 
   val check_valid :
-       ?must_be_valid_reason:Invalidation.must_be_valid_reason
+       PathContext.t
+    -> ?must_be_valid_reason:Invalidation.must_be_valid_reason
     -> Trace.t
     -> AbstractValue.t
     -> t
     -> (t, Invalidation.t * Trace.t) result
 
-  val check_initialized : Trace.t -> AbstractValue.t -> t -> (t, unit) result
+  val check_initialized : PathContext.t -> Trace.t -> AbstractValue.t -> t -> (t, unit) result
 
   val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
-  val replace_must_be_valid_reason : Invalidation.must_be_valid_reason -> AbstractValue.t -> t -> t
+  val replace_must_be_valid_reason :
+    PathContext.t -> Invalidation.must_be_valid_reason -> AbstractValue.t -> t -> t
 
   val allocate : Procname.t -> AbstractValue.t * ValueHistory.t -> Location.t -> t -> t
 
   val add_dynamic_type : Typ.t -> AbstractValue.t -> t -> t
 
   val remove_allocation_attr : AbstractValue.t -> t -> t
+
+  val get_allocation : AbstractValue.t -> t -> (Procname.t * Trace.t) option
 
   val get_closure_proc_name : AbstractValue.t -> t -> Procname.t option
 
@@ -142,10 +152,13 @@ module AddressAttributes : sig
 
   val std_vector_reserve : AbstractValue.t -> t -> t
 
+  val add_unreachable_at : AbstractValue.t -> Location.t -> t -> t
+
   val find_opt : AbstractValue.t -> t -> Attributes.t option
 
   val check_valid_isl :
-       Trace.t
+       PathContext.t
+    -> Trace.t
     -> AbstractValue.t
     -> ?null_noop:bool
     -> t
@@ -155,9 +168,6 @@ end
 val is_local : Var.t -> t -> bool
 
 val find_post_cell_opt : AbstractValue.t -> t -> BaseDomain.cell option
-
-val discard_unreachable : t -> t
-(** garbage collect unreachable addresses in the state to make it smaller and return the new state *)
 
 val get_unreachable_attributes : t -> AbstractValue.t list
 (** collect the addresses that have attributes but are unreachable in the current post-condition *)

@@ -54,7 +54,15 @@ let create_supers_fields qual_type_to_sil_type tenv class_tname decl_list otdi_s
   let supers =
     match super_opt with None -> [] | Some super -> [Typ.Name.Objc.from_qual_name super]
   in
-  let fields = CField_decl.get_fields qual_type_to_sil_type tenv class_tname decl_list in
+  let implements_remodel_class =
+    Option.exists Typ.Name.Objc.remodel_class ~f:(fun remodel_class ->
+        Typ.Name.equal class_tname remodel_class
+        || List.exists supers ~f:(Tenv.implements_remodel_class tenv) )
+  in
+  let fields =
+    CField_decl.get_fields ~implements_remodel_class qual_type_to_sil_type tenv class_tname
+      decl_list
+  in
   (supers, fields)
 
 
@@ -136,7 +144,11 @@ let interface_impl_declaration qual_type_to_sil_type procname_from_decl tenv dec
         "ADDING: ObjCImplementationDecl for class '%a'@\n" QualifiedCppName.pp class_name ;
       add_class_decl qual_type_to_sil_type tenv idi ;
       let class_tn_name = Typ.Name.Objc.from_qual_name class_name in
-      let fields = CField_decl.get_fields qual_type_to_sil_type tenv class_tn_name decl_list in
+      let implements_remodel_class = Tenv.implements_remodel_class tenv class_tn_name in
+      let fields =
+        CField_decl.get_fields ~implements_remodel_class qual_type_to_sil_type tenv class_tn_name
+          decl_list
+      in
       CField_decl.add_missing_fields tenv class_name fields ;
       let methods = ObjcMethod_decl.get_methods procname_from_decl tenv decl_list in
       ObjcMethod_decl.add_missing_methods tenv class_tn_name methods ;

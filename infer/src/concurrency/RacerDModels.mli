@@ -60,3 +60,6 @@ val is_synchronized_container_constructor : Tenv.t -> Procname.t -> HilExp.t lis
 
 val is_converter_to_synchronized_container : Tenv.t -> Procname.t -> HilExp.t list -> bool
 (** is the given [procname] a method that wraps a container into a thread-safe wrapper? *)
+
+val get_litho_explanation : Tenv.t -> Procname.t -> string option
+(** Get report explanation specific to Litho class methods, if applicable *)

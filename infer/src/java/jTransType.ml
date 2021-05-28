@@ -209,7 +209,7 @@ let rec get_method_procname program tenv cn ms kind =
   let (_ : Struct.t) = get_class_struct_typ program tenv cn in
   let return_type, method_name, parameters = method_signature_names ms in
   let class_name = Typ.Name.Java.from_string (JBasics.cn_name cn) in
-  Procname.make_java ~class_name ~return_type ~method_name ~parameters ~kind ()
+  Procname.make_java ~class_name ~return_type ~method_name ~parameters ~kind
 
 
 (* create a mangled procname from an abstract or concrete method *)

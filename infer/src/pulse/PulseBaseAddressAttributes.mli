@@ -35,17 +35,20 @@ val check_initialized : AbstractValue.t -> t -> (unit, unit) result
 
 val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
+val get_allocation : AbstractValue.t -> t -> (Procname.t * Trace.t) option
+
 val get_closure_proc_name : AbstractValue.t -> t -> Procname.t option
 
 val get_invalid : AbstractValue.t -> t -> (Invalidation.t * Trace.t) option
 
 val get_must_be_valid :
-  AbstractValue.t -> t -> (Trace.t * Invalidation.must_be_valid_reason option) option
+     AbstractValue.t
+  -> t
+  -> (PathContext.timestamp * Trace.t * Invalidation.must_be_valid_reason option) option
 
-val get_must_be_valid_or_allocated_isl :
-  AbstractValue.t -> t -> Trace.t option * Invalidation.must_be_valid_reason option
+val is_must_be_valid_or_allocated_isl : AbstractValue.t -> t -> bool
 
-val get_must_be_initialized : AbstractValue.t -> t -> Trace.t option
+val get_must_be_initialized : AbstractValue.t -> t -> (PathContext.timestamp * Trace.t) option
 
 val add_dynamic_type : Typ.t -> AbstractValue.t -> t -> t
 
@@ -58,6 +61,8 @@ val is_std_vector_reserved : AbstractValue.t -> t -> bool
 val mark_as_end_of_collection : AbstractValue.t -> t -> t
 
 val is_end_of_collection : AbstractValue.t -> t -> bool
+
+val add_unreachable_at : AbstractValue.t -> Location.t -> t -> t
 
 val pp : F.formatter -> t -> unit
 

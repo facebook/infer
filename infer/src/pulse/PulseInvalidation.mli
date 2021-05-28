@@ -40,7 +40,7 @@ val pp : F.formatter -> t -> unit
 
 val describe : F.formatter -> t -> unit
 
-type must_be_valid_reason = SelfOfNonPODReturnMethod | InsertionIntoCollection
+type must_be_valid_reason = BlockCall | InsertionIntoCollection | SelfOfNonPODReturnMethod
 [@@deriving compare, equal]
 
 val pp_must_be_valid_reason : F.formatter -> must_be_valid_reason option -> unit

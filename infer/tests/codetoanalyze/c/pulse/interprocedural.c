@@ -48,3 +48,57 @@ void propagate_latent_2_latent(int a2) { propagate_latent_1_latent(a2); }
 void propagate_latent_3_latent(int a3) { propagate_latent_2_latent(a3); }
 
 void make_latent_manifest() { propagate_latent_3_latent(4); }
+
+int* return_first(int* x, int a, int** out) {
+  int w = x;
+  *out = w;
+  return w;
+}
+
+int* return_null(int** out) {
+  int* p = NULL;
+  *out = p;
+  return p;
+}
+
+// make sure the trace has all the details
+int* follow_value_by_ref_bad() {
+  int* y;
+  return_null(&y);
+  int* z;
+  return_first(y, 12, &z);
+  *z = 42;
+}
+
+// make sure the trace has all the details
+int* follow_value_by_ret_bad() {
+  int *dummy1, dummy2;
+  int* y = return_null(&dummy1);
+  int* z = return_first(y, 12, &dummy2);
+  *z = 42;
+}
+
+int* malloc_wrapper_1() {
+  int* x;
+  x = (int*)malloc(sizeof(int));
+  return x;
+}
+
+int* malloc_wrapper_2(int b) {
+  if (b) {
+    return malloc_wrapper_1();
+  }
+}
+
+void free_wrapper(int* p, int b) {
+  if (b) {
+    free(p);
+  }
+}
+
+void trace_correctly_through_wrappers_bad() {
+  int* x = malloc_wrapper_2(1);
+  // TODO: ideally we would trace that we didn't go into the free() branch of
+  // the wrapper explicitly here to help understand the bug report
+  free_wrapper_(x, 0);
+}

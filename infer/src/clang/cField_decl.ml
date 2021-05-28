@@ -39,7 +39,7 @@ let fields_superclass tenv interface_decl_info =
       []
 
 
-let build_sil_field qual_type_to_sil_type tenv class_tname field_name qual_type prop_attributes =
+let build_sil_field qual_type_to_sil_type tenv class_tname ni_name qual_type prop_attributes =
   let prop_atts =
     List.map
       ~f:(fun att -> Annot.{name= None; value= Str (Clang_ast_j.string_of_property_attribute att)})
@@ -54,7 +54,7 @@ let build_sil_field qual_type_to_sil_type tenv class_tname field_name qual_type 
     | _ ->
         []
   in
-  let fname = CGeneral_utils.mk_class_field_name class_tname field_name.Clang_ast_t.ni_name in
+  let fname = CGeneral_utils.mk_class_field_name class_tname ni_name in
   let typ = qual_type_to_sil_type tenv qual_type in
   let item_annotations =
     match prop_atts with
@@ -68,22 +68,24 @@ let build_sil_field qual_type_to_sil_type tenv class_tname field_name qual_type 
 
 
 (* Given a list of declarations in an interface returns a list of fields  *)
-let get_fields qual_type_to_sil_type tenv class_tname decl_list =
+let get_fields ~implements_remodel_class qual_type_to_sil_type tenv class_tname decl_list =
   let open Clang_ast_t in
-  let get_sil_field name_info (qt : qual_type) property_attributes =
-    build_sil_field qual_type_to_sil_type tenv class_tname name_info qt property_attributes
+  let get_sil_field ni_name (qt : qual_type) property_attributes =
+    build_sil_field qual_type_to_sil_type tenv class_tname ni_name qt property_attributes
   in
   let rec get_field fields decl =
     match decl with
-    | ObjCPropertyDecl (_, _, obj_c_property_decl_info) -> (
-        let ivar_decl_ref = obj_c_property_decl_info.Clang_ast_t.opdi_ivar_decl in
-        let property_attributes = obj_c_property_decl_info.Clang_ast_t.opdi_property_attributes in
-        match CAst_utils.get_decl_opt_with_decl_ref_opt ivar_decl_ref with
-        | Some (ObjCIvarDecl (_, name_info, qual_type, _, _)) ->
-            let field = get_sil_field name_info qual_type property_attributes in
-            CGeneral_utils.add_no_duplicates_fields field fields
-        | _ ->
-            fields )
+    | ObjCPropertyDecl (_, {ni_name}, {opdi_qual_type; opdi_ivar_decl; opdi_property_attributes}) ->
+        let ni_name, qual_type =
+          match CAst_utils.get_decl_opt_with_decl_ref_opt opdi_ivar_decl with
+          | Some (ObjCIvarDecl (_, {ni_name}, qual_type, _, _)) ->
+              (ni_name, qual_type)
+          | _ ->
+              let ni_name = if implements_remodel_class then "_" ^ ni_name else ni_name in
+              (ni_name, opdi_qual_type)
+        in
+        let field = get_sil_field ni_name qual_type opdi_property_attributes in
+        CGeneral_utils.add_no_duplicates_fields field fields
     | ObjCPropertyImplDecl (_, obj_c_property_impl_decl_info) -> (
         let property_decl_opt = obj_c_property_impl_decl_info.Clang_ast_t.opidi_property_decl in
         match CAst_utils.get_decl_opt_with_decl_ref_opt property_decl_opt with
@@ -91,8 +93,8 @@ let get_fields qual_type_to_sil_type tenv class_tname decl_list =
             get_field fields decl
         | None ->
             fields )
-    | ObjCIvarDecl (_, name_info, qual_type, _, _) ->
-        let field = get_sil_field name_info qual_type [] in
+    | ObjCIvarDecl (_, {ni_name}, qual_type, _, _) ->
+        let field = get_sil_field ni_name qual_type [] in
         CGeneral_utils.add_no_duplicates_fields field fields
     | _ ->
         fields
@@ -114,10 +116,7 @@ let add_missing_fields tenv class_name missing_fields =
       ()
 
 
-let modelled_fields_in_classes =
-  [ ("NSData", "_bytes", Typ.mk (Tptr (StdTyp.void, Typ.Pk_pointer)))
-  ; ("NSArray", "elementData", Typ.mk (Tint Typ.IInt)) ]
-
+let modelled_fields_in_classes = [("NSArray", "elementData", Typ.mk (Tint Typ.IInt))]
 
 let modelled_field class_name_info =
   let modelled_field_in_class res (class_name, field_name, typ) =

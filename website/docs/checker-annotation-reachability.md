@@ -9,8 +9,9 @@ Activate with `--annotation-reachability`.
 
 Supported languages:
 - C/C++/ObjC: Yes
-- Java: Yes
 - C#/.Net: Yes
+- Erlang: Yes
+- Java: Yes
 
 
 

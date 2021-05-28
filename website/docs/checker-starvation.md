@@ -9,8 +9,9 @@ Activate with `--starvation`.
 
 Supported languages:
 - C/C++/ObjC: Yes
-- Java: Yes
 - C#/.Net: Yes
+- Erlang: Yes
+- Java: Yes
 
 Detect several kinds of "starvation" problems:
 - deadlocks

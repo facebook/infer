@@ -517,7 +517,7 @@ This error type is reported only in C++, in versions >= C++11.
 The code is trying to access an element of a vector that Infer believes to be
 empty. Such an access will cause undefined behavior at runtime.
 
-```c++
+```cpp
 #include <vector>
 int foo(){
   const std::vector<int> vec;
@@ -1301,11 +1301,21 @@ Reported as "Mutable Local Variable In Component File" by [linters](/docs/next/c
 
 [Doc in ComponentKit page](http://componentkit.org/docs/avoid-local-variables)
 
+## NIL_BLOCK_CALL
+
+Reported as "Nil Block Call" by [pulse](/docs/next/checker-pulse).
+
+Calling a nil block is an error in Objective-C.
+## NIL_INSERTION_INTO_COLLECTION
+
+Reported as "Nil Insertion Into Collection" by [pulse](/docs/next/checker-pulse).
+
+Inserting nil into a collection is an error in Objective-C.
 ## NIL_MESSAGING_TO_NON_POD
 
 Reported as "Nil Messaging To Non Pod" by [pulse](/docs/next/checker-pulse).
 
-See [NULLPTR_DEREFERENCE](#nullptr_dereference).
+Calling a method that returns a C++ non-POD object on the nil object is undefined behavior in Objective-C++.
 ## NULLPTR_DEREFERENCE
 
 Reported as "Nullptr Dereference" by [pulse](/docs/next/checker-pulse).
@@ -1381,7 +1391,7 @@ int null_pointer_interproc() {
 In Objective-C, null dereferences are less common than in Java, but they still
 happen and their cause can be hidden. In general, passing a message to nil does
 not cause a crash and returns `nil`, but dereferencing a pointer directly does
-cause a crash as well as calling a `nil` block.C
+cause a crash as well as calling a `nil` block.
 
 ```objectivec
 -(void) foo:(void (^)())callback {
@@ -2027,7 +2037,7 @@ Reported as "StrongSelf Not Checked" by [self-in-block](/docs/next/checker-self-
 
 When a block captures `weakSelf` in the following pattern:
 
-```
+```objectivec
 __weak __typeof(self) weakSelf = self;
   int (^my_block)() = ^() {
     __strong __typeof(weakSelf) strongSelf = weakSelf;
@@ -2150,7 +2160,7 @@ Reported as "Uninitialized Value" by [uninit](/docs/next/checker-uninit).
 
 A value is read before it has been initialized. For example, in C:
 
-```C
+```c
 struct coordinates {
   int x;
   int y;
@@ -2248,7 +2258,7 @@ The lifetime of an object has ended but that object is being
 accessed. For example, the address of a variable holding a C++ object
 is accessed after the variable has gone out of scope:
 
-```C++
+```cpp
 void foo() {
      X* p;
      { // new scope
@@ -2272,7 +2282,7 @@ pointers into the previous location of the contents).
 
 For example:
 
-```C++
+```cpp
 void deref_vector_element_after_push_back_bad(std::vector<int>& vec) {
   int* elt = &vec[1];
   vec.push_back(42); // if the array backing the vector was full already, this

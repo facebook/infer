@@ -65,7 +65,10 @@ let get_base_class_name_from_category decl =
 (* to the corresponding class. Update the tenv accordingly.*)
 let process_category qual_type_to_sil_type procname_from_decl tenv class_name decl_info decl_list =
   let class_tn_name = Typ.Name.Objc.from_qual_name class_name in
-  let decl_fields = CField_decl.get_fields qual_type_to_sil_type tenv class_tn_name decl_list in
+  let decl_fields =
+    CField_decl.get_fields ~implements_remodel_class:false qual_type_to_sil_type tenv class_tn_name
+      decl_list
+  in
   let decl_methods = ObjcMethod_decl.get_methods procname_from_decl tenv decl_list in
   let class_tn_desc = Typ.Tstruct class_tn_name in
   let decl_key = Clang_ast_extend.DeclPtr decl_info.Clang_ast_t.di_pointer in

@@ -72,6 +72,9 @@ val idempotent_getters : bool
 
 val initial_analysis_time : float
 
+val is_WSL : bool
+(** Windows Subsystem for Linux *)
+
 val ivar_attributes : string
 
 val java_lambda_marker_infix : string
@@ -257,6 +260,8 @@ val cost_tests_only_autoreleasepool : bool
 val cxx : bool
 
 val cxx_scope_guards : Yojson.Basic.t
+
+val dbwriter : bool
 
 val deduplicate : bool
 
@@ -498,6 +503,12 @@ val pulse_model_abort : string list
 
 val pulse_model_alloc_pattern : Str.regexp option
 
+val pulse_model_free_pattern : Str.regexp option
+
+val pulse_model_malloc_pattern : Str.regexp option
+
+val pulse_model_realloc_pattern : Str.regexp option
+
 val pulse_model_release_pattern : Str.regexp option
 
 val pulse_model_return_first_arg : Str.regexp option
@@ -541,6 +552,8 @@ val reactive_mode : bool
 val reanalyze : bool
 
 val relative_path_backtrack : int
+
+val remodel_class : string option
 
 val report : bool
 

@@ -119,21 +119,24 @@ let normalized_pp fmt = function
 
 let test ~f phi =
   AbstractValue.State.set init_vars_state ;
-  phi ttrue >>= f >>| fst |> F.printf "%a" normalized_pp
+  phi ttrue >>= f |> F.printf "%a" normalized_pp
 
 
 let dummy_tenv = Tenv.create ()
 
 let dummy_get_dynamic_type _ = None
 
-let normalize phi = test ~f:(normalize dummy_tenv ~get_dynamic_type:dummy_get_dynamic_type) phi
+let normalize phi =
+  test ~f:(fun phi -> normalize dummy_tenv ~get_dynamic_type:dummy_get_dynamic_type phi >>| fst) phi
+
 
 let simplify ~keep phi =
   let keep = AbstractValue.Set.of_list keep in
   test phi ~f:(fun phi ->
       (* keep variables as if they were in the pre-condition, which makes [simplify] keeps the most
          facts (eg atoms in [pruned] may be discarded if their variables are not in the pre) *)
-      simplify dummy_tenv ~get_dynamic_type:dummy_get_dynamic_type ~can_be_pruned:keep ~keep phi )
+      simplify dummy_tenv ~get_dynamic_type:dummy_get_dynamic_type ~can_be_pruned:keep ~keep phi
+      >>| fst3 )
 
 
 let%test_module "normalization" =

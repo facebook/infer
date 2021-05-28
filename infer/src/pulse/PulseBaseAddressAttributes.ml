@@ -118,8 +118,8 @@ let remove_isl_abduced_attr address memory =
 
 let remove_must_be_valid_attr address memory =
   match get_attribute Attributes.get_must_be_valid address memory with
-  | Some (trace, reason) ->
-      remove_one address (Attribute.MustBeValid (trace, reason)) memory
+  | Some (timestamp, trace, reason) ->
+      remove_one address (Attribute.MustBeValid (timestamp, trace, reason)) memory
   | None ->
       memory
 
@@ -130,22 +130,18 @@ let initialize address attrs =
   else attrs
 
 
+let get_allocation = get_attribute Attributes.get_allocation
+
 let get_closure_proc_name = get_attribute Attributes.get_closure_proc_name
 
 let get_invalid = get_attribute Attributes.get_invalid
 
 let get_must_be_valid = get_attribute Attributes.get_must_be_valid
 
-let get_must_be_valid_or_allocated_isl address attrs =
-  match get_must_be_valid address attrs with
-  | Some (trace, reason) ->
-      (Some trace, reason)
-  | None -> (
-    match get_attribute Attributes.get_allocation address attrs with
-    | Some (_, trace) ->
-        (Some trace, None)
-    | None ->
-        (get_attribute Attributes.get_isl_abduced address attrs, None) )
+let is_must_be_valid_or_allocated_isl address attrs =
+  Option.is_some (get_must_be_valid address attrs)
+  || Option.is_some (get_attribute Attributes.get_allocation address attrs)
+  || Option.is_some (get_attribute Attributes.get_isl_abduced address attrs)
 
 
 let get_must_be_initialized = get_attribute Attributes.get_must_be_initialized
@@ -155,6 +151,8 @@ let add_dynamic_type typ address memory = add_one address (Attribute.DynamicType
 let get_dynamic_type attrs v = get_attribute Attributes.get_dynamic_type v attrs
 
 let std_vector_reserve address memory = add_one address Attribute.StdVectorReserve memory
+
+let add_unreachable_at address location memory = add_one address (UnreachableAt location) memory
 
 let is_end_of_collection address attrs =
   Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_end_of_collection

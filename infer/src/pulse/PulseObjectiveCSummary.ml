@@ -15,7 +15,7 @@ let mk_objc_self_pvar proc_desc =
   Pvar.mk Mangled.self proc_name
 
 
-let init_fields_zero tenv location ~zero addr typ astate =
+let init_fields_zero tenv path location ~zero addr typ astate =
   let get_fields typ =
     match typ.Typ.desc with
     | Tstruct struct_name ->
@@ -31,7 +31,7 @@ let init_fields_zero tenv location ~zero addr typ astate =
             let acc, field_addr = Memory.eval_edge addr (FieldAccess field) acc in
             init_fields_zero_helper field_addr field_typ acc )
     | None ->
-        PulseOperations.write_deref location ~ref:addr ~obj:zero astate
+        PulseOperations.write_deref path location ~ref:addr ~obj:zero astate
   in
   init_fields_zero_helper addr typ astate
 
@@ -39,21 +39,30 @@ let init_fields_zero tenv location ~zero addr typ astate =
 let mk_objc_method_nil_summary_aux tenv proc_desc astate =
   (* Constructs summary {self = 0} {return = self}.
      This allows us to connect invalidation with invalid access in the trace *)
+  let path = PathContext.initial in
   let location = Procdesc.get_loc proc_desc in
   let self = mk_objc_self_pvar proc_desc in
-  let* astate, self_value = PulseOperations.eval_deref location (Lvar self) astate in
-  let* astate = PulseArithmetic.prune_eq_zero (fst self_value) astate in
+  let* astate, (self_value, self_history) =
+    PulseOperations.eval_deref path location (Lvar self) astate
+  in
+  let* astate = PulseArithmetic.prune_eq_zero self_value astate in
+  let event = ValueHistory.NilMessaging location in
+  let updated_self_value_hist = (self_value, event :: self_history) in
   match List.last (Procdesc.get_formals proc_desc) with
   | Some (last_formal, {desc= Tptr (typ, _)}) when Mangled.is_return_param last_formal ->
       let ret_param_var = Procdesc.get_ret_param_var proc_desc in
       let* astate, ret_param_var_addr_hist =
-        PulseOperations.eval_deref location (Lvar ret_param_var) astate
+        PulseOperations.eval_deref path location (Lvar ret_param_var) astate
       in
-      init_fields_zero tenv location ~zero:self_value ret_param_var_addr_hist typ astate
+      init_fields_zero tenv path location ~zero:updated_self_value_hist ret_param_var_addr_hist typ
+        astate
   | _ ->
       let ret_var = Procdesc.get_ret_var proc_desc in
-      let* astate, ret_var_addr_hist = PulseOperations.eval Write location (Lvar ret_var) astate in
-      PulseOperations.write_deref location ~ref:ret_var_addr_hist ~obj:self_value astate
+      let* astate, ret_var_addr_hist =
+        PulseOperations.eval path Write location (Lvar ret_var) astate
+      in
+      PulseOperations.write_deref path location ~ref:ret_var_addr_hist ~obj:updated_self_value_hist
+        astate
 
 
 let mk_objc_method_nil_summary tenv proc_desc initial =
@@ -82,7 +91,9 @@ let append_objc_self_positive {InterproceduralAnalysis.tenv; proc_desc; err_log}
   match astate with
   | ContinueProgram astate ->
       let result =
-        let* astate, value = PulseOperations.eval_deref location (Lvar self) astate in
+        let* astate, value =
+          PulseOperations.eval_deref PathContext.initial location (Lvar self) astate
+        in
         PulseArithmetic.prune_positive (fst value) astate
       in
       PulseReport.report_result tenv proc_desc err_log location result
@@ -105,6 +116,7 @@ let append_objc_actual_self_positive procdesc self_actual astate =
 
 
 let update_must_be_valid_reason {InterproceduralAnalysis.tenv; proc_desc; err_log} astate =
+  let path = PathContext.initial in
   let location = Procdesc.get_loc proc_desc in
   let self = mk_objc_self_pvar proc_desc in
   let proc_name = Procdesc.get_proc_name proc_desc in
@@ -113,12 +125,9 @@ let update_must_be_valid_reason {InterproceduralAnalysis.tenv; proc_desc; err_lo
     when not (Procdesc.is_ret_type_pod proc_desc) ->
       let result =
         (* add reason for must be valid to be because the return type is non pod *)
-        let+ astate, value = PulseOperations.eval_deref location (Lvar self) astate in
-        let astate =
-          AddressAttributes.replace_must_be_valid_reason Invalidation.SelfOfNonPODReturnMethod
-            (fst value) astate
-        in
-        astate
+        let+ astate, value = PulseOperations.eval_deref path location (Lvar self) astate in
+        AddressAttributes.replace_must_be_valid_reason path SelfOfNonPODReturnMethod (fst value)
+          astate
       in
       PulseReport.report_result tenv proc_desc err_log location result
   | ContinueProgram _, _

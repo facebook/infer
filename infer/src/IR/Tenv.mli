@@ -54,6 +54,9 @@ val add_field : t -> Typ.Name.t -> Struct.field -> unit
 val pp : Format.formatter -> t -> unit
 (** print a type environment *)
 
+val implements_remodel_class : t -> Typ.Name.t -> bool
+(** Check if a class implements the Remodel class *)
+
 type per_file = Global | FileLocal of t
 
 val pp_per_file : Format.formatter -> per_file -> unit

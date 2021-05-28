@@ -13,6 +13,18 @@ int* malloc_returned_ok() {
   return p;
 }
 
+void malloc_out_parameter_ok(int** x) { *x = (int*)malloc(sizeof(int)); }
+
+void malloc_out_parameter_local_mutation_ok(int** x) {
+  *x = (int*)malloc(sizeof(int));
+  x = NULL; // not visible from the outside
+}
+
+void malloc_out_parameter_local_mutation_bad(int** x) {
+  *x = (int*)malloc(sizeof(int));
+  *x = NULL;
+}
+
 void malloc_then_free_ok() {
   int* p = malloc(sizeof(p));
   if (p) {
@@ -70,13 +82,117 @@ void malloc_ptr_free_ptr_ok() {
   free_via_ptr(p);
 }
 
-void alias_ptr_free_FP(int* out, int flag) {
+void alias_ptr_free_ok(int* out, int flag) {
   int* y;
   if (flag) {
     y = (int*)malloc(sizeof(int));
   } else {
     y = out;
   }
-  if (y && y != out)
+  if (y && y != out) {
     free(y);
+  }
+}
+
+void report_leak_in_correct_line_bad(int* x) {
+  x = (int*)malloc(sizeof(int));
+  if (x != NULL) {
+    return; // should report leak at this line
+  }
+  free(x);
+}
+
+void* realloc_wrapper(void* p, size_t size) { return realloc(p, size); }
+
+void realloc_free_ok() {
+  int* p = (int*)malloc(sizeof(int));
+  int* q = realloc_wrapper(p, sizeof(int));
+  free(q);
+}
+
+void realloc_no_free_bad() {
+  int* p = (int*)malloc(sizeof(int));
+  int* q = realloc_wrapper(p, sizeof(int));
+}
+
+void realloc_no_check_bad() {
+  int* p = (int*)malloc(sizeof(int));
+  int* q = realloc_wrapper(p, sizeof(int));
+  *q = 42;
+  free(q);
+}
+
+void* my_malloc(size_t size);
+void* a_malloc(size_t size);
+void my_free(void* p);
+void* my_realloc(void* p, size_t size);
+
+void user_malloc_leak_bad() { int* x = (int*)a_malloc(sizeof(int)); }
+
+void test_config_options_1_ok() {
+  int* p = (int*)malloc(sizeof(int));
+  int* q = my_realloc(p, sizeof(int));
+  my_free(q);
+}
+
+void test_config_options_2_ok() {
+  int* p = (int*)my_malloc(sizeof(int));
+  int* q = realloc(p, sizeof(int));
+  my_free(q);
+}
+
+void test_config_options_no_free_bad() {
+  int* p = (int*)my_malloc(sizeof(int));
+  int* q = my_realloc(p, sizeof(int));
+}
+
+struct ref_counted {
+  size_t count;
+  int data;
+};
+
+// the address of the malloc()'d pointer can be retrieved from the
+// return value using pointer arithmetic
+int* alloc_ref_counted_ok() {
+  struct ref_counted* p =
+      (struct ref_counted*)malloc(sizeof(struct ref_counted));
+  if (p) {
+    p->count = 1;
+    return &(p->data);
+  } else {
+    return NULL;
+  }
+}
+
+// returning the value of the field loses the address of p
+int alloc_ref_counted_bad() {
+  struct ref_counted* p =
+      (struct ref_counted*)malloc(sizeof(struct ref_counted));
+  if (p) {
+    p->count = 1;
+    p->data = 42;
+    return p->data;
+  } else {
+    return NULL;
+  }
+}
+
+// the address of the malloc()'d pointer can be retrieved from the
+// return value using pointer arithmetic
+void* alloc_ref_counted_arith_ok(size_t size) {
+  int* p = (int*)malloc(size + sizeof(int));
+  if (p) {
+    // register count = 1 and point past the ref count
+    *p++ = 1;
+  }
+  return p;
+}
+
+int return_malloc_deref_bad() {
+  int* p = (int*)malloc(sizeof(int));
+  if (p) {
+    *p = 42;
+    return *p;
+  }
+  return 10;
 }

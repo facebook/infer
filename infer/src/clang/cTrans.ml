@@ -3537,11 +3537,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         stmts
     in
     (* 3. Add array initialization (elements assignments) *)
+    let none_id = Ident.create_none () in
     let res_trans_array =
       let instrs =
         List.mapi res_trans_elems ~f:(fun i {return= e, typ} ->
             let idx = Exp.Const (Cint (IntLit.of_int i)) in
-            Sil.Store {e1= Lindex (temp_var, idx); root_typ= typ; typ; e2= e; loc} )
+            [ Sil.Load {id= none_id; e; root_typ= typ; typ; loc}
+            ; Sil.Store {e1= Lindex (temp_var, idx); root_typ= typ; typ; e2= e; loc} ] )
+        |> List.concat
       in
       mk_trans_result temp_with_typ {empty_control with instrs}
     in

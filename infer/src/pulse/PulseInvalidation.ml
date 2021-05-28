@@ -52,12 +52,14 @@ type t =
   | JavaIterator of java_iterator_function
 [@@deriving compare, equal]
 
-type must_be_valid_reason = SelfOfNonPODReturnMethod | InsertionIntoCollection
+type must_be_valid_reason = BlockCall | InsertionIntoCollection | SelfOfNonPODReturnMethod
 [@@deriving compare, equal]
 
 let pp_must_be_valid_reason f = function
   | None ->
       F.fprintf f "None"
+  | Some BlockCall ->
+      F.fprintf f "Block"
   | Some InsertionIntoCollection ->
       F.fprintf f "InsertionIntoCollection"
   | Some SelfOfNonPODReturnMethod ->
@@ -72,6 +74,8 @@ let issue_type_of_cause invalidation must_be_valid_reason =
     match must_be_valid_reason with
     | None ->
         IssueType.nullptr_dereference
+    | Some BlockCall ->
+        IssueType.nil_block_call
     | Some InsertionIntoCollection ->
         IssueType.nil_insertion_into_collection
     | Some SelfOfNonPODReturnMethod ->

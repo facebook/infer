@@ -7,6 +7,7 @@
 open! IStd
 module F = Format
 module Invalidation = PulseInvalidation
+module PathContext = PulsePathContext
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
 
@@ -20,10 +21,13 @@ type t =
   | EndOfCollection
   | Invalid of Invalidation.t * Trace.t
   | ISLAbduced of Trace.t  (** The allocation is abduced so as the analysis could run normally *)
-  | MustBeInitialized of Trace.t
-  | MustBeValid of Trace.t * Invalidation.must_be_valid_reason option
+  | MustBeInitialized of PathContext.timestamp * Trace.t
+  | MustBeValid of PathContext.timestamp * Trace.t * Invalidation.must_be_valid_reason option
   | StdVectorReserve
   | Uninitialized
+  | UnreachableAt of Location.t
+      (** temporary marker to remember where a variable became unreachable; helps with accurately
+          reporting leaks *)
   | WrittenTo of Trace.t
 [@@deriving compare]
 
@@ -32,9 +36,6 @@ val pp : F.formatter -> t -> unit
 val is_suitable_for_pre : t -> bool
 
 val is_suitable_for_post : t -> bool
-
-val map_trace : f:(Trace.t -> Trace.t) -> t -> t
-(** applies [f] to the traces found in attributes, leaving attributes without traces intact *)
 
 module Attributes : sig
   include PrettyPrintable.PPUniqRankSet with type elt = t
@@ -53,7 +54,8 @@ module Attributes : sig
 
   val get_isl_abduced : t -> Trace.t option
 
-  val get_must_be_valid : t -> (Trace.t * Invalidation.must_be_valid_reason option) option
+  val get_must_be_valid :
+    t -> (PathContext.timestamp * Trace.t * Invalidation.must_be_valid_reason option) option
 
   val get_written_to : t -> Trace.t option
 
@@ -63,7 +65,9 @@ module Attributes : sig
 
   val is_uninitialized : t -> bool
 
-  val get_must_be_initialized : t -> Trace.t option
+  val get_must_be_initialized : t -> (PathContext.timestamp * Trace.t) option
+
+  val get_unreachable_at : t -> Location.t option
 
   val isl_subset : t -> t -> bool
   (** check whether for each attr in the second list, there exists a corresponding attr in the first
@@ -72,4 +76,6 @@ module Attributes : sig
   val replace_isl_abduced : t -> t -> t
   (** While applying a spec, replacing ISLAbduced by Allocated and Invalidation.Cfree by
       Invalidation.delete, if applicable *)
+
+  val add_call : PathContext.t -> Procname.t -> Location.t -> ValueHistory.t -> t -> t
 end

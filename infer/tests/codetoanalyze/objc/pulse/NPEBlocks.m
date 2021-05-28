@@ -19,14 +19,24 @@ void dispatch(MyBlock block) { block(); }
 
 @implementation Singleton
 
-// Common FP in Pulse NPEs, this requires block specialization
-- (int)dispatch_once_no_npe_good_FP {
+- (int)dispatch_once_no_npe_good {
   static Singleton* a = nil;
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
     a = [[Singleton alloc] init];
   });
   return a->_x;
+}
+
+- (int)dispatch_once_captured_vars_bad {
+  static dispatch_once_t onceToken;
+  int* x = NULL;
+  int val = 5;
+  __block int* y = &val;
+  dispatch_once(&onceToken, ^{
+    y = x;
+  });
+  return *y;
 }
 
 - (int)dispatch_no_npe_good {

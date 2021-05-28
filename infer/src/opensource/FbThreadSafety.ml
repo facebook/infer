@@ -8,7 +8,3 @@
 let is_custom_init _ _ = false
 
 let is_logging_method _ = false
-
-let get_fbthreadsafe_class_annot _ _ = None
-
-let message_fbthreadsafe_class _ _ = ""

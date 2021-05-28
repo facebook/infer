@@ -46,6 +46,8 @@ module type S = sig
   val mem : t -> key -> bool
 
   val union_left_biased : t -> t -> t
+
+  val to_seq : t -> (key * value) Seq.t
 end
 
 module Make
@@ -139,14 +141,16 @@ module Make
     else {count_new= next_count_new; new_= (key, value) :: new_without_key; old= map.old}
 
 
-  let fold map ~init ~f =
-    let acc = List.fold map.new_ ~init ~f in
-    (* this is quadratic time but the lists are at most [Config.limit] long, assumed small *)
-    List.fold map.old ~init:acc ~f:(fun acc binding ->
-        if List.Assoc.mem ~equal:Key.equal map.new_ (fst binding) then acc else f acc binding )
+  let to_seq map =
+    Seq.append (Caml.List.to_seq map.new_)
+      ( (* this is quadratic time but the lists are at most [Config.limit] long, assumed small *)
+        Caml.List.to_seq map.old
+      |> Seq.filter (fun binding -> not (List.Assoc.mem ~equal:Key.equal map.new_ (fst binding))) )
 
 
-  let bindings map = fold ~init:[] ~f:(fun bindings binding -> binding :: bindings) map
+  let fold map ~init ~f = Seq.fold_left f init (to_seq map)
+
+  let bindings map = to_seq map |> Caml.List.of_seq
 
   let exists map ~f =
     List.exists map.new_ ~f

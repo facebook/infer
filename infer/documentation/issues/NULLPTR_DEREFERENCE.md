@@ -69,7 +69,7 @@ int null_pointer_interproc() {
 In Objective-C, null dereferences are less common than in Java, but they still
 happen and their cause can be hidden. In general, passing a message to nil does
 not cause a crash and returns `nil`, but dereferencing a pointer directly does
-cause a crash as well as calling a `nil` block.C
+cause a crash as well as calling a `nil` block.
 
 ```objectivec
 -(void) foo:(void (^)())callback {

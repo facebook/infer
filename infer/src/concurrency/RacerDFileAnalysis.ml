@@ -29,9 +29,9 @@ let get_reporting_explanation_java ~nullsafe report_kind tenv pname thread =
            "@\n Reporting because current method is annotated %a or overrides an annotated method."
            MF.pp_monospaced "@ThreadSafe")
     else
-      match FbThreadSafety.get_fbthreadsafe_class_annot pname tenv with
-      | Some (qual, annot) ->
-          Some (FbThreadSafety.message_fbthreadsafe_class qual annot)
+      match RacerDModels.get_litho_explanation tenv pname with
+      | Some _ as expl_opt ->
+          expl_opt
       | None -> (
         match get_current_class_and_threadsafe_superclasses tenv pname with
         | Some (current_class, (thread_safe_class :: _ as thread_safe_annotated_classes)) ->
@@ -100,7 +100,7 @@ let get_reporting_explanation_cpp = (IssueType.lock_consistency_violation, "")
 
 (** Explain why we are reporting this access *)
 let get_reporting_explanation ~nullsafe report_kind tenv pname thread =
-  if (Procname.is_java pname || Procname.is_csharp pname) then
+  if Procname.is_java pname || Procname.is_csharp pname then
     get_reporting_explanation_java ~nullsafe report_kind tenv pname thread
   else get_reporting_explanation_cpp
 
@@ -357,7 +357,8 @@ end
 let should_report_on_proc tenv procdesc =
   let proc_name = Procdesc.get_proc_name procdesc in
   match proc_name with
-  | CSharp _ -> (not (ProcAttributes.equal_access (Procdesc.get_access procdesc) Private))
+  | CSharp _ ->
+      not (ProcAttributes.equal_access (Procdesc.get_access procdesc) Private)
   | Java java_pname ->
       (* return true if procedure is at an abstraction boundary or reporting has been explicitly
          requested via @ThreadSafe in java *)
@@ -491,7 +492,7 @@ let report_unsafe_accesses ~issue_log file_tenv classname (aggregated_access_map
         report_unannotated_interface_violation ~acc reported_pname reported_access
     | InterfaceCall _ ->
         acc
-    | (Write _ | ContainerWrite _) when (Procname.is_java pname || Procname.is_csharp pname) ->
+    | (Write _ | ContainerWrite _) when Procname.is_java pname || Procname.is_csharp pname ->
         let conflict =
           if ThreadsDomain.is_any threads then
             (* unprotected write in method that may run in parallel with itself. warn *)
@@ -521,7 +522,7 @@ let report_unsafe_accesses ~issue_log file_tenv classname (aggregated_access_map
         let is_conflict {snapshot; threads= other_threads} =
           AccessSnapshot.is_write snapshot
           &&
-          if (Procname.is_java pname || Procname.is_csharp pname) then
+          if Procname.is_java pname || Procname.is_csharp pname then
             ThreadsDomain.is_any threads || ThreadsDomain.is_any other_threads
           else not (AccessSnapshot.is_unprotected snapshot)
         in
@@ -533,7 +534,7 @@ let report_unsafe_accesses ~issue_log file_tenv classname (aggregated_access_map
                let report_kind = ReadWriteRace conflict.snapshot in
                report_thread_safety_violation ~acc ~make_description ~report_kind ~nullsafe
                  reported_access )
-    | (Read _ | ContainerRead _) when  (Procname.is_java pname || Procname.is_csharp pname) ->
+    | (Read _ | ContainerRead _) when Procname.is_java pname || Procname.is_csharp pname ->
         (* protected read. report unprotected writes and opposite protected writes as conflicts *)
         let can_conflict (snapshot1 : AccessSnapshot.t) (snapshot2 : AccessSnapshot.t) =
           if snapshot1.elem.lock && snapshot2.elem.lock then false
@@ -613,7 +614,7 @@ let class_has_concurrent_method class_summaries =
 
 let should_report_on_class (classname : Typ.Name.t) class_summaries =
   match classname with
-  | JavaClass _ | CSharpClass _ ->
+  | JavaClass _ | CSharpClass _ | ErlangType _ ->
       true
   | CppClass _ | ObjcClass _ | ObjcProtocol _ | CStruct _ ->
       class_has_concurrent_method class_summaries

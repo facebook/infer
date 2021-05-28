@@ -7,6 +7,7 @@
 open! IStd
 module F = Format
 module Invalidation = PulseInvalidation
+module PathContext = PulsePathContext
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
 
@@ -33,10 +34,11 @@ module Attribute = struct
     | EndOfCollection
     | Invalid of Invalidation.t * Trace.t
     | ISLAbduced of Trace.t
-    | MustBeInitialized of Trace.t
-    | MustBeValid of Trace.t * Invalidation.must_be_valid_reason option
+    | MustBeInitialized of PathContext.timestamp * Trace.t
+    | MustBeValid of PathContext.timestamp * Trace.t * Invalidation.must_be_valid_reason option
     | StdVectorReserve
     | Uninitialized
+    | UnreachableAt of Location.t
     | WrittenTo of Trace.t
   [@@deriving compare, variants]
 
@@ -63,7 +65,7 @@ module Attribute = struct
     Variants.to_rank (Invalid (Invalidation.ConstantDereference IntLit.zero, dummy_trace))
 
 
-  let must_be_valid_rank = Variants.to_rank (MustBeValid (dummy_trace, None))
+  let must_be_valid_rank = Variants.to_rank (MustBeValid (PathContext.t0, dummy_trace, None))
 
   let std_vector_reserve_rank = Variants.to_rank StdVectorReserve
 
@@ -93,7 +95,9 @@ module Attribute = struct
 
   let uninitialized_rank = Variants.to_rank Uninitialized
 
-  let must_be_initialized_rank = Variants.to_rank (MustBeInitialized dummy_trace)
+  let unreachable_at_rank = Variants.to_rank (UnreachableAt Location.dummy)
+
+  let must_be_initialized_rank = Variants.to_rank (MustBeInitialized (PathContext.t0, dummy_trace))
 
   let pp f attribute =
     let pp_string_if_debug string fmt =
@@ -121,20 +125,96 @@ module Attribute = struct
           trace
     | ISLAbduced trace ->
         F.fprintf f "ISLAbduced %a" (Trace.pp ~pp_immediate:(pp_string_if_debug "ISLAbduced")) trace
-    | MustBeInitialized trace ->
-        F.fprintf f "MustBeInitialized %a"
+    | MustBeInitialized (timestamp, trace) ->
+        F.fprintf f "MustBeInitialized(%a, t=%d)"
           (Trace.pp ~pp_immediate:(pp_string_if_debug "read"))
           trace
-    | MustBeValid (trace, reason) ->
-        F.fprintf f "MustBeValid %a (%a)"
+          (timestamp :> int)
+    | MustBeValid (timestamp, trace, reason) ->
+        F.fprintf f "MustBeValid(%a, %a, t=%d)"
           (Trace.pp ~pp_immediate:(pp_string_if_debug "access"))
           trace Invalidation.pp_must_be_valid_reason reason
+          (timestamp :> int)
     | StdVectorReserve ->
         F.pp_print_string f "std::vector::reserve()"
     | Uninitialized ->
         F.pp_print_string f "Uninitialized"
+    | UnreachableAt location ->
+        F.fprintf f "UnreachableAt(%a)" Location.pp location
     | WrittenTo trace ->
         F.fprintf f "WrittenTo %a" (Trace.pp ~pp_immediate:(pp_string_if_debug "mutation")) trace
+
+
+  let is_suitable_for_pre = function
+    | MustBeValid _ | MustBeInitialized _ ->
+        true
+    | Invalid _ | Allocated _ | ISLAbduced _ ->
+        Config.pulse_isl
+    | AddressOfCppTemporary _
+    | AddressOfStackVariable _
+    | Closure _
+    | DynamicType _
+    | EndOfCollection
+    | StdVectorReserve
+    | Uninitialized
+    | UnreachableAt _
+    | WrittenTo _ ->
+        false
+
+
+  let is_suitable_for_post = function
+    | MustBeInitialized _ | MustBeValid _ | UnreachableAt _ ->
+        false
+    | Invalid _
+    | Allocated _
+    | ISLAbduced _
+    | AddressOfCppTemporary _
+    | AddressOfStackVariable _
+    | Closure _
+    | DynamicType _
+    | EndOfCollection
+    | StdVectorReserve
+    | Uninitialized
+    | WrittenTo _ ->
+        true
+
+
+  let add_call path proc_name call_location caller_history attr =
+    let add_call_to_trace in_call =
+      Trace.ViaCall {f= Call proc_name; location= call_location; history= caller_history; in_call}
+    in
+    match attr with
+    | Allocated (proc_name, trace) -> (
+      match
+        Trace.trace_up_to_key_event caller_history ~is_key_event:(function
+          | Allocation _ ->
+              true
+          | _ ->
+              false )
+      with
+      | Some alloc_trace ->
+          Allocated (proc_name, alloc_trace)
+      | None ->
+          Allocated (proc_name, add_call_to_trace trace) )
+    | Invalid (invalidation, trace) ->
+        Invalid (invalidation, add_call_to_trace trace)
+    | ISLAbduced trace ->
+        ISLAbduced (add_call_to_trace trace)
+    | MustBeValid (_timestamp, trace, reason) ->
+        MustBeValid (path.PathContext.timestamp, add_call_to_trace trace, reason)
+    | MustBeInitialized (_timestamp, trace) ->
+        MustBeInitialized (path.PathContext.timestamp, add_call_to_trace trace)
+    | WrittenTo trace ->
+        WrittenTo (add_call_to_trace trace)
+    | ( AddressOfCppTemporary _
+      | AddressOfStackVariable _
+      | Closure _
+      | DynamicType _
+      | EndOfCollection
+      | StdVectorReserve
+      | UnreachableAt _
+      | Uninitialized ) as attr ->
+        attr
 end
 
 module Attributes = struct
@@ -150,8 +230,8 @@ module Attributes = struct
   let get_must_be_valid attrs =
     Set.find_rank attrs Attribute.must_be_valid_rank
     |> Option.map ~f:(fun attr ->
-           let[@warning "-8"] (Attribute.MustBeValid (trace, reason)) = attr in
-           (trace, reason) )
+           let[@warning "-8"] (Attribute.MustBeValid (timestamp, trace, reason)) = attr in
+           (timestamp, trace, reason) )
 
 
   let get_written_to attrs =
@@ -214,8 +294,15 @@ module Attributes = struct
   let get_must_be_initialized attrs =
     Set.find_rank attrs Attribute.must_be_initialized_rank
     |> Option.map ~f:(fun attr ->
-           let[@warning "-8"] (Attribute.MustBeInitialized trace) = attr in
-           trace )
+           let[@warning "-8"] (Attribute.MustBeInitialized (timestamp, trace)) = attr in
+           (timestamp, trace) )
+
+
+  let get_unreachable_at attrs =
+    Set.find_rank attrs Attribute.unreachable_at_rank
+    |> Option.map ~f:(fun attr ->
+           let[@warning "-8"] (Attribute.UnreachableAt location) = attr in
+           location )
 
 
   let isl_subset callee_attrs caller_attrs =
@@ -251,62 +338,12 @@ module Attributes = struct
         Set.add acc attr1 )
 
 
+  let add_call path proc_name call_location caller_history attrs =
+    Set.map attrs ~f:(fun attr ->
+        Attribute.add_call path proc_name call_location caller_history attr )
+
+
   include Set
 end
 
 include Attribute
-
-let is_suitable_for_pre = function
-  | MustBeValid _ | MustBeInitialized _ ->
-      true
-  | Invalid _ | Allocated _ | ISLAbduced _ ->
-      Config.pulse_isl
-  | AddressOfCppTemporary _
-  | AddressOfStackVariable _
-  | Closure _
-  | DynamicType _
-  | EndOfCollection
-  | StdVectorReserve
-  | Uninitialized
-  | WrittenTo _ ->
-      false
-
-
-let is_suitable_for_post = function
-  | MustBeInitialized _ | MustBeValid _ ->
-      false
-  | Invalid _
-  | Allocated _
-  | ISLAbduced _
-  | AddressOfCppTemporary _
-  | AddressOfStackVariable _
-  | Closure _
-  | DynamicType _
-  | EndOfCollection
-  | StdVectorReserve
-  | Uninitialized
-  | WrittenTo _ ->
-      true
-
-
-let map_trace ~f = function
-  | Allocated (procname, trace) ->
-      Allocated (procname, f trace)
-  | ISLAbduced trace ->
-      ISLAbduced (f trace)
-  | Invalid (invalidation, trace) ->
-      Invalid (invalidation, f trace)
-  | MustBeValid (trace, reason) ->
-      MustBeValid (f trace, reason)
-  | WrittenTo trace ->
-      WrittenTo (f trace)
-  | MustBeInitialized trace ->
-      MustBeInitialized (f trace)
-  | ( AddressOfCppTemporary _
-    | AddressOfStackVariable _
-    | Closure _
-    | DynamicType _
-    | EndOfCollection
-    | StdVectorReserve
-    | Uninitialized ) as attr ->
-      attr
