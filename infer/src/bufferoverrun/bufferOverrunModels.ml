@@ -130,6 +130,23 @@ let malloc ~can_be_zero size_exp =
       Allocsite.make pname ~caller_pname:(Dom.Mem.get_proc_name mem) ~node_hash ~inst_num:0
         ~dimension:1 ~path ~represents_multiple_values
     in
+    let mem =
+      let loc = Loc.of_allocsite allocsite in
+      match Dom.Mem.find_opt loc mem with
+      | None ->
+          (* If the allocsite is not present in the abstract state, write bot as a value of
+             allocsite. This effectively means that the first update of allocsite is strong
+             (the new value will be joined with bot).
+             That is, it relies on the assumption that an allocsite is fully initialized before
+             being read (e.g., all elements of an array are initialized before the array is read).*)
+          Dom.Mem.strong_update (PowLoc.singleton (Loc.of_allocsite allocsite)) Dom.Val.bot mem
+      | _ ->
+          (* If the allocsite is already in the abstract state, it means that we are in a loop.
+             The abstract allocsite represents multiple concrete allocsites and we need to retain
+             values already in the abstract state. The subsequent update of the allocsite will be
+             weak (the new value will be joined with the value in the abstract state). *)
+          mem
+    in
     if Language.curr_language_is Java then
       let internal_arr =
         let allocsite =
