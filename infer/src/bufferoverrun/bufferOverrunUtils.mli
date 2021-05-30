@@ -38,6 +38,12 @@ module Exec : sig
     -> PowLoc.t
     -> Dom.Mem.t
     -> Dom.Mem.t
+  (** [load_locs id typ locs mem] loads the contents of the memory locations [locs] (which have type
+      [typ]) into the identifier [id].
+
+      If [locs] represents a single location, also create an aliasing relation between this location
+      and [id]. This is useful, e.g., to constrain also the location when the identifier is
+      constrained. *)
 
   val decl_local : ModelEnv.model_env -> Dom.Mem.t * int -> Loc.t * Typ.t -> Dom.Mem.t * int
 

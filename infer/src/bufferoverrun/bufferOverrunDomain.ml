@@ -1491,7 +1491,7 @@ module Alias = struct
       AliasRet.pp x.ret CppIteratorCmp.pp x.cpp_iterator_cmp
 
 
-  let init : t = {map= AliasMap.empty; ret= AliasRet.empty; cpp_iterator_cmp= CppIteratorCmp.empty}
+  let init : t = {map= AliasMap.empty; ret= AliasRet.top; cpp_iterator_cmp= CppIteratorCmp.empty}
 
   let lift_map : (AliasMap.t -> AliasMap.t) -> t -> t = fun f a -> {a with map= f a.map}
 
@@ -1513,7 +1513,14 @@ module Alias = struct
     match e with
     | Exp.Var l ->
         let a = lift_map (AliasMap.store loc l) a in
-        if Loc.is_return loc then {a with ret= find_id l a} else a
+        if Loc.is_return loc then
+          let ret = find_id l a in
+          (* Don't update aliasing of return value with empty because it would result in an
+             incorrect must alias when joining aliasing information after two conditional
+             assignments where one updates the aliasing info to empty and the second to
+             non-empty. *)
+          {a with ret= (if AliasRet.is_empty ret then AliasRet.top else ret)}
+        else a
     | Exp.BinOp (Binop.PlusA _, Exp.Var id, Exp.Const (Const.Cint i))
     | Exp.BinOp (Binop.PlusA _, Exp.Const (Const.Cint i), Exp.Var id) ->
         lift_map (AliasMap.load id loc (AliasTarget.Simple {i= IntLit.neg i; java_tmp= None})) a
