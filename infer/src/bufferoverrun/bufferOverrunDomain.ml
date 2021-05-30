@@ -362,7 +362,15 @@ module Val = struct
 
   let lor_sem : t -> t -> t = lift_cmp_itv Itv.lor_sem Boolean.EqualOrder.top
 
-  let lift_prune1 : (Itv.t -> Itv.t) -> t -> t = fun f x -> {x with itv= f x.itv}
+  let lift_prune1 : (Itv.t -> Itv.t) -> t -> t =
+   fun f x ->
+    let itv = f x.itv in
+    if (not (Itv.is_bottom x.itv)) && Itv.is_bottom itv then
+      (* Prune produced bottom interval, return bottom value in order to detect that prune
+         pairs are not reachable (see PrunePairs.is_reachable). *)
+      {bot with traces= x.traces}
+    else {x with itv}
+
 
   let lift_prune_length1 : (Itv.t -> Itv.t) -> t -> t =
    fun f x -> {x with arrayblk= ArrayBlk.transform_length ~f x.arrayblk}
