@@ -611,20 +611,30 @@ module Prune = struct
       tgts acc
 
 
+  let prune_stack_var pruned_id prune ({mem} as astate) =
+    let pruned_loc = Loc.of_id pruned_id in
+    let pruned_val = Mem.find pruned_loc mem in
+    let resulting_val = prune pruned_val in
+    let mem = Mem.update_mem (PowLoc.singleton pruned_loc) resulting_val mem in
+    (pruned_val, {astate with mem})
+
+
   let prune_unop : Exp.t -> t -> t =
    fun e ({mem} as astate) ->
     match e with
     | Exp.Var x ->
+        (* (1) prune the stack variable corresponding to x *)
+        let x_val, astate = prune_stack_var x Val.prune_ne_zero astate in
+        (* (2) prune heap variables which are aliases of the stack variable *)
         let accum_prune_var rhs tgt acc =
           match tgt with
           | AliasTarget.Simple {i} when IntLit.iszero i ->
-              (let v = Mem.find rhs mem in
-               if Val.is_bot v then acc
-               else
-                 let v' = Val.prune_ne_zero v in
-                 update_mem_in_prune rhs v' acc )
-              |> prune_linked_list_index rhs mem
-              |> prune_iterator_offset_objc rhs mem
+              let v = Val.prune_eq x_val (Mem.find rhs mem) in
+              if Val.is_bot v then acc
+              else
+                let v' = Val.prune_ne_zero v in
+                update_mem_in_prune rhs v' acc |> prune_linked_list_index rhs mem
+                |> prune_iterator_offset_objc rhs mem
           | AliasTarget.Empty ->
               let v = Mem.find rhs mem in
               if Val.is_bot v then acc
@@ -645,10 +655,13 @@ module Prune = struct
         in
         AliasTargets.fold accum_prune_var (Mem.find_alias_id x mem) astate
     | Exp.UnOp (Unop.LNot, Exp.Var x, _) ->
+        (* (1) prune the stack variable corresponding to x *)
+        let x_val, astate = prune_stack_var x Val.prune_eq_zero astate in
+        (* (2) prune heap variables which are aliases of the stack variable *)
         let accum_prune_not_var rhs tgt acc =
           match tgt with
           | AliasTarget.Simple {i} when IntLit.iszero i ->
-              let v = Mem.find rhs mem in
+              let v = Val.prune_eq x_val (Mem.find rhs mem) in
               if Val.is_bot v then acc
               else
                 let v' = Val.prune_eq_zero v in
@@ -707,12 +720,18 @@ module Prune = struct
   let prune_simple_alias =
     let prune_alias_core ~val_prune_eq ~val_prune_le:_ ~make_pruning_exp _location
         integer_type_widths x e ({mem} as astate) =
+      let expr_val = eval integer_type_widths e mem in
+      (* (1) prune the stack variable corresponding to x *)
+      let x_val, astate = prune_stack_var x (fun loc_val -> val_prune_eq loc_val expr_val) astate in
+      (* (2) prune the heap variable which is an simple alias of the stack variable *)
       List.fold (Mem.find_simple_alias x mem) ~init:astate ~f:(fun acc (lv, i) ->
-          let lhs = Mem.find lv mem in
-          let rhs =
-            let v' = eval integer_type_widths e mem in
-            if IntLit.iszero i then v' else Val.minus_a v' (Val.of_int_lit i)
+          let lhs, rhs =
+            if IntLit.iszero i then (x_val, expr_val)
+            else
+              let i_val = Val.of_int_lit i in
+              (Val.minus_a x_val i_val, Val.minus_a expr_val i_val)
           in
+          let lhs = Val.prune_eq lhs (Mem.find lv mem) in
           if Val.is_bot lhs || Val.is_bot rhs then acc
           else
             let v = val_prune_eq lhs rhs in
