@@ -15,33 +15,19 @@ type t = (SourceFile.t, string array) Hashtbl.t
 let create () = Hashtbl.create 1
 
 let read_file fname =
-  let cin = In_channel.create fname in
-  let lines = ref [] in
-  try
-    while true do
-      let line_raw = In_channel.input_line_exn cin in
-      let line =
-        let len = String.length line_raw in
-        if len > 0 && Char.equal line_raw.[len - 1] '\r' then
-          String.sub line_raw ~pos:0 ~len:(len - 1)
-        else line_raw
-      in
-      lines := line :: !lines
-    done ;
-    assert false (* execution never reaches here *)
-  with End_of_file ->
-    In_channel.close cin ;
-    Array.of_list_rev !lines
+  try In_channel.read_lines ~fix_win_eol:true fname |> Array.of_list |> Option.some
+  with Sys_error _ -> None
 
 
 let file_data (hash : t) fname =
-  try Some (Hashtbl.find hash fname)
-  with Caml.Not_found -> (
-    try
-      let lines_arr = read_file (SourceFile.to_abs_path fname) in
+  match Hashtbl.find_opt hash fname with
+  | None ->
+      let open IOption.Let_syntax in
+      let+ lines_arr = read_file (SourceFile.to_abs_path fname) in
       Hashtbl.add hash fname lines_arr ;
-      Some lines_arr
-    with exn when SymOp.exn_not_failure exn -> None )
+      lines_arr
+  | res ->
+      res
 
 
 let from_file_linenum hash fname linenum =
