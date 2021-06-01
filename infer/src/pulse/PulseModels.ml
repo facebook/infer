@@ -297,6 +297,15 @@ module ObjC = struct
         Dereference astate
     in
     astate
+
+
+  (* NOTE: assume that this is always called with [freeWhenDone] being [YES] *)
+  let init_with_bytes_free_when_done bytes : model =
+   fun {ret= ret_id, _; callee_procname; location} astate ->
+    let event = ValueHistory.Call {f= Call callee_procname; location; in_call= []} in
+    PulseOperations.havoc_id ret_id [event] astate
+    |> PulseOperations.remove_allocation_attr (fst bytes)
+    |> ok_continue
 end
 
 module Optional = struct
@@ -1453,7 +1462,13 @@ module ProcNameDispatcher = struct
           ~f:(fun m -> -m $ capt_arg_payload $+...$--> ObjCCoreFoundation.cf_bridging_release)
           Config.pulse_model_transfer_ownership
       in
-      transfer_ownership_namespace_matchers @ transfer_ownership_name_matchers
+      ( -"NSString" &:: "initWithBytesNoCopy:length:encoding:freeWhenDone:" <>$ any_arg
+      $+ capt_arg_payload $+ any_arg $+ any_arg $+ any_arg $--> ObjC.init_with_bytes_free_when_done
+      )
+      :: ( -"NSData" &:: "initWithBytesNoCopy:length:freeWhenDone:" <>$ any_arg $+ capt_arg_payload
+         $+ any_arg $+ any_arg $--> ObjC.init_with_bytes_free_when_done )
+      :: transfer_ownership_namespace_matchers
+      @ transfer_ownership_name_matchers
     in
     let get_cpp_matchers config ~model =
       let cpp_separator_regex = Str.regexp_string "::" in
