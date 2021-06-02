@@ -93,7 +93,7 @@ module Misc = struct
       don't have the implementation. This triggers a bunch of heuristics, e.g. to havoc arguments we
       suspect are passed by reference. *)
   let unknown_call skip_reason args : model =
-   fun {analysis_data= {tenv}; callee_procname; location; ret} astate ->
+   fun {analysis_data= {tenv}; path; callee_procname; location; ret} astate ->
     let actuals =
       List.map args ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= actual; typ} ->
           (actual, typ) )
@@ -102,9 +102,11 @@ module Misc = struct
       AnalysisCallbacks.proc_resolve_attributes callee_procname
       |> Option.map ~f:Pvar.get_pvar_formals
     in
-    PulseCallOperations.unknown_call tenv location (Model skip_reason) ~ret ~actuals ~formals_opt
-      astate
-    |> ok_continue
+    let<+> astate =
+      PulseCallOperations.unknown_call tenv path location (Model skip_reason) ~ret ~actuals
+        ~formals_opt astate
+    in
+    astate
 
 
   (** don't actually do nothing, apply the heuristics for unknown calls (this may or may not be a

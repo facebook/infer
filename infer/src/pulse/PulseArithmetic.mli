@@ -22,6 +22,9 @@ val and_eq_int :
 type operand = PathCondition.operand =
   | LiteralOperand of IntLit.t
   | AbstractValueOperand of AbstractValue.t
+  | FunctionApplicationOperand of {f: PulseFormula.function_symbol; actuals: AbstractValue.t list}
+
+val and_equal : operand -> operand -> AbductiveDomain.t -> AbductiveDomain.t AccessResult.t
 
 val eval_binop :
      AbstractValue.t

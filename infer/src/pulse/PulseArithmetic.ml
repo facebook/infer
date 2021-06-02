@@ -32,6 +32,11 @@ let and_eq_int v i astate =
 type operand = PathCondition.operand =
   | LiteralOperand of IntLit.t
   | AbstractValueOperand of AbstractValue.t
+  | FunctionApplicationOperand of {f: PulseFormula.function_symbol; actuals: AbstractValue.t list}
+
+let and_equal op1 op2 astate =
+  map_path_condition astate ~f:(fun phi -> PathCondition.and_equal op1 op2 phi)
+
 
 let eval_binop binop_addr binop op_lhs op_rhs astate =
   map_path_condition astate ~f:(fun phi ->

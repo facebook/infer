@@ -171,16 +171,20 @@ end = struct
 
 
   let pp_predicate f (op, l, r) =
-    Format.fprintf f "@[%a%a%a@]" PathCondition.pp_operand l Binop.pp op PathCondition.pp_operand r
+    Format.fprintf f "@[%a%a%a@]" PulseFormula.pp_operand l Binop.pp op PulseFormula.pp_operand r
 
 
   let pp = Pp.seq ~sep:"∧" pp_predicate
 
   let eliminate_exists ~keep constr =
     (* TODO(rgrigore): replace the current weak approximation *)
-    let is_live_operand =
-      PathCondition.(
-        function LiteralOperand _ -> true | AbstractValueOperand v -> AbstractValue.Set.mem v keep)
+    let is_live_operand : PulseFormula.operand -> bool = function
+      | LiteralOperand _ ->
+          true
+      | AbstractValueOperand v ->
+          AbstractValue.Set.mem v keep
+      | FunctionApplicationOperand _ ->
+          true
     in
     let is_live_predicate (_op, l, r) = is_live_operand l && is_live_operand r in
     List.filter ~f:is_live_predicate constr

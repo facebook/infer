@@ -140,3 +140,26 @@ void report_correct_error_among_multiple_bad() {
   // the trace should complain about the first access inside the callee
   several_dereferences_ok(p, p, p);
 }
+
+int unknown(int x);
+
+void unknown_is_functional_ok() {
+  int* p = NULL;
+  if (unknown(10) != unknown(10)) {
+    *p = 42;
+  }
+}
+
+void unknown_with_different_values_bad() {
+  int* p = NULL;
+  if (unknown(32) != unknown(52)) {
+    *p = 42;
+  }
+}
+
+void unknown_from_parameters_latent(int x) {
+  int* p = NULL;
+  if (unknown(x) == 999) {
+    *p = 42;
+  }
+}

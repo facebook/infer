@@ -51,10 +51,11 @@ module PulseTransferFunctions = struct
           let arg_values = List.map actuals ~f:(fun ((value, _), _) -> value) in
           PulseCallOperations.conservatively_initialize_args arg_values astate
         in
-        [ Ok
-            (ContinueProgram
-               (PulseCallOperations.unknown_call tenv call_loc (SkippedUnknownCall call_exp) ~ret
-                  ~actuals ~formals_opt:None astate)) ]
+        let<+> astate =
+          PulseCallOperations.unknown_call tenv path call_loc (SkippedUnknownCall call_exp) ~ret
+            ~actuals ~formals_opt:None astate
+        in
+        astate
 
 
   (** has an object just gone out of scope? *)

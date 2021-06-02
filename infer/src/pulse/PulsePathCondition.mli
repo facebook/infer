@@ -53,10 +53,13 @@ val and_callee :
 
 (** {2 Operations} *)
 
-type operand = LiteralOperand of IntLit.t | AbstractValueOperand of AbstractValue.t
+type operand = PulseFormula.operand =
+  | LiteralOperand of IntLit.t
+  | AbstractValueOperand of AbstractValue.t
+  | FunctionApplicationOperand of {f: PulseFormula.function_symbol; actuals: AbstractValue.t list}
 [@@deriving compare]
 
-val pp_operand : Formatter.t -> operand -> unit
+val and_equal : operand -> operand -> t -> t * new_eqs
 
 val eval_binop : AbstractValue.t -> Binop.t -> operand -> operand -> t -> t * new_eqs
 

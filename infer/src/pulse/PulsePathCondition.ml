@@ -107,6 +107,12 @@ let and_eq_vars v1 v2 phi =
   ({is_unsat; bo_itvs; citvs; formula}, new_eqs)
 
 
+let and_equal op1 op2 phi =
+  let+ {is_unsat; bo_itvs; citvs; formula} = phi in
+  let+| formula, new_eqs = Formula.and_equal op1 op2 formula in
+  ({is_unsat; bo_itvs; citvs; formula}, new_eqs)
+
+
 let simplify tenv ~can_be_pruned ~keep ~get_dynamic_type phi =
   if phi.is_unsat then Unsat
   else
@@ -251,14 +257,8 @@ let and_callee subst phi ~callee:phi_callee =
 type operand = Formula.operand =
   | LiteralOperand of IntLit.t
   | AbstractValueOperand of AbstractValue.t
+  | FunctionApplicationOperand of {f: Formula.function_symbol; actuals: AbstractValue.t list}
 [@@deriving compare]
-
-let pp_operand f = function
-  | LiteralOperand i ->
-      IntLit.pp f i
-  | AbstractValueOperand v ->
-      AbstractValue.pp f v
-
 
 let eval_citv_binop binop_addr bop op_lhs op_rhs citvs =
   let citv_of_op op citvs =
@@ -267,6 +267,8 @@ let eval_citv_binop binop_addr bop op_lhs op_rhs citvs =
         Some (CItv.equal_to i)
     | AbstractValueOperand v ->
         CItvs.find_opt v citvs
+    | FunctionApplicationOperand _ ->
+        None
   in
   match
     Option.both (citv_of_op op_lhs citvs) (citv_of_op op_rhs citvs)
@@ -282,14 +284,18 @@ let eval_bo_itv_binop binop_addr bop op_lhs op_rhs bo_itvs =
   let bo_itv_of_op op bo_itvs =
     match op with
     | LiteralOperand i ->
-        Itv.ItvPure.of_int_lit i
+        Some (Itv.ItvPure.of_int_lit i)
     | AbstractValueOperand v ->
-        BoItvs.find_or_default v bo_itvs
+        Some (BoItvs.find_or_default v bo_itvs)
+    | FunctionApplicationOperand _ ->
+        None
   in
-  let bo_itv =
-    Itv.ItvPure.arith_binop bop (bo_itv_of_op op_lhs bo_itvs) (bo_itv_of_op op_rhs bo_itvs)
-  in
-  BoItvs.add binop_addr bo_itv bo_itvs
+  match Option.both (bo_itv_of_op op_lhs bo_itvs) (bo_itv_of_op op_rhs bo_itvs) with
+  | Some (bo_lhs, bo_rhs) ->
+      let bo_itv = Itv.ItvPure.arith_binop bop bo_lhs bo_rhs in
+      BoItvs.add binop_addr bo_itv bo_itvs
+  | None ->
+      bo_itvs
 
 
 let eval_binop binop_addr binop op_lhs op_rhs phi =
@@ -347,9 +353,11 @@ let prune_bo_with_bop ~negated v_opt arith bop arith' phi =
 
 let eval_operand phi = function
   | LiteralOperand i ->
-      (None, Some (CItv.equal_to i), Itv.ItvPure.of_int_lit i)
+      (None, Some (CItv.equal_to i), Some (Itv.ItvPure.of_int_lit i))
   | AbstractValueOperand v ->
-      (Some v, CItvs.find_opt v phi.citvs, BoItvs.find_or_default v phi.bo_itvs)
+      (Some v, CItvs.find_opt v phi.citvs, Some (BoItvs.find_or_default v phi.bo_itvs))
+  | FunctionApplicationOperand _ ->
+      (None, None, None)
 
 
 let record_citv_abduced addr_opt arith_opt citvs =
@@ -377,23 +385,29 @@ let prune_binop ~negated bop lhs_op rhs_op ({is_unsat; bo_itvs= _; citvs; formul
           in
           {phi with citvs}
         in
-        let is_unsat =
-          match Itv.ItvPure.arith_binop bop bo_itv_lhs bo_itv_rhs |> Itv.ItvPure.to_boolean with
-          | False ->
-              not negated
-          | True ->
-              negated
-          | Top ->
-              false
-          | Bottom ->
-              true
-        in
-        if is_unsat then L.d_printfln "contradiction detected by inferbo intervals" ;
-        let+ phi = {phi with is_unsat} in
-        let+ phi = prune_bo_with_bop ~negated value_lhs_opt bo_itv_lhs bop bo_itv_rhs phi in
         let+ phi =
-          Option.value_map (Binop.symmetric bop) ~default:phi ~f:(fun bop' ->
-              prune_bo_with_bop ~negated value_rhs_opt bo_itv_rhs bop' bo_itv_lhs phi )
+          match Option.both bo_itv_lhs bo_itv_rhs with
+          | None ->
+              phi
+          | Some (bo_itv_lhs, bo_itv_rhs) ->
+              let is_unsat =
+                match
+                  Itv.ItvPure.arith_binop bop bo_itv_lhs bo_itv_rhs |> Itv.ItvPure.to_boolean
+                with
+                | False ->
+                    not negated
+                | True ->
+                    negated
+                | Top ->
+                    false
+                | Bottom ->
+                    true
+              in
+              if is_unsat then L.d_printfln "contradiction detected by inferbo intervals" ;
+              let phi = {phi with is_unsat} in
+              let phi = prune_bo_with_bop ~negated value_lhs_opt bo_itv_lhs bop bo_itv_rhs phi in
+              Option.value_map (Binop.symmetric bop) ~default:phi ~f:(fun bop' ->
+                  prune_bo_with_bop ~negated value_rhs_opt bo_itv_rhs bop' bo_itv_lhs phi )
         in
         match Formula.prune_binop ~negated bop lhs_op rhs_op formula with
         | Unsat ->

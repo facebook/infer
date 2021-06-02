@@ -14,7 +14,29 @@ module Q = QSafeCapped
 module Z = ZSafe
 open SatUnsat
 
-type operand = LiteralOperand of IntLit.t | AbstractValueOperand of Var.t
+type function_symbol = Unknown of Var.t | Procname of Procname.t
+[@@deriving compare, equal, yojson_of]
+
+let pp_function_symbol fmt = function
+  | Unknown v ->
+      Var.pp fmt v
+  | Procname proc_name ->
+      Procname.pp fmt proc_name
+
+
+type operand =
+  | LiteralOperand of IntLit.t
+  | AbstractValueOperand of Var.t
+  | FunctionApplicationOperand of {f: function_symbol; actuals: Var.t list}
+
+let pp_operand fmt = function
+  | LiteralOperand i ->
+      IntLit.pp fmt i
+  | AbstractValueOperand v ->
+      Var.pp fmt v
+  | FunctionApplicationOperand {f; actuals} ->
+      F.fprintf fmt "%a(%a)" pp_function_symbol f (Pp.seq ~sep:"," Var.pp) actuals
+
 
 (** Linear Arithmetic *)
 module LinArith : sig
@@ -194,6 +216,8 @@ module Term = struct
   type t =
     | Const of Q.t
     | Var of Var.t
+    | Procname of Procname.t
+    | FunctionApplication of {f: t; actuals: t list}
     | Linear of LinArith.t
     | Add of t * t
     | Minus of t
@@ -228,6 +252,10 @@ module Term = struct
         false
     | Linear _ ->
         false
+    | Procname _ ->
+        false
+    | FunctionApplication _ ->
+        false
     | Minus _
     | BitNot _
     | Not _
@@ -259,6 +287,12 @@ module Term = struct
         pp_var fmt v
     | Const c ->
         Q.pp_print fmt c
+    | Procname proc_name ->
+        Procname.pp fmt proc_name
+    | FunctionApplication {f; actuals} ->
+        F.fprintf fmt "%a(%a)" (pp_paren pp_var ~needs_paren) f
+          (Pp.seq ~sep:"," (pp_paren pp_var ~needs_paren))
+          actuals
     | Linear l ->
         F.fprintf fmt "[%a]" (LinArith.pp pp_var) l
     | Minus t ->
@@ -312,6 +346,9 @@ module Term = struct
         Var v
     | LiteralOperand i ->
         IntLit.to_big_int i |> Q.of_bigint |> of_q
+    | FunctionApplicationOperand {f; actuals} ->
+        let f = match f with Unknown v -> Var v | Procname proc_name -> Procname proc_name in
+        FunctionApplication {f; actuals= List.map actuals ~f:(fun v -> Var v)}
 
 
   let of_subst_target = function QSubst q -> of_q q | VarSubst v -> Var v | LinSubst l -> Linear l
@@ -373,8 +410,22 @@ module Term = struct
   (** Fold [f] on the strict sub-terms of [t], if any. Preserve physical equality if [f] does. *)
   let fold_map_direct_subterms t ~init ~f =
     match t with
-    | Var _ | Const _ | Linear _ | IsInstanceOf _ ->
+    (* no sub-terms *)
+    | Var _ | Const _ | Procname _ | Linear _ | IsInstanceOf _ ->
         (init, t)
+    (* list of sub-terms *)
+    | FunctionApplication {f= t_f; actuals} ->
+        let acc, t_f' = f init t_f in
+        let changed = ref (not (phys_equal t_f t_f')) in
+        let acc, actuals' =
+          List.fold_map actuals ~init:acc ~f:(fun acc actual ->
+              let acc, actual' = f acc actual in
+              changed := !changed || not (phys_equal actual actual') ;
+              (acc, actual') )
+        in
+        let t' = if !changed then FunctionApplication {f= t_f'; actuals= actuals'} else t in
+        (acc, t')
+    (* one sub-term *)
     | Minus t_not | BitNot t_not | Not t_not ->
         let acc, t_not' = f init t_not in
         let t' =
@@ -389,6 +440,7 @@ module Term = struct
                 Not t_not'
         in
         (acc, t')
+    (* two sub-terms *)
     | Add (t1, t2)
     | Mult (t1, t2)
     | Div (t1, t2)
@@ -486,6 +538,8 @@ module Term = struct
         let t' = if phys_equal l l' then t else Linear l' in
         (acc, t')
     | Const _
+    | Procname _
+    | FunctionApplication _
     | Add _
     | Minus _
     | LessThan _
@@ -540,7 +594,7 @@ module Term = struct
     in
     let or_undef q_opt = Option.value ~default:Q.undef q_opt in
     match t0 with
-    | Const _ | Var _ | IsInstanceOf _ ->
+    | Const _ | Var _ | IsInstanceOf _ | Procname _ | FunctionApplication _ ->
         t0
     | Linear l ->
         LinArith.get_as_const l |> Option.value_map ~default:t0 ~f:(fun c -> Const c)
@@ -719,6 +773,8 @@ module Term = struct
       | Div (t, Const c) when Q.is_not_zero c ->
           let+ l = aux_linearize t in
           LinArith.mult (Q.inv c) l
+      | Procname _
+      | FunctionApplication _
       | Mult _
       | Div _
       | Mod _

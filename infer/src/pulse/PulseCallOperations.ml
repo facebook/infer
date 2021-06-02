@@ -18,9 +18,13 @@ let is_ptr_to_const formal_typ_opt =
       match formal_typ.desc with Typ.Tptr (t, _) -> Typ.is_const t.quals | _ -> false )
 
 
-let unknown_call tenv call_loc reason ~ret ~actuals ~formals_opt astate =
+let unknown_call tenv path call_loc (reason : CallEvent.t) ~ret ~actuals ~formals_opt astate =
   let event = ValueHistory.Call {f= reason; location= call_loc; in_call= []} in
-  let havoc_ret (ret, _) astate = PulseOperations.havoc_id ret [event] astate in
+  let ret_val = AbstractValue.mk_fresh () in
+  let astate = PulseOperations.write_id (fst ret) (ret_val, [event]) astate in
+  (* set to [false] if we think the procedure called does not behave "functionally", i.e. return the
+     same value for the same inputs *)
+  let is_functional = ref true in
   let rec havoc_fields ((_, history) as addr) typ astate =
     match typ.Typ.desc with
     | Tstruct struct_name -> (
@@ -36,13 +40,14 @@ let unknown_call tenv call_loc reason ~ret ~actuals ~formals_opt astate =
         astate
   in
   let havoc_actual_if_ptr (actual, actual_typ) formal_typ_opt astate =
-    (* We should not havoc when the corresponding formal is a
-       pointer to const *)
+    (* We should not havoc when the corresponding formal is a pointer to const *)
     match actual_typ.Typ.desc with
     | Tptr (typ, _)
       when (not (Language.curr_language_is Java)) && not (is_ptr_to_const formal_typ_opt) ->
-        (* HACK: write through the pointer even if it is invalid (except in Java). This is to avoid raising issues when
-           havoc'ing pointer parameters (which normally causes a [check_valid] call. *)
+        is_functional := false ;
+        (* HACK: write through the pointer even if it is invalid (except in Java). This is to avoid
+           raising issues when havoc'ing pointer parameters (which normally causes a [check_valid]
+           call. *)
         let fresh_value = AbstractValue.mk_fresh () in
         Memory.add_edge actual Dereference (fresh_value, [event]) call_loc astate
         |> havoc_fields actual typ
@@ -50,8 +55,28 @@ let unknown_call tenv call_loc reason ~ret ~actuals ~formals_opt astate =
         astate
   in
   let add_skipped_proc astate =
+    let* astate, f =
+      match reason with
+      | Call _ | Model _ ->
+          Ok (astate, None)
+      | SkippedKnownCall proc_name ->
+          Ok (astate, Some (PulseFormula.Procname proc_name))
+      | SkippedUnknownCall e ->
+          let+ astate, (v, _) = PulseOperations.eval path Read call_loc e astate in
+          (astate, Some (PulseFormula.Unknown v))
+    in
+    let+ astate =
+      match f with
+      | None ->
+          Ok astate
+      | Some f ->
+          PulseArithmetic.and_equal (AbstractValueOperand ret_val)
+            (FunctionApplicationOperand
+               {f; actuals= List.map ~f:(fun ((actual_val, _hist), _typ) -> actual_val) actuals})
+            astate
+    in
     match reason with
-    | CallEvent.SkippedKnownCall proc_name ->
+    | SkippedKnownCall proc_name ->
         AbductiveDomain.add_skipped_call proc_name
           (Trace.Immediate {location= call_loc; history= []})
           astate
@@ -59,20 +84,17 @@ let unknown_call tenv call_loc reason ~ret ~actuals ~formals_opt astate =
         astate
   in
   let havoc_actuals_without_typ_info astate =
-    List.fold actuals
-      ~f:(fun astate actual_typ -> havoc_actual_if_ptr actual_typ None astate)
-      ~init:astate
+    List.fold actuals ~init:astate ~f:(fun astate actual_typ ->
+        havoc_actual_if_ptr actual_typ None astate )
   in
-  L.d_printfln "skipping unknown procedure@." ;
+  L.d_printfln "skipping unknown procedure" ;
   ( match formals_opt with
   | None ->
       havoc_actuals_without_typ_info astate
   | Some formals -> (
     match
-      List.fold2 actuals formals
-        ~f:(fun astate actual_typ (_, formal_typ) ->
+      List.fold2 actuals formals ~init:astate ~f:(fun astate actual_typ (_, formal_typ) ->
           havoc_actual_if_ptr actual_typ (Some formal_typ) astate )
-        ~init:astate
     with
     | Unequal_lengths ->
         L.d_printfln "ERROR: formals have length %d but actuals have length %d"
@@ -80,7 +102,7 @@ let unknown_call tenv call_loc reason ~ret ~actuals ~formals_opt astate =
         havoc_actuals_without_typ_info astate
     | Ok result ->
         result ) )
-  |> havoc_ret ret |> add_skipped_proc
+  |> add_skipped_proc
 
 
 let apply_callee tenv path ~caller_proc_desc callee_pname call_loc callee_exec_state ~ret
@@ -269,9 +291,10 @@ let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.
       (* no spec found for some reason (unknown function, ...) *)
       L.d_printfln "No spec found for %a@\n" Procname.pp callee_pname ;
       let arg_values = List.map actuals ~f:(fun ((value, _), _) -> value) in
-      let astate_unknown =
+      let<*> astate_unknown =
         conservatively_initialize_args arg_values astate
-        |> unknown_call tenv call_loc (SkippedKnownCall callee_pname) ~ret ~actuals ~formals_opt
+        |> unknown_call tenv path call_loc (SkippedKnownCall callee_pname) ~ret ~actuals
+             ~formals_opt
       in
       let callee_procdesc_opt = AnalysisCallbacks.get_proc_desc callee_pname in
       Option.value_map callee_procdesc_opt

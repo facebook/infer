@@ -267,10 +267,12 @@ public class NullPointerExceptions {
     param.toString();
   }
 
-  native boolean test();
+  native boolean test1();
+
+  native boolean test2();
 
   Object getObj() {
-    if (test()) {
+    if (test1()) {
       return new Object();
     } else {
       return null;
@@ -278,32 +280,36 @@ public class NullPointerExceptions {
   }
 
   Boolean getBool() {
-    if (test()) {
+    if (test2()) {
       return new Boolean(true);
     } else {
       return null;
     }
   }
 
-  void FP_derefGetterAfterCheckShouldNotCauseNPE() {
+  void derefGetterAfterCheckShouldNotCauseNPE() {
     if (getObj() != null) {
       getObj().toString();
     }
   }
 
-  void FP_derefBoxedGetterAfterCheckShouldNotCauseNPE() {
+  void derefBoxedGetterAfterCheckShouldNotCauseNPE() {
     boolean b = getBool() != null && getBool();
   }
 
-  static void FP_derefNonThisGetterAfterCheckShouldNotCauseNPE() {
+  static void derefNonThisGetterAfterCheckShouldNotCauseNPE() {
     NullPointerExceptions c = new NullPointerExceptions();
     if (c.getObj() != null) {
       c.getObj().toString();
     }
   }
 
-  void badCheckShouldCauseNPE() {
-    if (getBool() != null) getObj().toString();
+  // latent because we don't know if test1() can return "true"
+  // arguably should be reported?
+  void badCheckShouldCauseNPE_latent() {
+    if (getBool() != null) {
+      getObj().toString();
+    }
   }
 
   void nullPointerExceptionArrayLength() {
