@@ -241,4 +241,19 @@ void FP_init_single_field_struct_ok() {
   }
 }
 
+struct Base {
+  Base(int* p1, int* p2) { *p1 = 42; }
+};
+
+struct ForwardConstructorParams : Base {
+  // check that the parameters are forwarded in the correct order by the
+  // frontend
+  using Base::Base;
+};
+
+void derived_constructor_forwards_param_ok() {
+  int x;
+  ForwardConstructorParams A{&x, NULL};
+}
+
 } // namespace frontend

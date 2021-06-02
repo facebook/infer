@@ -223,8 +223,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let attr = Procdesc.get_attributes pdesc in
     let procname = Procdesc.get_proc_name pdesc in
     attr.formals (* remove this, which should always be the first formal parameter *) |> List.tl_exn
-    |> List.fold_left ~init:([], [])
-         ~f:(fun (forwarded_params, forwarded_init_exps) (formal, typ) ->
+    |> List.fold_right ~init:([], [])
+         ~f:(fun (formal, typ) (forwarded_params, forwarded_init_exps) ->
            let pvar = Pvar.mk formal procname in
            let id = Ident.create_fresh Ident.knormal in
            ( (Exp.Var id, typ) :: forwarded_params
