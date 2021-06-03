@@ -117,6 +117,15 @@ module Bound : sig
   val has_void_ptr_symb : t -> bool
 
   val are_similar : t -> t -> bool
+  (** Return true if the two bounds are likely the same. Two bounds are considered likely the same
+      if either one of the following holds: (1) they are both non-symbolic and equal (2) they are
+      both symbolic and the symbols are the same (3) one bound is symbolic and the second
+      non-symbolic
+
+      The rationale for (3) is to handle the situation when unsigned symbolic value B (e.g., integer
+      representing a boolean) is pruned with zero (False). Before the prune, the value is
+      represented by an interval [B(u), B(u)] ("u" stands for unsigned) and is considered precise.
+      The result of the prune is [B(u), 0] and it should be also considered precise. *)
 
   val subst_lb : t -> eval_sym -> t AbstractDomain.Types.bottom_lifted
 

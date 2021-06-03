@@ -1079,7 +1079,14 @@ module Bound = struct
       (get_symbols x)
 
 
-  let are_similar b1 b2 = Symb.SymbolSet.equal (get_symbols b1) (get_symbols b2)
+  let are_similar b1 b2 =
+    let s1 = get_symbols b1 in
+    if Symb.SymbolSet.is_empty s1 then eq b1 b2
+    else
+      let s2 = get_symbols b2 in
+      if Symb.SymbolSet.is_empty s2 then true
+      else Symb.SymbolSet.equal (get_symbols b1) (get_symbols b2)
+
 
   (** Substitutes ALL symbols in [x] with respect to [eval_sym]. Under/over-Approximate as good as
       possible according to [subst_pos]. *)
