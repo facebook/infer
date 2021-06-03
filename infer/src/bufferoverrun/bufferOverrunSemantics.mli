@@ -87,6 +87,7 @@ module Prune : sig
        Location.t
     -> Typ.IntegerWidths.t
     -> Exp.t
+    -> ?in_loop_head:bool
     -> BufferOverrunDomain.Mem.t
     -> BufferOverrunDomain.Mem.t
   (** Prune memory with the given condition expression *)

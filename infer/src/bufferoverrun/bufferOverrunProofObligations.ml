@@ -670,10 +670,15 @@ module ConditionWithTrace = struct
     { cond: Condition.t
     ; trace: 'cond_trace ConditionTrace.t0
     ; reported: Reported.t option
-    ; reachability: Dom.Reachability.t }
+    ; reachability: Dom.Reachability.t
+    ; is_precondition: bool }
 
   let make cond trace latest_prune =
-    {cond; trace; reported= None; reachability= Dom.Reachability.make latest_prune}
+    { cond
+    ; trace
+    ; reported= None
+    ; reachability= Dom.Reachability.make latest_prune
+    ; is_precondition= false }
 
 
   let pp fmt {cond; trace; reachability} =
@@ -702,8 +707,13 @@ module ConditionWithTrace = struct
 
 
   let subst eval_sym_trace callee_pname call_site cwt =
-    let symbols = Condition.get_symbols cwt.cond in
-    if Symb.SymbolSet.is_empty symbols then
+    let symbols_cond = Condition.get_symbols cwt.cond in
+    if
+      Symb.SymbolSet.is_empty symbols_cond
+      && Symb.SymbolSet.is_empty (Dom.Reachability.get_symbols cwt.reachability)
+      (* The condition is symbolic if either the condition itself or its path condition is
+           symbolic.*)
+    then
       L.(die InternalError)
         "Trying to substitute a non-symbolic condition %a from %a at %a. Why was it propagated in \
          the first place?"
@@ -719,15 +729,16 @@ module ConditionWithTrace = struct
         | None ->
             None
         | Some cond ->
+            (* Add traces from symbols of the condition itself only (not of its path condition).*)
             let traces_caller =
               Symb.SymbolSet.fold
                 (fun symbol val_traces -> ValTrace.Set.join (trace_of_sym symbol) val_traces)
-                symbols ValTrace.Set.bottom
+                symbols_cond ValTrace.Set.bottom
             in
             let trace =
               ConditionTrace.make_call_and_subst ~traces_caller ~callee_pname call_site cwt.trace
             in
-            Some {cond; trace; reported= cwt.reported; reachability} )
+            Some {cond; trace; reported= cwt.reported; reachability; is_precondition= true} )
     | `Unreachable ->
         None
 
@@ -752,10 +763,49 @@ module ConditionWithTrace = struct
 
 
   let check cwt =
-    let ({report_issue_type; propagate} as checked) = Condition.check cwt.cond cwt.trace in
+    let {report_issue_type; propagate} = Condition.check cwt.cond cwt.trace in
+    (* Reachability information may not be complete. To avoid false positives
+       (reporting problems about unreachable checks), we want to detect it and
+       not propagate symbolic checks with incomplete reachability information. *)
+    let can_propagate = Config.bo_preconditions && Dom.Reachability.is_complete cwt.reachability in
+    let report_issue_type, propagate =
+      match report_issue_type with
+      | Issue _
+      (* The condition is not symbolic, but we might still want to propagate it because of the
+         reachability.*)
+        when Dom.Reachability.is_symbolic cwt.reachability
+             && cwt.is_precondition
+             (* We don't want to propagate non-precondition checks with symbolic reachability
+                into preconditions as ilustrated by the following example:
+                  if symb = 0 then
+                    return 1 / symb; -- report rather than propagate
+                As opposed to preconditions:
+                    procedure Callee (P1, P2 : Integer) is
+                      begin
+                        if P1 = 1 then
+                          pragma Assert (P2 > 1);
+                        end if;
+                    end Callee;
+
+                    procedure Caller (P : Integer) is
+                    begin
+                      Callee (P, 0);  -- not report, propagate
+                    end Caller; *)
+             && not (Dom.Reachability.pruning_exp_is_true cwt.reachability) ->
+          (* The check can be statically known as reachable even if reachability is
+                  symbolic:
+                    procedure Caller (P : Integer) is
+                    begin
+                      if P = 1 then
+                        Callee (P, 0);  -- reachabiliy info is still symbolic, but
+                                        -- it is known to be true *)
+          (SymbolicIssue, can_propagate)
+      | _ ->
+          (report_issue_type, propagate && can_propagate)
+    in
     match report_issue_type with
     | NotIssue | SymbolicIssue ->
-        checked
+        {report_issue_type; propagate}
     | Issue issue_type ->
         let issue_type = set_u5 cwt issue_type in
         (* Only report if the precision has improved.
@@ -782,7 +832,7 @@ module ConditionWithTrace = struct
   let for_summary = function
     | _, {propagate= false} | _, {report_issue_type= NotIssue} ->
         None
-    | {cond; trace; reported; reachability}, {report_issue_type} ->
+    | {cond; trace; reported; reachability; is_precondition}, {report_issue_type} ->
         let reported =
           match report_issue_type with
           | NotIssue ->
@@ -793,7 +843,7 @@ module ConditionWithTrace = struct
               Some (Reported.make issue_type)
         in
         let trace = ConditionTrace.for_summary trace in
-        Some {cond; trace; reported; reachability}
+        Some {cond; trace; reported; reachability; is_precondition}
 end
 
 module ConditionSet = struct

@@ -767,6 +767,16 @@ and bootclasspath =
     "Specify the Java bootclasspath"
 
 
+and bo_preconditions =
+  CLOpt.mk_bool ~long:"bo-preconditions" ~default:true
+    "Specify that the bufferoverrun checker should propagate checks from callees to callers"
+
+
+and bo_nested_path_conditions =
+  CLOpt.mk_bool ~long:"bo-nested-path-conditions" ~default:true
+    "Specify that bufferoverrun checker shouldn't cut nested path conditions"
+
+
 (** Automatically set when running from within Buck *)
 and buck = CLOpt.mk_bool ~long:"buck" ""
 
@@ -3021,6 +3031,10 @@ and bootclasspath = !bootclasspath
 and bo_debug = !bo_debug
 
 and bo_field_depth_limit = !bo_field_depth_limit
+
+and bo_preconditions = !bo_preconditions
+
+and bo_nested_path_conditions = !bo_nested_path_conditions
 
 and buck = !buck
 

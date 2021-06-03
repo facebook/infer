@@ -70,6 +70,10 @@ module Bound : sig
 
   val is_symbolic : t -> bool
 
+  (* Return true if the bound is symbolic and it is not MinMax.
+     This means that the bound is linear and it wasn't constrained. *)
+  val is_symbolic_linear : t -> bool
+
   val le : t -> t -> bool
 
   val lt : t -> t -> bool
@@ -95,6 +99,10 @@ module Bound : sig
   val widen_u : t -> t -> t
 
   val widen_u_thresholds : thresholds:Z.t list -> t -> t -> t
+
+  (* Return Some const if the interval given by a lower and an upper bound represents a
+     constant const, return None if it doesn't represent a statically known constant. *)
+  val repr_const_itv : lb:t -> ub:t -> Z.t option
 
   val get_const : t -> Z.t option
 

@@ -495,6 +495,8 @@ module PowLoc = struct
     if Loc.is_unknown l then mk_unknown (LocSet.singleton l) else mk_known (LocSet.singleton l)
 
 
+  let is_unknown = function Unknown _ -> true | Bottom | Known _ -> false
+
   let fold f ploc init =
     match ploc with Bottom -> init | Known ploc | Unknown ploc -> LocSet.fold f ploc init
 

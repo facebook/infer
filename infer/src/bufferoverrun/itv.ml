@@ -100,6 +100,10 @@ module ItvPure = struct
         `RightSmallerThanLeft
 
 
+  let have_empty_intersection itv1 itv2 =
+    Bound.lt (ub itv1) (lb itv2) || Bound.gt (lb itv1) (ub itv2)
+
+
   let join : t -> t -> t =
    fun (l1, u1) (l2, u2) -> (Bound.underapprox_min l1 l2, Bound.overapprox_max u1 u2)
 
@@ -170,6 +174,15 @@ module ItvPure = struct
 
   let is_nat : t -> bool = fun (l, u) -> Bound.is_zero l && Bound.is_pinf u
 
+  let is_const : t -> Z.t option =
+   fun (l, u) ->
+    match (Bound.get_const l, Bound.get_const u) with
+    | (Some n as z), Some m when Z.equal n m ->
+        z
+    | _, _ ->
+        Bound.repr_const_itv ~lb:l ~ub:u
+
+
   let get_const : t -> Z.t option =
    fun (l, u) ->
     match (Bound.get_const l, Bound.get_const u) with
@@ -188,6 +201,18 @@ module ItvPure = struct
   let is_true : t -> bool = fun (l, u) -> Bound.le Bound.one l || Bound.le u Bound.mone
 
   let is_symbolic : t -> bool = fun (lb, ub) -> Bound.is_symbolic lb || Bound.is_symbolic ub
+
+  let is_symbolic_linear : t -> bool =
+   fun (lb, ub) -> Bound.is_symbolic_linear lb && Bound.is_symbolic_linear ub
+
+
+  let is_precise : t -> bool =
+   fun it ->
+    if is_symbolic it then
+      let lb, ub = it in
+      Bound.are_similar lb ub
+    else match is_const it with None -> false | _ -> true
+
 
   let is_ge_zero : t -> bool = fun (lb, _) -> Bound.le Bound.zero lb
 
@@ -719,6 +744,8 @@ let bind2b : (ItvPure.t -> ItvPure.t -> Boolean.t) -> t -> t -> Boolean.t =
   bind2_gen ~bot:Boolean.Bottom
 
 
+let bind2bool : (ItvPure.t -> ItvPure.t -> bool) -> t -> t -> bool = bind2_gen ~bot:false
+
 let plus : t -> t -> t = lift2 ItvPure.plus
 
 let minus : t -> t -> t = lift2 ItvPure.minus
@@ -807,6 +834,12 @@ let subst : t -> Bound.eval_sym -> t =
 
 let is_symbolic = bind1bool ItvPure.is_symbolic
 
+let is_symbolic_linear = bind1bool ItvPure.is_symbolic_linear
+
+let is_precise = bind1_gen ~bot:true ItvPure.is_precise
+
+let have_empty_intersection = bind2bool ItvPure.have_empty_intersection
+
 let get_symbols : t -> SymbolSet.t = function
   | Bottom ->
       SymbolSet.empty
@@ -837,3 +870,5 @@ let is_length_path_of path = bind1_gen ~bot:false (ItvPure.is_length_path_of pat
 let has_only_non_int_symbols = bind1bool ItvPure.has_only_non_int_symbols
 
 let is_incr_of path = bind1bool (ItvPure.is_incr_of path)
+
+let is_top v = match v with Bottom -> false | NonBottom v_itv_pure -> ItvPure.is_top v_itv_pure

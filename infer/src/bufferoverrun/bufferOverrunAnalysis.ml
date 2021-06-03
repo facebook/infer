@@ -52,23 +52,6 @@ module TransferFunctions = struct
 
   type nonrec analysis_data = analysis_data
 
-  let instantiate_latest_prune ~ret_id ~callee_exit_mem eval_sym_trace location mem =
-    match
-      Dom.Mem.get_latest_prune callee_exit_mem
-      |> Dom.LatestPrune.subst ~ret_id eval_sym_trace location
-    with
-    | Ok latest_prune' ->
-        (* Note that we are losing some precisions here, e.g., the best results should be "and" of
-           caller's and callee's pruned conditions.  For now, we defer the implementation of the
-           "and" since we haven't seen a case where "and" would help yet. *)
-        if Dom.LatestPrune.is_top latest_prune' then mem
-        else Dom.Mem.set_latest_prune latest_prune' mem
-    | Error `SubstBottom ->
-        Dom.Mem.unreachable
-    | Error `SubstFail ->
-        mem
-
-
   let instantiate_mem_reachable ret_id callee_formals callee_pname ~callee_exit_mem
       ({Dom.eval_locpath} as eval_sym_trace) mem location =
     let formal_locs =
@@ -128,11 +111,13 @@ module TransferFunctions = struct
       | _ ->
           Dom.Mem.find (Loc.of_pvar (Pvar.get_ret_pvar callee_pname)) callee_exit_mem
     in
+    (* We intentionally don't instantiate latest prune for now. Latest prune now keeps only path
+       conditions and a path condition isn't impacted by a call (it should be empty at the exit
+       of a subprogram). *)
     Dom.Mem.add_stack ret_var (Dom.Val.subst ret_val eval_sym_trace location) mem
     |> instantiate_ret_alias
     |> copy_reachable_locs_from
          (LocSet.union formal_locs (Dom.Val.get_all_locs ret_val |> PowLoc.to_set))
-    |> instantiate_latest_prune ~ret_id ~callee_exit_mem eval_sym_trace location
 
 
   let instantiate_mem :
@@ -431,7 +416,8 @@ module TransferFunctions = struct
           let mem = Dom.Mem.update_latest_prune ~updated_locs:locs exp1 exp2 mem in
           mem
       | Prune (exp, location, _, _) ->
-          Sem.Prune.prune location integer_type_widths exp mem
+          Sem.Prune.prune location integer_type_widths exp
+            ~in_loop_head:(CFG.is_loop_head proc_desc node) mem
       | Call ((id, _), Const (Cfun callee_pname), _, _, _)
         when is_java_enum_values tenv callee_pname ->
           let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in

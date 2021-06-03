@@ -193,6 +193,16 @@ val normalize : t -> t
 
 val is_symbolic : t -> bool
 
+(* Return true if both bounds of the interval are symbolic and it are not MinMax.
+     This means that the interval is symbolic and it wasn't constrained. *)
+val is_symbolic_linear : t -> bool
+
+val is_precise : t -> bool
+(** Return true if an interval represents a precise value. *)
+
+val have_empty_intersection : t -> t -> bool
+(** Return true if it is statically known that both intervals have an empty intersection. *)
+
 val get_symbols : t -> SymbolSet.t
 
 val eq : t -> t -> bool
@@ -279,3 +289,5 @@ val has_only_non_int_symbols : t -> bool
 
 val is_incr_of : Symb.SymbolPath.partial -> t -> bool
 (** Check if [itv] is [path+1] when called [is_incr_of path itv] *)
+
+val is_top : t -> bool

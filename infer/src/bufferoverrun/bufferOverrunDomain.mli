@@ -92,8 +92,17 @@ module Val : sig
   val unknown_from : Typ.t -> callee_pname:Procname.t option -> location:Location.t -> t
   (** Unknown return value of [callee_pname] *)
 
+  val is_precise : t -> bool
+  (** Check if the value is precise. *)
+
   val is_bot : t -> bool
   (** Check if the value is bottom *)
+
+  val is_top : t -> bool
+  (** Return true if the value represents top value. Note that this does not mean that it is
+      identical with Dom.Val.top. This is because a top value is bound to a particular location
+      (this affects fields sym, offset_sym, and size_sym - see MemReach.add_heap) and a to
+      particular assignment (this affects the field traces - see Val.add_assign_trace_elem). *)
 
   val is_mone : t -> bool
   (** Check if the value is [\[-1,-1\]] *)
@@ -412,6 +421,11 @@ module LatestPrune : sig
   (** Substitute the latest pruned values. If the result is bottom, which means the path is
       unreachable. The substitution can be failed when a callee variable can be substituted to
       multiple abstract locations. *)
+
+  val mk_latest_prune :
+    complete:bool -> in_loop_head:bool -> previous_prune:t -> prune_pairs:PrunePairs.t -> t
+
+  val is_complete : t -> bool
 end
 
 (** Domain for reachability check *)
@@ -427,6 +441,14 @@ module Reachability : sig
 
   val subst : t -> eval_sym_trace -> Location.t -> [`Reachable of t | `Unreachable]
   (** Substitute a reachability value *)
+
+  val is_symbolic : t -> bool
+
+  val get_symbols : t -> Symb.SymbolSet.t
+
+  val is_complete : t -> bool
+
+  val pruning_exp_is_true : t -> bool
 end
 
 module LoopHeadLoc : sig
@@ -486,9 +508,9 @@ module Mem : sig
   val is_stack_loc : AbsLoc.Loc.t -> _ t0 -> bool
   (** Check if an abstract location is a stack variable, e.g., [n$0]. *)
 
-  val set_prune_pairs : PrunePairs.t -> t -> t
-
   val set_latest_prune : LatestPrune.t -> t -> t
+  (** Sets latest prune. If Config.bo_nested_path_conditions is true, try to keep information about
+      the past prunes. Otherwise, keep only information about the latest prune. *)
 
   val set_first_idx_of_null : AbsLoc.Loc.t -> Val.t -> t -> t
   (** In C string, set the index of the first null character, i.e., end of string, when called by

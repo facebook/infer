@@ -539,12 +539,25 @@ module Val = struct
 
   let unknown_locs = of_pow_loc PowLoc.unknown ~traces:TraceSet.bottom
 
+  let is_precise v = Itv.is_precise v.itv
+
+  let is_top v = Itv.is_top v.itv && PowLoc.is_unknown v.powloc && ArrayBlk.is_unknown v.arrayblk
+
   let is_bot x =
     Itv.is_bottom x.itv && PowLoc.is_bot x.powloc && ArrayBlk.is_bot x.arrayblk
     && FuncPtr.Set.is_bottom x.func_ptrs
 
 
   let is_mone x = Itv.is_mone (get_itv x)
+
+  let is_symbolic v =
+    if false then
+      let itv = get_itv v in
+      (* Note that Itv.is_bottom is no longer used for non-null pointers. I is still used for
+         arrays though. *)
+      if Itv.is_bottom itv then ArrayBlk.is_symbolic (get_array_blk v) else Itv.is_symbolic itv
+    else Itv.is_symbolic (get_itv v) || ArrayBlk.is_symbolic (get_array_blk v)
+
 
   let is_incr_of l {itv} =
     Option.value_map (Loc.get_path l) ~default:false ~f:(fun path -> Itv.is_incr_of path itv)
@@ -1641,11 +1654,16 @@ module CoreVal = struct
       (Val.get_array_blk x)
 
 
-  let is_symbolic v =
-    if false then
-      let itv = Val.get_itv v in
-      if Itv.is_bottom itv then ArrayBlk.is_symbolic (Val.get_array_blk v) else Itv.is_symbolic itv
-    else Itv.is_symbolic (Val.get_itv v) || ArrayBlk.is_symbolic (Val.get_array_blk v)
+  let is_symbolic = Val.is_symbolic
+
+  let get_symbols = Val.get_symbols
+
+  let is_precise v = Val.is_precise v
+
+  let is_empty v =
+    Itv.is_bottom (Val.get_itv v)
+    && PowLoc.is_bot (Val.get_pow_loc v)
+    && ArrayBlk.is_empty (Val.get_array_blk v)
 
 
   let is_bot = Val.is_bot
@@ -1668,7 +1686,11 @@ module PruningExp = struct
     match (x, y) with
     | Binop {bop= bop1; lhs= lhs1; rhs= rhs1}, Binop {bop= bop2; lhs= lhs2; rhs= rhs2}
       when Binop.equal bop1 bop2 ->
-        Binop {bop= bop1; lhs= Val.join lhs1 lhs2; rhs= Val.join rhs1 rhs2}
+        let lhs = Val.join lhs1 lhs2 in
+        let rhs = Val.join rhs1 rhs2 in
+        if Itv.is_top lhs.itv || Itv.is_top rhs.itv then
+          (* If either lhs or rhs is top, the constraint is effectively unknown *) Unknown
+        else Binop {bop= bop1; lhs; rhs}
     | _, _ ->
         Unknown
 
@@ -1677,10 +1699,11 @@ module PruningExp = struct
     match (prev, next) with
     | Binop {bop= bop1; lhs= lhs1; rhs= rhs1}, Binop {bop= bop2; lhs= lhs2; rhs= rhs2}
       when Binop.equal bop1 bop2 ->
-        Binop
-          { bop= bop1
-          ; lhs= Val.widen ~prev:lhs1 ~next:lhs2 ~num_iters
-          ; rhs= Val.widen ~prev:rhs1 ~next:rhs2 ~num_iters }
+        let lhs = Val.widen ~prev:lhs1 ~next:lhs2 ~num_iters in
+        let rhs = Val.widen ~prev:rhs1 ~next:rhs2 ~num_iters in
+        if Itv.is_top lhs.itv || Itv.is_top rhs.itv then
+          (* If either lhs or rhs is top, the constraint is effectively unknown *) Unknown
+        else Binop {bop= bop1; lhs; rhs}
     | _, _ ->
         Unknown
 
@@ -1704,26 +1727,44 @@ module PruningExp = struct
         CoreVal.is_symbolic lhs || CoreVal.is_symbolic rhs
 
 
-  let is_empty =
-    let le_false v = Itv.leq ~lhs:(Val.get_itv v) ~rhs:Itv.zero in
-    function
+  let get_symbols = function
     | Unknown ->
-        false
+        Symb.SymbolSet.empty
+    | Binop {lhs; rhs} ->
+        Symb.SymbolSet.union (CoreVal.get_symbols lhs) (CoreVal.get_symbols rhs)
+
+
+  let eval = function
+    | Unknown ->
+        Val.top
     | Binop {bop= Lt; lhs; rhs} ->
-        le_false (Val.lt_sem lhs rhs)
+        Val.lt_sem lhs rhs
     | Binop {bop= Gt; lhs; rhs} ->
-        le_false (Val.gt_sem lhs rhs)
+        Val.gt_sem lhs rhs
     | Binop {bop= Le; lhs; rhs} ->
-        le_false (Val.le_sem lhs rhs)
+        Val.le_sem lhs rhs
     | Binop {bop= Ge; lhs; rhs} ->
-        le_false (Val.ge_sem lhs rhs)
+        Val.ge_sem lhs rhs
     | Binop {bop= Eq; lhs; rhs} ->
-        le_false (Val.eq_sem lhs rhs)
+        Val.eq_sem lhs rhs
     | Binop {bop= Ne; lhs; rhs} ->
-        le_false (Val.ne_sem lhs rhs)
+        Val.ne_sem lhs rhs
     | Binop _ ->
         assert false
 
+
+  (* Return Boolean.True if the pruning expression is unsatisfiable, Boolean.False if it is
+     statically known to be true and Boolean.Top otherwise.*)
+  let is_empty_sem e =
+    let le_false v = Itv.le_sem (Val.get_itv v) Itv.zero in
+    le_false (eval e)
+
+
+  (* Return true if the pruning expression is unsatisfiable and false otherwise. *)
+  let is_empty e = match is_empty_sem e with Boolean.True -> true | _ -> false
+
+  (* Return true if pruning expression is known to be true. *)
+  let is_true e = Itv.is_one (Val.get_itv (eval e))
 
   let subst x eval_sym_trace location =
     match x with
@@ -1734,6 +1775,66 @@ module PruningExp = struct
           { bop
           ; lhs= Val.subst lhs eval_sym_trace location
           ; rhs= Val.subst rhs eval_sym_trace location }
+
+
+  (* Return true if pruning expression is likely unsatisfiable.
+     This is to be used for evaluating a reachability of preconditions because we want to
+     only emit messages about necessary preconditions.
+
+     For example, for an expression "A /= B", return true if there exists a value a of
+     A and a value b of B such that "a /= b". The rationale behind that is that when
+     there are more constraints for a variable, they are joined and to have only necessary
+     preconditions, we need to ensure that all constraints are satisfied. For example:
+       procedure Callee (A : Integer; B : Boolean) is
+         if A /= 1 then  --  the constraint is "A /= 1"
+           if A /= 3 then  --  the constraint is "A /= [1, 3]"
+             assert (B);  --  will be propagated to a precondition with reachability info
+                          --  A /= [1, 3] meaning that the precondition is treated as
+                          --  unreachable when there exists a value of A in [1, 3]. This
+                          --  is a necessary reachability condition, but not a sufficient
+                          --  one because when A evaluates to 2, the assertion may fail.
+           end if;
+         end if;
+       end Callee;
+       ...
+       Callee (1, False);  Callee (3, False);  --  likely_empty = true; both necesssary and
+                                               --  sufficient preconditions satisfied
+       Callee (2, False);  --  likely_empty = true; necessary precondition satisfied, sufficient
+                           --  precondition violated
+       Callee (4, False);  --  likely_empty = false -> necessary and sufficient
+                           --  preconditions violated
+     Do not do this if LHS or RHS of the pruning expression are symbolic unconstrained values.
+     This is because a symbolic unconstrained value can have non-empty intersection with any
+     other value. That is, if LHS or RHS is symbolic value, we would always treat the precondition
+     as unreachable.
+  *)
+  let likely_empty v =
+    match is_empty_sem v with
+    | Boolean.True ->
+        (* Expression known to be always false *)
+        true
+    | Boolean.False ->
+        (* Expression known to be always true (e.g., for a binary negation lhs.itv and rhs.itv
+           have an empty intersection) *)
+        false
+    | _ -> (
+      match v with
+      | Binop {lhs; rhs} ->
+          (* Binary operations:
+             - likely empty except of the case where lhs.itv or rhs.itv are symbolic and
+               not constrained because we don't want to return true for such intervals since
+               we don't know anything about them
+             - note that, e.g., for negation we know that there exists a value in the
+               intersection of lhs.itv and rhs.itv because is_empty_sem would return
+               Boolean.False otherwise*)
+          (not (Itv.is_symbolic_linear lhs.itv)) && not (Itv.is_symbolic_linear rhs.itv)
+      | Unknown ->
+          (* Do not treat Unknown as likely empty (prune expression can be Unknown because
+             it wasn't set from the start). Note that the whole prune is set as incomplete
+             (which disables propagating of preconditions with that prune information) when
+             prune expression is set to Unknown as the effect of updating a prune value in
+             set_latest_prune. *)
+          false )
 end
 
 module PrunedVal = struct
@@ -1768,6 +1869,16 @@ module PrunedVal = struct
   let is_symbolic {v; pruning_exp} = CoreVal.is_symbolic v || PruningExp.is_symbolic pruning_exp
 
   let is_bot {v; pruning_exp} = CoreVal.is_bot v || PruningExp.is_empty pruning_exp
+
+  let get_symbols {v; pruning_exp} =
+    Symb.SymbolSet.union (CoreVal.get_symbols v) (PruningExp.get_symbols pruning_exp)
+
+
+  (* Return true if pruned value is empty or pruning expression is likely unsatisfiable.
+     This is to be used for evaluating a reachability of preconditions because we want to
+     only emit messages about necessary preconditions. See the documentation of
+     PruningExp.likely_empty for more details.*)
+  let likely_empty {v; pruning_exp} = CoreVal.is_empty v || PruningExp.likely_empty pruning_exp
 end
 
 (* [PrunePairs] is a map from abstract locations to abstract values that represents pruned results
@@ -1798,215 +1909,286 @@ module PrunePairs = struct
 end
 
 module LatestPrune = struct
-  (* Latest p: The pruned pairs 'p' has pruning information (which
-     abstract locations are updated by which abstract values) in the
-     latest pruning.
+  module Prune = struct
+    (* Latest p: The pruned pairs 'p' has pruning information (which
+       abstract locations are updated by which abstract values) in the
+       latest pruning.
 
-     TrueBranch (x, p): After a pruning, the variable 'x' is assigned
-     by 1.  There is no other memory updates after the latest pruning.
+       TrueBranch (x, p): After a pruning, the variable 'x' is assigned
+       by 1.  There is no other memory updates after the latest pruning.
 
-     FalseBranch (x, p): After a pruning, the variable 'x' is assigned
-     by 0.  There is no other memory updates after the latest pruning.
+       FalseBranch (x, p): After a pruning, the variable 'x' is assigned
+       by 0.  There is no other memory updates after the latest pruning.
 
-     V (x, ptrue, pfalse): After two non-sequential prunings ('ptrue'
-     and 'pfalse'), the variable 'x' is assigned by 1 and 0,
-     respectively.  There is no other memory updates after the latest
-     prunings.
+       V (x, ptrue, pfalse): After two non-sequential prunings ('ptrue'
+       and 'pfalse'), the variable 'x' is assigned by 1 and 0,
+       respectively.  There is no other memory updates after the latest
+       prunings.
 
-     VRet (x, ptrue, pfalse): Similar to V, but this is for return
-     values of functions.
+       VRet (x, ptrue, pfalse): Similar to V, but this is for return
+       values of functions.
 
-     Top: No information about the latest pruning. *)
+       Top: No information about the latest pruning. *)
+    type t =
+      | Latest of PrunePairs.t
+      | TrueBranch of Pvar.t * PrunePairs.t
+      | FalseBranch of Pvar.t * PrunePairs.t
+      | V of Pvar.t * PrunePairs.t * PrunePairs.t
+      | VRet of Ident.t * PrunePairs.t * PrunePairs.t
+      | Top
+
+    let pvar_pp = Pvar.pp Pp.text
+
+    let pp fmt = function
+      | Top ->
+          ()
+      | Latest p ->
+          F.fprintf fmt "LatestPrune: latest %a" PrunePairs.pp p
+      | TrueBranch (v, p) ->
+          F.fprintf fmt "LatestPrune: true(%a) %a" pvar_pp v PrunePairs.pp p
+      | FalseBranch (v, p) ->
+          F.fprintf fmt "LatestPrune: false(%a) %a" pvar_pp v PrunePairs.pp p
+      | V (v, p1, p2) ->
+          F.fprintf fmt "LatestPrune: v(%a) %a / %a" pvar_pp v PrunePairs.pp p1 PrunePairs.pp p2
+      | VRet (v, p1, p2) ->
+          F.fprintf fmt "LatestPrune: ret(%a) %a / %a" Ident.pp v PrunePairs.pp p1 PrunePairs.pp p2
+
+
+    let leq ~lhs ~rhs =
+      if phys_equal lhs rhs then true
+      else
+        match (lhs, rhs) with
+        | _, Top ->
+            true
+        | Top, _ ->
+            false
+        | Latest p1, Latest p2 ->
+            PrunePairs.leq ~lhs:p1 ~rhs:p2
+        | TrueBranch (x1, p1), TrueBranch (x2, p2)
+        | FalseBranch (x1, p1), FalseBranch (x2, p2)
+        | TrueBranch (x1, p1), V (x2, p2, _)
+        | FalseBranch (x1, p1), V (x2, _, p2) ->
+            Pvar.equal x1 x2 && PrunePairs.leq ~lhs:p1 ~rhs:p2
+        | V (x1, ptrue1, pfalse1), V (x2, ptrue2, pfalse2) ->
+            Pvar.equal x1 x2
+            && PrunePairs.leq ~lhs:ptrue1 ~rhs:ptrue2
+            && PrunePairs.leq ~lhs:pfalse1 ~rhs:pfalse2
+        | VRet (x1, ptrue1, pfalse1), VRet (x2, ptrue2, pfalse2) ->
+            Ident.equal x1 x2
+            && PrunePairs.leq ~lhs:ptrue1 ~rhs:ptrue2
+            && PrunePairs.leq ~lhs:pfalse1 ~rhs:pfalse2
+        | _, _ ->
+            false
+
+
+    let is_top = function Top -> true | _ -> false
+
+    let forget locs =
+      let is_mem_locs x = PowLoc.mem (Loc.of_pvar x) locs in
+      function
+      | Latest p ->
+          Latest (PrunePairs.forget locs p)
+      | TrueBranch (x, p) ->
+          if is_mem_locs x then Top else TrueBranch (x, PrunePairs.forget locs p)
+      | FalseBranch (x, p) ->
+          if is_mem_locs x then Top else FalseBranch (x, PrunePairs.forget locs p)
+      | V (x, ptrue, pfalse) ->
+          if is_mem_locs x then Top
+          else V (x, PrunePairs.forget locs ptrue, PrunePairs.forget locs pfalse)
+      | VRet (x, ptrue, pfalse) ->
+          VRet (x, PrunePairs.forget locs ptrue, PrunePairs.forget locs pfalse)
+      | Top ->
+          Top
+
+
+    let replace ~from ~to_ x =
+      match x with
+      | TrueBranch (x, p) when Pvar.equal x from ->
+          TrueBranch (to_, p)
+      | FalseBranch (x, p) when Pvar.equal x from ->
+          FalseBranch (to_, p)
+      | V (x, ptrue, pfalse) when Pvar.equal x from ->
+          V (to_, ptrue, pfalse)
+      | _ ->
+          x
+
+
+    let subst ~ret_id ({eval_locpath} as eval_sym_trace) location =
+      let open Result.Monad_infix in
+      let subst_pvar x =
+        match PowLoc.is_singleton_or_more (PowLoc.subst_loc (Loc.of_pvar x) eval_locpath) with
+        | Empty ->
+            Error `SubstBottom
+        | Singleton (BoField.Prim (Loc.Var (Var.ProgramVar x'))) ->
+            Ok x'
+        | Singleton _ | More ->
+            Error `SubstFail
+      in
+      function
+      | Latest p ->
+          PrunePairs.subst p eval_sym_trace location >>| fun p' -> Latest p'
+      | TrueBranch (x, p) ->
+          subst_pvar x
+          >>= fun x' -> PrunePairs.subst p eval_sym_trace location >>| fun p' -> TrueBranch (x', p')
+      | FalseBranch (x, p) ->
+          subst_pvar x
+          >>= fun x' -> PrunePairs.subst p eval_sym_trace location >>| fun p' -> FalseBranch (x', p')
+      | V (x, ptrue, pfalse) when Pvar.is_return x ->
+          PrunePairs.subst ptrue eval_sym_trace location
+          >>= fun ptrue' ->
+          PrunePairs.subst pfalse eval_sym_trace location
+          >>| fun pfalse' -> VRet (ret_id, ptrue', pfalse')
+      | V (x, ptrue, pfalse) ->
+          subst_pvar x
+          >>= fun x' ->
+          PrunePairs.subst ptrue eval_sym_trace location
+          >>= fun ptrue' ->
+          PrunePairs.subst pfalse eval_sym_trace location >>| fun pfalse' -> V (x', ptrue', pfalse')
+      | VRet _ | Top ->
+          Ok Top
+  end
+
   type t =
-    | Latest of PrunePairs.t
-    | TrueBranch of Pvar.t * PrunePairs.t
-    | FalseBranch of Pvar.t * PrunePairs.t
-    | V of Pvar.t * PrunePairs.t * PrunePairs.t
-    | VRet of Ident.t * PrunePairs.t * PrunePairs.t
-    | Top
+    { complete: bool (* True if prune information capture a complete path condition *)
+    ; in_loop_head: bool
+          (* True if this prune is done in a node that is a loop head *)
+          (*; complete_in_dominators: bool list
+            (* Information about completeness of prunes of states of dominating blocks.
+               The first element of the list captures the information about completeness of
+               the immediate dominator of the block, the second element captures the information
+               about completeness of the immediate dominator of the immediate dominator, ... *)*)
+    ; previous_prunes: t list (* Previous prunes. The first element of the list is previous prune.*)
+    ; prune: Prune.t }
 
-  let pvar_pp = Pvar.pp Pp.text
-
-  let pp fmt = function
-    | Top ->
-        ()
-    | Latest p ->
-        F.fprintf fmt "LatestPrune: latest %a" PrunePairs.pp p
-    | TrueBranch (v, p) ->
-        F.fprintf fmt "LatestPrune: true(%a) %a" pvar_pp v PrunePairs.pp p
-    | FalseBranch (v, p) ->
-        F.fprintf fmt "LatestPrune: false(%a) %a" pvar_pp v PrunePairs.pp p
-    | V (v, p1, p2) ->
-        F.fprintf fmt "LatestPrune: v(%a) %a / %a" pvar_pp v PrunePairs.pp p1 PrunePairs.pp p2
-    | VRet (v, p1, p2) ->
-        F.fprintf fmt "LatestPrune: ret(%a) %a / %a" Ident.pp v PrunePairs.pp p1 PrunePairs.pp p2
+  let pp fmt {complete; prune} =
+    F.fprintf fmt "LatestPrune: complete: %b; %a" complete Prune.pp prune
 
 
-  let leq ~lhs ~rhs =
-    if phys_equal lhs rhs then true
-    else
-      match (lhs, rhs) with
-      | _, Top ->
-          true
-      | Top, _ ->
-          false
-      | Latest p1, Latest p2 ->
-          PrunePairs.leq ~lhs:p1 ~rhs:p2
-      | TrueBranch (x1, p1), TrueBranch (x2, p2)
-      | FalseBranch (x1, p1), FalseBranch (x2, p2)
-      | TrueBranch (x1, p1), V (x2, p2, _)
-      | FalseBranch (x1, p1), V (x2, _, p2) ->
-          Pvar.equal x1 x2 && PrunePairs.leq ~lhs:p1 ~rhs:p2
-      | V (x1, ptrue1, pfalse1), V (x2, ptrue2, pfalse2) ->
-          Pvar.equal x1 x2
-          && PrunePairs.leq ~lhs:ptrue1 ~rhs:ptrue2
-          && PrunePairs.leq ~lhs:pfalse1 ~rhs:pfalse2
-      | VRet (x1, ptrue1, pfalse1), VRet (x2, ptrue2, pfalse2) ->
-          Ident.equal x1 x2
-          && PrunePairs.leq ~lhs:ptrue1 ~rhs:ptrue2
-          && PrunePairs.leq ~lhs:pfalse1 ~rhs:pfalse2
-      | _, _ ->
-          false
+  let leq ~lhs ~rhs = Prune.leq ~lhs:lhs.prune ~rhs:rhs.prune
 
+  let top = {complete= true; in_loop_head= false; previous_prunes= []; prune= Prune.Top}
 
-  let join x y =
-    match (x, y) with
-    | _, _ when leq ~lhs:x ~rhs:y ->
-        y
-    | _, _ when leq ~lhs:y ~rhs:x ->
+  let is_top {prune} = Prune.is_top prune
+
+  let rec join x y =
+    let prev_prune = function [] -> top | first :: _ -> first in
+    let len_x_past = List.length x.previous_prunes in
+    let len_y_past = List.length y.previous_prunes in
+    if Int.equal len_x_past len_y_past then
+      (* x and y have common immediate dominator, we can pick previous prune from either
+         x or y *)
+      prev_prune x.previous_prunes
+    else if len_x_past < len_y_past then
+      if x.in_loop_head then
+        (* x is dominator of y (i.e., x is a loop header, the edge from y is a back edge) *)
         x
-    | Latest p1, Latest p2 ->
-        Latest (PrunePairs.join p1 p2)
-    | FalseBranch (x1, p1), FalseBranch (x2, p2) when Pvar.equal x1 x2 ->
-        FalseBranch (x1, PrunePairs.join p1 p2)
-    | TrueBranch (x1, p1), TrueBranch (x2, p2) when Pvar.equal x1 x2 ->
-        TrueBranch (x1, PrunePairs.join p1 p2)
-    | FalseBranch (x', pfalse), TrueBranch (y', ptrue)
-    | TrueBranch (x', ptrue), FalseBranch (y', pfalse)
-      when Pvar.equal x' y' ->
-        V (x', ptrue, pfalse)
-    | TrueBranch (x1, ptrue1), V (x2, ptrue2, pfalse)
-    | V (x2, ptrue2, pfalse), TrueBranch (x1, ptrue1)
-      when Pvar.equal x1 x2 ->
-        V (x1, PrunePairs.join ptrue1 ptrue2, pfalse)
-    | FalseBranch (x1, pfalse1), V (x2, ptrue, pfalse2)
-    | V (x2, ptrue, pfalse2), FalseBranch (x1, pfalse1)
-      when Pvar.equal x1 x2 ->
-        V (x1, ptrue, PrunePairs.join pfalse1 pfalse2)
-    | V (x1, ptrue1, pfalse1), V (x2, ptrue2, pfalse2) when Pvar.equal x1 x2 ->
-        V (x1, PrunePairs.join ptrue1 ptrue2, PrunePairs.join pfalse1 pfalse2)
-    | VRet (x1, ptrue1, pfalse1), VRet (x2, ptrue2, pfalse2) when Ident.equal x1 x2 ->
-        VRet (x1, PrunePairs.join ptrue1 ptrue2, PrunePairs.join pfalse1 pfalse2)
-    | _, _ ->
-        Top
+      else
+        (* x is less nested, fallback to an incomplete top. Note that this means that
+           the prune will stay incomplete for all the succeeding abstract states.
+           This happens when a short circuit disjunction is translated as a join of
+           two prunes (as opposed to a single prune). *)
+        {top with complete= false}
+    else join y x
 
 
   let widen ~prev ~next ~num_iters:_ = join prev next
 
-  let top = Top
+  let forget locs p = {p with prune= Prune.forget locs p.prune}
 
-  let is_top = function Top -> true | _ -> false
+  let replace ~from ~to_ p = {p with prune= Prune.replace ~from ~to_ p.prune}
 
-  let forget locs =
-    let is_mem_locs x = PowLoc.mem (Loc.of_pvar x) locs in
-    function
-    | Latest p ->
-        Latest (PrunePairs.forget locs p)
-    | TrueBranch (x, p) ->
-        if is_mem_locs x then Top else TrueBranch (x, PrunePairs.forget locs p)
-    | FalseBranch (x, p) ->
-        if is_mem_locs x then Top else FalseBranch (x, PrunePairs.forget locs p)
-    | V (x, ptrue, pfalse) ->
-        if is_mem_locs x then Top
-        else V (x, PrunePairs.forget locs ptrue, PrunePairs.forget locs pfalse)
-    | VRet (x, ptrue, pfalse) ->
-        VRet (x, PrunePairs.forget locs ptrue, PrunePairs.forget locs pfalse)
-    | Top ->
-        Top
-
-
-  let replace ~from ~to_ x =
-    match x with
-    | TrueBranch (x, p) when Pvar.equal x from ->
-        TrueBranch (to_, p)
-    | FalseBranch (x, p) when Pvar.equal x from ->
-        FalseBranch (to_, p)
-    | V (x, ptrue, pfalse) when Pvar.equal x from ->
-        V (to_, ptrue, pfalse)
-    | _ ->
-        x
-
-
-  let subst ~ret_id ({eval_locpath} as eval_sym_trace) location =
+  let subst ~ret_id eval_locpath location p =
     let open Result.Monad_infix in
-    let subst_pvar x =
-      match PowLoc.is_singleton_or_more (PowLoc.subst_loc (Loc.of_pvar x) eval_locpath) with
-      | Empty ->
-          Error `SubstBottom
-      | Singleton (BoField.Prim (Loc.Var (Var.ProgramVar x'))) ->
-          Ok x'
-      | Singleton _ | More ->
-          Error `SubstFail
-    in
-    function
-    | Latest p ->
-        PrunePairs.subst p eval_sym_trace location >>| fun p' -> Latest p'
-    | TrueBranch (x, p) ->
-        subst_pvar x
-        >>= fun x' -> PrunePairs.subst p eval_sym_trace location >>| fun p' -> TrueBranch (x', p')
-    | FalseBranch (x, p) ->
-        subst_pvar x
-        >>= fun x' -> PrunePairs.subst p eval_sym_trace location >>| fun p' -> FalseBranch (x', p')
-    | V (x, ptrue, pfalse) when Pvar.is_return x ->
-        PrunePairs.subst ptrue eval_sym_trace location
-        >>= fun ptrue' ->
-        PrunePairs.subst pfalse eval_sym_trace location
-        >>| fun pfalse' -> VRet (ret_id, ptrue', pfalse')
-    | V (x, ptrue, pfalse) ->
-        subst_pvar x
-        >>= fun x' ->
-        PrunePairs.subst ptrue eval_sym_trace location
-        >>= fun ptrue' ->
-        PrunePairs.subst pfalse eval_sym_trace location >>| fun pfalse' -> V (x', ptrue', pfalse')
-    | VRet _ | Top ->
-        Ok Top
+    Prune.subst ~ret_id eval_locpath location p.prune >>| fun prune -> {p with prune}
+
+
+  let mk_latest_prune ~complete ~in_loop_head ~previous_prune ~prune_pairs =
+    { complete
+    ; in_loop_head
+    ; previous_prunes= previous_prune :: previous_prune.previous_prunes
+    ; prune= Prune.Latest prune_pairs }
+
+
+  let is_complete prune = prune.complete
 end
 
 module Reachability = struct
   module M = PrettyPrintable.MakePPSet (PrunedVal)
 
-  type t = M.t
+  type t = {complete: bool (* True if reachability information is complete. *); reachability: M.t}
 
-  let equal = M.equal
+  let equal r1 r2 = Bool.equal r1.complete r2.complete && M.equal r1.reachability r2.reachability
 
-  let pp = M.pp
+  let pp f r = F.fprintf f "%a, complete= %b" M.pp r.reachability r.complete
 
-  (* It keeps only symbolic pruned values, because non-symbolic ones are useless to see the
-     reachability. *)
-  let add v x = if PrunedVal.is_symbolic v then M.add v x else x
+  (* Add value to reachability information.
+     Keep only symbolic pruned values, because non-symbolic ones are useless to see
+     the reachability. Moreover, having non-symbolic imprecise value here means that the
+     reachability information is incomplete. *)
+  let add v r =
+    if PrunedVal.is_symbolic v then {r with reachability= M.add v r.reachability}
+    else {r with complete= r.complete && CoreVal.is_precise (PrunedVal.get_val v)}
 
-  let of_latest_prune latest_prune =
-    let of_prune_pairs p = PrunePairs.fold (fun _ v acc -> add v acc) p M.empty in
-    match latest_prune with
-    | LatestPrune.Latest p | LatestPrune.TrueBranch (_, p) | LatestPrune.FalseBranch (_, p) ->
+
+  let of_latest_prune (latest_prune : LatestPrune.t) =
+    (* Reachability information is not complete if there are non-symbolic imprecise values in
+       latest prune (see add) or latest prune is not complete (it is not full path condition).
+       We keep the information about completeness in order to be able to decide whether
+       to propagate, report, or ignore checks with such reachability information (depending
+       on desired false positive rate) *)
+    let of_prune_pairs p =
+      PrunePairs.fold
+        (fun _ v acc -> add v acc)
+        p
+        {reachability= M.empty; complete= latest_prune.complete}
+    in
+    match latest_prune.prune with
+    | LatestPrune.Prune.Latest p
+    | LatestPrune.Prune.TrueBranch (_, p)
+    | LatestPrune.Prune.FalseBranch (_, p) ->
         of_prune_pairs p
-    | LatestPrune.V (_, ptrue, pfalse) | LatestPrune.VRet (_, ptrue, pfalse) ->
-        M.inter (of_prune_pairs ptrue) (of_prune_pairs pfalse)
-    | LatestPrune.Top ->
-        M.empty
+    | LatestPrune.Prune.V (_, ptrue, pfalse) | LatestPrune.Prune.VRet (_, ptrue, pfalse) ->
+        let ptrue_reachability = of_prune_pairs ptrue in
+        let pfalse_reachability = of_prune_pairs pfalse in
+        { reachability= M.inter ptrue_reachability.reachability pfalse_reachability.reachability
+        ; complete= ptrue_reachability.complete && ptrue_reachability.complete }
+    | LatestPrune.Prune.Top ->
+        {reachability= M.empty; complete= latest_prune.complete}
 
 
   let make latest_prune = of_latest_prune latest_prune
 
-  let add_latest_prune latest_prune x = M.union x (of_latest_prune latest_prune)
+  let add_latest_prune latest_prune x =
+    let r = of_latest_prune latest_prune in
+    {reachability= M.union x.reachability r.reachability; complete= r.complete && x.complete}
+
 
   let subst x eval_sym_trace location =
     let exception Unreachable in
     let subst1 x acc =
       let v = PrunedVal.subst x eval_sym_trace location in
-      if PrunedVal.is_bot v then raise Unreachable else add v acc
+      if PrunedVal.likely_empty v then raise Unreachable else add v acc
     in
-    match M.fold subst1 x M.empty with x -> `Reachable x | exception Unreachable -> `Unreachable
+    match M.fold subst1 x.reachability {reachability= M.empty; complete= x.complete} with
+    | x ->
+        `Reachable x
+    | exception Unreachable ->
+        `Unreachable
+
+
+  let is_symbolic x = M.fold (fun v acc -> acc || PrunedVal.is_symbolic v) x.reachability false
+
+  let get_symbols x =
+    M.fold
+      (fun v acc -> Symb.SymbolSet.union acc (PrunedVal.get_symbols v))
+      x.reachability Symb.SymbolSet.empty
+
+
+  let pruning_exp_is_true x =
+    M.fold (fun v acc -> acc || PruningExp.is_true v.pruning_exp) x.reachability false
+
+
+  let is_complete {complete} = complete
 end
 
 module MemReach = struct
@@ -2307,19 +2489,15 @@ module MemReach = struct
    fun temps m -> List.fold temps ~init:m ~f:(fun acc temp -> remove_temp temp acc)
 
 
-  let set_prune_pairs : PrunePairs.t -> t -> t =
-   fun prune_pairs m -> {m with latest_prune= LatestPrune.Latest prune_pairs}
-
-
   let apply_latest_prune : Exp.t -> t -> t * PrunePairs.t =
     let apply_prunes prunes m =
       let apply1 l v acc = update_mem (PowLoc.singleton l) (PrunedVal.get_val v) acc in
       PrunePairs.fold apply1 prunes m
     in
     fun e m ->
-      match (m.latest_prune, e) with
-      | LatestPrune.V (x, prunes, _), Exp.Var r
-      | LatestPrune.V (x, _, prunes), Exp.UnOp (Unop.LNot, Exp.Var r, _) ->
+      match (m.latest_prune.prune, e) with
+      | LatestPrune.Prune.V (x, prunes, _), Exp.Var r
+      | LatestPrune.Prune.V (x, _, prunes), Exp.UnOp (Unop.LNot, Exp.Var r, _) ->
           let pruned_val_meet _rhs v1 _v2 =
             (* NOTE: We need the pruned values, but for now we don't have the meet operation on
                value. *)
@@ -2332,8 +2510,8 @@ module MemReach = struct
                 acc
           in
           List.fold (find_simple_alias r m) ~init:(m, PrunePairs.empty) ~f:apply_simple_alias1
-      | LatestPrune.VRet (x, prunes, _), Exp.Var r
-      | LatestPrune.VRet (x, _, prunes), Exp.UnOp (Unop.LNot, Exp.Var r, _) ->
+      | LatestPrune.Prune.VRet (x, prunes, _), Exp.Var r
+      | LatestPrune.Prune.VRet (x, _, prunes), Exp.UnOp (Unop.LNot, Exp.Var r, _) ->
           if Ident.equal x r then (apply_prunes prunes m, prunes) else (m, PrunePairs.empty)
       | _ ->
           (m, PrunePairs.empty)
@@ -2341,10 +2519,12 @@ module MemReach = struct
 
   let update_latest_prune : updated_locs:PowLoc.t -> Exp.t -> Exp.t -> t -> t =
    fun ~updated_locs e1 e2 m ->
-    match (e1, e2, m.latest_prune) with
-    | Lvar x, Const (Const.Cint i), LatestPrune.Latest p ->
-        if IntLit.isone i then {m with latest_prune= LatestPrune.TrueBranch (x, p)}
-        else if IntLit.iszero i then {m with latest_prune= LatestPrune.FalseBranch (x, p)}
+    match (e1, e2, m.latest_prune.prune) with
+    | Lvar x, Const (Const.Cint i), LatestPrune.Prune.Latest p ->
+        if IntLit.isone i then
+          {m with latest_prune= {m.latest_prune with prune= LatestPrune.Prune.TrueBranch (x, p)}}
+        else if IntLit.iszero i then
+          {m with latest_prune= {m.latest_prune with prune= LatestPrune.Prune.FalseBranch (x, p)}}
         else {m with latest_prune= LatestPrune.forget updated_locs m.latest_prune}
     | Lvar return, _, _ when Pvar.is_return return ->
         let tgts = Alias.find_ret m.alias in
@@ -2362,7 +2542,100 @@ module MemReach = struct
 
   let get_latest_prune : _ t0 -> LatestPrune.t = fun {latest_prune} -> latest_prune
 
-  let set_latest_prune : LatestPrune.t -> t -> t = fun latest_prune x -> {x with latest_prune}
+  let set_latest_prune : LatestPrune.t -> t -> t =
+   fun latest_prune x ->
+    if not Config.bo_nested_path_conditions then
+      match x.latest_prune.prune with
+      | Top ->
+          (* Previous path condition was empty. *)
+          {x with latest_prune}
+      | _ ->
+          (* Previous path condition non-empty and will be thrown out. This means that the
+             current path condition is going to be incomplete *)
+          {x with latest_prune= {latest_prune with complete= false}}
+    else
+      let update_prune_pairs old_prune_pairs new_prune_pairs =
+        (* Update old_prune_pairs with information from new_prune_pairs. Return an information
+           whether the update produced an unknown constraint in the PruningExp part of PrunedVal
+           (either out of an already existing known constraint in old_prune_pairs or out of
+           a new known constraint to be added).
+           This happens when an already constrained location (in old_prune_pairs) is constraint
+           again and when the constraints cannot be joined precisely given an expressive power
+           of constraints (e.g., one constraint is an inequality constraint and the second an
+           equality constraint). This effectively means that either an existing constraint is
+           removed or new constraint is not added.*)
+        let unknown_constr_produced = ref false in
+        let updated_pairs =
+          PrunePairs.union
+            (fun _ old_prune_value new_prune_value ->
+              let updated_value =
+                { new_prune_value with
+                  (* no need to join the value part of PrunedVal, this was already done when pruning *)
+                  pruning_exp=
+                    PruningExp.join old_prune_value.pruning_exp new_prune_value.pruning_exp }
+              in
+              unknown_constr_produced :=
+                !unknown_constr_produced
+                || (not
+                      ( PruningExp.is_unknown old_prune_value.pruning_exp
+                      && PruningExp.is_unknown new_prune_value.pruning_exp ) )
+                   && PruningExp.is_unknown updated_value.pruning_exp ;
+              Some updated_value )
+            old_prune_pairs new_prune_pairs
+        in
+        (updated_pairs, !unknown_constr_produced)
+      in
+      let prune, unknown_constr_produced =
+        match (x.latest_prune.prune, latest_prune.prune) with
+        | Latest old_prune_pairs, Latest new_prune_pairs ->
+            let updated_pairs, unknown_constr_produced =
+              update_prune_pairs old_prune_pairs new_prune_pairs
+            in
+            (LatestPrune.Prune.Latest updated_pairs, unknown_constr_produced)
+        | TrueBranch (p1, old_prune_pairs), TrueBranch (p2, new_prune_pairs) when Pvar.equal p1 p2
+          ->
+            let updated_pairs, unknown_constr_produced =
+              update_prune_pairs old_prune_pairs new_prune_pairs
+            in
+            (LatestPrune.Prune.TrueBranch (p1, updated_pairs), unknown_constr_produced)
+        | FalseBranch (p1, old_prune_pairs), FalseBranch (p2, new_prune_pairs) when Pvar.equal p1 p2
+          ->
+            let updated_pairs, unknown_constr_produced =
+              update_prune_pairs old_prune_pairs new_prune_pairs
+            in
+            (LatestPrune.Prune.FalseBranch (p1, updated_pairs), unknown_constr_produced)
+        | ( V (p1, old_prune_pairs_true, old_prune_pairs_false)
+          , V (p2, new_prune_pairs_true, new_prune_pairs_false) )
+          when Pvar.equal p1 p2 ->
+            let updated_pairs_true, unknown_constr_produced_true =
+              update_prune_pairs old_prune_pairs_true new_prune_pairs_true
+            in
+            let updated_pairs_false, unknown_constr_produced_false =
+              update_prune_pairs old_prune_pairs_false new_prune_pairs_false
+            in
+            ( LatestPrune.Prune.V (p1, updated_pairs_true, updated_pairs_false)
+            , unknown_constr_produced_true || unknown_constr_produced_false )
+        | ( VRet (id1, old_prune_pairs_true, old_prune_pairs_false)
+          , VRet (id2, new_prune_pairs_true, new_prune_pairs_false) )
+          when Ident.equal id1 id2 ->
+            let updated_pairs_true, unknown_constr_produced_true =
+              update_prune_pairs old_prune_pairs_true new_prune_pairs_true
+            in
+            let updated_pairs_false, unknown_constr_produced_false =
+              update_prune_pairs old_prune_pairs_false new_prune_pairs_false
+            in
+            ( LatestPrune.Prune.VRet (id1, updated_pairs_true, updated_pairs_false)
+            , unknown_constr_produced_true || unknown_constr_produced_false )
+        | _, _ ->
+            (latest_prune.prune, false)
+      in
+      { x with
+        latest_prune=
+          { complete= latest_prune.complete && not unknown_constr_produced
+          ; in_loop_head= latest_prune.in_loop_head
+          ; previous_prunes= latest_prune.previous_prunes
+          ; prune } }
+
 
   let get_reachable_locs_from_aux : f:(Pvar.t -> bool) -> LocSet.t -> _ t0 -> LocSet.t =
     let add_reachable1 ~root loc v acc =
@@ -2673,10 +2946,6 @@ module Mem = struct
 
   let remove_temps : Ident.t list -> t -> t = fun temps -> map ~f:(MemReach.remove_temps temps)
 
-  let set_prune_pairs : PrunePairs.t -> t -> t =
-   fun prune_pairs -> map ~f:(MemReach.set_prune_pairs prune_pairs)
-
-
   let apply_latest_prune : Exp.t -> t -> t * PrunePairs.t =
    fun e -> function
     | (Unreachable | ExcRaised) as x ->
@@ -2691,7 +2960,7 @@ module Mem = struct
 
 
   let get_latest_prune : _ t0 -> LatestPrune.t =
-   fun m -> f_lift_default ~default:LatestPrune.Top MemReach.get_latest_prune m
+   fun m -> f_lift_default ~default:LatestPrune.top MemReach.get_latest_prune m
 
 
   let set_latest_prune : LatestPrune.t -> t -> t =

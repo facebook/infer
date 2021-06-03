@@ -165,6 +165,10 @@ val bo_debug : int
 
 val bo_field_depth_limit : int option
 
+val bo_preconditions : bool
+
+val bo_nested_path_conditions : bool
+
 val bootclasspath : string option
 
 val buck : bool

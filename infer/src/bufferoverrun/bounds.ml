@@ -255,6 +255,18 @@ module Bound = struct
 
   let equal = [%compare.equal: t]
 
+  let repr_const_itv ~lb ~ub =
+    match (lb, ub) with
+    | MinMax (a1, Plus, Max, c1, s1), MinMax (a2, Plus, Min, c2, s2)
+      when Z.equal a1 a2 && Z.equal c1 c2 && Symb.Symbol.equal s1 s2 ->
+        Some (Z.add a1 c1)
+    | MinMax (a1, Minus, Min, c1, s1), MinMax (a2, Minus, Max, c2, s2)
+      when Z.equal a1 a2 && Z.equal c1 c2 && Symb.Symbol.equal s1 s2 ->
+        Some (Z.sub a1 c1)
+    | _ ->
+        None
+
+
   let mask_min_max_constant b =
     match b with
     | Linear (_c, x) ->
@@ -389,6 +401,13 @@ module Bound = struct
         Z.(equal i one)
         && Option.value_map (SymLinear.get_one_symbol_opt se) ~default:false ~f:(fun sym ->
                Symb.SymbolPath.equal (Symb.SymbolPath.normal path) (Symb.Symbol.path sym) )
+    | _ ->
+        false
+
+
+  let is_symbolic_linear : t -> bool = function
+    | Linear (_, se) ->
+        not (SymLinear.is_empty se)
     | _ ->
         false
 
