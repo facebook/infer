@@ -20,9 +20,7 @@ let parse_and_store result_dir =
     | None ->
         false
     | Some ast ->
-        let source_file, cfg = ErlangTranslator.to_source_and_cfg ast in
-        let tenv = (* TODO: types *) Tenv.Global in
-        SourceFiles.add source_file cfg tenv None ;
+        ErlangTranslator.translate_module ast ;
         true
   in
   let log error = L.progress "E: %s@." error in

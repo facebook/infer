@@ -76,6 +76,8 @@ let __delete_array = create_procname "__delete_array"
 
 let __delete_locked_attribute = create_procname "__delete_locked_attribute"
 
+let __erlang_pattern_fail = create_procname "__erlang_pattern_fail"
+
 let __exit = create_procname "_exit"
 
 let __objc_bridge_transfer = create_procname "__objc_bridge_transfer"

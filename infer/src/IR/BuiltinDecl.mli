@@ -13,6 +13,9 @@ include BUILTINS.S with type t = Procname.t
 
 val is_declared : Procname.t -> bool
 
+val __erlang_pattern_fail : t
+(** all patterns in a function failed to match *)
+
 val __infer_initializer_list : Procname.t
 
 val __infer_skip_function : Procname.t

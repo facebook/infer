@@ -7,4 +7,4 @@
 
 open! IStd
 
-val to_source_and_cfg : ErlangAst.module_ -> SourceFile.t * Cfg.t
+val translate_module : ErlangAst.module_ -> unit
