@@ -62,8 +62,7 @@ let mk pdesc =
       | BoField.Field {fn; prefix= x} | BoField.StarField {last_field= fn; prefix= x} -> (
         match BoField.get_type fn with
         | None ->
-            let lookup = Tenv.lookup tenv in
-            Option.map (typ_of_param_path x) ~f:(Struct.fld_typ ~lookup ~default:StdTyp.void fn)
+            Option.bind (typ_of_param_path x) ~f:(Struct.fld_typ_opt ~lookup:(Tenv.lookup tenv) fn)
         | some_typ ->
             some_typ )
       | BoField.Prim (SPath.Callsite {ret_typ}) ->
