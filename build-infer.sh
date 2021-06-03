@@ -143,9 +143,9 @@ setup_opam () {
 install_opam_deps () {
     local locked=
     if [ "$USE_OPAM_LOCK" == yes ]; then
-        locked=--locked
+        locked=.locked
     fi
-    opam install --deps-only "$INFER_ROOT"/opam/infer.opam $locked &&
+    opam install --deps-only "$INFER_ROOT"/opam/infer.opam$locked &&
     if [ -n "$SANDCASTLE" ]; then
         opam pin list | grep yojson || opam pin add yojson "${DEPENDENCIES_DIR}/yojson-1.7.0fix"
     fi
