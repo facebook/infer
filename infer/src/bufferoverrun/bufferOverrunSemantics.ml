@@ -21,6 +21,13 @@ let eval_const : Typ.IntegerWidths.t -> Const.t -> Val.t =
       Val.of_big_int (IntLit.to_big_int intlit)
   | Const.Cstr s ->
       Val.of_literal_string integer_type_widths s
+  | Const.Cfun _ ->
+      (* Const.Cfun represents the address of a function call.
+         For now, return just non-null unknown pointer.
+         TODO: set func_ptrs field to be a singleton set representing the function. To do that,
+         FuncPtr would have to be changed to store functions represented by Procname. Currently,
+         FuncPtr only stores functions represented as symbolic paths and closures.*)
+      {Val.unknown with itv= Itv.one}
   | _ ->
       Val.Itv.top
 
