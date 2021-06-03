@@ -177,6 +177,20 @@ module Implementation = struct
     ResultsDatabase.create_tables db
 
 
+  module IntHash = Caml.Hashtbl.Make (Int)
+
+  let specs_overwrite_counts =
+    (* We don't want to keep all [proc_uid]s in memory just to keep an overwrite count,
+       so use a table keyed on their integer hashes; collisions will just lead to some noise. *)
+    IntHash.create 10
+
+
+  let log_specs_overwrite_counts () =
+    let overwrites = IntHash.fold (fun _hash count acc -> acc + count) specs_overwrite_counts 0 in
+    ScubaLogging.log_count ~label:"overwritten_specs" ~value:overwrites ;
+    L.debug Analysis Quiet "Detected %d spec overwrittes.@\n" overwrites
+
+
   let store_spec =
     let store_statement =
       ResultsDatabase.register_statement
@@ -186,6 +200,11 @@ module Implementation = struct
         |}
     in
     fun ~proc_uid ~proc_name ~analysis_summary ~report_summary ->
+      let proc_uid_hash = String.hash proc_uid in
+      IntHash.find_opt specs_overwrite_counts proc_uid_hash
+      |> Option.value_map ~default:0 ~f:(( + ) 1)
+      (* [default] is 0 as we are only counting overwrites *)
+      |> IntHash.replace specs_overwrite_counts proc_uid_hash ;
       ResultsDatabase.with_registered_statement store_statement ~f:(fun db store_stmt ->
           Sqlite3.bind store_stmt 1 (Sqlite3.Data.TEXT proc_uid)
           |> SqliteUtils.check_result_code db ~log:"store spec bind proc_uid" ;
@@ -292,7 +311,7 @@ module Command = struct
     | ResetCaptureTables ->
         Implementation.reset_capture_tables ()
     | Terminate ->
-        ()
+        Implementation.log_specs_overwrite_counts ()
     | Vacuum ->
         Implementation.canonicalize ()
 end
