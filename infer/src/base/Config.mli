@@ -175,6 +175,8 @@ val bo_bottom_as_default : bool
 
 val bo_context_sensitive_allocsites : bool
 
+val bo_assume_void : bool
+
 val bootclasspath : string option
 
 val buck : bool

@@ -780,6 +780,12 @@ and bo_context_sensitive_allocsites =
      allocsites imported to the caller."
 
 
+and bo_assume_void =
+  CLOpt.mk_bool ~default:true ~long:"bo-assume-void"
+    ~in_help:InferCommand.[(Analyze, manual_buffer_overrun)]
+    "Assume void type as a type of record fields not in type environment."
+
+
 and bootclasspath =
   CLOpt.mk_string_opt ~long:"bootclasspath"
     ~in_help:InferCommand.[(Capture, manual_java)]
@@ -3312,6 +3318,8 @@ and bo_sound_unknown_sets_join = !bo_sound_unknown_sets_join
 and bo_bottom_as_default = !bo_bottom_as_default
 
 and bo_context_sensitive_allocsites = !bo_context_sensitive_allocsites
+
+and bo_assume_void = !bo_assume_void
 
 and buck = !buck
 

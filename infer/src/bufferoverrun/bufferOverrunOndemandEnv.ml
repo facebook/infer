@@ -67,7 +67,11 @@ let mk pdesc =
         match BoField.get_type fn with
         | None ->
             let lookup = Tenv.lookup tenv in
-            Option.map (typ_of_param_path x) ~f:(Struct.fld_typ ~lookup ~default:StdTyp.void fn)
+            Option.bind (typ_of_param_path x)
+              ~f:
+                ( if Config.bo_assume_void then fun t ->
+                  Some (Struct.fld_typ ~lookup ~default:StdTyp.void fn t)
+                else Struct.fld_typ_opt ~lookup fn )
         | some_typ ->
             some_typ )
       | BoField.Prim (SPath.Callsite {ret_typ}) ->
