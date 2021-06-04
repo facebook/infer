@@ -572,7 +572,11 @@ let is_synchronized_container callee_pname (access_exp : HilExp.AccessExpression
 
 
 let is_initializer tenv proc_name =
-  Procname.is_constructor proc_name || FbThreadSafety.is_custom_init tenv proc_name
+  Procname.is_constructor proc_name
+  || FbThreadSafety.is_custom_init tenv proc_name
+  || PatternMatch.override_exists
+       (fun pname -> Annotations.pname_has_return_annot pname Annotations.ia_is_initializer)
+       tenv proc_name
 
 
 let get_current_class_and_superclasses_satisfying_attr_check check tenv pname =

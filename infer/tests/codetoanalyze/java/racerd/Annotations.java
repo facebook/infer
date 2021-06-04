@@ -9,6 +9,7 @@ package codetoanalyze.java.checkers;
 
 import android.support.annotation.UiThread;
 import com.facebook.infer.annotation.Functional;
+import com.facebook.infer.annotation.Initializer;
 import com.facebook.infer.annotation.ReturnsOwnership;
 import com.facebook.infer.annotation.SynchronizedCollection;
 import com.facebook.infer.annotation.ThreadConfined;
@@ -411,6 +412,17 @@ class Annotations implements Interface {
 
   public void injectPropOk(@InjectProp Obj o) {
     o.f = 7;
+  }
+
+  Object onlyUpdatedInInitializer;
+
+  @Initializer
+  public void setOnlyUpdatedInInitializerOk(Object o) {
+    onlyUpdatedInInitializer = o;
+  }
+
+  public synchronized Object getOnlyUpdatedInInitializerOk() {
+    return onlyUpdatedInInitializer;
   }
 }
 
