@@ -20,7 +20,12 @@ type failure_kind =
 (** failure that prevented analysis from finishing *)
 exception Analysis_failure_exe of failure_kind
 
-let exn_not_failure = function Analysis_failure_exe _ -> false | _ -> true
+let exn_not_failure = function
+  | Analysis_failure_exe _ | RestartSchedulerException.ProcnameAlreadyLocked _ ->
+      false
+  | _ ->
+      true
+
 
 let try_finally ~f ~finally =
   match f () with
@@ -29,14 +34,17 @@ let try_finally ~f ~finally =
       r
   | exception (Analysis_failure_exe _ as f_exn) ->
       IExn.reraise_after f_exn ~f:(fun () ->
-          try finally () with _ -> (* swallow in favor of the original exception *) () )
-  | exception f_exn ->
+          try finally ()
+          with finally_exn when RestartSchedulerException.is_not_restart_exception finally_exn ->
+            (* swallow in favor of the original exception unless it's the restart scheduler exception *)
+            () )
+  | exception f_exn when RestartSchedulerException.is_not_restart_exception f_exn ->
       IExn.reraise_after f_exn ~f:(fun () ->
           try finally ()
           with
           | finally_exn
           when (* do not swallow Analysis_failure_exe thrown from finally *)
-               match finally_exn with Analysis_failure_exe _ -> false | _ -> true
+               exn_not_failure finally_exn
           ->
             () )
 

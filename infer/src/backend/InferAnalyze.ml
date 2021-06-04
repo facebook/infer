@@ -51,7 +51,7 @@ let analyze_target : (TaskSchedulerTypes.target, string) Tasks.doer =
           Ondemand.analyze_file exe_env source_file ;
           if Config.write_html then Printer.write_all_html_files source_file ;
           None
-        with TaskSchedulerTypes.ProcnameAlreadyLocked {dependency_filename} ->
+        with RestartSchedulerException.ProcnameAlreadyLocked {dependency_filename} ->
           Some dependency_filename )
   in
   (* In call-graph scheduling, log progress every [per_procedure_logging_granularity] procedures.
@@ -68,7 +68,7 @@ let analyze_target : (TaskSchedulerTypes.target, string) Tasks.doer =
     try
       Ondemand.analyze_proc_name_toplevel exe_env proc_name ;
       None
-    with TaskSchedulerTypes.ProcnameAlreadyLocked {dependency_filename} ->
+    with RestartSchedulerException.ProcnameAlreadyLocked {dependency_filename} ->
       Some dependency_filename
   in
   fun target ->

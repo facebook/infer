@@ -328,7 +328,7 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
           post
       | Error (exn, backtrace, instr) ->
           ( match exn with
-          | TaskSchedulerTypes.ProcnameAlreadyLocked _ ->
+          | RestartSchedulerException.ProcnameAlreadyLocked _ ->
               (* this isn't an error; don't log it *)
               ()
           | _ ->

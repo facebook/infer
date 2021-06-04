@@ -194,6 +194,10 @@ let print_exception_html s exn =
 
 (** Return true if the exception is not serious and should be handled in timeout mode *)
 let handle_exception exn =
-  let error = recognize_exception exn in
-  IssueType.equal_visibility error.issue_type.visibility User
-  || IssueType.equal_visibility error.issue_type.visibility Developer
+  match exn with
+  | RestartSchedulerException.ProcnameAlreadyLocked _ ->
+      false
+  | _ ->
+      let error = recognize_exception exn in
+      IssueType.equal_visibility error.issue_type.visibility User
+      || IssueType.equal_visibility error.issue_type.visibility Developer

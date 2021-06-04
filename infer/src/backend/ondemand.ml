@@ -221,7 +221,7 @@ let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
     let backtrace = Printexc.get_backtrace () in
     IExn.reraise_if exn ~f:(fun () ->
         match exn with
-        | TaskSchedulerTypes.ProcnameAlreadyLocked _ ->
+        | RestartSchedulerException.ProcnameAlreadyLocked _ ->
             clear_actives () ;
             restore_global_state old_state ;
             true
