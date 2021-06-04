@@ -441,11 +441,15 @@ let config_unsafe checker =
       ; activates= [Pulse] }
   | Uninit ->
       { id= "uninit"
-      ; kind= UserFacing {title= "Uninitialized Value"; markdown_body= ""}
+      ; kind=
+          UserFacingDeprecated
+            { title= "Uninitialized Value"
+            ; markdown_body= ""
+            ; deprecation_message= "Uninitialized value checking has moved to Pulse." }
       ; support= supports_clang
       ; short_documentation= "Warns when values are used before having been initialized."
       ; cli_flags= Some {deprecated= []; show_in_help= true}
-      ; enabled_by_default= true
+      ; enabled_by_default= false
       ; activates= [] }
 
 

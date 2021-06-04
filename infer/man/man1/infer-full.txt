@@ -394,8 +394,8 @@ OPTIONS
            Deactivates: Default checkers: --biabduction,
            --fragment-retains-view, --inefficient-keyset-iterator, --linters,
            --liveness, --racerd, --dotnet-resource-leak, --siof,
-           --self-in-block, --starvation, --uninit (Conversely:
-           --default-checkers)           See also infer-analyze(1).
+           --self-in-block, --starvation (Conversely: --default-checkers)       
+    See also infer-analyze(1).
 
        --no-default-linters
            Deactivates: Use the default linters for the analysis.
@@ -552,7 +552,7 @@ OPTIONS
              PRECONDITION_NOT_FOUND (enabled by default),
              PRECONDITION_NOT_MET (enabled by default),
              PREMATURE_NIL_TERMINATION_ARGUMENT (enabled by default),
-             PULSE_UNINITIALIZED_VALUE (disabled by default),
+             PULSE_UNINITIALIZED_VALUE (enabled by default),
              PURE_FUNCTION (enabled by default),
              QUANDARY_TAINT_ERROR (enabled by default),
              RESOURCE_LEAK (enabled by default),
@@ -1299,9 +1299,9 @@ OPTIONS
            Activates: Enable topl and disable all other checkers (Conversely:
            --no-topl-only)           See also infer-analyze(1).
 
-       --no-uninit
-           Deactivates: checker uninit: Warns when values are used before
-           having been initialized. (Conversely: --uninit)           See also infer-analyze(1).
+       --uninit
+           Activates: checker uninit: Warns when values are used before
+           having been initialized. (Conversely: --no-uninit)           See also infer-analyze(1).
 
        --uninit-only
            Activates: Enable uninit and disable all other checkers
