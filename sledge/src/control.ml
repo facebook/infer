@@ -5,20 +5,25 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(** Iterative Breadth-First Bounded Exploration
-
-    The analysis' semantics of control flow. *)
+(** The analysis' semantics of control flow. *)
 
 open Domain_intf
 open Control_intf
 
+(** An element of work to be scheduled. The scheduling strategies have very
+    few dependencies on elements, mainly some just need to test if two
+    elements can be joined. An example element instance is a pair of a
+    control-flow edge with a symbolic state that has reached the source of
+    the edge and has yet to be propagated to the destination. *)
 module type Elt = sig
   type t [@@deriving compare, equal, sexp_of]
 
   val pp : t pp
   val joinable : t -> t -> bool
+  val dnf : t -> t list
 end
 
+(** Interface of analysis control scheduler "queues". *)
 module type QueueS = sig
   type elt
 
@@ -35,13 +40,16 @@ module type QueueS = sig
 
   val pop : t -> (elt * elt list * t) option
   (** [pop q] is [None] if [q] is empty and otherwise is [Some (e, es, q')]
-      where [e] is the selected element in [q], [es] are other elements in
-      [q] with the same destination as [e], and [q'] is [q] without [e] and
-      [es]. *)
+      where [e] is the selected element in [q], any elements [es] have the
+      same destination as [e], and [q'] is [q] without [e] and [es]. *)
 end
 
+(** Type of a queue implementation, which is parameterized over elements. *)
 module type Queue = functor (Elt : Elt) -> QueueS with type elt = Elt.t
 
+(** A strategy that implements an iterative breadth-first exploration that
+    joins scheduled elements whenever possible, thereby DAGifying the
+    execution tree. *)
 module PriorityQueue (Elt : Elt) : QueueS with type elt = Elt.t = struct
   type elt = Elt.t
 
@@ -75,6 +83,153 @@ module PriorityQueue (Elt : Elt) : QueueS with type elt = Elt.t = struct
             else (elts, removed) )
       in
       Some (top, elts, {queue; removed})
+end
+
+module RandomQueue (Elt : Elt) : QueueS with type elt = Elt.t = struct
+  type elt = Elt.t
+
+  module M = Int.Map
+
+  (** The analyzer, after calling [create], performs a sequence of [add] and
+      [pop] operations. Implicitly, each [add] is for an element that is a
+      successor of the element that was returned by the last [pop]. This
+      module assumes this implicit protocol in order to infer the structure
+      of the execution tree, and uses it to assign weights aiming to
+      implement fair random sampling of paths.
+
+      Each edge of an execution tree conceptually has a "weight" [1/w]
+      (represented by just the denominator [w]) indicating that there is a
+      [1] in [w] chance of making the sequence of branching choices leading
+      to the edge. An execution tree starts with a single edge to the
+      initial control point with weight [1]. For an edge with weight [1/w]
+      that has [n] successors, the edge to each of the successors has weight
+      [1 / (w * n)].
+
+      The scheduling "frontier" is a set of edges with weights (represented
+      as a map from weights to lists of edges) that have been reached but
+      not followed.
+
+      Edges are selected from the frontier randomly using the weights to
+      simulate fair sampling of paths as follows. Let [{eᵢ}] be a sequence
+      of the edges of the frontier in decreasing weight order. The weight of
+      edge [eᵢ] is written [wᵢ]. The sum of the weights of the frontier
+      is [s = Σᵢ wᵢ]. Now choose a random number [0 ≤ n ≤ s]. This
+      determines an edge [eᵣ] where [r] is least such that
+      [Σᵢ₌₀ʳ wᵢ ≥ n].
+
+      The inferred structure of the execution tree is also used to schedule
+      the analysis to proceed depth-first where a random successor is chosen
+      at each point until no further progress is possible, at which point a
+      new path is sampled. Successors are added by the analyzer prior to
+      knowing whether they are feasible. For example executing a conditional
+      branch results in two [add] operations where the next instruction on
+      each is to assume the condition and the negation of the condition. To
+      avoid depth-first execution from being thwarted by choosing infeasible
+      branches in such cases, a [recent] list is maintained that contains
+      the successors of the last popped element. When an element is popped
+      from the recent list, it is not known whether or not it is immediately
+      infeasible. If it is, the next operation will be another [pop], and
+      this is also taken from the [recent] list. If the element was not
+      immediately infeasible, the next operation is an [add] (of a
+      successor), at which point the recent list is flushed to the
+      "frontier". In this way, each [pop] that requests the next branch to
+      explore is chosen from the successors of the last control point,
+      effecting depth-first exploration. Only when the recent list is empty,
+      is an element chosen from the "frontier" of untaken branches. *)
+
+  type t =
+    { recent: Elt.t RAL.t  (** elements added since last pop; add *)
+    ; recent_weight: int  (** combined weight of recent *)
+    ; frontier: Elt.t RAL.t M.t  (** weight-keyed elements to be explored *)
+    ; frontier_weight: float  (** combined weight of frontier *)
+    ; last: last_operation  (** single step of execution history *) }
+
+  and last_operation =
+    | Add_or_pop_frontier
+        (** last operation was either [add] or [pop] where [recent] was
+            empty *)
+    | Pop_recent of int
+        (** last operation was [pop] where [recent] was not empty, and the
+            returned element had given weight *)
+
+  let pp ppf {recent; frontier} =
+    Format.fprintf ppf "@[%a @@@ %a@]" (List.pp " ::@ " Elt.pp)
+      (RAL.to_list recent)
+      (M.pp Int.pp (RAL.pp " ::@ " Elt.pp))
+      frontier
+
+  let create () =
+    { recent= RAL.empty
+    ; recent_weight= 1
+    ; frontier= M.empty
+    ; frontier_weight= 0.
+    ; last= Add_or_pop_frontier }
+
+  let add elt q =
+    let add_elt l = List.fold ~f:RAL.cons (Elt.dnf elt) l in
+    match q.last with
+    | Add_or_pop_frontier ->
+        (* elt is a sibling of the elements of recent, so extend recent *)
+        {q with recent= add_elt q.recent}
+    | Pop_recent elt_weight ->
+        (* elt is a successor of the last popped element (which is itself a
+           sibling of the elements of recent), so flush recent to frontier
+           and reset recent to the singleton elt with a combined weight
+           equal to that of the previously popped element *)
+        { recent= add_elt RAL.empty
+        ; recent_weight= elt_weight
+        ; frontier=
+            ( if RAL.is_empty q.recent then q.frontier
+            else
+              M.update elt_weight q.frontier ~f:(function
+                | Some data -> Some (RAL.append q.recent data)
+                | None -> Some q.recent ) )
+        ; frontier_weight=
+            q.frontier_weight
+            +. Float.of_int (RAL.length q.recent)
+               /. Float.of_int elt_weight
+        ; last= Add_or_pop_frontier }
+
+  let pop q =
+    let num_recent = RAL.length q.recent in
+    if num_recent > 0 then
+      let elt, recent =
+        RAL.get_and_remove_exn q.recent (Random.int num_recent)
+      in
+      match q.last with
+      | Pop_recent _ ->
+          (* elt is sibling to last popped element, with same elt_weight *)
+          Some (elt, [], {q with recent})
+      | Add_or_pop_frontier ->
+          (* recent is now complete, and weight of each element can be
+             computed from combined weight and length *)
+          let elt_weight = q.recent_weight * num_recent in
+          Some (elt, [], {q with recent; last= Pop_recent elt_weight})
+    else
+      let random_weight = Random.float q.frontier_weight in
+      M.fold_until q.frontier 0.
+        ~f:(fun ~key ~data prefix_weight ->
+          let len = RAL.length data in
+          let w = Float.of_int len /. Float.of_int key in
+          let prefix_weight = prefix_weight +. w in
+          if Float.(prefix_weight < random_weight) then
+            `Continue prefix_weight
+          else
+            let elt, data = RAL.get_and_remove_exn data (Random.int len) in
+            `Stop
+              (Some
+                 ( elt
+                 , []
+                 , { recent= RAL.empty
+                   ; recent_weight= key
+                   ; frontier=
+                       ( if RAL.is_empty data then M.remove key q.frontier
+                       else M.add ~key ~data q.frontier )
+                   ; frontier_weight= q.frontier_weight -. w
+                   ; last= Add_or_pop_frontier } )) )
+        ~finish:(fun _ ->
+          assert (M.is_empty q.frontier) ;
+          None )
 end
 
 module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
@@ -251,6 +406,7 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
         Format.fprintf ppf "%i: %a" depth Edge.pp edge
 
       let joinable x y = Llair.Block.equal x.edge.dst y.edge.dst
+      let dnf x = List.map ~f:(fun state -> {x with state}) (D.dnf x.state)
     end
 
     module Queue = Queue (Elt)

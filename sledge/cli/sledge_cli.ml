@@ -118,6 +118,10 @@ let analyze =
         "<string> select abstract domain; must be one of \"sh\" (default, \
          symbolic heap domain), \"globals\" (used-globals domain), or \
          \"unit\" (unit domain)"
+  and sample = flag "sample" no_arg ~doc:" randomly sample execution paths"
+  and seed =
+    flag "seed" (optional int)
+      ~doc:"<int> specify random number generator seed"
   and no_simplify_states =
     flag "no-simplify-states" no_arg
       ~doc:"do not simplify states during symbolic execution"
@@ -144,10 +148,14 @@ let analyze =
       | `itv -> (module Domain_itv)
       | `unit -> (module Domain_unit)
     in
-    let module Dom = (val dom) in
-    let module Analysis =
-      Control.Make (Config) (Dom) (Control.PriorityQueue)
+    let module Domain = (val dom) in
+    let queue : (module Control.Queue) =
+      if sample then (module Control.RandomQueue)
+      else (module Control.PriorityQueue)
     in
+    let module Queue = (val queue) in
+    let module Analysis = Control.Make (Config) (Domain) (Queue) in
+    (match seed with None -> Random.self_init () | Some n -> Random.init n) ;
     Domain_sh.simplify_states := not no_simplify_states ;
     Option.iter dump_query ~f:(fun n -> Solver.dump_query := n) ;
     at_exit (fun () -> Report.coverage pgm) ;

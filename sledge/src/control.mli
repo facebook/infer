@@ -13,6 +13,7 @@ open Control_intf
 module type Queue
 
 module PriorityQueue : Queue
+module RandomQueue : Queue
 
 module Make (_ : Config) (Domain : Domain) (_ : Queue) : sig
   val exec_pgm : Llair.program -> unit

@@ -123,6 +123,8 @@ Analyze code in one or more LLVM bitcode files. This is a convenience wrapper fo
   [-preanalyze-globals]  pre-analyze global variables used by each function
   [-report <file>]       write report sexp to <file>, or to standard error if
                          "-"
+  [-sample]              randomly sample execution paths
+  [-seed <int>]          specify random number generator seed
   [-stats]               output performance statistics to stderr
   [-trace <spec>]        enable debug tracing
   [-help]                print this help text and exit
@@ -200,6 +202,8 @@ The <input> file must be binary LLAIR, such as produced by `sledge translate`.
   [-preanalyze-globals]  pre-analyze global variables used by each function
   [-report <file>]       write report sexp to <file>, or to standard error if
                          "-"
+  [-sample]              randomly sample execution paths
+  [-seed <int>]          specify random number generator seed
   [-stats]               output performance statistics to stderr
   [-trace <spec>]        enable debug tracing
   [-help]                print this help text and exit
