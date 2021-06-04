@@ -35,7 +35,7 @@ depends: [
   "memtrace" {>="0.1.2"}
   "mlgmpidl" {>="1.2.12"}
   "mtime"
-  "ocaml" {>="4.09.0"}
+  "ocaml" {>="4.12.0"}
   "ocamlfind" {build}
   "ocamlgraph"
   "ounit" {>="2.0.5"}

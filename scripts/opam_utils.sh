@@ -50,7 +50,7 @@ opam_require_version_2 () {
 # assumes opam is available and initialized
 opam_switch_create_if_needed () {
     local switch=$1
-    local compiler=$2
+    local options=$2
     local switch_exists=no
     for installed_switch in $(opam switch list --short); do
         if [ "$installed_switch" == "$switch" ]; then
@@ -63,7 +63,7 @@ opam_switch_create_if_needed () {
         if [ -n "$opam_root" ]; then
             rm -rf "$opam_root/$switch" || true
         fi
-        opam switch create "$switch" "$compiler"
+        opam switch create "$switch" "$options"
     fi
 }
 

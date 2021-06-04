@@ -17,10 +17,10 @@ DEPENDENCIES_DIR="$INFER_ROOT/facebook/dependencies"
 PLATFORM="$(uname)"
 SANDCASTLE=${SANDCASTLE:-}
 NCPU="$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)"
-INFER_OPAM_DEFAULT_SWITCH="ocaml-variants.4.11.1+flambda"
-INFER_OPAM_DEFAULT_COMPILER="$INFER_OPAM_DEFAULT_SWITCH"
+INFER_OPAM_DEFAULT_SWITCH="4.12.0+flambda"
+INFER_OPAM_DEFAULT_SWITCH_OPTIONS="--package=ocaml-variants.4.12.0+options,ocaml-option-flambda"
 INFER_OPAM_SWITCH=${INFER_OPAM_SWITCH:-$INFER_OPAM_DEFAULT_SWITCH}
-INFER_OPAM_COMPILER=${INFER_OPAM_COMPILER:-$INFER_OPAM_DEFAULT_COMPILER}
+INFER_OPAM_SWITCH_OPTIONS=${INFER_OPAM_SWITCH_OPTIONS:-$INFER_OPAM_DEFAULT_SWITCH_OPTIONS}
 PLUGIN_DIR="$INFER_ROOT/facebook-clang-plugins"
 PLUGIN_SETUP_SCRIPT=${PLUGIN_SETUP_SCRIPT:-setup.sh}
 PLUGIN_SETUP="${PLUGIN_DIR}/clang/${PLUGIN_SETUP_SCRIPT}"
@@ -136,7 +136,7 @@ fi
 
 setup_opam () {
     opam var root 1>/dev/null 2>/dev/null || opam init --reinit --bare --no-setup &&
-    opam_retry opam_switch_create_if_needed "$INFER_OPAM_SWITCH" "$INFER_OPAM_COMPILER" &&
+    opam_retry opam_switch_create_if_needed "$INFER_OPAM_SWITCH" "$INFER_OPAM_SWITCH_OPTIONS" &&
     opam switch set "$INFER_OPAM_SWITCH"
 }
 
