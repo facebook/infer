@@ -963,16 +963,17 @@ let check_inconsistency_base tenv prop =
         in
         List.exists ~f:do_hpred sigma
   in
-  let inconsistent_atom = function
-    | Predicates.Aeq (e1, e2) -> (
+  let inconsistent_atom (atom : Predicates.atom) =
+    match atom with
+    | Aeq (e1, e2) -> (
       match (e1, e2) with
       | Exp.Const c1, Exp.Const c2 ->
           not (Const.equal c1 c2)
       | _ ->
           check_disequal tenv prop e1 e2 )
-    | Predicates.Aneq (e1, e2) -> (
+    | Aneq (e1, e2) -> (
       match (e1, e2) with Exp.Const c1, Exp.Const c2 -> Const.equal c1 c2 | _ -> Exp.equal e1 e2 )
-    | Predicates.Apred _ | Anpred _ ->
+    | Apred _ | Anpred _ ->
         false
   in
   let inconsistent_inequalities () =
@@ -2390,10 +2391,10 @@ let imply_atom tenv calc_missing (sub1, sub2) prop a =
 (** Check pure implications before looking at the spatial part. Add necessary instantiations for
     equalities and check that instantiations are possible for disequalities. *)
 let rec pre_check_pure_implication tenv calc_missing (subs : subst2) pi1 pi2 =
-  match pi2 with
+  match (pi2 : Predicates.atom list) with
   | [] ->
       subs
-  | (Predicates.Aeq (e2_in, f2_in) as a) :: pi2' when not (Prop.atom_is_inequality a) -> (
+  | (Aeq (e2_in, f2_in) as a) :: pi2' when not (Prop.atom_is_inequality a) -> (
       let e2, f2 = (Predicates.exp_sub (snd subs) e2_in, Predicates.exp_sub (snd subs) f2_in) in
       if Exp.equal e2 f2 then pre_check_pure_implication tenv calc_missing subs pi1 pi2'
       else
@@ -2411,14 +2412,14 @@ let rec pre_check_pure_implication tenv calc_missing (subs : subst2) pi1 pi2 =
             let prop_for_impl = prepare_prop_for_implication tenv subs pi1' [] in
             imply_atom tenv calc_missing subs prop_for_impl (Predicates.Aeq (e2_in, f2_in)) ;
             pre_check_pure_implication tenv calc_missing subs pi1 pi2' )
-  | (Predicates.Aneq (e, _) | Apred (_, e :: _) | Anpred (_, e :: _)) :: _
+  | (Aneq (e, _) | Apred (_, e :: _) | Anpred (_, e :: _)) :: _
     when (not calc_missing) && match e with Var v -> not (Ident.is_primed v) | _ -> true ->
       raise
         (IMPL_EXC
            ( "ineq e2=f2 in rhs with e2 not primed var"
            , (Predicates.sub_empty, Predicates.sub_empty)
            , EXC_FALSE ))
-  | (Predicates.Aeq _ | Aneq _ | Apred _ | Anpred _) :: pi2' ->
+  | (Aeq _ | Aneq _ | Apred _ | Anpred _) :: pi2' ->
       pre_check_pure_implication tenv calc_missing subs pi1 pi2'
 
 

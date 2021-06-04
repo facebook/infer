@@ -459,7 +459,7 @@ include TaintTrace.Make (struct
     (not is_escaped)
     &&
     match typ with
-    | Some (Typ.Tint _ | Tfloat _ | Tvoid) ->
+    | Some Typ.(Tint _ | Tfloat _ | Tvoid) ->
         false
     | _ ->
         (* possible a string/object/struct type; assume injection possible *)

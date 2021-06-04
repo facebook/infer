@@ -16,19 +16,20 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type analysis_data = unit
 
-  let exec_instr astate () _ _ = function
-    | Sil.Load {id= lhs_id} when Ident.is_none lhs_id ->
+  let exec_instr astate () _ _ (instr : Sil.instr) =
+    match instr with
+    | Load {id= lhs_id} when Ident.is_none lhs_id ->
         astate
-    | Sil.Load {id= lhs_id; e= Exp.Lvar rhs_pvar; typ= Typ.{desc= Tptr ({desc= Tfun}, _)}} ->
+    | Load {id= lhs_id; e= Exp.Lvar rhs_pvar; typ= Typ.{desc= Tptr ({desc= Tfun}, _)}} ->
         let fun_ptr =
           try Domain.find (Pvar.to_string rhs_pvar) astate
           with Caml.Not_found -> ProcnameSet.empty
         in
         Domain.add (Ident.to_string lhs_id) fun_ptr astate
-    | Sil.Store {e1= Lvar lhs_pvar; e2= Exp.Const (Const.Cfun pn)} ->
+    | Store {e1= Lvar lhs_pvar; e2= Exp.Const (Const.Cfun pn)} ->
         (* strong update *)
         Domain.add (Pvar.to_string lhs_pvar) (ProcnameSet.singleton pn) astate
-    | Sil.Load _ | Store _ | Call _ | Prune _ | Metadata _ ->
+    | Load _ | Store _ | Call _ | Prune _ | Metadata _ ->
         astate
 
 

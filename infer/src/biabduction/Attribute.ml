@@ -11,7 +11,7 @@ open! IStd
 (** Attribute manipulation in Propositions (i.e., Symbolic Heaps) *)
 
 (** Check whether an atom is used to mark an attribute *)
-let is_pred atom = match atom with Predicates.Apred _ | Anpred _ -> true | _ -> false
+let is_pred atom = match atom with Predicates.(Apred _ | Anpred _) -> true | _ -> false
 
 (** Add an attribute associated to the argument expressions *)
 let add tenv ?(footprint = false) ?(polarity = true) prop attr args =
@@ -27,13 +27,13 @@ let attributes_in_same_category attr1 attr2 =
 
 (** Replace an attribute associated to the expression *)
 let add_or_replace_check_changed tenv prop atom =
-  match atom with
-  | Predicates.Apred (att0, (_ :: _ as exps0)) | Anpred (att0, (_ :: _ as exps0)) ->
+  match (atom : Predicates.atom) with
+  | Apred (att0, (_ :: _ as exps0)) | Anpred (att0, (_ :: _ as exps0)) ->
       let pairs = List.map ~f:(fun e -> (e, Prop.exp_normalize_prop tenv prop e)) exps0 in
       let _, nexp = List.hd_exn pairs in
       (* len exps0 > 0 by match *)
       let atom_map = function
-        | (Predicates.Apred (att, exp :: _) | Anpred (att, exp :: _))
+        | Predicates.(Apred (att, exp :: _) | Anpred (att, exp :: _))
           when Exp.equal nexp exp && attributes_in_same_category att att0 ->
             atom
         | atom' ->
@@ -64,8 +64,8 @@ let get_all (prop : 'a Prop.t) =
 let get_for_exp tenv (prop : 'a Prop.t) exp =
   let nexp = Prop.exp_normalize_prop tenv prop exp in
   let atom_get_attr attributes atom =
-    match atom with
-    | (Predicates.Apred (_, es) | Anpred (_, es)) when List.mem ~equal:Exp.equal es nexp ->
+    match (atom : Predicates.atom) with
+    | (Apred (_, es) | Anpred (_, es)) when List.mem ~equal:Exp.equal es nexp ->
         atom :: attributes
     | _ ->
         attributes
@@ -77,7 +77,7 @@ let get tenv prop exp category =
   let atts = get_for_exp tenv prop exp in
   List.find
     ~f:(function
-      | Predicates.Apred (att, _) | Anpred (att, _) ->
+      | Predicates.(Apred (att, _) | Anpred (att, _)) ->
           PredSymb.equal_category (PredSymb.to_category att) category
       | _ ->
           false )
@@ -118,7 +118,7 @@ let remove tenv prop atom =
 (** Remove an attribute from all the atoms in the heap *)
 let remove_for_attr tenv prop att0 =
   let f = function
-    | Predicates.Apred (att, _) | Anpred (att, _) ->
+    | Predicates.(Apred (att, _) | Anpred (att, _)) ->
         not (PredSymb.equal att0 att)
     | _ ->
         true
@@ -196,7 +196,7 @@ let mark_vars_as_undefined tenv prop ~ret_exp ~undefined_actuals_by_ref callee_p
     path_pos =
   let mark_var_as_undefined ~annot exp prop =
     match exp with
-    | Exp.Var _ | Lvar _ ->
+    | Exp.(Var _ | Lvar _) ->
         let att_undef = PredSymb.Aundef (callee_pname, annot, loc, path_pos) in
         add_or_replace tenv prop (Apred (att_undef, [exp]))
     | _ ->

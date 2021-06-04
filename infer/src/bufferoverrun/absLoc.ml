@@ -252,12 +252,13 @@ module Loc = struct
         false
 
 
-  let rec is_pretty = function
-    | BoField.Prim (Var _) ->
+  let rec is_pretty (field : _ BoField.t) =
+    match field with
+    | Prim (Var _) ->
         true
-    | BoField.Prim (Allocsite a) ->
+    | Prim (Allocsite a) ->
         Allocsite.is_pretty a
-    | BoField.Field {prefix= loc} | StarField {prefix= loc} ->
+    | Field {prefix= loc} | StarField {prefix= loc} ->
         is_pretty loc
 
 

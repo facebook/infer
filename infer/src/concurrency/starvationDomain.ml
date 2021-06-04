@@ -132,7 +132,7 @@ module Lock = struct
        the default depending on the language, since most Java locks are recursive and most C++ locks
        are not. *)
     match get_typ tenv lock with
-    | Some {Typ.desc= Tptr ({desc= Tstruct name}, _)} | Some {desc= Tstruct name} ->
+    | Some {Typ.desc= Tptr ({desc= Tstruct name}, _) | Tstruct name} ->
         ConcurrencyModels.is_recursive_lock_type name
     | Some typ ->
         (* weird type passed as a lock, return default *)

@@ -197,29 +197,29 @@ let is_cpp_container_write =
 
 
 let is_container_write tenv pn =
-  match pn with
-  | Procname.CSharp _ when is_csharp_container_write tenv pn [] ->
+  match (pn : Procname.t) with
+  | CSharp _ when is_csharp_container_write tenv pn [] ->
       true
-  | Procname.Java _ when is_java_container_write tenv pn [] ->
+  | Java _ when is_java_container_write tenv pn [] ->
       true
-  | (Procname.ObjC_Cpp _ | C _) when is_cpp_container_write pn ->
+  | (ObjC_Cpp _ | C _) when is_cpp_container_write pn ->
       true
   | _ ->
       false
 
 
 let is_container_read tenv pn =
-  match pn with
-  | Procname.CSharp _ ->
+  match (pn : Procname.t) with
+  | CSharp _ ->
       is_csharp_container_read tenv pn []
-  | Procname.Java _ ->
+  | Java _ ->
       is_java_container_read tenv pn []
   (* The following order matters: we want to check if pname is a container write
      before we check if pname is a container read. This is due to a different
      treatment between std::map::operator[] and all other operator[]. *)
-  | Procname.ObjC_Cpp _ | C _ ->
+  | ObjC_Cpp _ | C _ ->
       (not (is_cpp_container_write pn)) && is_cpp_container_read pn
-  | _ ->
+  | Erlang _ | Linters_dummy_method | Block _ | WithBlockParameters _ ->
       false
 
 

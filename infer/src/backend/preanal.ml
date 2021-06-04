@@ -326,12 +326,12 @@ module Liveness = struct
 
     let is_last_instr_in_node instr node = phys_equal (last_instr_in_node node) instr
 
-    let exec_instr ((active_defs, to_nullify) as astate) extras node _ instr =
+    let exec_instr ((active_defs, to_nullify) as astate) extras node _ (instr : Sil.instr) =
       let astate' =
         match instr with
-        | Sil.Load {id= lhs_id} ->
+        | Load {id= lhs_id} ->
             (VarDomain.add (Var.of_id lhs_id) active_defs, to_nullify)
-        | Sil.Call ((id, _), _, actuals, _, {CallFlags.cf_assign_last_arg}) ->
+        | Call ((id, _), _, actuals, _, {CallFlags.cf_assign_last_arg}) ->
             let active_defs = VarDomain.add (Var.of_id id) active_defs in
             let active_defs =
               if cf_assign_last_arg then
@@ -343,15 +343,15 @@ module Liveness = struct
               else active_defs
             in
             (active_defs, to_nullify)
-        | Sil.Store {e1= Exp.Lvar lhs_pvar} ->
+        | Store {e1= Exp.Lvar lhs_pvar} ->
             (VarDomain.add (Var.of_pvar lhs_pvar) active_defs, to_nullify)
-        | Sil.Metadata (VariableLifetimeBegins (pvar, _, _)) ->
+        | Metadata (VariableLifetimeBegins (pvar, _, _)) ->
             (VarDomain.add (Var.of_pvar pvar) active_defs, to_nullify)
-        | Sil.Store _
+        | Store _
         | Prune _
         | Metadata (Abstract _ | CatchEntry _ | ExitScope _ | Skip | TryEntry _ | TryExit _) ->
             astate
-        | Sil.Metadata (Nullify _) ->
+        | Metadata (Nullify _) ->
             L.(die InternalError)
               "Should not add nullify instructions before running nullify analysis!"
       in

@@ -935,7 +935,7 @@ let abstract_gc tenv p =
   let strong_filter = function
     | Predicates.Aeq (e1, e2) | Predicates.Aneq (e1, e2) ->
         check (Exp.free_vars e1) && check (Exp.free_vars e2)
-    | (Predicates.Apred _ | Anpred _) as a ->
+    | Predicates.(Apred _ | Anpred _) as a ->
         check (Predicates.atom_free_vars a)
   in
   let new_pi = List.filter ~f:strong_filter pi in
