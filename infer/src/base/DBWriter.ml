@@ -147,6 +147,8 @@ module Implementation = struct
 
   let merge_db infer_out_src =
     let db_file = ResultsDirEntryName.get_path ~results_dir:infer_out_src CaptureDB in
+    if not (ISys.file_exists db_file) then
+      L.die InternalError "Tried to merge in DB at %s but path does not exist.@\n" db_file ;
     let main_db = ResultsDatabase.get_database () in
     SqliteUtils.exec main_db
       ~stmt:(Printf.sprintf "ATTACH '%s' AS attached" db_file)
