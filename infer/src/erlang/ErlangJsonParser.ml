@@ -432,19 +432,9 @@ and to_catch_pattern json : Ast.catch_pattern option =
       unknown "catch_pattern" json
 
 
-and to_guards line json : Ast.expression list option =
-  let andalso e1 e2 = {Ast.line; simple_expression= BinaryOperator (e1, AndAlso, e2)} in
-  let to_dnf_term xs =
-    let* atom_guards = to_list ~f:to_expression (one_list xs) in
-    match atom_guards with
-    | [] ->
-        unknown "empty_guard?" json
-    | [e] ->
-        Some e
-    | e :: es ->
-        Some (List.fold ~init:e ~f:andalso es)
-  in
-  json |> one_list |> to_list ~f:to_dnf_term
+and to_guards json : Ast.expression list list option =
+  let to_guard xs = to_list ~f:to_expression xs in
+  to_list ~f:to_guard json
 
 
 and to_clause : 'pat. 'pat parser -> 'pat Ast.clause parser =
@@ -453,7 +443,7 @@ and to_clause : 'pat. 'pat parser -> 'pat Ast.clause parser =
   | `List [`String "clause"; anno; patterns; guards; body] ->
       let* line = to_line anno in
       let* patterns = to_list ~f:to_pat patterns in
-      let* guards = to_guards line guards in
+      let* guards = to_guards guards in
       let body = one_list body in
       let* body = to_body body in
       Some {Ast.line; patterns; guards; body}

@@ -113,11 +113,11 @@ and association = {kind: association_kind; key: expression; value: expression}
 
 and pattern = expression
 
-and guard = expression
+and guard_test = expression
 
 (** {2 S8.5 Clauses} *)
 
-and 'pat clause = {line: line; patterns: 'pat list; guards: guard list; body: body}
+and 'pat clause = {line: line; patterns: 'pat list; guards: guard_test list list; body: body}
 
 and case_clause = pattern clause
 
