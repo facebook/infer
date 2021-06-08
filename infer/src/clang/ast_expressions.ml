@@ -123,7 +123,7 @@ let create_implicit_cast_expr stmt_info stmts typ cast_kind =
     {Clang_ast_t.ei_qual_type= typ; ei_value_kind= `RValue; ei_object_kind= `Ordinary}
   in
   let cast_expr_info = {Clang_ast_t.cei_cast_kind= cast_kind; cei_base_path= []} in
-  Clang_ast_t.ImplicitCastExpr (stmt_info, stmts, expr_info, cast_expr_info)
+  Clang_ast_t.ImplicitCastExpr (stmt_info, stmts, expr_info, cast_expr_info, false)
 
 
 let create_nil stmt_info =

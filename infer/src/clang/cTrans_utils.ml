@@ -781,14 +781,15 @@ let should_remove_first_param {context= {tenv} as context; is_fst_arg_objc_insta
             , {drti_decl_ref= Some {dr_name= Some {ni_name= name}; dr_qual_type= Some qual_type}} )
         ]
       , _
-      , {cei_cast_kind= `LValueToRValue} )
+      , {cei_cast_kind= `LValueToRValue}
+      , _ )
     when is_fst_arg_objc_instance_method_call && String.equal name "self"
          && CType.is_class (CType_decl.qual_type_to_sil_type tenv qual_type) ->
       some_class_name stmt_info
   | ObjCMessageExpr
       ( _
       , [ ImplicitCastExpr
-            (_, [DeclRefExpr (stmt_info, _, _, _)], _, {cei_cast_kind= `LValueToRValue}) ]
+            (_, [DeclRefExpr (stmt_info, _, _, _)], _, {cei_cast_kind= `LValueToRValue}, _) ]
       , _
       , {omei_selector= selector} )
     when is_fst_arg_objc_instance_method_call && String.equal selector CFrontend_config.class_method
