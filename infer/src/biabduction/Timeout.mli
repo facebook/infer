@@ -9,7 +9,7 @@ open! IStd
 
 (** Handle timeout events *)
 
-val exe_timeout : ('a -> unit) -> 'a -> SymOp.failure_kind option
+val exe_timeout : ('a -> unit) -> 'a -> Exception.failure_kind option
 (** Execute the function up to a given timeout. *)
 
 val resume_previous_timeout : unit -> unit

@@ -179,7 +179,7 @@ let extract_pre p tenv pdesc abstract_fun =
   in
   let _, p' = PropUtil.remove_locals_formals tenv pdesc p in
   let pre, _ = Prop.extract_spec p' in
-  let pre' = try abstract_fun tenv pre with exn when SymOp.exn_not_failure exn -> pre in
+  let pre' = try abstract_fun tenv pre with exn when Exception.exn_not_failure exn -> pre in
   Prop.normalize tenv (Prop.prop_sub sub pre')
 
 

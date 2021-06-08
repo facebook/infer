@@ -473,7 +473,7 @@ let rec fsel_star_fld fsel1 fsel2 =
 
 
 and array_content_star se1 se2 =
-  try sexp_star_fld se1 se2 with exn when SymOp.exn_not_failure exn -> se1
+  try sexp_star_fld se1 se2 with exn when Exception.exn_not_failure exn -> se1
 
 
 (* let postcondition override *)
@@ -581,7 +581,7 @@ let sigma_star_fld tenv (sigma1 : Predicates.hpred list) (sigma2 : Predicates.hp
           star sg1 sigma2' )
   in
   try star sigma1 sigma2
-  with exn when SymOp.exn_not_failure exn ->
+  with exn when Exception.exn_not_failure exn ->
     L.d_str "cannot star " ;
     Prop.d_sigma sigma1 ;
     L.d_str " and " ;
@@ -620,7 +620,7 @@ let sigma_star_typ (sigma1 : Predicates.hpred list) (typings2 : (Exp.t * Exp.t) 
           star sg1 typings2' )
   in
   try star sigma1 typings2
-  with exn when SymOp.exn_not_failure exn ->
+  with exn when Exception.exn_not_failure exn ->
     L.d_str "cannot star " ;
     Prop.d_sigma sigma1 ;
     L.d_str " and " ;

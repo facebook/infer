@@ -992,7 +992,7 @@ let explain_nth_function_parameter proc_name tenv use_buckets deref_str prop n p
         match dexp_opt with Some de -> Some (dexp_apply_pvar_off de pvar_off) | None -> None
       in
       create_dereference_desc proc_name tenv ~use_buckets dexp_opt' deref_str prop loc
-    with exn when SymOp.exn_not_failure exn -> Localise.no_desc )
+    with exn when Exception.exn_not_failure exn -> Localise.no_desc )
   | _ ->
       Localise.no_desc
 

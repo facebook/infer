@@ -13,7 +13,7 @@ open! IStd
 let set_reference_and_call_function reference value f x =
   let saved = !reference in
   let restore () = reference := saved in
-  Utils.try_finally_swallow_timeout
+  Exception.try_finally
     ~f:(fun () ->
       reference := value ;
       f x )

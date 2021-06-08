@@ -52,23 +52,3 @@ val unset_alarm : unit -> unit
 
 val unset_wallclock_alarm : unit -> unit
 (** Unset the wallclock alarm checked at every pay() *)
-
-type failure_kind =
-  | FKtimeout  (** max time exceeded *)
-  | FKsymops_timeout of int  (** max symop's exceeded *)
-  | FKrecursion_timeout of int  (** max recursion level exceeded *)
-  | FKcrash of string  (** uncaught exception or failed assertion *)
-
-(** Timeout exception *)
-exception Analysis_failure_exe of failure_kind
-
-val exn_not_failure : exn -> bool
-(** check that the exception is not a timeout exception *)
-
-val try_finally : f:(unit -> 'a) -> finally:(unit -> unit) -> 'a
-(** [try_finally ~f ~finally] executes [f] and then [finally] even if [f] raises an exception.
-    Assuming that [finally ()] terminates quickly [Analysis_failure_exe] exceptions are handled
-    correctly. In particular, an exception raised by [f ()] is delayed until [finally ()] finishes,
-    so [finally ()] should return reasonably quickly. *)
-
-val pp_failure_kind : Format.formatter -> failure_kind -> unit

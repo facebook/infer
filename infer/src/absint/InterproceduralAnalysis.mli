@@ -20,7 +20,7 @@ type 'payload t =
   ; analyze_dependency: Procname.t -> (Procdesc.t * 'payload) option
         (** On-demand analysis of callees or other dependencies of the analysis of the current
             procedure. Uses [Ondemand.analyze_procedure]. *)
-  ; update_stats: ?add_symops:int -> ?failure_kind:SymOp.failure_kind -> unit -> unit
+  ; update_stats: ?add_symops:int -> ?failure_kind:Exception.failure_kind -> unit -> unit
         (** update the [Summary.Stats.t] of the summary of the current procedure *) }
 
 (** Analysis data for the analysis of a source file. *)

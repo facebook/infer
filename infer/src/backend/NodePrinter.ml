@@ -44,5 +44,5 @@ let with_session ?kind ~pp_name node ~f =
     AnalysisState.set_session session ;
     let pp_name = Option.fold kind ~init:pp_name ~f:with_kind in
     Printer.node_start_session ~pp_name node session ;
-    SymOp.try_finally ~f ~finally:(fun () -> Printer.node_finish_session node) )
+    Exception.try_finally ~f ~finally:(fun () -> Printer.node_finish_session node) )
   else f ()

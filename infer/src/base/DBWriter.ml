@@ -373,7 +373,7 @@ module Server = struct
           Unix.close socket ;
           Unix.remove socket_name )
     in
-    Utils.try_finally_swallow_timeout ~f:(fun () -> server_loop socket) ~finally:shutdown
+    Exception.try_finally ~f:(fun () -> server_loop socket) ~finally:shutdown
 
 
   let send cmd =

@@ -1082,4 +1082,4 @@ let pp_speclist_to_file (filename : DB.filename) spec_list =
 
 
 let emit_specs_to_file filename spec_list =
-  try pp_speclist_to_file filename spec_list with exn when SymOp.exn_not_failure exn -> ()
+  try pp_speclist_to_file filename spec_list with exn when Exception.exn_not_failure exn -> ()

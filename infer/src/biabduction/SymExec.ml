@@ -1360,7 +1360,7 @@ and instrs ?(mask_errors = false) analysis_data instrs ppl =
     L.d_ln () ;
     try sym_exec analysis_data instr p path
     with exn ->
-      IExn.reraise_if exn ~f:(fun () -> (not mask_errors) || not (SymOp.exn_not_failure exn)) ;
+      IExn.reraise_if exn ~f:(fun () -> (not mask_errors) || not (Exception.exn_not_failure exn)) ;
       let error = Exceptions.recognize_exception exn in
       let loc =
         match error.ocaml_pos with
@@ -1585,7 +1585,7 @@ and check_variadic_sentinel ?(fails_on_nil = false) n_formals (sentinel, null_po
     let tmp_id_deref = Ident.create_fresh Ident.kprimed in
     let load_instr = Sil.Load {id= tmp_id_deref; e= lexp; root_typ= typ; typ; loc} in
     try instrs analysis_data (Instrs.singleton load_instr) result
-    with e when SymOp.exn_not_failure e ->
+    with e when Exception.exn_not_failure e ->
       IExn.reraise_if e ~f:(fun () -> fails_on_nil) ;
       let deref_str = Localise.deref_str_nil_argument_in_variadic_method proc_name nargs i in
       let err_desc =

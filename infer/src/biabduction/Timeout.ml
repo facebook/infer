@@ -73,7 +73,7 @@ let set_status status =
 
 let timeout_action _ =
   unset_alarm () ;
-  raise (SymOp.Analysis_failure_exe FKtimeout)
+  raise (Exception.Analysis_failure_exe FKtimeout)
 
 
 let register_timeout_handlers =
@@ -120,13 +120,13 @@ let exe_timeout f x =
     SymOp.set_alarm ()
   in
   try
-    SymOp.try_finally
+    Exception.try_finally
       ~f:(fun () ->
         suspend_existing_timeout_and_start_new_one () ;
         f x ;
         None )
       ~finally:resume_previous_timeout
-  with SymOp.Analysis_failure_exe kind ->
+  with Exception.Analysis_failure_exe kind ->
     let loc = AnalysisState.get_loc () |> Option.value ~default:Location.dummy in
-    Errdesc.warning_err loc "TIMEOUT: %a@." SymOp.pp_failure_kind kind ;
+    Errdesc.warning_err loc "TIMEOUT: %a@." Exception.pp_failure_kind kind ;
     Some kind

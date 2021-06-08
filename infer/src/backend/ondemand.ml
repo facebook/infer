@@ -237,7 +237,7 @@ let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
     L.internal_error "@\nERROR RUNNING BACKEND: %a %s@\n@\nBACK TRACE@\n%s@?" Procname.pp
       callee_pname (Exn.to_string exn) backtrace ;
     match exn with
-    | SymOp.Analysis_failure_exe kind ->
+    | Exception.Analysis_failure_exe kind ->
         (* in production mode, log the timeout/crash and continue with the summary we had before
            the failure occurred *)
         log_error_and_continue exn initial_callee_summary kind

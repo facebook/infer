@@ -330,7 +330,7 @@ end = struct
     let path_pos_at_path p =
       try
         match curr_node p with Some node -> Option.is_some pos_opt && filter node | None -> false
-      with exn when SymOp.exn_not_failure exn -> false
+      with exn when Exception.exn_not_failure exn -> false
     in
     let position_seen = ref false in
     let inverse_sequence =

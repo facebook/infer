@@ -15,7 +15,7 @@ module F = Format
 
 let decrease_indent_when_exception thunk =
   try thunk ()
-  with exn when SymOp.exn_not_failure exn ->
+  with exn when Exception.exn_not_failure exn ->
     IExn.reraise_after exn ~f:(fun () -> L.d_decrease_indent ())
 
 
@@ -2114,7 +2114,7 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
                   let res =
                     decrease_indent_when_exception (fun () ->
                         try sigma_imply tenv calc_index_frame calc_missing subs prop1 hpred_list2
-                        with exn when SymOp.exn_not_failure exn ->
+                        with exn when Exception.exn_not_failure exn ->
                           L.d_strln ~color:Red "backtracking lseg: trying rhs of length exactly 1" ;
                           let _, para_inst3 = Predicates.hpara_instantiate para2 e2_ f2_ elist2 in
                           sigma_imply tenv calc_index_frame calc_missing subs prop1 para_inst3 )

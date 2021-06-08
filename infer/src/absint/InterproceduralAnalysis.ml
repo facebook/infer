@@ -13,7 +13,7 @@ type 'payload t =
   ; err_log: Errlog.t
   ; exe_env: Exe_env.t
   ; analyze_dependency: Procname.t -> (Procdesc.t * 'payload) option
-  ; update_stats: ?add_symops:int -> ?failure_kind:SymOp.failure_kind -> unit -> unit }
+  ; update_stats: ?add_symops:int -> ?failure_kind:Exception.failure_kind -> unit -> unit }
 
 type 'payload file_t =
   { source_file: SourceFile.t
