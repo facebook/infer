@@ -126,8 +126,9 @@ let update_must_be_valid_reason {InterproceduralAnalysis.tenv; proc_desc; err_lo
       let result =
         (* add reason for must be valid to be because the return type is non pod *)
         let+ astate, value = PulseOperations.eval_deref path location (Lvar self) astate in
-        AddressAttributes.replace_must_be_valid_reason path SelfOfNonPODReturnMethod (fst value)
-          astate
+        AddressAttributes.replace_must_be_valid_reason path
+          (SelfOfNonPODReturnMethod (Procdesc.get_ret_type_from_signature proc_desc))
+          (fst value) astate
       in
       PulseReport.report_result tenv proc_desc err_log location result
   | ContinueProgram _, _

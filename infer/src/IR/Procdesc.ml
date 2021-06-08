@@ -545,6 +545,16 @@ let get_ret_var pdesc = Pvar.get_ret_pvar (get_proc_name pdesc)
 
 let get_ret_param_var pdesc = Pvar.get_ret_param_pvar (get_proc_name pdesc)
 
+let get_ret_type_from_signature pdesc =
+  if pdesc.attributes.has_added_return_param then
+    List.last pdesc.attributes.formals
+    |> Option.value_map
+         ~f:(fun (_, typ) ->
+           match typ.Typ.desc with Tptr (t, _) -> t | _ -> pdesc.attributes.ret_type )
+         ~default:pdesc.attributes.ret_type
+  else pdesc.attributes.ret_type
+
+
 let get_start_node pdesc = pdesc.start_node
 
 (** Return [true] iff the procedure is defined, and not just declared *)
