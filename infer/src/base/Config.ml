@@ -2088,8 +2088,8 @@ and pulse_report_ignore_unknown_java_methods_patterns =
     ~in_help:InferCommand.[(Analyze, manual_generic)]
     "On Java, issues that are found on program paths that contain calls to unknown methods (those \
      without implementation) are not reported unless all the unknown method names match this \
-     pattern. If the empty list is provided or \
-     --pulse_report_ignore_unknown_java_methods_patterns-reset, all issues will be reported \
+     pattern. If the empty list is provided with \
+     $(b,--pulse-report-ignore-unknown-java-methods-patterns-reset), all issues will be reported \
      regardless the presence of unknown code"
 
 

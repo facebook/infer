@@ -338,20 +338,56 @@ type 'a t =
   -> Arg.doc
   -> 'a
 
+let json_expect ~flag ~expected ~inferconfig_dir ~f json =
+  if f json then true
+  else (
+    warnf "WARNING: in %s/.inferconfig for option '%s', use %s (found value '%s' instead).@."
+      inferconfig_dir flag expected
+      (Yojson.Basic.pretty_to_string json) ;
+    false )
+
+
+let json_expect_float ~flag ~inferconfig_dir json =
+  json_expect ~flag ~expected:"a floating-point number or an integer" ~inferconfig_dir
+    ~f:(function `Int _ | `Float _ -> true | _ -> false)
+    json
+
+
+let json_expect_int ~flag ~inferconfig_dir json =
+  json_expect ~flag ~expected:"an integer" ~inferconfig_dir
+    ~f:(function `Int _ -> true | _ -> false)
+    json
+
+
+let json_expect_null ~flag ~inferconfig_dir json =
+  json_expect ~flag ~expected:"the 'null' value" ~inferconfig_dir
+    ~f:(function `Null -> true | _ -> false)
+    json
+
+
+let json_expect_string ~flag ~inferconfig_dir json =
+  json_expect ~flag ~expected:"a string" ~inferconfig_dir
+    ~f:(function `String _ -> true | _ -> false)
+    json
+
+
+let float_json_decoder ~flag ~inferconfig_dir json =
+  if json_expect_float ~flag ~inferconfig_dir json then [flag; string_of_float (YBU.to_number json)]
+  else []
+
+
 let int_json_decoder ~flag ~inferconfig_dir json =
-  let int_as_string =
-    match json with
-    | `String s ->
-        warnf "WARNING: in %s/.inferconfig for option '%s', use an integer instead of a string.@."
-          inferconfig_dir flag ;
-        s
-    | json ->
-        string_of_int (YBU.to_int json)
-  in
-  [flag; int_as_string]
+  if json_expect_int ~flag ~inferconfig_dir json then [flag; string_of_int (YBU.to_int json)]
+  else []
 
 
-let string_json_decoder ~flag ~inferconfig_dir:_ json = [flag; YBU.to_string json]
+let null_json_decoder ~flag ~inferconfig_dir json =
+  if json_expect_null ~flag ~inferconfig_dir json then [flag] else []
+
+
+let string_json_decoder ~flag ~inferconfig_dir json =
+  if json_expect_string ~flag ~inferconfig_dir json then [flag; YBU.to_string json] else []
+
 
 let path_json_decoder ~flag ~inferconfig_dir json =
   let abs_path =
@@ -366,7 +402,7 @@ let list_json_decoder json_decoder ~inferconfig_dir json =
 
 
 (* selects "--long" if not empty, or some non-empty "-deprecated" or "-short" *)
-let mk_flag ~deprecated ?short ~long =
+let mk_flag ~deprecated ~short ~long =
   if String.is_empty long then
     match short with
     | Some c ->
@@ -382,11 +418,11 @@ let mk_flag ~deprecated ?short ~long =
 
 let mk_set var value ?(deprecated = []) ~long ?short ?parse_mode ?in_help ?(meta = "") doc =
   let setter () = var := value in
-  let flag = mk_flag ~deprecated ?short ~long in
+  let flag = mk_flag ~deprecated ~short ~long in
   ignore
     (mk ~deprecated ~long ?short ~default:() ?parse_mode ?in_help ~meta doc
        ~default_to_string:(fun () -> "")
-       ~decode_json:(string_json_decoder ~flag)
+       ~decode_json:(null_json_decoder ~flag)
        ~mk_setter:(fun _ _ -> setter ())
        ~mk_spec:(fun _ -> Unit setter))
 
@@ -404,12 +440,11 @@ let reset_doc_opt ~long = Printf.sprintf "Cancel the effect of $(b,%s)." (dashda
 
 let reset_doc_list ~long = Printf.sprintf "Set $(b,%s) to the empty list." (dashdash long)
 
-let mk_option ?(default = None) ?(default_to_string = fun _ -> "") ~f ?(mk_reset = true)
-    ?(deprecated = []) ~long ?short ?parse_mode ?in_help ?(meta = "string") doc =
-  let flag = mk_flag ~deprecated ?short ~long in
+let mk_option ?(default = None) ?(default_to_string = fun _ -> "") ~decode_json ~f
+    ?(mk_reset = true) ?(deprecated = []) ~long ?short ?parse_mode ?in_help ?(meta = "string") doc =
   let mk () =
     mk ~deprecated ~long ?short ~default ?parse_mode ?in_help ~meta doc ~default_to_string
-      ~decode_json:(string_json_decoder ~flag)
+      ~decode_json
       ~mk_setter:(fun var str -> var := f str)
       ~mk_spec:(fun set -> String set)
   in
@@ -500,7 +535,7 @@ let mk_bool_group ?(deprecated_no = []) ?(default = false) ?f:(f0 = Fn.id) ?(dep
 
 let mk_int ~default ?(default_to_string = string_of_int) ?(f = Fn.id) ?(deprecated = []) ~long
     ?short ?parse_mode ?in_help ?(meta = "int") doc =
-  let flag = mk_flag ~deprecated ?short ~long in
+  let flag = mk_flag ~deprecated ~short ~long in
   mk ~deprecated ~long ?short ~default ?parse_mode ?in_help ~meta doc ~default_to_string
     ~mk_setter:(fun var str -> var := f (int_of_string str))
     ~decode_json:(int_json_decoder ~flag)
@@ -510,18 +545,22 @@ let mk_int ~default ?(default_to_string = string_of_int) ?(f = Fn.id) ?(deprecat
 let mk_int_opt ?default ?(default_to_string = Option.value_map ~default:"" ~f:string_of_int)
     ?f:(f0 = Fn.id) ?(deprecated = []) ~long ?short ?parse_mode ?in_help ?(meta = "int") doc =
   let f s = Some (f0 (int_of_string s)) in
-  mk_option ~deprecated ~long ?short ~default ~default_to_string ~f ?parse_mode ?in_help ~meta doc
+  let flag = mk_flag ~deprecated ~short ~long in
+  mk_option ~deprecated ~long ?short ~default ~default_to_string
+    ~decode_json:(int_json_decoder ~flag) ~f ?parse_mode ?in_help ~meta doc
 
 
 let mk_float_opt ?default ?(default_to_string = Option.value_map ~default:"" ~f:string_of_float)
     ?(deprecated = []) ~long ?short ?parse_mode ?in_help ?(meta = "float") doc =
   let f s = Some (float_of_string s) in
-  mk_option ~deprecated ~long ?short ~default ~default_to_string ~f ?parse_mode ?in_help ~meta doc
+  let flag = mk_flag ~deprecated ~short ~long in
+  mk_option ~deprecated ~long ?short ~default ~default_to_string
+    ~decode_json:(float_json_decoder ~flag) ~f ?parse_mode ?in_help ~meta doc
 
 
 let mk_string ~default ?(default_to_string = Fn.id) ?(f = fun s -> s) ?(deprecated = []) ~long
     ?short ?parse_mode ?in_help ?(meta = "string") doc =
-  let flag = mk_flag ~deprecated ?short ~long in
+  let flag = mk_flag ~deprecated ~short ~long in
   mk ~deprecated ~long ?short ~default ?parse_mode ?in_help ~meta doc ~default_to_string
     ~mk_setter:(fun var str -> var := f str)
     ~decode_json:(string_json_decoder ~flag)
@@ -531,13 +570,14 @@ let mk_string ~default ?(default_to_string = Fn.id) ?(f = fun s -> s) ?(deprecat
 let mk_string_opt ?default ?(default_to_string = Option.value ~default:"") ?(f = fun s -> s)
     ?mk_reset ?(deprecated = []) ~long ?short ?parse_mode ?in_help ?(meta = "string") doc =
   let f s = Some (f s) in
-  mk_option ~deprecated ~long ?short ~default ~default_to_string ~f ?mk_reset ?parse_mode ?in_help
-    ~meta doc
+  let flag = mk_flag ~deprecated ~short ~long in
+  mk_option ~deprecated ~long ?short ~default ~default_to_string
+    ~decode_json:(string_json_decoder ~flag) ~f ?mk_reset ?parse_mode ?in_help ~meta doc
 
 
 let mk_string_list ?(default = []) ?(default_to_string = String.concat ~sep:",") ?(f = fun s -> s)
     ?(deprecated = []) ~long ?short ?parse_mode ?in_help ?(meta = "string") doc =
-  let flag = mk_flag ~deprecated ?short ~long in
+  let flag = mk_flag ~deprecated ~short ~long in
   let mk () =
     mk ~deprecated ~long ?short ~default:(RevList.of_list default) ?parse_mode ?in_help
       ~meta:("+" ^ meta) doc
@@ -558,7 +598,7 @@ let map_to_str map =
 
 let mk_string_map ?(default = String.Map.empty) ?(default_to_string = map_to_str) ?(deprecated = [])
     ~long ?short ?parse_mode ?in_help ?(meta = "key=value") doc =
-  let flag = mk_flag ~deprecated ?short ~long in
+  let flag = mk_flag ~deprecated ~short ~long in
   let split_str str =
     match String.lsplit2 str ~on:'=' with
     | Some a ->
@@ -610,7 +650,7 @@ let mk_path_helper ~setter ~default_to_string ~default ~deprecated ~long ~short 
 
 let mk_path ~default ?(default_to_string = Fn.id) ?(f = Fn.id) ?(deprecated = []) ~long ?short
     ?parse_mode ?in_help ?(meta = "path") =
-  let flag = mk_flag ~deprecated ?short ~long in
+  let flag = mk_flag ~deprecated ~short ~long in
   mk_path_helper
     ~setter:(fun var x -> var := f x)
     ~decode_json:(path_json_decoder ~flag) ~default_to_string ~default ~deprecated ~long ~short
@@ -620,7 +660,7 @@ let mk_path ~default ?(default_to_string = Fn.id) ?(f = Fn.id) ?(deprecated = []
 let mk_path_opt ?default ?(default_to_string = Option.value ~default:"") ?(deprecated = []) ~long
     ?short ?parse_mode ?in_help ?(meta = "path") doc =
   let mk () =
-    let flag = mk_flag ~deprecated ?short ~long in
+    let flag = mk_flag ~deprecated ~short ~long in
     mk_path_helper
       ~setter:(fun var x -> var := Some x)
       ~decode_json:(path_json_decoder ~flag) ~default_to_string ~default ~deprecated ~long ~short
@@ -632,7 +672,7 @@ let mk_path_opt ?default ?(default_to_string = Option.value ~default:"") ?(depre
 
 let mk_path_list ?(default = []) ?(default_to_string = String.concat ~sep:", ") ?(deprecated = [])
     ~long ?short ?parse_mode ?in_help ?(meta = "path") doc =
-  let flag = mk_flag ~deprecated ?short ~long in
+  let flag = mk_flag ~deprecated ~short ~long in
   let mk () =
     mk_path_helper
       ~setter:(fun var x -> var := RevList.cons x !var)
@@ -657,7 +697,7 @@ let mk_symbol ~default ~symbols ~eq ?(f = Fn.id) ?(deprecated = []) ~long ?short
   let of_string str = List.Assoc.find_exn ~equal:String.equal symbols str in
   let to_string sym = List.Assoc.find_exn ~equal:eq sym_to_str sym in
   let meta = Option.value meta ~default:(mk_symbols_meta symbols) in
-  let flag = mk_flag ~deprecated ?short ~long in
+  let flag = mk_flag ~deprecated ~short ~long in
   mk ~deprecated ~long ?short ~default ?parse_mode ?in_help ~meta doc
     ~default_to_string:(fun s -> to_string s)
     ~mk_setter:(fun var str -> var := of_string str |> f)
@@ -670,7 +710,7 @@ let mk_symbol_opt ~symbols ?(f = Fn.id) ?(mk_reset = true) ?(deprecated = []) ~l
   let strings = List.map ~f:fst symbols in
   let of_string str = List.Assoc.find_exn ~equal:String.equal symbols str in
   let meta = Option.value meta ~default:(mk_symbols_meta symbols) in
-  let flag = mk_flag ~deprecated ?short ~long in
+  let flag = mk_flag ~deprecated ~short ~long in
   let mk () =
     mk ~deprecated ~long ?short ~default:None ?parse_mode ?in_help ~meta doc
       ~default_to_string:(fun _ -> "")

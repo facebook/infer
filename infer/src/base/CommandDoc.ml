@@ -269,6 +269,10 @@ $(b,infer) $(i,[options])|}
       ; `Noblank
       ; `P "- for switches options, the value is a JSON boolean (true or false, without quotes)"
       ; `Noblank
+      ; `P
+          "- for non-switches options with no arguments (for instance the $(,...-reset) option \
+           associated with a list option), the value is null"
+      ; `Noblank
       ; `P "- for integers, the value is a JSON integer (without quotes)"
       ; `Noblank
       ; `P "- string options have string values"
