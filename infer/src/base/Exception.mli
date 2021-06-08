@@ -14,7 +14,6 @@ open! IStd
 type failure_kind =
   | FKtimeout  (** max time exceeded *)
   | FKsymops_timeout of int  (** max symop's exceeded *)
-  | FKrecursion_timeout of int  (** max recursion level exceeded *)
   | FKcrash of string  (** uncaught exception or failed assertion *)
 
 val pp_failure_kind : Format.formatter -> failure_kind -> unit

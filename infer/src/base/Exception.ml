@@ -11,7 +11,6 @@ module F = Format
 type failure_kind =
   | FKtimeout  (** max time exceeded *)
   | FKsymops_timeout of int  (** max symop's exceeded *)
-  | FKrecursion_timeout of int  (** max recursion level exceeded *)
   | FKcrash of string  (** uncaught exception or failed assertion *)
 
 (** failure that prevented biabduction analysis from finishing *)
@@ -51,7 +50,5 @@ let pp_failure_kind fmt = function
       F.pp_print_string fmt "TIMEOUT"
   | FKsymops_timeout symops ->
       F.fprintf fmt "SYMOPS TIMEOUT (%d)" symops
-  | FKrecursion_timeout level ->
-      F.fprintf fmt "RECURSION TIMEOUT (%d)" level
   | FKcrash msg ->
       F.fprintf fmt "CRASH (%s)" msg
