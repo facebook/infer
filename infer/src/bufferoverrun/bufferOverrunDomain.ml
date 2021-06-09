@@ -860,6 +860,8 @@ module MemPure = struct
 
   let find_opt l m = Option.map (find_opt l m) ~f:MVal.get_val
 
+  let strong_update l v m = add l (Loc.represents_multiple_values l, v) m
+
   let add ?(represents_multiple_values = false) l ({Val.powloc; arrayblk} as v) m =
     let v =
       if Loc.is_unknown l then
@@ -2267,6 +2269,11 @@ module MemReach = struct
    fun k v m -> {m with mem_pure= MemPure.add k v m.mem_pure}
 
 
+  let strong_update_heap : Loc.t -> Val.t -> t -> t =
+   fun x v m ->
+    if Loc.is_unknown x then m else {m with mem_pure= MemPure.strong_update x v m.mem_pure}
+
+
   let add_heap : ?represents_multiple_values:bool -> Loc.t -> Val.t -> t -> t =
    fun ?represents_multiple_values x v m ->
     {m with mem_pure= MemPure.add ?represents_multiple_values x v m.mem_pure}
@@ -2286,7 +2293,9 @@ module MemReach = struct
 
   let strong_update : PowLoc.t -> Val.t -> t -> t =
    fun locs v m ->
-    let strong_update1 l m = if is_stack_loc l m then replace_stack l v m else add_heap l v m in
+    let strong_update1 l m =
+      if is_stack_loc l m then replace_stack l v m else strong_update_heap l v m
+    in
     PowLoc.fold strong_update1 locs m
 
 
