@@ -709,8 +709,8 @@ infer-reportdiff</b>(1). <b><br>
 <b>--inefficient-keyset-iterator</b>, <b>--linters</b>,
 <b>--liveness</b>, <b>--racerd</b>,
 <b>--dotnet-resource-leak</b>, <b>--siof</b>,
-<b>--self-in-block</b>, <b>--starvation</b>, <b>--uninit</b>
-(Conversely: <b>--default-checkers</b>)</p>
+<b>--self-in-block</b>, <b>--starvation</b> (Conversely:
+<b>--default-checkers</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -906,7 +906,7 @@ PRECONDITION_NOT_FOUND (enabled by default), <br>
 PRECONDITION_NOT_MET (enabled by default), <br>
 PREMATURE_NIL_TERMINATION_ARGUMENT (enabled by default),
 <br>
-PULSE_UNINITIALIZED_VALUE (disabled by default), <br>
+PULSE_UNINITIALIZED_VALUE (enabled by default), <br>
 PURE_FUNCTION (enabled by default), <br>
 QUANDARY_TAINT_ERROR (enabled by default), <br>
 RESOURCE_LEAK (enabled by default), <br>
@@ -1786,8 +1786,8 @@ disable all other checkers (Conversely:
 on program paths that contain calls to unknown methods
 (those without implementation) are not reported unless all
 the unknown method names match this pattern. If the empty
-list is provided or
---pulse_report_ignore_unknown_java_methods_patterns-reset,
+list is provided with
+<b>--pulse-report-ignore-unknown-java-methods-patterns-reset</b>,
 all issues will be reported regardless the presence of
 unknown code</p>
 
@@ -2244,11 +2244,11 @@ disable all other checkers (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
---no-uninit</b></p>
+--uninit</b></p>
 
-<p style="margin-left:17%;">Deactivates: checker uninit:
+<p style="margin-left:17%;">Activates: checker uninit:
 Warns when values are used before having been initialized.
-(Conversely: <b>--uninit</b>)</p>
+(Conversely: <b>--no-uninit</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -2421,6 +2421,9 @@ without their leading &quot;--&quot;, and values depend on
 the type of the option: <br>
 - for switches options, the value is a JSON boolean (true or
 false, without quotes) <br>
+- for non-switches options with no arguments (for instance
+the undefined option associated with a list option), the
+value is null <br>
 - for integers, the value is a JSON integer (without quotes)
 <br>
 - string options have string values <br>

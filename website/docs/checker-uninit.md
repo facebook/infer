@@ -5,6 +5,8 @@ description: "Warns when values are used before having been initialized."
 
 Warns when values are used before having been initialized.
 
+**\*\*\*DEPRECATED\*\*\*** Uninitialized value checking has moved to Pulse.
+
 Activate with `--uninit`.
 
 Supported languages:

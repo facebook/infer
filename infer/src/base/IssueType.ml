@@ -801,9 +801,7 @@ let nil_insertion_into_collection =
 
 let nil_messaging_to_non_pod =
   register ~id:"NIL_MESSAGING_TO_NON_POD" Error Pulse
-    ~user_documentation:
-      "Calling a method that returns a C++ non-POD object on the nil object is undefined behavior \
-       in Objective-C++."
+    ~user_documentation:[%blob "../../documentation/issues/NIL_MESSAGING_TO_NON_POD.md"]
 
 
 let null_dereference =

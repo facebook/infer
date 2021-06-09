@@ -250,8 +250,8 @@ reporting. (Conversely: <b>--deduplicate</b>)</p>
 <b>--inefficient-keyset-iterator</b>, <b>--linters</b>,
 <b>--liveness</b>, <b>--racerd</b>,
 <b>--dotnet-resource-leak</b>, <b>--siof</b>,
-<b>--self-in-block</b>, <b>--starvation</b>, <b>--uninit</b>
-(Conversely: <b>--default-checkers</b>)</p>
+<b>--self-in-block</b>, <b>--starvation</b> (Conversely:
+<b>--default-checkers</b>)</p>
 
 <p style="margin-left:11%;"><b>--eradicate</b></p>
 
@@ -597,8 +597,8 @@ disable all other checkers (Conversely:
 on program paths that contain calls to unknown methods
 (those without implementation) are not reported unless all
 the unknown method names match this pattern. If the empty
-list is provided or
---pulse_report_ignore_unknown_java_methods_patterns-reset,
+list is provided with
+<b>--pulse-report-ignore-unknown-java-methods-patterns-reset</b>,
 all issues will be reported regardless the presence of
 unknown code</p>
 
@@ -763,11 +763,11 @@ temporal properties over multiple objects. (Conversely:
 disable all other checkers (Conversely:
 <b>--no-topl-only</b>)</p>
 
-<p style="margin-left:11%;"><b>--no-uninit</b></p>
+<p style="margin-left:11%;"><b>--uninit</b></p>
 
-<p style="margin-left:17%;">Deactivates: checker uninit:
+<p style="margin-left:17%;">Activates: checker uninit:
 Warns when values are used before having been initialized.
-(Conversely: <b>--uninit</b>)</p>
+(Conversely: <b>--no-uninit</b>)</p>
 
 <p style="margin-left:11%;"><b>--uninit-only</b></p>
 
