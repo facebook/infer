@@ -62,6 +62,18 @@
   return nil;
 }
 
++ (instancetype)sharedInstance {
+  static SomeObject* shared;
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    auto obj = [SomeObject unknown];
+    if (obj) {
+      shared = [SomeObject new];
+    }
+  });
+  return shared;
+}
+
 @end
 
 int dereferenceNilBad() {
@@ -451,3 +463,10 @@ void arrayWithObjects(id object) {
 void arrayWithObjectsOk() { arrayWithObjects(@"obj"); }
 
 void FN_arrayWithObjectsNilBad() { arrayWithObjects(nil); }
+
+std::shared_ptr<int> unknown_call_twice_FP() {
+  if (![SomeObject sharedInstance]) {
+    return std::make_shared<int>(0);
+  }
+  return [[SomeObject sharedInstance] returnsnonPOD];
+}
