@@ -37,10 +37,13 @@ let build_info =
     List.fold_left libs 0 ~f:(fun n (name, _) ->
         max n (String.length name) )
   in
-  String.concat ~sep:"\n"
-    ( Printf.sprintf "%-*s %s" (max_length + 2) "ocaml:" Sys.ocaml_version
-      :: "statically linked libraries:"
-      :: List.map libs ~f:(fun (name, v) ->
-             Printf.sprintf "- %-*s %s" max_length name v )
-    @ [Printf.sprintf "%-*s %b" (max_length + 2) "debug:" debug; "version:"]
-    )
+  let pp_lib ppf (name, v) =
+    Format.fprintf ppf "- %-*s %s" max_length name v
+  in
+  let pf x = Format.fprintf Format.str_formatter x in
+  pf "%-*s %s@\n" (max_length + 2) "ocaml:" Sys.ocaml_version ;
+  pf "statically linked libraries:@\n" ;
+  pf "%a@\n" (List.pp "@\n" pp_lib) libs ;
+  pf "%-*s %b@\n" (max_length + 2) "debug:" debug ;
+  pf "version:" ;
+  Format.flush_str_formatter ()

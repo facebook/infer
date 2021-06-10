@@ -837,13 +837,11 @@ let rec simplify_ us rev_xss survived ancestor_subst q =
       let survived =
         Var.Set.union survived (fv (elim_exists stem.xs stem))
       in
-      let q =
-        starN
-          ( stem
-          :: List.map q.djns ~f:(fun djn ->
-                 orN (List.map ~f:(simplify_ us rev_xss survived subst) djn) )
-          )
+      let djns =
+        List.map q.djns ~f:(fun djn ->
+            orN (List.map ~f:(simplify_ us rev_xss survived subst) djn) )
       in
+      let q = starN (stem :: djns) in
       if is_false q then false_ q.us
       else
         let removed = Var.Set.diff removed survived in
