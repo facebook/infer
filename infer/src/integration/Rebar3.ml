@@ -19,9 +19,14 @@ let parse_and_store result_dir =
     match ErlangJsonParser.to_module json with
     | None ->
         false
-    | Some ast ->
-        ErlangTranslator.translate_module ast ;
-        true
+    | Some ast -> (
+      match ErlangAstValidator.validate ast with
+      | true ->
+          ErlangTranslator.translate_module ast ;
+          true
+      | false ->
+          L.debug Capture Verbose "Invalid AST@." ;
+          false )
   in
   let log error = L.progress "E: %s@." error in
   let read_one_ast json_file =
