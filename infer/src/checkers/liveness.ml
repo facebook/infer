@@ -364,7 +364,7 @@ let checker {IntraproceduralAnalysis.proc_desc; err_log} =
   in
   let log_report pvar typ loc =
     let message =
-      F.asprintf "The value written to %a (type %a) is never used" (Pvar.pp Pp.text) pvar
+      F.asprintf "The value written to `%a` (type `%a`) is never used" (Pvar.pp Pp.text) pvar
         (Typ.pp_full Pp.text) typ
     in
     let ltr = [Errlog.make_trace_element 0 loc "Write of unused value" []] in
