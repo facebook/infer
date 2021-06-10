@@ -39,17 +39,17 @@ type environment =
   { current_module: module_name  (** used to qualify function names *)
   ; exports: UnqualifiedFunction.Set.t  (** used to determine public/private access *)
   ; imports: module_name UnqualifiedFunction.Map.t  (** used to resolve function names *)
+  ; location: Location.t  (** used to tag nodes and instructions being created *)
   ; procdesc: (Procdesc.t option[@sexp.opaque])  (** imperative, being built *)
-  ; result: (Exp.t option[@sexp.opaque])  (** where to store the result value (if any) *)
-  ; source: (SourceFile.t[@sexp.opaque])  (** used to add location information *) }
+  ; result: (Exp.t option[@sexp.opaque])  (** where to store the result value (if any) *) }
 [@@deriving sexp_of]
 
 let get_environment module_ : environment =
   let init =
-    { exports= UnqualifiedFunction.Set.empty
+    { current_module= Printf.sprintf "%s:unknown_module" __FILE__
+    ; exports= UnqualifiedFunction.Set.empty
     ; imports= UnqualifiedFunction.Map.empty (* TODO: auto-import from module "erlang" *)
-    ; current_module= Printf.sprintf "%s:unknown_module" __FILE__
-    ; source= SourceFile.invalid __FILE__
+    ; location= Location.dummy
     ; procdesc= None
     ; result= None }
   in
@@ -73,7 +73,9 @@ let get_environment module_ : environment =
     | Module current_module ->
         {env with current_module}
     | File {path} ->
-        {env with source= SourceFile.create path}
+        let file = SourceFile.create path in
+        let location = Location.none file in
+        {env with location}
     | _ ->
         env
   in
@@ -82,49 +84,47 @@ let get_environment module_ : environment =
 
 let ( |~~> ) from to_ = Procdesc.set_succs from ~normal:(Some to_) ~exn:None
 
+let update_location line env =
+  let location = {env.location with line; col= -1} in
+  {env with location}
+
+
 (** Groups several helpers used to create nodes. *)
 module Node = struct
-  let make ?line ?loc env kind instructions =
+  let make env kind instructions =
     let procdesc = Option.value_exn env.procdesc in
-    let loc =
-      match (loc, line) with
-      | Some loc, _ ->
-          loc
-      | None, Some line ->
-          {Location.line; col= -1; file= env.source}
-      | None, None ->
-          Procdesc.get_loc procdesc
-    in
-    Procdesc.create_node procdesc loc kind instructions
+    Procdesc.create_node procdesc env.location kind instructions
 
 
-  let make_stmt ?line ?loc env (kind : Procdesc.Node.stmt_nodekind) instructions =
-    make ?line ?loc env (Stmt_node kind) instructions
+  let make_stmt env ?(kind = Procdesc.Node.Erlang) instructions =
+    make env (Stmt_node kind) instructions
 
 
-  let make_nop ?line ?loc env = make_stmt ?line ?loc env MethodBody []
+  let make_nop env = make_stmt env []
 
-  let make_join ?line ?loc env = make ?line ?loc env Join_node []
+  let make_join env = make env Join_node []
 
-  let make_throw ?line ?loc env one_instruction =
-    make ?line ?loc env Procdesc.Node.throw_kind [one_instruction]
+  let make_throw env one_instruction = make env Procdesc.Node.throw_kind [one_instruction]
 
-
-  let make_if ?line ?loc env branch one_instruction =
+  let make_if env branch id =
     let prune_kind : Procdesc.Node.prune_node_kind =
       if branch then PruneNodeKind_TrueBranch else PruneNodeKind_FalseBranch
     in
-    let kind : Procdesc.Node.nodekind = Prune_node (branch, Ik_switch, prune_kind) in
-    make ?line ?loc env kind [one_instruction]
+    let condition : Exp.t =
+      if branch then Var id else UnOp (LNot, Var id, Some (Typ.mk (Tint IBool)))
+    in
+    let kind : Procdesc.Node.nodekind = Prune_node (branch, Ik_if, prune_kind) in
+    let prune : Sil.instr = Prune (condition, env.location, branch, Ik_if) in
+    make env kind [prune]
 end
 
-let make_block_success ?line ?loc env =
-  let exit_success, exit_failure = (Node.make_nop ?line ?loc env, Node.make_nop ?line ?loc env) in
+let make_block_success env =
+  let exit_success, exit_failure = (Node.make_nop env, Node.make_nop env) in
   {start= exit_success; exit_success; exit_failure}
 
 
-let make_block_failure ?line ?loc env =
-  let exit_success, exit_failure = (Node.make_nop ?line ?loc env, Node.make_nop ?line ?loc env) in
+let make_block_failure env =
+  let exit_success, exit_failure = (Node.make_nop env, Node.make_nop env) in
   {start= exit_failure; exit_success; exit_failure}
 
 
@@ -175,21 +175,80 @@ let any_block env (blocks : block list) : block =
       {start; exit_success; exit_failure}
 
 
-let translate_pattern env (_value : Ident.t) _pattern =
-  (* TODO: This is a dummy implementation. *)
-  let start = Node.make_nop env in
-  let make_dummy_prune branch : Sil.instr =
-    let id = Ident.create_fresh Ident.knormal in
-    Prune (Exp.Var id, Location.dummy, branch, Ik_if)
+let has_type env ~result ~value (name : ErlangTypeName.t) : Sil.instr =
+  let fun_exp : Exp.t = Const (Cfun BuiltinDecl.__instanceof) in
+  let any = typ_of_name Any in
+  let args : (Exp.t * Typ.t) list =
+    [ (Var value, any)
+    ; ( Sizeof
+          { typ= typ_of_name name
+          ; nbytes= None
+          ; dynamic_length= None
+          ; subtype= Subtype.subtypes_instof }
+      , any ) ]
   in
-  let prune_true = Node.make_if env true (make_dummy_prune true) in
-  let prune_false = Node.make_if env false (make_dummy_prune false) in
-  let exit_success = Node.make_nop env in
-  let exit_failure = Node.make_nop env in
-  start |~~> [prune_true; prune_false] ;
-  prune_true |~~> [exit_success] ;
-  prune_false |~~> [exit_failure] ;
-  {start; exit_success; exit_failure}
+  Call ((result, Typ.mk (Tint IBool)), fun_exp, args, env.location, CallFlags.default)
+
+
+(** If the pattern-match succeeds, then the [exit_success] node is reached and the pattern variables
+    are storing the corresponding values; otherwise, the [exit_failure] node is reached. *)
+let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} =
+  let env = update_location line env in
+  let any = typ_of_name Any in
+  let procdesc = Option.value_exn env.procdesc in
+  let procname = Procdesc.get_proc_name procdesc in
+  match simple_expression with
+  | Cons {head; tail} ->
+      let id = Ident.create_fresh Ident.knormal in
+      let start = Node.make_stmt env [has_type env ~result:id ~value Cons] in
+      let right_type_node = Node.make_if env true id in
+      let wrong_type_node = Node.make_if env false id in
+      let load id field : Sil.instr =
+        (* x=value.field *)
+        let field = Fieldname.make (ErlangType Cons) field in
+        Load
+          { id
+          ; e= Lfield (Var value, field, typ_of_name Cons)
+          ; root_typ= any
+          ; typ= any
+          ; loc= env.location }
+      in
+      let head_value = Ident.create_fresh Ident.knormal in
+      let tail_value = Ident.create_fresh Ident.knormal in
+      let head_load = load head_value "head" in
+      let tail_load = load tail_value "tail" in
+      let unpack_node = Node.make_stmt env [head_load; tail_load] in
+      let head_matcher = translate_pattern env head_value head in
+      let tail_matcher = translate_pattern env tail_value tail in
+      let submatcher = all_blocks env [head_matcher; tail_matcher] in
+      let exit_failure = Node.make_nop env in
+      start |~~> [right_type_node; wrong_type_node] ;
+      right_type_node |~~> [unpack_node] ;
+      unpack_node |~~> [submatcher.start] ;
+      wrong_type_node |~~> [exit_failure] ;
+      submatcher.exit_failure |~~> [exit_failure] ;
+      {start; exit_success= submatcher.exit_success; exit_failure}
+  | Nil ->
+      let id = Ident.create_fresh Ident.knormal in
+      let start = Node.make_stmt env [has_type env ~result:id ~value Nil] in
+      let exit_success = Node.make_if env true id in
+      let exit_failure = Node.make_if env false id in
+      start |~~> [exit_success; exit_failure] ;
+      {start; exit_success; exit_failure}
+  | Variable vname when String.equal vname "_" ->
+      make_block_success env
+  | Variable vname ->
+      let store : Sil.instr =
+        let e1 : Exp.t = Lvar (Pvar.mk (Mangled.from_string vname) procname) in
+        let e2 : Exp.t = Var value in
+        Store {e1; root_typ= any; typ= any; e2; loc= env.location}
+      in
+      let exit_success = Node.make_stmt env [store] in
+      let exit_failure = Node.make_nop env in
+      {start= exit_success; exit_success; exit_failure}
+  | _ ->
+      (* TODO: Cover all cases. *)
+      make_block_failure env
 
 
 let translate_body env _body =
@@ -218,7 +277,7 @@ let translate_case_clause env (values : Ident.t list) {Ast.line= _; patterns; gu
   ; exit_success= body_block.exit_success }
 
 
-let translate_one_function env cfg line function_ clauses =
+let translate_one_function env cfg function_ clauses =
   let uf_name = UnqualifiedFunction.of_ast function_ in
   let {UnqualifiedFunction.name= function_name; arity} = uf_name in
   let name =
@@ -227,11 +286,10 @@ let translate_one_function env cfg line function_ clauses =
   in
   let any = typ_of_name Any in
   let attributes =
-    let default = ProcAttributes.default env.source name in
+    let default = ProcAttributes.default env.location.file name in
     let access : ProcAttributes.access = if Set.mem env.exports uf_name then Public else Private in
     let formals = List.init ~f:(fun i -> (mangled_arg i, any)) arity in
-    let loc = {Location.line; col= -1; file= env.source} in
-    {default with access; formals; loc; ret_type= any}
+    {default with access; formals; loc= env.location; ret_type= any}
   in
   let procdesc = Cfg.create_proc_desc cfg attributes in
   let env = {env with procdesc= Some procdesc; result= Some (Exp.Lvar (Pvar.get_ret_pvar name))} in
@@ -250,7 +308,7 @@ let translate_one_function env cfg line function_ clauses =
   in
   let () =
     (* Add a node that loads all values on which we pattern-match into idents. *)
-    let loads_node = Node.make_stmt env CaseStmt loads in
+    let loads_node = Node.make_stmt env ~kind:ErlangCaseClause loads in
     Procdesc.get_start_node procdesc |~~> [loads_node] ;
     loads_node |~~> [start]
   in
@@ -269,17 +327,18 @@ let translate_one_function env cfg line function_ clauses =
 
 
 let translate_functions env cfg module_ =
-  let f (form : Ast.form) =
-    match form.simple_form with
+  let f {Ast.line; simple_form} =
+    let env = update_location line env in
+    match simple_form with
     | Function {function_; clauses} ->
-        translate_one_function env cfg form.line function_ clauses
+        translate_one_function env cfg function_ clauses
     | _ ->
         ()
   in
   List.iter module_ ~f ;
-  DB.Results_dir.init env.source ;
-  Cfg.store env.source cfg ;
-  SourceFiles.add env.source cfg Tenv.Global None
+  DB.Results_dir.init env.location.file ;
+  Cfg.store env.location.file cfg ;
+  SourceFiles.add env.location.file cfg Tenv.Global None
 
 
 let translate_module module_ =

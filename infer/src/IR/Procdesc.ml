@@ -78,6 +78,8 @@ module Node = struct
     | DeclStmt
     | DefineBody
     | Destruction of destruction_kind
+    | Erlang
+    | ErlangCaseClause
     | ExceptionHandler
     | ExceptionsSink
     | ExprWithCleanups
@@ -328,6 +330,10 @@ module Node = struct
         F.pp_print_string fmt "define_body"
     | Destruction kind ->
         F.fprintf fmt "Destruction(%s)" (string_of_destruction_kind kind)
+    | Erlang ->
+        F.pp_print_string fmt "Erlang (generic)"
+    | ErlangCaseClause ->
+        F.pp_print_string fmt "ErlangCaseClause"
     | ExceptionHandler ->
         F.pp_print_string fmt "exception handler"
     | ExceptionsSink ->

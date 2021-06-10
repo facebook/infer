@@ -8,8 +8,15 @@
 open! IStd
 
 (* TODO: Add other types as they are needed by translation (otherwise it's dead code). *)
-type t = Any [@@deriving compare, yojson_of]
+type t = Any | Cons | Nil [@@deriving compare, yojson_of]
 
-let pp f = function Any -> Format.fprintf f "ErlangAny"
+let pp f = function
+  | Any ->
+      Format.fprintf f "ErlangAny"
+  | Nil ->
+      Format.fprintf f "ErlangNil"
+  | Cons ->
+      Format.fprintf f "ErlangCons"
+
 
 let to_string name = Format.asprintf "%a" pp name
