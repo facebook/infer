@@ -104,7 +104,7 @@ OCAMLFORMAT_ARGS =
 
 .PHONY: fmt_all
 fmt_all:
-	parallel $(OCAMLFORMAT_EXE) $(OCAMLFORMAT_ARGS) -i ::: $(shell find * \( -name _build -or -name llvm \) -not -prune -or \( -name '*'.ml -or -name '*'.mli \) -print 2>/dev/null)
+	parallel $(OCAMLFORMAT_EXE) $(OCAMLFORMAT_ARGS) -i ::: $(shell find * \( -name _build -or -name vendor \) -prune -or \( -name '*'.ml -or -name '*'.mli \) -print 2>/dev/null)
 
 # print any variable for Makefile debugging
 print-%:
