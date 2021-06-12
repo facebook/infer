@@ -148,7 +148,7 @@ let to_unary_operator json : Ast.unary_operator option =
   | `String "not" ->
       Some UNot
   | _ ->
-      unknown "binary_operator" json
+      unknown "unary_operator" json
 
 
 let to_exception json : Ast.exception_ option =
