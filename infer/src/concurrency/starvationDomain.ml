@@ -128,9 +128,8 @@ module Lock = struct
 
 
   let is_recursive tenv lock =
-    (* The "default" below is returned when we don't have enough information. We choose
-       the default depending on the language, since most Java locks are recursive and most C++ locks
-       are not. *)
+    (* We default to recursive if the type can't be found or looks malformed.
+       This reduces self-deadlock FPs. *)
     match get_typ tenv lock with
     | Some {Typ.desc= Tptr ({desc= Tstruct name}, _) | Tstruct name} ->
         ConcurrencyModels.is_recursive_lock_type name
@@ -138,11 +137,11 @@ module Lock = struct
         (* weird type passed as a lock, return default *)
         L.debug Analysis Verbose "Asked if non-struct type %a is a recursive lock type.@\n"
           (Typ.pp_full Pp.text) typ ;
-        Language.curr_language_is Java
+        true
     | None ->
         (* could not find type definition, return default *)
         L.debug Analysis Verbose "Could not resolve type for lock %a.@\n" pp lock ;
-        Language.curr_language_is Java
+        true
 end
 
 module AccessExpressionDomain = struct
