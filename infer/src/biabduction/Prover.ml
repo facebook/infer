@@ -44,6 +44,14 @@ let rec is_java_class tenv (typ : Typ.t) =
   | _ ->
       false
 
+let rec is_csharp_class tenv (typ : Typ.t) =
+  match typ.desc with
+  | Tstruct name ->
+      Typ.Name.CSharp.is_class name
+  | Tarray {elt= inner_typ} | Tptr (inner_typ, _) ->
+      is_csharp_class tenv inner_typ
+  | _ ->
+      false
 
 (** Negate an atom *)
 let atom_negate tenv (atom : Predicates.atom) : Predicates.atom =
@@ -1845,7 +1853,7 @@ let texp_imply tenv subs texp1 texp2 e1 calc_missing =
     | Exp.Sizeof {typ= typ1}, Exp.Sizeof {typ= typ2} -> (
       match (typ1.desc, typ2.desc) with
       | (Tstruct _ | Tarray _), (Tstruct _ | Tarray _) ->
-          is_java_class tenv typ1
+          (is_java_class tenv typ1 || is_csharp_class tenv typ1)
           || (Typ.is_cpp_class typ1 && Typ.is_cpp_class typ2)
           || (Typ.is_objc_class typ1 && Typ.is_objc_class typ2)
       | _ ->
