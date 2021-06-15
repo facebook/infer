@@ -458,6 +458,8 @@ module PowLoc = struct
         y
     | _, Bottom ->
         x
+    | (Unknown, _ | _, Unknown) when Config.bo_sound_unknown_sets_join ->
+        Unknown
     | Unknown, _ ->
         y
     | _, Unknown ->

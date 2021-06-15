@@ -169,6 +169,8 @@ val bo_field_depth_limit : int option
 
 val bo_max_cfg_size : int
 
+val bo_sound_unknown_sets_join : bool
+
 val bootclasspath : string option
 
 val buck : bool
