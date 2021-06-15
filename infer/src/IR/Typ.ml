@@ -512,6 +512,8 @@ module Name = struct
 
   module CSharp = struct
     let from_string name_str = CSharpClass (CSharpClassName.from_string name_str)
+
+    let is_class = function CSharpClass _ -> true | _ -> false
   end
 
   module Java = struct
