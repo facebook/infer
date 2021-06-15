@@ -45,6 +45,8 @@ module Name : sig
 
   module CSharp : sig
     val system_string : t
+    
+    val system_object : t
   end
 
   module Objc : sig
