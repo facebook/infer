@@ -48,6 +48,8 @@ module Name = struct
     open Typ.Name.CSharp
 
     let system_string = from_string "System.String"
+
+    let system_object = from_string "System.Object"
   end
 
   module Objc = struct
