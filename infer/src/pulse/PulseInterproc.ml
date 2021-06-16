@@ -758,7 +758,7 @@ let apply_prepost path ~is_isl_error_prepost callee_proc_name call_location ~cal
            [check_all_valid], whereas the "normal" mode encodes some error specs implicitly in the
            ContinueProgram ok specs *)
         let* astate =
-          if Config.pulse_isl then Ok astate
+          if Config.pulse_isl then Ok call_state.astate
           else check_all_valid path callee_proc_name call_location pre_post call_state
         in
         (* reset [visited] *)

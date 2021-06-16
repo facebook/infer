@@ -81,7 +81,7 @@ module Attribute = struct
     match (attr1, attr2) with
     | Invalid (v1, _), Invalid (v2, _) ->
         Invalidation.isl_equiv v1 v2
-    | Invalid _, WrittenTo _ ->
+    | Invalid _, (WrittenTo _ | DynamicType _) ->
         true
     | Uninitialized, Uninitialized ->
         true

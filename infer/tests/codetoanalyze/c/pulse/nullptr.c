@@ -111,7 +111,7 @@ void bug_after_abduction_bad(int* x) {
 }
 
 void bug_with_allocation_bad(int* x) {
-  x = (int*)malloc(sizeof(int*));
+  x = (int*)malloc(sizeof(int));
   int* y = NULL;
   *y = 42;
 }
