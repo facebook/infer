@@ -879,6 +879,8 @@ module Prune = struct
         astate
         |> prune_helper location integer_type_widths (Exp.UnOp (Unop.LNot, e1, t))
         |> prune_helper location integer_type_widths (Exp.UnOp (Unop.LNot, e2, t))
+    | Exp.UnOp (Unop.LNot, UnOp (Unop.LNot, e, _), _) ->
+        prune_helper location integer_type_widths e astate
     | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Lt as c), e1, e2), _)
     | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Gt as c), e1, e2), _)
     | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Le as c), e1, e2), _)
