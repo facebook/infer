@@ -5,15 +5,18 @@
 % LICENSE file in the root directory of this source tree.
 %
 %
-% Usage:
-%     erlang.escript [ast_out_dir] -- rebar3 [args ...]
-%     erlang.escript [ast_out_dir] -- erlc [args ...]
-%
-% This script produces a bash command that makes rebar3 or erlc
-% to execute with [args ...], and in addition to write the JSON
-% representation of the Erlang AST for each file compiled
-% in [ast_out_dir] or - if not provided - in the build
-% directory next to the corresponding compiled beam.
+
+usage() ->
+    Usage =
+        "Usage:\n"
+        "    erlang.escript <ast_out_dir> -- rebar3 [args ...]\n"
+        "    erlang.escript <ast_out_dir> -- erlc [args ...]\n"
+        "\n"
+        "This script produces a bash command that makes rebar3 or erlc\n"
+        "to execute with [args ...], and in addition to write in \n"
+        "<ast_out_dir> the Erlang AST in JSON format for each file compiled\n",
+    io:format("~s", [Usage]),
+    halt(1).
 
 main([]) ->
     usage();
@@ -21,7 +24,6 @@ main(Args) ->
     {SArgs, Cmd} = split_args(Args),
     OutDir =
         case SArgs of
-            [] -> false;
             [Dir] -> Dir;
             _ -> usage()
         end,
@@ -37,22 +39,22 @@ main(Args) ->
             ]),
             halt(1)
     end,
+    CompiledListPath = string:trim(os:cmd("mktemp --suffix .list")),
+    OutputCmd =
+        case Cmd of
+            ["rebar3" | _] ->
+                rebar3(Cmd, CompiledListPath);
+            ["erlc" | _] ->
+                erlc(Cmd, CompiledListPath);
+            _ ->
+                io:format("error: unrecognized command ~s~n", [string:join(Cmd, " ")]),
+                halt(1)
+        end,
     LibPath = filename:join(ParseTransformDir, "_build/default/lib"),
-    case Cmd of
-        ["rebar3" | _] ->
-            rebar3(LibPath, OutDir, Cmd);
-        ["erlc" | _] ->
-            erlc(LibPath, OutDir, Cmd);
-        _ ->
-            io:format("error: unrecognized command ~s~n", [string:join(Cmd, " ")]),
-            halt(1)
-    end.
-
-usage() ->
-    io:format("valid arguments:~n"),
-    io:format("  [ast_out_dir] -- rebar3 [args] ...~n"),
-    io:format("  [ast_out_dir] -- erlc [args] ...~n"),
-    halt(1).
+    io:format(
+        "export ERL_LIBS=\"~s:$ERL_LIBS\"; ~s && ~s/extract.escript ~s ~s~n",
+        [LibPath, OutputCmd, ScriptDir, CompiledListPath, OutDir]
+    ).
 
 load_config_from_list([]) ->
     false;
@@ -97,7 +99,7 @@ run(Command, Dir) ->
         {Port, {exit_status, Status}} -> Status
     end.
 
-rebar3(LibPath, OutDir, Cmd) ->
+rebar3(Cmd, CompiledListPath) ->
     ConfigPaths = [os:getenv("REBAR_CONFIG"), "rebar.config.script", "rebar.config"],
     Original =
         case load_config_from_list(ConfigPaths) of
@@ -107,40 +109,40 @@ rebar3(LibPath, OutDir, Cmd) ->
             Config ->
                 Config
         end,
-    Altered = inject_parse_transform(Original, OutDir),
+    Altered = inject_parse_transform(Original, CompiledListPath),
     AltConfigPath = string:trim(os:cmd("mktemp --suffix .script")),
     file:write_file(AltConfigPath, io_lib:fwrite("~p.~n", [Altered])),
 
-    io:format("ERL_LIBS=\"~s:$ERL_LIBS\" REBAR_CONFIG=\"~s\" ~s~n", [
-        LibPath,
+    io_lib:format("export REBAR_CONFIG=\"~s\"; ~s", [
         AltConfigPath,
         string:join(Cmd, " ")
     ]).
 
-erlc(LibPath, OutDir, Cmd) ->
-    [{erl_opts, Options}] = inject_parse_transform([], OutDir),
+erlc(Cmd, CompiledListPath) ->
+    [{erl_opts, Options}] = inject_parse_transform([], CompiledListPath),
     OptionList = ["+'" ++ io_lib:format("~p", [Item]) ++ "'" || Item <- Options],
     [ErlC | Args] = Cmd,
-    io:format("ERL_LIBS=\"~s:$ERL_LIBS\" ~s ~s ~s~n", [
-        LibPath,
+    io_lib:format("~s ~s ~s", [
         ErlC,
         string:join(OptionList, " "),
         string:join(Args, " ")
     ]).
 
-inject_parse_transform(Original, OutDir) ->
+inject_parse_transform(Original, CompiledListPath) ->
     ErlOpts =
         case lists:keyfind(erl_opts, 1, Original) of
             {erl_opts, Opts} -> Opts;
-            false -> []
+            _ -> []
         end,
     ErlOpts1 =
-        ErlOpts ++
-            [{parse_transform, infer_parse_transform}] ++
-            if
-                OutDir =/= false ->
-                    [{ast_outdir, OutDir}];
-                true ->
-                    []
-            end,
-    lists:keystore(erl_opts, 1, Original, {erl_opts, ErlOpts1}).
+        case lists:member(debug_info, ErlOpts) of
+            true -> ErlOpts;
+            false -> ErlOpts ++ [debug_info]
+        end,
+    ErlOpts2 =
+        ErlOpts1 ++
+            [
+                {parse_transform, infer_parse_transform},
+                {infer_compiled_list_path, CompiledListPath}
+            ],
+    lists:keystore(erl_opts, 1, Original, {erl_opts, ErlOpts2}).
