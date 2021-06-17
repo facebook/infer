@@ -29,8 +29,7 @@ let rec validate_pattern (p : Ast.expression) =
       true
   | Map {map; updates} ->
       let validate_assoc (a : Ast.association) =
-        validate_pattern a.key && validate_pattern a.value
-        (* TODO: a.kind must be Exact, except inside ets:fun2ms or dbg:fun2ms *)
+        match a.kind with Exact -> validate_pattern a.key && validate_pattern a.value | _ -> false
       in
       is_none map && List.for_all ~f:validate_assoc updates
   | Match {pattern; body} ->
