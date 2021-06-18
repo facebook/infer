@@ -59,11 +59,11 @@ let get_message diagnostic =
   match diagnostic with
   | AccessToInvalidAddress
       {calling_context; invalidation; invalidation_trace; access_trace; must_be_valid_reason} -> (
-      let invalidation, invalidation_trace =
+      let invalidation, invalidation_trace, same_trace =
         Trace.get_invalidation access_trace
         |> Option.value_map
-             ~f:(fun invalidation -> (invalidation, access_trace))
-             ~default:(invalidation, invalidation_trace)
+             ~f:(fun invalidation -> (invalidation, access_trace, true))
+             ~default:(invalidation, invalidation_trace, false)
       in
       match invalidation with
       | ConstantDereference i when IntLit.equal i IntLit.zero ->
@@ -77,11 +77,13 @@ let get_message diagnostic =
                 F.sprintf "null pointer dereference"
           in
           let pp_access_trace fmt (trace : Trace.t) =
-            match immediate_or_first_call calling_context trace with
-            | `Immediate ->
-                ()
-            | `Call f ->
-                F.fprintf fmt " in call to %a" CallEvent.describe f
+            if same_trace then ()
+            else
+              match immediate_or_first_call calling_context trace with
+              | `Immediate ->
+                  ()
+              | `Call f ->
+                  F.fprintf fmt " in call to %a" CallEvent.describe f
           in
           let pp_invalidation_trace line fmt (trace : Trace.t) =
             let pp_line fmt line = F.fprintf fmt "on line %d" line in
