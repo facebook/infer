@@ -468,7 +468,7 @@ public class NullPointerExceptions {
   }
 
   @SuppressLint("NULL_DEREFERENCE")
-  void FP_shouldNotReportNPE() {
+  void shouldNotReportNPE() {
     Object o = null;
     o.toString();
   }

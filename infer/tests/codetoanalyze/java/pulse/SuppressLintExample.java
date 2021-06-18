@@ -30,7 +30,6 @@ class SuppressAllWarnigsInTheClass {
 
 public class SuppressLintExample {
 
-  // FP. Reason: no current support for @SuppressLint
   @SuppressLint("null-dereference")
   SuppressLintExample() {
     Object object = null;
@@ -43,7 +42,7 @@ public class SuppressLintExample {
   }
 
   @SuppressLint("null-dereference")
-  void FP_shouldNotReportNPE() {
+  void shouldNotReportNPE() {
     Object object = null;
     object.toString();
   }

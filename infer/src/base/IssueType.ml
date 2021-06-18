@@ -810,7 +810,7 @@ let null_dereference =
 
 
 let nullptr_dereference =
-  register ~id:"NULLPTR_DEREFERENCE" Error Pulse
+  register ~id:"NULLPTR_DEREFERENCE" ~hum:"Null Dereference" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/NULLPTR_DEREFERENCE.md"]
 
 
