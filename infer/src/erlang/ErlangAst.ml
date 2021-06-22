@@ -13,15 +13,17 @@ open! IStd
 (** {2 Basics} *)
 
 type module_reference = ModuleName of string | ModuleMissing | ModuleVariable of string
+[@@deriving sexp_of]
 
-type function_reference = FunctionName of string | FunctionVariable of string
+type function_reference = FunctionName of string | FunctionVariable of string [@@deriving sexp_of]
 
 (* NOTE: Arity could be an expression but we don't handle that case, yet. *)
 type function_ = {module_: module_reference; function_: function_reference; arity: int}
+[@@deriving sexp_of]
 
-type line = int
+type line = int [@@deriving sexp_of]
 
-type record_name = string
+type record_name = string [@@deriving sexp_of]
 
 type binary_operator =
   | Add
@@ -51,22 +53,24 @@ type binary_operator =
   | Send
   | Sub
   | Xor
+[@@deriving sexp_of]
 
-type unary_operator = UBNot | UMinus | UNot
+type unary_operator = UBNot | UMinus | UNot [@@deriving sexp_of]
 
-type association_kind = Arrow | Exact
+type association_kind = Arrow | Exact [@@deriving sexp_of]
 
-type exception_ = Atom of string | Pattern of string
+type exception_ = Atom of string | Pattern of string [@@deriving sexp_of]
 
-type type_specifier = (* TODO *) unit
+type type_specifier = (* TODO *) unit [@@deriving sexp_of]
 
 (** {2 S8.2: Atomic literals} *)
 
 type literal = Atom of string | Char of string | Float of float | Int of string | String of string
+[@@deriving sexp_of]
 
 (** {2 S8.4: Expressions} *)
 
-type body = expression list
+type body = expression list [@@deriving sexp_of]
 
 and simple_expression =
   | BinaryOperator of expression * binary_operator * expression
@@ -93,37 +97,42 @@ and simple_expression =
   | Tuple of expression list
   | UnaryOperator of unary_operator * expression
   | Variable of string
+[@@deriving sexp_of]
 
-and expression = {line: line; simple_expression: simple_expression}
+and expression = {line: line; simple_expression: simple_expression} [@@deriving sexp_of]
 
 and qualifier =
   | BitsGenerator of {pattern: pattern; expression: expression}
   | Filter of expression
   | Generator of {pattern: pattern; expression: expression}
+[@@deriving sexp_of]
 
-and timeout = {time: expression; handler: body}
+and timeout = {time: expression; handler: body} [@@deriving sexp_of]
 
 and bin_element =
   {expression: expression; size: expression option; types: type_specifier list option}
+[@@deriving sexp_of]
 
 (* A [None] field stands for _, which means "all other fields". *)
-and record_update = {field: string option; expression: expression}
+and record_update = {field: string option; expression: expression} [@@deriving sexp_of]
 
-and association = {kind: association_kind; key: expression; value: expression}
+and association = {kind: association_kind; key: expression; value: expression} [@@deriving sexp_of]
 
-and pattern = expression
+and pattern = expression [@@deriving sexp_of]
 
-and guard_test = expression
+and guard_test = expression [@@deriving sexp_of]
 
 (** {2 S8.5 Clauses} *)
 
 and 'pat clause = {line: line; patterns: 'pat list; guards: guard_test list list; body: body}
+[@@deriving sexp_of]
 
-and case_clause = pattern clause
+and case_clause = pattern clause [@@deriving sexp_of]
 
-and catch_clause = catch_pattern clause
+and catch_clause = catch_pattern clause [@@deriving sexp_of]
 
 and catch_pattern = {exception_: exception_; pattern: pattern; variable: string}
+[@@deriving sexp_of]
 
 (** {2 S8.1: Module declarations and forms} *)
 
@@ -134,7 +143,8 @@ type simple_form =
   | Module of string
   | File of {path: string}
   | Function of {function_: function_; clauses: case_clause list}
+[@@deriving sexp_of]
 
-type form = {line: line; simple_form: simple_form}
+type form = {line: line; simple_form: simple_form} [@@deriving sexp_of]
 
-type module_ = form list
+type module_ = form list [@@deriving sexp_of]

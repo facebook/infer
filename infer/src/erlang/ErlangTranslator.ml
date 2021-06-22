@@ -246,14 +246,113 @@ let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} =
       let exit_success = Node.make_stmt env [store] in
       let exit_failure = Node.make_nop env in
       {start= exit_success; exit_success; exit_failure}
-  | _ ->
+  | e ->
       (* TODO: Cover all cases. *)
+      L.debug Capture Verbose "@[todo ErlangTranslate.translate_pattern %s@."
+        (Sexp.to_string (Ast.sexp_of_simple_expression e)) ;
       make_block_failure env
 
 
-let translate_body env _body =
-  (* TODO: This is a dummy implementation. *)
-  make_block_success env
+let rec instructions_of_expression env {Ast.line; simple_expression} : Sil.instr list =
+  let env = update_location line env in
+  let any = typ_of_name Any in
+  let procdesc = Option.value_exn env.procdesc in
+  let procname = Procdesc.get_proc_name procdesc in
+  let ret_var =
+    match env.result with Some (Var ret_var) -> ret_var | _ -> Ident.create_fresh Ident.knormal
+  in
+  let instructions =
+    match simple_expression with
+    | Call
+        { module_= None
+        ; function_= {Ast.line= _; simple_expression= Literal (Atom function_name)}
+        ; args } ->
+        let arity = List.length args in
+        let callee_procname =
+          let module_name =
+            let uf_name = {UnqualifiedFunction.name= function_name; arity} in
+            match UnqualifiedFunction.Map.find env.imports uf_name with
+            | Some module_name ->
+                module_name
+            | None ->
+                env.current_module
+          in
+          Procname.make_erlang ~module_name ~function_name ~arity
+        in
+        let args_with_ids = List.map ~f:(fun a -> (a, Ident.create_fresh Ident.knormal)) args in
+        let args_instructions =
+          let f (one_arg_expression, one_arg_ret_var) =
+            let result = Some (Exp.Var one_arg_ret_var) in
+            instructions_of_expression {env with result} one_arg_expression
+          in
+          List.concat_map ~f args_with_ids
+        in
+        let fun_exp = Exp.Const (Cfun callee_procname) in
+        let args_ids_and_types =
+          List.map ~f:(function _, id -> (Exp.Var id, any)) args_with_ids
+        in
+        args_instructions
+        @ [Sil.Call ((ret_var, any), fun_exp, args_ids_and_types, env.location, CallFlags.default)]
+    | Cons {head; tail} ->
+        let head_var = Ident.create_fresh Ident.knormal in
+        let tail_var = Ident.create_fresh Ident.knormal in
+        let head_instructions =
+          instructions_of_expression {env with result= Some (Var head_var)} head
+        in
+        let tail_instructions =
+          instructions_of_expression {env with result= Some (Var tail_var)} tail
+        in
+        let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_cons) in
+        let args : (Exp.t * Typ.t) list = [(Var head_var, any); (Var tail_var, any)] in
+        head_instructions @ tail_instructions
+        @ [Sil.Call ((ret_var, any), fun_exp, args, env.location, CallFlags.default)]
+    | Literal (Atom atom) ->
+        let hash =
+          (* With this hack, an atom may accidentaly be considered equal to an unrelated integer.
+             The [lsl] below makes this less likely. Proper fix is TODO (T93513105). *)
+          String.hash atom lsl 16
+        in
+        let e = Exp.Const (Cint (IntLit.of_int hash)) in
+        [Sil.Load {id= ret_var; e; root_typ= any; typ= any; loc= env.location}]
+    | Literal (String s) ->
+        let e = Exp.Const (Cstr s) in
+        [Sil.Load {id= ret_var; e; root_typ= any; typ= any; loc= env.location}]
+    | Nil ->
+        let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_nil) in
+        [Sil.Call ((ret_var, any), fun_exp, [], env.location, CallFlags.default)]
+    | Variable vname ->
+        let e = Exp.Lvar (Pvar.mk (Mangled.from_string vname) procname) in
+        [Sil.Load {id= ret_var; e; root_typ= any; typ= any; loc= env.location}]
+    | todo ->
+        L.debug Capture Verbose "@[todo ErlangTranslate.instructions_of_expression %s@."
+          (Sexp.to_string (Ast.sexp_of_simple_expression todo)) ;
+        []
+  in
+  match env.result with
+  | None | Some (Var _) ->
+      instructions
+  | Some result ->
+      instructions
+      @ [Sil.Store {e1= result; root_typ= any; typ= any; e2= Var ret_var; loc= env.location}]
+
+
+let translate_expression env expression =
+  let instructions = instructions_of_expression env expression in
+  let exit_success = Node.make_stmt env ~kind:ErlangExpression instructions in
+  let exit_failure = Node.make_nop env in
+  {start= exit_success; exit_success; exit_failure}
+
+
+let translate_body env body : block =
+  let blocks =
+    let f rev_blocks one_expression =
+      let env = {env with result= None} in
+      translate_expression env one_expression :: rev_blocks
+    in
+    let f_last rev_blocks one_expression = translate_expression env one_expression :: rev_blocks in
+    List.rev (IList.fold_last body ~init:[] ~f ~f_last)
+  in
+  all_blocks env blocks
 
 
 (** Assumes that the values on which patterns should be matched have been loaded into the

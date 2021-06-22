@@ -61,6 +61,7 @@ module Node : sig
     | Destruction of destruction_kind
     | Erlang
     | ErlangCaseClause
+    | ErlangExpression
     | ExceptionHandler
     | ExceptionsSink
     | ExprWithCleanups

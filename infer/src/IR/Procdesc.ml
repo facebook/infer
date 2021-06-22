@@ -80,6 +80,7 @@ module Node = struct
     | Destruction of destruction_kind
     | Erlang
     | ErlangCaseClause
+    | ErlangExpression
     | ExceptionHandler
     | ExceptionsSink
     | ExprWithCleanups
@@ -334,6 +335,8 @@ module Node = struct
         F.pp_print_string fmt "Erlang (generic)"
     | ErlangCaseClause ->
         F.pp_print_string fmt "ErlangCaseClause"
+    | ErlangExpression ->
+        F.pp_print_string fmt "ErlangExpression"
     | ExceptionHandler ->
         F.pp_print_string fmt "exception handler"
     | ExceptionsSink ->

@@ -76,6 +76,10 @@ let __delete_array = create_procname "__delete_array"
 
 let __delete_locked_attribute = create_procname "__delete_locked_attribute"
 
+let __erlang_make_cons = create_procname "__erlang_make_cons"
+
+let __erlang_make_nil = create_procname "__erlang_make_nil"
+
 let __erlang_pattern_fail = create_procname "__erlang_pattern_fail"
 
 let __exit = create_procname "_exit"
