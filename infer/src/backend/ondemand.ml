@@ -225,12 +225,13 @@ let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
             clear_actives () ;
             restore_global_state old_state ;
             true
-        | _ ->
+        | exn ->
             if not !logged_error then (
               let source_file = attributes.ProcAttributes.translation_unit in
               let location = attributes.ProcAttributes.loc in
-              L.internal_error "While analysing function %a:%a at %a@\n" SourceFile.pp source_file
-                Procname.pp callee_pname Location.pp_file_pos location ;
+              L.internal_error "While analysing function %a:%a at %a, raised %s@\n" SourceFile.pp
+                source_file Procname.pp callee_pname Location.pp_file_pos location
+                (Exn.to_string exn) ;
               logged_error := true ) ;
             restore_global_state old_state ;
             not Config.keep_going ) ;
