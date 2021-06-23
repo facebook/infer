@@ -7,6 +7,7 @@
 
 #include <atomic>
 #include <functional>
+#include <string>
 
 void get_closure(std::function<int()> closure);
 
@@ -32,5 +33,42 @@ class Uninit {
     MyClass x;
     init_by_store(&x);
     int y = x.i;
+  }
+};
+
+class Uninit2 {
+  int f1;
+  int f2;
+
+  void may_read_f1(std::string s) {
+    if (s.empty()) {
+      int x = f1;
+    }
+  }
+
+  void not_read_f1_ok_FP() {
+    Uninit2 o;
+    o.may_read_f1("non empty string");
+  }
+
+  void read_f1_bad() {
+    Uninit2 o;
+    o.may_read_f1(std::string());
+  }
+
+  void may_read_f2(std::string s) {
+    if (s.length() == 0) {
+      int x = f1;
+    }
+  }
+
+  void not_read_f2_ok_FP() {
+    Uninit2 o;
+    o.may_read_f2("non empty string");
+  }
+
+  void read_f2_bad() {
+    Uninit2 o;
+    o.may_read_f2("");
   }
 };
