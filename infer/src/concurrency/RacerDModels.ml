@@ -84,97 +84,115 @@ let is_csharp_container_read =
 
 
 let is_java_container_write =
-  let open MethodMatcher in
-  let array_methods =
-    ["append"; "clear"; "delete"; "put"; "remove"; "removeAt"; "removeAtRange"; "setValueAt"]
+  let matcher =
+    let open MethodMatcher in
+    let array_methods =
+      ["append"; "clear"; "delete"; "put"; "remove"; "removeAt"; "removeAtRange"; "setValueAt"]
+    in
+    (* https://developer.android.com/reference/androidx/core/util/Pools.SimplePool *)
+    make_android_support_template "Pools$SimplePool" ["acquire"; "release"]
+    (* https://developer.android.com/reference/android/support/v4/util/SimpleArrayMap *)
+    @ make_android_support_template "SimpleArrayMap"
+        ["clear"; "ensureCapacity"; "put"; "putAll"; "remove"; "removeAt"; "setValueAt"]
+    (* https://developer.android.com/reference/android/support/v4/util/SparseArrayCompat *)
+    @ make_android_support_template "SparseArrayCompat" array_methods
+    @ (* https://developer.android.com/reference/android/util/SparseArray *)
+    [ {default with classname= "android.util.SparseArray"; methods= array_methods}
+    ; (* https://docs.oracle.com/javase/8/docs/api/java/util/List.html
+         Only methods not in parent interface [Collection] are listed *)
+      {default with classname= "java.util.List"; methods= ["replaceAll"; "retainAll"; "set"; "sort"]}
+    ; (* https://docs.oracle.com/javase/8/docs/api/java/util/Map.html *)
+      { default with
+        classname= "java.util.Map"
+      ; methods=
+          ["clear"; "merge"; "put"; "putAll"; "putIfAbsent"; "remove"; "replace"; "replaceAll"] }
+    ; (* https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html *)
+      { default with
+        classname= "java.util.Collection"
+      ; methods= ["add"; "addAll"; "clear"; "remove"; "removeAll"; "removeIf"] }
+    ; (* https://docs.oracle.com/javase/8/docs/api/javax/crypto/Mac.html *)
+      {default with classname= "javax.crypto.Mac"; methods= ["update"; "init"; "doFinal"]} ]
+    |> of_records
   in
-  (* https://developer.android.com/reference/androidx/core/util/Pools.SimplePool *)
-  make_android_support_template "Pools$SimplePool" ["acquire"; "release"]
-  (* https://developer.android.com/reference/android/support/v4/util/SimpleArrayMap *)
-  @ make_android_support_template "SimpleArrayMap"
-      ["clear"; "ensureCapacity"; "put"; "putAll"; "remove"; "removeAt"; "setValueAt"]
-  (* https://developer.android.com/reference/android/support/v4/util/SparseArrayCompat *)
-  @ make_android_support_template "SparseArrayCompat" array_methods
-  @ (* https://developer.android.com/reference/android/util/SparseArray *)
-  [ {default with classname= "android.util.SparseArray"; methods= array_methods}
-  ; (* https://docs.oracle.com/javase/8/docs/api/java/util/List.html
-       Only methods not in parent interface [Collection] are listed *)
-    {default with classname= "java.util.List"; methods= ["replaceAll"; "retainAll"; "set"; "sort"]}
-  ; (* https://docs.oracle.com/javase/8/docs/api/java/util/Map.html *)
-    { default with
-      classname= "java.util.Map"
-    ; methods= ["clear"; "merge"; "put"; "putAll"; "putIfAbsent"; "remove"; "replace"; "replaceAll"]
-    }
-  ; (* https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html *)
-    { default with
-      classname= "java.util.Collection"
-    ; methods= ["add"; "addAll"; "clear"; "remove"; "removeAll"; "removeIf"] }
-  ; (* https://docs.oracle.com/javase/8/docs/api/javax/crypto/Mac.html *)
-    {default with classname= "javax.crypto.Mac"; methods= ["update"; "init"; "doFinal"]} ]
-  |> of_records
+  fun tenv (pn : Procname.t) ->
+    match pn with
+    | Java java_pn ->
+        (not (Procname.Java.is_static java_pn)) && matcher tenv pn []
+    | _ ->
+        L.die InternalError "is_java_container_write called with a non-Java procname.@\n"
 
 
 let is_java_container_read =
-  let open MethodMatcher in
-  let array_methods = ["clone"; "get"; "indexOfKey"; "indexOfValue"; "keyAt"; "size"; "valueAt"] in
-  (* https://developer.android.com/reference/android/support/v4/util/SimpleArrayMap *)
-  make_android_support_template "SimpleArrayMap"
-    [ "containsKey"
-    ; "containsValue"
-    ; "get"
-    ; "hashCode"
-    ; "indexOfKey"
-    ; "isEmpty"
-    ; "keyAt"
-    ; "size"
-    ; "valueAt" ]
-  (* https://developer.android.com/reference/android/support/v4/util/SparseArrayCompat *)
-  @ make_android_support_template "SparseArrayCompat" array_methods
-  @ (* https://developer.android.com/reference/android/util/SparseArray *)
-  [ {default with classname= "android.util.SparseArray"; methods= array_methods}
-  ; (* https://docs.oracle.com/javase/8/docs/api/java/util/List.html
-       Only methods not in parent interface [Collection] are listed *)
-    { default with
-      classname= "java.util.List"
-    ; methods= ["get"; "indexOf"; "isEmpty"; "lastIndexOf"; "listIterator"] }
-  ; (* https://docs.oracle.com/javase/8/docs/api/java/util/Map.html *)
-    { default with
-      classname= "java.util.Map"
-    ; methods=
-        [ "compute"
-        ; "computeIfAbsent"
-        ; "computeIfPresent"
-        ; "containsKey"
-        ; "containsValue"
-        ; "entrySet"
-        ; "equals"
-        ; "forEach"
-        ; "get"
-        ; "getOrDefault"
-        ; "hashCode"
-        ; "isEmpty"
-        ; "keySet"
-        ; "size"
-        ; "values" ] }
-  ; (* https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html *)
-    { default with
-      classname= "java.util.Collection"
-    ; methods=
-        [ "contains"
-        ; "containsAll"
-        ; "equals"
-        ; "get"
-        ; "hashCode"
-        ; "isEmpty"
-        ; "iterator"
-        ; "parallelStream"
-        ; "size"
-        ; "spliterator"
-        ; "stream"
-        ; "toArray" ] }
-  ; (* https://docs.oracle.com/javase/8/docs/api/javax/crypto/Mac.html *)
-    {default with classname= "javax.crypto.Mac"; methods= ["doFinal"]} ]
-  |> of_records
+  let matcher =
+    let open MethodMatcher in
+    let array_methods =
+      ["clone"; "get"; "indexOfKey"; "indexOfValue"; "keyAt"; "size"; "valueAt"]
+    in
+    (* https://developer.android.com/reference/android/support/v4/util/SimpleArrayMap *)
+    make_android_support_template "SimpleArrayMap"
+      [ "containsKey"
+      ; "containsValue"
+      ; "get"
+      ; "hashCode"
+      ; "indexOfKey"
+      ; "isEmpty"
+      ; "keyAt"
+      ; "size"
+      ; "valueAt" ]
+    (* https://developer.android.com/reference/android/support/v4/util/SparseArrayCompat *)
+    @ make_android_support_template "SparseArrayCompat" array_methods
+    @ (* https://developer.android.com/reference/android/util/SparseArray *)
+    [ {default with classname= "android.util.SparseArray"; methods= array_methods}
+    ; (* https://docs.oracle.com/javase/8/docs/api/java/util/List.html
+         Only methods not in parent interface [Collection] are listed *)
+      { default with
+        classname= "java.util.List"
+      ; methods= ["get"; "indexOf"; "isEmpty"; "lastIndexOf"; "listIterator"] }
+    ; (* https://docs.oracle.com/javase/8/docs/api/java/util/Map.html *)
+      { default with
+        classname= "java.util.Map"
+      ; methods=
+          [ "compute"
+          ; "computeIfAbsent"
+          ; "computeIfPresent"
+          ; "containsKey"
+          ; "containsValue"
+          ; "entrySet"
+          ; "equals"
+          ; "forEach"
+          ; "get"
+          ; "getOrDefault"
+          ; "hashCode"
+          ; "isEmpty"
+          ; "keySet"
+          ; "size"
+          ; "values" ] }
+    ; (* https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html *)
+      { default with
+        classname= "java.util.Collection"
+      ; methods=
+          [ "contains"
+          ; "containsAll"
+          ; "equals"
+          ; "get"
+          ; "hashCode"
+          ; "isEmpty"
+          ; "iterator"
+          ; "parallelStream"
+          ; "size"
+          ; "spliterator"
+          ; "stream"
+          ; "toArray" ] }
+    ; (* https://docs.oracle.com/javase/8/docs/api/javax/crypto/Mac.html *)
+      {default with classname= "javax.crypto.Mac"; methods= ["doFinal"]} ]
+    |> of_records
+  in
+  fun tenv (pn : Procname.t) ->
+    match pn with
+    | Java java_pn ->
+        (not (Procname.Java.is_static java_pn)) && matcher tenv pn []
+    | _ ->
+        L.die InternalError "is_java_container_read called with a non-Java procname.@\n"
 
 
 let is_cpp_container_read =
@@ -198,12 +216,12 @@ let is_cpp_container_write =
 
 let is_container_write tenv pn =
   match (pn : Procname.t) with
-  | CSharp _ when is_csharp_container_write tenv pn [] ->
-      true
-  | Java _ when is_java_container_write tenv pn [] ->
-      true
-  | (ObjC_Cpp _ | C _) when is_cpp_container_write pn ->
-      true
+  | CSharp _ ->
+      is_csharp_container_write tenv pn []
+  | Java _ ->
+      is_java_container_write tenv pn
+  | ObjC_Cpp _ | C _ ->
+      is_cpp_container_write pn
   | _ ->
       false
 
@@ -213,7 +231,7 @@ let is_container_read tenv pn =
   | CSharp _ ->
       is_csharp_container_read tenv pn []
   | Java _ ->
-      is_java_container_read tenv pn []
+      is_java_container_read tenv pn
   (* The following order matters: we want to check if pname is a container write
      before we check if pname is a container read. This is due to a different
      treatment between std::map::operator[] and all other operator[]. *)
