@@ -260,6 +260,7 @@ val get_locals : t -> ProcAttributes.var_data list
 (** Return name and type and attributes of local variables *)
 
 val get_nodes : t -> Node.t list
+(** Return the nodes, excluding the start node and the exit node. *)
 
 val get_proc_name : t -> Procname.t
 

@@ -467,13 +467,17 @@ end
 module Erlang = struct
   type t = {module_name: string; function_name: string; arity: int} [@@deriving compare, yojson_of]
 
-  let pp verbosity fmt {module_name; function_name; arity} =
+  let pp_general arity_sep verbosity fmt {module_name; function_name; arity} =
     match verbosity with
     | Simple | Non_verbose ->
-        F.fprintf fmt "%s/%d" function_name arity
+        F.fprintf fmt "%s%c%d" function_name arity_sep arity
     | Verbose ->
-        F.fprintf fmt "%s:%s/%d" module_name function_name arity
+        F.fprintf fmt "%s:%s%c%d" module_name function_name arity_sep arity
 
+
+  let pp verbosity fmt pname = pp_general '/' verbosity fmt pname
+
+  let pp_filename fmt pname = pp_general '#' Verbose fmt pname
 
   let set_arity arity name = {name with arity}
 end
@@ -1084,6 +1088,8 @@ let to_filename pname =
         let pp_mangled fmt = function None -> () | Some mangled -> F.fprintf fmt "#%s" mangled in
         F.asprintf "%a%a%a" pp_rev_qualified pname Parameter.pp_parameters parameters pp_mangled
           mangled
+    | Erlang pname ->
+        F.asprintf "%a" Erlang.pp_filename pname
     | ObjC_Cpp objc_cpp ->
         F.asprintf "%a%a#%a" pp_rev_qualified pname Parameter.pp_parameters objc_cpp.parameters
           ObjC_Cpp.pp_verbose_kind objc_cpp.kind

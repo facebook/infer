@@ -31,7 +31,6 @@ let get_all_defined_proc_names cfg =
   !procs
 
 
-(** Create a new procdesc *)
 let create_proc_desc cfg (proc_attributes : ProcAttributes.t) =
   let pdesc = Procdesc.from_proc_attributes proc_attributes in
   let pname = proc_attributes.proc_name in

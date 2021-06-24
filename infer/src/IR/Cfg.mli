@@ -28,7 +28,8 @@ val create : unit -> t
 (** create a new empty cfg *)
 
 val create_proc_desc : t -> ProcAttributes.t -> Procdesc.t
-(** Create a new procdesc and add it to the cfg *)
+(** Create a new procdesc. If the procedure is defined, you need to create and set the start/exit
+    nodes after creating the procedure. *)
 
 val iter_sorted : t -> f:(Procdesc.t -> unit) -> unit
 (** Iterate over all the proc descs in the cfg in ascending order *)

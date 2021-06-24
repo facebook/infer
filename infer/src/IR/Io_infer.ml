@@ -11,11 +11,14 @@ open! IStd
 (** Module to handle IO. Includes html and xml modules. *)
 
 module F = Format
+module L = Logging
 
 (* =============== START of module Html =============== *)
 module Html = struct
   (** Create a new html file *)
   let create source path =
+    if SourceFile.is_invalid source then
+      L.debug Capture Verbose "Invalid source. (Did you forget to create a start/exit node?)" ;
     let fname, dir_path =
       match List.rev path with
       | fname :: path_rev ->

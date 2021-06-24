@@ -388,9 +388,16 @@ let translate_one_function env cfg function_ clauses =
     let default = ProcAttributes.default env.location.file name in
     let access : ProcAttributes.access = if Set.mem env.exports uf_name then Public else Private in
     let formals = List.init ~f:(fun i -> (mangled_arg i, any)) arity in
-    {default with access; formals; loc= env.location; ret_type= any}
+    {default with access; formals; is_defined= true; loc= env.location; ret_type= any}
   in
-  let procdesc = Cfg.create_proc_desc cfg attributes in
+  let procdesc =
+    let procdesc = Cfg.create_proc_desc cfg attributes in
+    let start_node = Procdesc.create_node procdesc env.location Start_node [] in
+    let exit_node = Procdesc.create_node procdesc env.location Exit_node [] in
+    Procdesc.set_start_node procdesc start_node ;
+    Procdesc.set_exit_node procdesc exit_node ;
+    procdesc
+  in
   let env = {env with procdesc= Some procdesc; result= Some (Exp.Lvar (Pvar.get_ret_pvar name))} in
   let idents, loads =
     let load (formal, typ) =
@@ -436,8 +443,8 @@ let translate_functions env cfg module_ =
   in
   List.iter module_ ~f ;
   DB.Results_dir.init env.location.file ;
-  Cfg.store env.location.file cfg ;
-  SourceFiles.add env.location.file cfg Tenv.Global None
+  let tenv = Tenv.FileLocal (Tenv.create ()) in
+  SourceFiles.add env.location.file cfg tenv None
 
 
 let translate_module module_ =
