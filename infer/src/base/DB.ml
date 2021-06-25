@@ -154,6 +154,3 @@ module Results_dir = struct
     let full_fname = Filename.concat (create dir_path) filename in
     Unix.openfile full_fname ~mode:Unix.[O_WRONLY; O_CREAT; O_TRUNC] ~perm:0o777
 end
-
-let is_source_file path =
-  List.exists ~f:(fun ext -> Filename.check_suffix path ext) Config.source_file_extentions

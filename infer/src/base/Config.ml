@@ -197,8 +197,6 @@ let save_compact_summaries = true
 (** If true enables printing proposition compatible for the SMT project *)
 let smt_output = false
 
-let source_file_extentions = [".java"; ".m"; ".mm"; ".c"; ".cc"; ".cpp"; ".h"]
-
 let kotlin_source_extension = ".kt"
 
 (** Enable detailed tracing information during array abstraction *)
@@ -2506,11 +2504,6 @@ and test_determinator =
      $(b,--profiler-samples) flags, which specify the relevant arguments."
 
 
-and test_filtering =
-  CLOpt.mk_bool ~deprecated:["test_filtering"] ~long:"test-filtering"
-    "List all the files Infer can report on (should be called from the root of the project)"
-
-
 and topl_max_conjuncts =
   CLOpt.mk_int ~long:"topl-max-conjuncts" ~default:20
     "Stop tracking states that reach have at least $(i,int) conjuncts"
@@ -3509,8 +3502,6 @@ and tenv_json = !tenv_json
 and test_determinator = !test_determinator
 
 and export_changed_functions = !export_changed_functions
-
-and test_filtering = !test_filtering
 
 and profiler_samples = !profiler_samples
 

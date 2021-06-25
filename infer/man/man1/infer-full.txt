@@ -2155,11 +2155,6 @@ INTERNAL OPTIONS
            which specify the relevant arguments. (Conversely:
            --no-test-determinator)
 
-       --test-filtering
-           Activates: List all the files Infer can report on (should be
-           called from the root of the project) (Conversely:
-           --no-test-filtering)
-
        --testing-mode
            Activates: Mode for testing, where no headers are translated, and
            dot files are created (clang only) (Conversely: --no-testing-mode)

@@ -104,8 +104,6 @@ val save_compact_summaries : bool
 
 val smt_output : bool
 
-val source_file_extentions : string list
-
 val unsafe_unret : string
 
 val weak : string
@@ -652,8 +650,6 @@ val tenv_json : string option
 val test_determinator : bool
 
 val export_changed_functions : bool
-
-val test_filtering : bool
 
 val testing_mode : bool
 

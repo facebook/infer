@@ -67,6 +67,3 @@ val source_dir_get_internal_file : source_dir -> string -> filename
 
 val source_dir_from_source_file : SourceFile.t -> source_dir
 (** get the source directory corresponding to a source file *)
-
-val is_source_file : string -> bool
-(** Check if a path is a Java, C, C++ or Objectve C source file according to the file extention *)

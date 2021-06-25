@@ -8,7 +8,6 @@
 
 open! IStd
 module F = Format
-module L = Logging
 
 module Stats = struct
   type t =
@@ -349,11 +348,7 @@ module OnDisk = struct
 
   let make_filtered_iterator_from_config ~iter ~f =
     let filter =
-      if Option.is_some Config.procedures_filter then (
-        if Config.test_filtering then (
-          Inferconfig.test () ;
-          L.exit 0 ) ;
-        Lazy.force Filtering.procedures_filter )
+      if Option.is_some Config.procedures_filter then Lazy.force Filtering.procedures_filter
       else fun _ _ -> true
     in
     iter ~filter ~f

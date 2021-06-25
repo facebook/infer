@@ -359,17 +359,3 @@ let filters_from_inferconfig inferconfig : filters =
 (* Create filters based on configuration options *)
 let create_filters () =
   if not Config.filter_paths then do_not_filter else filters_from_inferconfig (load_filters ())
-
-
-(** This function loads and list the path that are being filtered by the analyzer. The results are
-    of the form: path/to/file.java -> true/false meaning that analysis results will be reported on
-    path/to/file.java or not *)
-let test () =
-  let filters = create_filters () in
-  let matches path = filters.path_filter path in
-  Sys.getcwd ()
-  |> Utils.directory_iter (fun path ->
-         if DB.is_source_file path then
-           let source_file = SourceFile.from_abs_path path in
-           let matching = matches source_file in
-           L.result "%s -> %b@." (SourceFile.to_rel_path source_file) matching )
