@@ -407,6 +407,8 @@ val liveness_ignored_constant : string list
 
 val load_average : float option
 
+val mask_sajwa_exceptions : bool
+
 val max_nesting : int option
 
 val memtrace_analysis : bool

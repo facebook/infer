@@ -1733,6 +1733,12 @@ and margin =
     "Set right margin for the pretty printing functions"
 
 
+and mask_sajwa_exceptions =
+  CLOpt.mk_bool ~long:"mask-sawja-exceptions" ~default:true
+    ~in_help:InferCommand.[(Capture, manual_java)]
+    "Mask exceptions thrown by Sawja/Javalib during Java capture"
+
+
 and max_jobs =
   CLOpt.mk_int_opt ~long:"max-jobs"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -3196,6 +3202,8 @@ and liveness_ignored_constant = RevList.to_list !liveness_ignored_constant
 and load_average =
   match !load_average with None when !buck -> Some (float_of_int ncpu) | _ -> !load_average
 
+
+and mask_sajwa_exceptions = !mask_sajwa_exceptions
 
 and max_nesting = !max_nesting
 

@@ -465,7 +465,7 @@ let create_cm_procdesc source_file program icfg cm proc_name =
     Procdesc.set_start_node procdesc start_node ;
     Procdesc.set_exit_node procdesc exit_node ;
     Some (procdesc, start_node, exit_node, exn_node, jbir_code)
-  with JBir.Subroutine ->
+  with JBir.Subroutine when Config.mask_sajwa_exceptions ->
     L.internal_error "create_procdesc raised JBir.Subroutine when translating %a in %a@."
       Procname.pp proc_name SourceFile.pp source_file ;
     None

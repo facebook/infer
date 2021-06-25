@@ -310,6 +310,10 @@ JAVA OPTIONS
            The version of Java being used. Set it to your Java version if mvn
            is failing.
 
+       --no-mask-sawja-exceptions
+           Deactivates: Mask exceptions thrown by Sawja/Javalib during Java
+           capture (Conversely: --mask-sawja-exceptions)
+
 
 ENVIRONMENT
        INFER_ARGS, INFERCONFIG, INFER_STRICT_MODE

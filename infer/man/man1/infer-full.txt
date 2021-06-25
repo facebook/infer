@@ -885,6 +885,10 @@ OPTIONS
            Activates: Enable loop-hoisting and disable all other checkers
            (Conversely: --no-loop-hoisting-only)           See also infer-analyze(1).
 
+       --no-mask-sawja-exceptions
+           Deactivates: Mask exceptions thrown by Sawja/Javalib during Java
+           capture (Conversely: --mask-sawja-exceptions)           See also infer-capture(1).
+
        --max-jobs int
            Maximum number of analysis jobs running simultaneously       
     See also infer-analyze(1).
