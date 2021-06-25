@@ -88,6 +88,7 @@ end = struct
     ; {rwm with classname= "apache::thrift::concurrency::ReadWriteMutex"}
     ; {shd with classname= "boost::shared_mutex"}
     ; {def with classname= "boost::mutex"}
+    ; {def with classname= "folly::detail::distributed_mutex::DistributedMutex"}
     ; {def with classname= "folly::MicroSpinLock"}
     ; {shd with classname= "folly::RWSpinLock"}
     ; {shd with classname= "folly::SharedMutex"}
