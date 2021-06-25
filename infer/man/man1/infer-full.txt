@@ -2092,11 +2092,6 @@ INTERNAL OPTIONS
        --skip-analysis-in-path-reset
            Set --skip-analysis-in-path to the empty list.
 
-       --skip-implementation json
-           Matcher or list of matchers for names of files where we only want
-           to translate the method declaration, skipping the body of the
-           methods (Java only).
-
        --skip-translation json
            Matcher or list of matchers for names of files that should not be
            analyzed at all.

@@ -1850,14 +1850,6 @@ and patterns_never_returning_null =
       "Matcher or list of matchers for functions that never return $(i,null)." )
 
 
-and patterns_skip_implementation =
-  let long = "skip-implementation" in
-  ( long
-  , CLOpt.mk_json ~long
-      "Matcher or list of matchers for names of files where we only want to translate the method \
-       declaration, skipping the body of the methods (Java only)." )
-
-
 and patterns_skip_translation =
   let long = "skip-translation" in
   ( long
@@ -3246,8 +3238,6 @@ and only_cheap_debug = !only_cheap_debug
 and patterns_modeled_expensive = match patterns_modeled_expensive with k, r -> (k, !r)
 
 and patterns_never_returning_null = match patterns_never_returning_null with k, r -> (k, !r)
-
-and patterns_skip_implementation = match patterns_skip_implementation with k, r -> (k, !r)
 
 and patterns_skip_translation = match patterns_skip_translation with k, r -> (k, !r)
 

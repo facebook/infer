@@ -445,8 +445,6 @@ val patterns_modeled_expensive : string * Yojson.Basic.t
 
 val patterns_never_returning_null : string * Yojson.Basic.t
 
-val patterns_skip_implementation : string * Yojson.Basic.t
-
 val patterns_skip_translation : string * Yojson.Basic.t
 
 val pmd_xml : bool

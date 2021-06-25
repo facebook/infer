@@ -7,11 +7,5 @@
       "language": "Java",
       "source_contains": "_SHOULD_BE_SKIPPED_"
     }
-  ],
-  "skip-implementation": [
-    {
-      "language": "Java",
-      "source_contains": "_SHOULD_SKIP_IMPLEMENTATION_"
-    }
   ]
 }
