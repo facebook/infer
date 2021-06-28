@@ -89,6 +89,25 @@ let iter xs ~f = iter ~f xs
 let iteri xs ~f = iteri ~f xs
 let exists xs ~f = exists ~f xs
 let for_all xs ~f = for_all ~f xs
+
+let contains_adjacent_duplicate ~eq xs =
+  let len = length xs in
+  if len < 2 then false
+  else
+    let contains_dup = ref false in
+    let idx = ref 1 in
+    let prev = ref xs.(0) in
+    while !idx < len do
+      let curr = xs.(!idx) in
+      if eq !prev curr then (
+        contains_dup := true ;
+        idx := len )
+      else (
+        prev := curr ;
+        incr idx )
+    done ;
+    !contains_dup
+
 let fold xs init ~f = fold ~f:(fun s x -> f x s) ~init xs
 let fold_right xs init ~f = fold_right ~f ~init xs
 
