@@ -153,6 +153,8 @@ let sequence_blocks ~(continue : block -> Procdesc.Node.t) ~(stop : block -> Pro
       (first_block.start, continue_node, new_stop)
 
 
+(** Chain a list of blocks together in a conjunctive style: a failure in any block leads to a global
+    failure, and successes lead to the next block. *)
 let all_blocks env (blocks : block list) : block =
   match blocks with
   | [] ->
@@ -164,6 +166,8 @@ let all_blocks env (blocks : block list) : block =
       {start; exit_success; exit_failure}
 
 
+(** Chain a list of blocks together in a disjunctive style: a success in any block leads to a global
+    success, and failures lead to the next block. *)
 let any_block env (blocks : block list) : block =
   match blocks with
   | [] ->
@@ -248,12 +252,23 @@ let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} =
       {start= exit_success; exit_success; exit_failure}
   | e ->
       (* TODO: Cover all cases. *)
-      L.debug Capture Verbose "@[todo ErlangTranslate.translate_pattern %s@."
+      L.debug Capture Verbose "@[todo ErlangTranslator.translate_pattern %s@."
         (Sexp.to_string (Ast.sexp_of_simple_expression e)) ;
       make_block_failure env
 
 
-let rec instructions_of_expression env {Ast.line; simple_expression} : Sil.instr list =
+let make_instruction_block env instructions =
+  let exit_success = Node.make_stmt env ~kind:ErlangExpression instructions in
+  let exit_failure = Node.make_nop env in
+  {start= exit_success; exit_success; exit_failure}
+
+
+let make_load_block env id e typ =
+  let instruction = Sil.Load {id; e; root_typ= typ; typ; loc= env.location} in
+  make_instruction_block env [instruction]
+
+
+let rec translate_expression env {Ast.line; simple_expression} =
   let env = update_location line env in
   let any = typ_of_name Any in
   let procdesc = Option.value_exn env.procdesc in
@@ -261,7 +276,7 @@ let rec instructions_of_expression env {Ast.line; simple_expression} : Sil.instr
   let ret_var =
     match env.result with Some (Var ret_var) -> ret_var | _ -> Ident.create_fresh Ident.knormal
   in
-  let instructions =
+  let expression_block =
     match simple_expression with
     | Call
         { module_= None
@@ -280,32 +295,33 @@ let rec instructions_of_expression env {Ast.line; simple_expression} : Sil.instr
           Procname.make_erlang ~module_name ~function_name ~arity
         in
         let args_with_ids = List.map ~f:(fun a -> (a, Ident.create_fresh Ident.knormal)) args in
-        let args_instructions =
+        let args_blocks =
           let f (one_arg_expression, one_arg_ret_var) =
             let result = Some (Exp.Var one_arg_ret_var) in
-            instructions_of_expression {env with result} one_arg_expression
+            translate_expression {env with result} one_arg_expression
           in
-          List.concat_map ~f args_with_ids
+          List.map ~f args_with_ids
         in
         let fun_exp = Exp.Const (Cfun callee_procname) in
         let args_ids_and_types =
           List.map ~f:(function _, id -> (Exp.Var id, any)) args_with_ids
         in
-        args_instructions
-        @ [Sil.Call ((ret_var, any), fun_exp, args_ids_and_types, env.location, CallFlags.default)]
+        let call_instruction =
+          Sil.Call ((ret_var, any), fun_exp, args_ids_and_types, env.location, CallFlags.default)
+        in
+        let call_block = make_instruction_block env [call_instruction] in
+        all_blocks env (args_blocks @ [call_block])
     | Cons {head; tail} ->
         let head_var = Ident.create_fresh Ident.knormal in
         let tail_var = Ident.create_fresh Ident.knormal in
-        let head_instructions =
-          instructions_of_expression {env with result= Some (Var head_var)} head
-        in
-        let tail_instructions =
-          instructions_of_expression {env with result= Some (Var tail_var)} tail
-        in
+        let head_block = translate_expression {env with result= Some (Var head_var)} head in
+        let tail_block = translate_expression {env with result= Some (Var tail_var)} tail in
         let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_cons) in
         let args : (Exp.t * Typ.t) list = [(Var head_var, any); (Var tail_var, any)] in
-        head_instructions @ tail_instructions
-        @ [Sil.Call ((ret_var, any), fun_exp, args, env.location, CallFlags.default)]
+        let call_instruction =
+          Sil.Call ((ret_var, any), fun_exp, args, env.location, CallFlags.default)
+        in
+        all_blocks env [head_block; tail_block; make_instruction_block env [call_instruction]]
     | Literal (Atom atom) ->
         let hash =
           (* With this hack, an atom may accidentaly be considered equal to an unrelated integer.
@@ -313,34 +329,32 @@ let rec instructions_of_expression env {Ast.line; simple_expression} : Sil.instr
           String.hash atom lsl 16
         in
         let e = Exp.Const (Cint (IntLit.of_int hash)) in
-        [Sil.Load {id= ret_var; e; root_typ= any; typ= any; loc= env.location}]
+        make_load_block env ret_var e any
     | Literal (String s) ->
         let e = Exp.Const (Cstr s) in
-        [Sil.Load {id= ret_var; e; root_typ= any; typ= any; loc= env.location}]
+        make_load_block env ret_var e any
     | Nil ->
         let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_nil) in
-        [Sil.Call ((ret_var, any), fun_exp, [], env.location, CallFlags.default)]
+        let instruction = Sil.Call ((ret_var, any), fun_exp, [], env.location, CallFlags.default) in
+        make_instruction_block env [instruction]
     | Variable vname ->
         let e = Exp.Lvar (Pvar.mk (Mangled.from_string vname) procname) in
-        [Sil.Load {id= ret_var; e; root_typ= any; typ= any; loc= env.location}]
+        make_load_block env ret_var e any
     | todo ->
-        L.debug Capture Verbose "@[todo ErlangTranslate.instructions_of_expression %s@."
+        L.debug Capture Verbose "@[todo ErlangTranslator.translate_expression %s@."
           (Sexp.to_string (Ast.sexp_of_simple_expression todo)) ;
-        []
+        make_block_success env
   in
+  (* Add extra nodes/instructions to store return value if needed *)
   match env.result with
   | None | Some (Var _) ->
-      instructions
+      expression_block
   | Some result ->
-      instructions
-      @ [Sil.Store {e1= result; root_typ= any; typ= any; e2= Var ret_var; loc= env.location}]
-
-
-let translate_expression env expression =
-  let instructions = instructions_of_expression env expression in
-  let exit_success = Node.make_stmt env ~kind:ErlangExpression instructions in
-  let exit_failure = Node.make_nop env in
-  {start= exit_success; exit_success; exit_failure}
+      let store_instr =
+        Sil.Store {e1= result; root_typ= any; typ= any; e2= Var ret_var; loc= env.location}
+      in
+      let store_block = make_instruction_block env [store_instr] in
+      all_blocks env [expression_block; store_block]
 
 
 let translate_body env body : block =
