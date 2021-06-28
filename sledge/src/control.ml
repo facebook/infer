@@ -421,7 +421,10 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
       let pp ppf {depth; edge} =
         Format.fprintf ppf "%i: %a" depth Edge.pp edge
 
-      let joinable x y = Llair.Block.equal x.edge.dst y.edge.dst
+      let joinable x y =
+        Llair.Block.equal x.edge.dst y.edge.dst
+        && Stack.equal_as_inlined_location x.edge.stk y.edge.stk
+
       let dnf x = List.map ~f:(fun state -> {x with state}) (D.dnf x.state)
     end
 

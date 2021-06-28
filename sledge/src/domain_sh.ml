@@ -36,7 +36,7 @@ let init globals =
 let join p q =
   [%Trace.call fun {pf} -> pf "@ %a@ %a" pp p pp q]
   ;
-  Sh.or_ p q |> simplify
+  (if p == q then p else Sh.or_ p q |> simplify)
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp]
 
