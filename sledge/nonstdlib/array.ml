@@ -27,6 +27,19 @@ let of_list_rev = function
       in
       back_fill (len - 2) tl
 
+let of_list_map xs ~f =
+  match xs with
+  | [] -> [||]
+  | hd :: tl ->
+      let a = make (1 + List.length tl) (f hd) in
+      let rec fill i = function
+        | [] -> a
+        | hd :: tl ->
+            unsafe_set a i (f hd) ;
+            fill (i + 1) tl
+      in
+      fill 1 tl
+
 let is_empty = function [||] -> true | _ -> false
 let map xs ~f = map ~f xs
 let mapi xs ~f = mapi ~f xs
