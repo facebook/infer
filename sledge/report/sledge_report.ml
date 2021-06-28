@@ -453,12 +453,14 @@ let write_html ranges rows chan =
         ( match ss with
         | [] -> Printf.fprintf ppf ">"
         | ss ->
-            List.iter ss ~f:(fun s ->
-                match (s : Report.status) with
-                | Safe _ | Unsafe _ | Ok ->
-                    Printf.fprintf ppf ">%a" pf_status s
-                | _ -> Printf.fprintf ppf "class=\"regress\">%a" pf_status s )
-        ) ;
+            if
+              List.exists ss ~f:(fun s ->
+                  match (s : Report.status) with
+                  | Safe _ | Unsafe _ | Ok -> false
+                  | _ -> true )
+            then Printf.fprintf ppf " class=\"regress\"" ;
+            Printf.fprintf ppf ">%s"
+              (Format.asprintf "%a" (List.pp " " Report.pp_status) ss) ) ;
         Printf.fprintf ppf "</td>\n"
       in
       let statd ppf = function
