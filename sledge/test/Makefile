@@ -36,6 +36,10 @@ diff?=patdiff
 # select llvm and clang used by opam
 export PATH := $(shell $$(opam config var conf-llvm:config) --bindir):$(PATH)
 
+# query llvm-config for compilation flags
+C_FLAGS = $(shell $$(opam config var conf-llvm:config) --cflags)
+CXX_FLAGS = $(shell $$(opam config var conf-llvm:config) --cxxflags)
+
 # configure sort
 export LANG := C
 
@@ -43,11 +47,11 @@ default: test
 
 # compile c to llvm bitcode
 %.bc : %.c $(CURDIR)/../model/llair_intrinsics.h
-	(cd $(@D) && clang -g -c -emit-llvm -include $(CURDIR)/../model/llair_intrinsics.h -Wno-main-return-type $(CLANG_ARGS) -o $(@F) $(<F))
+	(cd $(@D) && clang -g -c -emit-llvm $(C_FLAGS) -include $(CURDIR)/../model/llair_intrinsics.h -Wno-main-return-type $(CLANG_ARGS) -o $(@F) $(<F))
 
 # compile c++ to llvm bitcode
 %.bc : %.cpp
-	(cd $(@D) && clang++ -g -c -emit-llvm $(CLANG_ARGS) -o $(@F) $(<F))
+	(cd $(@D) && clang++ -g -c -emit-llvm $(CXX_FLAGS) $(CLANG_ARGS) -o $(@F) $(<F))
 
 # disassemble bitcode to llvm assembly
 %.ll : %.bc
