@@ -114,7 +114,10 @@
 
 (rule
  (targets sledge-help.txt)
- (deps tools/gen_help.sh cli/sledge_cli.exe)
+ (deps
+  tools/gen_help.sh
+  cli/sledge_cli.exe
+  (env_var SLEDGE_CONFIG))
  (action
   (with-stdout-to
    sledge-help.txt
