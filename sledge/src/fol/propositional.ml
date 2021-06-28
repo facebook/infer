@@ -19,6 +19,7 @@ struct
     type t =
       | Tt
       | Eq of Trm.t * Trm.t
+      | Distinct of Trm.t array
       | Eq0 of Trm.t
       | Pos of Trm.t
       | Not of t
@@ -82,7 +83,7 @@ struct
       | And {pos; neg} -> Or {pos= neg; neg= pos}
       | Or {pos; neg} -> And {pos= neg; neg= pos}
       | Cond {cnd; pos; neg} -> Cond {cnd; pos= _Not pos; neg= _Not neg}
-      | Tt | Eq _ | Eq0 _ | Pos _ | Lit _ | Iff _ -> Not p )
+      | Tt | Eq _ | Distinct _ | Eq0 _ | Pos _ | Lit _ | Iff _ -> Not p )
       |> check invariant
 
     let _Join cons unit zero ~pos ~neg =
@@ -238,6 +239,7 @@ struct
       |> check invariant
 
     let _Eq x y = Eq (x, y) |> check invariant
+    let _Distinct xs = Distinct xs |> check invariant
     let _Eq0 x = Eq0 x |> check invariant
     let _Pos x = Pos x |> check invariant
     let _Lit p xs = Lit (p, xs) |> check invariant
@@ -253,6 +255,7 @@ struct
       | Eq (x, y) ->
           f x ;
           f y
+      | Distinct xs -> Array.iter ~f xs
       | Eq0 x | Pos x -> f x
       | Not x -> iter_trms ~f x
       | And {pos; neg} | Or {pos; neg} ->

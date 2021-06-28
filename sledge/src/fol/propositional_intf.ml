@@ -19,6 +19,7 @@ module type FORMULA = sig
     | Tt
     (* equality *)
     | Eq of trm * trm
+    | Distinct of trm array
     (* arithmetic *)
     | Eq0 of trm  (** [Eq0(x)] iff x = 0 *)
     | Pos of trm  (** [Pos(x)] iff x > 0 *)
@@ -34,6 +35,7 @@ module type FORMULA = sig
 
   val mk_Tt : unit -> t
   val _Eq : trm -> trm -> t
+  val _Distinct : trm array -> t
   val _Eq0 : trm -> t
   val _Pos : trm -> t
   val _Not : t -> t

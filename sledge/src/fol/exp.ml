@@ -341,6 +341,7 @@ module Formula = struct
 
   let eq = ap2f Fml.eq
   let dq a b = Fml.not_ (eq a b)
+  let distinct = apNf Fml.distinct
 
   (* arithmetic *)
 
@@ -391,6 +392,7 @@ module Formula = struct
     match b with
     | Tt -> b
     | Eq (x, y) -> lift_map2 f b Fml.eq x y
+    | Distinct xs -> lift_mapN f b Fml.distinct xs
     | Eq0 x -> lift_map1 f b Fml.eq0 x
     | Pos x -> lift_map1 f b Fml.pos x
     | Not x -> map1 (map_terms ~f) b Fml.not_ x

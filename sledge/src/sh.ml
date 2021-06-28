@@ -639,8 +639,10 @@ let dnf q =
 (** first-order approximation of heap constraints *)
 let rec pure_approx q =
   Formula.andN
-    ( [q.pure]
-    |> List.fold q.heap ~f:(fun seg p -> Formula.dq0 seg.loc :: p)
+    ( [ q.pure
+      ; Formula.distinct
+          (Array.of_list
+             (Term.zero :: List.map ~f:(fun seg -> seg.loc) q.heap)) ]
     |> List.fold q.djns ~f:(fun djn p ->
            Formula.orN (List.map djn ~f:pure_approx) :: p ) )
 

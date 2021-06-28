@@ -109,6 +109,7 @@ and Formula : sig
   (* equality *)
   val eq : Term.t -> Term.t -> t
   val dq : Term.t -> Term.t -> t
+  val distinct : Term.t array -> t
 
   (* arithmetic *)
   val eq0 : Term.t -> t

@@ -52,6 +52,7 @@ let ppx strength fs fml =
     | Not Tt -> pf "ff"
     | Eq (x, y) -> pp_binop pp_t x "=" pp_t y
     | Not (Eq (x, y)) -> pp_binop pp_t x "≠" pp_t y
+    | Distinct xs -> pf "(%a)" (Array.pp "@ ≠ " pp_t) xs
     | Eq0 x -> pp_arith "=" x
     | Not (Eq0 x) -> pp_arith "≠" x
     | Pos x -> pp_arith ">" x
@@ -86,16 +87,16 @@ let _Pos x =
   | Q q -> bool (Q.gt q Q.zero)
   | x -> _Pos x
 
+let sort_eq x y =
+  match Sign.of_int (Trm.compare x y) with
+  | Neg -> _Eq x y
+  | Zero -> tt
+  | Pos -> _Eq y x
+
 let _Eq x y =
   if x == Trm.zero then _Eq0 y
   else if y == Trm.zero then _Eq0 x
   else
-    let sort_eq x y =
-      match Sign.of_int (Trm.compare x y) with
-      | Neg -> _Eq x y
-      | Zero -> tt
-      | Pos -> _Eq y x
-    in
     match (x, y) with
     (* x = y ==> 0 = x - y when x = y is an arithmetic equality *)
     | (Z _ | Q _ | Arith _), _ | _, (Z _ | Q _ | Arith _) ->
@@ -144,7 +145,17 @@ let _Eq x y =
         _Eq (Trm.sized ~siz:(Trm.seq_size_exn a) ~seq:x) a
     | _ -> sort_eq x y
 
+let _Distinct xs =
+  match Array.length xs with
+  | 0 | 1 -> tt
+  | 2 -> _Not (sort_eq xs.(0) xs.(1))
+  | _ ->
+      Array.sort ~cmp:Trm.compare xs ;
+      if Array.contains_adjacent_duplicate ~eq:Trm.equal xs then ff
+      else _Distinct xs
+
 let eq = _Eq
+let distinct = _Distinct
 let eq0 = _Eq0
 let pos = _Pos
 let not_ = _Not
@@ -160,6 +171,7 @@ let rec map_trms b ~f =
   match b with
   | Tt -> b
   | Eq (x, y) -> map2 f b _Eq x y
+  | Distinct xs -> mapN f b _Distinct xs
   | Eq0 x -> map1 f b _Eq0 x
   | Pos x -> map1 f b _Pos x
   | Not x -> map1 (map_trms ~f) b _Not x
@@ -185,7 +197,7 @@ let iter_pos_neg ~pos ~neg ~f =
 let iter_dnf ~meet1 ~top fml ~f =
   let rec add_conjunct fml (cjn, splits) =
     match fml with
-    | Tt | Eq _ | Eq0 _ | Pos _ | Iff _ | Lit _ | Not _ ->
+    | Tt | Eq _ | Distinct _ | Eq0 _ | Pos _ | Iff _ | Lit _ | Not _ ->
         (meet1 fml cjn, splits)
     | And {pos; neg} -> fold_pos_neg ~f:add_conjunct ~pos ~neg (cjn, splits)
     | Or {pos; neg} -> (cjn, (pos, neg) :: splits)

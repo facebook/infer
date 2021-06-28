@@ -14,6 +14,7 @@ type t = private
   | Tt
   (* equality *)
   | Eq of Trm.t * Trm.t
+  | Distinct of Trm.t array
   (* arithmetic *)
   | Eq0 of Trm.t  (** [Eq0(x)] iff x = 0 *)
   | Pos of Trm.t  (** [Pos(x)] iff x > 0 *)
@@ -45,6 +46,7 @@ val bool : bool -> t
 
 (* equality *)
 val eq : Trm.t -> Trm.t -> t
+val distinct : Trm.t array -> t
 
 (* arithmetic *)
 val eq0 : Trm.t -> t

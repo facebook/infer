@@ -800,7 +800,7 @@ let rec add_ wrt b r =
   | And {pos; neg} -> Fml.fold_pos_neg ~f:(add_ wrt) ~pos ~neg r
   | Eq (d, e) -> and_eq ~wrt d e r
   | Eq0 e -> and_eq ~wrt Trm.zero e r
-  | Pos _ | Not _ | Or _ | Iff _ | Cond _ | Lit _ -> r
+  | Distinct _ | Pos _ | Not _ | Or _ | Iff _ | Cond _ | Lit _ -> r
 
 let add us b r =
   [%Trace.call fun {pf} -> pf "@ %a@ | %a" Fml.pp b pp r]
