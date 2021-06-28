@@ -172,6 +172,12 @@ module Closures = struct
     (astate, closure_addr_hist)
 end
 
+let pulse_model_type = Typ.CStruct (QualifiedCppName.of_list ["__infer_pulse_model"])
+
+module ModeledField = struct
+  let string_length = Fieldname.make pulse_model_type "__infer_model_string_length"
+end
+
 let eval_access path ?must_be_valid_reason mode location addr_hist access astate =
   let+ astate = check_addr_access path ?must_be_valid_reason mode location addr_hist astate in
   Memory.eval_edge addr_hist access astate
@@ -236,6 +242,16 @@ let eval path mode location exp0 astate =
                 invalidation location
         in
         (astate, (v, [ValueHistory.Invalidated (invalidation, location)]))
+    | Const (Cstr s) ->
+        let v = AbstractValue.mk_fresh () in
+        let* astate, (len_addr, hist) =
+          eval_access path Write location
+            (v, [Assignment location])
+            (FieldAccess ModeledField.string_length) astate
+        in
+        let len_int = IntLit.of_int (String.length s) in
+        let+ astate = PulseArithmetic.and_eq_int len_addr len_int astate in
+        (astate, (v, hist))
     | UnOp (unop, exp, _typ) ->
         let* astate, (addr, hist) = eval path Read exp astate in
         let unop_addr = AbstractValue.mk_fresh () in

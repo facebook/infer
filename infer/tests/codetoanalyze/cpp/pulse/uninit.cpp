@@ -46,7 +46,7 @@ class Uninit2 {
     }
   }
 
-  void not_read_f1_ok_FP() {
+  void not_read_f1_ok() {
     Uninit2 o;
     o.may_read_f1("non empty string");
   }
@@ -62,7 +62,7 @@ class Uninit2 {
     }
   }
 
-  void not_read_f2_ok_FP() {
+  void not_read_f2_ok() {
     Uninit2 o;
     o.may_read_f2("non empty string");
   }

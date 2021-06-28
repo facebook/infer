@@ -67,5 +67,4 @@ codetoanalyze/java/pulse/SuppressLintExample.java, codetoanalyze.java.infer.Supp
 codetoanalyze/java/pulse/SuppressLintExample.java, codetoanalyze.java.infer.SuppressLintExample.shouldReportNPE():void, 2, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is the null pointer,assigned,invalid access occurs here]
 codetoanalyze/java/pulse/TextUtilsExample.java, TextUtilsExample.FP_testTextUtilsIsEmptyOk(java.lang.String):void, 3, NULLPTR_DEREFERENCE, no_bucket, ERROR, [*** LATENT ***,is the null pointer,assigned,invalid access occurs here]
 codetoanalyze/java/pulse/TextUtilsExample.java, TextUtilsExample.testTextUtilsIsEmptyBad():void, 4, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is the null pointer,assigned,invalid access occurs here]
-codetoanalyze/java/pulse/TextUtilsExample.java, TextUtilsExample.testTextUtilsIsEmptyEmptyStrBad():void, 3, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is the null pointer,assigned,invalid access occurs here]
 codetoanalyze/java/pulse/TextUtilsExample.java, TextUtilsExample.testTextUtilsIsEmptyNullBad():void, 4, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is the null pointer,assigned,invalid access occurs here]

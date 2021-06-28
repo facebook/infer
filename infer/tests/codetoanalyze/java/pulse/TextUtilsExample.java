@@ -23,7 +23,7 @@ public class TextUtilsExample {
     }
   }
 
-  public void testTextUtilsIsEmptyEmptyStrBad() {
+  public void FN_testTextUtilsIsEmptyEmptyStrBad() {
     if (TextUtils.isEmpty("")) {
       Object o = null;
       o.toString();

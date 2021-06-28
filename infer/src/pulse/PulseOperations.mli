@@ -83,6 +83,14 @@ module Closures : sig
   (** assert the validity of the addresses captured by the lambda *)
 end
 
+val pulse_model_type : Typ.name
+(** Struct type name of "__infer_pulse_model" *)
+
+module ModeledField : sig
+  val string_length : Fieldname.t
+  (** Modeled field for string length *)
+end
+
 val eval :
      PathContext.t
   -> access_mode

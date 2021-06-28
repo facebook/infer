@@ -23,8 +23,6 @@ type model = model_data -> AbductiveDomain.t -> ExecutionDomain.t AccessResult.t
 
 let ok_continue post = [Ok (ContinueProgram post)]
 
-let cpp_model_namespace = QualifiedCppName.of_list ["__infer_pulse_model"]
-
 module Misc = struct
   let shallow_copy_value path location event ret_id dest_pointer_hist src_value_hist astate =
     let<*> astate, obj_copy = PulseOperations.shallow_copy path location src_value_hist astate in
@@ -311,7 +309,7 @@ module ObjC = struct
 end
 
 module Optional = struct
-  let internal_value = Fieldname.make (Typ.CStruct cpp_model_namespace) "backing_value"
+  let internal_value = Fieldname.make PulseOperations.pulse_model_type "backing_value"
 
   let internal_value_access = HilExp.Access.FieldAccess internal_value
 
@@ -625,8 +623,27 @@ module StdBasicString = struct
 
   let internal_string_access = HilExp.Access.FieldAccess internal_string
 
+  let string_length_access = HilExp.Access.FieldAccess PulseOperations.ModeledField.string_length
+
   let to_internal_string path location bstring astate =
     PulseOperations.eval_access path Read location bstring internal_string_access astate
+
+
+  (* constructor from constant string *)
+  let constructor this_hist init_hist : model =
+   fun {path; location} astate ->
+    let event =
+      ValueHistory.Call {f= Model "std::basic_string::basic_string()"; location; in_call= []}
+    in
+    let<*> astate, (addr, hist) =
+      PulseOperations.eval_access path Write location this_hist Dereference astate
+    in
+    let<+> astate =
+      PulseOperations.write_field path location
+        ~ref:(addr, event :: hist)
+        internal_string ~obj:init_hist astate
+    in
+    astate
 
 
   let data this_hist : model =
@@ -657,6 +674,37 @@ module StdBasicString = struct
         location CppDelete string_addr_hist astate
     in
     astate
+
+
+  let empty this_hist : model =
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = ValueHistory.Call {f= Model "std::basic_string::empty()"; location; in_call= []} in
+    let<*> astate, internal_string = to_internal_string path location this_hist astate in
+    let<*> astate, (len_addr, hist) =
+      PulseOperations.eval_access path Read location internal_string string_length_access astate
+    in
+    let ((ret_addr, _) as ret_hist) = (AbstractValue.mk_fresh (), event :: hist) in
+    let astate_empty =
+      let<*> astate = PulseArithmetic.prune_eq_zero len_addr astate in
+      let<+> astate = PulseArithmetic.and_eq_int ret_addr IntLit.one astate in
+      PulseOperations.write_id ret_id ret_hist astate
+    in
+    let astate_non_empty =
+      let<*> astate = PulseArithmetic.prune_positive len_addr astate in
+      let<+> astate = PulseArithmetic.and_eq_int ret_addr IntLit.zero astate in
+      PulseOperations.write_id ret_id ret_hist astate
+    in
+    List.rev_append astate_empty astate_non_empty
+
+
+  let length this_hist : model =
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = ValueHistory.Call {f= Model "std::basic_string::length()"; location; in_call= []} in
+    let<*> astate, internal_string = to_internal_string path location this_hist astate in
+    let<+> astate, (length, hist) =
+      PulseOperations.eval_access path Read location internal_string string_length_access astate
+    in
+    PulseOperations.write_id ret_id (length, event :: hist) astate
 end
 
 module StdFunction = struct
@@ -704,11 +752,11 @@ module StdFunction = struct
 end
 
 module GenericArrayBackedCollection = struct
-  let field = Fieldname.make (Typ.CStruct cpp_model_namespace) "backing_array"
+  let field = Fieldname.make PulseOperations.pulse_model_type "backing_array"
 
-  let last_field = Fieldname.make (Typ.CStruct cpp_model_namespace) "past_the_end"
+  let last_field = Fieldname.make PulseOperations.pulse_model_type "past_the_end"
 
-  let is_empty = Fieldname.make (Typ.CStruct cpp_model_namespace) "is_empty"
+  let is_empty = Fieldname.make PulseOperations.pulse_model_type "is_empty"
 
   let access = HilExp.Access.FieldAccess field
 
@@ -741,7 +789,7 @@ module GenericArrayBackedCollection = struct
 end
 
 module GenericArrayBackedCollectionIterator = struct
-  let internal_pointer = Fieldname.make (Typ.CStruct cpp_model_namespace) "backing_pointer"
+  let internal_pointer = Fieldname.make PulseOperations.pulse_model_type "backing_pointer"
 
   let internal_pointer_access = HilExp.Access.FieldAccess internal_pointer
 
@@ -1607,7 +1655,11 @@ module ProcNameDispatcher = struct
         ; -"std" &:: "optional" &:: "value_or" $ capt_arg_payload $+ capt_arg_payload
           $+...$--> Optional.value_or ~desc:"std::optional::value_or()"
           (* end std::optional *)
+        ; -"std" &:: "basic_string" &:: "basic_string" $ capt_arg_payload $+ capt_arg_payload
+          $--> StdBasicString.constructor
         ; -"std" &:: "basic_string" &:: "data" <>$ capt_arg_payload $--> StdBasicString.data
+        ; -"std" &:: "basic_string" &:: "empty" <>$ capt_arg_payload $--> StdBasicString.empty
+        ; -"std" &:: "basic_string" &:: "length" <>$ capt_arg_payload $--> StdBasicString.length
         ; -"std" &:: "basic_string" &:: "~basic_string" <>$ capt_arg_payload
           $--> StdBasicString.destructor
         ; -"std" &:: "function" &:: "function" $ capt_arg_payload $+ capt_arg
