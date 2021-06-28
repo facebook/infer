@@ -8,6 +8,8 @@
 #include <iostream>
 #include <memory>
 
+#pragma clang diagnostic ignored "-Wdangling-gsl"
+
 // just a struct
 struct A {
   int f;
