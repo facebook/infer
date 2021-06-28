@@ -73,13 +73,12 @@ let get_message diagnostic =
                 F.asprintf "undefined behaviour caused by nil messaging of non-pod return type (%a)"
                   (Typ.pp Pp.text) non_pod_typ
             | Invalidation.InsertionIntoCollection ->
-                F.sprintf "nil insertion into collection"
+                "nil insertion into collection"
             | Invalidation.BlockCall ->
-                F.sprintf "nil block call"
+                "nil block call"
           in
           let issue_kind_str =
-            Option.value_map must_be_valid_reason
-              ~default:(F.sprintf "null pointer dereference")
+            Option.value_map must_be_valid_reason ~default:"null pointer dereference"
               ~f:nil_issue_kind
           in
           let pp_access_trace fmt (trace : Trace.t) =
