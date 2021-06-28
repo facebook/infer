@@ -614,6 +614,8 @@ module JavaObject = struct
     PulseOperations.write_id ret_id (fst obj_copy, event :: snd obj_copy) astate
 end
 
+let string_length_access = HilExp.Access.FieldAccess PulseOperations.ModeledField.string_length
+
 module StdBasicString = struct
   let internal_string =
     Fieldname.make
@@ -622,8 +624,6 @@ module StdBasicString = struct
 
 
   let internal_string_access = HilExp.Access.FieldAccess internal_string
-
-  let string_length_access = HilExp.Access.FieldAccess PulseOperations.ModeledField.string_length
 
   let to_internal_string path location bstring astate =
     PulseOperations.eval_access path Read location bstring internal_string_access astate
@@ -1476,19 +1476,34 @@ module JavaPreconditions = struct
 end
 
 module Android = struct
-  let text_utils_is_empty ~desc (address, hist) : model =
-   fun {location; ret= ret_id, _} astate ->
+  let text_utils_is_empty ~desc ((addr, hist) as addr_hist) : model =
+   fun {path; location; ret= ret_id, _} astate ->
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let ret_val = AbstractValue.mk_fresh () in
-    let astate = PulseOperations.write_id ret_id (ret_val, event :: hist) astate in
-    let<*> astate_equal_zero =
-      PulseArithmetic.and_eq_int ret_val IntLit.zero astate
-      >>= PulseArithmetic.prune_positive address
+    let astate_null =
+      let<*> astate = PulseArithmetic.prune_eq_zero addr astate in
+      let<+> astate = PulseArithmetic.and_eq_int ret_val IntLit.one astate in
+      PulseOperations.write_id ret_id (ret_val, event :: hist) astate
     in
-    let<*> astate_not_zero =
-      PulseArithmetic.and_eq_int ret_val IntLit.one astate >>= PulseArithmetic.prune_eq_zero address
+    let astate_not_null =
+      let<*> astate = PulseArithmetic.prune_positive addr astate in
+      let<*> astate, (len_addr, hist) =
+        PulseOperations.eval_access path Read location addr_hist string_length_access astate
+      in
+      let astate = PulseOperations.write_id ret_id (ret_val, event :: hist) astate in
+      let astate_empty =
+        let<*> astate = PulseArithmetic.prune_eq_zero len_addr astate in
+        let<+> astate = PulseArithmetic.and_eq_int ret_val IntLit.one astate in
+        astate
+      in
+      let astate_not_empty =
+        let<*> astate = PulseArithmetic.prune_positive len_addr astate in
+        let<+> astate = PulseArithmetic.and_eq_int ret_val IntLit.zero astate in
+        astate
+      in
+      List.rev_append astate_empty astate_not_empty
     in
-    [Ok (ContinueProgram astate_equal_zero); Ok (ContinueProgram astate_not_zero)]
+    List.rev_append astate_null astate_not_null
 end
 
 module StringSet = Caml.Set.Make (String)
