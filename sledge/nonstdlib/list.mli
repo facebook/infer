@@ -95,6 +95,7 @@ val fold : 'a list -> 's -> f:('a -> 's -> 's) -> 's
 val fold_left : 'a list -> 's -> f:('s -> 'a -> 's) -> 's
 val fold_right : 'a list -> 's -> f:('a -> 's -> 's) -> 's
 val reduce : 'a t -> f:('a -> 'a -> 'a) -> 'a option
+val fold_diagonal : 'a list -> 's -> f:('a -> 'a -> 's -> 's) -> 's
 val fold_map : 'a t -> 's -> f:('a -> 's -> 'b * 's) -> 'b t * 's
 val fold2_exn : 'a t -> 'b t -> 's -> f:('a -> 'b -> 's -> 's) -> 's
 

@@ -61,6 +61,15 @@ let fold_right xs init ~f = fold_right ~f ~init xs
 let reduce xs ~f =
   match xs with [] -> None | x :: xs -> Some (fold ~f xs x)
 
+let fold_diagonal xs init ~f =
+  let rec fold_diagonal_ z = function
+    | [] -> z
+    | x :: ys ->
+        let z = fold ~f:(fun y z -> f x y z) ys z in
+        fold_diagonal_ z ys
+  in
+  fold_diagonal_ init xs
+
 let fold_map xs init ~f =
   Pair.swap (fold_map ~f:(fun s x -> Pair.swap (f x s)) ~init xs)
 
