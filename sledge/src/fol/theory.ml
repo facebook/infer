@@ -32,9 +32,13 @@ let pp ppf = function
 (* Classification of terms ================================================*)
 
 type kind = InterpApp | NonInterpAtom | InterpAtom | UninterpApp
-[@@deriving compare, equal]
+[@@deriving compare, equal, sexp_of]
 
 let classify e =
+  [%trace]
+    ~call:(fun {pf} -> pf "%a" Trm.pp e)
+    ~retn:(fun {pf} k -> pf "%a" Sexp.pp (sexp_of_kind k))
+  @@ fun () ->
   match (e : Trm.t) with
   | Var _ -> NonInterpAtom
   | Z _ | Q _ -> InterpAtom
