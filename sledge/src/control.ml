@@ -256,8 +256,7 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
   end = struct
     type t =
       | Return of
-          { recursive: bool  (** return from a possibly-recursive call *)
-          ; dst: Llair.Jump.t
+          { dst: Llair.Jump.t
           ; formals: Llair.Reg.t iarray
           ; locals: Llair.Reg.Set.t
           ; from_call: D.from_call
@@ -266,11 +265,14 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
       | Empty
     [@@deriving sexp_of]
 
-    let rec pp ppf = function
-      | Return {recursive= false; dst; stk= s} ->
+    let rec pp ppf stk =
+      let pp ppf = function
+        | Empty -> ()
+        | stk -> Format.fprintf ppf "; %a" pp stk
+      in
+      match stk with
+      | Return {dst; stk= s} ->
           Format.fprintf ppf "R#%i%a" dst.dst.sort_index pp s
-      | Return {recursive= true; dst; stk= s} ->
-          Format.fprintf ppf "R↑#%i%a" dst.dst.sort_index pp s
       | Throw (dst, s) ->
           Format.fprintf ppf "T#%i%a" dst.dst.sort_index pp s
       | Empty -> ()
@@ -284,8 +286,8 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
     let empty = Empty |> check invariant
 
     let push_return call from_call stk =
-      let Llair.{callee= {formals; locals}; return; recursive; _} = call in
-      Return {recursive; dst= return; formals; locals; from_call; stk}
+      let Llair.{callee= {formals; locals}; return; _} = call in
+      Return {dst= return; formals; locals; from_call; stk}
       |> check invariant
 
     let push_throw call stk =
@@ -316,17 +318,12 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
     type as_inlined_location = t [@@deriving sexp_of]
 
     (* Treat a stack as a code location in a hypothetical expansion of the
-       program where all non-recursive functions have been completely
-       inlined. In particular, this means to compare stacks as if all Return
-       frames for recursive calls had been removed. Additionally, the
-       from_call info in Return frames is ignored. *)
+       program where functions have been inlined. In particular, only the
+       dst and stk of Return frames is considered. *)
     let rec compare_as_inlined_location x y =
       if x == y then 0
       else
         match (x, y) with
-        | Return {recursive= true; stk= x}, y
-         |x, Return {recursive= true; stk= y} ->
-            compare_as_inlined_location x y
         | Return {dst= j; stk= x}, Return {dst= k; stk= y} -> (
           match Llair.Jump.compare j k with
           | 0 -> compare_as_inlined_location x y
@@ -364,6 +361,9 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
 
     val run : f:(Stack.t -> D.t -> Llair.block -> x) -> t -> unit
   end = struct
+    (* Functions are treated as-if-inlined by including a call stack in each
+       edge, effectively copying the control-flow graph for each calling
+       context. *)
     module Edge = struct
       module T = struct
         type t =
@@ -383,7 +383,23 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
     end
 
     module Depths = struct
-      module M = Map.Make (Edge)
+      module M = Map.Make (struct
+        include Edge
+
+        (* Each retreating edge has a depth for each calling context, except
+           for recursive calls. Recursive call edges are instead compared
+           without considering their stacks. Bounding the depth of edges
+           therefore has the effect of bounding the number of recursive
+           calls in any calling context. *)
+        let compare x y =
+          let ignore_rec_call_stk x =
+            match x with
+            | {src= Some {term= Call {recursive= true}}} ->
+                {x with stk= Stack.empty}
+            | _ -> x
+          in
+          Edge.compare (ignore_rec_call_stk x) (ignore_rec_call_stk y)
+      end)
 
       type t = int M.t [@@deriving compare, equal, sexp_of]
 
