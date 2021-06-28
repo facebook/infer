@@ -68,13 +68,19 @@ let get_message diagnostic =
       match invalidation with
       | ConstantDereference i when IntLit.equal i IntLit.zero ->
           (* Special error message for nullptr dereference *)
-          let issue_kind_str =
-            match must_be_valid_reason with
-            | Some (Invalidation.SelfOfNonPODReturnMethod non_pod_typ) ->
+          let nil_issue_kind = function
+            | Invalidation.SelfOfNonPODReturnMethod non_pod_typ ->
                 F.asprintf "undefined behaviour caused by nil messaging of non-pod return type (%a)"
                   (Typ.pp Pp.text) non_pod_typ
-            | _ ->
-                F.sprintf "null pointer dereference"
+            | Invalidation.InsertionIntoCollection ->
+                F.sprintf "nil insertion into collection"
+            | Invalidation.BlockCall ->
+                F.sprintf "nil block call"
+          in
+          let issue_kind_str =
+            Option.value_map must_be_valid_reason
+              ~default:(F.sprintf "null pointer dereference")
+              ~f:nil_issue_kind
           in
           let pp_access_trace fmt (trace : Trace.t) =
             if same_trace then ()
