@@ -19,15 +19,23 @@ end
 
 open! Types
 
-module type NoJoin = sig
+module type Comparable = sig
   include PrettyPrintable.PrintableType
 
   val leq : lhs:t -> rhs:t -> bool
   (** the implication relation: [lhs <= rhs] means [lhs |- rhs] *)
 end
 
+module type Disjunct = sig
+  include Comparable
+
+  val equal_fast : t -> t -> bool
+  (** [equal_fast x y] must imply [x <=> y]; it's a good idea for this function to be "fast", e.g.
+      not depend on the size of its input *)
+end
+
 module type S = sig
-  include NoJoin
+  include Comparable
 
   val join : t -> t -> t
 
@@ -83,7 +91,8 @@ end
 (** Cartesian product of two domains. *)
 module Pair (Domain1 : S) (Domain2 : S) : S with type t = Domain1.t * Domain2.t
 
-module PairNoJoin (Domain1 : NoJoin) (Domain2 : NoJoin) : NoJoin with type t = Domain1.t * Domain2.t
+module PairDisjunct (Domain1 : Disjunct) (Domain2 : Disjunct) :
+  Disjunct with type t = Domain1.t * Domain2.t
 
 (** Flat abstract domain: Bottom, Top, and non-comparable elements in between *)
 module Flat (V : PrettyPrintable.PrintableEquatableType) : sig

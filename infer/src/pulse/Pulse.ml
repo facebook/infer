@@ -25,7 +25,7 @@ let report_topl_errors proc_desc err_log summary =
 
 module PulseTransferFunctions = struct
   module CFG = ProcCfg.Normal
-  module Domain = AbstractDomain.PairNoJoin (PathContext) (ExecutionDomain)
+  module Domain = AbstractDomain.PairDisjunct (ExecutionDomain) (PathContext)
 
   type analysis_data = PulseSummary.t InterproceduralAnalysis.t
 
@@ -443,13 +443,13 @@ module PulseTransferFunctions = struct
           [ContinueProgram astate] )
 
 
-  let exec_instr (path, astate) analysis_data cfg_node instr : Domain.t list =
+  let exec_instr (astate, path) analysis_data cfg_node instr : Domain.t list =
     (* Sometimes instead of stopping on contradictions a false path condition is recorded
        instead. Prune these early here so they don't spuriously count towards the disjunct limit. *)
     exec_instr_aux path astate analysis_data cfg_node instr
     |> List.filter_map ~f:(fun exec_state ->
            if ExecutionDomain.is_unsat_cheap exec_state then None
-           else Some (PathContext.post_exec_instr path, exec_state) )
+           else Some (exec_state, PathContext.post_exec_instr path) )
 
 
   let pp_session_name _node fmt = F.pp_print_string fmt "Pulse"
@@ -474,11 +474,11 @@ let with_debug_exit_node proc_desc ~f =
 let checker ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) =
   AbstractValue.State.reset () ;
   let initial_astate = ExecutionDomain.mk_initial tenv proc_desc in
-  let initial = [(PathContext.initial, initial_astate)] in
+  let initial = [(initial_astate, PathContext.initial)] in
   match DisjunctiveAnalyzer.compute_post analysis_data ~initial proc_desc with
   | Some posts ->
       (* forget path contexts, we don't propagate them across functions *)
-      let posts = List.map ~f:snd posts in
+      let posts = List.map ~f:fst posts in
       with_debug_exit_node proc_desc ~f:(fun () ->
           let updated_posts =
             PulseObjectiveCSummary.update_objc_method_posts analysis_data ~initial_astate ~posts

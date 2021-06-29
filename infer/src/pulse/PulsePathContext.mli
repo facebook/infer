@@ -16,6 +16,8 @@ type t = {timestamp: timestamp  (** step number *)}
 
 val leq : lhs:t -> rhs:t -> bool
 
+val equal_fast : t -> t -> bool
+
 val initial : t
 
 val post_exec_instr : t -> t

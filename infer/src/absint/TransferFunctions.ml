@@ -43,7 +43,7 @@ end
 module type DisjReady = sig
   module CFG : ProcCfg.S
 
-  module Domain : AbstractDomain.NoJoin
+  module Domain : AbstractDomain.Disjunct
 
   type analysis_data
 

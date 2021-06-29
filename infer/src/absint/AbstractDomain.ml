@@ -18,14 +18,22 @@ end
 
 open! Types
 
-module type NoJoin = sig
+module type Comparable = sig
   include PrettyPrintable.PrintableType
 
   val leq : lhs:t -> rhs:t -> bool
 end
 
+module type Disjunct = sig
+  include Comparable
+
+  val equal_fast : t -> t -> bool
+end
+
 module type S = sig
-  include NoJoin
+  include PrettyPrintable.PrintableType
+
+  val leq : lhs:t -> rhs:t -> bool
 
   val join : t -> t -> t
 
@@ -175,7 +183,7 @@ module TopLifted (Domain : S) = struct
   let pp = TopLiftedUtils.pp ~pp:Domain.pp
 end
 
-module PairNoJoin (Domain1 : NoJoin) (Domain2 : NoJoin) = struct
+module PairBase (Domain1 : Comparable) (Domain2 : Comparable) = struct
   type t = Domain1.t * Domain2.t
 
   let leq ~lhs ~rhs =
@@ -186,8 +194,14 @@ module PairNoJoin (Domain1 : NoJoin) (Domain2 : NoJoin) = struct
   let pp fmt astate = Pp.pair ~fst:Domain1.pp ~snd:Domain2.pp fmt astate
 end
 
+module PairDisjunct (Domain1 : Disjunct) (Domain2 : Disjunct) = struct
+  include PairBase (Domain1) (Domain2)
+
+  let equal_fast (x1, x2) (y1, y2) = Domain1.equal_fast x1 y1 && Domain2.equal_fast x2 y2
+end
+
 module Pair (Domain1 : S) (Domain2 : S) = struct
-  include PairNoJoin (Domain1) (Domain2)
+  include PairBase (Domain1) (Domain2)
 
   let join astate1 astate2 =
     if phys_equal astate1 astate2 then astate1

@@ -93,3 +93,16 @@ let get_astate : t -> AbductiveDomain.t = function
 let is_unsat_cheap exec_state = PathCondition.is_unsat_cheap (get_astate exec_state).path_condition
 
 type summary = AbductiveDomain.summary base_t [@@deriving compare, equal, yojson_of]
+
+let equal_fast exec_state1 exec_state2 =
+  phys_equal exec_state1 exec_state2
+  ||
+  match (exec_state1, exec_state2) with
+  | AbortProgram astate1, AbortProgram astate2
+  | ExitProgram astate1, ExitProgram astate2
+  | ISLLatentMemoryError astate1, ISLLatentMemoryError astate2 ->
+      phys_equal astate1 astate2
+  | ContinueProgram astate1, ContinueProgram astate2 ->
+      phys_equal astate1 astate2
+  | _ ->
+      false

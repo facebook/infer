@@ -162,7 +162,7 @@ struct
 
 
     let join_up_to ~limit ~into:lhs rhs =
-      join_up_to_with_leq ~limit (fun ~lhs ~rhs -> phys_equal lhs rhs) ~into:lhs rhs
+      join_up_to_with_leq ~limit (fun ~lhs ~rhs -> T.Domain.equal_fast lhs rhs) ~into:lhs rhs
 
 
     let join lhs rhs = join_up_to ~limit:disjunct_limit ~into:lhs rhs |> fst
@@ -173,7 +173,7 @@ struct
       match (disj, of_) with
       | [], _ ->
           true
-      | x :: disj', y :: of' when phys_equal x y ->
+      | x :: disj', y :: of' when T.Domain.equal_fast x y ->
           is_trivial_subset disj' ~of_:of'
       | _, _ :: of' ->
           is_trivial_subset disj ~of_:of'
@@ -229,7 +229,7 @@ struct
       | None ->
           true
       | Some {State.pre= previous_pre; _} ->
-          not (List.mem ~equal:phys_equal previous_pre disjunct)
+          not (List.mem ~equal:T.Domain.equal_fast previous_pre disjunct)
     in
     let current_post_n =
       match old_state_opt with None -> ([], 0) | Some {State.post; _} -> (post, List.length post)
