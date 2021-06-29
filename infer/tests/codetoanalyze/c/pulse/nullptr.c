@@ -163,3 +163,30 @@ void unknown_from_parameters_latent(int x) {
     *p = 42;
   }
 }
+
+// is pruned away without the model
+void random_non_functional_bad() {
+  if (random() != random()) {
+    int* p = NULL;
+    *p = 42;
+  }
+}
+
+// quantifier elimination not powerful enough to discard [\exists v. y = v] in
+// the pruned part
+void FNlatent_random_modelled_bad(int y) {
+  int x = random();
+  if (x == y) {
+    int* p = NULL;
+    *p = 42;
+  }
+}
+
+void FP_arithmetic_weakness_ok() {
+  int x = random();
+  int y = random();
+  if (x < y && x > y) {
+    int* p = NULL;
+    *p = 42;
+  }
+}

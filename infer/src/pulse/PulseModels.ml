@@ -1572,6 +1572,7 @@ module ProcNameDispatcher = struct
           <>$ capt_exp
           $--> Misc.alloc_no_leak_not_null ~desc:"new"
         ; +BuiltinDecl.(match_builtin __placement_new) &++> Cplusplus.placement_new
+        ; -"random" <>$$--> Misc.nondet ~fn_name:"random"
         ; +BuiltinDecl.(match_builtin objc_cpp_throw) <>--> Misc.early_exit
         ; +BuiltinDecl.(match_builtin __cast)
           <>$ capt_arg_payload $+...$--> Misc.id_first_arg ~desc:"cast"
