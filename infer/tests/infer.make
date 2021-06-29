@@ -9,7 +9,7 @@ include $(TESTS_DIR)/base.make
 
 default: compile
 
-issues.exp.test$(TEST_SUFFIX): $(INFER_OUT)/report.json $(INFER_BIN)
+issues.exp.test$(TEST_SUFFIX): $(INFER_OUT)/report.json $(INFER_BIN) $(MAKEFILE_LIST)
 	$(QUIET)$(INFER_BIN) report -q --results-dir $(<D) \
 	   $(INFERPRINT_OPTIONS) $@
 
