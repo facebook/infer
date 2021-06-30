@@ -8,10 +8,21 @@
 #import <Foundation/Foundation.h>
 #include <memory>
 
+@interface AnotherObject : NSObject
+- (int)someMethod:(int)param1;
+@end
+
+@implementation AnotherObject
+- (int)someMethod:(int)param1 {
+  return param1;
+}
+@end
+
 @interface SomeObject : NSObject
 
 @property int x;
 @property std::shared_ptr<int> ptr;
+@property AnotherObject* anotherObject;
 
 - (int)returnsPOD;
 
@@ -28,7 +39,6 @@
 - (SomeObject*)get;
 
 + (NSString*)returnsStringNil;
-
 @end
 
 @implementation SomeObject
@@ -53,6 +63,10 @@
   return nil;
 }
 
+- (int)callAnotherObjectMethod {
+  return [_anotherObject someMethod:[self returnsPOD]];
+}
+
 - (SomeObject*)get {
   SomeObject* o = [SomeObject new];
   return o;
@@ -74,6 +88,10 @@
   return shared;
 }
 
+- (int)methodNilDereferenceBad {
+  int* x = nil;
+  return *x;
+}
 @end
 
 int dereferenceNilBad() {
@@ -469,4 +487,9 @@ std::shared_ptr<int> unknown_call_twice_FP() {
     return std::make_shared<int>(0);
   }
   return [[SomeObject sharedInstance] returnsnonPOD];
+}
+
+int testAnotherObjectUseSelfOk() {
+  auto const obj = [SomeObject returnsNil];
+  return [obj callAnotherObjectMethod];
 }

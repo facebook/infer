@@ -88,20 +88,23 @@ let mk_objc_method_nil_summary tenv proc_desc initial =
 let append_objc_self_positive {InterproceduralAnalysis.tenv; proc_desc; err_log} astate =
   let location = Procdesc.get_loc proc_desc in
   let self = mk_objc_self_pvar proc_desc in
-  match astate with
-  | ContinueProgram astate ->
+  let proc_name = Procdesc.get_proc_name proc_desc in
+  match (astate, proc_name) with
+  | ContinueProgram astate, Procname.ObjC_Cpp {kind= ObjCInstanceMethod}
+    when Procdesc.is_ret_type_pod proc_desc ->
       let result =
         let* astate, value =
           PulseOperations.eval_deref PathContext.initial location (Lvar self) astate
         in
-        PulseArithmetic.prune_positive (fst value) astate
+        PulseArithmetic.and_positive (fst value) astate
       in
       PulseReport.report_result tenv proc_desc err_log location result
-  | ExitProgram _
-  | AbortProgram _
-  | LatentAbortProgram _
-  | LatentInvalidAccess _
-  | ISLLatentMemoryError _ ->
+  | ContinueProgram _, _
+  | ExitProgram _, _
+  | AbortProgram _, _
+  | LatentAbortProgram _, _
+  | LatentInvalidAccess _, _
+  | ISLLatentMemoryError _, _ ->
       [astate]
 
 
@@ -148,5 +151,4 @@ let update_objc_method_posts ({InterproceduralAnalysis.tenv; proc_desc; err_log}
   | Some result ->
       let location = Procdesc.get_loc proc_desc in
       let nil_summary = PulseReport.report_result tenv proc_desc err_log location result in
-      let posts = List.concat_map ~f:(append_objc_self_positive analysis_data) posts in
       nil_summary @ posts

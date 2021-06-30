@@ -474,7 +474,10 @@ let with_debug_exit_node proc_desc ~f =
 let checker ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) =
   AbstractValue.State.reset () ;
   let initial_astate = ExecutionDomain.mk_initial tenv proc_desc in
-  let initial = [(initial_astate, PathContext.initial)] in
+  let initial_self_positive =
+    PulseObjectiveCSummary.append_objc_self_positive analysis_data initial_astate
+  in
+  let initial = List.map ~f:(fun initial -> (initial, PathContext.initial)) initial_self_positive in
   match DisjunctiveAnalyzer.compute_post analysis_data ~initial proc_desc with
   | Some posts ->
       (* forget path contexts, we don't propagate them across functions *)
