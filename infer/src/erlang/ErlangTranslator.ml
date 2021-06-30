@@ -33,8 +33,6 @@ end
 
 type module_name = string [@@deriving sexp_of]
 
-type block = {start: Procdesc.Node.t; exit_success: Procdesc.Node.t; exit_failure: Procdesc.Node.t}
-
 type environment =
   { current_module: module_name  (** used to qualify function names *)
   ; exports: UnqualifiedFunction.Set.t  (** used to determine public/private access *)
@@ -128,66 +126,87 @@ module Node = struct
     make_throw env crash_instruction
 end
 
-let make_block_success env =
-  let exit_success, exit_failure = (Node.make_nop env, Node.make_nop env) in
-  {start= exit_success; exit_success; exit_failure}
+(** Groups several helpers used to create blocks. *)
+module Block = struct
+  type t = {start: Procdesc.Node.t; exit_success: Procdesc.Node.t; exit_failure: Procdesc.Node.t}
+
+  let make_success env =
+    let exit_success, exit_failure = (Node.make_nop env, Node.make_nop env) in
+    {start= exit_success; exit_success; exit_failure}
 
 
-let make_block_failure env =
-  let exit_success, exit_failure = (Node.make_nop env, Node.make_nop env) in
-  {start= exit_failure; exit_success; exit_failure}
+  let make_failure env =
+    let exit_success, exit_failure = (Node.make_nop env, Node.make_nop env) in
+    {start= exit_failure; exit_success; exit_failure}
 
 
-(** Makes one block of a list of blocks. Meant to be used only by the functions [all_blocks] and
-    [any_block] defined immediately below. If [b] comes before [c] in the list [blocks], then an
-    edge is added from [continue b] to [c.start]. For all blocks [b] in the list [blocks], an edge
-    is added from [stop b] to [new_stop], where [new_stop] is a new node of type join. If there is
-    only one block, then it is returned with no modification.*)
-let sequence_blocks ~(continue : block -> Procdesc.Node.t) ~(stop : block -> Procdesc.Node.t) env
-    (blocks : block list) =
-  match blocks with
-  | [] ->
-      L.die InternalError "blocks should not be empty"
-  | [one_block] ->
-      (one_block.start, continue one_block, stop one_block)
-  | first_block :: next_blocks ->
-      let continue_node =
-        let f previous b =
-          previous |~~> [b.start] ;
-          continue b
+  (** Makes one block of a list of blocks. Meant to be used only by the functions [all_blocks] and
+      [any_block] defined immediately below. If [b] comes before [c] in the list [blocks], then an
+      edge is added from [continue b] to [c.start]. For all blocks [b] in the list [blocks], an edge
+      is added from [stop b] to [new_stop], where [new_stop] is a new node of type join. If there is
+      only one block, then it is returned with no modification.*)
+  let sequence ~(continue : t -> Procdesc.Node.t) ~(stop : t -> Procdesc.Node.t) env
+      (blocks : t list) =
+    match blocks with
+    | [] ->
+        L.die InternalError "blocks should not be empty"
+    | [one_block] ->
+        (one_block.start, continue one_block, stop one_block)
+    | first_block :: next_blocks ->
+        let continue_node =
+          let f previous b =
+            previous |~~> [b.start] ;
+            continue b
+          in
+          List.fold ~f ~init:(continue first_block) next_blocks
         in
-        List.fold ~f ~init:(continue first_block) next_blocks
-      in
-      let new_stop = Node.make_join env in
-      List.iter ~f:(fun b -> stop b |~~> [new_stop]) blocks ;
-      (first_block.start, continue_node, new_stop)
+        let new_stop = Node.make_join env in
+        List.iter ~f:(fun b -> stop b |~~> [new_stop]) blocks ;
+        (first_block.start, continue_node, new_stop)
 
 
-(** Chain a list of blocks together in a conjunctive style: a failure in any block leads to a global
-    failure, and successes lead to the next block. *)
-let all_blocks env (blocks : block list) : block =
-  match blocks with
-  | [] ->
-      make_block_success env
-  | _ ->
-      let continue b = b.exit_success in
-      let stop b = b.exit_failure in
-      let start, exit_success, exit_failure = sequence_blocks ~continue ~stop env blocks in
-      {start; exit_success; exit_failure}
+  (** Chain a list of blocks together in a conjunctive style: a failure in any block leads to a
+      global failure, and successes lead to the next block. *)
+  let all env (blocks : t list) : t =
+    match blocks with
+    | [] ->
+        make_success env
+    | _ ->
+        let continue b = b.exit_success in
+        let stop b = b.exit_failure in
+        let start, exit_success, exit_failure = sequence ~continue ~stop env blocks in
+        {start; exit_success; exit_failure}
 
 
-(** Chain a list of blocks together in a disjunctive style: a success in any block leads to a global
-    success, and failures lead to the next block. *)
-let any_block env (blocks : block list) : block =
-  match blocks with
-  | [] ->
-      make_block_failure env
-  | _ ->
-      let continue b = b.exit_failure in
-      let stop b = b.exit_success in
-      let start, exit_failure, exit_success = sequence_blocks ~continue ~stop env blocks in
-      {start; exit_success; exit_failure}
+  (** Chain a list of blocks together in a disjunctive style: a success in any block leads to a
+      global success, and failures lead to the next block. *)
+  let any env (blocks : t list) : t =
+    match blocks with
+    | [] ->
+        make_failure env
+    | _ ->
+        let continue b = b.exit_failure in
+        let stop b = b.exit_success in
+        let start, exit_failure, exit_success = sequence ~continue ~stop env blocks in
+        {start; exit_success; exit_failure}
 
+
+  let make_instruction env instructions =
+    let exit_success = Node.make_stmt env ~kind:ErlangExpression instructions in
+    let exit_failure = Node.make_nop env in
+    {start= exit_success; exit_success; exit_failure}
+
+
+  let make_load env id e typ =
+    let procdesc = Option.value_exn env.procdesc in
+    let procname = Procdesc.get_proc_name procdesc in
+    let temp_pvar = Pvar.mk_tmp "LoadBlock" procname in
+    let instructions =
+      [ Sil.Store {e1= Lvar temp_pvar; e2= e; root_typ= typ; typ; loc= env.location}
+      ; Sil.Load {id; e= Lvar temp_pvar; root_typ= typ; typ; loc= env.location} ]
+    in
+    make_instruction env instructions
+end
 
 let has_type env ~result ~value (name : ErlangTypeName.t) : Sil.instr =
   let fun_exp : Exp.t = Const (Cfun BuiltinDecl.__instanceof) in
@@ -206,7 +225,7 @@ let has_type env ~result ~value (name : ErlangTypeName.t) : Sil.instr =
 
 (** If the pattern-match succeeds, then the [exit_success] node is reached and the pattern variables
     are storing the corresponding values; otherwise, the [exit_failure] node is reached. *)
-let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} =
+let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} : Block.t =
   let env = update_location line env in
   let any = typ_of_name Any in
   let procdesc = Option.value_exn env.procdesc in
@@ -234,7 +253,7 @@ let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} =
       let unpack_node = Node.make_stmt env [head_load; tail_load] in
       let head_matcher = translate_pattern env head_value head in
       let tail_matcher = translate_pattern env tail_value tail in
-      let submatcher = all_blocks env [head_matcher; tail_matcher] in
+      let submatcher = Block.all env [head_matcher; tail_matcher] in
       let exit_failure = Node.make_nop env in
       start |~~> [right_type_node; wrong_type_node] ;
       right_type_node |~~> [unpack_node] ;
@@ -258,7 +277,7 @@ let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} =
       start |~~> [exit_success; exit_failure] ;
       {start; exit_success; exit_failure}
   | Variable vname when String.equal vname "_" ->
-      make_block_success env
+      Block.make_success env
   | Variable vname ->
       let store : Sil.instr =
         let e1 : Exp.t = Lvar (Pvar.mk (Mangled.from_string vname) procname) in
@@ -272,24 +291,7 @@ let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} =
       (* TODO: Cover all cases. *)
       L.debug Capture Verbose "@[todo ErlangTranslator.translate_pattern %s@."
         (Sexp.to_string (Ast.sexp_of_simple_expression e)) ;
-      make_block_failure env
-
-
-let make_instruction_block env instructions =
-  let exit_success = Node.make_stmt env ~kind:ErlangExpression instructions in
-  let exit_failure = Node.make_nop env in
-  {start= exit_success; exit_success; exit_failure}
-
-
-let make_load_block env id e typ =
-  let procdesc = Option.value_exn env.procdesc in
-  let procname = Procdesc.get_proc_name procdesc in
-  let temp_pvar = Pvar.mk_tmp "LoadBlock" procname in
-  let instructions =
-    [ Sil.Store {e1= Lvar temp_pvar; e2= e; root_typ= typ; typ; loc= env.location}
-    ; Sil.Load {id; e= Lvar temp_pvar; root_typ= typ; typ; loc= env.location} ]
-  in
-  make_instruction_block env instructions
+      Block.make_failure env
 
 
 let rec translate_expression env {Ast.line; simple_expression} =
@@ -300,7 +302,7 @@ let rec translate_expression env {Ast.line; simple_expression} =
   let ret_var =
     match env.result with Some (Var ret_var) -> ret_var | _ -> Ident.create_fresh Ident.knormal
   in
-  let expression_block =
+  let expression_block : Block.t =
     match simple_expression with
     | Call
         { module_= None
@@ -333,14 +335,14 @@ let rec translate_expression env {Ast.line; simple_expression} =
         let call_instruction =
           Sil.Call ((ret_var, any), fun_exp, args_ids_and_types, env.location, CallFlags.default)
         in
-        let call_block = make_instruction_block env [call_instruction] in
-        all_blocks env (args_blocks @ [call_block])
+        let call_block = Block.make_instruction env [call_instruction] in
+        Block.all env (args_blocks @ [call_block])
     | Case {expression; cases} ->
         let id = Ident.create_fresh Ident.knormal in
         let expr_block = translate_expression {env with result= Some (Var id)} expression in
-        let blocks = any_block env (List.map ~f:(translate_case_clause env [id]) cases) in
+        let blocks = Block.any env (List.map ~f:(translate_case_clause env [id]) cases) in
         let crash_node = Node.make_pattern_fail env in
-        let {start; exit_success; exit_failure} = all_blocks env [expr_block; blocks] in
+        let {Block.start; exit_success; exit_failure} = Block.all env [expr_block; blocks] in
         blocks.exit_failure |~~> [crash_node] ;
         crash_node |~~> [Procdesc.get_exit_node procdesc] ;
         {start; exit_success; exit_failure}
@@ -354,7 +356,7 @@ let rec translate_expression env {Ast.line; simple_expression} =
         let call_instruction =
           Sil.Call ((ret_var, any), fun_exp, args, env.location, CallFlags.default)
         in
-        all_blocks env [head_block; tail_block; make_instruction_block env [call_instruction]]
+        Block.all env [head_block; tail_block; Block.make_instruction env [call_instruction]]
     | Literal (Atom atom) ->
         let hash =
           (* With this hack, an atom may accidentaly be considered equal to an unrelated integer.
@@ -362,24 +364,24 @@ let rec translate_expression env {Ast.line; simple_expression} =
           String.hash atom lsl 16
         in
         let e = Exp.Const (Cint (IntLit.of_int hash)) in
-        make_load_block env ret_var e any
+        Block.make_load env ret_var e any
     | Literal (Int i) ->
         let e = Exp.Const (Cint (IntLit.of_string i)) in
-        make_load_block env ret_var e any
+        Block.make_load env ret_var e any
     | Literal (String s) ->
         let e = Exp.Const (Cstr s) in
-        make_load_block env ret_var e any
+        Block.make_load env ret_var e any
     | Nil ->
         let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_nil) in
         let instruction = Sil.Call ((ret_var, any), fun_exp, [], env.location, CallFlags.default) in
-        make_instruction_block env [instruction]
+        Block.make_instruction env [instruction]
     | Variable vname ->
         let e = Exp.Lvar (Pvar.mk (Mangled.from_string vname) procname) in
-        make_load_block env ret_var e any
+        Block.make_load env ret_var e any
     | todo ->
         L.debug Capture Verbose "@[todo ErlangTranslator.translate_expression %s@."
           (Sexp.to_string (Ast.sexp_of_simple_expression todo)) ;
-        make_block_success env
+        Block.make_success env
   in
   (* Add extra nodes/instructions to store return value if needed *)
   match env.result with
@@ -389,11 +391,11 @@ let rec translate_expression env {Ast.line; simple_expression} =
       let store_instr =
         Sil.Store {e1= result; root_typ= any; typ= any; e2= Var ret_var; loc= env.location}
       in
-      let store_block = make_instruction_block env [store_instr] in
-      all_blocks env [expression_block; store_block]
+      let store_block = Block.make_instruction env [store_instr] in
+      Block.all env [expression_block; store_block]
 
 
-and translate_body env body : block =
+and translate_body env body : Block.t =
   let blocks =
     let f rev_blocks one_expression =
       let env = {env with result= None} in
@@ -402,17 +404,17 @@ and translate_body env body : block =
     let f_last rev_blocks one_expression = translate_expression env one_expression :: rev_blocks in
     List.rev (IList.fold_last body ~init:[] ~f ~f_last)
   in
-  all_blocks env blocks
+  Block.all env blocks
 
 
 (** Assumes that the values on which patterns should be matched have been loaded into the
     identifiers listed in [values]. *)
 and translate_case_clause env (values : Ident.t list) {Ast.line= _; patterns; guards= _; body} :
-    block =
+    Block.t =
   let matchers_block =
     let f (one_value, one_pattern) = translate_pattern env one_value one_pattern in
     let matchers = List.map ~f (List.zip_exn values patterns) in
-    all_blocks env matchers
+    Block.all env matchers
   in
   let body_block = translate_body env body in
   (* TODO: Evaluate the guards. *)
@@ -458,9 +460,9 @@ let translate_one_function env cfg function_ clauses =
     in
     List.unzip (List.map ~f:load attributes.formals)
   in
-  let {start; exit_success; exit_failure} =
+  let ({start; exit_success; exit_failure} : Block.t) =
     let blocks = List.map ~f:(translate_case_clause env idents) clauses in
-    any_block env blocks
+    Block.any env blocks
   in
   let () =
     (* Add a node that loads all values on which we pattern-match into idents. *)
