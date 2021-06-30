@@ -304,6 +304,52 @@ let rec translate_expression env {Ast.line; simple_expression} =
   in
   let expression_block : Block.t =
     match simple_expression with
+    | BinaryOperator (e1, op, e2) ->
+        let id1 = Ident.create_fresh Ident.knormal in
+        let id2 = Ident.create_fresh Ident.knormal in
+        let block1 = translate_expression {env with result= Some (Var id1)} e1 in
+        let block2 = translate_expression {env with result= Some (Var id2)} e2 in
+        let make_simple_op_block sil_op =
+          Block.make_load env ret_var (Exp.BinOp (sil_op, Var id1, Var id2)) any
+        in
+        let op_block =
+          match op with
+          | Add ->
+              make_simple_op_block (PlusA None)
+          | And ->
+              make_simple_op_block LAnd
+          | AtLeast ->
+              make_simple_op_block Ge
+          | AtMost ->
+              make_simple_op_block Le
+          | Equal | ExactlyEqual ->
+              (* TODO: do we want to handle Equal and ExactlyEqual differently? *)
+              make_simple_op_block Eq
+          | ExactlyNotEqual | NotEqual ->
+              (* TODO: do we want to handle NotEqual and ExactlyNotEqual differently? *)
+              make_simple_op_block Ne
+          | Greater ->
+              make_simple_op_block Gt
+          | IDiv ->
+              make_simple_op_block Div
+          | Less ->
+              make_simple_op_block Lt
+          | Mul ->
+              make_simple_op_block (Mult None)
+          | Or ->
+              make_simple_op_block LOr
+          | Rem ->
+              (* TODO: check semantics of Rem vs Mod *)
+              make_simple_op_block Mod
+          | Sub ->
+              make_simple_op_block (MinusA None)
+          | todo ->
+              L.debug Capture Verbose
+                "@[todo ErlangTranslator.translate_expression(BinaryOperator) %s@."
+                (Sexp.to_string (Ast.sexp_of_binary_operator todo)) ;
+              Block.make_success env
+        in
+        Block.all env [block1; block2; op_block]
     | Call
         { module_= None
         ; function_= {Ast.line= _; simple_expression= Literal (Atom function_name)}
@@ -377,7 +423,8 @@ let rec translate_expression env {Ast.line; simple_expression} =
         Block.make_instruction env [instruction]
     | Variable vname ->
         let e = Exp.Lvar (Pvar.mk (Mangled.from_string vname) procname) in
-        Block.make_load env ret_var e any
+        let load_instr = Sil.Load {id= ret_var; e; root_typ= any; typ= any; loc= env.location} in
+        Block.make_instruction env [load_instr]
     | todo ->
         L.debug Capture Verbose "@[todo ErlangTranslator.translate_expression %s@."
           (Sexp.to_string (Ast.sexp_of_simple_expression todo)) ;
