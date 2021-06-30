@@ -106,16 +106,26 @@ module Node = struct
 
   let make_throw env one_instruction = make env Procdesc.Node.throw_kind [one_instruction]
 
-  let make_if env branch id =
+  let make_if env branch expr =
     let prune_kind : Procdesc.Node.prune_node_kind =
       if branch then PruneNodeKind_TrueBranch else PruneNodeKind_FalseBranch
     in
     let condition : Exp.t =
-      if branch then Var id else UnOp (LNot, Var id, Some (Typ.mk (Tint IBool)))
+      if branch then expr else UnOp (LNot, expr, Some (Typ.mk (Tint IBool)))
     in
     let kind : Procdesc.Node.nodekind = Prune_node (branch, Ik_if, prune_kind) in
     let prune : Sil.instr = Prune (condition, env.location, branch, Ik_if) in
     make env kind [prune]
+
+
+  let make_pattern_fail env =
+    let any = typ_of_name Any in
+    let crash_instruction =
+      let ret_var = Ident.create_fresh Ident.knormal (* not used: nothing returned *) in
+      let pattern_fail_fun = Exp.Const (Cfun BuiltinDecl.__erlang_pattern_fail) in
+      Sil.Call ((ret_var, any), pattern_fail_fun, [], env.location, CallFlags.default)
+    in
+    make_throw env crash_instruction
 end
 
 let make_block_success env =
@@ -205,8 +215,8 @@ let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} =
   | Cons {head; tail} ->
       let id = Ident.create_fresh Ident.knormal in
       let start = Node.make_stmt env [has_type env ~result:id ~value Cons] in
-      let right_type_node = Node.make_if env true id in
-      let wrong_type_node = Node.make_if env false id in
+      let right_type_node = Node.make_if env true (Var id) in
+      let wrong_type_node = Node.make_if env false (Var id) in
       let load id field : Sil.instr =
         (* x=value.field *)
         let field = Fieldname.make (ErlangType Cons) field in
@@ -232,11 +242,19 @@ let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} =
       wrong_type_node |~~> [exit_failure] ;
       submatcher.exit_failure |~~> [exit_failure] ;
       {start; exit_success= submatcher.exit_success; exit_failure}
+  | Literal (Int i) ->
+      let e = Exp.Const (Cint (IntLit.of_string i)) in
+      let cond = Exp.BinOp (Eq, Var value, e) in
+      let start = Node.make_nop env in
+      let exit_success = Node.make_if env true cond in
+      let exit_failure = Node.make_if env false cond in
+      start |~~> [exit_success; exit_failure] ;
+      {start; exit_success; exit_failure}
   | Nil ->
       let id = Ident.create_fresh Ident.knormal in
       let start = Node.make_stmt env [has_type env ~result:id ~value Nil] in
-      let exit_success = Node.make_if env true id in
-      let exit_failure = Node.make_if env false id in
+      let exit_success = Node.make_if env true (Var id) in
+      let exit_failure = Node.make_if env false (Var id) in
       start |~~> [exit_success; exit_failure] ;
       {start; exit_success; exit_failure}
   | Variable vname when String.equal vname "_" ->
@@ -264,8 +282,14 @@ let make_instruction_block env instructions =
 
 
 let make_load_block env id e typ =
-  let instruction = Sil.Load {id; e; root_typ= typ; typ; loc= env.location} in
-  make_instruction_block env [instruction]
+  let procdesc = Option.value_exn env.procdesc in
+  let procname = Procdesc.get_proc_name procdesc in
+  let temp_pvar = Pvar.mk_tmp "LoadBlock" procname in
+  let instructions =
+    [ Sil.Store {e1= Lvar temp_pvar; e2= e; root_typ= typ; typ; loc= env.location}
+    ; Sil.Load {id; e= Lvar temp_pvar; root_typ= typ; typ; loc= env.location} ]
+  in
+  make_instruction_block env instructions
 
 
 let rec translate_expression env {Ast.line; simple_expression} =
@@ -311,6 +335,15 @@ let rec translate_expression env {Ast.line; simple_expression} =
         in
         let call_block = make_instruction_block env [call_instruction] in
         all_blocks env (args_blocks @ [call_block])
+    | Case {expression; cases} ->
+        let id = Ident.create_fresh Ident.knormal in
+        let expr_block = translate_expression {env with result= Some (Var id)} expression in
+        let blocks = any_block env (List.map ~f:(translate_case_clause env [id]) cases) in
+        let crash_node = Node.make_pattern_fail env in
+        let {start; exit_success; exit_failure} = all_blocks env [expr_block; blocks] in
+        blocks.exit_failure |~~> [crash_node] ;
+        crash_node |~~> [Procdesc.get_exit_node procdesc] ;
+        {start; exit_success; exit_failure}
     | Cons {head; tail} ->
         let head_var = Ident.create_fresh Ident.knormal in
         let tail_var = Ident.create_fresh Ident.knormal in
@@ -329,6 +362,9 @@ let rec translate_expression env {Ast.line; simple_expression} =
           String.hash atom lsl 16
         in
         let e = Exp.Const (Cint (IntLit.of_int hash)) in
+        make_load_block env ret_var e any
+    | Literal (Int i) ->
+        let e = Exp.Const (Cint (IntLit.of_string i)) in
         make_load_block env ret_var e any
     | Literal (String s) ->
         let e = Exp.Const (Cstr s) in
@@ -357,7 +393,7 @@ let rec translate_expression env {Ast.line; simple_expression} =
       all_blocks env [expression_block; store_block]
 
 
-let translate_body env body : block =
+and translate_body env body : block =
   let blocks =
     let f rev_blocks one_expression =
       let env = {env with result= None} in
@@ -371,7 +407,7 @@ let translate_body env body : block =
 
 (** Assumes that the values on which patterns should be matched have been loaded into the
     identifiers listed in [values]. *)
-let translate_case_clause env (values : Ident.t list) {Ast.line= _; patterns; guards= _; body} :
+and translate_case_clause env (values : Ident.t list) {Ast.line= _; patterns; guards= _; body} :
     block =
   let matchers_block =
     let f (one_value, one_pattern) = translate_pattern env one_value one_pattern in
@@ -434,12 +470,7 @@ let translate_one_function env cfg function_ clauses =
   in
   let () =
     (* If all patterns fail, call BuiltinDecl.__erlang_pattern_fail *)
-    let crash_instruction =
-      let ret_var = Ident.create_fresh Ident.knormal (* not used: nothing returned *) in
-      let pattern_fail_fun = Exp.Const (Cfun BuiltinDecl.__erlang_pattern_fail) in
-      Sil.Call ((ret_var, any), pattern_fail_fun, [], attributes.loc, CallFlags.default)
-    in
-    let crash_node = Node.make_throw env crash_instruction in
+    let crash_node = Node.make_pattern_fail env in
     exit_failure |~~> [crash_node] ;
     crash_node |~~> [Procdesc.get_exit_node procdesc]
   in
