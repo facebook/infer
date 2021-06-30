@@ -792,6 +792,10 @@ OPTIONS
            Activates: Keep going when the analysis encounters a failure
            (Conversely: --no-keep-going)           See also infer-analyze(1).
 
+       --kotlin-capture
+           Activates: Enable Kotlin capture (experimental, do not use).
+           (Conversely: --no-kotlin-capture)           See also infer-capture(1).
+
        --linter string
            From the linters available, only run this one linter. (Useful
            together with --linters-developer-mode)           See also infer-capture(1).

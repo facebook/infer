@@ -385,6 +385,8 @@ val jobs : int
 
 val keep_going : bool
 
+val kotlin_capture : bool
+
 val linter : string option
 
 val linters_def_file : string list

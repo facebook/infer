@@ -170,7 +170,15 @@ let to_string ?(force_relative = false) fname =
       else path
 
 
-let has_extension t ~ext = String.is_suffix (to_string t) ~suffix:ext
+let has_extension ~ext = function
+  | Invalid _ ->
+      false
+  | RelativeProjectRootAndWorkspace {rel_path= path}
+  | HashedBuckOut path
+  | RelativeProjectRoot path
+  | Absolute path ->
+      String.is_suffix path ~suffix:ext
+
 
 let pp fmt fname = Format.pp_print_string fmt (to_string fname)
 

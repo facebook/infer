@@ -1635,6 +1635,12 @@ and jobs =
     ~meta:"int" "Run the specified number of analysis jobs simultaneously"
 
 
+and kotlin_capture =
+  CLOpt.mk_bool ~long:"kotlin-capture" ~default:false
+    ~in_help:InferCommand.[(Capture, manual_java)]
+    "Enable Kotlin capture (experimental, do not use)."
+
+
 and liveness_dangerous_classes =
   CLOpt.mk_json ~long:"liveness-dangerous-classes"
     ~in_help:InferCommand.[(Analyze, manual_clang)]
@@ -3170,6 +3176,8 @@ and javac_classes_out = !javac_classes_out
 and job_id = !job_id
 
 and jobs = Option.fold !max_jobs ~init:!jobs ~f:min
+
+and kotlin_capture = !kotlin_capture
 
 and linter = !linter
 

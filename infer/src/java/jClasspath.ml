@@ -178,7 +178,12 @@ let search_sources () =
       initial_map
   | Some sourcepath ->
       Utils.directory_fold
-        (fun map p -> if Filename.check_suffix p "java" then add_source_file p map else map)
+        (fun map p ->
+          if
+            Filename.check_suffix p "java"
+            || (Config.kotlin_capture && Filename.check_suffix p Config.kotlin_source_extension)
+          then add_source_file p map
+          else map )
         initial_map sourcepath
 
 
