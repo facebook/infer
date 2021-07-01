@@ -88,6 +88,9 @@ module type S = sig
   val pop_exn : t -> elt * t
   (** Find and remove an unspecified element. [O(1)]. *)
 
+  val pop_min_elt_exn : t -> elt * t
+  (** Find and remove the minimum element. [O(1)]. *)
+
   (** {1 Transform} *)
 
   val map : t -> f:(elt -> elt) -> t

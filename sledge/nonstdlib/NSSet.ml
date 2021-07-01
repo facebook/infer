@@ -75,6 +75,11 @@ struct
   let choose_exn = S.choose
   let pop = S.pop_opt
   let pop_exn = S.pop
+
+  let pop_min_elt_exn s =
+    let min = S.min_elt s in
+    (min, S.remove min s)
+
   let only_elt = S.only_elt
   let classify = S.classify
   let map s ~f = S.map f s
