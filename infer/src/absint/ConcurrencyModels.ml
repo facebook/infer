@@ -19,6 +19,49 @@ type lock_effect =
   | GuardDestroy of HilExp.t
   | NoEffect
 
+let make_lock_action type_str action procname locks =
+  if List.is_empty locks then
+    L.internal_error "Attempting to %s locks (%a) without arguments.@\n" type_str Procname.pp
+      procname ;
+  action locks
+
+
+let make_lock = make_lock_action "acquire" (fun a -> Lock a)
+
+let make_unlock = make_lock_action "release" (fun a -> Unlock a)
+
+let make_trylock = make_lock_action "conditionally acquire" (fun a -> LockedIfTrue a)
+
+let make_guard_construct procname = function
+  | [guard; lock] ->
+      GuardConstruct {guard; lock; acquire_now= true}
+  | [guard; lock; _defer_lock] ->
+      GuardConstruct {guard; lock; acquire_now= false}
+  | actuals ->
+      L.internal_error "Cannot parse guard constructor call %a(%a)" Procname.pp procname
+        (PrettyPrintable.pp_collection ~pp_item:HilExp.pp)
+        actuals ;
+      NoEffect
+
+
+let make_guard_action type_str action procname = function
+  | [guard] ->
+      action guard
+  | actuals ->
+      L.internal_error "Cannot parse guard %s call %a(%a)" type_str Procname.pp procname
+        (PrettyPrintable.pp_collection ~pp_item:HilExp.pp)
+        actuals ;
+      NoEffect
+
+
+let make_guard_lock = make_guard_action "lock" (fun g -> GuardLock g)
+
+let make_guard_unlock = make_guard_action "unlock" (fun g -> GuardUnlock g)
+
+let make_guard_destructor = make_guard_action "destructor" (fun g -> GuardDestroy g)
+
+let make_guard_trylock = make_guard_action "trylock" (fun g -> GuardLockedIfTrue g)
+
 type thread = BackgroundThread | MainThread | MainThreadIfTrue | UnknownThread
 
 let is_thread_utils_type java_pname =
@@ -105,8 +148,8 @@ end = struct
     let qname_str = QualifiedCppName.to_qual_string qname in
     match List.find lock_models ~f:(fun mdl -> String.equal qname_str mdl.classname) with
     | None ->
-        L.debug Analysis Verbose "is_recursive_lock_type: Could not find lock type %a@."
-          QualifiedCppName.pp qname ;
+        L.internal_error "is_recursive_lock_type: Could not find lock type %a@." QualifiedCppName.pp
+          qname ;
         true
     | Some mdl ->
         mdl.recursive
@@ -207,41 +250,16 @@ end = struct
 
 
   let get_lock_effect pname actuals =
-    let log_parse_error error =
-      L.debug Analysis Verbose "%s pname:%a actuals:%a@." error Procname.pp pname
-        (PrettyPrintable.pp_collection ~pp_item:HilExp.pp)
-        actuals
-    in
-    let guard_action ~f ~error =
-      match actuals with
-      | [guard] ->
-          f guard
-      | _ ->
-          log_parse_error error ;
-          NoEffect
-    in
     let fst_arg = match actuals with x :: _ -> [x] | _ -> [] in
-    if is_std_lock pname then Lock actuals
-    else if is_lock pname then Lock fst_arg
-    else if is_unlock pname then Unlock fst_arg
-    else if is_trylock pname then LockedIfTrue fst_arg
-    else if is_guard_constructor pname then (
-      match actuals with
-      | [guard; lock] ->
-          GuardConstruct {guard; lock; acquire_now= true}
-      | [guard; lock; _defer_lock] ->
-          GuardConstruct {guard; lock; acquire_now= false}
-      | _ ->
-          log_parse_error "Cannot parse guard constructor call" ;
-          NoEffect )
-    else if is_guard_lock pname then
-      guard_action ~f:(fun guard -> GuardLock guard) ~error:"Can't parse guard lock"
-    else if is_guard_unlock pname then
-      guard_action ~f:(fun guard -> GuardUnlock guard) ~error:"Can't parse guard unlock"
-    else if is_guard_destructor pname then
-      guard_action ~f:(fun guard -> GuardDestroy guard) ~error:"Can't parse guard destructor"
-    else if is_guard_trylock pname then
-      guard_action ~f:(fun guard -> GuardLockedIfTrue guard) ~error:"Can't parse guard trylock"
+    if is_std_lock pname then make_lock pname actuals
+    else if is_lock pname then make_lock pname fst_arg
+    else if is_unlock pname then make_unlock pname fst_arg
+    else if is_trylock pname then make_trylock pname fst_arg
+    else if is_guard_constructor pname then make_guard_construct pname actuals
+    else if is_guard_lock pname then make_guard_lock pname actuals
+    else if is_guard_unlock pname then make_guard_unlock pname actuals
+    else if is_guard_destructor pname then make_guard_destructor pname actuals
+    else if is_guard_trylock pname then make_guard_trylock pname actuals
     else NoEffect
 end
 
@@ -272,28 +290,29 @@ end = struct
 
   let get_lock_effect pname java_pname actuals =
     let fst_arg = match actuals with x :: _ -> [x] | _ -> [] in
-    if is_thread_utils_method "assertHoldsLock" pname then Lock fst_arg
+    if is_thread_utils_method "assertHoldsLock" pname then make_lock pname fst_arg
     else
       let classname = Procname.Java.get_class_name java_pname in
       let methodname = Procname.Java.get_method java_pname in
-      if is_lock classname methodname then Lock fst_arg
-      else if is_unlock classname methodname then Unlock fst_arg
-      else if is_trylock classname methodname then LockedIfTrue fst_arg
+      if is_lock classname methodname then make_lock pname fst_arg
+      else if is_unlock classname methodname then make_unlock pname fst_arg
+      else if is_trylock classname methodname then make_trylock pname fst_arg
       else NoEffect
 end
 
 let get_lock_effect pname actuals =
   let fst_arg = match actuals with x :: _ -> [x] | _ -> [] in
-  if Procname.equal pname BuiltinDecl.__set_locked_attribute then Lock fst_arg
-  else if Procname.equal pname BuiltinDecl.__delete_locked_attribute then Unlock fst_arg
-  else
-    match pname with
-    | Procname.Java java_pname ->
-        Java.get_lock_effect pname java_pname actuals
-    | Procname.(ObjC_Cpp _ | C _) ->
-        Clang.get_lock_effect pname actuals
-    | _ ->
-        NoEffect
+  match pname with
+  | _ when Procname.equal pname BuiltinDecl.__set_locked_attribute ->
+      make_lock pname fst_arg
+  | _ when Procname.equal pname BuiltinDecl.__delete_locked_attribute ->
+      make_unlock pname fst_arg
+  | Procname.Java java_pname ->
+      Java.get_lock_effect pname java_pname actuals
+  | Procname.(ObjC_Cpp _ | C _) ->
+      Clang.get_lock_effect pname actuals
+  | _ ->
+      NoEffect
 
 
 let get_current_class_and_annotated_superclasses is_annot tenv pname =
