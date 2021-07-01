@@ -18,8 +18,10 @@ let pp ppf {name; init; loc} =
 
 let invariant g =
   let@ () = Invariant.invariant [%here] g [%sexp_of: t] in
-  match Global.typ g.name with
+  ( match Global.typ g.name with
   | Pointer {elt} -> assert (Option.is_none g.init || Typ.is_sized elt)
-  | _ -> assert false
+  | _ -> assert false ) ;
+  Option.iter g.init ~f:(fun init ->
+      Exp.fold_regs init () ~f:(fun _ () -> assert false) )
 
 let mk ?init name loc = {name; init; loc} |> check invariant
