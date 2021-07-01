@@ -112,6 +112,9 @@ let pp_diff ~cmp ?pre ?suf sep pp_elt fs (xs, ys) =
 module Assoc = struct
   include Assoc
 
+  let compare (type k v) compare_k compare_v = [%compare: (k * v) list]
+  let equal (type k v) equal_k equal_v = [%equal: (k * v) list]
+  let sexp_of_t sexp_of_k sexp_of_v = [%sexp_of: (k * v) list]
   let mem elt seq ~eq = mem ~eq elt seq
 end
 

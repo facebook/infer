@@ -103,7 +103,9 @@ val symmetric_diff :
   cmp:('a -> 'a -> int) -> 'a t -> 'a t -> ('a, 'a) Either.t t
 
 module Assoc : sig
-  include module type of Assoc
+  type ('k, 'v) t = ('k * 'v) list [@@deriving compare, equal, sexp_of]
+
+  include module type of Assoc with type ('k, 'v) t := ('k, 'v) t
 
   val mem : 'a -> ('a, _) t -> eq:('a -> 'a -> bool) -> bool
 end
