@@ -57,6 +57,7 @@ let group_join_by ~eq ~hash = group_join_by ~eq ~hash
 let fold xs init ~f = fold_left ~f:(fun s x -> f x s) ~init xs
 let fold_left xs init ~f = fold_left ~f ~init xs
 let fold_right xs init ~f = fold_right ~f ~init xs
+let foldi xs init ~f = foldi ~f:(fun s i x -> f i x s) ~init xs
 
 let reduce xs ~f =
   match xs with [] -> None | x :: xs -> Some (fold ~f xs x)

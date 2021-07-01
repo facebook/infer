@@ -94,6 +94,7 @@ val group_join_by :
 val fold : 'a list -> 's -> f:('a -> 's -> 's) -> 's
 val fold_left : 'a list -> 's -> f:('s -> 'a -> 's) -> 's
 val fold_right : 'a list -> 's -> f:('a -> 's -> 's) -> 's
+val foldi : 'a t -> 's -> f:(int -> 'a -> 's -> 's) -> 's
 val reduce : 'a t -> f:('a -> 'a -> 'a) -> 'a option
 val fold_diagonal : 'a list -> 's -> f:('a -> 'a -> 's -> 's) -> 's
 val fold_map : 'a t -> 's -> f:('a -> 's -> 'b * 's) -> 'b t * 's
