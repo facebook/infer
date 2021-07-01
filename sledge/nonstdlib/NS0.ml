@@ -55,7 +55,17 @@ module Poly = struct
   let hash = Stdlib.Hashtbl.hash
 end
 
-module Ord = Containers.Ord
+module Ord = struct
+  include Containers.Ord
+
+  let ( @? ) c1 c2 x y = c1 x y <?> (c2, x, y)
+
+  module Infix = struct
+    include Infix
+
+    let ( @? ) = ( @? )
+  end
+end
 
 (** Function combinators *)
 

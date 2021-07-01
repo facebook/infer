@@ -43,7 +43,17 @@ module Poly : sig
   val hash : 'a -> int
 end
 
-module Ord = Containers.Ord
+module Ord : sig
+  include module type of Containers.Ord
+
+  val ( @? ) : 'a t -> 'a t -> 'a t
+
+  module Infix : sig
+    include module type of Containers.Ord.Infix
+
+    val ( @? ) : 'a t -> 'a t -> 'a t
+  end
+end
 
 (** Function combinators *)
 
