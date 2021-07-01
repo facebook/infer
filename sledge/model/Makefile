@@ -10,7 +10,7 @@ CLANG_ARGS?=-g $(OPT_ARGS)
 ROOT?=..
 LIBCXXABI=$(ROOT)/vendor/llvm-dune/llvm-project/libcxxabi
 
-llvm-config=$(shell opam config var conf-llvm:config)
+llvm-config=$(shell opam var conf-llvm:config)
 LLVM_BIN=$(shell ${llvm-config} --bindir)
 LLVM_INCLUDE=$(shell ${llvm-config} --includedir)
 LLVM_CFLAGS=$(shell ${llvm-config} --cflags)

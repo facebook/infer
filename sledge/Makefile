@@ -33,11 +33,11 @@ LLVM_OCAML_SENTINEL=vendor/llvm-dune/src/llvm/common/dune
 # libLLVM.dylib.
 link_llvm_dylib:
 	@set -e ;\
-	LLVMLIB=$$($$(opam config var conf-llvm:config) --libdir) ;\
+	LLVMLIB=$$($$(opam var conf-llvm:config) --libdir) ;\
 	ln -s $$LLVMLIB/libLLVM.dylib $$LLVMLIB/libLLVM-11.dylib
 
 $(LLVM_OCAML_SENTINEL): $(LLVM_OCAML_SRC)
-	cd vendor/llvm-dune; ./setup.sh $$(opam config var conf-llvm:config) &>/dev/null
+	cd vendor/llvm-dune; ./setup.sh $$(opam var conf-llvm:config) # &>/dev/null
 
 clean_llvm:
 	rm -rf vendor/llvm-dune/{src,llvm_*.opam}
