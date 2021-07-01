@@ -12,24 +12,32 @@ module Invalidation = PulseInvalidation
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
 
+type calling_context = (CallEvent.t * Location.t) list [@@deriving compare, equal]
+
 type access_to_invalid_address =
-  { calling_context: (CallEvent.t * Location.t) list
+  { calling_context: calling_context
   ; invalidation: Invalidation.t
   ; invalidation_trace: Trace.t
   ; access_trace: Trace.t
   ; must_be_valid_reason: Invalidation.must_be_valid_reason option }
 [@@deriving compare, equal]
 
-type read_uninitialized_value = {calling_context: (CallEvent.t * Location.t) list; trace: Trace.t}
+type nonexhaustive_pattern_match = {calling_context: calling_context; location: Location.t}
+[@@deriving compare, equal]
+
+type read_uninitialized_value = {calling_context: calling_context; trace: Trace.t}
 [@@deriving compare, equal]
 
 let yojson_of_access_to_invalid_address = [%yojson_of: _]
+
+let yojson_of_nonexhaustive_pattern_match = [%yojson_of: _]
 
 let yojson_of_read_uninitialized_value = [%yojson_of: _]
 
 type t =
   | AccessToInvalidAddress of access_to_invalid_address
   | MemoryLeak of {procname: Procname.t; allocation_trace: Trace.t; location: Location.t}
+  | NonexhaustivePatternMatch of nonexhaustive_pattern_match
   | ReadUninitializedValue of read_uninitialized_value
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
 [@@deriving equal]
@@ -41,7 +49,9 @@ let get_location = function
   | AccessToInvalidAddress {calling_context= (_, location) :: _}
   | ReadUninitializedValue {calling_context= (_, location) :: _} ->
       (* report at the call site that triggers the bug *) location
-  | MemoryLeak {location} | StackVariableAddressEscape {location} ->
+  | MemoryLeak {location}
+  | NonexhaustivePatternMatch {location}
+  | StackVariableAddressEscape {location} ->
       location
 
 
@@ -164,6 +174,8 @@ let get_message diagnostic =
         "%s memory leak. Memory dynamically allocated at line %d %a is not freed after the last \
          access at %a"
         pulse_start_msg allocation_line pp_allocation_trace allocation_trace Location.pp location
+  | NonexhaustivePatternMatch {calling_context= _; location} ->
+      F.asprintf "%s nonexhaustive pattern match at %a" pulse_start_msg Location.pp location
   | ReadUninitializedValue {calling_context; trace} ->
       let root_var =
         PulseTrace.find_map trace ~f:(function VariableDeclared (pvar, _) -> Some pvar | _ -> None)
@@ -297,6 +309,9 @@ let get_trace = function
            ~pp_immediate:(fun fmt -> F.fprintf fmt "allocated by `%a` here" Procname.pp procname)
            allocation_trace
       @@ [Errlog.make_trace_element 0 location "memory becomes unreachable here" []]
+  | NonexhaustivePatternMatch {calling_context; location} ->
+      get_trace_calling_context calling_context
+      @@ [Errlog.make_trace_element 0 location "no pattern match here" []]
   | ReadUninitializedValue {calling_context; trace} ->
       get_trace_calling_context calling_context
       @@ Trace.add_to_errlog ~nesting:0
@@ -318,6 +333,8 @@ let get_issue_type = function
       Invalidation.issue_type_of_cause invalidation must_be_valid_reason
   | MemoryLeak _ ->
       IssueType.pulse_memory_leak
+  | NonexhaustivePatternMatch _ ->
+      IssueType.nonexhaustive_pattern_match
   | ReadUninitializedValue _ ->
       IssueType.uninitialized_value_pulse
   | StackVariableAddressEscape _ ->

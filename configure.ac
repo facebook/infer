@@ -276,6 +276,12 @@ AS_IF([test "$OPAM" != "no"], [
 AC_SUBST([OPAMROOT])
 AC_SUBST([OPAMSWITCH])
 
+if test "x$enable_erlang_analyzers" = "xyes"; then
+  AC_CHECK_TOOL([ESCRIPT], [escript], [no])
+  AC_CHECK_TOOL([REBAR3], [rebar3], [no])
+fi
+# end if($enable_erlang_analyzers)
+
 if test "x$enable_java_analyzers" = "xyes"; then
   AC_CHECK_TOOL([JAVA], [java], [no])
   AC_CHECK_TOOL([JAVAC], [javac], [no])
@@ -386,7 +392,6 @@ if test x"$NDKBUILD" = x"no"; then
 fi
 
 AC_CHECK_TOOL([NINJA], [ninja], [no])
-AC_CHECK_TOOL([REBAR3], [rebar3], [no])
 AC_CHECK_TOOL([XCPRETTY], [xcpretty], [no])
 
 AC_CHECK_TOOL([SED], [sed], [no])

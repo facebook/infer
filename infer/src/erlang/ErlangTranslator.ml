@@ -11,9 +11,9 @@ module L = Logging
 
 let mangled_arg (n : int) : Mangled.t = Mangled.from_string (Printf.sprintf "$arg%d" n)
 
-let typ_of_name (name : ErlangTypeName.t) : Typ.t =
-  Typ.mk (Tptr (Typ.mk (Tstruct (ErlangType name)), Pk_pointer))
+let typ_of_name (name : ErlangTypeName.t) : Typ.t = Typ.mk (Tstruct (ErlangType name))
 
+let ptr_typ_of_name (name : ErlangTypeName.t) : Typ.t = Typ.mk (Tptr (typ_of_name name, Pk_pointer))
 
 module UnqualifiedFunction = struct
   module T = struct
@@ -33,23 +33,27 @@ end
 
 type module_name = string [@@deriving sexp_of]
 
-type environment =
+type absent = Absent
+
+type 'a present = Present of 'a
+
+type ('procdesc, 'result) environment =
   { current_module: module_name  (** used to qualify function names *)
   ; exports: UnqualifiedFunction.Set.t  (** used to determine public/private access *)
   ; imports: module_name UnqualifiedFunction.Map.t  (** used to resolve function names *)
   ; location: Location.t  (** used to tag nodes and instructions being created *)
-  ; procdesc: (Procdesc.t option[@sexp.opaque])  (** imperative, being built *)
-  ; result: (Exp.t option[@sexp.opaque])  (** where to store the result value (if any) *) }
+  ; procdesc: ('procdesc[@sexp.opaque])
+  ; result: ('result[@sexp.opaque]) }
 [@@deriving sexp_of]
 
-let get_environment module_ : environment =
+let get_environment module_ =
   let init =
     { current_module= Printf.sprintf "%s:unknown_module" __FILE__
     ; exports= UnqualifiedFunction.Set.empty
     ; imports= UnqualifiedFunction.Map.empty (* TODO: auto-import from module "erlang" *)
     ; location= Location.dummy
-    ; procdesc= None
-    ; result= None }
+    ; procdesc= Absent
+    ; result= Absent }
   in
   let f env (form : Ast.form) =
     match form.simple_form with
@@ -89,8 +93,8 @@ let update_location line env =
 
 (** Groups several helpers used to create nodes. *)
 module Node = struct
-  let make env kind instructions =
-    let procdesc = Option.value_exn env.procdesc in
+  let make (env : (Procdesc.t present, _) environment) kind instructions =
+    let (Present procdesc) = env.procdesc in
     Procdesc.create_node procdesc env.location kind instructions
 
 
@@ -198,7 +202,7 @@ module Block = struct
 
 
   let make_load env id e typ =
-    let procdesc = Option.value_exn env.procdesc in
+    let (Present procdesc) = env.procdesc in
     let procname = Procdesc.get_proc_name procdesc in
     let temp_pvar = Pvar.mk_tmp "LoadBlock" procname in
     let instructions =
@@ -210,7 +214,7 @@ end
 
 let has_type env ~result ~value (name : ErlangTypeName.t) : Sil.instr =
   let fun_exp : Exp.t = Const (Cfun BuiltinDecl.__instanceof) in
-  let any = typ_of_name Any in
+  let any = ptr_typ_of_name Any in
   let args : (Exp.t * Typ.t) list =
     [ (Var value, any)
     ; ( Sizeof
@@ -227,8 +231,8 @@ let has_type env ~result ~value (name : ErlangTypeName.t) : Sil.instr =
     are storing the corresponding values; otherwise, the [exit_failure] node is reached. *)
 let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} : Block.t =
   let env = update_location line env in
-  let any = typ_of_name Any in
-  let procdesc = Option.value_exn env.procdesc in
+  let any = ptr_typ_of_name Any in
+  let (Present procdesc) = env.procdesc in
   let procname = Procdesc.get_proc_name procdesc in
   match simple_expression with
   | Cons {head; tail} ->
@@ -296,19 +300,20 @@ let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} : 
 
 let rec translate_expression env {Ast.line; simple_expression} =
   let env = update_location line env in
-  let any = typ_of_name Any in
-  let procdesc = Option.value_exn env.procdesc in
+  let any = ptr_typ_of_name Any in
+  let (Present result) = env.result in
+  let (Present procdesc) = env.procdesc in
   let procname = Procdesc.get_proc_name procdesc in
   let ret_var =
-    match env.result with Some (Var ret_var) -> ret_var | _ -> Ident.create_fresh Ident.knormal
+    match result with Exp.Var ret_var -> ret_var | _ -> Ident.create_fresh Ident.knormal
   in
   let expression_block : Block.t =
     match simple_expression with
     | BinaryOperator (e1, op, e2) ->
         let id1 = Ident.create_fresh Ident.knormal in
         let id2 = Ident.create_fresh Ident.knormal in
-        let block1 = translate_expression {env with result= Some (Var id1)} e1 in
-        let block2 = translate_expression {env with result= Some (Var id2)} e2 in
+        let block1 = translate_expression {env with result= Present (Exp.Var id1)} e1 in
+        let block2 = translate_expression {env with result= Present (Exp.Var id2)} e2 in
         let make_simple_op_block sil_op =
           Block.make_load env ret_var (Exp.BinOp (sil_op, Var id1, Var id2)) any
         in
@@ -369,7 +374,7 @@ let rec translate_expression env {Ast.line; simple_expression} =
         let args_with_ids = List.map ~f:(fun a -> (a, Ident.create_fresh Ident.knormal)) args in
         let args_blocks =
           let f (one_arg_expression, one_arg_ret_var) =
-            let result = Some (Exp.Var one_arg_ret_var) in
+            let result = Present (Exp.Var one_arg_ret_var) in
             translate_expression {env with result} one_arg_expression
           in
           List.map ~f args_with_ids
@@ -385,7 +390,7 @@ let rec translate_expression env {Ast.line; simple_expression} =
         Block.all env (args_blocks @ [call_block])
     | Case {expression; cases} ->
         let id = Ident.create_fresh Ident.knormal in
-        let expr_block = translate_expression {env with result= Some (Var id)} expression in
+        let expr_block = translate_expression {env with result= Present (Exp.Var id)} expression in
         let blocks = Block.any env (List.map ~f:(translate_case_clause env [id]) cases) in
         let crash_node = Node.make_pattern_fail env in
         let {Block.start; exit_success; exit_failure} = Block.all env [expr_block; blocks] in
@@ -395,8 +400,8 @@ let rec translate_expression env {Ast.line; simple_expression} =
     | Cons {head; tail} ->
         let head_var = Ident.create_fresh Ident.knormal in
         let tail_var = Ident.create_fresh Ident.knormal in
-        let head_block = translate_expression {env with result= Some (Var head_var)} head in
-        let tail_block = translate_expression {env with result= Some (Var tail_var)} tail in
+        let head_block = translate_expression {env with result= Present (Exp.Var head_var)} head in
+        let tail_block = translate_expression {env with result= Present (Exp.Var tail_var)} tail in
         let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_cons) in
         let args : (Exp.t * Typ.t) list = [(Var head_var, any); (Var tail_var, any)] in
         let call_instruction =
@@ -431,10 +436,10 @@ let rec translate_expression env {Ast.line; simple_expression} =
         Block.make_success env
   in
   (* Add extra nodes/instructions to store return value if needed *)
-  match env.result with
-  | None | Some (Var _) ->
+  match result with
+  | Exp.Var _ ->
       expression_block
-  | Some result ->
+  | _ ->
       let store_instr =
         Sil.Store {e1= result; root_typ= any; typ= any; e2= Var ret_var; loc= env.location}
       in
@@ -445,7 +450,8 @@ let rec translate_expression env {Ast.line; simple_expression} =
 and translate_body env body : Block.t =
   let blocks =
     let f rev_blocks one_expression =
-      let env = {env with result= None} in
+      let id = Ident.create_fresh Ident.knormal in
+      let env = {env with result= Present (Exp.Var id)} in
       translate_expression env one_expression :: rev_blocks
     in
     let f_last rev_blocks one_expression = translate_expression env one_expression :: rev_blocks in
@@ -467,7 +473,7 @@ and translate_case_clause env (values : Ident.t list) {Ast.line= _; patterns; gu
   (* TODO: Evaluate the guards. *)
   matchers_block.exit_success |~~> [body_block.start] ;
   let () =
-    let procdesc = Option.value_exn env.procdesc in
+    let (Present procdesc) = env.procdesc in
     body_block.exit_failure |~~> [Procdesc.get_exit_node procdesc]
   in
   { start= matchers_block.start
@@ -482,7 +488,7 @@ let translate_one_function env cfg function_ clauses =
     let module_name = env.current_module in
     Procname.make_erlang ~module_name ~function_name ~arity
   in
-  let any = typ_of_name Any in
+  let any = ptr_typ_of_name Any in
   let attributes =
     let default = ProcAttributes.default env.location.file name in
     let access : ProcAttributes.access = if Set.mem env.exports uf_name then Public else Private in
@@ -497,7 +503,9 @@ let translate_one_function env cfg function_ clauses =
     Procdesc.set_exit_node procdesc exit_node ;
     procdesc
   in
-  let env = {env with procdesc= Some procdesc; result= Some (Exp.Lvar (Pvar.get_ret_pvar name))} in
+  let env =
+    {env with procdesc= Present procdesc; result= Present (Exp.Lvar (Pvar.get_ret_pvar name))}
+  in
   let idents, loads =
     let load (formal, typ) =
       let id = Ident.create_fresh Ident.knormal in

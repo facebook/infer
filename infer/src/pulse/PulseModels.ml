@@ -1506,6 +1506,52 @@ module Android = struct
     List.rev_append astate_null astate_not_null
 end
 
+module Erlang = struct
+  let pattern_fail : model =
+   fun {location} astate ->
+    [ Error
+        (ReportableError
+           {astate; diagnostic= NonexhaustivePatternMatch {calling_context= []; location}}) ]
+
+
+  let make_nil : model =
+   fun {location; ret= ret_id, _} astate ->
+    let event = ValueHistory.Allocation {f= Model "[]"; location} in
+    let addr_nil_val = AbstractValue.mk_fresh () in
+    let addr_nil = (addr_nil_val, [event]) in
+    let astate =
+      let typ = Typ.mk_struct (ErlangType Nil) in
+      PulseOperations.add_dynamic_type typ addr_nil_val astate
+    in
+    let astate = PulseOperations.write_id ret_id addr_nil astate in
+    [Ok (ContinueProgram astate)]
+
+
+  let make_cons head tail : model =
+   fun {location; path; ret= ret_id, _} astate ->
+    let event = ValueHistory.Allocation {f= Model "[X|Xs]"; location} in
+    let addr_head_val = AbstractValue.mk_fresh () in
+    let addr_tail_val = AbstractValue.mk_fresh () in
+    let addr_cons_val = AbstractValue.mk_fresh () in
+    let addr_head = (addr_head_val, [event]) in
+    let addr_tail = (addr_tail_val, [event]) in
+    let addr_cons = (addr_cons_val, [event]) in
+    let field name = Fieldname.make (ErlangType Cons) name in
+    let<*> astate =
+      PulseOperations.write_field path location ~ref:addr_cons (field "head") ~obj:addr_head astate
+    in
+    let<*> astate = PulseOperations.write_deref path location ~ref:addr_head ~obj:head astate in
+    let<*> astate =
+      PulseOperations.write_field path location ~ref:addr_cons (field "tail") ~obj:addr_tail astate
+    in
+    let<+> astate = PulseOperations.write_deref path location ~ref:addr_tail ~obj:tail astate in
+    let astate =
+      let typ = Typ.mk_struct (ErlangType Cons) in
+      PulseOperations.add_dynamic_type typ addr_cons_val astate
+    in
+    PulseOperations.write_id ret_id addr_cons astate
+end
+
 module StringSet = Caml.Set.Make (String)
 
 module ProcNameDispatcher = struct
@@ -1578,6 +1624,10 @@ module ProcNameDispatcher = struct
           <>$ capt_arg_payload $+...$--> Misc.id_first_arg ~desc:"cast"
         ; +BuiltinDecl.(match_builtin abort) <>--> Misc.early_exit
         ; +BuiltinDecl.(match_builtin exit) <>--> Misc.early_exit
+        ; +BuiltinDecl.(match_builtin __erlang_make_cons)
+          <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.make_cons
+        ; +BuiltinDecl.(match_builtin __erlang_make_nil) <>--> Erlang.make_nil
+        ; +BuiltinDecl.(match_builtin __erlang_pattern_fail) <>--> Erlang.pattern_fail
         ; +BuiltinDecl.(match_builtin __infer_initializer_list)
           <>$ capt_arg_payload
           $+...$--> Misc.id_first_arg ~desc:"infer_init_list"

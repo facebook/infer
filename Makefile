@@ -148,6 +148,15 @@ endif
 endif # HAS_OBJC
 endif # BUILD_C_ANALYZERS
 
+ifeq ($(BUILD_ERLANG_ANALYZERS),yes)
+ifneq ($(REBAR3),no)
+DIRECT_TESTS += \
+  erlang_nonmatch \
+
+BUILD_SYSTEMS_TESTS += rebar3
+endif
+endif # BUILD_ERLANG_ANALYZERS
+
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 BUILD_SYSTEMS_TESTS += \
   differential_interesting_paths_filter \
@@ -212,19 +221,13 @@ endif
 ifneq ($(ANT),no)
 BUILD_SYSTEMS_TESTS += ant
 endif
-
-
-
 ifneq ($(BUCK),no)
 BUILD_SYSTEMS_TESTS += buck_java_flavor
 endif
 ifneq ($(MVN),no)
 BUILD_SYSTEMS_TESTS += mvn
 endif
-ifneq ($(REBAR3),no)
-BUILD_SYSTEMS_TESTS += rebar3
-endif
-endif
+endif # BUILD_JAVA_ANALYZERS
 
 DIRECT_TESTS += \
   dotnet_arithmetic \

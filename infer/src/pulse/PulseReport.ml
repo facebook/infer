@@ -46,7 +46,10 @@ let is_nullsafe_error tenv diagnostic jn =
    being equal to the value being dereferenced *)
 let is_constant_deref_without_invalidation (diagnostic : Diagnostic.t) =
   match diagnostic with
-  | MemoryLeak _ | ReadUninitializedValue _ | StackVariableAddressEscape _ ->
+  | MemoryLeak _
+  | NonexhaustivePatternMatch _
+  | ReadUninitializedValue _
+  | StackVariableAddressEscape _ ->
       false
   | AccessToInvalidAddress {invalidation; access_trace} -> (
     match invalidation with

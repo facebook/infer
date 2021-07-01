@@ -12,12 +12,15 @@ module Arithmetic = PulseArithmetic
 
 type t =
   | AccessToInvalidAddress of Diagnostic.access_to_invalid_address
+  | NonexhaustivePatternMatch of Diagnostic.nonexhaustive_pattern_match
   | ReadUninitializedValue of Diagnostic.read_uninitialized_value
 [@@deriving compare, equal, yojson_of]
 
 let to_diagnostic = function
   | AccessToInvalidAddress access_to_invalid_address ->
       Diagnostic.AccessToInvalidAddress access_to_invalid_address
+  | NonexhaustivePatternMatch nonexhaustive_pattern_match ->
+      Diagnostic.NonexhaustivePatternMatch nonexhaustive_pattern_match
   | ReadUninitializedValue read_uninitialized_value ->
       Diagnostic.ReadUninitializedValue read_uninitialized_value
 
@@ -25,6 +28,9 @@ let to_diagnostic = function
 let add_call call_and_loc = function
   | AccessToInvalidAddress access ->
       AccessToInvalidAddress {access with calling_context= call_and_loc :: access.calling_context}
+  | NonexhaustivePatternMatch nonmatch ->
+      NonexhaustivePatternMatch
+        {nonmatch with calling_context= call_and_loc :: nonmatch.calling_context}
   | ReadUninitializedValue read ->
       ReadUninitializedValue {read with calling_context= call_and_loc :: read.calling_context}
 
@@ -47,5 +53,7 @@ let should_report (astate : AbductiveDomain.summary) (diagnostic : Diagnostic.t)
       `ReportNow
   | AccessToInvalidAddress latent ->
       if is_manifest astate then `ReportNow else `DelayReport (AccessToInvalidAddress latent)
+  | NonexhaustivePatternMatch latent ->
+      if is_manifest astate then `ReportNow else `DelayReport (NonexhaustivePatternMatch latent)
   | ReadUninitializedValue latent ->
       if is_manifest astate then `ReportNow else `DelayReport (ReadUninitializedValue latent)

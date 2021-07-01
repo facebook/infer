@@ -282,6 +282,8 @@ val nil_insertion_into_collection : t
 
 val nil_messaging_to_non_pod : t
 
+val nonexhaustive_pattern_match : t
+
 val null_dereference : t
 
 val nullptr_dereference : t

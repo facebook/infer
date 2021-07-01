@@ -15,6 +15,7 @@ module AbductiveDomain = PulseAbductiveDomain
 
 type t =
   | AccessToInvalidAddress of Diagnostic.access_to_invalid_address
+  | NonexhaustivePatternMatch of Diagnostic.nonexhaustive_pattern_match
   | ReadUninitializedValue of Diagnostic.read_uninitialized_value
 [@@deriving compare, equal, yojson_of]
 

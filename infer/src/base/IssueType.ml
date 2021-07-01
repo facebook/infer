@@ -804,6 +804,11 @@ let nil_messaging_to_non_pod =
     ~user_documentation:[%blob "../../documentation/issues/NIL_MESSAGING_TO_NON_POD.md"]
 
 
+let nonexhaustive_pattern_match =
+  register ~id:"NONEXHAUSTIVE_PATTERN_MATCH" Error Pulse
+    ~user_documentation:[%blob "../../documentation/issues/NONEXHAUSTIVE_PATTERN_MATCH.md"]
+
+
 let null_dereference =
   register ~id:"NULL_DEREFERENCE" Error Biabduction
     ~user_documentation:"See [NULLPTR_DEREFERENCE](#nullptr_dereference)."
