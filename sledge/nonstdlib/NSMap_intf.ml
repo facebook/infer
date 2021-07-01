@@ -81,6 +81,7 @@ module type S = sig
 
   val min_binding : 'a t -> (key * 'a) option
   val max_binding : 'a t -> (key * 'a) option
+  val max_binding_exn : 'a t -> key * 'a
   val mem : key -> 'a t -> bool
   val find : key -> 'a t -> 'a option
   val find_exn : key -> 'a t -> 'a
