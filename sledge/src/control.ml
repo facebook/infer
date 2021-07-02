@@ -540,11 +540,13 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
     |>
     [%Trace.retn fun {pf} _ -> pf ""]
 
-  let exec_call stk state block call globals =
-    let Llair.{callee; areturn; return; _} = call in
+  let exec_call stk state block call =
+    let Llair.{callee= {name} as callee; areturn; return; _} = call in
     if Llair.Func.is_undefined callee then
       exec_skip_func stk state block areturn return
-    else exec_call stk state block call globals
+    else
+      let globals = Domain_used_globals.by_function Config.globals name in
+      exec_call stk state block call globals
 
   let exec_return stk pre_state (block : Llair.block) exp =
     let Llair.{name; formals; freturn; locals} = block.parent in
@@ -633,19 +635,15 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
                     ~name:jump.dst.lbl))
               jump stk state block
             |> Work.seq x )
-    | Call ({callee} as call) ->
-        exec_call stk state block call
-          (Domain_used_globals.by_function Config.globals callee.name)
+    | Call call -> exec_call stk state block call
     | ICall ({callee; areturn; return} as call) -> (
         let lookup name = Llair.Func.find name pgm.functions in
         match D.resolve_callee lookup callee state with
         | [] -> exec_skip_func stk state block areturn return
         | callees ->
             List.fold callees Work.skip ~f:(fun callee x ->
-                exec_call stk state block {call with callee}
-                  (Domain_used_globals.by_function Config.globals
-                     callee.name)
-                |> Work.seq x ) )
+                exec_call stk state block {call with callee} |> Work.seq x )
+        )
     | Return {exp} -> exec_return stk state block exp
     | Throw {exc} -> exec_throw stk state block exc
     | Unreachable -> Work.skip
