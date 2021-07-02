@@ -171,8 +171,9 @@ let to_string ?(force_relative = false) fname =
 
 
 let has_extension ~ext = function
-  | Invalid _ ->
-      false
+  | Invalid {ml_source_file} ->
+      L.die InternalError
+        "has_extension cannot be called with Invalid source file originating in %s" ml_source_file
   | RelativeProjectRootAndWorkspace {rel_path= path}
   | HashedBuckOut path
   | RelativeProjectRoot path
