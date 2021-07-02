@@ -197,8 +197,9 @@ module Block : sig
 end
 
 module IP : sig
-  type t = ip
+  type t = ip [@@deriving compare, equal, hash, sexp_of]
 
+  val pp : t pp
   val mk : block -> t
   val block : t -> block
   val inst : t -> inst option

@@ -534,10 +534,11 @@ module Block = struct
     ; sort_index= dummy_block.sort_index }
 end
 
-type ip = {block: block; index: int} [@@deriving equal, hash]
+type ip = {block: block; index: int}
+[@@deriving compare, equal, hash, sexp_of]
 
 module IP = struct
-  type t = ip
+  type t = ip [@@deriving compare, equal, hash, sexp_of]
 
   let mk block = {block; index= 0}
   let succ {block; index} = {block; index= index + 1}
@@ -548,6 +549,11 @@ module IP = struct
     else None
 
   let block ip = ip.block
+
+  let pp ppf {block; index} =
+    Format.fprintf ppf "#%i%t %%%s" block.sort_index
+      (fun ppf -> if index <> 0 then Format.fprintf ppf "+%i" index)
+      block.lbl
 
   module Tbl = HashTable.Make (struct
     type t = ip [@@deriving equal, hash]

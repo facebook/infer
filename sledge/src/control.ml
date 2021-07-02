@@ -341,145 +341,208 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
     let equal_as_inlined_location = [%compare.equal: as_inlined_location]
   end
 
+  (** Instruction Pointer. Functions are treated as-if-inlined by including
+      a call stack in each instruction pointer, effectively copying the
+      control-flow graph for each calling context. *)
+  type ip = {ip: Llair.IP.t; stk: Stack.t}
+
+  (** Instruction Pointer *)
+  module IP : sig
+    type t = ip [@@deriving compare, equal, sexp_of]
+
+    val pp : t pp
+  end = struct
+    type t = ip = {ip: Llair.IP.t; stk: Stack.as_inlined_location}
+    [@@deriving compare, equal, sexp_of]
+
+    let pp ppf {ip} = Llair.IP.pp ppf ip
+  end
+
+  (** A control-flow transition. An edge from block [src] to
+      [dst = {ip; stk}] represents a transition with call stack [stk] from
+      (the terminator of) block [src] to the instruction pointer [ip]. *)
+  type edge = {dst: IP.t; src: Llair.Block.t} [@@deriving sexp_of]
+
+  module Edge = struct
+    type t = edge [@@deriving sexp_of]
+
+    let pp fs {dst; src= {sort_index; lbl}} =
+      Format.fprintf fs "%a <-- #%i %%%s" IP.pp dst sort_index lbl
+
+    (** Each retreating edge has a depth for each calling context, except
+        for recursive calls. Recursive call edges are instead compared
+        without considering their stacks. Bounding the depth of edges
+        therefore has the effect of bounding the number of recursive calls
+        in any calling context. *)
+    let compare x y =
+      let open Ord.Infix in
+      if x == y then 0
+      else
+        let is_rec_call = function
+          | {Llair.term= Call {recursive= true}} -> true
+          | _ -> false
+        in
+        let compare_stk stk1 stk2 =
+          if is_rec_call x.src then 0
+          else Stack.compare_as_inlined_location stk1 stk2
+        in
+        Llair.IP.compare x.dst.ip y.dst.ip
+        <?> (Llair.Block.compare, x.src, y.src)
+        <?> (compare_stk, x.dst.stk, y.dst.stk)
+
+    let equal = [%compare.equal: t]
+  end
+
+  module Depths = struct
+    module M = Map.Make (Edge)
+
+    type t = int M.t [@@deriving compare, equal, sexp_of]
+
+    let empty = M.empty
+    let find = M.find
+    let add = M.add
+
+    let join x y =
+      M.merge x y ~f:(fun _ -> function
+        | `Left d | `Right d -> Some d
+        | `Both (d1, d2) -> Some (Int.max d1 d2) )
+  end
+
+  (** Abstract memory, control, and history state, with a slot used for the
+      current "control position", such as an instruction pointer. Consists
+      of a symbolic [state], plus a coarse abstraction of the preceding
+      execution history in the form of [depths] representing the number of
+      times retreating edges have been crossed. *)
+  type 'a memory_control_history =
+    { ctrl: 'a  (** current control position *)
+    ; state: D.t  (** symbolic memory and register state *)
+    ; depths: Depths.t  (** count of retreating edge crossings *) }
+  [@@deriving sexp_of]
+
+  (** An abstract machine state consists of the instruction pointer plus the
+      memory, control, and history state. *)
+  type ams = IP.t memory_control_history [@@deriving sexp_of]
+
+  (** A unit of analysis work is an abstract machine state from which
+      execution should continue, with additional control-flow [edge] info
+      used by the analysis scheduler. *)
+  type work = edge memory_control_history
+
+  (** An element of the frontier of execution is a control-flow [edge] that
+      has been executed, yielding a memory, control, and history state. *)
+  type elt = elt_ctrl memory_control_history [@@deriving sexp_of]
+
+  and elt_ctrl =
+    { edge: Edge.t
+    ; depth: int
+          (** pre-computed depth of [edge], for use by e.g. [Elt.compare] *)
+    }
+
   module Work : sig
     type t
 
     val init : D.t -> Llair.block -> t
-
-    type x
-
-    val skip : x
-    val seq : x -> x -> x
-
-    val add :
-         ?prev:Llair.block
-      -> retreating:bool
-      -> Stack.t
-      -> D.t
-      -> Llair.block
-      -> x
-
-    val run : f:(Stack.t -> D.t -> Llair.block -> x) -> t -> unit
+    val add : retreating:bool -> work -> t -> t
+    val run : f:(ams -> t -> t) -> t -> unit
   end = struct
-    (* Functions are treated as-if-inlined by including a call stack in each
-       edge, effectively copying the control-flow graph for each calling
-       context. *)
-    module Edge = struct
-      module T = struct
-        type t =
-          { dst: Llair.Block.t
-          ; src: Llair.Block.t option
-          ; stk: Stack.as_inlined_location }
-        [@@deriving compare, equal, sexp_of]
-      end
-
-      include T
-
-      let pp fs {dst; src} =
-        Format.fprintf fs "#%i %%%s <--%a" dst.sort_index dst.lbl
-          (Option.pp "%a" (fun fs (src : Llair.Block.t) ->
-               Format.fprintf fs " #%i %%%s" src.sort_index src.lbl ))
-          src
-    end
-
-    module Depths = struct
-      module M = Map.Make (struct
-        include Edge
-
-        (* Each retreating edge has a depth for each calling context, except
-           for recursive calls. Recursive call edges are instead compared
-           without considering their stacks. Bounding the depth of edges
-           therefore has the effect of bounding the number of recursive
-           calls in any calling context. *)
-        let compare x y =
-          let ignore_rec_call_stk x =
-            match x with
-            | {src= Some {term= Call {recursive= true}}} ->
-                {x with stk= Stack.empty}
-            | _ -> x
-          in
-          Edge.compare (ignore_rec_call_stk x) (ignore_rec_call_stk y)
-      end)
-
-      type t = int M.t [@@deriving compare, equal, sexp_of]
-
-      let empty = M.empty
-      let find = M.find
-      let add = M.add
-
-      let join x y =
-        M.merge x y ~f:(fun _ -> function
-          | `Left d | `Right d -> Some d
-          | `Both (d1, d2) -> Some (Int.max d1 d2) )
-    end
-
+    (** Element of the frontier of execution, ordered for scheduler's
+        priority queue *)
     module Elt = struct
-      (** an edge at a depth with the domain and depths state it yielded *)
-      type t = {depth: int; edge: Edge.t; state: D.t; depths: Depths.t}
-      [@@deriving compare, equal, sexp_of]
+      type t = elt [@@deriving sexp_of]
 
-      let pp ppf {depth; edge} =
+      let pp ppf {ctrl= {edge; depth}} =
         Format.fprintf ppf "%i: %a" depth Edge.pp edge
 
-      let equal_destination x y =
-        Llair.Block.equal x.edge.dst y.edge.dst
-        && Stack.equal_as_inlined_location x.edge.stk y.edge.stk
+      let compare x y =
+        let open Ord.Infix in
+        if x == y then 0
+        else
+          ( (Int.compare >|= fun x -> x.ctrl.depth)
+          @? (Edge.compare >|= fun x -> x.ctrl.edge)
+          @? (Depths.compare >|= fun x -> x.depths)
+          @? (D.compare >|= fun x -> x.state) )
+            x y
 
+      let equal = [%compare.equal: t]
+      let equal_destination x y = IP.equal x.ctrl.edge.dst y.ctrl.edge.dst
       let dnf x = List.map ~f:(fun state -> {x with state}) (D.dnf x.state)
     end
 
     module Queue = Queue (Elt)
 
-    let enqueue depth edge state depths queue =
-      [%Trace.info
-        " %i: %a [%a]@ | %a" depth Edge.pp edge Stack.pp edge.stk Queue.pp
-          queue] ;
-      let depths = Depths.add ~key:edge ~data:depth depths in
-      Queue.add {depth; edge; state; depths} queue
+    (** State and history projection of abstract machine states.
+        [StateHistory] represents the subset of [ams] fields that can be
+        joined across several executions. *)
+    module StateHistory = struct
+      module T = struct
+        type t = D.t * Depths.t [@@deriving compare, equal, sexp_of]
+      end
 
-    let prune depth edge queue =
+      include T
+      module Set = Set.Make (T)
+
+      let join s =
+        let states, depths =
+          Set.fold s ([], Depths.empty) ~f:(fun (q, d) (qs, ds) ->
+              let qqs =
+                match qs with
+                | q0 :: _ when D.equal q q0 -> qs
+                | _ -> q :: qs
+              in
+              (qqs, Depths.join d ds) )
+        in
+        (D.joinN states, depths)
+    end
+
+    (** Analysis exploration state *)
+    type t = Queue.t
+
+    let prune depth {ctrl= edge} wl =
       [%Trace.info " %i: %a" depth Edge.pp edge] ;
       Report.hit_bound Config.bound ;
+      wl
+
+    let enqueue depth ({ctrl= edge; depths} as elt) queue =
+      [%Trace.info " %i: %a@ | %a" depth Edge.pp edge Queue.pp queue] ;
+      let depths = Depths.add ~key:edge ~data:depth depths in
+      let queue = Queue.add {elt with ctrl= {edge; depth}; depths} queue in
       queue
 
-    let dequeue queue =
-      let+ {depth; edge; state; depths}, elts, queue = Queue.pop queue in
-      [%Trace.info
-        " %i: %a [%a]@ | %a" depth Edge.pp edge Stack.pp edge.stk Queue.pp
-          queue] ;
-      let states, depths =
-        List.fold elts
-          ([state], depths)
-          ~f:(fun elt (states, depths) ->
-            (elt.state :: states, Depths.join elt.depths depths) )
-      in
-      let state =
-        D.joinN (List.sort_uniq ~cmp:(Ord.opp D.compare) states)
-      in
-      (edge, state, depths, queue)
+    let init state curr =
+      let depth = 0 in
+      let ip = Llair.IP.mk curr in
+      let stk = Stack.empty in
+      let prev = curr in
+      let edge = {dst= {ip; stk}; src= prev} in
+      let depths = Depths.empty in
+      let queue = Queue.create () in
+      enqueue depth {ctrl= edge; state; depths} queue
 
-    type t = Queue.t
-    type x = Depths.t -> t -> t
-
-    let skip _ w = w
-    let seq x y d w = y d (x d w)
-
-    let add ?prev ~retreating stk state curr depths queue =
-      let edge = {Edge.dst= curr; src= prev; stk} in
+    let add ~retreating ({ctrl= edge; depths} as elt) wl =
       let depth = Option.value (Depths.find edge depths) ~default:0 in
       let depth = if retreating then depth + 1 else depth in
-      if 0 <= Config.bound && Config.bound < depth then
-        prune depth edge queue
-      else enqueue depth edge state depths queue
+      if depth > Config.bound && Config.bound >= 0 then prune depth elt wl
+      else enqueue depth elt wl
 
-    let init state curr =
-      add ~retreating:false Stack.empty state curr Depths.empty
-        (Queue.create ())
+    let dequeue queue =
+      let+ ({ctrl= {edge= {dst}}; state; depths} as top), elts, queue =
+        Queue.pop queue
+      in
+      [%Trace.info
+        " %i: %a [%a]@ | %a" top.ctrl.depth Edge.pp top.ctrl.edge Stack.pp
+          dst.stk Queue.pp queue] ;
+      let state, depths =
+        StateHistory.join
+          (List.fold
+             ~f:(fun {state; depths} -> StateHistory.Set.add (state, depths))
+             elts
+             (StateHistory.Set.of_ (state, depths)))
+      in
+      ({ctrl= dst; state; depths}, queue)
 
-    let rec run ~f queue =
-      match dequeue queue with
-      | Some (edge, state, depths, queue) ->
-          run ~f (f edge.stk state edge.dst depths queue)
+    let rec run ~f wl =
+      match dequeue wl with
+      | Some (ams, wl) -> run ~f (f ams wl)
       | None -> ()
   end
 
@@ -493,26 +556,23 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
                 (List.pp "@," D.pp_summary)
                 data ) )]
 
-  let exec_jump stk state block Llair.{dst; retreating} =
-    Work.add ~prev:block ~retreating stk state dst
+  let exec_jump jump ({ctrl= {ip; stk}} as ams) wl =
+    let src = Llair.IP.block ip in
+    let {Llair.dst; retreating} = jump in
+    let ip = Llair.IP.mk dst in
+    let edge = {dst= {ip; stk}; src} in
+    Work.add ~retreating {ams with ctrl= edge} wl
 
-  let exec_skip_func :
-         Stack.t
-      -> D.t
-      -> Llair.block
-      -> Llair.Reg.t option
-      -> Llair.jump
-      -> Work.x =
-   fun stk state block areturn return ->
-    Report.unknown_call block.term ;
+  let exec_skip_func areturn return ({ctrl= {ip}; state} as ams) wl =
+    Report.unknown_call (Llair.IP.block ip).term ;
     let state = Option.fold ~f:D.exec_kill areturn state in
-    exec_jump stk state block return
+    exec_jump return {ams with state} wl
 
-  let exec_call stk state block call globals =
+  let exec_call globals call ({ctrl= {stk}; state} as ams) wl =
     let Llair.{callee; actuals; areturn; return; recursive} = call in
     let Llair.{name; formals; freturn; locals; entry} = callee in
     [%Trace.call fun {pf} ->
-      pf "@[<2>@ %a from %a with state@]@;<1 2>%a" Llair.Func.pp_call call
+      pf " @[<2>@ %a from %a with state@]@;<1 2>%a" Llair.Func.pp_call call
         Llair.Function.pp return.dst.parent.name D.pp state]
     ;
     let dnf_states =
@@ -521,7 +581,7 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
     let domain_call =
       D.call ~globals ~actuals ~areturn ~formals ~freturn ~locals
     in
-    List.fold dnf_states Work.skip ~f:(fun state acc ->
+    List.fold dnf_states wl ~f:(fun state wl ->
         match
           if not Config.function_summaries then None
           else
@@ -533,24 +593,28 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
             let state, from_call =
               domain_call ~summaries:Config.function_summaries state
             in
+            let ip = Llair.IP.mk entry in
             let stk = Stack.push_call call from_call stk in
-            Work.seq acc
-              (Work.add stk ~prev:block ~retreating:recursive state entry)
-        | Some post -> Work.seq acc (exec_jump stk post block return) )
+            let src = Llair.IP.block ams.ctrl.ip in
+            let edge = {dst= {ip; stk}; src} in
+            Work.add ~retreating:recursive {ams with ctrl= edge; state} wl
+        | Some post -> exec_jump return {ams with state= post} wl )
     |>
     [%Trace.retn fun {pf} _ -> pf ""]
 
-  let exec_call stk state block call =
+  let exec_call call ams wl =
     let Llair.{callee= {name} as callee; areturn; return; _} = call in
     if Llair.Func.is_undefined callee then
-      exec_skip_func stk state block areturn return
+      exec_skip_func areturn return ams wl
     else
       let globals = Domain_used_globals.by_function Config.globals name in
-      exec_call stk state block call globals
+      exec_call globals call ams wl
 
-  let exec_return stk pre_state (block : Llair.block) exp =
-    let Llair.{name; formals; freturn; locals} = block.parent in
-    [%Trace.call fun {pf} -> pf "@ from: %a" Llair.Function.pp name]
+  let exec_return exp ({ctrl= {ip; stk}; state} as ams) wl =
+    let block = Llair.IP.block ip in
+    let func = block.parent in
+    let Llair.{name; formals; freturn; locals} = func in
+    [%Trace.call fun {pf} -> pf " @ from: %a" Llair.Function.pp name]
     ;
     let summarize post_state =
       if not Config.function_summaries then post_state
@@ -563,121 +627,114 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
         pp_st () ;
         post_state
     in
+    let pre_state = state in
     let exit_state =
       match (freturn, exp) with
       | Some freturn, Some return_val ->
           D.exec_move (IArray.of_ (freturn, return_val)) pre_state
       | None, None -> pre_state
-      | _ -> violates Llair.Func.invariant block.parent
+      | _ -> violates Llair.Func.invariant func
     in
     ( match Stack.pop_return stk with
     | Some (from_call, retn_site, stk) ->
         let post_state = summarize (D.post locals from_call exit_state) in
         let retn_state = D.retn formals freturn from_call post_state in
-        exec_jump stk retn_state block retn_site
+        exec_jump retn_site
+          {ams with ctrl= {ams.ctrl with stk}; state= retn_state}
+          wl
     | None ->
         if Config.function_summaries then
           summarize exit_state |> (ignore : D.t -> unit) ;
-        Work.skip )
+        wl )
     |>
     [%Trace.retn fun {pf} _ -> pf ""]
 
-  let exec_throw stk pre_state (block : Llair.block) exc =
-    let func = block.parent in
-    [%Trace.call fun {pf} -> pf "@ from %a" Llair.Function.pp func.name]
+  let exec_throw exc ({ctrl= {ip; stk}; state} as ams) wl =
+    let func = (Llair.IP.block ip).parent in
+    let Llair.{name; formals; freturn; fthrow; locals} = func in
+    [%Trace.call fun {pf} -> pf "@ from %a" Llair.Function.pp name]
     ;
     let unwind formals scope from_call state =
-      D.retn formals (Some func.fthrow) from_call
-        (D.post scope from_call state)
+      D.retn formals (Some fthrow) from_call (D.post scope from_call state)
     in
+    let pre_state = state in
     ( match Stack.pop_throw stk ~unwind pre_state with
     | Some (from_call, retn_site, stk, unwind_state) ->
-        let fthrow = func.fthrow in
         let exit_state =
           D.exec_move (IArray.of_ (fthrow, exc)) unwind_state
         in
-        let post_state = D.post func.locals from_call exit_state in
-        let retn_state =
-          D.retn func.formals func.freturn from_call post_state
-        in
-        exec_jump stk retn_state block retn_site
-    | None -> Work.skip )
+        let post_state = D.post locals from_call exit_state in
+        let retn_state = D.retn formals freturn from_call post_state in
+        exec_jump retn_site
+          {ams with ctrl= {ams.ctrl with stk}; state= retn_state}
+          wl
+    | None -> wl )
     |>
     [%Trace.retn fun {pf} _ -> pf ""]
 
-  let exec_assume cond jump stk state block =
+  let exec_assume cond jump ({state} as ams) wl =
     match D.exec_assume state cond with
-    | Some state -> exec_jump stk state block jump
+    | Some state -> exec_jump jump {ams with state} wl
     | None ->
         [%Trace.info " infeasible %a@\n@[%a@]" Llair.Exp.pp cond D.pp state] ;
-        Work.skip
+        wl
 
   let resolve_callee (pgm : Llair.program) callee state =
     let lookup name = Llair.Func.find name pgm.functions in
     D.resolve_callee lookup callee state
 
-  let exec_term : Llair.program -> Stack.t -> D.t -> Llair.block -> Work.x =
-   fun pgm stk state block ->
-    [%Trace.info "@\n@[%a@]@\n%a" D.pp state Llair.Term.pp block.term] ;
+  let exec_term pgm ({ctrl= {ip}; state} as ams) wl =
+    let block = Llair.IP.block ip in
+    let term = block.term in
+    [%Trace.info " @\n@[%a@]@\n%a" D.pp state Llair.Term.pp block.term] ;
     Report.step_term block ;
-    match block.term with
+    match (term : Llair.term) with
     | Switch {key; tbl; els} ->
-        IArray.fold tbl
-          ~f:(fun (case, jump) x ->
-            exec_assume (Llair.Exp.eq key case) jump stk state block
-            |> Work.seq x )
-          (exec_assume
-             (IArray.fold tbl Llair.Exp.true_ ~f:(fun (case, _) b ->
-                  Llair.Exp.and_ (Llair.Exp.dq key case) b ))
-             els stk state block)
+        let wl =
+          exec_assume
+            (IArray.fold tbl Llair.Exp.true_ ~f:(fun (case, _) b ->
+                 Llair.Exp.and_ (Llair.Exp.dq key case) b ))
+            els ams wl
+        in
+        IArray.fold tbl wl ~f:(fun (case, jump) wl ->
+            exec_assume (Llair.Exp.eq key case) jump ams wl )
     | Iswitch {ptr; tbl} ->
-        IArray.fold tbl Work.skip ~f:(fun jump x ->
+        IArray.fold tbl wl ~f:(fun jump wl ->
             exec_assume
               (Llair.Exp.eq ptr
                  (Llair.Exp.label
                     ~parent:(Llair.Function.name jump.dst.parent.name)
                     ~name:jump.dst.lbl))
-              jump stk state block
-            |> Work.seq x )
-    | Call call -> exec_call stk state block call
+              jump ams wl )
+    | Call call -> exec_call call ams wl
     | ICall ({callee; areturn; return} as call) -> (
       match resolve_callee pgm callee state with
-      | [] -> exec_skip_func stk state block areturn return
+      | [] -> exec_skip_func areturn return ams wl
       | callees ->
-          List.fold callees Work.skip ~f:(fun callee x ->
-              exec_call stk state block {call with callee} |> Work.seq x ) )
-    | Return {exp} -> exec_return stk state block exp
-    | Throw {exc} -> exec_throw stk state block exc
-    | Unreachable -> Work.skip
+          List.fold callees wl ~f:(fun callee wl ->
+              exec_call {call with callee} ams wl ) )
+    | Return {exp} -> exec_return exp ams wl
+    | Throw {exc} -> exec_throw exc ams wl
+    | Unreachable -> wl
 
-  let rec exec_ip : Llair.program -> Stack.t -> D.t -> Llair.ip -> Work.x =
-   fun pgm stk state ip ->
+  let rec exec_ip pgm ({ctrl= {ip}; state} as ams) wl =
     match Llair.IP.inst ip with
     | Some inst -> (
-        [%Trace.info "@\n@[%a@]@\n%a" D.pp state Llair.Inst.pp inst] ;
+        [%Trace.info " @\n@[%a@]@\n%a" D.pp state Llair.Inst.pp inst] ;
         Report.step_inst ip ;
         match D.exec_inst inst state with
         | Ok state ->
             let ip = Llair.IP.succ ip in
-            exec_ip pgm stk state ip
+            exec_ip pgm {ams with ctrl= {ams.ctrl with ip}; state} wl
         | Error alarm ->
             Report.alarm alarm ;
-            Work.skip )
-    | None -> exec_term pgm stk state (Llair.IP.block ip)
+            wl )
+    | None -> exec_term pgm ams wl
 
-  let exec_block : Llair.program -> Stack.t -> D.t -> Llair.block -> Work.x
-      =
-   fun pgm stk state block ->
-    [%trace]
-      ~call:(fun {pf} -> pf "@ %a" Llair.Block.pp block)
-      ~retn:(fun {pf} _ -> pf "%a" Llair.Block.pp block)
-    @@ fun () -> exec_ip pgm stk state (Llair.IP.mk block)
-
-  let call_entry_point : Llair.program -> Work.t option =
-   fun pgm ->
+  let call_entry_point pgm =
     let+ {name; formals; freturn; locals; entry} =
       List.find_map Config.entry_points ~f:(fun entry_point ->
-          let* func = Llair.Func.find entry_point pgm.functions in
+          let* func = Llair.Func.find entry_point pgm.Llair.functions in
           if IArray.is_empty func.formals then Some func else None )
     in
     let summaries = Config.function_summaries in
@@ -690,13 +747,12 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
     in
     Work.init state entry
 
-  let exec_pgm : Llair.program -> unit =
-   fun pgm ->
+  let exec_pgm pgm =
     match call_entry_point pgm with
-    | Some work -> Work.run ~f:(exec_block pgm) work
+    | Some wl -> Work.run ~f:(exec_ip pgm) wl
     | None -> fail "no entry point found" ()
 
-  let compute_summaries pgm : D.summary list Llair.Function.Map.t =
+  let compute_summaries pgm =
     assert Config.function_summaries ;
     exec_pgm pgm ;
     Llair.Function.Tbl.fold summary_table Llair.Function.Map.empty
