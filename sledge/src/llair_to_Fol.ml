@@ -9,6 +9,12 @@ open Fol
 module T = Term
 module F = Formula
 
+module RegTbl = HashTable.Make (struct
+  type t = Llair.Reg.t [@@deriving equal, hash]
+end)
+
+let reg_tbl : Var.t RegTbl.t = RegTbl.create ()
+
 let lookup_func lookup term =
   match Term.get_trm term with
   | Some (Apply (Uninterp name, [||])) -> lookup name
@@ -16,7 +22,13 @@ let lookup_func lookup term =
 
 let uconst name = T.apply (Funsym.uninterp name) [||]
 let global g = uconst (Llair.Global.name g)
-let reg r = Var.identified ~name:(Llair.Reg.name r) ~id:(Llair.Reg.id r)
+
+let reg r =
+  RegTbl.find_or_add reg_tbl r ~default:(fun () ->
+      let name = Llair.Reg.name r in
+      let id = Llair.Reg.id r in
+      Var.identified ~name ~id )
+
 let regs rs = Var.Set.of_iter (Iter.map ~f:reg (Llair.Reg.Set.to_iter rs))
 let uap0 f = T.apply f [||]
 let uap1 f a = T.apply f [|a|]
@@ -66,7 +78,7 @@ and term : Llair.Exp.t -> T.t =
       F.inject
         (F.cond ~cnd:(formula cnd) ~pos:(formula pos) ~neg:(formula neg))
   (* terms *)
-  | Reg {name; id; typ= _} -> T.var (Var.identified ~name ~id)
+  | Reg _ -> T.var (reg (Llair.Reg.of_exp e |> Option.get_exn))
   | Global {name; typ= _} | Function {name; typ= _} -> uconst name
   | Label {parent; name} ->
       uap0 (Funsym.uninterp ("label_" ^ parent ^ "_" ^ name))
