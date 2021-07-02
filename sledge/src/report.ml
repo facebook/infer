@@ -33,11 +33,11 @@ let unknown_call call =
 let solver_steps = ref 0
 let step_solver () = Int.incr solver_steps
 let steps = ref 0
-let hit_insts = Llair.Inst.Tbl.create ()
+let hit_insts = Llair.IP.Tbl.create ()
 let hit_terms = Llair.Block.Tbl.create ()
 
-let step_inst b i =
-  Llair.Inst.Tbl.incr hit_insts (b, i) ;
+let step_inst ip =
+  Llair.IP.Tbl.incr hit_insts ip ;
   Int.incr steps
 
 let step_term b =
@@ -162,7 +162,7 @@ let coverage (pgm : Llair.program) =
             n + IArray.length blk.cmnd + 1 ) )
   in
   let hit =
-    Llair.Inst.Tbl.length hit_insts + Llair.Block.Tbl.length hit_terms
+    Llair.IP.Tbl.length hit_insts + Llair.Block.Tbl.length hit_terms
   in
   let fraction = Float.(of_int hit /. of_int size) in
   output

@@ -650,32 +650,28 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
     | Throw {exc} -> exec_throw stk state block exc
     | Unreachable -> Work.skip
 
-  let exec_inst : Llair.block -> Llair.inst -> D.t -> D.t Or_alarm.t =
-   fun block inst state ->
-    [%Trace.info "@\n@[%a@]@\n%a" D.pp state Llair.Inst.pp inst] ;
-    Report.step_inst block inst ;
-    D.exec_inst inst state
+  let rec exec_ip : Llair.program -> Stack.t -> D.t -> Llair.ip -> Work.x =
+   fun pgm stk state ip ->
+    match Llair.IP.inst ip with
+    | Some inst -> (
+        [%Trace.info "@\n@[%a@]@\n%a" D.pp state Llair.Inst.pp inst] ;
+        Report.step_inst ip ;
+        match D.exec_inst inst state with
+        | Ok state ->
+            let ip = Llair.IP.succ ip in
+            exec_ip pgm stk state ip
+        | Error alarm ->
+            Report.alarm alarm ;
+            Work.skip )
+    | None -> exec_term pgm stk state (Llair.IP.block ip)
 
   let exec_block : Llair.program -> Stack.t -> D.t -> Llair.block -> Work.x
       =
    fun pgm stk state block ->
     [%trace]
-      ~call:(fun {pf} ->
-        pf "@ #%i %%%s in %a" block.sort_index block.lbl Llair.Function.pp
-          block.parent.name )
-      ~retn:(fun {pf} _ ->
-        pf "#%i %%%s in %a" block.sort_index block.lbl Llair.Function.pp
-          block.parent.name )
-    @@ fun () ->
-    match
-      Iter.fold_result ~f:(exec_inst block)
-        (IArray.to_iter block.cmnd)
-        state
-    with
-    | Ok state -> exec_term pgm stk state block
-    | Error alarm ->
-        Report.alarm alarm ;
-        Work.skip
+      ~call:(fun {pf} -> pf "@ %a" Llair.Block.pp block)
+      ~retn:(fun {pf} _ -> pf "%a" Llair.Block.pp block)
+    @@ fun () -> exec_ip pgm stk state (Llair.IP.mk block)
 
   let call_entry_point : Llair.program -> Work.t option =
    fun pgm ->

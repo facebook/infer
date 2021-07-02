@@ -370,10 +370,6 @@ and dummy_func =
 module Inst = struct
   type t = inst [@@deriving compare, equal, hash, sexp]
 
-  module Tbl = HashTable.Make (struct
-    type t = block * inst [@@deriving equal, hash]
-  end)
-
   let pp = pp_inst
   let move ~reg_exps ~loc = Move {reg_exps; loc}
   let load ~reg ~ptr ~len ~loc = Load {reg; ptr; len; loc}
@@ -536,6 +532,26 @@ module Block = struct
     ; term
     ; parent= dummy_block.parent
     ; sort_index= dummy_block.sort_index }
+end
+
+type ip = {block: block; index: int} [@@deriving equal, hash]
+
+module IP = struct
+  type t = ip
+
+  let mk block = {block; index= 0}
+  let succ {block; index} = {block; index= index + 1}
+
+  let inst {block; index} =
+    if index < IArray.length block.cmnd then
+      Some (IArray.get block.cmnd index)
+    else None
+
+  let block ip = ip.block
+
+  module Tbl = HashTable.Make (struct
+    type t = ip [@@deriving equal, hash]
+  end)
 end
 
 (* Blocks compared by label, which are unique within a function, used to

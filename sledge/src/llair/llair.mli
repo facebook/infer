@@ -106,6 +106,7 @@ and func = private
   ; entry: block
   ; loc: Loc.t }
 
+type ip
 type functions = func Function.Map.t
 
 type program = private
@@ -134,8 +135,6 @@ module Inst : sig
   val loc : inst -> Loc.t
   val locals : inst -> Reg.Set.t
   val fold_exps : inst -> 's -> f:(Exp.t -> 's -> 's) -> 's
-
-  module Tbl : HashTable.S with type key := block * t
 end
 
 module Jump : sig
@@ -194,6 +193,17 @@ module Block : sig
   val mk : lbl:label -> cmnd:cmnd -> term:term -> block
 
   module Map : Map.S with type key := t
+  module Tbl : HashTable.S with type key := t
+end
+
+module IP : sig
+  type t = ip
+
+  val mk : block -> t
+  val block : t -> block
+  val inst : t -> inst option
+  val succ : t -> t
+
   module Tbl : HashTable.S with type key := t
 end
 
