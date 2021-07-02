@@ -39,6 +39,10 @@ module Make (State_domain : State_domain_sig) = struct
     ( State_domain.join entry_a entry_b
     , State_domain.join current_a current_b )
 
+  let joinN rs =
+    let entrys, currents = List.split rs in
+    (State_domain.joinN entrys, State_domain.joinN currents)
+
   let exec_assume (entry, current) cnd =
     let+ next = State_domain.exec_assume current cnd in
     (entry, next)

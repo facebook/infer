@@ -12,6 +12,7 @@ module type Domain = sig
   val pp : t pp
   val init : Llair.GlobalDefn.t iarray -> t
   val join : t -> t -> t
+  val joinN : t list -> t
   val dnf : t -> t list
   val exec_assume : t -> Llair.Exp.t -> t option
   val exec_kill : Llair.Reg.t -> t -> t

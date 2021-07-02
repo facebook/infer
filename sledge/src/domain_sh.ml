@@ -40,6 +40,13 @@ let join p q =
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp]
 
+let joinN qs =
+  [%Trace.call fun {pf} -> pf "@ %a" Sh.pp_djn qs]
+  ;
+  (match qs with [q] -> q | _ -> Sh.orN qs |> simplify)
+  |>
+  [%Trace.retn fun {pf} -> pf "%a" pp]
+
 let dnf = Sh.dnf
 
 let exec_assume q b =

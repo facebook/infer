@@ -18,6 +18,7 @@ let init globals =
   empty
 
 let join l r = Llair.Global.Set.union l r
+let joinN = function [] -> empty | x :: xs -> List.fold ~f:join xs x
 let recursion_beyond_bound = `skip
 let post _ _ state = state
 let retn _ _ from_call post = Llair.Global.Set.union from_call post

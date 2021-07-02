@@ -20,6 +20,11 @@ let equal : t -> t -> bool = Poly.equal
 let compare : t -> t -> int = Poly.compare
 let man = lazy (Box.manager_alloc ())
 let join l r = Abstract1.join (Lazy.force man) l r
+
+let joinN = function
+  | [] -> Abstract1.bottom (Lazy.force man) (Environment.make [||] [||])
+  | x :: xs -> List.fold ~f:join xs x
+
 let is_false x = Abstract1.is_bottom (Lazy.force man) x
 
 let bindings (itv : t) =

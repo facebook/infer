@@ -59,6 +59,10 @@ val or_ : t -> t -> t
 (** Disjoin formulas, extending to a common vocabulary, and avoiding
     capturing existentials. *)
 
+val orN : t list -> t
+(** Disjoin formulas, extending to a common vocabulary, and avoiding
+    capturing existentials. *)
+
 val pure : Formula.t -> t
 (** Atomic pure boolean constraint formula. *)
 

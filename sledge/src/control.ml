@@ -447,9 +447,14 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
       [%Trace.info
         " %i: %a [%a]@ | %a" depth Edge.pp edge Stack.pp edge.stk Queue.pp
           queue] ;
-      let state, depths =
-        List.fold elts (state, depths) ~f:(fun elt (state, depths) ->
-            (D.join elt.state state, Depths.join elt.depths depths) )
+      let states, depths =
+        List.fold elts
+          ([state], depths)
+          ~f:(fun elt (states, depths) ->
+            (elt.state :: states, Depths.join elt.depths depths) )
+      in
+      let state =
+        D.joinN (List.sort_uniq ~cmp:(Ord.opp D.compare) states)
       in
       (edge, state, depths, queue)
 
