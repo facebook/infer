@@ -160,8 +160,10 @@ let assign reg exp q =
   |>
   [%Trace.retn fun {pf} r -> pf "{%a}" pp r]
 
+let resolve_int _ _ _ = []
+
 (** block if [e] is known to be false; skip otherwise *)
-let exec_assume q e =
+let exec_assume _ q e =
   match apron_texpr_of_llair_exp e q with
   | Some e ->
       let cond =
@@ -171,14 +173,14 @@ let exec_assume q e =
   | _ -> Some q
 
 (** existentially quantify killed register [r] out of state [q] *)
-let exec_kill r q =
+let exec_kill _ r q =
   let apron_v = apron_var_of_reg r in
   if Environment.mem_var (Abstract1.env q) apron_v then
     Abstract1.forget_array (Lazy.force man) q [|apron_v|] false
   else q
 
 (** perform a series [move_vec] of reg:=exp moves at state [q] *)
-let exec_move move_vec q =
+let exec_move _ move_vec q =
   let defs, uses =
     IArray.fold move_vec (Llair.Reg.Set.empty, Llair.Reg.Set.empty)
       ~f:(fun (r, e) (defs, uses) ->
@@ -189,17 +191,17 @@ let exec_move move_vec q =
     todo "overwritten variables in Domain_itv" () ;
   IArray.fold ~f:(fun (r, e) q -> assign r e q) move_vec q
 
-let exec_inst i q =
+let exec_inst tid i q =
   match (i : Llair.inst) with
-  | Move {reg_exps; loc= _} -> Ok (exec_move reg_exps q)
+  | Move {reg_exps; loc= _} -> Ok (exec_move tid reg_exps q)
   | Store {ptr; exp; len= _; loc= _} -> (
     match Llair.Reg.of_exp ptr with
     | Some reg -> Ok (assign reg exp q)
     | None -> Ok q )
   | Load {reg; ptr; len= _; loc= _} -> Ok (assign reg ptr q)
-  | Nondet {reg= Some reg; msg= _; loc= _} -> Ok (exec_kill reg q)
+  | Nondet {reg= Some reg; msg= _; loc= _} -> Ok (exec_kill tid reg q)
   | Nondet {reg= None; msg= _; loc= _} | Alloc _ | Free _ -> Ok q
-  | Intrinsic {reg= Some reg; _} -> Ok (exec_kill reg q)
+  | Intrinsic {reg= Some reg; _} -> Ok (exec_kill tid reg q)
   | Intrinsic {reg= None; _} -> Ok q
   | Abort {loc} ->
       Error
@@ -208,13 +210,15 @@ let exec_inst i q =
         ; pp_action= Fun.flip Llair.Inst.pp i
         ; pp_state= Fun.flip pp q }
 
+let enter_scope _ _ q = q
+
 type from_call = {areturn: Llair.Reg.t option; caller_q: t}
 [@@deriving sexp_of]
 
 let recursion_beyond_bound = `prune
 
 (** existentially quantify locals *)
-let post locals _ (q : t) =
+let post _ locals _ (q : t) =
   let locals =
     Llair.Reg.Set.fold locals [] ~f:(fun r a ->
         let v = apron_var_of_reg r in
@@ -224,7 +228,7 @@ let post locals _ (q : t) =
   Abstract1.forget_array (Lazy.force man) q locals false
 
 (** drop caller-local variables, add returned value to caller state *)
-let retn _ freturn {areturn; caller_q} callee_q =
+let retn tid _ freturn {areturn; caller_q} callee_q =
   match (areturn, freturn) with
   | Some aret, Some fret ->
       let env_fret_only =
@@ -245,14 +249,14 @@ let retn _ freturn {areturn; caller_q} callee_q =
       Abstract1.rename_array man result
         [|apron_var_of_reg fret|]
         [|apron_var_of_reg aret|]
-  | Some aret, None -> exec_kill aret caller_q
+  | Some aret, None -> exec_kill tid aret caller_q
   | None, _ -> caller_q
 
 (** map actuals to formals (via temporary registers), stash constraints on
     caller-local variables. Note that this exploits the non-relational-ness
     of Box to ignore all variables other than the formal/actual params/
     returns; this will not be possible if extended to a relational domain *)
-let call ~summaries ~globals:_ ~actuals ~areturn ~formals ~freturn:_
+let call ~summaries _ ~globals:_ ~actuals ~areturn ~formals ~freturn:_
     ~locals:_ q =
   if summaries then
     todo "Summaries not yet implemented for interval analysis" ()
@@ -285,10 +289,10 @@ let call ~summaries ~globals:_ ~actuals ~areturn ~formals ~freturn:_
     (q''', {areturn; caller_q= q})
 
 let dnf q = [q]
-let resolve_callee _ _ _ = []
+let resolve_callee _ _ _ _ = []
 
 type summary = t
 
 let pp_summary = pp
 let apply_summary _ _ = None
-let create_summary ~locals:_ ~formals:_ q = (q, q)
+let create_summary _ ~locals:_ ~formals:_ q = (q, q)

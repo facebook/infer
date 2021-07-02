@@ -11,7 +11,8 @@ open Domain_intf
 include Domain
 
 val create_summary :
-     locals:Llair.Reg.Set.t
+     ThreadID.t
+  -> locals:Llair.Reg.Set.t
   -> formals:Llair.Reg.t iarray
   -> entry:t
   -> current:t

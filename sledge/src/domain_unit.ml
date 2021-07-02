@@ -13,25 +13,27 @@ let pp fs () = Format.pp_print_string fs "()"
 let init _ = ()
 let join () () = ()
 let joinN _ = ()
-let exec_assume () _ = Some ()
-let exec_kill _ () = ()
-let exec_move _ () = ()
-let exec_inst _ () = Ok ()
+let resolve_int _ _ _ = []
+let exec_assume _ () _ = Some ()
+let exec_kill _ _ () = ()
+let exec_move _ _ () = ()
+let exec_inst _ _ () = Ok ()
+let enter_scope _ _ () = ()
 
 type from_call = unit [@@deriving compare, equal, sexp]
 
-let call ~summaries:_ ~globals:_ ~actuals:_ ~areturn:_ ~formals:_ ~freturn:_
-    ~locals:_ _ =
+let call ~summaries:_ _ ~globals:_ ~actuals:_ ~areturn:_ ~formals:_
+    ~freturn:_ ~locals:_ _ =
   ((), ())
 
 let recursion_beyond_bound = `skip
-let post _ _ () = ()
-let retn _ _ _ _ = ()
+let post _ _ _ () = ()
+let retn _ _ _ _ _ = ()
 let dnf () = [()]
-let resolve_callee _ _ _ = []
+let resolve_callee _ _ _ _ = []
 
 type summary = unit
 
 let pp_summary fs () = Format.pp_print_string fs "()"
-let create_summary ~locals:_ ~formals:_ _ = ((), ())
+let create_summary _ ~locals:_ ~formals:_ _ = ((), ())
 let apply_summary _ _ = Some ()

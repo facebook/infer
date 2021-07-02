@@ -204,6 +204,7 @@ module IP : sig
   val block : t -> block
   val inst : t -> inst option
   val succ : t -> t
+  val is_schedule_point : t -> bool
 
   module Tbl : HashTable.S with type key := t
 end

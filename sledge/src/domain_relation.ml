@@ -14,7 +14,8 @@ module type State_domain_sig = sig
   include Domain
 
   val create_summary :
-       locals:Llair.Reg.Set.t
+       ThreadID.t
+    -> locals:Llair.Reg.Set.t
     -> formals:Llair.Reg.t iarray
     -> entry:t
     -> current:t
@@ -43,20 +44,25 @@ module Make (State_domain : State_domain_sig) = struct
     let entrys, currents = List.split rs in
     (State_domain.joinN entrys, State_domain.joinN currents)
 
-  let exec_assume (entry, current) cnd =
-    let+ next = State_domain.exec_assume current cnd in
+  let resolve_int tid (_, current) = State_domain.resolve_int tid current
+
+  let exec_assume tid (entry, current) cnd =
+    let+ next = State_domain.exec_assume tid current cnd in
     (entry, next)
 
-  let exec_kill reg (entry, current) =
-    (entry, State_domain.exec_kill reg current)
+  let exec_kill tid reg (entry, current) =
+    (entry, State_domain.exec_kill tid reg current)
 
-  let exec_move reg_exps (entry, current) =
-    (entry, State_domain.exec_move reg_exps current)
+  let exec_move tid reg_exps (entry, current) =
+    (entry, State_domain.exec_move tid reg_exps current)
 
-  let exec_inst inst (entry, current) =
+  let exec_inst tid inst (entry, current) =
     let open Or_alarm.Import in
-    let+ next = State_domain.exec_inst inst current in
+    let+ next = State_domain.exec_inst tid inst current in
     (entry, next)
+
+  let enter_scope tid regs (entry, current) =
+    (entry, State_domain.enter_scope tid regs current)
 
   type from_call =
     {state_from_call: State_domain.from_call; caller_entry: State_domain.t}
@@ -64,8 +70,8 @@ module Make (State_domain : State_domain_sig) = struct
 
   let recursion_beyond_bound = State_domain.recursion_beyond_bound
 
-  let call ~summaries ~globals ~actuals ~areturn ~formals ~freturn ~locals
-      (entry, current) =
+  let call ~summaries tid ~globals ~actuals ~areturn ~formals ~freturn
+      ~locals (entry, current) =
     [%Trace.call fun {pf} ->
       pf
         "@ @[<v>@[actuals: (@[%a@])@ formals: (@[%a@])@]@ locals: \
@@ -77,7 +83,7 @@ module Make (State_domain : State_domain_sig) = struct
         State_domain.pp current]
     ;
     let caller_current, state_from_call =
-      State_domain.call ~summaries ~globals ~actuals ~areturn ~formals
+      State_domain.call tid ~summaries ~globals ~actuals ~areturn ~formals
         ~freturn ~locals current
     in
     ( (caller_current, caller_current)
@@ -85,33 +91,35 @@ module Make (State_domain : State_domain_sig) = struct
     |>
     [%Trace.retn fun {pf} (reln, _) -> pf "@,%a" pp reln]
 
-  let post locals {state_from_call; caller_entry} (_, current) =
+  let post tid locals {state_from_call; caller_entry} (_, current) =
     [%Trace.call fun {pf} -> pf "@ locals: %a" Llair.Reg.Set.pp locals]
     ;
-    (caller_entry, State_domain.post locals state_from_call current)
+    (caller_entry, State_domain.post tid locals state_from_call current)
     |>
     [%Trace.retn fun {pf} -> pf "%a" pp]
 
-  let retn formals freturn {caller_entry; state_from_call} (_, current) =
+  let retn tid formals freturn {caller_entry; state_from_call} (_, current)
+      =
     [%Trace.call fun {pf} -> pf "@ %a" State_domain.pp current]
     ;
-    (caller_entry, State_domain.retn formals freturn state_from_call current)
+    ( caller_entry
+    , State_domain.retn tid formals freturn state_from_call current )
     |>
     [%Trace.retn fun {pf} -> pf "%a" pp]
 
   let dnf (entry, current) =
     List.map ~f:(fun c -> (entry, c)) (State_domain.dnf current)
 
-  let resolve_callee f e (_, current) =
-    State_domain.resolve_callee f e current
+  let resolve_callee f tid e (_, current) =
+    State_domain.resolve_callee f tid e current
 
   type summary = State_domain.summary
 
   let pp_summary = State_domain.pp_summary
 
-  let create_summary ~locals ~formals (entry, current) =
+  let create_summary tid ~locals ~formals (entry, current) =
     let fs, next =
-      State_domain.create_summary ~locals ~formals ~entry ~current
+      State_domain.create_summary tid ~locals ~formals ~entry ~current
     in
     (fs, (entry, next))
 

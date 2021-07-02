@@ -19,9 +19,10 @@ let init globals =
 
 let join l r = Llair.Global.Set.union l r
 let joinN = function [] -> empty | x :: xs -> List.fold ~f:join xs x
+let enter_scope _ _ state = state
 let recursion_beyond_bound = `skip
-let post _ _ state = state
-let retn _ _ from_call post = Llair.Global.Set.union from_call post
+let post _ _ _ state = state
+let retn _ _ _ from_call post = Llair.Global.Set.union from_call post
 let dnf t = [t]
 
 let used_globals exp s =
@@ -30,13 +31,14 @@ let used_globals exp s =
       | Some g -> Llair.Global.Set.add g s
       | None -> s )
 
-let exec_assume st exp = Some (used_globals exp st)
-let exec_kill _ st = st
+let resolve_int _ _ _ = []
+let exec_assume _ st exp = Some (used_globals exp st)
+let exec_kill _ _ st = st
 
-let exec_move reg_exps st =
+let exec_move _ reg_exps st =
   IArray.fold ~f:(fun (_, rhs) -> used_globals rhs) reg_exps st
 
-let exec_inst inst st =
+let exec_inst _ inst st =
   [%Trace.call fun {pf} -> pf "@ pre:{%a} %a" pp st Llair.Inst.pp inst]
   ;
   Ok (Llair.Inst.fold_exps ~f:used_globals inst st)
@@ -47,18 +49,18 @@ let exec_inst inst st =
 type from_call = t [@@deriving sexp]
 
 (* Set abstract state to bottom (i.e. empty set) at function entry *)
-let call ~summaries:_ ~globals:_ ~actuals ~areturn:_ ~formals:_ ~freturn:_
+let call ~summaries:_ _ ~globals:_ ~actuals ~areturn:_ ~formals:_ ~freturn:_
     ~locals:_ st =
   (empty, IArray.fold ~f:used_globals actuals st)
 
-let resolve_callee _ _ _ = []
+let resolve_callee _ _ _ _ = []
 
 (* A function summary is the set of global registers accessed by that
    function and its transitive callees *)
 type summary = t
 
 let pp_summary = pp
-let create_summary ~locals:_ ~formals:_ state = (state, state)
+let create_summary _ ~locals:_ ~formals:_ state = (state, state)
 let apply_summary st summ = Some (Llair.Global.Set.union st summ)
 
 (** Query *)

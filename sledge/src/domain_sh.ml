@@ -29,7 +29,7 @@ let init globals =
             | _ -> violates Llair.GlobalDefn.invariant global
           in
           let len = Term.integer (Z.of_int siz) in
-          let cnt = X.term seq in
+          let cnt = X.term ThreadID.init seq in
           Sh.star q (Sh.seg {loc; bas= loc; len; siz= len; cnt})
       | _ -> q )
 
@@ -49,18 +49,24 @@ let joinN qs =
 
 let dnf = Sh.dnf
 
-let exec_assume q b =
-  Exec.assume q (X.formula b)
+let resolve_int tid q e =
+  match Term.get_z (Context.normalize q.Sh.ctx (X.term tid e)) with
+  | Some z -> [Z.to_int z]
+  | None -> []
+
+let exec_assume tid q b =
+  Exec.assume q (X.formula tid b)
   |> simplify
   |> fun q -> if Sh.is_unsat_dnf q then None else Some q
 
-let exec_kill r q = Exec.kill q (X.reg r) |> simplify
+let exec_kill tid r q = Exec.kill q (X.reg tid r) |> simplify
 
-let exec_move res q =
-  Exec.move q (IArray.map res ~f:(fun (r, e) -> (X.reg r, X.term e)))
+let exec_move tid res q =
+  Exec.move q
+    (IArray.map res ~f:(fun (r, e) -> (X.reg tid r, X.term tid e)))
   |> simplify
 
-let exec_inst inst pre =
+let exec_inst tid inst pre =
   let alarm kind =
     { Alarm.kind
     ; loc= Llair.Inst.loc inst
@@ -75,23 +81,32 @@ let exec_inst inst pre =
   | Move {reg_exps; _} ->
       Ok
         (Exec.move pre
-           (IArray.map reg_exps ~f:(fun (r, e) -> (X.reg r, X.term e))))
+           (IArray.map reg_exps ~f:(fun (r, e) ->
+                (X.reg tid r, X.term tid e) )))
   | Load {reg; ptr; len; _} ->
-      Exec.load pre ~reg:(X.reg reg) ~ptr:(X.term ptr) ~len:(X.term len)
+      Exec.load pre ~reg:(X.reg tid reg) ~ptr:(X.term tid ptr)
+        ~len:(X.term tid len)
       |> or_alarm
   | Store {ptr; exp; len; _} ->
-      Exec.store pre ~ptr:(X.term ptr) ~exp:(X.term exp) ~len:(X.term len)
+      Exec.store pre ~ptr:(X.term tid ptr) ~exp:(X.term tid exp)
+        ~len:(X.term tid len)
       |> or_alarm
   | Alloc {reg; num; len; _} ->
-      Exec.alloc pre ~reg:(X.reg reg) ~num:(X.term num) ~len |> or_alarm
-  | Free {ptr; _} -> Exec.free pre ~ptr:(X.term ptr) |> or_alarm
-  | Nondet {reg; _} -> Ok (Exec.nondet pre (Option.map ~f:X.reg reg))
+      Exec.alloc pre ~reg:(X.reg tid reg) ~num:(X.term tid num) ~len
+      |> or_alarm
+  | Free {ptr; _} -> Exec.free pre ~ptr:(X.term tid ptr) |> or_alarm
+  | Nondet {reg; _} -> Ok (Exec.nondet pre (Option.map ~f:(X.reg tid) reg))
   | Abort _ -> Error (alarm Abort)
   | Intrinsic {reg; name; args; _} ->
-      let areturn = Option.map ~f:X.reg reg in
-      let actuals = IArray.map ~f:X.term args in
+      let areturn = Option.map ~f:(X.reg tid) reg in
+      let actuals = IArray.map ~f:(X.term tid) args in
       Exec.intrinsic pre areturn name actuals |> or_alarm )
   |> Or_alarm.map ~f:simplify
+
+let enter_scope tid regs q =
+  let vars = X.regs tid regs in
+  assert (Var.Set.disjoint vars q.Sh.us) ;
+  Sh.extend_us vars q
 
 let value_determined_by ctx us a =
   List.exists (Context.class_of ctx a) ~f:(fun b ->
@@ -127,10 +142,13 @@ let and_eqs sub formals actuals q =
   in
   IArray.fold2_exn ~f:and_eq formals actuals q
 
-let localize_entry globals actuals formals freturn locals shadow pre entry =
+let localize_entry tid globals actuals formals freturn locals shadow pre
+    entry =
   (* Add the formals here to do garbage collection and then get rid of them *)
   let formals_set = Var.Set.of_iter (IArray.to_iter formals) in
-  let freturn_locals = X.regs (Llair.Reg.Set.add_option freturn locals) in
+  let freturn_locals =
+    X.regs tid (Llair.Reg.Set.add_option freturn locals)
+  in
   let wrt =
     Term.Set.of_iter
       (Iter.append
@@ -157,7 +175,8 @@ type from_call = {areturn: Var.t option; unshadow: Var.Subst.t; frame: Sh.t}
 (** Express formula in terms of formals instead of actuals, and enter scope
     of locals: rename formals to fresh vars in formula and actuals, add
     equations between each formal and actual, and quantify fresh vars. *)
-let call ~summaries ~globals ~actuals ~areturn ~formals ~freturn ~locals q =
+let call ~summaries tid ~globals ~actuals ~areturn ~formals ~freturn ~locals
+    q =
   [%Trace.call fun {pf} ->
     pf "@ @[<hv>locals: {@[%a@]}@ globals: {@[%a@]}@ q: %a@]"
       Llair.Reg.Set.pp locals Llair.Global.Set.pp globals pp q ;
@@ -166,17 +185,19 @@ let call ~summaries ~globals ~actuals ~areturn ~formals ~freturn ~locals q =
       let fv_actuals =
         actuals
         |> IArray.to_iter
-        |> Iter.map ~f:X.term
+        |> Iter.map ~f:(X.term tid)
         |> Iter.flat_map ~f:Term.vars
       in
       not
         (Option.exists areturn ~f:(fun modif ->
-             Iter.exists ~f:(Var.equal (X.reg modif)) fv_actuals )) )]
+             Iter.exists ~f:(Var.equal (X.reg tid modif)) fv_actuals )) )]
   ;
-  let actuals = IArray.map ~f:X.term actuals in
-  let areturn = Option.map ~f:X.reg areturn in
-  let formals = IArray.map ~f:X.reg formals in
-  let freturn_locals = X.regs (Llair.Reg.Set.add_option freturn locals) in
+  let actuals = IArray.map ~f:(X.term tid) actuals in
+  let areturn = Option.map ~f:(X.reg tid) areturn in
+  let formals = IArray.map ~f:(X.reg tid) formals in
+  let freturn_locals =
+    X.regs tid (Llair.Reg.Set.add_option freturn locals)
+  in
   let modifs = Var.Set.of_option areturn in
   (* quantify modifs, their current values will be overwritten and so should
      not be saved and restored on return *)
@@ -197,7 +218,8 @@ let call ~summaries ~globals ~actuals ~areturn ~formals ~freturn ~locals q =
   ( if not summaries then (entry, {areturn; unshadow; frame= Sh.emp})
   else
     let q, frame =
-      localize_entry globals actuals formals freturn locals shadow q entry
+      localize_entry tid globals actuals formals freturn locals shadow q
+        entry
     in
     (q, {areturn; unshadow; frame}) )
   |>
@@ -206,18 +228,18 @@ let call ~summaries ~globals ~actuals ~areturn ~formals ~freturn ~locals q =
       frame pp entry]
 
 (** Leave scope of locals: existentially quantify locals. *)
-let post locals _ q =
+let post tid locals _ q =
   [%Trace.call fun {pf} ->
     pf "@ @[<hv>locals: {@[%a@]}@ q: %a@]" Llair.Reg.Set.pp locals Sh.pp q]
   ;
-  Sh.exists (X.regs locals) q |> simplify
+  Sh.exists (X.regs tid locals) q |> simplify
   |>
   [%Trace.retn fun {pf} -> pf "%a" Sh.pp]
 
 (** Express in terms of actuals instead of formals: existentially quantify
     formals, and apply inverse of fresh variables for formals renaming to
     restore the shadowed variables. *)
-let retn formals freturn {areturn; unshadow; frame} q =
+let retn tid formals freturn {areturn; unshadow; frame} q =
   [%Trace.call fun {pf} ->
     pf "@ @[<v>formals: {@[%a@]}%a%a@ unshadow: %a@ q: %a@ frame: %a@]"
       (IArray.pp ", " Llair.Reg.pp)
@@ -228,9 +250,9 @@ let retn formals freturn {areturn; unshadow; frame} q =
       areturn Var.Subst.pp unshadow pp q pp frame]
   ;
   let formals =
-    Var.Set.of_iter (Iter.map ~f:X.reg (IArray.to_iter formals))
+    Var.Set.of_iter (Iter.map ~f:(X.reg tid) (IArray.to_iter formals))
   in
-  let freturn = Option.map ~f:X.reg freturn in
+  let freturn = Option.map ~f:(X.reg tid) freturn in
   let q =
     match areturn with
     | Some areturn -> (
@@ -259,8 +281,8 @@ let retn formals freturn {areturn; unshadow; frame} q =
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp]
 
-let resolve_callee lookup ptr (q : Sh.t) =
-  Context.class_of q.ctx (X.term ptr)
+let resolve_callee lookup tid ptr (q : Sh.t) =
+  Context.class_of q.ctx (X.term tid ptr)
   |> List.find_map ~f:(X.lookup_func lookup)
   |> Option.to_list
 
@@ -272,16 +294,16 @@ let pp_summary fs {xs; foot; post} =
   Format.fprintf fs "@[<v>xs: @[%a@]@ foot: %a@ post: %a @]" Var.Set.pp xs
     pp foot pp post
 
-let create_summary ~locals ~formals ~entry ~current:(post : Sh.t) =
+let create_summary tid ~locals ~formals ~entry ~current:(post : Sh.t) =
   [%Trace.call fun {pf} ->
     pf "@ formals %a@ entry: %a@ current: %a"
       (IArray.pp ",@ " Llair.Reg.pp)
       formals pp entry pp post]
   ;
   let formals =
-    Var.Set.of_iter (Iter.map ~f:X.reg (IArray.to_iter formals))
+    Var.Set.of_iter (Iter.map ~f:(X.reg tid) (IArray.to_iter formals))
   in
-  let locals = X.regs locals in
+  let locals = X.regs tid locals in
   let foot = Sh.exists locals entry in
   let foot, subst = Sh.freshen ~wrt:(Var.Set.union foot.us post.us) foot in
   let restore_formals q =

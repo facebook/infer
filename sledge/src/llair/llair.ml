@@ -550,6 +550,27 @@ module IP = struct
 
   let block ip = ip.block
 
+  let is_schedule_point ip =
+    match inst ip with
+    | Some (Load _ | Store _ | Free _) -> true
+    | Some (Move _ | Alloc _ | Nondet _ | Abort _) -> false
+    | Some (Intrinsic {name; _}) -> (
+      match name with
+      | `calloc | `malloc | `mallocx | `nallocx -> false
+      | `_ZN5folly13usingJEMallocEv | `aligned_alloc | `dallocx | `mallctl
+       |`mallctlbymib | `mallctlnametomib | `malloc_stats_print
+       |`malloc_usable_size | `memcpy | `memmove | `memset
+       |`posix_memalign | `rallocx | `realloc | `sallocx | `sdallocx
+       |`strlen | `xallocx ->
+          true )
+    | None -> (
+      match ip.block.term with
+      | Call {callee; _} -> (
+        match Function.name callee.name with
+        | "sledge_thread_join" -> true
+        | _ -> false )
+      | _ -> false )
+
   let pp ppf {block; index} =
     Format.fprintf ppf "#%i%t %%%s" block.sort_index
       (fun ppf -> if index <> 0 then Format.fprintf ppf "+%i" index)
