@@ -12,14 +12,14 @@ open Control_intf
 
 (** An element of work to be scheduled. The scheduling strategies have very
     few dependencies on elements, mainly some just need to test if two
-    elements can be joined. An example element instance is a pair of a
-    control-flow edge with a symbolic state that has reached the source of
-    the edge and has yet to be propagated to the destination. *)
+    elements have the same destination. An example element instance is a
+    pair of a control-flow edge with a symbolic state that has reached the
+    source of the edge and has yet to be propagated to the destination. *)
 module type Elt = sig
   type t [@@deriving compare, equal, sexp_of]
 
   val pp : t pp
-  val joinable : t -> t -> bool
+  val equal_destination : t -> t -> bool
   val dnf : t -> t list
 end
 
@@ -78,8 +78,8 @@ module PriorityQueue (Elt : Elt) : QueueS with type elt = Elt.t = struct
     else
       let elts, removed =
         FHeap.fold queue ~init:([], removed') ~f:(fun (elts, removed) elt ->
-            if Elt.joinable top elt && not (Elts.mem elt removed) then
-              (elt :: elts, Elts.add elt removed)
+            if Elt.equal_destination top elt && not (Elts.mem elt removed)
+            then (elt :: elts, Elts.add elt removed)
             else (elts, removed) )
       in
       Some (top, elts, {queue; removed})
@@ -421,7 +421,7 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
       let pp ppf {depth; edge} =
         Format.fprintf ppf "%i: %a" depth Edge.pp edge
 
-      let joinable x y =
+      let equal_destination x y =
         Llair.Block.equal x.edge.dst y.edge.dst
         && Stack.equal_as_inlined_location x.edge.stk y.edge.stk
 
