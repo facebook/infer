@@ -612,6 +612,10 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
         [%Trace.info " infeasible %a@\n@[%a@]" Llair.Exp.pp cond D.pp state] ;
         Work.skip
 
+  let resolve_callee (pgm : Llair.program) callee state =
+    let lookup name = Llair.Func.find name pgm.functions in
+    D.resolve_callee lookup callee state
+
   let exec_term : Llair.program -> Stack.t -> D.t -> Llair.block -> Work.x =
    fun pgm stk state block ->
     [%Trace.info "@\n@[%a@]@\n%a" D.pp state Llair.Term.pp block.term] ;
@@ -637,13 +641,11 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
             |> Work.seq x )
     | Call call -> exec_call stk state block call
     | ICall ({callee; areturn; return} as call) -> (
-        let lookup name = Llair.Func.find name pgm.functions in
-        match D.resolve_callee lookup callee state with
-        | [] -> exec_skip_func stk state block areturn return
-        | callees ->
-            List.fold callees Work.skip ~f:(fun callee x ->
-                exec_call stk state block {call with callee} |> Work.seq x )
-        )
+      match resolve_callee pgm callee state with
+      | [] -> exec_skip_func stk state block areturn return
+      | callees ->
+          List.fold callees Work.skip ~f:(fun callee x ->
+              exec_call stk state block {call with callee} |> Work.seq x ) )
     | Return {exp} -> exec_return stk state block exp
     | Throw {exc} -> exec_throw stk state block exc
     | Unreachable -> Work.skip
