@@ -81,8 +81,8 @@ let make properties =
       let prefix_pname pname =
         if String.equal ".*" pname then pname
         else
-          let ps = List.map ~f:(fun p -> "\\|" ^ p ^ "\\.") p.ToplAst.prefixes in
-          "^\\(" ^ String.concat ps ^ "\\)" ^ pname ^ "("
+          let ps = List.map ~f:(fun p -> "\\|" ^ p ^ ".") p.ToplAst.prefixes in
+          "^\\(" ^ String.concat ps ^ "\\)" ^ pname ^ "\\((\\|$\\)"
       in
       let prefix_pattern =
         ToplAst.(

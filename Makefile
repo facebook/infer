@@ -152,6 +152,7 @@ ifeq ($(BUILD_ERLANG_ANALYZERS),yes)
 ifneq ($(REBAR3),no)
 DIRECT_TESTS += \
   erlang_nonmatch \
+  erlang_topl \
 
 BUILD_SYSTEMS_TESTS += rebar3
 endif

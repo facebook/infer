@@ -1,0 +1,5 @@
+property Taint
+  prefix "topl_taint"
+  start -> start: *
+  start -> tracking: "source/0"(Ret) => x := Ret
+  tracking -> error: "sink/1"(Arg, VoidRet) when x == Arg
