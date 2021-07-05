@@ -393,10 +393,9 @@ let rec translate_expression env {Ast.line; simple_expression} =
         let expr_block = translate_expression {env with result= Present (Exp.Var id)} expression in
         let blocks = Block.any env (List.map ~f:(translate_case_clause env [id]) cases) in
         let crash_node = Node.make_pattern_fail env in
-        let {Block.start; exit_success; exit_failure} = Block.all env [expr_block; blocks] in
         blocks.exit_failure |~~> [crash_node] ;
-        crash_node |~~> [Procdesc.get_exit_node procdesc] ;
-        {start; exit_success; exit_failure}
+        let blocks = {blocks with exit_failure= crash_node} in
+        Block.all env [expr_block; blocks]
     | Cons {head; tail} ->
         let head_var = Ident.create_fresh Ident.knormal in
         let tail_var = Ident.create_fresh Ident.knormal in
