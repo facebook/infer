@@ -5,7 +5,18 @@
 
 -module(nonmatch).
 
--export([list_match_test_a/0, list_match_test_b/0, list_match_test_c/0]).
+-export([
+    list_match_test_a/0,
+    list_match_test_b/0,
+    list_match_test_c/0,
+    match_test_a_Ok/0,
+    match_test_b_Bad/0,
+    fp_match_test_c_Ok/0,
+    fp_match_test_d_Ok/0,
+    match_test_e_Bad/0,
+    match_test_f_Ok/0,
+    match_test_g_Bad/0
+]).
 
 tail([_ | Xs]) -> Xs.
 assert_empty([]) -> ok.
@@ -26,3 +37,37 @@ list_match_test_c() ->
     assert_second_is_nil([1, [], 2]),
     assert_second_is_nil([1, []]),
     assert_second_is_nil([1, [2], 3]).
+
+match_test_a_Ok() ->
+    _X = two().
+
+match_test_b_Bad() ->
+    [_ | _] = two().
+
+% FP (T94492137)
+fp_match_test_c_Ok() ->
+    [_X, _Y] = [1, 2].
+
+% FP (T94492137)
+fp_match_test_d_Ok() ->
+    [_ | Xs] = [1, 2],
+    tail(Xs).
+
+match_test_e_Bad() ->
+    [_ | Xs] = [1],
+    tail(Xs).
+
+match_test_f_Ok() ->
+    X = (Y = 1),
+    only_accepts_one(X),
+    only_accepts_one(Y).
+
+match_test_g_Bad() ->
+    X = 2,
+    only_accepts_one(X).
+
+%% internal
+%% These functions are used to fool the compiler, which would warn if these were inlined.
+
+only_accepts_one(1) -> ok.
+two() -> 2.

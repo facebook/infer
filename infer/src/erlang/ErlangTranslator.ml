@@ -422,6 +422,13 @@ let rec translate_expression env {Ast.line; simple_expression} =
     | Literal (String s) ->
         let e = Exp.Const (Cstr s) in
         Block.make_load env ret_var e any
+    | Match {pattern; body} ->
+        let body_block = translate_expression {env with result= Present (Exp.Var ret_var)} body in
+        let pattern_block = translate_pattern env ret_var pattern in
+        let crash_node = Node.make_pattern_fail env in
+        pattern_block.exit_failure |~~> [crash_node] ;
+        let pattern_block = {pattern_block with exit_failure= crash_node} in
+        Block.all env [body_block; pattern_block]
     | Nil ->
         let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_nil) in
         let instruction = Sil.Call ((ret_var, any), fun_exp, [], env.location, CallFlags.default) in
