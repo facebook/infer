@@ -191,8 +191,6 @@ val buck_out_gen : string
 
 val buck_targets_blacklist : string list
 
-val call_graph_schedule : bool
-
 val capture : bool
 
 val capture_blacklist : string option

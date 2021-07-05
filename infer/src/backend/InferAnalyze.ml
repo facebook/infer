@@ -11,7 +11,6 @@
 open! IStd
 module F = Format
 module L = Logging
-module CLOpt = CommandLineOption
 
 let clear_caches_except_lrus () =
   Summary.OnDisk.clear_cache () ;
@@ -134,17 +133,13 @@ let get_source_files_to_analyze ~changed_files =
 
 
 let tasks_generator_builder_for sources =
-  if Config.call_graph_schedule then (
-    CLOpt.warnf "WARNING: '--call-graph-schedule' is deprecated. Use '--scheduler' instead.@." ;
-    SyntacticCallGraph.make sources )
-  else
-    match Config.scheduler with
-    | File ->
-        FileScheduler.make sources
-    | Restart ->
-        RestartScheduler.make sources
-    | SyntacticCallGraph ->
-        SyntacticCallGraph.make sources
+  match Config.scheduler with
+  | File ->
+      FileScheduler.make sources
+  | Restart ->
+      RestartScheduler.make sources
+  | SyntacticCallGraph ->
+      SyntacticCallGraph.make sources
 
 
 let analyze source_files_to_analyze =

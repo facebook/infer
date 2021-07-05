@@ -856,10 +856,6 @@ and buck_targets_blacklist =
      $(b,--buck-compilation-database)."
 
 
-and call_graph_schedule =
-  CLOpt.mk_bool ~long:"call-graph-schedule" ~default:false "use call graph for scheduling analysis"
-
-
 and capture =
   CLOpt.mk_bool ~long:"capture" ~default:true
     "capture and translate source files into infer's intermediate language for analysis"
@@ -2941,8 +2937,6 @@ and buck_mode : BuckMode.t option =
 
 
 and buck_targets_blacklist = RevList.to_list !buck_targets_blacklist
-
-and call_graph_schedule = !call_graph_schedule
 
 and capture = !capture
 
