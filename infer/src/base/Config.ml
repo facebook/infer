@@ -2089,6 +2089,15 @@ and pulse_model_skip_pattern =
     "Regex of methods that should be modelled as \"skip\" in Pulse"
 
 
+and pulse_prune_unsupported_arithmetic =
+  CLOpt.mk_bool ~long:"pulse-prune-unsupported-arithmetic" ~default:false
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "The arithmetic engine in Pulse sometimes does not detect that the collection of conditions on \
+     the path makes it infeasible, especially outside the well-supported linear arithmetic \
+     fragment. To avoid false positives, Pulse tries to detect when there is a possibility of \
+     imprecise arithmetic treatment and if so pessimistically assumes the path is infeasible."
+
+
 and pulse_report_ignore_unknown_java_methods_patterns =
   CLOpt.mk_string_list ~default:[".*<init>.*"]
     ~long:"pulse-report-ignore-unknown-java-methods-patterns"
@@ -3331,6 +3340,8 @@ and pulse_model_return_first_arg = Option.map ~f:Str.regexp !pulse_model_return_
 and pulse_model_return_nonnull = Option.map ~f:Str.regexp !pulse_model_return_nonnull
 
 and pulse_model_skip_pattern = Option.map ~f:Str.regexp !pulse_model_skip_pattern
+
+and pulse_prune_unsupported_arithmetic = !pulse_prune_unsupported_arithmetic
 
 and pulse_report_ignore_unknown_java_methods_patterns =
   match RevList.to_list !pulse_report_ignore_unknown_java_methods_patterns with
