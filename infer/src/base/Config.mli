@@ -179,6 +179,8 @@ val buck_build_args_no_inline : string list
 
 val buck_cache_mode : bool
 
+val buck_clang_use_toolchain_config : bool
+
 val buck_java_flavor_suppress_config : bool
 
 val buck_java_heap_size_gb : int option
@@ -333,6 +335,8 @@ val genrule_mode : bool
 
 val get_linter_doc_url : linter_id:string -> string option
 
+val global_tenv : bool
+
 val help_checker : Checker.t list
 
 val help_issue_type : IssueType.t list
@@ -341,7 +345,8 @@ val hoisting_report_only_expensive : bool
 
 val html : bool
 
-val global_tenv : bool
+val infer_binary : string
+(** absolute canonicalized path to the current executable *)
 
 val icfg_dotty_outfile : string option
 

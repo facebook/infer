@@ -128,19 +128,20 @@ let config =
   in
   let get_java_flavor_config () =
     if Config.buck_java_flavor_suppress_config then []
-    else
-      [ "infer_java.version=" ^ Version.versionString
-      ; Printf.sprintf "infer_java.binary=%s/infer" Config.bin_dir ]
+    else ["infer_java.version=" ^ Version.versionString; "infer_java.binary=" ^ Config.infer_binary]
   in
-  let get_flavors_config () =
+  let get_clang_flavor_config () =
     [ "client.id=infer.clang"
-    ; Printf.sprintf "*//infer.infer_bin=%s" Config.bin_dir
-    ; Printf.sprintf "*//infer.clang_compiler=%s" clang_path
-    ; Printf.sprintf "*//infer.clang_plugin=%s" Config.clang_plugin_path
     ; "*//cxx.pch_enabled=false"
     ; (* Infer doesn't support C++ modules yet (T35656509) *)
       "*//cxx.modules_default=false"
     ; "*//cxx.modules=false" ]
+    @ ( if Config.buck_clang_use_toolchain_config then []
+      else
+        [ "*//infer.infer_bin=" ^ Config.bin_dir
+        ; "*//infer.binary=" ^ Config.infer_binary
+        ; "*//infer.clang_compiler=" ^ clang_path
+        ; "*//infer.clang_plugin=" ^ Config.clang_plugin_path ] )
     @ ( match Config.xcode_developer_dir with
       | Some d ->
           [Printf.sprintf "apple.xcode_developer_dir=%s" d]
@@ -158,7 +159,7 @@ let config =
       | JavaFlavor ->
           get_java_flavor_config ()
       | ClangFlavors ->
-          get_flavors_config ()
+          get_clang_flavor_config ()
       | ClangCompilationDB _ ->
           []
     in

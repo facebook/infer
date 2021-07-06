@@ -324,10 +324,12 @@ let initial_command =
   match InferCommand.of_exe_name exe_basename with Some _ as command -> command | None -> None
 
 
-let bin_dir =
+let infer_binary =
   (* Resolve symlinks to get to the real executable, which is located in [bin_dir]. *)
-  Filename.dirname (Utils.realpath Sys.executable_name)
+  Utils.realpath Sys.executable_name
 
+
+let bin_dir = Filename.dirname infer_binary
 
 let fcp_dir =
   bin_dir ^/ Filename.parent_dir_name ^/ Filename.parent_dir_name ^/ "facebook-clang-plugins"
@@ -784,6 +786,13 @@ and buck_build_args_no_inline_rev =
     ~in_help:InferCommand.[(Capture, manual_buck)]
     "Pass values as command-line arguments to invocations of $(i,`buck build`), don't inline any \
      args starting with '@'. Only valid for $(b,--buck-clang)."
+
+
+and buck_clang_use_toolchain_config =
+  CLOpt.mk_bool ~long:"buck-clang-use-toolchain-config" ~default:false
+    ~in_help:InferCommand.[(Capture, manual_buck)]
+    "Suppress setting buck config values for the infer binary and other values in the \
+     buck-clang-flavor integration and instead rely on buck toolchain configuration options."
 
 
 and buck_compilation_database_depth =
@@ -2913,6 +2922,8 @@ and buck_build_args = RevList.to_list !buck_build_args
 and buck_build_args_no_inline = RevList.to_list !buck_build_args_no_inline_rev
 
 and buck_cache_mode = (!buck || !genrule_mode) && not !debug
+
+and buck_clang_use_toolchain_config = !buck_clang_use_toolchain_config
 
 and buck_java_heap_size_gb = !buck_java_heap_size_gb
 
