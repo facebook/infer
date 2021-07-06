@@ -6,9 +6,15 @@
 -module(nonmatch).
 
 -export([
-    list_match_test_a/0,
-    list_match_test_b/0,
-    list_match_test_c/0,
+    list_match_test_tail1_Ok/0,
+    list_match_test_tail2_Ok/0,
+    list_match_test_tail3_Bad/0,
+    list_match_test_empty1_Ok/0,
+    list_match_test_empty2_Bad/0,
+    list_match_test_empty3_Bad/0,
+    fp_list_match_test_secondnil1_Ok/0,
+    fp_list_match_test_secondnil2_Ok/0,
+    list_match_test_secondnil3_Bad/0,
     match_test_a_Ok/0,
     match_test_b_Bad/0,
     fp_match_test_c_Ok/0,
@@ -22,20 +28,27 @@ tail([_ | Xs]) -> Xs.
 assert_empty([]) -> ok.
 assert_second_is_nil([_, [] | _]) -> ok.
 
-list_match_test_a() ->
-    tail([1, 2]),
-    tail([1]),
+list_match_test_tail1_Ok() ->
+    tail([1, 2]).
+list_match_test_tail2_Ok() ->
+    tail([1]).
+list_match_test_tail3_Bad() ->
     tail([]).
 
-list_match_test_b() ->
-    assert_empty([]),
-    assert_empty([1]),
+list_match_test_empty1_Ok() ->
+    assert_empty([]).
+list_match_test_empty2_Bad() ->
+    assert_empty([1]).
+list_match_test_empty3_Bad() ->
     assert_empty([1, 2]).
 
-list_match_test_c() ->
-    % FP (T94492137)
-    assert_second_is_nil([1, [], 2]),
-    assert_second_is_nil([1, []]),
+% FP (T94492137)
+fp_list_match_test_secondnil1_Ok() ->
+    assert_second_is_nil([1, [], 2]).
+% FP (T94492137)
+fp_list_match_test_secondnil2_Ok() ->
+    assert_second_is_nil([1, []]).
+list_match_test_secondnil3_Bad() ->
     assert_second_is_nil([1, [2], 3]).
 
 match_test_a_Ok() ->
