@@ -288,10 +288,8 @@ let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.
       PulseObjectiveCSummary.mk_objc_method_nil_summary tenv procdesc
         (ExecutionDomain.mk_initial tenv procdesc)
       |> Option.value_map ~default:[] ~f:(fun nil_summary ->
-             let<*> nil_astate = nil_summary in
              call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals procdesc
-               ([ContinueProgram nil_astate] :> ExecutionDomain.t list)
-               astate )
+               [nil_summary] astate )
     in
     result_unknown @ result_unknown_nil
   in

@@ -29,4 +29,4 @@ val append_objc_self_positive :
     for other kinds of methods *)
 
 val mk_objc_method_nil_summary :
-  Tenv.t -> Procdesc.t -> ExecutionDomain.t -> AbductiveDomain.t AccessResult.t option
+  Tenv.t -> Procdesc.t -> ExecutionDomain.t -> ExecutionDomain.t option

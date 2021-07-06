@@ -326,15 +326,6 @@ module AddressAttributes = struct
     map_post_attrs astate ~f:(BaseAddressAttributes.add_unreachable_at addr location)
 
 
-  let replace_must_be_valid_reason path reason addr astate =
-    match BaseAddressAttributes.get_must_be_valid addr (astate.pre :> base_domain).attrs with
-    | Some (_timestamp, trace, _reason) ->
-        remove_must_be_valid_attr addr astate
-        |> abduce_attribute addr (MustBeValid (path.PathContext.timestamp, trace, Some reason))
-    | None ->
-        astate
-
-
   let is_end_of_collection addr astate =
     BaseAddressAttributes.is_end_of_collection addr (astate.post :> base_domain).attrs
 
