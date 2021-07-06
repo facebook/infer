@@ -471,25 +471,25 @@ let with_debug_exit_node proc_desc ~f =
     ~f
 
 
+let initial tenv proc_desc =
+  [ ( ContinueProgram (PulseObjectiveCSummary.mk_initial_with_positive_self tenv proc_desc)
+    , PathContext.initial ) ]
+
+
 let checker ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) =
   AbstractValue.State.reset () ;
-  let initial_astate = ExecutionDomain.mk_initial tenv proc_desc in
-  let initial_self_positive =
-    PulseObjectiveCSummary.append_objc_self_positive analysis_data initial_astate
-  in
-  let initial = List.map ~f:(fun initial -> (initial, PathContext.initial)) initial_self_positive in
-  match DisjunctiveAnalyzer.compute_post analysis_data ~initial proc_desc with
+  match
+    DisjunctiveAnalyzer.compute_post analysis_data ~initial:(initial tenv proc_desc) proc_desc
+  with
   | Some posts ->
       (* forget path contexts, we don't propagate them across functions *)
       let posts = List.map ~f:fst posts in
       with_debug_exit_node proc_desc ~f:(fun () ->
-          let updated_posts =
-            PulseObjectiveCSummary.update_objc_method_posts analysis_data ~initial_astate ~posts
-          in
+          let objc_nil_summary = PulseObjectiveCSummary.mk_nil_messaging_summary tenv proc_desc in
           let summary =
             PulseSummary.of_posts tenv proc_desc err_log
               (Procdesc.get_exit_node proc_desc |> Procdesc.Node.get_loc)
-              updated_posts
+              (Option.to_list objc_nil_summary @ posts)
           in
           report_topl_errors proc_desc err_log summary ;
           Some summary )

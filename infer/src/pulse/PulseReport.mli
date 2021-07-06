@@ -8,13 +8,7 @@
 open! IStd
 open PulseDomainInterface
 
-val report_result :
-     Tenv.t
-  -> Procdesc.t
-  -> Errlog.t
-  -> Location.t
-  -> AbductiveDomain.t AccessResult.t
-  -> ExecutionDomain.t list
+[@@@warning "-32"]
 
 val report_summary_error :
      Tenv.t
@@ -22,6 +16,14 @@ val report_summary_error :
   -> Errlog.t
   -> AbductiveDomain.summary AccessResult.error
   -> _ ExecutionDomain.base_t
+
+val report_result :
+     Tenv.t
+  -> Procdesc.t
+  -> Errlog.t
+  -> Location.t
+  -> AbductiveDomain.t AccessResult.t
+  -> ExecutionDomain.t list
 
 val report_results :
      Tenv.t
