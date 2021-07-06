@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
 
@@ -66,14 +67,17 @@ let is_constant_deref_without_invalidation (diagnostic : Diagnostic.t) =
 
 
 let is_suppressed tenv proc_desc diagnostic astate =
-  is_constant_deref_without_invalidation diagnostic
-  ||
-  match Procdesc.get_proc_name proc_desc with
-  | Procname.Java jn ->
-      is_nullsafe_error tenv diagnostic jn
-      || not (AbductiveDomain.skipped_calls_match_pattern astate)
-  | _ ->
-      false
+  if is_constant_deref_without_invalidation diagnostic then (
+    L.d_printfln ~color:Red
+      "Dropping error: constant dereference with no invalidation in the access trace" ;
+    true )
+  else
+    match Procdesc.get_proc_name proc_desc with
+    | Procname.Java jn ->
+        is_nullsafe_error tenv diagnostic jn
+        || not (AbductiveDomain.skipped_calls_match_pattern astate)
+    | _ ->
+        false
 
 
 let summary_of_error_post tenv proc_desc location mk_error astate =

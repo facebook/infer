@@ -138,9 +138,9 @@ let apply_callee tenv path ~caller_proc_desc callee_pname call_loc callee_exec_s
   | LatentInvalidAccess {astate} ->
       map_call_result ~is_isl_error_prepost:false
         (astate :> AbductiveDomain.t)
-        ~f:(fun subst astate ->
+        ~f:(fun subst astate_post_call ->
           let* astate_summary_result =
-            ( AbductiveDomain.summary_of_post tenv caller_proc_desc call_loc astate
+            ( AbductiveDomain.summary_of_post tenv caller_proc_desc call_loc astate_post_call
               >>| AccessResult.ignore_memory_leaks >>| AccessResult.of_abductive_result
               :> (AbductiveDomain.summary, AbductiveDomain.t AccessResult.error) result SatUnsat.t
               )
@@ -168,17 +168,27 @@ let apply_callee tenv path ~caller_proc_desc callee_pname call_loc callee_exec_s
                     Sat (Error (ReportableErrorSummary {diagnostic; astate= astate_summary}))
                 | `ISLDelay astate ->
                     Sat (Error (ISLError astate)) )
-            | LatentInvalidAccess {address= address_callee; must_be_valid; calling_context} -> (
+            | LatentInvalidAccess
+                { address= address_callee
+                ; must_be_valid= callee_access_trace, must_be_valid_reason
+                ; calling_context } -> (
               match AbstractValue.Map.find_opt address_callee subst with
               | None ->
                   (* the address became unreachable so the bug can never be reached; drop it *)
                   Unsat
-              | Some (address, _history) -> (
+              | Some (address, caller_history) -> (
+                  let access_trace =
+                    Trace.ViaCall
+                      { in_call= callee_access_trace
+                      ; f= Call callee_pname
+                      ; location= call_loc
+                      ; history= caller_history }
+                  in
                   let calling_context =
                     (CallEvent.Call callee_pname, call_loc) :: calling_context
                   in
                   match
-                    AbductiveDomain.find_post_cell_opt address (astate_summary :> AbductiveDomain.t)
+                    AbductiveDomain.find_post_cell_opt address astate_post_call
                     |> Option.bind ~f:(fun (_, attrs) -> Attributes.get_invalid attrs)
                   with
                   | None ->
@@ -186,7 +196,10 @@ let apply_callee tenv path ~caller_proc_desc callee_pname call_loc callee_exec_s
                       Sat
                         (Ok
                            (LatentInvalidAccess
-                              {astate= astate_summary; address; must_be_valid; calling_context}))
+                              { astate= astate_summary
+                              ; address
+                              ; must_be_valid= (access_trace, must_be_valid_reason)
+                              ; calling_context }))
                   | Some (invalidation, invalidation_trace) ->
                       Sat
                         (Error
@@ -196,8 +209,8 @@ let apply_callee tenv path ~caller_proc_desc callee_pname call_loc callee_exec_s
                                     { calling_context
                                     ; invalidation
                                     ; invalidation_trace
-                                    ; access_trace= fst must_be_valid
-                                    ; must_be_valid_reason= snd must_be_valid }
+                                    ; access_trace
+                                    ; must_be_valid_reason }
                               ; astate= astate_summary })) ) ) ) )
   | ISLLatentMemoryError astate ->
       map_call_result ~is_isl_error_prepost:true
