@@ -11,7 +11,7 @@ namespace npe_added_to_b1 {
 
 int deref_ref(std::shared_ptr<int>& p) { return *p; }
 
-int FN_shared_ptr_uninit_deref_bad() {
+int shared_ptr_uninit_deref_bad() {
   std::shared_ptr<int> x;
   return deref_ref(x);
 }

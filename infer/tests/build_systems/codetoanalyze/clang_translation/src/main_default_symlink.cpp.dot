@@ -15,37 +15,33 @@ digraph cfg {
 	
 
 	 "fun#internal#3922054098004616643.55c3f2ad552457f847bc1570fce79224_4" -> "fun#internal#3922054098004616643.55c3f2ad552457f847bc1570fce79224_2" ;
-"main.fad58de7366495db4650cfefac2fcd61_1" [label="1: Start main\nFormals: \nLocals:  s:std::basic_string<char,std::char_traits<char>,std::allocator<char>> x:std::shared_ptr<int> \n  " color=yellow style=filled]
+"main.fad58de7366495db4650cfefac2fcd61_1" [label="1: Start main\nFormals: \nLocals:  s:std::basic_string<char,std::char_traits<char>,std::allocator<char>> \n  " color=yellow style=filled]
 	
 
-	 "main.fad58de7366495db4650cfefac2fcd61_1" -> "main.fad58de7366495db4650cfefac2fcd61_8" ;
+	 "main.fad58de7366495db4650cfefac2fcd61_1" -> "main.fad58de7366495db4650cfefac2fcd61_7" ;
 "main.fad58de7366495db4650cfefac2fcd61_2" [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  Destruction(Scope) \n   _=*&s:std::basic_string<char,std::char_traits<char>,std::allocator<char>> [line 22, column 1]\n  n$1=_fun_std::basic_string<char,std::char_traits<char>,std::allocator<char>>::~basic_string(&s:std::basic_string<char,std::char_traits<char>,std::allocator<char>>*) injected [line 22, column 1]\n  _=*&x:std::shared_ptr<int> [line 22, column 1]\n  n$3=_fun_std::shared_ptr<int>::~shared_ptr(&x:std::shared_ptr<int>*) injected [line 22, column 1]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  Destruction(Scope) \n   _=*&s:std::basic_string<char,std::char_traits<char>,std::allocator<char>> [line 20, column 1]\n  n$1=_fun_std::basic_string<char,std::char_traits<char>,std::allocator<char>>::~basic_string(&s:std::basic_string<char,std::char_traits<char>,std::allocator<char>>*) injected [line 20, column 1]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
-"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(s:std::basic_string<char,std::char_traits<char>,std::allocator<char>>); [line 20, column 3]\n  n$5=_fun_std::basic_string<char,std::char_traits<char>,std::allocator<char>>::basic_string<nullptr_t>(&s:std::basic_string<char,std::char_traits<char>,std::allocator<char>>*,\"1234\":char const *) [line 20, column 15]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(s:std::basic_string<char,std::char_traits<char>,std::allocator<char>>); [line 18, column 3]\n  n$3=_fun_std::basic_string<char,std::char_traits<char>,std::allocator<char>>::basic_string<nullptr_t>(&s:std::basic_string<char,std::char_traits<char>,std::allocator<char>>*,\"1234\":char const *) [line 18, column 15]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_4" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;
-"main.fad58de7366495db4650cfefac2fcd61_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(x:std::shared_ptr<int>); [line 19, column 3]\n  n$6=_fun_std::shared_ptr<int>::shared_ptr(&x:std::shared_ptr<int>*) [line 19, column 24]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_5" [label="5:  Call _fun_external::fun \n   n$4=_fun_external::fun(1:int) [line 17, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_5" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
-"main.fad58de7366495db4650cfefac2fcd61_6" [label="6:  Call _fun_external::fun \n   n$7=_fun_external::fun(1:int) [line 18, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_6" [label="6:  Call _fun_internal_exclude::fun \n   n$5=_fun_internal_exclude::fun(1:int) [line 16, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_6" -> "main.fad58de7366495db4650cfefac2fcd61_5" ;
-"main.fad58de7366495db4650cfefac2fcd61_7" [label="7:  Call _fun_internal_exclude::fun \n   n$8=_fun_internal_exclude::fun(1:int) [line 17, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_7" [label="7:  Call _fun_internal::fun \n   n$6=_fun_internal::fun(1:int) [line 15, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_7" -> "main.fad58de7366495db4650cfefac2fcd61_6" ;
-"main.fad58de7366495db4650cfefac2fcd61_8" [label="8:  Call _fun_internal::fun \n   n$9=_fun_internal::fun(1:int) [line 16, column 3]\n " shape="box"]
-	
-
-	 "main.fad58de7366495db4650cfefac2fcd61_8" -> "main.fad58de7366495db4650cfefac2fcd61_7" ;
 "unused_deref_in_header#15260603227785084028.ec2f844a26989dc35e9856ba0d7a485b_1" [label="1: Start unused_deref_in_header\nFormals:  a:int*\nLocals:  x:int \n  " color=yellow style=filled]
 	
 

@@ -25,7 +25,7 @@ void test_pointer(const std::shared_ptr<lol>& foo) {
   }
 }
 
-void ERROR_FP_skip_then_split_case_bad() {
+void FP_skip_then_split_case_bad() {
   auto foo = std::make_shared<lol>();
   skip_no_const(foo); // Infer havocs foo here since it's not const
   test_pointer(foo); // this call creates a case split, foo can be null in one
@@ -33,26 +33,26 @@ void ERROR_FP_skip_then_split_case_bad() {
   foo->f = 12; // error
 }
 
-void ERROR_const_skip_then_split_case_ok() {
+void FP_const_skip_then_split_case_ok() {
   auto foo = std::make_shared<lol>();
   skip_const(foo); // Infer shouldn't havoc foo here since it's const...
   test_pointer(foo); /* ...so foo cannot be null here, even if there is an
                         explicit null post... */
-  foo->f = 12; // no error
+  foo->f = 12; // error
 }
 
 // same as above but make sure infer pinpoints the correct const argument
-void ERROR_const_skip2_then_split_case_ok() {
+void FP_const_skip2_then_split_case_ok() {
   auto foo = std::make_shared<lol>();
   skip_const2(0, foo, 0, 0);
   test_pointer(foo);
-  foo->f = 12; // no error
+  foo->f = 12; // error
 }
 
 // same as above but hide the type under a typedef
-void ERROR_typedef_skip_then_split_case_ok() {
+void FP_typedef_skip_then_split_case_ok() {
   auto foo = std::make_shared<lol>();
   skip_typedef(foo);
   test_pointer(foo);
-  foo->f = 12; // no error
+  foo->f = 12; // error
 }

@@ -265,7 +265,10 @@ let std_whitelisted_cpp_classes =
   ; "std::move_iterator"
   ; "std::not_equal_to"
   ; "std::pair"
-  ; "std::reverse_iterator" ]
+  ; "std::reverse_iterator"
+  ; "std::shared_ptr"
+  ; "std::__shared_ptr"
+  ; "std::__shared_ptr_access" ]
 
 
 let libstdcxx_whitelisted_cpp_classes =
