@@ -1,0 +1,7 @@
+codetoanalyze/erlang/features/src/arithmetic.erl, test_add_Bad/0, -9, NONEXHAUSTIVE_PATTERN_MATCH, no_bucket, ERROR, [calling context starts here,in call to `warn/1`,no pattern match here]
+codetoanalyze/erlang/features/src/arithmetic.erl, test_idiv1_Bad/0, -54, NONEXHAUSTIVE_PATTERN_MATCH, no_bucket, ERROR, [calling context starts here,in call to `warn/1`,no pattern match here]
+codetoanalyze/erlang/features/src/arithmetic.erl, test_mul_Bad/0, -39, NONEXHAUSTIVE_PATTERN_MATCH, no_bucket, ERROR, [calling context starts here,in call to `warn/1`,no pattern match here]
+codetoanalyze/erlang/features/src/arithmetic.erl, test_multiple_Bad/0, -98, NONEXHAUSTIVE_PATTERN_MATCH, no_bucket, ERROR, [calling context starts here,in call to `warn/1`,no pattern match here]
+codetoanalyze/erlang/features/src/arithmetic.erl, test_rem_Bad/0, -85, NONEXHAUSTIVE_PATTERN_MATCH, no_bucket, ERROR, [calling context starts here,in call to `warn/1`,no pattern match here]
+codetoanalyze/erlang/features/src/arithmetic.erl, test_sub_Bad/0, -24, NONEXHAUSTIVE_PATTERN_MATCH, no_bucket, ERROR, [calling context starts here,in call to `warn/1`,no pattern match here]
+codetoanalyze/erlang/features/src/arithmetic.erl, warn/1, 0, NONEXHAUSTIVE_PATTERN_MATCH, no_bucket, ERROR, [*** LATENT ***,no pattern match here]
