@@ -2289,12 +2289,14 @@ module MemReach = struct
 
   let strong_update_heap : Loc.t -> Val.t -> t -> t =
    fun x v m ->
-    if Loc.is_unknown x then m else {m with mem_pure= MemPure.strong_update x v m.mem_pure}
+    if Loc.is_unknown x && not Config.bo_bottom_as_default then m
+    else {m with mem_pure= MemPure.strong_update x v m.mem_pure}
 
 
   let add_heap : ?represents_multiple_values:bool -> Loc.t -> Val.t -> t -> t =
    fun ?represents_multiple_values x v m ->
-    {m with mem_pure= MemPure.add ?represents_multiple_values x v m.mem_pure}
+    if Loc.is_unknown x && not Config.bo_bottom_as_default then m
+    else {m with mem_pure= MemPure.add ?represents_multiple_values x v m.mem_pure}
 
 
   let add_heap_set : ?represents_multiple_values:bool -> PowLoc.t -> Val.t -> t -> t =
