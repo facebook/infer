@@ -200,6 +200,8 @@ module Name : sig
 
   module CSharp : sig
     val from_string : string -> t
+
+    val is_class : t -> bool
   end
 
   module Java : sig

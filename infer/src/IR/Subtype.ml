@@ -46,6 +46,8 @@ let is_root_class class_name =
   match class_name with
   | Typ.JavaClass _ ->
       Typ.Name.equal class_name StdTyp.Name.Java.java_lang_object
+  | Typ.CSharpClass _ ->
+      Typ.Name.equal class_name StdTyp.Name.CSharp.system_object
   | _ ->
       false
 
