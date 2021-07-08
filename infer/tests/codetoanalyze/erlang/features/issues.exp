@@ -11,3 +11,5 @@ codetoanalyze/erlang/features/src/arithmetic.erl, test_sub2_Bad/0, -54, NONEXHAU
 codetoanalyze/erlang/features/src/arithmetic.erl, test_uminus1_Bad/0, -170, NONEXHAUSTIVE_PATTERN_MATCH, no_bucket, ERROR, [calling context starts here,in call to `warn/1`,no pattern match here]
 codetoanalyze/erlang/features/src/arithmetic.erl, test_uminus2_Bad/0, -183, NONEXHAUSTIVE_PATTERN_MATCH, no_bucket, ERROR, [calling context starts here,in call to `warn/1`,no pattern match here]
 codetoanalyze/erlang/features/src/arithmetic.erl, warn/1, 0, NONEXHAUSTIVE_PATTERN_MATCH, no_bucket, ERROR, [*** LATENT ***,no pattern match here]
+codetoanalyze/erlang/features/src/block.erl, test_block_Bad/0, -15, NONEXHAUSTIVE_PATTERN_MATCH, no_bucket, ERROR, [calling context starts here,in call to `warn/1`,no pattern match here]
+codetoanalyze/erlang/features/src/block.erl, warn/1, 0, NONEXHAUSTIVE_PATTERN_MATCH, no_bucket, ERROR, [*** LATENT ***,no pattern match here]

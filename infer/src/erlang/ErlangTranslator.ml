@@ -367,6 +367,8 @@ and translate_expression env {Ast.line; simple_expression} =
               Block.make_success env
         in
         Block.all env [block1; block2; op_block]
+    | Block body ->
+        translate_body env body
     | Call
         { module_= None
         ; function_= {Ast.line= _; simple_expression= Literal (Atom function_name)}
