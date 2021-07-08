@@ -39,7 +39,7 @@ main(Args) ->
             ]),
             halt(1)
     end,
-    CompiledListPath = string:trim(os:cmd("mktemp --suffix .list")),
+    CompiledListPath = mktemp(".list"),
     OutputCmd =
         case Cmd of
             ["rebar3" | _] ->
@@ -99,6 +99,12 @@ run(Command, Dir) ->
         {Port, {exit_status, Status}} -> Status
     end.
 
+mktemp(Suffix) ->
+    TempFilePath = string:trim(os:cmd("mktemp")),
+    WithSuffix = TempFilePath ++ Suffix,
+    os:cmd(io_lib:format("mv ~s ~s", [TempFilePath, WithSuffix])),
+    WithSuffix.
+
 rebar3(Cmd, CompiledListPath) ->
     ConfigPaths = [os:getenv("REBAR_CONFIG"), "rebar.config.script", "rebar.config"],
     Original =
@@ -110,7 +116,7 @@ rebar3(Cmd, CompiledListPath) ->
                 Config
         end,
     Altered = inject_parse_transform(Original, CompiledListPath),
-    AltConfigPath = string:trim(os:cmd("mktemp --suffix .script")),
+    AltConfigPath = mktemp(".script"),
     file:write_file(AltConfigPath, io_lib:fwrite("~p.~n", [Altered])),
 
     io_lib:format("export REBAR_CONFIG=\"~s\"; ~s", [
