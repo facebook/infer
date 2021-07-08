@@ -217,7 +217,7 @@ module SourceKind = struct
               Some
                 (taint_formals_with_types
                    ["android.net.Uri"; "java.lang.String"]
-                   UserControlledURI formals)
+                   UserControlledURI formals )
           | ( "android.webkit.WebChromeClient"
             , ("onJsAlert" | "onJsBeforeUnload" | "onJsConfirm" | "onJsPrompt") ) ->
               Some (taint_formals_with_types ["java.lang.String"] UserControlledURI formals)
@@ -226,7 +226,7 @@ module SourceKind = struct
               Some
                 (taint_formals_with_types
                    ["android.webkit.WebResourceRequest"; "java.lang.String"]
-                   UserControlledURI formals)
+                   UserControlledURI formals )
           | "codetoanalyze.java.quandary.TaintedFormals", "taintedContextBad" ->
               Some
                 (taint_formals_with_types ["java.lang.Integer"; "java.lang.String"] Other formals)

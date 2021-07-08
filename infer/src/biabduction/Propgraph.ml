@@ -162,8 +162,8 @@ let compute_edge_diff (oldedge : edge) (newedge : edge) : Obj.t list =
       compute_exp_diff e1 e2
   | Eatom (Aneq (_, e1)), Eatom (Aneq (_, e2)) ->
       compute_exp_diff e1 e2
-  | Eatom (Apred (_, es1)), Eatom (Apred (_, es2))
-  | Eatom (Anpred (_, es1)), Eatom (Anpred (_, es2)) ->
+  | Eatom (Apred (_, es1)), Eatom (Apred (_, es2)) | Eatom (Anpred (_, es1)), Eatom (Anpred (_, es2))
+    ->
       List.concat (try List.map2_exn ~f:compute_exp_diff es1 es2 with Invalid_argument _ -> [])
   | Esub_entry (_, e1), Esub_entry (_, e2) ->
       compute_exp_diff e1 e2

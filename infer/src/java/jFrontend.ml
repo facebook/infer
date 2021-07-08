@@ -223,7 +223,7 @@ let compute_source_icfg program tenv source_basename package_opt source_file =
     JBasics.ClassMap.iter
       (select
          (should_capture program package_opt source_basename)
-         (create_icfg source_file program tenv icfg))
+         (create_icfg source_file program tenv icfg) )
       (JProgramDesc.get_classmap program)
   in
   icfg.JContext.cfg

@@ -16,7 +16,7 @@ module LocalCache = struct
   let results =
     lazy
       (Procname.LRUHash.create ~initial_size:Config.summaries_caches_max_size
-         ~max_size:Config.summaries_caches_max_size)
+         ~max_size:Config.summaries_caches_max_size )
 
 
   let clear () = Procname.LRUHash.clear (Lazy.force results)

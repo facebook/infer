@@ -23,7 +23,7 @@ let get_required_props typename tenv =
           (List.exists
              ~f:(fun Annot.{name; value} ->
                match (name, value) with Some "optional", Annot.Bool true -> true | _ -> false )
-             parameters) )
+             parameters ) )
       annot_list
   in
   let get_var_args annot_list =
@@ -52,7 +52,7 @@ let get_required_props typename tenv =
             let var_prop_opt = get_var_args annot in
             Some
               (Option.value_map var_prop_opt ~default:(Prop prop) ~f:(fun var_prop ->
-                   VarProp {var_prop; prop} ))
+                   VarProp {var_prop; prop} ) )
           else None )
         fields
   | None ->
@@ -77,12 +77,14 @@ let report_missing_required_prop proc_desc err_log prop parent_typename ~create_
   let create_message = F.asprintf "calls %s.create(...)" (Typ.Name.name parent_typename) in
   let ltr =
     make_single_trace create_loc message
-    :: make_single_trace create_loc create_message
-    :: List.map call_chain ~f:(fun Domain.MethodCallPrefix.{procname; location} ->
-           let call_msg =
-             F.asprintf "calls %a" (Procname.pp_simplified_string ~withclass:false) procname
-           in
-           Errlog.make_trace_element 0 location call_msg [] )
+    ::
+    make_single_trace create_loc create_message
+    ::
+    List.map call_chain ~f:(fun Domain.MethodCallPrefix.{procname; location} ->
+        let call_msg =
+          F.asprintf "calls %a" (Procname.pp_simplified_string ~withclass:false) procname
+        in
+        Errlog.make_trace_element 0 location call_msg [] )
   in
   Reporting.log_issue proc_desc err_log ~loc:create_loc ~ltr LithoRequiredProps
     IssueType.missing_required_prop message

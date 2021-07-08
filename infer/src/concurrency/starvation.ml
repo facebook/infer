@@ -358,8 +358,8 @@ let set_class_init_attributes procname (astate : Domain.t) =
 
 
 (** Compute the attributes of instance variables that all constructors agree on. *)
-let set_constructor_attributes ({InterproceduralAnalysis.proc_desc} as interproc)
-    (astate : Domain.t) =
+let set_constructor_attributes ({InterproceduralAnalysis.proc_desc} as interproc) (astate : Domain.t)
+    =
   let procname = Procdesc.get_proc_name proc_desc in
   let open Domain in
   (* make a local [this] variable, for replacing all constructor attribute map keys' roots *)
@@ -819,7 +819,7 @@ let report_on_pair ~analyze_ondemand tenv pattrs (pair : Domain.CriticalPair.t) 
                      ~f:(fun acc (other_pname, summary) ->
                        Domain.fold_critical_pairs_of_summary
                          (report_on_parallel_composition ~should_report_starvation tenv pattrs pair
-                            lock other_pname)
+                            lock other_pname )
                          summary acc ) ) ) )
   | _ ->
       report_map

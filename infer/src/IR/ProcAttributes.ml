@@ -204,7 +204,7 @@ let pp f
      ; proc_name
      ; ret_type
      ; is_ret_type_pod
-     ; is_ret_constexpr }[@warning "+9"]) =
+     ; is_ret_constexpr } [@warning "+9"] ) =
   let default = default translation_unit proc_name in
   let pp_bool_default ~default title b f () =
     if not (Bool.equal default b) then F.fprintf f "; %s= %b@," title b
@@ -236,7 +236,7 @@ let pp f
   if
     not
       ([%compare.equal: Procname.t option] default.passed_as_noescape_block_to
-         passed_as_noescape_block_to)
+         passed_as_noescape_block_to )
   then
     F.fprintf f "; passed_as_noescape_block_to %a" (Pp.option Procname.pp)
       passed_as_noescape_block_to ;
@@ -246,7 +246,7 @@ let pp f
   if
     not
       ([%compare.equal: specialized_with_blocks_info option] default.specialized_with_blocks_info
-         specialized_with_blocks_info)
+         specialized_with_blocks_info )
   then
     F.fprintf f "; specialized_with_blocks_info %a@,"
       (Pp.option pp_specialized_with_blocks_info)

@@ -231,7 +231,8 @@ let check_problematic_class_annotation tenv user_defined_class =
               if not (JavaClassName.Set.is_empty extra_trusted_classes_in_nested) then
                 Error
                   (NestedModeIsWeaker
-                     (ExtraTrustClass (JavaClassName.Set.elements extra_trusted_classes_in_nested)))
+                     (ExtraTrustClass (JavaClassName.Set.elements extra_trusted_classes_in_nested))
+                  )
               else Ok ()
           | _ ->
               if is_stricter_than ~stricter:outer_mode ~weaker:nested_mode then

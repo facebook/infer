@@ -31,8 +31,12 @@ val proc_resolve_attributes : Procname.t -> ProcAttributes.t option
 type callbacks =
   { get_proc_desc_f: Procname.t -> Procdesc.t option
   ; html_debug_new_node_session_f:
-      'a.    ?kind:[`ComputePre | `ExecNode | `ExecNodeNarrowing | `WTO]
-      -> pp_name:(Format.formatter -> unit) -> Procdesc.Node.t -> f:(unit -> 'a) -> 'a
+      'a.
+         ?kind:[`ComputePre | `ExecNode | `ExecNodeNarrowing | `WTO]
+      -> pp_name:(Format.formatter -> unit)
+      -> Procdesc.Node.t
+      -> f:(unit -> 'a)
+      -> 'a
   ; proc_resolve_attributes_f: Procname.t -> ProcAttributes.t option }
 
 val set_callbacks : callbacks -> unit

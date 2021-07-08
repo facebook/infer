@@ -49,7 +49,7 @@ let concat_traces labelled_traces =
       | "", trace ->
           trace @ res
       | label, ({lt_loc} :: _ as trace) ->
-          (make_trace_element 0 lt_loc label [] :: trace) @ res )
+          make_trace_element 0 lt_loc label [] :: trace @ res )
 
 
 let compute_local_exception_line loc_trace =
@@ -252,7 +252,7 @@ let log_issue ?severity_override err_log ~loc ~node ~session ~ltr ~linters_def_f
     if added then (
       L.debug Analysis Medium "@\n%a@\n@?"
         (IssueToReport.pp_err ~severity_override:severity loc error.issue_type error.description
-           error.ocaml_pos)
+           error.ocaml_pos )
         () ;
       if not (IssueType.equal_severity severity Error) then (
         let warn_str =

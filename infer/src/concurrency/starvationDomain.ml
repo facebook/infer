@@ -486,9 +486,10 @@ module CriticalPairElement = struct
 end
 
 module CriticalPair = struct
-  include ExplicitTrace.MakeTraceElemModuloLocation
-            (CriticalPairElement)
-            (ExplicitTrace.DefaultCallPrinter)
+  include
+    ExplicitTrace.MakeTraceElemModuloLocation
+      (CriticalPairElement)
+      (ExplicitTrace.DefaultCallPrinter)
 
   let make ~loc acquisitions event = make {acquisitions; event} loc
 
@@ -616,7 +617,7 @@ module CriticalPair = struct
       let endpoint_descr = F.asprintf "%a" Event.describe event in
       Errlog.make_trace_element 0 loc endpoint_descr []
     in
-    List.concat (([header_step] :: call_stack) @ [[endpoint_step]])
+    List.concat ([header_step] :: call_stack @ [[endpoint_step]])
 
 
   let is_uithread t = ThreadDomain.is_uithread (get_thread t)

@@ -44,7 +44,7 @@ let build_formal_from_pvar var =
       Mangled.from_string
         (F.asprintf "%s[%a]" (Mangled.to_string var.pv_name)
            (Procname.pp_simplified_string ~withclass:false)
-           pname)
+           pname )
   | _ ->
       var.pv_name
 

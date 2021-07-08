@@ -570,8 +570,8 @@ type iso_mode = Exact | LFieldForget | RFieldForget [@@deriving compare]
 
 let equal_iso_mode = [%compare.equal: iso_mode]
 
-let rec generate_todos_from_strexp mode todos (sexp1 : Predicates.strexp)
-    (sexp2 : Predicates.strexp) =
+let rec generate_todos_from_strexp mode todos (sexp1 : Predicates.strexp) (sexp2 : Predicates.strexp)
+    =
   match (sexp1, sexp2) with
   | Eexp (exp1, _), Eexp (exp2, _) ->
       let new_todos = (exp1, exp2) :: todos in
@@ -740,7 +740,7 @@ let rec generic_find_partial_iso tenv mode update corres sigma_corres todos sigm
               in
               let new_todos =
                 let shared12 = List.zip_exn shared1 shared2 in
-                ((root1, root2) :: (next1, next2) :: shared12) @ todos'
+                (root1, root2) :: (next1, next2) :: shared12 @ todos'
               in
               generic_find_partial_iso tenv mode update new_corres new_sigma_corres new_todos
                 new_sigma_todo
@@ -766,7 +766,7 @@ let rec generic_find_partial_iso tenv mode update corres sigma_corres todos sigm
               in
               let new_todos =
                 let shared12 = List.zip_exn shared1 shared2 in
-                ((iF1, iF2) :: (oB1, oB2) :: (oF1, oF2) :: (iB1, iB2) :: shared12) @ todos'
+                (iF1, iF2) :: (oB1, oB2) :: (oF1, oF2) :: (iB1, iB2) :: shared12 @ todos'
               in
               generic_find_partial_iso tenv mode update new_corres new_sigma_corres new_todos
                 new_sigma_todo

@@ -75,8 +75,7 @@ let test_anonymous =
        ~expected_classname:"SomeClass$NestedClass$AgainNestedClass" ;
   (* Can be nested class AND several nested anonymous classes *)
   get_user_defined_class_if_anonymous_inner
-    (make ~package:(Some "some.package")
-       ~classname:"SomeClass$NestedClass$AgainNestedClass$17$23$1")
+    (make ~package:(Some "some.package") ~classname:"SomeClass$NestedClass$AgainNestedClass$17$23$1")
   |> assert_some
   |> assert_equal_to ~expected_package:(Some "some.package")
        ~expected_classname:"SomeClass$NestedClass$AgainNestedClass" ;

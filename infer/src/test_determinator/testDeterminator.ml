@@ -259,7 +259,7 @@ let match_profiler_samples_affected_methods native_symbols affected_methods =
       match affected_method with
       | Some
           (ClangProc.CFunction
-            {name= affected_function_name; mangled_name= affected_function_mangled_name}) ->
+            {name= affected_function_name; mangled_name= affected_function_mangled_name} ) ->
           (* This is needed because for simple c functions from the standard library, the name
              matches but the mangled name doesn't quite match, there is a __1 at the beginning
              in the name we get from the plugin, but not in the name we get from the profiler samples. *)

@@ -1609,11 +1609,11 @@ module Normalize = struct
               (not
                  (List.exists
                     ~f:(fun (e', n') -> Exp.equal e e' && IntLit.lt n' n)
-                    le_list_tightened))
+                    le_list_tightened ) )
               && not
                    (List.exists
                       ~f:(fun (n', e') -> Exp.equal e e' && IntLit.leq n n')
-                      lt_list_tightened)
+                      lt_list_tightened )
           | _ ->
               true )
         nonineq_list
@@ -2371,7 +2371,7 @@ let prop_iter_to_prop tenv iter =
   let prop =
     Normalize.normalize tenv
       (set prop_emp ~sub:iter.pit_sub ~pi:iter.pit_pi ~sigma ~pi_fp:iter.pit_pi_fp
-         ~sigma_fp:iter.pit_sigma_fp)
+         ~sigma_fp:iter.pit_sigma_fp )
   in
   List.fold
     ~f:(fun p (footprint, atom) -> Normalize.prop_atom_and tenv ~footprint p atom)

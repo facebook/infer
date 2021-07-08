@@ -83,20 +83,27 @@ let get_compilation_database_files_buck db_deps ~prog ~args =
   | {command= "build" as command; rev_not_targets; targets} ->
       let targets_args = Buck.store_args_in_file ~identifier:"compdb_build_args" targets in
       let build_args =
-        (command :: List.rev_append rev_not_targets Config.buck_build_args_no_inline)
+        command :: List.rev_append rev_not_targets Config.buck_build_args_no_inline
         @ (* Infer doesn't support C++ modules nor precompiled headers yet (T35656509) *)
-        "--config" :: "*//cxx.pch_enabled=false" :: "--config" :: "*//cxx.modules_default=false"
-        :: "--config" :: "*//cxx.modules=False" :: targets_args
+        "--config"
+        ::
+        "*//cxx.pch_enabled=false"
+        ::
+        "--config"
+        :: "*//cxx.modules_default=false" :: "--config" :: "*//cxx.modules=False" :: targets_args
       in
       Logging.(debug Linters Quiet)
         "Processed buck command is: 'buck %a'@\n" (Pp.seq F.pp_print_string) build_args ;
       Buck.wrap_buck_call ~label:"compdb_build" (prog :: build_args) |> ignore ;
       let buck_targets_shell =
-        prog :: "targets"
-        :: List.rev_append
-             (Buck.filter_compatible `Targets rev_not_targets)
-             Config.buck_build_args_no_inline
-        @ ("--show-output" :: targets_args)
+        prog
+        ::
+        "targets"
+        ::
+        List.rev_append
+          (Buck.filter_compatible `Targets rev_not_targets)
+          Config.buck_build_args_no_inline
+        @ "--show-output" :: targets_args
       in
       let on_target_lines = function
         | [] ->

@@ -599,7 +599,7 @@ module Dom = struct
           (* If callee is known expensive by model, add callee's name. *)
           join_unchecked_callees
             (UncheckedCallees.singleton
-               (UncheckedCallee.make ~is_known_expensive:true ~callee location))
+               (UncheckedCallee.make ~is_known_expensive:true ~callee location) )
             UncheckedCalleesCond.empty
       | None -> (
         match callee_summary with
@@ -621,7 +621,7 @@ module Dom = struct
             join_unchecked_callees
               (UncheckedCallees.replace_location_by_call ~via:callee location callee_summary)
               (UncheckedCalleesCond.replace_location_by_call location ~via:callee
-                 callee_summary_cond)
+                 callee_summary_cond )
         | None when Procname.is_objc_init callee || is_unmodeled_call ->
             (* If callee is unknown ObjC initializer or has no cost model, ignore it. *)
             astate
@@ -629,7 +629,7 @@ module Dom = struct
             (* Otherwise, add callee's name. *)
             join_unchecked_callees
               (UncheckedCallees.singleton
-                 (UncheckedCallee.make ~is_known_expensive:false ~callee location))
+                 (UncheckedCallee.make ~is_known_expensive:false ~callee location) )
               UncheckedCalleesCond.empty )
     else astate
 end

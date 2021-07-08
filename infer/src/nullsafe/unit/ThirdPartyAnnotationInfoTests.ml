@@ -15,7 +15,7 @@ let assert_has_nullability_info ?expected_file ?expected_line storage unique_rep
   | None ->
       assert_failure
         (F.asprintf "Expected to find info for %a, but it was not found"
-           ThirdPartyAnnotationInfo.pp_unique_repr unique_repr)
+           ThirdPartyAnnotationInfo.pp_unique_repr unique_repr )
   | Some {filename; line_number; signature} ->
       let expected_ret, expected_param_nullability = expected_nullability in
       let expected_params =
@@ -30,7 +30,7 @@ let assert_has_nullability_info ?expected_file ?expected_line storage unique_rep
       assert_equal expected_signature signature
         ~msg:
           (F.asprintf "Signature for %a does not match" ThirdPartyAnnotationInfo.pp_unique_repr
-             unique_repr)
+             unique_repr )
         ~printer:(Pp.string_of_pp ThirdPartyMethod.pp) ;
       Option.iter expected_file ~f:(fun expected_file ->
           assert_equal expected_file filename ~msg:"Filename does not match" ) ;
@@ -45,7 +45,7 @@ let assert_no_info storage unique_repr =
   | Some {signature} ->
       assert_failure
         (F.asprintf "Did not expect to find nullability info for method %a, but found %a"
-           ThirdPartyAnnotationInfo.pp_unique_repr unique_repr ThirdPartyMethod.pp signature)
+           ThirdPartyAnnotationInfo.pp_unique_repr unique_repr ThirdPartyMethod.pp signature )
 
 
 let add_from_annot_file_and_check_success storage ~filename ~lines =
@@ -55,7 +55,7 @@ let add_from_annot_file_and_check_success storage ~filename ~lines =
   | Error parsing_error ->
       assert_failure
         (F.asprintf "Expected to parse the file, but it was unparsable: %a"
-           ThirdPartyAnnotationInfo.pp_parsing_error parsing_error)
+           ThirdPartyAnnotationInfo.pp_parsing_error parsing_error )
 
 
 let add_from_annot_file_and_check_failure storage ~filename ~lines ~expected_error_line_number =
@@ -247,7 +247,7 @@ let assert_not_third_party storage ~package =
   | Some sig_file_name ->
       assert_failure
         (F.sprintf "Did not expect %s to be third-party, but it was wrongly attributed to %s"
-           package sig_file_name)
+           package sig_file_name )
 
 
 let test_is_third_party =

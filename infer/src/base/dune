@@ -11,6 +11,7 @@
     OpenSource))
  (libraries cmdliner core memtrace mtime.clock.os parmap re sqlite3 zip
    ATDGenerated IStdlib OpenSource)
+ (modules_without_implementation version)
  (preprocess
   (pps ppx_blob ppx_compare ppx_enumerate ppx_sexp_conv))
  (preprocessor_deps

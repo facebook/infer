@@ -401,7 +401,7 @@ let compute_checks :
   CFG.fold_nodes cfg
     ~f:
       (check_node get_checks_summary get_summary get_formals pname tenv integer_type_widths cfg
-         inv_map)
+         inv_map )
     ~init:Checks.empty
 
 

@@ -299,7 +299,7 @@ let patterns_of_json_with_key (json_key, json) =
     | json ->
         warn_user
           (Printf.sprintf "expected list or assoc json type, but got value %s"
-             (Yojson.Basic.to_string json)) ;
+             (Yojson.Basic.to_string json) ) ;
         accu
   in
   translate [] json
@@ -336,7 +336,7 @@ let filters_from_inferconfig inferconfig : filters =
       FileContainsStringMatcher.create_matcher
         (List.map
            ~f:(fun s -> {contains= s; not_contains= None})
-           inferconfig.block_list_files_containing)
+           inferconfig.block_list_files_containing )
     in
     function
     | source_file ->

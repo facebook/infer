@@ -81,11 +81,26 @@ let capture_gradle_target (out_dir, (javac_data : javac_data)) =
   Out_channel.close oc ;
   let prog = Config.bin_dir ^/ "infer" in
   let args =
-    "capture" :: "-j" :: "1" :: "-o" :: out_dir :: "--" :: "javac" :: ("@" ^ tmpfile)
-    :: List.filter_map javac_data.opts ~f:(fun arg ->
-           if String.equal "-Werror" arg then None
-           else if String.is_substring arg ~substring:"-g:" then Some "-g"
-           else Some arg )
+    "capture"
+    ::
+    "-j"
+    ::
+    "1"
+    ::
+    "-o"
+    ::
+    out_dir
+    ::
+    "--"
+    ::
+    "javac"
+    ::
+    ("@" ^ tmpfile)
+    ::
+    List.filter_map javac_data.opts ~f:(fun arg ->
+        if String.equal "-Werror" arg then None
+        else if String.is_substring arg ~substring:"-g:" then Some "-g"
+        else Some arg )
   in
   L.debug Capture Verbose "%s %s@." prog (String.concat ~sep:" " args) ;
   Process.create_process_and_wait ~prog ~args ;

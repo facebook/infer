@@ -272,7 +272,7 @@ let () =
         L.result "%a"
           (SourceFiles.pp_all ~filter ~type_environment:Config.source_files_type_environment
              ~procedure_names:Config.source_files_procedure_names
-             ~freshly_captured:Config.source_files_freshly_captured)
+             ~freshly_captured:Config.source_files_freshly_captured )
           () ;
         if Config.source_files_cfg then (
           let source_files = SourceFiles.get_all ~filter () in

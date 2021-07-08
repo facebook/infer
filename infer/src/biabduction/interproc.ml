@@ -129,8 +129,8 @@ let path_set_create_worklist proc_cfg =
   Worklist.create ()
 
 
-let htable_retrieve (htable : (Procdesc.Node.id, Paths.PathSet.t) Hashtbl.t)
-    (key : Procdesc.Node.id) : Paths.PathSet.t =
+let htable_retrieve (htable : (Procdesc.Node.id, Paths.PathSet.t) Hashtbl.t) (key : Procdesc.Node.id)
+    : Paths.PathSet.t =
   try Hashtbl.find htable key
   with Caml.Not_found ->
     Hashtbl.replace htable key Paths.PathSet.empty ;
@@ -499,9 +499,10 @@ let compute_visited vset =
     let node_loc = Procdesc.Node.get_loc n in
     let lines =
       node_loc.Location.line
-      :: IContainer.rev_map_to_list ~fold:Instrs.fold
-           ~f:(fun instr -> (Sil.location_of_instr instr).Location.line)
-           (ProcCfg.Exceptional.instrs n)
+      ::
+      IContainer.rev_map_to_list ~fold:Instrs.fold
+        ~f:(fun instr -> (Sil.location_of_instr instr).Location.line)
+        (ProcCfg.Exceptional.instrs n)
     in
     List.remove_consecutive_duplicates ~equal:Int.equal (List.sort ~compare:Int.compare lines)
   in
@@ -574,7 +575,7 @@ let collect_postconditions analysis_data wl tenv proc_cfg :
             (fun prop ->
               Attribute.remove_resource tenv Racquire (Rmemory Mobjc)
                 (Attribute.remove_resource tenv Racquire (Rmemory Mmalloc)
-                   (Attribute.remove_resource tenv Racquire Rfile prop)) )
+                   (Attribute.remove_resource tenv Racquire Rfile prop) ) )
             pathset
         else pathset
     | _ ->
@@ -933,7 +934,7 @@ let update_specs analysis_data prev_summary_opt phase
              ( Paths.PathSet.from_renamed_list spec.BiabductionSummary.posts
              , spec.BiabductionSummary.visited )
              map )
-         ~init:SpecMap.empty old_specs)
+         ~init:SpecMap.empty old_specs )
   in
   let re_exe_filter old_spec =
     (* filter out pres which failed re-exe *)
@@ -944,7 +945,7 @@ let update_specs analysis_data prev_summary_opt phase
               ~f:(fun new_spec ->
                 BiabductionSummary.Jprop.equal new_spec.BiabductionSummary.pre
                   old_spec.BiabductionSummary.pre )
-              new_specs)
+              new_specs )
     then (
       changed := true ;
       current_specs := SpecMap.remove old_spec.BiabductionSummary.pre !current_specs )

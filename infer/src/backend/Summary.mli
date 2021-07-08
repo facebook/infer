@@ -93,7 +93,7 @@ module OnDisk : sig
           -> CostDomain.summary option
           -> ConfigImpactAnalysis.Summary.t option
           -> Errlog.t
-          -> unit)
+          -> unit )
     -> unit
   (** Iterates over all analysis artefacts listed above, for each procedure *)
 

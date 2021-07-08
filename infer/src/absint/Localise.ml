@@ -348,7 +348,7 @@ let dereference_string proc_name deref_str value_str access_opt loc =
     [problem_str ^ " " ^ at_line tags loc]
   in
   let access_desc = access_desc access_opt in
-  {no_desc with descriptions= (value_desc :: access_desc) @ problem_desc; tags= !tags}
+  {no_desc with descriptions= value_desc :: access_desc @ problem_desc; tags= !tags}
 
 
 let parameter_field_not_null_checked_desc (desc : error_desc) exp =
@@ -518,7 +518,7 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
     match bucket_opt with Some bucket when Config.show_buckets -> bucket | _ -> ""
   in
   { no_desc with
-    descriptions= (bucket_str :: xxx_allocated_to) @ by_call_to @ is_not_rxxx_after
+    descriptions= bucket_str :: xxx_allocated_to @ by_call_to @ is_not_rxxx_after
   ; tags= !tags }
 
 

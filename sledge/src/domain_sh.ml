@@ -62,8 +62,7 @@ let exec_assume tid q b =
 let exec_kill tid r q = Exec.kill q (X.reg tid r) |> simplify
 
 let exec_move tid res q =
-  Exec.move q
-    (IArray.map res ~f:(fun (r, e) -> (X.reg tid r, X.term tid e)))
+  Exec.move q (IArray.map res ~f:(fun (r, e) -> (X.reg tid r, X.term tid e)))
   |> simplify
 
 let exec_inst tid inst pre =
@@ -82,7 +81,7 @@ let exec_inst tid inst pre =
       Ok
         (Exec.move pre
            (IArray.map reg_exps ~f:(fun (r, e) ->
-                (X.reg tid r, X.term tid e) )))
+                (X.reg tid r, X.term tid e) ) ) )
   | Load {reg; ptr; len; _} ->
       Exec.load pre ~reg:(X.reg tid reg) ~ptr:(X.term tid ptr)
         ~len:(X.term tid len)
@@ -144,7 +143,8 @@ let and_eqs sub formals actuals q =
 
 let localize_entry tid globals actuals formals freturn locals shadow pre
     entry =
-  (* Add the formals here to do garbage collection and then get rid of them *)
+  (* Add the formals here to do garbage collection and then get rid of
+     them *)
   let formals_set = Var.Set.of_iter (IArray.to_iter formals) in
   let freturn_locals =
     X.regs tid (Llair.Reg.Set.add_option freturn locals)
@@ -153,7 +153,7 @@ let localize_entry tid globals actuals formals freturn locals shadow pre
     Term.Set.of_iter
       (Iter.append
          (Iter.map ~f:X.global (Llair.Global.Set.to_iter globals))
-         (Iter.map ~f:Term.var (IArray.to_iter formals)))
+         (Iter.map ~f:Term.var (IArray.to_iter formals)) )
   in
   let function_summary_pre = garbage_collect entry ~wrt in
   [%Trace.info "function summary pre %a" pp function_summary_pre] ;
@@ -190,7 +190,7 @@ let call ~summaries tid ~globals ~actuals ~areturn ~formals ~freturn ~locals
       in
       not
         (Option.exists areturn ~f:(fun modif ->
-             Iter.exists ~f:(Var.equal (X.reg tid modif)) fv_actuals )) )]
+             Iter.exists ~f:(Var.equal (X.reg tid modif)) fv_actuals ) ) )]
   ;
   let actuals = IArray.map ~f:(X.term tid) actuals in
   let areturn = Option.map ~f:(X.reg tid) areturn in
@@ -381,13 +381,13 @@ let%test_module _ =
     let%expect_test _ =
       pp
         (garbage_collect (Sh.star seg_a seg_main)
-           ~wrt:(Term.Set.of_list [a])) ;
+           ~wrt:(Term.Set.of_list [a]) ) ;
       [%expect {| %a_2 -[ %b_4, %n_3 )-> ⟨%n_3,%end_5⟩ |}]
 
     let%expect_test _ =
       pp
         (garbage_collect (Sh.star seg_a seg_main)
-           ~wrt:(Term.Set.of_list [main])) ;
+           ~wrt:(Term.Set.of_list [main]) ) ;
       [%expect
         {|
           %main_1 -[ %b_4, %n_3 )-> ⟨%n_3,%a_2⟩
@@ -397,7 +397,7 @@ let%test_module _ =
       pp
         (garbage_collect
            (Sh.star seg_cycle seg_main)
-           ~wrt:(Term.Set.of_list [a])) ;
+           ~wrt:(Term.Set.of_list [a]) ) ;
       [%expect
         {|
           %main_1 -[ %b_4, %n_3 )-> ⟨%n_3,%a_2⟩

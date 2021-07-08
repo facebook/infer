@@ -254,7 +254,7 @@ module Exceptional = struct
     let normal_set =
       lazy
         (fold_normal_idset t n ~init:Node.IdSet.empty ~f:(fun set node ->
-             Node.IdSet.add (Procdesc.Node.get_id node) set ))
+             Node.IdSet.add (Procdesc.Node.get_id node) set ) )
     in
     let f acc node =
       if Node.IdSet.mem (Procdesc.Node.get_id node) (Lazy.force_val normal_set) then acc

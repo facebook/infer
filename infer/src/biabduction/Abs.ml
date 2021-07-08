@@ -123,7 +123,7 @@ let mk_rule_ptspts_ls tenv impl_ok1 impl_ok2 (para : Predicates.hpara) =
     let ids_private = id_next :: (ids_exist_fst @ ids_exist_snd) in
     create_condition_ls ids_private id_base
   in
-  { r_vars= (id_base :: id_next :: id_end :: ids_shared) @ ids_exist_fst @ ids_exist_snd
+  { r_vars= id_base :: id_next :: id_end :: ids_shared @ ids_exist_fst @ ids_exist_snd
   ; r_root= para_fst_start
   ; r_sigma= para_fst_rest @ para_snd
   ; r_new_sigma= [lseg_res]
@@ -154,7 +154,7 @@ let mk_rule_ptsls_ls tenv k2 impl_ok1 impl_ok2 para =
     let ids_private = id_next :: ids_exist in
     create_condition_ls ids_private id_base
   in
-  { r_vars= (id_base :: id_next :: id_end :: ids_shared) @ ids_exist
+  { r_vars= id_base :: id_next :: id_end :: ids_shared @ ids_exist
   ; r_root= para_inst_start
   ; r_sigma= para_inst_rest @ [lseg_pat]
   ; r_new_pi= gen_pi_res
@@ -181,7 +181,7 @@ let mk_rule_lspts_ls tenv k1 impl_ok1 impl_ok2 para =
     let ids_private = id_next :: ids_exist in
     create_condition_ls ids_private id_base
   in
-  { r_vars= (id_base :: id_next :: id_end :: ids_shared) @ ids_exist
+  { r_vars= id_base :: id_next :: id_end :: ids_shared @ ids_exist
   ; r_root= lseg_pat
   ; r_sigma= para_inst_pat
   ; r_new_sigma= [lseg_res]
@@ -311,7 +311,7 @@ let mk_rule_ptspts_dll tenv impl_ok1 impl_ok2 para =
   L.out "para_snd=%a @.@." pp_hpat_list para_snd;
   L.out "dllseg_res=%a @.@." pp_hpred dllseg_res;
   *)
-  { r_vars= (id_iF :: id_oB :: id_iF' :: id_oF :: ids_shared) @ ids_exist_fst @ ids_exist_snd
+  { r_vars= id_iF :: id_oB :: id_iF' :: id_oF :: ids_shared @ ids_exist_fst @ ids_exist_snd
   ; r_root= para_fst_start
   ; r_sigma= para_fst_rest @ para_snd
   ; r_new_sigma= [dllseg_res]
@@ -357,7 +357,7 @@ let mk_rule_ptsdll_dll tenv k2 impl_ok1 impl_ok2 para =
     let ids_private = id_iF' :: ids_exist in
     create_condition_dll ids_private id_iF
   in
-  { r_vars= (id_iF :: id_oB :: id_iF' :: id_oF :: id_iB :: ids_shared) @ ids_exist
+  { r_vars= id_iF :: id_oB :: id_iF' :: id_oF :: id_iB :: ids_shared @ ids_exist
   ; r_root= para_inst_start
   ; r_sigma= para_inst_rest @ [dllseg_pat]
   ; r_new_pi= gen_pi_res
@@ -399,7 +399,7 @@ let mk_rule_dllpts_dll tenv k1 impl_ok1 impl_ok2 para =
     let ids_private = id_oB' :: ids_exist in
     create_condition_dll ids_private id_iF
   in
-  { r_vars= (id_iF :: id_oB :: id_iF' :: id_oB' :: id_oF :: ids_shared) @ ids_exist
+  { r_vars= id_iF :: id_oB :: id_iF' :: id_oB' :: id_oF :: ids_shared @ ids_exist
   ; r_root= dllseg_pat
   ; r_sigma= para_inst_pat
   ; r_new_pi= gen_pi_res

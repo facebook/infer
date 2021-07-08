@@ -22,7 +22,7 @@ let clang_proc_of_decl decl =
       Some
         (ClangProc.CFunction
            { name= named_decl_info.Clang_ast_t.ni_name
-           ; mangled_name= fdi.Clang_ast_t.fdi_mangled_name })
+           ; mangled_name= fdi.Clang_ast_t.fdi_mangled_name } )
   | CXXConversionDecl (_, _, _, fdi, _)
   | CXXMethodDecl (_, _, _, fdi, _)
   | CXXConstructorDecl (_, _, _, fdi, _)

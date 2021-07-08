@@ -83,7 +83,7 @@ let list_checkers () =
               ; short_documentation= _ (* only list in [show_checkers] *)
               ; cli_flags= _ (* only list in [show_checkers] *)
               ; enabled_by_default
-              ; activates }[@warning "+9"]) =
+              ; activates } [@warning "+9"] ) =
            Checker.config checker
          in
          L.result "%s:%s:%s:%s:%b:%a@;" id (string_of_checker_kind kind)
@@ -131,17 +131,18 @@ let list_issue_types () =
   L.result "@[<v>" ;
   IssueType.all_issues ()
   |> List.iter
-       ~f:(fun ({ IssueType.unique_id
-                ; checker
-                ; visibility
-                ; user_documentation=
-                    _
-                    (* do not show this as this can be a big multi-line string and not tool-friendly *)
-                ; default_severity
-                ; enabled
-                ; hum
-                ; doc_url
-                ; linters_def_file }[@warning "+9"])
+       ~f:(fun
+            ({ IssueType.unique_id
+             ; checker
+             ; visibility
+             ; user_documentation=
+                 _
+                 (* do not show this as this can be a big multi-line string and not tool-friendly *)
+             ; default_severity
+             ; enabled
+             ; hum
+             ; doc_url
+             ; linters_def_file } [@warning "+9"] )
           ->
          L.result "%s:%s:%s:%s:%b:%s:%s:%s@;" unique_id hum
            (IssueType.string_of_visibility visibility)
@@ -153,9 +154,8 @@ let list_issue_types () =
 
 
 let pp_checker f checker =
-  let ({Checker.id; kind; support; short_documentation; cli_flags; enabled_by_default; activates}[@warning
-                                                                                                   "+9"])
-      =
+  let ({Checker.id; kind; support; short_documentation; cli_flags; enabled_by_default; activates}
+      [@warning "+9"] ) =
     Checker.config checker
   in
   F.fprintf f
@@ -215,11 +215,11 @@ let mk_checkers_json checkers_base_filenames =
              "This is a %cgenerated file, run `make doc-publish` from the root of the infer \
               repository to generate it"
              (* avoid tooling thinking this source file itself is generated because of the string _at_generated appearing in it *)
-             '@') )
+             '@' ) )
     ; ( "doc_entries"
       , `List
-          ( `String all_issues_basename
-          :: List.map checkers_base_filenames ~f:(fun filename -> `String filename) ) ) ]
+          (`String all_issues_basename
+           :: List.map checkers_base_filenames ~f:(fun filename -> `String filename) ) ) ]
 
 
 (** Writes an index of all the checkers documentation pages. Must correspond to all the pages

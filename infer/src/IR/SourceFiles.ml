@@ -147,7 +147,7 @@ let pp_all ~filter ~type_environment ~procedure_names ~freshly_captured fmt () =
       (pp_if stmt "procedure_names" procedure_names Procname.SQLiteList.deserialize pp_procnames)
       2
       (pp_if stmt "freshly_captured" freshly_captured deserialize_freshly_captured
-         Format.pp_print_bool)
+         Format.pp_print_bool )
       3
   in
   ResultsDatabase.with_registered_statement select_all_source_files_statement ~f:(fun db stmt ->
@@ -159,7 +159,7 @@ let pp_all ~filter ~type_environment ~procedure_names ~freshly_captured fmt () =
         Container.iter stmt ~f:(pp fmt)
           ~fold:
             (SqliteUtils.result_fold_single_column_rows ~finalize:false db
-               ~log:"printing all source files")
+               ~log:"printing all source files" )
       in
       F.fprintf fmt "@[<v>%a@]" pp_result stmt )
 

@@ -227,7 +227,7 @@ $(b,infer) $(i,[options])|}
                 options in $(b,%s). See the $(i,%s) and $(i,%s) sections of this manual for more \
                 information."
                inferconfig_file CLOpt.args_env_var CLOpt.args_env_var inferconfig_file
-               CLOpt.args_env_var Cmdliner.Manpage.s_environment Cmdliner.Manpage.s_files)
+               CLOpt.args_env_var Cmdliner.Manpage.s_environment Cmdliner.Manpage.s_files )
         ; `P
             "Options can be specified inside an argument file $(i,file) by passing $(b,@)$(i,file) \
              as argument. The format is one option per line, and enclosing single ' and double \" \
@@ -240,7 +240,7 @@ $(b,infer) $(i,[options])|}
         ; `P
             "See the manuals of individual infer commands for details about their supported \
              options. The following is a list of all the supported options (see also \
-             $(b,--help-full) for options reserved for internal use)." ])
+             $(b,--help-full) for options reserved for internal use)." ] )
     ~environment:
       [ `P
           (Printf.sprintf
@@ -249,23 +249,23 @@ $(b,infer) $(i,[options])|}
               %c-separated options. For instance, calling `%s=--debug^--print-logs infer` is \
               equivalent to calling `infer --debug --print-logs`."
              CLOpt.args_env_var Cmdliner.Manpage.s_options CLOpt.args_env_var CLOpt.env_var_sep
-             CLOpt.args_env_var)
+             CLOpt.args_env_var )
       ; `P
           (Printf.sprintf "$(b,%s): Tells infer where to find the %s file. (See the %s section)"
-             inferconfig_env_var inferconfig_file Cmdliner.Manpage.s_files)
+             inferconfig_env_var inferconfig_file Cmdliner.Manpage.s_files )
       ; `P
           (Printf.sprintf
              "If $(b,%s) is set to \"1\", then infer commands will exit with an error code in some \
               cases when otherwise a simple warning would be emitted on stderr, for instance if a \
               deprecated form of an option is used."
-             CLOpt.strict_mode_env_var) ]
+             CLOpt.strict_mode_env_var ) ]
     ~files:
       [ `P
           (Printf.sprintf
              "$(b,%s) can be used to store infer options. Its format is that of a JSON record, \
               where fields are infer long-form options, without their leading \"--\", and values \
               depend on the type of the option:"
-             inferconfig_file)
+             inferconfig_file )
       ; `Noblank
       ; `P "- for switches options, the value is a JSON boolean (true or false, without quotes)"
       ; `Noblank
@@ -281,14 +281,14 @@ $(b,infer) $(i,[options])|}
           (Printf.sprintf
              "- path options have string values, and are interpreted relative to the location of \
               the %s file"
-             inferconfig_file)
+             inferconfig_file )
       ; `Noblank
       ; `P "- cumulative options are JSON arrays of the appropriate type"
       ; `P
           (Printf.sprintf
              "Infer will look for an $(b,%s) file in the current directory, then its parent, etc., \
               stopping at the first $(b,%s) file found."
-             inferconfig_file inferconfig_file)
+             inferconfig_file inferconfig_file )
       ; `P "Example:"
       ; `Pre
           {|  {

@@ -101,8 +101,7 @@ module Variables = struct
           ; swallow_destructors= is_compound_stmt_ending_in_control_flow_break stmt }
     | CXXForRangeStmt
         ( _
-        , [ _init
-          (* TODO: ignored here because ignored in [CTrans] *)
+        , [ _init (* TODO: ignored here because ignored in [CTrans] *)
           ; iterator_decl
           ; begin_stmt
           ; end_stmt

@@ -709,7 +709,7 @@ let handle_objc_instance_method_call_or_skip pdesc tenv actual_pars path callee_
         raise
           (Exceptions.Internal_error
              (Localise.verbatim_desc
-                "In Objective-C instance method call there should be a receiver."))
+                "In Objective-C instance method call there should be a receiver." ) )
   in
   let is_receiver_null =
     match actual_pars with
@@ -1776,7 +1776,7 @@ let node handle_exn analysis_data proc_cfg (node : ProcCfg.Exceptional.Node.t)
         && not
              (Procdesc.Node.equal_nodekind
                 (ProcCfg.Exceptional.Node.kind node)
-                Procdesc.Node.exn_handler_kind)
+                Procdesc.Node.exn_handler_kind )
         (* skip normal instructions if an exception was thrown, unless this is an exception
            handler node *)
       then (

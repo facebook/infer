@@ -128,7 +128,7 @@ end = struct
     F.fprintf fmt "<center><h1>Procedure %a</h1></center>@\n"
       (Io_infer.Html.pp_line_link source
          ~text:(Some (Escape.escape_xml (Procname.to_string pname)))
-         [])
+         [] )
       linenum ;
     pp_node_link_seq [] ~description:true fmt nodes ;
     ( match Summary.OnDisk.get pname with

@@ -23,8 +23,8 @@ let capture ~build_cmd =
     else raw_prog
   in
   let args =
-    "NDK_TOOLCHAIN_VERSION=clang" :: "TARGET_CC=clang" :: "TARGET_CXX=clang" :: "TARGET_LD=ld"
-    :: ndk_args
+    "NDK_TOOLCHAIN_VERSION=clang"
+    :: "TARGET_CC=clang" :: "TARGET_CXX=clang" :: "TARGET_LD=ld" :: ndk_args
   in
   (* run ndk_build *)
   L.(debug Capture Verbose)

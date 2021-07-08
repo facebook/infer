@@ -40,7 +40,7 @@ let infer_profile =
        | Some version when version >= 9 ->
            Printf.sprintf "<release>%d</release>" version
        | _ ->
-           "" ))
+           "" ) )
 
 
 let pom_worklist = ref [CLOpt.init_work_dir]

@@ -20,7 +20,7 @@ let test_parse line files opts =
   assert_equal ~cmp:javac_data_eq
     ~msg:
       (Printf.sprintf "f:[%s] <> [%s] || o:[%s] <> [%s]" (p res.files) (p files) (p res.opts)
-         (p opts))
+         (p opts) )
     res {files; opts}
 
 
@@ -47,7 +47,7 @@ let tests_wrapper _test_ctxt =
   test_parse ("cls.class @" ^ tmpnojava ^ " @b.txt") [] ["@" ^ tmpnojava ^ " @b.txt"; "cls.class"] ;
   let rec biglist acc n l = if Int.equal n 0 then acc else biglist (l @ acc) (n - 1) l in
   let opts = biglist [] 100 ["-opt1"; "optval1"] in
-  test_parse (String.concat ~sep:" " @@ (tmpjava :: opts)) [tmpjava] opts ;
+  test_parse (String.concat ~sep:" " @@ tmpjava :: opts) [tmpjava] opts ;
   test_parse
     ("-d classes/java/main -s java/main " ^ tmpjava)
     [tmpjava]
