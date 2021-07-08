@@ -280,6 +280,18 @@ let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} : 
       let exit_failure = Node.make_if env false (Var id) in
       start |~~> [exit_success; exit_failure] ;
       {start; exit_success; exit_failure}
+  | UnaryOperator _ ->
+      (* Unary op pattern must evaluate to number, so just delegate to expression translation *)
+      let id = Ident.create_fresh Ident.knormal in
+      let expr_block =
+        translate_expression {env with result= Present (Exp.Var id)} {Ast.line; simple_expression}
+      in
+      let cond = Exp.BinOp (Eq, Var value, Var id) in
+      let start = Node.make_nop env in
+      let exit_success = Node.make_if env true cond in
+      let exit_failure = Node.make_if env false cond in
+      start |~~> [exit_success; exit_failure] ;
+      Block.all env [expr_block; {start; exit_success; exit_failure}]
   | Variable vname when String.equal vname "_" ->
       Block.make_success env
   | Variable vname ->
@@ -298,7 +310,7 @@ let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} : 
       Block.make_failure env
 
 
-let rec translate_expression env {Ast.line; simple_expression} =
+and translate_expression env {Ast.line; simple_expression} =
   let env = update_location line env in
   let any = ptr_typ_of_name Any in
   let (Present result) = env.result in
@@ -432,6 +444,25 @@ let rec translate_expression env {Ast.line; simple_expression} =
         let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_nil) in
         let instruction = Sil.Call ((ret_var, any), fun_exp, [], env.location, CallFlags.default) in
         Block.make_instruction env [instruction]
+    | UnaryOperator (op, e) ->
+        let id = Ident.create_fresh Ident.knormal in
+        let block = translate_expression {env with result= Present (Exp.Var id)} e in
+        let make_simple_op_block sil_op =
+          Block.make_load env ret_var (Exp.UnOp (sil_op, Var id, None)) any
+        in
+        let op_block =
+          match op with
+          | UMinus ->
+              make_simple_op_block Neg
+          | UNot ->
+              make_simple_op_block LNot
+          | todo ->
+              L.debug Capture Verbose
+                "@[todo ErlangTranslator.translate_expression(UnaryOperator) %s@."
+                (Sexp.to_string (Ast.sexp_of_unary_operator todo)) ;
+              Block.make_success env
+        in
+        Block.all env [block; op_block]
     | Variable vname ->
         let e = Exp.Lvar (Pvar.mk (Mangled.from_string vname) procname) in
         let load_instr = Sil.Load {id= ret_var; e; root_typ= any; typ= any; loc= env.location} in
