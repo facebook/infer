@@ -45,7 +45,7 @@ let rec ast_node_name an =
         ast_node_name (Stmt stmt)
     | None ->
         "" )
-  | Stmt (ImplicitCastExpr (_, [stmt], _, _))
+  | Stmt (ImplicitCastExpr (_, [stmt], _, _, _))
   | Stmt (PseudoObjectExpr (_, stmt :: _, _))
   | Stmt (ParenExpr (_, [stmt], _)) ->
       ast_node_name (Stmt stmt)

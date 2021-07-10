@@ -418,7 +418,7 @@ let objc_message_receiver context an =
               CAst_utils.qual_type_to_objc_interface omdi.omdi_result_type
           | _ ->
               None )
-        | PseudoObjectExpr (_, _, ei) | ImplicitCastExpr (_, _, ei, _) | ParenExpr (_, _, ei) ->
+        | PseudoObjectExpr (_, _, ei) | ImplicitCastExpr (_, _, ei, _, _) | ParenExpr (_, _, ei) ->
             CAst_utils.qual_type_to_objc_interface ei.ei_qual_type
         | _ ->
             None )
@@ -1340,7 +1340,7 @@ let rec get_decl_attributes an =
   match an with
   | Stmt (CallExpr (_, func :: _, _)) ->
       get_decl_attributes (Stmt func)
-  | Stmt (ImplicitCastExpr (_, [stmt], _, _)) ->
+  | Stmt (ImplicitCastExpr (_, [stmt], _, _, _)) ->
       get_decl_attributes (Stmt stmt)
   | Stmt (DeclRefExpr (_, _, _, drti)) -> (
     match CAst_utils.get_decl_opt_with_decl_ref_opt drti.drti_decl_ref with
@@ -1362,7 +1362,7 @@ let rec get_decl_attributes_for_callexpr_param an =
   match an with
   | Stmt (CallExpr (_, func :: _, _)) ->
       get_decl_attributes_for_callexpr_param (Stmt func)
-  | Stmt (ImplicitCastExpr (_, [stmt], _, _)) ->
+  | Stmt (ImplicitCastExpr (_, [stmt], _, _, _)) ->
       get_decl_attributes_for_callexpr_param (Stmt stmt)
   | Stmt (DeclRefExpr (si, _, _, drti)) -> (
       L.debug Linters Verbose "#####POINTER LOOP UP: '%i'@\n" si.si_pointer ;

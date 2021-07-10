@@ -390,6 +390,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   DECLARE_VISITOR(Expr)
   DECLARE_VISITOR(CastExpr)
   DECLARE_VISITOR(ExplicitCastExpr)
+  DECLARE_VISITOR(ImplicitCastExpr)
   DECLARE_VISITOR(DeclRefExpr)
   DECLARE_VISITOR(PredefinedExpr)
   DECLARE_VISITOR(CharacterLiteral)
@@ -3393,6 +3394,18 @@ void ASTExporter<ATDWriter>::VisitExplicitCastExpr(
     const ExplicitCastExpr *Node) {
   VisitCastExpr(Node);
   dumpQualType(Node->getTypeAsWritten());
+}
+
+template <class ATDWriter>
+int ASTExporter<ATDWriter>::ImplicitCastExprTupleSize() {
+  return CastExprTupleSize() + 1;
+}
+//@atd #define implicit_cast_expr_tuple cast_expr_tuple * bool
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitImplicitCastExpr(
+    const ImplicitCastExpr *Node) {
+  VisitCastExpr(Node);
+  OF.emitBoolean(Node->isPartOfExplicitCast());
 }
 
 template <class ATDWriter>
