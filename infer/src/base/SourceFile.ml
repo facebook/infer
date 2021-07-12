@@ -108,7 +108,7 @@ let reroot_rel_path ~foreign_rel_project_root rel_path =
       let foreign_abs_project_root = offset_to_abs_path foreign_offset_opt in
       Option.value_exn
         (Utils.filename_to_relative ~force_full_backtrack:true ~root:abs_project_root
-           foreign_abs_project_root)
+           foreign_abs_project_root )
       ^/ rel_path
   | _ ->
       rel_path
@@ -162,11 +162,10 @@ let to_string ?(force_relative = false) fname =
         let open IOption.Let_syntax in
         (let* isysroot_suffix = Config.xcode_isysroot_suffix in
          let+ pos = String.substr_index path ~pattern:isysroot_suffix in
-         "${XCODE_ISYSROOT}" ^ String.subo ~pos:(pos + String.length isysroot_suffix) path)
+         "${XCODE_ISYSROOT}" ^ String.subo ~pos:(pos + String.length isysroot_suffix) path )
         |> IOption.if_none_eval ~f:(fun () ->
                Option.value_exn
-                 (Utils.filename_to_relative ~force_full_backtrack:true ~root:project_root_real
-                    path) )
+                 (Utils.filename_to_relative ~force_full_backtrack:true ~root:project_root_real path) )
       else path
 
 
@@ -331,7 +330,7 @@ module SQLite = struct
     | RelativeProjectRootAndWorkspace {workspace_rel_root= prefix; rel_path} ->
         Sqlite3.Data.TEXT
           (Printf.sprintf "%c%d%c%s/%s" relative_project_root_and_workspace_tag
-             (String.length prefix) relative_project_root_and_workspace_tag prefix rel_path)
+             (String.length prefix) relative_project_root_and_workspace_tag prefix rel_path )
 
 
   let deserialize serialized_sourcefile =

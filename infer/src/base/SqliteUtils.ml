@@ -86,7 +86,7 @@ let db_close db =
       (Error
          (Printf.sprintf "closing: %s (%s)"
             (Sqlite3.errcode db |> Sqlite3.Rc.to_string)
-            (Sqlite3.errmsg db)))
+            (Sqlite3.errmsg db) ) )
 
 
 module type Data = sig

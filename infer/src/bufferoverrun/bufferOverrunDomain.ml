@@ -2457,8 +2457,7 @@ module Mem = struct
 
 
   let load_size_alias : Ident.t -> Loc.t -> t -> t =
-   fun id loc ->
-    load_alias id loc (AliasTarget.Size {alias_typ= Eq; i= IntLit.zero; java_tmp= None})
+   fun id loc -> load_alias id loc (AliasTarget.Size {alias_typ= Eq; i= IntLit.zero; java_tmp= None})
 
 
   let store_simple_alias : Loc.t -> Exp.t -> t -> t =

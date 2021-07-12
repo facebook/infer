@@ -506,7 +506,7 @@ let override_iter f tenv proc_name =
        (fun pname ->
          f pname ;
          false )
-       tenv proc_name)
+       tenv proc_name )
 
 
 let lookup_attributes tenv proc_name =

@@ -554,7 +554,7 @@ let apply_post_for_globals path callee_proc_name call_location pre_post call_sta
       call_state ~f:(fun _var ~stack_value:(addr_callee, _) ~addr_hist_caller call_state ->
         Ok
           (record_post_for_address path callee_proc_name call_location pre_post ~addr_callee
-             ~addr_hist_caller call_state) )
+             ~addr_hist_caller call_state ) )
   with
   | Error _ ->
       (* always return [Ok _] above *) assert false
@@ -714,7 +714,7 @@ let isl_check_all_invalid invalid_addr_callers callee_proc_name call_location
                          ; invalidation_trace
                          ; access_trace
                          ; must_be_valid_reason= None }
-                   ; astate }) ) ) )
+                   ; astate } ) ) ) )
     invalid_addr_callers (Ok astate)
 
 

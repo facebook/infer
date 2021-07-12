@@ -93,7 +93,7 @@ let add_to_modified pname ~pvar ~access ~addr pre_heap post modified_vars =
           | None, Some (_, attrs_post) ->
               aux
                 (add_invalid_and_modified ~pvar ~access ~check_empty:false attrs_post access_list
-                   modified_vars)
+                   modified_vars )
                 ~addr_to_explore ~visited
           | Some edges_pre, Some (edges_post, attrs_post) -> (
             match get_matching_dest_addr_opt ~edges_pre ~edges_post with
@@ -107,13 +107,13 @@ let add_to_modified pname ~pvar ~access ~addr pre_heap post modified_vars =
                   ~f:(fun acc addr ->
                     aux
                       (add_invalid_and_modified ~pvar ~access attrs_post ~check_empty:false
-                         access_list acc)
+                         access_list acc )
                       ~addr_to_explore:(addr :: addr_to_explore) ~visited )
                   addr_list
             | None ->
                 aux
                   (add_invalid_and_modified ~pvar ~access ~check_empty:false attrs_post access_list
-                     modified_vars)
+                     modified_vars )
                   ~addr_to_explore ~visited ) )
   in
   aux ([], modified_vars) ~addr_to_explore:[(access, addr)] ~visited:AbstractValue.Set.empty

@@ -68,7 +68,7 @@ module ReportableViolation = struct
       | PassingParamToFunction {actual_param_expression} ->
           not
             (ErrorRenderingUtils.is_object_nullability_self_explanatory
-               ~object_expression:actual_param_expression origin)
+               ~object_expression:actual_param_expression origin )
       | AssigningToField _ | ReturningFromFunction _ ->
           true
     in
@@ -94,7 +94,7 @@ module ReportableViolation = struct
       Option.value_map alternative_method
         ~f:
           (Format.asprintf " If you don't expect null, use %a instead."
-             MarkupFormatter.pp_monospaced)
+             MarkupFormatter.pp_monospaced )
         ~default:""
     in
     let full_description = Format.sprintf "%s%s" description alternative_recommendation in
@@ -180,7 +180,7 @@ module ReportableViolation = struct
             | ThirdParty (InThirdPartyRepo {filename; line_number}) ->
                 Format.sprintf " (see %s at line %d)"
                   (ThirdPartyAnnotationGlobalRepo.get_user_friendly_third_party_sig_file_name
-                     ~filename)
+                     ~filename )
                   line_number
           in
           let description =

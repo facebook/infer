@@ -73,7 +73,7 @@ let add_array_to_prop ({InterproceduralAnalysis.tenv; _} as analysis_data) prop_
              let hpred =
                Prop.mk_ptsto tenv n_lexp s
                  (Exp.Sizeof
-                    {typ= arr_typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact})
+                    {typ= arr_typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact} )
              in
              let sigma = prop.Prop.sigma in
              let sigma_fp = prop.Prop.sigma_fp in

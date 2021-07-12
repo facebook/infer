@@ -213,7 +213,7 @@ end = struct
            ~f:(fun id ->
              incr count ;
              (id, Exp.Var (Ident.create_normal Ident.name_spec !count)) )
-           idlist)
+           idlist )
     in
     spec_sub tenv sub spec
 

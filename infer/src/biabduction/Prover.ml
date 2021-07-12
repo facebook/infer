@@ -1765,7 +1765,8 @@ let expand_hpred_pointer =
                     (* type of struct at adr_base is known *)
                     Some
                       (Exp.Sizeof
-                         {typ= adr_typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact})
+                         {typ= adr_typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
+                      )
                 | None ->
                     None )
               | _ ->
@@ -2428,7 +2429,7 @@ let rec pre_check_pure_implication tenv calc_missing (subs : subst2) pi1 pi2 =
         (IMPL_EXC
            ( "ineq e2=f2 in rhs with e2 not primed var"
            , (Predicates.sub_empty, Predicates.sub_empty)
-           , EXC_FALSE ))
+           , EXC_FALSE ) )
   | (Aeq _ | Aneq _ | Apred _ | Anpred _) :: pi2' ->
       pre_check_pure_implication tenv calc_missing subs pi1 pi2'
 

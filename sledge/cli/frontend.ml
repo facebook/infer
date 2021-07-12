@@ -16,8 +16,8 @@ let pp_llvalue fs t = Format.pp_print_string fs (Llvm.string_of_llvalue t)
 
 let pp_llblock fs t =
   Format.pp_print_string fs (Llvm.string_of_llvalue (Llvm.value_of_block t))
-
 ;;
+
 Exp.demangle :=
   let open Ctypes in
   let cxa_demangle =
@@ -301,7 +301,7 @@ let rec xlate_type : x -> Llvm.lltype -> Typ.t =
             match
               Int64.unsigned_to_int
                 (Llvm_target.DataLayout.offset_of_element llt i
-                   x.lldatalayout)
+                   x.lldatalayout )
             with
             | Some i -> i
             | None -> todo "offset too large: %a" pp_lltype llt ()
@@ -498,7 +498,7 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t
         , Exp.function_
             (Function.mk
                (xlate_type x (Llvm.type_of llv))
-               (fst (find_name llv))) )
+               (fst (find_name llv)) ) )
     | GlobalVariable -> ([], Exp.global (xlate_global x llv).name)
     | GlobalAlias -> xlate_value x (Llvm.operand llv 0)
     | ConstantInt -> ([], xlate_int x llv)
@@ -1663,8 +1663,7 @@ let translate ~internalize : string -> Llair.program =
   let llcontext = Llvm.global_context () in
   let llmodule = read_and_parse llcontext input in
   assert (
-    Llvm_analysis.verify_module llmodule |> Option.for_all ~f:invalid_llvm
-  ) ;
+    Llvm_analysis.verify_module llmodule |> Option.for_all ~f:invalid_llvm ) ;
   transform ~internalize llmodule ;
   scan_names_and_locs llmodule ;
   let lldatalayout =

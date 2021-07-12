@@ -79,7 +79,7 @@ let process_category qual_type_to_sil_type procname_from_decl tenv class_name de
       let new_methods = CGeneral_utils.append_no_duplicates_methods decl_methods methods in
       ignore
         (Tenv.mk_struct tenv ~default:struct_typ ~fields:new_fields ~methods:new_methods
-           class_tn_name) ;
+           class_tn_name ) ;
       L.(debug Capture Verbose)
         " Updating info for class '%a' in tenv@\n" QualifiedCppName.pp class_name
   | _ ->

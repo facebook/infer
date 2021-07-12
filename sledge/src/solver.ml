@@ -201,7 +201,7 @@ let excise_seg_same ({com; min; sub} as goal) msg ssg =
   let sub =
     Sh.and_ (Formula.eq b b')
       (Sh.and_ (Formula.eq m m')
-         (Sh.and_ (Formula.eq a a') (Sh.rem_seg ssg sub)))
+         (Sh.and_ (Formula.eq a a') (Sh.rem_seg ssg sub)) )
   in
   goal |> with_ ~com ~min ~sub
 
@@ -235,12 +235,12 @@ let excise_seg_sub_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg o_n
       (eq_concat (o, a) [|(n, a0); (o_n, a1)|])
       (Sh.star
          (Sh.seg {loc= Term.add k n; bas= b; len= m; siz= o_n; cnt= a1})
-         (Sh.rem_seg msg min))
+         (Sh.rem_seg msg min) )
   in
   let sub =
     Sh.and_ (Formula.eq b b')
       (Sh.and_ (Formula.eq m m')
-         (Sh.and_ (Formula.eq a0 a') (Sh.rem_seg ssg sub)))
+         (Sh.and_ (Formula.eq a0 a') (Sh.rem_seg ssg sub)) )
   in
   goal |> with_ ~us ~com ~min ~xs ~sub ~zs
 
@@ -276,8 +276,8 @@ let excise_seg_min_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg n_o
             (eq_concat (n, a') [|(o, a); (n_o, a1')|])
             (Sh.star
                (Sh.seg
-                  {loc= Term.add l o; bas= b'; len= m'; siz= n_o; cnt= a1'})
-               (Sh.rem_seg ssg sub))))
+                  {loc= Term.add l o; bas= b'; len= m'; siz= n_o; cnt= a1'} )
+               (Sh.rem_seg ssg sub) ) ) )
   in
   goal |> with_ ~com ~min ~xs ~sub ~zs
 
@@ -313,12 +313,12 @@ let excise_seg_sub_suffix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
       (eq_concat (o, a) [|(l_k, a0); (n, a1)|])
       (Sh.star
          (Sh.seg {loc= k; bas= b; len= m; siz= l_k; cnt= a0})
-         (Sh.rem_seg msg min))
+         (Sh.rem_seg msg min) )
   in
   let sub =
     Sh.and_ (Formula.eq b b')
       (Sh.and_ (Formula.eq m m')
-         (Sh.and_ (Formula.eq a1 a') (Sh.rem_seg ssg sub)))
+         (Sh.and_ (Formula.eq a1 a') (Sh.rem_seg ssg sub)) )
   in
   goal |> with_ ~us ~com ~min ~xs ~sub ~zs
 
@@ -360,12 +360,12 @@ let excise_seg_sub_infix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
          (Sh.seg {loc= k; bas= b; len= m; siz= l_k; cnt= a0})
          (Sh.star
             (Sh.seg {loc= ln; bas= b; len= m; siz= ko_ln; cnt= a2})
-            (Sh.rem_seg msg min)))
+            (Sh.rem_seg msg min) ) )
   in
   let sub =
     Sh.and_ (Formula.eq b b')
       (Sh.and_ (Formula.eq m m')
-         (Sh.and_ (Formula.eq a1 a') (Sh.rem_seg ssg sub)))
+         (Sh.and_ (Formula.eq a1 a') (Sh.rem_seg ssg sub)) )
   in
   goal |> with_ ~us ~com ~min ~xs ~sub ~zs
 
@@ -406,7 +406,7 @@ let excise_seg_min_skew ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
       (eq_concat (o, a) [|(l_k, a0); (ko_l, a1)|])
       (Sh.star
          (Sh.seg {loc= k; bas= b; len= m; siz= l_k; cnt= a0})
-         (Sh.rem_seg msg min))
+         (Sh.rem_seg msg min) )
   in
   let sub =
     Sh.and_ (Formula.eq b b')
@@ -415,7 +415,7 @@ let excise_seg_min_skew ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
             (eq_concat (n, a') [|(ko_l, a1); (ln_ko, a2')|])
             (Sh.star
                (Sh.seg {loc= ko; bas= b'; len= m'; siz= ln_ko; cnt= a2'})
-               (Sh.rem_seg ssg sub))))
+               (Sh.rem_seg ssg sub) ) ) )
   in
   goal |> with_ ~us ~com ~min ~xs ~sub ~zs
 
@@ -451,7 +451,7 @@ let excise_seg_min_suffix ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
             (eq_concat (n, a') [|(k_l, a0'); (o, a)|])
             (Sh.star
                (Sh.seg {loc= l; bas= b'; len= m'; siz= k_l; cnt= a0'})
-               (Sh.rem_seg ssg sub))))
+               (Sh.rem_seg ssg sub) ) ) )
   in
   goal |> with_ ~com ~min ~xs ~sub ~zs
 
@@ -493,7 +493,7 @@ let excise_seg_min_infix ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
                (Sh.seg {loc= l; bas= b'; len= m'; siz= k_l; cnt= a0'})
                (Sh.star
                   (Sh.seg {loc= ko; bas= b'; len= m'; siz= ln_ko; cnt= a2'})
-                  (Sh.rem_seg ssg sub)))))
+                  (Sh.rem_seg ssg sub) ) ) ) )
   in
   goal |> with_ ~com ~min ~xs ~sub ~zs
 
@@ -533,7 +533,7 @@ let excise_seg_sub_skew ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
       (eq_concat (o, a) [|(ln_k, a1); (ko_ln, a2)|])
       (Sh.star
          (Sh.seg {loc= ln; bas= b; len= m; siz= ko_ln; cnt= a2})
-         (Sh.rem_seg msg min))
+         (Sh.rem_seg msg min) )
   in
   let sub =
     Sh.and_ (Formula.eq b b')
@@ -542,7 +542,7 @@ let excise_seg_sub_skew ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
             (eq_concat (n, a') [|(k_l, a0'); (ln_k, a1)|])
             (Sh.star
                (Sh.seg {loc= l; bas= b'; len= m'; siz= k_l; cnt= a0'})
-               (Sh.rem_seg ssg sub))))
+               (Sh.rem_seg ssg sub) ) ) )
   in
   goal |> with_ ~us ~com ~min ~xs ~sub ~zs
 
@@ -563,7 +563,7 @@ let excise_seg ({sub} as goal) msg ssg =
       |> with_
            ~sub:
              (Sh.and_ (Formula.eq b b')
-                (Sh.and_ (Formula.eq m m') goal.sub)) )
+                (Sh.and_ (Formula.eq m m') goal.sub) ) )
   else
     match Int.sign (Z.sign k_l) with
     (* k-l < 0 so k < l *)
@@ -581,7 +581,7 @@ let excise_seg ({sub} as goal) msg ssg =
             | Neg ->
                 Some
                   (excise_seg_min_skew goal msg ssg (Z.neg k_l) (Z.neg l_ko)
-                     (Z.neg ko_ln))
+                     (Z.neg ko_ln) )
             | Zero | Pos -> None )
         (* k+o-(l+n) = 0     [k;    o)
          * so k+o = l+n    ⊢    [l; n) *)

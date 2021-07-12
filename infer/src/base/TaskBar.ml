@@ -64,7 +64,9 @@ let draw_top_bar fmt ~term_width ~total ~finished ~elapsed =
     ("%*d", bar_tasks_num_size (* finished *))
     +++ "/"
     ++ ("%s", bar_tasks_num_size (* total *))
-    +++ " [" ++ ("%a%a", 0 (* progress bar *)) +++ "] "
+    +++ " ["
+    ++ ("%a%a", 0 (* progress bar *))
+    +++ "] "
     ++ ("%d%%", 3 (* "xxx%", even though sometimes it's just "x%" *))
     +++ " "
     ++ ( "%s"

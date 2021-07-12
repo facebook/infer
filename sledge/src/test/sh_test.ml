@@ -57,7 +57,7 @@ let%test_module _ =
     let eq_concat (siz, seq) ms =
       Formula.eq (Term.sized ~siz ~seq)
         (Term.concat
-           (Array.map ~f:(fun (siz, seq) -> Term.sized ~siz ~seq) ms))
+           (Array.map ~f:(fun (siz, seq) -> Term.sized ~siz ~seq) ms) )
 
     let of_eqs l =
       List.fold ~f:(fun (a, b) q -> and_ (Formula.eq a b) q) l emp
@@ -66,7 +66,7 @@ let%test_module _ =
       pp
         (star
            (seg {loc= x; bas= x; len= !16; siz= !8; cnt= a})
-           (seg {loc= x + !8; bas= x; len= !16; siz= !8; cnt= b})) ;
+           (seg {loc= x + !8; bas= x; len= !16; siz= !8; cnt= b}) ) ;
       [%expect {|
           %x_7 -[)-> ⟨8,%a_1⟩^⟨8,%b_2⟩ |}]
 
@@ -92,7 +92,7 @@ let%test_module _ =
              ~$[x_]
              (or_
                 (and_ (x = !1) (pure (y = !1)))
-                (exists ~$[x_] (pure (x = !2)))))
+                (exists ~$[x_] (pure (x = !2))) ) )
       in
       pp q ;
       pp_djn (dnf q) ;
@@ -115,7 +115,7 @@ let%test_module _ =
                 ~$[x_]
                 (or_
                    (and_ (x = !1) (pure (y = !1)))
-                   (exists ~$[x_] (pure (x = !2))))))
+                   (exists ~$[x_] (pure (x = !2))) ) ) )
       in
       pp q ;
       pp_djn (dnf q) ;
@@ -140,7 +140,7 @@ let%test_module _ =
                 ~$[x_]
                 (or_
                    (and_ (x = !1) (pure (y = !1)))
-                   (exists ~$[x_] (pure (x = !2))))))
+                   (exists ~$[x_] (pure (x = !2))) ) ) )
       in
       pp q ;
       pp (simplify q) ;
@@ -174,7 +174,7 @@ let%test_module _ =
                 (pure (Formula.dq x !0))
                 (exists
                    (Var.Set.of_list [b_])
-                   (pure (eq_concat (!8, a) [|(!4, c); (!4, b)|])))))
+                   (pure (eq_concat (!8, a) [|(!4, c); (!4, b)|])) ) ) )
       in
       pp_raw q ;
       let q' = simplify q in
@@ -204,7 +204,7 @@ let%test_module _ =
           ~$[b_; m_]
           (star
              (seg {loc= x; bas= b; len= m; siz= !8; cnt= !0})
-             (or_ (of_eqs [(b, y); (m, c)]) (of_eqs [(b, z); (m, c)])))
+             (or_ (of_eqs [(b, y); (m, c)]) (of_eqs [(b, z); (m, c)])) )
       in
       pp_raw q ;
       let q' = simplify q in

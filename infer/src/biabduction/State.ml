@@ -175,7 +175,7 @@ let extract_pre p tenv pdesc abstract_fun =
          ~f:(fun id ->
            incr count ;
            (id, Exp.Var (Ident.create_normal Ident.name_spec !count)) )
-         idlist)
+         idlist )
   in
   let _, p' = PropUtil.remove_locals_formals tenv pdesc p in
   let pre, _ = Prop.extract_spec p' in

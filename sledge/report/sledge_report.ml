@@ -141,8 +141,9 @@ let combine name b_result c_result =
                 (Iter.empty, Iter.empty, Iter.empty, Iter.empty, Iter.empty)
               in
               List.fold times init
-                ~f:(fun {Report.etime; utime; stime; cutime; cstime}
-                   (etimes, utimes, stimes, cutimes, cstimes)
+                ~f:(fun
+                     {Report.etime; utime; stime; cutime; cstime}
+                     (etimes, utimes, stimes, cutimes, cstimes)
                    ->
                   ( Iter.cons etime etimes
                   , Iter.cons utime utimes
@@ -156,15 +157,16 @@ let combine name b_result c_result =
                  ; utime= ave_floats utimes
                  ; stime= ave_floats stimes
                  ; cutime= ave_floats cutimes
-                 ; cstime= ave_floats cstimes })
+                 ; cstime= ave_floats cstimes } )
         in
         let gcs =
           if List.is_empty gcs then None
           else
             let allocs, promos, peaks =
               List.fold gcs (Iter.empty, Iter.empty, Iter.empty)
-                ~f:(fun {Report.allocated; promoted; peak_size}
-                   (allocs, promos, peaks)
+                ~f:(fun
+                     {Report.allocated; promoted; peak_size}
+                     (allocs, promos, peaks)
                    ->
                   ( Iter.cons allocated allocs
                   , Iter.cons promoted promos
@@ -441,7 +443,7 @@ let write_html ranges rows chan =
                   Printf.fprintf ppf
                     "<td %s align=\"right\">%12.0f%%</td>\n" attr
                     (Base.Float.round_decimal ~decimal_digits:2
-                       (100. *. fraction)) )
+                       (100. *. fraction) ) )
       in
       let coveraged coverage ppf cs =
         let cs = Option.value cs ~default:[] in
@@ -566,8 +568,9 @@ let average row =
     else
       let alloc, promo, peak =
         List.fold gcs (Iter.empty, Iter.empty, Iter.empty)
-          ~f:(fun {Report.allocated; promoted; peak_size}
-             (alloc, promo, peak)
+          ~f:(fun
+               {Report.allocated; promoted; peak_size}
+               (alloc, promo, peak)
              ->
             ( Iter.cons allocated alloc
             , Iter.cons promoted promo
@@ -776,10 +779,10 @@ let status_cmd =
          omitted"
   in
   fun () -> generate_status ?baseline current output
-
 ;;
+
 Command.run
   (Command.group ~summary:"SLEdge report manipulation"
      [ ("html", Command.basic ~summary:"generate html report" html_cmd)
      ; ("status", Command.basic ~summary:"generate status report" status_cmd)
-     ])
+     ] )

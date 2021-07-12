@@ -22,8 +22,8 @@ open PulseSatUnsat.Import
     [x+y] takes in a formula [phi] and returns [(phi ∧ v123 = x+y, v123)], i.e. a pair of the
     formula with a new intermediate equality and the resulting intermediate variable. This allows us
     to chain operations: [x+y-42] is a function that takes a formula, passes it to [x+y] returning
-    [(phi',v123)] as we saw with [phi' = phi ∧ v123 = x+y], passes it to "42", which here is also
-    a function returning [(phi',42)] (note the unchanged [phi']), then finally returns
+    [(phi',v123)] as we saw with [phi' = phi ∧ v123 = x+y], passes it to "42", which here is also a
+    function returning [(phi',42)] (note the unchanged [phi']), then finally returns
     [(phi ∧ v123 = x+y ∧ v234 = v123-42, v234)].
 
     This is convoluted, especially as each step may also return [Unsat] even during "term"

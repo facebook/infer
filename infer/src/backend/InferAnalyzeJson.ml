@@ -46,7 +46,7 @@ let parse_cil_type_name (str : string) : Typ.t =
     Typ.(
       mk_ptr
         (mk_struct
-           (CSharpClass (CSharpClassName.make ~namespace:(Some _namespace) ~classname:_name))))
+           (CSharpClass (CSharpClassName.make ~namespace:(Some _namespace) ~classname:_name)) ))
   with _ ->
     Typ.(mk_ptr (mk_struct (CSharpClass (CSharpClassName.make ~namespace:None ~classname:str))))
 
@@ -637,7 +637,7 @@ let parse_cfg (json : Safe.t) =
   let _ =
     parse_list
       (parse_node pd_id_to_pd nd_id_to_node nd_id_to_exn_nodes nd_id_to_pred_nodes
-         nd_id_to_succ_nodes)
+         nd_id_to_succ_nodes )
       (member "nodes" json)
   in
   (* Now fix up the dangling ends *)

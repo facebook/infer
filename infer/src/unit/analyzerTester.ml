@@ -179,7 +179,7 @@ struct
           (Procdesc.Node.Prune_node
              ( true_branch
              , if_kind
-             , if true_branch then PruneNodeKind_TrueBranch else PruneNodeKind_FalseBranch ))
+             , if true_branch then PruneNodeKind_TrueBranch else PruneNodeKind_FalseBranch ) )
           [prune_instr]
       in
       let true_prune_node = mk_prune_node cond_exp if_kind true in

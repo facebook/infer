@@ -100,12 +100,12 @@ let tests =
         (List.exists
            ~f:(fun {MockTrace.path_source; path_sink} ->
              source_equal path_source source1 && MockSink.equal path_sink sink1 )
-           reports) ;
+           reports ) ;
       assert_bool "Reports should contain source2 -> sink2"
         (List.exists
            ~f:(fun {MockTrace.path_source; path_sink} ->
              source_equal path_source source2 && MockSink.equal path_sink sink2 )
-           reports)
+           reports )
     in
     "get_reports" >:: get_reports_
   in

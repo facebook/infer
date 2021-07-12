@@ -4,4 +4,4 @@ break-sequences = true
 let-binding-spacing = sparse
 margin = 100
 parse-docstrings = true
-version = 0.14.1-13-g000da99
+version = 0.19.0

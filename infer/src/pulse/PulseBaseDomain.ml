@@ -195,7 +195,7 @@ module GraphVisit : sig
           -> 'accum
           -> AbstractValue.t
           -> Memory.Access.t list
-          -> ('accum, 'final) Base.Continue_or_stop.t)
+          -> ('accum, 'final) Base.Continue_or_stop.t )
     -> finish:('accum -> 'final)
     -> AbstractValue.Set.t * 'final
   (** Generic graph traversal of the memory starting from each variable in the stack that pass
@@ -212,7 +212,7 @@ module GraphVisit : sig
          (   'accum
           -> AbstractValue.t
           -> Memory.Access.t list
-          -> ('accum, 'final) Base.Continue_or_stop.t)
+          -> ('accum, 'final) Base.Continue_or_stop.t )
     -> finish:('accum -> 'final)
     -> AbstractValue.Set.t * 'final
   (** Similar to [fold], but start from given addresses, instead of stack variables. *)

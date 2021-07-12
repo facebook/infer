@@ -103,7 +103,7 @@ let lock_exn pname =
         unlock_all () ;
         raise
           (RestartSchedulerException.ProcnameAlreadyLocked
-             {dependency_filename= Procname.to_filename pname}) ) )
+             {dependency_filename= Procname.to_filename pname} ) ) )
 
 
 let unlock pname =

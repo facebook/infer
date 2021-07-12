@@ -155,8 +155,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         (* we want to forget about writes to @Functional fields altogether, otherwise we'll
            report spurious read/write races *)
         astate
-      else
-        add_access tenv formals loc ~is_write:true astate (HilExp.AccessExpression lhs_access_exp)
+      else add_access tenv formals loc ~is_write:true astate (HilExp.AccessExpression lhs_access_exp)
     in
     let ownership = OwnershipDomain.propagate_assignment lhs_access_exp rhs_exp astate.ownership in
     let attribute_map =

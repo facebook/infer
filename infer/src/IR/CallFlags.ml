@@ -21,9 +21,8 @@ type t =
 [@@deriving compare]
 
 let pp f
-    ({cf_assign_last_arg; cf_injected_destructor; cf_interface; cf_is_objc_block; cf_virtual}[@warning
-                                                                                               "+9"])
-    =
+    ({cf_assign_last_arg; cf_injected_destructor; cf_interface; cf_is_objc_block; cf_virtual}
+      [@warning "+9"] ) =
   if cf_assign_last_arg then F.pp_print_string f " assign_last" ;
   if cf_injected_destructor then F.pp_print_string f " injected" ;
   if cf_interface then F.pp_print_string f " interface" ;

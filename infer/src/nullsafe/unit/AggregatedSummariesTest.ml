@@ -64,7 +64,7 @@ let rec assert_expected_list actual expected case_name =
   assert_equal (List.length actual) (List.length expected)
     ~msg:
       (Format.sprintf "%s: Expected list of %d, got %d" case_name (List.length expected)
-         (List.length actual)) ;
+         (List.length actual) ) ;
   List.iter expected ~f:(fun {name; summary_ids; nested; anm} ->
       (* For each expected info find corresponding actual and compare *)
       let actual_info =

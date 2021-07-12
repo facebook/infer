@@ -5,4 +5,6 @@
 
 (dirs documentation src bin)
 
-(documentation (package infer) (mld_files :standard))
+(documentation
+ (package infer)
+ (mld_files :standard))

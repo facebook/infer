@@ -7,7 +7,8 @@
 
 (** Theory Solver *)
 
-(* Theory equation solver state ===========================================*)
+(* Theory equation solver state
+   ===========================================*)
 
 type oriented_equality = {var: Trm.t; rep: Trm.t}
 
@@ -23,13 +24,14 @@ let pp ppf = function
   | {solved= Some solved; fresh; pending} ->
       Format.fprintf ppf "%a%a : %a" Var.Set.pp_xs fresh
         (List.pp ";@ " (fun ppf {var; rep} ->
-             Format.fprintf ppf "@[%a ↦ %a@]" Trm.pp var Trm.pp rep ))
+             Format.fprintf ppf "@[%a ↦ %a@]" Trm.pp var Trm.pp rep ) )
         solved
         (List.pp ";@ " (fun ppf (a, b) ->
-             Format.fprintf ppf "@[%a = %a@]" Trm.pp a Trm.pp b ))
+             Format.fprintf ppf "@[%a = %a@]" Trm.pp a Trm.pp b ) )
         pending
 
-(* Classification of terms ================================================*)
+(* Classification of terms
+   ================================================*)
 
 type kind = InterpApp | NonInterpAtom | InterpAtom | UninterpApp
 [@@deriving compare, equal, sexp_of]
@@ -78,7 +80,8 @@ let rec map_solvables e ~f =
   | NonInterpAtom | UninterpApp -> f e
   | InterpApp -> Trm.map ~f:(map_solvables ~f) e
 
-(* Solving equations ======================================================*)
+(* Solving equations
+   ======================================================*)
 
 (** prefer representative terms that are minimal in the order s.t. Var <
     Sized < Extract < Concat < others, then using height of sequence

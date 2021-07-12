@@ -438,7 +438,7 @@ module NonNegativeNonTopPolynomial = struct
             | NonNegativeBoundWithDegreeKind s ->
                 M.update
                   (NonNegativeBoundWithDegreeKind
-                     (NonNegativeBoundWithDegreeKind.mask_min_max_constant s))
+                     (NonNegativeBoundWithDegreeKind.mask_min_max_constant s) )
                   (function
                     | None ->
                         Some p'
@@ -884,12 +884,12 @@ module NonNegativePolynomial = struct
         Above
           (TopTraces.map
              (fun callee_trace -> TopTrace.call ~callee_pname ~location callee_trace)
-             callee_traces)
+             callee_traces )
     | Below callee_traces ->
         Below
           (UnreachableTraces.map
              (fun callee_trace -> UnreachableTrace.call ~callee_pname ~location callee_trace)
-             callee_traces)
+             callee_traces )
     | Val p ->
         let get_closure_callee_cost pname =
           match get_closure_callee_cost pname with

@@ -66,7 +66,7 @@ module Trm3 = struct
              match xs.(i) with
              | Sized {siz= Z o; seq= Z c} when Z.equal Z.one o ->
                  Char.of_int_exn (Z.to_int c)
-             | _ -> raise_notrace Not_a_string ))
+             | _ -> raise_notrace Not_a_string ) )
     with _ -> None
 
   let rec ppx strength fs trm =

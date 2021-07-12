@@ -72,7 +72,7 @@ let unknown_call tenv path call_loc (reason : CallEvent.t) ~ret ~actuals ~formal
       | Some f ->
           PulseArithmetic.and_equal (AbstractValueOperand ret_val)
             (FunctionApplicationOperand
-               {f; actuals= List.map ~f:(fun ((actual_val, _hist), _typ) -> actual_val) actuals})
+               {f; actuals= List.map ~f:(fun ((actual_val, _hist), _typ) -> actual_val) actuals} )
             astate
     in
     match reason with
@@ -199,7 +199,7 @@ let apply_callee tenv path ~caller_proc_desc callee_pname call_loc callee_exec_s
                               { astate= astate_summary
                               ; address
                               ; must_be_valid= (access_trace, must_be_valid_reason)
-                              ; calling_context }))
+                              ; calling_context } ) )
                   | Some (invalidation, invalidation_trace) ->
                       Sat
                         (Error
@@ -211,7 +211,7 @@ let apply_callee tenv path ~caller_proc_desc callee_pname call_loc callee_exec_s
                                     ; invalidation_trace
                                     ; access_trace
                                     ; must_be_valid_reason }
-                              ; astate= astate_summary })) ) ) ) )
+                              ; astate= astate_summary } ) ) ) ) ) )
   | ISLLatentMemoryError astate ->
       map_call_result ~is_isl_error_prepost:true
         (astate :> AbductiveDomain.t)

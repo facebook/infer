@@ -20,7 +20,7 @@ let test_parse line files opts =
   assert_equal ~cmp:javac_data_eq
     ~msg:
       (Printf.sprintf "f:[%s] <> [%s] || o:[%s] <> [%s]" (p res.files) (p files) (p res.opts)
-         (p opts))
+         (p opts) )
     res {files; opts}
 
 

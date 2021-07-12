@@ -41,7 +41,7 @@ module RunState = struct
                "'%s' already exists but it is not an empty directory and it does not look like an \
                 infer results directory:\n\
                \  %s\n\
-                Was it created using an older version of infer?" Config.results_dir err_msg) )
+                Was it created using an older version of infer?" Config.results_dir err_msg ) )
         msg
     in
     if not (ISys.file_exists state_file_path) then
@@ -142,7 +142,7 @@ let scrub_for_incremental () =
   DBWriter.reset_capture_tables () ;
   List.iter ~f:Utils.rmtree
     (ResultsDirEntryName.to_delete_before_incremental_capture_and_analysis
-       ~results_dir:Config.results_dir) ;
+       ~results_dir:Config.results_dir ) ;
   ()
 
 

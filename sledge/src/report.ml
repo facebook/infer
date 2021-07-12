@@ -145,7 +145,7 @@ let init ?append filename =
      match filename with
      | "" -> None
      | "-" -> Some Out_channel.stderr
-     | _ -> Some (Out_channel.create ?append filename)) ;
+     | _ -> Some (Out_channel.create ?append filename) ) ;
   name :=
     Option.value
       (Filename.chop_suffix_opt ~suffix:".sexp" filename)

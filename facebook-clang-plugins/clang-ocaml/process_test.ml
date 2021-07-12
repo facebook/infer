@@ -20,6 +20,6 @@ let main =
          copy ic oc ;
          flush_all () ;
          true )
-       zipunzip ic stderr) ;
+       zipunzip ic stderr ) ;
   close_in ic ;
   ignore (wait pid)

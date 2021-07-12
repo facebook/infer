@@ -397,7 +397,7 @@ struct
         ~retn:(fun {pf} s ->
           pf "%a"
             (Option.pp "%a" (fun fs (v, q) ->
-                 Format.fprintf fs "%a ↦ %a" pp v pp q ))
+                 Format.fprintf fs "%a ↦ %a" pp v pp q ) )
             s )
       @@ fun () ->
       if Mono.equal_one mono || exists_fv_in (Mono.fv mono) poly then None
@@ -414,7 +414,7 @@ struct
         ~retn:(fun {pf} s ->
           pf "%a"
             (Option.pp "%a" (fun fs (v, q) ->
-                 Format.fprintf fs "%a ↦ %a" pp v pp q ))
+                 Format.fprintf fs "%a ↦ %a" pp v pp q ) )
             s )
       @@ fun () ->
       let* mono, coeff, poly = Sum.pop_min_elt poly in
@@ -430,7 +430,7 @@ struct
         ~retn:(fun {pf} s ->
           pf "%a"
             (Option.pp "%a" (fun fs (c, r) ->
-                 Format.fprintf fs "%a ↦ %a" pp c pp r ))
+                 Format.fprintf fs "%a ↦ %a" pp c pp r ) )
             s ;
           match (for_, s) with
           | Some f, Some (c, _) -> assert (equal (trm f) c)

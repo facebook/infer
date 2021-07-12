@@ -52,7 +52,7 @@ let test_file_renamings_from_json =
            ( "Error parsing file renamings: \"current\" field is not a string"
            ^ "\nExpected JSON object of the following form: "
            ^ "'{\"current\": \"aaa.java\", \"previous\": \"BBB.java\"}', "
-           ^ "but instead got: '{\"current\":1,\"previous\":\"BBB.java\"}'" )) )
+           ^ "but instead got: '{\"current\":1,\"previous\":\"BBB.java\"}'" ) ) )
   ; ( "test_file_renamings_from_json_with_malformed_input"
     , "A"
     , Raise (Yojson.Json_error "Line 1, bytes 0-1:\nInvalid token 'A'") ) ]

@@ -81,8 +81,7 @@ let with_formals_types_proc callee_pdesc resolved_pdesc substitutions =
           try Typ.mk ~default:origin_typ (Tstruct (Ident.Map.find origin_id !subst_map))
           with Caml.Not_found -> origin_typ
         in
-        Some
-          (Sil.Load {id; e= convert_exp origin_exp; root_typ= updated_typ; typ= updated_typ; loc})
+        Some (Sil.Load {id; e= convert_exp origin_exp; root_typ= updated_typ; typ= updated_typ; loc})
     | Sil.Load {id; e= origin_exp; root_typ; typ; loc} ->
         Some (Sil.Load {id; e= convert_exp origin_exp; root_typ; typ; loc})
     | Sil.Store {e1= assignee_exp; root_typ= origin_typ; e2= origin_exp; loc} ->

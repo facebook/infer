@@ -18,21 +18,21 @@ let tests =
       assert_equal ~printer:(Format.asprintf "%a" HilExp.pp)
         (HilExp.of_sil ~include_array_indexes:false ~f_resolve_id ~add_deref:true
            (Exp.Lfield (Exp.Var var_id, fieldname, struct_typ))
-           StdTyp.void)
+           StdTyp.void )
         (HilExp.AccessExpression
            (HilExp.AccessExpression.field_offset
               (HilExp.AccessExpression.base (Var.of_id var_id, struct_typ))
-              fieldname))
+              fieldname ) )
     in
     let var_index _ =
       assert_equal ~printer:(Format.asprintf "%a" HilExp.pp)
         (HilExp.of_sil ~include_array_indexes:false ~f_resolve_id ~add_deref:true
            (Exp.Lindex (Exp.Var var_id, Exp.zero))
-           StdTyp.int)
+           StdTyp.int )
         (HilExp.AccessExpression
            (HilExp.AccessExpression.array_offset
               (HilExp.AccessExpression.base (Var.of_id var_id, array_typ))
-              StdTyp.int None))
+              StdTyp.int None ) )
     in
     "of_sil" >::: ["var_field" >:: var_field; "var_index" >:: var_index]
   in

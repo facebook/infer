@@ -62,8 +62,8 @@ module type S0 = sig
   (** [trms a] enumerates the indeterminate terms appearing in [a].
       Considering an arithmetic term as a polynomial,
       [trms (c × (Σᵢ₌₁ⁿ cᵢ × Πⱼ₌₁ᵐᵢ
-      Xᵢⱼ^pᵢⱼ))] is the sequence of terms [Xᵢⱼ] for each [i] and
-      [j]. *)
+      Xᵢⱼ^pᵢⱼ))] is the sequence of
+      terms [Xᵢⱼ] for each [i] and [j]. *)
 end
 
 (** An embedding of arithmetic terms [t] into indeterminates [trm]. *)
@@ -112,10 +112,10 @@ module type S = sig
   (** [trms a] enumerates the maximal foreign or noninterpreted proper
       subterms of [a]. Considering an arithmetic term as a polynomial,
       [trms (c × (Σᵢ₌₁ⁿ cᵢ × Πⱼ₌₁ᵐᵢ
-      Xᵢⱼ^pᵢⱼ))] is the sequence of monomials
-      [Πⱼ₌₁ᵐᵢ Xᵢⱼ^pᵢⱼ] for each [i]. If the arithmetic
-      term is a monomial, [trms (Πⱼ₌₁ᵐ Xⱼ^pⱼ)] is the sequence
-      of factors [Xⱼ] for each [j]. *)
+      Xᵢⱼ^pᵢⱼ))] is the sequence of
+      monomials [Πⱼ₌₁ᵐᵢ Xᵢⱼ^pᵢⱼ] for each [i]. If the arithmetic term is a
+      monomial, [trms (Πⱼ₌₁ᵐ Xⱼ^pⱼ)] is the sequence of factors [Xⱼ] for
+      each [j]. *)
 
   (** Transform *)
 

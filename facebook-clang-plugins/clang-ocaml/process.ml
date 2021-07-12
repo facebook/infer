@@ -105,7 +105,7 @@ let wait pid =
 let exec args stdin stdout stderr =
   wait
     (U.create_process args.(0) args (U.descr_of_in_channel stdin) (U.descr_of_out_channel stdout)
-       (U.descr_of_out_channel stderr))
+       (U.descr_of_out_channel stderr) )
 
 
 let diff file1 file2 oc = exec [|"diff"; file1; file2|] stdin oc stderr

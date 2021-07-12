@@ -30,8 +30,8 @@ let test_jni_pp =
                      (Array
                         (Array
                            (Method
-                              ([Int; FullyQualifiedClass ("aaa.bbb", "Ccc"); Boolean], Array Char))))
-                 )) ]
+                              ([Int; FullyQualifiedClass ("aaa.bbb", "Ccc"); Boolean], Array Char)
+                           ) ) ) ) ) ]
         , Void ))
     , "([(I(J[[JZ)J)[[[(ILaaa/bbb/Ccc;Z)[C)V" ) ]
   |> List.map ~f:(fun (name, test_input, expected_output) ->
@@ -94,8 +94,8 @@ let test_jni_parse_str_with_valid_input =
                        (Array
                           (Array
                              (Method
-                                ([Int; FullyQualifiedClass ("aaa.bbb", "Ccc"); Boolean], Array Char))))
-                   )) ]
+                                ([Int; FullyQualifiedClass ("aaa.bbb", "Ccc"); Boolean], Array Char)
+                             ) ) ) ) ) ]
           , Void ) ] )
   ; ( "test_jni_parse_str_with_empty_method_signature"
     , JProcname.JNI.void_method_with_no_arguments

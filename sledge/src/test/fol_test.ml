@@ -566,7 +566,7 @@ let%test_module _ =
            Llair.(
              Exp.uge
                (Exp.integer Typ.bool Z.minus_one)
-               (Exp.signed 1 (Exp.integer Typ.siz Z.one) ~to_:Typ.bool)))
+               (Exp.signed 1 (Exp.integer Typ.siz Z.one) ~to_:Typ.bool)) )
 
     let pp_exp e =
       Format.printf "@\nexp= %a; term= %a@." Llair.Exp.pp e Term.pp

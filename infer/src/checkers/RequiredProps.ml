@@ -23,7 +23,7 @@ let get_required_props typename tenv =
           (List.exists
              ~f:(fun Annot.{name; value} ->
                match (name, value) with Some "optional", Annot.Bool true -> true | _ -> false )
-             parameters) )
+             parameters ) )
       annot_list
   in
   let get_var_args annot_list =
@@ -52,7 +52,7 @@ let get_required_props typename tenv =
             let var_prop_opt = get_var_args annot in
             Some
               (Option.value_map var_prop_opt ~default:(Prop prop) ~f:(fun var_prop ->
-                   VarProp {var_prop; prop} ))
+                   VarProp {var_prop; prop} ) )
           else None )
         fields
   | None ->

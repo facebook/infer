@@ -9,7 +9,8 @@
 
 open Exp
 
-(* Solution Substitutions =================================================*)
+(* Solution Substitutions
+   =================================================*)
 
 module Subst : sig
   type t = Trm.t Trm.Map.t [@@deriving compare, equal, sexp]
@@ -98,8 +99,8 @@ end = struct
     else (
       assert (
         Option.for_all ~f:(Trm.equal key) (Trm.Map.find key r)
-        || fail "domains intersect: %a ↦ %a in %a" Trm.pp key Trm.pp data
-             pp r () ) ;
+        || fail "domains intersect: %a ↦ %a in %a" Trm.pp key Trm.pp data pp
+             r () ) ;
       let s = Trm.Map.singleton key data in
       let r' = Trm.Map.map_endo ~f:(norm s) r in
       Trm.Map.add ~key ~data r' )
@@ -134,9 +135,8 @@ end = struct
     $> fun b ->
     [%Trace.info " %a%a=%a = %b" Var.Set.pp_xs xs Trm.pp e Trm.pp f b]
 
-  (** Partition ∃xs. σ into equivalent ∃xs. τ ∧ ∃ks. ν where ks
-      and ν are maximal where ∃ks. ν is universally valid, xs ⊇ ks and
-      ks ∩ fv(τ) = ∅. *)
+  (** Partition ∃xs. σ into equivalent ∃xs. τ ∧ ∃ks. ν where ks and ν are
+      maximal where ∃ks. ν is universally valid, xs ⊇ ks and ks ∩ fv(τ) = ∅. *)
   let partition_valid xs s =
     [%trace]
       ~call:(fun {pf} -> pf "@ @[%a@ %a@]" Var.Set.pp_xs xs pp s)
@@ -170,7 +170,8 @@ end = struct
   let remove = Trm.Map.remove
 end
 
-(* Equality classes =======================================================*)
+(* Equality classes
+   =======================================================*)
 
 module Cls : sig
   type t [@@deriving compare, equal, sexp]
@@ -202,7 +203,8 @@ end = struct
   let pp_raw fs es = pp_full ~pre:"{@[" ~suf:"@]}" ~sep:",@ " Trm.pp fs es
 end
 
-(* Use lists / Super-expressions ==========================================*)
+(* Use lists / Super-expressions
+   ==========================================*)
 
 module Use : sig
   type t [@@deriving compare, equal, sexp]
@@ -222,7 +224,8 @@ module Use : sig
 end =
   Trm.Set
 
-(* Conjunctions of atomic formula assumptions =============================*)
+(* Conjunctions of atomic formula assumptions
+   =============================*)
 
 (** see also [invariant] *)
 type t =
@@ -242,7 +245,8 @@ type t =
   }
 [@@deriving compare, equal, sexp]
 
-(* Pretty-printing ========================================================*)
+(* Pretty-printing
+   ========================================================*)
 
 let pp_eq fs (e, f) = Format.fprintf fs "@[%a = %a@]" Trm.pp e Trm.pp f
 
@@ -329,7 +333,8 @@ let ppx var_strength fs clss noneqs =
 
 let pp_diff_cls = Trm.Map.pp_diff ~eq:Cls.equal Trm.pp Cls.pp Cls.pp_diff
 
-(* Basic representation queries ===========================================*)
+(* Basic representation queries
+   ===========================================*)
 
 let trms r =
   Iter.flat_map ~f:(fun (k, v) -> Iter.doubleton k v) (Subst.to_iter r.rep)
@@ -347,7 +352,8 @@ let is_rep a x =
 let cls_of a x = Trm.Map.find a x.cls |> Option.value ~default:Cls.empty
 let use_of a x = Trm.Map.find a x.use |> Option.value ~default:Use.empty
 
-(* Invariant ==============================================================*)
+(* Invariant
+   ==============================================================*)
 
 (** terms are congruent if equal after normalizing subterms *)
 let congruent r a b =
@@ -418,8 +424,7 @@ let pre_invariant x =
         Use.iter use ~f:(fun u ->
             assert (
               Iter.mem ~eq:Trm.equal a (Theory.solvable_trms u)
-              || fail "%a does not occur in its use %a" Trm.pp a Trm.pp u ()
-            ) ) )
+              || fail "%a does not occur in its use %a" Trm.pp a Trm.pp u () ) ) )
   with exc ->
     let bt = Printexc.get_raw_backtrace () in
     [%Trace.info " %a" pp_raw x] ;
@@ -439,7 +444,8 @@ let invariant x =
                || fail "not congruent %a@ %a@ in@ %a" Trm.pp a Trm.pp b pp x
                     () ) ) )
 
-(* Representation queries =================================================*)
+(* Representation queries
+   =================================================*)
 
 (** [norm0 s a = norm0 s b] if [a] and [b] are equal in [s], that is,
     congruent using 0 applications of the congruence rule. *)
@@ -470,7 +476,8 @@ let rec canon x a =
         let a_can = Trm.map ~f:(Theory.map_solvables ~f:(canon x)) a in
         if a_can == a then a_can else norm0 x.rep a_can )
 
-(* Extending the carrier ==================================================*)
+(* Extending the carrier
+   ==================================================*)
 
 let add_use_of sup sub use =
   Trm.Map.update sub use ~f:(fun u ->
@@ -528,7 +535,8 @@ let canon_extend a x =
     ~retn:(fun {pf} (a', x') -> pf "%a@ %a" Trm.pp a' pp_diff (x, x'))
   @@ fun () -> canon_extend_ a x
 
-(* Propagation ============================================================*)
+(* Propagation
+   ============================================================*)
 
 let move_cls_to_rep a_cls a' rep =
   Cls.fold a_cls rep ~f:(fun e rep -> Trm.Map.add ~key:e ~data:a' rep)
@@ -636,7 +644,8 @@ let rec propagate ~wrt x =
         | {solved= None} -> {x with sat= false; pnd= []} )
   | [] -> x
 
-(* Core operations ========================================================*)
+(* Core operations
+   ========================================================*)
 
 let empty =
   { xs= Var.Set.empty
@@ -674,7 +683,8 @@ let and_eq ~wrt a b x =
 
 let extract_xs r = (r.xs, {r with xs= Var.Set.empty})
 
-(* Exposed interface ======================================================*)
+(* Exposed interface
+   ======================================================*)
 
 let is_empty {sat; rep} =
   sat && Subst.for_alli rep ~f:(fun ~key:a ~data:a' -> Trm.equal a a')
@@ -938,7 +948,8 @@ let apply_and_elim ~wrt xs s r =
       let r = trim ks r in
       (zs, r, ks)
 
-(* Existential Witnessing and Elimination =================================*)
+(* Existential Witnessing and Elimination
+   =================================*)
 
 let subst_invariant us s0 s =
   assert (s0 == s || not (Subst.equal s0 s)) ;
@@ -954,10 +965,9 @@ let subst_invariant us s0 s =
           || not (Var.Set.subset (Trm.fv key) ~of_:us) ) ) ;
     true )
 
-(** try to solve [p = q] such that [fv (p - q) ⊆ us ∪ xs] and [p - q]
-    has at most one maximal solvable subterm, [kill], where
-    [fv kill ⊈ us]; solve [p = q] for [kill]; extend subst mapping [kill]
-    to the solution *)
+(** try to solve [p = q] such that [fv (p - q) ⊆ us ∪ xs] and [p - q] has at
+    most one maximal solvable subterm, [kill], where [fv kill ⊈ us]; solve
+    [p = q] for [kill]; extend subst mapping [kill] to the solution *)
 let solve_poly_eq us p' q' subst =
   [%Trace.call fun {pf} -> pf "@ %a = %a" Trm.pp p' Trm.pp q']
   ;
@@ -988,7 +998,7 @@ let rec solve_pending (s : Theory.t) soln =
       | {solved= Some solved} as s ->
           solve_pending {s with solved= Some []}
             (List.fold solved soln ~f:(fun {var; rep} soln ->
-                 Subst.compose1 ~key:var ~data:rep soln ))
+                 Subst.compose1 ~key:var ~data:rep soln ) )
       | {solved= None} -> None )
   | [] -> Some soln
 
@@ -1011,7 +1021,7 @@ let solve_seq_eq us e' f' subst =
          ; no_fresh= true
          ; fresh= Var.Set.empty
          ; solved= Some []
-         ; pending= [] })
+         ; pending= [] } )
       subst
   in
   ( match ((e' : Trm.t), (f' : Trm.t)) with
@@ -1045,8 +1055,7 @@ let solve_interp_eq us e' (cls, subst) =
 
 (** move equations from [cls] to [subst] which are between interpreted terms
     and can be expressed, after normalizing with [subst], as [x ↦ u] where
-    [us ∪ xs ⊇ fv x ⊈ us] and [fv u ⊆ us] or else
-    [fv u ⊆ us ∪ xs] *)
+    [us ∪ xs ⊇ fv x ⊈ us] and [fv u ⊆ us] or else [fv u ⊆ us ∪ xs] *)
 let rec solve_interp_eqs us (cls, subst) =
   [%Trace.call fun {pf} ->
     pf "@ cls: @[%a@]@ subst: @[%a@]" Cls.pp cls Subst.pp subst]
@@ -1083,9 +1092,8 @@ let dom_trm e =
   | _ -> None
 
 (** move equations from [cls] (which is assumed to be normalized by [subst])
-    to [subst] which can be expressed as [x ↦ u] where [x] is
-    noninterpreted [us ∪ xs ⊇ fv x ⊈ us] and [fv u ⊆ us] or else
-    [fv u ⊆ us ∪ xs] *)
+    to [subst] which can be expressed as [x ↦ u] where [x] is noninterpreted
+    [us ∪ xs ⊇ fv x ⊈ us] and [fv u ⊆ us] or else [fv u ⊆ us ∪ xs] *)
 let solve_uninterp_eqs us (cls, subst) =
   [%Trace.call fun {pf} ->
     pf "@ cls: @[%a@]@ subst: @[%a@]" Cls.pp cls Subst.pp subst]
@@ -1246,8 +1254,8 @@ let solve_for_xs r us xs =
       else solve_concat_extracts r us x (classes, subst, us_xs) )
 
 (** move equations from [classes] to [subst] which can be expressed, after
-    normalizing with [subst], as [x ↦ u] where [us ∪ xs ⊇ fv x ⊈ us]
-    and [fv u ⊆ us] or else [fv u ⊆ us ∪ xs]. *)
+    normalizing with [subst], as [x ↦ u] where [us ∪ xs ⊇ fv x ⊈ us] and
+    [fv u ⊆ us] or else [fv u ⊆ us ∪ xs]. *)
 let solve_classes r xs (classes, subst, us) =
   [%Trace.call fun {pf} ->
     pf "@ us: {@[%a@]}@ xs: {@[%a@]}" Var.Set.pp us Var.Set.pp xs]
@@ -1272,11 +1280,10 @@ let pp_vss fs vss =
     (List.pp ";@ " (fun fs vs -> Format.fprintf fs "{@[%a@]}" Var.Set.pp vs))
     vss
 
-(** enumerate variable contexts vᵢ in [v₁;…] and accumulate a solution
-    subst with entries [x ↦ u] where [r] entails [x = u] and
-    [⋃ⱼ₌₁ⁱ vⱼ ⊇ fv x ⊈ ⋃ⱼ₌₁ⁱ⁻¹ vⱼ] and
-    [fv u ⊆ ⋃ⱼ₌₁ⁱ⁻¹ vⱼ] if possible and otherwise
-    [fv u ⊆ ⋃ⱼ₌₁ⁱ vⱼ] *)
+(** enumerate variable contexts vᵢ in [v₁;…] and accumulate a solution subst
+    with entries [x ↦ u] where [r] entails [x = u] and
+    [⋃ⱼ₌₁ⁱ vⱼ ⊇ fv x ⊈ ⋃ⱼ₌₁ⁱ⁻¹ vⱼ] and [fv u ⊆ ⋃ⱼ₌₁ⁱ⁻¹ vⱼ] if possible and
+    otherwise [fv u ⊆ ⋃ⱼ₌₁ⁱ vⱼ] *)
 let solve_for_vars vss r =
   [%Trace.call fun {pf} ->
     pf "@ %a@ @[%a@]" pp_vss vss pp r ;
@@ -1309,7 +1316,8 @@ let solve_for_vars vss r =
               else `Continue us_xs )
             ~finish:(fun _ -> false) ) )]
 
-(* Replay debugging =======================================================*)
+(* Replay debugging
+   =======================================================*)
 
 type call =
   | Add of Var.Set.t * Formula.t * t

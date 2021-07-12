@@ -203,13 +203,12 @@ let eval path mode location exp0 astate =
     match (exp : Exp.t) with
     | Var id ->
         Ok
-          (Stack.eval path location (* error in case of missing history? *) [] (Var.of_id id)
-             astate)
+          (Stack.eval path location (* error in case of missing history? *) [] (Var.of_id id) astate)
     | Lvar pvar ->
         Ok
           (Stack.eval path location
              [ValueHistory.VariableAccessed (pvar, location)]
-             (Var.of_pvar pvar) astate)
+             (Var.of_pvar pvar) astate )
     | Lfield (exp', field, _) ->
         let* astate, addr_hist = eval path Read exp' astate in
         eval_access path mode location addr_hist (FieldAccess field) astate
@@ -488,7 +487,8 @@ let invalidate_array_elements path location cause addr_trace astate =
           | ArrayAccess _ as access ->
               AddressAttributes.invalidate dest_addr_trace cause location astate
               |> record_invalidation path
-                   (MemoryAccess {pointer= addr_trace; access; hist_obj_default= snd dest_addr_trace})
+                   (MemoryAccess {pointer= addr_trace; access; hist_obj_default= snd dest_addr_trace}
+                   )
                    location cause
           | _ ->
               astate )
@@ -531,7 +531,7 @@ let check_address_escape escape_location proc_desc address history astate =
                         { diagnostic=
                             Diagnostic.StackVariableAddressEscape
                               {variable; location= escape_location; history}
-                        ; astate })
+                        ; astate } )
                | _ ->
                    Ok () ) )
   in
@@ -552,7 +552,7 @@ let check_address_escape escape_location proc_desc address history astate =
                { diagnostic=
                    Diagnostic.StackVariableAddressEscape
                      {variable; location= escape_location; history}
-               ; astate }) )
+               ; astate } ) )
         else Ok () )
   in
   let+ () = check_address_of_cpp_temporary () >>= check_address_of_stack_variable in
@@ -612,7 +612,7 @@ let filter_live_addresses ~is_dead_root potential_leak_addrs astate =
        ~f:(fun _ () addr _ ->
          mark_reachable addr ;
          Continue () )
-       ~finish:(fun () -> ())) ;
+       ~finish:(fun () -> ()) ) ;
   let collect_reachable_from addrs base_state =
     BaseDomain.GraphVisit.fold_from_addresses addrs base_state ~init:()
       ~f:(fun () addr _ ->

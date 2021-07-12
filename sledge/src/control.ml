@@ -123,10 +123,9 @@ module RandomQueue (Elt : Elt) : QueueS with type elt = Elt.t = struct
       Edges are selected from the frontier randomly using the weights to
       simulate fair sampling of paths as follows. Let [{eᵢ}] be a sequence
       of the edges of the frontier in decreasing weight order. The weight of
-      edge [eᵢ] is written [wᵢ]. The sum of the weights of the frontier
-      is [s = Σᵢ wᵢ]. Now choose a random number [0 ≤ n ≤ s]. This
-      determines an edge [eᵣ] where [r] is least such that
-      [Σᵢ₌₀ʳ wᵢ ≥ n].
+      edge [eᵢ] is written [wᵢ]. The sum of the weights of the frontier is
+      [s = Σᵢ wᵢ]. Now choose a random number [0 ≤ n ≤ s]. This determines
+      an edge [eᵣ] where [r] is least such that [Σᵢ₌₀ʳ wᵢ ≥ n].
 
       The inferred structure of the execution tree is also used to schedule
       the analysis to proceed depth-first where a random successor is chosen
@@ -237,7 +236,7 @@ module RandomQueue (Elt : Elt) : QueueS with type elt = Elt.t = struct
                        ( if RAL.is_empty data then M.remove key q.frontier
                        else M.add ~key ~data q.frontier )
                    ; frontier_weight= q.frontier_weight -. w
-                   ; last= Add_or_pop_frontier } )) )
+                   ; last= Add_or_pop_frontier } ) ) )
         ~finish:(fun _ ->
           assert (M.is_empty q.frontier) ;
           None )
@@ -258,11 +257,7 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
          t
       -> 'a
       -> unwind:
-           (   Llair.Reg.t iarray
-            -> Llair.Reg.Set.t
-            -> D.from_call
-            -> 'a
-            -> 'a)
+           (Llair.Reg.t iarray -> Llair.Reg.Set.t -> D.from_call -> 'a -> 'a)
       -> (D.from_call * Llair.jump * t * 'a) option
 
     type as_inlined_location = t [@@deriving compare, equal, sexp_of]
@@ -958,7 +953,7 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
         let wl =
           exec_assume
             (IArray.fold tbl Llair.Exp.true_ ~f:(fun (case, _) b ->
-                 Llair.Exp.and_ (Llair.Exp.dq key case) b ))
+                 Llair.Exp.and_ (Llair.Exp.dq key case) b ) )
             els ams wl
         in
         IArray.fold tbl wl ~f:(fun (case, jump) wl ->
@@ -969,7 +964,7 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
               (Llair.Exp.eq ptr
                  (Llair.Exp.label
                     ~parent:(Llair.Function.name jump.dst.parent.name)
-                    ~name:jump.dst.lbl))
+                    ~name:jump.dst.lbl ) )
               jump ams wl )
     | Call ({callee; actuals; areturn; return} as call) -> (
       match

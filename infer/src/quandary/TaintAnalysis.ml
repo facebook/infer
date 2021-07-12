@@ -321,7 +321,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               | HilExp.AccessExpression actual_ae_raw
                 when not
                        (TraceDomain.Sources.Footprint.is_bottom
-                          (TraceDomain.sources actual_trace').footprint) ->
+                          (TraceDomain.sources actual_trace').footprint ) ->
                   let actual_ap =
                     AccessPath.Abs.Abstracted (HilExp.AccessExpression.to_access_path actual_ae_raw)
                   in

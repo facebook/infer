@@ -74,7 +74,7 @@ let get_modelled_annotated_signature ~is_callee_in_trust_list tenv proc_attribut
     Option.value_map modelled_nullability
       ~f:
         (AnnotatedSignature.set_modelled_nullability (Procname.Java proc_name) ann_sig
-           ModelledInternally)
+           ModelledInternally )
       ~default:ann_sig
   in
   (* Look at external models *)

@@ -77,7 +77,7 @@ val mk_append_field :
         -> (depth:int -> 'prim t -> 'prim t)
         -> int
         -> 'prim
-        -> 'prim t)
+        -> 'prim t )
   -> prim_append_star_field:('prim t -> Fieldname.t -> ('prim t -> 'prim t) -> 'prim -> 'prim t)
   -> ?typ:Typ.t
   -> 'prim t

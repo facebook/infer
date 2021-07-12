@@ -153,7 +153,8 @@ end = struct
            ; enabled= _ (* not touching this one since [Config] will have set it *)
            ; hum= _ (* mutable field to update *)
            ; doc_url= _ (* mutable field to update *)
-           ; linters_def_file= _ (* mutable field to update *) } as issue ))[@warning "+9"]) ->
+           ; linters_def_file= _ (* mutable field to update *) } as issue ) )
+    [@warning "+9"] ) ->
         (* update fields that were supplied this time around, but keep the previous values of others
            and assert that the immutable fields are the same (see doc comment) *)
         let die_of_mismatch ~what ~old ~new_ =

@@ -670,7 +670,7 @@ module StdBasicString = struct
         (MemoryAccess
            { pointer= this_hist
            ; access= internal_string_access
-           ; hist_obj_default= snd string_addr_hist })
+           ; hist_obj_default= snd string_addr_hist } )
         location CppDelete string_addr_hist astate
     in
     astate
@@ -825,7 +825,7 @@ module GenericArrayBackedCollectionIterator = struct
                    ; invalidation_trace
                    ; access_trace
                    ; must_be_valid_reason= None }
-             ; astate })
+             ; astate } )
       else Ok astate
     in
     (* We do not want to create internal array if iterator pointer has an invalid value *)
@@ -1511,7 +1511,7 @@ module Erlang = struct
    fun {location} astate ->
     [ Error
         (ReportableError
-           {astate; diagnostic= NonexhaustivePatternMatch {calling_context= []; location}}) ]
+           {astate; diagnostic= NonexhaustivePatternMatch {calling_context= []; location}} ) ]
 
 
   let make_nil : model =

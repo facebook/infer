@@ -25,7 +25,7 @@ module Runner = struct
       ProcessPool.create ~jobs ~f ~child_epilogue ~tasks:(with_new_db_connection ~f:tasks)
         ~child_prologue:
           ((* hack: we'll continue executing after the function passed to [protect], despite what he name might suggest *)
-           ForkUtils.protect ~f:child_prologue)
+           ForkUtils.protect ~f:child_prologue )
     in
     PerfEvent.(log (fun logger -> log_end_event logger ())) ;
     pool
@@ -45,7 +45,7 @@ let run_sequentially ~(f : ('a, 'b) doer) (tasks : 'a list) : unit =
   (ProcessPoolState.update_status :=
      fun t status ->
        TaskBar.update_status task_bar ~slot:0 t status ;
-       TaskBar.refresh task_bar) ;
+       TaskBar.refresh task_bar ) ;
   TaskBar.set_tasks_total task_bar (task_generator.remaining_tasks ()) ;
   TaskBar.tasks_done_reset task_bar ;
   let rec run_tasks () =

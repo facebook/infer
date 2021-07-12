@@ -294,9 +294,7 @@ let pp_actuals pp_actual fs actuals =
 let pp_formal fs reg = Reg.pp fs reg
 
 let pp_jump fs {dst; retreating} =
-  Format.fprintf fs "@[<2>%s%%%s@]"
-    (if retreating then "↑" else "")
-    dst.lbl
+  Format.fprintf fs "@[<2>%s%%%s@]" (if retreating then "↑" else "") dst.lbl
 
 let pp_call tag pp_callee fs
     {callee; actuals; areturn; return; throw; recursive; loc; _} =
@@ -322,12 +320,12 @@ let pp_term fs term =
     | _ ->
         pf "@[<2>switch %a@ @[%a@ else: %a@]@]\t%a" Exp.pp key
           (IArray.pp "@ " (fun fs (case, jmp) ->
-               Format.fprintf fs "%a: %a" Exp.pp case pp_goto jmp ))
+               Format.fprintf fs "%a: %a" Exp.pp case pp_goto jmp ) )
           tbl pp_goto els Loc.pp loc )
   | Iswitch {ptr; tbl; loc} ->
       pf "@[<2>iswitch %a@ @[<hv>%a@]@]\t%a" Exp.pp ptr
         (IArray.pp "@ " (fun fs jmp ->
-             Format.fprintf fs "%s: %a" jmp.dst.lbl pp_goto jmp ))
+             Format.fprintf fs "%s: %a" jmp.dst.lbl pp_goto jmp ) )
         tbl Loc.pp loc
   | Call call -> pp_call "call" (fun fs f -> Function.pp fs f.name) fs call
   | ICall call -> pp_call "icall" Exp.pp fs call
@@ -454,8 +452,7 @@ module Term = struct
       match parent with
       | Some parent ->
           assert (
-            Bool.equal (Option.is_some exp) (Option.is_some parent.freturn)
-          )
+            Bool.equal (Option.is_some exp) (Option.is_some parent.freturn) )
       | None -> assert true )
     | Throw _ | Unreachable -> assert true
 
@@ -689,10 +686,9 @@ module Func = struct
             not
               (Iter.contains_dup
                  (Iter.of_list (entry_cfg func))
-                 ~cmp:(fun b1 b2 -> String.compare b1.lbl b2.lbl)) ) ;
+                 ~cmp:(fun b1 b2 -> String.compare b1.lbl b2.lbl) ) ) ;
           assert (
-            Bool.equal (Option.is_some return) (Option.is_some func.freturn)
-          ) ;
+            Bool.equal (Option.is_some return) (Option.is_some func.freturn) ) ;
           iter_term func ~f:(fun term -> Term.invariant ~parent:func term)
       | _ -> assert false
     with exc ->
@@ -831,7 +827,7 @@ module Program = struct
     assert (
       not
         (Iter.contains_dup (IArray.to_iter pgm.globals) ~cmp:(fun g1 g2 ->
-             Global.compare g1.name g2.name )) )
+             Global.compare g1.name g2.name ) ) )
 
   let mk ~globals ~functions =
     { globals= IArray.of_list_rev globals

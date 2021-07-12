@@ -52,12 +52,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | Some ms, _ ->
         ignore
           (CMethod_trans.create_local_procdesc context.translation_unit_context context.cfg
-             context.tenv ms [] []) ;
+             context.tenv ms [] [] ) ;
         (ms.CMethodSignature.name, CMethod_trans.MCNoVirtual)
     | None, Some ms ->
         ignore
           (CMethod_trans.create_local_procdesc context.translation_unit_context context.cfg
-             context.tenv ms [] []) ;
+             context.tenv ms [] [] ) ;
         if CMethodSignature.is_getter ms || CMethodSignature.is_setter ms then
           (proc_name, CMethod_trans.MCNoVirtual)
         else (proc_name, mc_type)
@@ -601,7 +601,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                 in
                 ignore
                   (CMethod_trans.create_local_procdesc context.translation_unit_context context.cfg
-                     context.tenv ms' [] []) ;
+                     context.tenv ms' [] [] ) ;
                 ms'.CMethodSignature.name
             | None ->
                 CMethod_trans.create_procdesc_with_pointer context decl_ptr (Some class_typename)
@@ -1559,7 +1559,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       Option.bind callee_pname_opt
         ~f:
           (CTrans_utils.builtin_trans trans_state_pri si.Clang_ast_t.si_source_range sil_loc
-             (res_trans_callee :: result_trans_params))
+             (res_trans_callee :: result_trans_params) )
     with
     | Some builtin ->
         builtin
@@ -1908,7 +1908,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       Some
         (PriorityNode.compute_results_to_parent trans_state_pri sil_loc
            (Destruction DestrVirtualBase) stmt_info_loc ~return:(mk_fresh_void_exp_typ ())
-           all_res_trans)
+           all_res_trans )
 
 
   and cxx_inject_field_destructors_in_destructor_body trans_state stmt_info =
@@ -1967,7 +1967,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       in
       Some
         (PriorityNode.compute_results_to_parent trans_state_pri sil_loc (Destruction DestrFields)
-           stmt_info' ~return:(mk_fresh_void_exp_typ ()) all_res_trans)
+           stmt_info' ~return:(mk_fresh_void_exp_typ ()) all_res_trans )
 
 
   and destructor_calls destr_kind trans_state stmt_info vars_to_destroy =
@@ -2000,7 +2000,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         in
         Some
           (PriorityNode.compute_results_to_parent trans_state_pri sil_loc (Destruction destr_kind)
-             stmt_info' ~return:(mk_fresh_void_exp_typ ()) all_res_trans)
+             stmt_info' ~return:(mk_fresh_void_exp_typ ()) all_res_trans )
 
 
   and inject_destructors destr_kind trans_state stmt_info =
@@ -2563,7 +2563,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             ~mk_first_opt:(fun _ _ ->
               Some
                 (mk_trans_result (mk_fresh_void_exp_typ ())
-                   {empty_control with instrs= [Metadata (TryEntry {try_id; loc= try_loc})]}) )
+                   {empty_control with instrs= [Metadata (TryEntry {try_id; loc= try_loc})]} ) )
             ~mk_second:(fun _ _ -> instruction trans_state try_body_stmt)
             ~mk_return:(fun ~fst:_ ~snd -> snd.return)
         in
@@ -3090,7 +3090,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                 Some
                   (mk_trans_result var_exp_typ
                      { empty_control with
-                       instrs= [Sil.Metadata (VariableLifetimeBegins (pvar, var_typ, sil_loc))] })
+                       instrs= [Sil.Metadata (VariableLifetimeBegins (pvar, var_typ, sil_loc))] } )
             | _ ->
                 None )
           ~mk_second:(fun trans_state stmt_info ->
@@ -3141,7 +3141,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                ; instrs= res_trans_tmp.control.instrs @ instrs_tl
                ; initd_exps= res_trans_tmp.control.initd_exps @ initd_exps_tl
                ; cxx_temporary_markers_set=
-                   res_trans_tmp.control.cxx_temporary_markers_set @ markers_tl })
+                   res_trans_tmp.control.cxx_temporary_markers_set @ markers_tl } )
       | _ :: var_decls' ->
           (* Here we can get also record declarations or typedef declarations, which are dealt with
              somewhere else.  We just handle the variables here. *)
@@ -4096,7 +4096,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       else
         Some
           (create_var_exp_tmp_var trans_state expr_info ~var_name:"SIL_compound_literal__"
-             ~clang_pointer:stmt_info.Clang_ast_t.si_pointer)
+             ~clang_pointer:stmt_info.Clang_ast_t.si_pointer )
     in
     let trans_state' = {trans_state with var_exp_typ} in
     instruction trans_state' stmt
@@ -4453,7 +4453,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       (Pp.seq ~sep:";" (fun fmt (temporary : CScope.var_to_destroy) ->
            Format.fprintf fmt "(%a,%a)" (Pvar.pp Pp.text_break) temporary.pvar
              (Pp.option (Pvar.pp Pp.text_break))
-             temporary.marker ))
+             temporary.marker ) )
       temporaries pp_trans_state trans_state ;
     match destroy_all stmt_info [] trans_state (List.rev temporaries) with
     | [] ->
@@ -4533,7 +4533,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let markers_init_result =
           PriorityNode.compute_result_to_parent trans_state loc ExprWithCleanups stmt_info
             (mk_trans_result (Exp.zero, StdTyp.boolean)
-               {empty_control with instrs= init_markers_to_zero_instrs})
+               {empty_control with instrs= init_markers_to_zero_instrs} )
         in
         PriorityNode.compute_results_to_parent trans_state loc ExprWithCleanups stmt_info
           ~return:sub_expr_result.return
@@ -4673,7 +4673,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           | Some (marker_var, _)
             when not
                    (List.mem ~equal:Pvar.equal stmt_result.control.cxx_temporary_markers_set
-                      marker_var) ->
+                      marker_var ) ->
               (* to avoid adding the marker-setting instruction for every super-expression of the
                  current one, add it to the list of marker variables set and do not create the
                  instruction if it's already in that list *)
@@ -5074,7 +5074,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           ~reason:
             (Printf.sprintf "unimplemented construct: %s, found at %s"
                (Clang_ast_proj.get_stmt_kind_string instr)
-               (Clang_ast_j.string_of_source_range stmt_info.Clang_ast_t.si_source_range))
+               (Clang_ast_j.string_of_source_range stmt_info.Clang_ast_t.si_source_range) )
           trans_state stmt_info ret_typ stmts
 
 

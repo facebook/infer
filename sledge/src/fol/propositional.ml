@@ -69,8 +69,8 @@ struct
     (** Some normalization is necessary for [embed_into_fml] (defined below)
         to be left inverse to [embed_into_cnd]. Essentially
         [0 ≠ (p ? 1 : 0)] needs to normalize to [p], by way of
-        [0 ≠ (p ? 1 : 0)] ==> [(p ? 0 ≠ 1 : 0 ≠ 0)] ==>
-        [(p ? tt : ff)] ==> [p]. *)
+        [0 ≠ (p ? 1 : 0)] ==> [(p ? 0 ≠ 1 : 0 ≠ 0)] ==> [(p ? tt : ff)] ==>
+        [p]. *)
 
     let tt = Tt |> check invariant
     let ff = Not Tt |> check invariant

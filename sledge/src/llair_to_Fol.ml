@@ -40,6 +40,7 @@ let nlit2 p a b = F.not_ (lit2 p a b)
 
 let rec ap_ttt : 'a. (T.t -> T.t -> 'a) -> _ -> _ -> _ -> 'a =
  fun f tid a b -> f (term tid a) (term tid b)
+
 and ap_ttf (f : T.t -> T.t -> F.t) tid a b = F.inject (ap_ttt f tid a b)
 
 and ap_fff (f : F.t -> F.t -> F.t) tid a b =
@@ -80,7 +81,7 @@ and term : ThreadID.t -> Llair.Exp.t -> T.t =
   | Ap3 (Conditional, Integer {bits= 1; _}, cnd, pos, neg) ->
       F.inject
         (F.cond ~cnd:(formula tid cnd) ~pos:(formula tid pos)
-           ~neg:(formula tid neg))
+           ~neg:(formula tid neg) )
   (* terms *)
   | Reg _ -> T.var (reg tid (Llair.Reg.of_exp e |> Option.get_exn))
   | Global {name; typ= _} | Function {name; typ= _} -> uconst name
@@ -165,7 +166,7 @@ and term : ThreadID.t -> Llair.Exp.t -> T.t =
       in
       T.concat
         (Array.mapi (IArray.to_array elts) ~f:(fun i elt ->
-             T.sized ~seq:(term tid elt) ~siz:(elt_siz i) ))
+             T.sized ~seq:(term tid elt) ~siz:(elt_siz i) ) )
   | Ap1 (Splat, _, byt) -> T.splat (term tid byt)
 
 and formula tid e = F.dq0 (term tid e)

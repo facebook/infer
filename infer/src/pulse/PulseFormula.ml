@@ -647,9 +647,7 @@ module Term = struct
 
 
   (* defend in depth against exceptions *)
-  let eval_const_shallow t =
-    Z.protect eval_const_shallow_ t |> Option.value ~default:(Const Q.undef)
-
+  let eval_const_shallow t = Z.protect eval_const_shallow_ t |> Option.value ~default:(Const Q.undef)
 
   let rec simplify_shallow_ t =
     match t with
@@ -1132,7 +1130,7 @@ module Formula = struct
       (VarUF.fold_congruences var_eqs ~init:[] ~f:(fun jsons (repr, eqs) ->
            `List
              (Var.yojson_of_t (repr :> Var.t) :: List.map ~f:Var.yojson_of_t (Var.Set.elements eqs))
-           :: jsons ))
+           :: jsons ) )
 
 
   type linear_eqs = LinArith.t Var.Map.t [@@deriving compare, equal]

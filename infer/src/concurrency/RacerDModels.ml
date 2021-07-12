@@ -408,7 +408,7 @@ let should_analyze_proc =
            ; "folly::ThreadLocal"
            ; "folly::detail::SingletonHolder"
            ; "std::atomic"
-           ; "std::vector" ])
+           ; "std::vector" ] )
     in
     function
     | Procname.ObjC_Cpp cpp_pname as pname ->
@@ -442,7 +442,7 @@ let is_thread_safe_method pname tenv =
 let is_marked_thread_safe pname tenv =
   ((* current class not marked [@NotThreadSafe] *)
    not
-     (PatternMatch.Java.check_current_class_attributes Annotations.ia_is_not_thread_safe tenv pname))
+     (PatternMatch.Java.check_current_class_attributes Annotations.ia_is_not_thread_safe tenv pname) )
   && ConcurrencyModels.find_override_or_superclass_annotated is_thread_safe tenv pname
      |> Option.is_some
 

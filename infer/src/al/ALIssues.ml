@@ -119,13 +119,13 @@ let evaluate_place_holder ph an =
         (Option.value_map
            ~f:(fun sf -> SourceFile.to_rel_path (SourceFile.create sf))
            ~default:""
-           (Ctl_parser_types.get_source_file an))
+           (Ctl_parser_types.get_source_file an) )
   | "%ref_source_file%" ->
       MF.monospaced_to_string
         (Option.value_map
            ~f:(fun sf -> SourceFile.to_rel_path (SourceFile.create sf))
            ~default:""
-           (Ctl_parser_types.get_referenced_decl_source_file an))
+           (Ctl_parser_types.get_referenced_decl_source_file an) )
   | _ ->
       L.die InternalError "helper function %s is unknown" ph
 

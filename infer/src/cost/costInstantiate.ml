@@ -54,7 +54,7 @@ let get_instantiated_cost
       if CostDomain.BasicCost.is_symbolic callee_cost.cost then
         (Cost.instantiate_cost ~default_closure_cost:Ints.NonNegativeInt.one integer_type_widths
            ~inferbo_caller_mem:inferbo_mem ~callee_pname:pname ~callee_formals ~args ~callee_cost
-           ~loc)
+           ~loc )
           .cost |> get_symbolic
       else Cheap
   | None ->

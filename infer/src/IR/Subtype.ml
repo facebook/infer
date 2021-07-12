@@ -85,13 +85,12 @@ end)
 
 let check_subtype =
   let subtMap = ref SubtypesMap.empty in
-  fun tenv c1 c2 ->
-    ( try SubtypesMap.find (c1, c2) !subtMap
-      with Caml.Not_found ->
-        let is_subt = check_subclass_tenv tenv c1 c2 in
-        subtMap := SubtypesMap.add (c1, c2) is_subt !subtMap ;
-        is_subt
-      : result )
+  fun tenv c1 c2 : result ->
+    try SubtypesMap.find (c1, c2) !subtMap
+    with Caml.Not_found ->
+      let is_subt = check_subclass_tenv tenv c1 c2 in
+      subtMap := SubtypesMap.add (c1, c2) is_subt !subtMap ;
+      is_subt
 
 
 let is_known_subtype tenv c1 c2 : bool = equal_result (check_subtype tenv c1 c2) Yes

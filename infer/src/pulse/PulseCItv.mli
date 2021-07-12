@@ -32,8 +32,8 @@ val abduce_binop_is_true : negated:bool -> Binop.t -> t option -> t option -> ab
     - [Unsatisfiable] iff lhs bop rhs = ∅
 
     - [Satisfiable (abduced_lhs_opt,abduced_rhs_opt)] iff lhs bop rhs ≠ ∅, such that (taking
-      lhs=true if lhs_opt is [None], same for rhs) [abduced_lhs_opt=Some alhs] if (lhs bop rhs ≠
-      ∅ => alhs⇔lhs) (and similarly for rhs)
+      lhs=true if lhs_opt is [None], same for rhs) [abduced_lhs_opt=Some alhs] if (lhs bop rhs ≠ ∅
+      => alhs⇔lhs) (and similarly for rhs)
 
     If [negated] then imagine a similar explanation replacing "= ∅" with "≠ ∅" and vice-versa. *)
 

@@ -344,7 +344,7 @@ let array_abstraction_performed = ref false
 let generic_strexp_abstract tenv (abstraction_name : string) (p_in : Prop.normal Prop.t)
     (can_abstract_ : StrexpMatch.strexp_data -> bool)
     (do_abstract :
-      bool -> Prop.normal Prop.t -> StrexpMatch.strexp_data -> Prop.normal Prop.t * bool) :
+      bool -> Prop.normal Prop.t -> StrexpMatch.strexp_data -> Prop.normal Prop.t * bool ) :
     Prop.normal Prop.t =
   let can_abstract data =
     let r = can_abstract_ data in
@@ -422,7 +422,7 @@ let blur_array_index tenv (p : Prop.normal Prop.t) (path : StrexpMatch.path) (in
     let fresh_index =
       Exp.Var
         (Ident.create_fresh
-           (if !BiabductionConfig.footprint then Ident.kfootprint else Ident.kprimed))
+           (if !BiabductionConfig.footprint then Ident.kfootprint else Ident.kprimed) )
     in
     let p2 =
       try
@@ -450,8 +450,8 @@ let blur_array_index tenv (p : Prop.normal Prop.t) (path : StrexpMatch.path) (in
 
 
 (** Given [p] containing an array at [root], blur [indices] in it *)
-let blur_array_indices tenv (p : Prop.normal Prop.t) (root : StrexpMatch.path)
-    (indices : Exp.t list) : Prop.normal Prop.t * bool =
+let blur_array_indices tenv (p : Prop.normal Prop.t) (root : StrexpMatch.path) (indices : Exp.t list)
+    : Prop.normal Prop.t * bool =
   let f prop index = blur_array_index tenv prop root index in
   (List.fold ~f ~init:p indices, List.length indices > 0)
 

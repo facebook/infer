@@ -64,7 +64,7 @@ let merge_json_results infer_out_src json_entry =
       (List.dedup_and_sort
          ~compare:(fun s1 s2 ->
            match (s1, s2) with `String s1, `String s2 -> String.compare s1 s2 | _ -> 0 )
-         (List.append main_json changed_json))
+         (List.append main_json changed_json) )
   in
   YB.to_file main_changed_fs_file all_fs
 

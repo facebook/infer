@@ -16,14 +16,14 @@ open! IStd
 let timeout_seconds =
   ref
     (Option.map Config.biabduction_seconds_per_iteration ~f:(fun sec ->
-         sec *. float_of_int Config.biabduction_iterations ))
+         sec *. float_of_int Config.biabduction_iterations ) )
 
 
 (** Timeout in SymOps *)
 let timeout_symops =
   ref
     (Option.map Config.biabduction_symops_per_iteration ~f:(fun symops ->
-         symops * Config.biabduction_iterations ))
+         symops * Config.biabduction_iterations ) )
 
 
 let get_timeout_seconds () = !timeout_seconds

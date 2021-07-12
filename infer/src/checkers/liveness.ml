@@ -114,7 +114,7 @@ module CheckerMode = struct
   let dangerous_destructor_matcher =
     QualifiedCppName.Match.of_fuzzy_qual_names
       (string_list_of_json ~option_name:"liveness-dangerous-classes" ~init:[]
-         Config.liveness_dangerous_classes)
+         Config.liveness_dangerous_classes )
 
 
   (** hardcoded list of wrappers, mostly because they are impossible to specify as config options *)

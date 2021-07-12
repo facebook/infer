@@ -33,7 +33,7 @@ let append_template_args_to_last quals ~args =
         (ParseError
            (F.sprintf
               "expected qualified name without template args, but got %s, the last qualifier of %s"
-              last (String.concat ~sep:", " quals)))
+              last (String.concat ~sep:", " quals) ) )
   | last :: rest ->
       (last ^ args) :: rest
   | [] ->

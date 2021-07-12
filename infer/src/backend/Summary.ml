@@ -129,12 +129,11 @@ module ReportSummary = struct
     ; config_impact_opt: ConfigImpactAnalysis.Summary.t option
     ; err_log: Errlog.t }
 
-  let of_full_summary (f : full_summary) =
-    ( { loc= get_loc f
-      ; cost_opt= f.payloads.Payloads.cost
-      ; config_impact_opt= f.payloads.Payloads.config_impact_analysis
-      ; err_log= f.err_log }
-      : t )
+  let of_full_summary (f : full_summary) : t =
+    { loc= get_loc f
+    ; cost_opt= f.payloads.Payloads.cost
+    ; config_impact_opt= f.payloads.Payloads.config_impact_analysis
+    ; err_log= f.err_log }
 
 
   module SQLite = SqliteUtils.MarshalledDataNOTForComparison (struct
@@ -157,14 +156,13 @@ module AnalysisSummary = struct
     [@@deriving fields]
   end
 
-  let of_full_summary (f : full_summary) =
-    ( { payloads= f.payloads
-      ; sessions= f.sessions
-      ; stats= f.stats
-      ; status= f.status
-      ; proc_desc= f.proc_desc
-      ; callee_pnames= f.callee_pnames }
-      : t )
+  let of_full_summary (f : full_summary) : t =
+    { payloads= f.payloads
+    ; sessions= f.sessions
+    ; stats= f.stats
+    ; status= f.status
+    ; proc_desc= f.proc_desc
+    ; callee_pnames= f.callee_pnames }
 
 
   module SQLite = SqliteUtils.MarshalledDataNOTForComparison (struct
@@ -172,15 +170,15 @@ module AnalysisSummary = struct
   end)
 end
 
-let mk_full_summary (report_summary : ReportSummary.t) (analysis_summary : AnalysisSummary.t) =
-  ( { payloads= analysis_summary.payloads
-    ; sessions= analysis_summary.sessions
-    ; stats= analysis_summary.stats
-    ; status= analysis_summary.status
-    ; proc_desc= analysis_summary.proc_desc
-    ; callee_pnames= analysis_summary.callee_pnames
-    ; err_log= report_summary.err_log }
-    : full_summary )
+let mk_full_summary (report_summary : ReportSummary.t) (analysis_summary : AnalysisSummary.t) :
+    full_summary =
+  { payloads= analysis_summary.payloads
+  ; sessions= analysis_summary.sessions
+  ; stats= analysis_summary.stats
+  ; status= analysis_summary.status
+  ; proc_desc= analysis_summary.proc_desc
+  ; callee_pnames= analysis_summary.callee_pnames
+  ; err_log= report_summary.err_log }
 
 
 module OnDisk = struct
