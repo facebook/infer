@@ -231,9 +231,8 @@ let report_impure_all proc_desc err_log
   let impure_fun_ltr = Errlog.make_trace_element 0 loc impure_fun_desc [] in
   let ltr =
     impure_fun_ltr
-    ::
-    add_modified_ltr Formal modified_params
-      (add_modified_ltr Global modified_globals skipped_functions)
+    :: add_modified_ltr Formal modified_params
+         (add_modified_ltr Global modified_globals skipped_functions)
   in
   Reporting.log_issue proc_desc err_log ~loc ~ltr Impurity IssueType.impure_function impure_fun_desc
 

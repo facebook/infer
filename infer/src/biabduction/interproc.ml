@@ -499,10 +499,9 @@ let compute_visited vset =
     let node_loc = Procdesc.Node.get_loc n in
     let lines =
       node_loc.Location.line
-      ::
-      IContainer.rev_map_to_list ~fold:Instrs.fold
-        ~f:(fun instr -> (Sil.location_of_instr instr).Location.line)
-        (ProcCfg.Exceptional.instrs n)
+      :: IContainer.rev_map_to_list ~fold:Instrs.fold
+           ~f:(fun instr -> (Sil.location_of_instr instr).Location.line)
+           (ProcCfg.Exceptional.instrs n)
     in
     List.remove_consecutive_duplicates ~equal:Int.equal (List.sort ~compare:Int.compare lines)
   in

@@ -25,9 +25,8 @@ let objc_getter tenv proc_desc location self_with_typ (fieldname, field_typ, _) 
     | {Typ.desc= Tstruct ((CStruct _ | CppClass _) as struct_name)} ->
         let ret_param = Exp.Lvar (Pvar.get_ret_param_pvar (Procdesc.get_proc_name proc_desc)) in
         Sil.Load {id= id_field; e= ret_param; root_typ= field_typ; typ= field_typ; loc= location}
-        ::
-        CStructUtils.struct_copy tenv location (Exp.Var id_field) field_exp ~typ:field_typ
-          ~struct_name
+        :: CStructUtils.struct_copy tenv location (Exp.Var id_field) field_exp ~typ:field_typ
+             ~struct_name
     | _ ->
         let load_field_instr =
           Sil.Load {id= id_field; e= field_exp; root_typ= field_typ; typ= field_typ; loc= location}

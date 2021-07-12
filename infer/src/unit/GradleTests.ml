@@ -47,7 +47,7 @@ let tests_wrapper _test_ctxt =
   test_parse ("cls.class @" ^ tmpnojava ^ " @b.txt") [] ["@" ^ tmpnojava ^ " @b.txt"; "cls.class"] ;
   let rec biglist acc n l = if Int.equal n 0 then acc else biglist (l @ acc) (n - 1) l in
   let opts = biglist [] 100 ["-opt1"; "optval1"] in
-  test_parse (String.concat ~sep:" " @@ tmpjava :: opts) [tmpjava] opts ;
+  test_parse (String.concat ~sep:" " @@ (tmpjava :: opts)) [tmpjava] opts ;
   test_parse
     ("-d classes/java/main -s java/main " ^ tmpjava)
     [tmpjava]

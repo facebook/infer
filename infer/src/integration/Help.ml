@@ -218,8 +218,8 @@ let mk_checkers_json checkers_base_filenames =
              '@' ) )
     ; ( "doc_entries"
       , `List
-          (`String all_issues_basename
-           :: List.map checkers_base_filenames ~f:(fun filename -> `String filename) ) ) ]
+          ( `String all_issues_basename
+          :: List.map checkers_base_filenames ~f:(fun filename -> `String filename) ) ) ]
 
 
 (** Writes an index of all the checkers documentation pages. Must correspond to all the pages

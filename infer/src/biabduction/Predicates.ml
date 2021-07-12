@@ -1234,7 +1234,7 @@ let hpara_instantiate para e1 e2 elist =
     try List.map2_exn ~f:g para.evars ids_evars with Invalid_argument _ -> assert false
   in
   let subst =
-    subst_of_list ((para.root, e1) :: (para.next, e2) :: subst_for_svars @ subst_for_evars)
+    subst_of_list (((para.root, e1) :: (para.next, e2) :: subst_for_svars) @ subst_for_evars)
   in
   (ids_evars, List.map ~f:(hpred_sub subst) para.body)
 
@@ -1258,7 +1258,7 @@ let hpara_dll_instantiate (para : hpara_dll) cell blink flink elist =
   in
   let subst =
     subst_of_list
-      ( (para.cell, cell) :: (para.blink, blink) :: (para.flink, flink) :: subst_for_svars
+      ( ((para.cell, cell) :: (para.blink, blink) :: (para.flink, flink) :: subst_for_svars)
       @ subst_for_evars )
   in
   (ids_evars, List.map ~f:(hpred_sub subst) para.body_dll)

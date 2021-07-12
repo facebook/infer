@@ -567,7 +567,7 @@ let rec expression (context : JContext.t) pc expr =
             Sil.Load
               {id; e= Exp.Lindex (sil_ex1, sil_ex2); root_typ= type_of_expr; typ= type_of_expr; loc}
           in
-          let instrs = (instrs1 @ deref_array_instr :: instrs2) @ [load_instr] in
+          let instrs = (instrs1 @ (deref_array_instr :: instrs2)) @ [load_instr] in
           (instrs, Exp.Var id, type_of_expr)
       | other_binop ->
           let sil_binop = get_binop type_of_expr other_binop in
@@ -1018,7 +1018,7 @@ let instruction (context : JContext.t) pc instr : translation =
           Sil.Store
             {e1= Exp.Lvar pvar; root_typ= class_type; typ= class_type; e2= Exp.Var ret_id; loc}
         in
-        let instrs = new_instr :: call_instrs @ [set_instr] in
+        let instrs = (new_instr :: call_instrs) @ [set_instr] in
         let node_kind = create_node_kind constr_procname in
         let node = create_node node_kind instrs in
         Instr node

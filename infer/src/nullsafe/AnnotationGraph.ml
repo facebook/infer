@@ -27,9 +27,8 @@ let get_provisional_annotation = function
 let annotations_of_signature AnnotatedSignature.{ret; params} =
   let annotated_nullability =
     ret.ret_annotated_type.nullability
-    ::
-    List.map params ~f:(fun AnnotatedSignature.{param_annotated_type= {nullability}} ->
-        nullability )
+    :: List.map params ~f:(fun AnnotatedSignature.{param_annotated_type= {nullability}} ->
+           nullability )
   in
   List.filter_map annotated_nullability ~f:get_provisional_annotation
 

@@ -600,7 +600,7 @@ let rec dotty_mk_set_links dotnodes sigma p f cycle =
         let lnk =
           mk_link LinkToArray (mk_coordinate n lambda) "" (mk_coordinate (n + 1) lambda) trg_label
         in
-        lnk :: links_from_elements @ dotty_mk_set_links dotnodes sigma' p f cycle
+        (lnk :: links_from_elements) @ dotty_mk_set_links dotnodes sigma' p f cycle
   in
   match sigma with
   | [] ->

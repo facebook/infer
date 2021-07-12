@@ -1094,7 +1094,7 @@ let xlate_instr :
   in
   let nop () = continue (fun (insts, term) -> (insts, term, [])) in
   let emit_inst ?(prefix = []) inst =
-    continue (fun (insts, term) -> (prefix @ inst :: insts, term, []))
+    continue (fun (insts, term) -> (prefix @ (inst :: insts), term, []))
   in
   let emit_term ?(prefix = []) ?(blocks = []) term =
     [%Trace.retn fun {pf} () -> pf "%a" pp_code (prefix, term, blocks)] () ;
@@ -1214,7 +1214,7 @@ let xlate_instr :
             let pre_jump, dst, blocks =
               xlate_jump x instr return_blk loc []
             in
-            let prefix = pre_inst @ inst :: pre_jump in
+            let prefix = pre_inst @ (inst :: pre_jump) in
             emit_term ~prefix (Term.goto ~dst ~loc) ~blocks
           in
           match

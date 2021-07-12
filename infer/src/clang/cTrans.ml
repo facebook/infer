@@ -1631,7 +1631,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         in
         let node_name = Procdesc.Node.Call (Exp.to_string sil_method) in
         let all_res_trans =
-          result_trans_params @ res_trans_call :: Option.to_list extra_res_trans
+          result_trans_params @ (res_trans_call :: Option.to_list extra_res_trans)
         in
         PriorityNode.compute_results_to_parent trans_state_pri sil_loc node_name si
           ~return:res_trans_call.return all_res_trans
@@ -1855,7 +1855,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           else None
         in
         let all_res_trans =
-          res_trans_subexpr_list @ res_trans_call :: Option.to_list assertion_trans_opt
+          res_trans_subexpr_list @ (res_trans_call :: Option.to_list assertion_trans_opt)
         in
         PriorityNode.compute_results_to_parent trans_state_pri sil_loc node_name si
           ~return:res_trans_call.return all_res_trans
@@ -4229,11 +4229,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let ret_exp = Exp.Var ret_id in
     let field_exp = Exp.Lfield (ret_exp, field_name, typ) in
     let args =
-      type_info_objc
-      ::
-      (field_exp, void_typ)
-      ::
-      Option.value_map ~default:[] res_trans_subexpr ~f:(fun trans_result -> [trans_result.return])
+      type_info_objc :: (field_exp, void_typ)
+      :: Option.value_map ~default:[] res_trans_subexpr ~f:(fun trans_result ->
+             [trans_result.return] )
     in
     let call_instr = Sil.Call ((ret_id, typ), sil_fun, args, sil_loc, CallFlags.default) in
     let res_control = {empty_control with instrs= [call_instr]} in
@@ -4503,13 +4501,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
               instrs
           | Some marker_pvar ->
               Sil.Metadata (VariableLifetimeBegins (marker_pvar, StdTyp.boolean, loc))
-              ::
-              Sil.Store
-                { e1= Lvar marker_pvar
-                ; e2= Exp.zero
-                ; typ= StdTyp.boolean
-                ; loc
-                ; root_typ= StdTyp.boolean }
+              :: Sil.Store
+                   { e1= Lvar marker_pvar
+                   ; e2= Exp.zero
+                   ; typ= StdTyp.boolean
+                   ; loc
+                   ; root_typ= StdTyp.boolean }
               :: instrs )
     in
     let markers_var_data =

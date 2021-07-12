@@ -49,7 +49,7 @@ let concat_traces labelled_traces =
       | "", trace ->
           trace @ res
       | label, ({lt_loc} :: _ as trace) ->
-          make_trace_element 0 lt_loc label [] :: trace @ res )
+          (make_trace_element 0 lt_loc label [] :: trace) @ res )
 
 
 let compute_local_exception_line loc_trace =

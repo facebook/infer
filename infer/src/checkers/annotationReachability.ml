@@ -463,15 +463,10 @@ let annot_specs =
   let cannot_call_non_ui_annots = [any_thread; mainthread; ui_thread] in
   [ (Language.Clang, CxxAnnotationSpecs.from_config ())
   ; ( Language.Java
-    , ExpensiveAnnotationSpec.spec
-      ::
-      NoAllocationAnnotationSpec.spec
-      ::
-      StandardAnnotationSpec.from_annotations cannot_call_ui_annots ui_thread
-      ::
-      StandardAnnotationSpec.from_annotations cannot_call_ui_annots mainthread
-      ::
-      StandardAnnotationSpec.from_annotations cannot_call_non_ui_annots worker_thread
+    , ExpensiveAnnotationSpec.spec :: NoAllocationAnnotationSpec.spec
+      :: StandardAnnotationSpec.from_annotations cannot_call_ui_annots ui_thread
+      :: StandardAnnotationSpec.from_annotations cannot_call_ui_annots mainthread
+      :: StandardAnnotationSpec.from_annotations cannot_call_non_ui_annots worker_thread
       :: user_defined_specs ) ]
 
 

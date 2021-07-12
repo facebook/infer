@@ -1165,10 +1165,9 @@ let show_manual ?(scrub_defaults = false) ?internal_section format default_doc c
         (* base indentation of documentation strings *)
       in
       `I (Format.asprintf "$(b,%s)%a%a" (dashdash long) pp_short short pp_meta meta, doc_first_line)
-      ::
-      List.concat_map
-        (List.concat_map ~f:(wrap_line indent_string width) doc_other_lines)
-        ~f:(fun s -> [`Noblank; `Pre s])
+      :: List.concat_map
+           (List.concat_map ~f:(wrap_line indent_string width) doc_other_lines)
+           ~f:(fun s -> [`Noblank; `Pre s])
   in
   let option_blocks =
     match command_doc.manual_options with
@@ -1178,9 +1177,7 @@ let show_manual ?(scrub_defaults = false) ?internal_section format default_doc c
         let hidden =
           match internal_section with
           | Some section ->
-              `S section
-              ::
-              `P "Use at your own risk."
+              `S section :: `P "Use at your own risk."
               :: List.concat_map ~f:block_of_desc (normalize_desc_list !hidden_descs_list)
           | None ->
               []
@@ -1198,7 +1195,7 @@ let show_manual ?(scrub_defaults = false) ?internal_section format default_doc c
                 @ result )
               !sections hidden
         | None ->
-            `S Cmdliner.Manpage.s_options :: blocks
+            (`S Cmdliner.Manpage.s_options :: blocks)
             @ List.concat_map ~f:block_of_desc (normalize_desc_list !visible_descs_list)
             @ hidden )
   in

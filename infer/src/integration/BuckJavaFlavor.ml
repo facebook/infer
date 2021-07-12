@@ -157,7 +157,7 @@ let capture build_cmd =
   in
   let updated_buck_cmd =
     (* make buck tell us where in buck-out are the capture directories for merging *)
-    prog :: command :: "--build-report" :: build_report_file :: Buck.config JavaFlavor
+    (prog :: command :: "--build-report" :: build_report_file :: Buck.config JavaFlavor)
     @ Config.buck_build_args_no_inline
     @ Buck.store_args_in_file ~identifier:"java_flavor_build" all_args
   in

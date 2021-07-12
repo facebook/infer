@@ -726,9 +726,8 @@ module StdFunction = struct
     | Some callee_proc_name ->
         let actuals =
           (lambda_ptr_hist, typ)
-          ::
-          List.map actuals ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
-              (arg_payload, typ) )
+          :: List.map actuals ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
+                 (arg_payload, typ) )
         in
         PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc
           ~callee_data:(analyze_dependency callee_proc_name)
@@ -1577,9 +1576,8 @@ module ProcNameDispatcher = struct
       ( -"NSString" &:: "initWithBytesNoCopy:length:encoding:freeWhenDone:" <>$ any_arg
       $+ capt_arg_payload $+ any_arg $+ any_arg $+ any_arg $--> ObjC.init_with_bytes_free_when_done
       )
-      ::
-      ( -"NSData" &:: "initWithBytesNoCopy:length:freeWhenDone:" <>$ any_arg $+ capt_arg_payload
-      $+ any_arg $+ any_arg $--> ObjC.init_with_bytes_free_when_done )
+      :: ( -"NSData" &:: "initWithBytesNoCopy:length:freeWhenDone:" <>$ any_arg $+ capt_arg_payload
+         $+ any_arg $+ any_arg $--> ObjC.init_with_bytes_free_when_done )
       :: transfer_ownership_namespace_matchers
       @ transfer_ownership_name_matchers
     in

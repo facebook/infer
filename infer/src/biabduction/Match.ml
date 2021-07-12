@@ -740,7 +740,7 @@ let rec generic_find_partial_iso tenv mode update corres sigma_corres todos sigm
               in
               let new_todos =
                 let shared12 = List.zip_exn shared1 shared2 in
-                (root1, root2) :: (next1, next2) :: shared12 @ todos'
+                ((root1, root2) :: (next1, next2) :: shared12) @ todos'
               in
               generic_find_partial_iso tenv mode update new_corres new_sigma_corres new_todos
                 new_sigma_todo
@@ -766,7 +766,7 @@ let rec generic_find_partial_iso tenv mode update corres sigma_corres todos sigm
               in
               let new_todos =
                 let shared12 = List.zip_exn shared1 shared2 in
-                (iF1, iF2) :: (oB1, oB2) :: (oF1, oF2) :: (iB1, iB2) :: shared12 @ todos'
+                ((iF1, iF2) :: (oB1, oB2) :: (oF1, oF2) :: (iB1, iB2) :: shared12) @ todos'
               in
               generic_find_partial_iso tenv mode update new_corres new_sigma_corres new_todos
                 new_sigma_todo
