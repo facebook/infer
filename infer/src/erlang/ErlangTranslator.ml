@@ -91,6 +91,44 @@ let update_location line env =
   {env with location}
 
 
+let sil_binary_of_erlang_binary (op : Ast.binary_operator) : Binop.t option =
+  match op with
+  | Add ->
+      Some (PlusA None)
+  | And ->
+      Some LAnd
+  | AtLeast ->
+      Some Ge
+  | AtMost ->
+      Some Le
+  (* TODO: do we want to handle Equal and ExactlyEqual differently? *)
+  | Equal | ExactlyEqual ->
+      Some Eq
+  (* TODO: do we want to handle NotEqual and ExactlyNotEqual differently? *)
+  | ExactlyNotEqual | NotEqual ->
+      Some Ne
+  | Greater ->
+      Some Gt
+  | IDiv ->
+      Some Div
+  | Less ->
+      Some Lt
+  | Mul ->
+      Some (Mult None)
+  | Or ->
+      Some LOr
+  | Rem ->
+      Some Mod (* TODO: check semantics of Rem vs Mod *)
+  | Sub ->
+      Some (MinusA None)
+  | _ ->
+      None
+
+
+let sil_unary_of_erlang_unary (op : Ast.unary_operator) : Unop.t option =
+  match op with UMinus -> Some Neg | UNot -> Some LNot | _ -> None
+
+
 (** Groups several helpers used to create nodes. *)
 module Node = struct
   let make (env : (Procdesc.t present, _) environment) kind instructions =
@@ -326,44 +364,14 @@ and translate_expression env {Ast.line; simple_expression} =
         let id2 = Ident.create_fresh Ident.knormal in
         let block1 = translate_expression {env with result= Present (Exp.Var id1)} e1 in
         let block2 = translate_expression {env with result= Present (Exp.Var id2)} e2 in
-        let make_simple_op_block sil_op =
-          Block.make_load env ret_var (Exp.BinOp (sil_op, Var id1, Var id2)) any
-        in
         let op_block =
-          match op with
-          | Add ->
-              make_simple_op_block (PlusA None)
-          | And ->
-              make_simple_op_block LAnd
-          | AtLeast ->
-              make_simple_op_block Ge
-          | AtMost ->
-              make_simple_op_block Le
-          | Equal | ExactlyEqual ->
-              (* TODO: do we want to handle Equal and ExactlyEqual differently? *)
-              make_simple_op_block Eq
-          | ExactlyNotEqual | NotEqual ->
-              (* TODO: do we want to handle NotEqual and ExactlyNotEqual differently? *)
-              make_simple_op_block Ne
-          | Greater ->
-              make_simple_op_block Gt
-          | IDiv ->
-              make_simple_op_block Div
-          | Less ->
-              make_simple_op_block Lt
-          | Mul ->
-              make_simple_op_block (Mult None)
-          | Or ->
-              make_simple_op_block LOr
-          | Rem ->
-              (* TODO: check semantics of Rem vs Mod *)
-              make_simple_op_block Mod
-          | Sub ->
-              make_simple_op_block (MinusA None)
-          | todo ->
+          match sil_binary_of_erlang_binary op with
+          | Some sil_op ->
+              Block.make_load env ret_var (Exp.BinOp (sil_op, Var id1, Var id2)) any
+          | None ->
               L.debug Capture Verbose
                 "@[todo ErlangTranslator.translate_expression(BinaryOperator) %s@."
-                (Sexp.to_string (Ast.sexp_of_binary_operator todo)) ;
+                (Sexp.to_string (Ast.sexp_of_binary_operator op)) ;
               Block.make_success env
         in
         Block.all env [block1; block2; op_block]
@@ -449,19 +457,14 @@ and translate_expression env {Ast.line; simple_expression} =
     | UnaryOperator (op, e) ->
         let id = Ident.create_fresh Ident.knormal in
         let block = translate_expression {env with result= Present (Exp.Var id)} e in
-        let make_simple_op_block sil_op =
-          Block.make_load env ret_var (Exp.UnOp (sil_op, Var id, None)) any
-        in
         let op_block =
-          match op with
-          | UMinus ->
-              make_simple_op_block Neg
-          | UNot ->
-              make_simple_op_block LNot
-          | todo ->
+          match sil_unary_of_erlang_unary op with
+          | Some sil_op ->
+              Block.make_load env ret_var (Exp.UnOp (sil_op, Var id, None)) any
+          | None ->
               L.debug Capture Verbose
                 "@[todo ErlangTranslator.translate_expression(UnaryOperator) %s@."
-                (Sexp.to_string (Ast.sexp_of_unary_operator todo)) ;
+                (Sexp.to_string (Ast.sexp_of_unary_operator op)) ;
               Block.make_success env
         in
         Block.all env [block; op_block]
