@@ -18,7 +18,7 @@ val should_translate_lib :
 
 val should_do_frontend_check : SourceFile.t -> Clang_ast_t.source_range -> bool
 
-val is_file_blacklisted : string -> bool
+val is_file_block_listed : string -> bool
 
 val location_of_source_range :
   ?pick_location:[`Start | `End] -> SourceFile.t -> Clang_ast_t.source_range -> Location.t

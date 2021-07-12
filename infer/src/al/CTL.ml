@@ -38,7 +38,7 @@ type clause =
   (* Set clause: set id = definition *)
   | CDesc of ALVar.keyword * string
   (* Description clause eg: set message = "..." *)
-  | CPath of [`WhitelistPath | `BlacklistPath] * ALVar.t list
+  | CPath of [`AllowListPath | `BlockListPath] * ALVar.t list
 
 type ctl_checker =
   {id: string; (* Checker's id *) definitions: clause list (* A list of let/set definitions *)}
@@ -66,7 +66,11 @@ let print_checker c =
           L.(debug Linters Medium) "    %s=  @\n    %s@\n@\n" cn_str s
       | CPath (paths_keyword, paths) ->
           let keyword =
-            match paths_keyword with `WhitelistPath -> "whitelist_path" | _ -> "blacklist_path"
+            match paths_keyword with
+            | `AllowListPath ->
+                "allow_list_path"
+            | `BlockListPath ->
+                "block_list_path"
           in
           let paths_str = String.concat ~sep:"," (List.map ~f:ALVar.alexp_to_string paths) in
           L.(debug Linters Medium) "    %s=  @\n    %s@\n@\n" keyword paths_str )

@@ -118,7 +118,7 @@ uint32_t integer_overflow_param_2(uint32_t x) { return x - 1; }
 void call_integer_overflow_param_2_Bad() { integer_overflow_param_2(0); }
 
 // "HaSh" (not "hash") is fot checking case-insensitive comparison.
-void whitelisted_HaSh_Good() {
+void allow_listed_HaSh_Good() {
   uint32_t x = -1;
   uint32_t y = x * 8;
 }

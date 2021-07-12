@@ -348,7 +348,7 @@ let is_android_lifecycle_method tenv pname =
     PatternMatch.override_exists package_starts_with_android tenv pname
   in
   let method_starts_with_on pname = Procname.get_method pname |> String.is_prefix ~prefix:"on" in
-  let is_whitelisted pname =
+  let is_allow_listed pname =
     match Procname.get_method pname with
     (* [IntentService.onHandleIntent] is an exception *)
     | "onHandleIntent" ->
@@ -362,7 +362,7 @@ let is_android_lifecycle_method tenv pname =
       false
   | Java _ ->
       method_starts_with_on pname
-      && (not (is_whitelisted pname))
+      && (not (is_allow_listed pname))
       && overrides_android_method tenv pname
 
 

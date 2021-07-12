@@ -24,6 +24,6 @@ infer-out/report.json: $(CLANG_DEPS) $(SOURCES) $(MAKEFILE_LIST)
 	$(QUIET)$(BUCK) clean
 	$(call silent_on_success,Testing Buck flavors integration,\
 	$(INFER_BIN) $(INFER_OPTIONS) capture --buck-clang --results-dir $(CURDIR)/infer-out \
-	  @blacklist.txt --buck-blacklist '.*src/hello2\.c' \
+	  @block_list.txt --buck-block-list '.*src/hello2\.c' \
 	  -- $(BUCK) build --no-cache $(BUCK_TARGET) &&\
 	$(INFER_BIN) $(INFER_OPTIONS) --merge analyze)

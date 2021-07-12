@@ -186,7 +186,7 @@ detect_dead_code: dune
 
 .PHONY: detect_dead_src_file
 detect_dead_src_file:
-	function is_in_blacklist { \
+	function is_in_block_list { \
 	  if [ $$1 = infertop.ml ] \
 	  || [ $$1 = infertop.mli ] \
 	  || [ $$1 = deadcode/all_infer_in_one_file.ml ] \
@@ -204,28 +204,28 @@ detect_dead_src_file:
 	\
 	tmp_file=$$(mktemp -t all_ml_files_XXXXX); \
 	for i in $(ml_src_files) $(ml_src_files_without_mli); do \
-	  (is_in_blacklist "$$i") || (echo "$$i" >> "$$tmp_file"); \
+	  (is_in_block_list "$$i") || (echo "$$i" >> "$$tmp_file"); \
 	done; \
 	sort -u "$$tmp_file" > $(ALL_ML_FILES); \
 	rm "$$tmp_file"; \
 	\
 	tmp_file=$$(mktemp -t all_mli_files_XXXXX); \
 	for i in $(mli_src_files); do \
-	  (is_in_blacklist "$$i") || (echo "$$i" >> "$$tmp_file"); \
+	  (is_in_block_list "$$i") || (echo "$$i" >> "$$tmp_file"); \
 	done; \
 	sort -u "$$tmp_file" > $(ALL_MLI_FILES); \
 	rm "$$tmp_file"; \
 	\
 	tmp_file=$$(mktemp -t all_ml_files_copied_XXXXX); \
 	for i in $$(cat $(ALL_ML_FILES_COPIED)); do \
-	  (is_in_blacklist "$$i") || (echo "$$i" >> "$$tmp_file"); \
+	  (is_in_block_list "$$i") || (echo "$$i" >> "$$tmp_file"); \
 	done; \
 	sort -u "$$tmp_file" > $(ALL_ML_FILES_COPIED); \
 	rm "$$tmp_file"; \
 	\
 	tmp_file=$$(mktemp -t all_mli_files_copied_XXXXX); \
 	for i in $$(cat $(ALL_MLI_FILES_COPIED)); do \
-	  (is_in_blacklist "$$i") || (echo "$$i" >> "$$tmp_file"); \
+	  (is_in_block_list "$$i") || (echo "$$i" >> "$$tmp_file"); \
 	done; \
 	sort -u "$$tmp_file" > $(ALL_MLI_FILES_COPIED); \
 	rm "$$tmp_file"

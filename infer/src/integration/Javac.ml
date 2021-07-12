@@ -113,12 +113,12 @@ let call_infer_javac_capture ~javac_args =
 
 
 let capture compiler ~prog ~args =
-  match (compiler, Config.capture_blacklist) with
+  match (compiler, Config.capture_block_list) with
   (* Simulates Buck support for compilation commands with no source file *)
   | _ when Config.buck_cache_mode && no_source_file args ->
       ()
-  | Javac, Some blacklist
-    when let re = Str.regexp blacklist in
+  | Javac, Some block_list
+    when let re = Str.regexp block_list in
          List.exists ~f:(fun arg -> Str.string_match re arg 0) args ->
       ()
   | _ ->

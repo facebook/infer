@@ -58,12 +58,12 @@ public class ThirdPartyTestClass {
     return "";
   }
 
-  // 3rd party repo whitelists this function as returning non-nullable
+  // 3rd party repo allow lists this function as returning non-nullable
   public String returnSpecifiedAsNonnull() {
     return "";
   }
 
-  // 3rd party repo whitelists this function as returning nullable
+  // 3rd party repo allow lists this function as returning nullable
   public String returnSpecifiedAsNullable() {
     return "";
   }

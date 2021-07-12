@@ -134,7 +134,7 @@ module ReportableViolation = struct
       | Nullability.Nullable ->
           Logging.die Logging.InternalError "Passing anything to a nullable param should be allowed"
       | Nullability.ThirdPartyNonnull ->
-          (* This is a special case. While for FB codebase we can assume "not annotated hence not nullable" rule for all_whitelisted signatures,
+          (* This is a special case. While for FB codebase we can assume "not annotated hence not nullable" rule for all_allow_listed signatures,
              This is not the case for third party functions, which can have different conventions,
              So we can not just say "param is declared as non-nullable" like we say for FB-internal or modelled case:
              param can be nullable according to API but it was just not annotated.
@@ -243,7 +243,7 @@ module ReportableViolation = struct
         let return_description =
           match explicit_rhs_nullable_kind with
           | ErrorRenderingUtils.UserFriendlyNullable.Null ->
-              (* Return `null` in all_whitelisted branches *)
+              (* Return `null` in all_allow_listed branches *)
               "`null`"
           | ErrorRenderingUtils.UserFriendlyNullable.Nullable ->
               "a nullable value"

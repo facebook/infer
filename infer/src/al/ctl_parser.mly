@@ -75,8 +75,8 @@
 %token REGEXP
 %token <string> IDENTIFIER
 %token <string> STRING
-%token WHITELIST_PATH
-%token BLACKLIST_PATH
+%token ALLOW_LIST_PATH
+%token BLOCK_LIST_PATH
 %token ACCESSOR_FOR_PROPERTY
 %token ANY
 %token BODY
@@ -187,10 +187,10 @@ clause:
       | _ -> L.(die ExternalError) "string '%s' cannot be set to a variable. \
                        Use the reserved variable 'report_when'" $2 in
       CTL.CSet (alvar, $4) }
-  | SET WHITELIST_PATH ASSIGNMENT LEFT_BRACE path_list RIGHT_BRACE
-    { CTL.CPath (`WhitelistPath, $5) }
-  | SET BLACKLIST_PATH ASSIGNMENT LEFT_BRACE path_list RIGHT_BRACE
-    { CTL.CPath (`BlacklistPath, $5) }
+  | SET ALLOW_LIST_PATH ASSIGNMENT LEFT_BRACE path_list RIGHT_BRACE
+    { CTL.CPath (`AllowListPath, $5) }
+  | SET BLOCK_LIST_PATH ASSIGNMENT LEFT_BRACE path_list RIGHT_BRACE
+    { CTL.CPath (`BlockListPath, $5) }
   | SET identifier ASSIGNMENT STRING
     { L.(debug Linters Verbose) "\tParsed SET clause@\n";
       let alvar = match $2 with

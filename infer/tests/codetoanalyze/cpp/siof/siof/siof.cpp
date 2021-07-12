@@ -40,13 +40,13 @@ int X::static_pod_accesses_non_pod_bad = access_to_non_pod();
 SomeNonPODObject initWithStatic_good = getFunctionStaticNonPOD();
 SomeNonPODObject initWithGlobal_bad = getGlobalNonPOD();
 
-SomeNonPODObject initWithGlobalWhitelisted_good = getGlobalNonPODWhitelisted();
+SomeNonPODObject initWithGlobalAllowListed_good = getGlobalNonPODAllowListed();
 
-SomeNonPODObject initWithGlobalWhitelistedNamespaced_good =
-    whitelisted::getGlobalNonPOD();
+SomeNonPODObject initWithGlobalAllowListedNamespaced_good =
+    allow_listed::getGlobalNonPOD();
 
-SomeNonPODObject initWithGlobalWhitelistedTemplated_good =
-    whitelisted::TemplatedObject<int>::getGlobalNonPOD();
+SomeNonPODObject initWithGlobalAllowListedTemplated_good =
+    allow_listed::TemplatedObject<int>::getGlobalNonPOD();
 
 // not declared constexpr but actually constexpr
 extern SomeConstexprObject& getGlobalConstexpr();

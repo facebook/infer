@@ -18,7 +18,7 @@ DEFINE-CHECKER EXTRA_COPY = {
   SET message = "Potentially unnecessary to copy var %name%";
   SET severity = "WARNING";
   SET mode = "ON";
-  //SET whitelist_path = {
+  //SET allow_list_path = {
   //  REGEXP("admarket/.*"),
   //  REGEXP("multifeed/.*")
   //};

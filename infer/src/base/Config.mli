@@ -108,9 +108,9 @@ val unsafe_unret : string
 
 val weak : string
 
-val whitelisted_cpp_classes : string list
+val allow_listed_cpp_classes : string list
 
-val whitelisted_cpp_methods : string list
+val allow_listed_cpp_methods : string list
 
 val wrappers_dir : string
 
@@ -171,7 +171,7 @@ val bootclasspath : string option
 
 val buck : bool
 
-val buck_blacklist : string list
+val buck_block_list : string list
 
 val buck_build_args : string list
 
@@ -191,11 +191,11 @@ val buck_mode : BuckMode.t option
 
 val buck_out_gen : string
 
-val buck_targets_blacklist : string list
+val buck_targets_block_list : string list
 
 val capture : bool
 
-val capture_blacklist : string option
+val capture_block_list : string option
 
 val censor_report : ((bool * Str.regexp) * (bool * Str.regexp) * string) list
 
@@ -211,9 +211,9 @@ val clang_compound_literal_init_limit : int
 
 val clang_extra_flags : string list
 
-val clang_blacklisted_flags : string list
+val clang_block_listed_flags : string list
 
-val clang_blacklisted_flags_with_arg : string list
+val clang_block_listed_flags_with_arg : string list
 
 val clang_frontend_action_string : string
 
@@ -562,7 +562,7 @@ val remodel_class : string option
 
 val report : bool
 
-val report_blacklist_files_containing : string list
+val report_block_list_files_containing : string list
 
 val report_console_limit : int option
 
@@ -574,9 +574,9 @@ val report_force_relative_path : bool
 
 val report_formatter : [`No_formatter | `Phabricator_formatter]
 
-val report_path_regex_blacklist : string list
+val report_path_regex_block_list : string list
 
-val report_path_regex_whitelist : string list
+val report_path_regex_allow_list : string list
 
 val report_previous : string option
 
@@ -690,7 +690,7 @@ val workspace : string option
 
 val write_html : bool
 
-val write_html_whitelist_regex : string list
+val write_html_allow_list_regex : string list
 
 val write_website : string option
 

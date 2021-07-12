@@ -139,7 +139,7 @@ OPTIONS
        --bootclasspath string
            Specify the Java bootclasspath           See also infer-capture(1).
 
-       --buck-blacklist +regex
+       --buck-block-list +regex
            Skip capture of files matched by the specified regular expression.
            Only the clang, non-compilation-database                Buck integration is supported, not Java.
            See also infer-capture(1) and infer-run(1).
@@ -186,7 +186,7 @@ OPTIONS
            successful capture. Only valid for --buck-clang. (Conversely:
            --no-buck-merge-all-deps)           See also infer-capture(1).
 
-       --buck-targets-blacklist +regex
+       --buck-targets-block-list +regex
            Skip capture of buck targets matched by the specified regular
            expression. Only valid for --buck-compilation-database.       
     See also infer-capture(1) and infer-run(1).
@@ -200,7 +200,7 @@ OPTIONS
            Activates: Enable bufferoverrun and disable all other checkers
            (Conversely: --no-bufferoverrun-only)           See also infer-analyze(1).
 
-       --capture-blacklist regex
+       --capture-block-list regex
            Skip capture of files matched by the specified OCaml regular
            expression (only supported by the javac integration for now).       
     See also infer-capture(1) and infer-run(1).
@@ -217,8 +217,8 @@ OPTIONS
            `<issue_type_regex>:<filename_regex>:<reason_string>`. The first
            two components are OCaml Str regular expressions, with an optional
            `!` character prefix. If a regex has a `!` prefix, the polarity is
-           inverted, and the filter becomes a "blacklist" instead of a
-           "whitelist". Each filter is interpreted as an implication: an
+           inverted, and the filter becomes a "block list" instead of a
+           "allow list". Each filter is interpreted as an implication: an
            issue matches if it does not match the `issue_type_regex` or if it
            does match the `filename_regex`. The filenames that are tested by
            the regex are relative to the `--project-root` directory. The
@@ -238,10 +238,10 @@ OPTIONS
            format. Please note you still need to provide a compilation
            command.           See also infer-capture(1).
 
-       --clang-blacklisted-flags +string
+       --clang-block-listed-flags +string
            Clang flags to filter out           See also infer-capture(1).
 
-       --clang-blacklisted-flags-with-arg +string
+       --clang-block-listed-flags-with-arg +string
            Clang flags (taking args) to filter out           See also infer-capture(1).
 
        --clang-compound-literal-init-limit int
@@ -645,7 +645,7 @@ OPTIONS
            differential reports           See also infer-reportdiff(1).
 
        --no-filtering,-F
-           Deactivates: Do not show the experimental and blacklisted issue
+           Deactivates: Do not show the experimental and block listed issue
            types (Conversely: --filtering | -f)           See also infer-report(1).
 
        --force-delete-results-dir
@@ -1146,14 +1146,19 @@ OPTIONS
            Deactivates: Run the reporting phase once the analysis has
            completed (Conversely: --report)           See also infer-analyze(1) and infer-run(1).
 
-       --report-blacklist-files-containing +string
+       --report-allow-list-path-regex +path_regex
+           Report issues only on files whose relative path matches the
+           specified OCaml regex (and which do not match
+           --report-block-list-path-regex)           See also infer-report(1) and infer-run(1).
+
+       --report-block-list-files-containing +string
            Do not report any issues on files containing the specified string       
     See also infer-report(1) and infer-run(1).
 
-       --report-blacklist-path-regex +path_regex
+       --report-block-list-path-regex +path_regex
            Do not report any issues on files whose relative path matches the
-           specified OCaml regex, even if they match the whitelist specified
-           by --report-whitelist-path-regex           See also infer-report(1) and infer-run(1).
+           specified OCaml regex, even if they match the allow list specified
+           by --report-allow-list-path-regex           See also infer-report(1) and infer-run(1).
 
        --report-console-limit int
            Maximum number of issues to display on standard output. Unset with
@@ -1175,11 +1180,6 @@ OPTIONS
 
        --report-suppress-errors +error_name
            do not report a type of errors           See also infer-report(1) and infer-run(1).
-
-       --report-whitelist-path-regex +path_regex
-           Report issues only on files whose relative path matches the
-           specified OCaml regex (and which do not match
-           --report-blacklist-path-regex)           See also infer-report(1) and infer-run(1).
 
        --results-dir,-o dir
            Write results and internal files in the specified directory       
@@ -1432,7 +1432,7 @@ FILES
 
          {
            "cxx": false,
-           "infer-blacklist-files-containing": ["@gen","/* no infer */"]
+           "infer-block-list-files-containing": ["@gen","/* no infer */"]
          }
 
 

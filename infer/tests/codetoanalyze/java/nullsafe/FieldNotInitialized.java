@@ -229,8 +229,8 @@ public class FieldNotInitialized {
 
 /**
  * There is a predefined list of classes which have known methods that act like initializers. If a
- * class extends such special class and initializes a field in such whitelisted method, we don't
- * require initializing this field in constructor. (NOTE: To do the same in non whitelisted class
+ * class extends such special class and initializes a field in such allow listed method, we don't
+ * require initializing this field in constructor. (NOTE: To do the same in non allow listed class
  * one can use @Initializer annotation instead).
  */
 class TestKnownInitializers {

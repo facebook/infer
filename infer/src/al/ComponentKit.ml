@@ -98,8 +98,8 @@ let mutable_local_vars_advice context an =
       | _ ->
           None
     in
-    let is_of_whitelisted_type qual_type =
-      let cpp_whitelist =
+    let is_of_allow_listed_type qual_type =
+      let cpp_allow_list =
         [ "CKComponentScope"
         ; "FBTrackingNodeScope"
         ; "FBTrackingCodeScope"
@@ -107,12 +107,12 @@ let mutable_local_vars_advice context an =
         ; "CKComponentKey"
         ; "UIContext" ]
       in
-      let objc_whitelist = ["NSError"] in
+      let objc_allow_list = ["NSError"] in
       match get_referenced_type qual_type with
       | Some (CXXRecordDecl (_, ndi, _, _, _, _, _, _)) ->
-          List.mem ~equal:String.equal cpp_whitelist ndi.ni_name
+          List.mem ~equal:String.equal cpp_allow_list ndi.ni_name
       | Some (ObjCInterfaceDecl (_, ndi, _, _, _)) ->
-          List.mem ~equal:String.equal objc_whitelist ndi.ni_name
+          List.mem ~equal:String.equal objc_allow_list ndi.ni_name
       | _ ->
           false
     in
@@ -138,7 +138,7 @@ let mutable_local_vars_advice context an =
           let should_not_report_mutable_local =
             CAst_utils.is_syntactically_global_var decl
             || CAst_utils.is_static_local_var decl
-            || is_const || is_of_whitelisted_type qual_type || decl_info.di_is_implicit
+            || is_const || is_of_allow_listed_type qual_type || decl_info.di_is_implicit
             || context.CLintersContext.in_for_loop_declaration
             || CAst_utils.is_std_vector qual_type
             || CAst_utils.has_block_attribute decl

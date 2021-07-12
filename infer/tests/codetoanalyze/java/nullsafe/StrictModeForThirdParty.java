@@ -14,7 +14,7 @@ import some.test.pckg.ThirdPartyTestClass;
 
 /**
  * In this test, we test how Strict mode works for calls of 3rd party libraries, and how detection
- * differs based on if the function is whitelisted or not in 3rd party signatures repository.
+ * differs based on if the function is allow listed or not in 3rd party signatures repository.
  */
 @NullsafeStrict
 public class StrictModeForThirdParty {
@@ -36,7 +36,7 @@ public class StrictModeForThirdParty {
   // Return values.
   // In strict mode, return values should be pessimistically treated as nullable
   // if the function is unspecified, and treated according to their return annotation if
-  // the function is whitelisted in the 3rd party repo.
+  // the function is allow listed in the 3rd party repo.
 
   public void dereferenceUnspecifiedIsBAD() {
     obj.returnUnspecified().toString();
@@ -57,7 +57,7 @@ public class StrictModeForThirdParty {
   // Params.
   // In strict mode, params should be pessimistically treated as non-nullable if the function is
   // unspecified,
-  // and treated based on their annotation if the function is whitelisted in the 3rd party repo.
+  // and treated based on their annotation if the function is allow listed in the 3rd party repo.
 
   public void passingNullableParamToUnspecifiedIsBAD() {
     obj.paramUnspecified(getNullable());
@@ -72,7 +72,7 @@ public class StrictModeForThirdParty {
   }
 
   public void passingNullableToParamSpecifiedAsNullableIsOK() {
-    // first param is explicitly whitelisted as specified as nullable, so everything is OK
+    // first param is explicitly allow listed as specified as nullable, so everything is OK
     obj.secondParamSpecifiedAsNonnull(getNullable(), getNonnull());
   }
 

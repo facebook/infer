@@ -27,8 +27,8 @@ OPTIONS
            `<issue_type_regex>:<filename_regex>:<reason_string>`. The first
            two components are OCaml Str regular expressions, with an optional
            `!` character prefix. If a regex has a `!` prefix, the polarity is
-           inverted, and the filter becomes a "blacklist" instead of a
-           "whitelist". Each filter is interpreted as an implication: an
+           inverted, and the filter becomes a "block list" instead of a
+           "allow list". Each filter is interpreted as an implication: an
            issue matches if it does not match the `issue_type_regex` or if it
            does match the `filename_regex`. The filenames that are tested by
            the regex are relative to the `--project-root` directory. The
@@ -279,7 +279,7 @@ OPTIONS
            off.
 
        --no-filtering,-F
-           Deactivates: Do not show the experimental and blacklisted issue
+           Deactivates: Do not show the experimental and block listed issue
            types (Conversely: --filtering | -f)
 
        --from-json-config-impact-report config-impact-report.json
@@ -324,13 +324,18 @@ OPTIONS
            Activates: Do not print anything on standard output. (Conversely:
            --no-quiet | -Q)
 
-       --report-blacklist-files-containing +string
+       --report-allow-list-path-regex +path_regex
+           Report issues only on files whose relative path matches the
+           specified OCaml regex (and which do not match
+           --report-block-list-path-regex)
+
+       --report-block-list-files-containing +string
            Do not report any issues on files containing the specified string
 
-       --report-blacklist-path-regex +path_regex
+       --report-block-list-path-regex +path_regex
            Do not report any issues on files whose relative path matches the
-           specified OCaml regex, even if they match the whitelist specified
-           by --report-whitelist-path-regex
+           specified OCaml regex, even if they match the allow list specified
+           by --report-allow-list-path-regex
 
        --report-console-limit int
            Maximum number of issues to display on standard output. Unset with
@@ -341,11 +346,6 @@ OPTIONS
 
        --report-suppress-errors +error_name
            do not report a type of errors
-
-       --report-whitelist-path-regex +path_regex
-           Report issues only on files whose relative path matches the
-           specified OCaml regex (and which do not match
-           --report-blacklist-path-regex)
 
        --results-dir,-o dir
            Write results and internal files in the specified directory

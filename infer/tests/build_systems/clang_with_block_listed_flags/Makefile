@@ -11,7 +11,7 @@ TESTS_DIR = ../..
 # leads to an error. This weird case can be observed when -index-store-path is
 # passed in a sequence like the one in CLANG_OPTIONS.
 CLANG_OPTIONS = -x c -index-store-path . -c -fsanitize=builtin -fsanitize=address,builtin -bogus=arg
-INFER_OPTIONS = --report-custom-error --developer-mode --project-root ../codetoanalyze --clang-blacklisted-flags-with-arg -bogus
+INFER_OPTIONS = --report-custom-error --developer-mode --project-root ../codetoanalyze --clang-block-listed-flags-with-arg -bogus
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = ../codetoanalyze/hello.c

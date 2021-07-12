@@ -255,7 +255,7 @@ let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals callee
         Str.string_match regex (Procname.to_string callee_pname) 0 )
   in
   if should_keep_at_most_one_disjunct then
-    L.d_printfln "Will keep at most one disjunct because %a is in blacklist" Procname.pp
+    L.d_printfln "Will keep at most one disjunct because %a is in block list" Procname.pp
       callee_pname ;
   (* call {!AbductiveDomain.PrePost.apply} on each pre/post pair in the summary. *)
   List.fold ~init:[] exec_states ~f:(fun posts callee_exec_state ->

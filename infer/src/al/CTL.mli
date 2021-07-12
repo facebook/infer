@@ -30,7 +30,7 @@ type clause =
   | CLet of ALVar.formula_id * ALVar.t list * CTLTypes.t  (** Let clause: let id = definifion; *)
   | CSet of ALVar.keyword * CTLTypes.t  (** Set clause: set id = definition *)
   | CDesc of ALVar.keyword * string  (** Description clause eg: set message = "..." *)
-  | CPath of [`WhitelistPath | `BlacklistPath] * ALVar.t list
+  | CPath of [`AllowListPath | `BlockListPath] * ALVar.t list
 
 type ctl_checker =
   {id: string  (** Checker's id *); definitions: clause list  (** A list of let/set definitions *)}

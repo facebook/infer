@@ -12,10 +12,10 @@ module L = Logging
 module GlobalVar = SiofTrace.GlobalVar
 module GlobalVarSet = SiofTrace.GlobalVarSet
 
-let methods_whitelist = QualifiedCppName.Match.of_fuzzy_qual_names Config.siof_safe_methods
+let methods_allow_list = QualifiedCppName.Match.of_fuzzy_qual_names Config.siof_safe_methods
 
-let is_whitelisted (pname : Procname.t) =
-  Procname.get_qualifiers pname |> QualifiedCppName.Match.match_qualifiers methods_whitelist
+let is_allow_listed (pname : Procname.t) =
+  Procname.get_qualifiers pname |> QualifiedCppName.Match.match_qualifiers methods_allow_list
 
 
 type siof_model =
@@ -148,7 +148,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Store {e2= exp; loc} (* except in the case above, consider all reads as dangerous *)
     | Prune (exp, loc, _, _) ->
         get_globals analysis_data exp |> add_globals astate loc
-    | Call (_, Const (Cfun callee_pname), _, _, _) when is_whitelisted callee_pname ->
+    | Call (_, Const (Cfun callee_pname), _, _, _) when is_allow_listed callee_pname ->
         at_least_nonbottom astate
     | Call (_, Const (Cfun callee_pname), _, _, _) when is_modelled callee_pname ->
         let init =

@@ -25,7 +25,7 @@ BUILD_SYSTEMS_TESTS += \
   clang_multiple_files \
   clang_translation \
   clang_unknown_ext \
-  clang_with_blacklisted_flags \
+  clang_with_block_listed_flags \
   clang_with_E_flag \
   clang_with_M_flag \
   clang_with_MD_flag \
@@ -77,7 +77,7 @@ DIRECT_TESTS += \
 
 ifneq ($(BUCK),no)
 BUILD_SYSTEMS_TESTS += \
-  buck_blacklist \
+  buck_block_list \
   buck-clang-db \
   buck_clang_test_determinator \
   buck_flavors \

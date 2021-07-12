@@ -43,7 +43,7 @@ SomeConstexprObject& getGlobalConstexpr() {
   return SomeConstexprObject::singletonMethod();
 }
 
-namespace whitelisted {
+namespace allow_listed {
 
 SomeNonPODObject& getGlobalNonPOD() {
   some_other_global_object2.some_method();
@@ -58,7 +58,7 @@ SomeNonPODObject& TemplatedObject<T>::getGlobalNonPOD() {
 
 // instantiate template so that infer analyses it
 template struct TemplatedObject<int>;
-} // namespace whitelisted
+} // namespace allow_listed
 
 // initialize static class field
 template <typename T>

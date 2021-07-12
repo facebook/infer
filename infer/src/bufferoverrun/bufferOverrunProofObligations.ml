@@ -491,10 +491,10 @@ module BinaryOperationCondition = struct
 
 
   let is_deliberate_integer_overflow =
-    let whitelist = ["hash"; "lfsr"; "prng"; "rand"; "seed"] in
+    let allow_list = ["hash"; "lfsr"; "prng"; "rand"; "seed"] in
     let f x =
       let x = String.lowercase x in
-      List.exists whitelist ~f:(fun whitelist -> String.is_substring x ~substring:whitelist)
+      List.exists allow_list ~f:(fun allow_list -> String.is_substring x ~substring:allow_list)
     in
     fun {typ; lhs; rhs; pname} ct ->
       Typ.ikind_is_unsigned typ

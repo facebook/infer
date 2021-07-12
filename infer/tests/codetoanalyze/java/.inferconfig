@@ -11,7 +11,7 @@
       "method": "get"
     }
   ],
-  "report-blacklist-files-containing": [
+  "report-block-list-files-containing": [
     "@generated"
   ],
   "enable-issue-type": [

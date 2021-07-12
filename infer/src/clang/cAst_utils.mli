@@ -111,12 +111,13 @@ val get_super_ObjCImplementationDecl :
   Clang_ast_t.obj_c_implementation_decl_info -> Clang_ast_t.decl option
 (** Given an objc impl decl info, return its super class implementation decl *)
 
-val is_objc_if_descendant : ?blacklist:string list -> Clang_ast_t.decl option -> string list -> bool
+val is_objc_if_descendant :
+  ?block_list:string list -> Clang_ast_t.decl option -> string list -> bool
 (** Recursively go up the inheritance hierarchy of a given ObjCInterfaceDecl. Returns true if the
     passed in decl is an objc interface decl that's an eventual descendant of one of the classes
     passed in. Ancestors param is a list of strings that represent the class names. Will
     short-circuit on NSObject and NSProxy since those are known to be common base classes. The list
-    of classes to short-circuit on can be overridden via specifying the named `blacklist` argument. *)
+    of classes to short-circuit on can be overridden via specifying the named `block_list` argument. *)
 
 val qual_type_to_objc_interface : Clang_ast_t.qual_type -> Clang_ast_t.decl option
 

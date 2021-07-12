@@ -250,7 +250,7 @@ let is_functional pname =
       match (Procname.Java.get_class_name java_pname, Procname.Java.get_method java_pname) with
       | "android.content.res.Resources", method_name ->
           (* all methods of Resources are considered @Functional except for the ones in this
-             blacklist *)
+             block list *)
           let non_functional_resource_methods =
             [ "getAssets"
             ; "getConfiguration"

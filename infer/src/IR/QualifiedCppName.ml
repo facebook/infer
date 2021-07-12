@@ -115,7 +115,7 @@ module Match = struct
 
 
   let match_qualifiers matcher quals =
-    (* qual_name may have qualifiers with template parameters - drop them to whitelist all
+    (* qual_name may have qualifiers with template parameters - drop them to allow all
        instantiations *)
     let normalized_qualifiers = strip_template_args quals in
     Str.string_match matcher (to_separated_string ~sep:matching_separator normalized_qualifiers) 0

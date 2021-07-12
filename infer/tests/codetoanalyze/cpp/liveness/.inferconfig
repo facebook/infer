@@ -1,7 +1,7 @@
 {
   "liveness-ignored-constant" : ["44"],
   "liveness-dangerous-classes": [
-    "dead_stores::BlacklistedStruct"
+    "dead_stores::BlockListedStruct"
   ],
   "cxx-scope-guards": [
     "infer::ScopeGuard"

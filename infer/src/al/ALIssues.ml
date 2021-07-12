@@ -13,8 +13,8 @@ module MF = MarkupFormatter
 type linter =
   { condition: CTLTypes.t
   ; issue_desc: CIssue.t
-  ; whitelist_paths: ALVar.t list
-  ; blacklist_paths: ALVar.t list }
+  ; allow_list_paths: ALVar.t list
+  ; block_list_paths: ALVar.t list }
 
 (* If in linter developer mode and if current linter was passed, filter it out *)
 let filter_parsed_linters_developer parsed_linters =
@@ -40,11 +40,13 @@ let filter_parsed_linters_by_path parsed_linters source_file =
         ~f:(fun path -> ALVar.compare_str_with_alexp (SourceFile.to_rel_path source_file) path)
         paths
     in
-    let whitelist_ok = List.is_empty linter.whitelist_paths || should_lint linter.whitelist_paths in
-    let blacklist_ok =
-      List.is_empty linter.blacklist_paths || not (should_lint linter.blacklist_paths)
+    let allow_list_ok =
+      List.is_empty linter.allow_list_paths || should_lint linter.allow_list_paths
     in
-    whitelist_ok && blacklist_ok
+    let block_list_ok =
+      List.is_empty linter.block_list_paths || not (should_lint linter.block_list_paths)
+    in
+    allow_list_ok && block_list_ok
   in
   List.filter ~f:filter_parsed_linter_by_path parsed_linters
 
@@ -206,7 +208,7 @@ let create_parsed_linters linters_def_file checkers : linter list =
       ; severity= Warning
       ; mode= On }
     in
-    let issue_desc, condition, whitelist_paths, blacklist_paths =
+    let issue_desc, condition, allow_list_paths, block_list_paths =
       let process_linter_definitions (issue, cond, wl_paths, bl_paths) description =
         match description with
         | CSet (av, phi) when ALVar.is_report_when_keyword av ->
@@ -223,9 +225,9 @@ let create_parsed_linters linters_def_file checkers : linter list =
             ({issue with issue_type_doc_url= Some doc}, cond, wl_paths, bl_paths)
         | CDesc (av, name) when ALVar.is_name_keyword av ->
             ({issue with issue_type_name= Some name}, cond, wl_paths, bl_paths)
-        | CPath (`WhitelistPath, paths) ->
+        | CPath (`AllowListPath, paths) ->
             (issue, cond, paths, bl_paths)
-        | CPath (`BlacklistPath, paths) ->
+        | CPath (`BlockListPath, paths) ->
             (issue, cond, wl_paths, paths)
         | _ ->
             (issue, cond, wl_paths, bl_paths)
@@ -254,7 +256,7 @@ let create_parsed_linters linters_def_file checkers : linter list =
       ; suggestion= issue_desc.suggestion }
     in
     L.debug Linters Medium "@\nIssue_desc = %a@\n" CIssue.pp issue_desc ;
-    {condition; issue_desc; whitelist_paths; blacklist_paths}
+    {condition; issue_desc; allow_list_paths; block_list_paths}
   in
   List.map ~f:do_one_checker checkers
 
@@ -445,9 +447,9 @@ let expand_checkers macro_map path_map checkers =
           | CSet (report_when_const, phi) ->
               L.(debug Linters Medium) "  -Expanding report_when@\n" ;
               CSet (report_when_const, expand_formula phi map "") :: defs
-          | CPath (black_or_white_list, paths) ->
+          | CPath (block_or_allow_list, paths) ->
               L.(debug Linters Medium) "  -Expanding path@\n" ;
-              CPath (black_or_white_list, expand_path paths path_map) :: defs
+              CPath (block_or_allow_list, expand_path paths path_map) :: defs
           | cl ->
               cl :: defs )
         ~init:[] c.definitions

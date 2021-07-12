@@ -379,19 +379,19 @@ let get_impl_decl_info dec =
   match dec with Clang_ast_t.ObjCImplementationDecl (_, _, _, _, idi) -> Some idi | _ -> None
 
 
-let default_blacklist = CFrontend_config.[nsobject_cl; nsproxy_cl]
+let default_block_list = CFrontend_config.[nsobject_cl; nsproxy_cl]
 
-let rec is_objc_if_descendant ?(blacklist = default_blacklist) if_decl ancestors =
+let rec is_objc_if_descendant ?(block_list = default_block_list) if_decl ancestors =
   (* List of ancestors to check for and list of classes to short-circuit to
      false can't intersect *)
-  if not String.Set.(is_empty (inter (of_list blacklist) (of_list ancestors))) then
-    L.(die InternalError) "Blacklist and ancestors must be mutually exclusive."
+  if not String.Set.(is_empty (inter (of_list block_list) (of_list ancestors))) then
+    L.(die InternalError) "Block list and ancestors must be mutually exclusive."
   else
     match if_decl with
     | Some (Clang_ast_t.ObjCInterfaceDecl (_, ndi, _, _, _)) ->
         let in_list some_list = List.mem ~equal:String.equal some_list ndi.Clang_ast_t.ni_name in
-        (not (in_list blacklist))
-        && (in_list ancestors || is_objc_if_descendant ~blacklist (get_super_if if_decl) ancestors)
+        (not (in_list block_list))
+        && (in_list ancestors || is_objc_if_descendant ~block_list (get_super_if if_decl) ancestors)
     | _ ->
         false
 

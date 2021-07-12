@@ -1,7 +1,7 @@
 {
   "force-delete-results-dir": true,
-  "siof-safe-methods": ["getGlobalNonPODWhitelisted", "whitelisted::getGlobalNonPOD",
-                        "whitelisted::TemplatedObject::getGlobalNonPOD"],
+  "siof-safe-methods": ["getGlobalNonPODAllowListed", "allow_listed::getGlobalNonPOD",
+                        "allow_listed::TemplatedObject::getGlobalNonPOD"],
   "skip-translation": [
     {
       "language": "Java",

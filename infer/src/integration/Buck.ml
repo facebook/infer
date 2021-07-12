@@ -148,10 +148,12 @@ let config =
       | None ->
           [] )
     @
-    if List.is_empty Config.buck_blacklist then []
+    if List.is_empty Config.buck_block_list then []
     else
-      [ Printf.sprintf "*//infer.blacklist_regex=(%s)"
-          (String.concat ~sep:")|(" Config.buck_blacklist) ]
+      let regex = Printf.sprintf "(%s)" (String.concat ~sep:")|(" Config.buck_block_list) in
+      (* TODO: The latter option will be removed after buck handles the new option. *)
+      [ Printf.sprintf "*//infer.block_list_regex=%s" regex
+      ; Printf.sprintf "*//infer.blacklist_regex=%s" regex ]
   in
   fun buck_mode ->
     let args =
@@ -389,11 +391,11 @@ let inline_argument_files buck_args =
 let parse_command_and_targets (buck_mode : BuckMode.t) original_buck_args =
   let expanded_buck_args = inline_argument_files original_buck_args in
   let command, args = split_buck_command expanded_buck_args in
-  let buck_targets_blacklist_regexp =
-    if List.is_empty Config.buck_targets_blacklist then None
+  let buck_targets_block_list_regexp =
+    if List.is_empty Config.buck_targets_block_list then None
     else
       Some
-        (Str.regexp ("\\(" ^ String.concat ~sep:"\\)\\|\\(" Config.buck_targets_blacklist ^ "\\)"))
+        (Str.regexp ("\\(" ^ String.concat ~sep:"\\)\\|\\(" Config.buck_targets_block_list ^ "\\)"))
   in
   let rec parse_cmd_args parsed_args = function
     | [] ->
@@ -429,7 +431,7 @@ let parse_command_and_targets (buck_mode : BuckMode.t) original_buck_args =
   let targets =
     Option.value_map ~default:targets
       ~f:(fun re -> List.filter ~f:(fun tgt -> not (Str.string_match re tgt 0)) targets)
-      buck_targets_blacklist_regexp
+      buck_targets_block_list_regexp
   in
   ScubaLogging.log_count ~label:"buck_targets" ~value:(List.length targets) ;
   (command, parsed_args.rev_not_targets', targets)
@@ -438,7 +440,7 @@ let parse_command_and_targets (buck_mode : BuckMode.t) original_buck_args =
 let filter_compatible subcommand args =
   match subcommand with
   | `Targets ->
-      let blacklist = "--keep-going" in
-      List.filter args ~f:(fun arg -> not (String.equal blacklist arg))
+      let block_list = "--keep-going" in
+      List.filter args ~f:(fun arg -> not (String.equal block_list arg))
   | _ ->
       args

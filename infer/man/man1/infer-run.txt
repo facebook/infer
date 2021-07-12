@@ -28,8 +28,8 @@ OPTIONS
            `<issue_type_regex>:<filename_regex>:<reason_string>`. The first
            two components are OCaml Str regular expressions, with an optional
            `!` character prefix. If a regex has a `!` prefix, the polarity is
-           inverted, and the filter becomes a "blacklist" instead of a
-           "whitelist". Each filter is interpreted as an implication: an
+           inverted, and the filter becomes a "block list" instead of a
+           "allow list". Each filter is interpreted as an implication: an
            issue matches if it does not match the `issue_type_regex` or if it
            does match the `filename_regex`. The filenames that are tested by
            the regex are relative to the `--project-root` directory. The
@@ -106,13 +106,18 @@ OPTIONS
            Deactivates: Run the reporting phase once the analysis has
            completed (Conversely: --report)
 
-       --report-blacklist-files-containing +string
+       --report-allow-list-path-regex +path_regex
+           Report issues only on files whose relative path matches the
+           specified OCaml regex (and which do not match
+           --report-block-list-path-regex)
+
+       --report-block-list-files-containing +string
            Do not report any issues on files containing the specified string
 
-       --report-blacklist-path-regex +path_regex
+       --report-block-list-path-regex +path_regex
            Do not report any issues on files whose relative path matches the
-           specified OCaml regex, even if they match the whitelist specified
-           by --report-whitelist-path-regex
+           specified OCaml regex, even if they match the allow list specified
+           by --report-allow-list-path-regex
 
        --report-force-relative-path
            Activates: Force converting an absolute path to a relative path to
@@ -120,11 +125,6 @@ OPTIONS
 
        --report-suppress-errors +error_name
            do not report a type of errors
-
-       --report-whitelist-path-regex +path_regex
-           Report issues only on files whose relative path matches the
-           specified OCaml regex (and which do not match
-           --report-blacklist-path-regex)
 
        --results-dir,-o dir
            Write results and internal files in the specified directory
@@ -153,15 +153,15 @@ OPTIONS
        --  Stop argument processing, use remaining arguments as a build
            command
 BUCK OPTIONS
-       --buck-blacklist +regex
+       --buck-block-list +regex
            Skip capture of files matched by the specified regular expression.
            Only the clang, non-compilation-database                Buck integration is supported, not Java.
 
-       --buck-targets-blacklist +regex
+       --buck-targets-block-list +regex
            Skip capture of buck targets matched by the specified regular
            expression. Only valid for --buck-compilation-database.
 JAVA OPTIONS
-       --capture-blacklist regex
+       --capture-block-list regex
            Skip capture of files matched by the specified OCaml regular
            expression (only supported by the javac integration for now).
 

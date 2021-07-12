@@ -318,7 +318,7 @@ DEFINE-CHECKER FILTER_BY_PATH_EXAMPLE = {
      WHEN declaration_has_name("main")
      HOLDS-IN-NODE FunctionDecl;
   SET message = "Found main method";
-  SET whitelist_path = { filtered_files, "A.m" };
+  SET allow_list_path = { filtered_files, "A.m" };
 };
 
 DEFINE-CHECKER ALL_PATH_NO_FILTER_EXAMPLE = {
@@ -333,24 +333,24 @@ DEFINE-CHECKER FILTER_BY_ALL_PATH_EXAMPLE = {
      WHEN declaration_has_name("main")
      HOLDS-IN-NODE FunctionDecl;
   SET message = "Found main method";
-  SET whitelist_path = { REGEXP(".*") };
+  SET allow_list_path = { REGEXP(".*") };
 };
 
-DEFINE-CHECKER BLACKLIST_PATH_EXAMPLE = {
+DEFINE-CHECKER BLOCK_LIST_PATH_EXAMPLE = {
   SET report_when =
      WHEN declaration_has_name("main")
      HOLDS-IN-NODE FunctionDecl;
   SET message = "Found main method";
-  SET blacklist_path = { REGEXP("codetoanalyze/objc/linters-for-test-only/filter_by_path/.*") };
+  SET block_list_path = { REGEXP("codetoanalyze/objc/linters-for-test-only/filter_by_path/.*") };
 };
 
-DEFINE-CHECKER WHITE_BLACKLIST_PATH_EXAMPLE = {
+DEFINE-CHECKER ALLOW_BLOCK_LIST_PATH_EXAMPLE = {
   SET report_when =
      WHEN declaration_has_name("main")
      HOLDS-IN-NODE FunctionDecl;
   SET message = "Found main method";
-  SET whitelist_path = { all_files };
-  SET blacklist_path = { filtered_files };
+  SET allow_list_path = { all_files };
+  SET block_list_path = { filtered_files };
   SET doc_url = "www.example.com";
 };
 

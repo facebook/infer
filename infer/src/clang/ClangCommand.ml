@@ -79,12 +79,12 @@ let filter_and_replace_unsupported_args ?(replace_options_arg = fun _ s -> s) ?(
     ?(pre_args = []) args =
   (* [prev] is the previously seen argument, [res_rev] is the reversed result, [changed] is true if
      some change has been performed *)
-  let rec aux in_argfiles (prev_is_blacklisted_with_arg, res_rev, changed) args =
+  let rec aux in_argfiles (prev_is_block_listed_with_arg, res_rev, changed) args =
     match args with
     | [] ->
-        (prev_is_blacklisted_with_arg, res_rev, changed)
-    | _ :: tl when prev_is_blacklisted_with_arg ->
-        (* in the unlikely event that a blacklisted flag with arg sits as the last option in some
+        (prev_is_block_listed_with_arg, res_rev, changed)
+    | _ :: tl when prev_is_block_listed_with_arg ->
+        (* in the unlikely event that a block listed flag with arg sits as the last option in some
            arg file, we need to remove its argument now *)
         aux in_argfiles (false, res_rev, true) tl
     | at_argfile :: tl
@@ -100,29 +100,29 @@ let filter_and_replace_unsupported_args ?(replace_options_arg = fun _ s -> s) ?(
               String.strip s
               |> Utils.strip_balanced_once ~drop:(function '"' | '\'' -> true | _ -> false)
             in
-            let last_in_file_is_blacklisted, rev_res_with_file_args, changed_file =
+            let last_in_file_is_block_listed, rev_res_with_file_args, changed_file =
               List.map ~f:strip lines
-              |> aux in_argfiles' (prev_is_blacklisted_with_arg, res_rev, false)
+              |> aux in_argfiles' (prev_is_block_listed_with_arg, res_rev, false)
             in
             if changed_file then
-              aux in_argfiles' (last_in_file_is_blacklisted, rev_res_with_file_args, true) tl
+              aux in_argfiles' (last_in_file_is_block_listed, rev_res_with_file_args, true) tl
             else
               (* keep the same argfile if we haven't needed to change anything in it *)
-              aux in_argfiles' (last_in_file_is_blacklisted, at_argfile :: res_rev, changed) tl
+              aux in_argfiles' (last_in_file_is_block_listed, at_argfile :: res_rev, changed) tl
         | exception e ->
             L.external_warning "Error reading argument file '%s': %s@\n" at_argfile
               (Exn.to_string e) ;
             aux in_argfiles' (false, at_argfile :: res_rev, changed) tl )
     | flag :: tl
-      when List.mem ~equal:String.equal Config.clang_blacklisted_flags flag
+      when List.mem ~equal:String.equal Config.clang_block_listed_flags flag
            || String.lsplit2 ~on:'=' flag
               |> function
               | Some (flag, _arg) ->
-                  List.mem ~equal:String.equal Config.clang_blacklisted_flags_with_arg flag
+                  List.mem ~equal:String.equal Config.clang_block_listed_flags_with_arg flag
               | None ->
                   false ->
         aux in_argfiles (false, res_rev, true) tl
-    | flag :: tl when List.mem ~equal:String.equal Config.clang_blacklisted_flags_with_arg flag ->
+    | flag :: tl when List.mem ~equal:String.equal Config.clang_block_listed_flags_with_arg flag ->
         (* remove the flag and its arg separately in case we are at the end of an argfile *)
         aux in_argfiles (true, res_rev, true) tl
     | arg :: tl ->

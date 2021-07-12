@@ -635,25 +635,25 @@ int decltype_read_ok(int x) {
   return x + i;
 }
 
-// destructor blacklisted for liveness in .inferconfig
-struct BlacklistedStruct {
-  ~BlacklistedStruct(){};
+// destructor block listed for liveness in .inferconfig
+struct BlockListedStruct {
+  ~BlockListedStruct(){};
 
-  BlacklistedStruct cloneAsValue() const { return BlacklistedStruct(); }
+  BlockListedStruct cloneAsValue() const { return BlockListedStruct(); }
 
-  std::unique_ptr<BlacklistedStruct> clone() const {
-    return std::make_unique<BlacklistedStruct>(cloneAsValue());
+  std::unique_ptr<BlockListedStruct> clone() const {
+    return std::make_unique<BlockListedStruct>(cloneAsValue());
   }
 };
 
-void unused_blacklisted_constructed_bad() { auto x = BlacklistedStruct(); }
+void unused_block_listed_constructed_bad() { auto x = BlockListedStruct(); }
 
-void unused_blacklisted_clone_bad(BlacklistedStruct* something) {
+void unused_block_listed_clone_bad(BlockListedStruct* something) {
   auto x = something->clone();
 }
 
-void unused_blacklisted_unique_ptr_bad(BlacklistedStruct* something) {
-  auto x = std::make_unique<BlacklistedStruct>(*something);
+void unused_block_listed_unique_ptr_bad(BlockListedStruct* something) {
+  auto x = std::make_unique<BlockListedStruct>(*something);
 }
 
 void unused_unique_ptr_good(A* something) {

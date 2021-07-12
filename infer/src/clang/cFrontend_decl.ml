@@ -297,14 +297,16 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
 
 
   (** Given REVERSED list of method qualifiers (method_name::class_name::rest_quals), return whether
-      method should be translated based on method and class whitelists *)
-  let is_whitelisted_cpp_method =
+      method should be translated based on method and class allow lists *)
+  let is_allow_listed_cpp_method =
     let method_matcher =
-      QualifiedCppName.Match.of_fuzzy_qual_names Config.whitelisted_cpp_methods
+      QualifiedCppName.Match.of_fuzzy_qual_names Config.allow_listed_cpp_methods
     in
-    let class_matcher = QualifiedCppName.Match.of_fuzzy_qual_names Config.whitelisted_cpp_classes in
+    let class_matcher =
+      QualifiedCppName.Match.of_fuzzy_qual_names Config.allow_listed_cpp_classes
+    in
     fun qual_name ->
-      (* either the method is explictely whitelisted, or the whole class is whitelisted *)
+      (* either the method is explictely allow listed, or the whole class is allow listed *)
       QualifiedCppName.Match.match_qualifiers method_matcher qual_name
       ||
       match QualifiedCppName.extract_last qual_name with
@@ -325,7 +327,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
       | CXXConstructorDecl (_, name_info, _, _, _)
       | CXXConversionDecl (_, name_info, _, _, _)
       | CXXDestructorDecl (_, name_info, _, _, _) ->
-          is_whitelisted_cpp_method (CAst_utils.get_qualified_name name_info)
+          is_allow_listed_cpp_method (CAst_utils.get_qualified_name name_info)
       | _ ->
           false
     in

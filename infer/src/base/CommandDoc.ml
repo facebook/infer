@@ -293,7 +293,7 @@ $(b,infer) $(i,[options])|}
       ; `Pre
           {|  {
     "cxx": false,
-    "infer-blacklist-files-containing": ["@gen","/* no infer */"]
+    "infer-block-list-files-containing": ["@gen","/* no infer */"]
   }|}
       ]
     ~see_also:InferCommand.all_commands "infer"

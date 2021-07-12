@@ -206,9 +206,9 @@ let unsafe_unret = "<\"Unsafe_unretained\">"
 
 let weak = "<\"Weak\">"
 
-(* Whitelists for C++ library functions *)
+(* Allow lists for C++ library functions *)
 
-let std_whitelisted_cpp_methods =
+let std_allow_listed_cpp_methods =
   [ "std::back_inserter"
   ; "std::forward"
   ; "std::front_inserter"
@@ -228,7 +228,7 @@ let std_whitelisted_cpp_methods =
   ; "std::swap" ]
 
 
-let libstdcxx_whitelisted_cpp_methods =
+let libstdcxx_allow_listed_cpp_methods =
   [ "__gnu_cxx::operator!="
   ; "__gnu_cxx::operator<"
   ; "__gnu_cxx::operator<="
@@ -239,21 +239,21 @@ let libstdcxx_whitelisted_cpp_methods =
   ; "__gnu_cxx::operator-" ]
 
 
-let libcxx_whitelisted_cpp_methods = []
+let libcxx_allow_listed_cpp_methods = []
 
-let other_whitelisted_cpp_methods = ["google::CheckNotNull"]
+let other_allow_listed_cpp_methods = ["google::CheckNotNull"]
 
-let whitelisted_cpp_methods =
+let allow_listed_cpp_methods =
   List.concat
-    [ std_whitelisted_cpp_methods
-    ; libstdcxx_whitelisted_cpp_methods
-    ; libcxx_whitelisted_cpp_methods
-    ; other_whitelisted_cpp_methods ]
+    [ std_allow_listed_cpp_methods
+    ; libstdcxx_allow_listed_cpp_methods
+    ; libcxx_allow_listed_cpp_methods
+    ; other_allow_listed_cpp_methods ]
 
 
-(* Whitelists for C++ library classes *)
+(* Allow lists for C++ library classes *)
 
-let std_whitelisted_cpp_classes =
+let std_allow_listed_cpp_classes =
   [ "std::back_insert_iterator"
   ; "std::equal_to"
   ; "std::front_insert_iterator"
@@ -271,27 +271,27 @@ let std_whitelisted_cpp_classes =
   ; "std::__shared_ptr_access" ]
 
 
-let libstdcxx_whitelisted_cpp_classes =
+let libstdcxx_allow_listed_cpp_classes =
   (* libstdc++ internal support class for std::get<std::pair> *)
   [ "__gnu_cxx::__normal_iterator" (* libstdc++ internal name of vector iterator *)
   ; "std::__pair_get" ]
 
 
-let libcxx_whitelisted_cpp_classes =
+let libcxx_allow_listed_cpp_classes =
   (* libc++ internal support class for std::get<std::pair> *)
   [ "std::__less"
   ; "std::__wrap_iter" (* libc++ internal name of vector iterator *)
   ; "std::__get_pair" ]
 
 
-let other_whitelisted_cpp_classes = []
+let other_allow_listed_cpp_classes = []
 
-let whitelisted_cpp_classes =
+let allow_listed_cpp_classes =
   List.concat
-    [ std_whitelisted_cpp_classes
-    ; libstdcxx_whitelisted_cpp_classes
-    ; libcxx_whitelisted_cpp_classes
-    ; other_whitelisted_cpp_classes ]
+    [ std_allow_listed_cpp_classes
+    ; libstdcxx_allow_listed_cpp_classes
+    ; libcxx_allow_listed_cpp_classes
+    ; other_allow_listed_cpp_classes ]
 
 
 let pp_version fmt () =
@@ -766,10 +766,10 @@ and bootclasspath =
 (** Automatically set when running from within Buck *)
 and buck = CLOpt.mk_bool ~long:"buck" ""
 
-and buck_blacklist =
+and buck_block_list =
   CLOpt.mk_string_list
-    ~deprecated:["-blacklist-regex"; "-blacklist"]
-    ~long:"buck-blacklist"
+    ~deprecated:["-blacklist-regex"; "-blacklist"; "-buck-blacklist"]
+    ~long:"buck-block-list"
     ~in_help:InferCommand.[(Run, manual_buck); (Capture, manual_buck)]
     ~meta:"regex"
     "Skip capture of files matched by the specified regular expression. Only the clang, \
@@ -860,8 +860,8 @@ and _buck_out =
     "[DOES NOTHING] Specify the root directory of buck-out. Only valid for $(b,--buck-java)."
 
 
-and buck_targets_blacklist =
-  CLOpt.mk_string_list ~long:"buck-targets-blacklist"
+and buck_targets_block_list =
+  CLOpt.mk_string_list ~long:"buck-targets-block-list" ~deprecated:["-buck-targets-blacklist"]
     ~in_help:InferCommand.[(Run, manual_buck); (Capture, manual_buck)]
     ~meta:"regex"
     "Skip capture of buck targets matched by the specified regular expression. Only valid for \
@@ -873,8 +873,8 @@ and capture =
     "capture and translate source files into infer's intermediate language for analysis"
 
 
-and capture_blacklist =
-  CLOpt.mk_string_opt ~long:"capture-blacklist"
+and capture_block_list =
+  CLOpt.mk_string_opt ~long:"capture-block-list" ~deprecated:["-capture-blacklist"]
     ~in_help:InferCommand.[(Run, manual_java); (Capture, manual_java)]
     ~meta:"regex"
     "Skip capture of files matched by the specified OCaml regular expression (only supported by \
@@ -897,9 +897,9 @@ and censor_report =
      to each issue detected, and only issues which are accepted by all filters are reported. Each \
      filter is of the form: `<issue_type_regex>:<filename_regex>:<reason_string>`. The first two \
      components are OCaml Str regular expressions, with an optional `!` character prefix. If a \
-     regex has a `!` prefix, the polarity is inverted, and the filter becomes a \"blacklist\" \
-     instead of a \"whitelist\". Each filter is interpreted as an implication: an issue matches if \
-     it does not match the `issue_type_regex` or if it does match the `filename_regex`. The \
+     regex has a `!` prefix, the polarity is inverted, and the filter becomes a \"block list\" \
+     instead of a \"allow list\". Each filter is interpreted as an implication: an issue matches \
+     if it does not match the `issue_type_regex` or if it does match the `filename_regex`. The \
      filenames that are tested by the regex are relative to the `--project-root` directory. The \
      `<reason_string>` is a non-empty string used to explain why the issue was filtered."
 
@@ -938,8 +938,8 @@ and clang_extra_flags =
     "Pass values as command-line arguments to invocations of clang"
 
 
-and clang_blacklisted_flags =
-  CLOpt.mk_string_list ~long:"clang-blacklisted-flags"
+and clang_block_listed_flags =
+  CLOpt.mk_string_list ~long:"clang-block-listed-flags" ~deprecated:["-clang-blacklisted-flags"]
     ~default:
       [ "--expt-relaxed-constexpr"
       ; "-fembed-bitcode-marker"
@@ -949,8 +949,9 @@ and clang_blacklisted_flags =
     "Clang flags to filter out"
 
 
-and clang_blacklisted_flags_with_arg =
-  CLOpt.mk_string_list ~long:"clang-blacklisted-flags-with-arg"
+and clang_block_listed_flags_with_arg =
+  CLOpt.mk_string_list ~long:"clang-block-listed-flags-with-arg"
+    ~deprecated:["-clang-blacklisted-flags-with-arg"]
     ~default:["-index-store-path"; "-mllvm"]
     ~in_help:InferCommand.[(Capture, manual_clang)]
     "Clang flags (taking args) to filter out"
@@ -1180,7 +1181,7 @@ and ( biabduction_write_dotty
   and filtering =
     CLOpt.mk_bool ~deprecated_no:["nf"] ~long:"filtering" ~short:'f' ~default:true
       ~in_help:InferCommand.[(Report, manual_generic)]
-      "Do not show the experimental and blacklisted issue types"
+      "Do not show the experimental and block listed issue types"
   and only_cheap_debug =
     CLOpt.mk_bool ~long:"only-cheap-debug" ~default:true "Disable expensive debugging output"
   and print_buckets =
@@ -2228,33 +2229,35 @@ and report =
     "Run the reporting phase once the analysis has completed"
 
 
-and ( report_blacklist_files_containing
-    , report_path_regex_blacklist
-    , report_path_regex_whitelist
+and ( report_block_list_files_containing
+    , report_path_regex_block_list
+    , report_path_regex_allow_list
     , report_suppress_errors ) =
-  let mk_filtering_option ~suffix ~help ~meta =
+  let mk_filtering_option ~suffix ?(deprecated = []) ~help ~meta () =
     let deprecated =
       List.map ["checkers"; "infer"] ~f:(fun name -> Printf.sprintf "%s-%s" name suffix)
+      @ List.map deprecated ~f:(fun deprecated -> Printf.sprintf "-report-%s" deprecated)
     in
     let long = Printf.sprintf "report-%s" suffix in
     CLOpt.mk_string_list ~deprecated ~long ~meta
       ~in_help:InferCommand.[(Report, manual_generic); (Run, manual_generic)]
       help
   in
-  ( mk_filtering_option ~suffix:"blacklist-files-containing"
-      ~help:"Do not report any issues on files containing the specified string" ~meta:"string"
-  , mk_filtering_option ~suffix:"blacklist-path-regex"
+  ( mk_filtering_option ~suffix:"block-list-files-containing"
+      ~deprecated:["blacklist-files-containing"]
+      ~help:"Do not report any issues on files containing the specified string" ~meta:"string" ()
+  , mk_filtering_option ~suffix:"block-list-path-regex" ~deprecated:["blacklist-path-regex"]
       ~help:
         "Do not report any issues on files whose relative path matches the specified OCaml regex, \
-         even if they match the whitelist specified by $(b,--report-whitelist-path-regex)"
-      ~meta:"path_regex"
-  , mk_filtering_option ~suffix:"whitelist-path-regex"
+         even if they match the allow list specified by $(b,--report-allow-list-path-regex)"
+      ~meta:"path_regex" ()
+  , mk_filtering_option ~suffix:"allow-list-path-regex" ~deprecated:["whitelist-path-regex"]
       ~help:
         "Report issues only on files whose relative path matches the specified OCaml regex (and \
-         which do not match $(b,--report-blacklist-path-regex))"
-      ~meta:"path_regex"
+         which do not match $(b,--report-block-list-path-regex))"
+      ~meta:"path_regex" ()
   , mk_filtering_option ~suffix:"suppress-errors" ~help:"do not report a type of errors"
-      ~meta:"error_name" )
+      ~meta:"error_name" () )
 
 
 and report_console_limit =
@@ -2628,9 +2631,10 @@ and workspace =
      roots, all relative to a common workspace. Usually a single project root is enough, though."
 
 
-and write_html_whitelist_regex =
-  CLOpt.mk_string_list ~long:"write-html-whitelist-regex"
-    "Whitelist files that will have their html debug output printed when $(b,--html) is true."
+and write_html_allow_list_regex =
+  CLOpt.mk_string_list ~long:"write-html-allow-list-regex"
+    ~deprecated:["-write-html-whitelist-regex"]
+    "Allow list files that will have their html debug output printed when $(b,--html) is true."
 
 
 and write_website =
@@ -2927,7 +2931,7 @@ and bo_field_depth_limit = !bo_field_depth_limit
 
 and buck = !buck
 
-and buck_blacklist = RevList.to_list !buck_blacklist
+and buck_block_list = RevList.to_list !buck_block_list
 
 and buck_build_args = RevList.to_list !buck_build_args
 
@@ -2959,11 +2963,11 @@ and buck_mode : BuckMode.t option =
       Some JavaFlavor
 
 
-and buck_targets_blacklist = RevList.to_list !buck_targets_blacklist
+and buck_targets_block_list = RevList.to_list !buck_targets_block_list
 
 and capture = !capture
 
-and capture_blacklist = !capture_blacklist
+and capture_block_list = !capture_block_list
 
 and cfg_json = !cfg_json
 
@@ -3006,9 +3010,9 @@ and clang_compound_literal_init_limit = !clang_compound_literal_init_limit
 
 and clang_extra_flags = RevList.to_list !clang_extra_flags
 
-and clang_blacklisted_flags = RevList.to_list !clang_blacklisted_flags
+and clang_block_listed_flags = RevList.to_list !clang_block_listed_flags
 
-and clang_blacklisted_flags_with_arg = RevList.to_list !clang_blacklisted_flags_with_arg
+and clang_block_listed_flags_with_arg = RevList.to_list !clang_block_listed_flags_with_arg
 
 and clang_ignore_regex = !clang_ignore_regex
 
@@ -3409,7 +3413,7 @@ and remodel_class = !remodel_class
 
 and report = !report
 
-and report_blacklist_files_containing = RevList.to_list !report_blacklist_files_containing
+and report_block_list_files_containing = RevList.to_list !report_block_list_files_containing
 
 and report_console_limit = !report_console_limit
 
@@ -3421,9 +3425,9 @@ and report_force_relative_path = !report_force_relative_path
 
 and report_formatter = !report_formatter
 
-and report_path_regex_blacklist = RevList.to_list !report_path_regex_blacklist
+and report_path_regex_block_list = RevList.to_list !report_path_regex_block_list
 
-and report_path_regex_whitelist = RevList.to_list !report_path_regex_whitelist
+and report_path_regex_allow_list = RevList.to_list !report_path_regex_allow_list
 
 and report_previous = !report_previous
 
@@ -3560,7 +3564,7 @@ and workspace = !workspace
 
 and write_html = !write_html
 
-and write_html_whitelist_regex = RevList.to_list !write_html_whitelist_regex
+and write_html_allow_list_regex = RevList.to_list !write_html_allow_list_regex
 
 and write_website = !write_website
 

@@ -140,8 +140,8 @@ DEFINE-CHECKER id_of_the_checker = {
      SET doc_url = <optional URL to documentation of the issue>;
      SET severity = INFO | LIKE | ADVICE | WARNING | ERROR;
      SET mode = ON | OFF
-     SET whitelist_path = {path1, path2, ..., pathn };
-     SET blacklist_path = {path1, path2, ..., pathn };
+     SET allow_list_path = {path1, path2, ..., pathn };
+     SET block_list_path = {path1, path2, ..., pathn };
   };
 ```
 
@@ -153,7 +153,7 @@ for CI comments at the moment (in Phabricator).
 
 ## Defining Paths
 
-`whitelist_path` and `blacklist_path` are optional, by default the rule is
+`allow_list_path` and `block_list_path` are optional, by default the rule is
 enabled everywhere. For specifying paths, one can use either string constants
 (`"File.m"`) or regexes (`REGEXP("path/to/.*")`) or variables. The variables
 stand for a list of paths, and are defined in a separate block:

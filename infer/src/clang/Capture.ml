@@ -169,13 +169,13 @@ let cc1_capture clang_cmd =
   if
     InferCommand.equal Config.command Compile
     || (not Config.skip_analysis_in_path_skips_compilation)
-       && CLocation.is_file_blacklisted source_path
+       && CLocation.is_file_block_listed source_path
   then (
     L.(debug Capture Quiet) "@\n Skip the analysis of source file %s@\n@\n" source_path ;
     (* We still need to run clang, but we don't have to attach the plugin. *)
     run_clang clang_cmd Utils.consume_in )
   else if
-    Config.skip_analysis_in_path_skips_compilation && CLocation.is_file_blacklisted source_path
+    Config.skip_analysis_in_path_skips_compilation && CLocation.is_file_block_listed source_path
   then (
     L.(debug Capture Quiet) "@\n Skip compilation and analysis of source file %s@\n@\n" source_path ;
     () )
