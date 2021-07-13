@@ -22,6 +22,8 @@ codetoanalyze/erlang/nonmatch/src/function_guards.erl, possible_exception/1, 0, 
 codetoanalyze/erlang/nonmatch/src/function_guards.erl, test_accepts_positive2_Bad/0, -23, NONEXHAUSTIVE_PATTERN_MATCH, no_bucket, ERROR, [calling context starts here,in call to `accepts_positive2/1`,no pattern match here]
 codetoanalyze/erlang/nonmatch/src/function_guards.erl, test_accepts_positive_Bad/0, -19, NONEXHAUSTIVE_PATTERN_MATCH, no_bucket, ERROR, [calling context starts here,in call to `accepts_positive/1`,no pattern match here]
 codetoanalyze/erlang/nonmatch/src/function_guards.erl, test_possible_exception_Bad/0, -37, NONEXHAUSTIVE_PATTERN_MATCH, no_bucket, ERROR, [calling context starts here,in call to `possible_exception/1`,no pattern match here]
+codetoanalyze/erlang/nonmatch/src/if_expression.erl, accepts_positive/1, 1, NONEXHAUSTIVE_PATTERN_MATCH, no_bucket, ERROR, [*** LATENT ***,no pattern match here]
+codetoanalyze/erlang/nonmatch/src/if_expression.erl, test_accepts_positive_Bad/0, -13, NONEXHAUSTIVE_PATTERN_MATCH, no_bucket, ERROR, [calling context starts here,in call to `accepts_positive/1`,no pattern match here]
 codetoanalyze/erlang/nonmatch/src/match.erl, fp_match_test_c_Ok/0, 1, NONEXHAUSTIVE_PATTERN_MATCH, no_bucket, ERROR, [no pattern match here]
 codetoanalyze/erlang/nonmatch/src/match.erl, fp_match_test_d_Ok/0, -13, NONEXHAUSTIVE_PATTERN_MATCH, no_bucket, ERROR, [calling context starts here,in call to `tail/1`,no pattern match here]
 codetoanalyze/erlang/nonmatch/src/match.erl, match_test_b_Bad/0, 1, CONSTANT_ADDRESS_DEREFERENCE, no_bucket, WARNING, [in call to `two/0`,is the constant 2,assigned,returned,return from call to `two/0`,invalid access occurs here]

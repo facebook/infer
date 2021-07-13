@@ -461,6 +461,12 @@ and translate_expression env {Ast.line; simple_expression} =
           Sil.Call ((ret_var, any), fun_exp, args, env.location, CallFlags.default)
         in
         Block.all env [head_block; tail_block; Block.make_instruction env [call_instruction]]
+    | If clauses ->
+        let blocks = Block.any env (List.map ~f:(translate_case_clause env []) clauses) in
+        let crash_node = Node.make_pattern_fail env in
+        blocks.exit_failure |~~> [crash_node] ;
+        let blocks = {blocks with exit_failure= crash_node} in
+        blocks
     | Literal (Atom atom) ->
         let hash =
           (* With this hack, an atom may accidentaly be considered equal to an unrelated integer.
