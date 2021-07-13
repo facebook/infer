@@ -348,6 +348,38 @@ let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} : 
       Block.make_failure env
 
 
+and translate_guard_expression env (expression : Ast.expression) : Ident.t * Block.t =
+  let id = Ident.create_fresh Ident.knormal in
+  let block = translate_expression {env with result= Present (Exp.Var id)} expression in
+  (* If we'd like to catch "silent" errors later, we might do it here *)
+  (id, block)
+
+
+and translate_guard env (expressions : Ast.expression list) : Block.t =
+  match expressions with
+  | [] ->
+      Block.make_success env
+  | _ ->
+      let ids_blocks = List.map ~f:(translate_guard_expression env) expressions in
+      let ids, expr_blocks = List.unzip ids_blocks in
+      let make_and (e1 : Exp.t) (e2 : Exp.t) = Exp.BinOp (LAnd, e1, e2) in
+      let make_var (id : Ident.t) : Exp.t = Var id in
+      let cond = List.reduce_exn (List.map ids ~f:make_var) ~f:make_and in
+      let start = Node.make_nop env in
+      let exit_success = Node.make_if env true cond in
+      let exit_failure = Node.make_if env false cond in
+      start |~~> [exit_success; exit_failure] ;
+      Block.all env (expr_blocks @ [{Block.start; exit_success; exit_failure}])
+
+
+and translate_guard_sequence env (guards : Ast.expression list list) : Block.t =
+  match guards with
+  | [] ->
+      Block.make_success env
+  | _ ->
+      Block.any env (List.map ~f:(translate_guard env) guards)
+
+
 and translate_expression env {Ast.line; simple_expression} =
   let env = update_location line env in
   let any = ptr_typ_of_name Any in
@@ -504,22 +536,20 @@ and translate_body env body : Block.t =
 
 (** Assumes that the values on which patterns should be matched have been loaded into the
     identifiers listed in [values]. *)
-and translate_case_clause env (values : Ident.t list) {Ast.line= _; patterns; guards= _; body} :
+and translate_case_clause env (values : Ident.t list) {Ast.line= _; patterns; guards; body} :
     Block.t =
-  let matchers_block =
-    let f (one_value, one_pattern) = translate_pattern env one_value one_pattern in
-    let matchers = List.map ~f (List.zip_exn values patterns) in
-    Block.all env matchers
-  in
+  let f (one_value, one_pattern) = translate_pattern env one_value one_pattern in
+  let matchers = List.map ~f (List.zip_exn values patterns) in
+  let guard_block = translate_guard_sequence env guards in
+  let matchers_and_guards = Block.all env [Block.all env matchers; guard_block] in
   let body_block = translate_body env body in
-  (* TODO: Evaluate the guards. *)
-  matchers_block.exit_success |~~> [body_block.start] ;
+  matchers_and_guards.exit_success |~~> [body_block.start] ;
   let () =
     let (Present procdesc) = env.procdesc in
     body_block.exit_failure |~~> [Procdesc.get_exit_node procdesc]
   in
-  { start= matchers_block.start
-  ; exit_failure= matchers_block.exit_failure
+  { start= matchers_and_guards.start
+  ; exit_failure= matchers_and_guards.exit_failure
   ; exit_success= body_block.exit_success }
 
 
