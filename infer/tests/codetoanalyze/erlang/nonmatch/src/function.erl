@@ -12,8 +12,8 @@
     list_match_test_empty1_Ok/0,
     list_match_test_empty2_Bad/0,
     list_match_test_empty3_Bad/0,
-    fp_list_match_test_secondnil1_Ok/0,
-    fp_list_match_test_secondnil2_Ok/0,
+    list_match_test_secondnil1_Ok/0,
+    list_match_test_secondnil2_Ok/0,
     list_match_test_secondnil3_Bad/0
 ]).
 
@@ -35,11 +35,9 @@ list_match_test_empty2_Bad() ->
 list_match_test_empty3_Bad() ->
     assert_empty([1, 2]).
 
-% FP (T94492137)
-fp_list_match_test_secondnil1_Ok() ->
+list_match_test_secondnil1_Ok() ->
     assert_second_is_nil([1, [], 2]).
-% FP (T94492137)
-fp_list_match_test_secondnil2_Ok() ->
+list_match_test_secondnil2_Ok() ->
     assert_second_is_nil([1, []]).
 list_match_test_secondnil3_Bad() ->
     assert_second_is_nil([1, [2], 3]).

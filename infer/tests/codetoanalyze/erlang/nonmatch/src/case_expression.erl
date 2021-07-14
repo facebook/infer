@@ -22,7 +22,7 @@ case_simple(X) ->
 
 tail_with_case(X) ->
     case X of
-        [_|T] -> T
+        [_ | T] -> T
     end.
 
 case_test_simple1_Ok() ->

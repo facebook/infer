@@ -511,10 +511,6 @@ module Term = struct
 
   let map_subterms t ~f = fold_map_subterms t ~init:() ~f:(fun () t' -> ((), f t')) |> snd
 
-  let iter_subterms t ~f = Container.iter ~fold:fold_subterms t ~f
-
-  let exists_subterm t ~f = Container.exists ~iter:iter_subterms t ~f
-
   let rec fold_subst_variables t ~init ~f =
     match t with
     | Var v ->
@@ -888,6 +884,14 @@ module Atom = struct
 
   let fold_terms atom ~init ~f = fold_map_terms atom ~init ~f:(fun acc t -> (f acc t, t)) |> fst
 
+  let fold_subterms atom ~init ~f =
+    fold_terms atom ~init ~f:(fun acc t -> Term.fold_subterms t ~init:acc ~f)
+
+
+  let iter_subterms atom ~f = Container.iter ~fold:fold_subterms atom ~f
+
+  let exists_subterm atom ~f = Container.exists ~iter:iter_subterms atom ~f
+
   let equal t1 t2 = Equal (t1, t2)
 
   let less_equal t1 t2 = LessEqual (t1, t2)
@@ -907,6 +911,7 @@ module Atom = struct
 
   let map_terms atom ~f = fold_map_terms atom ~init:() ~f:(fun () t -> ((), f t)) |> snd
 
+  (* Preseves physical equality if [f] does. *)
   let map_subterms atom ~f = map_terms atom ~f:(fun t -> Term.map_subterms t ~f)
 
   let to_term : t -> Term.t = function
@@ -1185,7 +1190,7 @@ module Formula = struct
 
     val normalize_atom : t -> Atom.t -> Atom.t option SatUnsat.t
 
-    val normalize : t -> (t * new_eqs) SatUnsat.t
+    val normalize : t * new_eqs -> (t * new_eqs) SatUnsat.t
 
     val implies_atom : t -> Atom.t -> bool
 
@@ -1530,7 +1535,7 @@ module Formula = struct
 
     (* interface *)
 
-    let normalize phi = normalize_with_fuel ~fuel:base_fuel (phi, [])
+    let normalize phi_new_eqs = normalize_with_fuel ~fuel:base_fuel phi_new_eqs
 
     let and_atom atom phi_new_eqs = and_atom atom phi_new_eqs >>| snd
 
@@ -1632,47 +1637,54 @@ module DynamicTypes = struct
            Term.of_bool is_instanceof )
 
 
-  let simplify tenv ~get_dynamic_type phi =
-    let simplify_is_instance_of (t : Term.t) =
+  let really_simplify tenv ~get_dynamic_type phi =
+    let simplify_term (t : Term.t) =
       match t with
       | IsInstanceOf (v, typ) -> (
         match evaluate_instanceof tenv ~get_dynamic_type v typ with None -> t | Some t' -> t' )
       | t ->
           t
     in
-    let changed = ref false in
-    let term_eqs =
-      if
-        Term.VarMap.exists
-          (fun t _ -> Term.exists_subterm t ~f:(function IsInstanceOf _ -> true | _ -> false))
-          phi.both.term_eqs
-      then
-        (* slow path: reconstruct everything *)
-        Term.VarMap.fold
-          (fun t v term_eqs' ->
-            let t' = Term.map_subterms t ~f:simplify_is_instance_of in
-            changed := !changed || not (phys_equal t t') ;
-            Term.VarMap.add t' v term_eqs' )
-          phi.both.term_eqs Term.VarMap.empty
-      else (* fast path: nothing to do *) phi.both.term_eqs
+    let simplify_atom atom = Atom.map_subterms ~f:simplify_term atom in
+    let open SatUnsat.Import in
+    let old_term_eqs = phi.both.term_eqs in
+    let old_atoms = phi.both.atoms in
+    let both = {phi.both with term_eqs= Term.VarMap.empty; atoms= Atom.Set.empty} in
+    let* both, new_eqs =
+      let f t v acc_both =
+        let* acc_both = acc_both in
+        let t = simplify_term t in
+        Formula.Normalizer.and_var_term v t acc_both
+      in
+      Term.VarMap.fold f old_term_eqs (Sat (both, []))
     in
-    let atoms =
-      Atom.Set.map
-        (fun atom ->
-          Atom.map_subterms atom ~f:(fun t ->
-              let t' = simplify_is_instance_of t in
-              changed := !changed || not (phys_equal t t') ;
-              t' ) )
-        phi.both.atoms
+    let+ both, new_eqs =
+      let f atom acc_both =
+        let* acc_both = acc_both in
+        let atom = simplify_atom atom in
+        Formula.Normalizer.and_atom atom acc_both
+      in
+      Atom.Set.fold f old_atoms (Sat (both, new_eqs))
     in
-    if !changed then {phi with both= {phi.both with atoms; term_eqs}} else phi
+    ({phi with both}, new_eqs)
+
+
+  let has_instanceof phi =
+    let in_term (t : Term.t) = match t with IsInstanceOf _ -> true | _ -> false in
+    let in_atom atom = Atom.exists_subterm atom ~f:in_term in
+    Term.VarMap.exists (fun t _v -> in_term t) phi.both.term_eqs
+    || Atom.Set.exists in_atom phi.both.atoms
+
+
+  let simplify tenv ~get_dynamic_type phi =
+    if has_instanceof phi then really_simplify tenv ~get_dynamic_type phi else Sat (phi, [])
 end
 
 let normalize tenv ~get_dynamic_type phi =
   let open SatUnsat.Import in
-  let phi = DynamicTypes.simplify tenv ~get_dynamic_type phi in
-  let* both, new_eqs = Formula.Normalizer.normalize phi.both in
-  let* known, _ = Formula.Normalizer.normalize phi.known in
+  let* phi, new_eqs = DynamicTypes.simplify tenv ~get_dynamic_type phi in
+  let* both, new_eqs = Formula.Normalizer.normalize (phi.both, new_eqs) in
+  let* known, _ = Formula.Normalizer.normalize (phi.known, new_eqs) in
   let+ pruned =
     Atom.Set.fold
       (fun atom pruned_sat ->
