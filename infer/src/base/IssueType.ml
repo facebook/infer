@@ -804,9 +804,24 @@ let nil_messaging_to_non_pod =
     ~user_documentation:[%blob "../../documentation/issues/NIL_MESSAGING_TO_NON_POD.md"]
 
 
-let nonexhaustive_pattern_match =
-  register ~id:"NONEXHAUSTIVE_PATTERN_MATCH" Error Pulse
-    ~user_documentation:[%blob "../../documentation/issues/NONEXHAUSTIVE_PATTERN_MATCH.md"]
+let no_match_of_rhs =
+  register ~id:"NO_MATCH_OF_RHS" Error Pulse
+    ~user_documentation:[%blob "../../documentation/issues/NO_MATCH_OF_RHS.md"]
+
+
+let no_matching_case_clause =
+  register ~id:"NO_MATCHING_CASE_CLAUSE" Error Pulse
+    ~user_documentation:[%blob "../../documentation/issues/NO_MATCHING_CASE_CLAUSE.md"]
+
+
+let no_matching_function_clause =
+  register ~id:"NO_MATCHING_FUNCTION_CLAUSE" Error Pulse
+    ~user_documentation:[%blob "../../documentation/issues/NO_MATCHING_FUNCTION_CLAUSE.md"]
+
+
+let no_true_branch_in_if =
+  register ~id:"NO_TRUE_BRANCH_IN_IF" Error Pulse
+    ~user_documentation:[%blob "../../documentation/issues/NO_TRUE_BRANCH_IN_IF.md"]
 
 
 let null_dereference =

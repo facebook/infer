@@ -28,7 +28,11 @@ type access_to_invalid_address =
   ; must_be_valid_reason: Invalidation.must_be_valid_reason option }
 [@@deriving compare, equal, yojson_of]
 
-type nonexhaustive_pattern_match = {calling_context: calling_context; location: Location.t}
+type erlang_error =
+  | Badmatch of {calling_context: calling_context; location: Location.t}
+  | Case_clause of {calling_context: calling_context; location: Location.t}
+  | Function_clause of {calling_context: calling_context; location: Location.t}
+  | If_clause of {calling_context: calling_context; location: Location.t}
 [@@deriving compare, equal, yojson_of]
 
 type read_uninitialized_value =
@@ -44,7 +48,7 @@ type read_uninitialized_value =
 type t =
   | AccessToInvalidAddress of access_to_invalid_address
   | MemoryLeak of {procname: Procname.t; allocation_trace: Trace.t; location: Location.t}
-  | NonexhaustivePatternMatch of nonexhaustive_pattern_match
+  | ErlangError of erlang_error
   | ReadUninitializedValue of read_uninitialized_value
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
 [@@deriving equal]

@@ -1507,11 +1507,32 @@ module Android = struct
 end
 
 module Erlang = struct
-  let pattern_fail : model =
+  let error_badmatch : model =
+   fun {location} astate ->
+    [ Error
+        (ReportableError {astate; diagnostic= ErlangError (Badmatch {calling_context= []; location})})
+    ]
+
+
+  let error_case_clause : model =
    fun {location} astate ->
     [ Error
         (ReportableError
-           {astate; diagnostic= NonexhaustivePatternMatch {calling_context= []; location}}) ]
+           {astate; diagnostic= ErlangError (Case_clause {calling_context= []; location})}) ]
+
+
+  let error_function_clause : model =
+   fun {location} astate ->
+    [ Error
+        (ReportableError
+           {astate; diagnostic= ErlangError (Function_clause {calling_context= []; location})}) ]
+
+
+  let error_if_clause : model =
+   fun {location} astate ->
+    [ Error
+        (ReportableError
+           {astate; diagnostic= ErlangError (If_clause {calling_context= []; location})}) ]
 
 
   let make_nil : model =
@@ -1627,7 +1648,11 @@ module ProcNameDispatcher = struct
         ; +BuiltinDecl.(match_builtin __erlang_make_cons)
           <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.make_cons
         ; +BuiltinDecl.(match_builtin __erlang_make_nil) <>--> Erlang.make_nil
-        ; +BuiltinDecl.(match_builtin __erlang_pattern_fail) <>--> Erlang.pattern_fail
+        ; +BuiltinDecl.(match_builtin __erlang_error_badmatch) <>--> Erlang.error_badmatch
+        ; +BuiltinDecl.(match_builtin __erlang_error_case_clause) <>--> Erlang.error_case_clause
+        ; +BuiltinDecl.(match_builtin __erlang_error_function_clause)
+          <>--> Erlang.error_function_clause
+        ; +BuiltinDecl.(match_builtin __erlang_error_if_clause) <>--> Erlang.error_if_clause
         ; +BuiltinDecl.(match_builtin __infer_initializer_list)
           <>$ capt_arg_payload
           $+...$--> Misc.id_first_arg ~desc:"infer_init_list"

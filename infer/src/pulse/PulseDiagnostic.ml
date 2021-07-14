@@ -22,7 +22,11 @@ type access_to_invalid_address =
   ; must_be_valid_reason: Invalidation.must_be_valid_reason option }
 [@@deriving compare, equal]
 
-type nonexhaustive_pattern_match = {calling_context: calling_context; location: Location.t}
+type erlang_error =
+  | Badmatch of {calling_context: calling_context; location: Location.t}
+  | Case_clause of {calling_context: calling_context; location: Location.t}
+  | Function_clause of {calling_context: calling_context; location: Location.t}
+  | If_clause of {calling_context: calling_context; location: Location.t}
 [@@deriving compare, equal]
 
 type read_uninitialized_value = {calling_context: calling_context; trace: Trace.t}
@@ -30,14 +34,14 @@ type read_uninitialized_value = {calling_context: calling_context; trace: Trace.
 
 let yojson_of_access_to_invalid_address = [%yojson_of: _]
 
-let yojson_of_nonexhaustive_pattern_match = [%yojson_of: _]
+let yojson_of_erlang_error = [%yojson_of: _]
 
 let yojson_of_read_uninitialized_value = [%yojson_of: _]
 
 type t =
   | AccessToInvalidAddress of access_to_invalid_address
   | MemoryLeak of {procname: Procname.t; allocation_trace: Trace.t; location: Location.t}
-  | NonexhaustivePatternMatch of nonexhaustive_pattern_match
+  | ErlangError of erlang_error
   | ReadUninitializedValue of read_uninitialized_value
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
 [@@deriving equal]
@@ -50,7 +54,10 @@ let get_location = function
   | ReadUninitializedValue {calling_context= (_, location) :: _} ->
       (* report at the call site that triggers the bug *) location
   | MemoryLeak {location}
-  | NonexhaustivePatternMatch {location}
+  | ErlangError (Badmatch {location})
+  | ErlangError (Case_clause {location})
+  | ErlangError (Function_clause {location})
+  | ErlangError (If_clause {location})
   | StackVariableAddressEscape {location} ->
       location
 
@@ -174,8 +181,14 @@ let get_message diagnostic =
         "%s memory leak. Memory dynamically allocated at line %d %a is not freed after the last \
          access at %a"
         pulse_start_msg allocation_line pp_allocation_trace allocation_trace Location.pp location
-  | NonexhaustivePatternMatch {calling_context= _; location} ->
-      F.asprintf "%s nonexhaustive pattern match at %a" pulse_start_msg Location.pp location
+  | ErlangError (Badmatch {calling_context= _; location}) ->
+      F.asprintf "%s no match of RHS at %a" pulse_start_msg Location.pp location
+  | ErlangError (Case_clause {calling_context= _; location}) ->
+      F.asprintf "%s no matching case clause at %a" pulse_start_msg Location.pp location
+  | ErlangError (Function_clause {calling_context= _; location}) ->
+      F.asprintf "%s no matching function clause at %a" pulse_start_msg Location.pp location
+  | ErlangError (If_clause {calling_context= _; location}) ->
+      F.asprintf "%s no true branch in if expression at %a" pulse_start_msg Location.pp location
   | ReadUninitializedValue {calling_context; trace} ->
       let root_var =
         PulseTrace.find_map trace ~f:(function VariableDeclared (pvar, _) -> Some pvar | _ -> None)
@@ -309,9 +322,18 @@ let get_trace = function
            ~pp_immediate:(fun fmt -> F.fprintf fmt "allocated by `%a` here" Procname.pp procname)
            allocation_trace
       @@ [Errlog.make_trace_element 0 location "memory becomes unreachable here" []]
-  | NonexhaustivePatternMatch {calling_context; location} ->
+  | ErlangError (Badmatch {calling_context; location}) ->
       get_trace_calling_context calling_context
-      @@ [Errlog.make_trace_element 0 location "no pattern match here" []]
+      @@ [Errlog.make_trace_element 0 location "no match of RHS here" []]
+  | ErlangError (Case_clause {calling_context; location}) ->
+      get_trace_calling_context calling_context
+      @@ [Errlog.make_trace_element 0 location "no matching case clause here" []]
+  | ErlangError (Function_clause {calling_context; location}) ->
+      get_trace_calling_context calling_context
+      @@ [Errlog.make_trace_element 0 location "no matching function clause here" []]
+  | ErlangError (If_clause {calling_context; location}) ->
+      get_trace_calling_context calling_context
+      @@ [Errlog.make_trace_element 0 location "no true branch in if expression here" []]
   | ReadUninitializedValue {calling_context; trace} ->
       get_trace_calling_context calling_context
       @@ Trace.add_to_errlog ~nesting:0
@@ -333,8 +355,14 @@ let get_issue_type = function
       Invalidation.issue_type_of_cause invalidation must_be_valid_reason
   | MemoryLeak _ ->
       IssueType.pulse_memory_leak
-  | NonexhaustivePatternMatch _ ->
-      IssueType.nonexhaustive_pattern_match
+  | ErlangError (Badmatch _) ->
+      IssueType.no_match_of_rhs
+  | ErlangError (Case_clause _) ->
+      IssueType.no_matching_case_clause
+  | ErlangError (Function_clause _) ->
+      IssueType.no_matching_function_clause
+  | ErlangError (If_clause _) ->
+      IssueType.no_true_branch_in_if
   | ReadUninitializedValue _ ->
       IssueType.uninitialized_value_pulse
   | StackVariableAddressEscape _ ->

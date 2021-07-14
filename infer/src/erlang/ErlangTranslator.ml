@@ -158,11 +158,11 @@ module Node = struct
     make env kind [prune]
 
 
-  let make_pattern_fail env =
+  let make_fail env fail_function =
     let any = typ_of_name Any in
     let crash_instruction =
       let ret_var = Ident.create_fresh Ident.knormal (* not used: nothing returned *) in
-      let pattern_fail_fun = Exp.Const (Cfun BuiltinDecl.__erlang_pattern_fail) in
+      let pattern_fail_fun = Exp.Const (Cfun fail_function) in
       Sil.Call ((ret_var, any), pattern_fail_fun, [], env.location, CallFlags.default)
     in
     make_throw env crash_instruction
@@ -446,7 +446,7 @@ and translate_expression env {Ast.line; simple_expression} =
         let id = Ident.create_fresh Ident.knormal in
         let expr_block = translate_expression {env with result= Present (Exp.Var id)} expression in
         let blocks = Block.any env (List.map ~f:(translate_case_clause env [id]) cases) in
-        let crash_node = Node.make_pattern_fail env in
+        let crash_node = Node.make_fail env BuiltinDecl.__erlang_error_case_clause in
         blocks.exit_failure |~~> [crash_node] ;
         let blocks = {blocks with exit_failure= crash_node} in
         Block.all env [expr_block; blocks]
@@ -463,7 +463,7 @@ and translate_expression env {Ast.line; simple_expression} =
         Block.all env [head_block; tail_block; Block.make_instruction env [call_instruction]]
     | If clauses ->
         let blocks = Block.any env (List.map ~f:(translate_case_clause env []) clauses) in
-        let crash_node = Node.make_pattern_fail env in
+        let crash_node = Node.make_fail env BuiltinDecl.__erlang_error_if_clause in
         blocks.exit_failure |~~> [crash_node] ;
         let blocks = {blocks with exit_failure= crash_node} in
         blocks
@@ -484,7 +484,7 @@ and translate_expression env {Ast.line; simple_expression} =
     | Match {pattern; body} ->
         let body_block = translate_expression {env with result= Present (Exp.Var ret_var)} body in
         let pattern_block = translate_pattern env ret_var pattern in
-        let crash_node = Node.make_pattern_fail env in
+        let crash_node = Node.make_fail env BuiltinDecl.__erlang_error_badmatch in
         pattern_block.exit_failure |~~> [crash_node] ;
         let pattern_block = {pattern_block with exit_failure= crash_node} in
         Block.all env [body_block; pattern_block]
@@ -604,8 +604,8 @@ let translate_one_function env cfg function_ clauses =
     loads_node |~~> [start]
   in
   let () =
-    (* If all patterns fail, call BuiltinDecl.__erlang_pattern_fail *)
-    let crash_node = Node.make_pattern_fail env in
+    (* If all patterns fail, call special method *)
+    let crash_node = Node.make_fail env BuiltinDecl.__erlang_error_function_clause in
     exit_failure |~~> [crash_node] ;
     crash_node |~~> [Procdesc.get_exit_node procdesc]
   in

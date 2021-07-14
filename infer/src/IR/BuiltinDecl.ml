@@ -76,11 +76,17 @@ let __delete_array = create_procname "__delete_array"
 
 let __delete_locked_attribute = create_procname "__delete_locked_attribute"
 
+let __erlang_error_badmatch = create_procname "__erlang_error_badmatch"
+
+let __erlang_error_case_clause = create_procname "__erlang_error_case_clause"
+
+let __erlang_error_function_clause = create_procname "__erlang_error_function_clause"
+
+let __erlang_error_if_clause = create_procname "__erlang_error_if_clause"
+
 let __erlang_make_cons = create_procname "__erlang_make_cons"
 
 let __erlang_make_nil = create_procname "__erlang_make_nil"
-
-let __erlang_pattern_fail = create_procname "__erlang_pattern_fail"
 
 let __exit = create_procname "_exit"
 
