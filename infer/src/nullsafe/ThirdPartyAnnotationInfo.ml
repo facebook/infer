@@ -52,7 +52,7 @@ let pp_parsing_error fmt {line_number; unparsable_method; parsing_error} =
 (* Consequtively evaluates results for all elements in a list,
    returns Ok (folded results) if all succeeded, or the first error.
    The evaluator function [f] has access to element's index.
- *)
+*)
 let bind_list_with_index ~init list ~f =
   List.foldi list ~init:(Ok init) ~f:(fun index acc elem ->
       Result.bind acc ~f:(fun acc -> f acc index elem) )

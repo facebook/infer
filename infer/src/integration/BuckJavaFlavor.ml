@@ -10,36 +10,36 @@ module F = Format
 module L = Logging
 
 (* example build report json output
-[
-  {
-  "success" : true,
-  "results" : {
-    "//annotations:annotations_infer" : {
-      "success" : true,
-      "type" : "BUILT_LOCALLY",
-      "output" : "buck-out/gen/annotations/annotations_infer/infer_out"
-    },
-    "//module2:module2_infer" : {
-      "success" : true,
-      "type" : "BUILT_LOCALLY",
-      "output" : "buck-out/gen/module2/module2_infer/infer_out"
-    },
-    "//module1:module1_infer" : {
-      "success" : true,
-      "type" : "BUILT_LOCALLY",
-      "output" : "buck-out/gen/module1/module1_infer/infer_out"
-    },
-    "//module3:module1_infer" : {
-      "success" : "SUCCESS",
-      "type" : "BUILT_LOCALLY",
-      "outputs" : {
-        "DEFAULT" : [ "buck-out/gen/module1/module3_infer/infer_out" ]
-      }
-    }
-  },
-  "failures" : { }
-}%
-]
+   [
+     {
+     "success" : true,
+     "results" : {
+       "//annotations:annotations_infer" : {
+         "success" : true,
+         "type" : "BUILT_LOCALLY",
+         "output" : "buck-out/gen/annotations/annotations_infer/infer_out"
+       },
+       "//module2:module2_infer" : {
+         "success" : true,
+         "type" : "BUILT_LOCALLY",
+         "output" : "buck-out/gen/module2/module2_infer/infer_out"
+       },
+       "//module1:module1_infer" : {
+         "success" : true,
+         "type" : "BUILT_LOCALLY",
+         "output" : "buck-out/gen/module1/module1_infer/infer_out"
+       },
+       "//module3:module1_infer" : {
+         "success" : "SUCCESS",
+         "type" : "BUILT_LOCALLY",
+         "outputs" : {
+           "DEFAULT" : [ "buck-out/gen/module1/module3_infer/infer_out" ]
+         }
+       }
+     },
+     "failures" : { }
+   }%
+   ]
 *)
 
 (** Read the build report json file buck produced, and parse into a list of pairs

@@ -21,7 +21,7 @@ let unknown name json =
 
 
 (* Takes a json of the form `List [j1;...;jn] and returns [f j1;...;f jn]. If skip_errors, then
-  elements that fail to parse are filtered out; otherwise, a parsing failure propagates up. *)
+   elements that fail to parse are filtered out; otherwise, a parsing failure propagates up. *)
 let to_list ?(skip_errors = false) ~(f : 'a parser) : 'a list parser =
  fun json ->
   try

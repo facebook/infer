@@ -801,9 +801,9 @@ module type Lang = sig
 end
 
 (* Abstract Collections are represented like arrays. But we don't care about the elements.
-- when they are constructed, we set the size to 0
-- each time we add an element, we increase the length of the array
-- each time we delete an element, we decrease the length of the array *)
+   - when they are constructed, we set the size to 0
+   - each time we add an element, we increase the length of the array
+   - each time we delete an element, we decrease the length of the array *)
 module AbstractCollection (Lang : Lang) = struct
   let create_collection {pname; node_hash; location} ~ret:(id, _) mem ~length =
     let represents_multiple_values = true in

@@ -341,10 +341,10 @@ let is_box = function
 
 
 (* Methods in @ThreadConfined classes and methods annotated with @ThreadConfined are assumed to all
-  run on the same thread. For the moment we won't warn on accesses resulting from use of such
-  methods at all. In future we should account for races between these methods and methods from
-  completely different classes that don't necessarily run on the same thread as the confined
-  object. *)
+   run on the same thread. For the moment we won't warn on accesses resulting from use of such
+   methods at all. In future we should account for races between these methods and methods from
+   completely different classes that don't necessarily run on the same thread as the confined
+   object. *)
 let is_thread_confined_method tenv pname =
   ConcurrencyModels.find_override_or_superclass_annotated Annotations.ia_is_thread_confined tenv
     pname

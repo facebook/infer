@@ -7,10 +7,10 @@
 open! IStd
 
 (* Builds a clang procedure, following the format required to match with profiler samples:
-C Functions: name, mangled name optional
-ObjC Methods: mangled_name
-ObjC Blocks: mangled_name
-C++ methods: mangled_name (For us mangled name is optional, but if it is not there then we can't match the method) *)
+   C Functions: name, mangled name optional
+   ObjC Methods: mangled_name
+   ObjC Blocks: mangled_name
+   C++ methods: mangled_name (For us mangled name is optional, but if it is not there then we can't match the method) *)
 let clang_proc_of_decl decl =
   let open Clang_ast_t in
   match decl with

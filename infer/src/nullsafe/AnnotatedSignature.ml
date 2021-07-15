@@ -9,10 +9,10 @@ module F = Format
 module L = Logging
 
 (* TODO(T54088319) remove Annot.Item.t from t:
-  For all helper annotations guiding Nullsafe behavior, introduce corresponding datatypes:
-    a. Known ret value annotations (if any)
-    b. Known param annotations
-    c. Known method-level annotations.
+   For all helper annotations guiding Nullsafe behavior, introduce corresponding datatypes:
+     a. Known ret value annotations (if any)
+     b. Known param annotations
+     c. Known method-level annotations.
 *)
 
 type t =

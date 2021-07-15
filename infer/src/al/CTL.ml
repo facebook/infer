@@ -28,7 +28,6 @@ module L = Logging
    set formula  = f OR f
 
    set message = "bla"
-
 *)
 
 type clause =

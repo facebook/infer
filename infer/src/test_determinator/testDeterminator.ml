@@ -224,7 +224,7 @@ let remove_llvm_suffix_native_symbols native_symbols =
 
 
 (* The clang plugin exports C++ mangled names in hashed form for perf reasons, so here we
-hash the incoming mangled names in the profiler samples, so that we can compare them. *)
+   hash the incoming mangled names in the profiler samples, so that we can compare them. *)
 let add_hash_mangled_native_symbols native_symbols =
   let add_hash_mangled_native_symbol native_symbol =
     let hash_mangled mangled_name =

@@ -217,7 +217,7 @@ let get_field_name_for_error_suppressing = function
 
 (* The condition is redundant because a non-nullable object was (implicitly or explicitly) compared with null.
    Describes what exactly made nullsafe believe this is indeed a non-nullable.
- *)
+*)
 let get_nonnull_explanation_for_condition_redudant (nonnull_origin : TypeOrigin.t) =
   match nonnull_origin with
   | MethodCall {pname} ->

@@ -219,8 +219,8 @@ let pi_of_subst sub =
 let get_pure (p : 'a t) : pi = pi_of_subst p.sub @ p.pi
 
 (* Same with get_pure, except that when we have both "x = t" and "y = t" where t is a primed ident,
-* we add "x = y" to the result. This is crucial for the normalizer, as it tend to drop "x = t" before
-* processing "y = t". If we don't explicitly preserve "x = y", the normalizer cannot pick it up *)
+   * we add "x = y" to the result. This is crucial for the normalizer, as it tend to drop "x = t" before
+   * processing "y = t". If we don't explicitly preserve "x = y", the normalizer cannot pick it up *)
 let get_pure_extended p =
   let base = get_pure p in
   let primed_atoms, _ =

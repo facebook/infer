@@ -513,7 +513,7 @@ let compute_visited vset =
 
 
 (* Extract specs from a pathset, after the footprint phase. The postconditions will be thrown away
-  by the re-execution phase, but they are first used to detect custom errors. *)
+   by the re-execution phase, but they are first used to detect custom errors. *)
 let extract_specs ({InterproceduralAnalysis.tenv; _} as analysis_data) pdesc pathset :
     Prop.normal BiabductionSummary.spec list =
   if not !BiabductionConfig.footprint then

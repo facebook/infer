@@ -673,7 +673,7 @@ let receiver_self receiver prop =
 (* When current ObjC method is an initializer and the method call is also an initializer,
    and the receiver is self, i.e. the call is [super init], then we want to assume that it
    can return null, regardless of code or annotations, so that the next statement should be
-   a check for null, which is considered good practice.  *)
+   a check for null, which is considered good practice. *)
 let force_objc_init_return_nil pdesc callee_pname tenv ret_id pre path receiver =
   let current_pname = Procdesc.get_proc_name pdesc in
   if

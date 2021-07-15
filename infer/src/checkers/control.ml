@@ -19,7 +19,7 @@ module L = Logging
    dependency
 
    3. remove invariant vars in the loop from control vars
- *)
+*)
 
 module CFG = ProcCfg.Normal
 module LoopHead = Procdesc.Node

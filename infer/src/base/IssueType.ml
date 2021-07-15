@@ -494,7 +494,7 @@ let eradicate_annotation_graph =
    null, this can have a lot of reasons to be actually nullable.
 
    Until it is made non-precise, it is recommended to not turn this warning on.  But even when it is
-   on, this should not be more than advice.  *)
+   on, this should not be more than advice. *)
 let eradicate_condition_redundant =
   register ~id:"ERADICATE_CONDITION_REDUNDANT" ~hum:"Condition Redundant" Advice Eradicate
     ~user_documentation:[%blob "../../documentation/issues/ERADICATE_CONDITION_REDUNDANT.md"]

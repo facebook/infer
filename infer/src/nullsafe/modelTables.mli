@@ -12,7 +12,7 @@ type model_table_t = (string, bool * bool list) Caml.Hashtbl.t
 (* The key is a unique string representation of a method.
    The value is nullability of its return value and params correspondingly.
    true corresponds to Nullable.
- *)
+*)
 
 val annotated_table_nullability : model_table_t
 

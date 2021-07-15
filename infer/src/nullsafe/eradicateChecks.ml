@@ -174,7 +174,7 @@ let lookup_field_in_typestate pname field_name typestate =
 
 
 (* Given a predicate over field name, look ups the field and returns a predicate
-  over this field value in a typestate, or true if there is no such a field in typestate *)
+   over this field value in a typestate, or true if there is no such a field in typestate *)
 let convert_predicate predicate_over_field_name field_name (pname, typestate) =
   let range_for_field = lookup_field_in_typestate pname field_name typestate in
   Option.exists range_for_field ~f:predicate_over_field_name
@@ -202,7 +202,7 @@ let get_nullability_upper_bound_for_typestate proc_name field_name typestate =
 
 (* Given the list of typestates (each corresponding to the final result of executing of some function),
    and the field, what is the upper bound of field nullability joined over all typestates?
- *)
+*)
 let get_nullability_upper_bound field_name typestate_list =
   (* Join upper bounds for all typestates in the list *)
   List.fold typestate_list ~init:Nullability.StrictNonnull ~f:(fun acc (proc_name, typestate) ->

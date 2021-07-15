@@ -640,13 +640,13 @@ let fold_reportable_summaries analyze_ondemand tenv clazz ~init ~f =
 
 let is_private attrs = ProcAttributes.equal_access (ProcAttributes.get_access attrs) Private
 
-(*  Note about how many times we report a deadlock: normally twice, at each trace starting point.
-    Due to the fact we look for deadlocks in the summaries of the class at the root of a path,
-    this will fail when (a) the lock is of class type (ie as used in static sync methods), because
-    then the root is an identifier of type java.lang.Class and (b) when the lock belongs to an
-    inner class but this is no longer obvious in the path, because of nested-class path normalisation.
-    The net effect of the above issues is that we will only see these locks in conflicting pairs
-    once, as opposed to twice with all other deadlock pairs. *)
+(* Note about how many times we report a deadlock: normally twice, at each trace starting point.
+   Due to the fact we look for deadlocks in the summaries of the class at the root of a path,
+   this will fail when (a) the lock is of class type (ie as used in static sync methods), because
+   then the root is an identifier of type java.lang.Class and (b) when the lock belongs to an
+   inner class but this is no longer obvious in the path, because of nested-class path normalisation.
+   The net effect of the above issues is that we will only see these locks in conflicting pairs
+   once, as opposed to twice with all other deadlock pairs. *)
 
 (** report warnings possible on the parallel composition of two threads/critical pairs
     [should_report_starvation] means [pair] is on the UI thread and not on a constructor *)

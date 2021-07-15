@@ -509,7 +509,7 @@ let mk_eval_sym_cost integer_type_widths callee_formals actual_exps caller_mem =
 (* This function evaluates the array length conservatively, which is useful when there are multiple
    array locations and their lengths are joined to top.  For example, if the [arr_locs] points to
    two arrays [a] and [b] and if their lengths are [a.length] and [b.length], this function
-   evaluates its length as [\[0, a.length.ub + b.length.ub\]].  *)
+   evaluates its length as [\[0, a.length.ub + b.length.ub\]]. *)
 let conservative_array_length ?traces arr_locs mem =
   let accum_add arr_loc acc = Mem.find arr_loc mem |> Val.array_sizeof |> Itv.plus acc in
   PowLoc.fold accum_add arr_locs Itv.zero

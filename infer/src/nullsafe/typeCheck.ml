@@ -286,7 +286,7 @@ let add_field_to_typestate_if_absent tenv access_loc typestate pvar object_origi
    1. The same as [convert_complex_exp_to_pvar]
    2. On top of this, if expr corresponds to a field access, stores this field in the typestate
       (if not stored yet).
-   *)
+*)
 let convert_complex_exp_to_pvar_and_register_field_in_typestate tenv idenv curr_pname
     (curr_annotated_signature : AnnotatedSignature.t) ~node ~(original_node : Procdesc.Node.t)
     ~is_assignment exp_ typestate loc =
@@ -396,7 +396,7 @@ let convert_complex_exp_to_pvar_and_register_field_in_typestate tenv idenv curr_
      does not require the programmer to write a check.
    What is the difference between ~node and ~original_node? I don't know. This is an artifact of refactoring of
    very old code. Sorry, dear future supporter, if names don't make sense.
- *)
+*)
 let convert_complex_exp_to_pvar tenv idenv curr_pname ~is_assignment
     (curr_annotated_signature : AnnotatedSignature.t) ~node ~(original_node : Procdesc.Node.t) exp
     typestate loc =
@@ -998,8 +998,8 @@ let rec check_condition_for_sil_prune
 
 
 (* If the function has @PropagatesNullable params the nullability of result is determined by
-  nullability of actual values of these params.
-  *)
+   nullability of actual values of these params.
+*)
 let clarify_ret_by_propagates_nullable ret (resolved_params : EradicateChecks.resolved_param list) =
   (* Nullability of actual values of params that are marked as propagating nullables *)
   let nullability_of_propagates_nullable_params =

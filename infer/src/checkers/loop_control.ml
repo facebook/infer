@@ -45,22 +45,22 @@ let get_back_edges pdesc =
 
 (* Get a set of nodes, `exit_nodes`, that themselves are not in the loop but their predecessors are
 
-  Visually:
+    Visually:
 
-  target (loop head)
-   /|
-  / .
- /  |
- . node_in_loop
- .  |\
- .  . \ 
- .  . exit_node
- \  .
-  \ |
-   \|
-  source
+    target (loop head)
+     /|
+    / .
+   /  |
+   . node_in_loop
+   .  |\
+   .  . \
+   .  . exit_node
+   \  .
+    \ |
+     \|
+    source
 
- Often, exit_node is a prune node. *)
+   Often, exit_node is a prune node. *)
 let get_exit_nodes_in_loop loop_nodes =
   let succs_of_loop_nodes =
     GuardNodes.fold

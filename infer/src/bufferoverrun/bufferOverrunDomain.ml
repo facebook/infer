@@ -66,7 +66,7 @@ end
 
    the loop will iterates as the file size, but the control variable [c] does not have that value.
    In these cases, it assigns a symbolic value of the file size to the modeled range of [c], then
-   which it is used when calculating the overall cost.  *)
+   which it is used when calculating the overall cost. *)
 module ModeledRange = struct
   include AbstractDomain.BottomLifted (struct
     include Bounds.NonNegativeBound

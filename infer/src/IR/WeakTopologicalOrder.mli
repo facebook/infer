@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 
 (* The definitions below taken from [Bou] "Efficient chaotic iteration strategies with widenings"
-  by François Bourdoncle.
+   by François Bourdoncle.
 *)
 
 (** A hierarchical ordering of a set is a well-parenthesized permutation of its elements without two
