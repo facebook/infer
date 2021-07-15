@@ -27,3 +27,8 @@ codetoanalyze/erlang/features/src/comparison.erl, test_less_Bad/0, 3, NO_TRUE_BR
 codetoanalyze/erlang/features/src/comparison.erl, test_less_Bad2/0, 3, NO_TRUE_BRANCH_IN_IF, no_bucket, ERROR, [no true branch in if expression here]
 codetoanalyze/erlang/features/src/comparison.erl, test_not_equal_Bad/0, 3, NO_TRUE_BRANCH_IN_IF, no_bucket, ERROR, [no true branch in if expression here]
 codetoanalyze/erlang/features/src/comparison.erl, test_not_equal_Bad2/0, 3, NO_TRUE_BRANCH_IN_IF, no_bucket, ERROR, [no true branch in if expression here]
+codetoanalyze/erlang/features/src/logic.erl, test_and00_Bad/0, 1, NO_TRUE_BRANCH_IN_IF, no_bucket, ERROR, [no true branch in if expression here]
+codetoanalyze/erlang/features/src/logic.erl, test_and01_Bad/0, 1, NO_TRUE_BRANCH_IN_IF, no_bucket, ERROR, [no true branch in if expression here]
+codetoanalyze/erlang/features/src/logic.erl, test_and10_Bad/0, 1, NO_TRUE_BRANCH_IN_IF, no_bucket, ERROR, [no true branch in if expression here]
+codetoanalyze/erlang/features/src/logic.erl, test_or00_Bad/0, 1, NO_TRUE_BRANCH_IN_IF, no_bucket, ERROR, [no true branch in if expression here]
+codetoanalyze/erlang/features/src/logic.erl, test_unot_Bad/0, 1, NO_TRUE_BRANCH_IN_IF, no_bucket, ERROR, [no true branch in if expression here]
