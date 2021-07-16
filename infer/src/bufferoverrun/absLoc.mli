@@ -80,6 +80,9 @@ module Loc : sig
 
   val get_path : t -> Symb.SymbolPath.partial option
 
+  val get_param_path : t -> Symb.SymbolPath.partial option
+  (** As get_path, but returns None if the path doesn't correspond to parameter passed by reference. *)
+
   val is_field_of : loc:t -> field_loc:t -> bool
   (** It checks if [loc] is prefix of [field_loc]. *)
 

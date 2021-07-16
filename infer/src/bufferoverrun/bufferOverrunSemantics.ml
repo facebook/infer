@@ -418,12 +418,27 @@ let rec eval_sympath_partial ~mode params p mem =
       Mem.find_set locs mem
 
 
+(* Import a path p from a callee as a set of locations to a caller.
+   There are the following cases:
+   (1) p involves dereference of a formal parameter:
+     Substitute the formal parameter with actual expression evaluating dereferences:
+     Example: p = "**A.f1", A is a formal parameter, actual is &B, B points
+       to C and D.
+       Return: {"C.f1", "D.f1"}
+   (2) p involves a formal parameter passed by value:
+     Return unknown location.
+     Example: p = A, A is a formal parameter, actual is B
+     Return: {"unknown"}
+     The reason why it is not possible to import A as B is that there is a mapping
+     from formal locations to evaluations of actual expressions in ParamBindings and
+     not to actual expression. That is, if the actual expression is A, we can get its
+     value, not the location itself. This is also why we can import dereferences precisely
+     (we get powloc part of such value). *)
 and eval_locpath ~mode params p mem =
   let res =
     match p with
     | BoField.Prim (Symb.SymbolPath.Pvar _ | Symb.SymbolPath.Callsite _) ->
-        let v = eval_sympath_partial ~mode params p mem in
-        Val.get_all_locs v
+        PowLoc.unknown
     | BoField.Prim (Symb.SymbolPath.Deref (_, p)) ->
         let v = eval_sympath_partial ~mode params p mem in
         Val.get_all_locs v
