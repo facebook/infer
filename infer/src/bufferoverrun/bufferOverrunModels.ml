@@ -127,13 +127,14 @@ let malloc ~can_be_zero size_exp =
     let offset, size = (Itv.zero, Dom.Val.get_itv length) in
     let represents_multiple_values = not (Itv.is_one size) in
     let allocsite =
-      Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path ~represents_multiple_values
+      Allocsite.make pname ~caller_pname:(Dom.Mem.get_proc_name mem) ~node_hash ~inst_num:0
+        ~dimension:1 ~path ~represents_multiple_values
     in
     if Language.curr_language_is Java then
       let internal_arr =
         let allocsite =
-          Allocsite.make pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
-            ~represents_multiple_values
+          Allocsite.make pname ~caller_pname:(Dom.Mem.get_proc_name mem) ~node_hash ~inst_num:1
+            ~dimension:1 ~path:None ~represents_multiple_values
         in
         Dom.Val.of_java_array_alloc allocsite ~length:size ~traces
       in
@@ -311,8 +312,8 @@ let strndup src_exp length_exp =
       let size = Itv.incr (Itv.min_sem (Dom.Val.get_itv src_strlen) (Dom.Val.get_itv length)) in
       let allocsite =
         let represents_multiple_values = not (Itv.is_one size) in
-        Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path:None
-          ~represents_multiple_values
+        Allocsite.make pname ~caller_pname:(Dom.Mem.get_proc_name mem) ~node_hash ~inst_num:0
+          ~dimension:1 ~path:None ~represents_multiple_values
       in
       let traces =
         Trace.Set.join (Dom.Val.get_traces src_strlen) (Dom.Val.get_traces length)
@@ -405,7 +406,8 @@ let set_array_length {exp; typ} length_exp =
         let size = Dom.Val.get_itv length in
         let allocsite =
           let represents_multiple_values = not (Itv.is_one size) in
-          Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path ~represents_multiple_values
+          Allocsite.make pname ~caller_pname:(Dom.Mem.get_proc_name mem) ~node_hash ~inst_num:0
+            ~dimension:1 ~path ~represents_multiple_values
         in
         let v = Dom.Val.of_c_array_alloc allocsite ~stride ~offset:Itv.zero ~size ~traces in
         Dom.Mem.add_stack (Loc.of_pvar array_pvar) v mem
@@ -568,8 +570,8 @@ module StdVector = struct
       let mem = malloc_exec model_env ~ret mem in
       let vec_locs = Sem.eval_locs vec_exp mem in
       let deref_of_vec =
-        Allocsite.make pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
-          ~represents_multiple_values:false
+        Allocsite.make pname ~caller_pname:(Dom.Mem.get_proc_name mem) ~node_hash ~inst_num:1
+          ~dimension:1 ~path:None ~represents_multiple_values:false
         |> Loc.of_allocsite
       in
       let array_v =
@@ -725,8 +727,8 @@ module StdBasicString = struct
       let tgt_locs = Sem.eval_locs tgt_exp mem in
       let tgt_deref =
         let allocsite =
-          Allocsite.make pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
-            ~represents_multiple_values:false
+          Allocsite.make pname ~caller_pname:(Dom.Mem.get_proc_name mem) ~node_hash ~inst_num:1
+            ~dimension:1 ~path:None ~represents_multiple_values:false
         in
         PowLoc.singleton (Loc.of_allocsite allocsite)
       in
@@ -780,8 +782,8 @@ module JavaInteger = struct
     let exec {pname; node_hash; location; integer_type_widths} ~ret:(id, _) mem =
       let represents_multiple_values = false in
       let int_allocsite =
-        Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:0 ~path:None
-          ~represents_multiple_values
+        Allocsite.make pname ~caller_pname:(Dom.Mem.get_proc_name mem) ~node_hash ~inst_num:0
+          ~dimension:0 ~path:None ~represents_multiple_values
       in
       let v = Sem.eval integer_type_widths exp mem in
       let int_loc = Loc.of_allocsite int_allocsite in
@@ -806,13 +808,13 @@ module AbstractCollection (Lang : Lang) = struct
     let represents_multiple_values = true in
     let traces = Trace.(Set.singleton location ArrayDeclaration) in
     let coll_allocsite =
-      Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path:None
-        ~represents_multiple_values
+      Allocsite.make pname ~caller_pname:(Dom.Mem.get_proc_name mem) ~node_hash ~inst_num:0
+        ~dimension:1 ~path:None ~represents_multiple_values
     in
     let internal_array =
       let allocsite =
-        Allocsite.make pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
-          ~represents_multiple_values
+        Allocsite.make pname ~caller_pname:(Dom.Mem.get_proc_name mem) ~node_hash ~inst_num:1
+          ~dimension:1 ~path:None ~represents_multiple_values
       in
       Dom.Val.of_java_array_alloc allocsite ~length ~traces
     in
@@ -1078,8 +1080,8 @@ module Container = struct
       let mem = (malloc ~can_be_zero:true size_exp).exec model_env ~ret mem in
       let vec_locs = Sem.eval_locs vec_exp mem in
       let deref_of_vec =
-        Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path:None
-          ~represents_multiple_values:false
+        Allocsite.make pname ~caller_pname:(Dom.Mem.get_proc_name mem) ~node_hash ~inst_num:0
+          ~dimension:1 ~path:None ~represents_multiple_values:false
         |> Loc.of_allocsite
       in
       let array_v =
@@ -1156,15 +1158,15 @@ module NSCollection = struct
     let traces = Trace.(Set.add_elem location ArrayDeclaration) (Dom.Val.get_traces length) in
     let internal_array =
       let allocsite =
-        Allocsite.make pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
-          ~represents_multiple_values
+        Allocsite.make pname ~caller_pname:(Dom.Mem.get_proc_name mem) ~node_hash ~inst_num:1
+          ~dimension:1 ~path:None ~represents_multiple_values
       in
       let offset, size = (Itv.zero, Dom.Val.get_itv length) in
       Dom.Val.of_c_array_alloc allocsite ~stride ~offset ~size ~traces
     in
     let coll_allocsite =
-      Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path:None
-        ~represents_multiple_values
+      Allocsite.make pname ~caller_pname:(Dom.Mem.get_proc_name mem) ~node_hash ~inst_num:0
+        ~dimension:1 ~path:None ~represents_multiple_values
     in
     let coll_loc = Loc.of_allocsite coll_allocsite in
     let internal_array_loc =
@@ -1294,14 +1296,14 @@ end
 module JavaClass = struct
   let decl_array {pname; node_hash; location} ~ret:(ret_id, _) length mem =
     let loc =
-      Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path:None
-        ~represents_multiple_values:true
+      Allocsite.make pname ~caller_pname:(Dom.Mem.get_proc_name mem) ~node_hash ~inst_num:0
+        ~dimension:1 ~path:None ~represents_multiple_values:true
       |> Loc.of_allocsite
     in
     let arr_v =
       let allocsite =
-        Allocsite.make pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
-          ~represents_multiple_values:true
+        Allocsite.make pname ~caller_pname:(Dom.Mem.get_proc_name mem) ~node_hash ~inst_num:1
+          ~dimension:1 ~path:None ~represents_multiple_values:true
       in
       let traces = Trace.(Set.singleton location ArrayDeclaration) in
       Dom.Val.of_java_array_alloc allocsite ~length ~traces
@@ -1414,13 +1416,13 @@ module JavaString = struct
       in
       let length, traces = (Dom.Val.get_itv length_v, Dom.Val.get_traces length_v) in
       let arr_loc =
-        Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path:None
-          ~represents_multiple_values:false
+        Allocsite.make pname ~caller_pname:(Dom.Mem.get_proc_name mem) ~node_hash ~inst_num:0
+          ~dimension:1 ~path:None ~represents_multiple_values:false
         |> Loc.of_allocsite
       in
       let elem_alloc =
-        Allocsite.make pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
-          ~represents_multiple_values:true
+        Allocsite.make pname ~caller_pname:(Dom.Mem.get_proc_name mem) ~node_hash ~inst_num:1
+          ~dimension:1 ~path:None ~represents_multiple_values:true
       in
       Dom.Mem.add_stack (Loc.of_id id) (Dom.Val.of_loc arr_loc) mem
       |> Dom.Mem.add_heap (Loc.append_field arr_loc fn)
@@ -1519,13 +1521,13 @@ module JavaString = struct
 
   let create_with_length {pname; node_hash; location} ~ret:(id, _) ~length_itv mem =
     let arr_loc =
-      Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path:None
-        ~represents_multiple_values:false
+      Allocsite.make pname ~caller_pname:(Dom.Mem.get_proc_name mem) ~node_hash ~inst_num:0
+        ~dimension:1 ~path:None ~represents_multiple_values:false
       |> Loc.of_allocsite
     in
     let elem_alloc =
-      Allocsite.make pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
-        ~represents_multiple_values:true
+      Allocsite.make pname ~caller_pname:(Dom.Mem.get_proc_name mem) ~node_hash ~inst_num:1
+        ~dimension:1 ~path:None ~represents_multiple_values:true
     in
     let traces = Trace.(Set.singleton location ArrayDeclaration) in
     Dom.Mem.add_stack (Loc.of_id id) (Dom.Val.of_loc arr_loc) mem

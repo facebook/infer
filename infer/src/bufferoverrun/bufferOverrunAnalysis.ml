@@ -80,7 +80,15 @@ module TransferFunctions = struct
         Option.value_map (Dom.Mem.find_opt loc callee_exit_mem) ~default:acc ~f:(fun v ->
             let locs = PowLoc.subst_loc loc eval_locpath in
             let v = Dom.Val.subst v eval_sym_trace location in
-            PowLoc.fold (fun loc acc -> Dom.Mem.add_heap loc v acc) locs acc )
+            (* Always do strong updates if locs_caller is a singleton set (loc_callee
+               maps to a single location in the caller).
+               We can do this because locations representing multiple values which are global
+               variables or subprogram parameters are updated with a value different from top
+               only when we know that all values are updated (i.e., a location representing all
+               elements of a global array is only updated when the whole array is copied).
+               Thus, for such a location, either v_caller is top or all values which this
+               location represents were updated in the callee. *)
+            Dom.Mem.update_mem ~force_strong_update:(Int.equal (PowLoc.cardinal locs) 1) locs v acc )
       in
       let reachable_locs = Dom.Mem.get_reachable_locs_from callee_formals locs callee_exit_mem in
       LocSet.fold copy (LocSet.diff reachable_locs formal_locs) mem
@@ -376,7 +384,7 @@ module TransferFunctions = struct
           let tgt_locs = Sem.eval_locs tgt_exp mem in
           let tgt_deref =
             let allocsite =
-              Allocsite.make pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
+              Allocsite.make pname ~caller_pname:None ~node_hash ~inst_num:1 ~dimension:1 ~path:None
                 ~represents_multiple_values:false
             in
             PowLoc.singleton (Loc.of_allocsite allocsite)
