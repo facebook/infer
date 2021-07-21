@@ -163,7 +163,7 @@ let pdesc_return_annot_ends_with pdesc annot =
 
 
 let pname_has_return_annot pname predicate =
-  match AnalysisCallbacks.proc_resolve_attributes pname with
+  match Attributes.load pname with
   | Some attributes ->
       predicate attributes.ProcAttributes.method_annotation.return
   | None ->
