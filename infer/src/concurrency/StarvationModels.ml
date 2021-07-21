@@ -336,7 +336,7 @@ let get_run_method_from_runnable tenv runnable =
 let get_returned_executor tenv callee actuals =
   let type_check =
     lazy
-      ( AnalysisCallbacks.proc_resolve_attributes callee
+      ( Attributes.load callee
       |> Option.exists ~f:(fun (attrs : ProcAttributes.t) ->
              match attrs.ret_type.Typ.desc with
              | Tstruct tname | Typ.Tptr ({desc= Tstruct tname}, _) ->

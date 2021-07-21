@@ -627,7 +627,7 @@ let fold_reportable_summaries analyze_ondemand tenv clazz ~init ~f =
     |> Option.value_map ~default:[] ~f:(fun tstruct -> tstruct.Struct.methods)
   in
   let f acc mthd =
-    AnalysisCallbacks.proc_resolve_attributes mthd
+    Attributes.load mthd
     |> Option.value_map ~default:acc ~f:(fun other_attrs ->
            if should_report other_attrs then
              analyze_ondemand mthd
@@ -652,10 +652,7 @@ let is_private attrs = ProcAttributes.equal_access (ProcAttributes.get_access at
     [should_report_starvation] means [pair] is on the UI thread and not on a constructor *)
 let report_on_parallel_composition ~should_report_starvation tenv pattrs pair lock other_pname
     other_pair report_map =
-  if
-    is_private pattrs
-    || AnalysisCallbacks.proc_resolve_attributes other_pname |> Option.exists ~f:is_private
-  then report_map
+  if is_private pattrs || Attributes.load other_pname |> Option.exists ~f:is_private then report_map
   else
     let open Domain in
     let pname = ProcAttributes.get_proc_name pattrs in
