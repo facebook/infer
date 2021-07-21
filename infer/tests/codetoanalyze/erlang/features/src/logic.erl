@@ -27,7 +27,11 @@
     test_orelse10_Ok/0,
     test_orelse11_Ok/0,
     test_unot_Ok/0,
-    test_unot_Bad/0
+    test_unot_Bad/0,
+    test_xor00_Bad/0,
+    test_xor01_Ok/0,
+    test_xor10_Ok/0,
+    test_xor11_Bad/0
 ]).
 
 test_and00_Bad() ->
@@ -118,4 +122,24 @@ test_unot_Ok() ->
 test_unot_Bad() ->
     if
         not ?T -> ok
+    end.
+
+test_xor00_Bad() ->
+    if
+        ?F xor ?F -> ok
+    end.
+
+test_xor01_Ok() ->
+    if
+        ?F xor ?T -> ok
+    end.
+
+test_xor10_Ok() ->
+    if
+        ?T xor ?F -> ok
+    end.
+
+test_xor11_Bad() ->
+    if
+        ?T xor ?T -> ok
     end.

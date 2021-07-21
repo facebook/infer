@@ -418,6 +418,15 @@ and translate_expression env {Ast.line; simple_expression} =
             make_simple_eager Mod (* TODO: check semantics of Rem vs Mod *)
         | Sub ->
             make_simple_eager (MinusA None)
+        | Xor ->
+            let expr =
+              Exp.BinOp
+                ( LOr
+                , Exp.BinOp (LAnd, Var id1, Exp.UnOp (LNot, Var id2, None))
+                , Exp.BinOp (LAnd, Exp.UnOp (LNot, Var id1, None), Var id2) )
+            in
+            let op_block = Block.make_load env ret_var expr any in
+            Block.all env [block1; block2; op_block]
         | todo ->
             L.debug Capture Verbose
               "@[todo ErlangTranslator.translate_expression(BinaryOperator) %s@."
