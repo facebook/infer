@@ -159,3 +159,17 @@ void nested_struct_bad() {
   x.g1.f2 = 42;
   read_g1_f1(&x);
 }
+
+void init_ptr_zero(int* ptr, int i) {
+  if (i != 0) {
+    *ptr = 42;
+  } else {
+    *(ptr + i) = 42;
+  }
+}
+
+void call_init_ptr_zero_good() {
+  int x;
+  init_ptr_zero(&x, 0);
+  int y = x;
+}

@@ -257,16 +257,23 @@ let eval path mode location exp0 astate =
         let unop_addr = AbstractValue.mk_fresh () in
         let+ astate = PulseArithmetic.eval_unop unop_addr unop addr astate in
         (astate, (unop_addr, hist))
-    | BinOp (bop, e_lhs, e_rhs) ->
+    | BinOp (bop, e_lhs, e_rhs) -> (
         let* astate, (addr_lhs, hist_lhs) = eval path Read e_lhs astate in
-        (* NOTE: keeping track of only [hist_lhs] into the binop is not the best *)
-        let* astate, (addr_rhs, _hist_rhs) = eval path Read e_rhs astate in
-        let binop_addr = AbstractValue.mk_fresh () in
-        let+ astate =
-          PulseArithmetic.eval_binop binop_addr bop (AbstractValueOperand addr_lhs)
-            (AbstractValueOperand addr_rhs) astate
-        in
-        (astate, (binop_addr, hist_lhs))
+        let* astate, (addr_rhs, hist_rhs) = eval path Read e_rhs astate in
+        match bop with
+        | (PlusA _ | PlusPI | MinusA _ | MinusPI) when PulseArithmetic.is_known_zero astate addr_rhs
+          ->
+            Ok (astate, (addr_lhs, hist_lhs))
+        | PlusA _ when PulseArithmetic.is_known_zero astate addr_lhs ->
+            Ok (astate, (addr_rhs, hist_rhs))
+        | _ ->
+            let binop_addr = AbstractValue.mk_fresh () in
+            let+ astate =
+              PulseArithmetic.eval_binop binop_addr bop (AbstractValueOperand addr_lhs)
+                (AbstractValueOperand addr_rhs) astate
+            in
+            (* NOTE: keeping track of only [hist_lhs] into the binop is not the best *)
+            (astate, (binop_addr, hist_lhs)) )
     | Const _ | Sizeof _ | Exn _ ->
         Ok (astate, (AbstractValue.mk_fresh (), (* TODO history *) []))
   in
