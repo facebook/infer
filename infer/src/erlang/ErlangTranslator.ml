@@ -102,6 +102,17 @@ module Node = struct
     make env (Stmt_node kind) instructions
 
 
+  let make_load env id e typ =
+    let (Present procdesc) = env.procdesc in
+    let procname = Procdesc.get_proc_name procdesc in
+    let temp_pvar = Pvar.mk_tmp "LoadBlock" procname in
+    let instructions =
+      [ Sil.Store {e1= Lvar temp_pvar; e2= e; root_typ= typ; typ; loc= env.location}
+      ; Sil.Load {id; e= Lvar temp_pvar; root_typ= typ; typ; loc= env.location} ]
+    in
+    make_stmt env ~kind:ErlangExpression instructions
+
+
   let make_nop env = make_stmt env []
 
   let make_join env = make env Join_node []
@@ -202,14 +213,9 @@ module Block = struct
 
 
   let make_load env id e typ =
-    let (Present procdesc) = env.procdesc in
-    let procname = Procdesc.get_proc_name procdesc in
-    let temp_pvar = Pvar.mk_tmp "LoadBlock" procname in
-    let instructions =
-      [ Sil.Store {e1= Lvar temp_pvar; e2= e; root_typ= typ; typ; loc= env.location}
-      ; Sil.Load {id; e= Lvar temp_pvar; root_typ= typ; typ; loc= env.location} ]
-    in
-    make_instruction env instructions
+    let exit_success = Node.make_load env id e typ in
+    let exit_failure = Node.make_nop env in
+    {start= exit_success; exit_success; exit_failure}
 end
 
 let has_type env ~result ~value (name : ErlangTypeName.t) : Sil.instr =
@@ -353,51 +359,70 @@ and translate_expression env {Ast.line; simple_expression} =
   in
   let expression_block : Block.t =
     match simple_expression with
-    | BinaryOperator (e1, op, e2) ->
+    | BinaryOperator (e1, op, e2) -> (
         let id1 = Ident.create_fresh Ident.knormal in
         let id2 = Ident.create_fresh Ident.knormal in
-        let block1 = translate_expression {env with result= Present (Exp.Var id1)} e1 in
-        let block2 = translate_expression {env with result= Present (Exp.Var id2)} e2 in
-        let make_simple_op_block sil_op =
-          Block.make_load env ret_var (Exp.BinOp (sil_op, Var id1, Var id2)) any
+        let block1 : Block.t = translate_expression {env with result= Present (Exp.Var id1)} e1 in
+        let block2 : Block.t = translate_expression {env with result= Present (Exp.Var id2)} e2 in
+        let make_simple_eager sil_op =
+          let op_block = Block.make_load env ret_var (Exp.BinOp (sil_op, Var id1, Var id2)) any in
+          Block.all env [block1; block2; op_block]
         in
-        let op_block =
-          match op with
-          | Add ->
-              make_simple_op_block (PlusA None)
-          | And ->
-              make_simple_op_block LAnd
-          | AtLeast ->
-              make_simple_op_block Ge
-          | AtMost ->
-              make_simple_op_block Le
-          (* TODO: proper modeling of equal vs exactly equal T95767672 *)
-          | Equal | ExactlyEqual ->
-              make_simple_op_block Eq
-          (* TODO: proper modeling of not equal vs exactly not equal T95767672 *)
-          | ExactlyNotEqual | NotEqual ->
-              make_simple_op_block Ne
-          | Greater ->
-              make_simple_op_block Gt
-          | IDiv ->
-              make_simple_op_block Div
-          | Less ->
-              make_simple_op_block Lt
-          | Mul ->
-              make_simple_op_block (Mult None)
-          | Or ->
-              make_simple_op_block LOr
-          | Rem ->
-              make_simple_op_block Mod (* TODO: check semantics of Rem vs Mod *)
-          | Sub ->
-              make_simple_op_block (MinusA None)
-          | todo ->
-              L.debug Capture Verbose
-                "@[todo ErlangTranslator.translate_expression(BinaryOperator) %s@."
-                (Sexp.to_string (Ast.sexp_of_binary_operator todo)) ;
-              Block.make_success env
+        let make_short_circuit_logic ~short_circuit_when_lhs_is =
+          let start = Node.make_nop env in
+          let id1_cond = Node.make_if env short_circuit_when_lhs_is (Var id1) in
+          let id2_cond = Node.make_if env (not short_circuit_when_lhs_is) (Var id1) in
+          let store_id1 = Node.make_load env ret_var (Var id1) any in
+          let store_id2 = Node.make_load env ret_var (Var id2) any in
+          let exit_success = Node.make_nop env in
+          let exit_failure = Node.make_nop env in
+          start |~~> [id1_cond; id2_cond] ;
+          id1_cond |~~> [store_id1] ;
+          store_id1 |~~> [exit_success] ;
+          id2_cond |~~> [block2.start] ;
+          block2.exit_success |~~> [store_id2] ;
+          block2.exit_failure |~~> [exit_failure] ;
+          store_id2 |~~> [exit_success] ;
+          Block.all env [block1; {start; exit_success; exit_failure}]
         in
-        Block.all env [block1; block2; op_block]
+        match op with
+        | Add ->
+            make_simple_eager (PlusA None)
+        | And ->
+            make_simple_eager LAnd
+        | AndAlso ->
+            make_short_circuit_logic ~short_circuit_when_lhs_is:false
+        | AtLeast ->
+            make_simple_eager Ge
+        | AtMost ->
+            make_simple_eager Le
+        (* TODO: proper modeling of equal vs exactly equal T95767672 *)
+        | Equal | ExactlyEqual ->
+            make_simple_eager Eq
+        (* TODO: proper modeling of not equal vs exactly not equal T95767672 *)
+        | ExactlyNotEqual | NotEqual ->
+            make_simple_eager Ne
+        | Greater ->
+            make_simple_eager Gt
+        | IDiv ->
+            make_simple_eager Div
+        | Less ->
+            make_simple_eager Lt
+        | Mul ->
+            make_simple_eager (Mult None)
+        | Or ->
+            make_simple_eager LOr
+        | OrElse ->
+            make_short_circuit_logic ~short_circuit_when_lhs_is:true
+        | Rem ->
+            make_simple_eager Mod (* TODO: check semantics of Rem vs Mod *)
+        | Sub ->
+            make_simple_eager (MinusA None)
+        | todo ->
+            L.debug Capture Verbose
+              "@[todo ErlangTranslator.translate_expression(BinaryOperator) %s@."
+              (Sexp.to_string (Ast.sexp_of_binary_operator todo)) ;
+            Block.all env [block1; block2; Block.make_success env] )
     | Block body ->
         translate_body env body
     | Call

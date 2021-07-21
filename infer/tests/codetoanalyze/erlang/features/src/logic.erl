@@ -14,10 +14,18 @@
     test_and01_Bad/0,
     test_and10_Bad/0,
     test_and11_Ok/0,
+    test_andalso00_Bad/0,
+    test_andalso01_Bad/0,
+    test_andalso10_Bad/0,
+    test_andalso11_Ok/0,
     test_or00_Bad/0,
     test_or01_Ok/0,
     test_or10_Ok/0,
     test_or11_Ok/0,
+    test_orelse00_Bad/0,
+    test_orelse01_Ok/0,
+    test_orelse10_Ok/0,
+    test_orelse11_Ok/0,
     test_unot_Ok/0,
     test_unot_Bad/0
 ]).
@@ -42,6 +50,26 @@ test_and11_Ok() ->
         ?T and ?T -> ok
     end.
 
+test_andalso00_Bad() ->
+    if
+        ?F andalso ?F -> ok
+    end.
+
+test_andalso01_Bad() ->
+    if
+        ?F andalso ?T -> ok
+    end.
+
+test_andalso10_Bad() ->
+    if
+        ?T andalso ?F -> ok
+    end.
+
+test_andalso11_Ok() ->
+    if
+        ?T andalso ?T -> ok
+    end.
+
 test_or00_Bad() ->
     if
         ?F or ?F -> ok
@@ -60,6 +88,26 @@ test_or10_Ok() ->
 test_or11_Ok() ->
     if
         ?T or ?T -> ok
+    end.
+
+test_orelse00_Bad() ->
+    if
+        ?F orelse ?F -> ok
+    end.
+
+test_orelse01_Ok() ->
+    if
+        ?F orelse ?T -> ok
+    end.
+
+test_orelse10_Ok() ->
+    if
+        ?T orelse ?F -> ok
+    end.
+
+test_orelse11_Ok() ->
+    if
+        ?T orelse ?T -> ok
     end.
 
 test_unot_Ok() ->
