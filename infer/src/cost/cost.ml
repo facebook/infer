@@ -435,9 +435,7 @@ let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as
       let* _cost_summary, inferbo_summary, _ = get_summary_common callee_pname in
       inferbo_summary
     in
-    let get_formals callee_pname =
-      AnalysisCallbacks.proc_resolve_attributes callee_pname >>| Pvar.get_pvar_formals
-    in
+    let get_formals callee_pname = Attributes.load callee_pname >>| Pvar.get_pvar_formals in
     let instr_cfg = InstrCFG.from_pdesc proc_desc in
     let extras =
       { inferbo_invariant_map
@@ -447,7 +445,7 @@ let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as
       ; get_summary
       ; get_formals
       ; get_proc_desc= AnalysisCallbacks.get_proc_desc
-      ; proc_resolve_attributes= AnalysisCallbacks.proc_resolve_attributes }
+      ; proc_resolve_attributes= Attributes.load }
     in
     AnalysisCallbacks.html_debug_new_node_session (NodeCFG.start_node node_cfg)
       ~pp_name:(fun f -> F.pp_print_string f "cost(worst-case)")
