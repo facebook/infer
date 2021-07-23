@@ -444,7 +444,7 @@ let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as
       ; get_node_nb_exec
       ; get_summary
       ; get_formals
-      ; get_proc_desc= AnalysisCallbacks.get_proc_desc
+      ; get_proc_desc= Procdesc.load
       ; proc_resolve_attributes= Attributes.load }
     in
     AnalysisCallbacks.html_debug_new_node_session (NodeCFG.start_node node_cfg)
