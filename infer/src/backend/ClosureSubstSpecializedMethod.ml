@@ -223,7 +223,7 @@ let process summary =
   let proc_attributes = Procdesc.get_attributes pdesc in
   match proc_attributes.ProcAttributes.specialized_with_blocks_info with
   | Some spec_with_blocks_info -> (
-    match AnalysisCallbacks.get_proc_desc spec_with_blocks_info.orig_proc with
+    match Procdesc.load spec_with_blocks_info.orig_proc with
     | Some orig_proc_desc ->
         let formals_to_blocks_map = spec_with_blocks_info.formals_to_procs_and_new_formals in
         Procdesc.shallow_copy_code_from_pdesc ~orig_pdesc:orig_proc_desc ~dest_pdesc:pdesc ;
