@@ -329,7 +329,7 @@ module TransferFunctions = struct
       | _ ->
           domain
     in
-    let attributes_opt = AnalysisCallbacks.proc_resolve_attributes pname in
+    let attributes_opt = Attributes.load pname in
     let annotations = get_annotations attributes_opt in
     let args =
       if is_objc_instance attributes_opt then match args with _ :: rest -> rest | [] -> []
