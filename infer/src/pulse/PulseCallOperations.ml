@@ -306,7 +306,7 @@ let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.
         |> unknown_call tenv path call_loc (SkippedKnownCall callee_pname) ~ret ~actuals
              ~formals_opt
       in
-      let callee_procdesc_opt = AnalysisCallbacks.get_proc_desc callee_pname in
+      let callee_procdesc_opt = Procdesc.load callee_pname in
       Option.value_map callee_procdesc_opt
         ~default:[Ok (ContinueProgram astate_unknown)]
         ~f:(unknown_objc_nil_messaging astate_unknown)
