@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module IRAttributes = Attributes
 open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperations.Import
@@ -96,10 +97,7 @@ module Misc = struct
       List.map args ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= actual; typ} ->
           (actual, typ) )
     in
-    let formals_opt =
-      AnalysisCallbacks.proc_resolve_attributes callee_procname
-      |> Option.map ~f:Pvar.get_pvar_formals
-    in
+    let formals_opt = IRAttributes.load callee_procname |> Option.map ~f:Pvar.get_pvar_formals in
     let<+> astate =
       PulseCallOperations.unknown_call tenv path location (Model skip_reason) ~ret ~actuals
         ~formals_opt astate
