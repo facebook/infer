@@ -33,12 +33,15 @@ let make_unlock = make_lock_action "release" (fun a -> Unlock a)
 let make_trylock = make_lock_action "conditionally acquire" (fun a -> LockedIfTrue a)
 
 let make_guard_construct procname = function
+  | [_guard] ->
+      (* constructor is called without a mutex *)
+      NoEffect
   | [guard; lock] ->
       GuardConstruct {guard; lock; acquire_now= true}
   | [guard; lock; _defer_lock] ->
       GuardConstruct {guard; lock; acquire_now= false}
   | actuals ->
-      L.internal_error "Cannot parse guard constructor call %a(%a)" Procname.pp procname
+      L.internal_error "Cannot parse guard constructor call %a(%a)@\n" Procname.pp procname
         (PrettyPrintable.pp_collection ~pp_item:HilExp.pp)
         actuals ;
       NoEffect
@@ -48,7 +51,7 @@ let make_guard_action type_str action procname = function
   | [guard] ->
       action guard
   | actuals ->
-      L.internal_error "Cannot parse guard %s call %a(%a)" type_str Procname.pp procname
+      L.internal_error "Cannot parse guard %s call %a(%a)@\n" type_str Procname.pp procname
         (PrettyPrintable.pp_collection ~pp_item:HilExp.pp)
         actuals ;
       NoEffect
@@ -148,8 +151,8 @@ end = struct
     let qname_str = QualifiedCppName.to_qual_string qname in
     match List.find lock_models ~f:(fun mdl -> String.equal qname_str mdl.classname) with
     | None ->
-        L.internal_error "is_recursive_lock_type: Could not find lock type %a@." QualifiedCppName.pp
-          qname ;
+        L.internal_error "is_recursive_lock_type: Could not find lock type %a@\n"
+          QualifiedCppName.pp qname ;
         true
     | Some mdl ->
         mdl.recursive
