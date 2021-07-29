@@ -68,10 +68,8 @@ let should_be_analyzed proc_attributes =
   (not (is_active proc_name)) (* avoid infinite loops *) && not (already_analyzed proc_name)
 
 
-let get_proc_attr proc_name = Summary.OnDisk.proc_resolve_attributes proc_name
-
 let procedure_should_be_analyzed proc_name =
-  match get_proc_attr proc_name with
+  match Attributes.load proc_name with
   | Some proc_attributes ->
       should_be_analyzed proc_attributes
   | None ->

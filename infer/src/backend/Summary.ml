@@ -268,16 +268,6 @@ module OnDisk = struct
     else Option.map (get model_name) ~f:(fun (s : full_summary) -> s.proc_desc)
 
 
-  (** Try to find the attributes for a defined proc. First look at specs (to get attributes computed
-      by analysis) then look at the attributes table. If no attributes can be found, return None. *)
-  let proc_resolve_attributes proc_name =
-    match get proc_name with
-    | Some summary ->
-        Some (get_attributes summary)
-    | None ->
-        Attributes.load proc_name
-
-
   (** Save summary for the procedure into the spec database *)
   let store (summary : t) =
     let proc_name = get_proc_name summary in
