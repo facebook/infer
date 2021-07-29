@@ -189,6 +189,8 @@ val buck_merge_all_deps : bool
 
 val buck_mode : BuckMode.t option
 
+val buck_out : string
+
 val buck_out_gen : string
 
 val buck_targets_block_list : string list

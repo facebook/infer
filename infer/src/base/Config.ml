@@ -108,7 +108,9 @@ let assign = "<\"Assign\">"
     with a direct array access where an error is produced and the analysis continues *)
 let bound_error_allowed_in_procedure_call = true
 
-let buck_out_gen = "buck-out" ^/ "gen"
+let buck_out = "buck-out"
+
+let buck_out_gen = buck_out ^/ "gen"
 
 let buck_results_dir_name = "infer"
 
