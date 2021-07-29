@@ -9,9 +9,6 @@ open! IStd
 
 (** Module for on-demand analysis. *)
 
-val get_proc_desc : Procname.t -> Procdesc.t option
-(** Find a proc desc for the procedure, perhaps loading it from disk. *)
-
 val analyze_proc_name : Exe_env.t -> caller_summary:Summary.t -> Procname.t -> Summary.t option
 (** [analyze_proc_name exe_env ~caller_summary callee_pname] performs an on-demand analysis of
     [callee_pname] triggered during the analysis of [caller_summary] *)

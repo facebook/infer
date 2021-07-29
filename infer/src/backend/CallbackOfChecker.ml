@@ -11,9 +11,8 @@ open! IStd
    crash) *)
 let () =
   AnalysisCallbacks.set_callbacks
-    { get_proc_desc_f= Ondemand.get_proc_desc
-    ; html_debug_new_node_session_f= NodePrinter.with_session
-    ; proc_resolve_attributes_f= Summary.OnDisk.proc_resolve_attributes }
+    { html_debug_new_node_session_f= NodePrinter.with_session
+    ; get_model_proc_desc_f= Summary.OnDisk.get_model_proc_desc }
 
 
 let mk_interprocedural_t ~f_analyze_dep ~get_payload exe_env summary

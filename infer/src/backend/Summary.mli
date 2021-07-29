@@ -99,4 +99,6 @@ module OnDisk : sig
 
   val pp_specs_from_config : Format.formatter -> unit
   (** pretty print all stored summaries *)
+
+  val get_model_proc_desc : Procname.t -> Procdesc.t option
 end

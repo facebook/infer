@@ -261,6 +261,13 @@ module OnDisk = struct
         load_summary_to_spec_table proc_name
 
 
+  let get_model_proc_desc model_name =
+    if not (BiabductionModels.mem model_name) then
+      Logging.die InternalError "Requested summary of model that couldn't be found: %a@\n"
+        Procname.pp model_name
+    else Option.map (get model_name) ~f:(fun (s : full_summary) -> s.proc_desc)
+
+
   (** Try to find the attributes for a defined proc. First look at specs (to get attributes computed
       by analysis) then look at the attributes table. If no attributes can be found, return None. *)
   let proc_resolve_attributes proc_name =
