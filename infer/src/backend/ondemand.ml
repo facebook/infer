@@ -297,9 +297,8 @@ let register_callee ?caller_summary callee_pname =
 
 
 let get_proc_desc callee_pname =
-  IList.force_until_first_some
-    [ lazy (Procdesc.load callee_pname)
-    ; lazy (Option.map ~f:Summary.get_proc_desc (Summary.OnDisk.get callee_pname)) ]
+  if BiabductionModels.mem callee_pname then Summary.OnDisk.get_model_proc_desc callee_pname
+  else Procdesc.load callee_pname
 
 
 let analyze_callee exe_env ?caller_summary callee_pname =

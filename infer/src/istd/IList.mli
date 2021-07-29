@@ -46,10 +46,6 @@ val opt_cons : 'a option -> 'a list -> 'a list
 
 val remove_first : 'a list -> f:('a -> bool) -> 'a list option
 
-val force_until_first_some : 'a option lazy_t list -> 'a option
-(** [force_until_first_some xs] forces the computation of each element of [xs] and returns the first
-    that matches (Some _); or, if no such element exists, it returns None. *)
-
 val eval_until_first_some : (unit -> 'a option) list -> 'a option
 (** given a list of functions taking unit, evaluate and return the first one to return [Some x] *)
 
