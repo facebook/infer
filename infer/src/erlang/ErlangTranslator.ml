@@ -576,15 +576,12 @@ and translate_expression env {Ast.line; simple_expression} =
         in
         let op_block =
           match op with
+          | UBNot ->
+              make_simple_op_block BNot
           | UMinus ->
               make_simple_op_block Neg
           | UNot ->
               make_simple_op_block LNot
-          | todo ->
-              L.debug Capture Verbose
-                "@[todo ErlangTranslator.translate_expression(UnaryOperator) %s@."
-                (Sexp.to_string (Ast.sexp_of_unary_operator todo)) ;
-              Block.make_success env
         in
         Block.all env [block; op_block]
     | Variable vname ->

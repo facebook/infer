@@ -23,7 +23,11 @@
     test_bsr1_Ok/0,
     test_bsr1_Bad/0,
     test_bsr2_Ok/0,
-    test_bsr2_Bad/0
+    test_bsr2_Bad/0,
+    test_ubnot1_Ok/0,
+    test_ubnot1_Bad/0,
+    test_ubnot2_Ok/0,
+    test_ubnot2_Bad/0
 ]).
 
 % Call this method with warn(1) to trigger a warning to expect
@@ -153,4 +157,28 @@ test_bsr2_Bad() ->
     Y = 7,
     case X bsr Y of
         0 -> warn(1)
+    end.
+
+test_ubnot1_Ok() ->
+    X = 1,
+    case bnot X of
+        -2 -> ok
+    end.
+
+test_ubnot1_Bad() ->
+    X = 1,
+    case bnot X of
+        -2 -> warn(1)
+    end.
+
+test_ubnot2_Ok() ->
+    X = 11,
+    case bnot X of
+        -12 -> ok
+    end.
+
+test_ubnot2_Bad() ->
+    X = 11,
+    case bnot X of
+        -12 -> warn(1)
     end.
