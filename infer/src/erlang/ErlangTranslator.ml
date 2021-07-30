@@ -419,6 +419,16 @@ and translate_expression env {Ast.line; simple_expression} =
             make_simple_eager Ge
         | AtMost ->
             make_simple_eager Le
+        | BAnd ->
+            make_simple_eager BAnd
+        | BOr ->
+            make_simple_eager BOr
+        | Bsl ->
+            make_simple_eager Shiftlt
+        | Bsr ->
+            make_simple_eager Shiftrt
+        | BXor ->
+            make_simple_eager BXor
         (* TODO: proper modeling of equal vs exactly equal T95767672 *)
         | Equal | ExactlyEqual ->
             make_simple_eager Eq
