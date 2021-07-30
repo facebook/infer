@@ -240,26 +240,22 @@ let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} : 
   let any = ptr_typ_of_name Any in
   let (Present procdesc) = env.procdesc in
   let procname = Procdesc.get_proc_name procdesc in
+  let load_field id field typ : Sil.instr =
+    (* x=value.field *)
+    let field = Fieldname.make (ErlangType typ) field in
+    Load
+      {id; e= Lfield (Var value, field, typ_of_name typ); root_typ= any; typ= any; loc= env.location}
+  in
   match simple_expression with
   | Cons {head; tail} ->
-      let id = Ident.create_fresh Ident.knormal in
-      let start = Node.make_stmt env [has_type env ~result:id ~value Cons] in
-      let right_type_node = Node.make_if env true (Var id) in
-      let wrong_type_node = Node.make_if env false (Var id) in
-      let load id field : Sil.instr =
-        (* x=value.field *)
-        let field = Fieldname.make (ErlangType Cons) field in
-        Load
-          { id
-          ; e= Lfield (Var value, field, typ_of_name Cons)
-          ; root_typ= any
-          ; typ= any
-          ; loc= env.location }
-      in
+      let is_right_type_id = Ident.create_fresh Ident.knormal in
+      let start = Node.make_stmt env [has_type env ~result:is_right_type_id ~value Cons] in
+      let right_type_node = Node.make_if env true (Var is_right_type_id) in
+      let wrong_type_node = Node.make_if env false (Var is_right_type_id) in
       let head_value = Ident.create_fresh Ident.knormal in
       let tail_value = Ident.create_fresh Ident.knormal in
-      let head_load = load head_value "head" in
-      let tail_load = load tail_value "tail" in
+      let head_load = load_field head_value ErlangTypeName.cons_head Cons in
+      let tail_load = load_field tail_value ErlangTypeName.cons_tail Cons in
       let unpack_node = Node.make_stmt env [head_load; tail_load] in
       let head_matcher = translate_pattern env head_value head in
       let tail_matcher = translate_pattern env tail_value tail in
@@ -286,6 +282,33 @@ let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} : 
       let exit_failure = Node.make_if env false (Var id) in
       start |~~> [exit_success; exit_failure] ;
       {start; exit_success; exit_failure}
+  | Tuple exprs ->
+      let is_right_type_id = Ident.create_fresh Ident.knormal in
+      let tuple_typ : ErlangTypeName.t = Tuple (List.length exprs) in
+      let start = Node.make_stmt env [has_type env ~result:is_right_type_id ~value tuple_typ] in
+      let right_type_node = Node.make_if env true (Var is_right_type_id) in
+      let wrong_type_node = Node.make_if env false (Var is_right_type_id) in
+      let value_ids = List.map ~f:(function _ -> Ident.create_fresh Ident.knormal) exprs in
+      let field_names = ErlangTypeName.tuple_field_names (List.length exprs) in
+      let load_instructions =
+        List.map
+          ~f:(function one_value, one_field -> load_field one_value one_field tuple_typ)
+          (List.zip_exn value_ids field_names)
+      in
+      let unpack_node = Node.make_stmt env load_instructions in
+      let matchers =
+        List.map
+          ~f:(function one_expr, one_value -> translate_pattern env one_value one_expr)
+          (List.zip_exn exprs value_ids)
+      in
+      let submatcher = Block.all env matchers in
+      let exit_failure = Node.make_nop env in
+      start |~~> [right_type_node; wrong_type_node] ;
+      right_type_node |~~> [unpack_node] ;
+      unpack_node |~~> [submatcher.start] ;
+      wrong_type_node |~~> [exit_failure] ;
+      submatcher.exit_failure |~~> [exit_failure] ;
+      {start; exit_success= submatcher.exit_success; exit_failure}
   | UnaryOperator _ ->
       (* Unary op pattern must evaluate to number, so just delegate to expression translation *)
       let id = Ident.create_fresh Ident.knormal in
@@ -517,6 +540,24 @@ and translate_expression env {Ast.line; simple_expression} =
         let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_nil) in
         let instruction = Sil.Call ((ret_var, any), fun_exp, [], env.location, CallFlags.default) in
         Block.make_instruction env [instruction]
+    | Tuple exprs ->
+        let exprs_with_ids = List.map ~f:(fun e -> (e, Ident.create_fresh Ident.knormal)) exprs in
+        let expr_blocks =
+          let f (one_expr, one_id) =
+            let result = Present (Exp.Var one_id) in
+            translate_expression {env with result} one_expr
+          in
+          List.map ~f exprs_with_ids
+        in
+        let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_tuple) in
+        let exprs_ids_and_types =
+          List.map ~f:(function _, id -> (Exp.Var id, any)) exprs_with_ids
+        in
+        let call_instruction =
+          Sil.Call ((ret_var, any), fun_exp, exprs_ids_and_types, env.location, CallFlags.default)
+        in
+        let call_block = Block.make_instruction env [call_instruction] in
+        Block.all env (expr_blocks @ [call_block])
     | UnaryOperator (op, e) ->
         let id = Ident.create_fresh Ident.knormal in
         let block = translate_expression {env with result= Present (Exp.Var id)} e in

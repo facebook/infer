@@ -25,6 +25,8 @@ val __erlang_make_cons : Procname.t
 
 val __erlang_make_nil : Procname.t
 
+val __erlang_make_tuple : Procname.t
+
 val __infer_initializer_list : Procname.t
 
 val __infer_skip_function : Procname.t

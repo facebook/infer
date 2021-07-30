@@ -88,6 +88,8 @@ let __erlang_make_cons = create_procname "__erlang_make_cons"
 
 let __erlang_make_nil = create_procname "__erlang_make_nil"
 
+let __erlang_make_tuple = create_procname "__erlang_make_tuple"
+
 let __exit = create_procname "_exit"
 
 let __objc_bridge_transfer = create_procname "__objc_bridge_transfer"

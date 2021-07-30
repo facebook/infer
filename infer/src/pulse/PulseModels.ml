@@ -1557,11 +1557,13 @@ module Erlang = struct
     let addr_cons = (addr_cons_val, [event]) in
     let field name = Fieldname.make (ErlangType Cons) name in
     let<*> astate =
-      PulseOperations.write_field path location ~ref:addr_cons (field "head") ~obj:addr_head astate
+      PulseOperations.write_field path location ~ref:addr_cons (field ErlangTypeName.cons_head)
+        ~obj:addr_head astate
     in
     let<*> astate = PulseOperations.write_deref path location ~ref:addr_head ~obj:head astate in
     let<*> astate =
-      PulseOperations.write_field path location ~ref:addr_cons (field "tail") ~obj:addr_tail astate
+      PulseOperations.write_field path location ~ref:addr_cons (field ErlangTypeName.cons_tail)
+        ~obj:addr_tail astate
     in
     let<+> astate = PulseOperations.write_deref path location ~ref:addr_tail ~obj:tail astate in
     let astate =
@@ -1569,6 +1571,38 @@ module Erlang = struct
       PulseOperations.add_dynamic_type typ addr_cons_val astate
     in
     PulseOperations.write_id ret_id addr_cons astate
+
+
+  let make_tuple (args : 'a ProcnameDispatcher.Call.FuncArg.t list) : model =
+   fun {location; path; ret= ret_id, _} astate ->
+    let tuple_size = List.length args in
+    let tuple_typ_name : Typ.name = ErlangType (Tuple tuple_size) in
+    let event = ValueHistory.Allocation {f= Model "{}"; location} in
+    let addr_tuple_val = AbstractValue.mk_fresh () in
+    let addr_tuple = (addr_tuple_val, [event]) in
+    let addr_elems = List.map ~f:(function _ -> (AbstractValue.mk_fresh (), [event])) args in
+    let mk_field name = Fieldname.make tuple_typ_name name in
+    let field_names = ErlangTypeName.tuple_field_names tuple_size in
+    let get_payload (arg : 'a ProcnameDispatcher.Call.FuncArg.t) = arg.arg_payload in
+    let arg_payloads = List.map ~f:get_payload args in
+    let addr_elems_fields_payloads =
+      List.zip_exn addr_elems (List.zip_exn field_names arg_payloads)
+    in
+    let write_field_and_deref astate (addr_elem, (field_name, payload)) =
+      let* astate =
+        PulseOperations.write_field path location ~ref:addr_tuple (mk_field field_name)
+          ~obj:addr_elem astate
+      in
+      PulseOperations.write_deref path location ~ref:addr_elem ~obj:payload astate
+    in
+    let<+> astate =
+      List.fold_result addr_elems_fields_payloads ~init:astate ~f:write_field_and_deref
+    in
+    let astate =
+      let typ = Typ.mk_struct tuple_typ_name in
+      PulseOperations.add_dynamic_type typ addr_tuple_val astate
+    in
+    PulseOperations.write_id ret_id addr_tuple astate
 end
 
 module StringSet = Caml.Set.Make (String)
@@ -1645,6 +1679,7 @@ module ProcNameDispatcher = struct
         ; +BuiltinDecl.(match_builtin exit) <>--> Misc.early_exit
         ; +BuiltinDecl.(match_builtin __erlang_make_cons)
           <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.make_cons
+        ; +BuiltinDecl.(match_builtin __erlang_make_tuple) &++> Erlang.make_tuple
         ; +BuiltinDecl.(match_builtin __erlang_make_nil) <>--> Erlang.make_nil
         ; +BuiltinDecl.(match_builtin __erlang_error_badmatch) <>--> Erlang.error_badmatch
         ; +BuiltinDecl.(match_builtin __erlang_error_case_clause) <>--> Erlang.error_case_clause
