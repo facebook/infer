@@ -1052,6 +1052,15 @@ let incorporate_new_eqs new_eqs astate =
         Error (`PotentialInvalidAccess (astate, address, must_be_valid))
 
 
+let incorporate_new_eqs_on_val new_eqs v =
+  List.find_map new_eqs ~f:(function
+    | PulseFormula.Equal (v1, v2) when AbstractValue.equal v1 v ->
+        Some v2
+    | _ ->
+        None )
+  |> Option.value ~default:v
+
+
 module Topl = struct
   let small_step loc event astate =
     {astate with topl= PulseTopl.small_step loc astate.path_condition event astate.topl}

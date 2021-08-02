@@ -10,11 +10,21 @@ open PulseBasicInterface
 module AbductiveDomain = PulseAbductiveDomain
 module AccessResult = PulseAccessResult
 
-let map_path_condition ~f astate =
+let map_path_condition_common ~f astate =
   let phi, new_eqs = f astate.AbductiveDomain.path_condition in
-  AbductiveDomain.set_path_condition phi astate
-  |> AbductiveDomain.incorporate_new_eqs new_eqs
-  |> AccessResult.of_abductive_result
+  let astate = AbductiveDomain.set_path_condition phi astate in
+  let result =
+    AbductiveDomain.incorporate_new_eqs new_eqs astate |> AccessResult.of_abductive_result
+  in
+  (result, new_eqs)
+
+
+let map_path_condition ~f astate = map_path_condition_common ~f astate |> fst
+
+let map_path_condition_with_ret ~f astate ret =
+  let result, new_eqs = map_path_condition_common ~f astate in
+  Result.map result ~f:(fun result ->
+      (result, AbductiveDomain.incorporate_new_eqs_on_val new_eqs ret) )
 
 
 let and_nonnegative v astate =
@@ -39,17 +49,17 @@ let and_equal op1 op2 astate =
 
 
 let eval_binop binop_addr binop op_lhs op_rhs astate =
-  map_path_condition astate ~f:(fun phi ->
+  map_path_condition_with_ret astate binop_addr ~f:(fun phi ->
       PathCondition.eval_binop binop_addr binop op_lhs op_rhs phi )
 
 
 let eval_unop unop_addr unop addr astate =
-  map_path_condition astate ~f:(fun phi -> PathCondition.eval_unop unop_addr unop addr phi)
+  map_path_condition_with_ret astate unop_addr ~f:(fun phi ->
+      PathCondition.eval_unop unop_addr unop addr phi )
 
 
 let prune_binop ~negated bop lhs_op rhs_op astate =
-  map_path_condition astate ~f:(fun phi ->
-      PathCondition.prune_binop ~negated bop lhs_op rhs_op phi )
+  map_path_condition astate ~f:(fun phi -> PathCondition.prune_binop ~negated bop lhs_op rhs_op phi)
 
 
 let prune_eq_zero v astate =

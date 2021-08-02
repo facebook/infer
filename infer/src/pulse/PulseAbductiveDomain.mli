@@ -216,6 +216,9 @@ val incorporate_new_eqs :
     and [y] being allocated separately. In those cases, the resulting path condition is
     {!PathCondition.false_}. *)
 
+val incorporate_new_eqs_on_val : PathCondition.new_eqs -> AbstractValue.t -> AbstractValue.t
+(** Similar to [incorporate_new_eqs], but apply to an abstract value. *)
+
 val initialize : AbstractValue.t -> t -> t
 (** Remove "Uninitialized" attribute of the given address *)
 

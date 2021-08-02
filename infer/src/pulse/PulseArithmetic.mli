@@ -32,14 +32,14 @@ val eval_binop :
   -> operand
   -> operand
   -> AbductiveDomain.t
-  -> AbductiveDomain.t AccessResult.t
+  -> (AbductiveDomain.t * AbstractValue.t) AccessResult.t
 
 val eval_unop :
      AbstractValue.t
   -> Unop.t
   -> AbstractValue.t
   -> AbductiveDomain.t
-  -> AbductiveDomain.t AccessResult.t
+  -> (AbductiveDomain.t * AbstractValue.t) AccessResult.t
 
 val prune_binop :
      negated:bool

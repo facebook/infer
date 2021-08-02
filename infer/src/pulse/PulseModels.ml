@@ -480,7 +480,7 @@ module StdAtomicInteger = struct
   let arith_bop path prepost location event ret_id bop this operand astate =
     let* astate, int_addr, (old_int, hist) = load_backing_int path location this astate in
     let bop_addr = AbstractValue.mk_fresh () in
-    let* astate =
+    let* astate, bop_addr =
       PulseArithmetic.eval_binop bop_addr bop (AbstractValueOperand old_int) operand astate
     in
     let+ astate =
@@ -1438,7 +1438,7 @@ module JavaInteger = struct
     let<*> astate, _int_addr1, (int1, hist) = load_backing_int path location this astate in
     let<*> astate, _int_addr2, (int2, _) = load_backing_int path location arg astate in
     let binop_addr = AbstractValue.mk_fresh () in
-    let<+> astate =
+    let<+> astate, binop_addr =
       PulseArithmetic.eval_binop binop_addr Binop.Eq (AbstractValueOperand int1)
         (AbstractValueOperand int2) astate
     in
