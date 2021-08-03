@@ -15,6 +15,8 @@ val is_declared : Procname.t -> bool
 
 val __erlang_error_badmatch : Procname.t
 
+val __erlang_error_badrecord : Procname.t
+
 val __erlang_error_case_clause : Procname.t
 
 val __erlang_error_function_clause : Procname.t

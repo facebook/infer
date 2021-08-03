@@ -302,6 +302,11 @@ let _bad_pointer_comparison =
     ~user_documentation:[%blob "../../documentation/issues/BAD_POINTER_COMPARISON.md"]
 
 
+let bad_record =
+  register ~id:"BAD_RECORD" Error Pulse
+    ~user_documentation:[%blob "../../documentation/issues/BAD_RECORD.md"]
+
+
 let biabduction_analysis_stops =
   register_hidden ~enabled:false ~id:"BIABDUCTION_ANALYSIS_STOPS" Warning Biabduction
 

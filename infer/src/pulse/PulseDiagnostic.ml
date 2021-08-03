@@ -24,6 +24,7 @@ type access_to_invalid_address =
 
 type erlang_error =
   | Badmatch of {calling_context: calling_context; location: Location.t}
+  | Badrecord of {calling_context: calling_context; location: Location.t}
   | Case_clause of {calling_context: calling_context; location: Location.t}
   | Function_clause of {calling_context: calling_context; location: Location.t}
   | If_clause of {calling_context: calling_context; location: Location.t}
@@ -55,6 +56,7 @@ let get_location = function
       (* report at the call site that triggers the bug *) location
   | MemoryLeak {location}
   | ErlangError (Badmatch {location})
+  | ErlangError (Badrecord {location})
   | ErlangError (Case_clause {location})
   | ErlangError (Function_clause {location})
   | ErlangError (If_clause {location})
@@ -183,6 +185,8 @@ let get_message diagnostic =
         pulse_start_msg allocation_line pp_allocation_trace allocation_trace Location.pp location
   | ErlangError (Badmatch {calling_context= _; location}) ->
       F.asprintf "%s no match of RHS at %a" pulse_start_msg Location.pp location
+  | ErlangError (Badrecord {calling_context= _; location}) ->
+      F.asprintf "%s bad record at %a" pulse_start_msg Location.pp location
   | ErlangError (Case_clause {calling_context= _; location}) ->
       F.asprintf "%s no matching case clause at %a" pulse_start_msg Location.pp location
   | ErlangError (Function_clause {calling_context= _; location}) ->
@@ -325,6 +329,9 @@ let get_trace = function
   | ErlangError (Badmatch {calling_context; location}) ->
       get_trace_calling_context calling_context
       @@ [Errlog.make_trace_element 0 location "no match of RHS here" []]
+  | ErlangError (Badrecord {calling_context; location}) ->
+      get_trace_calling_context calling_context
+      @@ [Errlog.make_trace_element 0 location "bad record here" []]
   | ErlangError (Case_clause {calling_context; location}) ->
       get_trace_calling_context calling_context
       @@ [Errlog.make_trace_element 0 location "no matching case clause here" []]
@@ -357,6 +364,8 @@ let get_issue_type = function
       IssueType.pulse_memory_leak
   | ErlangError (Badmatch _) ->
       IssueType.no_match_of_rhs
+  | ErlangError (Badrecord _) ->
+      IssueType.bad_record
   | ErlangError (Case_clause _) ->
       IssueType.no_matching_case_clause
   | ErlangError (Function_clause _) ->

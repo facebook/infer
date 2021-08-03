@@ -30,6 +30,7 @@ type access_to_invalid_address =
 
 type erlang_error =
   | Badmatch of {calling_context: calling_context; location: Location.t}
+  | Badrecord of {calling_context: calling_context; location: Location.t}
   | Case_clause of {calling_context: calling_context; location: Location.t}
   | Function_clause of {calling_context: calling_context; location: Location.t}
   | If_clause of {calling_context: calling_context; location: Location.t}

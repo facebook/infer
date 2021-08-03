@@ -438,6 +438,7 @@ OPTIONS
              Array_of_pointsto (enabled by default),
              Assert_failure (enabled by default),
              BAD_POINTER_COMPARISON (enabled by default),
+             BAD_RECORD (enabled by default),
              BIABDUCTION_ANALYSIS_STOPS (disabled by default),
              BIABDUCTION_MEMORY_LEAK (disabled by default),
              BUFFER_OVERRUN_L1 (enabled by default),

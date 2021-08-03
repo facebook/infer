@@ -276,6 +276,40 @@ let translate_atom_literal (atom : string) : Exp.t =
   Exp.Const (Cint (IntLit.of_int hash))
 
 
+(** into_id=value_id.field_name *)
+let load_field env into_id value_id field_name typ : Sil.instr =
+  let any = ptr_typ_of_name Any in
+  let field = Fieldname.make (ErlangType typ) field_name in
+  Load
+    { id= into_id
+    ; e= Lfield (Var value_id, field, typ_of_name typ)
+    ; root_typ= any
+    ; typ= any
+    ; loc= env.location }
+
+
+let match_record_name env value name record_info : Block.t =
+  let tuple_size = 1 + List.length record_info.field_names in
+  let tuple_typ : ErlangTypeName.t = Tuple tuple_size in
+  let is_right_type_id = Ident.create_fresh Ident.knormal in
+  let start = Node.make_stmt env [has_type env ~result:is_right_type_id ~value tuple_typ] in
+  let right_type_node = Node.make_if env true (Var is_right_type_id) in
+  let wrong_type_node = Node.make_if env false (Var is_right_type_id) in
+  let name_id = Ident.create_fresh Ident.knormal in
+  let name_load = load_field env name_id value (ErlangTypeName.tuple_elem 1) tuple_typ in
+  let unpack_node = Node.make_stmt env [name_load] in
+  let name_cond = Exp.BinOp (Eq, Var name_id, translate_atom_literal name) in
+  let right_name_node = Node.make_if env true name_cond in
+  let wrong_name_node = Node.make_if env false name_cond in
+  let exit_failure = Node.make_nop env in
+  start |~~> [right_type_node; wrong_type_node] ;
+  right_type_node |~~> [unpack_node] ;
+  unpack_node |~~> [right_name_node; wrong_name_node] ;
+  wrong_type_node |~~> [exit_failure] ;
+  wrong_name_node |~~> [exit_failure] ;
+  {start; exit_success= right_name_node; exit_failure}
+
+
 (** If the pattern-match succeeds, then the [exit_success] node is reached and the pattern variables
     are storing the corresponding values; otherwise, the [exit_failure] node is reached. *)
 let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} : Block.t =
@@ -283,12 +317,6 @@ let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} : 
   let any = ptr_typ_of_name Any in
   let (Present procdesc) = env.procdesc in
   let procname = Procdesc.get_proc_name procdesc in
-  let load_field id field typ : Sil.instr =
-    (* x=value.field *)
-    let field = Fieldname.make (ErlangType typ) field in
-    Load
-      {id; e= Lfield (Var value, field, typ_of_name typ); root_typ= any; typ= any; loc= env.location}
-  in
   match simple_expression with
   | Cons {head; tail} ->
       let is_right_type_id = Ident.create_fresh Ident.knormal in
@@ -297,8 +325,8 @@ let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} : 
       let wrong_type_node = Node.make_if env false (Var is_right_type_id) in
       let head_value = Ident.create_fresh Ident.knormal in
       let tail_value = Ident.create_fresh Ident.knormal in
-      let head_load = load_field head_value ErlangTypeName.cons_head Cons in
-      let tail_load = load_field tail_value ErlangTypeName.cons_tail Cons in
+      let head_load = load_field env head_value value ErlangTypeName.cons_head Cons in
+      let tail_load = load_field env tail_value value ErlangTypeName.cons_tail Cons in
       let unpack_node = Node.make_stmt env [head_load; tail_load] in
       let head_matcher = translate_pattern env head_value head in
       let tail_matcher = translate_pattern env tail_value tail in
@@ -333,39 +361,23 @@ let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} : 
         let index_expr = Exp.Const (Cint (IntLit.of_int field_info.index)) in
         Block.make_branch env (Exp.BinOp (Eq, Var value, index_expr)) )
   | RecordUpdate {name; updates; _} -> (
-    (* Match the type and the record name *)
     match String.Map.find env.records name with
     | None ->
         L.debug Capture Verbose "@[Unknown record %s@." name ;
         Block.make_failure env
     | Some record_info ->
+        (* Match the type and the record name *)
+        let record_name_matcher = match_record_name env value name record_info in
+        (* Match each specified field *)
         let tuple_size = 1 + List.length record_info.field_names in
         let tuple_typ : ErlangTypeName.t = Tuple tuple_size in
-        let is_right_type_id = Ident.create_fresh Ident.knormal in
-        let start = Node.make_stmt env [has_type env ~result:is_right_type_id ~value tuple_typ] in
-        let right_type_node = Node.make_if env true (Var is_right_type_id) in
-        let wrong_type_node = Node.make_if env false (Var is_right_type_id) in
-        let name_id = Ident.create_fresh Ident.knormal in
-        let name_load = load_field name_id (ErlangTypeName.tuple_elem 1) tuple_typ in
-        let unpack_node = Node.make_stmt env [name_load] in
-        let name_cond = Exp.BinOp (Eq, Var name_id, translate_atom_literal name) in
-        let right_name_node = Node.make_if env true name_cond in
-        let wrong_name_node = Node.make_if env false name_cond in
-        let exit_failure = Node.make_nop env in
-        start |~~> [right_type_node; wrong_type_node] ;
-        right_type_node |~~> [unpack_node] ;
-        unpack_node |~~> [right_name_node; wrong_name_node] ;
-        wrong_type_node |~~> [exit_failure] ;
-        wrong_name_node |~~> [exit_failure] ;
-        let record_name_matcher : Block.t = {start; exit_success= right_name_node; exit_failure} in
-        (* Match each specified field *)
         let make_one_field_matcher (one_update : Ast.record_update) =
           match one_update.field with
           | Some name ->
               let field_info = String.Map.find_exn record_info.field_info name in
               let value_id = Ident.create_fresh Ident.knormal in
               let tuple_elem = ErlangTypeName.tuple_elem field_info.index in
-              let load_instr = load_field value_id tuple_elem tuple_typ in
+              let load_instr = load_field env value_id value tuple_elem tuple_typ in
               let unpack_node = Node.make_stmt env [load_instr] in
               let submatcher = translate_pattern env value_id one_update.expression in
               unpack_node |~~> [submatcher.start] ;
@@ -387,7 +399,7 @@ let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} : 
       let field_names = ErlangTypeName.tuple_field_names (List.length exprs) in
       let load_instructions =
         List.map
-          ~f:(function one_value, one_field -> load_field one_value one_field tuple_typ)
+          ~f:(function one_value, one_field -> load_field env one_value value one_field tuple_typ)
           (List.zip_exn value_ids field_names)
       in
       let unpack_node = Node.make_stmt env load_instructions in
@@ -470,11 +482,6 @@ and translate_expression env {Ast.line; simple_expression} =
   let procname = Procdesc.get_proc_name procdesc in
   let ret_var =
     match result with Exp.Var ret_var -> ret_var | _ -> Ident.create_fresh Ident.knormal
-  in
-  let load_field id field expr typ : Sil.instr =
-    (* x=value.field *)
-    let field = Fieldname.make (ErlangType typ) field in
-    Load {id; e= Lfield (expr, field, typ_of_name typ); root_typ= any; typ= any; loc= env.location}
   in
   let expression_block : Block.t =
     match simple_expression with
@@ -642,27 +649,31 @@ and translate_expression env {Ast.line; simple_expression} =
         let instruction = Sil.Call ((ret_var, any), fun_exp, [], env.location, CallFlags.default) in
         Block.make_instruction env [instruction]
     | RecordAccess {record; name; field} -> (
-        (* TODO: check for badrecord T97040801 *)
-        let record_id = Ident.create_fresh Ident.knormal in
-        let record_block =
-          let result = Present (Exp.Var record_id) in
-          translate_expression {env with result} record
-        in
-        (* Under the hood, a record is a tagged tuple, the first element is the name,
-           and then the fields follow in the order as in the record definition. *)
-        match String.Map.find env.records name with
-        | None ->
-            L.debug Capture Verbose "@[Unknown record %s@." name ;
-            Block.make_success env
-        | Some record_info ->
-            let field_info = String.Map.find_exn record_info.field_info field in
-            let field_no = field_info.index in
-            let tuple_typ : ErlangTypeName.t = Tuple (1 + List.length record_info.field_names) in
-            let field_load =
-              load_field ret_var (ErlangTypeName.tuple_elem field_no) (Var record_id) tuple_typ
-            in
-            let load_block = Block.make_instruction env [field_load] in
-            Block.all env [record_block; load_block] )
+      (* Under the hood, a record is a tagged tuple, the first element is the name,
+         and then the fields follow in the order as in the record definition. *)
+      match String.Map.find env.records name with
+      | None ->
+          L.debug Capture Verbose "@[Unknown record %s@." name ;
+          Block.make_success env
+      | Some record_info ->
+          let record_id = Ident.create_fresh Ident.knormal in
+          let record_block =
+            let result = Present (Exp.Var record_id) in
+            let value_block = translate_expression {env with result} record in
+            let matcher_block = match_record_name env record_id name record_info in
+            let crash_node = Node.make_fail env BuiltinDecl.__erlang_error_badrecord in
+            matcher_block.exit_failure |~~> [crash_node] ;
+            let matcher_block = {matcher_block with exit_failure= crash_node} in
+            Block.all env [value_block; matcher_block]
+          in
+          let field_info = String.Map.find_exn record_info.field_info field in
+          let field_no = field_info.index in
+          let tuple_typ : ErlangTypeName.t = Tuple (1 + List.length record_info.field_names) in
+          let field_load =
+            load_field env ret_var record_id (ErlangTypeName.tuple_elem field_no) tuple_typ
+          in
+          let load_block = Block.make_instruction env [field_load] in
+          Block.all env [record_block; load_block] )
     | RecordIndex {name; field} -> (
       match String.Map.find env.records name with
       | None ->
@@ -692,13 +703,17 @@ and translate_expression env {Ast.line; simple_expression} =
           in
           let updates_map = List.fold ~init:String.Map.empty ~f:collect_updates updates in
           (* Translate record expression if it is an update *)
-          (* TODO: check for badrecord T97040801 *)
           let record_id = Ident.create_fresh Ident.knormal in
           let record_block =
             match record with
             | Some expr ->
                 let result = Present (Exp.Var record_id) in
-                [translate_expression {env with result} expr]
+                let value_block = translate_expression {env with result} expr in
+                let matcher_block = match_record_name env record_id name record_info in
+                let crash_node = Node.make_fail env BuiltinDecl.__erlang_error_badrecord in
+                matcher_block.exit_failure |~~> [crash_node] ;
+                let matcher_block = {matcher_block with exit_failure= crash_node} in
+                [Block.all env [value_block; matcher_block]]
             | None ->
                 []
           in
@@ -721,9 +736,9 @@ and translate_expression env {Ast.line; simple_expression} =
                   match record with
                   | Some _ ->
                       let field_load =
-                        load_field one_id
+                        load_field env one_id record_id
                           (ErlangTypeName.tuple_elem field_info.index)
-                          (Var record_id) tuple_typ
+                          tuple_typ
                       in
                       Block.make_instruction env [field_load]
                   | None -> (

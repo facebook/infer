@@ -78,6 +78,8 @@ let __delete_locked_attribute = create_procname "__delete_locked_attribute"
 
 let __erlang_error_badmatch = create_procname "__erlang_error_badmatch"
 
+let __erlang_error_badrecord = create_procname "__erlang_error_badrecord"
+
 let __erlang_error_case_clause = create_procname "__erlang_error_case_clause"
 
 let __erlang_error_function_clause = create_procname "__erlang_error_function_clause"

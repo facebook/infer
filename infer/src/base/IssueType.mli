@@ -83,6 +83,8 @@ val assert_failure : t
 
 val bad_footprint : t
 
+val bad_record : t
+
 val biabduction_analysis_stops : t
 
 val buffer_overrun_l1 : t

@@ -1512,6 +1512,13 @@ module Erlang = struct
     ]
 
 
+  let error_badrecord : model =
+   fun {location} astate ->
+    [ Error
+        (ReportableError
+           {astate; diagnostic= ErlangError (Badrecord {calling_context= []; location})}) ]
+
+
   let error_case_clause : model =
    fun {location} astate ->
     [ Error
@@ -1682,6 +1689,7 @@ module ProcNameDispatcher = struct
         ; +BuiltinDecl.(match_builtin __erlang_make_tuple) &++> Erlang.make_tuple
         ; +BuiltinDecl.(match_builtin __erlang_make_nil) <>--> Erlang.make_nil
         ; +BuiltinDecl.(match_builtin __erlang_error_badmatch) <>--> Erlang.error_badmatch
+        ; +BuiltinDecl.(match_builtin __erlang_error_badrecord) <>--> Erlang.error_badrecord
         ; +BuiltinDecl.(match_builtin __erlang_error_case_clause) <>--> Erlang.error_case_clause
         ; +BuiltinDecl.(match_builtin __erlang_error_function_clause)
           <>--> Erlang.error_function_clause
