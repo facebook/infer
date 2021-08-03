@@ -6,6 +6,7 @@
 -module(records).
 
 -record(person, {name, phone, address}).
+-record(car, {plate, owner}).
 
 -export([
     test_index2_Ok/0,
@@ -43,7 +44,9 @@
     test_initializer_update_override_Ok/0,
     test_initializer_update_override_Bad/0,
     test_undefined_Ok/0,
-    test_undefined_Bad/0
+    test_undefined_Bad/0,
+    test_nested_Ok/0,
+    test_nested_Bad/0
 ]).
 
 % Call this method with warn(1) to trigger a warning to expect
@@ -269,4 +272,18 @@ test_undefined_Bad() ->
     P = #person{},
     case P#person.name of
         undefined -> warn(1)
+    end.
+
+test_nested_Ok() ->
+    P = #person{name = 123, phone = 45, address = 6789},
+    C = #car{plate = 987654, owner = P},
+    case C#car.owner#person.name of
+        123 -> ok
+    end.
+
+test_nested_Bad() ->
+    P = #person{name = 123, phone = 45, address = 6789},
+    C = #car{plate = 987654, owner = P},
+    case C#car.owner#person.name of
+        123 -> warn(1)
     end.

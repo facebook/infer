@@ -7,6 +7,7 @@
 
 -record(person, {name, phone, address}).
 -record(rabbit, {name, color}).
+-record(car, {plate, owner}).
 
 -export([
     test_type_Ok/0,
@@ -30,7 +31,12 @@
     test_match_as_tuple4_Bad/0,
     test_match_as_tuple5_Bad/0,
     test_bad_record_access_Bad/0,
-    test_bad_record_update_Bad/0
+    test_bad_record_update_Bad/0,
+    test_nested1_Ok/0,
+    test_nested2_Ok/0,
+    test_nested3_Ok/0,
+    test_nested4_Bad/0,
+    test_nested5_Bad/0
 ]).
 
 accepts_rabbits(#rabbit{}) -> ok.
@@ -148,3 +154,38 @@ test_bad_record_access_Bad() ->
 test_bad_record_update_Bad() ->
     P = #person{name = 123, phone = 45, address = 6789},
     P#rabbit{name = 9999}.
+
+test_nested1_Ok() ->
+    P = #person{name = 123, phone = 45, address = 6789},
+    C = #car{plate = 987654, owner = P},
+    case C of
+        #car{owner = #person{name = 123}} -> ok
+    end.
+
+test_nested2_Ok() ->
+    P = #person{name = 123, phone = 45, address = 6789},
+    C = #car{plate = 987654, owner = P},
+    case C of
+        #car{owner = #person{phone = 45}} -> ok
+    end.
+
+test_nested3_Ok() ->
+    P = #person{name = 123, phone = 45, address = 6789},
+    C = #car{plate = 987654, owner = P},
+    case C of
+        #car{owner = #person{name = 123, address = 6789}} -> ok
+    end.
+
+test_nested4_Bad() ->
+    P = #person{name = 123, phone = 45, address = 6789},
+    C = #car{plate = 987654, owner = P},
+    case C of
+        #car{owner = #person{name = 9999}} -> ok
+    end.
+
+test_nested5_Bad() ->
+    P = #person{name = 123, phone = 45, address = 6789},
+    C = #car{plate = 987654, owner = P},
+    case C of
+        #car{owner = #person{name = 123, phone = 99999}} -> ok
+    end.

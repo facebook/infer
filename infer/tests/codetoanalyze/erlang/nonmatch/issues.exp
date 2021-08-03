@@ -44,6 +44,8 @@ codetoanalyze/erlang/nonmatch/src/records.erl, test_match_field3_Bad/0, 2, NO_MA
 codetoanalyze/erlang/nonmatch/src/records.erl, test_match_field4_Bad/0, 2, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
 codetoanalyze/erlang/nonmatch/src/records.erl, test_match_field_multiple2_Bad/0, 2, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
 codetoanalyze/erlang/nonmatch/src/records.erl, test_match_field_multiple3_Bad/0, 2, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
+codetoanalyze/erlang/nonmatch/src/records.erl, test_nested4_Bad/0, 3, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
+codetoanalyze/erlang/nonmatch/src/records.erl, test_nested5_Bad/0, 3, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
 codetoanalyze/erlang/nonmatch/src/records.erl, test_type_Bad/0, -5, NO_MATCHING_FUNCTION_CLAUSE, no_bucket, ERROR, [calling context starts here,in call to `accepts_rabbits/1`,no matching function clause here]
 codetoanalyze/erlang/nonmatch/src/tuples.erl, accepts_empty/1, 0, NO_MATCHING_FUNCTION_CLAUSE, no_bucket, ERROR, [*** LATENT ***,no matching function clause here]
 codetoanalyze/erlang/nonmatch/src/tuples.erl, accepts_tuple_of_two/1, 0, NO_MATCHING_FUNCTION_CLAUSE, no_bucket, ERROR, [*** LATENT ***,no matching function clause here]
