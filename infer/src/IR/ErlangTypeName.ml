@@ -27,4 +27,7 @@ let cons_head = "head"
 
 let cons_tail = "tail"
 
-let tuple_field_names size = List.init size ~f:(Printf.sprintf "elem%d")
+let tuple_elem i = Printf.sprintf "elem%d" i
+
+(* Tuple element indexing is one based *)
+let tuple_field_names size = List.init size ~f:(fun i -> tuple_elem (i + 1))

@@ -479,6 +479,16 @@ let to_function json : Ast.function_ option =
       unknown "function" json
 
 
+let to_record_field json : Ast.record_field option =
+  match json with
+  | `List [`String "record_field"; _; `List [`String "atom"; _; `String field_name]; expr] ->
+      Some {Ast.field_name; initializer_= to_expression expr}
+  | `List [`String "record_field"; _; `List [`String "atom"; _; `String field_name]] ->
+      Some {Ast.field_name; initializer_= None}
+  | _ ->
+      unknown "record_field" json
+
+
 let to_line_form json : Ast.form option =
   let form line simple_form : Ast.form option = Some {line; simple_form} in
   match json with
@@ -502,8 +512,12 @@ let to_line_form json : Ast.form option =
       let function_ : Ast.function_reference = FunctionName function_ in
       let function_ : Ast.function_ = {module_= ModuleMissing; function_; arity} in
       form line (Function {function_; clauses})
+  | `List [`String "attribute"; anno; `String "record"; `List [`String name; fields]] ->
+      let* line = to_line anno in
+      let* field_list = to_list ~f:to_record_field fields in
+      form line (Record {name; fields= field_list})
   | `List [`String "attribute"; _anno; `String _unknown_attribute; _] ->
-      (* TODO: handle types (spec, record, ...) *)
+      (* TODO: handle types (spec, ...) *)
       None
   | `List [`String "eof"; _] ->
       None

@@ -136,13 +136,16 @@ and catch_pattern = {exception_: exception_; pattern: pattern; variable: string}
 
 (** {2 S8.1: Module declarations and forms} *)
 
-(* TODO: Add records, types, and specs. *)
+(* TODO: Add types, and specs. *)
+type record_field = {field_name: string; initializer_: expression option} [@@deriving sexp_of]
+
 type simple_form =
   | Export of function_ list
   | Import of {module_name: string; functions: function_ list}
   | Module of string
   | File of {path: string}
   | Function of {function_: function_; clauses: case_clause list}
+  | Record of {name: string; fields: record_field list}
 [@@deriving sexp_of]
 
 type form = {line: line; simple_form: simple_form} [@@deriving sexp_of]
