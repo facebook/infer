@@ -168,9 +168,18 @@ let rec validate_expr (expr : Ast.expression) =
       validate_expr e && List.for_all ~f:validate_qualifier qs
   | Literal _ ->
       true
-  | Map {map; updates} ->
-      let validate_assoc (a : Ast.association) = validate_expr a.key && validate_expr a.value in
-      validate_expr_opt map && List.for_all ~f:validate_assoc updates
+  | Map {map; updates} -> (
+      (* Map create only accepts '=>' *)
+      let validate_create (a : Ast.association) =
+        match a.kind with Arrow -> validate_expr a.key && validate_expr a.value | _ -> false
+      in
+      (* Map update accepts '=>' and ':=' *)
+      let validate_update (a : Ast.association) = validate_expr a.key && validate_expr a.value in
+      match map with
+      | None ->
+          List.for_all ~f:validate_create updates
+      | Some expr ->
+          validate_expr expr && List.for_all ~f:validate_update updates )
   | Match {pattern; body} ->
       validate_pattern pattern && validate_expr body
   | Nil ->
