@@ -30,6 +30,8 @@
     test_match_as_tuple3_Bad/0,
     test_match_as_tuple4_Bad/0,
     test_match_as_tuple5_Bad/0,
+    test_match_as_tuple6_Bad/0,
+    test_match_as_tuple7_Bad/0,
     test_bad_record_access_Bad/0,
     test_bad_record_update_Bad/0,
     test_nested1_Ok/0,
@@ -145,6 +147,18 @@ test_match_as_tuple5_Bad() ->
     P = #person{name = 123, phone = 45, address = 6789},
     case P of
         {person, 123, 45, 999999} -> ok
+    end.
+
+test_match_as_tuple6_Bad() ->
+    P = #person{name = 123, phone = 45, address = 6789},
+    case P of
+        {person, _, _} -> ok
+    end.
+
+test_match_as_tuple7_Bad() ->
+    P = #person{name = 123, phone = 45, address = 6789},
+    case P of
+        {person, _, _, _, _} -> ok
     end.
 
 test_bad_record_access_Bad() ->

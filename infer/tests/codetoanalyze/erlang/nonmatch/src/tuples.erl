@@ -9,6 +9,7 @@
     test_size1_Ok/0,
     test_size2_Bad/0,
     test_size3_Bad/0,
+    test_size4_Bad/0,
     test_elements1_Ok/0,
     test_elements2_Bad/0,
     test_elements3_Bad/0,
@@ -37,6 +38,9 @@ test_size2_Bad() ->
 
 test_size3_Bad() ->
     accepts_tuple_of_two({1}).
+
+test_size4_Bad() ->
+    accepts_tuple_of_two({}).
 
 test_elements1_Ok() ->
     T = {1, 2},

@@ -39,6 +39,8 @@ codetoanalyze/erlang/nonmatch/src/records.erl, test_match_as_tuple2_Bad/0, 2, NO
 codetoanalyze/erlang/nonmatch/src/records.erl, test_match_as_tuple3_Bad/0, 2, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
 codetoanalyze/erlang/nonmatch/src/records.erl, test_match_as_tuple4_Bad/0, 2, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
 codetoanalyze/erlang/nonmatch/src/records.erl, test_match_as_tuple5_Bad/0, 2, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
+codetoanalyze/erlang/nonmatch/src/records.erl, test_match_as_tuple6_Bad/0, 2, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
+codetoanalyze/erlang/nonmatch/src/records.erl, test_match_as_tuple7_Bad/0, 2, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
 codetoanalyze/erlang/nonmatch/src/records.erl, test_match_field2_Bad/0, 2, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
 codetoanalyze/erlang/nonmatch/src/records.erl, test_match_field3_Bad/0, 2, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
 codetoanalyze/erlang/nonmatch/src/records.erl, test_match_field4_Bad/0, 2, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
@@ -62,3 +64,4 @@ codetoanalyze/erlang/nonmatch/src/tuples.erl, test_nested3_Bad/0, 2, NO_MATCH_OF
 codetoanalyze/erlang/nonmatch/src/tuples.erl, test_nested4_Bad/0, 2, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
 codetoanalyze/erlang/nonmatch/src/tuples.erl, test_size2_Bad/0, -5, NO_MATCHING_FUNCTION_CLAUSE, no_bucket, ERROR, [calling context starts here,in call to `accepts_tuple_of_two/1`,no matching function clause here]
 codetoanalyze/erlang/nonmatch/src/tuples.erl, test_size3_Bad/0, -8, NO_MATCHING_FUNCTION_CLAUSE, no_bucket, ERROR, [calling context starts here,in call to `accepts_tuple_of_two/1`,no matching function clause here]
+codetoanalyze/erlang/nonmatch/src/tuples.erl, test_size4_Bad/0, -11, NO_MATCHING_FUNCTION_CLAUSE, no_bucket, ERROR, [calling context starts here,in call to `accepts_tuple_of_two/1`,no matching function clause here]
