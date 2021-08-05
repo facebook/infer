@@ -70,7 +70,7 @@ jobs:
         if: runner.os == 'Linux'
 
       - name: Install Required Brew Packages for MacOS
-        run: brew install automake jq ninja pkg-config
+        run: brew install automake jq ninja pkg-config lzlib
         if: runner.os == 'macOS'
 
       - name: Compute hash of clang installation
