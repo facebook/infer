@@ -479,12 +479,14 @@ let to_function json : Ast.function_ option =
       unknown "function" json
 
 
-let to_record_field json : Ast.record_field option =
+let rec to_record_field json : Ast.record_field option =
   match json with
   | `List [`String "record_field"; _; `List [`String "atom"; _; `String field_name]; expr] ->
       Some {Ast.field_name; initializer_= to_expression expr}
   | `List [`String "record_field"; _; `List [`String "atom"; _; `String field_name]] ->
       Some {Ast.field_name; initializer_= None}
+  | `List [`String "typed_record_field"; inner_record_field; _] ->
+      to_record_field inner_record_field
   | _ ->
       unknown "record_field" json
 
