@@ -21,15 +21,17 @@ This docker file will use the latest
 Infer. 
 
 1. Get docker running, e.g. using Docker Quickstart Terminal.
-2. cd to the directory `docker/`,
-3. Build Infer in docker container and try on an example:
+2. go to the version of your choice, e.g. `cd docker/1.1.0/`
+3. Build or install Infer in the Docker container and try on an example:
 
 ```sh
-# Build Infer; 20min or so; to be executed from docker/ in the Infer repo
-./run.sh
+cd docker/1.1.0/
+docker build -t infer .
+# mount the local examples directory inside the image
+# you can mount your project directory here instead
+docker run -it infer -v $PWD/../../examples:/infer-examples /bin/bash
 # you should now be inside the docker container with a shell prompt, e.g.
-# "root@5c3b9af90d59:/infer/examples# "
-sdkmanager --licenses
-cd android_hello/
-infer -- ./gradlew build
+# "root@5c3b9af90d59:/# "
+cd /infer-examples/
+infer -- clang -c hello.c
 ```

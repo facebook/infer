@@ -1,4 +1,4 @@
-FROM debian:buster-slim
+FROM debian:bullseye-slim AS compilator
 
 LABEL maintainer "Infer team"
 
@@ -11,6 +11,7 @@ RUN apt-get update && \
       bzip2 \
       cmake \
       curl \
+      g++ \
       gcc \
       git \
       libc6-dev \
@@ -18,22 +19,21 @@ RUN apt-get update && \
       libmpfr-dev \
       libsqlite3-dev \
       make \
+      opam \
       openjdk-11-jdk-headless \
       patch \
+      patchelf \
       pkg-config \
-      python3.7 \
+      python3 \
       python3-distutils \
       unzip \
+      xz-utils \
       zlib1g-dev && \
     rm -rf /var/lib/apt/lists/*
 
-# Install opam 2
-RUN curl -sL https://github.com/ocaml/opam/releases/download/2.0.6/opam-2.0.6-x86_64-linux > /usr/bin/opam && \
-    chmod +x /usr/bin/opam
-
 # Disable sandboxing
 # Without this opam fails to compile OCaml for some reason. We don't need sandboxing inside a Docker container anyway.
-RUN opam init --reinit --bare --disable-sandboxing
+RUN opam init --reinit --bare --disable-sandboxing --yes --auto-setup
 
 # Download the latest Infer master
 RUN cd / && \
@@ -42,31 +42,28 @@ RUN cd / && \
 # Build opam deps first, then infer. This way if any step fails we
 # don't lose the significant amount of work done in the previous
 # steps.
+RUN cd /infer && ./build-infer.sh java --only-setup-opam
+RUN cd /infer && ./build-infer.sh java
+
+# Generate a release
 RUN cd /infer && \
-    INFER_OPAM_SWITCH=4.08.1 ./build-infer.sh --only-setup-opam --no-opam-lock java && \
-    opam clean
+    make install-with-libs \
+    BUILD_MODE=opt \
+    PATCHELF=patchelf \
+    DESTDIR="/infer-release" \
+    libdir_relative_to_bindir="../lib"
 
-# Make sure clang is disabled
-RUN eval $(opam env) && \
-    cd /infer && \
-    SKIP_SUBMODULES=true ./autogen.sh && \
-    ./configure --disable-c-analyzers
+FROM debian:buster-slim AS executor
 
-# "Install" Infer. The tutorial assumes /infer-host is the working copy of infer so let's put it in the PATH too.
-ENV PATH /infer-host/infer/bin:/infer/bin:$PATH
+RUN apt-get update && apt-get install --yes --no-install-recommends sqlite3
 
-# build in non-optimized mode by default to speed up build times
-ENV BUILD_MODE=dev
+# Get the infer release
+COPY --from=compilator /infer-release/usr/local /infer
 
-# prevent exiting by compulsively hitting Control-D
-ENV IGNOREEOF=9
+# Install infer
+ENV PATH /infer/bin:${PATH}
 
-# should be moved earlier
-ENV INFER_OPAM_SWITCH=4.08.1
-
-# export `opam env`
-ENV OPAM_SWITCH_PREFIX=/root/.opam/4.08.1
-ENV CAML_LD_LIBRARY_PATH=/root/.opam/4.08.1/lib/stublibs:/root/.opam/4.08.1/lib/ocaml/stublibs:/root/.opam/4.08.1/lib/ocaml
-ENV OCAML_TOPLEVEL_PATH=/root/.opam/4.08.1/lib/toplevel
-ENV MANPATH=$MANPATH:/root/.opam/4.08.1/man
-ENV PATH=/root/.opam/4.08.1/bin:$PATH
+# if called with /infer-host mounted then copy infer there
+RUN if test -d /infer-host; then \
+      cp -av /infer/. /infer-host; \
+    fi
