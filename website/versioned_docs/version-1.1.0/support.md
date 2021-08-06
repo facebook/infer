@@ -40,10 +40,10 @@ adapt to your project:
 infer run -- xcodebuild -workspace HelloWorld.xcworkspace -scheme HelloWorld
 ```
 
-### "infer [options] -- \<build command\>" fails during a linking step
+### `infer [options] -- <build command>` fails during a linking step
 
 The linker will sometimes not work if files have been compiled using a different
-compiler, such as the one Infer uses [under the hood](/docs/infer-workflow) to
+compiler, such as the one Infer uses [under the hood](/docs/1.1.0/infer-workflow) to
 analyze your files.
 
 A workaround consists in setting the `LD` environment variable to a dummy
@@ -65,11 +65,6 @@ Please run Infer with the following environment variable setting:
 ```bash
 GCC_PRECOMPILE_PREFIX_HEADER=NO
 ```
-
-### Using Infer with Maven results in no output
-
-Try upgrading `maven-compiler-plugin`. See also
-[this GitHub issue](https://github.com/facebook/infer/issues/38).
 
 ### Infer reports a "Too many open files" error
 
@@ -96,27 +91,19 @@ infer run -- gradle build -x lint
 
 See also [this GitHub issue](https://github.com/facebook/infer/issues/58).
 
-### Running "infer [options] -- \<build command\>" fails with some other error
+### Running `infer [options] -- <build command>` fails with some other error
 
 Please make sure that:
 
-- \<build command\> runs successfully on its own.
+- `<build command>` runs successfully on its own.
 - `infer` is in your `$PATH` (try `which infer`, it should show where `infer` is
   located)
 
-### Running Infer fails with "ImportError: No module named xml.etree.ElementTree"
-
-Make sure that the `xml` Python package is installed. For instance, on OpenSuse
-13.1, it is provided by the
-[`python-xmldiff`](http://software.opensuse.org/download.html?project=XML&package=python-xmldiff)
-package.
-
 ### I get errors compiling Infer
 
-Make sure the dependencies are up to date. They may change as we update Infer
-itself; you may also need to recompile the facebook-clang-plugins when it
-changes version. See the
-[installation document](https://github.com/facebook/infer/blob/master/INSTALL.md)
+Make sure the dependencies are up to date. They may change as we
+update Infer itself. See the [installation
+document](https://github.com/facebook/infer/blob/master/INSTALL.md)
 for an up-to-date list of dependencies and how to get them.
 
 ### My problem is not listed here
@@ -129,9 +116,10 @@ Here are some frequently asked questions. More to come.
 
 ### How do I suppress Infer warnings on a class or method?
 
-In Java code, you can do this by annotating your class or method with
-`@SuppressLint("infer")`. Or `@SuppressWarnings("infer")` if your Infer is older
-than v0.10.0.
+In Java code, you can do this *for some error types* by annotating
+your class or method with `@SuppressLint("<ISSUE_TYPE>")`, for example
+`@SuppressLint("NULL_DEREFERENCE")`. However, not all checkers honor
+this annotation.
 
 ### Is Infer supported for Windows?
 
@@ -140,12 +128,12 @@ a Linux virtual machine if your project can be compiled on Linux.
 
 ### How does Infer compare to the Clang Static Analyzer?
 
-On iOS there is the Clang Static analyzer. Infer does some things different, in
-particular reasoning that spans across multiple files. But CSA checks for more
-kinds of issues and is also more mature than Infer when it comes to iOS: we send
-big respect to CSA! Infer has only got started there recently. Really, these
-tools complement one another and it would even make sense to use both. Indeed,
-that's what we do inside Facebook.
+Infer and Clang Static Analyzer (CSA) will typically find different
+kinds of issues on the same project. One thing that sets Infer apart
+from other static analysis tools is its ability to reason and find
+issues across multiple files. But CSA will find many kinds of issues
+that Infer doesn't find: we send big respect to CSA! Really, these
+tools complement one another and it makes sense to use both.
 
 ### How does Infer compare to Android linters and Findbugs?
 
@@ -154,20 +142,3 @@ Linters, in contrast, typically implement simple syntactic checks that are local
 within one procedure. But they are valuable and Infer doesn't try to duplicate
 what they are good at. At Facebook we run both Infer and a collection of Android
 linters. Findbugs can be useful too; it is more akin to linters.
-
-### Why Infer doesn't find a particular bug?
-
-The answer here is for one of the checkers of Infer, the bi-abduction checker,
-that finds Null Dereferences, Memory Leaks, Retain Cycles and other memory
-related issues.
-
-The analysis performs a symbolic execution of the code, keeping data structures
-that represent a symbolic heap, and trying to prove memory safety of the
-program. When it fails to prove it, it can report an error, if it finds a Null
-Dereference or Memory Leak, or it can find itself in an inconsistent state. In
-any case, it will stop the analysis of that particular procedure because the
-attempted proof doesn't make sense anymore. Another cause of the analysis not
-reaching some part of the code is that we introduce timeouts in the analysis,
-because otherwise it would take too long. So it could reach a timeout before
-reaching the end of the method. So when Infer doesn't find a particular bug,
-it's possible that it is because it couldn't reach that part of the code.
