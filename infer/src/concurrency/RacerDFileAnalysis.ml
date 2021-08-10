@@ -623,31 +623,33 @@ let make_results_table exe_env summaries =
       aggregate_post tenv procname acc summary )
 
 
-let should_report_on_proc file_exe_env procdesc =
-  let proc_name = Procdesc.get_proc_name procdesc in
-  let tenv = Exe_env.get_proc_tenv file_exe_env proc_name in
-  match proc_name with
-  | CSharp _ ->
-      not (ProcAttributes.equal_access (Procdesc.get_access procdesc) Private)
-  | Java java_pname ->
-      (* return true if procedure is at an abstraction boundary or reporting has been explicitly
-         requested via @ThreadSafe in java *)
-      RacerDModels.is_thread_safe_method proc_name tenv
-      || (not (ProcAttributes.equal_access (Procdesc.get_access procdesc) Private))
-         && (not (Procname.Java.is_class_initializer java_pname))
-         && (not (Procname.Java.is_autogen_method java_pname))
-         && not (Annotations.pdesc_return_annot_ends_with procdesc Annotations.visibleForTesting)
-  | ObjC_Cpp _ when Procname.is_cpp_lambda proc_name ->
-      (* do not report on lambdas; they are essentially private though do not appear as such *)
-      false
-  | ObjC_Cpp {kind= CPPMethod _ | CPPConstructor _ | CPPDestructor _} ->
-      not (ProcAttributes.equal_access (Procdesc.get_access procdesc) Private)
-  | ObjC_Cpp {kind= ObjCClassMethod | ObjCInstanceMethod | ObjCInternalMethod; class_name} ->
-      Tenv.lookup tenv class_name
-      |> Option.exists ~f:(fun {Struct.exported_objc_methods} ->
-             List.mem ~equal:Procname.equal exported_objc_methods proc_name )
-  | _ ->
-      false
+let should_report_on_proc file_exe_env proc_name =
+  Attributes.load proc_name
+  |> Option.exists ~f:(fun attrs ->
+         let tenv = Exe_env.get_proc_tenv file_exe_env proc_name in
+         let is_not_private = not ProcAttributes.(equal_access (get_access attrs) Private) in
+         match (proc_name : Procname.t) with
+         | CSharp _ ->
+             is_not_private
+         | Java java_pname ->
+             (* return true if procedure is at an abstraction boundary or reporting has been explicitly
+                requested via @ThreadSafe in java *)
+             RacerDModels.is_thread_safe_method proc_name tenv
+             || is_not_private
+                && (not (Procname.Java.is_class_initializer java_pname))
+                && (not (Procname.Java.is_autogen_method java_pname))
+                && not Annotations.(attrs_return_annot_ends_with attrs visibleForTesting)
+         | ObjC_Cpp _ when Procname.is_cpp_lambda proc_name ->
+             (* do not report on lambdas; they are essentially private though do not appear as such *)
+             false
+         | ObjC_Cpp {kind= CPPMethod _ | CPPConstructor _ | CPPDestructor _} ->
+             is_not_private
+         | ObjC_Cpp {kind= ObjCClassMethod | ObjCInstanceMethod | ObjCInternalMethod; class_name} ->
+             Tenv.lookup tenv class_name
+             |> Option.exists ~f:(fun {Struct.exported_objc_methods} ->
+                    List.mem ~equal:Procname.equal exported_objc_methods proc_name )
+         | _ ->
+             false )
 
 
 let class_has_concurrent_method class_summaries =
@@ -675,7 +677,7 @@ let aggregate_by_class {InterproceduralAnalysis.procedures; file_exe_env; analyz
       Procname.get_class_type_name procname
       |> Option.bind ~f:(fun classname ->
              analyze_file_dependency procname
-             |> Option.filter ~f:(fun (pdesc, _) -> should_report_on_proc file_exe_env pdesc)
+             |> Option.filter ~f:(fun _ -> should_report_on_proc file_exe_env procname)
              |> Option.map ~f:(fun summary_proc_desc ->
                     Typ.Name.Map.update classname
                       (function

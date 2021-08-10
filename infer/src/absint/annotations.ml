@@ -158,16 +158,16 @@ let pdesc_get_return_annot pdesc =
 
 let pdesc_has_return_annot pdesc predicate = predicate (pdesc_get_return_annot pdesc)
 
-let pdesc_return_annot_ends_with pdesc annot =
-  pdesc_has_return_annot pdesc (fun ia -> ia_ends_with ia annot)
-
-
 let pname_has_return_annot pname predicate =
   match Attributes.load pname with
   | Some attributes ->
       predicate attributes.ProcAttributes.method_annotation.return
   | None ->
       false
+
+
+let attrs_return_annot_ends_with attrs annot =
+  ia_ends_with attrs.ProcAttributes.method_annotation.return annot
 
 
 let field_has_annot fieldname (struct_typ : Struct.t) predicate =
