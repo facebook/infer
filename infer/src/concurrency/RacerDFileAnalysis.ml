@@ -617,8 +617,7 @@ let make_results_table exe_env summaries =
       (fun snapshot acc -> ReportMap.add {threads; snapshot; tenv; procname} acc)
       accesses acc
   in
-  List.fold summaries ~init:ReportMap.empty ~f:(fun acc (proc_desc, summary) ->
-      let procname = Procdesc.get_proc_name proc_desc in
+  List.fold summaries ~init:ReportMap.empty ~f:(fun acc (procname, summary) ->
       let tenv = Exe_env.get_proc_tenv exe_env procname in
       aggregate_post tenv procname acc summary )
 
@@ -678,13 +677,10 @@ let aggregate_by_class {InterproceduralAnalysis.procedures; file_exe_env; analyz
       |> Option.bind ~f:(fun classname ->
              analyze_file_dependency procname
              |> Option.filter ~f:(fun _ -> should_report_on_proc file_exe_env procname)
-             |> Option.map ~f:(fun summary_proc_desc ->
+             |> Option.map ~f:(fun (_, summary) ->
                     Typ.Name.Map.update classname
-                      (function
-                        | None ->
-                            Some [summary_proc_desc]
-                        | Some summaries ->
-                            Some (summary_proc_desc :: summaries) )
+                      (fun summaries_opt ->
+                        Some ((procname, summary) :: Option.value ~default:[] summaries_opt) )
                       acc ) )
       |> Option.value ~default:acc )
   |> Typ.Name.Map.filter should_report_on_class
