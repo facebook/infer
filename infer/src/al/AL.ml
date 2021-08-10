@@ -336,7 +336,8 @@ let find_linters_files () =
 
 
 let linters_files =
-  List.dedup_and_sort ~compare:String.compare (find_linters_files () @ Config.linters_def_file)
+  lazy
+    (List.dedup_and_sort ~compare:String.compare (find_linters_files () @ Config.linters_def_file))
 
 
 let is_decl_allowed lcxt decl =
@@ -350,10 +351,10 @@ let do_frontend_checks (trans_unit_ctx : CFrontend_config.translation_unit_conte
   L.(debug Capture Quiet)
     "Loading the following linters files: %a@\n"
     (Pp.comma_seq Format.pp_print_string)
-    linters_files ;
+    (Lazy.force linters_files) ;
   CTL.create_ctl_evaluation_tracker trans_unit_ctx.source_file ;
   let parsed_linters =
-    let parsed_linters = parse_ctl_files linters_files in
+    let parsed_linters = parse_ctl_files (Lazy.force linters_files) in
     ALIssues.filter_parsed_linters parsed_linters trans_unit_ctx.source_file
   in
   let source_file = trans_unit_ctx.CFrontend_config.source_file in
