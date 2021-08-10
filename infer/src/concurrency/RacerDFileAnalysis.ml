@@ -677,7 +677,7 @@ let aggregate_by_class {InterproceduralAnalysis.procedures; file_exe_env; analyz
       |> Option.bind ~f:(fun classname ->
              analyze_file_dependency procname
              |> Option.filter ~f:(fun _ -> should_report_on_proc file_exe_env procname)
-             |> Option.map ~f:(fun (_, summary) ->
+             |> Option.map ~f:(fun summary ->
                     Typ.Name.Map.update classname
                       (fun summaries_opt ->
                         Some ((procname, summary) :: Option.value ~default:[] summaries_opt) )

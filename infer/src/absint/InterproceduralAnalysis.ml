@@ -19,7 +19,7 @@ type 'payload file_t =
   { source_file: SourceFile.t
   ; procedures: Procname.t list
   ; file_exe_env: Exe_env.t
-  ; analyze_file_dependency: Procname.t -> (Procdesc.t * 'payload) option }
+  ; analyze_file_dependency: Procname.t -> 'payload option }
 
 let bind_payload ~f analysis_data =
   { analysis_data with

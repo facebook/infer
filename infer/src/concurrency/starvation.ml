@@ -631,7 +631,7 @@ let fold_reportable_summaries analyze_ondemand tenv clazz ~init ~f =
     |> Option.value_map ~default:acc ~f:(fun other_attrs ->
            if should_report other_attrs then
              analyze_ondemand mthd
-             |> Option.map ~f:(fun (_, payload) -> (mthd, payload))
+             |> Option.map ~f:(fun payload -> (mthd, payload))
              |> Option.fold ~init:acc ~f
            else acc )
   in
@@ -825,9 +825,9 @@ let report_on_pair ~analyze_ondemand tenv pattrs (pair : Domain.CriticalPair.t) 
 let reporting {InterproceduralAnalysis.procedures; file_exe_env; analyze_file_dependency} =
   if Config.starvation_whole_program then IssueLog.empty
   else
-    let report_on_proc tenv proc_desc report_map payload =
+    let report_on_proc tenv pattrs report_map payload =
       Domain.fold_critical_pairs_of_summary
-        (report_on_pair ~analyze_ondemand:analyze_file_dependency tenv proc_desc)
+        (report_on_pair ~analyze_ondemand:analyze_file_dependency tenv pattrs)
         payload report_map
     in
     let report_procedure report_map procname =
@@ -836,7 +836,7 @@ let reporting {InterproceduralAnalysis.procedures; file_exe_env; analyze_file_de
           report_map
       | Some attributes ->
           analyze_file_dependency procname
-          |> Option.value_map ~default:report_map ~f:(fun (_proc_desc, summary) ->
+          |> Option.value_map ~default:report_map ~f:(fun summary ->
                  let tenv = Exe_env.get_proc_tenv file_exe_env procname in
                  if should_report attributes then report_on_proc tenv attributes report_map summary
                  else report_map )

@@ -21,7 +21,7 @@ let get_summaries
   List.filter_map procedures ~f:(fun procname ->
       let* class_name = Procname.get_class_type_name procname in
       let* java_class_name = get_java_class_name class_name in
-      let* _proc_desc, summary = analyze_file_dependency procname in
+      let* summary = analyze_file_dependency procname in
       return (java_class_name, summary) )
 
 

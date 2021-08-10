@@ -23,7 +23,7 @@ module ReportMap : sig
 end
 
 val report_on_pair :
-     analyze_ondemand:(Procname.t -> (Procdesc.t * StarvationDomain.summary) option)
+     analyze_ondemand:(Procname.t -> StarvationDomain.summary option)
   -> Tenv.t
   -> ProcAttributes.t
   -> StarvationDomain.CriticalPair.t
