@@ -23,8 +23,7 @@ type extras_WorstCaseCost =
   ; get_node_nb_exec: Node.t -> BasicCost.t
   ; get_summary: Procname.t -> CostDomain.summary option
   ; get_formals: Procname.t -> (Pvar.t * Typ.t) list option
-  ; get_proc_desc: Procname.t -> Procdesc.t option
-  ; proc_resolve_attributes: Procname.t -> ProcAttributes.t option }
+  ; get_proc_desc: Procname.t -> Procdesc.t option }
 
 let instantiate_cost ?get_closure_callee_cost ~default_closure_cost integer_type_widths
     ~inferbo_caller_mem ~callee_pname ~callee_formals ~args ~callee_cost ~loc =
@@ -444,8 +443,7 @@ let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as
       ; get_node_nb_exec
       ; get_summary
       ; get_formals
-      ; get_proc_desc= Procdesc.load
-      ; proc_resolve_attributes= Attributes.load }
+      ; get_proc_desc= Procdesc.load }
     in
     AnalysisCallbacks.html_debug_new_node_session (NodeCFG.start_node node_cfg)
       ~pp_name:(fun f -> F.pp_print_string f "cost(worst-case)")
