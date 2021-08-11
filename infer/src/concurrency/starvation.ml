@@ -671,8 +671,8 @@ let report_on_parallel_composition ~should_report_starvation tenv pattrs pair lo
              && Acquisitions.lock_is_held_in_other_thread tenv lock acquisitions ->
           let error_message =
             Format.asprintf
-              "Method %a runs on UI thread and%a, which may be held by another thread which %a. \
-               This may regress scroll performance or cause ANRs."
+              "%a runs on UI thread and%a, which may be held by another thread which %a. This may \
+               regress scroll performance or cause ANRs."
               pname_pp pname Lock.pp_locks lock Event.describe event
           in
           let ltr, loc = make_trace_and_loc () in
@@ -683,8 +683,8 @@ let report_on_parallel_composition ~should_report_starvation tenv pattrs pair lo
              && not (Lock.equal lock monitor_lock) ->
           let error_message =
             Format.asprintf
-              "Method %a runs on UI thread and%a, which may be held by another thread which %a. \
-               This may regress scroll performance or cause ANRs."
+              "%a runs on UI thread and%a, which may be held by another thread which %a. This may \
+               regress scroll performance or cause ANRs."
               pname_pp pname Lock.pp_locks lock Event.describe other_pair.CriticalPair.elem.event
           in
           let ltr, loc = make_trace_and_loc () in
@@ -694,9 +694,8 @@ let report_on_parallel_composition ~should_report_starvation tenv pattrs pair lo
         | Some other_lock when should_report_deadlock_on_current_proc pair other_pair ->
             let error_message =
               Format.asprintf
-                "Potential deadlock. %a (Trace 1) and %a (Trace 2) acquire locks %a and %a in \
-                 reverse orders."
-                pname_pp pname pname_pp other_pname Lock.describe lock Lock.describe other_lock
+                "%a (Trace 1) and %a (Trace 2) acquire locks %a and %a in reverse orders." pname_pp
+                pname pname_pp other_pname Lock.describe lock Lock.describe other_lock
             in
             let ltr, loc = make_trace_and_loc () in
             ReportMap.add_deadlock tenv pattrs loc ltr error_message report_map
@@ -724,7 +723,7 @@ let report_on_pair ~analyze_ondemand tenv pattrs (pair : Domain.CriticalPair.t) 
   | Ipc _ when is_not_private && should_report_starvation ->
       let error_message =
         Format.asprintf
-          "Method %a runs on UI thread and may perform blocking IPC, potentially regressing scroll \
+          "%a runs on UI thread and may perform blocking IPC, potentially regressing scroll \
            performance or causing ANRs; %a."
           pname_pp pname Event.describe event
       in
@@ -733,7 +732,7 @@ let report_on_pair ~analyze_ondemand tenv pattrs (pair : Domain.CriticalPair.t) 
   | MayBlock _ when is_not_private && should_report_starvation ->
       let error_message =
         Format.asprintf
-          "Method %a runs on UI thread and may block, potentially regressing scroll performance or \
+          "%a runs on UI thread and may block, potentially regressing scroll performance or \
            causing ANRs; %a."
           pname_pp pname Event.describe event
       in
@@ -742,7 +741,7 @@ let report_on_pair ~analyze_ondemand tenv pattrs (pair : Domain.CriticalPair.t) 
   | MonitorWait _ when is_not_private && should_report_starvation ->
       let error_message =
         Format.asprintf
-          "Method %a runs on UI thread and may block, potentially regressing scroll performance or \
+          "%a runs on UI thread and may block, potentially regressing scroll performance or \
            causing ANRs; %a."
           pname_pp pname Event.describe event
       in
@@ -750,8 +749,8 @@ let report_on_pair ~analyze_ondemand tenv pattrs (pair : Domain.CriticalPair.t) 
       ReportMap.add_starvation tenv pattrs loc ltr error_message report_map
   | StrictModeCall _ when is_not_private && should_report_starvation ->
       let error_message =
-        Format.asprintf "Method %a runs on UI thread and may violate Strict Mode; %a." pname_pp
-          pname Event.describe event
+        Format.asprintf "%a runs on UI thread and may violate Strict Mode; %a." pname_pp pname
+          Event.describe event
       in
       let ltr, loc = make_trace_and_loc () in
       ReportMap.add_strict_mode_violation tenv pattrs loc ltr error_message report_map
@@ -774,8 +773,8 @@ let report_on_pair ~analyze_ondemand tenv pattrs (pair : Domain.CriticalPair.t) 
       | IContainer.Singleton _ ->
           let error_message =
             Format.asprintf
-              "Method %a %a under a lock; executed code may acquire arbitrary locks leading to \
-               potential deadlock."
+              "%a %a under a lock; executed code may acquire arbitrary locks leading to potential \
+               deadlock."
               pname_pp pname Event.describe event
           in
           let loc = CriticalPair.get_earliest_lock_or_call_loc ~procname:pname pair in
@@ -784,7 +783,7 @@ let report_on_pair ~analyze_ondemand tenv pattrs (pair : Domain.CriticalPair.t) 
             report_map )
   | LockAcquire _ when is_not_private && StarvationModels.is_annotated_lockless tenv pname ->
       let error_message =
-        Format.asprintf "Method %a is annotated %s but%a." pname_pp pname
+        Format.asprintf "%a is annotated %s but%a." pname_pp pname
           (MF.monospaced_to_string Annotations.lockless)
           Event.describe event
       in
