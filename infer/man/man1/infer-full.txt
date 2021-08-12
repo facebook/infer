@@ -1622,6 +1622,11 @@ INTERNAL OPTIONS
        --config-impact-previous-reset
            Cancel the effect of --config-impact-previous.
 
+       --config-impact-strict-mode
+           Activates: Make the config impact analysis stricter. It disables
+           all heuristics of ignoring cheap method calls. (Conversely:
+           --no-config-impact-strict-mode)
+
        --cost-issues-tests-reset
            Cancel the effect of --cost-issues-tests.
 

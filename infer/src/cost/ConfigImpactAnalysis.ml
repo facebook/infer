@@ -574,6 +574,16 @@ module Dom = struct
         in
         {astate with unchecked_callees_cond}
     in
+    let join_callee_summary callee_summary callee_summary_cond =
+      join_unchecked_callees
+        (UncheckedCallees.replace_location_by_call ~via:callee location callee_summary)
+        (UncheckedCalleesCond.replace_location_by_call location ~via:callee callee_summary_cond)
+    in
+    let add_callee_name ~is_known_expensive =
+      join_unchecked_callees
+        (UncheckedCallees.singleton (UncheckedCallee.make ~is_known_expensive ~callee location))
+        UncheckedCalleesCond.empty
+    in
     if ConfigChecks.is_top config_checks then
       let (callee_summary : Summary.t option) =
         match analyze_dependency callee with
@@ -588,49 +598,53 @@ module Dom = struct
       in
       let is_cheap_call = match instantiated_cost with Cheap -> true | _ -> false in
       let is_unmodeled_call = match instantiated_cost with NoModel -> true | _ -> false in
-      match expensiveness_model with
-      | None when is_cheap_call && not has_expensive_callee ->
-          (* If callee is cheap by heuristics, ignore it. *)
-          astate
-      | Some KnownCheap ->
-          (* If callee is known cheap by model, ignore it. *)
-          astate
-      | Some KnownExpensive ->
-          (* If callee is known expensive by model, add callee's name. *)
-          join_unchecked_callees
-            (UncheckedCallees.singleton
-               (UncheckedCallee.make ~is_known_expensive:true ~callee location))
-            UncheckedCalleesCond.empty
-      | None -> (
+      if Config.config_impact_strict_mode then
         match callee_summary with
         | Some
             { Summary.unchecked_callees= callee_summary
             ; unchecked_callees_cond= callee_summary_cond
             ; has_call_stmt }
           when has_call_stmt ->
-            let callee_summary, callee_summary_cond =
-              if is_cheap_call then
-                (* In this case, the callee is cheap by the heuristics, but its summary includes
-                   some known expensive callees. Thus, it filters the known expensive callees
-                   only. *)
-                ( UncheckedCallees.filter_known_expensive callee_summary
-                , UncheckedCalleesCond.filter_known_expensive callee_summary_cond )
-              else (callee_summary, callee_summary_cond)
-            in
             (* If callee's summary is not leaf, use it. *)
-            join_unchecked_callees
-              (UncheckedCallees.replace_location_by_call ~via:callee location callee_summary)
-              (UncheckedCalleesCond.replace_location_by_call location ~via:callee
-                 callee_summary_cond)
-        | None when Procname.is_objc_init callee || is_unmodeled_call ->
-            (* If callee is unknown ObjC initializer or has no cost model, ignore it. *)
-            astate
+            join_callee_summary callee_summary callee_summary_cond
         | _ ->
             (* Otherwise, add callee's name. *)
-            join_unchecked_callees
-              (UncheckedCallees.singleton
-                 (UncheckedCallee.make ~is_known_expensive:false ~callee location))
-              UncheckedCalleesCond.empty )
+            add_callee_name ~is_known_expensive:false
+      else
+        match expensiveness_model with
+        | None when is_cheap_call && not has_expensive_callee ->
+            (* If callee is cheap by heuristics, ignore it. *)
+            astate
+        | Some KnownCheap ->
+            (* If callee is known cheap by model, ignore it. *)
+            astate
+        | Some KnownExpensive ->
+            (* If callee is known expensive by model, add callee's name. *)
+            add_callee_name ~is_known_expensive:true
+        | None -> (
+          match callee_summary with
+          | Some
+              { Summary.unchecked_callees= callee_summary
+              ; unchecked_callees_cond= callee_summary_cond
+              ; has_call_stmt }
+            when has_call_stmt ->
+              let callee_summary, callee_summary_cond =
+                if is_cheap_call then
+                  (* In this case, the callee is cheap by the heuristics, but its summary includes
+                     some known expensive callees. Thus, it filters the known expensive callees
+                     only. *)
+                  ( UncheckedCallees.filter_known_expensive callee_summary
+                  , UncheckedCalleesCond.filter_known_expensive callee_summary_cond )
+                else (callee_summary, callee_summary_cond)
+              in
+              (* If callee's summary is not leaf, use it. *)
+              join_callee_summary callee_summary callee_summary_cond
+          | None when Procname.is_objc_init callee || is_unmodeled_call ->
+              (* If callee is unknown ObjC initializer or has no cost model, ignore it. *)
+              astate
+          | _ ->
+              (* Otherwise, add callee's name. *)
+              add_callee_name ~is_known_expensive:false )
     else astate
 end
 
@@ -722,7 +736,8 @@ module TransferFunctions = struct
     | Call ((ret_id, _), Const (Cfun callee), [(Var id, _)], _, _) when is_modeled_as_id tenv callee
       ->
         Dom.copy_value ret_id id astate
-    | Call ((ret_id, _), Const (Cfun callee), _, _, _) when is_known_cheap_method tenv callee ->
+    | Call ((ret_id, _), Const (Cfun callee), _, _, _)
+      when (not Config.config_impact_strict_mode) && is_known_cheap_method tenv callee ->
         add_ret analyze_dependency ret_id callee astate
     | Call (((ret_id, _) as ret), Const (Cfun callee), args, location, _) -> (
       match FbGKInteraction.get_config_check tenv callee args with

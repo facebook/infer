@@ -1051,6 +1051,12 @@ and config_impact_previous =
     "Config impact report of the base revision to use for comparison"
 
 
+and config_impact_strict_mode =
+  CLOpt.mk_bool ~long:"config-impact-strict-mode"
+    "Make the config impact analysis stricter. It disables all heuristics of ignoring cheap method \
+     calls."
+
+
 (** Continue the capture for reactive mode: If a procedure was changed beforehand, keep the changed
     marking. *)
 and continue =
@@ -3035,6 +3041,8 @@ and config_impact_issues_tests = !config_impact_issues_tests
 and config_impact_max_callees_to_print = !config_impact_max_callees_to_print
 
 and config_impact_previous = !config_impact_previous
+
+and config_impact_strict_mode = !config_impact_strict_mode
 
 and continue_analysis = !continue_analysis
 

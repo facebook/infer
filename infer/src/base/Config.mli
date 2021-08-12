@@ -241,6 +241,8 @@ val config_impact_max_callees_to_print : int
 
 val config_impact_previous : string option
 
+val config_impact_strict_mode : bool
+
 val continue_analysis : bool
 
 val continue_capture : bool
