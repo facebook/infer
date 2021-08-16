@@ -66,7 +66,7 @@ end
 
    the loop will iterates as the file size, but the control variable [c] does not have that value.
    In these cases, it assigns a symbolic value of the file size to the modeled range of [c], then
-   which it is used when calculating the overall cost.  *)
+   which it is used when calculating the overall cost. *)
 module ModeledRange = struct
   include AbstractDomain.BottomLifted (struct
     include Bounds.NonNegativeBound
@@ -2457,8 +2457,7 @@ module Mem = struct
 
 
   let load_size_alias : Ident.t -> Loc.t -> t -> t =
-   fun id loc ->
-    load_alias id loc (AliasTarget.Size {alias_typ= Eq; i= IntLit.zero; java_tmp= None})
+   fun id loc -> load_alias id loc (AliasTarget.Size {alias_typ= Eq; i= IntLit.zero; java_tmp= None})
 
 
   let store_simple_alias : Loc.t -> Exp.t -> t -> t =

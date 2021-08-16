@@ -153,7 +153,7 @@ let check_field_assignment
               (TypeErr.Bad_assignment
                  { assignment_violation
                  ; assignment_location= loc
-                 ; assignment_type= AssignmentRule.ReportableViolation.AssigningToField fname })
+                 ; assignment_type= AssignmentRule.ReportableViolation.AssigningToField fname } )
               (Some instr_ref) ~nullsafe_mode ) )
 
 
@@ -174,7 +174,7 @@ let lookup_field_in_typestate pname field_name typestate =
 
 
 (* Given a predicate over field name, look ups the field and returns a predicate
-  over this field value in a typestate, or true if there is no such a field in typestate *)
+   over this field value in a typestate, or true if there is no such a field in typestate *)
 let convert_predicate predicate_over_field_name field_name (pname, typestate) =
   let range_for_field = lookup_field_in_typestate pname field_name typestate in
   Option.exists range_for_field ~f:predicate_over_field_name
@@ -202,7 +202,7 @@ let get_nullability_upper_bound_for_typestate proc_name field_name typestate =
 
 (* Given the list of typestates (each corresponding to the final result of executing of some function),
    and the field, what is the upper bound of field nullability joined over all typestates?
- *)
+*)
 let get_nullability_upper_bound field_name typestate_list =
   (* Join upper bounds for all typestates in the list *)
   List.fold typestate_list ~init:Nullability.StrictNonnull ~f:(fun acc (proc_name, typestate) ->
@@ -311,7 +311,7 @@ let check_constructor_initialization
                           (TypeErr.Over_annotation
                              { over_annotated_violation
                              ; loc
-                             ; violation_type= OverAnnotatedRule.FieldOverAnnoted field_name })
+                             ; violation_type= OverAnnotatedRule.FieldOverAnnoted field_name } )
                           ~nullsafe_mode None ) )
           in
           List.iter ~f:do_field fields
@@ -331,7 +331,7 @@ let check_return_not_nullable analysis_data ~nullsafe_mode ~java_pname find_cano
         (Bad_assignment
            { assignment_violation
            ; assignment_location= loc
-           ; assignment_type= ReturningFromFunction java_pname })
+           ; assignment_type= ReturningFromFunction java_pname } )
         None ~nullsafe_mode )
 
 
@@ -348,7 +348,7 @@ let check_return_overrannotated ~java_pname analysis_data find_canonical_duplica
     ~f:(fun over_annotated_violation ->
       TypeErr.register_error analysis_data find_canonical_duplicate
         (Over_annotation
-           {over_annotated_violation; loc; violation_type= ReturnOverAnnotated java_pname})
+           {over_annotated_violation; loc; violation_type= ReturnOverAnnotated java_pname} )
         None ~nullsafe_mode )
 
 
@@ -420,7 +420,7 @@ let check_call_parameters ({IntraproceduralAnalysis.tenv; _} as analysis_data) ~
                  ; actual_param_expression
                  ; param_index
                  ; annotated_signature= callee_annotated_signature
-                 ; procname= callee_pname } })
+                 ; procname= callee_pname } } )
         (Some instr_ref) ~nullsafe_mode
     in
     if PatternMatch.type_is_class formal.param_annotated_type.typ then
@@ -437,14 +437,14 @@ let check_inheritance_rule_for_return analysis_data find_canonical_duplicate loc
     ~overridden_proc_name ~base_proc_name ~base_nullability ~overridden_nullability =
   Result.iter_error
     (InheritanceRule.check InheritanceRule.Ret ~base:base_nullability
-       ~overridden:overridden_nullability) ~f:(fun inheritance_violation ->
+       ~overridden:overridden_nullability ) ~f:(fun inheritance_violation ->
       TypeErr.register_error analysis_data find_canonical_duplicate
         (Inconsistent_subclass
            { inheritance_violation
            ; loc
            ; violation_type= InconsistentReturn
            ; overridden_proc_name
-           ; base_proc_name })
+           ; base_proc_name } )
         None ~nullsafe_mode )
 
 
@@ -453,7 +453,7 @@ let check_inheritance_rule_for_param analysis_data find_canonical_duplicate loc 
     ~overridden_proc_name =
   Result.iter_error
     (InheritanceRule.check InheritanceRule.Param ~base:base_nullability
-       ~overridden:overridden_nullability) ~f:(fun inheritance_violation ->
+       ~overridden:overridden_nullability ) ~f:(fun inheritance_violation ->
       TypeErr.register_error analysis_data find_canonical_duplicate
         (Inconsistent_subclass
            { inheritance_violation
@@ -462,7 +462,7 @@ let check_inheritance_rule_for_param analysis_data find_canonical_duplicate loc 
                  {param_index; param_description= Mangled.to_string overridden_param_name}
            ; base_proc_name
            ; loc
-           ; overridden_proc_name })
+           ; overridden_proc_name } )
         None ~nullsafe_mode )
 
 
@@ -476,11 +476,12 @@ let check_inheritance_rule_for_params analysis_data find_canonical_duplicate loc
       let has_implicit_this_param = is_virtual base_params in
       (* Check the rule for each pair of base and overridden param *)
       List.iteri base_and_overridden_params
-        ~f:(fun index
-           ( AnnotatedSignature.{param_annotated_type= {nullability= annotated_nullability_base}}
-           , AnnotatedSignature.
-               { mangled= overridden_param_name
-               ; param_annotated_type= {nullability= annotated_nullability_overridden} } )
+        ~f:(fun
+             index
+             ( AnnotatedSignature.{param_annotated_type= {nullability= annotated_nullability_base}}
+             , AnnotatedSignature.
+                 { mangled= overridden_param_name
+                 ; param_annotated_type= {nullability= annotated_nullability_overridden} } )
            ->
           check_inheritance_rule_for_param analysis_data find_canonical_duplicate loc ~nullsafe_mode
             ~overridden_param_name ~base_proc_name

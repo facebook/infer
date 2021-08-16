@@ -93,7 +93,7 @@ let eq_concat (siz, cnt) ms =
   Formula.eq
     (Term.sized ~siz ~seq:cnt)
     (Term.concat
-       (Array.map ~f:(fun (siz, cnt) -> Term.sized ~siz ~seq:cnt) ms))
+       (Array.map ~f:(fun (siz, cnt) -> Term.sized ~siz ~seq:cnt) ms) )
 
 open Fresh.Import
 
@@ -223,7 +223,7 @@ let memmov_foot dst src len =
   let foot =
     Sh.and_ eq_mem_dst_mid_src
       (Sh.and_ (Formula.lt dst src)
-         (Sh.and_ (Formula.lt src (Term.add dst len)) seg))
+         (Sh.and_ (Formula.lt src (Term.add dst len)) seg) )
   in
   (bas, siz, mem_dst, mem_mid, mem_src, foot)
 
@@ -246,7 +246,7 @@ let memmov_dn_spec dst src len =
          ; bas
          ; len= siz
          ; siz= siz_mid_src_src
-         ; cnt= cnt_mid_src_src })
+         ; cnt= cnt_mid_src_src } )
   in
   {foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
@@ -269,7 +269,7 @@ let memmov_up_spec dst src len =
          ; bas
          ; len= siz
          ; siz= siz_src_src_mid
-         ; cnt= cnt_src_src_mid })
+         ; cnt= cnt_src_src_mid } )
   in
   {foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
@@ -386,7 +386,7 @@ let posix_memalign_spec reg ptr siz =
       (Sh.and_ (Formula.eq (Term.var reg) enomem) (Sh.rename sub foot))
       (Sh.and_
          (Formula.eq (Term.var reg) eok)
-         (Sh.rename sub (Sh.star (Sh.seg pseg') (Sh.seg qseg))))
+         (Sh.rename sub (Sh.star (Sh.seg pseg') (Sh.seg qseg))) )
   in
   {foot; sub; ms; post}
 
@@ -416,8 +416,8 @@ let realloc_spec reg ptr siz =
       (Sh.and_
          (Formula.cond ~cnd:(Formula.le len siz)
             ~pos:(eq_concat (siz, a1) [|(len, a0); (Term.sub siz len, a2)|])
-            ~neg:(eq_concat (len, a0) [|(siz, a1); (Term.sub len siz, a2)|]))
-         (Sh.seg rseg))
+            ~neg:(eq_concat (len, a0) [|(siz, a1); (Term.sub len siz, a2)|]) )
+         (Sh.seg rseg) )
   in
   {foot; sub; ms; post}
 
@@ -445,8 +445,8 @@ let rallocx_spec reg ptr siz =
       (Sh.and_
          (Formula.cond ~cnd:(Formula.le len siz)
             ~pos:(eq_concat (siz, a1) [|(len, a0); (Term.sub siz len, a2)|])
-            ~neg:(eq_concat (len, a0) [|(siz, a1); (Term.sub len siz, a2)|]))
-         (Sh.seg rseg))
+            ~neg:(eq_concat (len, a0) [|(siz, a1); (Term.sub len siz, a2)|]) )
+         (Sh.seg rseg) )
   in
   {foot; sub; ms; post}
 
@@ -476,9 +476,9 @@ let xallocx_spec reg ptr siz ext =
       (Formula.and_
          (Formula.cond ~cnd:(Formula.le len siz)
             ~pos:(eq_concat (siz, a1) [|(len, a0); (Term.sub siz len, a2)|])
-            ~neg:(eq_concat (len, a0) [|(siz, a1); (Term.sub len siz, a2)|]))
+            ~neg:(eq_concat (len, a0) [|(siz, a1); (Term.sub len siz, a2)|]) )
          (Formula.and_ (Formula.le siz reg)
-            (Formula.le reg (Term.add siz ext))))
+            (Formula.le reg (Term.add siz ext)) ) )
       (Sh.seg seg')
   in
   {foot; sub; ms; post}
@@ -677,7 +677,7 @@ let exec_spec_ (xs, pre) (gs, {foot; sub; ms; post}) =
   ;
   let+ frame = Solver.infer_frame pre gs foot in
   Sh.exists (Var.Set.union xs gs)
-    (Sh.star post (Sh.exists ms (Sh.rename sub frame))))
+    (Sh.star post (Sh.exists ms (Sh.rename sub frame))) )
   |>
   [%Trace.retn fun {pf} r ->
     pf "%a" pp r ;
@@ -799,7 +799,8 @@ let intrinsic :
      size_t newlen) *)
   | Some _, `mallctl, [|_; oldp; oldlenp; newp; newlen|] ->
       exec_specs pre (mallctl_specs oldp oldlenp newp newlen)
-  (* int mallctlnametomib(const char* name, size_t* mibp, size_t* miblenp) *)
+  (* int mallctlnametomib(const char* name, size_t* mibp, size_t*
+     miblenp) *)
   | Some _, `mallctlnametomib, [|_; mibp; miblenp|] ->
       exec_spec pre (mallctlnametomib_spec mibp miblenp)
   (* int mallctlbymib(const size_t* mib, size_t miblen, void* oldp, size_t*

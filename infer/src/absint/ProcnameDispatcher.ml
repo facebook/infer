@@ -917,7 +917,7 @@ module NameCommon = struct
       -> ('context, 'f_out, 'arg_payload) matcher =
    fun m f ->
     let ({on_templated_name; path_extra= PathNonEmpty {on_objc_cpp}}
-          : ('context, 'f_in, 'f_out, non_empty, 'arg_payload) path_matcher) =
+          : ('context, 'f_in, 'f_out, non_empty, 'arg_payload) path_matcher ) =
       m
     in
     let on_templated_name context templated_name = templated_name |> on_templated_name context f in

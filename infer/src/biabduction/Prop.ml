@@ -219,8 +219,8 @@ let pi_of_subst sub =
 let get_pure (p : 'a t) : pi = pi_of_subst p.sub @ p.pi
 
 (* Same with get_pure, except that when we have both "x = t" and "y = t" where t is a primed ident,
-* we add "x = y" to the result. This is crucial for the normalizer, as it tend to drop "x = t" before
-* processing "y = t". If we don't explicitly preserve "x = y", the normalizer cannot pick it up *)
+   * we add "x = y" to the result. This is crucial for the normalizer, as it tend to drop "x = t" before
+   * processing "y = t". If we don't explicitly preserve "x = y", the normalizer cannot pick it up *)
 let get_pure_extended p =
   let base = get_pure p in
   let primed_atoms, _ =
@@ -1609,11 +1609,11 @@ module Normalize = struct
               (not
                  (List.exists
                     ~f:(fun (e', n') -> Exp.equal e e' && IntLit.lt n' n)
-                    le_list_tightened))
+                    le_list_tightened ) )
               && not
                    (List.exists
                       ~f:(fun (n', e') -> Exp.equal e e' && IntLit.leq n n')
-                      lt_list_tightened)
+                      lt_list_tightened )
           | _ ->
               true )
         nonineq_list
@@ -2371,7 +2371,7 @@ let prop_iter_to_prop tenv iter =
   let prop =
     Normalize.normalize tenv
       (set prop_emp ~sub:iter.pit_sub ~pi:iter.pit_pi ~sigma ~pi_fp:iter.pit_pi_fp
-         ~sigma_fp:iter.pit_sigma_fp)
+         ~sigma_fp:iter.pit_sigma_fp )
   in
   List.fold
     ~f:(fun p (footprint, atom) -> Normalize.prop_atom_and tenv ~footprint p atom)

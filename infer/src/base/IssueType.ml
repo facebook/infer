@@ -153,7 +153,8 @@ end = struct
            ; enabled= _ (* not touching this one since [Config] will have set it *)
            ; hum= _ (* mutable field to update *)
            ; doc_url= _ (* mutable field to update *)
-           ; linters_def_file= _ (* mutable field to update *) } as issue ))[@warning "+9"]) ->
+           ; linters_def_file= _ (* mutable field to update *) } as issue ) )
+    [@warning "+9"] ) ->
         (* update fields that were supplied this time around, but keep the previous values of others
            and assert that the immutable fields are the same (see doc comment) *)
         let die_of_mismatch ~what ~old ~new_ =
@@ -498,7 +499,7 @@ let eradicate_annotation_graph =
    null, this can have a lot of reasons to be actually nullable.
 
    Until it is made non-precise, it is recommended to not turn this warning on.  But even when it is
-   on, this should not be more than advice.  *)
+   on, this should not be more than advice. *)
 let eradicate_condition_redundant =
   register ~id:"ERADICATE_CONDITION_REDUNDANT" ~hum:"Condition Redundant" Advice Eradicate
     ~user_documentation:[%blob "../../documentation/issues/ERADICATE_CONDITION_REDUNDANT.md"]

@@ -89,7 +89,7 @@ let%test_module "Third-party Method Tests OK Cases" =
    We let other tools to make thorough linting.
    Also we don't test exact error type, because this is an implementation detail
    needed merely to simplify diagnostics
-   *)
+*)
 let%test_module "Third-party Method Tests Bad Cases" =
   ( module struct
     let%expect_test _ =

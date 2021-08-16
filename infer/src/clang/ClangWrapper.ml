@@ -86,12 +86,12 @@ let clang_driver_action_items : ClangCommand.t -> action_item list =
   let one_line line =
     if String.is_prefix ~prefix:" \"" line then
       CanonicalCommand
-        ( (* massage line to remove edge-cases for splitting *)
-        match
-          "\"" ^ line ^ " \""
-          |> (* split by whitespace *)
-          Str.split (Str.regexp_string "\" \"")
-        with
+        (* massage line to remove edge-cases for splitting *)
+        ( match
+            "\"" ^ line ^ " \""
+            |> (* split by whitespace *)
+            Str.split (Str.regexp_string "\" \"")
+          with
         | prog :: args ->
             ClangCommand.mk ~is_driver:false ClangQuotes.EscapedDoubleQuotes ~prog ~args
         | [] ->

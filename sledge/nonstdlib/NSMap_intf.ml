@@ -36,7 +36,7 @@ module type S = sig
     -> f:
          (   key
           -> [`Left of 'a | `Both of 'a * 'b | `Right of 'b]
-          -> 'c option)
+          -> 'c option )
     -> 'c t
 
   val merge_endo :
@@ -45,7 +45,7 @@ module type S = sig
     -> f:
          (   key
           -> [`Left of 'a | `Both of 'a * 'b | `Right of 'b]
-          -> 'a option)
+          -> 'a option )
     -> 'a t
   (** Like merge, but specialized to require [f] to preserve the type of the
       left argument, which enables preserving [==] if [f] preserves [==] of

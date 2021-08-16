@@ -8,6 +8,7 @@
 (* NOTE: prepend dune.common to this file! *)
 
 let lexer = "(ocamllex jSourceLexer jSourceFileInfo)"
+
 let jparser = "(menhir (modules jSourceParser))"
 
 let java =

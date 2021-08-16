@@ -111,7 +111,7 @@ let add_class_to_tenv qual_type_to_sil_type procname_from_decl tenv decl_info na
   in
   ignore
     (Tenv.mk_struct tenv ~fields:all_fields ~supers ~objc_protocols ~methods
-       ~annots:Annot.Class.objc ~exported_objc_methods:methods interface_name) ;
+       ~annots:Annot.Class.objc ~exported_objc_methods:methods interface_name ) ;
   interface_desc
 
 

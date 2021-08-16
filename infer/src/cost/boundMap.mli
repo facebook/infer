@@ -19,7 +19,6 @@ module Node = ProcCfg.DefaultNode
    where |env(v)| is the size of the interval associated to v by env.
 
     Reference: see Stefan Bygde PhD thesis, 2010
-
 *)
 
 val lookup_upperbound : BasicCost.t Node.IdMap.t -> Node.id -> BasicCost.t

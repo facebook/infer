@@ -240,8 +240,7 @@ module Bound = struct
 
   type t =
     | MInf  (** -oo *)
-    | Linear of Z.t * SymLinear.t
-        (** [Linear (c, se)] represents [c+se] where [se] is Σ(c⋅x). *)
+    | Linear of Z.t * SymLinear.t  (** [Linear (c, se)] represents [c+se] where [se] is Σ(c⋅x). *)
     | MinMax of Z.t * Sign.t * MinMax.t * Z.t * Symb.Symbol.t
         (** [MinMax] represents a bound of "int [+|-] [min|max](int, symbol)" format. For example,
             [MinMax (1, Minus, Max, 2, s)] represents [1-max(2,s)]. *)
@@ -1195,7 +1194,7 @@ module Bound = struct
                       of_big_int
                         (Sign.eval_big_int sign c
                            (MinMax.eval_big_int min_max d
-                              (big_int_of_minmax bound_end x' |> Option.value ~default:d))) )
+                              (big_int_of_minmax bound_end x' |> Option.value ~default:d) ) ) )
               in
               NonBottom res )
       | MinMaxB (m, x, y) ->

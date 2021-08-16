@@ -20,13 +20,14 @@ let ( |*> ) : 'a param -> ('a -> 'b) param -> 'b param =
 let ( >*> ) : ('a -> 'b) param -> ('b -> 'c) param -> ('a -> 'c) param =
  fun f' g' -> Command.Param.both f' g' >>| fun (f, g) -> f >> g
 
-(* define a command, with trace flag, and with action wrapped in reporting *)
+(* define a command, with trace flag, and with action wrapped in
+   reporting *)
 let command ~summary ?readme param =
   let trace =
     let%map_open config =
       flag "trace" ~doc:"<spec> enable debug tracing"
         (optional_with_default Trace.none
-           (Arg_type.create (fun s -> Trace.parse s |> Result.get_ok)))
+           (Arg_type.create (fun s -> Trace.parse s |> Result.get_ok)) )
     and colors = flag "colors" no_arg ~doc:"enable printing in colors"
     and margin =
       flag "margin" ~doc:"<cols> wrap debug tracing at <cols> columns"
@@ -69,7 +70,7 @@ let marshal program file =
 
 let unmarshal file () =
   In_channel.with_file
-    ~f:(fun ic -> (Marshal.from_channel ic : Llair.program))
+    ~f:(fun ic : Llair.program -> Marshal.from_channel ic)
     file
 
 let entry_points = Config.find_list "entry-points"
@@ -91,7 +92,7 @@ let used_globals pgm entry_points preanalyze =
   else
     UG.Declared
       (Llair.Global.Set.of_iter
-         (Iter.map ~f:(fun g -> g.name) (IArray.to_iter pgm.globals)))
+         (Iter.map ~f:(fun g -> g.name) (IArray.to_iter pgm.globals)) )
 
 let analyze =
   let%map_open bound =
@@ -113,7 +114,7 @@ let analyze =
             [ ("sh", `sh)
             ; ("globals", `globals)
             ; ("itv", `itv)
-            ; ("unit", `unit) ]))
+            ; ("unit", `unit) ] ) )
       ~doc:
         "<string> select abstract domain; must be one of \"sh\" (default, \
          symbolic heap domain), \"globals\" (used-globals domain), or \
@@ -296,4 +297,4 @@ Command.run ~version:Version.version ~build_info:Version.build_info
      ; ("llvm", llvm_grp)
      ; ("analyze", analyze_cmd)
      ; ("disassemble", disassemble_cmd)
-     ; ("smt", smt_cmd) ])
+     ; ("smt", smt_cmd) ] )

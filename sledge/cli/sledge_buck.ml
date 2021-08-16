@@ -28,7 +28,7 @@ let buck_root =
   let open Process in
   lazy
     (String.trim
-       (eval (run "buck" ["root"; "@mode/" ^ Lazy.force mode] |- read_all)))
+       (eval (run "buck" ["root"; "@mode/" ^ Lazy.force mode] |- read_all)) )
 
 (* use buck root for working directory *)
 let context () =
@@ -44,7 +44,7 @@ let buck_build ~context target =
        ; "@mode/" ^ Lazy.force mode
        ; "-c"
        ; "sledge.build=True"
-       ; target ])
+       ; target ] )
 
 (* split a fully-qualified buck target into file and rule *)
 let parse_target target =

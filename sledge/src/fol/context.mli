@@ -96,16 +96,15 @@ module Subst : sig
   (** Apply a substitution recursively to subterms. *)
 
   val partition_valid : Var.Set.t -> t -> t * Var.Set.t * t
-  (** Partition ∃xs. σ into equivalent ∃xs. τ ∧ ∃ks. ν where ks
-      and ν are maximal where ∃ks. ν is universally valid, xs ⊇ ks and
-      ks ∩ fv(τ) = ∅. *)
+  (** Partition ∃xs. σ into equivalent ∃xs. τ ∧ ∃ks. ν where ks and ν are
+      maximal where ∃ks. ν is universally valid, xs ⊇ ks and ks ∩ fv(τ) = ∅. *)
 end
 
 val solve_for_vars : Var.Set.t list -> t -> Subst.t
 (** [solve_for_vars vss x] is a solution substitution that is implied by [x]
-    and consists of oriented equalities [v ↦ e] that map terms [v] with
-    free variables contained in (the union of) a prefix [uss] of [vss] to
-    terms [e] with free variables contained in as short a prefix of [uss] as
+    and consists of oriented equalities [v ↦ e] that map terms [v] with free
+    variables contained in (the union of) a prefix [uss] of [vss] to terms
+    [e] with free variables contained in as short a prefix of [uss] as
     possible. *)
 
 val apply_subst : Var.Set.t -> Subst.t -> t -> Var.Set.t * t
@@ -116,8 +115,8 @@ val apply_and_elim :
   wrt:Var.Set.t -> Var.Set.t -> Subst.t -> t -> Var.Set.t * t * Var.Set.t
 (** Apply a solution substitution to eliminate the solved variables. That
     is, [apply_and_elim ~wrt vs s x] is [(zs, x', ks)] where
-    [∃zs. r' ∧ ∃ks. s] is equivalent to [∃xs. r] where [zs] are
-    fresh with respect to [wrt] and [ks ⊆ xs] and is maximal. *)
+    [∃zs. r' ∧ ∃ks. s] is equivalent to [∃xs. r] where [zs] are fresh with
+    respect to [wrt] and [ks ⊆ xs] and is maximal. *)
 
 (**/**)
 

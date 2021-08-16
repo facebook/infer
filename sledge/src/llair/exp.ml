@@ -241,8 +241,7 @@ let rec invariant exp =
     match typ with
     | Array {elt} ->
         assert (
-          IArray.for_all args ~f:(fun arg -> Typ.castable elt (typ_of arg))
-        )
+          IArray.for_all args ~f:(fun arg -> Typ.castable elt (typ_of arg)) )
     | Tuple {elts} | Struct {elts} ->
         assert (IArray.length elts = IArray.length args) ;
         assert (

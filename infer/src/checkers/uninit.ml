@@ -136,7 +136,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               && (not (Typ.is_pointer t))
               && not
                    (Option.exists callee_formals_opt ~f:(fun callee_formals ->
-                        is_struct_field_passed_by_ref callee_formals t access_expr idx ))
+                        is_struct_field_passed_by_ref callee_formals t access_expr idx ) )
             then report_intra access_expr loc analysis_data
         | _ ->
             () )

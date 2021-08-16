@@ -1198,10 +1198,10 @@ let remove_pure_garbage tenv ?(count = fun _ -> 0) prop =
 
 
 (* During re-execution, free variables in Prop.t have the whole spec as their scope. Thus, most
-functions in Prop abstain from dropping free variables. Here, however, we can do it. Let's call an
-atom an orphan when it contains a variable v that does not occur anywhere else in the spec. Orphans
-can be dropped. Alpha-renaming can create orphans. Thus, we will perform a best-effort fixpoint
-computation (rename, drop)*, stopping when the last drop is a no-op. *)
+   functions in Prop abstain from dropping free variables. Here, however, we can do it. Let's call an
+   atom an orphan when it contains a variable v that does not occur anywhere else in the spec. Orphans
+   can be dropped. Alpha-renaming can create orphans. Thus, we will perform a best-effort fixpoint
+   computation (rename, drop)*, stopping when the last drop is a no-op. *)
 let abstract_spec ({InterproceduralAnalysis.tenv; _} as analysis_data) spec =
   let open BiabductionSummary in
   let rename spec = spec_normalize tenv spec in

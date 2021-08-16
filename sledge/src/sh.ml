@@ -227,7 +227,7 @@ let rec pp_ ?var_strength ?vs ancestor_xs parent_ctx fs
         (pp_djn ?var_strength
            (Var.Set.union vs (Var.Set.union us xs))
            (Var.Set.union ancestor_xs xs)
-           (if Option.is_some var_strength then ctx else emp.ctx))
+           (if Option.is_some var_strength then ctx else emp.ctx) )
         fs djns ) ;
   Format.pp_close_box fs ()
 
@@ -242,7 +242,7 @@ and pp_djn ?var_strength vs xs ctx fs = function
              in
              Format.fprintf fs "@[<hv 1>(%a)@]"
                (pp_ ?var_strength ~vs (Var.Set.union xs sjn.xs) ctx)
-               sjn ))
+               sjn ) )
         djn
 
 let pp_us fs us = pp_us fs us
@@ -278,8 +278,7 @@ let rec invariant q =
            pp q () ) ;
     assert (
       Var.Set.subset (fv q) ~of_:us
-      || fail "unbound but free: %a" Var.Set.pp (Var.Set.diff (fv q) us) ()
-    ) ;
+      || fail "unbound but free: %a" Var.Set.pp (Var.Set.diff (fv q) us) () ) ;
     Context.invariant ctx ;
     ( match djns with
     | [[]] ->
@@ -335,8 +334,7 @@ let exists xs q =
   ;
   assert (
     Var.Set.subset xs ~of_:q.us
-    || fail "Sh.exists xs - q.us: %a" Var.Set.pp (Var.Set.diff xs q.us) ()
-  ) ;
+    || fail "Sh.exists xs - q.us: %a" Var.Set.pp (Var.Set.diff xs q.us) () ) ;
   ( if Var.Set.is_empty xs then q
   else
     {q with us= Var.Set.diff q.us xs; xs= Var.Set.union q.xs xs}
@@ -642,7 +640,7 @@ let rec pure_approx q =
     ( [ q.pure
       ; Formula.distinct
           (Array.of_list
-             (Term.zero :: List.map ~f:(fun seg -> seg.loc) q.heap)) ]
+             (Term.zero :: List.map ~f:(fun seg -> seg.loc) q.heap) ) ]
     |> List.fold q.djns ~f:(fun djn p ->
            Formula.orN (List.map djn ~f:pure_approx) :: p ) )
 

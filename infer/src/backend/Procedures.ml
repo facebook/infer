@@ -88,13 +88,13 @@ let pp_all ~filter ~proc_name:proc_name_cond ~attr_kind ~source_file:source_file
       (pp_if proc_name_cond "proc_name" Procname.pp)
       proc_name
       (pp_column_if stmt attr_kind "attribute_kind" Attributes.deserialize_attributes_kind
-         Attributes.pp_attributes_kind)
+         Attributes.pp_attributes_kind )
       2
       (pp_column_if stmt ~new_line:true proc_attributes "attributes"
-         ProcAttributes.SQLite.deserialize ProcAttributes.pp)
+         ProcAttributes.SQLite.deserialize ProcAttributes.pp )
       4
       (pp_column_if stmt ~new_line:false proc_cfg "control-flow graph" Procdesc.SQLite.deserialize
-         dump_cfg)
+         dump_cfg )
       5
   in
   (* we could also register this statement but it's typically used only once per run so just prepare

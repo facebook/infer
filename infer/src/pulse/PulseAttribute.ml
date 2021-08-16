@@ -111,7 +111,7 @@ module Attribute = struct
     | Allocated (procname, trace) ->
         F.fprintf f "Allocated %a"
           (Trace.pp
-             ~pp_immediate:(pp_string_if_debug ("allocation with " ^ Procname.to_string procname)))
+             ~pp_immediate:(pp_string_if_debug ("allocation with " ^ Procname.to_string procname)) )
           trace
     | Closure pname ->
         Procname.pp f pname

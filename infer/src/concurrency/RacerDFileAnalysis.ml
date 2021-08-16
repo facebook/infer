@@ -255,7 +255,7 @@ let get_reporting_explanation_java ~nullsafe report_kind tenv pname thread =
       Some
         (F.asprintf
            "@\n Reporting because current method is annotated %a or overrides an annotated method."
-           MF.pp_monospaced "@ThreadSafe")
+           MF.pp_monospaced "@ThreadSafe" )
     else
       match RacerDModels.get_litho_explanation tenv pname with
       | Some _ as expl_opt ->
@@ -444,8 +444,8 @@ let report_on_write_java_csharp ~nullsafe accesses acc (reported_access : report
 
 
 (** unprotected read. report all writes as conflicts for java/csharp. *)
-let report_on_unprotected_read_java_csharp ~nullsafe accesses acc
-    (reported_access : reported_access) =
+let report_on_unprotected_read_java_csharp ~nullsafe accesses acc (reported_access : reported_access)
+    =
   let open RacerDDomain in
   let is_conflict {snapshot; threads= other_threads} =
     AccessSnapshot.is_write snapshot

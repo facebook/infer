@@ -129,8 +129,8 @@ let path_set_create_worklist proc_cfg =
   Worklist.create ()
 
 
-let htable_retrieve (htable : (Procdesc.Node.id, Paths.PathSet.t) Hashtbl.t)
-    (key : Procdesc.Node.id) : Paths.PathSet.t =
+let htable_retrieve (htable : (Procdesc.Node.id, Paths.PathSet.t) Hashtbl.t) (key : Procdesc.Node.id)
+    : Paths.PathSet.t =
   try Hashtbl.find htable key
   with Caml.Not_found ->
     Hashtbl.replace htable key Paths.PathSet.empty ;
@@ -513,7 +513,7 @@ let compute_visited vset =
 
 
 (* Extract specs from a pathset, after the footprint phase. The postconditions will be thrown away
-  by the re-execution phase, but they are first used to detect custom errors. *)
+   by the re-execution phase, but they are first used to detect custom errors. *)
 let extract_specs ({InterproceduralAnalysis.tenv; _} as analysis_data) pdesc pathset :
     Prop.normal BiabductionSummary.spec list =
   if not !BiabductionConfig.footprint then
@@ -574,7 +574,7 @@ let collect_postconditions analysis_data wl tenv proc_cfg :
             (fun prop ->
               Attribute.remove_resource tenv Racquire (Rmemory Mobjc)
                 (Attribute.remove_resource tenv Racquire (Rmemory Mmalloc)
-                   (Attribute.remove_resource tenv Racquire Rfile prop)) )
+                   (Attribute.remove_resource tenv Racquire Rfile prop) ) )
             pathset
         else pathset
     | _ ->
@@ -933,7 +933,7 @@ let update_specs analysis_data prev_summary_opt phase
              ( Paths.PathSet.from_renamed_list spec.BiabductionSummary.posts
              , spec.BiabductionSummary.visited )
              map )
-         ~init:SpecMap.empty old_specs)
+         ~init:SpecMap.empty old_specs )
   in
   let re_exe_filter old_spec =
     (* filter out pres which failed re-exe *)
@@ -944,7 +944,7 @@ let update_specs analysis_data prev_summary_opt phase
               ~f:(fun new_spec ->
                 BiabductionSummary.Jprop.equal new_spec.BiabductionSummary.pre
                   old_spec.BiabductionSummary.pre )
-              new_specs)
+              new_specs )
     then (
       changed := true ;
       current_specs := SpecMap.remove old_spec.BiabductionSummary.pre !current_specs )

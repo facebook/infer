@@ -183,7 +183,7 @@ let get_provisional_annotation = function
   | CurrMethodParameter
       (Normal
         { param_annotated_type=
-            {nullability= AnnotatedNullability.ProvisionallyNullable provisional_annotation} }) ->
+            {nullability= AnnotatedNullability.ProvisionallyNullable provisional_annotation} } ) ->
       Some provisional_annotation
   | MethodCall
       { annotated_signature=

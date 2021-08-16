@@ -364,7 +364,7 @@ let get_translate_as_friend_decl decl_list =
   match get_friend_decl_opt (List.find_exn ~f:is_translate_as_friend_decl decl_list) with
   | Some
       (Clang_ast_t.ClassTemplateSpecializationDecl
-        (_, _, _, _, _, _, _, _, _, {tsi_specialization_args= [`Type t_ptr]})) ->
+        (_, _, _, _, _, _, _, _, _, {tsi_specialization_args= [`Type t_ptr]}) ) ->
       Some t_ptr
   | _ ->
       None

@@ -302,7 +302,7 @@ module PulseTransferFunctions = struct
                        PulseOperations.write_id lhs_id rhs_addr_hist astate )
               else
                 [ (let+ astate, rhs_addr_hist = PulseOperations.eval_deref path loc rhs_exp astate in
-                   PulseOperations.write_id lhs_id rhs_addr_hist astate) ]
+                   PulseOperations.write_id lhs_id rhs_addr_hist astate ) ]
             in
             PulseReport.report_results tenv proc_desc err_log loc results
           in
@@ -394,7 +394,7 @@ module PulseTransferFunctions = struct
              []
            else
              (* [condition] is true or unknown value: go into the branch *)
-             [Ok (ContinueProgram astate)])
+             [Ok (ContinueProgram astate)] )
           |> PulseReport.report_exec_results tenv proc_desc err_log loc
       | Call (ret, call_exp, actuals, loc, call_flags) ->
           dispatch_call analysis_data path ret call_exp actuals loc call_flags astate

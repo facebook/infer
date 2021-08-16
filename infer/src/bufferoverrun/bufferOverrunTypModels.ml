@@ -20,9 +20,9 @@ let std_array element_typ length =
 let std_vector = CppStdVector
 
 (* Java's Collections are represented by their size. We don't care about the elements.
-- when they are constructed, we set the size to 0
-- each time we add an element, we increase the length of the array
-- each time we delete an element, we decrease the length of the array *)
+   - when they are constructed, we set the size to 0
+   - each time we add an element, we increase the length of the array
+   - each time we delete an element, we decrease the length of the array *)
 
 module Java = struct
   let collection = JavaCollection

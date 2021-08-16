@@ -286,7 +286,7 @@ let add_field_to_typestate_if_absent tenv access_loc typestate pvar object_origi
    1. The same as [convert_complex_exp_to_pvar]
    2. On top of this, if expr corresponds to a field access, stores this field in the typestate
       (if not stored yet).
-   *)
+*)
 let convert_complex_exp_to_pvar_and_register_field_in_typestate tenv idenv curr_pname
     (curr_annotated_signature : AnnotatedSignature.t) ~node ~(original_node : Procdesc.Node.t)
     ~is_assignment exp_ typestate loc =
@@ -345,8 +345,7 @@ let convert_complex_exp_to_pvar_and_register_field_in_typestate tenv idenv curr_
           in
           let class_under_analysis =
             Procname.Java.get_class_type_name
-              (Procname.as_java_exn curr_pname
-                 ~explanation:"Attempt to typecheck non-Java procname")
+              (Procname.as_java_exn curr_pname ~explanation:"Attempt to typecheck non-Java procname")
           in
           let res =
             match exp' with
@@ -397,7 +396,7 @@ let convert_complex_exp_to_pvar_and_register_field_in_typestate tenv idenv curr_
      does not require the programmer to write a check.
    What is the difference between ~node and ~original_node? I don't know. This is an artifact of refactoring of
    very old code. Sorry, dear future supporter, if names don't make sense.
- *)
+*)
 let convert_complex_exp_to_pvar tenv idenv curr_pname ~is_assignment
     (curr_annotated_signature : AnnotatedSignature.t) ~node ~(original_node : Procdesc.Node.t) exp
     typestate loc =
@@ -500,7 +499,7 @@ let typecheck_expr_for_errors analysis_data ~nullsafe_mode find_canonical_duplic
     checks node instr_ref typestate1 exp1 loc1 : unit =
   ignore
     (typecheck_expr_simple analysis_data ~nullsafe_mode find_canonical_duplicate calls_this checks
-       node instr_ref typestate1 exp1 StdTyp.void TypeOrigin.OptimisticFallback loc1)
+       node instr_ref typestate1 exp1 StdTyp.void TypeOrigin.OptimisticFallback loc1 )
 
 
 (** Get the values of a vararg parameter given the pvar used to assign the elements by looking for
@@ -547,7 +546,7 @@ let do_preconditions_check_not_null
                { is_always_true= true
                ; loc
                ; condition_descr= EradicateChecks.explain_expr tenv node cond
-               ; nonnull_origin= InferredNullability.get_simple_origin nullability })
+               ; nonnull_origin= InferredNullability.get_simple_origin nullability } )
             (Some instr_ref) ~nullsafe_mode ) ;
         let previous_origin = InferredNullability.get_simple_origin nullability in
         let new_origin = TypeOrigin.InferredNonnull {previous_origin} in
@@ -575,7 +574,7 @@ let do_preconditions_check_not_null
           | Exp.Lvar pvar1 ->
               pvar_apply instr_ref idenv tenv curr_pname curr_annotated_signature loc
                 (clear_nullable_flag
-                   ~nullsafe_mode:curr_annotated_signature.AnnotatedSignature.nullsafe_mode)
+                   ~nullsafe_mode:curr_annotated_signature.AnnotatedSignature.nullsafe_mode )
                 ts pvar1 node
           | _ ->
               ts
@@ -585,7 +584,7 @@ let do_preconditions_check_not_null
       else
         pvar_apply instr_ref idenv tenv curr_pname curr_annotated_signature loc
           (clear_nullable_flag
-             ~nullsafe_mode:curr_annotated_signature.AnnotatedSignature.nullsafe_mode)
+             ~nullsafe_mode:curr_annotated_signature.AnnotatedSignature.nullsafe_mode )
           typestate' pvar node
   | None ->
       typestate'
@@ -693,7 +692,7 @@ let do_map_put ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as anal
           TypeState.add pvar_map_get
             (typecheck_expr_simple analysis_data ~nullsafe_mode find_canonical_duplicate calls_this
                checks node instr_ref typestate' exp_value typ_value TypeOrigin.OptimisticFallback
-               loc)
+               loc )
             typestate' ~descr:"do_map_put"
       | None ->
           typestate' )
@@ -840,7 +839,7 @@ let rec check_condition_for_sil_prune
       (* This will replace x.containsKey(e) to x.get(e) *)
       | Some
           (DExp.Dretcall
-            (DExp.Dconst (Const.Cfun (Procname.Java pname_java)), args, loc, call_flags)) ->
+            (DExp.Dconst (Const.Cfun (Procname.Java pname_java)), args, loc, call_flags) ) ->
           let pname_java' =
             pname_java
             |> Procname.Java.replace_method_name "get"
@@ -999,8 +998,8 @@ let rec check_condition_for_sil_prune
 
 
 (* If the function has @PropagatesNullable params the nullability of result is determined by
-  nullability of actual values of these params.
-  *)
+   nullability of actual values of these params.
+*)
 let clarify_ret_by_propagates_nullable ret (resolved_params : EradicateChecks.resolved_param list) =
   (* Nullability of actual values of params that are marked as propagating nullables *)
   let nullability_of_propagates_nullable_params =
@@ -1244,7 +1243,7 @@ let typecheck_instr ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as
       in
       TypeState.add_id id
         (typecheck_expr_simple analysis_data ~nullsafe_mode find_canonical_duplicate calls_this
-           checks node instr_ref typestate' e' typ TypeOrigin.OptimisticFallback loc)
+           checks node instr_ref typestate' e' typ TypeOrigin.OptimisticFallback loc )
         ~descr:"Sil.Load" typestate'
   | Sil.Store {e1= Exp.Lvar pvar; e2= Exp.Exn _} when is_return pvar ->
       (* skip assignment to return variable where it is an artifact of a throw instruction *)
@@ -1261,8 +1260,7 @@ let typecheck_instr ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as
         | Exp.Lfield (_, field_name, field_class_type) -> (
             let class_under_analysis =
               Procname.Java.get_class_type_name
-                (Procname.as_java_exn curr_pname
-                   ~explanation:"Attempt to typecheck non-Java method")
+                (Procname.as_java_exn curr_pname ~explanation:"Attempt to typecheck non-Java method")
             in
             match
               AnnotatedField.get tenv field_name ~class_typ:field_class_type ~class_under_analysis
@@ -1273,7 +1271,7 @@ let typecheck_instr ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as
                     find_canonical_duplicate node instr_ref typestate ~expr_rhs:e2 ~field_type:typ
                     loc field_name annotated_field
                     (typecheck_expr analysis_data ~nullsafe_mode find_canonical_duplicate calls_this
-                       checks)
+                       checks )
             | None ->
                 L.d_strln "WARNING: could not fetch field declaration; skipping assignment check" )
         | _ ->
@@ -1284,8 +1282,7 @@ let typecheck_instr ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as
         | Exp.Lvar pvar ->
             TypeState.add pvar
               (typecheck_expr_simple analysis_data ~nullsafe_mode find_canonical_duplicate
-                 calls_this checks node instr_ref typestate e2 typ TypeOrigin.OptimisticFallback
-                 loc)
+                 calls_this checks node instr_ref typestate e2 typ TypeOrigin.OptimisticFallback loc )
               typestate ~descr:"Sil.Store: Exp.Lvar case"
         | Exp.Lfield _ ->
             typestate
@@ -1313,7 +1310,7 @@ let typecheck_instr ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as
       (* cast copies the type of the first argument *)
       TypeState.add_id id
         (typecheck_expr_simple analysis_data ~nullsafe_mode find_canonical_duplicate calls_this
-           checks node instr_ref typestate e' typ TypeOrigin.OptimisticFallback loc)
+           checks node instr_ref typestate e' typ TypeOrigin.OptimisticFallback loc )
         typestate ~descr:"type cast"
   (* myarray.length *)
   | Sil.Call ((id, _), Exp.Const (Const.Cfun pn), [(array_exp, t)], loc, _)

@@ -33,7 +33,7 @@ let interprocedural2 payload_field1 payload_field2 checker =
        ~get_payload:(fun payloads ->
          (Field.get payload_field1 payloads, Field.get payload_field2 payloads) )
        ~set_payload:(fun payloads payload1 -> Field.fset payload_field1 payloads payload1)
-       checker)
+       checker )
 
 
 (** For checkers that read three separate payloads. *)
@@ -45,7 +45,7 @@ let interprocedural3 payload_field1 payload_field2 payload_field3 ~set_payload c
          ( Field.get payload_field1 payloads
          , Field.get payload_field2 payloads
          , Field.get payload_field3 payloads ) )
-       ~set_payload checker)
+       ~set_payload checker )
 
 
 let file issue_dir payload_field checker =

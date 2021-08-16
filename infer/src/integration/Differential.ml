@@ -322,7 +322,7 @@ module Cost = struct
       in
       Some
         (create_json_bug ~qualifier ~line ~file ~source_file ~trace ~item:(convert cost_info)
-           ~issue_type)
+           ~issue_type )
     else None
 
 
@@ -455,7 +455,7 @@ module ConfigImpactItem = struct
       in
       Some
         (create_json_bug ~qualifier ~line ~file ~source_file ~trace
-           ~item:(convert config_impact_item) ~issue_type:IssueType.config_impact_analysis)
+           ~item:(convert config_impact_item) ~issue_type:IssueType.config_impact_analysis )
     else None
 
 

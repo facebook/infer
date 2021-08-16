@@ -8,8 +8,8 @@
 open! IStd
 
 (* TODO(T54088319) get rid of annotation_deprecated:
-  Introduce "field flags" and move all other usages to this dedicated datatype
-  *)
+   Introduce "field flags" and move all other usages to this dedicated datatype
+*)
 type t = {annotation_deprecated: Annot.Item.t; annotated_type: AnnotatedType.t}
 
 let rec get_type_name {Typ.desc} =

@@ -19,7 +19,7 @@ open! IStd
       to ones produced on procedure-level stage.
       NOTE: The checker SHALL NOT modify summaries at this point, including updating
       summaries' error log.
- *)
+*)
 
 (** Type of a procedure callback:
 

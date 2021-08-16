@@ -283,7 +283,7 @@ let call ~summaries _ ~globals:_ ~actuals ~areturn ~formals ~freturn:_
       Abstract1.rename_array man q''
         (Array.map
            ~f:(mangle >> apron_var_of_reg)
-           (IArray.to_array formals))
+           (IArray.to_array formals) )
         (Array.map ~f:apron_var_of_reg (IArray.to_array formals))
     in
     (q''', {areturn; caller_q= q})

@@ -78,7 +78,7 @@ module ReportableViolation = struct
                The parent method declared it can handle `null` for this param, so the child should \
                also declare that."
               (position_to_human_readable_string
-                 ((* For the user reporting, index param positions from 1 *) param_index + 1))
+                 ((* For the user reporting, index param positions from 1 *) param_index + 1) )
               MF.pp_monospaced param_description MF.pp_monospaced overridden_method_descr
               MF.pp_monospaced base_method_descr
     in

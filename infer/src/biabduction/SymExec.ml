@@ -684,7 +684,7 @@ let receiver_self receiver prop =
 (* When current ObjC method is an initializer and the method call is also an initializer,
    and the receiver is self, i.e. the call is [super init], then we want to assume that it
    can return null, regardless of code or annotations, so that the next statement should be
-   a check for null, which is considered good practice.  *)
+   a check for null, which is considered good practice. *)
 let force_objc_init_return_nil pdesc callee_pname tenv ret_id pre path receiver =
   let current_pname = Procdesc.get_proc_name pdesc in
   if
@@ -720,7 +720,7 @@ let handle_objc_instance_method_call_or_skip pdesc tenv actual_pars path callee_
         raise
           (Exceptions.Internal_error
              (Localise.verbatim_desc
-                "In Objective-C instance method call there should be a receiver."))
+                "In Objective-C instance method call there should be a receiver." ) )
   in
   let is_receiver_null =
     match actual_pars with
@@ -1783,7 +1783,7 @@ let node handle_exn analysis_data proc_cfg (node : ProcCfg.Exceptional.Node.t)
         && not
              (Procdesc.Node.equal_nodekind
                 (ProcCfg.Exceptional.Node.kind node)
-                Procdesc.Node.exn_handler_kind)
+                Procdesc.Node.exn_handler_kind )
         (* skip normal instructions if an exception was thrown, unless this is an exception
            handler node *)
       then (

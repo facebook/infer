@@ -374,7 +374,7 @@ let write_config_impact all_config_fields proc_name loc config_impact_opt (outfi
       Option.map config_impact_opt
         ~f:
           (ConfigImpactAnalysis.Summary.instantiate_unchecked_callees_cond
-             ~all_config_fields:(Lazy.force all_config_fields))
+             ~all_config_fields:(Lazy.force all_config_fields) )
     in
     JsonConfigImpactPrinter.pp outfile.fmt {loc; proc_name; config_impact_opt}
 

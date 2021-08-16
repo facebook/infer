@@ -88,7 +88,7 @@ let calc_mode_to_promote_to curr_mode all_issues =
 
 (* analyze all issues for the current class (including all nested and anonymous classes recursively)
    and classify them into one meta-issue.
- *)
+*)
 let make_meta_issue modes_and_issues top_level_class_mode top_level_class_name =
   let currently_reportable_issues = get_reportable_typing_rules_violations modes_and_issues in
   List.iter currently_reportable_issues ~f:(fun issue ->

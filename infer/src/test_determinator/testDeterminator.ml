@@ -224,7 +224,7 @@ let remove_llvm_suffix_native_symbols native_symbols =
 
 
 (* The clang plugin exports C++ mangled names in hashed form for perf reasons, so here we
-hash the incoming mangled names in the profiler samples, so that we can compare them. *)
+   hash the incoming mangled names in the profiler samples, so that we can compare them. *)
 let add_hash_mangled_native_symbols native_symbols =
   let add_hash_mangled_native_symbol native_symbol =
     let hash_mangled mangled_name =
@@ -259,7 +259,7 @@ let match_profiler_samples_affected_methods native_symbols affected_methods =
       match affected_method with
       | Some
           (ClangProc.CFunction
-            {name= affected_function_name; mangled_name= affected_function_mangled_name}) ->
+            {name= affected_function_name; mangled_name= affected_function_mangled_name} ) ->
           (* This is needed because for simple c functions from the standard library, the name
              matches but the mangled name doesn't quite match, there is a __1 at the beginning
              in the name we get from the plugin, but not in the name we get from the profiler samples. *)

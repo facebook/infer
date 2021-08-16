@@ -98,8 +98,8 @@ end = struct
     else (
       assert (
         Option.for_all ~f:(Trm.equal key) (Trm.Map.find key r)
-        || fail "domains intersect: %a ↦ %a in %a" Trm.pp key Trm.pp data
-             pp r () ) ;
+        || fail "domains intersect: %a ↦ %a in %a" Trm.pp key Trm.pp data pp
+             r () ) ;
       let s = Trm.Map.singleton key data in
       let r' = Trm.Map.map_endo ~f:(norm s) r in
       Trm.Map.add ~key ~data r' )
@@ -134,9 +134,8 @@ end = struct
     $> fun b ->
     [%Trace.info " %a%a=%a = %b" Var.Set.pp_xs xs Trm.pp e Trm.pp f b]
 
-  (** Partition ∃xs. σ into equivalent ∃xs. τ ∧ ∃ks. ν where ks
-      and ν are maximal where ∃ks. ν is universally valid, xs ⊇ ks and
-      ks ∩ fv(τ) = ∅. *)
+  (** Partition ∃xs. σ into equivalent ∃xs. τ ∧ ∃ks. ν where ks and ν are
+      maximal where ∃ks. ν is universally valid, xs ⊇ ks and ks ∩ fv(τ) = ∅. *)
   let partition_valid xs s =
     [%trace]
       ~call:(fun {pf} -> pf "@ @[%a@ %a@]" Var.Set.pp_xs xs pp s)
@@ -418,8 +417,7 @@ let pre_invariant x =
         Use.iter use ~f:(fun u ->
             assert (
               Iter.mem ~eq:Trm.equal a (Theory.solvable_trms u)
-              || fail "%a does not occur in its use %a" Trm.pp a Trm.pp u ()
-            ) ) )
+              || fail "%a does not occur in its use %a" Trm.pp a Trm.pp u () ) ) )
   with exc ->
     let bt = Printexc.get_raw_backtrace () in
     [%Trace.info " %a" pp_raw x] ;
@@ -954,10 +952,9 @@ let subst_invariant us s0 s =
           || not (Var.Set.subset (Trm.fv key) ~of_:us) ) ) ;
     true )
 
-(** try to solve [p = q] such that [fv (p - q) ⊆ us ∪ xs] and [p - q]
-    has at most one maximal solvable subterm, [kill], where
-    [fv kill ⊈ us]; solve [p = q] for [kill]; extend subst mapping [kill]
-    to the solution *)
+(** try to solve [p = q] such that [fv (p - q) ⊆ us ∪ xs] and [p - q] has at
+    most one maximal solvable subterm, [kill], where [fv kill ⊈ us]; solve
+    [p = q] for [kill]; extend subst mapping [kill] to the solution *)
 let solve_poly_eq us p' q' subst =
   [%Trace.call fun {pf} -> pf "@ %a = %a" Trm.pp p' Trm.pp q']
   ;
@@ -988,7 +985,7 @@ let rec solve_pending (s : Theory.t) soln =
       | {solved= Some solved} as s ->
           solve_pending {s with solved= Some []}
             (List.fold solved soln ~f:(fun {var; rep} soln ->
-                 Subst.compose1 ~key:var ~data:rep soln ))
+                 Subst.compose1 ~key:var ~data:rep soln ) )
       | {solved= None} -> None )
   | [] -> Some soln
 
@@ -1011,7 +1008,7 @@ let solve_seq_eq us e' f' subst =
          ; no_fresh= true
          ; fresh= Var.Set.empty
          ; solved= Some []
-         ; pending= [] })
+         ; pending= [] } )
       subst
   in
   ( match ((e' : Trm.t), (f' : Trm.t)) with
@@ -1045,8 +1042,7 @@ let solve_interp_eq us e' (cls, subst) =
 
 (** move equations from [cls] to [subst] which are between interpreted terms
     and can be expressed, after normalizing with [subst], as [x ↦ u] where
-    [us ∪ xs ⊇ fv x ⊈ us] and [fv u ⊆ us] or else
-    [fv u ⊆ us ∪ xs] *)
+    [us ∪ xs ⊇ fv x ⊈ us] and [fv u ⊆ us] or else [fv u ⊆ us ∪ xs] *)
 let rec solve_interp_eqs us (cls, subst) =
   [%Trace.call fun {pf} ->
     pf "@ cls: @[%a@]@ subst: @[%a@]" Cls.pp cls Subst.pp subst]
@@ -1083,9 +1079,8 @@ let dom_trm e =
   | _ -> None
 
 (** move equations from [cls] (which is assumed to be normalized by [subst])
-    to [subst] which can be expressed as [x ↦ u] where [x] is
-    noninterpreted [us ∪ xs ⊇ fv x ⊈ us] and [fv u ⊆ us] or else
-    [fv u ⊆ us ∪ xs] *)
+    to [subst] which can be expressed as [x ↦ u] where [x] is noninterpreted
+    [us ∪ xs ⊇ fv x ⊈ us] and [fv u ⊆ us] or else [fv u ⊆ us ∪ xs] *)
 let solve_uninterp_eqs us (cls, subst) =
   [%Trace.call fun {pf} ->
     pf "@ cls: @[%a@]@ subst: @[%a@]" Cls.pp cls Subst.pp subst]
@@ -1246,8 +1241,8 @@ let solve_for_xs r us xs =
       else solve_concat_extracts r us x (classes, subst, us_xs) )
 
 (** move equations from [classes] to [subst] which can be expressed, after
-    normalizing with [subst], as [x ↦ u] where [us ∪ xs ⊇ fv x ⊈ us]
-    and [fv u ⊆ us] or else [fv u ⊆ us ∪ xs]. *)
+    normalizing with [subst], as [x ↦ u] where [us ∪ xs ⊇ fv x ⊈ us] and
+    [fv u ⊆ us] or else [fv u ⊆ us ∪ xs]. *)
 let solve_classes r xs (classes, subst, us) =
   [%Trace.call fun {pf} ->
     pf "@ us: {@[%a@]}@ xs: {@[%a@]}" Var.Set.pp us Var.Set.pp xs]
@@ -1272,11 +1267,10 @@ let pp_vss fs vss =
     (List.pp ";@ " (fun fs vs -> Format.fprintf fs "{@[%a@]}" Var.Set.pp vs))
     vss
 
-(** enumerate variable contexts vᵢ in [v₁;…] and accumulate a solution
-    subst with entries [x ↦ u] where [r] entails [x = u] and
-    [⋃ⱼ₌₁ⁱ vⱼ ⊇ fv x ⊈ ⋃ⱼ₌₁ⁱ⁻¹ vⱼ] and
-    [fv u ⊆ ⋃ⱼ₌₁ⁱ⁻¹ vⱼ] if possible and otherwise
-    [fv u ⊆ ⋃ⱼ₌₁ⁱ vⱼ] *)
+(** enumerate variable contexts vᵢ in [v₁;…] and accumulate a solution subst
+    with entries [x ↦ u] where [r] entails [x = u] and
+    [⋃ⱼ₌₁ⁱ vⱼ ⊇ fv x ⊈ ⋃ⱼ₌₁ⁱ⁻¹ vⱼ] and [fv u ⊆ ⋃ⱼ₌₁ⁱ⁻¹ vⱼ] if possible and
+    otherwise [fv u ⊆ ⋃ⱼ₌₁ⁱ vⱼ] *)
 let solve_for_vars vss r =
   [%Trace.call fun {pf} ->
     pf "@ %a@ @[%a@]" pp_vss vss pp r ;

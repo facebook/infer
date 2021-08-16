@@ -19,11 +19,7 @@ type t = private
 
 val create :
      ?at_exit:
-       (   name:string
-        -> elapsed:float
-        -> aggregate:float
-        -> count:int
-        -> unit)
+       (name:string -> elapsed:float -> aggregate:float -> count:int -> unit)
   -> string
   -> t
 (** Construct a timer with the given name and register the given function to

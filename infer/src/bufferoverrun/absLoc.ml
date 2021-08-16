@@ -189,7 +189,8 @@ module Loc = struct
             Prim
               (Allocsite
                 (Allocsite.Symbol
-                  (BoField.Prim (SP.Deref ((SP.Deref_COneValuePointer | SP.Deref_CPointer), p)))))
+                  (BoField.Prim (SP.Deref ((SP.Deref_COneValuePointer | SP.Deref_CPointer), p))) )
+                )
         ; fn= f }
     | BoField.Field
         { prefix=
@@ -199,7 +200,7 @@ module Loc = struct
                   { path=
                       Some
                         (BoField.Prim
-                          (SP.Deref ((SP.Deref_COneValuePointer | SP.Deref_CPointer), p))) }))
+                          (SP.Deref ((SP.Deref_COneValuePointer | SP.Deref_CPointer), p)) ) } ) )
         ; fn= f } ->
         BoField.pp ~pp_lhs:(SP.pp_partial_paren ~paren:true) ~sep:"->" fmt p f
     | BoField.Field {prefix= l; fn= f} ->
@@ -410,8 +411,8 @@ module Loc = struct
       , Some
           ( Field {prefix= rhs_path}
           | Prim
-              (Deref
-                (Deref_JavaPointer, Field {prefix= Prim (Deref (Deref_JavaPointer, rhs_path))})) ) )
+              (Deref (Deref_JavaPointer, Field {prefix= Prim (Deref (Deref_JavaPointer, rhs_path))}))
+            ) )
       when Symb.SymbolPath.equal_partial lhs_path rhs_path ->
         Some lhs
     | _, _ ->

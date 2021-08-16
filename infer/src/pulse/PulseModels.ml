@@ -668,7 +668,7 @@ module StdBasicString = struct
         (MemoryAccess
            { pointer= this_hist
            ; access= internal_string_access
-           ; hist_obj_default= snd string_addr_hist })
+           ; hist_obj_default= snd string_addr_hist } )
         location CppDelete string_addr_hist astate
     in
     astate
@@ -823,7 +823,7 @@ module GenericArrayBackedCollectionIterator = struct
                    ; invalidation_trace
                    ; access_trace
                    ; must_be_valid_reason= None }
-             ; astate })
+             ; astate } )
       else Ok astate
     in
     (* We do not want to create internal array if iterator pointer has an invalid value *)
@@ -1508,36 +1508,36 @@ module Erlang = struct
   let error_badmatch : model =
    fun {location} astate ->
     [ Error
-        (ReportableError {astate; diagnostic= ErlangError (Badmatch {calling_context= []; location})})
-    ]
+        (ReportableError {astate; diagnostic= ErlangError (Badmatch {calling_context= []; location})}
+        ) ]
 
 
   let error_badrecord : model =
    fun {location} astate ->
     [ Error
         (ReportableError
-           {astate; diagnostic= ErlangError (Badrecord {calling_context= []; location})}) ]
+           {astate; diagnostic= ErlangError (Badrecord {calling_context= []; location})} ) ]
 
 
   let error_case_clause : model =
    fun {location} astate ->
     [ Error
         (ReportableError
-           {astate; diagnostic= ErlangError (Case_clause {calling_context= []; location})}) ]
+           {astate; diagnostic= ErlangError (Case_clause {calling_context= []; location})} ) ]
 
 
   let error_function_clause : model =
    fun {location} astate ->
     [ Error
         (ReportableError
-           {astate; diagnostic= ErlangError (Function_clause {calling_context= []; location})}) ]
+           {astate; diagnostic= ErlangError (Function_clause {calling_context= []; location})} ) ]
 
 
   let error_if_clause : model =
    fun {location} astate ->
     [ Error
         (ReportableError
-           {astate; diagnostic= ErlangError (If_clause {calling_context= []; location})}) ]
+           {astate; diagnostic= ErlangError (If_clause {calling_context= []; location})} ) ]
 
 
   let make_nil : model =

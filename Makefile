@@ -882,6 +882,8 @@ endif
 .PHONY: devsetup
 devsetup: Makefile.autoconf
 	$(QUIET)[ $(OPAM) != "no" ] || (echo 'No `opam` found, aborting setup.' >&2; exit 1)
+	$(QUIET)$(call silent_on_success,pinning ocamlformat,\
+	  OPAMSWITCH=$(OPAMSWITCH); $(OPAM) pin ocamlformat 'git+https://github.com/ocaml-ppx/ocamlformat#nebuchadnezzar' --yes)
 	$(QUIET)$(call silent_on_success,installing $(OPAM_DEV_DEPS),\
 	  OPAMSWITCH=$(OPAMSWITCH); $(OPAM) install --yes --no-checksum user-setup $(OPAM_DEV_DEPS))
 	$(QUIET)echo '$(TERM_INFO)*** Running `opam user-setup`$(TERM_RESET)' >&2

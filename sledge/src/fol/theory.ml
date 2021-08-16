@@ -23,10 +23,10 @@ let pp ppf = function
   | {solved= Some solved; fresh; pending} ->
       Format.fprintf ppf "%a%a : %a" Var.Set.pp_xs fresh
         (List.pp ";@ " (fun ppf {var; rep} ->
-             Format.fprintf ppf "@[%a ↦ %a@]" Trm.pp var Trm.pp rep ))
+             Format.fprintf ppf "@[%a ↦ %a@]" Trm.pp var Trm.pp rep ) )
         solved
         (List.pp ";@ " (fun ppf (a, b) ->
-             Format.fprintf ppf "@[%a = %a@]" Trm.pp a Trm.pp b ))
+             Format.fprintf ppf "@[%a = %a@]" Trm.pp a Trm.pp b ) )
         pending
 
 (* Classification of terms ===============================================*)

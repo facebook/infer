@@ -17,7 +17,7 @@ let from_java_profiler_samples j ~use_signature =
       (List.map
          ~f:(fun {Java_profiler_samples_t.classname; methodname; signature} ->
            JProcname.create_procname ~classname ~methodname ~signature ~use_signature )
-         methods)
+         methods )
   in
   List.map j ~f:(fun {Java_profiler_samples_t.test; methods} -> (test, process_methods methods))
 

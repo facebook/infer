@@ -102,7 +102,7 @@ let spec_find_rename proc_attrs specs :
     if List.is_empty specs then
       raise
         (Exceptions.Precondition_not_found
-           (Localise.verbatim_desc (Procname.to_string proc_name), __POS__)) ;
+           (Localise.verbatim_desc (Procname.to_string proc_name), __POS__) ) ;
     let formal_parameters =
       List.map ~f:(fun (x, _) -> Pvar.mk_callee x proc_name) proc_attrs.ProcAttributes.formals
     in
@@ -111,7 +111,7 @@ let spec_find_rename proc_attrs specs :
     L.d_printfln "ERROR: found no entry for procedure %a. Give up..." Procname.pp proc_name ;
     raise
       (Exceptions.Precondition_not_found
-         (Localise.verbatim_desc (Procname.to_string proc_name), __POS__))
+         (Localise.verbatim_desc (Procname.to_string proc_name), __POS__) )
 
 
 (** Process a splitting coming straight from a call to the prover: change the instantiating

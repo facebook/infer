@@ -21,18 +21,18 @@ type ('f_in, 'f_out_in_out, 'list_constraint) template_arg
 type ('context, 'f_in, 'f_out, 'list_constraint, 'arg_payload) templ_matcher
 
 (* A matcher is a rule associating a function [f] to a [C/C++ function/method]:
-  - [C/C++ function/method] --> [f]
+   - [C/C++ function/method] --> [f]
 
-  The goal is to write the C/C++ function/method as naturally as possible, with the following
-  exceptions:
-    Start with -
-    Use $ instead of parentheses for function arguments
-    Use + instead of comma to separate function/template arguments
-    Concatenate consecutive symbols (e.g. >:: instead of > ::)
-    Operators must start with & $ < >
+   The goal is to write the C/C++ function/method as naturally as possible, with the following
+   exceptions:
+     Start with -
+     Use $ instead of parentheses for function arguments
+     Use + instead of comma to separate function/template arguments
+     Concatenate consecutive symbols (e.g. >:: instead of > ::)
+     Operators must start with & $ < >
 
-    E.g. std::vector<T, A>::vector(A) --> f becomes
-    -"std" &:: "vector" < capt_typ T &+ capt_typ A >:: "vector" $ typ2 A $--> f
+     E.g. std::vector<T, A>::vector(A) --> f becomes
+     -"std" &:: "vector" < capt_typ T &+ capt_typ A >:: "vector" $ typ2 A $--> f
 *)
 
 module type Common = sig

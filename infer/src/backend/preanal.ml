@@ -109,7 +109,7 @@ module ReplaceObjCCopy = struct
                , function_exp
                , args @ [(Exp.null, StdTyp.Objc.pointer_to_nszone)]
                , loc
-               , flags )) )
+               , flags ) ) )
         else None
     | _ ->
         None

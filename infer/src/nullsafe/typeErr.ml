@@ -217,7 +217,7 @@ let get_field_name_for_error_suppressing = function
 
 (* The condition is redundant because a non-nullable object was (implicitly or explicitly) compared with null.
    Describes what exactly made nullsafe believe this is indeed a non-nullable.
- *)
+*)
 let get_nonnull_explanation_for_condition_redudant (nonnull_origin : TypeOrigin.t) =
   match nonnull_origin with
   | MethodCall {pname} ->
@@ -258,14 +258,15 @@ let make_nullsafe_issue_if_reportable_lazy ~nullsafe_mode err_instance =
                  (P.sprintf "The condition %s might be always %b%s."
                     (Option.value condition_descr ~default:"")
                     is_always_true
-                    (get_nonnull_explanation_for_condition_redudant nonnull_origin))
+                    (get_nonnull_explanation_for_condition_redudant nonnull_origin) )
                ~issue_type:IssueType.eradicate_condition_redundant
                ~loc
                  (* Condition redundant is a very non-precise issue. Depending on the origin of what is compared with null,
                       this can have a lot of reasons to be actually nullable.
                       Until it is made non-precise, it is recommended to not turn this warning on.
                       But even when it is on, this should not be more than advice.
-                 *) ~severity:IssueType.Advice ~field_name:None) )
+                 *)
+               ~severity:IssueType.Advice ~field_name:None ) )
     | Over_annotation {over_annotated_violation; loc; violation_type} ->
         Some
           ( lazy
@@ -292,10 +293,10 @@ let make_nullsafe_issue_if_reportable_lazy ~nullsafe_mode err_instance =
                     "Field %a is declared non-nullable, so it should be initialized in the \
                      constructor"
                     MF.pp_monospaced
-                    (Fieldname.get_field_name field_name))
+                    (Fieldname.get_field_name field_name) )
                ~issue_type:IssueType.eradicate_field_not_initialized ~loc
                ~severity:(NullsafeMode.severity nullsafe_mode)
-               ~field_name:(Some field_name)) )
+               ~field_name:(Some field_name) ) )
     | Bad_assignment {assignment_location; assignment_type; assignment_violation} ->
         (* If violation is reportable, create tuple, otherwise None *)
         let+ reportable_violation =
@@ -303,7 +304,7 @@ let make_nullsafe_issue_if_reportable_lazy ~nullsafe_mode err_instance =
         in
         lazy
           (AssignmentRule.ReportableViolation.make_nullsafe_issue ~assignment_location
-             assignment_type reportable_violation)
+             assignment_type reportable_violation )
     | Nullable_dereference
         {dereference_violation; dereference_location; nullable_object_descr; dereference_type} ->
         (* If violation is reportable, create tuple, otherwise None *)
@@ -312,7 +313,7 @@ let make_nullsafe_issue_if_reportable_lazy ~nullsafe_mode err_instance =
         in
         lazy
           (DereferenceRule.ReportableViolation.make_nullsafe_issue reportable_violation
-             ~dereference_location dereference_type ~nullable_object_descr)
+             ~dereference_location dereference_type ~nullable_object_descr )
     | Inconsistent_subclass
         {inheritance_violation; violation_type; loc; base_proc_name; overridden_proc_name} ->
         (* If violation is reportable, create tuple, otherwise None *)
@@ -321,7 +322,7 @@ let make_nullsafe_issue_if_reportable_lazy ~nullsafe_mode err_instance =
         in
         lazy
           (InheritanceRule.ReportableViolation.make_nullsafe_issue ~nullsafe_mode
-             reportable_violation violation_type ~loc ~base_proc_name ~overridden_proc_name)
+             reportable_violation violation_type ~loc ~base_proc_name ~overridden_proc_name )
 
 
 (** If error is reportable to the user, return description, severity etc. Otherwise return None. *)

@@ -275,7 +275,7 @@ let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
           ( Pvar.mk_global ~translation_unit:tu
               (Mangled.from_string
                  (* infer's C++ headers define this global variable in <iostream> *)
-                 "__infer_translation_unit_init_streams")
+                 "__infer_translation_unit_init_streams" )
           |> Pvar.get_initializer_pname )
       in
       SourceFiles.get_procs_in_file pname |> List.exists ~f:(Procname.equal magic_iostream_marker)

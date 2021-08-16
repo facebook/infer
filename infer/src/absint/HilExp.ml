@@ -579,7 +579,7 @@ and of_sil ~include_array_indexes ~f_resolve_id ~add_deref exp typ =
             (Exp.Lfield
                ( Var (Ident.create_normal (Ident.string_to_name (Exp.to_string root_exp)) 0)
                , fld
-               , root_exp_typ ))
+               , root_exp_typ ) )
             typ )
     | Lindex (Const (Cstr s), index_exp) ->
         (* indexed string literal (e.g., "foo"[1]). represent this by introducing a dummy variable
@@ -596,7 +596,7 @@ and of_sil ~include_array_indexes ~f_resolve_id ~add_deref exp typ =
           of_sil_
             (Exp.Lindex
                ( Var (Ident.create_normal (Ident.string_to_name (Exp.to_string root_exp)) 0)
-               , index_exp ))
+               , index_exp ) )
             typ )
     | Lvar _ -> (
       match access_expr_of_lhs_exp ~include_array_indexes ~f_resolve_id ~add_deref exp typ with

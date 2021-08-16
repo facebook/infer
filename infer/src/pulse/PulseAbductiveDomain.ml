@@ -1030,7 +1030,7 @@ let summary_of_post tenv pdesc location astate =
     | Error (unreachable_location, proc_name, trace) ->
         Error
           (`MemoryLeak
-            (astate, proc_name, trace, Option.value unreachable_location ~default:location)) )
+            (astate, proc_name, trace, Option.value unreachable_location ~default:location) ) )
   | Some (address, must_be_valid) ->
       Error (`PotentialInvalidAccessSummary (astate, address, must_be_valid))
 

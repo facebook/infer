@@ -157,7 +157,7 @@ let get_objc_property_accessor tenv ms =
           let class_tname =
             Typ.Name.Objc.from_qual_name
               (QualifiedCppName.from_field_qualified_name
-                 (QualifiedCppName.of_rev_list name_decl_info.ni_qual_name))
+                 (QualifiedCppName.of_rev_list name_decl_info.ni_qual_name) )
           in
           let field_name = CGeneral_utils.mk_class_field_name class_tname name_decl_info.ni_name in
           match Tenv.lookup tenv class_tname with
@@ -333,7 +333,7 @@ let create_procdesc_with_pointer ?(captured_vars = []) context pointer class_nam
       ignore
         (create_local_procdesc context.translation_unit_context context.cfg context.tenv callee_ms
            [] captured_vars
-           ~record_lambda_captured:(not (List.is_empty captured_vars))) ;
+           ~record_lambda_captured:(not (List.is_empty captured_vars)) ) ;
       callee_ms.CMethodSignature.name
   | None ->
       let callee_name, method_kind =

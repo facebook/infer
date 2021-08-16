@@ -1158,7 +1158,7 @@ and ( biabduction_write_dotty
     CLOpt.mk_bool ~long:"biabduction-write-dotty"
       ~in_help:InferCommand.[(Analyze, manual_generic)]
       (Printf.sprintf "Produce dotty files for specs and retain cycles reports in %s."
-         (ResultsDirEntryName.get_path ~results_dir:"infer-out" Debug))
+         (ResultsDirEntryName.get_path ~results_dir:"infer-out" Debug) )
   and bo_debug =
     CLOpt.mk_int ~default:0 ~long:"bo-debug"
       ~in_help:InferCommand.[(Analyze, manual_buffer_overrun)]
@@ -1217,7 +1217,7 @@ and ( biabduction_write_dotty
           the file there are links to the nodes of the control flow graph of Infer's translation \
           of that line of code into its intermediate representation (SIL). This way it's possible \
           to see what the translation is, and the details of the symbolic execution on each node."
-         (ResultsDirEntryName.get_path ~results_dir:"infer-out" Debug))
+         (ResultsDirEntryName.get_path ~results_dir:"infer-out" Debug) )
   in
   let set_debug_level level =
     bo_debug := level ;
@@ -1383,7 +1383,7 @@ and () =
         Available issue types are as follows:\n\
        \  @[<v2>%a@].\n"
        (Pp.seq ~print_env:Pp.text_break ~sep:"," pp_issue)
-       all_issues) ;
+       all_issues ) ;
   mk true ~long:"enable-issue-type"
     ~deprecated:["enable_checks"; "-enable-checks"]
     "Show reports coming from this type of issue. By default, all issue types are enabled except \
@@ -1449,7 +1449,7 @@ and fail_on_bug =
   CLOpt.mk_bool ~deprecated:["-fail-on-bug"] ~long:"fail-on-issue" ~default:false
     ~in_help:InferCommand.[(Run, manual_generic)]
     (Printf.sprintf "Exit with error code %d if Infer found something to report"
-       fail_on_issue_exit_code)
+       fail_on_issue_exit_code )
 
 
 and fcp_apple_clang =
@@ -1484,7 +1484,7 @@ and force_integration =
     (Printf.sprintf
        "Proceed as if the first argument after $(b,--) was $(i,command). Possible values: %s."
        ( List.map build_system_exe_assoc ~f:(fun (_, s) -> Printf.sprintf "$(i,%s)" s)
-       |> String.concat ~sep:", " ))
+       |> String.concat ~sep:", " ) )
 
 
 and from_json_report =
@@ -1826,7 +1826,8 @@ and nullsafe_optimistic_third_party_in_default_mode =
     ~long:
       "nullsafe-optimistic-third-party-in-default-mode"
       (* Turned on for compatibility reasons
-       *) ~default:true
+       *)
+    ~default:true
     "Nullsafe: Unless @Nullsafe annotation is used, treat not annotated third party method params \
      as if they were annotated as nullable, and return values as if they were annotated as \
      non-null"
@@ -1931,7 +1932,7 @@ and procedures_cfg =
     (Printf.sprintf
        "Output a dotty file in %s/<file_name>/<proc_name>.dot for each procedure in the output of \
         $(b,--procedures)"
-       (ResultsDirEntryName.get_path ~results_dir:"infer-out" Debug))
+       (ResultsDirEntryName.get_path ~results_dir:"infer-out" Debug) )
 
 
 and procedures_definedness =
@@ -2429,7 +2430,7 @@ and source_files_cfg =
     ~in_help:InferCommand.[(Debug, manual_debug_source_files)]
     (Printf.sprintf
        "Output a dotty file in %s for each source file in the output of $(b,--source-files)"
-       (ResultsDirEntryName.get_path ~results_dir:"infer-out" Debug))
+       (ResultsDirEntryName.get_path ~results_dir:"infer-out" Debug) )
 
 
 and source_files_filter =
@@ -2584,7 +2585,7 @@ and threadsafe_aliases =
 and trace_events =
   CLOpt.mk_bool ~long:"trace-events"
     (Printf.sprintf "Emit Chrome performance trace events in %s"
-       (ResultsDirEntryName.get_path ~results_dir:"infer-out" PerfEvents))
+       (ResultsDirEntryName.get_path ~results_dir:"infer-out" PerfEvents) )
 
 
 and trace_ondemand =

@@ -18,4 +18,4 @@ Jbuild_plugin.V1.send
   %s
 )
 |}
-     (if facebook then "(modules)" else "(modules :standard)"))
+     (if facebook then "(modules)" else "(modules :standard)") )

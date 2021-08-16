@@ -84,7 +84,7 @@ end
 
 (* If key (class_name) was not in the map yet, add it, otherwise modify the existing value.
    [update] is a function that modifies value.
- *)
+*)
 let update_in_map class_name ~update t =
   JavaClassName.Map.update class_name
     (fun class_info ->

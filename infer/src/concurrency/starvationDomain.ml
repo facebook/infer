@@ -486,9 +486,10 @@ module CriticalPairElement = struct
 end
 
 module CriticalPair = struct
-  include ExplicitTrace.MakeTraceElemModuloLocation
-            (CriticalPairElement)
-            (ExplicitTrace.DefaultCallPrinter)
+  include
+    ExplicitTrace.MakeTraceElemModuloLocation
+      (CriticalPairElement)
+      (ExplicitTrace.DefaultCallPrinter)
 
   let make ~loc acquisitions event = make {acquisitions; event} loc
 

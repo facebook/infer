@@ -20,7 +20,7 @@ let leq ~lhs:_ ~rhs:_ = true
 (** see [leq] *)
 let equal_fast _ _ = true
 
-let pp fmt ({timestamp}[@warning "+9"]) = F.fprintf fmt "timestamp= %d" timestamp
+let pp fmt ({timestamp} [@warning "+9"]) = F.fprintf fmt "timestamp= %d" timestamp
 
 let initial = {timestamp= 0}
 

@@ -90,4 +90,4 @@ let fold_result_until ~fold ~init ~f ~finish collection =
              | Continue x ->
                  x
              | Stop x ->
-                 return (Result.Ok x) )) )
+                 return (Result.Ok x) ) ) )
