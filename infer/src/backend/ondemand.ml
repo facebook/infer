@@ -80,6 +80,7 @@ type global_state =
   { abs_val: int
   ; abstraction_rules: Abs.rules
   ; delayed_prints: L.delayed_prints
+  ; disjunctive_demo_state: int
   ; footprint_mode: bool
   ; html_formatter: F.formatter
   ; name_generator: Ident.NameGenerator.t
@@ -96,6 +97,7 @@ let save_global_state () =
   { abs_val= !BiabductionConfig.abs_val
   ; abstraction_rules= Abs.get_current_rules ()
   ; delayed_prints= L.get_and_reset_delayed_prints ()
+  ; disjunctive_demo_state= !DisjunctiveDemo.node_id
   ; footprint_mode= !BiabductionConfig.footprint
   ; html_formatter= !Printer.curr_html_formatter
   ; name_generator= Ident.NameGenerator.get_current ()
@@ -114,6 +116,7 @@ let restore_global_state st =
   L.set_delayed_prints st.delayed_prints ;
   BiabductionConfig.footprint := st.footprint_mode ;
   Printer.curr_html_formatter := st.html_formatter ;
+  DisjunctiveDemo.node_id := st.disjunctive_demo_state ;
   Ident.NameGenerator.set_current st.name_generator ;
   PulseAbstractValue.State.set st.pulse_address_generator ;
   AnalysisState.restore st.absint_state ;

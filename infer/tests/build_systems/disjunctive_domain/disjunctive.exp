@@ -1,0 +1,116 @@
+The order of disjuncts for each function should remain stable
+This tests that the set of paths explored by the disjunctive analysis
+monotonically increases as the disjunct limit increases
+
+N_disjuncts = 1
+
+three_branch:
+  1 disjuncts:
+  #0: 0
+  
+four_branch:
+  1 disjuncts:
+  #0: 0
+  
+two_branch:
+  1 disjuncts:
+  #0: 0
+  
+sequence:
+  1 disjuncts:
+  #0: two_branch0.0.three_branch1.0.four_branch2.0
+  
+loop:
+  1 disjuncts:
+  #0: two_branch0.0
+  
+
+  No issues found  
+
+----------------------------------------
+N_disjuncts = 4
+
+three_branch:
+  3 disjuncts:
+  #0: 1
+  #1: 0
+  #2: 2
+  
+four_branch:
+  4 disjuncts:
+  #0: 1
+  #1: 0
+  #2: 2
+  #3: 3
+  
+two_branch:
+  2 disjuncts:
+  #0: 0
+  #1: 1
+  
+sequence:
+  4 disjuncts:
+  #0: two_branch0.0.three_branch2.1.four_branch3.3
+  #1: two_branch0.0.three_branch2.1.four_branch3.2
+  #2: two_branch0.0.three_branch2.1.four_branch3.0
+  #3: two_branch0.0.three_branch2.1.four_branch3.1
+  
+loop:
+  4 disjuncts:
+  #0: two_branch0.1.two_branch2.0
+  #1: two_branch0.1.two_branch2.1
+  #2: two_branch0.1
+  #3: two_branch0.0
+  
+
+  No issues found  
+
+----------------------------------------
+N_disjuncts = 10
+
+three_branch:
+  3 disjuncts:
+  #0: 1
+  #1: 0
+  #2: 2
+  
+four_branch:
+  4 disjuncts:
+  #0: 1
+  #1: 0
+  #2: 2
+  #3: 3
+  
+two_branch:
+  2 disjuncts:
+  #0: 0
+  #1: 1
+  
+sequence:
+  10 disjuncts:
+  #0: two_branch0.0.three_branch2.2.four_branch3.3
+  #1: two_branch0.0.three_branch2.2.four_branch3.2
+  #2: two_branch0.0.three_branch2.2.four_branch3.0
+  #3: two_branch0.0.three_branch2.2.four_branch3.1
+  #4: two_branch0.0.three_branch2.0.four_branch4.3
+  #5: two_branch0.0.three_branch2.0.four_branch4.2
+  #6: two_branch0.0.three_branch2.0.four_branch4.0
+  #7: two_branch0.0.three_branch2.0.four_branch4.1
+  #8: two_branch0.0.three_branch2.1.four_branch5.0
+  #9: two_branch0.0.three_branch2.1.four_branch5.1
+  
+loop:
+  10 disjuncts:
+  #0: two_branch0.1.two_branch2.1.two_branch5.0
+  #1: two_branch0.1.two_branch2.1.two_branch5.1
+  #2: two_branch0.0.two_branch1.0.two_branch4.0
+  #3: two_branch0.0.two_branch1.0.two_branch4.1
+  #4: two_branch0.1.two_branch2.0
+  #5: two_branch0.1.two_branch2.1
+  #6: two_branch0.0.two_branch1.0
+  #7: two_branch0.0.two_branch1.1
+  #8: two_branch0.1
+  #9: two_branch0.0
+  
+
+  No issues found  

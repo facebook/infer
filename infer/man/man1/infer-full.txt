@@ -1677,6 +1677,10 @@ INTERNAL OPTIONS
        --disable-issue-type-reset
            Set --disable-issue-type to the empty list.
 
+       --disjunctive-demo
+           Activates: checker disjunctive-demo: Demo of the disjunctive
+           domain, used for testing. (Conversely: --no-disjunctive-demo)
+
        --no-dotnet-resource-leak
            Deactivates: checker dotnet-resource-leak: "resource leak" checker
            for .NET. (Conversely: --dotnet-resource-leak)

@@ -152,6 +152,9 @@ let all_checkers =
     ; callbacks=
         [ (interprocedural Payloads.Fields.quandary JavaTaintAnalysis.checker, Java)
         ; (interprocedural Payloads.Fields.quandary ClangTaintAnalysis.checker, Clang) ] }
+  ; { checker= DisjunctiveDemo
+    ; callbacks= [(interprocedural Payloads.Fields.disjunctive_demo DisjunctiveDemo.checker, Clang)]
+    }
   ; { checker= Pulse
     ; callbacks=
         (let pulse = interprocedural Payloads.Fields.pulse Pulse.checker in

@@ -16,6 +16,7 @@ type t =
   | ConfigChecksBetweenMarkers
   | ConfigImpactAnalysis
   | Cost
+  | DisjunctiveDemo
   | Eradicate
   | FragmentRetainsView
   | ImmutableCast
@@ -186,6 +187,14 @@ let config_unsafe checker =
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [BufferOverrunAnalysis; PurityAnalysis] }
+  | DisjunctiveDemo ->
+      { id= "disjunctive-demo"
+      ; kind= Internal
+      ; support= supports_clang
+      ; short_documentation= "Demo of the disjunctive domain, used for testing."
+      ; cli_flags= Some {deprecated= []; show_in_help= false}
+      ; enabled_by_default= false
+      ; activates= [] }
   | Eradicate ->
       { id= "eradicate"
       ; kind=

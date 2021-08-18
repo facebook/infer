@@ -31,6 +31,7 @@ BUILD_SYSTEMS_TESTS += \
   clang_with_MD_flag \
   deduplicate_template_warnings \
   delete_results_dir \
+  disjunctive_domain \
   duplicate_symbols \
   fail_on_issue \
   j1 \

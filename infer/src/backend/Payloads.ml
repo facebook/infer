@@ -16,8 +16,9 @@ type t =
   ; config_checks_between_markers: ConfigChecksBetweenMarkers.Summary.t option
   ; config_impact_analysis: ConfigImpactAnalysis.Summary.t option
   ; cost: CostDomain.summary option
-  ; lab_resource_leaks: ResourceLeakDomain.summary option
+  ; disjunctive_demo: DisjunctiveDemo.domain option
   ; dotnet_resource_leaks: ResourceLeakCSDomain.summary option
+  ; lab_resource_leaks: ResourceLeakDomain.summary option
   ; litho_required_props: LithoDomain.summary option
   ; pulse: PulseSummary.t option
   ; purity: PurityDomain.summary option
@@ -49,6 +50,7 @@ let fields =
       mk f "ConfigChecksBetweenMarkers" ConfigChecksBetweenMarkers.Summary.pp )
     ~config_impact_analysis:(fun f -> mk f "ConfigImpactAnalysis" ConfigImpactAnalysis.Summary.pp)
     ~cost:(fun f -> mk f "Cost" CostDomain.pp_summary)
+    ~disjunctive_demo:(fun f -> mk f "Disjunctive Demo" DisjunctiveDemo.pp_domain)
     ~litho_required_props:(fun f -> mk f "Litho Required Props" LithoDomain.pp_summary)
     ~pulse:(fun f -> mk f "Pulse" PulseSummary.pp)
     ~purity:(fun f -> mk f "Purity" PurityDomain.pp_summary)
@@ -75,8 +77,9 @@ let empty =
   ; config_checks_between_markers= None
   ; config_impact_analysis= None
   ; cost= None
-  ; lab_resource_leaks= None
+  ; disjunctive_demo= None
   ; dotnet_resource_leaks= None
+  ; lab_resource_leaks= None
   ; litho_required_props= None
   ; pulse= None
   ; purity= None
