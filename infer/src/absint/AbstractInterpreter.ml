@@ -121,15 +121,6 @@ struct
     (** a list [\[x1; x2; ...; xN\]] represents a disjunction [x1 ∨ x2 ∨ ... ∨ xN] *)
     type t = T.Domain.t list
 
-    (* a bit too specialised to go into {!IList} *)
-    let length_if_leq n l =
-      let rec aux length n l =
-        if n < 0 then None
-        else match l with [] -> Some length | _ :: tl -> aux (length + 1) (n - 1) tl
-      in
-      aux 0 n l
-
-
     let append_no_duplicates_up_to leq ~limit from ~into ~into_length =
       let rec aux acc n_acc from =
         match from with
@@ -147,18 +138,19 @@ struct
       aux into into_length from
 
 
+    let length_and_cap_to_limit n l =
+      let length = List.length l in
+      (List.drop l (length - n), min length n)
+
+
     (** Ignore states in [lhs] that are over-approximated in [rhs] according to [leq] and
         vice-versa. Favors keeping states in [lhs]. Returns no more than [limit] disjuncts. *)
     let join_up_to_with_leq ~limit leq ~into:lhs rhs =
-      match length_if_leq limit lhs with
-      | None ->
-          (* we are past [limit] with just [lhs], trim back down *)
-          (List.take lhs limit, limit)
-      | Some lhs_length ->
-          if phys_equal lhs rhs then (lhs, lhs_length)
-          else
-            (* this filters only in one direction for now, could be worth doing both ways *)
-            append_no_duplicates_up_to leq ~limit rhs ~into:lhs ~into_length:lhs_length
+      let lhs, lhs_length = length_and_cap_to_limit limit lhs in
+      if phys_equal lhs rhs || lhs_length >= limit then (lhs, lhs_length)
+      else
+        (* this filters only in one direction for now, could be worth doing both ways *)
+        append_no_duplicates_up_to leq ~limit (List.rev rhs) ~into:lhs ~into_length:lhs_length
 
 
     let join_up_to ~limit ~into:lhs rhs =
@@ -196,7 +188,7 @@ struct
 
     let pp f disjuncts =
       let pp_disjuncts f disjuncts =
-        List.iteri disjuncts ~f:(fun i disjunct ->
+        List.iteri (List.rev disjuncts) ~f:(fun i disjunct ->
             F.fprintf f "#%d: @[%a@]@;" i T.Domain.pp disjunct )
       in
       F.fprintf f "@[<v>%d disjuncts:@;%a@]" (List.length disjuncts) pp_disjuncts disjuncts
@@ -209,7 +201,8 @@ struct
   let exec_instr pre_disjuncts analysis_data node _ instr =
     (* always called from [exec_node_instrs] so [remaining_disjuncts] should always be [Some _] *)
     let limit = Option.value_exn !remaining_disjuncts in
-    List.foldi pre_disjuncts ~init:([], 0) ~f:(fun i (post_disjuncts, n_disjuncts) pre_disjunct ->
+    List.foldi (List.rev pre_disjuncts) ~init:([], 0)
+      ~f:(fun i (post_disjuncts, n_disjuncts) pre_disjunct ->
         if n_disjuncts >= limit then (
           L.d_printfln "@[<v2>Reached max disjuncts limit, skipping disjunct #%d@;@]" i ;
           (post_disjuncts, n_disjuncts) )
@@ -234,7 +227,8 @@ struct
     let current_post_n =
       match old_state_opt with None -> ([], 0) | Some {State.post; _} -> (post, List.length post)
     in
-    List.foldi pre ~init:current_post_n ~f:(fun i (post_disjuncts, n_disjuncts) pre_disjunct ->
+    List.foldi (List.rev pre) ~init:current_post_n
+      ~f:(fun i (post_disjuncts, n_disjuncts) pre_disjunct ->
         let limit = disjunct_limit - n_disjuncts in
         remaining_disjuncts := Some limit ;
         if limit <= 0 then (

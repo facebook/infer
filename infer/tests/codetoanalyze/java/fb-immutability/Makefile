@@ -8,6 +8,7 @@ TESTS_DIR = ../../..
 ANALYZER = checkers
 INFER_OPTIONS = \
   --impurity-only --impurity-report-immutable-modifications --report-force-relative-path \
+  --pulse-max-disjuncts 30 \
   --disable-issue-type IMPURE_FUNCTION \
   --disable-issue-type NULLPTR_DEREFERENCE
 
