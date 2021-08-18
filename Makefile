@@ -216,6 +216,7 @@ COST_TESTS += java_fb-performance
 
 DIRECT_TESTS += \
   java_fb-config-impact \
+  java_fb-config-impact-paths \
   java_fb-config-impact-strict \
   java_fb-gk-interaction \
   java_fb-immutability \

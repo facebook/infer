@@ -367,7 +367,9 @@ let get_all_config_fields () =
 let write_config_impact all_config_fields proc_name loc config_impact_opt (outfile : Utils.outfile)
     =
   if
-    (ExternalConfigImpactData.is_in_config_data_file proc_name || Config.config_impact_strict_mode)
+    ( ExternalConfigImpactData.is_in_config_data_file proc_name
+    || (Config.config_impact_strict_mode && List.is_empty Config.config_impact_strict_mode_paths)
+    || ConfigImpactAnalysis.is_in_strict_mode_paths loc.Location.file )
     && is_in_changed_files loc
   then
     let config_impact_opt =

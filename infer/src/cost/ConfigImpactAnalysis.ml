@@ -9,6 +9,20 @@ open! IStd
 module F = Format
 module ConfigName = FbGKInteraction.ConfigName
 
+let is_in_strict_mode_paths file =
+  SourceFile.is_matching Config.config_impact_strict_mode_paths file
+
+
+let strict_mode =
+  Config.config_impact_strict_mode
+  ||
+  match SourceFile.read_config_changed_files () with
+  | None ->
+      not (List.is_empty Config.config_impact_strict_mode_paths)
+  | Some changed_files ->
+      SourceFile.Set.exists is_in_strict_mode_paths changed_files
+
+
 module Branch = struct
   type t = True | False | Lt of Const.t | Gt of Const.t | Le of Const.t | Ge of Const.t | Top
   [@@deriving equal]
@@ -598,7 +612,7 @@ module Dom = struct
       in
       let is_cheap_call = match instantiated_cost with Cheap -> true | _ -> false in
       let is_unmodeled_call = match instantiated_cost with NoModel -> true | _ -> false in
-      if Config.config_impact_strict_mode then
+      if strict_mode then
         match callee_summary with
         | Some
             { Summary.unchecked_callees= callee_summary
@@ -737,7 +751,7 @@ module TransferFunctions = struct
       ->
         Dom.copy_value ret_id id astate
     | Call ((ret_id, _), Const (Cfun callee), _, _, _)
-      when (not Config.config_impact_strict_mode) && is_known_cheap_method tenv callee ->
+      when (not strict_mode) && is_known_cheap_method tenv callee ->
         add_ret analyze_dependency ret_id callee astate
     | Call (((ret_id, _) as ret), Const (Cfun callee), args, location, _) -> (
       match FbGKInteraction.get_config_check tenv callee args with

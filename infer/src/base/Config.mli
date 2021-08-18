@@ -243,6 +243,8 @@ val config_impact_previous : string option
 
 val config_impact_strict_mode : bool
 
+val config_impact_strict_mode_paths : Str.regexp list
+
 val continue_analysis : bool
 
 val continue_capture : bool

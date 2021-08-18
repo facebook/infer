@@ -1057,6 +1057,14 @@ and config_impact_strict_mode =
      calls."
 
 
+and config_impact_strict_mode_paths =
+  CLOpt.mk_string_list ~long:"config-impact-strict-mode-paths" ~meta:"path_regex"
+    "Enable config impact strict mode only for the given paths. When it is empty, i.e. \
+     $(b,--config-impact-strict-mode-paths) is not given, the behavior depends on the \
+     $(b,--config-impact-strict-mode) option: if $(b,--config-impact-strict-mode) is not given, it \
+     runs as non-strict mode; otherwise, it runs as strict mode, but for all paths."
+
+
 (** Continue the capture for reactive mode: If a procedure was changed beforehand, keep the changed
     marking. *)
 and continue =
@@ -3044,6 +3052,8 @@ and config_impact_max_callees_to_print = !config_impact_max_callees_to_print
 and config_impact_previous = !config_impact_previous
 
 and config_impact_strict_mode = !config_impact_strict_mode
+
+and config_impact_strict_mode_paths = RevList.rev_map !config_impact_strict_mode_paths ~f:Str.regexp
 
 and continue_analysis = !continue_analysis
 

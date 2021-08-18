@@ -35,14 +35,6 @@ type filter_config =
   ; block_list_files_containing: string list
   ; suppress_errors: string list }
 
-let is_matching patterns source_file =
-  let path = SourceFile.to_rel_path source_file in
-  List.exists
-    ~f:(fun pattern ->
-      try Int.equal (Str.search_forward pattern path 0) 0 with Caml.Not_found -> false )
-    patterns
-
-
 (** Check if a proc name is matching the name given as string. *)
 let match_method language proc_name method_name =
   (not (BuiltinDecl.is_declared proc_name))
@@ -327,10 +319,10 @@ let load_filters () =
 let filters_from_inferconfig inferconfig : filters =
   let path_filter =
     let allow_list_filter : path_filter =
-      is_matching (List.map ~f:Str.regexp inferconfig.allow_list)
+      SourceFile.is_matching (List.map ~f:Str.regexp inferconfig.allow_list)
     in
     let block_list_filter : path_filter =
-      is_matching (List.map ~f:Str.regexp inferconfig.block_list)
+      SourceFile.is_matching (List.map ~f:Str.regexp inferconfig.block_list)
     in
     let block_list_files_containing_filter : path_filter =
       FileContainsStringMatcher.create_matcher

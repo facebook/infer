@@ -301,6 +301,14 @@ let read_config_changed_files =
   fun () -> Lazy.force result
 
 
+let is_matching patterns source_file =
+  let path = to_rel_path source_file in
+  List.exists
+    ~f:(fun pattern ->
+      try Int.equal (Str.search_forward pattern path 0) 0 with Caml.Not_found -> false )
+    patterns
+
+
 module SQLite = struct
   type nonrec t = t
 

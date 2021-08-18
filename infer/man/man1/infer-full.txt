@@ -1627,6 +1627,16 @@ INTERNAL OPTIONS
            all heuristics of ignoring cheap method calls. (Conversely:
            --no-config-impact-strict-mode)
 
+       --config-impact-strict-mode-paths +path_regex
+           Enable config impact strict mode only for the given paths. When it
+           is empty, i.e. --config-impact-strict-mode-paths is not given, the
+           behavior depends on the --config-impact-strict-mode option: if
+           --config-impact-strict-mode is not given, it runs as non-strict
+           mode; otherwise, it runs as strict mode, but for all paths.
+
+       --config-impact-strict-mode-paths-reset
+           Set --config-impact-strict-mode-paths to the empty list.
+
        --cost-issues-tests-reset
            Cancel the effect of --cost-issues-tests.
 
