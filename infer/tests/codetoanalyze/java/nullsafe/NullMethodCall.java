@@ -16,7 +16,6 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nullable;
 
@@ -366,39 +365,6 @@ public class NullMethodCall {
       return "both null";
     }
     return object1 == null ? object2.toString() : "null";
-  }
-
-  void objectsNonNullOK(@Nullable Object object) {
-   String foo;
-   if (Objects.nonNull(object)) {
-      foo = object.toString();
-    }
-  }
-
-  void objectsNonNullWarn(@Nullable Object object) {
-    String foo;
-    if (! Objects.nonNull(object)) {
-      foo = object.toString();
-    }
-  }
-
-  void objectsIsNullWarn(@Nullable Object object) {
-    String foo;
-    if (Objects.isNull(object)) {
-      foo = object.toString();
-    }
-  }
-
-  void objectsIsNullOK(@Nullable Object object) {
-    String foo;
-    if (!Objects.isNull(object)) {
-      foo = object.toString();
-    }
-  }
-
-  void objectsRequireNonNullOK(@Nullable Object object) {
-    Objects.requireNonNull(object);
-    String foo = object.toString();
   }
 
 }
