@@ -35,6 +35,8 @@ val noreturn_table : model_table_t
 
 val true_on_null_table : model_table_t
 
+val false_on_null_table : model_table_t
+
 (** Used to describe a method complementary to a given one. Contains information needed for
     reporting (hence does not describe the whole signature). *)
 type nonnull_alternative_method = {package_name: string; class_name: string; method_name: string}

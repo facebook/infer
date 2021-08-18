@@ -120,7 +120,7 @@ let is_false_on_null proc_name =
   (* The only usecase for now - consider all overrides of `Object.equals()` correctly
      implementing the Java specification contract (returning false on null). *)
   PatternMatch.Java.is_override_of_lang_object_equals (Procname.Java proc_name)
-
+   ||  table_has_procedure false_on_null_table proc_name
 
 let is_containsKey proc_name = table_has_procedure containsKey_table proc_name
 

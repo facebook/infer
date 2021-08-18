@@ -150,7 +150,19 @@ let check_not_null_parameter_list, check_not_null_list =
     ; ( 1
       , (o, [n; n])
       , "androidx.core.util.Preconditions.checkNotNull(java.lang.Object,java.lang.Object):java.lang.Object"
-      ) ]
+      )
+    ; ( 1
+      , (o, [n])
+      , "java.util.Objects.requireNonNull(java.lang.Object):java.lang.Object"
+      )
+    ; ( 1
+      , (o, [n; n])
+      , "java.util.Objects.requireNonNull(java.lang.Object, java.lang.String):java.lang.Object"
+      )
+    ; ( 1
+      , (o, [n; n])
+      , "java.util.Objects.requireNonNull(java.lang.Object, java.util.function.Supplier):java.lang.Object"
+      )]
   in
   (List.map ~f:(fun (x, _, z) -> (x, z)) list, List.map ~f:(fun (_, y, z) -> (y, z)) list)
 
@@ -207,8 +219,12 @@ let check_argument_list =
 (** Models for boolean functions that return true on null. *)
 let true_on_null_list =
   [ (n1, "android.text.TextUtils.isEmpty(java.lang.CharSequence):boolean")
-  ; (n1, "com.google.common.base.Strings.isNullOrEmpty(java.lang.String):boolean") ]
+  ; (n1, "com.google.common.base.Strings.isNullOrEmpty(java.lang.String):boolean")
+  ; (n1, "java.util.Objects.isNull(java.lang.Object):boolean") ] 
 
+(** Models for boolean functions that return false on null. *)
+let false_on_null_list =
+  [ (n1, "java.util.Objects.nonNull(java.lang.Object):boolean") ] 
 
 (** Models for Map.containsKey *)
 let containsKey_list =
@@ -705,6 +721,8 @@ let mapPut_table = mk_table mapPut_list
 let noreturn_table = mk_table noreturn_list
 
 let true_on_null_table = mk_table true_on_null_list
+
+let false_on_null_table = mk_table false_on_null_list
 
 let nonnull_alternatives_table =
   let method_descr_to_alternative =
