@@ -9,8 +9,8 @@ ROOT_DIR = $(TESTS_DIR)/../..
 BUCK_TARGET = //src:hello
 SOURCES = $(wildcard src/hello.c)
 OBJECTS = buck-out/gen/src/hello\#compile-hello.c.o1f717d69,default/hello.c.o
-INFER_OPTIONS = --report-custom-error --project-root $(TESTS_DIR) --no-linters
-INFERPRINT_OPTIONS = --project-root $(TESTS_DIR) --issues-tests
+INFER_OPTIONS = --report-custom-error --no-linters
+INFERPRINT_OPTIONS = --issues-tests
 CLEAN_EXTRA = buck-out capture_hash-1.sha capture_hash-2.sha
 
 include $(TESTS_DIR)/base.make
