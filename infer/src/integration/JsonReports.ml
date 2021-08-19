@@ -308,9 +308,10 @@ module JsonConfigImpactPrinterElt = struct
   type elt =
     { loc: Location.t
     ; proc_name: Procname.t
-    ; config_impact_opt: ConfigImpactAnalysis.Summary.t option }
+    ; config_impact_opt: ConfigImpactAnalysis.Summary.t option
+    ; is_strict: bool }
 
-  let to_string {loc; proc_name; config_impact_opt} =
+  let to_string {loc; proc_name; config_impact_opt; is_strict} =
     Option.map config_impact_opt ~f:(fun config_impact ->
         let {NoQualifierHashProcInfo.hash; loc; procedure_name; procedure_id} =
           NoQualifierHashProcInfo.get loc proc_name
@@ -320,7 +321,7 @@ module JsonConfigImpactPrinterElt = struct
           |> ConfigImpactAnalysis.UncheckedCallees.encode
         in
         Jsonbug_j.string_of_config_impact_item
-          {Jsonbug_t.hash; loc; procedure_name; procedure_id; unchecked_callees} )
+          {Jsonbug_t.hash; loc; procedure_name; procedure_id; unchecked_callees; is_strict} )
 end
 
 module JsonConfigImpactPrinter = MakeJsonListPrinter (JsonConfigImpactPrinterElt)
@@ -378,7 +379,8 @@ let write_config_impact all_config_fields proc_name loc config_impact_opt (outfi
           (ConfigImpactAnalysis.Summary.instantiate_unchecked_callees_cond
              ~all_config_fields:(Lazy.force all_config_fields) )
     in
-    JsonConfigImpactPrinter.pp outfile.fmt {loc; proc_name; config_impact_opt}
+    JsonConfigImpactPrinter.pp outfile.fmt
+      {loc; proc_name; config_impact_opt; is_strict= ConfigImpactAnalysis.strict_mode}
 
 
 (** Process lint issues of a procedure *)

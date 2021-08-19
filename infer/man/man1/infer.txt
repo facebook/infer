@@ -463,6 +463,7 @@ OPTIONS
              CONDITION_ALWAYS_TRUE (disabled by default),
              CONFIG_CHECKS_BETWEEN_MARKERS (disabled by default),
              CONFIG_IMPACT (disabled by default),
+             CONFIG_IMPACT_STRICT (disabled by default),
              CONSTANT_ADDRESS_DEREFERENCE (disabled by default),
              CREATE_INTENT_FROM_URI (enabled by default),
              CROSS_SITE_SCRIPTING (enabled by default),

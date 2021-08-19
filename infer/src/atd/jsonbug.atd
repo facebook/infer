@@ -148,7 +148,9 @@ inherit item;
 type costs_report = cost_item list
 
 type config_impact_item = {
- inherit item;  unchecked_callees : string;
+  inherit item;
+  unchecked_callees : string;
+  ~is_strict : bool;
 }
 
 type config_impact_report = config_impact_item list

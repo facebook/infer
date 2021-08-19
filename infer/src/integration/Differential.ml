@@ -7,6 +7,7 @@
 
 open! IStd
 open! AbstractDomain.Types
+module L = Logging
 
 (** set of lists of locations for remembering what trace ends have been reported *)
 module LocListSet = struct
@@ -453,9 +454,13 @@ module ConfigImpactItem = struct
           Jsonbug_t.item =
         {hash; loc; procedure_name; procedure_id}
       in
+      let issue_type =
+        if config_impact_item.is_strict then IssueType.config_impact_analysis_strict
+        else IssueType.config_impact_analysis
+      in
       Some
         (create_json_bug ~qualifier ~line ~file ~source_file ~trace
-           ~item:(convert config_impact_item) ~issue_type:IssueType.config_impact_analysis )
+           ~item:(convert config_impact_item) ~issue_type )
     else None
 
 
@@ -472,15 +477,22 @@ module ConfigImpactItem = struct
           (* current/previous reports cannot be empty. *)
           let current = get_biggest current_reports in
           let previous = get_biggest previous_reports in
-          let introduced =
-            UncheckedCallees.diff current.unchecked_callees previous.unchecked_callees
-            |> issue_of ~change_type:Added current.config_impact_item
-          in
-          let removed =
-            UncheckedCallees.diff previous.unchecked_callees current.unchecked_callees
-            |> issue_of ~change_type:Removed previous.config_impact_item
-          in
-          (Option.to_list introduced @ acc_introduced, Option.to_list removed @ acc_fixed)
+          if Bool.equal current.config_impact_item.is_strict previous.config_impact_item.is_strict
+          then
+            let introduced =
+              UncheckedCallees.diff current.unchecked_callees previous.unchecked_callees
+              |> issue_of ~change_type:Added current.config_impact_item
+            in
+            let removed =
+              UncheckedCallees.diff previous.unchecked_callees current.unchecked_callees
+              |> issue_of ~change_type:Removed previous.config_impact_item
+            in
+            (Option.to_list introduced @ acc_introduced, Option.to_list removed @ acc_fixed)
+          else (
+            L.internal_error
+              "Config Impact issues' strict modes are different in current(%b) and previous(%b).@\n"
+              current.config_impact_item.is_strict previous.config_impact_item.is_strict ;
+            acc )
       | `Left _ | `Right _ ->
           (* Note: The reports available on one side are ignored since we don't want to report on
              newly added (or freshly removed) functions. *)

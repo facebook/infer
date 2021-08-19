@@ -425,6 +425,11 @@ let config_impact_analysis =
     ~user_documentation:"A function is called without a config check"
 
 
+let config_impact_analysis_strict =
+  register ~enabled:false ~id:"CONFIG_IMPACT_STRICT" Advice ConfigImpactAnalysis
+    ~user_documentation:"A function is called without a config check (experimental in strict mode)"
+
+
 let constant_address_dereference =
   register ~enabled:false ~id:"CONSTANT_ADDRESS_DEREFERENCE" Warning Pulse
     ~user_documentation:[%blob "../../documentation/issues/CONSTANT_ADDRESS_DEREFERENCE.md"]
