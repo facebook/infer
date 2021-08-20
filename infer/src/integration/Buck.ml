@@ -150,10 +150,8 @@ let config =
     @
     if List.is_empty Config.buck_block_list then []
     else
-      let regex = Printf.sprintf "(%s)" (String.concat ~sep:")|(" Config.buck_block_list) in
-      (* TODO: The latter option will be removed after buck handles the new option. *)
-      [ Printf.sprintf "*//infer.block_list_regex=%s" regex
-      ; Printf.sprintf "*//infer.blacklist_regex=%s" regex ]
+      [ Printf.sprintf "*//infer.block_list_regex=(%s)"
+          (String.concat ~sep:")|(" Config.buck_block_list) ]
   in
   fun buck_mode ->
     let args =
