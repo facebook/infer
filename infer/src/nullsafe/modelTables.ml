@@ -162,6 +162,66 @@ let check_not_null_parameter_list, check_not_null_list =
     ; ( 1
       , (o, [n; n])
       , "java.util.Objects.requireNonNull(java.lang.Object, java.util.function.Supplier):java.lang.Object"
+      )
+    ; ( 1
+      , (o, [n])
+      , "org.apache.commons.lang3.Validate.notNull(java.lang.Object):java.lang.Object"
+      )
+    ; ( 1
+      , (o, [n])
+      , "org.apache.commons.lang3.Validate.notNull(java.lang.Object,java.lang.String):java.lang.Object"
+      )
+    ; ( 1
+      , (o, [n])
+      , "org.apache.commons.lang3.Validate.notNull(java.lang.Object,java.lang.String,java.lang.Object):java.lang.Object"
+      )
+    ; ( 1
+      , (o, [n])
+      , "org.apache.commons.lang3.Validate.notEmpty(java.util.Collection):java.util.Collection"
+      )
+    ; ( 1
+      , (o, [n; n])
+      , "org.apache.commons.lang3.Validate.notEmpty(java.util.Collection,java.lang.String):java.util.Collection"
+      )
+    ; ( 1
+      , (o, [n; n; n])
+      , "org.apache.commons.lang3.Validate.notEmpty(java.util.Collection,java.lang.String,java.lang.Object):java.util.Collection"
+      )
+    ; ( 1
+      , (o, [n])
+      , "org.apache.commons.lang3.Validate.notEmpty(java.lang.CharSequence):java.lang.CharSequence"
+      )
+    ; ( 1
+      , (o, [n; n])
+      , "org.apache.commons.lang3.Validate.notEmpty(java.lang.CharSequence,java.lang.String):java.lang.CharSequence"
+      )
+    ; ( 1
+      , (o, [n; n; n])
+      , "org.apache.commons.lang3.Validate.notEmpty(java.lang.CharSequence,java.lang.String,java.lang.Object):java.lang.CharSequence"
+      )
+    ; ( 1
+      , (o, [n])
+      , "org.apache.commons.lang.Validate.notNull(java.lang.Object):java.lang.Object"
+      )
+    ; ( 1
+      , (o, [n; n])
+      , "org.apache.commons.lang.Validate.notNull(java.lang.Object,java.lang.String):java.lang.Object"
+      )
+    ; ( 1
+      , (o, [n])
+      , "org.apache.commons.lang.Validate.notEmpty(java.util.Collection):java.lang.Object"
+      )
+    ; ( 1
+      , (o, [n; n])
+      , "org.apache.commons.lang.Validate.notEmpty(java.util.Collection,java.lang.String):java.lang.Object"
+      )
+    ; ( 1
+      , (o, [n])
+      , "org.apache.commons.lang.Validate.notEmpty(java.lang.CharSequence):java.lang.Object"
+      )
+    ; ( 1
+      , (o, [n; n])
+      , "org.apache.commons.lang.Validate.notEmpty(java.lang.CharSequence,java.lang.String):java.lang.Object"
       )]
   in
   (List.map ~f:(fun (x, _, z) -> (x, z)) list, List.map ~f:(fun (_, y, z) -> (y, z)) list)

@@ -8,7 +8,10 @@
 package codetoanalyze.java.nullsafe;;
 
 import java.util.Objects;
+import java.util.Collection;
 import javax.annotation.Nullable;
+import lombok.NonNull;
+import org.apache.commons.lang3.Validate;
 
 public class NullLibraries {
 
@@ -38,6 +41,20 @@ public class NullLibraries {
 
   void objectsRequireNonNullOK(@Nullable Object object) {
     Objects.requireNonNull(object);
+    object.toString();
+  }
+
+  void objectsCommons3ValidateNotNullOK(@Nullable Object object) {
+    Validate.notNull(object);
+    object.toString();
+  }
+
+  void objectsCommons3ValidateNotEmptyOK(@Nullable Collection collection) {
+    Validate.notEmpty(collection);
+    collection.toString();
+  }
+
+  void objectsLombokNonNullOK(@NonNull @Nullable Object object) {
     object.toString();
   }
 
