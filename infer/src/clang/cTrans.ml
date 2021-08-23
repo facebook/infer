@@ -4483,7 +4483,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           | None ->
               markers
           | Some marker_pvar ->
-              Exp.Map.add (Lvar pvar) (marker_pvar, typ) markers )
+              Pvar.Map.add pvar (marker_pvar, typ) markers )
     in
     (* translate the sub-expression in its own node(s) so we can inject code for managing
        conditional destructor markers before and after its nodes *)
@@ -4669,23 +4669,29 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       List.fold stmt_result.control.initd_exps
         ~init:([], stmt_result.control.cxx_temporary_markers_set)
         ~f:(fun ((instrs, markers_set) as acc) initd_exp ->
-          match Exp.Map.find_opt initd_exp trans_state.context.temporaries_constructor_markers with
-          | Some (marker_var, _)
-            when not
-                   (List.mem ~equal:Pvar.equal stmt_result.control.cxx_temporary_markers_set
-                      marker_var ) ->
-              (* to avoid adding the marker-setting instruction for every super-expression of the
-                 current one, add it to the list of marker variables set and do not create the
-                 instruction if it's already in that list *)
-              let store_marker =
-                Sil.Store
-                  { e1= Lvar marker_var
-                  ; root_typ= StdTyp.boolean
-                  ; typ= StdTyp.boolean
-                  ; e2= Exp.one
-                  ; loc }
-              in
-              (store_marker :: instrs, marker_var :: markers_set)
+          match initd_exp with
+          | Exp.Lvar initd_pvar -> (
+            match
+              Pvar.Map.find_opt initd_pvar trans_state.context.temporaries_constructor_markers
+            with
+            | Some (marker_var, _)
+              when not
+                     (List.mem ~equal:Pvar.equal stmt_result.control.cxx_temporary_markers_set
+                        marker_var ) ->
+                (* to avoid adding the marker-setting instruction for every super-expression of the
+                   current one, add it to the list of marker variables set and do not create the
+                   instruction if it's already in that list *)
+                let store_marker =
+                  Sil.Store
+                    { e1= Lvar marker_var
+                    ; root_typ= StdTyp.boolean
+                    ; typ= StdTyp.boolean
+                    ; e2= Exp.one
+                    ; loc }
+                in
+                (store_marker :: instrs, marker_var :: markers_set)
+            | _ ->
+                acc )
           | _ ->
               acc )
     in

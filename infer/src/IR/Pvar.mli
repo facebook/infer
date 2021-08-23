@@ -175,8 +175,9 @@ val materialized_cpp_temporary : string
 
 val swap_proc_in_local_pvar : t -> Procname.t -> t
 
-(** Sets of pvars. *)
 module Set : PrettyPrintable.PPSet with type elt = t
+
+module Map : PrettyPrintable.PPMap with type key = t
 
 val get_pvar_formals : ProcAttributes.t -> (t * Typ.t) list
 (** Return pvar and type of formal parameters *)
