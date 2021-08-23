@@ -1996,7 +1996,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       if List.is_empty all_res_trans then None
       else
         let sil_loc =
-          CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
+          CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info_loc
         in
         Some
           (PriorityNode.compute_results_to_parent trans_state_pri sil_loc (Destruction destr_kind)
