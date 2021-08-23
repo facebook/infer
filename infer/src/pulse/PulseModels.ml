@@ -22,6 +22,8 @@ type model_data =
 
 type model = model_data -> AbductiveDomain.t -> ExecutionDomain.t AccessResult.t list
 
+let continue astate = ContinueProgram astate
+
 let ok_continue post = [Ok (ContinueProgram post)]
 
 module Misc = struct
@@ -146,29 +148,6 @@ module Misc = struct
     Ok (ContinueProgram astate_zero) :: astates_alloc
 
 
-  (** record in its history and dynamic type that the value was allocated but consider that it
-      cannot generate leaks (eg it is handled by the language's garbage collector, or we don't want
-      to report leaks for some reason) *)
-  let alloc_no_leak_not_null ~desc arg : model =
-   fun {location; ret= ret_id, _} astate ->
-    let ret_addr = AbstractValue.mk_fresh () in
-    let ret_value = (ret_addr, [ValueHistory.Allocation {f= Model desc; location}]) in
-    let astate =
-      match arg with
-      | Exp.Sizeof {typ} ->
-          PulseOperations.add_dynamic_type typ ret_addr astate
-      | _ ->
-          (* The type expr is sometimes a Var expr in Java but this is not expected.
-             This seems to be introduced by inline mechanism of Java synthetic methods during preanalysis *)
-          astate
-    in
-    let<+> astate = PulseArithmetic.and_positive ret_addr astate in
-    PulseOperations.write_id ret_id ret_value astate
-end
-
-module C = struct
-  let free deleted_access : model = Misc.free_or_delete `Free deleted_access
-
   let set_uninitialized tenv size_exp_opt location ret_value astate =
     Option.value_map size_exp_opt ~default:astate ~f:(fun size_exp ->
         BufferOverrunModels.get_malloc_info_opt size_exp
@@ -176,17 +155,43 @@ module C = struct
                AbductiveDomain.set_uninitialized tenv (`Malloc ret_value) obj_typ location astate ) )
 
 
-  let malloc_common ~size_exp_opt : model =
-   fun {path; analysis_data= {tenv}; callee_procname; location; ret= ret_id, _} astate ->
+  let alloc_not_null_common ~can_leak ~initialize ?desc size_exp_opt
+      {analysis_data= {tenv}; location; callee_procname; ret= ret_id, _} astate =
     let ret_addr = AbstractValue.mk_fresh () in
-    let<*> astate_alloc =
-      let ret_alloc_hist =
-        [ValueHistory.Allocation {f= Model (Procname.to_string callee_procname); location}]
-      in
-      PulseOperations.write_id ret_id (ret_addr, ret_alloc_hist) astate
-      |> PulseOperations.allocate callee_procname location (ret_addr, [])
-      |> set_uninitialized tenv size_exp_opt location ret_addr
-      |> PulseArithmetic.and_positive ret_addr
+    let desc = Option.value desc ~default:(Procname.to_string callee_procname) in
+    let ret_alloc_hist = [ValueHistory.Allocation {f= Model desc; location}] in
+    let astate =
+      match size_exp_opt with
+      | Some (Exp.Sizeof {typ}) ->
+          PulseOperations.add_dynamic_type typ ret_addr astate
+      | _ ->
+          (* The type expr is sometimes a Var expr in Java but this is not expected.
+             This seems to be introduced by inline mechanism of Java synthetic methods during preanalysis *)
+          astate
+    in
+    let do_if b f x = if b then f x else x in
+    PulseOperations.write_id ret_id (ret_addr, ret_alloc_hist) astate
+    |> do_if can_leak (PulseOperations.allocate callee_procname location (ret_addr, []))
+    |> do_if (not initialize) (set_uninitialized tenv size_exp_opt location ret_addr)
+    |> PulseArithmetic.and_positive ret_addr
+
+
+  let alloc_not_null ?desc size = alloc_not_null_common ~can_leak:true ?desc size
+
+  (** record in its history and dynamic type that the value was allocated but consider that it
+      cannot generate leaks (eg it is handled by the language's garbage collector, or we don't want
+      to report leaks for some reason) *)
+  let alloc_no_leak_not_null ?desc size = alloc_not_null_common ~can_leak:false ?desc size
+end
+
+module C = struct
+  let free deleted_access : model = Misc.free_or_delete `Free deleted_access
+
+  let malloc_common ~size_exp_opt : model =
+   fun ({path; callee_procname; location; ret= ret_id, _} as model_data) astate ->
+    let ret_addr = AbstractValue.mk_fresh () in
+    let astate_alloc =
+      Misc.alloc_not_null ~initialize:false size_exp_opt model_data astate >>| continue
     in
     let result_null =
       let ret_null_hist =
@@ -202,21 +207,12 @@ module C = struct
       in
       ContinueProgram astate_null
     in
-    [Ok (ContinueProgram astate_alloc); result_null]
+    [astate_alloc; result_null]
 
 
   let malloc_not_null_common ~size_exp_opt : model =
-   fun {analysis_data= {tenv}; callee_procname; location; ret= ret_id, _} astate ->
-    let ret_addr = AbstractValue.mk_fresh () in
-    let ret_alloc_hist =
-      [ValueHistory.Allocation {f= Model (Procname.to_string callee_procname); location}]
-    in
-    let astate = PulseOperations.write_id ret_id (ret_addr, ret_alloc_hist) astate in
-    let<+> astate =
-      PulseOperations.allocate callee_procname location (ret_addr, []) astate
-      |> set_uninitialized tenv size_exp_opt location ret_addr
-      |> PulseArithmetic.and_positive ret_addr
-    in
+   fun model_data astate ->
+    let<+> astate = Misc.alloc_not_null ~initialize:false size_exp_opt model_data astate in
     astate
 
 
@@ -304,6 +300,16 @@ module ObjC = struct
     PulseOperations.havoc_id ret_id [event] astate
     |> PulseOperations.remove_allocation_attr (fst bytes)
     |> ok_continue
+
+
+  let alloc_no_fail size : model =
+   fun model_data astate ->
+    (* NOTE: technically this doesn't initialize the result but we haven't modelled initialization so
+       assume the object is initialized after [init] for now *)
+    let<+> astate =
+      Misc.alloc_no_leak_not_null ~initialize:true ~desc:"alloc" (Some size) model_data astate
+    in
+    astate
 end
 
 module Optional = struct
@@ -433,6 +439,14 @@ end
 
 module Cplusplus = struct
   let delete deleted_access : model = Misc.free_or_delete `Delete deleted_access
+
+  let new_ type_name : model =
+   fun model_data astate ->
+    let<+> astate =
+      Misc.alloc_no_leak_not_null ~initialize:true ~desc:"new" (Some type_name) model_data astate
+    in
+    astate
+
 
   let placement_new actuals : model =
    fun {location; ret= ret_id, _} astate ->
@@ -1671,12 +1685,8 @@ module ProcNameDispatcher = struct
         ; +match_regexp_opt Config.pulse_model_realloc_pattern
           <>$ capt_arg_payload $+ capt_exp $+...$--> C.realloc
         ; +BuiltinDecl.(match_builtin __delete) <>$ capt_arg_payload $--> Cplusplus.delete
-        ; +BuiltinDecl.(match_builtin __new)
-          <>$ capt_exp
-          $--> Misc.alloc_no_leak_not_null ~desc:"new"
-        ; +BuiltinDecl.(match_builtin __new_array)
-          <>$ capt_exp
-          $--> Misc.alloc_no_leak_not_null ~desc:"new"
+        ; +BuiltinDecl.(match_builtin __new) <>$ capt_exp $--> Cplusplus.new_
+        ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $--> Cplusplus.new_
         ; +BuiltinDecl.(match_builtin __placement_new) &++> Cplusplus.placement_new
         ; -"random" <>$$--> Misc.nondet ~fn_name:"random"
         ; +BuiltinDecl.(match_builtin objc_cpp_throw) <>--> Misc.early_exit
@@ -2015,9 +2025,7 @@ module ProcNameDispatcher = struct
         ; -"CFBridgingRelease" <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; +BuiltinDecl.(match_builtin __objc_bridge_transfer)
           <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
-        ; +BuiltinDecl.(match_builtin __objc_alloc_no_fail)
-          <>$ capt_exp
-          $--> Misc.alloc_no_leak_not_null ~desc:"alloc"
+        ; +BuiltinDecl.(match_builtin __objc_alloc_no_fail) <>$ capt_exp $--> ObjC.alloc_no_fail
         ; -"NSObject" &:: "init" <>$ capt_arg_payload $--> Misc.id_first_arg ~desc:"NSObject.init"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableDictionary")
           &:: "setObject:forKey:" <>$ any_arg $+ capt_arg_payload $+ capt_arg_payload
