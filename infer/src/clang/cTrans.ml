@@ -2214,13 +2214,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           (* Assumption: If it's a null_stmt, it is a loop with no bound, so we set condition to 1 *)
         else if is_cmp then
           let open Clang_ast_t in
-          (* If we have a comparision here, do not dispatch it to [instruction] function, which
-           * invokes binaryOperator_trans_with_cond -> conditionalOperator_trans -> cond_trans.
-           * This will throw the translation process into an infinite loop immediately.
-           * Instead, dispatch to binaryOperator_trans directly. *)
+          (* If we have a comparison here, do not dispatch it to [instruction] function, which
+             invokes binaryOperator_trans_with_cond -> conditionalOperator_trans -> cond_trans.
+             This will throw the translation process into an infinite loop immediately.  Instead,
+             dispatch to binaryOperator_trans directly. *)
           (* If one wants to add a new kind of [BinaryOperator] that will have the same behavior,
-           * she need to change both the codes here and the [match] in
-           * binaryOperator_trans_with_cond *)
+             she need to change both the codes here and the [match] in
+             binaryOperator_trans_with_cond *)
           match cond with
           | BinaryOperator (si, ss, ei, boi)
           | ExprWithCleanups (_, [BinaryOperator (si, ss, ei, boi)], _, _) ->
@@ -5202,10 +5202,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           (* destructor wrapper only have calls to virtual base class destructors in its body *)
         , Clang_ast_t.CompoundStmt (stmt_info', []) )
       else if is_destructor then
+        (* Injecting destructor call nodes of fields at the end of the body *)
         (cxx_inject_field_destructors_in_destructor_body trans_state stmt_info, body)
       else (None, body)
     in
-    (* Injecting destructor call nodes of fields at the end of the body *)
     let succ_nodes =
       match destructor_res with
       | Some {control= {root_nodes= _ :: _ as root_nodes}} ->
