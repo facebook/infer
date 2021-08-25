@@ -348,12 +348,7 @@ end)
 module IssuesSarif = struct
   include SarifIssuePrinter
 
-  let pp_n_spaces n fmt =
-    for _ = 1 to n do
-      F.pp_print_char fmt ' '
-    done
-
-  (** Write bug report in SARIF 2.0 format *)
+  (** Write bug report in SARIF 2.1 format *)
   let pp_issues_of_error_log fmt error_filter _ proc_loc_opt proc_name err_log =
     Errlog.iter
       (fun err_key err_data -> pp fmt {error_filter; proc_name; proc_loc_opt; err_key; err_data})
