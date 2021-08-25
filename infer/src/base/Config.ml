@@ -2566,6 +2566,11 @@ and profiler_samples =
      $(b,--test-determinator)."
 
 
+and export_sarif_only =
+  CLOpt.mk_bool ~long:"export-sarif-only" ~default:false
+    "Run infer to generate SARIF format output only."
+
+
 and starvation_strict_mode =
   CLOpt.mk_bool ~long:"starvation-strict-mode" ~default:true
     "During starvation analysis, report strict mode violations (Android only)"
@@ -3546,6 +3551,8 @@ and custom_symbols =
 
 
 and keep_going = !keep_going
+
+and export_sarif_only = !export_sarif_only
 
 and tenv_json = !tenv_json
 

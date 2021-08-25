@@ -188,14 +188,18 @@ let execute_analyze_json () =
 
 
 let report ?(suppress_console = false) () =
-  let issues_json = ResultsDir.get_path ReportJson in
-  let costs_json = ResultsDir.get_path ReportCostsJson in
-  let config_impact_json = ResultsDir.get_path ReportConfigImpactJson in
-  JsonReports.write_reports ~issues_json ~costs_json ~config_impact_json ;
-  (* Post-process the report according to the user config. By default, calls report.py to create a
-     human-readable report.
+  if Config.export_sarif_only then
+    let issues_sarif = ResultsDir.get_path ReportSarif in
+    JsonReports.write_sarif_reports ~issues_sarif ;
+  else
+    let issues_json = ResultsDir.get_path ReportJson in
+    let costs_json = ResultsDir.get_path ReportCostsJson in
+    let config_impact_json = ResultsDir.get_path ReportConfigImpactJson in
+    JsonReports.write_reports ~issues_json ~costs_json ~config_impact_json ;
+    (* Post-process the report according to the user config. By default, calls report.py to create a
+        human-readable report.
 
-     Do not bother calling the report hook when called from within Buck. *)
+        Do not bother calling the report hook when called from within Buck. *)
   if not Config.buck_cache_mode then (
     (* Create a dummy bugs.txt file for backwards compatibility. TODO: Stop doing that one day. *)
     Utils.with_file_out (Config.results_dir ^/ "bugs.txt") ~f:(fun outc ->

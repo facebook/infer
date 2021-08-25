@@ -494,6 +494,8 @@ val process_clang_ast : bool
 
 val profiler_samples : string option
 
+val export_sarif_only : bool
+
 val progress_bar : [`MultiLine | `Plain | `Quiet]
 
 val project_root : string
