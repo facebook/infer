@@ -18,7 +18,7 @@ type region = {
 }
 
 type physicalloc = {
-  fileLocation : fileloc;
+  artifactLocation : fileloc;
 }
 
 type loc = {
@@ -33,4 +33,7 @@ type sarifbug = {
   locations : loc list;
 }
 
-type sarifbugs = sarifbug list
+type rule = {
+  id : string;
+  shortDescription : message;
+}

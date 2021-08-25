@@ -9,6 +9,8 @@ open! IStd
 module L = Logging
 module F = Format
 
+let rules_list = ref []
+
 let error_desc_to_plain_string error_desc =
   let pp fmt = Localise.pp_error_desc fmt error_desc in
   let s = F.asprintf "%t" pp in
@@ -139,11 +141,27 @@ end) : Printer with type elt = P.elt = struct
         ()
 end
 
+module type PrinterSarif = sig
+  type elt
+
+  val pp_open : F.formatter -> unit -> unit
+
+  val pp_results : F.formatter -> unit -> unit
+
+  val pp_close : F.formatter -> unit -> unit
+
+  val pp_rules : F.formatter -> elt -> unit
+
+  val pp : F.formatter -> elt -> unit
+end
+
 module MakeSarifListPrinter (P : sig
   type elt
 
+  val rules_to_string : elt -> string option
+
   val to_string : elt -> string option
-end) : Printer with type elt = P.elt = struct
+end) : PrinterSarif with type elt = P.elt = struct
   include P
 
   let is_first_item = ref true
@@ -161,14 +179,30 @@ end) : Printer with type elt = P.elt = struct
     F.fprintf fmt "%t%s: [@\n"  (pp_n_spaces 2) "\"runs\"" ;
     F.fprintf fmt "%t{@\n"  (pp_n_spaces 4) ;
     F.fprintf fmt "%t%s: {@\n"  (pp_n_spaces 6) "\"tools\"" ;
-    F.fprintf fmt "%t%s: %s,@\n"  (pp_n_spaces 8) "\"name\"" "\"Infer\"" ;
+    F.fprintf fmt "%t%s: {@\n"  (pp_n_spaces 8) "\"driver\"" ;
+    F.fprintf fmt "%t%s: %s,@\n"  (pp_n_spaces 10) "\"name\"" "\"Infer\"" ;
+    F.fprintf fmt "%t%s: [@?"  (pp_n_spaces 10) "\"rules\""
+
+  let pp_results fmt () =
+    is_first_item := true ;
+    F.fprintf fmt "]@\n" ;
+    F.fprintf fmt "%t%s@\n"  (pp_n_spaces 8) "}" ;
     F.fprintf fmt "%t%s,@\n"  (pp_n_spaces 6) "}" ;
-    F.fprintf fmt "%t%s:@?"  (pp_n_spaces 6) "\"results\""
+    F.fprintf fmt "%t%s: [@?"  (pp_n_spaces 6) "\"results\""
 
   let pp_close fmt () = 
+    F.fprintf fmt "]@\n" ;
     F.fprintf fmt "%t%s@\n" (pp_n_spaces 4) "}" ;
     F.fprintf fmt "%t%s@\n" (pp_n_spaces 2) "]" ;
     F.fprintf fmt "}@\n@?"
+  
+  let pp_rules fmt elt =
+    match rules_to_string elt with
+    | Some s ->
+        if !is_first_item then is_first_item := false else F.pp_print_char fmt ',' ;
+        F.fprintf fmt "%s@?" s
+    | None ->
+        ()
 
   let pp fmt elt =
     match to_string elt with
@@ -282,6 +316,38 @@ end
 
 module SarifIssuePrinter = MakeSarifListPrinter (struct
   type elt = json_issue_printer_typ
+  
+  let rules_to_string ({error_filter; proc_name; proc_loc_opt; err_key; err_data} : elt) =
+    let source_file =
+      match proc_loc_opt with
+      | Some proc_loc ->
+          proc_loc.Location.file
+      | None ->
+          err_data.loc.Location.file
+    in
+    if SourceFile.is_invalid source_file then
+      L.(die InternalError)
+        "Invalid source file for %a %a@.Trace: %a@." IssueType.pp err_key.issue_type
+        Localise.pp_error_desc err_key.err_desc Errlog.pp_loc_trace err_data.loc_trace ;
+    let should_report_proc_name =
+      Config.debug_mode || Config.debug_exceptions || not (BiabductionModels.mem proc_name)
+    in
+    let ruleId = err_key.issue_type.unique_id in
+    let should_report_rule_id = not (List.mem ~equal:String.equal !rules_list ruleId) in
+    if
+      error_filter source_file err_key.issue_type
+      && should_report_rule_id
+      && should_report_proc_name
+      && should_report err_key.issue_type err_key.err_desc
+    then
+      let shortDescription = {Sarifbug_j.text= err_key.issue_type.hum} in
+      let rule =
+        { Sarifbug_j.id= ruleId
+        ; shortDescription }
+      in
+      rules_list := List.append !rules_list [ruleId] ;
+      Some (Sarifbug_j.string_of_rule rule)
+    else None
 
   let to_string ({error_filter; proc_name; proc_loc_opt; err_key; err_data} : elt) =
     let source_file =
@@ -320,13 +386,13 @@ module SarifIssuePrinter = MakeSarifListPrinter (struct
       let message = 
         {Sarifbug_j.text= message_content}
       in
-      let level = IssueType.string_of_severity err_key.severity in
+      let level = String.lowercase (IssueType.string_of_severity err_key.severity) in
       let ruleId = err_key.issue_type.unique_id in
       let file =
         SourceFile.to_string ~force_relative:Config.report_force_relative_path source_file
       in
       let file_loc = {Sarifbug_j.url= file} in
-      let physical_location = {Sarifbug_j.fileLocation= file_loc} in
+      let physical_location = {Sarifbug_j.artifactLocation= file_loc} in
       let region = 
         { Sarifbug_j.startLine= err_data.loc.Location.line
         ; startColumn= err_data.loc.Location.col }
@@ -352,6 +418,12 @@ module IssuesSarif = struct
   let pp_issues_of_error_log fmt error_filter _ proc_loc_opt proc_name err_log =
     Errlog.iter
       (fun err_key err_data -> pp fmt {error_filter; proc_name; proc_loc_opt; err_key; err_data})
+      err_log
+  
+  (** Write bug rules in SARIF 2.1 format *)
+  let pp_rules_of_error_log fmt error_filter _ proc_loc_opt proc_name err_log =
+    Errlog.iter
+      (fun err_key err_data -> pp_rules fmt {error_filter; proc_name; proc_loc_opt; err_key; err_data})
       err_log
 end
 
@@ -507,6 +579,10 @@ let write_sarif_lint_issues filters (issues_outf : Utils.outfile) linereader pro
   let error_filter = mk_error_filter filters procname in
   IssuesSarif.pp_issues_of_error_log issues_outf.fmt error_filter linereader None procname error_log
 
+let write_sarif_lint_rules filters (issues_outf : Utils.outfile) linereader procname error_log =
+  let error_filter = mk_error_filter filters procname in
+  IssuesSarif.pp_rules_of_error_log issues_outf.fmt error_filter linereader None procname error_log
+
 let process_summary proc_name loc ~cost:(cost_opt, costs_outf)
     ~config_impact:(config_impact_opt, config_impact_outf, all_config_fields) err_log issues_acc =
   write_costs proc_name loc cost_opt costs_outf ;
@@ -549,6 +625,16 @@ let process_issues_for_sarif ~issues_outf =
       all_issues :=
         process_issue_summary proc_name loc err_log !all_issues ) ;
   all_issues := Issue.sort_filter_issues !all_issues ;
+  List.iter
+    ~f:(fun {Issue.proc_name; proc_location; err_key; err_data} ->
+      let error_filter = mk_error_filter filters proc_name in
+      IssuesSarif.pp_rules issues_outf.Utils.fmt
+        {error_filter; proc_name; proc_loc_opt= Some proc_location; err_key; err_data} )
+    !all_issues ;
+  (* Rules that are generated and stored outside of summaries by linter and checkers *)
+  List.iter (ResultsDirEntryName.get_issues_directories ()) ~f:(fun dir_name ->
+      IssueLog.load dir_name |> IssueLog.iter ~f:(write_sarif_lint_rules filters issues_outf linereader) ) ;
+  IssuesSarif.pp_results issues_outf.Utils.fmt () ;
   List.iter
     ~f:(fun {Issue.proc_name; proc_location; err_key; err_data} ->
       let error_filter = mk_error_filter filters proc_name in
