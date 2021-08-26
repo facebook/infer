@@ -128,7 +128,7 @@ let config =
   in
   let get_java_flavor_config () =
     if Config.buck_java_flavor_suppress_config then []
-    else ["infer_java.version=" ^ Version.versionString; "infer_java.binary=" ^ Config.infer_binary]
+    else ["infer.version=" ^ Version.versionString; "infer.binary=" ^ Config.infer_binary]
   in
   let get_clang_flavor_config () =
     [ "client.id=infer.clang"
