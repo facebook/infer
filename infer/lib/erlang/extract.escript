@@ -3,8 +3,6 @@
 %
 % This source code is licensed under the MIT license found in the
 % LICENSE file in the root directory of this source tree.
-%
-%
 
 usage() ->
     Usage =
@@ -61,6 +59,9 @@ ast_to_json(Node) when is_list(Node) ->
     end;
 ast_to_json(Node) when is_tuple(Node) ->
     L = tuple_to_list(Node),
-    ast_to_json(L);
+    case lists:all(fun(Item) -> is_integer(Item) end, L) of
+        true -> [ast_to_json(Child) || Child <- L];
+        false -> ast_to_json(L)
+    end;
 ast_to_json(Node) ->
     Node.

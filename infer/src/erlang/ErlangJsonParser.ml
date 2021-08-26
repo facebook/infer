@@ -39,11 +39,13 @@ let default_or (to_a : 'a parser) : 'a option parser = function
 
 
 let to_line json : Ast.line option =
-  (* TODO: When OTP is upgraded, add case for line&col locations. *)
   match json with
   | `Int line ->
       Some line
   | `List [`List (`String "generated" :: _); `List [`String "location"; `Int line]] ->
+      Some line
+  | `List [`Int line; _] ->
+      (* TODO: Next item is the column we can store as well *)
       Some line
   | _ ->
       unknown "line" json
