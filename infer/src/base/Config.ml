@@ -2566,9 +2566,9 @@ and profiler_samples =
      $(b,--test-determinator)."
 
 
-and export_sarif_only =
-  CLOpt.mk_bool ~long:"export-sarif-only" ~default:false
-    "Run infer to generate SARIF format output only."
+and output_sarif =
+  CLOpt.mk_bool ~long:"output-sarif" ~default:false
+    "Run infer to generate SARIF format output."
 
 
 and starvation_strict_mode =
@@ -3552,7 +3552,7 @@ and custom_symbols =
 
 and keep_going = !keep_going
 
-and export_sarif_only = !export_sarif_only
+and output_sarif = !output_sarif
 
 and tenv_json = !tenv_json
 
