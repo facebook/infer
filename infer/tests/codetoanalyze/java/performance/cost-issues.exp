@@ -305,6 +305,7 @@ codetoanalyze/java/performance/Loops.java, codetoanalyze.java.performance.Loops.
 codetoanalyze/java/performance/MapTest.java, MapTest.<init>(), 2,  OnUIThread:false, []
 codetoanalyze/java/performance/MapTest.java, MapTest.containsNullValue_linear(java.util.HashMap):boolean, 4 + keyMap.length,  OnUIThread:false, [{keyMap.length},Modeled call to Map.containsValue]
 codetoanalyze/java/performance/MapTest.java, MapTest.entrySet_linear(java.util.Map):void, 8 + 8 ⋅ map.length + 3 ⋅ (map.length + 1),  OnUIThread:false, [{map.length + 1},Loop,{map.length},Loop]
+codetoanalyze/java/performance/MapTest.java, MapTest.iterate_over_map_elems_linear(java.util.Map):void, 15 + 5 ⋅ map.elements.*.length.ub + 3 ⋅ (map.elements.*.length.ub + 1),  OnUIThread:false, [{map.elements.*.length.ub + 1},Loop,{map.elements.*.length.ub},Loop]
 codetoanalyze/java/performance/MapTest.java, MapTest.keySet_linear(java.util.Map):void, 8 + 8 ⋅ map.length + 3 ⋅ (map.length + 1),  OnUIThread:false, [{map.length + 1},Loop,{map.length},Loop]
 codetoanalyze/java/performance/MapTest.java, MapTest.putAll_linear(java.util.Map):void, 14 + 8 ⋅ map.length + 3 ⋅ (map.length + 1),  OnUIThread:false, [{map.length + 1},Loop,{map.length},Loop]
 codetoanalyze/java/performance/MapTest.java, MapTest.values_linear(java.util.Map):void, 14 + 8 ⋅ (map.length + 1) + 3 ⋅ (map.length + 2),  OnUIThread:false, [{map.length + 2},Loop,{map.length + 1},Loop]

@@ -1996,7 +1996,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       if List.is_empty all_res_trans then None
       else
         let sil_loc =
-          CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
+          CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info_loc
         in
         Some
           (PriorityNode.compute_results_to_parent trans_state_pri sil_loc (Destruction destr_kind)
@@ -2214,13 +2214,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           (* Assumption: If it's a null_stmt, it is a loop with no bound, so we set condition to 1 *)
         else if is_cmp then
           let open Clang_ast_t in
-          (* If we have a comparision here, do not dispatch it to [instruction] function, which
-           * invokes binaryOperator_trans_with_cond -> conditionalOperator_trans -> cond_trans.
-           * This will throw the translation process into an infinite loop immediately.
-           * Instead, dispatch to binaryOperator_trans directly. *)
+          (* If we have a comparison here, do not dispatch it to [instruction] function, which
+             invokes binaryOperator_trans_with_cond -> conditionalOperator_trans -> cond_trans.
+             This will throw the translation process into an infinite loop immediately.  Instead,
+             dispatch to binaryOperator_trans directly. *)
           (* If one wants to add a new kind of [BinaryOperator] that will have the same behavior,
-           * she need to change both the codes here and the [match] in
-           * binaryOperator_trans_with_cond *)
+             she need to change both the codes here and the [match] in
+             binaryOperator_trans_with_cond *)
           match cond with
           | BinaryOperator (si, ss, ei, boi)
           | ExprWithCleanups (_, [BinaryOperator (si, ss, ei, boi)], _, _) ->
@@ -4483,7 +4483,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           | None ->
               markers
           | Some marker_pvar ->
-              Exp.Map.add (Lvar pvar) (marker_pvar, typ) markers )
+              Pvar.Map.add pvar (marker_pvar, typ) markers )
     in
     (* translate the sub-expression in its own node(s) so we can inject code for managing
        conditional destructor markers before and after its nodes *)
@@ -4669,23 +4669,29 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       List.fold stmt_result.control.initd_exps
         ~init:([], stmt_result.control.cxx_temporary_markers_set)
         ~f:(fun ((instrs, markers_set) as acc) initd_exp ->
-          match Exp.Map.find_opt initd_exp trans_state.context.temporaries_constructor_markers with
-          | Some (marker_var, _)
-            when not
-                   (List.mem ~equal:Pvar.equal stmt_result.control.cxx_temporary_markers_set
-                      marker_var ) ->
-              (* to avoid adding the marker-setting instruction for every super-expression of the
-                 current one, add it to the list of marker variables set and do not create the
-                 instruction if it's already in that list *)
-              let store_marker =
-                Sil.Store
-                  { e1= Lvar marker_var
-                  ; root_typ= StdTyp.boolean
-                  ; typ= StdTyp.boolean
-                  ; e2= Exp.one
-                  ; loc }
-              in
-              (store_marker :: instrs, marker_var :: markers_set)
+          match initd_exp with
+          | Exp.Lvar initd_pvar -> (
+            match
+              Pvar.Map.find_opt initd_pvar trans_state.context.temporaries_constructor_markers
+            with
+            | Some (marker_var, _)
+              when not
+                     (List.mem ~equal:Pvar.equal stmt_result.control.cxx_temporary_markers_set
+                        marker_var ) ->
+                (* to avoid adding the marker-setting instruction for every super-expression of the
+                   current one, add it to the list of marker variables set and do not create the
+                   instruction if it's already in that list *)
+                let store_marker =
+                  Sil.Store
+                    { e1= Lvar marker_var
+                    ; root_typ= StdTyp.boolean
+                    ; typ= StdTyp.boolean
+                    ; e2= Exp.one
+                    ; loc }
+                in
+                (store_marker :: instrs, marker_var :: markers_set)
+            | _ ->
+                acc )
           | _ ->
               acc )
     in
@@ -5196,10 +5202,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           (* destructor wrapper only have calls to virtual base class destructors in its body *)
         , Clang_ast_t.CompoundStmt (stmt_info', []) )
       else if is_destructor then
+        (* Injecting destructor call nodes of fields at the end of the body *)
         (cxx_inject_field_destructors_in_destructor_body trans_state stmt_info, body)
       else (None, body)
     in
-    (* Injecting destructor call nodes of fields at the end of the body *)
     let succ_nodes =
       match destructor_res with
       | Some {control= {root_nodes= _ :: _ as root_nodes}} ->
