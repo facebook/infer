@@ -4,6 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,5 +31,13 @@ class MapTest {
 
   boolean containsNullValue_linear(HashMap<Integer, String> keyMap) {
     return keyMap.containsValue(null);
+  }
+
+  void iterate_over_map_elems_linear(Map<String, ArrayList<?>> map) {
+    ArrayList list = map.get("key");
+    if (list == null) {
+      return;
+    }
+    for (Object el : list) {}
   }
 }
