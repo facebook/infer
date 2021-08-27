@@ -7,7 +7,6 @@
 
 open! IStd
 module F = Format
-module L = Logging
 module ConfigName = FbGKInteraction.ConfigName
 
 let is_in_strict_mode_paths file =
@@ -15,17 +14,13 @@ let is_in_strict_mode_paths file =
 
 
 let strict_mode =
-  let enabled =
-    Config.config_impact_strict_mode
-    ||
-    match SourceFile.read_config_changed_files () with
-    | None ->
-        not (List.is_empty Config.config_impact_strict_mode_paths)
-    | Some changed_files ->
-        SourceFile.Set.exists is_in_strict_mode_paths changed_files
-  in
-  L.debug Analysis Quiet "config impact strict mode: %b@." enabled ;
-  enabled
+  Config.config_impact_strict_mode
+  ||
+  match SourceFile.read_config_changed_files () with
+  | None ->
+      not (List.is_empty Config.config_impact_strict_mode_paths)
+  | Some changed_files ->
+      SourceFile.Set.exists is_in_strict_mode_paths changed_files
 
 
 module Branch = struct
