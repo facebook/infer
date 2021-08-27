@@ -967,6 +967,15 @@ module AbstractCollection (Lang : Lang) = struct
     {exec; check= no_check}
 
 
+  let get_elem iterator =
+    let exec {integer_type_widths} ~ret:(id, _) mem =
+      let traces = Sem.eval integer_type_widths iterator mem |> Dom.Val.get_traces in
+      let locs = eval_collection_internal_array_locs iterator mem in
+      model_by_value (Dom.Val.of_pow_loc ~traces locs) id mem
+    in
+    {exec; check= no_check}
+
+
   let next iterator =
     let exec {integer_type_widths} ~ret:(id, _) mem =
       let traces = Sem.eval integer_type_widths iterator mem |> Dom.Val.get_traces in
@@ -1902,6 +1911,7 @@ module Call = struct
         &:: "addAll" <>$ capt_var_exn $+ capt_exp $--> Collection.addAll
       ; +PatternMatch.Java.implements_collection
         &:: "get" <>$ capt_var_exn $+ capt_exp $--> Collection.get_at_index
+      ; +PatternMatch.Java.implements_map &:: "get" <>$ capt_exp $+ any_arg $--> Collection.get_elem
       ; +PatternMatch.Java.implements_collection
         &:: "remove" <>$ capt_var_exn $+ capt_exp $--> Collection.remove_at_index
       ; +PatternMatch.Java.implements_collection

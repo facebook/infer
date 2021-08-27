@@ -128,7 +128,7 @@ let config =
   in
   let get_java_flavor_config () =
     if Config.buck_java_flavor_suppress_config then []
-    else ["infer_java.version=" ^ Version.versionString; "infer_java.binary=" ^ Config.infer_binary]
+    else ["infer.version=" ^ Version.versionString; "infer.binary=" ^ Config.infer_binary]
   in
   let get_clang_flavor_config () =
     [ "client.id=infer.clang"
@@ -150,10 +150,8 @@ let config =
     @
     if List.is_empty Config.buck_block_list then []
     else
-      let regex = Printf.sprintf "(%s)" (String.concat ~sep:")|(" Config.buck_block_list) in
-      (* TODO: The latter option will be removed after buck handles the new option. *)
-      [ Printf.sprintf "*//infer.block_list_regex=%s" regex
-      ; Printf.sprintf "*//infer.blacklist_regex=%s" regex ]
+      [ Printf.sprintf "*//infer.block_list_regex=(%s)"
+          (String.concat ~sep:")|(" Config.buck_block_list) ]
   in
   fun buck_mode ->
     let args =

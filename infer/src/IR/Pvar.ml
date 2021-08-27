@@ -332,6 +332,12 @@ module Set = PrettyPrintable.MakePPSet (struct
   let pp = pp Pp.text
 end)
 
+module Map = PrettyPrintable.MakePPMap (struct
+  type nonrec t = t [@@deriving compare]
+
+  let pp = pp Pp.text
+end)
+
 let get_pvar_formals (attributes : ProcAttributes.t) =
   let pname = attributes.proc_name in
   List.map attributes.formals ~f:(fun (name, typ) -> (mk name pname, typ))

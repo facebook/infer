@@ -31,7 +31,7 @@ type t =
         (** mapping from a statement to a list of variables, that go out of scope after the end of
             the statement *)
   ; temporary_names: (Clang_ast_t.pointer, Pvar.t * Typ.t) Caml.Hashtbl.t
-  ; temporaries_constructor_markers: (Pvar.t * Typ.t) Exp.Map.t
+  ; temporaries_constructor_markers: (Pvar.t * Typ.t) Pvar.Map.t
         (** In order to know when to destruct C++ temporaries created in expressions containing
             conditionals (e.g. to hold the object created by [X()] in [b?foo(X()):goo()]), we
             associate "markers" to each one of them, set to true if and only if the temporary has
