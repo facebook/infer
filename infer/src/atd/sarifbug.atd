@@ -9,7 +9,7 @@ type message = {
 }
 
 type fileloc = {
-  url : string;
+  uri : string;
 }
 
 type region = {
@@ -19,11 +19,11 @@ type region = {
 
 type physicalloc = {
   artifactLocation : fileloc;
+  region : region;
 }
 
 type loc = {
   physicalLocation : physicalloc;
-  region : region;
 }
 
 type sarifbug = {

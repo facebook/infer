@@ -178,9 +178,11 @@ end) : PrinterSarif with type elt = P.elt = struct
     F.fprintf fmt "%t%s: %s,@\n" (pp_n_spaces 2) "\"version\"" "\"2.1.0\"" ;
     F.fprintf fmt "%t%s: [@\n"  (pp_n_spaces 2) "\"runs\"" ;
     F.fprintf fmt "%t{@\n"  (pp_n_spaces 4) ;
-    F.fprintf fmt "%t%s: {@\n"  (pp_n_spaces 6) "\"tools\"" ;
+    F.fprintf fmt "%t%s: {@\n"  (pp_n_spaces 6) "\"tool\"" ;
     F.fprintf fmt "%t%s: {@\n"  (pp_n_spaces 8) "\"driver\"" ;
     F.fprintf fmt "%t%s: %s,@\n"  (pp_n_spaces 10) "\"name\"" "\"Infer\"" ;
+    F.fprintf fmt "%t%s: %s,@\n"  (pp_n_spaces 10) "\"informationUri\"" "\"https://github.com/facebook/infer\"" ;
+    F.fprintf fmt "%t%s: \"%d.%d.%d\",@\n"  (pp_n_spaces 10) "\"version\"" Version.major Version.minor Version.patch ;
     F.fprintf fmt "%t%s: [@?"  (pp_n_spaces 10) "\"rules\""
 
   let pp_results fmt () =
@@ -391,16 +393,22 @@ module SarifIssuePrinter = MakeSarifListPrinter (struct
       let file =
         SourceFile.to_string ~force_relative:Config.report_force_relative_path source_file
       in
-      let file_loc = {Sarifbug_j.url= file} in
-      let physical_location = {Sarifbug_j.artifactLocation= file_loc} in
+      let file_loc = {Sarifbug_j.uri= file} in
+      let column = err_data.loc.Location.col in
       let region = 
-        { Sarifbug_j.startLine= err_data.loc.Location.line
-        ; startColumn= err_data.loc.Location.col }
+        match column with
+        | -1 ->
+          { Sarifbug_j.startLine= err_data.loc.Location.line
+          ; startColumn= 1 }
+        | _ ->
+          { Sarifbug_j.startLine= err_data.loc.Location.line
+          ; startColumn= column }
       in
-      let file_location_to_record =
-        [{ Sarifbug_j.physicalLocation=physical_location
-        ; region }]
+      let physical_location = 
+        {Sarifbug_j.artifactLocation= file_loc
+        ; region } 
       in
+      let file_location_to_record = [{ Sarifbug_j.physicalLocation=physical_location}] in
       let result =
         { Sarifbug_j.message
         ; level
