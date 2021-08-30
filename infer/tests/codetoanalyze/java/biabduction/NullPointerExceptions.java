@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.concurrent.locks.Lock;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 public class NullPointerExceptions {
 
@@ -633,5 +634,16 @@ public class NullPointerExceptions {
   void addNullToImmutableListBuilderBad() {
     ImmutableList.Builder<Object> listBuilder = ImmutableList.builder();
     listBuilder.add(getObject());
+  }
+
+  String assertParameterRequireNonNullOk(@Nullable Object object) {
+    return Objects.requireNonNull(object).toString();
+  }
+
+  String objectsNonNullOk(@Nullable Object object) {
+    if (!Objects.isNull(object)) {
+      return object.toString();
+    }
+    return null;
   }
 }
