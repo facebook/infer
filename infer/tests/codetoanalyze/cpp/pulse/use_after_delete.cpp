@@ -132,3 +132,13 @@ void gated_delete_throw_ok(bool b) {
   }
   s->f = 7;
 }
+
+void delete_allocated_then_error_bad(int* x) {
+  *x = 42;
+  delete x;
+  *x = 0;
+}
+
+void null_call_delete_allocated_then_error_bad(int* x) {
+  delete_allocated_then_error_bad(nullptr);
+}

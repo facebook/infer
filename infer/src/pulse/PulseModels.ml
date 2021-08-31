@@ -24,6 +24,12 @@ type model = model_data -> AbductiveDomain.t -> ExecutionDomain.t AccessResult.t
 
 let continue astate = ContinueProgram astate
 
+let map_continue astate_result =
+  let open IResult.Let_syntax in
+  let+ astate = astate_result in
+  continue astate
+
+
 let ok_continue post = [Ok (ContinueProgram post)]
 
 module Misc = struct
@@ -144,8 +150,8 @@ module Misc = struct
         in
         astate
     in
-    let<*> astate_zero = PulseArithmetic.prune_eq_zero (fst deleted_access) astate in
-    Ok (ContinueProgram astate_zero) :: astates_alloc
+    let astate_zero = PulseArithmetic.prune_eq_zero (fst deleted_access) astate |> map_continue in
+    astate_zero :: astates_alloc
 
 
   let set_uninitialized tenv size_exp_opt location ret_value astate =
@@ -390,11 +396,17 @@ module Optional = struct
     let ret_value = (ret_addr, [ValueHistory.Call {f= Model desc; location; in_call= []}]) in
     let<*> astate, (value_addr, _) = to_internal_value_deref path Read location optional astate in
     let astate = PulseOperations.write_id ret_id ret_value astate in
-    let<*> astate_non_empty = PulseArithmetic.prune_positive value_addr astate in
-    let<*> astate_true = PulseArithmetic.prune_positive ret_addr astate_non_empty in
-    let<*> astate_empty = PulseArithmetic.prune_eq_zero value_addr astate in
-    let<*> astate_false = PulseArithmetic.prune_eq_zero ret_addr astate_empty in
-    [Ok (ContinueProgram astate_false); Ok (ContinueProgram astate_true)]
+    let result_non_empty =
+      PulseArithmetic.prune_positive value_addr astate
+      >>= PulseArithmetic.prune_positive ret_addr
+      |> map_continue
+    in
+    let result_empty =
+      PulseArithmetic.prune_eq_zero value_addr astate
+      >>= PulseArithmetic.prune_eq_zero ret_addr
+      |> map_continue
+    in
+    [result_non_empty; result_empty]
 
 
   let get_pointer optional ~desc : model =
@@ -402,39 +414,46 @@ module Optional = struct
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let<*> astate, value_addr = to_internal_value_deref path Read location optional astate in
     let value_update_hist = (fst value_addr, event :: snd value_addr) in
-    let<*> astate_value_addr =
+    let astate_value_addr =
       PulseOperations.write_id ret_id value_update_hist astate
       |> PulseArithmetic.prune_positive (fst value_addr)
+      |> map_continue
     in
     let nullptr = (AbstractValue.mk_fresh (), [event]) in
-    let<*> astate_null =
+    let astate_null =
       PulseOperations.write_id ret_id nullptr astate
       |> PulseArithmetic.prune_eq_zero (fst value_addr)
       >>= PulseArithmetic.and_eq_int (fst nullptr) IntLit.zero
       >>= PulseOperations.invalidate path
             (StackAddress (Var.of_id ret_id, snd nullptr))
             location (ConstantDereference IntLit.zero) nullptr
+      |> map_continue
     in
-    [Ok (ContinueProgram astate_value_addr); Ok (ContinueProgram astate_null)]
+    [astate_value_addr; astate_null]
 
 
   let value_or optional default ~desc : model =
    fun {path; location; ret= ret_id, _} astate ->
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let<*> astate, value_addr = to_internal_value_deref path Read location optional astate in
-    let<*> astate_non_empty = PulseArithmetic.prune_positive (fst value_addr) astate in
-    let<*> astate_non_empty, value =
-      PulseOperations.eval_access path Read location value_addr Dereference astate_non_empty
+    let astate_non_empty =
+      let+ astate_non_empty, value =
+        PulseArithmetic.prune_positive (fst value_addr) astate
+        >>= PulseOperations.eval_access path Read location value_addr Dereference
+      in
+      let value_update_hist = (fst value, event :: snd value) in
+      PulseOperations.write_id ret_id value_update_hist astate_non_empty |> continue
     in
-    let value_update_hist = (fst value, event :: snd value) in
-    let astate_value = PulseOperations.write_id ret_id value_update_hist astate_non_empty in
-    let<*> astate, (default_val, default_hist) =
-      PulseOperations.eval_access path Read location default Dereference astate
+    let astate_default =
+      let* astate, (default_val, default_hist) =
+        PulseOperations.eval_access path Read location default Dereference astate
+      in
+      let default_value_hist = (default_val, event :: default_hist) in
+      PulseArithmetic.prune_eq_zero (fst value_addr) astate
+      >>| PulseOperations.write_id ret_id default_value_hist
+      |> map_continue
     in
-    let default_value_hist = (default_val, event :: default_hist) in
-    let<*> astate_empty = PulseArithmetic.prune_eq_zero (fst value_addr) astate in
-    let astate_default = PulseOperations.write_id ret_id default_value_hist astate_empty in
-    [Ok (ContinueProgram astate_value); Ok (ContinueProgram astate_default)]
+    [astate_non_empty; astate_default]
 end
 
 module Cplusplus = struct
@@ -697,16 +716,16 @@ module StdBasicString = struct
     in
     let ((ret_addr, _) as ret_hist) = (AbstractValue.mk_fresh (), event :: hist) in
     let astate_empty =
-      let<*> astate = PulseArithmetic.prune_eq_zero len_addr astate in
-      let<+> astate = PulseArithmetic.and_eq_int ret_addr IntLit.one astate in
-      PulseOperations.write_id ret_id ret_hist astate
+      let* astate = PulseArithmetic.prune_eq_zero len_addr astate in
+      let+ astate = PulseArithmetic.and_eq_int ret_addr IntLit.one astate in
+      PulseOperations.write_id ret_id ret_hist astate |> continue
     in
     let astate_non_empty =
-      let<*> astate = PulseArithmetic.prune_positive len_addr astate in
-      let<+> astate = PulseArithmetic.and_eq_int ret_addr IntLit.zero astate in
-      PulseOperations.write_id ret_id ret_hist astate
+      let* astate = PulseArithmetic.prune_positive len_addr astate in
+      let+ astate = PulseArithmetic.and_eq_int ret_addr IntLit.zero astate in
+      PulseOperations.write_id ret_id ret_hist astate |> continue
     in
-    List.rev_append astate_empty astate_non_empty
+    [astate_empty; astate_non_empty]
 
 
   let length this_hist : model =
@@ -888,17 +907,19 @@ module GenericArrayBackedCollectionIterator = struct
       | `NotEqual ->
           (IntLit.zero, IntLit.one)
     in
-    let<*> astate_equal =
+    let astate_equal =
       PulseArithmetic.and_eq_int ret_val ret_val_equal astate
       >>= PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand index_lhs)
             (AbstractValueOperand index_rhs)
+      |> map_continue
     in
-    let<*> astate_notequal =
+    let astate_notequal =
       PulseArithmetic.and_eq_int ret_val ret_val_notequal astate
       >>= PulseArithmetic.prune_binop ~negated:false Ne (AbstractValueOperand index_lhs)
             (AbstractValueOperand index_rhs)
+      |> map_continue
     in
-    [Ok (ContinueProgram astate_equal); Ok (ContinueProgram astate_notequal)]
+    [astate_equal; astate_notequal]
 
 
   let operator_star ~desc iter : model =
@@ -1213,40 +1234,41 @@ module JavaCollection = struct
 
   let update path coll new_val new_val_hist event location ret_id astate =
     (* case0: element not present in collection *)
-    let* astate, coll_val =
+    let<*> astate, coll_val =
       PulseOperations.eval_access path Read location coll Dereference astate
     in
-    let* astate, _, fst_val = Java.load_field path fst_field location coll_val astate in
-    let* astate, _, snd_val = Java.load_field path snd_field location coll_val astate in
+    let<*> astate, _, fst_val = Java.load_field path fst_field location coll_val astate in
+    let<*> astate, _, snd_val = Java.load_field path snd_field location coll_val astate in
     let is_empty_val = AbstractValue.mk_fresh () in
-    let* astate' =
+    let<*> astate' =
       Java.write_field path is_empty_field (is_empty_val, [event]) location coll_val astate
     in
     (* case1: fst_field is updated *)
-    let* astate1 =
+    let astate1 =
       Java.write_field path fst_field (new_val, event :: new_val_hist) location coll astate'
+      >>| PulseOperations.write_id ret_id fst_val
+      |> map_continue
     in
-    let astate1 = PulseOperations.write_id ret_id fst_val astate1 in
     (* case2: snd_field is updated *)
-    let+ astate2 =
+    let astate2 =
       Java.write_field path snd_field (new_val, event :: new_val_hist) location coll astate'
+      >>| PulseOperations.write_id ret_id snd_val
+      |> map_continue
     in
-    let astate2 = PulseOperations.write_id ret_id snd_val astate2 in
-    [astate; astate1; astate2]
+    [Ok (continue astate); astate1; astate2]
 
 
   let set coll (new_val, new_val_hist) : model =
    fun {path; location; ret= ret_id, _} astate ->
     let event = ValueHistory.Call {f= Model "Collection.set()"; location; in_call= []} in
-    let<*> astates = update path coll new_val new_val_hist event location ret_id astate in
-    List.map ~f:(fun astate -> Ok (ContinueProgram astate)) astates
+    update path coll new_val new_val_hist event location ret_id astate
 
 
   let remove_at path ~desc coll location ret_id astate =
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let new_val = AbstractValue.mk_fresh () in
-    PulseArithmetic.and_eq_int new_val IntLit.zero astate
-    >>= update path coll new_val [] event location ret_id
+    let<*> astate = PulseArithmetic.and_eq_int new_val IntLit.zero astate in
+    update path coll new_val [] event location ret_id astate
 
 
   (* Auxiliary function that updates the state by:
@@ -1268,53 +1290,56 @@ module JavaCollection = struct
       PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand elem)
         (AbstractValueOperand field_val) astate
     in
-    let* astate =
+    let+ astate =
       PulseOperations.write_deref path location ~ref:field_addr ~obj:(null_val, [event]) astate
     in
-    let astate = PulseOperations.write_id ret_id (ret_val, [event]) astate in
-    Ok astate
+    PulseOperations.write_id ret_id (ret_val, [event]) astate
 
 
   let remove_obj path ~desc coll (elem, _) location ret_id astate =
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
-    let* astate, coll_val =
+    let<*> astate, coll_val =
       PulseOperations.eval_access path Read location coll Dereference astate
     in
+    let<*> astate, fst_addr, (fst_val, _) =
+      Java.load_field path fst_field location coll_val astate
+    in
+    let<*> astate, snd_addr, (snd_val, _) =
+      Java.load_field path snd_field location coll_val astate
+    in
     (* case1: given element is equal to fst_field *)
-    let* astate, fst_addr, (fst_val, _) = Java.load_field path fst_field location coll_val astate in
-    let* astate1 =
+    let astate1 =
       remove_elem_found path coll_val elem fst_addr fst_val ret_id location event astate
+      |> map_continue
     in
     (* case2: given element is equal to snd_field *)
-    let* astate, snd_addr, (snd_val, _) = Java.load_field path snd_field location coll_val astate in
-    let* astate2 =
+    let astate2 =
       remove_elem_found path coll_val elem snd_addr snd_val ret_id location event astate
+      |> map_continue
     in
     (* case 3: given element is not equal to the fst AND not equal to the snd *)
-    let+ astate =
+    let astate3 =
       PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand elem)
         (AbstractValueOperand fst_val) astate
       >>= PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand elem)
             (AbstractValueOperand snd_val)
+      |> map_continue
     in
-    [astate1; astate2; astate]
+    [astate1; astate2; astate3]
 
 
   let remove ~desc args : model =
    fun {path; location; ret= ret_id, _} astate ->
     match args with
     | [ {ProcnameDispatcher.Call.FuncArg.arg_payload= coll_arg}
-      ; {ProcnameDispatcher.Call.FuncArg.arg_payload= elem_arg; typ} ] ->
-        let<*> astates =
-          match typ.desc with
-          | Tint _ ->
-              (* Case of remove(int index) *)
-              remove_at path ~desc coll_arg location ret_id astate
-          | _ ->
-              (* Case of remove(Object o) *)
-              remove_obj path ~desc coll_arg elem_arg location ret_id astate
-        in
-        List.map ~f:(fun astate -> Ok (ContinueProgram astate)) astates
+      ; {ProcnameDispatcher.Call.FuncArg.arg_payload= elem_arg; typ} ] -> (
+      match typ.desc with
+      | Tint _ ->
+          (* Case of remove(int index) *)
+          remove_at path ~desc coll_arg location ret_id astate
+      | _ ->
+          (* Case of remove(Object o) *)
+          remove_obj path ~desc coll_arg elem_arg location ret_id astate )
     | _ ->
         astate |> ok_continue
 
@@ -1375,22 +1400,26 @@ module JavaCollection = struct
      the internal is_empty field is not known to have value 1 *)
   let get_elem_coll_not_known_empty elem found_val fst_val snd_val astate =
     (* case 1: given element is not equal to the fst AND not equal to the snd *)
-    let* astate1 =
-      PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand elem)
+    let astate1 =
+      PulseArithmetic.prune_binop ~negated:true Eq (AbstractValueOperand elem)
         (AbstractValueOperand fst_val) astate
-      >>= PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand elem)
+      >>= PulseArithmetic.prune_binop ~negated:true Eq (AbstractValueOperand elem)
             (AbstractValueOperand snd_val)
+      |> map_continue
     in
-    let* astate = PulseArithmetic.and_positive found_val astate in
     (* case 2: given element is equal to fst_field *)
-    let* astate2 =
-      PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand elem)
-        (AbstractValueOperand fst_val) astate
+    let astate2 =
+      PulseArithmetic.and_positive found_val astate
+      >>= PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand elem)
+            (AbstractValueOperand fst_val)
+      |> map_continue
     in
     (* case 3: given element is equal to snd_field *)
-    let+ astate3 =
-      PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand elem)
-        (AbstractValueOperand snd_val) astate
+    let astate3 =
+      PulseArithmetic.and_positive found_val astate
+      >>= PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand elem)
+            (AbstractValueOperand snd_val)
+      |> map_continue
     in
     [astate1; astate2; astate3]
 
@@ -1406,21 +1435,23 @@ module JavaCollection = struct
     in
     (* case 1: collection is empty *)
     let true_val = AbstractValue.mk_fresh () in
-    let<*> astate1 =
-      get_elem_coll_is_empty path is_empty_val true_val event location ret_id astate
+    let astate1 =
+      get_elem_coll_is_empty path is_empty_val true_val event location ret_id astate |> map_continue
     in
     (* case 2: collection is not known to be empty *)
     let found_val = AbstractValue.mk_fresh () in
-    let<*> astate2, _, (fst_val, _) = Java.load_field path fst_field location coll_val astate in
-    let<*> astate2, _, (snd_val, _) = Java.load_field path snd_field location coll_val astate2 in
-    let<*> astate2 =
-      PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand is_empty_val)
-        (AbstractValueOperand true_val) astate2
-      >>= PulseArithmetic.and_eq_int true_val IntLit.one
+    let astates2 =
+      let<*> astate2, _, (fst_val, _) = Java.load_field path fst_field location coll_val astate in
+      let<*> astate2, _, (snd_val, _) = Java.load_field path snd_field location coll_val astate2 in
+      let<*> astate2 =
+        PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand is_empty_val)
+          (AbstractValueOperand true_val) astate2
+        >>= PulseArithmetic.and_eq_int true_val IntLit.one
+        >>| PulseOperations.write_id ret_id (found_val, [event])
+      in
+      get_elem_coll_not_known_empty elem found_val fst_val snd_val astate2
     in
-    let astate2 = PulseOperations.write_id ret_id (found_val, [event]) astate2 in
-    let<*> astates = get_elem_coll_not_known_empty elem found_val fst_val snd_val astate2 in
-    List.map (astate1 :: astates) ~f:(fun astate -> Ok (ContinueProgram astate))
+    astate1 :: astates2
 end
 
 module JavaInteger = struct
@@ -1493,9 +1524,10 @@ module Android = struct
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let ret_val = AbstractValue.mk_fresh () in
     let astate_null =
-      let<*> astate = PulseArithmetic.prune_eq_zero addr astate in
-      let<+> astate = PulseArithmetic.and_eq_int ret_val IntLit.one astate in
-      PulseOperations.write_id ret_id (ret_val, event :: hist) astate
+      PulseArithmetic.prune_eq_zero addr astate
+      >>= PulseArithmetic.and_eq_int ret_val IntLit.one
+      >>| PulseOperations.write_id ret_id (ret_val, event :: hist)
+      |> map_continue
     in
     let astate_not_null =
       let<*> astate = PulseArithmetic.prune_positive addr astate in
@@ -1504,18 +1536,18 @@ module Android = struct
       in
       let astate = PulseOperations.write_id ret_id (ret_val, event :: hist) astate in
       let astate_empty =
-        let<*> astate = PulseArithmetic.prune_eq_zero len_addr astate in
-        let<+> astate = PulseArithmetic.and_eq_int ret_val IntLit.one astate in
-        astate
+        PulseArithmetic.prune_eq_zero len_addr astate
+        >>= PulseArithmetic.and_eq_int ret_val IntLit.one
+        |> map_continue
       in
       let astate_not_empty =
-        let<*> astate = PulseArithmetic.prune_positive len_addr astate in
-        let<+> astate = PulseArithmetic.and_eq_int ret_val IntLit.zero astate in
-        astate
+        PulseArithmetic.prune_positive len_addr astate
+        >>= PulseArithmetic.and_eq_int ret_val IntLit.zero
+        |> map_continue
       in
-      List.rev_append astate_empty astate_not_empty
+      [astate_empty; astate_not_empty]
     in
-    List.rev_append astate_null astate_not_null
+    astate_null :: astate_not_null
 end
 
 module Erlang = struct
