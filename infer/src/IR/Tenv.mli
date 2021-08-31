@@ -80,4 +80,6 @@ val resolve_method :
     [method_exists adapted_procname methods] should check if [adapted_procname] ([procname] but with
     its class potentially changed to some [other_class]) is among the [methods] of [other_class]. *)
 
+val find_cpp_destructor : t -> Typ.Name.t -> Procname.t option
+
 module SQLite : SqliteUtils.Data with type t = per_file

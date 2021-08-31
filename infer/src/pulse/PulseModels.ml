@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module L = Logging
 module IRAttributes = Attributes
 open PulseBasicInterface
 open PulseDomainInterface
@@ -130,25 +131,64 @@ module Misc = struct
     PulseOperations.write_id ret_id ret_value astate |> ok_continue
 
 
-  let free_or_delete operation deleted_access : model =
-   fun {path; location} astate ->
+  let call_destructor {ProcnameDispatcher.Call.FuncArg.arg_payload= deleted_access; typ} : model =
+   fun {analysis_data= {tenv; proc_desc; analyze_dependency}; path; location; ret} astate ->
+    (* TODO: lookup dynamic type; currently not set in C++, should update model of [new] *)
+    match typ.Typ.desc with
+    | Typ.Tptr ({desc= Tstruct class_name}, _) -> (
+      match Tenv.find_cpp_destructor tenv class_name with
+      | None ->
+          L.d_printfln "No destructor found for class %a@\n" Typ.Name.pp class_name ;
+          ok_continue astate
+      | Some destructor ->
+          L.d_printfln "Found destructor for class %a@\n" Typ.Name.pp class_name ;
+          PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc
+            ~callee_data:(analyze_dependency destructor) location destructor ~ret
+            ~actuals:[(deleted_access, typ)] ~formals_opt:None astate )
+    | _ ->
+        L.d_printfln "Object being deleted is not a pointer to a class, got '%a' instead@\n"
+          (Typ.pp_desc (Pp.html Black))
+          typ.Typ.desc ;
+        ok_continue astate
+
+
+  let free_or_delete operation
+      ({ProcnameDispatcher.Call.FuncArg.arg_payload= deleted_access} as deleted_arg) : model =
+   fun ({path; location} as model_data) astate ->
     (* NOTE: freeing 0 is a no-op so we introduce a case split *)
     let invalidation =
       match operation with `Free -> Invalidation.CFree | `Delete -> Invalidation.CppDelete
     in
     let astates_alloc =
       let<*> astate = PulseArithmetic.and_positive (fst deleted_access) astate in
-      if Config.pulse_isl then
-        PulseOperations.invalidate_biad_isl path location invalidation deleted_access astate
-        |> List.map ~f:(fun result ->
-               let+ astate = result in
-               ContinueProgram astate )
-      else
-        let<+> astate =
-          PulseOperations.invalidate path UntraceableAccess location invalidation deleted_access
-            astate
-        in
-        astate
+      let astates =
+        match operation with
+        | `Free ->
+            ok_continue astate
+        | `Delete ->
+            call_destructor deleted_arg model_data astate
+      in
+      List.concat_map astates ~f:(fun exec_state_result ->
+          let<*> exec_state = exec_state_result in
+          match exec_state with
+          | ContinueProgram astate ->
+              if Config.pulse_isl then
+                PulseOperations.invalidate_biad_isl path location invalidation deleted_access astate
+                |> List.map ~f:(fun result ->
+                       let+ astate = result in
+                       ContinueProgram astate )
+              else
+                let<+> astate =
+                  PulseOperations.invalidate path UntraceableAccess location invalidation
+                    deleted_access astate
+                in
+                astate
+          | ExitProgram _
+          | AbortProgram _
+          | LatentAbortProgram _
+          | LatentInvalidAccess _
+          | ISLLatentMemoryError _ ->
+              [Ok exec_state] )
     in
     let astate_zero = PulseArithmetic.prune_eq_zero (fst deleted_access) astate |> map_continue in
     astate_zero :: astates_alloc
@@ -457,7 +497,9 @@ module Optional = struct
 end
 
 module Cplusplus = struct
-  let delete deleted_access : model = Misc.free_or_delete `Delete deleted_access
+  let delete deleted_arg : model =
+   fun model_data astate -> Misc.free_or_delete `Delete deleted_arg model_data astate
+
 
   let new_ type_name : model =
    fun model_data astate ->
@@ -1709,14 +1751,14 @@ module ProcNameDispatcher = struct
     let map_context_tenv f (x, _) = f x in
     make_dispatcher
       ( transfer_ownership_matchers @ abort_matchers
-      @ [ +BuiltinDecl.(match_builtin free) <>$ capt_arg_payload $--> C.free
-        ; +match_regexp_opt Config.pulse_model_free_pattern <>$ capt_arg_payload $+...$--> C.free
+      @ [ +BuiltinDecl.(match_builtin free) <>$ capt_arg $--> C.free
+        ; +match_regexp_opt Config.pulse_model_free_pattern <>$ capt_arg $+...$--> C.free
         ; +BuiltinDecl.(match_builtin malloc) <>$ capt_exp $--> C.malloc
         ; +match_regexp_opt Config.pulse_model_malloc_pattern <>$ capt_exp $+...$--> C.malloc
-        ; -"realloc" <>$ capt_arg_payload $+ capt_exp $--> C.realloc
+        ; -"realloc" <>$ capt_arg $+ capt_exp $--> C.realloc
         ; +match_regexp_opt Config.pulse_model_realloc_pattern
-          <>$ capt_arg_payload $+ capt_exp $+...$--> C.realloc
-        ; +BuiltinDecl.(match_builtin __delete) <>$ capt_arg_payload $--> Cplusplus.delete
+          <>$ capt_arg $+ capt_exp $+...$--> C.realloc
+        ; +BuiltinDecl.(match_builtin __delete) <>$ capt_arg $--> Cplusplus.delete
         ; +BuiltinDecl.(match_builtin __new) <>$ capt_exp $--> Cplusplus.new_
         ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $--> Cplusplus.new_
         ; +BuiltinDecl.(match_builtin __placement_new) &++> Cplusplus.placement_new

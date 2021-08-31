@@ -258,3 +258,13 @@ let resolve_method ~method_exists tenv class_name proc_name =
     lookup tenv class_name |> Option.bind ~f:(resolve_name_struct class_name)
   in
   resolve_name class_name
+
+
+let find_cpp_destructor tenv class_name =
+  let open IOption.Let_syntax in
+  let* struct_ = lookup tenv class_name in
+  List.find struct_.Struct.methods ~f:(function
+    | Procname.ObjC_Cpp f ->
+        Procname.ObjC_Cpp.(is_destructor f && not (is_inner_destructor f))
+    | _ ->
+        false )
