@@ -73,6 +73,43 @@ let loc_trace_to_jsonbug_record trace_list ekind =
       record_list
 
 
+let loc_trace_to_sarifbug_record trace_list ekind =
+  match ekind with
+  | IssueType.Info ->
+      []
+  | _ ->
+      let file_loc trace_item = 
+        {Sarifbug_j.uri= SourceFile.to_string trace_item.Errlog.lt_loc.Location.file} 
+      in
+      let message trace_item = 
+        {Sarifbug_j.text= trace_item.Errlog.lt_description} 
+      in
+      let column trace_item = trace_item.Errlog.lt_loc.Location.col in
+      let region trace_item = 
+        match column trace_item with
+        | -1 ->
+          { Sarifbug_j.startLine= trace_item.Errlog.lt_loc.Location.line
+          ; startColumn= 1 }
+        | _ ->
+          { Sarifbug_j.startLine= trace_item.Errlog.lt_loc.Location.line
+          ; startColumn= column trace_item }
+      in
+      let physical_location trace_item = 
+        {Sarifbug_j.artifactLocation= file_loc trace_item
+        ; region= region trace_item } 
+      in
+      let file_location_to_record trace_item = 
+        {message= message trace_item
+        ; Sarifbug_j.physicalLocation=physical_location trace_item}
+      in
+      let trace_item_to_record trace_item = 
+        { Sarifbug_j.nestingLevel = trace_item.Errlog.lt_level
+        ; location= file_location_to_record trace_item }
+      in
+      let record_list = List.rev (List.rev_map ~f:trace_item_to_record trace_list) in
+      record_list
+
+
 let should_report issue_type error_desc =
   if (not Config.filtering) || Language.curr_language_is CIL then true
   else
@@ -409,10 +446,17 @@ module SarifIssuePrinter = MakeSarifListPrinter (struct
         ; region } 
       in
       let file_location_to_record = [{ Sarifbug_j.physicalLocation=physical_location}] in
+      let thread_flow_locs = 
+        [{Sarifbug_j.locations= loc_trace_to_sarifbug_record err_data.loc_trace err_key.severity}]
+      in
+      let thread_flow = 
+        [{Sarifbug_j.threadFlows= thread_flow_locs}]
+      in
       let result =
         { Sarifbug_j.message
         ; level
         ; ruleId 
+        ; codeFlows= thread_flow
         ; locations= file_location_to_record }
       in
       Some (Sarifbug_j.string_of_sarifbug result)

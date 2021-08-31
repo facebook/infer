@@ -13,8 +13,8 @@ type fileloc = {
 }
 
 type region = {
-  startLine: int;
-  startColumn: int;
+  startLine : int;
+  startColumn : int;
 }
 
 type physicalloc = {
@@ -26,10 +26,29 @@ type loc = {
   physicalLocation : physicalloc;
 }
 
+type trace_loc = {
+  physicalLocation : physicalloc;
+  message : message;
+}
+
+type trace = {
+  nestingLevel  : int;
+  location : trace_loc;
+}
+
+type threadflow = {
+  locations : trace list;
+}
+
+type codeflow = {
+  threadFlows : threadflow list;
+}
+
 type sarifbug = {
   message : message;
   level : string;
   ruleId : string;
+  codeFlows : codeflow list;
   locations : loc list;
 }
 
