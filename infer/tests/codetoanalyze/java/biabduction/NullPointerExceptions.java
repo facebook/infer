@@ -28,6 +28,7 @@ import java.util.concurrent.locks.Lock;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Objects;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 
 public class NullPointerExceptions {
 
@@ -645,5 +646,19 @@ public class NullPointerExceptions {
       return object.toString();
     }
     return null;
+  }
+
+  String dynamodbMapperWarning2() {
+    DynamoDBMapper mapper = new DynamoDBMapper();
+    Float object2 = 1.0f;
+    Object object = mapper.load(Object.class, object2);
+    return object.toString();
+  }
+
+  void dynamodbMapperWarning3() {
+    DynamoDBMapper mapper = new DynamoDBMapper();
+    String object2 = "foo";
+    NullPointerExceptions object = mapper.load(NullPointerExceptions.class, object2);
+    object.toString();
   }
 }
