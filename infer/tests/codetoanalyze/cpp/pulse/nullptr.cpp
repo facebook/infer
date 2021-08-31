@@ -275,3 +275,8 @@ X* unknown_function_X();
 void createSomeDerivedClass_from_unknown_function_ok() {
   SomeDerivedClass something(unknown_function_X());
 }
+
+void test_call_nullptr_bad() {
+  void (*f)() = nullptr;
+  f();
+}

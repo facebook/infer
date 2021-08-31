@@ -211,3 +211,8 @@ int testAnotherObjectUseSelfOk() {
   auto const obj = [SomeObject returnsNil];
   return [obj callAnotherObjectMethod];
 }
+
+void testCallNullptrBad() {
+  void (*f)() = nullptr;
+  f();
+}

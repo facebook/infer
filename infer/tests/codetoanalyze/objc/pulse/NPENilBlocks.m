@@ -99,3 +99,10 @@ void calldoSomethingThenCallbackWithNilBad() {
   BlockA* blockA = [BlockA alloc];
   [blockA doSomethingThenCallback:nil];
 }
+
+void nilBlockCallCFuntionBad() {
+  void (^my_block)(void) = ^() {
+  };
+  my_block = NULL;
+  my_block();
+}

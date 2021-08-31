@@ -32,7 +32,7 @@ module PulseTransferFunctions = struct
   let get_pvar_formals pname = IRAttributes.load pname |> Option.map ~f:Pvar.get_pvar_formals
 
   let interprocedural_call {InterproceduralAnalysis.analyze_dependency; tenv; proc_desc} path ret
-      callee_pname call_exp actuals call_loc astate =
+      callee_pname call_exp actuals call_loc (flags : CallFlags.t) astate =
     match callee_pname with
     | Some callee_pname when not Config.pulse_intraprocedural_only ->
         let formals_opt = get_pvar_formals callee_pname in
@@ -42,7 +42,9 @@ module PulseTransferFunctions = struct
     | _ ->
         (* dereference call expression to catch nil issues *)
         let<*> astate, _ =
-          PulseOperations.eval_deref path ~must_be_valid_reason:BlockCall call_loc call_exp astate
+          if flags.cf_is_objc_block then
+            PulseOperations.eval_deref path ~must_be_valid_reason:BlockCall call_loc call_exp astate
+          else PulseOperations.eval_deref path call_loc call_exp astate
         in
         L.d_printfln "Skipping indirect call %a@\n" Exp.pp call_exp ;
         let astate =
@@ -184,7 +186,7 @@ module PulseTransferFunctions = struct
           in
           let r =
             interprocedural_call analysis_data path ret callee_pname call_exp only_actuals_evaled
-              call_loc astate
+              call_loc flags astate
           in
           PerfEvent.(log (fun logger -> log_end_event logger ())) ;
           r
