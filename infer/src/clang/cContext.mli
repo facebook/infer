@@ -12,6 +12,24 @@ open! IStd
 
 module StmtMap = ClangPointers.Map
 
+type cxx_temporary =
+  { pvar: Pvar.t
+  ; typ: Typ.t
+  ; qual_type: Clang_ast_t.qual_type
+  ; marker: Pvar.t option
+        (** [Some m] means that creating [pvar] should also set [m] to [1] so that we know whether
+            [pvar] needs to be destroyed after the current full-expression *) }
+
+type var_to_destroy =
+  | VarDecl of
+      ( Clang_ast_t.decl_info
+      * Clang_ast_t.named_decl_info
+      * Clang_ast_t.qual_type
+      * Clang_ast_t.var_decl_info )
+  | CXXTemporary of cxx_temporary
+
+val pp_var_to_destroy : Format.formatter -> var_to_destroy -> unit
+
 type curr_class = ContextClsDeclPtr of int | ContextNoCls [@@deriving compare]
 
 type str_node_map = (string, Procdesc.Node.t) Caml.Hashtbl.t
@@ -27,7 +45,7 @@ type t =
         (** in case of objc blocks, the context of the method containing the block *)
   ; mutable blocks_static_vars: (Pvar.t * Typ.t) list Procname.Map.t
   ; label_map: str_node_map
-  ; vars_to_destroy: Clang_ast_t.decl list StmtMap.t
+  ; vars_to_destroy: var_to_destroy list StmtMap.t
         (** mapping from a statement to a list of variables, that go out of scope after the end of
             the statement *)
   ; temporary_names: (Clang_ast_t.pointer, Pvar.t * Typ.t) Caml.Hashtbl.t
@@ -56,7 +74,6 @@ val create_context :
   -> curr_class
   -> Typ.t option
   -> t option
-  -> Clang_ast_t.decl list StmtMap.t
   -> t
 
 val add_block_static_var : t -> Procname.t -> Pvar.t * Typ.t -> unit

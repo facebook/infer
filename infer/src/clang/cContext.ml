@@ -6,8 +6,27 @@
  *)
 
 open! IStd
+module F = Format
 module Hashtbl = Caml.Hashtbl
 module StmtMap = ClangPointers.Map
+
+type cxx_temporary =
+  {pvar: Pvar.t; typ: Typ.t; qual_type: Clang_ast_t.qual_type; marker: Pvar.t option}
+
+type var_to_destroy =
+  | VarDecl of
+      ( Clang_ast_t.decl_info
+      * Clang_ast_t.named_decl_info
+      * Clang_ast_t.qual_type
+      * Clang_ast_t.var_decl_info )
+  | CXXTemporary of cxx_temporary
+
+let pp_var_to_destroy fmt = function
+  | VarDecl (_, {ni_name}, _, _) ->
+      F.pp_print_string fmt ni_name
+  | CXXTemporary {pvar} ->
+      Pvar.pp Pp.text fmt pvar
+
 
 type pointer = (* = Clang_ast_t.pointer *) int [@@deriving compare]
 
@@ -25,12 +44,12 @@ type t =
   ; outer_context: t option
   ; mutable blocks_static_vars: (Pvar.t * Typ.t) list Procname.Map.t
   ; label_map: str_node_map
-  ; vars_to_destroy: Clang_ast_t.decl list StmtMap.t
+  ; vars_to_destroy: var_to_destroy list StmtMap.t
   ; temporary_names: (Clang_ast_t.pointer, Pvar.t * Typ.t) Hashtbl.t
   ; temporaries_constructor_markers: (Pvar.t * Typ.t) Pvar.Map.t }
 
 let create_context translation_unit_context tenv cfg procdesc immediate_curr_class return_param_typ
-    outer_context vars_to_destroy =
+    outer_context =
   { translation_unit_context
   ; tenv
   ; cfg
@@ -40,7 +59,7 @@ let create_context translation_unit_context tenv cfg procdesc immediate_curr_cla
   ; outer_context
   ; blocks_static_vars= Procname.Map.empty
   ; label_map= Hashtbl.create 17
-  ; vars_to_destroy
+  ; vars_to_destroy= StmtMap.empty
   ; temporary_names= Hashtbl.create 0
   ; temporaries_constructor_markers= Pvar.Map.empty }
 

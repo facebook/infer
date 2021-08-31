@@ -1985,7 +1985,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info' in
       let all_res_trans =
         L.debug Capture Verbose "Destroying pointer %d@\n" stmt_info.Clang_ast_t.si_pointer ;
-        List.filter_map vars_to_destroy ~f:(fun {CScope.pvar; typ; qual_type} ->
+        List.filter_map vars_to_destroy ~f:(function {CContext.pvar; typ; qual_type} ->
             let exp = Exp.Lvar pvar in
             let this_res_trans_destruct = mk_trans_result (exp, typ) empty_control in
             get_destructor_decl_ref qual_type.Clang_ast_t.qt_type_ptr
@@ -2016,16 +2016,15 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | Some var_decls_to_destroy ->
           let procname = Procdesc.get_proc_name context.CContext.procdesc in
           let vars_to_destroy =
-            List.filter_map var_decls_to_destroy ~f:(function
-              | Clang_ast_t.VarDecl (_, _, qual_type, _) as decl ->
-                  let pvar = CVar_decl.sil_var_of_decl context decl procname in
-                  if Pvar.is_static_local pvar then (* don't call destructors on static vars *)
-                    None
-                  else
-                    let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
-                    Some {CScope.pvar; typ; qual_type; marker= None}
-              | _ ->
-                  assert false )
+            List.map var_decls_to_destroy ~f:(function
+              | CContext.VarDecl ((_, _, qual_type, _) as var_decl) ->
+                  let pvar =
+                    CVar_decl.sil_var_of_decl context (Clang_ast_t.VarDecl var_decl) procname
+                  in
+                  let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
+                  {CContext.pvar; typ; qual_type; marker= None}
+              | CContext.CXXTemporary cxx_temporary ->
+                  cxx_temporary )
           in
           destructor_calls destr_kind trans_state stmt_info vars_to_destroy
 
@@ -4372,7 +4371,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       CLocation.location_of_stmt_info trans_state.context.translation_unit_context.source_file
         stmt_info
     in
-    let dtor_call stmt_info trans_state destructor_decl_ref (temporary : CScope.var_to_destroy) =
+    let dtor_call stmt_info trans_state destructor_decl_ref (temporary : CContext.cxx_temporary) =
       L.debug Capture Verbose "Destroying pointer %d@\n" stmt_info.Clang_ast_t.si_pointer ;
       let exp = Exp.Lvar temporary.pvar in
       let this_res_trans_destruct = mk_trans_result (exp, temporary.typ) empty_control in
@@ -4383,7 +4382,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
        where [created_conditional] is true when we needed to create new nodes to conditionally
        destroy the temporary (hence the next instruction should also create its own new node to
        place before that) *)
-    let destroy_one stmt_info trans_state (temporary : CScope.var_to_destroy) =
+    let destroy_one stmt_info trans_state (temporary : CContext.cxx_temporary) =
       L.debug Capture Verbose "destructing %a, trans_state=%a@\n" (Pvar.pp Pp.text_break)
         temporary.pvar pp_trans_state trans_state ;
       let open IOption.Let_syntax in
@@ -4472,7 +4471,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             destroy_all stmt_info (trans_result :: trans_results_acc) trans_state temporaries )
     in
     L.debug Capture Verbose "Destroying [%a] in state %a@\n"
-      (Pp.seq ~sep:";" (fun fmt (temporary : CScope.var_to_destroy) ->
+      (Pp.seq ~sep:";" (fun fmt (temporary : CContext.cxx_temporary) ->
            Format.fprintf fmt "(%a,%a)" (Pvar.pp Pp.text_break) temporary.pvar
              (Pp.option (Pvar.pp Pp.text_break))
              temporary.marker ) )
@@ -4506,7 +4505,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let[@warning "-8"] [stmt] = stmt_list in
     let temporaries_constructor_markers =
       List.fold temporaries_to_destroy ~init:trans_state.context.temporaries_constructor_markers
-        ~f:(fun markers {CScope.pvar; typ; marker} ->
+        ~f:(fun markers {CContext.pvar; typ; marker} ->
           match marker with
           | None ->
               markers
@@ -4524,12 +4523,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     (* HACK: we can know which C++ temporaries were actually used by the translation of the
        sub-expression by inspecting the local variables *)
     let temporaries_to_destroy =
-      List.filter temporaries_to_destroy ~f:(fun {CScope.pvar} ->
+      List.filter temporaries_to_destroy ~f:(fun {CContext.pvar} ->
           Procdesc.is_local trans_state.context.procdesc pvar )
     in
     L.debug Capture Verbose "sub_expr_result.control=%a@\n" pp_control sub_expr_result.control ;
     let init_markers_to_zero_instrs =
-      List.fold temporaries_to_destroy ~init:[] ~f:(fun instrs {CScope.marker} ->
+      List.fold temporaries_to_destroy ~init:[] ~f:(fun instrs {CContext.marker} ->
           match marker with
           | None ->
               instrs
@@ -4544,7 +4543,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
               :: instrs )
     in
     let markers_var_data =
-      List.fold temporaries_to_destroy ~init:[] ~f:(fun vds {CScope.marker} ->
+      List.fold temporaries_to_destroy ~init:[] ~f:(fun vds {CContext.marker} ->
           match marker with
           | None ->
               vds

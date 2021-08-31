@@ -35,10 +35,12 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
           L.(debug Capture Verbose)
             "@\n@\n>>---------- Start translating body of function: '%s' ---------<<@\n@."
             (Procname.to_string procname) ;
-          let vars_to_destroy = CScope.Variables.compute_vars_to_destroy_map body in
           let context =
             CContext.create_context trans_unit_ctx tenv cfg procdesc class_decl_opt has_return_param
-              outer_context_opt vars_to_destroy
+              outer_context_opt
+          in
+          let context =
+            {context with vars_to_destroy= CScope.Variables.compute_vars_to_destroy_map context body}
           in
           let start_node = Procdesc.get_start_node procdesc in
           let exit_node = Procdesc.get_exit_node procdesc in

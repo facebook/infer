@@ -82,7 +82,7 @@ void temporary_in_while_condition_ok() {
 
 void call_mk_UniquePtr_A_get_field_ok() { int x = A().s_; }
 
-int FN_bind_temporary_to_const_bad() {
+int bind_temporary_to_const_bad() {
   A* a_ptr;
   {
     const UniquePtr<A>& local = mk_UniquePtr_A();

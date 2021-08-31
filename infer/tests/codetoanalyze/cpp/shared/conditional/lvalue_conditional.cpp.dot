@@ -264,18 +264,18 @@ digraph cfg {
 	
 
 	 "div1_temp_lvalue_ok#4626871652686231614.8872cbb3e2dad1aa6aca69eca5075abc_4" -> "div1_temp_lvalue_ok#4626871652686231614.8872cbb3e2dad1aa6aca69eca5075abc_2" ;
-"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_1" [label="1: Start div_temp_lvalue\nFormals:  a:int b:int\nLocals:  r:int const & 0$?%__sil_tmpSIL_materialize_temp__n$2:int const  \n  " color=yellow style=filled]
+"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_1" [label="1: Start div_temp_lvalue\nFormals:  a:int b:int\nLocals:  r:int const & 0$?%__sil_tmpSIL_materialize_temp__n$0:int const  \n  " color=yellow style=filled]
 	
 
 	 "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_1" -> "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_11" ;
 "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_2" [label="2: Exit div_temp_lvalue \n  " color=yellow style=filled]
 	
 
-"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_3" [label="3:  Return Stmt \n   n$0=*&r:int const & [line 28, column 14]\n  n$1=*n$0:int [line 28, column 14]\n " shape="box"]
+"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_3" [label="3:  Return Stmt \n   n$1=*&r:int const & [line 28, column 14]\n  n$2=*n$1:int [line 28, column 14]\n " shape="box"]
 	
 
 	 "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_3" -> "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_4" ;
-"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$1) [line 28, column 3]\n " shape="box"]
+"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$2) [line 28, column 3]\n " shape="box"]
 	
 
 	 "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_4" -> "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_2" ;
@@ -291,15 +291,15 @@ digraph cfg {
 	
 
 	 "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_7" -> "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_9" ;
-"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_8" [label="8:  ConditionalStmt Branch \n   n$4=*&b:int [line 27, column 22]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$2:int=n$4 [line 27, column 18]\n " shape="box"]
+"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_8" [label="8:  ConditionalStmt Branch \n   n$4=*&b:int [line 27, column 22]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$0:int=n$4 [line 27, column 18]\n " shape="box"]
 	
 
 	 "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_8" -> "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_5" ;
-"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_9" [label="9:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_materialize_temp__n$2:int=1 [line 27, column 18]\n " shape="box"]
+"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_9" [label="9:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_materialize_temp__n$0:int=1 [line 27, column 18]\n " shape="box"]
 	
 
 	 "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_9" -> "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_5" ;
-"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$2:int const ); [line 27, column 18]\n " shape="box"]
+"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$0:int const ); [line 27, column 18]\n " shape="box"]
 	
 
 	 "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_10" -> "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_6" ;
@@ -308,7 +308,7 @@ digraph cfg {
 	
 
 	 "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_11" -> "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_10" ;
-"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_12" [label="12:  DeclStmt \n   *&r:int const &=&0$?%__sil_tmpSIL_materialize_temp__n$2 [line 27, column 3]\n " shape="box"]
+"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_12" [label="12:  DeclStmt \n   *&r:int const &=&0$?%__sil_tmpSIL_materialize_temp__n$0 [line 27, column 3]\n " shape="box"]
 	
 
 	 "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_12" -> "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_3" ;
