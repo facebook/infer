@@ -174,7 +174,7 @@ end) : PrinterSarif with type elt = P.elt = struct
   let pp_open fmt () =
     is_first_item := true ;
     F.fprintf fmt "{@\n" ;
-    F.fprintf fmt "%t%s: %s,@\n" (pp_n_spaces 2) "\"$schema\"" "\"http://json.schemastore.org/sarif-2.1.0\"" ;
+    F.fprintf fmt "%t%s: %s,@\n" (pp_n_spaces 2) "\"schema\"" "\"http://json.schemastore.org/sarif-2.1.0\"" ;
     F.fprintf fmt "%t%s: %s,@\n" (pp_n_spaces 2) "\"version\"" "\"2.1.0\"" ;
     F.fprintf fmt "%t%s: [@\n"  (pp_n_spaces 2) "\"runs\"" ;
     F.fprintf fmt "%t{@\n"  (pp_n_spaces 4) ;
