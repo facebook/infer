@@ -4089,6 +4089,28 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     res_trans
 
 
+  and cxxBindTemporaryExpr_trans trans_state stmt_info stmt_list expr_info =
+    (* Only create a temporary if there *isn't* already a variable to store the result into, eg [X x
+       = X();] will generate a [CXXBindTemporaryExpr] to hold [X()] but clang doesn't expect a
+       temporary to be actually created here as we can store the result in [x] directly (and have to
+       since C++17 –in contexts where clang does expect the temporary to be created we'll get an
+       intermediate copy or move constructor call, which in particular has the effect of setting
+       [trans_state.var_exp_typ] to [None]).
+
+       Since the presence of [trans_state.var_exp_typ] is highly dependent on the current context,
+       [CScope.CXXTemporaries.get_destroyable_temporaries] will compute an over-approximation of the
+       C++ temporaries needed by a given expression. We can tell which ones are actually used as
+       they are recorded as local variables by [materializeTemporaryExpr_trans]. This trick is used
+       by [exprWithCleanups_trans] to compute the accurate set of C++ temporaries to destroy. *)
+    if Option.is_none trans_state.var_exp_typ then
+      (* actually create a C++ temporary to hold the result of the sub-expression *)
+      materializeTemporaryExpr_trans trans_state stmt_info stmt_list expr_info
+    else
+      (* do nothing and translate the sub-expression directly if we already have a variable to
+         initialize *)
+      parenExpr_trans trans_state stmt_info.Clang_ast_t.si_source_range stmt_list
+
+
   and compoundLiteralExpr_trans trans_state stmt_list stmt_info expr_info =
     let stmt = match stmt_list with [stmt] -> stmt | _ -> assert false in
     let var_exp_typ =
@@ -4472,6 +4494,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       CLocation.location_of_stmt_info trans_state.context.translation_unit_context.source_file
         stmt_info
     in
+    (* We need to pass a set of temporaries to destroy to the translation of the sub-expression but
+       we cannot know exactly what they will be until *after* the translation (see also
+       [CXXBindTemporaryExpr])... Fortunately the translation of the sub-expression only needs to
+       know a *superset* of the temporaries to destroy, which is easier to compute. We'll get the
+       real set of temporaries to destroy after when filtering to keep only those that are local
+       variables. *)
     let temporaries_to_destroy =
       CScope.CXXTemporaries.get_destroyable_temporaries trans_state.context stmt_list
     in
@@ -4493,6 +4521,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         stmt_info
     in
     let sub_expr_result = instruction trans_state stmt in
+    (* HACK: we can know which C++ temporaries were actually used by the translation of the
+       sub-expression by inspecting the local variables *)
+    let temporaries_to_destroy =
+      List.filter temporaries_to_destroy ~f:(fun {CScope.pvar} ->
+          Procdesc.is_local trans_state.context.procdesc pvar )
+    in
     L.debug Capture Verbose "sub_expr_result.control=%a@\n" pp_control sub_expr_result.control ;
     let init_markers_to_zero_instrs =
       List.fold temporaries_to_destroy ~init:[] ~f:(fun instrs {CScope.marker} ->
@@ -4657,7 +4691,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   (** Instrument program to know when C++ temporaries created conditionally have indeed been created
       and need to be destroyed. This is a common compilation scheme for temporary variables created
-      conditionally in expressions, due to either [a?b:c] or short-circuiting of [&&] or [||]. *)
+      conditionally in expressions, due to either [a?b:c] or short-circuiting of [&&] or [||].
+
+      Similarly to [exprWithCleanups_trans], only act on the C++ temporaries that we ended up using
+      in the translation of the sub-expression. Here the fact we only take variables initialized by
+      the sub-expression ensures that this is always the case. *)
   and instruction_insert_cxx_temporary_markers trans_state stmt =
     let stmt_result = instruction_translate trans_state stmt in
     let stmt_info, _ = Clang_ast_proj.get_stmt_tuple stmt in
@@ -4894,13 +4932,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         cxxDeleteExpr_trans trans_state stmt_info stmt_list delete_expr_info
     | MaterializeTemporaryExpr (stmt_info, stmt_list, expr_info, _) ->
         materializeTemporaryExpr_trans trans_state stmt_info stmt_list expr_info
+    | CXXBindTemporaryExpr (stmt_info, stmt_list, expr_info, _) ->
+        cxxBindTemporaryExpr_trans trans_state stmt_info stmt_list expr_info
     | CompoundLiteralExpr (stmt_info, stmt_list, expr_info) ->
         compoundLiteralExpr_trans trans_state stmt_list stmt_info expr_info
     | InitListExpr (stmt_info, stmts, expr_info) ->
         initListExpr_trans trans_state stmt_info expr_info stmts
-    | CXXBindTemporaryExpr ({Clang_ast_t.si_source_range}, stmt_list, _, _) ->
-        (* right now we ignore this expression and try to translate the child node *)
-        parenExpr_trans trans_state si_source_range stmt_list
     | CXXDynamicCastExpr (stmt_info, stmts, _, _, qual_type, _) ->
         cxxDynamicCastExpr_trans trans_state stmt_info stmts qual_type
     | CXXDefaultArgExpr (_, _, _, default_expr_info)

@@ -535,6 +535,11 @@ let get_loc pdesc = pdesc.attributes.loc
 (** Return name and type of local variables *)
 let get_locals pdesc = pdesc.attributes.locals
 
+let is_local pdesc pvar =
+  List.exists (get_locals pdesc) ~f:(fun {ProcAttributes.name} ->
+      Mangled.equal name (Pvar.get_name pvar) )
+
+
 let has_added_return_param pdesc = pdesc.attributes.has_added_return_param
 
 let is_ret_type_pod pdesc = pdesc.attributes.is_ret_type_pod

@@ -218,8 +218,9 @@ module Variables = struct
 end
 
 module CXXTemporaries = struct
-  let rec visit_stmt_aux context stmt ~needs_marker temporaries =
-    match (stmt : Clang_ast_t.stmt) with
+  let rec visit_stmt_aux (context : CContext.t) (stmt : Clang_ast_t.stmt) ~needs_marker temporaries
+      =
+    match stmt with
     | MaterializeTemporaryExpr
         ( stmt_info
         , stmt_list
@@ -227,13 +228,14 @@ module CXXTemporaries = struct
         , { mtei_decl_ref=
               (* C++ temporaries bound to a const reference see their lifetimes extended to that of
                  the reference *)
-              None } ) ->
+              None } )
+    | CXXBindTemporaryExpr (stmt_info, stmt_list, expr_info, _) ->
         let pvar, typ = CVar_decl.materialize_cpp_temporary context stmt_info expr_info in
         L.debug Capture Verbose "+%a:%a@," (Pvar.pp Pp.text) pvar (Typ.pp Pp.text) typ ;
         let marker =
           if needs_marker then (
             let marker_pvar =
-              Pvar.mk_tmp "_temp_marker_" (Procdesc.get_proc_name context.CContext.procdesc)
+              Pvar.mk_tmp "_temp_marker_" (Procdesc.get_proc_name context.procdesc)
             in
             L.debug Capture Verbose "Attaching marker %a to %a@," (Pvar.pp Pp.text) marker_pvar
               (Pvar.pp Pp.text) pvar ;
