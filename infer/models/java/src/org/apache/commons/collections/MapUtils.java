@@ -15,22 +15,18 @@
  * limitations under the License.
  */
 
-package org.apache.commons.collections4;
+package org.apache.commons.collections;
 
-import java.util.Collection;
+import java.util.Map;
 
-public final class CollectionUtils {
+public final class MapUtils {
 
-  public static boolean isNotEmpty(final Collection c) {
-    return !isEmpty(c);
+  public static boolean isNotEmpty(final Map m) {
+    return !isEmpty(m);
   }
 
-  public static boolean isEmpty(final Collection c) {
-    return c == null || c.size() == 0;
-  }
-
-  public static int size(final Collection c) {
-    return c == null ? 0 : c.size();
+  public static boolean isEmpty(final Map m) {
+    return m == null || m.size() == 0;
   }
 
 }

@@ -15,28 +15,22 @@
  * limitations under the License.
  */
 
-/* 
- * The method below are copied verbatim from:
- * https://github.com/apache/commons-lang/blob/master/src/main/java/org/apache/commons/lang3/StringUtils.java
- * to provide a model for biabduction analysis
- */
-
 package org.apache.commons.collections;
 
 import java.util.Collection;
 
 public final class CollectionUtils {
 
-  public static boolean isNotEmpty(final Collection cs) {
-    return !isEmpty(cs);
+  public static boolean isNotEmpty(final Collection c) {
+    return !isEmpty(c);
   }
 
-  public static boolean isEmpty(final Collection cs) {
-    return cs == null || cs.size() == 0;
+  public static boolean isEmpty(final Collection c) {
+    return c == null || c.size() == 0;
   }
 
-  public static int size(final Collection cs) {
-    return cs == null ? 0 : cs.size();
+  public static int size(final Collection c) {
+    return c == null ? 0 : c.size();
   }
 
 }
