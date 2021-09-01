@@ -14,7 +14,7 @@ module F = Format
 
 module Name = struct
   type t = Primed | Normal | Footprint | Spec | FromString of string
-  [@@deriving compare, yojson_of]
+  [@@deriving compare, yojson_of, equal]
 
   let primed = "t"
 
@@ -39,11 +39,9 @@ module Name = struct
         s
 end
 
-type name = Name.t [@@deriving compare]
+type name = Name.t [@@deriving compare, equal]
 
 let name_spec = Name.Spec
-
-let equal_name = [%compare.equal: name]
 
 type kind =
   | KNone
@@ -53,7 +51,7 @@ type kind =
   | KFootprint
   | KNormal
   | KPrimed
-[@@deriving compare, yojson_of]
+[@@deriving compare, yojson_of, equal]
 
 let kfootprint = KFootprint
 
@@ -62,8 +60,6 @@ let knormal = KNormal
 let kprimed = KPrimed
 
 let knone = KNone
-
-let equal_kind = [%compare.equal: kind]
 
 (* timestamp for a path identifier *)
 let path_ident_stamp = -3

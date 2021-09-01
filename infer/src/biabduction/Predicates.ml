@@ -37,9 +37,7 @@ let atom_has_local_addr a =
 type lseg_kind =
   | Lseg_NE  (** nonempty (possibly circular) listseg *)
   | Lseg_PE  (** possibly empty (possibly circular) listseg *)
-[@@deriving compare]
-
-let equal_lseg_kind = [%compare.equal: lseg_kind]
+[@@deriving compare, equal]
 
 (** The boolean is true when the pointer was dereferenced without testing for zero. *)
 type zero_flag = bool option [@@deriving compare]

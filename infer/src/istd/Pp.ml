@@ -14,14 +14,10 @@ module F = Format
 type simple_kind = SIM_DEFAULT | SIM_WITH_TYP
 
 (** Kind of printing *)
-type print_kind = TEXT | HTML [@@deriving compare]
-
-let equal_print_kind = [%compare.equal: print_kind]
+type print_kind = TEXT | HTML [@@deriving compare, equal]
 
 (** Colors supported in printing *)
-type color = Black | Blue | Green | Orange | Red [@@deriving compare]
-
-let equal_color = [%compare.equal: color]
+type color = Black | Blue | Green | Orange | Red [@@deriving compare, equal]
 
 (** map subexpressions (as Obj.t element compared by physical equality) to colors *)
 type colormap = Obj.t -> color

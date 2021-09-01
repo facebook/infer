@@ -12,9 +12,7 @@ type scope_kind =
   | Breakable  (** loop or switch statement within which it's ok to [break;] *)
   | Compound  (** inside a CompoundStmt *)
   | InitialScope  (** should be only one of these at the bottom of the stack *)
-[@@deriving compare]
-
-let equal_scope_kind = [%compare.equal: scope_kind]
+[@@deriving compare, equal]
 
 let string_of_kind = function
   | Compound ->

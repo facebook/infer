@@ -8,9 +8,7 @@
 open! IStd
 module F = Format
 
-type attributes_kind = ProcUndefined | ProcDefined [@@deriving compare]
-
-let equal_attributes_kind = [%compare.equal: attributes_kind]
+type attributes_kind = ProcUndefined | ProcDefined [@@deriving compare, equal]
 
 let attributes_kind_to_int64 = [(ProcUndefined, Int64.zero); (ProcDefined, Int64.of_int 2)]
 

@@ -23,9 +23,7 @@ type mem_kind =
 type resource = Rmemory of mem_kind | Rfile | Rignore | Rlock [@@deriving compare]
 
 (** kind of resource action *)
-type res_act_kind = Racquire | Rrelease [@@deriving compare]
-
-let equal_res_act_kind = [%compare.equal: res_act_kind]
+type res_act_kind = Racquire | Rrelease [@@deriving compare, equal]
 
 (** kind of dangling pointers *)
 type dangling_kind =
@@ -129,9 +127,7 @@ type category =
   | ACretval
   | ACobserver
   | ACwontleak
-[@@deriving compare]
-
-let equal_category = [%compare.equal: category]
+[@@deriving compare, equal]
 
 let to_category att =
   match att with

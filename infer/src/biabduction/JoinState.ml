@@ -9,9 +9,7 @@ open! IStd
 
 (** Object representing the status of the join operation *)
 
-type mode = Pre | Post [@@deriving compare]
-
-let equal_mode = [%compare.equal: mode]
+type mode = Pre | Post [@@deriving compare, equal]
 
 (** set to true when we are doing join of footprints *)
 let footprint = ref false

@@ -15,9 +15,7 @@ module F = Format
 module CLOpt = CommandLineOption
 module L = Die
 
-type analyzer = Checkers | Linters [@@deriving compare]
-
-let equal_analyzer = [%compare.equal: analyzer]
+type analyzer = Checkers | Linters [@@deriving compare, equal]
 
 let string_to_analyzer = [("checkers", Checkers); ("linters", Linters)]
 
@@ -44,11 +42,9 @@ type build_system =
   | BNdk
   | BRebar3
   | BXcode
-[@@deriving compare]
+[@@deriving compare, equal]
 
 type scheduler = File | Restart | SyntacticCallGraph [@@deriving equal]
-
-let equal_build_system = [%compare.equal: build_system]
 
 (* List of ([build system], [executable name]). Several executables may map to the same build
    system. In that case, the first one in the list will be used for printing, eg, in which mode

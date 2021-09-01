@@ -16,9 +16,7 @@ module L = Logging
     means that it is an instance method and that the method to be called will be determined at
     runtime. If it is MCNoVirtual it means that it is an instance method but that the method to be
     called will be determined at compile time *)
-type method_call_type = MCVirtual | MCNoVirtual | MCStatic [@@deriving compare]
-
-let equal_method_call_type = [%compare.equal: method_call_type]
+type method_call_type = MCVirtual | MCNoVirtual | MCStatic [@@deriving compare, equal]
 
 let method_signature_of_pointer tenv pointer =
   try

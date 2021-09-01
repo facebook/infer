@@ -31,18 +31,16 @@ type kind_of_links =
   | LinkToSSL
   | LinkToDLL
   | LinkRetainCycle
-[@@deriving compare]
+[@@deriving compare, equal]
 
 (* coordinate identifies a node using two dimension: id is an numerical identifier of the node,*)
 (* lambda identifies in which hpred parameter id lays in*)
-type coordinate = {id: int; lambda: int} [@@deriving compare]
+type coordinate = {id: int; lambda: int} [@@deriving compare, equal]
 
 (* define a link between two nodes. src_fld/trg_fld define the label of the src/trg field. It is*)
 (* useful for having nodes from within a struct and/or to inside a struct *)
 type link = {kind: kind_of_links; src: coordinate; src_fld: string; trg: coordinate; trg_fld: string}
-[@@deriving compare]
-
-let equal_link = [%compare.equal: link]
+[@@deriving compare, equal]
 
 (* type of the visualized boxes/nodes in the graph*)
 type dotty_node =

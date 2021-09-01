@@ -6,9 +6,7 @@
  *)
 open! IStd
 
-type t = Clang | CIL | Erlang | Java [@@deriving compare, enumerate]
-
-let equal = [%compare.equal: t]
+type t = Clang | CIL | Erlang | Java [@@deriving compare, enumerate, equal]
 
 let language_to_string =
   [(Clang, "C/C++/ObjC"); (Erlang, "Erlang"); (Java, "Java"); (CIL, "C#/.Net")]

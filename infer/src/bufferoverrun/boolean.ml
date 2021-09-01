@@ -7,9 +7,7 @@
 
 open! IStd
 
-type t = Bottom | False | True | Top [@@deriving compare]
-
-let equal = [%compare.equal: t]
+type t = Bottom | False | True | Top [@@deriving compare, equal]
 
 let of_bool = function false -> False | true -> True
 

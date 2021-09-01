@@ -894,7 +894,7 @@ module AliasTarget = struct
 
      [Le]: The value of alias target is less than or equal to the alias key.  For example, if there
      is an alias between [%r] and [size(x)+i] with the [Le] type, which means [size(x)+i <= %r]. *)
-  type alias_typ = Eq | Le [@@deriving compare]
+  type alias_typ = Eq | Le [@@deriving compare, equal]
 
   let alias_typ_pp fmt = function
     | Eq ->

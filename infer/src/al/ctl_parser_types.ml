@@ -291,13 +291,11 @@ type builtin_kind =
   | ObjCId  (** id *)
   | ObjCClass  (** Class *)
   | ObjCSel  (** SEL *)
-[@@deriving compare]
+[@@deriving compare, equal]
 
 (* | OCLSampler | OCLEvent | OCLClkEvent | OCLQueue | OCLNDRange
    | OCLReserveID | Dependent | Overload | BoundMember | PseudoObject
    | UnknownAny | BuiltinFn | ARCUnbridgedCast | OMPArraySection *)
-
-let equal_builtin_kind = [%compare.equal: builtin_kind]
 
 let builtin_kind_to_string t =
   match t with

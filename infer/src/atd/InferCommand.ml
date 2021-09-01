@@ -18,9 +18,7 @@ type t =
   | Report
   | ReportDiff
   | Run
-[@@deriving compare]
-
-let equal = [%compare.equal: t]
+[@@deriving compare, equal]
 
 let command_to_string =
   [ (Analyze, "analyze")

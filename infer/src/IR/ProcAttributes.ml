@@ -11,9 +11,7 @@ open! IStd
 module F = Format
 
 (** Visibility modifiers. *)
-type access = Default | Public | Private | Protected [@@deriving compare]
-
-let equal_access = [%compare.equal: access]
+type access = Default | Public | Private | Protected [@@deriving compare, equal]
 
 let string_of_access = function
   | Default ->
