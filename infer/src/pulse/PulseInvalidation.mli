@@ -42,7 +42,8 @@ val describe : F.formatter -> t -> unit
 
 type must_be_valid_reason =
   | BlockCall
-  | InsertionIntoCollection
+  | InsertionIntoCollectionKey
+  | InsertionIntoCollectionValue
   | SelfOfNonPODReturnMethod of Typ.t
 [@@deriving compare, equal]
 

@@ -91,8 +91,10 @@ let get_message diagnostic =
             | Invalidation.SelfOfNonPODReturnMethod non_pod_typ ->
                 F.asprintf "undefined behaviour caused by nil messaging of non-pod return type (%a)"
                   (Typ.pp_full Pp.text) non_pod_typ
-            | Invalidation.InsertionIntoCollection ->
-                "nil insertion into collection"
+            | Invalidation.InsertionIntoCollectionKey ->
+                "nil key insertion into collection"
+            | Invalidation.InsertionIntoCollectionValue ->
+                "nil object insertion into collection"
             | Invalidation.BlockCall ->
                 "nil block call"
           in

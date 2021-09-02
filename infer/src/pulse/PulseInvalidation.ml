@@ -54,7 +54,8 @@ type t =
 
 type must_be_valid_reason =
   | BlockCall
-  | InsertionIntoCollection
+  | InsertionIntoCollectionKey
+  | InsertionIntoCollectionValue
   | SelfOfNonPODReturnMethod of Typ.t
 [@@deriving compare, equal]
 
@@ -63,8 +64,10 @@ let pp_must_be_valid_reason f = function
       F.fprintf f "None"
   | Some BlockCall ->
       F.fprintf f "Block"
-  | Some InsertionIntoCollection ->
-      F.fprintf f "InsertionIntoCollection"
+  | Some InsertionIntoCollectionKey ->
+      F.fprintf f "InsertionIntoCollectionKey"
+  | Some InsertionIntoCollectionValue ->
+      F.fprintf f "InsertionIntoCollectionValue"
   | Some (SelfOfNonPODReturnMethod _) ->
       F.fprintf f "SelfOfNonPODReturnMethod"
 
@@ -79,7 +82,7 @@ let issue_type_of_cause invalidation must_be_valid_reason =
         IssueType.nullptr_dereference
     | Some BlockCall ->
         IssueType.nil_block_call
-    | Some InsertionIntoCollection ->
+    | Some InsertionIntoCollectionKey | Some InsertionIntoCollectionValue ->
         IssueType.nil_insertion_into_collection
     | Some (SelfOfNonPODReturnMethod _) ->
         IssueType.nil_messaging_to_non_pod )

@@ -316,23 +316,32 @@ module ObjC = struct
    fun {path; location} astate ->
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let<*> astate, _ =
-      PulseOperations.eval_access path ~must_be_valid_reason:InsertionIntoCollection Read location
+      PulseOperations.eval_access path ~must_be_valid_reason:InsertionIntoCollectionValue Read
+        location
         (value, event :: value_hist)
         Dereference astate
     in
     let<+> astate, _ =
-      PulseOperations.eval_access path ~must_be_valid_reason:InsertionIntoCollection Read location
+      PulseOperations.eval_access path ~must_be_valid_reason:InsertionIntoCollectionKey Read
+        location
         (key, event :: key_hist)
         Dereference astate
     in
     astate
 
 
-  let insertion_into_collection_key_or_value (value, value_hist) ~desc : model =
+  let insertion_into_collection_key_or_value (value, value_hist) ~value_kind ~desc : model =
    fun {path; location} astate ->
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+    let must_be_valid_reason =
+      match value_kind with
+      | `Key ->
+          Invalidation.InsertionIntoCollectionKey
+      | `Value ->
+          Invalidation.InsertionIntoCollectionValue
+    in
     let<+> astate, _ =
-      PulseOperations.eval_access path ~must_be_valid_reason:InsertionIntoCollection Read location
+      PulseOperations.eval_access path ~must_be_valid_reason Read location
         (value, event :: value_hist)
         Dereference astate
     in
@@ -2107,58 +2116,66 @@ module ProcNameDispatcher = struct
                  ~desc:"NSMutableDictionary.setObject:forKey:"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableDictionary")
           &:: "setObject:forKeyedSubscript:" <>$ any_arg $+ any_arg $+ capt_arg_payload
-          $--> ObjC.insertion_into_collection_key_or_value
+          $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Key
                  ~desc:"mutableDictionary[someKey] = value"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableDictionary")
           &:: "removeObjectForKey:" <>$ any_arg $+ capt_arg_payload
-          $--> ObjC.insertion_into_collection_key_or_value
+          $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Key
                  ~desc:"NSMutableDictionary.removeObjectForKey"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableDictionary")
           &:: "dictionaryWithSharedKeySet:" <>$ capt_arg_payload
-          $--> ObjC.insertion_into_collection_key_or_value
+          $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Key
                  ~desc:"NSMutableDictionary.dictionaryWithSharedKeySet"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
           &:: "addObject:" <>$ any_arg $+ capt_arg_payload
-          $--> ObjC.insertion_into_collection_key_or_value ~desc:"NSMutableArray.addObject:"
+          $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Value
+                 ~desc:"NSMutableArray.addObject:"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
           &:: "insertObject:atIndex:" <>$ any_arg $+ capt_arg_payload $+ any_arg
-          $--> ObjC.insertion_into_collection_key_or_value
+          $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Value
                  ~desc:"NSMutableArray.insertObject:atIndex:"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
           &:: "replaceObjectAtIndex:withObject:" <>$ any_arg $+ any_arg $+ capt_arg_payload
-          $--> ObjC.insertion_into_collection_key_or_value
+          $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Value
                  ~desc:"NSMutableArray.replaceObjectAtIndex:withObject:"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableSet")
           &:: "addObject:" <>$ any_arg $+ capt_arg_payload
-          $--> ObjC.insertion_into_collection_key_or_value ~desc:"NSMutableSet.addObject:"
+          $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Value
+                 ~desc:"NSMutableSet.addObject:"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableSet")
           &:: "removeObject:" <>$ any_arg $+ capt_arg_payload
-          $--> ObjC.insertion_into_collection_key_or_value ~desc:"NSMutableSet.removeObject:"
+          $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Value
+                 ~desc:"NSMutableSet.removeObject:"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
           &:: "removeObjectsAtIndexes:" <>$ any_arg $+ capt_arg_payload
-          $--> ObjC.insertion_into_collection_key_or_value
+          $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Key
                  ~desc:"NSMutableArray.removeObjectsAtIndexes:"
-        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
+        ; ( +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
           &:: "replaceObjectsAtIndexes:withObjects:" <>$ any_arg $+ capt_arg_payload
           $+ capt_arg_payload
-          $--> ObjC.insertion_into_collection_key_and_value
-                 ~desc:"NSMutableArray.replaceObjectsAtIndexes:withObjects:"
+          $--> fun k v ->
+          ObjC.insertion_into_collection_key_and_value v k
+            ~desc:"NSMutableArray.replaceObjectsAtIndexes:withObjects:" )
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSDictionary")
           &:: "dictionaryWithObject:forKey:" <>$ capt_arg_payload $+ capt_arg_payload
           $--> ObjC.insertion_into_collection_key_and_value
                  ~desc:"NSDictionary.dictionaryWithObject:forKey:"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSDictionary")
           &:: "sharedKeySetForKeys:" <>$ capt_arg_payload
-          $--> ObjC.insertion_into_collection_key_or_value ~desc:"NSDictionary.sharedKeySetForKeys"
+          $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Key
+                 ~desc:"NSDictionary.sharedKeySetForKeys"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSSet")
           &:: "setWithObject:" <>$ capt_arg_payload
-          $--> ObjC.insertion_into_collection_key_or_value ~desc:"NSSet.setWithObject"
+          $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Value
+                 ~desc:"NSSet.setWithObject"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSSet")
           &:: "setByAddingObject:" <>$ any_arg $+ capt_arg_payload
-          $--> ObjC.insertion_into_collection_key_or_value ~desc:"NSSet.setByAddingObject"
+          $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Value
+                 ~desc:"NSSet.setByAddingObject"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSArray")
           &:: "arrayWithObject:" <>$ capt_arg_payload
-          $--> ObjC.insertion_into_collection_key_or_value ~desc:"NSArray.arrayWithObject"
+          $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Value
+                 ~desc:"NSArray.arrayWithObject"
         ; +match_regexp_opt Config.pulse_model_return_nonnull
           &::.*--> Misc.return_positive
                      ~desc:"modelled as returning not null due to configuration option"
