@@ -221,6 +221,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     | RecordDecl _
     | RequiresExprBodyDecl _
     | StaticAssertDecl _
+    | TemplateParamObjectDecl _
     | TemplateTemplateParmDecl _
     | TemplateTypeParmDecl _
     | TranslationUnitDecl _

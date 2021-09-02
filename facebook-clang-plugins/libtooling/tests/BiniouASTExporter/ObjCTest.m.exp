@@ -1623,7 +1623,7 @@
                         { #c1127ea9: 5 },
                         { })>
                   ],
-                  #d2e9b40c: "-[ foo:]"
+                  #d2e9b40c: "-[MyClass() foo:]"
                 })>
           ],
           { },
@@ -7898,7 +7898,7 @@
                         { #c1127ea9: 5 },
                         { })>
                   ],
-                  #d2e9b40c: "-[MyCategory bar:]"
+                  #d2e9b40c: "-[MyClass(MyCategory) bar:]"
                 })>
           ],
           { },

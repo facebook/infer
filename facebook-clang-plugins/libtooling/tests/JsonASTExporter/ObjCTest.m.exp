@@ -3602,7 +3602,7 @@
                 }
               ]]
             ],
-            "mangled_name" : "-[ foo:]"
+            "mangled_name" : "-[MyClass() foo:]"
           }
         ]]
       ],
@@ -10684,7 +10684,7 @@
                 }
               ]]
             ],
-            "mangled_name" : "-[MyCategory bar:]"
+            "mangled_name" : "-[MyClass(MyCategory) bar:]"
           }
         ]]
       ],

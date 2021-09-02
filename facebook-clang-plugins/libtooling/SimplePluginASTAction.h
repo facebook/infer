@@ -219,8 +219,6 @@ class SimplePluginASTAction
         CI.createOutputFile(Parent::options->outputFile,
                             Binary,
                             RemoveFileOnSignal,
-                            "",
-                            "",
                             UseTemporary,
                             CreateMissingDirectories);
     if (!OS) {

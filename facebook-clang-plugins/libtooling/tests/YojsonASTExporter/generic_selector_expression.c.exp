@@ -510,6 +510,7 @@
                     "type_ptr" : 15
                   },
                   {
+                    "is_init_ice" : true,
                     "init_expr" : <"GenericSelectionExpr" : (
                       {
                         "pointer" : 17,
@@ -1012,6 +1013,7 @@
                     "type_ptr" : 15
                   },
                   {
+                    "is_init_ice" : true,
                     "init_expr" : <"GenericSelectionExpr" : (
                       {
                         "pointer" : 27,

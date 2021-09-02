@@ -40,7 +40,7 @@ digraph cfg {
 "objc_blockEscapingByref.capture_local_static_byvalue_4.c3f6724a818e1f8b6ce2010807ddaa98_2" [label="2: Exit objc_blockEscapingByref.capture_local_static_byvalue_4 \n  " color=yellow style=filled]
 	
 
-"objc_blockEscapingByref.capture_local_static_byvalue_4.c3f6724a818e1f8b6ce2010807ddaa98_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 40, column 5]\n  n$3=*&#GB<codetoanalyze/objc/frontend/block/escaping_byref.m>$EscapingByref.capture_local_static_byvalue.local:int [line 40, column 13]\n  *&x:int=n$3 [line 40, column 5]\n " shape="box"]
+"objc_blockEscapingByref.capture_local_static_byvalue_4.c3f6724a818e1f8b6ce2010807ddaa98_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 40, column 5]\n  n$3=*&#GB<codetoanalyze/objc/frontend/block/escaping_byref.m|ice>$EscapingByref.capture_local_static_byvalue.local:int [line 40, column 13]\n  *&x:int=n$3 [line 40, column 5]\n " shape="box"]
 	
 
 	 "objc_blockEscapingByref.capture_local_static_byvalue_4.c3f6724a818e1f8b6ce2010807ddaa98_3" -> "objc_blockEscapingByref.capture_local_static_byvalue_4.c3f6724a818e1f8b6ce2010807ddaa98_2" ;
@@ -99,7 +99,7 @@ digraph cfg {
 	
 
 	 "capture_local_static_byvalue#EscapingByref#class.62aaa1df15079c55c89f40cca7b36f49_3" -> "capture_local_static_byvalue#EscapingByref#class.62aaa1df15079c55c89f40cca7b36f49_2" ;
-"capture_local_static_byvalue#EscapingByref#class.62aaa1df15079c55c89f40cca7b36f49_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(#GB<codetoanalyze/objc/frontend/block/escaping_byref.m>$EscapingByref.capture_local_static_byvalue.local:int); [line 38, column 3]\n  *&#GB<codetoanalyze/objc/frontend/block/escaping_byref.m>$EscapingByref.capture_local_static_byvalue.local:int=3 [line 38, column 3]\n " shape="box"]
+"capture_local_static_byvalue#EscapingByref#class.62aaa1df15079c55c89f40cca7b36f49_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(#GB<codetoanalyze/objc/frontend/block/escaping_byref.m|ice>$EscapingByref.capture_local_static_byvalue.local:int); [line 38, column 3]\n  *&#GB<codetoanalyze/objc/frontend/block/escaping_byref.m|ice>$EscapingByref.capture_local_static_byvalue.local:int=3 [line 38, column 3]\n " shape="box"]
 	
 
 	 "capture_local_static_byvalue#EscapingByref#class.62aaa1df15079c55c89f40cca7b36f49_4" -> "capture_local_static_byvalue#EscapingByref#class.62aaa1df15079c55c89f40cca7b36f49_3" ;

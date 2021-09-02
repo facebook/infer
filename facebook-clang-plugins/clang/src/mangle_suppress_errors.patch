@@ -1,6 +1,18 @@
 --- a/llvm-project/clang/lib/AST/ItaniumMangle.cpp
 +++ b/llvm-project/clang/lib/AST/ItaniumMangle.cpp
-@@ -3048,11 +3048,7 @@ void CXXNameMangler::mangleNeonVectorType(const VectorType *T) {
+@@ -1064,10 +1064,7 @@ void CXXNameMangler::mangleFloatLiteral(QualType T, const llvm::APFloat &V) {
+ }
+
+ void CXXNameMangler::mangleFixedPointLiteral() {
+-  DiagnosticsEngine &Diags = Context.getDiags();
+-  unsigned DiagID = Diags.getCustomDiagID(
+-      DiagnosticsEngine::Error, "cannot mangle fixed point literals yet");
+-  Diags.Report(DiagID);
++  Out << "__unhandled_FixedPointLiteral";
+ }
+
+ void CXXNameMangler::mangleNullPointer(QualType T) {
+@@ -3270,11 +3267,7 @@ void CXXNameMangler::mangleNeonVectorType(const VectorType *T) {
  }
 
  void CXXNameMangler::mangleNeonVectorType(const DependentVectorType *T) {
@@ -13,7 +25,7 @@
  }
 
  static StringRef mangleAArch64VectorBase(const BuiltinType *EltType) {
-@@ -3123,11 +3119,7 @@ void CXXNameMangler::mangleAArch64NeonVectorType(const VectorType *T) {
+@@ -3347,11 +3340,7 @@ void CXXNameMangler::mangleAArch64NeonVectorType(const VectorType *T) {
    Out << TypeName.length() << TypeName;
  }
  void CXXNameMangler::mangleAArch64NeonVectorType(const DependentVectorType *T) {
@@ -25,10 +37,23 @@
 +  Out << "__unhandled_AArch64NeonVectorType";
  }
 
+ // The AArch64 ACLE specifies that fixed-length SVE vector and predicate types
+@@ -3444,11 +3433,7 @@ void CXXNameMangler::mangleAArch64FixedSveVectorType(const VectorType *T) {
+
+ void CXXNameMangler::mangleAArch64FixedSveVectorType(
+     const DependentVectorType *T) {
+-  DiagnosticsEngine &Diags = Context.getDiags();
+-  unsigned DiagID = Diags.getCustomDiagID(
+-      DiagnosticsEngine::Error,
+-      "cannot mangle this dependent fixed-length SVE vector type yet");
+-  Diags.Report(T->getAttributeLoc(), DiagID);
++  Out << "__unhandled_AArch64FixedSveVectorType";
+ }
+
  // GNU extension: vector types
-@@ -3626,12 +3618,7 @@ recurse:
-   case Expr::BuiltinBitCastExprClass:
+@@ -4040,12 +4025,7 @@ recurse:
    {
+     NotPrimaryExpr();
      if (!NullOut) {
 -      // As bad as this diagnostic is, it's better than crashing.
 -      DiagnosticsEngine &Diags = Context.getDiags();
@@ -36,14 +61,14 @@
 -                                       "cannot yet mangle expression type %0");
 -      Diags.Report(E->getExprLoc(), DiagID)
 -        << E->getStmtClassName() << E->getSourceRange();
-+      Out << "__unhandled_expression";
++      Out << "__unhandled_BuiltinBitCastExprClass";
+       return;
      }
      break;
-   }
-@@ -3652,12 +3639,7 @@ recurse:
-
+@@ -4081,12 +4061,7 @@ recurse:
    // Even gcc-4.5 doesn't mangle this.
    case Expr::BinaryConditionalOperatorClass: {
+     NotPrimaryExpr();
 -    DiagnosticsEngine &Diags = Context.getDiags();
 -    unsigned DiagID =
 -      Diags.getCustomDiagID(DiagnosticsEngine::Error,
@@ -51,18 +76,18 @@
 -    Diags.Report(E->getExprLoc(), DiagID)
 -      << E->getStmtClassName() << E->getSourceRange();
 +    Out << "__unhandled_BinaryConditionalOperatorClass";
-     break;
+     return;
    }
 
-@@ -3952,18 +3934,11 @@ recurse:
-       Out << 'a';
+@@ -4425,18 +4400,11 @@ recurse:
+       MangleAlignofSizeofArg();
        break;
      case UETT_VecStep: {
 -      DiagnosticsEngine &Diags = Context.getDiags();
 -      unsigned DiagID = Diags.getCustomDiagID(DiagnosticsEngine::Error,
 -                                     "cannot yet mangle vec_step expression");
 -      Diags.Report(DiagID);
-+      Out << "__unhandled_VecStep";
++      Out << "__unhandled_UETT_VecStep";
        return;
      }
      case UETT_OpenMPRequiredSimdAlign: {

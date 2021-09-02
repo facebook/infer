@@ -386,6 +386,7 @@
       },
       {
         "is_global" : true,
+        "is_init_ice" : true,
         "init_expr" : <"ImplicitCastExpr" : (
           {
             "pointer" : 23,

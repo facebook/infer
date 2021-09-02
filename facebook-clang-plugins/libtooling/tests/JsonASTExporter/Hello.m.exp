@@ -2817,6 +2817,7 @@
                         "type_ptr" : 53
                       },
                       {
+                        "is_init_ice" : true,
                         "init_expr" : ["IntegerLiteral" , [
                           {
                             "pointer" : 134,

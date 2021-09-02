@@ -5271,6 +5271,7 @@
                     "type_ptr" : 11
                   },
                   {
+                    "is_init_ice" : true,
                     "init_expr" : ["IntegerLiteral" , [
                       {
                         "pointer" : 187,
@@ -6864,9 +6865,17 @@
           ]
         }
       ]],
-      ["FunctionProtoType" , [
+      ["LValueReferenceType" , [
         {
           "pointer" : 301
+        },
+        {
+          "type_ptr" : 11
+        }
+      ]],
+      ["FunctionProtoType" , [
+        {
+          "pointer" : 302
         },
         {
           "return_type" : {
@@ -6889,20 +6898,20 @@
       ]],
       ["TemplateTypeParmType" , [
         {
-          "pointer" : 302
+          "pointer" : 303
         }
       ]],
       ["PointerType" , [
         {
-          "pointer" : 303
+          "pointer" : 304
         },
         {
-          "type_ptr" : 302
+          "type_ptr" : 303
         }
       ]],
       ["ObjCObjectType" , [
         {
-          "pointer" : 304
+          "pointer" : 305
         },
         {
           "base_type" : 256
@@ -6910,32 +6919,32 @@
       ]],
       ["ObjCObjectPointerType" , [
         {
-          "pointer" : 305
+          "pointer" : 306
         },
         {
-          "type_ptr" : 304
+          "type_ptr" : 305
         }
       ]],
       ["TypedefType" , [
         {
-          "pointer" : 306,
-          "desugared_type" : 305
+          "pointer" : 307,
+          "desugared_type" : 306
         },
         {
           "child_type" : {
-            "type_ptr" : 305
+            "type_ptr" : 306
           },
-          "decl_ptr" : 307
+          "decl_ptr" : 308
         }
       ]],
       ["TypedefType" , [
         {
           "pointer" : 199,
-          "desugared_type" : 305
+          "desugared_type" : 306
         },
         {
           "child_type" : {
-            "type_ptr" : 306
+            "type_ptr" : 307
           },
           "decl_ptr" : 198
         }

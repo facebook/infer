@@ -12,9 +12,9 @@ set -o pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SHASUM=${SHASUM:-shasum -a 256}
 
-LLVM_VER="11.1.0"
+LLVM_VER="12.0.1"
 LLVM_URL="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VER}/llvm-project-${LLVM_VER}.src.tar.xz"
-LLVM_SHA="74d2529159fd118c3eac6f90107b5611bccc6f647fdea104024183e8d5e25831"
+LLVM_SHA="129cb25cd13677aad951ce5c2deb0fe4afc1e9d98950f53b51bdcfb5a73afa0e"
 LLVM_FILE="llvm-project.src.tar.xz"
 
 mkdir -p "${SCRIPT_DIR}/download"
