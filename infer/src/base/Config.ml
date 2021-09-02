@@ -1809,6 +1809,12 @@ and modified_lines =
      with $(b,--test-determinator)."
 
 
+and no_censor_report =
+  CLOpt.mk_string_list ~long:"no-censor-report" ~meta:"issue_type_regex"
+    ~in_help:InferCommand.[(Report, manual_generic); (Run, manual_generic)]
+    "For debugging/experimentation only: Specify issues not to be censored by $(b,--censor-report)."
+
+
 and nullable_annotation =
   CLOpt.mk_string_opt ~long:"nullable-annotation-name" "Specify a custom nullable annotation name."
 
@@ -3254,6 +3260,8 @@ and merge = !merge
 and method_decls_info = !method_decls_info
 
 and modified_lines = !modified_lines
+
+and no_censor_report = RevList.rev_map !no_censor_report ~f:Str.regexp
 
 and nullable_annotation = !nullable_annotation
 

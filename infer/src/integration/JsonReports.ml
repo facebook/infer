@@ -88,19 +88,28 @@ let should_report issue_type error_desc =
     if issue_type_is_null_deref then Localise.error_desc_is_reportable_bucket error_desc else true
 
 
+let should_not_censor (issue_type : IssueType.t) =
+  List.exists Config.no_censor_report ~f:(fun issue_type_re ->
+      Str.string_match issue_type_re issue_type.unique_id 0 )
+
+
 (* The reason an issue should be censored (that is, not reported). The empty
    string (that is "no reason") means that the issue should be reported. *)
 let censored_reason (issue_type : IssueType.t) source_file =
-  let filename = SourceFile.to_rel_path source_file in
-  let rejected_by ((issue_type_polarity, issue_type_re), (filename_polarity, filename_re), reason) =
-    let accepted =
-      (* matches issue_type_re implies matches filename_re *)
-      (not (Bool.equal issue_type_polarity (Str.string_match issue_type_re issue_type.unique_id 0)))
-      || Bool.equal filename_polarity (Str.string_match filename_re filename 0)
+  if should_not_censor issue_type then None
+  else
+    let filename = SourceFile.to_rel_path source_file in
+    let rejected_by ((issue_type_polarity, issue_type_re), (filename_polarity, filename_re), reason)
+        =
+      let accepted =
+        (* matches issue_type_re implies matches filename_re *)
+        (not
+           (Bool.equal issue_type_polarity (Str.string_match issue_type_re issue_type.unique_id 0)) )
+        || Bool.equal filename_polarity (Str.string_match filename_re filename 0)
+      in
+      Option.some_if (not accepted) reason
     in
-    Option.some_if (not accepted) reason
-  in
-  List.find_map Config.censor_report ~f:rejected_by
+    List.find_map Config.censor_report ~f:rejected_by
 
 
 let potential_exception_message = "potential exception at line"

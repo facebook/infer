@@ -205,6 +205,10 @@ OPTIONS
            expression (only supported by the javac integration for now).       
     See also infer-capture(1) and infer-run(1).
 
+       --no-censor-report +issue_type_regex
+           For debugging/experimentation only: Specify issues not to be
+           censored by --censor-report.           See also infer-report(1) and infer-run(1).
+
        --censor-report +string
            Specify a filter for issues to be censored by adding a
            'censored_reason' field in the json report. Infer will not report
@@ -1529,6 +1533,9 @@ INTERNAL OPTIONS
 
        --capture-block-list-reset
            Cancel the effect of --capture-block-list.
+
+       --no-censor-report-reset
+           Set --no-censor-report to the empty list.
 
        --censor-report-reset
            Set --censor-report to the empty list.
