@@ -188,10 +188,6 @@ let execute_analyze_json () =
 
 
 let report ?(suppress_console = false) () =
-  if Config.output_sarif then
-    let issues_sarif = ResultsDir.get_path ReportSarif in
-    JsonReports.write_sarif_reports ~issues_sarif ;
-  
   let issues_json = ResultsDir.get_path ReportJson in
   let costs_json = ResultsDir.get_path ReportCostsJson in
   let config_impact_json = ResultsDir.get_path ReportConfigImpactJson in
@@ -212,6 +208,9 @@ let report ?(suppress_console = false) () =
       XMLReport.write ~xml_path:(ResultsDir.get_path ReportXML) ~json_path:issues_json ) ;
   if Config.(test_determinator && process_clang_ast) then
     TestDeterminator.merge_test_determinator_results () ;
+  if Config.output_sarif then
+    let issues_sarif = ResultsDir.get_path ReportSarif in
+    JsonReports.write_sarif_reports ~issues_sarif ;
   ()
 
 
