@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <functional>
 #include <new>
 
 namespace leaks {
@@ -67,6 +68,72 @@ void unique_ptr_managed_ok() {
 
 void unique_ptr_pointer_bad() {
   struct UniquePtr<X>* heap_allocated = new UniquePtr<X>(new X);
+}
+
+void static_local_alloc_ok() { static X* x = new X; }
+
+void call_static_local_alloc_ok() { static_local_alloc_ok(); }
+
+// the initialization of the static local is run every time the function is
+// called instead of at most once, causing the FP
+void FP_call_static_local_alloc_twice_ok() {
+  static_local_alloc_ok();
+  static_local_alloc_ok();
+}
+
+static UniquePtr<X>* global_pointer;
+
+void global_alloc_ok() { global_pointer = new UniquePtr(new X); }
+
+void unknown(void* x);
+
+void unknown_wrapper(UniquePtr<X>* x) { unknown(x); }
+
+void FP_unknown_alloc_ok() {
+  UniquePtr<X>* x = new UniquePtr<X>(new X);
+  // could do anything, including deallocate x, so best not to report anything
+  unknown(x);
+}
+
+void FP_unknown_wrapper_alloc_ok() {
+  UniquePtr<X>* x = new UniquePtr<X>(new X);
+  // same as above, inter-procedurally
+  unknown_wrapper(x);
+}
+
+void unknown_wrapper_alloc_then_leak_bad() {
+  UniquePtr<X>* x = new UniquePtr<X>(new X);
+  unknown_wrapper(x);
+  x->x_ = new X;
+}
+
+struct Y {
+  int* a;
+};
+
+void FP_deep_alloc_unknown_ok(Y* y) {
+  y->a = new int;
+  unknown(y);
+  y->a = new int;
+}
+
+void call_deep_alloc_unknown_ok() {
+  Y* y = new Y;
+  FP_deep_alloc_unknown_ok(y);
+  delete y->a;
+  delete y;
+}
+
+void store_closure_unknown(const std::function<void()>& f);
+
+void FP_capture_alloc_unknown_ok() {
+  X* x = new X;
+  store_closure_unknown([&] { delete x; });
+}
+
+auto capture_alloc_return_ok() {
+  X* x = new X;
+  return [=] { delete x; };
 }
 
 } // namespace leaks
