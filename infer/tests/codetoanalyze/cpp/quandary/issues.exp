@@ -142,7 +142,6 @@ codetoanalyze/cpp/quandary/strings.cpp, strings::strncpy_bad, 4, QUANDARY_TAINT_
 codetoanalyze/cpp/quandary/strings.cpp, strings::swap_bad, 4, QUANDARY_TAINT_ERROR, no_bucket, ERROR, [Return from __infer_taint_source,Call to __infer_taint_sink with tainted index 0]
 codetoanalyze/cpp/quandary/structs.cpp, structs::read_from_struct_source_field_bad, 2, SHELL_INJECTION, no_bucket, ERROR, [Return from __infer_taint_source,Call to system with tainted index 0]
 codetoanalyze/cpp/quandary/structs.cpp, structs::struct_field_source_bad, 3, QUANDARY_TAINT_ERROR, no_bucket, ERROR, [Return from getenv,Call to __infer_taint_sink with tainted index 0]
-codetoanalyze/cpp/quandary/structs.cpp, structs::struct_field_source_unique_pointer_bad, 2, QUANDARY_TAINT_ERROR, no_bucket, ERROR, [Return from __infer_taint_source,Call to __infer_taint_sink with tainted index 0]
 codetoanalyze/cpp/quandary/structs.cpp, structs::struct_source_bad, 2, QUANDARY_TAINT_ERROR, no_bucket, ERROR, [Return from __infer_taint_source,Call to __infer_taint_sink with tainted index 0]
 codetoanalyze/cpp/quandary/unknown_code.cpp, unknown_code::direct_bad, 2, QUANDARY_TAINT_ERROR, no_bucket, ERROR, [Return from __infer_taint_source,Call to __infer_taint_sink with tainted index 0]
 codetoanalyze/cpp/quandary/unknown_code.cpp, unknown_code::skip_indirect_bad, 3, QUANDARY_TAINT_ERROR, no_bucket, ERROR, [Return from __infer_taint_source,Call to __infer_taint_sink with tainted index 0]

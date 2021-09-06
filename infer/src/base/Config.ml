@@ -237,7 +237,9 @@ let libstdcxx_allow_listed_cpp_methods =
   ; "__gnu_cxx::operator-" ]
 
 
-let libcxx_allow_listed_cpp_methods = []
+let libcxx_allow_listed_cpp_methods =
+  ["std::__get_helper"; "std::make_unique"; "std::make_unique_for_overwrite"]
+
 
 let other_allow_listed_cpp_methods = ["google::CheckNotNull"]
 
@@ -266,7 +268,16 @@ let std_allow_listed_cpp_classes =
   ; "std::reverse_iterator"
   ; "std::shared_ptr"
   ; "std::__shared_ptr"
-  ; "std::__shared_ptr_access" ]
+  ; "std::__shared_ptr_access"
+  ; "std::unique_ptr"
+  ; "std::__uniq_ptr_impl"
+  ; "std::__uniq_ptr_data"
+  ; "std::default_delete"
+  ; "std::tuple"
+  ; "std::_Tuple_impl"
+  ; "std::_Head_base"
+  ; "std::__compressed_pair"
+  ; "std::__compressed_pair_elem" ]
 
 
 let libstdcxx_allow_listed_cpp_classes =

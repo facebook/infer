@@ -264,12 +264,13 @@ void allocate_in_branch_ok(bool b) {
   std::unique_ptr<A>* a3 = &a1;
 
   if (b) {
-    a2 = std::make_unique<A>(*a1);
+    a2 = std::make_unique<A>();
     a3 = &a2;
   }
 
-  // read a3
-  const B* read = (*a3)->f;
+  if (b) {
+    const B* read = (*a3)->f;
+  }
 }
 
 std::string mk_string();
