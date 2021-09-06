@@ -742,6 +742,11 @@ let deallocate_all_reachable_from x astate =
   {astate with post= PostDomain.update ~attrs astate.post}
 
 
+let deep_deallocate x astate =
+  deallocate_all_reachable_from x astate
+  |> AddressAttributes.add_attrs x (Attributes.singleton DeepDeallocate)
+
+
 let is_local var astate = not (Var.is_return var || Stack.is_abducible astate var)
 
 let set_post_edges addr edges astate =

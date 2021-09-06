@@ -332,6 +332,25 @@ let apply_arithmetic_constraints path callee_proc_name call_location pre_post ca
       call_state.subst call_state
 
 
+let deep_deallocate pre_post call_state =
+  let astate =
+    BaseAddressAttributes.fold
+      (fun addr_callee attrs astate ->
+        if Attributes.is_deep_deallocated attrs then
+          match AddressMap.find_opt addr_callee call_state.subst with
+          | None ->
+              astate
+          | Some (addr_caller, _) ->
+              (* NOTE: could be optimized to remember the addresses already visited in case many
+                 addresses have the [DeepDeallocate] attribute and share important parts of the memory
+                 graph (unlikely) *)
+              AbductiveDomain.deallocate_all_reachable_from addr_caller astate
+        else astate )
+      (pre_post.AbductiveDomain.post :> BaseDomain.t).attrs call_state.astate
+  in
+  {call_state with astate}
+
+
 let materialize_pre path callee_proc_name call_location pre_post ~captured_vars_with_actuals
     ~formals ~actuals call_state =
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse call pre" ())) ;
@@ -346,6 +365,7 @@ let materialize_pre path callee_proc_name call_location pre_post ~captured_vars_
     >>= (* ...then relational arithmetic constraints in the callee's attributes will make sense in
            terms of the caller's values *)
     apply_arithmetic_constraints path callee_proc_name call_location pre_post
+    >>| deep_deallocate pre_post
   in
   PerfEvent.(log (fun logger -> log_end_event logger ())) ;
   r

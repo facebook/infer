@@ -95,7 +95,7 @@ void unknown_alloc_ok() {
   unknown(x);
 }
 
-void FP_unknown_wrapper_alloc_ok() {
+void unknown_wrapper_alloc_ok() {
   UniquePtr<X>* x = new UniquePtr<X>(new X);
   // same as above, inter-procedurally
   unknown_wrapper(x);

@@ -54,6 +54,7 @@ module Attribute = struct
     | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
     | Allocated of allocator * Trace.t
     | Closure of Procname.t
+    | DeepDeallocate
     | DynamicType of Typ.t
     | EndOfCollection
     | Invalid of Invalidation.t * Trace.t
@@ -95,6 +96,8 @@ module Attribute = struct
 
   let allocated_rank = Variants.to_rank (Allocated (CMalloc, dummy_trace))
 
+  let deep_deallocate_rank = Variants.to_rank DeepDeallocate
+
   let dynamic_type_rank = Variants.to_rank (DynamicType StdTyp.void)
 
   let end_of_collection_rank = Variants.to_rank EndOfCollection
@@ -111,6 +114,9 @@ module Attribute = struct
         true
     | (MustBeValid _ | Allocated _ | ISLAbduced _), Invalid _ ->
         false
+    | _, DeepDeallocate ->
+        (* ignore *)
+        true
     | Invalid _, _ | _, Uninitialized ->
         false
     | _ ->
@@ -138,6 +144,8 @@ module Attribute = struct
           trace
     | Closure pname ->
         Procname.pp f pname
+    | DeepDeallocate ->
+        F.fprintf f "DeepDeallocate"
     | DynamicType typ ->
         F.fprintf f "DynamicType %a" (Typ.pp Pp.text) typ
     | EndOfCollection ->
@@ -176,6 +184,7 @@ module Attribute = struct
     | AddressOfCppTemporary _
     | AddressOfStackVariable _
     | Closure _
+    | DeepDeallocate
     | DynamicType _
     | EndOfCollection
     | StdVectorReserve
@@ -194,6 +203,7 @@ module Attribute = struct
     | AddressOfCppTemporary _
     | AddressOfStackVariable _
     | Closure _
+    | DeepDeallocate
     | DynamicType _
     | EndOfCollection
     | StdVectorReserve
@@ -232,6 +242,7 @@ module Attribute = struct
     | ( AddressOfCppTemporary _
       | AddressOfStackVariable _
       | Closure _
+      | DeepDeallocate
       | DynamicType _
       | EndOfCollection
       | StdVectorReserve
@@ -317,6 +328,10 @@ module Attributes = struct
     |> Option.map ~f:(fun attr ->
            let[@warning "-8"] (Attribute.ISLAbduced trace) = attr in
            trace )
+
+
+  let is_deep_deallocated attrs =
+    Set.find_rank attrs Attribute.deep_deallocate_rank |> Option.is_some
 
 
   let get_dynamic_type attrs =

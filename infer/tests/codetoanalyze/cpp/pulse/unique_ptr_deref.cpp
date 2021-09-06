@@ -157,6 +157,7 @@ bool instantiate() {
   return p != nullptr && q != nullptr;
 }
 
-void no_deleter_construct_bad() { my_unique_ptr<X> p(new X()); }
+// FN because skipped methods create a DeepDeallocate masking the leak
+void FN_no_deleter_construct_bad() { my_unique_ptr<X> p(new X()); }
 
 } // namespace unique_ptr
