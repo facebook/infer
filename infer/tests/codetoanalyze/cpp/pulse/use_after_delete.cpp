@@ -58,6 +58,10 @@ void delete_in_branch_latent(bool b) {
     delete s;
   }
   s->f = 7;
+  // avoid leak
+  if (!b) {
+    delete s;
+  }
 }
 
 void delete_in_branch_ok(bool b) {
@@ -113,6 +117,10 @@ void gated_delete_abort_ok(bool b) {
     std::abort();
   }
   s->f = 7;
+  // avoid leak
+  if (!b) {
+    delete s;
+  }
 }
 
 void gated_exit_abort_ok(bool b) {
@@ -122,6 +130,10 @@ void gated_exit_abort_ok(bool b) {
     exit(1);
   }
   s->f = 7;
+  // avoid leak
+  if (!b) {
+    delete s;
+  }
 }
 
 void gated_delete_throw_ok(bool b) {
@@ -131,6 +143,10 @@ void gated_delete_throw_ok(bool b) {
     throw 5;
   }
   s->f = 7;
+  // avoid leak
+  if (!b) {
+    delete s;
+  }
 }
 
 void delete_allocated_then_error_bad(int* x) {

@@ -642,7 +642,11 @@ let check_memory_leaks ~live_addresses ~unreachable_addresses astate =
     let allocated_not_freed_opt =
       let allocated = Attributes.get_allocation attributes in
       if Option.is_some allocated then
-        match Attributes.get_invalid attributes with Some (CFree, _) -> None | _ -> allocated
+        match Attributes.get_invalid attributes with
+        | Some ((CFree | CppDelete), _) ->
+            None
+        | _ ->
+            allocated
       else None
     in
     match allocated_not_freed_opt with

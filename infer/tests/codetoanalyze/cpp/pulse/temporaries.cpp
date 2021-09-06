@@ -4,16 +4,13 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+
 namespace temporaries {
 
 template <typename X>
 struct UniquePtr {
   X* x_;
-  ~UniquePtr() {
-    if (x_) {
-      delete x_;
-    }
-  }
+  ~UniquePtr() { delete x_; }
   UniquePtr(X* y) { x_ = y; }
 
   UniquePtr(UniquePtr<X>& p) = delete; // no copy constructor

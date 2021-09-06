@@ -105,7 +105,7 @@ int FP_unique_ptr_move_deref_ok() {
   return *p2;
 }
 
-int unique_ptr_assign_deref_ok() {
+int FP_unique_ptr_assign_deref_ok() {
   std::unique_ptr<int> p1(new int);
   std::unique_ptr<int> p2;
   p2 = std::move(p1);

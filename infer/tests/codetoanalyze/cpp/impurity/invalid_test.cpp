@@ -35,7 +35,7 @@ Simple* reassign_pure(Simple* s) {
 }
 
 Simple* reassign_impure(Simple* s) {
-  *s = *(new Simple{2});
+  *s = Simple{2};
   return s;
 }
 

@@ -157,6 +157,7 @@ void call_lambda_ok() {
   auto f = [](S* s) { int x = s->f; };
   S* s = new S();
   f(s);
+  delete s;
 }
 
 void call_lambda_bad() {
@@ -198,6 +199,7 @@ void capture_by_value_ok() {
   if (*p != 5) {
     *q = 42;
   }
+  delete p;
 }
 
 void capture_by_value_bad() {
@@ -209,6 +211,7 @@ void capture_by_value_bad() {
   if (*p == 5) {
     *q = 42;
   }
+  delete p;
 }
 
 void capture_by_ref_ok() {
@@ -220,6 +223,7 @@ void capture_by_ref_ok() {
   if (*p != 6) {
     *q = 42;
   }
+  delete p;
 }
 
 void capture_by_ref_bad() {
@@ -231,6 +235,7 @@ void capture_by_ref_bad() {
   if (*p == 6) {
     *q = 42;
   }
+  delete p;
 }
 
 void capture_by_value_init_ok() {
@@ -242,6 +247,7 @@ void capture_by_value_init_ok() {
   if (*p != 5) {
     *q = 42;
   }
+  delete p;
 }
 
 void capture_by_value_init_bad() {
@@ -253,6 +259,7 @@ void capture_by_value_init_bad() {
   if (*p == 5) {
     *q = 42;
   }
+  delete p;
 }
 
 void capture_by_ref_init_ok() {
@@ -264,6 +271,7 @@ void capture_by_ref_init_ok() {
   if (*p != 6) {
     *q = 42;
   }
+  delete p;
 }
 
 void capture_by_ref_init_bad() {
@@ -275,6 +283,7 @@ void capture_by_ref_init_bad() {
   if (*p == 6) {
     *q = 42;
   }
+  delete p;
 }
 
 void ref_capture_by_value_ok() {
@@ -287,6 +296,7 @@ void ref_capture_by_value_ok() {
   if (*p != 5) {
     *q = 42;
   }
+  delete p;
 }
 
 void ref_capture_by_value_bad() {
@@ -299,6 +309,7 @@ void ref_capture_by_value_bad() {
   if (*p == 5) {
     *q = 42;
   }
+  delete p;
 }
 
 void ref_capture_by_ref_ok() {
@@ -311,6 +322,7 @@ void ref_capture_by_ref_ok() {
   if (*p != 6) {
     *q = 42;
   }
+  delete p;
 }
 
 void ref_capture_by_ref_bad() {
@@ -323,6 +335,7 @@ void ref_capture_by_ref_bad() {
   if (*p == 6) {
     *q = 42;
   }
+  delete p;
 }
 
 void struct_capture_by_ref_bad() {
@@ -334,6 +347,7 @@ void struct_capture_by_ref_bad() {
   if (*p == 5) {
     *q = 42;
   }
+  delete p;
 }
 
 void struct_capture_by_ref_ok() {
@@ -345,6 +359,7 @@ void struct_capture_by_ref_ok() {
   if (*p != 5) {
     *q = 42;
   }
+  delete p;
 }
 
 void struct_capture_by_val_bad() {
@@ -356,6 +371,7 @@ void struct_capture_by_val_bad() {
   if (*p == 1) {
     *q = 42;
   }
+  delete p;
 }
 
 void struct_capture_by_val_ok_FP() {
@@ -367,6 +383,7 @@ void struct_capture_by_val_ok_FP() {
   if (*p != 1) {
     *q = 42;
   }
+  delete p;
 }
 
 S* update_inside_lambda_capture_and_init(S* s) {

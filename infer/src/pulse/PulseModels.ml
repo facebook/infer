@@ -513,7 +513,27 @@ module Cplusplus = struct
   let new_ type_name : model =
    fun model_data astate ->
     let<+> astate =
-      Misc.alloc_no_leak_not_null ~initialize:true ~desc:"new" (Some type_name) model_data astate
+      (* Java and C++ [new] share the same builtin (note that ObjC gets its own [objc_alloc_no_fail]
+         builtin for [\[Class new\]]) *)
+      if Procname.is_java @@ Procdesc.get_proc_name model_data.analysis_data.proc_desc then
+        Misc.alloc_no_leak_not_null ~initialize:true (Some type_name) ~desc:"new" model_data astate
+      else
+        (* C++ *)
+        Misc.alloc_not_null ~initialize:true ~desc:"new" (Some type_name) model_data astate
+    in
+    astate
+
+
+  let new_array type_name : model =
+   fun model_data astate ->
+    let<+> astate =
+      (* Java and C++ [new\[\]] share the same builtin *)
+      if Procname.is_java @@ Procdesc.get_proc_name model_data.analysis_data.proc_desc then
+        Misc.alloc_no_leak_not_null ~initialize:true (Some type_name) ~desc:"new[]" model_data
+          astate
+      else
+        (* C++ *)
+        Misc.alloc_not_null ~initialize:true ~desc:"new[]" (Some type_name) model_data astate
     in
     astate
 
@@ -1769,7 +1789,7 @@ module ProcNameDispatcher = struct
           <>$ capt_arg $+ capt_exp $+...$--> C.realloc
         ; +BuiltinDecl.(match_builtin __delete) <>$ capt_arg $--> Cplusplus.delete
         ; +BuiltinDecl.(match_builtin __new) <>$ capt_exp $--> Cplusplus.new_
-        ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $--> Cplusplus.new_
+        ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $--> Cplusplus.new_array
         ; +BuiltinDecl.(match_builtin __placement_new) &++> Cplusplus.placement_new
         ; -"random" <>$$--> Misc.nondet ~fn_name:"random"
         ; +BuiltinDecl.(match_builtin objc_cpp_throw) <>--> Misc.early_exit

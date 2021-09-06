@@ -44,12 +44,14 @@ X* may_return_nullptr() {
 void no_check_return_bad() {
   X* x = may_return_nullptr();
   x->foo();
+  delete x;
 }
 
 void check_return_ok() {
   X* x = may_return_nullptr();
   if (x != nullptr) {
     x->foo();
+    delete x;
   }
 }
 
@@ -113,9 +115,11 @@ void fun_abort(bool b) {
 } // namespace ns2
 } // namespace ns1
 
+X global_x;
+
 X* getX(bool b) {
   if (b) {
-    return new X();
+    return &global_x;
   } else {
     ns1::ns2::fun_abort(true);
   }
@@ -179,7 +183,7 @@ struct Handle {
 // We do not want to report nullptr dereference in this case
 // as we "know" that Item::get does not return null, however
 // at the moment we are not able to show it in pulse.
-// That's why as a workaround we model the analysis of Handle::get`
+// That's why as a workaround we model the analysis of Handle::get
 // to return non-null
 void explicit_check_for_null_ok(Handle h) { return h->foo(); }
 
