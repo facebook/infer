@@ -372,6 +372,25 @@ module ObjC = struct
     astate
 
 
+  let read_from_collection (key, key_hist) ~desc : model =
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+    let astate_nil =
+      let ret_val = AbstractValue.mk_fresh () in
+      let<*> astate = PulseArithmetic.prune_eq_zero key astate in
+      let<+> astate = PulseArithmetic.and_eq_int ret_val IntLit.zero astate in
+      PulseOperations.write_id ret_id (ret_val, event :: key_hist) astate
+    in
+    let astate_not_nil =
+      let<*> astate = PulseArithmetic.prune_positive key astate in
+      let<+> astate, (ret_val, hist) =
+        PulseOperations.eval_access path Read location (key, key_hist) Dereference astate
+      in
+      PulseOperations.write_id ret_id (ret_val, event :: hist) astate
+    in
+    List.rev_append astate_nil astate_not_nil
+
+
   (* NOTE: assume that this is always called with [freeWhenDone] being [YES] *)
   let init_with_bytes_free_when_done bytes : model =
    fun {ret= ret_id, _; callee_procname; location} astate ->
@@ -2179,6 +2198,9 @@ module ProcNameDispatcher = struct
           &:: "dictionaryWithSharedKeySet:" <>$ capt_arg_payload
           $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Key
                  ~desc:"NSMutableDictionary.dictionaryWithSharedKeySet"
+        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableDictionary")
+          &:: "objectForKey:" <>$ any_arg $+ capt_arg_payload
+          $--> ObjC.read_from_collection ~desc:"NSMutableDictionary.objectForKey"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
           &:: "addObject:" <>$ any_arg $+ capt_arg_payload
           $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Value
@@ -2217,6 +2239,9 @@ module ProcNameDispatcher = struct
           &:: "sharedKeySetForKeys:" <>$ capt_arg_payload
           $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Key
                  ~desc:"NSDictionary.sharedKeySetForKeys"
+        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSDictionary")
+          &:: "objectForKey:" <>$ any_arg $+ capt_arg_payload
+          $--> ObjC.read_from_collection ~desc:"NSDictionary.objectForKey"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSSet")
           &:: "setWithObject:" <>$ capt_arg_payload
           $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Value

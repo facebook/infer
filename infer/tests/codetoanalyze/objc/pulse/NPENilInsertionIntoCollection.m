@@ -67,6 +67,23 @@ void dictionaryWithSharedKeySetBad() {
       [NSMutableDictionary dictionaryWithSharedKeySet:nil];
 }
 
+void dictionaryRemoveObjectForKeyIfKeyExists(NSMutableDictionary* mDict,
+                                             id key) {
+  id value = [mDict objectForKey:key];
+  if (value) {
+    [mDict removeObjectForKey:key];
+  }
+}
+
+void dictionaryRemoveObjectForKeyIfKeyExistsNilOK(NSMutableDictionary* mDict) {
+  dictionaryRemoveObjectForKeyIfKeyExists(mDict, nil);
+}
+
+void dictionaryRemoveObjectForKeyIfKeyExistsNotNilOK(
+    NSMutableDictionary* mDict) {
+  dictionaryRemoveObjectForKeyIfKeyExists(mDict, @"somestring");
+}
+
 void testNilMessagingForModelNilNilOK_FP() { addObjectInDict(nil, nil); }
 
 void testNilMessagingForModelNilStringOK() {
@@ -225,6 +242,21 @@ void dictionaryWithSharedKeySetForKeysOk() {
 
 void dictionaryWithSharedKeySetForKeysBad() {
   dictionaryWithSharedKeySetForKeys(nil);
+}
+
+void dictionaryWithObjectsForKeysIfKeyExists(NSDictionary* dict, id key) {
+  id value = [dict objectForKey:key];
+  if (value) {
+    dict = [NSDictionary dictionaryWithObjects:@[ value ] forKeys:@[ key ]];
+  }
+}
+
+void dictionaryWithObjectsForKeysIfKeyExistsNilOK(NSDictionary* dict) {
+  dictionaryWithObjectsForKeysIfKeyExists(dict, nil);
+}
+
+void dictionaryWithObjectsForKeysIfKeyExistsNotNilOK(NSDictionary* dict) {
+  dictionaryWithObjectsForKeysIfKeyExists(dict, @"somestring");
 }
 
 void setWithObject(id object) { NSSet* set = [NSSet setWithObject:object]; }
