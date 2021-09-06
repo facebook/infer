@@ -48,12 +48,12 @@ void new_placement_new_delete_ok() {
 
 void simple_new_array_bad() { X* x = new X[5]; }
 
-void FP_simple_new_array_delete_array_ok() {
+void simple_new_array_delete_array_ok() {
   X* x = new X[5];
   delete[] x;
 }
 
-void FN_new_array_delete_bad() {
+void new_array_delete_bad() {
   X* x = new X[5];
   delete x;
 }

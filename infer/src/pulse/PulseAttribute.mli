@@ -88,4 +88,6 @@ module Attributes : sig
       Invalidation.delete, if applicable *)
 
   val add_call : PathContext.t -> Procname.t -> Location.t -> ValueHistory.t -> t -> t
+
+  val get_allocated_not_freed : t -> (allocator * Trace.t) option
 end

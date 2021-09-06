@@ -152,13 +152,10 @@ module Misc = struct
         ok_continue astate
 
 
-  let free_or_delete operation
+  let free_or_delete operation invalidation
       ({ProcnameDispatcher.Call.FuncArg.arg_payload= deleted_access} as deleted_arg) : model =
    fun ({path; location} as model_data) astate ->
     (* NOTE: freeing 0 is a no-op so we introduce a case split *)
-    let invalidation =
-      match operation with `Free -> Invalidation.CFree | `Delete -> Invalidation.CppDelete
-    in
     let astates_alloc =
       let<*> astate = PulseArithmetic.and_positive (fst deleted_access) astate in
       let astates =
@@ -240,7 +237,7 @@ module Misc = struct
 end
 
 module C = struct
-  let free deleted_access : model = Misc.free_or_delete `Free deleted_access
+  let free deleted_access : model = Misc.free_or_delete `Free CFree deleted_access
 
   let alloc_common allocator ~size_exp_opt : model =
    fun ({path; callee_procname; location; ret= ret_id, _} as model_data) astate ->
@@ -534,7 +531,13 @@ end
 
 module Cplusplus = struct
   let delete deleted_arg : model =
-   fun model_data astate -> Misc.free_or_delete `Delete deleted_arg model_data astate
+   fun model_data astate -> Misc.free_or_delete `Delete CppDelete deleted_arg model_data astate
+
+
+  (* NOTE: [new\[\]] is not yet modelled as allocating an array of objects hence why this model
+     deletes only the root address *)
+  let delete_array deleted_arg : model =
+   fun model_data astate -> Misc.free_or_delete `Delete CppDeleteArray deleted_arg model_data astate
 
 
   let new_ type_name : model =
@@ -551,6 +554,7 @@ module Cplusplus = struct
     astate
 
 
+  (* TODO: actually allocate an array  *)
   let new_array type_name : model =
    fun model_data astate ->
     let<+> astate =
@@ -1816,6 +1820,7 @@ module ProcNameDispatcher = struct
         ; +match_regexp_opt Config.pulse_model_realloc_pattern
           <>$ capt_arg $+ capt_exp $+...$--> C.custom_realloc
         ; +BuiltinDecl.(match_builtin __delete) <>$ capt_arg $--> Cplusplus.delete
+        ; +BuiltinDecl.(match_builtin __delete_array) <>$ capt_arg $--> Cplusplus.delete_array
         ; +BuiltinDecl.(match_builtin __new) <>$ capt_exp $--> Cplusplus.new_
         ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $--> Cplusplus.new_array
         ; +BuiltinDecl.(match_builtin __placement_new) &++> Cplusplus.placement_new

@@ -278,7 +278,9 @@ let invalidation_titles (invalidation : Invalidation.t) =
       ( "source of the constant value part of the trace starts here"
       , "constant value dereference part of the trace starts here" )
   | CFree
+  | CustomFree _
   | CppDelete
+  | CppDeleteArray
   | EndIterator
   | GoneOutOfScope _
   | OptionalEmpty

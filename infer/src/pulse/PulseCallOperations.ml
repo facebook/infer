@@ -47,7 +47,7 @@ let unknown_call tenv path call_loc (reason : CallEvent.t) ~ret ~actuals ~formal
         is_functional := false ;
         (* HACK: write through the pointer even if it is invalid (except in Java). This is to avoid
            raising issues when havoc'ing pointer parameters (which normally causes a [check_valid]
-           call. *)
+           call). *)
         let fresh_value = AbstractValue.mk_fresh () in
         Memory.add_edge actual Dereference (fresh_value, [event]) call_loc astate
         |> havoc_fields actual typ

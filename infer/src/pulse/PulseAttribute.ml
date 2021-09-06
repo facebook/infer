@@ -238,6 +238,18 @@ module Attribute = struct
       | UnreachableAt _
       | Uninitialized ) as attr ->
         attr
+
+
+  let alloc_free_match allocator (invalidation : Invalidation.t) =
+    match (allocator, invalidation) with
+    | (CMalloc | CustomMalloc _ | CRealloc | CustomRealloc _), (CFree | CustomFree _) ->
+        true
+    | CppNew, CppDelete ->
+        true
+    | CppNewArray, CppDeleteArray ->
+        true
+    | _ ->
+        false
 end
 
 module Attributes = struct
@@ -364,6 +376,19 @@ module Attributes = struct
   let add_call path proc_name call_location caller_history attrs =
     Set.map attrs ~f:(fun attr ->
         Attribute.add_call path proc_name call_location caller_history attr )
+
+
+  let get_allocated_not_freed attributes =
+    let allocated_opt = get_allocation attributes in
+    if Option.is_none allocated_opt then None
+    else
+      match (allocated_opt, get_invalid attributes) with
+      | None, _ ->
+          assert false
+      | Some (allocator, _), Some (invalidation, _) ->
+          if Attribute.alloc_free_match allocator invalidation then None else allocated_opt
+      | Some _, None ->
+          allocated_opt
 
 
   include Set

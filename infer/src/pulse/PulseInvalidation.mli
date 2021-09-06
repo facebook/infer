@@ -24,8 +24,10 @@ type java_iterator_function = Remove
 
 type t =
   | CFree
+  | CustomFree of Procname.t
   | ConstantDereference of IntLit.t
   | CppDelete
+  | CppDeleteArray
   | EndIterator
   | GoneOutOfScope of Pvar.t * Typ.t
   | OptionalEmpty
