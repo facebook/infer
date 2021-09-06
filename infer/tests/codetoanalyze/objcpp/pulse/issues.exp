@@ -1,4 +1,4 @@
-codetoanalyze/objcpp/pulse/AllocPatternMemLeak.mm, A.create_no_release_leak_bad, 1, MEMORY_LEAK, no_bucket, ERROR, [allocation part of the trace starts here,allocated by `ABFDataCreate` here,memory becomes unreachable here]
+codetoanalyze/objcpp/pulse/AllocPatternMemLeak.mm, A.create_no_release_leak_bad, 1, MEMORY_LEAK, no_bucket, ERROR, [allocation part of the trace starts here,allocated by `ABFDataCreate (custom malloc)` here,memory becomes unreachable here]
 codetoanalyze/objcpp/pulse/NPEBasic.mm, SomeObject.methodNilDereferenceBad, 2, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is the null pointer,assigned,invalid access occurs here]
 codetoanalyze/objcpp/pulse/NPEBasic.mm, dereferenceNilBad, 2, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is the null pointer,assigned,invalid access occurs here]
 codetoanalyze/objcpp/pulse/NPEBasic.mm, testAccessPropertyAccessorBad, 2, NIL_MESSAGING_TO_NON_POD, no_bucket, ERROR, [calling context starts here,in call to `SomeObject.ptr`,null pointer dereference part of the trace starts here,is the null pointer,assigned,when calling `SomeObject.ptr` here,invalid access occurs here]

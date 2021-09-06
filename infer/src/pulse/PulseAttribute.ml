@@ -25,10 +25,34 @@ include struct
 end
 
 module Attribute = struct
+  type allocator =
+    | CMalloc
+    | CustomMalloc of Procname.t
+    | CRealloc
+    | CustomRealloc of Procname.t
+    | CppNew
+    | CppNewArray
+  [@@deriving compare, equal]
+
+  let pp_allocator fmt = function
+    | CMalloc ->
+        F.fprintf fmt "malloc"
+    | CustomMalloc proc_name ->
+        F.fprintf fmt "%a (custom malloc)" Procname.pp proc_name
+    | CRealloc ->
+        F.fprintf fmt "realloc"
+    | CustomRealloc proc_name ->
+        F.fprintf fmt "%a (custom realloc)" Procname.pp proc_name
+    | CppNew ->
+        F.fprintf fmt "new"
+    | CppNewArray ->
+        F.fprintf fmt "new[]"
+
+
   type t =
     | AddressOfCppTemporary of Var.t * ValueHistory.t
     | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
-    | Allocated of Procname.t * Trace.t
+    | Allocated of allocator * Trace.t
     | Closure of Procname.t
     | DynamicType of Typ.t
     | EndOfCollection
@@ -69,7 +93,7 @@ module Attribute = struct
 
   let std_vector_reserve_rank = Variants.to_rank StdVectorReserve
 
-  let allocated_rank = Variants.to_rank (Allocated (Procname.Linters_dummy_method, dummy_trace))
+  let allocated_rank = Variants.to_rank (Allocated (CMalloc, dummy_trace))
 
   let dynamic_type_rank = Variants.to_rank (DynamicType StdTyp.void)
 
@@ -108,10 +132,9 @@ module Attribute = struct
         F.fprintf f "t&%a (%a)" Var.pp var ValueHistory.pp history
     | AddressOfStackVariable (var, location, history) ->
         F.fprintf f "s&%a (%a) at %a" Var.pp var ValueHistory.pp history Location.pp location
-    | Allocated (procname, trace) ->
-        F.fprintf f "Allocated %a"
-          (Trace.pp
-             ~pp_immediate:(pp_string_if_debug ("allocation with " ^ Procname.to_string procname)) )
+    | Allocated (allocator, trace) ->
+        F.fprintf f "Allocated%a"
+          (Trace.pp ~pp_immediate:(pp_string_if_debug (F.asprintf "(%a)" pp_allocator allocator)))
           trace
     | Closure pname ->
         Procname.pp f pname
@@ -273,8 +296,8 @@ module Attributes = struct
   let get_allocation attrs =
     Set.find_rank attrs Attribute.allocated_rank
     |> Option.map ~f:(fun attr ->
-           let[@warning "-8"] (Attribute.Allocated (procname, trace)) = attr in
-           (procname, trace) )
+           let[@warning "-8"] (Attribute.Allocated (allocator, trace)) = attr in
+           (allocator, trace) )
 
 
   let get_isl_abduced attrs =

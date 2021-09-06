@@ -201,7 +201,7 @@ module Misc = struct
                AbductiveDomain.set_uninitialized tenv (`Malloc ret_value) obj_typ location astate ) )
 
 
-  let alloc_not_null_common ~can_leak ~initialize ?desc size_exp_opt
+  let alloc_not_null_common ~initialize ?desc ~allocator size_exp_opt
       {analysis_data= {tenv}; location; callee_procname; ret= ret_id, _} astate =
     let ret_addr = AbstractValue.mk_fresh () in
     let desc = Option.value desc ~default:(Procname.to_string callee_procname) in
@@ -215,29 +215,38 @@ module Misc = struct
              This seems to be introduced by inline mechanism of Java synthetic methods during preanalysis *)
           astate
     in
-    let do_if b f x = if b then f x else x in
-    PulseOperations.write_id ret_id (ret_addr, ret_alloc_hist) astate
-    |> do_if can_leak (PulseOperations.allocate callee_procname location (ret_addr, []))
-    |> do_if (not initialize) (set_uninitialized tenv size_exp_opt location ret_addr)
-    |> PulseArithmetic.and_positive ret_addr
+    let astate = PulseOperations.write_id ret_id (ret_addr, ret_alloc_hist) astate in
+    let astate =
+      match allocator with
+      | None ->
+          astate
+      | Some allocator ->
+          PulseOperations.allocate allocator location (ret_addr, []) astate
+    in
+    let astate =
+      if initialize then astate else set_uninitialized tenv size_exp_opt location ret_addr astate
+    in
+    PulseArithmetic.and_positive ret_addr astate
 
 
-  let alloc_not_null ?desc size = alloc_not_null_common ~can_leak:true ?desc size
+  let alloc_not_null ?desc allocator size =
+    alloc_not_null_common ?desc ~allocator:(Some allocator) size
+
 
   (** record in its history and dynamic type that the value was allocated but consider that it
       cannot generate leaks (eg it is handled by the language's garbage collector, or we don't want
       to report leaks for some reason) *)
-  let alloc_no_leak_not_null ?desc size = alloc_not_null_common ~can_leak:false ?desc size
+  let alloc_no_leak_not_null ?desc size = alloc_not_null_common ?desc ~allocator:None size
 end
 
 module C = struct
   let free deleted_access : model = Misc.free_or_delete `Free deleted_access
 
-  let malloc_common ~size_exp_opt : model =
+  let alloc_common allocator ~size_exp_opt : model =
    fun ({path; callee_procname; location; ret= ret_id, _} as model_data) astate ->
     let ret_addr = AbstractValue.mk_fresh () in
     let astate_alloc =
-      Misc.alloc_not_null ~initialize:false size_exp_opt model_data astate >>| continue
+      Misc.alloc_not_null allocator ~initialize:false size_exp_opt model_data astate >>| continue
     in
     let result_null =
       let ret_null_hist =
@@ -256,34 +265,52 @@ module C = struct
     [astate_alloc; result_null]
 
 
-  let malloc_not_null_common ~size_exp_opt : model =
+  let alloc_not_null_common allocator ~size_exp_opt : model =
    fun model_data astate ->
-    let<+> astate = Misc.alloc_not_null ~initialize:false size_exp_opt model_data astate in
+    let<+> astate =
+      Misc.alloc_not_null ~initialize:false allocator size_exp_opt model_data astate
+    in
     astate
 
 
-  let malloc size_exp = malloc_common ~size_exp_opt:(Some size_exp)
+  let malloc size_exp = alloc_common CMalloc ~size_exp_opt:(Some size_exp)
 
-  let malloc_no_param = malloc_common ~size_exp_opt:None
+  let malloc_not_null size_exp = alloc_not_null_common CMalloc ~size_exp_opt:(Some size_exp)
 
-  let malloc_not_null size_exp = malloc_not_null_common ~size_exp_opt:(Some size_exp)
+  let custom_malloc size_exp model_data astate =
+    alloc_common (CustomMalloc model_data.callee_procname) ~size_exp_opt:(Some size_exp) model_data
+      astate
 
-  let malloc_not_null_no_param = malloc_not_null_common ~size_exp_opt:None
 
-  let realloc pointer size : model =
+  let custom_alloc model_data astate =
+    alloc_common (CustomMalloc model_data.callee_procname) ~size_exp_opt:None model_data astate
+
+
+  let custom_alloc_not_null model_data astate =
+    alloc_not_null_common (CustomMalloc model_data.callee_procname) ~size_exp_opt:None model_data
+      astate
+
+
+  let realloc_common allocator pointer size : model =
    fun data astate ->
     free pointer data astate
     |> List.concat_map ~f:(fun result ->
            let<*> exec_state = result in
            match (exec_state : ExecutionDomain.t) with
            | ContinueProgram astate ->
-               malloc size data astate
+               alloc_common allocator ~size_exp_opt:(Some size) data astate
            | ExitProgram _
            | AbortProgram _
            | LatentAbortProgram _
            | LatentInvalidAccess _
            | ISLLatentMemoryError _ ->
                [Ok exec_state] )
+
+
+  let realloc = realloc_common CRealloc
+
+  let custom_realloc pointer size data astate =
+    realloc_common (CustomRealloc data.callee_procname) pointer size data astate
 end
 
 module ObjCCoreFoundation = struct
@@ -519,7 +546,7 @@ module Cplusplus = struct
         Misc.alloc_no_leak_not_null ~initialize:true (Some type_name) ~desc:"new" model_data astate
       else
         (* C++ *)
-        Misc.alloc_not_null ~initialize:true ~desc:"new" (Some type_name) model_data astate
+        Misc.alloc_not_null ~initialize:true ~desc:"new" CppNew (Some type_name) model_data astate
     in
     astate
 
@@ -533,7 +560,8 @@ module Cplusplus = struct
           astate
       else
         (* C++ *)
-        Misc.alloc_not_null ~initialize:true ~desc:"new[]" (Some type_name) model_data astate
+        Misc.alloc_not_null ~initialize:true ~desc:"new[]" CppNewArray (Some type_name) model_data
+          astate
     in
     astate
 
@@ -1783,10 +1811,10 @@ module ProcNameDispatcher = struct
       @ [ +BuiltinDecl.(match_builtin free) <>$ capt_arg $--> C.free
         ; +match_regexp_opt Config.pulse_model_free_pattern <>$ capt_arg $+...$--> C.free
         ; +BuiltinDecl.(match_builtin malloc) <>$ capt_exp $--> C.malloc
-        ; +match_regexp_opt Config.pulse_model_malloc_pattern <>$ capt_exp $+...$--> C.malloc
+        ; +match_regexp_opt Config.pulse_model_malloc_pattern <>$ capt_exp $+...$--> C.custom_malloc
         ; -"realloc" <>$ capt_arg $+ capt_exp $--> C.realloc
         ; +match_regexp_opt Config.pulse_model_realloc_pattern
-          <>$ capt_arg $+ capt_exp $+...$--> C.realloc
+          <>$ capt_arg $+ capt_exp $+...$--> C.custom_realloc
         ; +BuiltinDecl.(match_builtin __delete) <>$ capt_arg $--> Cplusplus.delete
         ; +BuiltinDecl.(match_builtin __new) <>$ capt_exp $--> Cplusplus.new_
         ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $--> Cplusplus.new_array
@@ -2114,11 +2142,11 @@ module ProcNameDispatcher = struct
           $--> Android.text_utils_is_empty ~desc:"TextUtils.isEmpty"
         ; -"dispatch_sync" &++> ObjC.dispatch_sync
         ; +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_create_or_copy
-          &--> C.malloc_no_param
+          &--> C.custom_alloc
         ; +map_context_tenv PatternMatch.ObjectiveC.is_core_foundation_create_or_copy
-          &--> C.malloc_no_param
+          &--> C.custom_alloc
         ; +BuiltinDecl.(match_builtin malloc_no_fail) <>$ capt_exp $--> C.malloc_not_null
-        ; +match_regexp_opt Config.pulse_model_alloc_pattern &--> C.malloc_not_null_no_param
+        ; +match_regexp_opt Config.pulse_model_alloc_pattern &--> C.custom_alloc_not_null
         ; +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_release
           <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; -"CFRelease" <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release

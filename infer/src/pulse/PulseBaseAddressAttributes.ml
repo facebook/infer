@@ -74,8 +74,8 @@ let invalidate (address, history) invalidation location memory =
   add_one address (Attribute.Invalid (invalidation, Immediate {location; history})) memory
 
 
-let allocate procname (address, history) location memory =
-  add_one address (Attribute.Allocated (procname, Immediate {location; history})) memory
+let allocate allocator (address, history) location memory =
+  add_one address (Attribute.Allocated (allocator, Immediate {location; history})) memory
 
 
 let mark_as_end_of_collection address memory = add_one address Attribute.EndOfCollection memory
@@ -102,8 +102,8 @@ let get_attribute getter address attrs =
 
 let remove_allocation_attr address memory =
   match get_attribute Attributes.get_allocation address memory with
-  | Some (procname, trace) ->
-      remove_one address (Attribute.Allocated (procname, trace)) memory
+  | Some (allocator, trace) ->
+      remove_one address (Attribute.Allocated (allocator, trace)) memory
   | None ->
       memory
 

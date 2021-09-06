@@ -11,11 +11,21 @@ module PathContext = PulsePathContext
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
 
+type allocator =
+  | CMalloc
+  | CustomMalloc of Procname.t
+  | CRealloc
+  | CustomRealloc of Procname.t
+  | CppNew
+  | CppNewArray
+[@@deriving equal]
+
+val pp_allocator : F.formatter -> allocator -> unit
+
 type t =
   | AddressOfCppTemporary of Var.t * ValueHistory.t
   | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
-  | Allocated of Procname.t * Trace.t
-      (** the {!Procname.t} is the function causing the allocation, eg [malloc] *)
+  | Allocated of allocator * Trace.t
   | Closure of Procname.t
   | DynamicType of Typ.t
   | EndOfCollection
@@ -44,7 +54,7 @@ module Attributes : sig
 
   val get_closure_proc_name : t -> Procname.t option
 
-  val get_allocation : t -> (Procname.t * Trace.t) option
+  val get_allocation : t -> (allocator * Trace.t) option
 
   val get_dynamic_type : t -> Typ.t option
 

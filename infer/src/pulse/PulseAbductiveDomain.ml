@@ -278,8 +278,8 @@ module AddressAttributes = struct
     else astate
 
 
-  let allocate procname address location astate =
-    map_post_attrs astate ~f:(BaseAddressAttributes.allocate procname address location)
+  let allocate allocator address location astate =
+    map_post_attrs astate ~f:(BaseAddressAttributes.allocate allocator address location)
 
 
   let get_allocation addr astate =
@@ -652,10 +652,10 @@ let check_memory_leaks ~live_addresses ~unreachable_addresses astate =
     match allocated_not_freed_opt with
     | None ->
         Ok ()
-    | Some (procname, trace) ->
+    | Some (allocator, trace) ->
         (* allocated but not freed => leak *)
         L.d_printfln ~color:Red "LEAK: unreachable address %a was allocated by %a" AbstractValue.pp
-          addr Procname.pp procname ;
+          addr Attribute.pp_allocator allocator ;
         (* last-chance checks: it could be that the value (or its canonical equal) is reachable via
            pointer arithmetic from live values. This is common in libraries that do their own memory
            management, e.g. they return a field of the malloc()'d pointer, and the latter is a fat
@@ -688,7 +688,7 @@ let check_memory_leaks ~live_addresses ~unreachable_addresses astate =
         else
           (* if the address became unreachable at a known point use that location *)
           let location = Attributes.get_unreachable_at attributes in
-          Error (location, procname, trace)
+          Error (location, allocator, trace)
   in
   List.fold_result unreachable_addresses ~init:() ~f:(fun () addr ->
       match AddressAttributes.find_opt addr astate with
