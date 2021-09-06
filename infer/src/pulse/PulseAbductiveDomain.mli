@@ -162,6 +162,8 @@ module AddressAttributes : sig
     -> (t, [> `ISLError of t | `InvalidAccess of Invalidation.t * Trace.t * t]) result list
 end
 
+val deallocate_all_reachable_from : AbstractValue.t -> t -> t
+
 val is_local : Var.t -> t -> bool
 
 val find_post_cell_opt : AbstractValue.t -> t -> BaseDomain.cell option

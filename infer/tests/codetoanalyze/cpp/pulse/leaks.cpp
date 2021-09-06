@@ -89,7 +89,7 @@ void unknown(void* x);
 
 void unknown_wrapper(UniquePtr<X>* x) { unknown(x); }
 
-void FP_unknown_alloc_ok() {
+void unknown_alloc_ok() {
   UniquePtr<X>* x = new UniquePtr<X>(new X);
   // could do anything, including deallocate x, so best not to report anything
   unknown(x);
@@ -111,7 +111,7 @@ struct Y {
   int* a;
 };
 
-void FP_deep_alloc_unknown_ok(Y* y) {
+void deep_alloc_unknown_ok(Y* y) {
   y->a = new int;
   unknown(y);
   y->a = new int;
@@ -119,14 +119,14 @@ void FP_deep_alloc_unknown_ok(Y* y) {
 
 void call_deep_alloc_unknown_ok() {
   Y* y = new Y;
-  FP_deep_alloc_unknown_ok(y);
+  deep_alloc_unknown_ok(y);
   delete y->a;
   delete y;
 }
 
 void store_closure_unknown(const std::function<void()>& f);
 
-void FP_capture_alloc_unknown_ok() {
+void capture_alloc_unknown_ok() {
   X* x = new X;
   store_closure_unknown([&] { delete x; });
 }

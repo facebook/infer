@@ -730,6 +730,18 @@ let get_unreachable_attributes {post} =
     (post :> BaseDomain.t).attrs []
 
 
+let deallocate_all_reachable_from x astate =
+  let post = (astate.post :> BaseDomain.t) in
+  let attrs =
+    BaseDomain.GraphVisit.fold_from_addresses (Seq.return x) post ~init:post.attrs
+      ~f:(fun attrs addr _edges ->
+        Continue (BaseAddressAttributes.remove_allocation_attr addr attrs) )
+      ~finish:Fn.id
+    |> snd
+  in
+  {astate with post= PostDomain.update ~attrs astate.post}
+
+
 let is_local var astate = not (Var.is_return var || Stack.is_abducible astate var)
 
 let set_post_edges addr edges astate =
