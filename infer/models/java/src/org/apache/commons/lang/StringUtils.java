@@ -21,36 +21,27 @@
  * to provide a model for biabduction analysis
  */
 
-package org.apache.commons.lang3;
+package org.apache.commons.lang;
 
 public final class StringUtils {
 
-  public static boolean isNotEmpty(final CharSequence cs) {
+  public static boolean isNotEmpty(final String cs) {
     return !isEmpty(cs);
   }
 
-  public static boolean isNotBlank(final CharSequence cs) {
+  public static boolean isNotBlank(final String cs) {
     return !isBlank(cs);
   }
 
-  public static boolean isEmpty(final CharSequence cs) {
+  public static boolean isEmpty(final String cs) {
     return cs == null || cs.length() == 0;
   }
 
-  public static boolean isBlank(final CharSequence cs) {
-    final int strLen = length(cs);
-    if (strLen == 0) {
-      return true;
-    }
-    for (int i = 0; i < strLen; i++) {
-      if (!Character.isWhitespace(cs.charAt(i))) {
-        return false;
-      }
-    }
-    return true;
+  public static boolean isBlank(final String cs) {
+    return isEmpty(cs);
   }
 
-  public static int length(final CharSequence cs) {
+  public static int length(final String cs) {
     return cs == null ? 0 : cs.length();
   }
 

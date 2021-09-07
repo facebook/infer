@@ -28,6 +28,12 @@ import java.util.concurrent.locks.Lock;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Objects;
+import java.util.Map;
+import java.util.List;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.Validate;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 
 public class NullPointerExceptions {
@@ -637,13 +643,104 @@ public class NullPointerExceptions {
     listBuilder.add(getObject());
   }
 
-  String assertParameterRequireNonNullOk(@Nullable Object object) {
+  String requireNonNullOk(@Nullable Object object) {
     return Objects.requireNonNull(object).toString();
   }
 
   String objectsNonNullOk(@Nullable Object object) {
     if (!Objects.isNull(object)) {
       return object.toString();
+    }
+    return null;
+  }
+
+  String stringUtilsIsNotEmptyOk(@Nullable String str) {
+    if (StringUtils.isNotEmpty(str)) {
+       return str.toLowerCase();
+    }
+    return null;
+  }
+
+  String stringUtils3IsNotEmptyOk(@Nullable String str) {
+    if (org.apache.commons.lang3.StringUtils.isNotEmpty(str)) {
+       return str.toLowerCase();
+    }
+    return null;
+  }
+
+  String stringUtilsIsNotBlankOk(@Nullable String str) {
+    if (StringUtils.isNotBlank(str)) {
+       return str.toLowerCase();
+    }
+    return null;
+  }
+
+  String stringUtils3IsNotBlankOk(@Nullable String str) {
+    if (org.apache.commons.lang3.StringUtils.isNotBlank(str)) {
+       return str.toLowerCase();
+    }
+    return null;
+  }
+
+  String collectionUtilsIsNotEmptyOk(@Nullable List list) {
+    if (CollectionUtils.isNotEmpty(list)) {
+       return list.toString();
+    }
+    return null;
+  }
+
+  String collectionUtils4IsNotEmptyOk(@Nullable List list) {
+    if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(list)) {
+       return list.toString();
+    }
+    return null;
+  }
+
+  String mapUtilsIsNotEmptyOk(@Nullable Map map) {
+    if (MapUtils.isNotEmpty(map)) {
+       return map.toString();
+    }
+    return null;
+  }
+
+  String mapUtils4IsNotEmptyOk(@Nullable Map map) {
+    if (org.apache.commons.collections4.MapUtils.isNotEmpty(map)) {
+       return map.toString();
+    }
+    return null;
+  }
+
+  String validateNotNullOK(@Nullable Object obj) {
+    return Validate.notNull(obj).toString();
+  }
+
+  String validateNotNullOK(@Nullable String str) {
+    return Validate.notEmpty(str).toLowerCase();
+  }
+
+  String validateNotEmptyOK(@Nullable List list) {
+    return Validate.notEmpty(list).toString();
+  }
+
+  String validateNotEmptyOK(@Nullable Map map) {
+    return Validate.notEmpty(map).toString();
+  }
+
+  String validateIsTrue(@Nullable Object obj) {
+    Validate.isTrue(obj != null);
+    return obj.toString();
+  }
+
+  String stringUtilsIsNullOrEmptyOK(@Nullable String str) {
+    if (!com.amazonaws.util.StringUtils.isNullOrEmpty(str)) {
+       return str.toLowerCase();
+    }
+    return null;
+  }
+
+  String collectionUtilsIsNullOrEmptyOK(@Nullable List list) {
+    if (!com.amazonaws.util.CollectionUtils.isNullOrEmpty(list)) {
+       return list.toString();
     }
     return null;
   }
