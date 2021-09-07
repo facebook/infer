@@ -112,6 +112,8 @@ module type S = sig
 
   val nsArray_arrayWithObjectsCount : t
 
+  val objc_insert_key : t
+
   val objc_insert_value : t
 
   val objc_autorelease_pool_pop : t

@@ -3615,9 +3615,17 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         n$2=NSNumber.stringWithUTF8:(@"Foo")
         n$3=NSNumber.stringWithUTF8:(@"lastName")
         n$4=NSNumber.stringWithUTF8:(@"Bar")
+        _ = objc_insert_key(n$1:objc_object* ) // nil insertion check
+        _ = *n$1 // null dereference check
         temp1[0]:objc_object*=n$1
+        _ = objc_insert_key(n$3:objc_object* ) // nil insertion check
+        _ = *n$3 // null dereference check
         temp1[1]:objc_object*=n$3
+        _ = objc_insert_value(n$2:objc_object* ) // nil insertion check
+        _ = *n$2 // null dereference check
         temp2[0]:objc_object*=n$2
+        _ = objc_insert_value(n$4:objc_object* ) // nil insertion check
+        _ = *n$4 // null dereference check
         temp2[1]:objc_object*=n$4
         n$3=NSDictionary.dictionaryWithObjects:forKeys:count:(temp2:objc_object* const [2*8],
                                                               temp1:objc_object* const [2*8], 2:int)
@@ -3665,21 +3673,26 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       List.mapi ~f:(exec_instruction_with_trans_state trans_state None) stmts
     in
     (* 3. Add array initialization (elements assignments) *)
-    let none_id = Ident.create_none () in
-    let array_init temp_var temp_with_typ idx_mod =
+    let array_init temp_var temp_with_typ idx_mod insert_proc =
+      let none_id = Ident.create_none () in
+      let objc_insert : Exp.t * Typ.t -> Sil.instr =
+       fun arg ->
+        Sil.Call ((none_id, StdTyp.void), Const (Cfun insert_proc), [arg], loc, CallFlags.default)
+      in
       let instrs =
         List.mapi res_trans_elems ~f:(fun i {return= e, typ} ->
             if Int.equal (i % 2) idx_mod then
               let idx = Exp.Const (Cint (IntLit.of_int (i / 2))) in
-              [ Sil.Load {id= none_id; e; root_typ= typ; typ; loc}
+              [ objc_insert (e, typ)
+              ; Sil.Load {id= none_id; e; root_typ= typ; typ; loc}
               ; Sil.Store {e1= Lindex (temp_var, idx); root_typ= typ; typ; e2= e; loc} ]
             else [] )
         |> List.concat
       in
       mk_trans_result temp_with_typ {empty_control with instrs}
     in
-    let res_trans_array1 = array_init temp1_var temp1_with_typ 1 in
-    let res_trans_array2 = array_init temp2_var temp2_with_typ 0 in
+    let res_trans_array1 = array_init temp1_var temp1_with_typ 1 BuiltinDecl.objc_insert_value in
+    let res_trans_array2 = array_init temp2_var temp2_with_typ 0 BuiltinDecl.objc_insert_key in
     (* 4. Add a function call. *)
     let res_trans_call =
       let method_type_no_ref = CType_decl.get_type_from_expr_info expr_info tenv in
