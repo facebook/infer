@@ -3499,7 +3499,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       {[
         n$1=NSNumber.numberWithInt:(2:int)
         n$2=NSNumber.numberWithInt:(3:int)
+        _ = objc_insert_value(n$1:objc_object* ) // nil insertion check
+        _ = *n$1 // null dereference check
         temp[0]:objc_object*=n$1
+        _ = objc_insert_value(n$2:objc_object* ) // nil insertion check
+        _ = *n$2 // null dereference check
         temp[1]:objc_object*=n$2
         n$3=NSArray.arrayWithObjects:count:(temp:objc_object* const [2*8],2:int)
         a:NSArray*=n$3
@@ -3535,13 +3539,23 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         ~f:(exec_instruction_with_trans_state {trans_state with var_exp_typ= None} None)
         stmts
     in
-    (* 3. Add array initialization (elements assignments) *)
-    let none_id = Ident.create_none () in
+    (* 3. Add array initialization (elements assignments + nil insertion check) *)
     let res_trans_array =
       let instrs =
+        let none_id = Ident.create_none () in
+        let objc_insert_value : Exp.t * Typ.t -> Sil.instr =
+         fun arg ->
+          Sil.Call
+            ( (none_id, StdTyp.void)
+            , Const (Cfun BuiltinDecl.objc_insert_value)
+            , [arg]
+            , loc
+            , CallFlags.default )
+        in
         List.mapi res_trans_elems ~f:(fun i {return= e, typ} ->
             let idx = Exp.Const (Cint (IntLit.of_int i)) in
-            [ Sil.Load {id= none_id; e; root_typ= typ; typ; loc}
+            [ objc_insert_value (e, typ)
+            ; Sil.Load {id= none_id; e; root_typ= typ; typ; loc}
             ; Sil.Store {e1= Lindex (temp_var, idx); root_typ= typ; typ; e2= e; loc} ] )
         |> List.concat
       in

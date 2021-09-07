@@ -965,6 +965,8 @@ let nsArray_arrayWithObjectsCount =
   Builtin.register BuiltinDecl.nsArray_arrayWithObjectsCount execute_skip
 
 
+let objc_insert_value = Builtin.register BuiltinDecl.objc_insert_value execute_skip
+
 let objc_autorelease_pool_pop = Builtin.register BuiltinDecl.objc_autorelease_pool_pop execute_skip
 
 let objc_autorelease_pool_push =

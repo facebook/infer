@@ -191,6 +191,8 @@ let nsArray_arrayWithObjectsCount =
   create_objc_class_method "NSArray" "arrayWithObjects:count:" [None; None]
 
 
+let objc_insert_value = create_procname "_objc_insertValue"
+
 let objc_autorelease_pool_pop = create_procname "_objc_autoreleasePoolPop"
 
 let objc_autorelease_pool_push = create_procname "_objc_autoreleasePoolPush"

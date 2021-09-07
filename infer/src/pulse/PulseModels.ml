@@ -2182,6 +2182,10 @@ module ProcNameDispatcher = struct
           <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; +BuiltinDecl.(match_builtin __objc_alloc_no_fail) <>$ capt_exp $--> ObjC.alloc_no_fail
         ; -"NSObject" &:: "init" <>$ capt_arg_payload $--> Misc.id_first_arg ~desc:"NSObject.init"
+        ; +BuiltinDecl.(match_builtin objc_insert_value)
+          <>$ capt_arg_payload
+          $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Value
+                 ~desc:"value insertion into collection literal"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableDictionary")
           &:: "setObject:forKey:" <>$ any_arg $+ capt_arg_payload $+ capt_arg_payload
           $--> ObjC.insertion_into_collection_key_and_value
