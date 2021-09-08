@@ -724,7 +724,8 @@
                 "cast_kind" : "FunctionToPointerDecay",
                 "base_path" : [
                 ]
-              }
+              },
+              false
             ]]
           ],
           {
@@ -841,7 +842,8 @@
                 "cast_kind" : "FunctionToPointerDecay",
                 "base_path" : [
                 ]
-              }
+              },
+              false
             ]]
           ],
           {

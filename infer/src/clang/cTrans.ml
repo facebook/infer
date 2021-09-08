@@ -73,7 +73,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | BlockExpr _ ->
         true
     (* the block can be wrapped in ExprWithCleanups  or ImplicitCastExpr*)
-    | ImplicitCastExpr (_, [s'], _, _) | ExprWithCleanups (_, [s'], _, _) ->
+    | ImplicitCastExpr (_, [s'], _, _, _) | ExprWithCleanups (_, [s'], _, _) ->
         is_block_expr s'
     | _ ->
         false
@@ -81,7 +81,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   let objc_exp_of_type_block fun_exp_stmt =
     match fun_exp_stmt with
-    | Clang_ast_t.ImplicitCastExpr (_, _, ei, _)
+    | Clang_ast_t.ImplicitCastExpr (_, _, ei, _, _)
       when CType.is_block_type ei.Clang_ast_t.ei_qual_type ->
         true
     | _ ->
@@ -1003,7 +1003,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       CType_decl.qual_type_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_qual_type
     in
     match (stmt_list, res_typ.desc, binary_operator_info.Clang_ast_t.boi_kind) with
-    | ( [s1; Clang_ast_t.ImplicitCastExpr (_, [s2], _, _)]
+    | ( [s1; Clang_ast_t.ImplicitCastExpr (_, [s2], _, _, _)]
       , Tstruct (CStruct _ as struct_name)
       , `Assign ) ->
         let res_trans_e1, res_trans_e2 =
@@ -1081,7 +1081,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
               true
           | UnaryOperator (_, stmts, _, _)
           | BinaryOperator (_, stmts, _, _)
-          | ImplicitCastExpr (_, stmts, _, _)
+          | ImplicitCastExpr (_, stmts, _, _, _)
           | ParenExpr (_, stmts, _) ->
               List.exists stmts ~f:is_complex_rhs
           | _ ->
@@ -3004,8 +3004,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       let instruction' = exec_with_glvalue_as_reference instruction in
       let init_expr =
         match init_expr with
-        | Clang_ast_t.ImplicitCastExpr (_, [init_expr], _, _) when Option.is_some cstruct_name_opt
-          ->
+        | Clang_ast_t.ImplicitCastExpr (_, [init_expr], _, _, _)
+          when Option.is_some cstruct_name_opt ->
             init_expr
         | _ ->
             init_expr
@@ -3238,6 +3238,24 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       extract_stmt_from_singleton stmt_list stmt_info.Clang_ast_t.si_source_range
         "In CastExpr There must be only one stmt defining the expression to be cast."
     in
+    let stmt =
+      match stmt with
+      | ImplicitCastExpr
+          ( inner_stmt_info
+          , inner_stmt_list
+          , inner_expr_info
+          , inner_cast_expr_info
+          , part_of_explicit_cast )
+        when part_of_explicit_cast ->
+          Clang_ast_t.ImplicitCastExpr
+            ( inner_stmt_info
+            , inner_stmt_list
+            , {inner_expr_info with ei_qual_type= expr_info.Clang_ast_t.ei_qual_type}
+            , inner_cast_expr_info
+            , part_of_explicit_cast )
+      | _ ->
+          stmt
+    in
     let cast_kind = cast_expr_info.Clang_ast_t.cei_cast_kind in
     let trans_state =
       match cast_kind with
@@ -3421,7 +3439,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       |> mk_trans_result res_trans_stmt.return
     in
     match (stmt_list, context.CContext.return_param_typ) with
-    | ( ([Clang_ast_t.ImplicitCastExpr (_, [stmt], _, _)] | [stmt])
+    | ( ([Clang_ast_t.ImplicitCastExpr (_, [stmt], _, _, _)] | [stmt])
       , Some {desc= Tptr ({desc= Tstruct (CStruct _ as struct_name)}, _)} ) ->
         (* return (exp:struct); *)
         return_stmt stmt ~mk_ret_instrs:(fun ret_exp _root_typ ret_typ res_trans_stmt ->
@@ -4851,7 +4869,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         pseudoObjectExpr_trans trans_state stmt_list
     | UnaryExprOrTypeTraitExpr (_, _, _, unary_expr_or_type_trait_expr_info) ->
         unaryExprOrTypeTraitExpr_trans trans_state unary_expr_or_type_trait_expr_info
-    | ImplicitCastExpr (stmt_info, stmt_list, expr_info, cast_kind)
+    | ImplicitCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _)
     | BuiltinBitCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _)
     | CStyleCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _)
     | CXXReinterpretCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _, _)

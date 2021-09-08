@@ -2365,7 +2365,8 @@
                                         "cast_kind" : "FunctionToPointerDecay",
                                         "base_path" : [
                                         ]
-                                      }
+                                      },
+                                      false
                                     ]]
                                   ],
                                   {
@@ -2402,7 +2403,8 @@
                             "cast_kind" : "ARCConsumeObject",
                             "base_path" : [
                             ]
-                          }
+                          },
+                          false
                         ]]
                       ],
                       {
@@ -2547,7 +2549,8 @@
                                             "cast_kind" : "FunctionToPointerDecay",
                                             "base_path" : [
                                             ]
-                                          }
+                                          },
+                                          false
                                         ]]
                                       ],
                                       {
@@ -2584,7 +2587,8 @@
                                 "cast_kind" : "ARCConsumeObject",
                                 "base_path" : [
                                 ]
-                              }
+                              },
+                              false
                             ]]
                           ],
                           {

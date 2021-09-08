@@ -218,6 +218,7 @@ let get_cast_kind = function
 #define ABSTRACT_STMT(TYPE)
 #define CASTEXPR(Type, Base) | Type (_, _, _, cast_expr_info)
 #define EXPLICITCASTEXPR(Type, Base) | Type (_, _, _, cast_expr_info, _)
+#define IMPLICITCASTEXPR(Type, Base) | Type (_, _, _, cast_expr_info, _)
 #define CXXNAMEDCASTEXPR(Type, Base) | Type (_, _, _, cast_expr_info, _, _)
 #define OBJCBRIDGEDCASTEXPR(Type, Base) | Type (_, _, _, cast_expr_info, _, _)
 #include<clang/AST/StmtNodes.inc>
