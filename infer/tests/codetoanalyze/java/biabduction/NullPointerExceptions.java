@@ -758,4 +758,19 @@ public class NullPointerExceptions {
     NullPointerExceptions object = mapper.load(NullPointerExceptions.class, object2);
     object.toString();
   }
+
+  String preconditionCheckArgumentTest(@Nullable Object obj) {
+    Preconditions.checkArgument(Objects.nonNull(obj));
+    return obj.toString();
+  }
+
+  String preconditionCheckArgumentDescriptionTest(@Nullable Object obj) {
+    Preconditions.checkArgument(Objects.nonNull(obj), "obj is null");
+    return obj.toString();
+  }
+
+  String preconditionCheckArgumentDescriptionParameterTest(@Nullable Object obj) {
+    Preconditions.checkArgument(Objects.nonNull(obj), "obj is null %s ", new String("foo"));
+    return obj.toString();
+  }
 }
