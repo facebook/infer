@@ -388,7 +388,7 @@ and translate_pattern_map env value updates : Block.t =
     let key_expr_block =
       translate_expression {env with result= Present (Exp.Var key_id)} one_update.key
     in
-    let has_key_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_map_has_key) in
+    let has_key_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_map_is_key) in
     let args = [(Exp.Var key_id, any); (Exp.Var value, any)] in
     let has_key_block : Block.t =
       let start =
@@ -401,7 +401,7 @@ and translate_pattern_map env value updates : Block.t =
       {start; exit_success; exit_failure}
     in
     let value_id = Ident.create_fresh Ident.knormal in
-    let lookup_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_map_lookup) in
+    let lookup_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_map_get) in
     let lookup_block =
       Block.make_instruction env
         [Sil.Call ((value_id, any), lookup_fun_exp, args, env.location, CallFlags.default)]
@@ -810,7 +810,7 @@ and translate_expression_map_update env ret_var map updates : Block.t =
     let value_expr_block =
       translate_expression {env with result= Present (Exp.Var value_id)} one_update.value
     in
-    let update_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_map_update) in
+    let update_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_map_put) in
     let update_args = [(Exp.Var key_id, any); (Exp.Var value_id, any); (Exp.Var map_id, any)] in
     let update_block =
       Block.make_instruction env
@@ -822,7 +822,7 @@ and translate_expression_map_update env ret_var map updates : Block.t =
           []
       | Exact ->
           let has_key_id = Ident.create_fresh Ident.knormal in
-          let has_key_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_map_has_key) in
+          let has_key_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_map_is_key) in
           let has_key_args = [(Exp.Var key_id, any); (Exp.Var map_id, any)] in
           let start =
             Node.make_stmt env

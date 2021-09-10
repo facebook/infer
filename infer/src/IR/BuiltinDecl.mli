@@ -35,11 +35,11 @@ val __erlang_make_tuple : Procname.t
 
 val __erlang_map_create : Procname.t
 
-val __erlang_map_has_key : Procname.t
+val __erlang_map_is_key : Procname.t
 
-val __erlang_map_lookup : Procname.t
+val __erlang_map_get : Procname.t
 
-val __erlang_map_update : Procname.t
+val __erlang_map_put : Procname.t
 
 val __infer_initializer_list : Procname.t
 

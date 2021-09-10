@@ -1839,7 +1839,7 @@ module Erlang = struct
     PulseOperations.write_id ret_id addr_map astate
 
 
-  let map_has_key (key, _key_history) map : model =
+  let map_is_key (key, _key_history) map : model =
    fun ({location; path; ret= ret_id, _} as data) astate ->
     match Java.load_field path map_is_empty_field location map astate with
     | Error _ ->
@@ -1848,7 +1848,7 @@ module Erlang = struct
     | Ok (astate, _isempty_addr, (is_empty, _isempty_hist)) ->
         let ret_val_true = AbstractValue.mk_fresh () in
         let ret_val_false = AbstractValue.mk_fresh () in
-        let event = ValueHistory.Call {f= Model "map_has_key"; location; in_call= []} in
+        let event = ValueHistory.Call {f= Model "map_is_key"; location; in_call= []} in
         (* Return [Ok & assume map is empty & return false;
          * Ok & assume map is not empty & assume key is the tracked key & return true ]
          *)
@@ -1872,7 +1872,7 @@ module Erlang = struct
         [astate_empty; astate_haskey]
 
 
-  let map_lookup (key, _key_history) map : model =
+  let map_get (key, _key_history) map : model =
    fun ({location; path; ret= ret_id, _} as data) astate ->
     match Java.load_field path map_is_empty_field location map astate with
     | Error _ ->
@@ -1903,10 +1903,10 @@ module Erlang = struct
         astate_ok :: astate_bad
 
 
-  let map_update key value _map : model =
+  let map_put key value _map : model =
    fun {location; path; ret= ret_id, _} astate ->
     (* Ignore old map. We only store one key/value so we can simply create a new map. *)
-    let event = ValueHistory.Allocation {f= Model "map_update"; location} in
+    let event = ValueHistory.Allocation {f= Model "map_put"; location} in
     let addr_map_val = AbstractValue.mk_fresh () in
     let addr_map = (addr_map_val, [event]) in
     let addr_is_empty = (AbstractValue.mk_fresh (), [event]) in
@@ -2008,12 +2008,12 @@ module ProcNameDispatcher = struct
         ; +BuiltinDecl.(match_builtin __erlang_make_tuple) &++> Erlang.make_tuple
         ; +BuiltinDecl.(match_builtin __erlang_make_nil) <>--> Erlang.make_nil
         ; +BuiltinDecl.(match_builtin __erlang_map_create) &++> Erlang.map_create
-        ; +BuiltinDecl.(match_builtin __erlang_map_has_key)
-          <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.map_has_key
-        ; +BuiltinDecl.(match_builtin __erlang_map_lookup)
-          <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.map_lookup
-        ; +BuiltinDecl.(match_builtin __erlang_map_update)
-          <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> Erlang.map_update
+        ; +BuiltinDecl.(match_builtin __erlang_map_is_key)
+          <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.map_is_key
+        ; +BuiltinDecl.(match_builtin __erlang_map_get)
+          <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.map_get
+        ; +BuiltinDecl.(match_builtin __erlang_map_put)
+          <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> Erlang.map_put
         ; +BuiltinDecl.(match_builtin __erlang_error_badkey) <>--> Erlang.error_badkey
         ; +BuiltinDecl.(match_builtin __erlang_error_badmap) <>--> Erlang.error_badmap
         ; +BuiltinDecl.(match_builtin __erlang_error_badmatch) <>--> Erlang.error_badmatch

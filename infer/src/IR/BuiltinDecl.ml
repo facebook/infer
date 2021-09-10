@@ -94,11 +94,11 @@ let __erlang_make_cons = create_procname "__erlang_make_cons"
 
 let __erlang_map_create = create_procname "__erlang_map_create"
 
-let __erlang_map_has_key = create_procname "__erlang_map_has_key"
+let __erlang_map_is_key = create_procname "__erlang_map_is_key"
 
-let __erlang_map_lookup = create_procname "__erlang_map_lookup"
+let __erlang_map_get = create_procname "__erlang_map_get"
 
-let __erlang_map_update = create_procname "__erlang_map_update"
+let __erlang_map_put = create_procname "__erlang_map_put"
 
 let __erlang_make_nil = create_procname "__erlang_make_nil"
 
