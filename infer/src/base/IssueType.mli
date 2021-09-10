@@ -83,6 +83,10 @@ val assert_failure : t
 
 val bad_footprint : t
 
+val bad_key : t
+
+val bad_map : t
+
 val bad_record : t
 
 val biabduction_analysis_stops : t

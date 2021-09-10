@@ -112,6 +112,8 @@ OPTIONS
              Abduction_case_not_implemented (enabled by default),
              Array_of_pointsto (enabled by default),
              Assert_failure (enabled by default),
+             BAD_KEY (enabled by default),
+             BAD_MAP (enabled by default),
              BAD_POINTER_COMPARISON (enabled by default),
              BAD_RECORD (enabled by default),
              BIABDUCTION_ANALYSIS_STOPS (disabled by default),

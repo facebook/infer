@@ -76,7 +76,11 @@ let __delete_array = create_procname "__delete_array"
 
 let __delete_locked_attribute = create_procname "__delete_locked_attribute"
 
+let __erlang_error_badkey = create_procname "__erlang_error_badkey"
+
 let __erlang_error_badmatch = create_procname "__erlang_error_badmatch"
+
+let __erlang_error_badmap = create_procname "__erlang_error_badmap"
 
 let __erlang_error_badrecord = create_procname "__erlang_error_badrecord"
 
@@ -87,6 +91,14 @@ let __erlang_error_function_clause = create_procname "__erlang_error_function_cl
 let __erlang_error_if_clause = create_procname "__erlang_error_if_clause"
 
 let __erlang_make_cons = create_procname "__erlang_make_cons"
+
+let __erlang_map_create = create_procname "__erlang_map_create"
+
+let __erlang_map_has_key = create_procname "__erlang_map_has_key"
+
+let __erlang_map_lookup = create_procname "__erlang_map_lookup"
+
+let __erlang_map_update = create_procname "__erlang_map_update"
 
 let __erlang_make_nil = create_procname "__erlang_make_nil"
 

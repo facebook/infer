@@ -344,6 +344,8 @@ let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} : 
   | Literal (Int i) ->
       let e = Exp.Const (Cint (IntLit.of_string i)) in
       Block.make_branch env (Exp.BinOp (Eq, Var value, e))
+  | Map {updates; _} ->
+      translate_pattern_map env value updates
   | Nil ->
       let id = Ident.create_fresh Ident.knormal in
       let start = Node.make_stmt env [has_type env ~result:id ~value Nil] in
@@ -440,6 +442,47 @@ let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} : 
       L.debug Capture Verbose "@[todo ErlangTranslator.translate_pattern %s@."
         (Sexp.to_string (Ast.sexp_of_simple_expression e)) ;
       Block.make_failure env
+
+
+and translate_pattern_map env value updates : Block.t =
+  let any = ptr_typ_of_name Any in
+  let is_right_type_id = Ident.create_fresh Ident.knormal in
+  let start = Node.make_stmt env [has_type env ~result:is_right_type_id ~value Map] in
+  let right_type_node = Node.make_if env true (Var is_right_type_id) in
+  let wrong_type_node = Node.make_if env false (Var is_right_type_id) in
+  (* For each update, check if key is there and if yes, match against value *)
+  let make_submatcher (one_update : Ast.association) =
+    let has_key_id = Ident.create_fresh Ident.knormal in
+    let key_id = Ident.create_fresh Ident.knormal in
+    let key_expr_block =
+      translate_expression {env with result= Present (Exp.Var key_id)} one_update.key
+    in
+    let has_key_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_map_has_key) in
+    let args = [(Exp.Var key_id, any); (Exp.Var value, any)] in
+    let has_key_block : Block.t =
+      let start =
+        Node.make_stmt env
+          [Sil.Call ((has_key_id, any), has_key_fun_exp, args, env.location, CallFlags.default)]
+      in
+      let exit_success = Node.make_if env true (Var has_key_id) in
+      let exit_failure = Node.make_if env false (Var has_key_id) in
+      start |~~> [exit_success; exit_failure] ;
+      {start; exit_success; exit_failure}
+    in
+    let value_id = Ident.create_fresh Ident.knormal in
+    let lookup_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_map_lookup) in
+    let lookup_block =
+      Block.make_instruction env
+        [Sil.Call ((value_id, any), lookup_fun_exp, args, env.location, CallFlags.default)]
+    in
+    let match_value_block = translate_pattern env value_id one_update.value in
+    Block.all env [key_expr_block; has_key_block; lookup_block; match_value_block]
+  in
+  let submatchers = Block.all env (List.map ~f:make_submatcher updates) in
+  start |~~> [right_type_node; wrong_type_node] ;
+  right_type_node |~~> [submatchers.start] ;
+  wrong_type_node |~~> [submatchers.exit_failure] ;
+  {start; exit_success= submatchers.exit_success; exit_failure= submatchers.exit_failure}
 
 
 and translate_guard_expression env (expression : Ast.expression) : Ident.t * Block.t =
@@ -637,6 +680,10 @@ and translate_expression env {Ast.line; simple_expression} =
     | Literal (String s) ->
         let e = Exp.Const (Cstr s) in
         Block.make_load env ret_var e any
+    | Map {map= None; updates} ->
+        translate_expression_map_create env ret_var updates
+    | Map {map= Some map; updates} ->
+        translate_expression_map_update env ret_var map updates
     | Match {pattern; body} ->
         let body_block = translate_expression {env with result= Present (Exp.Var ret_var)} body in
         let pattern_block = translate_pattern env ret_var pattern in
@@ -817,6 +864,84 @@ and translate_expression env {Ast.line; simple_expression} =
       in
       let store_block = Block.make_instruction env [store_instr] in
       Block.all env [expression_block; store_block]
+
+
+and translate_expression_map_create env ret_var updates : Block.t =
+  (* Get keys and values as an alternating list of expressions: [K1; V1; K2; V2; ...] *)
+  let exprs = List.concat_map ~f:(fun (a : Ast.association) -> [a.key; a.value]) updates in
+  let exprs_with_ids = List.map ~f:(fun e -> (e, Ident.create_fresh Ident.knormal)) exprs in
+  let expr_blocks =
+    let translate_one_expr (one_expr, one_id) =
+      translate_expression {env with result= Present (Exp.Var one_id)} one_expr
+    in
+    List.map ~f:translate_one_expr exprs_with_ids
+  in
+  let any = ptr_typ_of_name Any in
+  let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_map_create) in
+  let exprs_ids_and_types = List.map ~f:(function _, id -> (Exp.Var id, any)) exprs_with_ids in
+  let call_instruction =
+    Sil.Call ((ret_var, any), fun_exp, exprs_ids_and_types, env.location, CallFlags.default)
+  in
+  let call_block = Block.make_instruction env [call_instruction] in
+  Block.all env (expr_blocks @ [call_block])
+
+
+and translate_expression_map_update env ret_var map updates : Block.t =
+  let any = ptr_typ_of_name Any in
+  let map_id = Ident.create_fresh Ident.knormal in
+  let map_block = translate_expression {env with result= Present (Exp.Var map_id)} map in
+  let check_map_type_block : Block.t =
+    let is_right_type_id = Ident.create_fresh Ident.knormal in
+    let start = Node.make_stmt env [has_type env ~result:is_right_type_id ~value:map_id Map] in
+    let right_type_node = Node.make_if env true (Var is_right_type_id) in
+    let wrong_type_node = Node.make_if env false (Var is_right_type_id) in
+    let crash_node = Node.make_fail env BuiltinDecl.__erlang_error_badmap in
+    start |~~> [right_type_node; wrong_type_node] ;
+    wrong_type_node |~~> [crash_node] ;
+    {start; exit_success= right_type_node; exit_failure= crash_node}
+  in
+  (* Translate updates one-by-one, also check key if exact association *)
+  let translate_update (one_update : Ast.association) =
+    let key_id = Ident.create_fresh Ident.knormal in
+    let value_id = Ident.create_fresh Ident.knormal in
+    let key_expr_block =
+      translate_expression {env with result= Present (Exp.Var key_id)} one_update.key
+    in
+    let value_expr_block =
+      translate_expression {env with result= Present (Exp.Var value_id)} one_update.value
+    in
+    let update_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_map_update) in
+    let update_args = [(Exp.Var key_id, any); (Exp.Var value_id, any); (Exp.Var map_id, any)] in
+    let update_block =
+      Block.make_instruction env
+        [Sil.Call ((ret_var, any), update_fun_exp, update_args, env.location, CallFlags.default)]
+    in
+    let has_key_block : Block.t list =
+      match one_update.kind with
+      | Arrow ->
+          []
+      | Exact ->
+          let has_key_id = Ident.create_fresh Ident.knormal in
+          let has_key_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_map_has_key) in
+          let has_key_args = [(Exp.Var key_id, any); (Exp.Var map_id, any)] in
+          let start =
+            Node.make_stmt env
+              [ Sil.Call
+                  ((has_key_id, any), has_key_fun_exp, has_key_args, env.location, CallFlags.default)
+              ]
+          in
+          let exit_success = Node.make_if env true (Var has_key_id) in
+          let no_key_node = Node.make_if env false (Var has_key_id) in
+          let crash_node = Node.make_fail env BuiltinDecl.__erlang_error_badkey in
+          start |~~> [exit_success; no_key_node] ;
+          no_key_node |~~> [crash_node] ;
+          [{start; exit_success; exit_failure= crash_node}]
+    in
+    Block.all env ([key_expr_block; value_expr_block] @ has_key_block @ [update_block])
+  in
+  (* TODO: what should be the order of updates? *)
+  let update_blocks = List.map ~f:translate_update updates in
+  Block.all env ([map_block; check_map_type_block] @ update_blocks)
 
 
 and translate_body env body : Block.t =

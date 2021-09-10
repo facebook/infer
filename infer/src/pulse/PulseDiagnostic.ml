@@ -24,6 +24,8 @@ type access_to_invalid_address =
 [@@deriving compare, equal]
 
 type erlang_error =
+  | Badkey of {calling_context: calling_context; location: Location.t}
+  | Badmap of {calling_context: calling_context; location: Location.t}
   | Badmatch of {calling_context: calling_context; location: Location.t}
   | Badrecord of {calling_context: calling_context; location: Location.t}
   | Case_clause of {calling_context: calling_context; location: Location.t}
@@ -56,6 +58,8 @@ let get_location = function
   | ReadUninitializedValue {calling_context= (_, location) :: _} ->
       (* report at the call site that triggers the bug *) location
   | MemoryLeak {location}
+  | ErlangError (Badkey {location})
+  | ErlangError (Badmap {location})
   | ErlangError (Badmatch {location})
   | ErlangError (Badrecord {location})
   | ErlangError (Case_clause {location})
@@ -186,6 +190,10 @@ let get_message diagnostic =
         "%s memory leak. Memory dynamically allocated at line %d %a is not freed after the last \
          access at %a"
         pulse_start_msg allocation_line pp_allocation_trace allocation_trace Location.pp location
+  | ErlangError (Badkey {calling_context= _; location}) ->
+      F.asprintf "%s bad key at %a" pulse_start_msg Location.pp location
+  | ErlangError (Badmap {calling_context= _; location}) ->
+      F.asprintf "%s bad map at %a" pulse_start_msg Location.pp location
   | ErlangError (Badmatch {calling_context= _; location}) ->
       F.asprintf "%s no match of RHS at %a" pulse_start_msg Location.pp location
   | ErlangError (Badrecord {calling_context= _; location}) ->
@@ -332,6 +340,12 @@ let get_trace = function
              F.fprintf fmt "allocated by `%a` here" Attribute.pp_allocator allocator )
            allocation_trace
       @@ [Errlog.make_trace_element 0 location "memory becomes unreachable here" []]
+  | ErlangError (Badkey {calling_context; location}) ->
+      get_trace_calling_context calling_context
+      @@ [Errlog.make_trace_element 0 location "bad key here" []]
+  | ErlangError (Badmap {calling_context; location}) ->
+      get_trace_calling_context calling_context
+      @@ [Errlog.make_trace_element 0 location "bad map here" []]
   | ErlangError (Badmatch {calling_context; location}) ->
       get_trace_calling_context calling_context
       @@ [Errlog.make_trace_element 0 location "no match of RHS here" []]
@@ -368,6 +382,10 @@ let get_issue_type = function
       Invalidation.issue_type_of_cause invalidation must_be_valid_reason
   | MemoryLeak _ ->
       IssueType.pulse_memory_leak
+  | ErlangError (Badkey _) ->
+      IssueType.bad_key
+  | ErlangError (Badmap _) ->
+      IssueType.bad_map
   | ErlangError (Badmatch _) ->
       IssueType.no_match_of_rhs
   | ErlangError (Badrecord _) ->

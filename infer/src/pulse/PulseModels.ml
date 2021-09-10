@@ -1673,6 +1673,20 @@ module Android = struct
 end
 
 module Erlang = struct
+  let error_badkey : model =
+   fun {location} astate ->
+    [ Error
+        (ReportableError {astate; diagnostic= ErlangError (Badkey {calling_context= []; location})})
+    ]
+
+
+  let error_badmap : model =
+   fun {location} astate ->
+    [ Error
+        (ReportableError {astate; diagnostic= ErlangError (Badmap {calling_context= []; location})})
+    ]
+
+
   let error_badmatch : model =
    fun {location} astate ->
     [ Error
@@ -1708,6 +1722,13 @@ module Erlang = struct
            {astate; diagnostic= ErlangError (If_clause {calling_context= []; location})} ) ]
 
 
+  let write_field_and_deref path location ~struct_addr ~field_addr ~field_val field_name astate =
+    let* astate =
+      PulseOperations.write_field path location ~ref:struct_addr field_name ~obj:field_addr astate
+    in
+    PulseOperations.write_deref path location ~ref:field_addr ~obj:field_val astate
+
+
   let make_nil : model =
    fun {location; ret= ret_id, _} astate ->
     let event = ValueHistory.Allocation {f= Model "[]"; location} in
@@ -1732,15 +1753,13 @@ module Erlang = struct
     let addr_cons = (addr_cons_val, [event]) in
     let field name = Fieldname.make (ErlangType Cons) name in
     let<*> astate =
-      PulseOperations.write_field path location ~ref:addr_cons (field ErlangTypeName.cons_head)
-        ~obj:addr_head astate
+      write_field_and_deref path location ~struct_addr:addr_cons ~field_addr:addr_head
+        ~field_val:head (field ErlangTypeName.cons_head) astate
     in
-    let<*> astate = PulseOperations.write_deref path location ~ref:addr_head ~obj:head astate in
-    let<*> astate =
-      PulseOperations.write_field path location ~ref:addr_cons (field ErlangTypeName.cons_tail)
-        ~obj:addr_tail astate
+    let<+> astate =
+      write_field_and_deref path location ~struct_addr:addr_cons ~field_addr:addr_tail
+        ~field_val:tail (field ErlangTypeName.cons_tail) astate
     in
-    let<+> astate = PulseOperations.write_deref path location ~ref:addr_tail ~obj:tail astate in
     let astate =
       let typ = Typ.mk_struct (ErlangType Cons) in
       PulseOperations.add_dynamic_type typ addr_cons_val astate
@@ -1763,21 +1782,156 @@ module Erlang = struct
     let addr_elems_fields_payloads =
       List.zip_exn addr_elems (List.zip_exn field_names arg_payloads)
     in
-    let write_field_and_deref astate (addr_elem, (field_name, payload)) =
-      let* astate =
-        PulseOperations.write_field path location ~ref:addr_tuple (mk_field field_name)
-          ~obj:addr_elem astate
-      in
-      PulseOperations.write_deref path location ~ref:addr_elem ~obj:payload astate
+    let write_tuple_field astate (addr_elem, (field_name, payload)) =
+      write_field_and_deref path location ~struct_addr:addr_tuple ~field_addr:addr_elem
+        ~field_val:payload (mk_field field_name) astate
     in
-    let<+> astate =
-      List.fold_result addr_elems_fields_payloads ~init:astate ~f:write_field_and_deref
-    in
+    let<+> astate = List.fold_result addr_elems_fields_payloads ~init:astate ~f:write_tuple_field in
     let astate =
       let typ = Typ.mk_struct tuple_typ_name in
       PulseOperations.add_dynamic_type typ addr_tuple_val astate
     in
     PulseOperations.write_id ret_id addr_tuple astate
+
+
+  (** Maps are currently approximated to store only the latest key/value *)
+  let mk_map_field f = Fieldname.make (ErlangType Map) f
+
+  let map_key_field = mk_map_field "__infer_model_backing_map_key"
+
+  let map_value_field = mk_map_field "__infer_model_backing_map_value"
+
+  let map_is_empty_field = mk_map_field "__infer_model_backing_map_is_empty"
+
+  let map_create (args : 'a ProcnameDispatcher.Call.FuncArg.t list) : model =
+   fun {location; path; ret= ret_id, _} astate ->
+    let event = ValueHistory.Allocation {f= Model "#{}"; location} in
+    let addr_map_val = AbstractValue.mk_fresh () in
+    let addr_map = (addr_map_val, [event]) in
+    let addr_is_empty = (AbstractValue.mk_fresh (), [event]) in
+    let is_empty_value = AbstractValue.mk_fresh () in
+    let fresh_val = (is_empty_value, [event]) in
+    let typ = Typ.mk_struct (ErlangType Map) in
+    let is_empty_lit = match args with [] -> IntLit.one | _ -> IntLit.zero in
+    (* Reverse the list so we can get last key/value *)
+    let<*> astate =
+      match List.rev args with
+      (* Non-empty map: we just consider the last key/value, rest is ignored (approximation) *)
+      | value_arg :: key_arg :: _ ->
+          let addr_key = (AbstractValue.mk_fresh (), [event]) in
+          let addr_value = (AbstractValue.mk_fresh (), [event]) in
+          write_field_and_deref path location ~struct_addr:addr_map ~field_addr:addr_key
+            ~field_val:key_arg.arg_payload map_key_field astate
+          >>= write_field_and_deref path location ~struct_addr:addr_map ~field_addr:addr_value
+                ~field_val:value_arg.arg_payload map_value_field
+      | _ :: _ ->
+          L.die InternalError "Map create got one argument (requires even number)"
+      (* Empty map *)
+      | [] ->
+          Ok astate
+    in
+    let<*> astate =
+      write_field_and_deref path location ~struct_addr:addr_map ~field_addr:addr_is_empty
+        ~field_val:fresh_val map_is_empty_field astate
+    in
+    let<+> astate = PulseArithmetic.and_eq_int is_empty_value is_empty_lit astate in
+    let astate = PulseOperations.add_dynamic_type typ addr_map_val astate in
+    PulseOperations.write_id ret_id addr_map astate
+
+
+  let map_has_key (key, _key_history) map : model =
+   fun ({location; path; ret= ret_id, _} as data) astate ->
+    match Java.load_field path map_is_empty_field location map astate with
+    | Error _ ->
+        (* Field not found, seems like it's not a map *)
+        error_badmap data astate
+    | Ok (astate, _isempty_addr, (is_empty, _isempty_hist)) ->
+        let ret_val_true = AbstractValue.mk_fresh () in
+        let ret_val_false = AbstractValue.mk_fresh () in
+        let event = ValueHistory.Call {f= Model "map_has_key"; location; in_call= []} in
+        (* Return [Ok & assume map is empty & return false;
+         * Ok & assume map is not empty & assume key is the tracked key & return true ]
+         *)
+        let astate_empty =
+          let* astate = PulseArithmetic.prune_positive is_empty astate in
+          let+ astate = PulseArithmetic.and_eq_int ret_val_false IntLit.zero astate in
+          PulseOperations.write_id ret_id (ret_val_false, [event]) astate |> continue
+        in
+        let astate_haskey =
+          let* astate = PulseArithmetic.prune_eq_zero is_empty astate in
+          let* astate, _key_addr, (tracked_key, _hist) =
+            Java.load_field path map_key_field location map astate
+          in
+          let* astate =
+            PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand key)
+              (AbstractValueOperand tracked_key) astate
+          in
+          let+ astate = PulseArithmetic.and_eq_int ret_val_true IntLit.one astate in
+          PulseOperations.write_id ret_id (ret_val_true, [event]) astate |> continue
+        in
+        [astate_empty; astate_haskey]
+
+
+  let map_lookup (key, _key_history) map : model =
+   fun ({location; path; ret= ret_id, _} as data) astate ->
+    match Java.load_field path map_is_empty_field location map astate with
+    | Error _ ->
+        (* Field not found, seems like it's not a map *)
+        error_badmap data astate
+    | Ok (astate, _isempty_addr, (is_empty, _isempty_hist)) ->
+        (* Return [ Error & assume map is empty;
+         * Ok & assume map nonempty & assume key is the tracked key & return tracked value ]
+         *)
+        let astate_ok =
+          let* astate = PulseArithmetic.prune_eq_zero is_empty astate in
+          let* astate, _key_addr, (tracked_key, _hist) =
+            Java.load_field path map_key_field location map astate
+          in
+          let* astate =
+            PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand key)
+              (AbstractValueOperand tracked_key) astate
+          in
+          let+ astate, _value_addr, tracked_value =
+            Java.load_field path map_value_field location map astate
+          in
+          PulseOperations.write_id ret_id tracked_value astate |> continue
+        in
+        let astate_bad =
+          let<*> astate = PulseArithmetic.prune_positive is_empty astate in
+          error_badkey data astate
+        in
+        astate_ok :: astate_bad
+
+
+  let map_update key value _map : model =
+   fun {location; path; ret= ret_id, _} astate ->
+    (* Ignore old map. We only store one key/value so we can simply create a new map. *)
+    let event = ValueHistory.Allocation {f= Model "map_update"; location} in
+    let addr_map_val = AbstractValue.mk_fresh () in
+    let addr_map = (addr_map_val, [event]) in
+    let addr_is_empty = (AbstractValue.mk_fresh (), [event]) in
+    let is_empty_value = AbstractValue.mk_fresh () in
+    let fresh_val = (is_empty_value, [event]) in
+    let addr_key = (AbstractValue.mk_fresh (), [event]) in
+    let addr_value = (AbstractValue.mk_fresh (), [event]) in
+    let<*> astate =
+      write_field_and_deref path location ~struct_addr:addr_map ~field_addr:addr_key ~field_val:key
+        map_key_field astate
+    in
+    let<*> astate =
+      write_field_and_deref path location ~struct_addr:addr_map ~field_addr:addr_value
+        ~field_val:value map_value_field astate
+    in
+    let<+> astate =
+      write_field_and_deref path location ~struct_addr:addr_map ~field_addr:addr_is_empty
+        ~field_val:fresh_val map_is_empty_field astate
+      >>= PulseArithmetic.and_eq_int is_empty_value IntLit.zero
+    in
+    let astate =
+      let typ = Typ.mk_struct (ErlangType Map) in
+      PulseOperations.add_dynamic_type typ addr_map_val astate
+    in
+    PulseOperations.write_id ret_id addr_map astate
 end
 
 module StringSet = Caml.Set.Make (String)
@@ -1853,6 +2007,15 @@ module ProcNameDispatcher = struct
           <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.make_cons
         ; +BuiltinDecl.(match_builtin __erlang_make_tuple) &++> Erlang.make_tuple
         ; +BuiltinDecl.(match_builtin __erlang_make_nil) <>--> Erlang.make_nil
+        ; +BuiltinDecl.(match_builtin __erlang_map_create) &++> Erlang.map_create
+        ; +BuiltinDecl.(match_builtin __erlang_map_has_key)
+          <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.map_has_key
+        ; +BuiltinDecl.(match_builtin __erlang_map_lookup)
+          <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.map_lookup
+        ; +BuiltinDecl.(match_builtin __erlang_map_update)
+          <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> Erlang.map_update
+        ; +BuiltinDecl.(match_builtin __erlang_error_badkey) <>--> Erlang.error_badkey
+        ; +BuiltinDecl.(match_builtin __erlang_error_badmap) <>--> Erlang.error_badmap
         ; +BuiltinDecl.(match_builtin __erlang_error_badmatch) <>--> Erlang.error_badmatch
         ; +BuiltinDecl.(match_builtin __erlang_error_badrecord) <>--> Erlang.error_badrecord
         ; +BuiltinDecl.(match_builtin __erlang_error_case_clause) <>--> Erlang.error_case_clause

@@ -13,7 +13,11 @@ include BUILTINS.S with type t = Procname.t
 
 val is_declared : Procname.t -> bool
 
+val __erlang_error_badkey : Procname.t
+
 val __erlang_error_badmatch : Procname.t
+
+val __erlang_error_badmap : Procname.t
 
 val __erlang_error_badrecord : Procname.t
 
@@ -28,6 +32,14 @@ val __erlang_make_cons : Procname.t
 val __erlang_make_nil : Procname.t
 
 val __erlang_make_tuple : Procname.t
+
+val __erlang_map_create : Procname.t
+
+val __erlang_map_has_key : Procname.t
+
+val __erlang_map_lookup : Procname.t
+
+val __erlang_map_update : Procname.t
 
 val __infer_initializer_list : Procname.t
 

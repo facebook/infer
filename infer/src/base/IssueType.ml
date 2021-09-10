@@ -303,6 +303,16 @@ let _bad_pointer_comparison =
     ~user_documentation:[%blob "../../documentation/issues/BAD_POINTER_COMPARISON.md"]
 
 
+let bad_key =
+  register ~id:"BAD_KEY" Error Pulse
+    ~user_documentation:[%blob "../../documentation/issues/BAD_KEY.md"]
+
+
+let bad_map =
+  register ~id:"BAD_MAP" Error Pulse
+    ~user_documentation:[%blob "../../documentation/issues/BAD_MAP.md"]
+
+
 let bad_record =
   register ~id:"BAD_RECORD" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/BAD_RECORD.md"]
