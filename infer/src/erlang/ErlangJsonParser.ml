@@ -222,7 +222,7 @@ let rec to_expression json : Ast.expression option =
       let* line = to_line anno in
       let* body = to_body body in
       expr line (Block body)
-  | `List [`String "call"; anno; `List [`String "remote"; `Int _line2; module_; function_]; args] ->
+  | `List [`String "call"; anno; `List [`String "remote"; _anno2; module_; function_]; args] ->
       let* line = to_line anno in
       let* module_ = to_expression module_ in
       let* function_ = to_expression function_ in
