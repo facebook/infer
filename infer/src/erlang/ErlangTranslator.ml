@@ -314,30 +314,9 @@ let match_record_name env value name record_info : Block.t =
     are storing the corresponding values; otherwise, the [exit_failure] node is reached. *)
 let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} : Block.t =
   let env = update_location line env in
-  let any = ptr_typ_of_name Any in
-  let (Present procdesc) = env.procdesc in
-  let procname = Procdesc.get_proc_name procdesc in
   match simple_expression with
   | Cons {head; tail} ->
-      let is_right_type_id = Ident.create_fresh Ident.knormal in
-      let start = Node.make_stmt env [has_type env ~result:is_right_type_id ~value Cons] in
-      let right_type_node = Node.make_if env true (Var is_right_type_id) in
-      let wrong_type_node = Node.make_if env false (Var is_right_type_id) in
-      let head_value = Ident.create_fresh Ident.knormal in
-      let tail_value = Ident.create_fresh Ident.knormal in
-      let head_load = load_field env head_value value ErlangTypeName.cons_head Cons in
-      let tail_load = load_field env tail_value value ErlangTypeName.cons_tail Cons in
-      let unpack_node = Node.make_stmt env [head_load; tail_load] in
-      let head_matcher = translate_pattern env head_value head in
-      let tail_matcher = translate_pattern env tail_value tail in
-      let submatcher = Block.all env [head_matcher; tail_matcher] in
-      let exit_failure = Node.make_nop env in
-      start |~~> [right_type_node; wrong_type_node] ;
-      right_type_node |~~> [unpack_node] ;
-      unpack_node |~~> [submatcher.start] ;
-      wrong_type_node |~~> [exit_failure] ;
-      submatcher.exit_failure |~~> [exit_failure] ;
-      {start; exit_success= submatcher.exit_success; exit_failure}
+      translate_pattern_cons env value head tail
   | Literal (Atom atom) ->
       let e = translate_atom_literal atom in
       Block.make_branch env (Exp.BinOp (Eq, Var value, e))
@@ -347,101 +326,53 @@ let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} : 
   | Map {updates; _} ->
       translate_pattern_map env value updates
   | Nil ->
-      let id = Ident.create_fresh Ident.knormal in
-      let start = Node.make_stmt env [has_type env ~result:id ~value Nil] in
-      let exit_success = Node.make_if env true (Var id) in
-      let exit_failure = Node.make_if env false (Var id) in
-      start |~~> [exit_success; exit_failure] ;
-      {start; exit_success; exit_failure}
-  | RecordIndex {name; field} -> (
-    match String.Map.find env.records name with
-    | None ->
-        L.debug Capture Verbose "@[Unknown record %s@." name ;
-        Block.make_failure env
-    | Some record_info ->
-        let field_info = String.Map.find_exn record_info.field_info field in
-        let index_expr = Exp.Const (Cint (IntLit.of_int field_info.index)) in
-        Block.make_branch env (Exp.BinOp (Eq, Var value, index_expr)) )
-  | RecordUpdate {name; updates; _} -> (
-    match String.Map.find env.records name with
-    | None ->
-        L.debug Capture Verbose "@[Unknown record %s@." name ;
-        Block.make_failure env
-    | Some record_info ->
-        (* Match the type and the record name *)
-        let record_name_matcher = match_record_name env value name record_info in
-        (* Match each specified field *)
-        let tuple_size = 1 + List.length record_info.field_names in
-        let tuple_typ : ErlangTypeName.t = Tuple tuple_size in
-        let make_one_field_matcher (one_update : Ast.record_update) =
-          match one_update.field with
-          | Some name ->
-              let field_info = String.Map.find_exn record_info.field_info name in
-              let value_id = Ident.create_fresh Ident.knormal in
-              let tuple_elem = ErlangTypeName.tuple_elem field_info.index in
-              let load_instr = load_field env value_id value tuple_elem tuple_typ in
-              let unpack_node = Node.make_stmt env [load_instr] in
-              let submatcher = translate_pattern env value_id one_update.expression in
-              unpack_node |~~> [submatcher.start] ;
-              { Block.start= unpack_node
-              ; exit_success= submatcher.exit_success
-              ; exit_failure= submatcher.exit_failure }
-          | None ->
-              Block.make_success env
-        in
-        let record_field_matchers = List.map ~f:make_one_field_matcher updates in
-        Block.all env (record_name_matcher :: record_field_matchers) )
+      translate_pattern_nil env value
+  | RecordIndex {name; field} ->
+      translate_pattern_record_index env value name field
+  | RecordUpdate {name; updates; _} ->
+      translate_pattern_record_update env value name updates
   | Tuple exprs ->
-      let is_right_type_id = Ident.create_fresh Ident.knormal in
-      let tuple_typ : ErlangTypeName.t = Tuple (List.length exprs) in
-      let start = Node.make_stmt env [has_type env ~result:is_right_type_id ~value tuple_typ] in
-      let right_type_node = Node.make_if env true (Var is_right_type_id) in
-      let wrong_type_node = Node.make_if env false (Var is_right_type_id) in
-      let value_ids = List.map ~f:(function _ -> Ident.create_fresh Ident.knormal) exprs in
-      let field_names = ErlangTypeName.tuple_field_names (List.length exprs) in
-      let load_instructions =
-        List.map
-          ~f:(function one_value, one_field -> load_field env one_value value one_field tuple_typ)
-          (List.zip_exn value_ids field_names)
-      in
-      let unpack_node = Node.make_stmt env load_instructions in
-      let matchers =
-        List.map
-          ~f:(function one_expr, one_value -> translate_pattern env one_value one_expr)
-          (List.zip_exn exprs value_ids)
-      in
-      let submatcher = Block.all env matchers in
-      let exit_failure = Node.make_nop env in
-      start |~~> [right_type_node; wrong_type_node] ;
-      right_type_node |~~> [unpack_node] ;
-      unpack_node |~~> [submatcher.start] ;
-      wrong_type_node |~~> [exit_failure] ;
-      submatcher.exit_failure |~~> [exit_failure] ;
-      {start; exit_success= submatcher.exit_success; exit_failure}
+      translate_pattern_tuple env value exprs
   | UnaryOperator _ ->
-      (* Unary op pattern must evaluate to number, so just delegate to expression translation *)
-      let id = Ident.create_fresh Ident.knormal in
-      let expr_block =
-        translate_expression {env with result= Present (Exp.Var id)} {Ast.line; simple_expression}
-      in
-      let branch_block = Block.make_branch env (Exp.BinOp (Eq, Var value, Var id)) in
-      Block.all env [expr_block; branch_block]
-  | Variable vname when String.equal vname "_" ->
-      Block.make_success env
+      translate_pattern_unary_expression env value line simple_expression
   | Variable vname ->
-      let store : Sil.instr =
-        let e1 : Exp.t = Lvar (Pvar.mk (Mangled.from_string vname) procname) in
-        let e2 : Exp.t = Var value in
-        Store {e1; root_typ= any; typ= any; e2; loc= env.location}
-      in
-      let exit_success = Node.make_stmt env [store] in
-      let exit_failure = Node.make_nop env in
-      {start= exit_success; exit_success; exit_failure}
+      translate_pattern_variable env value vname
   | e ->
       (* TODO: Cover all cases. *)
       L.debug Capture Verbose "@[todo ErlangTranslator.translate_pattern %s@."
         (Sexp.to_string (Ast.sexp_of_simple_expression e)) ;
       Block.make_failure env
+
+
+and translate_pattern_cons env value head tail : Block.t =
+  let is_right_type_id = Ident.create_fresh Ident.knormal in
+  let start = Node.make_stmt env [has_type env ~result:is_right_type_id ~value Cons] in
+  let right_type_node = Node.make_if env true (Var is_right_type_id) in
+  let wrong_type_node = Node.make_if env false (Var is_right_type_id) in
+  let head_value = Ident.create_fresh Ident.knormal in
+  let tail_value = Ident.create_fresh Ident.knormal in
+  let head_load = load_field env head_value value ErlangTypeName.cons_head Cons in
+  let tail_load = load_field env tail_value value ErlangTypeName.cons_tail Cons in
+  let unpack_node = Node.make_stmt env [head_load; tail_load] in
+  let head_matcher = translate_pattern env head_value head in
+  let tail_matcher = translate_pattern env tail_value tail in
+  let submatcher = Block.all env [head_matcher; tail_matcher] in
+  let exit_failure = Node.make_nop env in
+  start |~~> [right_type_node; wrong_type_node] ;
+  right_type_node |~~> [unpack_node] ;
+  unpack_node |~~> [submatcher.start] ;
+  wrong_type_node |~~> [exit_failure] ;
+  submatcher.exit_failure |~~> [exit_failure] ;
+  {start; exit_success= submatcher.exit_success; exit_failure}
+
+
+and translate_pattern_nil env value : Block.t =
+  let id = Ident.create_fresh Ident.knormal in
+  let start = Node.make_stmt env [has_type env ~result:id ~value Nil] in
+  let exit_success = Node.make_if env true (Var id) in
+  let exit_failure = Node.make_if env false (Var id) in
+  start |~~> [exit_success; exit_failure] ;
+  {start; exit_success; exit_failure}
 
 
 and translate_pattern_map env value updates : Block.t =
@@ -483,6 +414,105 @@ and translate_pattern_map env value updates : Block.t =
   right_type_node |~~> [submatchers.start] ;
   wrong_type_node |~~> [submatchers.exit_failure] ;
   {start; exit_success= submatchers.exit_success; exit_failure= submatchers.exit_failure}
+
+
+and translate_pattern_record_index env value name field : Block.t =
+  match String.Map.find env.records name with
+  | None ->
+      L.debug Capture Verbose "@[Unknown record %s@." name ;
+      Block.make_failure env
+  | Some record_info ->
+      let field_info = String.Map.find_exn record_info.field_info field in
+      let index_expr = Exp.Const (Cint (IntLit.of_int field_info.index)) in
+      Block.make_branch env (Exp.BinOp (Eq, Var value, index_expr))
+
+
+and translate_pattern_record_update env value name updates : Block.t =
+  match String.Map.find env.records name with
+  | None ->
+      L.debug Capture Verbose "@[Unknown record %s@." name ;
+      Block.make_failure env
+  | Some record_info ->
+      (* Match the type and the record name *)
+      let record_name_matcher = match_record_name env value name record_info in
+      (* Match each specified field *)
+      let tuple_size = 1 + List.length record_info.field_names in
+      let tuple_typ : ErlangTypeName.t = Tuple tuple_size in
+      let make_one_field_matcher (one_update : Ast.record_update) =
+        match one_update.field with
+        | Some name ->
+            let field_info = String.Map.find_exn record_info.field_info name in
+            let value_id = Ident.create_fresh Ident.knormal in
+            let tuple_elem = ErlangTypeName.tuple_elem field_info.index in
+            let load_instr = load_field env value_id value tuple_elem tuple_typ in
+            let unpack_node = Node.make_stmt env [load_instr] in
+            let submatcher = translate_pattern env value_id one_update.expression in
+            unpack_node |~~> [submatcher.start] ;
+            { Block.start= unpack_node
+            ; exit_success= submatcher.exit_success
+            ; exit_failure= submatcher.exit_failure }
+        | None ->
+            Block.make_success env
+      in
+      let record_field_matchers = List.map ~f:make_one_field_matcher updates in
+      Block.all env (record_name_matcher :: record_field_matchers)
+
+
+and translate_pattern_tuple env value exprs : Block.t =
+  let is_right_type_id = Ident.create_fresh Ident.knormal in
+  let tuple_typ : ErlangTypeName.t = Tuple (List.length exprs) in
+  let start = Node.make_stmt env [has_type env ~result:is_right_type_id ~value tuple_typ] in
+  let right_type_node = Node.make_if env true (Var is_right_type_id) in
+  let wrong_type_node = Node.make_if env false (Var is_right_type_id) in
+  let value_ids = List.map ~f:(function _ -> Ident.create_fresh Ident.knormal) exprs in
+  let field_names = ErlangTypeName.tuple_field_names (List.length exprs) in
+  let load_instructions =
+    List.map
+      ~f:(function one_value, one_field -> load_field env one_value value one_field tuple_typ)
+      (List.zip_exn value_ids field_names)
+  in
+  let unpack_node = Node.make_stmt env load_instructions in
+  let matchers =
+    List.map
+      ~f:(function one_expr, one_value -> translate_pattern env one_value one_expr)
+      (List.zip_exn exprs value_ids)
+  in
+  let submatcher = Block.all env matchers in
+  let exit_failure = Node.make_nop env in
+  start |~~> [right_type_node; wrong_type_node] ;
+  right_type_node |~~> [unpack_node] ;
+  unpack_node |~~> [submatcher.start] ;
+  wrong_type_node |~~> [exit_failure] ;
+  submatcher.exit_failure |~~> [exit_failure] ;
+  {start; exit_success= submatcher.exit_success; exit_failure}
+
+
+and translate_pattern_unary_expression env value line simple_expression : Block.t =
+  (* Unary op pattern must evaluate to number, so just delegate to expression translation *)
+  let id = Ident.create_fresh Ident.knormal in
+  let expr_block =
+    translate_expression {env with result= Present (Exp.Var id)} {Ast.line; simple_expression}
+  in
+  let branch_block = Block.make_branch env (Exp.BinOp (Eq, Var value, Var id)) in
+  Block.all env [expr_block; branch_block]
+
+
+and translate_pattern_variable env value vname : Block.t =
+  match vname with
+  | "_" ->
+      Block.make_success env
+  | _ ->
+      let (Present procdesc) = env.procdesc in
+      let procname = Procdesc.get_proc_name procdesc in
+      let any = ptr_typ_of_name Any in
+      let store : Sil.instr =
+        let e1 : Exp.t = Lvar (Pvar.mk (Mangled.from_string vname) procname) in
+        let e2 : Exp.t = Var value in
+        Store {e1; root_typ= any; typ= any; e2; loc= env.location}
+      in
+      let exit_success = Node.make_stmt env [store] in
+      let exit_failure = Node.make_nop env in
+      {start= exit_success; exit_success; exit_failure}
 
 
 and translate_guard_expression env (expression : Ast.expression) : Ident.t * Block.t =
