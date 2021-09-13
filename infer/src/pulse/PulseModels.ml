@@ -1729,28 +1729,26 @@ module Erlang = struct
     PulseOperations.write_deref path location ~ref:field_addr ~obj:field_val astate
 
 
+  let write_dynamic_type_and_return (addr_val, hist) typ ret_id astate =
+    let typ = Typ.mk_struct (ErlangType typ) in
+    let astate = PulseOperations.add_dynamic_type typ addr_val astate in
+    PulseOperations.write_id ret_id (addr_val, hist) astate
+
+
   let make_nil : model =
    fun {location; ret= ret_id, _} astate ->
     let event = ValueHistory.Allocation {f= Model "[]"; location} in
-    let addr_nil_val = AbstractValue.mk_fresh () in
-    let addr_nil = (addr_nil_val, [event]) in
-    let astate =
-      let typ = Typ.mk_struct (ErlangType Nil) in
-      PulseOperations.add_dynamic_type typ addr_nil_val astate
-    in
-    let astate = PulseOperations.write_id ret_id addr_nil astate in
+    let addr_nil = (AbstractValue.mk_fresh (), [event]) in
+    let astate = write_dynamic_type_and_return addr_nil Nil ret_id astate in
     [Ok (ContinueProgram astate)]
 
 
   let make_cons head tail : model =
    fun {location; path; ret= ret_id, _} astate ->
     let event = ValueHistory.Allocation {f= Model "[X|Xs]"; location} in
-    let addr_head_val = AbstractValue.mk_fresh () in
-    let addr_tail_val = AbstractValue.mk_fresh () in
-    let addr_cons_val = AbstractValue.mk_fresh () in
-    let addr_head = (addr_head_val, [event]) in
-    let addr_tail = (addr_tail_val, [event]) in
-    let addr_cons = (addr_cons_val, [event]) in
+    let addr_head = (AbstractValue.mk_fresh (), [event]) in
+    let addr_tail = (AbstractValue.mk_fresh (), [event]) in
+    let addr_cons = (AbstractValue.mk_fresh (), [event]) in
     let field name = Fieldname.make (ErlangType Cons) name in
     let<*> astate =
       write_field_and_deref path location ~struct_addr:addr_cons ~field_addr:addr_head
@@ -1760,11 +1758,7 @@ module Erlang = struct
       write_field_and_deref path location ~struct_addr:addr_cons ~field_addr:addr_tail
         ~field_val:tail (field ErlangTypeName.cons_tail) astate
     in
-    let astate =
-      let typ = Typ.mk_struct (ErlangType Cons) in
-      PulseOperations.add_dynamic_type typ addr_cons_val astate
-    in
-    PulseOperations.write_id ret_id addr_cons astate
+    write_dynamic_type_and_return addr_cons Cons ret_id astate
 
 
   let make_tuple (args : 'a ProcnameDispatcher.Call.FuncArg.t list) : model =
@@ -1772,8 +1766,7 @@ module Erlang = struct
     let tuple_size = List.length args in
     let tuple_typ_name : Typ.name = ErlangType (Tuple tuple_size) in
     let event = ValueHistory.Allocation {f= Model "{}"; location} in
-    let addr_tuple_val = AbstractValue.mk_fresh () in
-    let addr_tuple = (addr_tuple_val, [event]) in
+    let addr_tuple = (AbstractValue.mk_fresh (), [event]) in
     let addr_elems = List.map ~f:(function _ -> (AbstractValue.mk_fresh (), [event])) args in
     let mk_field name = Fieldname.make tuple_typ_name name in
     let field_names = ErlangTypeName.tuple_field_names tuple_size in
@@ -1787,11 +1780,7 @@ module Erlang = struct
         ~field_val:payload (mk_field field_name) astate
     in
     let<+> astate = List.fold_result addr_elems_fields_payloads ~init:astate ~f:write_tuple_field in
-    let astate =
-      let typ = Typ.mk_struct tuple_typ_name in
-      PulseOperations.add_dynamic_type typ addr_tuple_val astate
-    in
-    PulseOperations.write_id ret_id addr_tuple astate
+    write_dynamic_type_and_return addr_tuple (Tuple tuple_size) ret_id astate
 
 
   (** Maps are currently approximated to store only the latest key/value *)
@@ -1806,12 +1795,10 @@ module Erlang = struct
   let map_create (args : 'a ProcnameDispatcher.Call.FuncArg.t list) : model =
    fun {location; path; ret= ret_id, _} astate ->
     let event = ValueHistory.Allocation {f= Model "#{}"; location} in
-    let addr_map_val = AbstractValue.mk_fresh () in
-    let addr_map = (addr_map_val, [event]) in
+    let addr_map = (AbstractValue.mk_fresh (), [event]) in
     let addr_is_empty = (AbstractValue.mk_fresh (), [event]) in
     let is_empty_value = AbstractValue.mk_fresh () in
     let fresh_val = (is_empty_value, [event]) in
-    let typ = Typ.mk_struct (ErlangType Map) in
     let is_empty_lit = match args with [] -> IntLit.one | _ -> IntLit.zero in
     (* Reverse the list so we can get last key/value *)
     let<*> astate =
@@ -1835,8 +1822,7 @@ module Erlang = struct
         ~field_val:fresh_val map_is_empty_field astate
     in
     let<+> astate = PulseArithmetic.and_eq_int is_empty_value is_empty_lit astate in
-    let astate = PulseOperations.add_dynamic_type typ addr_map_val astate in
-    PulseOperations.write_id ret_id addr_map astate
+    write_dynamic_type_and_return addr_map Map ret_id astate
 
 
   let make_astate_badmap (map_val, _map_hist) data astate =
@@ -1938,8 +1924,7 @@ module Erlang = struct
     let event = ValueHistory.Allocation {f= Model "map_put"; location} in
     let astate_badmap = make_astate_badmap map data astate in
     let astate_ok =
-      let addr_map_val = AbstractValue.mk_fresh () in
-      let addr_map = (addr_map_val, [event]) in
+      let addr_map = (AbstractValue.mk_fresh (), [event]) in
       let addr_is_empty = (AbstractValue.mk_fresh (), [event]) in
       let is_empty_value = AbstractValue.mk_fresh () in
       let fresh_val = (is_empty_value, [event]) in
@@ -1959,11 +1944,7 @@ module Erlang = struct
           ~field_val:fresh_val map_is_empty_field astate
         >>= PulseArithmetic.and_eq_int is_empty_value IntLit.zero
       in
-      let astate =
-        let typ = Typ.mk_struct (ErlangType Map) in
-        PulseOperations.add_dynamic_type typ addr_map_val astate
-      in
-      PulseOperations.write_id ret_id addr_map astate
+      write_dynamic_type_and_return addr_map Map ret_id astate
     in
     astate_ok @ astate_badmap
 end
