@@ -1839,6 +1839,21 @@ module Erlang = struct
     PulseOperations.write_id ret_id addr_map astate
 
 
+  let make_astate_badmap (map_val, _map_hist) data astate =
+    let typ = Typ.mk_struct (ErlangType Map) in
+    let instanceof_val = AbstractValue.mk_fresh () in
+    let<*> astate = PulseArithmetic.and_equal_instanceof instanceof_val map_val typ astate in
+    let<*> astate = PulseArithmetic.prune_eq_zero instanceof_val astate in
+    error_badmap data astate
+
+
+  let make_astate_goodmap (map_val, _map_hist) astate =
+    let typ = Typ.mk_struct (ErlangType Map) in
+    let instanceof_val = AbstractValue.mk_fresh () in
+    let* astate = PulseArithmetic.and_equal_instanceof instanceof_val map_val typ astate in
+    PulseArithmetic.prune_positive instanceof_val astate
+
+
   let map_is_key (key, _key_history) map : model =
    fun ({location; path; ret= ret_id, _} as data) astate ->
     match Java.load_field path map_is_empty_field location map astate with
@@ -1849,15 +1864,20 @@ module Erlang = struct
         let ret_val_true = AbstractValue.mk_fresh () in
         let ret_val_false = AbstractValue.mk_fresh () in
         let event = ValueHistory.Call {f= Model "map_is_key"; location; in_call= []} in
-        (* Return [Ok & assume map is empty & return false;
-         * Ok & assume map is not empty & assume key is the tracked key & return true ]
+        (* Return 3 cases:
+         * - Error & assume not map
+         * - Ok & assume map & assume empty & return false
+         * - Ok & assume map & assume not empty & assume key is the tracked key & return true
          *)
+        let astate_badmap = make_astate_badmap map data astate in
         let astate_empty =
+          let* astate = make_astate_goodmap map astate in
           let* astate = PulseArithmetic.prune_positive is_empty astate in
           let+ astate = PulseArithmetic.and_eq_int ret_val_false IntLit.zero astate in
           PulseOperations.write_id ret_id (ret_val_false, [event]) astate |> continue
         in
         let astate_haskey =
+          let* astate = make_astate_goodmap map astate in
           let* astate = PulseArithmetic.prune_eq_zero is_empty astate in
           let* astate, _key_addr, (tracked_key, _hist) =
             Java.load_field path map_key_field location map astate
@@ -1869,7 +1889,7 @@ module Erlang = struct
           let+ astate = PulseArithmetic.and_eq_int ret_val_true IntLit.one astate in
           PulseOperations.write_id ret_id (ret_val_true, [event]) astate |> continue
         in
-        [astate_empty; astate_haskey]
+        astate_badmap @ [astate_empty; astate_haskey]
 
 
   let map_get (key, _key_history) map : model =
@@ -1879,10 +1899,14 @@ module Erlang = struct
         (* Field not found, seems like it's not a map *)
         error_badmap data astate
     | Ok (astate, _isempty_addr, (is_empty, _isempty_hist)) ->
-        (* Return [ Error & assume map is empty;
-         * Ok & assume map nonempty & assume key is the tracked key & return tracked value ]
+        (* Return 3 cases:
+         * - Error & assume not map
+         * - Error & assume map & assume empty;
+         * - Ok & assume map & assume nonempty & assume key is the tracked key & return tracked value
          *)
+        let astate_badmap = make_astate_badmap map data astate in
         let astate_ok =
+          let* astate = make_astate_goodmap map astate in
           let* astate = PulseArithmetic.prune_eq_zero is_empty astate in
           let* astate, _key_addr, (tracked_key, _hist) =
             Java.load_field path map_key_field location map astate
@@ -1896,42 +1920,52 @@ module Erlang = struct
           in
           PulseOperations.write_id ret_id tracked_value astate |> continue
         in
-        let astate_bad =
+        let astate_badkey =
+          let<*> astate = make_astate_goodmap map astate in
           let<*> astate = PulseArithmetic.prune_positive is_empty astate in
           error_badkey data astate
         in
-        astate_ok :: astate_bad
+        (astate_ok :: astate_badkey) @ astate_badmap
 
 
-  let map_put key value _map : model =
-   fun {location; path; ret= ret_id, _} astate ->
+  let map_put key value map : model =
+   fun ({location; path; ret= ret_id, _} as data) astate ->
     (* Ignore old map. We only store one key/value so we can simply create a new map. *)
+    (* Return 2 cases:
+     * - Error & assume not map
+     * - Ok & assume map & return new map
+     *)
     let event = ValueHistory.Allocation {f= Model "map_put"; location} in
-    let addr_map_val = AbstractValue.mk_fresh () in
-    let addr_map = (addr_map_val, [event]) in
-    let addr_is_empty = (AbstractValue.mk_fresh (), [event]) in
-    let is_empty_value = AbstractValue.mk_fresh () in
-    let fresh_val = (is_empty_value, [event]) in
-    let addr_key = (AbstractValue.mk_fresh (), [event]) in
-    let addr_value = (AbstractValue.mk_fresh (), [event]) in
-    let<*> astate =
-      write_field_and_deref path location ~struct_addr:addr_map ~field_addr:addr_key ~field_val:key
-        map_key_field astate
+    let astate_badmap = make_astate_badmap map data astate in
+    let astate_ok =
+      let addr_map_val = AbstractValue.mk_fresh () in
+      let addr_map = (addr_map_val, [event]) in
+      let addr_is_empty = (AbstractValue.mk_fresh (), [event]) in
+      let is_empty_value = AbstractValue.mk_fresh () in
+      let fresh_val = (is_empty_value, [event]) in
+      let addr_key = (AbstractValue.mk_fresh (), [event]) in
+      let addr_value = (AbstractValue.mk_fresh (), [event]) in
+      let<*> astate = make_astate_goodmap map astate in
+      let<*> astate =
+        write_field_and_deref path location ~struct_addr:addr_map ~field_addr:addr_key
+          ~field_val:key map_key_field astate
+      in
+      let<*> astate =
+        write_field_and_deref path location ~struct_addr:addr_map ~field_addr:addr_value
+          ~field_val:value map_value_field astate
+      in
+      let<+> astate =
+        write_field_and_deref path location ~struct_addr:addr_map ~field_addr:addr_is_empty
+          ~field_val:fresh_val map_is_empty_field astate
+        >>= PulseArithmetic.and_eq_int is_empty_value IntLit.zero
+      in
+      let astate =
+        let typ = Typ.mk_struct (ErlangType Map) in
+        PulseOperations.add_dynamic_type typ addr_map_val astate
+      in
+      PulseOperations.write_id ret_id addr_map astate
     in
-    let<*> astate =
-      write_field_and_deref path location ~struct_addr:addr_map ~field_addr:addr_value
-        ~field_val:value map_value_field astate
-    in
-    let<+> astate =
-      write_field_and_deref path location ~struct_addr:addr_map ~field_addr:addr_is_empty
-        ~field_val:fresh_val map_is_empty_field astate
-      >>= PulseArithmetic.and_eq_int is_empty_value IntLit.zero
-    in
-    let astate =
-      let typ = Typ.mk_struct (ErlangType Map) in
-      PulseOperations.add_dynamic_type typ addr_map_val astate
-    in
-    PulseOperations.write_id ret_id addr_map astate
+    astate_ok @ astate_badmap
 end
 
 module StringSet = Caml.Set.Make (String)
