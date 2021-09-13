@@ -214,7 +214,7 @@ module Block : sig
 end
 
 module Erlang : sig
-  type t
+  type t = private {module_name: string; function_name: string; arity: int}
 end
 
 (** Type of procedure names. WithBlockParameters is used for creating an instantiation of a method

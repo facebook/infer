@@ -564,7 +564,12 @@ and translate_expression env {Ast.line; simple_expression} =
         { module_= None
         ; function_= {Ast.line= _; simple_expression= Literal (Atom function_name)}
         ; args } ->
-        translate_expression_call env ret_var function_name args
+        translate_expression_call env ret_var None function_name args
+    | Call
+        { module_= Some {Ast.line= _; simple_expression= Literal (Atom module_name)}
+        ; function_= {Ast.line= _; simple_expression= Literal (Atom function_name)}
+        ; args } ->
+        translate_expression_call env ret_var (Some module_name) function_name args
     | Case {expression; cases} ->
         translate_expression_case env expression cases
     | Cons {head; tail} ->
@@ -704,19 +709,23 @@ and translate_expression_binary_operator env ret_var e1 (op : Ast.binary_operato
       Block.all env [block1; block2; Block.make_success env]
 
 
-and translate_expression_call env ret_var function_name args : Block.t =
+and translate_expression_call env ret_var module_name function_name args : Block.t =
   let any = ptr_typ_of_name Any in
   let arity = List.length args in
   let callee_procname =
-    let module_name =
-      let uf_name = {UnqualifiedFunction.name= function_name; arity} in
-      match UnqualifiedFunction.Map.find env.imports uf_name with
-      | Some module_name ->
-          module_name
-      | None ->
-          env.current_module
+    let module_name_lookup =
+      match module_name with
+      | Some name ->
+          name
+      | None -> (
+          let uf_name = {UnqualifiedFunction.name= function_name; arity} in
+          match UnqualifiedFunction.Map.find env.imports uf_name with
+          | Some name ->
+              name
+          | None ->
+              env.current_module )
     in
-    Procname.make_erlang ~module_name ~function_name ~arity
+    Procname.make_erlang ~module_name:module_name_lookup ~function_name ~arity
   in
   let args_with_ids = List.map ~f:(fun a -> (a, Ident.create_fresh Ident.knormal)) args in
   let args_blocks =

@@ -2224,6 +2224,10 @@ module ProcNameDispatcher = struct
           $--> StdVector.invalidate_references ShrinkToFit
         ; -"std" &:: "vector" &:: "push_back" <>$ capt_arg_payload $+...$--> StdVector.push_back
         ; -"std" &:: "vector" &:: "empty" <>$ capt_arg_payload $+...$--> StdVector.empty
+        ; -"maps" &:: "is_key" <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.map_is_key
+        ; -"maps" &:: "get" <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.map_get
+        ; -"maps" &:: "put" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
+          $--> Erlang.map_put
         ; +map_context_tenv PatternMatch.Java.implements_collection
           &:: "<init>" <>$ capt_arg_payload
           $--> JavaCollection.init ~desc:"Collection.init()"
