@@ -90,7 +90,7 @@ module PPPVar = struct
 end
 
 module CheckedForNull = struct
-  type t = {checked: bool; loc: Location.t; reported: bool}
+  type t = {checked: bool; loc: Location.t; reported: bool} [@@deriving compare]
 
   let pp fmt {checked; reported} =
     let s = match checked with true -> "Checked" | false -> "NotChecked" in
@@ -111,41 +111,38 @@ module CheckedForNull = struct
   let leq ~lhs:{checked= lhs} ~rhs:{checked= rhs} = AbstractDomain.BooleanAnd.leq ~lhs ~rhs
 end
 
-module StrongEqualToWeakCapturedVars = AbstractDomain.Map (PPPVar) (CheckedForNull)
-module Vars = AbstractDomain.Map (Ident) (DomainData)
+module StrongEqualToWeakCapturedVars = struct
+  include AbstractDomain.Map (PPPVar) (CheckedForNull)
 
-module Domain = struct
-  type t = {vars: Vars.t; strongVars: StrongEqualToWeakCapturedVars.t}
+  let compare = compare CheckedForNull.compare
+end
+
+module Vars = struct
+  include AbstractDomain.Map (Ident) (DomainData)
+
+  let compare = compare DomainData.compare
+end
+
+module Mem = struct
+  type t = {vars: Vars.t; strongVars: StrongEqualToWeakCapturedVars.t} [@@deriving compare]
 
   let pp fmt {vars; strongVars} =
     F.fprintf fmt "%a@.%a" Vars.pp vars StrongEqualToWeakCapturedVars.pp strongVars
 
 
-  let join lhs rhs =
-    { vars= Vars.join lhs.vars rhs.vars
-    ; strongVars= StrongEqualToWeakCapturedVars.join lhs.strongVars rhs.strongVars }
-
-
-  let widen ~prev ~next ~num_iters:_ = join prev next
-
-  let leq ~lhs ~rhs =
-    Vars.leq ~lhs:lhs.vars ~rhs:rhs.vars
-    && StrongEqualToWeakCapturedVars.leq ~lhs:lhs.strongVars ~rhs:rhs.strongVars
-
-
-  let find_strong_var (domain : t) id =
-    match Vars.find_opt id domain.vars with
-    | Some elem when StrongEqualToWeakCapturedVars.mem elem.pvar domain.strongVars ->
-        Some (elem, elem.pvar, StrongEqualToWeakCapturedVars.find elem.pvar domain.strongVars)
+  let find_strong_var id (astate : t) =
+    match Vars.find_opt id astate.vars with
+    | Some elem when StrongEqualToWeakCapturedVars.mem elem.pvar astate.strongVars ->
+        Some (elem, StrongEqualToWeakCapturedVars.find elem.pvar astate.strongVars)
     | _ ->
         None
 
 
-  let exec_null_check_id (astate : t) id =
-    match find_strong_var astate id with
-    | Some (elem, pvar, strongVarElem) ->
+  let exec_null_check_id id (astate : t) =
+    match find_strong_var id astate with
+    | Some (elem, strongVarElem) ->
         let strongVars =
-          StrongEqualToWeakCapturedVars.add pvar
+          StrongEqualToWeakCapturedVars.add elem.pvar
             {strongVarElem with checked= true}
             astate.strongVars
         in
@@ -159,14 +156,14 @@ module Domain = struct
         astate
 
 
-  let make_trace_unchecked_strongself (domain : t) =
+  let make_trace_unchecked_strongself (astate : t) =
     let trace_elems_strongVars =
       StrongEqualToWeakCapturedVars.fold
         (fun pvar {loc} trace_elems ->
           let trace_elem_desc = F.asprintf "%a assigned here" (Pvar.pp Pp.text) pvar in
           let trace_elem = Errlog.make_trace_element 0 loc trace_elem_desc [] in
           trace_elem :: trace_elems )
-        domain.strongVars []
+        astate.strongVars []
     in
     let trace_elems_vars =
       Vars.fold
@@ -180,16 +177,16 @@ module Domain = struct
               trace_elem :: trace_elems
           | _ ->
               trace_elems )
-        domain.vars []
+        astate.vars []
     in
     let trace_elems = List.append trace_elems_strongVars trace_elems_vars in
     List.sort trace_elems ~compare:(fun {Errlog.lt_loc= loc1} {Errlog.lt_loc= loc2} ->
         Location.compare loc1 loc2 )
 
 
-  let report_unchecked_strongself_issues proc_desc err_log (domain : t) var_use var =
-    match find_strong_var domain var with
-    | Some ({DomainData.pvar; loc; kind}, _, strongVarElem)
+  let report_unchecked_strongself_issues proc_desc err_log var_use var (astate : t) =
+    match find_strong_var var astate with
+    | Some ({DomainData.pvar; loc; kind}, strongVarElem)
       when DomainData.is_unchecked_strong_self kind && not strongVarElem.reported ->
         let message =
           F.asprintf
@@ -197,24 +194,24 @@ module Domain = struct
              at %a. This could cause a crash or unexpected behavior."
             (Pvar.pp Pp.text) pvar var_use Location.pp loc
         in
-        let ltr = make_trace_unchecked_strongself domain in
+        let ltr = make_trace_unchecked_strongself astate in
         Reporting.log_issue proc_desc err_log ~ltr ~loc SelfInBlock
           IssueType.strong_self_not_checked message ;
         let strongVars =
           StrongEqualToWeakCapturedVars.add pvar
             {strongVarElem with reported= true}
-            domain.strongVars
+            astate.strongVars
         in
-        {domain with strongVars}
+        {astate with strongVars}
     | _ ->
-        domain
+        astate
 
 
   (* The translation of closures includes a load instruction for the captured variable,
      then we add that corresponding id to the closure. This doesn't correspond to an
      actual "use" of the captured variable in the source program though, and causes false
      positives. Here we remove the ids from the domain when that id is being added to a closure. *)
-  let remove_ids_in_closures_from_domain (domain : t) (instr : Sil.instr) =
+  let remove_ids_in_closures_from_domain (instr : Sil.instr) (astate : t) =
     let remove_id_in_closures_from_domain vars ((exp : Exp.t), _, _, _) =
       match exp with Var id -> Vars.remove id vars | _ -> vars
     in
@@ -226,8 +223,8 @@ module Domain = struct
           vars
     in
     let exps = Sil.exps_of_instr instr in
-    let vars = List.fold ~init:domain.vars ~f:do_exp exps in
-    {domain with vars}
+    let vars = List.fold ~init:astate.vars ~f:do_exp exps in
+    {astate with vars}
 
 
   let is_captured_self attributes pvar =
@@ -291,6 +288,25 @@ module Domain = struct
     {astate with strongVars}
 end
 
+module Domain = struct
+  include AbstractDomain.FiniteSet (Mem)
+
+  let exec_null_check_id id astate = map (Mem.exec_null_check_id id) astate
+
+  let report_unchecked_strongself_issues proc_desc err_log var_use var astate =
+    map (Mem.report_unchecked_strongself_issues proc_desc err_log var_use var) astate
+
+
+  let remove_ids_in_closures_from_domain instr astate =
+    map (Mem.remove_ids_in_closures_from_domain instr) astate
+
+
+  let load attributes id pvar loc typ astate = map (Mem.load attributes id pvar loc typ) astate
+
+  let store attributes pvar id pvar_typ loc astate =
+    map (Mem.store attributes pvar id pvar_typ loc) astate
+end
+
 type report_issues_result =
   { reported_captured_strong_self: Pvar.Set.t
   ; reported_weak_self_in_noescape_block: Pvar.Set.t
@@ -310,7 +326,7 @@ module TransferFunctions = struct
     let report_unchecked_strongself_issues_on_exp strongVars (exp : Exp.t) =
       match exp with
       | Lfield (Var var, _, _) ->
-          Domain.report_unchecked_strongself_issues proc_desc err_log domain "dereferenced" var
+          Domain.report_unchecked_strongself_issues proc_desc err_log "dereferenced" var domain
       | _ ->
           strongVars
     in
@@ -340,9 +356,9 @@ module TransferFunctions = struct
 
   let report_unchecked_strongself_issues_on_args proc_desc err_log (domain : Domain.t) pname args =
     let report_issue var =
-      Domain.report_unchecked_strongself_issues proc_desc err_log domain
+      Domain.report_unchecked_strongself_issues proc_desc err_log
         (F.sprintf "passed to `%s`" (Procname.to_simplified_string pname))
-        var
+        var domain
     in
     let rec report_on_non_nullable_arg ?annotations domain args =
       match (annotations, args) with
@@ -379,19 +395,19 @@ module TransferFunctions = struct
       (instr : Sil.instr) =
     let attributes = Procdesc.get_attributes proc_desc in
     let astate = report_unchecked_strongself_issues_on_exps proc_desc err_log astate instr in
-    let astate = Domain.remove_ids_in_closures_from_domain astate instr in
+    let astate = Domain.remove_ids_in_closures_from_domain instr astate in
     match instr with
     | Load {id; e= Lvar pvar; loc; typ} ->
         Domain.load attributes id pvar loc typ astate
     | Store {e1= Lvar pvar; e2= Var id; typ= pvar_typ; loc} ->
         Domain.store attributes pvar id pvar_typ loc astate
     | Prune (Var id, _, _, _) ->
-        Domain.exec_null_check_id astate id
+        Domain.exec_null_check_id id astate
     (* If (strongSelf != nil) or equivalent else branch *)
     | Prune (BinOp (Binop.Ne, Var id, e), _, _, _)
     (* If (!(strongSelf == nil)) or equivalent else branch *)
     | Prune (UnOp (LNot, BinOp (Binop.Eq, Var id, e), _), _, _, _) ->
-        if Exp.is_null_literal e then Domain.exec_null_check_id astate id else astate
+        if Exp.is_null_literal e then Domain.exec_null_check_id id astate else astate
     | Call (_, Exp.Const (Const.Cfun callee_pn), args, _, _) ->
         report_unchecked_strongself_issues_on_args proc_desc err_log astate callee_pn args
     | _ ->
@@ -564,11 +580,13 @@ let report_issues proc_desc err_log domain =
 module Analyzer = AbstractInterpreter.MakeWTO (TransferFunctions)
 
 let checker ({IntraproceduralAnalysis.proc_desc; err_log} as analysis_data) =
-  let initial = {Domain.vars= Vars.empty; strongVars= StrongEqualToWeakCapturedVars.empty} in
+  let initial =
+    Domain.singleton {Mem.vars= Vars.empty; strongVars= StrongEqualToWeakCapturedVars.empty}
+  in
   let procname = Procdesc.get_proc_name proc_desc in
   if Procname.is_objc_block procname then
     match Analyzer.compute_post analysis_data ~initial proc_desc with
     | Some domain ->
-        report_issues proc_desc err_log domain.vars
+        Domain.iter (fun {vars} -> report_issues proc_desc err_log vars) domain
     | None ->
         ()
