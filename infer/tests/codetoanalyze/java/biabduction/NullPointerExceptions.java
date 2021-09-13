@@ -13,6 +13,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.text.TextUtils;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.facebook.infer.annotation.Assertions;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
@@ -34,7 +35,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import org.testng.Assert;
 
 public class NullPointerExceptions {
 
@@ -654,15 +655,18 @@ public class NullPointerExceptions {
     return null;
   }
 
-  String stringUtilsIsNotEmptyOk(@Nullable String str) {
-    if (StringUtils.isNotEmpty(str)) {
-       return str.toLowerCase();
-    }
-    return null;
+  String assertNotNullOK(@Nullable Object object) {
+    Assert.assertNotNull(object);
+    return object.toString();
   }
 
-  String stringUtils3IsNotEmptyOk(@Nullable String str) {
-    if (org.apache.commons.lang3.StringUtils.isNotEmpty(str)) {
+  String uriOK(@Nullable String str) throws java.net.URISyntaxException {
+    java.net.URI uri = new java.net.URI(str);
+    return str.toLowerCase();
+  }
+
+  String stringUtilsIsNotEmptyOk(@Nullable String str) {
+    if (StringUtils.isNotEmpty(str)) {
        return str.toLowerCase();
     }
     return null;
@@ -675,6 +679,20 @@ public class NullPointerExceptions {
     return null;
   }
 
+  String stringsIsNotEmptyOk(@Nullable String str) {
+    if (org.apache.logging.log4j.util.Strings.isNotEmpty(str)) {
+       return str.toLowerCase();
+    }
+    return null;
+  }
+
+  String stringsIsNotBlankOk(@Nullable String str) {
+    if (org.apache.logging.log4j.util.Strings.isNotBlank(str)) {
+       return str.toLowerCase();
+    }
+    return null;
+  }
+
   String stringUtils3IsNotBlankOk(@Nullable String str) {
     if (org.apache.commons.lang3.StringUtils.isNotBlank(str)) {
        return str.toLowerCase();
@@ -682,8 +700,29 @@ public class NullPointerExceptions {
     return null;
   }
 
+  String stringUtils3IsNotEmptyOk(@Nullable String str) {
+    if (org.apache.commons.lang3.StringUtils.isNotEmpty(str)) {
+       return str.toLowerCase();
+    }
+    return null;
+  }
+
   String collectionUtilsIsNotEmptyOk(@Nullable List list) {
     if (CollectionUtils.isNotEmpty(list)) {
+       return list.toString();
+    }
+    return null;
+  }
+
+  String collectionUtilsIsEmptyOk(@Nullable List list) {
+    if (!CollectionUtils.isEmpty(list)) {
+       return list.toString();
+    }
+    return null;
+  }
+
+  String springFrameworkCollectionUtilsIsEmptyOk(@Nullable List list) {
+    if (!org.springframework.util.CollectionUtils.isEmpty(list)) {
        return list.toString();
     }
     return null;

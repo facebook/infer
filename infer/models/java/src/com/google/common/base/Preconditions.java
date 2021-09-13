@@ -70,14 +70,8 @@ public final class Preconditions {
     assume(expression);
   }
 
-  public static void checkArgument(boolean expression, @Nullable String errorMessage) {
-    assume(expression);
-  }
-
-  public static void checkArgument(
-      boolean expression,
-      @Nullable String errorMessageTemplate,
-      @Nullable Object... errorMessageArgs) {
+  public static void checkArgument(boolean expression,
+      @Nullable Object errorMessage) {
     assume(expression);
   }
 
