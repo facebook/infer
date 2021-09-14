@@ -205,7 +205,7 @@ codetoanalyze/objc/performance/cost_test_deps.m, simulated_nested_loop_more_expe
 codetoanalyze/objc/performance/cost_test_deps.m, simulated_while_constant, 217,  OnUIThread:false, []
 codetoanalyze/objc/performance/cost_test_deps.m, two_loops, 548,  OnUIThread:false, []
 codetoanalyze/objc/performance/exit.m, call_exit_unreachable, ⊥,  OnUIThread:false, [Unreachable node]
-codetoanalyze/objc/performance/exit.m, call_unreachable_constant, 1,  OnUIThread:false, []
+codetoanalyze/objc/performance/exit.m, call_unreachable, ⊥,  OnUIThread:false, [Call to exit_unreachable,Unreachable node]
 codetoanalyze/objc/performance/exit.m, compute_exit_unreachable, ⊥,  OnUIThread:false, [Unreachable node]
 codetoanalyze/objc/performance/exit.m, exit_unreachable, ⊥,  OnUIThread:false, [Unreachable node]
 codetoanalyze/objc/performance/exit.m, inline_exit_unreachable_FP, 3 ⋅ p + 2 ⋅ (1+max(0, p)),  OnUIThread:false, [{1+max(0, p)},Loop,{p},Loop]

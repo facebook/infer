@@ -32,4 +32,4 @@ void inline_exit_unreachable_FP(int p) {
   exit(0);
 }
 
-void call_unreachable_constant() { exit_unreachable_unreachable(); }
+void call_unreachable() { exit_unreachable(); }

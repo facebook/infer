@@ -40,7 +40,7 @@ codetoanalyze/c/performance/cost_test_deps.c, simulated_nested_loop_more_expensi
 codetoanalyze/c/performance/cost_test_deps.c, simulated_while_constant, 217,  OnUIThread:false, []
 codetoanalyze/c/performance/cost_test_deps.c, two_loops, 548,  OnUIThread:false, []
 codetoanalyze/c/performance/exit.c, call_exit_unreachable, ⊥,  OnUIThread:false, [Unreachable node]
-codetoanalyze/c/performance/exit.c, call_unreachable_constant, 1,  OnUIThread:false, []
+codetoanalyze/c/performance/exit.c, call_unreachable, ⊥,  OnUIThread:false, [Call to exit_unreachable,Unreachable node]
 codetoanalyze/c/performance/exit.c, compute_exit_unreachable, ⊥,  OnUIThread:false, [Unreachable node]
 codetoanalyze/c/performance/exit.c, exit_unreachable, ⊥,  OnUIThread:false, [Unreachable node]
 codetoanalyze/c/performance/exit.c, inline_exit_unreachable_FP, 3 ⋅ p + 2 ⋅ (1+max(0, p)),  OnUIThread:false, [{1+max(0, p)},Loop,{p},Loop]
