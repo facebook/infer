@@ -680,7 +680,10 @@ module TransferFunctions = struct
       make_dispatcher
         [ +PatternMatch.Java.implements_lang "Boolean" &:: "booleanValue" &--> ()
         ; +PatternMatch.Java.implements_lang "Boolean" &:: "valueOf" &--> ()
-        ; +PatternMatch.Java.implements_lang "Long" &:: "longValue" &--> () ]
+        ; +PatternMatch.Java.implements_lang "Double" &:: "doubleValue" &--> ()
+        ; +PatternMatch.Java.implements_lang "Double" &:: "valueOf" &--> ()
+        ; +PatternMatch.Java.implements_lang "Long" &:: "longValue" &--> ()
+        ; +PatternMatch.Java.implements_lang "Long" &:: "valueOf" &--> () ]
     in
     fun tenv pname -> dispatch tenv pname |> Option.is_some
 
@@ -735,10 +738,18 @@ module TransferFunctions = struct
   let exec_instr ({Dom.config_checks} as astate)
       {interproc= {tenv; analyze_dependency}; get_instantiated_cost} node idx instr =
     match (instr : Sil.instr) with
-    | Load {id; e= Lvar pvar} ->
-        Dom.load_config id pvar astate
-    | Load {id; e= Lfield (_, fn, _)} ->
-        Dom.load_field id fn astate
+    | Load {id; e} -> (
+      match FbGKInteraction.get_config e with
+      | Some config ->
+          Dom.call_config_check id config astate
+      | None -> (
+        match e with
+        | Lvar pvar ->
+            Dom.load_config id pvar astate
+        | Lfield (_, fn, _) ->
+            Dom.load_field id fn astate
+        | _ ->
+            astate ) )
     | Store {e1= Lvar pvar; e2= Const zero} when Const.iszero_int_float zero ->
         Dom.add_mem (Loc.of_pvar pvar) (Val.of_temp_bool ~is_true:false config_checks) astate
     | Store {e1= Lvar pvar; e2= Const one} when Const.isone_int_float one ->
@@ -757,7 +768,10 @@ module TransferFunctions = struct
       match FbGKInteraction.get_config_check tenv callee args with
       | Some (`Config config) ->
           Dom.call_config_check ret_id config astate
+      | Some (`Exp (Exp.Var id)) ->
+          Dom.copy_value ret_id id astate
       | Some (`Exp _) ->
+          (* NOTE: We need a more proper evaluation function for handling the case. *)
           add_ret analyze_dependency ret_id callee astate
       | None ->
           (* normal function calls *)
