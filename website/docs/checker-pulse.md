@@ -74,11 +74,16 @@ class Registry {
 ## List of Issue Types
 
 The following issue types are reported by this checker:
+- [BAD_RECORD](/docs/next/all-issue-types#bad_record)
 - [CONSTANT_ADDRESS_DEREFERENCE](/docs/next/all-issue-types#constant_address_dereference)
 - [MEMORY_LEAK](/docs/next/all-issue-types#memory_leak)
 - [NIL_BLOCK_CALL](/docs/next/all-issue-types#nil_block_call)
 - [NIL_INSERTION_INTO_COLLECTION](/docs/next/all-issue-types#nil_insertion_into_collection)
 - [NIL_MESSAGING_TO_NON_POD](/docs/next/all-issue-types#nil_messaging_to_non_pod)
+- [NO_MATCHING_CASE_CLAUSE](/docs/next/all-issue-types#no_matching_case_clause)
+- [NO_MATCHING_FUNCTION_CLAUSE](/docs/next/all-issue-types#no_matching_function_clause)
+- [NO_MATCH_OF_RHS](/docs/next/all-issue-types#no_match_of_rhs)
+- [NO_TRUE_BRANCH_IN_IF](/docs/next/all-issue-types#no_true_branch_in_if)
 - [NULLPTR_DEREFERENCE](/docs/next/all-issue-types#nullptr_dereference)
 - [OPTIONAL_EMPTY_ACCESS](/docs/next/all-issue-types#optional_empty_access)
 - [PULSE_UNINITIALIZED_VALUE](/docs/next/all-issue-types#pulse_uninitialized_value)
