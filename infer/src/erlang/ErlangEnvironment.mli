@@ -40,3 +40,7 @@ type ('procdesc, 'result) t =
 [@@deriving sexp_of]
 
 val get_environment : Ast.form list -> (absent, absent) t
+
+val typ_of_name : ErlangTypeName.t -> Typ.t
+
+val ptr_typ_of_name : ErlangTypeName.t -> Typ.t

@@ -103,3 +103,8 @@ let get_environment module_ =
         env
   in
   List.fold ~init ~f module_
+
+
+let typ_of_name (name : ErlangTypeName.t) : Typ.t = Typ.mk (Tstruct (ErlangType name))
+
+let ptr_typ_of_name (name : ErlangTypeName.t) : Typ.t = Typ.mk (Tptr (typ_of_name name, Pk_pointer))
