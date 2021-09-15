@@ -209,8 +209,9 @@ let report ?(suppress_console = false) () =
   if Config.(test_determinator && process_clang_ast) then
     TestDeterminator.merge_test_determinator_results () ;
   if Config.output_sarif then
-    let issues_sarif = ResultsDir.get_path ReportSarif in
-    JsonReports.write_sarif_reports ~issues_sarif ;
+    SarifReport.create_from_json
+      ~report_sarif:(ResultsDir.get_path ReportSarif)
+      ~report_json:issues_json ;
   ()
 
 

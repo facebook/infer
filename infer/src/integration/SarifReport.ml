@@ -1,0 +1,154 @@
+(*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *)
+open! IStd
+module F = Format
+
+module IssueHash = Caml.Hashtbl.Make (String)
+
+let pp_n_spaces n fmt =
+  for _ = 1 to n do
+    F.pp_print_char fmt ' '
+  done
+
+
+module ReportSummary = struct
+  type t = {mutable n_issues: int; issue_type_counts: (int * string) IssueHash.t}
+
+  let mk_empty () = {n_issues= 0; issue_type_counts= IssueHash.create 64}
+
+  let pp fmt {n_issues= _; issue_type_counts= _} = pp_n_spaces 3 fmt
+
+  let add_issue summary (jsonbug : Jsonbug_t.jsonbug) =
+    let bug_count =
+      IssueHash.find_opt summary.issue_type_counts jsonbug.bug_type
+      |> Option.value_map ~default:0 ~f:fst
+    in
+    IssueHash.replace summary.issue_type_counts jsonbug.bug_type
+      (bug_count + 1, jsonbug.bug_type_hum) ;
+    summary.n_issues <- summary.n_issues + 1 ;
+    (* chain for convenience/pretending it's a functional data structure *)
+    summary
+end
+
+let is_first_item = ref true
+
+let pp_open fmt () =
+  is_first_item := true ;
+  F.fprintf fmt "{"
+
+let pp_close fmt () = F.fprintf fmt "]}]}@\n@?"
+
+let pp_schema_version fmt () = 
+  F.fprintf fmt "%s:%s,%s:%s," "\"schema\"" "\"http://json.schemastore.org/sarif-2.1.0\"" "\"version\"" "\"2.1.0\""
+
+let pp_runs fmt () =
+  F.fprintf fmt "%s:[{%s:{%s:{%s:%s,%s:%s,"  "\"runs\"" "\"tool\"" "\"driver\"" "\"name\"" "\"Infer\"" "\"informationUri\"" "\"https://github.com/facebook/infer\"" ;
+  F.fprintf fmt "%s:\"%d.%d.%d\",%s:[" "\"version\"" Version.major Version.minor Version.patch "\"rules\""
+
+(* let pp_rules fmt elt =
+  match rules_to_string elt with
+  | Some s ->
+      if !is_first_item then is_first_item := false else F.pp_print_char fmt ',' ;
+      F.fprintf fmt "%s@?" s
+  | None ->
+      () *)
+
+let pp_results_header fmt () =
+  is_first_item := true ;
+  F.fprintf fmt "]}},%s:[" "\"results\""
+
+let loc_trace_to_sarifbug_record trace_list =
+    let file_loc filename = 
+      {Sarifbug_j.uri= filename} 
+    in
+    let message description = 
+      {Sarifbug_j.text= description} 
+    in
+    let region line_number column_number = 
+      match column_number with
+      | -1 ->
+        { Sarifbug_j.startLine= line_number
+        ; startColumn= 1 }
+      | _ ->
+        { Sarifbug_j.startLine= line_number
+        ; startColumn= column_number }
+    in
+    let physical_location filename line_number column_number = 
+      {Sarifbug_j.artifactLocation= file_loc filename
+      ; region= region line_number column_number } 
+    in
+    let file_location_to_record filename line_number column_number description = 
+      {message= message description
+      ; Sarifbug_j.physicalLocation=physical_location filename line_number column_number}
+    in
+    let trace_item_to_record {Jsonbug_t.level; filename; line_number; column_number; description} = 
+      { Sarifbug_j.nestingLevel = level
+      ; location= file_location_to_record filename line_number column_number description }
+    in
+    let record_list = List.rev (List.rev_map ~f:trace_item_to_record trace_list) in
+    record_list
+
+let pp_jsonbug fmt {Jsonbug_t.file; severity; bug_type; qualifier; line; column; bug_trace} =
+  let message = 
+    {Sarifbug_j.text= qualifier}
+  in
+  let level = String.lowercase severity in
+  let ruleId = bug_type in
+  let source_name =
+    if Filename.is_absolute file then file else Config.project_root ^/ file
+  in
+  let file_loc = {Sarifbug_j.uri= source_name} in
+  let region = 
+    match column with
+    | -1 ->
+      { Sarifbug_j.startLine= line
+      ; startColumn= 1 }
+    | _ ->
+      { Sarifbug_j.startLine= line
+      ; startColumn= column }
+  in
+  let physical_location = 
+    {Sarifbug_j.artifactLocation= file_loc
+    ; region } 
+  in
+  let file_location_to_record = [{ Sarifbug_j.physicalLocation=physical_location}] in
+  let thread_flow_locs = 
+    [{Sarifbug_j.locations= loc_trace_to_sarifbug_record bug_trace}]
+  in
+  let thread_flow = 
+    [{Sarifbug_j.threadFlows= thread_flow_locs}]
+  in
+  let result =
+    { Sarifbug_j.message
+    ; level
+    ; ruleId 
+    ; codeFlows= thread_flow
+    ; locations= file_location_to_record }
+  in
+  F.fprintf fmt "%s@?" (Sarifbug_j.string_of_sarifbug result)
+
+
+let create_from_json ~report_sarif ~report_json =
+  let report = Atdgen_runtime.Util.Json.from_file Jsonbug_j.read_report report_json in
+  let one_issue_to_report_sarif fmt (jsonbug : Jsonbug_t.jsonbug) =
+    if !is_first_item then is_first_item := false else F.pp_print_char fmt ',' ;
+    F.fprintf fmt "%a" pp_jsonbug jsonbug
+  in
+  Utils.with_file_out report_sarif ~f:(fun report_sarif_out ->
+      let report_sarif_fmt = F.formatter_of_out_channel report_sarif_out in
+      pp_open report_sarif_fmt () ;
+      pp_schema_version report_sarif_fmt () ;
+      pp_runs report_sarif_fmt () ;
+      pp_results_header report_sarif_fmt () ;
+      let summary =
+        List.fold report ~init:(ReportSummary.mk_empty ()) ~f:(fun summary jsonbug ->
+            let summary' = ReportSummary.add_issue summary jsonbug in
+            one_issue_to_report_sarif report_sarif_fmt jsonbug ;
+            summary' )
+      in
+      F.printf "%a" ReportSummary.pp summary ; 
+      pp_close report_sarif_fmt () ) 
