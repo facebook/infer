@@ -32,8 +32,7 @@ You can install some of these dependencies using
 [Homebrew](http://brew.sh/):
 
 ```sh
-brew install autoconf automake cmake opam pkg-config sqlite gmp mpfr
-brew cask install java
+brew install autoconf automake cmake opam pkg-config sqlite gmp mpfr java
 ```
 
 

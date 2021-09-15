@@ -226,11 +226,11 @@ digraph cfg {
 	
 
 	 "test_for_range#break_scope#2115859683356214080.ad34c277f8d086eb0a22c75fc80fb235_20" -> "test_for_range#break_scope#2115859683356214080.ad34c277f8d086eb0a22c75fc80fb235_19" ;
-"test_for_range#break_scope#2115859683356214080.ad34c277f8d086eb0a22c75fc80fb235_21" [label="21:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$41:break_scope::X const ); [line 47, column 12]\n  n$44=_fun_break_scope::iterator::operator*(&__begin1:break_scope::iterator&,&0$?%__sil_tmpSIL_materialize_temp__n$41:break_scope::X*) assign_last [line 47, column 12]\n " shape="box"]
+"test_for_range#break_scope#2115859683356214080.ad34c277f8d086eb0a22c75fc80fb235_21" [label="21:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$41:break_scope::X const ); [line 47, column 12]\n  n$45=_fun_break_scope::iterator::operator*(&__begin1:break_scope::iterator&,&0$?%__sil_tmpSIL_materialize_temp__n$41:break_scope::X*) assign_last [line 47, column 12]\n " shape="box"]
 	
 
 	 "test_for_range#break_scope#2115859683356214080.ad34c277f8d086eb0a22c75fc80fb235_21" -> "test_for_range#break_scope#2115859683356214080.ad34c277f8d086eb0a22c75fc80fb235_22" ;
-"test_for_range#break_scope#2115859683356214080.ad34c277f8d086eb0a22c75fc80fb235_22" [label="22:  Destruction(temporaries cleanup) \n   n$45=_fun_break_scope::X::X(&x:break_scope::X*,&0$?%__sil_tmpSIL_materialize_temp__n$41:break_scope::X const &) [line 47, column 12]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$41:break_scope::X const  [line 47, column 12]\n  n$47=_fun_break_scope::X::~X(&0$?%__sil_tmpSIL_materialize_temp__n$41:break_scope::X const *) injected [line 47, column 12]\n " shape="box"]
+"test_for_range#break_scope#2115859683356214080.ad34c277f8d086eb0a22c75fc80fb235_22" [label="22:  Destruction(temporaries cleanup) \n   n$46=_fun_break_scope::X::X(&x:break_scope::X*,&0$?%__sil_tmpSIL_materialize_temp__n$41:break_scope::X const &) [line 47, column 12]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$41:break_scope::X const  [line 47, column 12]\n  n$48=_fun_break_scope::X::~X(&0$?%__sil_tmpSIL_materialize_temp__n$41:break_scope::X const *) injected [line 47, column 12]\n " shape="box"]
 	
 
 	 "test_for_range#break_scope#2115859683356214080.ad34c277f8d086eb0a22c75fc80fb235_22" -> "test_for_range#break_scope#2115859683356214080.ad34c277f8d086eb0a22c75fc80fb235_17" ;
@@ -243,11 +243,11 @@ digraph cfg {
 	
 
 	 "test_for_range#break_scope#2115859683356214080.ad34c277f8d086eb0a22c75fc80fb235_24" -> "test_for_range#break_scope#2115859683356214080.ad34c277f8d086eb0a22c75fc80fb235_11" ;
-"test_for_range#break_scope#2115859683356214080.ad34c277f8d086eb0a22c75fc80fb235_25" [label="25:  DeclStmt \n   VARIABLE_DECLARED(x1:break_scope::X); [line 46, column 3]\n  n$49=_fun_break_scope::X::X(&x1:break_scope::X*) [line 46, column 5]\n " shape="box"]
+"test_for_range#break_scope#2115859683356214080.ad34c277f8d086eb0a22c75fc80fb235_25" [label="25:  DeclStmt \n   VARIABLE_DECLARED(x1:break_scope::X); [line 46, column 3]\n  n$50=_fun_break_scope::X::X(&x1:break_scope::X*) [line 46, column 5]\n " shape="box"]
 	
 
 	 "test_for_range#break_scope#2115859683356214080.ad34c277f8d086eb0a22c75fc80fb235_25" -> "test_for_range#break_scope#2115859683356214080.ad34c277f8d086eb0a22c75fc80fb235_24" ;
-"test_for_range#break_scope#2115859683356214080.ad34c277f8d086eb0a22c75fc80fb235_26" [label="26:  DeclStmt \n   VARIABLE_DECLARED(vector:break_scope::vec); [line 45, column 3]\n  n$50=_fun_break_scope::vec::vec(&vector:break_scope::vec*) [line 45, column 7]\n " shape="box"]
+"test_for_range#break_scope#2115859683356214080.ad34c277f8d086eb0a22c75fc80fb235_26" [label="26:  DeclStmt \n   VARIABLE_DECLARED(vector:break_scope::vec); [line 45, column 3]\n  n$51=_fun_break_scope::vec::vec(&vector:break_scope::vec*) [line 45, column 7]\n " shape="box"]
 	
 
 	 "test_for_range#break_scope#2115859683356214080.ad34c277f8d086eb0a22c75fc80fb235_26" -> "test_for_range#break_scope#2115859683356214080.ad34c277f8d086eb0a22c75fc80fb235_25" ;
@@ -590,11 +590,11 @@ digraph cfg {
 "operator*#iterator#break_scope(class break_scope::X)#(4328339407583570703).89adb890a0c29514eda31053987e2050_2" [label="2: Exit break_scope::iterator::operator* \n  " color=yellow style=filled]
 	
 
-"operator*#iterator#break_scope(class break_scope::X)#(4328339407583570703).89adb890a0c29514eda31053987e2050_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::X const ); [line 42, column 40]\n  n$2=*&this:break_scope::iterator const * [line 42, column 40]\n  n$3=*n$2.vector:break_scope::vec const * [line 42, column 40]\n  _=*n$3:break_scope::vec const  [line 42, column 40]\n  n$5=*&this:break_scope::iterator const * [line 42, column 52]\n  n$6=*n$5.position:int [line 42, column 52]\n  n$8=_fun_break_scope::vec::get(n$3:break_scope::vec const *,n$6:int,&0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::X*) assign_last [line 42, column 40]\n " shape="box"]
+"operator*#iterator#break_scope(class break_scope::X)#(4328339407583570703).89adb890a0c29514eda31053987e2050_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::X const ); [line 42, column 40]\n  n$3=*&this:break_scope::iterator const * [line 42, column 40]\n  n$4=*n$3.vector:break_scope::vec const * [line 42, column 40]\n  _=*n$4:break_scope::vec const  [line 42, column 40]\n  n$6=*&this:break_scope::iterator const * [line 42, column 52]\n  n$7=*n$6.position:int [line 42, column 52]\n  n$9=_fun_break_scope::vec::get(n$4:break_scope::vec const *,n$7:int,&0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::X*) assign_last [line 42, column 40]\n " shape="box"]
 	
 
 	 "operator*#iterator#break_scope(class break_scope::X)#(4328339407583570703).89adb890a0c29514eda31053987e2050_3" -> "operator*#iterator#break_scope(class break_scope::X)#(4328339407583570703).89adb890a0c29514eda31053987e2050_4" ;
-"operator*#iterator#break_scope(class break_scope::X)#(4328339407583570703).89adb890a0c29514eda31053987e2050_4" [label="4:  Destruction(temporaries cleanup) \n   n$9=_fun_break_scope::X::X(n$0:break_scope::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::X const &) [line 42, column 40]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::X const  [line 42, column 60]\n  n$11=_fun_break_scope::X::~X(&0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::X const *) injected [line 42, column 60]\n " shape="box"]
+"operator*#iterator#break_scope(class break_scope::X)#(4328339407583570703).89adb890a0c29514eda31053987e2050_4" [label="4:  Destruction(temporaries cleanup) \n   n$10=_fun_break_scope::X::X(n$0:break_scope::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::X const &) [line 42, column 40]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::X const  [line 42, column 60]\n  n$12=_fun_break_scope::X::~X(&0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::X const *) injected [line 42, column 60]\n " shape="box"]
 	
 
 	 "operator*#iterator#break_scope(class break_scope::X)#(4328339407583570703).89adb890a0c29514eda31053987e2050_4" -> "operator*#iterator#break_scope(class break_scope::X)#(4328339407583570703).89adb890a0c29514eda31053987e2050_6" ;

@@ -95,6 +95,7 @@ struct Y* may_return_invalid_ptr_ok() {
 void feed_invalid_into_access_bad() {
   struct Y* y = may_return_invalid_ptr_ok();
   call_store(y);
+  delete y;
 }
 
 void invalidate_and_set_to_null(struct X** x_ptr) {

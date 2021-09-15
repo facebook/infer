@@ -22,15 +22,11 @@ type t' = Exact  (** denotes the current type only *) | Subtypes of Typ.Name.t l
 let equal_modulo_flag (st1, _) (st2, _) = [%compare.equal: t'] st1 st2
 
 (** denotes the current type and a list of types that are not their subtypes *)
-type kind = CAST | INSTOF | NORMAL [@@deriving compare]
-
-let equal_kind = [%compare.equal: kind]
+type kind = CAST | INSTOF | NORMAL [@@deriving compare, equal]
 
 type t = t' * kind [@@deriving compare, equal]
 
-type result = No | Unknown | Yes [@@deriving compare]
-
-let equal_result = [%compare.equal: result]
+type result = No | Unknown | Yes [@@deriving compare, equal]
 
 let max_result res1 res2 = if compare_result res1 res2 <= 0 then res2 else res1
 

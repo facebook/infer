@@ -524,9 +524,7 @@ end
 module JavaSink = Sink.Make (SinkKind)
 
 module JavaSanitizer = struct
-  type t = All | StringConcatenation [@@deriving compare]
-
-  let equal = [%compare.equal: t]
+  type t = All | StringConcatenation [@@deriving compare, equal]
 
   let external_sanitizers =
     List.map

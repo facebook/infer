@@ -50,7 +50,7 @@ val of_abductive_access_result :
 
 val ignore_memory_leaks :
      ( AbductiveDomain.summary
-     , [< `MemoryLeak of AbductiveDomain.summary * Procname.t * Trace.t * Location.t
+     , [< `MemoryLeak of AbductiveDomain.summary * Attribute.allocator * Trace.t * Location.t
        | AbductiveDomain.summary abductive_error ] )
      result
   -> (AbductiveDomain.summary, [> AbductiveDomain.summary abductive_error]) result

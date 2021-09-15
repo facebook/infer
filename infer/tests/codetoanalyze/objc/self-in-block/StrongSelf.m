@@ -208,6 +208,29 @@ void m2(_Nullable SelfInBlockTest* obj) {}
   };
 }
 
+- (void)weakSelfBranch_good {
+  __weak __typeof(self) weakSelf = self;
+  int (^my_block)(BOOL) = ^(BOOL isTapped) {
+    if (isTapped) {
+      [weakSelf foo];
+    } else {
+      [weakSelf bar];
+    }
+    return 0;
+  };
+}
+
+- (void)weakSelfBranch_bad {
+  __weak __typeof(self) weakSelf = self;
+  int (^my_block)(BOOL) = ^(BOOL isTapped) {
+    if (isTapped) {
+      [weakSelf foo];
+    }
+    [weakSelf bar];
+    return 0;
+  };
+}
+
 - (void)capturedStrongSelf_bad {
   __weak __typeof(self) weakSelf = self;
   int (^my_block)() = ^() {

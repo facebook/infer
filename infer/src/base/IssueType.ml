@@ -303,6 +303,16 @@ let _bad_pointer_comparison =
     ~user_documentation:[%blob "../../documentation/issues/BAD_POINTER_COMPARISON.md"]
 
 
+let bad_key =
+  register ~id:"BAD_KEY" Error Pulse
+    ~user_documentation:[%blob "../../documentation/issues/BAD_KEY.md"]
+
+
+let bad_map =
+  register ~id:"BAD_MAP" Error Pulse
+    ~user_documentation:[%blob "../../documentation/issues/BAD_MAP.md"]
+
+
 let bad_record =
   register ~id:"BAD_RECORD" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/BAD_RECORD.md"]
@@ -422,12 +432,12 @@ let config_checks_between_markers =
 
 let config_impact_analysis =
   register ~enabled:false ~id:"CONFIG_IMPACT" Advice ConfigImpactAnalysis
-    ~user_documentation:"A function is called without a config check"
+    ~user_documentation:[%blob "../../documentation/issues/CONFIG_IMPACT.md"]
 
 
 let config_impact_analysis_strict =
   register ~enabled:false ~id:"CONFIG_IMPACT_STRICT" Advice ConfigImpactAnalysis
-    ~user_documentation:"A function is called without a config check (experimental in strict mode)"
+    ~user_documentation:[%blob "../../documentation/issues/CONFIG_IMPACT_STRICT.md"]
 
 
 let constant_address_dereference =

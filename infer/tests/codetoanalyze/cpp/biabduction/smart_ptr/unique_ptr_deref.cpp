@@ -59,27 +59,26 @@ int FN_empty_ptr_method_deref_bad() {
   return x->get();
 }
 
-// FP is memory leak
-int FN_FP_reset_ptr_null_deref_bad() {
+int FN_reset_ptr_null_deref_bad() {
   std::unique_ptr<int> x(new int);
   x.reset();
   return *x;
 }
 
-int FN_FP_reset_ptr_null_deref2_bad() {
+int FN_reset_ptr_null_deref2_bad() {
   std::unique_ptr<int> x(new int);
   x.reset(new int);
   x.reset();
   return *x;
 }
 
-int FP_reset_ptr_deref_ok() {
+int reset_ptr_deref_ok() {
   std::unique_ptr<int> x;
   x.reset(new int);
   return *x;
 }
 
-int FP_reset_ptr_deref2_ok() {
+int reset_ptr_deref2_ok() {
   std::unique_ptr<int> x;
   x.reset();
   x.reset(new int);
@@ -99,7 +98,7 @@ int FN_unique_ptr_assign_null_deref_bad() {
   return *p1;
 }
 
-int FP_unique_ptr_move_deref_ok() {
+int unique_ptr_move_deref_ok() {
   std::unique_ptr<int> p1(new int);
   std::unique_ptr<int> p2 = std::move(p1);
   return *p2;

@@ -25,11 +25,36 @@ include struct
 end
 
 module Attribute = struct
+  type allocator =
+    | CMalloc
+    | CustomMalloc of Procname.t
+    | CRealloc
+    | CustomRealloc of Procname.t
+    | CppNew
+    | CppNewArray
+  [@@deriving compare, equal]
+
+  let pp_allocator fmt = function
+    | CMalloc ->
+        F.fprintf fmt "malloc"
+    | CustomMalloc proc_name ->
+        F.fprintf fmt "%a (custom malloc)" Procname.pp proc_name
+    | CRealloc ->
+        F.fprintf fmt "realloc"
+    | CustomRealloc proc_name ->
+        F.fprintf fmt "%a (custom realloc)" Procname.pp proc_name
+    | CppNew ->
+        F.fprintf fmt "new"
+    | CppNewArray ->
+        F.fprintf fmt "new[]"
+
+
   type t =
     | AddressOfCppTemporary of Var.t * ValueHistory.t
     | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
-    | Allocated of Procname.t * Trace.t
+    | Allocated of allocator * Trace.t
     | Closure of Procname.t
+    | DeepDeallocate
     | DynamicType of Typ.t
     | EndOfCollection
     | Invalid of Invalidation.t * Trace.t
@@ -69,7 +94,9 @@ module Attribute = struct
 
   let std_vector_reserve_rank = Variants.to_rank StdVectorReserve
 
-  let allocated_rank = Variants.to_rank (Allocated (Procname.Linters_dummy_method, dummy_trace))
+  let allocated_rank = Variants.to_rank (Allocated (CMalloc, dummy_trace))
+
+  let deep_deallocate_rank = Variants.to_rank DeepDeallocate
 
   let dynamic_type_rank = Variants.to_rank (DynamicType StdTyp.void)
 
@@ -87,6 +114,9 @@ module Attribute = struct
         true
     | (MustBeValid _ | Allocated _ | ISLAbduced _), Invalid _ ->
         false
+    | _, DeepDeallocate ->
+        (* ignore *)
+        true
     | Invalid _, _ | _, Uninitialized ->
         false
     | _ ->
@@ -108,13 +138,14 @@ module Attribute = struct
         F.fprintf f "t&%a (%a)" Var.pp var ValueHistory.pp history
     | AddressOfStackVariable (var, location, history) ->
         F.fprintf f "s&%a (%a) at %a" Var.pp var ValueHistory.pp history Location.pp location
-    | Allocated (procname, trace) ->
-        F.fprintf f "Allocated %a"
-          (Trace.pp
-             ~pp_immediate:(pp_string_if_debug ("allocation with " ^ Procname.to_string procname)) )
+    | Allocated (allocator, trace) ->
+        F.fprintf f "Allocated%a"
+          (Trace.pp ~pp_immediate:(pp_string_if_debug (F.asprintf "(%a)" pp_allocator allocator)))
           trace
     | Closure pname ->
         Procname.pp f pname
+    | DeepDeallocate ->
+        F.fprintf f "DeepDeallocate"
     | DynamicType typ ->
         F.fprintf f "DynamicType %a" (Typ.pp Pp.text) typ
     | EndOfCollection ->
@@ -153,6 +184,7 @@ module Attribute = struct
     | AddressOfCppTemporary _
     | AddressOfStackVariable _
     | Closure _
+    | DeepDeallocate
     | DynamicType _
     | EndOfCollection
     | StdVectorReserve
@@ -171,6 +203,7 @@ module Attribute = struct
     | AddressOfCppTemporary _
     | AddressOfStackVariable _
     | Closure _
+    | DeepDeallocate
     | DynamicType _
     | EndOfCollection
     | StdVectorReserve
@@ -209,12 +242,25 @@ module Attribute = struct
     | ( AddressOfCppTemporary _
       | AddressOfStackVariable _
       | Closure _
+      | DeepDeallocate
       | DynamicType _
       | EndOfCollection
       | StdVectorReserve
       | UnreachableAt _
       | Uninitialized ) as attr ->
         attr
+
+
+  let alloc_free_match allocator (invalidation : Invalidation.t) =
+    match (allocator, invalidation) with
+    | (CMalloc | CustomMalloc _ | CRealloc | CustomRealloc _), (CFree | CustomFree _) ->
+        true
+    | CppNew, CppDelete ->
+        true
+    | CppNewArray, CppDeleteArray ->
+        true
+    | _ ->
+        false
 end
 
 module Attributes = struct
@@ -273,8 +319,8 @@ module Attributes = struct
   let get_allocation attrs =
     Set.find_rank attrs Attribute.allocated_rank
     |> Option.map ~f:(fun attr ->
-           let[@warning "-8"] (Attribute.Allocated (procname, trace)) = attr in
-           (procname, trace) )
+           let[@warning "-8"] (Attribute.Allocated (allocator, trace)) = attr in
+           (allocator, trace) )
 
 
   let get_isl_abduced attrs =
@@ -282,6 +328,10 @@ module Attributes = struct
     |> Option.map ~f:(fun attr ->
            let[@warning "-8"] (Attribute.ISLAbduced trace) = attr in
            trace )
+
+
+  let is_deep_deallocated attrs =
+    Set.find_rank attrs Attribute.deep_deallocate_rank |> Option.is_some
 
 
   let get_dynamic_type attrs =
@@ -341,6 +391,19 @@ module Attributes = struct
   let add_call path proc_name call_location caller_history attrs =
     Set.map attrs ~f:(fun attr ->
         Attribute.add_call path proc_name call_location caller_history attr )
+
+
+  let get_allocated_not_freed attributes =
+    let allocated_opt = get_allocation attributes in
+    if Option.is_none allocated_opt then None
+    else
+      match (allocated_opt, get_invalid attributes) with
+      | None, _ ->
+          assert false
+      | Some (allocator, _), Some (invalidation, _) ->
+          if Attribute.alloc_free_match allocator invalidation then None else allocated_opt
+      | Some _, None ->
+          allocated_opt
 
 
   include Set

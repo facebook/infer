@@ -8,9 +8,7 @@
 open! IStd
 
 type t = CPP_INSTANCE | OBJC_INSTANCE | CPP_CLASS | OBJC_CLASS | BLOCK | C_FUNCTION
-[@@deriving compare]
-
-let equal = [%compare.equal: t]
+[@@deriving compare, equal]
 
 let to_string = function
   | CPP_INSTANCE ->

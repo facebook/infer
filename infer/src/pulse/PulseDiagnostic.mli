@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module Attribute = PulseAttribute
 module CallEvent = PulseCallEvent
 module Invalidation = PulseInvalidation
 module Trace = PulseTrace
@@ -29,6 +30,8 @@ type access_to_invalid_address =
 [@@deriving compare, equal, yojson_of]
 
 type erlang_error =
+  | Badkey of {calling_context: calling_context; location: Location.t}
+  | Badmap of {calling_context: calling_context; location: Location.t}
   | Badmatch of {calling_context: calling_context; location: Location.t}
   | Badrecord of {calling_context: calling_context; location: Location.t}
   | Case_clause of {calling_context: calling_context; location: Location.t}
@@ -48,7 +51,7 @@ type read_uninitialized_value =
 (** an error to report to the user *)
 type t =
   | AccessToInvalidAddress of access_to_invalid_address
-  | MemoryLeak of {procname: Procname.t; allocation_trace: Trace.t; location: Location.t}
+  | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
   | ErlangError of erlang_error
   | ReadUninitializedValue of read_uninitialized_value
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}

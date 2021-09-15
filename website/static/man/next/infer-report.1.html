@@ -1,4 +1,4 @@
-<!-- Creator     : groff version 1.22.4 -->
+<!-- Creator     : groff version 1.19.2 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -7,17 +7,16 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <meta name="Content-Style" content="text/css">
 <style type="text/css">
-       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       h1      { text-align: center }
+       p     { margin-top: 0; margin-bottom: 0; }
+       pre   { margin-top: 0; margin-bottom: 0; }
+       table { margin-top: 0; margin-bottom: 0; }
 </style>
 <title>infer-report</title>
 
 </head>
 <body>
 
-<h1 align="center">infer-report</h1>
+<h1 align=center>infer-report</h1>
 
 <a href="#NAME">NAME</a><br>
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
@@ -31,25 +30,22 @@
 <hr>
 
 
-<h2>NAME
 <a name="NAME"></a>
-</h2>
+<h2>NAME</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">infer-report -
 compute and manipulate infer results</p>
 
-<h2>SYNOPSIS
 <a name="SYNOPSIS"></a>
-</h2>
+<h2>SYNOPSIS</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>infer
 report</b> <i>[options]</i> [<i>file.specs</i>...]</p>
 
-<h2>DESCRIPTION
 <a name="DESCRIPTION"></a>
-</h2>
+<h2>DESCRIPTION</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">Read, convert,
@@ -60,13 +56,19 @@ is printed to standard output unless option -q is used.</p>
 file are passed on the command line, process all the .specs
 in the results directory.</p>
 
-<h2>OPTIONS
 <a name="OPTIONS"></a>
-</h2>
+<h2>OPTIONS</h2>
 
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>--censor-report</b>
+<p style="margin-left:11%; margin-top: 1em"><b>--no-censor-report</b>
+<i>+issue_type_regex</i></p>
+
+<p style="margin-left:17%;">For debugging/experimentation
+only: Specify issues not to be censored by
+<b>--censor-report</b>.</p>
+
+<p style="margin-left:11%;"><b>--censor-report</b>
 <i>+string</i></p>
 
 <p style="margin-left:17%;">Specify a filter for issues to
@@ -82,8 +84,8 @@ are reported. Each filter is of the form:
 The first two components are OCaml Str regular expressions,
 with an optional &lsquo;!&lsquo; character prefix. If a
 regex has a &lsquo;!&lsquo; prefix, the polarity is
-inverted, and the filter becomes a &quot;blacklist&quot;
-instead of a &quot;whitelist&quot;. Each filter is
+inverted, and the filter becomes a &quot;block list&quot;
+instead of a &quot;allow list&quot;. Each filter is
 interpreted as an implication: an issue matches if it does
 not match the &lsquo;issue_type_regex&lsquo; or if it does
 match the &lsquo;filename_regex&lsquo;. The filenames that
@@ -194,9 +196,11 @@ have run. In particular, note that disabling issue types
 does not make the corresponding checker not run.</p>
 
 <p style="margin-left:11%;">Available issue types are as
-follows: <br>
-ARBITRARY_CODE_EXECUTION_UNDER_LOCK (enabled by default),
-<br>
+follows:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">ARBITRARY_CODE_EXECUTION_UNDER_LOCK
+(enabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L1 (disabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L2 (disabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L3 (disabled by default), <br>
@@ -212,6 +216,7 @@ Abduction_case_not_implemented (enabled by default), <br>
 Array_of_pointsto (enabled by default), <br>
 Assert_failure (enabled by default), <br>
 BAD_POINTER_COMPARISON (enabled by default), <br>
+BAD_RECORD (enabled by default), <br>
 BIABDUCTION_ANALYSIS_STOPS (disabled by default), <br>
 BIABDUCTION_MEMORY_LEAK (disabled by default), <br>
 BUFFER_OVERRUN_L1 (enabled by default), <br>
@@ -239,6 +244,7 @@ CONDITION_ALWAYS_FALSE (disabled by default), <br>
 CONDITION_ALWAYS_TRUE (disabled by default), <br>
 CONFIG_CHECKS_BETWEEN_MARKERS (disabled by default), <br>
 CONFIG_IMPACT (disabled by default), <br>
+CONFIG_IMPACT_STRICT (disabled by default), <br>
 CONSTANT_ADDRESS_DEREFERENCE (disabled by default), <br>
 CREATE_INTENT_FROM_URI (enabled by default), <br>
 CROSS_SITE_SCRIPTING (enabled by default), <br>
@@ -341,6 +347,10 @@ Missing_fld (enabled by default), <br>
 NIL_BLOCK_CALL (enabled by default), <br>
 NIL_INSERTION_INTO_COLLECTION (enabled by default), <br>
 NIL_MESSAGING_TO_NON_POD (enabled by default), <br>
+NO_MATCHING_CASE_CLAUSE (enabled by default), <br>
+NO_MATCHING_FUNCTION_CLAUSE (enabled by default), <br>
+NO_MATCH_OF_RHS (enabled by default), <br>
+NO_TRUE_BRANCH_IN_IF (enabled by default), <br>
 NULLPTR_DEREFERENCE (enabled by default), <br>
 NULL_DEREFERENCE (enabled by default), <br>
 OPTIONAL_EMPTY_ACCESS (enabled by default), <br>
@@ -403,7 +413,7 @@ or off.</p>
 <p style="margin-left:11%;"><b>--no-filtering</b>,<b>-F</b></p>
 
 <p style="margin-left:17%;">Deactivates: Do not show the
-experimental and blacklisted issue types (Conversely:
+experimental and block listed issue types (Conversely:
 <b>--filtering</b> | <b>-f</b>)</p>
 
 
@@ -480,20 +490,29 @@ anything on standard output. (Conversely: <b>--no-quiet</b>
 | <b>-Q</b>)</p>
 
 
-<p style="margin-left:11%;"><b>--report-blacklist-files-containing</b>
+<p style="margin-left:11%;"><b>--report-allow-list-path-regex</b>
+<i>+path_regex</i></p>
+
+<p style="margin-left:17%;">Report issues only on files
+whose relative path matches the specified OCaml regex (and
+which do not match
+<b>--report-block-list-path-regex</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--report-block-list-files-containing</b>
 <i>+string</i></p>
 
 <p style="margin-left:17%;">Do not report any issues on
 files containing the specified string</p>
 
 
-<p style="margin-left:11%;"><b>--report-blacklist-path-regex</b>
+<p style="margin-left:11%;"><b>--report-block-list-path-regex</b>
 <i>+path_regex</i></p>
 
 <p style="margin-left:17%;">Do not report any issues on
 files whose relative path matches the specified OCaml regex,
-even if they match the whitelist specified by
-<b>--report-whitelist-path-regex</b></p>
+even if they match the allow list specified by
+<b>--report-allow-list-path-regex</b></p>
 
 <p style="margin-left:11%;"><b>--report-console-limit</b>
 <i>int</i></p>
@@ -515,14 +534,6 @@ emitting the report</p>
 <p style="margin-left:17%;">do not report a type of
 errors</p>
 
-
-<p style="margin-left:11%;"><b>--report-whitelist-path-regex</b>
-<i>+path_regex</i></p>
-
-<p style="margin-left:17%;">Report issues only on files
-whose relative path matches the specified OCaml regex (and
-which do not match <b>--report-blacklist-path-regex</b>)</p>
-
 <p style="margin-left:11%;"><b>--results-dir</b>,<b>-o</b>
 <i>dir</i></p>
 
@@ -537,9 +548,8 @@ files in the specified directory</p>
 (Conversely:
 <b>--no-skip-analysis-in-path-skips-compilation</b>)</p>
 
-<h2>HOISTING OPTIONS
 <a name="HOISTING OPTIONS"></a>
-</h2>
+<h2>HOISTING OPTIONS</h2>
 
 
 
@@ -550,9 +560,8 @@ loop-invariant calls only when the function is expensive,
 i.e. at least linear (Conversely:
 <b>--hoisting-report-only-expensive</b>)</p>
 
-<h2>ENVIRONMENT
 <a name="ENVIRONMENT"></a>
-</h2>
+<h2>ENVIRONMENT</h2>
 
 
 
@@ -562,9 +571,8 @@ i.e. at least linear (Conversely:
 <p style="margin-left:17%;">See the ENVIRONMENT section in
 the manual of <b>infer</b>(1).</p>
 
-<h2>FILES
 <a name="FILES"></a>
-</h2>
+<h2>FILES</h2>
 
 
 
@@ -573,9 +581,8 @@ the manual of <b>infer</b>(1).</p>
 <p style="margin-left:17%;">See the FILES section in the
 manual of <b>infer</b>(1).</p>
 
-<h2>SEE ALSO
 <a name="SEE ALSO"></a>
-</h2>
+<h2>SEE ALSO</h2>
 
 
 

@@ -276,6 +276,7 @@ let get_struct_decls decl =
   | PragmaDetectMismatchDecl _
   | RequiresExprBodyDecl _
   | StaticAssertDecl _
+  | TemplateParamObjectDecl _
   | TemplateTemplateParmDecl _
   | TemplateTypeParmDecl _
   | TypeAliasDecl _

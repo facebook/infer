@@ -143,7 +143,7 @@ let is_frontend_tmp pvar =
   ||
   match pvar.pv_kind with
   | Local_var pname ->
-      Procname.is_java pname && is_bytecode_tmp name
+      (Procname.is_java pname || Procname.is_csharp pname) && is_bytecode_tmp name
   | _ ->
       false
 

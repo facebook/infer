@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module L = Logging
 module IRAttributes = Attributes
 open PulseBasicInterface
 open PulseDomainInterface
@@ -23,6 +24,12 @@ type model_data =
 type model = model_data -> AbductiveDomain.t -> ExecutionDomain.t AccessResult.t list
 
 let continue astate = ContinueProgram astate
+
+let map_continue astate_result =
+  let open IResult.Let_syntax in
+  let+ astate = astate_result in
+  continue astate
+
 
 let ok_continue post = [Ok (ContinueProgram post)]
 
@@ -124,28 +131,64 @@ module Misc = struct
     PulseOperations.write_id ret_id ret_value astate |> ok_continue
 
 
-  let free_or_delete operation deleted_access : model =
-   fun {path; location} astate ->
+  let call_destructor {ProcnameDispatcher.Call.FuncArg.arg_payload= deleted_access; typ} : model =
+   fun {analysis_data= {tenv; proc_desc; analyze_dependency}; path; location; ret} astate ->
+    (* TODO: lookup dynamic type; currently not set in C++, should update model of [new] *)
+    match typ.Typ.desc with
+    | Typ.Tptr ({desc= Tstruct class_name}, _) -> (
+      match Tenv.find_cpp_destructor tenv class_name with
+      | None ->
+          L.d_printfln "No destructor found for class %a@\n" Typ.Name.pp class_name ;
+          ok_continue astate
+      | Some destructor ->
+          L.d_printfln "Found destructor for class %a@\n" Typ.Name.pp class_name ;
+          PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc
+            ~callee_data:(analyze_dependency destructor) location destructor ~ret
+            ~actuals:[(deleted_access, typ)] ~formals_opt:None astate )
+    | _ ->
+        L.d_printfln "Object being deleted is not a pointer to a class, got '%a' instead@\n"
+          (Typ.pp_desc (Pp.html Black))
+          typ.Typ.desc ;
+        ok_continue astate
+
+
+  let free_or_delete operation invalidation
+      ({ProcnameDispatcher.Call.FuncArg.arg_payload= deleted_access} as deleted_arg) : model =
+   fun ({path; location} as model_data) astate ->
     (* NOTE: freeing 0 is a no-op so we introduce a case split *)
-    let invalidation =
-      match operation with `Free -> Invalidation.CFree | `Delete -> Invalidation.CppDelete
-    in
     let astates_alloc =
       let<*> astate = PulseArithmetic.and_positive (fst deleted_access) astate in
-      if Config.pulse_isl then
-        PulseOperations.invalidate_biad_isl path location invalidation deleted_access astate
-        |> List.map ~f:(fun result ->
-               let+ astate = result in
-               ContinueProgram astate )
-      else
-        let<+> astate =
-          PulseOperations.invalidate path UntraceableAccess location invalidation deleted_access
-            astate
-        in
-        astate
+      let astates =
+        match operation with
+        | `Free ->
+            ok_continue astate
+        | `Delete ->
+            call_destructor deleted_arg model_data astate
+      in
+      List.concat_map astates ~f:(fun exec_state_result ->
+          let<*> exec_state = exec_state_result in
+          match exec_state with
+          | ContinueProgram astate ->
+              if Config.pulse_isl then
+                PulseOperations.invalidate_biad_isl path location invalidation deleted_access astate
+                |> List.map ~f:(fun result ->
+                       let+ astate = result in
+                       ContinueProgram astate )
+              else
+                let<+> astate =
+                  PulseOperations.invalidate path UntraceableAccess location invalidation
+                    deleted_access astate
+                in
+                astate
+          | ExitProgram _
+          | AbortProgram _
+          | LatentAbortProgram _
+          | LatentInvalidAccess _
+          | ISLLatentMemoryError _ ->
+              [Ok exec_state] )
     in
-    let<*> astate_zero = PulseArithmetic.prune_eq_zero (fst deleted_access) astate in
-    Ok (ContinueProgram astate_zero) :: astates_alloc
+    let astate_zero = PulseArithmetic.prune_eq_zero (fst deleted_access) astate |> map_continue in
+    astate_zero :: astates_alloc
 
 
   let set_uninitialized tenv size_exp_opt location ret_value astate =
@@ -155,7 +198,7 @@ module Misc = struct
                AbductiveDomain.set_uninitialized tenv (`Malloc ret_value) obj_typ location astate ) )
 
 
-  let alloc_not_null_common ~can_leak ~initialize ?desc size_exp_opt
+  let alloc_not_null_common ~initialize ?desc ~allocator size_exp_opt
       {analysis_data= {tenv}; location; callee_procname; ret= ret_id, _} astate =
     let ret_addr = AbstractValue.mk_fresh () in
     let desc = Option.value desc ~default:(Procname.to_string callee_procname) in
@@ -169,29 +212,38 @@ module Misc = struct
              This seems to be introduced by inline mechanism of Java synthetic methods during preanalysis *)
           astate
     in
-    let do_if b f x = if b then f x else x in
-    PulseOperations.write_id ret_id (ret_addr, ret_alloc_hist) astate
-    |> do_if can_leak (PulseOperations.allocate callee_procname location (ret_addr, []))
-    |> do_if (not initialize) (set_uninitialized tenv size_exp_opt location ret_addr)
-    |> PulseArithmetic.and_positive ret_addr
+    let astate = PulseOperations.write_id ret_id (ret_addr, ret_alloc_hist) astate in
+    let astate =
+      match allocator with
+      | None ->
+          astate
+      | Some allocator ->
+          PulseOperations.allocate allocator location (ret_addr, []) astate
+    in
+    let astate =
+      if initialize then astate else set_uninitialized tenv size_exp_opt location ret_addr astate
+    in
+    PulseArithmetic.and_positive ret_addr astate
 
 
-  let alloc_not_null ?desc size = alloc_not_null_common ~can_leak:true ?desc size
+  let alloc_not_null ?desc allocator size =
+    alloc_not_null_common ?desc ~allocator:(Some allocator) size
+
 
   (** record in its history and dynamic type that the value was allocated but consider that it
       cannot generate leaks (eg it is handled by the language's garbage collector, or we don't want
       to report leaks for some reason) *)
-  let alloc_no_leak_not_null ?desc size = alloc_not_null_common ~can_leak:false ?desc size
+  let alloc_no_leak_not_null ?desc size = alloc_not_null_common ?desc ~allocator:None size
 end
 
 module C = struct
-  let free deleted_access : model = Misc.free_or_delete `Free deleted_access
+  let free deleted_access : model = Misc.free_or_delete `Free CFree deleted_access
 
-  let malloc_common ~size_exp_opt : model =
+  let alloc_common allocator ~size_exp_opt : model =
    fun ({path; callee_procname; location; ret= ret_id, _} as model_data) astate ->
     let ret_addr = AbstractValue.mk_fresh () in
     let astate_alloc =
-      Misc.alloc_not_null ~initialize:false size_exp_opt model_data astate >>| continue
+      Misc.alloc_not_null allocator ~initialize:false size_exp_opt model_data astate >>| continue
     in
     let result_null =
       let ret_null_hist =
@@ -210,34 +262,52 @@ module C = struct
     [astate_alloc; result_null]
 
 
-  let malloc_not_null_common ~size_exp_opt : model =
+  let alloc_not_null_common allocator ~size_exp_opt : model =
    fun model_data astate ->
-    let<+> astate = Misc.alloc_not_null ~initialize:false size_exp_opt model_data astate in
+    let<+> astate =
+      Misc.alloc_not_null ~initialize:false allocator size_exp_opt model_data astate
+    in
     astate
 
 
-  let malloc size_exp = malloc_common ~size_exp_opt:(Some size_exp)
+  let malloc size_exp = alloc_common CMalloc ~size_exp_opt:(Some size_exp)
 
-  let malloc_no_param = malloc_common ~size_exp_opt:None
+  let malloc_not_null size_exp = alloc_not_null_common CMalloc ~size_exp_opt:(Some size_exp)
 
-  let malloc_not_null size_exp = malloc_not_null_common ~size_exp_opt:(Some size_exp)
+  let custom_malloc size_exp model_data astate =
+    alloc_common (CustomMalloc model_data.callee_procname) ~size_exp_opt:(Some size_exp) model_data
+      astate
 
-  let malloc_not_null_no_param = malloc_not_null_common ~size_exp_opt:None
 
-  let realloc pointer size : model =
+  let custom_alloc model_data astate =
+    alloc_common (CustomMalloc model_data.callee_procname) ~size_exp_opt:None model_data astate
+
+
+  let custom_alloc_not_null model_data astate =
+    alloc_not_null_common (CustomMalloc model_data.callee_procname) ~size_exp_opt:None model_data
+      astate
+
+
+  let realloc_common allocator pointer size : model =
    fun data astate ->
     free pointer data astate
     |> List.concat_map ~f:(fun result ->
            let<*> exec_state = result in
            match (exec_state : ExecutionDomain.t) with
            | ContinueProgram astate ->
-               malloc size data astate
+               alloc_common allocator ~size_exp_opt:(Some size) data astate
            | ExitProgram _
            | AbortProgram _
            | LatentAbortProgram _
            | LatentInvalidAccess _
            | ISLLatentMemoryError _ ->
                [Ok exec_state] )
+
+
+  let realloc = realloc_common CRealloc
+
+  let custom_realloc pointer size data astate =
+    realloc_common (CustomRealloc data.callee_procname) pointer size data astate
 end
 
 module ObjCCoreFoundation = struct
@@ -270,27 +340,55 @@ module ObjC = struct
    fun {path; location} astate ->
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let<*> astate, _ =
-      PulseOperations.eval_access path ~must_be_valid_reason:InsertionIntoCollection Read location
+      PulseOperations.eval_access path ~must_be_valid_reason:InsertionIntoCollectionValue Read
+        location
         (value, event :: value_hist)
         Dereference astate
     in
     let<+> astate, _ =
-      PulseOperations.eval_access path ~must_be_valid_reason:InsertionIntoCollection Read location
+      PulseOperations.eval_access path ~must_be_valid_reason:InsertionIntoCollectionKey Read
+        location
         (key, event :: key_hist)
         Dereference astate
     in
     astate
 
 
-  let insertion_into_collection_key_or_value (value, value_hist) ~desc : model =
+  let insertion_into_collection_key_or_value (value, value_hist) ~value_kind ~desc : model =
    fun {path; location} astate ->
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+    let must_be_valid_reason =
+      match value_kind with
+      | `Key ->
+          Invalidation.InsertionIntoCollectionKey
+      | `Value ->
+          Invalidation.InsertionIntoCollectionValue
+    in
     let<+> astate, _ =
-      PulseOperations.eval_access path ~must_be_valid_reason:InsertionIntoCollection Read location
+      PulseOperations.eval_access path ~must_be_valid_reason Read location
         (value, event :: value_hist)
         Dereference astate
     in
     astate
+
+
+  let read_from_collection (key, key_hist) ~desc : model =
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+    let astate_nil =
+      let ret_val = AbstractValue.mk_fresh () in
+      let<*> astate = PulseArithmetic.prune_eq_zero key astate in
+      let<+> astate = PulseArithmetic.and_eq_int ret_val IntLit.zero astate in
+      PulseOperations.write_id ret_id (ret_val, event :: key_hist) astate
+    in
+    let astate_not_nil =
+      let<*> astate = PulseArithmetic.prune_positive key astate in
+      let<+> astate, (ret_val, hist) =
+        PulseOperations.eval_access path Read location (key, key_hist) Dereference astate
+      in
+      PulseOperations.write_id ret_id (ret_val, event :: hist) astate
+    in
+    List.rev_append astate_nil astate_not_nil
 
 
   (* NOTE: assume that this is always called with [freeWhenDone] being [YES] *)
@@ -390,11 +488,17 @@ module Optional = struct
     let ret_value = (ret_addr, [ValueHistory.Call {f= Model desc; location; in_call= []}]) in
     let<*> astate, (value_addr, _) = to_internal_value_deref path Read location optional astate in
     let astate = PulseOperations.write_id ret_id ret_value astate in
-    let<*> astate_non_empty = PulseArithmetic.prune_positive value_addr astate in
-    let<*> astate_true = PulseArithmetic.prune_positive ret_addr astate_non_empty in
-    let<*> astate_empty = PulseArithmetic.prune_eq_zero value_addr astate in
-    let<*> astate_false = PulseArithmetic.prune_eq_zero ret_addr astate_empty in
-    [Ok (ContinueProgram astate_false); Ok (ContinueProgram astate_true)]
+    let result_non_empty =
+      PulseArithmetic.prune_positive value_addr astate
+      >>= PulseArithmetic.prune_positive ret_addr
+      |> map_continue
+    in
+    let result_empty =
+      PulseArithmetic.prune_eq_zero value_addr astate
+      >>= PulseArithmetic.prune_eq_zero ret_addr
+      |> map_continue
+    in
+    [result_non_empty; result_empty]
 
 
   let get_pointer optional ~desc : model =
@@ -402,48 +506,85 @@ module Optional = struct
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let<*> astate, value_addr = to_internal_value_deref path Read location optional astate in
     let value_update_hist = (fst value_addr, event :: snd value_addr) in
-    let<*> astate_value_addr =
+    let astate_value_addr =
       PulseOperations.write_id ret_id value_update_hist astate
       |> PulseArithmetic.prune_positive (fst value_addr)
+      |> map_continue
     in
     let nullptr = (AbstractValue.mk_fresh (), [event]) in
-    let<*> astate_null =
+    let astate_null =
       PulseOperations.write_id ret_id nullptr astate
       |> PulseArithmetic.prune_eq_zero (fst value_addr)
       >>= PulseArithmetic.and_eq_int (fst nullptr) IntLit.zero
       >>= PulseOperations.invalidate path
             (StackAddress (Var.of_id ret_id, snd nullptr))
             location (ConstantDereference IntLit.zero) nullptr
+      |> map_continue
     in
-    [Ok (ContinueProgram astate_value_addr); Ok (ContinueProgram astate_null)]
+    [astate_value_addr; astate_null]
 
 
   let value_or optional default ~desc : model =
    fun {path; location; ret= ret_id, _} astate ->
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let<*> astate, value_addr = to_internal_value_deref path Read location optional astate in
-    let<*> astate_non_empty = PulseArithmetic.prune_positive (fst value_addr) astate in
-    let<*> astate_non_empty, value =
-      PulseOperations.eval_access path Read location value_addr Dereference astate_non_empty
+    let astate_non_empty =
+      let+ astate_non_empty, value =
+        PulseArithmetic.prune_positive (fst value_addr) astate
+        >>= PulseOperations.eval_access path Read location value_addr Dereference
+      in
+      let value_update_hist = (fst value, event :: snd value) in
+      PulseOperations.write_id ret_id value_update_hist astate_non_empty |> continue
     in
-    let value_update_hist = (fst value, event :: snd value) in
-    let astate_value = PulseOperations.write_id ret_id value_update_hist astate_non_empty in
-    let<*> astate, (default_val, default_hist) =
-      PulseOperations.eval_access path Read location default Dereference astate
+    let astate_default =
+      let* astate, (default_val, default_hist) =
+        PulseOperations.eval_access path Read location default Dereference astate
+      in
+      let default_value_hist = (default_val, event :: default_hist) in
+      PulseArithmetic.prune_eq_zero (fst value_addr) astate
+      >>| PulseOperations.write_id ret_id default_value_hist
+      |> map_continue
     in
-    let default_value_hist = (default_val, event :: default_hist) in
-    let<*> astate_empty = PulseArithmetic.prune_eq_zero (fst value_addr) astate in
-    let astate_default = PulseOperations.write_id ret_id default_value_hist astate_empty in
-    [Ok (ContinueProgram astate_value); Ok (ContinueProgram astate_default)]
+    [astate_non_empty; astate_default]
 end
 
 module Cplusplus = struct
-  let delete deleted_access : model = Misc.free_or_delete `Delete deleted_access
+  let delete deleted_arg : model =
+   fun model_data astate -> Misc.free_or_delete `Delete CppDelete deleted_arg model_data astate
+
+
+  (* NOTE: [new\[\]] is not yet modelled as allocating an array of objects hence why this model
+     deletes only the root address *)
+  let delete_array deleted_arg : model =
+   fun model_data astate -> Misc.free_or_delete `Delete CppDeleteArray deleted_arg model_data astate
+
 
   let new_ type_name : model =
    fun model_data astate ->
     let<+> astate =
-      Misc.alloc_no_leak_not_null ~initialize:true ~desc:"new" (Some type_name) model_data astate
+      (* Java and C++ [new] share the same builtin (note that ObjC gets its own [objc_alloc_no_fail]
+         builtin for [\[Class new\]]) *)
+      if Procname.is_java @@ Procdesc.get_proc_name model_data.analysis_data.proc_desc then
+        Misc.alloc_no_leak_not_null ~initialize:true (Some type_name) ~desc:"new" model_data astate
+      else
+        (* C++ *)
+        Misc.alloc_not_null ~initialize:true ~desc:"new" CppNew (Some type_name) model_data astate
+    in
+    astate
+
+
+  (* TODO: actually allocate an array  *)
+  let new_array type_name : model =
+   fun model_data astate ->
+    let<+> astate =
+      (* Java and C++ [new\[\]] share the same builtin *)
+      if Procname.is_java @@ Procdesc.get_proc_name model_data.analysis_data.proc_desc then
+        Misc.alloc_no_leak_not_null ~initialize:true (Some type_name) ~desc:"new[]" model_data
+          astate
+      else
+        (* C++ *)
+        Misc.alloc_not_null ~initialize:true ~desc:"new[]" CppNewArray (Some type_name) model_data
+          astate
     in
     astate
 
@@ -697,16 +838,16 @@ module StdBasicString = struct
     in
     let ((ret_addr, _) as ret_hist) = (AbstractValue.mk_fresh (), event :: hist) in
     let astate_empty =
-      let<*> astate = PulseArithmetic.prune_eq_zero len_addr astate in
-      let<+> astate = PulseArithmetic.and_eq_int ret_addr IntLit.one astate in
-      PulseOperations.write_id ret_id ret_hist astate
+      let* astate = PulseArithmetic.prune_eq_zero len_addr astate in
+      let+ astate = PulseArithmetic.and_eq_int ret_addr IntLit.one astate in
+      PulseOperations.write_id ret_id ret_hist astate |> continue
     in
     let astate_non_empty =
-      let<*> astate = PulseArithmetic.prune_positive len_addr astate in
-      let<+> astate = PulseArithmetic.and_eq_int ret_addr IntLit.zero astate in
-      PulseOperations.write_id ret_id ret_hist astate
+      let* astate = PulseArithmetic.prune_positive len_addr astate in
+      let+ astate = PulseArithmetic.and_eq_int ret_addr IntLit.zero astate in
+      PulseOperations.write_id ret_id ret_hist astate |> continue
     in
-    List.rev_append astate_empty astate_non_empty
+    [astate_empty; astate_non_empty]
 
 
   let length this_hist : model =
@@ -888,17 +1029,19 @@ module GenericArrayBackedCollectionIterator = struct
       | `NotEqual ->
           (IntLit.zero, IntLit.one)
     in
-    let<*> astate_equal =
+    let astate_equal =
       PulseArithmetic.and_eq_int ret_val ret_val_equal astate
       >>= PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand index_lhs)
             (AbstractValueOperand index_rhs)
+      |> map_continue
     in
-    let<*> astate_notequal =
+    let astate_notequal =
       PulseArithmetic.and_eq_int ret_val ret_val_notequal astate
       >>= PulseArithmetic.prune_binop ~negated:false Ne (AbstractValueOperand index_lhs)
             (AbstractValueOperand index_rhs)
+      |> map_continue
     in
-    [Ok (ContinueProgram astate_equal); Ok (ContinueProgram astate_notequal)]
+    [astate_equal; astate_notequal]
 
 
   let operator_star ~desc iter : model =
@@ -1213,40 +1356,41 @@ module JavaCollection = struct
 
   let update path coll new_val new_val_hist event location ret_id astate =
     (* case0: element not present in collection *)
-    let* astate, coll_val =
+    let<*> astate, coll_val =
       PulseOperations.eval_access path Read location coll Dereference astate
     in
-    let* astate, _, fst_val = Java.load_field path fst_field location coll_val astate in
-    let* astate, _, snd_val = Java.load_field path snd_field location coll_val astate in
+    let<*> astate, _, fst_val = Java.load_field path fst_field location coll_val astate in
+    let<*> astate, _, snd_val = Java.load_field path snd_field location coll_val astate in
     let is_empty_val = AbstractValue.mk_fresh () in
-    let* astate' =
+    let<*> astate' =
       Java.write_field path is_empty_field (is_empty_val, [event]) location coll_val astate
     in
     (* case1: fst_field is updated *)
-    let* astate1 =
+    let astate1 =
       Java.write_field path fst_field (new_val, event :: new_val_hist) location coll astate'
+      >>| PulseOperations.write_id ret_id fst_val
+      |> map_continue
     in
-    let astate1 = PulseOperations.write_id ret_id fst_val astate1 in
     (* case2: snd_field is updated *)
-    let+ astate2 =
+    let astate2 =
       Java.write_field path snd_field (new_val, event :: new_val_hist) location coll astate'
+      >>| PulseOperations.write_id ret_id snd_val
+      |> map_continue
     in
-    let astate2 = PulseOperations.write_id ret_id snd_val astate2 in
-    [astate; astate1; astate2]
+    [Ok (continue astate); astate1; astate2]
 
 
   let set coll (new_val, new_val_hist) : model =
    fun {path; location; ret= ret_id, _} astate ->
     let event = ValueHistory.Call {f= Model "Collection.set()"; location; in_call= []} in
-    let<*> astates = update path coll new_val new_val_hist event location ret_id astate in
-    List.map ~f:(fun astate -> Ok (ContinueProgram astate)) astates
+    update path coll new_val new_val_hist event location ret_id astate
 
 
   let remove_at path ~desc coll location ret_id astate =
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let new_val = AbstractValue.mk_fresh () in
-    PulseArithmetic.and_eq_int new_val IntLit.zero astate
-    >>= update path coll new_val [] event location ret_id
+    let<*> astate = PulseArithmetic.and_eq_int new_val IntLit.zero astate in
+    update path coll new_val [] event location ret_id astate
 
 
   (* Auxiliary function that updates the state by:
@@ -1268,53 +1412,56 @@ module JavaCollection = struct
       PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand elem)
         (AbstractValueOperand field_val) astate
     in
-    let* astate =
+    let+ astate =
       PulseOperations.write_deref path location ~ref:field_addr ~obj:(null_val, [event]) astate
     in
-    let astate = PulseOperations.write_id ret_id (ret_val, [event]) astate in
-    Ok astate
+    PulseOperations.write_id ret_id (ret_val, [event]) astate
 
 
   let remove_obj path ~desc coll (elem, _) location ret_id astate =
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
-    let* astate, coll_val =
+    let<*> astate, coll_val =
       PulseOperations.eval_access path Read location coll Dereference astate
     in
+    let<*> astate, fst_addr, (fst_val, _) =
+      Java.load_field path fst_field location coll_val astate
+    in
+    let<*> astate, snd_addr, (snd_val, _) =
+      Java.load_field path snd_field location coll_val astate
+    in
     (* case1: given element is equal to fst_field *)
-    let* astate, fst_addr, (fst_val, _) = Java.load_field path fst_field location coll_val astate in
-    let* astate1 =
+    let astate1 =
       remove_elem_found path coll_val elem fst_addr fst_val ret_id location event astate
+      |> map_continue
     in
     (* case2: given element is equal to snd_field *)
-    let* astate, snd_addr, (snd_val, _) = Java.load_field path snd_field location coll_val astate in
-    let* astate2 =
+    let astate2 =
       remove_elem_found path coll_val elem snd_addr snd_val ret_id location event astate
+      |> map_continue
     in
     (* case 3: given element is not equal to the fst AND not equal to the snd *)
-    let+ astate =
+    let astate3 =
       PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand elem)
         (AbstractValueOperand fst_val) astate
       >>= PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand elem)
             (AbstractValueOperand snd_val)
+      |> map_continue
     in
-    [astate1; astate2; astate]
+    [astate1; astate2; astate3]
 
 
   let remove ~desc args : model =
    fun {path; location; ret= ret_id, _} astate ->
     match args with
     | [ {ProcnameDispatcher.Call.FuncArg.arg_payload= coll_arg}
-      ; {ProcnameDispatcher.Call.FuncArg.arg_payload= elem_arg; typ} ] ->
-        let<*> astates =
-          match typ.desc with
-          | Tint _ ->
-              (* Case of remove(int index) *)
-              remove_at path ~desc coll_arg location ret_id astate
-          | _ ->
-              (* Case of remove(Object o) *)
-              remove_obj path ~desc coll_arg elem_arg location ret_id astate
-        in
-        List.map ~f:(fun astate -> Ok (ContinueProgram astate)) astates
+      ; {ProcnameDispatcher.Call.FuncArg.arg_payload= elem_arg; typ} ] -> (
+      match typ.desc with
+      | Tint _ ->
+          (* Case of remove(int index) *)
+          remove_at path ~desc coll_arg location ret_id astate
+      | _ ->
+          (* Case of remove(Object o) *)
+          remove_obj path ~desc coll_arg elem_arg location ret_id astate )
     | _ ->
         astate |> ok_continue
 
@@ -1375,22 +1522,26 @@ module JavaCollection = struct
      the internal is_empty field is not known to have value 1 *)
   let get_elem_coll_not_known_empty elem found_val fst_val snd_val astate =
     (* case 1: given element is not equal to the fst AND not equal to the snd *)
-    let* astate1 =
-      PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand elem)
+    let astate1 =
+      PulseArithmetic.prune_binop ~negated:true Eq (AbstractValueOperand elem)
         (AbstractValueOperand fst_val) astate
-      >>= PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand elem)
+      >>= PulseArithmetic.prune_binop ~negated:true Eq (AbstractValueOperand elem)
             (AbstractValueOperand snd_val)
+      |> map_continue
     in
-    let* astate = PulseArithmetic.and_positive found_val astate in
     (* case 2: given element is equal to fst_field *)
-    let* astate2 =
-      PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand elem)
-        (AbstractValueOperand fst_val) astate
+    let astate2 =
+      PulseArithmetic.and_positive found_val astate
+      >>= PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand elem)
+            (AbstractValueOperand fst_val)
+      |> map_continue
     in
     (* case 3: given element is equal to snd_field *)
-    let+ astate3 =
-      PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand elem)
-        (AbstractValueOperand snd_val) astate
+    let astate3 =
+      PulseArithmetic.and_positive found_val astate
+      >>= PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand elem)
+            (AbstractValueOperand snd_val)
+      |> map_continue
     in
     [astate1; astate2; astate3]
 
@@ -1406,21 +1557,23 @@ module JavaCollection = struct
     in
     (* case 1: collection is empty *)
     let true_val = AbstractValue.mk_fresh () in
-    let<*> astate1 =
-      get_elem_coll_is_empty path is_empty_val true_val event location ret_id astate
+    let astate1 =
+      get_elem_coll_is_empty path is_empty_val true_val event location ret_id astate |> map_continue
     in
     (* case 2: collection is not known to be empty *)
     let found_val = AbstractValue.mk_fresh () in
-    let<*> astate2, _, (fst_val, _) = Java.load_field path fst_field location coll_val astate in
-    let<*> astate2, _, (snd_val, _) = Java.load_field path snd_field location coll_val astate2 in
-    let<*> astate2 =
-      PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand is_empty_val)
-        (AbstractValueOperand true_val) astate2
-      >>= PulseArithmetic.and_eq_int true_val IntLit.one
+    let astates2 =
+      let<*> astate2, _, (fst_val, _) = Java.load_field path fst_field location coll_val astate in
+      let<*> astate2, _, (snd_val, _) = Java.load_field path snd_field location coll_val astate2 in
+      let<*> astate2 =
+        PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand is_empty_val)
+          (AbstractValueOperand true_val) astate2
+        >>= PulseArithmetic.and_eq_int true_val IntLit.one
+        >>| PulseOperations.write_id ret_id (found_val, [event])
+      in
+      get_elem_coll_not_known_empty elem found_val fst_val snd_val astate2
     in
-    let astate2 = PulseOperations.write_id ret_id (found_val, [event]) astate2 in
-    let<*> astates = get_elem_coll_not_known_empty elem found_val fst_val snd_val astate2 in
-    List.map (astate1 :: astates) ~f:(fun astate -> Ok (ContinueProgram astate))
+    astate1 :: astates2
 end
 
 module JavaInteger = struct
@@ -1493,9 +1646,10 @@ module Android = struct
     let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
     let ret_val = AbstractValue.mk_fresh () in
     let astate_null =
-      let<*> astate = PulseArithmetic.prune_eq_zero addr astate in
-      let<+> astate = PulseArithmetic.and_eq_int ret_val IntLit.one astate in
-      PulseOperations.write_id ret_id (ret_val, event :: hist) astate
+      PulseArithmetic.prune_eq_zero addr astate
+      >>= PulseArithmetic.and_eq_int ret_val IntLit.one
+      >>| PulseOperations.write_id ret_id (ret_val, event :: hist)
+      |> map_continue
     in
     let astate_not_null =
       let<*> astate = PulseArithmetic.prune_positive addr astate in
@@ -1504,21 +1658,35 @@ module Android = struct
       in
       let astate = PulseOperations.write_id ret_id (ret_val, event :: hist) astate in
       let astate_empty =
-        let<*> astate = PulseArithmetic.prune_eq_zero len_addr astate in
-        let<+> astate = PulseArithmetic.and_eq_int ret_val IntLit.one astate in
-        astate
+        PulseArithmetic.prune_eq_zero len_addr astate
+        >>= PulseArithmetic.and_eq_int ret_val IntLit.one
+        |> map_continue
       in
       let astate_not_empty =
-        let<*> astate = PulseArithmetic.prune_positive len_addr astate in
-        let<+> astate = PulseArithmetic.and_eq_int ret_val IntLit.zero astate in
-        astate
+        PulseArithmetic.prune_positive len_addr astate
+        >>= PulseArithmetic.and_eq_int ret_val IntLit.zero
+        |> map_continue
       in
-      List.rev_append astate_empty astate_not_empty
+      [astate_empty; astate_not_empty]
     in
-    List.rev_append astate_null astate_not_null
+    astate_null :: astate_not_null
 end
 
 module Erlang = struct
+  let error_badkey : model =
+   fun {location} astate ->
+    [ Error
+        (ReportableError {astate; diagnostic= ErlangError (Badkey {calling_context= []; location})})
+    ]
+
+
+  let error_badmap : model =
+   fun {location} astate ->
+    [ Error
+        (ReportableError {astate; diagnostic= ErlangError (Badmap {calling_context= []; location})})
+    ]
+
+
   let error_badmatch : model =
    fun {location} astate ->
     [ Error
@@ -1554,44 +1722,43 @@ module Erlang = struct
            {astate; diagnostic= ErlangError (If_clause {calling_context= []; location})} ) ]
 
 
+  let write_field_and_deref path location ~struct_addr ~field_addr ~field_val field_name astate =
+    let* astate =
+      PulseOperations.write_field path location ~ref:struct_addr field_name ~obj:field_addr astate
+    in
+    PulseOperations.write_deref path location ~ref:field_addr ~obj:field_val astate
+
+
+  let write_dynamic_type_and_return (addr_val, hist) typ ret_id astate =
+    let typ = Typ.mk_struct (ErlangType typ) in
+    let astate = PulseOperations.add_dynamic_type typ addr_val astate in
+    PulseOperations.write_id ret_id (addr_val, hist) astate
+
+
   let make_nil : model =
    fun {location; ret= ret_id, _} astate ->
     let event = ValueHistory.Allocation {f= Model "[]"; location} in
-    let addr_nil_val = AbstractValue.mk_fresh () in
-    let addr_nil = (addr_nil_val, [event]) in
-    let astate =
-      let typ = Typ.mk_struct (ErlangType Nil) in
-      PulseOperations.add_dynamic_type typ addr_nil_val astate
-    in
-    let astate = PulseOperations.write_id ret_id addr_nil astate in
+    let addr_nil = (AbstractValue.mk_fresh (), [event]) in
+    let astate = write_dynamic_type_and_return addr_nil Nil ret_id astate in
     [Ok (ContinueProgram astate)]
 
 
   let make_cons head tail : model =
    fun {location; path; ret= ret_id, _} astate ->
     let event = ValueHistory.Allocation {f= Model "[X|Xs]"; location} in
-    let addr_head_val = AbstractValue.mk_fresh () in
-    let addr_tail_val = AbstractValue.mk_fresh () in
-    let addr_cons_val = AbstractValue.mk_fresh () in
-    let addr_head = (addr_head_val, [event]) in
-    let addr_tail = (addr_tail_val, [event]) in
-    let addr_cons = (addr_cons_val, [event]) in
+    let addr_head = (AbstractValue.mk_fresh (), [event]) in
+    let addr_tail = (AbstractValue.mk_fresh (), [event]) in
+    let addr_cons = (AbstractValue.mk_fresh (), [event]) in
     let field name = Fieldname.make (ErlangType Cons) name in
     let<*> astate =
-      PulseOperations.write_field path location ~ref:addr_cons (field ErlangTypeName.cons_head)
-        ~obj:addr_head astate
+      write_field_and_deref path location ~struct_addr:addr_cons ~field_addr:addr_head
+        ~field_val:head (field ErlangTypeName.cons_head) astate
     in
-    let<*> astate = PulseOperations.write_deref path location ~ref:addr_head ~obj:head astate in
-    let<*> astate =
-      PulseOperations.write_field path location ~ref:addr_cons (field ErlangTypeName.cons_tail)
-        ~obj:addr_tail astate
+    let<+> astate =
+      write_field_and_deref path location ~struct_addr:addr_cons ~field_addr:addr_tail
+        ~field_val:tail (field ErlangTypeName.cons_tail) astate
     in
-    let<+> astate = PulseOperations.write_deref path location ~ref:addr_tail ~obj:tail astate in
-    let astate =
-      let typ = Typ.mk_struct (ErlangType Cons) in
-      PulseOperations.add_dynamic_type typ addr_cons_val astate
-    in
-    PulseOperations.write_id ret_id addr_cons astate
+    write_dynamic_type_and_return addr_cons Cons ret_id astate
 
 
   let make_tuple (args : 'a ProcnameDispatcher.Call.FuncArg.t list) : model =
@@ -1599,8 +1766,7 @@ module Erlang = struct
     let tuple_size = List.length args in
     let tuple_typ_name : Typ.name = ErlangType (Tuple tuple_size) in
     let event = ValueHistory.Allocation {f= Model "{}"; location} in
-    let addr_tuple_val = AbstractValue.mk_fresh () in
-    let addr_tuple = (addr_tuple_val, [event]) in
+    let addr_tuple = (AbstractValue.mk_fresh (), [event]) in
     let addr_elems = List.map ~f:(function _ -> (AbstractValue.mk_fresh (), [event])) args in
     let mk_field name = Fieldname.make tuple_typ_name name in
     let field_names = ErlangTypeName.tuple_field_names tuple_size in
@@ -1609,21 +1775,178 @@ module Erlang = struct
     let addr_elems_fields_payloads =
       List.zip_exn addr_elems (List.zip_exn field_names arg_payloads)
     in
-    let write_field_and_deref astate (addr_elem, (field_name, payload)) =
-      let* astate =
-        PulseOperations.write_field path location ~ref:addr_tuple (mk_field field_name)
-          ~obj:addr_elem astate
+    let write_tuple_field astate (addr_elem, (field_name, payload)) =
+      write_field_and_deref path location ~struct_addr:addr_tuple ~field_addr:addr_elem
+        ~field_val:payload (mk_field field_name) astate
+    in
+    let<+> astate = List.fold_result addr_elems_fields_payloads ~init:astate ~f:write_tuple_field in
+    write_dynamic_type_and_return addr_tuple (Tuple tuple_size) ret_id astate
+
+
+  (** Maps are currently approximated to store only the latest key/value *)
+  let mk_map_field f = Fieldname.make (ErlangType Map) f
+
+  let map_key_field = mk_map_field "__infer_model_backing_map_key"
+
+  let map_value_field = mk_map_field "__infer_model_backing_map_value"
+
+  let map_is_empty_field = mk_map_field "__infer_model_backing_map_is_empty"
+
+  let map_create (args : 'a ProcnameDispatcher.Call.FuncArg.t list) : model =
+   fun {location; path; ret= ret_id, _} astate ->
+    let event = ValueHistory.Allocation {f= Model "#{}"; location} in
+    let addr_map = (AbstractValue.mk_fresh (), [event]) in
+    let addr_is_empty = (AbstractValue.mk_fresh (), [event]) in
+    let is_empty_value = AbstractValue.mk_fresh () in
+    let fresh_val = (is_empty_value, [event]) in
+    let is_empty_lit = match args with [] -> IntLit.one | _ -> IntLit.zero in
+    (* Reverse the list so we can get last key/value *)
+    let<*> astate =
+      match List.rev args with
+      (* Non-empty map: we just consider the last key/value, rest is ignored (approximation) *)
+      | value_arg :: key_arg :: _ ->
+          let addr_key = (AbstractValue.mk_fresh (), [event]) in
+          let addr_value = (AbstractValue.mk_fresh (), [event]) in
+          write_field_and_deref path location ~struct_addr:addr_map ~field_addr:addr_key
+            ~field_val:key_arg.arg_payload map_key_field astate
+          >>= write_field_and_deref path location ~struct_addr:addr_map ~field_addr:addr_value
+                ~field_val:value_arg.arg_payload map_value_field
+      | _ :: _ ->
+          L.die InternalError "Map create got one argument (requires even number)"
+      (* Empty map *)
+      | [] ->
+          Ok astate
+    in
+    let<*> astate =
+      write_field_and_deref path location ~struct_addr:addr_map ~field_addr:addr_is_empty
+        ~field_val:fresh_val map_is_empty_field astate
+    in
+    let<+> astate = PulseArithmetic.and_eq_int is_empty_value is_empty_lit astate in
+    write_dynamic_type_and_return addr_map Map ret_id astate
+
+
+  let make_astate_badmap (map_val, _map_hist) data astate =
+    let typ = Typ.mk_struct (ErlangType Map) in
+    let instanceof_val = AbstractValue.mk_fresh () in
+    let<*> astate = PulseArithmetic.and_equal_instanceof instanceof_val map_val typ astate in
+    let<*> astate = PulseArithmetic.prune_eq_zero instanceof_val astate in
+    error_badmap data astate
+
+
+  let make_astate_goodmap (map_val, _map_hist) astate =
+    let typ = Typ.mk_struct (ErlangType Map) in
+    let instanceof_val = AbstractValue.mk_fresh () in
+    let* astate = PulseArithmetic.and_equal_instanceof instanceof_val map_val typ astate in
+    PulseArithmetic.prune_positive instanceof_val astate
+
+
+  let map_is_key (key, _key_history) map : model =
+   fun ({location; path; ret= ret_id, _} as data) astate ->
+    match Java.load_field path map_is_empty_field location map astate with
+    | Error _ ->
+        (* Field not found, seems like it's not a map *)
+        error_badmap data astate
+    | Ok (astate, _isempty_addr, (is_empty, _isempty_hist)) ->
+        let ret_val_true = AbstractValue.mk_fresh () in
+        let ret_val_false = AbstractValue.mk_fresh () in
+        let event = ValueHistory.Call {f= Model "map_is_key"; location; in_call= []} in
+        (* Return 3 cases:
+         * - Error & assume not map
+         * - Ok & assume map & assume empty & return false
+         * - Ok & assume map & assume not empty & assume key is the tracked key & return true
+         *)
+        let astate_badmap = make_astate_badmap map data astate in
+        let astate_empty =
+          let* astate = make_astate_goodmap map astate in
+          let* astate = PulseArithmetic.prune_positive is_empty astate in
+          let+ astate = PulseArithmetic.and_eq_int ret_val_false IntLit.zero astate in
+          PulseOperations.write_id ret_id (ret_val_false, [event]) astate |> continue
+        in
+        let astate_haskey =
+          let* astate = make_astate_goodmap map astate in
+          let* astate = PulseArithmetic.prune_eq_zero is_empty astate in
+          let* astate, _key_addr, (tracked_key, _hist) =
+            Java.load_field path map_key_field location map astate
+          in
+          let* astate =
+            PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand key)
+              (AbstractValueOperand tracked_key) astate
+          in
+          let+ astate = PulseArithmetic.and_eq_int ret_val_true IntLit.one astate in
+          PulseOperations.write_id ret_id (ret_val_true, [event]) astate |> continue
+        in
+        astate_badmap @ [astate_empty; astate_haskey]
+
+
+  let map_get (key, _key_history) map : model =
+   fun ({location; path; ret= ret_id, _} as data) astate ->
+    match Java.load_field path map_is_empty_field location map astate with
+    | Error _ ->
+        (* Field not found, seems like it's not a map *)
+        error_badmap data astate
+    | Ok (astate, _isempty_addr, (is_empty, _isempty_hist)) ->
+        (* Return 3 cases:
+         * - Error & assume not map
+         * - Error & assume map & assume empty;
+         * - Ok & assume map & assume nonempty & assume key is the tracked key & return tracked value
+         *)
+        let astate_badmap = make_astate_badmap map data astate in
+        let astate_ok =
+          let* astate = make_astate_goodmap map astate in
+          let* astate = PulseArithmetic.prune_eq_zero is_empty astate in
+          let* astate, _key_addr, (tracked_key, _hist) =
+            Java.load_field path map_key_field location map astate
+          in
+          let* astate =
+            PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand key)
+              (AbstractValueOperand tracked_key) astate
+          in
+          let+ astate, _value_addr, tracked_value =
+            Java.load_field path map_value_field location map astate
+          in
+          PulseOperations.write_id ret_id tracked_value astate |> continue
+        in
+        let astate_badkey =
+          let<*> astate = make_astate_goodmap map astate in
+          let<*> astate = PulseArithmetic.prune_positive is_empty astate in
+          error_badkey data astate
+        in
+        (astate_ok :: astate_badkey) @ astate_badmap
+
+
+  let map_put key value map : model =
+   fun ({location; path; ret= ret_id, _} as data) astate ->
+    (* Ignore old map. We only store one key/value so we can simply create a new map. *)
+    (* Return 2 cases:
+     * - Error & assume not map
+     * - Ok & assume map & return new map
+     *)
+    let event = ValueHistory.Allocation {f= Model "map_put"; location} in
+    let astate_badmap = make_astate_badmap map data astate in
+    let astate_ok =
+      let addr_map = (AbstractValue.mk_fresh (), [event]) in
+      let addr_is_empty = (AbstractValue.mk_fresh (), [event]) in
+      let is_empty_value = AbstractValue.mk_fresh () in
+      let fresh_val = (is_empty_value, [event]) in
+      let addr_key = (AbstractValue.mk_fresh (), [event]) in
+      let addr_value = (AbstractValue.mk_fresh (), [event]) in
+      let<*> astate = make_astate_goodmap map astate in
+      let<*> astate =
+        write_field_and_deref path location ~struct_addr:addr_map ~field_addr:addr_key
+          ~field_val:key map_key_field astate
       in
-      PulseOperations.write_deref path location ~ref:addr_elem ~obj:payload astate
+      let<*> astate =
+        write_field_and_deref path location ~struct_addr:addr_map ~field_addr:addr_value
+          ~field_val:value map_value_field astate
+      in
+      let<+> astate =
+        write_field_and_deref path location ~struct_addr:addr_map ~field_addr:addr_is_empty
+          ~field_val:fresh_val map_is_empty_field astate
+        >>= PulseArithmetic.and_eq_int is_empty_value IntLit.zero
+      in
+      write_dynamic_type_and_return addr_map Map ret_id astate
     in
-    let<+> astate =
-      List.fold_result addr_elems_fields_payloads ~init:astate ~f:write_field_and_deref
-    in
-    let astate =
-      let typ = Typ.mk_struct tuple_typ_name in
-      PulseOperations.add_dynamic_type typ addr_tuple_val astate
-    in
-    PulseOperations.write_id ret_id addr_tuple astate
+    astate_ok @ astate_badmap
 end
 
 module StringSet = Caml.Set.Make (String)
@@ -1677,16 +2000,17 @@ module ProcNameDispatcher = struct
     let map_context_tenv f (x, _) = f x in
     make_dispatcher
       ( transfer_ownership_matchers @ abort_matchers
-      @ [ +BuiltinDecl.(match_builtin free) <>$ capt_arg_payload $--> C.free
-        ; +match_regexp_opt Config.pulse_model_free_pattern <>$ capt_arg_payload $+...$--> C.free
+      @ [ +BuiltinDecl.(match_builtin free) <>$ capt_arg $--> C.free
+        ; +match_regexp_opt Config.pulse_model_free_pattern <>$ capt_arg $+...$--> C.free
         ; +BuiltinDecl.(match_builtin malloc) <>$ capt_exp $--> C.malloc
-        ; +match_regexp_opt Config.pulse_model_malloc_pattern <>$ capt_exp $+...$--> C.malloc
-        ; -"realloc" <>$ capt_arg_payload $+ capt_exp $--> C.realloc
+        ; +match_regexp_opt Config.pulse_model_malloc_pattern <>$ capt_exp $+...$--> C.custom_malloc
+        ; -"realloc" <>$ capt_arg $+ capt_exp $--> C.realloc
         ; +match_regexp_opt Config.pulse_model_realloc_pattern
-          <>$ capt_arg_payload $+ capt_exp $+...$--> C.realloc
-        ; +BuiltinDecl.(match_builtin __delete) <>$ capt_arg_payload $--> Cplusplus.delete
+          <>$ capt_arg $+ capt_exp $+...$--> C.custom_realloc
+        ; +BuiltinDecl.(match_builtin __delete) <>$ capt_arg $--> Cplusplus.delete
+        ; +BuiltinDecl.(match_builtin __delete_array) <>$ capt_arg $--> Cplusplus.delete_array
         ; +BuiltinDecl.(match_builtin __new) <>$ capt_exp $--> Cplusplus.new_
-        ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $--> Cplusplus.new_
+        ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $--> Cplusplus.new_array
         ; +BuiltinDecl.(match_builtin __placement_new) &++> Cplusplus.placement_new
         ; -"random" <>$$--> Misc.nondet ~fn_name:"random"
         ; +BuiltinDecl.(match_builtin objc_cpp_throw) <>--> Misc.early_exit
@@ -1698,6 +2022,15 @@ module ProcNameDispatcher = struct
           <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.make_cons
         ; +BuiltinDecl.(match_builtin __erlang_make_tuple) &++> Erlang.make_tuple
         ; +BuiltinDecl.(match_builtin __erlang_make_nil) <>--> Erlang.make_nil
+        ; +BuiltinDecl.(match_builtin __erlang_map_create) &++> Erlang.map_create
+        ; +BuiltinDecl.(match_builtin __erlang_map_is_key)
+          <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.map_is_key
+        ; +BuiltinDecl.(match_builtin __erlang_map_get)
+          <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.map_get
+        ; +BuiltinDecl.(match_builtin __erlang_map_put)
+          <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> Erlang.map_put
+        ; +BuiltinDecl.(match_builtin __erlang_error_badkey) <>--> Erlang.error_badkey
+        ; +BuiltinDecl.(match_builtin __erlang_error_badmap) <>--> Erlang.error_badmap
         ; +BuiltinDecl.(match_builtin __erlang_error_badmatch) <>--> Erlang.error_badmatch
         ; +BuiltinDecl.(match_builtin __erlang_error_badrecord) <>--> Erlang.error_badrecord
         ; +BuiltinDecl.(match_builtin __erlang_error_case_clause) <>--> Erlang.error_case_clause
@@ -1906,6 +2239,10 @@ module ProcNameDispatcher = struct
           $--> StdVector.invalidate_references ShrinkToFit
         ; -"std" &:: "vector" &:: "push_back" <>$ capt_arg_payload $+...$--> StdVector.push_back
         ; -"std" &:: "vector" &:: "empty" <>$ capt_arg_payload $+...$--> StdVector.empty
+        ; -"maps" &:: "is_key" <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.map_is_key
+        ; -"maps" &:: "get" <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.map_get
+        ; -"maps" &:: "put" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
+          $--> Erlang.map_put
         ; +map_context_tenv PatternMatch.Java.implements_collection
           &:: "<init>" <>$ capt_arg_payload
           $--> JavaCollection.init ~desc:"Collection.init()"
@@ -2011,11 +2348,11 @@ module ProcNameDispatcher = struct
           $--> Android.text_utils_is_empty ~desc:"TextUtils.isEmpty"
         ; -"dispatch_sync" &++> ObjC.dispatch_sync
         ; +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_create_or_copy
-          &--> C.malloc_no_param
+          &--> C.custom_alloc
         ; +map_context_tenv PatternMatch.ObjectiveC.is_core_foundation_create_or_copy
-          &--> C.malloc_no_param
+          &--> C.custom_alloc
         ; +BuiltinDecl.(match_builtin malloc_no_fail) <>$ capt_exp $--> C.malloc_not_null
-        ; +match_regexp_opt Config.pulse_model_alloc_pattern &--> C.malloc_not_null_no_param
+        ; +match_regexp_opt Config.pulse_model_alloc_pattern &--> C.custom_alloc_not_null
         ; +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_release
           <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; -"CFRelease" <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
@@ -2027,64 +2364,86 @@ module ProcNameDispatcher = struct
           <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; +BuiltinDecl.(match_builtin __objc_alloc_no_fail) <>$ capt_exp $--> ObjC.alloc_no_fail
         ; -"NSObject" &:: "init" <>$ capt_arg_payload $--> Misc.id_first_arg ~desc:"NSObject.init"
+        ; +BuiltinDecl.(match_builtin objc_insert_key)
+          <>$ capt_arg_payload
+          $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Key
+                 ~desc:"key insertion into collection literal"
+        ; +BuiltinDecl.(match_builtin objc_insert_value)
+          <>$ capt_arg_payload
+          $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Value
+                 ~desc:"value insertion into collection literal"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableDictionary")
           &:: "setObject:forKey:" <>$ any_arg $+ capt_arg_payload $+ capt_arg_payload
           $--> ObjC.insertion_into_collection_key_and_value
                  ~desc:"NSMutableDictionary.setObject:forKey:"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableDictionary")
           &:: "setObject:forKeyedSubscript:" <>$ any_arg $+ any_arg $+ capt_arg_payload
-          $--> ObjC.insertion_into_collection_key_or_value
+          $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Key
                  ~desc:"mutableDictionary[someKey] = value"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableDictionary")
           &:: "removeObjectForKey:" <>$ any_arg $+ capt_arg_payload
-          $--> ObjC.insertion_into_collection_key_or_value
+          $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Key
                  ~desc:"NSMutableDictionary.removeObjectForKey"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableDictionary")
           &:: "dictionaryWithSharedKeySet:" <>$ capt_arg_payload
-          $--> ObjC.insertion_into_collection_key_or_value
+          $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Key
                  ~desc:"NSMutableDictionary.dictionaryWithSharedKeySet"
+        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableDictionary")
+          &:: "objectForKey:" <>$ any_arg $+ capt_arg_payload
+          $--> ObjC.read_from_collection ~desc:"NSMutableDictionary.objectForKey"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
           &:: "addObject:" <>$ any_arg $+ capt_arg_payload
-          $--> ObjC.insertion_into_collection_key_or_value ~desc:"NSMutableArray.addObject:"
+          $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Value
+                 ~desc:"NSMutableArray.addObject:"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
           &:: "insertObject:atIndex:" <>$ any_arg $+ capt_arg_payload $+ any_arg
-          $--> ObjC.insertion_into_collection_key_or_value
+          $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Value
                  ~desc:"NSMutableArray.insertObject:atIndex:"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
           &:: "replaceObjectAtIndex:withObject:" <>$ any_arg $+ any_arg $+ capt_arg_payload
-          $--> ObjC.insertion_into_collection_key_or_value
+          $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Value
                  ~desc:"NSMutableArray.replaceObjectAtIndex:withObject:"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableSet")
           &:: "addObject:" <>$ any_arg $+ capt_arg_payload
-          $--> ObjC.insertion_into_collection_key_or_value ~desc:"NSMutableSet.addObject:"
+          $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Value
+                 ~desc:"NSMutableSet.addObject:"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableSet")
           &:: "removeObject:" <>$ any_arg $+ capt_arg_payload
-          $--> ObjC.insertion_into_collection_key_or_value ~desc:"NSMutableSet.removeObject:"
+          $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Value
+                 ~desc:"NSMutableSet.removeObject:"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
           &:: "removeObjectsAtIndexes:" <>$ any_arg $+ capt_arg_payload
-          $--> ObjC.insertion_into_collection_key_or_value
+          $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Key
                  ~desc:"NSMutableArray.removeObjectsAtIndexes:"
-        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
+        ; ( +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
           &:: "replaceObjectsAtIndexes:withObjects:" <>$ any_arg $+ capt_arg_payload
           $+ capt_arg_payload
-          $--> ObjC.insertion_into_collection_key_and_value
-                 ~desc:"NSMutableArray.replaceObjectsAtIndexes:withObjects:"
+          $--> fun k v ->
+          ObjC.insertion_into_collection_key_and_value v k
+            ~desc:"NSMutableArray.replaceObjectsAtIndexes:withObjects:" )
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSDictionary")
           &:: "dictionaryWithObject:forKey:" <>$ capt_arg_payload $+ capt_arg_payload
           $--> ObjC.insertion_into_collection_key_and_value
                  ~desc:"NSDictionary.dictionaryWithObject:forKey:"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSDictionary")
           &:: "sharedKeySetForKeys:" <>$ capt_arg_payload
-          $--> ObjC.insertion_into_collection_key_or_value ~desc:"NSDictionary.sharedKeySetForKeys"
+          $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Key
+                 ~desc:"NSDictionary.sharedKeySetForKeys"
+        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSDictionary")
+          &:: "objectForKey:" <>$ any_arg $+ capt_arg_payload
+          $--> ObjC.read_from_collection ~desc:"NSDictionary.objectForKey"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSSet")
           &:: "setWithObject:" <>$ capt_arg_payload
-          $--> ObjC.insertion_into_collection_key_or_value ~desc:"NSSet.setWithObject"
+          $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Value
+                 ~desc:"NSSet.setWithObject"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSSet")
           &:: "setByAddingObject:" <>$ any_arg $+ capt_arg_payload
-          $--> ObjC.insertion_into_collection_key_or_value ~desc:"NSSet.setByAddingObject"
+          $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Value
+                 ~desc:"NSSet.setByAddingObject"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSArray")
           &:: "arrayWithObject:" <>$ capt_arg_payload
-          $--> ObjC.insertion_into_collection_key_or_value ~desc:"NSArray.arrayWithObject"
+          $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Value
+                 ~desc:"NSArray.arrayWithObject"
         ; +match_regexp_opt Config.pulse_model_return_nonnull
           &::.*--> Misc.return_positive
                      ~desc:"modelled as returning not null due to configuration option"

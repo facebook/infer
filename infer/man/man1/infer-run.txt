@@ -16,6 +16,10 @@ DESCRIPTION
 
 
 OPTIONS
+       --no-censor-report +issue_type_regex
+           For debugging/experimentation only: Specify issues not to be
+           censored by --censor-report.
+
        --censor-report +string
            Specify a filter for issues to be censored by adding a
            'censored_reason' field in the json report. Infer will not report

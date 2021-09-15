@@ -8,16 +8,11 @@
 open! IStd
 module L = Logging
 
-type var_to_destroy =
-  {pvar: Pvar.t; typ: Typ.t; qual_type: Clang_ast_t.qual_type; marker: Pvar.t option}
-
 type scope_kind =
   | Breakable  (** loop or switch statement within which it's ok to [break;] *)
   | Compound  (** inside a CompoundStmt *)
   | InitialScope  (** should be only one of these at the bottom of the stack *)
-[@@deriving compare]
-
-let equal_scope_kind = [%compare.equal: scope_kind]
+[@@deriving compare, equal]
 
 let string_of_kind = function
   | Compound ->
@@ -66,14 +61,115 @@ let breaks_control_flow = function
       false
 
 
-module Variables = struct
-  let pp_var_decl f = function
-    | Clang_ast_t.VarDecl (_, {ni_name}, _, _) ->
-        Format.pp_print_string f ni_name
+module CXXTemporaries = struct
+  (** This function has basically two modes depending on whether [bound_to_decl] is set or not. If
+      set, we look for temporaries bound to the decl passed as argument. If not set, we look for
+      temporaries not bound to any decls. *)
+  let rec visit_stmt_aux ~bound_to_decl (context : CContext.t) (stmt : Clang_ast_t.stmt)
+      ~needs_marker temporaries =
+    match stmt with
+    | MaterializeTemporaryExpr (stmt_info, stmt_list, expr_info, _)
+    | CXXBindTemporaryExpr (stmt_info, stmt_list, expr_info, _) ->
+        (* whether we want to count this temporary or not *)
+        let should_accumulate =
+          match (bound_to_decl, stmt) with
+          (* looking for a temporary bound to a decl, keeping only those bound to that particular
+             decl *)
+          | ( Some var_decl_pointer
+            , MaterializeTemporaryExpr (_, _, _, {mtei_decl_ref= Some {dr_decl_pointer}}) ) ->
+              Int.equal var_decl_pointer dr_decl_pointer
+          (* looking for a temporary bound to a decl, skipping those not bound to a decl *)
+          | Some _, MaterializeTemporaryExpr (_, _, _, {mtei_decl_ref= None})
+          | Some _, CXXBindTemporaryExpr _
+          (* not looking for a temporary bound to a decl, skipping those bound to a decl *)
+          | None, MaterializeTemporaryExpr (_, _, _, {mtei_decl_ref= Some _}) ->
+              false
+          (* not looking for a temporary bound to a decl, keeping those not bound to a decl *)
+          | ( None
+            , (MaterializeTemporaryExpr (_, _, _, {mtei_decl_ref= None}) | CXXBindTemporaryExpr _) )
+            ->
+              true
+          | _ ->
+              L.die InternalError "Impossible: got bound_to_decl:%a and decl=%a" (Pp.option Int.pp)
+                bound_to_decl
+                (Pp.of_string ~f:Clang_ast_j.string_of_stmt)
+                stmt
+        in
+        let temporaries =
+          if should_accumulate then (
+            let pvar, typ = CVar_decl.materialize_cpp_temporary context stmt_info expr_info in
+            L.debug Capture Verbose "+%a:%a@," (Pvar.pp Pp.text) pvar (Typ.pp Pp.text) typ ;
+            let marker =
+              if needs_marker then (
+                let marker_pvar =
+                  Pvar.mk_tmp "_temp_marker_" (Procdesc.get_proc_name context.procdesc)
+                in
+                L.debug Capture Verbose "Attaching marker %a to %a@," (Pvar.pp Pp.text) marker_pvar
+                  (Pvar.pp Pp.text) pvar ;
+                Some marker_pvar )
+              else None
+            in
+            {CContext.pvar; typ; qual_type= expr_info.ei_qual_type; marker} :: temporaries )
+          else temporaries
+        in
+        visit_stmt_list ~bound_to_decl context stmt_list ~needs_marker temporaries
+    | ConditionalOperator (_, [cond; then_; else_], _) ->
+        (* temporaries created in branches need instrumentation markers to remember if they have
+           been created or not during the evaluation of the expression *)
+        visit_stmt ~bound_to_decl context cond ~needs_marker temporaries
+        |> visit_stmt ~bound_to_decl context then_ ~needs_marker:true
+        |> visit_stmt ~bound_to_decl context else_ ~needs_marker:true
+    | BinaryOperator (_, [lhs; rhs], _, {boi_kind= `LAnd | `LOr}) ->
+        (* similarly to above, due to possible short-circuiting we are not sure that the RHS of [a
+           && b] and [a || b] will be executed *)
+        visit_stmt ~bound_to_decl context lhs ~needs_marker temporaries
+        |> visit_stmt ~bound_to_decl context rhs ~needs_marker:true
+    | LambdaExpr _ ->
+        (* do not analyze the code of another function *) temporaries
+    | ExprWithCleanups _ when Option.is_none bound_to_decl ->
+        (* huho, we're stepping on someone else's toes (eg, a lambda literal); stop here unless we
+           are looking for the temporary bound to a specific lvalue [bound_to_decl] (because then we
+           are not already in the [ExprWithCleanups _] that might contain the temporary, and we will
+           check the ref the temporary is bound to so there is no chance of destroying the wrong C++
+           temporary that way) *)
+        temporaries
     | _ ->
-        assert false
+        let _, stmt_list = Clang_ast_proj.get_stmt_tuple stmt in
+        visit_stmt_list ~bound_to_decl context stmt_list ~needs_marker temporaries
 
 
+  and visit_stmt ~bound_to_decl context stmt ~needs_marker temporaries =
+    L.debug Capture Verbose "<@[<hv2>%a|@,"
+      (Pp.of_string ~f:Clang_ast_proj.get_stmt_kind_string)
+      stmt ;
+    let r = visit_stmt_aux ~bound_to_decl context stmt ~needs_marker temporaries in
+    L.debug Capture Verbose "@]@;/%a>" (Pp.of_string ~f:Clang_ast_proj.get_stmt_kind_string) stmt ;
+    r
+
+
+  and visit_stmt_list ~bound_to_decl context stmt_list ~needs_marker temporaries =
+    List.fold stmt_list ~init:temporaries ~f:(fun temporaries stmt ->
+        L.debug Capture Verbose "@;" ;
+        visit_stmt ~bound_to_decl context stmt ~needs_marker temporaries )
+
+
+  let get_temporaries ~bound_to_decl context stmt_list =
+    let temporaries = visit_stmt_list ~bound_to_decl context stmt_list ~needs_marker:false [] in
+    L.debug Capture Verbose "@\n" ;
+    temporaries
+
+
+  (** {2 Interface} *)
+
+  let get_destroyable_temporaries context stmt_list =
+    get_temporaries ~bound_to_decl:None context stmt_list
+
+
+  let get_temporaries_bound_to_decl context decl stmt_list =
+    get_temporaries ~bound_to_decl:(Some decl) context stmt_list
+end
+
+module Variables = struct
   type scope =
     { outer_scope: Clang_ast_t.stmt list  (** statements that are under the new scope *)
     ; breakable_scope: Clang_ast_t.stmt list
@@ -142,10 +238,12 @@ module Variables = struct
         None
 
 
-  let rec visit_stmt stmt ((scope, map) as scope_map) =
+  let rec visit_stmt context stmt ((scope, map) as scope_map) =
     L.debug Capture Verbose "%a{%a}@;"
       (Pp.of_string ~f:Clang_ast_proj.get_stmt_kind_string)
-      stmt (Pp.seq ~sep:"," pp_var_decl) scope.current ;
+      stmt
+      (Pp.seq ~sep:"," CContext.pp_var_to_destroy)
+      scope.current ;
     match (stmt : Clang_ast_t.stmt) with
     | ReturnStmt (stmt_info, _)
     | BreakStmt (stmt_info, _)
@@ -155,28 +253,41 @@ module Variables = struct
         in
         let vars_to_destroy = collect_until break_until scope in
         L.debug Capture Verbose "~[%d:%a]" stmt_info.Clang_ast_t.si_pointer
-          (Pp.seq ~sep:"," pp_var_decl) vars_to_destroy ;
+          (Pp.seq ~sep:"," CContext.pp_var_to_destroy)
+          vars_to_destroy ;
         let map =
           ClangPointers.Map.set map ~key:stmt_info.Clang_ast_t.si_pointer ~data:vars_to_destroy
         in
         (scope, map)
-    | DeclStmt (_, _, decl_list) ->
-        let new_vars =
-          List.filter decl_list ~f:(function Clang_ast_t.VarDecl _ -> true | _ -> false)
+    | DeclStmt (_, stmts, decl_list) ->
+        let to_destroy =
+          List.concat_map decl_list ~f:(function
+            | Clang_ast_t.VarDecl (({di_pointer}, _, _, {vdi_is_static_local= false}) as var_decl)
+              ->
+                (* C++ temporaries bound to a const reference see their lifetimes extended to that
+                   of the reference; collect these cases here so they get destroyed at the same time
+                   that (in reality just before) the lvalues they are bound to get destroyed *)
+                let temporaries_in_extended_scope =
+                  CXXTemporaries.get_temporaries_bound_to_decl context di_pointer stmts
+                  |> List.map ~f:(fun temp -> CContext.CXXTemporary temp)
+                in
+                CContext.VarDecl var_decl :: temporaries_in_extended_scope
+            | _ ->
+                [] )
         in
+        L.debug Capture Verbose "+%a@," (Pp.seq ~sep:"," CContext.pp_var_to_destroy) to_destroy ;
         (* the reverse order is the one we want to destroy the variables in at the end of the scope
-        *)
-        L.debug Capture Verbose "+%a@," (Pp.seq ~sep:"," pp_var_decl) new_vars ;
-        (rev_append new_vars scope, map)
+           *)
+        (rev_append to_destroy scope, map)
     | _ -> (
         let stmt_info, stmt_list = Clang_ast_proj.get_stmt_tuple stmt in
         match get_scopes stmt with
         | None ->
-            visit_stmt_list stmt_list scope_map
+            visit_stmt_list context stmt_list scope_map
         | Some {outer_scope; breakable_scope; swallow_destructors} ->
             with_scope ~inject_destructors:(not swallow_destructors) Compound
               stmt_info.Clang_ast_t.si_pointer scope ~f:(fun scope ->
-                let scope_map = visit_stmt_list outer_scope (scope, map) in
+                let scope_map = visit_stmt_list context outer_scope (scope, map) in
                 match breakable_scope with
                 | [] ->
                     scope_map
@@ -187,14 +298,16 @@ module Variables = struct
                     in
                     let scope, map = scope_map in
                     with_scope Breakable ~inject_destructors:false body_ptr scope ~f:(fun scope ->
-                        visit_stmt_list body (scope, map) ) ) )
+                        visit_stmt_list context body (scope, map) ) ) )
 
 
   and with_scope ?(inject_destructors = true) kind pointer scope ~f =
-    let vars_to_destroy, scope, map = in_ kind scope ~f:(fun scope -> f scope) in
+    let vars_to_destroy, scope, map = in_ kind scope ~f in
     let map =
       if inject_destructors then (
-        L.debug Capture Verbose "~[%d:%a]" pointer (Pp.seq ~sep:"," pp_var_decl) vars_to_destroy ;
+        L.debug Capture Verbose "~[%d:%a]" pointer
+          (Pp.seq ~sep:"," CContext.pp_var_to_destroy)
+          vars_to_destroy ;
         ClangPointers.Map.set map ~key:pointer ~data:vars_to_destroy )
       else (
         L.debug Capture Verbose "~[%d:skip]" pointer ;
@@ -203,83 +316,16 @@ module Variables = struct
     (scope, map)
 
 
-  and visit_stmt_list stmt_list scope_map =
+  and visit_stmt_list context stmt_list scope_map =
     List.fold stmt_list ~init:scope_map ~f:(fun scope_map stmt ->
         L.debug Capture Verbose "@;" ;
-        visit_stmt stmt scope_map )
+        visit_stmt context stmt scope_map )
 
 
   let empty_scope = {current= []; current_kind= InitialScope; outers= []}
 
-  let compute_vars_to_destroy_map body =
-    let scope_map = visit_stmt body (empty_scope, ClangPointers.Map.empty) |> snd in
+  let compute_vars_to_destroy_map context body =
+    let scope_map = visit_stmt context body (empty_scope, ClangPointers.Map.empty) |> snd in
     L.debug Capture Verbose "@\n" ;
     scope_map
-end
-
-module CXXTemporaries = struct
-  let rec visit_stmt_aux context stmt ~needs_marker temporaries =
-    match (stmt : Clang_ast_t.stmt) with
-    | MaterializeTemporaryExpr
-        ( stmt_info
-        , stmt_list
-        , expr_info
-        , { mtei_decl_ref=
-              (* C++ temporaries bound to a const reference see their lifetimes extended to that of
-                 the reference *)
-              None } ) ->
-        let pvar, typ = CVar_decl.materialize_cpp_temporary context stmt_info expr_info in
-        L.debug Capture Verbose "+%a:%a@," (Pvar.pp Pp.text) pvar (Typ.pp Pp.text) typ ;
-        let marker =
-          if needs_marker then (
-            let marker_pvar =
-              Pvar.mk_tmp "_temp_marker_" (Procdesc.get_proc_name context.CContext.procdesc)
-            in
-            L.debug Capture Verbose "Attaching marker %a to %a@," (Pvar.pp Pp.text) marker_pvar
-              (Pvar.pp Pp.text) pvar ;
-            Some marker_pvar )
-          else None
-        in
-        let temporaries = {pvar; typ; qual_type= expr_info.ei_qual_type; marker} :: temporaries in
-        visit_stmt_list context stmt_list ~needs_marker temporaries
-    | ConditionalOperator (_, [cond; then_; else_], _) ->
-        (* temporaries created in branches need instrumentation markers to remember if they have
-           been created or not during the evaluation of the expression *)
-        visit_stmt context cond ~needs_marker temporaries
-        |> visit_stmt context then_ ~needs_marker:true
-        |> visit_stmt context else_ ~needs_marker:true
-    | BinaryOperator (_, [lhs; rhs], _, {boi_kind= `LAnd | `LOr}) ->
-        (* similarly to above, due to possible short-circuiting we are not sure that the RHS of [a
-           && b] and [a || b] will be executed *)
-        visit_stmt context lhs ~needs_marker temporaries
-        |> visit_stmt context rhs ~needs_marker:true
-    | LambdaExpr _ ->
-        (* do not analyze the code of another function *) temporaries
-    | ExprWithCleanups _ ->
-        (* huho, we're stepping on someone else's toes (eg, a lambda literal); stop here *)
-        temporaries
-    | _ ->
-        let _, stmt_list = Clang_ast_proj.get_stmt_tuple stmt in
-        visit_stmt_list context stmt_list ~needs_marker temporaries
-
-
-  and visit_stmt context stmt ~needs_marker temporaries =
-    L.debug Capture Verbose "<@[<hv2>%a|@,"
-      (Pp.of_string ~f:Clang_ast_proj.get_stmt_kind_string)
-      stmt ;
-    let r = visit_stmt_aux context stmt ~needs_marker temporaries in
-    L.debug Capture Verbose "@]@;/%a>" (Pp.of_string ~f:Clang_ast_proj.get_stmt_kind_string) stmt ;
-    r
-
-
-  and visit_stmt_list context stmt_list ~needs_marker temporaries =
-    List.fold stmt_list ~init:temporaries ~f:(fun temporaries stmt ->
-        L.debug Capture Verbose "@;" ;
-        visit_stmt context stmt ~needs_marker temporaries )
-
-
-  let get_destroyable_temporaries context stmt_list =
-    let temporaries = visit_stmt_list context stmt_list ~needs_marker:false [] in
-    L.debug Capture Verbose "@\n" ;
-    temporaries
 end

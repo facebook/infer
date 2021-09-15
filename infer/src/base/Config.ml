@@ -15,9 +15,7 @@ module F = Format
 module CLOpt = CommandLineOption
 module L = Die
 
-type analyzer = Checkers | Linters [@@deriving compare]
-
-let equal_analyzer = [%compare.equal: analyzer]
+type analyzer = Checkers | Linters [@@deriving compare, equal]
 
 let string_to_analyzer = [("checkers", Checkers); ("linters", Linters)]
 
@@ -44,11 +42,9 @@ type build_system =
   | BNdk
   | BRebar3
   | BXcode
-[@@deriving compare]
+[@@deriving compare, equal]
 
 type scheduler = File | Restart | SyntacticCallGraph [@@deriving equal]
-
-let equal_build_system = [%compare.equal: build_system]
 
 (* List of ([build system], [executable name]). Several executables may map to the same build
    system. In that case, the first one in the list will be used for printing, eg, in which mode
@@ -241,7 +237,9 @@ let libstdcxx_allow_listed_cpp_methods =
   ; "__gnu_cxx::operator-" ]
 
 
-let libcxx_allow_listed_cpp_methods = []
+let libcxx_allow_listed_cpp_methods =
+  ["std::__get_helper"; "std::make_unique"; "std::make_unique_for_overwrite"]
+
 
 let other_allow_listed_cpp_methods = ["google::CheckNotNull"]
 
@@ -270,7 +268,16 @@ let std_allow_listed_cpp_classes =
   ; "std::reverse_iterator"
   ; "std::shared_ptr"
   ; "std::__shared_ptr"
-  ; "std::__shared_ptr_access" ]
+  ; "std::__shared_ptr_access"
+  ; "std::unique_ptr"
+  ; "std::__uniq_ptr_impl"
+  ; "std::__uniq_ptr_data"
+  ; "std::default_delete"
+  ; "std::tuple"
+  ; "std::_Tuple_impl"
+  ; "std::_Head_base"
+  ; "std::__compressed_pair"
+  ; "std::__compressed_pair_elem" ]
 
 
 let libstdcxx_allow_listed_cpp_classes =
@@ -1813,6 +1820,12 @@ and modified_lines =
      with $(b,--test-determinator)."
 
 
+and no_censor_report =
+  CLOpt.mk_string_list ~long:"no-censor-report" ~meta:"issue_type_regex"
+    ~in_help:InferCommand.[(Report, manual_generic); (Run, manual_generic)]
+    "For debugging/experimentation only: Specify issues not to be censored by $(b,--censor-report)."
+
+
 and nullable_annotation =
   CLOpt.mk_string_opt ~long:"nullable-annotation-name" "Specify a custom nullable annotation name."
 
@@ -3263,6 +3276,8 @@ and merge = !merge
 and method_decls_info = !method_decls_info
 
 and modified_lines = !modified_lines
+
+and no_censor_report = RevList.rev_map !no_censor_report ~f:Str.regexp
 
 and nullable_annotation = !nullable_annotation
 

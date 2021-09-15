@@ -7,9 +7,7 @@
 open! IStd
 module F = Format
 
-type t = int [@@deriving compare]
-
-let equal = [%compare.equal: t]
+type t = int [@@deriving compare, equal]
 
 let initial_next_fresh = 1
 

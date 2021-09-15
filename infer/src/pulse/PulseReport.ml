@@ -54,7 +54,9 @@ let is_constant_deref_without_invalidation (diagnostic : Diagnostic.t) =
     | ConstantDereference _ ->
         not (Trace.has_invalidation access_trace)
     | CFree
+    | CustomFree _
     | CppDelete
+    | CppDeleteArray
     | EndIterator
     | GoneOutOfScope _
     | OptionalEmpty

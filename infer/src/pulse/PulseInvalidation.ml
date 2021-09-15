@@ -43,8 +43,10 @@ let pp_java_iterator_function f = function Remove -> F.pp_print_string f "Iterat
 
 type t =
   | CFree
+  | CustomFree of Procname.t
   | ConstantDereference of IntLit.t
   | CppDelete
+  | CppDeleteArray
   | EndIterator
   | GoneOutOfScope of Pvar.t * Typ.t
   | OptionalEmpty
@@ -54,7 +56,8 @@ type t =
 
 type must_be_valid_reason =
   | BlockCall
-  | InsertionIntoCollection
+  | InsertionIntoCollectionKey
+  | InsertionIntoCollectionValue
   | SelfOfNonPODReturnMethod of Typ.t
 [@@deriving compare, equal]
 
@@ -63,15 +66,17 @@ let pp_must_be_valid_reason f = function
       F.fprintf f "None"
   | Some BlockCall ->
       F.fprintf f "Block"
-  | Some InsertionIntoCollection ->
-      F.fprintf f "InsertionIntoCollection"
+  | Some InsertionIntoCollectionKey ->
+      F.fprintf f "InsertionIntoCollectionKey"
+  | Some InsertionIntoCollectionValue ->
+      F.fprintf f "InsertionIntoCollectionValue"
   | Some (SelfOfNonPODReturnMethod _) ->
       F.fprintf f "SelfOfNonPODReturnMethod"
 
 
 let issue_type_of_cause invalidation must_be_valid_reason =
   match invalidation with
-  | CFree ->
+  | CFree | CustomFree _ ->
       IssueType.use_after_free
   | ConstantDereference i when IntLit.iszero i -> (
     match must_be_valid_reason with
@@ -79,13 +84,13 @@ let issue_type_of_cause invalidation must_be_valid_reason =
         IssueType.nullptr_dereference
     | Some BlockCall ->
         IssueType.nil_block_call
-    | Some InsertionIntoCollection ->
+    | Some InsertionIntoCollectionKey | Some InsertionIntoCollectionValue ->
         IssueType.nil_insertion_into_collection
     | Some (SelfOfNonPODReturnMethod _) ->
         IssueType.nil_messaging_to_non_pod )
   | ConstantDereference _ ->
       IssueType.constant_address_dereference
-  | CppDelete ->
+  | CppDelete | CppDeleteArray ->
       IssueType.use_after_delete
   | EndIterator ->
       IssueType.vector_invalidation
@@ -111,12 +116,16 @@ let describe f cause =
   match cause with
   | CFree ->
       F.pp_print_string f "was invalidated by call to `free()`"
+  | CustomFree proc_name ->
+      F.fprintf f "was invalidated by call to `%a` (user config)" Procname.pp proc_name
   | ConstantDereference i when IntLit.iszero i ->
       F.pp_print_string f "is the null pointer"
   | ConstantDereference i ->
       F.fprintf f "is the constant %a" IntLit.pp i
   | CppDelete ->
       F.pp_print_string f "was invalidated by `delete`"
+  | CppDeleteArray ->
+      F.pp_print_string f "was invalidated by `delete[]`"
   | EndIterator ->
       F.pp_print_string f "is pointed to by the `end()` iterator"
   | GoneOutOfScope (pvar, typ) ->
@@ -136,11 +145,11 @@ let describe f cause =
 
 let pp f invalidation =
   match invalidation with
-  | CFree ->
+  | CFree | CustomFree _ ->
       F.fprintf f "CFree(%a)" describe invalidation
   | ConstantDereference _ ->
       F.fprintf f "ConstantDereference(%a)" describe invalidation
-  | CppDelete ->
+  | CppDelete | CppDeleteArray ->
       F.fprintf f "CppDelete(%a)" describe invalidation
   | EndIterator | GoneOutOfScope _ | OptionalEmpty ->
       describe f invalidation

@@ -91,6 +91,24 @@ integer pointed to by `n` is nonzero (e.g., she may have meant to call an
 accessor like `[n intValue]` instead). Infer will ask the programmer explicitly
 compare `n` to `nil` or call an accessor to clarify her intention.
 
+## BAD_RECORD
+
+Reported as "Bad Record" by [pulse](/docs/next/checker-pulse).
+
+## Bad record in Erlang
+
+Reports an error when trying to access or update a record with the wrong name. Corresponds to the `{badrecord,Name}` error in the Erlang runtime.
+
+For example, accessing `R` as a `person` record gives `{badrecord,person}` error because `R` is `rabbit` (even though both share the `name` field).
+```erlang
+-record(person, {name, phone}).
+-record(rabbit, {name, color}).
+
+f() ->
+    R = #rabbit{name = "Bunny", color = "Brown"},
+    R#person.name
+```
+
 ## BIABDUCTION_MEMORY_LEAK
 
 Reported as "Memory Leak" by [biabduction](/docs/next/checker-biabduction).
@@ -301,7 +319,51 @@ A config checking is done between a marker's start and end
 
 Reported as "Config Impact" by [config-impact-analysis](/docs/next/checker-config-impact-analysis).
 
-A function is called without a config check
+Infer reports this issue when an expensive function is called without a config check. Configs are usually functions that return a boolean and are defined per application/codebase (e.g. gatekeepers). This issue type is only reported in differential mode: i.e when we are
+comparing the analysis results of two runs of infer on a file.
+
+
+To determine whether a function is expensive or not, we rely on Infer's cost analysis and a set of modeled functions that are assumed to be expensive (e.g. string operations).
+
+For instance, if we have the following code (v1)
+```java
+foo();
+if (config_check){
+   bar();
+}
+```
+which is then modified to the version (v2)
+```java
+foo();
+if (config_check){
+   bar();
+}
+goo(); // added
+```
+the analysis would warn the developer that `goo()` is a newly added (and assumed to be expensive) but ungated function that might cause a new behavior. However, if we were to add `goo()` right after `bar()`, then Infer wouldn't warn here since it is already gated/config-checked.
+
+
+The analysis is inter-procedural: we can analyze not only a single procedure but all its callees. For instance,
+if we were to modify v1 to v3 by calling `goo()` in `foo()` as follows,
+```java
+ void foo(){
+   // ....
+   goo(); // added
+  }
+```
+then our analysis can also detect this.
+
+Currently, the analysis supports both Objective-C and Java but not C++.
+
+
+
+
+
+## CONFIG_IMPACT_STRICT
+
+Reported as "Config Impact Strict" by [config-impact-analysis](/docs/next/checker-config-impact-analysis).
+
+This is similar to `CONFIG_IMPACT` issues but the analysis reports all ungated codes irrespective of whether they are expensive or not. 
 ## CONSTANT_ADDRESS_DEREFERENCE
 
 Reported as "Constant Address Dereference" by [pulse](/docs/next/checker-pulse).
@@ -1340,9 +1402,69 @@ std::shared_ptr<int> callMethodReturnsnonPOD(bool b) {
 }
 ```
 
+## NO_MATCHING_CASE_CLAUSE
+
+Reported as "No Matching Case Clause" by [pulse](/docs/next/checker-pulse).
+
+## No matching case clause in Erlang
+
+Reports an error when none of the clauses of a `case` match the expression. Corresponds to the `{case_clause,V}` error in the Erlang runtime.
+
+For example, if we call `tail([])` and the full definition of `tail` is
+```erlang
+tail(X) ->
+    case X of
+        [_|T] -> T
+    end.
+```
+
+This error is reported if either the pattern(s) or the guard(s) prevent matching any of the clauses.
+
+## NO_MATCHING_FUNCTION_CLAUSE
+
+Reported as "No Matching Function Clause" by [pulse](/docs/next/checker-pulse).
+
+## No matching function clause in Erlang
+
+Reports an error when none of the clauses of a function match the arguments of a call. Corresponds to the `function_clause` error in the Erlang runtime.
+
+For example, if we call `tail([])` and the full definition of `tail` is
+```erlang
+tail([_|Xs]) -> Xs.
+```
+
+This error is reported if either the pattern(s) or the guard(s) prevent matching any of the clauses.
+
+## NO_MATCH_OF_RHS
+
+Reported as "No Match Of Rhs" by [pulse](/docs/next/checker-pulse).
+
+## No match of right hand side value in Erlang
+
+Reports an error when the right hand side value of a `match` expression does not match the pattern on the left hand side. Corresponds to the `{badmatch,V}` error in the Erlang runtime.
+
+For example, `[H|T] = []` gives the error because the left hand side pattern requires at least one element in the list on the right hand side.
+
+## NO_TRUE_BRANCH_IN_IF
+
+Reported as "No True Branch In If" by [pulse](/docs/next/checker-pulse).
+
+## No true branch when evaluating an if expression in Erlang
+
+Reports an error when none of the branches of an `if` expression evaluate to true. Corresponds to the `if_clause` error in the Erlang runtime.
+
+For example, if we call `sign(0)` and the full definition of `sign` is
+```erlang
+sign(X) ->
+    if
+        X > 0 -> positive;
+        X < 0 -> negative
+    end.
+```
+
 ## NULLPTR_DEREFERENCE
 
-Reported as "Nullptr Dereference" by [pulse](/docs/next/checker-pulse).
+Reported as "Null Dereference" by [pulse](/docs/next/checker-pulse).
 
 Infer reports null dereference bugs in Java, C, C++, and Objective-C
 when it is possible that the null pointer is dereferenced, leading to

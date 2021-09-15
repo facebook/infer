@@ -141,6 +141,7 @@
       },
       {
         "is_global" : true,
+        "is_init_ice" : true,
         "init_expr" : ["IntegerLiteral" , [
           {
             "pointer" : 9,
@@ -277,7 +278,8 @@
                     "cast_kind" : "LValueToRValue",
                     "base_path" : [
                     ]
-                  }
+                  },
+                  true
                 ]]
               ],
               {
@@ -289,7 +291,8 @@
                 "cast_kind" : "IntegralCast",
                 "base_path" : [
                 ]
-              }
+              },
+              true
             ]]
           ],
           {
@@ -417,7 +420,8 @@
                     "cast_kind" : "LValueToRValue",
                     "base_path" : [
                     ]
-                  }
+                  },
+                  true
                 ]]
               ],
               {
@@ -429,7 +433,8 @@
                 "cast_kind" : "IntegralCast",
                 "base_path" : [
                 ]
-              }
+              },
+              true
             ]]
           ],
           {

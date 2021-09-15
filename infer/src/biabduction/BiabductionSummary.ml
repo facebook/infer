@@ -239,9 +239,7 @@ let expose = NormSpec.tospec
 (** Cast a list of normalized specs to a list of specs *)
 let normalized_specs_to_specs = List.map ~f:NormSpec.tospec
 
-type phase = FOOTPRINT | RE_EXECUTION [@@deriving compare]
-
-let equal_phase = [%compare.equal: phase]
+type phase = FOOTPRINT | RE_EXECUTION [@@deriving compare, equal]
 
 let string_of_phase = function FOOTPRINT -> "FOOTPRINT" | RE_EXECUTION -> "RE_EXECUTION"
 

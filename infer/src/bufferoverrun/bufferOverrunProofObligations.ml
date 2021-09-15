@@ -379,9 +379,7 @@ module ArrayAccessCondition = struct
 end
 
 module BinaryOperationCondition = struct
-  type binop_t = Plus | Minus | Mult [@@deriving compare]
-
-  let equal_binop = [%compare.equal: binop_t]
+  type binop_t = Plus | Minus | Mult [@@deriving compare, equal]
 
   let binop_to_string = function
     | Plus ->
@@ -413,7 +411,7 @@ module BinaryOperationCondition = struct
 
   let have_similar_bounds {binop= binop1; typ= typ1; lhs= lhs1; rhs= rhs1}
       {binop= binop2; typ= typ2; lhs= lhs2; rhs= rhs2} =
-    equal_binop binop1 binop2 && Typ.equal_ikind typ1 typ2
+    equal_binop_t binop1 binop2 && Typ.equal_ikind typ1 typ2
     && ItvPure.have_similar_bounds lhs1 lhs2
     && ItvPure.have_similar_bounds rhs1 rhs2
 
@@ -422,7 +420,7 @@ module BinaryOperationCondition = struct
 
   let xcompare ~lhs:{binop= binop1; typ= typ1; lhs= lhs1; rhs= rhs1}
       ~rhs:{binop= binop2; typ= typ2; lhs= lhs2; rhs= rhs2} =
-    if not (equal_binop binop1 binop2 && Typ.equal_ikind typ1 typ2) then `NotComparable
+    if not (equal_binop_t binop1 binop2 && Typ.equal_ikind typ1 typ2) then `NotComparable
     else
       let lhscmp = ItvPure.xcompare ~lhs:lhs1 ~rhs:lhs2 in
       let rhscmp = ItvPure.xcompare ~lhs:rhs1 ~rhs:rhs2 in
@@ -463,7 +461,7 @@ module BinaryOperationCondition = struct
   let pp = pp_description ~markup:false
 
   let is_mult_one binop lhs rhs =
-    equal_binop binop Mult && (ItvPure.is_one lhs || ItvPure.is_one rhs)
+    equal_binop_t binop Mult && (ItvPure.is_one lhs || ItvPure.is_one rhs)
 
 
   let should_check {binop; typ; lhs; rhs} =

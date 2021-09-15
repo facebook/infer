@@ -25,7 +25,7 @@ val add_one : AbstractValue.t -> Attribute.t -> t -> t
 
 val add : AbstractValue.t -> Attributes.t -> t -> t
 
-val allocate : Procname.t -> AbstractValue.t * ValueHistory.t -> Location.t -> t -> t
+val allocate : Attribute.allocator -> AbstractValue.t * ValueHistory.t -> Location.t -> t -> t
 
 val fold : (AbstractValue.t -> Attributes.t -> 'a -> 'a) -> t -> 'a -> 'a
 
@@ -35,7 +35,7 @@ val check_initialized : AbstractValue.t -> t -> (unit, unit) result
 
 val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
-val get_allocation : AbstractValue.t -> t -> (Procname.t * Trace.t) option
+val get_allocation : AbstractValue.t -> t -> (Attribute.allocator * Trace.t) option
 
 val get_closure_proc_name : AbstractValue.t -> t -> Procname.t option
 

@@ -207,7 +207,7 @@ void mutual_recursion(NODE* x) { mutual_recursion_2(x); }
 
 void mutual_recursion_2(NODE* x) { mutual_recursion(x); }
 
-void FP_interproc_mutual_recusion_leak(NODE* x) {
+void interproc_mutual_recusion_leak(NODE* x) {
   int* d;
   if (x->data == NULL) {
     x->data = (int*)malloc(sizeof(int));

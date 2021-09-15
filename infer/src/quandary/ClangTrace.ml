@@ -405,9 +405,7 @@ module CppSanitizer = struct
     | EscapeSQL  (** escape string to sanitize SQL queries *)
     | EscapeURL  (** escape string to sanitize URLs (e.g., prevent injecting GET/POST params) *)
     | All  (** sanitizes all forms of taint *)
-  [@@deriving compare]
-
-  let equal = [%compare.equal: t]
+  [@@deriving compare, equal]
 
   let of_string = function
     | "EscapeShell" ->

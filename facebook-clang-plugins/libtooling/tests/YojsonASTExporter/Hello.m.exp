@@ -2354,7 +2354,8 @@
                             "cast_kind" : <"LValueToRValue">,
                             "base_path" : [
                             ]
-                          }
+                          },
+                          false
                         )>,
                         <"IntegerLiteral" : (
                           {
@@ -2477,7 +2478,8 @@
                                 "cast_kind" : <"FunctionToPointerDecay">,
                                 "base_path" : [
                                 ]
-                              }
+                              },
+                              false
                             )>,
                             <"ImplicitCastExpr" : (
                               {
@@ -2546,7 +2548,8 @@
                                 "cast_kind" : <"BitCast">,
                                 "base_path" : [
                                 ]
-                              }
+                              },
+                              false
                             )>,
                             <"ImplicitCastExpr" : (
                               {
@@ -2607,7 +2610,8 @@
                                 "cast_kind" : <"LValueToRValue">,
                                 "base_path" : [
                                 ]
-                              }
+                              },
+                              false
                             )>
                           ],
                           {
@@ -2817,6 +2821,7 @@
                         "type_ptr" : 53
                       },
                       {
+                        "is_init_ice" : true,
                         "init_expr" : <"IntegerLiteral" : (
                           {
                             "pointer" : 134,
@@ -2931,7 +2936,8 @@
                         "cast_kind" : <"LValueToRValue">,
                         "base_path" : [
                         ]
-                      }
+                      },
+                      false
                     )>,
                     <"IntegerLiteral" : (
                       {
@@ -3149,7 +3155,8 @@
                                         "cast_kind" : <"ARCConsumeObject">,
                                         "base_path" : [
                                         ]
-                                      }
+                                      },
+                                      false
                                     )>,
                                     <"ImplicitCastExpr" : (
                                       {
@@ -3210,7 +3217,8 @@
                                         "cast_kind" : <"LValueToRValue">,
                                         "base_path" : [
                                         ]
-                                      }
+                                      },
+                                      false
                                     )>
                                   ],
                                   {

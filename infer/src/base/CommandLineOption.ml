@@ -62,9 +62,7 @@ let to_arg_spec_triple (x, spec, y) = (x, to_arg_spec spec, y)
 
 let to_arg_speclist = List.map ~f:to_arg_spec_triple
 
-type parse_mode = InferCommand | Javac | NoParse [@@deriving compare, enumerate]
-
-let equal_parse_mode = [%compare.equal: parse_mode]
+type parse_mode = InferCommand | Javac | NoParse [@@deriving compare, equal, enumerate]
 
 type anon_arg_action =
   {parse_subcommands: bool; parse_argfiles: bool; on_unknown: [`Add | `Reject | `Skip]}

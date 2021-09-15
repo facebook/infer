@@ -11,9 +11,7 @@
 open! IStd
 module F = Format
 
-type t = {plain: string; mangled: string option} [@@deriving compare, yojson_of]
-
-let equal = [%compare.equal: t]
+type t = {plain: string; mangled: string option} [@@deriving compare, yojson_of, equal]
 
 (** Convert a string to a mangled name *)
 let from_string (s : string) = {plain= s; mangled= None}

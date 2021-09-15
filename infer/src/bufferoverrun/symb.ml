@@ -10,9 +10,7 @@ module L = Logging
 module BoField = BufferOverrunField
 
 module BoundEnd = struct
-  type t = LowerBound | UpperBound [@@deriving compare]
-
-  let equal = [%compare.equal: t]
+  type t = LowerBound | UpperBound [@@deriving compare, equal]
 
   let neg = function LowerBound -> UpperBound | UpperBound -> LowerBound
 

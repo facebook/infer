@@ -131,13 +131,13 @@ module AddressAttributes : sig
 
   val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
-  val allocate : Procname.t -> AbstractValue.t * ValueHistory.t -> Location.t -> t -> t
+  val allocate : Attribute.allocator -> AbstractValue.t * ValueHistory.t -> Location.t -> t -> t
 
   val add_dynamic_type : Typ.t -> AbstractValue.t -> t -> t
 
   val remove_allocation_attr : AbstractValue.t -> t -> t
 
-  val get_allocation : AbstractValue.t -> t -> (Procname.t * Trace.t) option
+  val get_allocation : AbstractValue.t -> t -> (Attribute.allocator * Trace.t) option
 
   val get_closure_proc_name : AbstractValue.t -> t -> Procname.t option
 
@@ -161,6 +161,10 @@ module AddressAttributes : sig
     -> t
     -> (t, [> `ISLError of t | `InvalidAccess of Invalidation.t * Trace.t * t]) result list
 end
+
+val deallocate_all_reachable_from : AbstractValue.t -> t -> t
+
+val deep_deallocate : AbstractValue.t -> t -> t
 
 val is_local : Var.t -> t -> bool
 
@@ -190,7 +194,7 @@ val summary_of_post :
   -> Location.t
   -> t
   -> ( summary
-     , [> `MemoryLeak of summary * Procname.t * Trace.t * Location.t
+     , [> `MemoryLeak of summary * Attribute.allocator * Trace.t * Location.t
        | `PotentialInvalidAccessSummary of
          summary * AbstractValue.t * (Trace.t * Invalidation.must_be_valid_reason option) ] )
      result

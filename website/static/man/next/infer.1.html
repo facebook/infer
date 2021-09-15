@@ -1,4 +1,4 @@
-<!-- Creator     : groff version 1.22.4 -->
+<!-- Creator     : groff version 1.19.2 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -7,17 +7,16 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <meta name="Content-Style" content="text/css">
 <style type="text/css">
-       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       h1      { text-align: center }
+       p     { margin-top: 0; margin-bottom: 0; }
+       pre   { margin-top: 0; margin-bottom: 0; }
+       table { margin-top: 0; margin-bottom: 0; }
 </style>
 <title>infer</title>
 
 </head>
 <body>
 
-<h1 align="center">infer</h1>
+<h1 align=center>infer</h1>
 
 <a href="#NAME">NAME</a><br>
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
@@ -30,17 +29,15 @@
 <hr>
 
 
-<h2>NAME
 <a name="NAME"></a>
-</h2>
+<h2>NAME</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">infer - static
 analysis for Java and C/C++/Objective-C/Objective-C++</p>
 
-<h2>SYNOPSIS
 <a name="SYNOPSIS"></a>
-</h2>
+<h2>SYNOPSIS</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>infer
@@ -57,9 +54,8 @@ infer --compilation-database[-escaped]</b> <i>file
 infer</b> <i>[options]</i> <b>-- compile command <br>
 infer</b> <i>[options]</i></p>
 
-<h2>DESCRIPTION
 <a name="DESCRIPTION"></a>
-</h2>
+<h2>DESCRIPTION</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">Infer is a
@@ -79,9 +75,8 @@ specified via the <b>--</b> option or one of the
 <b>infer</b> behaves as <b>infer-run</b>(1). Otherwise,
 <b>infer</b> behaves as <b>infer-analyze</b>(1).</p>
 
-<h2>OPTIONS
 <a name="OPTIONS"></a>
-</h2>
+<h2>OPTIONS</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">Every infer
@@ -171,9 +166,10 @@ Example:</p>
 &quot;.*::Trusted::.*&quot; ] } <br>
 } <br>
 } <br>
-} <br>
-This will cause us to create a new ISOLATED_REACHING_CONNECT
-<br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">This will cause
+us to create a new ISOLATED_REACHING_CONNECT <br>
 issue for every function whose source path starts with
 &quot;isolated/&quot; <br>
 that may reach the function named &quot;connect&quot;,
@@ -259,7 +255,7 @@ bootclasspath</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1). <b><br>
---buck-blacklist</b> <i>+regex</i></p>
+--buck-block-list</b> <i>+regex</i></p>
 
 <p style="margin-left:17%;">Skip capture of files matched
 by the specified regular expression. Only the clang,
@@ -274,6 +270,16 @@ See also <b>infer-capture</b>(1) and <b>infer-run</b>(1).
 <p style="margin-left:17%;">Activates: Buck integration for
 clang-based targets (C/C++/Objective-C/Objective-C++).
 (Conversely: <b>--no-buck-clang</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-capture</b>(1). <b><br>
+--buck-clang-use-toolchain-config</b></p>
+
+<p style="margin-left:17%;">Activates: Suppress setting
+buck config values for the infer binary and other values in
+the buck-clang-flavor integration and instead rely on buck
+toolchain configuration options. (Conversely:
+<b>--no-buck-clang-use-toolchain-config</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1). <b><br>
@@ -330,7 +336,7 @@ capture. Only valid for <b>--buck-clang</b>. (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1). <b><br>
---buck-targets-blacklist</b> <i>+regex</i></p>
+--buck-targets-block-list</b> <i>+regex</i></p>
 
 <p style="margin-left:17%;">Skip capture of buck targets
 matched by the specified regular expression. Only valid for
@@ -354,7 +360,7 @@ and disable all other checkers (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
---capture-blacklist</b> <i>regex</i></p>
+--capture-block-list</b> <i>regex</i></p>
 
 <p style="margin-left:17%;">Skip capture of files matched
 by the specified OCaml regular expression (only supported by
@@ -362,6 +368,14 @@ the javac integration for now).</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1) and <b>infer-run</b>(1). <b><br>
+--no-censor-report</b> <i>+issue_type_regex</i></p>
+
+<p style="margin-left:17%;">For debugging/experimentation
+only: Specify issues not to be censored by
+<b>--censor-report</b>.</p>
+
+<p style="margin-left:11%;">See also <b>infer-report</b>(1)
+and <b>infer-run</b>(1). <b><br>
 --censor-report</b> <i>+string</i></p>
 
 <p style="margin-left:17%;">Specify a filter for issues to
@@ -377,8 +391,8 @@ are reported. Each filter is of the form:
 The first two components are OCaml Str regular expressions,
 with an optional &lsquo;!&lsquo; character prefix. If a
 regex has a &lsquo;!&lsquo; prefix, the polarity is
-inverted, and the filter becomes a &quot;blacklist&quot;
-instead of a &quot;whitelist&quot;. Each filter is
+inverted, and the filter becomes a &quot;block list&quot;
+instead of a &quot;allow list&quot;. Each filter is
 interpreted as an implication: an issue matches if it does
 not match the &lsquo;issue_type_regex&lsquo; or if it does
 match the &lsquo;filename_regex&lsquo;. The filenames that
@@ -412,13 +426,13 @@ need to provide a compilation command.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1). <b><br>
---clang-blacklisted-flags</b> <i>+string</i></p>
+--clang-block-listed-flags</b> <i>+string</i></p>
 
 <p style="margin-left:17%;">Clang flags to filter out</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1). <b><br>
---clang-blacklisted-flags-with-arg</b> <i>+string</i></p>
+--clang-block-listed-flags-with-arg</b> <i>+string</i></p>
 
 <p style="margin-left:17%;">Clang flags (taking args) to
 filter out</p>
@@ -750,9 +764,11 @@ have run. In particular, note that disabling issue types
 does not make the corresponding checker not run.</p>
 
 <p style="margin-left:11%;">Available issue types are as
-follows: <br>
-ARBITRARY_CODE_EXECUTION_UNDER_LOCK (enabled by default),
-<br>
+follows:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">ARBITRARY_CODE_EXECUTION_UNDER_LOCK
+(enabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L1 (disabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L2 (disabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L3 (disabled by default), <br>
@@ -768,6 +784,7 @@ Abduction_case_not_implemented (enabled by default), <br>
 Array_of_pointsto (enabled by default), <br>
 Assert_failure (enabled by default), <br>
 BAD_POINTER_COMPARISON (enabled by default), <br>
+BAD_RECORD (enabled by default), <br>
 BIABDUCTION_ANALYSIS_STOPS (disabled by default), <br>
 BIABDUCTION_MEMORY_LEAK (disabled by default), <br>
 BUFFER_OVERRUN_L1 (enabled by default), <br>
@@ -795,6 +812,7 @@ CONDITION_ALWAYS_FALSE (disabled by default), <br>
 CONDITION_ALWAYS_TRUE (disabled by default), <br>
 CONFIG_CHECKS_BETWEEN_MARKERS (disabled by default), <br>
 CONFIG_IMPACT (disabled by default), <br>
+CONFIG_IMPACT_STRICT (disabled by default), <br>
 CONSTANT_ADDRESS_DEREFERENCE (disabled by default), <br>
 CREATE_INTENT_FROM_URI (enabled by default), <br>
 CROSS_SITE_SCRIPTING (enabled by default), <br>
@@ -897,6 +915,10 @@ Missing_fld (enabled by default), <br>
 NIL_BLOCK_CALL (enabled by default), <br>
 NIL_INSERTION_INTO_COLLECTION (enabled by default), <br>
 NIL_MESSAGING_TO_NON_POD (enabled by default), <br>
+NO_MATCHING_CASE_CLAUSE (enabled by default), <br>
+NO_MATCHING_FUNCTION_CLAUSE (enabled by default), <br>
+NO_MATCH_OF_RHS (enabled by default), <br>
+NO_TRUE_BRANCH_IN_IF (enabled by default), <br>
 NULLPTR_DEREFERENCE (enabled by default), <br>
 NULL_DEREFERENCE (enabled by default), <br>
 OPTIONAL_EMPTY_ACCESS (enabled by default), <br>
@@ -945,8 +967,10 @@ USE_AFTER_FREE (enabled by default), <br>
 USE_AFTER_LIFETIME (enabled by default), <br>
 VECTOR_INVALIDATION (enabled by default), <br>
 WEAK_SELF_IN_NO_ESCAPE_BLOCK (enabled by default), <br>
-Wrong_argument_number (enabled by default). <br>
-See also <b>infer-report</b>(1). <b><br>
+Wrong_argument_number (enabled by default).</p>
+
+<p style="margin-left:11%; margin-top: 1em">See also
+<b>infer-report</b>(1). <b><br>
 --dump-duplicate-symbols</b></p>
 
 <p style="margin-left:17%;">Activates: Dump all symbols
@@ -1026,7 +1050,7 @@ renamings to use while computing differential reports</p>
 --no-filtering</b>,<b>-F</b></p>
 
 <p style="margin-left:17%;">Deactivates: Do not show the
-experimental and blacklisted issue types (Conversely:
+experimental and block listed issue types (Conversely:
 <b>--filtering</b> | <b>-f</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -1310,6 +1334,14 @@ analysis encounters a failure (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--kotlin-capture</b></p>
+
+<p style="margin-left:17%;">Activates: Enable Kotlin
+capture (experimental, do not use). (Conversely:
+<b>--no-kotlin-capture</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-capture</b>(1). <b><br>
 --linter</b> <i>string</i></p>
 
 <p style="margin-left:17%;">From the linters available,
@@ -1480,6 +1512,14 @@ and disable all other checkers (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--no-mask-sawja-exceptions</b></p>
+
+<p style="margin-left:17%;">Deactivates: Mask exceptions
+thrown by Sawja/Javalib during Java capture (Conversely:
+<b>--mask-sawja-exceptions</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-capture</b>(1). <b><br>
 --max-jobs</b> <i>int</i></p>
 
 <p style="margin-left:17%;">Maximum number of analysis jobs
@@ -1779,6 +1819,20 @@ disable all other checkers (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--pulse-prune-unsupported-arithmetic</b></p>
+
+<p style="margin-left:17%;">Activates: The arithmetic
+engine in Pulse sometimes does not detect that the
+collection of conditions on the path makes it infeasible,
+especially outside the well-supported linear arithmetic
+fragment. To avoid false positives, Pulse tries to detect
+when there is a possibility of imprecise arithmetic
+treatment and if so pessimistically assumes the path is
+infeasible. (Conversely:
+<b>--no-pulse-prune-unsupported-arithmetic</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --pulse-report-ignore-unknown-java-methods-patterns</b>
 <i>+string</i></p>
 
@@ -1913,19 +1967,28 @@ phase once the analysis has completed (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1) and <b>infer-run</b>(1). <b><br>
---report-blacklist-files-containing</b> <i>+string</i></p>
+--report-allow-list-path-regex</b> <i>+path_regex</i></p>
+
+<p style="margin-left:17%;">Report issues only on files
+whose relative path matches the specified OCaml regex (and
+which do not match
+<b>--report-block-list-path-regex</b>)</p>
+
+<p style="margin-left:11%;">See also <b>infer-report</b>(1)
+and <b>infer-run</b>(1). <b><br>
+--report-block-list-files-containing</b> <i>+string</i></p>
 
 <p style="margin-left:17%;">Do not report any issues on
 files containing the specified string</p>
 
 <p style="margin-left:11%;">See also <b>infer-report</b>(1)
 and <b>infer-run</b>(1). <b><br>
---report-blacklist-path-regex</b> <i>+path_regex</i></p>
+--report-block-list-path-regex</b> <i>+path_regex</i></p>
 
 <p style="margin-left:17%;">Do not report any issues on
 files whose relative path matches the specified OCaml regex,
-even if they match the whitelist specified by
-<b>--report-whitelist-path-regex</b></p>
+even if they match the allow list specified by
+<b>--report-allow-list-path-regex</b></p>
 
 <p style="margin-left:11%;">See also <b>infer-report</b>(1)
 and <b>infer-run</b>(1). <b><br>
@@ -1970,14 +2033,6 @@ use for comparison</p>
 
 <p style="margin-left:17%;">do not report a type of
 errors</p>
-
-<p style="margin-left:11%;">See also <b>infer-report</b>(1)
-and <b>infer-run</b>(1). <b><br>
---report-whitelist-path-regex</b> <i>+path_regex</i></p>
-
-<p style="margin-left:17%;">Report issues only on files
-whose relative path matches the specified OCaml regex (and
-which do not match <b>--report-blacklist-path-regex</b>)</p>
 
 <p style="margin-left:11%;">See also <b>infer-report</b>(1)
 and <b>infer-run</b>(1). <b><br>
@@ -2364,28 +2419,27 @@ command&gt;&lsquo;</i>. (Conversely:
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1).</p>
 
-<table width="100%" border="0" rules="none" frame="void"
+<table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
 <td width="11%"></td>
 <td width="3%">
 
 
-<p><b>--</b></p></td>
+<p style="margin-top: 1em" valign="top"><b>--</b></p></td>
 <td width="3%"></td>
 <td width="83%">
 
 
-<p>Stop argument processing, use remaining arguments as a
-build command</p></td></tr>
+<p style="margin-top: 1em" valign="top">Stop argument
+processing, use remaining arguments as a build command</p></td>
 </table>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1) and <b>infer-run</b>(1).</p>
 
-<h2>ENVIRONMENT
 <a name="ENVIRONMENT"></a>
-</h2>
+<h2>ENVIRONMENT</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">Extra arguments
@@ -2408,9 +2462,8 @@ commands will exit with an error code in some cases when
 otherwise a simple warning would be emitted on stderr, for
 instance if a deprecated form of an option is used.</p>
 
-<h2>FILES
 <a name="FILES"></a>
-</h2>
+<h2>FILES</h2>
 
 
 
@@ -2441,13 +2494,12 @@ then its parent, etc., stopping at the first
 
 <p style="margin-left:11%; margin-top: 1em">{ <br>
 &quot;cxx&quot;: false, <br>
-&quot;infer-blacklist-files-containing&quot;:
+&quot;infer-block-list-files-containing&quot;:
 [&quot;@gen&quot;,&quot;/* no infer */&quot;] <br>
 }</p>
 
-<h2>SEE ALSO
 <a name="SEE ALSO"></a>
-</h2>
+<h2>SEE ALSO</h2>
 
 
 

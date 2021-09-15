@@ -11,8 +11,11 @@ namespace unique_ptr {
 
 struct X {
   int field;
+  int* pointer_field;
   int get() { return field; }
   void set(int value) { field = value; }
+  X() { pointer_field = new int; }
+  ~X() { delete pointer_field; }
 };
 
 int empty_ptr_access() {
@@ -24,82 +27,101 @@ int empty_ptr_access() {
   return 0;
 }
 
-int FN_empty_ptr_deref_bad() {
+int empty_ptr_deref_bad() {
   std::unique_ptr<int> x;
   return *x;
 }
 
-int FN_empty_array_ptr_deref_bad() {
+int empty_array_ptr_deref_bad() {
   std::unique_ptr<int[]> x;
   return x[0];
 }
 
-int FN_nullptr_ptr_deref_bad() {
+int nullptr_ptr_deref_bad() {
   std::unique_ptr<int> x(nullptr);
   return *x;
 }
 
-int FN_nullptr_array_ptr_deref_bad() {
+int nullptr_array_ptr_deref_bad() {
   std::unique_ptr<int[]> x(nullptr);
   return x[2];
 }
 
-int FN_empty_ptr_field_deref_bad() {
+int empty_ptr_field_deref_bad() {
   std::unique_ptr<X> x;
   return x.get()->field;
 }
 
-int FN_empty_ptr_field_deref2_bad() {
+int empty_ptr_field_deref2_bad() {
   std::unique_ptr<X> x;
   return x->field;
 }
 
-int FN_empty_ptr_method_deref_bad() {
+int empty_ptr_method_deref_bad() {
   std::unique_ptr<X> x;
   return x->get();
 }
 
-// FP is memory leak
-int FN_FP_reset_ptr_null_deref_bad() {
+int unique_ptr_create_use_ok() {
+  std::unique_ptr<X> x(new X());
+  return x->get();
+}
+
+void unique_ptr_release_bad() {
+  std::unique_ptr<X> x(new X());
+  x.release();
+}
+
+int make_unique_ptr_use_ok() {
+  std::unique_ptr<X> x = std::make_unique<X>();
+  return x->get();
+}
+
+void make_unique_ptr_release_bad() {
+  std::unique_ptr<X> x = std::make_unique<X>();
+  x.release();
+}
+
+int reset_ptr_null_deref_bad() {
   std::unique_ptr<int> x(new int);
   x.reset();
   return *x;
 }
 
-int FN_FP_reset_ptr_null_deref2_bad() {
+int reset_ptr_null_deref2_bad() {
   std::unique_ptr<int> x(new int);
   x.reset(new int);
   x.reset();
   return *x;
 }
 
-int FP_reset_ptr_deref_ok() {
+int reset_ptr_deref_ok() {
   std::unique_ptr<int> x;
   x.reset(new int);
   return *x;
 }
 
-int FP_reset_ptr_deref2_ok() {
+int reset_ptr_deref2_ok() {
   std::unique_ptr<int> x;
   x.reset();
   x.reset(new int);
   return *x;
 }
 
-int FN_unique_ptr_copy_null_deref_bad() {
+int unique_ptr_copy_null_deref_bad() {
   std::unique_ptr<int> p1;
   std::unique_ptr<int> p2 = std::move(p1);
   return *p2;
 }
 
-int FN_unique_ptr_assign_null_deref_bad() {
+int unique_ptr_assign_null_deref_bad() {
   std::unique_ptr<int> p1(new int);
   std::unique_ptr<int> p2;
   p1 = std::move(p2);
   return *p1;
 }
 
-int FP_unique_ptr_move_deref_ok() {
+int unique_ptr_move_deref_ok() {
   std::unique_ptr<int> p1(new int);
   std::unique_ptr<int> p2 = std::move(p1);
   return *p2;
@@ -113,36 +135,15 @@ int unique_ptr_assign_deref_ok() {
   return *p2;
 }
 
-int FN_unique_ptr_move_null_deref_bad() {
+int unique_ptr_move_null_deref_bad() {
   std::unique_ptr<int> p1(new int);
   std::unique_ptr<int> p2 = std::move(p1);
   return *p1;
 }
 
-} // namespace unique_ptr
-
-namespace unique_ptr_with_deleter {
-
-/* This is just a compilation test */
-
-template <class T>
-class Pointer {
- public:
-  /* No constructor with only one T* argument */
-  /* implicit */ Pointer(std::nullptr_t = nullptr) noexcept {}
-  Pointer(T* ptr, int n) noexcept {}
-
-  friend bool operator==(Pointer a, Pointer b) noexcept { return true; }
-  friend bool operator!=(Pointer a, Pointer b) noexcept { return true; }
-  explicit operator bool() const noexcept { return true; }
-  T* operator->() const noexcept { return get(); }
-  T& operator*() const noexcept { return *get(); }
-  T* get() const noexcept { return nullptr; }
-};
-
 template <class T>
 struct Deleter {
-  using pointer = Pointer<T>;
+  using pointer = T*;
 
   void operator()(pointer ptr) const {}
 };
@@ -155,4 +156,8 @@ bool instantiate() {
   my_unique_ptr<int[]> q;
   return p != nullptr && q != nullptr;
 }
-} // namespace unique_ptr_with_deleter
+
+// FN because skipped methods create a DeepDeallocate masking the leak
+void FN_no_deleter_construct_bad() { my_unique_ptr<X> p(new X()); }
+
+} // namespace unique_ptr

@@ -1,4 +1,4 @@
-<!-- Creator     : groff version 1.22.4 -->
+<!-- Creator     : groff version 1.19.2 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -7,17 +7,16 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <meta name="Content-Style" content="text/css">
 <style type="text/css">
-       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       h1      { text-align: center }
+       p     { margin-top: 0; margin-bottom: 0; }
+       pre   { margin-top: 0; margin-bottom: 0; }
+       table { margin-top: 0; margin-bottom: 0; }
 </style>
 <title>infer-analyze</title>
 
 </head>
 <body>
 
-<h1 align="center">infer-analyze</h1>
+<h1 align=center>infer-analyze</h1>
 
 <a href="#NAME">NAME</a><br>
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
@@ -37,35 +36,31 @@
 <hr>
 
 
-<h2>NAME
 <a name="NAME"></a>
-</h2>
+<h2>NAME</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">infer-analyze -
 analyze the files captured by infer</p>
 
-<h2>SYNOPSIS
 <a name="SYNOPSIS"></a>
-</h2>
+<h2>SYNOPSIS</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>infer
 analyze</b> <i>[options]</i> <b><br>
 infer</b> <i>[options]</i></p>
 
-<h2>DESCRIPTION
 <a name="DESCRIPTION"></a>
-</h2>
+<h2>DESCRIPTION</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">Analyze the
 files captured in the project results directory and
 report.</p>
 
-<h2>OPTIONS
 <a name="OPTIONS"></a>
-</h2>
+<h2>OPTIONS</h2>
 
 
 
@@ -590,6 +585,19 @@ disable all other checkers (Conversely:
 <b>--no-pulse-only</b>)</p>
 
 
+<p style="margin-left:11%;"><b>--pulse-prune-unsupported-arithmetic</b></p>
+
+<p style="margin-left:17%;">Activates: The arithmetic
+engine in Pulse sometimes does not detect that the
+collection of conditions on the path makes it infeasible,
+especially outside the well-supported linear arithmetic
+fragment. To avoid false positives, Pulse tries to detect
+when there is a possibility of imprecise arithmetic
+treatment and if so pessimistically assumes the path is
+infeasible. (Conversely:
+<b>--no-pulse-prune-unsupported-arithmetic</b>)</p>
+
+
 <p style="margin-left:11%;"><b>--pulse-report-ignore-unknown-java-methods-patterns</b>
 <i>+string</i></p>
 
@@ -798,9 +806,8 @@ node. (Conversely: <b>--no-write-html</b>) <b><br>
 <p style="margin-left:17%;">Specify the suffix of Xcode
 isysroot directory, to avoid absolute paths in tests</p>
 
-<h2>BUCK OPTIONS
 <a name="BUCK OPTIONS"></a>
-</h2>
+<h2>BUCK OPTIONS</h2>
 
 
 
@@ -810,9 +817,8 @@ isysroot directory, to avoid absolute paths in tests</p>
 results directories specified in the dependency file.
 (Conversely: <b>--no-merge</b>)</p>
 
-<h2>BUFFER OVERRUN OPTIONS
 <a name="BUFFER OVERRUN OPTIONS"></a>
-</h2>
+<h2>BUFFER OVERRUN OPTIONS</h2>
 
 
 
@@ -828,9 +834,8 @@ checker (0-4)</p>
 <p style="margin-left:17%;">Limit of field depth of
 abstract location in buffer-overrun checker</p>
 
-<h2>CLANG OPTIONS
 <a name="CLANG OPTIONS"></a>
-</h2>
+<h2>CLANG OPTIONS</h2>
 
 
 
@@ -863,9 +868,10 @@ Example:</p>
 &quot;.*::Trusted::.*&quot; ] } <br>
 } <br>
 } <br>
-} <br>
-This will cause us to create a new ISOLATED_REACHING_CONNECT
-<br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">This will cause
+us to create a new ISOLATED_REACHING_CONNECT <br>
 issue for every function whose source path starts with
 &quot;isolated/&quot; <br>
 that may reach the function named &quot;connect&quot;,
@@ -913,9 +919,8 @@ common wrappers around these types such as
 when the variables are not read explicitly by the
 program.</p>
 
-<h2>JAVA OPTIONS
 <a name="JAVA OPTIONS"></a>
-</h2>
+<h2>JAVA OPTIONS</h2>
 
 
 
@@ -944,9 +949,8 @@ packages.</p>
 <p style="margin-left:17%;">The version of Java being used.
 Set it to your Java version if mvn is failing.</p>
 
-<h2>QUANDARY CHECKER OPTIONS
 <a name="QUANDARY CHECKER OPTIONS"></a>
-</h2>
+<h2>QUANDARY CHECKER OPTIONS</h2>
 
 
 
@@ -974,9 +978,8 @@ Quandary</p>
 <p style="margin-left:17%;">Specify custom sources for
 Quandary</p>
 
-<h2>RACERD CHECKER OPTIONS
 <a name="RACERD CHECKER OPTIONS"></a>
-</h2>
+<h2>RACERD CHECKER OPTIONS</h2>
 
 
 
@@ -999,9 +1002,8 @@ nothing. (Conversely:
 <p style="margin-left:17%;">Specify custom annotations that
 should be considered aliases of @ThreadSafe</p>
 
-<h2>SIOF CHECKER OPTIONS
 <a name="SIOF CHECKER OPTIONS"></a>
-</h2>
+<h2>SIOF CHECKER OPTIONS</h2>
 
 
 
@@ -1022,9 +1024,8 @@ recent libstdc++ then it is safe to turn this option on.
 &quot;foo&lt;int&gt;::bar()&quot;, etc. (can be specified
 multiple times)</p>
 
-<h2>ENVIRONMENT
 <a name="ENVIRONMENT"></a>
-</h2>
+<h2>ENVIRONMENT</h2>
 
 
 
@@ -1034,9 +1035,8 @@ multiple times)</p>
 <p style="margin-left:17%;">See the ENVIRONMENT section in
 the manual of <b>infer</b>(1).</p>
 
-<h2>FILES
 <a name="FILES"></a>
-</h2>
+<h2>FILES</h2>
 
 
 
@@ -1045,9 +1045,8 @@ the manual of <b>infer</b>(1).</p>
 <p style="margin-left:17%;">See the FILES section in the
 manual of <b>infer</b>(1).</p>
 
-<h2>SEE ALSO
 <a name="SEE ALSO"></a>
-</h2>
+<h2>SEE ALSO</h2>
 
 
 

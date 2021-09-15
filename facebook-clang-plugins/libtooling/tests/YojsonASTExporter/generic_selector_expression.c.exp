@@ -348,7 +348,8 @@
                         "cast_kind" : <"LValueToRValue">,
                         "base_path" : [
                         ]
-                      }
+                      },
+                      false
                     )>,
                     <"IntegerLiteral" : (
                       {
@@ -510,6 +511,7 @@
                     "type_ptr" : 15
                   },
                   {
+                    "is_init_ice" : true,
                     "init_expr" : <"GenericSelectionExpr" : (
                       {
                         "pointer" : 17,
@@ -603,7 +605,8 @@
                             "cast_kind" : <"LValueToRValue">,
                             "base_path" : [
                             ]
-                          }
+                          },
+                          false
                         )>,
                         <"IntegerLiteral" : (
                           {
@@ -850,7 +853,8 @@
                         "cast_kind" : <"LValueToRValue">,
                         "base_path" : [
                         ]
-                      }
+                      },
+                      false
                     )>,
                     <"IntegerLiteral" : (
                       {
@@ -1012,6 +1016,7 @@
                     "type_ptr" : 15
                   },
                   {
+                    "is_init_ice" : true,
                     "init_expr" : <"GenericSelectionExpr" : (
                       {
                         "pointer" : 27,
@@ -1105,7 +1110,8 @@
                             "cast_kind" : <"LValueToRValue">,
                             "base_path" : [
                             ]
-                          }
+                          },
+                          false
                         )>,
                         <"IntegerLiteral" : (
                           {
@@ -1331,7 +1337,8 @@
                         "cast_kind" : <"LValueToRValue">,
                         "base_path" : [
                         ]
-                      }
+                      },
+                      false
                     )>,
                     <"ImplicitCastExpr" : (
                       {
@@ -1392,7 +1399,8 @@
                         "cast_kind" : <"LValueToRValue">,
                         "base_path" : [
                         ]
-                      }
+                      },
+                      false
                     )>
                   ],
                   {

@@ -102,7 +102,7 @@ let rec get_responds_to_selector stmt =
   | BinaryOperator (_, [stmt1; stmt2], _, bo_info)
     when PolyVariantEqual.( = ) bo_info.Clang_ast_t.boi_kind `LAnd ->
       List.append (get_responds_to_selector stmt1) (get_responds_to_selector stmt2)
-  | ImplicitCastExpr (_, [stmt], _, _)
+  | ImplicitCastExpr (_, [stmt], _, _, _)
   | ParenExpr (_, [stmt], _)
   | ExprWithCleanups (_, [stmt], _, _) ->
       get_responds_to_selector stmt
@@ -120,7 +120,7 @@ let rec is_core_foundation_version_number stmt =
         String.equal name_info.ni_name "kCFCoreFoundationVersionNumber"
     | None ->
         false )
-  | ImplicitCastExpr (_, [stmt], _, _) ->
+  | ImplicitCastExpr (_, [stmt], _, _, _) ->
       is_core_foundation_version_number stmt
   | _ ->
       false
@@ -133,7 +133,7 @@ let rec current_os_version_constant stmt =
       CiOSVersionNumbers.version_of number
   | IntegerLiteral (_, _, _, info) ->
       CiOSVersionNumbers.version_of info.ili_value
-  | ImplicitCastExpr (_, [stmt], _, _) ->
+  | ImplicitCastExpr (_, [stmt], _, _, _) ->
       current_os_version_constant stmt
   | _ ->
       None
@@ -153,7 +153,7 @@ let rec get_current_os_version stmt =
   | BinaryOperator (_, [stmt1; stmt2], _, bo_info)
     when PolyVariantEqual.( = ) bo_info.Clang_ast_t.boi_kind `LAnd ->
       List.append (get_current_os_version stmt1) (get_current_os_version stmt2)
-  | ImplicitCastExpr (_, [stmt], _, _)
+  | ImplicitCastExpr (_, [stmt], _, _, _)
   | ParenExpr (_, [stmt], _)
   | ExprWithCleanups (_, [stmt], _, _) ->
       get_current_os_version stmt
@@ -166,7 +166,7 @@ let rec get_ios_available_version stmt =
   match stmt with
   | ObjCAvailabilityCheckExpr (_, _, _, oacei) ->
       oacei.oacei_version
-  | ImplicitCastExpr (_, [stmt], _, _)
+  | ImplicitCastExpr (_, [stmt], _, _, _)
   | ParenExpr (_, [stmt], _)
   | ExprWithCleanups (_, [stmt], _, _) ->
       get_ios_available_version stmt

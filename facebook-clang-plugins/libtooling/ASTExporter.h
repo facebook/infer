@@ -390,6 +390,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   DECLARE_VISITOR(Expr)
   DECLARE_VISITOR(CastExpr)
   DECLARE_VISITOR(ExplicitCastExpr)
+  DECLARE_VISITOR(ImplicitCastExpr)
   DECLARE_VISITOR(DeclRefExpr)
   DECLARE_VISITOR(PredefinedExpr)
   DECLARE_VISITOR(CharacterLiteral)
@@ -1717,8 +1718,11 @@ void ASTExporter<ATDWriter>::VisitVarDecl(const VarDecl *D) {
   bool IsStaticLocal = D->isStaticLocal(); // static function variables
   bool IsStaticDataMember = D->isStaticDataMember();
   bool IsConstexpr = D->isConstexpr();
-  bool IsInitICE = D->isInitKnownICE() && D->isInitICE();
   bool HasInit = D->hasInit();
+  const Expr *initExpr = D->getInit();
+  bool IsInitICE = HasInit && !initExpr->isValueDependent() &&
+                   !initExpr->getType().isNull() &&
+                   D->hasICEInitializer(D->getASTContext());
   const ParmVarDecl *ParmDecl = dyn_cast<ParmVarDecl>(D);
   bool HasParmIndex = (bool)ParmDecl;
   bool isInitExprCXX11ConstantExpr = false;
@@ -2538,7 +2542,9 @@ void ASTExporter<ATDWriter>::VisitObjCMethodDecl(const ObjCMethodDecl *D) {
 
   SmallString<64> Buf;
   llvm::raw_svector_ostream StrOS(Buf);
-  Mangler->mangleObjCMethodNameWithoutSize(D, StrOS);
+  Mangler->mangleObjCMethodName(D, StrOS,
+                                /*includePrefixByte=*/false,
+                                /*includeCategoryNamespace=*/true);
   std::string MangledName = StrOS.str().str();
 
   ObjectScope Scope(OF,
@@ -3396,6 +3402,18 @@ void ASTExporter<ATDWriter>::VisitExplicitCastExpr(
 }
 
 template <class ATDWriter>
+int ASTExporter<ATDWriter>::ImplicitCastExprTupleSize() {
+  return CastExprTupleSize() + 1;
+}
+//@atd #define implicit_cast_expr_tuple cast_expr_tuple * bool
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitImplicitCastExpr(
+    const ImplicitCastExpr *Node) {
+  VisitCastExpr(Node);
+  OF.emitBoolean(Node->isPartOfExplicitCast());
+}
+
+template <class ATDWriter>
 int ASTExporter<ATDWriter>::ObjCBridgedCastExprTupleSize() {
   return ExplicitCastExprTupleSize() + 1;
 }
@@ -3582,12 +3600,6 @@ void ASTExporter<ATDWriter>::VisitPredefinedExpr(const PredefinedExpr *Node) {
     break;
   case PredefinedExpr::PrettyFunctionNoVirtual:
     OF.emitSimpleVariant("PrettyFunctionNoVirtual");
-    break;
-  case PredefinedExpr::UniqueStableNameType:
-    OF.emitSimpleVariant("UniqueStableNameType");
-    break;
-  case PredefinedExpr::UniqueStableNameExpr:
-    OF.emitSimpleVariant("UniqueStableNameExpr");
     break;
   }
 }

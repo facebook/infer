@@ -19,9 +19,7 @@ type comment_style =
       (** line comments, eg "#" for shell, and whether there should be a newline before the
           copyright notice *)
   | Block of string * string * string * bool  (** block comments, eg ("(*", "*", "*)") for ocaml *)
-[@@deriving compare]
-
-let equal_comment_style = [%compare.equal: comment_style]
+[@@deriving compare, equal]
 
 let comment_style_al = Line ("//", false)
 

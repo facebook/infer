@@ -432,6 +432,8 @@ val method_decls_info : string option
 
 val modified_lines : string option
 
+val no_censor_report : Str.regexp list
+
 val no_translate_libs : bool
 
 val nullable_annotation : string option

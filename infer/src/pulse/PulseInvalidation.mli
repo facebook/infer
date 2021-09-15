@@ -24,8 +24,10 @@ type java_iterator_function = Remove
 
 type t =
   | CFree
+  | CustomFree of Procname.t
   | ConstantDereference of IntLit.t
   | CppDelete
+  | CppDeleteArray
   | EndIterator
   | GoneOutOfScope of Pvar.t * Typ.t
   | OptionalEmpty
@@ -42,7 +44,8 @@ val describe : F.formatter -> t -> unit
 
 type must_be_valid_reason =
   | BlockCall
-  | InsertionIntoCollection
+  | InsertionIntoCollectionKey
+  | InsertionIntoCollectionValue
   | SelfOfNonPODReturnMethod of Typ.t
 [@@deriving compare, equal]
 

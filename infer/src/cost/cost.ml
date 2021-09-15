@@ -452,8 +452,7 @@ let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as
   in
   let () =
     L.(debug Analysis Verbose)
-      "@\n[COST ANALYSIS] PROCEDURE '%a' |CFG| = %i FINAL COST = %a @\n" Procname.pp proc_name
-      (Container.length ~fold:NodeCFG.fold_nodes node_cfg)
+      "@\n[COST ANALYSIS] PROCEDURE '%a' FINAL COST = %a @\n" Procname.pp proc_name
       CostDomain.VariantCostMap.pp astate
   in
   let astate =

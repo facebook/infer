@@ -73,7 +73,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | BlockExpr _ ->
         true
     (* the block can be wrapped in ExprWithCleanups  or ImplicitCastExpr*)
-    | ImplicitCastExpr (_, [s'], _, _) | ExprWithCleanups (_, [s'], _, _) ->
+    | ImplicitCastExpr (_, [s'], _, _, _) | ExprWithCleanups (_, [s'], _, _) ->
         is_block_expr s'
     | _ ->
         false
@@ -81,7 +81,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   let objc_exp_of_type_block fun_exp_stmt =
     match fun_exp_stmt with
-    | Clang_ast_t.ImplicitCastExpr (_, _, ei, _)
+    | Clang_ast_t.ImplicitCastExpr (_, _, ei, _, _)
       when CType.is_block_type ei.Clang_ast_t.ei_qual_type ->
         true
     | _ ->
@@ -1003,7 +1003,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       CType_decl.qual_type_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_qual_type
     in
     match (stmt_list, res_typ.desc, binary_operator_info.Clang_ast_t.boi_kind) with
-    | ( [s1; Clang_ast_t.ImplicitCastExpr (_, [s2], _, _)]
+    | ( [s1; Clang_ast_t.ImplicitCastExpr (_, [s2], _, _, _)]
       , Tstruct (CStruct _ as struct_name)
       , `Assign ) ->
         let res_trans_e1, res_trans_e2 =
@@ -1081,7 +1081,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
               true
           | UnaryOperator (_, stmts, _, _)
           | BinaryOperator (_, stmts, _, _)
-          | ImplicitCastExpr (_, stmts, _, _)
+          | ImplicitCastExpr (_, stmts, _, _, _)
           | ParenExpr (_, stmts, _) ->
               List.exists stmts ~f:is_complex_rhs
           | _ ->
@@ -1985,7 +1985,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info' in
       let all_res_trans =
         L.debug Capture Verbose "Destroying pointer %d@\n" stmt_info.Clang_ast_t.si_pointer ;
-        List.filter_map vars_to_destroy ~f:(fun {CScope.pvar; typ; qual_type} ->
+        List.filter_map vars_to_destroy ~f:(function {CContext.pvar; typ; qual_type} ->
             let exp = Exp.Lvar pvar in
             let this_res_trans_destruct = mk_trans_result (exp, typ) empty_control in
             get_destructor_decl_ref qual_type.Clang_ast_t.qt_type_ptr
@@ -2016,16 +2016,15 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | Some var_decls_to_destroy ->
           let procname = Procdesc.get_proc_name context.CContext.procdesc in
           let vars_to_destroy =
-            List.filter_map var_decls_to_destroy ~f:(function
-              | Clang_ast_t.VarDecl (_, _, qual_type, _) as decl ->
-                  let pvar = CVar_decl.sil_var_of_decl context decl procname in
-                  if Pvar.is_static_local pvar then (* don't call destructors on static vars *)
-                    None
-                  else
-                    let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
-                    Some {CScope.pvar; typ; qual_type; marker= None}
-              | _ ->
-                  assert false )
+            List.map var_decls_to_destroy ~f:(function
+              | CContext.VarDecl ((_, _, qual_type, _) as var_decl) ->
+                  let pvar =
+                    CVar_decl.sil_var_of_decl context (Clang_ast_t.VarDecl var_decl) procname
+                  in
+                  let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
+                  {CContext.pvar; typ; qual_type; marker= None}
+              | CContext.CXXTemporary cxx_temporary ->
+                  cxx_temporary )
           in
           destructor_calls destr_kind trans_state stmt_info vars_to_destroy
 
@@ -3005,8 +3004,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       let instruction' = exec_with_glvalue_as_reference instruction in
       let init_expr =
         match init_expr with
-        | Clang_ast_t.ImplicitCastExpr (_, [init_expr], _, _) when Option.is_some cstruct_name_opt
-          ->
+        | Clang_ast_t.ImplicitCastExpr (_, [init_expr], _, _, _)
+          when Option.is_some cstruct_name_opt ->
             init_expr
         | _ ->
             init_expr
@@ -3239,6 +3238,24 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       extract_stmt_from_singleton stmt_list stmt_info.Clang_ast_t.si_source_range
         "In CastExpr There must be only one stmt defining the expression to be cast."
     in
+    let stmt =
+      match stmt with
+      | ImplicitCastExpr
+          ( inner_stmt_info
+          , inner_stmt_list
+          , inner_expr_info
+          , inner_cast_expr_info
+          , part_of_explicit_cast )
+        when part_of_explicit_cast ->
+          Clang_ast_t.ImplicitCastExpr
+            ( inner_stmt_info
+            , inner_stmt_list
+            , {inner_expr_info with ei_qual_type= expr_info.Clang_ast_t.ei_qual_type}
+            , inner_cast_expr_info
+            , part_of_explicit_cast )
+      | _ ->
+          stmt
+    in
     let cast_kind = cast_expr_info.Clang_ast_t.cei_cast_kind in
     let trans_state =
       match cast_kind with
@@ -3422,7 +3439,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       |> mk_trans_result res_trans_stmt.return
     in
     match (stmt_list, context.CContext.return_param_typ) with
-    | ( ([Clang_ast_t.ImplicitCastExpr (_, [stmt], _, _)] | [stmt])
+    | ( ([Clang_ast_t.ImplicitCastExpr (_, [stmt], _, _, _)] | [stmt])
       , Some {desc= Tptr ({desc= Tstruct (CStruct _ as struct_name)}, _)} ) ->
         (* return (exp:struct); *)
         return_stmt stmt ~mk_ret_instrs:(fun ret_exp _root_typ ret_typ res_trans_stmt ->
@@ -3500,7 +3517,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       {[
         n$1=NSNumber.numberWithInt:(2:int)
         n$2=NSNumber.numberWithInt:(3:int)
+        _ = objc_insert_value(n$1:objc_object* ) // nil insertion check
+        _ = *n$1 // null dereference check
         temp[0]:objc_object*=n$1
+        _ = objc_insert_value(n$2:objc_object* ) // nil insertion check
+        _ = *n$2 // null dereference check
         temp[1]:objc_object*=n$2
         n$3=NSArray.arrayWithObjects:count:(temp:objc_object* const [2*8],2:int)
         a:NSArray*=n$3
@@ -3536,13 +3557,23 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         ~f:(exec_instruction_with_trans_state {trans_state with var_exp_typ= None} None)
         stmts
     in
-    (* 3. Add array initialization (elements assignments) *)
-    let none_id = Ident.create_none () in
+    (* 3. Add array initialization (elements assignments + nil insertion check) *)
     let res_trans_array =
       let instrs =
+        let none_id = Ident.create_none () in
+        let objc_insert_value : Exp.t * Typ.t -> Sil.instr =
+         fun arg ->
+          Sil.Call
+            ( (none_id, StdTyp.void)
+            , Const (Cfun BuiltinDecl.objc_insert_value)
+            , [arg]
+            , loc
+            , CallFlags.default )
+        in
         List.mapi res_trans_elems ~f:(fun i {return= e, typ} ->
             let idx = Exp.Const (Cint (IntLit.of_int i)) in
-            [ Sil.Load {id= none_id; e; root_typ= typ; typ; loc}
+            [ objc_insert_value (e, typ)
+            ; Sil.Load {id= none_id; e; root_typ= typ; typ; loc}
             ; Sil.Store {e1= Lindex (temp_var, idx); root_typ= typ; typ; e2= e; loc} ] )
         |> List.concat
       in
@@ -3602,9 +3633,17 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         n$2=NSNumber.stringWithUTF8:(@"Foo")
         n$3=NSNumber.stringWithUTF8:(@"lastName")
         n$4=NSNumber.stringWithUTF8:(@"Bar")
+        _ = objc_insert_key(n$1:objc_object* ) // nil insertion check
+        _ = *n$1 // null dereference check
         temp1[0]:objc_object*=n$1
+        _ = objc_insert_key(n$3:objc_object* ) // nil insertion check
+        _ = *n$3 // null dereference check
         temp1[1]:objc_object*=n$3
+        _ = objc_insert_value(n$2:objc_object* ) // nil insertion check
+        _ = *n$2 // null dereference check
         temp2[0]:objc_object*=n$2
+        _ = objc_insert_value(n$4:objc_object* ) // nil insertion check
+        _ = *n$4 // null dereference check
         temp2[1]:objc_object*=n$4
         n$3=NSDictionary.dictionaryWithObjects:forKeys:count:(temp2:objc_object* const [2*8],
                                                               temp1:objc_object* const [2*8], 2:int)
@@ -3652,21 +3691,26 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       List.mapi ~f:(exec_instruction_with_trans_state trans_state None) stmts
     in
     (* 3. Add array initialization (elements assignments) *)
-    let none_id = Ident.create_none () in
-    let array_init temp_var temp_with_typ idx_mod =
+    let array_init temp_var temp_with_typ idx_mod insert_proc =
+      let none_id = Ident.create_none () in
+      let objc_insert : Exp.t * Typ.t -> Sil.instr =
+       fun arg ->
+        Sil.Call ((none_id, StdTyp.void), Const (Cfun insert_proc), [arg], loc, CallFlags.default)
+      in
       let instrs =
         List.mapi res_trans_elems ~f:(fun i {return= e, typ} ->
             if Int.equal (i % 2) idx_mod then
               let idx = Exp.Const (Cint (IntLit.of_int (i / 2))) in
-              [ Sil.Load {id= none_id; e; root_typ= typ; typ; loc}
+              [ objc_insert (e, typ)
+              ; Sil.Load {id= none_id; e; root_typ= typ; typ; loc}
               ; Sil.Store {e1= Lindex (temp_var, idx); root_typ= typ; typ; e2= e; loc} ]
             else [] )
         |> List.concat
       in
       mk_trans_result temp_with_typ {empty_control with instrs}
     in
-    let res_trans_array1 = array_init temp1_var temp1_with_typ 1 in
-    let res_trans_array2 = array_init temp2_var temp2_with_typ 0 in
+    let res_trans_array1 = array_init temp1_var temp1_with_typ 1 BuiltinDecl.objc_insert_value in
+    let res_trans_array2 = array_init temp2_var temp2_with_typ 0 BuiltinDecl.objc_insert_key in
     (* 4. Add a function call. *)
     let res_trans_call =
       let method_type_no_ref = CType_decl.get_type_from_expr_info expr_info tenv in
@@ -4089,6 +4133,28 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     res_trans
 
 
+  and cxxBindTemporaryExpr_trans trans_state stmt_info stmt_list expr_info =
+    (* Only create a temporary if there *isn't* already a variable to store the result into, eg [X x
+       = X();] will generate a [CXXBindTemporaryExpr] to hold [X()] but clang doesn't expect a
+       temporary to be actually created here as we can store the result in [x] directly (and have to
+       since C++17 –in contexts where clang does expect the temporary to be created we'll get an
+       intermediate copy or move constructor call, which in particular has the effect of setting
+       [trans_state.var_exp_typ] to [None]).
+
+       Since the presence of [trans_state.var_exp_typ] is highly dependent on the current context,
+       [CScope.CXXTemporaries.get_destroyable_temporaries] will compute an over-approximation of the
+       C++ temporaries needed by a given expression. We can tell which ones are actually used as
+       they are recorded as local variables by [materializeTemporaryExpr_trans]. This trick is used
+       by [exprWithCleanups_trans] to compute the accurate set of C++ temporaries to destroy. *)
+    if Option.is_none trans_state.var_exp_typ then
+      (* actually create a C++ temporary to hold the result of the sub-expression *)
+      materializeTemporaryExpr_trans trans_state stmt_info stmt_list expr_info
+    else
+      (* do nothing and translate the sub-expression directly if we already have a variable to
+         initialize *)
+      parenExpr_trans trans_state stmt_info.Clang_ast_t.si_source_range stmt_list
+
+
   and compoundLiteralExpr_trans trans_state stmt_list stmt_info expr_info =
     let stmt = match stmt_list with [stmt] -> stmt | _ -> assert false in
     let var_exp_typ =
@@ -4350,7 +4416,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       CLocation.location_of_stmt_info trans_state.context.translation_unit_context.source_file
         stmt_info
     in
-    let dtor_call stmt_info trans_state destructor_decl_ref (temporary : CScope.var_to_destroy) =
+    let dtor_call stmt_info trans_state destructor_decl_ref (temporary : CContext.cxx_temporary) =
       L.debug Capture Verbose "Destroying pointer %d@\n" stmt_info.Clang_ast_t.si_pointer ;
       let exp = Exp.Lvar temporary.pvar in
       let this_res_trans_destruct = mk_trans_result (exp, temporary.typ) empty_control in
@@ -4361,7 +4427,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
        where [created_conditional] is true when we needed to create new nodes to conditionally
        destroy the temporary (hence the next instruction should also create its own new node to
        place before that) *)
-    let destroy_one stmt_info trans_state (temporary : CScope.var_to_destroy) =
+    let destroy_one stmt_info trans_state (temporary : CContext.cxx_temporary) =
       L.debug Capture Verbose "destructing %a, trans_state=%a@\n" (Pvar.pp Pp.text_break)
         temporary.pvar pp_trans_state trans_state ;
       let open IOption.Let_syntax in
@@ -4450,7 +4516,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             destroy_all stmt_info (trans_result :: trans_results_acc) trans_state temporaries )
     in
     L.debug Capture Verbose "Destroying [%a] in state %a@\n"
-      (Pp.seq ~sep:";" (fun fmt (temporary : CScope.var_to_destroy) ->
+      (Pp.seq ~sep:";" (fun fmt (temporary : CContext.cxx_temporary) ->
            Format.fprintf fmt "(%a,%a)" (Pvar.pp Pp.text_break) temporary.pvar
              (Pp.option (Pvar.pp Pp.text_break))
              temporary.marker ) )
@@ -4472,13 +4538,19 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       CLocation.location_of_stmt_info trans_state.context.translation_unit_context.source_file
         stmt_info
     in
+    (* We need to pass a set of temporaries to destroy to the translation of the sub-expression but
+       we cannot know exactly what they will be until *after* the translation (see also
+       [CXXBindTemporaryExpr])... Fortunately the translation of the sub-expression only needs to
+       know a *superset* of the temporaries to destroy, which is easier to compute. We'll get the
+       real set of temporaries to destroy after when filtering to keep only those that are local
+       variables. *)
     let temporaries_to_destroy =
       CScope.CXXTemporaries.get_destroyable_temporaries trans_state.context stmt_list
     in
     let[@warning "-8"] [stmt] = stmt_list in
     let temporaries_constructor_markers =
       List.fold temporaries_to_destroy ~init:trans_state.context.temporaries_constructor_markers
-        ~f:(fun markers {CScope.pvar; typ; marker} ->
+        ~f:(fun markers {CContext.pvar; typ; marker} ->
           match marker with
           | None ->
               markers
@@ -4493,9 +4565,15 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         stmt_info
     in
     let sub_expr_result = instruction trans_state stmt in
+    (* HACK: we can know which C++ temporaries were actually used by the translation of the
+       sub-expression by inspecting the local variables *)
+    let temporaries_to_destroy =
+      List.filter temporaries_to_destroy ~f:(fun {CContext.pvar} ->
+          Procdesc.is_local trans_state.context.procdesc pvar )
+    in
     L.debug Capture Verbose "sub_expr_result.control=%a@\n" pp_control sub_expr_result.control ;
     let init_markers_to_zero_instrs =
-      List.fold temporaries_to_destroy ~init:[] ~f:(fun instrs {CScope.marker} ->
+      List.fold temporaries_to_destroy ~init:[] ~f:(fun instrs {CContext.marker} ->
           match marker with
           | None ->
               instrs
@@ -4510,7 +4588,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
               :: instrs )
     in
     let markers_var_data =
-      List.fold temporaries_to_destroy ~init:[] ~f:(fun vds {CScope.marker} ->
+      List.fold temporaries_to_destroy ~init:[] ~f:(fun vds {CContext.marker} ->
           match marker with
           | None ->
               vds
@@ -4657,7 +4735,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   (** Instrument program to know when C++ temporaries created conditionally have indeed been created
       and need to be destroyed. This is a common compilation scheme for temporary variables created
-      conditionally in expressions, due to either [a?b:c] or short-circuiting of [&&] or [||]. *)
+      conditionally in expressions, due to either [a?b:c] or short-circuiting of [&&] or [||].
+
+      Similarly to [exprWithCleanups_trans], only act on the C++ temporaries that we ended up using
+      in the translation of the sub-expression. Here the fact we only take variables initialized by
+      the sub-expression ensures that this is always the case. *)
   and instruction_insert_cxx_temporary_markers trans_state stmt =
     let stmt_result = instruction_translate trans_state stmt in
     let stmt_info, _ = Clang_ast_proj.get_stmt_tuple stmt in
@@ -4787,7 +4869,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         pseudoObjectExpr_trans trans_state stmt_list
     | UnaryExprOrTypeTraitExpr (_, _, _, unary_expr_or_type_trait_expr_info) ->
         unaryExprOrTypeTraitExpr_trans trans_state unary_expr_or_type_trait_expr_info
-    | ImplicitCastExpr (stmt_info, stmt_list, expr_info, cast_kind)
+    | ImplicitCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _)
     | BuiltinBitCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _)
     | CStyleCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _)
     | CXXReinterpretCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _, _)
@@ -4894,13 +4976,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         cxxDeleteExpr_trans trans_state stmt_info stmt_list delete_expr_info
     | MaterializeTemporaryExpr (stmt_info, stmt_list, expr_info, _) ->
         materializeTemporaryExpr_trans trans_state stmt_info stmt_list expr_info
+    | CXXBindTemporaryExpr (stmt_info, stmt_list, expr_info, _) ->
+        cxxBindTemporaryExpr_trans trans_state stmt_info stmt_list expr_info
     | CompoundLiteralExpr (stmt_info, stmt_list, expr_info) ->
         compoundLiteralExpr_trans trans_state stmt_list stmt_info expr_info
     | InitListExpr (stmt_info, stmts, expr_info) ->
         initListExpr_trans trans_state stmt_info expr_info stmts
-    | CXXBindTemporaryExpr ({Clang_ast_t.si_source_range}, stmt_list, _, _) ->
-        (* right now we ignore this expression and try to translate the child node *)
-        parenExpr_trans trans_state si_source_range stmt_list
     | CXXDynamicCastExpr (stmt_info, stmts, _, _, qual_type, _) ->
         cxxDynamicCastExpr_trans trans_state stmt_info stmts qual_type
     | CXXDefaultArgExpr (_, _, _, default_expr_info)

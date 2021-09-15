@@ -7,6 +7,7 @@
 
 open! IStd
 module F = Format
+module Attribute = PulseAttribute
 module CallEvent = PulseCallEvent
 module Invalidation = PulseInvalidation
 module Trace = PulseTrace
@@ -23,6 +24,8 @@ type access_to_invalid_address =
 [@@deriving compare, equal]
 
 type erlang_error =
+  | Badkey of {calling_context: calling_context; location: Location.t}
+  | Badmap of {calling_context: calling_context; location: Location.t}
   | Badmatch of {calling_context: calling_context; location: Location.t}
   | Badrecord of {calling_context: calling_context; location: Location.t}
   | Case_clause of {calling_context: calling_context; location: Location.t}
@@ -41,7 +44,7 @@ let yojson_of_read_uninitialized_value = [%yojson_of: _]
 
 type t =
   | AccessToInvalidAddress of access_to_invalid_address
-  | MemoryLeak of {procname: Procname.t; allocation_trace: Trace.t; location: Location.t}
+  | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
   | ErlangError of erlang_error
   | ReadUninitializedValue of read_uninitialized_value
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
@@ -55,6 +58,8 @@ let get_location = function
   | ReadUninitializedValue {calling_context= (_, location) :: _} ->
       (* report at the call site that triggers the bug *) location
   | MemoryLeak {location}
+  | ErlangError (Badkey {location})
+  | ErlangError (Badmap {location})
   | ErlangError (Badmatch {location})
   | ErlangError (Badrecord {location})
   | ErlangError (Case_clause {location})
@@ -91,8 +96,10 @@ let get_message diagnostic =
             | Invalidation.SelfOfNonPODReturnMethod non_pod_typ ->
                 F.asprintf "undefined behaviour caused by nil messaging of non-pod return type (%a)"
                   (Typ.pp_full Pp.text) non_pod_typ
-            | Invalidation.InsertionIntoCollection ->
-                "nil insertion into collection"
+            | Invalidation.InsertionIntoCollectionKey ->
+                "nil key insertion into collection"
+            | Invalidation.InsertionIntoCollectionValue ->
+                "nil object insertion into collection"
             | Invalidation.BlockCall ->
                 "nil block call"
           in
@@ -166,7 +173,7 @@ let get_message diagnostic =
           F.asprintf "%a%a" pp_access_trace access_trace
             (pp_invalidation_trace invalidation_line invalidation)
             invalidation_trace )
-  | MemoryLeak {procname; location; allocation_trace} ->
+  | MemoryLeak {allocator; location; allocation_trace} ->
       let allocation_line =
         let {Location.line; _} = Trace.get_outer_location allocation_trace in
         line
@@ -174,15 +181,19 @@ let get_message diagnostic =
       let pp_allocation_trace fmt (trace : Trace.t) =
         match trace with
         | Immediate _ ->
-            F.fprintf fmt "by `%a`" Procname.pp procname
+            F.fprintf fmt "by `%a`" Attribute.pp_allocator allocator
         | ViaCall {f; _} ->
-            F.fprintf fmt "by `%a`, indirectly via call to %a" Procname.pp procname
+            F.fprintf fmt "by `%a`, indirectly via call to %a" Attribute.pp_allocator allocator
               CallEvent.describe f
       in
       F.asprintf
         "%s memory leak. Memory dynamically allocated at line %d %a is not freed after the last \
          access at %a"
         pulse_start_msg allocation_line pp_allocation_trace allocation_trace Location.pp location
+  | ErlangError (Badkey {calling_context= _; location}) ->
+      F.asprintf "%s bad key at %a" pulse_start_msg Location.pp location
+  | ErlangError (Badmap {calling_context= _; location}) ->
+      F.asprintf "%s bad map at %a" pulse_start_msg Location.pp location
   | ErlangError (Badmatch {calling_context= _; location}) ->
       F.asprintf "%s no match of RHS at %a" pulse_start_msg Location.pp location
   | ErlangError (Badrecord {calling_context= _; location}) ->
@@ -275,7 +286,9 @@ let invalidation_titles (invalidation : Invalidation.t) =
       ( "source of the constant value part of the trace starts here"
       , "constant value dereference part of the trace starts here" )
   | CFree
+  | CustomFree _
   | CppDelete
+  | CppDeleteArray
   | EndIterator
   | GoneOutOfScope _
   | OptionalEmpty
@@ -318,14 +331,21 @@ let get_trace = function
            ~include_title:(should_print_invalidation_trace || not (List.is_empty calling_context))
            ~nesting:in_context_nesting invalidation access_trace
       @@ []
-  | MemoryLeak {procname; location; allocation_trace} ->
+  | MemoryLeak {allocator; location; allocation_trace} ->
       let access_start_location = Trace.get_start_location allocation_trace in
       add_errlog_header ~nesting:0 ~title:"allocation part of the trace starts here"
         access_start_location
       @@ Trace.add_to_errlog ~nesting:1
-           ~pp_immediate:(fun fmt -> F.fprintf fmt "allocated by `%a` here" Procname.pp procname)
+           ~pp_immediate:(fun fmt ->
+             F.fprintf fmt "allocated by `%a` here" Attribute.pp_allocator allocator )
            allocation_trace
       @@ [Errlog.make_trace_element 0 location "memory becomes unreachable here" []]
+  | ErlangError (Badkey {calling_context; location}) ->
+      get_trace_calling_context calling_context
+      @@ [Errlog.make_trace_element 0 location "bad key here" []]
+  | ErlangError (Badmap {calling_context; location}) ->
+      get_trace_calling_context calling_context
+      @@ [Errlog.make_trace_element 0 location "bad map here" []]
   | ErlangError (Badmatch {calling_context; location}) ->
       get_trace_calling_context calling_context
       @@ [Errlog.make_trace_element 0 location "no match of RHS here" []]
@@ -362,6 +382,10 @@ let get_issue_type = function
       Invalidation.issue_type_of_cause invalidation must_be_valid_reason
   | MemoryLeak _ ->
       IssueType.pulse_memory_leak
+  | ErlangError (Badkey _) ->
+      IssueType.bad_key
+  | ErlangError (Badmap _) ->
+      IssueType.bad_map
   | ErlangError (Badmatch _) ->
       IssueType.no_match_of_rhs
   | ErlangError (Badrecord _) ->

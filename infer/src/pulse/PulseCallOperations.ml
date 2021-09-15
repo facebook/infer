@@ -45,9 +45,12 @@ let unknown_call tenv path call_loc (reason : CallEvent.t) ~ret ~actuals ~formal
     | Tptr (typ, _)
       when (not (Language.curr_language_is Java)) && not (is_ptr_to_const formal_typ_opt) ->
         is_functional := false ;
+        (* avoid creating leaks when havoc'ing pointers, and generally optimistically assume unknown
+           calls deallocate everything reachable to avoid reporting memory leak false positives *)
+        let astate = AbductiveDomain.deep_deallocate (fst actual) astate in
         (* HACK: write through the pointer even if it is invalid (except in Java). This is to avoid
            raising issues when havoc'ing pointer parameters (which normally causes a [check_valid]
-           call. *)
+           call). *)
         let fresh_value = AbstractValue.mk_fresh () in
         Memory.add_edge actual Dereference (fresh_value, [event]) call_loc astate
         |> havoc_fields actual typ

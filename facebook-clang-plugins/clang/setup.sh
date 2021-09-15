@@ -17,12 +17,12 @@ CLANG_PREBUILD_PATCHES=(
     "$SCRIPT_DIR/src/mangle_suppress_errors.patch"
     "$SCRIPT_DIR/src/AArch64SVEACLETypes.patch"
     "$SCRIPT_DIR/src/benchmark_register.patch"
-    "$SCRIPT_DIR/src/sysroot_cpp_headers.patch"
 )
 CLANG_PREFIX="$SCRIPT_DIR/install"
 CLANG_INSTALLED_VERSION_FILE="$SCRIPT_DIR/installed.version"
 PATCH=${PATCH:-patch}
 STRIP=${STRIP:-strip}
+CMAKE=${CMAKE:-cmake}
 
 NCPUS="$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 2)"
 JOBS="${JOBS:-$(($NCPUS>=8?$NCPUS/4:2))}"
@@ -234,7 +234,7 @@ pushd build
 # workaround install issue with ocaml llvm bindings and ocamldoc
 mkdir -p docs/ocamldoc/html
 
-cmake -G "$CMAKE_GENERATOR" "$CLANG_SRC" "${CMAKE_ARGS[@]}" $CLANG_CMAKE_ARGS
+$CMAKE -G "$CMAKE_GENERATOR" "$CLANG_SRC" "${CMAKE_ARGS[@]}" $CLANG_CMAKE_ARGS
 
 $BUILD_BIN $BUILD_ARGS
 

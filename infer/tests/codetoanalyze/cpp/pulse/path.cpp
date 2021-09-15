@@ -15,6 +15,7 @@ int* may_return_null(int x) {
 void only_bad_on_42_latent(int x) {
   int* p = may_return_null(x);
   *p = 12;
+  delete p;
 }
 
 void faulty_call_bad() { only_bad_on_42_latent(42); }

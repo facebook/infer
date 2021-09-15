@@ -9,9 +9,7 @@ open! IStd
 
 (** Module that contains constants and global state used in the frontend *)
 
-type clang_lang = C | CPP | ObjC | ObjCPP [@@deriving compare]
-
-let equal_clang_lang = [%compare.equal: clang_lang]
+type clang_lang = C | CPP | ObjC | ObjCPP [@@deriving compare, equal]
 
 type translation_unit_context =
   { lang: clang_lang

@@ -135,9 +135,18 @@ class Subclass : virtual POD {
 
 void basic_placement_new_ok() {
   S* ptr = new S(1);
+  ptr->~S();
   S* tptr = new (ptr) S(1);
+  delete tptr;
+}
+
+// the correct code is shown in basic_placement_new_ok()
+void placement_new_wrong_order_bad() {
+  S* ptr = new S(1);
+  S* tptr = new (ptr) S(1); // leaking ptr->f
   tptr->~S();
-  delete[] ptr;
+  delete ptr; // deleting tptr->f again because of the aliasing induced by
+              // placement new
 }
 
 int* destruct_pointer_contents_then_placement_new1_ok(S* s) {
@@ -187,8 +196,9 @@ void placement_new_non_var_ok() {
   delete m.s;
 }
 
-void return_placement_new_ok() {
+S* return_placement_new_ok() {
   auto mem = new S(1);
+  mem->~S();
   return new (mem) S(2);
 }
 
@@ -248,23 +258,24 @@ void destructor_order_empty_destructor_ok() {
   a.f = &b;
 }
 
-std::unique_ptr<A>* allocate_in_branch_ok(bool b) {
+void allocate_in_branch_ok(bool b) {
   std::unique_ptr<A> a1;
   std::unique_ptr<A> a2;
   std::unique_ptr<A>* a3 = &a1;
 
   if (b) {
-    a2 = std::make_unique<A>(*a1);
+    a2 = std::make_unique<A>();
     a3 = &a2;
   }
 
-  // read a3
-  const B* read = (*a3)->f;
+  if (b) {
+    const B* read = (*a3)->f;
+  }
 }
 
 std::string mk_string();
 
-bool variable_init_ternary_ok(bool b) {
+void variable_init_ternary_ok(bool b) {
   // this can cause issues because of the way the frontend treatment of ternary
   // ?: interacts with the treatment of passing return values by reference as
   // parameters

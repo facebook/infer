@@ -100,5 +100,5 @@ void trace_correctly_through_wrappers_bad() {
   int* x = malloc_wrapper_2(1);
   // TODO: ideally we would trace that we didn't go into the free() branch of
   // the wrapper explicitly here to help understand the bug report
-  free_wrapper_(x, 0);
+  free_wrapper(x, 0);
 }

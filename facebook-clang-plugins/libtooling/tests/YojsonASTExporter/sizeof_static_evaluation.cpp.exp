@@ -273,7 +273,8 @@
                 "cast_kind" : <"IntegralCast">,
                 "base_path" : [
                 ]
-              }
+              },
+              false
             )>
           }
         )>,
@@ -386,6 +387,7 @@
       },
       {
         "is_global" : true,
+        "is_init_ice" : true,
         "init_expr" : <"ImplicitCastExpr" : (
           {
             "pointer" : 23,
@@ -435,7 +437,8 @@
             "cast_kind" : <"IntegralCast">,
             "base_path" : [
             ]
-          }
+          },
+          false
         )>
       }
     )>,

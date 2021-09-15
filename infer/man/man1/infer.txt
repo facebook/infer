@@ -205,6 +205,10 @@ OPTIONS
            expression (only supported by the javac integration for now).       
     See also infer-capture(1) and infer-run(1).
 
+       --no-censor-report +issue_type_regex
+           For debugging/experimentation only: Specify issues not to be
+           censored by --censor-report.           See also infer-report(1) and infer-run(1).
+
        --censor-report +string
            Specify a filter for issues to be censored by adding a
            'censored_reason' field in the json report. Infer will not report
@@ -437,6 +441,8 @@ OPTIONS
              Abduction_case_not_implemented (enabled by default),
              Array_of_pointsto (enabled by default),
              Assert_failure (enabled by default),
+             BAD_KEY (enabled by default),
+             BAD_MAP (enabled by default),
              BAD_POINTER_COMPARISON (enabled by default),
              BAD_RECORD (enabled by default),
              BIABDUCTION_ANALYSIS_STOPS (disabled by default),

@@ -1486,7 +1486,8 @@
                         "name" : "A"
                       }
                     ]
-                  }
+                  },
+                  false
                 )>
               ],
               [
@@ -1599,7 +1600,8 @@
                             "name" : "A"
                           }
                         ]
-                      }
+                      },
+                      false
                     )>
                   }
                 )>
@@ -1909,7 +1911,8 @@
                         "cast_kind" : <"LValueToRValue">,
                         "base_path" : [
                         ]
-                      }
+                      },
+                      true
                     )>
                   ],
                   {
@@ -2023,7 +2026,8 @@
                             "cast_kind" : <"LValueToRValue">,
                             "base_path" : [
                             ]
-                          }
+                          },
+                          true
                         )>
                       ],
                       {
@@ -2131,7 +2135,8 @@
                         "cast_kind" : <"LValueToRValue">,
                         "base_path" : [
                         ]
-                      }
+                      },
+                      true
                     )>
                   ],
                   {
@@ -2245,7 +2250,8 @@
                             "cast_kind" : <"LValueToRValue">,
                             "base_path" : [
                             ]
-                          }
+                          },
+                          true
                         )>
                       ],
                       {
@@ -2366,7 +2372,8 @@
                             "cast_kind" : <"LValueToRValue">,
                             "base_path" : [
                             ]
-                          }
+                          },
+                          false
                         )>
                       ],
                       {
@@ -2505,7 +2512,8 @@
                                 "cast_kind" : <"LValueToRValue">,
                                 "base_path" : [
                                 ]
-                              }
+                              },
+                              false
                             )>
                           ],
                           {
@@ -2638,7 +2646,8 @@
                             "cast_kind" : <"LValueToRValue">,
                             "base_path" : [
                             ]
-                          }
+                          },
+                          false
                         )>
                       ],
                       {
@@ -2777,7 +2786,8 @@
                                 "cast_kind" : <"LValueToRValue">,
                                 "base_path" : [
                                 ]
-                              }
+                              },
+                              false
                             )>
                           ],
                           {
@@ -2910,7 +2920,8 @@
                             "cast_kind" : <"LValueToRValue">,
                             "base_path" : [
                             ]
-                          }
+                          },
+                          false
                         )>
                       ],
                       {
@@ -3049,7 +3060,8 @@
                                 "cast_kind" : <"LValueToRValue">,
                                 "base_path" : [
                                 ]
-                              }
+                              },
+                              false
                             )>
                           ],
                           {

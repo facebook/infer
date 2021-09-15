@@ -4,16 +4,13 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+
 namespace temporaries {
 
 template <typename X>
 struct UniquePtr {
   X* x_;
-  ~UniquePtr() {
-    if (x_) {
-      delete x_;
-    }
-  }
+  ~UniquePtr() { delete x_; }
   UniquePtr(X* y) { x_ = y; }
 
   UniquePtr(UniquePtr<X>& p) = delete; // no copy constructor
@@ -82,7 +79,7 @@ void temporary_in_while_condition_ok() {
 
 void call_mk_UniquePtr_A_get_field_ok() { int x = A().s_; }
 
-int FN_bind_temporary_to_const_bad() {
+int bind_temporary_to_const_bad() {
   A* a_ptr;
   {
     const UniquePtr<A>& local = mk_UniquePtr_A();
