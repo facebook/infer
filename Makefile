@@ -205,6 +205,12 @@ DIRECT_TESTS += \
   java_starvation-whole-program \
   java_topl \
 
+ifneq ($(KOTLINC), no)
+DIRECT_TESTS += \
+	kotlin_racerd \
+
+endif
+
 # javac has trouble running in parallel on the same files
 direct_java_pulse-isl_test: direct_java_pulse_test
 
