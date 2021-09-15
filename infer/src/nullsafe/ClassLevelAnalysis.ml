@@ -313,12 +313,14 @@ let analyze_class_impl tenv source_file class_name class_struct class_info issue
 
 
 let analyze_class tenv source_file class_info issue_log =
-  let class_name = AggregatedSummaries.ClassInfo.get_class_name class_info in
-  match Tenv.lookup tenv (Typ.JavaClass class_name) with
-  | Some class_struct ->
-      analyze_class_impl tenv source_file class_name class_struct class_info issue_log
-  | None ->
-      L.debug Analysis Medium
-        "%a: could not load class info in environment: skipping class analysis@\n" JavaClassName.pp
-        class_name ;
-      issue_log
+  if SourceFile.has_extension ~ext:Config.kotlin_source_extension source_file then issue_log
+  else
+    let class_name = AggregatedSummaries.ClassInfo.get_class_name class_info in
+    match Tenv.lookup tenv (Typ.JavaClass class_name) with
+    | Some class_struct ->
+        analyze_class_impl tenv source_file class_name class_struct class_info issue_log
+    | None ->
+        L.debug Analysis Medium
+          "%a: could not load class info in environment: skipping class analysis@\n"
+          JavaClassName.pp class_name ;
+        issue_log
