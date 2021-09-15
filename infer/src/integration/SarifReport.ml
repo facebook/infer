@@ -9,18 +9,33 @@ module F = Format
 
 module IssueHash = Caml.Hashtbl.Make (String)
 
-let pp_n_spaces n fmt =
-  for _ = 1 to n do
-    F.pp_print_char fmt ' '
-  done
-
-
 module ReportSummary = struct
   type t = {mutable n_issues: int; issue_type_counts: (int * string) IssueHash.t}
 
   let mk_empty () = {n_issues= 0; issue_type_counts= IssueHash.create 64}
 
-  let pp fmt {n_issues= _; issue_type_counts= _} = pp_n_spaces 3 fmt
+  let is_first_rule_item = ref true
+
+  let pp fmt {n_issues= _; issue_type_counts} = 
+    let string_of_issue ~issue_type ~issue_type_hum =
+      let shortDescription = {Sarifbug_j.text= issue_type_hum} in
+      let rule =
+        { Sarifbug_j.id= issue_type
+        ; shortDescription }
+      in
+      (Sarifbug_j.string_of_rule rule)
+    in
+    let issue_counts =
+      IssueHash.to_seq issue_type_counts
+      |> Seq.fold_left
+           (fun (issue_counts) ((_, (_, _)) as binding) ->
+             (binding :: issue_counts) )
+           ([])
+    in
+    List.iter ~f:(fun (issue_type, (_, issue_type_hum)) ->
+        if !is_first_rule_item then is_first_rule_item := false else F.pp_print_char fmt ',' ;
+        let issue_string = string_of_issue ~issue_type ~issue_type_hum in
+        F.fprintf fmt "%s" issue_string ) issue_counts
 
   let add_issue summary (jsonbug : Jsonbug_t.jsonbug) =
     let bug_count =
@@ -48,14 +63,6 @@ let pp_schema_version fmt () =
 let pp_runs fmt () =
   F.fprintf fmt "%s:[{%s:{%s:{%s:%s,%s:%s,"  "\"runs\"" "\"tool\"" "\"driver\"" "\"name\"" "\"Infer\"" "\"informationUri\"" "\"https://github.com/facebook/infer\"" ;
   F.fprintf fmt "%s:\"%d.%d.%d\",%s:[" "\"version\"" Version.major Version.minor Version.patch "\"rules\""
-
-(* let pp_rules fmt elt =
-  match rules_to_string elt with
-  | Some s ->
-      if !is_first_item then is_first_item := false else F.pp_print_char fmt ',' ;
-      F.fprintf fmt "%s@?" s
-  | None ->
-      () *)
 
 let pp_results_header fmt () =
   is_first_item := true ;
@@ -143,12 +150,17 @@ let create_from_json ~report_sarif ~report_json =
       pp_open report_sarif_fmt () ;
       pp_schema_version report_sarif_fmt () ;
       pp_runs report_sarif_fmt () ;
-      pp_results_header report_sarif_fmt () ;
       let summary =
         List.fold report ~init:(ReportSummary.mk_empty ()) ~f:(fun summary jsonbug ->
             let summary' = ReportSummary.add_issue summary jsonbug in
-            one_issue_to_report_sarif report_sarif_fmt jsonbug ;
             summary' )
       in
-      F.printf "%a" ReportSummary.pp summary ; 
+      F.fprintf report_sarif_fmt "%a" ReportSummary.pp summary ; 
+      pp_results_header report_sarif_fmt () ;
+      let output_issues =
+        List.iter ~f:(fun jsonbug ->
+            one_issue_to_report_sarif report_sarif_fmt jsonbug
+          ) report
+      in
+      output_issues ; 
       pp_close report_sarif_fmt () ) 
