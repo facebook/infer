@@ -108,7 +108,7 @@ let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} : 
       (* TODO: Cover all cases. *)
       L.debug Capture Verbose "@[todo ErlangTranslator.translate_pattern %s@."
         (Sexp.to_string (Ast.sexp_of_simple_expression e)) ;
-      Block.make_failure env
+      Block.all env [Block.make_unsupported env; Block.make_failure env]
 
 
 and translate_pattern_cons env value head tail : Block.t =
@@ -370,7 +370,7 @@ and translate_expression env {Ast.line; simple_expression} =
     | todo ->
         L.debug Capture Verbose "@[todo ErlangTranslator.translate_expression %s@."
           (Sexp.to_string (Ast.sexp_of_simple_expression todo)) ;
-        Block.make_success env
+        Block.all env [Block.make_unsupported env; Block.make_success env]
   in
   (* Add extra nodes/instructions to store return value if needed *)
   match result with
@@ -467,7 +467,7 @@ and translate_expression_binary_operator (env : (_, _) Env.t) ret_var e1 (op : A
   | todo ->
       L.debug Capture Verbose "@[todo ErlangTranslator.translate_expression_binary_operator %s@."
         (Sexp.to_string (Ast.sexp_of_binary_operator todo)) ;
-      Block.all env [block1; block2; Block.make_success env]
+      Block.all env [block1; block2; Block.make_unsupported env]
 
 
 and translate_expression_call (env : (_, _) Env.t) ret_var module_name function_name args : Block.t

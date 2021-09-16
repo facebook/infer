@@ -41,6 +41,8 @@ val __erlang_map_get : Procname.t
 
 val __erlang_map_put : Procname.t
 
+val __erlang_missing_translation : Procname.t
+
 val __infer_initializer_list : Procname.t
 
 val __infer_skip_function : Procname.t

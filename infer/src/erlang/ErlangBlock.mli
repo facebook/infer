@@ -30,3 +30,5 @@ val make_load : (Procdesc.t Env.present, _) Env.t -> Ident.t -> Exp.t -> Typ.t -
 
 val make_branch : (Procdesc.t Env.present, _) Env.t -> Exp.t -> t
 (** Make a branch based on the condition: go to success if true, go to failure if false *)
+
+val make_unsupported : (Procdesc.t Env.present, _) Env.t -> t
