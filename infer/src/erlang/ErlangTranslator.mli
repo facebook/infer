@@ -7,4 +7,4 @@
 
 open! IStd
 
-val translate_module : ErlangAst.module_ -> unit
+val translate_module : (_, _) ErlangEnvironment.t -> ErlangAst.module_ -> unit

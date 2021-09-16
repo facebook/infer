@@ -10,5 +10,5 @@ open! IStd
 (** Enforce additional invariants and constraints on the AST based on
     https://erlang.org/doc/apps/erts/absform.html *)
 
-val validate : ErlangAst.module_ -> bool
+val validate : (_, _) ErlangEnvironment.t -> ErlangAst.module_ -> bool
 (** Validate a module. *)
