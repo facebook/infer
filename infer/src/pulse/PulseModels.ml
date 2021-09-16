@@ -1825,6 +1825,8 @@ module Erlang = struct
     write_dynamic_type_and_return addr_map Map ret_id astate
 
 
+  let map_new : model = map_create []
+
   let make_astate_badmap (map_val, _map_hist) data astate =
     let typ = Typ.mk_struct (ErlangType Map) in
     let instanceof_val = AbstractValue.mk_fresh () in
@@ -2243,6 +2245,7 @@ module ProcNameDispatcher = struct
         ; -"maps" &:: "get" <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.map_get
         ; -"maps" &:: "put" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
           $--> Erlang.map_put
+        ; -"maps" &:: "new" <>$$--> Erlang.map_new
         ; +map_context_tenv PatternMatch.Java.implements_collection
           &:: "<init>" <>$ capt_arg_payload
           $--> JavaCollection.init ~desc:"Collection.init()"

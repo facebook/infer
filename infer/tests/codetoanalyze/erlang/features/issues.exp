@@ -66,6 +66,7 @@ codetoanalyze/erlang/features/src/maps.erl, test_get_badkey_Bad/0, 2, BAD_KEY, n
 codetoanalyze/erlang/features/src/maps.erl, test_get_badmap_Bad/0, 1, BAD_MAP, no_bucket, ERROR, [bad map here]
 codetoanalyze/erlang/features/src/maps.erl, test_is_key_Bad/0, -10, NO_MATCHING_FUNCTION_CLAUSE, no_bucket, ERROR, [calling context starts here,in call to `warn/1`,no matching function clause here]
 codetoanalyze/erlang/features/src/maps.erl, test_is_key_badmap_Bad/0, 1, BAD_MAP, no_bucket, ERROR, [bad map here]
+codetoanalyze/erlang/features/src/maps.erl, test_new_Bad/0, -80, NO_MATCHING_FUNCTION_CLAUSE, no_bucket, ERROR, [calling context starts here,in call to `warn/1`,no matching function clause here]
 codetoanalyze/erlang/features/src/maps.erl, test_put4_Bad/0, -17, NO_MATCHING_FUNCTION_CLAUSE, no_bucket, ERROR, [calling context starts here,in call to `accepts_map_with_key_one_value_two/1`,no matching function clause here]
 codetoanalyze/erlang/features/src/maps.erl, test_put5_Bad/0, -22, NO_MATCHING_FUNCTION_CLAUSE, no_bucket, ERROR, [calling context starts here,in call to `accepts_map_with_key_one_value_two/1`,no matching function clause here]
 codetoanalyze/erlang/features/src/maps.erl, test_put6_Bad/0, 1, BAD_MAP, no_bucket, ERROR, [bad map here]
