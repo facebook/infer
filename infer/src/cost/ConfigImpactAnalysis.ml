@@ -565,6 +565,11 @@ module Dom = struct
       dispatch tenv pname args
 
 
+  let is_setter_getter pname =
+    let method_name = Procname.get_method pname in
+    String.is_prefix method_name ~prefix:"set" || String.is_prefix method_name ~prefix:"get"
+
+
   let call tenv analyze_dependency ~(instantiated_cost : CostInstantiate.instantiated_cost) ~callee
       args location
       ({config_checks; field_checks; unchecked_callees; unchecked_callees_cond} as astate) =
@@ -613,15 +618,19 @@ module Dom = struct
       let is_cheap_call = match instantiated_cost with Cheap -> true | _ -> false in
       let is_unmodeled_call = match instantiated_cost with NoModel -> true | _ -> false in
       if strict_mode then
-        match callee_summary with
-        | Some
-            { Summary.unchecked_callees= callee_summary
-            ; unchecked_callees_cond= callee_summary_cond
-            ; has_call_stmt }
+        match (callee_summary, expensiveness_model) with
+        | ( Some
+              { Summary.unchecked_callees= callee_summary
+              ; unchecked_callees_cond= callee_summary_cond
+              ; has_call_stmt }
+          , _ )
           when has_call_stmt ->
             (* If callee's summary is not leaf, use it. *)
             join_callee_summary callee_summary callee_summary_cond
-        | _ ->
+        | None, (None | Some KnownCheap) when is_setter_getter callee ->
+            (* If callee is unknown/cheap setter/getter, ignore it. *)
+            astate
+        | _, _ ->
             (* Otherwise, add callee's name. *)
             add_callee_name ~is_known_expensive:false
       else
