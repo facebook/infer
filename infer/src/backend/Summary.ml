@@ -353,11 +353,5 @@ module OnDisk = struct
     make_filtered_iterator_from_config ~iter:iter_filtered_report_summaries ~f
 
 
-  let iter_specs_from_config ~f = make_filtered_iterator_from_config ~iter:iter_filtered_specs ~f
-
   let iter_specs ~f = iter_filtered_specs ~filter:(fun _ _ -> true) ~f
-
-  let pp_specs_from_config fmt =
-    iter_specs_from_config ~f:(fun summary ->
-        F.fprintf fmt "Procedure: %a@\n%a@." Procname.pp (get_proc_name summary) pp_text summary )
 end

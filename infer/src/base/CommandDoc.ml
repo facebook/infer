@@ -300,15 +300,12 @@ $(b,infer) $(i,[options])|}
 
 
 let report =
-  mk_command_doc ~title:"Infer Reporting" ~short_description:"compute and manipulate infer results"
-    ~synopsis:"$(b,infer) $(b,report) $(i,[options]) [$(i,file.specs)...]"
-    ~description:
-      [ `P
-          "Read, convert, and print .specs files in the results directory. Each spec is printed to \
-           standard output unless option -q is used."
-      ; `P
-          "If no specs file are passed on the command line, process all the .specs in the results \
-           directory." ]
+  mk_command_doc ~title:"Infer Reporting" ~short_description:"compute and manipulate infer reports"
+    ~synopsis:
+      {|$(b,infer) $(b,report) $(b,--issues-tests)
+$(b,infer) $(b,report) $(b,--cost-issues-tests)
+$(b,infer) $(b,report) $(b,--config-impact-issues-tests)|}
+    ~description:[`P "Write out issues in a format suitable for tests."]
     ~see_also:InferCommand.[ReportDiff; Run]
 
 

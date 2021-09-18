@@ -1,16 +1,14 @@
 NAME
-       infer-report - compute and manipulate infer results
+       infer-report - compute and manipulate infer reports
 
 SYNOPSIS
-       infer report [options] [file.specs...]
+       infer report --issues-tests
+       infer report --cost-issues-tests
+       infer report --config-impact-issues-tests
 
 
 DESCRIPTION
-       Read, convert, and print .specs files in the results directory. Each
-       spec is printed to standard output unless option -q is used.
-
-       If no specs file are passed on the command line, process all the
-       .specs in the results directory.
+       Write out issues in a format suitable for tests.
 
 
 
