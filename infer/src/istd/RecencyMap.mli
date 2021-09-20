@@ -40,11 +40,13 @@ module type S = sig
 
   val fold : t -> init:'acc -> f:('acc -> key * value -> 'acc) -> 'acc
 
-  val fold_map : t -> init:'acc -> f:('acc -> value -> 'acc * value) -> 'acc * t
+  val fold_map : t -> init:'acc -> f:('acc -> key -> value -> 'acc * value) -> 'acc * t
 
   val is_empty : t -> bool
 
   val map : t -> f:(value -> value) -> t
+
+  val mapi : t -> f:(key -> value -> value) -> t
 
   val mem : t -> key -> bool
 
