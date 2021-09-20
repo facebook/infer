@@ -3694,8 +3694,14 @@ let scuba_execution_id =
   else None
 
 
+let is_originator =
+  (* in remote execution environments, the environment variable used by
+     [CommandLineOption.is_originator] will not carry over *)
+  CLOpt.is_originator && not buck_cache_mode
+
+
 let toplevel_results_dir =
-  if CLOpt.is_originator then (
+  if is_originator then (
     (* let subprocesses know where the toplevel process' results dir is *)
     Unix.putenv ~key:infer_top_results_dir_env_var ~data:results_dir ;
     results_dir )

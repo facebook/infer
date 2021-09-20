@@ -19,6 +19,7 @@ type parse_mode =
 [@@deriving compare]
 
 val is_originator : bool
+(** Do not use this value, use [Config.is_originator] instead *)
 
 val init_work_dir : string
 

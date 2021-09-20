@@ -8,7 +8,6 @@ open! IStd
 
 (** entry points for top-level functionalities such as capture, analysis, and reporting *)
 
-module CLOpt = CommandLineOption
 module L = Logging
 module F = Format
 
@@ -125,7 +124,7 @@ let capture ~changed_files = function
       L.progress "Capturing for BuckJavaFlavor integration...@." ;
       BuckJavaFlavor.capture build_cmd
   | Clang {compiler; prog; args} ->
-      if CLOpt.is_originator then L.progress "Capturing in make/cc mode...@." ;
+      if Config.is_originator then L.progress "Capturing in make/cc mode...@." ;
       Clang.capture compiler ~prog ~args
   | ClangCompilationDB {db_files} ->
       L.progress "Capturing using compilation database...@." ;
@@ -134,7 +133,7 @@ let capture ~changed_files = function
       L.progress "Capturing in gradle mode...@." ;
       Gradle.capture ~prog ~args
   | Javac {compiler; prog; args} ->
-      if CLOpt.is_originator then L.progress "Capturing in javac mode...@." ;
+      if Config.is_originator then L.progress "Capturing in javac mode...@." ;
       Javac.capture compiler ~prog ~args
   | Maven {prog; args} ->
       L.progress "Capturing in maven mode...@." ;
@@ -375,7 +374,7 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
   | prog :: args -> (
       let build_system =
         match Config.force_integration with
-        | Some build_system when CLOpt.is_originator ->
+        | Some build_system when Config.is_originator ->
             build_system
         | _ ->
             Config.build_system_of_exe_name (Filename.basename prog)
@@ -445,9 +444,9 @@ let mode_from_command_line =
 
 
 let run_prologue mode =
-  if CLOpt.is_originator then L.environment_info "%a@\n" Config.pp_version () ;
+  if Config.is_originator then L.environment_info "%a@\n" Config.pp_version () ;
   if Config.debug_mode then L.environment_info "Driver mode:@\n%a@." pp_mode mode ;
-  if CLOpt.is_originator && Config.dump_duplicate_symbols then reset_duplicates_file () ;
+  if Config.is_originator && Config.dump_duplicate_symbols then reset_duplicates_file () ;
   ()
 
 
@@ -456,7 +455,7 @@ let run_prologue mode =
 
 
 let run_epilogue () =
-  if CLOpt.is_originator then (
+  if Config.is_originator then (
     if Config.fail_on_bug then fail_on_issue_epilogue () ;
     () ) ;
   if Config.buck_cache_mode then ResultsDir.scrub_for_caching () ;

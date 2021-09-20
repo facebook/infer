@@ -727,6 +727,9 @@ val java_package_is_external : string -> bool
 val scuba_execution_id : Int64.t option
 (** a random number to (hopefully) uniquely identify this run *)
 
+val is_originator : bool
+(** is the current process (forked from) the root of the Infer process tree *)
+
 (** {2 Global variables with initial values specified by command-line options} *)
 
 val clang_compilation_dbs : [`Escaped of string | `Raw of string] list

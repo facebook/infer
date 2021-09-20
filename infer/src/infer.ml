@@ -28,7 +28,7 @@ let setup () =
   let db_start =
     let already_started = ref false in
     fun () ->
-      if (not !already_started) && CLOpt.is_originator && DBWriter.use_daemon then (
+      if (not !already_started) && Config.is_originator && DBWriter.use_daemon then (
         DBWriter.start () ;
         Epilogues.register ~f:DBWriter.stop ~description:"Stop Sqlite write daemon" ;
         already_started := true )
@@ -54,7 +54,7 @@ let setup () =
       then ResultsDir.remove_results_dir () ;
       ResultsDir.create_results_dir () ;
       if
-        CLOpt.is_originator && (not Config.continue_capture)
+        Config.is_originator && (not Config.continue_capture)
         && not (Driver.is_analyze_mode driver_mode)
       then (
         db_start () ;
@@ -74,12 +74,12 @@ let setup () =
   in
   if has_result_dir then (
     db_start () ;
-    if CLOpt.is_originator then ResultsDir.RunState.add_run_to_sequence () ) ;
+    if Config.is_originator then ResultsDir.RunState.add_run_to_sequence () ) ;
   has_result_dir
 
 
 let print_active_checkers () =
-  (if Config.print_active_checkers && CLOpt.is_originator then L.result else L.environment_info)
+  (if Config.print_active_checkers && Config.is_originator then L.result else L.environment_info)
     "Active checkers: %a@."
     (Pp.seq ~sep:", " RegisterCheckers.pp_checker)
     (RegisterCheckers.get_active_checkers ())
@@ -150,7 +150,7 @@ let () =
   if Config.print_builtins then Builtin.print_and_exit () ;
   let has_results_dir = setup () in
   if has_results_dir then log_environment_info () ;
-  if has_results_dir && Config.debug_mode && CLOpt.is_originator then (
+  if has_results_dir && Config.debug_mode && Config.is_originator then (
     L.progress "Logs in %s@." (ResultsDir.get_path Logs) ;
     Option.iter Config.scuba_execution_id ~f:(fun id -> L.progress "Execution ID %Ld@." id) ) ;
   ( match Config.command with
