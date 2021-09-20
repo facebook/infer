@@ -33,6 +33,20 @@
  (action
   (run atdgen -t %{deps})))
 
+; ATD for jsoncost
+
+(rule
+ (targets jsoncost_j.ml jsoncost_j.mli)
+ (deps jsoncost.atd)
+ (action
+  (run atdgen -j -j-std %{deps})))
+
+(rule
+ (targets jsoncost_t.ml jsoncost_t.mli)
+ (deps jsoncost.atd)
+ (action
+  (run atdgen -t %{deps})))
+
 ; ATD for runstate
 
 (rule

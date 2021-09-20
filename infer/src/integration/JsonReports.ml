@@ -272,7 +272,7 @@ module JsonCostsPrinterElt = struct
     | Some {post; is_on_ui_thread} when not (Procname.is_java_access_method proc_name) ->
         let hum cost =
           let degree_with_term = CostDomain.BasicCost.get_degree_with_term cost in
-          { Jsonbug_t.hum_polynomial= Format.asprintf "%a" CostDomain.BasicCost.pp_hum cost
+          { Jsoncost_t.hum_polynomial= Format.asprintf "%a" CostDomain.BasicCost.pp_hum cost
           ; hum_degree=
               Format.asprintf "%a"
                 (CostDomain.BasicCost.pp_degree ~only_bigO:false)
@@ -282,7 +282,7 @@ module JsonCostsPrinterElt = struct
           }
         in
         let cost_info ?is_autoreleasepool_trace cost =
-          { Jsonbug_t.polynomial_version= CostDomain.BasicCost.version
+          { Jsoncost_t.polynomial_version= CostDomain.BasicCost.version
           ; polynomial= CostDomain.BasicCost.encode cost
           ; degree=
               Option.map (CostDomain.BasicCost.degree cost) ~f:Polynomials.Degree.encode_to_int
@@ -296,7 +296,7 @@ module JsonCostsPrinterElt = struct
           let {NoQualifierHashProcInfo.hash; loc; procedure_name; procedure_id} =
             NoQualifierHashProcInfo.get loc proc_name
           in
-          { Jsonbug_t.hash
+          { Jsoncost_t.hash
           ; loc
           ; procedure_name
           ; procedure_id
@@ -306,7 +306,7 @@ module JsonCostsPrinterElt = struct
               cost_info ~is_autoreleasepool_trace:true
                 (CostDomain.get_cost_kind CostKind.AutoreleasepoolSize post).cost }
         in
-        Some (Jsonbug_j.string_of_cost_item cost_item)
+        Some (Jsoncost_j.string_of_item cost_item)
     | _ ->
         None
 end

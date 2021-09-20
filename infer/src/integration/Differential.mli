@@ -16,8 +16,8 @@ type t =
 val issues_of_reports :
      current_report:Jsonbug_t.report
   -> previous_report:Jsonbug_t.report
-  -> current_costs:Jsonbug_t.costs_report
-  -> previous_costs:Jsonbug_t.costs_report
+  -> current_costs:Jsoncost_t.report
+  -> previous_costs:Jsoncost_t.report
   -> current_config_impact:Jsonbug_t.config_impact_report
   -> previous_config_impact:Jsonbug_t.config_impact_report
   -> t

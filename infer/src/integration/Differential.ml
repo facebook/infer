@@ -114,10 +114,10 @@ module CostsSummary = struct
           {t with degrees}
     in
     List.fold ~init
-      ~f:(fun acc (v : Jsonbug_t.cost_item) ->
+      ~f:(fun acc (v : Jsoncost_t.item) ->
         CostIssues.CostKindMap.fold
           (fun _ CostIssues.{extract_cost_f} acc ->
-            let {Jsonbug_t.polynomial_version; polynomial; degree} = extract_cost_f v in
+            let {Jsoncost_t.polynomial_version; polynomial; degree} = extract_cost_f v in
             if Int.equal polynomial_version CostDomain.BasicCost.version then
               count_aux acc (CostDomain.BasicCost.decode polynomial)
             else count_aux_degree acc degree )
@@ -181,7 +181,7 @@ let to_map key_func report =
 module Cost = struct
   module CostItem = struct
     type t =
-      { cost_item: Jsonbug_t.cost_item
+      { cost_item: Jsoncost_t.item
       ; polynomial: Polynomials.NonNegativePolynomial.t option
       ; degree_with_term: Polynomials.NonNegativePolynomial.degree_with_term option
       ; degree: int option }
@@ -253,9 +253,9 @@ module Cost = struct
       ~delta ~prev_item:({CostItem.degree_with_term= prev_degree_with_term} as prev_item)
       ~curr_item:
         ({CostItem.cost_item= cost_info; degree_with_term= curr_degree_with_term} as curr_item) =
-    let file = cost_info.Jsonbug_t.loc.file in
-    let method_name = cost_info.Jsonbug_t.procedure_name in
-    let is_on_ui_thread = cost_info.Jsonbug_t.is_on_ui_thread in
+    let file = cost_info.Jsoncost_t.loc.file in
+    let method_name = cost_info.Jsoncost_t.procedure_name in
+    let is_on_ui_thread = cost_info.Jsoncost_t.is_on_ui_thread in
     let source_file = SourceFile.create ~warn_on_error:false file in
     let issue_type =
       if CostItem.is_top curr_item then infinite_issue
@@ -302,8 +302,8 @@ module Cost = struct
           (MarkupFormatter.wrap_monospaced (CostItem.pp_degree ~only_bigO:true))
           curr_item ui_msg pp_extra_msg ()
       in
-      let line = cost_info.Jsonbug_t.loc.lnum in
-      let column = cost_info.Jsonbug_t.loc.cnum in
+      let line = cost_info.Jsoncost_t.loc.lnum in
+      let column = cost_info.Jsoncost_t.loc.cnum in
       let trace =
         let marker_cost_trace msg cost_item =
           [ Errlog.make_trace_element 0
@@ -317,7 +317,7 @@ module Cost = struct
           :: polynomial_traces issue_type curr_degree_with_term
         |> Errlog.concat_traces
       in
-      let convert (Jsonbug_t.{hash; loc; procedure_name; procedure_id} : Jsonbug_t.cost_item) :
+      let convert (Jsoncost_t.{hash; loc; procedure_name; procedure_id} : Jsoncost_t.item) :
           Jsonbug_t.item =
         {hash; loc; procedure_name; procedure_id}
       in
@@ -332,8 +332,7 @@ module Cost = struct
 
       - DB > DA => fixed
       - DB < DA => introduced *)
-  let issues_of_reports ~(current_costs : Jsonbug_t.costs_report)
-      ~(previous_costs : Jsonbug_t.costs_report) =
+  let issues_of_reports ~(current_costs : Jsoncost_t.report) ~(previous_costs : Jsoncost_t.report) =
     let fold_aux kind issue_spec ~key:_ ~data (left, both, right) =
       match data with
       | `Both (current, previous) ->
@@ -372,19 +371,19 @@ module Cost = struct
           (* costs available only on one of the two reports are discarded, since no comparison can be made *)
           (left, both, right)
     in
-    let key_func {CostItem.cost_item} = cost_item.Jsonbug_t.hash in
+    let key_func {CostItem.cost_item} = cost_item.Jsoncost_t.hash in
     let to_map = to_map key_func in
     let decoded_costs costs ~extract_cost_f =
       List.map costs ~f:(fun c ->
           let cost_info = extract_cost_f c in
           let polynomial, degree_with_term =
-            if Int.equal cost_info.Jsonbug_t.polynomial_version CostDomain.BasicCost.version then
-              let polynomial = CostDomain.BasicCost.decode cost_info.Jsonbug_t.polynomial in
+            if Int.equal cost_info.Jsoncost_t.polynomial_version CostDomain.BasicCost.version then
+              let polynomial = CostDomain.BasicCost.decode cost_info.Jsoncost_t.polynomial in
               let degree_with_term = CostDomain.BasicCost.get_degree_with_term polynomial in
               (Some polynomial, Some degree_with_term)
             else (None, None)
           in
-          let degree = cost_info.Jsonbug_t.degree in
+          let degree = cost_info.Jsoncost_t.degree in
           {CostItem.cost_item= c; polynomial; degree_with_term; degree} )
     in
     let get_current_costs = decoded_costs current_costs in
@@ -531,7 +530,7 @@ let combine_all ~report ~cost ~config_impact =
 
 (** Set operations should keep duplicated issues with identical hashes *)
 let issues_of_reports ~(current_report : Jsonbug_t.report) ~(previous_report : Jsonbug_t.report)
-    ~(current_costs : Jsonbug_t.costs_report) ~(previous_costs : Jsonbug_t.costs_report)
+    ~(current_costs : Jsoncost_t.report) ~(previous_costs : Jsoncost_t.report)
     ~(current_config_impact : Jsonbug_t.config_impact_report)
     ~(previous_config_impact : Jsonbug_t.config_impact_report) : t =
   let introduced, preexisting, fixed = Report.issues_of_reports ~current_report ~previous_report in
