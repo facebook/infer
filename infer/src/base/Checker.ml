@@ -36,6 +36,7 @@ type t =
   | ResourceLeakLabExercise
   | DOTNETResourceLeaks
   | SIOF
+  | SimpleLineage
   | SelfInBlock
   | Starvation
   | Topl
@@ -78,6 +79,17 @@ let config_unsafe checker =
         NoSupport
     | Erlang ->
         NoSupport
+  in
+  let supports_erlang (language : Language.t) =
+    match language with
+    | Clang ->
+        NoSupport
+    | Java ->
+        NoSupport
+    | CIL ->
+        NoSupport
+    | Erlang ->
+        Support
   in
   let supports_java (language : Language.t) =
     match language with
@@ -414,6 +426,14 @@ let config_unsafe checker =
            compiler-version-dependent errors."
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= true
+      ; activates= [] }
+  | SimpleLineage ->
+      { id= "simple-lineage"
+      ; kind= UserFacing {title= "Simple Lineage"; markdown_body= ""}
+      ; support= supports_erlang
+      ; short_documentation= "Computes a dataflow graph"
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
+      ; enabled_by_default= false
       ; activates= [] }
   | SelfInBlock ->
       { id= "self-in-block"

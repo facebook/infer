@@ -168,6 +168,8 @@ let manual_quandary = "QUANDARY CHECKER OPTIONS"
 
 let manual_racerd = "RACERD CHECKER OPTIONS"
 
+let manual_simple_lineage = "SIMPLE LINEAGE OPTIONS"
+
 let manual_siof = "SIOF CHECKER OPTIONS"
 
 let max_narrows = 5
@@ -2386,6 +2388,12 @@ and scuba_tags =
      <name>=(<value>,<value>,<value>|NONE)"
 
 
+and simple_lineage_max_cfg_size =
+  CLOpt.mk_int_opt ~long:"simple-lineage-max-cfg-size"
+    ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
+    "If set, larger CFGs are skipped."
+
+
 and siof_check_iostreams =
   CLOpt.mk_bool ~long:"siof-check-iostreams"
     ~in_help:InferCommand.[(Analyze, manual_siof)]
@@ -3494,6 +3502,8 @@ and select =
 
 
 and show_buckets = !print_buckets
+
+and simple_lineage_max_cfg_size = !simple_lineage_max_cfg_size
 
 and siof_check_iostreams = !siof_check_iostreams
 

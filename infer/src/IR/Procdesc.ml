@@ -888,6 +888,13 @@ let has_modify_in_block_attr procdesc pvar =
   List.exists ~f:pvar_local_matches (get_locals procdesc)
 
 
+let size pdesc =
+  let f size node =
+    size + 1 + List.length (Node.get_succs node) + Instrs.count (Node.get_instrs node)
+  in
+  fold_nodes pdesc ~init:0 ~f
+
+
 module SQLite = SqliteUtils.MarshalledNullableDataNOTForComparison (struct
   type nonrec t = t
 end)

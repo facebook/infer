@@ -207,7 +207,11 @@ let all_checkers =
              Payloads.Fields.buffer_overrun_analysis Payloads.Fields.config_impact_analysis
              Payloads.Fields.cost ConfigImpactAnalysis.checker
          in
-         [(checker, Clang); (checker, Java)] ) } ]
+         [(checker, Clang); (checker, Java)] ) }
+  ; { checker= SimpleLineage
+    ; callbacks=
+        (let checker = interprocedural Payloads.Fields.simple_lineage SimpleLineage.checker in
+         [(checker, Erlang)] ) } ]
 
 
 let get_active_checkers () =

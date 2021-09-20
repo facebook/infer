@@ -35,6 +35,7 @@ type t =
   | ResourceLeakLabExercise
   | DOTNETResourceLeaks
   | SIOF
+  | SimpleLineage
   | SelfInBlock
   | Starvation
   | Topl

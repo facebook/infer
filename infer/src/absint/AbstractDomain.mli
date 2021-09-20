@@ -262,6 +262,10 @@ include sig
 
     val remove : Key.t -> Value.t -> t -> t [@@warning "-32"]
 
+    val remove_all : Key.t -> t -> t
+
+    val get_all : Key.t -> t -> Value.t list
+
     val fold : (Key.t -> Value.t -> 'a -> 'a) -> t -> 'a -> 'a
 
     val filter : (Key.t -> Value.t -> bool) -> t -> t

@@ -25,6 +25,7 @@ type t =
   ; quandary: QuandarySummary.t option
   ; racerd: RacerDDomain.summary option
   ; siof: SiofDomain.Summary.t option
+  ; simple_lineage: SimpleLineage.Summary.t option
   ; starvation: StarvationDomain.summary option
   ; nullsafe: NullsafeSummary.t option
   ; uninit: UninitDomain.Summary.t option }
@@ -59,6 +60,7 @@ let fields =
     ~lab_resource_leaks:(fun f -> mk f "Resource Leaks Lab" ResourceLeakDomain.pp)
     ~dotnet_resource_leaks:(fun f -> mk f "DOTNET Resource Leaks" ResourceLeakCSDomain.Summary.pp)
     ~siof:(fun f -> mk f "Siof" SiofDomain.Summary.pp)
+    ~simple_lineage:(fun f -> mk f "SimpleLineage" SimpleLineage.Summary.pp)
     ~starvation:(fun f -> mk f "Starvation" StarvationDomain.pp_summary)
     ~nullsafe:(fun f -> mk f "Nullsafe" NullsafeSummary.pp)
     ~uninit:(fun f -> mk f "Uninitialised" UninitDomain.Summary.pp)
@@ -86,6 +88,7 @@ let empty =
   ; quandary= None
   ; racerd= None
   ; siof= None
+  ; simple_lineage= None
   ; starvation= None
   ; nullsafe= None
   ; uninit= None }

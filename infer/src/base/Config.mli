@@ -608,6 +608,8 @@ val select : [`All | `Select of int] option
 
 val show_buckets : bool
 
+val simple_lineage_max_cfg_size : int option
+
 val siof_check_iostreams : bool
 
 val siof_safe_methods : string list

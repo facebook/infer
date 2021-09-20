@@ -1219,6 +1219,17 @@ OPTIONS
            Activates: Enable self-in-block and disable all other checkers
            (Conversely: --no-self-in-block-only)           See also infer-analyze(1).
 
+       --simple-lineage
+           Activates: checker simple-lineage: Computes a dataflow graph
+           (Conversely: --no-simple-lineage)           See also infer-analyze(1).
+
+       --simple-lineage-max-cfg-size int
+           If set, larger CFGs are skipped.           See also infer-analyze(1).
+
+       --simple-lineage-only
+           Activates: Enable simple-lineage and disable all other checkers
+           (Conversely: --no-simple-lineage-only)           See also infer-analyze(1).
+
        --no-siof
            Deactivates: checker siof: Catches Static Initialization Order
            Fiascos in C++, that can lead to subtle,
