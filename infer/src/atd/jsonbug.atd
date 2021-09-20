@@ -118,13 +118,3 @@ type jsonbug = {
 }
 
 type report = jsonbug list
-
-type item = {hash: string ; loc: loc ; procedure_name: string ; procedure_id: string }
-
-type config_impact_item = {
-  inherit item;
-  unchecked_callees : string;
-  ~is_strict : bool;
-}
-
-type config_impact_report = config_impact_item list

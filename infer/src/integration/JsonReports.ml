@@ -329,8 +329,8 @@ module JsonConfigImpactPrinterElt = struct
           ConfigImpactAnalysis.Summary.get_unchecked_callees config_impact
           |> ConfigImpactAnalysis.UncheckedCallees.encode
         in
-        Jsonbug_j.string_of_config_impact_item
-          {Jsonbug_t.hash; loc; procedure_name; procedure_id; unchecked_callees; is_strict} )
+        Jsonconfigimpact_j.string_of_item
+          {Jsonconfigimpact_t.hash; loc; procedure_name; procedure_id; unchecked_callees; is_strict} )
 end
 
 module JsonConfigImpactPrinter = MakeJsonListPrinter (JsonConfigImpactPrinterElt)

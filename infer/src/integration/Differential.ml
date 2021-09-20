@@ -56,7 +56,7 @@ let dedup (issues : Jsonbug_t.jsonbug list) =
   |> snd |> sort_by_location
 
 
-let create_json_bug ~qualifier ~line ~file ~source_file ~trace ~(item : Jsonbug_t.item)
+let create_json_bug ~qualifier ~line ~file ~source_file ~trace ~(item : Jsoncost_t.sub_item)
     ~(issue_type : IssueType.t) =
   { Jsonbug_t.bug_type= issue_type.unique_id
   ; qualifier
@@ -317,8 +317,7 @@ module Cost = struct
           :: polynomial_traces issue_type curr_degree_with_term
         |> Errlog.concat_traces
       in
-      let convert (Jsoncost_t.{hash; loc; procedure_name; procedure_id} : Jsoncost_t.item) :
-          Jsonbug_t.item =
+      let convert Jsoncost_t.{hash; loc; procedure_name; procedure_id} : Jsoncost_t.sub_item =
         {hash; loc; procedure_name; procedure_id}
       in
       Some
@@ -401,7 +400,7 @@ module ConfigImpactItem = struct
   module UncheckedCallee = ConfigImpactAnalysis.UncheckedCallee
   module UncheckedCallees = ConfigImpactAnalysis.UncheckedCallees
 
-  type t = {config_impact_item: Jsonbug_t.config_impact_item; unchecked_callees: UncheckedCallees.t}
+  type t = {config_impact_item: Jsonconfigimpact_t.item; unchecked_callees: UncheckedCallees.t}
 
   type change_type = Added | Removed
 
@@ -438,7 +437,7 @@ module ConfigImpactItem = struct
     (qualifier, trace)
 
 
-  let issue_of ~change_type (config_impact_item : Jsonbug_t.config_impact_item) callees =
+  let issue_of ~change_type (config_impact_item : Jsonconfigimpact_t.item) callees =
     let should_report =
       ((not Config.filtering) || IssueType.config_impact_analysis.enabled)
       && not (UncheckedCallees.is_empty callees)
@@ -448,9 +447,8 @@ module ConfigImpactItem = struct
       let file = config_impact_item.loc.file in
       let source_file = SourceFile.create ~warn_on_error:false file in
       let line = config_impact_item.loc.lnum in
-      let convert
-          (Jsonbug_t.{hash; loc; procedure_name; procedure_id} : Jsonbug_t.config_impact_item) :
-          Jsonbug_t.item =
+      let convert Jsonconfigimpact_t.{hash; loc; procedure_name; procedure_id} : Jsoncost_t.sub_item
+          =
         {hash; loc; procedure_name; procedure_id}
       in
       let issue_type =
@@ -463,8 +461,8 @@ module ConfigImpactItem = struct
     else None
 
 
-  let issues_of_reports ~(current_config_impact : Jsonbug_t.config_impact_report)
-      ~(previous_config_impact : Jsonbug_t.config_impact_report) =
+  let issues_of_reports ~(current_config_impact : Jsonconfigimpact_t.report)
+      ~(previous_config_impact : Jsonconfigimpact_t.report) =
     let get_biggest report =
       (* two methods with identical method names but different
           number/type of args will have the same hash. We pick the one with the biggest unchecked callees. *)
@@ -499,7 +497,7 @@ module ConfigImpactItem = struct
     in
     let map_of_config_impact config_impact =
       List.fold ~init:String.Map.empty config_impact
-        ~f:(fun acc ({Jsonbug_t.hash= key; unchecked_callees} as config_impact_item) ->
+        ~f:(fun acc ({Jsonconfigimpact_t.hash= key; unchecked_callees} as config_impact_item) ->
           let unchecked_callees = UncheckedCallees.decode unchecked_callees in
           String.Map.add_multi acc ~key ~data:{config_impact_item; unchecked_callees} )
     in
@@ -531,8 +529,8 @@ let combine_all ~report ~cost ~config_impact =
 (** Set operations should keep duplicated issues with identical hashes *)
 let issues_of_reports ~(current_report : Jsonbug_t.report) ~(previous_report : Jsonbug_t.report)
     ~(current_costs : Jsoncost_t.report) ~(previous_costs : Jsoncost_t.report)
-    ~(current_config_impact : Jsonbug_t.config_impact_report)
-    ~(previous_config_impact : Jsonbug_t.config_impact_report) : t =
+    ~(current_config_impact : Jsonconfigimpact_t.report)
+    ~(previous_config_impact : Jsonconfigimpact_t.report) : t =
   let introduced, preexisting, fixed = Report.issues_of_reports ~current_report ~previous_report in
   let introduced_costs, preexisting_costs, fixed_costs =
     Cost.issues_of_reports ~current_costs ~previous_costs

@@ -17,7 +17,7 @@ let reportdiff ~current_report:current_report_fname ~previous_report:previous_re
   in
   let load_report = load_aux ~f:Jsonbug_j.read_report in
   let load_costs = load_aux ~f:Jsoncost_j.read_report in
-  let load_config_impact = load_aux ~f:Jsonbug_j.read_config_impact_report in
+  let load_config_impact = load_aux ~f:Jsonconfigimpact_j.read_report in
   let current_report = load_report current_report_fname in
   let previous_report = load_report previous_report_fname in
   let current_costs = load_costs current_costs_fname in

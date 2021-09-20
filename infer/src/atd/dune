@@ -47,6 +47,20 @@
  (action
   (run atdgen -t %{deps})))
 
+; ATD for jsonconfigimpact
+
+(rule
+ (targets jsonconfigimpact_j.ml jsonconfigimpact_j.mli)
+ (deps jsonconfigimpact.atd)
+ (action
+  (run atdgen -j -j-std %{deps})))
+
+(rule
+ (targets jsonconfigimpact_t.ml jsonconfigimpact_t.mli)
+ (deps jsonconfigimpact.atd)
+ (action
+  (run atdgen -t %{deps})))
+
 ; ATD for runstate
 
 (rule

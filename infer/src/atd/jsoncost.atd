@@ -24,12 +24,10 @@ type info = {
   trace : json_trace_item list;
 }
 
+type sub_item = {hash: string ; loc: loc ; procedure_name: string ; procedure_id: string }
 
 type item = {
-  hash : string;
-  loc : loc;
-  procedure_name : string;
-  procedure_id : string;
+  inherit sub_item;
   is_on_ui_thread : bool;
   exec_cost : info;
   autoreleasepool_size : info;

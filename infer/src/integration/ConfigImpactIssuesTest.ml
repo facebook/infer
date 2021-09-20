@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 
 let pp_custom_of_config_impact_report fmt report =
-  let pp_custom_of_config_impact_issue fmt (config_impact_item : Jsonbug_t.config_impact_item) =
+  let pp_custom_of_config_impact_issue fmt (config_impact_item : Jsonconfigimpact_t.item) =
     let open Jsonbug_t in
     F.fprintf fmt "%s%s, %s, {%a}@\n"
       (if config_impact_item.is_strict then "[STRICT] " else "")
@@ -20,8 +20,8 @@ let pp_custom_of_config_impact_report fmt report =
   List.iter ~f:(pp_custom_of_config_impact_issue fmt) report
 
 
-let config_impact_tests_jsonbug_compare (x : Jsonbug_t.config_impact_item)
-    (y : Jsonbug_t.config_impact_item) =
+let config_impact_tests_jsonbug_compare (x : Jsonconfigimpact_t.item) (y : Jsonconfigimpact_t.item)
+    =
   let open Jsonbug_t in
   [%compare: string * string * string]
     (x.loc.file, x.procedure_id, x.hash)
@@ -31,7 +31,7 @@ let config_impact_tests_jsonbug_compare (x : Jsonbug_t.config_impact_item)
 let write_from_json ~json_path ~out_path =
   Utils.with_file_out out_path ~f:(fun outf ->
       let config_impact_report =
-        Atdgen_runtime.Util.Json.from_file Jsonbug_j.read_config_impact_report json_path
+        Atdgen_runtime.Util.Json.from_file Jsonconfigimpact_j.read_report json_path
       in
       let sorted_config_impact_report =
         List.sort ~compare:config_impact_tests_jsonbug_compare config_impact_report
