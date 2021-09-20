@@ -10,7 +10,7 @@ package junit.framework;
 import com.facebook.infer.builtins.InferBuiltins;
 import javax.annotation.Nullable;
 
-public class Assert {
+public class TestCase {
 
   public static void assertTrue(boolean condition) {
     InferBuiltins.assume(condition);

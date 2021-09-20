@@ -26,7 +26,7 @@ public final class MapUtils {
   }
 
   public static boolean isEmpty(final Map m) {
-    return m == null || m.size() == 0;
+    return m == null;
   }
 
 }

@@ -63,7 +63,7 @@ public class Validate {
   }
 
   public static <T extends Map<?,?>> T notEmpty(T map) {
-     assume(map != null && map.size() > 0 );
+     assume(map != null);
     return map;
   }
 

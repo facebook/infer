@@ -31,11 +31,13 @@ import javax.annotation.Nullable;
 import java.util.Objects;
 import java.util.Map;
 import java.util.List;
+import junit.framework.TestCase;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.testng.Assert;
+import org.testng.AssertJUnit;
 
 public class NullPointerExceptions {
 
@@ -187,6 +189,11 @@ public class NullPointerExceptions {
       return (h.get(o).toString());
     }
     return "aa";
+  }
+
+  String NPEhashmapProtectedByPut(HashMap h, Object o) {
+    h.put(o, o);
+    return (h.get(o).toString());
   }
 
   int NPEvalueOfFromHashmapBad(HashMap<Integer, Integer> h, int position) {
@@ -657,6 +664,26 @@ public class NullPointerExceptions {
 
   String assertNotNullOK(@Nullable Object object) {
     Assert.assertNotNull(object);
+    return object.toString();
+  }
+
+  String assertJUnitNotNullOK(@Nullable Object object) {
+    AssertJUnit.assertNotNull(object);
+    return object.toString();
+  }
+
+  String junitAssertNotNullOK(@Nullable Object object) {
+    org.junit.Assert.assertNotNull(object);
+    return object.toString();
+  }
+
+  String junitTestCaseNotNullOK(@Nullable Object object) {
+    TestCase.assertNotNull(object);
+    return object.toString();
+  }
+
+  String jupiterAssertionsNotNullOK(@Nullable Object object) {
+    org.junit.jupiter.api.Assertions.assertNotNull(object);
     return object.toString();
   }
 
