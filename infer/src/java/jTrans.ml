@@ -468,6 +468,7 @@ let create_cm_procdesc source_file program icfg cm proc_name =
   | (JBir.Subroutine as exn)
   | (Sawja_pack.Bir.NonemptyStack_backward_jump as exn)
   | (Sawja_pack.Bir.Uninit_is_not_expr as exn)
+  | (Invalid_argument _ as exn)
   ->
     IExn.reraise_if
       ~f:(fun () ->
