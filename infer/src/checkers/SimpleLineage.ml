@@ -64,7 +64,7 @@ module Summary = struct
   (** TITO stands for "taint-in taint-out". In this context a tito argument is one that has a path
       to the return node, without going through call edges; more precisely, [i] is a tito argument
       if there is a path from [Argument i] to [Return] not going through [ArgumentOf _] nodes. *)
-  type tito_arguments = Int.Set.t
+  type tito_arguments = IntSet.t
 
   type t = {graph: LineageGraph.t; tito_arguments: tito_arguments}
 
@@ -72,7 +72,7 @@ module Summary = struct
     let pp_sep fmt () = Format.fprintf fmt ",@;" in
     Format.fprintf fmt "@;@[<2>TitoArguments@;%a@]"
       (Format.pp_print_list ~pp_sep Int.pp)
-      (Set.elements arguments)
+      (IntSet.elements arguments)
 
 
   let pp fmt {graph; tito_arguments} =
@@ -113,9 +113,9 @@ module Summary = struct
     (* Collect reachable arguments. *)
     let tito_arguments =
       let add_node args (node : LineageGraph.data) =
-        match node with Argument i -> Set.add args i | _ -> args
+        match node with Argument i -> IntSet.add i args | _ -> args
       in
-      N.Set.fold reachable ~init:Int.Set.empty ~f:add_node
+      Set.fold reachable ~init:IntSet.empty ~f:add_node
     in
     {graph; tito_arguments}
 end
@@ -248,7 +248,7 @@ module TransferFunctions = struct
     let tito_vars =
       let tito_exps =
         List.filter_mapi
-          ~f:(fun index arg -> if Set.mem tito_arguments index then Some arg else None)
+          ~f:(fun index arg -> if IntSet.mem index tito_arguments then Some arg else None)
           argument_list
       in
       vars_of_exp_list tito_exps
@@ -258,7 +258,7 @@ module TransferFunctions = struct
 
   let add_tito_all (argument_list : Exp.t list) (ret_id : Ident.t) node (astate : Domain.t) :
       Domain.t =
-    let all = Int.Set.of_list (List.mapi argument_list ~f:(fun index _ -> index)) in
+    let all = IntSet.of_list (List.mapi argument_list ~f:(fun index _ -> index)) in
     add_tito all argument_list ret_id node astate
 
 
