@@ -92,6 +92,8 @@ let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} : 
       Block.make_branch env (Exp.BinOp (Eq, Var value, e))
   | Map {updates; _} ->
       translate_pattern_map env value updates
+  | Match {pattern; body} ->
+      translate_pattern_match env value pattern body
   | Nil ->
       translate_pattern_nil env value
   | RecordIndex {name; field} ->
@@ -140,6 +142,17 @@ and translate_pattern_nil env value : Block.t =
   let exit_failure = Node.make_if env false (Var id) in
   start |~~> [exit_success; exit_failure] ;
   {start; exit_success; exit_failure}
+
+
+and translate_pattern_match (env : (_, _) Env.t) value pattern body : Block.t =
+  (* A pattern like [P1 = P2] means comparing both P1 and P2 against the value.
+     We might be tempted to match P1 against P2 and the value, but P2 is
+     also a pattern and can have unbound variables. For example,
+     [(A = B) = 2] should read as [A = 2, B = 2] and not [A = B, A = 2]
+     because B can be unbound. *)
+  let subpattern_block = translate_pattern env value pattern in
+  let body_block = translate_pattern env value body in
+  Block.all env [body_block; subpattern_block]
 
 
 and translate_pattern_map (env : (_, _) Env.t) value updates : Block.t =
