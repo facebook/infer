@@ -26,7 +26,7 @@ digraph cfg {
 	
 
 	 "div0_A#inheritance_casts#7658516495554603699.e5c3e3413f6eac12dda7dd76db597c34_3" -> "div0_A#inheritance_casts#7658516495554603699.e5c3e3413f6eac12dda7dd76db597c34_4" ;
-"div0_A#inheritance_casts#7658516495554603699.e5c3e3413f6eac12dda7dd76db597c34_4" [label="4:  Destruction(temporaries cleanup) \n   n$3=_fun_inheritance_casts::div(&0$?%__sil_tmpSIL_materialize_temp__n$0:inheritance_casts::A const &) [line 26, column 23]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:inheritance_casts::A const  [line 26, column 34]\n  n$5=_fun_inheritance_casts::A::~A(&0$?%__sil_tmpSIL_materialize_temp__n$0:inheritance_casts::A const *) injected [line 26, column 34]\n " shape="box"]
+"div0_A#inheritance_casts#7658516495554603699.e5c3e3413f6eac12dda7dd76db597c34_4" [label="4:  Return Stmt \n   n$3=_fun_inheritance_casts::div(&0$?%__sil_tmpSIL_materialize_temp__n$0:inheritance_casts::A const &) [line 26, column 23]\n " shape="box"]
 	
 
 	 "div0_A#inheritance_casts#7658516495554603699.e5c3e3413f6eac12dda7dd76db597c34_4" -> "div0_A#inheritance_casts#7658516495554603699.e5c3e3413f6eac12dda7dd76db597c34_5" ;
@@ -45,7 +45,7 @@ digraph cfg {
 	
 
 	 "div0_B#inheritance_casts#9651791439006644302.4d2c177357a796fa9b436df4f92f3de8_3" -> "div0_B#inheritance_casts#9651791439006644302.4d2c177357a796fa9b436df4f92f3de8_4" ;
-"div0_B#inheritance_casts#9651791439006644302.4d2c177357a796fa9b436df4f92f3de8_4" [label="4:  Destruction(temporaries cleanup) \n   n$3=_fun_inheritance_casts::div(&0$?%__sil_tmpSIL_materialize_temp__n$0:inheritance_casts::B const &) [line 30, column 23]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:inheritance_casts::B const  [line 30, column 34]\n  n$5=_fun_inheritance_casts::B::~B(&0$?%__sil_tmpSIL_materialize_temp__n$0:inheritance_casts::B const *) injected [line 30, column 34]\n " shape="box"]
+"div0_B#inheritance_casts#9651791439006644302.4d2c177357a796fa9b436df4f92f3de8_4" [label="4:  Return Stmt \n   n$3=_fun_inheritance_casts::div(&0$?%__sil_tmpSIL_materialize_temp__n$0:inheritance_casts::B const &) [line 30, column 23]\n " shape="box"]
 	
 
 	 "div0_B#inheritance_casts#9651791439006644302.4d2c177357a796fa9b436df4f92f3de8_4" -> "div0_B#inheritance_casts#9651791439006644302.4d2c177357a796fa9b436df4f92f3de8_5" ;
@@ -64,7 +64,7 @@ digraph cfg {
 	
 
 	 "div1_A#inheritance_casts#14706027417800210732.96d94ec773e2890c763d57de8a52982b_3" -> "div1_A#inheritance_casts#14706027417800210732.96d94ec773e2890c763d57de8a52982b_4" ;
-"div1_A#inheritance_casts#14706027417800210732.96d94ec773e2890c763d57de8a52982b_4" [label="4:  Destruction(temporaries cleanup) \n   n$3=_fun_inheritance_casts::div(&0$?%__sil_tmpSIL_materialize_temp__n$0:inheritance_casts::A const &) [line 28, column 23]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:inheritance_casts::A const  [line 28, column 34]\n  n$5=_fun_inheritance_casts::A::~A(&0$?%__sil_tmpSIL_materialize_temp__n$0:inheritance_casts::A const *) injected [line 28, column 34]\n " shape="box"]
+"div1_A#inheritance_casts#14706027417800210732.96d94ec773e2890c763d57de8a52982b_4" [label="4:  Return Stmt \n   n$3=_fun_inheritance_casts::div(&0$?%__sil_tmpSIL_materialize_temp__n$0:inheritance_casts::A const &) [line 28, column 23]\n " shape="box"]
 	
 
 	 "div1_A#inheritance_casts#14706027417800210732.96d94ec773e2890c763d57de8a52982b_4" -> "div1_A#inheritance_casts#14706027417800210732.96d94ec773e2890c763d57de8a52982b_5" ;
@@ -83,7 +83,7 @@ digraph cfg {
 	
 
 	 "div1_B#inheritance_casts#15202051198007397773.6fa30ed113dcaca42095f52f33fb0c86_3" -> "div1_B#inheritance_casts#15202051198007397773.6fa30ed113dcaca42095f52f33fb0c86_4" ;
-"div1_B#inheritance_casts#15202051198007397773.6fa30ed113dcaca42095f52f33fb0c86_4" [label="4:  Destruction(temporaries cleanup) \n   n$3=_fun_inheritance_casts::div(&0$?%__sil_tmpSIL_materialize_temp__n$0:inheritance_casts::B const &) [line 32, column 23]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:inheritance_casts::B const  [line 32, column 34]\n  n$5=_fun_inheritance_casts::B::~B(&0$?%__sil_tmpSIL_materialize_temp__n$0:inheritance_casts::B const *) injected [line 32, column 34]\n " shape="box"]
+"div1_B#inheritance_casts#15202051198007397773.6fa30ed113dcaca42095f52f33fb0c86_4" [label="4:  Return Stmt \n   n$3=_fun_inheritance_casts::div(&0$?%__sil_tmpSIL_materialize_temp__n$0:inheritance_casts::B const &) [line 32, column 23]\n " shape="box"]
 	
 
 	 "div1_B#inheritance_casts#15202051198007397773.6fa30ed113dcaca42095f52f33fb0c86_4" -> "div1_B#inheritance_casts#15202051198007397773.6fa30ed113dcaca42095f52f33fb0c86_5" ;
@@ -106,15 +106,15 @@ digraph cfg {
 	
 
 	 "getA#inheritance_casts(class inheritance_casts::A)#5702196550029280494.bf770d8fdf04212f16e0b3beb3d4c512_4" -> "getA#inheritance_casts(class inheritance_casts::A)#5702196550029280494.bf770d8fdf04212f16e0b3beb3d4c512_5" ;
-"getA#inheritance_casts(class inheritance_casts::A)#5702196550029280494.bf770d8fdf04212f16e0b3beb3d4c512_5" [label="5:  Return Stmt \n   _=*&x:inheritance_casts::A [line 21, column 10]\n  n$3=_fun_inheritance_casts::A::~A(&x:inheritance_casts::A*) injected [line 21, column 10]\n " shape="box"]
+"getA#inheritance_casts(class inheritance_casts::A)#5702196550029280494.bf770d8fdf04212f16e0b3beb3d4c512_5" [label="5:  Return Stmt \n  " shape="box"]
 	
 
 	 "getA#inheritance_casts(class inheritance_casts::A)#5702196550029280494.bf770d8fdf04212f16e0b3beb3d4c512_5" -> "getA#inheritance_casts(class inheritance_casts::A)#5702196550029280494.bf770d8fdf04212f16e0b3beb3d4c512_2" ;
-"getA#inheritance_casts(class inheritance_casts::A)#5702196550029280494.bf770d8fdf04212f16e0b3beb3d4c512_6" [label="6:  BinaryOperatorStmt: Assign \n   n$5=*&f:int [line 20, column 9]\n  *&x.f:int=n$5 [line 20, column 3]\n " shape="box"]
+"getA#inheritance_casts(class inheritance_casts::A)#5702196550029280494.bf770d8fdf04212f16e0b3beb3d4c512_6" [label="6:  BinaryOperatorStmt: Assign \n   n$2=*&f:int [line 20, column 9]\n  *&x.f:int=n$2 [line 20, column 3]\n " shape="box"]
 	
 
 	 "getA#inheritance_casts(class inheritance_casts::A)#5702196550029280494.bf770d8fdf04212f16e0b3beb3d4c512_6" -> "getA#inheritance_casts(class inheritance_casts::A)#5702196550029280494.bf770d8fdf04212f16e0b3beb3d4c512_3" ;
-"getA#inheritance_casts(class inheritance_casts::A)#5702196550029280494.bf770d8fdf04212f16e0b3beb3d4c512_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(x:inheritance_casts::A); [line 19, column 3]\n  n$6=_fun_inheritance_casts::A::A(&x:inheritance_casts::A*) [line 19, column 5]\n " shape="box"]
+"getA#inheritance_casts(class inheritance_casts::A)#5702196550029280494.bf770d8fdf04212f16e0b3beb3d4c512_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(x:inheritance_casts::A); [line 19, column 3]\n  n$3=_fun_inheritance_casts::A::A(&x:inheritance_casts::A*) [line 19, column 5]\n " shape="box"]
 	
 
 	 "getA#inheritance_casts(class inheritance_casts::A)#5702196550029280494.bf770d8fdf04212f16e0b3beb3d4c512_7" -> "getA#inheritance_casts(class inheritance_casts::A)#5702196550029280494.bf770d8fdf04212f16e0b3beb3d4c512_6" ;
@@ -133,15 +133,15 @@ digraph cfg {
 	
 
 	 "getB#inheritance_casts(class inheritance_casts::B)#7572693428029732371.903fb8dc56797768f6ca6ebdf511cdaf_4" -> "getB#inheritance_casts(class inheritance_casts::B)#7572693428029732371.903fb8dc56797768f6ca6ebdf511cdaf_5" ;
-"getB#inheritance_casts(class inheritance_casts::B)#7572693428029732371.903fb8dc56797768f6ca6ebdf511cdaf_5" [label="5:  Return Stmt \n   _=*&x:inheritance_casts::B [line 16, column 10]\n  n$3=_fun_inheritance_casts::B::~B(&x:inheritance_casts::B*) injected [line 16, column 10]\n " shape="box"]
+"getB#inheritance_casts(class inheritance_casts::B)#7572693428029732371.903fb8dc56797768f6ca6ebdf511cdaf_5" [label="5:  Return Stmt \n  " shape="box"]
 	
 
 	 "getB#inheritance_casts(class inheritance_casts::B)#7572693428029732371.903fb8dc56797768f6ca6ebdf511cdaf_5" -> "getB#inheritance_casts(class inheritance_casts::B)#7572693428029732371.903fb8dc56797768f6ca6ebdf511cdaf_2" ;
-"getB#inheritance_casts(class inheritance_casts::B)#7572693428029732371.903fb8dc56797768f6ca6ebdf511cdaf_6" [label="6:  BinaryOperatorStmt: Assign \n   n$5=*&f:int [line 15, column 9]\n  *&x.f:int=n$5 [line 15, column 3]\n " shape="box"]
+"getB#inheritance_casts(class inheritance_casts::B)#7572693428029732371.903fb8dc56797768f6ca6ebdf511cdaf_6" [label="6:  BinaryOperatorStmt: Assign \n   n$2=*&f:int [line 15, column 9]\n  *&x.f:int=n$2 [line 15, column 3]\n " shape="box"]
 	
 
 	 "getB#inheritance_casts(class inheritance_casts::B)#7572693428029732371.903fb8dc56797768f6ca6ebdf511cdaf_6" -> "getB#inheritance_casts(class inheritance_casts::B)#7572693428029732371.903fb8dc56797768f6ca6ebdf511cdaf_3" ;
-"getB#inheritance_casts(class inheritance_casts::B)#7572693428029732371.903fb8dc56797768f6ca6ebdf511cdaf_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(x:inheritance_casts::B); [line 14, column 3]\n  n$6=_fun_inheritance_casts::B::B(&x:inheritance_casts::B*) [line 14, column 5]\n " shape="box"]
+"getB#inheritance_casts(class inheritance_casts::B)#7572693428029732371.903fb8dc56797768f6ca6ebdf511cdaf_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(x:inheritance_casts::B); [line 14, column 3]\n  n$3=_fun_inheritance_casts::B::B(&x:inheritance_casts::B*) [line 14, column 5]\n " shape="box"]
 	
 
 	 "getB#inheritance_casts(class inheritance_casts::B)#7572693428029732371.903fb8dc56797768f6ca6ebdf511cdaf_7" -> "getB#inheritance_casts(class inheritance_casts::B)#7572693428029732371.903fb8dc56797768f6ca6ebdf511cdaf_6" ;

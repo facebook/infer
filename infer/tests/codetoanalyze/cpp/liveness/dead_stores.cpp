@@ -73,7 +73,7 @@ auto FN_init_capture_no_call_bad() {
   return [i = 1]() { return i; };
 }
 
-void FN_init_capture_call_bad2() {
+void init_capture_call_bad2() {
   auto f = [i = 1]() { return i; };
 }
 
@@ -629,8 +629,9 @@ struct A {
   int f : 4;
 };
 
-int decltype_read_ok(int x) {
-  A a;
+int FP_decltype_read_ok(int x) {
+  A a; // report here as the frontend erases the expression used in decltype
+       // below
   decltype(a.f) i;
   return x + i;
 }

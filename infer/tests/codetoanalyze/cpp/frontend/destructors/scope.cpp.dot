@@ -49,11 +49,11 @@ digraph cfg {
 	
 
 	 "getZ#destructor_scope(class destructor_scope::Z)#13110319947448813202.27b8261073c8d26082c5ea18b0194031_4" -> "getZ#destructor_scope(class destructor_scope::Z)#13110319947448813202.27b8261073c8d26082c5ea18b0194031_5" ;
-"getZ#destructor_scope(class destructor_scope::Z)#13110319947448813202.27b8261073c8d26082c5ea18b0194031_5" [label="5:  Return Stmt \n   _=*&z:destructor_scope::Z [line 75, column 10]\n  n$3=_fun_destructor_scope::Z::~Z(&z:destructor_scope::Z*) injected [line 75, column 10]\n " shape="box"]
+"getZ#destructor_scope(class destructor_scope::Z)#13110319947448813202.27b8261073c8d26082c5ea18b0194031_5" [label="5:  Return Stmt \n  " shape="box"]
 	
 
 	 "getZ#destructor_scope(class destructor_scope::Z)#13110319947448813202.27b8261073c8d26082c5ea18b0194031_5" -> "getZ#destructor_scope(class destructor_scope::Z)#13110319947448813202.27b8261073c8d26082c5ea18b0194031_2" ;
-"getZ#destructor_scope(class destructor_scope::Z)#13110319947448813202.27b8261073c8d26082c5ea18b0194031_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(z:destructor_scope::Z); [line 74, column 3]\n  n$5=_fun_destructor_scope::Z::Z(&z:destructor_scope::Z*) [line 74, column 5]\n " shape="box"]
+"getZ#destructor_scope(class destructor_scope::Z)#13110319947448813202.27b8261073c8d26082c5ea18b0194031_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(z:destructor_scope::Z); [line 74, column 3]\n  n$2=_fun_destructor_scope::Z::Z(&z:destructor_scope::Z*) [line 74, column 5]\n " shape="box"]
 	
 
 	 "getZ#destructor_scope(class destructor_scope::Z)#13110319947448813202.27b8261073c8d26082c5ea18b0194031_6" -> "getZ#destructor_scope(class destructor_scope::Z)#13110319947448813202.27b8261073c8d26082c5ea18b0194031_3" ;
