@@ -203,8 +203,8 @@ function Home() {
               </div>
             </div>
             <span>
-              Does your app use Infer? Add it to this list with{" "}
-              <a href="https://github.com/facebook/infer/edit/master/website/src/pages/index.js">
+              Does your project use Infer? Add it to this list with{" "}
+              <a href="https://github.com/facebook/infer/edit/main/website/src/pages/index.js">
                 a pull request!
               </a>
             </span>

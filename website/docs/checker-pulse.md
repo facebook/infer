@@ -74,6 +74,8 @@ class Registry {
 ## List of Issue Types
 
 The following issue types are reported by this checker:
+- [BAD_KEY](/docs/next/all-issue-types#bad_key)
+- [BAD_MAP](/docs/next/all-issue-types#bad_map)
 - [BAD_RECORD](/docs/next/all-issue-types#bad_record)
 - [CONSTANT_ADDRESS_DEREFERENCE](/docs/next/all-issue-types#constant_address_dereference)
 - [MEMORY_LEAK](/docs/next/all-issue-types#memory_leak)

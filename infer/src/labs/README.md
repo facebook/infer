@@ -31,11 +31,11 @@ You can now edit the files *locally* in `$HOME/infer-docker` and build infer *in
 
 ### (a') ...or, alternatively, build Infer locally from scratch
 
-Clone the Infer repository at https://github.com/facebook/infer and read the instructions in [INSTALL.md](https://github.com/facebook/infer/blob/master/INSTALL.md) to build Infer from source. Note that you only need Infer for Java for this lab: `./build-infer.sh java`.
+Clone the Infer repository at https://github.com/facebook/infer and read the instructions in [INSTALL.md](https://github.com/facebook/infer/blob/main/INSTALL.md) to build Infer from source. Note that you only need Infer for Java for this lab: `./build-infer.sh java`.
 
 ### (b) Set up your Development Environment
 
-See [CONTRIBUTING.md](https://github.com/facebook/infer/blob/master/CONTRIBUTING.md#hacking-on-the-code) to set your editor and for tips and tricks on how to hack on Infer more efficiently. One of the most useful things to install in your editor to navigate OCaml source code efficiently is [Merlin](https://github.com/ocaml/merlin/wiki).
+See [CONTRIBUTING.md](https://github.com/facebook/infer/blob/main/CONTRIBUTING.md#hacking-on-the-code) to set your editor and for tips and tricks on how to hack on Infer more efficiently. One of the most useful things to install in your editor to navigate OCaml source code efficiently is [Merlin](https://github.com/ocaml/merlin/wiki).
 
 For Java, ensure that you have the following jar files in your `$CLASSPATH`:
 
@@ -85,11 +85,11 @@ You don't need to change `join` or `widen` yet, this will be done later. You als
 
 (b) Now, in `ResourceLeaks.ml`, change the first `Call` case of `exec_instr` to bump the integer when a resource is acquired, and decrease it when a resource is released. Use `acquires_resource` (remove the leading `_`, telling OCaml not to warn that it was unused) and `releases_resource` (same). For the rest of the lab, it will be useful **not** to expose the type of `ResourceLeakDomain.t` to `ResourceLeaks.ml`, so add functions `ResourceLeakDomain.acquire_resource` and `ResourceLeakDomain.release_resource` to do the actual integer manipulations. Expose these functions in ResourceLeakDomain.mli`.
 
-Finally, look again at the HTML debug output of infer on [Leaks.java](https://github.com/facebook/infer/blob/master/infer/tests/codetoanalyze/java/lab/Leaks.java). You should see the resource count be incremented and decremented appropriately.
+Finally, look again at the HTML debug output of infer on [Leaks.java](https://github.com/facebook/infer/blob/main/infer/tests/codetoanalyze/java/lab/Leaks.java). You should see the resource count be incremented and decremented appropriately.
 
 (c) Now let's report leaks! Write and expose a function `ResourceLeakDomain.has_leak`, true when an abstract state shows a leak. Then change `ResourceLeaks.report_if_leak` to report when `ResourceLeakDomain.has_leak post` is true.
 
-(d) Think about the concretization of the resource count. What does a resource count of zero mean? Is there a concrete state in the concretization of "Resource count zero" that leaks a resource? Write a simple test method `FN_leakBad` in [Leaks.java](https://github.com/facebook/infer/blob/master/infer/tests/codetoanalyze/java/lab/Leaks.java) that will produce this concrete state (that is, a false negative test where the program leaks a resource, but the analyzer doesn't catch it).
+(d) Think about the concretization of the resource count. What does a resource count of zero mean? Is there a concrete state in the concretization of "Resource count zero" that leaks a resource? Write a simple test method `FN_leakBad` in [Leaks.java](https://github.com/facebook/infer/blob/main/infer/tests/codetoanalyze/java/lab/Leaks.java) that will produce this concrete state (that is, a false negative test where the program leaks a resource, but the analyzer doesn't catch it).
 
 (e) In addition, there are programs that do not leak resources that the analyzer will flag. Write a simple test method `FP_noLeakOk` that exhibits this problem (that is, a false positive test that demonstrates the imprecision of the analyzer).
 
@@ -99,9 +99,9 @@ Let's stick with just an integer domain to keep things simple until (5).
 
 ## (3) Integer domain for branching and looping programs
 
-(a) Run your checker on [LeaksBranch.java](https://github.com/facebook/infer/blob/master/infer/tests/codetoanalyze/java/lab/LeaksBranch.java). Uh oh, it crashed! Fix it by implementing `join` for your domain.
+(a) Run your checker on [LeaksBranch.java](https://github.com/facebook/infer/blob/main/infer/tests/codetoanalyze/java/lab/LeaksBranch.java). Uh oh, it crashed! Fix it by implementing `join` for your domain.
 
-(b) Now run on [LeaksLoop.java](https://github.com/facebook/infer/blob/master/infer/tests/codetoanalyze/java/lab/LeaksLoop.java), and implement `widen`. Hmm... There's a termination bug in the abstract domain--do you see it?
+(b) Now run on [LeaksLoop.java](https://github.com/facebook/infer/blob/main/infer/tests/codetoanalyze/java/lab/LeaksLoop.java), and implement `widen`. Hmm... There's a termination bug in the abstract domain--do you see it?
 
 (c) Time for a richer domain! A classic solution to this problem in abstract interpretation is to add a `Top` value that is larger than any integer.
 
@@ -130,7 +130,7 @@ Augment the summary type with state to indicate whether the current procedure re
      ()
 ```
 
-This improvement should allow your analysis to pass the tests in [LeaksInterprocedural.java](https://github.com/facebook/infer/blob/master/infer/tests/codetoanalyze/java/lab/LeaksInterprocedural.java).
+This improvement should allow your analysis to pass the tests in [LeaksInterprocedural.java](https://github.com/facebook/infer/blob/main/infer/tests/codetoanalyze/java/lab/LeaksInterprocedural.java).
 
 Hint: What do return values look like in infer? They are assignments to a special variable, detected by `Var.is_return`. You may also want to match only return variables of some specific object type. Use this code to look at the classname of the type of the return value:
 
@@ -157,16 +157,16 @@ Then `ret_var` is the return variable (if `Var.is_return ret_var` returns true),
 
 - It's okay for the domain to diverge in certain cases for the purpose of this lab. Can you write a method that would make your checker diverge?
 
-(b) Write some tests that demonstrate the limitations of your new domain: both false positives (names prefixed with `FP_` and false negatives (prefixed with `FN_`). Add them to [LeaksAccessPaths.java](https://github.com/facebook/infer/blob/master/infer/tests/codetoanalyze/java/lab/LeaksAccessPath.java).
+(b) Write some tests that demonstrate the limitations of your new domain: both false positives (names prefixed with `FP_` and false negatives (prefixed with `FN_`). Add them to [LeaksAccessPaths.java](https://github.com/facebook/infer/blob/main/infer/tests/codetoanalyze/java/lab/LeaksAccessPath.java).
 
-(c) Augment the summary type with state to indicate formals that are closed by the current function. This should allow your analysis to pass the tests in [LeaksAccessPathsInterprocedural.java](https://github.com/facebook/infer/blob/master/infer/tests/codetoanalyze/java/lab/LeaksAccessPathsInterprocedural.java).
+(c) Augment the summary type with state to indicate formals that are closed by the current function. This should allow your analysis to pass the tests in [LeaksAccessPathsInterprocedural.java](https://github.com/facebook/infer/blob/main/infer/tests/codetoanalyze/java/lab/LeaksAccessPathsInterprocedural.java).
 
 Hint: You will find the `FormalMap` module useful for this. This module lets you go back and forth between the index of a formal and its name. This utility module is also used in the `RacerD` and `TaintAnalysis` modules.
 
 
 ## (6) Making it practical
 
-(a) Real resource leaks frequently involve failing to close resources along exceptional control-flow paths. For simplicity, the initial version of the current analysis uses a filtered view of the CFG that skips exceptional edges (`ProcCfg.Normal`). To find more bugs, you might want to switch to using `ProcCfg.Exceptional` and make sure that your analysis gets the right answer on some realistic exception examples like [LeaksExceptions.java](https://github.com/facebook/infer/blob/master/infer/tests/codetoanalyze/java/lab/LeaksExceptions.java).
+(a) Real resource leaks frequently involve failing to close resources along exceptional control-flow paths. For simplicity, the initial version of the current analysis uses a filtered view of the CFG that skips exceptional edges (`ProcCfg.Normal`). To find more bugs, you might want to switch to using `ProcCfg.Exceptional` and make sure that your analysis gets the right answer on some realistic exception examples like [LeaksExceptions.java](https://github.com/facebook/infer/blob/main/infer/tests/codetoanalyze/java/lab/LeaksExceptions.java).
 
 (b) Try running on real code! The instructions [here](http://fm.csl.sri.com/SSFT17/infer-instr.html) have several suggestions for open-source Android apps to point your analysis at. Try `./gradlew assembleDebug -x test` first to make sure everything builds correctly without Infer (if not, you are probably missing some dependencies--the error messages should guide you). Once that's working, try
 `./gradlew clean; infer run --resource-leak-lab-only -- ./gradlew assembleDebug -x test`.

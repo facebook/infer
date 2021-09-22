@@ -284,7 +284,7 @@ fb-setup:
 
 .PHONY: fmt
 fmt:
-	parallel $(OCAMLFORMAT_EXE) $(OCAMLFORMAT_ARGS) -i ::: $$(git diff --name-only --diff-filter=ACMRU $$(git merge-base origin/master HEAD) | grep "\.mli\?$$")
+	parallel $(OCAMLFORMAT_EXE) $(OCAMLFORMAT_ARGS) -i ::: $$(git diff --name-only --diff-filter=ACMRU $$(git merge-base origin/$(MAIN_GIT_BRANCH) HEAD) | grep "\.mli\?$$")
 
 DUNE_ML:=$(shell find * -name 'dune*.in' | grep -v workspace | grep -v infer-source | grep -v infer/src/deadcode/dune.in)
 

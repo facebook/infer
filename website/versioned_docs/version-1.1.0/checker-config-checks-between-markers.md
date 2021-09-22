@@ -12,7 +12,7 @@ Supported languages:
 - Java: Experimental
 - C#/.Net: Experimental
 
-This checker collects config checkings in some program regions determined by pairs of marker-starts and marker-ends. The set of config checking functions, marker-start functions, and marker-end functions is hardcoded and empty by default for now, so to use this checker, please modify the code directly in [FbGKInteraction.ml](https://github.com/facebook/infer/tree/master/infer/src/opensource).
+This checker collects config checkings in some program regions determined by pairs of marker-starts and marker-ends. The set of config checking functions, marker-start functions, and marker-end functions is hardcoded and empty by default for now, so to use this checker, please modify the code directly in [FbGKInteraction.ml](https://github.com/facebook/infer/tree/main/infer/src/opensource).
 
 ## List of Issue Types
 

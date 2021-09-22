@@ -36,7 +36,7 @@ RUN apt-get update && \
 # Without this opam fails to compile OCaml for some reason. We don't need sandboxing inside a Docker container anyway.
 RUN opam init --reinit --bare --disable-sandboxing --yes --auto-setup
 
-# Download the latest Infer master
+# Download the latest Infer from git
 RUN cd / && \
     git clone --depth 1 https://github.com/facebook/infer/
 

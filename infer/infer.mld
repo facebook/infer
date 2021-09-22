@@ -37,7 +37,7 @@ together, and deals with build system integrations.
 
 You'll find the source code for the [infer] command-line interface and
 others in the
-{{:https://github.com/facebook/infer/blob/master/infer/src/}infer/src/}
+{{:https://github.com/facebook/infer/blob/main/infer/src/}infer/src/}
 directory.
 
 {1 Index}

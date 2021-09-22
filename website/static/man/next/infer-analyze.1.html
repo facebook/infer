@@ -1,4 +1,4 @@
-<!-- Creator     : groff version 1.19.2 -->
+<!-- Creator     : groff version 1.22.4 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -7,16 +7,17 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <meta name="Content-Style" content="text/css">
 <style type="text/css">
-       p     { margin-top: 0; margin-bottom: 0; }
-       pre   { margin-top: 0; margin-bottom: 0; }
-       table { margin-top: 0; margin-bottom: 0; }
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
 </style>
 <title>infer-analyze</title>
 
 </head>
 <body>
 
-<h1 align=center>infer-analyze</h1>
+<h1 align="center">infer-analyze</h1>
 
 <a href="#NAME">NAME</a><br>
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
@@ -28,6 +29,7 @@
 <a href="#JAVA OPTIONS">JAVA OPTIONS</a><br>
 <a href="#QUANDARY CHECKER OPTIONS">QUANDARY CHECKER OPTIONS</a><br>
 <a href="#RACERD CHECKER OPTIONS">RACERD CHECKER OPTIONS</a><br>
+<a href="#SIMPLE LINEAGE OPTIONS">SIMPLE LINEAGE OPTIONS</a><br>
 <a href="#SIOF CHECKER OPTIONS">SIOF CHECKER OPTIONS</a><br>
 <a href="#ENVIRONMENT">ENVIRONMENT</a><br>
 <a href="#FILES">FILES</a><br>
@@ -36,31 +38,35 @@
 <hr>
 
 
+<h2>NAME
 <a name="NAME"></a>
-<h2>NAME</h2>
+</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">infer-analyze -
 analyze the files captured by infer</p>
 
+<h2>SYNOPSIS
 <a name="SYNOPSIS"></a>
-<h2>SYNOPSIS</h2>
+</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>infer
 analyze</b> <i>[options]</i> <b><br>
 infer</b> <i>[options]</i></p>
 
+<h2>DESCRIPTION
 <a name="DESCRIPTION"></a>
-<h2>DESCRIPTION</h2>
+</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">Analyze the
 files captured in the project results directory and
 report.</p>
 
+<h2>OPTIONS
 <a name="OPTIONS"></a>
-<h2>OPTIONS</h2>
+</h2>
 
 
 
@@ -68,12 +74,12 @@ report.</p>
 
 <p style="margin-left:17%;">Activates: checker
 annotation-reachability: Given a pair of source and sink
-annotation, e.g. &lsquo;@PerformanceCritical&lsquo; and
-&lsquo;@Expensive&lsquo;, this checker will warn whenever
+annotation, e.g. &rsquo;@PerformanceCritical&rsquo; and
+&rsquo;@Expensive&rsquo;, this checker will warn whenever
 some method annotated with
-&lsquo;@PerformanceCritical&lsquo; calls, directly or
+&rsquo;@PerformanceCritical&rsquo; calls, directly or
 indirectly, another method annotated with
-&lsquo;@Expensive&lsquo; (Conversely:
+&rsquo;@Expensive&rsquo; (Conversely:
 <b>--no-annotation-reachability</b>)</p>
 
 
@@ -169,7 +175,7 @@ given the same before. Not compatible with
 <p style="margin-left:17%;">Activates: checker cost:
 Computes the time complexity of functions and methods. Can
 be used to detect changes in runtime complexity with
-&lsquo;infer reportdiff&lsquo;. (Conversely:
+&rsquo;infer reportdiff&rsquo;. (Conversely:
 <b>--no-cost</b>)</p>
 
 <p style="margin-left:11%;"><b>--cost-only</b></p>
@@ -251,7 +257,7 @@ reporting. (Conversely: <b>--deduplicate</b>)</p>
 <p style="margin-left:11%;"><b>--eradicate</b></p>
 
 <p style="margin-left:17%;">Activates: checker eradicate:
-The eradicate &lsquo;@Nullable&lsquo; checker for Java
+The eradicate &rsquo;@Nullable&rsquo; checker for Java
 annotations. (Conversely: <b>--no-eradicate</b>)</p>
 
 <p style="margin-left:11%;"><b>--eradicate-only</b></p>
@@ -297,9 +303,9 @@ internal options in the INTERNAL OPTIONS section</p>
 <p style="margin-left:17%;">Activates: checker
 immutable-cast: Detection of object cast from immutable
 types to mutable types. For instance, it will detect casts
-from &lsquo;ImmutableList&lsquo; to &lsquo;List&lsquo;,
-&lsquo;ImmutableMap&lsquo; to &lsquo;Map&lsquo;, and
-&lsquo;ImmutableSet&lsquo; to &lsquo;Set&lsquo;.
+from &rsquo;ImmutableList&rsquo; to &rsquo;List&rsquo;,
+&rsquo;ImmutableMap&rsquo; to &rsquo;Map&rsquo;, and
+&rsquo;ImmutableSet&rsquo; to &rsquo;Set&rsquo;.
 (Conversely: <b>--no-immutable-cast</b>)</p>
 
 
@@ -375,7 +381,7 @@ disable all other checkers (Conversely:
 
 <p style="margin-left:17%;">Activates: checker
 litho-required-props: Checks that all non-optional
-&lsquo;@Prop&lsquo;s have been specified when constructing
+&rsquo;@Prop&rsquo;s have been specified when constructing
 Litho components. (Conversely:
 <b>--no-litho-required-props</b>)</p>
 
@@ -430,7 +436,7 @@ running simultaneously</p>
 
 <p style="margin-left:17%;">Activates: Generate OCaml
 analysis allocation traces in
-&lsquo;infer-out/memtrace&lsquo;. (Conversely:
+&rsquo;infer-out/memtrace&rsquo;. (Conversely:
 <b>--no-memtrace-analysis-profiling</b>)</p>
 
 
@@ -455,11 +461,11 @@ stdout and stderr (Conversely: <b>--no-print-logs</b>)</p>
 <p style="margin-left:11%;"><b>--printf-args</b></p>
 
 <p style="margin-left:17%;">Activates: checker printf-args:
-Detect mismatches between the Java &lsquo;printf&lsquo;
+Detect mismatches between the Java &rsquo;printf&rsquo;
 format strings and the argument types For example, this
 checker will warn about the type error in
-&lsquo;printf(&quot;Hello %d&quot;,
-&quot;world&quot;)&lsquo; (Conversely:
+&rsquo;printf(&quot;Hello %d&quot;,
+&quot;world&quot;)&rsquo; (Conversely:
 <b>--no-printf-args</b>)</p>
 
 <p style="margin-left:11%;"><b>--printf-args-only</b></p>
@@ -703,7 +709,7 @@ performs better in some circumstances <b><br>
 
 <p style="margin-left:17%;">Deactivates: checker
 self-in-block: An Objective-C-specific analysis to detect
-when a block captures &lsquo;self&lsquo;. (Conversely:
+when a block captures &rsquo;self&rsquo;. (Conversely:
 <b>--self-in-block</b>)</p>
 
 
@@ -712,6 +718,19 @@ when a block captures &lsquo;self&lsquo;. (Conversely:
 <p style="margin-left:17%;">Activates: Enable self-in-block
 and disable all other checkers (Conversely:
 <b>--no-self-in-block-only</b>)</p>
+
+<p style="margin-left:11%;"><b>--simple-lineage</b></p>
+
+<p style="margin-left:17%;">Activates: checker
+simple-lineage: Computes a dataflow graph (Conversely:
+<b>--no-simple-lineage</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--simple-lineage-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable
+simple-lineage and disable all other checkers (Conversely:
+<b>--no-simple-lineage-only</b>)</p>
 
 <p style="margin-left:11%;"><b>--no-siof</b></p>
 
@@ -806,8 +825,9 @@ node. (Conversely: <b>--no-write-html</b>) <b><br>
 <p style="margin-left:17%;">Specify the suffix of Xcode
 isysroot directory, to avoid absolute paths in tests</p>
 
+<h2>BUCK OPTIONS
 <a name="BUCK OPTIONS"></a>
-<h2>BUCK OPTIONS</h2>
+</h2>
 
 
 
@@ -817,8 +837,9 @@ isysroot directory, to avoid absolute paths in tests</p>
 results directories specified in the dependency file.
 (Conversely: <b>--no-merge</b>)</p>
 
+<h2>BUFFER OVERRUN OPTIONS
 <a name="BUFFER OVERRUN OPTIONS"></a>
-<h2>BUFFER OVERRUN OPTIONS</h2>
+</h2>
 
 
 
@@ -834,8 +855,9 @@ checker (0-4)</p>
 <p style="margin-left:17%;">Limit of field depth of
 abstract location in buffer-overrun checker</p>
 
+<h2>CLANG OPTIONS
 <a name="CLANG OPTIONS"></a>
-<h2>CLANG OPTIONS</h2>
+</h2>
 
 
 
@@ -868,10 +890,9 @@ Example:</p>
 &quot;.*::Trusted::.*&quot; ] } <br>
 } <br>
 } <br>
-}</p>
-
-<p style="margin-left:11%; margin-top: 1em">This will cause
-us to create a new ISOLATED_REACHING_CONNECT <br>
+} <br>
+This will cause us to create a new ISOLATED_REACHING_CONNECT
+<br>
 issue for every function whose source path starts with
 &quot;isolated/&quot; <br>
 that may reach the function named &quot;connect&quot;,
@@ -919,8 +940,9 @@ common wrappers around these types such as
 when the variables are not read explicitly by the
 program.</p>
 
+<h2>JAVA OPTIONS
 <a name="JAVA OPTIONS"></a>
-<h2>JAVA OPTIONS</h2>
+</h2>
 
 
 
@@ -949,8 +971,9 @@ packages.</p>
 <p style="margin-left:17%;">The version of Java being used.
 Set it to your Java version if mvn is failing.</p>
 
+<h2>QUANDARY CHECKER OPTIONS
 <a name="QUANDARY CHECKER OPTIONS"></a>
-<h2>QUANDARY CHECKER OPTIONS</h2>
+</h2>
 
 
 
@@ -978,8 +1001,9 @@ Quandary</p>
 <p style="margin-left:17%;">Specify custom sources for
 Quandary</p>
 
+<h2>RACERD CHECKER OPTIONS
 <a name="RACERD CHECKER OPTIONS"></a>
-<h2>RACERD CHECKER OPTIONS</h2>
+</h2>
 
 
 
@@ -1002,8 +1026,21 @@ nothing. (Conversely:
 <p style="margin-left:17%;">Specify custom annotations that
 should be considered aliases of @ThreadSafe</p>
 
+<h2>SIMPLE LINEAGE OPTIONS
+<a name="SIMPLE LINEAGE OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>--simple-lineage-max-cfg-size</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">If set, larger CFGs are
+skipped.</p>
+
+<h2>SIOF CHECKER OPTIONS
 <a name="SIOF CHECKER OPTIONS"></a>
-<h2>SIOF CHECKER OPTIONS</h2>
+</h2>
 
 
 
@@ -1024,8 +1061,9 @@ recent libstdc++ then it is safe to turn this option on.
 &quot;foo&lt;int&gt;::bar()&quot;, etc. (can be specified
 multiple times)</p>
 
+<h2>ENVIRONMENT
 <a name="ENVIRONMENT"></a>
-<h2>ENVIRONMENT</h2>
+</h2>
 
 
 
@@ -1035,8 +1073,9 @@ multiple times)</p>
 <p style="margin-left:17%;">See the ENVIRONMENT section in
 the manual of <b>infer</b>(1).</p>
 
+<h2>FILES
 <a name="FILES"></a>
-<h2>FILES</h2>
+</h2>
 
 
 
@@ -1045,8 +1084,9 @@ the manual of <b>infer</b>(1).</p>
 <p style="margin-left:17%;">See the FILES section in the
 manual of <b>infer</b>(1).</p>
 
+<h2>SEE ALSO
 <a name="SEE ALSO"></a>
-<h2>SEE ALSO</h2>
+</h2>
 
 
 

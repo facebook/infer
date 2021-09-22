@@ -162,7 +162,7 @@ let config_unsafe checker =
                  pairs of marker-starts and marker-ends. The set of config checking functions, \
                  marker-start functions, and marker-end functions is hardcoded and empty by \
                  default for now, so to use this checker, please modify the code directly in \
-                 [FbGKInteraction.ml](https://github.com/facebook/infer/tree/master/infer/src/opensource)."
+                 [FbGKInteraction.ml](https://github.com/facebook/infer/tree/main/infer/src/opensource)."
             }
       ; support= supports_clang_and_java_experimental
       ; short_documentation= "[EXPERIMENTAL] Collects config checks between marker start and end."
@@ -178,7 +178,7 @@ let config_unsafe checker =
                 "This checker collects functions whose execution isn't gated by certain \
                  pre-defined gating functions. The set of gating functions is hardcoded and empty \
                  by default for now, so to use this checker, please modify the code directly in \
-                 [FbGKInteraction.ml](https://github.com/facebook/infer/tree/master/infer/src/opensource)."
+                 [FbGKInteraction.ml](https://github.com/facebook/infer/tree/main/infer/src/opensource)."
             }
       ; support= supports_clang_and_java_experimental
       ; short_documentation=
@@ -399,7 +399,7 @@ let config_unsafe checker =
             ; markdown_body=
                 "This toy checker does nothing by default. Hack on it to make it report resource \
                  leaks! See the [lab \
-                 instructions](https://github.com/facebook/infer/blob/master/infer/src/labs/README.md)."
+                 instructions](https://github.com/facebook/infer/blob/main/infer/src/labs/README.md)."
             }
       ; support=
           (function Clang -> NoSupport | Java -> Support | CIL -> Support | Erlang -> NoSupport)

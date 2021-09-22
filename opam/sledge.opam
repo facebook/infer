@@ -1,7 +1,7 @@
 opam-version: "2.0"
 maintainer: "Josh Berdine <jjb@fb.com>"
 authors: "Josh Berdine <jjb@fb.com>"
-homepage: "https://github.com/facebook/infer/tree/master/sledge"
+homepage: "https://github.com/facebook/infer/tree/main/sledge"
 bug-reports: "https://github.com/facebook/infer/issues/new?template=sledge_issue_template.md"
 dev-repo: "git://github.com/facebook/infer.git"
 license: "MIT"

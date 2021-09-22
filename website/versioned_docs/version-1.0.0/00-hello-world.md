@@ -10,7 +10,7 @@ idea of how Infer works. See the [User Guide](infer-workflow) for more details
 about the use of Infer.
 
 All these examples can be found in the
-[`infer/examples`](https://github.com/facebook/infer/tree/master/examples)
+[`infer/examples`](https://github.com/facebook/infer/tree/main/examples)
 directory distributed with Infer.
 
 ## Hello world Java
@@ -28,7 +28,7 @@ class Hello {
 ```
 
 To run Infer, type the following in your terminal from the same directory as
-[`Hello.java`](https://github.com/facebook/infer/tree/master/examples/Hello.java).
+[`Hello.java`](https://github.com/facebook/infer/tree/main/examples/Hello.java).
 
 ```bash
 infer run -- javac Hello.java
@@ -73,7 +73,7 @@ NSString* m() {
 ```
 
 To run Infer, type the following in your terminal from the same directory as
-[`Hello.m`](https://github.com/facebook/infer/tree/master/examples/Hello.m).
+[`Hello.m`](https://github.com/facebook/infer/tree/main/examples/Hello.m).
 
 ```bash
 infer run -- clang -c Hello.m
@@ -112,7 +112,7 @@ void test() {
 ```
 
 To run Infer, type the following in your terminal from the same directory as
-[`hello.c`](https://github.com/facebook/infer/tree/master/examples/hello.c).
+[`hello.c`](https://github.com/facebook/infer/tree/main/examples/hello.c).
 
 ```bash
 infer run -- gcc -c hello.c
@@ -155,7 +155,7 @@ installed and up to date, as well as the "Android SDK Build-tools" and "Android
 Support Repository" components.
 
 Go to the sample Android app in
-[`infer/examples/android_hello`](https://github.com/facebook/infer/tree/master/examples/android_hello/)
+[`infer/examples/android_hello`](https://github.com/facebook/infer/tree/main/examples/android_hello/)
 and create a `local.properties` file with a single line
 `sdk.dir=<location of your Android SDK>`. This sample Android app uses
 [gradle](https://gradle.org/) as its build system. You do not need to install
@@ -245,7 +245,7 @@ You can learn more about the particulars of each solution in the
 ## Hello world iOS
 
 Go to the sample iOS app in
-[`infer/examples/ios_hello`](https://github.com/facebook/infer/tree/master/examples/ios_hello/)
+[`infer/examples/ios_hello`](https://github.com/facebook/infer/tree/main/examples/ios_hello/)
 and run Infer on it:
 
 ```bash
@@ -299,7 +299,7 @@ xcodebuild -target HelloWorldApp -configuration Debug -sdk iphonesimulator clean
 ## Hello world Make
 
 Go to the sample C project in
-[`infer/examples/c_hello`](https://github.com/facebook/infer/tree/master/examples/c_hello/)
+[`infer/examples/c_hello`](https://github.com/facebook/infer/tree/main/examples/c_hello/)
 and run Infer on it:
 
 ```bash

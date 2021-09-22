@@ -72,6 +72,36 @@ Reported as "Autoreleasepool Size Unreachable At Exit" by [cost](/docs/next/chec
 \[EXPERIMENTAL\] This issue type indicates that the program's execution doesn't reach the exit
 node. Hence, we cannot compute a static bound of ObjC autoreleasepool's size for the procedure.
 
+## BAD_KEY
+
+Reported as "Bad Key" by [pulse](/docs/next/checker-pulse).
+
+## Bad key in Erlang
+
+Reports an error when trying to access or update a non-existing key in a map. Corresponds to the `{badkey,K}` error in the Erlang runtime.
+
+For example, trying to update the key `2` in `M` gives `{badkey,2}` error because `2` is not present as a key in `M`.
+```erlang
+f() ->
+    M = #{1 => 2},
+    M#{2 := 3}.
+```
+
+## BAD_MAP
+
+Reported as "Bad Map" by [pulse](/docs/next/checker-pulse).
+
+## Bad map in Erlang
+
+Reports an error when trying to access or update a key for a term that is not a map. Corresponds to the `{badmap,...}` error in the Erlang runtime.
+
+For example, trying to update `L` as if it was a map gives `{badmap,[1,2,3]}` error because `L` is actually a list (`[1,2,3]`).
+```erlang
+f() ->
+    L = [1,2,3],
+    L#{1 => 2}.
+```
+
 ## BAD_POINTER_COMPARISON
 
 Reported as "Bad Pointer Comparison" by [linters](/docs/next/checker-linters).
@@ -1511,7 +1541,7 @@ Exception.
 
 Facebook NOTE: **If you are absolutely sure that foo() will not be
 null**, then if you land your diff this case will no longer be
-reported after your diff makes it to master.
+reported after your diff makes it to trunk.
 
 ### Null dereference in C
 

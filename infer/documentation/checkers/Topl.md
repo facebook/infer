@@ -87,7 +87,7 @@ There are two types of patterns:
     * for a method with n arguments, there must be n+1 transition variables to get a match. The first n transition variables get bound to the argument values, and the last transition variable gets bound to the return value. *This is true even for the case in which the return type is void*.
 * the special keyword **#ArrayWrite**. In that case, there should be two transition variables like “(Array, Index)” — Array gets bound to the array object, and Index gets bound to the index at which the write happens.
 
-For several examples, see https://github.com/facebook/infer/tree/master/infer/tests/codetoanalyze/java/topl
+For several examples, see https://github.com/facebook/infer/tree/main/infer/tests/codetoanalyze/java/topl
 
 ## Limitations
 

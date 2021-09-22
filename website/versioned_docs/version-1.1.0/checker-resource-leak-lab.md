@@ -12,7 +12,7 @@ Supported languages:
 - Java: Yes
 - C#/.Net: Yes
 
-This toy checker does nothing by default. Hack on it to make it report resource leaks! See the [lab instructions](https://github.com/facebook/infer/blob/master/infer/src/labs/README.md).
+This toy checker does nothing by default. Hack on it to make it report resource leaks! See the [lab instructions](https://github.com/facebook/infer/blob/main/infer/src/labs/README.md).
 
 ## List of Issue Types
 
