@@ -86,12 +86,15 @@ let check_valid address attrs =
   | None ->
       Ok ()
   | Some invalidation ->
+      L.d_printfln ~color:Red "INVALID: %a" Invalidation.pp (fst invalidation) ;
       Error invalidation
 
 
 let check_initialized address attrs =
   L.d_printfln "Checking if %a is initialized" AbstractValue.pp address ;
-  if Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_uninitialized then Error ()
+  if Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_uninitialized then (
+    L.d_printfln ~color:Red "UNINITIALIZED" ;
+    Error () )
   else Ok ()
 
 
