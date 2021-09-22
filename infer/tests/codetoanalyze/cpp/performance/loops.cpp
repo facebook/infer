@@ -26,3 +26,12 @@ void zeropad_linear(std::string s, std::string p) {
     p = p + "0";
   }
 }
+
+// upper bound for inner loop
+// is not calculated
+void loop_with_complicated_bound_constant_FP() {
+  for (int i = 2; i < 100; i++) {
+    for (int j = 2; j <= (i / j); j++) {
+    }
+  }
+}

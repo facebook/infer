@@ -78,6 +78,7 @@ codetoanalyze/cpp/performance/list.cpp, sort_list_int_nlogn_FN, 2,  OnUIThread:f
 codetoanalyze/cpp/performance/list.cpp, sort_list_string_constant, 12,  OnUIThread:false, []
 codetoanalyze/cpp/performance/list.cpp, sort_list_string_no_case_constant, 12,  OnUIThread:false, []
 codetoanalyze/cpp/performance/list.cpp, sort_list_string_no_case_nlogn_FN, 35,  OnUIThread:false, []
+codetoanalyze/cpp/performance/loops.cpp, loop_with_complicated_bound_constant_FP, ⊤,  OnUIThread:false, [Unbounded loop,Loop]
 codetoanalyze/cpp/performance/loops.cpp, nested_do_while, 942,  OnUIThread:false, []
 codetoanalyze/cpp/performance/loops.cpp, zeropad_linear, 40 + 12 ⋅ s->cpp.vector_elem.length.ub(u) + (s->cpp.vector_elem.length.ub(u) + 1),  OnUIThread:false, [{s->cpp.vector_elem.length.ub(u) + 1},Call to std::operator==<std::allocator<char>_>,Loop,{s->cpp.vector_elem.length.ub(u)},Call to std::operator==<std::allocator<char>_>,Loop]
 codetoanalyze/cpp/performance/string_test.cpp, call_google_strlen_linear, 2 + str->strlen.ub(u),  OnUIThread:false, [{str->strlen.ub(u)},Modeled call to google::StrLen]
