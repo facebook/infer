@@ -282,11 +282,11 @@ and validate_case_clause_components env patterns guards body =
 
 
 and validate_case_clause env ({patterns= ps; guards= gs; body= b; _} : Ast.case_clause) =
-  Poly.(List.length ps = 1) && validate_case_clause_components env ps gs b
+  (match ps with [_] -> true | _ -> false) && validate_case_clause_components env ps gs b
 
 
 and validate_if_clause env ({patterns= ps; guards= gs; body= b; _} : Ast.case_clause) =
-  Poly.(List.length ps = 0) && validate_case_clause_components env ps gs b
+  List.is_empty ps && validate_case_clause_components env ps gs b
 
 
 and validate_catch_clause env ({patterns= ps; guards= gs; body= b; _} : Ast.catch_clause) =
