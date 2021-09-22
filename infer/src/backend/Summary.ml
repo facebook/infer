@@ -112,13 +112,14 @@ let pp_text fmt summary =
 
 
 let pp_html source fmt summary =
+  let pp_escaped pp fmt x = F.fprintf fmt "%s" (Escape.escape_xml (F.asprintf "%a" pp x)) in
   F.pp_force_newline fmt () ;
-  Pp.html_with_color Black pp_no_stats_specs fmt summary ;
+  Pp.html_with_color Black (pp_escaped pp_no_stats_specs) fmt summary ;
   F.fprintf fmt "<br />%a<br />@\n" Stats.pp summary.stats ;
   Errlog.pp_html source [] fmt (get_err_log summary) ;
   Io_infer.Html.pp_hline fmt () ;
   F.fprintf fmt "<LISTING>@\n" ;
-  Payloads.pp (Pp.html Black) fmt summary.payloads ;
+  pp_escaped (Payloads.pp (Pp.html Black)) fmt summary.payloads ;
   F.fprintf fmt "</LISTING>@\n"
 
 
