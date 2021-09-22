@@ -536,6 +536,9 @@ CLANG OPTIONS
            these types (or common wrappers around these types such as
            unique_ptr<type>) will count as dead stores when the variables are
            not read explicitly by the program.
+ERLANG OPTIONS
+       --erlang-reverse-unfold-depth int
+           Unfold Erlang lists:reverse up to depth int
 JAVA OPTIONS
        --annotation-reachability-custom-pairs json
            Specify custom sources/sink for the annotation reachability

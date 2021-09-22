@@ -1447,6 +1447,12 @@ and erlang_skip_rebar3 =
     "Skip running rebar, to save time. It is useful together with $(b,--erlang-ast-dir)."
 
 
+and erlang_reverse_unfold_depth =
+  CLOpt.mk_int ~long:"erlang-reverse-unfold-depth" ~default:4
+    ~in_help:InferCommand.[(Analyze, manual_erlang)]
+    "Unfold Erlang lists:reverse up to depth $(i,int)"
+
+
 and export_changed_functions =
   CLOpt.mk_bool ~deprecated:["test-determinator-clang"] ~long:"export-changed-functions"
     ~default:false
@@ -3137,6 +3143,8 @@ and eradicate_verbose = !eradicate_verbose
 and erlang_ast_dir = !erlang_ast_dir
 
 and erlang_skip_rebar3 = !erlang_skip_rebar3
+
+and erlang_reverse_unfold_depth = !erlang_reverse_unfold_depth
 
 and external_java_packages = !external_java_packages
 
