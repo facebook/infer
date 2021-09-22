@@ -272,7 +272,7 @@ build command</p></td></tr>
 append to targets discovered by the
 <b>--buck-compilation-database</b> option.</p>
 
-<p style="margin-left:11%;"><b>--buck-blacklist</b>
+<p style="margin-left:11%;"><b>--buck-block-list</b>
 <i>+regex</i></p>
 
 <p style="margin-left:17%;">Skip capture of files matched
@@ -286,6 +286,15 @@ not Java. <b><br>
 <p style="margin-left:17%;">Activates: Buck integration for
 clang-based targets (C/C++/Objective-C/Objective-C++).
 (Conversely: <b>--no-buck-clang</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--buck-clang-use-toolchain-config</b></p>
+
+<p style="margin-left:17%;">Activates: Suppress setting
+buck config values for the infer binary and other values in
+the buck-clang-flavor integration and instead rely on buck
+toolchain configuration options. (Conversely:
+<b>--no-buck-clang-use-toolchain-config</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--buck-compilation-database</b>
@@ -336,7 +345,7 @@ capture. Only valid for <b>--buck-clang</b>. (Conversely:
 <b>--no-buck-merge-all-deps</b>)</p>
 
 
-<p style="margin-left:11%;"><b>--buck-targets-blacklist</b>
+<p style="margin-left:11%;"><b>--buck-targets-block-list</b>
 <i>+regex</i></p>
 
 <p style="margin-left:17%;">Skip capture of buck targets
@@ -347,14 +356,14 @@ matched by the specified regular expression. Only valid for
 <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&lsquo;buck build&lsquo;</i>.
+arguments to invocations of <i>&rsquo;buck build&rsquo;</i>.
 Only valid for <b>--buck-clang</b>.</p>
 
 <p style="margin-left:11%;"><b>--Xbuck-no-inline</b>
 <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&lsquo;buck build&lsquo;</i>,
+arguments to invocations of <i>&rsquo;buck build&rsquo;</i>,
 don't inline any args starting with '@'. Only valid for
 <b>--buck-clang</b>.</p>
 
@@ -450,13 +459,13 @@ AST of the program, in biniou format. Please note you still
 need to provide a compilation command.</p>
 
 
-<p style="margin-left:11%;"><b>--clang-blacklisted-flags</b>
+<p style="margin-left:11%;"><b>--clang-block-listed-flags</b>
 <i>+string</i></p>
 
 <p style="margin-left:17%;">Clang flags to filter out</p>
 
 
-<p style="margin-left:11%;"><b>--clang-blacklisted-flags-with-arg</b>
+<p style="margin-left:11%;"><b>--clang-block-listed-flags-with-arg</b>
 <i>+string</i></p>
 
 <p style="margin-left:17%;">Clang flags (taking args) to
@@ -542,8 +551,8 @@ arguments to invocations of clang</p>
 <p style="margin-left:17%;">Activates: Infer will use
 xcpretty together with xcodebuild to analyze an iOS app.
 xcpretty just needs to be in the path, infer command is
-still just <i>&lsquo;infer -- &lt;xcodebuild
-command&gt;&lsquo;</i>. (Conversely:
+still just <i>&rsquo;infer -- &lt;xcodebuild
+command&gt;&rsquo;</i>. (Conversely:
 <b>--no-xcpretty</b>)</p>
 
 <h2>ERLANG OPTIONS
@@ -579,7 +588,7 @@ to save time. It is useful together with
 <p style="margin-left:17%;">Specify the Java
 bootclasspath</p>
 
-<p style="margin-left:11%;"><b>--capture-blacklist</b>
+<p style="margin-left:11%;"><b>--capture-block-list</b>
 <i>regex</i></p>
 
 <p style="margin-left:17%;">Skip capture of files matched
@@ -610,6 +619,19 @@ used to generate the bytecode</p>
 
 <p style="margin-left:17%;">The version of Java being used.
 Set it to your Java version if mvn is failing.</p>
+
+<p style="margin-left:11%;"><b>--kotlin-capture</b></p>
+
+<p style="margin-left:17%;">Activates: Enable Kotlin
+capture (experimental, do not use). (Conversely:
+<b>--no-kotlin-capture</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--no-mask-sawja-exceptions</b></p>
+
+<p style="margin-left:17%;">Deactivates: Mask exceptions
+thrown by Sawja/Javalib during Java capture (Conversely:
+<b>--mask-sawja-exceptions</b>)</p>
 
 <h2>ENVIRONMENT
 <a name="ENVIRONMENT"></a>

@@ -37,28 +37,25 @@
 
 
 <p style="margin-left:11%; margin-top: 1em">infer-report -
-compute and manipulate infer results</p>
+compute and manipulate infer reports</p>
 
 <h2>SYNOPSIS
 <a name="SYNOPSIS"></a>
 </h2>
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>infer
-report</b> <i>[options]</i> [<i>file.specs</i>...]</p>
+<p style="margin-left:11%; margin-top: 1em"><b>infer report
+--issues-tests <br>
+infer report --cost-issues-tests <br>
+infer report --config-impact-issues-tests</b></p>
 
 <h2>DESCRIPTION
 <a name="DESCRIPTION"></a>
 </h2>
 
 
-<p style="margin-left:11%; margin-top: 1em">Read, convert,
-and print .specs files in the results directory. Each spec
-is printed to standard output unless option -q is used.</p>
-
-<p style="margin-left:11%; margin-top: 1em">If no specs
-file are passed on the command line, process all the .specs
-in the results directory.</p>
+<p style="margin-left:11%; margin-top: 1em">Write out
+issues in a format suitable for tests.</p>
 
 <h2>OPTIONS
 <a name="OPTIONS"></a>
@@ -66,7 +63,14 @@ in the results directory.</p>
 
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>--censor-report</b>
+<p style="margin-left:11%; margin-top: 1em"><b>--no-censor-report</b>
+<i>+issue_type_regex</i></p>
+
+<p style="margin-left:17%;">For debugging/experimentation
+only: Specify issues not to be censored by
+<b>--censor-report</b>.</p>
+
+<p style="margin-left:11%;"><b>--censor-report</b>
 <i>+string</i></p>
 
 <p style="margin-left:17%;">Specify a filter for issues to
@@ -78,18 +82,18 @@ are specified, they are applied in the order in which they
 are specified. Each filter is applied to each issue
 detected, and only issues which are accepted by all filters
 are reported. Each filter is of the form:
-&lsquo;&lt;issue_type_regex&gt;:&lt;filename_regex&gt;:&lt;reason_string&gt;&lsquo;.
+&rsquo;&lt;issue_type_regex&gt;:&lt;filename_regex&gt;:&lt;reason_string&gt;&rsquo;.
 The first two components are OCaml Str regular expressions,
-with an optional &lsquo;!&lsquo; character prefix. If a
-regex has a &lsquo;!&lsquo; prefix, the polarity is
-inverted, and the filter becomes a &quot;blacklist&quot;
-instead of a &quot;whitelist&quot;. Each filter is
+with an optional &rsquo;!&rsquo; character prefix. If a
+regex has a &rsquo;!&rsquo; prefix, the polarity is
+inverted, and the filter becomes a &quot;block list&quot;
+instead of a &quot;allow list&quot;. Each filter is
 interpreted as an implication: an issue matches if it does
-not match the &lsquo;issue_type_regex&lsquo; or if it does
-match the &lsquo;filename_regex&lsquo;. The filenames that
+not match the &rsquo;issue_type_regex&rsquo; or if it does
+match the &rsquo;filename_regex&rsquo;. The filenames that
 are tested by the regex are relative to the
-&lsquo;--project-root&lsquo; directory. The
-&lsquo;&lt;reason_string&gt;&lsquo; is a non-empty string
+&rsquo;--project-root&rsquo; directory. The
+&rsquo;&lt;reason_string&gt;&rsquo; is a non-empty string
 used to explain why the issue was filtered.</p>
 
 
@@ -211,7 +215,10 @@ default), <br>
 Abduction_case_not_implemented (enabled by default), <br>
 Array_of_pointsto (enabled by default), <br>
 Assert_failure (enabled by default), <br>
+BAD_KEY (enabled by default), <br>
+BAD_MAP (enabled by default), <br>
 BAD_POINTER_COMPARISON (enabled by default), <br>
+BAD_RECORD (enabled by default), <br>
 BIABDUCTION_ANALYSIS_STOPS (disabled by default), <br>
 BIABDUCTION_MEMORY_LEAK (disabled by default), <br>
 BUFFER_OVERRUN_L1 (enabled by default), <br>
@@ -239,6 +246,7 @@ CONDITION_ALWAYS_FALSE (disabled by default), <br>
 CONDITION_ALWAYS_TRUE (disabled by default), <br>
 CONFIG_CHECKS_BETWEEN_MARKERS (disabled by default), <br>
 CONFIG_IMPACT (disabled by default), <br>
+CONFIG_IMPACT_STRICT (disabled by default), <br>
 CONSTANT_ADDRESS_DEREFERENCE (disabled by default), <br>
 CREATE_INTENT_FROM_URI (enabled by default), <br>
 CROSS_SITE_SCRIPTING (enabled by default), <br>
@@ -341,6 +349,10 @@ Missing_fld (enabled by default), <br>
 NIL_BLOCK_CALL (enabled by default), <br>
 NIL_INSERTION_INTO_COLLECTION (enabled by default), <br>
 NIL_MESSAGING_TO_NON_POD (enabled by default), <br>
+NO_MATCHING_CASE_CLAUSE (enabled by default), <br>
+NO_MATCHING_FUNCTION_CLAUSE (enabled by default), <br>
+NO_MATCH_OF_RHS (enabled by default), <br>
+NO_TRUE_BRANCH_IN_IF (enabled by default), <br>
 NULLPTR_DEREFERENCE (enabled by default), <br>
 NULL_DEREFERENCE (enabled by default), <br>
 OPTIONAL_EMPTY_ACCESS (enabled by default), <br>
@@ -403,7 +415,7 @@ or off.</p>
 <p style="margin-left:11%;"><b>--no-filtering</b>,<b>-F</b></p>
 
 <p style="margin-left:17%;">Deactivates: Do not show the
-experimental and blacklisted issue types (Conversely:
+experimental and block listed issue types (Conversely:
 <b>--filtering</b> | <b>-f</b>)</p>
 
 
@@ -480,20 +492,29 @@ anything on standard output. (Conversely: <b>--no-quiet</b>
 | <b>-Q</b>)</p>
 
 
-<p style="margin-left:11%;"><b>--report-blacklist-files-containing</b>
+<p style="margin-left:11%;"><b>--report-allow-list-path-regex</b>
+<i>+path_regex</i></p>
+
+<p style="margin-left:17%;">Report issues only on files
+whose relative path matches the specified OCaml regex (and
+which do not match
+<b>--report-block-list-path-regex</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--report-block-list-files-containing</b>
 <i>+string</i></p>
 
 <p style="margin-left:17%;">Do not report any issues on
 files containing the specified string</p>
 
 
-<p style="margin-left:11%;"><b>--report-blacklist-path-regex</b>
+<p style="margin-left:11%;"><b>--report-block-list-path-regex</b>
 <i>+path_regex</i></p>
 
 <p style="margin-left:17%;">Do not report any issues on
 files whose relative path matches the specified OCaml regex,
-even if they match the whitelist specified by
-<b>--report-whitelist-path-regex</b></p>
+even if they match the allow list specified by
+<b>--report-allow-list-path-regex</b></p>
 
 <p style="margin-left:11%;"><b>--report-console-limit</b>
 <i>int</i></p>
@@ -514,14 +535,6 @@ emitting the report</p>
 
 <p style="margin-left:17%;">do not report a type of
 errors</p>
-
-
-<p style="margin-left:11%;"><b>--report-whitelist-path-regex</b>
-<i>+path_regex</i></p>
-
-<p style="margin-left:17%;">Report issues only on files
-whose relative path matches the specified OCaml regex (and
-which do not match <b>--report-blacklist-path-regex</b>)</p>
 
 <p style="margin-left:11%;"><b>--results-dir</b>,<b>-o</b>
 <i>dir</i></p>

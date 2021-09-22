@@ -7,17 +7,17 @@
 <link rel="alternate" type="application/rss+xml" href="/blog/rss.xml" title="Infer Blog RSS Feed">
 <link rel="alternate" type="application/atom+xml" href="/blog/atom.xml" title="Infer Blog Atom Feed">
 <link rel="search" type="application/opensearchdescription+xml" title="Infer" href="/opensearch.xml"><title data-react-helmet="true">Building checkers with the Infer.AI framework | Infer</title><meta data-react-helmet="true" property="og:url" content="https://fbinfer.com/docs/1.0.0/absint-framework"><meta data-react-helmet="true" name="docsearch:language" content="en"><meta data-react-helmet="true" name="docsearch:version" content="1.0.0"><meta data-react-helmet="true" name="docsearch:docusaurus_tag" content="docs-default-1.0.0"><meta data-react-helmet="true" property="og:title" content="Building checkers with the Infer.AI framework | Infer"><meta data-react-helmet="true" name="description" content="Infer.AI is a framework for quickly developing abstract interpretation-based"><meta data-react-helmet="true" property="og:description" content="Infer.AI is a framework for quickly developing abstract interpretation-based"><link data-react-helmet="true" rel="shortcut icon" href="/img/favicon.png"><link data-react-helmet="true" rel="canonical" href="https://fbinfer.com/docs/1.0.0/absint-framework"><link data-react-helmet="true" rel="alternate" href="https://fbinfer.com/docs/1.0.0/absint-framework" hreflang="en"><link data-react-helmet="true" rel="alternate" href="https://fbinfer.com/docs/1.0.0/absint-framework" hreflang="x-default"><link data-react-helmet="true" rel="preconnect" href="https://BH4D9OD16A-dsn.algolia.net" crossorigin="anonymous"><link rel="stylesheet" href="/assets/css/styles.46ed01ba.css">
-<link rel="preload" href="/assets/js/styles.7a3bfc13.js" as="script">
-<link rel="preload" href="/assets/js/runtime~main.d65296cb.js" as="script">
-<link rel="preload" href="/assets/js/main.950911ac.js" as="script">
-<link rel="preload" href="/assets/js/1.b5bf5a34.js" as="script">
-<link rel="preload" href="/assets/js/2.87dfd38b.js" as="script">
-<link rel="preload" href="/assets/js/3.529b6fba.js" as="script">
-<link rel="preload" href="/assets/js/1be78505.c4007472.js" as="script">
-<link rel="preload" href="/assets/js/183.7a16840f.js" as="script">
-<link rel="preload" href="/assets/js/62e81aa6.e2500d24.js" as="script">
-<link rel="preload" href="/assets/js/17896441.1b2449d5.js" as="script">
-<link rel="preload" href="/assets/js/43455a69.f1c87091.js" as="script">
+<link rel="preload" href="/assets/js/styles.4dd728d4.js" as="script">
+<link rel="preload" href="/assets/js/runtime~main.f5cccd5f.js" as="script">
+<link rel="preload" href="/assets/js/main.7824f895.js" as="script">
+<link rel="preload" href="/assets/js/1.7b6f24ff.js" as="script">
+<link rel="preload" href="/assets/js/2.0316d8d9.js" as="script">
+<link rel="preload" href="/assets/js/3.73bfe7e2.js" as="script">
+<link rel="preload" href="/assets/js/1be78505.006ad70c.js" as="script">
+<link rel="preload" href="/assets/js/184.913cbd41.js" as="script">
+<link rel="preload" href="/assets/js/62e81aa6.b55e27a4.js" as="script">
+<link rel="preload" href="/assets/js/17896441.c0052d9d.js" as="script">
+<link rel="preload" href="/assets/js/43455a69.d26db2a6.js" as="script">
 </head>
 <body>
 <script>!function(){function t(t){document.documentElement.setAttribute("data-theme",t)}var e=function(){var t=null;try{t=localStorage.getItem("theme")}catch(t){}return t}();t(null!==e?e:"light")}()</script><div id="__docusaurus">
@@ -32,10 +32,10 @@ framework and how it works, check out these
 <a href="https://atscaleconference.com/videos/getting-the-most-out-of-static-analyzers" target="_blank" rel="noopener noreferrer">talk</a>
 from @Scale2016.</p><p><strong>If you feel like coding instead of reading, a great way to get started with
 Infer.AI is to go through the lab exercise
-<a href="https://github.com/facebook/infer/blob/master/infer/src/labs/README.md" target="_blank" rel="noopener noreferrer">here</a>.</strong></p><h2><a aria-hidden="true" tabindex="-1" class="anchor enhancedAnchor_2LWZ" id="by-example-intraprocedural-analysis"></a>By example: intraprocedural analysis<a class="hash-link" href="#by-example-intraprocedural-analysis" title="Direct link to heading">#</a></h2><p>This section helps you get started ASAP if you already understand
+<a href="https://github.com/facebook/infer/blob/main/infer/src/labs/README.md" target="_blank" rel="noopener noreferrer">here</a>.</strong></p><h2><a aria-hidden="true" tabindex="-1" class="anchor enhancedAnchor_2LWZ" id="by-example-intraprocedural-analysis"></a>By example: intraprocedural analysis<a class="hash-link" href="#by-example-intraprocedural-analysis" title="Direct link to heading">#</a></h2><p>This section helps you get started ASAP if you already understand
 <a href="http://www.di.ens.fr/~cousot/AI/IntroAbsInt.html" target="_blank" rel="noopener noreferrer">abstract interpretation</a> (or
 don&#x27;t, but are feeling bold).</p><p>Take a look at
-<a href="https://github.com/facebook/infer/blob/master/infer/src/checkers/liveness.ml" target="_blank" rel="noopener noreferrer">liveness.ml</a>.
+<a href="https://github.com/facebook/infer/blob/main/infer/src/checkers/liveness.ml" target="_blank" rel="noopener noreferrer">liveness.ml</a>.
 This code is performing a compilers-101 style liveness analysis over
 <a href="#ir-basics-sil-cfgs-tenvs-procdescs-and-procnames">SIL</a>, Infer&#x27;s intermediate
 language. Since this code is fairly small and you should already understand what
@@ -47,26 +47,26 @@ iteration to be backward&quot; (since liveness is a backward analysis), and &quo
 to the analysis to follow exceptional edges&quot;. For a forward analysis that
 ignores exceptional edges, you would do <code>ProcCfg.Normal</code> instead (and many other
 combinations are possible; take a look at
-<a href="https://github.com/facebook/infer/blob/master/infer/src/absint/ProcCfg.mli" target="_blank" rel="noopener noreferrer">ProcCfg.mli</a>
+<a href="https://github.com/facebook/infer/blob/main/infer/src/absint/ProcCfg.mli" target="_blank" rel="noopener noreferrer">ProcCfg.mli</a>
 for more). And finally, the <code>TransferFunctions</code> part says &quot;Use the transfer
 functions I defined above&quot;.</p><p>Now you have a <code>CheckerAnalyzer</code> module that exposes useful functions
 like
-<a href="https://github.com/facebook/infer/blob/master/infer/src/absint/AbstractInterpreter.mli#L30" target="_blank" rel="noopener noreferrer"><code>compute_post</code></a>
+<a href="https://github.com/facebook/infer/blob/main/infer/src/absint/AbstractInterpreter.mli#L30" target="_blank" rel="noopener noreferrer"><code>compute_post</code></a>
 (take a procedure as input and compute a postcondition) and
-<a href="https://github.com/facebook/infer/blob/master/infer/src/absint/AbstractInterpreter.mli#L36" target="_blank" rel="noopener noreferrer"><code>exec_pdesc</code></a>
+<a href="https://github.com/facebook/infer/blob/main/infer/src/absint/AbstractInterpreter.mli#L36" target="_blank" rel="noopener noreferrer"><code>exec_pdesc</code></a>
 (take a procedure and compute an invariant map from node id&#x27;s to the
 pre/post at each node). The next step is to hook your checker up to
 the Infer command-line interface (CLI). For the liveness analysis, you
 would do this by exposing a function for running the checker on a
 single procedure:</p><div class="codeBlockContainer_K1bP"><div class="codeBlockContent_hGly OCaml"><div tabindex="0" class="prism-code language-OCaml codeBlock_23N8 thin-scrollbar"><div class="codeBlockLines_39YC" style="color:#bfc7d5;background-color:#292d3e"><div class="token-line" style="color:#bfc7d5"><span class="token plain">let checker ({IntraproceduralAnalysis.proc_desc; err_log} as analysis_data) =</span></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  match Analyzer.compute_post analysis_data ~initial:Domain.empty with</span></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  | Some post -&gt;</span></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">      Logging.progress &quot;Computed post %a for %a&quot;</span></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">        Domain.pp post Procname.pp (Procdesc.get_proc_name proc_desc);</span></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  | None -&gt; ()</span></div></div></div><button type="button" aria-label="Copy code to clipboard" class="copyButton_Ue-o">Copy</button></div></div><p>and then adding <code>Liveness.checker</code> to the list of registered checkers
 in
-<a href="https://github.com/facebook/infer/blob/master/infer/src/backend/registerCheckers.ml" target="_blank" rel="noopener noreferrer">registerCheckers.ml</a>
+<a href="https://github.com/facebook/infer/blob/main/infer/src/backend/registerCheckers.ml" target="_blank" rel="noopener noreferrer">registerCheckers.ml</a>
 (search for &quot;Liveness&quot;).</p><p>you can then run <code>infer run --liveness-only -- &lt;your_build_command&gt;</code> to run your
 checker on real code. See <a href="/docs/1.0.0/analyzing-apps-or-projects">here</a> for more
 details on the build systems supported by Infer.</p><p>Other examples of simple intraprocedural checkers are
-<a href="https://github.com/facebook/infer/blob/master/infer/src/checkers/addressTaken.ml" target="_blank" rel="noopener noreferrer">addressTaken.ml</a>
+<a href="https://github.com/facebook/infer/blob/main/infer/src/checkers/addressTaken.ml" target="_blank" rel="noopener noreferrer">addressTaken.ml</a>
 and
-<a href="https://github.com/facebook/infer/blob/master/infer/src/checkers/Siof.ml" target="_blank" rel="noopener noreferrer">Siof.ml</a>.</p><h2><a aria-hidden="true" tabindex="-1" class="anchor enhancedAnchor_2LWZ" id="error-reporting"></a>Error reporting<a class="hash-link" href="#error-reporting" title="Direct link to heading">#</a></h2><p>Useful analyses have output. Basic printing to stderr or stderr is
+<a href="https://github.com/facebook/infer/blob/main/infer/src/checkers/Siof.ml" target="_blank" rel="noopener noreferrer">Siof.ml</a>.</p><h2><a aria-hidden="true" tabindex="-1" class="anchor enhancedAnchor_2LWZ" id="error-reporting"></a>Error reporting<a class="hash-link" href="#error-reporting" title="Direct link to heading">#</a></h2><p>Useful analyses have output. Basic printing to stderr or stderr is
 good for debugging, but to report a programmer-readable error that is
 tied to a source code location, you&#x27;ll want to use
 <a href="/odoc/1.0.0/infer/Absint/Reporting/index.html#val-log_issue" target="_blank" rel="noopener noreferrer"><code>Reporting.log_issue</code></a>.</p><h2><a aria-hidden="true" tabindex="-1" class="anchor enhancedAnchor_2LWZ" id="by-example-interprocedural-analysis"></a>By example: interprocedural analysis<a class="hash-link" href="#by-example-interprocedural-analysis" title="Direct link to heading">#</a></h2><p>Let&#x27;s assume you have already read and understood the &quot;intraprocedural analysis&quot;
@@ -76,7 +76,7 @@ framework makes it easy to convert your intraprocedural analysis into a
 more; global analyses cannot be expressed in this framework.</p><p>To make your checker interprocedural, you need to:</p><ol><li><p>Define the type of procedure summaries for your analysis and let
 registerCheckers.ml know that your checker is interprocedural</p></li><li><p>Add logic for (a) using summaries in your transfer functions and (b)
 converting your intraprocedural abstract state to a summary.</p></li></ol><p>A good example to look at here is
-<a href="https://github.com/facebook/infer/blob/master/infer/src/checkers/Siof.ml" target="_blank" rel="noopener noreferrer">Siof.ml</a>.
+<a href="https://github.com/facebook/infer/blob/main/infer/src/checkers/Siof.ml" target="_blank" rel="noopener noreferrer">Siof.ml</a>.
 Step (1) is just:</p><div class="codeBlockContainer_K1bP"><div class="codeBlockContent_hGly OCaml"><div tabindex="0" class="prism-code language-OCaml codeBlock_23N8 thin-scrollbar"><div class="codeBlockLines_39YC" style="color:#bfc7d5;background-color:#292d3e"><div class="token-line" style="color:#bfc7d5"><span class="token plain">(* in src/checkers/SiofDomain.ml *)</span></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">(* note that as a result the type of summaries is the same as the type of domain</span></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">   elements *)</span></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">module Summary = ...</span></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">include Summary</span></div><div class="token-line" style="color:#bfc7d5"><span class="token plain" style="display:inline-block">
 </span></div><div class="token-line" style="color:#bfc7d5"><span class="token plain" style="display:inline-block">
 </span></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">(* in src/backend/Payloads.ml: register the payload of the analyzer *)</span></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">type t =</span></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  { ...</span></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  ; siof: SiofDomain.Summary.t option</span></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  ... }</span></div><div class="token-line" style="color:#bfc7d5"><span class="token plain" style="display:inline-block">
@@ -89,21 +89,21 @@ and uses the <code>analyze_dependency</code> callback provided by the framework:
 first&quot;. You must then add logic for applying the summary to the
 current abstract state (often, this is as simple as doing a join).</p><p>Because our summary type is the same as the abstract state, part (2b)
 here simply consists in return the post computed by the analysis as
-the procedure&#x27;s summary, using <code>Analyzer.compute_post</code>.</p><p>That&#x27;s it! We now have an interprocedural analysis.</p><p>To go deeper, jump to the <a href="https://github.com/facebook/infer/blob/master/infer/src/labs/README.md" target="_blank" rel="noopener noreferrer">lab
+the procedure&#x27;s summary, using <code>Analyzer.compute_post</code>.</p><p>That&#x27;s it! We now have an interprocedural analysis.</p><p>To go deeper, jump to the <a href="https://github.com/facebook/infer/blob/main/infer/src/labs/README.md" target="_blank" rel="noopener noreferrer">lab
 exercise</a>
 and to the <a href="/docs/1.0.0/internal-API/">API documentation</a>, e.g. for the
 <a href="/odoc/1.0.0/infer/Absint.html" target="_blank" rel="noopener noreferrer">Absint</a> and
 <a href="/odoc/1.0.0/infer/IR.html" target="_blank" rel="noopener noreferrer">IR</a> modules.</p></div></article><div class="margin-vert--lg"><nav class="pagination-nav" aria-label="Docs pages navigation"><div class="pagination-nav__item"><a class="pagination-nav__link" href="/docs/1.0.0/separation-logic-and-bi-abduction"><div class="pagination-nav__sublabel">Previous</div><div class="pagination-nav__label">« Separation logic and bi-abduction</div></a></div><div class="pagination-nav__item pagination-nav__item--next"><a class="pagination-nav__link" href="/docs/1.0.0/internal-API"><div class="pagination-nav__sublabel">Next</div><div class="pagination-nav__label">Infer Internal OCaml Modules API »</div></a></div></nav></div></div></div><div class="col col--3"><div class="tableOfContents_35-E thin-scrollbar"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#by-example-intraprocedural-analysis" class="table-of-contents__link">By example: intraprocedural analysis</a></li><li><a href="#error-reporting" class="table-of-contents__link">Error reporting</a></li><li><a href="#by-example-interprocedural-analysis" class="table-of-contents__link">By example: interprocedural analysis</a></li></ul></div></div></div></div></main></div></div><footer class="footer"><div class="container"><div class="row footer__links"><div class="col footer__col"><h4 class="footer__title">Docs</h4><ul class="footer__items"><li class="footer__item"><a class="footer__link-item" href="/docs/getting-started">Quick Start</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/infer-workflow">User Guide</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/about-Infer">Foundations</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/all-issue-types">Bug Types Reference</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/absint-framework">Contribute</a></li></ul></div><div class="col footer__col"><h4 class="footer__title">Community</h4><ul class="footer__items"><li class="footer__item"><a class="footer__link-item" href="/docs/support">Support</a></li></ul></div><div class="col footer__col"><h4 class="footer__title">Social</h4><ul class="footer__items"><li class="footer__item"><a class="footer__link-item" href="/blog">Blog</a></li><li class="footer__item"><a href="https://github.com/facebook/infer" target="_blank" rel="noopener noreferrer" class="footer__link-item">GitHub</a></li><li class="footer__item"><a href="https://twitter.com/fbinfer" target="_blank" rel="noopener noreferrer" class="footer__link-item">Twitter</a></li><li class="footer__item"><a href="https://www.facebook.com/inferstaticanalyzer" target="_blank" rel="noopener noreferrer" class="footer__link-item">Facebook</a></li></ul></div><div class="col footer__col"><h4 class="footer__title">Legal</h4><ul class="footer__items"><li class="footer__item"><a href="https://opensource.facebook.com/legal/privacy/" target="_blank" rel="noreferrer noopener" class="footer__link-item">Privacy</a></li><li class="footer__item"><a href="https://opensource.facebook.com/legal/terms/" target="_blank" rel="noreferrer noopener" class="footer__link-item">Terms</a></li></ul></div></div><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2021 Facebook, Inc. Built with Docusaurus.</div></div></div></footer></div>
-<script src="/assets/js/styles.7a3bfc13.js"></script>
-<script src="/assets/js/runtime~main.d65296cb.js"></script>
-<script src="/assets/js/main.950911ac.js"></script>
-<script src="/assets/js/1.b5bf5a34.js"></script>
-<script src="/assets/js/2.87dfd38b.js"></script>
-<script src="/assets/js/3.529b6fba.js"></script>
-<script src="/assets/js/1be78505.c4007472.js"></script>
-<script src="/assets/js/183.7a16840f.js"></script>
-<script src="/assets/js/62e81aa6.e2500d24.js"></script>
-<script src="/assets/js/17896441.1b2449d5.js"></script>
-<script src="/assets/js/43455a69.f1c87091.js"></script>
+<script src="/assets/js/styles.4dd728d4.js"></script>
+<script src="/assets/js/runtime~main.f5cccd5f.js"></script>
+<script src="/assets/js/main.7824f895.js"></script>
+<script src="/assets/js/1.7b6f24ff.js"></script>
+<script src="/assets/js/2.0316d8d9.js"></script>
+<script src="/assets/js/3.73bfe7e2.js"></script>
+<script src="/assets/js/1be78505.006ad70c.js"></script>
+<script src="/assets/js/184.913cbd41.js"></script>
+<script src="/assets/js/62e81aa6.b55e27a4.js"></script>
+<script src="/assets/js/17896441.c0052d9d.js"></script>
+<script src="/assets/js/43455a69.d26db2a6.js"></script>
 </body>
 </html>

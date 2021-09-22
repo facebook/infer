@@ -121,12 +121,12 @@ reserved for internal use). <b><br>
 
 <p style="margin-left:17%;">Activates: checker
 annotation-reachability: Given a pair of source and sink
-annotation, e.g. &lsquo;@PerformanceCritical&lsquo; and
-&lsquo;@Expensive&lsquo;, this checker will warn whenever
+annotation, e.g. &rsquo;@PerformanceCritical&rsquo; and
+&rsquo;@Expensive&rsquo;, this checker will warn whenever
 some method annotated with
-&lsquo;@PerformanceCritical&lsquo; calls, directly or
+&rsquo;@PerformanceCritical&rsquo; calls, directly or
 indirectly, another method annotated with
-&lsquo;@Expensive&lsquo; (Conversely:
+&rsquo;@Expensive&rsquo; (Conversely:
 <b>--no-annotation-reachability</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -259,7 +259,7 @@ bootclasspath</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1). <b><br>
---buck-blacklist</b> <i>+regex</i></p>
+--buck-block-list</b> <i>+regex</i></p>
 
 <p style="margin-left:17%;">Skip capture of files matched
 by the specified regular expression. Only the clang,
@@ -274,6 +274,16 @@ See also <b>infer-capture</b>(1) and <b>infer-run</b>(1).
 <p style="margin-left:17%;">Activates: Buck integration for
 clang-based targets (C/C++/Objective-C/Objective-C++).
 (Conversely: <b>--no-buck-clang</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-capture</b>(1). <b><br>
+--buck-clang-use-toolchain-config</b></p>
+
+<p style="margin-left:17%;">Activates: Suppress setting
+buck config values for the infer binary and other values in
+the buck-clang-flavor integration and instead rely on buck
+toolchain configuration options. (Conversely:
+<b>--no-buck-clang-use-toolchain-config</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1). <b><br>
@@ -330,7 +340,7 @@ capture. Only valid for <b>--buck-clang</b>. (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1). <b><br>
---buck-targets-blacklist</b> <i>+regex</i></p>
+--buck-targets-block-list</b> <i>+regex</i></p>
 
 <p style="margin-left:17%;">Skip capture of buck targets
 matched by the specified regular expression. Only valid for
@@ -354,7 +364,7 @@ and disable all other checkers (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
---capture-blacklist</b> <i>regex</i></p>
+--capture-block-list</b> <i>regex</i></p>
 
 <p style="margin-left:17%;">Skip capture of files matched
 by the specified OCaml regular expression (only supported by
@@ -362,6 +372,14 @@ the javac integration for now).</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1) and <b>infer-run</b>(1). <b><br>
+--no-censor-report</b> <i>+issue_type_regex</i></p>
+
+<p style="margin-left:17%;">For debugging/experimentation
+only: Specify issues not to be censored by
+<b>--censor-report</b>.</p>
+
+<p style="margin-left:11%;">See also <b>infer-report</b>(1)
+and <b>infer-run</b>(1). <b><br>
 --censor-report</b> <i>+string</i></p>
 
 <p style="margin-left:17%;">Specify a filter for issues to
@@ -373,18 +391,18 @@ are specified, they are applied in the order in which they
 are specified. Each filter is applied to each issue
 detected, and only issues which are accepted by all filters
 are reported. Each filter is of the form:
-&lsquo;&lt;issue_type_regex&gt;:&lt;filename_regex&gt;:&lt;reason_string&gt;&lsquo;.
+&rsquo;&lt;issue_type_regex&gt;:&lt;filename_regex&gt;:&lt;reason_string&gt;&rsquo;.
 The first two components are OCaml Str regular expressions,
-with an optional &lsquo;!&lsquo; character prefix. If a
-regex has a &lsquo;!&lsquo; prefix, the polarity is
-inverted, and the filter becomes a &quot;blacklist&quot;
-instead of a &quot;whitelist&quot;. Each filter is
+with an optional &rsquo;!&rsquo; character prefix. If a
+regex has a &rsquo;!&rsquo; prefix, the polarity is
+inverted, and the filter becomes a &quot;block list&quot;
+instead of a &quot;allow list&quot;. Each filter is
 interpreted as an implication: an issue matches if it does
-not match the &lsquo;issue_type_regex&lsquo; or if it does
-match the &lsquo;filename_regex&lsquo;. The filenames that
+not match the &rsquo;issue_type_regex&rsquo; or if it does
+match the &rsquo;filename_regex&rsquo;. The filenames that
 are tested by the regex are relative to the
-&lsquo;--project-root&lsquo; directory. The
-&lsquo;&lt;reason_string&gt;&lsquo; is a non-empty string
+&rsquo;--project-root&rsquo; directory. The
+&rsquo;&lt;reason_string&gt;&rsquo; is a non-empty string
 used to explain why the issue was filtered.</p>
 
 <p style="margin-left:11%;">See also <b>infer-report</b>(1)
@@ -412,13 +430,13 @@ need to provide a compilation command.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1). <b><br>
---clang-blacklisted-flags</b> <i>+string</i></p>
+--clang-block-listed-flags</b> <i>+string</i></p>
 
 <p style="margin-left:17%;">Clang flags to filter out</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1). <b><br>
---clang-blacklisted-flags-with-arg</b> <i>+string</i></p>
+--clang-block-listed-flags-with-arg</b> <i>+string</i></p>
 
 <p style="margin-left:17%;">Clang flags (taking args) to
 filter out</p>
@@ -554,7 +572,7 @@ given the same before. Not compatible with
 <p style="margin-left:17%;">Activates: checker cost:
 Computes the time complexity of functions and methods. Can
 be used to detect changes in runtime complexity with
-&lsquo;infer reportdiff&lsquo;. (Conversely:
+&rsquo;infer reportdiff&rsquo;. (Conversely:
 <b>--no-cost</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -767,7 +785,10 @@ default), <br>
 Abduction_case_not_implemented (enabled by default), <br>
 Array_of_pointsto (enabled by default), <br>
 Assert_failure (enabled by default), <br>
+BAD_KEY (enabled by default), <br>
+BAD_MAP (enabled by default), <br>
 BAD_POINTER_COMPARISON (enabled by default), <br>
+BAD_RECORD (enabled by default), <br>
 BIABDUCTION_ANALYSIS_STOPS (disabled by default), <br>
 BIABDUCTION_MEMORY_LEAK (disabled by default), <br>
 BUFFER_OVERRUN_L1 (enabled by default), <br>
@@ -795,6 +816,7 @@ CONDITION_ALWAYS_FALSE (disabled by default), <br>
 CONDITION_ALWAYS_TRUE (disabled by default), <br>
 CONFIG_CHECKS_BETWEEN_MARKERS (disabled by default), <br>
 CONFIG_IMPACT (disabled by default), <br>
+CONFIG_IMPACT_STRICT (disabled by default), <br>
 CONSTANT_ADDRESS_DEREFERENCE (disabled by default), <br>
 CREATE_INTENT_FROM_URI (enabled by default), <br>
 CROSS_SITE_SCRIPTING (enabled by default), <br>
@@ -897,6 +919,10 @@ Missing_fld (enabled by default), <br>
 NIL_BLOCK_CALL (enabled by default), <br>
 NIL_INSERTION_INTO_COLLECTION (enabled by default), <br>
 NIL_MESSAGING_TO_NON_POD (enabled by default), <br>
+NO_MATCHING_CASE_CLAUSE (enabled by default), <br>
+NO_MATCHING_FUNCTION_CLAUSE (enabled by default), <br>
+NO_MATCH_OF_RHS (enabled by default), <br>
+NO_TRUE_BRANCH_IN_IF (enabled by default), <br>
 NULLPTR_DEREFERENCE (enabled by default), <br>
 NULL_DEREFERENCE (enabled by default), <br>
 OPTIONAL_EMPTY_ACCESS (enabled by default), <br>
@@ -969,7 +995,7 @@ or off.</p>
 --eradicate</b></p>
 
 <p style="margin-left:17%;">Activates: checker eradicate:
-The eradicate &lsquo;@Nullable&lsquo; checker for Java
+The eradicate &rsquo;@Nullable&rsquo; checker for Java
 annotations. (Conversely: <b>--no-eradicate</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -1026,7 +1052,7 @@ renamings to use while computing differential reports</p>
 --no-filtering</b>,<b>-F</b></p>
 
 <p style="margin-left:17%;">Deactivates: Do not show the
-experimental and blacklisted issue types (Conversely:
+experimental and block listed issue types (Conversely:
 <b>--filtering</b> | <b>-f</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -1202,9 +1228,9 @@ report of issues found. (Conversely: <b>--no-html</b>)</p>
 <p style="margin-left:17%;">Activates: checker
 immutable-cast: Detection of object cast from immutable
 types to mutable types. For instance, it will detect casts
-from &lsquo;ImmutableList&lsquo; to &lsquo;List&lsquo;,
-&lsquo;ImmutableMap&lsquo; to &lsquo;Map&lsquo;, and
-&lsquo;ImmutableSet&lsquo; to &lsquo;Set&lsquo;.
+from &rsquo;ImmutableList&rsquo; to &rsquo;List&rsquo;,
+&rsquo;ImmutableMap&rsquo; to &rsquo;Map&rsquo;, and
+&rsquo;ImmutableSet&rsquo; to &rsquo;Set&rsquo;.
 (Conversely: <b>--no-immutable-cast</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -1310,6 +1336,14 @@ analysis encounters a failure (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--kotlin-capture</b></p>
+
+<p style="margin-left:17%;">Activates: Enable Kotlin
+capture (experimental, do not use). (Conversely:
+<b>--no-kotlin-capture</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-capture</b>(1). <b><br>
 --linter</b> <i>string</i></p>
 
 <p style="margin-left:17%;">From the linters available,
@@ -1406,7 +1440,7 @@ issue types that infer might report. (Conversely:
 
 <p style="margin-left:17%;">Activates: checker
 litho-required-props: Checks that all non-optional
-&lsquo;@Prop&lsquo;s have been specified when constructing
+&rsquo;@Prop&rsquo;s have been specified when constructing
 Litho components. (Conversely:
 <b>--no-litho-required-props</b>)</p>
 
@@ -1480,6 +1514,14 @@ and disable all other checkers (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--no-mask-sawja-exceptions</b></p>
+
+<p style="margin-left:17%;">Deactivates: Mask exceptions
+thrown by Sawja/Javalib during Java capture (Conversely:
+<b>--mask-sawja-exceptions</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-capture</b>(1). <b><br>
 --max-jobs</b> <i>int</i></p>
 
 <p style="margin-left:17%;">Maximum number of analysis jobs
@@ -1499,7 +1541,7 @@ skipped. If omitted, all levels are shown.</p>
 
 <p style="margin-left:17%;">Activates: Generate OCaml
 analysis allocation traces in
-&lsquo;infer-out/memtrace&lsquo;. (Conversely:
+&rsquo;infer-out/memtrace&rsquo;. (Conversely:
 <b>--no-memtrace-analysis-profiling</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -1547,11 +1589,11 @@ infer-run</b>(1). <b><br>
 --printf-args</b></p>
 
 <p style="margin-left:17%;">Activates: checker printf-args:
-Detect mismatches between the Java &lsquo;printf&lsquo;
+Detect mismatches between the Java &rsquo;printf&rsquo;
 format strings and the argument types For example, this
 checker will warn about the type error in
-&lsquo;printf(&quot;Hello %d&quot;,
-&quot;world&quot;)&lsquo; (Conversely:
+&rsquo;printf(&quot;Hello %d&quot;,
+&quot;world&quot;)&rsquo; (Conversely:
 <b>--no-printf-args</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -1779,6 +1821,20 @@ disable all other checkers (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--pulse-prune-unsupported-arithmetic</b></p>
+
+<p style="margin-left:17%;">Activates: The arithmetic
+engine in Pulse sometimes does not detect that the
+collection of conditions on the path makes it infeasible,
+especially outside the well-supported linear arithmetic
+fragment. To avoid false positives, Pulse tries to detect
+when there is a possibility of imprecise arithmetic
+treatment and if so pessimistically assumes the path is
+infeasible. (Conversely:
+<b>--no-pulse-prune-unsupported-arithmetic</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --pulse-report-ignore-unknown-java-methods-patterns</b>
 <i>+string</i></p>
 
@@ -1913,19 +1969,28 @@ phase once the analysis has completed (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1) and <b>infer-run</b>(1). <b><br>
---report-blacklist-files-containing</b> <i>+string</i></p>
+--report-allow-list-path-regex</b> <i>+path_regex</i></p>
+
+<p style="margin-left:17%;">Report issues only on files
+whose relative path matches the specified OCaml regex (and
+which do not match
+<b>--report-block-list-path-regex</b>)</p>
+
+<p style="margin-left:11%;">See also <b>infer-report</b>(1)
+and <b>infer-run</b>(1). <b><br>
+--report-block-list-files-containing</b> <i>+string</i></p>
 
 <p style="margin-left:17%;">Do not report any issues on
 files containing the specified string</p>
 
 <p style="margin-left:11%;">See also <b>infer-report</b>(1)
 and <b>infer-run</b>(1). <b><br>
---report-blacklist-path-regex</b> <i>+path_regex</i></p>
+--report-block-list-path-regex</b> <i>+path_regex</i></p>
 
 <p style="margin-left:17%;">Do not report any issues on
 files whose relative path matches the specified OCaml regex,
-even if they match the whitelist specified by
-<b>--report-whitelist-path-regex</b></p>
+even if they match the allow list specified by
+<b>--report-allow-list-path-regex</b></p>
 
 <p style="margin-left:11%;">See also <b>infer-report</b>(1)
 and <b>infer-run</b>(1). <b><br>
@@ -1973,14 +2038,6 @@ errors</p>
 
 <p style="margin-left:11%;">See also <b>infer-report</b>(1)
 and <b>infer-run</b>(1). <b><br>
---report-whitelist-path-regex</b> <i>+path_regex</i></p>
-
-<p style="margin-left:17%;">Report issues only on files
-whose relative path matches the specified OCaml regex (and
-which do not match <b>--report-blacklist-path-regex</b>)</p>
-
-<p style="margin-left:11%;">See also <b>infer-report</b>(1)
-and <b>infer-run</b>(1). <b><br>
 --results-dir</b>,<b>-o</b> <i>dir</i></p>
 
 <p style="margin-left:17%;">Write results and internal
@@ -2018,7 +2075,7 @@ and <b>infer-explore</b>(1). <b><br>
 
 <p style="margin-left:17%;">Deactivates: checker
 self-in-block: An Objective-C-specific analysis to detect
-when a block captures &lsquo;self&lsquo;. (Conversely:
+when a block captures &rsquo;self&rsquo;. (Conversely:
 <b>--self-in-block</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -2028,6 +2085,29 @@ when a block captures &lsquo;self&lsquo;. (Conversely:
 <p style="margin-left:17%;">Activates: Enable self-in-block
 and disable all other checkers (Conversely:
 <b>--no-self-in-block-only</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--simple-lineage</b></p>
+
+<p style="margin-left:17%;">Activates: checker
+simple-lineage: Computes a dataflow graph (Conversely:
+<b>--no-simple-lineage</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--simple-lineage-max-cfg-size</b> <i>int</i></p>
+
+<p style="margin-left:17%;">If set, larger CFGs are
+skipped.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--simple-lineage-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable
+simple-lineage and disable all other checkers (Conversely:
+<b>--no-simple-lineage-only</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -2317,7 +2397,7 @@ Infer directory to generate its website at
 --Xbuck</b> <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&lsquo;buck build&lsquo;</i>.
+arguments to invocations of <i>&rsquo;buck build&rsquo;</i>.
 Only valid for <b>--buck-clang</b>.</p>
 
 <p style="margin-left:11%;">See also
@@ -2325,7 +2405,7 @@ Only valid for <b>--buck-clang</b>.</p>
 --Xbuck-no-inline</b> <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&lsquo;buck build&lsquo;</i>,
+arguments to invocations of <i>&rsquo;buck build&rsquo;</i>,
 don't inline any args starting with '@'. Only valid for
 <b>--buck-clang</b>.</p>
 
@@ -2357,8 +2437,8 @@ isysroot directory, to avoid absolute paths in tests</p>
 <p style="margin-left:17%;">Activates: Infer will use
 xcpretty together with xcodebuild to analyze an iOS app.
 xcpretty just needs to be in the path, infer command is
-still just <i>&lsquo;infer -- &lt;xcodebuild
-command&gt;&lsquo;</i>. (Conversely:
+still just <i>&rsquo;infer -- &lt;xcodebuild
+command&gt;&rsquo;</i>. (Conversely:
 <b>--no-xcpretty</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -2393,9 +2473,9 @@ may be passed to all infer commands using the
 <b>INFER_ARGS</b> environment variable (see the
 <i>OPTIONS</i> section). <b>INFER_ARGS</b> is expected to
 contain a string of ^-separated options. For instance,
-calling &lsquo;INFER_ARGS=--debug^--print-logs infer&lsquo;
-is equivalent to calling &lsquo;infer --debug
---print-logs&lsquo;.</p>
+calling &rsquo;INFER_ARGS=--debug^--print-logs infer&rsquo;
+is equivalent to calling &rsquo;infer --debug
+--print-logs&rsquo;.</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>INFERCONFIG</b>:
@@ -2441,7 +2521,7 @@ then its parent, etc., stopping at the first
 
 <p style="margin-left:11%; margin-top: 1em">{ <br>
 &quot;cxx&quot;: false, <br>
-&quot;infer-blacklist-files-containing&quot;:
+&quot;infer-block-list-files-containing&quot;:
 [&quot;@gen&quot;,&quot;/* no infer */&quot;] <br>
 }</p>
 
