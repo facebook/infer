@@ -1792,22 +1792,22 @@ module Erlang = struct
     PulseArithmetic.prune_positive instanceof_val astate
 
 
+  let load_field path field location obj astate =
+    match Java.load_field path field location obj astate with
+    | Error _ ->
+        L.die InternalError "Could not load field (we assume Erlang references to be valid)"
+    | Ok result ->
+        result
+
+
   let list_reverse list : model =
    fun {location; path; ret= ret_id, _} astate ->
     (* Assumes that the argument is a Cons and loads the head and tail *)
     let load_head_tail cons astate =
       let+ astate = prune_type cons Cons astate in
-      match Java.load_field path cons_head_field location cons astate with
-      | Error _ ->
-          (* The prune above should catch cases when the structure is not a Cons *)
-          L.die InternalError "List 'head' field not found on structure in Erlang.list_reverse"
-      | Ok (astate, _, head) -> (
-        match Java.load_field path cons_tail_field location cons astate with
-        | Error _ ->
-            (* The prune above should catch cases when the structure is not a Cons *)
-            L.die InternalError "List 'tail' field not found on structure in Erlang.list_reverse"
-        | Ok (astate, _, tail) ->
-            (head, tail, astate) )
+      let astate, _, head = load_field path cons_head_field location cons astate in
+      let astate, _, tail = load_field path cons_tail_field location cons astate in
+      (head, tail, astate)
     in
     (* Assumes that a list is of given length and reads the elements *)
     let rec assume_and_deconstruct list length astate =
@@ -1914,76 +1914,72 @@ module Erlang = struct
 
   let map_is_key (key, _key_history) map : model =
    fun ({location; path; ret= ret_id, _} as data) astate ->
-    match Java.load_field path map_is_empty_field location map astate with
-    | Error _ ->
-        (* Field not found, seems like it's not a map *)
-        error_badmap data astate
-    | Ok (astate, _isempty_addr, (is_empty, _isempty_hist)) ->
-        let ret_val_true = AbstractValue.mk_fresh () in
-        let ret_val_false = AbstractValue.mk_fresh () in
-        let event = ValueHistory.Call {f= Model "map_is_key"; location; in_call= []} in
-        (* Return 3 cases:
-         * - Error & assume not map
-         * - Ok & assume map & assume empty & return false
-         * - Ok & assume map & assume not empty & assume key is the tracked key & return true
-         *)
-        let astate_badmap = make_astate_badmap map data astate in
-        let astate_empty =
-          let* astate = make_astate_goodmap map astate in
-          let* astate = PulseArithmetic.prune_positive is_empty astate in
-          let+ astate = PulseArithmetic.and_eq_int ret_val_false IntLit.zero astate in
-          PulseOperations.write_id ret_id (ret_val_false, [event]) astate |> continue
-        in
-        let astate_haskey =
-          let* astate = make_astate_goodmap map astate in
-          let* astate = PulseArithmetic.prune_eq_zero is_empty astate in
-          let* astate, _key_addr, (tracked_key, _hist) =
-            Java.load_field path map_key_field location map astate
-          in
-          let* astate =
-            PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand key)
-              (AbstractValueOperand tracked_key) astate
-          in
-          let+ astate = PulseArithmetic.and_eq_int ret_val_true IntLit.one astate in
-          PulseOperations.write_id ret_id (ret_val_true, [event]) astate |> continue
-        in
-        astate_badmap @ [astate_empty; astate_haskey]
+    let astate, _isempty_addr, (is_empty, _isempty_hist) =
+      load_field path map_is_empty_field location map astate
+    in
+    let ret_val_true = AbstractValue.mk_fresh () in
+    let ret_val_false = AbstractValue.mk_fresh () in
+    let event = ValueHistory.Call {f= Model "map_is_key"; location; in_call= []} in
+    (* Return 3 cases:
+     * - Error & assume not map
+     * - Ok & assume map & assume empty & return false
+     * - Ok & assume map & assume not empty & assume key is the tracked key & return true
+     *)
+    let astate_badmap = make_astate_badmap map data astate in
+    let astate_empty =
+      let* astate = make_astate_goodmap map astate in
+      let* astate = PulseArithmetic.prune_positive is_empty astate in
+      let+ astate = PulseArithmetic.and_eq_int ret_val_false IntLit.zero astate in
+      PulseOperations.write_id ret_id (ret_val_false, [event]) astate |> continue
+    in
+    let astate_haskey =
+      let* astate = make_astate_goodmap map astate in
+      let* astate = PulseArithmetic.prune_eq_zero is_empty astate in
+      let astate, _key_addr, (tracked_key, _hist) =
+        load_field path map_key_field location map astate
+      in
+      let* astate =
+        PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand key)
+          (AbstractValueOperand tracked_key) astate
+      in
+      let+ astate = PulseArithmetic.and_eq_int ret_val_true IntLit.one astate in
+      PulseOperations.write_id ret_id (ret_val_true, [event]) astate |> continue
+    in
+    astate_empty :: astate_haskey :: astate_badmap
 
 
   let map_get (key, _key_history) map : model =
    fun ({location; path; ret= ret_id, _} as data) astate ->
-    match Java.load_field path map_is_empty_field location map astate with
-    | Error _ ->
-        (* Field not found, seems like it's not a map *)
-        error_badmap data astate
-    | Ok (astate, _isempty_addr, (is_empty, _isempty_hist)) ->
-        (* Return 3 cases:
-         * - Error & assume not map
-         * - Error & assume map & assume empty;
-         * - Ok & assume map & assume nonempty & assume key is the tracked key & return tracked value
-         *)
-        let astate_badmap = make_astate_badmap map data astate in
-        let astate_ok =
-          let* astate = make_astate_goodmap map astate in
-          let* astate = PulseArithmetic.prune_eq_zero is_empty astate in
-          let* astate, _key_addr, (tracked_key, _hist) =
-            Java.load_field path map_key_field location map astate
-          in
-          let* astate =
-            PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand key)
-              (AbstractValueOperand tracked_key) astate
-          in
-          let+ astate, _value_addr, tracked_value =
-            Java.load_field path map_value_field location map astate
-          in
-          PulseOperations.write_id ret_id tracked_value astate |> continue
-        in
-        let astate_badkey =
-          let<*> astate = make_astate_goodmap map astate in
-          let<*> astate = PulseArithmetic.prune_positive is_empty astate in
-          error_badkey data astate
-        in
-        (astate_ok :: astate_badkey) @ astate_badmap
+    let astate, _isempty_addr, (is_empty, _isempty_hist) =
+      load_field path map_is_empty_field location map astate
+    in
+    (* Return 3 cases:
+     * - Error & assume not map
+     * - Error & assume map & assume empty;
+     * - Ok & assume map & assume nonempty & assume key is the tracked key & return tracked value
+     *)
+    let astate_badmap = make_astate_badmap map data astate in
+    let astate_ok =
+      let* astate = make_astate_goodmap map astate in
+      let* astate = PulseArithmetic.prune_eq_zero is_empty astate in
+      let astate, _key_addr, (tracked_key, _hist) =
+        load_field path map_key_field location map astate
+      in
+      let+ astate =
+        PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand key)
+          (AbstractValueOperand tracked_key) astate
+      in
+      let astate, _value_addr, tracked_value =
+        load_field path map_value_field location map astate
+      in
+      PulseOperations.write_id ret_id tracked_value astate |> continue
+    in
+    let astate_badkey =
+      let<*> astate = make_astate_goodmap map astate in
+      let<*> astate = PulseArithmetic.prune_positive is_empty astate in
+      error_badkey data astate
+    in
+    (astate_ok :: astate_badkey) @ astate_badmap
 
 
   let map_put key value map : model =
