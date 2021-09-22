@@ -618,21 +618,22 @@ module Dom = struct
       let is_cheap_call = match instantiated_cost with Cheap -> true | _ -> false in
       let is_unmodeled_call = match instantiated_cost with NoModel -> true | _ -> false in
       if strict_mode then
-        match (callee_summary, expensiveness_model) with
-        | ( Some
-              { Summary.unchecked_callees= callee_summary
-              ; unchecked_callees_cond= callee_summary_cond
-              ; has_call_stmt }
-          , _ )
+        match callee_summary with
+        | Some
+            { Summary.unchecked_callees= callee_summary
+            ; unchecked_callees_cond= callee_summary_cond
+            ; has_call_stmt }
           when has_call_stmt ->
             (* If callee's summary is not leaf, use it. *)
             join_callee_summary callee_summary callee_summary_cond
-        | None, (None | Some KnownCheap) when is_setter_getter callee ->
-            (* If callee is unknown/cheap setter/getter, ignore it. *)
-            astate
-        | _, _ ->
-            (* Otherwise, add callee's name. *)
-            add_callee_name ~is_known_expensive:false
+        | _ -> (
+          match expensiveness_model with
+          | (None | Some KnownCheap) when is_setter_getter callee ->
+              (* If callee is unknown/cheap setter/getter, ignore it. *)
+              astate
+          | _ ->
+              (* Otherwise, add callee's name. *)
+              add_callee_name ~is_known_expensive:false )
       else
         match expensiveness_model with
         | None when is_cheap_call && not has_expensive_callee ->
