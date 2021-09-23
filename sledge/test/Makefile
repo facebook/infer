@@ -7,8 +7,8 @@
 CLANG_ARGS?=-O0 -Xclang -disable-O0-optnone
 
 # executable to test
-SLEDGE_DBG=$(CURDIR)/../_build/debug/cli/sledge_cli.exe
-SLEDGE_OPT=$(CURDIR)/../_build/release/cli/sledge_cli.exe
+SLEDGE_DBG:=$(CURDIR)/../_build/debug/cli/sledge_cli.exe
+SLEDGE_OPT:=$(CURDIR)/../_build/release/cli/sledge_cli.exe
 
 # additional arguments to pass to sledge translate, disassemble, analyze, smt, and report
 SLEDGE_T_ARGS?=
@@ -21,10 +21,10 @@ SLEDGE_R_ARGS?=
 TIMEOUT?=300
 MEMOUT?=6
 
-sledge_dbg=./wrap.sh $(TIMEOUT) $(MEMOUT) $(SLEDGE_DBG)
-sledge_opt=./wrap.sh $(TIMEOUT) $(MEMOUT) $(SLEDGE_OPT)
+sledge_dbg:=./wrap.sh $(TIMEOUT) $(MEMOUT) $(SLEDGE_DBG)
+sledge_opt:=./wrap.sh $(TIMEOUT) $(MEMOUT) $(SLEDGE_OPT)
 
-sledge_report=$(CURDIR)/../_build/debug/report/sledge_report.exe
+sledge_report:=$(CURDIR)/../_build/debug/report/sledge_report.exe
 
 .PHONY: sledge_report_exe
 sledge_report_exe:
@@ -34,28 +34,30 @@ sledge_report_exe:
 diff?=patdiff
 
 # select llvm and clang used by opam
-export PATH := $(shell $$(opam var conf-llvm:config) --bindir):$(PATH)
+export PATH:=$(shell $$(opam var conf-llvm:config) --bindir):$(PATH)
 
 # query llvm-config for compilation flags
-C_FLAGS = $(shell $$(opam var conf-llvm:config) --cflags)
-CXX_FLAGS = $(shell $$(opam var conf-llvm:config) --cxxflags)
+C_FLAGS:=$(shell $$(opam var conf-llvm:config) --cflags)
+CXX_FLAGS:=$(shell $$(opam var conf-llvm:config) --cxxflags)
 
 # configure sort
-export LANG := C
+export LANG:=C
 
 default: test
 
+llair_intrinsics_h:=$(CURDIR)/../model/llair_intrinsics.h
+
 # compile c to llvm bitcode
-%.bc : %.c $(CURDIR)/../model/llair_intrinsics.h
-	(cd $(@D) && clang -g -c -emit-llvm $(C_FLAGS) -include $(CURDIR)/../model/llair_intrinsics.h -Wno-main-return-type $(CLANG_ARGS) -o $(@F) $(<F))
+%.bc : %.c $(llair_intrinsics)
+	clang -g -c -emit-llvm $(C_FLAGS) -include $(llair_intrinsics_h) -Wno-main-return-type $(CLANG_ARGS) -o $@ $<
 
 # compile c++ to llvm bitcode
 %.bc : %.cpp
-	(cd $(@D) && clang++ -g -c -emit-llvm $(CXX_FLAGS) $(CLANG_ARGS) -o $(@F) $(<F))
+	clang++ -g -c -emit-llvm $(CXX_FLAGS) $(CLANG_ARGS) -o $@ $<
 
 # disassemble bitcode to llvm assembly
 %.ll : %.bc
-	(cd $(@D) && llvm-dis -show-annotations -o $(@F) $(<F))
+	llvm-dis -show-annotations -o $@ $<
 
 %.bllair : %.bc
 	$(SLEDGE_DBG) llvm translate $< -output $@
@@ -85,7 +87,9 @@ AnalyzeTests:=$(AnalyzeBCs) $(AnalyzeLLs)
 GeneratedBCs:=$(TranslateGenBCs) $(AnalyzeGenBCs)
 
 # compile all c/c++ to bc
-compile: $(GeneratedBCs)
+.PHONY: compile
+compile:
+	$(MAKE) -j $(GeneratedBCs)
 	@if [ -d "extra" ]; then \
 	   $(MAKE) sledge=$(SLEDGE_DBG) -C extra compile; \
 	 fi
@@ -121,7 +125,7 @@ translate-status: translate.sexp sledge_report_exe
 analyze: compile
 	-parallel --bar $(sledge_dbg) llvm analyze -trace Report+Control $(SLEDGE_A_ARGS) ::: $(AnalyzeTests)
 
-parallel_sledge_opt=parallel --use-cores-instead-of-threads --shuf --bar $(sledge_opt) llvm analyze -append-report $(SLEDGE_A_ARGS) :::
+parallel_sledge_opt:=parallel --use-cores-instead-of-threads --shuf --bar $(sledge_opt) llvm analyze -append-report $(SLEDGE_A_ARGS) :::
 
 analyze-perf1: compile
 	-@$(parallel_sledge_opt) $(AnalyzeTests)
@@ -159,7 +163,7 @@ SmtTests:=$(shell find smt -name '*.smt2' 2>/dev/null)
 smt:
 	-parallel --bar $(sledge_dbg) smt $(SLEDGE_S_ARGS) ::: $(SmtTests)
 
-parallel_sledge_opt_smt=parallel --use-cores-instead-of-threads --shuf --bar $(sledge_opt) smt -append-report $(SLEDGE_S_ARGS) :::
+parallel_sledge_opt_smt:=parallel --use-cores-instead-of-threads --shuf --bar $(sledge_opt) smt -append-report $(SLEDGE_S_ARGS) :::
 
 smt-perf1:
 	-@$(parallel_sledge_opt_smt) $(SmtTests)

@@ -8,13 +8,13 @@ OPT_ARGS?=-Os
 CLANG_ARGS?=-g $(OPT_ARGS)
 
 ROOT?=..
-LIBCXXABI=$(ROOT)/vendor/llvm-dune/llvm-project/libcxxabi
+LIBCXXABI:=$(ROOT)/vendor/llvm-dune/llvm-project/libcxxabi
 
-llvm-config=$(shell opam var conf-llvm:config)
-LLVM_BIN=$(shell ${llvm-config} --bindir)
-LLVM_INCLUDE=$(shell ${llvm-config} --includedir)
-LLVM_CFLAGS=$(shell ${llvm-config} --cflags)
-LLVM_CXXFLAGS=$(shell ${llvm-config} --cxxflags)
+llvm-config:=$(shell opam var conf-llvm:config)
+LLVM_BIN:=$(shell ${llvm-config} --bindir)
+LLVM_INCLUDE:=$(shell ${llvm-config} --includedir)
+LLVM_CFLAGS:=$(shell ${llvm-config} --cflags)
+LLVM_CXXFLAGS:=$(shell ${llvm-config} --cxxflags)
 
 default: cxxabi.bc lib_fuzzer_main.bc
 
