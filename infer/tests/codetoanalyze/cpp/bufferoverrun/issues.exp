@@ -1,4 +1,3 @@
-../../facebook-clang-plugins/clang/install/include/c++/v1/string, std::operator==<std::allocator<char>_>, 13, BUFFER_OVERRUN_U5, no_bucket, ERROR, [<Length trace>,Unknown value from: std::basic_string<char,std::char_traits<char>,std::allocator<char>>::data,Assignment,Array access: Offset: [-oo, +oo] Size: [0, +oo]]
 codetoanalyze/cpp/bufferoverrun/arith.cpp, bool_overflow2_Good_FP, 2, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, [Here]
 codetoanalyze/cpp/bufferoverrun/arith.cpp, bool_overflow2_Good_FP, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 10 Size: 10]
 codetoanalyze/cpp/bufferoverrun/arith.cpp, bool_overflow_Bad, 2, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, [Here]

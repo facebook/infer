@@ -1,5 +1,3 @@
-../../facebook-clang-plugins/clang/install/include/c++/v1/iterator, std::__wrap_iter<A*>::operator++, 0, IMPURE_FUNCTION, no_bucket, ERROR, [Impure function std::__wrap_iter<A*>::operator++,parameter `this.*__i` modified here]
-../../facebook-clang-plugins/clang/install/include/c++/v1/iterator, std::__wrap_iter<int*>::operator++, 0, IMPURE_FUNCTION, no_bucket, ERROR, [Impure function std::__wrap_iter<int*>::operator++,parameter `this.*__i` modified here]
 codetoanalyze/cpp/impurity/array_test.cpp, alias_mod_impure, 0, IMPURE_FUNCTION, no_bucket, ERROR, [Impure function alias_mod_impure,parameter `array.*[]` modified here]
 codetoanalyze/cpp/impurity/array_test.cpp, array_mod_both_impure, 0, IMPURE_FUNCTION, no_bucket, ERROR, [Impure function array_mod_both_impure,parameter `a.*[]` modified here]
 codetoanalyze/cpp/impurity/array_test.cpp, array_mod_impure, 0, IMPURE_FUNCTION, no_bucket, ERROR, [Impure function array_mod_impure,parameter `b.*[]` modified here,parameter `a.*[]` modified here]
