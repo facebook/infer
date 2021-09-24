@@ -56,6 +56,12 @@ error_t thread_join(thread_t* t) {
   return OK;
 }
 
+/*
+ * cct
+ */
+
+void cct_point(void);
+
 #ifdef __cplusplus
 }
 #endif

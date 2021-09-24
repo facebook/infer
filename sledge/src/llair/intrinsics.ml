@@ -34,5 +34,7 @@ type t =
   | (* cstring *)
     `strlen
   | (* folly *)
-    `_ZN5folly13usingJEMallocEv ]
+    `_ZN5folly13usingJEMallocEv
+  | (* cct *)
+    `cct_point ]
 [@@deriving compare, equal, hash, sexp, enumerate, variants]

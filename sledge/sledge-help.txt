@@ -106,29 +106,30 @@ Analyze code in one or more LLVM bitcode files. This is a convenience wrapper fo
 
 === flags ===
 
-  [-append-report]       append to report file
-  [-bound <int>]         stop execution exploration at depth <int>, a negative
-                         bound is never hit and leads to unbounded exploration
-  [-colors]              enable printing in colors
-  [-domain <string>]     select abstract domain; must be one of "sh" (default,
-                         symbolic heap domain), "globals" (used-globals domain),
-                         or "unit" (unit domain)
-  [-dump-query <int>]    dump solver query <int> and halt
-  [-function-summaries]  use function summaries (in development)
-  [-margin <cols>]       wrap debug tracing at <cols> columns
-  [-no-internalize]      do not internalize all functions except the entry
-                         points specified in the config file
-  [-no-simplify-states]  do not simplify states during symbolic execution
-  [-output <file>]       write generated binary LLAIR to <file>
-  [-preanalyze-globals]  pre-analyze global variables used by each function
-  [-report <file>]       write report sexp to <file>, or to standard error if
-                         "-"
-  [-sample]              randomly sample execution paths
-  [-seed <int>]          specify random number generator seed
-  [-stats]               output performance statistics to stderr
-  [-trace <spec>]        enable debug tracing
-  [-help]                print this help text and exit
-                         (alias: -?)
+  [-append-report]        append to report file
+  [-bound <int>]          stop execution exploration at depth <int>, a negative
+                          bound is never hit and leads to unbounded exploration
+  [-cct-schedule-points]  context switch only at cct_point calls
+  [-colors]               enable printing in colors
+  [-domain <string>]      select abstract domain; must be one of "sh" (default,
+                          symbolic heap domain), "globals" (used-globals
+                          domain), or "unit" (unit domain)
+  [-dump-query <int>]     dump solver query <int> and halt
+  [-function-summaries]   use function summaries (in development)
+  [-margin <cols>]        wrap debug tracing at <cols> columns
+  [-no-internalize]       do not internalize all functions except the entry
+                          points specified in the config file
+  [-no-simplify-states]   do not simplify states during symbolic execution
+  [-output <file>]        write generated binary LLAIR to <file>
+  [-preanalyze-globals]   pre-analyze global variables used by each function
+  [-report <file>]        write report sexp to <file>, or to standard error if
+                          "-"
+  [-sample]               randomly sample execution paths
+  [-seed <int>]           specify random number generator seed
+  [-stats]                output performance statistics to stderr
+  [-trace <spec>]         enable debug tracing
+  [-help]                 print this help text and exit
+                          (alias: -?)
 
 
 ====== sledge llvm translate ======
@@ -188,26 +189,27 @@ The <input> file must be binary LLAIR, such as produced by `sledge translate`.
 
 === flags ===
 
-  [-append-report]       append to report file
-  [-bound <int>]         stop execution exploration at depth <int>, a negative
-                         bound is never hit and leads to unbounded exploration
-  [-colors]              enable printing in colors
-  [-domain <string>]     select abstract domain; must be one of "sh" (default,
-                         symbolic heap domain), "globals" (used-globals domain),
-                         or "unit" (unit domain)
-  [-dump-query <int>]    dump solver query <int> and halt
-  [-function-summaries]  use function summaries (in development)
-  [-margin <cols>]       wrap debug tracing at <cols> columns
-  [-no-simplify-states]  do not simplify states during symbolic execution
-  [-preanalyze-globals]  pre-analyze global variables used by each function
-  [-report <file>]       write report sexp to <file>, or to standard error if
-                         "-"
-  [-sample]              randomly sample execution paths
-  [-seed <int>]          specify random number generator seed
-  [-stats]               output performance statistics to stderr
-  [-trace <spec>]        enable debug tracing
-  [-help]                print this help text and exit
-                         (alias: -?)
+  [-append-report]        append to report file
+  [-bound <int>]          stop execution exploration at depth <int>, a negative
+                          bound is never hit and leads to unbounded exploration
+  [-cct-schedule-points]  context switch only at cct_point calls
+  [-colors]               enable printing in colors
+  [-domain <string>]      select abstract domain; must be one of "sh" (default,
+                          symbolic heap domain), "globals" (used-globals
+                          domain), or "unit" (unit domain)
+  [-dump-query <int>]     dump solver query <int> and halt
+  [-function-summaries]   use function summaries (in development)
+  [-margin <cols>]        wrap debug tracing at <cols> columns
+  [-no-simplify-states]   do not simplify states during symbolic execution
+  [-preanalyze-globals]   pre-analyze global variables used by each function
+  [-report <file>]        write report sexp to <file>, or to standard error if
+                          "-"
+  [-sample]               randomly sample execution paths
+  [-seed <int>]           specify random number generator seed
+  [-stats]                output performance statistics to stderr
+  [-trace <spec>]         enable debug tracing
+  [-help]                 print this help text and exit
+                          (alias: -?)
 
 
 ====== sledge disassemble ======

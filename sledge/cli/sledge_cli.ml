@@ -101,6 +101,9 @@ let analyze =
       ~doc:
         "<int> stop execution exploration at depth <int>, a negative bound \
          is never hit and leads to unbounded exploration"
+  and cct_schedule_points =
+    flag "cct-schedule-points" no_arg
+      ~doc:"context switch only at cct_point calls"
   and function_summaries =
     flag "function-summaries" no_arg
       ~doc:"use function summaries (in development)"
@@ -157,6 +160,7 @@ let analyze =
     let module Queue = (val queue) in
     let module Analysis = Control.Make (Config) (Domain) (Queue) in
     (match seed with None -> Random.self_init () | Some n -> Random.init n) ;
+    Llair.cct_schedule_points := cct_schedule_points ;
     Domain_sh.simplify_states := not no_simplify_states ;
     Option.iter dump_query ~f:(fun n -> Solver.dump_query := n) ;
     at_exit (fun () -> Report.coverage pgm) ;
