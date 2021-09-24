@@ -414,11 +414,17 @@ let rec extract ~seq ~off ~len =
       solvables_contained_in [|seq; off; len|] e ;
       invariant e )
   @@ fun () ->
-  (* _[_,0) ==> ⟨⟩ *)
-  if equal len zero then empty_seq
+  if
+    (* _[_,0) ==> ⟨⟩ *)
+    equal len zero
+    (* α[o,l) ==> ⟨⟩ when o ≥ |α| *)
+    || match seq_size seq with Some n -> partial_ge off n | None -> false
+  then empty_seq
   else
     let o_l = add off len in
     match seq with
+    (* 0[o,l) ==> ⟨l,0⟩ *)
+    | Z _ when seq == Trm.zero -> sized ~seq ~siz:len
     (* α[m,k)[o,l) ==> α[m+o,l) when k ≥ o+l *)
     | Extract {seq= a; off= m; len= k} when partial_ge k o_l ->
         extract ~seq:a ~off:(add m off) ~len
@@ -450,26 +456,31 @@ let rec extract ~seq ~off ~len =
      * where l₀ = max 0 (min l |α₀|-o)
      *       o₁ = max 0 o-|α₀|
      *)
-    | Concat na1N -> (
-      match len with
-      | Z l ->
-          Array.fold_map_until na1N (l, off)
-            ~f:(fun naI (l, oI) ->
-              if Z.equal Z.zero l then
-                `Continue (extract ~seq:naI ~off:oI ~len:zero, (l, oI))
-              else
-                let nI = seq_size_exn naI in
-                let oI_nI = sub oI nI in
-                match oI_nI with
-                | Z z ->
-                    let oJ = if Z.sign z <= 0 then zero else oI_nI in
-                    let lI = Z.(max zero (min l (neg z))) in
-                    let l = Z.(l - lI) in
-                    `Continue
-                      (extract ~seq:naI ~off:oI ~len:(_Z lI), (l, oJ))
-                | _ -> `Stop (Extract {seq; off; len}) )
-            ~finish:(fun (e1N, _) -> concat e1N)
-      | _ -> Extract {seq; off; len} )
+    | Concat na1N ->
+        let n = Array.length na1N - 1 in
+        let rec loop i oI lIN =
+          let naI = na1N.(i) in
+          let j = i + 1 in
+          if i = n then [extract ~seq:naI ~off:oI ~len:lIN]
+          else
+            let nI = seq_size_exn naI in
+            let oI_nI = sub oI nI in
+            match (oI_nI, lIN) with
+            | Z z, _ when Z.sign z >= 0 (* oᵢ ≥ |αᵢ| *) ->
+                let oJ = oI_nI in
+                let lJN = lIN in
+                loop j oJ lJN
+            | Z z, Z lIN ->
+                let lI = Z.(max zero (min lIN (neg z))) in
+                let oJ = zero in
+                let lJN = Z.(lIN - lI) in
+                extract ~seq:naI ~off:oI ~len:(_Z lI) :: loop j oJ (_Z lJN)
+            | _ ->
+                let naIN = Array.sub ~pos:i na1N in
+                let seq = concat naIN in
+                [Extract {seq; off= oI; len= lIN}]
+        in
+        concat (Array.of_list (loop 0 off len))
     (* α[o,l) *)
     | _ -> Extract {seq; off; len}
 

@@ -146,6 +146,9 @@ let solve d e s =
       s
       |> add_pending a (Trm.concat [||])
       |> add_pending b (Trm.concat [||])
+  (* 0 = α₀^…^αᵥ ==> … ∧ αⱼ = ⟨nⱼ,0⟩ ∧ … *)
+  | Some ((Concat a0V as c), z) when z == Trm.zero ->
+      solve_concat a0V z (Trm.seq_size_exn c) s
   (* ⟨n,0⟩ = α₀^…^αᵥ ==> … ∧ αⱼ = ⟨n,0⟩[n₀+…+nᵢ,nⱼ) ∧ … *)
   | Some ((Sized {siz= n; seq} as b), Concat a0V) when seq == Trm.zero ->
       solve_concat a0V b n s
