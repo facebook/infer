@@ -185,12 +185,12 @@ struct
 
     let is_uninterpreted poly =
       match Sum.only_elt poly with
+      | None -> false
       | Some (mono, _) -> (
         match Prod.classify mono with
         | Zero2 -> false
         | One2 (_, 1) -> false
         | _ -> true )
-      | None -> false
 
     let get_const poly =
       match Sum.classify poly with
@@ -286,7 +286,7 @@ struct
 
     (** Terms of a polynomial: product of a coefficient and a monomial *)
     module CM = struct
-      type t = Q.t * Prod.t
+      type t = Q.t * Mono.t
 
       let mul (c1, m1) (c2, m2) = (Q.mul c1 c2, Mono.mul m1 m2)
 
@@ -352,13 +352,37 @@ struct
 
     let pow base power = CM.to_poly (CM.of_trm base ~power)
 
+    (** For [map ~f arg = res], check that the representation
+        simplifications are non-expansive wrt solvable terms, see also
+        {!Trm.solvables_contained_in}. *)
+    let solvables_contained_in ~f arg res =
+      let res_trms = trms res in
+      let arg_trms =
+        Iter.flat_map (trms arg) ~f:(fun e ->
+            let e' = f e in
+            Iter.cons e'
+              ( match Embed.get_arith e' with
+              | Some a -> trms a
+              | None -> Iter.empty ) )
+      in
+      let new_trms =
+        Trm.Set.diff (Trm.Set.of_iter res_trms) (Trm.Set.of_iter arg_trms)
+      in
+      assert (
+        Trm.Set.is_empty new_trms
+        || fail "new trms %a in %a not in %a" Trm.Set.pp new_trms pp res
+             (List.pp "@ " Trm.pp) (Iter.to_list arg_trms) () )
+
     (** map over [trms] *)
     let map poly ~f =
       [%trace]
         ~call:(fun {pf} -> pf "@ %a" pp poly)
-        ~retn:(fun {pf} -> pf "%a" pp)
+        ~retn:(fun {pf} poly' ->
+          pf "%a" pp poly' ;
+          invariant poly' ;
+          solvables_contained_in ~f poly poly' )
       @@ fun () ->
-      ( match get_mono poly with
+      match get_mono poly with
       | Some mono ->
           let mono', (coeff, mono_delta) =
             Prod.fold mono
@@ -385,8 +409,7 @@ struct
                     ( Sum.remove mono poly'
                     , Sum.union delta (mulc coeff (trm e')) ) )
           in
-          Sum.union poly' delta )
-      |> check invariant
+          Sum.union poly' delta
 
     (* solve *)
 

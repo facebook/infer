@@ -324,7 +324,31 @@ let rec solvables e =
 
 and solvable_trms e = Iter.flat_map ~f:solvables (trms e)
 
+let rec transitive_solvables e =
+  Iter.flat_map
+    ~f:(fun b -> Iter.snoc (transitive_solvable_trms b) b)
+    (solvables e)
+
+and transitive_solvable_trms e =
+  Iter.flat_map ~f:transitive_solvables (solvable_trms e)
+
 (** Construct *)
+
+(** Check that constructor functions are non-expansive wrt solvables, that
+    is, transitive_solvables(args) ⊇ solvable_trms(result). *)
+let solvables_contained_in_ args result =
+  let new_solvables =
+    Set.diff
+      (Set.of_iter (solvable_trms result))
+      (Set.of_iter (Iter.flat_map ~f:transitive_solvables args))
+  in
+  assert (
+    Set.is_empty new_solvables
+    || fail "new solvables %a in %a not in %a" Set.pp new_solvables pp
+         result (List.pp "@ " pp) (Iter.to_list args) () )
+
+let solvables_contained_in args result =
+  solvables_contained_in_ (Iter.of_array args) result
 
 (* variables *)
 
@@ -347,7 +371,9 @@ let arith = _Arith
 
 let splat x =
   (* 0^ ==> 0 *)
-  (if x == zero then x else Splat x) |> check invariant
+  (if x == zero then x else Splat x)
+  |> check (solvables_contained_in [|x|])
+  |> check invariant
 
 let seq_size_exn =
   let invalid = Invalid_argument "seq_size_exn" in
@@ -366,6 +392,7 @@ let sized ~seq ~siz =
   (* ⟨n,α⟩ ==> α when n ≡ |α| *)
   | Some n when equal siz n -> seq
   | _ -> Sized {seq; siz} )
+  |> check (solvables_contained_in [|seq; siz|])
   |> check invariant
 
 let partial_compare x y =
@@ -382,10 +409,13 @@ let empty_seq = Concat [||]
 let rec extract ~seq ~off ~len =
   [%trace]
     ~call:(fun {pf} -> pf "@ %a" pp (Extract {seq; off; len}))
-    ~retn:(fun {pf} -> pf "%a" pp)
+    ~retn:(fun {pf} e ->
+      pf "%a" pp e ;
+      solvables_contained_in [|seq; off; len|] e ;
+      invariant e )
   @@ fun () ->
   (* _[_,0) ==> ⟨⟩ *)
-  ( if equal len zero then empty_seq
+  if equal len zero then empty_seq
   else
     let o_l = add off len in
     match seq with
@@ -441,13 +471,15 @@ let rec extract ~seq ~off ~len =
             ~finish:(fun (e1N, _) -> concat e1N)
       | _ -> Extract {seq; off; len} )
     (* α[o,l) *)
-    | _ -> Extract {seq; off; len} )
-  |> check invariant
+    | _ -> Extract {seq; off; len}
 
 and concat xs =
   [%trace]
     ~call:(fun {pf} -> pf "@ %a" pp (Concat xs))
-    ~retn:(fun {pf} -> pf "%a" pp)
+    ~retn:(fun {pf} c ->
+      pf "%a" pp c ;
+      solvables_contained_in xs c ;
+      invariant c )
   @@ fun () ->
   (* (α^(β^γ)^δ) ==> (α^β^γ^δ) *)
   let flatten xs =
@@ -475,7 +507,7 @@ and concat xs =
   in
   let xs = flatten xs in
   let xs = Array.reduce_adjacent ~f:simp_adjacent xs in
-  (if Array.length xs = 1 then xs.(0) else Concat xs) |> check invariant
+  if Array.length xs = 1 then xs.(0) else Concat xs
 
 (* uninterpreted *)
 
@@ -483,6 +515,7 @@ let apply f es =
   ( match Funsym.eval ~equal ~get_z ~ret_z:_Z ~get_q ~ret_q:_Q f es with
   | Some c -> c
   | None -> Apply (f, es) )
+  |> check (solvables_contained_in es)
   |> check invariant
 
 (** Query *)
