@@ -763,17 +763,20 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
           ~f:(fun ~key:(switches, ip, threads) ~data:incoming ->
             let next = (switches, ip, threads) in
             let curr = SeqSH.Set.of_list incoming in
-            let+ next_states =
+            let+ done_states, next_states =
               match Cursor.find next cursor with
-              | Some already_done ->
-                  let next_states = SeqSH.Set.diff curr already_done in
+              | Some done_states ->
+                  let next_states = SeqSH.Set.diff curr done_states in
                   if SeqSH.Set.is_empty next_states then None
-                  else Some next_states
-              | None -> Some curr
+                  else Some (done_states, next_states)
+              | None -> Some (SeqSH.Set.empty, curr)
             in
-            ( next
-            , next_states
-            , Cursor.add ~key:next ~data:next_states cursor ) )
+            let cursor =
+              Cursor.add ~key:next
+                ~data:(SeqSH.Set.union done_states next_states)
+                cursor
+            in
+            (next, next_states, cursor) )
       in
       let queue = if hit_end then Queue.remove top elts queue else queue in
       match found with
