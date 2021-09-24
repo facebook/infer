@@ -54,40 +54,6 @@ let%test_module _ =
 
     (* tests *)
 
-    let r3 = of_eqs [(g y z, w); (v, w); (g y w, t); (x, v); (x, u); (u, z)]
-
-    let%expect_test _ =
-      pp_classes r3 ;
-      pp r3 ;
-      [%expect
-        {|
-        %t_1 = %u_2 = %v_3 = %w_4 = %x_5 = %z_7 = g(%y_6, %t_1)
-        = g(%y_6, %u_2) = g(%y_6, %v_3) = g(%y_6, %z_7)
-    
-      { sat= true;
-        rep= [[%t_1 ↦ ];
-              [%u_2 ↦ %t_1];
-              [%v_3 ↦ %t_1];
-              [%w_4 ↦ %t_1];
-              [%x_5 ↦ %t_1];
-              [%y_6 ↦ ];
-              [%z_7 ↦ %t_1];
-              [g(%y_6, %t_1) ↦ %t_1];
-              [g(%y_6, %u_2) ↦ %t_1];
-              [g(%y_6, %v_3) ↦ %t_1];
-              [g(%y_6, %z_7) ↦ %t_1]];
-        cls= [[%t_1
-               ↦ {%u_2, %v_3, %w_4, %x_5, %z_7, g(%y_6, %t_1),
-                  g(%y_6, %u_2), g(%y_6, %v_3), g(%y_6, %z_7)}]];
-        use= [[%t_1 ↦ g(%y_6, %t_1)];
-              [%u_2 ↦ g(%y_6, %u_2)];
-              [%v_3 ↦ g(%y_6, %v_3)];
-              [%y_6 ↦ g(%y_6, %t_1), g(%y_6, %u_2), g(%y_6, %v_3),
-               g(%y_6, %z_7)];
-              [%z_7 ↦ g(%y_6, %z_7)]] } |}]
-
-    let%test _ = implies_eq r3 t z
-
     let b = Formula.inject (Formula.dq x !0)
     let r15 = of_eqs [(b, b); (x, !1)]
 
