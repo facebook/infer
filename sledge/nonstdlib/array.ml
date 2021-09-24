@@ -11,6 +11,10 @@ include Array
 
 type 'a t = 'a array [@@deriving compare, equal, sexp]
 
+let sub ?(pos = 0) ?len arr =
+  let len = match len with Some i -> i | None -> length arr - pos in
+  sub ~pos ~len arr
+
 let of_ x = [|x|]
 let of_iter = Iter.to_array
 

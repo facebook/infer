@@ -10,6 +10,12 @@ include module type of ContainersLabels.Array
 
 type 'a t = 'a array [@@deriving compare, equal, sexp]
 
+val sub : ?pos:int -> ?len:int -> 'a t -> 'a t
+(** [sub a ~pos ~len] returns a fresh array of length [len], containing the
+    elements number [pos] to [pos + len - 1] of array [a]. If omitted, [pos]
+    defaults to the beginning of the array and [len] defaults to the rest of
+    the array. *)
+
 val of_ : 'a -> 'a t
 val of_iter : 'a iter -> 'a t
 val of_list_rev : 'a list -> 'a t

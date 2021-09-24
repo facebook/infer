@@ -39,7 +39,7 @@ val of_iter : 'a iter -> 'a t
 val of_list : 'a list -> 'a t
 val of_list_rev : 'a list -> 'a t
 val init : int -> f:(int -> 'a) -> 'a t
-val sub : 'a t -> pos:int -> len:int -> 'a t
+val sub : ?pos:int -> ?len:int -> 'a t -> 'a t
 val concat : 'a t list -> 'a t
 val map : 'a t -> f:('a -> 'b) -> 'b t
 val mapi : 'a t -> f:(int -> 'a -> 'b) -> 'b t
