@@ -76,9 +76,7 @@ node. Hence, we cannot compute a static bound of ObjC autoreleasepool's size for
 
 Reported as "Bad Key" by [pulse](/docs/next/checker-pulse).
 
-## Bad key in Erlang
-
-Reports an error when trying to access or update a non-existing key in a map. Corresponds to the `{badkey,K}` error in the Erlang runtime.
+Bad key in Erlang: Reports an error when trying to access or update a non-existing key in a map. Corresponds to the `{badkey,K}` error in the Erlang runtime.
 
 For example, trying to update the key `2` in `M` gives `{badkey,2}` error because `2` is not present as a key in `M`.
 ```erlang
@@ -91,9 +89,7 @@ f() ->
 
 Reported as "Bad Map" by [pulse](/docs/next/checker-pulse).
 
-## Bad map in Erlang
-
-Reports an error when trying to access or update a key for a term that is not a map. Corresponds to the `{badmap,...}` error in the Erlang runtime.
+Bad map in Erlang: Reports an error when trying to access or update a key for a term that is not a map. Corresponds to the `{badmap,...}` error in the Erlang runtime.
 
 For example, trying to update `L` as if it was a map gives `{badmap,[1,2,3]}` error because `L` is actually a list (`[1,2,3]`).
 ```erlang
@@ -125,9 +121,7 @@ compare `n` to `nil` or call an accessor to clarify her intention.
 
 Reported as "Bad Record" by [pulse](/docs/next/checker-pulse).
 
-## Bad record in Erlang
-
-Reports an error when trying to access or update a record with the wrong name. Corresponds to the `{badrecord,Name}` error in the Erlang runtime.
+Bad record in Erlang: Reports an error when trying to access or update a record with the wrong name. Corresponds to the `{badrecord,Name}` error in the Erlang runtime.
 
 For example, accessing `R` as a `person` record gives `{badrecord,person}` error because `R` is `rabbit` (even though both share the `name` field).
 ```erlang
@@ -1436,9 +1430,7 @@ std::shared_ptr<int> callMethodReturnsnonPOD(bool b) {
 
 Reported as "No Matching Case Clause" by [pulse](/docs/next/checker-pulse).
 
-## No matching case clause in Erlang
-
-Reports an error when none of the clauses of a `case` match the expression. Corresponds to the `{case_clause,V}` error in the Erlang runtime.
+No matching case clause in Erlang: Reports an error when none of the clauses of a `case` match the expression. Corresponds to the `{case_clause,V}` error in the Erlang runtime.
 
 For example, if we call `tail([])` and the full definition of `tail` is
 ```erlang
@@ -1454,9 +1446,7 @@ This error is reported if either the pattern(s) or the guard(s) prevent matching
 
 Reported as "No Matching Function Clause" by [pulse](/docs/next/checker-pulse).
 
-## No matching function clause in Erlang
-
-Reports an error when none of the clauses of a function match the arguments of a call. Corresponds to the `function_clause` error in the Erlang runtime.
+No matching function clause in Erlang: Reports an error when none of the clauses of a function match the arguments of a call. Corresponds to the `function_clause` error in the Erlang runtime.
 
 For example, if we call `tail([])` and the full definition of `tail` is
 ```erlang
@@ -1469,9 +1459,7 @@ This error is reported if either the pattern(s) or the guard(s) prevent matching
 
 Reported as "No Match Of Rhs" by [pulse](/docs/next/checker-pulse).
 
-## No match of right hand side value in Erlang
-
-Reports an error when the right hand side value of a `match` expression does not match the pattern on the left hand side. Corresponds to the `{badmatch,V}` error in the Erlang runtime.
+No match of right hand side value in Erlang: Reports an error when the right hand side value of a `match` expression does not match the pattern on the left hand side. Corresponds to the `{badmatch,V}` error in the Erlang runtime.
 
 For example, `[H|T] = []` gives the error because the left hand side pattern requires at least one element in the list on the right hand side.
 
@@ -1479,9 +1467,7 @@ For example, `[H|T] = []` gives the error because the left hand side pattern req
 
 Reported as "No True Branch In If" by [pulse](/docs/next/checker-pulse).
 
-## No true branch when evaluating an if expression in Erlang
-
-Reports an error when none of the branches of an `if` expression evaluate to true. Corresponds to the `if_clause` error in the Erlang runtime.
+No true branch when evaluating an if expression in Erlang: Reports an error when none of the branches of an `if` expression evaluate to true. Corresponds to the `if_clause` error in the Erlang runtime.
 
 For example, if we call `sign(0)` and the full definition of `sign` is
 ```erlang
