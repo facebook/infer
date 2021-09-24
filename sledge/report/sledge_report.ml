@@ -797,9 +797,38 @@ let status_cmd =
   in
   fun () -> exit (generate_status ?baseline current output)
 
+let sort_tests baseline tests =
+  let rows = input_rows baseline in
+  let name_time =
+    Iter.map rows ~f:(fun {name; times; status} ->
+        if List.exists status ~f:(function Timeout -> true | _ -> false)
+        then (name, Float.infinity)
+        else
+          (name, List.fold ~f:(fun {etime} m -> Float.max etime m) times 0.) )
+  in
+  let tbl = Tbl.of_iter name_time in
+  let test_time =
+    Array.of_list_map tests ~f:(fun test ->
+        (test, Option.value (Tbl.find tbl test) ~default:0.) )
+  in
+  Array.sort ~cmp:(fun (_, x) (_, y) -> -Float.compare x y) test_time ;
+  Array.iter test_time ~f:(fun (test, _) ->
+      Out_channel.output_string Out_channel.stdout test ;
+      Out_channel.output_char Out_channel.stdout ' ' ) ;
+  Out_channel.newline Out_channel.stdout
+
+let sort_cmd =
+  let open Command.Let_syntax in
+  let%map_open baseline =
+    flag "baseline" (required string)
+      ~doc:"<file> read baseline results from report <file>"
+  and tests = anon (sequence ("<file>" %: string)) in
+  fun () -> sort_tests baseline tests
+
 ;;
 Command.run
   (Command.group ~summary:"SLEdge report manipulation"
      [ ("html", Command.basic ~summary:"generate html report" html_cmd)
      ; ("status", Command.basic ~summary:"generate status report" status_cmd)
-     ] )
+     ; ( "sort"
+       , Command.basic ~summary:"sort tests by baseline time" sort_cmd ) ] )

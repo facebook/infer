@@ -119,7 +119,7 @@ translate-status: translate.sexp
 # run analyze tests
 .PHONY: analyze
 analyze: compile
-	-parallel --bar $(sledge_dbg) llvm analyze -trace Report+Control $(SLEDGE_A_ARGS) ::: $(AnalyzeTests)
+	-parallel --use-cores-instead-of-threads --bar $(sledge_dbg) llvm analyze -trace Report+Control $(SLEDGE_A_ARGS) ::: $(shell $(sledge_report) sort -baseline baseline/analyze.sexp $(AnalyzeTests))
 
 parallel_sledge_opt:=parallel --use-cores-instead-of-threads --shuf --bar $(sledge_opt) llvm analyze -append-report $(SLEDGE_A_ARGS) :::
 
