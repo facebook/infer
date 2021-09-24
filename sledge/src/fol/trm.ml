@@ -114,20 +114,24 @@ module Trm3 = struct
 end
 
 (* Define containers over terms *)
-module Set = struct
-  include Set.Make (Trm3)
-  include Provide_of_sexp (Trm3)
-  include Provide_pp (Trm3)
-end
+module Trm4 = struct
+  include Trm3
 
-module Map = struct
-  include Map.Make (Trm3)
-  include Provide_of_sexp (Trm3)
+  module Set = struct
+    include Set.Make (Trm3)
+    include Provide_of_sexp (Trm3)
+    include Provide_pp (Trm3)
+  end
+
+  module Map = struct
+    include Map.Make (Trm3)
+    include Provide_of_sexp (Trm3)
+  end
 end
 
 (* Define variables as a subtype of terms *)
 module Var = struct
-  open Trm3
+  open Trm4
 
   module V = struct
     type nonrec t = t [@@deriving compare, equal, sexp]
@@ -181,7 +185,7 @@ end
 
 (* Add definitions needed for arithmetic embedding into terms *)
 module Trm = struct
-  include Trm3
+  include Trm4
 
   (** Invariant *)
 

@@ -86,6 +86,12 @@ module type TRM = sig
 
   val pp : t pp
 
+  module Set : sig
+    include Set.S with type elt := t
+
+    val pp : t pp
+  end
+
   type var
 
   val vars : t -> var iter
