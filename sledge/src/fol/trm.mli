@@ -60,6 +60,32 @@ val pp_diff : (t * t) pp
 
 include Invariant.S with type t := t
 
+(** Classification *)
+
+type kind = InterpApp | NonInterpAtom | InterpAtom | UninterpApp
+[@@deriving compare, equal]
+
+val classify : t -> kind
+
+val is_noninterpreted : t -> bool
+(** Test if a term is either a variable ({!Var}) or an uninterpreted
+    function symbol application ({!Apply} or {!Arith} when
+    [{!Arith.classify} a = Uninterpreted]). That is, is not an interpreted
+    function symbol application (including constants and nullary
+    applications). *)
+
+val is_interpreted : t -> bool
+val is_uninterpreted : t -> bool
+
+val solvables : t -> t iter
+(** The maximal noninterpreted terms (according to {!is_noninterpreted})
+    occurring in a term. Note that for noninterpreted terms, this is the
+    single term itself. *)
+
+val solvable_trms : t -> t iter
+(** The solvables of immediate subterms. That is, maximal noninterpreted
+    strict subterms. *)
+
 (** Construct *)
 
 (* variables *)
@@ -120,6 +146,9 @@ val map_vars : t -> f:(Var.t -> Var.t) -> t
 
 val map : t -> f:(t -> t) -> t
 (** Map over the {!trms}. *)
+
+val map_solvables : t -> f:(t -> t) -> t
+(** Map over the {!solvables}. *)
 
 val fold_map : t -> 's -> f:(t -> 's -> t * 's) -> t * 's
 (** Fold while mapping over the {!trms}. *)

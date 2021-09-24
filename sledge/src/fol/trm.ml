@@ -279,6 +279,47 @@ let is_atomic = function
 let rec atoms e =
   if is_atomic e then Iter.return e else Iter.flat_map ~f:atoms (trms e)
 
+type kind = InterpApp | NonInterpAtom | InterpAtom | UninterpApp
+[@@deriving compare, equal, sexp_of]
+
+let classify e =
+  [%trace]
+    ~call:(fun {pf} -> pf "%a" pp e)
+    ~retn:(fun {pf} k -> pf "%a" Sexp.pp (sexp_of_kind k))
+  @@ fun () ->
+  match e with
+  | Var _ -> NonInterpAtom
+  | Z _ | Q _ -> InterpAtom
+  | Arith a ->
+      if Arith.is_uninterpreted a then UninterpApp
+      else (
+        assert (
+          match Arith.classify a with
+          | Trm _ | Const _ -> violates invariant e
+          | Interpreted -> true
+          | Uninterpreted -> false ) ;
+        InterpApp )
+  | Concat [||] -> InterpAtom
+  | Splat _ | Sized _ | Extract _ | Concat _ -> InterpApp
+  | Apply (_, [||]) -> NonInterpAtom
+  | Apply _ -> UninterpApp
+
+let is_interpreted e = equal_kind (classify e) InterpApp
+let is_uninterpreted e = equal_kind (classify e) UninterpApp
+
+let is_noninterpreted e =
+  match classify e with
+  | InterpAtom | InterpApp -> false
+  | NonInterpAtom | UninterpApp -> true
+
+let rec solvables e =
+  match classify e with
+  | InterpAtom -> Iter.empty
+  | InterpApp -> solvable_trms e
+  | NonInterpAtom | UninterpApp -> Iter.return e
+
+and solvable_trms e = Iter.flat_map ~f:solvables (trms e)
+
 (** Construct *)
 
 (* variables *)
@@ -474,3 +515,9 @@ let map e ~f =
   | Apply (g, xs) -> mapN f e (apply g) xs
 
 let fold_map e = fold_map_from_map map e
+
+let rec map_solvables e ~f =
+  match classify e with
+  | InterpAtom -> e
+  | NonInterpAtom | UninterpApp -> f e
+  | InterpApp -> map ~f:(map_solvables ~f) e

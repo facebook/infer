@@ -71,7 +71,7 @@ end = struct
     [%trace]
       ~call:(fun {pf} -> pf "@ %a" Trm.pp a)
       ~retn:(fun {pf} -> pf "%a" Trm.pp)
-    @@ fun () -> Theory.map_solvables ~f:(apply s) a
+    @@ fun () -> Trm.map_solvables ~f:(apply s) a
 
   (** apply a substitution recursively, bottom-up *)
   let rec apply_rec s a = apply s (Trm.map ~f:(apply_rec s) a)
@@ -126,8 +126,8 @@ end = struct
     let is_var_in xs e = Trm.Set.mem e (xs : Var.Set.t :> Trm.Set.t) in
     let noninterp_with_solvable_var_in xs e =
       is_var_in xs e
-      || Theory.is_noninterpreted e
-         && Iter.exists ~f:(is_var_in xs) (Theory.solvable_trms e)
+      || Trm.is_noninterpreted e
+         && Iter.exists ~f:(is_var_in xs) (Trm.solvable_trms e)
     in
     ( noninterp_with_solvable_var_in xs e
     || noninterp_with_solvable_var_in xs f )
@@ -355,7 +355,7 @@ let congruent r a b =
     (Trm.map ~f:(Subst.norm r.rep) b)
 
 let find_check a x =
-  if not (Theory.is_noninterpreted a) then a
+  if not (Trm.is_noninterpreted a) then a
   else
     match Trm.Map.find a x.rep with
     | Some a' -> a'
@@ -368,11 +368,11 @@ let pre_invariant x =
         (* only noninterpreted terms in dom of rep, except reps of
            nontrivial classes *)
         assert (
-          Theory.is_noninterpreted a
+          Trm.is_noninterpreted a
           || (is_rep a x && not (Cls.is_empty (cls_of a' x)))
           || fail "interp in rep dom %a" Trm.pp a () ) ;
         (* carrier is closed under solvable subterms *)
-        Iter.iter (Theory.solvable_trms a) ~f:(fun b ->
+        Iter.iter (Trm.solvable_trms a) ~f:(fun b ->
             assert (
               in_car b x
               || fail "@[subterm %a@ of %a@ not in carrier@]" Trm.pp b
@@ -392,7 +392,7 @@ let pre_invariant x =
                a'_cls () ) ;
         (* each term in carrier is in use list of each of its solvable
            subterms *)
-        Iter.iter (Theory.solvable_trms a) ~f:(fun b ->
+        Iter.iter (Trm.solvable_trms a) ~f:(fun b ->
             assert (
               let b_use = use_of b x in
               Use.mem a b_use
@@ -412,11 +412,11 @@ let pre_invariant x =
                    Trm.pp e' Trm.pp a' Cls.pp cls () ) ) ) ;
     Trm.Map.iteri x.use ~f:(fun ~key:a ~data:use ->
         (* dom of use are solvable terms *)
-        assert (Theory.is_noninterpreted a) ;
+        assert (Trm.is_noninterpreted a) ;
         (* terms occur in each of their uses *)
         Use.iter use ~f:(fun u ->
             assert (
-              Iter.mem ~eq:Trm.equal a (Theory.solvable_trms u)
+              Iter.mem ~eq:Trm.equal a (Trm.solvable_trms u)
               || fail "%a does not occur in its use %a" Trm.pp a Trm.pp u () ) ) )
   with exc ->
     let bt = Printexc.get_raw_backtrace () in
@@ -446,26 +446,26 @@ let norm0 s a = Subst.apply s a
 (** [norm1 s a = norm1 s b] if [a] and [b] are congruent in [s] using 0 or 1
     application of the congruence rule. *)
 let norm1 s a =
-  match Theory.classify a with
+  match Trm.classify a with
   | InterpAtom -> a
   | NonInterpAtom -> norm0 s a
   | InterpApp | UninterpApp -> (
     match Trm.Map.find a s with
     | Some a' -> a'
     | None ->
-        let a_norm = Trm.map ~f:(Theory.map_solvables ~f:(norm0 s)) a in
+        let a_norm = Trm.map ~f:(Trm.map_solvables ~f:(norm0 s)) a in
         if a_norm == a then a_norm else norm0 s a_norm )
 
 (** rewrite a term into canonical form using rep recursively *)
 let rec canon x a =
-  match Theory.classify a with
+  match Trm.classify a with
   | InterpAtom -> a
   | NonInterpAtom -> norm0 x.rep a
   | InterpApp | UninterpApp -> (
     match Trm.Map.find a x.rep with
     | Some a' -> a'
     | None ->
-        let a_can = Trm.map ~f:(Theory.map_solvables ~f:(canon x)) a in
+        let a_can = Trm.map ~f:(Trm.map_solvables ~f:(canon x)) a in
         if a_can == a then a_can else norm0 x.rep a_can )
 
 (* Extending the carrier =================================================*)
@@ -475,7 +475,7 @@ let add_use_of sup sub use =
       Some (Use.add sup (Option.value ~default:Use.empty u)) )
 
 let add_uses_of a use =
-  Iter.fold ~f:(add_use_of a) (Theory.solvable_trms a) use
+  Iter.fold ~f:(add_use_of a) (Trm.solvable_trms a) use
 
 (** [canon_extend_ a x] is [a', x'] where [x'] is [x] extended so that
     [a' = canon x' a]. This finds [a] in rep or recurses and then canonizes
@@ -487,7 +487,7 @@ let rec canon_extend_ a x =
       pf "%a@ %a" Trm.pp a' pp_diff (x, x') ;
       assert (Trm.equal a' (canon x' a)) )
   @@ fun () ->
-  match Theory.classify a with
+  match Trm.classify a with
   | InterpAtom -> (a, x)
   | NonInterpAtom -> (
     match Trm.Map.find_or_add a a x.rep with
@@ -506,7 +506,7 @@ let rec canon_extend_ a x =
     | None -> (
         (* norm wrt rep and add subterms *)
         let a_norm, x = Trm.fold_map ~f:canon_extend_ a x in
-        match Theory.classify a_norm with
+        match Trm.classify a_norm with
         | InterpAtom | NonInterpAtom | InterpApp -> canon_extend_ a_norm x
         | UninterpApp -> (
           match Trm.Map.find_or_add a_norm a_norm x.rep with
@@ -542,8 +542,8 @@ let find_and_move_cls noninterp ~of_:u ~to_:u' cls =
   (u_cls, cls)
 
 let move_uses ~rem:f ~add:t use =
-  let f_trms = Theory.solvable_trms f |> Trm.Set.of_iter in
-  let t_trms = Theory.solvable_trms t |> Trm.Set.of_iter in
+  let f_trms = Trm.solvable_trms f |> Trm.Set.of_iter in
+  let t_trms = Trm.solvable_trms t |> Trm.Set.of_iter in
   let f_trms, ft_trms, t_trms = Trm.Set.diff_inter_diff f_trms t_trms in
   (* remove f from use of each of its subterms not shared with t *)
   let use =
@@ -588,7 +588,7 @@ let propagate1 {Theory.var= v; rep= t} x =
     ~call:(fun {pf} ->
       pf "@ @[%a ↦ %a@]@ %a" Trm.pp v Trm.pp t pp_raw x ;
       (* v should be a solvable term that is a representative or absent *)
-      assert (Theory.is_noninterpreted v) ;
+      assert (Trm.is_noninterpreted v) ;
       assert (
         match Trm.Map.find v x.rep with
         | Some v' -> Trm.equal v v'
@@ -603,7 +603,7 @@ let propagate1 {Theory.var= v; rep= t} x =
   Use.fold (use_of v x) x ~f:(fun u x ->
       let w = norm1 s u in
       let x = {x with pnd= (u, w) :: x.pnd} in
-      if Theory.is_noninterpreted u then
+      if Trm.is_noninterpreted u then
         if in_car w x then x else {x with use= add_uses_of w x.use}
       else update_rep false ~from:u ~to_:w x )
 
@@ -960,8 +960,7 @@ let solve_poly_eq us p' q' subst =
   ;
   let diff = Trm.sub p' q' in
   let max_solvables_not_ito_us =
-    Iter.fold (Theory.solvables diff) Zero ~f:(fun solvable_subterm ->
-      function
+    Iter.fold (Trm.solvables diff) Zero ~f:(fun solvable_subterm -> function
       | Many -> Many
       | zom when Var.Set.subset (Trm.fv solvable_subterm) ~of_:us -> zom
       | One _ -> Many
@@ -1052,7 +1051,7 @@ let rec solve_interp_eqs us (cls, subst) =
     | None -> (cls', subst)
     | Some (trm, cls) ->
         let trm' = Subst.norm subst trm in
-        if Theory.is_interpreted trm' then
+        if Trm.is_interpreted trm' then
           match solve_interp_eq us trm' (cls, subst) with
           | Some subst -> solve_interp_eqs_ cls' (cls, subst)
           | None -> solve_interp_eqs_ (Cls.add trm' cls') (cls, subst)
@@ -1075,7 +1074,7 @@ type cls_solve_state =
 let dom_trm e =
   match (e : Trm.t) with
   | Sized {seq= Var _ as v} -> Some v
-  | _ when Theory.is_noninterpreted e -> Some e
+  | _ when Trm.is_noninterpreted e -> Some e
   | _ -> None
 
 (** move equations from [cls] (which is assumed to be normalized by [subst])
@@ -1086,9 +1085,7 @@ let solve_uninterp_eqs us (cls, subst) =
     pf "@ cls: @[%a@]@ subst: @[%a@]" Cls.pp cls Subst.pp subst]
   ;
   let compare e f =
-    [%compare: Theory.kind * Trm.t]
-      (Theory.classify e, e)
-      (Theory.classify f, f)
+    [%compare: Trm.kind * Trm.t] (Trm.classify e, e) (Trm.classify f, f)
   in
   let {rep_us; cls_us; rep_xs; cls_xs} =
     Cls.fold cls

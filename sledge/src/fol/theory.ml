@@ -29,55 +29,6 @@ let pp ppf = function
              Format.fprintf ppf "@[%a = %a@]" Trm.pp a Trm.pp b ) )
         pending
 
-(* Classification of terms ===============================================*)
-
-type kind = InterpApp | NonInterpAtom | InterpAtom | UninterpApp
-[@@deriving compare, equal, sexp_of]
-
-let classify e =
-  [%trace]
-    ~call:(fun {pf} -> pf "%a" Trm.pp e)
-    ~retn:(fun {pf} k -> pf "%a" Sexp.pp (sexp_of_kind k))
-  @@ fun () ->
-  match (e : Trm.t) with
-  | Var _ -> NonInterpAtom
-  | Z _ | Q _ -> InterpAtom
-  | Arith a ->
-      if Trm.Arith.is_uninterpreted a then UninterpApp
-      else (
-        assert (
-          match Trm.Arith.classify a with
-          | Trm _ | Const _ -> violates Trm.invariant e
-          | Interpreted -> true
-          | Uninterpreted -> false ) ;
-        InterpApp )
-  | Concat [||] -> InterpAtom
-  | Splat _ | Sized _ | Extract _ | Concat _ -> InterpApp
-  | Apply (_, [||]) -> NonInterpAtom
-  | Apply _ -> UninterpApp
-
-let is_interpreted e = equal_kind (classify e) InterpApp
-let is_uninterpreted e = equal_kind (classify e) UninterpApp
-
-let is_noninterpreted e =
-  match classify e with
-  | InterpAtom | InterpApp -> false
-  | NonInterpAtom | UninterpApp -> true
-
-let rec solvables e =
-  match classify e with
-  | InterpAtom -> Iter.empty
-  | InterpApp -> solvable_trms e
-  | NonInterpAtom | UninterpApp -> Iter.return e
-
-and solvable_trms e = Iter.flat_map ~f:solvables (Trm.trms e)
-
-let rec map_solvables e ~f =
-  match classify e with
-  | InterpAtom -> e
-  | NonInterpAtom | UninterpApp -> f e
-  | InterpApp -> Trm.map ~f:(map_solvables ~f) e
-
 (* Solving equations =====================================================*)
 
 (** prefer representative terms that are minimal in the order s.t. Var <
@@ -257,6 +208,6 @@ let solve d e s =
    *)
   (* r = v ==> v ↦ r *)
   | Some (rep, var) ->
-      assert (is_noninterpreted var) ;
-      assert (is_noninterpreted rep) ;
+      assert (Trm.is_noninterpreted var) ;
+      assert (Trm.is_noninterpreted rep) ;
       add_solved ~var ~rep s
