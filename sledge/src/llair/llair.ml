@@ -576,9 +576,8 @@ module IP = struct
         | _ -> false )
 
   let pp ppf {block; index} =
-    Format.fprintf ppf "#%i%t %%%s" block.sort_index
-      (fun ppf -> if index <> 0 then Format.fprintf ppf "+%i" index)
-      block.lbl
+    Format.fprintf ppf "#%i%t" block.sort_index (fun ppf ->
+        if index <> 0 then Format.fprintf ppf "+%i" index )
 
   module Tbl = HashTable.Make (struct
     type t = ip [@@deriving equal, hash]
