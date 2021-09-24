@@ -66,8 +66,9 @@ type kind = InterpApp | NonInterpAtom | InterpAtom | UninterpApp
 [@@deriving compare, equal]
 
 val classify : t -> kind
+val is_interp_app : t -> bool
 
-val is_noninterpreted : t -> bool
+val non_interpreted : t -> bool
 (** Test if a term is either a variable ({!Var}) or an uninterpreted
     function symbol application ({!Apply} or {!Arith} when
     [{!Arith.classify} a = Uninterpreted]). That is, is not an interpreted
@@ -75,7 +76,7 @@ val is_noninterpreted : t -> bool
     applications). *)
 
 val is_interpreted : t -> bool
-val is_uninterpreted : t -> bool
+(** The opposite of [non_interpreted]. *)
 
 val solvables : t -> t iter
 (** The maximal noninterpreted terms (according to {!is_noninterpreted})
@@ -163,6 +164,11 @@ val map : t -> f:(t -> t) -> t
 
 val map_solvables : t -> f:(t -> t) -> t
 (** Map over the {!solvables}. *)
+
+val map_solvable_trms : t -> f:(t -> t) -> t
+(** Map over the {!solvable_trms}. If [map_solvable_trms ~f a] is [a'], then
+    it is ensured that [solvable_trms a'] are contained in
+    [transitive_solvables a]. *)
 
 val fold_map : t -> 's -> f:(t -> 's -> t * 's) -> t * 's
 (** Fold while mapping over the {!trms}. *)

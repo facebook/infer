@@ -295,7 +295,7 @@ let classify e =
   | Var _ -> NonInterpAtom
   | Z _ | Q _ -> InterpAtom
   | Arith a ->
-      if Arith.is_uninterpreted a then UninterpApp
+      if Arith.non_interpreted a then UninterpApp
       else (
         assert (
           match Arith.classify a with
@@ -308,10 +308,14 @@ let classify e =
   | Apply (_, [||]) -> NonInterpAtom
   | Apply _ -> UninterpApp
 
-let is_interpreted e = equal_kind (classify e) InterpApp
-let is_uninterpreted e = equal_kind (classify e) UninterpApp
+let is_interp_app e = match classify e with InterpApp -> true | _ -> false
 
-let is_noninterpreted e =
+let is_interpreted e =
+  match classify e with
+  | InterpAtom | InterpApp -> true
+  | NonInterpAtom | UninterpApp -> false
+
+let non_interpreted e =
   match classify e with
   | InterpAtom | InterpApp -> false
   | NonInterpAtom | UninterpApp -> true
@@ -568,4 +572,6 @@ let rec map_solvables e ~f =
   match classify e with
   | InterpAtom -> e
   | NonInterpAtom | UninterpApp -> f e
-  | InterpApp -> map ~f:(map_solvables ~f) e
+  | InterpApp -> map_solvable_trms ~f e
+
+and map_solvable_trms e ~f = map ~f:(map_solvables ~f) e

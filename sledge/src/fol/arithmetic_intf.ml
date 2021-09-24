@@ -53,8 +53,8 @@ module type S0 = sig
       [get_const a] is [Some q], [Interpreted] if the principal operation of
       [a] is interpreted, and [Uninterpreted] otherwise. *)
 
-  val is_uninterpreted : t -> bool
-  (** [is_uninterpreted a] iff [classify a = Uninterpreted] *)
+  val non_interpreted : t -> bool
+  (** [non_interpreted a] iff [classify a = Uninterpreted] *)
 
   (** Traverse *)
 

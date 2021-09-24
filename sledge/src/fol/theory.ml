@@ -211,6 +211,6 @@ let solve d e s =
    *)
   (* r = v ==> v ↦ r *)
   | Some (rep, var) ->
-      assert (Trm.is_noninterpreted var) ;
-      assert (Trm.is_noninterpreted rep) ;
+      assert (Trm.non_interpreted var) ;
+      assert (Trm.non_interpreted rep) ;
       add_solved ~var ~rep s

@@ -183,7 +183,7 @@ struct
         | _ -> Uninterpreted )
       | Many2 -> Interpreted
 
-    let is_uninterpreted poly =
+    let non_interpreted poly =
       match Sum.only_elt poly with
       | None -> false
       | Some (mono, _) -> (
