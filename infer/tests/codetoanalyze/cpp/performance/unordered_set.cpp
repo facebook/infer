@@ -71,7 +71,7 @@ bool find_str_in_uset_linear_FN(std::unordered_set<std::string> uset,
 }
 
 // emplace is linear
-// https://www.cplusplus.com/reference/unordered_set/unordered_set/count/
+// https://www.cplusplus.com/reference/unordered_set/unordered_set/emplace/
 // Expected: O(uset); got constant
 void emplace_str_in_uset_linear_FN(std::unordered_set<std::string> uset,
                                    std::string str) {
@@ -79,7 +79,7 @@ void emplace_str_in_uset_linear_FN(std::unordered_set<std::string> uset,
 }
 
 // erase is linear
-// https://www.cplusplus.com/reference/unordered_set/unordered_set/count/
+// https://www.cplusplus.com/reference/unordered_set/unordered_set/erase/
 // Expected: O(uset); got constant
 void erase_from_uset_linear_FN(std::unordered_set<std::string> uset,
                                std::string str) {
@@ -87,7 +87,7 @@ void erase_from_uset_linear_FN(std::unordered_set<std::string> uset,
 }
 
 // find is linear
-// https://www.cplusplus.com/reference/unordered_set/unordered_set/count/
+// https://www.cplusplus.com/reference/unordered_set/unordered_set/find/
 // Expected: O(uset); got constant
 void find_in_uset_linear_FN(std::unordered_set<std::string> uset,
                             std::string str) {
