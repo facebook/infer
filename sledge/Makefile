@@ -6,10 +6,9 @@
 .PHONY: default
 default: exes
 
-RELEASE_TARGETS:=_build/release/cli/sledge_cli.exe _build/release/sledge.install
-REPORT_TARGETS:=_build/debug/report/sledge_report.exe
+RELEASE_TARGETS:=_build/release/cli/sledge_cli.exe _build/release/sledge.install _build/release/report/sledge_report.exe
 
-TARGETS:=$(subst release,debug,$(RELEASE_TARGETS)) $(subst release,trace,$(RELEASE_TARGETS)) $(RELEASE_TARGETS) $(REPORT_TARGETS) _build/release/sledge-help.txt
+TARGETS:=$(subst release,debug,$(RELEASE_TARGETS)) $(subst release,trace,$(RELEASE_TARGETS)) $(RELEASE_TARGETS) _build/release/sledge-help.txt
 
 dune_build_release:=dune build $(RELEASE_TARGETS)
 dune_install_release:=dune install --context=release --prefix=_build/_install/release sledge 2>/dev/null
@@ -70,10 +69,6 @@ trace: setup
 release: setup
 	$(dune_build_release)
 	$(dune_install_release)
-
-.PHONY: report
-report: setup
-	dune build $(REPORT_TARGETS)
 
 .PHONY: watch
 watch: setup
