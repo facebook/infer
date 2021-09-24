@@ -45,6 +45,9 @@ struct
 
   let add ~key ~data m = M.add key data m
 
+  let add_absent ~key ~data m =
+    M.update key (function Some data -> Some data | None -> Some data) m
+
   let add_multi ~key ~data m =
     M.update key
       (function Some vs -> Some (data :: vs) | None -> Some [data])

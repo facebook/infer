@@ -27,6 +27,10 @@ module type S = sig
   val singleton : key -> 'a -> 'a t
   val add_exn : key:key -> data:'a -> 'a t -> 'a t
   val add : key:key -> data:'a -> 'a t -> 'a t
+
+  val add_absent : key:key -> data:'a -> 'a t -> 'a t
+  (** Add a binding if the key is not already bound. *)
+
   val add_multi : key:key -> data:'a -> 'a list t -> 'a list t
   val remove : key -> 'a t -> 'a t
 
