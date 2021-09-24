@@ -38,13 +38,13 @@ module type QueueS = sig
   val add : elt -> t -> t
   (** add an element *)
 
-  val top : t -> (elt * elt list * t) option
+  val top : t -> (elt * elt iter * t) option
   (** [top q] is [None] if [q] is empty and otherwise is [Some (e, es, q')]
       where [e] is the selected element in [q] and any elements [es] have
       the same destination as [e]. [q'] is equivalent to [q] but possibly
       more compactly represented. *)
 
-  val remove : elt -> elt list -> t -> t
+  val remove : elt -> elt iter -> t -> t
 end
 
 (** Type of a queue implementation, which is parameterized over elements. *)
@@ -83,17 +83,14 @@ module PriorityQueue (Elt : Elt) : QueueS with type elt = Elt.t = struct
       top {queue= queue'; removed= removed'}
     else
       let elts =
-        FHeap.fold queue ~init:[] ~f:(fun elts elt ->
-            if Elt.equal_destination next elt && not (Elts.mem elt removed)
-            then elt :: elts
-            else elts )
+        Iter.filter ~f:(Elt.equal_destination next) (elts {queue; removed})
       in
       Some (next, elts, {queue; removed})
 
   let remove top elts {queue; removed} =
     assert (Elt.equal top (FHeap.top_exn queue)) ;
     let queue = FHeap.remove_top_exn queue in
-    let removed = Elts.add_list elts removed in
+    let removed = Elts.union (Elts.of_iter elts) removed in
     {queue; removed}
 end
 
@@ -748,7 +745,7 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
     let rec dequeue (queue, cursor) =
       let* ({threads} as top), elts, queue = Queue.top queue in
       let succs =
-        List.fold (top :: elts) Succs.empty ~f:(fun incoming succs ->
+        Iter.fold (Iter.cons top elts) Succs.empty ~f:(fun incoming succs ->
             let {ctrl= {edge= {dst}}; state; switches; depths} = incoming in
             let incoming_tid = Thread.id dst in
             Threads.fold threads succs ~f:(fun active succs ->
