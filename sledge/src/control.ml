@@ -714,9 +714,9 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
     let add ~retreating ({ctrl= edge; depths} as elt) wl =
       let depth = Option.value (Depths.find edge depths) ~default:0 in
       let depth = if retreating then depth + 1 else depth in
-      if depth > Config.bound && Config.bound >= 0 then (
+      if depth > Config.loop_bound then (
         prune elt.switches depth elt.ctrl ;
-        Report.hit_bound Config.bound ;
+        Report.hit_loop_bound Config.loop_bound ;
         wl )
       else enqueue depth elt wl
 
@@ -779,6 +779,11 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
       in
       let queue = if hit_end then Queue.remove top elts queue else queue in
       match found with
+      | Some ((switches, _, _), _, cursor)
+        when switches > Config.switch_bound ->
+          prune switches top.ctrl.depth top.ctrl.edge ;
+          Report.hit_switch_bound Config.switch_bound ;
+          dequeue (queue, cursor)
       | Some ((switches, ip, threads), next_states, cursor) ->
           [%Trace.info
             " %i,%i: %a%a" switches top.ctrl.depth Edge.pp top.ctrl.edge

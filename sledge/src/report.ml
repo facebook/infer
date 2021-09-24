@@ -45,7 +45,9 @@ let step_term b =
   Int.incr steps
 
 let bound = ref (-1)
-let hit_bound n = bound := n
+let hit_loop_bound n = bound := n
+let switches = ref (-1)
+let hit_switch_bound n = switches := n
 
 (** Status reporting *)
 

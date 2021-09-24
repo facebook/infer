@@ -6,8 +6,11 @@
  *)
 
 module type Config = sig
-  val bound : int
-  (** Loop/recursion unrolling bound *)
+  val loop_bound : int
+  (** Bound on number of loop iterations *)
+
+  val switch_bound : int
+  (** Bound on number of context switches *)
 
   val function_summaries : bool
   (** Use function summarization *)

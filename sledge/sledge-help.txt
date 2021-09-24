@@ -107,8 +107,6 @@ Analyze code in one or more LLVM bitcode files. This is a convenience wrapper fo
 === flags ===
 
   [-append-report]        append to report file
-  [-bound <int>]          stop execution exploration at depth <int>, a negative
-                          bound is never hit and leads to unbounded exploration
   [-cct-schedule-points]  context switch only at cct_point calls
   [-colors]               enable printing in colors
   [-domain <string>]      select abstract domain; must be one of "sh" (default,
@@ -116,6 +114,10 @@ Analyze code in one or more LLVM bitcode files. This is a convenience wrapper fo
                           domain), or "unit" (unit domain)
   [-dump-query <int>]     dump solver query <int> and halt
   [-function-summaries]   use function summaries (in development)
+  [-loop-bound <int>]     limit execution exploration to <int> loop iterations,
+                          a negative bound is never hit and leads to unbounded
+                          exploration
+                          (alias: -bound)
   [-margin <cols>]        wrap debug tracing at <cols> columns
   [-no-internalize]       do not internalize all functions except the entry
                           points specified in the config file
@@ -127,6 +129,10 @@ Analyze code in one or more LLVM bitcode files. This is a convenience wrapper fo
   [-sample]               randomly sample execution paths
   [-seed <int>]           specify random number generator seed
   [-stats]                output performance statistics to stderr
+  [-switch-bound <int>]   limit execution exploration to <int> context switches,
+                          a negative bound is never hit and leads to unbounded
+                          exploration
+                          (alias: -yield)
   [-trace <spec>]         enable debug tracing
   [-help]                 print this help text and exit
                           (alias: -?)
@@ -190,8 +196,6 @@ The <input> file must be binary LLAIR, such as produced by `sledge translate`.
 === flags ===
 
   [-append-report]        append to report file
-  [-bound <int>]          stop execution exploration at depth <int>, a negative
-                          bound is never hit and leads to unbounded exploration
   [-cct-schedule-points]  context switch only at cct_point calls
   [-colors]               enable printing in colors
   [-domain <string>]      select abstract domain; must be one of "sh" (default,
@@ -199,6 +203,10 @@ The <input> file must be binary LLAIR, such as produced by `sledge translate`.
                           domain), or "unit" (unit domain)
   [-dump-query <int>]     dump solver query <int> and halt
   [-function-summaries]   use function summaries (in development)
+  [-loop-bound <int>]     limit execution exploration to <int> loop iterations,
+                          a negative bound is never hit and leads to unbounded
+                          exploration
+                          (alias: -bound)
   [-margin <cols>]        wrap debug tracing at <cols> columns
   [-no-simplify-states]   do not simplify states during symbolic execution
   [-preanalyze-globals]   pre-analyze global variables used by each function
@@ -207,6 +215,10 @@ The <input> file must be binary LLAIR, such as produced by `sledge translate`.
   [-sample]               randomly sample execution paths
   [-seed <int>]           specify random number generator seed
   [-stats]                output performance statistics to stderr
+  [-switch-bound <int>]   limit execution exploration to <int> context switches,
+                          a negative bound is never hit and leads to unbounded
+                          exploration
+                          (alias: -yield)
   [-trace <spec>]         enable debug tracing
   [-help]                 print this help text and exit
                           (alias: -?)
