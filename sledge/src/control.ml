@@ -60,12 +60,13 @@ module PriorityQueue (Elt : Elt) : QueueS with type elt = Elt.t = struct
 
   type t = {queue: Elt.t FHeap.t; removed: Elts.t}
 
-  let pp ppf {queue; removed} =
-    let rev_elts =
-      FHeap.fold queue ~init:[] ~f:(fun rev_elts elt ->
-          if Elts.mem elt removed then rev_elts else elt :: rev_elts )
-    in
-    Format.fprintf ppf "@[%a@]" (List.pp " ::@ " Elt.pp) (List.rev rev_elts)
+  let elts {queue; removed} =
+    Iter.unfoldr FHeap.pop queue
+    |> Iter.filter ~f:(fun elt -> not (Elts.mem elt removed))
+
+  let pp ppf q =
+    Format.fprintf ppf "@[%a@]" (List.pp " ::@ " Elt.pp)
+      (Iter.to_list (elts q))
 
   let create () = {queue= FHeap.create ~cmp:Elt.compare; removed= Elts.empty}
 
