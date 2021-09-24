@@ -745,18 +745,32 @@ let html_cmd =
 let write_status ?baseline rows chan =
   let rows =
     if Option.is_none baseline then rows
-    else Iter.filter rows ~f:(fun row -> Option.is_some row.status_deltas)
+    else
+      Iter.filter rows ~f:(fun row ->
+          Option.is_some row.status_deltas
+          || Option.exists row.cov_deltas ~f:(fun cov_deltas ->
+                 List.exists cov_deltas
+                   ~f:(fun {Report.steps; solver_steps} ->
+                     steps != 0 || solver_steps != 0 ) ) )
   in
   let rows =
     Iter.sort ~cmp:(fun x y -> String.compare x.name y.name) rows
   in
+  let pp_steps ppf {Report.steps} = Format.fprintf ppf "%+i" steps in
+  let pp_solver_steps ppf {Report.solver_steps} =
+    Format.fprintf ppf "%+i" solver_steps
+  in
   let ppf = Format.str_formatter in
-  Iter.iter rows ~f:(fun {name; status; status_deltas} ->
-      Format.fprintf ppf "%s:\t%a%a@\n" name
+  Iter.iter rows ~f:(fun {name; status; status_deltas; cov_deltas} ->
+      Format.fprintf ppf "%s:\t%a%a%a%a@\n" name
         (List.pp ", " Report.pp_status)
         status
         (Option.pp "\t%a" (List.pp ", " Report.pp_status))
-        status_deltas ) ;
+        status_deltas
+        (Option.pp "\t%a" (List.pp ", " pp_steps))
+        cov_deltas
+        (Option.pp "\t%a" (List.pp ", " pp_solver_steps))
+        cov_deltas ) ;
   Out_channel.output_string chan (Format.flush_str_formatter ())
 
 let generate_status ?baseline current output =
