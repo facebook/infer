@@ -104,6 +104,11 @@ module type S = sig
   (** Find the value bound to the given key if there is one, or otherwise
       add a binding for the given key and value. *)
 
+  val find_or_add_lazy :
+    key -> 'a t -> f:(unit -> 'a) -> [> `Added of 'a | `Found of 'a] * 'a t
+  (** Find the value bound to the given key if there is one, or otherwise
+      add a binding for the given key with value [f ()]. *)
+
   val pop_min_binding : 'a t -> (key * 'a * 'a t) option
   (** Find and remove binding with minimum key. [O(log n)]. *)
 

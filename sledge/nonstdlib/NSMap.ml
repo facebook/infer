@@ -139,6 +139,22 @@ struct
   let find_or_add k v m =
     find_update k ~f:(function None -> Some v | some_v -> some_v) m
 
+  let find_or_add_lazy k m ~f =
+    let result = ref None in
+    let m =
+      M.update k
+        (function
+          | None ->
+              let v' = f () in
+              result := Some (`Added v') ;
+              Some v'
+          | Some v ->
+              result := Some (`Found v) ;
+              Some v )
+        m
+    in
+    (Option.get_exn !result, m)
+
   let pop_min_binding m =
     min_binding m |> Option.map ~f:(fun (k, v) -> (k, v, remove k m))
 
