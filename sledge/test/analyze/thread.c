@@ -10,8 +10,7 @@ int count = 0;
 void child_routine() { count++; }
 
 int main() {
-  thread_t child_data;
-  thread_t* child = &child_data;
+  thread_t* child;
   error_t err = thread_create(&child, &child_routine);
   count++;
   err = thread_join(child);
