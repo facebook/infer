@@ -103,12 +103,18 @@ struct
             Format.fprintf ppf "%a" (Mono.ppx pp_trm) m
           else Format.fprintf ppf "%a@<1>×%a" Q.pp c (Mono.ppx pp_trm) m
         in
+        let pp_poly ppf poly =
+          let pp_sum = Sum.pp "@ + " pp_coeff_mono in
+          match Sum.find_and_remove Mono.one poly with
+          | Some c, p_c when Q.sign c > 0 && not (Sum.is_empty p_c) ->
+              Format.fprintf ppf "%a@ + %a" pp_sum p_c Q.pp c
+          | Some c, p_c when Q.sign c < 0 && not (Sum.is_empty p_c) ->
+              Format.fprintf ppf "%a@ - %a" pp_sum p_c Q.pp (Q.neg c)
+          | _ -> pp_sum ppf poly
+        in
         if Sum.is_singleton poly then
-          Format.fprintf ppf "@[<2>%a@]" (Sum.pp "@ + " pp_coeff_mono) poly
-        else
-          Format.fprintf ppf "@[<2>(%a)@]"
-            (Sum.pp "@ + " pp_coeff_mono)
-            poly
+          Format.fprintf ppf "@[<2>%a@]" pp_poly poly
+        else Format.fprintf ppf "@[<2>(%a)@]" pp_poly poly
 
     let trms poly =
       Iter.from_iter (fun f ->
