@@ -76,10 +76,14 @@ let ff = _Not tt
 let bool b = if b then tt else ff
 
 let _Eq0 x =
-  match (x : Trm.t) with
-  | Z z -> bool (Z.equal Z.zero z)
-  | Q q -> bool (Q.equal Q.zero q)
-  | x -> _Eq0 x
+  let rec aux x =
+    match (x : Trm.t) with
+    | Z z -> bool (Z.equal Z.zero z)
+    | Q q -> bool (Q.equal Q.zero q)
+    | Sized {seq} -> aux seq
+    | x -> _Eq0 x
+  in
+  aux x
 
 let _Pos x =
   match (x : Trm.t) with
