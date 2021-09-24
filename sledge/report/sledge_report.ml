@@ -761,7 +761,9 @@ let write_status ?baseline rows chan =
     Format.fprintf ppf "%+i" solver_steps
   in
   let ppf = Format.str_formatter in
+  let count = ref 0 in
   Iter.iter rows ~f:(fun {name; status; status_deltas; cov_deltas} ->
+      incr count ;
       Format.fprintf ppf "%s:\t%a%a%a%a@\n" name
         (List.pp ", " Report.pp_status)
         status
@@ -771,7 +773,8 @@ let write_status ?baseline rows chan =
         cov_deltas
         (Option.pp "\t%a" (List.pp ", " pp_solver_steps))
         cov_deltas ) ;
-  Out_channel.output_string chan (Format.flush_str_formatter ())
+  Out_channel.output_string chan (Format.flush_str_formatter ()) ;
+  !count
 
 let generate_status ?baseline current output =
   let rows = input_rows ?baseline current in
@@ -792,7 +795,7 @@ let status_cmd =
         "<file> write status report to <file>, or to standard output if \
          omitted"
   in
-  fun () -> generate_status ?baseline current output
+  fun () -> exit (generate_status ?baseline current output)
 
 ;;
 Command.run

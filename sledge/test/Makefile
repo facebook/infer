@@ -146,7 +146,7 @@ analyze.html: analyze.sexp
 	$(sledge_report) html $(SLEDGE_R_ARGS) -baseline baseline/analyze.sexp analyze.sexp -output $@
 
 analyze-status: analyze.sexp
-	$(sledge_report) status -baseline baseline/analyze.sexp analyze.sexp | column -ts$$'\t'
+	$(sledge_report) status -baseline baseline/analyze.sexp analyze.sexp | column -ts$$'\t' ; exit $${PIPESTATUS[0]}
 
 #
 # smt tests
