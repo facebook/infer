@@ -260,6 +260,25 @@ module Arith =
 let get_z = function Z z -> Some z | _ -> None
 let get_q = function Q q -> Some q | Z z -> Some (Q.of_z z) | _ -> None
 
+(** Traverse *)
+
+let trms = function
+  | Var _ | Z _ | Q _ -> Iter.empty
+  | Arith a -> Arith.trms a
+  | Splat x -> Iter.(cons x empty)
+  | Sized {seq; siz} -> Iter.(cons seq (cons siz empty))
+  | Extract {seq; off; len} -> Iter.(cons seq (cons off (cons len empty)))
+  | Concat xs | Apply (_, xs) -> Iter.of_array xs
+
+(** Classification *)
+
+let is_atomic = function
+  | Var _ | Z _ | Q _ | Concat [||] | Apply (_, [||]) -> true
+  | Arith _ | Splat _ | Sized _ | Extract _ | Concat _ | Apply _ -> false
+
+let rec atoms e =
+  if is_atomic e then Iter.return e else Iter.flat_map ~f:atoms (trms e)
+
 (** Construct *)
 
 (* variables *)
@@ -420,23 +439,6 @@ let apply f es =
   | Some c -> c
   | None -> Apply (f, es) )
   |> check invariant
-
-(** Traverse *)
-
-let trms = function
-  | Var _ | Z _ | Q _ -> Iter.empty
-  | Arith a -> Arith.trms a
-  | Splat x -> Iter.(cons x empty)
-  | Sized {seq; siz} -> Iter.(cons seq (cons siz empty))
-  | Extract {seq; off; len} -> Iter.(cons seq (cons off (cons len empty)))
-  | Concat xs | Apply (_, xs) -> Iter.of_array xs
-
-let is_atomic = function
-  | Var _ | Z _ | Q _ | Concat [||] | Apply (_, [||]) -> true
-  | Arith _ | Splat _ | Sized _ | Extract _ | Concat _ | Apply _ -> false
-
-let rec atoms e =
-  if is_atomic e then Iter.return e else Iter.flat_map ~f:atoms (trms e)
 
 (** Query *)
 
