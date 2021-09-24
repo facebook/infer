@@ -17,8 +17,8 @@ val unknown_call : Llair.term -> unit
 val alarm : Alarm.t -> unit
 
 type status =
-  | Safe of {bound: int}
-  | Unsafe of {alarms: int; bound: int}
+  | Safe of {bound: int; switches: int}
+  | Unsafe of {alarms: int; bound: int; switches: int}
   | Ok
   | Unsound
   | Incomplete

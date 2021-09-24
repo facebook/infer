@@ -52,8 +52,8 @@ let hit_switch_bound n = switches := n
 (** Status reporting *)
 
 type status =
-  | Safe of {bound: int}
-  | Unsafe of {alarms: int; bound: int}
+  | Safe of {bound: int; switches: int}
+  | Unsafe of {alarms: int; bound: int; switches: int}
   | Ok
   | Unsound
   | Incomplete
@@ -70,10 +70,17 @@ type status =
 let pp_status ppf stat =
   let pf fmt = Format.fprintf ppf fmt in
   match stat with
-  | Safe {bound= -1} -> pf "Safe"
-  | Safe {bound} -> pf "Safe (%i)" bound
-  | Unsafe {alarms; bound= -1} -> pf "Unsafe: %i" alarms
-  | Unsafe {alarms; bound} -> pf "Unsafe: %i (%i)" alarms bound
+  | Safe {bound= -1; switches= -1} -> pf "Safe"
+  | Safe {bound= -1; switches} -> pf "Safe (%i,_)" switches
+  | Safe {bound; switches= -1} -> pf "Safe (_,%i)" bound
+  | Safe {bound; switches} -> pf "Safe (%i,%i)" switches bound
+  | Unsafe {alarms; bound= -1; switches= -1} -> pf "Unsafe: %i" alarms
+  | Unsafe {alarms; bound= -1; switches} ->
+      pf "Unsafe: %i (%i,_)" alarms switches
+  | Unsafe {alarms; bound; switches= -1} ->
+      pf "Unsafe: %i (_,%i)" alarms bound
+  | Unsafe {alarms; bound; switches} ->
+      pf "Unsafe: %i (%i,%i)" alarms switches bound
   | Ok -> pf "Ok"
   | Unsound -> pf "Unsound"
   | Incomplete -> pf "Incomplete"
@@ -87,8 +94,8 @@ let pp_status ppf stat =
   | UnknownError msg -> pf "Unknown error: %s" msg
 
 let safe_or_unsafe () =
-  if !alarm_count = 0 then Safe {bound= !bound}
-  else Unsafe {alarms= !alarm_count; bound= !bound}
+  if !alarm_count = 0 then Safe {bound= !bound; switches= !switches}
+  else Unsafe {alarms= !alarm_count; bound= !bound; switches= !switches}
 
 type gc_stats = {allocated: float; promoted: float; peak_size: float}
 [@@deriving sexp]
