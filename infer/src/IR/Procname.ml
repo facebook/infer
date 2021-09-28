@@ -414,6 +414,20 @@ module ObjC_Cpp = struct
           Parameter.pp_parameters osig.parameters pp_verbose_kind osig.kind
 
 
+  let remove_templates name =
+    match String.lsplit2 ~on:'<' name with
+    | Some (name_without_template, _template_part) ->
+        name_without_template
+    | None ->
+        name
+
+
+  let pp_without_templates fmt osig =
+    F.fprintf fmt "%s::%s"
+      (Typ.Name.name_without_templates osig.class_name)
+      (remove_templates osig.method_name)
+
+
   let get_parameters osig = osig.parameters
 
   let replace_parameters new_parameters osig = {osig with parameters= new_parameters}
@@ -841,6 +855,14 @@ let rec pp fmt = function
       pp_with_block_parameters Non_verbose pp fmt base blocks
   | Linters_dummy_method ->
       pp_unique_id fmt Linters_dummy_method
+
+
+let pp_without_templates fmt = function
+  | ObjC_Cpp osig when not (ObjC_Cpp.is_objc_method osig) ->
+      ObjC_Cpp.pp_without_templates fmt osig
+  | other ->
+      (* For other languages, we use the formaters defined in pp *)
+      pp fmt other
 
 
 let to_string proc_name = F.asprintf "%a" pp proc_name

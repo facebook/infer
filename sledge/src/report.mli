@@ -11,13 +11,14 @@ val init : ?append:bool -> string -> unit
 val step_solver : unit -> unit
 val step_inst : Llair.ip -> unit
 val step_term : Llair.block -> unit
-val hit_bound : int -> unit
+val hit_loop_bound : int -> unit
+val hit_switch_bound : int -> unit
 val unknown_call : Llair.term -> unit
 val alarm : Alarm.t -> unit
 
 type status =
-  | Safe of {bound: int}
-  | Unsafe of {alarms: int; bound: int}
+  | Safe of {bound: int; switches: int}
+  | Unsafe of {alarms: int; bound: int; switches: int}
   | Ok
   | Unsound
   | Incomplete

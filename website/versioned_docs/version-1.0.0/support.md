@@ -103,7 +103,7 @@ Please make sure that:
 
 Make sure the dependencies are up to date. They may change as we
 update Infer itself. See the [installation
-document](https://github.com/facebook/infer/blob/master/INSTALL.md)
+document](https://github.com/facebook/infer/blob/main/INSTALL.md)
 for an up-to-date list of dependencies and how to get them.
 
 ### My problem is not listed here

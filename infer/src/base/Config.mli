@@ -307,6 +307,8 @@ val erlang_ast_dir : string option
 
 val erlang_skip_rebar3 : bool
 
+val erlang_reverse_unfold_depth : int
+
 val fail_on_bug : bool
 
 val fcp_apple_clang : string option
@@ -427,6 +429,8 @@ val memtrace_analysis : bool
 val memtrace_sampling_rate : float
 
 val merge : bool
+
+val merge_report : string list
 
 val method_decls_info : string option
 
@@ -610,6 +614,10 @@ val select : [`All | `Select of int] option
 
 val show_buckets : bool
 
+val simple_lineage_max_cfg_size : int option
+
+val simple_lineage_json_report : bool
+
 val siof_check_iostreams : bool
 
 val siof_safe_methods : string list
@@ -728,6 +736,9 @@ val java_package_is_external : string -> bool
 
 val scuba_execution_id : Int64.t option
 (** a random number to (hopefully) uniquely identify this run *)
+
+val is_originator : bool
+(** is the current process (forked from) the root of the Infer process tree *)
 
 (** {2 Global variables with initial values specified by command-line options} *)
 

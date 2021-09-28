@@ -565,6 +565,11 @@ module Dom = struct
       dispatch tenv pname args
 
 
+  let is_setter_getter pname =
+    let method_name = Procname.get_method pname in
+    String.is_prefix method_name ~prefix:"set" || String.is_prefix method_name ~prefix:"get"
+
+
   let call tenv analyze_dependency ~(instantiated_cost : CostInstantiate.instantiated_cost) ~callee
       args location
       ({config_checks; field_checks; unchecked_callees; unchecked_callees_cond} as astate) =
@@ -621,9 +626,14 @@ module Dom = struct
           when has_call_stmt ->
             (* If callee's summary is not leaf, use it. *)
             join_callee_summary callee_summary callee_summary_cond
-        | _ ->
-            (* Otherwise, add callee's name. *)
-            add_callee_name ~is_known_expensive:false
+        | _ -> (
+          match expensiveness_model with
+          | (None | Some KnownCheap) when is_setter_getter callee ->
+              (* If callee is unknown/cheap setter/getter, ignore it. *)
+              astate
+          | _ ->
+              (* Otherwise, add callee's name. *)
+              add_callee_name ~is_known_expensive:false )
       else
         match expensiveness_model with
         | None when is_cheap_call && not has_expensive_callee ->
@@ -758,6 +768,9 @@ module TransferFunctions = struct
         Dom.store_config pvar id astate
     | Store {e1= Lfield (_, fn, _); e2= Var id} ->
         Dom.store_field fn id astate
+    | Call (_, Const (Cfun callee), _, _, _) when Procname.is_java_class_initializer callee ->
+        (* Mitigation: We ignore Java class initializer to avoid non-deterministic FP. *)
+        astate
     | Call ((ret_id, _), Const (Cfun callee), [(Var id, _)], _, _) when is_modeled_as_id tenv callee
       ->
         Dom.copy_value ret_id id astate
@@ -803,8 +816,13 @@ let has_call_stmt proc_desc =
 
 
 let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
-  let get_instantiated_cost = CostInstantiate.get_instantiated_cost analysis_data in
-  let analysis_data = {interproc= analysis_data; get_instantiated_cost} in
-  Option.map (Analyzer.compute_post analysis_data ~initial:Dom.init proc_desc) ~f:(fun astate ->
-      let has_call_stmt = has_call_stmt proc_desc in
-      Dom.to_summary (Procdesc.get_proc_name proc_desc) ~has_call_stmt astate )
+  let pname = Procdesc.get_proc_name proc_desc in
+  if Procname.is_java_class_initializer pname then
+    (* Mitigation: We ignore Java class initializer to avoid non-deterministic FP. *)
+    None
+  else
+    let get_instantiated_cost = CostInstantiate.get_instantiated_cost analysis_data in
+    let analysis_data = {interproc= analysis_data; get_instantiated_cost} in
+    Option.map (Analyzer.compute_post analysis_data ~initial:Dom.init proc_desc) ~f:(fun astate ->
+        let has_call_stmt = has_call_stmt proc_desc in
+        Dom.to_summary pname ~has_call_stmt astate )

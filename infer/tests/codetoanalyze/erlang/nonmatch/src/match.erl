@@ -12,7 +12,16 @@
     match_test_d_Ok/0,
     match_test_e_Bad/0,
     match_test_f_Ok/0,
-    match_test_g_Bad/0
+    match_test_g_Bad/0,
+    match_in_pattern_test_a_Ok/0,
+    match_in_pattern_test_b_Bad/0,
+    match_in_pattern_test_c_Bad/0,
+    match_in_pattern_test_d_Bad/0,
+    match_in_pattern_test_e_Ok/0,
+    match_in_pattern_test_f_Bad/0,
+    match_nested1_Ok/0,
+    match_nested2_Bad/0,
+    match_nested3_Bad/0
 ]).
 
 tail([_ | Xs]) -> Xs.
@@ -42,6 +51,55 @@ match_test_f_Ok() ->
 match_test_g_Bad() ->
     X = 2,
     only_accepts_one(X).
+
+match_in_pattern_test_a_Ok() ->
+    X = 2,
+    case X of
+        2 = 2 -> ok
+    end.
+
+match_in_pattern_test_b_Bad() ->
+    X = 3,
+    case X of
+        2 = 2 -> ok
+    end.
+
+match_in_pattern_test_c_Bad() ->
+    X = 2,
+    case X of
+        2 = 3 -> ok
+    end.
+
+match_in_pattern_test_d_Bad() ->
+    X = 3,
+    case X of
+        3 = 2 -> ok
+    end.
+
+match_in_pattern_test_e_Ok() ->
+    X = 2,
+    case X of
+        Y = 2 -> ok
+    end,
+    case Y of
+        2 -> ok
+    end.
+
+match_in_pattern_test_f_Bad() ->
+    X = 1,
+    case X of
+        Y = 2 -> ok
+    end.
+
+match_nested1_Ok() ->
+    (1 = X) = 1,
+    only_accepts_one(X).
+
+match_nested2_Bad() ->
+    (1 = _X) = 2.
+
+match_nested3_Bad() ->
+    (2 = _X) = 1.
 
 %% internal
 %% These functions are used to fool the compiler, which would warn if these were inlined.

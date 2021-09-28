@@ -8,7 +8,7 @@
 open! IStd
 
 type issue_spec =
-  { extract_cost_f: Jsonbug_t.cost_item -> Jsonbug_t.cost_info
+  { extract_cost_f: Jsoncost_t.item -> Jsoncost_t.info
   ; name: string
   ; complexity_increase_issue: is_on_ui_thread:bool -> IssueType.t
   ; unreachable_issue: IssueType.t

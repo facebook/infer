@@ -164,6 +164,12 @@ let procedure_id_of_procname proc_name =
       Procname.to_string proc_name
 
 
+let is_in_clang_header source_file =
+  String.is_substring
+    (SourceFile.to_string source_file)
+    ~substring:"/facebook-clang-plugins/clang/install/include/"
+
+
 module JsonIssuePrinter = MakeJsonListPrinter (struct
   type elt = json_issue_printer_typ
 
@@ -186,6 +192,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
       error_filter source_file err_key.issue_type
       && should_report_proc_name
       && should_report err_key.issue_type err_key.err_desc
+      && not (is_in_clang_header source_file)
     then
       let severity = IssueType.string_of_severity err_key.severity in
       let bug_type = err_key.issue_type.unique_id in
@@ -269,10 +276,11 @@ module JsonCostsPrinterElt = struct
 
   let to_string {loc; proc_name; cost_opt} =
     match cost_opt with
-    | Some {post; is_on_ui_thread} when not (Procname.is_java_access_method proc_name) ->
+    | Some {post; is_on_ui_thread}
+      when (not (Procname.is_java_access_method proc_name)) && not (is_in_clang_header loc.file) ->
         let hum cost =
           let degree_with_term = CostDomain.BasicCost.get_degree_with_term cost in
-          { Jsonbug_t.hum_polynomial= Format.asprintf "%a" CostDomain.BasicCost.pp_hum cost
+          { Jsoncost_t.hum_polynomial= Format.asprintf "%a" CostDomain.BasicCost.pp_hum cost
           ; hum_degree=
               Format.asprintf "%a"
                 (CostDomain.BasicCost.pp_degree ~only_bigO:false)
@@ -282,7 +290,7 @@ module JsonCostsPrinterElt = struct
           }
         in
         let cost_info ?is_autoreleasepool_trace cost =
-          { Jsonbug_t.polynomial_version= CostDomain.BasicCost.version
+          { Jsoncost_t.polynomial_version= CostDomain.BasicCost.version
           ; polynomial= CostDomain.BasicCost.encode cost
           ; degree=
               Option.map (CostDomain.BasicCost.degree cost) ~f:Polynomials.Degree.encode_to_int
@@ -296,7 +304,7 @@ module JsonCostsPrinterElt = struct
           let {NoQualifierHashProcInfo.hash; loc; procedure_name; procedure_id} =
             NoQualifierHashProcInfo.get loc proc_name
           in
-          { Jsonbug_t.hash
+          { Jsoncost_t.hash
           ; loc
           ; procedure_name
           ; procedure_id
@@ -306,7 +314,7 @@ module JsonCostsPrinterElt = struct
               cost_info ~is_autoreleasepool_trace:true
                 (CostDomain.get_cost_kind CostKind.AutoreleasepoolSize post).cost }
         in
-        Some (Jsonbug_j.string_of_cost_item cost_item)
+        Some (Jsoncost_j.string_of_item cost_item)
     | _ ->
         None
 end
@@ -321,16 +329,23 @@ module JsonConfigImpactPrinterElt = struct
     ; is_strict: bool }
 
   let to_string {loc; proc_name; config_impact_opt; is_strict} =
-    Option.map config_impact_opt ~f:(fun config_impact ->
-        let {NoQualifierHashProcInfo.hash; loc; procedure_name; procedure_id} =
-          NoQualifierHashProcInfo.get loc proc_name
-        in
-        let unchecked_callees =
-          ConfigImpactAnalysis.Summary.get_unchecked_callees config_impact
-          |> ConfigImpactAnalysis.UncheckedCallees.encode
-        in
-        Jsonbug_j.string_of_config_impact_item
-          {Jsonbug_t.hash; loc; procedure_name; procedure_id; unchecked_callees; is_strict} )
+    if is_in_clang_header loc.file then None
+    else
+      Option.map config_impact_opt ~f:(fun config_impact ->
+          let {NoQualifierHashProcInfo.hash; loc; procedure_name; procedure_id} =
+            NoQualifierHashProcInfo.get loc proc_name
+          in
+          let unchecked_callees =
+            ConfigImpactAnalysis.Summary.get_unchecked_callees config_impact
+            |> ConfigImpactAnalysis.UncheckedCallees.encode
+          in
+          Jsonconfigimpact_j.string_of_item
+            { Jsonconfigimpact_t.hash
+            ; loc
+            ; procedure_name
+            ; procedure_id
+            ; unchecked_callees
+            ; is_strict } )
 end
 
 module JsonConfigImpactPrinter = MakeJsonListPrinter (JsonConfigImpactPrinterElt)

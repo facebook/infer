@@ -20,13 +20,14 @@ let parse_and_store result_dir =
     | None ->
         false
     | Some ast -> (
-      match ErlangAstValidator.validate ast with
-      | true ->
-          ErlangTranslator.translate_module ast ;
-          true
-      | false ->
-          L.debug Capture Verbose "Invalid AST@." ;
-          false )
+        let env = ErlangEnvironment.get_environment ast in
+        match ErlangAstValidator.validate env ast with
+        | true ->
+            ErlangTranslator.translate_module env ast ;
+            true
+        | false ->
+            L.debug Capture Verbose "Invalid AST@." ;
+            false )
   in
   let log error = L.progress "E: %s@." error in
   let read_one_ast json_file =

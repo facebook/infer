@@ -56,3 +56,5 @@ val get_footprint_index : t -> int option
 val pp : Format.formatter -> t -> unit
 
 module Map : PrettyPrintable.PPMap with type key = t
+
+module Set : PrettyPrintable.PPSet with type elt = t

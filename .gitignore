@@ -60,6 +60,7 @@ duplicates.txt
 /infer/tests/codetoanalyze/erlang/**/_build
 /_release
 /infer-source
+META-INF
 
 # Docusaurus
 /website/.docusaurus/

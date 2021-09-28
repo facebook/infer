@@ -1,16 +1,16 @@
 NAME
-       infer-report - compute and manipulate infer results
+       infer-report - compute and manipulate infer reports
 
 SYNOPSIS
-       infer report [options] [file.specs...]
+       infer report --issues-tests
+       infer report --cost-issues-tests
+       infer report --config-impact-issues-tests
+       infer report --merge-report dir1 ... --merge-report dirN
 
 
 DESCRIPTION
-       Read, convert, and print .specs files in the results directory. Each
-       spec is printed to standard output unless option -q is used.
-
-       If no specs file are passed on the command line, process all the
-       .specs in the results directory.
+       Write out issues in a format suitable for tests, or merge multiple
+       JSON reports in one with --merge-report.
 
 
 
@@ -323,6 +323,12 @@ OPTIONS
        procedure_start_line | file | bug_trace | key | hash | line_offset |
        qualifier_contains_potential_exception_note | nullsafe_extra }
            Fields to emit with --issues-tests
+
+       --merge-report +string
+           Specifies an Infer results directory. The reports stored in JSON
+           files in all specified results directories will be merged together
+           and deduplicated before being stored in the main results
+           directory.
 
        --print-logs
            Activates: Also log messages to stdout and stderr (Conversely:

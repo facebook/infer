@@ -37,11 +37,13 @@ module type S = sig
 
   val fold : t -> init:'acc -> f:('acc -> key * value -> 'acc) -> 'acc
 
-  val fold_map : t -> init:'acc -> f:('acc -> value -> 'acc * value) -> 'acc * t
+  val fold_map : t -> init:'acc -> f:('acc -> key -> value -> 'acc * value) -> 'acc * t
 
   val is_empty : t -> bool
 
   val map : t -> f:(value -> value) -> t
+
+  val mapi : t -> f:(key -> value -> value) -> t
 
   val mem : t -> key -> bool
 
@@ -75,9 +77,7 @@ module Make
   type t =
     { count_new: int  (** invariant: [count_new] is [M.length new_] *)
     ; new_: (key, value) List.Assoc.t  (** invariant: [List.length new_ ≤ Config.limit] *)
-    ; old: (key, value) List.Assoc.t
-          (** invariant: [List.length old ≤ Config.limit]. Actually, the length of [old] is always
-              either [0] or [N], except possibly after a call to [merge]. *) }
+    ; old: (key, value) List.Assoc.t  (** invariant: [List.length old ≤ Config.limit] *) }
   [@@deriving compare]
 
   [@@@warning "+3"]
@@ -175,23 +175,23 @@ module Make
     IContainer.pp_collection ~pp_item fmt map ~fold
 
 
-  let map m ~f =
-    let new_ = List.Assoc.map m.new_ ~f in
+  let mapi m ~f =
+    let new_ = List.map m.new_ ~f:(fun (key, value) -> (key, f key value)) in
     let old =
-      List.map m.old ~f:(fun ((key, value) as binding) ->
-          if List.Assoc.mem ~equal:Key.equal m.new_ key then binding
-          else
-            let value' = f value in
-            if phys_equal value value' then binding else (key, value') )
+      (* garbage-collect since we are building a new list anyway *)
+      List.filter_map m.old ~f:(fun (key, value) ->
+          if List.Assoc.mem ~equal:Key.equal m.new_ key then None else Some (key, f key value) )
     in
     {m with new_; old}
 
 
+  let map m ~f = mapi m ~f:(fun _ value -> f value)
+
   let fold_map m ~init ~f =
     let acc_ref = ref init in
     let m' =
-      map m ~f:(fun value ->
-          let acc, value' = f !acc_ref value in
+      mapi m ~f:(fun key value ->
+          let acc, value' = f !acc_ref key value in
           acc_ref := acc ;
           value' )
     in

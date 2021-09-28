@@ -9,5 +9,5 @@ make -C libtooling test
 ```
 
 More information:
-- [`ATD_GUIDELINES`](https://github.com/facebook/facebook-clang-plugins/tree/master/libtooling/ATD_GUIDELINES.md) for documentation about ASTExporter.
+- [`ATD_GUIDELINES`](https://github.com/facebook/infer/blob/main/facebook-clang-plugins/libtooling/ATD_GUIDELINES.md) for documentation about ASTExporter.
 - http://clang.llvm.org/docs/ClangPlugins.html for general documentation about clang plugins

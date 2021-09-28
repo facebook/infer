@@ -27,6 +27,10 @@ module type S = sig
   val singleton : key -> 'a -> 'a t
   val add_exn : key:key -> data:'a -> 'a t -> 'a t
   val add : key:key -> data:'a -> 'a t -> 'a t
+
+  val add_absent : key:key -> data:'a -> 'a t -> 'a t
+  (** Add a binding if the key is not already bound. *)
+
   val add_multi : key:key -> data:'a -> 'a list t -> 'a list t
   val remove : key -> 'a t -> 'a t
 
@@ -99,6 +103,11 @@ module type S = sig
   val find_or_add : key -> 'a -> 'a t -> 'a option * 'a t
   (** Find the value bound to the given key if there is one, or otherwise
       add a binding for the given key and value. *)
+
+  val find_or_add_lazy :
+    key -> 'a t -> f:(unit -> 'a) -> [> `Added of 'a | `Found of 'a] * 'a t
+  (** Find the value bound to the given key if there is one, or otherwise
+      add a binding for the given key with value [f ()]. *)
 
   val pop_min_binding : 'a t -> (key * 'a * 'a t) option
   (** Find and remove binding with minimum key. [O(log n)]. *)

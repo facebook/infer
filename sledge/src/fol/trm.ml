@@ -114,20 +114,24 @@ module Trm3 = struct
 end
 
 (* Define containers over terms *)
-module Set = struct
-  include Set.Make (Trm3)
-  include Provide_of_sexp (Trm3)
-  include Provide_pp (Trm3)
-end
+module Trm4 = struct
+  include Trm3
 
-module Map = struct
-  include Map.Make (Trm3)
-  include Provide_of_sexp (Trm3)
+  module Set = struct
+    include Set.Make (Trm3)
+    include Provide_of_sexp (Trm3)
+    include Provide_pp (Trm3)
+  end
+
+  module Map = struct
+    include Map.Make (Trm3)
+    include Provide_of_sexp (Trm3)
+  end
 end
 
 (* Define variables as a subtype of terms *)
 module Var = struct
-  open Trm3
+  open Trm4
 
   module V = struct
     type nonrec t = t [@@deriving compare, equal, sexp]
@@ -181,7 +185,7 @@ end
 
 (* Add definitions needed for arithmetic embedding into terms *)
 module Trm = struct
-  include Trm3
+  include Trm4
 
   (** Invariant *)
 
@@ -260,7 +264,95 @@ module Arith =
 let get_z = function Z z -> Some z | _ -> None
 let get_q = function Q q -> Some q | Z z -> Some (Q.of_z z) | _ -> None
 
+(** Traverse *)
+
+let trms = function
+  | Var _ | Z _ | Q _ -> Iter.empty
+  | Arith a -> Arith.trms a
+  | Splat x -> Iter.(cons x empty)
+  | Sized {seq; siz} -> Iter.(cons seq (cons siz empty))
+  | Extract {seq; off; len} -> Iter.(cons seq (cons off (cons len empty)))
+  | Concat xs | Apply (_, xs) -> Iter.of_array xs
+
+(** Classification *)
+
+let is_atomic = function
+  | Var _ | Z _ | Q _ | Concat [||] | Apply (_, [||]) -> true
+  | Arith _ | Splat _ | Sized _ | Extract _ | Concat _ | Apply _ -> false
+
+let rec atoms e =
+  if is_atomic e then Iter.return e else Iter.flat_map ~f:atoms (trms e)
+
+type kind = InterpApp | NonInterpAtom | InterpAtom | UninterpApp
+[@@deriving compare, equal, sexp_of]
+
+let classify e =
+  [%trace]
+    ~call:(fun {pf} -> pf "%a" pp e)
+    ~retn:(fun {pf} k -> pf "%a" Sexp.pp (sexp_of_kind k))
+  @@ fun () ->
+  match e with
+  | Var _ -> NonInterpAtom
+  | Z _ | Q _ -> InterpAtom
+  | Arith a ->
+      if Arith.non_interpreted a then UninterpApp
+      else (
+        assert (
+          match Arith.classify a with
+          | Trm _ | Const _ -> violates invariant e
+          | Interpreted -> true
+          | Uninterpreted -> false ) ;
+        InterpApp )
+  | Concat [||] -> InterpAtom
+  | Splat _ | Sized _ | Extract _ | Concat _ -> InterpApp
+  | Apply (_, [||]) -> NonInterpAtom
+  | Apply _ -> UninterpApp
+
+let is_interp_app e = match classify e with InterpApp -> true | _ -> false
+
+let is_interpreted e =
+  match classify e with
+  | InterpAtom | InterpApp -> true
+  | NonInterpAtom | UninterpApp -> false
+
+let non_interpreted e =
+  match classify e with
+  | InterpAtom | InterpApp -> false
+  | NonInterpAtom | UninterpApp -> true
+
+let rec solvables e =
+  match classify e with
+  | InterpAtom -> Iter.empty
+  | InterpApp -> solvable_trms e
+  | NonInterpAtom | UninterpApp -> Iter.return e
+
+and solvable_trms e = Iter.flat_map ~f:solvables (trms e)
+
+let rec transitive_solvables e =
+  Iter.flat_map
+    ~f:(fun b -> Iter.snoc (transitive_solvable_trms b) b)
+    (solvables e)
+
+and transitive_solvable_trms e =
+  Iter.flat_map ~f:transitive_solvables (solvable_trms e)
+
 (** Construct *)
+
+(** Check that constructor functions are non-expansive wrt solvables, that
+    is, transitive_solvables(args) ⊇ solvable_trms(result). *)
+let solvables_contained_in_ args result =
+  let new_solvables =
+    Set.diff
+      (Set.of_iter (solvable_trms result))
+      (Set.of_iter (Iter.flat_map ~f:transitive_solvables args))
+  in
+  assert (
+    Set.is_empty new_solvables
+    || fail "new solvables %a in %a not in %a" Set.pp new_solvables pp
+         result (List.pp "@ " pp) (Iter.to_list args) () )
+
+let solvables_contained_in args result =
+  solvables_contained_in_ (Iter.of_array args) result
 
 (* variables *)
 
@@ -283,7 +375,9 @@ let arith = _Arith
 
 let splat x =
   (* 0^ ==> 0 *)
-  (if x == zero then x else Splat x) |> check invariant
+  (if x == zero then x else Splat x)
+  |> check (solvables_contained_in [|x|])
+  |> check invariant
 
 let seq_size_exn =
   let invalid = Invalid_argument "seq_size_exn" in
@@ -302,6 +396,7 @@ let sized ~seq ~siz =
   (* ⟨n,α⟩ ==> α when n ≡ |α| *)
   | Some n when equal siz n -> seq
   | _ -> Sized {seq; siz} )
+  |> check (solvables_contained_in [|seq; siz|])
   |> check invariant
 
 let partial_compare x y =
@@ -318,13 +413,22 @@ let empty_seq = Concat [||]
 let rec extract ~seq ~off ~len =
   [%trace]
     ~call:(fun {pf} -> pf "@ %a" pp (Extract {seq; off; len}))
-    ~retn:(fun {pf} -> pf "%a" pp)
+    ~retn:(fun {pf} e ->
+      pf "%a" pp e ;
+      solvables_contained_in [|seq; off; len|] e ;
+      invariant e )
   @@ fun () ->
-  (* _[_,0) ==> ⟨⟩ *)
-  ( if equal len zero then empty_seq
+  if
+    (* _[_,0) ==> ⟨⟩ *)
+    equal len zero
+    (* α[o,l) ==> ⟨⟩ when o ≥ |α| *)
+    || match seq_size seq with Some n -> partial_ge off n | None -> false
+  then empty_seq
   else
     let o_l = add off len in
     match seq with
+    (* 0[o,l) ==> ⟨l,0⟩ *)
+    | Z _ when seq == Trm.zero -> sized ~seq ~siz:len
     (* α[m,k)[o,l) ==> α[m+o,l) when k ≥ o+l *)
     | Extract {seq= a; off= m; len= k} when partial_ge k o_l ->
         extract ~seq:a ~off:(add m off) ~len
@@ -356,34 +460,41 @@ let rec extract ~seq ~off ~len =
      * where l₀ = max 0 (min l |α₀|-o)
      *       o₁ = max 0 o-|α₀|
      *)
-    | Concat na1N -> (
-      match len with
-      | Z l ->
-          Array.fold_map_until na1N (l, off)
-            ~f:(fun naI (l, oI) ->
-              if Z.equal Z.zero l then
-                `Continue (extract ~seq:naI ~off:oI ~len:zero, (l, oI))
-              else
-                let nI = seq_size_exn naI in
-                let oI_nI = sub oI nI in
-                match oI_nI with
-                | Z z ->
-                    let oJ = if Z.sign z <= 0 then zero else oI_nI in
-                    let lI = Z.(max zero (min l (neg z))) in
-                    let l = Z.(l - lI) in
-                    `Continue
-                      (extract ~seq:naI ~off:oI ~len:(_Z lI), (l, oJ))
-                | _ -> `Stop (Extract {seq; off; len}) )
-            ~finish:(fun (e1N, _) -> concat e1N)
-      | _ -> Extract {seq; off; len} )
+    | Concat na1N ->
+        let n = Array.length na1N - 1 in
+        let rec loop i oI lIN =
+          let naI = na1N.(i) in
+          let j = i + 1 in
+          if i = n then [extract ~seq:naI ~off:oI ~len:lIN]
+          else
+            let nI = seq_size_exn naI in
+            let oI_nI = sub oI nI in
+            match (oI_nI, lIN) with
+            | Z z, _ when Z.sign z >= 0 (* oᵢ ≥ |αᵢ| *) ->
+                let oJ = oI_nI in
+                let lJN = lIN in
+                loop j oJ lJN
+            | Z z, Z lIN ->
+                let lI = Z.(max zero (min lIN (neg z))) in
+                let oJ = zero in
+                let lJN = Z.(lIN - lI) in
+                extract ~seq:naI ~off:oI ~len:(_Z lI) :: loop j oJ (_Z lJN)
+            | _ ->
+                let naIN = Array.sub ~pos:i na1N in
+                let seq = concat naIN in
+                [Extract {seq; off= oI; len= lIN}]
+        in
+        concat (Array.of_list (loop 0 off len))
     (* α[o,l) *)
-    | _ -> Extract {seq; off; len} )
-  |> check invariant
+    | _ -> Extract {seq; off; len}
 
 and concat xs =
   [%trace]
     ~call:(fun {pf} -> pf "@ %a" pp (Concat xs))
-    ~retn:(fun {pf} -> pf "%a" pp)
+    ~retn:(fun {pf} c ->
+      pf "%a" pp c ;
+      solvables_contained_in xs c ;
+      invariant c )
   @@ fun () ->
   (* (α^(β^γ)^δ) ==> (α^β^γ^δ) *)
   let flatten xs =
@@ -411,7 +522,7 @@ and concat xs =
   in
   let xs = flatten xs in
   let xs = Array.reduce_adjacent ~f:simp_adjacent xs in
-  (if Array.length xs = 1 then xs.(0) else Concat xs) |> check invariant
+  if Array.length xs = 1 then xs.(0) else Concat xs
 
 (* uninterpreted *)
 
@@ -419,24 +530,8 @@ let apply f es =
   ( match Funsym.eval ~equal ~get_z ~ret_z:_Z ~get_q ~ret_q:_Q f es with
   | Some c -> c
   | None -> Apply (f, es) )
+  |> check (solvables_contained_in es)
   |> check invariant
-
-(** Traverse *)
-
-let trms = function
-  | Var _ | Z _ | Q _ -> Iter.empty
-  | Arith a -> Arith.trms a
-  | Splat x -> Iter.(cons x empty)
-  | Sized {seq; siz} -> Iter.(cons seq (cons siz empty))
-  | Extract {seq; off; len} -> Iter.(cons seq (cons off (cons len empty)))
-  | Concat xs | Apply (_, xs) -> Iter.of_array xs
-
-let is_atomic = function
-  | Var _ | Z _ | Q _ | Concat [||] | Apply (_, [||]) -> true
-  | Arith _ | Splat _ | Sized _ | Extract _ | Concat _ | Apply _ -> false
-
-let rec atoms e =
-  if is_atomic e then Iter.return e else Iter.flat_map ~f:atoms (trms e)
 
 (** Query *)
 
@@ -472,3 +567,11 @@ let map e ~f =
   | Apply (g, xs) -> mapN f e (apply g) xs
 
 let fold_map e = fold_map_from_map map e
+
+let rec map_solvables e ~f =
+  match classify e with
+  | InterpAtom -> e
+  | NonInterpAtom | UninterpApp -> f e
+  | InterpApp -> map_solvable_trms ~f e
+
+and map_solvable_trms e ~f = map ~f:(map_solvables ~f) e

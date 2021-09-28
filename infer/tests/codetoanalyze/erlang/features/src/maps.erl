@@ -18,7 +18,9 @@
     test_put3_Ok/0,
     test_put4_Bad/0,
     test_put5_Bad/0,
-    test_put6_Bad/0
+    test_put6_Bad/0,
+    test_new_Ok/0,
+    test_new_Bad/0
 ]).
 
 % Call this method with warn(1) to trigger a warning to expect
@@ -93,3 +95,19 @@ test_put5_Bad() ->
 
 test_put6_Bad() ->
     M1 = maps:put(1, 3, [not_a_map]).
+
+test_new_Ok() ->
+    M = maps:new(),
+    case maps:is_key(1, M) of
+        % TODO: 0 should be replaced with false when we support true/false atoms properly (T94670024)
+        0 -> ok;
+        _ -> warn(1)
+    end.
+
+test_new_Bad() ->
+    M = maps:new(),
+    case maps:is_key(1, M) of
+        % TODO: 0 should be replaced with false when we support true/false atoms properly (T94670024)
+        0 -> warn(1);
+        _ -> ok
+    end.

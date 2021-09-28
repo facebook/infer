@@ -16,6 +16,8 @@ module Function = Function
 module Global = Global
 module GlobalDefn = GlobalDefn
 
+val cct_schedule_points : bool ref
+
 module Intrinsic : sig
   include module type of Intrinsics
 

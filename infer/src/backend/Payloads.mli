@@ -29,6 +29,7 @@ include sig
     ; quandary: QuandarySummary.t option
     ; racerd: RacerDDomain.summary option
     ; siof: SiofDomain.Summary.t option
+    ; simple_lineage: SimpleLineage.Summary.t option
     ; starvation: StarvationDomain.summary option
     ; nullsafe: NullsafeSummary.t option
     ; uninit: UninitDomain.Summary.t option }

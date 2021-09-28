@@ -12,7 +12,7 @@ Supported languages:
 - Java: Experimental
 - C#/.Net: Experimental
 
-This checker collects functions whose execution isn't gated by certain pre-defined gating functions. The set of gating functions is hardcoded and empty by default for now, so to use this checker, please modify the code directly in [FbGKInteraction.ml](https://github.com/facebook/infer/tree/master/infer/src/opensource).
+This checker collects functions whose execution isn't gated by certain pre-defined gating functions. The set of gating functions is hardcoded and empty by default for now, so to use this checker, please modify the code directly in [FbGKInteraction.ml](https://github.com/facebook/infer/tree/main/infer/src/opensource).
 
 ## List of Issue Types
 

@@ -8,7 +8,6 @@ open! IStd
 
 (** entry points for top-level functionalities such as capture, analysis, and reporting *)
 
-module CLOpt = CommandLineOption
 module L = Logging
 module F = Format
 
@@ -125,7 +124,7 @@ let capture ~changed_files = function
       L.progress "Capturing for BuckJavaFlavor integration...@." ;
       BuckJavaFlavor.capture build_cmd
   | Clang {compiler; prog; args} ->
-      if CLOpt.is_originator then L.progress "Capturing in make/cc mode...@." ;
+      if Config.is_originator then L.progress "Capturing in make/cc mode...@." ;
       Clang.capture compiler ~prog ~args
   | ClangCompilationDB {db_files} ->
       L.progress "Capturing using compilation database...@." ;
@@ -134,7 +133,7 @@ let capture ~changed_files = function
       L.progress "Capturing in gradle mode...@." ;
       Gradle.capture ~prog ~args
   | Javac {compiler; prog; args} ->
-      if CLOpt.is_originator then L.progress "Capturing in javac mode...@." ;
+      if Config.is_originator then L.progress "Capturing in javac mode...@." ;
       Javac.capture compiler ~prog ~args
   | Maven {prog; args} ->
       L.progress "Capturing in maven mode...@." ;
@@ -192,9 +191,7 @@ let report ?(suppress_console = false) () =
   let costs_json = ResultsDir.get_path ReportCostsJson in
   let config_impact_json = ResultsDir.get_path ReportConfigImpactJson in
   JsonReports.write_reports ~issues_json ~costs_json ~config_impact_json ;
-  (* Post-process the report according to the user config. By default, calls report.py to create a
-    human-readable report.
-
+  (* Post-process the report according to the user config.
     Do not bother calling the report hook when called from within Buck. *)
   if not Config.buck_cache_mode then (
     (* Create a dummy bugs.txt file for backwards compatibility. TODO: Stop doing that one day. *)
@@ -260,15 +257,8 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
     | _ when Config.merge ->
         (* [--merge] overrides other behaviors *)
         true
-    | BuckClangFlavor _
-      when Option.exists ~f:BuckMode.is_clang_flavors Config.buck_mode
-           && InferCommand.equal Run Config.command ->
-        (* if doing capture + analysis of buck with flavors, we always need to merge targets before the analysis phase *)
-        true
-    | Analyze | BuckJavaFlavor _ | Gradle _ ->
+    | Analyze | BuckClangFlavor _ | BuckJavaFlavor _ | Gradle _ ->
         ResultsDir.RunState.get_merge_capture ()
-    | AnalyzeJson ->
-        false
     | _ ->
         false
   in
@@ -379,7 +369,7 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
   | prog :: args -> (
       let build_system =
         match Config.force_integration with
-        | Some build_system when CLOpt.is_originator ->
+        | Some build_system when Config.is_originator ->
             build_system
         | _ ->
             Config.build_system_of_exe_name (Filename.basename prog)
@@ -449,9 +439,9 @@ let mode_from_command_line =
 
 
 let run_prologue mode =
-  if CLOpt.is_originator then L.environment_info "%a@\n" Config.pp_version () ;
+  if Config.is_originator then L.environment_info "%a@\n" Config.pp_version () ;
   if Config.debug_mode then L.environment_info "Driver mode:@\n%a@." pp_mode mode ;
-  if CLOpt.is_originator && Config.dump_duplicate_symbols then reset_duplicates_file () ;
+  if Config.is_originator && Config.dump_duplicate_symbols then reset_duplicates_file () ;
   ()
 
 
@@ -460,7 +450,7 @@ let run_prologue mode =
 
 
 let run_epilogue () =
-  if CLOpt.is_originator then (
+  if Config.is_originator then (
     if Config.fail_on_bug then fail_on_issue_epilogue () ;
     () ) ;
   if Config.buck_cache_mode then ResultsDir.scrub_for_caching () ;

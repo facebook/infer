@@ -778,6 +778,11 @@ struct
             let s' = S.remove v s in
             if S.is_empty s' then None else Some s' )
       m
+
+
+  let remove_all k m = M.remove k m
+
+  let get_all k m = match M.find_opt k m with None -> [] | Some vs -> S.elements vs
 end
 
 module BooleanAnd = struct

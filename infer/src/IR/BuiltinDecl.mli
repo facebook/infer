@@ -27,6 +27,8 @@ val __erlang_error_function_clause : Procname.t
 
 val __erlang_error_if_clause : Procname.t
 
+val __erlang_list_reverse : Procname.t
+
 val __erlang_make_cons : Procname.t
 
 val __erlang_make_nil : Procname.t
@@ -40,6 +42,8 @@ val __erlang_map_is_key : Procname.t
 val __erlang_map_get : Procname.t
 
 val __erlang_map_put : Procname.t
+
+val __erlang_missing_translation : Procname.t
 
 val __infer_initializer_list : Procname.t
 

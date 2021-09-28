@@ -1,9 +1,9 @@
-name: Deploy
+name: website
 
 on:
   push:
     branches:
-      - "master"
+      - "main"
     paths:
       - "website/**"
 

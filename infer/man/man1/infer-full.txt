@@ -637,6 +637,9 @@ OPTIONS
            files usually come from a previous run with --debug.       
     See also infer-capture(1).
 
+       --erlang-reverse-unfold-depth int
+           Unfold Erlang lists:reverse up to depth int           See also infer-analyze(1).
+
        --erlang-skip-rebar3
            Activates: Skip running rebar, to save time. It is useful together
            with --erlang-ast-dir. (Conversely: --no-erlang-skip-rebar3)       
@@ -933,6 +936,12 @@ OPTIONS
            Activates: Merge the captured results directories specified in the
            dependency file. (Conversely: --no-merge)           See also infer-analyze(1).
 
+       --merge-report +string
+           Specifies an Infer results directory. The reports stored in JSON
+           files in all specified results directories will be merged together
+           and deduplicated before being stored in the main results
+           directory.           See also infer-report(1).
+
        --pmd-xml
            Activates: Output issues in (PMD) XML format in
            infer-out/report.xml (Conversely: --no-pmd-xml)           See also infer-run(1).
@@ -1218,6 +1227,21 @@ OPTIONS
        --self-in-block-only
            Activates: Enable self-in-block and disable all other checkers
            (Conversely: --no-self-in-block-only)           See also infer-analyze(1).
+
+       --simple-lineage
+           Activates: checker simple-lineage: Computes a dataflow graph
+           (Conversely: --no-simple-lineage)           See also infer-analyze(1).
+
+       --simple-lineage-json-report
+           Activates: Enable simple lineage report in JSON format.
+           (Conversely: --no-simple-lineage-json-report)           See also infer-analyze(1).
+
+       --simple-lineage-max-cfg-size int
+           If set, larger CFGs are skipped.           See also infer-analyze(1).
+
+       --simple-lineage-only
+           Activates: Enable simple-lineage and disable all other checkers
+           (Conversely: --no-simple-lineage-only)           See also infer-analyze(1).
 
        --no-siof
            Deactivates: checker siof: Catches Static Initialization Order
@@ -1869,6 +1893,9 @@ INTERNAL OPTIONS
        --memtrace-sampling-rate-reset
            Cancel the effect of --memtrace-sampling-rate.
 
+       --merge-report-reset
+           Set --merge-report to the empty list.
+
        --method-decls-info method_decls_info.json
            Specifies the file containing the method declarations info (eg.
            start line, end line, class, method name, etc.) when Infer is run
@@ -2135,6 +2162,9 @@ INTERNAL OPTIONS
 
        --select-reset
            Cancel the effect of --select.
+
+       --simple-lineage-max-cfg-size-reset
+           Cancel the effect of --simple-lineage-max-cfg-size.
 
        --siof-safe-methods-reset
            Set --siof-safe-methods to the empty list.

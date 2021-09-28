@@ -1735,30 +1735,105 @@ module Erlang = struct
     PulseOperations.write_id ret_id (addr_val, hist) astate
 
 
+  let cons_head_field = Fieldname.make (ErlangType Cons) ErlangTypeName.cons_head
+
+  let cons_tail_field = Fieldname.make (ErlangType Cons) ErlangTypeName.cons_tail
+
+  (** Helper function to create a Nil structure without assigning it to return value *)
+  let make_nil_no_return astate location =
+    let event = ValueHistory.Allocation {f= Model "[]"; location} in
+    let addr_nil_val = AbstractValue.mk_fresh () in
+    let addr_nil = (addr_nil_val, [event]) in
+    let astate =
+      PulseOperations.add_dynamic_type (Typ.mk_struct (ErlangType Nil)) addr_nil_val astate
+    in
+    (addr_nil, astate)
+
+
+  (** Create a Nil structure and assign it to return value *)
   let make_nil : model =
    fun {location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Allocation {f= Model "[]"; location} in
-    let addr_nil = (AbstractValue.mk_fresh (), [event]) in
-    let astate = write_dynamic_type_and_return addr_nil Nil ret_id astate in
-    [Ok (ContinueProgram astate)]
+    let addr_nil, astate = make_nil_no_return astate location in
+    PulseOperations.write_id ret_id addr_nil astate |> ok_continue
 
 
+  (** Helper function to create a Cons structure without assigning it to return value *)
+  let make_cons_no_return astate path location hd tl =
+    let event = ValueHistory.Allocation {f= Model "[X|Xs]"; location} in
+    let addr_cons_val = AbstractValue.mk_fresh () in
+    let addr_cons = (addr_cons_val, [event]) in
+    let* astate =
+      write_field_and_deref path location ~struct_addr:addr_cons
+        ~field_addr:(AbstractValue.mk_fresh (), [event])
+        ~field_val:hd cons_head_field astate
+    in
+    let+ astate =
+      write_field_and_deref path location ~struct_addr:addr_cons
+        ~field_addr:(AbstractValue.mk_fresh (), [event])
+        ~field_val:tl cons_tail_field astate
+    in
+    let astate =
+      PulseOperations.add_dynamic_type (Typ.mk_struct (ErlangType Cons)) addr_cons_val astate
+    in
+    (addr_cons, astate)
+
+
+  (** Create a Cons structure and assign it to return value *)
   let make_cons head tail : model =
    fun {location; path; ret= ret_id, _} astate ->
-    let event = ValueHistory.Allocation {f= Model "[X|Xs]"; location} in
-    let addr_head = (AbstractValue.mk_fresh (), [event]) in
-    let addr_tail = (AbstractValue.mk_fresh (), [event]) in
-    let addr_cons = (AbstractValue.mk_fresh (), [event]) in
-    let field name = Fieldname.make (ErlangType Cons) name in
-    let<*> astate =
-      write_field_and_deref path location ~struct_addr:addr_cons ~field_addr:addr_head
-        ~field_val:head (field ErlangTypeName.cons_head) astate
+    let<+> addr_cons, astate = make_cons_no_return astate path location head tail in
+    PulseOperations.write_id ret_id addr_cons astate
+
+
+  let prune_type (value, _hist) typ astate =
+    let typ = Typ.mk_struct (ErlangType typ) in
+    let instanceof_val = AbstractValue.mk_fresh () in
+    let* astate = PulseArithmetic.and_equal_instanceof instanceof_val value typ astate in
+    PulseArithmetic.prune_positive instanceof_val astate
+
+
+  let load_field path field location obj astate =
+    match Java.load_field path field location obj astate with
+    | Error _ ->
+        L.die InternalError "Could not load field (we assume Erlang references to be valid)"
+    | Ok result ->
+        result
+
+
+  let list_reverse list : model =
+   fun {location; path; ret= ret_id, _} astate ->
+    (* Assumes that the argument is a Cons and loads the head and tail *)
+    let load_head_tail cons astate =
+      let+ astate = prune_type cons Cons astate in
+      let astate, _, head = load_field path cons_head_field location cons astate in
+      let astate, _, tail = load_field path cons_tail_field location cons astate in
+      (head, tail, astate)
     in
-    let<+> astate =
-      write_field_and_deref path location ~struct_addr:addr_cons ~field_addr:addr_tail
-        ~field_val:tail (field ErlangTypeName.cons_tail) astate
+    (* Assumes that a list is of given length and reads the elements *)
+    let rec assume_and_deconstruct list length astate =
+      match length with
+      | 0 ->
+          let+ astate = prune_type list Nil astate in
+          ([], astate)
+      | _ ->
+          let* hd, tl, astate = load_head_tail list astate in
+          let+ elems, astate = assume_and_deconstruct tl (length - 1) astate in
+          (hd :: elems, astate)
     in
-    write_dynamic_type_and_return addr_cons Cons ret_id astate
+    let foldResult ~init fs = List.fold ~init ~f:(fun r f -> Result.bind r ~f) fs in
+    (* Makes an abstract state corresponding to reversing a list of given length *)
+    let mk_astate_rev length =
+      let<*> elems, astate = assume_and_deconstruct list length astate in
+      let<+> reversed, astate =
+        foldResult
+          ~init:(Ok (make_nil_no_return astate location))
+          (List.map
+             ~f:(fun hd (tl, astate) -> make_cons_no_return astate path location hd tl)
+             elems )
+      in
+      PulseOperations.write_id ret_id reversed astate
+    in
+    List.concat (List.init Config.erlang_reverse_unfold_depth ~f:mk_astate_rev)
 
 
   let make_tuple (args : 'a ProcnameDispatcher.Call.FuncArg.t list) : model =
@@ -1784,7 +1859,7 @@ module Erlang = struct
 
 
   (** Maps are currently approximated to store only the latest key/value *)
-  let mk_map_field f = Fieldname.make (ErlangType Map) f
+  let mk_map_field = Fieldname.make (ErlangType Map)
 
   let map_key_field = mk_map_field "__infer_model_backing_map_key"
 
@@ -1825,6 +1900,8 @@ module Erlang = struct
     write_dynamic_type_and_return addr_map Map ret_id astate
 
 
+  let map_new : model = map_create []
+
   let make_astate_badmap (map_val, _map_hist) data astate =
     let typ = Typ.mk_struct (ErlangType Map) in
     let instanceof_val = AbstractValue.mk_fresh () in
@@ -1833,85 +1910,76 @@ module Erlang = struct
     error_badmap data astate
 
 
-  let make_astate_goodmap (map_val, _map_hist) astate =
-    let typ = Typ.mk_struct (ErlangType Map) in
-    let instanceof_val = AbstractValue.mk_fresh () in
-    let* astate = PulseArithmetic.and_equal_instanceof instanceof_val map_val typ astate in
-    PulseArithmetic.prune_positive instanceof_val astate
-
+  let make_astate_goodmap (map_val, _map_hist) astate = prune_type (map_val, _map_hist) Map astate
 
   let map_is_key (key, _key_history) map : model =
    fun ({location; path; ret= ret_id, _} as data) astate ->
-    match Java.load_field path map_is_empty_field location map astate with
-    | Error _ ->
-        (* Field not found, seems like it's not a map *)
-        error_badmap data astate
-    | Ok (astate, _isempty_addr, (is_empty, _isempty_hist)) ->
-        let ret_val_true = AbstractValue.mk_fresh () in
-        let ret_val_false = AbstractValue.mk_fresh () in
-        let event = ValueHistory.Call {f= Model "map_is_key"; location; in_call= []} in
-        (* Return 3 cases:
-         * - Error & assume not map
-         * - Ok & assume map & assume empty & return false
-         * - Ok & assume map & assume not empty & assume key is the tracked key & return true
-         *)
-        let astate_badmap = make_astate_badmap map data astate in
-        let astate_empty =
-          let* astate = make_astate_goodmap map astate in
-          let* astate = PulseArithmetic.prune_positive is_empty astate in
-          let+ astate = PulseArithmetic.and_eq_int ret_val_false IntLit.zero astate in
-          PulseOperations.write_id ret_id (ret_val_false, [event]) astate |> continue
-        in
-        let astate_haskey =
-          let* astate = make_astate_goodmap map astate in
-          let* astate = PulseArithmetic.prune_eq_zero is_empty astate in
-          let* astate, _key_addr, (tracked_key, _hist) =
-            Java.load_field path map_key_field location map astate
-          in
-          let* astate =
-            PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand key)
-              (AbstractValueOperand tracked_key) astate
-          in
-          let+ astate = PulseArithmetic.and_eq_int ret_val_true IntLit.one astate in
-          PulseOperations.write_id ret_id (ret_val_true, [event]) astate |> continue
-        in
-        astate_badmap @ [astate_empty; astate_haskey]
+    let astate, _isempty_addr, (is_empty, _isempty_hist) =
+      load_field path map_is_empty_field location map astate
+    in
+    let ret_val_true = AbstractValue.mk_fresh () in
+    let ret_val_false = AbstractValue.mk_fresh () in
+    let event = ValueHistory.Call {f= Model "map_is_key"; location; in_call= []} in
+    (* Return 3 cases:
+     * - Error & assume not map
+     * - Ok & assume map & assume empty & return false
+     * - Ok & assume map & assume not empty & assume key is the tracked key & return true
+     *)
+    let astate_badmap = make_astate_badmap map data astate in
+    let astate_empty =
+      let* astate = make_astate_goodmap map astate in
+      let* astate = PulseArithmetic.prune_positive is_empty astate in
+      let+ astate = PulseArithmetic.and_eq_int ret_val_false IntLit.zero astate in
+      PulseOperations.write_id ret_id (ret_val_false, [event]) astate |> continue
+    in
+    let astate_haskey =
+      let* astate = make_astate_goodmap map astate in
+      let* astate = PulseArithmetic.prune_eq_zero is_empty astate in
+      let astate, _key_addr, (tracked_key, _hist) =
+        load_field path map_key_field location map astate
+      in
+      let* astate =
+        PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand key)
+          (AbstractValueOperand tracked_key) astate
+      in
+      let+ astate = PulseArithmetic.and_eq_int ret_val_true IntLit.one astate in
+      PulseOperations.write_id ret_id (ret_val_true, [event]) astate |> continue
+    in
+    astate_empty :: astate_haskey :: astate_badmap
 
 
   let map_get (key, _key_history) map : model =
    fun ({location; path; ret= ret_id, _} as data) astate ->
-    match Java.load_field path map_is_empty_field location map astate with
-    | Error _ ->
-        (* Field not found, seems like it's not a map *)
-        error_badmap data astate
-    | Ok (astate, _isempty_addr, (is_empty, _isempty_hist)) ->
-        (* Return 3 cases:
-         * - Error & assume not map
-         * - Error & assume map & assume empty;
-         * - Ok & assume map & assume nonempty & assume key is the tracked key & return tracked value
-         *)
-        let astate_badmap = make_astate_badmap map data astate in
-        let astate_ok =
-          let* astate = make_astate_goodmap map astate in
-          let* astate = PulseArithmetic.prune_eq_zero is_empty astate in
-          let* astate, _key_addr, (tracked_key, _hist) =
-            Java.load_field path map_key_field location map astate
-          in
-          let* astate =
-            PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand key)
-              (AbstractValueOperand tracked_key) astate
-          in
-          let+ astate, _value_addr, tracked_value =
-            Java.load_field path map_value_field location map astate
-          in
-          PulseOperations.write_id ret_id tracked_value astate |> continue
-        in
-        let astate_badkey =
-          let<*> astate = make_astate_goodmap map astate in
-          let<*> astate = PulseArithmetic.prune_positive is_empty astate in
-          error_badkey data astate
-        in
-        (astate_ok :: astate_badkey) @ astate_badmap
+    let astate, _isempty_addr, (is_empty, _isempty_hist) =
+      load_field path map_is_empty_field location map astate
+    in
+    (* Return 3 cases:
+     * - Error & assume not map
+     * - Error & assume map & assume empty;
+     * - Ok & assume map & assume nonempty & assume key is the tracked key & return tracked value
+     *)
+    let astate_badmap = make_astate_badmap map data astate in
+    let astate_ok =
+      let* astate = make_astate_goodmap map astate in
+      let* astate = PulseArithmetic.prune_eq_zero is_empty astate in
+      let astate, _key_addr, (tracked_key, _hist) =
+        load_field path map_key_field location map astate
+      in
+      let+ astate =
+        PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand key)
+          (AbstractValueOperand tracked_key) astate
+      in
+      let astate, _value_addr, tracked_value =
+        load_field path map_value_field location map astate
+      in
+      PulseOperations.write_id ret_id tracked_value astate |> continue
+    in
+    let astate_badkey =
+      let<*> astate = make_astate_goodmap map astate in
+      let<*> astate = PulseArithmetic.prune_positive is_empty astate in
+      error_badkey data astate
+    in
+    (astate_ok :: astate_badkey) @ astate_badmap
 
 
   let map_put key value map : model =
@@ -2018,6 +2086,8 @@ module ProcNameDispatcher = struct
           <>$ capt_arg_payload $+...$--> Misc.id_first_arg ~desc:"cast"
         ; +BuiltinDecl.(match_builtin abort) <>--> Misc.early_exit
         ; +BuiltinDecl.(match_builtin exit) <>--> Misc.early_exit
+        ; +BuiltinDecl.(match_builtin __erlang_list_reverse)
+          <>$ capt_arg_payload $--> Erlang.list_reverse
         ; +BuiltinDecl.(match_builtin __erlang_make_cons)
           <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.make_cons
         ; +BuiltinDecl.(match_builtin __erlang_make_tuple) &++> Erlang.make_tuple
@@ -2239,10 +2309,12 @@ module ProcNameDispatcher = struct
           $--> StdVector.invalidate_references ShrinkToFit
         ; -"std" &:: "vector" &:: "push_back" <>$ capt_arg_payload $+...$--> StdVector.push_back
         ; -"std" &:: "vector" &:: "empty" <>$ capt_arg_payload $+...$--> StdVector.empty
+        ; -"lists" &:: "reverse" <>$ capt_arg_payload $--> Erlang.list_reverse
         ; -"maps" &:: "is_key" <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.map_is_key
         ; -"maps" &:: "get" <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.map_get
         ; -"maps" &:: "put" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
           $--> Erlang.map_put
+        ; -"maps" &:: "new" <>$$--> Erlang.map_new
         ; +map_context_tenv PatternMatch.Java.implements_collection
           &:: "<init>" <>$ capt_arg_payload
           $--> JavaCollection.init ~desc:"Collection.init()"

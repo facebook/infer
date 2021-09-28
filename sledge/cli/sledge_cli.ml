@@ -79,7 +79,8 @@ let used_globals pgm entry_points preanalyze =
   let module UG = Domain_used_globals in
   if preanalyze then
     let module Config = struct
-      let bound = 1
+      let loop_bound = 1
+      let switch_bound = 0
       let function_summaries = true
       let entry_points = entry_points
       let globals = UG.Declared Llair.Global.Set.empty
@@ -95,12 +96,21 @@ let used_globals pgm entry_points preanalyze =
          (Iter.map ~f:(fun g -> g.name) (IArray.to_iter pgm.globals)) )
 
 let analyze =
-  let%map_open bound =
-    flag "bound"
+  let%map_open loop_bound =
+    flag "loop-bound" ~aliases:["bound"]
       (optional_with_default 1 int)
       ~doc:
-        "<int> stop execution exploration at depth <int>, a negative bound \
-         is never hit and leads to unbounded exploration"
+        "<int> limit execution exploration to <int> loop iterations, a \
+         negative bound is never hit and leads to unbounded exploration"
+  and switch_bound =
+    flag "switch-bound" ~aliases:["yield"]
+      (optional_with_default (-1) int)
+      ~doc:
+        "<int> limit execution exploration to <int> context switches, a \
+         negative bound is never hit and leads to unbounded exploration"
+  and cct_schedule_points =
+    flag "cct-schedule-points" no_arg
+      ~doc:"context switch only at cct_point calls"
   and function_summaries =
     flag "function-summaries" no_arg
       ~doc:"use function summaries (in development)"
@@ -137,7 +147,11 @@ let analyze =
     let pgm = program () in
     let globals = used_globals pgm entry_points preanalyze_globals in
     let module Config = struct
-      let bound = bound
+      let loop_bound = if loop_bound < 0 then Int.max_int else loop_bound
+
+      let switch_bound =
+        if switch_bound < 0 then Int.max_int else switch_bound
+
       let function_summaries = function_summaries
       let entry_points = entry_points
       let globals = globals
@@ -157,6 +171,7 @@ let analyze =
     let module Queue = (val queue) in
     let module Analysis = Control.Make (Config) (Domain) (Queue) in
     (match seed with None -> Random.self_init () | Some n -> Random.init n) ;
+    Llair.cct_schedule_points := cct_schedule_points ;
     Domain_sh.simplify_states := not no_simplify_states ;
     Option.iter dump_query ~f:(fun n -> Solver.dump_query := n) ;
     at_exit (fun () -> Report.coverage pgm) ;

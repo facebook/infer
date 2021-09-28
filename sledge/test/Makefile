@@ -7,8 +7,8 @@
 CLANG_ARGS?=-O0 -Xclang -disable-O0-optnone
 
 # executable to test
-SLEDGE_DBG=$(CURDIR)/../_build/debug/cli/sledge_cli.exe
-SLEDGE_OPT=$(CURDIR)/../_build/release/cli/sledge_cli.exe
+SLEDGE_DBG:=$(CURDIR)/../_build/debug/cli/sledge_cli.exe
+SLEDGE_OPT:=$(CURDIR)/../_build/release/cli/sledge_cli.exe
 
 # additional arguments to pass to sledge translate, disassemble, analyze, smt, and report
 SLEDGE_T_ARGS?=
@@ -21,41 +21,39 @@ SLEDGE_R_ARGS?=
 TIMEOUT?=300
 MEMOUT?=6
 
-sledge_dbg=./wrap.sh $(TIMEOUT) $(MEMOUT) $(SLEDGE_DBG)
-sledge_opt=./wrap.sh $(TIMEOUT) $(MEMOUT) $(SLEDGE_OPT)
+sledge_dbg:=./wrap.sh $(TIMEOUT) $(MEMOUT) $(SLEDGE_DBG)
+sledge_opt:=./wrap.sh $(TIMEOUT) $(MEMOUT) $(SLEDGE_OPT)
 
-sledge_report=$(CURDIR)/../_build/debug/report/sledge_report.exe
-
-.PHONY: sledge_report_exe
-sledge_report_exe:
-	$(MAKE) -C .. report
+sledge_report:=$(shell \ls -t1 $(CURDIR)/../_build/*/report/sledge_report.exe | head -1)
 
 # which utilities to use
 diff?=patdiff
 
 # select llvm and clang used by opam
-export PATH := $(shell $$(opam var conf-llvm:config) --bindir):$(PATH)
+export PATH:=$(shell $$(opam var conf-llvm:config) --bindir):$(PATH)
 
 # query llvm-config for compilation flags
-C_FLAGS = $(shell $$(opam var conf-llvm:config) --cflags)
-CXX_FLAGS = $(shell $$(opam var conf-llvm:config) --cxxflags)
+C_FLAGS:=$(shell $$(opam var conf-llvm:config) --cflags)
+CXX_FLAGS:=$(shell $$(opam var conf-llvm:config) --cxxflags)
 
 # configure sort
-export LANG := C
+export LANG:=C
 
 default: test
 
+llair_intrinsics_h:=$(CURDIR)/../model/llair_intrinsics.h
+
 # compile c to llvm bitcode
-%.bc : %.c $(CURDIR)/../model/llair_intrinsics.h
-	(cd $(@D) && clang -g -c -emit-llvm $(C_FLAGS) -include $(CURDIR)/../model/llair_intrinsics.h -Wno-main-return-type $(CLANG_ARGS) -o $(@F) $(<F))
+%.bc : %.c $(llair_intrinsics)
+	clang -g -c -emit-llvm $(C_FLAGS) -include $(llair_intrinsics_h) -Wno-main-return-type $(CLANG_ARGS) -o $@ $<
 
 # compile c++ to llvm bitcode
 %.bc : %.cpp
-	(cd $(@D) && clang++ -g -c -emit-llvm $(CXX_FLAGS) $(CLANG_ARGS) -o $(@F) $(<F))
+	clang++ -g -c -emit-llvm $(CXX_FLAGS) $(CLANG_ARGS) -o $@ $<
 
 # disassemble bitcode to llvm assembly
 %.ll : %.bc
-	(cd $(@D) && llvm-dis -show-annotations -o $(@F) $(<F))
+	llvm-dis -show-annotations -o $@ $<
 
 %.bllair : %.bc
 	$(SLEDGE_DBG) llvm translate $< -output $@
@@ -85,7 +83,9 @@ AnalyzeTests:=$(AnalyzeBCs) $(AnalyzeLLs)
 GeneratedBCs:=$(TranslateGenBCs) $(AnalyzeGenBCs)
 
 # compile all c/c++ to bc
-compile: $(GeneratedBCs)
+.PHONY: compile
+compile:
+	$(MAKE) -j $(GeneratedBCs)
 	@if [ -d "extra" ]; then \
 	   $(MAKE) sledge=$(SLEDGE_DBG) -C extra compile; \
 	 fi
@@ -106,10 +106,10 @@ translate.sexp:
 baseline/translate.sexp: translate.sexp
 	cp translate.sexp $@
 
-translate.html: translate.sexp sledge_report_exe
+translate.html: translate.sexp
 	$(sledge_report) html $(SLEDGE_R_ARGS) -baseline baseline/translate.sexp translate.sexp -output $@
 
-translate-status: translate.sexp sledge_report_exe
+translate-status: translate.sexp
 	$(sledge_report) status -baseline baseline/translate.sexp translate.sexp | column -ts$$'\t'
 
 #
@@ -119,9 +119,9 @@ translate-status: translate.sexp sledge_report_exe
 # run analyze tests
 .PHONY: analyze
 analyze: compile
-	-parallel --bar $(sledge_dbg) llvm analyze -trace Report+Control $(SLEDGE_A_ARGS) ::: $(AnalyzeTests)
+	-parallel --use-cores-instead-of-threads --bar $(sledge_dbg) llvm analyze -trace Report+Control $(SLEDGE_A_ARGS) ::: $(shell $(sledge_report) sort -baseline baseline/analyze.sexp $(AnalyzeTests))
 
-parallel_sledge_opt=parallel --use-cores-instead-of-threads --shuf --bar $(sledge_opt) llvm analyze -append-report $(SLEDGE_A_ARGS) :::
+parallel_sledge_opt:=parallel --use-cores-instead-of-threads --shuf --bar $(sledge_opt) llvm analyze -append-report $(SLEDGE_A_ARGS) :::
 
 analyze-perf1: compile
 	-@$(parallel_sledge_opt) $(AnalyzeTests)
@@ -142,11 +142,11 @@ analyze.sexp:
 baseline/analyze.sexp: analyze.sexp
 	cp analyze.sexp $@
 
-analyze.html: analyze.sexp sledge_report_exe
+analyze.html: analyze.sexp
 	$(sledge_report) html $(SLEDGE_R_ARGS) -baseline baseline/analyze.sexp analyze.sexp -output $@
 
-analyze-status: analyze.sexp sledge_report_exe
-	$(sledge_report) status -baseline baseline/analyze.sexp analyze.sexp | column -ts$$'\t'
+analyze-status: analyze.sexp
+	$(sledge_report) status -baseline baseline/analyze.sexp analyze.sexp | column -ts$$'\t' ; exit $${PIPESTATUS[0]}
 
 #
 # smt tests
@@ -159,7 +159,7 @@ SmtTests:=$(shell find smt -name '*.smt2' 2>/dev/null)
 smt:
 	-parallel --bar $(sledge_dbg) smt $(SLEDGE_S_ARGS) ::: $(SmtTests)
 
-parallel_sledge_opt_smt=parallel --use-cores-instead-of-threads --shuf --bar $(sledge_opt) smt -append-report $(SLEDGE_S_ARGS) :::
+parallel_sledge_opt_smt:=parallel --use-cores-instead-of-threads --shuf --bar $(sledge_opt) smt -append-report $(SLEDGE_S_ARGS) :::
 
 smt-perf1:
 	-@$(parallel_sledge_opt_smt) $(SmtTests)
@@ -180,10 +180,10 @@ smt.sexp:
 baseline/smt.sexp: smt.sexp
 	cp smt.sexp $@
 
-smt.html: smt.sexp sledge_report_exe
+smt.html: smt.sexp
 	$(sledge_report) html $(SLEDGE_R_ARGS) -baseline baseline/smt.sexp smt.sexp -output $@
 
-smt-status: smt.sexp sledge_report_exe
+smt-status: smt.sexp
 	$(sledge_report) status -baseline baseline/smt.sexp smt.sexp | column -ts$$'\t'
 
 #
@@ -202,10 +202,10 @@ llvm.sexp:
 baseline/llvm.sexp: llvm.sexp
 	cp llvm.sexp $@
 
-llvm.html: llvm.sexp sledge_report_exe
+llvm.html: llvm.sexp
 	$(sledge_report) html $(SLEDGE_R_ARGS) -baseline baseline/llvm.sexp llvm.sexp -output $@
 
-llvm-status: llvm.sexp sledge_report_exe
+llvm-status: llvm.sexp
 	$(sledge_report) status -baseline baseline/llvm.sexp llvm.sexp | column -ts$$'\t'
 
 #

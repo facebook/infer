@@ -38,13 +38,13 @@ module type QueueS = sig
   val add : elt -> t -> t
   (** add an element *)
 
-  val top : t -> (elt * elt list * t) option
+  val top : t -> (elt * elt iter * t) option
   (** [top q] is [None] if [q] is empty and otherwise is [Some (e, es, q')]
       where [e] is the selected element in [q] and any elements [es] have
       the same destination as [e]. [q'] is equivalent to [q] but possibly
       more compactly represented. *)
 
-  val remove : elt -> elt list -> t -> t
+  val remove : elt -> elt iter -> t -> t
 end
 
 (** Type of a queue implementation, which is parameterized over elements. *)
@@ -60,12 +60,13 @@ module PriorityQueue (Elt : Elt) : QueueS with type elt = Elt.t = struct
 
   type t = {queue: Elt.t FHeap.t; removed: Elts.t}
 
-  let pp ppf {queue; removed} =
-    let rev_elts =
-      FHeap.fold queue ~init:[] ~f:(fun rev_elts elt ->
-          if Elts.mem elt removed then rev_elts else elt :: rev_elts )
-    in
-    Format.fprintf ppf "@[%a@]" (List.pp " ::@ " Elt.pp) (List.rev rev_elts)
+  let elts {queue; removed} =
+    Iter.unfoldr FHeap.pop queue
+    |> Iter.filter ~f:(fun elt -> not (Elts.mem elt removed))
+
+  let pp ppf q =
+    Format.fprintf ppf "@[%a@]" (List.pp " ::@ " Elt.pp)
+      (Iter.to_list (elts q))
 
   let create () = {queue= FHeap.create ~cmp:Elt.compare; removed= Elts.empty}
 
@@ -82,17 +83,14 @@ module PriorityQueue (Elt : Elt) : QueueS with type elt = Elt.t = struct
       top {queue= queue'; removed= removed'}
     else
       let elts =
-        FHeap.fold queue ~init:[] ~f:(fun elts elt ->
-            if Elt.equal_destination next elt && not (Elts.mem elt removed)
-            then elt :: elts
-            else elts )
+        Iter.filter ~f:(Elt.equal_destination next) (elts {queue; removed})
       in
       Some (next, elts, {queue; removed})
 
   let remove top elts {queue; removed} =
     assert (Elt.equal top (FHeap.top_exn queue)) ;
     let queue = FHeap.remove_top_exn queue in
-    let removed = Elts.add_list elts removed in
+    let removed = Elts.union (Elts.of_iter elts) removed in
     {queue; removed}
 end
 
@@ -414,6 +412,9 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
   (** Set of threads *)
   module Threads : sig
     type t [@@deriving compare, equal, sexp_of]
+
+    val pp : t pp
+
     type inactive [@@deriving sexp_of]
 
     val compare_inactive : inactive Ord.t
@@ -427,6 +428,11 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
     module M = Map.Make (ThreadID)
 
     type t = Thread.t M.t [@@deriving compare, equal, sexp_of]
+
+    let pp ppf threads =
+      Format.fprintf ppf "@[[%a]@]" (List.pp "" Thread.pp)
+        (Iter.to_list (M.values threads))
+
     type inactive = Thread.t array [@@deriving sexp_of]
 
     let compare_inactive = Ord.array Thread.compare_without_tid
@@ -478,9 +484,9 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
   module Edge = struct
     type t = edge [@@deriving sexp_of]
 
-    let pp fs {dst; src= {sort_index; lbl}} =
-      Format.fprintf fs "%a <-t%i- #%i %%%s" Thread.pp dst (Thread.id dst)
-        sort_index lbl
+    let pp fs {dst; src= {sort_index}} =
+      Format.fprintf fs "%a <-t%i- #%i" Thread.pp dst (Thread.id dst)
+        sort_index
 
     (** Each retreating edge has a depth for each calling context, except
         for recursive calls. Recursive call edges are instead compared
@@ -582,8 +588,9 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
     module Elt = struct
       type t = elt [@@deriving sexp_of]
 
-      let pp ppf {ctrl= {edge; depth}; switches} =
-        Format.fprintf ppf "%i,%i: %a" switches depth Edge.pp edge
+      let pp ppf {ctrl= {edge; depth}; threads; switches} =
+        Format.fprintf ppf "%i,%i: %a %a" switches depth Edge.pp edge
+          Threads.pp threads
 
       let compare x y =
         let open Ord.Infix in
@@ -668,15 +675,15 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
     (** Analysis exploration state *)
     type t = Queue.t * Cursor.t
 
-    let prune depth {ctrl= edge} wl =
-      [%Trace.info " %i: %a" depth Edge.pp edge] ;
-      Report.hit_bound Config.bound ;
-      wl
+    let prune switches depth edge =
+      [%Trace.info " %i,%i: %a" switches depth Edge.pp edge]
+
+    let pp_queue ppf queue = [%Trace.fprintf ppf "@ | %a" Queue.pp queue]
 
     let enqueue depth ({ctrl= {dst} as edge; threads; depths} as elt)
         (queue, cursor) =
       [%Trace.info
-        " %i,%i: %a@ | %a" elt.switches depth Edge.pp edge Queue.pp queue] ;
+        " %i,%i: %a%a" elt.switches depth Edge.pp edge pp_queue queue] ;
       let depths = Depths.add ~key:edge ~data:depth depths in
       let threads, inactive = Threads.after_step dst threads in
       let queue =
@@ -705,7 +712,10 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
     let add ~retreating ({ctrl= edge; depths} as elt) wl =
       let depth = Option.value (Depths.find edge depths) ~default:0 in
       let depth = if retreating then depth + 1 else depth in
-      if depth > Config.bound && Config.bound >= 0 then prune depth elt wl
+      if depth > Config.loop_bound then (
+        prune elt.switches depth elt.ctrl ;
+        Report.hit_loop_bound Config.loop_bound ;
+        wl )
       else enqueue depth elt wl
 
     module Succs = struct
@@ -735,7 +745,7 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
     let rec dequeue (queue, cursor) =
       let* ({threads} as top), elts, queue = Queue.top queue in
       let succs =
-        List.fold (top :: elts) Succs.empty ~f:(fun incoming succs ->
+        Iter.fold (Iter.cons top elts) Succs.empty ~f:(fun incoming succs ->
             let {ctrl= {edge= {dst}}; state; switches; depths} = incoming in
             let incoming_tid = Thread.id dst in
             Threads.fold threads succs ~f:(fun active succs ->
@@ -753,24 +763,32 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
           ~f:(fun ~key:(switches, ip, threads) ~data:incoming ->
             let next = (switches, ip, threads) in
             let curr = SeqSH.Set.of_list incoming in
-            let+ next_states =
+            let+ done_states, next_states =
               match Cursor.find next cursor with
-              | Some already_done ->
-                  let next_states = SeqSH.Set.diff curr already_done in
+              | Some done_states ->
+                  let next_states = SeqSH.Set.diff curr done_states in
                   if SeqSH.Set.is_empty next_states then None
-                  else Some next_states
-              | None -> Some curr
+                  else Some (done_states, next_states)
+              | None -> Some (SeqSH.Set.empty, curr)
             in
-            ( next
-            , next_states
-            , Cursor.add ~key:next ~data:next_states cursor ) )
+            let cursor =
+              Cursor.add ~key:next
+                ~data:(SeqSH.Set.union done_states next_states)
+                cursor
+            in
+            (next, next_states, cursor) )
       in
       let queue = if hit_end then Queue.remove top elts queue else queue in
       match found with
+      | Some ((switches, _, _), _, cursor)
+        when switches > Config.switch_bound ->
+          prune switches top.ctrl.depth top.ctrl.edge ;
+          Report.hit_switch_bound Config.switch_bound ;
+          dequeue (queue, cursor)
       | Some ((switches, ip, threads), next_states, cursor) ->
           [%Trace.info
-            " %i,%i: %a@ | %a" switches top.ctrl.depth Edge.pp top.ctrl.edge
-              Queue.pp queue] ;
+            " %i,%i: %a%a" switches top.ctrl.depth Edge.pp top.ctrl.edge
+              pp_queue queue] ;
           let state, depths = SeqSH.join next_states in
           Some
             ({ctrl= ip; state; threads; switches; depths}, (queue, cursor))
@@ -989,10 +1007,12 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
     | Throw {exc} -> exec_throw exc ams wl
     | Unreachable -> wl
 
+  let pp_state ppf state = [%Trace.fprintf ppf "@[%a@]@\n" D.pp state]
+
   let rec exec_ip pgm ({ctrl= {ip; stk; tid}; state} as ams) wl =
     match Llair.IP.inst ip with
     | Some inst -> (
-        [%Trace.info " t%i@\n@[%a@]@\n%a" tid D.pp state Llair.Inst.pp inst] ;
+        [%Trace.info " t%i@ %a%a" tid pp_state state Llair.Inst.pp inst] ;
         Report.step_inst ip ;
         match D.exec_inst tid inst state with
         | Ok state ->

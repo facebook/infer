@@ -820,6 +820,11 @@ let intrinsic :
   (* bool folly::usingJEMalloc() *)
   | Some _, `_ZN5folly13usingJEMallocEv, [||] -> Some pre
   (*
+   * cct
+   *)
+  (* void cct_point() *)
+  | None, `cct_point, [||] -> Some pre
+  (*
    * signature mismatch
    *)
   | ( _
@@ -827,7 +832,7 @@ let intrinsic :
       | `posix_memalign | `realloc | `mallocx | `rallocx | `xallocx
       | `sallocx | `dallocx | `sdallocx | `nallocx | `malloc_usable_size
       | `mallctl | `mallctlnametomib | `mallctlbymib | `strlen
-      | `_ZN5folly13usingJEMallocEv )
+      | `_ZN5folly13usingJEMallocEv | `cct_point )
     , _ ) ->
       fail "%aintrinsic %a%a;"
         (Option.pp "%a := " Var.pp)

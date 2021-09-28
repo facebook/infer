@@ -447,6 +447,8 @@ module Name = struct
         None
 
 
+  let name_without_templates n = unqualified_name n |> QualifiedCppName.to_qual_string
+
   let name n =
     match n with
     | CStruct _ | CUnion _ | CppClass _ | ObjcClass _ | ObjcProtocol _ ->

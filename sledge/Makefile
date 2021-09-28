@@ -6,23 +6,19 @@
 .PHONY: default
 default: exes
 
-RELEASE_TARGETS = _build/release/cli/sledge_cli.exe _build/release/sledge.install
-REPORT_TARGETS = _build/debug/report/sledge_report.exe
+RELEASE_TARGETS:=_build/release/cli/sledge_cli.exe _build/release/sledge.install _build/release/report/sledge_report.exe _build/release/sledge-help.txt
+DEBUG_TARGETS:=$(subst release,debug,$(RELEASE_TARGETS))
+TRACE_TARGETS:=$(subst release,trace,$(RELEASE_TARGETS))
 
-TARGETS = $(subst release,debug,$(RELEASE_TARGETS)) $(subst release,trace,$(RELEASE_TARGETS)) $(RELEASE_TARGETS) $(REPORT_TARGETS) _build/release/sledge-help.txt
+TARGETS:=$(DEBUG_TARGETS) $(TRACE_TARGETS) $(RELEASE_TARGETS)
 
-dune_build_release = dune build $(RELEASE_TARGETS)
-dune_install_release = dune install --context=release --prefix=_build/_install/release sledge 2>/dev/null
+dune_install_release:=dune install --context=release --prefix=_build/_install/release sledge 2>/dev/null
+dune_install_trace:=$(subst release,trace,$(dune_install_release))
+dune_install_debug:=$(subst release,debug,$(dune_install_release))
 
-dune_build_trace = $(subst release,trace,$(dune_build_release))
-dune_install_trace = $(subst release,trace,$(dune_install_release))
+export PATH:=../facebook/dependencies/bin:$(PATH)
 
-dune_build_debug = $(subst release,debug,$(dune_build_release))
-dune_install_debug = $(subst release,debug,$(dune_install_release))
-
-export PATH := ../facebook/dependencies/bin:$(PATH)
-
-LLVM_OCAML_SRC = $(shell git ls-files -- vendor/llvm-dune)
+LLVM_OCAML_SRC:=$(shell git ls-files -- vendor/llvm-dune)
 
 # file to use as a sentinel indicating llvm ocaml bindings are up-to-date
 LLVM_OCAML_SENTINEL=vendor/llvm-dune/src/llvm/common/dune
@@ -58,26 +54,26 @@ exes: setup
 
 .PHONY: debug
 debug: setup
-	$(dune_build_debug)
+	dune build $(DEBUG_TARGETS)
 	$(dune_install_debug)
 
 .PHONY: trace
 trace: setup
-	$(dune_build_trace)
+	dune build $(TRACE_TARGETS)
 	$(dune_install_trace)
 
 .PHONY: release
 release: setup
-	$(dune_build_release)
+	dune build $(RELEASE_TARGETS)
 	$(dune_install_release)
-
-.PHONY: report
-report: setup
-	dune build $(REPORT_TARGETS)
 
 .PHONY: watch
 watch: setup
 	dune build --watch --terminal-persistence=clear-on-rebuild $(TARGETS)
+
+.PHONY: watch
+watch-test: setup
+	dune build --watch @_build/debug/runtest --auto-promote $(DEBUG_TARGETS)
 
 .PHONY: test
 test:
@@ -100,8 +96,8 @@ fmt:
 	clang-format -i model/llair_intrinsics.h model/cxxabi.cpp
 	${MAKE} -C test fmt
 
-OCAMLFORMAT_EXE = ocamlformat
-OCAMLFORMAT_ARGS =
+OCAMLFORMAT_EXE:=ocamlformat
+OCAMLFORMAT_ARGS=
 
 .PHONY: fmt_all
 fmt_all:

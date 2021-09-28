@@ -407,6 +407,14 @@ OPTIONS
            Activates: Enable self-in-block and disable all other checkers
            (Conversely: --no-self-in-block-only)
 
+       --simple-lineage
+           Activates: checker simple-lineage: Computes a dataflow graph
+           (Conversely: --no-simple-lineage)
+
+       --simple-lineage-only
+           Activates: Enable simple-lineage and disable all other checkers
+           (Conversely: --no-simple-lineage-only)
+
        --no-siof
            Deactivates: checker siof: Catches Static Initialization Order
            Fiascos in C++, that can lead to subtle,
@@ -528,6 +536,9 @@ CLANG OPTIONS
            these types (or common wrappers around these types such as
            unique_ptr<type>) will count as dead stores when the variables are
            not read explicitly by the program.
+ERLANG OPTIONS
+       --erlang-reverse-unfold-depth int
+           Unfold Erlang lists:reverse up to depth int
 JAVA OPTIONS
        --annotation-reachability-custom-pairs json
            Specify custom sources/sink for the annotation reachability
@@ -567,6 +578,13 @@ RACERD CHECKER OPTIONS
        --threadsafe-aliases json
            Specify custom annotations that should be considered aliases of
            @ThreadSafe
+SIMPLE LINEAGE OPTIONS
+       --simple-lineage-json-report
+           Activates: Enable simple lineage report in JSON format.
+           (Conversely: --no-simple-lineage-json-report)
+
+       --simple-lineage-max-cfg-size int
+           If set, larger CFGs are skipped.
 SIOF CHECKER OPTIONS
        --siof-check-iostreams
            Activates: Do not assume that iostreams (cout, cerr, ...) are

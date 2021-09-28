@@ -158,11 +158,11 @@ let%test_module _ =
       pp q' ;
       [%expect
         {|
-        ∃ %x_7 .   %x_7 = f(%x_7) ∧ (-1 + %y_8) = f(%y_8) ∧ emp
+        ∃ %x_7 .   %x_7 = f(%x_7) ∧ (%y_8 - 1) = f(%y_8) ∧ emp
     
-          (-1 + %y_8) = f(%y_8) ∧ ((1 + f(%y_8)) = %y_8) ∧ emp
+          (%y_8 - 1) = f(%y_8) ∧ ((f(%y_8) + 1) = %y_8) ∧ emp
     
-          (-1 + %y_8) = f(%y_8) ∧ emp |}]
+          (%y_8 - 1) = f(%y_8) ∧ emp |}]
 
     let%expect_test _ =
       let q =

@@ -634,6 +634,17 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           None
     in
     match CAst_utils.get_decl decl_ref.Clang_ast_t.dr_decl_pointer with
+    | Some (CXXDestructorDecl ({di_is_implicit= true}, _, _, {fdi_body= None}, _)) ->
+        (* trivial destructor (i.e. the destructor isn't user-defined and is a no-op as none of the
+           fields of the object need to be destructed, e.g. the object is POD): pretend there is no
+           destructor at all as we won't get a chance to translate it due to its empty body (which
+           makes it "undefined" according to the frontend's logic for such things) and doing nothing
+           at all is equivalent anyway. Note that returning [Some _] here would cause "unknown
+           calls" at the call site.
+
+           Note: For some reason empty implicit trivial constructors *do* get a body in the AST so
+           do not suffer from this issue. *)
+        None
     | Some (CXXDestructorDecl _) ->
         Some decl_ref
     | _ ->

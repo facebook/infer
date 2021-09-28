@@ -90,6 +90,8 @@ let __erlang_error_function_clause = create_procname "__erlang_error_function_cl
 
 let __erlang_error_if_clause = create_procname "__erlang_error_if_clause"
 
+let __erlang_list_reverse = create_procname "__erlang_list_reverse"
+
 let __erlang_make_cons = create_procname "__erlang_make_cons"
 
 let __erlang_map_create = create_procname "__erlang_map_create"
@@ -103,6 +105,8 @@ let __erlang_map_put = create_procname "__erlang_map_put"
 let __erlang_make_nil = create_procname "__erlang_make_nil"
 
 let __erlang_make_tuple = create_procname "__erlang_make_tuple"
+
+let __erlang_missing_translation = create_procname "__erlang_missing_translation"
 
 let __exit = create_procname "_exit"
 

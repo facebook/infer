@@ -11,11 +11,11 @@ digraph cfg {
 	
 
 	 "copyX_div0#copy_move_constructor#7555826423954612298.1fd45599e2fc3ce471d7d474aa615bcb_3" -> "copyX_div0#copy_move_constructor#7555826423954612298.1fd45599e2fc3ce471d7d474aa615bcb_4" ;
-"copyX_div0#copy_move_constructor#7555826423954612298.1fd45599e2fc3ce471d7d474aa615bcb_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$0) [line 43, column 3]\n  _=*&x2:copy_move_constructor::X [line 43, column 17]\n  n$2=_fun_copy_move_constructor::X::~X(&x2:copy_move_constructor::X*) injected [line 43, column 17]\n  _=*&x1:copy_move_constructor::X [line 43, column 17]\n  n$4=_fun_copy_move_constructor::X::~X(&x1:copy_move_constructor::X*) injected [line 43, column 17]\n " shape="box"]
+"copyX_div0#copy_move_constructor#7555826423954612298.1fd45599e2fc3ce471d7d474aa615bcb_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$0) [line 43, column 3]\n " shape="box"]
 	
 
 	 "copyX_div0#copy_move_constructor#7555826423954612298.1fd45599e2fc3ce471d7d474aa615bcb_4" -> "copyX_div0#copy_move_constructor#7555826423954612298.1fd45599e2fc3ce471d7d474aa615bcb_2" ;
-"copyX_div0#copy_move_constructor#7555826423954612298.1fd45599e2fc3ce471d7d474aa615bcb_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(x2:copy_move_constructor::X); [line 42, column 3]\n  n$6=_fun_copy_move_constructor::X::X(&x2:copy_move_constructor::X*,&x1:copy_move_constructor::X&) [line 42, column 10]\n " shape="box"]
+"copyX_div0#copy_move_constructor#7555826423954612298.1fd45599e2fc3ce471d7d474aa615bcb_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(x2:copy_move_constructor::X); [line 42, column 3]\n  n$1=_fun_copy_move_constructor::X::X(&x2:copy_move_constructor::X*,&x1:copy_move_constructor::X&) [line 42, column 10]\n " shape="box"]
 	
 
 	 "copyX_div0#copy_move_constructor#7555826423954612298.1fd45599e2fc3ce471d7d474aa615bcb_5" -> "copyX_div0#copy_move_constructor#7555826423954612298.1fd45599e2fc3ce471d7d474aa615bcb_3" ;
@@ -23,14 +23,14 @@ digraph cfg {
 	
 
 	 "copyX_div0#copy_move_constructor#7555826423954612298.1fd45599e2fc3ce471d7d474aa615bcb_6" -> "copyX_div0#copy_move_constructor#7555826423954612298.1fd45599e2fc3ce471d7d474aa615bcb_5" ;
-"copyX_div0#copy_move_constructor#7555826423954612298.1fd45599e2fc3ce471d7d474aa615bcb_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(x1:copy_move_constructor::X); [line 40, column 3]\n  n$7=_fun_copy_move_constructor::X::X(&x1:copy_move_constructor::X*) [line 40, column 5]\n " shape="box"]
+"copyX_div0#copy_move_constructor#7555826423954612298.1fd45599e2fc3ce471d7d474aa615bcb_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(x1:copy_move_constructor::X); [line 40, column 3]\n  n$2=_fun_copy_move_constructor::X::X(&x1:copy_move_constructor::X*) [line 40, column 5]\n " shape="box"]
 	
 
 	 "copyX_div0#copy_move_constructor#7555826423954612298.1fd45599e2fc3ce471d7d474aa615bcb_7" -> "copyX_div0#copy_move_constructor#7555826423954612298.1fd45599e2fc3ce471d7d474aa615bcb_6" ;
-"copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_1" [label="1: Start copy_move_constructor::copyX_moveX_div1\nFormals: \nLocals:  d2:int 0$?%__sil_tmpSIL_materialize_temp__n$7:copy_move_constructor::X d1:int x2:copy_move_constructor::X x1:copy_move_constructor::X \n  " color=yellow style=filled]
+"copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_1" [label="1: Start copy_move_constructor::copyX_moveX_div1\nFormals: \nLocals:  d2:int 0$?%__sil_tmpSIL_materialize_temp__n$2:copy_move_constructor::X d1:int x2:copy_move_constructor::X x1:copy_move_constructor::X \n  " color=yellow style=filled]
 	
 
-	 "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_1" -> "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_12" ;
+	 "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_1" -> "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_11" ;
 "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_2" [label="2: Exit copy_move_constructor::copyX_moveX_div1 \n  " color=yellow style=filled]
 	
 
@@ -38,42 +38,38 @@ digraph cfg {
 	
 
 	 "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_3" -> "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_4" ;
-"copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_4" [label="4:  Return Stmt \n   *&return:int=(n$0 + n$1) [line 69, column 3]\n  _=*&x2:copy_move_constructor::X [line 69, column 15]\n  n$3=_fun_copy_move_constructor::X::~X(&x2:copy_move_constructor::X*) injected [line 69, column 15]\n  _=*&x1:copy_move_constructor::X [line 69, column 15]\n  n$5=_fun_copy_move_constructor::X::~X(&x1:copy_move_constructor::X*) injected [line 69, column 15]\n " shape="box"]
+"copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_4" [label="4:  Return Stmt \n   *&return:int=(n$0 + n$1) [line 69, column 3]\n " shape="box"]
 	
 
 	 "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_4" -> "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_2" ;
-"copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$7:copy_move_constructor::X); [line 68, column 16]\n  n$9=_fun_copy_move_constructor::getX(1:int,&0$?%__sil_tmpSIL_materialize_temp__n$7:copy_move_constructor::X*) assign_last [line 68, column 16]\n " shape="box"]
+"copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$2:copy_move_constructor::X); [line 68, column 16]\n  n$4=_fun_copy_move_constructor::getX(1:int,&0$?%__sil_tmpSIL_materialize_temp__n$2:copy_move_constructor::X*) assign_last [line 68, column 16]\n " shape="box"]
 	
 
-	 "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_5" -> "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_6" ;
-"copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_6" [label="6:  Destruction(temporaries cleanup) \n   n$10=*&0$?%__sil_tmpSIL_materialize_temp__n$7.f:int [line 68, column 16]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$7:copy_move_constructor::X [line 68, column 24]\n  n$12=_fun_copy_move_constructor::X::~X(&0$?%__sil_tmpSIL_materialize_temp__n$7:copy_move_constructor::X*) injected [line 68, column 24]\n " shape="box"]
+	 "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_5" -> "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_7" ;
+"copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(d2:int); [line 68, column 3]\n " shape="box"]
 	
 
-	 "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_6" -> "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_8" ;
-"copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(d2:int); [line 68, column 3]\n " shape="box"]
+	 "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_6" -> "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_5" ;
+"copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_7" [label="7:  DeclStmt \n   n$5=*&0$?%__sil_tmpSIL_materialize_temp__n$2.f:int [line 68, column 16]\n  *&d2:int=(1 / n$5) [line 68, column 3]\n " shape="box"]
 	
 
-	 "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_7" -> "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_5" ;
-"copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_8" [label="8:  DeclStmt \n   *&d2:int=(1 / n$10) [line 68, column 3]\n " shape="box"]
+	 "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_7" -> "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_3" ;
+"copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(d1:int); [line 67, column 3]\n  n$6=*&x2.f:int [line 67, column 16]\n  *&d1:int=(1 / n$6) [line 67, column 3]\n " shape="box"]
 	
 
-	 "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_8" -> "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_3" ;
-"copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(d1:int); [line 67, column 3]\n  n$13=*&x2.f:int [line 67, column 16]\n  *&d1:int=(1 / n$13) [line 67, column 3]\n " shape="box"]
+	 "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_8" -> "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_6" ;
+"copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(x2:copy_move_constructor::X); [line 66, column 3]\n  n$7=_fun_copy_move_constructor::X::X(&x2:copy_move_constructor::X*,&x1:copy_move_constructor::X&) [line 66, column 10]\n " shape="box"]
 	
 
-	 "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_9" -> "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_7" ;
-"copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(x2:copy_move_constructor::X); [line 66, column 3]\n  n$14=_fun_copy_move_constructor::X::X(&x2:copy_move_constructor::X*,&x1:copy_move_constructor::X&) [line 66, column 10]\n " shape="box"]
+	 "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_9" -> "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_8" ;
+"copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_10" [label="10:  BinaryOperatorStmt: Assign \n   *&x1.f:int=1 [line 65, column 3]\n " shape="box"]
 	
 
 	 "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_10" -> "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_9" ;
-"copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_11" [label="11:  BinaryOperatorStmt: Assign \n   *&x1.f:int=1 [line 65, column 3]\n " shape="box"]
+"copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(x1:copy_move_constructor::X); [line 64, column 3]\n  n$8=_fun_copy_move_constructor::X::X(&x1:copy_move_constructor::X*) [line 64, column 5]\n " shape="box"]
 	
 
 	 "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_11" -> "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_10" ;
-"copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(x1:copy_move_constructor::X); [line 64, column 3]\n  n$15=_fun_copy_move_constructor::X::X(&x1:copy_move_constructor::X*) [line 64, column 5]\n " shape="box"]
-	
-
-	 "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_12" -> "copyX_moveX_div1#copy_move_constructor#6853813819184662211.00e91897e7d9fcfa93de911bba9a1399_11" ;
 "copyY_div0#copy_move_constructor#17079397845524781987.61211209ec1f961073f3adafcd080bfb_1" [label="1: Start copy_move_constructor::copyY_div0\nFormals: \nLocals:  y2:copy_move_constructor::Y y1:copy_move_constructor::Y \n  " color=yellow style=filled]
 	
 
@@ -85,11 +81,11 @@ digraph cfg {
 	
 
 	 "copyY_div0#copy_move_constructor#17079397845524781987.61211209ec1f961073f3adafcd080bfb_3" -> "copyY_div0#copy_move_constructor#17079397845524781987.61211209ec1f961073f3adafcd080bfb_4" ;
-"copyY_div0#copy_move_constructor#17079397845524781987.61211209ec1f961073f3adafcd080bfb_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$0) [line 52, column 3]\n  _=*&y2:copy_move_constructor::Y [line 52, column 17]\n  n$2=_fun_copy_move_constructor::Y::~Y(&y2:copy_move_constructor::Y*) injected [line 52, column 17]\n  _=*&y1:copy_move_constructor::Y [line 52, column 17]\n  n$4=_fun_copy_move_constructor::Y::~Y(&y1:copy_move_constructor::Y*) injected [line 52, column 17]\n " shape="box"]
+"copyY_div0#copy_move_constructor#17079397845524781987.61211209ec1f961073f3adafcd080bfb_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$0) [line 52, column 3]\n " shape="box"]
 	
 
 	 "copyY_div0#copy_move_constructor#17079397845524781987.61211209ec1f961073f3adafcd080bfb_4" -> "copyY_div0#copy_move_constructor#17079397845524781987.61211209ec1f961073f3adafcd080bfb_2" ;
-"copyY_div0#copy_move_constructor#17079397845524781987.61211209ec1f961073f3adafcd080bfb_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(y2:copy_move_constructor::Y); [line 51, column 3]\n  n$6=_fun_copy_move_constructor::Y::Y(&y2:copy_move_constructor::Y*,&y1:copy_move_constructor::Y&) [line 51, column 10]\n " shape="box"]
+"copyY_div0#copy_move_constructor#17079397845524781987.61211209ec1f961073f3adafcd080bfb_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(y2:copy_move_constructor::Y); [line 51, column 3]\n  n$1=_fun_copy_move_constructor::Y::Y(&y2:copy_move_constructor::Y*,&y1:copy_move_constructor::Y&) [line 51, column 10]\n " shape="box"]
 	
 
 	 "copyY_div0#copy_move_constructor#17079397845524781987.61211209ec1f961073f3adafcd080bfb_5" -> "copyY_div0#copy_move_constructor#17079397845524781987.61211209ec1f961073f3adafcd080bfb_3" ;
@@ -97,14 +93,14 @@ digraph cfg {
 	
 
 	 "copyY_div0#copy_move_constructor#17079397845524781987.61211209ec1f961073f3adafcd080bfb_6" -> "copyY_div0#copy_move_constructor#17079397845524781987.61211209ec1f961073f3adafcd080bfb_5" ;
-"copyY_div0#copy_move_constructor#17079397845524781987.61211209ec1f961073f3adafcd080bfb_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(y1:copy_move_constructor::Y); [line 49, column 3]\n  n$7=_fun_copy_move_constructor::Y::Y(&y1:copy_move_constructor::Y*) [line 49, column 5]\n " shape="box"]
+"copyY_div0#copy_move_constructor#17079397845524781987.61211209ec1f961073f3adafcd080bfb_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(y1:copy_move_constructor::Y); [line 49, column 3]\n  n$2=_fun_copy_move_constructor::Y::Y(&y1:copy_move_constructor::Y*) [line 49, column 5]\n " shape="box"]
 	
 
 	 "copyY_div0#copy_move_constructor#17079397845524781987.61211209ec1f961073f3adafcd080bfb_7" -> "copyY_div0#copy_move_constructor#17079397845524781987.61211209ec1f961073f3adafcd080bfb_6" ;
-"copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_1" [label="1: Start copy_move_constructor::copyY_moveY_div1\nFormals: \nLocals:  d2:int 0$?%__sil_tmpSIL_materialize_temp__n$7:copy_move_constructor::Y d1:int y2:copy_move_constructor::Y y1:copy_move_constructor::Y \n  " color=yellow style=filled]
+"copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_1" [label="1: Start copy_move_constructor::copyY_moveY_div1\nFormals: \nLocals:  d2:int 0$?%__sil_tmpSIL_materialize_temp__n$2:copy_move_constructor::Y d1:int y2:copy_move_constructor::Y y1:copy_move_constructor::Y \n  " color=yellow style=filled]
 	
 
-	 "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_1" -> "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_12" ;
+	 "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_1" -> "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_11" ;
 "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_2" [label="2: Exit copy_move_constructor::copyY_moveY_div1 \n  " color=yellow style=filled]
 	
 
@@ -112,42 +108,38 @@ digraph cfg {
 	
 
 	 "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_3" -> "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_4" ;
-"copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_4" [label="4:  Return Stmt \n   *&return:int=(n$0 + n$1) [line 78, column 3]\n  _=*&y2:copy_move_constructor::Y [line 78, column 15]\n  n$3=_fun_copy_move_constructor::Y::~Y(&y2:copy_move_constructor::Y*) injected [line 78, column 15]\n  _=*&y1:copy_move_constructor::Y [line 78, column 15]\n  n$5=_fun_copy_move_constructor::Y::~Y(&y1:copy_move_constructor::Y*) injected [line 78, column 15]\n " shape="box"]
+"copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_4" [label="4:  Return Stmt \n   *&return:int=(n$0 + n$1) [line 78, column 3]\n " shape="box"]
 	
 
 	 "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_4" -> "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_2" ;
-"copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$7:copy_move_constructor::Y); [line 77, column 16]\n  n$9=_fun_copy_move_constructor::getY(2:int,&0$?%__sil_tmpSIL_materialize_temp__n$7:copy_move_constructor::Y*) assign_last [line 77, column 16]\n " shape="box"]
+"copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$2:copy_move_constructor::Y); [line 77, column 16]\n  n$4=_fun_copy_move_constructor::getY(2:int,&0$?%__sil_tmpSIL_materialize_temp__n$2:copy_move_constructor::Y*) assign_last [line 77, column 16]\n " shape="box"]
 	
 
-	 "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_5" -> "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_6" ;
-"copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_6" [label="6:  Destruction(temporaries cleanup) \n   n$10=*&0$?%__sil_tmpSIL_materialize_temp__n$7.f:int [line 77, column 16]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$7:copy_move_constructor::Y [line 77, column 24]\n  n$12=_fun_copy_move_constructor::Y::~Y(&0$?%__sil_tmpSIL_materialize_temp__n$7:copy_move_constructor::Y*) injected [line 77, column 24]\n " shape="box"]
+	 "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_5" -> "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_7" ;
+"copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(d2:int); [line 77, column 3]\n " shape="box"]
 	
 
-	 "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_6" -> "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_8" ;
-"copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(d2:int); [line 77, column 3]\n " shape="box"]
+	 "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_6" -> "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_5" ;
+"copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_7" [label="7:  DeclStmt \n   n$5=*&0$?%__sil_tmpSIL_materialize_temp__n$2.f:int [line 77, column 16]\n  *&d2:int=(1 / n$5) [line 77, column 3]\n " shape="box"]
 	
 
-	 "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_7" -> "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_5" ;
-"copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_8" [label="8:  DeclStmt \n   *&d2:int=(1 / n$10) [line 77, column 3]\n " shape="box"]
+	 "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_7" -> "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_3" ;
+"copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(d1:int); [line 76, column 3]\n  n$6=*&y2.f:int [line 76, column 16]\n  *&d1:int=(1 / n$6) [line 76, column 3]\n " shape="box"]
 	
 
-	 "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_8" -> "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_3" ;
-"copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(d1:int); [line 76, column 3]\n  n$13=*&y2.f:int [line 76, column 16]\n  *&d1:int=(1 / n$13) [line 76, column 3]\n " shape="box"]
+	 "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_8" -> "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_6" ;
+"copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(y2:copy_move_constructor::Y); [line 75, column 3]\n  n$7=_fun_copy_move_constructor::Y::Y(&y2:copy_move_constructor::Y*,&y1:copy_move_constructor::Y&) [line 75, column 10]\n " shape="box"]
 	
 
-	 "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_9" -> "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_7" ;
-"copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(y2:copy_move_constructor::Y); [line 75, column 3]\n  n$14=_fun_copy_move_constructor::Y::Y(&y2:copy_move_constructor::Y*,&y1:copy_move_constructor::Y&) [line 75, column 10]\n " shape="box"]
+	 "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_9" -> "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_8" ;
+"copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_10" [label="10:  BinaryOperatorStmt: Assign \n   *&y1.f:int=1 [line 74, column 3]\n " shape="box"]
 	
 
 	 "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_10" -> "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_9" ;
-"copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_11" [label="11:  BinaryOperatorStmt: Assign \n   *&y1.f:int=1 [line 74, column 3]\n " shape="box"]
+"copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(y1:copy_move_constructor::Y); [line 73, column 3]\n  n$8=_fun_copy_move_constructor::Y::Y(&y1:copy_move_constructor::Y*) [line 73, column 5]\n " shape="box"]
 	
 
 	 "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_11" -> "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_10" ;
-"copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(y1:copy_move_constructor::Y); [line 73, column 3]\n  n$15=_fun_copy_move_constructor::Y::Y(&y1:copy_move_constructor::Y*) [line 73, column 5]\n " shape="box"]
-	
-
-	 "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_12" -> "copyY_moveY_div1#copy_move_constructor#5827233588222911615.5716e8b7acbd3ff43f18c7c5954c6565_11" ;
 "getX#copy_move_constructor(class copy_move_constructor::X)#2211685783611424509.3ed1bf77442fb4e47b3afdd1dd669b7a_1" [label="1: Start copy_move_constructor::getX\nFormals:  f:int __return_param:copy_move_constructor::X*\nLocals:  x:copy_move_constructor::X \n  " color=yellow style=filled]
 	
 
@@ -163,15 +155,15 @@ digraph cfg {
 	
 
 	 "getX#copy_move_constructor(class copy_move_constructor::X)#2211685783611424509.3ed1bf77442fb4e47b3afdd1dd669b7a_4" -> "getX#copy_move_constructor(class copy_move_constructor::X)#2211685783611424509.3ed1bf77442fb4e47b3afdd1dd669b7a_5" ;
-"getX#copy_move_constructor(class copy_move_constructor::X)#2211685783611424509.3ed1bf77442fb4e47b3afdd1dd669b7a_5" [label="5:  Return Stmt \n   _=*&x:copy_move_constructor::X [line 30, column 10]\n  n$3=_fun_copy_move_constructor::X::~X(&x:copy_move_constructor::X*) injected [line 30, column 10]\n " shape="box"]
+"getX#copy_move_constructor(class copy_move_constructor::X)#2211685783611424509.3ed1bf77442fb4e47b3afdd1dd669b7a_5" [label="5:  Return Stmt \n  " shape="box"]
 	
 
 	 "getX#copy_move_constructor(class copy_move_constructor::X)#2211685783611424509.3ed1bf77442fb4e47b3afdd1dd669b7a_5" -> "getX#copy_move_constructor(class copy_move_constructor::X)#2211685783611424509.3ed1bf77442fb4e47b3afdd1dd669b7a_2" ;
-"getX#copy_move_constructor(class copy_move_constructor::X)#2211685783611424509.3ed1bf77442fb4e47b3afdd1dd669b7a_6" [label="6:  BinaryOperatorStmt: Assign \n   n$5=*&f:int [line 29, column 9]\n  *&x.f:int=n$5 [line 29, column 3]\n " shape="box"]
+"getX#copy_move_constructor(class copy_move_constructor::X)#2211685783611424509.3ed1bf77442fb4e47b3afdd1dd669b7a_6" [label="6:  BinaryOperatorStmt: Assign \n   n$2=*&f:int [line 29, column 9]\n  *&x.f:int=n$2 [line 29, column 3]\n " shape="box"]
 	
 
 	 "getX#copy_move_constructor(class copy_move_constructor::X)#2211685783611424509.3ed1bf77442fb4e47b3afdd1dd669b7a_6" -> "getX#copy_move_constructor(class copy_move_constructor::X)#2211685783611424509.3ed1bf77442fb4e47b3afdd1dd669b7a_3" ;
-"getX#copy_move_constructor(class copy_move_constructor::X)#2211685783611424509.3ed1bf77442fb4e47b3afdd1dd669b7a_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(x:copy_move_constructor::X); [line 28, column 3]\n  n$6=_fun_copy_move_constructor::X::X(&x:copy_move_constructor::X*) [line 28, column 5]\n " shape="box"]
+"getX#copy_move_constructor(class copy_move_constructor::X)#2211685783611424509.3ed1bf77442fb4e47b3afdd1dd669b7a_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(x:copy_move_constructor::X); [line 28, column 3]\n  n$3=_fun_copy_move_constructor::X::X(&x:copy_move_constructor::X*) [line 28, column 5]\n " shape="box"]
 	
 
 	 "getX#copy_move_constructor(class copy_move_constructor::X)#2211685783611424509.3ed1bf77442fb4e47b3afdd1dd669b7a_7" -> "getX#copy_move_constructor(class copy_move_constructor::X)#2211685783611424509.3ed1bf77442fb4e47b3afdd1dd669b7a_6" ;
@@ -190,15 +182,15 @@ digraph cfg {
 	
 
 	 "getY#copy_move_constructor(class copy_move_constructor::Y)#1712013823822590270.ad9dd85c67bb69fcd76f4c34bc426f28_4" -> "getY#copy_move_constructor(class copy_move_constructor::Y)#1712013823822590270.ad9dd85c67bb69fcd76f4c34bc426f28_5" ;
-"getY#copy_move_constructor(class copy_move_constructor::Y)#1712013823822590270.ad9dd85c67bb69fcd76f4c34bc426f28_5" [label="5:  Return Stmt \n   _=*&y:copy_move_constructor::Y [line 36, column 10]\n  n$3=_fun_copy_move_constructor::Y::~Y(&y:copy_move_constructor::Y*) injected [line 36, column 10]\n " shape="box"]
+"getY#copy_move_constructor(class copy_move_constructor::Y)#1712013823822590270.ad9dd85c67bb69fcd76f4c34bc426f28_5" [label="5:  Return Stmt \n  " shape="box"]
 	
 
 	 "getY#copy_move_constructor(class copy_move_constructor::Y)#1712013823822590270.ad9dd85c67bb69fcd76f4c34bc426f28_5" -> "getY#copy_move_constructor(class copy_move_constructor::Y)#1712013823822590270.ad9dd85c67bb69fcd76f4c34bc426f28_2" ;
-"getY#copy_move_constructor(class copy_move_constructor::Y)#1712013823822590270.ad9dd85c67bb69fcd76f4c34bc426f28_6" [label="6:  BinaryOperatorStmt: Assign \n   n$5=*&f:int [line 35, column 9]\n  *&y.f:int=n$5 [line 35, column 3]\n " shape="box"]
+"getY#copy_move_constructor(class copy_move_constructor::Y)#1712013823822590270.ad9dd85c67bb69fcd76f4c34bc426f28_6" [label="6:  BinaryOperatorStmt: Assign \n   n$2=*&f:int [line 35, column 9]\n  *&y.f:int=n$2 [line 35, column 3]\n " shape="box"]
 	
 
 	 "getY#copy_move_constructor(class copy_move_constructor::Y)#1712013823822590270.ad9dd85c67bb69fcd76f4c34bc426f28_6" -> "getY#copy_move_constructor(class copy_move_constructor::Y)#1712013823822590270.ad9dd85c67bb69fcd76f4c34bc426f28_3" ;
-"getY#copy_move_constructor(class copy_move_constructor::Y)#1712013823822590270.ad9dd85c67bb69fcd76f4c34bc426f28_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(y:copy_move_constructor::Y); [line 34, column 3]\n  n$6=_fun_copy_move_constructor::Y::Y(&y:copy_move_constructor::Y*) [line 34, column 5]\n " shape="box"]
+"getY#copy_move_constructor(class copy_move_constructor::Y)#1712013823822590270.ad9dd85c67bb69fcd76f4c34bc426f28_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(y:copy_move_constructor::Y); [line 34, column 3]\n  n$3=_fun_copy_move_constructor::Y::Y(&y:copy_move_constructor::Y*) [line 34, column 5]\n " shape="box"]
 	
 
 	 "getY#copy_move_constructor(class copy_move_constructor::Y)#1712013823822590270.ad9dd85c67bb69fcd76f4c34bc426f28_7" -> "getY#copy_move_constructor(class copy_move_constructor::Y)#1712013823822590270.ad9dd85c67bb69fcd76f4c34bc426f28_6" ;
@@ -213,7 +205,7 @@ digraph cfg {
 	
 
 	 "moveX_div0#copy_move_constructor#2229557375196326562.f23c95e594ab41ba50090dccb989c3e3_3" -> "moveX_div0#copy_move_constructor#2229557375196326562.f23c95e594ab41ba50090dccb989c3e3_4" ;
-"moveX_div0#copy_move_constructor#2229557375196326562.f23c95e594ab41ba50090dccb989c3e3_4" [label="4:  Destruction(temporaries cleanup) \n   n$3=*&0$?%__sil_tmpSIL_materialize_temp__n$0.f:int [line 46, column 31]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:copy_move_constructor::X [line 46, column 39]\n  n$5=_fun_copy_move_constructor::X::~X(&0$?%__sil_tmpSIL_materialize_temp__n$0:copy_move_constructor::X*) injected [line 46, column 39]\n " shape="box"]
+"moveX_div0#copy_move_constructor#2229557375196326562.f23c95e594ab41ba50090dccb989c3e3_4" [label="4:  Return Stmt \n   n$3=*&0$?%__sil_tmpSIL_materialize_temp__n$0.f:int [line 46, column 31]\n " shape="box"]
 	
 
 	 "moveX_div0#copy_move_constructor#2229557375196326562.f23c95e594ab41ba50090dccb989c3e3_4" -> "moveX_div0#copy_move_constructor#2229557375196326562.f23c95e594ab41ba50090dccb989c3e3_5" ;
@@ -232,7 +224,7 @@ digraph cfg {
 	
 
 	 "moveY_div0#copy_move_constructor#15307842160732522395.eee7693240d3ce27d5c30f34d771cb57_3" -> "moveY_div0#copy_move_constructor#15307842160732522395.eee7693240d3ce27d5c30f34d771cb57_4" ;
-"moveY_div0#copy_move_constructor#15307842160732522395.eee7693240d3ce27d5c30f34d771cb57_4" [label="4:  Destruction(temporaries cleanup) \n   n$3=*&0$?%__sil_tmpSIL_materialize_temp__n$0.f:int [line 55, column 31]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:copy_move_constructor::Y [line 55, column 39]\n  n$5=_fun_copy_move_constructor::Y::~Y(&0$?%__sil_tmpSIL_materialize_temp__n$0:copy_move_constructor::Y*) injected [line 55, column 39]\n " shape="box"]
+"moveY_div0#copy_move_constructor#15307842160732522395.eee7693240d3ce27d5c30f34d771cb57_4" [label="4:  Return Stmt \n   n$3=*&0$?%__sil_tmpSIL_materialize_temp__n$0.f:int [line 55, column 31]\n " shape="box"]
 	
 
 	 "moveY_div0#copy_move_constructor#15307842160732522395.eee7693240d3ce27d5c30f34d771cb57_4" -> "moveY_div0#copy_move_constructor#15307842160732522395.eee7693240d3ce27d5c30f34d771cb57_5" ;
@@ -240,10 +232,10 @@ digraph cfg {
 	
 
 	 "moveY_div0#copy_move_constructor#15307842160732522395.eee7693240d3ce27d5c30f34d771cb57_5" -> "moveY_div0#copy_move_constructor#15307842160732522395.eee7693240d3ce27d5c30f34d771cb57_2" ;
-"moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_1" [label="1: Start copy_move_constructor::moveY_moveY_copyY_div0\nFormals: \nLocals:  y2:copy_move_constructor::Y y1:copy_move_constructor::Y 0$?%__sil_tmpSIL_materialize_temp__n$7:copy_move_constructor::Y const  \n  " color=yellow style=filled]
+"moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_1" [label="1: Start copy_move_constructor::moveY_moveY_copyY_div0\nFormals: \nLocals:  y2:copy_move_constructor::Y y1:copy_move_constructor::Y 0$?%__sil_tmpSIL_materialize_temp__n$2:copy_move_constructor::Y const  \n  " color=yellow style=filled]
 	
 
-	 "moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_1" -> "moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_8" ;
+	 "moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_1" -> "moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_7" ;
 "moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_2" [label="2: Exit copy_move_constructor::moveY_moveY_copyY_div0 \n  " color=yellow style=filled]
 	
 
@@ -251,26 +243,26 @@ digraph cfg {
 	
 
 	 "moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_3" -> "moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_4" ;
-"moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$0) [line 60, column 3]\n  _=*&y2:copy_move_constructor::Y [line 60, column 17]\n  n$2=_fun_copy_move_constructor::Y::~Y(&y2:copy_move_constructor::Y*) injected [line 60, column 17]\n  _=*&y1:copy_move_constructor::Y [line 60, column 17]\n  n$4=_fun_copy_move_constructor::Y::~Y(&y1:copy_move_constructor::Y*) injected [line 60, column 17]\n " shape="box"]
+"moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$0) [line 60, column 3]\n " shape="box"]
 	
 
 	 "moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_4" -> "moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_2" ;
-"moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(y2:copy_move_constructor::Y); [line 59, column 3]\n  n$6=_fun_copy_move_constructor::Y::Y(&y2:copy_move_constructor::Y*,&y1:copy_move_constructor::Y&) [line 59, column 10]\n " shape="box"]
+"moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(y2:copy_move_constructor::Y); [line 59, column 3]\n  n$1=_fun_copy_move_constructor::Y::Y(&y2:copy_move_constructor::Y*,&y1:copy_move_constructor::Y&) [line 59, column 10]\n " shape="box"]
 	
 
 	 "moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_5" -> "moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_3" ;
-"moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$7:copy_move_constructor::Y const ); [line 58, column 10]\n  n$9=_fun_copy_move_constructor::getY(2:int,&0$?%__sil_tmpSIL_materialize_temp__n$7:copy_move_constructor::Y*) assign_last [line 58, column 10]\n " shape="box"]
+"moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$2:copy_move_constructor::Y const ); [line 58, column 10]\n  n$4=_fun_copy_move_constructor::getY(2:int,&0$?%__sil_tmpSIL_materialize_temp__n$2:copy_move_constructor::Y*) assign_last [line 58, column 10]\n " shape="box"]
 	
 
-	 "moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_6" -> "moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_7" ;
-"moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_7" [label="7:  Destruction(temporaries cleanup) \n   n$10=_fun_copy_move_constructor::Y::Y(&y1:copy_move_constructor::Y*,&0$?%__sil_tmpSIL_materialize_temp__n$7:copy_move_constructor::Y const &) [line 58, column 10]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$7:copy_move_constructor::Y const  [line 58, column 16]\n  n$12=_fun_copy_move_constructor::Y::~Y(&0$?%__sil_tmpSIL_materialize_temp__n$7:copy_move_constructor::Y const *) injected [line 58, column 16]\n " shape="box"]
+	 "moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_6" -> "moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_8" ;
+"moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(y1:copy_move_constructor::Y); [line 58, column 3]\n " shape="box"]
 	
 
-	 "moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_7" -> "moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_5" ;
-"moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(y1:copy_move_constructor::Y); [line 58, column 3]\n " shape="box"]
+	 "moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_7" -> "moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_6" ;
+"moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_8" [label="8:  DeclStmt \n   n$5=_fun_copy_move_constructor::Y::Y(&y1:copy_move_constructor::Y*,&0$?%__sil_tmpSIL_materialize_temp__n$2:copy_move_constructor::Y const &) [line 58, column 10]\n " shape="box"]
 	
 
-	 "moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_8" -> "moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_6" ;
+	 "moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_8" -> "moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_5" ;
 "X#X#copy_move_constructor#{11779436833146999139}.6ed40f8be6eab1bc8b2be6959217973d_1" [label="1: Start copy_move_constructor::X::X\nFormals:  this:copy_move_constructor::X* __param_0:copy_move_constructor::X&\nLocals:  \n  " color=yellow style=filled]
 	
 

@@ -290,6 +290,9 @@ if test "x$enable_java_analyzers" = "xyes"; then
   AC_ASSERT_OCAML_PKG([javalib])
   AC_ASSERT_OCAML_PKG([sawja])
 
+  AC_ARG_VAR([KOTLIN_HOME], [Root of a Kotlin installation.])
+  AC_CHECK_TOOL([KOTLINC], [kotlinc], [no])
+
   AC_MSG_CHECKING([for Java major version])
   JAVA_MAJOR_VERSION=`"$JAVAC" -version 2>&1 | head -n 1 | cut -d ' ' -f 2`
   AS_IF([test "x`echo $JAVA_MAJOR_VERSION | cut -d '.' -f 1`" = "x1"], [

@@ -43,7 +43,7 @@ Exception.
 
 Facebook NOTE: **If you are absolutely sure that foo() will not be
 null**, then if you land your diff this case will no longer be
-reported after your diff makes it to master.
+reported after your diff makes it to trunk.
 
 ### Null dereference in C
 

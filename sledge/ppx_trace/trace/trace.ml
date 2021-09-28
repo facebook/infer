@@ -13,9 +13,7 @@ module Char = struct
 end
 
 module String = struct
-  include StringLabels
-
-  let is_empty str = length str = 0
+  include CCStringLabels
 
   let lsplit2 str ~on =
     match index_opt str on with
@@ -136,6 +134,12 @@ let init ?(colors = false) ?(margin = 240) ?config:(c = none) () =
     [Dune__exe__Module.Submodule.Subsubmodule.function.subfunction] into
     [(Module, function.subfunction)] *)
 let split_mod_fun_name s =
+  let rec chop_anon s =
+    match String.chop_suffix s ~suf:".(fun)" with
+    | Some s -> chop_anon s
+    | None -> s
+  in
+  let s = chop_anon s in
   let fun_name_end = String.length s in
   let rec fun_name_start_ s i =
     match String.rindex_from_opt s i '.' with

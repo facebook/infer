@@ -16,7 +16,7 @@
   <licenses>
     <license>
       <name>MIT license</name>
-      <url>https://github.com/facebook/infer/blob/master/LICENSE</url>
+      <url>https://github.com/facebook/infer/blob/main/LICENSE</url>
       <distribution>repo</distribution>
     </license>
   </licenses>

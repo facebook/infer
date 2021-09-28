@@ -173,7 +173,7 @@ Follow `clang-format` (see ".clang-format" at the root of the repository).
 ## Testing your Changes
 
 - Make sure infer builds: `make -j test_build`. Refer to the [installation
-  document](https://github.com/facebook/infer/blob/master/INSTALL.md) for details.
+  document](https://github.com/facebook/infer/blob/main/INSTALL.md) for details.
 
 - Run the tests: `make -j 4 test` (adjust 4 to the number of cores available of your machine). The
   tests (almost) all consist of the same three ingredients:

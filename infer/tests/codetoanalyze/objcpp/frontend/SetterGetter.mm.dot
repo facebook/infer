@@ -79,34 +79,34 @@ digraph cfg {
 "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_1" [label="1: Start SetterGetter.call_getter\nFormals:  self:SetterGetter* __return_param:S*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:S \n  " color=yellow style=filled]
 	
 
-	 "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_1" -> "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_5" ;
+	 "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_1" -> "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_4" ;
 "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_2" [label="2: Exit SetterGetter.call_getter \n  " color=yellow style=filled]
 	
 
 "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:S); [line 24, column 10]\n  n$2=*&self:SetterGetter* [line 24, column 11]\n  n$4=_fun_SetterGetter.x(n$2:SetterGetter*,&0$?%__sil_tmpSIL_materialize_temp__n$1:S*) assign_last [line 24, column 10]\n " shape="box"]
 	
 
-	 "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_3" -> "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_4" ;
-"call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_4" [label="4:  Destruction(temporaries cleanup) \n   n$5=_fun_S::S(n$0:S*,&0$?%__sil_tmpSIL_materialize_temp__n$1:S&) [line 24, column 10]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$1:S [line 24, column 17]\n  n$7=_fun_S::~S(&0$?%__sil_tmpSIL_materialize_temp__n$1:S*) injected [line 24, column 17]\n " shape="box"]
+	 "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_3" -> "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_5" ;
+"call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_4" [label="4:  Return Stmt \n   n$0=*&__return_param:S* [line 24, column 3]\n " shape="box"]
 	
 
-	 "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_4" -> "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_6" ;
-"call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_5" [label="5:  Return Stmt \n   n$0=*&__return_param:S* [line 24, column 3]\n " shape="box"]
+	 "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_4" -> "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_3" ;
+"call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_5" [label="5:  Return Stmt \n   n$5=_fun_S::S(n$0:S*,&0$?%__sil_tmpSIL_materialize_temp__n$1:S&) [line 24, column 10]\n " shape="box"]
 	
 
-	 "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_5" -> "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_3" ;
+	 "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_5" -> "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_6" ;
 "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_6" [label="6:  Return Stmt \n  " shape="box"]
 	
 
 	 "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_6" -> "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_2" ;
-"call_setter:#SetterGetter#instance.20e4ef9fb1c3383cffedd4b947ba1ad5_1" [label="1: Start SetterGetter.call_setter:\nFormals:  self:SetterGetter* param:S&\nLocals:  0$?%__sil_tmp__temp_construct_n$8:S \n  " color=yellow style=filled]
+"call_setter:#SetterGetter#instance.20e4ef9fb1c3383cffedd4b947ba1ad5_1" [label="1: Start SetterGetter.call_setter:\nFormals:  self:SetterGetter* param:S&\nLocals:  0$?%__sil_tmp__temp_construct_n$6:S \n  " color=yellow style=filled]
 	
 
 	 "call_setter:#SetterGetter#instance.20e4ef9fb1c3383cffedd4b947ba1ad5_1" -> "call_setter:#SetterGetter#instance.20e4ef9fb1c3383cffedd4b947ba1ad5_3" ;
 "call_setter:#SetterGetter#instance.20e4ef9fb1c3383cffedd4b947ba1ad5_2" [label="2: Exit SetterGetter.call_setter: \n  " color=yellow style=filled]
 	
 
-"call_setter:#SetterGetter#instance.20e4ef9fb1c3383cffedd4b947ba1ad5_3" [label="3:  Message Call: setX: \n   n$11=*&self:SetterGetter* [line 28, column 4]\n  n$9=*&param:S& [line 28, column 14]\n  n$10=_fun_S::S(&0$?%__sil_tmp__temp_construct_n$8:S*,n$9:S&) [line 28, column 14]\n  n$12=_fun_SetterGetter.setX:(n$11:SetterGetter*,&0$?%__sil_tmp__temp_construct_n$8:S) [line 28, column 3]\n " shape="box"]
+"call_setter:#SetterGetter#instance.20e4ef9fb1c3383cffedd4b947ba1ad5_3" [label="3:  Message Call: setX: \n   n$9=*&self:SetterGetter* [line 28, column 4]\n  n$7=*&param:S& [line 28, column 14]\n  n$8=_fun_S::S(&0$?%__sil_tmp__temp_construct_n$6:S*,n$7:S&) [line 28, column 14]\n  n$10=_fun_SetterGetter.setX:(n$9:SetterGetter*,&0$?%__sil_tmp__temp_construct_n$6:S) [line 28, column 3]\n " shape="box"]
 	
 
 	 "call_setter:#SetterGetter#instance.20e4ef9fb1c3383cffedd4b947ba1ad5_3" -> "call_setter:#SetterGetter#instance.20e4ef9fb1c3383cffedd4b947ba1ad5_2" ;

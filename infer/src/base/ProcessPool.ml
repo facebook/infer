@@ -52,8 +52,8 @@ let log_or_die fmt = if Config.keep_going then L.internal_error fmt else L.die I
 
 type child_info = {pid: Pid.t; down_pipe: Out_channel.t}
 
-(** The master's abstraction of state for workers. See [worker_message] and [boss_message] below for
-    transitions between states.
+(** The orchestrator's abstraction of state for workers. See [worker_message] and [boss_message]
+    below for transitions between states.
 
     - [Initializing] is the state a newly-forked worker is in.
     - [Idle] is the state a worker goes to after it finishes initializing, or finishes processing a
@@ -100,8 +100,8 @@ type 'result worker_message =
       (** [(i, t, status)]: starting a task from slot [i], at start time [t], with description
           [status]. Watch out that [status] must not be too close in length to [buffer_size]. *)
   | Ready of {worker: int; result: 'result}
-      (** Sent after finishing initializing or after finishing a given task. When received by
-          master, this moves the worker state from [Initializing] or [Processing _] to [Idle]. *)
+      (** Sent after finishing initializing or after finishing a given task. When received by the
+          orchestrator, this moves the worker state from [Initializing] or [Processing _] to [Idle]. *)
   | Crash of int  (** there was an error and the child is no longer receiving messages *)
 
 (** messages from the parent process down to worker processes *)
@@ -344,7 +344,7 @@ let rec child_loop ~slot send_to_parent send_final receive_from_parent ~f ~epilo
               send_final (Finished (slot, None)) ;
               false )
             else (
-              (* crash hard, but first let the master know that we have crashed *)
+              (* crash hard, but first let the orchestrator know that we have crashed *)
               send_final (FinalCrash slot) ;
               true ) ) )
   | Do stuff ->
@@ -357,7 +357,7 @@ let rec child_loop ~slot send_to_parent send_final receive_from_parent ~f ~epilo
                 (* do not raise and continue accepting jobs *)
                 false )
               else (
-                (* crash hard, but first let the master know that we have crashed *)
+                (* crash hard, but first let the orchestrator know that we have crashed *)
                 send_to_parent (Crash slot) ;
                 true ) ) ;
           None

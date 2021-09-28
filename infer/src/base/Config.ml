@@ -168,6 +168,8 @@ let manual_quandary = "QUANDARY CHECKER OPTIONS"
 
 let manual_racerd = "RACERD CHECKER OPTIONS"
 
+let manual_simple_lineage = "SIMPLE LINEAGE OPTIONS"
+
 let manual_siof = "SIOF CHECKER OPTIONS"
 
 let max_narrows = 5
@@ -1445,6 +1447,12 @@ and erlang_skip_rebar3 =
     "Skip running rebar, to save time. It is useful together with $(b,--erlang-ast-dir)."
 
 
+and erlang_reverse_unfold_depth =
+  CLOpt.mk_int ~long:"erlang-reverse-unfold-depth" ~default:4
+    ~in_help:InferCommand.[(Analyze, manual_erlang)]
+    "Unfold Erlang lists:reverse up to depth $(i,int)"
+
+
 and export_changed_functions =
   CLOpt.mk_bool ~deprecated:["test-determinator-clang"] ~long:"export-changed-functions"
     ~default:false
@@ -1806,6 +1814,14 @@ and merge =
   CLOpt.mk_bool ~deprecated:["merge"] ~long:"merge"
     ~in_help:InferCommand.[(Analyze, manual_buck)]
     "Merge the captured results directories specified in the dependency file."
+
+
+and merge_report =
+  CLOpt.mk_string_list ~long:"merge-report"
+    ~in_help:InferCommand.[(Report, manual_generic)]
+    "Specifies an Infer results directory. The reports stored in JSON files in all specified \
+     results directories will be merged together and deduplicated before being stored in the main \
+     results directory."
 
 
 and method_decls_info =
@@ -2384,6 +2400,18 @@ and scuba_tags =
   CLOpt.mk_string_map ~long:"scuba-tags"
     "add an extra set of strings (tagset) field to be set for each sample of scuba, format \
      <name>=(<value>,<value>,<value>|NONE)"
+
+
+and simple_lineage_max_cfg_size =
+  CLOpt.mk_int_opt ~long:"simple-lineage-max-cfg-size"
+    ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
+    "If set, larger CFGs are skipped."
+
+
+and simple_lineage_json_report =
+  CLOpt.mk_bool ~long:"simple-lineage-json-report"
+    ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
+    "Enable simple lineage report in JSON format."
 
 
 and siof_check_iostreams =
@@ -3135,6 +3163,8 @@ and erlang_ast_dir = !erlang_ast_dir
 
 and erlang_skip_rebar3 = !erlang_skip_rebar3
 
+and erlang_reverse_unfold_depth = !erlang_reverse_unfold_depth
+
 and external_java_packages = !external_java_packages
 
 and fail_on_bug = !fail_on_bug
@@ -3272,6 +3302,8 @@ and memtrace_analysis = !memtrace_analysis
 and memtrace_sampling_rate = Option.value_exn !memtrace_sampling_rate
 
 and merge = !merge
+
+and merge_report = RevList.to_list !merge_report
 
 and method_decls_info = !method_decls_info
 
@@ -3500,6 +3532,10 @@ and select =
 
 and show_buckets = !print_buckets
 
+and simple_lineage_max_cfg_size = !simple_lineage_max_cfg_size
+
+and simple_lineage_json_report = !simple_lineage_json_report
+
 and siof_check_iostreams = !siof_check_iostreams
 
 and siof_safe_methods = RevList.to_list !siof_safe_methods
@@ -3701,8 +3737,14 @@ let scuba_execution_id =
   else None
 
 
+let is_originator =
+  (* in remote execution environments, the environment variable used by
+     [CommandLineOption.is_originator] will not carry over *)
+  CLOpt.is_originator && not buck_cache_mode
+
+
 let toplevel_results_dir =
-  if CLOpt.is_originator then (
+  if is_originator then (
     (* let subprocesses know where the toplevel process' results dir is *)
     Unix.putenv ~key:infer_top_results_dir_env_var ~data:results_dir ;
     results_dir )

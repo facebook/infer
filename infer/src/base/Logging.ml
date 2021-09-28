@@ -11,7 +11,6 @@ open! IStd
 (** log messages at different levels of verbosity *)
 
 module F = Format
-module CLOpt = CommandLineOption
 include Die
 
 (* log files *)
@@ -372,7 +371,7 @@ let setup_log_file () =
       log_file := Some (fmt, chan) ;
       if preexisting_logfile then is_newline := false ;
       reset_formatters () ;
-      if CLOpt.is_originator && preexisting_logfile then
+      if Config.is_originator && preexisting_logfile then
         phase
           "============================================================@\n\
            = New infer execution begins@\n\

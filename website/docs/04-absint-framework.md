@@ -23,7 +23,7 @@ from @Scale2016.
 
 **If you feel like coding instead of reading, a great way to get started with
 Infer.AI is to go through the lab exercise
-[here](https://github.com/facebook/infer/blob/master/infer/src/labs/README.md).**
+[here](https://github.com/facebook/infer/blob/main/infer/src/labs/README.md).**
 
 ## By example: intraprocedural analysis
 
@@ -32,7 +32,7 @@ This section helps you get started ASAP if you already understand
 don't, but are feeling bold).
 
 Take a look at
-[liveness.ml](https://github.com/facebook/infer/blob/master/infer/src/checkers/liveness.ml).
+[liveness.ml](https://github.com/facebook/infer/blob/main/infer/src/checkers/liveness.ml).
 This code is performing a compilers-101 style liveness analysis over
 [SIL](#ir-basics-sil-cfgs-tenvs-procdescs-and-procnames), Infer's intermediate
 language. Since this code is fairly small and you should already understand what
@@ -54,15 +54,15 @@ iteration to be backward" (since liveness is a backward analysis), and "I want
 to the analysis to follow exceptional edges". For a forward analysis that
 ignores exceptional edges, you would do `ProcCfg.Normal` instead (and many other
 combinations are possible; take a look at
-[ProcCfg.mli](https://github.com/facebook/infer/blob/master/infer/src/absint/ProcCfg.mli)
+[ProcCfg.mli](https://github.com/facebook/infer/blob/main/infer/src/absint/ProcCfg.mli)
 for more). And finally, the `TransferFunctions` part says "Use the transfer
 functions I defined above".
 
 Now you have a `CheckerAnalyzer` module that exposes useful functions
 like
-[`compute_post`](https://github.com/facebook/infer/blob/master/infer/src/absint/AbstractInterpreter.mli#L30)
+[`compute_post`](https://github.com/facebook/infer/blob/main/infer/src/absint/AbstractInterpreter.mli#L30)
 (take a procedure as input and compute a postcondition) and
-[`exec_pdesc`](https://github.com/facebook/infer/blob/master/infer/src/absint/AbstractInterpreter.mli#L36)
+[`exec_pdesc`](https://github.com/facebook/infer/blob/main/infer/src/absint/AbstractInterpreter.mli#L36)
 (take a procedure and compute an invariant map from node id's to the
 pre/post at each node). The next step is to hook your checker up to
 the Infer command-line interface (CLI). For the liveness analysis, you
@@ -80,7 +80,7 @@ let checker ({IntraproceduralAnalysis.proc_desc; err_log} as analysis_data) =
 
 and then adding `Liveness.checker` to the list of registered checkers
 in
-[registerCheckers.ml](https://github.com/facebook/infer/blob/master/infer/src/backend/registerCheckers.ml)
+[registerCheckers.ml](https://github.com/facebook/infer/blob/main/infer/src/backend/registerCheckers.ml)
 (search for "Liveness").
 
 you can then run `infer run --liveness-only -- <your_build_command>` to run your
@@ -88,9 +88,9 @@ checker on real code. See [here](/docs/next/analyzing-apps-or-projects) for more
 details on the build systems supported by Infer.
 
 Other examples of simple intraprocedural checkers are
-[addressTaken.ml](https://github.com/facebook/infer/blob/master/infer/src/checkers/addressTaken.ml)
+[addressTaken.ml](https://github.com/facebook/infer/blob/main/infer/src/checkers/addressTaken.ml)
 and
-[Siof.ml](https://github.com/facebook/infer/blob/master/infer/src/checkers/Siof.ml).
+[Siof.ml](https://github.com/facebook/infer/blob/main/infer/src/checkers/Siof.ml).
 
 ## Error reporting
 
@@ -116,7 +116,7 @@ registerCheckers.ml know that your checker is interprocedural
 converting your intraprocedural abstract state to a summary.
 
 A good example to look at here is
-[Siof.ml](https://github.com/facebook/infer/blob/master/infer/src/checkers/Siof.ml).
+[Siof.ml](https://github.com/facebook/infer/blob/main/infer/src/checkers/Siof.ml).
 Step (1) is just:
 
 ```OCaml
@@ -163,7 +163,7 @@ the procedure's summary, using `Analyzer.compute_post`.
 That's it! We now have an interprocedural analysis.
 
 To go deeper, jump to the [lab
-exercise](https://github.com/facebook/infer/blob/master/infer/src/labs/README.md)
+exercise](https://github.com/facebook/infer/blob/main/infer/src/labs/README.md)
 and to the [API documentation](internal-API/), e.g. for the
 [Absint](pathname:///odoc/next/infer/Absint.html) and
 [IR](pathname:///odoc/next/infer/IR.html) modules.

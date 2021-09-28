@@ -83,7 +83,9 @@ module InstrBasicCostWithReason = struct
           callee_cost
       | _ ->
           ScubaLogging.cost_log_message ~label:"unmodeled_function_operation_cost"
-            ~message:(F.asprintf "Unmodeled Function[Operation Cost] : %a" Procname.pp callee_pname) ;
+            ~message:
+              (F.asprintf "[Operation Cost] Unmodeled Function: %a" Procname.pp_without_templates
+                 callee_pname ) ;
           BasicCostWithReason.one () )
 
 
@@ -286,8 +288,8 @@ module WorstCaseCost = struct
     in
     Option.iter (CostDomain.get_operation_cost cost).top_pname_opt ~f:(fun top_pname ->
         ScubaLogging.cost_log_message ~label:"unmodeled_function_top_cost"
-          ~message:(F.asprintf "Unmodeled Function[Top Cost] : %a" Procname.pp top_pname) ;
-        L.debug Analysis Verbose "@\nUnmodeled Function[Top Cost]: %a@\n" Procname.pp top_pname ) ;
+          ~message:
+            (F.asprintf "[Top Cost] Unmodeled Function: %a" Procname.pp_without_templates top_pname) ) ;
     cost
 end
 

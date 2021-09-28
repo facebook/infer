@@ -106,7 +106,7 @@ true/false depending whether the property's name contains a word in the language
 of the regular expression `[dD]elegate`. In general a predicate is a simple
 atomic formula evaluated on an AST node. The list of available predicates is in
 the module
-[`cPredicates.mli`](https://github.com/facebook/infer/blob/master/infer/src/clang/cPredicates.mli)
+[`cPredicates.mli`](https://github.com/facebook/infer/blob/main/infer/src/clang/cPredicates.mli)
 (this list is continuously growing and if you need a new predicate you can add
 it in ocaml). Formula variables can be used to simplify other definitions. The
 `SET report_when` is mandatory and defines a formula that, when evaluates to
@@ -194,7 +194,7 @@ paths defined in the `library.al` file.
 
 The simplest formulas we can write are predicates. They are defined inside
 Infer. We provide a
-[library](https://github.com/facebook/infer/blob/master/infer/src/clang/cPredicates.mli),
+[library](https://github.com/facebook/infer/blob/main/infer/src/clang/cPredicates.mli),
 but if the predicate that you require is not available, you will need to extend
 the library. Here are the some of the currently defined predicates:
 
@@ -246,9 +246,9 @@ this regex can be embedded inside another string, for example:
 starting with NS.
 
 If you need to add a new predicate, write the predicate in
-[cPredicates.ml](https://github.com/facebook/infer/blob/master/infer/src/clang/cPredicates.ml)
+[cPredicates.ml](https://github.com/facebook/infer/blob/main/infer/src/clang/cPredicates.ml)
 and then register it in
-[CTL.ml](https://github.com/facebook/infer/blob/master/infer/src/clang/cTL.ml#L728).
+[CTL.ml](https://github.com/facebook/infer/blob/main/infer/src/clang/cTL.ml#L728).
 
 ## AL Formulas
 
@@ -417,7 +417,7 @@ via a particular field (i.e., a transition).
 
 **Hint** A good way to learn how to write checkers is looking at existing
 checkers in the file
-[linters.al](https://github.com/facebook/infer/blob/master/infer/lib/linter_rules/linters.al).
+[linters.al](https://github.com/facebook/infer/blob/main/infer/lib/linter_rules/linters.al).
 
 ## Example checks
 

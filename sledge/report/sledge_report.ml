@@ -745,19 +745,36 @@ let html_cmd =
 let write_status ?baseline rows chan =
   let rows =
     if Option.is_none baseline then rows
-    else Iter.filter rows ~f:(fun row -> Option.is_some row.status_deltas)
+    else
+      Iter.filter rows ~f:(fun row ->
+          Option.is_some row.status_deltas
+          || Option.exists row.cov_deltas ~f:(fun cov_deltas ->
+                 List.exists cov_deltas
+                   ~f:(fun {Report.steps; solver_steps} ->
+                     steps != 0 || solver_steps != 0 ) ) )
   in
   let rows =
     Iter.sort ~cmp:(fun x y -> String.compare x.name y.name) rows
   in
+  let pp_steps ppf {Report.steps} = Format.fprintf ppf "%+i" steps in
+  let pp_solver_steps ppf {Report.solver_steps} =
+    Format.fprintf ppf "%+i" solver_steps
+  in
   let ppf = Format.str_formatter in
-  Iter.iter rows ~f:(fun {name; status; status_deltas} ->
-      Format.fprintf ppf "%s:\t%a%a@\n" name
+  let count = ref 0 in
+  Iter.iter rows ~f:(fun {name; status; status_deltas; cov_deltas} ->
+      incr count ;
+      Format.fprintf ppf "%s:\t%a%a%a%a@\n" name
         (List.pp ", " Report.pp_status)
         status
         (Option.pp "\t%a" (List.pp ", " Report.pp_status))
-        status_deltas ) ;
-  Out_channel.output_string chan (Format.flush_str_formatter ())
+        status_deltas
+        (Option.pp "\t%a" (List.pp ", " pp_steps))
+        cov_deltas
+        (Option.pp "\t%a" (List.pp ", " pp_solver_steps))
+        cov_deltas ) ;
+  Out_channel.output_string chan (Format.flush_str_formatter ()) ;
+  !count
 
 let generate_status ?baseline current output =
   let rows = input_rows ?baseline current in
@@ -778,11 +795,40 @@ let status_cmd =
         "<file> write status report to <file>, or to standard output if \
          omitted"
   in
-  fun () -> generate_status ?baseline current output
+  fun () -> exit (generate_status ?baseline current output)
+
+let sort_tests baseline tests =
+  let rows = input_rows baseline in
+  let name_time =
+    Iter.map rows ~f:(fun {name; times; status} ->
+        if List.exists status ~f:(function Timeout -> true | _ -> false)
+        then (name, Float.infinity)
+        else
+          (name, List.fold ~f:(fun {etime} m -> Float.max etime m) times 0.) )
+  in
+  let tbl = Tbl.of_iter name_time in
+  let test_time =
+    Array.of_list_map tests ~f:(fun test ->
+        (test, Option.value (Tbl.find tbl test) ~default:0.) )
+  in
+  Array.sort ~cmp:(fun (_, x) (_, y) -> -Float.compare x y) test_time ;
+  Array.iter test_time ~f:(fun (test, _) ->
+      Out_channel.output_string Out_channel.stdout test ;
+      Out_channel.output_char Out_channel.stdout ' ' ) ;
+  Out_channel.newline Out_channel.stdout
+
+let sort_cmd =
+  let open Command.Let_syntax in
+  let%map_open baseline =
+    flag "baseline" (required string)
+      ~doc:"<file> read baseline results from report <file>"
+  and tests = anon (sequence ("<file>" %: string)) in
+  fun () -> sort_tests baseline tests
 
 ;;
 Command.run
   (Command.group ~summary:"SLEdge report manipulation"
      [ ("html", Command.basic ~summary:"generate html report" html_cmd)
      ; ("status", Command.basic ~summary:"generate status report" status_cmd)
-     ] )
+     ; ( "sort"
+       , Command.basic ~summary:"sort tests by baseline time" sort_cmd ) ] )

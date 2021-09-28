@@ -33,8 +33,8 @@ module TaskGenerator : sig
   (** schedule tasks out of a concrete list *)
 end
 
-(** Pool of parallel workers that can both receive tasks from the master process and start doing
-    tasks on their own. Unix pipes are used for communication, all while refreshing a task bar
+(** Pool of parallel workers that can both receive tasks from the orchestrator process and start
+    doing tasks on their own. Unix pipes are used for communication, all while refreshing a task bar
     periodically.
 
     Due to ondemand analysis, workers may do tasks unprompted (eg, when analysing a procedure, a

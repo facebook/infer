@@ -52,6 +52,7 @@ let eval ~equal ~get_z ~ret_z ~get_q ~ret_q:_ f xs =
         | Some {Q.num; den} -> Some (ret_z (Z.rem (Z.div num den) j))
         | None -> None ) )
     | _ -> None )
+  | Rem, _ -> None
   | BitAnd, [|x; y|] -> (
     match (get_z x, get_z y) with
     (* i && j *)
@@ -65,6 +66,7 @@ let eval ~equal ~get_z ~ret_z ~get_q ~ret_q:_ f xs =
     (* x && x ==> x *)
     | _ when equal x y -> Some x
     | _ -> None )
+  | BitAnd, _ -> None
   | BitOr, [|x; y|] -> (
     match (get_z x, get_z y) with
     (* i || j *)
@@ -78,6 +80,18 @@ let eval ~equal ~get_z ~ret_z ~get_q ~ret_q:_ f xs =
     (* x || x ==> x *)
     | _ when equal x y -> Some x
     | _ -> None )
+  | BitOr, _ -> None
+  | BitXor, [|x; y|] -> (
+    match (get_z x, get_z y) with
+    (* i xor j *)
+    | Some i, Some j -> Some (ret_z (Z.logxor i j))
+    (* x xor false ==> x *)
+    | _, Some z when Z.is_false z -> Some x
+    | Some z, _ when Z.is_false z -> Some y
+    (* x xor x ==> false *)
+    | _ when equal x y -> Some (ret_z Z.false_)
+    | _ -> None )
+  | BitXor, _ -> None
   | BitShl, [|x; y|] -> (
     match get_z y with
     (* x shl 0 ==> x *)
@@ -90,6 +104,7 @@ let eval ~equal ~get_z ~ret_z ~get_q ~ret_q:_ f xs =
         | n -> Some (ret_z (Z.shift_left i n))
         | exception Z.Overflow -> None )
       | _ -> None ) )
+  | BitShl, _ -> None
   | BitLshr, [|x; y|] -> (
     match get_z y with
     (* x lshr 0 ==> x *)
@@ -102,6 +117,7 @@ let eval ~equal ~get_z ~ret_z ~get_q ~ret_q:_ f xs =
         | n -> Some (ret_z (Z.shift_right_trunc i n))
         | exception Z.Overflow -> None )
       | _ -> None ) )
+  | BitLshr, _ -> None
   | BitAshr, [|x; y|] -> (
     match get_z y with
     (* x ashr 0 ==> x *)
@@ -114,14 +130,17 @@ let eval ~equal ~get_z ~ret_z ~get_q ~ret_q:_ f xs =
         | n -> Some (ret_z (Z.shift_right i n))
         | exception Z.Overflow -> None )
       | _ -> None ) )
+  | BitAshr, _ -> None
   | Signed n, [|x|] -> (
     match get_z x with
     (* (sN)i *)
     | Some i -> Some (ret_z (Z.signed_extract i 0 n))
     | _ -> None )
+  | Signed _, _ -> None
   | Unsigned n, [|x|] -> (
     match get_z x with
     (* (uN)i *)
     | Some i -> Some (ret_z (Z.extract i 0 n))
     | _ -> None )
-  | _ -> None
+  | Unsigned _, _ -> None
+  | Uninterp _, _ -> None
