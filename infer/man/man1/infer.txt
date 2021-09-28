@@ -1226,6 +1226,10 @@ OPTIONS
            Activates: checker simple-lineage: Computes a dataflow graph
            (Conversely: --no-simple-lineage)           See also infer-analyze(1).
 
+       --simple-lineage-json-report
+           Activates: Enable simple lineage report in JSON format.
+           (Conversely: --no-simple-lineage-json-report)           See also infer-analyze(1).
+
        --simple-lineage-max-cfg-size int
            If set, larger CFGs are skipped.           See also infer-analyze(1).
 

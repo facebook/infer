@@ -612,6 +612,8 @@ val show_buckets : bool
 
 val simple_lineage_max_cfg_size : int option
 
+val simple_lineage_json_report : bool
+
 val siof_check_iostreams : bool
 
 val siof_safe_methods : string list

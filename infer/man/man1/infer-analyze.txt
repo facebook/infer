@@ -579,6 +579,10 @@ RACERD CHECKER OPTIONS
            Specify custom annotations that should be considered aliases of
            @ThreadSafe
 SIMPLE LINEAGE OPTIONS
+       --simple-lineage-json-report
+           Activates: Enable simple lineage report in JSON format.
+           (Conversely: --no-simple-lineage-json-report)
+
        --simple-lineage-max-cfg-size int
            If set, larger CFGs are skipped.
 SIOF CHECKER OPTIONS

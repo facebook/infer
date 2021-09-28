@@ -2400,6 +2400,12 @@ and simple_lineage_max_cfg_size =
     "If set, larger CFGs are skipped."
 
 
+and simple_lineage_json_report =
+  CLOpt.mk_bool ~long:"simple-lineage-json-report"
+    ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
+    "Enable simple lineage report in JSON format."
+
+
 and siof_check_iostreams =
   CLOpt.mk_bool ~long:"siof-check-iostreams"
     ~in_help:InferCommand.[(Analyze, manual_siof)]
@@ -3512,6 +3518,8 @@ and select =
 and show_buckets = !print_buckets
 
 and simple_lineage_max_cfg_size = !simple_lineage_max_cfg_size
+
+and simple_lineage_json_report = !simple_lineage_json_report
 
 and siof_check_iostreams = !siof_check_iostreams
 

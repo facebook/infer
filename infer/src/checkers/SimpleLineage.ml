@@ -310,6 +310,251 @@ end
 
 module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions)
 
+module Out = struct
+  module Json = struct
+    type location_id = int64 [@@deriving yojson_of]
+
+    type node_id = int64 [@@deriving yojson_of]
+
+    type state_id = int64 [@@deriving yojson_of]
+
+    (* These correspond to CFG nodes in Infer. *)
+    type _location =
+      { id: location_id
+      ; function_: string [@key "function"]
+      ; file: string
+      ; line: int option (* might be unknown for some locations *) }
+    [@@deriving yojson_of, yojson_fields]
+
+    type location = {location: _location} [@@deriving yojson_of]
+
+    (* These correspond to abstract states in AbsInt. *)
+    type _state = {id: state_id; location: location_id} [@@deriving yojson_of]
+
+    type state = {state: _state} [@@deriving yojson_of]
+
+    type variable_type = UserVariable | Temporary | Argument | Return
+
+    let yojson_of_variable_type typ =
+      match typ with
+      | UserVariable ->
+          `String "UserVariable"
+      | Temporary ->
+          `String "Temporary"
+      | Argument ->
+          `String "Argument"
+      | Return ->
+          `String "Return"
+
+
+    type variable =
+      { name: string (* "$ret" if type is Return; "$argN" for N=0,1,... if type is Argument *)
+      ; variable_type: variable_type }
+    [@@deriving yojson_of]
+
+    type _node = {id: node_id; state: state_id; variable: variable} [@@deriving yojson_of]
+
+    type node = {node: _node} [@@deriving yojson_of]
+
+    type edge_type = Copy | Derive
+
+    let yojson_of_edge_type typ =
+      match typ with Copy -> `String "Copy" | Derive -> `String "Derive"
+
+
+    type _edge = {source: node_id; target: node_id; edge_type: edge_type} [@@deriving yojson_of]
+
+    type edge = {edge: _edge} [@@deriving yojson_of]
+
+    type lineage =
+      { nodes: node list
+      ; edges: edge list
+      ; states: state list
+      ; variables: variable list
+      ; locations: location list }
+    [@@deriving yojson_of]
+  end
+
+  let channel_ref = ref None
+
+  let channel () =
+    let output_dir = Filename.concat Config.results_dir "simple-lineage" in
+    Unix.mkdir_p output_dir ;
+    match !channel_ref with
+    | None ->
+        let filename = Format.asprintf "lineage-%a.json" Pid.pp (Unix.getpid ()) in
+        let channel = Filename.concat output_dir filename |> Out_channel.create in
+        let close_channel () =
+          Option.iter !channel_ref ~f:Out_channel.close_no_err ;
+          channel_ref := None
+        in
+        Epilogues.register ~f:close_channel ~description:"close output channel for lineage" ;
+        channel_ref := Some channel ;
+        channel
+    | Some channel ->
+        channel
+
+
+  type node = Start of Location.t option | Exit of Location.t option | Normal of PPNode.t
+
+  type var = Argument of int | Return | Normal of Var.t
+
+  type vertex = {procname: Procname.t; var: var; node: node}
+
+  let id x : Md5.t = Md5.digest_bytes (Marshal.to_bytes x [])
+
+  let id_of_node (node : node) =
+    match node with
+    | Start _ ->
+        id (Start None)
+    | Exit _ ->
+        id (Exit None)
+    | Normal n ->
+        id (PPNode.id n)
+
+
+  let id_of_vertex {procname; var; node} = id (procname, var, id_of_node node)
+
+  let id_of_state (procname, (node : node)) = id (procname, id_of_node node)
+
+  let id_of_edge (source, target, (kind : LineageGraph.flow_kind)) =
+    id (id_of_vertex source, id_of_vertex target, kind)
+
+
+  let short_id (md5 : Md5.t) : int64 =
+    (* TODO: Consider alternatives - monitor collisions *)
+    Int64.of_string ("0x" ^ String.sub (Md5.to_hex md5) ~pos:0 ~len:16)
+
+
+  let once_per_id f id =
+    let seen = ref Md5.Set.empty in
+    Staged.stage (fun x ->
+        let key = id x in
+        if not (Set.mem !seen key) then (
+          f key x ;
+          seen := Set.add !seen key ) )
+
+
+  let variable_of_var (var : var) : Json.variable =
+    let name =
+      match var with
+      | Argument index ->
+          Printf.sprintf "$arg%d" index
+      | Return ->
+          "$ret"
+      | Normal x ->
+          Format.asprintf "%a" Var.pp x
+    in
+    let variable_type : Json.variable_type =
+      match var with
+      | Argument _ ->
+          Argument
+      | Return ->
+          Return
+      | Normal x ->
+          if Var.appears_in_source_code x then UserVariable else Temporary
+    in
+    {Json.name; variable_type}
+
+
+  let vertex_of_data proc_desc (data : LineageGraph.data) : vertex =
+    let procname = Procdesc.get_proc_name proc_desc in
+    match data with
+    | Local (var, node) ->
+        let node : node =
+          match PPNode.kind node with
+          | Start_node ->
+              Start None
+          | Exit_node ->
+              Exit None
+          | _ ->
+              Normal node
+        in
+        {procname; var= Normal var; node}
+    | Argument index ->
+        { procname
+        ; var= Argument index
+        ; node= Start (Some (Procdesc.Node.get_loc (Procdesc.get_start_node proc_desc))) }
+    | Return ->
+        { procname
+        ; var= Return
+        ; node= Exit (Some (Procdesc.Node.get_loc (Procdesc.get_exit_node proc_desc))) }
+    | ArgumentOf (index, callee) ->
+        {procname= callee; var= Argument index; node= Start None}
+    | ReturnOf callee ->
+        {procname= callee; var= Return; node= Exit None}
+
+
+  let report_summary summary proc_desc =
+    let save_state state_id (procname, (node : node)) =
+      let location =
+        match node with
+        | Start (Some loc) | Exit (Some loc) ->
+            loc
+        | Normal node ->
+            PPNode.loc node
+        | _ ->
+            L.die InternalError "Attempting to save non-local state"
+      in
+      let file, line =
+        if location.Location.line > 0 then
+          (SourceFile.to_rel_path location.Location.file, Some location.Location.line)
+        else ("?", None)
+      in
+      let out_loc =
+        { Json.location=
+            {id= short_id state_id; function_= Procname.to_unique_id procname; file; line} }
+      in
+      let out_state = {Json.state= {id= short_id state_id; location= short_id state_id}} in
+      Yojson.Safe.to_channel (channel ()) (Json.yojson_of_location out_loc) ;
+      Out_channel.newline (channel ()) ;
+      Yojson.Safe.to_channel (channel ()) (Json.yojson_of_state out_state) ;
+      Out_channel.newline (channel ())
+    in
+    let save_state = Staged.unstage (once_per_id save_state id_of_state) in
+    let save_vertex vertex_id {procname; var; node} =
+      (* Terminology. In: procname, var, node; Out: node, state/loc, var. *
+         Mapping: (procname,node)->state/loc; ((procname,node)=state/loc,var)->node; var->var *)
+      let state = (procname, node) in
+      save_state state ;
+      let variable = variable_of_var var in
+      let out_node =
+        {Json.node= {id= short_id vertex_id; state= short_id (id_of_state state); variable}}
+      in
+      Yojson.Safe.to_channel (channel ()) (Json.yojson_of_node out_node) ;
+      Out_channel.newline (channel ())
+    in
+    let save_vertex = Staged.unstage (once_per_id save_vertex id_of_vertex) in
+    let save_vertex ({node} as vertex) =
+      match node with
+      | Start None | Exit None ->
+          () (* non-local: do not save *)
+      | _ ->
+          save_vertex vertex
+    in
+    let save_edge _edge_id (source, target, (kind : LineageGraph.flow_kind)) =
+      save_vertex source ;
+      save_vertex target ;
+      let edge_type = match kind with Direct -> Json.Copy | Summary -> Json.Derive in
+      let out_edge =
+        { Json.edge=
+            { source= short_id (id_of_vertex source)
+            ; target= short_id (id_of_vertex target)
+            ; edge_type } }
+      in
+      Yojson.Safe.to_channel (channel ()) (Json.yojson_of_edge out_edge) ;
+      Out_channel.newline (channel ())
+    in
+    let save_edge = Staged.unstage (once_per_id save_edge id_of_edge) in
+    let record_flow {LineageGraph.source; target; kind} =
+      let source = vertex_of_data proc_desc source in
+      let target = vertex_of_data proc_desc target in
+      save_edge (source, target, kind)
+    in
+    List.iter ~f:record_flow summary ;
+    Out_channel.flush (channel ())
+end
+
 let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   let proc_size = Procdesc.size proc_desc in
   let too_big =
@@ -361,4 +606,5 @@ let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
       List.map ~f:mk_ret_edge (Domain.Real.get_all ret_var last_writes)
       @ (Analyzer.InvariantMap.fold collect invmap [snd initial] |> List.concat)
     in
+    if Config.simple_lineage_json_report then Out.report_summary graph proc_desc ;
     Some (Summary.of_graph graph)
