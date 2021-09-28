@@ -768,6 +768,9 @@ module TransferFunctions = struct
         Dom.store_config pvar id astate
     | Store {e1= Lfield (_, fn, _); e2= Var id} ->
         Dom.store_field fn id astate
+    | Call (_, Const (Cfun callee), _, _, _) when Procname.is_java_class_initializer callee ->
+        (* Mitigation: We ignore Java class initializer to avoid non-deterministic FP. *)
+        astate
     | Call ((ret_id, _), Const (Cfun callee), [(Var id, _)], _, _) when is_modeled_as_id tenv callee
       ->
         Dom.copy_value ret_id id astate
@@ -813,8 +816,13 @@ let has_call_stmt proc_desc =
 
 
 let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
-  let get_instantiated_cost = CostInstantiate.get_instantiated_cost analysis_data in
-  let analysis_data = {interproc= analysis_data; get_instantiated_cost} in
-  Option.map (Analyzer.compute_post analysis_data ~initial:Dom.init proc_desc) ~f:(fun astate ->
-      let has_call_stmt = has_call_stmt proc_desc in
-      Dom.to_summary (Procdesc.get_proc_name proc_desc) ~has_call_stmt astate )
+  let pname = Procdesc.get_proc_name proc_desc in
+  if Procname.is_java_class_initializer pname then
+    (* Mitigation: We ignore Java class initializer to avoid non-deterministic FP. *)
+    None
+  else
+    let get_instantiated_cost = CostInstantiate.get_instantiated_cost analysis_data in
+    let analysis_data = {interproc= analysis_data; get_instantiated_cost} in
+    Option.map (Analyzer.compute_post analysis_data ~initial:Dom.init proc_desc) ~f:(fun astate ->
+        let has_call_stmt = has_call_stmt proc_desc in
+        Dom.to_summary pname ~has_call_stmt astate )
