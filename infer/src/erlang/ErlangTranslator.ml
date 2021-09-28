@@ -349,6 +349,8 @@ and translate_expression env {Ast.line; simple_expression} =
         translate_expression_cons env ret_var head tail
     | If clauses ->
         translate_expression_if env clauses
+    | ListComprehension {expression; qualifiers} ->
+        translate_expression_listcomprehension env ret_var expression qualifiers
     | Literal (Atom atom) ->
         let e = translate_atom_literal atom in
         Block.make_load env ret_var e any
@@ -365,9 +367,7 @@ and translate_expression env {Ast.line; simple_expression} =
     | Match {pattern; body} ->
         translate_expression_match env ret_var pattern body
     | Nil ->
-        let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_nil) in
-        let instruction = Sil.Call ((ret_var, any), fun_exp, [], env.location, CallFlags.default) in
-        Block.make_instruction env [instruction]
+        translate_expression_nil env ret_var
     | RecordAccess {record; name; field} ->
         translate_expression_record_access env ret_var record name field
     | RecordIndex {name; field} ->
@@ -550,6 +550,100 @@ and translate_expression_if env clauses : Block.t =
   {blocks with exit_failure= crash_node}
 
 
+and translate_expression_listcomprehension (env : (_, _) Env.t) ret_var expression qualifiers :
+    Block.t =
+  let any = Env.ptr_typ_of_name Any in
+  let list_var = Ident.create_fresh Ident.knormal in
+  (* Start with en empty list L := Nil *)
+  let init_block = translate_expression_nil env list_var in
+  (* Compute one iteration of the expression and add to list: L := Cons(Expr, L) *)
+  let loop_body =
+    (* Compute result of the expression *)
+    let expr_id = Ident.create_fresh Ident.knormal in
+    let expr_block =
+      translate_expression {env with result= Env.Present (Exp.Var expr_id)} expression
+    in
+    (* Prepend to list *)
+    let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_cons) in
+    let args : (Exp.t * Typ.t) list = [(Var expr_id, any); (Var list_var, any)] in
+    let call_instr = Sil.Call ((list_var, any), fun_exp, args, env.location, CallFlags.default) in
+    Block.all env [expr_block; Block.make_instruction env [call_instr]]
+  in
+  (* Surround expression with filters *)
+  let extract_filter (qual : Ast.qualifier) =
+    match qual with Filter expr -> Some expr | _ -> None
+  in
+  let filters = List.filter_map ~f:extract_filter qualifiers in
+  let apply_one_filter expr (acc : Block.t) : Block.t =
+    (* Check expression, execute inner block (accumulator) only if true *)
+    let result_id = Ident.create_fresh Ident.knormal in
+    let filter_expr_block : Block.t =
+      translate_expression {env with result= Env.Present (Exp.Var result_id)} expr
+    in
+    let true_node = Node.make_if env true (Var result_id) in
+    let false_node = Node.make_if env false (Var result_id) in
+    let fail_node = Node.make_nop env in
+    let succ_node = Node.make_nop env in
+    filter_expr_block.exit_success |~~> [true_node; false_node] ;
+    filter_expr_block.exit_failure |~~> [fail_node] ;
+    true_node |~~> [acc.start] ;
+    false_node |~~> [succ_node] ;
+    acc.exit_success |~~> [succ_node] ;
+    acc.exit_failure |~~> [fail_node] ;
+    {start= filter_expr_block.start; exit_success= succ_node; exit_failure= fail_node}
+  in
+  let loop_body_with_filters = List.fold_right filters ~f:apply_one_filter ~init:loop_body in
+  (* Translate generators *)
+  let extract_generator (qual : Ast.qualifier) =
+    match qual with Generator {pattern; expression} -> Some (pattern, expression) | _ -> None
+  in
+  let generators = List.filter_map ~f:extract_generator qualifiers in
+  (* Wrap filtered expression with loops for generators*)
+  let apply_one_gen (pat, expr) (acc : Block.t) : Block.t =
+    (* Initialize generator *)
+    let gen_var = Ident.create_fresh Ident.knormal in
+    let init_block : Block.t =
+      translate_expression {env with result= Env.Present (Exp.Var gen_var)} expr
+    in
+    (* Check if there are still elements in the generator *)
+    let join_node = Node.make_join env in
+    let is_cons_id = Ident.create_fresh Ident.knormal in
+    let check_cons_node =
+      Node.make_stmt env [has_type env ~result:is_cons_id ~value:gen_var Cons]
+    in
+    let is_cons_node = Node.make_if env true (Var is_cons_id) in
+    let no_cons_node = Node.make_if env false (Var is_cons_id) in
+    (* Load head, overwrite list with tail for next iteration *)
+    let head_var = Ident.create_fresh Ident.knormal in
+    let head_load = load_field env head_var gen_var ErlangTypeName.cons_head Cons in
+    let tail_load = load_field env gen_var gen_var ErlangTypeName.cons_tail Cons in
+    let unpack_node = Node.make_stmt env [head_load; tail_load] in
+    (* Match head and evaluate expression *)
+    let head_matcher = translate_pattern env head_var pat in
+    let fail_node = Node.make_nop env in
+    init_block.exit_success |~~> [join_node] ;
+    init_block.exit_failure |~~> [fail_node] ;
+    join_node |~~> [check_cons_node] ;
+    check_cons_node |~~> [is_cons_node; no_cons_node] ;
+    is_cons_node |~~> [unpack_node] ;
+    unpack_node |~~> [head_matcher.start] ;
+    head_matcher.exit_success |~~> [acc.start] ;
+    head_matcher.exit_failure |~~> [join_node] ;
+    acc.exit_success |~~> [join_node] ;
+    acc.exit_failure |~~> [fail_node] ;
+    {start= init_block.start; exit_success= no_cons_node; exit_failure= fail_node}
+  in
+  let loop_block = List.fold_right generators ~f:apply_one_gen ~init:loop_body_with_filters in
+  (* Store lists:reverse(L) in return variable *)
+  let store_return_block =
+    let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_list_reverse) in
+    let args : (Exp.t * Typ.t) list = [(Var list_var, any)] in
+    let call_instr = Sil.Call ((ret_var, any), fun_exp, args, env.location, CallFlags.default) in
+    Block.make_instruction env [call_instr]
+  in
+  Block.all env [init_block; loop_block; store_return_block]
+
+
 and translate_expression_map_create (env : (_, _) Env.t) ret_var updates : Block.t =
   (* Get keys and values as an alternating list of expressions: [K1; V1; K2; V2; ...] *)
   let exprs = List.concat_map ~f:(fun (a : Ast.association) -> [a.key; a.value]) updates in
@@ -635,6 +729,13 @@ and translate_expression_match (env : (_, _) Env.t) ret_var pattern body : Block
   pattern_block.exit_failure |~~> [crash_node] ;
   let pattern_block = {pattern_block with exit_failure= crash_node} in
   Block.all env [body_block; pattern_block]
+
+
+and translate_expression_nil (env : (_, _) Env.t) ret_var : Block.t =
+  let any = Env.ptr_typ_of_name Any in
+  let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_nil) in
+  let instruction = Sil.Call ((ret_var, any), fun_exp, [], env.location, CallFlags.default) in
+  Block.make_instruction env [instruction]
 
 
 and translate_expression_record_access (env : (_, _) Env.t) ret_var record name field : Block.t =

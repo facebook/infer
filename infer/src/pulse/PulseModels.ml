@@ -2086,6 +2086,8 @@ module ProcNameDispatcher = struct
           <>$ capt_arg_payload $+...$--> Misc.id_first_arg ~desc:"cast"
         ; +BuiltinDecl.(match_builtin abort) <>--> Misc.early_exit
         ; +BuiltinDecl.(match_builtin exit) <>--> Misc.early_exit
+        ; +BuiltinDecl.(match_builtin __erlang_list_reverse)
+          <>$ capt_arg_payload $--> Erlang.list_reverse
         ; +BuiltinDecl.(match_builtin __erlang_make_cons)
           <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.make_cons
         ; +BuiltinDecl.(match_builtin __erlang_make_tuple) &++> Erlang.make_tuple
