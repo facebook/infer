@@ -374,6 +374,8 @@ and translate_expression env {Ast.line; simple_expression} =
         translate_expression_record_index env ret_var name field
     | RecordUpdate {record; name; updates} ->
         translate_expression_record_update env ret_var record name updates
+    | TryCatch {body; ok_cases; catch_cases; after} ->
+        translate_expression_trycatch env ret_var body ok_cases catch_cases after
     | Tuple exprs ->
         translate_expression_tuple env ret_var exprs
     | UnaryOperator (op, e) ->
@@ -846,6 +848,29 @@ and translate_expression_record_update (env : (_, _) Env.t) ret_var record name 
   in
   let call_block = Block.make_instruction env [call_instruction] in
   Block.all env (record_block @ field_blocks @ [call_block])
+
+
+and translate_expression_trycatch (env : (_, _) Env.t) ret_var body ok_cases _catch_cases after :
+    Block.t =
+  let body_id = Ident.create_fresh Ident.knormal in
+  let body_block = translate_body {env with result= Env.Present (Exp.Var body_id)} body in
+  let ok_blocks : Block.t =
+    match ok_cases with
+    | [] ->
+        (* No ok cases: result comes from the body expression *)
+        let any = Env.ptr_typ_of_name Any in
+        Block.make_load env ret_var (Var body_id) any
+    | _ ->
+        (* Ok cases present: treat as case expression *)
+        let cases = Block.any env (List.map ~f:(translate_case_clause env [body_id]) ok_cases) in
+        let crash_node = Node.make_fail env BuiltinDecl.__erlang_error_case_clause in
+        cases.exit_failure |~~> [crash_node] ;
+        {cases with exit_failure= crash_node}
+  in
+  let after_id = Ident.create_fresh Ident.knormal in
+  let after_block = translate_body {env with result= Env.Present (Exp.Var after_id)} after in
+  let catch_blocks = Block.make_unsupported env in
+  Block.all env [body_block; ok_blocks; catch_blocks; after_block]
 
 
 and translate_expression_tuple (env : (_, _) Env.t) ret_var exprs : Block.t =
