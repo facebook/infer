@@ -430,6 +430,8 @@ val memtrace_sampling_rate : float
 
 val merge : bool
 
+val merge_report : string list
+
 val method_decls_info : string option
 
 val modified_lines : string option

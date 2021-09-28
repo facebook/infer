@@ -1816,6 +1816,14 @@ and merge =
     "Merge the captured results directories specified in the dependency file."
 
 
+and merge_report =
+  CLOpt.mk_string_list ~long:"merge-report"
+    ~in_help:InferCommand.[(Report, manual_generic)]
+    "Specifies an Infer results directory. The reports stored in JSON files in all specified \
+     results directories will be merged together and deduplicated before being stored in the main \
+     results directory."
+
+
 and method_decls_info =
   CLOpt.mk_path_opt ~long:"method-decls-info" ~meta:"method_decls_info.json"
     "Specifies the file containing the method declarations info (eg. start line, end line, class, \
@@ -3289,6 +3297,8 @@ and memtrace_analysis = !memtrace_analysis
 and memtrace_sampling_rate = Option.value_exn !memtrace_sampling_rate
 
 and merge = !merge
+
+and merge_report = RevList.to_list !merge_report
 
 and method_decls_info = !method_decls_info
 

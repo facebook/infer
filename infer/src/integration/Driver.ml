@@ -191,8 +191,7 @@ let report ?(suppress_console = false) () =
   let costs_json = ResultsDir.get_path ReportCostsJson in
   let config_impact_json = ResultsDir.get_path ReportConfigImpactJson in
   JsonReports.write_reports ~issues_json ~costs_json ~config_impact_json ;
-  (* Post-process the report according to the user config. By default, calls report.py to create a
-     human-readable report.
+  (* Post-process the report according to the user config.
 
      Do not bother calling the report hook when called from within Buck. *)
   if not Config.buck_cache_mode then (

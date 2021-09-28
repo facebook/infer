@@ -936,6 +936,12 @@ OPTIONS
            Activates: Merge the captured results directories specified in the
            dependency file. (Conversely: --no-merge)           See also infer-analyze(1).
 
+       --merge-report +string
+           Specifies an Infer results directory. The reports stored in JSON
+           files in all specified results directories will be merged together
+           and deduplicated before being stored in the main results
+           directory.           See also infer-report(1).
+
        --pmd-xml
            Activates: Output issues in (PMD) XML format in
            infer-out/report.xml (Conversely: --no-pmd-xml)           See also infer-run(1).

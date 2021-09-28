@@ -304,8 +304,12 @@ let report =
     ~synopsis:
       {|$(b,infer) $(b,report) $(b,--issues-tests)
 $(b,infer) $(b,report) $(b,--cost-issues-tests)
-$(b,infer) $(b,report) $(b,--config-impact-issues-tests)|}
-    ~description:[`P "Write out issues in a format suitable for tests."]
+$(b,infer) $(b,report) $(b,--config-impact-issues-tests)
+$(b,infer) $(b,report) $(b,--merge-report) $(i,dir1) $(i,...) $(b,--merge-report) $(i,dirN)|}
+    ~description:
+      [ `P
+          "Write out issues in a format suitable for tests, or merge multiple JSON reports in one \
+           with $(b,--merge-report)." ]
     ~see_also:InferCommand.[ReportDiff; Run]
 
 

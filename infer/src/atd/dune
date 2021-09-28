@@ -25,13 +25,13 @@
  (targets jsonbug_j.ml jsonbug_j.mli)
  (deps jsonbug.atd)
  (action
-  (run atdgen -j -j-std %{deps})))
+  (run atdgen -open !AtdDeps -deriving-conv equal -j -j-std %{deps})))
 
 (rule
  (targets jsonbug_t.ml jsonbug_t.mli)
  (deps jsonbug.atd)
  (action
-  (run atdgen -t %{deps})))
+  (run atdgen -open !AtdDeps -deriving-conv equal -t %{deps})))
 
 ; ATD for jsoncost
 
@@ -39,13 +39,13 @@
  (targets jsoncost_j.ml jsoncost_j.mli)
  (deps jsoncost.atd)
  (action
-  (run atdgen -j -j-std %{deps})))
+  (run atdgen -open !AtdDeps -deriving-conv equal -j -j-std %{deps})))
 
 (rule
  (targets jsoncost_t.ml jsoncost_t.mli)
  (deps jsoncost.atd)
  (action
-  (run atdgen -t %{deps})))
+  (run atdgen -open !AtdDeps -deriving-conv equal -t %{deps})))
 
 ; ATD for jsonconfigimpact
 
@@ -53,13 +53,13 @@
  (targets jsonconfigimpact_j.ml jsonconfigimpact_j.mli)
  (deps jsonconfigimpact.atd)
  (action
-  (run atdgen -j -j-std %{deps})))
+  (run atdgen -open !AtdDeps -deriving-conv equal -j -j-std %{deps})))
 
 (rule
  (targets jsonconfigimpact_t.ml jsonconfigimpact_t.mli)
  (deps jsonconfigimpact.atd)
  (action
-  (run atdgen -t %{deps})))
+  (run atdgen -open !AtdDeps -deriving-conv equal -t %{deps})))
 
 ; ATD for runstate
 

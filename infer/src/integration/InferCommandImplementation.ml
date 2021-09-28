@@ -105,6 +105,104 @@ let help () =
        To see help about the \"help\" command itself, run `infer help --help`.@\n"
 
 
+module ReportSet = struct
+  module type JsonReport = sig
+    include Caml.Hashtbl.HashedType
+
+    val json_loader : Yojson.lexer_state -> Lexing.lexbuf -> t list
+
+    val string_of_reports : ?len:int -> t list -> string
+
+    val results_dir_entry_name : ResultsDirEntryName.id
+  end
+
+  (** functor producing a json report set module (using the provided equality relation) *)
+  module MakeSet (R : JsonReport) = struct
+    module HT = Caml.Hashtbl.Make (R)
+
+    type t = unit HT.t
+
+    let create () = HT.create 1
+
+    let load_into set results_dir =
+      let filename = ResultsDirEntryName.get_path ~results_dir R.results_dir_entry_name in
+      let reports = Atdgen_runtime.Util.Json.from_file R.json_loader filename in
+      List.iter reports ~f:(fun r -> if not (HT.mem set r) then HT.add set r ())
+
+
+    let store set =
+      let reports = HT.fold (fun r () acc -> r :: acc) set [] in
+      let report_file = ResultsDir.get_path R.results_dir_entry_name in
+      Out_channel.write_all report_file ~data:(R.string_of_reports reports)
+  end
+
+  module Jsonbug = struct
+    type t = Jsonbug_j.jsonbug [@@deriving equal]
+
+    let hash = Hashtbl.hash
+
+    let json_loader = Jsonbug_j.read_report
+
+    let results_dir_entry_name = ResultsDirEntryName.ReportJson
+
+    let string_of_reports = Jsonbug_j.string_of_report
+  end
+
+  module Jsoncost = struct
+    type t = Jsoncost_j.item [@@deriving equal]
+
+    let hash = Hashtbl.hash
+
+    let json_loader = Jsoncost_j.read_report
+
+    let results_dir_entry_name = ResultsDirEntryName.ReportCostsJson
+
+    let string_of_reports = Jsoncost_j.string_of_report
+  end
+
+  module JsonConfigimpact = struct
+    type t = Jsonconfigimpact_j.item [@@deriving equal]
+
+    let hash = Hashtbl.hash
+
+    let json_loader = Jsonconfigimpact_j.read_report
+
+    let results_dir_entry_name = ResultsDirEntryName.ReportConfigImpactJson
+
+    let string_of_reports = Jsonconfigimpact_j.string_of_report
+  end
+
+  module JsonbugSet = MakeSet (Jsonbug)
+  module JsoncostSet = MakeSet (Jsoncost)
+  module JsonconfigimpactSet = MakeSet (JsonConfigimpact)
+
+  type accumulator =
+    {report_set: JsonbugSet.t; costs_set: JsoncostSet.t; config_impact_set: JsonconfigimpactSet.t}
+
+  let create_accumulator () =
+    { report_set= JsonbugSet.create ()
+    ; costs_set= JsoncostSet.create ()
+    ; config_impact_set= JsonconfigimpactSet.create () }
+
+
+  let process_directory {report_set; costs_set; config_impact_set} results_dir =
+    JsonbugSet.load_into report_set results_dir ;
+    JsoncostSet.load_into costs_set results_dir ;
+    JsonconfigimpactSet.load_into config_impact_set results_dir
+
+
+  let store {report_set; costs_set; config_impact_set} =
+    JsonbugSet.store report_set ;
+    JsoncostSet.store costs_set ;
+    JsonconfigimpactSet.store config_impact_set
+end
+
+let merge_reports () =
+  let acc = ReportSet.create_accumulator () in
+  Config.merge_report |> List.iter ~f:(ReportSet.process_directory acc) ;
+  ReportSet.store acc
+
+
 let report () =
   let write_from_json out_path =
     IssuesTest.write_from_json ~json_path:Config.from_json_report ~out_path
@@ -118,15 +216,26 @@ let report () =
     ConfigImpactIssuesTest.write_from_json ~json_path:Config.from_json_config_impact_report
       ~out_path
   in
-  match (Config.issues_tests, Config.cost_issues_tests, Config.config_impact_issues_tests) with
-  | None, None, None ->
+  match
+    ( Config.issues_tests
+    , Config.cost_issues_tests
+    , Config.config_impact_issues_tests
+    , Config.merge_report )
+  with
+  | None, None, None, [] ->
       L.die UserError
-        "Expected at least one of '--issues-tests', '--cost-issues-tests' or \
-         '--config-impact-issues-tests'.@\n"
-  | out_path, cost_out_path, config_impact_out_path ->
+        "Expected at least one of '--issues-tests', '--cost-issues-tests', \
+         '--config-impact-issues-tests' or '--merge-report'.@\n"
+  | out_path, cost_out_path, config_impact_out_path, [] ->
       Option.iter out_path ~f:write_from_json ;
       Option.iter cost_out_path ~f:write_from_cost_json ;
       Option.iter config_impact_out_path ~f:write_from_config_impact_json
+  | None, None, None, _ ->
+      merge_reports ()
+  | _, _, _, _ :: _ ->
+      L.die UserError
+        "Option '--merge-report' cannot be used with '--issues-tests', '--cost-issues-tests' or \
+         '--config-impact-issues-tests'.@\n"
 
 
 let report_diff () =
