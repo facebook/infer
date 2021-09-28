@@ -303,9 +303,12 @@ module TransferFunctions = struct
               callee_exit_mem location
         | _, _ ->
             (* This may happen for procedures with a biabduction model too. *)
-            L.d_printfln_escaped "/!\\ Unknown call to %a" Procname.pp callee_pname ;
+            L.d_printfln_escaped "/!\\ Unknown call to %a" Procname.pp_without_templates
+              callee_pname ;
             ScubaLogging.cost_log_message ~label:"unmodeled_function_inferbo"
-              ~message:(F.asprintf "Unmodeled Function[Inferbo] : %a" Procname.pp callee_pname) ;
+              ~message:
+                (F.asprintf "[Inferbo] Unmodeled Function: %a" Procname.pp_without_templates
+                   callee_pname ) ;
             Dom.Mem.add_unknown_from ret ~callee_pname ~location mem )
 
 

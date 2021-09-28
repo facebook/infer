@@ -178,6 +178,9 @@ module Name : sig
   val is_same_type : t -> t -> bool
   (** [is_class name1 name2] holds if [name1] and [name2] name same kind of type *)
 
+  val name_without_templates : t -> string
+  (** name of the c++ typename without qualifier *)
+
   val name : t -> string
   (** name of the typename without qualifier *)
 

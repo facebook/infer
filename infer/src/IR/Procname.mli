@@ -367,6 +367,9 @@ val get_global_name_of_initializer : t -> string option
 (** Return the name of the global for which this procedure is the initializer if this is an
     initializer, None otherwise. *)
 
+val pp_without_templates : Format.formatter -> t -> unit
+(** Pretty print a c++ proc name for the user to see. *)
+
 val pp : Format.formatter -> t -> unit
 (** Pretty print a proc name for the user to see. *)
 
