@@ -14,6 +14,10 @@ module Node = ErlangNode
 
 let mangled_arg (n : int) : Mangled.t = Mangled.from_string (Printf.sprintf "$arg%d" n)
 
+let any_typ = Env.ptr_typ_of_name Any
+
+let mk_fresh_id () = Ident.create_fresh Ident.knormal
+
 let ( |~~> ) = ErlangBlock.( |~~> )
 
 let update_location line (env : (_, _) Env.t) =
@@ -23,15 +27,14 @@ let update_location line (env : (_, _) Env.t) =
 
 let has_type (env : (_, _) Env.t) ~result ~value (name : ErlangTypeName.t) : Sil.instr =
   let fun_exp : Exp.t = Const (Cfun BuiltinDecl.__instanceof) in
-  let any = Env.ptr_typ_of_name Any in
   let args : (Exp.t * Typ.t) list =
-    [ (Var value, any)
+    [ (Var value, any_typ)
     ; ( Sizeof
           { typ= Env.typ_of_name name
           ; nbytes= None
           ; dynamic_length= None
           ; subtype= Subtype.subtypes_instof }
-      , any ) ]
+      , any_typ ) ]
   in
   Call ((result, Typ.mk (Tint IBool)), fun_exp, args, env.location, CallFlags.default)
 
@@ -45,24 +48,23 @@ let translate_atom_literal (atom : string) : Exp.t =
 
 (** into_id=value_id.field_name *)
 let load_field (env : (_, _) Env.t) into_id value_id field_name typ : Sil.instr =
-  let any = Env.ptr_typ_of_name Any in
   let field = Fieldname.make (ErlangType typ) field_name in
   Load
     { id= into_id
     ; e= Lfield (Var value_id, field, Env.typ_of_name typ)
-    ; root_typ= any
-    ; typ= any
+    ; root_typ= any_typ
+    ; typ= any_typ
     ; loc= env.location }
 
 
 let match_record_name env value name (record_info : Env.record_info) : Block.t =
   let tuple_size = 1 + List.length record_info.field_names in
   let tuple_typ : ErlangTypeName.t = Tuple tuple_size in
-  let is_right_type_id = Ident.create_fresh Ident.knormal in
+  let is_right_type_id = mk_fresh_id () in
   let start = Node.make_stmt env [has_type env ~result:is_right_type_id ~value tuple_typ] in
   let right_type_node = Node.make_if env true (Var is_right_type_id) in
   let wrong_type_node = Node.make_if env false (Var is_right_type_id) in
-  let name_id = Ident.create_fresh Ident.knormal in
+  let name_id = mk_fresh_id () in
   let name_load = load_field env name_id value (ErlangTypeName.tuple_elem 1) tuple_typ in
   let unpack_node = Node.make_stmt env [name_load] in
   let name_cond = Exp.BinOp (Eq, Var name_id, translate_atom_literal name) in
@@ -114,12 +116,12 @@ let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} : 
 
 
 and translate_pattern_cons env value head tail : Block.t =
-  let is_right_type_id = Ident.create_fresh Ident.knormal in
+  let is_right_type_id = mk_fresh_id () in
   let start = Node.make_stmt env [has_type env ~result:is_right_type_id ~value Cons] in
   let right_type_node = Node.make_if env true (Var is_right_type_id) in
   let wrong_type_node = Node.make_if env false (Var is_right_type_id) in
-  let head_value = Ident.create_fresh Ident.knormal in
-  let tail_value = Ident.create_fresh Ident.knormal in
+  let head_value = mk_fresh_id () in
+  let tail_value = mk_fresh_id () in
   let head_load = load_field env head_value value ErlangTypeName.cons_head Cons in
   let tail_load = load_field env tail_value value ErlangTypeName.cons_tail Cons in
   let unpack_node = Node.make_stmt env [head_load; tail_load] in
@@ -136,7 +138,7 @@ and translate_pattern_cons env value head tail : Block.t =
 
 
 and translate_pattern_nil env value : Block.t =
-  let id = Ident.create_fresh Ident.knormal in
+  let id = mk_fresh_id () in
   let start = Node.make_stmt env [has_type env ~result:id ~value Nil] in
   let exit_success = Node.make_if env true (Var id) in
   let exit_failure = Node.make_if env false (Var id) in
@@ -156,35 +158,31 @@ and translate_pattern_match (env : (_, _) Env.t) value pattern body : Block.t =
 
 
 and translate_pattern_map (env : (_, _) Env.t) value updates : Block.t =
-  let any = Env.ptr_typ_of_name Any in
-  let is_right_type_id = Ident.create_fresh Ident.knormal in
+  let is_right_type_id = mk_fresh_id () in
   let start = Node.make_stmt env [has_type env ~result:is_right_type_id ~value Map] in
   let right_type_node = Node.make_if env true (Var is_right_type_id) in
   let wrong_type_node = Node.make_if env false (Var is_right_type_id) in
   (* For each update, check if key is there and if yes, match against value *)
   let make_submatcher (one_update : Ast.association) =
-    let has_key_id = Ident.create_fresh Ident.knormal in
-    let key_id = Ident.create_fresh Ident.knormal in
-    let key_expr_block =
-      translate_expression {env with result= Env.Present (Exp.Var key_id)} one_update.key
-    in
+    let has_key_id = mk_fresh_id () in
+    let key_id, key_expr_block = translate_expression_to_fresh_id env one_update.key in
     let has_key_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_map_is_key) in
-    let args = [(Exp.Var key_id, any); (Exp.Var value, any)] in
+    let args = [(Exp.Var key_id, any_typ); (Exp.Var value, any_typ)] in
     let has_key_block : Block.t =
       let start =
         Node.make_stmt env
-          [Sil.Call ((has_key_id, any), has_key_fun_exp, args, env.location, CallFlags.default)]
+          [Sil.Call ((has_key_id, any_typ), has_key_fun_exp, args, env.location, CallFlags.default)]
       in
       let exit_success = Node.make_if env true (Var has_key_id) in
       let exit_failure = Node.make_if env false (Var has_key_id) in
       start |~~> [exit_success; exit_failure] ;
       {start; exit_success; exit_failure}
     in
-    let value_id = Ident.create_fresh Ident.knormal in
+    let value_id = mk_fresh_id () in
     let lookup_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_map_get) in
     let lookup_block =
       Block.make_instruction env
-        [Sil.Call ((value_id, any), lookup_fun_exp, args, env.location, CallFlags.default)]
+        [Sil.Call ((value_id, any_typ), lookup_fun_exp, args, env.location, CallFlags.default)]
     in
     let match_value_block = translate_pattern env value_id one_update.value in
     Block.all env [key_expr_block; has_key_block; lookup_block; match_value_block]
@@ -214,7 +212,7 @@ and translate_pattern_record_update (env : (_, _) Env.t) value name updates : Bl
     match one_update.field with
     | Some name ->
         let field_info = String.Map.find_exn record_info.field_info name in
-        let value_id = Ident.create_fresh Ident.knormal in
+        let value_id = mk_fresh_id () in
         let tuple_elem = ErlangTypeName.tuple_elem field_info.index in
         let load_instr = load_field env value_id value tuple_elem tuple_typ in
         let unpack_node = Node.make_stmt env [load_instr] in
@@ -231,12 +229,12 @@ and translate_pattern_record_update (env : (_, _) Env.t) value name updates : Bl
 
 
 and translate_pattern_tuple env value exprs : Block.t =
-  let is_right_type_id = Ident.create_fresh Ident.knormal in
+  let is_right_type_id = mk_fresh_id () in
   let tuple_typ : ErlangTypeName.t = Tuple (List.length exprs) in
   let start = Node.make_stmt env [has_type env ~result:is_right_type_id ~value tuple_typ] in
   let right_type_node = Node.make_if env true (Var is_right_type_id) in
   let wrong_type_node = Node.make_if env false (Var is_right_type_id) in
-  let value_ids = List.map ~f:(function _ -> Ident.create_fresh Ident.knormal) exprs in
+  let value_ids = List.map ~f:(function _ -> mk_fresh_id ()) exprs in
   let field_names = ErlangTypeName.tuple_field_names (List.length exprs) in
   let load_instructions =
     List.map
@@ -261,10 +259,7 @@ and translate_pattern_tuple env value exprs : Block.t =
 
 and translate_pattern_unary_expression (env : (_, _) Env.t) value line simple_expression : Block.t =
   (* Unary op pattern must evaluate to number, so just delegate to expression translation *)
-  let id = Ident.create_fresh Ident.knormal in
-  let expr_block =
-    translate_expression {env with result= Env.Present (Exp.Var id)} {Ast.line; simple_expression}
-  in
+  let id, expr_block = translate_expression_to_fresh_id env {Ast.line; simple_expression} in
   let branch_block = Block.make_branch env (Exp.BinOp (Eq, Var value, Var id)) in
   Block.all env [expr_block; branch_block]
 
@@ -276,11 +271,10 @@ and translate_pattern_variable (env : (_, _) Env.t) value vname : Block.t =
   | _ ->
       let (Env.Present procdesc) = env.procdesc in
       let procname = Procdesc.get_proc_name procdesc in
-      let any = Env.ptr_typ_of_name Any in
       let store : Sil.instr =
         let e1 : Exp.t = Lvar (Pvar.mk (Mangled.from_string vname) procname) in
         let e2 : Exp.t = Var value in
-        Store {e1; root_typ= any; typ= any; e2; loc= env.location}
+        Store {e1; root_typ= any_typ; typ= any_typ; e2; loc= env.location}
       in
       let exit_success = Node.make_stmt env [store] in
       let exit_failure = Node.make_nop env in
@@ -289,8 +283,7 @@ and translate_pattern_variable (env : (_, _) Env.t) value vname : Block.t =
 
 and translate_guard_expression (env : (_, _) Env.t) (expression : Ast.expression) :
     Ident.t * Block.t =
-  let id = Ident.create_fresh Ident.knormal in
-  let block = translate_expression {env with result= Env.Present (Exp.Var id)} expression in
+  let id, block = translate_expression_to_fresh_id env expression in
   (* If we'd like to catch "silent" errors later, we might do it here *)
   (id, block)
 
@@ -322,11 +315,8 @@ and translate_guard_sequence env (guards : Ast.expression list list) : Block.t =
 
 and translate_expression env {Ast.line; simple_expression} =
   let env = update_location line env in
-  let any = Env.ptr_typ_of_name Any in
   let (Env.Present result) = env.result in
-  let ret_var =
-    match result with Exp.Var ret_var -> ret_var | _ -> Ident.create_fresh Ident.knormal
-  in
+  let ret_var = match result with Exp.Var ret_var -> ret_var | _ -> mk_fresh_id () in
   let expression_block : Block.t =
     match simple_expression with
     | BinaryOperator (e1, op, e2) ->
@@ -353,13 +343,13 @@ and translate_expression env {Ast.line; simple_expression} =
         translate_expression_listcomprehension env ret_var expression qualifiers
     | Literal (Atom atom) ->
         let e = translate_atom_literal atom in
-        Block.make_load env ret_var e any
+        Block.make_load env ret_var e any_typ
     | Literal (Int i) ->
         let e = Exp.Const (Cint (IntLit.of_string i)) in
-        Block.make_load env ret_var e any
+        Block.make_load env ret_var e any_typ
     | Literal (String s) ->
         let e = Exp.Const (Cstr s) in
-        Block.make_load env ret_var e any
+        Block.make_load env ret_var e any_typ
     | Map {map= None; updates} ->
         translate_expression_map_create env ret_var updates
     | Map {map= Some map; updates} ->
@@ -393,29 +383,38 @@ and translate_expression env {Ast.line; simple_expression} =
       expression_block
   | _ ->
       let store_instr =
-        Sil.Store {e1= result; root_typ= any; typ= any; e2= Var ret_var; loc= env.location}
+        Sil.Store {e1= result; root_typ= any_typ; typ= any_typ; e2= Var ret_var; loc= env.location}
       in
       let store_block = Block.make_instruction env [store_instr] in
       Block.all env [expression_block; store_block]
 
 
+(** Translate an expression assinging the result into the given identifier. *)
+and translate_expression_to_id (env : (_, _) Env.t) id expression : Block.t =
+  translate_expression {env with result= Env.Present (Exp.Var id)} expression
+
+
+(** Translate an expression while creating a fresh identifier to store the result. *)
+and translate_expression_to_fresh_id (env : (_, _) Env.t) expression : Ident.t * Block.t =
+  let id = mk_fresh_id () in
+  let block = translate_expression_to_id env id expression in
+  (id, block)
+
+
 and translate_expression_binary_operator (env : (_, _) Env.t) ret_var e1 (op : Ast.binary_operator)
     e2 : Block.t =
-  let any = Env.ptr_typ_of_name Any in
-  let id1 = Ident.create_fresh Ident.knormal in
-  let id2 = Ident.create_fresh Ident.knormal in
-  let block1 : Block.t = translate_expression {env with result= Env.Present (Exp.Var id1)} e1 in
-  let block2 : Block.t = translate_expression {env with result= Env.Present (Exp.Var id2)} e2 in
+  let id1, block1 = translate_expression_to_fresh_id env e1 in
+  let id2, block2 = translate_expression_to_fresh_id env e2 in
   let make_simple_eager sil_op =
-    let op_block = Block.make_load env ret_var (Exp.BinOp (sil_op, Var id1, Var id2)) any in
+    let op_block = Block.make_load env ret_var (Exp.BinOp (sil_op, Var id1, Var id2)) any_typ in
     Block.all env [block1; block2; op_block]
   in
   let make_short_circuit_logic ~short_circuit_when_lhs_is =
     let start = Node.make_nop env in
     let id1_cond = Node.make_if env short_circuit_when_lhs_is (Var id1) in
     let id2_cond = Node.make_if env (not short_circuit_when_lhs_is) (Var id1) in
-    let store_id1 = Node.make_load env ret_var (Var id1) any in
-    let store_id2 = Node.make_load env ret_var (Var id2) any in
+    let store_id1 = Node.make_load env ret_var (Var id1) any_typ in
+    let store_id2 = Node.make_load env ret_var (Var id2) any_typ in
     let exit_success = Node.make_nop env in
     let exit_failure = Node.make_nop env in
     start |~~> [id1_cond; id2_cond] ;
@@ -477,7 +476,7 @@ and translate_expression_binary_operator (env : (_, _) Env.t) ret_var e1 (op : A
           , Exp.BinOp (LAnd, Var id1, Exp.UnOp (LNot, Var id2, None))
           , Exp.BinOp (LAnd, Exp.UnOp (LNot, Var id1, None), Var id2) )
       in
-      let op_block = Block.make_load env ret_var expr any in
+      let op_block = Block.make_load env ret_var expr any_typ in
       Block.all env [block1; block2; op_block]
   | todo ->
       L.debug Capture Verbose "@[todo ErlangTranslator.translate_expression_binary_operator %s@."
@@ -487,7 +486,6 @@ and translate_expression_binary_operator (env : (_, _) Env.t) ret_var e1 (op : A
 
 and translate_expression_call (env : (_, _) Env.t) ret_var module_name function_name args : Block.t
     =
-  let any = Env.ptr_typ_of_name Any in
   let arity = List.length args in
   let callee_procname =
     let module_name_lookup =
@@ -504,26 +502,24 @@ and translate_expression_call (env : (_, _) Env.t) ret_var module_name function_
     in
     Procname.make_erlang ~module_name:module_name_lookup ~function_name ~arity
   in
-  let args_with_ids = List.map ~f:(fun a -> (a, Ident.create_fresh Ident.knormal)) args in
+  let args_with_ids = List.map ~f:(fun a -> (a, mk_fresh_id ())) args in
   let args_blocks =
     let f (one_arg_expression, one_arg_ret_var) =
-      let result = Env.Present (Exp.Var one_arg_ret_var) in
-      translate_expression {env with result} one_arg_expression
+      translate_expression_to_id env one_arg_ret_var one_arg_expression
     in
     List.map ~f args_with_ids
   in
   let fun_exp = Exp.Const (Cfun callee_procname) in
-  let args_ids_and_types = List.map ~f:(function _, id -> (Exp.Var id, any)) args_with_ids in
+  let args_ids_and_types = List.map ~f:(function _, id -> (Exp.Var id, any_typ)) args_with_ids in
   let call_instruction =
-    Sil.Call ((ret_var, any), fun_exp, args_ids_and_types, env.location, CallFlags.default)
+    Sil.Call ((ret_var, any_typ), fun_exp, args_ids_and_types, env.location, CallFlags.default)
   in
   let call_block = Block.make_instruction env [call_instruction] in
   Block.all env (args_blocks @ [call_block])
 
 
 and translate_expression_case (env : (_, _) Env.t) expression cases : Block.t =
-  let id = Ident.create_fresh Ident.knormal in
-  let expr_block = translate_expression {env with result= Env.Present (Exp.Var id)} expression in
+  let id, expr_block = translate_expression_to_fresh_id env expression in
   let blocks = Block.any env (List.map ~f:(translate_case_clause env [id]) cases) in
   let crash_node = Node.make_fail env BuiltinDecl.__erlang_error_case_clause in
   blocks.exit_failure |~~> [crash_node] ;
@@ -532,15 +528,12 @@ and translate_expression_case (env : (_, _) Env.t) expression cases : Block.t =
 
 
 and translate_expression_cons (env : (_, _) Env.t) ret_var head tail : Block.t =
-  let any = Env.ptr_typ_of_name Any in
-  let head_var = Ident.create_fresh Ident.knormal in
-  let tail_var = Ident.create_fresh Ident.knormal in
-  let head_block = translate_expression {env with result= Env.Present (Exp.Var head_var)} head in
-  let tail_block = translate_expression {env with result= Env.Present (Exp.Var tail_var)} tail in
+  let head_var, head_block = translate_expression_to_fresh_id env head in
+  let tail_var, tail_block = translate_expression_to_fresh_id env tail in
   let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_cons) in
-  let args : (Exp.t * Typ.t) list = [(Var head_var, any); (Var tail_var, any)] in
+  let args : (Exp.t * Typ.t) list = [(Var head_var, any_typ); (Var tail_var, any_typ)] in
   let call_instruction =
-    Sil.Call ((ret_var, any), fun_exp, args, env.location, CallFlags.default)
+    Sil.Call ((ret_var, any_typ), fun_exp, args, env.location, CallFlags.default)
   in
   Block.all env [head_block; tail_block; Block.make_instruction env [call_instruction]]
 
@@ -554,21 +547,19 @@ and translate_expression_if env clauses : Block.t =
 
 and translate_expression_listcomprehension (env : (_, _) Env.t) ret_var expression qualifiers :
     Block.t =
-  let any = Env.ptr_typ_of_name Any in
-  let list_var = Ident.create_fresh Ident.knormal in
+  let list_var = mk_fresh_id () in
   (* Start with en empty list L := Nil *)
   let init_block = translate_expression_nil env list_var in
   (* Compute one iteration of the expression and add to list: L := Cons(Expr, L) *)
   let loop_body =
     (* Compute result of the expression *)
-    let expr_id = Ident.create_fresh Ident.knormal in
-    let expr_block =
-      translate_expression {env with result= Env.Present (Exp.Var expr_id)} expression
-    in
+    let expr_id, expr_block = translate_expression_to_fresh_id env expression in
     (* Prepend to list *)
     let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_cons) in
-    let args : (Exp.t * Typ.t) list = [(Var expr_id, any); (Var list_var, any)] in
-    let call_instr = Sil.Call ((list_var, any), fun_exp, args, env.location, CallFlags.default) in
+    let args : (Exp.t * Typ.t) list = [(Var expr_id, any_typ); (Var list_var, any_typ)] in
+    let call_instr =
+      Sil.Call ((list_var, any_typ), fun_exp, args, env.location, CallFlags.default)
+    in
     Block.all env [expr_block; Block.make_instruction env [call_instr]]
   in
   (* Surround expression with filters *)
@@ -578,10 +569,7 @@ and translate_expression_listcomprehension (env : (_, _) Env.t) ret_var expressi
   let filters = List.filter_map ~f:extract_filter qualifiers in
   let apply_one_filter expr (acc : Block.t) : Block.t =
     (* Check expression, execute inner block (accumulator) only if true *)
-    let result_id = Ident.create_fresh Ident.knormal in
-    let filter_expr_block : Block.t =
-      translate_expression {env with result= Env.Present (Exp.Var result_id)} expr
-    in
+    let result_id, filter_expr_block = translate_expression_to_fresh_id env expr in
     let true_node = Node.make_if env true (Var result_id) in
     let false_node = Node.make_if env false (Var result_id) in
     let fail_node = Node.make_nop env in
@@ -603,20 +591,17 @@ and translate_expression_listcomprehension (env : (_, _) Env.t) ret_var expressi
   (* Wrap filtered expression with loops for generators*)
   let apply_one_gen (pat, expr) (acc : Block.t) : Block.t =
     (* Initialize generator *)
-    let gen_var = Ident.create_fresh Ident.knormal in
-    let init_block : Block.t =
-      translate_expression {env with result= Env.Present (Exp.Var gen_var)} expr
-    in
+    let gen_var, init_block = translate_expression_to_fresh_id env expr in
     (* Check if there are still elements in the generator *)
     let join_node = Node.make_join env in
-    let is_cons_id = Ident.create_fresh Ident.knormal in
+    let is_cons_id = mk_fresh_id () in
     let check_cons_node =
       Node.make_stmt env [has_type env ~result:is_cons_id ~value:gen_var Cons]
     in
     let is_cons_node = Node.make_if env true (Var is_cons_id) in
     let no_cons_node = Node.make_if env false (Var is_cons_id) in
     (* Load head, overwrite list with tail for next iteration *)
-    let head_var = Ident.create_fresh Ident.knormal in
+    let head_var = mk_fresh_id () in
     let head_load = load_field env head_var gen_var ErlangTypeName.cons_head Cons in
     let tail_load = load_field env gen_var gen_var ErlangTypeName.cons_tail Cons in
     let unpack_node = Node.make_stmt env [head_load; tail_load] in
@@ -639,8 +624,10 @@ and translate_expression_listcomprehension (env : (_, _) Env.t) ret_var expressi
   (* Store lists:reverse(L) in return variable *)
   let store_return_block =
     let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_list_reverse) in
-    let args : (Exp.t * Typ.t) list = [(Var list_var, any)] in
-    let call_instr = Sil.Call ((ret_var, any), fun_exp, args, env.location, CallFlags.default) in
+    let args : (Exp.t * Typ.t) list = [(Var list_var, any_typ)] in
+    let call_instr =
+      Sil.Call ((ret_var, any_typ), fun_exp, args, env.location, CallFlags.default)
+    in
     Block.make_instruction env [call_instr]
   in
   Block.all env [init_block; loop_block; store_return_block]
@@ -649,29 +636,26 @@ and translate_expression_listcomprehension (env : (_, _) Env.t) ret_var expressi
 and translate_expression_map_create (env : (_, _) Env.t) ret_var updates : Block.t =
   (* Get keys and values as an alternating list of expressions: [K1; V1; K2; V2; ...] *)
   let exprs = List.concat_map ~f:(fun (a : Ast.association) -> [a.key; a.value]) updates in
-  let exprs_with_ids = List.map ~f:(fun e -> (e, Ident.create_fresh Ident.knormal)) exprs in
+  let exprs_with_ids = List.map ~f:(fun e -> (e, mk_fresh_id ())) exprs in
   let expr_blocks =
-    let translate_one_expr (one_expr, one_id) =
-      translate_expression {env with result= Env.Present (Exp.Var one_id)} one_expr
-    in
+    let translate_one_expr (one_expr, one_id) = translate_expression_to_id env one_id one_expr in
     List.map ~f:translate_one_expr exprs_with_ids
   in
-  let any = Env.ptr_typ_of_name Any in
   let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_map_create) in
-  let exprs_ids_and_types = List.map ~f:(function _, id -> (Exp.Var id, any)) exprs_with_ids in
+  let exprs_ids_and_types =
+    List.map ~f:(function _, id -> (Exp.Var id, any_typ)) exprs_with_ids
+  in
   let call_instruction =
-    Sil.Call ((ret_var, any), fun_exp, exprs_ids_and_types, env.location, CallFlags.default)
+    Sil.Call ((ret_var, any_typ), fun_exp, exprs_ids_and_types, env.location, CallFlags.default)
   in
   let call_block = Block.make_instruction env [call_instruction] in
   Block.all env (expr_blocks @ [call_block])
 
 
 and translate_expression_map_update (env : (_, _) Env.t) ret_var map updates : Block.t =
-  let any = Env.ptr_typ_of_name Any in
-  let map_id = Ident.create_fresh Ident.knormal in
-  let map_block = translate_expression {env with result= Env.Present (Exp.Var map_id)} map in
+  let map_id, map_block = translate_expression_to_fresh_id env map in
   let check_map_type_block : Block.t =
-    let is_right_type_id = Ident.create_fresh Ident.knormal in
+    let is_right_type_id = mk_fresh_id () in
     let start = Node.make_stmt env [has_type env ~result:is_right_type_id ~value:map_id Map] in
     let right_type_node = Node.make_if env true (Var is_right_type_id) in
     let wrong_type_node = Node.make_if env false (Var is_right_type_id) in
@@ -682,33 +666,32 @@ and translate_expression_map_update (env : (_, _) Env.t) ret_var map updates : B
   in
   (* Translate updates one-by-one, also check key if exact association *)
   let translate_update (one_update : Ast.association) =
-    let key_id = Ident.create_fresh Ident.knormal in
-    let value_id = Ident.create_fresh Ident.knormal in
-    let key_expr_block =
-      translate_expression {env with result= Env.Present (Exp.Var key_id)} one_update.key
-    in
-    let value_expr_block =
-      translate_expression {env with result= Env.Present (Exp.Var value_id)} one_update.value
-    in
+    let key_id, key_expr_block = translate_expression_to_fresh_id env one_update.key in
+    let value_id, value_expr_block = translate_expression_to_fresh_id env one_update.value in
     let update_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_map_put) in
-    let update_args = [(Exp.Var key_id, any); (Exp.Var value_id, any); (Exp.Var map_id, any)] in
+    let update_args =
+      [(Exp.Var key_id, any_typ); (Exp.Var value_id, any_typ); (Exp.Var map_id, any_typ)]
+    in
     let update_block =
       Block.make_instruction env
-        [Sil.Call ((ret_var, any), update_fun_exp, update_args, env.location, CallFlags.default)]
+        [Sil.Call ((ret_var, any_typ), update_fun_exp, update_args, env.location, CallFlags.default)]
     in
     let has_key_block : Block.t list =
       match one_update.kind with
       | Arrow ->
           []
       | Exact ->
-          let has_key_id = Ident.create_fresh Ident.knormal in
+          let has_key_id = mk_fresh_id () in
           let has_key_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_map_is_key) in
-          let has_key_args = [(Exp.Var key_id, any); (Exp.Var map_id, any)] in
+          let has_key_args = [(Exp.Var key_id, any_typ); (Exp.Var map_id, any_typ)] in
           let start =
             Node.make_stmt env
               [ Sil.Call
-                  ((has_key_id, any), has_key_fun_exp, has_key_args, env.location, CallFlags.default)
-              ]
+                  ( (has_key_id, any_typ)
+                  , has_key_fun_exp
+                  , has_key_args
+                  , env.location
+                  , CallFlags.default ) ]
           in
           let exit_success = Node.make_if env true (Var has_key_id) in
           let no_key_node = Node.make_if env false (Var has_key_id) in
@@ -725,7 +708,7 @@ and translate_expression_map_update (env : (_, _) Env.t) ret_var map updates : B
 
 
 and translate_expression_match (env : (_, _) Env.t) ret_var pattern body : Block.t =
-  let body_block = translate_expression {env with result= Env.Present (Exp.Var ret_var)} body in
+  let body_block = translate_expression_to_id env ret_var body in
   let pattern_block = translate_pattern env ret_var pattern in
   let crash_node = Node.make_fail env BuiltinDecl.__erlang_error_badmatch in
   pattern_block.exit_failure |~~> [crash_node] ;
@@ -734,9 +717,8 @@ and translate_expression_match (env : (_, _) Env.t) ret_var pattern body : Block
 
 
 and translate_expression_nil (env : (_, _) Env.t) ret_var : Block.t =
-  let any = Env.ptr_typ_of_name Any in
   let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_nil) in
-  let instruction = Sil.Call ((ret_var, any), fun_exp, [], env.location, CallFlags.default) in
+  let instruction = Sil.Call ((ret_var, any_typ), fun_exp, [], env.location, CallFlags.default) in
   Block.make_instruction env [instruction]
 
 
@@ -744,10 +726,9 @@ and translate_expression_record_access (env : (_, _) Env.t) ret_var record name 
   (* Under the hood, a record is a tagged tuple, the first element is the name,
      and then the fields follow in the order as in the record definition. *)
   let record_info = String.Map.find_exn env.records name in
-  let record_id = Ident.create_fresh Ident.knormal in
+  let record_id = mk_fresh_id () in
   let record_block =
-    let result = Env.Present (Exp.Var record_id) in
-    let value_block = translate_expression {env with result} record in
+    let value_block = translate_expression_to_id env record_id record in
     let matcher_block = match_record_name env record_id name record_info in
     let crash_node = Node.make_fail env BuiltinDecl.__erlang_error_badrecord in
     matcher_block.exit_failure |~~> [crash_node] ;
@@ -766,17 +747,15 @@ and translate_expression_record_access (env : (_, _) Env.t) ret_var record name 
 
 and translate_expression_record_index (env : (_, _) Env.t) ret_var name field : Block.t =
   let record_info = String.Map.find_exn env.records name in
-  let any = Env.ptr_typ_of_name Any in
   let field_info = String.Map.find_exn record_info.field_info field in
   let expr = Exp.Const (Cint (IntLit.of_int field_info.index)) in
-  Block.make_load env ret_var expr any
+  Block.make_load env ret_var expr any_typ
 
 
 and translate_expression_record_update (env : (_, _) Env.t) ret_var record name updates : Block.t =
   (* Under the hood, a record is a tagged tuple, the first element is the name,
      and then the fields follow in the order as in the record definition. *)
   let record_info = String.Map.find_exn env.records name in
-  let any = Env.ptr_typ_of_name Any in
   let tuple_typ : ErlangTypeName.t = Tuple (1 + List.length record_info.field_names) in
   (* First collect all the fields that are updated *)
   let collect_updates map (one_update : Ast.record_update) =
@@ -789,12 +768,11 @@ and translate_expression_record_update (env : (_, _) Env.t) ret_var record name 
   in
   let updates_map = List.fold ~init:String.Map.empty ~f:collect_updates updates in
   (* Translate record expression if it is an update *)
-  let record_id = Ident.create_fresh Ident.knormal in
+  let record_id = mk_fresh_id () in
   let record_block =
     match record with
     | Some expr ->
-        let result = Env.Present (Exp.Var record_id) in
-        let value_block = translate_expression {env with result} expr in
+        let value_block = translate_expression_to_id env record_id expr in
         let matcher_block = match_record_name env record_id name record_info in
         let crash_node = Node.make_fail env BuiltinDecl.__erlang_error_badrecord in
         matcher_block.exit_failure |~~> [crash_node] ;
@@ -808,14 +786,12 @@ and translate_expression_record_update (env : (_, _) Env.t) ret_var record name 
     (* (1) Check if field is explicitly set *)
     match String.Map.find updates_map one_field_name with
     | Some expr ->
-        let result = Env.Present (Exp.Var one_id) in
-        translate_expression {env with result} expr
+        translate_expression_to_id env one_id expr
     | None -> (
       (* (2) Check if field is set using 'everything else' *)
       match String.Map.find updates_map "_" with
       | Some expr ->
-          let result = Env.Present (Exp.Var one_id) in
-          translate_expression {env with result} expr
+          translate_expression_to_id env one_id expr
       | None -> (
           let field_info = String.Map.find_exn record_info.field_info one_field_name in
           (* (3) Check if we have to copy over from record that is being updated *)
@@ -831,20 +807,19 @@ and translate_expression_record_update (env : (_, _) Env.t) ret_var record name 
             (* (4) Check if there is an initializer *)
             match field_info.initializer_ with
             | Some expr ->
-                let result = Env.Present (Exp.Var one_id) in
-                translate_expression {env with result} expr
+                translate_expression_to_id env one_id expr
             | None ->
                 (* (5) Finally, it's undefined *)
-                Block.make_load env one_id (translate_atom_literal "undefined") any ) ) )
+                Block.make_load env one_id (translate_atom_literal "undefined") any_typ ) ) )
   in
   let field_names = record_info.field_names in
-  let field_ids = List.map ~f:(function _ -> Ident.create_fresh Ident.knormal) field_names in
+  let field_ids = List.map ~f:(function _ -> mk_fresh_id ()) field_names in
   let field_blocks = List.map ~f:translate_one_field (List.zip_exn field_names field_ids) in
-  let field_ids_and_types = List.map ~f:(fun id -> (Exp.Var id, any)) field_ids in
-  let args_and_types = (translate_atom_literal name, any) :: field_ids_and_types in
+  let field_ids_and_types = List.map ~f:(fun id -> (Exp.Var id, any_typ)) field_ids in
+  let args_and_types = (translate_atom_literal name, any_typ) :: field_ids_and_types in
   let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_tuple) in
   let call_instruction =
-    Sil.Call ((ret_var, any), fun_exp, args_and_types, env.location, CallFlags.default)
+    Sil.Call ((ret_var, any_typ), fun_exp, args_and_types, env.location, CallFlags.default)
   in
   let call_block = Block.make_instruction env [call_instruction] in
   Block.all env (record_block @ field_blocks @ [call_block])
@@ -852,14 +827,13 @@ and translate_expression_record_update (env : (_, _) Env.t) ret_var record name 
 
 and translate_expression_trycatch (env : (_, _) Env.t) ret_var body ok_cases _catch_cases after :
     Block.t =
-  let body_id = Ident.create_fresh Ident.knormal in
+  let body_id = mk_fresh_id () in
   let body_block = translate_body {env with result= Env.Present (Exp.Var body_id)} body in
   let ok_blocks : Block.t =
     match ok_cases with
     | [] ->
         (* No ok cases: result comes from the body expression *)
-        let any = Env.ptr_typ_of_name Any in
-        Block.make_load env ret_var (Var body_id) any
+        Block.make_load env ret_var (Var body_id) any_typ
     | _ ->
         (* Ok cases present: treat as case expression *)
         let cases = Block.any env (List.map ~f:(translate_case_clause env [body_id]) ok_cases) in
@@ -867,26 +841,24 @@ and translate_expression_trycatch (env : (_, _) Env.t) ret_var body ok_cases _ca
         cases.exit_failure |~~> [crash_node] ;
         {cases with exit_failure= crash_node}
   in
-  let after_id = Ident.create_fresh Ident.knormal in
+  let after_id = mk_fresh_id () in
   let after_block = translate_body {env with result= Env.Present (Exp.Var after_id)} after in
   let catch_blocks = Block.make_unsupported env in
   Block.all env [body_block; ok_blocks; catch_blocks; after_block]
 
 
 and translate_expression_tuple (env : (_, _) Env.t) ret_var exprs : Block.t =
-  let any = Env.ptr_typ_of_name Any in
-  let exprs_with_ids = List.map ~f:(fun e -> (e, Ident.create_fresh Ident.knormal)) exprs in
+  let exprs_with_ids = List.map ~f:(fun e -> (e, mk_fresh_id ())) exprs in
   let expr_blocks =
-    let f (one_expr, one_id) =
-      let result = Env.Present (Exp.Var one_id) in
-      translate_expression {env with result} one_expr
-    in
+    let f (one_expr, one_id) = translate_expression_to_id env one_id one_expr in
     List.map ~f exprs_with_ids
   in
   let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_tuple) in
-  let exprs_ids_and_types = List.map ~f:(function _, id -> (Exp.Var id, any)) exprs_with_ids in
+  let exprs_ids_and_types =
+    List.map ~f:(function _, id -> (Exp.Var id, any_typ)) exprs_with_ids
+  in
   let call_instruction =
-    Sil.Call ((ret_var, any), fun_exp, exprs_ids_and_types, env.location, CallFlags.default)
+    Sil.Call ((ret_var, any_typ), fun_exp, exprs_ids_and_types, env.location, CallFlags.default)
   in
   let call_block = Block.make_instruction env [call_instruction] in
   Block.all env (expr_blocks @ [call_block])
@@ -894,11 +866,9 @@ and translate_expression_tuple (env : (_, _) Env.t) ret_var exprs : Block.t =
 
 and translate_expression_unary_operator (env : (_, _) Env.t) ret_var (op : Ast.unary_operator) e :
     Block.t =
-  let any = Env.ptr_typ_of_name Any in
-  let id = Ident.create_fresh Ident.knormal in
-  let block = translate_expression {env with result= Env.Present (Exp.Var id)} e in
+  let id, block = translate_expression_to_fresh_id env e in
   let make_simple_op_block sil_op =
-    Block.make_load env ret_var (Exp.UnOp (sil_op, Var id, None)) any
+    Block.make_load env ret_var (Exp.UnOp (sil_op, Var id, None)) any_typ
   in
   let op_block =
     match op with
@@ -915,19 +885,18 @@ and translate_expression_unary_operator (env : (_, _) Env.t) ret_var (op : Ast.u
 and translate_expression_variable (env : (_, _) Env.t) ret_var vname : Block.t =
   let (Env.Present procdesc) = env.procdesc in
   let procname = Procdesc.get_proc_name procdesc in
-  let any = Env.ptr_typ_of_name Any in
   let e = Exp.Lvar (Pvar.mk (Mangled.from_string vname) procname) in
-  let load_instr = Sil.Load {id= ret_var; e; root_typ= any; typ= any; loc= env.location} in
+  let load_instr = Sil.Load {id= ret_var; e; root_typ= any_typ; typ= any_typ; loc= env.location} in
   Block.make_instruction env [load_instr]
 
 
 and translate_body (env : (_, _) Env.t) body : Block.t =
   let blocks =
     let f rev_blocks one_expression =
-      let id = Ident.create_fresh Ident.knormal in
-      let env = {env with result= Env.Present (Exp.Var id)} in
-      translate_expression env one_expression :: rev_blocks
+      let id = mk_fresh_id () in
+      translate_expression_to_id env id one_expression :: rev_blocks
     in
+    (* Last needs separate treatment to use its result as the overall result *)
     let f_last rev_blocks one_expression = translate_expression env one_expression :: rev_blocks in
     List.rev (IList.fold_last body ~init:[] ~f ~f_last)
   in
@@ -960,12 +929,11 @@ let translate_one_function (env : (_, _) Env.t) cfg function_ clauses =
     let module_name = env.current_module in
     Procname.make_erlang ~module_name ~function_name ~arity
   in
-  let any = Env.ptr_typ_of_name Any in
   let attributes =
     let default = ProcAttributes.default env.location.file name in
     let access : ProcAttributes.access = if Set.mem env.exports uf_name then Public else Private in
-    let formals = List.init ~f:(fun i -> (mangled_arg i, any)) arity in
-    {default with access; formals; is_defined= true; loc= env.location; ret_type= any}
+    let formals = List.init ~f:(fun i -> (mangled_arg i, any_typ)) arity in
+    {default with access; formals; is_defined= true; loc= env.location; ret_type= any_typ}
   in
   let procdesc =
     let procdesc = Cfg.create_proc_desc cfg attributes in
@@ -982,7 +950,7 @@ let translate_one_function (env : (_, _) Env.t) cfg function_ clauses =
   in
   let idents, loads =
     let load (formal, typ) =
-      let id = Ident.create_fresh Ident.knormal in
+      let id = mk_fresh_id () in
       let pvar = Pvar.mk formal name in
       let load = Sil.Load {id; e= Exp.Lvar pvar; root_typ= typ; typ; loc= attributes.loc} in
       (id, load)
