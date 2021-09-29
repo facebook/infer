@@ -335,6 +335,9 @@ and translate_expression env {Ast.line; simple_expression} =
         translate_expression_call env ret_var (Some module_name) function_name args
     | Case {expression; cases} ->
         translate_expression_case env expression cases
+    | Catch expression ->
+        (* TODO: handle exceptions T95448111 *)
+        Block.all env [Block.make_unsupported env; translate_expression env expression]
     | Cons {head; tail} ->
         translate_expression_cons env ret_var head tail
     | If clauses ->
@@ -843,6 +846,7 @@ and translate_expression_trycatch (env : (_, _) Env.t) ret_var body ok_cases _ca
   in
   let after_id = mk_fresh_id () in
   let after_block = translate_body {env with result= Env.Present (Exp.Var after_id)} after in
+  (* TODO: handle exceptions T95448111 *)
   let catch_blocks = Block.make_unsupported env in
   Block.all env [body_block; ok_blocks; catch_blocks; after_block]
 
