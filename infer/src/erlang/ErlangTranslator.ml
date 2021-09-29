@@ -39,6 +39,15 @@ let has_type (env : (_, _) Env.t) ~result ~value (name : ErlangTypeName.t) : Sil
   Call ((result, Typ.mk (Tint IBool)), fun_exp, args, env.location, CallFlags.default)
 
 
+let check_type env value typ : Block.t =
+  let is_right_type_id = mk_fresh_id () in
+  let start = Node.make_stmt env [has_type env ~result:is_right_type_id ~value typ] in
+  let exit_success = Node.make_if env true (Var is_right_type_id) in
+  let exit_failure = Node.make_if env false (Var is_right_type_id) in
+  start |~~> [exit_success; exit_failure] ;
+  {start; exit_success; exit_failure}
+
+
 let translate_atom_literal (atom : string) : Exp.t =
   (* With this hack, an atom may accidentaly be considered equal to an unrelated integer.
       The [lsl] below makes this less likely. Proper fix is TODO (T93513105). *)
@@ -60,10 +69,7 @@ let load_field (env : (_, _) Env.t) into_id value_id field_name typ : Sil.instr 
 let match_record_name env value name (record_info : Env.record_info) : Block.t =
   let tuple_size = 1 + List.length record_info.field_names in
   let tuple_typ : ErlangTypeName.t = Tuple tuple_size in
-  let is_right_type_id = mk_fresh_id () in
-  let start = Node.make_stmt env [has_type env ~result:is_right_type_id ~value tuple_typ] in
-  let right_type_node = Node.make_if env true (Var is_right_type_id) in
-  let wrong_type_node = Node.make_if env false (Var is_right_type_id) in
+  let type_checker = check_type env value tuple_typ in
   let name_id = mk_fresh_id () in
   let name_load = load_field env name_id value (ErlangTypeName.tuple_elem 1) tuple_typ in
   let unpack_node = Node.make_stmt env [name_load] in
@@ -71,12 +77,11 @@ let match_record_name env value name (record_info : Env.record_info) : Block.t =
   let right_name_node = Node.make_if env true name_cond in
   let wrong_name_node = Node.make_if env false name_cond in
   let exit_failure = Node.make_nop env in
-  start |~~> [right_type_node; wrong_type_node] ;
-  right_type_node |~~> [unpack_node] ;
+  type_checker.exit_success |~~> [unpack_node] ;
   unpack_node |~~> [right_name_node; wrong_name_node] ;
-  wrong_type_node |~~> [exit_failure] ;
+  type_checker.exit_failure |~~> [exit_failure] ;
   wrong_name_node |~~> [exit_failure] ;
-  {start; exit_success= right_name_node; exit_failure}
+  {start= type_checker.start; exit_success= right_name_node; exit_failure}
 
 
 (** If the pattern-match succeeds, then the [exit_success] node is reached and the pattern variables
@@ -116,10 +121,6 @@ let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} : 
 
 
 and translate_pattern_cons env value head tail : Block.t =
-  let is_right_type_id = mk_fresh_id () in
-  let start = Node.make_stmt env [has_type env ~result:is_right_type_id ~value Cons] in
-  let right_type_node = Node.make_if env true (Var is_right_type_id) in
-  let wrong_type_node = Node.make_if env false (Var is_right_type_id) in
   let head_value = mk_fresh_id () in
   let tail_value = mk_fresh_id () in
   let head_load = load_field env head_value value ErlangTypeName.cons_head Cons in
@@ -129,22 +130,15 @@ and translate_pattern_cons env value head tail : Block.t =
   let tail_matcher = translate_pattern env tail_value tail in
   let submatcher = Block.all env [head_matcher; tail_matcher] in
   let exit_failure = Node.make_nop env in
-  start |~~> [right_type_node; wrong_type_node] ;
-  right_type_node |~~> [unpack_node] ;
+  let type_checker = check_type env value Cons in
+  type_checker.exit_success |~~> [unpack_node] ;
   unpack_node |~~> [submatcher.start] ;
-  wrong_type_node |~~> [exit_failure] ;
+  type_checker.exit_failure |~~> [exit_failure] ;
   submatcher.exit_failure |~~> [exit_failure] ;
-  {start; exit_success= submatcher.exit_success; exit_failure}
+  {start= type_checker.start; exit_success= submatcher.exit_success; exit_failure}
 
 
-and translate_pattern_nil env value : Block.t =
-  let id = mk_fresh_id () in
-  let start = Node.make_stmt env [has_type env ~result:id ~value Nil] in
-  let exit_success = Node.make_if env true (Var id) in
-  let exit_failure = Node.make_if env false (Var id) in
-  start |~~> [exit_success; exit_failure] ;
-  {start; exit_success; exit_failure}
-
+and translate_pattern_nil env value : Block.t = check_type env value Nil
 
 and translate_pattern_match (env : (_, _) Env.t) value pattern body : Block.t =
   (* A pattern like [P1 = P2] means comparing both P1 and P2 against the value.
@@ -158,10 +152,6 @@ and translate_pattern_match (env : (_, _) Env.t) value pattern body : Block.t =
 
 
 and translate_pattern_map (env : (_, _) Env.t) value updates : Block.t =
-  let is_right_type_id = mk_fresh_id () in
-  let start = Node.make_stmt env [has_type env ~result:is_right_type_id ~value Map] in
-  let right_type_node = Node.make_if env true (Var is_right_type_id) in
-  let wrong_type_node = Node.make_if env false (Var is_right_type_id) in
   (* For each update, check if key is there and if yes, match against value *)
   let make_submatcher (one_update : Ast.association) =
     let has_key_id = mk_fresh_id () in
@@ -187,11 +177,13 @@ and translate_pattern_map (env : (_, _) Env.t) value updates : Block.t =
     let match_value_block = translate_pattern env value_id one_update.value in
     Block.all env [key_expr_block; has_key_block; lookup_block; match_value_block]
   in
+  let type_checker = check_type env value Map in
   let submatchers = Block.all env (List.map ~f:make_submatcher updates) in
-  start |~~> [right_type_node; wrong_type_node] ;
-  right_type_node |~~> [submatchers.start] ;
-  wrong_type_node |~~> [submatchers.exit_failure] ;
-  {start; exit_success= submatchers.exit_success; exit_failure= submatchers.exit_failure}
+  type_checker.exit_success |~~> [submatchers.start] ;
+  type_checker.exit_failure |~~> [submatchers.exit_failure] ;
+  { start= type_checker.start
+  ; exit_success= submatchers.exit_success
+  ; exit_failure= submatchers.exit_failure }
 
 
 and translate_pattern_record_index (env : (_, _) Env.t) value name field : Block.t =
@@ -229,11 +221,8 @@ and translate_pattern_record_update (env : (_, _) Env.t) value name updates : Bl
 
 
 and translate_pattern_tuple env value exprs : Block.t =
-  let is_right_type_id = mk_fresh_id () in
   let tuple_typ : ErlangTypeName.t = Tuple (List.length exprs) in
-  let start = Node.make_stmt env [has_type env ~result:is_right_type_id ~value tuple_typ] in
-  let right_type_node = Node.make_if env true (Var is_right_type_id) in
-  let wrong_type_node = Node.make_if env false (Var is_right_type_id) in
+  let type_checker = check_type env value tuple_typ in
   let value_ids = List.map ~f:(function _ -> mk_fresh_id ()) exprs in
   let field_names = ErlangTypeName.tuple_field_names (List.length exprs) in
   let load_instructions =
@@ -249,12 +238,11 @@ and translate_pattern_tuple env value exprs : Block.t =
   in
   let submatcher = Block.all env matchers in
   let exit_failure = Node.make_nop env in
-  start |~~> [right_type_node; wrong_type_node] ;
-  right_type_node |~~> [unpack_node] ;
+  type_checker.exit_success |~~> [unpack_node] ;
   unpack_node |~~> [submatcher.start] ;
-  wrong_type_node |~~> [exit_failure] ;
+  type_checker.exit_failure |~~> [exit_failure] ;
   submatcher.exit_failure |~~> [exit_failure] ;
-  {start; exit_success= submatcher.exit_success; exit_failure}
+  {start= type_checker.start; exit_success= submatcher.exit_success; exit_failure}
 
 
 and translate_pattern_unary_expression (env : (_, _) Env.t) value line simple_expression : Block.t =
@@ -658,14 +646,10 @@ and translate_expression_map_create (env : (_, _) Env.t) ret_var updates : Block
 and translate_expression_map_update (env : (_, _) Env.t) ret_var map updates : Block.t =
   let map_id, map_block = translate_expression_to_fresh_id env map in
   let check_map_type_block : Block.t =
-    let is_right_type_id = mk_fresh_id () in
-    let start = Node.make_stmt env [has_type env ~result:is_right_type_id ~value:map_id Map] in
-    let right_type_node = Node.make_if env true (Var is_right_type_id) in
-    let wrong_type_node = Node.make_if env false (Var is_right_type_id) in
+    let type_checker = check_type env map_id Map in
     let crash_node = Node.make_fail env BuiltinDecl.__erlang_error_badmap in
-    start |~~> [right_type_node; wrong_type_node] ;
-    wrong_type_node |~~> [crash_node] ;
-    {start; exit_success= right_type_node; exit_failure= crash_node}
+    type_checker.exit_failure |~~> [crash_node] ;
+    {start= type_checker.start; exit_success= type_checker.exit_success; exit_failure= crash_node}
   in
   (* Translate updates one-by-one, also check key if exact association *)
   let translate_update (one_update : Ast.association) =
