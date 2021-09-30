@@ -1800,30 +1800,33 @@ module Erlang = struct
         result
 
 
+  (** Assumes that the argument is a Cons and loads the head and tail *)
+  let load_head_tail cons astate path location =
+    let+ astate = prune_type cons Cons astate in
+    let astate, _, head = load_field path cons_head_field location cons astate in
+    let astate, _, tail = load_field path cons_tail_field location cons astate in
+    (head, tail, astate)
+
+
+  (** Assumes that a list is of given length and reads the elements *)
+  let rec assume_and_deconstruct list length astate path location =
+    match length with
+    | 0 ->
+        let+ astate = prune_type list Nil astate in
+        ([], astate)
+    | _ ->
+        let* hd, tl, astate = load_head_tail list astate path location in
+        let+ elems, astate = assume_and_deconstruct tl (length - 1) astate path location in
+        (hd :: elems, astate)
+
+
+  let foldResult ~init fs = List.fold ~init ~f:(fun r f -> Result.bind r ~f) fs
+
   let list_reverse list : model =
    fun {location; path; ret= ret_id, _} astate ->
-    (* Assumes that the argument is a Cons and loads the head and tail *)
-    let load_head_tail cons astate =
-      let+ astate = prune_type cons Cons astate in
-      let astate, _, head = load_field path cons_head_field location cons astate in
-      let astate, _, tail = load_field path cons_tail_field location cons astate in
-      (head, tail, astate)
-    in
-    (* Assumes that a list is of given length and reads the elements *)
-    let rec assume_and_deconstruct list length astate =
-      match length with
-      | 0 ->
-          let+ astate = prune_type list Nil astate in
-          ([], astate)
-      | _ ->
-          let* hd, tl, astate = load_head_tail list astate in
-          let+ elems, astate = assume_and_deconstruct tl (length - 1) astate in
-          (hd :: elems, astate)
-    in
-    let foldResult ~init fs = List.fold ~init ~f:(fun r f -> Result.bind r ~f) fs in
     (* Makes an abstract state corresponding to reversing a list of given length *)
     let mk_astate_rev length =
-      let<*> elems, astate = assume_and_deconstruct list length astate in
+      let<*> elems, astate = assume_and_deconstruct list length astate path location in
       let<+> reversed, astate =
         foldResult
           ~init:(Ok (make_nil_no_return astate location))
@@ -1833,7 +1836,24 @@ module Erlang = struct
       in
       PulseOperations.write_id ret_id reversed astate
     in
-    List.concat (List.init Config.erlang_reverse_unfold_depth ~f:mk_astate_rev)
+    List.concat (List.init Config.erlang_list_unfold_depth ~f:mk_astate_rev)
+
+
+  let list_append2 list1 list2 : model =
+   fun {location; path; ret= ret_id, _} astate ->
+    (* Makes an abstract state corresponding to appending to a list of given length *)
+    let mk_astate_concat length =
+      let<*> elems, astate = assume_and_deconstruct list1 length astate path location in
+      let<+> concatenated, astate =
+        foldResult
+          ~init:(Ok (list2, astate))
+          (List.map
+             ~f:(fun hd (tl, astate) -> make_cons_no_return astate path location hd tl)
+             (List.rev elems) )
+      in
+      PulseOperations.write_id ret_id concatenated astate
+    in
+    List.concat (List.init Config.erlang_list_unfold_depth ~f:mk_astate_concat)
 
 
   let make_tuple (args : 'a ProcnameDispatcher.Call.FuncArg.t list) : model =
@@ -2088,6 +2108,8 @@ module ProcNameDispatcher = struct
         ; +BuiltinDecl.(match_builtin exit) <>--> Misc.early_exit
         ; +BuiltinDecl.(match_builtin __erlang_list_reverse)
           <>$ capt_arg_payload $--> Erlang.list_reverse
+        ; +BuiltinDecl.(match_builtin __erlang_list_append2)
+          <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.list_append2
         ; +BuiltinDecl.(match_builtin __erlang_make_cons)
           <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.make_cons
         ; +BuiltinDecl.(match_builtin __erlang_make_tuple) &++> Erlang.make_tuple
@@ -2309,6 +2331,7 @@ module ProcNameDispatcher = struct
           $--> StdVector.invalidate_references ShrinkToFit
         ; -"std" &:: "vector" &:: "push_back" <>$ capt_arg_payload $+...$--> StdVector.push_back
         ; -"std" &:: "vector" &:: "empty" <>$ capt_arg_payload $+...$--> StdVector.empty
+        ; -"lists" &:: "append" <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.list_append2
         ; -"lists" &:: "reverse" <>$ capt_arg_payload $--> Erlang.list_reverse
         ; -"maps" &:: "is_key" <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.map_is_key
         ; -"maps" &:: "get" <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.map_get

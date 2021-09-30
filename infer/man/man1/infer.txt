@@ -637,8 +637,8 @@ OPTIONS
            files usually come from a previous run with --debug.       
     See also infer-capture(1).
 
-       --erlang-reverse-unfold-depth int
-           Unfold Erlang lists:reverse up to depth int           See also infer-analyze(1).
+       --erlang-list-unfold-depth int
+           Unfold Erlang lists up to depth int           See also infer-analyze(1).
 
        --erlang-skip-rebar3
            Activates: Skip running rebar, to save time. It is useful together

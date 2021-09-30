@@ -21,7 +21,35 @@
     test_reverse3_Ok/0,
     test_reverse3_Bad/0,
     test_reverse4_Ok/0,
-    fn_test_reverse4_Bad/0
+    fn_test_reverse4_Bad/0,
+    test_listadd0_Ok/0,
+    test_listadd0_Bad/0,
+    test_listadd0a_Ok/0,
+    test_listadd0a_Bad/0,
+    test_listadd1_Ok/0,
+    test_listadd1_Bad/0,
+    test_listadd2_Ok/0,
+    test_listadd2_Bad/0,
+    test_listadd2a_Ok/0,
+    test_listadd2a_Bad/0,
+    test_listadd3_Ok/0,
+    test_listadd3_Bad/0,
+    test_listadd4_Ok/0,
+    fn_test_listadd4_Bad/0,
+    test_listappend0_Ok/0,
+    test_listappend0_Bad/0,
+    test_listappend0a_Ok/0,
+    test_listappend0a_Bad/0,
+    test_listappend1_Ok/0,
+    test_listappend1_Bad/0,
+    test_listappend2_Ok/0,
+    test_listappend2_Bad/0,
+    test_listappend2a_Ok/0,
+    test_listappend2a_Bad/0,
+    test_listappend3_Ok/0,
+    test_listappend3_Bad/0,
+    test_listappend4_Ok/0,
+    fn_test_listappend4_Bad/0
 ]).
 
 % Call this method with warn(1) to trigger a warning to expect
@@ -142,10 +170,208 @@ test_reverse4_Ok() ->
         _ -> warn(1)
     end.
 
-% Known false negative
+% Known false negative (list too long)
 fn_test_reverse4_Bad() ->
     L = lists:reverse([1234, 567, 89, 0]),
     case L of
         [0, 89, 567, 1234] -> warn(1);
+        _ -> ok
+    end.
+
+test_listadd0_Ok() ->
+    L = [] ++ [1, 2],
+    case L of
+        [1, 2] -> ok;
+        _ -> warn(1)
+    end.
+
+test_listadd0_Bad() ->
+    L = [] ++ [1, 2],
+    case L of
+        [1, 2] -> warn(1);
+        _ -> ok
+    end.
+
+test_listadd0a_Ok() ->
+    L = [] ++ [],
+    case L of
+        [] -> ok;
+        _ -> warn(1)
+    end.
+
+test_listadd0a_Bad() ->
+    L = [] ++ [],
+    case L of
+        [] -> warn(1);
+        _ -> ok
+    end.
+
+test_listadd1_Ok() ->
+    L = [1] ++ [2, 3],
+    case L of
+        [1, 2, 3] -> ok;
+        _ -> warn(1)
+    end.
+
+test_listadd1_Bad() ->
+    L = [1] ++ [2, 3],
+    case L of
+        [1, 2, 3] -> warn(1);
+        _ -> ok
+    end.
+
+test_listadd2_Ok() ->
+    L = [1, 2] ++ [3],
+    case L of
+        [1, 2, 3] -> ok;
+        _ -> warn(1)
+    end.
+
+test_listadd2_Bad() ->
+    L = [1, 2] ++ [3],
+    case L of
+        [1, 2, 3] -> warn(1);
+        _ -> ok
+    end.
+
+test_listadd2a_Ok() ->
+    L = [1, 2] ++ [],
+    case L of
+        [1, 2] -> ok;
+        _ -> warn(1)
+    end.
+
+test_listadd2a_Bad() ->
+    L = [1, 2] ++ [],
+    case L of
+        [1, 2] -> warn(1);
+        _ -> ok
+    end.
+
+test_listadd3_Ok() ->
+    L = [1, 2, 3] ++ [4, 5],
+    case L of
+        [1, 2, 3, 4, 5] -> ok;
+        _ -> warn(1)
+    end.
+
+test_listadd3_Bad() ->
+    L = [1, 2, 3] ++ [4, 5],
+    case L of
+        [1, 2, 3, 4, 5] -> warn(1);
+        _ -> ok
+    end.
+
+test_listadd4_Ok() ->
+    L = [1, 2, 3, 4] ++ [5],
+    case L of
+        [1, 2, 3, 4, 5] -> ok;
+        _ -> warn(1)
+    end.
+
+% Known false negative (list too long)
+fn_test_listadd4_Bad() ->
+    L = [1, 2, 3, 4] ++ [5],
+    case L of
+        [1, 2, 3, 4, 5] -> warn(1);
+        _ -> ok
+    end.
+
+test_listappend0_Ok() ->
+    L = lists:append([], [1, 2]),
+    case L of
+        [1, 2] -> ok;
+        _ -> warn(1)
+    end.
+
+test_listappend0_Bad() ->
+    L = lists:append([], [1, 2]),
+    case L of
+        [1, 2] -> warn(1);
+        _ -> ok
+    end.
+
+test_listappend0a_Ok() ->
+    L = lists:append([], []),
+    case L of
+        [] -> ok;
+        _ -> warn(1)
+    end.
+
+test_listappend0a_Bad() ->
+    L = lists:append([], []),
+    case L of
+        [] -> warn(1);
+        _ -> ok
+    end.
+
+test_listappend1_Ok() ->
+    L = lists:append([1], [2, 3]),
+    case L of
+        [1, 2, 3] -> ok;
+        _ -> warn(1)
+    end.
+
+test_listappend1_Bad() ->
+    L = lists:append([1], [2, 3]),
+    case L of
+        [1, 2, 3] -> warn(1);
+        _ -> ok
+    end.
+
+test_listappend2_Ok() ->
+    L = lists:append([1, 2], [3]),
+    case L of
+        [1, 2, 3] -> ok;
+        _ -> warn(1)
+    end.
+
+test_listappend2_Bad() ->
+    L = lists:append([1, 2], [3]),
+    case L of
+        [1, 2, 3] -> warn(1);
+        _ -> ok
+    end.
+
+test_listappend2a_Ok() ->
+    L = lists:append([1, 2], []),
+    case L of
+        [1, 2] -> ok;
+        _ -> warn(1)
+    end.
+
+test_listappend2a_Bad() ->
+    L = lists:append([1, 2], []),
+    case L of
+        [1, 2] -> warn(1);
+        _ -> ok
+    end.
+
+test_listappend3_Ok() ->
+    L = lists:append([1, 2, 3], [4, 5]),
+    case L of
+        [1, 2, 3, 4, 5] -> ok;
+        _ -> warn(1)
+    end.
+
+test_listappend3_Bad() ->
+    L = lists:append([1, 2, 3], [4, 5]),
+    case L of
+        [1, 2, 3, 4, 5] -> warn(1);
+        _ -> ok
+    end.
+
+test_listappend4_Ok() ->
+    L = lists:append([1, 2, 3, 4], [5]),
+    case L of
+        [1, 2, 3, 4, 5] -> ok;
+        _ -> warn(1)
+    end.
+
+% Known false negative (list too long)
+fn_test_listappend4_Bad() ->
+    L = lists:append([1, 2, 3, 4], [5]),
+    case L of
+        [1, 2, 3, 4, 5] -> warn(1);
         _ -> ok
     end.

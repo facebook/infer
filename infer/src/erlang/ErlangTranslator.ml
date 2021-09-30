@@ -450,6 +450,13 @@ and translate_expression_binary_operator (env : (_, _) Env.t) ret_var e1 (op : A
       make_simple_eager Div
   | Less ->
       make_simple_eager Lt
+  | ListAdd ->
+      let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_list_append2) in
+      let args : (Exp.t * Typ.t) list = [(Var id1, any_typ); (Var id2, any_typ)] in
+      let call_instr =
+        Sil.Call ((ret_var, any_typ), fun_exp, args, env.location, CallFlags.default)
+      in
+      Block.all env [block1; block2; Block.make_instruction env [call_instr]]
   | Mul ->
       make_simple_eager (Mult None)
   | Or ->

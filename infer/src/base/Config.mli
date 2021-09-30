@@ -307,7 +307,7 @@ val erlang_ast_dir : string option
 
 val erlang_skip_rebar3 : bool
 
-val erlang_reverse_unfold_depth : int
+val erlang_list_unfold_depth : int
 
 val fail_on_bug : bool
 
