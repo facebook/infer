@@ -703,7 +703,12 @@ let rec norm_ s q =
     invariant q']
 
 let norm s q =
-  [%Trace.call fun {pf} -> pf "@ @[%a@]@ %a" Context.Subst.pp s pp_raw q]
+  [%Trace.call fun {pf} ->
+    pf "@ @[%a@]@ %a" Context.Subst.pp s pp_raw q ;
+    assert (
+      let unbound = Var.Set.diff (Context.Subst.fv s) q.us in
+      Var.Set.is_empty unbound
+      || fail "unbound subst vars: %a" Var.Set.pp unbound () )]
   ;
   (if Context.Subst.is_empty s then q else norm_ s q)
   |>
@@ -812,7 +817,7 @@ let remove_absent_xs ks q =
     in
     {q with xs; djns}
 
-let rec simplify_ us rev_xss survived ancestor_subst q =
+let rec simplify_ us ancestor_xs rev_xss survived ancestor_subst q =
   [%Trace.call fun {pf} ->
     pf "@ %a@ %a@ %a" pp_vss (List.rev rev_xss) Context.Subst.pp
       ancestor_subst pp_raw q]
@@ -828,12 +833,12 @@ let rec simplify_ us rev_xss survived ancestor_subst q =
   ( if Context.Subst.is_empty subst then q0
   else
     (* normalize context wrt solutions *)
-    let union_xss = Var.Set.union_list rev_xss in
+    let union_xss = Var.Set.union xs ancestor_xs in
     let wrt = Var.Set.union us union_xss in
     let fresh, ctx, removed =
       Context.apply_and_elim ~wrt union_xss subst q.ctx
     in
-    let q = {(extend_us fresh q) with ctx} in
+    let q = {(extend_us (Var.Set.union fresh ancestor_xs) q) with ctx} in
     (* normalize stem wrt both ancestor and current solutions *)
     let stem =
       (* opt: ctx already normalized so just preserve it *)
@@ -847,7 +852,9 @@ let rec simplify_ us rev_xss survived ancestor_subst q =
       in
       let djns =
         List.map q.djns ~f:(fun djn ->
-            orN (List.map ~f:(simplify_ us rev_xss survived subst) djn) )
+            orN
+              (List.map djn
+                 ~f:(simplify_ us union_xss rev_xss survived subst) ) )
       in
       let q = starN (stem :: djns) in
       if is_false q then false_ q.us
@@ -855,10 +862,7 @@ let rec simplify_ us rev_xss survived ancestor_subst q =
         let removed = Var.Set.diff removed survived in
         let removed =
           if Var.Set.is_empty removed then Var.Set.empty
-          else (
-            (* opt: removed already disjoint from ctx, so ignore_ctx *)
-            assert (Var.Set.disjoint removed (Context.fv q.ctx)) ;
-            Var.Set.diff removed (fv ~ignore_ctx:() (elim_exists q.xs q)) )
+          else Var.Set.diff removed (fv (elim_exists q.xs q))
         in
         (* removed may not contain all variables stem_subst has solutions
            for, so the equations in [∃ removed. stem_subst] that are not
@@ -885,9 +889,8 @@ let simplify q =
     let q = freshen_nested_xs Var.Set.empty q in
     let q = propagate_context Var.Set.empty Context.empty q in
     if is_false q then false_ q.us
-    else
-      let q = simplify_ q.us [] Var.Set.empty Context.Subst.empty q in
-      q )
+    else simplify_ q.us Var.Set.empty [] Var.Set.empty Context.Subst.empty q
+  )
   |>
   [%Trace.retn fun {pf} q' ->
     pf "%a" pp_raw q' ;
