@@ -17,6 +17,43 @@ let strong_unsat = false
 type seg = {loc: Term.t; bas: Term.t; len: Term.t; siz: Term.t; cnt: Term.t}
 [@@deriving compare, equal, sexp]
 
+module Seg = struct
+  type t = seg [@@deriving compare, equal, sexp]
+end
+
+module Segs : sig
+  type t [@@deriving compare, equal, sexp]
+
+  val empty : t
+  val of_ : seg -> t
+  val remove : seg -> t -> t
+  val union : t -> t -> t option
+  val is_empty : t -> bool
+  val map : t -> f:(seg -> seg) -> t option
+  val filter : t -> f:(seg -> bool) -> t
+  val fold : t -> 's -> f:(seg -> 's -> 's) -> 's
+  val to_iter : t -> seg iter
+  val to_list : t -> seg list
+end = struct
+  include Set.Make (Seg)
+  include Provide_of_sexp (Seg)
+
+  let add x s =
+    let s' = add x s in
+    if s' == s then None else Some s'
+
+  let union s t = if disjoint s t then Some (union s t) else None
+
+  let map s ~f =
+    let s, ys =
+      fold s (s, []) ~f:(fun x (s, ys) ->
+          let y = f x in
+          if y == x then (s, ys) else (remove x s, y :: ys) )
+    in
+    List.fold ys (Some s) ~f:(fun y -> function
+      | Some s -> add y s | None -> None )
+end
+
 module T0 = struct
   type compare [@@deriving compare, equal, sexp]
 
@@ -25,7 +62,7 @@ module T0 = struct
     ; xs: Var.Set.t
     ; ctx: Context.t [@ignore]
     ; pure: Formula.t
-    ; heap: seg list
+    ; heap: Segs.t
     ; djns: disjunction list }
   [@@deriving compare, equal, sexp]
 
@@ -53,7 +90,7 @@ let emp =
   ; xs= Var.Set.empty
   ; ctx= Context.empty
   ; pure= Formula.tt
-  ; heap= []
+  ; heap= Segs.empty
   ; djns= [] }
 
 let false_ us =
@@ -85,7 +122,7 @@ let fold_vars_seg seg s ~f =
 let fold_vars_stem ?ignore_ctx ?ignore_pure
     {us= _; xs= _; ctx; pure; heap; djns= _} s ~f =
   let unless flag f s = if Option.is_some flag then s else f s in
-  List.fold ~f:(fold_vars_seg ~f) heap s
+  Segs.fold ~f:(fold_vars_seg ~f) heap s
   |> unless ignore_pure (Iter.fold ~f (Formula.vars pure))
   |> unless ignore_ctx (Iter.fold ~f (Context.vars ctx))
 
@@ -234,7 +271,7 @@ let rec pp_ ?var_strength ?vs ancestor_xs parent_ctx fs
             pure ;
           false )
       in
-      if List.is_empty heap then
+      if Segs.is_empty heap then
         Format.fprintf fs
           ( if first then if List.is_empty djns then "  emp" else ""
           else "@ @<5>∧ emp" )
@@ -242,8 +279,8 @@ let rec pp_ ?var_strength ?vs ancestor_xs parent_ctx fs
         pp_heap x
           ~pre:(if first then "  " else "@ @<2>∧ ")
           (if Option.is_some var_strength then ctx else emp.ctx)
-          fs heap ;
-      let first = first && List.is_empty heap in
+          fs (Segs.to_list heap) ;
+      let first = first && Segs.is_empty heap in
       List.pp
         ~pre:(if first then "  " else "@ * ")
         "@ * "
@@ -307,7 +344,7 @@ let rec invariant q =
     | [djn] when Set.is_empty djn ->
         assert (Context.is_unsat ctx) ;
         assert (Formula.equal Formula.ff pure) ;
-        assert (List.is_empty heap)
+        assert (Segs.is_empty heap)
     | _ ->
         assert (not (Context.is_unsat ctx)) ;
         assert (not (Formula.equal Formula.ff pure)) ;
@@ -328,12 +365,12 @@ let rec invariant q =
 let is_emp q =
   Context.is_empty q.ctx
   && Formula.equal Formula.tt q.pure
-  && List.is_empty q.heap
+  && Segs.is_empty q.heap
   && List.is_empty q.djns
 
 (** (incomplete syntactic) test that all satisfying heaps are empty *)
 let rec is_empty q =
-  List.is_empty q.heap && List.for_all ~f:(Set.for_all ~f:is_empty) q.djns
+  Segs.is_empty q.heap && List.for_all ~f:(Set.for_all ~f:is_empty) q.djns
 
 (** syntactically inconsistent *)
 let is_false q = match q.djns with [djn] -> Set.is_empty djn | _ -> false
@@ -388,17 +425,19 @@ let rec map ~f_sjn ~f_ctx ~f_trm ~f_fml
       in
       if List.exists ~f:Set.is_empty djns then false_ us
       else
-        let heap = List.map_endo heap ~f:(map_seg ~f:f_trm) in
-        if
-          ctx == q.ctx
-          && pure == q.pure
-          && heap == q.heap
-          && djns == q.djns
-          && Var.Set.is_empty xs
-        then q
-        else
-          exists_fresh xs
-            (List.fold ~f:star hoisted {q with ctx; pure; heap; djns})
+        match Segs.map heap ~f:(map_seg ~f:f_trm) with
+        | None -> false_ us
+        | Some heap ->
+            if
+              ctx == q.ctx
+              && pure == q.pure
+              && heap == q.heap
+              && djns == q.djns
+              && Var.Set.is_empty xs
+            then q
+            else
+              exists_fresh xs
+                (List.fold ~f:star hoisted {q with ctx; pure; heap; djns})
 
 (** primitive application of a substitution, ignores us and xs, may violate
     invariant *)
@@ -480,21 +519,24 @@ and star q1 q2 =
     let {us= us1; xs= xs1; ctx= c1; pure= p1; heap= h1; djns= d1} = q1 in
     let {us= us2; xs= xs2; ctx= c2; pure= p2; heap= h2; djns= d2} = q2 in
     assert (Var.Set.equal us (Var.Set.union us1 us2)) ;
-    let xs, ctx =
-      Context.union (Var.Set.union us (Var.Set.union xs1 xs2)) c1 c2
-    in
-    if Context.is_unsat ctx then false_ us
-    else
-      let pure = Formula.and_ p1 p2 in
-      if Formula.equal Formula.ff pure then false_ us
-      else
-        exists_fresh xs
-          { us
-          ; xs= Var.Set.union xs1 xs2
-          ; ctx
-          ; pure
-          ; heap= List.append h1 h2
-          ; djns= List.append d1 d2 }
+    match Segs.union h1 h2 with
+    | None -> false_ us
+    | Some heap ->
+        let xs, ctx =
+          Context.union (Var.Set.union us (Var.Set.union xs1 xs2)) c1 c2
+        in
+        if Context.is_unsat ctx then false_ us
+        else
+          let pure = Formula.and_ p1 p2 in
+          if Formula.equal Formula.ff pure then false_ us
+          else
+            exists_fresh xs
+              { us
+              ; xs= Var.Set.union xs1 xs2
+              ; ctx
+              ; pure
+              ; heap
+              ; djns= List.append d1 d2 }
 
 let starN = function
   | [] -> emp
@@ -507,13 +549,15 @@ let or_ q1 q2 =
   ( match (q1, q2) with
   | _ when is_false q1 -> extend_us q1.us q2
   | _ when is_false q2 -> extend_us q2.us q1
-  | ( ({djns= []; _} as q)
-    , ({us= _; xs; ctx= _; pure; heap= []; djns= [djn]} as d) )
-    when Var.Set.is_empty xs && Formula.(equal tt pure) ->
+  | ({djns= []; _} as q), ({us= _; xs; ctx= _; pure; heap; djns= [djn]} as d)
+    when Var.Set.is_empty xs
+         && Formula.(equal tt pure)
+         && Segs.is_empty heap ->
       {d with us= Var.Set.union q.us d.us; djns= [Set.add q djn]}
-  | ( ({us= _; xs; ctx= _; pure; heap= []; djns= [djn]} as d)
-    , ({djns= []; _} as q) )
-    when Var.Set.is_empty xs && Formula.(equal tt pure) ->
+  | ({us= _; xs; ctx= _; pure; heap; djns= [djn]} as d), ({djns= []; _} as q)
+    when Var.Set.is_empty xs
+         && Formula.(equal tt pure)
+         && Segs.is_empty heap ->
       {d with us= Var.Set.union q.us d.us; djns= [Set.add q djn]}
   | _ when equal q1 q2 -> q1
   | _ ->
@@ -521,7 +565,7 @@ let or_ q1 q2 =
       ; xs= Var.Set.empty
       ; ctx= Context.empty
       ; pure= Formula.tt
-      ; heap= []
+      ; heap= Segs.empty
       ; djns= [Set.add q1 (Set.of_ q2)] } )
   |>
   [%Trace.retn fun {pf} q ->
@@ -626,16 +670,14 @@ let subst sub q =
 let seg pt =
   let us = fv_seg pt in
   if Term.equal Term.zero pt.loc then false_ us
-  else {emp with us; heap= [pt]} |> check invariant
+  else {emp with us; heap= Segs.of_ pt} |> check invariant
 
 (** Update *)
 
-let rem_seg seg q =
-  {q with heap= List.remove_one_exn ~eq:( == ) seg q.heap}
-  |> check invariant
+let rem_seg seg q = {q with heap= Segs.remove seg q.heap} |> check invariant
 
 let filter_heap ~f q =
-  {q with heap= List.filter q.heap ~f} |> check invariant
+  {q with heap= Segs.filter q.heap ~f} |> check invariant
 
 (** Disjunctive-Normal Form *)
 
@@ -677,7 +719,8 @@ let rec pure_approx q =
     ( [ q.pure
       ; Formula.distinct
           (Array.of_list
-             (Term.zero :: List.map ~f:(fun seg -> seg.loc) q.heap) ) ]
+             (Segs.fold q.heap [Term.zero] ~f:(fun seg locs ->
+                  seg.loc :: locs ) ) ) ]
     |> List.fold q.djns ~f:(fun djn p ->
            Formula.orN
              (Set.fold ~f:(fun dj ps -> pure_approx dj :: ps) djn [])
@@ -701,7 +744,7 @@ let is_unsat_dnf q =
     let wrt = Var.Set.union wrt zs in
     let fml = Formula.and_ fml sjn.pure in
     let fml =
-      List.fold sjn.heap fml ~f:(fun seg ->
+      Segs.fold sjn.heap fml ~f:(fun seg ->
           Formula.and_ (Formula.dq0 seg.loc) )
     in
     (wrt, ctx, fml)

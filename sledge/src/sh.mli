@@ -17,13 +17,19 @@ type seg =
   ; siz: Term.t  (** size of segment / length of the contents *)
   ; cnt: Term.t  (** contents of segment, a sequence / byte array *) }
 
+module Segs : sig
+  type t
+
+  val to_iter : t -> seg iter
+end
+
 type starjunction = private
   { us: Var.Set.t  (** vocabulary / variable context of formula *)
   ; xs: Var.Set.t  (** existentially-bound variables *)
   ; ctx: Context.t
         (** first-order logical context induced by rest of formula *)
   ; pure: Formula.t  (** pure boolean constraints *)
-  ; heap: seg list  (** star-conjunction of segment atomic formulas *)
+  ; heap: Segs.t  (** star-conjunction of segment atomic formulas *)
   ; djns: disjunction list  (** star-conjunction of disjunctions *) }
 
 and disjunction
