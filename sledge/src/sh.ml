@@ -282,7 +282,7 @@ let rec invariant q =
       Var.Set.subset (fv q) ~of_:us
       || fail "unbound but free: %a" Var.Set.pp (Var.Set.diff (fv q) us) () ) ;
     Context.invariant ctx ;
-    ( match djns with
+    match djns with
     | [[]] ->
         assert (Context.is_unsat ctx) ;
         assert (Formula.equal Formula.ff pure) ;
@@ -290,11 +290,12 @@ let rec invariant q =
     | _ ->
         assert (not (Context.is_unsat ctx)) ;
         assert (not (Formula.equal Formula.ff pure)) ;
-        assert (not (List.exists djns ~f:List.is_empty)) ) ;
-    List.iter djns ~f:(fun djn ->
-        List.iter djn ~f:(fun sjn ->
-            assert (Var.Set.subset sjn.us ~of_:(Var.Set.union us xs)) ;
-            invariant sjn ) )
+        assert (not (List.exists djns ~f:List.is_empty)) ;
+        List.iter djns ~f:(fun djn ->
+            assert (List.length djn > 1) ;
+            List.iter djn ~f:(fun sjn ->
+                assert (Var.Set.subset sjn.us ~of_:(Var.Set.union us xs)) ;
+                invariant sjn ) )
   with exc ->
     let bt = Printexc.get_raw_backtrace () in
     [%Trace.info " %a" pp_raw q] ;
