@@ -527,6 +527,7 @@ let or_ q1 q2 =
     , ({djns= []; _} as q) )
     when Var.Set.is_empty xs && Formula.(equal tt pure) ->
       {d with us= Var.Set.union q.us d.us; djns= [q :: djn]}
+  | _ when equal q1 q2 -> q1
   | _ ->
       { us= Var.Set.union q1.us q2.us
       ; xs= Var.Set.empty
