@@ -768,6 +768,33 @@ let is_unsat q =
 
 (** Simplify *)
 
+let rec normalize_ q =
+  [%Trace.call fun {pf} -> pf "@ %a" pp_raw q]
+  ;
+  let q' =
+    map q ~f_sjn:normalize_
+      ~f_ctx:(fun x -> (Var.Set.empty, x))
+      ~f_trm:(Context.normalize q.ctx)
+      ~f_fml:(Formula.map_terms ~f:(Context.normalize q.ctx))
+  in
+  let pure = Context.fold_eqs ~f:Formula.and_ q.ctx q'.pure in
+  {q' with pure}
+  |>
+  [%Trace.retn fun {pf} q' ->
+    pf "%a" pp_raw q' ;
+    invariant q']
+
+let do_normalize = ref false
+
+let normalize q =
+  [%Trace.call fun {pf} -> pf "@ %a" pp_raw q]
+  ;
+  (if !do_normalize then normalize_ q else q)
+  |>
+  [%Trace.retn fun {pf} q' ->
+    pf "%a" pp_raw q' ;
+    invariant q']
+
 let rec norm_ s q =
   [%Trace.call fun {pf} -> pf "@ @[%a@]@ %a" Context.Subst.pp s pp_raw q]
   ;
@@ -919,7 +946,7 @@ let rec simplify_ us ancestor_xs rev_xss survived ancestor_subst q =
   (* try to solve equations in ctx for variables in xss *)
   let stem_subst = Context.solve_for_vars (us :: List.rev rev_xss) q.ctx in
   let subst = Context.Subst.compose ancestor_subst stem_subst in
-  ( if Context.Subst.is_empty subst then q0
+  ( if Context.Subst.is_empty subst then normalize q0
   else
     (* normalize context wrt solutions *)
     let union_xss = Var.Set.union xs ancestor_xs in
@@ -928,10 +955,12 @@ let rec simplify_ us ancestor_xs rev_xss survived ancestor_subst q =
       Context.apply_and_elim ~wrt union_xss subst q.ctx
     in
     let q = {(extend_us (Var.Set.union fresh ancestor_xs) q) with ctx} in
+    (* normalize stem wrt its context *)
+    let stem = normalize {q with djns= emp.djns} in
     (* normalize stem wrt both ancestor and current solutions *)
     let stem =
       (* opt: ctx already normalized so just preserve it *)
-      {(norm subst {q with djns= emp.djns; ctx= emp.ctx}) with ctx= q.ctx}
+      {(norm subst {stem with ctx= emp.ctx}) with ctx= q.ctx}
     in
     if strong_unsat && is_unsat stem then false_ stem.us
     else

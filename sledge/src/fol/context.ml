@@ -890,6 +890,7 @@ let implies r b =
   [%Trace.retn fun {pf} -> pf "%b"]
 
 let refutes r b = Fml.equal Fml.ff (canon_f r b)
+let fold_eqs x = Subst.fold_eqs x.rep
 
 let class_of r e =
   match Term.get_trm (normalize r e) with

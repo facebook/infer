@@ -133,6 +133,9 @@ let analyze =
   and seed =
     flag "seed" (optional int)
       ~doc:"<int> specify random number generator seed"
+  and normalize_states =
+    flag "normalize-states" no_arg
+      ~doc:"normalize states during symbolic execution"
   and no_simplify_states =
     flag "no-simplify-states" no_arg
       ~doc:"do not simplify states during symbolic execution"
@@ -172,6 +175,7 @@ let analyze =
     let module Analysis = Control.Make (Config) (Domain) (Queue) in
     (match seed with None -> Random.self_init () | Some n -> Random.init n) ;
     Llair.cct_schedule_points := cct_schedule_points ;
+    Sh.do_normalize := normalize_states ;
     Domain_sh.simplify_states := not no_simplify_states ;
     Option.iter dump_query ~f:(fun n -> Solver.dump_query := n) ;
     at_exit (fun () -> Report.coverage pgm) ;

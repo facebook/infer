@@ -7,6 +7,8 @@
 
 (** Symbolic Heap Formulas *)
 
+val do_normalize : bool ref
+
 open Fol
 
 (** Segment of memory. *)
