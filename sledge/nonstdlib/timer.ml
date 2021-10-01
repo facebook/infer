@@ -38,7 +38,7 @@ let stop_ t =
   t.count <- t.count + 1 ;
   (tms_utime, tms_stime)
 
-let stop t = if !enabled then stop_ t |> (ignore : float * float -> unit)
+let stop t = if !enabled then stop_ t |> ignore
 
 let stop_report t report =
   if !enabled then

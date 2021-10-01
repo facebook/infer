@@ -682,7 +682,7 @@ module Func = struct
               jmp.retreating <- tgt.retreating ;
               tgt
       in
-      let jump' jmp = ignore (jump jmp) in
+      let jump' jmp = jump jmp |> ignore in
       match src.term with
       | Switch {tbl; els; _} ->
           IArray.iter ~f:(fun (_, jmp) -> jump' jmp) tbl ;
@@ -699,7 +699,7 @@ module Func = struct
       | Return _ | Throw _ | Unreachable -> None
     in
     let resolve_parent_and_jumps block =
-      ignore (resolve_parent_and_jumps Block_label.Set.empty block)
+      resolve_parent_and_jumps Block_label.Set.empty block |> ignore
     in
     resolve_parent_and_jumps entry ;
     func |> check invariant
@@ -717,8 +717,7 @@ let set_derived_metadata functions =
     Function.Map.iter functions ~f:(fun func ->
         Func.iter_term func ~f:(fun term ->
             match term with
-            | Call {callee; _} ->
-                FuncQ.remove roots callee |> (ignore : [> ] -> unit)
+            | Call {callee; _} -> FuncQ.remove roots callee |> ignore
             | _ -> () ) ) ;
     roots
   in

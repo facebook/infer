@@ -24,8 +24,7 @@ let%test_module _ =
     [@@@warning "-32"]
 
     let infer_frame p xs q =
-      Solver.infer_frame p (Var.Set.of_list xs) q
-      |> (ignore : Sh.t option -> _)
+      Solver.infer_frame p (Var.Set.of_list xs) q |> ignore
 
     let check_frame p xs q =
       Solver.infer_frame p (Var.Set.of_list xs) q

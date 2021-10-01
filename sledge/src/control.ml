@@ -899,8 +899,7 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
           {ams with ctrl= {ams.ctrl with stk}; state= retn_state}
           wl
     | None ->
-        if Config.function_summaries then
-          summarize exit_state |> (ignore : D.t -> unit) ;
+        if Config.function_summaries then summarize exit_state |> ignore ;
         Work.add ~retreating:false
           {ams with ctrl= {dst= Terminated tid; src= block}}
           wl )
