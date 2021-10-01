@@ -418,7 +418,11 @@ let rec map ~f_sjn ~f_ctx ~f_trm ~f_fml
     else
       let djns, hoisted =
         List.partition_map_endo djns ~f:(fun djn ->
-            let djn' = Set.map ~f:f_sjn djn in
+            let djn' =
+              Set.filter_map djn ~f:(fun sjn ->
+                  let sjn' = f_sjn sjn in
+                  if is_false sjn' then None else Some sjn' )
+            in
             match Set.classify djn' with
             | One dj -> Right dj
             | _ -> Left djn' )
