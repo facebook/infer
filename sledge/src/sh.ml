@@ -374,6 +374,10 @@ let map ~f_sjn ~f_ctx ~f_trm ~f_fml ({us; xs= _; ctx; pure; heap; djns} as q)
 (** primitive application of a substitution, ignores us and xs, may violate
     invariant *)
 let rec apply_subst sub q =
+  [%trace]
+    ~call:(fun {pf} -> pf "@ @[%a@]@ %a" Var.Subst.pp sub pp q)
+    ~retn:(fun {pf} -> pf "%a" pp)
+  @@ fun () ->
   map q ~f_sjn:(rename sub)
     ~f_ctx:(fun r -> (Var.Set.empty, Context.rename r sub))
     ~f_trm:(Term.rename sub) ~f_fml:(Formula.rename sub)
@@ -483,8 +487,8 @@ let star q1 q2 =
   else if is_emp q2 then extend_us q2.us q1
   else
     let us = Var.Set.union q1.us q2.us in
-    let q1 = freshen_xs q1 ~wrt:(Var.Set.union us q2.xs) in
-    let q2 = freshen_xs q2 ~wrt:(Var.Set.union us q1.xs) in
+    let q1 = freshen_xs {q1 with us} ~wrt:(Var.Set.union us q2.xs) in
+    let q2 = freshen_xs {q2 with us} ~wrt:(Var.Set.union us q1.xs) in
     let {us= us1; xs= xs1; ctx= c1; pure= p1; heap= h1; djns= d1} = q1 in
     let {us= us2; xs= xs2; ctx= c2; pure= p2; heap= h2; djns= d2} = q2 in
     assert (Var.Set.equal us (Var.Set.union us1 us2)) ;
