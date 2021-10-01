@@ -664,18 +664,18 @@ let excise_dnf : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
   let from_minuend minuend remainders =
     [%trace]
       ~call:(fun {pf} -> pf "@ %a" Sh.pp minuend)
-      ~retn:(fun {pf} -> pf "%a" (Option.pp "%a" Sh.pp))
+      ~retn:(fun {pf} ->
+        pf "%a" (Option.pp "%a" (fun fs rs -> Sh.pp fs (Sh.orN rs))) )
     @@ fun () ->
     let zs, min = Sh.bind_exists minuend ~wrt:xs in
     let us = min.us in
     let+ remainder =
       List.find_map ~f:(excise_subtrahend us min zs) dnf_subtrahend
     in
-    Sh.or_ remainders remainder
+    remainder :: remainders
   in
-  Iter.fold_opt ~f:from_minuend
-    (Iter.of_list dnf_minuend)
-    (Sh.false_ (Var.Set.union minuend.us xs))
+  let+ rs = Iter.fold_opt ~f:from_minuend (Iter.of_list dnf_minuend) [] in
+  Sh.extend_us (Var.Set.union minuend.us xs) (Sh.orN rs)
 
 let query_count = ref (-1)
 
