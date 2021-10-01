@@ -40,6 +40,58 @@ let partition xs ~f = partition ~f xs
 let map xs ~f = map ~f xs
 let map_endo t ~f = map_endo map t ~f
 
+let rev_partition_map xs ~f =
+  let rec loop f ls rs = function
+    | [] -> (ls, rs)
+    | x :: xs -> (
+      match (f x : _ Either.t) with
+      | Left l -> loop f (l :: ls) rs xs
+      | Right r -> loop f ls (r :: rs) xs )
+  in
+  loop f [] [] xs
+
+let partition_map xs ~f =
+  let rev_ls, rev_rs = rev_partition_map xs ~f in
+  (rev rev_ls, rev rev_rs)
+
+let partition_map_endo xs ~f =
+  let change = ref false in
+  let xs', ys =
+    rev_partition_map xs ~f:(fun x ->
+        let z = f x in
+        ( match (z : _ Either.t) with
+        | Left x' when x' == x -> ()
+        | _ -> change := true ) ;
+        z )
+  in
+  if !change then (rev xs', rev ys) else (xs, rev ys)
+
+let fold_rev_partition_map xs init ~f =
+  let rec loop f s rev_ls rev_rs = function
+    | [] -> (rev_ls, rev_rs, s)
+    | x :: xs -> (
+      match (f x s : _ Either.t * _) with
+      | Left l, s -> loop f s (l :: rev_ls) rev_rs xs
+      | Right r, s -> loop f s rev_ls (r :: rev_rs) xs )
+  in
+  loop f init [] [] xs
+
+let fold_partition_map xs init ~f =
+  let rev_ls, rev_rs, s = fold_rev_partition_map xs init ~f in
+  (rev rev_ls, rev rev_rs, s)
+
+let fold_partition_map_endo xs init ~f =
+  let change = ref false in
+  let rev_ls, rev_rs, s =
+    fold_rev_partition_map xs init ~f:(fun x s ->
+        let y, s = f x s in
+        ( match (y : _ Either.t) with
+        | Left x' when x' == x -> ()
+        | _ -> change := true ) ;
+        (y, s) )
+  in
+  if !change then (rev rev_ls, rev rev_rs, s) else (xs, [], s)
+
 let rev_map_split xs ~f =
   fold_left xs ~init:([], []) ~f:(fun (ys, zs) x ->
       let y, z = f x in
