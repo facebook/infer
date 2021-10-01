@@ -66,6 +66,7 @@ struct
   let map s ~f = S.map f s
   let flat_map s ~f = S.fold (fun x s -> S.union (f x) s) s S.empty
   let filter s ~f = S.filter f s
+  let filter_map s ~f = S.filter_map f s
   let partition s ~f = S.partition f s
   let iter s ~f = S.iter f s
   let exists s ~f = S.exists f s

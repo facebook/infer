@@ -89,6 +89,10 @@ module type S = sig
   val map : t -> f:(elt -> elt) -> t
   val flat_map : t -> f:(elt -> t) -> t
   val filter : t -> f:(elt -> bool) -> t
+
+  val filter_map : t -> f:(elt -> elt option) -> t
+  (** Map [f] over a set, removing any element [e] where [f e = None]. *)
+
   val partition : t -> f:(elt -> bool) -> t * t
 
   (** {1 Traverse} *)
