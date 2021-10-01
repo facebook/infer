@@ -113,7 +113,9 @@ let var_strength ?(xs = Var.Set.empty) q =
   in
   var_strength_ xs m q
 
-let pp_chunk x fs (siz, cnt) = Term.ppx x fs (Term.sized ~siz ~seq:cnt)
+let pp_chunk x fs (siz, cnt) =
+  Format.fprintf fs "@[<2>@<1>⟨%a,%a@<1>⟩@]" (Term.ppx x) siz (Term.ppx x)
+    cnt
 
 let pp_seg x fs {loc; bas; len; siz; cnt} =
   let term_pp = Term.ppx x in
