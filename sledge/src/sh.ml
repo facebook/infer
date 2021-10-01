@@ -58,15 +58,15 @@ module T0 = struct
   type compare [@@deriving compare, equal, sexp]
 
   type starjunction =
-    { us: Var.Set.t
-    ; xs: Var.Set.t
-    ; ctx: Context.t [@ignore]
+    { heap: Segs.t
+    ; djns: disjunction list
     ; pure: Formula.t
-    ; heap: Segs.t
-    ; djns: disjunction list }
-  [@@deriving compare, equal, sexp]
+    ; xs: Var.Set.t
+    ; us: Var.Set.t
+    ; ctx: Context.t [@ignore] }
 
   and disjunction = (starjunction, compare) Set.t
+  [@@deriving compare, equal, sexp]
 
   type t = starjunction [@@deriving compare, equal, sexp]
 end

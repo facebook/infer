@@ -24,13 +24,13 @@ module Segs : sig
 end
 
 type starjunction = private
-  { us: Var.Set.t  (** vocabulary / variable context of formula *)
-  ; xs: Var.Set.t  (** existentially-bound variables *)
-  ; ctx: Context.t
-        (** first-order logical context induced by rest of formula *)
+  { heap: Segs.t  (** star-conjunction of segment atomic formulas *)
+  ; djns: disjunction list  (** star-conjunction of disjunctions *)
   ; pure: Formula.t  (** pure boolean constraints *)
-  ; heap: Segs.t  (** star-conjunction of segment atomic formulas *)
-  ; djns: disjunction list  (** star-conjunction of disjunctions *) }
+  ; xs: Var.Set.t  (** existentially-bound variables *)
+  ; us: Var.Set.t  (** vocabulary / variable context of formula *)
+  ; ctx: Context.t
+        (** first-order logical context induced by rest of formula *) }
 
 and disjunction
 

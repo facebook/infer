@@ -246,11 +246,11 @@ let%test_module _ =
   \- ∃ %a_1, %m_8 .
       %l_6 -[ %l_6, %m_8 )-> ⟨%m_8,%a_1⟩
 ) Solver.infer_frame:
-    ( (  %a_1 = %a_2
+    ( (  1 = %n_9 ∧ 16 = %m_8 ∧ (⟨8,%a_2⟩^⟨8,%a_3⟩) = %a_1 ∧ emp)
+    ∨ (  %a_1 = %a_2
        ∧ 2 = %n_9
        ∧ 16 = %m_8
        ∧ (%l_6 + 16) -[ %l_6, 16 )-> ⟨0,%a_3⟩)
-    ∨ (  1 = %n_9 ∧ 16 = %m_8 ∧ (⟨8,%a_2⟩^⟨8,%a_3⟩) = %a_1 ∧ emp)
     ) |}]
 
     (* Incompleteness: equivalent to above but using ≤ instead of ∨ *)
