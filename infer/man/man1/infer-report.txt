@@ -229,6 +229,7 @@ OPTIONS
              NIL_BLOCK_CALL (enabled by default),
              NIL_INSERTION_INTO_COLLECTION (enabled by default),
              NIL_MESSAGING_TO_NON_POD (enabled by default),
+             NO_MATCHING_BRANCH_IN_TRY (enabled by default),
              NO_MATCHING_CASE_CLAUSE (enabled by default),
              NO_MATCHING_FUNCTION_CLAUSE (enabled by default),
              NO_MATCH_OF_RHS (enabled by default),

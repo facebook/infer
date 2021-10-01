@@ -298,6 +298,8 @@ val no_matching_function_clause : t
 
 val no_true_branch_in_if : t
 
+val no_matching_branch_in_try : t
+
 val null_dereference : t
 
 val nullptr_dereference : t

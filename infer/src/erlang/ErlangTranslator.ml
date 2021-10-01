@@ -831,7 +831,7 @@ and translate_expression_trycatch (env : (_, _) Env.t) ret_var body ok_cases _ca
     | _ ->
         (* Ok cases present: treat as case expression *)
         let cases = Block.any env (List.map ~f:(translate_case_clause env [body_id]) ok_cases) in
-        let crash_node = Node.make_fail env BuiltinDecl.__erlang_error_case_clause in
+        let crash_node = Node.make_fail env BuiltinDecl.__erlang_error_try_clause in
         cases.exit_failure |~~> [crash_node] ;
         {cases with exit_failure= crash_node}
   in

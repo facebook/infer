@@ -42,6 +42,8 @@ let add_call call_and_loc = function
       ErlangError (Function_clause {calling_context= call_and_loc :: calling_context; location})
   | ErlangError (If_clause {calling_context; location}) ->
       ErlangError (If_clause {calling_context= call_and_loc :: calling_context; location})
+  | ErlangError (Try_clause {calling_context; location}) ->
+      ErlangError (Try_clause {calling_context= call_and_loc :: calling_context; location})
   | ReadUninitializedValue read ->
       ReadUninitializedValue {read with calling_context= call_and_loc :: read.calling_context}
 

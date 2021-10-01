@@ -27,6 +27,8 @@ val __erlang_error_function_clause : Procname.t
 
 val __erlang_error_if_clause : Procname.t
 
+val __erlang_error_try_clause : Procname.t
+
 val __erlang_list_append2 : Procname.t
 
 val __erlang_list_reverse : Procname.t

@@ -31,6 +31,7 @@ type erlang_error =
   | Case_clause of {calling_context: calling_context; location: Location.t}
   | Function_clause of {calling_context: calling_context; location: Location.t}
   | If_clause of {calling_context: calling_context; location: Location.t}
+  | Try_clause of {calling_context: calling_context; location: Location.t}
 [@@deriving compare, equal]
 
 type read_uninitialized_value = {calling_context: calling_context; trace: Trace.t}
@@ -65,6 +66,7 @@ let get_location = function
   | ErlangError (Case_clause {location})
   | ErlangError (Function_clause {location})
   | ErlangError (If_clause {location})
+  | ErlangError (Try_clause {location})
   | StackVariableAddressEscape {location} ->
       location
 
@@ -204,6 +206,8 @@ let get_message diagnostic =
       F.asprintf "%s no matching function clause at %a" pulse_start_msg Location.pp location
   | ErlangError (If_clause {calling_context= _; location}) ->
       F.asprintf "%s no true branch in if expression at %a" pulse_start_msg Location.pp location
+  | ErlangError (Try_clause {calling_context= _; location}) ->
+      F.asprintf "%s no matching branch in try at %a" pulse_start_msg Location.pp location
   | ReadUninitializedValue {calling_context; trace} ->
       let root_var =
         PulseTrace.find_map trace ~f:(function VariableDeclared (pvar, _) -> Some pvar | _ -> None)
@@ -361,6 +365,9 @@ let get_trace = function
   | ErlangError (If_clause {calling_context; location}) ->
       get_trace_calling_context calling_context
       @@ [Errlog.make_trace_element 0 location "no true branch in if expression here" []]
+  | ErlangError (Try_clause {calling_context; location}) ->
+      get_trace_calling_context calling_context
+      @@ [Errlog.make_trace_element 0 location "no matching branch in try here" []]
   | ReadUninitializedValue {calling_context; trace} ->
       get_trace_calling_context calling_context
       @@ Trace.add_to_errlog ~nesting:0
@@ -396,6 +403,8 @@ let get_issue_type = function
       IssueType.no_matching_function_clause
   | ErlangError (If_clause _) ->
       IssueType.no_true_branch_in_if
+  | ErlangError (Try_clause _) ->
+      IssueType.no_matching_branch_in_try
   | ReadUninitializedValue _ ->
       IssueType.uninitialized_value_pulse
   | StackVariableAddressEscape _ ->

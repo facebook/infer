@@ -1722,6 +1722,13 @@ module Erlang = struct
            {astate; diagnostic= ErlangError (If_clause {calling_context= []; location})} ) ]
 
 
+  let error_try_clause : model =
+   fun {location} astate ->
+    [ Error
+        (ReportableError
+           {astate; diagnostic= ErlangError (Try_clause {calling_context= []; location})} ) ]
+
+
   let write_field_and_deref path location ~struct_addr ~field_addr ~field_val field_name astate =
     let* astate =
       PulseOperations.write_field path location ~ref:struct_addr field_name ~obj:field_addr astate
@@ -2129,6 +2136,7 @@ module ProcNameDispatcher = struct
         ; +BuiltinDecl.(match_builtin __erlang_error_function_clause)
           <>--> Erlang.error_function_clause
         ; +BuiltinDecl.(match_builtin __erlang_error_if_clause) <>--> Erlang.error_if_clause
+        ; +BuiltinDecl.(match_builtin __erlang_error_try_clause) <>--> Erlang.error_try_clause
         ; +BuiltinDecl.(match_builtin __infer_initializer_list)
           <>$ capt_arg_payload
           $+...$--> Misc.id_first_arg ~desc:"infer_init_list"

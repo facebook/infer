@@ -37,6 +37,7 @@ type erlang_error =
   | Case_clause of {calling_context: calling_context; location: Location.t}
   | Function_clause of {calling_context: calling_context; location: Location.t}
   | If_clause of {calling_context: calling_context; location: Location.t}
+  | Try_clause of {calling_context: calling_context; location: Location.t}
 [@@deriving compare, equal, yojson_of]
 
 type read_uninitialized_value =
