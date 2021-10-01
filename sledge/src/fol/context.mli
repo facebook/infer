@@ -90,6 +90,7 @@ module Subst : sig
   val empty : t
   val compose : t -> t -> t
   val is_empty : t -> bool
+  val fv : t -> Var.Set.t
   val fold_eqs : t -> 's -> f:(Formula.t -> 's -> 's) -> 's
 
   val subst : t -> Term.t -> Term.t

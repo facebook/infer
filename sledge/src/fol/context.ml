@@ -23,6 +23,7 @@ module Subst : sig
   val canon : t -> Trm.t -> Trm.t
   val subst : t -> Term.t -> Term.t
   val fold_eqs : t -> 's -> f:(Fml.t -> 's -> 's) -> 's
+  val fv : t -> Var.Set.t
   val compose1 : key:Trm.t -> data:Trm.t -> t -> t
   val compose : t -> t -> t
   val map_entries : f:(Trm.t -> Trm.t) -> t -> t
@@ -38,6 +39,12 @@ end = struct
 
   let fold_eqs s z ~f =
     Trm.Map.fold ~f:(fun ~key ~data -> f (Fml.eq key data)) s z
+
+  let trms s =
+    Iter.flat_map ~f:(fun (k, v) -> Iter.doubleton k v) (Trm.Map.to_iter s)
+
+  let vars s = Iter.flat_map ~f:Trm.vars (trms s)
+  let fv s = Var.Set.of_iter (vars s)
 
   (** apply a substitution, considered as the identity function overridden
       for finitely-many terms *)
