@@ -31,8 +31,11 @@ module LineageGraph = struct
   type flow_kind =
     | Direct  (** Immediate copy; e.g., assigment or passing an argument *)
     | Summary  (** Summarizes the effect of a procedure call *)
+  [@@deriving compare, sexp]
 
-  type flow = {source: data; target: data; kind: flow_kind}
+  let max_flow_kind flow_a flow_b = if compare_flow_kind flow_a flow_b > 0 then flow_a else flow_b
+
+  type flow = {source: data; target: data; kind: flow_kind} [@@deriving compare, sexp]
 
   let flow ?(kind = Direct) ~source ~target () = {source; target; kind}
 
@@ -68,6 +71,13 @@ module LineageGraph = struct
     Format.fprintf fmt "@;@[<v 2>LineageGraph@;@[%a@]@]" (Format.pp_print_list pp_flow) flows
 end
 
+(** Helper function. *)
+let get_formals proc_desc : Var.t list =
+  let pname = Procdesc.get_proc_name proc_desc in
+  let f (var, _typ) = Var.of_pvar (Pvar.mk var pname) in
+  List.map ~f (Procdesc.get_formals proc_desc)
+
+
 module Summary = struct
   (** TITO stands for "taint-in taint-out". In this context a tito argument is one that has a path
       to the return node, without going through call edges; more precisely, [i] is a tito argument
@@ -88,17 +98,28 @@ module Summary = struct
       LineageGraph.pp graph
 
 
-  (** Given a graph, computes tito_arguments, and makes a summary. *)
-  let of_graph graph =
-    (* Construct an adjacency list representation of the reversed graph. *)
-    let module N = struct
-      module T = struct
-        type t = LineageGraph.data [@@deriving compare, sexp]
-      end
+  (** Make [LineageGraph.data] usable in Maps/Sets. *)
+  module Vertex = struct
+    module T = struct
+      type t = LineageGraph.data [@@deriving compare, sexp]
+    end
 
-      include T
-      include Comparable.Make (T)
-    end in
+    include T
+    include Comparable.Make (T)
+  end
+
+  (** Make [LineageGraph.flow] usable in Maps/Sets. *)
+  module Edge = struct
+    module T = struct
+      type t = LineageGraph.flow [@@deriving compare, sexp]
+    end
+
+    include T
+    include Comparable.Make (T)
+  end
+
+  let tito_arguments_of_graph graph =
+    (* Construct an adjacency list representation of the reversed graph. *)
     let graph_rev =
       let add_flow g {LineageGraph.source; target} =
         match target with
@@ -107,7 +128,7 @@ module Summary = struct
         | _ ->
             Map.add_multi ~key:target ~data:source g
       in
-      List.fold ~init:N.Map.empty ~f:add_flow graph
+      List.fold ~init:Vertex.Map.empty ~f:add_flow graph
     in
     (* Do a DFS, to see which arguments are reachable from return. *)
     let rec dfs seen node =
@@ -117,7 +138,7 @@ module Summary = struct
         let parents = Map.find_multi graph_rev node in
         List.fold ~init:seen ~f:dfs parents
     in
-    let reachable = dfs N.Set.empty LineageGraph.Return in
+    let reachable = dfs Vertex.Set.empty LineageGraph.Return in
     (* Collect reachable arguments. *)
     let tito_arguments =
       let add_node args (node : LineageGraph.data) =
@@ -125,6 +146,62 @@ module Summary = struct
       in
       Set.fold reachable ~init:IntSet.empty ~f:add_node
     in
+    tito_arguments
+
+
+  (** A vertex is uninteresting if it is of the form [Local(x,_)], where x is a variable that does
+      not appear in source or a formal parameter or the return variable. The returned graph has an
+      edge X0->Xn of type T between interesting vertices X0 and Xn iff the input graph has a path
+      X0->X1->...->Xn with X1,...,X(n-1) being uninteresting and T is the maximum of the types of
+      the edges in the path. *)
+  let remove_temporaries proc_desc graph =
+    (* Build adjacency list representation, to make DFS easy. *)
+    let children =
+      let add_flow g {LineageGraph.source; target; kind} =
+        Map.add_multi ~key:source ~data:(target, kind) g
+      in
+      List.fold ~init:Vertex.Map.empty ~f:add_flow graph
+    in
+    (* A check for vertex interestingness, used during the DFS that comes next. *)
+    let special_variables =
+      let formals = get_formals proc_desc in
+      let ret_var = Var.of_pvar (Procdesc.get_ret_var proc_desc) in
+      Var.Set.of_list (ret_var :: formals)
+    in
+    let is_interesting (data : LineageGraph.data) =
+      match data with
+      | Local (var, _node) ->
+          Var.appears_in_source_code var && not (Var.Set.mem var special_variables)
+      | Argument _ | Return | ArgumentOf _ | ReturnOf _ ->
+          true
+    in
+    (* Do a DFS and produce edges. *)
+    let rec dfs (seen, result_graph) ({LineageGraph.source; target; kind} as state) =
+      if not (is_interesting source) then L.die InternalError "INV broken" ;
+      if not (Set.mem seen state) then
+        let seen = Set.add seen state in
+        if is_interesting target then (seen, state :: result_graph)
+        else
+          let f (seen, result_graph) (target, edge_kind) =
+            let kind = LineageGraph.max_flow_kind kind edge_kind in
+            dfs (seen, result_graph) {LineageGraph.source; target; kind}
+          in
+          List.fold ~init:(seen, result_graph) ~f (Map.find_multi children target)
+      else (seen, result_graph)
+    in
+    let start_dfs (seen, result_graph) ({LineageGraph.source} as state) =
+      if is_interesting source then dfs (seen, result_graph) state else (seen, result_graph)
+    in
+    let _seen, result_graph = List.fold ~init:(Edge.Set.empty, []) ~f:start_dfs graph in
+    result_graph
+
+
+  (** Given a graph, computes tito_arguments, and makes a summary. *)
+  let of_graph proc_desc graph =
+    let graph =
+      if Config.simple_lineage_keep_temporaries then graph else remove_temporaries proc_desc graph
+    in
+    let tito_arguments = tito_arguments_of_graph graph in
     {graph; tito_arguments}
 end
 
@@ -617,12 +694,7 @@ let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   else
     let cfg = CFG.from_pdesc proc_desc in
     let initial =
-      let pname = Procdesc.get_proc_name proc_desc in
-      let formals =
-        List.map
-          ~f:(fun (var, _typ) -> Var.of_pvar (Pvar.mk var pname))
-          (Procdesc.get_formals proc_desc)
-      in
+      let formals = get_formals proc_desc in
       let start_node = CFG.start_node cfg in
       let add_arg last_writes arg = Domain.Real.add arg start_node last_writes in
       let last_writes = List.fold ~init:Domain.Real.bottom ~f:add_arg formals in
@@ -654,5 +726,6 @@ let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
       List.map ~f:mk_ret_edge (Domain.Real.get_all ret_var last_writes)
       @ (Analyzer.InvariantMap.fold collect invmap [snd initial] |> List.concat)
     in
-    if Config.simple_lineage_json_report then Out.report_summary graph proc_desc ;
-    Some (Summary.of_graph graph)
+    let summary = Summary.of_graph proc_desc graph in
+    if Config.simple_lineage_json_report then Out.report_summary summary.Summary.graph proc_desc ;
+    Some summary

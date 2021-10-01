@@ -590,6 +590,13 @@ SIMPLE LINEAGE OPTIONS
            Activates: Enable simple lineage report in JSON format.
            (Conversely: --no-simple-lineage-json-report)
 
+       --simple-lineage-keep-temporaries
+           Activates: Normally, lineage summaries do not mention temporary
+           variables introduced while compiling the high-level code to
+           Infer's IR (intermediate representation). If this option is
+           enabled, then the lineage graph produced corresponds to Infer's
+           IR. (Conversely: --no-simple-lineage-keep-temporaries)
+
        --simple-lineage-max-cfg-size int
            If set, larger CFGs are skipped.
 

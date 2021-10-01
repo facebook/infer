@@ -614,6 +614,8 @@ val show_buckets : bool
 
 val simple_lineage_json_report : bool
 
+val simple_lineage_keep_temporaries : bool
+
 val simple_lineage_max_cfg_size : int option
 
 val simple_lineage_dedup : bool

@@ -2422,6 +2422,14 @@ and simple_lineage_dedup =
      in which distinct entities get assigned the same ID."
 
 
+and simple_lineage_keep_temporaries =
+  CLOpt.mk_bool ~long:"simple-lineage-keep-temporaries"
+    ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
+    "Normally, lineage summaries do not mention temporary variables introduced while compiling the \
+     high-level code to Infer's IR (intermediate representation). If this option is enabled, then \
+     the lineage graph produced corresponds to Infer's IR."
+
+
 and simple_lineage_seed =
   CLOpt.mk_int ~long:"simple-lineage-seed" ~default:123
     ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
@@ -3549,6 +3557,8 @@ and simple_lineage_max_cfg_size = !simple_lineage_max_cfg_size
 and simple_lineage_json_report = !simple_lineage_json_report
 
 and simple_lineage_dedup = !simple_lineage_dedup
+
+and simple_lineage_keep_temporaries = !simple_lineage_keep_temporaries
 
 and simple_lineage_seed = !simple_lineage_seed
 
