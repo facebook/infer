@@ -144,20 +144,20 @@ module type S =
        @since 4.04.0 *)
 
     val fold: (elt -> 'a -> 'a) -> t -> 'a -> 'a
-    (** [fold f s a] computes [(f xN ... (f x2 (f x1 a))...)],
+    (** [fold f s init] computes [(f xN ... (f x2 (f x1 init))...)],
        where [x1 ... xN] are the elements of [s], in increasing order. *)
 
     val for_all: (elt -> bool) -> t -> bool
-    (** [for_all p s] checks if all elements of the set
-       satisfy the predicate [p]. *)
+    (** [for_all f s] checks if all elements of the set
+       satisfy the predicate [f]. *)
 
     val exists: (elt -> bool) -> t -> bool
-    (** [exists p s] checks if at least one element of
-       the set satisfies the predicate [p]. *)
+    (** [exists f s] checks if at least one element of
+       the set satisfies the predicate [f]. *)
 
     val filter: (elt -> bool) -> t -> t
-    (** [filter p s] returns the set of all elements in [s]
-       that satisfy predicate [p]. If [p] satisfies every element in [s],
+    (** [filter f s] returns the set of all elements in [s]
+       that satisfy predicate [f]. If [f] satisfies every element in [s],
        [s] is returned unchanged (the result of the function is then
        physically equal to [s]).
        @before 4.03 Physical equality was not ensured.*)
@@ -179,10 +179,10 @@ module type S =
      *)
 
     val partition: (elt -> bool) -> t -> t * t
-    (** [partition p s] returns a pair of sets [(s1, s2)], where
+    (** [partition f s] returns a pair of sets [(s1, s2)], where
        [s1] is the set of all the elements of [s] that satisfy the
-       predicate [p], and [s2] is the set of all the elements of
-       [s] that do not satisfy [p]. *)
+       predicate [f], and [s2] is the set of all the elements of
+       [s] that do not satisfy [f]. *)
 
     val cardinal: t -> int
     (** Return the number of elements of a set. *)
@@ -311,6 +311,10 @@ module type S =
     val to_seq : t -> elt Seq.t
     (** Iterate on the whole set, in ascending order
         @since 4.07 *)
+
+    val to_rev_seq : t -> elt Seq.t
+    (** Iterate on the whole set, in descending order
+        @since 4.12 *)
 
     val add_seq : elt Seq.t -> t -> t
     (** Add the given elements to the set, in order.
