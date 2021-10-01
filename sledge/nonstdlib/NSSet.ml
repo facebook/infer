@@ -91,6 +91,16 @@ struct
   let for_all s ~f = S.for_all f s
   let fold s z ~f = S.fold f s z
 
+  let fold_map s z ~f =
+    let z = ref z in
+    let f x =
+      let x', z' = f x !z in
+      z := z' ;
+      x'
+    in
+    let s' = map s ~f in
+    (s', !z)
+
   let reduce xs ~f =
     match pop xs with Some (x, xs) -> Some (fold ~f xs x) | None -> None
 

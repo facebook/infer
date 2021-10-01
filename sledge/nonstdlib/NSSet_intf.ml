@@ -106,6 +106,10 @@ module type S = sig
   val fold : t -> 's -> f:(elt -> 's -> 's) -> 's
   val reduce : t -> f:(elt -> elt -> elt) -> elt option
 
+  val fold_map : t -> 's -> f:(elt -> 's -> elt * 's) -> t * 's
+  (** Map [f] over a set while threading an accumulator through calls to
+      [f]. *)
+
   (** {1 Convert} *)
 
   val to_list : t -> elt list
