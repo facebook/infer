@@ -98,11 +98,11 @@ let%test_module _ =
       pp_djn (dnf q) ;
       [%expect
         {|
-          ( (  0 = %x_7 ∧ emp) ∨ (  ( (  1 = %y_8 ∧ emp) ∨ (  emp) )) )
+          ( (  0 = %x_7 ∧ emp) ∨ (  ( (  emp) ∨ (  1 = %y_8 ∧ emp) )) )
     
         ( (∃ %x_7, %x_8 .   2 = %x_8 ∧ (2 = %x_8) ∧ emp)
-        ∨ (∃ %x_7 .   1 = %x_7 = %y_8 ∧ ((1 = %x_7) ∧ (1 = %y_8)) ∧ emp)
         ∨ (  0 = %x_7 ∧ (0 = %x_7) ∧ emp)
+        ∨ (∃ %x_7 .   1 = %x_7 = %y_8 ∧ ((1 = %x_7) ∧ (1 = %y_8)) ∧ emp)
         ) |}]
 
     let%expect_test _ =
@@ -121,13 +121,13 @@ let%test_module _ =
       pp_djn (dnf q) ;
       [%expect
         {|
-          ( (  emp) ∨ (  ( (  1 = %y_8 ∧ emp) ∨ (  emp) )) )
+          ( (  emp) ∨ (  ( (  emp) ∨ (  1 = %y_8 ∧ emp) )) )
     
-        ( (∃ %x_7, %x_9, %x_10 .   2 = %x_10 ∧ (2 = %x_10) ∧ emp)
+        ( (∃ %x_7 .   0 = %x_7 ∧ (0 = %x_7) ∧ emp)
         ∨ (∃ %x_7, %x_9 .
              1 = %y_8 = %x_9 ∧ ((1 = %y_8) ∧ (1 = %x_9))
            ∧ emp)
-        ∨ (∃ %x_7 .   0 = %x_7 ∧ (0 = %x_7) ∧ emp)
+        ∨ (∃ %x_7, %x_9, %x_10 .   2 = %x_10 ∧ (2 = %x_10) ∧ emp)
         ) |}]
 
     let%expect_test _ =
@@ -146,9 +146,9 @@ let%test_module _ =
       pp (simplify q) ;
       [%expect
         {|
-        ( (  emp) ∨ (  ( (  1 = %y_8 ∧ emp) ∨ (  emp) )) )
+        ( (  emp) ∨ (  ( (  emp) ∨ (  1 = %y_8 ∧ emp) )) )
     
-        ( (  emp) ∨ (  1 = %y_8 ∧ emp) ∨ (  emp) ) |}]
+        ( (  emp) ∨ (  emp) ∨ (  1 = %y_8 ∧ emp) ) |}]
 
     let%expect_test _ =
       let q = exists ~$[x_] (of_eqs [(f x, x); (f y, y - !1)]) in
@@ -185,11 +185,11 @@ let%test_module _ =
         ∃ %a_1, %c_3, %d_4, %e_5 .
           (⟨8,%a_1⟩^⟨8,%d_4⟩) = %e_5 ∧ (⟨16,%e_5⟩ = (⟨8,%a_1⟩^⟨8,%d_4⟩))
         ∧ emp
-        * ( (  tt ∧ (0 ≠ %x_7) ∧ emp)
-          ∨ (∃ %b_2 .
+        * ( (∃ %b_2 .
                (⟨4,%c_3⟩^⟨4,%b_2⟩) = %a_1
              ∧ (⟨8,%a_1⟩ = (⟨4,%c_3⟩^⟨4,%b_2⟩))
              ∧ emp)
+          ∨ (  tt ∧ (0 ≠ %x_7) ∧ emp)
           )
 
           tt ∧ tt
@@ -226,11 +226,11 @@ let%test_module _ =
         ∃ %b_2 .
           tt ∧ tt
         ∧ %x_7 -[ %b_2, %c_3 )-> ⟨8,0⟩
-        * ( (  %b_2 = %z_9 ∧ (%b_2 = %z_9) ∧ emp)
-          ∨ (  %b_2 = %y_8 ∧ (%b_2 = %y_8) ∧ emp)
+        * ( (  %b_2 = %y_8 ∧ (%b_2 = %y_8) ∧ emp)
+          ∨ (  %b_2 = %z_9 ∧ (%b_2 = %z_9) ∧ emp)
           )
     
         ∃ %b_2 .
           %x_7 -[ %b_2, %c_3 )-> ⟨8,0⟩
-        * ( (  %b_2 = %z_9 ∧ emp) ∨ (  %b_2 = %y_8 ∧ emp) ) |}]
+        * ( (  %b_2 = %y_8 ∧ emp) ∨ (  %b_2 = %z_9 ∧ emp) ) |}]
   end )

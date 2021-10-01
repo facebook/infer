@@ -670,11 +670,15 @@ let excise_dnf : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
     let zs, min = Sh.bind_exists minuend ~wrt:xs in
     let us = min.us in
     let+ remainder =
-      List.find_map ~f:(excise_subtrahend us min zs) dnf_subtrahend
+      Iter.find_map
+        ~f:(excise_subtrahend us min zs)
+        (Sh.Set.to_iter dnf_subtrahend)
     in
-    remainder :: remainders
+    Sh.Set.add remainder remainders
   in
-  let+ rs = Iter.fold_opt ~f:from_minuend (Iter.of_list dnf_minuend) [] in
+  let+ rs =
+    Iter.fold_opt ~f:from_minuend (Sh.Set.to_iter dnf_minuend) Sh.Set.empty
+  in
   Sh.extend_us (Var.Set.union minuend.us xs) (Sh.orN rs)
 
 let query_count = ref (-1)

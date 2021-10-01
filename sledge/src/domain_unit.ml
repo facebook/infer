@@ -7,7 +7,12 @@
 
 (** "Unit" abstract domain *)
 
-type t = unit [@@deriving compare, equal, sexp]
+module T = struct
+  type t = unit [@@deriving compare, equal, sexp]
+end
+
+include T
+module Set = Set.Make (T)
 
 let pp fs () = Format.pp_print_string fs "()"
 let init _ = ()
@@ -29,7 +34,7 @@ let call ~summaries:_ _ ~globals:_ ~actuals:_ ~areturn:_ ~formals:_
 let recursion_beyond_bound = `skip
 let post _ _ _ () = ()
 let retn _ _ _ _ _ = ()
-let dnf () = [()]
+let dnf () = Set.of_ ()
 let resolve_callee _ _ _ _ = []
 
 type summary = unit

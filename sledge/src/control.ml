@@ -608,7 +608,11 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
 
       let equal = [%compare.equal: t]
       let equal_destination x y = Threads.equal x.threads y.threads
-      let dnf x = List.map ~f:(fun state -> {x with state}) (D.dnf x.state)
+
+      let dnf x =
+        List.map
+          ~f:(fun state -> {x with state})
+          (D.Set.to_list (D.dnf x.state))
     end
 
     module Queue = Queue (Elt)
@@ -641,13 +645,8 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
 
       let join s =
         let states, depths =
-          Set.fold s ([], Depths.empty) ~f:(fun (q, d) (qs, ds) ->
-              let qqs =
-                match qs with
-                | q0 :: _ when D.equal q q0 -> qs
-                | _ -> q :: qs
-              in
-              (qqs, Depths.join d ds) )
+          Set.fold s (D.Set.empty, Depths.empty) ~f:(fun (q, d) (qs, ds) ->
+              (D.Set.add q qs, Depths.join d ds) )
         in
         (D.joinN states, depths)
     end
@@ -831,12 +830,12 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
         D.pp state]
     ;
     let dnf_states =
-      if Config.function_summaries then D.dnf state else [state]
+      if Config.function_summaries then D.dnf state else D.Set.of_ state
     in
     let domain_call =
       D.call tid ~globals ~actuals ~areturn ~formals ~freturn ~locals
     in
-    List.fold dnf_states wl ~f:(fun state wl ->
+    D.Set.fold dnf_states wl ~f:(fun state wl ->
         match
           if not Config.function_summaries then None
           else

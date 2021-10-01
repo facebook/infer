@@ -13,38 +13,45 @@ let equal_apron_typ =
   (* Apron.Texpr1.typ is a sum of nullary constructors *)
   Poly.equal
 
-(** Apron-managed map from variables to intervals *)
-type t = Box.t Abstract1.t
+module T = struct
+  (** Apron-managed map from variables to intervals *)
+  type t = Box.t Abstract1.t
 
-let equal : t -> t -> bool = Poly.equal
-let compare : t -> t -> int = Poly.compare
-let man = lazy (Box.manager_alloc ())
+  let equal : t -> t -> bool = Poly.equal
+  let compare : t -> t -> int = Poly.compare
+  let man = lazy (Box.manager_alloc ())
+
+  let bindings (itv : t) =
+    let itv = Abstract1.minimize_environment (Lazy.force man) itv in
+    let box = Abstract1.to_box (Lazy.force man) itv in
+    let vars =
+      Environment.vars box.box1_env |> fun (i, r) -> Array.append i r
+    in
+    Array.combine_exn vars box.interval_array
+
+  let sexp_of_t (itv : t) =
+    let sexps =
+      Array.fold_right (bindings itv) [] ~f:(fun (v, i) acc ->
+          Sexp.List
+            [ Sexp.Atom (Var.to_string v)
+            ; Sexp.Atom (Scalar.to_string i.inf)
+            ; Sexp.Atom (Scalar.to_string i.sup) ]
+          :: acc )
+    in
+    Sexp.List sexps
+end
+
+include T
+module Set = Set.Make (T)
+
 let join l r = Abstract1.join (Lazy.force man) l r
 
-let joinN = function
-  | [] -> Abstract1.bottom (Lazy.force man) (Environment.make [||] [||])
-  | x :: xs -> List.fold ~f:join xs x
+let joinN qs =
+  match Set.pop qs with
+  | None -> Abstract1.bottom (Lazy.force man) (Environment.make [||] [||])
+  | Some (x, xs) -> Set.fold ~f:join xs x
 
 let is_false x = Abstract1.is_bottom (Lazy.force man) x
-
-let bindings (itv : t) =
-  let itv = Abstract1.minimize_environment (Lazy.force man) itv in
-  let box = Abstract1.to_box (Lazy.force man) itv in
-  let vars =
-    Environment.vars box.box1_env |> fun (i, r) -> Array.append i r
-  in
-  Array.combine_exn vars box.interval_array
-
-let sexp_of_t (itv : t) =
-  let sexps =
-    Array.fold_right (bindings itv) [] ~f:(fun (v, i) acc ->
-        Sexp.List
-          [ Sexp.Atom (Var.to_string v)
-          ; Sexp.Atom (Scalar.to_string i.inf)
-          ; Sexp.Atom (Scalar.to_string i.sup) ]
-        :: acc )
-  in
-  Sexp.List sexps
 
 let pp fs =
   let pp_pair a_pp b_pp fs (a, b) =
@@ -288,7 +295,7 @@ let call ~summaries _ ~globals:_ ~actuals ~areturn ~formals ~freturn:_
     in
     (q''', {areturn; caller_q= q})
 
-let dnf q = [q]
+let dnf q = Set.of_ q
 let resolve_callee _ _ _ _ = []
 
 type summary = t

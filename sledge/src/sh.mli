@@ -26,9 +26,11 @@ type starjunction = private
   ; heap: seg list  (** star-conjunction of segment atomic formulas *)
   ; djns: disjunction list  (** star-conjunction of disjunctions *) }
 
-and disjunction = starjunction list
+and disjunction
 
 type t = starjunction [@@deriving compare, equal, sexp]
+
+module Set : Set.S with type elt := t and type t = disjunction
 
 val pp_seg_norm : Context.t -> seg pp
 val pp_us : Var.Set.t pp
@@ -59,7 +61,7 @@ val or_ : t -> t -> t
 (** Disjoin formulas, extending to a common vocabulary, and avoiding
     capturing existentials. *)
 
-val orN : t list -> t
+val orN : disjunction -> t
 (** Disjoin formulas, extending to a common vocabulary, and avoiding
     capturing existentials. *)
 
