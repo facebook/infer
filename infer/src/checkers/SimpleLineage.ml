@@ -52,12 +52,20 @@ module LineageGraph = struct
         Format.fprintf fmt "%a.ret" Procname.pp proc_name
 
 
-  let pp_flow fmt {source; target} =
-    Format.fprintf fmt "@[<2>[%a@ ->@ %a]@]@;" pp_data source pp_data target
+  let pp_flow_kind fmt kind =
+    match kind with
+    | Direct ->
+        Format.fprintf fmt "Direct"
+    | Summary ->
+        Format.fprintf fmt "Summary"
+
+
+  let pp_flow fmt {source; target; kind} =
+    Format.fprintf fmt "@[<2>[%a@ ->@ %a@ (%a)]@]@;" pp_data source pp_data target pp_flow_kind kind
 
 
   let pp fmt flows =
-    Format.fprintf fmt "@;@[<2>LineageGraph@;%a@]" (Format.pp_print_list pp_flow) flows
+    Format.fprintf fmt "@;@[<v 2>LineageGraph@;@[%a@]@]" (Format.pp_print_list pp_flow) flows
 end
 
 module Summary = struct
