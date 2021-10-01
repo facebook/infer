@@ -12,10 +12,8 @@ include Array
 
 type 'a t = 'a array
 
-let hash_fold_t = hash_fold_array_frozen
-
 module Import = struct
-  type 'a iarray = 'a t [@@deriving compare, equal, hash, sexp]
+  type 'a iarray = 'a t [@@deriving compare, equal, sexp]
 end
 
 let to_array xs = xs

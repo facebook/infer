@@ -14,13 +14,6 @@ module type S = sig
 
   include Comparer.S with type t := t
 
-  module Provide_hash (_ : sig
-    type t = elt [@@deriving hash]
-  end) : sig
-    type t [@@deriving hash]
-  end
-  with type t := t
-
   module Provide_of_sexp (_ : sig
     type t = elt [@@deriving of_sexp]
   end) : sig

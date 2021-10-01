@@ -5,6 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-type t = int [@@deriving compare, equal, hash, sexp_of]
+type t = int [@@deriving compare, equal, sexp_of]
 
 val init : t

@@ -9,7 +9,7 @@ open! NS0
 include module type of Containers.Int
 include module type of Stdlib.Int
 
-type t = int [@@deriving compare, equal, hash, sexp]
+type t = int [@@deriving compare, equal, sexp]
 
 val of_string : string -> int option
 val of_string_exn : string -> int

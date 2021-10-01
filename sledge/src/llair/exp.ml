@@ -18,7 +18,7 @@ module T = struct
     (* array/struct operations *)
     | Splat
     | Select of int
-  [@@deriving compare, equal, hash, sexp]
+  [@@deriving compare, equal, sexp]
 
   type op2 =
     (* comparison *)
@@ -51,15 +51,15 @@ module T = struct
     | Ashr
     (* array/struct operations *)
     | Update of int
-  [@@deriving compare, equal, hash, sexp]
+  [@@deriving compare, equal, sexp]
 
   type op3 = (* if-then-else *)
     | Conditional
-  [@@deriving compare, equal, hash, sexp]
+  [@@deriving compare, equal, sexp]
 
   type opN = (* array/struct constants *)
     | Record
-  [@@deriving compare, equal, hash, sexp]
+  [@@deriving compare, equal, sexp]
 
   type t =
     | Reg of {id: int; name: string; typ: Typ.t}
@@ -72,8 +72,9 @@ module T = struct
     | Ap2 of op2 * Typ.t * t * t
     | Ap3 of op3 * Typ.t * t * t * t
     | ApN of opN * Typ.t * t iarray
-  [@@deriving compare, equal, hash, sexp]
+  [@@deriving compare, equal, sexp]
 
+  let hash = Poly.hash
   let demangle = ref (fun _ -> None)
 
   let pp_demangled ppf name =
@@ -162,7 +163,6 @@ include T
 
 module Set = struct
   include Set.Make (T)
-  include Provide_hash (T)
   include Provide_of_sexp (T)
 end
 

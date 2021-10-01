@@ -19,7 +19,9 @@ let rdrop n s =
 let rtake_drop n s = (rtake n s, rdrop n s)
 
 module T = struct
-  type t = string [@@deriving compare, equal, hash, sexp]
+  type t = string [@@deriving compare, equal, sexp]
+
+  let hash = (Poly.hash : t -> int)
 end
 
 include T

@@ -7,7 +7,7 @@
 
 (** Uninterpreted Predicate Symbols *)
 
-type t [@@deriving compare, equal, hash, sexp]
+type t [@@deriving compare, equal, sexp]
 
 val pp : t pp
 val uninterp : string -> t

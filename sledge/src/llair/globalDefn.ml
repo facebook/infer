@@ -8,7 +8,7 @@
 (** Global variables *)
 
 type t = {name: Global.t; init: Exp.t option; loc: Loc.t}
-[@@deriving compare, equal, hash, sexp]
+[@@deriving compare, equal, sexp]
 
 let pp ppf {name; init; loc} =
   Format.fprintf ppf "@[<2>%a %a%a %a@]" Typ.pp (Global.typ name) Global.pp

@@ -7,11 +7,9 @@
 
 (** Global namespace intended to be opened in each source file *)
 
-(** Support for [@@deriving compare, equal, hash, sexp] on builtin types *)
+(** Support for [@@deriving compare, equal, sexp] on builtin types *)
 
 include module type of Ppx_compare_lib.Builtin
-module Hash = Ppx_hash_lib.Std.Hash
-include module type of Hash.Builtin
 module Sexp = Sexplib.Sexp
 include module type of Ppx_sexp_conv_lib.Conv
 

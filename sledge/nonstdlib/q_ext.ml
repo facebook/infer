@@ -8,8 +8,6 @@
 open NS0
 
 let pp = Q.pp_print
-let hash = Poly.hash
-let hash_fold_t s q = Int.hash_fold_t s (hash q)
 let sexp_of_t q = Sexp.Atom (Q.to_string q)
 let t_of_sexp = function Sexp.Atom s -> Q.of_string s | _ -> assert false
 let of_z = Q.of_bigint

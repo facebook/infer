@@ -10,7 +10,9 @@ module T = Term
 module F = Formula
 
 module RegTbl = HashTable.Make (struct
-  type t = Llair.Reg.t * ThreadID.t [@@deriving equal, hash]
+  type t = Llair.Reg.t * ThreadID.t [@@deriving equal]
+
+  let hash = Poly.hash
 end)
 
 let reg_tbl : Var.t RegTbl.t = RegTbl.create ()

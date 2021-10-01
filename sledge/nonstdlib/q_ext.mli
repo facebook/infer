@@ -13,8 +13,6 @@ end
 
 val of_z : Z.t -> t
 val compare : t -> t -> int
-val hash : t -> int
-val hash_fold_t : t Hash.folder
 val t_of_sexp : Sexp.t -> t
 val sexp_of_t : t -> Sexp.t
 val pp : t pp

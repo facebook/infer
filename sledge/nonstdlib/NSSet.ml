@@ -30,25 +30,6 @@ struct
   let comparer = S.comparer
 
   include S.Provide_equal (Elt)
-
-  module Provide_hash (Elt : sig
-    type t = elt [@@deriving hash]
-  end) =
-  struct
-    let hash_fold_t h s =
-      let length = ref 0 in
-      let s =
-        S.fold
-          (fun x h ->
-            incr length ;
-            Elt.hash_fold_t h x )
-          s h
-      in
-      Hash.fold_int s !length
-
-    let hash = Hash.of_fold hash_fold_t
-  end
-
   include S.Provide_sexp_of (Elt)
   module Provide_of_sexp = S.Provide_of_sexp
 

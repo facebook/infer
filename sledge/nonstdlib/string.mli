@@ -8,7 +8,7 @@
 open! NS0
 include module type of ContainersLabels.String
 
-type t = string [@@deriving compare, equal, hash, sexp]
+type t = string [@@deriving compare, equal, sexp]
 
 val index : string -> char -> int option
 val index_exn : string -> char -> int

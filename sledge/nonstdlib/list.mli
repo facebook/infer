@@ -8,7 +8,7 @@
 open! NS0
 include module type of ContainersLabels.List
 
-type 'a t = 'a list [@@deriving compare, equal, hash, sexp]
+type 'a t = 'a list [@@deriving compare, equal, sexp]
 
 val pp :
      ?pre:(unit, unit) fmt
