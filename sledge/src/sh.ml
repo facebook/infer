@@ -433,47 +433,6 @@ and extend_us us q =
   (if us == q.us then q else {(freshen_xs q ~wrt:us) with us})
   |> check invariant
 
-let freshen q ~wrt =
-  [%Trace.call fun {pf} -> pf "@ {@[%a@]}@ %a" Var.Set.pp wrt pp q]
-  ;
-  let xsub, _ = Var.Subst.freshen q.us ~wrt:(Var.Set.union wrt q.xs) in
-  let q' = extend_us wrt (rename_ xsub q) in
-  (q', xsub.sub)
-  |>
-  [%Trace.retn fun {pf} (q', _) ->
-    pf "%a" pp q' ;
-    invariant q' ;
-    assert (Var.Set.subset wrt ~of_:q'.us) ;
-    assert (Var.Set.disjoint wrt (fv q'))]
-
-let bind_exists q ~wrt =
-  [%Trace.call fun {pf} -> pf "@ {@[%a@]}@ %a" Var.Set.pp wrt pp q]
-  ;
-  let q' =
-    if Var.Set.is_empty wrt then q
-    else freshen_xs q ~wrt:(Var.Set.union q.us wrt)
-  in
-  (q'.xs, {q' with us= Var.Set.union q'.us q'.xs; xs= Var.Set.empty})
-  |>
-  [%Trace.retn fun {pf} (_, q') -> pf "%a" pp q']
-
-(** Construct *)
-
-(** conjoin an FOL context assuming vocabulary is compatible *)
-let and_ctx_ ctx q =
-  assert (Var.Set.subset (Context.fv ctx) ~of_:q.us) ;
-  let xs, ctx = Context.union (Var.Set.union q.us q.xs) q.ctx ctx in
-  if Context.is_unsat ctx then false_ q.us else exists_fresh xs {q with ctx}
-
-let and_ctx ctx q =
-  [%Trace.call fun {pf} -> pf "@ %a@ %a" Context.pp ctx pp q]
-  ;
-  (if is_false q then q else and_ctx_ ctx (extend_us (Context.fv ctx) q))
-  |>
-  [%Trace.retn fun {pf} q ->
-    pf "%a" pp q ;
-    invariant q]
-
 let star q1 q2 =
   [%trace]
     ~call:(fun {pf} -> pf "@ (%a)@ (%a)" pp q1 pp q2)
@@ -545,6 +504,47 @@ let orN = function
   | [] -> false_ Var.Set.empty
   | [q] -> q
   | q :: qs -> List.fold ~f:or_ qs q
+
+let freshen q ~wrt =
+  [%Trace.call fun {pf} -> pf "@ {@[%a@]}@ %a" Var.Set.pp wrt pp q]
+  ;
+  let xsub, _ = Var.Subst.freshen q.us ~wrt:(Var.Set.union wrt q.xs) in
+  let q' = extend_us wrt (rename_ xsub q) in
+  (q', xsub.sub)
+  |>
+  [%Trace.retn fun {pf} (q', _) ->
+    pf "%a" pp q' ;
+    invariant q' ;
+    assert (Var.Set.subset wrt ~of_:q'.us) ;
+    assert (Var.Set.disjoint wrt (fv q'))]
+
+let bind_exists q ~wrt =
+  [%Trace.call fun {pf} -> pf "@ {@[%a@]}@ %a" Var.Set.pp wrt pp q]
+  ;
+  let q' =
+    if Var.Set.is_empty wrt then q
+    else freshen_xs q ~wrt:(Var.Set.union q.us wrt)
+  in
+  (q'.xs, {q' with us= Var.Set.union q'.us q'.xs; xs= Var.Set.empty})
+  |>
+  [%Trace.retn fun {pf} (_, q') -> pf "%a" pp q']
+
+(** Construct *)
+
+(** conjoin an FOL context assuming vocabulary is compatible *)
+let and_ctx_ ctx q =
+  assert (Var.Set.subset (Context.fv ctx) ~of_:q.us) ;
+  let xs, ctx = Context.union (Var.Set.union q.us q.xs) q.ctx ctx in
+  if Context.is_unsat ctx then false_ q.us else exists_fresh xs {q with ctx}
+
+let and_ctx ctx q =
+  [%Trace.call fun {pf} -> pf "@ %a@ %a" Context.pp ctx pp q]
+  ;
+  (if is_false q then q else and_ctx_ ctx (extend_us (Context.fv ctx) q))
+  |>
+  [%Trace.retn fun {pf} q ->
+    pf "%a" pp q ;
+    invariant q]
 
 let pure (p : Formula.t) =
   [%Trace.call fun {pf} -> pf "@ %a" Formula.pp p]
