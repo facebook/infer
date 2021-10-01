@@ -1436,7 +1436,7 @@ let replay c =
   | Union (us, r, s) -> union us r s |> ignore
   | Inter (us, r, s) -> inter us r s |> ignore
   | InterN (us, rs) -> interN us rs |> ignore
-  | Dnf f -> dnf f |> ignore
+  | Dnf f -> dnf f |> Iter.iter ~f:ignore
   | Rename (r, s) -> rename r s |> ignore
   | Is_unsat r -> is_unsat r |> ignore
   | Implies (r, f) -> implies r f |> ignore
