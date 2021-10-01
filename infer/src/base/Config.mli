@@ -612,9 +612,13 @@ val select : [`All | `Select of int] option
 
 val show_buckets : bool
 
+val simple_lineage_json_report : bool
+
 val simple_lineage_max_cfg_size : int option
 
-val simple_lineage_json_report : bool
+val simple_lineage_dedup : bool
+
+val simple_lineage_seed : int
 
 val siof_check_iostreams : bool
 

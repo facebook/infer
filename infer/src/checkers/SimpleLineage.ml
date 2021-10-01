@@ -366,13 +366,7 @@ module Out = struct
 
     type edge = {edge: _edge} [@@deriving yojson_of]
 
-    type lineage =
-      { nodes: node list
-      ; edges: edge list
-      ; states: state list
-      ; variables: variable list
-      ; locations: location list }
-    [@@deriving yojson_of]
+    type entity_type = Edge | Node | State | Location [@@deriving compare, hash, sexp]
   end
 
   let channel_ref = ref None
@@ -395,45 +389,89 @@ module Out = struct
         channel
 
 
-  type node = Start of Location.t option | Exit of Location.t option | Normal of PPNode.t
+  type state_local = Start of Location.t | Exit of Location.t | Normal of PPNode.t
 
   type var = Argument of int | Return | Normal of Var.t
 
-  type vertex = {procname: Procname.t; var: var; node: node}
+  module Id = struct
+    (** Internal representation of an Id. *)
+    type t = Z.t
 
-  let id x : Md5.t = Md5.digest_bytes (Marshal.to_bytes x [])
+    (** Largest prime that fits in 63 bits. *)
+    let modulo_i64 = Int64.of_string "9223372036854775783"
 
-  let id_of_node (node : node) =
-    match node with
-    | Start _ ->
-        id (Start None)
-    | Exit _ ->
-        id (Exit None)
-    | Normal n ->
-        id (PPNode.id n)
+    let modulo_z = Z.of_int64 modulo_i64
 
+    let zero : t = Z.zero
 
-  let id_of_vertex {procname; var; node} = id (procname, var, id_of_node node)
+    let one : t = Z.one
 
-  let id_of_state (procname, (node : node)) = id (procname, id_of_node node)
+    let two : t = Z.of_int 2
 
-  let id_of_edge (source, target, (kind : LineageGraph.flow_kind)) =
-    id (id_of_vertex source, id_of_vertex target, kind)
+    let three : t = Z.of_int 3
 
-
-  let short_id (md5 : Md5.t) : int64 =
-    (* TODO: Consider alternatives - monitor collisions *)
-    Int64.of_string ("0x" ^ String.sub (Md5.to_hex md5) ~pos:0 ~len:16)
+    let coefficients =
+      let open Sequence.Generator in
+      let rec gen prng =
+        yield (Z.of_int64 (Random.State.int64 prng modulo_i64)) >>= fun () -> gen prng
+      in
+      Sequence.memoize (run (gen (Random.State.make [|Config.simple_lineage_seed|])))
 
 
-  let once_per_id f id =
-    let seen = ref Md5.Set.empty in
-    Staged.stage (fun x ->
-        let key = id x in
-        if not (Set.mem !seen key) then (
-          f key x ;
-          seen := Set.add !seen key ) )
+    let of_sequence ids =
+      let hash_add old_hash (a, b) =
+        let open Z in
+        (old_hash + (a * b)) mod modulo_z
+      in
+      Sequence.fold ~init:zero ~f:hash_add (Sequence.zip ids coefficients)
 
+
+    let of_list ids = of_sequence (Sequence.of_list ids)
+
+    let of_state_local (state : state_local) : t =
+      match state with
+      | Start _ ->
+          of_list [zero]
+      | Exit _ ->
+          of_list [one]
+      | Normal n ->
+          of_list [two; Z.of_int (PPNode.hash n)]
+
+
+    (** Workaround: [String.hash] leads to many collisions. *)
+    let of_string s =
+      of_sequence
+        (Sequence.map
+           ~f:(fun c -> Z.of_int (int_of_char c))
+           (Sequence.of_seq (Caml.String.to_seq s)) )
+
+
+    let of_procname procname : t = of_string (Procname.hashable_name procname)
+
+    let of_variable_type (variable_type : Json.variable_type) =
+      match variable_type with
+      | UserVariable ->
+          zero
+      | Temporary ->
+          one
+      | Argument ->
+          two
+      | Return ->
+          three
+
+
+    let of_variable {Json.name; variable_type} : t =
+      of_list [of_string name; of_variable_type variable_type]
+
+
+    let of_kind (kind : LineageGraph.flow_kind) : t =
+      match kind with Direct -> zero | Summary -> one
+
+
+    (** Converts the internal representation to an [int64], as used by the [Out] module. *)
+    let out id : int64 =
+      try Z.to_int64 id with Z.Overflow -> L.die InternalError "Hash does not fit in int64"
+  end
 
   let variable_of_var (var : var) : Json.variable =
     let name =
@@ -457,102 +495,104 @@ module Out = struct
     {Json.name; variable_type}
 
 
-  let vertex_of_data proc_desc (data : LineageGraph.data) : vertex =
-    let procname = Procdesc.get_proc_name proc_desc in
+  module JsonCacheKey = struct
+    module T = struct
+      type t = Json.entity_type * Int64.t [@@deriving compare, hash, sexp]
+    end
+
+    include T
+    include Hashable.Make (T)
+  end
+
+  let write_json_cache = JsonCacheKey.Hash_set.create ()
+
+  let write_json =
+    let really_write_json json =
+      Yojson.Safe.to_channel (channel ()) json ;
+      Out_channel.newline (channel ())
+    in
+    if Config.simple_lineage_dedup then ( fun category id json ->
+      let key = (category, Id.out id) in
+      if not (Hash_set.mem write_json_cache key) then (
+        Hash_set.add write_json_cache key ;
+        really_write_json json ) )
+    else fun _category _id json -> really_write_json json
+
+
+  let save_location ~write procname (state_local : state_local) : Id.t =
+    let procname_id = Id.of_procname procname in
+    let state_local_id = Id.of_state_local state_local in
+    let location_id = Id.of_list [procname_id; state_local_id] in
+    if write then (
+      let location =
+        match state_local with
+        | Start location | Exit location ->
+            location
+        | Normal node ->
+            PPNode.loc node
+      in
+      if Location.equal location Location.dummy then
+        L.die InternalError "Source file name should always be available" ;
+      let function_ = Procname.hashable_name procname in
+      let file = SourceFile.to_rel_path location.Location.file in
+      let line = if location.Location.line < 0 then None else Some location.Location.line in
+      write_json Location location_id
+        (Json.yojson_of_location {location= {id= Id.out location_id; function_; file; line}}) ) ;
+    location_id
+
+
+  let save_state ~write procname (state : state_local) : Id.t =
+    let location_id = save_location ~write procname state in
+    if write then
+      write_json State location_id
+        (Json.yojson_of_state {state= {id= Id.out location_id; location= Id.out location_id}}) ;
+    location_id
+
+
+  let save_node proc_desc (data : LineageGraph.data) =
+    let save ?(write = true) procname state_local variable =
+      let state_id = save_state ~write procname state_local in
+      let variable = variable_of_var variable in
+      let node_id = Id.of_list [state_id; Id.of_variable variable] in
+      if write then
+        write_json Node node_id
+          (Json.yojson_of_node {node= {id= Id.out node_id; state= Id.out state_id; variable}}) ;
+      node_id
+    in
     match data with
     | Local (var, node) ->
-        let node : node =
-          match PPNode.kind node with
-          | Start_node ->
-              Start None
-          | Exit_node ->
-              Exit None
-          | _ ->
-              Normal node
-        in
-        {procname; var= Normal var; node}
+        let procname = Procdesc.get_proc_name proc_desc in
+        save procname (Normal node) (Normal var)
     | Argument index ->
-        { procname
-        ; var= Argument index
-        ; node= Start (Some (Procdesc.Node.get_loc (Procdesc.get_start_node proc_desc))) }
+        let procname = Procdesc.get_proc_name proc_desc in
+        save procname
+          (Start (Procdesc.Node.get_loc (Procdesc.get_start_node proc_desc)))
+          (Argument index)
     | Return ->
-        { procname
-        ; var= Return
-        ; node= Exit (Some (Procdesc.Node.get_loc (Procdesc.get_exit_node proc_desc))) }
-    | ArgumentOf (index, callee) ->
-        {procname= callee; var= Argument index; node= Start None}
-    | ReturnOf callee ->
-        {procname= callee; var= Return; node= Exit None}
+        let procname = Procdesc.get_proc_name proc_desc in
+        save procname (Exit (Procdesc.Node.get_loc (Procdesc.get_exit_node proc_desc))) Return
+    | ArgumentOf (index, callee_procname) ->
+        save ~write:false callee_procname (Start Location.dummy) (Argument index)
+    | ReturnOf callee_procname ->
+        save ~write:false callee_procname (Exit Location.dummy) Return
+
+
+  let save_edge proc_desc {LineageGraph.source; target; kind} =
+    let source_id = save_node proc_desc source in
+    let target_id = save_node proc_desc target in
+    let kind_id = Id.of_kind kind in
+    let edge_id = Id.of_list [source_id; target_id; kind_id] in
+    let edge_type = match kind with Direct -> Json.Copy | Summary -> Json.Derive in
+    write_json Edge edge_id
+      (Json.yojson_of_edge {edge= {source= Id.out source_id; target= Id.out target_id; edge_type}}) ;
+    edge_id
 
 
   let report_summary summary proc_desc =
-    let save_state state_id (procname, (node : node)) =
-      let location =
-        match node with
-        | Start (Some loc) | Exit (Some loc) ->
-            loc
-        | Normal node ->
-            PPNode.loc node
-        | _ ->
-            L.die InternalError "Attempting to save non-local state"
-      in
-      let file, line =
-        if location.Location.line > 0 then
-          (SourceFile.to_rel_path location.Location.file, Some location.Location.line)
-        else ("?", None)
-      in
-      let out_loc =
-        { Json.location=
-            {id= short_id state_id; function_= Procname.to_unique_id procname; file; line} }
-      in
-      let out_state = {Json.state= {id= short_id state_id; location= short_id state_id}} in
-      Yojson.Safe.to_channel (channel ()) (Json.yojson_of_location out_loc) ;
-      Out_channel.newline (channel ()) ;
-      Yojson.Safe.to_channel (channel ()) (Json.yojson_of_state out_state) ;
-      Out_channel.newline (channel ())
-    in
-    let save_state = Staged.unstage (once_per_id save_state id_of_state) in
-    let save_vertex vertex_id {procname; var; node} =
-      (* Terminology. In: procname, var, node; Out: node, state/loc, var. *
-         Mapping: (procname,node)->state/loc; ((procname,node)=state/loc,var)->node; var->var *)
-      let state = (procname, node) in
-      save_state state ;
-      let variable = variable_of_var var in
-      let out_node =
-        {Json.node= {id= short_id vertex_id; state= short_id (id_of_state state); variable}}
-      in
-      Yojson.Safe.to_channel (channel ()) (Json.yojson_of_node out_node) ;
-      Out_channel.newline (channel ())
-    in
-    let save_vertex = Staged.unstage (once_per_id save_vertex id_of_vertex) in
-    let save_vertex ({node} as vertex) =
-      match node with
-      | Start None | Exit None ->
-          () (* non-local: do not save *)
-      | _ ->
-          save_vertex vertex
-    in
-    let save_edge _edge_id (source, target, (kind : LineageGraph.flow_kind)) =
-      save_vertex source ;
-      save_vertex target ;
-      let edge_type = match kind with Direct -> Json.Copy | Summary -> Json.Derive in
-      let out_edge =
-        { Json.edge=
-            { source= short_id (id_of_vertex source)
-            ; target= short_id (id_of_vertex target)
-            ; edge_type } }
-      in
-      Yojson.Safe.to_channel (channel ()) (Json.yojson_of_edge out_edge) ;
-      Out_channel.newline (channel ())
-    in
-    let save_edge = Staged.unstage (once_per_id save_edge id_of_edge) in
-    let record_flow {LineageGraph.source; target; kind} =
-      let source = vertex_of_data proc_desc source in
-      let target = vertex_of_data proc_desc target in
-      save_edge (source, target, kind)
-    in
+    let record_flow flow = ignore (save_edge proc_desc flow) in
     List.iter ~f:record_flow summary ;
-    Out_channel.flush (channel ())
+    Out_channel.flush (channel ()) ;
+    Hash_set.clear write_json_cache
 end
 
 let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =

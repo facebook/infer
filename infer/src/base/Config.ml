@@ -2414,6 +2414,23 @@ and simple_lineage_json_report =
     "Enable simple lineage report in JSON format."
 
 
+and simple_lineage_dedup =
+  CLOpt.mk_bool ~long:"simple-lineage-dedup" ~default:true
+    ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
+    "In JSON output, attempt to print each entity at most once. This is the default. The only \
+     reason you may want to turn this off is to make hash collisions more visible; that is, cases \
+     in which distinct entities get assigned the same ID."
+
+
+and simple_lineage_seed =
+  CLOpt.mk_int ~long:"simple-lineage-seed" ~default:123
+    ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
+    "Set the random seed used for hashing. (Various entities that get reported need unique \
+     identifiers. To generate these unique identifiers, in a distributed way without \
+     communication, we use hashing. If you are unlucky and get collisions, you can try a different \
+     seed."
+
+
 and siof_check_iostreams =
   CLOpt.mk_bool ~long:"siof-check-iostreams"
     ~in_help:InferCommand.[(Analyze, manual_siof)]
@@ -3530,6 +3547,10 @@ and show_buckets = !print_buckets
 and simple_lineage_max_cfg_size = !simple_lineage_max_cfg_size
 
 and simple_lineage_json_report = !simple_lineage_json_report
+
+and simple_lineage_dedup = !simple_lineage_dedup
+
+and simple_lineage_seed = !simple_lineage_seed
 
 and siof_check_iostreams = !siof_check_iostreams
 

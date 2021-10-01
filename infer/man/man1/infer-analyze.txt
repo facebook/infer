@@ -579,12 +579,26 @@ RACERD CHECKER OPTIONS
            Specify custom annotations that should be considered aliases of
            @ThreadSafe
 SIMPLE LINEAGE OPTIONS
+       --no-simple-lineage-dedup
+           Deactivates: In JSON output, attempt to print each entity at most
+           once. This is the default. The only reason you may want to turn
+           this off is to make hash collisions more visible; that is, cases
+           in which distinct entities get assigned the same ID. (Conversely:
+           --simple-lineage-dedup)
+
        --simple-lineage-json-report
            Activates: Enable simple lineage report in JSON format.
            (Conversely: --no-simple-lineage-json-report)
 
        --simple-lineage-max-cfg-size int
            If set, larger CFGs are skipped.
+
+       --simple-lineage-seed int
+           Set the random seed used for hashing. (Various entities that get
+           reported need unique identifiers. To generate these unique
+           identifiers, in a distributed way without communication, we use
+           hashing. If you are unlucky and get collisions, you can try a
+           different seed.
 SIOF CHECKER OPTIONS
        --siof-check-iostreams
            Activates: Do not assume that iostreams (cout, cerr, ...) are

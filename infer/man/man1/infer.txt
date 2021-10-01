@@ -1232,6 +1232,13 @@ OPTIONS
            Activates: checker simple-lineage: Computes a dataflow graph
            (Conversely: --no-simple-lineage)           See also infer-analyze(1).
 
+       --no-simple-lineage-dedup
+           Deactivates: In JSON output, attempt to print each entity at most
+           once. This is the default. The only reason you may want to turn
+           this off is to make hash collisions more visible; that is, cases
+           in which distinct entities get assigned the same ID. (Conversely:
+           --simple-lineage-dedup)           See also infer-analyze(1).
+
        --simple-lineage-json-report
            Activates: Enable simple lineage report in JSON format.
            (Conversely: --no-simple-lineage-json-report)           See also infer-analyze(1).
@@ -1242,6 +1249,13 @@ OPTIONS
        --simple-lineage-only
            Activates: Enable simple-lineage and disable all other checkers
            (Conversely: --no-simple-lineage-only)           See also infer-analyze(1).
+
+       --simple-lineage-seed int
+           Set the random seed used for hashing. (Various entities that get
+           reported need unique identifiers. To generate these unique
+           identifiers, in a distributed way without communication, we use
+           hashing. If you are unlucky and get collisions, you can try a
+           different seed.           See also infer-analyze(1).
 
        --no-siof
            Deactivates: checker siof: Catches Static Initialization Order
