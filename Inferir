@@ -1,0 +1,14 @@
+logo
+Inferir construir sitio web
+Infer es una herramienta de análisis estático para Java, C ++, Objective-C y C. Infer está escrito en OCaml .
+
+Instalación
+Lea nuestra página de Introducción para obtener detalles sobre cómo instalar versiones empaquetadas de Infer. Para construir Inferir desde el código fuente, vea INSTALL.md .
+
+Contribuyendo
+Ver CONTRIBUTING.md .
+
+Licencia
+Infer tiene licencia del MIT.
+
+Nota: Es posible que para habilitar el soporte de Java sea necesario descargar e instalar componentes con licencia de GPL.
