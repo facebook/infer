@@ -7,8 +7,16 @@
 
 open! IStd
 
+module LineageGraph : sig
+  type t
+
+  val report : t -> Procdesc.t -> unit
+end
+
 module Summary : sig
   type t
+
+  val graph : t -> LineageGraph.t
 
   val pp : Format.formatter -> t -> unit
 end

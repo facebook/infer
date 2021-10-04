@@ -69,6 +69,293 @@ module LineageGraph = struct
 
   let pp fmt flows =
     Format.fprintf fmt "@;@[<v 2>LineageGraph@;@[%a@]@]" (Format.pp_print_list pp_flow) flows
+
+
+  module Out = struct
+    module Json = struct
+      type location_id = int64 [@@deriving yojson_of]
+
+      type node_id = int64 [@@deriving yojson_of]
+
+      type state_id = int64 [@@deriving yojson_of]
+
+      (* These correspond to CFG nodes in Infer. *)
+      type _location =
+        { id: location_id
+        ; function_: string [@key "function"]
+        ; file: string
+        ; line: int option (* might be unknown for some locations *) }
+      [@@deriving yojson_of, yojson_fields]
+
+      type location = {location: _location} [@@deriving yojson_of]
+
+      (* These correspond to abstract states in AbsInt. *)
+      type _state = {id: state_id; location: location_id} [@@deriving yojson_of]
+
+      type state = {state: _state} [@@deriving yojson_of]
+
+      type variable_type = UserVariable | Temporary | Argument | Return
+
+      let yojson_of_variable_type typ =
+        match typ with
+        | UserVariable ->
+            `String "UserVariable"
+        | Temporary ->
+            `String "Temporary"
+        | Argument ->
+            `String "Argument"
+        | Return ->
+            `String "Return"
+
+
+      type variable =
+        { name: string (* "$ret" if type is Return; "$argN" for N=0,1,... if type is Argument *)
+        ; variable_type: variable_type }
+      [@@deriving yojson_of]
+
+      type _node = {id: node_id; state: state_id; variable: variable} [@@deriving yojson_of]
+
+      type node = {node: _node} [@@deriving yojson_of]
+
+      type edge_type = Copy | Derive
+
+      let yojson_of_edge_type typ =
+        match typ with Copy -> `String "Copy" | Derive -> `String "Derive"
+
+
+      type _edge = {source: node_id; target: node_id; edge_type: edge_type} [@@deriving yojson_of]
+
+      type edge = {edge: _edge} [@@deriving yojson_of]
+
+      type entity_type = Edge | Node | State | Location [@@deriving compare, hash, sexp]
+    end
+
+    let channel_ref = ref None
+
+    let channel () =
+      let output_dir = Filename.concat Config.results_dir "simple-lineage" in
+      Unix.mkdir_p output_dir ;
+      match !channel_ref with
+      | None ->
+          let filename = Format.asprintf "lineage-%a.json" Pid.pp (Unix.getpid ()) in
+          let channel = Filename.concat output_dir filename |> Out_channel.create in
+          let close_channel () =
+            Option.iter !channel_ref ~f:Out_channel.close_no_err ;
+            channel_ref := None
+          in
+          Epilogues.register ~f:close_channel ~description:"close output channel for lineage" ;
+          channel_ref := Some channel ;
+          channel
+      | Some channel ->
+          channel
+
+
+    type state_local = Start of Location.t | Exit of Location.t | Normal of PPNode.t
+
+    type var = Argument of int | Return | Normal of Var.t
+
+    module Id = struct
+      (** Internal representation of an Id. *)
+      type t = Z.t
+
+      (** Largest prime that fits in 63 bits. *)
+      let modulo_i64 = Int64.of_string "9223372036854775783"
+
+      let modulo_z = Z.of_int64 modulo_i64
+
+      let zero : t = Z.zero
+
+      let one : t = Z.one
+
+      let two : t = Z.of_int 2
+
+      let three : t = Z.of_int 3
+
+      let coefficients =
+        let open Sequence.Generator in
+        let rec gen prng =
+          yield (Z.of_int64 (Random.State.int64 prng modulo_i64)) >>= fun () -> gen prng
+        in
+        Sequence.memoize (run (gen (Random.State.make [|Config.simple_lineage_seed|])))
+
+
+      let of_sequence ids =
+        let hash_add old_hash (a, b) =
+          let open Z in
+          (old_hash + (a * b)) mod modulo_z
+        in
+        Sequence.fold ~init:zero ~f:hash_add (Sequence.zip ids coefficients)
+
+
+      let of_list ids = of_sequence (Sequence.of_list ids)
+
+      let of_state_local (state : state_local) : t =
+        match state with
+        | Start _ ->
+            of_list [zero]
+        | Exit _ ->
+            of_list [one]
+        | Normal n ->
+            of_list [two; Z.of_int (PPNode.hash n)]
+
+
+      (** Workaround: [String.hash] leads to many collisions. *)
+      let of_string s =
+        of_sequence
+          (Sequence.map
+             ~f:(fun c -> Z.of_int (int_of_char c))
+             (Sequence.of_seq (Caml.String.to_seq s)) )
+
+
+      let of_procname procname : t = of_string (Procname.hashable_name procname)
+
+      let of_variable_type (variable_type : Json.variable_type) =
+        match variable_type with
+        | UserVariable ->
+            zero
+        | Temporary ->
+            one
+        | Argument ->
+            two
+        | Return ->
+            three
+
+
+      let of_variable {Json.name; variable_type} : t =
+        of_list [of_string name; of_variable_type variable_type]
+
+
+      let of_kind (kind : flow_kind) : t = match kind with Direct -> zero | Summary -> one
+
+      (** Converts the internal representation to an [int64], as used by the [Out] module. *)
+      let out id : int64 =
+        try Z.to_int64 id with Z.Overflow -> L.die InternalError "Hash does not fit in int64"
+    end
+
+    let variable_of_var (var : var) : Json.variable =
+      let name =
+        match var with
+        | Argument index ->
+            Printf.sprintf "$arg%d" index
+        | Return ->
+            "$ret"
+        | Normal x ->
+            Format.asprintf "%a" Var.pp x
+      in
+      let variable_type : Json.variable_type =
+        match var with
+        | Argument _ ->
+            Argument
+        | Return ->
+            Return
+        | Normal x ->
+            if Var.appears_in_source_code x then UserVariable else Temporary
+      in
+      {Json.name; variable_type}
+
+
+    module JsonCacheKey = struct
+      module T = struct
+        type t = Json.entity_type * Int64.t [@@deriving compare, hash, sexp]
+      end
+
+      include T
+      include Hashable.Make (T)
+    end
+
+    let write_json_cache = JsonCacheKey.Hash_set.create ()
+
+    let write_json =
+      let really_write_json json =
+        Yojson.Safe.to_channel (channel ()) json ;
+        Out_channel.newline (channel ())
+      in
+      if Config.simple_lineage_dedup then ( fun category id json ->
+        let key = (category, Id.out id) in
+        if not (Hash_set.mem write_json_cache key) then (
+          Hash_set.add write_json_cache key ;
+          really_write_json json ) )
+      else fun _category _id json -> really_write_json json
+
+
+    let save_location ~write procname (state_local : state_local) : Id.t =
+      let procname_id = Id.of_procname procname in
+      let state_local_id = Id.of_state_local state_local in
+      let location_id = Id.of_list [procname_id; state_local_id] in
+      if write then (
+        let location =
+          match state_local with
+          | Start location | Exit location ->
+              location
+          | Normal node ->
+              PPNode.loc node
+        in
+        if Location.equal location Location.dummy then
+          L.die InternalError "Source file name should always be available" ;
+        let function_ = Procname.hashable_name procname in
+        let file = SourceFile.to_rel_path location.Location.file in
+        let line = if location.Location.line < 0 then None else Some location.Location.line in
+        write_json Location location_id
+          (Json.yojson_of_location {location= {id= Id.out location_id; function_; file; line}}) ) ;
+      location_id
+
+
+    let save_state ~write procname (state : state_local) : Id.t =
+      let location_id = save_location ~write procname state in
+      if write then
+        write_json State location_id
+          (Json.yojson_of_state {state= {id= Id.out location_id; location= Id.out location_id}}) ;
+      location_id
+
+
+    let save_node proc_desc (data : data) =
+      let save ?(write = true) procname state_local variable =
+        let state_id = save_state ~write procname state_local in
+        let variable = variable_of_var variable in
+        let node_id = Id.of_list [state_id; Id.of_variable variable] in
+        if write then
+          write_json Node node_id
+            (Json.yojson_of_node {node= {id= Id.out node_id; state= Id.out state_id; variable}}) ;
+        node_id
+      in
+      match data with
+      | Local (var, node) ->
+          let procname = Procdesc.get_proc_name proc_desc in
+          save procname (Normal node) (Normal var)
+      | Argument index ->
+          let procname = Procdesc.get_proc_name proc_desc in
+          save procname
+            (Start (Procdesc.Node.get_loc (Procdesc.get_start_node proc_desc)))
+            (Argument index)
+      | Return ->
+          let procname = Procdesc.get_proc_name proc_desc in
+          save procname (Exit (Procdesc.Node.get_loc (Procdesc.get_exit_node proc_desc))) Return
+      | ArgumentOf (index, callee_procname) ->
+          save ~write:false callee_procname (Start Location.dummy) (Argument index)
+      | ReturnOf callee_procname ->
+          save ~write:false callee_procname (Exit Location.dummy) Return
+
+
+    let save_edge proc_desc {source; target; kind} =
+      let source_id = save_node proc_desc source in
+      let target_id = save_node proc_desc target in
+      let kind_id = Id.of_kind kind in
+      let edge_id = Id.of_list [source_id; target_id; kind_id] in
+      let edge_type = match kind with Direct -> Json.Copy | Summary -> Json.Derive in
+      write_json Edge edge_id
+        (Json.yojson_of_edge
+           {edge= {source= Id.out source_id; target= Id.out target_id; edge_type}} ) ;
+      edge_id
+
+
+    let report_summary summary proc_desc =
+      let record_flow flow = ignore (save_edge proc_desc flow) in
+      List.iter ~f:record_flow summary ;
+      Out_channel.flush (channel ()) ;
+      Hash_set.clear write_json_cache
+  end
+
+  let report = Out.report_summary
 end
 
 (** Helper function. *)
@@ -85,6 +372,8 @@ module Summary = struct
   type tito_arguments = IntSet.t
 
   type t = {graph: LineageGraph.t; tito_arguments: tito_arguments}
+
+  let graph {graph} = graph
 
   let pp_tito_arguments fmt arguments =
     let pp_sep fmt () = Format.fprintf fmt ",@;" in
@@ -395,291 +684,6 @@ end
 
 module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions)
 
-module Out = struct
-  module Json = struct
-    type location_id = int64 [@@deriving yojson_of]
-
-    type node_id = int64 [@@deriving yojson_of]
-
-    type state_id = int64 [@@deriving yojson_of]
-
-    (* These correspond to CFG nodes in Infer. *)
-    type _location =
-      { id: location_id
-      ; function_: string [@key "function"]
-      ; file: string
-      ; line: int option (* might be unknown for some locations *) }
-    [@@deriving yojson_of, yojson_fields]
-
-    type location = {location: _location} [@@deriving yojson_of]
-
-    (* These correspond to abstract states in AbsInt. *)
-    type _state = {id: state_id; location: location_id} [@@deriving yojson_of]
-
-    type state = {state: _state} [@@deriving yojson_of]
-
-    type variable_type = UserVariable | Temporary | Argument | Return
-
-    let yojson_of_variable_type typ =
-      match typ with
-      | UserVariable ->
-          `String "UserVariable"
-      | Temporary ->
-          `String "Temporary"
-      | Argument ->
-          `String "Argument"
-      | Return ->
-          `String "Return"
-
-
-    type variable =
-      { name: string (* "$ret" if type is Return; "$argN" for N=0,1,... if type is Argument *)
-      ; variable_type: variable_type }
-    [@@deriving yojson_of]
-
-    type _node = {id: node_id; state: state_id; variable: variable} [@@deriving yojson_of]
-
-    type node = {node: _node} [@@deriving yojson_of]
-
-    type edge_type = Copy | Derive
-
-    let yojson_of_edge_type typ =
-      match typ with Copy -> `String "Copy" | Derive -> `String "Derive"
-
-
-    type _edge = {source: node_id; target: node_id; edge_type: edge_type} [@@deriving yojson_of]
-
-    type edge = {edge: _edge} [@@deriving yojson_of]
-
-    type entity_type = Edge | Node | State | Location [@@deriving compare, hash, sexp]
-  end
-
-  let channel_ref = ref None
-
-  let channel () =
-    let output_dir = Filename.concat Config.results_dir "simple-lineage" in
-    Unix.mkdir_p output_dir ;
-    match !channel_ref with
-    | None ->
-        let filename = Format.asprintf "lineage-%a.json" Pid.pp (Unix.getpid ()) in
-        let channel = Filename.concat output_dir filename |> Out_channel.create in
-        let close_channel () =
-          Option.iter !channel_ref ~f:Out_channel.close_no_err ;
-          channel_ref := None
-        in
-        Epilogues.register ~f:close_channel ~description:"close output channel for lineage" ;
-        channel_ref := Some channel ;
-        channel
-    | Some channel ->
-        channel
-
-
-  type state_local = Start of Location.t | Exit of Location.t | Normal of PPNode.t
-
-  type var = Argument of int | Return | Normal of Var.t
-
-  module Id = struct
-    (** Internal representation of an Id. *)
-    type t = Z.t
-
-    (** Largest prime that fits in 63 bits. *)
-    let modulo_i64 = Int64.of_string "9223372036854775783"
-
-    let modulo_z = Z.of_int64 modulo_i64
-
-    let zero : t = Z.zero
-
-    let one : t = Z.one
-
-    let two : t = Z.of_int 2
-
-    let three : t = Z.of_int 3
-
-    let coefficients =
-      let open Sequence.Generator in
-      let rec gen prng =
-        yield (Z.of_int64 (Random.State.int64 prng modulo_i64)) >>= fun () -> gen prng
-      in
-      Sequence.memoize (run (gen (Random.State.make [|Config.simple_lineage_seed|])))
-
-
-    let of_sequence ids =
-      let hash_add old_hash (a, b) =
-        let open Z in
-        (old_hash + (a * b)) mod modulo_z
-      in
-      Sequence.fold ~init:zero ~f:hash_add (Sequence.zip ids coefficients)
-
-
-    let of_list ids = of_sequence (Sequence.of_list ids)
-
-    let of_state_local (state : state_local) : t =
-      match state with
-      | Start _ ->
-          of_list [zero]
-      | Exit _ ->
-          of_list [one]
-      | Normal n ->
-          of_list [two; Z.of_int (PPNode.hash n)]
-
-
-    (** Workaround: [String.hash] leads to many collisions. *)
-    let of_string s =
-      of_sequence
-        (Sequence.map
-           ~f:(fun c -> Z.of_int (int_of_char c))
-           (Sequence.of_seq (Caml.String.to_seq s)) )
-
-
-    let of_procname procname : t = of_string (Procname.hashable_name procname)
-
-    let of_variable_type (variable_type : Json.variable_type) =
-      match variable_type with
-      | UserVariable ->
-          zero
-      | Temporary ->
-          one
-      | Argument ->
-          two
-      | Return ->
-          three
-
-
-    let of_variable {Json.name; variable_type} : t =
-      of_list [of_string name; of_variable_type variable_type]
-
-
-    let of_kind (kind : LineageGraph.flow_kind) : t =
-      match kind with Direct -> zero | Summary -> one
-
-
-    (** Converts the internal representation to an [int64], as used by the [Out] module. *)
-    let out id : int64 =
-      try Z.to_int64 id with Z.Overflow -> L.die InternalError "Hash does not fit in int64"
-  end
-
-  let variable_of_var (var : var) : Json.variable =
-    let name =
-      match var with
-      | Argument index ->
-          Printf.sprintf "$arg%d" index
-      | Return ->
-          "$ret"
-      | Normal x ->
-          Format.asprintf "%a" Var.pp x
-    in
-    let variable_type : Json.variable_type =
-      match var with
-      | Argument _ ->
-          Argument
-      | Return ->
-          Return
-      | Normal x ->
-          if Var.appears_in_source_code x then UserVariable else Temporary
-    in
-    {Json.name; variable_type}
-
-
-  module JsonCacheKey = struct
-    module T = struct
-      type t = Json.entity_type * Int64.t [@@deriving compare, hash, sexp]
-    end
-
-    include T
-    include Hashable.Make (T)
-  end
-
-  let write_json_cache = JsonCacheKey.Hash_set.create ()
-
-  let write_json =
-    let really_write_json json =
-      Yojson.Safe.to_channel (channel ()) json ;
-      Out_channel.newline (channel ())
-    in
-    if Config.simple_lineage_dedup then ( fun category id json ->
-      let key = (category, Id.out id) in
-      if not (Hash_set.mem write_json_cache key) then (
-        Hash_set.add write_json_cache key ;
-        really_write_json json ) )
-    else fun _category _id json -> really_write_json json
-
-
-  let save_location ~write procname (state_local : state_local) : Id.t =
-    let procname_id = Id.of_procname procname in
-    let state_local_id = Id.of_state_local state_local in
-    let location_id = Id.of_list [procname_id; state_local_id] in
-    if write then (
-      let location =
-        match state_local with
-        | Start location | Exit location ->
-            location
-        | Normal node ->
-            PPNode.loc node
-      in
-      if Location.equal location Location.dummy then
-        L.die InternalError "Source file name should always be available" ;
-      let function_ = Procname.hashable_name procname in
-      let file = SourceFile.to_rel_path location.Location.file in
-      let line = if location.Location.line < 0 then None else Some location.Location.line in
-      write_json Location location_id
-        (Json.yojson_of_location {location= {id= Id.out location_id; function_; file; line}}) ) ;
-    location_id
-
-
-  let save_state ~write procname (state : state_local) : Id.t =
-    let location_id = save_location ~write procname state in
-    if write then
-      write_json State location_id
-        (Json.yojson_of_state {state= {id= Id.out location_id; location= Id.out location_id}}) ;
-    location_id
-
-
-  let save_node proc_desc (data : LineageGraph.data) =
-    let save ?(write = true) procname state_local variable =
-      let state_id = save_state ~write procname state_local in
-      let variable = variable_of_var variable in
-      let node_id = Id.of_list [state_id; Id.of_variable variable] in
-      if write then
-        write_json Node node_id
-          (Json.yojson_of_node {node= {id= Id.out node_id; state= Id.out state_id; variable}}) ;
-      node_id
-    in
-    match data with
-    | Local (var, node) ->
-        let procname = Procdesc.get_proc_name proc_desc in
-        save procname (Normal node) (Normal var)
-    | Argument index ->
-        let procname = Procdesc.get_proc_name proc_desc in
-        save procname
-          (Start (Procdesc.Node.get_loc (Procdesc.get_start_node proc_desc)))
-          (Argument index)
-    | Return ->
-        let procname = Procdesc.get_proc_name proc_desc in
-        save procname (Exit (Procdesc.Node.get_loc (Procdesc.get_exit_node proc_desc))) Return
-    | ArgumentOf (index, callee_procname) ->
-        save ~write:false callee_procname (Start Location.dummy) (Argument index)
-    | ReturnOf callee_procname ->
-        save ~write:false callee_procname (Exit Location.dummy) Return
-
-
-  let save_edge proc_desc {LineageGraph.source; target; kind} =
-    let source_id = save_node proc_desc source in
-    let target_id = save_node proc_desc target in
-    let kind_id = Id.of_kind kind in
-    let edge_id = Id.of_list [source_id; target_id; kind_id] in
-    let edge_type = match kind with Direct -> Json.Copy | Summary -> Json.Derive in
-    write_json Edge edge_id
-      (Json.yojson_of_edge {edge= {source= Id.out source_id; target= Id.out target_id; edge_type}}) ;
-    edge_id
-
-
-  let report_summary summary proc_desc =
-    let record_flow flow = ignore (save_edge proc_desc flow) in
-    List.iter ~f:record_flow summary ;
-    Out_channel.flush (channel ()) ;
-    Hash_set.clear write_json_cache
-end
-
 let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   let proc_size = Procdesc.size proc_desc in
   let too_big =
@@ -727,5 +731,5 @@ let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
       @ (Analyzer.InvariantMap.fold collect invmap [snd initial] |> List.concat)
     in
     let summary = Summary.of_graph proc_desc graph in
-    if Config.simple_lineage_json_report then Out.report_summary summary.Summary.graph proc_desc ;
+    if Config.simple_lineage_json_report then LineageGraph.report summary.Summary.graph proc_desc ;
     Some summary

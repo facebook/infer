@@ -220,22 +220,24 @@ let report () =
     ( Config.issues_tests
     , Config.cost_issues_tests
     , Config.config_impact_issues_tests
+    , Config.simple_lineage_json_report
     , Config.merge_report )
   with
-  | None, None, None, [] ->
+  | None, None, None, false, [] ->
       L.die UserError
         "Expected at least one of '--issues-tests', '--cost-issues-tests', \
-         '--config-impact-issues-tests' or '--merge-report'.@\n"
-  | out_path, cost_out_path, config_impact_out_path, [] ->
+         '--config-impact-issues-tests', '--simple-lineage-json-report' or '--merge-report'.@\n"
+  | out_path, cost_out_path, config_impact_out_path, report_lineage, [] ->
       Option.iter out_path ~f:write_from_json ;
       Option.iter cost_out_path ~f:write_from_cost_json ;
-      Option.iter config_impact_out_path ~f:write_from_config_impact_json
-  | None, None, None, _ ->
+      Option.iter config_impact_out_path ~f:write_from_config_impact_json ;
+      if report_lineage then ReportSimpleLineage.report ()
+  | None, None, None, false, _ ->
       merge_reports ()
-  | _, _, _, _ :: _ ->
+  | _, _, _, _, _ :: _ ->
       L.die UserError
-        "Option '--merge-report' cannot be used with '--issues-tests', '--cost-issues-tests' or \
-         '--config-impact-issues-tests'.@\n"
+        "Option '--merge-report' cannot be used with '--issues-tests', '--cost-issues-tests', \
+         '--config-impact-issues-tests' or '--simple-lineage-json-report'.@\n"
 
 
 let report_diff () =
