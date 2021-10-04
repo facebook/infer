@@ -1627,6 +1627,12 @@ and inclusive_cost =
   CLOpt.mk_bool ~long:"inclusive-cost" ~default:true "Computes the inclusive cost"
 
 
+and incremental_analysis =
+  CLOpt.mk_bool ~long:"incremental-analysis" ~default:false
+    "[EXPERIMENTAL] Use incremental analysis for changed files. Not compatible with \
+     $(b,--reanalyze) and $(b,--continue-analysis)."
+
+
 and issues_tests_fields =
   CLOpt.mk_symbol_seq ~long:"issues-tests-fields"
     ~in_help:InferCommand.[(Report, manual_generic)]
@@ -2582,6 +2588,12 @@ and sqlite_lock_timeout =
     "Timeout for SQLite results database operations, in milliseconds."
 
 
+and sqlite_vacuum =
+  CLOpt.mk_bool ~long:"sqlite-vacuum" ~default:false
+    ~in_help:InferCommand.[(Capture, manual_generic)]
+    "$(b,VACUUM) the SQLite DB after performing capture."
+
+
 and sqlite_vfs =
   let default =
     (* on WSL (bash on Windows) standard SQLite VFS can't be used, see WSL/issues/1927 WSL/issues/2395 *)
@@ -2686,12 +2698,6 @@ and tv_limit_filtered =
 
 and uninit_interproc =
   CLOpt.mk_bool ~long:"uninit-interproc" "Run uninit check in the experimental interprocedural mode"
-
-
-and incremental_analysis =
-  CLOpt.mk_bool ~long:"incremental-analysis" ~default:false
-    "[EXPERIMENTAL] Use incremental analysis for changed files. Not compatible with \
-     $(b,--reanalyze) and $(b,--continue-analysis)."
 
 
 and version =
@@ -3599,6 +3605,8 @@ and sqlite_cache_size = !sqlite_cache_size
 and sqlite_page_size = !sqlite_page_size
 
 and sqlite_lock_timeout = !sqlite_lock_timeout
+
+and sqlite_vacuum = !sqlite_vacuum
 
 and sqlite_vfs = !sqlite_vfs
 
