@@ -60,9 +60,10 @@ type t =
 let empty = {resolve= IdAccessPathMapDomain.empty; reverse= Reverse.empty}
 
 let add id ap {resolve; reverse} =
-  if (Config.debug_exceptions || Config.write_html) && Reverse.mem id reverse then
-    (if Config.debug_exceptions then L.(die InternalError) else L.d_printfln ?color:None)
-      "Variable %a appearing on both sides of bindings" Var.pp id ;
+  if Reverse.mem id reverse then (
+    L.internal_error "Variable %a appearing on both sides of bindings@\n" Var.pp id ;
+    if Config.write_html then
+      L.d_printfln "Variable %a appearing on both sides of bindings@\n" Var.pp id ) ;
   let resolve = IdAccessPathMapDomain.add id ap resolve in
   let reverse =
     HilExp.AccessExpression.fold_vars ap ~init:reverse ~f:(fun acc var_in_ap ->
