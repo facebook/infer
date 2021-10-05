@@ -196,7 +196,8 @@ let report_meta_issue_for_top_level_class tenv source_file class_name class_stru
         ; unvetted_3rd_party= None
         ; nullable_methods= None
         ; field= None
-        ; annotation_graph= None }
+        ; annotation_graph= None
+        ; redundant_fixme_info= None }
     in
     log_issue ~issue_log ~loc:class_loc ~severity ~nullsafe_extra issue_type description
 
@@ -231,7 +232,8 @@ let analyze_nullsafe_annotations tenv source_file class_name class_struct issue_
       ; unvetted_3rd_party= None
       ; nullable_methods= None
       ; field= None
-      ; annotation_graph= None }
+      ; annotation_graph= None
+      ; redundant_fixme_info= None }
   in
   match NullsafeMode.check_problematic_class_annotation tenv class_name with
   | Ok () ->
@@ -282,7 +284,8 @@ let report_annotation_graph source_file class_name class_struct annotation_graph
       ; unvetted_3rd_party= None
       ; nullable_methods= None
       ; field= None
-      ; annotation_graph= Some annotation_graph }
+      ; annotation_graph= Some annotation_graph
+      ; redundant_fixme_info= None }
   in
   log_issue ~issue_log ~loc:class_loc ~severity:IssueType.Info ~nullsafe_extra
     IssueType.eradicate_annotation_graph ""

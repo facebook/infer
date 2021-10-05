@@ -161,4 +161,5 @@ let get_nullsafe_extra
     ; unvetted_3rd_party
     ; nullable_methods
     ; field
-    ; annotation_graph= None }
+    ; annotation_graph= None
+    ; redundant_fixme_info= None }
