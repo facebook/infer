@@ -5,7 +5,12 @@
 
 -module(block).
 
--export([test_block_Ok/0, test_block_Bad/0]).
+-export([
+    test_block_Ok/0,
+    test_block_Bad/0,
+    test_block_in_function_Ok/0,
+    test_block_in_function_Bad/0
+]).
 
 % Call this method with warn(1) to trigger a warning to expect
 warn(0) -> ok.
@@ -32,6 +37,27 @@ test_block_Bad() ->
             Z
         end
     of
+        3 -> warn(1);
+        _ -> ok
+    end.
+
+block_in_function() ->
+    begin
+        1,
+        2,
+        3
+    end.
+
+test_block_in_function_Ok() ->
+    X = block_in_function(),
+    case X of
+        3 -> ok;
+        _ -> warn(1)
+    end.
+
+test_block_in_function_Bad() ->
+    X = block_in_function(),
+    case X of
         3 -> warn(1);
         _ -> ok
     end.

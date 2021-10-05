@@ -305,6 +305,7 @@ and translate_expression env {Ast.line; simple_expression} =
   let env = update_location line env in
   let (Env.Present result) = env.result in
   let ret_var = match result with Exp.Var ret_var -> ret_var | _ -> mk_fresh_id () in
+  let env = {env with result= Env.Present (Exp.Var ret_var)} in
   let expression_block : Block.t =
     match simple_expression with
     | BinaryOperator (e1, op, e2) ->
