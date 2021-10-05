@@ -476,6 +476,14 @@ module StdArray = struct
       Dom.Mem.add_stack (Loc.of_id id) v mem
     in
     {exec; check= no_check}
+
+
+  let integer_size size =
+    let exec _ ~ret:(ret_id, _) mem =
+      let size_v = IntLit.of_int64 size |> Itv.of_int_lit |> Dom.Val.of_itv in
+      model_by_value size_v ret_id mem
+    in
+    {exec; check= no_check}
 end
 
 module ArrObjCommon = struct
@@ -1820,6 +1828,8 @@ module Call = struct
         $+? capt_exp $--> Folly.Split.std_vector
       ; -"std" &:: "__shared_ptr_access" &:: "operator->" $ capt_exp $--> id
       ; -"std" &:: "array" < any_typ &+ capt_int >:: "array" &--> StdArray.constructor
+      ; -"std" &:: "array" < any_typ &+ capt_int >:: "size" &--> StdArray.integer_size
+      ; -"std" &:: "array" < any_typ &+ capt_int >:: "max_size" &--> StdArray.integer_size
       ; -"std" &:: "array" < any_typ &+ capt_int >:: "at" $ capt_arg $+ capt_arg $!--> StdArray.at
       ; -"std" &:: "array" < any_typ &+ capt_int >:: "back" $ capt_arg $!--> StdArray.back
       ; -"std" &:: "array" < any_typ &+ capt_int >:: "begin" $ capt_arg $!--> StdArray.begin_
