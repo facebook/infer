@@ -33,7 +33,7 @@ digraph cfg {
 	
 
 	 "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_3" -> "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_4" ;
-"test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_4" [label="4:  Return Stmt \n   n$1=_fun_X::X(n$0:X*,&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:X const &) [line 13, column 19]\n " shape="box"]
+"test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_4" [label="4:  Return Stmt \n   n$1=_fun_X::X(n$0:X*,&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:X const &) copy ctor [line 13, column 19]\n " shape="box"]
 	
 
 	 "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_4" -> "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_5" ;

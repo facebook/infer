@@ -61,7 +61,7 @@ digraph cfg {
 	
 
 	 "initialization_mixed_styles_not_handled_correctly#5603413470418470631.422782850043f1b48105fbbb47efe379_3" -> "initialization_mixed_styles_not_handled_correctly#5603413470418470631.422782850043f1b48105fbbb47efe379_2" ;
-"initialization_mixed_styles_not_handled_correctly#5603413470418470631.422782850043f1b48105fbbb47efe379_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(z:Z[2*8]); [line 39, column 3]\n  *&z[0].a:int=1 [line 39, column 20]\n  *&z[0].b:int=2 [line 39, column 20]\n  n$1=_fun_Z::Z(&z[1]:Z*,&old:Z&) [line 39, column 28]\n " shape="box"]
+"initialization_mixed_styles_not_handled_correctly#5603413470418470631.422782850043f1b48105fbbb47efe379_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(z:Z[2*8]); [line 39, column 3]\n  *&z[0].a:int=1 [line 39, column 20]\n  *&z[0].b:int=2 [line 39, column 20]\n  n$1=_fun_Z::Z(&z[1]:Z*,&old:Z&) copy ctor [line 39, column 28]\n " shape="box"]
 	
 
 	 "initialization_mixed_styles_not_handled_correctly#5603413470418470631.422782850043f1b48105fbbb47efe379_4" -> "initialization_mixed_styles_not_handled_correctly#5603413470418470631.422782850043f1b48105fbbb47efe379_3" ;
