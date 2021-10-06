@@ -9,11 +9,13 @@
 module type Domain = sig
   type t [@@deriving compare, equal, sexp_of]
 
+  module Set : Set.S with type elt := t
+
   val pp : t pp
   val init : Llair.GlobalDefn.t iarray -> t
   val join : t -> t -> t
-  val joinN : t list -> t
-  val dnf : t -> t list
+  val joinN : Set.t -> t
+  val dnf : t -> Set.t
   val exec_assume : ThreadID.t -> t -> Llair.Exp.t -> t option
   val exec_kill : ThreadID.t -> Llair.Reg.t -> t -> t
   val exec_move : ThreadID.t -> (Llair.Reg.t * Llair.Exp.t) iarray -> t -> t

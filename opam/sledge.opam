@@ -25,7 +25,6 @@ depends: [
   "memtrace"
   "mtime"
   "ppx_compare"
-  "ppx_hash"
   "ppxlib" {>= "0.21.0"}
   "shexp"
   "smtlib-utils"

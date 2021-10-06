@@ -629,8 +629,9 @@ let excise_seg ({sub} as goal) msg ssg =
 let excise_heap ({min; sub} as goal) =
   trace (fun {pf} -> pf "excise_heap:@ %a" pp goal) ;
   match
-    List.find_map sub.heap ~f:(fun ssg ->
-        List.find_map min.heap ~f:(fun msg -> excise_seg goal msg ssg) )
+    Iter.find_map (Sh.Segs.to_iter sub.heap) ~f:(fun ssg ->
+        Iter.find_map (Sh.Segs.to_iter min.heap) ~f:(fun msg ->
+            excise_seg goal msg ssg ) )
   with
   | Some goal -> Some (goal |> with_ ~pgs:true)
   | None -> Some goal
@@ -664,18 +665,22 @@ let excise_dnf : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
   let from_minuend minuend remainders =
     [%trace]
       ~call:(fun {pf} -> pf "@ %a" Sh.pp minuend)
-      ~retn:(fun {pf} -> pf "%a" (Option.pp "%a" Sh.pp))
+      ~retn:(fun {pf} ->
+        pf "%a" (Option.pp "%a" (fun fs rs -> Sh.pp fs (Sh.orN rs))) )
     @@ fun () ->
     let zs, min = Sh.bind_exists minuend ~wrt:xs in
     let us = min.us in
     let+ remainder =
-      List.find_map ~f:(excise_subtrahend us min zs) dnf_subtrahend
+      Iter.find_map
+        ~f:(excise_subtrahend us min zs)
+        (Sh.Set.to_iter dnf_subtrahend)
     in
-    Sh.or_ remainders remainder
+    Sh.Set.add remainder remainders
   in
-  Iter.fold_opt ~f:from_minuend
-    (Iter.of_list dnf_minuend)
-    (Sh.false_ (Var.Set.union minuend.us xs))
+  let+ rs =
+    Iter.fold_opt ~f:from_minuend (Sh.Set.to_iter dnf_minuend) Sh.Set.empty
+  in
+  Sh.extend_us (Var.Set.union minuend.us xs) (Sh.orN rs)
 
 let query_count = ref (-1)
 

@@ -7,7 +7,7 @@
 
 (** Uninterpreted Predicate Symbols *)
 
-type t = string [@@deriving compare, equal, hash, sexp]
+type t = string [@@deriving compare, equal, sexp]
 
 let pp ppf p =
   let pf fmt = Format.fprintf ppf fmt in

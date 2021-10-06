@@ -12,6 +12,8 @@ open Fol
 
 type t = Sh.t [@@deriving compare, equal, sexp]
 
+module Set = Sh.Set
+
 let pp fs q = Format.fprintf fs "@[{ %a@ }@]" Sh.pp q
 
 (* set by cli *)
@@ -43,7 +45,10 @@ let join p q =
 let joinN qs =
   [%Trace.call fun {pf} -> pf "@ %a" Sh.pp_djn qs]
   ;
-  (match qs with [q] -> q | _ -> Sh.orN qs |> simplify)
+  ( match Sh.Set.classify qs with
+  | Zero -> Sh.orN qs
+  | One q -> q
+  | Many -> Sh.orN qs |> simplify )
   |>
   [%Trace.retn fun {pf} -> pf "%a" pp]
 
@@ -120,7 +125,7 @@ let garbage_collect (q : Sh.t) ~wrt =
     if Term.Set.equal previous current then current
     else
       let new_set =
-        List.fold q.heap current ~f:(fun seg current ->
+        Iter.fold (Sh.Segs.to_iter q.heap) current ~f:(fun seg current ->
             if value_determined_by q.ctx current seg.loc then
               List.fold (Context.class_of q.ctx seg.cnt) current
                 ~f:(fun e c ->

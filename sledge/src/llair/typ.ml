@@ -22,7 +22,7 @@ type t =
       ; bits: int
       ; byts: int }
   | Opaque of {name: string}
-[@@deriving compare, equal, hash, sexp]
+[@@deriving compare, equal, sexp]
 
 let rec pp fs typ =
   let pf pp =

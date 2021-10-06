@@ -102,7 +102,8 @@ let check_xcpretty () =
          @."
 
 
-let capture ~changed_files = function
+let capture ~changed_files mode =
+  ( match mode with
   | Analyze | AnalyzeJson ->
       ()
   | Ant {prog; args} ->
@@ -153,7 +154,8 @@ let capture ~changed_files = function
       let db_files =
         CaptureCompilationDatabase.get_compilation_database_files_xcodebuild ~prog ~args
       in
-      CaptureCompilationDatabase.capture ~changed_files ~db_files
+      CaptureCompilationDatabase.capture ~changed_files ~db_files ) ;
+  if Config.sqlite_vacuum then DBWriter.canonicalize ()
 
 
 (* shadowed for tracing *)

@@ -122,6 +122,7 @@ Analyze code in one or more LLVM bitcode files. This is a convenience wrapper fo
   [-no-internalize]       do not internalize all functions except the entry
                           points specified in the config file
   [-no-simplify-states]   do not simplify states during symbolic execution
+  [-normalize-states]     normalize states during symbolic execution
   [-output <file>]        write generated binary LLAIR to <file>
   [-preanalyze-globals]   pre-analyze global variables used by each function
   [-report <file>]        write report sexp to <file>, or to standard error if
@@ -209,6 +210,7 @@ The <input> file must be binary LLAIR, such as produced by `sledge translate`.
                           (alias: -bound)
   [-margin <cols>]        wrap debug tracing at <cols> columns
   [-no-simplify-states]   do not simplify states during symbolic execution
+  [-normalize-states]     normalize states during symbolic execution
   [-preanalyze-globals]   pre-analyze global variables used by each function
   [-report <file>]        write report sexp to <file>, or to standard error if
                           "-"

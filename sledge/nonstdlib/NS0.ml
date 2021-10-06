@@ -8,11 +8,9 @@
 (** Global namespace used when defining the rest of nonstdlib, which is
     extended in NS, the exposed interface of nonstdlib *)
 
-(** Support for [@@deriving compare, equal, hash, sexp] on builtin types *)
+(** Support for [@@deriving compare, equal, sexp] on builtin types *)
 
 include Ppx_compare_lib.Builtin
-module Hash = Ppx_hash_lib.Std.Hash
-include Hash.Builtin
 module Sexp = Sexplib.Sexp
 include Ppx_sexp_conv_lib.Conv
 

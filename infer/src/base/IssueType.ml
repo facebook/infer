@@ -845,6 +845,11 @@ let no_true_branch_in_if =
     ~user_documentation:[%blob "../../documentation/issues/NO_TRUE_BRANCH_IN_IF.md"]
 
 
+let no_matching_branch_in_try =
+  register ~id:"NO_MATCHING_BRANCH_IN_TRY" Error Pulse
+    ~user_documentation:[%blob "../../documentation/issues/NO_MATCHING_BRANCH_IN_TRY.md"]
+
+
 let null_dereference =
   register ~id:"NULL_DEREFERENCE" Error Biabduction
     ~user_documentation:"See [NULLPTR_DEREFERENCE](#nullptr_dereference)."

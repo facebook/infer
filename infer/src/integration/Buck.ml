@@ -262,7 +262,9 @@ module Query = struct
     let is_valid_source source_path_json =
       match source_path_json with
       | `String source_path ->
-          String.is_suffix ~suffix:".java" source_path
+          ( String.is_suffix ~suffix:".java" source_path
+          || Config.kotlin_capture
+             && Filename.check_suffix source_path Config.kotlin_source_extension )
           && not (String.is_suffix ~suffix:"MetagenRoot.java" source_path)
       | _ ->
           L.internal_error "Could not parse source path json: %s@\n"

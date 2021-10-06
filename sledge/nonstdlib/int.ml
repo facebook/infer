@@ -10,7 +10,7 @@ include Containers.Int
 include Stdlib.Int
 
 module T = struct
-  type t = int [@@deriving compare, equal, hash, sexp]
+  type t = int [@@deriving compare, equal, sexp]
 end
 
 include T

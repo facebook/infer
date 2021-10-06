@@ -90,6 +90,10 @@ let __erlang_error_function_clause = create_procname "__erlang_error_function_cl
 
 let __erlang_error_if_clause = create_procname "__erlang_error_if_clause"
 
+let __erlang_error_try_clause = create_procname "__erlang_error_try_clause"
+
+let __erlang_list_append2 = create_procname "__erlang_list_append2"
+
 let __erlang_list_reverse = create_procname "__erlang_list_reverse"
 
 let __erlang_make_cons = create_procname "__erlang_make_cons"

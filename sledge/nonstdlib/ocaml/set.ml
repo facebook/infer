@@ -77,6 +77,7 @@ module type S =
     val of_list: elt list -> t
     val to_seq_from : elt -> t -> elt Seq.t
     val to_seq : t -> elt Seq.t
+    val to_rev_seq : t -> elt Seq.t
     val add_seq : elt Seq.t -> t -> t
     val of_seq : elt Seq.t -> t
 
@@ -699,6 +700,17 @@ module Make(Ord: Comparer.S) =
       | More (x, t, rest) -> Seq.Cons (x, seq_of_enum_ (cons_enum t rest))
 
     let to_seq c = seq_of_enum_ (cons_enum c End)
+
+    let rec snoc_enum s e =
+      match s with
+        Empty -> e
+      | Node{l; v; r} -> snoc_enum r (More(v, l, e))
+
+    let rec rev_seq_of_enum_ c () = match c with
+      | End -> Seq.Nil
+      | More (x, t, rest) -> Seq.Cons (x, rev_seq_of_enum_ (snoc_enum t rest))
+
+    let to_rev_seq c = rev_seq_of_enum_ (snoc_enum c End)
 
     let to_seq_from low s =
       let rec aux low s c = match s with

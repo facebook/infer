@@ -7,6 +7,8 @@
 
 (** Symbolic Heap Formulas *)
 
+val do_normalize : bool ref
+
 open Fol
 
 (** Segment of memory. *)
@@ -17,18 +19,26 @@ type seg =
   ; siz: Term.t  (** size of segment / length of the contents *)
   ; cnt: Term.t  (** contents of segment, a sequence / byte array *) }
 
-type starjunction = private
-  { us: Var.Set.t  (** vocabulary / variable context of formula *)
-  ; xs: Var.Set.t  (** existentially-bound variables *)
-  ; ctx: Context.t
-        (** first-order logical context induced by rest of formula *)
-  ; pure: Formula.t  (** pure boolean constraints *)
-  ; heap: seg list  (** star-conjunction of segment atomic formulas *)
-  ; djns: disjunction list  (** star-conjunction of disjunctions *) }
+module Segs : sig
+  type t
 
-and disjunction = starjunction list
+  val to_iter : t -> seg iter
+end
+
+type starjunction = private
+  { heap: Segs.t  (** star-conjunction of segment atomic formulas *)
+  ; djns: disjunction list  (** star-conjunction of disjunctions *)
+  ; pure: Formula.t  (** pure boolean constraints *)
+  ; xs: Var.Set.t  (** existentially-bound variables *)
+  ; us: Var.Set.t  (** vocabulary / variable context of formula *)
+  ; ctx: Context.t
+        (** first-order logical context induced by rest of formula *) }
+
+and disjunction
 
 type t = starjunction [@@deriving compare, equal, sexp]
+
+module Set : Set.S with type elt := t and type t = disjunction
 
 val pp_seg_norm : Context.t -> seg pp
 val pp_us : Var.Set.t pp
@@ -59,7 +69,7 @@ val or_ : t -> t -> t
 (** Disjoin formulas, extending to a common vocabulary, and avoiding
     capturing existentials. *)
 
-val orN : t list -> t
+val orN : disjunction -> t
 (** Disjoin formulas, extending to a common vocabulary, and avoiding
     capturing existentials. *)
 

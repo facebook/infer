@@ -9,7 +9,7 @@ open! NS0
 include Containers.Option
 include Monad.Make (Containers.Option)
 
-type 'a t = 'a option [@@deriving compare, equal, hash, sexp]
+type 'a t = 'a option [@@deriving compare, equal, sexp]
 
 let pp fmt pp_elt fs = function
   | Some x -> Format.fprintf fs fmt pp_elt x

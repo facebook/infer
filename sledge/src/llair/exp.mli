@@ -32,7 +32,7 @@ type op1 =
           [Integer] types. *)
   | Splat  (** Iterated concatenation of a single byte *)
   | Select of int  (** Select an index from a record *)
-[@@deriving compare, equal, hash, sexp]
+[@@deriving compare, equal, sexp]
 
 type op2 =
   | Eq  (** Equal test *)
@@ -63,13 +63,13 @@ type op2 =
   | Lshr  (** Logical shift right, bitwise *)
   | Ashr  (** Arithmetic shift right, bitwise *)
   | Update of int  (** Constant record with updated index *)
-[@@deriving compare, equal, hash, sexp]
+[@@deriving compare, equal, sexp]
 
 type op3 = Conditional  (** If-then-else *)
-[@@deriving compare, equal, hash, sexp]
+[@@deriving compare, equal, sexp]
 
 type opN = Record  (** Record (array / struct) constant *)
-[@@deriving compare, equal, hash, sexp]
+[@@deriving compare, equal, sexp]
 
 type t = private
   | Reg of {id: int; name: string; typ: Typ.t}  (** Virtual register *)
@@ -83,7 +83,7 @@ type t = private
   | Ap2 of op2 * Typ.t * t * t
   | Ap3 of op3 * Typ.t * t * t * t
   | ApN of opN * Typ.t * t iarray
-[@@deriving compare, equal, hash, sexp]
+[@@deriving compare, equal, sexp]
 
 val pp : t pp
 
@@ -94,13 +94,13 @@ val demangle : (string -> string option) ref
 (** Exp.Reg is re-exported as Reg *)
 module Reg : sig
   type exp := t
-  type t = private exp [@@deriving compare, equal, hash, sexp]
+  type t = private exp [@@deriving compare, equal, sexp]
 
   module Set : sig
     include Set.S with type elt := t
 
     include sig
-        type t [@@deriving hash, sexp]
+        type t [@@deriving sexp]
       end
       with type t := t
 
@@ -121,7 +121,7 @@ end
 (** Exp.Global is re-exported as Global *)
 module Global : sig
   type exp := t
-  type t = private exp [@@deriving compare, equal, hash, sexp]
+  type t = private exp [@@deriving compare, equal, sexp]
 
   module Set : sig
     include Set.S with type elt := t
@@ -147,7 +147,7 @@ end
 (** Exp.Function is re-exported as Function *)
 module Function : sig
   type exp := t
-  type t = private exp [@@deriving compare, equal, hash, sexp]
+  type t = private exp [@@deriving compare, equal, sexp]
 
   module Map : Map.S with type key := t
   module Tbl : HashTable.S with type key := t

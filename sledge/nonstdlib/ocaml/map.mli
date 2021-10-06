@@ -66,7 +66,7 @@ module type S =
     type key
     (** The type of the map keys. *)
 
-    type (+'a) t
+    type !+'a t
     (** The type of maps from type [key] to type ['a]. *)
 
     include Comparer.S1 with type 'a t := 'a t
@@ -82,21 +82,21 @@ module type S =
        and [false] otherwise. *)
 
     val add: key -> 'a -> 'a t -> 'a t
-    (** [add x y m] returns a map containing the same bindings as
-       [m], plus a binding of [x] to [y]. If [x] was already bound
-       in [m] to a value that is physically equal to [y],
+    (** [add key data m] returns a map containing the same bindings as
+       [m], plus a binding of [key] to [data]. If [key] was already bound
+       in [m] to a value that is physically equal to [data],
        [m] is returned unchanged (the result of the function is
        then physically equal to [m]). Otherwise, the previous binding
-       of [x] in [m] disappears.
+       of [key] in [m] disappears.
        @before 4.03 Physical equality was not ensured. *)
 
     val update: key -> ('a option -> 'a option) -> 'a t -> 'a t
-    (** [update x f m] returns a map containing the same bindings as
-        [m], except for the binding of [x]. Depending on the value of
-        [y] where [y] is [f (find_opt x m)], the binding of [x] is
+    (** [update key f m] returns a map containing the same bindings as
+        [m], except for the binding of [key]. Depending on the value of
+        [y] where [y] is [f (find_opt key m)], the binding of [key] is
         added, removed or updated. If [y] is [None], the binding is
-        removed if it exists; otherwise, if [y] is [Some z] then [x]
-        is associated to [z] in the resulting map.  If [x] was already
+        removed if it exists; otherwise, if [y] is [Some z] then [key]
+        is associated to [z] in the resulting map.  If [key] was already
         bound in [m] to a value that is physically equal to [z], [m]
         is returned unchanged (the result of the function is then
         physically equal to [m]).
@@ -165,25 +165,25 @@ module type S =
        order with respect to the ordering over the type of the keys. *)
 
     val fold: (key -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
-    (** [fold f m a] computes [(f kN dN ... (f k1 d1 a)...)],
+    (** [fold f m init] computes [(f kN dN ... (f k1 d1 init)...)],
        where [k1 ... kN] are the keys of all bindings in [m]
        (in increasing order), and [d1 ... dN] are the associated data. *)
 
     val for_all: (key -> 'a -> bool) -> 'a t -> bool
-    (** [for_all p m] checks if all the bindings of the map
-        satisfy the predicate [p].
+    (** [for_all f m] checks if all the bindings of the map
+        satisfy the predicate [f].
         @since 3.12.0
      *)
 
     val exists: (key -> 'a -> bool) -> 'a t -> bool
-    (** [exists p m] checks if at least one binding of the map
-        satisfies the predicate [p].
+    (** [exists f m] checks if at least one binding of the map
+        satisfies the predicate [f].
         @since 3.12.0
      *)
 
     val filter: (key -> 'a -> bool) -> 'a t -> 'a t
-    (** [filter p m] returns the map with all the bindings in [m]
-        that satisfy predicate [p]. If every binding in [m] satisfies [p],
+    (** [filter f m] returns the map with all the bindings in [m]
+        that satisfy predicate [p]. If every binding in [m] satisfies [f],
         [m] is returned unchanged (the result of the function is then
         physically equal to [m])
         @since 3.12.0
@@ -211,10 +211,10 @@ module type S =
      *)
 
     val partition: (key -> 'a -> bool) -> 'a t -> 'a t * 'a t
-    (** [partition p m] returns a pair of maps [(m1, m2)], where
+    (** [partition f m] returns a pair of maps [(m1, m2)], where
         [m1] contains all the bindings of [m] that satisfy the
-        predicate [p], and [m2] is the map with all the bindings of
-        [m] that do not satisfy [p].
+        predicate [f], and [m2] is the map with all the bindings of
+        [m] that do not satisfy [f].
         @since 3.12.0
      *)
 
@@ -358,11 +358,15 @@ module type S =
     (** Same as {!Map.S.map}, but the function receives as arguments both the
        key and the associated value for each binding of the map. *)
 
-    (** {1 Iterators} *)
+    (** {1 Maps and Sequences} *)
 
     val to_seq : 'a t -> (key * 'a) Seq.t
     (** Iterate on the whole map, in ascending order of keys
         @since 4.07 *)
+
+    val to_rev_seq : 'a t -> (key * 'a) Seq.t
+    (** Iterate on the whole map, in descending order of keys
+        @since 4.12 *)
 
     val to_seq_from : key -> 'a t -> (key * 'a) Seq.t
     (** [to_seq_from k m] iterates on a subset of the bindings of [m],
@@ -393,13 +397,13 @@ module type S =
   end
 (** Output signature of the functor {!Map.Make}. *)
 
-type ('key, +'a, 'compare_key) t [@@deriving compare, equal, sexp]
+type ('key, !+'a, 'compare_key) t [@@deriving compare, equal, sexp]
 
 type ('compare_key, 'compare_a) compare [@@deriving compare, equal, sexp]
 
 module Make (Ord : Comparer.S) :
   S with type key = Ord.t
-    with type +'a t = (Ord.t, 'a, Ord.compare) t
+    with type !+'a t = (Ord.t, 'a, Ord.compare) t
     with type 'compare_a compare = (Ord.compare, 'compare_a) compare
 (** Functor building an implementation of the map structure
    given a totally ordered type. *)

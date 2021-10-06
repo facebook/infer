@@ -17,6 +17,7 @@ type t =
   ; cf_injected_destructor: bool
         (** true if this is an implicit C++ destructor call injected by the clang frontend *)
   ; cf_interface: bool
+  ; cf_is_copy_ctor: bool
   ; cf_is_objc_block: bool
   ; cf_virtual: bool }
 [@@deriving compare]

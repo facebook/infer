@@ -1609,7 +1609,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   and cxx_method_construct_call_trans trans_state_pri result_trans_callee params_stmt si
       function_type ~is_cpp_call_virtual ~is_injected_destructor extra_res_trans ~is_inherited_ctor
-      =
+      ~is_copy_ctor =
     let context = trans_state_pri.context in
     let sil_loc = CLocation.location_of_stmt_info context.translation_unit_context.source_file si in
     let callee_pname = Option.value_exn result_trans_callee.method_name in
@@ -1634,7 +1634,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let call_flags =
           { CallFlags.default with
             cf_virtual= is_cpp_call_virtual
-          ; cf_injected_destructor= is_injected_destructor }
+          ; cf_injected_destructor= is_injected_destructor
+          ; cf_is_copy_ctor= is_copy_ctor }
         in
         let res_trans_call =
           create_call_instr trans_state_pri function_type sil_method actual_params sil_loc
@@ -1666,6 +1667,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let function_type = add_reference_if_glvalue fn_type_no_ref expr_info in
     cxx_method_construct_call_trans trans_state_pri result_trans_callee params_stmt si function_type
       ~is_injected_destructor:false ~is_cpp_call_virtual None ~is_inherited_ctor:false
+      ~is_copy_ctor:false
 
 
   and cxxConstructExpr_trans trans_state si params_stmt ei cxx_constr_info ~is_inherited_ctor =
@@ -1698,10 +1700,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let res_trans_callee =
       decl_ref_trans ~context:(MemberOrIvar this_res_trans) trans_state si decl_ref
     in
+    let is_copy_ctor = cxx_constr_info.Clang_ast_t.xcei_is_copy_constructor in
     let res_trans =
       cxx_method_construct_call_trans trans_state_pri res_trans_callee params_stmt si StdTyp.void
         ~is_injected_destructor:false ~is_cpp_call_virtual:false (Some tmp_res_trans)
-        ~is_inherited_ctor
+        ~is_inherited_ctor ~is_copy_ctor
     in
     {res_trans with return= tmp_res_trans.return}
 
@@ -1723,7 +1726,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     assert (Option.is_some res_trans_callee.method_name) ;
     let is_cpp_call_virtual = res_trans_callee.is_cpp_call_virtual in
     cxx_method_construct_call_trans trans_state_pri res_trans_callee [] si' StdTyp.void
-      ~is_injected_destructor ~is_cpp_call_virtual None ~is_inherited_ctor:false
+      ~is_injected_destructor ~is_cpp_call_virtual None ~is_inherited_ctor:false ~is_copy_ctor:false
 
 
   and is_receiver_instance = function `Instance | `SuperInstance -> true | _ -> false

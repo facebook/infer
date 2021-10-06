@@ -8,7 +8,7 @@
 (** Global variables *)
 
 type t = private {name: Global.t; init: Exp.t option; loc: Loc.t}
-[@@deriving compare, equal, hash, sexp]
+[@@deriving compare, equal, sexp]
 
 val pp : t pp
 

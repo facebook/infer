@@ -1447,10 +1447,10 @@ and erlang_skip_rebar3 =
     "Skip running rebar, to save time. It is useful together with $(b,--erlang-ast-dir)."
 
 
-and erlang_reverse_unfold_depth =
-  CLOpt.mk_int ~long:"erlang-reverse-unfold-depth" ~default:4
+and erlang_list_unfold_depth =
+  CLOpt.mk_int ~long:"erlang-list-unfold-depth" ~default:4
     ~in_help:InferCommand.[(Analyze, manual_erlang)]
-    "Unfold Erlang lists:reverse up to depth $(i,int)"
+    "Unfold Erlang lists up to depth $(i,int)"
 
 
 and export_changed_functions =
@@ -1625,6 +1625,12 @@ and impurity_report_immutable_modifications =
 
 and inclusive_cost =
   CLOpt.mk_bool ~long:"inclusive-cost" ~default:true "Computes the inclusive cost"
+
+
+and incremental_analysis =
+  CLOpt.mk_bool ~long:"incremental-analysis" ~default:false
+    "[EXPERIMENTAL] Use incremental analysis for changed files. Not compatible with \
+     $(b,--reanalyze) and $(b,--continue-analysis)."
 
 
 and issues_tests_fields =
@@ -2414,6 +2420,31 @@ and simple_lineage_json_report =
     "Enable simple lineage report in JSON format."
 
 
+and simple_lineage_dedup =
+  CLOpt.mk_bool ~long:"simple-lineage-dedup" ~default:true
+    ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
+    "In JSON output, attempt to print each entity at most once. This is the default. The only \
+     reason you may want to turn this off is to make hash collisions more visible; that is, cases \
+     in which distinct entities get assigned the same ID."
+
+
+and simple_lineage_keep_temporaries =
+  CLOpt.mk_bool ~long:"simple-lineage-keep-temporaries"
+    ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
+    "Normally, lineage summaries do not mention temporary variables introduced while compiling the \
+     high-level code to Infer's IR (intermediate representation). If this option is enabled, then \
+     the lineage graph produced corresponds to Infer's IR."
+
+
+and simple_lineage_seed =
+  CLOpt.mk_int ~long:"simple-lineage-seed" ~default:123
+    ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
+    "Set the random seed used for hashing. (Various entities that get reported need unique \
+     identifiers. To generate these unique identifiers, in a distributed way without \
+     communication, we use hashing. If you are unlucky and get collisions, you can try a different \
+     seed."
+
+
 and siof_check_iostreams =
   CLOpt.mk_bool ~long:"siof-check-iostreams"
     ~in_help:InferCommand.[(Analyze, manual_siof)]
@@ -2557,6 +2588,12 @@ and sqlite_lock_timeout =
     "Timeout for SQLite results database operations, in milliseconds."
 
 
+and sqlite_vacuum =
+  CLOpt.mk_bool ~long:"sqlite-vacuum" ~default:false
+    ~in_help:InferCommand.[(Capture, manual_generic)]
+    "$(b,VACUUM) the SQLite DB after performing capture."
+
+
 and sqlite_vfs =
   let default =
     (* on WSL (bash on Windows) standard SQLite VFS can't be used, see WSL/issues/1927 WSL/issues/2395 *)
@@ -2666,12 +2703,6 @@ and tv_limit_filtered =
 
 and uninit_interproc =
   CLOpt.mk_bool ~long:"uninit-interproc" "Run uninit check in the experimental interprocedural mode"
-
-
-and incremental_analysis =
-  CLOpt.mk_bool ~long:"incremental-analysis" ~default:false
-    "[EXPERIMENTAL] Use incremental analysis for changed files. Not compatible with \
-     $(b,--reanalyze) and $(b,--continue-analysis)."
 
 
 and version =
@@ -3163,7 +3194,7 @@ and erlang_ast_dir = !erlang_ast_dir
 
 and erlang_skip_rebar3 = !erlang_skip_rebar3
 
-and erlang_reverse_unfold_depth = !erlang_reverse_unfold_depth
+and erlang_list_unfold_depth = !erlang_list_unfold_depth
 
 and external_java_packages = !external_java_packages
 
@@ -3536,6 +3567,12 @@ and simple_lineage_max_cfg_size = !simple_lineage_max_cfg_size
 
 and simple_lineage_json_report = !simple_lineage_json_report
 
+and simple_lineage_dedup = !simple_lineage_dedup
+
+and simple_lineage_keep_temporaries = !simple_lineage_keep_temporaries
+
+and simple_lineage_seed = !simple_lineage_seed
+
 and siof_check_iostreams = !siof_check_iostreams
 
 and siof_safe_methods = RevList.to_list !siof_safe_methods
@@ -3573,6 +3610,8 @@ and sqlite_cache_size = !sqlite_cache_size
 and sqlite_page_size = !sqlite_page_size
 
 and sqlite_lock_timeout = !sqlite_lock_timeout
+
+and sqlite_vacuum = !sqlite_vacuum
 
 and sqlite_vfs = !sqlite_vfs
 

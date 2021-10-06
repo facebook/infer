@@ -8,8 +8,6 @@
 open NS0
 
 let pp = Z.pp_print
-let hash = [%hash: Z.t]
-let hash_fold_t s z = Int.hash_fold_t s (hash z)
 let sexp_of_t z = Sexp.Atom (Z.to_string z)
 let t_of_sexp = function Sexp.Atom s -> Z.of_string s | _ -> assert false
 

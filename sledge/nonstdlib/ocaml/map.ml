@@ -24,7 +24,7 @@ module type OrderedType =
 module type S =
   sig
     type key
-    type +'a t
+    type !+'a t
 
     include Comparer.S1 with type 'a t := 'a t
 
@@ -77,6 +77,7 @@ module type S =
     val map: ('a -> 'b) -> 'a t -> 'b t
     val mapi: (key -> 'a -> 'b) -> 'a t -> 'b t
     val to_seq : 'a t -> (key * 'a) Seq.t
+    val to_rev_seq : 'a t -> (key * 'a) Seq.t
     val to_seq_from : key -> 'a t -> (key * 'a) Seq.t
     val add_seq : (key * 'a) Seq.t -> 'a t -> 'a t
     val of_seq : (key * 'a) Seq.t -> 'a t
@@ -632,6 +633,19 @@ module Make (Ord : Comparer.S) = struct
 
     let to_seq m =
       seq_of_enum_ (cons_enum m End)
+
+    let rec snoc_enum s e =
+      match s with
+        Empty -> e
+      | Node{l; v; d; r} -> snoc_enum r (More(v, d, l, e))
+
+    let rec rev_seq_of_enum_ c () = match c with
+      | End -> Seq.Nil
+      | More (k,v,t,rest) ->
+          Seq.Cons ((k,v), rev_seq_of_enum_ (snoc_enum t rest))
+
+    let to_rev_seq c =
+      rev_seq_of_enum_ (snoc_enum c End)
 
     let to_seq_from low m =
       let rec aux low m c = match m with

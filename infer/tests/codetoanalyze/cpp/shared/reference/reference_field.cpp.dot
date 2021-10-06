@@ -527,7 +527,7 @@ digraph cfg {
 	
 
 	 "Val#Val#reference_field#{4788856549917862568}.b7d1ec35256cbe6a05257dc23f16dca0_5" -> "Val#Val#reference_field#{4788856549917862568}.b7d1ec35256cbe6a05257dc23f16dca0_6" ;
-"Val#Val#reference_field#{4788856549917862568}.b7d1ec35256cbe6a05257dc23f16dca0_6" [label="6:  Constructor Init \n   n$5=*&r_:reference_field::X& [line 40, column 18]\n  n$6=_fun_reference_field::X::X(n$4.x:reference_field::X*,n$5:reference_field::X&) [line 40, column 16]\n " shape="box"]
+"Val#Val#reference_field#{4788856549917862568}.b7d1ec35256cbe6a05257dc23f16dca0_6" [label="6:  Constructor Init \n   n$5=*&r_:reference_field::X& [line 40, column 18]\n  n$6=_fun_reference_field::X::X(n$4.x:reference_field::X*,n$5:reference_field::X&) copy ctor [line 40, column 16]\n " shape="box"]
 	
 
 	 "Val#Val#reference_field#{4788856549917862568}.b7d1ec35256cbe6a05257dc23f16dca0_6" -> "Val#Val#reference_field#{4788856549917862568}.b7d1ec35256cbe6a05257dc23f16dca0_3" ;

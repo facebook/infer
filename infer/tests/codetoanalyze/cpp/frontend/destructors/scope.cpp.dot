@@ -22,7 +22,7 @@ digraph cfg {
 	
 
 	 "getX#destructor_scope(class destructor_scope::X)#11739464242911605656.956e6b931ba67c14d56b1314b7f2fce7_3" -> "getX#destructor_scope(class destructor_scope::X)#11739464242911605656.956e6b931ba67c14d56b1314b7f2fce7_4" ;
-"getX#destructor_scope(class destructor_scope::X)#11739464242911605656.956e6b931ba67c14d56b1314b7f2fce7_4" [label="4:  Return Stmt \n   n$1=_fun_destructor_scope::X::X(n$0:destructor_scope::X*,&x:destructor_scope::X&) [line 70, column 10]\n " shape="box"]
+"getX#destructor_scope(class destructor_scope::X)#11739464242911605656.956e6b931ba67c14d56b1314b7f2fce7_4" [label="4:  Return Stmt \n   n$1=_fun_destructor_scope::X::X(n$0:destructor_scope::X*,&x:destructor_scope::X&) copy ctor [line 70, column 10]\n " shape="box"]
 	
 
 	 "getX#destructor_scope(class destructor_scope::X)#11739464242911605656.956e6b931ba67c14d56b1314b7f2fce7_4" -> "getX#destructor_scope(class destructor_scope::X)#11739464242911605656.956e6b931ba67c14d56b1314b7f2fce7_5" ;

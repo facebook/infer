@@ -14,13 +14,6 @@ module type S = sig
 
   include Comparer.S with type t := t
 
-  module Provide_hash (_ : sig
-    type t = elt [@@deriving hash]
-  end) : sig
-    type t [@@deriving hash]
-  end
-  with type t := t
-
   module Provide_of_sexp (_ : sig
     type t = elt [@@deriving of_sexp]
   end) : sig
@@ -96,6 +89,10 @@ module type S = sig
   val map : t -> f:(elt -> elt) -> t
   val flat_map : t -> f:(elt -> t) -> t
   val filter : t -> f:(elt -> bool) -> t
+
+  val filter_map : t -> f:(elt -> elt option) -> t
+  (** Map [f] over a set, removing any element [e] where [f e = None]. *)
+
   val partition : t -> f:(elt -> bool) -> t * t
 
   (** {1 Traverse} *)
@@ -105,6 +102,10 @@ module type S = sig
   val for_all : t -> f:(elt -> bool) -> bool
   val fold : t -> 's -> f:(elt -> 's -> 's) -> 's
   val reduce : t -> f:(elt -> elt -> elt) -> elt option
+
+  val fold_map : t -> 's -> f:(elt -> 's -> elt * 's) -> t * 's
+  (** Map [f] over a set while threading an accumulator through calls to
+      [f]. *)
 
   (** {1 Convert} *)
 

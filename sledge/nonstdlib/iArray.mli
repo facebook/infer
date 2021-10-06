@@ -15,10 +15,10 @@
 
 open! NS0
 
-type 'a t [@@deriving compare, equal, hash, sexp]
+type 'a t [@@deriving compare, equal, sexp]
 
 module Import : sig
-  type 'a iarray = 'a t [@@deriving compare, equal, hash, sexp]
+  type 'a iarray = 'a t [@@deriving compare, equal, sexp]
 end
 
 val pp : (unit, unit) fmt -> 'a pp -> 'a t pp

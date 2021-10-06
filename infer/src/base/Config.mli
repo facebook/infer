@@ -307,7 +307,7 @@ val erlang_ast_dir : string option
 
 val erlang_skip_rebar3 : bool
 
-val erlang_reverse_unfold_depth : int
+val erlang_list_unfold_depth : int
 
 val fail_on_bug : bool
 
@@ -614,9 +614,15 @@ val select : [`All | `Select of int] option
 
 val show_buckets : bool
 
+val simple_lineage_json_report : bool
+
+val simple_lineage_keep_temporaries : bool
+
 val simple_lineage_max_cfg_size : int option
 
-val simple_lineage_json_report : bool
+val simple_lineage_dedup : bool
+
+val simple_lineage_seed : int
 
 val siof_check_iostreams : bool
 
@@ -655,6 +661,8 @@ val sqlite_cache_size : int
 val sqlite_page_size : int
 
 val sqlite_lock_timeout : int
+
+val sqlite_vacuum : bool
 
 val sqlite_vfs : string option
 

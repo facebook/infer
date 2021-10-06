@@ -536,11 +536,11 @@ digraph cfg {
 	
 
 	 "struct_init_capture_by_value#3463451947935606399.b06cb2db506297a6236b8f54f65f87a9_4" -> "struct_init_capture_by_value#3463451947935606399.b06cb2db506297a6236b8f54f65f87a9_2" ;
-"struct_init_capture_by_value#3463451947935606399.b06cb2db506297a6236b8f54f65f87a9_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(xreflambda:SomeStruct); [line 131, column 12]\n  n$9=*&xref:SomeStruct& [line 131, column 39]\n  n$10=_fun_SomeStruct::SomeStruct(&xreflambda:SomeStruct*,n$9:SomeStruct&) [line 131, column 39]\n " shape="box"]
+"struct_init_capture_by_value#3463451947935606399.b06cb2db506297a6236b8f54f65f87a9_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(xreflambda:SomeStruct); [line 131, column 12]\n  n$9=*&xref:SomeStruct& [line 131, column 39]\n  n$10=_fun_SomeStruct::SomeStruct(&xreflambda:SomeStruct*,n$9:SomeStruct&) copy ctor [line 131, column 39]\n " shape="box"]
 	
 
 	 "struct_init_capture_by_value#3463451947935606399.b06cb2db506297a6236b8f54f65f87a9_5" -> "struct_init_capture_by_value#3463451947935606399.b06cb2db506297a6236b8f54f65f87a9_8" ;
-"struct_init_capture_by_value#3463451947935606399.b06cb2db506297a6236b8f54f65f87a9_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(xlambda:SomeStruct); [line 131, column 12]\n  n$12=_fun_SomeStruct::SomeStruct(&xlambda:SomeStruct*,&x:SomeStruct&) [line 131, column 23]\n " shape="box"]
+"struct_init_capture_by_value#3463451947935606399.b06cb2db506297a6236b8f54f65f87a9_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(xlambda:SomeStruct); [line 131, column 12]\n  n$12=_fun_SomeStruct::SomeStruct(&xlambda:SomeStruct*,&x:SomeStruct&) copy ctor [line 131, column 23]\n " shape="box"]
 	
 
 	 "struct_init_capture_by_value#3463451947935606399.b06cb2db506297a6236b8f54f65f87a9_6" -> "struct_init_capture_by_value#3463451947935606399.b06cb2db506297a6236b8f54f65f87a9_5" ;
@@ -728,7 +728,7 @@ digraph cfg {
 	
 
 	 "#lambda_shared_lambda_lambda1.cpp:114:12#struct_capture_by_value#{16388855054768398388}.84d338a7f7df444d6a051bb81d898a5d_3" -> "#lambda_shared_lambda_lambda1.cpp:114:12#struct_capture_by_value#{16388855054768398388}.84d338a7f7df444d6a051bb81d898a5d_4" ;
-"#lambda_shared_lambda_lambda1.cpp:114:12#struct_capture_by_value#{16388855054768398388}.84d338a7f7df444d6a051bb81d898a5d_4" [label="4:  Constructor Init \n   n$2=*&__param_0:struct_capture_by_value::lambda_shared_lambda_lambda1.cpp:114:12& [line 114, column 12]\n  n$3=_fun_SomeStruct::SomeStruct(n$1.__anon_field_1:SomeStruct*,n$2.__anon_field_1:SomeStruct&) [line 114, column 12]\n " shape="box"]
+"#lambda_shared_lambda_lambda1.cpp:114:12#struct_capture_by_value#{16388855054768398388}.84d338a7f7df444d6a051bb81d898a5d_4" [label="4:  Constructor Init \n   n$2=*&__param_0:struct_capture_by_value::lambda_shared_lambda_lambda1.cpp:114:12& [line 114, column 12]\n  n$3=_fun_SomeStruct::SomeStruct(n$1.__anon_field_1:SomeStruct*,n$2.__anon_field_1:SomeStruct&) copy ctor [line 114, column 12]\n " shape="box"]
 	
 
 	 "#lambda_shared_lambda_lambda1.cpp:114:12#struct_capture_by_value#{16388855054768398388}.84d338a7f7df444d6a051bb81d898a5d_4" -> "#lambda_shared_lambda_lambda1.cpp:114:12#struct_capture_by_value#{16388855054768398388}.84d338a7f7df444d6a051bb81d898a5d_2" ;
@@ -736,7 +736,7 @@ digraph cfg {
 	
 
 	 "#lambda_shared_lambda_lambda1.cpp:114:12#struct_capture_by_value#{16388855054768398388}.84d338a7f7df444d6a051bb81d898a5d_5" -> "#lambda_shared_lambda_lambda1.cpp:114:12#struct_capture_by_value#{16388855054768398388}.84d338a7f7df444d6a051bb81d898a5d_6" ;
-"#lambda_shared_lambda_lambda1.cpp:114:12#struct_capture_by_value#{16388855054768398388}.84d338a7f7df444d6a051bb81d898a5d_6" [label="6:  Constructor Init \n   n$5=*&__param_0:struct_capture_by_value::lambda_shared_lambda_lambda1.cpp:114:12& [line 114, column 12]\n  n$6=_fun_SomeStruct::SomeStruct(n$4.__anon_field_0:SomeStruct*,n$5.__anon_field_0:SomeStruct&) [line 114, column 12]\n " shape="box"]
+"#lambda_shared_lambda_lambda1.cpp:114:12#struct_capture_by_value#{16388855054768398388}.84d338a7f7df444d6a051bb81d898a5d_6" [label="6:  Constructor Init \n   n$5=*&__param_0:struct_capture_by_value::lambda_shared_lambda_lambda1.cpp:114:12& [line 114, column 12]\n  n$6=_fun_SomeStruct::SomeStruct(n$4.__anon_field_0:SomeStruct*,n$5.__anon_field_0:SomeStruct&) copy ctor [line 114, column 12]\n " shape="box"]
 	
 
 	 "#lambda_shared_lambda_lambda1.cpp:114:12#struct_capture_by_value#{16388855054768398388}.84d338a7f7df444d6a051bb81d898a5d_6" -> "#lambda_shared_lambda_lambda1.cpp:114:12#struct_capture_by_value#{16388855054768398388}.84d338a7f7df444d6a051bb81d898a5d_3" ;
@@ -830,7 +830,7 @@ digraph cfg {
 	
 
 	 "#lambda_shared_lambda_lambda1.cpp:131:12#struct_init_capture_by_value#{5414798644176225694}.5ff48ede2fa2c67661c6f9b6dff925b1_3" -> "#lambda_shared_lambda_lambda1.cpp:131:12#struct_init_capture_by_value#{5414798644176225694}.5ff48ede2fa2c67661c6f9b6dff925b1_4" ;
-"#lambda_shared_lambda_lambda1.cpp:131:12#struct_init_capture_by_value#{5414798644176225694}.5ff48ede2fa2c67661c6f9b6dff925b1_4" [label="4:  Constructor Init \n   n$2=*&__param_0:struct_init_capture_by_value::lambda_shared_lambda_lambda1.cpp:131:12& [line 131, column 12]\n  n$3=_fun_SomeStruct::SomeStruct(n$1.__anon_field_1:SomeStruct*,n$2.__anon_field_1:SomeStruct&) [line 131, column 12]\n " shape="box"]
+"#lambda_shared_lambda_lambda1.cpp:131:12#struct_init_capture_by_value#{5414798644176225694}.5ff48ede2fa2c67661c6f9b6dff925b1_4" [label="4:  Constructor Init \n   n$2=*&__param_0:struct_init_capture_by_value::lambda_shared_lambda_lambda1.cpp:131:12& [line 131, column 12]\n  n$3=_fun_SomeStruct::SomeStruct(n$1.__anon_field_1:SomeStruct*,n$2.__anon_field_1:SomeStruct&) copy ctor [line 131, column 12]\n " shape="box"]
 	
 
 	 "#lambda_shared_lambda_lambda1.cpp:131:12#struct_init_capture_by_value#{5414798644176225694}.5ff48ede2fa2c67661c6f9b6dff925b1_4" -> "#lambda_shared_lambda_lambda1.cpp:131:12#struct_init_capture_by_value#{5414798644176225694}.5ff48ede2fa2c67661c6f9b6dff925b1_2" ;
@@ -838,7 +838,7 @@ digraph cfg {
 	
 
 	 "#lambda_shared_lambda_lambda1.cpp:131:12#struct_init_capture_by_value#{5414798644176225694}.5ff48ede2fa2c67661c6f9b6dff925b1_5" -> "#lambda_shared_lambda_lambda1.cpp:131:12#struct_init_capture_by_value#{5414798644176225694}.5ff48ede2fa2c67661c6f9b6dff925b1_6" ;
-"#lambda_shared_lambda_lambda1.cpp:131:12#struct_init_capture_by_value#{5414798644176225694}.5ff48ede2fa2c67661c6f9b6dff925b1_6" [label="6:  Constructor Init \n   n$5=*&__param_0:struct_init_capture_by_value::lambda_shared_lambda_lambda1.cpp:131:12& [line 131, column 12]\n  n$6=_fun_SomeStruct::SomeStruct(n$4.__anon_field_0:SomeStruct*,n$5.__anon_field_0:SomeStruct&) [line 131, column 12]\n " shape="box"]
+"#lambda_shared_lambda_lambda1.cpp:131:12#struct_init_capture_by_value#{5414798644176225694}.5ff48ede2fa2c67661c6f9b6dff925b1_6" [label="6:  Constructor Init \n   n$5=*&__param_0:struct_init_capture_by_value::lambda_shared_lambda_lambda1.cpp:131:12& [line 131, column 12]\n  n$6=_fun_SomeStruct::SomeStruct(n$4.__anon_field_0:SomeStruct*,n$5.__anon_field_0:SomeStruct&) copy ctor [line 131, column 12]\n " shape="box"]
 	
 
 	 "#lambda_shared_lambda_lambda1.cpp:131:12#struct_init_capture_by_value#{5414798644176225694}.5ff48ede2fa2c67661c6f9b6dff925b1_6" -> "#lambda_shared_lambda_lambda1.cpp:131:12#struct_init_capture_by_value#{5414798644176225694}.5ff48ede2fa2c67661c6f9b6dff925b1_3" ;
@@ -1162,7 +1162,7 @@ digraph cfg {
 	
 
 	 "#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#{4132013847919986531}.e49d0c58c82f5a7c01b84b611dd1e6e8_3" -> "#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#{4132013847919986531}.e49d0c58c82f5a7c01b84b611dd1e6e8_4" ;
-"#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#{4132013847919986531}.e49d0c58c82f5a7c01b84b611dd1e6e8_4" [label="4:  Constructor Init \n   n$2=*&__param_0:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12& [line 77, column 12]\n  n$3=_fun_SomeStruct::SomeStruct(n$1.__anon_field_1:SomeStruct*,n$2.__anon_field_1:SomeStruct&) [line 77, column 12]\n " shape="box"]
+"#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#{4132013847919986531}.e49d0c58c82f5a7c01b84b611dd1e6e8_4" [label="4:  Constructor Init \n   n$2=*&__param_0:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12& [line 77, column 12]\n  n$3=_fun_SomeStruct::SomeStruct(n$1.__anon_field_1:SomeStruct*,n$2.__anon_field_1:SomeStruct&) copy ctor [line 77, column 12]\n " shape="box"]
 	
 
 	 "#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#{4132013847919986531}.e49d0c58c82f5a7c01b84b611dd1e6e8_4" -> "#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#{4132013847919986531}.e49d0c58c82f5a7c01b84b611dd1e6e8_2" ;
@@ -1170,7 +1170,7 @@ digraph cfg {
 	
 
 	 "#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#{4132013847919986531}.e49d0c58c82f5a7c01b84b611dd1e6e8_5" -> "#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#{4132013847919986531}.e49d0c58c82f5a7c01b84b611dd1e6e8_6" ;
-"#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#{4132013847919986531}.e49d0c58c82f5a7c01b84b611dd1e6e8_6" [label="6:  Constructor Init \n   n$5=*&__param_0:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12& [line 77, column 12]\n  n$6=_fun_SomeStruct::SomeStruct(n$4.__anon_field_0:SomeStruct*,n$5.__anon_field_0:SomeStruct&) [line 77, column 12]\n " shape="box"]
+"#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#{4132013847919986531}.e49d0c58c82f5a7c01b84b611dd1e6e8_6" [label="6:  Constructor Init \n   n$5=*&__param_0:struct_capture::lambda_shared_lambda_lambda1.cpp:77:12& [line 77, column 12]\n  n$6=_fun_SomeStruct::SomeStruct(n$4.__anon_field_0:SomeStruct*,n$5.__anon_field_0:SomeStruct&) copy ctor [line 77, column 12]\n " shape="box"]
 	
 
 	 "#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#{4132013847919986531}.e49d0c58c82f5a7c01b84b611dd1e6e8_6" -> "#lambda_shared_lambda_lambda1.cpp:77:12#struct_capture#{4132013847919986531}.e49d0c58c82f5a7c01b84b611dd1e6e8_3" ;

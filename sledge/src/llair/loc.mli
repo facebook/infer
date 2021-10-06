@@ -8,7 +8,7 @@
 (** Source code debug locations *)
 
 type t = {dir: string; file: string; line: int; col: int}
-[@@deriving compare, equal, hash, sexp]
+[@@deriving compare, equal, sexp]
 
 val pp : t pp
 val none : t

@@ -34,12 +34,6 @@ struct
 
   let comparer = M.comparer Mul.comparer
 
-  let hash_fold_t hash_fold_elt s m =
-    let hash_fold_mul s i = Hash.fold_int s (Mul.hash i) in
-    let init = Hash.fold_int s (M.length m) in
-    M.fold m init ~f:(fun ~key ~data state ->
-        hash_fold_mul (hash_fold_elt state key) data )
-
   module Provide_of_sexp (Elt : sig
     type t = elt [@@deriving of_sexp]
   end) =

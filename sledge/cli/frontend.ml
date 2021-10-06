@@ -1595,7 +1595,7 @@ let transform ~internalize : Llvm.llmodule -> unit =
   Llvm_scalar_opts.add_scalarizer pm ;
   Llvm_scalar_opts.add_unify_function_exit_nodes pm ;
   Llvm_scalar_opts.add_cfg_simplification pm ;
-  Llvm.PassManager.run_module llmodule pm |> (ignore : bool -> _) ;
+  Llvm.PassManager.run_module llmodule pm |> ignore ;
   Llvm.PassManager.dispose pm
 
 let read_and_parse llcontext bc_file =
