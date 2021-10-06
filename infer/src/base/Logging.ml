@@ -162,6 +162,18 @@ let flush_formatters {file; console_file} =
   F.pp_print_flush console_file ()
 
 
+let close_logs () =
+  let close_fmt (_, formatters) = flush_formatters formatters in
+  List.iter ~f:close_fmt !logging_formatters ;
+  Option.iter !log_file ~f:(function file_fmt, chan ->
+      F.pp_print_flush file_fmt () ;
+      Out_channel.close chan )
+
+
+let register_epilogue () =
+  Epilogues.register ~f:close_logs ~description:"flushing logs and closing log file"
+
+
 let reset_formatters () =
   let refresh_formatter ((formatters_ref, mk_formatters), formatters) =
     (* flush to be nice *)
@@ -176,18 +188,11 @@ let reset_formatters () =
   List.iter ~f:refresh_formatter previous_formatters ;
   if not !is_newline then
     Option.iter !log_file ~f:(function log_file, _ -> F.pp_print_newline log_file ()) ;
-  is_newline := true
+  is_newline := true ;
+  register_epilogue ()
 
 
-let close_logs () =
-  let close_fmt (_, formatters) = flush_formatters formatters in
-  List.iter ~f:close_fmt !logging_formatters ;
-  Option.iter !log_file ~f:(function file_fmt, chan ->
-      F.pp_print_flush file_fmt () ;
-      Out_channel.close chan )
-
-
-let () = Epilogues.register ~f:close_logs ~description:"flushing logs and closing log file"
+let () = register_epilogue ()
 
 let log ~to_console ?(to_file = true) (lazy formatters) =
   match (to_console, to_file) with
