@@ -277,9 +277,68 @@ let get_bytecode cm =
       {bytecode with JCode.c_code}
 
 
+(* Sawja uses the .class local_variable table using `javac` conventions where each
+   [start, start+length) interval in the table should start at the next valid
+   instruction after a store (except for parameters).
+
+   Example :
+         I i = (I) o;
+         System.out.println("something");
+         i.m();
+   is compiled into
+          0: aload_0
+          1: checkcast     #2
+          4: astore_1
+          5: getstatic     #3
+          8: ldc           #4
+         10: invokevirtual #5
+         13: aload_1
+         14: invokeinterface #6,  1
+         19: return
+       LocalVariableTable:
+         Start  Length  Slot  Name   Signature
+             0      20     0     o   Ljava/lang/Object;
+             5      15     1     i   LI;
+
+   Here, the interval is [5, 5+15) and its starts just after slot#1 assignment.
+
+   With the Kotlin compilation chain, the generated table does not respect this
+   convention. The interval starts a bit later. It would be [13, 13+7) here
+   for example.
+
+   The following function fix this problem by traversing backward (from 13 to 4
+   in our example) the opcode array. *)
+let fix_local_variable_table code table =
+  let fix_table_entry entry =
+    let start, length, name, sign, slot = entry in
+    let rec loop current_pc last_pc =
+      (* last_pc : the last program point we have seen with a valide opcode *)
+      if current_pc < 0 then entry
+      else
+        match code.(current_pc) with
+        (* in a standard table, this case will happen as soon
+           as the first iteration *)
+        | JCode.OpStore (_, s) when Int.equal s slot ->
+            if Int.equal last_pc start then entry else (last_pc, length, name, sign, slot)
+        | JCode.OpInvalid ->
+            loop (current_pc - 1) last_pc
+        | _ ->
+            loop (current_pc - 1) current_pc
+    in
+    loop (start - 1) start
+  in
+  List.map table ~f:fix_table_entry
+
+
 let get_jbir_representation cm bytecode =
+  let c_local_variable_table =
+    Option.map
+      ~f:(fix_local_variable_table bytecode.JCode.c_code)
+      bytecode.JCode.c_local_variable_table
+  in
+  let fixed_bytecode = {bytecode with JCode.c_local_variable_table} in
   JBir.transform ~bcv:false ~ch_link:false ~formula:false ~formula_cmd:[] ~almost_ssa:true cm
-    bytecode
+    fixed_bytecode
 
 
 let pp_jbir fmt jbir =
