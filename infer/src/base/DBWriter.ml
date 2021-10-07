@@ -318,7 +318,7 @@ module Command = struct
         Implementation.canonicalize ()
 end
 
-type response = Ack
+type response = Ack | Error of (string * Caml.Printexc.raw_backtrace)
 
 module Server = struct
   (* General comment about socket/channel destruction: closing the in_channel associated with the socket
@@ -343,8 +343,13 @@ module Server = struct
     and out_channel = Unix.out_channel_of_descr client_sock in
     let command : Command.t = Marshal.from_channel in_channel in
     L.debug Analysis Verbose "Sqlite write daemon: received command %a@." Command.pp command ;
-    Command.execute command ;
-    Marshal.to_channel out_channel Ack [] ;
+    ( try
+        Command.execute command ;
+        Marshal.to_channel out_channel Ack []
+      with exn ->
+        Marshal.to_channel out_channel
+          (Error (Caml.Printexc.to_string exn, Caml.Printexc.get_raw_backtrace ()))
+          [] ) ;
     Out_channel.flush out_channel ;
     In_channel.close in_channel ;
     L.debug Analysis Verbose "Sqlite write daemon: closing connection@." ;
@@ -380,7 +385,14 @@ module Server = struct
     let in_channel, out_channel = in_results_dir ~f:(fun () -> Unix.open_connection socket_addr) in
     Marshal.to_channel out_channel cmd [] ;
     Out_channel.flush out_channel ;
-    let (Ack : response) = Marshal.from_channel in_channel in
+    let (response : response) = Marshal.from_channel in_channel in
+    ( match response with
+    | Ack ->
+        ()
+    | Error (exn_str, exn_backtrace) ->
+        Caml.Printexc.raise_with_backtrace
+          (Die.InferInternalError ("DBWriter raised " ^ exn_str))
+          exn_backtrace ) ;
     In_channel.close in_channel
 
 
