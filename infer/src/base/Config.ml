@@ -125,15 +125,6 @@ let fail_on_issue_exit_code = 2
 (** If true, treat calls to no-arg getters as idempotent w.r.t non-nullness *)
 let idempotent_getters = true
 
-let is_WSL =
-  match Utils.read_file "/proc/version" with
-  | Ok [line] ->
-      let re = Str.regexp "Linux.+-Microsoft" in
-      Str.string_match re line 0
-  | _ ->
-      false
-
-
 let ivar_attributes = "ivar_attributes"
 
 let java_lambda_marker_infix = "$Lambda$"
