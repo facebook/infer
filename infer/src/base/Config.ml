@@ -2586,10 +2586,9 @@ and sqlite_vacuum =
 
 
 and sqlite_vfs =
-  let default = None
+  let default = 
     match Utils.read_file "/proc/version" with
     | Result.Ok [line] ->
-        let re = Str.regexp "Linux.+-Microsoft" in
         (* daemon is now supported by wsl *)
         None
     | _ ->
