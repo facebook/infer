@@ -1,0 +1,138 @@
+Pautas de contribución
+Informar problemas
+Si encuentra un problema al usar inferir o si tiene alguna pregunta, abra un problema de GitHub .
+
+Hackear el código
+Damos la bienvenida a las contribuciones a través de solicitudes de extracción en GitHub .
+
+Dependencias de desarrollo
+Querrá instalar algunas dependencias más para piratear cómodamente la base de código inferida. Simplemente ejecute:
+
+hacer devsetup
+Building Infer para el desarrollo
+El modo de compilación predeterminado ("dev") hace que todas las advertencias de compilación sean fatales . Si desea que la compilación ignore las advertencias, por ejemplo, para poder probar un ejecutable inferido antes de pulir el código para eliminar las advertencias, puede compilar en modo "dev-noerror" con make BUILD_MODE=dev-noerror.
+
+Ciclo de edición / compilación más rápido cuando se trabaja en código OCaml dentro de infer / src /: compila dentro de infer / src / (omite la construcción de los modelos después de que se haya compilado infer), y compila solo lo que se necesita para la verificación de tipos make -j -C infer/src check. Necesitas haber corrido make -jen algún momento antes.
+
+Alternativamente, si desea probar los cambios en un pequeño ejemplo, la acumulación en el modo de código de bytes: make -j -C infer/src byte.
+
+En general, los makecomandos de la raíz del repositorio aseguran que las dependencias estén en un estado consistente y actualizado (por ejemplo, reconstruyen inferir y los modelos antes de ejecutar los pasos que usan inferir), mientras que ejecutar makecomandos desde dentro de los subdirectorios generalmente asume que las dependencias ya están actualizadas.
+
+Por ejemplo, la ejecución make direct_java_biabduction_testreconstruirá inferir y los modelos si es necesario antes de ejecutar la prueba, pero la ejecución make -C infer/tests/codetoanalyze/java/biabduction/ test solo ejecutará la prueba.
+
+Depurar código OCaml
+Printf-debug usando Logging.debug_dev. Viene con una advertencia para que no envíe código accidentalmente con llamadas al debug_devrepositorio.
+
+Explore la documentación de los módulos OCaml en su navegador con make doc
+
+Al usar ocamldebug, y en particular al establecer puntos de interrupción break @ <module> <line>, no olvide que un módulo inferir M en realidad se llama InferModules__M, o InferBase__M, o ... Consulte la documentación html de los módulos OCaml de make doc si no está seguro del nombre de un módulo.
+
+$ ledit ocamldebug infer / bin / infer.bc.exe 
+(ocd) break @ InferModules__InferAnalyze 100 
+Breakpoint 1 en 9409684: backend de archivo / InferAnalyze.ml, línea 99, caracteres 18-78
+Para probar el código OCaml inferido, puede usar el nivel superior de OCaml. Para construir el nivel superior de OCaml con los módulos inferidos precargados, ejecute make toplevely siga las instrucciones.
+
+Para pasar inferir opciones para el nivel superior, el uso INFER_ARGS, por ejemplo: INFER_ARGS=--debug^-o^infer-out-foo.
+
+Muchas operaciones requieren que se inicialice el directorio de resultados y la base de datos ResultsDir.assert_results_dir "".
+
+Acuerdo de licencia de colaborador
+Requerimos que los contribuyentes firmen nuestro Acuerdo de licencia de colaborador. Para que podamos revisar y fusionar su código, regístrese en https://code.facebook.com/cla . Si tiene alguna pregunta, escríbanos a cla@fb.com .
+
+También se espera que siga el Código de conducta , así que léalo si es un colaborador nuevo.
+
+¡Gracias!
+
+Estilo de codificación
+Todos los idiomas
+Sangría con espacios, no tabuladores.
+
+El límite de ancho de línea es de 100 caracteres.
+
+En general, siga el estilo del código circundante.
+
+OCaml
+El módulo IStd (infer / src / istd / IStd.ml) se abre automáticamente en cada archivo. Tenga en cuenta que esto puede causar errores extraños como:
+$ pwd
+/somewhere/infer/infer/src
+$ cat base/toto.ml
+let b = List.mem true [true; false]
+$ make
+[...]
+File "base/toto.ml", line 1, characters 17-21:
+Error: This variant expression is expected to have type 'a list
+       The constructor true does not belong to type list
+Todos los módulos se abren IStdusando open! IStd. Esto es para hacer ese hecho más explícito (también está el indicador de compilación mencionado anteriormente), y también ayuda a Merlin a encontrar los tipos correctos. En particular, esto también se abre Core.Std.
+
+No agregue nada a IStdmenos que tenga una razón convincente para hacerlo, por ejemplo, si encuentra que falta alguna función de utilidad y no la proporciona Core.
+
+La igualdad polimórfica está desactivada; use la igualdad específica de tipo en su lugar, incluso para tipos primitivos (por ejemplo, Int.equal). Sin embargo, si su módulo usa muchas variantes polimórficas sin argumentos, puede hacerlo con seguridad open PolyVariantEqual.
+
+Si intenta utilizar la igualdad polimórfica =en su código, obtendrá un error de compilación, como:
+
+Error: This expression has type int but an expression was expected of type
+         [ `no_polymorphic_compare ]
+Alias ​​y uso module L = Loggingpara todas sus necesidades de registro. Consulte su API en Logging.mli para obtener documentación.
+
+Verifique que su código se compile sin advertencias con make -j test_build(esto también se ejecuta como parte de make test).
+
+Aparte de IStdy PolyVariantEqual, abstenerse de openmódulos globales . Usando abierta local cuando mejora la legibilidad: let open MyModule in ....
+
+Evite el uso de alias de módulo, excepto para los siguientes módulos con alias comunes. Utilice los alias de módulo de forma coherente (por ejemplo, no asigne Lun alias a un módulo que no sea Logging).
+
+módulo  CLOpt  =  Módulo CommandLineOption 
+F = Módulo de formato L = Módulo de registro MF = MarkupFormatter   
+   
+   
+Úselo [@@deriving compare]para escribir funciones de comparación siempre que sea posible. Tenga cuidado con este problema al escribir type nonrec t = t [@@deriving compare].
+
+Úselo let equal_foo = [%compare.equal : foo]para escribir funciones de igualdad siempre que sea posible.
+
+Utilice argumentos con nombre siempre que el propósito del argumento no sea inmediatamente obvio. En particular, use argumentos con nombre para parámetros booleanos y enteros a menos que el nombre de la función los mencione explícitamente. También use argumentos con nombre para eliminar la ambigüedad entre varios argumentos del mismo tipo.
+
+Utilice argumentos con nombre para funciones tomadas como argumento; es común nombrar un argumento de función f. Por ejemplo: List.map : 'a list -> f:('a -> 'b) -> 'b list.
+
+En los módulos que definen un tipo t, funciones que toman un argumento de ese tipo generalmente deben tener ese argumento son lo primero, a excepción de los argumentos opcionales: val f : ?optional:bool -> t -> ....
+
+Utilice el _humsufijo para marcar funciones que generan cadenas legibles por humanos.
+
+Formatee el código con ocamlformat .
+
+C / C ++ / Objective-C
+Siga clang-format(consulte ".clang-format" en la raíz del repositorio).
+
+Probando sus cambios
+Asegúrese de que inferir construye: make -j test_build. Consulte el documento de instalación para obtener más detalles.
+
+Ejecute las pruebas: make -j 4 test(ajuste 4 a la cantidad de núcleos disponibles de su máquina). Las pruebas (casi) constan de los mismos tres ingredientes:
+
+Algún código fuente para ejecutar inferir.
+Un archivo "issues.exp" donde cada línea representa un elemento de salida de la prueba. Para la mayoría de las pruebas, una línea es un problema informado por infer.
+A Makefileque orquesta la prueba, por ejemplo corriendo infer en el código fuente y comparando los resultados con issues.exp usando diff.
+Si sus cambios modificaron algunos de los resultados esperados y si los cambios tienen sentido, puede actualizar los resultados esperados de la prueba ejecutando make test-replace.
+
+Si es relevante, agregue una prueba para su cambio.
+
+Para agregar una prueba que inferir encuentra (o no encuentra) un problema en particular, agregue su prueba en "infer / tests / codetoanalyze / {language} / {analyzer} /". Mire Makefileen ese directorio y asegúrese de que ejecute su prueba. "{analizador}" es a menudo un analizador de inferir (como en infer -a {analyzer}), con algunos casos especiales:
+
+"errores" es "inferir"
+"frontend" es un modo en el que la salida esperada es el resultado de la traducción del programa por el frontend clang de infer en la representación intermedia de infer.
+Nombra los procedimientos en tu prueba siguiendo estas convenciones:
+
+Los procedimientos de prueba en los que el analizador debe informar un error deben terminar con el sufijo Bad.
+Los procedimientos de prueba en los que el analizador no debe informar un error deben terminar con el sufijo Ok.
+Los procedimientos de prueba que documentan las limitaciones actuales del analizador deben tener el prefijo FP_ (para "falso positivo") o FN_(para "falso negativo") y un comentario que explique por qué el analizador obtiene la respuesta incorrecta.
+Para agregar una prueba de que cierta integración del sistema de compilación o una opción de línea de comandos funciona de cierta manera, agregue una prueba en "infer / tests / build_systems /".
+
+Si creó un nuevo Makefile para su prueba, agréguelo a la raíz "Makefile", ya sea al DIRECT_TESTS(primer caso) oa la BUILD_SYSTEMS_TESTSvariable (segundo caso). Gate la prueba de manera apropiada si depende de Java o Clang o Xcode (vea cómo lo hacen otras pruebas).
+
+Puede ser útil mirar la salida HTML de depuración de inferir para ver el detalle de la ejecución simbólica. Por ejemplo:
+
+$ infer --debug - clang -c ejemplos / hola.c
+$ firefox infer-out / capturado / hola.c. * .html
+Actualización de infer.opam e infer.opam.locked
+tl; dr: Ejecutar make opam/infer.opam.locked.
+
+infer.opam.locked registra versiones fijas de las dependencias de opam conocidas por trabajar con infer y respetar las restricciones en opam. Esto evita roturas impredecibles de inferir o sus dependencias, especialmente para versiones inferidas, para las cuales es más difícil cambiar las restricciones de sus paquetes después del hecho.
+
+Para agregar un paquete opam o actualizar sus restricciones de versión, edite 'infer.opam' y luego ejecútelo make infer.opam.locked.
