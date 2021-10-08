@@ -419,7 +419,7 @@ module Server = struct
 end
 
 let use_daemon =
-  Config.((not (buck || genrule_mode)) && jobs > 1)
+  Config.(dbwriter && (not (buck || genrule_mode)) && jobs > 1)
   && match Version.build_platform with Linux | Darwin -> true | Windows -> false
 
 

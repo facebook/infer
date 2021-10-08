@@ -2586,9 +2586,14 @@ and sqlite_vacuum =
 
 
 and sqlite_vfs =
-  let default =
-    (* on WSL (bash on Windows) standard SQLite VFS can't be used, see WSL/issues/1927 WSL/issues/2395 *)
-    if is_WSL then Some "unix-excl" else None
+  let default = None
+    match Utils.read_file "/proc/version" with
+    | Result.Ok [line] ->
+        let re = Str.regexp "Linux.+-Microsoft" in
+        (* daemon is now supported by wsl *)
+        None
+    | _ ->
+        None
   in
   CLOpt.mk_string_opt ?default ~long:"sqlite-vfs" "VFS for SQLite"
 
