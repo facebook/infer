@@ -12,6 +12,21 @@ bool binary_search_log_FN(std::vector<std::string>& vec) {
   return std::binary_search(vec.begin(), vec.end(), "x");
 }
 
+void iterate_over_vec_linear_FN(std::vector<std::string>& vec) {
+  for (auto it = vec.begin(); it != vec.end(); ++it) {
+  }
+}
+
+void iteratec_over_vec_linear_FN(std::vector<std::string>& vec) {
+  for (auto it = vec.cbegin(); it != vec.cend(); ++it) {
+  }
+}
+
+void loop_over_vec_linear_FN(std::vector<std::string>& vec) {
+  for (auto i : vec) {
+  }
+}
+
 void copy_iterative_method_linear_FN(std::vector<std::string>& vec1) {
   std::vector<std::string> vec2;
   for (int i = 0; i < vec2.size(); i++)

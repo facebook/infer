@@ -28,3 +28,5 @@ val is_marker_end_java : 'tenv -> 'pname -> bool
 val is_marker_start_objc : 'pname -> bool
 
 val is_marker_end_objc : 'pname -> bool
+
+val is_lazy_instance : 'pname -> bool

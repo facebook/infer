@@ -30,3 +30,5 @@ let is_marker_end_java _ _ = false
 let is_marker_start_objc _ = false
 
 let is_marker_end_objc _ = false
+
+let is_lazy_instance _ = false

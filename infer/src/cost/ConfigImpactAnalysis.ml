@@ -768,8 +768,10 @@ module TransferFunctions = struct
         Dom.store_config pvar id astate
     | Store {e1= Lfield (_, fn, _); e2= Var id} ->
         Dom.store_field fn id astate
-    | Call (_, Const (Cfun callee), _, _, _) when Procname.is_java_class_initializer callee ->
-        (* Mitigation: We ignore Java class initializer to avoid non-deterministic FP. *)
+    | Call (_, Const (Cfun callee), _, _, _)
+      when Procname.is_java_class_initializer callee
+           (* Mitigation: We ignore Java class initializer to avoid non-deterministic FP. *)
+           || FbGKInteraction.is_lazy_instance callee ->
         astate
     | Call ((ret_id, _), Const (Cfun callee), [(Var id, _)], _, _) when is_modeled_as_id tenv callee
       ->
