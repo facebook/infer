@@ -6,6 +6,7 @@
  *)
 open! IStd
 module F = Format
+module CallEvent = PulseCallEvent
 module Invalidation = PulseInvalidation
 module PathContext = PulsePathContext
 module Trace = PulseTrace
@@ -54,7 +55,6 @@ module Attribute = struct
     | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
     | Allocated of allocator * Trace.t
     | Closure of Procname.t
-    | DeepDeallocate
     | DynamicType of Typ.t
     | EndOfCollection
     | Invalid of Invalidation.t * Trace.t
@@ -63,6 +63,7 @@ module Attribute = struct
     | MustBeValid of PathContext.timestamp * Trace.t * Invalidation.must_be_valid_reason option
     | StdVectorReserve
     | Uninitialized
+    | UnknownEffect of CallEvent.t * ValueHistory.t
     | UnreachableAt of Location.t
     | WrittenTo of Trace.t
   [@@deriving compare, variants]
@@ -96,8 +97,6 @@ module Attribute = struct
 
   let allocated_rank = Variants.to_rank (Allocated (CMalloc, dummy_trace))
 
-  let deep_deallocate_rank = Variants.to_rank DeepDeallocate
-
   let dynamic_type_rank = Variants.to_rank (DynamicType StdTyp.void)
 
   let end_of_collection_rank = Variants.to_rank EndOfCollection
@@ -114,7 +113,7 @@ module Attribute = struct
         true
     | (MustBeValid _ | Allocated _ | ISLAbduced _), Invalid _ ->
         false
-    | _, DeepDeallocate ->
+    | _, UnknownEffect _ ->
         (* ignore *)
         true
     | Invalid _, _ | _, Uninitialized ->
@@ -124,6 +123,8 @@ module Attribute = struct
 
 
   let uninitialized_rank = Variants.to_rank Uninitialized
+
+  let unknown_effect_rank = Variants.to_rank (UnknownEffect (Model "", []))
 
   let unreachable_at_rank = Variants.to_rank (UnreachableAt Location.dummy)
 
@@ -144,8 +145,6 @@ module Attribute = struct
           trace
     | Closure pname ->
         Procname.pp f pname
-    | DeepDeallocate ->
-        F.fprintf f "DeepDeallocate"
     | DynamicType typ ->
         F.fprintf f "DynamicType %a" (Typ.pp Pp.text) typ
     | EndOfCollection ->
@@ -170,6 +169,8 @@ module Attribute = struct
         F.pp_print_string f "std::vector::reserve()"
     | Uninitialized ->
         F.pp_print_string f "Uninitialized"
+    | UnknownEffect (call, hist) ->
+        F.fprintf f "UnknownEffect(%a, %a)" CallEvent.pp call ValueHistory.pp hist
     | UnreachableAt location ->
         F.fprintf f "UnreachableAt(%a)" Location.pp location
     | WrittenTo trace ->
@@ -184,11 +185,11 @@ module Attribute = struct
     | AddressOfCppTemporary _
     | AddressOfStackVariable _
     | Closure _
-    | DeepDeallocate
     | DynamicType _
     | EndOfCollection
     | StdVectorReserve
     | Uninitialized
+    | UnknownEffect _
     | UnreachableAt _
     | WrittenTo _ ->
         false
@@ -203,11 +204,11 @@ module Attribute = struct
     | AddressOfCppTemporary _
     | AddressOfStackVariable _
     | Closure _
-    | DeepDeallocate
     | DynamicType _
     | EndOfCollection
     | StdVectorReserve
     | Uninitialized
+    | UnknownEffect _
     | WrittenTo _ ->
         true
 
@@ -237,12 +238,13 @@ module Attribute = struct
         MustBeValid (path.PathContext.timestamp, add_call_to_trace trace, reason)
     | MustBeInitialized (_timestamp, trace) ->
         MustBeInitialized (path.PathContext.timestamp, add_call_to_trace trace)
+    | UnknownEffect (call, hist) ->
+        UnknownEffect (call, [Call {f= Call proc_name; location= call_location; in_call= hist}])
     | WrittenTo trace ->
         WrittenTo (add_call_to_trace trace)
     | ( AddressOfCppTemporary _
       | AddressOfStackVariable _
       | Closure _
-      | DeepDeallocate
       | DynamicType _
       | EndOfCollection
       | StdVectorReserve
@@ -312,6 +314,7 @@ module Attributes = struct
   let is_modified attrs =
     Option.is_some (Set.find_rank attrs Attribute.written_to_rank)
     || Option.is_some (Set.find_rank attrs Attribute.invalid_rank)
+    || Option.is_some (Set.find_rank attrs Attribute.unknown_effect_rank)
 
 
   let is_uninitialized attrs = Set.find_rank attrs Attribute.uninitialized_rank |> Option.is_some
@@ -330,8 +333,11 @@ module Attributes = struct
            trace )
 
 
-  let is_deep_deallocated attrs =
-    Set.find_rank attrs Attribute.deep_deallocate_rank |> Option.is_some
+  let get_unknown_effect attrs =
+    Set.find_rank attrs Attribute.unknown_effect_rank
+    |> Option.map ~f:(fun attr ->
+           let[@warning "-8"] (Attribute.UnknownEffect (call, hist)) = attr in
+           (call, hist) )
 
 
   let get_dynamic_type attrs =

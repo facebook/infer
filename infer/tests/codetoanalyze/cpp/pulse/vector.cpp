@@ -90,7 +90,8 @@ void push_back_loop_latent(std::vector<int>& vec_other) {
   std::cout << *elt << "\n";
 }
 
-void reserve_bad(std::vector<int>& vec) {
+// FN because of unknown std::vector::size()
+void FN_reserve_bad(std::vector<int>& vec) {
   int* elt = &vec[1];
   vec.reserve(vec.size() + 1);
   std::cout << *elt << "\n";

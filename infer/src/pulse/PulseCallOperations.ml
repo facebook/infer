@@ -18,42 +18,25 @@ let is_ptr_to_const formal_typ_opt =
       match formal_typ.desc with Typ.Tptr (t, _) -> Typ.is_const t.quals | _ -> false )
 
 
-let unknown_call tenv path call_loc (reason : CallEvent.t) ~ret ~actuals ~formals_opt astate =
+let unknown_call path call_loc (reason : CallEvent.t) ~ret ~actuals ~formals_opt astate =
   let event = ValueHistory.Call {f= reason; location= call_loc; in_call= []} in
   let ret_val = AbstractValue.mk_fresh () in
   let astate = PulseOperations.write_id (fst ret) (ret_val, [event]) astate in
   (* set to [false] if we think the procedure called does not behave "functionally", i.e. return the
      same value for the same inputs *)
   let is_functional = ref true in
-  let rec havoc_fields ((_, history) as addr) typ astate =
-    match typ.Typ.desc with
-    | Tstruct struct_name -> (
-      match Tenv.lookup tenv struct_name with
-      | Some {fields} ->
-          List.fold fields ~init:astate ~f:(fun acc (field, field_typ, _) ->
-              let fresh_value = AbstractValue.mk_fresh () in
-              Memory.add_edge addr (FieldAccess field) (fresh_value, [event]) call_loc acc
-              |> havoc_fields (fresh_value, history) field_typ )
-      | None ->
-          astate )
-    | _ ->
-        astate
-  in
-  let havoc_actual_if_ptr (actual, actual_typ) formal_typ_opt astate =
+  let havoc_actual_if_ptr ((actual, _), actual_typ) formal_typ_opt astate =
     (* We should not havoc when the corresponding formal is a pointer to const *)
     match actual_typ.Typ.desc with
-    | Tptr (typ, _)
-      when (not (Language.curr_language_is Java)) && not (is_ptr_to_const formal_typ_opt) ->
+    | Tptr _ when (not (Language.curr_language_is Java)) && not (is_ptr_to_const formal_typ_opt) ->
         is_functional := false ;
-        (* avoid creating leaks when havoc'ing pointers, and generally optimistically assume unknown
-           calls deallocate everything reachable to avoid reporting memory leak false positives *)
-        let astate = AbductiveDomain.deep_deallocate (fst actual) astate in
-        (* HACK: write through the pointer even if it is invalid (except in Java). This is to avoid
-           raising issues when havoc'ing pointer parameters (which normally causes a [check_valid]
-           call). *)
-        let fresh_value = AbstractValue.mk_fresh () in
-        Memory.add_edge actual Dereference (fresh_value, [event]) call_loc astate
-        |> havoc_fields actual typ
+        let hist = [event] in
+        (* this will deallocate anything reachable from the [actual] and havoc the values pointed to
+           by [actual] *)
+        AbductiveDomain.apply_unknown_effect hist actual astate
+        (* record the [UnknownEffect] attribute so callers of the current procedure can apply the
+           above effects too in calling contexts where more is reachable from [actual] than here *)
+        |> AddressAttributes.add_attrs actual (Attributes.singleton (UnknownEffect (reason, hist)))
     | _ ->
         astate
   in
@@ -306,8 +289,7 @@ let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.
       let arg_values = List.map actuals ~f:(fun ((value, _), _) -> value) in
       let<*> astate_unknown =
         conservatively_initialize_args arg_values astate
-        |> unknown_call tenv path call_loc (SkippedKnownCall callee_pname) ~ret ~actuals
-             ~formals_opt
+        |> unknown_call path call_loc (SkippedKnownCall callee_pname) ~ret ~actuals ~formals_opt
       in
       let callee_procdesc_opt = Procdesc.load callee_pname in
       Option.value_map callee_procdesc_opt
