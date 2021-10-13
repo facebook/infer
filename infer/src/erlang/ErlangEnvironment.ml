@@ -38,6 +38,7 @@ type record_info = {field_names: string list; field_info: record_field_info Stri
 
 type ('procdesc, 'result) t =
   { current_module: module_name  (** used to qualify function names *)
+  ; functions: UnqualifiedFunction.Set.t  (** used to resolve function names *)
   ; exports: UnqualifiedFunction.Set.t  (** used to determine public/private access *)
   ; imports: module_name UnqualifiedFunction.Map.t  (** used to resolve function names *)
   ; records: record_info String.Map.t  (** used to get fields, indexes and initializers *)
@@ -49,6 +50,7 @@ type ('procdesc, 'result) t =
 let get_environment module_ =
   let init =
     { current_module= Printf.sprintf "%s:unknown_module" __FILE__
+    ; functions= UnqualifiedFunction.Set.empty
     ; exports= UnqualifiedFunction.Set.empty
     ; imports= UnqualifiedFunction.Map.empty (* TODO: auto-import from module "erlang" *)
     ; records= String.Map.empty
@@ -99,8 +101,9 @@ let get_environment module_ =
         let file = SourceFile.create path in
         let location = Location.none file in
         {env with location}
-    | _ ->
-        env
+    | Function {function_; _} ->
+        let key = UnqualifiedFunction.of_ast function_ in
+        {env with functions= Set.add env.functions key}
   in
   List.fold ~init ~f module_
 

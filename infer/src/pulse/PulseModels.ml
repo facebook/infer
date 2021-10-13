@@ -1939,6 +1939,15 @@ module Erlang = struct
 
   let make_astate_goodmap (map_val, _map_hist) astate = prune_type (map_val, _map_hist) Map astate
 
+  let erlang_is_map (map_val, _map_hist) : model =
+   fun {location; ret= ret_id, _} astate ->
+    let typ = Typ.mk_struct (ErlangType Map) in
+    let instanceof_val = AbstractValue.mk_fresh () in
+    let event = ValueHistory.Call {f= Model "is_map"; location; in_call= []} in
+    let<*> astate = PulseArithmetic.and_equal_instanceof instanceof_val map_val typ astate in
+    PulseOperations.write_id ret_id (instanceof_val, [event]) astate |> ok_continue
+
+
   let map_is_key (key, _key_history) map : model =
    fun ({location; path; ret= ret_id, _} as data) astate ->
     let astate, _isempty_addr, (is_empty, _isempty_hist) =
@@ -2339,6 +2348,8 @@ module ProcNameDispatcher = struct
           $--> StdVector.invalidate_references ShrinkToFit
         ; -"std" &:: "vector" &:: "push_back" <>$ capt_arg_payload $+...$--> StdVector.push_back
         ; -"std" &:: "vector" &:: "empty" <>$ capt_arg_payload $+...$--> StdVector.empty
+        ; -ErlangTypeName.erlang_namespace &:: "is_map" <>$ capt_arg_payload
+          $--> Erlang.erlang_is_map
         ; -"lists" &:: "append" <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.list_append2
         ; -"lists" &:: "reverse" <>$ capt_arg_payload $--> Erlang.list_reverse
         ; -"maps" &:: "is_key" <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.map_is_key

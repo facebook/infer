@@ -483,23 +483,33 @@ and translate_expression_binary_operator (env : (_, _) Env.t) ret_var e1 (op : A
       Block.all env [block1; block2; Block.make_unsupported env]
 
 
-and translate_expression_call (env : (_, _) Env.t) ret_var module_name function_name args : Block.t
-    =
+and lookup_module_for_unqualified (env : (_, _) Env.t) function_name arity =
+  (* First check if the function is imported or local (order does not matter
+     as compiler should enforce that both cannot hold at the same time).
+     Then assume it's built-in. *)
+  let uf_name = {Env.UnqualifiedFunction.name= function_name; arity} in
+  match Env.UnqualifiedFunction.Map.find env.imports uf_name with
+  | Some name ->
+      name
+  | None ->
+      if Env.UnqualifiedFunction.Set.mem env.functions uf_name then env.current_module
+      else ErlangTypeName.erlang_namespace
+
+
+and translate_expression_call (env : (_, _) Env.t) ret_var module_name_opt function_name args :
+    Block.t =
   let arity = List.length args in
   let callee_procname =
-    let module_name_lookup =
-      match module_name with
+    let module_name =
+      match module_name_opt with
+      (* If we have a module name just use that *)
       | Some name ->
           name
-      | None -> (
-          let uf_name = {Env.UnqualifiedFunction.T.name= function_name; arity} in
-          match Env.UnqualifiedFunction.Map.find env.imports uf_name with
-          | Some name ->
-              name
-          | None ->
-              env.current_module )
+      (* Otherwise we need a module name *)
+      | None ->
+          lookup_module_for_unqualified env function_name arity
     in
-    Procname.make_erlang ~module_name:module_name_lookup ~function_name ~arity
+    Procname.make_erlang ~module_name ~function_name ~arity
   in
   let args_with_ids = List.map ~f:(fun a -> (a, mk_fresh_id ())) args in
   let args_blocks =
@@ -920,7 +930,7 @@ and translate_case_clause (env : (_, _) Env.t) (values : Ident.t list)
 
 let translate_one_function (env : (_, _) Env.t) cfg function_ clauses =
   let uf_name = Env.UnqualifiedFunction.of_ast function_ in
-  let {Env.UnqualifiedFunction.T.name= function_name; arity} = uf_name in
+  let {Env.UnqualifiedFunction.name= function_name; arity} = uf_name in
   let name =
     let module_name = env.current_module in
     Procname.make_erlang ~module_name ~function_name ~arity
