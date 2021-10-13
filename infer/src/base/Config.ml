@@ -2586,14 +2586,8 @@ and sqlite_vacuum =
 
 
 and sqlite_vfs =
-  let default = 
-    match Utils.read_file "/proc/version" with
-    | Result.Ok [line] ->
-        (* daemon is now supported by wsl *)
-        None
-    | _ ->
-        None
-  in
+  (* daemon is now supported by wsl *)
+  let default = None in
   CLOpt.mk_string_opt ?default ~long:"sqlite-vfs" "VFS for SQLite"
 
 
