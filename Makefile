@@ -698,6 +698,12 @@ ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/java/' || \
 	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/lib/java/'
 endif
+ifeq ($(BUILD_ERLANG_ANALYZERS),yes)
+	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/erlang/' || \
+	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/lib/erlang/'
+	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/erlang/infer_parse_transform/src/' || \
+	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/lib/erlang/infer_parse_transform/src/'
+endif
 	test -d      '$(DESTDIR)$(libdir)/infer/infer/annotations/' || \
 	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/annotations/'
 	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/wrappers/' || \
@@ -736,6 +742,20 @@ ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 	  $(INSTALL_DATA) -C \{\} '$(DESTDIR)$(libdir)'/infer/\{\}
 	$(INSTALL_PROGRAM) -C      '$(LIB_DIR)'/wrappers/javac \
 	  '$(DESTDIR)$(libdir)'/infer/infer/lib/wrappers/
+endif
+ifeq ($(BUILD_ERLANG_ANALYZERS),yes)
+	$(INSTALL_PROGRAM) -C      '$(LIB_DIR)'/erlang/erlang.sh \
+	  '$(DESTDIR)$(libdir)'/infer/infer/lib/erlang/
+	$(INSTALL_PROGRAM) -C      '$(LIB_DIR)'/erlang/erlang.escript \
+	  '$(DESTDIR)$(libdir)'/infer/infer/lib/erlang/
+	$(INSTALL_PROGRAM) -C      '$(LIB_DIR)'/erlang/extract.escript \
+	  '$(DESTDIR)$(libdir)'/infer/infer/lib/erlang/
+	$(INSTALL_DATA) -C         '$(LIB_DIR)'/erlang/infer_parse_transform/rebar.config \
+	  '$(DESTDIR)$(libdir)'/infer/infer/lib/erlang/infer_parse_transform/
+	$(INSTALL_DATA) -C         '$(LIB_DIR)'/erlang/infer_parse_transform/src/infer_parse_transform.app.src \
+	  '$(DESTDIR)$(libdir)'/infer/infer/lib/erlang/infer_parse_transform/src/
+	$(INSTALL_DATA) -C         '$(LIB_DIR)'/erlang/infer_parse_transform/src/infer_parse_transform.erl \
+	  '$(DESTDIR)$(libdir)'/infer/infer/lib/erlang/infer_parse_transform/src/
 endif
 	$(INSTALL_PROGRAM) -C '$(INFER_BIN)' '$(DESTDIR)$(libdir)'/infer/infer/bin/
 	(cd '$(DESTDIR)$(bindir)/' && \
