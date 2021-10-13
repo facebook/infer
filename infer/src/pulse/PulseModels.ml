@@ -1863,6 +1863,24 @@ module Erlang = struct
     List.concat (List.init Config.erlang_list_unfold_depth ~f:mk_astate_concat)
 
 
+  let erlang_is_list (list_val, _list_hist) : model =
+   fun {location; ret= ret_id, _} astate ->
+    let cons_typ = Typ.mk_struct (ErlangType Cons) in
+    let nil_typ = Typ.mk_struct (ErlangType Nil) in
+    let is_cons = AbstractValue.mk_fresh () in
+    let is_nil = AbstractValue.mk_fresh () in
+    let is_list = AbstractValue.mk_fresh () in
+    let event = ValueHistory.Call {f= Model "is_list"; location; in_call= []} in
+    let<*> astate = PulseArithmetic.and_equal_instanceof is_cons list_val cons_typ astate in
+    let<*> astate = PulseArithmetic.and_equal_instanceof is_nil list_val nil_typ astate in
+    let<*> astate, is_list =
+      PulseArithmetic.eval_binop is_list Binop.LOr (AbstractValueOperand is_cons)
+        (AbstractValueOperand is_nil) astate
+    in
+    let astate = PulseOperations.write_id ret_id (is_list, [event]) astate in
+    [Ok (ContinueProgram astate)]
+
+
   let make_tuple (args : 'a ProcnameDispatcher.Call.FuncArg.t list) : model =
    fun {location; path; ret= ret_id, _} astate ->
     let tuple_size = List.length args in
@@ -2350,6 +2368,8 @@ module ProcNameDispatcher = struct
         ; -"std" &:: "vector" &:: "empty" <>$ capt_arg_payload $+...$--> StdVector.empty
         ; -ErlangTypeName.erlang_namespace &:: "is_map" <>$ capt_arg_payload
           $--> Erlang.erlang_is_map
+        ; -ErlangTypeName.erlang_namespace &:: "is_list" <>$ capt_arg_payload
+          $--> Erlang.erlang_is_list
         ; -"lists" &:: "append" <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.list_append2
         ; -"lists" &:: "reverse" <>$ capt_arg_payload $--> Erlang.list_reverse
         ; -"maps" &:: "is_key" <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.map_is_key
