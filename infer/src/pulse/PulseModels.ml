@@ -114,10 +114,6 @@ module Misc = struct
     astate
 
 
-  (** don't actually do nothing, apply the heuristics for unknown calls (this may or may not be a
-      good idea) *)
-  let skip = unknown_call
-
   let nondet ~fn_name : model =
    fun {location; ret= ret_id, _} astate ->
     let event = ValueHistory.Call {f= Model fn_name; location; in_call= []} in
@@ -2174,9 +2170,9 @@ module ProcNameDispatcher = struct
              ref-counting *)
           -"folly" &:: "fbstring_core" &:: "category" &--> Misc.return_int Int64.zero
         ; -"folly" &:: "DelayedDestruction" &:: "destroy"
-          &++> Misc.skip "folly::DelayedDestruction::destroy is modelled as skip"
+          &++> Misc.unknown_call "folly::DelayedDestruction::destroy is modelled as skip"
         ; -"folly" &:: "SocketAddress" &:: "~SocketAddress"
-          &++> Misc.skip "folly::SocketAddress's destructor is modelled as skip"
+          &++> Misc.unknown_call "folly::SocketAddress's destructor is modelled as skip"
         ; -"folly" &:: "Optional" &:: "Optional" <>$ capt_arg_payload
           $+ any_arg_of_typ (-"folly" &:: "None")
           $--> Optional.assign_none ~desc:"folly::Optional::Optional(=None)"
@@ -2262,6 +2258,11 @@ module ProcNameDispatcher = struct
         ; -"std" &:: "basic_string" &:: "data" <>$ capt_arg_payload $--> StdBasicString.data
         ; -"std" &:: "basic_string" &:: "empty" <>$ capt_arg_payload $--> StdBasicString.empty
         ; -"std" &:: "basic_string" &:: "length" <>$ capt_arg_payload $--> StdBasicString.length
+        ; -"std" &:: "basic_string" &:: "substr"
+          &--> Misc.nondet ~fn_name:"std::basic_string::substr"
+        ; -"std" &:: "basic_string" &:: "size" &--> Misc.nondet ~fn_name:"std::basic_string::size"
+        ; -"std" &:: "basic_string" &:: "operator[]"
+          &--> Misc.nondet ~fn_name:"std::basic_string::operator[]"
         ; -"std" &:: "basic_string" &:: "~basic_string" <>$ capt_arg_payload
           $--> StdBasicString.destructor
         ; -"std" &:: "function" &:: "function" $ capt_arg_payload $+ capt_arg
@@ -2451,6 +2452,7 @@ module ProcNameDispatcher = struct
         ; +map_context_tenv PatternMatch.Java.implements_map
           &:: "putAll" <>$ capt_arg_payload $+...$--> StdVector.push_back
         ; -"std" &:: "vector" &:: "reserve" <>$ capt_arg_payload $+...$--> StdVector.reserve
+        ; -"std" &:: "vector" &:: "size" &--> Misc.nondet ~fn_name:"std::vector::size"
         ; +map_context_tenv PatternMatch.Java.implements_collection
           &:: "get" <>$ capt_arg_payload $+ capt_arg_payload
           $--> StdVector.at ~desc:"Collection.get()"
@@ -2587,7 +2589,7 @@ module ProcNameDispatcher = struct
           $+...$--> Misc.id_first_arg
                       ~desc:"modelled as returning the first argument due to configuration option"
         ; +match_regexp_opt Config.pulse_model_skip_pattern
-          &::.*++> Misc.skip "modelled as skip due to configuration option" ] )
+          &::.*++> Misc.unknown_call "modelled as skip due to configuration option" ] )
 end
 
 let dispatch tenv proc_name args = ProcNameDispatcher.dispatch (tenv, proc_name) proc_name args

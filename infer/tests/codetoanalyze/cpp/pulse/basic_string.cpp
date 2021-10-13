@@ -21,8 +21,7 @@ const Range setLanguage(const std::string& s) {
                      : "en";
 }
 
-// FN because of unknown function std::basic_string::operator[]
-bool FN_use_range_of_invalidated_temporary_string_bad(const std::string& str) {
+bool use_range_of_invalidated_temporary_string_bad(const std::string& str) {
   auto s = setLanguage(str);
   return s[0] == 'k';
 }
