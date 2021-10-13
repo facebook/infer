@@ -1669,60 +1669,38 @@ module Android = struct
 end
 
 module Erlang = struct
+  let error err astate = [Error (ReportableError {astate; diagnostic= ErlangError err})]
+
   let error_badkey : model =
-   fun {location} astate ->
-    [ Error
-        (ReportableError {astate; diagnostic= ErlangError (Badkey {calling_context= []; location})})
-    ]
+   fun {location} astate -> error (Badkey {calling_context= []; location}) astate
 
 
   let error_badmap : model =
-   fun {location} astate ->
-    [ Error
-        (ReportableError {astate; diagnostic= ErlangError (Badmap {calling_context= []; location})})
-    ]
+   fun {location} astate -> error (Badmap {calling_context= []; location}) astate
 
 
   let error_badmatch : model =
-   fun {location} astate ->
-    [ Error
-        (ReportableError {astate; diagnostic= ErlangError (Badmatch {calling_context= []; location})}
-        ) ]
+   fun {location} astate -> error (Badmatch {calling_context= []; location}) astate
 
 
   let error_badrecord : model =
-   fun {location} astate ->
-    [ Error
-        (ReportableError
-           {astate; diagnostic= ErlangError (Badrecord {calling_context= []; location})} ) ]
+   fun {location} astate -> error (Badrecord {calling_context= []; location}) astate
 
 
   let error_case_clause : model =
-   fun {location} astate ->
-    [ Error
-        (ReportableError
-           {astate; diagnostic= ErlangError (Case_clause {calling_context= []; location})} ) ]
+   fun {location} astate -> error (Case_clause {calling_context= []; location}) astate
 
 
   let error_function_clause : model =
-   fun {location} astate ->
-    [ Error
-        (ReportableError
-           {astate; diagnostic= ErlangError (Function_clause {calling_context= []; location})} ) ]
+   fun {location} astate -> error (Function_clause {calling_context= []; location}) astate
 
 
   let error_if_clause : model =
-   fun {location} astate ->
-    [ Error
-        (ReportableError
-           {astate; diagnostic= ErlangError (If_clause {calling_context= []; location})} ) ]
+   fun {location} astate -> error (If_clause {calling_context= []; location}) astate
 
 
   let error_try_clause : model =
-   fun {location} astate ->
-    [ Error
-        (ReportableError
-           {astate; diagnostic= ErlangError (Try_clause {calling_context= []; location})} ) ]
+   fun {location} astate -> error (Try_clause {calling_context= []; location}) astate
 
 
   let write_field_and_deref path location ~struct_addr ~field_addr ~field_val field_name astate =
@@ -1736,6 +1714,21 @@ module Erlang = struct
     let typ = Typ.mk_struct (ErlangType typ) in
     let astate = PulseOperations.add_dynamic_type typ addr_val astate in
     PulseOperations.write_id ret_id (addr_val, hist) astate
+
+
+  let prune_type (value, _hist) typ astate =
+    let typ = Typ.mk_struct (ErlangType typ) in
+    let instanceof_val = AbstractValue.mk_fresh () in
+    let* astate = PulseArithmetic.and_equal_instanceof instanceof_val value typ astate in
+    PulseArithmetic.prune_positive instanceof_val astate
+
+
+  let load_field path field location obj astate =
+    match Java.load_field path field location obj astate with
+    | Error _ ->
+        L.die InternalError "Could not load field (we assume Erlang references to be valid)"
+    | Ok result ->
+        result
 
 
   let cons_head_field = Fieldname.make (ErlangType Cons) ErlangTypeName.cons_head
@@ -1788,21 +1781,6 @@ module Erlang = struct
     PulseOperations.write_id ret_id addr_cons astate
 
 
-  let prune_type (value, _hist) typ astate =
-    let typ = Typ.mk_struct (ErlangType typ) in
-    let instanceof_val = AbstractValue.mk_fresh () in
-    let* astate = PulseArithmetic.and_equal_instanceof instanceof_val value typ astate in
-    PulseArithmetic.prune_positive instanceof_val astate
-
-
-  let load_field path field location obj astate =
-    match Java.load_field path field location obj astate with
-    | Error _ ->
-        L.die InternalError "Could not load field (we assume Erlang references to be valid)"
-    | Ok result ->
-        result
-
-
   (** Assumes that the argument is a Cons and loads the head and tail *)
   let load_head_tail cons astate path location =
     let+ astate = prune_type cons Cons astate in
@@ -1812,24 +1790,24 @@ module Erlang = struct
 
 
   (** Assumes that a list is of given length and reads the elements *)
-  let rec assume_and_deconstruct list length astate path location =
+  let rec list_assume_and_deconstruct list length astate path location =
     match length with
     | 0 ->
         let+ astate = prune_type list Nil astate in
         ([], astate)
     | _ ->
         let* hd, tl, astate = load_head_tail list astate path location in
-        let+ elems, astate = assume_and_deconstruct tl (length - 1) astate path location in
+        let+ elems, astate = list_assume_and_deconstruct tl (length - 1) astate path location in
         (hd :: elems, astate)
 
 
   let foldResult ~init fs = List.fold ~init ~f:(fun r f -> Result.bind r ~f) fs
 
-  let list_reverse list : model =
+  let lists_reverse list : model =
    fun {location; path; ret= ret_id, _} astate ->
     (* Makes an abstract state corresponding to reversing a list of given length *)
     let mk_astate_rev length =
-      let<*> elems, astate = assume_and_deconstruct list length astate path location in
+      let<*> elems, astate = list_assume_and_deconstruct list length astate path location in
       let<+> reversed, astate =
         foldResult
           ~init:(Ok (make_nil_no_return astate location))
@@ -1842,11 +1820,11 @@ module Erlang = struct
     List.concat (List.init Config.erlang_list_unfold_depth ~f:mk_astate_rev)
 
 
-  let list_append2 list1 list2 : model =
+  let lists_append2 list1 list2 : model =
    fun {location; path; ret= ret_id, _} astate ->
     (* Makes an abstract state corresponding to appending to a list of given length *)
     let mk_astate_concat length =
-      let<*> elems, astate = assume_and_deconstruct list1 length astate path location in
+      let<*> elems, astate = list_assume_and_deconstruct list1 length astate path location in
       let<+> concatenated, astate =
         foldResult
           ~init:(Ok (list2, astate))
@@ -1866,7 +1844,7 @@ module Erlang = struct
     let is_cons = AbstractValue.mk_fresh () in
     let is_nil = AbstractValue.mk_fresh () in
     let is_list = AbstractValue.mk_fresh () in
-    let event = ValueHistory.Call {f= Model "is_list"; location; in_call= []} in
+    let event = ValueHistory.Call {f= Model "erlang:is_list"; location; in_call= []} in
     let<*> astate = PulseArithmetic.and_equal_instanceof is_cons list_val cons_typ astate in
     let<*> astate = PulseArithmetic.and_equal_instanceof is_nil list_val nil_typ astate in
     let<*> astate, is_list =
@@ -1884,7 +1862,7 @@ module Erlang = struct
     let event = ValueHistory.Allocation {f= Model "{}"; location} in
     let addr_tuple = (AbstractValue.mk_fresh (), [event]) in
     let addr_elems = List.map ~f:(function _ -> (AbstractValue.mk_fresh (), [event])) args in
-    let mk_field name = Fieldname.make tuple_typ_name name in
+    let mk_field = Fieldname.make tuple_typ_name in
     let field_names = ErlangTypeName.tuple_field_names tuple_size in
     let get_payload (arg : 'a ProcnameDispatcher.Call.FuncArg.t) = arg.arg_payload in
     let arg_payloads = List.map ~f:get_payload args in
@@ -1908,7 +1886,7 @@ module Erlang = struct
 
   let map_is_empty_field = mk_map_field "__infer_model_backing_map_is_empty"
 
-  let map_create (args : 'a ProcnameDispatcher.Call.FuncArg.t list) : model =
+  let make_map (args : 'a ProcnameDispatcher.Call.FuncArg.t list) : model =
    fun {location; path; ret= ret_id, _} astate ->
     let event = ValueHistory.Allocation {f= Model "#{}"; location} in
     let addr_map = (AbstractValue.mk_fresh (), [event]) in
@@ -1941,7 +1919,7 @@ module Erlang = struct
     write_dynamic_type_and_return addr_map Map ret_id astate
 
 
-  let map_new : model = map_create []
+  let maps_new : model = make_map []
 
   let make_astate_badmap (map_val, _map_hist) data astate =
     let typ = Typ.mk_struct (ErlangType Map) in
@@ -1962,14 +1940,12 @@ module Erlang = struct
     PulseOperations.write_id ret_id (instanceof_val, [event]) astate |> ok_continue
 
 
-  let map_is_key (key, _key_history) map : model =
+  let maps_is_key (key, _key_history) map : model =
    fun ({location; path; ret= ret_id, _} as data) astate ->
     let astate, _isempty_addr, (is_empty, _isempty_hist) =
       load_field path map_is_empty_field location map astate
     in
-    let ret_val_true = AbstractValue.mk_fresh () in
-    let ret_val_false = AbstractValue.mk_fresh () in
-    let event = ValueHistory.Call {f= Model "map_is_key"; location; in_call= []} in
+    let event = ValueHistory.Call {f= Model "maps_is_key"; location; in_call= []} in
     (* Return 3 cases:
      * - Error & assume not map
      * - Ok & assume map & assume empty & return false
@@ -1977,12 +1953,14 @@ module Erlang = struct
      *)
     let astate_badmap = make_astate_badmap map data astate in
     let astate_empty =
+      let ret_val_false = AbstractValue.mk_fresh () in
       let* astate = make_astate_goodmap map astate in
       let* astate = PulseArithmetic.prune_positive is_empty astate in
       let+ astate = PulseArithmetic.and_eq_int ret_val_false IntLit.zero astate in
       PulseOperations.write_id ret_id (ret_val_false, [event]) astate |> continue
     in
     let astate_haskey =
+      let ret_val_true = AbstractValue.mk_fresh () in
       let* astate = make_astate_goodmap map astate in
       let* astate = PulseArithmetic.prune_eq_zero is_empty astate in
       let astate, _key_addr, (tracked_key, _hist) =
@@ -1998,7 +1976,7 @@ module Erlang = struct
     astate_empty :: astate_haskey :: astate_badmap
 
 
-  let map_get (key, _key_history) map : model =
+  let maps_get (key, _key_history) map : model =
    fun ({location; path; ret= ret_id, _} as data) astate ->
     let astate, _isempty_addr, (is_empty, _isempty_hist) =
       load_field path map_is_empty_field location map astate
@@ -2032,14 +2010,14 @@ module Erlang = struct
     (astate_ok :: astate_badkey) @ astate_badmap
 
 
-  let map_put key value map : model =
+  let maps_put key value map : model =
    fun ({location; path; ret= ret_id, _} as data) astate ->
     (* Ignore old map. We only store one key/value so we can simply create a new map. *)
     (* Return 2 cases:
      * - Error & assume not map
      * - Ok & assume map & return new map
      *)
-    let event = ValueHistory.Allocation {f= Model "map_put"; location} in
+    let event = ValueHistory.Allocation {f= Model "maps_put"; location} in
     let astate_badmap = make_astate_badmap map data astate in
     let astate_ok =
       let addr_map = (AbstractValue.mk_fresh (), [event]) in
@@ -2136,21 +2114,21 @@ module ProcNameDispatcher = struct
           <>$ capt_arg_payload $+...$--> Misc.id_first_arg ~desc:"cast"
         ; +BuiltinDecl.(match_builtin abort) <>--> Misc.early_exit
         ; +BuiltinDecl.(match_builtin exit) <>--> Misc.early_exit
-        ; +BuiltinDecl.(match_builtin __erlang_list_reverse)
-          <>$ capt_arg_payload $--> Erlang.list_reverse
-        ; +BuiltinDecl.(match_builtin __erlang_list_append2)
-          <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.list_append2
+        ; +BuiltinDecl.(match_builtin __erlang_lists_reverse)
+          <>$ capt_arg_payload $--> Erlang.lists_reverse
+        ; +BuiltinDecl.(match_builtin __erlang_lists_append2)
+          <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.lists_append2
         ; +BuiltinDecl.(match_builtin __erlang_make_cons)
           <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.make_cons
         ; +BuiltinDecl.(match_builtin __erlang_make_tuple) &++> Erlang.make_tuple
         ; +BuiltinDecl.(match_builtin __erlang_make_nil) <>--> Erlang.make_nil
-        ; +BuiltinDecl.(match_builtin __erlang_map_create) &++> Erlang.map_create
-        ; +BuiltinDecl.(match_builtin __erlang_map_is_key)
-          <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.map_is_key
-        ; +BuiltinDecl.(match_builtin __erlang_map_get)
-          <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.map_get
-        ; +BuiltinDecl.(match_builtin __erlang_map_put)
-          <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> Erlang.map_put
+        ; +BuiltinDecl.(match_builtin __erlang_make_map) &++> Erlang.make_map
+        ; +BuiltinDecl.(match_builtin __erlang_maps_is_key)
+          <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.maps_is_key
+        ; +BuiltinDecl.(match_builtin __erlang_maps_get)
+          <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.maps_get
+        ; +BuiltinDecl.(match_builtin __erlang_maps_put)
+          <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> Erlang.maps_put
         ; +BuiltinDecl.(match_builtin __erlang_error_badkey) <>--> Erlang.error_badkey
         ; +BuiltinDecl.(match_builtin __erlang_error_badmap) <>--> Erlang.error_badmap
         ; +BuiltinDecl.(match_builtin __erlang_error_badmatch) <>--> Erlang.error_badmatch
@@ -2371,13 +2349,13 @@ module ProcNameDispatcher = struct
           $--> Erlang.erlang_is_map
         ; -ErlangTypeName.erlang_namespace &:: "is_list" <>$ capt_arg_payload
           $--> Erlang.erlang_is_list
-        ; -"lists" &:: "append" <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.list_append2
-        ; -"lists" &:: "reverse" <>$ capt_arg_payload $--> Erlang.list_reverse
-        ; -"maps" &:: "is_key" <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.map_is_key
-        ; -"maps" &:: "get" <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.map_get
+        ; -"lists" &:: "append" <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.lists_append2
+        ; -"lists" &:: "reverse" <>$ capt_arg_payload $--> Erlang.lists_reverse
+        ; -"maps" &:: "is_key" <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.maps_is_key
+        ; -"maps" &:: "get" <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.maps_get
         ; -"maps" &:: "put" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
-          $--> Erlang.map_put
-        ; -"maps" &:: "new" <>$$--> Erlang.map_new
+          $--> Erlang.maps_put
+        ; -"maps" &:: "new" <>$$--> Erlang.maps_new
         ; +map_context_tenv PatternMatch.Java.implements_collection
           &:: "<init>" <>$ capt_arg_payload
           $--> JavaCollection.init ~desc:"Collection.init()"

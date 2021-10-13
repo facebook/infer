@@ -29,9 +29,9 @@ val __erlang_error_if_clause : Procname.t
 
 val __erlang_error_try_clause : Procname.t
 
-val __erlang_list_append2 : Procname.t
+val __erlang_lists_append2 : Procname.t
 
-val __erlang_list_reverse : Procname.t
+val __erlang_lists_reverse : Procname.t
 
 val __erlang_make_cons : Procname.t
 
@@ -39,13 +39,13 @@ val __erlang_make_nil : Procname.t
 
 val __erlang_make_tuple : Procname.t
 
-val __erlang_map_create : Procname.t
+val __erlang_make_map : Procname.t
 
-val __erlang_map_is_key : Procname.t
+val __erlang_maps_is_key : Procname.t
 
-val __erlang_map_get : Procname.t
+val __erlang_maps_get : Procname.t
 
-val __erlang_map_put : Procname.t
+val __erlang_maps_put : Procname.t
 
 val __erlang_missing_translation : Procname.t
 
