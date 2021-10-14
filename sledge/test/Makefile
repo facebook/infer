@@ -121,19 +121,19 @@ translate-status: translate.sexp
 analyze: compile
 	-parallel --use-cores-instead-of-threads --bar $(sledge_dbg) llvm analyze -trace Report+Control $(SLEDGE_A_ARGS) ::: $(shell $(sledge_report) sort -baseline baseline/analyze.sexp $(AnalyzeTests))
 
-parallel_sledge_opt:=parallel --use-cores-instead-of-threads --shuf --bar $(sledge_opt) llvm analyze -append-report $(SLEDGE_A_ARGS) :::
+parallel_sledge_opt:=parallel --use-cores-instead-of-threads --bar $(sledge_opt) llvm analyze -append-report $(SLEDGE_A_ARGS) :::
 
 analyze-perf1: compile
-	-@$(parallel_sledge_opt) $(AnalyzeTests)
+	-@$(parallel_sledge_opt) $(shell $(sledge_report) sort -baseline baseline/analyze.sexp $(AnalyzeTests))
 
 analyze-perf3: compile
-	-@$(parallel_sledge_opt) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests)
+	-@$(parallel_sledge_opt) $(shell $(sledge_report) sort -baseline baseline/analyze.sexp $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests))
 
 analyze-perf5: compile
-	-@$(parallel_sledge_opt) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests)
+	-@$(parallel_sledge_opt) $(shell $(sledge_report) sort -baseline baseline/analyze.sexp $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests))
 
 analyze-perf7: compile
-	-@$(parallel_sledge_opt) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests)
+	-@$(parallel_sledge_opt) $(shell $(sledge_report) sort -baseline baseline/analyze.sexp $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests))
 
 .PHONY: analyze.sexp
 analyze.sexp:
