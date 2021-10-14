@@ -1,4 +1,4 @@
-A call that may execute arbitrary code (such as registered, or chained, callbacks) is made while holding a lock.
+A call that may execute other code (such as registered or chained callbacks) is made while holding a lock.
 This code may deadlock whenever the callbacks obtain locks themselves, so it is an unsafe pattern.
 
 Example:
