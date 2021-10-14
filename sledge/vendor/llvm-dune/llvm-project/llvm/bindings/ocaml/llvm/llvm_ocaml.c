@@ -1584,6 +1584,16 @@ value llvm_instr_fcmp_predicate(LLVMValueRef Val) {
   return caml_alloc_some(Val_int(x - LLVMRealPredicateFalse));
 }
 
+/* llvalue -> AtomicRMWBinOp.t */
+value llvm_instr_get_atomicrmw_binop(LLVMValueRef Inst) {
+  LLVMAtomicRMWBinOp o;
+  if (!LLVMIsAInstruction(Inst))
+    failwith("Not an instruction");
+  o = LLVMGetAtomicRMWBinOp(Inst);
+  assert(o <= LLVMAtomicRMWBinOpFSub);
+  return Val_int(o);
+}
+
 /* llvalue -> llvalue */
 LLVMValueRef llvm_instr_clone(LLVMValueRef Inst) {
   if (!LLVMIsAInstruction(Inst))

@@ -1877,6 +1877,11 @@ val icmp_predicate : llvalue -> Icmp.t option
     instruction [i]. *)
 val fcmp_predicate : llvalue -> Fcmp.t option
 
+(** [atomicrmw_binop i] returns the [AtomicRMWBinOp.t] of [AtomicRMW]
+    instruction [i].
+    See the method [llvm::AtomicRMWInst::getOperation].*)
+val atomicrmw_binop : llvalue -> AtomicRMWBinOp.t
+
 (** [inst_clone i] returns a copy of instruction [i],
     The instruction has no parent, and no name.
     See the method [llvm::Instruction::clone]. *)
