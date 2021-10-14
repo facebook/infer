@@ -431,7 +431,11 @@ let should_inline : Llvm.llvalue -> bool =
             ) ->
           true (* inline casts *)
       | _ -> false (* do not inline if >= 2 uses *) )
-    | None -> true )
+    | None -> (
+      match Llvm.classify_value llv with
+      | Instruction (AtomicRMW | AtomicCmpXchg) ->
+          false (* do not inline into atomic instructions *)
+      | _ -> true (* inline if 1 non-atomic use *) ) )
   | None -> true
 
 let ptr_fld x ~ptr ~fld ~lltyp =
@@ -490,7 +494,9 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t
         match xlate_intrinsic_exp fname with
         | Some intrinsic when inline || should_inline llv -> intrinsic x llv
         | _ -> ([], Exp.reg (xlate_name x llv)) )
-    | Instruction (Invoke | Alloca | Load | PHI | LandingPad | VAArg)
+    | Instruction
+        ( Invoke | Alloca | Load | AtomicRMW | AtomicCmpXchg | PHI
+        | LandingPad | VAArg )
      |Argument ->
         ([], Exp.reg (xlate_name x llv))
     | Function ->
@@ -563,8 +569,8 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t
         todo "windows exception handling: %a" pp_llvalue llv ()
     | Instruction
         ( Invalid | Ret | Br | Switch | IndirectBr | Invalid2 | Unreachable
-        | Store | UserOp1 | UserOp2 | Fence | AtomicCmpXchg | AtomicRMW
-        | Resume | CleanupRet | CatchRet | CallBr )
+        | Store | UserOp1 | UserOp2 | Fence | Resume | CleanupRet | CatchRet
+        | CallBr )
      |NullValue | BasicBlock | InlineAsm | MDNode | MDString ->
         fail "xlate_value: %a" pp_llvalue llv ()
   in
@@ -795,7 +801,7 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t
   | Freeze -> xlate_value x (Llvm.operand llv 0)
   | Invalid | Ret | Br | Switch | IndirectBr | Invoke | Invalid2
    |Unreachable | Alloca | Load | Store | PHI | Call | CallBr | UserOp1
-   |UserOp2 | Fence | AtomicCmpXchg | AtomicRMW | Resume | LandingPad
+   |UserOp2 | Fence | AtomicRMW | AtomicCmpXchg | Resume | LandingPad
    |CleanupRet | CatchRet | CatchPad | CleanupPad | CatchSwitch | VAArg ->
       fail "xlate_opcode: %a" pp_llvalue llv () )
   |>
@@ -1122,6 +1128,50 @@ let xlate_instr :
       let len = xlate_size_of x rand0 in
       let pre1, ptr = xlate_value x (Llvm.operand instr 1) in
       emit_inst ~prefix:(pre0 @ pre1) (Inst.store ~ptr ~exp ~len ~loc)
+  | AtomicRMW ->
+      let reg = xlate_name x instr in
+      let len = xlate_size_of x instr in
+      let pre0, ptr = xlate_value x (Llvm.operand instr 0) in
+      let rand1 = Llvm.operand instr 1 in
+      let pre1, arg = xlate_value x rand1 in
+      let prefix = pre0 @ pre1 in
+      let exp =
+        let typ = xlate_type x (Llvm.type_of rand1) in
+        let old = Exp.reg reg in
+        let choose (cmp : ?typ:_ -> _) =
+          Exp.conditional typ ~cnd:(cmp ~typ old arg) ~thn:old ~els:arg
+        in
+        match Llvm.atomicrmw_binop instr with
+        | Xchg -> arg
+        | Add | FAdd -> Exp.add ~typ old arg
+        | Sub | FSub -> Exp.sub ~typ old arg
+        | And -> Exp.and_ ~typ old arg
+        | Nand ->
+            Exp.xor ~typ
+              (Exp.integer typ Z.minus_one)
+              (Exp.and_ ~typ old arg)
+        | Or -> Exp.or_ ~typ old arg
+        | Xor -> Exp.xor ~typ old arg
+        | Max -> choose Exp.gt
+        | Min -> choose Exp.lt
+        | UMax -> choose Exp.ugt
+        | UMin -> choose Exp.ult
+      in
+      emit_inst ~prefix (Inst.atomic_rmw ~reg ~ptr ~exp ~len ~loc)
+  | AtomicCmpXchg ->
+      let reg = xlate_name x instr in
+      let len, len1 = Llair.Typ.offset_length_of_elt (Reg.typ reg) 1 in
+      let len = Exp.integer Typ.siz (Z.of_int len) in
+      let len1 = Exp.integer Typ.siz (Z.of_int len1) in
+      let rand0 = Llvm.operand instr 0 in
+      let pre0, ptr = xlate_value x rand0 in
+      let rand1 = Llvm.operand instr 1 in
+      let pre1, cmp = xlate_value x rand1 in
+      let rand2 = Llvm.operand instr 2 in
+      let pre2, exp = xlate_value x rand2 in
+      let prefix = pre0 @ pre1 @ pre2 in
+      emit_inst ~prefix
+        (Inst.atomic_cmpxchg ~reg ~ptr ~cmp ~exp ~len ~len1 ~loc)
   | Alloca ->
       let reg = xlate_name x instr in
       let num_elts = Llvm.operand instr 0 in
@@ -1448,6 +1498,7 @@ let xlate_instr :
       let exc = Exp.select typ rcd 0 in
       emit_term ~prefix:(pop loc @ pre) (Term.throw ~exc ~loc)
   | Unreachable -> emit_term Term.unreachable
+  | Fence -> nop ()
   | Trunc | ZExt | SExt | FPToUI | FPToSI | UIToFP | SIToFP | FPTrunc
    |FPExt | PtrToInt | IntToPtr | BitCast | AddrSpaceCast | Add | FAdd
    |Sub | FSub | FNeg | Mul | FMul | UDiv | SDiv | FDiv | URem | SRem
@@ -1462,8 +1513,6 @@ let xlate_instr :
   | CleanupRet | CatchRet | CatchPad | CleanupPad | CatchSwitch ->
       todo "windows exception handling: %a" pp_llvalue instr ()
   | CallBr -> todo "inline asm: %a" pp_llvalue instr ()
-  | Fence | AtomicCmpXchg | AtomicRMW ->
-      fail "xlate_instr: %a" pp_llvalue instr ()
   | PHI | Invalid | Invalid2 | UserOp1 | UserOp2 -> assert false
 
 let rec xlate_instrs : pop_thunk -> x -> _ Llvm.llpos -> code =
@@ -1590,7 +1639,6 @@ let transform ~internalize : Llvm.llmodule -> unit =
   Llvm_scalar_opts.add_dce pm ;
   Llvm_ipo.add_global_dce pm ;
   Llvm_ipo.add_dead_arg_elimination pm ;
-  Llvm_scalar_opts.add_lower_atomic pm ;
   Llvm_scalar_opts.add_scalar_repl_aggregation pm ;
   Llvm_scalar_opts.add_scalarizer pm ;
   Llvm_scalar_opts.add_unify_function_exit_nodes pm ;

@@ -36,6 +36,25 @@ type inst = private
           [ptr] into [reg]. *)
   | Store of {ptr: Exp.t; exp: Exp.t; len: Exp.t; loc: Loc.t}
       (** Write [len]-byte value [exp] into memory at address [ptr]. *)
+  | AtomicRMW of {reg: Reg.t; ptr: Exp.t; exp: Exp.t; len: Exp.t; loc: Loc.t}
+      (** Atomically load a [len]-byte value [val] from the contents of
+          memory at address [ptr], set [reg] to [val], and store the
+          [len]-byte value of [(λreg. exp) val] into memory at address
+          [ptr]. Note that, unlike other instructions and arguments,
+          occurrences of [reg] in [exp] refer to the new, not old, value. *)
+  | AtomicCmpXchg of
+      { reg: Reg.t
+      ; ptr: Exp.t
+      ; cmp: Exp.t
+      ; exp: Exp.t
+      ; len: Exp.t
+      ; len1: Exp.t
+      ; loc: Loc.t }
+      (** Atomically load a [len]-byte value from the contents of memory at
+          address [ptr], compare the value to [cmp], and if equal store
+          [len]-byte value [exp] into memory at address [ptr]. Sets [reg] to
+          the loaded value concatenated to a [len1]-byte value [1] if the
+          store was performed, otherwise [0]. *)
   | Alloc of {reg: Reg.t; num: Exp.t; len: int; loc: Loc.t}
       (** Allocate a block of memory large enough to store [num] elements of
           [len] bytes each and bind [reg] to the first address. *)
@@ -122,6 +141,20 @@ module Inst : sig
   val move : reg_exps:(Reg.t * Exp.t) iarray -> loc:Loc.t -> inst
   val load : reg:Reg.t -> ptr:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
   val store : ptr:Exp.t -> exp:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
+
+  val atomic_rmw :
+    reg:Reg.t -> ptr:Exp.t -> exp:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
+
+  val atomic_cmpxchg :
+       reg:Reg.t
+    -> ptr:Exp.t
+    -> cmp:Exp.t
+    -> exp:Exp.t
+    -> len:Exp.t
+    -> len1:Exp.t
+    -> loc:Loc.t
+    -> inst
+
   val alloc : reg:Reg.t -> num:Exp.t -> len:int -> loc:Loc.t -> inst
   val free : ptr:Exp.t -> loc:Loc.t -> inst
   val nondet : reg:Reg.t option -> msg:string -> loc:Loc.t -> inst

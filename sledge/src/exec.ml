@@ -138,6 +138,53 @@ let store_spec ptr exp len =
   let post = Sh.seg {seg with cnt= exp} in
   {foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
+(* { p-[b;m)->⟨l,α⟩ }
+ *   r := atomic_rmw l p e
+ * { r=α * pΘ-[b;m)->⟨lΘ,e⟩ }
+ *)
+let atomic_rmw_spec reg ptr exp len =
+  let* seg = Fresh.seg ptr ~siz:len in
+  let foot = Sh.seg seg in
+  let+ sub, ms = Fresh.assign ~ws:(Var.Set.of_ reg) ~rs:foot.us in
+  let post =
+    Sh.and_
+      (Formula.eq (Term.var reg) seg.cnt)
+      (Sh.seg
+         { seg with
+           loc= Term.rename sub seg.loc
+         ; siz= Term.rename sub seg.siz
+         ; cnt= exp } )
+  in
+  {foot; sub; ms; post}
+
+(* { p-[b;m)->⟨l,α⟩ }
+ *   r := cmpxchg l,l₁ p c e
+ * { r=(⟨l,α⟩^⟨l₁,1⟩)Θ * (α=c * p-[b;m)->⟨l,e⟩)Θ
+ * ∨ r=(⟨l,α⟩^⟨l₁,0⟩)Θ * (α≠c * p-[b;m)->⟨l,α⟩)Θ }
+ *)
+let atomic_cmpxchg_spec reg ptr cmp exp len len1 =
+  let* foot_seg = Fresh.seg ptr ~siz:len in
+  let foot = Sh.seg foot_seg in
+  let+ sub, ms = Fresh.assign ~ws:(Var.Set.of_ reg) ~rs:foot.us in
+  let a = foot_seg.cnt in
+  let l_a = Term.sized ~siz:(Term.rename sub len) ~seq:a in
+  let len1' = Term.rename sub len1 in
+  let bit b = Term.sized ~siz:len1' ~seq:(Formula.inject b) in
+  let a_eq_c = Formula.rename sub (Formula.eq cmp a) in
+  let a_dq_c = Formula.not_ a_eq_c in
+  let post_succ =
+    Sh.and_
+      (Formula.eq (Term.var reg) (Term.concat [|l_a; bit Formula.tt|]))
+      (Sh.and_ a_eq_c (Sh.rename sub (Sh.seg {foot_seg with cnt= exp})))
+  in
+  let post_fail =
+    Sh.and_
+      (Formula.eq (Term.var reg) (Term.concat [|l_a; bit Formula.ff|]))
+      (Sh.and_ a_dq_c (Sh.rename sub foot))
+  in
+  let post = Sh.or_ post_succ post_fail in
+  {foot; sub; ms; post}
+
 (* { d-[b;m)->⟨l,α⟩ }
  *   memset l d b
  * { d-[b;m)->⟨l,b^⟩ }
@@ -732,6 +779,13 @@ let move pre reg_exps =
 
 let load pre ~reg ~ptr ~len = exec_spec pre (load_spec reg ptr len)
 let store pre ~ptr ~exp ~len = exec_spec pre (store_spec ptr exp len)
+
+let atomic_rmw pre ~reg ~ptr ~exp ~len =
+  exec_spec pre (atomic_rmw_spec reg ptr exp len)
+
+let atomic_cmpxchg pre ~reg ~ptr ~cmp ~exp ~len ~len1 =
+  exec_spec pre (atomic_cmpxchg_spec reg ptr cmp exp len len1)
+
 let alloc pre ~reg ~num ~len = exec_spec pre (alloc_spec reg num len)
 let free pre ~ptr = exec_spec pre (free_spec ptr)
 let nondet pre = function Some reg -> kill pre reg | None -> pre

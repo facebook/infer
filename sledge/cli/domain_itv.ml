@@ -208,7 +208,10 @@ let exec_inst tid i q =
   | Load {reg; ptr; len= _; loc= _} -> Ok (assign reg ptr q)
   | Nondet {reg= Some reg; msg= _; loc= _} -> Ok (exec_kill tid reg q)
   | Nondet {reg= None; msg= _; loc= _} | Alloc _ | Free _ -> Ok q
-  | Intrinsic {reg= Some reg; _} -> Ok (exec_kill tid reg q)
+  | AtomicRMW {reg; _}
+   |AtomicCmpXchg {reg; _}
+   |Intrinsic {reg= Some reg; _} ->
+      Ok (exec_kill tid reg q)
   | Intrinsic {reg= None; _} -> Ok q
   | Abort {loc} ->
       Error
