@@ -13,7 +13,7 @@ SLEDGE_OPT:=$(CURDIR)/../_build/release/cli/sledge_cli.exe
 # additional arguments to pass to sledge translate, disassemble, analyze, smt, and report
 SLEDGE_T_ARGS?=
 SLEDGE_D_ARGS?=
-SLEDGE_A_ARGS?=-bound 5
+SLEDGE_A_ARGS?=-loop-bound 5 -switch-bound 3 -cct-schedule-points
 SLEDGE_S_ARGS?=
 SLEDGE_R_ARGS?=
 
