@@ -162,9 +162,15 @@ module AddressAttributes : sig
     -> (t, [> `ISLError of t | `InvalidAccess of Invalidation.t * Trace.t * t]) result list
 end
 
-val deallocate_all_reachable_from : AbstractValue.t -> t -> t
-
-val deep_deallocate : AbstractValue.t -> t -> t
+val apply_unknown_effect :
+     ?havoc_filter:(AbstractValue.t -> BaseMemory.Access.t -> BaseMemory.AddrTrace.t -> bool)
+  -> ValueHistory.t
+  -> AbstractValue.t
+  -> t
+  -> t
+(** do as much as possible to assume "the best" happened at that location: deallocate and initialize
+    everything reachable from the address, then havoc all the edges starting from the address
+    passing [havoc_filter] (by default everything passes the filter) *)
 
 val is_local : Var.t -> t -> bool
 

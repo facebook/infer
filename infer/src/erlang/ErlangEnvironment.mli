@@ -19,9 +19,13 @@ module UnqualifiedFunction : sig
     type t = {name: string; arity: int} [@@deriving sexp, compare]
   end
 
+  include module type of struct
+    include T
+  end
+
   include module type of Comparable.Make (T)
 
-  val of_ast : Ast.function_ -> T.t
+  val of_ast : Ast.function_ -> t
 end
 
 type record_field_info = {index: int; initializer_: Ast.expression option} [@@deriving sexp_of]
@@ -31,6 +35,7 @@ type record_info = {field_names: string list; field_info: record_field_info Stri
 
 type ('procdesc, 'result) t =
   { current_module: module_name  (** used to qualify function names *)
+  ; functions: UnqualifiedFunction.Set.t  (** used to resolve function names *)
   ; exports: UnqualifiedFunction.Set.t  (** used to determine public/private access *)
   ; imports: module_name UnqualifiedFunction.Map.t  (** used to resolve function names *)
   ; records: record_info String.Map.t  (** used to get fields, indexes and initializers *)
