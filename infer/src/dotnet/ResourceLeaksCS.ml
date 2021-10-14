@@ -62,6 +62,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   (** Take an abstract state and instruction, produce a new abstract state *)
   let exec_instr (astate : ResourceLeakCSDomain.t)
       {InterproceduralAnalysis.proc_desc; tenv; analyze_dependency; _} _ _ (instr : HilInstr.t) =
+    L.debug Analysis Medium "@\nHit %a@\n" HilInstr.pp instr ;
     let assign_type_map = type_map := ResourceLeakCSDomain.get_type_map in
     assign_type_map ;
     let is_not_enumerable =
@@ -101,12 +102,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           astate )
     | Call (return, Direct callee_procname, actuals, _, _loc) -> (
       match analyze_dependency callee_procname with
-      | Some (_callee_proc_desc, callee_summary) ->
+      | Some (_callee_proc_desc, callee_summary) -> (
+          L.debug Analysis Medium "@\nreturn not none %a@\n" HilInstr.pp instr ;
           (* interprocedural analysis produced a summary: use it *)
-          ResourceLeakCSDomain.Summary.apply ~callee:callee_summary ~return ~actuals astate
-      | None ->
+          ResourceLeakCSDomain.Summary.apply ~callee:callee_summary ~return ~actuals astate )
+      | None -> (
           (* No summary for [callee_procname]; it's native code or missing for some reason *)
-          astate )
+          L.debug Analysis Medium "@\nreturn none %a@\n" HilInstr.pp instr ;
+          astate ) )
     | Assign (access_expr, AccessExpression rhs_access_expr, _loc) ->
         ResourceLeakCSDomain.assign
           (HilExp.AccessExpression.to_access_path access_expr)
@@ -157,9 +160,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let pp_session_name _node fmt = F.pp_print_string fmt "resource leaks"
 end
 
-(** 5(a) Type of CFG to analyze--Exceptional to follow exceptional control-flow edges, Normal to
+(** Type of CFG to analyze--DOTNETExceptional to follow exceptional control-flow edges, Normal to
     ignore them *)
-module CFG = ProcCfg.Normal
+module CFG = ProcCfg.DOTNETExceptional
 
 (* Create an intraprocedural abstract interpreter from the transfer functions we defined *)
 module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (CFG))
