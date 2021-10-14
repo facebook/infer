@@ -767,7 +767,9 @@ let assume pre cnd =
   [%trace]
     ~call:(fun {pf} -> pf "@ %a" Formula.pp cnd)
     ~retn:(fun {pf} -> pf "%a" Sh.pp)
-  @@ fun () -> Sh.and_ cnd pre
+  @@ fun () ->
+  let post = Sh.and_ cnd pre in
+  if Sh.is_unsat post then Sh.false_ post.us else post
 
 let kill pre reg =
   let ms = Var.Set.of_ reg in
