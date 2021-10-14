@@ -117,16 +117,14 @@ let move_spec reg_exps =
 
 (* { p-[b;m)->⟨l,α⟩ }
  *   load l r p
- * { r=αΘ * (p-[b;m)->⟨l,α⟩)Θ }
+ * { r=α * (p-[b;m)->⟨l,α⟩)Θ }
  *)
 let load_spec reg ptr len =
   let* seg = Fresh.seg ptr ~siz:len in
   let foot = Sh.seg seg in
   let+ sub, ms = Fresh.assign ~ws:(Var.Set.of_ reg) ~rs:foot.us in
   let post =
-    Sh.and_
-      (Formula.eq (Term.var reg) (Term.rename sub seg.cnt))
-      (Sh.rename sub foot)
+    Sh.and_ (Formula.eq (Term.var reg) seg.cnt) (Sh.rename sub foot)
   in
   {foot; sub; ms; post}
 
