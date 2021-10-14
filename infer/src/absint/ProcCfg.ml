@@ -7,7 +7,6 @@
 
 open! IStd
 module F = Format
-module L = Logging
 
 (** Control-flow graph for a single procedure (as opposed to cfg.ml, which represents a cfg for a
     file). Defines useful wrappers that allows us to do tricks like turn a forward cfg into a
@@ -232,17 +231,14 @@ module DOTNETExceptional = struct
       let instrs = Procdesc.Node.get_instrs node in
       let instr_count = (Instrs.count instrs) - 3 in
       let get_last_instr () =
-         L.debug Analysis Medium "@\nHit node %a@\n" Procdesc.Node.pp_id (Procdesc.Node.get_id node) ;
          if instr_count >= 0 then Instrs.nth_exn instrs instr_count else Instrs.last instrs |> Option.value ~default:Sil.skip_instr
       in
       let last_instr = get_last_instr () in
       match last_instr with 
-      | Sil.Store {e1= Exp.Lvar pvar; e2= Exp.Exn _} when Pvar.is_return pvar -> (
-        L.debug Analysis Medium "@\nHit %a in return@\n" (Sil.pp_instr ~print_types:false Pp.text) last_instr ;
-        fold_exceptional t node ~init ~f )
-      | _ -> (
-        L.debug Analysis Medium "@\nHit %a nothing@\n" (Sil.pp_instr ~print_types:false Pp.text) last_instr ;
-        fold_normal_alpha t node ~init ~f )
+      | Sil.Store {e1= Exp.Lvar pvar; e2= Exp.Exn _} when Pvar.is_return pvar ->
+        fold_exceptional t node ~init ~f
+      | _ ->
+        fold_normal_alpha t node ~init ~f
     in
     choose_normal_or_exn_succs n
   
