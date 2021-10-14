@@ -222,7 +222,10 @@ let disassemble_cmd =
   command ~summary ~readme param
 
 let translate =
-  let%map_open output =
+  let%map_open dump_bitcode =
+    flag "dump-bitcode" (optional string)
+      ~doc:"<file> write transformed LLVM bitcode to <file>"
+  and output =
     flag "output" (optional string)
       ~doc:"<file> write generated binary LLAIR to <file>"
   and no_internalize =
@@ -234,6 +237,7 @@ let translate =
   fun bitcode_input () ->
     let program =
       Frontend.translate ~internalize:(not no_internalize) bitcode_input
+        ?dump_bitcode
     in
     Option.iter ~f:(marshal program) output ;
     program

@@ -100,9 +100,9 @@
   (public_name sledge)
   (package sledge)
   (libraries apron apron.boxMPQ core ctypes ctypes.foreign dune-build-info
-    llvm llvm.irreader llvm.analysis llvm.scalar_opts llvm.target llvm.ipo
-    llvm.linker memtrace shexp.process yojson trace nonstdlib sledge
-    smtlib-utils)
+    llvm llvm.analysis llvm.bitwriter llvm.ipo llvm.irreader llvm.linker
+    llvm.scalar_opts llvm.target memtrace shexp.process yojson trace
+    nonstdlib sledge smtlib-utils)
   (flags
    (:standard -w -58 -open NS -open Sledge))
   (preprocess

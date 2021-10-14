@@ -58,11 +58,11 @@ llair_intrinsics_h:=$(CURDIR)/../model/llair_intrinsics.h
 %.bllair : %.bc
 	$(SLEDGE_DBG) llvm translate $< -output $@
 
-%.llair : %.bc
-	$(SLEDGE_DBG) llvm disassemble $< -llair-output $@
+%.llair %.opt.bc : %.bc
+	$(SLEDGE_DBG) llvm disassemble $< -llair-output $*.llair -dump-bitcode $*.opt.bc
 
-%.llair : %.ll
-	$(SLEDGE_DBG) llvm disassemble $< -llair-output $@
+%.llair %.opt.bc : %.ll
+	$(SLEDGE_DBG) llvm disassemble $< -llair-output $*.llair -dump-bitcode $*.opt.bc
 
 # code to test sledge translate
 TranslateCs:=$(shell find -L {,local/}translate -name '*.c' 2>/dev/null)

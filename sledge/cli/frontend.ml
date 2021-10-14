@@ -1703,7 +1703,7 @@ let cleanup llmodule llcontext =
   Llvm.dispose_module llmodule ;
   Llvm.dispose_context llcontext
 
-let translate ~internalize : string -> Llair.program =
+let translate ~internalize ?dump_bitcode : string -> Llair.program =
  fun input ->
   [%Trace.call fun {pf} -> pf "@ %s" input]
   ;
@@ -1713,6 +1713,10 @@ let translate ~internalize : string -> Llair.program =
   assert (
     Llvm_analysis.verify_module llmodule |> Option.for_all ~f:invalid_llvm ) ;
   transform ~internalize llmodule ;
+  Option.for_all
+    ~f:(Llvm_bitwriter.write_bitcode_file llmodule)
+    dump_bitcode
+  |> ignore ;
   scan_names_and_locs llmodule ;
   let lldatalayout =
     Llvm_target.DataLayout.of_string (Llvm.data_layout llmodule)
