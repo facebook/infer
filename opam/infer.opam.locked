@@ -40,6 +40,8 @@ depends: [
   "biniou" {= "1.2.1"}
   "camlidl" {= "1.09"}
   "camlzip" {= "1.10"}
+  "camomile" {= "1.0.2" & with-test}
+  "charInfo_width" {= "1.1.0" & with-test}
   "cmdliner" {= "1.0.4"}
   "conf-autoconf" {= "0.1"}
   "conf-gmp" {= "3"}
@@ -64,11 +66,18 @@ depends: [
   "jane-street-headers" {= "v0.14.0"}
   "javalib" {= "3.2.1"}
   "jst-config" {= "v0.14.0"}
+  "lambda-term" {= "3.1.0" & with-test}
+  "lwt" {= "5.4.2" & with-test}
+  "lwt_log" {= "1.1.1" & with-test}
+  "lwt_react" {= "1.1.4" & with-test}
   "memtrace" {= "0.2.1.2"}
   "menhir" {= "20210419"}
   "menhirLib" {= "20210419"}
   "menhirSdk" {= "20210419"}
+  "mew" {= "0.1.0" & with-test}
+  "mew_vi" {= "0.5.0" & with-test}
   "mlgmpidl" {= "1.2.13"}
+  "mmap" {= "1.1.0" & with-test}
   "mtime" {= "1.2.0"}
   "num" {= "1.4"}
   "ocaml" {= "4.12.0"}
@@ -80,6 +89,7 @@ depends: [
   "ocamlbuild" {= "0.14.0"}
   "ocamlfind" {= "1.9.1"}
   "ocamlgraph" {= "2.0.0"}
+  "ocplib-endian" {= "1.1" & with-test}
   "octavius" {= "1.2.2"}
   "ounit" {= "2.2.4"}
   "ounit2" {= "2.2.4"}
@@ -121,8 +131,9 @@ depends: [
   "ppxlib" {= "0.22.0"}
   "protocol_version_header" {= "v0.14.0"}
   "re" {= "1.9.0"}
+  "react" {= "1.2.1" & with-test}
   "result" {= "1.5"}
-  "sawja" {= "1.5.8"}
+  "sawja" {= "1.5.10"}
   "seq" {= "base"}
   "sexplib" {= "v0.14.0"}
   "sexplib0" {= "v0.14.0"}
@@ -135,11 +146,14 @@ depends: [
   "time_now" {= "v0.14.0"}
   "timezone" {= "v0.14.0"}
   "topkg" {= "1.0.3"}
+  "trie" {= "1.0.0" & with-test}
   "typerep" {= "v0.14.0"}
+  "utop" {= "2.8.0" & with-test}
   "variantslib" {= "v0.14.0"}
   "xmlm" {= "1.3.0"}
   "yojson" {= "1.7.0"}
   "zarith" {= "1.12"}
+  "zed" {= "3.1.0" & with-test}
 ]
 depexts: [
   [ ["ubuntu"] ["default-jdk"] ]

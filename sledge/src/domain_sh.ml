@@ -95,6 +95,15 @@ let exec_inst tid inst pre =
       Exec.store pre ~ptr:(X.term tid ptr) ~exp:(X.term tid exp)
         ~len:(X.term tid len)
       |> or_alarm
+  | AtomicRMW {reg; ptr; exp; len; _} ->
+      Exec.atomic_rmw pre ~reg:(X.reg tid reg) ~ptr:(X.term tid ptr)
+        ~exp:(X.term tid exp) ~len:(X.term tid len)
+      |> or_alarm
+  | AtomicCmpXchg {reg; ptr; cmp; exp; len; len1; _} ->
+      Exec.atomic_cmpxchg pre ~reg:(X.reg tid reg) ~ptr:(X.term tid ptr)
+        ~cmp:(X.term tid cmp) ~exp:(X.term tid exp) ~len:(X.term tid len)
+        ~len1:(X.term tid len1)
+      |> or_alarm
   | Alloc {reg; num; len; _} ->
       Exec.alloc pre ~reg:(X.reg tid reg) ~num:(X.term tid num) ~len
       |> or_alarm

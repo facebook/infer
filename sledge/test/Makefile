@@ -13,7 +13,7 @@ SLEDGE_OPT:=$(CURDIR)/../_build/release/cli/sledge_cli.exe
 # additional arguments to pass to sledge translate, disassemble, analyze, smt, and report
 SLEDGE_T_ARGS?=
 SLEDGE_D_ARGS?=
-SLEDGE_A_ARGS?=-bound 5
+SLEDGE_A_ARGS?=-loop-bound 5 -switch-bound 3 -cct-schedule-points
 SLEDGE_S_ARGS?=
 SLEDGE_R_ARGS?=
 
@@ -58,11 +58,11 @@ llair_intrinsics_h:=$(CURDIR)/../model/llair_intrinsics.h
 %.bllair : %.bc
 	$(SLEDGE_DBG) llvm translate $< -output $@
 
-%.llair : %.bc
-	$(SLEDGE_DBG) llvm disassemble $< -llair-output $@
+%.llair %.opt.bc : %.bc
+	$(SLEDGE_DBG) llvm disassemble $< -llair-output $*.llair -dump-bitcode $*.opt.bc
 
-%.llair : %.ll
-	$(SLEDGE_DBG) llvm disassemble $< -llair-output $@
+%.llair %.opt.bc : %.ll
+	$(SLEDGE_DBG) llvm disassemble $< -llair-output $*.llair -dump-bitcode $*.opt.bc
 
 # code to test sledge translate
 TranslateCs:=$(shell find -L {,local/}translate -name '*.c' 2>/dev/null)
@@ -121,19 +121,19 @@ translate-status: translate.sexp
 analyze: compile
 	-parallel --use-cores-instead-of-threads --bar $(sledge_dbg) llvm analyze -trace Report+Control $(SLEDGE_A_ARGS) ::: $(shell $(sledge_report) sort -baseline baseline/analyze.sexp $(AnalyzeTests))
 
-parallel_sledge_opt:=parallel --use-cores-instead-of-threads --shuf --bar $(sledge_opt) llvm analyze -append-report $(SLEDGE_A_ARGS) :::
+parallel_sledge_opt:=parallel --use-cores-instead-of-threads --bar $(sledge_opt) llvm analyze -append-report $(SLEDGE_A_ARGS) :::
 
 analyze-perf1: compile
-	-@$(parallel_sledge_opt) $(AnalyzeTests)
+	-@$(parallel_sledge_opt) $(shell $(sledge_report) sort -baseline baseline/analyze.sexp $(AnalyzeTests))
 
 analyze-perf3: compile
-	-@$(parallel_sledge_opt) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests)
+	-@$(parallel_sledge_opt) $(shell $(sledge_report) sort -baseline baseline/analyze.sexp $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests))
 
 analyze-perf5: compile
-	-@$(parallel_sledge_opt) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests)
+	-@$(parallel_sledge_opt) $(shell $(sledge_report) sort -baseline baseline/analyze.sexp $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests))
 
 analyze-perf7: compile
-	-@$(parallel_sledge_opt) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests)
+	-@$(parallel_sledge_opt) $(shell $(sledge_report) sort -baseline baseline/analyze.sexp $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests))
 
 .PHONY: analyze.sexp
 analyze.sexp:

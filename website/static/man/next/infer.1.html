@@ -1,4 +1,4 @@
-<!-- Creator     : groff version 1.22.3 -->
+<!-- Creator     : groff version 1.22.4 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -121,12 +121,12 @@ reserved for internal use). <b><br>
 
 <p style="margin-left:17%;">Activates: checker
 annotation-reachability: Given a pair of source and sink
-annotation, e.g. &lsquo;@PerformanceCritical&lsquo; and
-&lsquo;@Expensive&lsquo;, this checker will warn whenever
+annotation, e.g. &rsquo;@PerformanceCritical&rsquo; and
+&rsquo;@Expensive&rsquo;, this checker will warn whenever
 some method annotated with
-&lsquo;@PerformanceCritical&lsquo; calls, directly or
+&rsquo;@PerformanceCritical&rsquo; calls, directly or
 indirectly, another method annotated with
-&lsquo;@Expensive&lsquo; (Conversely:
+&rsquo;@Expensive&rsquo; (Conversely:
 <b>--no-annotation-reachability</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -391,18 +391,18 @@ are specified, they are applied in the order in which they
 are specified. Each filter is applied to each issue
 detected, and only issues which are accepted by all filters
 are reported. Each filter is of the form:
-&lsquo;&lt;issue_type_regex&gt;:&lt;filename_regex&gt;:&lt;reason_string&gt;&lsquo;.
+&rsquo;&lt;issue_type_regex&gt;:&lt;filename_regex&gt;:&lt;reason_string&gt;&rsquo;.
 The first two components are OCaml Str regular expressions,
-with an optional &lsquo;!&lsquo; character prefix. If a
-regex has a &lsquo;!&lsquo; prefix, the polarity is
+with an optional &rsquo;!&rsquo; character prefix. If a
+regex has a &rsquo;!&rsquo; prefix, the polarity is
 inverted, and the filter becomes a &quot;block list&quot;
 instead of a &quot;allow list&quot;. Each filter is
 interpreted as an implication: an issue matches if it does
-not match the &lsquo;issue_type_regex&lsquo; or if it does
-match the &lsquo;filename_regex&lsquo;. The filenames that
+not match the &rsquo;issue_type_regex&rsquo; or if it does
+match the &rsquo;filename_regex&rsquo;. The filenames that
 are tested by the regex are relative to the
-&lsquo;--project-root&lsquo; directory. The
-&lsquo;&lt;reason_string&gt;&lsquo; is a non-empty string
+&rsquo;--project-root&rsquo; directory. The
+&rsquo;&lt;reason_string&gt;&rsquo; is a non-empty string
 used to explain why the issue was filtered.</p>
 
 <p style="margin-left:11%;">See also <b>infer-report</b>(1)
@@ -572,7 +572,7 @@ given the same before. Not compatible with
 <p style="margin-left:17%;">Activates: checker cost:
 Computes the time complexity of functions and methods. Can
 be used to detect changes in runtime complexity with
-&lsquo;infer reportdiff&lsquo;. (Conversely:
+&rsquo;infer reportdiff&rsquo;. (Conversely:
 <b>--no-cost</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -919,6 +919,7 @@ Missing_fld (enabled by default), <br>
 NIL_BLOCK_CALL (enabled by default), <br>
 NIL_INSERTION_INTO_COLLECTION (enabled by default), <br>
 NIL_MESSAGING_TO_NON_POD (enabled by default), <br>
+NO_MATCHING_BRANCH_IN_TRY (enabled by default), <br>
 NO_MATCHING_CASE_CLAUSE (enabled by default), <br>
 NO_MATCHING_FUNCTION_CLAUSE (enabled by default), <br>
 NO_MATCH_OF_RHS (enabled by default), <br>
@@ -995,7 +996,7 @@ or off.</p>
 --eradicate</b></p>
 
 <p style="margin-left:17%;">Activates: checker eradicate:
-The eradicate &lsquo;@Nullable&lsquo; checker for Java
+The eradicate &rsquo;@Nullable&rsquo; checker for Java
 annotations. (Conversely: <b>--no-eradicate</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -1016,10 +1017,10 @@ a previous run with <b>--debug</b>.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1). <b><br>
---erlang-reverse-unfold-depth</b> <i>int</i></p>
+--erlang-list-unfold-depth</b> <i>int</i></p>
 
-<p style="margin-left:17%;">Unfold Erlang lists:reverse up
-to depth <i>int</i></p>
+<p style="margin-left:17%;">Unfold Erlang lists up to depth
+<i>int</i></p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -1235,9 +1236,9 @@ report of issues found. (Conversely: <b>--no-html</b>)</p>
 <p style="margin-left:17%;">Activates: checker
 immutable-cast: Detection of object cast from immutable
 types to mutable types. For instance, it will detect casts
-from &lsquo;ImmutableList&lsquo; to &lsquo;List&lsquo;,
-&lsquo;ImmutableMap&lsquo; to &lsquo;Map&lsquo;, and
-&lsquo;ImmutableSet&lsquo; to &lsquo;Set&lsquo;.
+from &rsquo;ImmutableList&rsquo; to &rsquo;List&rsquo;,
+&rsquo;ImmutableMap&rsquo; to &rsquo;Map&rsquo;, and
+&rsquo;ImmutableSet&rsquo; to &rsquo;Set&rsquo;.
 (Conversely: <b>--no-immutable-cast</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -1447,7 +1448,7 @@ issue types that infer might report. (Conversely:
 
 <p style="margin-left:17%;">Activates: checker
 litho-required-props: Checks that all non-optional
-&lsquo;@Prop&lsquo;s have been specified when constructing
+&rsquo;@Prop&rsquo;s have been specified when constructing
 Litho components. (Conversely:
 <b>--no-litho-required-props</b>)</p>
 
@@ -1548,7 +1549,7 @@ skipped. If omitted, all levels are shown.</p>
 
 <p style="margin-left:17%;">Activates: Generate OCaml
 analysis allocation traces in
-&lsquo;infer-out/memtrace&lsquo;. (Conversely:
+&rsquo;infer-out/memtrace&rsquo;. (Conversely:
 <b>--no-memtrace-analysis-profiling</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -1568,6 +1569,15 @@ results directories specified in the dependency file.
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--merge-report</b> <i>+string</i></p>
+
+<p style="margin-left:17%;">Specifies an Infer results
+directory. The reports stored in JSON files in all specified
+results directories will be merged together and deduplicated
+before being stored in the main results directory.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-report</b>(1). <b><br>
 --pmd-xml</b></p>
 
 <p style="margin-left:17%;">Activates: Output issues in
@@ -1596,11 +1606,11 @@ infer-run</b>(1). <b><br>
 --printf-args</b></p>
 
 <p style="margin-left:17%;">Activates: checker printf-args:
-Detect mismatches between the Java &lsquo;printf&lsquo;
+Detect mismatches between the Java &rsquo;printf&rsquo;
 format strings and the argument types For example, this
 checker will warn about the type error in
-&lsquo;printf(&quot;Hello %d&quot;,
-&quot;world&quot;)&lsquo; (Conversely:
+&rsquo;printf(&quot;Hello %d&quot;,
+&quot;world&quot;)&rsquo; (Conversely:
 <b>--no-printf-args</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -2082,7 +2092,7 @@ and <b>infer-explore</b>(1). <b><br>
 
 <p style="margin-left:17%;">Deactivates: checker
 self-in-block: An Objective-C-specific analysis to detect
-when a block captures &lsquo;self&lsquo;. (Conversely:
+when a block captures &rsquo;self&rsquo;. (Conversely:
 <b>--self-in-block</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -2103,6 +2113,37 @@ simple-lineage: Computes a dataflow graph (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--no-simple-lineage-dedup</b></p>
+
+<p style="margin-left:17%;">Deactivates: In JSON output,
+attempt to print each entity at most once. This is the
+default. The only reason you may want to turn this off is to
+make hash collisions more visible; that is, cases in which
+distinct entities get assigned the same ID. (Conversely:
+<b>--simple-lineage-dedup</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--simple-lineage-json-report</b></p>
+
+<p style="margin-left:17%;">Activates: Enable simple
+lineage report in JSON format. (Conversely:
+<b>--no-simple-lineage-json-report</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--simple-lineage-keep-temporaries</b></p>
+
+<p style="margin-left:17%;">Activates: Normally, lineage
+summaries do not mention temporary variables introduced
+while compiling the high-level code to Infer's IR
+(intermediate representation). If this option is enabled,
+then the lineage graph produced corresponds to Infer's IR.
+(Conversely:
+<b>--no-simple-lineage-keep-temporaries</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --simple-lineage-max-cfg-size</b> <i>int</i></p>
 
 <p style="margin-left:17%;">If set, larger CFGs are
@@ -2115,6 +2156,17 @@ skipped.</p>
 <p style="margin-left:17%;">Activates: Enable
 simple-lineage and disable all other checkers (Conversely:
 <b>--no-simple-lineage-only</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--simple-lineage-seed</b> <i>int</i></p>
+
+<p style="margin-left:17%;">Set the random seed used for
+hashing. (Various entities that get reported need unique
+identifiers. To generate these unique identifiers, in a
+distributed way without communication, we use hashing. If
+you are unlucky and get collisions, you can try a different
+seed.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -2284,6 +2336,14 @@ be a power of two between 512 and 65536.</p>
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1), <b>infer-capture</b>(1), and
 <b>infer-run</b>(1). <b><br>
+--sqlite-vacuum</b></p>
+
+<p style="margin-left:17%;">Activates: <b>VACUUM</b> the
+SQLite DB after performing capture. (Conversely:
+<b>--no-sqlite-vacuum</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-capture</b>(1). <b><br>
 --no-starvation</b></p>
 
 <p style="margin-left:17%;">Deactivates: checker
@@ -2404,7 +2464,7 @@ Infer directory to generate its website at
 --Xbuck</b> <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&lsquo;buck build&lsquo;</i>.
+arguments to invocations of <i>&rsquo;buck build&rsquo;</i>.
 Only valid for <b>--buck-clang</b>.</p>
 
 <p style="margin-left:11%;">See also
@@ -2412,7 +2472,7 @@ Only valid for <b>--buck-clang</b>.</p>
 --Xbuck-no-inline</b> <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&lsquo;buck build&lsquo;</i>,
+arguments to invocations of <i>&rsquo;buck build&rsquo;</i>,
 don't inline any args starting with '@'. Only valid for
 <b>--buck-clang</b>.</p>
 
@@ -2444,8 +2504,8 @@ isysroot directory, to avoid absolute paths in tests</p>
 <p style="margin-left:17%;">Activates: Infer will use
 xcpretty together with xcodebuild to analyze an iOS app.
 xcpretty just needs to be in the path, infer command is
-still just <i>&lsquo;infer -- &lt;xcodebuild
-command&gt;&lsquo;</i>. (Conversely:
+still just <i>&rsquo;infer -- &lt;xcodebuild
+command&gt;&rsquo;</i>. (Conversely:
 <b>--no-xcpretty</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -2480,9 +2540,9 @@ may be passed to all infer commands using the
 <b>INFER_ARGS</b> environment variable (see the
 <i>OPTIONS</i> section). <b>INFER_ARGS</b> is expected to
 contain a string of ^-separated options. For instance,
-calling &lsquo;INFER_ARGS=--debug^--print-logs infer&lsquo;
-is equivalent to calling &lsquo;infer --debug
---print-logs&lsquo;.</p>
+calling &rsquo;INFER_ARGS=--debug^--print-logs infer&rsquo;
+is equivalent to calling &rsquo;infer --debug
+--print-logs&rsquo;.</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>INFERCONFIG</b>:
