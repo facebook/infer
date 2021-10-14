@@ -106,6 +106,12 @@ Analyze code in one or more LLVM bitcode files. This is a convenience wrapper fo
 
 === flags ===
 
+  [-O0]                   optimization level 0
+  [-O1]                   optimization level 1
+  [-O2]                   optimization level 2
+  [-O3]                   optimization level 3
+  [-Os]                   like -O2 with extra optimizations for size
+  [-Oz]                   like -Os but reduces code size further (default)
   [-append-report]        append to report file
   [-cct-schedule-points]  context switch only at cct_point calls
   [-colors]               enable printing in colors
@@ -150,6 +156,12 @@ Translate one or more LLVM bitcode files to LLAIR. Each <input> filename may be 
 
 === flags ===
 
+  [-O0]                   optimization level 0
+  [-O1]                   optimization level 1
+  [-O2]                   optimization level 2
+  [-O3]                   optimization level 3
+  [-Os]                   like -O2 with extra optimizations for size
+  [-Oz]                   like -Os but reduces code size further (default)
   [-append-report]        append to report file
   [-colors]               enable printing in colors
   [-dump-bitcode <file>]  write transformed LLVM bitcode to <file>
@@ -174,6 +186,12 @@ The <input> file must be LLVM bitcode.
 
 === flags ===
 
+  [-O0]                   optimization level 0
+  [-O1]                   optimization level 1
+  [-O2]                   optimization level 2
+  [-O3]                   optimization level 3
+  [-Os]                   like -O2 with extra optimizations for size
+  [-Oz]                   like -Os but reduces code size further (default)
   [-append-report]        append to report file
   [-colors]               enable printing in colors
   [-dump-bitcode <file>]  write transformed LLVM bitcode to <file>

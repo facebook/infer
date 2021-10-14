@@ -1622,25 +1622,19 @@ let backpatch_calls x func_tbl =
           in
           backpatch ~callee )
 
-let transform ~internalize : Llvm.llmodule -> unit =
+let transform ~internalize ~opt_level ~size_level : Llvm.llmodule -> unit =
  fun llmodule ->
   let pm = Llvm.PassManager.create () in
   let entry_points = Config.find_list "entry-points" in
   if internalize then
     Llvm_ipo.add_internalize_predicate pm (fun fn ->
         List.exists entry_points ~f:(String.equal fn) ) ;
-  Llvm_ipo.add_global_dce pm ;
-  Llvm_ipo.add_global_optimizer pm ;
-  Llvm_ipo.add_merge_functions pm ;
-  Llvm_ipo.add_constant_merge pm ;
-  Llvm_ipo.add_argument_promotion pm ;
-  Llvm_ipo.add_ipsccp pm ;
   Llvm_scalar_opts.add_memory_to_register_promotion pm ;
-  Llvm_scalar_opts.add_dce pm ;
-  Llvm_ipo.add_global_dce pm ;
-  Llvm_ipo.add_dead_arg_elimination pm ;
-  Llvm_scalar_opts.add_scalar_repl_aggregation pm ;
   Llvm_scalar_opts.add_scalarizer pm ;
+  let pmb = Llvm_passmgr_builder.create () in
+  Llvm_passmgr_builder.set_opt_level opt_level pmb ;
+  Llvm_passmgr_builder.set_size_level size_level pmb ;
+  Llvm_passmgr_builder.populate_module_pass_manager pm pmb ;
   Llvm_scalar_opts.add_unify_function_exit_nodes pm ;
   Llvm_scalar_opts.add_cfg_simplification pm ;
   Llvm.PassManager.run_module llmodule pm |> ignore ;
@@ -1703,7 +1697,8 @@ let cleanup llmodule llcontext =
   Llvm.dispose_module llmodule ;
   Llvm.dispose_context llcontext
 
-let translate ~internalize ?dump_bitcode : string -> Llair.program =
+let translate ~internalize ~opt_level ~size_level ?dump_bitcode :
+    string -> Llair.program =
  fun input ->
   [%Trace.call fun {pf} -> pf "@ %s" input]
   ;
@@ -1712,7 +1707,7 @@ let translate ~internalize ?dump_bitcode : string -> Llair.program =
   let llmodule = read_and_parse llcontext input in
   assert (
     Llvm_analysis.verify_module llmodule |> Option.for_all ~f:invalid_llvm ) ;
-  transform ~internalize llmodule ;
+  transform ~internalize ~opt_level ~size_level llmodule ;
   Option.for_all
     ~f:(Llvm_bitwriter.write_bitcode_file llmodule)
     dump_bitcode

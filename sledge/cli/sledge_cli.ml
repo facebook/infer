@@ -228,6 +228,19 @@ let translate =
   and output =
     flag "output" (optional string)
       ~doc:"<file> write generated binary LLAIR to <file>"
+  and opt_level, size_level =
+    choose_one
+      [ flag "O0" (no_arg_some (0, 0)) ~doc:" optimization level 0"
+      ; flag "O1" (no_arg_some (1, 0)) ~doc:" optimization level 1"
+      ; flag "O2" (no_arg_some (2, 0)) ~doc:" optimization level 2"
+      ; flag "O3" (no_arg_some (3, 0)) ~doc:" optimization level 3"
+      ; flag "Os"
+          (no_arg_some (2, 1))
+          ~doc:" like -O2 with extra optimizations for size"
+      ; flag "Oz"
+          (no_arg_some (2, 2))
+          ~doc:" like -Os but reduces code size further (default)" ]
+      ~if_nothing_chosen:(Default_to (2, 2))
   and no_internalize =
     flag "no-internalize" no_arg
       ~doc:
@@ -236,8 +249,8 @@ let translate =
   in
   fun bitcode_input () ->
     let program =
-      Frontend.translate ~internalize:(not no_internalize) bitcode_input
-        ?dump_bitcode
+      Frontend.translate ~internalize:(not no_internalize) ~opt_level
+        ~size_level bitcode_input ?dump_bitcode
     in
     Option.iter ~f:(marshal program) output ;
     program

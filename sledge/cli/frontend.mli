@@ -10,6 +10,11 @@
 exception Invalid_llvm of string
 
 val translate :
-  internalize:bool -> ?dump_bitcode:string -> string -> Llair.program
+     internalize:bool
+  -> opt_level:int
+  -> size_level:int
+  -> ?dump_bitcode:string
+  -> string
+  -> Llair.program
 (** Translate the compilation units in the named (llvm or bitcode) files to
     LLAIR. Attempts to raise [Invalid_llvm] when the input is invalid LLVM. *)
