@@ -730,21 +730,35 @@ let get_unreachable_attributes {post} =
     (post :> BaseDomain.t).attrs []
 
 
-let deallocate_all_reachable_from x astate =
+let apply_unknown_effect ?(havoc_filter = fun _ _ _ -> true) hist x astate =
+  let havoc_accesses hist addr heap =
+    match BaseMemory.find_opt addr heap with
+    | None ->
+        heap
+    | Some edges ->
+        let edges =
+          BaseMemory.Edges.mapi edges ~f:(fun access value ->
+              if havoc_filter addr access value then (
+                L.d_printfln_escaped "havoc'ing access %a" BaseMemory.Access.pp access ;
+                (AbstractValue.mk_fresh (), hist) )
+              else value )
+        in
+        BaseMemory.add addr edges heap
+  in
   let post = (astate.post :> BaseDomain.t) in
-  let attrs =
-    BaseDomain.GraphVisit.fold_from_addresses (Seq.return x) post ~init:post.attrs
-      ~f:(fun attrs addr _edges ->
-        Continue (BaseAddressAttributes.remove_allocation_attr addr attrs) )
+  let heap, attrs =
+    BaseDomain.GraphVisit.fold_from_addresses (Seq.return x) post ~init:(post.heap, post.attrs)
+      ~f:(fun (heap, attrs) addr _edges ->
+        let attrs =
+          BaseAddressAttributes.remove_allocation_attr addr attrs
+          |> BaseAddressAttributes.initialize addr
+        in
+        let heap = havoc_accesses hist addr heap in
+        Continue (heap, attrs) )
       ~finish:Fn.id
     |> snd
   in
-  {astate with post= PostDomain.update ~attrs astate.post}
-
-
-let deep_deallocate x astate =
-  deallocate_all_reachable_from x astate
-  |> AddressAttributes.add_attrs x (Attributes.singleton DeepDeallocate)
+  {astate with post= PostDomain.update ~attrs ~heap astate.post}
 
 
 let is_local var astate = not (Var.is_return var || Stack.is_abducible astate var)
