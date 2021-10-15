@@ -1712,17 +1712,38 @@ module Erlang = struct
     PulseOperations.write_id ret_id (addr_val, hist) astate
 
 
-  let prune_type (value, _hist) typ astate =
+  (** Use for chaining functions of the type ('a->('b,'err) result list). The idea of such functions
+      is that they can both fan-out into a (possibly empty) disjunction *and* signal errors. For
+      example, consider [f] of type ['a->('b,'err) result list] and [g] of type
+      ['b->('c,'err) result list] and [a] is some value of type ['a]. Note that the type of error is
+      the same, so they can be propagated forward. To chain the application of these functions, you
+      can write [let> x=f a in let> y=g x in \[Ok y\]].
+
+      In several places, we have to compose with functions of the type ['a->('b,'err) result], which
+      don't produce a list. One way to handle this is to wrap those functions in a list. For
+      example, if [f] and [a] have the same type as before but [g] has type ['b->('c,'err) result],
+      then we can write [let> =f a in let> y=\[g x\] in \[Ok y\].] *)
+  let ( let> ) x f = List.concat_map ~f:(function Error _ as error -> [error] | Ok ok -> f ok) x
+
+  let prune_type path location (value, hist) typ astate : AbductiveDomain.t AccessResult.t list =
+    (* If check_addr_access fails, we stop exploring this path. *)
+    let ( let^ ) x f = match x with Error _ -> [] | Ok astate -> [f astate] in
+    let^ astate = PulseOperations.check_addr_access path Read location (value, hist) astate in
     let typ = Typ.mk_struct (ErlangType typ) in
     let instanceof_val = AbstractValue.mk_fresh () in
     let* astate = PulseArithmetic.and_equal_instanceof instanceof_val value typ astate in
-    PulseArithmetic.prune_positive instanceof_val astate
+    let+ astate = PulseArithmetic.prune_positive instanceof_val astate in
+    astate
 
 
+  (** Loads a field from a struct, assuming that it has the correct type (should be checked by
+      [prune_type]). *)
   let load_field path field location obj astate =
     match Java.load_field path field location obj astate with
     | Error _ ->
-        L.die InternalError "Could not load field (we assume Erlang references to be valid)"
+        L.die InternalError "@[<v>@[%s@]@;@[%a@]@;@]"
+          "Could not load field. Did you call this function without calling prune_type?"
+          AbductiveDomain.pp astate
     | Ok result ->
         result
 
@@ -1779,58 +1800,45 @@ module Erlang = struct
 
   (** Assumes that the argument is a Cons and loads the head and tail *)
   let load_head_tail cons astate path location =
-    let+ astate = prune_type cons Cons astate in
+    let> astate = prune_type path location cons Cons astate in
     let astate, _, head = load_field path cons_head_field location cons astate in
     let astate, _, tail = load_field path cons_tail_field location cons astate in
-    (head, tail, astate)
+    [Ok (head, tail, astate)]
 
 
   (** Assumes that a list is of given length and reads the elements *)
   let rec list_assume_and_deconstruct list length astate path location =
     match length with
     | 0 ->
-        let+ astate = prune_type list Nil astate in
-        ([], astate)
+        let> astate = prune_type path location list Nil astate in
+        [Ok ([], astate)]
     | _ ->
-        let* hd, tl, astate = load_head_tail list astate path location in
-        let+ elems, astate = list_assume_and_deconstruct tl (length - 1) astate path location in
-        (hd :: elems, astate)
+        let> hd, tl, astate = load_head_tail list astate path location in
+        let> elems, astate = list_assume_and_deconstruct tl (length - 1) astate path location in
+        [Ok (hd :: elems, astate)]
 
 
-  let foldResult ~init fs = List.fold ~init ~f:(fun r f -> Result.bind r ~f) fs
-
-  let lists_reverse list : model =
-   fun {location; path; ret= ret_id, _} astate ->
-    (* Makes an abstract state corresponding to reversing a list of given length *)
-    let mk_astate_rev length =
-      let<*> elems, astate = list_assume_and_deconstruct list length astate path location in
-      let<+> reversed, astate =
-        foldResult
-          ~init:(Ok (make_nil_no_return astate location))
-          (List.map
-             ~f:(fun hd (tl, astate) -> make_cons_no_return astate path location hd tl)
-             elems )
-      in
-      PulseOperations.write_id ret_id reversed astate
-    in
-    List.concat (List.init Config.erlang_list_unfold_depth ~f:mk_astate_rev)
-
-
-  let lists_append2 list1 list2 : model =
+  let lists_append2 ~reverse list1 list2 : model =
    fun {location; path; ret= ret_id, _} astate ->
     (* Makes an abstract state corresponding to appending to a list of given length *)
     let mk_astate_concat length =
-      let<*> elems, astate = list_assume_and_deconstruct list1 length astate path location in
-      let<+> concatenated, astate =
-        foldResult
-          ~init:(Ok (list2, astate))
-          (List.map
-             ~f:(fun hd (tl, astate) -> make_cons_no_return astate path location hd tl)
-             (List.rev elems) )
+      let> elems, astate = list_assume_and_deconstruct list1 length astate path location in
+      let elems = if reverse then elems else List.rev elems in
+      let> result_list, astate =
+        [ List.fold_result ~init:(list2, astate)
+            ~f:(fun (tl, astate) hd -> make_cons_no_return astate path location hd tl)
+            elems ]
       in
-      PulseOperations.write_id ret_id concatenated astate
+      [Ok (PulseOperations.write_id ret_id result_list astate)]
     in
     List.concat (List.init Config.erlang_list_unfold_depth ~f:mk_astate_concat)
+    |> List.map ~f:map_continue
+
+
+  let lists_reverse list : model =
+   fun ({location; _} as data) astate ->
+    let nil, astate = make_nil_no_return astate location in
+    lists_append2 ~reverse:true list nil data astate
 
 
   let erlang_is_list (list_val, _list_hist) : model =
@@ -1925,7 +1933,7 @@ module Erlang = struct
     error_badmap data astate
 
 
-  let make_astate_goodmap (map_val, _map_hist) astate = prune_type (map_val, _map_hist) Map astate
+  let make_astate_goodmap path location map astate = prune_type path location map Map astate
 
   let erlang_is_map (map_val, _map_hist) : model =
    fun {location; ret= ret_id, _} astate ->
@@ -1938,9 +1946,6 @@ module Erlang = struct
 
   let maps_is_key (key, _key_history) map : model =
    fun ({location; path; ret= ret_id, _} as data) astate ->
-    let astate, _isempty_addr, (is_empty, _isempty_hist) =
-      load_field path map_is_empty_field location map astate
-    in
     let event = ValueHistory.Call {f= Model "maps_is_key"; location; in_call= []} in
     (* Return 3 cases:
      * - Error & assume not map
@@ -1950,33 +1955,36 @@ module Erlang = struct
     let astate_badmap = make_astate_badmap map data astate in
     let astate_empty =
       let ret_val_false = AbstractValue.mk_fresh () in
-      let* astate = make_astate_goodmap map astate in
-      let* astate = PulseArithmetic.prune_positive is_empty astate in
-      let+ astate = PulseArithmetic.and_eq_int ret_val_false IntLit.zero astate in
-      PulseOperations.write_id ret_id (ret_val_false, [event]) astate |> continue
+      let> astate = make_astate_goodmap path location map astate in
+      let astate, _isempty_addr, (is_empty, _isempty_hist) =
+        load_field path map_is_empty_field location map astate
+      in
+      let> astate = [PulseArithmetic.prune_positive is_empty astate] in
+      let> astate = [PulseArithmetic.and_eq_int ret_val_false IntLit.zero astate] in
+      [Ok (PulseOperations.write_id ret_id (ret_val_false, [event]) astate)]
     in
     let astate_haskey =
       let ret_val_true = AbstractValue.mk_fresh () in
-      let* astate = make_astate_goodmap map astate in
-      let* astate = PulseArithmetic.prune_eq_zero is_empty astate in
+      let> astate = make_astate_goodmap path location map astate in
+      let astate, _isempty_addr, (is_empty, _isempty_hist) =
+        load_field path map_is_empty_field location map astate
+      in
+      let> astate = [PulseArithmetic.prune_eq_zero is_empty astate] in
       let astate, _key_addr, (tracked_key, _hist) =
         load_field path map_key_field location map astate
       in
-      let* astate =
-        PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand key)
-          (AbstractValueOperand tracked_key) astate
+      let> astate =
+        [ PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand key)
+            (AbstractValueOperand tracked_key) astate ]
       in
-      let+ astate = PulseArithmetic.and_eq_int ret_val_true IntLit.one astate in
-      PulseOperations.write_id ret_id (ret_val_true, [event]) astate |> continue
+      let> astate = [PulseArithmetic.and_eq_int ret_val_true IntLit.one astate] in
+      [Ok (PulseOperations.write_id ret_id (ret_val_true, [event]) astate)]
     in
-    astate_empty :: astate_haskey :: astate_badmap
+    List.map ~f:map_continue (astate_empty @ astate_haskey) @ astate_badmap
 
 
   let maps_get (key, _key_history) map : model =
    fun ({location; path; ret= ret_id, _} as data) astate ->
-    let astate, _isempty_addr, (is_empty, _isempty_hist) =
-      load_field path map_is_empty_field location map astate
-    in
     (* Return 3 cases:
      * - Error & assume not map
      * - Error & assume map & assume empty;
@@ -1984,26 +1992,32 @@ module Erlang = struct
      *)
     let astate_badmap = make_astate_badmap map data astate in
     let astate_ok =
-      let* astate = make_astate_goodmap map astate in
-      let* astate = PulseArithmetic.prune_eq_zero is_empty astate in
+      let> astate = make_astate_goodmap path location map astate in
+      let astate, _isempty_addr, (is_empty, _isempty_hist) =
+        load_field path map_is_empty_field location map astate
+      in
+      let> astate = [PulseArithmetic.prune_eq_zero is_empty astate] in
       let astate, _key_addr, (tracked_key, _hist) =
         load_field path map_key_field location map astate
       in
-      let+ astate =
-        PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand key)
-          (AbstractValueOperand tracked_key) astate
+      let> astate =
+        [ PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand key)
+            (AbstractValueOperand tracked_key) astate ]
       in
       let astate, _value_addr, tracked_value =
         load_field path map_value_field location map astate
       in
-      PulseOperations.write_id ret_id tracked_value astate |> continue
+      [Ok (PulseOperations.write_id ret_id tracked_value astate)]
     in
     let astate_badkey =
-      let<*> astate = make_astate_goodmap map astate in
-      let<*> astate = PulseArithmetic.prune_positive is_empty astate in
+      let> astate = make_astate_goodmap path location map astate in
+      let astate, _isempty_addr, (is_empty, _isempty_hist) =
+        load_field path map_is_empty_field location map astate
+      in
+      let> astate = [PulseArithmetic.prune_positive is_empty astate] in
       error_badkey data astate
     in
-    (astate_ok :: astate_badkey) @ astate_badmap
+    List.map ~f:map_continue astate_ok @ astate_badkey @ astate_badmap
 
 
   let maps_put key value map : model =
@@ -2022,23 +2036,23 @@ module Erlang = struct
       let fresh_val = (is_empty_value, [event]) in
       let addr_key = (AbstractValue.mk_fresh (), [event]) in
       let addr_value = (AbstractValue.mk_fresh (), [event]) in
-      let<*> astate = make_astate_goodmap map astate in
-      let<*> astate =
-        write_field_and_deref path location ~struct_addr:addr_map ~field_addr:addr_key
-          ~field_val:key map_key_field astate
+      let> astate = make_astate_goodmap path location map astate in
+      let> astate =
+        [ write_field_and_deref path location ~struct_addr:addr_map ~field_addr:addr_key
+            ~field_val:key map_key_field astate ]
       in
-      let<*> astate =
-        write_field_and_deref path location ~struct_addr:addr_map ~field_addr:addr_value
-          ~field_val:value map_value_field astate
+      let> astate =
+        [ write_field_and_deref path location ~struct_addr:addr_map ~field_addr:addr_value
+            ~field_val:value map_value_field astate ]
       in
-      let<+> astate =
-        write_field_and_deref path location ~struct_addr:addr_map ~field_addr:addr_is_empty
-          ~field_val:fresh_val map_is_empty_field astate
-        >>= PulseArithmetic.and_eq_int is_empty_value IntLit.zero
+      let> astate =
+        [ write_field_and_deref path location ~struct_addr:addr_map ~field_addr:addr_is_empty
+            ~field_val:fresh_val map_is_empty_field astate
+          >>= PulseArithmetic.and_eq_int is_empty_value IntLit.zero ]
       in
-      write_dynamic_type_and_return addr_map Map ret_id astate
+      [Ok (write_dynamic_type_and_return addr_map Map ret_id astate)]
     in
-    astate_ok @ astate_badmap
+    List.map ~f:map_continue astate_ok @ astate_badmap
 end
 
 module StringSet = Caml.Set.Make (String)
@@ -2113,7 +2127,8 @@ module ProcNameDispatcher = struct
         ; +BuiltinDecl.(match_builtin __erlang_lists_reverse)
           <>$ capt_arg_payload $--> Erlang.lists_reverse
         ; +BuiltinDecl.(match_builtin __erlang_lists_append2)
-          <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.lists_append2
+          <>$ capt_arg_payload $+ capt_arg_payload
+          $--> Erlang.lists_append2 ~reverse:false
         ; +BuiltinDecl.(match_builtin __erlang_make_cons)
           <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.make_cons
         ; +BuiltinDecl.(match_builtin __erlang_make_tuple) &++> Erlang.make_tuple
@@ -2345,7 +2360,8 @@ module ProcNameDispatcher = struct
           $--> Erlang.erlang_is_map
         ; -ErlangTypeName.erlang_namespace &:: "is_list" <>$ capt_arg_payload
           $--> Erlang.erlang_is_list
-        ; -"lists" &:: "append" <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.lists_append2
+        ; -"lists" &:: "append" <>$ capt_arg_payload $+ capt_arg_payload
+          $--> Erlang.lists_append2 ~reverse:false
         ; -"lists" &:: "reverse" <>$ capt_arg_payload $--> Erlang.lists_reverse
         ; -"maps" &:: "is_key" <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.maps_is_key
         ; -"maps" &:: "get" <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.maps_get
