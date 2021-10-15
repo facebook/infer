@@ -275,10 +275,6 @@ module C = struct
       astate
 
 
-  let custom_alloc model_data astate =
-    alloc_common (CustomMalloc model_data.callee_procname) ~size_exp_opt:None model_data astate
-
-
   let custom_alloc_not_null model_data astate =
     alloc_not_null_common (CustomMalloc model_data.callee_procname) ~size_exp_opt:None model_data
       astate
@@ -2462,9 +2458,9 @@ module ProcNameDispatcher = struct
           $--> Android.text_utils_is_empty ~desc:"TextUtils.isEmpty"
         ; -"dispatch_sync" &++> ObjC.dispatch_sync
         ; +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_create_or_copy
-          &--> C.custom_alloc
+          &--> C.custom_alloc_not_null
         ; +map_context_tenv PatternMatch.ObjectiveC.is_core_foundation_create_or_copy
-          &--> C.custom_alloc
+          &--> C.custom_alloc_not_null
         ; +BuiltinDecl.(match_builtin malloc_no_fail) <>$ capt_exp $--> C.malloc_not_null
         ; +match_regexp_opt Config.pulse_model_alloc_pattern &--> C.custom_alloc_not_null
         ; +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_release

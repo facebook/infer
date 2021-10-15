@@ -320,3 +320,13 @@ void arrayWithObjects(id object) {
 void arrayWithObjectsOk() { arrayWithObjects(@"obj"); }
 
 void FN_arrayWithObjectsNilBad() { arrayWithObjects(nil); }
+
+NSLocale* ret_bridge() {
+  CFLocaleRef nameRef = CFLocaleCreate(NULL, NULL);
+  return CFBridgingRelease(nameRef);
+}
+
+void createWithBrideInArrayOk() {
+  NSLocale* locale = ret_bridge();
+  NSArray<NSLocale*>* locales = @[ locale ];
+}
