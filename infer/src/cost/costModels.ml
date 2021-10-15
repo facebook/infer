@@ -27,14 +27,8 @@ let linear = cost_of_exp ~degree_kind:Polynomials.DegreeKind.Linear
 
 let log = cost_of_exp ~degree_kind:Polynomials.DegreeKind.Log
 
-module BoundsOf (Container : CostUtils.S) = struct
-  let of_length exp {model_env= {location}} ~ret:_ mem ~of_function ~degree_kind =
-    let itv = Container.length exp mem |> BufferOverrunDomain.Val.get_itv in
-    CostUtils.of_itv ~itv ~degree_kind ~of_function location
-
-
-  let of_length_iter begin_exp end_exp {model_env= {location}} ~ret:_ inferbo_mem ~of_function
-      ~degree_kind =
+module Iterator = struct
+  let get_iter_itv begin_exp end_exp inferbo_mem =
     let begin_v =
       BufferOverrunDomain.Mem.find_set
         (BufferOverrunSemantics.eval_locs begin_exp inferbo_mem)
@@ -51,21 +45,36 @@ module BoundsOf (Container : CostUtils.S) = struct
       Logging.d_printfln_escaped "length of begin_iter=%a and end_iter=%a"
         BufferOverrunDomain.Val.pp begin_v BufferOverrunDomain.Val.pp end_v
     in
-    let itv = Itv.minus end_itv begin_itv in
+    Itv.minus end_itv begin_itv
+end
+
+module BoundsOf (Container : CostUtils.S) = struct
+  let of_length exp {model_env= {location}} ~ret:_ mem ~of_function ~degree_kind =
+    let itv = Container.length exp mem |> BufferOverrunDomain.Val.get_itv in
+    CostUtils.of_itv ~itv ~degree_kind ~of_function location
+
+
+  let of_length_itv itv {model_env= {location}} ~ret:_ ~of_function ~degree_kind =
     CostUtils.of_itv ~itv ~degree_kind ~of_function location
 
 
   let linear_length = of_length ~degree_kind:Polynomials.DegreeKind.Linear
 
-  let logarithmic_length_iter begin_exp end_exp =
-    of_length_iter begin_exp end_exp ~degree_kind:Polynomials.DegreeKind.Log
+  let linear_length_itv itv = of_length_itv itv ~degree_kind:Polynomials.DegreeKind.Linear
 
+  let logarithmic_length_itv itv = of_length_itv itv ~degree_kind:Polynomials.DegreeKind.Log
 
   let logarithmic_length = of_length ~degree_kind:Polynomials.DegreeKind.Log
 
   let n_log_n_length exp cost_model_env ~ret mem ~of_function =
     let log_n = logarithmic_length exp ~of_function cost_model_env mem ~ret in
     let n = linear_length exp ~of_function cost_model_env mem ~ret in
+    BasicCost.mult n log_n
+
+
+  let n_log_n_length_itv itv cost_model_env ~ret ~of_function =
+    let log_n = logarithmic_length_itv itv ~of_function cost_model_env ~ret in
+    let n = linear_length_itv itv ~of_function cost_model_env ~ret in
     BasicCost.mult n log_n
 
 
@@ -173,8 +182,13 @@ module BoundsOfCString = BoundsOf (CostUtils.CString)
 
 module Algorithm = struct
   let binary_search begin_arg end_arg cost_model_env ~ret inferbo_mem ~of_function =
-    BoundsOfContainer.logarithmic_length_iter begin_arg end_arg cost_model_env ~ret inferbo_mem
-      ~of_function
+    let itv = Iterator.get_iter_itv begin_arg end_arg inferbo_mem in
+    BoundsOfContainer.logarithmic_length_itv itv cost_model_env ~ret ~of_function
+
+
+  let sort begin_arg end_arg cost_model_env ~ret inferbo_mem ~of_function =
+    let itv = Iterator.get_iter_itv begin_arg end_arg inferbo_mem in
+    BoundsOfContainer.n_log_n_length_itv itv cost_model_env ~ret ~of_function
 end
 
 module NSString = struct
@@ -349,6 +363,8 @@ module Call = struct
           (* C++ Cost Models *)
         ; -"std" &:: "binary_search" $ capt_exp $+ capt_exp
           $+...$--> Algorithm.binary_search ~of_function:"Container.binary_search"
+        ; -"std" &:: "sort" $ capt_exp $+ capt_exp
+          $+...$--> Algorithm.sort ~of_function:"Container.sort"
           (* Java Cost Models *)
         ; +PatternMatch.Java.implements_collections
           &:: "sort" $ capt_exp

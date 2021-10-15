@@ -126,4 +126,4 @@ codetoanalyze/cpp/performance/vector.cpp, iterate_vector_quadratic, 2 + 6 ⋅ ve
 codetoanalyze/cpp/performance/vector.cpp, iteratec_over_vec_linear_FN, 29,  OnUIThread:false, []
 codetoanalyze/cpp/performance/vector.cpp, loop_over_vec_linear_FN, 35,  OnUIThread:false, []
 codetoanalyze/cpp/performance/vector.cpp, remove_duplicates_quadratic_FN, 86,  OnUIThread:false, []
-codetoanalyze/cpp/performance/vector.cpp, sort_vector_nlogn_FN, 5,  OnUIThread:false, []
+codetoanalyze/cpp/performance/vector.cpp, sort_vector_nlogn, 4 + vec->cpp.vector_elem.length.ub × log(vec->cpp.vector_elem.length.ub),  OnUIThread:false, [{vec->cpp.vector_elem.length.ub},Modeled call to Container.sort,{vec->cpp.vector_elem.length.ub},Modeled call to Container.sort]
