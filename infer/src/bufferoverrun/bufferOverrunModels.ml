@@ -1896,6 +1896,7 @@ module Call = struct
         $ any_arg_of_typ (-"std" &:: "basic_string")
         $+ any_arg_of_typ (-"std" &:: "basic_string")
         $--> by_value Dom.Val.Itv.unknown_bool
+      ; -"std" &:: "map" &:: "size" $ capt_exp $--> Container.size
       ; -"std" &:: "shared_ptr" &:: "operator->" $ capt_exp $--> id
       ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "data" $ capt_arg $--> StdVector.data
       ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "emplace_back" $ capt_arg $+ capt_exp
