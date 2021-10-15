@@ -672,6 +672,24 @@ module StdVector = struct
     {exec; check= no_check}
 
 
+  let begin_ exp =
+    let exec _ ~ret:_ mem =
+      let locs = Sem.eval_locs exp mem in
+      Dom.Mem.update_mem locs Dom.Val.Itv.zero mem
+    in
+    {exec; check= no_check}
+
+
+  let end_ elt_typ vec temp_exp =
+    let exec model_env ~ret:((ret_id, _) as ret) mem =
+      let mem = (size elt_typ vec).exec model_env ~ret mem in
+      let locs = Sem.eval_locs temp_exp mem in
+      let v = Dom.Mem.find (Loc.of_id ret_id) mem in
+      Dom.Mem.update_mem locs v mem
+    in
+    {exec; check= no_check}
+
+
   let resize elt_typ vec_arg size_exp =
     let exec ({integer_type_widths} as model_env) ~ret:_ mem =
       let arr_locs = deref_of model_env elt_typ vec_arg mem in
@@ -1068,6 +1086,10 @@ end
 
 module Collection = AbstractCollection (struct
   let collection_internal_array_field = BufferOverrunField.java_collection_internal_array
+end)
+
+module Container = AbstractCollection (struct
+  let collection_internal_array_field = BufferOverrunField.cpp_collection_internal_array
 end)
 
 module NSCollection = struct
@@ -1888,6 +1910,8 @@ module Call = struct
       ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "resize" $ capt_arg $+ capt_exp
         $--> StdVector.resize
       ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "size" $ capt_arg $--> StdVector.size
+      ; -"std" &:: "vector" &:: "begin" $ any_arg $+ capt_exp $--> StdVector.begin_
+      ; -"std" &:: "vector" < capt_typ &+...>:: "end" $ capt_arg $+ capt_exp $--> StdVector.end_
       ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "vector"
         $ capt_arg_of_typ (-"std" &:: "vector")
         $+ capt_exp_of_prim_typ (Typ.mk (Typ.Tint Typ.size_t))

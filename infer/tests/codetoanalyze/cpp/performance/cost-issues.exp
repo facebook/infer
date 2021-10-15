@@ -104,7 +104,7 @@ codetoanalyze/cpp/performance/unordered_set.cpp, iterate_over_bucket_linear_FN, 
 codetoanalyze/cpp/performance/unordered_set.cpp, iterate_over_uset_linear_FN, 21,  OnUIThread:false, []
 codetoanalyze/cpp/performance/unordered_set.cpp, loop_over_buckets_count_FP, ⊤,  OnUIThread:false, [Unbounded loop,Loop]
 codetoanalyze/cpp/performance/unordered_set.cpp, range_based_loop_over_uset_linear_FN, 25,  OnUIThread:false, []
-codetoanalyze/cpp/performance/vector.cpp, binary_search_log_FN, 6,  OnUIThread:false, []
+codetoanalyze/cpp/performance/vector.cpp, binary_search_log, 5 + log(vec->cpp.vector_elem.length.ub),  OnUIThread:false, [{vec->cpp.vector_elem.length.ub},Modeled call to Container.binary_search]
 codetoanalyze/cpp/performance/vector.cpp, copy_assign_linear_FN, 7,  OnUIThread:false, []
 codetoanalyze/cpp/performance/vector.cpp, copy_assignment_operator_linear_FN, 4,  OnUIThread:false, []
 codetoanalyze/cpp/performance/vector.cpp, copy_contructor_linear_FN, 3,  OnUIThread:false, []

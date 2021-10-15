@@ -8,7 +8,7 @@
 #include <vector>
 #include <iostream>
 
-bool binary_search_log_FN(std::vector<std::string>& vec) {
+bool binary_search_log(std::vector<std::string>& vec) {
   return std::binary_search(vec.begin(), vec.end(), "x");
 }
 
