@@ -124,12 +124,16 @@ let pp_jsonbug fmt {Jsonbug_t.file; severity; bug_type; qualifier; line; column;
     {Sarifbug_j.artifactLocation= file_loc
     ; region } 
   in
-  let file_location_to_record = [{ Sarifbug_j.physicalLocation=physical_location}] in
+  let file_location_to_record = [{ Sarifbug_j.physicalLocation=physical_location }] in
   let thread_flow_locs = 
     [{Sarifbug_j.locations= loc_trace_to_sarifbug_record bug_trace}]
   in
+  let trace_list_length = List.length bug_trace in 
   let thread_flow = 
-    [{Sarifbug_j.threadFlows= thread_flow_locs}]
+    if trace_list_length > 0 then
+      Some [{Sarifbug_j.threadFlows= thread_flow_locs}]
+    else
+      None
   in
   let result =
     { Sarifbug_j.message
