@@ -862,22 +862,21 @@ let rec propagate_context_ ancestor_vs ancestor_ctx q =
   [%Trace.call fun {pf} -> pf "@ (%a)@ %a" Context.pp ancestor_ctx pp q]
   ;
   (* extend vocabulary with variables in scope above *)
-  let ancestor_vs = Var.Set.union ancestor_vs (Var.Set.union q.us q.xs) in
-  (* decompose formula *)
-  let xs, stem, djns =
-    (q.xs, {q with us= ancestor_vs; xs= emp.xs; djns= emp.djns}, q.djns)
-  in
+  let q = {q with us= Var.Set.union ancestor_vs q.us} in
   (* strengthen context with that from above *)
-  let ancestor_stem = and_ctx_ ancestor_ctx stem in
-  let ancestor_ctx = ancestor_stem.ctx in
+  let q = and_ctx_ ancestor_ctx q in
+  (* decompose formula *)
+  let xs, q = bind_exists q ~wrt:Var.Set.empty in
+  let stem, djns = ({q with djns= emp.djns}, q.djns) in
+  (* propagate over disjunctions *)
   let q' =
-    List.fold djns ancestor_stem ~f:(fun djn q' ->
+    List.fold djns stem ~f:(fun djn q' ->
         let djn, dj_ctxs =
           Set.fold_map djn [] ~f:(fun dj dj_ctxs ->
-              let dj = propagate_context_ ancestor_vs ancestor_ctx dj in
+              let dj = propagate_context_ q.us q.ctx dj in
               (dj, dj.ctx :: dj_ctxs) )
         in
-        let new_xs, djn_ctx = Context.interN ancestor_vs dj_ctxs in
+        let new_xs, djn_ctx = Context.interN q.us dj_ctxs in
         (* hoist xs appearing in disjunction's context *)
         let djn_xs = Var.Set.diff (Context.fv djn_ctx) q'.us in
         let djn = Set.map ~f:(elim_exists djn_xs) djn in
