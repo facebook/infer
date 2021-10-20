@@ -144,6 +144,9 @@ let analyze =
   and dump_query =
     flag "dump-query" (optional int)
       ~doc:"<int> dump solver query <int> and halt"
+  and dump_simplify =
+    flag "dump-simplify" (optional int)
+      ~doc:"<int> dump simplify query <int> and halt"
   in
   fun program () ->
     Timer.enabled := stats ;
@@ -178,6 +181,7 @@ let analyze =
     Sh.do_normalize := normalize_states ;
     Domain_sh.simplify_states := not no_simplify_states ;
     Option.iter dump_query ~f:(fun n -> Solver.dump_query := n) ;
+    Option.iter dump_simplify ~f:(fun n -> Sh.dump_simplify := n) ;
     at_exit (fun () -> Report.coverage pgm) ;
     Analysis.exec_pgm pgm ;
     Report.safe_or_unsafe ()

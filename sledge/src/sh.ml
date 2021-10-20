@@ -1002,8 +1002,10 @@ let rec simplify_ us ancestor_xs rev_xss survived ancestor_subst q =
     pf "%a@ %a" Context.Subst.pp stem_subst pp_raw q' ;
     invariant q']
 
+let count_simplify = ref (-1)
+
 let simplify q =
-  [%Trace.call fun {pf} -> pf "@ %a" pp_raw q]
+  [%Trace.call fun {pf} -> pf " %i@ %a" !count_simplify pp_raw q]
   ;
   ( if is_false q then false_ q.us
   else
@@ -1016,3 +1018,21 @@ let simplify q =
   [%Trace.retn fun {pf} q' ->
     pf "%a" pp_raw q' ;
     invariant q']
+
+(*
+ * Replay debugging
+ *)
+
+type call = Simplify of t [@@deriving sexp]
+
+let replay c =
+  match call_of_sexp (Sexp.of_string c) with
+  | Simplify q -> simplify q |> ignore
+
+let dump_simplify = ref (-1)
+
+let simplify q =
+  Int.incr count_simplify ;
+  if !count_simplify = !dump_simplify then
+    fail "%a" Sexp.pp_hum (sexp_of_call (Simplify q)) ()
+  else simplify q

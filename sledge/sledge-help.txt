@@ -120,6 +120,7 @@ Analyze code in one or more LLVM bitcode files. This is a convenience wrapper fo
                           domain), or "unit" (unit domain)
   [-dump-bitcode <file>]  write transformed LLVM bitcode to <file>
   [-dump-query <int>]     dump solver query <int> and halt
+  [-dump-simplify <int>]  dump simplify query <int> and halt
   [-function-summaries]   use function summaries (in development)
   [-loop-bound <int>]     limit execution exploration to <int> loop iterations,
                           a negative bound is never hit and leads to unbounded
@@ -225,6 +226,7 @@ The <input> file must be binary LLAIR, such as produced by `sledge translate`.
                           symbolic heap domain), "globals" (used-globals
                           domain), or "unit" (unit domain)
   [-dump-query <int>]     dump solver query <int> and halt
+  [-dump-simplify <int>]  dump simplify query <int> and halt
   [-function-summaries]   use function summaries (in development)
   [-loop-bound <int>]     limit execution exploration to <int> loop iterations,
                           a negative bound is never hit and leads to unbounded
