@@ -58,7 +58,7 @@ let pp_open fmt () =
 let pp_close fmt () = F.fprintf fmt "]}]}@\n@?"
 
 let pp_schema_version fmt () = 
-  F.fprintf fmt "%s:%s,%s:%s," "\"schema\"" "\"http://json.schemastore.org/sarif-2.1.0\"" "\"version\"" "\"2.1.0\""
+  F.fprintf fmt "%s:%s,%s:%s," "\"$schema\"" "\"http://json.schemastore.org/sarif-2.1.0-rtm.5\"" "\"version\"" "\"2.1.0\""
 
 let pp_runs fmt () =
   F.fprintf fmt "%s:[{%s:{%s:{%s:%s,%s:%s,"  "\"runs\"" "\"tool\"" "\"driver\"" "\"name\"" "\"Infer\"" "\"informationUri\"" "\"https://github.com/facebook/infer\"" ;
@@ -70,7 +70,9 @@ let pp_results_header fmt () =
 
 let loc_trace_to_sarifbug_record trace_list =
     let file_loc filename = 
-      {Sarifbug_j.uri= filename} 
+      let absolute_source_name = Config.project_root ^/ filename in
+      { Sarifbug_j.uri= filename
+      ; Sarifbug_j.uriBaseId= absolute_source_name } 
     in
     let message description = 
       {Sarifbug_j.text= description} 
@@ -105,10 +107,10 @@ let pp_jsonbug fmt {Jsonbug_t.file; severity; bug_type; qualifier; line; column;
   in
   let level = String.lowercase severity in
   let ruleId = bug_type in
-  let source_name =
-    if Filename.is_absolute file then file else Config.project_root ^/ file
-  in
-  let file_loc = {Sarifbug_j.uri= source_name} in
+  let absolute_source_name = Config.project_root ^/ file in
+  let file_loc = 
+    { Sarifbug_j.uri= file
+    ; Sarifbug_j.uriBaseId= absolute_source_name } in
   let region = 
     match column with
     | -1 ->
@@ -122,12 +124,16 @@ let pp_jsonbug fmt {Jsonbug_t.file; severity; bug_type; qualifier; line; column;
     {Sarifbug_j.artifactLocation= file_loc
     ; region } 
   in
-  let file_location_to_record = [{ Sarifbug_j.physicalLocation=physical_location}] in
+  let file_location_to_record = [{ Sarifbug_j.physicalLocation=physical_location }] in
   let thread_flow_locs = 
     [{Sarifbug_j.locations= loc_trace_to_sarifbug_record bug_trace}]
   in
+  let trace_list_length = List.length bug_trace in 
   let thread_flow = 
-    [{Sarifbug_j.threadFlows= thread_flow_locs}]
+    if trace_list_length > 0 then
+      Some [{Sarifbug_j.threadFlows= thread_flow_locs}]
+    else
+      None
   in
   let result =
     { Sarifbug_j.message
