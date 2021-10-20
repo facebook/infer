@@ -31,6 +31,7 @@ codetoanalyze/cpp/performance/foreachtest.cpp, vector_quadratic_FN::lambda_forea
 codetoanalyze/cpp/performance/foreachtest.cpp, vector_quadratic_FN::lambda_foreachtest.cpp:46:31::__infer_inner_destructor_~, 2,  OnUIThread:false, []
 codetoanalyze/cpp/performance/foreachtest.cpp, vector_quadratic_FN::lambda_foreachtest.cpp:46:31::operator(), 44,  OnUIThread:false, []
 codetoanalyze/cpp/performance/foreachtest.cpp, vector_quadratic_FN::lambda_foreachtest.cpp:46:31::~, 3,  OnUIThread:false, []
+codetoanalyze/cpp/performance/integral_constant.cpp, iterate_integral_constant, 35,  OnUIThread:false, []
 codetoanalyze/cpp/performance/list.cpp, compare_nocase_linear, 15 + 29 ⋅ first->cpp.vector_elem.length.ub + 3 ⋅ (first->cpp.vector_elem.length.ub + 1),  OnUIThread:false, [{first->cpp.vector_elem.length.ub + 1},Loop,{first->cpp.vector_elem.length.ub},Loop]
 codetoanalyze/cpp/performance/list.cpp, iterate_over_list_for_linear_FN, 25,  OnUIThread:false, []
 codetoanalyze/cpp/performance/list.cpp, iterate_over_list_linear_FN, 3,  OnUIThread:false, []
