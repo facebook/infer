@@ -400,6 +400,20 @@ module ObjC = struct
       Misc.alloc_no_leak_not_null ~initialize:true ~desc:"alloc" (Some size) model_data astate
     in
     astate
+
+
+  let construct_string char_array : model =
+   fun {path; location; ret= ret_id, _} astate ->
+    let event =
+      ValueHistory.Call {f= Model "NSString.stringWithUTF8String:"; location; in_call= []}
+    in
+    let string = AbstractValue.mk_fresh () in
+    let<+> astate =
+      PulseOperations.write_field path location
+        ~ref:(string, [event])
+        PulseOperations.ModeledField.internal_string ~obj:char_array astate
+    in
+    PulseOperations.write_id ret_id (string, [event]) astate
 end
 
 module Optional = struct
@@ -2486,6 +2500,7 @@ module ProcNameDispatcher = struct
           <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; +BuiltinDecl.(match_builtin __objc_alloc_no_fail) <>$ capt_exp $--> ObjC.alloc_no_fail
         ; -"NSObject" &:: "init" <>$ capt_arg_payload $--> Misc.id_first_arg ~desc:"NSObject.init"
+        ; -"NSString" &:: "stringWithUTF8String:" <>$ capt_arg_payload $--> ObjC.construct_string
         ; +BuiltinDecl.(match_builtin objc_insert_key)
           <>$ capt_arg_payload
           $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Key
