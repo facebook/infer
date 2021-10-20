@@ -642,9 +642,11 @@ let and_ b q =
     ~call:(fun {pf} -> pf "@ (%a)@ (%a)" Formula.pp b pp q)
     ~retn:(fun {pf} -> pf "%a" pp)
   @@ fun () ->
-  let xs, q = bind_exists q ~wrt:(Formula.fv b) in
-  let b = Formula.map_terms ~f:(Context.normalize q.ctx) b in
-  exists xs (star (pure b) q)
+  let p = pure (Formula.map_terms ~f:(Context.normalize q.ctx) b) in
+  if is_emp p then q
+  else
+    let xs, q = bind_exists q ~wrt:(Formula.fv b) in
+    exists xs (star p q)
 
 let and_subst subst q =
   [%Trace.call fun {pf} -> pf "@ %a@ %a" Context.Subst.pp subst pp q]
