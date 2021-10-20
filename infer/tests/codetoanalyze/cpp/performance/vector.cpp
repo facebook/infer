@@ -8,7 +8,7 @@
 #include <vector>
 #include <iostream>
 
-bool binary_search_log_FN(std::vector<std::string>& vec) {
+bool binary_search_log(std::vector<std::string>& vec) {
   return std::binary_search(vec.begin(), vec.end(), "x");
 }
 
@@ -99,7 +99,7 @@ void iterate_vector_auto_linear_FN(std::vector<int>& vec) {
     v *= v;
 }
 
-void sort_vector_nlogn_FN(std::vector<int>& vec) {
+void sort_vector_nlogn(std::vector<int>& vec) {
   std::sort(vec.begin(), vec.end());
 }
 

@@ -220,11 +220,11 @@ $ firefox infer-out/captured/hello.c.*.html
 
 ## Updating infer.opam and infer.opam.locked
 
-tl; dr: Run `make opam/infer.opam.locked`.
+`opam/infer.opam.locked` records fixed versions of the opam
+dependencies known to work with infer and to respect the constraints
+in opam. This prevents unpredictable breakages of infer or its
+dependencies, especially for infer releases, for which it is more
+difficult to change their package constraints after the fact.
 
-infer.opam.locked records fixed versions of the opam dependencies known to work with infer and to respect
-the constraints in opam. This prevents unpredictable breakages of infer or its dependencies,
-especially for infer releases, for which it is more difficult to change their package constraints
-after the fact.
-
-To add an opam package or update its version constraints, edit 'infer.opam' then run `make infer.opam.locked`.
+To add an opam package or update its version constraints, edit
+`opam/infer.opam` then run `opam lock .` in directory `opam/`.

@@ -9,29 +9,30 @@ Here is an overview of the issue types currently reported by Infer.
 
 Reported as "Arbitrary Code Execution Under lock" by [starvation](/docs/next/checker-starvation).
 
-A call which may execute arbitrary code (such as registered, or chained, callbacks) is made while a lock is held.
+A call that may execute arbitrary code (such as registered, or chained, callbacks) is made while holding a lock.
 This code may deadlock whenever the callbacks obtain locks themselves, so it is an unsafe pattern.
-This warning is issued only at the innermost lock acquisition around the final call.
 
 Example:
 ```java
-public class NotUnderLock {
   SettableFuture future = null;
 
-  public void callFutureSetOk() {
+  public void callFutureSet() {
     future.set(null);
   }
 
-  public synchronized void firstAcquisitionBad() {
-    callFutureSetOk();
+  // synchronized means it's taking a lock implicitly
+  public synchronized void example_of_bad_pattern() {
+    callFutureSet(); // <- issue reported here
   }
 
-  public void secondAcquisitionOk(Object o) {
+  // If the call is made while holding multiple locks, the warning
+  // will be issued only at the innermost lock acquisition. Here we
+  // report in example_of_bad_pattern but we won't report below.
+  public void nested_bad_pattern_no_report(Object o) {
     synchronized (o) {
-      firstAcquisitionBad();
+      example_of_bad_pattern(); // <- no issue reported
     }
   }
-}
 ```
 
 ## ASSIGN_POINTER_WARNING
@@ -1424,6 +1425,22 @@ std::shared_ptr<int> callMethodReturnsnonPOD(bool b) {
   std::shared_ptr<int> d = [obj returnsnonPOD];
   return d;
 }
+```
+
+## NO_MATCHING_BRANCH_IN_TRY
+
+Reported as "No Matching Branch In Try" by [pulse](/docs/next/checker-pulse).
+
+No matching branch is found when evaluating the `of` section of a `try` expression. Corresponds to the `{try_clause,V}` error in the Erlang runtime.
+
+For example, if we call `tail([])` and the full definition of `tail` is
+```erlang
+tail(X) ->
+    try X of
+        [_|T] -> {ok,T}
+    catch
+        _ -> error
+    end.
 ```
 
 ## NO_MATCHING_CASE_CLAUSE

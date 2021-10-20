@@ -156,7 +156,7 @@ and translate_pattern_map (env : (_, _) Env.t) value updates : Block.t =
   let make_submatcher (one_update : Ast.association) =
     let has_key_id = mk_fresh_id () in
     let key_id, key_expr_block = translate_expression_to_fresh_id env one_update.key in
-    let has_key_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_map_is_key) in
+    let has_key_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_maps_is_key) in
     let args = [(Exp.Var key_id, any_typ); (Exp.Var value, any_typ)] in
     let has_key_block : Block.t =
       let start =
@@ -169,7 +169,7 @@ and translate_pattern_map (env : (_, _) Env.t) value updates : Block.t =
       {start; exit_success; exit_failure}
     in
     let value_id = mk_fresh_id () in
-    let lookup_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_map_get) in
+    let lookup_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_maps_get) in
     let lookup_block =
       Block.make_instruction env
         [Sil.Call ((value_id, any_typ), lookup_fun_exp, args, env.location, CallFlags.default)]
@@ -452,7 +452,7 @@ and translate_expression_binary_operator (env : (_, _) Env.t) ret_var e1 (op : A
   | Less ->
       make_simple_eager Lt
   | ListAdd ->
-      let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_list_append2) in
+      let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_lists_append2) in
       let args : (Exp.t * Typ.t) list = [(Var id1, any_typ); (Var id2, any_typ)] in
       let call_instr =
         Sil.Call ((ret_var, any_typ), fun_exp, args, env.location, CallFlags.default)
@@ -483,23 +483,33 @@ and translate_expression_binary_operator (env : (_, _) Env.t) ret_var e1 (op : A
       Block.all env [block1; block2; Block.make_unsupported env]
 
 
-and translate_expression_call (env : (_, _) Env.t) ret_var module_name function_name args : Block.t
-    =
+and lookup_module_for_unqualified (env : (_, _) Env.t) function_name arity =
+  (* First check if the function is imported or local (order does not matter
+     as compiler should enforce that both cannot hold at the same time).
+     Then assume it's built-in. *)
+  let uf_name = {Env.UnqualifiedFunction.name= function_name; arity} in
+  match Env.UnqualifiedFunction.Map.find env.imports uf_name with
+  | Some name ->
+      name
+  | None ->
+      if Env.UnqualifiedFunction.Set.mem env.functions uf_name then env.current_module
+      else ErlangTypeName.erlang_namespace
+
+
+and translate_expression_call (env : (_, _) Env.t) ret_var module_name_opt function_name args :
+    Block.t =
   let arity = List.length args in
   let callee_procname =
-    let module_name_lookup =
-      match module_name with
+    let module_name =
+      match module_name_opt with
+      (* If we have a module name just use that *)
       | Some name ->
           name
-      | None -> (
-          let uf_name = {Env.UnqualifiedFunction.T.name= function_name; arity} in
-          match Env.UnqualifiedFunction.Map.find env.imports uf_name with
-          | Some name ->
-              name
-          | None ->
-              env.current_module )
+      (* Otherwise we need a module name *)
+      | None ->
+          lookup_module_for_unqualified env function_name arity
     in
-    Procname.make_erlang ~module_name:module_name_lookup ~function_name ~arity
+    Procname.make_erlang ~module_name ~function_name ~arity
   in
   let args_with_ids = List.map ~f:(fun a -> (a, mk_fresh_id ())) args in
   let args_blocks =
@@ -622,7 +632,7 @@ and translate_expression_listcomprehension (env : (_, _) Env.t) ret_var expressi
   let loop_block = List.fold_right generators ~f:apply_one_gen ~init:loop_body_with_filters in
   (* Store lists:reverse(L) in return variable *)
   let store_return_block =
-    let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_list_reverse) in
+    let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_lists_reverse) in
     let args : (Exp.t * Typ.t) list = [(Var list_var, any_typ)] in
     let call_instr =
       Sil.Call ((ret_var, any_typ), fun_exp, args, env.location, CallFlags.default)
@@ -640,7 +650,7 @@ and translate_expression_map_create (env : (_, _) Env.t) ret_var updates : Block
     let translate_one_expr (one_expr, one_id) = translate_expression_to_id env one_id one_expr in
     List.map ~f:translate_one_expr exprs_with_ids
   in
-  let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_map_create) in
+  let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_map) in
   let exprs_ids_and_types =
     List.map ~f:(function _, id -> (Exp.Var id, any_typ)) exprs_with_ids
   in
@@ -663,7 +673,7 @@ and translate_expression_map_update (env : (_, _) Env.t) ret_var map updates : B
   let translate_update (one_update : Ast.association) =
     let key_id, key_expr_block = translate_expression_to_fresh_id env one_update.key in
     let value_id, value_expr_block = translate_expression_to_fresh_id env one_update.value in
-    let update_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_map_put) in
+    let update_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_maps_put) in
     let update_args =
       [(Exp.Var key_id, any_typ); (Exp.Var value_id, any_typ); (Exp.Var map_id, any_typ)]
     in
@@ -677,7 +687,7 @@ and translate_expression_map_update (env : (_, _) Env.t) ret_var map updates : B
           []
       | Exact ->
           let has_key_id = mk_fresh_id () in
-          let has_key_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_map_is_key) in
+          let has_key_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_maps_is_key) in
           let has_key_args = [(Exp.Var key_id, any_typ); (Exp.Var map_id, any_typ)] in
           let start =
             Node.make_stmt env
@@ -920,7 +930,7 @@ and translate_case_clause (env : (_, _) Env.t) (values : Ident.t list)
 
 let translate_one_function (env : (_, _) Env.t) cfg function_ clauses =
   let uf_name = Env.UnqualifiedFunction.of_ast function_ in
-  let {Env.UnqualifiedFunction.T.name= function_name; arity} = uf_name in
+  let {Env.UnqualifiedFunction.name= function_name; arity} = uf_name in
   let name =
     let module_name = env.current_module in
     Procname.make_erlang ~module_name ~function_name ~arity

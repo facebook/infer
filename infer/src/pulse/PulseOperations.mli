@@ -89,6 +89,9 @@ val pulse_model_type : Typ.name
 module ModeledField : sig
   val string_length : Fieldname.t
   (** Modeled field for string length *)
+
+  val internal_string : Fieldname.t
+  (** Modeled field for internal string *)
 end
 
 val eval :

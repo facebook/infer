@@ -1,4 +1,4 @@
-<!-- Creator     : groff version 1.22.3 -->
+<!-- Creator     : groff version 1.22.4 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -75,12 +75,12 @@ report.</p>
 
 <p style="margin-left:17%;">Activates: checker
 annotation-reachability: Given a pair of source and sink
-annotation, e.g. &lsquo;@PerformanceCritical&lsquo; and
-&lsquo;@Expensive&lsquo;, this checker will warn whenever
+annotation, e.g. &rsquo;@PerformanceCritical&rsquo; and
+&rsquo;@Expensive&rsquo;, this checker will warn whenever
 some method annotated with
-&lsquo;@PerformanceCritical&lsquo; calls, directly or
+&rsquo;@PerformanceCritical&rsquo; calls, directly or
 indirectly, another method annotated with
-&lsquo;@Expensive&lsquo; (Conversely:
+&rsquo;@Expensive&rsquo; (Conversely:
 <b>--no-annotation-reachability</b>)</p>
 
 
@@ -176,7 +176,7 @@ given the same before. Not compatible with
 <p style="margin-left:17%;">Activates: checker cost:
 Computes the time complexity of functions and methods. Can
 be used to detect changes in runtime complexity with
-&lsquo;infer reportdiff&lsquo;. (Conversely:
+&rsquo;infer reportdiff&rsquo;. (Conversely:
 <b>--no-cost</b>)</p>
 
 <p style="margin-left:11%;"><b>--cost-only</b></p>
@@ -258,7 +258,7 @@ reporting. (Conversely: <b>--deduplicate</b>)</p>
 <p style="margin-left:11%;"><b>--eradicate</b></p>
 
 <p style="margin-left:17%;">Activates: checker eradicate:
-The eradicate &lsquo;@Nullable&lsquo; checker for Java
+The eradicate &rsquo;@Nullable&rsquo; checker for Java
 annotations. (Conversely: <b>--no-eradicate</b>)</p>
 
 <p style="margin-left:11%;"><b>--eradicate-only</b></p>
@@ -304,9 +304,9 @@ internal options in the INTERNAL OPTIONS section</p>
 <p style="margin-left:17%;">Activates: checker
 immutable-cast: Detection of object cast from immutable
 types to mutable types. For instance, it will detect casts
-from &lsquo;ImmutableList&lsquo; to &lsquo;List&lsquo;,
-&lsquo;ImmutableMap&lsquo; to &lsquo;Map&lsquo;, and
-&lsquo;ImmutableSet&lsquo; to &lsquo;Set&lsquo;.
+from &rsquo;ImmutableList&rsquo; to &rsquo;List&rsquo;,
+&rsquo;ImmutableMap&rsquo; to &rsquo;Map&rsquo;, and
+&rsquo;ImmutableSet&rsquo; to &rsquo;Set&rsquo;.
 (Conversely: <b>--no-immutable-cast</b>)</p>
 
 
@@ -382,7 +382,7 @@ disable all other checkers (Conversely:
 
 <p style="margin-left:17%;">Activates: checker
 litho-required-props: Checks that all non-optional
-&lsquo;@Prop&lsquo;s have been specified when constructing
+&rsquo;@Prop&rsquo;s have been specified when constructing
 Litho components. (Conversely:
 <b>--no-litho-required-props</b>)</p>
 
@@ -437,7 +437,7 @@ running simultaneously</p>
 
 <p style="margin-left:17%;">Activates: Generate OCaml
 analysis allocation traces in
-&lsquo;infer-out/memtrace&lsquo;. (Conversely:
+&rsquo;infer-out/memtrace&rsquo;. (Conversely:
 <b>--no-memtrace-analysis-profiling</b>)</p>
 
 
@@ -462,11 +462,11 @@ stdout and stderr (Conversely: <b>--no-print-logs</b>)</p>
 <p style="margin-left:11%;"><b>--printf-args</b></p>
 
 <p style="margin-left:17%;">Activates: checker printf-args:
-Detect mismatches between the Java &lsquo;printf&lsquo;
+Detect mismatches between the Java &rsquo;printf&rsquo;
 format strings and the argument types For example, this
 checker will warn about the type error in
-&lsquo;printf(&quot;Hello %d&quot;,
-&quot;world&quot;)&lsquo; (Conversely:
+&rsquo;printf(&quot;Hello %d&quot;,
+&quot;world&quot;)&rsquo; (Conversely:
 <b>--no-printf-args</b>)</p>
 
 <p style="margin-left:11%;"><b>--printf-args-only</b></p>
@@ -710,7 +710,7 @@ performs better in some circumstances <b><br>
 
 <p style="margin-left:17%;">Deactivates: checker
 self-in-block: An Objective-C-specific analysis to detect
-when a block captures &lsquo;self&lsquo;. (Conversely:
+when a block captures &rsquo;self&rsquo;. (Conversely:
 <b>--self-in-block</b>)</p>
 
 
@@ -947,11 +947,11 @@ program.</p>
 
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>--erlang-reverse-unfold-depth</b>
+<p style="margin-left:11%; margin-top: 1em"><b>--erlang-list-unfold-depth</b>
 <i>int</i></p>
 
-<p style="margin-left:17%;">Unfold Erlang lists:reverse up
-to depth <i>int</i></p>
+<p style="margin-left:17%;">Unfold Erlang lists up to depth
+<i>int</i></p>
 
 <h2>JAVA OPTIONS
 <a name="JAVA OPTIONS"></a>
@@ -1045,11 +1045,49 @@ should be considered aliases of @ThreadSafe</p>
 
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>--simple-lineage-max-cfg-size</b>
+<p style="margin-left:11%; margin-top: 1em"><b>--no-simple-lineage-dedup</b></p>
+
+<p style="margin-left:17%;">Deactivates: In JSON output,
+attempt to print each entity at most once. This is the
+default. The only reason you may want to turn this off is to
+make hash collisions more visible; that is, cases in which
+distinct entities get assigned the same ID. (Conversely:
+<b>--simple-lineage-dedup</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--simple-lineage-json-report</b></p>
+
+<p style="margin-left:17%;">Activates: Enable simple
+lineage report in JSON format. (Conversely:
+<b>--no-simple-lineage-json-report</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--simple-lineage-keep-temporaries</b></p>
+
+<p style="margin-left:17%;">Activates: Normally, lineage
+summaries do not mention temporary variables introduced
+while compiling the high-level code to Infer's IR
+(intermediate representation). If this option is enabled,
+then the lineage graph produced corresponds to Infer's IR.
+(Conversely:
+<b>--no-simple-lineage-keep-temporaries</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--simple-lineage-max-cfg-size</b>
 <i>int</i></p>
 
 <p style="margin-left:17%;">If set, larger CFGs are
 skipped.</p>
+
+<p style="margin-left:11%;"><b>--simple-lineage-seed</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Set the random seed used for
+hashing. (Various entities that get reported need unique
+identifiers. To generate these unique identifiers, in a
+distributed way without communication, we use hashing. If
+you are unlucky and get collisions, you can try a different
+seed.</p>
 
 <h2>SIOF CHECKER OPTIONS
 <a name="SIOF CHECKER OPTIONS"></a>

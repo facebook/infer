@@ -41,6 +41,15 @@ type inst =
   | Move of {reg_exps: (Reg.t * Exp.t) iarray; loc: Loc.t}
   | Load of {reg: Reg.t; ptr: Exp.t; len: Exp.t; loc: Loc.t}
   | Store of {ptr: Exp.t; exp: Exp.t; len: Exp.t; loc: Loc.t}
+  | AtomicRMW of {reg: Reg.t; ptr: Exp.t; exp: Exp.t; len: Exp.t; loc: Loc.t}
+  | AtomicCmpXchg of
+      { reg: Reg.t
+      ; ptr: Exp.t
+      ; cmp: Exp.t
+      ; exp: Exp.t
+      ; len: Exp.t
+      ; len1: Exp.t
+      ; loc: Loc.t }
   | Alloc of {reg: Reg.t; num: Exp.t; len: int; loc: Loc.t}
   | Free of {ptr: Exp.t; loc: Loc.t}
   | Nondet of {reg: Reg.t option; msg: string; loc: Loc.t}
@@ -215,6 +224,12 @@ let pp_inst fs inst =
   | Store {ptr; exp; len; loc} ->
       pf "@[<2>store %a@ %a@ %a;@]\t%a" Exp.pp len Exp.pp ptr Exp.pp exp
         Loc.pp loc
+  | AtomicRMW {reg; ptr; exp; len; loc} ->
+      pf "@[<2>%a@ := atomic_rmw %a@ %a@ %a;@]\t%a" Reg.pp reg Exp.pp len
+        Exp.pp ptr Exp.pp exp Loc.pp loc
+  | AtomicCmpXchg {reg; ptr; cmp; exp; len; len1; loc} ->
+      pf "@[<2>%a@ := atomic_cmpxchg %a,%a@ %a@ %a@ %a;@]\t%a" Reg.pp reg
+        Exp.pp len Exp.pp len1 Exp.pp ptr Exp.pp cmp Exp.pp exp Loc.pp loc
   | Alloc {reg; num; len; loc} ->
       pf "@[<2>%a@ := alloc [%a x %i];@]\t%a" Reg.pp reg Exp.pp num len
         Loc.pp loc
@@ -313,6 +328,13 @@ module Inst = struct
   let move ~reg_exps ~loc = Move {reg_exps; loc}
   let load ~reg ~ptr ~len ~loc = Load {reg; ptr; len; loc}
   let store ~ptr ~exp ~len ~loc = Store {ptr; exp; len; loc}
+
+  let atomic_rmw ~reg ~ptr ~exp ~len ~loc =
+    AtomicRMW {reg; ptr; exp; len; loc}
+
+  let atomic_cmpxchg ~reg ~ptr ~cmp ~exp ~len ~len1 ~loc =
+    AtomicCmpXchg {reg; ptr; cmp; exp; len; len1; loc}
+
   let alloc ~reg ~num ~len ~loc = Alloc {reg; num; len; loc}
   let free ~ptr ~loc = Free {ptr; loc}
   let nondet ~reg ~msg ~loc = Nondet {reg; msg; loc}
@@ -323,6 +345,8 @@ module Inst = struct
     | Move {loc; _}
      |Load {loc; _}
      |Store {loc; _}
+     |AtomicRMW {loc; _}
+     |AtomicCmpXchg {loc; _}
      |Alloc {loc; _}
      |Free {loc; _}
      |Nondet {loc; _}
@@ -335,6 +359,8 @@ module Inst = struct
     | Move {reg_exps; _} ->
         IArray.fold ~f:(fun (reg, _) vs -> Reg.Set.add reg vs) reg_exps vs
     | Load {reg; _}
+     |AtomicRMW {reg; _}
+     |AtomicCmpXchg {reg; _}
      |Alloc {reg; _}
      |Nondet {reg= Some reg; _}
      |Intrinsic {reg= Some reg; _} ->
@@ -353,6 +379,9 @@ module Inst = struct
         IArray.fold ~f:(fun (_reg, exp) -> f exp) reg_exps s
     | Load {reg= _; ptr; len; loc= _} -> f len (f ptr s)
     | Store {ptr; exp; len; loc= _} -> f len (f exp (f ptr s))
+    | AtomicRMW {reg= _; ptr; exp; len; loc= _} -> f len (f exp (f ptr s))
+    | AtomicCmpXchg {reg= _; ptr; cmp; exp; len; len1; loc= _} ->
+        f len1 (f len (f exp (f cmp (f ptr s))))
     | Alloc {reg= _; num; len= _; loc= _} -> f num s
     | Free {ptr; loc= _} -> f ptr s
     | Nondet {reg= _; msg= _; loc= _} -> s
@@ -496,7 +525,8 @@ module IP = struct
       | _ -> false
     else
       match inst ip with
-      | Some (Load _ | Store _ | Free _) -> true
+      | Some (Load _ | Store _ | AtomicRMW _ | AtomicCmpXchg _ | Free _) ->
+          true
       | Some (Move _ | Alloc _ | Nondet _ | Abort _) -> false
       | Some (Intrinsic {name; _}) -> (
         match name with

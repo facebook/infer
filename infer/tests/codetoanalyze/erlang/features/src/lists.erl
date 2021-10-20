@@ -49,7 +49,8 @@
     test_listappend3_Ok/0,
     test_listappend3_Bad/0,
     test_listappend4_Ok/0,
-    fn_test_listappend4_Bad/0
+    fn_test_listappend4_Bad/0,
+    fn_test_listappend5_Bad/0
 ]).
 
 % Call this method with warn(1) to trigger a warning to expect
@@ -375,3 +376,10 @@ fn_test_listappend4_Bad() ->
         [1, 2, 3, 4, 5] -> warn(1);
         _ -> ok
     end.
+
+one() -> 1.
+
+% T102978784
+fn_test_listappend5_Bad() ->
+    % using the function one() makes the Erlang compiler not see the problem
+    one() ++ "?".

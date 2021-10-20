@@ -7,7 +7,7 @@ TESTS_DIR = ../../..
 
 # see explanations in cpp/biabduction/Makefile for the custom isystem
 INFER_OPTIONS = --pulse-only --debug-exceptions --project-root $(TESTS_DIR) \
-  --pulse-report-latent-issues
+  --pulse-report-latent-issues --print-types
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard src/*.erl)

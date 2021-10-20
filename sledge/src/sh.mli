@@ -157,3 +157,8 @@ val fold_dnf :
 
 val dnf : t -> disjunction
 (** Convert to disjunctive-normal form. *)
+
+(**/**)
+
+val dump_simplify : int ref
+val replay : string -> unit

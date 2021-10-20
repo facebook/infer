@@ -332,25 +332,6 @@ let apply_arithmetic_constraints path callee_proc_name call_location pre_post ca
       call_state.subst call_state
 
 
-let deep_deallocate pre_post call_state =
-  let astate =
-    BaseAddressAttributes.fold
-      (fun addr_callee attrs astate ->
-        if Attributes.is_deep_deallocated attrs then
-          match AddressMap.find_opt addr_callee call_state.subst with
-          | None ->
-              astate
-          | Some (addr_caller, _) ->
-              (* NOTE: could be optimized to remember the addresses already visited in case many
-                 addresses have the [DeepDeallocate] attribute and share important parts of the memory
-                 graph (unlikely) *)
-              AbductiveDomain.deallocate_all_reachable_from addr_caller astate
-        else astate )
-      (pre_post.AbductiveDomain.post :> BaseDomain.t).attrs call_state.astate
-  in
-  {call_state with astate}
-
-
 let materialize_pre path callee_proc_name call_location pre_post ~captured_vars_with_actuals
     ~formals ~actuals call_state =
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse call pre" ())) ;
@@ -365,7 +346,6 @@ let materialize_pre path callee_proc_name call_location pre_post ~captured_vars_
     >>= (* ...then relational arithmetic constraints in the callee's attributes will make sense in
            terms of the caller's values *)
     apply_arithmetic_constraints path callee_proc_name call_location pre_post
-    >>| deep_deallocate pre_post
   in
   PerfEvent.(log (fun logger -> log_end_event logger ())) ;
   r
@@ -460,7 +440,9 @@ let rec record_post_for_address path callee_proc_name call_loc
     | Some ((edges_post, attrs_post) as cell_callee_post) ->
         let edges_pre_opt = BaseMemory.find_opt addr_callee (pre :> BaseDomain.t).BaseDomain.heap in
         let call_state_after_post =
-          if is_cell_read_only ~edges_pre_opt ~cell_post:cell_callee_post then call_state
+          if is_cell_read_only ~edges_pre_opt ~cell_post:cell_callee_post then (
+            L.d_printfln "cell at %a is read-only, not modifying@\n" AbstractValue.pp addr_callee ;
+            call_state )
           else
             let attrs_post =
               if Config.pulse_isl then
@@ -609,14 +591,58 @@ let record_skipped_calls callee_proc_name call_loc pre_post call_state =
   {call_state with astate}
 
 
+let apply_unknown_effects pre_post call_state =
+  let open IOption.Let_syntax in
+  L.d_printfln "call_state = {%a}@\n" pp_call_state call_state ;
+  let is_modified_by_call addr_caller access =
+    match AddressMap.find_opt addr_caller call_state.rev_subst with
+    | None ->
+        false
+    | Some addr_callee ->
+        let edges_callee_pre =
+          BaseMemory.find_opt addr_callee (pre_post.AbductiveDomain.pre :> BaseDomain.t).heap
+          |> Option.value ~default:BaseMemory.Edges.empty
+        in
+        let edges_callee_post =
+          BaseMemory.find_opt addr_callee (pre_post.AbductiveDomain.post :> BaseDomain.t).heap
+          |> Option.value ~default:BaseMemory.Edges.empty
+        in
+        let pre_value = BaseMemory.Edges.find_opt access edges_callee_pre >>| fst in
+        let post_value = BaseMemory.Edges.find_opt access edges_callee_post >>| fst in
+        (* havoc only fields that haven't been havoc'd already during the call *)
+        not (Option.equal AbstractValue.equal post_value pre_value)
+  in
+  let astate =
+    BaseAddressAttributes.fold
+      (fun addr_callee attrs astate ->
+        (let* _, havoc_hist = Attributes.get_unknown_effect attrs in
+         let+ addr_caller, _ = AddressMap.find_opt addr_callee call_state.subst in
+         (* NOTE: could be optimized to remember the addresses already visited in case many
+            addresses have the [UnknownEffect] attribute and share important parts of the memory
+            graph (unlikely) *)
+         L.d_printfln "applying unknown effects on %a@\n  @[<2>" AbstractValue.pp addr_caller ;
+         let astate =
+           AbductiveDomain.apply_unknown_effect havoc_hist addr_caller astate
+             ~havoc_filter:(fun addr_caller access _ ->
+               (* havoc only fields that haven't been havoc'd already during the call *)
+               not (is_modified_by_call addr_caller access) )
+         in
+         L.d_printfln "@]" ;
+         astate )
+        |> Option.value ~default:astate )
+      (pre_post.AbductiveDomain.post :> BaseDomain.t).attrs call_state.astate
+  in
+  {call_state with astate}
+
+
 let apply_post path callee_proc_name call_location pre_post ~captured_vars_with_actuals ~formals
     ~actuals call_state =
   let open IResult.Let_syntax in
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse call post" ())) ;
   let r =
     let call_state, return_caller =
-      apply_post_for_parameters path callee_proc_name call_location pre_post ~formals ~actuals
-        call_state
+      apply_unknown_effects pre_post call_state
+      |> apply_post_for_parameters path callee_proc_name call_location pre_post ~formals ~actuals
       |> apply_post_for_captured_vars path callee_proc_name call_location pre_post
            ~captured_vars_with_actuals
       |> apply_post_for_globals path callee_proc_name call_location pre_post

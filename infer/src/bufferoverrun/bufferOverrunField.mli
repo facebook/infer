@@ -41,6 +41,9 @@ val java_linked_list_next : Typ.t -> Fieldname.t
 val java_list_files_length : Fieldname.t
 (** Virtual field for length of Java's files list in a directory *)
 
+val cpp_collection_internal_array : Fieldname.t
+(** Field for C++ collection's elements *)
+
 val is_cpp_vector_elem : Fieldname.t -> bool
 (** Check if the field is for C++ vector's elements *)
 

@@ -946,6 +946,38 @@ let instruction (context : JContext.t) pc instr : translation =
     let procname_string = Procname.to_string procname in
     Procdesc.Node.Stmt_node (Call procname_string)
   in
+  let build_alloc var cn constructor_opt =
+    let builtin_new = Exp.Const (Const.Cfun BuiltinDecl.__new) in
+    let class_type = JTransType.get_class_type program tenv cn in
+    let class_type_np = JTransType.get_class_type_no_pointer program tenv cn in
+    let sizeof_exp =
+      Exp.Sizeof {typ= class_type_np; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
+    in
+    let args = [(sizeof_exp, class_type)] in
+    let ret_id = Ident.create_fresh Ident.knormal in
+    let new_instr = Sil.Call ((ret_id, class_type), builtin_new, args, loc, CallFlags.default) in
+    let pvar = JContext.set_pvar context var class_type in
+    let set_instr =
+      Sil.Store {e1= Exp.Lvar pvar; root_typ= class_type; typ= class_type; e2= Exp.Var ret_id; loc}
+    in
+    match constructor_opt with
+    | Some (constr_type_list, constr_arg_list) ->
+        let constr_ms = JBasics.make_ms JConfig.constructor_name constr_type_list None in
+        let constr_procname, call_instrs =
+          let ret_opt = Some (Exp.Var ret_id, class_type) in
+          method_invocation context loc pc None cn constr_ms ret_opt constr_arg_list I_Special
+            Procname.Java.Non_Static
+        in
+        let instrs = (new_instr :: call_instrs) @ [set_instr] in
+        let node_kind = create_node_kind constr_procname in
+        let node = create_node node_kind instrs in
+        Instr node
+    | None ->
+        let instrs = [new_instr; set_instr] in
+        let node_kind = Procdesc.Node.Stmt_node MethodBody in
+        let node = create_node node_kind instrs in
+        Instr node
+  in
   try
     match (instr : JBir.instr) with
     | AffectVar (var, expr) ->
@@ -1063,33 +1095,11 @@ let instruction (context : JContext.t) pc instr : translation =
         let node = create_node Procdesc.Node.throw_kind (instrs @ [sil_instr]) in
         JContext.add_goto_jump context pc JContext.Exit ;
         Instr node
+    | Alloc (var, cn) ->
+        (* since Sawja 1.5.10 some allocation sites come without constructor calls *)
+        build_alloc var cn None
     | New (var, cn, constr_type_list, constr_arg_list) ->
-        let builtin_new = Exp.Const (Const.Cfun BuiltinDecl.__new) in
-        let class_type = JTransType.get_class_type program tenv cn in
-        let class_type_np = JTransType.get_class_type_no_pointer program tenv cn in
-        let sizeof_exp =
-          Exp.Sizeof {typ= class_type_np; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
-        in
-        let args = [(sizeof_exp, class_type)] in
-        let ret_id = Ident.create_fresh Ident.knormal in
-        let new_instr =
-          Sil.Call ((ret_id, class_type), builtin_new, args, loc, CallFlags.default)
-        in
-        let constr_ms = JBasics.make_ms JConfig.constructor_name constr_type_list None in
-        let constr_procname, call_instrs =
-          let ret_opt = Some (Exp.Var ret_id, class_type) in
-          method_invocation context loc pc None cn constr_ms ret_opt constr_arg_list I_Special
-            Procname.Java.Non_Static
-        in
-        let pvar = JContext.set_pvar context var class_type in
-        let set_instr =
-          Sil.Store
-            {e1= Exp.Lvar pvar; root_typ= class_type; typ= class_type; e2= Exp.Var ret_id; loc}
-        in
-        let instrs = (new_instr :: call_instrs) @ [set_instr] in
-        let node_kind = create_node_kind constr_procname in
-        let node = create_node node_kind instrs in
-        Instr node
+        build_alloc var cn (Some (constr_type_list, constr_arg_list))
     | NewArray (var, vt, expr_list) ->
         let builtin_new_array = Exp.Const (Const.Cfun BuiltinDecl.__new_array) in
         let content_type = JTransType.value_type program tenv vt in

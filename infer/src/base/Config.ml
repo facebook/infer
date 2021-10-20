@@ -41,6 +41,7 @@ type build_system =
   | BMvn
   | BNdk
   | BRebar3
+  | BErlc
   | BXcode
 [@@deriving compare, equal]
 
@@ -70,6 +71,7 @@ let build_system_exe_assoc =
   ; (BMvn, "mvnw")
   ; (BNdk, "ndk-build")
   ; (BRebar3, "rebar3")
+  ; (BErlc, "erlc")
   ; (BXcode, "xcodebuild") ]
 
 

@@ -890,17 +890,6 @@ conf-clean: clean
 	$(REMOVE_DIR) $(MODELS_DIR)/java/infer-out/
 	$(REMOVE_DIR) $(MODELS_DIR)/objc/out/
 
-
-# phony because it depends on opam's internal state
-.PHONY: opam/infer.opam.locked
-opam/infer.opam.locked: opam/infer.opam
-# allow users to not force a run of opam update since it's very slow
-ifeq ($(NO_OPAM_UPDATE),)
-	$(QUIET)$(call silent_on_success,opam update,$(OPAM) update)
-endif
-	$(QUIET)$(call silent_on_success,generating opam/infer.opam.locked,\
-	  $(OPAM) lock opam/infer.opam)
-
 OPAM_DEV_DEPS = ocp-indent merlin utop webbrowser
 
 ifneq ($(EMACS),no)

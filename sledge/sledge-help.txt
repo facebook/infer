@@ -106,13 +106,21 @@ Analyze code in one or more LLVM bitcode files. This is a convenience wrapper fo
 
 === flags ===
 
+  [-O0]                   optimization level 0
+  [-O1]                   optimization level 1
+  [-O2]                   optimization level 2
+  [-O3]                   optimization level 3
+  [-Os]                   like -O2 with extra optimizations for size
+  [-Oz]                   like -Os but reduces code size further (default)
   [-append-report]        append to report file
   [-cct-schedule-points]  context switch only at cct_point calls
   [-colors]               enable printing in colors
   [-domain <string>]      select abstract domain; must be one of "sh" (default,
                           symbolic heap domain), "globals" (used-globals
                           domain), or "unit" (unit domain)
+  [-dump-bitcode <file>]  write transformed LLVM bitcode to <file>
   [-dump-query <int>]     dump solver query <int> and halt
+  [-dump-simplify <int>]  dump simplify query <int> and halt
   [-function-summaries]   use function summaries (in development)
   [-loop-bound <int>]     limit execution exploration to <int> loop iterations,
                           a negative bound is never hit and leads to unbounded
@@ -149,16 +157,24 @@ Translate one or more LLVM bitcode files to LLAIR. Each <input> filename may be 
 
 === flags ===
 
-  [-append-report]   append to report file
-  [-colors]          enable printing in colors
-  [-margin <cols>]   wrap debug tracing at <cols> columns
-  [-no-internalize]  do not internalize all functions except the entry points
-                     specified in the config file
-  [-output <file>]   write generated binary LLAIR to <file>
-  [-report <file>]   write report sexp to <file>, or to standard error if "-"
-  [-trace <spec>]    enable debug tracing
-  [-help]            print this help text and exit
-                     (alias: -?)
+  [-O0]                   optimization level 0
+  [-O1]                   optimization level 1
+  [-O2]                   optimization level 2
+  [-O3]                   optimization level 3
+  [-Os]                   like -O2 with extra optimizations for size
+  [-Oz]                   like -Os but reduces code size further (default)
+  [-append-report]        append to report file
+  [-colors]               enable printing in colors
+  [-dump-bitcode <file>]  write transformed LLVM bitcode to <file>
+  [-margin <cols>]        wrap debug tracing at <cols> columns
+  [-no-internalize]       do not internalize all functions except the entry
+                          points specified in the config file
+  [-output <file>]        write generated binary LLAIR to <file>
+  [-report <file>]        write report sexp to <file>, or to standard error if
+                          "-"
+  [-trace <spec>]         enable debug tracing
+  [-help]                 print this help text and exit
+                          (alias: -?)
 
 
 ====== sledge llvm disassemble ======
@@ -171,8 +187,15 @@ The <input> file must be LLVM bitcode.
 
 === flags ===
 
+  [-O0]                   optimization level 0
+  [-O1]                   optimization level 1
+  [-O2]                   optimization level 2
+  [-O3]                   optimization level 3
+  [-Os]                   like -O2 with extra optimizations for size
+  [-Oz]                   like -Os but reduces code size further (default)
   [-append-report]        append to report file
   [-colors]               enable printing in colors
+  [-dump-bitcode <file>]  write transformed LLVM bitcode to <file>
   [-llair-output <file>]  write generated textual LLAIR to <file>, or to
                           standard output if omitted
   [-margin <cols>]        wrap debug tracing at <cols> columns
@@ -203,6 +226,7 @@ The <input> file must be binary LLAIR, such as produced by `sledge translate`.
                           symbolic heap domain), "globals" (used-globals
                           domain), or "unit" (unit domain)
   [-dump-query <int>]     dump solver query <int> and halt
+  [-dump-simplify <int>]  dump simplify query <int> and halt
   [-function-summaries]   use function summaries (in development)
   [-loop-bound <int>]     limit execution exploration to <int> loop iterations,
                           a negative bound is never hit and leads to unbounded

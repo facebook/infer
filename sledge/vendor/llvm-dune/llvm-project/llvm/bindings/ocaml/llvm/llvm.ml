@@ -1024,6 +1024,7 @@ external instr_pred : llvalue -> (llbasicblock, llvalue) llrev_pos
 external instr_opcode : llvalue -> Opcode.t = "llvm_instr_get_opcode"
 external icmp_predicate : llvalue -> Icmp.t option = "llvm_instr_icmp_predicate"
 external fcmp_predicate : llvalue -> Fcmp.t option = "llvm_instr_fcmp_predicate"
+external atomicrmw_binop : llvalue -> AtomicRMWBinOp.t = "llvm_instr_get_atomicrmw_binop"
 external instr_clone : llvalue -> llvalue = "llvm_instr_clone"
 
 let rec iter_instrs_range f i e =

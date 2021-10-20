@@ -476,14 +476,6 @@ module StdArray = struct
       Dom.Mem.add_stack (Loc.of_id id) v mem
     in
     {exec; check= no_check}
-
-
-  let integer_size size =
-    let exec _ ~ret:(ret_id, _) mem =
-      let size_v = IntLit.of_int64 size |> Itv.of_int_lit |> Dom.Val.of_itv in
-      model_by_value size_v ret_id mem
-    in
-    {exec; check= no_check}
 end
 
 module ArrObjCommon = struct
@@ -668,6 +660,24 @@ module StdVector = struct
       ArrObjCommon.size_exec vec_exp
         ~fn:(BufferOverrunField.cpp_vector_elem ~vec_typ)
         ~fn_typ:(Typ.mk_ptr elt_typ)
+    in
+    {exec; check= no_check}
+
+
+  let begin_ exp =
+    let exec _ ~ret:_ mem =
+      let locs = Sem.eval_locs exp mem in
+      Dom.Mem.update_mem locs Dom.Val.Itv.zero mem
+    in
+    {exec; check= no_check}
+
+
+  let end_ elt_typ vec temp_exp =
+    let exec model_env ~ret:((ret_id, _) as ret) mem =
+      let mem = (size elt_typ vec).exec model_env ~ret mem in
+      let locs = Sem.eval_locs temp_exp mem in
+      let v = Dom.Mem.find (Loc.of_id ret_id) mem in
+      Dom.Mem.update_mem locs v mem
     in
     {exec; check= no_check}
 
@@ -1069,6 +1079,19 @@ end
 module Collection = AbstractCollection (struct
   let collection_internal_array_field = BufferOverrunField.java_collection_internal_array
 end)
+
+module Container = struct
+  include AbstractCollection (struct
+    let collection_internal_array_field = BufferOverrunField.cpp_collection_internal_array
+  end)
+
+  let integer_size size =
+    let exec _ ~ret:(ret_id, _) mem =
+      let size_v = IntLit.of_int64 size |> Itv.of_int_lit |> Dom.Val.of_itv in
+      model_by_value size_v ret_id mem
+    in
+    {exec; check= no_check}
+end
 
 module NSCollection = struct
   include AbstractCollection (struct
@@ -1826,10 +1849,12 @@ module Call = struct
       ; -"folly" &:: "split" $ any_arg $+ any_arg
         $+ capt_arg_of_typ (-"std" &:: "vector")
         $+? capt_exp $--> Folly.Split.std_vector
+      ; -"std" &:: "integral_constant" < any_typ &+ capt_int >:: "operator_int"
+        &--> Container.integer_size
       ; -"std" &:: "__shared_ptr_access" &:: "operator->" $ capt_exp $--> id
       ; -"std" &:: "array" < any_typ &+ capt_int >:: "array" &--> StdArray.constructor
-      ; -"std" &:: "array" < any_typ &+ capt_int >:: "size" &--> StdArray.integer_size
-      ; -"std" &:: "array" < any_typ &+ capt_int >:: "max_size" &--> StdArray.integer_size
+      ; -"std" &:: "array" < any_typ &+ capt_int >:: "size" &--> Container.integer_size
+      ; -"std" &:: "array" < any_typ &+ capt_int >:: "max_size" &--> Container.integer_size
       ; -"std" &:: "array" < any_typ &+ capt_int >:: "at" $ capt_arg $+ capt_arg $!--> StdArray.at
       ; -"std" &:: "array" < any_typ &+ capt_int >:: "back" $ capt_arg $!--> StdArray.back
       ; -"std" &:: "array" < any_typ &+ capt_int >:: "begin" $ capt_arg $!--> StdArray.begin_
@@ -1874,6 +1899,7 @@ module Call = struct
         $ any_arg_of_typ (-"std" &:: "basic_string")
         $+ any_arg_of_typ (-"std" &:: "basic_string")
         $--> by_value Dom.Val.Itv.unknown_bool
+      ; -"std" &:: "map" &:: "size" $ capt_exp $--> Container.size
       ; -"std" &:: "shared_ptr" &:: "operator->" $ capt_exp $--> id
       ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "data" $ capt_arg $--> StdVector.data
       ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "emplace_back" $ capt_arg $+ capt_exp
@@ -1888,6 +1914,8 @@ module Call = struct
       ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "resize" $ capt_arg $+ capt_exp
         $--> StdVector.resize
       ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "size" $ capt_arg $--> StdVector.size
+      ; -"std" &:: "vector" &:: "begin" $ any_arg $+ capt_exp $--> StdVector.begin_
+      ; -"std" &:: "vector" < capt_typ &+...>:: "end" $ capt_arg $+ capt_exp $--> StdVector.end_
       ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "vector"
         $ capt_arg_of_typ (-"std" &:: "vector")
         $+ capt_exp_of_prim_typ (Typ.mk (Typ.Tint Typ.size_t))
