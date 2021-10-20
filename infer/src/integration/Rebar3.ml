@@ -7,8 +7,8 @@
 open! IStd
 module L = Logging
 
-let run_rebar result_dir args =
-  let args = [result_dir; "--"; "rebar3"] @ args in
+let run_compile command result_dir args =
+  let args = [result_dir; "--"; command] @ args in
   let prog = Config.lib_dir ^/ "erlang" ^/ "erlang.sh" in
   L.debug Capture Verbose "executing %s@." prog ;
   Process.create_process_and_wait ~prog ~args
@@ -42,11 +42,11 @@ let parse_and_store result_dir =
   Utils.directory_iter read_one_ast result_dir
 
 
-let capture ~args =
+let capture ~command ~args =
   Option.iter ~f:parse_and_store Config.erlang_ast_dir ;
   if not Config.erlang_skip_rebar3 then (
     let in_dir = ResultsDir.get_path Temporary in
-    let rebar_result_dir = Filename.temp_dir ~in_dir "rebar3infer" "" in
-    run_rebar rebar_result_dir args ;
-    parse_and_store rebar_result_dir ;
-    if not Config.debug_mode then Utils.rmtree rebar_result_dir )
+    let result_dir = Filename.temp_dir ~in_dir (command ^ "infer") "" in
+    run_compile command result_dir args ;
+    parse_and_store result_dir ;
+    if not Config.debug_mode then Utils.rmtree result_dir )

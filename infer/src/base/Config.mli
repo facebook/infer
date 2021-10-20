@@ -24,6 +24,7 @@ type build_system =
   | BMvn
   | BNdk
   | BRebar3
+  | BErlc
   | BXcode
 
 type scheduler = File | Restart | SyntacticCallGraph [@@deriving equal]

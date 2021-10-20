@@ -78,7 +78,7 @@ OPTIONS
            Proceed as if the first argument after -- was command. Possible
            values: ant, buck, gradle, gradlew, java, javac, cc, clang, gcc,
            clang++, c++, g++, make, configure, cmake, waf, mvn, mvnw,
-           ndk-build, rebar3, xcodebuild.
+           ndk-build, rebar3, erlc, xcodebuild.
 
        --help
            Show this manual
