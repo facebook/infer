@@ -762,13 +762,9 @@ end
 let string_length_access = HilExp.Access.FieldAccess PulseOperations.ModeledField.string_length
 
 module StdBasicString = struct
-  let internal_string =
-    Fieldname.make
-      (Typ.CStruct (QualifiedCppName.of_list ["std"; "basic_string"]))
-      "__infer_model_backing_string"
+  let internal_string_access =
+    HilExp.Access.FieldAccess PulseOperations.ModeledField.internal_string
 
-
-  let internal_string_access = HilExp.Access.FieldAccess internal_string
 
   let to_internal_string path location bstring astate =
     PulseOperations.eval_access path Read location bstring internal_string_access astate
@@ -786,7 +782,7 @@ module StdBasicString = struct
     let<+> astate =
       PulseOperations.write_field path location
         ~ref:(addr, event :: hist)
-        internal_string ~obj:init_hist astate
+        PulseOperations.ModeledField.internal_string ~obj:init_hist astate
     in
     astate
 
