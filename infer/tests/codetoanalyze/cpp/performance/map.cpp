@@ -23,8 +23,7 @@ void loop_over_map_linear_FN(std::map<int, int> m) {
   }
 }
 
-// Expected: O(m); got top
-void loop_over_map_linear_FP(std::map<int, int> m) {
+void loop_over_map_linear(std::map<int, int> m) {
   for (int i = 0; i < m.size(); i++) {
   }
 }

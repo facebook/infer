@@ -807,7 +807,11 @@ let get_global_name_of_initializer = function
 let pp_with_block_parameters verbose pp fmt base blocks =
   pp fmt base ;
   F.pp_print_string fmt "[" ;
-  Pp.seq ~sep:"^" (Block.pp verbose) fmt blocks ;
+  ( match verbose with
+  | Non_verbose | Simple ->
+      F.pp_print_string fmt "specialized with blocks"
+  | Verbose ->
+      Pp.seq ~sep:"^" (Block.pp verbose) fmt blocks ) ;
   F.pp_print_string fmt "]"
 
 

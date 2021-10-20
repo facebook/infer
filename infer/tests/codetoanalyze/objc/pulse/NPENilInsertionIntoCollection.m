@@ -320,3 +320,27 @@ void arrayWithObjects(id object) {
 void arrayWithObjectsOk() { arrayWithObjects(@"obj"); }
 
 void FN_arrayWithObjectsNilBad() { arrayWithObjects(nil); }
+
+NSLocale* ret_bridge() {
+  CFLocaleRef nameRef = CFLocaleCreate(NULL, NULL);
+  return CFBridgingRelease(nameRef);
+}
+
+void createWithBrideInArrayOk() {
+  NSLocale* locale = ret_bridge();
+  NSArray<NSLocale*>* locales = @[ locale ];
+}
+
+id stringConstValueOK(NSMutableDictionary* dict, NSString* key) {
+  id value; // unrelated 0 caused FP to manifest
+  if (!key) {
+    key = @"key"; // NSString.stringWithUTF8String is called to construct @"key"
+  } // We need to model NSString.stringWithUTF8String to know that key is not
+    // nil at this point
+  NSMutableDictionary* subDict = [dict objectForKey:key];
+  if (!subDict) {
+    subDict = [NSMutableDictionary new];
+    [dict setObject:subDict forKey:key];
+  }
+  return value;
+}
