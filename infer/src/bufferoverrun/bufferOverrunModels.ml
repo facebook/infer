@@ -962,9 +962,9 @@ module AbstractCollection (Lang : Lang) = struct
 
 
   let init_with_arg lhs_id rhs_exp =
-    let exec {integer_type_widths} ~ret:_ mem =
-      let itr = Sem.eval integer_type_widths rhs_exp mem in
-      model_by_value itr lhs_id mem
+    let exec model_env ~ret mem =
+      let length = eval_collection_length rhs_exp mem |> Dom.Val.get_itv in
+      change_size_by ~size_f:(fun _ -> length) lhs_id model_env ~ret mem
     and check = check_alloc_size ~can_be_zero:true rhs_exp in
     {exec; check}
 
